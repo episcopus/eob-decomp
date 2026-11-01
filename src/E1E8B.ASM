@@ -780,13 +780,13 @@ handler_leave:
         iret
 _OverlayCallHandler ENDP
 
-; 1E8B:0536: age the overlay records after a version-record update. It bumps the 20B5:00AC counter,
-; then for each record in the 20B5:00BC chain: when its ES:0010 entry is set, marks it used (ES:001B
-; = 1, ES:001A |= 4); otherwise sets the unused bit (ES:001A |= 8), calls 0613 on it, updates
-; ES:000E, calls the record's ES:0018 routine and relinks it through 0711. It ends
-; when the byte count 0761 says no older record remains, then stores the new top at ES:0010. It
-; aborts through __OverlayHalt (0000:503F) if the overlay routine fails. Evidence: the [00AC]/[00BA]
-; counters, the ES:001A bit flags, the [00A8] limit and the __OverlayHalt jump.
+; 1E8B:0536: age the overlay records. It bumps the 20B5:00BA counter, then for each record in the
+; 20B5:00BC chain: when its ES:0010 entry is set, marks it used (ES:001B = 1, ES:001A |= 4);
+; otherwise sets the unused bit (ES:001A |= 8), discards the records (0613), updates ES:000E, calls
+; the record's ES:0018 routine and relinks it through 0711. It ends when the byte count 0761 says no
+; older record remains, then stores the new top at ES:0010. It aborts through __OverlayHalt
+; (0000:503F) if the overlay routine fails. Evidence: the [00BA] counter, the ES:001A bit flags, the
+; [00A8] limit and the __OverlayHalt jump.
         PUBLIC  _AgeOverlayRecords       ; @ 1E8B:0536
 _AgeOverlayRecords PROC NEAR
         push    es
