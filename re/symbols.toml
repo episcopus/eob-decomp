@@ -4369,6 +4369,7 @@ evidence = ["far", "segment"]
 name = "PrintInt"
 level = "L2"
 match_flags = "-ml -O -Z"
+review = "passed 2026-11-01 rev-sonnet"
 
 [[function]]
 id = "e1aaa_0005"
