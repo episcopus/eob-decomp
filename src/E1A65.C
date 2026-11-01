@@ -11,8 +11,8 @@
 
 extern int gFE6C; /*@ ds:FE6C */
 
-extern void far f1A72_02FC(void); /*@ 1A72:02FC */
-extern void far f1A72_02FA(void); /*@ 1A72:02FA */
+extern void far DisableInterrupts(void); /*@ 1A72:02FC */
+extern void far EnableInterrupts(void); /*@ 1A72:02FA */
 extern int f1DE4_0000(void); /*@ 1DE4:0000 */
 
 /*@ 1A65:000E */ void CalibrateRetrace(void)
@@ -23,14 +23,14 @@ extern int f1DE4_0000(void); /*@ 1DE4:0000 */
     register int i, k;
 
     i = gFE6C = 0;
-    f1A72_02FC();
+    DisableInterrupts();
     deadline = *timer;
-    f1A72_02FA();
+    EnableInterrupts();
     while (deadline == *timer)
         ;
-    f1A72_02FC();
+    DisableInterrupts();
     deadline = *timer + 4;
-    f1A72_02FA();
+    EnableInterrupts();
     while (*timer < deadline) {
         i++;
         for (k = 200; k; k--)

@@ -155,6 +155,24 @@ why = "reads a region record from ds:009F, expands it into ds:FE44/FE46/FE48/FE4
 date = "2026-11-01"
 
 [[rename]]
+id = "1A72:02FA=EnableInterrupts"
+addr = "1A72:02FA"
+old = "f1A72_02FA"
+new = "EnableInterrupts"
+kind = "function"
+why = "a two byte sti; retf wrapper, called around the retrace calibration at 1A65:000E (src/E1A72.ASM)"
+date = "2026-11-01"
+
+[[rename]]
+id = "1A72:02FC=DisableInterrupts"
+addr = "1A72:02FC"
+old = "f1A72_02FC"
+new = "DisableInterrupts"
+kind = "function"
+why = "a two byte cli; retf wrapper, called around the retrace calibration at 1A65:000E (src/E1A72.ASM)"
+date = "2026-11-01"
+
+[[rename]]
 id = "1BB1:0002=SetMousePointerShape"
 addr = "1BB1:0002"
 old = "f1BB1_0002"
