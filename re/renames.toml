@@ -36,3 +36,84 @@ new = "NormFar"
 kind = "function"
 why = "normalises a far pointer: Unpack4 (1D9A:0013) calls it on its source and destination before using them as DS:SI and ES:DI (1D9A:0023, 1D9A:0032)"
 date = "2026-11-01"
+
+[[rename]]
+id = "ds:009F=gRegions"
+addr = "ds:009F"
+old = "gImages"
+new = "gRegions"
+kind = "global"
+why = "the 16-byte region records read by the selector 1A29:0189 and by 082C:0650; record 0 is 0,0,40,200 = left, top, width in 8-pixel columns, height in lines (review of e1a29)"
+date = "2026-11-01"
+
+[[rename]]
+id = "ds:8108=gCurRegion"
+addr = "ds:8108"
+old = "gImage"
+new = "gCurRegion"
+kind = "global"
+why = "the index of the region 1A29:0189 selected last; the drawing wrappers compare their region argument with it to decide whether to reselect (1A29:001D) (review of e1a29)"
+date = "2026-11-01"
+
+[[rename]]
+id = "ds:FE48=gRegionLeft"
+addr = "ds:FE48"
+old = "gImgW"
+new = "gRegionLeft"
+kind = "global"
+why = "the current region's left edge in 8-pixel columns, loaded from record word 0 by 1A29:019A (review of e1a29)"
+date = "2026-11-01"
+
+[[rename]]
+id = "ds:FE4A=gRegionLeftPx"
+addr = "ds:FE4A"
+old = "gImgRow"
+new = "gRegionLeftPx"
+kind = "global"
+why = "the current region's left edge in pixels (gRegionLeft * 8), added to x by the drawing wrappers (1A29:0036) (review of e1a29)"
+date = "2026-11-01"
+
+[[rename]]
+id = "ds:FE4C=gRegionRight"
+addr = "ds:FE4C"
+old = "gImgX"
+new = "gRegionRight"
+kind = "global"
+why = "the current region's right edge (left + width), pushed to the driver as its second argument at 1A29:01D3 (review of e1a29)"
+date = "2026-11-01"
+
+[[rename]]
+id = "ds:FE46=gRegionTop"
+addr = "ds:FE46"
+old = "gImgH"
+new = "gRegionTop"
+kind = "global"
+why = "the current region's top line, loaded from record word 1 by 1A29:01BC and added to y by the wrappers (review of e1a29)"
+date = "2026-11-01"
+
+[[rename]]
+id = "ds:FE44=gRegionBottom"
+addr = "ds:FE44"
+old = "gImgY"
+new = "gRegionBottom"
+kind = "global"
+why = "the current region's bottom line (top + height), pushed to the driver as its first argument at 1A29:01CE (review of e1a29)"
+date = "2026-11-01"
+
+[[rename]]
+id = "ds:80B6=gSetRegion"
+addr = "ds:80B6"
+old = "gSetImage"
+new = "gSetRegion"
+kind = "global"
+why = "a far function pointer called with (left, right, top, bottom) after a region is selected; no writer in the resident code, filled at load time [H] (review of e1a29)"
+date = "2026-11-01"
+
+[[rename]]
+id = "1A29:0189=SelectRegion"
+addr = "1A29:0189"
+old = "f1A29_0189"
+new = "SelectRegion"
+kind = "function"
+why = "reads a region record from ds:009F, expands it into ds:FE44/FE46/FE48/FE4A/FE4C and calls the driver region setter; called by every drawing wrapper and by 1DE7:02FE (review of e1a29)"
+date = "2026-11-01"
