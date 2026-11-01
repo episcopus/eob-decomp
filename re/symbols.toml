@@ -3729,6 +3729,9 @@ unit = "e14ef"
 addr = "14EF:0154"
 size = 288
 evidence = ["frame"]
+name = "DrawOptionList"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e14ef_0274"

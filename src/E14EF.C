@@ -29,8 +29,8 @@ extern int gFC7A; /*@ ds:FC7A: the key UpdateOptionList did not handle, read by 
 extern int g5D1A; /*@ ds:5D1A: nonzero lets the pointer position pick the entry in DrawOptionList */
 extern int g8140; /*@ ds:8140: x of the last click, tested by UpdateOptionList */
 extern int g8142; /*@ ds:8142: y of the last click, tested by UpdateOptionList */
-extern unsigned char gFontWidth1A47; /*@ ds:8100 */
-extern unsigned char gFontHeight1A47; /*@ ds:8101 */
+extern char gFontWidth1A47; /*@ ds:8100 */
+extern char gFontHeight1A47; /*@ ds:8101 */
 extern int g8102; /*@ ds:8102 */
 extern int g814A; /*@ ds:814A */
 extern int g8138; /*@ ds:8138: mouse x (E1A72.ASM) */
@@ -110,5 +110,34 @@ extern void WaitFrames(int n); /*@ 1A16:000B */
     return count;
 }
 
-/*@ 14EF:0154 stub */ void DrawOptionList(void) {}
+/*@ 14EF:0154 */ void DrawOptionList(int panel, char far * far *names, long mask, int shift,
+                                   int spacing)
+{
+    struct Panel *p;
+    int y;
+    int x;
+    int sel;
+    int n;
+    int dy;
+    register int i;
+    register int glyph;
+
+    p = &gPanels[panel];
+    y = gFE66 + p->y;
+    x = (gFE64 + p->x) << 3;
+    sel = FindMaskBit(p->sel, mask, shift);
+    n = p->height;
+    f1BBE_0307();
+    for (i = 0; i < n; i++) {
+        glyph = FindMaskBit(i, mask, shift);
+        dy = y + gFontHeight1A47 * i + i * spacing;
+        f082C_0898(names[glyph], x, dy, !g8102 ? 1 : p->colorA, 0);
+        if (glyph == sel && (g5D1A || g814A))
+            gDrawText(names[glyph], x, dy, p->colorB, 0);
+    }
+    gFC78 = spacing;
+    f1BBE_0332();
+    f1AAD_0480();
+    g8134 = 0;
+}
 /*@ 14EF:0274 stub */ int UpdateOptionList(void) { return 0; }
