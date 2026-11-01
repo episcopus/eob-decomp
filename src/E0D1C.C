@@ -43,6 +43,11 @@ extern unsigned long g848A; /*@ ds:848A */  /* a tick counter compared with gFC5
 extern unsigned long gFC5E; /*@ ds:FC5E */  /* the next tick 0D1C:0454 may draw at */
 extern signed char g1CE7[]; /*@ ds:1CE7 */  /* per-row colours for the list 0D1C:0454 draws */
 extern signed char g54F6[]; /*@ ds:54F6 */  /* byte table indexed by a character's m17 in 0D1C:059B */
+extern unsigned char gFBD2; /*@ ds:FBD2 */  /* bit 0 gates the icon colour row in 0D1C:070F (src/E07A9.C) */
+extern int g8102; /*@ ds:8102 */            /* nonzero: a colour row exists (src/E07A9.C) */
+extern char far *gBufF534; /*@ ds:F534 */   /* the 1600-byte ITEMRMP buffer (src/E07A9.C) */
+extern void (far *gFn80D2)(void far *map); /*@ ds:80D2 */ /* the far colour-table callback (src/E07A9.C) */
+extern void far *gIconsDDE4[]; /*@ ds:DDE4 */ /* the item icon far pointers (src/E07A9.C) */
 
 struct Row8 {               /* eight-byte rows at ds:5482, four words: a DrawBox rectangle */
     int m0;
@@ -81,6 +86,8 @@ extern void LockShowPointer(void); /*@ 1BBE:0332 */
 extern void DrawBox(int x1, int y1, int x2, int y2, int colour); /*@ 1A1F:000C */
 extern int GetIndexedByte(char index, char limit, char offset); /*@ 0A72:0006 */
 extern char GetClassSlotByte(char row, char slot); /*@ 0A72:0509 */
+extern void f1A29_008B(int mode, void far *src, int x, int y, int region); /*@ 1A29:008B */
+extern void f1A29_000F(int mode, void far *src, int x, int y, int region); /*@ 1A29:000F */
 
 int f0D1C_0670(int who, int mask);
 int f0D1C_02DC(void);
@@ -399,7 +406,26 @@ int f0D1C_02DC(void);
         result &= (rec->m01 & 2) == 0;
     return result;
 }
-/*@ 0D1C:070F stub */ void f0D1C_070F(void) {}
+/* 0D1C:070F: Purpose unknown: draws the item icon of the ds:8DD2 record `n` at (x, y). It reads
+   the record's icon number; when gFBD2 bit 0 is set and the record's flags have 0x80, it first
+   selects the icon's 16-byte colour row (gBufF534 + (icon << 4), or the empty string at ds:550A
+   when g8102 is 0) through gFn80D2 and draws through f1A29_008B, otherwise through f1A29_000F.
+   Called by 0BD2 (three sites) and 1547:07E7. */
+/*@ 0D1C:070F */ void f0D1C_070F(int mode, int n, int x, int y)
+{
+    int icon;
+
+    icon = gTable8DD2[n].icon;
+    if ((gFBD2 & 1) && (gTable8DD2[n].flags & 0x80)) {
+        if (g8102)
+            gFn80D2(gBufF534 + (icon << 4));
+        else
+            gFn80D2("");
+        f1A29_008B(mode, gIconsDDE4[icon], x, y, 0);
+    } else {
+        f1A29_000F(mode, gIconsDDE4[icon], x, y, 0);
+    }
+}
 /*@ 0D1C:07A7 stub */ void f0D1C_07A7(void) {}
 /*@ 0D1C:07DB stub */ void f0D1C_07DB(void) {}
 /*@ 0D1C:08B1 stub */ void f0D1C_08B1(void) {}
