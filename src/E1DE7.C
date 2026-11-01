@@ -105,7 +105,48 @@ extern char *itoa(int value, char far *string, int radix); /*@ 0000:62AA */
     ClearTextRegion();
 }
 
-/*@ 1DE7:00C9 stub */ void f1DE7_00C9(void) {}
+/* The frame styles: one far pointer per style, each to a word record whose first four words are
+   the four corner cells and whose further words are the repeating border tile numbers, terminated
+   by 0xFF. Read only here (ds:113B, stride 4). */
+extern unsigned far *gFrameTable[]; /*@ ds:113B */
+
+/* 1DE7:00C9: draw the frame of the active text window in style `style`. The four corner cells come
+   from gFrameTable[style] words 0..3 and the four edges from its words 4.. via DrawTileRun
+   (1DE7:025E): the top and bottom edges run left to right over the window's width, the left and
+   right edges run top to bottom over its height, inset by one cell. Each cell's source is
+   gTileBuf + (number << shift) with shift 5, or 6 when g8102 is 3 or 4. Called by many units to
+   draw a decorated box. QUIRK 1DE7:0135: the second and third edge runs take their x from the
+   global gTextLeft, the corners and the first and fourth runs from the local copy, as the original
+   bytes do. */
+/*@ 1DE7:00C9 */ void DrawTextFrame(int style)
+{
+    int left;
+    int shift;
+    char far *tile;
+    unsigned far *frame;
+    int top;
+    register int n;
+
+    shift = 5;
+    if (g8102 == 4 || g8102 == 3)
+        shift = 6;
+    left = gTextLeft;
+    top = gTextTop;
+    frame = gFrameTable[style];
+    tile = (char far *)gTileBuf + (frame[0] << shift);
+    gTile805A(tile, left - 1, top - 1);
+    tile = (char far *)gTileBuf + (frame[1] << shift);
+    gTile805A(tile, left + gTextWidth, top - 1);
+    tile = (char far *)gTileBuf + (frame[2] << shift);
+    gTile805A(tile, left - 1, top + gTextHeight);
+    tile = (char far *)gTileBuf + (frame[3] << shift);
+    gTile805A(tile, left + gTextWidth, top + gTextHeight);
+    n = 4;
+    n = DrawTileRun(frame, n, left, top - 1, gTextWidth, 1);
+    n = DrawTileRun(frame, n, gTextLeft - 1, top, gTextHeight, 0);
+    n = DrawTileRun(frame, n, gTextLeft + gTextWidth, top, gTextHeight, 0);
+    n = DrawTileRun(frame, n, left, top + gTextHeight, gTextWidth, 1);
+}
 /* 1DE7:025E: draw a run of `count` tiles of a repeating pattern. `pattern` is a word array of tile
    numbers terminated by 0xFF; drawing starts at `start` and wraps back to it at each terminator.
    Each tile's source is gTileBuf + (number << shift) with shift 5, or 6 when g8102 is 3 or 4 (the

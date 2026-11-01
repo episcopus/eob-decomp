@@ -5439,6 +5439,9 @@ unit = "e1de7"
 addr = "1DE7:00C9"
 size = 405
 evidence = ["frame"]
+name = "DrawTextFrame"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "e1de7_025e"
