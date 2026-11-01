@@ -5026,6 +5026,9 @@ unit = "e1ddd"
 addr = "1DDD:0006"
 size = 39
 evidence = ["segment"]
+name = "f1DDD_0006"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e1ddd_002d"
@@ -5033,6 +5036,9 @@ unit = "e1ddd"
 addr = "1DDD:002D"
 size = 67
 evidence = ["far", "frame"]
+name = "f1DDD_002D"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e1de4_0000"
