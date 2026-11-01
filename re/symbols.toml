@@ -4186,6 +4186,9 @@ unit = "e1a19"
 addr = "1A19:0006"
 size = 53
 evidence = ["far", "segment"]
+name = "_FindLastDrive"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1a19_003b"
