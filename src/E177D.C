@@ -72,5 +72,10 @@ extern int f17A6_0F61(int x, int y); /*@ 17A6:0F61 */
         f1948_0418(p);
     }
 }
-/*@ 177D:00F3 stub */ void f177D_00F3(int a) {}
+void f177D_0106(int a, int b);
+
+/*@ 177D:00F3 */ void f177D_00F3(int a)
+{
+    f177D_0106(a, gFBCA);
+}
 /*@ 177D:0106 stub */ void f177D_0106(int a, int b) {}

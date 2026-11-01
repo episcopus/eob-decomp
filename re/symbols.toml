@@ -3926,6 +3926,9 @@ unit = "e177d"
 addr = "177D:00F3"
 size = 19
 evidence = ["far", "frame"]
+name = "f177D_00F3"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e177d_0106"
