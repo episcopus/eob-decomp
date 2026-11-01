@@ -48,13 +48,18 @@ void Unpack(char far *src, void far *dst);
     Unpack(src, dst);
 }
 
+/* The original sign-extends the format byte to long (cbw; cwd) and switches on the int in AX
+   through a 5-entry table, with 8 bytes of locals. `switch ((long)*src)` keeps the cwd but the
+   pinned compiler (tc100/tc101) turns a long switch into a 4-byte compare search with a 4-byte
+   temporary, never a jump table; `switch ((int)(long)*src)` here gives the matching frame and jump
+   table but folds the cwd away. See the note in re/symbols.toml (e1b82_00c7). */
 /*@ 1B82:00C7 draft */ void Unpack(char far *src, void far *dst)
 {
     void far *work;
     long size;
     int n;
 
-    switch ((long)*src) {
+    switch ((int)(long)*src) {
     case 0L:
         Unpack0(src + 8, dst, *(long far *)(src + 2));
         break;
