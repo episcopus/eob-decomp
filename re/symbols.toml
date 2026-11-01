@@ -4212,6 +4212,7 @@ evidence = ["far", "segment"]
 name = "_FindLastDrive"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-01 rev-sonnet"
 
 [[function]]
 id = "e1a19_003b"
@@ -4222,6 +4223,7 @@ evidence = ["far", "frame"]
 name = "_IsLastLogicalDrive"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-01 rev-sonnet"
 
 [[function]]
 id = "e1a1f_000c"
