@@ -5,7 +5,7 @@
 | Phase | State |
 |---|---|
 | P0 Bootstrap | done: `make doctor`, `make p0-check` (16 files pinned; 99 + 54 segments; 7 + 1 overlays; 6 PAKs, 193 files) |
-| P1 Map and toolchain | toolchain pinned: Turbo C++ 1.00, large model, TLINK 3.0 (`make tc-check`, `make rtl-compare`); assembler provisionally TASM 2.0. Next: switches, `re/units.toml`, function enumeration, the go/no-go spike |
+| P1 Map and toolchain | toolchain pinned (Turbo C++ 1.00, `-ml -O -Z`, TLINK 3.0; TASM 2.0 [H]); map written (`make map`: EOB.EXE 62 units, 885 functions; INTRO.EXE 33 units, 250 functions, 21 shared); **go/no-go passed**: 8 functions in 2 whole units at L2 (`make match`). Next: the rest of the matcher (assembly units, jump tables, overlay code, shifted-data builds), then Phase 2 |
 
 ## Environment
 

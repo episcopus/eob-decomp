@@ -18,19 +18,51 @@ The files in `eob/` are the unofficial fan patch "1.9" (`eob/version.nfo`: "base
 - EXE header bytes `FB 30 6A 72` at `1Eh`: the TLINK signature, version 30h (TLINK 3.0). `tools/re/mzutil.py` (`tlink`), `tests/unit/test_fbov.py`.
 - **The release is Turbo C++ 1.00** (May 1990), large model, not 1.01 (February 1991). Both releases print "Version 1.0x Copyright (c) 1990", and TLINK 3.0 (with 1.00) and 3.01 (with 1.01) both write version byte 30h, so neither the banner nor the header decides. The code does:
   - **Startup.** A program linked with 1.00's `C0L.OBJ` and `CL.LIB` has the same first 524 bytes as `EOB.EXE` except 16 instructions, all address fields: the DGROUP paragraph, DS offsets of runtime variables, the init table segments, call targets (`main` is called at `07C8:0001`). 1.01's startup is 522 bytes and differs in 287 bytes. Scratch probe, 2026-10-31.
-  - **Runtime modules.** `make rtl-compare` (`tools/re/rtl_compare.py`) links every module of `CL.LIB` and `OVERLAY.LIB` for each release and looks for each in `EOB.EXE`, instruction by instruction with address fields ignored. 1.00: 59 modules found; 1.01: 56, a subset. `FCORELFT`, `IOERROR` and `SETARGV` are found only as 1.00's. Modules that keep data in their code are not decoded by that comparison; scored by equal bytes instead (above 85%), `FFLUSH`, `FLUSHALL`, `FSEEK`, `TIMECVT`, `XFFLUSH`, `INT86`, `TZSET`, `VPRINTER` and `FARHEAP` fit only 1.00's version, and none fits only 1.01's.
+  - **Runtime modules.** `make rtl-compare` (`tools/re/rtl_compare.py`) links every module of `CL.LIB` and `OVERLAY.LIB` for each release and looks for each in `EOB.EXE`, instruction by instruction with address fields ignored (direct far call targets included since 2026-10-31; the first run compared them as bytes and found fewer). 1.00: 66 modules found; 1.01: 59, a subset. `C0.ASM`, `FARHEAP`, `FBRK`, `FCORELFT`, `FSEEK`, `IOERROR` and `SETVBUF` are found only as 1.00's. Modules that keep data in their code are not decoded by that comparison; scored by equal bytes instead (above 85%), `FFLUSH`, `FLUSHALL`, `TIMECVT`, `XFFLUSH`, `INT86`, `TZSET` and `VPRINTER` fit only 1.00's version, and none fits only 1.01's. `INTRO.EXE`: 64 of 1.00's modules found.
 - TASM 2.0 came with the same `TLINK.EXE` as Turbo C++ 1.00 (identical SHA-256), TASM 2.01 with 1.01's. [H] The assembly modules were assembled by TASM 2.0.
 
-### 2.1.1 What segment 0 holds
+### 2.1.1 Compiler switches
 
-Segment `0000` (`_TEXT`, 31,386 bytes) starts with `C0L` (524 bytes), then 19,996 bytes that are not library code (`0x020C` to `0x505C`), then the runtime library from `0x505C` to the end (the found modules above, `OVRDATA`, `OVRHP`, `OVRHALT` of the overlay manager among them). [H] The 20 KB are Westwood's own modules that use `_TEXT`, which is what TASM's simplified segments name the code of a large-model assembly module: hand-written assembly linked between the startup and the library.
+Proven by matching two whole modules, `e0cf7` (6 functions, 591 bytes) and `e07a9` (2 functions, 487 bytes), with `tools/match/cmatch.py` (`make match`), 2026-10-31:
+
+| Switch | Evidence |
+|---|---|
+| `-ml` large model | far calls and far data pointers; the large-model runtime |
+| `-O` jump optimisation | needed: with `-Z` alone `ListInit` keeps a second `les bx`; `-O` also merges the common tails of `if (g8102) f(a); else f(b);` in `Level07A9` |
+| `-Z` register load suppression | needed: neither module matches without it; `xor ax,ax; push ax` is reused for the next zero argument |
+| `-r` register variables (default) | `-r-` breaks both modules (SI holds the loop counter) |
+| no `-G` (optimise for size, default) | `-G` breaks both modules |
+| no `-1` (8086 code, default) | `-1` breaks both modules; `shl` by 1 twice, `mov cl,4; shl ax,cl` |
+| no `-N` (no stack check, default) | `-N` breaks both modules |
+| `-K`, `-a`, `-d` | not decided: these modules use no plain `char`, no structure layout that `-a` changes and no repeated string |
+
+No game code uses floating point: no emulator interrupts (`INT 34h` to `3Dh`) in any code segment. The switches are `cflags` in `tools/re/tc_toolchain.toml`; a module that needs others records them (`match_flags` in `re/symbols.toml`).
+
+Three negative tests confirm the matcher rejects a near miss: a loop bound changed from 52 to 53, the wrong table passed, and an extra store (scratch probe, 2026-10-31).
+
+### 2.1.2 What segment 0 holds
+
+Segment `0000` (`_TEXT`, 31,386 bytes) starts with `C0L` (524 bytes), then 19,996 bytes that are not library code (`0000:020C` to `0000:5028`), then the runtime library from `0000:5028` (`OVRHALT`, the first module found) to the end, 10,866 bytes. The 20 KB are assembly: lookup tables kept in the code segment, a routine that loads DS from CS to fix up a table of words (`0000:03FA`), near calls. [H] They are Westwood's assembly modules that use `_TEXT` (what TASM's simplified segments name a large-model module's code), linked between the startup and the library; units `e_c0`, `e_text`, `e_lib` in `re/units.toml`. `INTRO.EXE` has the same three parts, its library from `0000:5400`.
+
+### 2.1.3 Modules
+
+`make map` (playbook 10) writes `re/units.toml` and `re/symbols.toml`:
+
+| Program | Units | By kind ([H] until matched) | Functions |
+|---|---:|---|---:|
+| `EOB.EXE` | 62 | 30 C, 25 assembly, 5 unknown, startup, library (7 of the units are overlays) | 885 |
+| `INTRO.EXE` | 33 | 8 C, 19 assembly, 4 unknown, startup, library; 21 units have the same code as an `EOB.EXE` unit | 250 |
+| `START1.EXE` | 1 | not mapped yet | |
+
+Matched (L2): `e0cf7` (6 functions) and `e07a9` (2 functions), whole units.
 
 ### 2.2 EOB.EXE layout
 
 - Entry `0000:0000` is Borland's startup (`c0`): `mov dx,212Eh` then DOS version (`int 21h`, `ah=30h`) and `mov ds,dx`. DGROUP is paragraph `212E`. Stack `312D:0080`.
-- The FBOV header (section 2.3) gives the file offset of TLINK's segment table, 144,400 (load module offset `20C10h`, the segment at paragraph `20C1`), 99 entries of 8 bytes: paragraph, last offset (size - 1, `FFFF` when empty), kind, flags. `make overlays` writes it to `build/re/eob.json`.
-- Kinds: 1 code (58 segments, 127,887 bytes), 0 data (22 segments, 73,168 bytes, DGROUP among them, `212E`, last offset `FFE4`), 3 overlay stub (7), 4 not established (12 entries, sizes 0 to 12). The flags of code segments take values 0 to 15; meaning not established.
-- Segment `0000` is 31,386 bytes with 136 near returns: the startup, about 20 KB of non-library code, and the runtime library (section 2.1.1). Segment `17A6` (6,694 bytes) has 36 `iret`, 77 `out` and `int 10h`: [H] hand-written interrupt and hardware code. Small segments from `19EA` to `1E8B`: [H] C runtime modules.
+- The FBOV header (section 2.3) gives the file offset of TLINK's segment table, 144,400 (load module offset `20C10h`), 99 entries of 8 bytes: frame paragraph, end offset in that frame (exclusive; `FFFF` for no extent), kind, flags. `make overlays` writes it to `build/re/eob.json`.
+- **Segments are byte aligned**: each starts where the previous one ends, inside the paragraph that holds that end, so the frame paragraph is the start rounded down. `main` is at `07C8:0001`, right after the `retf` at `07C8:0000` that ends the module framed at `07A9`; that module starts at `07A9:000A`. Some entries have zero length. (Phase 0 first read the second field as size - 1; corrected 2026-10-31, `tests/unit/test_cmatch.py`.)
+- Kinds: 1 code (58 entries, 53 not empty, 127,435 bytes), 0 data (DGROUP among them, `212E`, ending at `212E:FFE4`), 3 overlay stub (7), 4 not established (12 entries). The flags take values 0 to 15; meaning not established.
+- Segment `0000` is 31,386 bytes with 136 near returns: the startup, about 20 KB of assembly, and the runtime library (section 2.1.2). Every other non-empty code segment is one Westwood module: the runtime library is all in segment 0. Segment `17A6` (6,694 bytes) has 36 `iret`, 77 `out` and `int 10h`: [H] hand-written interrupt and hardware code.
 
 ### 2.3 Overlays (VROOMM)
 
@@ -56,7 +88,7 @@ The padding between records is 0 to 42 bytes in `EOB.EXE` and 169 bytes after `I
 ### 2.4 INTRO.EXE and START1.EXE
 
 - `INTRO.EXE`: 54 segments, 34 code (59,286 bytes). It names the same data files as `EOB.EXE` (`eobdata*.pak`, `WESTWOOD.COL`, `SSI.CMP`, the graphics drivers): [H] the two programs share library modules.
-- `START1.EXE`: one small program without overlays or a segment table: the setup menu (CGA, Tandy, EGA, VGA; AdLib or Sound Blaster, PC speaker, Tandy speaker), then runs `INTRO.EXE`.
+- `START1.EXE`: one small program without overlays or a segment table: the setup menu (CGA, Tandy, EGA, VGA; AdLib or Sound Blaster, PC speaker, Tandy speaker), then runs `INTRO.EXE`. **Small model**: its first 193 instructions are Turbo C++ 1.00's `C0S.OBJ`, the 18 that differ all DGROUP offsets (scratch probe, 2026-10-31). Being edited by the patch ("Version 1.9", section 1), it may hold bytes no compiler wrote.
 
 ### 2.5 Graphics drivers
 

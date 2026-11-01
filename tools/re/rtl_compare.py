@@ -86,6 +86,8 @@ def same_insn(a, b) -> bool:
         return True
     if a.size != b.size or a.mnemonic != b.mnemonic:
         return False
+    if a.bytes[0] in (0x9A, 0xEA):  # direct far call or jump: the whole operand is an address
+        return a.bytes[0] == b.bytes[0]
     cut = [o for o in (a.disp_offset, a.imm_offset) if o] or [a.size]
     return a.bytes[:min(cut)] == b.bytes[:min(cut)]
 

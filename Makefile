@@ -4,11 +4,12 @@
 PY ?= $(if $(wildcard .venv/bin/python),.venv/bin/python,python3)
 PROGRAMS := eob/EOB.EXE eob/INTRO.EXE eob/START1.EXE
 
-.PHONY: help setup doctor inputs overlays pak emu2 test p0-check tc-install tc-check rtl-compare
+.PHONY: help setup doctor inputs overlays pak emu2 test p0-check tc-install tc-check rtl-compare map match
 
 help:
 	@echo "Phase 0:  setup doctor inputs overlays pak emu2 test p0-check"
 	@echo "Toolchain: tc-install tc-check rtl-compare (docs/setup/SETUP-tc.md)"
+	@echo "Phase 1:  map match [FILE=src/E0CF7.C] [WRITE=1]"
 	@echo "See AGENTS.md and docs/spec/SPEC.md."
 
 setup:            ## create .venv with the Python tools (uv)
@@ -40,6 +41,15 @@ tc-check:         ## verify the installed toolchain files against tools/re/tc_to
 
 rtl-compare:      ## which Turbo C++ release's runtime is in EOB.EXE (several minutes; build/re/rtl_compare.json)
 	$(PY) tools/re/rtl_compare.py
+
+map: overlays     ## enumerate functions, write re/units.toml and re/symbols.toml (playbook 10)
+	$(PY) tools/re/functions.py eob/EOB.EXE build/re/eob.json -o build/re/eob-functions.json
+	$(PY) tools/re/functions.py eob/INTRO.EXE build/re/intro.json -o build/re/intro-functions.json
+	$(PY) tools/re/map_units.py --write
+
+match:            ## prove C modules against EOB.EXE (FILE=src/X.C, default every src/*.C; WRITE=1 records L2)
+	@rc=0; for f in $(or $(FILE),$(wildcard src/*.C)); do echo "== $$f"; \
+	  $(PY) tools/match/cmatch.py $$f $(if $(WRITE),--write) || rc=1; done; exit $$rc
 
 test:             ## Python tests
 	$(PY) -m pytest -q tests/unit

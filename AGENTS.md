@@ -11,7 +11,7 @@ You are working on a **matching decompilation of Westwood's Eye of the Beholder 
 
 ## Facts you must not get wrong
 
-- The programs (`EOB.EXE`, `INTRO.EXE`, `START1.EXE`) were built with **Borland Turbo C++ 1.00, large model, and its TLINK 3.0**, with VROOMM overlays appended to the EXE as FBOV data. Not 1.01 (`make rtl-compare`, whitepaper 2.1). The assembler is provisionally TASM 2.0 [H].
+- The programs (`EOB.EXE`, `INTRO.EXE`, `START1.EXE`) were built with **Borland Turbo C++ 1.00, `-ml -O -Z`, and its TLINK 3.0**, with VROOMM overlays appended to the EXE as FBOV data. Not 1.01 (`make rtl-compare`, whitepaper 2.1). The assembler is provisionally TASM 2.0 [H].
 - **The copy in `eob/` is the fan patch "1.9"**, not the retail release (SPEC section 2). Some bytes may be hex edits no compiler wrote; record them as patch sites, never force them with C.
 - `LEVELS.TMP` and `EOBDATA.SAV` are written by the game and not pinned. Never run the game inside `eob/` from a tool; copy the files first.
 - **The Borland runtime library is library**: linked, never decompiled.
@@ -39,6 +39,8 @@ You are working on a **matching decompilation of Westwood's Eye of the Beholder 
 | `make emu2` | Build the headless DOS emulator for the compiler |
 | `make tc-install` / `make tc-check` | Install the Turbo C++ and TASM releases from `build/toolchain/dist/`; verify them |
 | `make rtl-compare` | Which Turbo C++ release's runtime is in `EOB.EXE` (several minutes) |
+| `make map` | Enumerate functions; write `re/units.toml` and `re/symbols.toml` (playbook 10) |
+| `make match [FILE=src/X.C] [WRITE=1]` | Prove C modules against `EOB.EXE`; `WRITE=1` records L2 (playbook 30) |
 | `make test` | Python tests |
 | `make p0-check` | Phase 0 exit criteria |
 
@@ -47,5 +49,7 @@ You are working on a **matching decompilation of Westwood's Eye of the Beholder 
 | Playbook | When |
 |---|---|
 | `00-bootstrap.md` | Setting up or repairing the environment |
+| `10-map.md` | Segments, units, functions |
+| `30-lift-module.md` | Decompiling a C module to L2: the source conventions and the idioms found so far |
 
 Later playbooks are brought over from poolrad as each phase starts (SPEC section 10).

@@ -65,8 +65,8 @@ The assembler is provisionally **TASM 2.0** (`tasm20`, May 1990): it shipped wit
 Evidence is in the whitepaper, section 2.
 
 1. **Language: Borland Turbo C++ 1.00.** All three programs carry "Turbo C++ - Copyright 1990 Borland Intl." and the Borland C runtime strings; the EXE headers carry TLINK's signature. The startup code of `EOB.EXE` is 1.00's `C0L.OBJ` (all 16 differing instructions are address fields), and its runtime modules are 1.00's (`make rtl-compare`, whitepaper 2.1).
-2. **Memory model: large** (the large-model startup and `CL.LIB` match). Whether every module was compiled `-ml` is checked per module in Phase 1.
-3. **Segments.** The FBOV header points to TLINK's segment table: 99 entries in `EOB.EXE` (58 code, 22 data, 7 overlay stubs, 12 of a fourth kind), 54 in `INTRO.EXE`. This gives the exact boundary of every code segment, and with Borland's one code segment per source file, of most source modules. DGROUP is paragraph `212E` in `EOB.EXE`; 127,887 bytes of resident code.
+2. **Switches: `-ml -O -Z`** (large model, jump optimisation, register load suppression), with the defaults for the rest (register variables, 8086 code, no stack check, optimise for size); proven by matching two whole modules (whitepaper 2.1.1). `-K`, `-a` and `-d` are not decided yet.
+3. **Segments.** The FBOV header points to TLINK's segment table: 99 entries in `EOB.EXE` (58 code, 22 data, 7 overlay stubs, 12 of a fourth kind), 54 in `INTRO.EXE`. Segments are byte aligned; the table gives the exact boundary of every code segment, and with Borland's one code segment per source file, of every module outside segment 0. DGROUP is paragraph `212E` in `EOB.EXE`; 127,435 bytes of resident code in 53 non-empty segments.
 4. **Overlays (VROOMM).** 7 overlaid segments in `EOB.EXE` (125 entries, 50,641 bytes of code) and 1 in `INTRO.EXE` (22 entries, 11,741 bytes). The stub layout is Turbo Pascal's; the overlay data is appended to the EXE instead of a separate `.OVR` file. `make overlays` validates both.
 5. **No packing.** The load modules are analysed as they are.
 6. **Assembly.** Some code is hand-written: a segment with 36 `iret` and 77 `out` (interrupt handlers, timer, sound, video), near-return code, and probably the four graphics drivers. Assembly is matched as assembly (TASM source), as poolrad's sound driver.
@@ -86,16 +86,18 @@ Decided from the poolrad experience (its ADR-002 replaced behaviour-matching C a
 4. **The runtime is the compiler's.** The Borland runtime library (`CL.LIB` or the model's equivalent, `C0x.OBJ`) is linked, never decompiled.
 5. **A real rebuild** when everything matches, compared byte for byte (O2).
 
-Known differences from Turbo Pascal, to be settled with probes (`make tcc`, Phase 1):
+Known differences from Turbo Pascal (the first two settled by the spike, section 4.2):
 
 - Register variables (SI, DI) are chosen by the compiler from the declarations, and their order changes the code.
 - Optimisation switches (`-O`, `-Z`, `-G`, `-r`) and the model (`-ml`, `-mm`) change the code; they are found per module, as poolrad found `$O+` per unit.
 - String literals go to the module's part of `_DATA`, not before the function: matching compares them by content and module, and the rebuild needs the module order of DGROUP.
 - `switch` statements compile to jump tables in the code segment.
 
-### 4.2 The gate before building the matcher
+### 4.2 The gate before building the matcher: passed 2026-10-31
 
-Phase 1 ends with a **go/no-go spike**: three to five functions of one small C module matched by hand with the pinned compiler (playbook 10, step 8). If register allocation or switches cannot be reproduced, the approach is reconsidered before any matcher is written.
+Phase 1 had a **go/no-go spike**: three to five functions of one small C module matched by hand with the pinned compiler; if register allocation or switches could not be reproduced, the approach would be reconsidered before a full matcher was written.
+
+**Result: go.** Two whole modules match, 8 functions and 1,078 bytes: `src/E0CF7.C` (6 functions, list building over far pointer tables) and `src/E07A9.C` (start-up allocations; a routine with string literals, a 14-byte struct table, a signed char field, a far function pointer call and an overlay call). Register allocation came out right without `register` declarations; the switches were found by elimination (whitepaper 2.1.1). Three wrong variants are rejected. The spike matcher, `tools/match/cmatch.py`, compares instructions and checks that every address field names the same global, function or string; it is the start of `make match`, not its final form (still to come: assembly units, jump tables, overlay code, constants that happen to look like addresses, which poolrad settled by compiling twice with shifted data).
 
 ---
 

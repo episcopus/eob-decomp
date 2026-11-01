@@ -10,9 +10,12 @@ Turbo C++ appends the overlay code to the EXE after the load module (whitepaper 
        +10      overlay records, one per overlaid segment: code, then u16 fixup offsets,
                 then zero padding up to the next record
 
-  segment table entry (8 bytes): u16 paragraph, u16 last offset (size - 1, FFFF for none),
-                                 u16 kind, u16 flags (meaning not established)
-  kind: 0 data, 1 code, 3 overlay stub, 4 meaning not established (stack, BSS?)
+  segment table entry (8 bytes): u16 frame paragraph, u16 end offset in that frame (exclusive;
+                                 FFFF: no extent), u16 kind, u16 flags (meaning not established)
+  Segments are byte aligned: one starts where the previous one ends (or at its frame, if later),
+  so a module's code may start inside the paragraph that holds the end of the previous one
+  (EOB.EXE: main at 07C8:0001, after the retf at 07C8:0000). Entries of zero length occur.
+  kind: 0 data, 1 code, 3 overlay stub, 4 meaning not established
 
   overlay stub segment (in the load module), same layout as Turbo Pascal's:
        +00 CD 3F, +02 u16 runtime, +04 u32 offset of the record (from tail +10),
@@ -34,12 +37,14 @@ KIND = {0: "data", 1: "code", 3: "overlay-stub", 4: "kind4"}
 
 
 def segment_table(data: bytes, mz: dict, offset: int, count: int) -> list[dict]:
-    out = []
+    out, prev_end = [], 0
     for i in range(count):
-        para, last, kind, flags = struct.unpack_from("<4H", data, offset + 8 * i)
-        out.append({"index": i, "para": para, "size": 0 if last == 0xFFFF else last + 1,
-                    "last": last, "kind": kind, "kind_name": KIND.get(kind, "kind%d" % kind),
-                    "flags": flags})
+        para, end, kind, flags = struct.unpack_from("<4H", data, offset + 8 * i)
+        start = max(prev_end, para * 16)
+        stop = start if end == 0xFFFF else max(start, para * 16 + end)
+        out.append({"index": i, "para": para, "end_offset": end, "start": start, "size": stop - start,
+                    "kind": kind, "kind_name": KIND.get(kind, "kind%d" % kind), "flags": flags})
+        prev_end = stop
     return out
 
 

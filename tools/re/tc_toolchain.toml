@@ -12,6 +12,9 @@ pinned = "tc100"
 # [H] The assembler: TASM 2.0 shipped with Turbo C++ 1.0 (same TLINK.EXE, same dates); not proven
 # until an assembly module is matched.
 pinned_asm = "tasm20"
+# The switches every C module matched so far needs (WHITEPAPER 2.1.1): large model, jump optimisation,
+# register load suppression; register variables and 8086 code are the defaults.
+cflags = "-ml -O -Z"
 
 [release.tc100]
 label = "Turbo C++ 1.0 (disks dated 1990-05-04)"
