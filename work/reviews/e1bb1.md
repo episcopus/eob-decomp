@@ -217,31 +217,47 @@ the bytes). The disassembly agrees with every byte-level claim in the header exc
 
 ### Findings
 
-- [ ] must-fix src/E1BB1.ASM:5-7: "Called from f07A9_010C ... and the record gIconsDDE4[n] in both cases" names one
+- [x] must-fix src/E1BB1.ASM:5-7: "Called from f07A9_010C ... and the record gIconsDDE4[n] in both cases" names one
   caller, but there are two. `SetPointerShape` at ovl2:0000 (src/EOV2.C:206-211) calls
   `SetMousePointerShape(0, 0, gPtrDD00)`, with gPtrDD00 = gIconsDDE4[0] (EOV2.C:210), and LoadItemData
   (ovl2:09CC, EOV2.C:451) calls SetPointerShape. The call is in the overlay bytes (EOV2 matches 11 of 11). Name
   both callers with their arguments; "gIconsDDE4[n] in both cases" holds only for f07A9_010C. The third round's
   summary ("one caller") is wrong for the same reason, and the round-3 note asking whether the packet's ovl2:0000
-  caller is a real call is answered: it is.
-- [ ] must-fix src/E1BB1.ASM:7, re/renames.toml:181, :208, :217, re/globals.toml:67 and :72: the citation
+  caller is a real call is answered: it is. Fixed in fd20bb5: the header (now lines 5-16) names both
+  callers, f07A9_010C (the two calls at E07A9.C:164 and :166, the record gIconsDDE4[n] in both cases) and
+  SetPointerShape (ovl2:0000, src/EOV2.C:206-211, passing (0,0) and gPtrDD00 = gIconsDDE4[0] at
+  EOV2.C:210-211), and says LoadItemData calls SetPointerShape at start-up (EOV2.C:451).
+- [x] must-fix src/E1BB1.ASM:7, re/renames.toml:181, :208, :217, re/globals.toml:67 and :72: the citation
   "E07A9.C:127-130" for the two calls is stale. In the current file they are at src/E07A9.C:164 and :166
   (`SetMousePointerShape(8, 8, gIconsDDE4[n])` and `(0, 0, gIconsDDE4[n])`; `grep -n "SetMousePointerShape(" src/E07A9.C`).
   The icon-table citation "E07A9.C:41-43" in src/E1BB1.ASM:7 is also stale: the comment is at E07A9.C:64-68, above
-  `gIconsDDE4` (E07A9.C:69). Cite the current lines.
-- [ ] should src/E1BB1.ASM:8-9: "the hot spot ds:8158/815A is subtracted from the last drawn pointer position
+  `gIconsDDE4` (E07A9.C:69). Cite the current lines. Fixed in fd20bb5: src/E1BB1.ASM:7 now cites
+  E07A9.C:164 and :166 and the gIconsDDE4 comment at E07A9.C:64-68 (the declaration at :69);
+  re/renames.toml:181, :208 and :217 and re/globals.toml:67 and :72 cite E07A9.C:164 and :166.
+- [x] should src/E1BB1.ASM:8-9: "the hot spot ds:8158/815A is subtracted from the last drawn pointer position
   ds:815C/815E (1BBE:001E..002F, 1BBE:0111..012E)". The hide (1BBE:001E..002F) subtracts from ds:815C/815E. The
   show does not: 1BBE:0111 and :0121 store the mouse position into ds:815C/815E, and 1BBE:0117 and :0127 subtract
   the hot spot from that same mouse position to get the rectangle. Say that the show sets the drawn position to the
-  mouse position and subtracts the hot spot from it.
-- [ ] should src/E1BB1.ASM:15-17: the clip citations are off. "1BBE:0095 adds it to the pointer's y and clips to 200":
+  mouse position and subtracts the hot spot from it. Fixed in fd20bb5: the header (now lines 10-13) separates the
+  two: the hide 1BBE:0002 subtracts the hot spot ds:8158/815A from the last drawn position ds:815C/815E
+  (1BBE:001E..002F); the show 1BBE:00ED sets that drawn position to the mouse position ds:8138/813A
+  (1BBE:0111/0114 and 1BBE:0121/0124) and subtracts the hot spot from it (1BBE:0117/0127).
+- [x] should src/E1BB1.ASM:15-17: the clip citations are off. "1BBE:0095 adds it to the pointer's y and clips to 200":
   1BBE:0095 adds the height to the top edge ds:8178 to make the bottom edge ds:817C; the clip to 200 is at
   1BBE:00AB..00B3. "1BBE:005F adds it to x>>3 and clips to 40": the right edge ds:817A is clipped to 40 at
-  1BBE:0077..007E, and the left edge at 1BBE:0051..005A. Cite those addresses.
-- [ ] should src/E1BB1.ASM:180-183 (QUIRK 1BB1:00C6, first paragraph): the dangling buffer comes only from a
+  1BBE:0077..007E, and the left edge at 1BBE:0051..005A. Cite those addresses. Fixed in fd20bb5: the header (now
+  lines 18-25) says 1BBE:0095 adds the height to the top edge ds:8178 to make the bottom edge ds:817C, with the
+  clip to 200 at 1BBE:00AB..00B3; and 1BBE:005F adds the width to the left edge x>>3 to make the right edge
+  ds:817A, with the left edge tested for 40 at 1BBE:0051..005A and the right edge clipped to 40 at
+  1BBE:0077..007E.
+- [x] should src/E1BB1.ASM:180-183 (QUIRK 1BB1:00C6, first paragraph): the dangling buffer comes only from a
   failure after a resize freed the old buffer (1BB1:0058..005C), or from a first-time failure, which leaves ds:816C
   zero. The comment omits the worse case: a later call with a different size calls MemFree on the freed block again
-  (1BB1:0044 `jne` to 0052, then 0058..005C with ds:816A/816C), a double free. Say both.
+  (1BB1:0044 `jne` to 0052, then 0058..005C with ds:816A/816C), a double free. Say both. Fixed in fd20bb5: the
+  QUIRK (now lines 187-192) states the dangling-buffer failure after a resize free (1BB1:0058..005C), the later
+  same-size call passing `je ready` (1BB1:0050) with a dangling buffer, and the later different-size call
+  (1BB1:0046/004C, `jne 0052` at 1BB1:004A) freeing the already-freed block again (1BB1:0058..005C), a double
+  free; the first-time failure (ds:816C == 0) still leaves it zero and retries.
 - [ ] note the other units' notes from rounds 2 and 3 are still open for their owners and this branch does not touch
   them: src/E1BBE.ASM:65 cites "1BB1:0094" for the size query (the call is at 1BB1:006F); the "already hidden" wording
   at src/E1BBE.ASM:72..76 (1BBE:0015 `jne 0075` increments the count); the "semaphore" wording for ds:812E at
@@ -250,6 +266,35 @@ the bytes). The disassembly agrees with every byte-level claim in the header exc
 - [ ] note for the e07a9 owner (src/E07A9.C:127-130, now :164 and :166): the round-3 question about gIconsDDE4[0] being
   null is partly answered: SetPointerShape writes gIconsDDE4[0] (EOV2.C:209) before it passes it at EOV2.C:210, and
   LoadItemData runs at start-up. Whether f07A9_010C can run before that write is not checked here.
+
+## Decompiler response (fourth review, fd20bb5)
+
+Both must-fix items and all three `should` items are addressed in commit fd20bb5 (src/E1BB1.ASM,
+re/renames.toml, re/globals.toml); each is ticked above with what changed. The header now names both
+callers: f07A9_010C (the two calls at E07A9.C:164 and :166, the record gIconsDDE4[n] in both cases)
+and SetPointerShape (ovl2:0000, src/EOV2.C:206-211, passing (0,0) and gPtrDD00 = gIconsDDE4[0] at
+EOV2.C:210-211), with LoadItemData calling it at start-up (EOV2.C:451); the stale citations are now
+E07A9.C:164 and :166 (the gIconsDDE4 comment at E07A9.C:64-68, its declaration at :69), in the header
+and in re/renames.toml:181, :208, :217 and re/globals.toml:67, :72. The header separates the hide
+(1BBE:0002 subtracts the hot spot from the last drawn position ds:815C/815E, 1BBE:001E..002F) from
+the show (1BBE:00ED sets that position to the mouse position ds:8138/813A and subtracts the hot
+spot, 1BBE:0111..012E), corrects the clip citations (height to the bottom edge ds:817C at
+1BBE:0095/0099, clip to 200 at 1BBE:00AB..00B3; width to the right edge ds:817A at 1BBE:005F/0063,
+left-edge test at 1BBE:0051..005A, right-edge clip at 1BBE:0077..007E), and gives the QUIRK 1
+double free (a later different-size call at 1BB1:0046/004C, `jne 0052` at 1BB1:004A, frees
+ds:816A/816C again at 1BB1:0058..005C).
+
+The three `note` items are for other units, not this one: src/E1BBE.ASM:65 and :72..76 are unit
+1BBE's file, the "semaphore" wording in src/E1A72.ASM and src/E1BBE.ASM is those units' files, and
+src/E07A9.C:86-87 and the gIconsDDE4[0] question are unit e07a9's. This unit's branch does not change
+other units' files, so they stay open for their owners.
+
+Verified: `make match FILE=src/E1BB1.ASM` 1 of 1 (208 of 208 bytes), `make readability UNIT=e1bb1`
+0 findings. Rechecked against tools/re/disasm.py: 1BB1:003F..0065 (the buffer paths and the free),
+1BB1:0046/004A/004C/0050 (the size compares and the two size outcomes), 1BB1:0076/0080/0082/0091,
+1BB1:00A5 (the single store to 816C), 1BBE:001E..002F (the hide subtract), 1BBE:0051..005A/005F/0063/
+0066..006D/0077..007E (the x clips), 1BBE:0095/0099/00A3/00AB..00B3 (the y clips), and 1BBE:0111..012E
+(the show's position and subtract).
 
 ### Summary (fourth review)
 
