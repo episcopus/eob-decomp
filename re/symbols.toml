@@ -3906,6 +3906,9 @@ unit = "e177d"
 addr = "177D:000A"
 size = 102
 evidence = ["far", "segment"]
+name = "LoadSoundDriver"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e177d_0070"
@@ -3913,6 +3916,9 @@ unit = "e177d"
 addr = "177D:0070"
 size = 131
 evidence = ["far", "frame"]
+name = "PlaySound"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e177d_00f3"
@@ -3920,6 +3926,9 @@ unit = "e177d"
 addr = "177D:00F3"
 size = 19
 evidence = ["far", "frame"]
+name = "PlaySoundDefault"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e177d_0106"
@@ -3927,6 +3936,10 @@ unit = "e177d"
 addr = "177D:0106"
 size = 394
 evidence = ["far", "frame"]
+notes = "resolved 2026-11-01: the two far accesses are the far object gDrvReg annotated 0000:3B36; task/far-data taught cmatch to prove a far object in that segment (src/E177D.C)."
+name = "PlaySoundVolume"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e17a6_0000"
@@ -4053,6 +4066,8 @@ unit = "e1990"
 addr = "1990:0001"
 size = 15
 evidence = ["segment"]
+level = "L2"
+notes = "not a function: bytes of the unit outside its functions (a marker or padding), matched with the whole unit"
 
 [[function]]
 id = "e1990_0010"
@@ -4721,7 +4736,7 @@ unit = "e1bb1"
 addr = "1BB1:0002"
 size = 207
 evidence = ["far"]
-name = "_f1BB1_0002"
+name = "SetMousePointerShape"
 level = "L2"
 match_flags = "tasm /mx"
 
@@ -5174,6 +5189,7 @@ evidence = ["segment"]
 name = "f1DDD_0006"
 level = "L2"
 match_flags = "-ml -O -Z"
+review = "passed 2026-11-01 rev-haiku"
 
 [[function]]
 id = "e1ddd_002d"
@@ -5184,6 +5200,7 @@ evidence = ["far", "frame"]
 name = "f1DDD_002D"
 level = "L2"
 match_flags = "-ml -O -Z"
+review = "passed 2026-11-01 rev-haiku"
 
 [[function]]
 id = "e1de4_0000"
