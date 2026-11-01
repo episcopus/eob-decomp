@@ -5127,6 +5127,9 @@ unit = "e1d9a"
 addr = "1D9A:000B"
 size = 8
 evidence = ["segment"]
+name = "_UnpackScratch"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1d9a_0013"
@@ -5134,6 +5137,9 @@ unit = "e1d9a"
 addr = "1D9A:0013"
 size = 256
 evidence = ["far"]
+name = "_Unpack4"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1d9a_0113"
@@ -5141,6 +5147,9 @@ unit = "e1d9a"
 addr = "1D9A:0113"
 size = 79
 evidence = ["far"]
+name = "_Unpack3"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1d9a_0162"
@@ -5148,6 +5157,9 @@ unit = "e1d9a"
 addr = "1D9A:0162"
 size = 41
 evidence = ["near"]
+name = "_NormDest"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1d9a_018b"
@@ -5155,6 +5167,9 @@ unit = "e1d9a"
 addr = "1D9A:018B"
 size = 270
 evidence = ["far"]
+name = "_Unpack1"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1d9a_0299"
@@ -5162,6 +5177,9 @@ unit = "e1d9a"
 addr = "1D9A:0299"
 size = 50
 evidence = ["near"]
+name = "_ReadCode1"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1d9a_02cb"
@@ -5169,6 +5187,9 @@ unit = "e1d9a"
 addr = "1D9A:02CB"
 size = 257
 evidence = ["far"]
+name = "_Unpack2"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1d9a_03cc"
@@ -5176,6 +5197,9 @@ unit = "e1d9a"
 addr = "1D9A:03CC"
 size = 106
 evidence = ["near"]
+name = "_ReadCode2"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1ddd_0006"
