@@ -201,3 +201,60 @@ def open_must_fix(uid: str) -> list[str]:
     if not p.exists():
         return []
     return [l.strip() for l in p.read_text().splitlines() if re.match(r"\s*-\s*\[ \]\s*must-fix\b", l, re.I)]
+
+
+# ---------------------------------------------------------------- attempts and agent status
+
+TIER1_ATTEMPTS = 2           # sessions of tier 1 on a unit without progress before tier 2 may take it
+
+
+def _locked_json(name: str, update=None):
+    """Read (and with `update`, rewrite) a JSON file of the clone's git directory under an flock."""
+    import fcntl
+    path = common_dir() / name
+    with open(common_dir() / (name + ".lock"), "w") as guard:
+        fcntl.flock(guard, fcntl.LOCK_EX)
+        data = json.loads(path.read_text()) if path.exists() else {}
+        if update is not None:
+            update(data)
+            atomic_write(path, json.dumps(data, indent=1, sort_keys=True))
+        return data
+
+
+def attempts() -> dict[str, dict[str, int]]:
+    """unit -> {"1": sessions of tier 1 without progress, "2": the same for tier 2}."""
+    return _locked_json("eob-attempts.json")
+
+
+def record_attempt(uid: str, tier: int, progressed: bool) -> None:
+    """A decompiler session ended: progress (more functions at L2) clears the unit's count, so a big
+    unit keeps going as long as sessions keep matching; no progress counts one attempt of its tier."""
+    def up(d):
+        if progressed:
+            d.pop(uid, None)
+        else:
+            e = d.setdefault(uid, {})
+            e[str(tier)] = e.get(str(tier), 0) + 1
+    _locked_json("eob-attempts.json", up)
+
+
+def l2_count(root: Path, uid: str) -> int:
+    """Functions of the unit at L2 or L3 in the registry of the checkout `root`."""
+    fs = tomllib.loads((root / "re/symbols.toml").read_text())["function"]
+    return sum(1 for f in fs if f["unit"] == uid and f.get("level") in ("L2", "L3"))
+
+
+def agent_status(agent: str, **fields_) -> None:
+    """What a worker is doing now, for `make watch-agents` (eob-agents/<agent>.json)."""
+    d = state_dir("eob-agents")
+    atomic_write(d / ("%s.json" % identifier(agent, "agent")), json.dumps({"agent": agent, "time": now(), **fields_}))
+
+
+def agent_statuses() -> dict[str, dict]:
+    out = {}
+    for p in state_dir("eob-agents").glob("*.json"):
+        try:
+            out[p.stem] = json.loads(p.read_text())
+        except ValueError:
+            pass
+    return out

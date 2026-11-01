@@ -5,8 +5,8 @@ PY ?= $(if $(wildcard .venv/bin/python),.venv/bin/python,python3)
 PROGRAMS := eob/EOB.EXE eob/INTRO.EXE eob/START1.EXE
 
 .PHONY: help setup doctor inputs overlays pak data emu2 test p0-check tc-install tc-check rtl-compare map match oracle-run golden test-slow \
-	match-gate check queue next claim locks unlock packet skeleton handoff handoffs handoff-done integrate review-pass worker progress hooks \
-	merge-driver start-run stop-run run-status run-add
+	match-gate check queue next claim locks unlock packet skeleton handoff handoffs handoff-done integrate review-pass worker progress \
+	start-run stop-run run-status run-add watch-agents smoke-agent
 
 help:
 	@echo "Phase 0:  setup doctor inputs overlays pak emu2 test p0-check"
@@ -16,7 +16,7 @@ help:
 	@echo "          golden [NAME=x] [CHECK=1] test-slow"
 	@echo "Phase 3:  match-gate check progress queue next packet skeleton (playbook 30)"
 	@echo "          claim locks unlock handoff handoffs integrate handoff-done review-pass worker (playbooks 70, 90)"
-	@echo "          start-run run-status run-add stop-run (work/roster.toml), hooks merge-driver"
+	@echo "          smoke-agent start-run watch-agents run-status run-add stop-run (work/roster.toml)"
 	@echo "See AGENTS.md and docs/spec/SPEC.md."
 
 setup:            ## create .venv with the Python tools (uv)
@@ -120,14 +120,8 @@ integrate:        ## merge every waiting hand-off into main through make check: 
 review-pass:      ## record a passed review: UNIT=<id> AGENT=<reviewer> [CHECK=1]
 	$(PY) tools/agent/review.py
 
-worker:           ## supervisor running model sessions on claimed units: AGENT= [ROLE=] [UNIT=] [SESSIONS=] [TIMEOUT=] [SESSION_CMD=] [DRY=1]
+worker:           ## one supervisor by hand: AGENT= [ROLE=] [MODEL= VARIANT= TIER=] [UNIT=] [SESSIONS=] [TIMEOUT=] [COST_CAP=] [DRY=1]
 	$(PY) tools/agent/worker.py
-
-hooks:            ## install the pre-commit guard and the registry merge driver (git config of this clone)
-	$(PY) -c "import sys; sys.path.insert(0, 'tools/agent'); import common; common.install_git_config()"
-	@echo "hooks: core.hooksPath and merge.eob-registry set"
-
-merge-driver: hooks  ## the same: re/symbols.toml and re/units.toml merge entry by entry
 
 start-run:        ## check, then start every entry of work/roster.toml in the background (DRY=1: show and check only)
 	$(PY) tools/agent/run.py start $(if $(DRY),--dry)
@@ -140,6 +134,12 @@ run-status:       ## each roster entry: alive, its claim, the last line of its l
 
 run-add:          ## start (or restart) one roster entry in the running run: NAME=<name>
 	$(PY) tools/agent/run.py add $(NAME)
+
+watch-agents:     ## live view of the run: agents, sessions and their cost, progress, hand-offs, stuck units (INTERVAL=5, ONCE=1)
+	@$(PY) tools/agent/watch.py
+
+smoke-agent:      ## one real session of a roster entry on one unit, in a scratch clone, merged through make check: [NAME=dec-deepseek] [UNIT=e19ec] [TIMEOUT=30] [WORKTREE=1]
+	$(PY) tools/agent/smoke.py
 
 p0-check: inputs overlays pak test  ## Phase 0 exit criteria (SPEC section 10)
 	@echo "p0-check: OK"

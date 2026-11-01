@@ -142,3 +142,49 @@ def test_roster_and_commands():
         assert cmd[1] == ("tools/agent/integrator.py" if e["role"] == "integrator" else "tools/agent/worker.py")
         if e["role"] != "integrator":
             assert cmd[cmd.index("--agent") + 1] == e["name"] and "--session-cmd" in cmd
+
+
+def test_roster_rules():
+    """The roster's rules, whatever its entries (the human edits it): ids without #variant, a model
+    wherever the session command passes one, tier 2 only for decompilers, one integrator at most."""
+    good = {"run": {}, "session": [{"name": "d1", "role": "decompiler", "model": "p/m", "variant": "high"}]}
+    bad = [
+        {"name": "d1", "role": "decompiler", "model": "p/m#high"},
+        {"name": "d1", "role": "decompiler"},
+        {"name": "r1", "role": "reviewer", "model": "p/m", "tier": 2},
+        {"name": "X", "role": "decompiler", "model": "p/m"},
+    ]
+    import tomllib
+    real = tomllib.loads
+    try:
+        tomllib.loads = lambda text: good
+        run, entries = run_mod.roster()
+        cmd = run_mod.command(run, entries[0])
+        assert cmd[cmd.index("--model") + 1] == "p/m" and cmd[cmd.index("--tier") + 1] == "1"
+        for b in bad:
+            tomllib.loads = lambda text, b=b: {"run": {}, "session": [b]}
+            with pytest.raises(ValueError):
+                run_mod.roster()
+    finally:
+        tomllib.loads = real
+    run_mod.roster()                                   # the committed roster obeys them
+    assert run_mod.program("cd {worktree} && opencode run --auto x") == "opencode"
+
+
+def test_tier_selection(monkeypatch):
+    """Tier 2 takes only units tier 1 gave up on; both giving up leaves the unit to the human."""
+    att = {}
+    monkeypatch.setattr(common, "attempts", lambda: att)
+    monkeypatch.setattr(nxt, "busy", lambda key: False)
+    first = nxt.next_unit(1)
+    assert first and nxt.next_unit(2) is None
+    att[first] = {"1": common.TIER1_ATTEMPTS}
+    assert nxt.next_unit(1) != first and nxt.next_unit(2) == first
+    att[first]["2"] = 2
+    assert nxt.next_unit(2, 2) is None and nxt.stuck(2) == [first]
+
+
+def test_watch_screen_renders():
+    import watch
+    text = watch.screen(100)
+    assert "== progress" in text and "functions at L2" in text and "== hand-offs" in text

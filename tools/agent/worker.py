@@ -1,31 +1,46 @@
 #!/usr/bin/env python3
-"""worker.py: a supervisor that runs model sessions on claimed units (docs/process/playbooks/90-orchestrate.md).
+"""worker.py: a supervisor that runs model sessions on claimed units (playbook 90).
 
-  make worker AGENT=<name> [ROLE=decompiler|reviewer] [UNIT=<id>] [SESSIONS=1] [TIMEOUT=60]
-              [SESSION_CMD="claude -p --permission-mode acceptEdits"] [DRY=1]
+  make worker AGENT=<name> [ROLE=decompiler|reviewer] [MODEL=openrouter/...] [VARIANT=high] [TIER=1|2]
+              [UNIT=<id>] [SESSIONS=1] [TIMEOUT=90] [COST_CAP=0] [MAX_ATTEMPTS=2] [SESSION_CMD=...] [DRY=1]
 
-The human starts it; scripts never start one. For each session (at most SESSIONS):
-  1. claim a unit (`make claim`: UNIT, or the next one; ROLE=reviewer claims a review);
-  2. run SESSION_CMD in the unit's worktree with the prompt (tools/agent/worker_prompt.md, filled
-     in) on its standard input, for at most TIMEOUT minutes; the output goes to
-     build/worker/<agent>/<n>.log;
-  3. afterwards the claim must end in a hand-off: if the session handed off, good; if it committed
-     work that matches but did not hand off, the supervisor hands it off as `partial`; if it
-     committed nothing, the claim is released; anything else is left for the human (`make locks`).
-Its own hand-offs that `make integrate` rejected come first: it re-claims that unit, with the
-reason in the prompt. It stops after SESSIONS, when there is nothing to claim, after two sessions in
-a row that produced nothing, when build/worker/STOP exists (`make stop-run` creates it), or on
-SIGTERM (the session is stopped and the claim settled as above). DRY=1 prints the first prompt.
+Normally `make start-run` starts one per roster entry; the human may start one by hand. For each
+session (at most SESSIONS):
+
+  1. claim: its own hand-off that `make integrate` rejected (once per worker run, with the reason
+     in the prompt), else UNIT, else the next unit for its tier (`make next`), or a review;
+  2. run the session command in the unit's worktree, the prompt (tools/agent/worker_prompt.md,
+     filled in) in a file. The default runs OpenCode on its background service, which holds the
+     provider credentials, with a session id chosen here so the session can be found again:
+
+       cd {worktree} && opencode run --auto --session {session_id} --title {title}{model_flag} "$(cat {prompt_file})"
+
+     ({model_flag} is ` --model <model>#<variant>`). A template without {prompt_file} gets the
+     prompt on standard input. The session is killed (and interrupted on the service, where it would
+     otherwise go on) after TIMEOUT minutes, when OpenCode reports COST_CAP USD spent, or on SIGTERM;
+  3. settle the claim: the session's own hand-off; else a `partial` hand-off of new commits that
+     match; else the claim is released (nothing committed) or left for the human;
+  4. count the attempt: a decompiler session that recorded no new function at L2 counts one attempt
+     of its tier on the unit; progress clears the count (common.record_attempt). Tier 1 gives a unit
+     up after TIER1_ATTEMPTS, tier 2 (the stronger model) after MAX_ATTEMPTS.
+
+When nothing is claimable it waits (IDLE seconds) and looks again: tier 2 waits for units tier 1
+gave up on, reviewers for complete units. A session the provider refused (no credits, model
+unavailable) counts no attempt; the worker waits 15 minutes. It stops after SESSIONS, when
+build/worker/STOP exists (`make stop-run`), or on SIGTERM. DRY=1 prints the prompt and the command.
 """
 from __future__ import annotations
 
 import argparse
+import json
 import os
+import re
 import shlex
 import signal
 import subprocess
 import sys
 import time
+import uuid
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -33,10 +48,20 @@ import claim as claim_mod  # noqa: E402
 import common  # noqa: E402
 
 PROMPT = Path(__file__).resolve().parent / "worker_prompt.md"
+DEFAULT_SESSION_CMD = ('cd {worktree} && opencode run --auto --session {session_id} --title {title}{model_flag} '
+                       '"$(cat {prompt_file})"')
+COST_POLL_SECONDS = 30
+PROVIDER_BACKOFF_SECONDS = 900
+KILL_GRACE_SECONDS = 10
+# OpenCode's `run` exits 0 even when the provider refused (poolrad, 2026-10-14): read the log.
+PROVIDER_ERROR = re.compile(r"exceed your available credits|insufficient credits|insufficient_quota|"
+                            r"credit balance is too low|payment required|Model unavailable|"
+                            r"ProviderModelNotFound|model not found", re.I)
 ROLES = {
     "decompiler": ("docs/process/playbooks/30-lift-module.md",
                    "Run `make packet UNIT={unit}` and read build/packets/{unit}.md. If src/ has no file for "
-                   "the unit, `make skeleton UNIT={unit}`. Decompile the functions that are not at L2.",
+                   "the unit, `make skeleton UNIT={unit}`. Decompile the functions that are not at L2, in "
+                   "address order, as many as you can match.",
                    "complete|partial|blocked"),
     "reviewer": ("docs/process/playbooks/70-review.md",
                  "Copy work/reviews/TEMPLATE.md to work/reviews/{unit}.md and review the unit as the playbook says.",
@@ -48,9 +73,13 @@ class Stopped(Exception):
     """SIGTERM from `make stop-run`: stop the session, settle the claim, exit."""
 
 
-def prompt(agent: str, role: str, key: str, branch: str, wt: Path, rejected: str = "") -> str:
+def prompt(agent: str, role: str, key: str, branch: str, wt: Path, rejected: str = "", tier: int = 1) -> str:
     unit = key[7:] if key.startswith("review-") else key
     playbook, first, states = ROLES[role]
+    if tier == 2:
+        first = ("Earlier sessions of a cheaper model gave up on this unit without matching more of it: "
+                 "read the notes of its functions in re/symbols.toml and `git log main..HEAD` before you "
+                 "start, and take one hard function at a time. ") + first
     if rejected:
         first = ("Your last hand-off of this branch was rejected by make integrate: %s. Fix that first (a "
                  "merge conflict: `git merge main` in this worktree and keep both sides; a failed check: "
@@ -69,26 +98,90 @@ def rejected_handoffs(agent: str) -> list[tuple[str, str]]:
     return out
 
 
-def run_session(cmd: str, wt: Path, env: dict, text: str, timeout: float, log: Path) -> str:
-    """Run one session in its own process group; returns its exit code, "timeout" or "stopped"."""
-    with open(log, "w") as out:
-        p = subprocess.Popen(shlex.split(cmd), cwd=wt, env=env, stdin=subprocess.PIPE, stdout=out,
-                             stderr=subprocess.STDOUT, text=True, start_new_session=True)
+# ---------------------------------------------------------------- one session
+
+def session_cost(session_id: str) -> float | None:
+    """What OpenCode reports spent in the session so far (USD), or None when it cannot say."""
+    if not session_id:
+        return None
+    try:
+        r = subprocess.run(["opencode", "api", "get", "/api/session/%s" % session_id], capture_output=True,
+                           text=True, timeout=20, stdin=subprocess.DEVNULL)
+        return float(json.loads(r.stdout)["data"]["cost"]) if r.returncode == 0 else None
+    except (OSError, subprocess.TimeoutExpired, ValueError, KeyError, TypeError):
+        return None
+
+
+def interrupt_session(session_id: str, log) -> None:
+    """Stop an OpenCode session on the background service; killing its client does not."""
+    try:
+        r = subprocess.run(["opencode", "api", "post", "/api/session/%s/interrupt" % session_id],
+                           capture_output=True, text=True, timeout=30, stdin=subprocess.DEVNULL)
+        log.write("$ interrupt %s: exit %d\n" % (session_id, r.returncode))
+    except (OSError, subprocess.TimeoutExpired) as e:
+        log.write("$ interrupt %s failed: %s\n" % (session_id, e))
+
+
+def kill_group(p: subprocess.Popen) -> None:
+    for sig in (signal.SIGTERM, signal.SIGKILL):
         try:
-            p.communicate(text, timeout=timeout)
-            return str(p.returncode)
+            os.killpg(p.pid, sig)
+            p.wait(timeout=KILL_GRACE_SECONDS)
+            return
+        except ProcessLookupError:
+            return
         except subprocess.TimeoutExpired:
-            code = "timeout"
+            continue
+
+
+def run_session(template: str, wt: Path, env: dict, text: str, timeout_s: float, log: Path,
+                model_flag: str = "", title: str = "", cost_cap: float = 0.0, on_start=None) -> dict:
+    """Run one session in its own process group; returns {code, session_id, cost, refused, seconds}.
+    code is the exit code, "timeout", "cost-cap" or "stopped"."""
+    prompt_file = log.with_suffix(".prompt.md")
+    prompt_file.write_text(text)
+    session_id = "ses_eob" + uuid.uuid4().hex[:16] if "{session_id}" in template else ""
+    cmd = template.format(prompt_file=shlex.quote(str(prompt_file)), worktree=shlex.quote(str(wt)),
+                          model_flag=model_flag, title=shlex.quote(title), session_id=session_id)
+    stdin = subprocess.DEVNULL if "{prompt_file}" in template else subprocess.PIPE
+    start = time.monotonic()
+    code = None
+    with open(log, "a") as out:
+        out.write("$ %s   (%s)\n" % (cmd, common.now()))
+        out.flush()
+        p = subprocess.Popen(cmd, shell=True, cwd=wt, env=env, stdin=stdin, stdout=out, stderr=subprocess.STDOUT,
+                             text=True, start_new_session=True)
+        if on_start:
+            on_start(session_id)
+        try:
+            if stdin is subprocess.PIPE:
+                try:
+                    p.stdin.write(text)
+                    p.stdin.close()
+                except BrokenPipeError:
+                    pass
+            deadline = start + timeout_s
+            while code is None:
+                step = min(COST_POLL_SECONDS if cost_cap and session_id else 5, max(deadline - time.monotonic(), 0.01))
+                try:
+                    p.wait(timeout=step)
+                    code = str(p.returncode)
+                except subprocess.TimeoutExpired:
+                    if time.monotonic() >= deadline:
+                        code = "timeout"
+                    elif cost_cap and session_id and (session_cost(session_id) or 0.0) >= cost_cap:
+                        code = "cost-cap"
         except Stopped:
             code = "stopped"
-        for sig in (signal.SIGTERM, signal.SIGKILL):
-            try:
-                os.killpg(p.pid, sig)
-                p.wait(timeout=20)
-                break
-            except (ProcessLookupError, subprocess.TimeoutExpired):
-                continue
-        return code
+        if code in ("timeout", "cost-cap", "stopped"):
+            kill_group(p)
+            if session_id:
+                interrupt_session(session_id, out)
+        out.write("$ exit %s after %.0f s\n" % (code, time.monotonic() - start))
+    tail = log.read_text(errors="replace")[-20000:]
+    refused = PROVIDER_ERROR.search(tail)
+    return {"code": code, "session_id": session_id, "cost": session_cost(session_id),
+            "refused": refused.group(0) if refused else "", "seconds": round(time.monotonic() - start)}
 
 
 def settle(agent: str, key: str, branch: str, wt: Path, head_before: str = "") -> str:
@@ -98,8 +191,8 @@ def settle(agent: str, key: str, branch: str, wt: Path, head_before: str = "") -
     h = common.handoff_path(key)
     if h.exists() and common.fields(h.read_text()).get("integrate") != "rejected":
         return "handed-off"
-    if h.exists() and common.git("rev-parse", branch, check=False) == head_before:
-        return "left"
+    if h.exists() and (not head_before or common.git("rev-parse", branch, check=False) == head_before):
+        return "left"                       # rejected, nothing new (or not known: make stop-run)
     ahead = int(common.git("rev-list", "--count", "main..%s" % branch, check=False) or 0)
     dirty = common.git("status", "--porcelain", "--untracked-files=no", cwd=wt, check=False)
     if not ahead and not dirty:
@@ -114,15 +207,102 @@ def settle(agent: str, key: str, branch: str, wt: Path, head_before: str = "") -
     return "left"
 
 
+# ---------------------------------------------------------------- the loop
+
+def stop_requested() -> bool:
+    return (common.main_checkout() / "build/worker/STOP").exists()
+
+
+def wait(seconds: float) -> bool:
+    """Sleep, waking for STOP; False when a stop was requested."""
+    end = time.time() + seconds
+    while time.time() < end:
+        if stop_requested():
+            return False
+        time.sleep(max(0.0, min(5, end - time.time())))
+    return not stop_requested()
+
+
+def loop(a) -> int:
+    logs = common.main_checkout() / "build/worker" / a.agent
+    logs.mkdir(parents=True, exist_ok=True)
+    model = "%s#%s" % (a.model, a.variant) if a.variant else a.model
+    model_flag = (" --model " + shlex.quote(model)) if a.model else ""
+    status = dict(role=a.role, tier=a.tier, model=a.model, variant=a.variant, pid=os.getpid())
+    retried, n = set(), 0
+    while n < a.sessions:
+        if stop_requested():
+            print("worker: build/worker/STOP exists; stopping")
+            break
+        rejected = [r for r in rejected_handoffs(a.agent) if r[0] not in retried][:1]
+        retried.update(k for k, _ in rejected)
+        try:
+            if rejected:
+                key = rejected[0][0]
+                key, wt = claim_mod.claim(a.agent, key[7:] if key.startswith("review-") else key, key.startswith("review-"))
+            else:
+                key, wt = claim_mod.claim(a.agent, a.unit if n == 0 else "", a.role == "reviewer",
+                                          tier=a.tier, max_attempts=a.max_attempts)
+        except (ValueError, RuntimeError) as e:
+            if a.unit and n == 0:
+                print("worker: %s" % e)
+                return 1
+            common.agent_status(a.agent, state="idle", note=str(e)[:200], **status)
+            if not wait(a.idle):
+                break
+            continue
+        n += 1
+        branch = common.fields(common.lock_path(key).read_text())["branch"]
+        uid = key[7:] if key.startswith("review-") else key
+        log = logs / ("%s-%d-%s.log" % (time.strftime("%Y%m%dT%H%M%S"), n, key))
+        before = common.l2_count(wt, uid)
+        head_before = common.git("rev-parse", branch, check=False)
+        print("worker: session %d on %s (%s%s) in %s, log %s" % (n, key, model or "session_cmd",
+              ", after a rejection" if rejected else "", wt, log), flush=True)
+        started = common.now()
+
+        def on_start(session_id, key=key, log=log, started=started):
+            common.agent_status(a.agent, state="session", key=key, session_id=session_id, started=started,
+                                log=str(log), **status)
+        r = run_session(a.session_cmd, wt, dict(os.environ, AGENT=a.agent), prompt(
+            a.agent, a.role, key, branch, wt, rejected[0][1] if rejected else "", a.tier),
+            a.timeout * 60, log, model_flag, "%s %s" % (a.agent, key), a.cost_cap, on_start)
+        outcome = settle(a.agent, key, branch, wt, head_before)
+        after = common.l2_count(wt, uid) if wt.exists() else common.l2_count(common.ROOT, uid)
+        if a.role == "decompiler" and not r["refused"] and r["code"] != "stopped":
+            common.record_attempt(uid, a.tier, after > before)
+        common.event("worker-session", agent=a.agent, key=key, tier=a.tier, model=a.model, outcome=outcome,
+                     exit=r["code"], cost=r["cost"], seconds=r["seconds"], session_id=r["session_id"],
+                     l2_before=before, l2_after=after, refused=r["refused"])
+        print("worker: session %d on %s ended (%s, %ds, USD %s): %s; L2 %d -> %d%s" % (
+            n, key, r["code"], r["seconds"], "%.2f" % r["cost"] if r["cost"] is not None else "?", outcome,
+            before, after, "; PROVIDER REFUSED: %s" % r["refused"] if r["refused"] else ""), flush=True)
+        if r["code"] == "stopped":
+            break
+        if r["refused"]:
+            common.agent_status(a.agent, state="backoff", note=r["refused"], **status)
+            if not wait(PROVIDER_BACKOFF_SECONDS):
+                break
+    common.agent_status(a.agent, state="stopped", **status)
+    return 0
+
+
 def main(argv=None) -> int:
+    env = os.environ.get
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    ap.add_argument("--agent", default=os.environ.get("AGENT", ""))
-    ap.add_argument("--role", default=os.environ.get("ROLE", "decompiler"), choices=sorted(ROLES))
-    ap.add_argument("--unit", default=os.environ.get("UNIT", ""))
-    ap.add_argument("--sessions", type=int, default=int(os.environ.get("SESSIONS") or 1))
-    ap.add_argument("--timeout", type=float, default=float(os.environ.get("TIMEOUT") or 60))
-    ap.add_argument("--session-cmd", default=os.environ.get("SESSION_CMD") or "claude -p --permission-mode acceptEdits")
-    ap.add_argument("--dry", action="store_true", default=bool(os.environ.get("DRY")))
+    ap.add_argument("--agent", default=env("AGENT", ""))
+    ap.add_argument("--role", default=env("ROLE", "decompiler"), choices=sorted(ROLES))
+    ap.add_argument("--model", default=env("MODEL", ""))
+    ap.add_argument("--variant", default=env("VARIANT", ""))
+    ap.add_argument("--tier", type=int, default=int(env("TIER") or 1), choices=(1, 2))
+    ap.add_argument("--unit", default=env("UNIT", ""))
+    ap.add_argument("--sessions", type=int, default=int(env("SESSIONS") or 1))
+    ap.add_argument("--timeout", type=float, default=float(env("TIMEOUT") or 90))
+    ap.add_argument("--cost-cap", type=float, default=float(env("COST_CAP") or 0))
+    ap.add_argument("--max-attempts", type=int, default=int(env("MAX_ATTEMPTS") or 2))
+    ap.add_argument("--idle", type=float, default=float(env("IDLE") or 300))
+    ap.add_argument("--session-cmd", default=env("SESSION_CMD") or DEFAULT_SESSION_CMD)
+    ap.add_argument("--dry", action="store_true", default=bool(env("DRY")))
     a = ap.parse_args(argv)
     try:
         common.identifier(a.agent, "agent")
@@ -133,63 +313,21 @@ def main(argv=None) -> int:
         uid = a.unit or "<unit>"
         key = ("review-" + uid) if a.role == "reviewer" else uid
         print(prompt(a.agent, a.role, key, ("review/" if a.role == "reviewer" else "unit/") + uid,
-                     common.worktree_of(key)))
+                     common.worktree_of(key), tier=a.tier))
+        mf = (" --model %s#%s" % (a.model, a.variant)) if a.model else ""
+        print("\n$ " + a.session_cmd.format(worktree=common.worktree_of(key), session_id="ses_eob<id>",
+                                            title="'%s %s'" % (a.agent, key), model_flag=mf, prompt_file="<prompt file>"))
         return 0
-    logs = common.main_checkout() / "build/worker" / a.agent
-    logs.mkdir(parents=True, exist_ok=True)
 
     def on_term(sig, frame):
         raise Stopped()
     signal.signal(signal.SIGTERM, on_term)
-    idle, retried = 0, set()
     try:
-        return loop(a, logs, idle, retried)
+        return loop(a)
     except Stopped:
         print("worker: stopped by make stop-run")
+        common.agent_status(a.agent, state="stopped", role=a.role, tier=a.tier, model=a.model)
         return 0
-
-
-def loop(a, logs: Path, idle: int, retried: set) -> int:
-    for n in range(1, a.sessions + 1):
-        if (common.main_checkout() / "build/worker/STOP").exists():
-            print("worker: build/worker/STOP exists; stopping")
-            break
-        rejected = [r for r in rejected_handoffs(a.agent) if r[0] not in retried][:1]
-        retried.update(k for k, _ in rejected)
-        try:
-            if rejected:                        # its own rejected work comes first
-                key = rejected[0][0]
-                key, wt = claim_mod.claim(a.agent, key[7:] if key.startswith("review-") else key, key.startswith("review-"))
-            else:
-                key, wt = claim_mod.claim(a.agent, a.unit if n == 1 else "", a.role == "reviewer")
-        except (ValueError, RuntimeError) as e:
-            print("worker: %s" % e)
-            break
-        branch = common.fields(common.lock_path(key).read_text())["branch"]
-        log = logs / ("%d-%s.log" % (n, key))
-        print("worker: session %d on %s in %s (log %s)%s" % (n, key, wt, log, ", after a rejection" if rejected else ""),
-              flush=True)
-        env = dict(os.environ, AGENT=a.agent)
-        start, head_before = time.time(), common.git("rev-parse", branch, check=False)
-        try:
-            code = run_session(a.session_cmd, wt, env, prompt(a.agent, a.role, key, branch, wt,
-                                                              rejected[0][1] if rejected else ""), a.timeout * 60, log)
-        except OSError as e:
-            print("worker: cannot run %r: %s" % (a.session_cmd, e), file=sys.stderr)
-            print("worker: %s: %s" % (key, settle(a.agent, key, branch, wt, head_before)), file=sys.stderr)
-            return 2
-        outcome = settle(a.agent, key, branch, wt, head_before)
-        common.event("worker-session", agent=a.agent, key=key, exit=str(code), outcome=outcome,
-                     minutes=round((time.time() - start) / 60, 1))
-        print("worker: session %d on %s ended (%s): %s" % (n, key, code, outcome), flush=True)
-        if code == "stopped":
-            print("worker: stopped by make stop-run")
-            break
-        idle = idle + 1 if outcome in ("released", "left") else 0
-        if idle >= 2:
-            print("worker: two sessions in a row produced nothing to merge; stopping")
-            break
-    return 0
 
 
 if __name__ == "__main__":

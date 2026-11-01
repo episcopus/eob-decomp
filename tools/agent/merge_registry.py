@@ -16,8 +16,8 @@ entry. Git's line merge conflicts when two branches change one entry, even diffe
     the other: a conflict.
 
   git config merge.eob-registry.driver "python3 tools/agent/merge_registry.py %O %A %B"
-  .gitattributes: re/symbols.toml merge=eob-registry   (make merge-driver; make claim and
-  make integrate set it up)
+  .gitattributes: re/symbols.toml merge=eob-registry   (make claim, make integrate and
+  make start-run set it up: common.install_git_config)
 """
 from __future__ import annotations
 

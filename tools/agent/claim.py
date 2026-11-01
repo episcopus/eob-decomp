@@ -45,7 +45,8 @@ def setup(key: str, branch: str) -> Path:
     return wt
 
 
-def claim(agent: str, uid: str = "", review: bool = False, task: str = "") -> tuple[str, Path]:
+def claim(agent: str, uid: str = "", review: bool = False, task: str = "", tier: int = 1,
+          max_attempts: int = 2) -> tuple[str, Path]:
     """Lock and set up; returns (key, worktree). Raises ValueError when there is nothing to take."""
     common.identifier(agent, "agent")
     main_dir = common.main_checkout()
@@ -64,7 +65,7 @@ def claim(agent: str, uid: str = "", review: bool = False, task: str = "") -> tu
             key, branch = common.identifier(task, "task"), "task/%s" % task
         else:
             if not explicit:
-                uid = (nxt.next_review() if review else nxt.next_unit()) or ""
+                uid = (nxt.next_review() if review else nxt.next_unit(tier, max_attempts)) or ""
                 if not uid:
                     raise ValueError("nothing to %s: the queue is done, locked or waiting for integration"
                                      % ("review" if review else "claim"))

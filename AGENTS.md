@@ -55,8 +55,9 @@ You are working on a **matching decompilation of Westwood's Eye of the Beholder 
 | `make packet UNIT=`, `make skeleton UNIT=` | Everything to start a unit (`build/packets/<id>.md`); its source file with every function a stub |
 | `make handoff AGENT= UNIT= STATE= NOTE=` | From your worktree: the branch is ready, or a question for the human (`STATE=escalate`) |
 | `make review-pass UNIT= AGENT=` | Record a passed review (playbook 70) |
-| `make handoffs`, `make integrate`, `make handoff-done`, `make locks`, `make unlock`, `make worker`, `make hooks` | The human's side (playbook 90) |
-| `make start-run [DRY=1]`, `make run-status`, `make run-add NAME=`, `make stop-run [WAIT=]` | A run of `work/roster.toml`: workers and the integrator in the background (playbook 90) |
+| `make handoffs`, `make integrate`, `make handoff-done`, `make locks`, `make unlock`, `make worker` | The human's side (playbook 90) |
+| `make smoke-agent [NAME=] [UNIT=]` | One real session of a roster model on one unit, in a scratch clone (playbook 90) |
+| `make start-run [DRY=1]`, `make watch-agents`, `make run-status`, `make run-add NAME=`, `make stop-run [WAIT=]` | A run of `work/roster.toml`: workers and the integrator in the background (playbook 90) |
 
 ## Playbooks
 

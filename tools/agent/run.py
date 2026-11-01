@@ -48,6 +48,13 @@ def roster() -> tuple[dict, list[dict]]:
         common.identifier(e.get("name", ""), "roster name")
         if e.get("role") not in ROLES:
             raise ValueError("%s: role must be one of %s" % (e["name"], ", ".join(ROLES)))
+        if e["role"] != "integrator":
+            if "#" in e.get("model", ""):
+                raise ValueError("%s: model is the id without a #variant suffix (variant is its own field)" % e["name"])
+            if "{model_flag}" in session_cmd(run, e) and not e.get("model"):
+                raise ValueError("%s: needs a model (the session command passes one)" % e["name"])
+            if e.get("tier", 1) not in (1, 2) or (e.get("tier", 1) == 2 and e["role"] != "decompiler"):
+                raise ValueError("%s: tier is 1 or 2, and 2 only for a decompiler" % e["name"])
     if len(set(names)) != len(names):
         raise ValueError("roster names must be unique")
     if sum(e["role"] == "integrator" for e in entries) > 1:
@@ -55,15 +62,37 @@ def roster() -> tuple[dict, list[dict]]:
     return run, entries
 
 
+def session_cmd(run: dict, e: dict) -> str:
+    import worker
+    return e.get("session_cmd", run.get("session_cmd", worker.DEFAULT_SESSION_CMD))
+
+
+def program(cmd: str) -> str:
+    """The program a session command runs: the first word of its last `&&` part (after `cd ... &&`)."""
+    words = shlex.split(cmd.split("&&")[-1]) if cmd.strip() else []
+    return words[0] if words else ""
+
+
+def opt(run: dict, e: dict, key: str, default):
+    return e.get(key, run.get(key, default))
+
+
 def command(run: dict, e: dict) -> list[str]:
     py = str(common.main_checkout() / ".venv/bin/python")
     if e["role"] == "integrator":
         return [py, "tools/agent/integrator.py", "--interval", str(e.get("interval", 120)),
                 "--idle-stop", str(e.get("idle_stop", 60))]
-    return [py, "tools/agent/worker.py", "--agent", e["name"], "--role", e["role"],
-            "--sessions", str(e.get("sessions", run.get("sessions", 50))),
-            "--timeout", str(e.get("timeout", run.get("timeout", 60))),
-            "--session-cmd", e.get("session_cmd", run.get("session_cmd", ""))]
+    cmd = [py, "tools/agent/worker.py", "--agent", e["name"], "--role", e["role"],
+           "--tier", str(e.get("tier", 1)),
+           "--sessions", str(opt(run, e, "sessions", 1000)),
+           "--timeout", str(opt(run, e, "timeout", 90)),
+           "--cost-cap", str(opt(run, e, "cost_cap", 0)),
+           "--max-attempts", str(opt(run, e, "max_attempts", 2)),
+           "--idle", str(opt(run, e, "idle", 300)),
+           "--session-cmd", session_cmd(run, e)]
+    if e.get("model"):
+        cmd += ["--model", e["model"], "--variant", e.get("variant", "")]
+    return cmd
 
 
 def alive(pid: int) -> bool:
@@ -101,13 +130,18 @@ def preflight(run: dict, entries: list[dict]) -> list[str]:
     for rel in (".venv/bin/python", "build/toolchain", "build/re/eob.json"):
         if not (main_dir / rel).exists():
             out.append("%s is missing (make setup, make tc-install, make overlays)" % rel)
-    for e in entries:
-        if e["role"] != "integrator":
-            cmd = e.get("session_cmd", run.get("session_cmd", ""))
-            prog = shlex.split(cmd)[0] if cmd.strip() else ""
-            if not prog or not shutil.which(prog):
-                out.append("%s: the session command %r is not runnable here (set session_cmd in work/roster.toml)" % (
-                    e["name"], cmd))
+    progs = {program(session_cmd(run, e)) for e in entries if e["role"] != "integrator"}
+    for prog in sorted(progs):
+        if not prog or not shutil.which(prog):
+            out.append("the session program %r is not on the PATH (session_cmd in work/roster.toml)" % prog)
+    if "opencode" in progs and shutil.which("opencode"):
+        r = subprocess.run(["opencode", "models"], capture_output=True, text=True, timeout=120)
+        known = set(r.stdout.split())
+        if r.returncode:
+            out.append("`opencode models` fails (is its background service running?): %s" % (r.stdout + r.stderr)[-300:])
+        for e in entries:
+            if e.get("model") and e["model"] not in known:
+                out.append("%s: model %s is not in `opencode models`" % (e["name"], e["model"]))
     if any(alive(v["pid"]) for v in load_state().get("sessions", {}).values()):
         out.append("a run is active (make run-status; make stop-run)")
     if not out:

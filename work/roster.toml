@@ -1,33 +1,76 @@
-# The roster `make start-run` starts (playbook 90): one process per entry, in the background, each
-# with its log in build/run/<name>.log. Decompilers and reviewers are workers (tools/agent/worker.py):
-# each claims a unit, runs one model session on it, settles the claim, and claims again. The
-# integrator (tools/agent/integrator.py) runs `make integrate` every `interval` seconds and ends the
-# run after `idle_stop` minutes with nothing claimed or waiting.
+# The roster `make start-run` starts (playbook 90): one background process per entry, its log in
+# build/run/<name>.log, `make watch-agents` to follow them. The models and limits are poolrad-decomp's
+# roster of 2026-10-14 (its notes: DeepSeek matched the most bytes per dollar; Sonnet replaced Grok
+# as the escalation model at about USD 3 per matched routine).
 #
-# `session_cmd` is the command a worker runs for each session, in the unit's worktree, with the
-# prompt on its standard input (tools/agent/worker_prompt.md). It must be set to a tool installed
-# here; `make start-run` refuses to start when its program is not on the PATH. Any entry may override
-# session_cmd, timeout (minutes per session) and sessions (per worker).
+# Decompilers and reviewers are workers (tools/agent/worker.py): each claims a unit, runs one OpenCode
+# session on it, settles the claim and claims again; idle, it waits and looks again. `model` is the
+# OpenCode model id (`opencode models`), `variant` its reasoning effort, passed as `model#variant`.
+# Tier 1 (the default) takes units in queue order until two of its sessions in a row on a unit match
+# nothing new; tier 2, the stronger model, takes only those units, up to `max_attempts` sessions
+# each; what both give up on is listed by `make watch-agents` for the human. Options per entry, or
+# for every entry under [run]: timeout (minutes per session), cost_cap (USD per session, read from
+# OpenCode while it runs; 0: none), max_attempts (tier 2), sessions (per worker), idle (seconds
+# between looks when nothing is claimable), session_cmd (default: tools/agent/worker.py
+# DEFAULT_SESSION_CMD, `opencode run --auto` on the background service, which holds the credentials).
+#
+# The integrator (tools/agent/integrator.py) is a script, no model: it runs `make integrate` every
+# `interval` seconds and ends the run after `idle_stop` minutes with nothing claimed or waiting. (In
+# poolrad it also resolved rejected merges with a model session; here the owner's worker retakes its
+# rejected hand-off first, with the reason in its prompt.)
 
 [run]
-session_cmd = "claude -p --permission-mode acceptEdits"
-timeout = 60
-sessions = 50
+timeout = 90
 
 [[session]]
-name = "int"
+name = "int-loop"
 role = "integrator"
 interval = 120
 idle_stop = 60
 
+# Tier 1: DeepSeek.
 [[session]]
-name = "dec1"
+name = "dec-deepseek"
 role = "decompiler"
+model = "openrouter/deepseek/deepseek-v4.1-flash"
+variant = "high"
 
 [[session]]
-name = "dec2"
+name = "dec-deepseek-2"
 role = "decompiler"
+model = "openrouter/deepseek/deepseek-v4.1-flash"
+variant = "high"
 
 [[session]]
-name = "rev1"
+name = "dec-deepseek-3"
+role = "decompiler"
+model = "openrouter/deepseek/deepseek-v4.1-flash"
+variant = "high"
+
+# Tier 2: the escalation decompilers, Claude Sonnet 5.5, each session stopped at 150 minutes or USD 8,
+# at most two sessions without progress per unit.
+[[session]]
+name = "esc-sonnet"
+role = "decompiler"
+tier = 2
+model = "openrouter/anthropic/claude-sonnet-5.5"
+variant = "xhigh"
+timeout = 150
+cost_cap = 8
+max_attempts = 2
+
+[[session]]
+name = "esc-sonnet-2"
+role = "decompiler"
+tier = 2
+model = "openrouter/anthropic/claude-sonnet-5.5"
+variant = "xhigh"
+timeout = 150
+cost_cap = 8
+max_attempts = 2
+
+[[session]]
+name = "rev-sonnet"
 role = "reviewer"
+model = "openrouter/anthropic/claude-sonnet-5.5"
+variant = "high"

@@ -60,8 +60,8 @@ class Program:
     def target(self, f: dict, insn) -> str | None:
         """The address a call reaches, in the registry's spelling."""
         seg = f["addr"].split(":")[0]
-        if insn.mnemonic == "call" and insn.op_str.startswith("0x"):
-            return "%s:%04X" % (seg.lower() if seg.lower().startswith("ovl") else seg.upper(), int(insn.op_str, 16) & 0xFFFF)
+        if insn.mnemonic == "call" and re.fullmatch(r"0x[0-9a-f]+|\d+", insn.op_str):   # capstone: decimal below 10
+            return "%s:%04X" % (seg.lower() if seg.lower().startswith("ovl") else seg.upper(), int(insn.op_str, 0) & 0xFFFF)
         if insn.mnemonic == "lcall" and insn.bytes[0] == 0x9A:
             off, para = struct.unpack_from("<HH", insn.bytes, 1)
             if seg.lower().startswith("ovl"):

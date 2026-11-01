@@ -60,6 +60,6 @@ Examples: `src/E0CF7.C`, `src/E07A9.C` (whole units), `src/E08E6.C` (a jump tabl
 
 ## Rules
 
-- Never change the matcher to make a function match; never use `__emit__` or inline bytes. A unit branch cannot change `tools/match/`, its negative fixtures (`tests/match/negative/`), the agent tools, the spec, the pins or `eob/`: the pre-commit hook (`make hooks`; `make claim` installs it) and `make handoff` refuse it. A matcher problem is an escalation.
+- Never change the matcher to make a function match; never use `__emit__` or inline bytes. A unit branch cannot change `tools/match/`, its negative fixtures (`tests/match/negative/`), the agent tools, the spec, the pins or `eob/`: the pre-commit hook (`make claim` installs it) and `make handoff` refuse it. A matcher problem is an escalation.
 - `make match-gate` is the matcher's regression gate (part of `make check`): every file of `src/` matches, every function recorded at L2 is still proven by `src/`, and every negative fixture is rejected with a difference. A fixture is a matched unit with one deliberate defect (a constant, a global, a callee, a struct field, a string, an operator, a case label, a near call to the wrong sibling, an overlay global, missing switches, an assembly jump); a change to the matcher that lets one through fails the gate.
 - Five failed attempts on one function: stop, write what you tried in its `notes` in `re/symbols.toml`, move on.

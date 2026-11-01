@@ -2,9 +2,10 @@
 """integrator.py: `make integrate` on a timer, for a run (playbook 90; `make start-run` starts it).
 
 Every INTERVAL seconds: `make integrate` in the main checkout when a branch hand-off waits. After
-IDLE_STOP minutes with no claim, no branch hand-off waiting and no worker of the run alive, the run
-is over: it creates build/worker/STOP and exits (`make stop-run` then cleans up). SIGTERM (from
-`make stop-run`) lets a merge in progress finish, then exits.
+IDLE_STOP minutes with no claim and no branch hand-off waiting (the workers found nothing to take:
+the queue is done, or what is left waits for the human), the run is over: it creates
+build/worker/STOP and exits (`make stop-run` then cleans up). SIGTERM (from `make stop-run`) lets a
+merge in progress finish, then exits.
 
   integrator.py [--interval 120] [--idle-stop 60]
 """
@@ -19,7 +20,6 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import common  # noqa: E402
-import run  # noqa: E402
 
 STOPPING = False
 
@@ -48,7 +48,7 @@ def main(argv=None) -> int:
         if waiting():
             r = subprocess.run(["make", "-s", "integrate"], cwd=main_dir, capture_output=True, text=True)
             print((r.stdout + r.stderr).strip(), flush=True)
-        busy = waiting() or any(common.state_dir("eob-locks").glob("*.lock")) or run.workers_alive()
+        busy = waiting() or any(common.state_dir("eob-locks").glob("*.lock"))
         if busy:
             idle_since = time.time()
         elif time.time() - idle_since > a.idle_stop * 60:

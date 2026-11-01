@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """next.py: what to work on next (playbooks 30 and 70).
 
-  make next                 the next unit to decompile: the first of work/queue.toml that is not
-                            complete (or has open must-fix review findings), not locked and has no
-                            hand-off waiting
+  make next [TIER=2]        the next unit to decompile: the first of work/queue.toml that is not
+                            complete (or has open must-fix review findings), not locked, has no
+                            hand-off waiting, and that its tier has not given up on (common.attempts)
   make next REVIEW=1        the next complete unit nobody has reviewed
   make queue [WRITE=1]      the queue made from re/units.toml: the units of EOB.EXE that are game
                             code (C, assembly, not classified), smallest first; WRITE=1 writes
@@ -34,14 +34,29 @@ def busy(key: str) -> bool:
     return common.lock_path(key).exists() or common.handoff_path(key).exists()
 
 
-def next_unit() -> str | None:
-    fs = common.functions()
+def next_unit(tier: int = 1, max_attempts: int = 2) -> str | None:
+    """Tier 1 takes units its sessions have not given up on (fewer than TIER1_ATTEMPTS sessions without
+    progress); tier 2 takes only those, up to `max_attempts` of its own sessions without progress.
+    Units both tiers gave up on wait for the human (`stuck`)."""
+    fs, att = common.functions(), common.attempts()
     for uid in common.queue():
         if busy(uid):
             continue
-        if not common.unit_complete(uid, fs) or common.open_must_fix(uid):
+        if common.unit_complete(uid, fs) and not common.open_must_fix(uid):
+            continue
+        a = att.get(uid, {})
+        t1 = a.get("1", 0) >= common.TIER1_ATTEMPTS
+        if tier == 1 and not t1:
+            return uid
+        if tier == 2 and t1 and a.get("2", 0) < max_attempts:
             return uid
     return None
+
+
+def stuck(max_attempts: int = 2) -> list[str]:
+    """Units both tiers gave up on: for the human."""
+    att = common.attempts()
+    return [u for u, a in sorted(att.items()) if a.get("1", 0) >= common.TIER1_ATTEMPTS and a.get("2", 0) >= max_attempts]
 
 
 def next_review() -> str | None:
@@ -67,6 +82,7 @@ def main(argv=None) -> int:
     ap.add_argument("--review", action="store_true", default=bool(os.environ.get("REVIEW")))
     ap.add_argument("--queue", action="store_true")
     ap.add_argument("--write", action="store_true", default=bool(os.environ.get("WRITE")))
+    ap.add_argument("--tier", type=int, default=int(os.environ.get("TIER") or 1))
     a = ap.parse_args(argv)
     if a.queue:
         text = queue_text()
@@ -76,7 +92,7 @@ def main(argv=None) -> int:
         else:
             print(text)
         return 0
-    n = next_review() if a.review else next_unit()
+    n = next_review() if a.review else next_unit(a.tier)
     if n is None:
         print("next: nothing to %s" % ("review" if a.review else "claim"))
         return 1
