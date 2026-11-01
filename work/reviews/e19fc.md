@@ -334,3 +334,59 @@ has no round trip. `_f19FC_0007` (the segment-start byte, which is data) and `eo
 whose unit has no `src/` file yet) are placeholders with evidence, which is acceptable. The shoulds are
 wording: the caller's fill, the argument removal, what `gBestLen` = 1 means, the `kind` claim and the two
 process clauses. I did not edit `src/`; the findings are the decompiler's to fix.
+
+---
+
+## Round 7
+
+Reviewer: rev-haiku
+Commit reviewed: 0236171 (review/e19fc); `src/E19FC.ASM` is the round 6 fix (64e5590), unchanged since.
+
+Playbook 70. Read for meaning; the bytes were proved by `make match`. Appended, as in rounds 4 to 6, so the earlier rounds stay in the file.
+
+### What I checked (read-only; no game run; no source edited)
+
+- `make match FILE=src/E19FC.ASM`: 2 of 2. `make readability UNIT=e19fc`: 0 findings.
+- The round 6 fixes are in the file. `tools/re/disasm.py` on eob/EOB.EXE: 19FC:0187 is `mov ax,80h`, and the
+  pops run from 19FC:0192 (`pop si`) to 0199 (`pop bp`), so the function comment is right. The
+  `mov word ptr cs:[gBestLen],1` at 19FC:0068 carries its note, and the process clauses are gone.
+- The other addresses the comments cite are the instructions they name: mainloop 0053, search 006F, and the
+  fill and match scans at 007E and 00D7.
+- Cross-file names: `Unpack4` is declared at src/E1B82.C:40 with `@ 1D9A:0013`; `_NormFar` is PUBLIC at
+  src/E1BA8.ASM:92 (1BA8:0081); `gBufDCFC` is declared at src/E07A9.C:32 with `@ ds:DCFC`. The files
+  tests/unit/test_wwfmt.py and tools/re/wwfmt.py (`lcw`) and WHITEPAPER 4.2 exist.
+- Caller evidence, rerun: a byte search of eob/EOB.EXE and of every .bin in build/re/eob-overlays for
+  `08 00 E0 00` (segment index 28 as an overlay stores it) finds two hits: build/re/eob-overlays/ovl03.bin at
+  0x1034 (the call at ovl3:1033) and EOB.EXE at 0x3ADB4 (the call at 0x3ADB3, in the FBOV copy). The pattern
+  `08 00 FC 19` is in neither.
+- The argument reads: the only `[bp+n]` uses are at src/E19FC.ASM:99 to 109, and from line 111 bp holds the
+  end pointer. The argument order matches the caller's pushes (ovl3:1021 to 1033).
+- The FEh fill (lines 146 to 153) writes FEh, then the count word, then the byte. The short form packs
+  (length - 3) << 4 with the high nibble of the distance, and the xchg puts that byte first. The literal count
+  runs from 81h to BFh.
+
+### Findings
+
+- [ ] should src/E19FC.ASM:3: "Its only caller is ovl3:0FD1" states more than the search shows. The byte
+  search finds the direct call and any far pointer stored with the same two words, but not a segment or an
+  offset built separately at run time. Say that the only direct call a byte search finds is at ovl3:1033
+  (the caller ovl3:0FD1, eov3_0fd1). Evidence: the two hits above.
+
+- [ ] should src/E19FC.ASM:111-112: `mov bp,si` reuses bp as the end-of-source pointer, so bp is no longer
+  the frame pointer after line 111. The arguments are read only before it (lines 99 to 109), which the
+  function comment does not say. Add that, so a reader does not look for later [bp+n] uses.
+
+- [ ] note re/symbols.toml, the entry for 19FC:0008 (its notes): "split by hand ... not produced by make map"
+  and "functions.py did not see" record how the entry was made. The next reader needs the marker and the
+  entry point, not the pipeline; trim it the next time the entry is edited. Not in src/.
+
+### Summary
+
+The file is understandable from its source alone. I found no must-fix: the round 6 fixes are in, the
+addresses the comments name are the instructions they name, and the names agree with src/ (`_NormFar`,
+`Unpack4`, `gBufDCFC`). The two shoulds are wording: the "only caller" claim should name the byte search it
+rests on, and the reuse of bp should be stated. The names claim no more than the evidence shows.
+`CompressLcw` is an LCW encoder whose tokens Unpack4 decodes; the encoder's own round trip has not run, and
+the header says so. `_f19FC_0007` is the segment-start byte (data). `eov3_0fd1` is the caller, whose unit has
+no src/ file yet. The two unchecked notes from round 6 (work/reviews/e1ba8.md:17 and the eov3 lead) stay
+open for their owners. I did not edit src/.
