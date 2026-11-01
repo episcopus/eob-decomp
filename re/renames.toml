@@ -693,3 +693,12 @@ new = "gPointerBusy"
 kind = "global"
 why = "the word ds:812E is a busy flag, not a lock: 1BB1:0008 and 1BF3:0080 test it then increment it (not atomic), and 1BB1:00C8 and 1BF3:0085 decrement it; SetMousePointerShape and the 1BF3 cursor setters hold it across their work (review of e1bb1)"
 date = "2026-11-01"
+
+[[rename]]
+id = "1DE7:060A=DrawText"
+addr = "1DE7:060A"
+old = ""
+new = "DrawText"
+kind = "function"
+why = "the text console's string renderer: E07A9:010C passes \" taken.\\r\" and this unit's PrintIntText passes a decimal buffer (1DE7:05DF); it is the DrawText the header comment names"
+date = "2026-11-01"

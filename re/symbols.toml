@@ -5493,6 +5493,7 @@ unit = "e1de7"
 addr = "1DE7:060A"
 size = 1082
 evidence = ["far", "frame"]
+name = "DrawText"
 
 [[function]]
 id = "e1e8b_0004"
