@@ -5419,6 +5419,9 @@ unit = "e1de7"
 addr = "1DE7:0009"
 size = 173
 evidence = ["far", "near", "segment"]
+name = "SetTextWindow"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "e1de7_00b6"
@@ -5447,6 +5450,9 @@ unit = "e1de7"
 addr = "1DE7:02FE"
 size = 70
 evidence = ["frame"]
+name = "SetRegionExtents"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "e1de7_0344"

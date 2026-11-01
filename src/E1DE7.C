@@ -1,0 +1,113 @@
+/* Unit at EOB.EXE 1DE7:0009 (2619 bytes, 9 functions): the text console. It keeps a text window
+   (a rectangle of the region table) with its own cursor and colours, draws its border from a tile
+   table, clears and redraws it, and prints strings and integers into it, scrolling at the bottom
+   line. SetTextWindow (1DE7:0009) switches the active window, saving the current one's cursor
+   and colours into its region record; SetTextWindowAndClear (1DE7:00B6) also clears the new
+   one. DrawTextFrame (1DE7:00C9) draws the frame, DrawTileRun (1DE7:025E) the runs of tiles it is
+   built from, SetRegionExtents (1DE7:02FE) writes a record, ClearTextRegion (1DE7:0344) blanks a
+   window, DrawTextLine (1DE7:03B2) draws one line at the cursor, PrintIntText (1DE7:05DF) prints
+   an integer and DrawText (1DE7:060A) renders a string with embedded control codes. Placeholder
+   names until the callers name them. Compiled with -G (the two-byte argument clean-ups are
+   `inc sp; inc sp`). */
+
+/*@flags -ml -O -Z -G */
+
+struct Region {             /* 16 bytes: four edges, then four words of saved state (1DE7:0009) */
+    int left;               /* left edge, in 8-pixel columns */
+    int top;                /* top edge, in pixel rows */
+    int width;              /* width, in 8-pixel columns */
+    int height;             /* height, in pixel rows */
+    int saved0;             /* per-window state copied in and out by SelectTextRegion: two */
+    int saved1;             /* attributes (saved0/saved1) and the cursor column and row (saved2/saved3) */
+    int saved2;
+    int saved3;
+};
+
+extern struct Region gRegions[];  /*@ ds:009F */  /* the region table (src/E1A29.C) */
+extern int gCurRegion;            /*@ ds:8108 */  /* the region selected last (src/E1A29.C) */
+void SelectRegion(int region);    /*@ 1A29:0189 */
+
+/* The active window's live state. SelectTextRegion loads the four edges from the record and puts
+   the record's saved words into the cursor and attribute globals; the drawing routines work from
+   these, not from the record. */
+extern int gTextLeft;      /*@ ds:FE64 */  /* the window's left edge, in 8-pixel columns */
+extern int gTextTop;       /*@ ds:FE66 */  /* the window's top edge, in pixel rows */
+extern int gTextWidth;     /*@ ds:FE62 */  /* the window's width, in 8-pixel columns */
+extern int gTextHeight;    /*@ ds:FE60 */  /* the window's height, in pixel rows */
+extern int gTextAttr1;     /*@ ds:811D */  /* first text attribute, passed to the text routine (saved0) */
+extern int gTextAttr2;     /*@ ds:811B */  /* second text attribute, the colour of the frame and of */
+                                           /* ClearTextRegion's fill (saved1) */
+extern int gTextCol;       /*@ ds:FE52 */  /* cursor column, in font widths (saved2) */
+extern int gTextRow;       /*@ ds:FE54 */  /* cursor row, in font heights (saved3) */
+extern int gTextSaved;     /*@ ds:FEC0 */  /* 0 until the first SelectTextRegion, which then saves the */
+                                           /* window switched away from */
+extern int g811F;          /*@ ds:811F */  /* the current window's record index (src/E07A9.C reads it) */
+extern int g8102;          /*@ ds:8102 */  /* the video mode (src/E07A9.C); 3 and 4 select the 6-bit cells */
+
+/* The tile graphics the frame is drawn from: a cell's byte offset is the tile table's word for
+   the cell shifted by 5 (or, for g8102 3 and 4, 6) and added to this far base. Only read here. */
+extern void far *gTileBuf; /*@ ds:FE56 */
+
+extern unsigned char gFontWidth1A47;  /*@ ds:8100 */  /* font cell width (src/E1A47.C) */
+extern unsigned char gFontHeight1A47; /*@ ds:8101 */  /* font cell height (src/E1A47.C) */
+
+/* ds:805A: a far routine the frame corners are drawn through, called with a tile source far
+   pointer and a cell position (src, x, y). No writer or other caller. */
+extern void (far *gTile805A)(void far *src, int x, int y); /*@ ds:805A */
+/* ds:806A: a far routine called with (x1, y1, x2, y2, colour) like the line routine at ds:8062
+   (src/E1A1F.C); ClearTextRegion and DrawTextLine fill and clip rectangles through it. */
+extern void (far *gRect806A)(int x1, int y1, int x2, int y2, int colour); /*@ ds:806A */
+extern void (far *gDrawText)(char far *text, int a, int b, int c, int d); /*@ ds:80CA */  /* src/E1AA6.C */
+/* ds:8117: a far routine called when the cursor is on the last line of the window (the scroll
+   hook); gScrollOn (ds:8110) gates it. */
+extern void (far *gScroll8117)(void);  /*@ ds:8117 */
+extern int gScrollOn;      /*@ ds:8110 */
+
+/* 1DE7:0009: make `region` (an index into gRegions) the active text window. The first call only
+   sets gTextSaved; after that, the window being left has its live attributes and cursor saved back
+   into its record (the four words after the edges), and the new record's edges and saved words are
+   loaded into the window globals and g811F. Called by many units (07C8, 0ACD, 0DE8, 1C0E, ovl0,
+   ovl1, ovl2, ovl5, ovl6) and by 1DE7:00B6 here. */
+/*@ 1DE7:0009 */ void SetTextWindow(int region)
+{
+    if (gTextSaved) {
+        gRegions[g811F].saved0 = gTextAttr1;
+        gRegions[g811F].saved1 = gTextAttr2;
+        gRegions[g811F].saved2 = gTextCol;
+        gRegions[g811F].saved3 = gTextRow;
+    } else {
+        gTextSaved = 1;
+    }
+    g811F = region;
+    gTextLeft = gRegions[region].left;
+    gTextTop = gRegions[region].top;
+    gTextWidth = gRegions[region].width;
+    gTextHeight = gRegions[region].height;
+    gTextAttr1 = gRegions[region].saved0;
+    gTextAttr2 = gRegions[region].saved1;
+    gTextCol = gRegions[region].saved2;
+    gTextRow = gRegions[region].saved3;
+}
+
+/*@ 1DE7:00B6 stub */ void f1DE7_00B6(void) {}
+/*@ 1DE7:00C9 stub */ void f1DE7_00C9(void) {}
+/*@ 1DE7:025E stub */ void f1DE7_025E(void) {}
+
+/* 1DE7:02FE: write a region record's four edges (left, top, width, height). When `region` is the
+   one currently selected, SelectRegion (1A29:0189) is called to load it into the driver's globals
+   and hand the edges to the driver. Called by ovl4:0066, ovl4:021E and ovl4:1411; the text
+   window's edges (ds:FE60..FE66) are not refreshed by it, only the record is. */
+/*@ 1DE7:02FE */ void SetRegionExtents(int region, int left, int top, int width, int height)
+{
+    gRegions[region].left = left;
+    gRegions[region].top = top;
+    gRegions[region].width = width;
+    gRegions[region].height = height;
+    if (region == gCurRegion)
+        SelectRegion(region);
+}
+
+/*@ 1DE7:0344 stub */ void f1DE7_0344(void) {}
+/*@ 1DE7:03B2 stub */ void f1DE7_03B2(void) {}
+/*@ 1DE7:05DF stub */ void f1DE7_05DF(void) {}
+/*@ 1DE7:060A stub */ void f1DE7_060A(void) {}
