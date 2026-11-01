@@ -4695,6 +4695,9 @@ unit = "e1aad"
 addr = "1AAD:0223"
 size = 363
 evidence = ["near"]
+name = "_TranslateKey"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1aad_038e"
@@ -4702,6 +4705,9 @@ unit = "e1aad"
 addr = "1AAD:038E"
 size = 123
 evidence = ["far"]
+name = "_ReadKey"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1aad_0409"
@@ -4709,6 +4715,9 @@ unit = "e1aad"
 addr = "1AAD:0409"
 size = 104
 evidence = ["far"]
+name = "_ReadKeySpecial"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1aad_0471"
@@ -4716,6 +4725,9 @@ unit = "e1aad"
 addr = "1AAD:0471"
 size = 15
 evidence = ["far"]
+name = "_IsKeyPending"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1aad_0480"
@@ -4723,6 +4735,9 @@ unit = "e1aad"
 addr = "1AAD:0480"
 size = 13
 evidence = ["far"]
+name = "_FlushKeyBuffer"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1aad_048d"
@@ -4730,6 +4745,9 @@ unit = "e1aad"
 addr = "1AAD:048D"
 size = 173
 evidence = ["near"]
+name = "_DequeueKeyEvent"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1aad_053a"
@@ -4737,6 +4755,9 @@ unit = "e1aad"
 addr = "1AAD:053A"
 size = 78
 evidence = ["far"]
+name = "_WaitGameKey"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1aad_0588"
@@ -4744,6 +4765,9 @@ unit = "e1aad"
 addr = "1AAD:0588"
 size = 75
 evidence = ["far"]
+name = "_WaitGameKey2"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1aad_05d3"
@@ -4751,6 +4775,9 @@ unit = "e1aad"
 addr = "1AAD:05D3"
 size = 30
 evidence = ["far"]
+name = "_WaitKeyEvent"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1aad_05f1"
