@@ -58,6 +58,13 @@ struct Size2 {              /* a byte pair, the per-cell width/height tables */
     char h;
 };
 
+struct Cell4 {              /* a four-byte cell definition, x, y, w, h */
+    unsigned char x;
+    unsigned char y;
+    unsigned char w;
+    unsigned char h;
+};
+
 extern int g8102; /*@ ds:8102 */
 extern int g8115; /*@ ds:8115 */
 extern char g811B; /*@ ds:811B */
@@ -80,6 +87,18 @@ extern void far *gThrownIcon2; /*@ ds:FB40 */
 extern void far *gThrownIcon3; /*@ ds:EFB4 */
 extern void far *gThrownIcon4; /*@ ds:EFBE */
 extern char gFileNameBuf[]; /*@ ds:FE6E */
+extern unsigned char g65C0[]; /*@ ds:65C0 */
+extern unsigned char g65C3[]; /*@ ds:65C3 */
+extern struct Cell4 gCellDef65C6[]; /*@ ds:65C6 */
+extern void far *gIntroCells[]; /*@ ds:F4BE */
+extern void far *gIconDD1C; /*@ ds:DD1C */
+extern void far *gIconDD20; /*@ ds:DD20 */
+extern void far *gIconDD24; /*@ ds:DD24 */
+extern void far *gIconDD28; /*@ ds:DD28 */
+extern void far *gIconF2F4; /*@ ds:F2F4 */
+extern void far *gIconDC94; /*@ ds:DC94 */
+extern void far *gIcon8A7E; /*@ ds:8A7E */
+extern void far *gIconTableA92A[]; /*@ ds:A92A */
 extern int gItemCount; /*@ ds:E066 */
 extern int gItemNameCount; /*@ ds:F516 */
 extern unsigned char far gItemNames[]; /*@ 1F28:0000 */
@@ -222,7 +241,7 @@ extern void FileClose(int handle); /*@ 1C0E:03BB */
    out of them through gGetSpriteCell into the icon tables (gItemL1Icons, gItemS1Icons,
    gThrownIcons, gIconsDDE4) and the five single THROWN cells, allocates the 0x12C-byte item
    description buffer (gDF48), then reads ITEMRMP.VGA (g8102 == 3) or ITEMRMP.EGA into gBufF534.
-   Called by Ovl2_0577 right before it loads DECORATE. */
+   Called by LoadDecorateIcons right before it loads DECORATE. */
 /*@ ovl2:0171 */ void LoadItemSheets(void)
 {
     int handle;
@@ -291,8 +310,33 @@ extern void FileClose(int handle); /*@ 1C0E:03BB */
     }
 }
 
-/* ovl2:0577 stub */
-/*@ ovl2:0577 stub */ void Ovl2_0577(void) {}
+/* ovl2:0577: the overlay-8 entry (reached as 2106:0048), leads to the ITEMRMP read. First calls
+   LoadItemSheets, then loads the DECORATE sheet and slices the creature/decoration icons out of
+   it: six cells from the INTRO sheet (ds:113F) into gIntroCells, seven single cells, and the 3x4
+   gIconTableA92A whose cell width comes from g65C0 and y from g65C3. Called by StartupAlloc
+   (07A9:000A). */
+/*@ ovl2:0577 */ void LoadDecorateIcons(void)
+{
+    char i;
+    char j;
+
+    LoadItemSheets();
+    f082C_05EC("DECORATE", 5, 3);
+    for (i = 0; i < 6; i++)
+        gIntroCells[i] = gGetSpriteCell(gCellDef65C6[i].x, gCellDef65C6[i].y,
+            gCellDef65C6[i].w, gCellDef65C6[i].h, gSheet113F);
+    gIconDD1C = gGetSpriteCell(0x1d, 0, 2, 0x10, gSheetDECORATE);
+    gIconDD20 = gGetSpriteCell(0x1f, 0, 2, 0x10, gSheetDECORATE);
+    gIconDD24 = gGetSpriteCell(0x21, 0, 2, 0x10, gSheetDECORATE);
+    gIconF2F4 = gGetSpriteCell(0, 0x58, 4, 0x20, gSheetDECORATE);
+    gIconDC94 = gGetSpriteCell(4, 0x58, 4, 0x20, gSheetDECORATE);
+    gIcon8A7E = gGetSpriteCell(8, 0x58, 4, 0x10, gSheetDECORATE);
+    gIconDD28 = gGetSpriteCell(9, 0x58, 2, 8, gSheetDECORATE);
+    for (i = 0; i < 3; i++)
+        for (j = 0; j < 4; j++)
+            gIconTableA92A[i * 4 + j] = gGetSpriteCell(j * 3, g65C3[i], 3, g65C0[i], gSheetDECORATE);
+    g8115 = 0;
+}
 
 /* ovl2:078D: Purpose unknown. Loads the INTRO sheet into gSheet113F and fills the DROW/creature
    icon tables (through gGetSpriteCell, at ds:F4BE and ds:A92A) after drawing the "intro" panels;
