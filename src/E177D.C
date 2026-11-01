@@ -44,6 +44,33 @@ extern int f17A6_0F61(int x, int y); /*@ 17A6:0F61 */
     f0_03FA();
 }
 
-/*@ 177D:0070 stub */ void f177D_0070(int i) {}
+/*@ 177D:0070 */ void f177D_0070(int i)
+{
+    int c;
+    void far *p;
+
+    if (!g80E6)
+        return;
+    c = gBufDCAC[i];
+    if (c < 0x96) {
+        if (gB892 == 0) {
+            f0_400C(c);
+            return;
+        }
+        if (g9E == 1) {
+            if (c < 0 && g8A67) {
+                g8A67 = 0;
+                f1948_0458();
+            }
+            if (c > 0 && g8A67 == 0) {
+                g8A67 = 1;
+                f1948_0458();
+            }
+        }
+        c &= 0x7f;
+        p = f0_03E3(c);
+        f1948_0418(p);
+    }
+}
 /*@ 177D:00F3 stub */ void f177D_00F3(int a) {}
 /*@ 177D:0106 stub */ void f177D_0106(int a, int b) {}
