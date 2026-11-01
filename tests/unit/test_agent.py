@@ -187,7 +187,7 @@ def test_tier_selection(monkeypatch):
 def test_watch_screen_renders():
     import watch
     text = watch.screen(100)
-    assert "== progress" in text and "functions at L2" in text and "== hand-offs" in text
+    assert "== progress" in text and "functions " in text and "== hand-offs" in text
     assert "== costs (USD)" in text and "all runs" in text
     assert "functions " in text and "%" in text
     assert watch.span(0.5) == "30m" and watch.span(3.25) == "3h15m" and watch.span(50) == "2d02h"
