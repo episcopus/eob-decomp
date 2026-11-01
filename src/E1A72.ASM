@@ -59,12 +59,13 @@
         .CODE
 
 ; 1A72:0006: the INT 3Fh handler main installs (07C8:008F, `setvect(0x3F, 1A72:0006)`; the old
-; vector was saved at DGROUP:FC08 by 07C8:0088). It saves everything, points DS at DGROUP, and,
-; when EOB.EXE can be accessed, closes the file handle kept at 20B5h:00B8h, retries opening the
-; overlay file through 1C0E:1310 (with the indirect helpers at DGROUP:8111 and DGROUP:8104 in
-; between) and reopens EOB.EXE with `open("EOB.EXE", O_RDONLY)`, storing the new handle at
-; 20B5h:00B8h. Every failure path calls 07C8:058A. It always leaves through the saved vector at
-; DGROUP:FC08, so it is a hook around the runtime's overlay trap, not a replacement.
+; vector was saved at DGROUP:FC08 by 07C8:0088) and always leaves through that saved vector, so it
+; is a hook around the runtime's overlay trap. It saves everything, points DS at DGROUP and calls
+; `access("EOB.EXE", 0)`: when that returns zero (the program file is accessible) it goes straight
+; to the chain. Otherwise it closes the file handle kept at 20B5h:00B8h, retries opening EOB.EXE
+; through 1C0E:1310 (with the indirect helpers at DGROUP:8111 and DGROUP:8104 in between) and
+; reopens it with `open("EOB.EXE", O_RDONLY)`, storing the new handle at 20B5h:00B8h; every
+; failing path calls 07C8:058A. Which of the two paths is the normal case is not established.
         PUBLIC  _Int3FHandler           ; @ 1A72:0006
 _Int3FHandler PROC FAR
         push    ax
@@ -418,8 +419,8 @@ _DisableInterrupts ENDP
 
 ; 1A72:02FE: point the far pointer at DGROUP:8172/8174 at the offset in [bp+6] and the segment in
 ; [bp+8]. When the old segment was nonzero it copies 16 bytes from the old target to the new one,
-; with interrupts disabled around the whole sequence. Called from 17A6:0446 with a stack buffer
-; (17A6:0304) and from 17EA:0019 with CS:0304.
+; with interrupts disabled around the whole sequence. Called from the 17A6 unit at 0459 with
+; CS:0304 and at 050D with the buffer whose pointer 17A6:0446 saved through 033A.
         PUBLIC  _SetFarPointer          ; @ 1A72:02FE
 _SetFarPointer PROC FAR
         push    bp
@@ -459,7 +460,8 @@ L0330:  sti
 _SetFarPointer ENDP
 
 ; 1A72:033A: return the far pointer at DGROUP:8172/8174 in DX:AX, with interrupts disabled only
-; around the two loads. Called from 17A6:0446 and 17EA:0006.
+; around the two loads. Called from the 17A6 unit at 0446, which saves the result and passes
+; CS:0304 to 02FE.
         PUBLIC  _GetFarPointer          ; @ 1A72:033A
 _GetFarPointer PROC FAR
         push    bp
