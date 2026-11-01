@@ -254,3 +254,16 @@ def test_apply_takes_names_from_definitions(tmp_path, monkeypatch):
     assert "LockShowPointer();" in (src / "E14EF.C").read_text()
     assert "PickNumber" in (src / "E0001.C").read_text()          # a real name: not overwritten
     assert "gTextAttr2 = 1;" in (src / "E1A16.C").read_text()     # a global: one real name wins
+
+
+def test_blocked_units_leave_the_queue(monkeypatch):
+    fs = [{"unit": "e0001", "addr": "0001:0000", "level": "L2"},
+          {"unit": "e0001", "addr": "0001:0010", "notes": "blocked: a compiler question"},
+          {"unit": "e0002", "addr": "0002:0000", "notes": "draft: not yet"}]
+    assert common.unit_blocked("e0001", fs) and not common.unit_blocked("e0002", fs)
+    monkeypatch.setattr(common, "functions", lambda: fs)
+    monkeypatch.setattr(common, "queue", lambda: ["e0001", "e0002"])
+    monkeypatch.setattr(common, "attempts", lambda: {})
+    monkeypatch.setattr(common, "open_must_fix", lambda uid: [])
+    monkeypatch.setattr(nxt, "busy", lambda key: False)
+    assert nxt.next_unit(1) == "e0002" and nxt.blocked_units() == ["e0001"]

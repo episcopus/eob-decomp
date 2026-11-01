@@ -10,6 +10,8 @@ git worktree {worktree} on branch {branch}; other agents work in other worktrees
    and callees (`make rename` gives one a name everywhere). `make readability UNIT={unit}` checks it.
 4. Never change eob/, build/, docs/spec/, re/inputs.toml, tools/match/, tests/match/negative/ or
    tools/agent/ (the pre-commit hook refuses it). No raw machine code to force a match. No en or em dashes.
+   A difference that no source form produces (a compiler question): `blocked:` in the function's
+   notes with the evidence, and escalate once (playbook 30).
 5. When you are done, or stuck, or have used most of your time: make sure every function of the
    file is matched, a `stub` or a `draft` with a note (`make match FILE=...` exits 0), commit, and
    hand off from this worktree:

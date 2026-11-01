@@ -299,6 +299,9 @@ def screen(width: int) -> str:
             f.get("integrate_reason") or f.get("note", ""), max(width - 56, 20))))
 
     stuck = nxt.stuck()
+    for u in nxt.blocked_units():
+        stuck.append("%s (blocked: %s)" % (u, ", ".join(f["addr"] for f in common.unit_functions(u)
+                                                         if common.blocked(f))))
     att = {u: a for u, a in common.attempts().items() if u not in stuck}
     if stuck or att:
         out.append(section("attempts without progress", width))
