@@ -47,46 +47,55 @@ What I checked (read-only; no game run; no source edited):
 Each finding is a checkbox. `must-fix` blocks `make review-pass` until a decompiler ticks it off
 (with the commit that fixes it); `should` and `note` do not block.
 
-- [ ] must-fix src/E19FC.ASM:61-62: the function comment says "on return DS:SI points at the source end
+- [x] must-fix src/E19FC.ASM:61-62: the function comment says "on return DS:SI points at the source end
   and ES:DI just past the output". The code does not leave those registers that way: the epilogue pops
   si, es, ds and di (src/E19FC.ASM:228-233), so on return SI, ES, DS and DI are the caller's values
   from entry. Only AX is the result (AX = bytes written, set at lines 226-227). Say that SI, ES, DS and
   DI are preserved and that AX is the only result, and drop the claim about the source end and the output
-  end.
+  end. Fixed in 081be14: the comment now says the epilogue restores SI, ES, DS and DI to the caller's
+  values, so AX is the only result.
 
-- [ ] must-fix src/E19FC.ASM:14 (and the same citation in `re/renames.toml`, the WHY of the
+- [x] must-fix src/E19FC.ASM:14 (and the same citation in `re/renames.toml`, the WHY of the
   `19FC:0008=CompressLcw` rename, line 703): "Unpack4 (1D9A:0013, src/E1B82.C:22)". Line 22 of
   src/E1B82.C is the closing `} WorkBuffer;` of the union. Unpack4 is declared at src/E1B82.C:39
   (`extern void Unpack4(char far *src, void far *dst, int len); /*@ 1D9A:0013 */`). Cite :39. The
   registry's WHY goes through `make rename` (or the rename entry in `re/renames.toml`, as the decompiler
-  sees fit); the source line goes in src/E19FC.ASM.
+  sees fit); the source line goes in src/E19FC.ASM. Fixed in 081be14: src/E19FC.ASM:2 and the
+  re/renames.toml WHY now cite src/E1B82.C:39, and the WHY records that :22 was the union's closing
+  brace.
 
-- [ ] should src/E19FC.ASM:123: the comment "FEh fill: count, byte" is a little short of what is
+- [x] should src/E19FC.ASM:123: the comment "FEh fill: count, byte" is a little short of what is
   emitted. The code writes FEh (stosb at 124), then the count as a word (xchg/stosw at 125-126), then the
   byte (mov al,ch / stosb at 127-128). The header (lines 18-19) says "a count word then the byte".
-  Write "FEh fill: count word, byte" so the comment matches the layout.
+  Write "FEh fill: count word, byte" so the comment matches the layout. Fixed in 081be14: the comment
+  now reads "FEh fill: count word, byte".
 
-- [ ] note src/E19FC.ASM:43-46: "the map marks a code segment's first byte as a function, as in 1BA8:0005
+- [x] note src/E19FC.ASM:43-46: "the map marks a code segment's first byte as a function, as in 1BA8:0005
   and 1BF3:000D" states a convention that is not shown here. The evidence that settles 19FC:0007 is in the
   segment table: the unit at 19F3:000E is 137 bytes (segment 27 of `build/re/eob.json`, start 106302),
   so it ends at 19F3:0097, which is linear 106439. That is the byte 19FC:0007 (19FC is para 6652, linear
   106432, so 19FC:0000..0006 are the same linear bytes as 19F3:0090..0096, the 19F3 unit's last bytes).
   So the 00 at 19FC:0007 is the first byte after the 19F3 unit, and it is the 19FC segment's first byte in
   the table. Saying so would tell the next reader why the marker is data and where the segment starts.
+  Fixed in 081be14: the header now cites segment 27 of build/re/eob.json (start 106302, 137 bytes,
+  ends 106439 = 19FC:0007) and drops the unshown convention claim.
 
-- [ ] note src/E19FC.ASM:92-95 and the header: the encoder writes the first literal (81h, then one source
+- [x] note src/E19FC.ASM:92-95 and the header: the encoder writes the first literal (81h, then one source
   byte) before it tests the length, so a length of 0 does not give an empty stream; it gives a stream that
   copies bytes at and past the source start. Read from the code, not run. The header says nothing about
   the length (it says a caller keeps both buffers inside 64 KiB). Add "the length must be at least 1" to
-  the limits at lines 36-41.
+  the limits at lines 36-41. Fixed in 081be14: the limits paragraph now requires a length of at least 1
+  and says a length of 0 copies bytes at and past the source start.
 
-- [ ] note src/E19FC.ASM:157-159 and 116-126: the match length is one short when a run reaches the end of
+- [x] note src/E19FC.ASM:157-159 and 116-126: the match length is one short when a run reaches the end of
   the source. After `repe cmpsb` (or `repe scasb` for a fill) runs out of count, DI is one past the last
   compared byte, not on a mismatch, but `ax = di - bx` (and `dec di`) assume a mismatch, so the length is
   n - 1 for a match that runs to bp. The output is still correct, since the last byte becomes a literal or
   a shorter match. The original keeps the same bytes, so this is the original's behaviour, not a
   decompile error; the header says nothing that would contradict it, but a reader who expects a maximal
-  match should be told. Read from the code, not run.
+  match should be told. Read from the code, not run. Fixed in 081be14: the header carries QUIRK
+  19FC:007E / 19FC:00D7 with the one-short case and why the output stays correct, and the two string
+  instructions point at it.
 
 ## Summary
 

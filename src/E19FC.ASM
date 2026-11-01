@@ -1,5 +1,5 @@
 ; Unit at EOB.EXE 19FC:0007 (420 bytes, 1 function), kind asm [H] by the map. The one function is
-; CompressLcw (19FC:0008), the inverse of Unpack4 (1D9A:0013, src/E1B82.C:22): an LCW encoder for
+; CompressLcw (19FC:0008), the inverse of Unpack4 (1D9A:0013, src/E1B82.C:39): an LCW encoder for
 ; the format-4 compressed files of whitepaper 4.2. What the encoder is for in the game is unknown:
 ; no caller was found (see the note below).
 ;
@@ -38,12 +38,24 @@
 ; longer matches take FFh; literal runs are capped at 3Fh bytes (a full count byte starts a new
 ; 80h run). All offsets are 16 bits from the normalised starts, and add bp,dx (end of the source)
 ; wraps at 10000h when offset + length passes FFFFh; the output has the same limit. A caller must
-; keep both buffers inside 64 KiB from their normalised starts.
+; keep both buffers inside 64 KiB from their normalised starts, and pass a length of at least 1: the
+; first literal (81h plus one byte) is written before any length test, so a length of 0 copies bytes
+; at and past the source start instead of producing an empty stream.
 ;
-; The map's segment starts at 19FC:0007, a lone 00 byte that is data, not code (the map marks a code
-; segment's first byte as a function, as in 1BA8:0005 in src/E1BA8.ASM and 1BF3:000D); it is emitted
-; as a public byte symbol (_f19FC_0007) so the registry records it at L2, and CompressLcw starts at
-; 19FC:0008 with the same 419 code bytes. The unit stays 420 bytes.
+; QUIRK 19FC:007E and 19FC:00D7: when a run of equal bytes reaches the end of the source, repe scasb
+; (the fill scan) or repe cmpsb (the match extension) runs out of count with DI one past the last
+; compared byte, not on a mismatch, but the length is computed as DI - start (after the dec di at
+; 19FC:0080 for the fill), so such a match is one byte short of the run. The encoded output is still
+; correct, because the last byte is then emitted as a literal or a shorter match. This is the
+; original's behaviour, not a decompile error.
+;
+; The map's segment starts at 19FC:0007, a lone 00 byte that is data, not code: the segment table
+; (build/re/eob.json) has the 19F3 unit (segment 27, start 106302) at 137 bytes, so it ends at
+; 106439, which is 19FC:0007 (19FC is paragraph 6652, linear 106432; 19FC:0000..0006 repeat the
+; 19F3 unit's last seven bytes). The 00 is therefore the first byte after the 19F3 unit and the
+; 19FC segment's first byte in the table. It is emitted as a public byte symbol (_f19FC_0007) so
+; the registry records it at L2, and CompressLcw starts at 19FC:0008 with the same 419 code bytes.
+; The unit stays 420 bytes.
 
         .MODEL  LARGE
 
@@ -58,8 +70,8 @@ _f19FC_0007 LABEL BYTE                   ; @ 19FC:0007
 ; 19FC:0008: encode. Arg 1 at [bp+6]/[bp+8] is the source far pointer, arg 2 at [bp+0Ah]/[bp+0Ch] the
 ; destination, arg 3 at [bp+0Eh] the source length in bytes. Returns AX = the number of bytes written
 ; to the destination, the whole stream (the leading 81h byte and the trailing 80h end byte included).
-; Reads and writes the eight cs: state words declared below; on return DS:SI points at the source end
-; and ES:DI just past the output.
+; Reads and writes the eight cs: state words declared below; the epilogue restores SI, ES, DS and DI
+; to the values the caller had, so AX is the only result.
         PUBLIC  _CompressLcw             ; @ 19FC:0008
 _CompressLcw PROC FAR
         push    bp
@@ -109,7 +121,7 @@ search:                                 ; 19FC:006F
         mov     di,si
         mov     cx,bp
         sub     cx,di
-        repe    scasb                   ; scan the equal run
+        repe    scasb                   ; scan the equal run; one short at bp (QUIRK 19FC:007E)
         dec     di
         mov     cx,di
         sub     cx,si
@@ -120,7 +132,7 @@ search:                                 ; 19FC:006F
         mov     es,cs:[gOutSeg]
         mov     di,cs:[gOutPtr]
         mov     ah,al
-        mov     al,0feh                 ; FEh fill: count, byte
+        mov     al,0feh                 ; FEh fill: count word, byte
         stosb
         xchg    cx,ax
         stosw
@@ -148,7 +160,7 @@ nextcand:                               ; 19FC:00B6
         dec     di
         mov     cx,bp
         sub     cx,si
-        repe    cmpsb                   ; extend the match
+        repe    cmpsb                   ; extend the match; one short at bp (QUIRK 19FC:00D7)
         mov     si,dx
         mov     ax,di
         sub     ax,bx
