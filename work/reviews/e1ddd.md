@@ -1,7 +1,7 @@
-# Review: e1ddd
+# Review: <unit id>
 
 Reviewer: rev-sonnet
-Commit reviewed: 6c10036cf37829ec15d8f063a0782ba7546639b6
+Commit reviewed: 780ddb57e1299c491e644bec4a67634956072240
 
 Playbook 70. Judge what a matching file can still get wrong: names, types, comments, structure.
 The matcher already proved the bytes; do not re-prove them, read for meaning.
@@ -11,24 +11,17 @@ The matcher already proved the bytes; do not re-prove them, read for meaning.
 Each finding is a checkbox. `must-fix` blocks `make review-pass` until a decompiler ticks it off
 (with the commit that fixes it); `should` and `note` do not block.
 
-- [x] must-fix src/E1DDD.C:1-2 and :11: the header calls the first argument of 0000:60BD "the count 16" and the prototype names it `n`. It is the interrupt number (10h, the video BIOS), not a count. Evidence: 0000:60BD is Borland `int86(intno, in, out)`: it calls 0000:66BB (segread: stores es, cs, ss, ds into an 8 byte buffer) and then 0000:60EF with the same intno, the two register unions and that buffer (int86x). 0000:60EF builds an `int N` stub on its stack: byte 0xCD at [bp-0xd] (0000:6105), N = low byte of [bp+6] (0000:6109..610C), then `lcall [bp-4]` at 0000:614B; the 0x25/0x26 test at 6114 is the absolute disk read/write special case. WHITEPAPER 3 (line 111) already says the mode number goes "through `int86` (1DDD:002D)". Rename the parameter (`intno`) and fix the comment.
-  Fixed in ee48384. The prototype is now `extern void f60BD(int intno, void far *inregs, void far *outregs);` and the header describes 0000:60BD as Borland `int86(intno, inregs, outregs)` with the segread at 66BB, the `int N` stub at 60EF and the 25h/26h case, as in the finding.
-- [x] must-fix src/E1DDD.C:5-6: the claim "the caller passes 7, so it always calls" is not supported. With i = 7 the code takes the else branch (ds:84A0) and then compares `g84A2[7]`, which is ds:84B0, one word past the 7 word table at 84A2..84AE (the image holds 0 there, 84A2..84AE are 4,9,0Dh,13h,13h,7,2), against ds:84A0. It calls only when ds:84A0 differs from the word at ds:84B0 (initially 0); ds:84A0 is argv[5], "the video mode restored on exit" (WHITEPAPER 115), so a restore mode of 0 would skip the call. All four callers push 7 (07C8:0199 via the table setup, 07C8:0625 at 0628, 19BC:02B6 at 02B9; 07C8:058A to be checked by the decompiler). Say what the code does (reads one word past the table; reads ds:84B0), and state that "always calls" holds only when ds:84A0 is nonzero. Also record that the table has 7 entries (84A2..84AE), so `g84A2[]` is unbounded in the declaration.
-  Fixed in ee48384. The "always calls" claim is gone. The header now says the comparison reads `g84A2[7]` = ds:84B0, one word past the 7 entry table (g84A2[] is unbounded here), that ds:84B0 is 0 in the image, and that the call therefore happens only when ds:84A0 is nonzero. Re-checked the table in the image (ds:84A2..84AE = 4, 9, 0Dh, 13h, 13h, 7, 2; ds:84B0 = 0).
-- [x] should src/E1DDD.C:3-4: now that 60BD is known to be int86 with intno 10h, say what the unit does: f1DDD_0006 is INT 10h AH=0Fh (get current video mode), returns AL (AH of ds:FF46 is 0Fh, the word is AX in; ds:FF36 is the out AX). f1DDD_002D is INT 10h AH=00h (set video mode) with AL = the mode from the table. FF46/FF36 are the in and out `union REGS` (only .x.ax is used, but they are a 16 byte union REGS if the neighbours at FF46/FF36 are laid out so; the file declares one word each). Names can stay placeholders, but they should be noted as [H] with this evidence.
-  Fixed in ee48384. The header now names f1DDD_0006 as INT 10h AH=0Fh (get mode, returns AL) and f1DDD_002D as INT 10h AH=00h (set mode, AL = the mode from ds:84A2 or ds:84A0), and calls ds:FF46/ds:FF36 the in and out register union with the 16 byte union REGS note tagged [H]. Names stay placeholders.
-- [x] should src/E1DDD.C:11: `f60BD` returns AX (int86 returns the output ax) but is declared void; callers here ignore it, fine, but note it is deliberate.
-  Fixed in ee48384. A line before f1DDD_0006 now records that int86 returns the output AX and that the void here is deliberate because both callers ignore it.
-- [x] note 1DDD:0000..0005 are 6 bytes before the first function (pop dx, cx, bx, ax, pop bp, retf): code, not padding, and not covered by the file (the unit starts at 1DDD:0006). Evidence 'segment' only; the next reader should find out whether it is a stub that Westwood's assembly shares.
-  Recorded in ee48384: the header states the 6 bytes at 1DDD:0000..0005 (pop dx, cx, bx, ax; pop bp; retf) are code, not padding, and outside this unit.
-- [ ] note `make match FILE=src/E1DDD.C` exits 0: 2 of 2 functions match, unit complete 106 bytes.
+Second review round. The first round (commits a3ca08c, b6bbb6b in git history) failed the unit on
+the int86 argument and an "always calls" claim; both were fixed (ee48384) and I re-read them against
+the bytes: they are right now (0000:60BD pushed as int86(0x10, &FF46, &FF36) at 1DDD:0019..001D and
+0061..0065; ds:84A2..84AE = 4,9,0D,13,13,7,2 and ds:84B0 = 0 in the image).
+
+- [ ] must-fix src/E1DDD.C:13: "The callers pass i = 7, so that comparison reads g84A2[7]" is wrong as a general statement. The image has 8 far calls to 1DDD:002D (bytes 9a 2d 00 dd 1d at file offsets 0xa648, 0xa668, 0xa6b2, 0xa6e9, 0xa9a8, 0xaa6c, 0xaaac, 0x1c67d). Six push 7 (07C8:01C4, 0265, 0524, 05E8, 0628 and 19BC:02B9). Two push the word ds:8102 (the graphics mode argv[1][0] reduced by '1', WHITEPAPER 111): 07C8:01E4 (`push word ptr [0x8102]` then lcall 1DDD:002D) and 07C8:022E (same). Those two are the in range case that takes the mode from the ds:84A2 table, and the compare against ds:84A0 then really reads a table entry (call skipped when the video mode is already the restore mode). The comment describes only the i = 7 case and the review text "all four callers push 7" in the previous round was also incomplete. Say: callers push either 7 (6 sites, the restore case: the else branch, g84A2[7] = ds:84B0 = 0, calls only when ds:84A0 is nonzero) or ds:8102 (2 sites, 07C8:01E4 and 022E, the table case).
+- [ ] should src/E1DDD.C:11-12: "the word at ds:84A0 (argv[5] ...)". Confirmed it is a word: 07C8:0074 calls 0000:5D63 with the far string pointer argv[5] and stores only AX at 07C8:007B (`mov [84A0], ax`, DX is not stored). WHITEPAPER 115 calls it `atol`; the bytes show a word store, so 5D63 looks like atoi (an int result). The C file is right; the whitepaper line is the thing to fix (not in scope for a unit branch). Keeping the word type in the file is correct; maybe say "atoi-like, int result [H]".
+- [ ] note f1DDD_0006 (get video mode) has no direct far call in the image (no bytes 9a 06 00 dd 1d); it may be dead code or reached some other way. Its name stays a placeholder; nothing here is wrong.
+- [ ] note f1DDD_002D semantics worth recording once a name is wanted: at the table path (i < 7) it is "set video mode i unless it equals the restore mode"; at i = 7 it is "restore the mode in ds:84A0" (and skips when ds:84A0 is 0, which is the image default before argv[5] is parsed). The code is not a bug, it is how the original reads past the table.
+- [ ] note `make match FILE=src/E1DDD.C` exits 0 here: 2 of 2 functions match, unit complete 106 bytes. Code reading for meaning (types, unsigned for mode words, f60BD void with a comment, int return for f1DDD_0006 returning AL masked to 8 bits) is fine.
 
 ## Summary
 
-The file matches and is short enough to read, but its header misreads the rtl call: 0000:60BD is `int86`, its first argument is the interrupt number 10h (not a count), so the unit is a pair of video mode BIOS calls (get mode, set mode from the ds:84A2 table), and the "always calls" remark hides a one word read past the table. Names are placeholders with no must-fix in themselves; the two must-fix items are comment and parameter name corrections.
-
-Resolution (dec-deepseek-3, ee48384): the two must-fix items are done in that commit, and the two
-should items and the note on 1DDD:0000..0005 as well. Comment and parameter-name only, no code
-change; `make match FILE=src/E1DDD.C` still reports 2 of 2 functions and unit e1ddd complete
-(ours 106 bytes, the unit 106). The table and the byte past it were re-read in the image:
-ds:84A2..84AE = 4, 9, 0Dh, 13h, 13h, 7, 2 (7 entries) and ds:84B0 = 0.
+The unit is two INT 10h video mode calls through Borland int86 and is understandable from the header, except that the header misstates which arguments reach f1DDD_002D: it says the callers pass 7, but two of the eight sites pass ds:8102 and use the table. That one comment is a must-fix, no code change needed. Names stay placeholders (no evidence of the callers' roles beyond the whitepaper), which is fine.
