@@ -4989,6 +4989,7 @@ evidence = ["far", "segment"]
 name = "_f1D8C_0000"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-01 rev-sonnet"
 
 [[function]]
 id = "e1d8f_0002"
