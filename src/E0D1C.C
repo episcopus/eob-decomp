@@ -11,7 +11,8 @@
 struct CharRec {            /* 243-byte (0xF3) character records at ds:F580; see src/E0A72.C */
     char pad00;
     unsigned char m01;      /* +01 */
-    char pad02[0x17 - 0x02];
+    char name[0x0B];        /* +02: the character's name, NUL padded (src/EOV6.C) */
+    char pad0D[0x17 - 0x0D];
     signed char m17;        /* +17 */
     char pad18[0x1B - 0x18];
     signed char m1B;        /* +1B */
@@ -106,6 +107,19 @@ extern struct Entry14 gTable8DD2[]; /*@ ds:8DD2 */
 extern char gFB44; /*@ ds:FB44 */            /* a mode byte: 0 and 1 gate 0D1C:01CA's redraws */
 extern int gFBCE; /*@ ds:FBCE */             /* the item index shown by the mouse (src/E07A9.C) */
 extern int gMouseDisabled; /*@ ds:814A */    /* nonzero disables the mouse (src/E07A9.C) */
+extern int gFBC8; /*@ ds:FBC8 */             /* the current action: 2 or 7 gates the turn-undead
+                                                effect (0D1C:0A43); other units set it too */
+extern int gF518; /*@ ds:F518 */             /* set to 1 while an object is being turned (0D1C:0A43) */
+extern char gFileNameBuf[]; /*@ ds:FE6E */   /* the text buffer sprintf formats into (src/EOV2.C) */
+
+extern void f08E6_17FD(int far *list, int key, int field, char flags, char scanAll, char scanFiltered); /*@ 08E6:17FD */
+/* fills `list` with the gObjs indices whose m02 equals key, terminated by -1; flags, scanAll
+   and scanFiltered select the scan (Purpose unknown) */
+extern void f0EF3_06E7(void); /*@ 0EF3:06E7 */
+extern void f08E6_0E48(void); /*@ 08E6:0E48 */
+extern void PlaySound(int sound); /*@ 177D:0070 */
+extern void DrawText(char far *text); /*@ 1DE7:060A */
+extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
 
 extern void f1547_0991(int dir); /*@ 1547:0991 */
 extern void f1547_07E7(char who, char slot); /*@ 1547:07E7 */
@@ -239,7 +253,8 @@ int f0D1C_02DC(void);
 
     rec = &gChars[who];
     for (i = 25; i <= 26; i++) {
-        if (item = rec->m77[i]) {
+        item = rec->m77[i];
+        if (item) {
             if (gTable8DD2[item].m02 == 0x2F && gTable8DD2[item].m0B == fieldB)
                 return 1;
         }
@@ -488,10 +503,8 @@ int f0D1C_02DC(void);
    accepted it. Otherwise it returns 0 when slot 0 holds an item whose gA9F5[m02].m01 is 2, then
    1 when slot 1 is empty, and for a slot-1 item whose gA9F5[m1].m09 (low 7 bits) is 1, 2 or 3,
    0 when gA9F5[m1].m01 is nonzero, else the slot-1 result. Called by 0BD2:1001, 0DE8:0D5E and
-   1547:07E7. Placeholder: what the values mean is not established. DRAFT: matches every byte
-   except that the compiler lays the `A <= 0 || A >= 4` return out with a two-byte trampoline
-   (0D1C:0897 `jmp`); the original branches straight to the shared return. */
-/*@ 0D1C:07DB draft */ int f0D1C_07DB(int who, int flag)
+   1547:07E7. Placeholder: what the values mean is not established. */
+/*@ 0D1C:07DB */ int f0D1C_07DB(int who, int flag)
 {
     int slot0;
     int result0;
@@ -512,10 +525,11 @@ int f0D1C_02DC(void);
         return 0;
     if (slot1 == 0)
         return 1;
-    if ((gA9F5[m1].m09 & 0x7f) <= 0 || (gA9F5[m1].m09 & 0x7f) >= 4)
-        return result1;
-    if (gA9F5[m1].m01 != 0)
+    if ((gA9F5[m1].m09 & 0x7f) > 0 && (gA9F5[m1].m09 & 0x7f) < 4) {
+        if (gA9F5[m1].m01 == 0)
+            return result1;
         return 0;
+    }
     return result1;
 }
 /* 0D1C:08B1: Purpose unknown: returns 1 when one of the first two carried items of the character
@@ -564,43 +578,99 @@ int f0D1C_02DC(void);
                 bestVal = rec->m24[slot];
                 best = who;
             }
-            continue;
-        }
-        slot = FindClassSlot(4, rec->m20);
-        if (slot == -1)
-            continue;
-        if (rec->m24[slot] - 2 > bestVal) {
-            bestVal = rec->m24[slot] - 2;
-            best = who;
+        } else {
+            slot = FindClassSlot(4, rec->m20);
+            if (slot == -1)
+                continue;
+            if (rec->m24[slot] - 2 > bestVal) {
+                bestVal = rec->m24[slot] - 2;
+                best = who;
+            }
         }
     }
     return (best << 8) + bestVal;
 }
 /* 0D1C:09CB: Purpose unknown: a per-object check. It takes the object's ds:1A3B record's m19 as
-   a row and GetClampedTableByte(b, m19) as a value; a value of -1 calls f08E6_0FBE(obj, 100) and
-   returns 1. Otherwise, when `a` is below the value it returns 0; else it sets bit 3 of
-   obj->m16, stores (f17A6_0314(obj->m02, gSoundVolume) ^ 4) >> 1 in obj->m05 and returns 1.
-   Called by 0D1C:0A43 and 17A6. DRAFT: matches every byte except the block ordering of the two
-   `return 1` paths (the original falls the success path into the shared return; ours jumps to it
-   after the -1 path), a one-byte difference. */
-/*@ 0D1C:09CB draft */ int f0D1C_09CB(struct Obj28 far *obj, int threshold, int column)
+   a row and GetClampedTableByte(column, m19) as a value. A value of -1 calls f08E6_0FBE(obj, 100)
+   and returns 1. Otherwise, when `threshold` is below the value it returns 0; else it sets bit 3
+   of obj->m16, stores (f17A6_0314(obj->m02, gSoundVolume) ^ 4) >> 1 in obj->m05 and returns 1.
+   Called by 0D1C:0A43 and 17A6. */
+/*@ 0D1C:09CB */ int f0D1C_09CB(struct Obj28 far *obj, int threshold, int column)
 {
     int row;
     int value;
 
     row = gTable1A3B[obj->b0].m19;
     value = GetClampedTableByte(column, row);
-    if (value == -1) {
-        f08E6_0FBE(obj, 100);
-    } else if (threshold < value) {
-        return 0;
+    if (value != -1) {
+        if (threshold >= value) {
+            obj->m16 |= 8;
+            obj->m05 = (f17A6_0314(obj->m02, gSoundVolume) ^ 4) >> 1;
+            return 1;
+        }
     } else {
-        obj->m16 |= 8;
-        obj->m05 = (f17A6_0314(obj->m02, gSoundVolume) ^ 4) >> 1;
+        f08E6_0FBE(obj, 100);
+        return 1;
     }
-    return 1;
+    return 0;
 }
-/*@ 0D1C:0A43 stub */ void f0D1C_0A43(void) {}
+/* 0D1C:0A43: the "turn undead" action. When gFBC8 is 2 or 7 it derives a ten-bit key from
+   gSoundVolume and gFBCC (f0D1C_00DA) and requires gB894[key * 9 + 4] & 7 to be nonzero, then
+   asks f0D1C_0903 for the best qualifying party member (its low byte the member's value, its
+   high byte the member's index) and rolls 1d20. It lists the objects whose ds:8DD2 record's m02
+   equals key (f08E6_17FD) and, for each object whose ds:1A3B record's m0F has bit 2 set and whose
+   m16 has bit 4 clear, sets gF518, marks the object (m16 |= 0x10) and runs f0D1C_09CB(obj, roll,
+   member value), ORing the results. When any object turned it formats "%s uses the power to turn
+   undead!" (ds:550E) with the best member's name, draws it, plays sound 0x5F and runs 0EF3:06E7
+   and 08E6:0E48. gF518 is cleared at the end on the normal path. Called by 0ACD:0E8A. DRAFT:
+   matches every byte except one idiom in the m0F test (below). */
+/*@ 0D1C:0A43 draft */ void TurnUndead(void)
+{
+    struct Obj28 far *obj;
+    int key;
+    int value;
+    int list[5];
+    int roll;
+    int turned;
+    int memberVal;
+    int member;
+    unsigned packed;
+    int i;
+
+    if (gFBC8 != 2 && gFBC8 != 7)
+        return;
+    turned = 0;
+    key = f0D1C_00DA(gSoundVolume, gFBCC);
+    value = (unsigned char)gB894[key * 9 + 4] & 7;
+    if (value == 0)
+        return;
+    packed = f0D1C_0903();
+    if (packed == 0)
+        return;
+    memberVal = packed & 0xff;
+    member = (packed & 0xff00) >> 8;
+    f08E6_17FD(list, key, 4, 4, 1, 1);
+    roll = RollDice(1, 20, 0);
+    for (i = 0; i < 5; i++) {
+        if (list[i] == -1)
+            break;
+        obj = &gObjs[list[i]];
+        if ((gTable1A3B[obj->b0].m0F & 4) && !(obj->m16 & 0x10)) {
+            gF518 = 1;
+            obj->m16 |= 0x10;
+            turned |= f0D1C_09CB(obj, roll, memberVal);
+        }
+    }
+    if (turned) {
+        sprintf(gFileNameBuf, "\x06\x06%s uses the power to turn undead!\x06\x0f\r",
+                gChars[member].name);
+        DrawText(gFileNameBuf);
+        PlaySound(0x5F);
+        f0EF3_06E7();
+        f08E6_0E48();
+    }
+    gF518 = 0;
+}
 /* 0D1C:0BAB: Purpose unknown: a percentage check on the object `obj`: through gObjs[obj].b0 it
    reads gTable1A3B[b0].m1A and returns 1 when RollDice(1, 100, 0) is below it, otherwise 0.
    Called by 0DE8:0359. */

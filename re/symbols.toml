@@ -2356,6 +2356,7 @@ unit = "e0d1c"
 addr = "0D1C:0163"
 size = 103
 evidence = ["far", "frame"]
+notes = "draft: matches every byte except that the original reloads `item` into AX before the first multiply (0D1C:018A `mov ax,di`, 2 bytes); ours forwards the AX left by the test. Tried `if (item = rec->m77[i])`, separate assignment + `if (item)`, `if (item == 0) continue`, `if (item != 0 && ...)`, `register int item`, a `while` loop, an `int i; int item;` declaration order, and a `rec->m77[i] && (item = rec->m77[i])` form, all either identical or worse. A TCC peephole keeps AX live across the test."
 
 [[function]]
 id = "e0d1c_01ca"
@@ -2463,6 +2464,9 @@ unit = "e0d1c"
 addr = "0D1C:07DB"
 size = 214
 evidence = ["far", "frame"]
+name = "f0D1C_07DB"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0d1c_08b1"
@@ -2480,6 +2484,7 @@ unit = "e0d1c"
 addr = "0D1C:0903"
 size = 200
 evidence = ["near", "frame"]
+notes = "draft: TCC cross-jumps the two identical `bestVal = ...; best = who;` tails (0D1C:099F) into one shared block with a jump, 8 bytes shorter; the original keeps the pair inline in each branch. Tried if/else, two `continue`s, `goto`, `else if ((slot = ...) != -1)`, combining the slot test with `&&`, swapping the branch order, and assigning `best` before `bestVal`; TCC still merges. Same class as 0ACD:091C and 14EF:0274 (the matcher's internal assembler cross-jumps identical basic blocks; -B/TASM does not, but -B breaks DrawRowList in this unit)."
 
 [[function]]
 id = "e0d1c_09cb"
@@ -2487,6 +2492,9 @@ unit = "e0d1c"
 addr = "0D1C:09CB"
 size = 120
 evidence = ["near", "frame"]
+name = "f0D1C_09CB"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0d1c_0a43"
@@ -2494,6 +2502,7 @@ unit = "e0d1c"
 addr = "0D1C:0A43"
 size = 360
 evidence = ["far", "frame"]
+notes = "draft: matches every byte except the m0F test at 0D1C:0B17 (original `mov ax,word [bx+0x1a4a]; and ax,4; or ax,0; je`, ours folds it to `test word [bx+..],4`). Tried plain `if (m0F & 4)`, `!= 0`, `!(m0F & 4)`, `== 0`, `== 4`, `> 0`, `&& !(m16 & 0x10)`, nested ifs, `| 0`, `^ 0`, `+ 0`, `!!`, `4 & m0F`, unsigned/volatile field, and TCC -S experiments: the and/or form needs an OR with a runtime zero, so the source idiom is not yet found. TCC's `or ax,0` (0D 00 00) is distinct from `or ax,ax` (0B C0) and appears 44 times in EOB.EXE (08E6:106B, 0EF3:13xx, 0D1C same)."
 
 [[function]]
 id = "e0d1c_0bab"
