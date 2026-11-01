@@ -11,7 +11,7 @@
 ; smart code generation would turn into a MOV; NOSMART keeps the LEA.
 
         .MODEL  LARGE
-        NOSMART
+        EXTRN   _gOverlayIndex:BYTE      ; @ 20C1:0000 (segment 20C1, the overlay index table)
         .CODE
 
         PUBLIC  _f1E8B_0004              ; @ 1E8B:0004 stub
@@ -24,10 +24,51 @@ _f1E8B_000F PROC FAR
         ret
 _f1E8B_000F ENDP
 
-        PUBLIC  _f1E8B_0134              ; @ 1E8B:0134 stub
-_f1E8B_0134 PROC FAR
-        ret
-_f1E8B_0134 ENDP
+        NOSMART                          ; 0134, 01A7, 01F3 and 0250 contain LEA of an absolute address,
+                                         ; and 0185 a far call the smart code generator would shorten
+; 1E8B:0134: swap and (re)open the overlay file. It saves the current INT [20B5:00A1] vector,
+; installs the previously saved one from 20B5:0004:0002, stashes the one just read for the next swap,
+; then closes the file handle at 20B5:00B8 and reopens the file named in the 20B5:001C buffer (or
+; opens it when no handle is open). This is the pair to the shutdown path of 0185. Evidence: INT
+; 21h/35h and /25h, the 20B5:00A1 interrupt number, the [0002]/[0004] vector store and the 3Eh/3Dh
+; file calls.
+        PUBLIC  _SwapAndReopenOverlayFile              ; @ 1E8B:0134
+_SwapAndReopenOverlayFile PROC FAR
+        push    bp
+        mov     bp,sp
+        push    ds
+        mov     ds,word ptr cs:[4]
+        mov     al,ds:[0A1h]
+        mov     ah,35h
+        int     21h
+        push    es
+        push    bx
+        push    ds
+        mov     al,ds:[0A1h]
+        mov     dx,ds:[2]
+        mov     ds,ds:[4]
+        mov     ah,25h
+        int     21h
+        pop     ds
+        pop     word ptr ds:[2]
+        pop     word ptr ds:[4]
+        cmp     word ptr ds:[0B8h],0
+        je      short swap_open
+        mov     bx,ds:[0B8h]
+        mov     ah,3Eh
+        int     21h
+        mov     word ptr ds:[0B8h],0
+        jmp     short swap_out
+swap_open:
+        lea     dx,ds:[1Ch]
+        mov     ax,3D00h
+        int     21h
+        mov     ds:[0B8h],ax
+swap_out:
+        pop     ds
+        pop     bp
+        retf
+_SwapAndReopenOverlayFile ENDP
 
 ; 1E8B:0185: shut the overlay manager down. If the overlay file handle at 20B5:00B8 is open, close it
 ; and restore the swapped interrupt vector through 0134, then run the two cleanup vectors kept at
@@ -41,7 +82,7 @@ _ShutdownOverlayManager PROC FAR
         mov     ds,word ptr cs:[4]
         cmp     word ptr ds:[0B8h],0
         je      short shutdown_nohandle
-        call    far ptr _f1E8B_0134
+        call    far ptr _SwapAndReopenOverlayFile
 shutdown_nohandle:
         push    cs
         call    word ptr ds:[14h]
@@ -207,6 +248,8 @@ open_name:
         ret
 _CopyNameAndOpenOverlay ENDP
 
+        SMART
+
 ; 1E8B:0276: read CX bytes from the open overlay file (handle in 20B5:00B8) into the 14h-byte buffer
 ; at the caller's [bp-14h] (the MZ header scratch of 000F, whose frame this helper shares). Returns
 ; carry set on a DOS error or when fewer than CX bytes were read. Evidence: the SS:BP buffer, the
@@ -227,12 +270,12 @@ hdr_out:
 _ReadOverlayHeaderBytes ENDP
 
         PUBLIC  _f1E8B_0286              ; @ 1E8B:0286 stub
-_f1E8B_0286 PROC FAR
+_f1E8B_0286 PROC NEAR
         ret
 _f1E8B_0286 ENDP
 
         PUBLIC  _f1E8B_02FF              ; @ 1E8B:02FF stub
-_f1E8B_02FF PROC FAR
+_f1E8B_02FF PROC NEAR
         ret
 _f1E8B_02FF ENDP
 
@@ -276,15 +319,119 @@ img_out:
         ret
 _ReadOverlayImage ENDP
 
-        PUBLIC  _f1E8B_03FD              ; @ 1E8B:03FD stub
-_f1E8B_03FD PROC FAR
+; 1E8B:03FD: apply the CX relocations stored at the overlay's image base. It walks the CX words at
+; the record's ES:0008/ES:000A (the reloc list), reads each target word through the segment 20C1
+; table and, when the low bit is set, fixes it up through 0442 (the far-pointer relocation). The
+; ES:0010 base is the segment the overlay was loaded at. Evidence: the ES:0008/000A address, the
+; 20C1 table segment (relocated) and the 0442 call on the odd flag.
+        PUBLIC  _ApplyOverlayRelocations              ; @ 1E8B:03FD
+_ApplyOverlayRelocations PROC NEAR
+        push    ds
+        push    es
+        mov     ax,es:[8]
+        mov     si,ax
+        and     si,0Fh
+        shr     ax,1
+        shr     ax,1
+        shr     ax,1
+        shr     ax,1
+        mov     dx,es:[10h]
+        add     ax,dx
+        mov     ds,ax
+        mov     es,dx
+        shr     cx,1
+        cld
+fix_loop:
+        lodsw
+        mov     bx,ax
+        mov     di,es:[bx]
+        push    ds
+        mov     ax,seg _gOverlayIndex
+        mov     ds,ax
+        mov     ax,di
+        and     di,0FFF8h
+        mov     dx,[di]
+        mov     es:[bx],dx
+        test    ax,1
+        je      short fix_skip
+        call    _RelocateOverlayPointer
+fix_skip:
+        pop     ds
+        loop    fix_loop
+        pop     es
+        pop     ds
         ret
-_f1E8B_03FD ENDP
+_ApplyOverlayRelocations ENDP
 
-        PUBLIC  _f1E8B_0442              ; @ 1E8B:0442 stub
-_f1E8B_0442 PROC FAR
+; 1E8B:0442: relocate one far pointer in the overlay image. Given DS:DX (the overlay base) and the
+; pointer at ES:BX, it checks the b8 50 pattern of an overlay call fixup (the four masked bytes at
+; ES:BX-1, +2, +3, +6), then replaces the ES:[BX+4] entry with its 20B5:0020 version slot. The tail
+; at 04A2 is an uncalled sibling that loads a fresh overlay copy: it seeks ES:0004:0006, reads
+; ES:0008+ES:000A bytes with 03C4 and applies the relocations with 03FD.
+; Evidence: the 0F807h masks and b8/50 byte tests; the 03C4/03FD calls in the 04A2 tail.
+        PUBLIC  _RelocateOverlayPointer              ; @ 1E8B:0442
+_RelocateOverlayPointer PROC NEAR
+        push    cx
+        mov     ds,dx
+        mov     ah,es:[bx-1]
+        mov     al,ah
+        and     ax,0F807h
+        cmp     ah,0B8h
+        jne     short rel_out
+        mov     cx,ax
+        mov     ah,es:[bx+2]
+        mov     al,ah
+        and     ax,0F807h
+        cmp     ah,50h
+        jne     short rel_out
+        cmp     al,cl
+        jne     short rel_out
+        mov     dx,ax
+        mov     ah,es:[bx+3]
+        mov     al,ah
+        and     ax,0F807h
+        cmp     cx,ax
+        jne     short rel_out
+        mov     ah,es:[bx+6]
+        mov     al,ah
+        and     ax,0F807h
+        cmp     ax,dx
+        jne     short rel_out
+        mov     di,20h
+        mov     cx,ds:[0Ch]
+        mov     ax,es:[bx+4]
+rel_slot:
+        cmp     ax,[di+2]
+        je      short rel_found
+        add     di,5
+        loop    rel_slot
+        jmp     short rel_out2
+rel_found:
+        mov     es:[bx+4],di
+rel_out:
+        pop     cx
         ret
-_f1E8B_0442 ENDP
+rel_out2:
+        pop     cx
+        ret
+; 1E8B:04A2: uncalled sibling in this range: reload an overlay image.
+        mov     si,es:[8]
+        xor     di,di
+        add     si,es:[0Ah]
+        adc     di,0
+        mov     dx,es:[4]
+        mov     cx,es:[6]
+        mov     ax,es:[10h]
+        call    _ReadOverlayImage
+        jb      short reload_out
+        mov     cx,es:[0Ah]
+        jcxz    short reload_clc
+        call    _ApplyOverlayRelocations
+reload_clc:
+        clc
+reload_out:
+        ret
+_RelocateOverlayPointer ENDP
 
         PUBLIC  _f1E8B_04D0              ; @ 1E8B:04D0 stub
 _f1E8B_04D0 PROC FAR
@@ -292,12 +439,12 @@ _f1E8B_04D0 PROC FAR
 _f1E8B_04D0 ENDP
 
         PUBLIC  _f1E8B_0536              ; @ 1E8B:0536 stub
-_f1E8B_0536 PROC FAR
+_f1E8B_0536 PROC NEAR
         ret
 _f1E8B_0536 ENDP
 
         PUBLIC  _f1E8B_0580              ; @ 1E8B:0580 stub
-_f1E8B_0580 PROC FAR
+_f1E8B_0580 PROC NEAR
         ret
 _f1E8B_0580 ENDP
 
@@ -317,12 +464,12 @@ fpu_done:
 _ReleaseOverlayFpuState ENDP
 
         PUBLIC  _f1E8B_0613              ; @ 1E8B:0613 stub
-_f1E8B_0613 PROC FAR
+_f1E8B_0613 PROC NEAR
         ret
 _f1E8B_0613 ENDP
 
         PUBLIC  _f1E8B_064E              ; @ 1E8B:064E stub
-_f1E8B_064E PROC FAR
+_f1E8B_064E PROC NEAR
         ret
 _f1E8B_064E ENDP
 
@@ -377,7 +524,7 @@ clr_out:
 _ClearOverlayVersionTable ENDP
 
         PUBLIC  _f1E8B_06C0              ; @ 1E8B:06C0 stub
-_f1E8B_06C0 PROC FAR
+_f1E8B_06C0 PROC NEAR
         ret
 _f1E8B_06C0 ENDP
 

@@ -5496,6 +5496,9 @@ unit = "e1e8b"
 addr = "1E8B:0134"
 size = 81
 evidence = ["far", "frame"]
+name = "_SwapAndReopenOverlayFile"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1e8b_0185"
@@ -5587,6 +5590,9 @@ unit = "e1e8b"
 addr = "1E8B:03FD"
 size = 69
 evidence = ["near"]
+name = "_ApplyOverlayRelocations"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1e8b_0442"
@@ -5594,6 +5600,9 @@ unit = "e1e8b"
 addr = "1E8B:0442"
 size = 142
 evidence = ["near"]
+name = "_RelocateOverlayPointer"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1e8b_04d0"
