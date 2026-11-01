@@ -4196,6 +4196,9 @@ unit = "e1a19"
 addr = "1A19:003B"
 size = 49
 evidence = ["far", "frame"]
+name = "_IsLastLogicalDrive"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1a1f_000c"

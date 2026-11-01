@@ -29,16 +29,16 @@ _FindLastDrive PROC FAR
         dec     al
         xor     ah,ah
         mov     dx,ax
-loop:   mov     bl,dl
+scan:   mov     bl,dl
         inc     bl
         mov     ax,440Eh
         int     21h
-        jae     done
+        jae     found
         cmp     al,0Fh
-        jne     done
+        jne     found
         dec     dx
-        jmp     loop
-done:   mov     ax,dx
+        jmp     scan
+found:  mov     ax,dx
         mov     byte ptr [gLastDrive],al
         pop     dx
         pop     bx
@@ -47,9 +47,39 @@ done:   mov     ax,dx
         ret
 _FindLastDrive ENDP
 
-        PUBLIC  _f1A19_003B            ; @ 1A19:003B stub
-_f1A19_003B PROC FAR
+; 1A19:003B: 1 if drive DL (0 = A) is the last logical drive on its physical device, 0 otherwise
+; (or when the drive is invalid). IOCTL 0Eh (44h/0Eh, get logical drive map) with BL = drive + 1:
+; on error (CF set) AL = 1 means the call is unsupported (DOS before 3.0) and AL = 0Fh an invalid
+; drive. Called in a loop from 1C0E:1369 with drive numbers from gLastDrive down to 0.
+        PUBLIC  _IsLastLogicalDrive     ; @ 1A19:003B
+_IsLastLogicalDrive PROC FAR
+        push    bp
+        mov     bp,sp
+        push    bx
+        push    dx
+        mov     dl,byte ptr [bp+6]
+        push    bx
+        mov     bl,dl
+        inc     bl
+        mov     ax,440Eh
+        int     21h
+        pop     bx
+        jae     mapped
+        cmp     al,1
+        je      yes
+        jmp     short no
+mapped: cmp     al,0
+        je      yes
+        dec     al
+        cmp     al,dl
+        je      yes
+no:     mov     ax,0
+        jmp     short exit
+yes:    mov     ax,1
+exit:   pop     dx
+        pop     bx
+        pop     bp
         ret
-_f1A19_003B ENDP
+_IsLastLogicalDrive ENDP
 
         END
