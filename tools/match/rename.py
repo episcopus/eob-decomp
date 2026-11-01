@@ -14,7 +14,10 @@ files get `_NEW`). The registry follows: a function's `name` in re/symbols.toml,
 re/globals.toml. The whitepaper's mentions of the old names follow too. Every rename is logged in
 re/renames.toml (address, old names, new, evidence, date).
 
-A rename never changes the code: `make match` proves every renamed file exactly as before.
+On a unit branch (a worker's claim) only the unit's own file changes; the other files that declare
+the address get the name when the branch merges (`make integrate` applies the log), so branches never
+edit each other's units. A rename never changes the code: `make match` proves every renamed file
+exactly as before.
 """
 from __future__ import annotations
 
@@ -101,10 +104,21 @@ def resolve(old: str) -> str:
     return found.pop()
 
 
-def rename_address(addr: str, new: str, dry: bool = False) -> tuple[list[str], dict[str, int]]:
-    """Give `addr` the name `new` in every file of src/; (the old local names, changes per file)."""
+def own_unit() -> str | None:
+    """On a unit branch (unit/<id>, a worker's claim), the unit's id; else None."""
+    import subprocess
+    r = subprocess.run(["git", "branch", "--show-current"], cwd=ROOT, capture_output=True, text=True)
+    b = r.stdout.strip()
+    return b[5:] if b.startswith("unit/") else None
+
+
+def rename_address(addr: str, new: str, dry: bool = False, only: str | None = None) -> tuple[list[str], dict[str, int]]:
+    """Give `addr` the name `new` in every file of src/ (or only in the files of unit `only`); (the
+    old local names, changes per file)."""
     olds, changed = set(), {}
     for p in sources():
+        if only and p.stem.lower() != only.lower():
+            continue
         b = bindings(p)
         mine = [n for n, a in b.items() if a == addr]
         if not mine:
@@ -210,6 +224,7 @@ def main(argv=None) -> int:
     ap.add_argument("new", nargs="?", default=os.environ.get("NEW", ""))
     ap.add_argument("--why", default=os.environ.get("WHY") or os.environ.get("RENAME_WHY", ""))
     ap.add_argument("--apply", action="store_true", default=bool(os.environ.get("APPLY")))
+    ap.add_argument("--everywhere", action="store_true", help="on a unit branch, rename in every file anyway")
     a = ap.parse_args(argv)
     try:
         if a.apply:
@@ -225,7 +240,17 @@ def main(argv=None) -> int:
             other = [x for n, x in bindings(p).items() if n == local(a.new, p) and x != addr]
             if other:
                 raise ValueError("%s already names %s in %s" % (a.new, other[0], p.name))
-        olds, changed = rename_address(addr, a.new)
+        # On a unit branch only the unit's own file changes: the other files are other units, often
+        # being worked on in parallel, and editing them here made merges conflict. make integrate
+        # applies the logged rename to them when this branch merges (make rename APPLY=1).
+        unit = own_unit() if not a.everywhere else None
+        olds, changed = rename_address(addr, a.new, only=unit)
+        if unit:
+            others = sorted({p.name for p in sources() if p.stem.lower() != unit
+                             and any(x == addr for x in bindings(p).values())})
+            if others:
+                print("rename: the other files that declare %s (%s) get the name when this branch merges" % (
+                    addr, ", ".join(others)))
         if not changed and not olds:
             print("rename: %s is already %s everywhere" % (addr, a.new))
         kind = set_registry(addr, a.new, a.why)
