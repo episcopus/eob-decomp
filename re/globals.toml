@@ -64,12 +64,12 @@ why = "the pointer sprite's width in 8-pixel units: filled from shape record byt
 [[global]]
 id = "ds:8158"
 name = "gPointerHotX"
-why = "the hot-spot x subtracted from the last drawn pointer position ds:815C before drawing: set from argument 1 at 1BB1:001B and used at 1BBE:0021 and 1BBE:0117 (the caller passes 8 or 0, E07A9.C:92-94)"
+why = "the hot-spot x subtracted from the last drawn pointer position ds:815C before drawing: set from argument 1 at 1BB1:001B and used at 1BBE:0021 and 1BBE:0117 (the caller passes 8 or 0, E07A9.C:127-130)"
 
 [[global]]
 id = "ds:815A"
 name = "gPointerHotY"
-why = "the hot-spot y subtracted from the last drawn pointer position ds:815E before drawing: set from argument 2 at 1BB1:0021 and used at 1BBE:002B and 1BBE:0127 (the caller passes 8 or 0, E07A9.C:92-94)"
+why = "the hot-spot y subtracted from the last drawn pointer position ds:815E before drawing: set from argument 2 at 1BB1:0021 and used at 1BBE:002B and 1BBE:0127 (the caller passes 8 or 0, E07A9.C:127-130)"
 
 [[global]]
 id = "ds:816A"
@@ -277,6 +277,26 @@ name = "gBufSize"
 why = "the shared unpack work buffer's size in bytes, stored by SetUnpackBuffer (1B82:0217) and compared by Unpack (1B82:00C7) with 0x3C00/0xFC00 to decide whether to allocate (src/E1B82.C; WHITEPAPER 147)"
 
 [[global]]
+id = "ds:DCA6"
+name = "gSegDCA6"
+why = "19EC:0002 does not allocate: it returns MK_FP(gSegsFC0C[kind|1], 0), a far pointer with offset 0 to the page/buffer table segment of ds:DCA6's slot 7 (src/E19EC.C:18-20, src/E1B82.C); not an object (review of e07a9)"
+
+[[global]]
+id = "ds:DF4E"
+name = "gSegDF4E"
+why = "19EC:0002 returns MK_FP(gSegsFC0C[kind|1], 0), a far pointer with offset 0 to the page/buffer table segment of ds:DF4E's slot 5 (src/E19EC.C:18-20); not an object (review of e07a9)"
+
+[[global]]
+id = "ds:EFC2"
+name = "gSegEFC2"
+why = "19EC:0002 returns MK_FP(gSegsFC0C[kind|1], 0), a far pointer with offset 0 to the page/buffer table segment of ds:EFC2's slot 3 (src/E19EC.C:18-20); not an object (review of e07a9)"
+
+[[global]]
 id = "ds:812E"
 name = "gPointerBusy"
 why = "the word ds:812E is a busy flag, not a lock: 1BB1:0008 and 1BF3:0080 test it then increment it (not atomic), and 1BB1:00C8 and 1BF3:0085 decrement it; SetMousePointerShape and the 1BF3 cursor setters hold it across their work (review of e1bb1)"
+
+[[global]]
+id = "ds:814A"
+name = "gMouseDisabled"
+why = "nonzero disables the mouse: the INT 33h handler body skips all of its work (1A72:254-255) and HidePointer/ShowPointer do nothing (1BBE:89-90, 178); 1A72:215 sets it to 1 at install and the overlay loader 1C00:00D4 clears it once a driver overlay has loaded and its entry has run, which enables the handler and the pointer; E07A9.C:113 and E14EF.C:142, 223 test it the same way"

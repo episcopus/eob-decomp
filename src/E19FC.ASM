@@ -1,6 +1,12 @@
 ; Unit at EOB.EXE 19FC:0007 (420 bytes, 1 function), kind asm [H] by the map. The one function is
-; CompressLcw (19FC:0007), the inverse of Unpack4 (1D9A:0013, src/E1B82.C:22): an LCW encoder.
-; What the encoder is for in the game is unknown: no caller was found (see the note below).
+; CompressLcw (19FC:0008), the inverse of Unpack4 (1D9A:0013, src/E1B82.C:22): an LCW encoder for
+; the format-4 compressed files of whitepaper 4.2. What the encoder is for in the game is unknown:
+; no caller was found (see the note below).
+;
+; The unit is written in assembly, which the map's kind asm says only as a guess [H]: it keeps its
+; state in the code segment through cs: overrides and scans with the repe/repne string instructions,
+; which the C compiler does not emit for C source. That the source was assembly and not C is
+; therefore inferred from those forms, not proven.
 ;
 ; A byte oriented LZ encoder: it reads an input buffer (arg 1, a far pointer) of a given length
 ; (arg 3, a word) and writes a compressed stream to arg 2 (a far pointer), returning the number of
@@ -12,13 +18,15 @@
 ; the low 8, counted back from the current position), C0h..FDh a longer absolute copy
 ; ((byte & 3Fh) + 3 bytes, then a distance word), FEh a fill (a count word then the byte), FFh a
 ; long absolute copy (a length word then a distance word), and 80h ends the stream. For the two
-; word forms the distance is measured from cs:gInBase, the source base (the decoder adds it to its
-; output base, the same index, because the decompressed prefix has the same length). The first
-; literal is written as an explicit 81h plus the byte, which opens a run. Runs of 41h or more equal
-; bytes are found by scanning with repe scasb and become FEh fills; shorter matches are searched
-; with repne scasb over the input base and extended with repe cmpsb. The eight words of state are
-; kept in the code segment, each with its role in the data comments below. The token set above is
-; the one of the decoder model tools/re/wwfmt.py lcw [H]; no round trip of this encoder has run.
+; word forms the distance is an index from the start of the decompressed output: the encoder
+; measures it from cs:gInBase, the start of the input, and the decoder adds it to the start of its
+; output, so the two agree because the decoded prefix has the same length as the input prefix it
+; came from. The first literal is written as an explicit 81h plus the byte, which opens a run. Runs
+; of 41h or more equal bytes are found by scanning with repe scasb and become FEh fills; shorter
+; matches are searched with repne scasb over the input base and extended with repe cmpsb. The eight
+; words of state are kept in the code segment, each with its role in the data comments below. The
+; token set above is the one of the decoder model tools/re/wwfmt.py lcw [H]; no round trip of this
+; encoder has run.
 ;
 ; No caller was found: the packet reports no direct call (tools/agent/packet.py:149 checks direct
 ; calls only), and a byte search of EOB.EXE and the seven overlay images (build/re/eob-overlays)
@@ -32,8 +40,10 @@
 ; wraps at 10000h when offset + length passes FFFFh; the output has the same limit. A caller must
 ; keep both buffers inside 64 KiB from their normalised starts.
 ;
-; The map's segment starts at 19FC:0007, a segment-start byte the map gives to this unit (the same
-; kind as 1BA8:0005 in src/E1BA8.ASM); the frame is 19FC:0008. Reproduced here as the leading db 0.
+; The map's segment starts at 19FC:0007, a lone 00 byte that is data, not code (the map marks a code
+; segment's first byte as a function, as in 1BA8:0005 in src/E1BA8.ASM and 1BF3:000D); it is emitted
+; as a public byte symbol (_f19FC_0007) so the registry records it at L2, and CompressLcw starts at
+; 19FC:0008 with the same 419 code bytes. The unit stays 420 bytes.
 
         .MODEL  LARGE
 
@@ -41,9 +51,17 @@
 
         .CODE
 
-        PUBLIC  _CompressLcw             ; @ 19FC:0007
+        PUBLIC  _f19FC_0007
+_f19FC_0007 LABEL BYTE                   ; @ 19FC:0007
+        db      0                       ; the segment-start byte: data, not code
+
+; 19FC:0008: encode. Arg 1 at [bp+6]/[bp+8] is the source far pointer, arg 2 at [bp+0Ah]/[bp+0Ch] the
+; destination, arg 3 at [bp+0Eh] the source length in bytes. Returns AX = the number of bytes written
+; to the destination, the whole stream (the leading 81h byte and the trailing 80h end byte included).
+; Reads and writes the eight cs: state words declared below; on return DS:SI points at the source end
+; and ES:DI just past the output.
+        PUBLIC  _CompressLcw             ; @ 19FC:0008
 _CompressLcw PROC FAR
-        db      0                       ; the segment-start byte the map gives to this unit (19FC:0007)
         push    bp
         mov     bp,sp
         push    bx
@@ -122,9 +140,9 @@ nextcand:                               ; 19FC:00B6
         repne   scasb                   ; scan forward for this byte
         jne     notfound
         mov     bx,cs:[gBestLen]
-        mov     ah,[bx+si-1]
-        cmp     ah,es:[bx+di-2]
-        jne     nextcand
+        mov     ah,[bx+si-1]            ; a candidate can only beat gBestLen if it agrees at offset
+        cmp     ah,es:[bx+di-2]         ;   gBestLen - 1 (else the match cannot reach gBestLen); this
+        jne     nextcand                ;   byte is gBestLen - 1 ahead of each start
         mov     dx,si
         mov     bx,di
         dec     di
@@ -136,7 +154,9 @@ nextcand:                               ; 19FC:00B6
         sub     ax,bx
         mov     di,bx
         cmp     ax,cs:[gBestLen]
-        jb      search
+        jb      search                  ; jb, not jbe: an equal length replaces the earlier match,
+                                        ;   because the later candidate is nearer, and a smaller
+                                        ;   distance can use the 2-byte short form
         mov     cs:[gBestLen],ax
         dec     bx
         mov     cs:[gBestPos],bx

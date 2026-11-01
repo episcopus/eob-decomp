@@ -18,7 +18,7 @@
         EXTRN   _open:FAR               ; @ 0000:6443 (runtime OPEN module, E1A47.C)
         EXTRN   _close:FAR              ; @ 0000:50C5 (runtime, E1A47.C)
         EXTRN   _f1C0E_1310:FAR         ; @ 1C0E:1310 (locates and opens the overlay file)
-        EXTRN   _f07C8_058A:FAR         ; @ 07C8:058A (cleanup and exit, E19BC.C)
+        EXTRN   _ShutdownGame:FAR         ; @ 07C8:058A (cleanup and exit, E19BC.C)
         EXTRN   _f1AAD_0B0E:FAR         ; @ 1AAD:0B0E (keyboard glue, takes the button state)
         EXTRN   _HidePointer:FAR         ; @ 1BBE:0002 (E1BB1.ASM)
         EXTRN   _ShowPointer:FAR         ; @ 1BBE:00ED (E1BB1.ASM)
@@ -41,7 +41,7 @@
         EXTRN   g8144:WORD              ; @ ds:8144: 1 when the driver reports a 640 wide range
         EXTRN   _gHideDepth:WORD              ; @ ds:8146: nonzero suppresses the redraw
         EXTRN   g8148:WORD              ; @ ds:8148: 1 when the mouse driver handler is installed
-        EXTRN   g814A:WORD              ; @ ds:814A: 0 disables the handler body (E07A9.C)
+        EXTRN   gMouseDisabled:WORD              ; @ ds:814A: 0 disables the handler body (E07A9.C)
         EXTRN   g814E:WORD              ; @ ds:814E: screen width minus 1, 13Fh
         EXTRN   g8152:WORD              ; @ ds:8152: screen height minus 1, 0C7h
         EXTRN   _gDrawnX:WORD              ; @ ds:815C: last position handed to the game
@@ -134,7 +134,7 @@ L0080:  or      si,si
         push    ax
         call    dword ptr [g8104]
         add     sp,6
-        call    far ptr _f07C8_058A
+        call    far ptr _ShutdownGame
 L0099:  mov     ax,1
         push    ax
         push    ds
@@ -154,7 +154,7 @@ L0099:  mov     ax,1
         push    ax
         call    dword ptr [g8104]
         add     sp,6
-        call    far ptr _f07C8_058A
+        call    far ptr _ShutdownGame
 L00CD:  pop     bp
         pop     di
         pop     si
@@ -212,7 +212,7 @@ L0123:  mov     ax,0
 L0144:  mov     cx,0A0h
         mov     dx,64h
         mov     word ptr [g8148],1
-        mov     word ptr [g814A],1
+        mov     word ptr [gMouseDisabled],1
         cmp     word ptr [g8144],1
         jne     L015F
         shl     cx,1
@@ -251,7 +251,7 @@ MouseEventHandler:
         cld
         mov     ax,212Eh
         mov     ds,ax
-        cmp     word ptr [g814A],0
+        cmp     word ptr [gMouseDisabled],0
         jne     L01E9
         cmp     word ptr [g8144],1
         jne     L0195

@@ -1182,6 +1182,7 @@ unit = "e07c8"
 addr = "07C8:0199"
 size = 1009
 evidence = ["far"]
+name = "StartupGame"
 
 [[function]]
 id = "e07c8_058a"
@@ -1189,6 +1190,7 @@ unit = "e07c8"
 addr = "07C8:058A"
 size = 147
 evidence = ["far", "near"]
+name = "ShutdownGame"
 
 [[function]]
 id = "e07c8_061d"
@@ -1203,6 +1205,7 @@ unit = "e07c8"
 addr = "07C8:0625"
 size = 38
 evidence = ["frame"]
+name = "AllocationFailure"
 
 [[function]]
 id = "e082c_000b"
@@ -3734,6 +3737,9 @@ unit = "e14ef"
 addr = "14EF:0007"
 size = 113
 evidence = ["near", "segment"]
+name = "FindMaskBit"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e14ef_0078"
@@ -3741,6 +3747,9 @@ unit = "e14ef"
 addr = "14EF:0078"
 size = 105
 evidence = ["near", "frame"]
+name = "BlinkText"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e14ef_00e1"
@@ -3748,6 +3757,9 @@ unit = "e14ef"
 addr = "14EF:00E1"
 size = 38
 evidence = ["near", "frame"]
+name = "PointInRect"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e14ef_0107"
@@ -3755,6 +3767,9 @@ unit = "e14ef"
 addr = "14EF:0107"
 size = 77
 evidence = ["frame"]
+name = "CountMaskBits"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e14ef_0154"
@@ -3762,6 +3777,9 @@ unit = "e14ef"
 addr = "14EF:0154"
 size = 288
 evidence = ["frame"]
+name = "DrawOptionList"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e14ef_0274"
@@ -3769,6 +3787,7 @@ unit = "e14ef"
 addr = "14EF:0274"
 size = 789
 evidence = ["frame"]
+notes = "draft 2026-11-01 (src/E14EF.C): everything matches (frame, all locals and their offsets, the rectangle, the key switch values, the click/confirm/default tails) except the case tail merge: with -O our build merges the identical `row = 0` tails of the down case and the first case, and the identical `row = rows` tails of the up case and the last case, into one copy each, so the function is 7 bytes shorter and the case table lands at 14EF:0556 instead of 14EF:055D; the original keeps all four copies. The click success/confirm (`picked = row`, original 0425 jmp 0429) tails do merge in the original, so -O's merge is real but selective. Same unresolved -O tail merge as 0ACD:091C (whitepaper 2.1.1). Round 2, 2026-11-01: the pass works on the emitted code, not on the source tree: `row = rows - rows` is not folded, emits `mov al,[bp-2]; sub al,[bp-2]` and then jumps to the shared store (table at 14EF:055C), so an expression it cannot fold still merges at the store. Source forms re-tested with make match FILE=src/E14EF.C, all either emit the same bytes and merge or change the bytes: `*(char *)&row = 0`, a case-body block `{ }`, an empty `else ;`, the char literal `'\\0'`, `rows & 0`, `rows + 0`, a cast `(char)rows`, grouped braces around the up or down body, and ungrouped `case KEY_FIRST:`/`case KEY_FIRST2:` (table at 14EF:0558; the compiler then chains the two bodies through a bare jmp). Flags ruled out: `#pragma option -O-` before the function moves the first difference back to +0026 (the panel pointer `les bx`), so the function needs -O; -P (the C++ front end) breaks the other five functions (they lose ES:BX and their `push si/di`), so the unit is C; -G changes the frame (`sub sp,0x20`). TCC 1.00 has one -O, `Optimize jumps` (toolchain option list), with no sub-switch. Earlier tries: separate `row--; if (row < 0)` statements (the case body bytes match, 7 short), pre-decrement `if (--row < 0)` (2 short), `row = panelDef->height - 1` for the last case (still merged, 3 long), dropping -O (breaks the other five functions). Open for the human: a source form whose four tails the optimizer keeps, or proof that the 1.9 patch edited this function; otherwise the same class as 0ACD:091C."
 
 [[function]]
 id = "e1547_0009"
@@ -4337,11 +4356,23 @@ match_flags = "-ml -O -Z"
 id = "e19fc_0007"
 unit = "e19fc"
 addr = "19FC:0007"
-size = 420
+size = 1
 evidence = ["segment"]
 level = "L2"
 match_flags = "tasm /mx"
+name = "_f19FC_0007"
+notes = "the segment-start marker byte (data, not code); CompressLcw follows at 19FC:0008 (see e19fc_0008)"
+
+[[function]]
+id = "e19fc_0008"
+unit = "e19fc"
+addr = "19FC:0008"
+size = 419
+evidence = ["frame"]
 name = "CompressLcw"
+level = "L2"
+match_flags = "tasm /mx"
+notes = "split by hand from the map's single entry at 19FC:0007: the map's start is the marker byte (_f19FC_0007), the code begins at 19FC:0008 (the 55 8B EC frame), which functions.py did not see because the byte before it is not a ret; not produced by make map"
 
 [[function]]
 id = "e1a16_000b"
@@ -4940,7 +4971,7 @@ unit = "e1bbe"
 addr = "1BBE:0307"
 size = 43
 evidence = ["far", "frame"]
-name = "_LockHidePointer"
+name = "LockHidePointer"
 level = "L2"
 match_flags = "tasm /mx"
 
@@ -4950,7 +4981,7 @@ unit = "e1bbe"
 addr = "1BBE:0332"
 size = 43
 evidence = ["far", "frame"]
-name = "_LockShowPointer"
+name = "LockShowPointer"
 level = "L2"
 match_flags = "tasm /mx"
 
@@ -5509,6 +5540,8 @@ unit = "e1e8b"
 addr = "1E8B:0004"
 size = 11
 evidence = ["segment"]
+level = "L2"
+notes = "not a function: bytes of the unit outside its functions (a marker or padding), matched with the whole unit"
 
 [[function]]
 id = "e1e8b_000f"
@@ -5516,6 +5549,9 @@ unit = "e1e8b"
 addr = "1E8B:000F"
 size = 293
 evidence = ["far"]
+name = "_InitOverlayManager"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1e8b_0134"
@@ -5523,6 +5559,9 @@ unit = "e1e8b"
 addr = "1E8B:0134"
 size = 81
 evidence = ["far", "frame"]
+name = "_SwapAndReopenOverlayFile"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1e8b_0185"
@@ -5530,6 +5569,9 @@ unit = "e1e8b"
 addr = "1E8B:0185"
 size = 34
 evidence = ["frame"]
+name = "_ShutdownOverlayManager"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1e8b_01a7"
@@ -5537,6 +5579,9 @@ unit = "e1e8b"
 addr = "1E8B:01A7"
 size = 12
 evidence = ["near"]
+name = "_OpenNamedOverlayFile"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1e8b_01b3"
@@ -5544,6 +5589,9 @@ unit = "e1e8b"
 addr = "1E8B:01B3"
 size = 64
 evidence = ["near"]
+name = "_OpenOwnOverlayFile"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1e8b_01f3"
@@ -5551,6 +5599,9 @@ unit = "e1e8b"
 addr = "1E8B:01F3"
 size = 93
 evidence = ["near"]
+name = "_OpenOverlayFileViaPath"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1e8b_0250"
@@ -5558,6 +5609,9 @@ unit = "e1e8b"
 addr = "1E8B:0250"
 size = 38
 evidence = ["near"]
+name = "_CopyNameAndOpenOverlay"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1e8b_0276"
@@ -5565,6 +5619,9 @@ unit = "e1e8b"
 addr = "1E8B:0276"
 size = 16
 evidence = ["near"]
+name = "_ReadOverlayHeaderBytes"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1e8b_0286"
@@ -5572,6 +5629,9 @@ unit = "e1e8b"
 addr = "1E8B:0286"
 size = 121
 evidence = ["near"]
+name = "_InitOverlayRecords"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1e8b_02ff"
@@ -5579,6 +5639,9 @@ unit = "e1e8b"
 addr = "1E8B:02FF"
 size = 197
 evidence = ["near"]
+name = "_MapOverlayRecords"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1e8b_03c4"
@@ -5586,6 +5649,9 @@ unit = "e1e8b"
 addr = "1E8B:03C4"
 size = 57
 evidence = ["near"]
+name = "_ReadOverlayImage"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1e8b_03fd"
@@ -5593,6 +5659,9 @@ unit = "e1e8b"
 addr = "1E8B:03FD"
 size = 69
 evidence = ["near"]
+name = "_ApplyOverlayRelocations"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1e8b_0442"
@@ -5600,6 +5669,9 @@ unit = "e1e8b"
 addr = "1E8B:0442"
 size = 142
 evidence = ["near"]
+name = "_RelocateOverlayPointer"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1e8b_04d0"
@@ -5607,6 +5679,9 @@ unit = "e1e8b"
 addr = "1E8B:04D0"
 size = 102
 evidence = ["frame"]
+name = "_OverlayCallHandler"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1e8b_0536"
@@ -5614,6 +5689,9 @@ unit = "e1e8b"
 addr = "1E8B:0536"
 size = 74
 evidence = ["near"]
+name = "_AgeOverlayRecords"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1e8b_0580"
@@ -5621,6 +5699,9 @@ unit = "e1e8b"
 addr = "1E8B:0580"
 size = 123
 evidence = ["near"]
+name = "_LoadOverlayRecord"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1e8b_05fb"
@@ -5628,6 +5709,9 @@ unit = "e1e8b"
 addr = "1E8B:05FB"
 size = 24
 evidence = ["near"]
+name = "_ReleaseOverlayFpuState"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1e8b_0613"
@@ -5635,6 +5719,9 @@ unit = "e1e8b"
 addr = "1E8B:0613"
 size = 59
 evidence = ["near"]
+name = "_DiscardOverlayRecords"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1e8b_064e"
@@ -5642,6 +5729,9 @@ unit = "e1e8b"
 addr = "1E8B:064E"
 size = 33
 evidence = ["near"]
+name = "_RestoreOverlayVersionTable"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1e8b_066f"
@@ -5649,6 +5739,9 @@ unit = "e1e8b"
 addr = "1E8B:066F"
 size = 30
 evidence = ["near"]
+name = "_FillOverlayVersionTable"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1e8b_068d"
@@ -5656,6 +5749,9 @@ unit = "e1e8b"
 addr = "1E8B:068D"
 size = 51
 evidence = ["near"]
+name = "_ClearOverlayVersionTable"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1e8b_06c0"
@@ -5663,6 +5759,9 @@ unit = "e1e8b"
 addr = "1E8B:06C0"
 size = 81
 evidence = ["near"]
+name = "_MoveOverlayRecord"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1e8b_0711"
@@ -5670,6 +5769,9 @@ unit = "e1e8b"
 addr = "1E8B:0711"
 size = 30
 evidence = ["near"]
+name = "_LinkOverlayRecord"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1e8b_072f"
@@ -5677,6 +5779,9 @@ unit = "e1e8b"
 addr = "1E8B:072F"
 size = 12
 evidence = ["near"]
+name = "_PatchOverlayEntryVector"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1e8b_073b"
@@ -5684,6 +5789,9 @@ unit = "e1e8b"
 addr = "1E8B:073B"
 size = 38
 evidence = ["near"]
+name = "_FindOverlaySlot"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1e8b_0761"
@@ -5691,6 +5799,9 @@ unit = "e1e8b"
 addr = "1E8B:0761"
 size = 28
 evidence = ["near"]
+name = "_OverlayBytesRemaining"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1e8b_077d"
@@ -5698,6 +5809,9 @@ unit = "e1e8b"
 addr = "1E8B:077D"
 size = 12
 evidence = ["near"]
+name = "_OverlayCodeParagraphs"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1e8b_0789"
@@ -5705,6 +5819,9 @@ unit = "e1e8b"
 addr = "1E8B:0789"
 size = 78
 evidence = ["near"]
+name = "_OverlayTotalParagraphs"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1e8b_07d7"
@@ -5712,6 +5829,9 @@ unit = "e1e8b"
 addr = "1E8B:07D7"
 size = 152
 evidence = ["frame"]
+name = "_ReleaseOverlayRecords"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1e8b_086f"
@@ -5719,6 +5839,9 @@ unit = "e1e8b"
 addr = "1E8B:086F"
 size = 174
 evidence = ["frame"]
+name = "_OverlayManagerEntry"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "eov0_0000"

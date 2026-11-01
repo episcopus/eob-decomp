@@ -133,7 +133,7 @@ addr = "ds:FE44"
 old = "gImgY"
 new = "gRegionBottom"
 kind = "global"
-why = "the current region's bottom line (top + height), pushed to the driver as its first argument at 1A29:01CE (review of e1a29)"
+why = "the current region's bottom line (top + height), pushed first at 1A29:01CE, so it is the fourth argument of the driver setter call at 1A29:01DB (the convention pushes right to left) (review of e1a29)"
 date = "2026-11-01"
 
 [[rename]]
@@ -151,7 +151,7 @@ addr = "1A29:0189"
 old = "f1A29_0189"
 new = "SelectRegion"
 kind = "function"
-why = "reads a region record from ds:009F, expands it into ds:FE44/FE46/FE48/FE4A/FE4C and calls the driver region setter; called by every drawing wrapper and by 1DE7:02FE (review of e1a29)"
+why = "reads a region record from ds:009F, expands it into ds:FE44/FE46/FE48/FE4A/FE4C and calls the driver region setter; called by every drawing wrapper and, conditionally, by 1DE7:02FE when the record it rewrote is the current one (1DE7:0333 cmp si, [8108]; 1DE7:0337 jne skips the call) (review of e1a29)"
 date = "2026-11-01"
 
 [[rename]]
@@ -178,7 +178,7 @@ addr = "1BB1:0002"
 old = "f1BB1_0002"
 new = "SetMousePointerShape"
 kind = "function"
-why = "1BB1:0002 stores a hot-spot offset (ds:8158/815A) and a pointer shape record (ds:816E/8170), resizes the save-under buffer ds:816A/816C from the record's height (byte +3) and width in 8-pixel units (byte +2 + 1), and hides/shows the pointer through 1BBE:0002 and 1BBE:00ED around the change; caller Level07A9 passes (8,8) for the sprite centre [H] and (0,0) for its corner (E07A9.C:92-94, review of e1bb1). The (8,8) is the centre of a 16 by 16 cell if the record is 16 wide by 16 tall, which is not proven here [H] (review of e07a9)"
+why = "1BB1:0002 stores the hot spot x and y (ds:8158/815A) and a pointer shape record (ds:816E/8170), resizes the save-under buffer ds:816A/816C from the record's height (byte +3) and width in 8-pixel units (byte +2 + 1), and hides/shows the pointer through 1BBE:0002 and 1BBE:00ED around the change; the caller f07A9_010C (07A9:010C) passes the hot spot (8,8) when its n is above 0 and (0,0) otherwise, and the record gIconsDDE4[n] in both cases (E07A9.C:127-130, review of e1bb1). The (8,8) is the centre of a 16 by 16 cell if the record is 16 wide by 16 tall, which is not proven here [H] (review of e07a9)"
 date = "2026-11-01"
 
 [[rename]]
@@ -205,7 +205,7 @@ addr = "ds:8158"
 old = "g8158"
 new = "gPointerHotX"
 kind = "global"
-why = "the hot-spot x subtracted from the last drawn pointer position ds:815C before drawing: set from argument 1 at 1BB1:001B and used at 1BBE:0021 and 1BBE:0117 (the caller passes 8 or 0, E07A9.C:92-94)"
+why = "the hot-spot x subtracted from the last drawn pointer position ds:815C before drawing: set from argument 1 at 1BB1:001B and used at 1BBE:0021 and 1BBE:0117 (the caller passes 8 or 0, E07A9.C:127-130)"
 date = "2026-11-01"
 
 [[rename]]
@@ -214,7 +214,7 @@ addr = "ds:815A"
 old = "g815A"
 new = "gPointerHotY"
 kind = "global"
-why = "the hot-spot y subtracted from the last drawn pointer position ds:815E before drawing: set from argument 2 at 1BB1:0021 and used at 1BBE:002B and 1BBE:0127 (the caller passes 8 or 0, E07A9.C:92-94)"
+why = "the hot-spot y subtracted from the last drawn pointer position ds:815E before drawing: set from argument 2 at 1BB1:0021 and used at 1BBE:002B and 1BBE:0127 (the caller passes 8 or 0, E07A9.C:127-130)"
 date = "2026-11-01"
 
 [[rename]]
@@ -677,12 +677,84 @@ why = "the shared unpack work buffer's size in bytes, stored by SetUnpackBuffer 
 date = "2026-11-01"
 
 [[rename]]
-id = "19FC:0007=CompressLcw"
-addr = "19FC:0007"
-old = "f19FC_0007"
+id = "07C8:058A=ShutdownGame"
+addr = "07C8:058A"
+old = "f07C8_058A"
+new = "ShutdownGame"
+kind = "function"
+why = "stops sound, mouse and the overlay manager, restores video mode 7 and the old INT 3Fh vector and exits the program; called by main and by the allocation failure hook (07C8:058A)"
+date = "2026-11-01"
+
+[[rename]]
+id = "07C8:0625=AllocationFailure"
+addr = "07C8:0625"
+old = "f07C8_0625"
+new = "AllocationFailure"
+kind = "function"
+why = "the allocation failure hook main stores at ds:810A: restores video mode 7, prints 'Allocation failure, returning to DOS!', waits for a key and runs the shut-down path (07C8:0625)"
+date = "2026-11-01"
+
+[[rename]]
+id = "07C8:0199=StartupGame"
+addr = "07C8:0199"
+old = "f07C8_0199"
+new = "StartupGame"
+kind = "function"
+why = "the start-up after main: sets the video mode, sizes memory, loads the graphics overlay and the two fonts, builds the ds:FC0C buffer table, starts the overlay manager and turns sound on (07C8:0199)"
+date = "2026-11-01"
+
+[[rename]]
+id = "1BBE:0307=LockHidePointer"
+addr = "1BBE:0307"
+old = "f1BBE_0307"
+new = "LockHidePointer"
+kind = "function"
+why = "hide the pointer, bracketed by the pointer semaphore: PUBLIC _LockHidePointer at 1BBE:0307 (src/E1BBE.ASM)"
+date = "2026-11-01"
+
+[[rename]]
+id = "1BBE:0332=LockShowPointer"
+addr = "1BBE:0332"
+old = "f1BBE_0332"
+new = "LockShowPointer"
+kind = "function"
+why = "show the pointer, bracketed by the pointer semaphore: PUBLIC _LockShowPointer at 1BBE:0332 (src/E1BBE.ASM)"
+date = "2026-11-01"
+
+[[rename]]
+id = "19FC:0008=CompressLcw"
+addr = "19FC:0008"
+old = ""
 new = "CompressLcw"
 kind = "function"
-why = "LCW encoder: writes the tokens Unpack4 (1D9A:0013, src/E1B82.C:22) reads (short back references, absolute copies, fills, literals), the inverse of that decoder; wwfmt.py lcw, whitepaper 4.2"
+why = "LCW encoder: writes the tokens Unpack4 (1D9A:0013, src/E1B82.C:22) reads (short back references, absolute copies, fills, literals), the inverse of that decoder; wwfmt.py lcw, whitepaper 4.2. Entry corrected from 19FC:0007 to 19FC:0008 by the e19fc review: 19FC:0007 is the segment-start marker byte (data, a separate public byte symbol _f19FC_0007) and the encoder's first instruction, push bp, is at 19FC:0008"
+date = "2026-11-01"
+
+[[rename]]
+id = "ds:DCA6=gSegDCA6"
+addr = "ds:DCA6"
+old = "gObjDCA6"
+new = "gSegDCA6"
+kind = "global"
+why = "19EC:0002 does not allocate: it returns MK_FP(gSegsFC0C[kind|1], 0), a far pointer with offset 0 to the page/buffer table segment of ds:DCA6's slot 7 (src/E19EC.C:18-20, src/E1B82.C); not an object (review of e07a9)"
+date = "2026-11-01"
+
+[[rename]]
+id = "ds:DF4E=gSegDF4E"
+addr = "ds:DF4E"
+old = "gObjDF4E"
+new = "gSegDF4E"
+kind = "global"
+why = "19EC:0002 returns MK_FP(gSegsFC0C[kind|1], 0), a far pointer with offset 0 to the page/buffer table segment of ds:DF4E's slot 5 (src/E19EC.C:18-20); not an object (review of e07a9)"
+date = "2026-11-01"
+
+[[rename]]
+id = "ds:EFC2=gSegEFC2"
+addr = "ds:EFC2"
+old = "gObjEFC2"
+new = "gSegEFC2"
+kind = "global"
+why = "19EC:0002 returns MK_FP(gSegsFC0C[kind|1], 0), a far pointer with offset 0 to the page/buffer table segment of ds:EFC2's slot 3 (src/E19EC.C:18-20); not an object (review of e07a9)"
 date = "2026-11-01"
 
 [[rename]]
@@ -692,6 +764,15 @@ old = "g812E"
 new = "gPointerBusy"
 kind = "global"
 why = "the word ds:812E is a busy flag, not a lock: 1BB1:0008 and 1BF3:0080 test it then increment it (not atomic), and 1BB1:00C8 and 1BF3:0085 decrement it; SetMousePointerShape and the 1BF3 cursor setters hold it across their work (review of e1bb1)"
+date = "2026-11-01"
+
+[[rename]]
+id = "ds:814A=gMouseDisabled"
+addr = "ds:814A"
+old = "g814A"
+new = "gMouseDisabled"
+kind = "global"
+why = "nonzero disables the mouse: the INT 33h handler body skips all of its work (1A72:254-255) and HidePointer/ShowPointer do nothing (1BBE:89-90, 178); 1A72:215 sets it to 1 at install and the overlay loader 1C00:00D4 clears it once a driver overlay has loaded and its entry has run, which enables the handler and the pointer; E07A9.C:113 and E14EF.C:142, 223 test it the same way"
 date = "2026-11-01"
 
 [[rename]]

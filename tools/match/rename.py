@@ -2,8 +2,9 @@
 """rename.py: give a function or a global its real name, everywhere at once (docs/process/READABILITY.md).
 
   make rename OLD=<name or address> NEW=<Name> WHY="<evidence>"
-  make rename APPLY=1          give every address of re/renames.toml its recorded name in src/ (after a
-                               merge, or when a new file declares the thing under a placeholder)
+  make rename APPLY=1          give every address of re/renames.toml its recorded name in src/, and every
+                               function the name its defining file gives it where other files still use
+                               a placeholder (make integrate runs it after every merge)
 
 The matcher ties a name to the original by its annotation (`/*@ ds:FC0C */`, `/*@ 19EC:0016 */`), not
 by the name, so every file of src/ declares what it uses under a name of its own, and two files can
@@ -123,18 +124,20 @@ def rename_address(addr: str, new: str, dry: bool = False, only: str | None = No
         mine = [n for n, a in b.items() if a == addr]
         if not mine:
             continue
-        target = local(new, p)
-        clash = [n for n, a in b.items() if n == target and a != addr]
-        if clash:
-            raise ValueError("%s already uses %s for %s" % (p.name, target, b[target]))
+        asm = p.suffix.upper() == ".ASM"
         text, total = p.read_text(), 0
         for n in mine:
+            # assembly keeps its own convention: `_Name` where the file uses underscores, `Name` where not
+            target = "_" + new if asm and n.startswith("_") else new
             if n == target:
                 continue
+            clash = [m for m, a in b.items() if m == target and a != addr]
+            if clash:
+                raise ValueError("%s already uses %s for %s" % (p.name, target, b[target]))
             if re.search(r"(?<![A-Za-z0-9_])%s(?![A-Za-z0-9_])" % re.escape(target), text):
                 raise ValueError("%s already has an identifier %s; choose another name" % (p.name, target))
-            olds.add(n[1:] if p.suffix.upper() == ".ASM" and n.startswith("_") else n)
-            text, k = replace_word(text, n, target, p.suffix.upper() == ".ASM")
+            olds.add(n[1:] if asm and n.startswith("_") else n)
+            text, k = replace_word(text, n, target, asm)
             total += k
         if total:
             changed[p.name] = total
@@ -207,10 +210,43 @@ def whitepaper(olds: list[str], new: str) -> int:
     return n
 
 
+PLACEHOLDER = re.compile(r"^_?(f[0-9A-F]{4}_[0-9A-F]{4}|Ovl\d+_[0-9A-F]{4}|g[0-9A-F]{4}|gFn[0-9A-F]{4}|sub\w*_[0-9A-F]{4})$")
+
+
+def definitions() -> dict[str, str]:
+    """address -> the name the file that defines the function gives it (not a stub, not a placeholder):
+    a unit names its own functions in its own file, often without `make rename`."""
+    out = {}
+    for p in sources():
+        asm = p.suffix.upper() == ".ASM"
+        funcs, _, defined, stubs = cmatch.parse_annotations(p.read_text(), asm)
+        for n in defined - stubs:
+            bare = n[1:] if asm and n.startswith("_") else n
+            seg, off = funcs[n]
+            addr = norm("%s:%X" % (seg if isinstance(seg, str) else "%04X" % seg, off))
+            if not PLACEHOLDER.match(bare):
+                out[addr] = bare
+    return out
+
+
 def apply() -> int:
+    """Every address gets its recorded name (re/renames.toml), and a function the defining file names
+    gets that name in the files that still call it by a placeholder. Two real names for one address
+    stay as they are: `make readability` reports them for a person to settle with `make rename`."""
     n = 0
-    for addr, new in recorded().items():
-        olds, changed = rename_address(addr, new)
+    names = recorded()
+    for addr, new in definitions().items():
+        if addr in names:
+            continue
+        local_names = {m.lstrip("_") for p in sources() for m, a in bindings(p).items() if a == addr}
+        if all(m == new or PLACEHOLDER.match(m) for m in local_names):
+            names[addr] = new
+    for addr, new in names.items():
+        try:
+            olds, changed = rename_address(addr, new)
+        except ValueError as e:
+            print("rename: %s -> %s not applied: %s" % (addr, new, e))
+            continue
         for f, k in changed.items():
             print("rename: %s: %s -> %s (%d)" % (f, "/".join(olds), new, k))
             n += 1

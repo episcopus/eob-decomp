@@ -2,12 +2,13 @@
    driver, plus the routine that selects the current region. The region table at ds:009F holds
    one rectangle per region in a 16-byte record; the rectangles may overlap (record 0 is the
    whole screen, 0,0,40,200, and records 1 to 3 lie inside it; the initial table is at EOB.EXE
-   file offset 0x23B7F). The table is read by 082C:0650, 0D1C:A0F7, 0EF3:8387, 1547:1E47,
-   16A5:0867 and 1DE7:005F, and written by the setter 1DE7:02FE; each record gives the region's
-   left edge in 8-pixel columns, its top line, its width in 8-pixel columns and its height in
-   lines. A front end's `region` argument is an index into the table, not a byte offset. A front
-   end adds the selected region's pixel origin (ds:FE4A, ds:FE46) to the caller's region-relative
-   coordinates and, when its region argument is not the one selected, selects it first, then
+   file offset 0x23B7F). The table is read by many front ends, for example 082C:0650/0696/06DC/071E,
+   0D1C:A0F7, 0EF3:8387, 1547:1E47, 16A5:0867, 1DE7:005F and SelectRegion 1A29:019A, and written
+   by the setter 1DE7:02FE; each record gives the region's left edge in 8-pixel columns, its top
+   line, its width in 8-pixel columns and its height in lines. A front end's `region` argument is
+   an index into the table, not a byte offset. A front end adds the selected region's origin
+   (ds:FE4A in pixels, ds:FE46 in lines) to the caller's region-relative coordinates and, when
+   its region argument is not the one selected, selects it first, then
    calls one of the driver's far drawing pointers. SelectRegion expands a record into the globals
    ds:FE48/FE4A/FE4C/FE46/FE44 and hands the four edges to the driver's region setter.
    The driver pointer table is filled outside the resident code [H]. Compiled with -G
@@ -26,8 +27,8 @@ struct Region {             /* 16 bytes: four edges, then four words of saved st
     int saved3;
 };
 
-extern struct Region gRegions[]; /*@ ds:009F */  /* the region table, 082C and 1DE7 read it too; indexed by a region number, so gRegions[region] is region * 16 */
-extern int gCurRegion;           /*@ ds:8108 */  /* index of the region selected last, set by SelectRegion and compared by the front ends; 1DE7 keeps its own record index at ds:811F, and nothing here says the two agree */
+extern struct Region gRegions[]; /*@ ds:009F */  /* the region table, read by 082C (four sites, 082C:0650/0696/06DC/071E), 1DE7:005F and SelectRegion (1A29:019A); indexed by a region number, so gRegions[region] is region * 16 */
+extern int gCurRegion;           /*@ ds:8108 */  /* index of the region selected last, set by SelectRegion and compared by the front ends and by 1DE7:0333; 1DE7 keeps its own record index at ds:811F, and nothing here says the two agree */
 extern int gRegionLeft;          /*@ ds:FE48 */  /* selected region's left edge, in 8-pixel columns */
 extern int gRegionLeftPx;        /*@ ds:FE4A */  /* selected region's left edge, in pixels (left * 8) */
 extern int gRegionRight;         /*@ ds:FE4C */  /* selected region's right edge (left + width), in 8-pixel columns */
@@ -36,8 +37,11 @@ extern int gRegionBottom;        /*@ ds:FE44 */  /* selected region's bottom lin
 
 /* The driver's drawing entry points. No writer of these words exists in the resident code, so
    they are filled at load time [H]; their meanings are unknown and their first argument `mode`
-   is passed straight through. The only caller found, 1BBE:01F4, passes a literal 0 for `mode`
-   (`mov ax, 0; push ax` at 1BBE:01F0), so the name claims no more than its position. */
+   is passed straight through. This unit is the only caller of the six pointers below: each has
+   one indirect call, in its own front end (for example 1A29:0082 `lcall [0x80a6]`), and of
+   gSetRegion, called once in SelectRegion (1A29:01DB `lcall [0x80b6]`). For ds:80C2 only, the
+   mouse pointer bypasses this unit: ShowPointer (1BBE:00ED) calls the driver pointer itself at
+   1BBE:01F4 (`mov ax, 0` at 1BBE:01F0) with a literal 0 for `mode`. */
 extern void (far *gDraw80C2)(int mode, void far *src, int x, int y);        /*@ ds:80C2 */
 extern void (far *gDraw80A6)(int mode, void far *src, int x, int y);        /*@ ds:80A6 */
 extern void (far *gDraw80D6)(int mode, void far *src, int x, int y);        /*@ ds:80D6 */
@@ -51,10 +55,13 @@ void SelectRegion(int region);
 
 /* 1A29:000F: Purpose unknown: a front end that draws through the driver pointer ds:80C2. It
    does nothing when the source far pointer is null, selects `region` when it is not the current
-   one, then calls the driver with x and y offset by the region's pixel origin. The one caller
-   found, 1BBE:01F4, passes the mouse pointer shape record ([816E]:[8170], gPointerShapeOff and
-   gPointerShapeSeg, re/renames.toml) as `src` with the pointer's coordinates, and a literal 0
-   as `mode`. */
+   one, then calls the driver with x and y offset by the region's pixel origin. The mouse pointer
+   bypasses this front end: ShowPointer (1BBE:00ED) calls the driver pointer ds:80C2 directly at
+   1BBE:01F4 (`mov ax, 0` at 1BBE:01F0; src/E1BBE.ASM:252-258), passing the shape record
+   ([816E]:[8170], gPointerShapeOff and gPointerShapeSeg, re/renames.toml) as `src` at the
+   unclipped absolute position gShapeX/gShapeY, with no region origin added, and a literal 0 as
+   `mode`. This front end itself has 20 call sites (for example the `lcall 1A29:000F` at
+   082C:0675), which pass region-relative coordinates. */
 /*@ 1A29:000F */ void f1A29_000F(int mode, void far *src, int x, int y, int region)
 {
     if (!src)
