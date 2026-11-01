@@ -44,7 +44,7 @@ extern void f0D1C_0304(int n); /*@ 0D1C:0304 */
 extern void f0BD2_05B5(int n); /*@ 0BD2:05B5 */
 extern void f1DE7_060A(char far *text); /*@ 1DE7:060A */
 extern void f17A6_197E(void far *name, void far *a, void far *b, int c); /*@ 17A6:197E */
-extern void SetMousePointerShape(int a, int b, void far *name); /*@ 1BB1:0002 */
+extern void SetMousePointerShape(int hotX, int hotY, void far *shape); /*@ 1BB1:0002 */
 
 /*@ 07A9:000A */ void StartupAlloc(int argc, char far * far *argv)
 {

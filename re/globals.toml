@@ -145,3 +145,7 @@ why = "the driver amplitude written to register 1 of the current sound (0000:03B
 id = "ds:FBCA"
 name = "gSoundVolume"
 why = "the default sound volume PlaySoundDefault (177D:00F3) passes and PlaySoundVolume uses to derive the level"
+[[global]]
+id = "ds:812E"
+name = "gPointerBusy"
+why = "the word ds:812E is a busy flag, not a lock: 1BB1:0008 and 1BF3:0080 test it then increment it (not atomic), and 1BB1:00C8 and 1BF3:0085 decrement it; SetMousePointerShape and the 1BF3 cursor setters hold it across their work (review of e1bb1)"

@@ -160,7 +160,7 @@ addr = "1BB1:0002"
 old = "f1BB1_0002"
 new = "SetMousePointerShape"
 kind = "function"
-why = "1BB1:0002 stores a hot-spot offset (ds:8158/815A) and a pointer shape record (ds:816E/8170), resizes the save-under buffer ds:816A/816C from the record's height (byte +3) and width in 8-pixel units (byte +2 + 1), and hides/shows the pointer through 1BBE:0002 and 1BBE:00ED around the change; caller Level07A9 passes (8,8) for the sprite centre and (0,0) for its corner (E07A9.C:92-94, review of e1bb1)"
+why = "1BB1:0002 stores a hot-spot offset (ds:8158/815A) and a pointer shape record (ds:816E/8170), resizes the save-under buffer ds:816A/816C from the record's height (byte +3) and width in 8-pixel units (byte +2 + 1), and hides/shows the pointer through 1BBE:0002 and 1BBE:00ED around the change; caller Level07A9 passes (8,8) for the sprite centre [H] and (0,0) for its corner (E07A9.C:92-94, review of e1bb1). The (8,8) is the centre of a 16 by 16 cell if the record is 16 wide by 16 tall, which is not proven here [H] (review of e07a9)"
 date = "2026-11-01"
 
 [[rename]]
@@ -368,4 +368,13 @@ old = ""
 new = "gSoundVolume"
 kind = "global"
 why = "the default sound volume PlaySoundDefault (177D:00F3) passes and PlaySoundVolume uses to derive the level"
+date = "2026-11-01"
+
+[[rename]]
+id = "ds:812E=gPointerBusy"
+addr = "ds:812E"
+old = "g812E"
+new = "gPointerBusy"
+kind = "global"
+why = "the word ds:812E is a busy flag, not a lock: 1BB1:0008 and 1BF3:0080 test it then increment it (not atomic), and 1BB1:00C8 and 1BF3:0085 decrement it; SetMousePointerShape and the 1BF3 cursor setters hold it across their work (review of e1bb1)"
 date = "2026-11-01"
