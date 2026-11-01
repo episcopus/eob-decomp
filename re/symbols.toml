@@ -4746,6 +4746,7 @@ evidence = ["segment"]
 name = "_f1BF3_000D"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-01 rev-sonnet"
 
 [[function]]
 id = "e1bf3_000e"
@@ -4756,6 +4757,7 @@ evidence = ["near"]
 name = "_f1BF3_000E"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-01 rev-sonnet"
 
 [[function]]
 id = "e1bf3_0087"
@@ -4766,6 +4768,7 @@ evidence = ["frame"]
 name = "_f1BF3_0087"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-01 rev-sonnet"
 
 [[function]]
 id = "e1bf3_00a8"
@@ -4776,6 +4779,7 @@ evidence = ["far", "frame"]
 name = "_f1BF3_00A8"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-01 rev-sonnet"
 
 [[function]]
 id = "e1c00_0001"
