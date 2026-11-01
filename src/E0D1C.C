@@ -426,7 +426,22 @@ int f0D1C_02DC(void);
         f1A29_000F(mode, gIconsDDE4[icon], x, y, 0);
     }
 }
-/*@ 0D1C:07A7 stub */ void f0D1C_07A7(void) {}
+/* 0D1C:07A7: advances the far string pointer `text` past `count` NUL-terminated strings (each
+   step skips to and past the next zero byte) and returns the pointer just past the last one.
+   Called by 0BD2, overlay 1, overlay 2 and overlay 6. */
+/*@ 0D1C:07A7 */ char far *SkipStrings(char far *text, int count)
+{
+    char far *cursor;
+    int i;
+
+    i = count;
+    cursor = text;
+    for (; i; i--) {
+        while (*cursor++)
+            ;
+    }
+    return cursor;
+}
 /*@ 0D1C:07DB stub */ void f0D1C_07DB(void) {}
 /*@ 0D1C:08B1 stub */ void f0D1C_08B1(void) {}
 /*@ 0D1C:0903 stub */ void f0D1C_0903(void) {}

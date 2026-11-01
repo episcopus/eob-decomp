@@ -2453,6 +2453,9 @@ unit = "e0d1c"
 addr = "0D1C:07A7"
 size = 52
 evidence = ["far", "frame"]
+name = "SkipStrings"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0d1c_07db"
