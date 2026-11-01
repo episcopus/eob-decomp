@@ -57,7 +57,7 @@ struct DDRec {
     char m0B;                 /* +0B */
     char m0C;                 /* +0C: flags, bit 0x20 tested by 0285 */
     char m0D;                 /* +0D */
-    char pad0E[0x12 - 0x0E];
+    int (far *fn)(struct DDRec far *rec); /* +0E: called by 0172 when active is 2 */
 };
 
 /* The 14-byte records at ds:8DD2 (src/E0D1C.C names the same table Entry14); 020F clears the low
@@ -83,6 +83,8 @@ extern struct CharRec gChars[]; /*@ ds:F580 */
 extern struct DDRec gDD2C[]; /*@ ds:DD2C */   /* 10 records, 18 bytes each */
 extern struct Entry14 gTable8DD2[]; /*@ ds:8DD2 */ /* 14-byte records (src/E0D1C.C) */
 extern struct Obj28 gObjs[]; /*@ ds:8A82 */   /* 30 records, 28 bytes each (src/E08E6.C) */
+extern unsigned char gB894[]; /*@ ds:B894 */    /* nine-byte records (src/E0D1C.C) */
+extern int gSoundVolume; /*@ ds:FBCA */         /* the global sound volume (src/E177D.C) */
 extern unsigned char far *gEF6A[]; /*@ ds:EF6A */ /* 18 far pointers, walked by 04B0 */
 extern signed char gA9C6; /*@ ds:A9C6 */      /* an offset added into gEF6A's targets */
 extern int gFB78; /*@ ds:FB78 */              /* a flag toggled by 04B0 */
@@ -106,8 +108,9 @@ extern void DrawText(char *text); /*@ 1DE7:060A */
 extern void f1547_04A0(int member); /*@ 1547:04A0 */
 extern void f122E_0896(int member, int a); /*@ 122E:0896 */
 extern void f122E_1DA8(int member, int a); /*@ 122E:1DA8 */
-extern void f0DE8_01FF(void far *rec, int a); /*@ 0DE8:01FF */
-extern void f0DE8_02D4(void far *rec, int a, int b); /*@ 0DE8:02D4 */
+extern int f08E6_189D(struct Obj28 far *obj, int a, int b); /*@ 08E6:189D */
+extern int f0DE8_01FF(struct DDRec far *rec); /*@ 0DE8:01FF */
+extern int f0DE8_02D4(struct DDRec far *rec, int idx); /*@ 0DE8:02D4 */
 extern void f0EF3_00CD(int seg, int off); /*@ 0EF3:00CD */
 extern void f0EF3_0D78(int a, int b); /*@ 0EF3:0D78 */
 extern void f0BD2_01D0(void far *head, int key, int item, int sound); /*@ 0BD2:01D0 */
@@ -133,7 +136,37 @@ extern int f0BD2_02B9(void far *head, int key, int item); /*@ 0BD2:02B9 */
     slot++;
 }
 /*@ 1414:003E stub */ void f1414_003E(void) {}
-/*@ 1414:0172 stub */ int f1414_0172(struct DDRec far *rec, int a, int b) { return 0; }
+/* 1414:0172: the per-record test 0285 and 0D63 use. It returns 0 when the record already has a
+   nonzero m02. A record in state 2 runs its cell callback rec->fn(rec) and returns that res. Otherwise it looks up gB894[a * 9 + 4]: when that byte has bits 0..2 set it scans the 30 objects
+   at ds:8A82 for one that f08E6_189D accepts and that f0DE8_02D4 then also accepts, returning 1
+   on the first; when the bits are clear it runs f0DE8_01FF(rec) only when `a` is the current
+   sound volume and returns that. Called by 0285 and 0D63. */
+/*@ 1414:0172 */ int TestDDEffect(struct DDRec far *rec, int a, int b)
+{
+    struct Obj28 far *obj;
+    int i;
+
+    if (rec->m02 != 0)
+        return 0;
+    if (rec->active == 2) {
+        return rec->fn(rec);
+    }
+    if (gB894[a * 9 + 4] & 7) {
+        i = 0;
+        obj = gObjs;
+        for (; i < 30; i++, obj++) {
+            if (f08E6_189D(obj, a, b)) {
+                if (f0DE8_02D4(rec, i))
+                    return 1;
+            }
+        }
+        return 0;
+    } else {
+        if (a == gSoundVolume)
+            return f0DE8_01FF(rec);
+        return 0;
+    }
+}
 
 /* 1414:020F: clears a live ds:DD2C record. When it is in state 1 it first clears the low two
    bits of gTable8DD2[rec->m08].m03, redraws rec->m04 through 122E:1DA8 with mode 4 and plays
@@ -341,7 +374,7 @@ extern int f0BD2_02B9(void far *head, int key, int item); /*@ 0BD2:02B9 */
     rec = gDD2C;
     for (i = 0; i < 10; i++, rec++) {
         if (rec->active != 0) {
-            result = f1414_0172(rec, rec->m04, rec->m06);
+            result = TestDDEffect(rec, rec->m04, rec->m06);
             if (result)
                 ClearDDEffect(rec);
         }
