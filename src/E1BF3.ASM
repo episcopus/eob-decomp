@@ -4,8 +4,9 @@
 ; mode) only when a driver is present (ds:8148), and when the position changed redraws the game's
 ; own pointer through the far function pointers at ds:80AA and ds:80A2 (with the two arguments at
 ; ds:8172/ds:8174), bracketed by the two functions of unit 1BBE. 0087 sets the position, 00A8 moves
-; it by a delta; both hold the busy flag at ds:812E across the work. The leading 1-byte entry at
-; 000D (a 0x00 left in the segment by the linker) is not code: stub. Placeholder names.
+; it by a delta; both hold the busy flag at ds:812E across the work. The segment's first byte at
+; 000D is a lone 0x00 (data, not code: the map marks a code segment's first byte as a function, as
+; in E1990); the three functions follow. Placeholder names.
 
         .MODEL  LARGE
 
@@ -14,10 +15,7 @@
 
         .CODE
 
-        PUBLIC  _f1BF3_000D              ; @ 1BF3:000D stub
-_f1BF3_000D PROC NEAR
-        ret
-_f1BF3_000D ENDP
+        db      0                        ; 1BF3:000D
 
 ; 1BF3:000E: place the cursor at (CX, DX), clamped, and redraw it if it moved. Near: called
 ; only by 0087 and 00A8.
