@@ -308,3 +308,72 @@ that moved. The shoulds are the show-half wording, the clip citations in the hea
 placeholders stay on purpose: g80AA, g80A2 and g80C6 (their callees are not lifted; the evidence is in the E1BBE.ASM EXTRN
 comments and the call sites), and g8172/g8174 (named by writer and reader, the argument's meaning is not known). Verdict:
 review-failed.
+
+## Fifth review (rev-haiku, at 0c87e9b)
+
+Reviewer: rev-haiku. Commit reviewed: 0c87e9b (main; review/e1bb1 is at the same commit and includes fd20bb5, the
+fourth-round fixes). This file was appended to, not replaced from TEMPLATE.md, to keep the four rounds of history.
+
+Checks: `make match FILE=src/E1BB1.ASM` 1 of 1 (208 of 208 bytes); `make readability UNIT=e1bb1` 0 findings. Read only,
+against eob/EOB.EXE with `.venv/bin/python tools/re/disasm.py` (the system python has no capstone): 1BB1:0008..00D0 (busy
+flag, hide, globals, buffer paths 003F..0066, size query 006F, margin 0076..0086, MemAlloc 0088..00A5, show and 80A2
+00A9..00C6, returns 00C1/00C6); 1BBE:0006..0017, 0075, 00E0 (the hide), 0051..005A and 0077..007E (the x clips), 00AB..00B3
+(the y clip), 00ED..0110 (the show's gating), 0111..012E (the show's position). The callers: src/E07A9.C:164/:166 (the
+(8,8)/(0,0) by n > 0), src/EOV2.C:206-211 and :451 (SetPointerShape, LoadItemData), src/EOV2.C:3 ("once at start-up").
+src/E19BC.C:5 (the quote), :31 (flags), :142 (`max -= 0x10`). src/E07A9.C:64-69 (the icon table). src/E1A72.ASM:442-443
+(the writes) and :473-474 (the reads). src/E1BF3.ASM:61-63 (only pushes of 8172/8174). The byte-level claims in the header
+hold, including the margin with both 16s, the high-word skip, the three buffer paths, the MemAlloc flags, the hide gating
+and the clip citations.
+
+### Findings
+
+- [ ] must-fix src/E1BB1.ASM:25: "E1A29.C:19-22" does not show the width. In src/E1A29.C, line 19 is blank, `struct Region {`
+  is at :20, `int left;` (left edge, in 8-pixel columns) is at :21, and `int width;` (width, in 8-pixel columns) is at :23.
+  Cite E1A29.C:21 and :23 (`grep -n "8-pixel" src/E1A29.C` to check).
+- [ ] should src/E1BB1.ASM:22-24: "the left edge is tested for 40" is incomplete. 1BBE:0051..0055 (`cmp ax,[8188]; jle`)
+  skips the rectangle when the left edge is at or below the negated width (ds:8188), and 1BBE:0057..005A (`cmp ax,28h; jge`)
+  skips it when the left edge is 40 or more. Say both tests.
+- [ ] should src/E1BB1.ASM:45-46: the show is described only as "decrements the count and, at zero, copies the position,
+  saves the background and draws". The code (1BBE:00ED..010F) also does nothing when ds:814A is set (00F1), when the count
+  is 0 on entry (00F8), when the count is still nonzero after the decrement (0103), and when ds:816C is 0 (010A). The
+  decrement comes before the buffer test, so a show with no buffer still decrements. The QUIRK 2 argument depends on
+  this gating; say it.
+- [ ] should src/E1BB1.ASM:11-25 and :43: the header writes raw addresses where the registry already has a name (docs/process/
+  READABILITY.md rule 7): ds:8158/815A (gPointerHotX/gPointerHotY, re/globals.toml:66 and the EXTRN at :74-75), ds:815C/815E
+  (gDrawnX/gDrawnY, re/globals.toml:186 and :191), ds:8138/813A (gCursorX/gCursorY, re/globals.toml:171 and :176), ds:814A
+  (gMouseDisabled), ds:8154/8156 (gPointerHeight/gPointerWidth8), ds:8176/817A/8178/817C (gRectLeft, gRectRight, gRectTop,
+  gRectBottom), and ds:816A/816C/816E/8170 (the gPointerBack and gPointerShape globals). The second-round finding said
+  ds:814A, ds:8138/813A and ds:8176 "have no names and stay raw" (and b9bf160 kept them raw); re/globals.toml now names all
+  three, so that statement is out of date. Use the names, keeping the address where a reader needs it. (ds:8146 is already gHideDepth in the header.)
+- [ ] should src/E1BB1.ASM:19-23: "in 1BBE:0002 1BBE:0095 adds it" and "in 1BBE:0002 1BBE:005F adds it" repeat the unit name
+  and read as one phrase. Say "1BBE:0002 uses it: 1BBE:0095 adds it to the top edge ds:8178 ...", and the same for the width
+  at 1BBE:005F.
+- [ ] should src/E1BB1.ASM:62: "shape record byte +2: width in 8-pixel units" is not what the code shows. The code reads the
+  byte and stores it plus one (1BB1:003A, `inc dx` at 003E, stored at 006A), so the byte's own meaning is not "the width in
+  8-pixel units" by the code alone. Say what the code does ("the stored width is the byte plus one") and mark the byte's
+  meaning [H] (a count less one is a reading, not a proof).
+- [ ] should src/E1BB1.ASM:99-102 (the function comment): the result is missing. The function returns 1 on success (1BB1:00C1)
+  and 0 when the block is too small (1BB1:0084..0086) or MemAlloc fails (1BB1:009D..00A0). The header says so; rule 3 asks
+  for the result in the function comment. The prototype is void (src/E07A9.C:88) and both callers ignore the value.
+- [ ] should src/E1BB1.ASM:55-57: "the module uses explicit segments like the runtime startup" has no citation. Either cite
+  what the startup's segments look like (C0L, the whitepaper's startup section) or drop the comparison.
+- [ ] note re/renames.toml (the gPointerHeight and gPointerWidth8 entries, about lines 185-197): "added to the pointer's y
+  before clipping" and "added to the pointer's x>>3" name the wrong copy. 1BBE:0032..0035 and 003D..0040 copy 8154/8156 to
+  ds:8182/8186 (gSpriteHeight/gSpriteWidth) and negate them; 1BBE:0095 and 005F add the copies. The WHY should say so. This
+  is registry text, not src/; the owner of the next registry edit can fix it.
+- [ ] note the open notes from rounds 2 to 4 are for their owners and this branch does not touch them: the "already hidden"
+  wording in src/E1BBE.ASM:72..76 (1BBE:0015 `jne 0075` increments the count, checked again this round); the "semaphore"
+  wording for ds:812E in src/E1A72.ASM:7 and :32, src/E1BBE.ASM:28, :273, :353 and the WHY at re/renames.toml:712; the
+  E1BBE.ASM:65 citation of "1BB1:0094" (the size query is at 1BB1:006F); the src/E07A9.C:86-87 "stores the hot-spot offset"
+  wording; and the question whether f07A9_010C can run before gIconsDDE4[0] is written (EOV2.C:209).
+
+### Summary (fifth review)
+
+The unit is understandable from its source alone. The names have evidence in the header, the registry and the callers:
+SetMousePointerShape (two callers, both now cited at their call sites), gPointerBusy (the test and increment at 1BB1:0008/000F
+and the release at 00C8), gHideDepth, HidePointer and ShowPointer (1BBE:0002 and 00ED, checked against the disassembly), the
+shape and buffer globals, and HEAP_BLOCK. The placeholders stay on purpose: g80AA, g80A2 and g80C6 (their callees are not
+lifted; the evidence is the call sites and the E1BBE and E1BF3 comments), and g8172 and g8174 (named by writer and reader, the
+argument's meaning is not known). One must-fix remains, a wrong line citation for the width (E1A29.C:23, not 19-22); the
+shoulds are the show's gating, the left-edge test, the raw addresses that now have registry names, the width byte, the
+function result and one uncited comparison. Verdict: review-failed.
