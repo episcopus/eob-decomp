@@ -38,14 +38,26 @@ extern signed char g194B[]; /*@ ds:194B */  /* byte table read by 0D1C:0080 */
 struct Entry14 {            /* the 14-byte records E07A9 calls Entry14; view based at ds:8DD2 (E07A9) */
     unsigned char flags;    /* +0 (ds:8DD2), read by 07A9:015C */
     signed char icon;       /* +1 (ds:8DD3), read by 07A9:0141 */
-    signed char m02;        /* +2 (ds:8DD4), compared by 0D1C:00F1 */
-    char pad03[0x0B - 0x03];
+    signed char m02;        /* +2 (ds:8DD4), compared by 0D1C:00F1 and 0D1C:01CA */
+    char pad03;
+    int m04;                /* +4 (ds:8DD6), set to -1 by 0D1C:01CA */
+    char pad06[0x0B - 0x06];
     signed char m0B;        /* +0xB (ds:8DDD), compared by 0D1C:00F1 */
     char pad0C[0x0E - 0x0C];
 };
 extern struct Entry14 gTable8DD2[]; /*@ ds:8DD2 */
 
+extern char gFB44; /*@ ds:FB44 */            /* a mode byte: 0 and 1 gate 0D1C:01CA's redraws */
+extern int gFBCE; /*@ ds:FBCE */             /* the item index shown by the mouse (src/E07A9.C) */
+extern int gMouseDisabled; /*@ ds:814A */    /* nonzero disables the mouse (src/E07A9.C) */
+
 extern void f1547_0991(int dir); /*@ 1547:0991 */
+extern void f1547_07E7(char who, char slot); /*@ 1547:07E7 */
+extern void f0BD2_0917(int who, int slot, int one); /*@ 0BD2:0917 */
+extern void f07A9_010C(int n); /*@ 07A9:010C */
+
+int f0D1C_0670(int who, int mask);
+int f0D1C_02DC(void);
 
 /* 0D1C:0006: Purpose unknown: the value `value` is looked for in the 15 words at ds:A9C8; when
    it is found, ds:DF4C is set to 1 and the function returns 1, otherwise it returns 0. Called
@@ -148,13 +160,13 @@ extern void f1547_0991(int dir); /*@ 1547:0991 */
    forwards the value AX still holds from the test (two bytes shorter). */
 /*@ 0D1C:0163 draft */ int f0D1C_0163(int who, int fieldB)
 {
-    struct CharRec far *c;
+    struct CharRec far *rec;
     int item;
     int i;
 
-    c = &gChars[who];
+    rec = &gChars[who];
     for (i = 25; i <= 26; i++) {
-        if (item = c->m77[i]) {
+        if (item = rec->m77[i]) {
             if (gTable8DD2[item].m02 == 0x2F) {
                 if (gTable8DD2[item].m0B == fieldB)
                     return 1;
@@ -163,14 +175,62 @@ extern void f1547_0991(int dir); /*@ 1547:0991 */
     }
     return 0;
 }
-/*@ 0D1C:01CA stub */ void f0D1C_01CA(void) {}
-/*@ 0D1C:02DC stub */ void f0D1C_02DC(void) {}
+/* 0D1C:01CA: Purpose unknown: for every character `who` that passes f0D1C_0670(who, 1), removes
+   all carried items whose ds:8DD2 record has m02 == `field2` and m0B == `fieldB`
+   (FindCarriedSlot's match): clears the item's m04 (sets it to -1), clears the character's slot,
+   and redraws. Returns 1 when at least one item was removed, otherwise 0. The redraw paths: when
+   gFB44 is 0 and the slot is one of the first two of a character before the sixth, f1547_07E7;
+   when gFB44 is 1 and the character is the selected one, f0BD2_0917; and when the mouse is
+   enabled, the item in the slot f0D1C_02DC names is cleared and redrawn through f07A9_010C.
+   Called by overlays 5. What m02, m0B and m04 mean is not established. */
+/*@ 0D1C:01CA */ int RemoveCarriedItems(int field2, int fieldB)
+{
+    int slot;
+    int who;
+    register int item;
+    register int found;
+
+    found = who = 0;
+    for (; who < 6; who++) {
+        if (!f0D1C_0670(who, 1))
+            continue;
+        while ((slot = FindCarriedSlot(who, field2, fieldB)) != -1) {
+            item = gChars[who].m77[slot];
+            gTable8DD2[item].m04 = -1;
+            gChars[who].m77[slot] = 0;
+            found = 1;
+            if (gFB44 == 0) {
+                if (slot < 2 && who < 5)
+                    f1547_07E7(who, slot);
+            }
+            if (gFB44 == 1 && gA99A == who)
+                f0BD2_0917(who, slot, 1);
+            if (!gMouseDisabled) {
+                item = f0D1C_02DC();
+                if (gTable8DD2[item].m02 == field2) {
+                    gTable8DD2[item].m04 = -1;
+                    f07A9_010C(0);
+                }
+            }
+        }
+    }
+    return found;
+}
+/* 0D1C:02DC: Purpose unknown: returns the item index in the currently displayed slot: gFBCE
+   when the mouse is disabled, otherwise gChars[gA99A].m77[gF51A]. Called by 0D1C:01CA and from
+   many other units. */
+/*@ 0D1C:02DC */ int f0D1C_02DC(void)
+{
+    if (!gMouseDisabled)
+        return gFBCE;
+    return gChars[gA99A].m77[gF51A];
+}
 /*@ 0D1C:0304 stub */ void f0D1C_0304(void) {}
 /*@ 0D1C:035A stub */ void f0D1C_035A(void) {}
 /*@ 0D1C:0454 stub */ void f0D1C_0454(void) {}
 /*@ 0D1C:0583 stub */ void f0D1C_0583(void) {}
 /*@ 0D1C:059B stub */ void f0D1C_059B(void) {}
-/*@ 0D1C:0670 stub */ void f0D1C_0670(void) {}
+/*@ 0D1C:0670 stub */ int f0D1C_0670(int who, int mask) { return 0; }
 /*@ 0D1C:070F stub */ void f0D1C_070F(void) {}
 /*@ 0D1C:07A7 stub */ void f0D1C_07A7(void) {}
 /*@ 0D1C:07DB stub */ void f0D1C_07DB(void) {}

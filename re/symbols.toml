@@ -2363,6 +2363,9 @@ unit = "e0d1c"
 addr = "0D1C:01CA"
 size = 274
 evidence = ["frame"]
+name = "RemoveCarriedItems"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0d1c_02dc"
@@ -2370,6 +2373,9 @@ unit = "e0d1c"
 addr = "0D1C:02DC"
 size = 40
 evidence = ["far", "frame"]
+name = "f0D1C_02DC"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0d1c_0304"
