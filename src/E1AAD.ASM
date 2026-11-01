@@ -84,11 +84,12 @@ kModifierOut    db 00h   ; 1AAD:0222: modifier bits published to 1AAD:0B0E
 
 ; 1AAD:0223: map a key code in AL with modifier bits in AH to an ASCII code in AL. Key codes below
 ; 3Eh index one of two 3Eh-entry tables by AL & 3Fh and by the shift bit AH & 1; the control bit
-; AH & 2 masks the result to the low 5 bits when the key is in the bit table at 1AAD:01DF. Keys
-; 4Bh..6Dh are the numeric keypad and use the tables at 1AAD:0357/037Ah, gated by kModifierState
-; bit 200h and kShiftFlagsCopy bit 2; keys 70h..79h (Ctrl-F1..F10) use the table at 1AAD:037Ah.
-; Other keys are returned with bit 80h set, or as ESC (1Bh) for 6Eh. Purpose unknown: the meaning
-; of each table entry is not established.
+; AH & 2 masks the result to the low 5 bits when the key is in the bit table at 1AAD:01DF. Key
+; codes 4Bh..6Dh (the numeric keypad) take the table at 1AAD:0357 unless kShiftFlagsCopy bit 2 is
+; set and kModifierState bit 200h is clear, when they take 1AAD:037Ah with a different index base.
+; Key codes 70h..79h subtract a base (0C5h, or 98h/A2h/ACh by the control bits) and return the
+; difference. Other codes come back with bit 80h set, or as ESC (1Bh) for 6Eh. Purpose unknown:
+; the meaning of each table entry is not established.
         PUBLIC  _TranslateKey            ; @ 1AAD:0223
 _TranslateKey PROC NEAR
         push    bx
@@ -552,9 +553,10 @@ _WaitKeyEvent ENDP
 ; it recomputes the bit for the key's own low byte (bit 1AAD:066F + index>>3) and returns
 ; AL = held-key bitmap bits OR 1AAD:066E. Called far from 16A5:00EA/0106 with the key pushed. The
 ; block at 1AAD:0693 (inside this region) wraps it: it keeps the key in BX, calls 1AAD:05F1 and
-; returns AX = 0 unless AH matches BH, after folding in the Ctrl/Alt/Shift bits from kKeyFlag204/
-; kKeyFlag206/kKeyFlag207 and kShiftFlags through the bit tables at 1AAD:01DF/01EF. Purpose
-; unknown: how the 1AAD:0693 wrapper is entered (the map takes it for part of 1AAD:05F1).
+; returns AL = 0FFh when the folded modifier byte AH equals the key's high byte BH, and 0 otherwise,
+; after folding in the Ctrl/Alt/Shift bits from kKeyFlag204/kKeyFlag206/kKeyFlag207 and kShiftFlags
+; through the bit tables at 1AAD:01DF/01EF. Purpose unknown: how the 1AAD:0693 wrapper is entered
+; (the map takes it for part of 1AAD:05F1), and why its near call reads the key from [bp+6].
         PUBLIC  _GetKeyState            ; @ 1AAD:05F1
 _GetKeyState PROC FAR
         push    bp
