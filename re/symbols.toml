@@ -5446,6 +5446,9 @@ unit = "e1de7"
 addr = "1DE7:025E"
 size = 160
 evidence = ["far", "frame"]
+name = "DrawTileRun"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "e1de7_02fe"
@@ -5480,6 +5483,9 @@ unit = "e1de7"
 addr = "1DE7:05DF"
 size = 43
 evidence = ["frame"]
+name = "PrintIntText"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "e1de7_060a"

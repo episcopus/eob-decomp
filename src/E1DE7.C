@@ -93,6 +93,9 @@ extern void HidePointerZone(int left, int top, int right, int bottom); /*@ 1BBE:
 extern void ShowPointerZone(void); /*@ 1BBE:02C2 */
 
 void ClearTextRegion(void);
+void DrawText(char far *text);
+
+extern char *itoa(int value, char far *string, int radix); /*@ 0000:62AA */
 
 /* 1DE7:00B6: select the text window `region` and clear it. Called by ovl1:1153, ovl1:13F7,
    ovl6:0000 and ovl6:0B9B, which use it to open a window. */
@@ -103,7 +106,37 @@ void ClearTextRegion(void);
 }
 
 /*@ 1DE7:00C9 stub */ void f1DE7_00C9(void) {}
-/*@ 1DE7:025E stub */ void f1DE7_025E(void) {}
+/* 1DE7:025E: draw a run of `count` tiles of a repeating pattern. `pattern` is a word array of tile
+   numbers terminated by 0xFF; drawing starts at `start` and wraps back to it at each terminator.
+   Each tile's source is gTileBuf + (number << shift) with shift 5, or 6 when g8102 is 3 or 4 (the
+   same cell size DrawTextFrame uses), and is drawn through ds:805A at the next cell position: x
+   advances when `horizontal` is set, y otherwise. After `count` tiles, the index is advanced to the
+   end of the pattern (past its 0xFF) and returned, so the caller can continue on the next edge.
+   Called by 1DE7:00C9 for each of the four frame edges. */
+/*@ 1DE7:025E */ int DrawTileRun(unsigned far *pattern, int start, int x, int y, int count, int horizontal)
+{
+    int shift;
+    int i;
+    int n;
+    char far *tile;
+
+    shift = 5 + (g8102 == 4 || g8102 == 3);
+    n = start;
+    for (i = 0; i < count; i++) {
+        tile = (char far *)gTileBuf + (pattern[n] << shift);
+        gTile805A(tile, x, y);
+        if (horizontal)
+            x++;
+        else
+            y++;
+        n++;
+        if (pattern[n] == 0xff)
+            n = start;
+    }
+    while (pattern[n] != 0xff)
+        n++;
+    return ++n;
+}
 
 /* 1DE7:02FE: write a region record's four edges (left, top, width, height). When `region` is the
    one currently selected, SelectRegion (1A29:0189) is called to load it into the driver's globals
@@ -141,5 +174,14 @@ void ClearTextRegion(void);
     gTextCol = gTextRow = 0;
 }
 /*@ 1DE7:03B2 stub */ void f1DE7_03B2(void) {}
-/*@ 1DE7:05DF stub */ void f1DE7_05DF(void) {}
-/*@ 1DE7:060A stub */ void f1DE7_060A(void) {}
+/* 1DE7:05DF: print `value` in decimal into the text window. The value is formatted into a local
+   30-byte buffer and handed to DrawText (1DE7:060A). No caller was found in the resident code. */
+/*@ 1DE7:05DF */ void PrintIntText(int value)
+{
+    char buf[30];
+
+    itoa(value, buf, 10);
+    DrawText(buf);
+}
+
+/*@ 1DE7:060A stub */ void DrawText(char far *text) {}
