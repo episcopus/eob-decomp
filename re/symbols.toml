@@ -5429,6 +5429,9 @@ unit = "e1de7"
 addr = "1DE7:00B6"
 size = 19
 evidence = ["frame"]
+name = "SetTextWindowAndClear"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "e1de7_00c9"
@@ -5460,6 +5463,9 @@ unit = "e1de7"
 addr = "1DE7:0344"
 size = 110
 evidence = ["far", "frame"]
+name = "ClearTextRegion"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "e1de7_03b2"

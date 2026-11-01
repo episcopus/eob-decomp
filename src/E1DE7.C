@@ -89,7 +89,19 @@ extern int gScrollOn;      /*@ ds:8110 */
     gTextRow = gRegions[region].saved3;
 }
 
-/*@ 1DE7:00B6 stub */ void f1DE7_00B6(void) {}
+extern void HidePointerZone(int left, int top, int right, int bottom); /*@ 1BBE:01FE */
+extern void ShowPointerZone(void); /*@ 1BBE:02C2 */
+
+void ClearTextRegion(void);
+
+/* 1DE7:00B6: select the text window `region` and clear it. Called by ovl1:1153, ovl1:13F7,
+   ovl6:0000 and ovl6:0B9B, which use it to open a window. */
+/*@ 1DE7:00B6 */ void SetTextWindowAndClear(int region)
+{
+    SetTextWindow(region);
+    ClearTextRegion();
+}
+
 /*@ 1DE7:00C9 stub */ void f1DE7_00C9(void) {}
 /*@ 1DE7:025E stub */ void f1DE7_025E(void) {}
 
@@ -107,7 +119,27 @@ extern int gScrollOn;      /*@ ds:8110 */
         SelectRegion(region);
 }
 
-/*@ 1DE7:0344 stub */ void f1DE7_0344(void) {}
+/* 1DE7:0344: blank the active text window. The window rectangle is (left*8, top) to
+   ((left + width)*8, top + height) in pixels; the mouse pointer is hidden over it, the rectangle
+   is filled through ds:806A in the frame colour (gTextAttr2, one pixel short on the right and
+   bottom), the pointer is shown again and the cursor is reset to (0, 0). Called by
+   1DE7:00B6 here and by 1C0E:0ADD, ovl2:0846, ovl2:09ED, ovl5:021C, ovl5:025F and ovl6:0858. */
+/*@ 1DE7:0344 */ void ClearTextRegion(void)
+{
+    int leftPx;
+    int top;
+    int rightPx;
+    int bottom;
+
+    leftPx = gTextLeft * 8;
+    top = gTextTop;
+    rightPx = (gTextLeft + gTextWidth) * 8;
+    bottom = gTextTop + gTextHeight;
+    HidePointerZone(leftPx, top, rightPx, bottom);
+    gRect806A(leftPx, top, rightPx - 1, bottom - 1, gTextAttr2);
+    ShowPointerZone();
+    gTextCol = gTextRow = 0;
+}
 /*@ 1DE7:03B2 stub */ void f1DE7_03B2(void) {}
 /*@ 1DE7:05DF stub */ void f1DE7_05DF(void) {}
 /*@ 1DE7:060A stub */ void f1DE7_060A(void) {}
