@@ -1,13 +1,14 @@
 /* Module at EOB.EXE 07A9:000A (487 bytes, the whole code segment). Second go/no-go module
    (SPEC 4.2): Turbo C++ 1.00, -ml -Z -O. StartupAlloc (07A9:000A) runs first: it makes the
-   start-up far allocations (the unpack buffers, the ADLIB sound map at ds:DCAC and the 1600-byte
-   ITEMRMP remap buffer at ds:F534, whitepaper 4), asks 19EC:0002 for three objects, then loads
-   the sound (177D:000A), the item tables and the overlay-2 data. The second function (07A9:010C)
-   redraws the item icon for the current square. Overlay entries are reached through the stub at
-   2106 (entries 2 and 8). Names are placeholders. */
+   start-up far allocations (7500 bytes at ds:8DCA, 6000 at ds:F43E, 4096 at ds:DCFC, the ADLIB
+   sound map at ds:DCAC and the 1600-byte ITEMRMP remap buffer at ds:F534, whitepaper 4), reads
+   the segments of slots 7, 5 and 3 from the 19EC:0002 page/buffer table (ds:FC0C), then loads
+   the sound (177D:000A), the item tables (LoadItemData) and the ITEMRMP read. The second function
+   (07A9:010C) redraws the item icon for the current square. Overlay entries are reached through
+   the stub at 2106 (entries 2 and 8). Names are placeholders. */
 
 struct Entry14 {            /* 14-byte records at ds:8DD2 */
-    unsigned char flags;    /* bit 0x80: draw an item for this record (other code tests 0x20, 0x08, 0x10) */
+    unsigned char flags;    /* bit 0x80: gates drawing the record's item icon (other code tests 0x20, 0x08, 0x10) */
     signed char icon;       /* the item's icon number, an index into gIconsDDE4 (read at 07A9:0141) */
     char rest[12];
 };
@@ -19,12 +20,12 @@ extern void far *gBufF43E; /*@ ds:F43E */
 extern void far *gSoundMap; /*@ ds:DCAC */
 extern void far *gBufDCFC; /*@ ds:DCFC */
 extern char far *gBufF534; /*@ ds:F534 */
-extern void far *gObjDCA6; /*@ ds:DCA6 */
-extern void far *gObjDF4E; /*@ ds:DF4E */
-extern void far *gObjEFC2; /*@ ds:EFC2 */
+extern void far *gSegDCA6; /*@ ds:DCA6 */  /* 19EC:0002(slot 7): page/buffer table segment, offset 0 */
+extern void far *gSegDF4E; /*@ ds:DF4E */  /* 19EC:0002(slot 5) */
+extern void far *gSegEFC2; /*@ ds:EFC2 */  /* 19EC:0002(slot 3) */
 extern int gFC1A; /*@ ds:FC1A */
 extern int g810E; /*@ ds:810E */
-extern void far *gA9C0; /*@ ds:A9C0 */
+extern char far *gA9C0; /*@ ds:A9C0 */  /* the font buffer passed to 1A47:0169 (records gFont1A47 at ds:FE4E) */
 extern int g811F; /*@ ds:811F */
 extern struct Entry14 gTable8DD2[]; /*@ ds:8DD2 */
 extern int g814A; /*@ ds:814A */
@@ -46,8 +47,11 @@ extern void far *MemAlloc(unsigned long size, int flags); /*@ 19BC:0007 */
 extern void far *f19EC_0002(int kind); /*@ 19EC:0002 */
 extern void LoadSoundDriver(void); /*@ 177D:000A */
 extern void SetUnpackBuffer(unsigned seg, unsigned size); /*@ 1B82:0217 */
-extern void Ovl2Entry2(void); /*@ 2106:002A */
-extern void f1A47_0169(void far *p); /*@ 1A47:0169 */
+/* the overlay entry at stub 2106:002A resolves to ovl2:09CC LoadItemData (src/EOV2.C:37). */
+extern void LoadItemData(void); /*@ 2106:002A */
+extern void f1A47_0169(char far *font); /*@ 1A47:0169 */
+/* the overlay entry at stub 2106:0048 resolves to ovl2:0577, which leads to the ITEMRMP read
+   (ovl2:0484, via ovl2:0171; docs/design/WHITEPAPER.md, the ITEMRMP.VGA/EGA row). */
 extern void Ovl2Entry8(void); /*@ 2106:0048 */
 extern void f0ACD_0E8A(void); /*@ 0ACD:0E8A */
 extern void f0D1C_0304(int n); /*@ 0D1C:0304 */
@@ -59,11 +63,12 @@ extern void f17A6_197E(void far *icon, void far *a, void far *b, int c); /*@ 17A
 extern void SetMousePointerShape(int hotX, int hotY, void far *icon); /*@ 1BB1:0002 */
 
 /* 07A9:000A: a start-up routine called from `main` (07C8:017F passes argc, argv through). It makes
-   the far allocations through MemAlloc (7500 at ds:8DCA, 6000 at ds:F43E, 120 at ds:DCAC the ADLIB
-   sound map, 4096 at ds:DCFC, 1600 at ds:F534 the ITEMRMP remap buffer, whitepaper 4), asks
-   19EC:0002 for three objects (kinds 7, 5, 3), clears ds:810E, sets the unpack buffer (1B82:0217),
-   and then loads sound (177D:000A), the item tables (Ovl2 stub entry 2) and the overlay-2 data
-   (Ovl2 stub entry 8, then 0ACD:0E8A). Sets ds:F43C = 1 and ds:FB45 = 0. */
+   the start-up far allocations through MemAlloc (7500 at ds:8DCA, 6000 at ds:F43E, 120 at ds:DCAC
+   the ADLIB sound map, 4096 at ds:DCFC, 1600 at ds:F534 the ITEMRMP remap buffer, whitepaper 4),
+   reads the segments of slots 7, 5 and 3 from the 19EC:0002 page/buffer table (ds:FC0C), clears
+   ds:810E, records the shared unpack work buffer (1B82:0217), and then loads sound (177D:000A),
+   the item tables (LoadItemData, Ovl2 stub entry 2) and the ITEMRMP read (Ovl2 stub entry 8, then
+   0ACD:0E8A). Sets ds:F43C = 1 and ds:FB45 = 0. */
 /*@ 07A9:000A */ void StartupAlloc(int argc, char far * far *argv)
 {
     gF43C = 1;
@@ -77,13 +82,13 @@ extern void SetMousePointerShape(int hotX, int hotY, void far *icon); /*@ 1BB1:0
     gSoundMap = MemAlloc(120L, 0);
     gBufDCFC = MemAlloc(4096L, 0);
     gBufF534 = MemAlloc(1600L, 0);
-    gObjDCA6 = f19EC_0002(7);
-    gObjDF4E = f19EC_0002(5);
-    gObjEFC2 = f19EC_0002(3);
+    gSegDCA6 = f19EC_0002(7);
+    gSegDF4E = f19EC_0002(5);
+    gSegEFC2 = f19EC_0002(3);
     LoadSoundDriver();
     SetUnpackBuffer(gFC1A, 0xFC00);
     g810E = 0;
-    Ovl2Entry2();
+    LoadItemData();
     f1A47_0169(gA9C0);
     Ovl2Entry8();
     f0ACD_0E8A();
@@ -114,7 +119,10 @@ extern void SetMousePointerShape(int hotX, int hotY, void far *icon); /*@ 1BB1:0
                    when g8102 == 0 (the real table is only built for g8102 != 0). */
                 gFn80D2("");
             f17A6_197E(gIconsDDE4[n], gDF48, g80E2, g8102);
-            n = 0x59;   /* one past the 1..0x58 that ovl2:03D5 fills; the filled icon set ends here */
+            /* gIconsDDE4[0x59] is gDF48 (0xDDE4 + 0x59 * 4 = 0xDF48), the same pointer just passed
+               as the second argument: the icon drawn for a record whose flag has 0x80 set. Its
+               writer is not in this unit. */
+            n = 0x59;
         }
         if (n > 0)
             SetMousePointerShape(8, 8, gIconsDDE4[n]);
