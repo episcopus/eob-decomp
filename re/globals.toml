@@ -277,6 +277,21 @@ name = "gBufSize"
 why = "the shared unpack work buffer's size in bytes, stored by SetUnpackBuffer (1B82:0217) and compared by Unpack (1B82:00C7) with 0x3C00/0xFC00 to decide whether to allocate (src/E1B82.C; WHITEPAPER 147)"
 
 [[global]]
+id = "ds:DCA6"
+name = "gSegDCA6"
+why = "19EC:0002 does not allocate: it returns MK_FP(gSegsFC0C[kind|1], 0), a far pointer with offset 0 to the page/buffer table segment of ds:DCA6's slot 7 (src/E19EC.C:18-20, src/E1B82.C); not an object (review of e07a9)"
+
+[[global]]
+id = "ds:DF4E"
+name = "gSegDF4E"
+why = "19EC:0002 returns MK_FP(gSegsFC0C[kind|1], 0), a far pointer with offset 0 to the page/buffer table segment of ds:DF4E's slot 5 (src/E19EC.C:18-20); not an object (review of e07a9)"
+
+[[global]]
+id = "ds:EFC2"
+name = "gSegEFC2"
+why = "19EC:0002 returns MK_FP(gSegsFC0C[kind|1], 0), a far pointer with offset 0 to the page/buffer table segment of ds:EFC2's slot 3 (src/E19EC.C:18-20); not an object (review of e07a9)"
+
+[[global]]
 id = "ds:812E"
 name = "gPointerBusy"
 why = "the word ds:812E is a busy flag, not a lock: 1BB1:0008 and 1BF3:0080 test it then increment it (not atomic), and 1BB1:00C8 and 1BF3:0085 decrement it; SetMousePointerShape and the 1BF3 cursor setters hold it across their work (review of e1bb1)"

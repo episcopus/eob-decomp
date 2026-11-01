@@ -686,6 +686,33 @@ why = "LCW encoder: writes the tokens Unpack4 (1D9A:0013, src/E1B82.C:22) reads 
 date = "2026-11-01"
 
 [[rename]]
+id = "ds:DCA6=gSegDCA6"
+addr = "ds:DCA6"
+old = "gObjDCA6"
+new = "gSegDCA6"
+kind = "global"
+why = "19EC:0002 does not allocate: it returns MK_FP(gSegsFC0C[kind|1], 0), a far pointer with offset 0 to the page/buffer table segment of ds:DCA6's slot 7 (src/E19EC.C:18-20, src/E1B82.C); not an object (review of e07a9)"
+date = "2026-11-01"
+
+[[rename]]
+id = "ds:DF4E=gSegDF4E"
+addr = "ds:DF4E"
+old = "gObjDF4E"
+new = "gSegDF4E"
+kind = "global"
+why = "19EC:0002 returns MK_FP(gSegsFC0C[kind|1], 0), a far pointer with offset 0 to the page/buffer table segment of ds:DF4E's slot 5 (src/E19EC.C:18-20); not an object (review of e07a9)"
+date = "2026-11-01"
+
+[[rename]]
+id = "ds:EFC2=gSegEFC2"
+addr = "ds:EFC2"
+old = "gObjEFC2"
+new = "gSegEFC2"
+kind = "global"
+why = "19EC:0002 returns MK_FP(gSegsFC0C[kind|1], 0), a far pointer with offset 0 to the page/buffer table segment of ds:EFC2's slot 3 (src/E19EC.C:18-20); not an object (review of e07a9)"
+date = "2026-11-01"
+
+[[rename]]
 id = "ds:812E=gPointerBusy"
 addr = "ds:812E"
 old = "g812E"
