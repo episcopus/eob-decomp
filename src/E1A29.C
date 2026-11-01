@@ -16,14 +16,17 @@
 
 /*@flags -ml -O -Z -G */
 
-struct Region {             /* 16 bytes: four edges, then four words of saved state (1DE7:0009) */
+struct Region {             /* 16 bytes: left, top, width, height, then four words of saved state */
     int left;               /* left edge, in 8-pixel columns */
     int top;                /* top edge, in lines */
     int width;              /* width, in 8-pixel columns */
     int height;             /* height, in lines */
-    int saved0;             /* words 4..7: per-region saved state (small values, colours [H]), */
-    int saved1;             /* copied in and out by 1DE7:0009 for the region it switches away from, */
-    int saved2;             /* unused by this unit */
+    /* words 4..7: per-region saved state (small values, colours [H]), copied in and out by
+       1DE7:0009 for the region it switches away from; this unit does not use them, and the
+       names only give the position (1DE7:0009) */
+    int saved0;
+    int saved1;
+    int saved2;
     int saved3;
 };
 
@@ -37,11 +40,16 @@ extern int gRegionBottom;        /*@ ds:FE44 */  /* selected region's bottom lin
 
 /* The driver's drawing entry points. No writer of these words exists in the resident code, so
    they are filled at load time [H]; their meanings are unknown and their first argument `mode`
-   is passed straight through. This unit is the only caller of the six pointers below: each has
-   one indirect call, in its own front end (for example 1A29:0082 `lcall [0x80a6]`), and of
-   gSetRegion, called once in SelectRegion (1A29:01DB `lcall [0x80b6]`). For ds:80C2 only, the
-   mouse pointer bypasses this unit: ShowPointer (1BBE:00ED) calls the driver pointer itself at
-   1BBE:01F4 (`mov ax, 0` at 1BBE:01F0) with a literal 0 for `mode`. */
+   is passed straight through. This unit calls each of the five pointers other than ds:80C2
+   (80A6, 80D6, 80DA, 809A, 8096) once, from its own front end (for example 1A29:0082 `lcall
+   [0x80a6]`), and calls ds:80C2 once from f1A29_000F (1A29:0044 `lcall [0x80c2]`). It is not
+   the only caller of ds:80C2: ShowPointer (1BBE:00ED, src/E1BBE.ASM:252-258) calls the same
+   pointer at 1BBE:01F4 (`mov ax, 0` at 1BBE:01F0) with a literal 0 for `mode`, bypassing this
+   unit. gSetRegion below is called once, in SelectRegion (1A29:01DB `lcall [0x80b6]`).
+   The `gDraw` prefix is a family guess: only ds:80C2 is evidenced as drawing (ShowPointer
+   draws the mouse shape through it, src/E1BBE.ASM:252-258); ds:8062, another pointer of the
+   same kind, is gDrawLine (src/E1A1F.C:6), which supports the family but is not evidence for
+   these six. */
 extern void (far *gDraw80C2)(int mode, void far *src, int x, int y);        /*@ ds:80C2 */
 extern void (far *gDraw80A6)(int mode, void far *src, int x, int y);        /*@ ds:80A6 */
 extern void (far *gDraw80D6)(int mode, void far *src, int x, int y);        /*@ ds:80D6 */
@@ -55,13 +63,15 @@ void SelectRegion(int region);
 
 /* 1A29:000F: Purpose unknown: a front end that draws through the driver pointer ds:80C2. It
    does nothing when the source far pointer is null, selects `region` when it is not the current
-   one, then calls the driver with x and y offset by the region's pixel origin. The mouse pointer
+   one, then calls the driver with x and y offset by the region's origin: its left edge in pixels
+   for x, its top line for y. The mouse pointer
    bypasses this front end: ShowPointer (1BBE:00ED) calls the driver pointer ds:80C2 directly at
    1BBE:01F4 (`mov ax, 0` at 1BBE:01F0; src/E1BBE.ASM:252-258), passing the shape record
    ([816E]:[8170], gPointerShapeOff and gPointerShapeSeg, re/renames.toml) as `src` at the
    unclipped absolute position gShapeX/gShapeY, with no region origin added, and a literal 0 as
-   `mode`. This front end itself has 20 call sites (for example the `lcall 1A29:000F` at
-   082C:0675), which pass region-relative coordinates. */
+   `mode`. This front end is called from 20 functions (9 in the resident code, 11 in the
+   overlays; for example 082C:063B, the `lcall 1A29:000F` at 082C:0675), which pass
+   region-relative coordinates. */
 /*@ 1A29:000F */ void f1A29_000F(int mode, void far *src, int x, int y, int region)
 {
     if (!src)
@@ -105,8 +115,8 @@ void SelectRegion(int region);
 }
 
 /* 1A29:0107: Purpose unknown: a front end over the driver pointer ds:809A, like 1A29:000F but
-   with one extra word forwarded to the driver. No caller of it was found in the resident code,
-   so both its role and the meaning of `extra` are unknown. */
+   with one extra word forwarded to the driver. No caller of it was found in EOB.EXE or its
+   overlays (make packet), so both its role and the meaning of `extra` are unknown. */
 /*@ 1A29:0107 */ void f1A29_0107(int mode, void far *src, int x, int y, int region, int extra)
 {
     if (!src)
@@ -117,8 +127,8 @@ void SelectRegion(int region);
 }
 
 /* 1A29:0148: Purpose unknown: a front end over the driver pointer ds:8096, like 1A29:000F but
-   with one extra word forwarded to the driver. No caller of it was found in the resident code,
-   so both its role and the meaning of `extra` are unknown. */
+   with one extra word forwarded to the driver. No caller of it was found in EOB.EXE or its
+   overlays (make packet), so both its role and the meaning of `extra` are unknown. */
 /*@ 1A29:0148 */ void f1A29_0148(int mode, void far *src, int x, int y, int region, int extra)
 {
     if (!src)
