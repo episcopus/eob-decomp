@@ -25,6 +25,12 @@ struct ItemType {           /* 16-byte records of ITEMTYPE.DAT, at ds:A9F0 */
     char data[16];
 };
 
+struct ItemRec {            /* the 14-byte ITEM.DAT records, at ds:8DD0 */
+    char b0[6];
+    int word6;              /* +06: set to -1 for all 500 slots before ITEM.DAT is read */
+    char b8[6];
+};
+
 struct CharRec {            /* 243-byte character records at ds:F580 (src/E0A72.C) */
     unsigned char index;    /* +00: the record's own index, written by InitGameTables */
     char pad01[0x32];
@@ -49,6 +55,10 @@ extern char g811D; /*@ ds:811D */
 extern int g811F; /*@ ds:811F */
 extern struct Region gRegions[]; /*@ ds:009F */
 extern struct ItemType gItemTypes[]; /*@ ds:A9F0 */
+extern struct ItemRec gItems[]; /*@ ds:8DD0 */
+extern int gItemCount; /*@ ds:E066 */
+extern int gItemNameCount; /*@ ds:F516 */
+extern unsigned char far gItemNames[]; /*@ 1F28:0000 */
 extern struct CharRec gChars[]; /*@ ds:F580 */
 extern void far *gIconsDDE4[]; /*@ ds:DDE4 */
 extern void far *gPtrDD00; /*@ ds:DD00 */
@@ -149,10 +159,26 @@ extern void FileClose(int handle); /*@ 1C0E:03BB */
     g8115 = 0;
 }
 
-/* ovl2:005E: Purpose unknown. Reads ITEM.DAT: a word count, one 14-byte record per count into the
-   table at ds:8DD0 (whose word at +6 is first set to -1 for all 500 slots), then a second word
-   count and one 35-byte record per count into the buffer at 01E0:0000. Called by LoadItemData. */
-/*@ ovl2:005E stub */ void Ovl2_005E(void) {}
+/* ovl2:005E: reads ITEM.DAT (whitepaper 4): a u16 item count (432), one 14-byte item record per
+   count into gItems (whose word at +6 is first set to -1 for all 500 slots), then a u16 name count
+   (98) and one 35-byte name per count into the far buffer gItemNames at 1F28:0000. Called by
+   LoadItemData. */
+/*@ ovl2:005E */ void LoadItems(void)
+{
+    int handle;
+    int i;
+
+    handle = FileOpen("ITEM.DAT", 1);
+    FileRead(handle, (void far *)&gItemCount, 2L);
+    for (i = 0; i < 500; i++)
+        gItems[i].word6 = -1;
+    for (i = 0; i < gItemCount; i++)
+        FileRead(handle, (void far *)&gItems[i], 14L);
+    FileRead(handle, (void far *)&gItemNameCount, 2L);
+    for (i = 0; i < gItemNameCount; i++)
+        FileRead(handle, (void far *)(gItemNames + i * 0x23), 0x23L);
+    FileClose(handle);
+}
 
 /* ovl2:0110: read ITEMTYPE.DAT, a count then 16-byte records */
 /*@ ovl2:0110 */ void LoadItemTypes(void)
@@ -299,7 +325,7 @@ extern void FileClose(int handle); /*@ 1C0E:03BB */
 {
     SetPointerShape();
     InitGameTables();
-    Ovl2_005E();
+    LoadItems();
     LoadItemTypes();
     SetUiPalette();
     LoadIntroIcons();
