@@ -1661,6 +1661,9 @@ unit = "e0a72"
 addr = "0A72:0006"
 size = 117
 evidence = ["far", "segment"]
+name = "GetIndexedByte"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0a72_007b"
@@ -1668,6 +1671,9 @@ unit = "e0a72"
 addr = "0A72:007B"
 size = 84
 evidence = ["far", "frame"]
+name = "FindClassSlot"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0a72_00cf"
@@ -1675,6 +1681,9 @@ unit = "e0a72"
 addr = "0A72:00CF"
 size = 89
 evidence = ["far", "frame"]
+name = "GetDerivedStatA"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0a72_0128"
@@ -1682,6 +1691,9 @@ unit = "e0a72"
 addr = "0A72:0128"
 size = 89
 evidence = ["far", "frame"]
+name = "GetDerivedStatB"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0a72_0181"
@@ -1689,6 +1701,9 @@ unit = "e0a72"
 addr = "0A72:0181"
 size = 28
 evidence = ["far", "frame"]
+name = "GetCharM15Value"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0a72_019d"
@@ -1696,6 +1711,9 @@ unit = "e0a72"
 addr = "0A72:019D"
 size = 17
 evidence = ["far", "frame"]
+name = "GetClassWord"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0a72_01ae"
@@ -1703,6 +1721,9 @@ unit = "e0a72"
 addr = "0A72:01AE"
 size = 261
 evidence = ["far", "frame"]
+name = "RollDamage"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0a72_02b3"
@@ -1710,6 +1731,9 @@ unit = "e0a72"
 addr = "0A72:02B3"
 size = 241
 evidence = ["frame"]
+name = "MaxDamage"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0a72_03a4"
@@ -1717,6 +1741,9 @@ unit = "e0a72"
 addr = "0A72:03A4"
 size = 196
 evidence = ["frame"]
+name = "MinDamage"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0a72_0468"
@@ -1724,6 +1751,9 @@ unit = "e0a72"
 addr = "0A72:0468"
 size = 79
 evidence = ["far", "frame"]
+name = "FormatRatioText"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0a72_04b7"
@@ -1731,6 +1761,9 @@ unit = "e0a72"
 addr = "0A72:04B7"
 size = 82
 evidence = ["far", "frame"]
+name = "GetClassSlotLong"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0a72_0509"
@@ -1738,6 +1771,9 @@ unit = "e0a72"
 addr = "0A72:0509"
 size = 25
 evidence = ["far", "frame"]
+name = "GetClassSlotByte"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0a72_0522"
@@ -1745,6 +1781,9 @@ unit = "e0a72"
 addr = "0A72:0522"
 size = 106
 evidence = ["far", "frame"]
+name = "GetScaledValue"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0a72_058c"
@@ -1752,6 +1791,9 @@ unit = "e0a72"
 addr = "0A72:058C"
 size = 11
 evidence = ["far", "frame"]
+name = "SubtractInts"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0a72_0597"
@@ -1759,6 +1801,9 @@ unit = "e0a72"
 addr = "0A72:0597"
 size = 33
 evidence = ["far", "frame"]
+name = "GetClampedTableByte"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0acd_0008"
@@ -4027,6 +4072,9 @@ unit = "e1948"
 addr = "1948:0006"
 size = 74
 evidence = ["segment"]
+name = "_SoundTimerIsr"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1948_0050"
@@ -4034,6 +4082,9 @@ unit = "e1948"
 addr = "1948:0050"
 size = 631
 evidence = ["near"]
+name = "_SoundTick"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1948_02c7"
@@ -4041,6 +4092,9 @@ unit = "e1948"
 addr = "1948:02C7"
 size = 42
 evidence = ["near"]
+name = "_VoiceOn"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1948_02f1"
@@ -4048,6 +4102,9 @@ unit = "e1948"
 addr = "1948:02F1"
 size = 37
 evidence = ["near"]
+name = "_VoiceOff"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1948_0316"
@@ -4055,6 +4112,9 @@ unit = "e1948"
 addr = "1948:0316"
 size = 52
 evidence = ["near"]
+name = "_SetVoicePitch"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1948_034a"
@@ -4062,6 +4122,9 @@ unit = "e1948"
 addr = "1948:034A"
 size = 29
 evidence = ["near"]
+name = "_SetThreeVoices"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1948_0367"
@@ -4069,6 +4132,9 @@ unit = "e1948"
 addr = "1948:0367"
 size = 16
 evidence = ["near"]
+name = "_SetOneVoice"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1948_0377"
@@ -4076,6 +4142,9 @@ unit = "e1948"
 addr = "1948:0377"
 size = 99
 evidence = ["far", "frame"]
+name = "_SoundDriverInstall"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1948_03da"
@@ -4083,6 +4152,9 @@ unit = "e1948"
 addr = "1948:03DA"
 size = 62
 evidence = ["far", "frame"]
+name = "_SoundDriverUninstall"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1948_0418"
@@ -4090,6 +4162,9 @@ unit = "e1948"
 addr = "1948:0418"
 size = 43
 evidence = ["far", "frame"]
+name = "_StartSound"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1948_0443"
@@ -4097,6 +4172,9 @@ unit = "e1948"
 addr = "1948:0443"
 size = 21
 evidence = ["frame"]
+name = "_StopSound"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1948_0458"
@@ -4104,6 +4182,9 @@ unit = "e1948"
 addr = "1948:0458"
 size = 19
 evidence = ["far", "frame"]
+name = "_SoundDriverResume"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1948_046b"
@@ -4111,6 +4192,9 @@ unit = "e1948"
 addr = "1948:046B"
 size = 22
 evidence = ["far", "frame"]
+name = "_SoundDriverPause"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1990_0001"
