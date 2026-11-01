@@ -1782,7 +1782,8 @@ addr = "0A72:0522"
 size = 106
 evidence = ["far", "frame"]
 name = "GetScaledValue"
-notes = "draft 2026-11-01 (src/E0A72.C): matches except at 0A72:052F, where -O keeps `cls` (g116E[m20]) in CL across the idiv; the original spills it to [bp-2] and reloads it for both table reads. Tried: volatile cls (then num is promoted instead), an extra local, declaration initializers, char casts, and inlining g116E[m20] in both subscripts (compiler keeps the value in a register, no frame). Open: a source shape where Turbo C promotes neither char local."
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0a72_058c"

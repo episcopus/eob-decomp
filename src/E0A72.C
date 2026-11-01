@@ -250,18 +250,19 @@ char GetClassSlotByte(char row, char slot); /*@ 0A72:0509 */
 
 /* 0A72:0522: 20 - (m24 - 1) / g3614[g116E[m20]] * g3610[g116E[m20]] - x, computed in bytes.
    Purpose unknown: called by 0DE8:0007 with x a class byte from ds:1A3B to build an attack value;
-   m20 indexes ds:116E and m24 is the character's counter at +24. Draft: with -O our build keeps
-   `cls` in CL across the division, the original spills it to [bp-2] and reloads it for both table
-   reads. Tried a volatile, an extra local, initializers, char casts, and inlining the m20 lookup
-   (which the compiler then keeps in a register); all either promote `cls` or promote `num`. */
-/*@ 0A72:0522 draft */ char GetScaledValue(char who, char x)
+   m20 indexes ds:116E and m24 is the character's counter at +24. `result` is what keeps the two
+   lookups in memory: without it -O promotes `cls` (or `num`) to CL and the spills differ. */
+/*@ 0A72:0522 */ char GetScaledValue(char who, char x)
 {
     char num;
     char cls;
+    char result;
 
     num = gChars[who].m24 - 1;
     cls = g116E[gChars[who].m20];
-    return 20 - num / g3614[cls] * g3610[cls] - x;
+    result = 20 - num / g3614[cls] * g3610[cls];
+    result -= x;
+    return result;
 }
 
 /* 0A72:058C: the difference of two ints. Purpose unknown: its only caller 08E6:106B uses it as a
