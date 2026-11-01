@@ -34,7 +34,7 @@ extern void interrupt (far *gFC08)();  /*@ ds:FC08: the INT 3Fh vector main repl
 extern void (far *gFn80FA)(void);     /*@ ds:80FA: exit hook main sets to 07C8:061D */
 extern int (far *gAllocFailHook)(void); /*@ ds:810A: allocation failure hook, main sets 07C8:0625 */
 extern int g8148;                     /*@ ds:8148: 1 when the mouse event handler is installed */
-extern int g814A;                     /*@ ds:814A: 0 disables the mouse handler body */
+extern int gMouseDisabled;                     /*@ ds:814A: 0 disables the mouse handler body */
 extern unsigned char g3092;           /*@ ds:3092: 1 once start-up reached its end */
 extern unsigned char g3056;           /*@ ds:3056: 1 while the overlay manager is running */
 extern int g80EA;                     /*@ ds:80EA: set to 1 during start-up, meaning unknown */
@@ -149,9 +149,9 @@ int AllocationFailure(void);
         f16A5_0D78(0L, 0);
         if (g3092) {
             if (!g8148)
-                g814A = 1;
+                gMouseDisabled = 1;
             else
-                g814A = !mouse;
+                gMouseDisabled = !mouse;
             StartupAlloc(argc, argv);
         }
     }

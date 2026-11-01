@@ -28,7 +28,7 @@ extern int g810E; /*@ ds:810E */
 extern char far *gA9C0; /*@ ds:A9C0 */  /* the font buffer passed to 1A47:0169 (records gFont1A47 at ds:FE4E) */
 extern int g811F; /*@ ds:811F */
 extern struct Entry14 gTable8DD2[]; /*@ ds:8DD2 */
-extern int g814A; /*@ ds:814A */
+extern int gMouseDisabled; /*@ ds:814A */
 extern int gFBCE; /*@ ds:FBCE */
 extern unsigned char gFBD2; /*@ ds:FBD2 */
 extern int g8102; /*@ ds:8102 */
@@ -95,7 +95,7 @@ extern void SetMousePointerShape(int hotX, int hotY, void far *icon); /*@ 1BB1:0
 }
 
 /* 07A9:010C: Purpose unknown: redraws the item icon for the current square. f0D1C_0304 stores the
-   index n in ds:FBCE (gFBCE) unless g814A; a nonzero n also prints " taken.\r" (after 0BD2:05B5)
+   index n in ds:FBCE (gFBCE) unless gMouseDisabled; a nonzero n also prints " taken.\r" (after 0BD2:05B5)
    when g811F == 7, and the record gTable8DD2[n] then supplies the icon number. When the current
    record gTable8DD2[gFBCE] has flag 0x80 and gFBD2 bit 0 is set, it selects the icon's 16-byte
    colour row (gBufF534 + (n << 4), or the dummy byte at ds:0090 when g8102 == 0), draws the item
@@ -110,7 +110,7 @@ extern void SetMousePointerShape(int hotX, int hotY, void far *icon); /*@ 1BB1:0
         }
         n = gTable8DD2[n].icon;
     }
-    if (!g814A) {
+    if (!gMouseDisabled) {
         if ((gTable8DD2[gFBCE].flags & 0x80) && (gFBD2 & 1)) {
             if (g8102)
                 gFn80D2(gBufF534 + (n << 4));   /* the icon's 16-byte colour row */

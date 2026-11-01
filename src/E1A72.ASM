@@ -41,7 +41,7 @@
         EXTRN   g8144:WORD              ; @ ds:8144: 1 when the driver reports a 640 wide range
         EXTRN   _gHideDepth:WORD              ; @ ds:8146: nonzero suppresses the redraw
         EXTRN   g8148:WORD              ; @ ds:8148: 1 when the mouse driver handler is installed
-        EXTRN   g814A:WORD              ; @ ds:814A: 0 disables the handler body (E07A9.C)
+        EXTRN   gMouseDisabled:WORD              ; @ ds:814A: 0 disables the handler body (E07A9.C)
         EXTRN   g814E:WORD              ; @ ds:814E: screen width minus 1, 13Fh
         EXTRN   g8152:WORD              ; @ ds:8152: screen height minus 1, 0C7h
         EXTRN   _gDrawnX:WORD              ; @ ds:815C: last position handed to the game
@@ -212,7 +212,7 @@ L0123:  mov     ax,0
 L0144:  mov     cx,0A0h
         mov     dx,64h
         mov     word ptr [g8148],1
-        mov     word ptr [g814A],1
+        mov     word ptr [gMouseDisabled],1
         cmp     word ptr [g8144],1
         jne     L015F
         shl     cx,1
@@ -251,7 +251,7 @@ MouseEventHandler:
         cld
         mov     ax,212Eh
         mov     ds,ax
-        cmp     word ptr [g814A],0
+        cmp     word ptr [gMouseDisabled],0
         jne     L01E9
         cmp     word ptr [g8144],1
         jne     L0195

@@ -32,7 +32,7 @@ extern int g8142; /*@ ds:8142: y of the last click, tested by UpdateOptionList *
 extern char gFontWidth1A47; /*@ ds:8100 */
 extern char gFontHeight1A47; /*@ ds:8101 */
 extern int g8102; /*@ ds:8102 */
-extern int g814A; /*@ ds:814A */
+extern int gMouseDisabled; /*@ ds:814A */
 extern int gCursorX; /*@ ds:8138: mouse x (E1A72.ASM) */
 extern int gCursorY; /*@ ds:813A: mouse y (E1A72.ASM) */
 extern int g8134; /*@ ds:8134: accumulated button changes (E1A72.ASM) */
@@ -139,7 +139,7 @@ extern void WaitFrames(int n); /*@ 1A16:000B */
         glyph = FindMaskBit(i, mask, shift);
         dy = y + gFontHeight1A47 * i + i * spacing;
         f082C_0898(names[glyph], x, dy, !g8102 ? 1 : panelDef->colorA, 0);
-        if (glyph == sel && (g5D1A || g814A))
+        if (glyph == sel && (g5D1A || gMouseDisabled))
             gDrawText(names[glyph], x, dy, panelDef->colorB, 0);
     }
     gFC78 = spacing;
@@ -220,7 +220,7 @@ enum {
     top = gFE66 + panelDef->y - halfspace;
     right = left + panelDef->width * gFontWidth1A47 - 1;
     bottom = top + panelDef->height * lineheight - 1;
-    if (!g814A) {
+    if (!gMouseDisabled) {
         cursory = gCursorY;
         if (PointInRect(gCursorX, cursory, left, top, right, bottom) && g5D1A)
             row = (cursory - top) / lineheight;
