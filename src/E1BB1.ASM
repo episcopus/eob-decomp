@@ -2,10 +2,10 @@
 ; single 00 byte with `segment` evidence (the unit's start marker, like 1990:0001); the one real
 ; function follows at 1BB1:0002.
 ;
-; 1BB1:0002 sets the mouse pointer's shape. Called from f07A9_010C (07A9:010C) with a hot-spot
-; offset (8,8) when n > 0 or (0,0) otherwise, and a pointer shape record gIconsDDE4[n] (E07A9.C:92-94;
-; the table holds item icon images, nothing here says "level" or "name"). Unit 1BBE shows what the
-; globals are: the hot spot ds:8158/815A is subtracted from the last drawn pointer position
+; 1BB1:0002 sets the mouse pointer's shape. Called from f07A9_010C (07A9:010C) with the hot spot
+; (8,8) when its n is above 0 and (0,0) otherwise, and the record gIconsDDE4[n] in both cases (the
+; two calls at E07A9.C:127-130; the table holds item icon images, E07A9.C:41-43). Unit 1BBE shows
+; what the globals are: the hot spot ds:8158/815A is subtracted from the last drawn pointer position
 ; ds:815C/815E (1BBE:001E..002F, 1BBE:0111..012E), and the shape record ds:816E/8170 is what
 ; 1BBE:00ED draws through [ds:80C2]. The save-under buffer ds:816A/816C is the screen behind the
 ; pointer: 1BBE:0002 restores it through [ds:804E] and 1BBE:00ED saves the background into it
@@ -14,27 +14,31 @@
 ; The size comes from the shape record: byte SHAPE_HEIGHT_BYTE (+3) is the height in pixels,
 ; taken unchanged (1BB1:0034 stores it at ds:8154; 1BBE:0095 adds it to the pointer's y and clips
 ; to 200), and byte SHAPE_WIDTH_BYTE (+2), plus 1, is the width in 8-pixel units (1BB1:003E
-; `inc dx` stores dx at ds:8156; 1BBE:005F adds it to x>>3 and clips to 40, the same unit as the
-; region records of 1A29). The width is an unsigned char count, so a stored width of 0 means 1
-; column; a stored height of 0 is 0 pixels. If the size changed, the old buffer is freed and the
-; size query [ds:80C6] is called as (width, height); its result is the new buffer size. The check
-; needs LargestFreeBlock (19BC:023D) to return at least that result plus 16 (1BB1:0076
-; `add ax,16`), and that function already subtracts 16 from the raw largest free block (19BC:0142
-; `max -= 0x10`, its header "less one 16 byte block"), so a raw free block of result + 32 bytes
-; is what passes. MemAlloc then allocates the result at 1BB1:0091..0094 (si minus the same 16).
+; `inc dx` stores dx at ds:8156; 1BBE:005F adds it to x>>3 and clips to 40, the same 8-pixel
+; column unit as a region record's left edge and width, E1A29.C:19-22). The width is an unsigned
+; char count, so a stored width of 0 means 1 column; a stored height of 0 is 0 pixels. If the size
+; changed, the old buffer is freed and the size query [ds:80C6] is called as (width, height); its
+; result is the new buffer size. The check needs LargestFreeBlock (19BC:023D) to return at least
+; that result plus HEAP_BLOCK (16, 1BB1:0076 `add ax,HEAP_BLOCK`), and that function already
+; subtracts 16 from the raw largest free block
+; (19BC:0142 `max -= 0x10`, its header "less one 16 byte block"), so a raw free block of result + 32
+; bytes is what passes. The comparison is skipped when the block's high word DX is nonzero
+; (1BB1:0080 `or dx,dx`; 1BB1:0082 `jne`), so a free block of 64 KB or more passes without the
+; test. MemAlloc then allocates the result at 1BB1:0091..0094 (si minus the same 16).
 ;
 ; The order is what keeps the old buffer valid: 1BBE:0002 hides the pointer first, while the old
 ; buffer and sizes are still in place, then the globals are overwritten, the buffer is resized,
 ; and 1BBE:00ED shows the pointer again and draws the new shape. 1BBE:0002 does nothing when
-; ds:814A is set; when the hide count ds:8146 is nonzero it only increments it (a nested hide);
-; when the count is 0 and ds:816C (no buffer) is 0 it does nothing; otherwise it restores the
-; background and increments ds:8146. 1BBE:00ED decrements the count and, at zero, copies the
-; position, saves the background and draws. The pair [ds:80AA] on the far pointer ds:8172/8174
-; and [ds:80A2] brackets only the show call at 1BB1:00B8 (1BB1:00B1 and 1BB1:00BD); nobody in
-; this unit or in E1BF3 writes ds:8172/8174, so the writer is unknown.
+; ds:814A is set; when the hide count gHideDepth (ds:8146) is nonzero it only increments it (a
+; nested hide); when the count is 0 and ds:816C (no buffer) is 0 it does nothing; otherwise it
+; restores the background and increments gHideDepth. 1BBE:00ED decrements the count and, at zero,
+; copies the position, saves the background and draws. The pair [ds:80AA] on the far pointer
+; ds:8172/8174 and [ds:80A2] brackets only the show call at 1BB1:00B8 (1BB1:00B1 and 1BB1:00BD);
+; this unit and E1BF3 only read ds:8172/8174, which _SetFarPointer (1A72:02FE, src/E1A72.ASM:442-443)
+; writes and _GetFarPointer (1A72:033A) reads.
 ;
-; The function acquires the busy flag at ds:812E (a test then an increment, not a lock), returns 1,
-; or 0 when no block can be allocated.
+; The function acquires the busy flag gPointerBusy (ds:812E, a test then an increment, not a lock),
+; returns 1, or 0 when no block can be allocated.
 ;
 ; The unit is hand-written assembly ([H]: the map's c_like test, tools/re/map_units.py:42-46, looks
 ; only at the instructions after the frame and finds no C-like frame here), so the module uses
@@ -44,6 +48,9 @@
 
         SHAPE_WIDTH_BYTE  EQU 2  ; shape record byte +2: width in 8-pixel units (1BB1:003A)
         SHAPE_HEIGHT_BYTE EQU 3  ; shape record byte +3: height in pixels (1BB1:0034)
+        HEAP_BLOCK        EQU 16 ; bytes per heap block; LargestFreeBlock subtracts one from the raw
+                                 ; block (E19BC.C:142, "less one 16 byte block") and this unit adds it
+                                 ; back for the margin (1BB1:0076) and removes it for MemAlloc (1BB1:0091)
 
         _DATA   SEGMENT WORD PUBLIC 'DATA'
         EXTRN   _gPointerBusy:WORD      ; @ ds:812E: busy flag, 0 = free; a test then an
@@ -56,8 +63,10 @@
         EXTRN   _gPointerBackSeg:WORD   ; @ ds:816C: save-under buffer, far segment (0 = none)
         EXTRN   _gPointerShapeOff:WORD  ; @ ds:816E: pointer shape record, far offset
         EXTRN   _gPointerShapeSeg:WORD  ; @ ds:8170: pointer shape record, far segment
-        EXTRN   g8172:WORD              ; @ ds:8172: argument of the [ds:80AA] call, offset (writer unknown)
-        EXTRN   g8174:WORD              ; @ ds:8174: argument of the [ds:80AA] call, segment (writer unknown)
+        EXTRN   g8172:WORD              ; @ ds:8172: argument of the [ds:80AA] call, offset; written by
+                                        ; _SetFarPointer 1A72:02FE (src/E1A72.ASM:442), read by _GetFarPointer 1A72:033A
+        EXTRN   g8174:WORD              ; @ ds:8174: argument of the [ds:80AA] call, segment; written by
+                                        ; _SetFarPointer 1A72:02FE (src/E1A72.ASM:443), read by _GetFarPointer 1A72:033A
         EXTRN   g80C6:DWORD             ; @ ds:80C6: indirect far function, buffer size (width, height)
         EXTRN   g80AA:DWORD             ; @ ds:80AA: indirect far function, called with ds:8172/8174
         EXTRN   g80A2:DWORD             ; @ ds:80A2: indirect far function, no arguments
@@ -127,7 +136,7 @@ setsize:
         push    dx
         call    dword ptr [g80C6]
         add     sp,4
-        add     ax,16
+        add     ax,HEAP_BLOCK           ; the margin LargestFreeBlock takes off (1BB1:0076)
         mov     si,ax
         ASSUME  CS:NOTHING
         call    far ptr _LargestFreeBlock
@@ -141,7 +150,7 @@ alloc:  mov     ax,0
         xor     ax,ax
         push    ax
         mov     ax,si
-        sub     ax,16
+        sub     ax,HEAP_BLOCK           ; undo the margin so MemAlloc sees the raw block (1BB1:0091)
         push    ax
         ASSUME  CS:NOTHING
         call    far ptr _MemAlloc
@@ -166,11 +175,15 @@ ready:  push    word ptr [g8174]
 ; size passes `je ready` with a dangling buffer. A first-time failure (ds:816C == 0) leaves it
 ; zero and the next call retries.
 ;
-; QUIRK 1BB1:00C6: the failure path also skips the 1BBE:00ED call above, so when ds:816C was
-; nonzero when 1BBE:0002 was called (1BB1:0013) the hide it did (incrementing ds:8146) is never
-; undone and the pointer stays hidden until something else balances the count. When ds:816C was 0
-; on entry, 1BBE:0002 returned before incrementing (1BBE:0017), so the first-time failure above
-; leaks no hide. Both paths still release the busy flag ds:812E at `release`.
+; QUIRK 1BB1:00C6: the failure path also skips the 1BBE:00ED call above, so the hide 1BBE:0002
+; did is never undone and the pointer stays hidden until something else balances the count. The
+; count can be nonzero two ways: it was already nonzero, so 1BBE:0002 only increments it (1BBE:0015
+; `jne 0075` to 1BBE:00E0 `inc [8146]`, no buffer test), or ds:816C (the buffer) was nonzero on
+; entry, so 1BBE:0017 passes the buffer test and increments. ds:816C is stored once (1BB1:00A5,
+; only with a nonzero MemAlloc segment) and never cleared, so the count is nonzero only after a
+; hide that saw a buffer. Only when ds:816C is 0 and the count is 0 does 1BBE:0002 return before
+; incrementing (1BBE:0017), so the first-time failure above leaks no hide. Both paths still
+; release the busy flag gPointerBusy at `release`.
 failed: xor     ax,ax
 release:
         dec     word ptr [_gPointerBusy]
