@@ -7,10 +7,12 @@ For each branch hand-off, oldest first (rejected ones only when named with KEY):
   1. a temporary worktree build/integrate/<key> on branch integrate/<key> from main;
   2. `git merge --no-ff --no-commit` of the commit that was handed off (not whatever the branch
      holds now);
-  3. the branch's changes checked (tools/agent/safety.py: nothing under eob/, no dashes, and from a
+  3. the recorded renames applied to the merged tree (`make rename APPLY=1`), so one address keeps
+     one name whatever the branch called it;
+  4. the branch's changes checked (tools/agent/safety.py: nothing under eob/, no dashes, and from a
      unit or review branch nothing in the spec, the pins, the matcher, its fixtures, the agent tools);
-  4. `make check` in the temporary worktree: the receipt is for exactly the tree that lands;
-  5. one merge commit, `main` fast-forwarded to it, the hand-off archived, the claim released, the
+  5. `make check` in the temporary worktree: the receipt is for exactly the tree that lands;
+  6. one merge commit, `main` fast-forwarded to it, the hand-off archived, the claim released, the
      agent's worktree removed when it is clean and its branch deleted.
 A failing step leaves main untouched: the hand-off is marked rejected with the reason and the log
 (build/integrate/<key>.log); the owner re-claims the unit (same AGENT), fixes, and hands off again.
@@ -72,8 +74,18 @@ def integrate_one(key: str, dry: bool) -> bool:
         # even when a branch committed them (git add -A in a worktree, before .gitignore matched links)
         common.git("rm", "-r", "-q", "--cached", "--ignore-unmatch", "--", *common.LINKS, cwd=tmp)
         common.link_untracked(tmp)
-        with open(log, "w") as out:
-            r = subprocess.run(["make", "check"], cwd=tmp, stdout=out, stderr=subprocess.STDOUT)
+        # Names: a branch may still use a name another branch renamed, or declare a renamed address
+        # under its placeholder; the recorded renames win (tools/match/rename.py), before the check
+        if (tmp / "tools/match/rename.py").exists():
+            r = subprocess.run([str(tmp / ".venv/bin/python"), "tools/match/rename.py", "--apply"], cwd=tmp,
+                               capture_output=True, text=True)
+            if r.returncode:
+                raise Rejected("make rename APPLY=1 failed: %s" % (r.stdout + r.stderr).strip()[-300:])
+            common.git("add", "-A", "--", "src", "re", "docs", cwd=tmp)
+        changed = common.git("diff", "--name-only", "%s...%s" % ("main", commit), cwd=main_dir).split()
+        with open(log, "w") as out:                   # the readability gate judges what the branch changed
+            r = subprocess.run(["make", "check"], cwd=tmp, stdout=out, stderr=subprocess.STDOUT,
+                               env=dict(os.environ, READABILITY_FILES=" ".join(changed)))
         if r.returncode:
             tail = log.read_text().strip().splitlines()[-3:]
             raise Rejected("make check failed: %s" % " | ".join(tail))

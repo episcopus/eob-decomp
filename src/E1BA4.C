@@ -4,12 +4,12 @@
    screen text. Placeholder names. */
 
 extern char *ltoa(long value, char *string, int radix); /*@ 0000:62F1 */
-extern void (far *gFn80CA)(); /*@ ds:80CA */
+extern void (far *gDrawText)(); /*@ ds:80CA */
 
 /*@ 1BA4:000C */ void f1BA4_000C(long value, int a, int b, int c, int d)
 {
     char buf[30];
 
     ltoa(value, buf, 10);
-    gFn80CA(buf, a, b, c, d);
+    gDrawText(buf, a, b, c, d);
 }

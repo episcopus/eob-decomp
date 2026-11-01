@@ -12,8 +12,8 @@
 _f1BA8_0005 LABEL BYTE                     ; @ 1BA8:0005
         db      0
 
-        PUBLIC  _f1BA8_0006                ; @ 1BA8:0006
-_f1BA8_0006 PROC FAR
+        PUBLIC  _Unpack0                ; @ 1BA8:0006
+_Unpack0 PROC FAR
         push    bp
         mov     bp,sp
         push    ax
@@ -75,7 +75,7 @@ L0068:  pop     si
         pop     ax
         pop     bp
         ret
-_f1BA8_0006 ENDP
+_Unpack0 ENDP
 
         PUBLIC  _f1BA8_0072                ; @ 1BA8:0072
 _f1BA8_0072 PROC FAR

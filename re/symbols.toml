@@ -4574,9 +4574,9 @@ unit = "e1b82"
 addr = "1B82:0217"
 size = 21
 evidence = ["far"]
-name = "SetUnpackBuffer"
 level = "L2"
 match_flags = "-ml -O -Z -G"
+name = "SetUnpackBuffer"
 
 [[function]]
 id = "e1ba4_000c"
@@ -4604,9 +4604,9 @@ unit = "e1ba8"
 addr = "1BA8:0006"
 size = 108
 evidence = ["far"]
-name = "_f1BA8_0006"
 level = "L2"
 match_flags = "tasm /mx"
+name = "Unpack0"
 
 [[function]]
 id = "e1ba8_0072"
