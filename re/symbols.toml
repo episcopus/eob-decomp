@@ -1165,7 +1165,7 @@ unit = "e07a9"
 addr = "07A9:010C"
 size = 229
 evidence = ["far", "frame"]
-name = "Level07A9"
+name = "f07A9_010C"
 level = "L2"
 match_flags = "-ml -O -Z"
 

@@ -389,6 +389,33 @@ why = "the default sound volume PlaySoundDefault (177D:00F3) passes and PlaySoun
 date = "2026-11-01"
 
 [[rename]]
+id = "ds:DDE4=gIconsDDE4"
+addr = "ds:DDE4"
+old = "gNamesDDE4"
+new = "gIconsDDE4"
+kind = "global"
+why = "the table at ds:DDE4 is far pointers to item icon images, not names: ovl2:03D5..0413 fills entries 1..0x58 from the call through [ds:8086] with a 16x16 cell position on the 20-per-row ITEMICN sheet (the string at ds:677D), and 07A9:018F passes each to the sprite drawer f17A6_197E/f1BB1_0002 (review of e07a9)"
+date = "2026-11-01"
+
+[[rename]]
+id = "ds:80D2=gFn80D2"
+addr = "ds:80D2"
+old = "gPrint80D2"
+new = "gFn80D2"
+kind = "global"
+why = "a far function pointer called with a pointer to a 16-byte colour table, not text: E07A9 passes a row of the 1600-byte ITEMRMP buffer (ds:F534 + n<<4) or the one-byte dummy at ds:0090, and the other callers pass the 16-byte tables at ds:1CD3 and ds:1CE3 (review of e07a9)"
+date = "2026-11-01"
+
+[[rename]]
+id = "07A9:010C=f07A9_010C"
+addr = "07A9:010C"
+old = "Level07A9"
+new = "f07A9_010C"
+kind = "function"
+why = "the old name Level07A9 claimed a level routine with no evidence; the bytes only show an item icon display routine (review of e07a9), so keep a placeholder until the purpose is pinned"
+date = "2026-11-01"
+
+[[rename]]
 id = "19F3:000E=ClipRect"
 addr = "19F3:000E"
 old = "ClipDrawRect"

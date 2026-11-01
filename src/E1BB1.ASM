@@ -2,9 +2,9 @@
 ; single 00 byte with `segment` evidence (the unit's start marker, like 1990:0001); the one real
 ; function follows at 1BB1:0002.
 ;
-; 1BB1:0002 sets the mouse pointer's shape. Called from Level07A9 (07A9:010C) with a hot-spot
-; offset and a pointer shape record, both taken from gNamesDDE4[n] (E07A9.C:92-94; that is only
-; the caller's name for the table, nothing here says "level" or "name"). Unit 1BBE shows what the
+; 1BB1:0002 sets the mouse pointer's shape. Called from f07A9_010C (07A9:010C) with a hot-spot
+; offset (8,8) when n > 0 or (0,0) otherwise, and a pointer shape record gIconsDDE4[n] (E07A9.C:92-94;
+; the table holds item icon images, nothing here says "level" or "name"). Unit 1BBE shows what the
 ; globals are: the hot spot ds:8158/815A is subtracted from the last drawn pointer position
 ; ds:815C/815E (1BBE:001E..002F, 1BBE:0111..012E), and the shape record ds:816E/8170 is what
 ; 1BBE:00ED draws through [ds:80C2]. The save-under buffer ds:816A/816C is the screen behind the

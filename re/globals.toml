@@ -145,3 +145,13 @@ why = "the driver amplitude written to register 1 of the current sound (0000:03B
 id = "ds:FBCA"
 name = "gSoundVolume"
 why = "the default sound volume PlaySoundDefault (177D:00F3) passes and PlaySoundVolume uses to derive the level"
+
+[[global]]
+id = "ds:DDE4"
+name = "gIconsDDE4"
+why = "the table at ds:DDE4 is far pointers to item icon images, not names: ovl2:03D5..0413 fills entries 1..0x58 from the call through [ds:8086] with a 16x16 cell position on the 20-per-row ITEMICN sheet (the string at ds:677D), and 07A9:018F passes each to the sprite drawer f17A6_197E/f1BB1_0002 (review of e07a9)"
+
+[[global]]
+id = "ds:80D2"
+name = "gFn80D2"
+why = "a far function pointer called with a pointer to a 16-byte colour table, not text: E07A9 passes a row of the 1600-byte ITEMRMP buffer (ds:F534 + n<<4) or the one-byte dummy at ds:0090, and the other callers pass the 16-byte tables at ds:1CD3 and ds:1CE3 (review of e07a9)"
