@@ -27,3 +27,12 @@ new = "Unpack0"
 kind = "function"
 why = "Unpack (1B82:00C7) calls it for format 0, stored data: src + 8, the destination and the unpacked size (src/E1B82.C, whitepaper 4.2)"
 date = "2026-11-01"
+
+[[rename]]
+id = "1BA8:0081=NormFar"
+addr = "1BA8:0081"
+old = "f1BA8_0081"
+new = "NormFar"
+kind = "function"
+why = "normalises a far pointer: Unpack4 (1D9A:0013) calls it on its source and destination before using them as DS:SI and ES:DI (1D9A:0023, 1D9A:0032)"
+date = "2026-11-01"

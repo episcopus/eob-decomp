@@ -31,13 +31,13 @@ _Unpack0 PROC FAR
         mov     ax,di
         mov     dx,es
         push    cs
-        call    near ptr _f1BA8_0081
+        call    near ptr _NormFar
         mov     di,ax
         mov     es,dx
         mov     ax,si
         mov     dx,ds
         push    cs
-        call    near ptr _f1BA8_0081
+        call    near ptr _NormFar
         mov     si,ax
         mov     ds,dx
         mov     cx,[bp+0Eh]
@@ -52,13 +52,13 @@ L0044:  or      bx,bx
 L0048:  mov     ax,di
         mov     dx,es
         push    cs
-        call    near ptr _f1BA8_0081
+        call    near ptr _NormFar
         mov     di,ax
         mov     es,dx
         mov     ax,si
         mov     dx,ds
         push    cs
-        call    near ptr _f1BA8_0081
+        call    near ptr _NormFar
         mov     si,ax
         mov     ds,dx
         mov     cx,8000h
@@ -84,13 +84,13 @@ _f1BA8_0072 PROC FAR
         mov     ax,[bp+6]
         mov     dx,[bp+8]
         push    cs
-        call    near ptr _f1BA8_0081
+        call    near ptr _NormFar
         pop     bp
         ret
 _f1BA8_0072 ENDP
 
-        PUBLIC  _f1BA8_0081                ; @ 1BA8:0081
-_f1BA8_0081 PROC FAR
+        PUBLIC  _NormFar                ; @ 1BA8:0081
+_NormFar PROC FAR
         push    ax
         shr     ax,1
         shr     ax,1
@@ -100,6 +100,6 @@ _f1BA8_0081 PROC FAR
         pop     ax
         and     ax,0Fh
         ret
-_f1BA8_0081 ENDP
+_NormFar ENDP
 
         END
