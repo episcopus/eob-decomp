@@ -19,7 +19,7 @@
         EXTRN   _close:FAR              ; @ 0000:50C5 (runtime, E1A47.C)
         EXTRN   _f1C0E_1310:FAR         ; @ 1C0E:1310 (locates and opens the overlay file)
         EXTRN   _ShutdownGame:FAR         ; @ 07C8:058A (cleanup and exit, E19BC.C)
-        EXTRN   _f1AAD_0B0E:FAR         ; @ 1AAD:0B0E (keyboard glue, takes the button state)
+        EXTRN   _HandleMouseButtons:FAR         ; @ 1AAD:0B0E (keyboard glue, takes the button state)
         EXTRN   _HidePointer:FAR         ; @ 1BBE:0002 (E1BB1.ASM)
         EXTRN   _ShowPointer:FAR         ; @ 1BBE:00ED (E1BB1.ASM)
 
@@ -271,7 +271,7 @@ L019E:  mov     word ptr [g813C],cx
 L01B8:  cmp     word ptr [g8130],bx
         je      L01D7
         push    bx
-        call    far ptr _f1AAD_0B0E
+        call    far ptr _HandleMouseButtons
         add     sp,2
         mov     ax,[g8130]
         xor     ax,bx

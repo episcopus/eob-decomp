@@ -43,9 +43,9 @@ extern void (far *gDrawText)(char far *text, int a, int b, int c, int d); /*@ ds
 extern void f082C_0898(char far *text, int a, int b, int c, int d); /*@ 082C:0898 */
 extern void LockHidePointer(void); /*@ 1BBE:0307: start a frame (redraws through the mouse callbacks) */
 extern void LockShowPointer(void); /*@ 1BBE:0332: end a frame */
-extern int f1AAD_0471(void); /*@ 1AAD:0471: nonzero when a key is waiting */
-extern void f1AAD_0480(void); /*@ 1AAD:0480: clear the pending key */
-extern int f1AAD_05D3(void); /*@ 1AAD:05D3: read a key (the low eleven bits are the code) */
+extern int IsKeyPending(void); /*@ 1AAD:0471: nonzero when a key is waiting */
+extern void FlushKeyBuffer(void); /*@ 1AAD:0480: clear the pending key */
+extern int WaitKeyEvent(void); /*@ 1AAD:05D3: read a key (the low eleven bits are the code) */
 extern void WaitFrames(int n); /*@ 1A16:000B */
 
 /* 14EF:0007: the index of the n-th (zero-based) set bit of mask, scanning bit numbers from shift up.
@@ -146,7 +146,7 @@ extern void WaitFrames(int n); /*@ 1A16:000B */
     }
     gFC78 = spacing;
     LockShowPointer();
-    f1AAD_0480();
+    FlushKeyBuffer();
     g8134 = 0;
 }
 /* the key codes UpdateOptionList accepts; the switch table at 14EF:055D lists them. One game key and
@@ -218,8 +218,8 @@ enum {
     colorB = panelDef->colorB;
     key = 0;
     gFC7A = 0;
-    if (f1AAD_0471())
-        key = f1AAD_05D3() & 0x8ff;
+    if (IsKeyPending())
+        key = WaitKeyEvent() & 0x8ff;
     left = (gTextLeft << 3) + panelDef->x * gFontWidth1A47;
     top = gTextTop + panelDef->y - halfspace;
     right = left + panelDef->width * gFontWidth1A47 - 1;

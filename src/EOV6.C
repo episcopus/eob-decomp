@@ -86,8 +86,8 @@ extern void f1547_0991(int member); /*@ 1547:0991 */
 extern void f0DE8_09B9(int member, int what); /*@ 0DE8:09B9 */
 extern void UpdateObjects(int kind); /*@ 08E6:0CC8 */
 extern void ClipRect(int x1, int y1, int x2, int y2, int width, int height, int extra1, int extra2); /*@ 19F3:000E */
-extern int f1AAD_038E(void); /*@ 1AAD:038E */
-extern void f1AAD_0480(void); /*@ 1AAD:0480 */
+extern int ReadKey(void); /*@ 1AAD:038E */
+extern void FlushKeyBuffer(void); /*@ 1AAD:0480 */
 extern int fOvl1_243A(int what); /*@ 2102:0039 */
 extern int FindClassSlot(int value, int classIndex); /*@ 0A72:007B */
 extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
@@ -316,14 +316,14 @@ void f0B9B(int message);
             if (!flag4)
                 goto done;
         }
-        if (!f1AAD_038E()) {
+        if (!ReadKey()) {
             result = f09D2();
             if ((f0A92() || (foundWounded && (flag4 || healerFound)))
-                && !f1AAD_038E() && result == 0)
+                && !ReadKey() && result == 0)
                 continue;
         }
 done:
-        f1AAD_0480();
+        FlushKeyBuffer();
         SetTextWindow(4);
         f1A47_0169(gFE5A);
         if (!foundWounded && !result)
@@ -481,8 +481,8 @@ done:
     ClipRect(gTextLeft, gTextTop, gTextLeft, gTextTop, gTextWidth, gTextHeight, 2, 0);
     LockShowPointer();
     for (i = 0; i < 0x78; i++) {
-        if (f1AAD_038E()) {
-            f1AAD_0480();
+        if (ReadKey()) {
+            FlushKeyBuffer();
             break;
         }
         WaitFrames(1);
@@ -490,5 +490,5 @@ done:
     g8115 = savedRegion;
     f1A47_0169(savedFont);
     SetTextWindow(savedSelect);
-    f1AAD_0480();
+    FlushKeyBuffer();
 }

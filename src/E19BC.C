@@ -22,7 +22,7 @@ extern void far *f1BA8_0072(void far *p); /*@ 1BA8:0072: normalizes a far pointe
 extern int f1C0E_0E5B(unsigned a, unsigned char b); /*@ 1C0E:0E5B: first retry before the OOM hook */
 extern int f1DDD_002D(int i); /*@ 1DDD:002D */
 extern void PrintString(char far *s); /*@ 19EA:0000 */
-extern void f1AAD_053A(void); /*@ 1AAD:053A */
+extern void WaitGameKey(void); /*@ 1AAD:053A */
 extern void ShutdownGame(void); /*@ 07C8:058A */
 
 /* 19BC:0007: allocate a far block of size bytes. It asks farmalloc for one extra byte (or 16 for
@@ -153,7 +153,7 @@ extern void ShutdownGame(void); /*@ 07C8:058A */
 {
     f1DDD_002D(7);
     PrintString("Memory Allocation Error! Press any key to exit to DOS.");
-    f1AAD_053A();
+    WaitGameKey();
     ShutdownGame();
     return 0;
 }
