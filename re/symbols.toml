@@ -4785,6 +4785,9 @@ unit = "e1aad"
 addr = "1AAD:05F1"
 size = 295
 evidence = ["far", "near", "frame"]
+name = "_GetKeyState"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1aad_0718"

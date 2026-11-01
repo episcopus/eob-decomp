@@ -544,10 +544,136 @@ f05D3_05E9:
         retf
 _WaitKeyEvent ENDP
 
-        PUBLIC  _f1AAD_05F1              ; @ 1AAD:05F1 stub
-_f1AAD_05F1 PROC FAR
-        ret
-_f1AAD_05F1 ENDP
+; 1AAD:05F1: the key-state query. It takes a key code at [bp+6], clears the extra-bit byte
+; 1AAD:066E, and copies ds:80EA into kModifierState. Unless kModifierState bit 2 is set it
+; searches the key's low byte in the 14-entry list 1AAD:0677; a match takes the mode byte from
+; 1AAD:0685 and reads that mode's bits out of the held-key bitmap 1AAD:01FF into 1AAD:066E. Then
+; it recomputes the bit for the key's own low byte (bit 1AAD:066F + index>>3) and returns
+; AL = held-key bitmap bits OR 1AAD:066E. Called far from 16A5:00EA/0106 with the key pushed. The
+; block at 1AAD:0693 (inside this region) wraps it: it keeps the key in BX, calls 1AAD:05F1 and
+; returns AX = 0 unless AH matches BH, after folding in the Ctrl/Alt/Shift bits from kKeyFlag204/
+; kKeyFlag206/kKeyFlag207 and kShiftFlags through the bit tables at 1AAD:01DF/01EF. Purpose
+; unknown: how the 1AAD:0693 wrapper is entered (the map takes it for part of 1AAD:05F1).
+        PUBLIC  _GetKeyState            ; @ 1AAD:05F1
+_GetKeyState PROC FAR
+        push    bp
+        mov     bp,sp
+        mov     ax,[bp+6]
+        pop     bp
+        push    di
+        push    bx
+        mov     byte ptr cs:[kKeyBits66E],0
+        push    ds
+        push    ax
+        mov     ax,212Eh
+        mov     ds,ax
+        mov     ax,[g80EA]
+        mov     cs:[kModifierState],ax
+        pop     ax
+        pop     ds
+        test    word ptr cs:[kModifierState],2
+        jne     f05F1_064B
+        mov     di,0Eh
+f05F1_061C:
+        dec     di
+        jl      f05F1_064B
+        cmp     al,byte ptr cs:[di+kScanList677]
+        jne     f05F1_061C
+        push    ax
+        mov     al,byte ptr cs:[di+kModeList685]
+        xor     ah,ah
+        mov     di,ax
+        shr     di,1
+        shr     di,1
+        shr     di,1
+        mov     bx,ax
+        and     bx,7
+        mov     al,byte ptr cs:[bx+kKeyMasks66F]
+        cli
+        and     al,byte ptr cs:[di+kKeyDownBits]
+        mov     byte ptr cs:[kKeyBits66E],al
+        pop     ax
+f05F1_064B:
+        xor     ah,ah
+        mov     di,ax
+        shr     di,1
+        shr     di,1
+        shr     di,1
+        mov     bx,ax
+        and     bx,7
+        mov     al,byte ptr cs:[bx+kKeyMasks66F]
+        cli
+        and     al,byte ptr cs:[di+kKeyDownBits]
+        or      al,byte ptr cs:[kKeyBits66E]
+        sti
+        pop     bx
+        pop     di
+        retf
+_GetKeyState ENDP
+
+kKeyBits66E     db 00h          ; 1AAD:066E: extra held bits accumulated by 1AAD:05F1
+kKeyMasks66F    db 01h,02h,04h,08h,10h,20h,40h,80h       ; 1AAD:066F: bit for a key low 3 bits
+kScanList677    db 3Ch,3Ah,63h,68h,5Ch,5Bh,5Dh,60h,62h,65h,67h,66h,37h,2Bh  ; 1AAD:0677
+kModeList685    db 3Eh,40h,4Bh,4Ch,4Fh,50h,51h,53h,54h,55h,56h,59h,5Fh,6Ch  ; 1AAD:0685
+
+; 1AAD:0693: the wrapper described in the 1AAD:05F1 comment. Purpose unknown: its entry.
+f05F1_0693:
+        push    bx
+        push    cx
+        push    di
+        mov     bx,ax
+        call    _GetKeyState
+        je      f05F1_0712
+        mov     ax,bx
+        xor     ah,ah
+        mov     di,ax
+        shr     di,1
+        shr     di,1
+        shr     di,1
+        mov     ch,1
+        mov     cl,al
+        and     cl,7
+        shl     ch,cl
+        test    byte ptr cs:[kKeyFlag206],4
+        jne     f05F1_06C3
+        test    byte ptr cs:[kKeyFlag207],1
+        je      f05F1_06C6
+f05F1_06C3:
+        or      ah,2
+f05F1_06C6:
+        test    byte ptr cs:[kKeyFlag206],50h
+        je      f05F1_06D1
+        or      ah,4
+f05F1_06D1:
+        test    byte ptr cs:[kKeyFlag204],10h
+        jne     f05F1_06E1
+        test    byte ptr cs:[kKeyFlag206],2
+        je      f05F1_06E4
+f05F1_06E1:
+        or      ah,1
+f05F1_06E4:
+        test    word ptr cs:[kShiftFlags],1
+        je      f05F1_06F7
+        test    byte ptr cs:[di+kKeyBitTable1],ch
+        je      f05F1_06F7
+        xor     ah,1
+f05F1_06F7:
+        test    word ptr cs:[kShiftFlags],2
+        je      f05F1_070A
+        test    byte ptr cs:[di+kKeyBitTable2],ch
+        je      f05F1_070A
+        xor     ah,1
+f05F1_070A:
+        mov     al,0FFh
+        cmp     ah,bh
+        je      f05F1_0712
+        xor     ax,ax
+f05F1_0712:
+        pop     di
+        pop     cx
+        pop     bx
+        or      ax,ax
+        retf
 
         PUBLIC  _f1AAD_0718              ; @ 1AAD:0718 stub
 _f1AAD_0718 PROC FAR
