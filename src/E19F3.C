@@ -1,22 +1,25 @@
 /* Unit at EOB.EXE 19F3:000E (137 bytes, 1 function): adjust a rectangle request before
    passing it to the far routine behind the function pointer at ds:8052. The eight ints are
-   two origins, a width and a height. The width is read as the shared extent of the x origin
+   two origins (x1, y1 and x2, y2), a width, a height and two extras that pass through
+   untouched. The width is read as the shared extent of the x origin
    pair [H]: the bytes move it with whichever x origin is raised (19F3:0036 for x1, 19F3:004B
    for x2), and move the height with whichever y origin is raised (19F3:005C, 19F3:0070); no
    code states that reading. The units are the region table's [H]: x in 8-pixel columns, y in
    lines (src/E1A29.C), so the cap of SCREEN_COLUMNS on the width is the 320-pixel screen and
    the cap of SCREEN_LINES on the height its 200 lines; region record 0 is 0,0,40,200, the
    full screen, matching the call at 082C:05DD. That reading is an inference [H] from the caps
-   and record 0; no code states
-   it. All the compares are signed. The width and height are capped at SCREEN_COLUMNS and
-   SCREEN_LINES when larger, as plain size caps not tied to any origin; nothing clips the far
-   edge x1 + width (x1 = 30, width = 40 passes unclipped). x1 and x2 are rejected, the
-   function returns without calling, when they reach SCREEN_COLUMNS. The negative-x1 shift
-   runs first: it adds -x1 to x2 (x2 -= x1), adds x1 to the width and clears x1. The x1 test
-   follows that shift, so it sees x1 already at 0 when x1 was negative (a negative x1 never
-   makes it return) but catches a positive x1 at or past SCREEN_COLUMNS columns. The x2 test
-   comes next and sees x2 after the negative-x1 shift has moved it (x2 has had -x1 added), so
-   a clipped x1 can push x2 to SCREEN_COLUMNS and make the function return.
+   and record 0; the callers support the columns reading (E1DE7.C:245-248 and EOV6.C:375-376
+   pass gTextLeft, gTextTop, gTextWidth and gTextHeight unshifted to ClipRect, while the same
+   variables are multiplied by 8 or shifted by 3 for the pixel arguments of gRect806A, gDrawText
+   and f0D1C_0C21 there). All the compares are signed. The width and height are capped at
+   SCREEN_COLUMNS and SCREEN_LINES when larger, as plain size caps not tied to any origin;
+   nothing clips the far edge x1 + width (x1 = 30, width = 40 passes unclipped). x1 and x2 are
+   rejected, the function returns without calling, when they reach SCREEN_COLUMNS. The
+   negative-x1 shift runs first: it adds -x1 to x2 (x2 -= x1), adds x1 to the width and clears
+   x1. The x1 test follows that shift, so it sees x1 already at 0 when x1 was negative (a
+   negative x1 never makes it return) but catches a positive x1 at or past SCREEN_COLUMNS
+   columns. The x2 test comes next and sees x2 after the negative-x1 shift has moved it (x2 has
+   had -x1 added), so a clipped x1 can push x2 to SCREEN_COLUMNS and make the function return.
    QUIRK 19F3:0045: the negative-x2 shift comes after both x tests (19F3:003B cmp di,28h,
    19F3:0040 cmp si,28h) and rewrites x1 (di) with no later test reading it, so an origin past
    SCREEN_COLUMNS can still reach the far routine: ClipRect(0, 0, -50, 0, 40, 200, 0, 0)
@@ -30,20 +33,32 @@
    unknown.
    y1 and y2 have no upper test and nothing is capped on that side beyond the height.
    Each of x1, y1, x2, y2 is raised to 0 when negative, and that move shifts its partner on
-   the same axis and the size by the same amount: x1 moves x2 and the width, x2 moves x1 and
-   the width, y1 moves y2 and the height, y2 moves y1 and the height. The eight ints are then
-   passed on in source order (their push order in the bytes is extra2, extra1, height,
-   width, y2, x2, y1, x1). extra1 and extra2 are passed through untouched; nothing in this
-   unit reads them and their roles are unknown. The five call sites push the eight ints
-   (add sp,10h). Calls (x1, y1, x2, y2, width, height, extra1, extra2):
+   the same axis by the same amount but the size by the opposite amount: x1 moves x2 by -x1
+   and the width by x1, x2 moves x1 by -x2 and the width by x2, y1 moves y2 by -y1 and the
+   height by y1, y2 moves y1 by -y2 and the height by y2. The far edge x1 + width (and
+   y1 + height) is unchanged by the shift, the reason the far-edge sentence above holds.
+   The eight ints are then passed on in source order (their push order in the bytes is extra2,
+   extra1, height, width, y2, x2, y1, x1). extra1 and extra2 are passed through untouched;
+   nothing in this unit reads them and their roles are unknown, and the callers do not settle
+   them either: E1DE7.C:245 passes g8115 for both extras, whose role E1DE7.C:69 says is not
+   established. The five call sites below push the eight ints (add sp,10h); they are the 082C
+   and 0EF3 call sites this header checked, not every caller, since the packet lists 30
+   callers across the resident code and overlays ovl0 to ovl6. Calls (x1, y1, x2, y2, width,
+   height, extra1, extra2):
      082C:05DD  (0,0,0,0, 40,200, 4,2) when g8102 (src/E07C8.C:27) is 0 or 1 and si is 2
                 (082C:058F); (0,0,0,0, 40,200, 2,0) when g8102 is 2 and si is 0 (082C:05C8)
      0EF3:071E  (0,0,0,0, 22,120, 0,2)
      0EF3:0860  (0,0,0,0, 22,120, 2,0)
      082C:006D  ([bp+a]-1, [bp+c], 0, 191, [bp+e]+2, 9, 0,2)
      082C:038A  (0, 191, [bp+a]-1, [bp+c], [bp+e]+2, 9, 2,0)
-   The two callers disagree on which y origin holds 191 (y2 for 006D, y1 for 038A), so the
-   006D rectangle's coverage is not settled by the bytes; the [H] reading of y in lines rests
+   The only src/ call whose two y origins differ is 1DE7:03B2 (E1DE7.C:245): y1 =
+   gTextTop + one line and y2 = gTextTop, a one-line scroll that clips and refills the last
+   visible line (E1DE7.C:228). That fits x1, y1 as a source and x2, y2 as a destination, a
+   lead [H] to test against the far routine, not evidence yet. Every other src/ call with named
+   origins passes x1 = x2 and y1 = y2 (EOV6.C:376, :385, :481).
+   The two call sites 082C:006D and 082C:038A disagree on which y origin holds 191 (y2 for
+   006D, y1 for 038A), so the 006D rectangle's coverage is not settled by the bytes; the [H]
+   reading of y in lines rests
    on the height cap and region record 0, both below. The whitepaper has no section on the
    region table, the 8-pixel columns, the screen bounds or ds:8052 yet. What the far routine
    does is still unknown. */
