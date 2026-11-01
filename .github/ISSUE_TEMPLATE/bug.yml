@@ -1,0 +1,41 @@
+name: Bug report
+description: Something in the matcher, the rebuild, the portable build, the DOS port or a tool does not work as described.
+labels: [bug]
+body:
+  - type: dropdown
+    id: part
+    attributes:
+      label: Which part
+      options:
+        - The matcher (make match)
+        - The rebuild (make rebuild)
+        - The portable build (make port, make port-play)
+        - The DOS port for the Tandy 1000 EX (ports/dos)
+        - Another tool or the documentation
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you ran, what you expected, and what happened instead. Paste the output as text.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: How to reproduce it
+    validations:
+      required: true
+  - type: input
+    id: platform
+    attributes:
+      label: Platform
+      description: Operating system, emulator or hardware, and versions.
+  - type: checkboxes
+    id: files
+    attributes:
+      label: The game's files
+      options:
+        - label: I have not attached, linked or pasted any of the game's files.
+          required: true

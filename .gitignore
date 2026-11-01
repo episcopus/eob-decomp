@@ -1,0 +1,5 @@
+# public copy: the original game files are yours to supply (eob/README.md)
+eob/*
+!eob/README.md
+tests/sessions/fixtures/
+video/
