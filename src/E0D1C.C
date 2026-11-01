@@ -42,6 +42,7 @@ extern int g54F4; /*@ ds:54F4 */            /* the row of the animated list 0D1C
 extern unsigned long g848A; /*@ ds:848A */  /* a tick counter compared with gFC5E by 0D1C:0454 */
 extern unsigned long gFC5E; /*@ ds:FC5E */  /* the next tick 0D1C:0454 may draw at */
 extern signed char g1CE7[]; /*@ ds:1CE7 */  /* per-row colours for the list 0D1C:0454 draws */
+extern signed char g54F6[]; /*@ ds:54F6 */  /* byte table indexed by a character's m17 in 0D1C:059B */
 
 struct Row8 {               /* eight-byte rows at ds:5482, four words: a DrawBox rectangle */
     int m0;
@@ -78,6 +79,8 @@ extern void f1414_0B2E(void); /*@ 1414:0B2E */
 extern void LockHidePointer(void); /*@ 1BBE:0307 */
 extern void LockShowPointer(void); /*@ 1BBE:0332 */
 extern void DrawBox(int x1, int y1, int x2, int y2, int colour); /*@ 1A1F:000C */
+extern int GetIndexedByte(char index, char limit, char offset); /*@ 0A72:0006 */
+extern char GetClassSlotByte(char row, char slot); /*@ 0A72:0509 */
 
 int f0D1C_0670(int who, int mask);
 int f0D1C_02DC(void);
@@ -334,8 +337,45 @@ int f0D1C_02DC(void);
         }
     }
 }
-/*@ 0D1C:0583 stub */ void f0D1C_0583(void) {}
-/*@ 0D1C:059B stub */ void f0D1C_059B(void) {}
+/* 0D1C:0583: calls f1547_0991 (which redraws one character's row) for each of the six party
+   members. Called by 0ACD, 0EF3 and overlays 1, 3 and 5 after a change that affects the whole
+   party. */
+/*@ 0D1C:0583 */ void RedrawCharacters(void)
+{
+    int i;
+
+    for (i = 0; i < 6; i++)
+        f1547_0991(i);
+}
+/* 0D1C:059B: Purpose unknown: a per-character check against a 1d20 roll. It derives a class
+   slot from gChars[who].m20 (GetClassSlotByte, with 4 and 5 folded to 0), a value from
+   GetIndexedByte(classSlot, m24, `attack`), then, depending on a level-like value m1F * 2
+   (3 or 5, and separately 4), for `attack` 4, 0 or 1, subtracts g54F6[m17]; finally it returns
+   1 when RollDice(1, 20, 0) >= value. QUIRK 0D1C:0609/0604: m1F * 2 is even, so the tests for 3
+   and 5 can never hold; the original still has them. Called by 0DE8:0F98 and 0DE8:101A. */
+/*@ 0D1C:059B */ int f0D1C_059B(int who, int attack)
+{
+    struct CharRec far *rec;
+    int classSlot;
+    int value;
+    int level;
+
+    rec = &gChars[who];
+    classSlot = GetClassSlotByte(rec->m20, 0);
+    if (classSlot == 4 || classSlot == 5)
+        classSlot = 0;
+    value = GetIndexedByte(classSlot, rec->m24, attack);
+    level = rec->m1F * 2;
+    if (level == 3 || level == 5) {
+        if (attack == 4 || attack == 0 || attack == 1)
+            value -= g54F6[rec->m17];
+    }
+    if (level == 4) {
+        if (attack == 4 || attack == 1)
+            value -= g54F6[rec->m17];
+    }
+    return RollDice(1, 20, 0) >= value;
+}
 /*@ 0D1C:0670 stub */ int f0D1C_0670(int who, int mask) { return 0; }
 /*@ 0D1C:070F stub */ void f0D1C_070F(void) {}
 /*@ 0D1C:07A7 stub */ void f0D1C_07A7(void) {}
