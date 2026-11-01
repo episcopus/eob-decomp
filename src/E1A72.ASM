@@ -20,8 +20,8 @@
         EXTRN   _f1C0E_1310:FAR         ; @ 1C0E:1310 (locates and opens the overlay file)
         EXTRN   _f07C8_058A:FAR         ; @ 07C8:058A (cleanup and exit, E19BC.C)
         EXTRN   _f1AAD_0B0E:FAR         ; @ 1AAD:0B0E (keyboard glue, takes the button state)
-        EXTRN   _f1BBE_0002:FAR         ; @ 1BBE:0002 (E1BB1.ASM)
-        EXTRN   _f1BBE_00ED:FAR         ; @ 1BBE:00ED (E1BB1.ASM)
+        EXTRN   _HidePointer:FAR         ; @ 1BBE:0002 (E1BB1.ASM)
+        EXTRN   _ShowPointer:FAR         ; @ 1BBE:00ED (E1BB1.ASM)
 
         .DATA
         EXTRN   g80A2:DWORD             ; @ ds:80A2: indirect far function, no arguments
@@ -34,23 +34,23 @@
         EXTRN   g8132:WORD              ; @ ds:8132: button bits or-ed into every event
         EXTRN   g8134:WORD              ; @ ds:8134: accumulated button changes
         EXTRN   g8136:WORD              ; @ ds:8136: set to 1 while a button is held
-        EXTRN   g8138:WORD              ; @ ds:8138: working mouse x (set to the middle on init)
-        EXTRN   g813A:WORD              ; @ ds:813A: working mouse y (set to the middle on init)
+        EXTRN   _gCursorX:WORD              ; @ ds:8138: working mouse x (set to the middle on init)
+        EXTRN   _gCursorY:WORD              ; @ ds:813A: working mouse y (set to the middle on init)
         EXTRN   g813C:WORD              ; @ ds:813C: x of the event just handled
         EXTRN   g813E:WORD              ; @ ds:813E: y of the event just handled
         EXTRN   g8144:WORD              ; @ ds:8144: 1 when the driver reports a 640 wide range
-        EXTRN   g8146:WORD              ; @ ds:8146: nonzero suppresses the redraw
+        EXTRN   _gHideDepth:WORD              ; @ ds:8146: nonzero suppresses the redraw
         EXTRN   g8148:WORD              ; @ ds:8148: 1 when the mouse driver handler is installed
         EXTRN   g814A:WORD              ; @ ds:814A: 0 disables the handler body (E07A9.C)
         EXTRN   g814E:WORD              ; @ ds:814E: screen width minus 1, 13Fh
         EXTRN   g8152:WORD              ; @ ds:8152: screen height minus 1, 0C7h
-        EXTRN   g815C:WORD              ; @ ds:815C: last position handed to the game
-        EXTRN   g815E:WORD              ; @ ds:815E: last position handed to the game
-        EXTRN   g8160:WORD              ; @ ds:8160: status bits, 4000h and 8000h (see the handler)
-        EXTRN   g8162:WORD              ; @ ds:8162: tracking rectangle, left
-        EXTRN   g8164:WORD              ; @ ds:8164: tracking rectangle, top
-        EXTRN   g8166:WORD              ; @ ds:8166: tracking rectangle, right
-        EXTRN   g8168:WORD              ; @ ds:8168: tracking rectangle, bottom
+        EXTRN   _gDrawnX:WORD              ; @ ds:815C: last position handed to the game
+        EXTRN   _gDrawnY:WORD              ; @ ds:815E: last position handed to the game
+        EXTRN   _gPointerState:WORD              ; @ ds:8160: status bits, 4000h and 8000h (see the handler)
+        EXTRN   _gZoneLeft:WORD              ; @ ds:8162: tracking rectangle, left
+        EXTRN   _gZoneTop:WORD              ; @ ds:8164: tracking rectangle, top
+        EXTRN   _gZoneRight:WORD              ; @ ds:8166: tracking rectangle, right
+        EXTRN   _gZoneBottom:WORD              ; @ ds:8168: tracking rectangle, bottom
         EXTRN   g8172:WORD              ; @ ds:8172: far pointer argument, offset
         EXTRN   g8174:WORD              ; @ ds:8174: far pointer argument, segment
         EXTRN   g8026:WORD              ; @ ds:8026: scratch copy of the reported x (MouseInRect)
@@ -184,10 +184,10 @@ _MouseInit PROC FAR
         push    es
         mov     ax,3533h
         int     21h
-        mov     word ptr [g8138],0A0h
-        mov     word ptr [g813A],64h
-        mov     word ptr [g8146],1
-        mov     word ptr [g8160],0
+        mov     word ptr [_gCursorX],0A0h
+        mov     word ptr [_gCursorY],64h
+        mov     word ptr [_gHideDepth],1
+        mov     word ptr [_gPointerState],0
         mov     word ptr [g814E],13Fh
         mov     word ptr [g8152],0C7h
         mov     ax,es
@@ -288,39 +288,39 @@ L01EC:  push    word ptr [g8174]
         push    word ptr [g8172]
         call    dword ptr [g80AA]
         add     sp,4
-        call    far ptr _f1BBE_0002
+        call    far ptr _HidePointer
         call    dword ptr [g80A2]
-        or      word ptr [g8160],4000h
+        or      word ptr [_gPointerState],4000h
         jmp     short L0279
 L020C:  mov     word ptr [g812E],1
         cmp     byte ptr [g80EC],2
         je      L0221
-        mov     word ptr [g8138],cx
-        mov     word ptr [g813A],dx
-L0221:  mov     cx,[g8138]
-        cmp     [g815C],cx
+        mov     word ptr [_gCursorX],cx
+        mov     word ptr [_gCursorY],dx
+L0221:  mov     cx,[_gCursorX]
+        cmp     [_gDrawnX],cx
         jne     L0235
-        mov     dx,[g813A]
-        cmp     [g815E],dx
+        mov     dx,[_gCursorY]
+        cmp     [_gDrawnY],dx
         je      L0279
-L0235:  cmp     word ptr [g8146],0
+L0235:  cmp     word ptr [_gHideDepth],0
         jne     L0279
-        test    word ptr [g8160],8000h
+        test    word ptr [_gPointerState],8000h
         je      L025C
-        cmp     cx,[g8162]
+        cmp     cx,[_gZoneLeft]
         jl      L0250
-        cmp     cx,[g8166]
+        cmp     cx,[_gZoneRight]
         jg      L025C
-L0250:  cmp     dx,[g8164]
+L0250:  cmp     dx,[_gZoneTop]
         jl      L025C
-        cmp     dx,[g8168]
+        cmp     dx,[_gZoneBottom]
         jle     L01EC
 L025C:  push    word ptr [g8174]
         push    word ptr [g8172]
         call    dword ptr [g80AA]
         add     sp,4
-        call    far ptr _f1BBE_0002
-        call    far ptr _f1BBE_00ED
+        call    far ptr _HidePointer
+        call    far ptr _ShowPointer
         call    dword ptr [g80A2]
 L0279:  mov     word ptr [g812E],0
 L027F:  popf
@@ -377,9 +377,9 @@ _MouseInRect PROC FAR
 L02B9:  cmp     word ptr [g812E],0
         jne     L02B9
         inc     word ptr [g812E]
-        mov     ax,[g815C]
+        mov     ax,[_gDrawnX]
         mov     [g8026],ax
-        mov     ax,[g815E]
+        mov     ax,[_gDrawnY]
         mov     [g8028],ax
         cmp     [g8026],cx
         jl      L02ED
