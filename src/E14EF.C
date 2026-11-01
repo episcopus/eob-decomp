@@ -148,7 +148,7 @@ extern void WaitFrames(int n); /*@ 1A16:000B */
     g8134 = 0;
 }
 /* the key codes UpdateOptionList accepts; the switch table at 14EF:055D lists them. One game key and
-   one keyboard key share each action, and the mouse buttons arrive as KEY_CLICK/KEY_CLICK_ALT. */
+   one keyboard key share each action, and the mouse buttons arrive as KEY_CLICK/KEY_CLICK2. */
 enum {
     KEY_CONFIRM   = 0x2B,
     KEY_CONFIRM2  = 0x3D,
