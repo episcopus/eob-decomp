@@ -74,10 +74,10 @@ extern void DrawText(char *text); /*@ 1DE7:060A */
 extern void f1A47_0169(void *font); /*@ 1A47:0169 */
 extern void WaitFrames(int n); /*@ 1A16:000B */
 extern int f0D1C_0670(int member, int what); /*@ 0D1C:0670 */
-extern int f0D1C_00F1(int member, int what, int which); /*@ 0D1C:00F1 */
+extern int FindCarriedSlot(int member, int what, int which); /*@ 0D1C:00F1 */
 extern int f0D1C_0163(int member, int what); /*@ 0D1C:0163 */
 extern void f0D1C_0C21(int x, int y, int width, int height, int c, int d); /*@ 0D1C:0C21 */
-extern char *f0D1C_07A7(char *s, int n); /*@ 0D1C:07A7 */
+extern char *SkipStrings(char *s, int n); /*@ 0D1C:07A7 */
 extern void f082C_0898(char *text, int x, int y, int colour, int flag); /*@ 082C:0898 */
 extern void f082C_0425(int n); /*@ 082C:0425 */
 extern int far RollDice(char count, char sides, char bonus); /*@ 082C:0458 */
@@ -185,7 +185,7 @@ void f0B9B(int message);
                 WaitFrames(5);
                 break;
             }
-            if (f0D1C_00F1(i, 0x1d, -1) == -1)
+            if (FindCarriedSlot(i, 0x1d, -1) == -1)
                 continue;
             slots = &gChars[i].known[0];
             for (member = 0; member < 0x1e; member++) {
@@ -374,7 +374,7 @@ done:
         ClearTextRegion();
         f0D1C_0C21(gTextLeft << 3, gTextTop, gTextWidth << 3, gTextHeight, 0, 0);
         ClipRect(gTextLeft, gTextTop, gTextLeft, gTextTop, gTextWidth, gTextHeight, 0, 2);
-        f082C_0898(f0D1C_07A7(&gStrings2003, 0x2a), (gTextLeft + 1) << 3, gTextTop + 5, 9, 0);
+        f082C_0898(SkipStrings(&gStrings2003, 0x2a), (gTextLeft + 1) << 3, gTextTop + 5, 9, 0);
         LockShowPointer();
     }
     sprintf(gFileNameBuf, "Hours rested: %-4d", hours);
@@ -446,7 +446,7 @@ done:
         }
         if (FindClassSlot(1, gChars[member].classIndex) == -1)
             continue;
-        if (f0D1C_00F1(member, 0x1d, -1) == -1)
+        if (FindCarriedSlot(member, 0x1d, -1) == -1)
             continue;
         slots = &gChars[member].known[0];
         for (i = 0; i < 0x1e; i++)
@@ -477,7 +477,7 @@ done:
     SetTextWindowAndClear(0xb);
     g8115 = 2;
     f0D1C_0C21(gTextLeft << 3, gTextTop, gTextWidth << 3, gTextHeight, 0, 0);
-    f082C_0898(f0D1C_07A7(&gStrings2003, message), (gTextLeft << 3) + 5, gTextTop + 5, 0xf, 0);
+    f082C_0898(SkipStrings(&gStrings2003, message), (gTextLeft << 3) + 5, gTextTop + 5, 0xf, 0);
     ClipRect(gTextLeft, gTextTop, gTextLeft, gTextTop, gTextWidth, gTextHeight, 2, 0);
     LockShowPointer();
     for (i = 0; i < 0x78; i++) {

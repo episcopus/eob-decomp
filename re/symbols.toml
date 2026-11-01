@@ -2286,6 +2286,9 @@ unit = "e0d1c"
 addr = "0D1C:0006"
 size = 57
 evidence = ["far", "segment"]
+name = "f0D1C_0006"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0d1c_003f"
@@ -2293,6 +2296,9 @@ unit = "e0d1c"
 addr = "0D1C:003F"
 size = 46
 evidence = ["far", "frame"]
+name = "SelectCharacter"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0d1c_006d"
@@ -2300,6 +2306,9 @@ unit = "e0d1c"
 addr = "0D1C:006D"
 size = 11
 evidence = ["far", "frame"]
+name = "f0D1C_006D"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0d1c_0078"
@@ -2307,6 +2316,9 @@ unit = "e0d1c"
 addr = "0D1C:0078"
 size = 8
 evidence = ["far", "frame"]
+name = "f0D1C_0078"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0d1c_0080"
@@ -2314,6 +2326,9 @@ unit = "e0d1c"
 addr = "0D1C:0080"
 size = 90
 evidence = ["far", "frame"]
+name = "f0D1C_0080"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0d1c_00da"
@@ -2321,6 +2336,9 @@ unit = "e0d1c"
 addr = "0D1C:00DA"
 size = 23
 evidence = ["far", "near", "frame"]
+name = "f0D1C_00DA"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0d1c_00f1"
@@ -2328,6 +2346,9 @@ unit = "e0d1c"
 addr = "0D1C:00F1"
 size = 114
 evidence = ["near", "frame"]
+name = "FindCarriedSlot"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0d1c_0163"
@@ -2342,6 +2363,9 @@ unit = "e0d1c"
 addr = "0D1C:01CA"
 size = 274
 evidence = ["frame"]
+name = "RemoveCarriedItems"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0d1c_02dc"
@@ -2349,6 +2373,9 @@ unit = "e0d1c"
 addr = "0D1C:02DC"
 size = 40
 evidence = ["far", "frame"]
+name = "f0D1C_02DC"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0d1c_0304"
@@ -2356,6 +2383,9 @@ unit = "e0d1c"
 addr = "0D1C:0304"
 size = 86
 evidence = ["far", "frame"]
+name = "SetCurrentItem"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0d1c_035a"
@@ -2363,6 +2393,9 @@ unit = "e0d1c"
 addr = "0D1C:035A"
 size = 250
 evidence = ["frame"]
+name = "f0D1C_035A"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0d1c_0454"
@@ -2370,6 +2403,9 @@ unit = "e0d1c"
 addr = "0D1C:0454"
 size = 303
 evidence = ["frame"]
+name = "DrawRowList"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0d1c_0583"
@@ -2377,6 +2413,9 @@ unit = "e0d1c"
 addr = "0D1C:0583"
 size = 24
 evidence = ["far", "frame"]
+name = "RedrawCharacters"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0d1c_059b"
@@ -2384,6 +2423,9 @@ unit = "e0d1c"
 addr = "0D1C:059B"
 size = 213
 evidence = ["far", "frame"]
+name = "f0D1C_059B"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0d1c_0670"
@@ -2391,6 +2433,9 @@ unit = "e0d1c"
 addr = "0D1C:0670"
 size = 159
 evidence = ["far", "near", "frame"]
+name = "f0D1C_0670"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0d1c_070f"
@@ -2398,6 +2443,9 @@ unit = "e0d1c"
 addr = "0D1C:070F"
 size = 152
 evidence = ["far", "frame"]
+name = "f0D1C_070F"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0d1c_07a7"
@@ -2405,6 +2453,9 @@ unit = "e0d1c"
 addr = "0D1C:07A7"
 size = 52
 evidence = ["far", "frame"]
+name = "SkipStrings"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0d1c_07db"
@@ -2419,6 +2470,9 @@ unit = "e0d1c"
 addr = "0D1C:08B1"
 size = 82
 evidence = ["near", "frame"]
+name = "f0D1C_08B1"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0d1c_0903"
@@ -2447,6 +2501,9 @@ unit = "e0d1c"
 addr = "0D1C:0BAB"
 size = 64
 evidence = ["far", "frame"]
+name = "f0D1C_0BAB"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0d1c_0beb"
@@ -2454,6 +2511,9 @@ unit = "e0d1c"
 addr = "0D1C:0BEB"
 size = 54
 evidence = ["far", "frame"]
+name = "f0D1C_0BEB"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0d1c_0c21"
@@ -2461,6 +2521,9 @@ unit = "e0d1c"
 addr = "0D1C:0C21"
 size = 166
 evidence = ["frame"]
+name = "f0D1C_0C21"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0de8_0007"

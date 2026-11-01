@@ -186,7 +186,7 @@ extern void f1AAD_053A(void); /*@ 1AAD:053A */
 extern void f1AAD_0480(void); /*@ 1AAD:0480 */
 extern void ShutdownGame(void); /*@ 07C8:058A */
 extern void ClipRect(int x1, int y1, int x2, int y2, int width, int height, int extra1, int extra2); /*@ 19F3:000E */
-extern char far *f0D1C_07A7(char far *p, int n); /*@ 0D1C:07A7 */
+extern char far *SkipStrings(char far *p, int n); /*@ 0D1C:07A7 */
 extern char far *strcpy(char far *dst, char far *src); /*@ 0000:67CD */
 extern unsigned strlen(char far *s); /*@ 0000:67F6 */
 extern int strcmp(char far *a, char far *b); /*@ 0000:679D */
@@ -506,7 +506,7 @@ extern void FileClose(int handle); /*@ 1C0E:03BB */
         while (input[strlen(input) - 1] == ' ')
             input[strlen(input) - 1] = 0;
         f6815(input);
-        if (strcmp(f0D1C_07A7("attacks", pick), input) == 0)
+        if (strcmp(SkipStrings("attacks", pick), input) == 0)
             break;
         tries++;
         if (tries == 3) {

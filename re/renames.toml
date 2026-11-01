@@ -776,6 +776,24 @@ why = "nonzero disables the mouse: the INT 33h handler body skips all of its wor
 date = "2026-11-01"
 
 [[rename]]
+id = "0D1C:0304=SetCurrentItem"
+addr = "0D1C:0304"
+old = "f0D1C_0304"
+new = "SetCurrentItem"
+kind = "function"
+why = "stores the item index of the currently displayed slot (gFBCE when the mouse is enabled, else gChars[gA99A].m77[gF51A]); read back by 0D1C:02DC and called by f07A9_010C"
+date = "2026-11-01"
+
+[[rename]]
+id = "0D1C:0454=DrawRowList"
+addr = "0D1C:0454"
+old = "f0D1C_0454"
+new = "DrawRowList"
+kind = "function"
+why = "draws the animated row list at ds:5482 one row per tick, erasing the previous row and using the per-row colours at ds:1CE7; called from overlays 0 and 1"
+date = "2026-11-01"
+
+[[rename]]
 id = "1DE7:060A=DrawText"
 addr = "1DE7:060A"
 old = ""

@@ -79,7 +79,7 @@ extern void f1A47_0169(char far *font); /*@ 1A47:0169 */
    (ovl2:0484, via ovl2:0171; docs/design/WHITEPAPER.md, the ITEMRMP.VGA/EGA row). */
 extern void Ovl2Entry8(void); /*@ 2106:0048 */
 extern void f0ACD_0E8A(void); /*@ 0ACD:0E8A */
-extern void f0D1C_0304(int n); /*@ 0D1C:0304 */
+extern void SetCurrentItem(int n); /*@ 0D1C:0304 */
 extern void f0BD2_05B5(int n); /*@ 0BD2:05B5 */
 extern void DrawText(char far *text); /*@ 1DE7:060A */
 extern void f17A6_197E(void far *icon, void far *a, void far *b, int c); /*@ 17A6:197E */
@@ -126,7 +126,7 @@ extern void SetMousePointerShape(int hotX, int hotY, void far *icon); /*@ 1BB1:0
     f0ACD_0E8A();
 }
 
-/* 07A9:010C: Purpose unknown: redraws the item icon for the current square. f0D1C_0304 stores the
+/* 07A9:010C: Purpose unknown: redraws the item icon for the current square. SetCurrentItem stores the
    index n in ds:FBCE (gFBCE) unless gMouseDisabled; a nonzero n also passes " taken.\r" (ds:0094)
    to 1DE7:060A after 0BD2:05B5 when g811F == 7, and the record gTable8DD2[n].icon then supplies
    the icon number. When the current record gTable8DD2[gFBCE] has flag 0x80 and gFBD2 bit 0 is
@@ -135,7 +135,7 @@ extern void SetMousePointerShape(int hotX, int hotY, void far *icon); /*@ 1BB1:0
    gIconsDDE4[0x59] to 1BB1:0002 at (8,8), or at (0,0) when the number is 0. */
 /*@ 07A9:010C */ void f07A9_010C(int n)
 {
-    f0D1C_0304(n);
+    SetCurrentItem(n);
     if (n) {
         if (g811F == 7) {
             f0BD2_05B5(n);
