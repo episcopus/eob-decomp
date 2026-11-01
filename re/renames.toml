@@ -389,6 +389,24 @@ why = "the default sound volume PlaySoundDefault (177D:00F3) passes and PlaySoun
 date = "2026-11-01"
 
 [[rename]]
+id = "1948:0418=StartSound"
+addr = "1948:0418"
+old = "f1948_0418"
+new = "StartSound"
+kind = "function"
+why = "starts a sound: it stores the far pointer from its [bp+6]/[bp+8] argument in the driver's song pointer and sets the start, play and run flags (1948:0418, decompiled in src/E1948.ASM)"
+date = "2026-11-01"
+
+[[rename]]
+id = "1948:0458=SoundDriverResume"
+addr = "1948:0458"
+old = "f1948_0458"
+new = "SoundDriverResume"
+kind = "function"
+why = "restarts the driver's output: it calls SetThreeVoices (1948:034A); E177D.C calls it whenever the PC-speaker gate bit changes and main once after the Tandy install (1948:0458, src/E1948.ASM)"
+date = "2026-11-01"
+
+[[rename]]
 id = "ds:DDE4=gIconsDDE4"
 addr = "ds:DDE4"
 old = "gNamesDDE4"

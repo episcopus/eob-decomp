@@ -33,8 +33,8 @@ extern int f0_03CA(int idx, int off); /*@ 0000:03CA */
 extern void far *f0_03E3(int idx); /*@ 0000:03E3 */
 extern void f0_03FA(void); /*@ 0000:03FA */
 extern void f0_400C(int c); /*@ 0000:400C */
-extern void f1948_0418(void far *p); /*@ 1948:0418 */
-extern void f1948_0458(void); /*@ 1948:0458 */
+extern void StartSound(void far *p); /*@ 1948:0418 */
+extern void SoundDriverResume(void); /*@ 1948:0458 */
 extern int f17A6_0F61(int x, int y); /*@ 17A6:0F61 */
 
 /* 177D:000A: opens the driver file chosen by gSoundCard (adlib.dat when 0, pcgamesn.dat
@@ -75,16 +75,16 @@ extern int f17A6_0F61(int x, int y); /*@ 17A6:0F61 */
         if (gSpeakerMode == 1) {
             if (driverSound < 0 && gSpeakerOn) {
                 gSpeakerOn = 0;
-                f1948_0458();
+                SoundDriverResume();
             }
             if (driverSound > 0 && gSpeakerOn == 0) {
                 gSpeakerOn = 1;
-                f1948_0458();
+                SoundDriverResume();
             }
         }
         driverSound &= 0x7f;
         routine = f0_03E3(driverSound);
-        f1948_0418(routine);
+        StartSound(routine);
     }
 }
 void PlaySoundVolume(int sound, int volume);
@@ -134,16 +134,16 @@ void PlaySoundVolume(int sound, int volume);
             if (gSpeakerMode == 1) {
                 if (gCurSound < 0 && gSpeakerOn) {
                     gSpeakerOn = 0;
-                    f1948_0458();
+                    SoundDriverResume();
                 }
                 if (gCurSound > 0 && gSpeakerOn == 0) {
                     gSpeakerOn = 1;
-                    f1948_0458();
+                    SoundDriverResume();
                 }
             }
             gCurSound &= 0x7f;
             routine = f0_03E3(gCurSound);
-            f1948_0418(routine);
+            StartSound(routine);
         }
     }
     gCurVolume = volume ? f17A6_0F61(gSoundVolume, volume) : 0;
