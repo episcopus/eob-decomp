@@ -5500,6 +5500,8 @@ addr = "1DE7:060A"
 size = 1082
 evidence = ["far", "frame"]
 name = "DrawText"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "e1e8b_0004"

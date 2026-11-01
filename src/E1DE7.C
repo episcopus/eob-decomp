@@ -285,4 +285,139 @@ extern unsigned far *gFrameTable[]; /*@ ds:113B */
     DrawText(buf);
 }
 
-/*@ 1DE7:060A stub */ void DrawText(char far *text) {}
+extern char *strcat(char far *dest, char far *src); /*@ 0000:6721 */
+extern char *strcpy(char far *dest, char far *src); /*@ 0000:67CD */
+
+/* 1DE7:060A: render a string into the active text window. Text is accumulated in a pending word
+   buffer and committed to a line buffer, which is flushed through DrawTextLine (1DE7:03B2) when
+   the window width runs out or a control code asks for it. The control codes seen: 0x0D ends the
+   line; 0x02 and 0x06 take the next byte as the second and first text attribute (ds:811B, ds:811D)
+   and commit the line without a newline; 0x09 takes the next byte as a column and commits the line;
+   0x13 takes the next byte as a target column and pads with spaces to it; 0x20 breaks the line at
+   the current word; any other byte is appended to the current word. A byte with bit 0x80 set is
+   stored with that bit cleared and ends the string after it (the stop flag). A trailing part word
+   or line is flushed at the end. Called by 07A9:010C and many other units. */
+/*@ 1DE7:060A */ void DrawText(char far *text)
+{
+    int pos;
+    int n;
+    int stop;
+    char ch;
+    char line[82];
+    char word[82];
+    int len;
+    int col;
+
+    pos = len = stop = 0;
+    line[0] = 0;
+    col = gTextCol;
+    while ((ch = text[pos++]) != 0 && !stop) {
+        if (ch & 0x80) {
+            ch &= 0x7f;
+            stop = 1;
+        }
+        if (ch == 0x0d) {
+            word[len] = 0;
+            if ((len + col) * gFontWidth1A47 <= gTextWidth * 8) {
+                strcat(line, word);
+                DrawTextLine(line, 1);
+            } else {
+                DrawTextLine(line, 1);
+                DrawTextLine(word, 1);
+            }
+            col = len = 0;
+        } else if (ch == 0x02) {
+            word[len] = 0;
+            if ((len + col) * gFontWidth1A47 <= gTextWidth * 8) {
+                strcat(line, word);
+                DrawTextLine(line, 0);
+            } else {
+                DrawTextLine(line, 1);
+                DrawTextLine(word, 0);
+            }
+            len = 0;
+            col = gTextCol;
+            gTextAttr2 = text[pos++];
+        } else if (ch == 0x06) {
+            word[len] = 0;
+            if ((len + col) * gFontWidth1A47 <= gTextWidth * 8) {
+                strcat(line, word);
+                DrawTextLine(line, 0);
+            } else {
+                DrawTextLine(line, 1);
+                DrawTextLine(word, 0);
+            }
+            len = 0;
+            col = gTextCol;
+            gTextAttr1 = text[pos++];
+        } else if (ch == 0x09) {
+            word[len] = 0;
+            if ((len + col) * gFontWidth1A47 <= gTextWidth * 8) {
+                strcat(line, word);
+                DrawTextLine(line, 0);
+            } else {
+                DrawTextLine(line, 1);
+                DrawTextLine(word, 0);
+            }
+            len = 0;
+            col = text[pos];
+            gTextCol = col;
+            pos++;
+            if ((col + 1) * gFontWidth1A47 >= gTextWidth * 8)
+                col = gTextCol = 0;
+        } else if (ch == 0x13) {
+            n = text[pos++];
+            if (gTextCol < n) {
+                while (gTextCol < n) {
+                    word[len++] = ' ';
+                    n--;
+                }
+                word[len] = 0;
+                strcat(line, word);
+                col += len;
+                len = 0;
+            }
+        } else if (ch == ' ') {
+            if ((len + col) * gFontWidth1A47 <= gTextWidth * 8) {
+                if ((len + col + 1) * gFontWidth1A47 <= gTextWidth * 8 && len + col != 0)
+                    word[len++] = ' ';
+                word[len] = 0;
+                strcat(line, word);
+            } else {
+                if ((len + 1) * gFontWidth1A47 <= gTextWidth * 8 && len != 0)
+                    word[len++] = ' ';
+                word[len] = 0;
+                DrawTextLine(line, 1);
+                col = 0;
+                strcpy(line, word);
+            }
+            col += len;
+            len = 0;
+        } else {
+            /* QUIRK 1DE7:09A6: the append is written in both arms of this if, so the compiler
+               merges the two identical tails and emits a `jmp` to the join, which is the next
+               instruction (EB 00). */
+            if (len * gFontWidth1A47 >= gTextWidth * 8) {
+                if (line[0])
+                    DrawTextLine(line, 1);
+                word[len] = 0;
+                strcat(line, word);
+                DrawTextLine(line, 1);
+                col = len = 0;
+                word[len++] = ch;
+            } else {
+                word[len++] = ch;
+            }
+        }
+    }
+    if (len != 0 || line[0] != 0) {
+        word[len] = 0;
+        if (gTextWidth * 8 - gFontWidth1A47 >= (len + col) * gFontWidth1A47) {
+            strcat(line, word);
+            DrawTextLine(line, 0);
+        } else {
+            DrawTextLine(line, 1);
+            DrawTextLine(word, 0);
+        }
+    }
+}
