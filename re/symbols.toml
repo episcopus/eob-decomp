@@ -4137,6 +4137,9 @@ unit = "e19ec"
 addr = "19EC:0002"
 size = 20
 evidence = ["far", "segment"]
+name = "ObjAlloc"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e19ec_0016"
@@ -4144,6 +4147,9 @@ unit = "e19ec"
 addr = "19EC:0016"
 size = 20
 evidence = ["frame"]
+name = "f19EC_0016"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e19ec_002a"
@@ -4151,6 +4157,9 @@ unit = "e19ec"
 addr = "19EC:002A"
 size = 84
 evidence = ["far", "frame"]
+name = "f19EC_002A"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e19f3_000e"
