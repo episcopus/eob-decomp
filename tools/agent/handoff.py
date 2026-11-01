@@ -83,6 +83,12 @@ def make(agent: str, uid: str, state: str, note: str) -> str:
         if why:
             raise ValueError("make match fails on %s; turn every unfinished function back into a `stub` or a "
                              "`draft` (playbook 30), commit, and hand off again:\n%s" % (uid, why))
+        if (common.ROOT / "tools/match/readability.py").exists():
+            r = subprocess.run([sys.executable, str(common.ROOT / "tools/match/readability.py"), uid, "--gate"],
+                               cwd=common.ROOT, capture_output=True, text=True)
+            if r.returncode == 1:
+                raise ValueError("make readability UNIT=%s finds new problems (docs/process/READABILITY.md); "
+                                 "fix them, commit, and hand off again:\n%s" % (uid, r.stdout.strip()[-1500:]))
     if review and not (common.ROOT / "work/reviews" / ("%s.md" % uid)).exists():
         raise ValueError("a review hands off work/reviews/%s.md" % uid)
     path = common.handoff_path(key)

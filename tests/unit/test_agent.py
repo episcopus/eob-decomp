@@ -201,3 +201,30 @@ def test_watch_screen_renders():
     assert watch.pct(1, 4) == 25.0
     t = watch.tally([{"l2_before": 1, "l2_after": 4, "cost": 0.5}, {"l2_before": 2, "l2_after": 2, "cost": None}])
     assert t == {"sessions": 2, "gained": 3, "cost": 0.5, "unknown": 1}
+
+
+sys.path.insert(0, str(ROOT / "tools" / "match"))
+import readability  # noqa: E402
+import rename  # noqa: E402
+
+
+def test_rename_skips_literals_and_follows_comments():
+    text = 'extern int gFE6C; /*@ ds:FE6C */\n/* gFE6C is the mode */\nchar *s = "gFE6C";\nf(gFE6C);\n'
+    out, n = rename.replace_word(text, "gFE6C", "gVideoMode", asm=False)
+    assert n == 3 and '"gFE6C"' in out and "/* gVideoMode is the mode */" in out
+    assert rename.norm("ds:fe6c") == "ds:FE6C" and rename.norm("ovl2:110") == "ovl2:0110"
+
+
+def test_readability_rules(tmp_path):
+    good = ('/* Unit at EOB.EXE 1A16:000B: frame delays, waits for vertical retraces of the display. */\n\n'
+            'extern int gMode; /*@ ds:FE6C */\n\n'
+            '/* 1A16:000B: waits n vertical retraces of the display, polling port 3DAh. */\n'
+            '/*@ 1A16:000B */ void WaitFrames(int n)\n{\n    int count;\n\n    count = n;\n}\n')
+    bad = ('/* x */\n/*@ 1A16:000B */ void f1A16_000B(int a)\n{\n    int tmp;\n\n    tmp = a;\n}\n')
+    (tmp_path / "GOOD.C").write_text(good)
+    (tmp_path / "BAD.C").write_text(bad)
+    assert readability.check_file(tmp_path / "GOOD.C", {}, {}) == []
+    rules = {r for _, r, _ in readability.check_file(tmp_path / "BAD.C", {}, {})}
+    assert rules == {"R1", "R2", "R3", "R4"}
+    named = readability.check_file(tmp_path / "GOOD.C", {"ds:FE6C": "gVideoMode"}, {})
+    assert [r for _, r, _ in named] == ["R5"]

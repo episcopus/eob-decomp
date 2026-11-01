@@ -1,0 +1,38 @@
+# Every rename of a function or a global (tools/match/rename.py). `make rename APPLY=1` gives each
+# address its last recorded name in src/; make integrate runs it after every merge.
+
+[[rename]]
+id = "ds:80CA=gDrawText"
+addr = "ds:80CA"
+old = "gFn80CA"
+new = "gDrawText"
+kind = "global"
+why = "a far function pointer that draws text: its callers 082C:0864 to 08FF pass a far string, x, y, a colour (0Ch, then 0Fh for the shadow) and a flag (review of e1aa6)"
+date = "2026-11-01"
+
+[[rename]]
+id = "1B82:0217=SetUnpackBuffer"
+addr = "1B82:0217"
+old = "f1B82_0217"
+new = "SetUnpackBuffer"
+kind = "function"
+why = "stores a segment and a size in ds:812A and ds:812C, the work buffer Unpack (1B82:00C7) uses for formats 1 and 2 (src/E1B82.C)"
+date = "2026-11-01"
+
+[[rename]]
+id = "1BA8:0006=Unpack0"
+addr = "1BA8:0006"
+old = "f1BA8_0006"
+new = "Unpack0"
+kind = "function"
+why = "Unpack (1B82:00C7) calls it for format 0, stored data: src + 8, the destination and the unpacked size (src/E1B82.C, whitepaper 4.2)"
+date = "2026-11-01"
+
+[[rename]]
+id = "1BA8:0081=NormFar"
+addr = "1BA8:0081"
+old = "f1BA8_0081"
+new = "NormFar"
+kind = "function"
+why = "normalises a far pointer: Unpack4 (1D9A:0013) calls it on its source and destination before using them as DS:SI and ES:DI (1D9A:0023, 1D9A:0032)"
+date = "2026-11-01"

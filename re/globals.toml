@@ -1,0 +1,7 @@
+# The names of globals (DGROUP offsets), set by `make rename` (tools/match/rename.py) with their
+# evidence. Every file of src/ that declares one uses this name (`make readability` checks it).
+
+[[global]]
+id = "ds:80CA"
+name = "gDrawText"
+why = "a far function pointer that draws text: its callers 082C:0864 to 08FF pass a far string, x, y, a colour (0Ch, then 0Fh for the shadow) and a flag (review of e1aa6)"
