@@ -28,9 +28,13 @@ struct CharRec {
     signed char m0D;          /* +0D */
     char pad0E;
     signed char m0F;          /* +0F */
-    char pad10[0x1E - 0x10];
+    char pad10[0x1B - 0x10];
+    signed char hp;           /* +1B: current hit points (src/EOV6.C); 0C82 requires it above -10 */
+    char pad1C[0x1E - 0x1C];
     unsigned char m1E;        /* +1E: a bit set/cleared by the per-slot helper 0770 */
-    char pad1F[0xAD - 0x1F];
+    char pad1F[0x23 - 0x1F];
+    unsigned char m23;        /* +23: the level-like byte 0C82 tests and decrements */
+    char pad24[0xAD - 0x24];
     unsigned long mAD[10];    /* +AD: 10 32-bit effect times (07CA, 0B2E, 0C2D, 05ED) */
     signed char mD5[10];      /* +D5: 10 effect type bytes, one per mAD slot */
     char padDF[0xE3 - 0xDF];
@@ -42,22 +46,43 @@ struct CharRec {
 
 /* The 18-byte records at ds:DD2C, 10 of them, walked by 0285 and 0D63. */
 struct DDRec {
-    char active;              /* +00: nonzero: the record is live */
+    char active;              /* +00: 1 when the record is live, cleared by 020F */
     char pad01;
     int m02;                  /* +02 */
-    int m04;                  /* +04 */
+    int m04;                  /* +04: a character or object index */
     char m06;                 /* +06 */
     signed char m07;          /* +07 */
-    char pad08[0x0C - 0x08];
+    int m08;                  /* +08: an index into the 14-byte records at ds:8DD2 */
+    char m0A;                 /* +0A */
+    char m0B;                 /* +0B */
     char m0C;                 /* +0C: flags, bit 0x20 tested by 0285 */
     char m0D;                 /* +0D */
     char pad0E[0x12 - 0x0E];
+};
+
+/* The 14-byte records at ds:8DD2 (src/E0D1C.C names the same table Entry14); 020F clears the low
+   two bits of the byte at +3 of one. */
+struct Entry14 {
+    char pad00[3];
+    unsigned char m03;        /* +03: 020F clears its low two bits */
+    char pad04[0x0E - 0x04];
+};
+
+/* The 28-byte object records at ds:8A82 (src/E08E6.C). */
+struct Obj28 {
+    char pad00[2];
+    int m02;                  /* +02 */
+    char pad04[0x17 - 0x04];
+    unsigned char m17;        /* +17: the value 0CE7 randomises */
+    char pad18[0x1C - 0x18];
 };
 
 extern struct Effect gEffects[]; /*@ ds:5BA8 */
 extern int gEffectCount; /*@ ds:5CA8 */       /* the number of entries, 16 */
 extern struct CharRec gChars[]; /*@ ds:F580 */
 extern struct DDRec gDD2C[]; /*@ ds:DD2C */   /* 10 records, 18 bytes each */
+extern struct Entry14 gTable8DD2[]; /*@ ds:8DD2 */ /* 14-byte records (src/E0D1C.C) */
+extern struct Obj28 gObjs[]; /*@ ds:8A82 */   /* 30 records, 28 bytes each (src/E08E6.C) */
 extern unsigned char far *gEF6A[]; /*@ ds:EF6A */ /* 18 far pointers, walked by 04B0 */
 extern signed char gA9C6; /*@ ds:A9C6 */      /* an offset added into gEF6A's targets */
 extern int gFB78; /*@ ds:FB78 */              /* a flag toggled by 04B0 */
@@ -71,7 +96,7 @@ extern void f1547_0991(int member); /*@ 1547:0991 */
 extern void PlaySoundDefault(int sound); /*@ 177D:00F3 */
 extern int f0D1C_0006(int value); /*@ 0D1C:0006 */
 extern int f0D1C_00DA(int value, int page); /*@ 0D1C:00DA */
-extern void f0D1C_0163(void); /*@ 0D1C:0163 */
+extern int f0D1C_0163(int who, int fieldB); /*@ 0D1C:0163 */
 extern int f0D1C_0670(int member, int what); /*@ 0D1C:0670 */
 extern int far RollDice(char count, char sides, char bonus); /*@ 082C:0458 */
 extern void UpdateObjects(int kind); /*@ 08E6:0CC8 */
@@ -109,7 +134,26 @@ extern int f0BD2_02B9(void far *head, int key, int item); /*@ 0BD2:02B9 */
 }
 /*@ 1414:003E stub */ void f1414_003E(void) {}
 /*@ 1414:0172 stub */ int f1414_0172(struct DDRec far *rec, int a, int b) { return 0; }
-/*@ 1414:020F stub */ void f1414_020F(struct DDRec far *rec) {}
+
+/* 1414:020F: clears a live ds:DD2C record. When it is in state 1 it first clears the low two
+   bits of gTable8DD2[rec->m08].m03, redraws rec->m04 through 122E:1DA8 with mode 4 and plays
+   sound 0x12, then clears the record's active flag and its m0D, m07, m04, m0B, m0A and m08
+   fields. Called by 0285 and 0D63. */
+/*@ 1414:020F */ void ClearDDEffect(struct DDRec far *rec)
+{
+    if (rec->active == 1) {
+        gTable8DD2[rec->m08].m03 &= 3;
+        f122E_1DA8(rec->m04, 4);
+        PlaySoundDefault(0x12);
+    }
+    rec->active = 0;
+    rec->m0D = 0;
+    rec->m07 = 0;
+    rec->m04 = 0;
+    rec->m0B = 0;
+    rec->m0A = 0;
+    rec->m08 = 0;
+}
 /*@ 1414:0285 stub */ void f1414_0285(void) {}
 /*@ 1414:03B4 stub */ void f1414_03B4(void) {}
 /* 1414:04B0: effect 13 of the table. Toggles gFB78, then walks the 18 far pointers at ds:EF6A,
@@ -248,8 +292,44 @@ extern int f0BD2_02B9(void far *head, int key, int item); /*@ 0BD2:02B9 */
     }
     RearmCharEffects();
 }
-/*@ 1414:0C82 stub */ void f1414_0C82(void) {}
-/*@ 1414:0CE7 stub */ void f1414_0CE7(void) {}
+/* 1414:0C82: effect 14 of the table. For every party member whose f0D1C_0163(who, 2) test
+   passes and who is alive (level-like m23 nonzero, m01 bit 0 set, hit points above -10), it
+   decrements m23 and runs 1547:04A0 for that member. */
+/*@ 1414:0C82 */ void DecayMemberState(void)
+{
+    int who;
+
+    for (who = 0; who < 6; who++) {
+        if (f0D1C_0163(who, 2) < 0)
+            continue;
+        if (gChars[who].m23 == 0)
+            continue;
+        if ((gChars[who].m01 & 1) == 0)
+            continue;
+        if (gChars[who].hp <= -10)
+            continue;
+        gChars[who].m23--;
+        f1547_04A0(who);
+    }
+}
+/* 1414:0CE7: effect 15 of the table. For every one of the 30 objects at ds:8A82 that wins a
+   1d2 roll, it stores a fresh (1d2 << 4) + 1d2 value in obj->m17 and reports the object's m02
+   through f0D1C_0006. */
+/*@ 1414:0CE7 */ void RandomiseObjectState(void)
+{
+    struct Obj28 far *obj;
+    int i;
+
+    i = 0;
+    obj = gObjs;
+    for (; i < 30; i++, obj++) {
+        if (RollDice(1, 2, 0) == 1) {
+            obj->m17 = RollDice(1, 2, 0) << 4;
+            obj->m17 += RollDice(1, 2, 0);
+            f0D1C_0006(obj->m02);
+        }
+    }
+}
 /* 1414:0D63: walks the 10 records at ds:DD2C and, for every live one whose 0172 test passes,
    runs 020F on it. Called by UpdateObjects (08E6:0CC8) and 122E:0001. */
 /*@ 1414:0D63 */ void UpdateDDEffects(void)
@@ -263,7 +343,7 @@ extern int f0BD2_02B9(void far *head, int key, int item); /*@ 0BD2:02B9 */
         if (rec->active != 0) {
             result = f1414_0172(rec, rec->m04, rec->m06);
             if (result)
-                f1414_020F(rec);
+                ClearDDEffect(rec);
         }
     }
 }
