@@ -489,10 +489,8 @@ int f0D1C_02DC(void);
    accepted it. Otherwise it returns 0 when slot 0 holds an item whose gA9F5[m02].m01 is 2, then
    1 when slot 1 is empty, and for a slot-1 item whose gA9F5[m1].m09 (low 7 bits) is 1, 2 or 3,
    0 when gA9F5[m1].m01 is nonzero, else the slot-1 result. Called by 0BD2:1001, 0DE8:0D5E and
-   1547:07E7. Placeholder: what the values mean is not established. DRAFT: matches every byte
-   except that the compiler lays the `A <= 0 || A >= 4` return out with a two-byte trampoline
-   (0D1C:0897 `jmp`); the original branches straight to the shared return. */
-/*@ 0D1C:07DB draft */ int f0D1C_07DB(int who, int flag)
+   1547:07E7. Placeholder: what the values mean is not established. */
+/*@ 0D1C:07DB */ int f0D1C_07DB(int who, int flag)
 {
     int slot0;
     int result0;
@@ -514,8 +512,9 @@ int f0D1C_02DC(void);
     if (slot1 == 0)
         return 1;
     if ((gA9F5[m1].m09 & 0x7f) > 0 && (gA9F5[m1].m09 & 0x7f) < 4) {
-        if (gA9F5[m1].m01 != 0)
-            return 0;
+        if (gA9F5[m1].m01 == 0)
+            return result1;
+        return 0;
     }
     return result1;
 }
@@ -565,14 +564,14 @@ int f0D1C_02DC(void);
                 bestVal = rec->m24[slot];
                 best = who;
             }
-            continue;
-        }
-        slot = FindClassSlot(4, rec->m20);
-        if (slot == -1)
-            continue;
-        if (rec->m24[slot] - 2 > bestVal) {
-            bestVal = rec->m24[slot] - 2;
-            best = who;
+        } else {
+            slot = FindClassSlot(4, rec->m20);
+            if (slot == -1)
+                continue;
+            if (rec->m24[slot] - 2 > bestVal) {
+                bestVal = rec->m24[slot] - 2;
+                best = who;
+            }
         }
     }
     return (best << 8) + bestVal;
@@ -582,7 +581,7 @@ int f0D1C_02DC(void);
    and returns 1. Otherwise, when `threshold` is below the value it returns 0; else it sets bit 3
    of obj->m16, stores (f17A6_0314(obj->m02, gSoundVolume) ^ 4) >> 1 in obj->m05 and returns 1.
    Called by 0D1C:0A43 and 17A6. */
-/*@ 0D1C:09CB draft */ int f0D1C_09CB(struct Obj28 far *obj, int threshold, int column)
+/*@ 0D1C:09CB */ int f0D1C_09CB(struct Obj28 far *obj, int threshold, int column)
 {
     int row;
     int value;
