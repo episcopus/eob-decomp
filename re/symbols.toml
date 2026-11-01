@@ -5510,6 +5510,8 @@ unit = "e1e8b"
 addr = "1E8B:0004"
 size = 11
 evidence = ["segment"]
+level = "L2"
+notes = "not a function: bytes of the unit outside its functions (a marker or padding), matched with the whole unit"
 
 [[function]]
 id = "e1e8b_000f"
@@ -5517,6 +5519,9 @@ unit = "e1e8b"
 addr = "1E8B:000F"
 size = 293
 evidence = ["far"]
+name = "_InitOverlayManager"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1e8b_0134"
@@ -5524,6 +5529,9 @@ unit = "e1e8b"
 addr = "1E8B:0134"
 size = 81
 evidence = ["far", "frame"]
+name = "_SwapAndReopenOverlayFile"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1e8b_0185"
@@ -5531,6 +5539,9 @@ unit = "e1e8b"
 addr = "1E8B:0185"
 size = 34
 evidence = ["frame"]
+name = "_ShutdownOverlayManager"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1e8b_01a7"
@@ -5538,6 +5549,9 @@ unit = "e1e8b"
 addr = "1E8B:01A7"
 size = 12
 evidence = ["near"]
+name = "_OpenNamedOverlayFile"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1e8b_01b3"
@@ -5545,6 +5559,9 @@ unit = "e1e8b"
 addr = "1E8B:01B3"
 size = 64
 evidence = ["near"]
+name = "_OpenOwnOverlayFile"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1e8b_01f3"
@@ -5552,6 +5569,9 @@ unit = "e1e8b"
 addr = "1E8B:01F3"
 size = 93
 evidence = ["near"]
+name = "_OpenOverlayFileViaPath"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1e8b_0250"
@@ -5559,6 +5579,9 @@ unit = "e1e8b"
 addr = "1E8B:0250"
 size = 38
 evidence = ["near"]
+name = "_CopyNameAndOpenOverlay"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1e8b_0276"
@@ -5566,6 +5589,9 @@ unit = "e1e8b"
 addr = "1E8B:0276"
 size = 16
 evidence = ["near"]
+name = "_ReadOverlayHeaderBytes"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1e8b_0286"
@@ -5573,6 +5599,9 @@ unit = "e1e8b"
 addr = "1E8B:0286"
 size = 121
 evidence = ["near"]
+name = "_InitOverlayRecords"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1e8b_02ff"
@@ -5580,6 +5609,9 @@ unit = "e1e8b"
 addr = "1E8B:02FF"
 size = 197
 evidence = ["near"]
+name = "_MapOverlayRecords"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1e8b_03c4"
@@ -5587,6 +5619,9 @@ unit = "e1e8b"
 addr = "1E8B:03C4"
 size = 57
 evidence = ["near"]
+name = "_ReadOverlayImage"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1e8b_03fd"
@@ -5594,6 +5629,9 @@ unit = "e1e8b"
 addr = "1E8B:03FD"
 size = 69
 evidence = ["near"]
+name = "_ApplyOverlayRelocations"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1e8b_0442"
@@ -5601,6 +5639,9 @@ unit = "e1e8b"
 addr = "1E8B:0442"
 size = 142
 evidence = ["near"]
+name = "_RelocateOverlayPointer"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1e8b_04d0"
@@ -5608,6 +5649,9 @@ unit = "e1e8b"
 addr = "1E8B:04D0"
 size = 102
 evidence = ["frame"]
+name = "_OverlayCallHandler"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1e8b_0536"
@@ -5615,6 +5659,9 @@ unit = "e1e8b"
 addr = "1E8B:0536"
 size = 74
 evidence = ["near"]
+name = "_AgeOverlayRecords"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1e8b_0580"
@@ -5622,6 +5669,9 @@ unit = "e1e8b"
 addr = "1E8B:0580"
 size = 123
 evidence = ["near"]
+name = "_LoadOverlayRecord"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1e8b_05fb"
@@ -5629,6 +5679,9 @@ unit = "e1e8b"
 addr = "1E8B:05FB"
 size = 24
 evidence = ["near"]
+name = "_ReleaseOverlayFpuState"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1e8b_0613"
@@ -5636,6 +5689,9 @@ unit = "e1e8b"
 addr = "1E8B:0613"
 size = 59
 evidence = ["near"]
+name = "_DiscardOverlayRecords"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1e8b_064e"
@@ -5643,6 +5699,9 @@ unit = "e1e8b"
 addr = "1E8B:064E"
 size = 33
 evidence = ["near"]
+name = "_RestoreOverlayVersionTable"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1e8b_066f"
@@ -5650,6 +5709,9 @@ unit = "e1e8b"
 addr = "1E8B:066F"
 size = 30
 evidence = ["near"]
+name = "_FillOverlayVersionTable"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1e8b_068d"
@@ -5657,6 +5719,9 @@ unit = "e1e8b"
 addr = "1E8B:068D"
 size = 51
 evidence = ["near"]
+name = "_ClearOverlayVersionTable"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1e8b_06c0"
@@ -5664,6 +5729,9 @@ unit = "e1e8b"
 addr = "1E8B:06C0"
 size = 81
 evidence = ["near"]
+name = "_MoveOverlayRecord"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1e8b_0711"
@@ -5671,6 +5739,9 @@ unit = "e1e8b"
 addr = "1E8B:0711"
 size = 30
 evidence = ["near"]
+name = "_LinkOverlayRecord"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1e8b_072f"
@@ -5678,6 +5749,9 @@ unit = "e1e8b"
 addr = "1E8B:072F"
 size = 12
 evidence = ["near"]
+name = "_PatchOverlayEntryVector"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1e8b_073b"
@@ -5685,6 +5759,9 @@ unit = "e1e8b"
 addr = "1E8B:073B"
 size = 38
 evidence = ["near"]
+name = "_FindOverlaySlot"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1e8b_0761"
@@ -5692,6 +5769,9 @@ unit = "e1e8b"
 addr = "1E8B:0761"
 size = 28
 evidence = ["near"]
+name = "_OverlayBytesRemaining"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1e8b_077d"
@@ -5699,6 +5779,9 @@ unit = "e1e8b"
 addr = "1E8B:077D"
 size = 12
 evidence = ["near"]
+name = "_OverlayCodeParagraphs"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1e8b_0789"
@@ -5706,6 +5789,9 @@ unit = "e1e8b"
 addr = "1E8B:0789"
 size = 78
 evidence = ["near"]
+name = "_OverlayTotalParagraphs"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1e8b_07d7"
@@ -5713,6 +5799,9 @@ unit = "e1e8b"
 addr = "1E8B:07D7"
 size = 152
 evidence = ["frame"]
+name = "_ReleaseOverlayRecords"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1e8b_086f"
@@ -5720,6 +5809,9 @@ unit = "e1e8b"
 addr = "1E8B:086F"
 size = 174
 evidence = ["frame"]
+name = "_OverlayManagerEntry"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "eov0_0000"
