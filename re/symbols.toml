@@ -5083,6 +5083,7 @@ evidence = ["far", "segment"]
 name = "_f1DE4_0000"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-01 rev-sonnet"
 
 [[function]]
 id = "e1de4_000d"
@@ -5093,6 +5094,7 @@ evidence = ["far", "frame"]
 name = "_f1DE4_000D"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-01 rev-sonnet"
 
 [[function]]
 id = "e1de7_0009"
