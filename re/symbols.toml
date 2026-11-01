@@ -4177,6 +4177,9 @@ unit = "e19fc"
 addr = "19FC:0007"
 size = 420
 evidence = ["segment"]
+name = "_f19FC_0007"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1a16_000b"
@@ -4229,6 +4232,7 @@ evidence = ["far", "segment"]
 name = "DrawBox"
 level = "L2"
 match_flags = "-ml -O -Z"
+review = "passed 2026-11-01 rev-sonnet"
 
 [[function]]
 id = "e1a29_000f"
@@ -4236,6 +4240,9 @@ unit = "e1a29"
 addr = "1A29:000F"
 size = 62
 evidence = ["far", "segment"]
+name = "f1A29_000F"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "e1a29_004d"
@@ -4243,6 +4250,9 @@ unit = "e1a29"
 addr = "1A29:004D"
 size = 62
 evidence = ["far", "frame"]
+name = "f1A29_004D"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "e1a29_008b"
@@ -4250,6 +4260,9 @@ unit = "e1a29"
 addr = "1A29:008B"
 size = 62
 evidence = ["far", "frame"]
+name = "f1A29_008B"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "e1a29_00c9"
@@ -4257,6 +4270,9 @@ unit = "e1a29"
 addr = "1A29:00C9"
 size = 62
 evidence = ["far", "frame"]
+name = "f1A29_00C9"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "e1a29_0107"
@@ -4264,6 +4280,9 @@ unit = "e1a29"
 addr = "1A29:0107"
 size = 65
 evidence = ["frame"]
+name = "f1A29_0107"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "e1a29_0148"
@@ -4271,6 +4290,9 @@ unit = "e1a29"
 addr = "1A29:0148"
 size = 65
 evidence = ["frame"]
+name = "f1A29_0148"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "e1a29_0189"
@@ -4278,6 +4300,9 @@ unit = "e1a29"
 addr = "1A29:0189"
 size = 92
 evidence = ["far", "frame"]
+name = "f1A29_0189"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "e1a47_0005"
@@ -4331,6 +4356,7 @@ evidence = ["far", "segment"]
 name = "CalibrateRetrace"
 level = "L2"
 match_flags = "-ml -O -Z"
+review = "passed 2026-11-01 rev-sonnet"
 
 [[function]]
 id = "e1a72_0006"
@@ -4601,6 +4627,7 @@ evidence = ["segment"]
 name = "_f1BA8_0005"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-01 rev-sonnet"
 
 [[function]]
 id = "e1ba8_0006"
@@ -4611,6 +4638,7 @@ evidence = ["far"]
 level = "L2"
 match_flags = "tasm /mx"
 name = "Unpack0"
+review = "passed 2026-11-01 rev-sonnet"
 
 [[function]]
 id = "e1ba8_0072"
@@ -4621,6 +4649,7 @@ evidence = ["far", "frame"]
 name = "_f1BA8_0072"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-01 rev-sonnet"
 
 [[function]]
 id = "e1ba8_0081"
@@ -4631,6 +4660,7 @@ evidence = ["far", "near"]
 name = "_f1BA8_0081"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-01 rev-sonnet"
 
 [[function]]
 id = "e1bb1_0001"
@@ -4645,6 +4675,9 @@ unit = "e1bb1"
 addr = "1BB1:0002"
 size = 207
 evidence = ["far"]
+name = "_f1BB1_0002"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1bbe_0001"
@@ -4701,6 +4734,9 @@ unit = "e1bf3"
 addr = "1BF3:000D"
 size = 1
 evidence = ["segment"]
+name = "_f1BF3_000D"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1bf3_000e"
@@ -4989,6 +5025,7 @@ evidence = ["segment"]
 name = "_f1D8F_0002"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-01 rev-sonnet"
 
 [[function]]
 id = "e1d8f_0010"
@@ -4999,6 +5036,7 @@ evidence = ["far", "frame"]
 name = "_f1D8F_0010"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-01 rev-sonnet"
 
 [[function]]
 id = "e1d8f_0038"
@@ -5009,6 +5047,7 @@ evidence = ["far", "frame"]
 name = "_f1D8F_0038"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-01 rev-sonnet"
 
 [[function]]
 id = "e1d9a_000b"
