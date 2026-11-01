@@ -2,26 +2,33 @@
 ; single 00 byte with `segment` evidence (the unit's start marker, like 1990:0001); the one real
 ; function follows at 1BB1:0002.
 ;
-; 1BB1:0002 sets the mouse pointer's shape. Called from f07A9_010C (07A9:010C) with the hot spot
+; 1BB1:0002 sets the mouse pointer's shape. Two callers. f07A9_010C (07A9:010C) passes the hot spot
 ; (8,8) when its n is above 0 and (0,0) otherwise, and the record gIconsDDE4[n] in both cases (the
-; two calls at E07A9.C:127-130; the table holds item icon images, E07A9.C:41-43). Unit 1BBE shows
-; what the globals are: the hot spot ds:8158/815A is subtracted from the last drawn pointer position
-; ds:815C/815E (1BBE:001E..002F, 1BBE:0111..012E), and the shape record ds:816E/8170 is what
-; 1BBE:00ED draws through [ds:80C2]. The save-under buffer ds:816A/816C is the screen behind the
-; pointer: 1BBE:0002 restores it through [ds:804E] and 1BBE:00ED saves the background into it
-; through [ds:80AE].
+; two calls at E07A9.C:164 and :166; the table holds item icon images, E07A9.C:64-68, the comment
+; just above gIconsDDE4 at :69). SetPointerShape (ovl2:0000, src/EOV2.C:206-211) passes (0,0) and
+; gPtrDD00, which it has just set to gIconsDDE4[0] (EOV2.C:210-211); LoadItemData calls
+; SetPointerShape at start-up (EOV2.C:451). Unit 1BBE shows what the globals are: the hide
+; 1BBE:0002 subtracts the hot spot ds:8158/815A from the last drawn pointer position ds:815C/815E
+; (1BBE:001E..002F), and the show 1BBE:00ED sets that drawn position to the mouse position
+; ds:8138/813A and subtracts the hot spot from it (1BBE:0111..012E); the shape record ds:816E/8170
+; is what 1BBE:00ED draws through [ds:80C2]. The save-under buffer ds:816A/816C is the screen
+; behind the pointer: 1BBE:0002 restores it through [ds:804E] and 1BBE:00ED saves the background
+; into it through [ds:80AE].
 ;
 ; The size comes from the shape record: byte SHAPE_HEIGHT_BYTE (+3) is the height in pixels, read
-; at 1BB1:0034 and stored unchanged at ds:8154 (1BB1:0066; 1BBE:0095 adds it to the pointer's y
-; and clips to 200); byte SHAPE_WIDTH_BYTE (+2) is read at 1BB1:003A and, plus 1 (1BB1:003E
-; `inc dx`), stored at ds:8156 (1BB1:006A) as the width in 8-pixel units (1BBE:005F adds it to
-; x>>3 and clips to 40, the same 8-pixel column unit as a region record's left edge and width,
-; E1A29.C:19-22). The width is an unsigned char count, so a stored width of 0 means 1 column; a
-; stored height of 0 is 0 pixels. The buffer path depends on the buffer and the size: with no
-; buffer yet (ds:816C == 0) the free is skipped (1BB1:0044 `je 0066`) and the size query and
-; MemAlloc run; with a buffer and a changed size (height or width differ, 1BB1:004A/0050) the old
-; buffer is freed (1BB1:0058..005C) before the query and MemAlloc; with a buffer and the same size
-; the call goes straight to the show (1BB1:0050 `je 00A9`). The size query [ds:80C6] is called as
+; at 1BB1:0034 and stored unchanged at ds:8154 (1BB1:0066; in 1BBE:0002 1BBE:0095 adds it to the
+; top edge ds:8178 to make the bottom edge ds:817C, and the bottom edge is clipped to 200 at
+; 1BBE:00AB..00B3); byte SHAPE_WIDTH_BYTE (+2) is read at 1BB1:003A and, plus 1 (1BB1:003E
+; `inc dx`), stored at ds:8156 (1BB1:006A) as the width in 8-pixel units (in 1BBE:0002 1BBE:005F
+; adds it to the left edge x>>3 to make the right edge ds:817A, the left edge is tested for 40 at
+; 1BBE:0051..005A and the right edge is clipped to 40 at 1BBE:0077..007E, the same 8-pixel column
+; unit as a region record's left edge and width, E1A29.C:19-22). The width is an unsigned char
+; count, so a stored width of 0 means 1 column; a stored height of 0 is 0 pixels. The buffer
+; path depends on the buffer and the size: with no buffer yet (ds:816C == 0) the free is skipped
+; (1BB1:0044 `je 0066`) and the size query and MemAlloc run; with a buffer and a changed size
+; (height or width differ, 1BB1:004A/0050) the old buffer is freed (1BB1:0058..005C) before the
+; query and MemAlloc; with a buffer and the same size the call goes straight to the show
+; (1BB1:0050 `je 00A9`). The size query [ds:80C6] is called as
 ; (width, height) and its result is the new buffer size. The check needs LargestFreeBlock
 ; (19BC:023D) to return at least that result plus HEAP_BLOCK (16, 1BB1:0076 `add ax,HEAP_BLOCK`),
 ; and that function already subtracts 16 from the raw largest free block (E19BC.C:142 `max -= 0x10`;
@@ -177,10 +184,12 @@ ready:  push    word ptr [g8174]
         call    dword ptr [g80A2]
         mov     ax,1
         jmp     short release
-; QUIRK 1BB1:00C6: on failure the old buffer was already freed at resize and the new size is
-; already stored, but ds:816A/816C still hold the freed pointer, so a later call with the same
-; size passes `je ready` with a dangling buffer. A first-time failure (ds:816C == 0) leaves it
-; zero and the next call retries.
+; QUIRK 1BB1:00C6: on failure the old buffer was already freed at resize (1BB1:0058..005C) and the
+; new size is already stored, but ds:816A/816C still hold the freed pointer. A later call with the
+; same size passes `je ready` (1BB1:0050) with a dangling buffer, and a later call with a different
+; size (1BB1:0046/004C, `jne 0052` at 1BB1:004A) frees the already-freed block again (1BB1:0058..005C
+; with ds:816A/816C), a double free. A first-time failure (ds:816C == 0) leaves it zero and the next
+; call retries.
 ;
 ; QUIRK 1BB1:00C6: the failure path also skips the 1BBE:00ED call above, so the hide 1BBE:0002
 ; did is never undone and the pointer stays hidden until something else balances the count. The
