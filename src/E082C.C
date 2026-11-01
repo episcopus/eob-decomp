@@ -7,7 +7,7 @@
    (src/E1A1F.C) and the game's 32-bit tick counter at ds:848A (incremented by the INT 1Ch handler,
    src/E1D8F.ASM). Placeholder names until the callers name them. */
 
-/*@flags -ml -O -Z */
+/*@flags -ml -O -Z -B */
 
 #include <dos.h>
 
@@ -20,6 +20,18 @@ struct Region {             /* 16-byte records at ds:009F (src/E1A29.C) */
     int saved1;
     int saved2;
     int saved3;
+};
+
+/* The keys the text-field editor reacts to (1AAD:053A returns the code; 0xAD and 0x7F fold to
+   KeyDelete). */
+enum {
+    KeyBackspace = 8,
+    KeyReturn = 0x0d,
+    KeyEsc = 0x1b,
+    KeySpace = 0x20,
+    KeyDelete = 0x7e,
+    KeyLeft = 0xb5,
+    KeyRight = 0xb3
 };
 
 extern struct Region gRegions[]; /*@ ds:009F */
@@ -69,17 +81,20 @@ extern void f1AAD_0009(void); /*@ 1AAD:0009 */
 /* siblings of this file called before they are defined */
 void DrawShadowText(char far *text, int x, int y, int color, int extra);
 
-/* 082C:000B: Purpose unknown: the interactive text-field editor. It draws a string at (x, y)
-   (x in 8-pixel cells) with its cursor, then loops reading a key (1AAD:038E waits for one,
-   1AAD:053A returns it), blinking the cursor every two ticks through gCursorOn, and edits the
-   buffer in place: printable keys insert (with a leading-space guard), backspace (8), delete
-   (0x7E), left (0xB5) and right (0xB3) move, Escape (0x1B) returns -1 and Return (0x0D) returns
-   the new length. The field's screen area is saved and restored with ClipRect (width maxlen+2,
-   height 9); the string and the cursor character are drawn with DrawShadowText. Draft: matches
-   through +0x1CC, then -O tail-merges the two `text[c] = 0` stores (maxlen in the insert path and
-   cur in the append path) and the ES:BX reuse differs; see re/symbols.toml, e082c_000b. */
-/*@ 082C:000B draft */ int EditTextField(char far *text, char x, char y, char maxlen, char color,
-                                        char attr, char cursorAttr)
+/* 082C:000B: the interactive text-field editor. Draws the string `text` at (x, y) (x in 8-pixel
+   cells, y in lines) with the character under the cursor, then loops: it waits for a key
+   (1AAD:038E) while blinking the cursor every two ticks through gCursorOn and the tick counter
+   ds:848A, edits `text` in place and redraws the field. Printable keys insert (uppercased; a
+   space is refused at the start), KeyBackspace deletes to the left of the cursor, KeyDelete at
+   it, the arrow keys move it, KeyReturn ends the edit and returns the new length and KeyEsc ends
+   it and returns -1. `maxlen` is the highest buffer index (the buffer holds maxlen+1 bytes
+   including the terminator); the field, maxlen+2 by 9, is saved and restored with ClipRect and
+   the text and cursor are drawn with DrawShadowText. Reached from FindWordPanel (ovl2:09ED) and
+   ovl0:23EC. The unit is compiled through the assembler (the flags line records -B): only that
+   keeps the insert path's text[maxlen]=0 and the append path's text[cur]=0 as two separate
+   stores, where TCC's own assembler merges them into one shared store. */
+/*@ 082C:000B */ int EditTextField(char far *text, char x, char y, char maxlen, char color,
+                                    char attr, char cursorAttr)
 {
     char cur;
     char n;
@@ -116,27 +131,27 @@ void DrawShadowText(char far *text, int x, int y, int color, int extra);
             }
         }
         key = f1AAD_053A() & 0xff;
-        if (key == 0xad)
-            key = 0x7e;
+        if (key == 0xad)               /* the two other delete codes fold to KeyDelete */
+            key = KeyDelete;
         if (key == 0x7f)
-            key = 0x7e;
-        if (key == 8)
+            key = KeyDelete;
+        if (key == KeyBackspace)
             goto special;
-        if (key == 0x1b)
+        if (key == KeyEsc)
             goto special;
-        if (key == 0xd)
+        if (key == KeyReturn)
             goto special;
-        if (key == 0x7e)
+        if (key == KeyDelete)
             goto special;
-        if (key == 0xb5)
+        if (key == KeyLeft)
             goto special;
-        if (key == 0xb3)
+        if (key == KeyRight)
             goto special;
-        if (key < 0x20)
+        if (key < KeySpace)
             goto special;
-        if (key > 0x7e)
+        if (key > KeyDelete)
             goto special;
-        if (cur == 0 && key == 0x20)
+        if (cur == 0 && key == KeySpace)
             goto redraw;
         if (cur < n) {
             for (i = maxlen - 1; cur <= i; i--)
@@ -154,53 +169,54 @@ void DrawShadowText(char far *text, int x, int y, int color, int extra);
             cur++;
             text[cur] = 0;
         }
-        n++;
-        if (n > maxlen)
+        if (++n > maxlen)
             n = maxlen;
         if (cur > maxlen - 1)
             cur = maxlen - 1;
         goto redraw;
     special:
-        if (key == 8) {
+        if (key == KeyBackspace) {
             if (cur < n) {
-                if (cur <= 0)
+                if (cur > 0) {
+                    for (i = cur; i < maxlen; i++)
+                        text[i - 1] = text[i];
+                    cur--;
+                    text[--n] = 0;
+                } else
                     goto redraw;
-                for (i = cur; i < maxlen; i++)
-                    text[i - 1] = text[i];
-                cur--;
-                n--;
-                text[n] = 0;
             } else {
-                if (n <= 0)
+                if (n > 0) {
+                    text[--n] = 0;
+                    cur--;
+                } else
                     goto redraw;
-                n--;
-                text[n] = 0;
-                cur--;
             }
-        } else if (key == 0xb5) {
+        } else if (key == KeyLeft) {
             if (cur > 0)
                 cur--;
-        } else if (key == 0xb3) {
+        } else if (key == KeyRight) {
             if (cur < n && cur < maxlen - 1)
                 cur++;
-        } else if (key == 0x7e) {
+        } else if (key == KeyDelete) {
             if (text[cur] != 0) {
-                memmove(text + cur, text + cur + 1, n - cur);
+                memmove(&text[cur], &text[cur + 1], n - cur);
                 n--;
             }
         }
     redraw:
-        ClipRect(x - 1, y, 0, 0xbf, maxlen + 2, 9, 0, 2);
+        /* QUIRK 082C:037F: the same field rectangle as the save at 082C:0062, but with the two
+           corner pairs exchanged (0, 0xbf then x-1, y) and the extras 2, 0 instead of 0, 2. */
+        ClipRect(0, 0xbf, x - 1, y, maxlen + 2, 9, 2, 0);
         DrawShadowText(text, x * 8, y, color, attr);
         if (cur < n)
             gCursorChar = text[cur];
         else
             gCursorChar = ' ';
         DrawShadowText(&gCursorChar, (x + cur) * 8, y, color, cursorAttr);
-        if (key == 0xd || key == 0x1b)
+        if (key == KeyReturn || key == KeyEsc)
             break;
     }
-    if (key == 0x1b)
+    if (key == KeyEsc)
         return -1;
     return n;
 }

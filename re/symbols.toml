@@ -1225,7 +1225,9 @@ unit = "e082c"
 addr = "082C:000B"
 size = 1050
 evidence = ["segment"]
-notes = "draft 2026-11-01 (src/E082C.C): the interactive text-field editor. The reconstruction matches byte for byte through +0x1CC (the initial draw, the key-blink loop, the key normalisation and the first half of the insert path). Then -O cross-jumps the two `text[...]=0` stores: the insert path's `text[maxlen]=0` (082C:021B) and the append path's `text[cur]=0` (082C:0250). In the original both reuse the ES:BX of the preceding `text[cur]=toupper(key)` (082C:021F and 082C:0254 both `mov bx,[bp+6]`, no `les`) and each keeps its own store; ours emits one shared tail that reloads `les` and is 12 bytes shorter by the special label (first difference +0x182, the `goto special` target 0x276 vs 0x282). Evidence: the argument layout (far text at +6/+8, char x +0xa, y +0xc, maxlen +0xe, colour +0x10 and extras +0x12/+0x14), the ClipRect(x-1, y, 0, 0xbf, maxlen+2, 9, 0, 2) save, the two DrawShadowText draws, the key set (8, 0x1b, 0xd, 0x7e, 0xb5, 0xb3, key<0x20, key>0x7e), the 0xad/0x7f folds to 0x7e, and the memmove delete. Tried: a compound `if (||)`, a switch, a chain of `if (cond) goto special` (the last reproduces the original's `jne skip; jmp 0x28d` dispatch, now matching), braces around the insert store, and an early-`goto` plus combined-condition restructure like the one that fixed 082C:051B. Open: how to keep the two stores from cross-jumping."
+name = "EditTextField"
+level = "L2"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e082c_0425"
@@ -1235,7 +1237,7 @@ size = 51
 evidence = ["far", "frame"]
 name = "WaitTicks"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e082c_0458"
@@ -1245,7 +1247,7 @@ size = 108
 evidence = ["far", "frame"]
 name = "RollDice"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e082c_04c4"
@@ -1255,7 +1257,7 @@ size = 87
 evidence = ["far", "frame"]
 name = "DrawRect"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e082c_051b"
@@ -1265,7 +1267,7 @@ size = 209
 evidence = ["far", "near", "frame"]
 name = "LoadScreenImage"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e082c_05ec"
@@ -1275,7 +1277,7 @@ size = 39
 evidence = ["frame"]
 name = "LoadOverlayScreen"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e082c_0613"
@@ -1285,7 +1287,7 @@ size = 40
 evidence = ["far", "near", "frame"]
 name = "IsPointInsideRect"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e082c_063b"
@@ -1295,7 +1297,7 @@ size = 70
 evidence = ["far", "frame"]
 name = "DrawRegion000F"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e082c_0681"
@@ -1305,7 +1307,7 @@ size = 70
 evidence = ["far", "frame"]
 name = "DrawRegion004D"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e082c_06c7"
@@ -1315,7 +1317,7 @@ size = 70
 evidence = ["frame"]
 name = "DrawRegion008B"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e082c_070d"
@@ -1325,7 +1327,7 @@ size = 64
 evidence = ["frame"]
 name = "DrawRegion00C9"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e082c_074d"
@@ -1335,7 +1337,7 @@ size = 87
 evidence = ["frame"]
 name = "DrawBevelBox"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e082c_07a4"
@@ -1345,7 +1347,7 @@ size = 33
 evidence = ["far", "frame"]
 name = "SwapChars"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e082c_07c5"
@@ -1355,7 +1357,7 @@ size = 85
 evidence = ["frame"]
 name = "RotateBlocks"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e082c_081a"
@@ -1365,7 +1367,7 @@ size = 126
 evidence = ["near", "frame"]
 name = "ShowMemoryDiagnostics"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e082c_0898"
@@ -1375,7 +1377,7 @@ size = 114
 evidence = ["far", "frame"]
 name = "DrawShadowText"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e082c_090a"
@@ -1385,7 +1387,7 @@ size = 106
 evidence = ["frame"]
 name = "DrawShadowInt"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e082c_0974"
@@ -1395,7 +1397,7 @@ size = 50
 evidence = ["far", "frame"]
 name = "NumberWidthLong"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e082c_09a6"
@@ -1405,7 +1407,7 @@ size = 47
 evidence = ["far", "frame"]
 name = "NumberWidthInt"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e082c_09d5"
@@ -1415,7 +1417,7 @@ size = 126
 evidence = ["far", "frame"]
 name = "DrawFilledPanel"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e082c_0a53"
@@ -1425,7 +1427,7 @@ size = 10
 evidence = ["frame"]
 name = "QuitGame"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e082c_0a5d"
@@ -1435,7 +1437,7 @@ size = 32
 evidence = ["far", "frame"]
 name = "ClickInRect"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e082c_0a7d"
@@ -1445,7 +1447,7 @@ size = 55
 evidence = ["frame"]
 name = "ReadFileBytes"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e082c_0ab4"
@@ -1455,7 +1457,7 @@ size = 52
 evidence = ["far", "frame"]
 name = "ClampValue"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e082c_0ae8"
@@ -1465,7 +1467,7 @@ size = 38
 evidence = ["frame"]
 name = "FormatName"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e082c_0b0e"
@@ -1475,7 +1477,7 @@ size = 53
 evidence = ["frame"]
 name = "ShowStatus"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e082c_0b43"
@@ -1485,7 +1487,7 @@ size = 76
 evidence = ["far", "frame"]
 name = "DelaySeconds"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e082c_0b8f"
@@ -1495,7 +1497,7 @@ size = 28
 evidence = ["far", "frame"]
 name = "SayAndBeep"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e08e6_000b"
