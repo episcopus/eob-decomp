@@ -5616,6 +5616,9 @@ unit = "e1e8b"
 addr = "1E8B:04D0"
 size = 102
 evidence = ["frame"]
+name = "_OverlayCallHandler"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1e8b_0536"

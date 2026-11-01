@@ -580,10 +580,66 @@ reload_out:
         ret
 _RelocateOverlayPointer ENDP
 
-        PUBLIC  _f1E8B_04D0              ; @ 1E8B:04D0 stub
-_f1E8B_04D0 PROC FAR
-        ret
-_f1E8B_04D0 ENDP
+; 1E8B:04D0: the overlay call interrupt handler. An odd BP means the call came from outside the
+; overlay manager, so it aborts through __OverlayHalt; otherwise it saves the registers, switches to
+; the manager's data segment 20B5, pushes the request word at ES:[BX] and loads the overlay
+; (_LoadOverlayRecord), either the single entry at [bp+2] or the two-word form at [bp+6]/[bp+2],
+; then calls the overlay's routine through 20B5:0016 with the ES:001A bit 8 value in AX. Ends with
+; IRET. Evidence: the BP parity guard, the __OverlayHalt jump, the ES:001A bit 8 and the 20B5:0016
+; far pointer (the same one 02FF uses).
+        PUBLIC  _OverlayCallHandler      ; @ 1E8B:04D0
+_OverlayCallHandler PROC FAR
+        push    bp
+        mov     bp,sp
+        test    bp,1
+        je      short handler_ok
+        jmp     far ptr _OverlayHalt
+handler_ok:
+        push    ax
+        push    bx
+        push    cx
+        push    dx
+        push    si
+        push    di
+        push    ds
+        push    es
+        mov     ax,20B5h
+        mov     ds,ax
+        sti
+        les     bx,[bp+2]
+        push    word ptr es:[bx]
+        sub     word ptr [bp+2],2
+        jne     short handler_multi
+        call    _LoadOverlayRecord
+        jmp     short handler_leave
+handler_multi:
+        add     bp,6
+        mov     ax,[bp]
+        xchg    word ptr [bp-6],ax
+        mov     [bp],ax
+        call    _LoadOverlayRecord
+        mov     ax,[bp]
+        xchg    word ptr [bp-6],ax
+        mov     [bp],ax
+handler_leave:
+        pop     bx
+        mov     al,es:[1Ah]
+        and     al,8
+        and     byte ptr es:[1Ah],0F7h
+        cbw
+        mov     ds,word ptr cs:[4]
+        call    dword ptr ds:[16h]
+        pop     es
+        pop     ds
+        pop     di
+        pop     si
+        pop     dx
+        pop     cx
+        pop     bx
+        pop     ax
+        pop     bp
+        iret
+_OverlayCallHandler ENDP
 
 ; 1E8B:0536: age the overlay records after a version-record update. It bumps the 20B5:00AC counter,
 ; then for each record in the 20B5:00BC chain: when its ES:0010 entry is set, marks it used (ES:001B
