@@ -6777,6 +6777,8 @@ unit = "eov6"
 addr = "ovl6:0000"
 size = 2018
 evidence = ["ovl", "segment"]
+name = "CampLoop"
+notes = "draft: the camp loop is written from the disassembly and reads correctly, but it does not match. First difference at +0008: the copy of the six zero bytes at ds:7F40 into the local spell-group counter array emits `lea ax,[bp-14]; push ss` where the original emits `push ss; lea ax,[bp-14]` (the argument-style far pointer push; a plain struct assignment, a struct initializer, a struct pointer dereference and a char-array cast all compile to the other order, and passing &local to a function gives the argument order but calls the function). Behind that the tick/hour control flow (six sub-steps per hour, hours%8, hours%0x18), the two 30-slot spell scans, the healing scan and the string-table far object (segment 2003 offset 0, the far strings at 0x20030) still diverge. Evidence for names: f0858 prints Hours rested, f09D2 tests monsters near, f0A92 tests ready to rest, f0B9B draws the warning box, f07E2 finds the most wounded member. The spell record stride 0x13, the tables ds:151F and ds:1344, the 0x151F/0x151f far name pointer and the 28-byte ds:8A84 monster records are from the disassembly. Five failed attempts on the copy ordering."
 
 [[function]]
 id = "eov6_07e2"
@@ -6784,6 +6786,9 @@ unit = "eov6"
 addr = "ovl6:07E2"
 size = 118
 evidence = ["ovl", "near", "frame"]
+name = "f07E2"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov6_0858"
@@ -6791,6 +6796,9 @@ unit = "eov6"
 addr = "ovl6:0858"
 size = 378
 evidence = ["ovl", "near", "frame"]
+name = "f0858"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov6_09d2"
@@ -6798,6 +6806,9 @@ unit = "eov6"
 addr = "ovl6:09D2"
 size = 192
 evidence = ["ovl", "near", "frame"]
+name = "f09D2"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov6_0a92"
@@ -6805,6 +6816,9 @@ unit = "eov6"
 addr = "ovl6:0A92"
 size = 265
 evidence = ["ovl", "near", "frame"]
+name = "f0A92"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov6_0b9b"
@@ -6812,6 +6826,9 @@ unit = "eov6"
 addr = "ovl6:0B9B"
 size = 287
 evidence = ["ovl", "near", "frame"]
+name = "f0B9B"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "i0000_0000"
