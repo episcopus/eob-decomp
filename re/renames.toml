@@ -837,3 +837,12 @@ new = "DrawShadowText"
 kind = "function"
 why = "draws a text string with a drop shadow (three 0x0C shadow draws then the main colour); used by the option list and field code"
 date = "2026-11-01"
+
+[[rename]]
+id = "ds:806A=gFillRect"
+addr = "ds:806A"
+old = ""
+new = "gFillRect"
+kind = "global"
+why = "a far rectangle-fill routine called with (x1, y1, x2, y2, attribute): E082C.C:436 fills the bevel interior, E1DE7.C:221/246 fill and redraw text-window rectangles; so gFillRect, not the address-suffix placeholder gRect806A"
+date = "2026-11-01"

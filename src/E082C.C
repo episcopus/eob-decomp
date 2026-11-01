@@ -56,7 +56,7 @@ extern void FileRead(int handle, void far *buf, unsigned long len); /*@ 1C0E:040
 extern void FileClose(int handle); /*@ 1C0E:03BB */
 extern void ShutdownGame(void); /*@ 07C8:058A */
 extern void PlaySound(int sound); /*@ 177D:0070 */
-extern void f1DE7_060A(char far *text); /*@ 1DE7:060A */
+extern void DrawText(char far *text); /*@ 1DE7:060A */  /* the text console's string renderer (src/E1DE7.C) */
 extern void f1A29_000F(int mode, void far *src, int x, int y, int region); /*@ 1A29:000F */
 extern void f1A29_004D(int mode, void far *src, int x, int y, int region); /*@ 1A29:004D */
 extern void f1A29_008B(int mode, void far *src, int x, int y, int region); /*@ 1A29:008B */
@@ -514,9 +514,9 @@ void DrawShadowText(char far *text, int x, int y, int color, int extra);
     f1AAD_0480();
 }
 
-/* 082C:0B8F: write `text` to the message line (1DE7:060A) and play sound 0x4F. */
+/* 082C:0B8F: write `text` to the message line (DrawText, 1DE7:060A) and play sound 0x4F. */
 /*@ 082C:0B8F */ void SayAndBeep(char far *text)
 {
-    f1DE7_060A(text);
+    DrawText(text);
     PlaySound(0x4f);
 }
