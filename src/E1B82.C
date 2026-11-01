@@ -5,8 +5,8 @@
    dispatches on the block's format byte to one of five unpackers (1BA8:0006 for format 0 and
    1D9A:0013/0113/018B/02CB for formats 4/3/1/2), allocating a work buffer for formats 1 and 2 when
    the shared buffer at gBufSeg/gBufSize is too small; SetUnpackBuffer records that shared buffer.
-   Built as C++ (the -P flag): only the C++ front end keeps the format byte's sign extension to
-   long in Unpack's switch, and it reproduces all four functions' bytes. */
+   Built as C++ (the -P flag): in the tc100/tc101 trials only the C++ front end keeps the format
+   byte's sign extension to long in Unpack's switch, and it reproduces all four functions' bytes. */
 
 /*@flags -ml -O -Z -G -P */
 
@@ -15,7 +15,8 @@
 /* The work buffer of formats 1 and 2, kept as two words so its segment can be read from memory:
    the original pushes the far pointer's second word (1B82:013F/0197 `push [bp-2]`), where the
    C++ front end would fold `FP_SEG(work)` to `push dx`. MemAlloc with flag 0x20 returns
-   MK_FP(seg + 1, 0), an offset-0 block (19BC:0059), so the segment word alone names the block. */
+   MK_FP(seg + 1, 0), an offset-0 block (the `inc ax; mov [bp-4],0` at 19BC:00B3), so the segment
+   word alone names the block. */
 typedef union {
     void far *block;    /* the block as MemAlloc returns it, passed on to MemFree */
     unsigned words[2];  /* words[1] is the block's segment (what Unpack1/Unpack2 receive) */
@@ -55,7 +56,7 @@ void Unpack(char far *src, void far *dst);
    into dst. */
 /*@ 1B82:0041 */ void LoadPacked(char far *name, int srcKind, int dstKind)
 {
-    unsigned n;
+    unsigned packedLen;
     void far *src;
     void far *dst;
     int handle;
@@ -63,24 +64,25 @@ void Unpack(char far *src, void far *dst);
     src = f19EC_0002(srcKind);
     dst = f19EC_0002(dstKind);
     handle = FileOpen(name, 1);
-    FileRead(handle, (void far *)&n, 2L);   /* the packed block's byte length */
-    FileRead(handle, src, n);
+    FileRead(handle, (void far *)&packedLen, 2L);   /* the packed block's byte length */
+    FileRead(handle, src, packedLen);
     FileClose(handle);
     Unpack((char far *)src, dst);
 }
 
 /* 1B82:00C7: unpacks the block src into dst by its first byte, the format:
-     0: Unpack0 copies the long count at src+2 and the data at src+8;
+     0: Unpack0 copies the long count at block offset +2 and the data at block offset +8;
      3: Unpack3 receives the source and destination segments;
-     1 and 2: Unpack1/Unpack2 use a 0x3C00/0xFC00 byte work buffer, the shared one at gBufSeg when
+     1 and 2: Unpack1/Unpack2 get a 0x3C00/0xFC00 byte work buffer, the shared one at gBufSeg when
               gBufSize is large enough, otherwise a MemAlloc'd block freed after the call;
-     4: Unpack reads the long unpacked size at src+2 and passes it on as Unpack4's length (the
-        decoder uses only its low word, 1D9A:003B/0043), skips the u16 at src+6 (the palette bytes
-        the format header carries before the data, WHITEPAPER 147) and calls Unpack4 with the data
-        at src+8+n.
-   The format byte is sign-extended to long and the switch runs on the int in AX, the original keeps
-   the cbw;cwd; C++ codegen does that here, the C front end folds (int)(long)*src to *src. The case
-   bodies are laid out in source order 0, 3, 1, 2, 4, the order of the table at cs:020d. */
+     4: Unpack reads the long unpacked size at block offset +2 and passes it on as Unpack4's length
+        (the decoder uses only its low word, 1D9A:003B/0043), skips the u16 at block offset +6 (the
+        palette bytes the format header carries before the data, WHITEPAPER 147) and calls Unpack4
+        with the data at block offset +8+n.
+   The original sign-extends the format byte (cbw; cwd) and switches on the int in AX. The C++ front
+   end (-P) emits those bytes; the C front end folds the extension away (re/symbols.toml note on
+   1B82:00C7). The case bodies follow the source order 0, 3, 1, 2, 4 (1B82:00E7, 010D, 011E, 0176,
+   01CC), and the table at cs:020D is indexed by format value. */
 /*@ 1B82:00C7 */ void Unpack(char far *src, void far *dst)
 {
     WorkBuffer work;
@@ -111,10 +113,10 @@ void Unpack(char far *src, void far *dst);
             Unpack2(FP_SEG(src), FP_SEG(dst), gBufSeg);
         break;
     case 4L:
-        src += 2;                   /* skip the format byte and the pad byte */
-        size = *(long far *)src;    /* the 32-bit unpacked size (src+2) */
+        src += 2;                   /* block offset +2: skip the format byte and the pad byte */
+        size = *(long far *)src;    /* block offset +2: the 32-bit unpacked size */
         src += 4;
-        n = *(int far *)src;        /* the u16 palette byte count (src+6), 0 in every pinned file */
+        n = *(int far *)src;        /* block offset +6: the u16 palette byte count (WHITEPAPER 147), 0 in every pinned file */
         src += 2;
         src += n;
         Unpack4(src, dst, size);    /* Unpack4 uses size's low word (1D9A:003B) */
