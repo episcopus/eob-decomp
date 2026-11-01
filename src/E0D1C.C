@@ -37,6 +37,19 @@ extern signed char g194B[]; /*@ ds:194B */  /* byte table read by 0D1C:0080 */
 extern signed char g1A1B[]; /*@ ds:1A1B */  /* per-page sound table read by 0D1C:035A */
 extern int gSoundVolume; /*@ ds:FBCA */     /* the global sound volume (src/E177D.C) */
 extern int gFBCC; /*@ ds:FBCC */            /* a page number 0..3 (kept modulo 4 by 0ACD) */
+extern int g54F2; /*@ ds:54F2 */            /* the index drawn by 0D1C:0454, -1 when none */
+extern int g54F4; /*@ ds:54F4 */            /* the row of the animated list 0D1C:0454 draws */
+extern unsigned long g848A; /*@ ds:848A */  /* a tick counter compared with gFC5E by 0D1C:0454 */
+extern unsigned long gFC5E; /*@ ds:FC5E */  /* the next tick 0D1C:0454 may draw at */
+extern signed char g1CE7[]; /*@ ds:1CE7 */  /* per-row colours for the list 0D1C:0454 draws */
+
+struct Row8 {               /* eight-byte rows at ds:5482, four words: a DrawBox rectangle */
+    int m0;
+    int m2;
+    int m4;
+    int m6;
+};
+extern struct Row8 gRows5482[]; /*@ ds:5482 */
 
 struct Entry14 {            /* the 14-byte records E07A9 calls Entry14; view based at ds:8DD2 (E07A9) */
     unsigned char flags;    /* +0 (ds:8DD2), read by 07A9:015C */
@@ -62,6 +75,9 @@ extern int f0BD2_02B9(void far *head, int key, int item); /*@ 0BD2:02B9 */
 extern void f07A9_010C(int n); /*@ 07A9:010C */
 extern int far RollDice(char count, char sides, char bonus); /*@ 082C:0458 */
 extern void f1414_0B2E(void); /*@ 1414:0B2E */
+extern void LockHidePointer(void); /*@ 1BBE:0307 */
+extern void LockShowPointer(void); /*@ 1BBE:0332 */
+extern void DrawBox(int x1, int y1, int x2, int y2, int colour); /*@ 1A1F:000C */
 
 int f0D1C_0670(int who, int mask);
 int f0D1C_02DC(void);
@@ -277,7 +293,47 @@ int f0D1C_02DC(void);
         gA99A = 0;
     f1414_0B2E();
 }
-/*@ 0D1C:0454 stub */ void f0D1C_0454(void) {}
+/* 0D1C:0454: draws the animated row list at ds:5482. When `index` differs from the stored g54F2
+   it hides the pointer, erases the old row (DrawBox over gRows5482[g54F2] in colour 0xC), shows
+   the pointer, resets the row counter g54F4 to 0, stores `index` in g54F2 and records the
+   current tick (gFC5E = g848A). Otherwise, when a row is selected and one tick has passed, it
+   draws the next row g1CE7[g54F4] in the row's colour, advances g54F4 (wrapping to 0 at a zero
+   colour) and sets gFC5E = g848A + 1. Called by overlays 0 and 1. */
+/*@ 0D1C:0454 */ void DrawRowList(int index)
+{
+    int x1;
+    int y1;
+    int x2;
+    int y2;
+
+    if (g54F2 != index) {
+        if (g54F2 != -1) {
+            LockHidePointer();
+            DrawBox(gRows5482[g54F2].m0, gRows5482[g54F2].m2, gRows5482[g54F2].m4,
+                    gRows5482[g54F2].m6, 0xC);
+            LockShowPointer();
+        }
+        g54F4 = 0;
+        g54F2 = index;
+        gFC5E = g848A;
+    } else {
+        if (g54F2 != -1) {
+            if (g848A > gFC5E) {
+                if (g1CE7[g54F4] == 0)
+                    g54F4 = 0;
+                x1 = gRows5482[g54F2].m0;
+                y1 = gRows5482[g54F2].m2;
+                x2 = gRows5482[g54F2].m4;
+                y2 = gRows5482[g54F2].m6;
+                LockHidePointer();
+                DrawBox(x1, y1, x2, y2, g1CE7[g54F4]);
+                LockShowPointer();
+                g54F4++;
+                gFC5E = g848A + 1;
+            }
+        }
+    }
+}
 /*@ 0D1C:0583 stub */ void f0D1C_0583(void) {}
 /*@ 0D1C:059B stub */ void f0D1C_059B(void) {}
 /*@ 0D1C:0670 stub */ int f0D1C_0670(int who, int mask) { return 0; }
