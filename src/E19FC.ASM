@@ -15,8 +15,13 @@
 ; literal is written as an explicit 81h plus the byte, which opens a run. Runs of 41h or more equal
 ; bytes are found by scanning with repe scasb and become FEh fills; shorter matches are searched
 ; with repne scasb over the input base and extended with repe cmpsb. The eight words of state are
-; kept in the code segment. No caller was found (the packet: no direct call, no far pointer
-; anywhere in EOB.EXE or its overlays).
+; kept in the code segment, each with its role in the data comments below. No caller was found (the
+; packet: no direct call, no far pointer anywhere in EOB.EXE or its overlays).
+;
+; The limits the encoder keeps: matches shorter than 3 bytes become literals; the short 00h..7Fh
+; form is used only for lengths 3..0Ah and distances <= 0FFFh; C0h..FDh carry lengths up to 40h;
+; longer matches take FFh; literal runs are capped at 3Fh bytes (a full count byte starts a new
+; 80h run).
 ;
 ; The map's segment starts at 19FC:0007, the alignment byte between the previous module (19F3) and
 ; this one; the frame is 19FC:0008. Reproduced here as the leading db 0.
@@ -56,7 +61,7 @@ _f19FC_0007 PROC FAR
         mov     word ptr cs:[litOpen],1
         mov     word ptr cs:[outBase],di
         mov     word ptr cs:[inBase],si
-        mov     word ptr cs:[litCount],di
+        mov     word ptr cs:[litHdr],di
         mov     al,81h                  ; open the first literal run
         stosb
         lodsb
@@ -71,7 +76,7 @@ mainloop:                               ; 19FC:0053
         mov     word ptr cs:[bestLen],1
 search:                                 ; 19FC:006F
         mov     al,[si]
-        cmp     al,[si+40h]             ; a run of equal bytes 40h ahead?
+        cmp     al,[si+40h]             ; precheck: a candidate fill run (byte 40h ahead equal)
         jne     nextcand
         mov     bx,di
         mov     di,si
@@ -158,14 +163,14 @@ litrun:                                 ; 19FC:0139
         cmp     word ptr cs:[litOpen],0
         jne     putlit
 newlit:                                 ; 19FC:0141
-        mov     word ptr cs:[litCount],di
+        mov     word ptr cs:[litHdr],di ; litHdr = offset of this run's count byte (the 80h below)
         mov     al,80h
         stosb
 putlit:                                 ; 19FC:0149
-        mov     bx,cs:[litCount]
-        cmp     byte ptr es:[bx],0bfh
+        mov     bx,cs:[litHdr]
+        cmp     byte ptr es:[bx],0bfh   ; a full 3Fh run starts a new one
         je      newlit
-        inc     byte ptr es:[bx]
+        inc     byte ptr es:[bx]        ; bump the run's count byte
         lodsb
         stosb
         mov     word ptr cs:[litOpen],1
@@ -202,13 +207,13 @@ finish:                                 ; 19FC:0187
         ret
 _f19FC_0007 ENDP
 
-litOpen dw      0                       ; 19FC:019B
-outBase dw      0                       ; 19FC:019D
-inBase  dw      0                       ; 19FC:019F
-litCount dw     0                       ; 19FC:01A1
-outSeg  dw      0                       ; 19FC:01A3
-outPtr  dw      0                       ; 19FC:01A5
-bestLen dw      0                       ; 19FC:01A7
-bestPos dw      0                       ; 19FC:01A9
+litOpen dw      0                       ; 19FC:019B  a literal run is open (1) or closed (0)
+outBase dw      0                       ; 19FC:019D  output start (normalised offset), for the return length
+inBase  dw      0                       ; 19FC:019F  input start (normalised offset); distances are relative to it
+litHdr  dw      0                       ; 19FC:01A1  output offset of the open literal run's count byte
+outSeg  dw      0                       ; 19FC:01A3  output segment, saved while es holds the source
+outPtr  dw      0                       ; 19FC:01A5  output position, saved while es holds the source
+bestLen dw      0                       ; 19FC:01A7  best match length so far
+bestPos dw      0                       ; 19FC:01A9  best match input offset so far
 
         END
