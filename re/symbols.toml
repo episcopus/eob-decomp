@@ -5503,6 +5503,9 @@ unit = "e1e8b"
 addr = "1E8B:0185"
 size = 34
 evidence = ["frame"]
+name = "_ShutdownOverlayManager"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1e8b_01a7"
@@ -5510,6 +5513,9 @@ unit = "e1e8b"
 addr = "1E8B:01A7"
 size = 12
 evidence = ["near"]
+name = "_OpenNamedOverlayFile"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1e8b_01b3"
@@ -5517,6 +5523,9 @@ unit = "e1e8b"
 addr = "1E8B:01B3"
 size = 64
 evidence = ["near"]
+name = "_OpenOwnOverlayFile"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1e8b_01f3"
@@ -5524,6 +5533,9 @@ unit = "e1e8b"
 addr = "1E8B:01F3"
 size = 93
 evidence = ["near"]
+name = "_OpenOverlayFileViaPath"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1e8b_0250"
@@ -5531,6 +5543,9 @@ unit = "e1e8b"
 addr = "1E8B:0250"
 size = 38
 evidence = ["near"]
+name = "_CopyNameAndOpenOverlay"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1e8b_0276"
@@ -5538,6 +5553,9 @@ unit = "e1e8b"
 addr = "1E8B:0276"
 size = 16
 evidence = ["near"]
+name = "_ReadOverlayHeaderBytes"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1e8b_0286"
@@ -5559,6 +5577,9 @@ unit = "e1e8b"
 addr = "1E8B:03C4"
 size = 57
 evidence = ["near"]
+name = "_ReadOverlayImage"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1e8b_03fd"
@@ -5601,6 +5622,9 @@ unit = "e1e8b"
 addr = "1E8B:05FB"
 size = 24
 evidence = ["near"]
+name = "_ReleaseOverlayFpuState"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1e8b_0613"
@@ -5622,6 +5646,9 @@ unit = "e1e8b"
 addr = "1E8B:066F"
 size = 30
 evidence = ["near"]
+name = "_FillOverlayVersionTable"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1e8b_068d"
@@ -5629,6 +5656,9 @@ unit = "e1e8b"
 addr = "1E8B:068D"
 size = 51
 evidence = ["near"]
+name = "_ClearOverlayVersionTable"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1e8b_06c0"
@@ -5643,6 +5673,9 @@ unit = "e1e8b"
 addr = "1E8B:0711"
 size = 30
 evidence = ["near"]
+name = "_LinkOverlayRecord"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1e8b_072f"
@@ -5650,6 +5683,9 @@ unit = "e1e8b"
 addr = "1E8B:072F"
 size = 12
 evidence = ["near"]
+name = "_PatchOverlayEntryVector"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1e8b_073b"
@@ -5657,6 +5693,9 @@ unit = "e1e8b"
 addr = "1E8B:073B"
 size = 38
 evidence = ["near"]
+name = "_FindOverlaySlot"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1e8b_0761"
@@ -5664,6 +5703,9 @@ unit = "e1e8b"
 addr = "1E8B:0761"
 size = 28
 evidence = ["near"]
+name = "_OverlayBytesRemaining"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1e8b_077d"
@@ -5671,6 +5713,9 @@ unit = "e1e8b"
 addr = "1E8B:077D"
 size = 12
 evidence = ["near"]
+name = "_OverlayCodeParagraphs"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1e8b_0789"
@@ -5678,6 +5723,9 @@ unit = "e1e8b"
 addr = "1E8B:0789"
 size = 78
 evidence = ["near"]
+name = "_OverlayTotalParagraphs"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1e8b_07d7"
