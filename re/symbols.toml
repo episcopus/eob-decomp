@@ -4822,6 +4822,8 @@ unit = "e1c00"
 addr = "1C00:0001"
 size = 1
 evidence = ["segment"]
+level = "L2"
+notes = "not a function: bytes of the unit outside its functions (a marker or padding), matched with the whole unit"
 
 [[function]]
 id = "e1c00_0002"
@@ -4829,6 +4831,9 @@ unit = "e1c00"
 addr = "1C00:0002"
 size = 83
 evidence = ["near"]
+name = "_LoadOverlayImage"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1c00_0055"
@@ -4836,6 +4841,9 @@ unit = "e1c00"
 addr = "1C00:0055"
 size = 151
 evidence = ["far", "frame"]
+name = "_RunOverlayRequest"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1c0e_000c"
