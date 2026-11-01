@@ -2286,6 +2286,9 @@ unit = "e0d1c"
 addr = "0D1C:0006"
 size = 57
 evidence = ["far", "segment"]
+name = "f0D1C_0006"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0d1c_003f"
@@ -2293,6 +2296,9 @@ unit = "e0d1c"
 addr = "0D1C:003F"
 size = 46
 evidence = ["far", "frame"]
+name = "SelectCharacter"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0d1c_006d"
@@ -2300,6 +2306,9 @@ unit = "e0d1c"
 addr = "0D1C:006D"
 size = 11
 evidence = ["far", "frame"]
+name = "f0D1C_006D"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0d1c_0078"
@@ -2307,6 +2316,9 @@ unit = "e0d1c"
 addr = "0D1C:0078"
 size = 8
 evidence = ["far", "frame"]
+name = "f0D1C_0078"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0d1c_0080"
