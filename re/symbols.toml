@@ -4662,6 +4662,9 @@ unit = "e1bf3"
 addr = "1BF3:000E"
 size = 121
 evidence = ["near"]
+name = "_f1BF3_000E"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1bf3_0087"
@@ -4669,6 +4672,9 @@ unit = "e1bf3"
 addr = "1BF3:0087"
 size = 33
 evidence = ["frame"]
+name = "_f1BF3_0087"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1bf3_00a8"
@@ -4676,6 +4682,9 @@ unit = "e1bf3"
 addr = "1BF3:00A8"
 size = 41
 evidence = ["far", "frame"]
+name = "_f1BF3_00A8"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1c00_0001"
