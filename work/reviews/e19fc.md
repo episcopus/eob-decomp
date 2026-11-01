@@ -263,48 +263,66 @@ copying the template over the file, so the five earlier rounds stay in the file.
 
 ### Findings
 
-- [ ] must-fix src/E19FC.ASM:82-83: "the epilogue (19FC:0187) pops si, es, dx, ds, di, cx, bx and bp".
+- [x] must-fix src/E19FC.ASM:82-83: "the epilogue (19FC:0187) pops si, es, dx, ds, di, cx, bx and bp".
   19FC:0187 is the `finish` block (`mov ax,80h`, the end byte, the return length), not the pops. The
   pops are at 19FC:0192 to 0199, which `finish` falls into. Cite 19FC:0192 for the pops, or say the
   finish block at 19FC:0187 runs into the pops at 19FC:0192 to 0199.
+  Fixed in 64e5590: the function comment now says the finish block (19FC:0187) runs into the epilogue,
+  which pops si, es, dx, ds, di, cx, bx and bp at 19FC:0192 to 0199.
 
-- [ ] should src/E19FC.ASM:3-5 and 38-39: the header says the caller calls the encoder "once per
+- [x] should src/E19FC.ASM:3-5 and 38-39: the header says the caller calls the encoder "once per
   4096-byte block" and gives the source as gBufDCFC, but not that the caller fills the block first.
   ovl3:0FFA to 101F write 1024 records of 4 bytes (4096 bytes) through [bp-8]:[bp-6], which is gBufDCFC,
   from a table in ds with 9-byte records (index 9 x di + si - 476Ch), and only then call the encoder
   (lcall at 1033). So the encoder's source is a block the caller builds, not loaded data. Say so; the
   caller's role stays with eov3.
+  Fixed in 64e5590: the header now says the caller builds a 4096-byte block (ovl3:0FFA to 101F, 1024
+  records of 4 from a 9-byte-stride table in ds) into gBufDCFC and passes that block as the source.
 
-- [ ] should src/E19FC.ASM:79-83: the function comment does not say who removes the arguments. The
+- [x] should src/E19FC.ASM:79-83: the function comment does not say who removes the arguments. The
   encoder ends in a plain retf, and the caller does `add sp,0Ah` at ovl3:1038 after the lcall. Say that
   the caller pops the ten bytes of arguments.
+  Fixed in 64e5590: the function comment now says it ends in a plain retf and the caller pops
+  the ten argument bytes (add sp,0Ah at ovl3:1038).
 
-- [ ] should src/E19FC.ASM:124 and 268: "best match length so far" does not say that 1 means "no match
+- [x] should src/E19FC.ASM:124 and 268: "best match length so far" does not say that 1 means "no match
   yet". `mov word ptr cs:[gBestLen],1` at 19FC:0068 starts each mainloop pass, and a length of 2 or less
   is emitted as literals (`cmp cx,2` at 19FC:0104). Say: "best match length so far (1 = none yet; 3 or
   more is a match)".
+  Fixed in 64e5590: the declaration comment now reads "best match length so far (1 = none yet; 3 or more
+  is a match)", and the `mov word ptr cs:[gBestLen],1` at 19FC:0068 carries "1 = no match yet (3 or more
+  is a match)".
 
-- [ ] should src/E19FC.ASM:7-8: "kind asm [H] by the map, which the map's kind asm says only as a guess
+- [x] should src/E19FC.ASM:7-8: "kind asm [H] by the map, which the map's kind asm says only as a guess
   [H]". `re/units.toml` says kind stays [H] until the unit's code is matched. The unit now matches (2 of
   2), but a matching assembly file does not show the original source language, so the claim stays [H].
   Say that, not "only as a guess".
+  Fixed in 64e5590: the header now says the map's kind asm is [H] (re/units.toml, which keeps it [H] until
+  the unit's code is matched), and a matching assembly file shows that the bytes are right, not the
+  language they were written in.
 
-- [ ] should src/E19FC.ASM:33-37 and 66-67: two process references sit in code comments. "tools/agent/
+- [x] should src/E19FC.ASM:33-37 and 66-67: two process references sit in code comments. "tools/agent/
   packet.py resolves the fixup, so its caller list is right" names a tool, and "so the registry records it
   at L2" names registry state. Both go stale. Keep the evidence (the fixup at ovl3:1036, segment index 28)
   and drop the two clauses.
+  Fixed in 64e5590: both clauses are dropped; the fixup at ovl3:1036, segment index 28 and the FBOV copy
+  at 0x3ADB3 stay, and the marker is still named _f19FC_0007 without the registry sentence.
 
 - [ ] note work/reviews/e1ba8.md:17 lists 19FC:0007 as a caller of `_NormFar`. The calls are at 19FC:0018
   and 19FC:0027, inside CompressLcw (src/E19FC.ASM:97 and 102). For the e1ba8 owner to correct.
+  Not this unit: e1ba8's file is left for its owner.
 
-- [ ] note re/renames.toml (the WHY of `19FC:0008=CompressLcw`) carries review history ("corrected by
+- [x] note re/renames.toml (the WHY of `19FC:0008=CompressLcw`) carries review history ("corrected by
   review", "the round 4 value :39 was Unpack2"). It is a log entry: the evidence is what the next reader
   needs, and git keeps the history. Trim it the next time the entry is edited.
+  Fixed in 64e5590: the WHY is trimmed to the evidence (LCW encoder, Unpack4 at src/E1B82.C:40, wwfmt.py
+  lcw, whitepaper 4.2, entry 19FC:0008 with the marker byte at 19FC:0007); the review history is gone.
 
 - [ ] note lead for eov3, not checked: the caller passes its un-biased destination to the encoder
   (ovl3:1025 to 1028, `push [bp+8]`, `push [bp+6]`) but also keeps dest + 4B0 in [bp-4] (ovl3:0FDF to
   0FE3), and tests the stream length against 4B0 (`cmp ax,4B0` at ovl3:103E). After that test the
   caller uses [bp-4] (ovl3:107D to 108F). Whether the 1200-byte offset is intended is eov3's question.
+  Not this unit: routed to the eov3 owner.
 
 ### Summary
 

@@ -1,13 +1,14 @@
 ; Unit at EOB.EXE 19FC:0007 (420 bytes, 1 function), kind asm [H] by the map. The one function is
 ; CompressLcw (19FC:0008), the inverse of Unpack4 (1D9A:0013, src/E1B82.C:40): an LCW encoder for
 ; the format-4 compressed files of whitepaper 4.2. Its only caller is ovl3:0FD1 (eov3_0fd1, no src/
-; file yet), which calls it once per 4096-byte block; what the caller does with the stream is its
-; own unit's question.
+; file yet), which builds a 4096-byte block (ovl3:0FFA to 101F) and calls the encoder once on it;
+; what the caller does with the stream is its own unit's question.
 ;
-; The unit is written in assembly [H], which the map's kind asm says only as a guess [H]: it keeps
-; its state in the code segment through cs: overrides and scans with the repe/repne string
-; instructions, neither of which Turbo C++ 1.00 emits for C source [H]. That the source was
-; assembly and not C is therefore inferred from those forms, not proven.
+; The unit is written in assembly [H]: it keeps its state in the code segment through cs: overrides
+; and scans with the repe/repne string instructions, neither of which Turbo C++ 1.00 emits for C
+; source [H]. That the source was assembly and not C is inferred from those forms, not proven: the
+; map's kind asm is [H] (re/units.toml, which keeps it [H] until the unit's code is matched), and a
+; matching assembly file shows that the bytes are right, not the language they were written in.
 ;
 ; A byte oriented LZ encoder: it reads an input buffer (arg 1, a far pointer) of a given length
 ; (arg 3, a word) and writes a compressed stream to arg 2 (a far pointer), returning the number of
@@ -34,9 +35,10 @@
 ; overlay fixup at ovl3:1036 (build/re/eob.json overlay 3) relocates to segment index 28, which is
 ; 19FC (segments[28], para 6652), so it reaches 19FC:0008; the same call sits in the FBOV copy of
 ; overlay 3 at EOB.EXE 0x3ADB3. A byte search for 9a 08 00 fc 19 misses it because an overlay
-; stores the segment index, not the paragraph; tools/agent/packet.py resolves the fixup, so its
-; caller list is right. The caller passes a length of 1000h (4096) and the source far pointer
-; [ds:DCFE]:[ds:DCFC], that is gBufDCFC (src/E07A9.C:32, a 4096-byte start-up allocation).
+; stores the segment index, not the paragraph. The caller builds the source block first: ovl3:0FFA
+; to 101F write 4096 bytes (1024 records of 4) from a table in ds with a 9-byte stride into
+; [ds:DCFE]:[ds:DCFC], that is gBufDCFC (src/E07A9.C:32, a 4096-byte start-up allocation), and then
+; passes a length of 1000h (4096) and that same far pointer as the source.
 ;
 ; The limits the encoder keeps: matches shorter than 3 bytes become literals; the short 00h..7Fh
 ; form is used only for lengths 3..0Ah and distances <= 0FFFh; C0h..FDh carry lengths up to 40h;
@@ -63,8 +65,8 @@
 ; 106302) at 137 bytes, so it ends at 106439, which is 19FC:0007 (19FC is paragraph 6652, linear
 ; 106432; 19FC:0000..0006 repeat the 19F3 unit's last seven bytes). The 00 is therefore the byte
 ; after that retf and the 19FC segment's first byte in the table, just before the encoder's push bp
-; at 19FC:0008. It is emitted as a public byte symbol (_f19FC_0007) so the registry records it at
-; L2, and CompressLcw starts at 19FC:0008 with the same 419 code bytes. The unit stays 420 bytes.
+; at 19FC:0008. It is emitted as a public byte symbol (_f19FC_0007), and CompressLcw starts at
+; 19FC:0008 with the same 419 code bytes. The unit stays 420 bytes.
 
         .MODEL  LARGE
 
@@ -79,8 +81,10 @@ _f19FC_0007 LABEL BYTE                   ; @ 19FC:0007
 ; 19FC:0008: encode. Arg 1 at [bp+6]/[bp+8] is the source far pointer, arg 2 at [bp+0Ah]/[bp+0Ch] the
 ; destination, arg 3 at [bp+0Eh] the source length in bytes. Returns AX = the number of bytes written
 ; to the destination, the whole stream (the leading 81h byte and the trailing 80h end byte included).
-; Reads and writes the eight cs: state words declared below; the epilogue (19FC:0187) pops si, es,
-; dx, ds, di, cx, bx and bp, so it restores every register except AX, which is the only result.
+; Reads and writes the eight cs: state words declared below; the finish block (19FC:0187) runs into
+; the epilogue, which pops si, es, dx, ds, di, cx, bx and bp at 19FC:0192 to 0199, so it restores
+; every register except AX, which is the only result. The function ends in a plain retf: the caller
+; pops the ten argument bytes (add sp,0Ah at ovl3:1038).
         PUBLIC  _CompressLcw             ; @ 19FC:0008
 _CompressLcw PROC FAR
         push    bp
@@ -121,7 +125,7 @@ mainloop:                               ; 19FC:0053
         mov     di,ds
         mov     es,di                   ; es = the source segment for the searches
         mov     di,cs:[gInBase]
-        mov     word ptr cs:[gBestLen],1
+        mov     word ptr cs:[gBestLen],1 ; 1 = no match yet (3 or more is a match)
 search:                                 ; 19FC:006F
         mov     al,[si]
         cmp     al,[si+40h]             ; precheck: a candidate fill run (byte 40h ahead equal)
@@ -265,7 +269,8 @@ gInBase  dw 0                           ; 19FC:019F  input start (normalised off
 gLitHdr  dw 0                           ; 19FC:01A1  output offset of the open literal run's count byte
 gOutSeg  dw 0                           ; 19FC:01A3  output segment, saved while es holds the source
 gOutPtr  dw 0                           ; 19FC:01A5  output position, saved while es holds the source
-gBestLen dw 0                           ; 19FC:01A7  best match length so far
+gBestLen dw 0                           ; 19FC:01A7  best match length so far (1 = none yet; 3 or
+                                        ;   more is a match)
 gBestPos dw 0                           ; 19FC:01A9  best match input offset so far
 
         END
