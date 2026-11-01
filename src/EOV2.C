@@ -1,12 +1,13 @@
 /* Overlay 2 of EOB.EXE (3332 bytes, 11 functions, all entries of the overlay): loading the item
    tables and the item/creature sprite sheets, plus the "load a saved game" option panel. Called
    once at start-up: StartupAlloc (07A9:000A) reaches entry 2 (2106:002A, ovl2:09CC) which calls
-   SetPointerShape, InitGameTables, Ovl2_005E, LoadItemTypes, SetUiPalette, LoadIntroIcons and LoadGamePanel in turn, and
+   SetPointerShape, InitGameTables, LoadItems, LoadItemTypes, SetUiPalette, LoadIntroIcons and
+   LoadGamePanel in turn, and
    reaches entry 8 (2106:0048, ovl2:0577) for the ITEMRMP read (docs/design/WHITEPAPER.md 4). The
    sprite sheets are at fixed paragraphs of the overlay's own data (ITEML1 at 20A3, ITEMS1 at
    20A5, THROWN at 20A7, ITEMICN at 20A9 and DECORATE at 2069, from TLINK's segment table), loaded
-   through 082C:05EC/082C:051B and sliced into cells through the function pointer ds:8086. Two
-   functions decompiled, the rest are drafts. Placeholder names. */
+   through 082C:05EC/082C:051B and sliced into cells through the function pointer ds:8086. All 11
+   functions are decompiled to L2; several names are placeholders. */
 
 /*@flags -ml -O -Z */
 
@@ -65,10 +66,17 @@ struct Cell4 {              /* a four-byte cell definition, x, y, w, h */
     unsigned char h;
 };
 
+struct WordCell {           /* the 4-byte "find the word" records at ds:65F0, 30 of them */
+    char unused;            /* +0: always zero */
+    char row;               /* +1: a row of gItemL1Icons */
+    char line;              /* +2: the "Find line" number */
+    char word;              /* +3: the "Enter word" number */
+};
+
 extern int g8102; /*@ ds:8102 */
 extern int g8115; /*@ ds:8115 */
-extern char g811B; /*@ ds:811B */
-extern char g811D; /*@ ds:811D */
+extern int g811B; /*@ ds:811B */
+extern int g811D; /*@ ds:811D */
 extern int g811F; /*@ ds:811F */
 extern struct Region gRegions[]; /*@ ds:009F */
 extern struct ItemType gItemTypes[]; /*@ ds:A9F0 */
@@ -87,6 +95,8 @@ extern void far *gThrownIcon2; /*@ ds:FB40 */
 extern void far *gThrownIcon3; /*@ ds:EFB4 */
 extern void far *gThrownIcon4; /*@ ds:EFBE */
 extern char gFileNameBuf[]; /*@ ds:FE6E */
+extern int gColour179; /*@ ds:0179 */
+extern struct WordCell gWordCells[]; /*@ ds:65F0 */
 extern unsigned char g65C0[]; /*@ ds:65C0 */
 extern unsigned char g65C3[]; /*@ ds:65C3 */
 extern struct Cell4 gCellDef65C6[]; /*@ ds:65C6 */
@@ -157,7 +167,7 @@ extern void (far *gFn804A)(int x, int y, int w, int h, void far *buf); /*@ ds:80
 extern void f082C_05EC(char far *name, int a, int b); /*@ 082C:05EC */
 extern void f082C_051B(char far *name, char far *buf, int a, int b, int c); /*@ 082C:051B */
 extern void f082C_09D5(int a, int b, int c, int d, int e, int f, int g); /*@ 082C:09D5 */
-extern int f082C_000B(char far *buf, int a, int b, int c, int d, int e, int f); /*@ 082C:000B */
+extern int f082C_000B(char far *buf, char a, char b, char c, char d, char e, char f); /*@ 082C:000B */
 extern void f082C_0898(char far *text, int a, int b, int c, int d); /*@ 082C:0898 */
 extern int far RollDice(char count, char sides, char bonus); /*@ 082C:0458 */
 extern void f19EC_002A(int a, int b, char far *c); /*@ 19EC:002A */
@@ -176,7 +186,7 @@ extern void f1AAD_053A(void); /*@ 1AAD:053A */
 extern void f1AAD_0480(void); /*@ 1AAD:0480 */
 extern void ShutdownGame(void); /*@ 07C8:058A */
 extern void ClipRect(int x1, int y1, int x2, int y2, int width, int height, int extra1, int extra2); /*@ 19F3:000E */
-extern void f0D1C_07A7(void); /*@ 0D1C:07A7 */
+extern char far *f0D1C_07A7(char far *p, int n); /*@ 0D1C:07A7 */
 extern char far *strcpy(char far *dst, char far *src); /*@ 0000:67CD */
 extern unsigned strlen(char far *s); /*@ 0000:67F6 */
 extern int strcmp(char far *a, char far *b); /*@ 0000:679D */
@@ -447,5 +457,69 @@ extern void FileClose(int handle); /*@ 1C0E:03BB */
     LoadGamePanel();
 }
 
-/* ovl2:09ED stub */
-/*@ ovl2:09ED stub */ void Ovl2_09ED(void) {}
+/* ovl2:09ED: the "find the word" dungeon puzzle panel. Saves ds:811F and the font, switches to the
+   8x8 font gFE5A, draws the panel frame (through 082C:09D5, 082C:0898 and the region changed by
+   the panel rectangle), picks one of the 30 gWordCells records at random (RollDice), draws its item
+   icon and the "On the page with this symbol... Find line %d / Enter word %d" text, reads the
+   player's word through 082C:000B and compares it with the record's message through 0D1C:07A7
+   ("attacks" and the strings after it). Three wrong answers shut the game down; a correct one
+   restores the region, the panel and the font. Called by overlay 5 (ovl5:1A82). */
+/*@ ovl2:09ED */ void FindWordPanel(void)
+{
+    void far *font;
+    int saveRegion;
+    char input[0x1e];
+    char text[0x96];
+    int pick;
+    int tries;
+
+    saveRegion = g811F;
+    font = gFont1A47;
+    f1A47_0169(gFE5A);
+    gColour179 = gF57E;
+    g8115 = 0;
+    f1DE7_0009(0xd);
+    gFn807E(gFE64, gFE66, gFE62, gFE60, gSegDF4E);
+    tries = 0;
+    f1DE7_0344();
+    f082C_09D5(gFE64 * 8, gFE66, (gFE64 + gFE62) * 8 - 1, gFE66 + gFE60 - 1,
+        gFB4C, gF53A, -1);
+    f082C_09D5(gFE64 * 8 + 1, gFE66 + 1, (gFE64 + gFE62) * 8 - 2, gFE66 + gFE60 - 2,
+        gFB4C, gF53A, -1);
+    gRegions[g811F].left++;
+    gRegions[g811F].top += 2;
+    gRegions[g811F].width -= 2;
+    gRegions[g811F].height -= 0x10;
+    f1DE7_0009(0xd);
+    for (;;) {
+        pick = RollDice(1, 0x1e, -1);
+        f1DE7_0344();
+        f1A29_000F(0, gItemL1Icons[gWordCells[pick].row][0], 0x64, 2, 0xd);
+        sprintf(text, "\r\r\r\rOn the page with this symbol...\r\rFind line %d\rEnter word %d\r",
+            gWordCells[pick].line, gWordCells[pick].word);
+        f082C_0898(text, (gFE64 + 1) * 8, gFE66, g811D, g811B);
+        input[0] = 0;
+        f082C_09D5(0x4c, 0x64, 0xd0, 0x71, gF53A, gFB4C, -1);
+        f082C_09D5(0x4d, 0x65, 0xcf, 0x70, gF53A, gFB4C, -1);
+        while (f082C_000B(input, 0xa, 0x67, 0xf, (char)g811D, (char)g811B, 8) < 1)
+            ;
+        while (input[strlen(input) - 1] == ' ')
+            input[strlen(input) - 1] = 0;
+        f6815(input);
+        if (strcmp(f0D1C_07A7("attacks", pick), input) == 0)
+            break;
+        tries++;
+        if (tries == 3) {
+            ShutdownGame();
+            exit(0);
+        }
+    }
+    gRegions[g811F].left--;
+    gRegions[g811F].top -= 2;
+    gRegions[g811F].width += 2;
+    gRegions[g811F].height += 0x10;
+    f1DE7_0009(0xd);
+    gFn804A(gFE64, gFE66, gFE62, gFE60, gSegDF4E);
+    f1DE7_0009(saveRegion);
+    f1A47_0169(font);
+}

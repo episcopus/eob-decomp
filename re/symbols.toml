@@ -6263,6 +6263,9 @@ unit = "eov2"
 addr = "ovl2:09ED"
 size = 791
 evidence = ["ovl", "frame"]
+name = "FindWordPanel"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov3_0000"
