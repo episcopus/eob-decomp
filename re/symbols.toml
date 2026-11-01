@@ -1175,6 +1175,9 @@ unit = "e07c8"
 addr = "07C8:0001"
 size = 408
 evidence = ["far", "segment"]
+name = "Main"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e07c8_0199"
@@ -1183,6 +1186,8 @@ addr = "07C8:0199"
 size = 1009
 evidence = ["far"]
 name = "StartupGame"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e07c8_058a"
@@ -1191,6 +1196,8 @@ addr = "07C8:058A"
 size = 147
 evidence = ["far", "near"]
 name = "ShutdownGame"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e07c8_061d"
@@ -1198,6 +1205,9 @@ unit = "e07c8"
 addr = "07C8:061D"
 size = 8
 evidence = ["frame"]
+name = "f07C8_061D"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e07c8_0625"
@@ -1206,6 +1216,8 @@ addr = "07C8:0625"
 size = 38
 evidence = ["frame"]
 name = "AllocationFailure"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e082c_000b"
