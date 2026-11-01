@@ -210,7 +210,10 @@ def whitepaper(olds: list[str], new: str) -> int:
     return n
 
 
-PLACEHOLDER = re.compile(r"^_?(f[0-9A-F]{4}_[0-9A-F]{4}|Ovl\d+_[0-9A-F]{4}|g[0-9A-F]{4}|gFn[0-9A-F]{4}|sub\w*_[0-9A-F]{4})$")
+# Placeholders: f19EC_0016, Ovl2_0110, g811B, and names that end with the address they stand for
+# (gRect806A, gBuf8DCA, Level07A9): a guess the code has not proven yet. A real name wins over them.
+PLACEHOLDER = re.compile(r"^_?(f[0-9A-F]{4}_[0-9A-F]{4}|Ovl\d+_[0-9A-F]{4}|sub\w*_[0-9A-F]{4}|"
+                         r"(?:\w*[a-z_])?(?=[0-9A-F]{0,3}\d)[0-9A-F]{4})$")
 
 
 def real_names() -> dict[str, str]:
