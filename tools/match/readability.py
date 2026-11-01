@@ -18,7 +18,8 @@ For every function a file defines (not its stubs) and for the file:
   R4  no parameter or local is a single letter (except i, j, k, n, x, y) or a placeholder (tmp,
       val, a1, arg2, local3 ...)
   R5  the file uses the recorded name of every address re/renames.toml names (`make rename APPLY=1`
-      fixes it), and one name per address across src/ (otherwise `make rename` the address)
+      fixes it), and no address has two different real names across src/ (`make rename` settles it;
+      one real name against placeholders is not a finding: integration applies it everywhere)
 
 Assembly files are held to R1, R2 and R5. Findings are keyed `file|rule|address` so they survive
 renames; the baseline holds the findings that existed when a rule came in, so the gate stops new
@@ -135,7 +136,7 @@ def check_file(path: Path, recorded: dict[str, str], names_by_addr: dict[str, se
         bare = n[1:] if asm and n.startswith("_") else n
         if addr in recorded and bare != recorded[addr]:
             add("R5", addr, "%s is recorded as %s (re/renames.toml): make rename APPLY=1" % (bare, recorded[addr]))
-        elif addr not in recorded and len(names_by_addr.get(addr, ())) > 1:
+        elif addr not in recorded and len({m for m in names_by_addr.get(addr, ()) if not rename.PLACEHOLDER.match(m)}) > 1:
             add("R5", addr, "%s is %s here and %s elsewhere: make rename OLD=%s NEW=<the name> WHY=..." % (
                 addr, bare, "/".join(sorted(names_by_addr[addr] - {bare})), addr))
     return out

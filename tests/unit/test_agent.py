@@ -238,9 +238,12 @@ def test_apply_takes_names_from_definitions(tmp_path, monkeypatch):
     (src / "E1BBE.C").write_text('/*@ 1BBE:0332 */ void LockShowPointer(void)\n{\n}\n')
     (src / "E14EF.C").write_text('extern void f1BBE_0332(void); /*@ 1BBE:0332 */\nvoid g(void) { f1BBE_0332(); }\n')
     (src / "E1AAA.C").write_text('/*@ 1AAA:0005 */ int RandomRange(int lo)\n{\n    return lo;\n}\n')
+    (src / "E1DE7.C").write_text('extern char gTextAttr2; /*@ ds:811B */\n')
+    (src / "E1A16.C").write_text('extern char g811B; /*@ ds:811B */\nvoid h(void) { g811B = 1; }\n')
     (src / "E0001.C").write_text('extern int PickNumber(int lo); /*@ 1AAA:0005 */\n')
     monkeypatch.setattr(rename, "SRC", src)
     monkeypatch.setattr(rename, "LOG", tmp_path / "renames.toml")
     rename.apply()
     assert "LockShowPointer();" in (src / "E14EF.C").read_text()
     assert "PickNumber" in (src / "E0001.C").read_text()          # a real name: not overwritten
+    assert "gTextAttr2 = 1;" in (src / "E1A16.C").read_text()     # a global: one real name wins
