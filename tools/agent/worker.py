@@ -24,6 +24,9 @@ session (at most SESSIONS):
      of its tier on the unit; progress clears the count (common.record_attempt). Tier 1 gives a unit
      up after TIER1_ATTEMPTS, tier 2 (the stronger model) after MAX_ATTEMPTS.
 
+Between sessions it restarts itself (same arguments) when tools/agent/worker.py, common.py,
+claim.py or next.py changed on disk: a fix merged into main applies to the running workers.
+
 When nothing is claimable it waits (IDLE seconds) and looks again: tier 2 waits for units tier 1
 gave up on, reviewers for complete units. A session the provider refused (no credits, model
 unavailable) counts no attempt; the worker waits 15 minutes. It stops after SESSIONS, when
@@ -229,6 +232,13 @@ def wait(seconds: float) -> bool:
     return not stop_requested()
 
 
+HARNESS = [Path(__file__).resolve().parent / f for f in ("worker.py", "common.py", "claim.py", "next.py")]
+
+
+def harness_signature() -> tuple:
+    return tuple(p.stat().st_mtime_ns if p.exists() else 0 for p in HARNESS)
+
+
 def loop(a) -> int:
     logs = common.main_checkout() / "build/worker" / a.agent
     logs.mkdir(parents=True, exist_ok=True)
@@ -236,10 +246,17 @@ def loop(a) -> int:
     model_flag = (" --model " + shlex.quote(model)) if a.model else ""
     status = dict(role=a.role, tier=a.tier, model=a.model, variant=a.variant, pid=os.getpid())
     retried, n = set(), 0
+    signature = harness_signature()
     while n < a.sessions:
         if stop_requested():
             print("worker: build/worker/STOP exists; stopping")
             break
+        if not a.unit and harness_signature() != signature:
+            # the harness changed on main (make integrate merged a fix): run the new code from the next
+            # session on, without a restart of the run
+            print("worker: tools/agent changed; restarting the worker with the new code", flush=True)
+            common.agent_status(a.agent, state="reloading", **status)
+            os.execv(sys.executable, [sys.executable] + sys.argv)
         rejected = [r for r in rejected_handoffs(a.agent) if r[0] not in retried][:1]
         retried.update(k for k, _ in rejected)
         try:
@@ -275,8 +292,10 @@ def loop(a) -> int:
             a.timeout * 60, log, model_flag, "%s %s" % (a.agent, key), a.cost_cap, on_start)
         outcome = settle(a.agent, key, branch, wt, head_before)
         after = common.l2_count(wt, uid) if wt.exists() else common.l2_count(common.ROOT, uid)
+        moved = common.git("rev-parse", branch, check=False) != head_before
         if a.role == "decompiler" and not r["refused"] and r["code"] != "stopped":
-            common.record_attempt(uid, a.tier, after > before)
+            # progress: more functions at L2, or new work handed off (a review's must-fix findings fixed)
+            common.record_attempt(uid, a.tier, after > before or (moved and outcome in ("handed-off", "auto-handed-off")))
         common.event("worker-session", agent=a.agent, key=key, tier=a.tier, model=a.model, outcome=outcome,
                      exit=r["code"], cost=r["cost"], seconds=r["seconds"], session_id=r["session_id"],
                      l2_before=before, l2_after=after, refused=r["refused"])

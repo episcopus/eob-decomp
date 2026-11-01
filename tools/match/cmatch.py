@@ -355,8 +355,28 @@ def unit_of(path: Path, unit: str | None = None) -> dict | None:
     return next((u for u in units if u["id"] == (unit or path.stem).lower()), None)
 
 
-def write_levels(names_by_addr: dict, flags: str) -> int:
-    """Set name, level = "L2" and match_flags on the registry entries of matched functions."""
+def gaps_match(A, B, orig, covered: list, u: dict) -> bool:
+    """The unit's bytes outside its functions (a start marker, padding, data between them) equal
+    the original's, and do not move between our two links."""
+    frame, off = (int(x, 16) for x in u["start"].split(":"))
+    ours, theirs = A.unit[0] * 16 + A.unit[1], frame * 16 + off
+    inside = set()
+    for at, n in covered:
+        inside.update(range(at - ours, at - ours + n))
+    shift = (B.unit[0] * 16 + B.unit[1]) - ours
+    for k in range(A.unit[2]):
+        if k in inside:
+            continue
+        if A.image[ours + k] != B.image[ours + shift + k] or A.image[ours + k] != orig.image[theirs + k]:
+            return False
+    return True
+
+
+def write_levels(names_by_addr: dict, flags: str, whole_unit: str | None = None) -> int:
+    """Set name, level = "L2" and match_flags on the registry entries of matched functions. When the
+    whole unit matched (every function, and the bytes between them), its entries that are not
+    functions of the source (a start marker, padding the map took for a function) get L2 too, with
+    a note."""
     p = ROOT / "re" / "symbols.toml"
     blocks = p.read_text().split("[[function]]\n")
     n = 0
@@ -368,6 +388,11 @@ def write_levels(names_by_addr: dict, flags: str) -> int:
         key = (s.lower() if s.lower().startswith("ovl") else int(s, 16), int(m.group(2), 16))
         name = names_by_addr.get(key)
         if not name:
+            if whole_unit and re.search(r'^unit = "%s"$' % re.escape(whole_unit), b, re.M) \
+                    and not re.search(r'^level = ', b, re.M):
+                blocks[i] = b.rstrip("\n") + '\nlevel = "L2"\nnotes = "not a function: bytes of the unit outside its ' \
+                    'functions (a marker or padding), matched with the whole unit"\n\n'
+                n += 1
             continue
         b = re.sub(r'^(name|level|match_flags) = .*\n', "", b, flags=re.M)
         blocks[i] = b.rstrip("\n") + '\nname = "%s"\nlevel = "L2"\nmatch_flags = "%s"\n\n' % (name, flags)
@@ -414,7 +439,7 @@ def main() -> int:
         unit_frame, unit_base = (int(x, 16) for x in u["start"].split(":"))
     ours_end = A.unit[0] * 16 + A.unit[1] + A.unit[2]
     starts = sorted(A.publics[A.name(n)] for n in defined if A.name(n))
-    bad, matched = 0, []
+    bad, matched, covered = 0, [], []
     for n in sorted(defined - stubs, key=lambda n: A.publics.get(A.name(n) or "", 1 << 30)):
         pub = A.name(n)
         if not pub:
@@ -426,6 +451,7 @@ def main() -> int:
         seg, off = funcs[n]
         at_o = off if isinstance(seg, str) else seg * 16 + off
         err = compare(n, A, B, at_a, at_b, length, orig, at_o, unit_frame, unit_base, funcs, data)
+        covered.append((at_a, length))
         if a.show == n:
             side_by_side(A, at_a, length, orig, at_o)
         if err and n in DRAFTS:
@@ -436,14 +462,17 @@ def main() -> int:
         if not err:
             matched.append(n)
     drafts = sum(1 for n in DRAFTS if n not in matched)
+    whole = False
     if u and not bad and not stubs and not drafts:
+        whole = A.unit[2] == u["bytes"] and ovl is None and gaps_match(A, B, orig, covered, u)
         print("unit %s %s: ours %d bytes, the unit %d" % (
-            u["id"], "complete" if A.unit[2] == u["bytes"] else "not complete", A.unit[2], u["bytes"]))
+            u["id"], "complete" if whole else "not complete", A.unit[2], u["bytes"]))
     print("cmatch: %d of %d functions match%s%s" % (
         len(defined - stubs) - bad - drafts, len(defined - stubs),
         ", %d drafts" % drafts if drafts else "", ", %d stubs" % len(stubs) if stubs else ""))
     if a.write and program.name.upper() == "EOB.EXE":
-        n = write_levels({funcs[k]: k for k in matched}, "tasm /mx" if asm else " ".join(flags))
+        n = write_levels({funcs[k]: k for k in matched}, "tasm /mx" if asm else " ".join(flags),
+                         u["id"] if whole else None)
         print("cmatch: recorded L2 for %d functions in re/symbols.toml" % n)
     return 1 if bad else 0
 

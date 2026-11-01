@@ -6,7 +6,8 @@ Three things must hold, or the gate fails:
   1. every unit in src/ matches (cmatch exits 0: no function that is neither a stub nor a draft
      differs);
   2. every function that re/symbols.toml records at L2 is still proven: some file of src/ defines it
-     (not as a stub or a draft) and cmatch printed `ok` for it in this run;
+     (not as a stub or a draft) and cmatch printed `ok` for it in this run, or it is an entry of a unit
+     that matched whole (cmatch: `unit <id> complete`, the bytes between functions included);
   3. every negative fixture in tests/match/negative/ is rejected: cmatch reports a difference (a
      DIFFER line). A fixture that does not build, or that matches, fails the gate, because then it
      tests nothing. A fixture is a unit of src/ with one deliberate defect; its file name starts
@@ -57,7 +58,7 @@ def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("-v", "--verbose", action="store_true")
     a = ap.parse_args(argv)
-    problems, proven = [], set()
+    problems, proven, whole = [], set(), set()
     for f in sources(ROOT / "src"):
         code, out = run(f)
         if code:
@@ -66,6 +67,7 @@ def main(argv=None) -> int:
         funcs, _, defined, stubs = cmatch.parse_annotations(f.read_text(), f.suffix.upper() == ".ASM")
         drafts = set(cmatch.DRAFTS)
         ok = set(re.findall(r"^ok\s+(\S+)", out, re.M))
+        whole.update(re.findall(r"^unit (\w+) complete:", out, re.M))
         for n in defined - stubs - drafts:
             if n in ok:
                 proven.add(address(*funcs[n]))
@@ -73,6 +75,9 @@ def main(argv=None) -> int:
             print("%-22s %s" % (rel(f), "ok" if not code else "FAILS"))
     registry = tomllib.loads((ROOT / "re/symbols.toml").read_text())["function"]
     l2 = {f["addr"] for f in registry if f.get("level") == "L2"}
+    # a unit that matched whole (its functions and the bytes between them) proves every entry of it,
+    # the marker or padding entries the map took for functions included
+    proven |= {f["addr"] for f in registry if f["unit"] in whole}
     lost = sorted(l2 - proven)
     if lost:
         problems.append("recorded at L2 in re/symbols.toml but not proven by src/ in this run: %s" % ", ".join(lost))

@@ -4677,6 +4677,8 @@ unit = "e1bb1"
 addr = "1BB1:0001"
 size = 1
 evidence = ["segment"]
+level = "L2"
+notes = "not a function: bytes of the unit outside its functions (a marker or padding), matched with the whole unit"
 
 [[function]]
 id = "e1bb1_0002"
@@ -4747,6 +4749,7 @@ name = "_f1BF3_000D"
 level = "L2"
 match_flags = "tasm /mx"
 review = "passed 2026-11-01 rev-sonnet"
+notes = "not a function: bytes of the unit outside its functions (a marker or padding), matched with the whole unit"
 
 [[function]]
 id = "e1bf3_000e"
