@@ -4112,6 +4112,7 @@ unit = "e19bc"
 addr = "19BC:023D"
 size = 121
 evidence = ["far", "frame"]
+name = "LargestFreeBlock"
 
 [[function]]
 id = "e19bc_02b6"
@@ -4119,6 +4120,7 @@ unit = "e19bc"
 addr = "19BC:02B6"
 size = 41
 evidence = ["frame"]
+name = "OutOfMemory"
 
 [[function]]
 id = "e19ea_0000"
