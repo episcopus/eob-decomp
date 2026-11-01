@@ -33,14 +33,14 @@ extern char gFontWidth1A47; /*@ ds:8100 */
 extern char gFontHeight1A47; /*@ ds:8101 */
 extern int g8102; /*@ ds:8102 */
 extern int g814A; /*@ ds:814A */
-extern int g8138; /*@ ds:8138: mouse x (E1A72.ASM) */
-extern int g813A; /*@ ds:813A: mouse y (E1A72.ASM) */
+extern int gCursorX; /*@ ds:8138: mouse x (E1A72.ASM) */
+extern int gCursorY; /*@ ds:813A: mouse y (E1A72.ASM) */
 extern int g8134; /*@ ds:8134: accumulated button changes (E1A72.ASM) */
 extern void (far *gDrawText)(char far *text, int a, int b, int c, int d); /*@ ds:80CA */
 
 extern void f082C_0898(char far *text, int a, int b, int c, int d); /*@ 082C:0898 */
-extern void f1BBE_0307(void); /*@ 1BBE:0307: start a frame (redraws through the mouse callbacks) */
-extern void f1BBE_0332(void); /*@ 1BBE:0332: end a frame */
+extern void LockHidePointer(void); /*@ 1BBE:0307: start a frame (redraws through the mouse callbacks) */
+extern void LockShowPointer(void); /*@ 1BBE:0332: end a frame */
 extern int f1AAD_0471(void); /*@ 1AAD:0471: nonzero when a key is waiting */
 extern void f1AAD_0480(void); /*@ 1AAD:0480: clear the pending key */
 extern int f1AAD_05D3(void); /*@ 1AAD:05D3: read a key (the low eleven bits are the code) */
@@ -75,11 +75,11 @@ extern void WaitFrames(int n); /*@ 1A16:000B */
     int i;
 
     for (i = 0; i < 3; i++) {
-        f1BBE_0307();
+        LockHidePointer();
         gDrawText(text, x, y, colorB, zero);
         WaitFrames(2);
         gDrawText(text, x, y, colorA, zero);
-        f1BBE_0332();
+        LockShowPointer();
         WaitFrames(2);
     }
 }
@@ -134,7 +134,7 @@ extern void WaitFrames(int n); /*@ 1A16:000B */
     x = (gFE64 + panelDef->x) << 3;
     sel = FindMaskBit(panelDef->sel, mask, shift);
     n = panelDef->height;
-    f1BBE_0307();
+    LockHidePointer();
     for (i = 0; i < n; i++) {
         glyph = FindMaskBit(i, mask, shift);
         dy = y + gFontHeight1A47 * i + i * spacing;
@@ -143,7 +143,7 @@ extern void WaitFrames(int n); /*@ 1A16:000B */
             gDrawText(names[glyph], x, dy, panelDef->colorB, 0);
     }
     gFC78 = spacing;
-    f1BBE_0332();
+    LockShowPointer();
     f1AAD_0480();
     g8134 = 0;
 }
@@ -218,8 +218,8 @@ enum {
     right = left + panelDef->width * gFontWidth1A47 - 1;
     bottom = top + panelDef->height * lineheight - 1;
     if (!g814A) {
-        cursory = g813A;
-        if (PointInRect(g8138, cursory, left, top, right, bottom) && g5D1A)
+        cursory = gCursorY;
+        if (PointInRect(gCursorX, cursory, left, top, right, bottom) && g5D1A)
             row = (cursory - top) / lineheight;
     }
     switch (key) {
@@ -260,21 +260,21 @@ enum {
         break;
     }
     if (row != prev) {
-        f1BBE_0307();
+        LockHidePointer();
         glyph = FindMaskBit(prev, mask, shift);
         lineY = ybase + lineheight * prev;
         gDrawText(names[glyph], xbase, lineY, colorA, 0);
         glyph = FindMaskBit(row, mask, shift);
         lineY = ybase + lineheight * row;
         gDrawText(names[glyph], xbase, lineY, colorB, 0);
-        f1BBE_0332();
+        LockShowPointer();
     }
     if (picked != -1) {
         glyph = FindMaskBit(picked, mask, shift);
-        f1BBE_0307();
+        LockHidePointer();
         lineY = ybase + lineheight * row;
         BlinkText(names[glyph], xbase, lineY, colorA, colorB, 0);
-        f1BBE_0332();
+        LockShowPointer();
         picked = glyph;
     }
     panelDef->sel = row;

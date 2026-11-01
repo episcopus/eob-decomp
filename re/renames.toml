@@ -666,3 +666,21 @@ new = "CompressLcw"
 kind = "function"
 why = "LCW encoder: writes the tokens Unpack4 (1D9A:0013, src/E1B82.C:22) reads (short back references, absolute copies, fills, literals), the inverse of that decoder; wwfmt.py lcw, whitepaper 4.2"
 date = "2026-11-01"
+
+[[rename]]
+id = "1BBE:0307=LockHidePointer"
+addr = "1BBE:0307"
+old = "f1BBE_0307"
+new = "LockHidePointer"
+kind = "function"
+why = "hide the pointer, bracketed by the pointer semaphore: PUBLIC _LockHidePointer at 1BBE:0307 (src/E1BBE.ASM)"
+date = "2026-11-01"
+
+[[rename]]
+id = "1BBE:0332=LockShowPointer"
+addr = "1BBE:0332"
+old = "f1BBE_0332"
+new = "LockShowPointer"
+kind = "function"
+why = "show the pointer, bracketed by the pointer semaphore: PUBLIC _LockShowPointer at 1BBE:0332 (src/E1BBE.ASM)"
+date = "2026-11-01"

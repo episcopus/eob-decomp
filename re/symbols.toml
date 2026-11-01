@@ -4872,9 +4872,9 @@ unit = "e1bbe"
 addr = "1BBE:0307"
 size = 43
 evidence = ["far", "frame"]
-name = "_LockHidePointer"
 level = "L2"
 match_flags = "tasm /mx"
+name = "LockHidePointer"
 
 [[function]]
 id = "e1bbe_0332"
@@ -4882,9 +4882,9 @@ unit = "e1bbe"
 addr = "1BBE:0332"
 size = 43
 evidence = ["far", "frame"]
-name = "_LockShowPointer"
 level = "L2"
 match_flags = "tasm /mx"
+name = "LockShowPointer"
 
 [[function]]
 id = "e1bf3_000d"
