@@ -57,6 +57,13 @@ def test_worker_prompt():
     assert "UNIT=e0cf7 STATE=<review-passed|review-failed>" in p and "70-review.md" in p
     p = worker.prompt("w1", "decompiler", "e0cf7", "unit/e0cf7", Path("/tmp/wt"))
     assert "make packet UNIT=e0cf7" in p and "{" not in p
+    import common as cm
+    real = cm.open_must_fix
+    try:
+        cm.open_must_fix = lambda uid: ["- [ ] must-fix x"]
+        assert "open must-fix findings" in worker.prompt("w1", "decompiler", "e0cf7", "unit/e0cf7", Path("/tmp/wt"))
+    finally:
+        cm.open_must_fix = real
 
 
 def test_the_gate_fails_on_a_fixture_that_matches(tmp_path, monkeypatch, capsys):
