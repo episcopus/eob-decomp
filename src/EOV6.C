@@ -86,7 +86,7 @@ extern void ClipRect(int x1, int y1, int x2, int y2, int width, int height, int 
 extern int f1AAD_038E(void); /*@ 1AAD:038E */
 extern void f1AAD_0480(void); /*@ 1AAD:0480 */
 extern int fOvl1_243A(int what); /*@ 2102:0039 */
-extern int f0A72_007B(int value, char classIndex); /*@ 0A72:007B */
+extern int f0A72_007B(int value, int classIndex); /*@ 0A72:007B */
 extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
 extern void *memchr(void *s, int c, unsigned n); /*@ 0000:6319 */
 
@@ -115,5 +115,37 @@ extern void *memchr(void *s, int c, unsigned n); /*@ 0000:6319 */
 
 /*@ ovl6:0858 stub */ void Ovl6_0858(void) {}
 /*@ ovl6:09D2 stub */ void Ovl6_09D2(void) {}
-/*@ ovl6:0A92 stub */ void Ovl6_0A92(void) {}
+/* ovl6:0A92: one when some party member (with hit points and a level) still holds a negative
+   (not yet memorised) spell: the "memorized" slots for a class whose slots 2 or 4 apply, or the
+   "known" slots for a class whose slot 1 applies and 0D1C:00F1(member, 0x1d, -1) does not return
+   -1. Returns zero when the party can rest. Called by the camp loop. */
+/*@ ovl6:0A92 */ int f0A92(void)
+{
+    register int member;
+    char *slots;
+    register int i;
+
+    for (member = 0; member < 6; member++) {
+        if (gChars[member].hp <= 0)
+            continue;
+        if (gChars[member].level <= 0)
+            continue;
+        if (f0A72_007B(2, gChars[member].classIndex) != -1
+            || f0A72_007B(4, gChars[member].classIndex) != 0) {
+            slots = &gChars[member].memorized[0];
+            for (i = 0; i < 0x1e; i++)
+                if (*slots++ < 0)
+                    return 1;
+        }
+        if (f0A72_007B(1, gChars[member].classIndex) == -1)
+            continue;
+        if (f0D1C_00F1(member, 0x1d, -1) == -1)
+            continue;
+        slots = &gChars[member].known[0];
+        for (i = 0; i < 0x1e; i++)
+            if (*slots++ < 0)
+                return 1;
+    }
+    return 0;
+}
 /*@ ovl6:0B9B stub */ void Ovl6_0B9B(void) {}
