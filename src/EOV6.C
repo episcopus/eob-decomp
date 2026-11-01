@@ -114,7 +114,40 @@ extern void *memchr(void *s, int c, unsigned n); /*@ 0000:6319 */
 }
 
 /*@ ovl6:0858 stub */ void Ovl6_0858(void) {}
-/*@ ovl6:09D2 stub */ void Ovl6_09D2(void) {}
+/* ovl6:09D2: the "monsters are near" test. It selects the 6x6 font, marks the object update
+   (gF442) and updates objects 0 and 1, then scans the 30 28-byte records at ds:8A84: when
+   f17A6_0F61(gSoundVolume, record.value) is below two a monster is close, so it switches back to
+   the previous region (saved in g811F), draws "\rYou can't rest here, monsters are near." and
+   returns 1. Restores the caller's font and returns 0 when nothing is close. Called at the start
+   of the camp loop. */
+/*@ ovl6:09D2 */ int f09D2(void)
+{
+    void *savedFont;
+    register int i;
+    register int member;
+
+    savedFont = gFont1A47;
+    f1A47_0169(gA9C0);
+    gF442 = 1;
+    UpdateObjects(0);
+    UpdateObjects(1);
+    gF442 = 0;
+    for (i = 0; i < 0x1e; i++) {
+        if (f17A6_0F61(gSoundVolume, gTable8A84[i].value) < 2) {
+            member = g811F;
+            f1DE7_0009(7);
+            g8115 = 0;
+            LockHidePointer();
+            f1DE7_060A("\rYou can't rest here, monsters are near.");
+            LockShowPointer();
+            f1DE7_0009(member);
+            f1A47_0169(savedFont);
+            return 1;
+        }
+    }
+    f1A47_0169(savedFont);
+    return 0;
+}
 /* ovl6:0A92: one when some party member (with hit points and a level) still holds a negative
    (not yet memorised) spell: the "memorized" slots for a class whose slots 2 or 4 apply, or the
    "known" slots for a class whose slot 1 applies and 0D1C:00F1(member, 0x1d, -1) does not return
