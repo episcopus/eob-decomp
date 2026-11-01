@@ -4360,6 +4360,9 @@ unit = "e1aaa"
 addr = "1AAA:0005"
 size = 55
 evidence = ["far", "segment"]
+name = "RandomRange"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e1aad_000c"
