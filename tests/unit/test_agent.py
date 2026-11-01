@@ -230,6 +230,13 @@ def test_readability_rules(tmp_path):
     assert [r for _, r, _ in named] == ["R5"]
 
 
+def test_placeholders():
+    for n in ("f19EC_0016", "Ovl2_0110", "g811B", "gFn80CA", "gRect806A", "gBuf8DCA", "Level07A9", "_f1BA8_0006"):
+        assert rename.PLACEHOLDER.match(n), n
+    for n in ("gFillRect", "LockShowPointer", "CheckMCB", "gTextAttr2", "WaitFrames", "gFACE", "ObjAlloc"):
+        assert not rename.PLACEHOLDER.match(n), n
+
+
 def test_apply_takes_names_from_definitions(tmp_path, monkeypatch):
     """A unit names its own function in its file; a file that calls it by a placeholder gets that name
     at integration, and two real names for one address are left for a person."""
