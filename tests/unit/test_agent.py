@@ -189,5 +189,8 @@ def test_watch_screen_renders():
     text = watch.screen(100)
     assert "== progress" in text and "functions at L2" in text and "== hand-offs" in text
     assert "== costs (USD)" in text and "all runs" in text
+    assert "functions " in text and "%" in text
+    assert watch.span(0.5) == "30m" and watch.span(3.25) == "3h15m" and watch.span(50) == "2d02h"
+    assert watch.pct(1, 4) == 25.0
     t = watch.tally([{"l2_before": 1, "l2_after": 4, "cost": 0.5}, {"l2_before": 2, "l2_after": 2, "cost": None}])
     assert t == {"sessions": 2, "gained": 3, "cost": 0.5, "unknown": 1}
