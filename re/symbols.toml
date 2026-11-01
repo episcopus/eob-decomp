@@ -4137,7 +4137,7 @@ unit = "e19ec"
 addr = "19EC:0002"
 size = 20
 evidence = ["far", "segment"]
-name = "ObjAlloc"
+name = "f19EC_0002"
 level = "L2"
 match_flags = "-ml -O -Z"
 

@@ -12,7 +12,7 @@ extern unsigned gBufSize; /*@ ds:812C */
 extern int FileOpen(char far *name, int mode); /*@ 1C0E:00DB */
 extern void FileRead(int handle, void far *buf, unsigned long len); /*@ 1C0E:0400 */
 extern void FileClose(int handle); /*@ 1C0E:03BB */
-extern void far *ObjAlloc(int kind); /*@ 19EC:0002 */
+extern void far *f19EC_0002(int kind); /*@ 19EC:0002 */
 extern void far *MemAlloc(unsigned long size, int flags); /*@ 19BC:0007 */
 extern void MemFree(void far *p); /*@ 19BC:0137 */
 extern void Unpack0(char far *src, void far *dst, long arg); /*@ 1BA8:0006 */
@@ -39,8 +39,8 @@ void Unpack(char far *src, void far *dst);
     void far *dst;
     int h;
 
-    src = ObjAlloc(srcKind);
-    dst = ObjAlloc(dstKind);
+    src = f19EC_0002(srcKind);
+    dst = f19EC_0002(dstKind);
     h = FileOpen(name, 1);
     FileRead(h, (void far *)&n, 2L);
     FileRead(h, src, n);
