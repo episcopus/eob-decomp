@@ -19,8 +19,8 @@ struct CharRec {            /* 243-byte (0xF3) character records at ds:F580; see
     signed char m1F;        /* +1F */
     signed char m20;        /* +20 */
     char pad21[3];
-    signed char m24;        /* +24 */
-    char pad25[0x77 - 0x25];
+    signed char m24[3];     /* +24: three per-class-slot bytes (0D1C:0903 indexes it, 0D1C:059B reads [0]) */
+    char pad27[0x77 - 0x27];
     int m77[27];            /* +77: 27 word slots; slot 16 (+97) is also read on its own */
     char padAD[0xF3 - 0xAD];
 };
@@ -49,13 +49,30 @@ extern char far *gBufF534; /*@ ds:F534 */   /* the 1600-byte ITEMRMP buffer (src
 extern void (far *gFn80D2)(void far *map); /*@ ds:80D2 */ /* the far colour-table callback (src/E07A9.C) */
 extern void far *gIconsDDE4[]; /*@ ds:DDE4 */ /* the item icon far pointers (src/E07A9.C) */
 
-struct ItemInfo {           /* 16-byte records at ds:A9F6; read by 0D1C:07DB */
-    signed char m00;        /* +0 (ds:A9F6) */
-    char pad01[7];
-    int m08;                /* +8 (ds:A9FE) */
-    char pad0A[6];
+struct ItemInfo {           /* 16-byte records at ds:A9F5; read by 0D1C:07DB and 0D1C:0BEB */
+    signed char m00;        /* +0 (ds:A9F5), bit 4 tested by 0D1C:0BEB */
+    signed char m01;        /* +1 (ds:A9F6), compared by 0D1C:07DB */
+    char pad02[7];
+    int m09;                /* +9 (ds:A9FE), tested by 0D1C:07DB */
+    char pad0B[5];
 };
-extern struct ItemInfo gA9F6[]; /*@ ds:A9F6 */
+extern struct ItemInfo gA9F5[]; /*@ ds:A9F5 */
+
+struct Obj28 {              /* 28-byte object records at ds:8A82 (see src/E08E6.C) */
+    char b0;                /* +0: an index into the ds:1A3B table */
+    char pad01[0x1C - 0x01];
+};
+extern struct Obj28 gObjs[]; /*@ ds:8A82 */
+
+struct Entry27 {            /* 27-byte records at ds:1A3B, indexed by gObjs[obj].b0 */
+    char pad00[0x0E];
+    signed char m0E;        /* +0xE (ds:1A49), bit 2 tested by 0D1C:0BEB */
+    int m0F;                /* +0xF (ds:1A4A), read by 0D1C:0A43 */
+    char pad11[0x19 - 0x11];
+    signed char m19;        /* +0x19 (ds:1A54), read by 0D1C:09CB */
+    signed char m1A;        /* +0x1A (ds:1A55), read by 0D1C:0BAB */
+};
+extern struct Entry27 gTable1A3B[]; /*@ ds:1A3B */
 
 struct Row8 {               /* eight-byte rows at ds:5482, four words: a DrawBox rectangle */
     int m0;
@@ -95,6 +112,7 @@ extern void LockShowPointer(void); /*@ 1BBE:0332 */
 extern void DrawBox(int x1, int y1, int x2, int y2, int colour); /*@ 1A1F:000C */
 extern int GetIndexedByte(char index, char limit, char offset); /*@ 0A72:0006 */
 extern char GetClassSlotByte(char row, char slot); /*@ 0A72:0509 */
+extern int FindClassSlot(int value, char classIndex); /*@ 0A72:007B */
 extern void f1A29_008B(int mode, void far *src, int x, int y, int region); /*@ 1A29:008B */
 extern void f1A29_000F(int mode, void far *src, int x, int y, int region); /*@ 1A29:000F */
 
@@ -380,7 +398,7 @@ int f0D1C_02DC(void);
     classSlot = GetClassSlotByte(rec->m20, 0);
     if (classSlot == 4 || classSlot == 5)
         classSlot = 0;
-    value = GetIndexedByte(classSlot, rec->m24, attack);
+    value = GetIndexedByte(classSlot, rec->m24[0], attack);
     level = rec->m1F * 2;
     if (level == 3 || level == 5) {
         if (attack == 4 || attack == 0 || attack == 1)
@@ -454,9 +472,9 @@ int f0D1C_02DC(void);
 /* 0D1C:07DB: Purpose unknown: combines the first two carried items of gChars[who] (slots 0 and
    1). Each slot's item is passed to f0BD2_11FD and its ds:8DD2 record's m02 indexes the 16-byte
    records at ds:A9F6. With `flag` 0 it returns 1 when slot 0 holds an item and f0BD2_11FD also
-   accepted it. Otherwise it returns 0 when slot 0 holds an item whose gA9F6[m02].m00 is 2, then
-   1 when slot 1 is empty, and for a slot-1 item whose gA9F6[m1].m08 (low 7 bits) is 1, 2 or 3,
-   0 when gA9F6[m1].m00 is nonzero, else the slot-1 result. Called by 0BD2:1001, 0DE8:0D5E and
+   accepted it. Otherwise it returns 0 when slot 0 holds an item whose gA9F5[m02].m01 is 2, then
+   1 when slot 1 is empty, and for a slot-1 item whose gA9F5[m1].m09 (low 7 bits) is 1, 2 or 3,
+   0 when gA9F5[m1].m01 is nonzero, else the slot-1 result. Called by 0BD2:1001, 0DE8:0D5E and
    1547:07E7. Placeholder: what the values mean is not established. DRAFT: matches every byte
    except that the compiler lays the `A <= 0 || A >= 4` return out with a two-byte trampoline
    (0D1C:0897 `jmp`); the original branches straight to the shared return. */
@@ -477,19 +495,19 @@ int f0D1C_02DC(void);
     slot1 = gChars[who].m77[1];
     result1 = f0BD2_11FD(who, slot1);
     m1 = gTable8DD2[slot1].m02;
-    if (slot0 != 0 && gA9F6[m0].m00 == 2)
+    if (slot0 != 0 && gA9F5[m0].m01 == 2)
         return 0;
     if (slot1 == 0)
         return 1;
-    if ((gA9F6[m1].m08 & 0x7f) <= 0 || (gA9F6[m1].m08 & 0x7f) >= 4)
+    if ((gA9F5[m1].m09 & 0x7f) <= 0 || (gA9F5[m1].m09 & 0x7f) >= 4)
         return result1;
-    if (gA9F6[m1].m00 != 0)
+    if (gA9F5[m1].m01 != 0)
         return 0;
     return result1;
 }
 /* 0D1C:08B1: Purpose unknown: returns 1 when one of the first two carried items of the character
    record `rec` (m77[0] or m77[1]) holds a nonzero item whose ds:8DD2 record's m02 indexes a
-   ds:A9F6 record with m08 == 6, otherwise 0. The pointer is a character record (the slots are at
+   ds:A9F5 record with m09 == 6, otherwise 0. The pointer is a character record (the slots are at
    +77). Called by 0D1C:0903. */
 /*@ 0D1C:08B1 */ int f0D1C_08B1(struct CharRec far *rec)
 {
@@ -499,15 +517,68 @@ int f0D1C_02DC(void);
     for (i = 0; i <= 1; i++) {
         if (rec->m77[i]) {
             item = gTable8DD2[rec->m77[i]].m02;
-            if (gA9F6[item].m08 == 6)
+            if (gA9F5[item].m09 == 6)
                 return 1;
         }
     }
     return 0;
 }
-/*@ 0D1C:0903 stub */ void f0D1C_0903(void) {}
+/* 0D1C:0903: Purpose unknown: scans the six party members and returns a packed word. A member
+   qualifies when f0D1C_0670(who, 0xD) and f0D1C_08B1(rec) hold; for it the code takes
+   FindClassSlot(2, m20) and, failing that, FindClassSlot(4, m20), and compares the member's
+   m24[slot] (minus 2 in the second case) with the best so far. The result is (best member << 8)
+   + best value, or 0 when none qualifies. Called by 0D1C:0A43. DRAFT: matches every byte except
+   that the two branches share one trailing `bestVal = ...; best = who;` store (0D1C:099F) with a
+   jump; the original repeats the pair inline in each branch (eight bytes longer). */
+/*@ 0D1C:0903 draft */ int f0D1C_0903(void)
+{
+    struct CharRec far *rec;
+    int bestVal;
+    int best;
+    int who;
+    int slot;
+
+    bestVal = best = 0;
+    rec = gChars;
+    for (who = 0; who < 6; who++, rec++) {
+        if (!f0D1C_0670(who, 0xD))
+            continue;
+        if (!f0D1C_08B1(rec))
+            continue;
+        slot = FindClassSlot(2, rec->m20);
+        if (slot != -1) {
+            if (rec->m24[slot] > bestVal) {
+                bestVal = rec->m24[slot];
+                best = who;
+            }
+            continue;
+        }
+        slot = FindClassSlot(4, rec->m20);
+        if (slot == -1)
+            continue;
+        if (rec->m24[slot] - 2 > bestVal) {
+            bestVal = rec->m24[slot] - 2;
+            best = who;
+        }
+    }
+    return (best << 8) + bestVal;
+}
 /*@ 0D1C:09CB stub */ void f0D1C_09CB(void) {}
 /*@ 0D1C:0A43 stub */ void f0D1C_0A43(void) {}
-/*@ 0D1C:0BAB stub */ void f0D1C_0BAB(void) {}
-/*@ 0D1C:0BEB stub */ void f0D1C_0BEB(void) {}
+/* 0D1C:0BAB: Purpose unknown: a percentage check on the object `obj`: through gObjs[obj].b0 it
+   reads gTable1A3B[b0].m1A and returns 1 when RollDice(1, 100, 0) is below it, otherwise 0.
+   Called by 0DE8:0359. */
+/*@ 0D1C:0BAB */ int f0D1C_0BAB(int obj)
+{
+    int chance;
+
+    chance = gTable1A3B[gObjs[obj].b0].m1A;
+    return RollDice(1, 100, 0) < chance;
+}
+/* 0D1C:0BEB: Purpose unknown: returns 1 when gTable1A3B[gObjs[obj].b0].m0E has bit 2 set and
+   gA9F5[flag].m00 has bit 4 clear, otherwise 0. Called by 0DE8:0359. */
+/*@ 0D1C:0BEB */ int f0D1C_0BEB(int obj, int flag)
+{
+    return (gTable1A3B[gObjs[obj].b0].m0E & 4) && (gA9F5[flag].m00 & 4) == 0;
+}
 /*@ 0D1C:0C21 stub */ void f0D1C_0C21(void) {}
