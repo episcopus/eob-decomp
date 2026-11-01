@@ -31,54 +31,77 @@ What I checked against the bytes and the other units (read-only, no game run):
 Each finding is a checkbox. `must-fix` blocks `make review-pass` until a decompiler ticks it off
 (with the commit that fixes it); `should` and `note` do not block.
 
-- [ ] must-fix src/E19FC.ASM:212: the comment on `inBase` says "distances are relative to it". That is
+- [x] must-fix src/E19FC.ASM:212: the comment on `inBase` says "distances are relative to it". That is
   true only for the absolute forms (C0h..FDh and FFh). The storeoff path subtracts it (19FC:016A..016E,
   `mov ax,cs:[bestPos]` / `sub ax,cs:[inBase]`). The 00h..7Fh form does not use it: its distance is
   `si - bestPos` (19FC:010E..0110, `mov ax,si` / `sub ax,cs:[bestPos]`), counted back from the
   current position, as the header says on line 10. Fix the comment to say what it is for, e.g.
   "input start (normalised offset); the absolute copy offsets (C0h..FDh, FFh) are measured from it".
-- [ ] should src/E19FC.ASM:10 and :12 (header): "back reference" for C0h..FDh and FFh. These forms
+  Fixed in 7dda755: `gInBase` (19FC:019F) now reads "input start (normalised offset); the absolute copy
+  offsets (C0h..FDh, FFh) are measured from it, the short 00h..7Fh distance is not".
+- [x] should src/E19FC.ASM:10 and :12 (header): "back reference" for C0h..FDh and FFh. These forms
   copy from an absolute output offset (the distance is from inBase, not from the current position).
   The whitepaper (4.2) calls them "absolute copies" and `tools/re/wwfmt.py` `lcw()` reads
   `out[pos + k]`. Say "absolute copy" so a reader does not take them for relative back references.
   The header's distance sentence (line 13) is right.
-- [ ] should src/E19FC.ASM:36 (`_f19FC_0007`): the placeholder has no `Purpose unknown:` in its
+  Fixed in 7dda755: header line 12 now "a longer absolute copy", line 14 "long absolute copy"; the
+  short 00h..7Fh form keeps "short back reference" (relative).
+- [x] should src/E19FC.ASM:36 (`_f19FC_0007`): the placeholder has no `Purpose unknown:` in its
   comment, so R2 passes only because the finding is in `work/readability-baseline.txt`. What the bytes
   show is known: an LCW encoder, the inverse of Unpack4 (the token set above). Name what it does, e.g.
   `make rename OLD=_f19FC_0007 NEW=CompressLcw WHY="LCW encoder: writes the tokens Unpack4 (1D9A:0013) reads; wwfmt.py lcw, whitepaper 4.2"`.
   The game role stays unknown (no direct caller, packet: "(no direct call found)"), and the header
   should say so in one sentence. The previous round accepted the placeholder ("LCW encoder for format 4"
   is the only evidence); the bytes now support the verb, so I list it as a should, not a blocker.
-- [ ] should src/E19FC.ASM:1-27 and :212: the decoder is named "the loader's format-4 decoder
+  Fixed in 7dda755: `make rename OLD=_f19FC_0007 NEW=CompressLcw` (re/renames.toml, re/symbols.toml);
+  header line 3 says the game role is unknown. The stale R2 line is deleted from
+  `work/readability-baseline.txt` (make readability UNIT=e19fc: 0 findings).
+- [x] should src/E19FC.ASM:1-27 and :212: the decoder is named "the loader's format-4 decoder
   (1D9A:0013)". Its name in `src/E1B82.C:22` and in the whitepaper is `Unpack4`. Use that name.
-- [ ] should src/E19FC.ASM:210-217: the eight state words have no `g` prefix (litOpen, outBase, inBase,
+  Fixed in 7dda755: the header and the data comment name `Unpack4 (1D9A:0013)`.
+- [x] should src/E19FC.ASM:210-217: the eight state words have no `g` prefix (litOpen, outBase, inBase,
   litHdr, outSeg, outPtr, bestLen, bestPos). READABILITY.md: globals are `g` + PascalCase
   (`src/E1990.ASM` has `gMemTopSeg`). These are the encoder's state, written and read by the function
   and kept in the code segment. Rename them with `make rename` (gLitOpen, gOutBase, gInBase, gLitHdr,
   gOutSeg, gOutPtr, gBestLen, gBestPos), each with its address as the evidence.
-- [ ] should src/E19FC.ASM:154 (label `match2`): the name says nothing about the token. The path is
+  Fixed in 7dda755: renamed to gLitOpen, gOutBase, gInBase, gLitHdr, gOutSeg, gOutPtr, gBestLen,
+  gBestPos. They are code-segment data with no `/*@ */` annotation, so `make rename` cannot resolve
+  or rewrite them (annotating one as a far address would make cmatch treat the word as a function);
+  renamed in place, each keeping its `; 19FC:01xx` address.
+- [x] should src/E19FC.ASM:154 (label `match2`): the name says nothing about the token. The path is
   taken by `ja match2` on lines 142 and 146 (lengths over 0Ah or distances over 0FFFh) and writes the
   C0h..FDh form (lines 154..161). Name it for that (e.g. `absCopy`); `longmatch` (line 178, the FFh
   form) is already clear.
-- [ ] should src/E19FC.ASM:19 (header): "no far pointer anywhere in EOB.EXE or its overlays". The
+  Fixed in 7dda755: the label is `absCopy`, its two `ja` targets follow.
+- [x] should src/E19FC.ASM:19 (header): "no far pointer anywhere in EOB.EXE or its overlays". The
   previous round searched `EOB.EXE` for the far call bytes `9a 07 00 fc 19` and `9a 08 00 fc 19` and for
   bare far pointers, with no hit, and said the overlay code was not searched. The packet tool itself
   checks direct calls only (`tools/agent/packet.py:149` prints "(no direct call found)"). So the claim
   has evidence for `EOB.EXE` and none for the overlays. Say that, or search the overlays and cite it.
-- [ ] should src/E19FC.ASM:59-60 and the limits paragraph (lines 21..23): the encoder uses 16-bit
+  Fixed in 7dda755: searched the seven overlay images (`build/re/eob-overlays/ovl00..06.bin`) as well:
+  no `9a 07 00 fc 19` / `9a 08 00 fc 19` and no bare `07 00 fc 19` / `08 00 fc 19` (same result in
+  `EOB.EXE`). The header states the search and that the packet checks direct calls only.
+- [x] should src/E19FC.ASM:59-60 and the limits paragraph (lines 21..23): the encoder uses 16-bit
   offsets from the normalised start, and `add bp,dx` (end of the source) wraps if offset + length passes
   FFFFh. The output has the same limit. The header's "limits" list does not mention this. A caller must
   keep both buffers inside 64 KiB from their normalised starts. Add that line.
-- [ ] note src/E19FC.ASM:26-27: "the alignment byte between the previous module (19F3) and this one". In
+  Fixed in 7dda755: the limits paragraph now says all offsets are 16 bits from the normalised starts,
+  `add bp,dx` wraps at 10000h, the output has the same limit, and a caller must keep both buffers
+  inside 64 KiB from their normalised starts.
+- [x] note src/E19FC.ASM:26-27: "the alignment byte between the previous module (19F3) and this one". In
   `re/units.toml` 19FC:0007 is this unit's start, and 19F3 (137 bytes from 19F3:000E) ends at 19FC:0006.
   The byte is a segment-start byte of the same kind as 1BA8:0005 (`src/E1BA8.ASM`), so the wording "between
   the modules" is loose. Not a claim I could check beyond the map; say "a segment-start byte the map
   gives to this unit" if you touch the header.
-- [ ] note No test runs this encoder. `tests/unit/test_wwfmt.py` checks the decoder (Unpack4 in the
+  Fixed in 7dda755: the header now says "a segment-start byte the map gives to this unit (the same kind
+  as 1BA8:0005 in src/E1BA8.ASM)"; the `db 0` comment says the same.
+- [x] note No test runs this encoder. `tests/unit/test_wwfmt.py` checks the decoder (Unpack4 in the
   oracle) and `wwfmt.lcw`. The header's claim that the emitted tokens are the ones the decoder reads is
   therefore [H] (read from the bytes and the decoder model), not [V]. A round trip
   (`wwfmt.lcw(encode(x), len(x)) == x` on the pinned data, with the encoder run in the oracle, playbook
   25) would turn it into evidence.
+  Noted in 7dda755: the header marks the token-set claim `[H]` and adds "no round trip of this encoder
+  has run". No round trip was run (out of scope here).
 
 ## Summary
 

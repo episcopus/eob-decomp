@@ -423,3 +423,12 @@ new = "ClipRect"
 kind = "function"
 why = "clips a rectangle request before ds:8052; no draw is shown"
 date = "2026-11-01"
+
+[[rename]]
+id = "19FC:0007=CompressLcw"
+addr = "19FC:0007"
+old = "f19FC_0007"
+new = "CompressLcw"
+kind = "function"
+why = "LCW encoder: writes the tokens Unpack4 (1D9A:0013, src/E1B82.C:22) reads (short back references, absolute copies, fills, literals), the inverse of that decoder; wwfmt.py lcw, whitepaper 4.2"
+date = "2026-11-01"
