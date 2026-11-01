@@ -1,18 +1,19 @@
 #!/usr/bin/env python3
 """smoke.py: one real model session on one unit, end to end, in a scratch clone (playbook 90).
 
-  make smoke-agent [NAME=dec-deepseek] [UNIT=e19ec] [TIMEOUT=30] [WORKTREE=1]
+  make smoke-agent [NAME=dec-deepseek] [UNIT=e19ec] [TIMEOUT=30] [WORKTREE=1] [MODEL=<id> VARIANT=<v>]
 
 Proves that a roster entry's model can do the job before a run spends money on it. In
 build/smoke/repo, a fresh clone of this checkout's HEAD (WORKTREE=1 adds the uncommitted changes),
 it runs the worker of roster entry NAME for one session on UNIT, exactly as `make start-run` would
 (OpenCode on the background service, the entry's model, variant, cost cap), then `make integrate`
 in the clone: the hand-off must pass `make check`. Nothing of this checkout changes; the clone
-stays for inspection until the next smoke test.
+stays for inspection until the next smoke test. MODEL and VARIANT try another model in that
+entry's role (a candidate before it goes into the roster).
 
 PASS: the session ran (the provider did not refuse it), its claim ended in a hand-off, the merge
 passed `make check`, and a decompiler's unit has more functions at L2 than before (a reviewer's
-smoke test, NAME=rev-sonnet, needs a complete unit: UNIT=e0cf7). Exit code 0 on PASS.
+smoke test, NAME=rev-haiku, needs a complete unit: UNIT=e0cf7). Exit code 0 on PASS.
 """
 from __future__ import annotations
 
@@ -43,6 +44,8 @@ def main(argv=None) -> int:
     ap.add_argument("--unit", default=env("UNIT") or "e19ec")
     ap.add_argument("--timeout", type=float, default=float(env("TIMEOUT") or 30))
     ap.add_argument("--worktree", action="store_true", default=bool(env("WORKTREE")))
+    ap.add_argument("--model", default=env("MODEL") or "")
+    ap.add_argument("--variant", default=env("VARIANT") or "")
     a = ap.parse_args(argv)
     sys.stdout.reconfigure(line_buffering=True)
     run, entries = runmod.roster()
@@ -50,6 +53,8 @@ def main(argv=None) -> int:
     if e is None or e["role"] == "integrator":
         print("smoke: %s is not a worker of work/roster.toml" % a.name, file=sys.stderr)
         return 2
+    if a.model:
+        e = dict(e, model=a.model, variant=a.variant or e.get("variant", ""))
     uid = common.identifier(a.unit, "unit")
     main_dir = common.main_checkout()
     base = main_dir / "build/smoke"

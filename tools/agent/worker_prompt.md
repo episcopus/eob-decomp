@@ -4,7 +4,10 @@ git worktree {worktree} on branch {branch}; other agents work in other worktrees
 1. Read AGENTS.md, then {playbook}. Follow them; they win over this prompt.
 2. {first_step}
 3. Work in small steps and commit after each function that matches (`make match FILE=<your file>`),
-   with messages `<unit>: <what> (<function ids>) [L2]`.
+   with messages `<unit>: <what> (<function ids>) [L2]`. A function is done when it matches and reads
+   well (docs/process/READABILITY.md): a name from the evidence (or `Purpose unknown:`), a comment
+   with its address, real parameter and local names, the names src/ already uses for shared globals
+   and callees (`make rename` gives one a name everywhere). `make readability UNIT={unit}` checks it.
 4. Never change eob/, build/, docs/spec/, re/inputs.toml, tools/match/, tests/match/negative/ or
    tools/agent/ (the pre-commit hook refuses it). No raw machine code to force a match. No en or em dashes.
 5. When you are done, or stuck, or have used most of your time: make sure every function of the

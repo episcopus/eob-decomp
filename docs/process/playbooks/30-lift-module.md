@@ -21,11 +21,14 @@ More annotations:
 /*@ 0ACD:091C draft */ void Turn091C(int how)             /* written, not matching yet: compared and
                                                               reported, never a failure, never L2 */
 /*@ ovl2:0110 */ void LoadItemTypes(void)                 /* a function of overlay 2 */
+extern unsigned char far gDrvReg; /*@ 0000:3B36 */        /* a far object in another segment */
 ```
+
+**Data outside DGROUP** (`mov ax,<relocated segment>; mov es,ax; ... es:[off]`, for example a byte kept in an assembly unit's code segment): declare it as a far object with its segment and offset, `extern unsigned char far gDrvReg; /*@ 0000:3B36 */` (in assembly `EXTRN _gDrvReg:BYTE ; @ 0000:3B36`), and use it by name. `MK_FP` with a constant segment compiles to `xor ax,ax` and cannot match (escalation e177d, 2026-11-01).
 
 Siblings must be in the file (as stubs) and in address order: a call to a function of the same file compiles to `push cs; call near`, to an extern to a far call. Callers elsewhere reach an overlay function through its stub entry (`2106:002A` for entry 2 of the stub at `2106`, entries at +20h, 5 bytes each).
 
-**Assembly units** are `src/<ID>.ASM`, assembled by TASM 2.0 with `/mx`, `.MODEL LARGE` (the code segment is word aligned): `PUBLIC _Name ; @ 19EA:0000`, `EXTRN _Callee:FAR ; @ ...`. Write forward jumps as plain `jmp label`: TASM is one pass and pads a forward `jmp` that turns out short with a NOP (`EB xx 90`), as the original shows. Data inside the code segment is written where it is (`src/E1990.ASM`).
+**Assembly units** are `src/<ID>.ASM`, assembled by TASM 2.0 with `/mx`, `.MODEL LARGE` (the code segment is word aligned): `PUBLIC _Name ; @ 19EA:0000`, `EXTRN _Callee:FAR ; @ ...`. **Far calls to another unit** (`9A off seg`): declare the callee at module level, after `.MODEL LARGE` and before `.CODE`, outside any segment (`EXTRN _MemAlloc:FAR ; @ 19BC:0007`), and write the call `call far ptr _MemAlloc`. A plain `call _MemAlloc` assembles as `push cs; call near`, and an EXTRN inside a segment of its own makes TLINK report a fixup overflow and leave the segment word 0000 (escalation e1c00, 2026-11-01; `src/E19FC.ASM` and `src/E1C00.ASM` show the form). Write forward jumps as plain `jmp label`: TASM is one pass and pads a forward `jmp` that turns out short with a NOP (`EB xx 90`), as the original shows. Data inside the code segment is written where it is (`src/E1990.ASM`).
 
 Examples: `src/E0CF7.C`, `src/E07A9.C` (whole units), `src/E08E6.C` (a jump table, stub siblings), `src/E1B82.C` (`-G`), `src/EOV2.C` (overlay), `src/E19EA.ASM`, `src/E1990.ASM`.
 
@@ -35,8 +38,8 @@ Examples: `src/E0CF7.C`, `src/E07A9.C` (whole units), `src/E08E6.C` (a jump tabl
 2. `make packet UNIT=<id>` and read `build/packets/<id>.md`: the unit's functions with their callers and callees (overlay calls resolved through their stub entries), the globals and callees `src/` already names (reuse those names and annotations), and the disassembly of every function not at L2 with call targets and known globals named. `tools/re/disasm.py eob/EOB.EXE <SEG>` disassembles any range.
 3. No file yet: `make skeleton UNIT=<id>` writes `src/<ID>.C` (or `.ASM`) with every function a stub. Replace stubs with code, one function at a time, in address order. Declare every callee and global with its annotation; a callee's signature comes from what the caller pushes (`push` order is right to left, `add sp,n` gives the bytes).
 4. `make match FILE=src/<ID>.C`. The first difference is printed with both instructions; `tools/match/cmatch.py FILE --show NAME` prints ours and the original side by side.
-5. A function matches: `make match FILE=src/<ID>.C WRITE=1` records L2 in `re/symbols.toml`; commit (`<unit>: <what> (<function ids>) [L2]`).
-6. Done, stuck, or out of time: every function of the file matched, a `stub`, or a `draft` with a note; commit; `make handoff AGENT=<you> UNIT=<id> STATE=complete|partial|blocked NOTE="..."` from the worktree. `make handoff` refuses a file that does not match and a branch that changes what it may not (below). A question for the human is `STATE=escalate`.
+5. A function matches: make it readable before committing (`docs/process/READABILITY.md`): name it, its parameters and locals from the evidence (or `Purpose unknown:` with what is known), comment it with its address, and use the names `src/` already gives the globals and callees it shares (`make packet` lists them). A global or callee that deserves a better name everywhere: `make rename OLD=<name or address> NEW=<Name> WHY="<evidence>"`. `make readability UNIT=<id>` checks the rules. Then `make match FILE=src/<ID>.C WRITE=1` records L2 in `re/symbols.toml`; commit (`<unit>: <what> (<function ids>) [L2]`).
+6. Done, stuck, or out of time: every function of the file matched, a `stub`, or a `draft` with a note; commit; `make handoff AGENT=<you> UNIT=<id> STATE=complete|partial|blocked NOTE="..."` from the worktree. `make handoff` refuses a file that does not match, a file with new readability findings (`make readability UNIT=<id>`), and a branch that changes what it may not (below). A question for the human is `STATE=escalate`.
 
 `make integrate` (playbook 90) merges the branch through `make check`; if it rejects it, `make claim` with the same AGENT gives you the worktree back with the reason.
 

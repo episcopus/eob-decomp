@@ -95,6 +95,67 @@ def describe(e: dict) -> str:
     return "%s %s" % (k, " ".join("%s=%s" % (a, b) for a, b in e.items() if a not in ("time", "event")))
 
 
+def bar(n: float, total: float, width: int) -> str:
+    """A progress bar of `width` cells, eighths of a cell resolved with the partial block characters."""
+    if total <= 0:
+        return " " * width
+    eighths = int(round(min(n / total, 1.0) * width * 8))
+    full, part = divmod(eighths, 8)
+    cells = "\u2588" * full + (" \u258f\u258e\u258d\u258c\u258b\u258a\u2589"[part] if part else "")
+    return c(GREEN, cells) + c(DIM, "\u2591" * (width - len(cells)))
+
+
+def pct(n: float, total: float) -> float:
+    return 100.0 * n / total if total else 0.0
+
+
+def span(hours: float) -> str:
+    if hours < 1:
+        return "%dm" % round(hours * 60)
+    if hours < 48:
+        return "%dh%02dm" % (int(hours), round((hours % 1) * 60))
+    return "%dd%02dh" % (int(hours // 24), round(hours % 24))
+
+
+BASELINES: dict[str, tuple[int, int]] = {}
+
+
+def baseline(started: str, game: set[str]) -> tuple[int, int]:
+    """(functions, bytes) at L2 on main when the run started: the registry of the last commit of main
+    before that time."""
+    if started not in BASELINES:
+        rev = common.git("rev-list", "-1", "--before=%s" % started, "main", check=False)
+        try:
+            import tomllib
+            fs = tomllib.loads(common.git("show", "%s:re/symbols.toml" % rev))["function"] if rev else []
+        except (RuntimeError, ValueError):
+            fs = []
+        done = [f for f in fs if f["unit"] in game and f.get("level") in ("L2", "L3")]
+        BASELINES[started] = (len(done), sum(f["size"] for f in done))
+    return BASELINES[started]
+
+
+def velocity(state: dict, game: set[str], nf: int, tf: int, nb: int, tb: int) -> list[str]:
+    """Functions and bytes merged into main per hour since the run started, and when the rest would
+    be done at that pace (by bytes: functions differ a lot in size), with what it would cost."""
+    started = state["started"]
+    hours = minutes_since(started) / 60
+    f0, b0 = baseline(started, game)
+    df, db = nf - f0, nb - b0
+    if hours < 0.25 or db <= 0:
+        return [c(DIM, "  velocity  measuring (%s of run, %d functions merged so far)" % (span(hours), df))]
+    fph, bph = df / hours, db / hours
+    eta = (tb - nb) / bph
+    spend = sum(e.get("cost") or 0 for e in events(started) if e.get("event") == "worker-session")
+    finish = dt.datetime.now().astimezone() + dt.timedelta(hours=eta)
+    return ["  velocity  %.1f functions/hour, %d bytes/hour (merged into main since the run started, %s ago)" % (
+                fph, bph, span(hours)),
+            c(BOLD, "  ETA       %s at this pace: about %s (by functions: %s); about USD %.0f more at USD %.2f/hour" % (
+                span(eta), finish.strftime("%a %d %b %H:%M"), span((tf - nf) / fph) if fph else "?",
+                spend / hours * eta, spend / hours)),
+            c(DIM, "            the queue goes smallest unit first, so the pace and the ETA will change as units grow")]
+
+
 def money(x: float | None) -> str:
     return "-" if x is None else "%.2f" % x
 
@@ -182,11 +243,17 @@ def screen(width: int) -> str:
             except (OSError, KeyError, ValueError):
                 pass
     out.append(section("progress", width))
-    out.append("  EOB.EXE  %d of %d functions at L2 (%d of %d bytes)%s" % (
-        len(done), len(gf), sum(f["size"] for f in done), sum(f["size"] for f in gf),
-        c(GREEN, "   +%d matched in worktrees, not merged" % pending) if pending > 0 else ""))
-    out.append("  queue    %d units: %d complete, %d reviewed" % (
-        len(q), sum(common.unit_complete(u, fs) for u in q), sum(common.unit_reviewed(u, fs) for u in q)))
+    nbytes, total_bytes = sum(f["size"] for f in done), sum(f["size"] for f in gf)
+    complete = sum(common.unit_complete(u, fs) for u in q)
+    bw = max(10, min(40, width - 62))
+    out.append("  functions %s %5.1f%%  %d of %d" % (bar(len(done), len(gf), bw), pct(len(done), len(gf)), len(done), len(gf)))
+    out.append("  bytes     %s %5.1f%%  %d of %d" % (bar(nbytes, total_bytes, bw), pct(nbytes, total_bytes), nbytes, total_bytes))
+    out.append("  units     %s %5.1f%%  %d of %d complete, %d reviewed" % (
+        bar(complete, len(q), bw), pct(complete, len(q)), complete, len(q), sum(common.unit_reviewed(u, fs) for u in q)))
+    if pending > 0:
+        out.append(c(GREEN, "            +%d functions matched in worktrees, not merged yet" % pending))
+    if state:
+        out += velocity(state, game, len(done), len(gf), nbytes, total_bytes)
 
     out.append(section("agents", width))
     statuses = common.agent_statuses()
