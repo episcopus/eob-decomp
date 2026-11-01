@@ -47,6 +47,7 @@ extern struct CharRec gChars[]; /*@ ds:F580 */  /* the 243-byte character record
 extern struct Spell gSpells1344[]; /*@ ds:1344 */ /* far name pointers, indexed by a spell id */
 extern struct Spell gSpells151F[]; /*@ ds:151F */
 extern struct Entry28 gTable8A84[]; /*@ ds:8A84 */ /* 28-byte records, 30 of them */
+extern char far gStrings2003; /*@ 2003:0000 */    /* the message string table */
 extern struct Six g7F40; /*@ ds:7F40 */         /* six zero bytes, the counter template */
 extern int g811F; /*@ ds:811F */
 extern int g8115; /*@ ds:8115 */
@@ -54,6 +55,7 @@ extern int gFE60; /*@ ds:FE60 */
 extern int gFE62; /*@ ds:FE62 */
 extern int gFE64; /*@ ds:FE64 */
 extern int gFE66; /*@ ds:FE66 */
+extern char gFE6E[]; /*@ ds:FE6E */              /* the text buffer ovl6:0858 formats into */
 extern void *gFont1A47; /*@ ds:FE4E */          /* the current font (1A47:0169 records it) */
 extern void *gFE5A; /*@ ds:FE5A */              /* the 8x8 font loaded from Font8.fnt */
 extern void *gA9C0; /*@ ds:A9C0 */              /* the 6x6 font loaded from FONT6.FNT */
@@ -74,7 +76,7 @@ extern int f0D1C_0670(int member, int what); /*@ 0D1C:0670 */
 extern int f0D1C_00F1(int member, int what, int which); /*@ 0D1C:00F1 */
 extern int f0D1C_0163(int member, int what); /*@ 0D1C:0163 */
 extern void f0D1C_0C21(int x, int y, int width, int height, int c, int d); /*@ 0D1C:0C21 */
-extern char *f0D1C_07A7(int a, int b, int c); /*@ 0D1C:07A7 */
+extern char *f0D1C_07A7(char *s, int n); /*@ 0D1C:07A7 */
 extern void f082C_0898(char *text, int x, int y, int colour, int flag); /*@ 082C:0898 */
 extern void f082C_0425(int n); /*@ 082C:0425 */
 extern int far RollDice(char count, char sides, char bonus); /*@ 082C:0458 */
@@ -113,7 +115,41 @@ extern void *memchr(void *s, int c, unsigned n); /*@ 0000:6319 */
     return found + 1;
 }
 
-/*@ ovl6:0858 stub */ void Ovl6_0858(void) {}
+/* ovl6:0858: shows the camp panel and the "Hours rested" line. It selects the 8x8 font and the
+   region 0xa, and when `draw` is nonzero clears g8115, hides the pointer, fills the panel
+   rectangle (f0D1C_0C21) inside its clip (ClipRect), draws the title through f082C_0898 and shows
+   the pointer again. Then it formats "Hours rested: %-4d" with gFE6E and, with g8115 set to 2,
+   draws the line in the colour gF57E inside a second clip. Finally it waits ten frames and
+   restores the font and the region. Called by the camp loop. */
+/*@ ovl6:0858 */ void f0858(int hours, int draw)
+{
+    void *savedFont;
+    register int region;
+
+    region = g811F;
+    savedFont = gFont1A47;
+    f1A47_0169(gFE5A);
+    f1DE7_0009(0xa);
+    if (draw) {
+        g8115 = 0;
+        LockHidePointer();
+        f1DE7_0344();
+        f0D1C_0C21(gFE64 << 3, gFE66, gFE62 << 3, gFE60, 0, 0);
+        ClipRect(gFE64, gFE66, gFE64, gFE66, gFE62, gFE60, 0, 2);
+        f082C_0898(f0D1C_07A7(&gStrings2003, 0x2a), (gFE64 + 1) << 3, gFE66 + 5, 9, 0);
+        LockShowPointer();
+    }
+    sprintf(gFE6E, "Hours rested: %-4d", hours);
+    g8115 = 2;
+    LockHidePointer();
+    f082C_0898(gFE6E, (gFE64 + 1) << 3, gFE66 + 0x14, 0xf, gF57E);
+    g8115 = 0;
+    ClipRect(gFE64 + 1, gFE66 + 0x14, gFE64 + 1, gFE66 + 0x14, 0x12, 8, 2, 0);
+    LockShowPointer();
+    WaitFrames(0xa);
+    f1A47_0169(savedFont);
+    f1DE7_0009(region);
+}
 /* ovl6:09D2: the "monsters are near" test. It selects the 6x6 font, marks the object update
    (gF442) and updates objects 0 and 1, then scans the 30 28-byte records at ds:8A84: when
    f17A6_0F61(gSoundVolume, record.value) is below two a monster is close, so it switches back to
