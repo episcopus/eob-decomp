@@ -1,8 +1,9 @@
 ; Unit at EOB.EXE 1BBE:0001 (860 bytes, 7 functions): the game's own mouse pointer, its hide and
 ; show halves and the wrappers that call them. The pointer is drawn by [ds:80C2] (gDraw80C2 in
-; src/E1A29.C) from the shape record _gPointerShapeOff/_gPointerShapeSeg, positioned at the mouse position gCursorX/
-; gCursorY less the hot spot _gPointerHotX/_gPointerHotY; before it is drawn at a new place the screen under it is
-; saved through [ds:80AE] (gSaveRect) into the buffer _gPointerBackOff/_gPointerBackSeg, and to erase it the saved
+; src/E1A29.C) from the shape record _gPointerShapeOff/_gPointerShapeSeg, positioned at the mouse
+; position gCursorX/gCursorY less the hot spot _gPointerHotX/_gPointerHotY; before it is drawn at
+; a new place the screen under it is saved through [ds:80AE] (gSaveRect) into the buffer
+; _gPointerBackOff/_gPointerBackSeg, and to erase it the saved
 ; background is written back through [ds:804E] (gRestoreRect). 1BBE:0002 HidePointer is the hide
 ; half: restore the background, then gHideDepth++. 1BBE:00ED ShowPointer is the show half:
 ; gHideDepth is decremented and, only at zero, move the drawn position to the mouse position, save
@@ -15,8 +16,9 @@
 ; is saved with push/pop ax, which the compiler's C functions never do; the far call through a
 ; DGROUP pointer and the busy-wait on g812E are the style of E1BB1 and E1BF3).
 ;
-; Globals src/ already names keep those names: g812E, g814A, _gPointerHeight, _gPointerWidth8, _gPointerHotX, _gPointerHotY, _gPointerBackOff,
-; _gPointerBackSeg, _gPointerShapeOff, _gPointerShapeSeg, g8172, g8174, g80AA, g80A2 and g80C6 from src/E1BB1.ASM (and g814A from
+; Globals src/ already names keep those names: g812E, g814A, gPointerHeight, gPointerWidth8,
+; gPointerHotX, gPointerHotY, gPointerBackOff, gPointerBackSeg, gPointerShapeOff, gPointerShapeSeg,
+; g8172, g8174, g80AA, g80A2 and g80C6 from src/E1BB1.ASM (and g814A from
 ; src/E07A9.C, gDraw80C2 from src/E1A29.C). The byte at 1BBE:0001 is the unit's segment start, as
 ; in 1BB1:0001 and 1BF3:000D.
 
@@ -28,10 +30,10 @@
         EXTRN   _gCursorY:WORD          ; @ ds:813A: mouse position, y in pixels
         EXTRN   _gHideDepth:WORD        ; @ ds:8146: hide depth, 0 = drawn (1BBE:0002/00ED change it)
         EXTRN   g814A:WORD              ; @ ds:814A: non-zero disables the pointer (E07A9 tests it too)
-        EXTRN   _gPointerHeight:WORD              ; @ ds:8154: sprite height in pixels (record byte +3, 1BB1)
-        EXTRN   _gPointerWidth8:WORD              ; @ ds:8156: sprite width in 8-pixel columns (byte +2 + 1)
-        EXTRN   _gPointerHotX:WORD              ; @ ds:8158: hot spot, x in pixels (subtracted from gCursorX)
-        EXTRN   _gPointerHotY:WORD              ; @ ds:815A: hot spot, y in pixels
+        EXTRN   _gPointerHeight:WORD     ; @ ds:8154: sprite height in pixels (record byte +3, 1BB1)
+        EXTRN   _gPointerWidth8:WORD     ; @ ds:8156: sprite width in 8-pixel columns (byte +2 + 1)
+        EXTRN   _gPointerHotX:WORD       ; @ ds:8158: hot spot, x in pixels (subtracted from gCursorX)
+        EXTRN   _gPointerHotY:WORD       ; @ ds:815A: hot spot, y in pixels
         EXTRN   _gDrawnX:WORD           ; @ ds:815C: position drawn at last, x in pixels
         EXTRN   _gDrawnY:WORD           ; @ ds:815E: position drawn at last, y in pixels
         EXTRN   _gPointerState:WORD     ; @ ds:8160: bit 8000 hidden, bit 4000 redraw, low byte a count
@@ -39,10 +41,10 @@
         EXTRN   _gZoneTop:WORD          ; @ ds:8164: hide zone, top in pixels
         EXTRN   _gZoneRight:WORD        ; @ ds:8166: hide zone, right in pixels
         EXTRN   _gZoneBottom:WORD       ; @ ds:8168: hide zone, bottom in pixels
-        EXTRN   _gPointerBackOff:WORD              ; @ ds:816A: save-under buffer, far offset (1BB1 allocates)
-        EXTRN   _gPointerBackSeg:WORD              ; @ ds:816C: save-under buffer, far segment, 0 = none
-        EXTRN   _gPointerShapeOff:WORD              ; @ ds:816E: pointer shape record, far offset (1BB1 stores it)
-        EXTRN   _gPointerShapeSeg:WORD              ; @ ds:8170: pointer shape record, far segment
+        EXTRN   _gPointerBackOff:WORD    ; @ ds:816A: save-under buffer, far offset (1BB1 allocates)
+        EXTRN   _gPointerBackSeg:WORD    ; @ ds:816C: save-under buffer, far segment, 0 = none
+        EXTRN   _gPointerShapeOff:WORD   ; @ ds:816E: pointer shape record, far offset (1BB1 stores it)
+        EXTRN   _gPointerShapeSeg:WORD   ; @ ds:8170: pointer shape record, far segment
         EXTRN   g8172:WORD              ; @ ds:8172: far pointer handed to [ds:80AA], offset
         EXTRN   g8174:WORD              ; @ ds:8174: far pointer handed to [ds:80AA], segment
         EXTRN   _gRectLeft:WORD         ; @ ds:8176: clipped rectangle, left in 8-pixel columns
