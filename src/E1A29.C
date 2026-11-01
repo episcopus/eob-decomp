@@ -4,8 +4,9 @@
    whole screen, 0,0,40,200, and records 1 to 3 lie inside it; the initial table is at EOB.EXE
    file offset 0x23B7F). The table is read by many front ends, for example 082C:0650/0696/06DC/071E,
    0D1C:A0F7, 0EF3:8387, 1547:1E47, 16A5:0867, 1DE7:005F and SelectRegion 1A29:019A, and written
-   by the setter 1DE7:02FE; each record gives the region's left edge in 8-pixel columns, its top
-   line, its width in 8-pixel columns and its height in lines. A front end's `region` argument is
+   by the setter 1DE7:02FE (words 0 to 3) and, for words 4 to 7, by 1DE7:0009 SetTextWindow; each
+   record gives the region's left edge in 8-pixel columns, its top line, its width in 8-pixel
+   columns and its height in lines. A front end's `region` argument is
    an index into the table, not a byte offset. A front end adds the selected region's origin
    (ds:FE4A in pixels, ds:FE46 in lines) to the caller's region-relative coordinates and, when
    its region argument is not the one selected, selects it first, then
@@ -21,9 +22,12 @@ struct Region {             /* 16 bytes: left, top, width, height, then four wor
     int top;                /* top edge, in lines */
     int width;              /* width, in 8-pixel columns */
     int height;             /* height, in lines */
-    /* words 4..7: per-region saved state (small values, colours [H]), copied in and out by
-       1DE7:0009 for the region it switches away from; this unit does not use them, and the
-       names only give the position (1DE7:0009) */
+    /* words 4..7: per-record text-window state, copied out by 1DE7:0009 (SetTextWindow) for the
+       window it switches away from (src/E1DE7.C:80-83) and copied in for the window it switches to
+       (src/E1DE7.C:88-95). saved0 and saved1 are the window's two text attributes (gTextAttr1,
+       gTextAttr2, src/E1DE7.C:38-40; their game meaning is not established [H]); saved2 and saved3
+       are its cursor column and row (gTextCol, gTextRow, src/E1DE7.C:41-42). This unit does not
+       use them. */
     int saved0;
     int saved1;
     int saved2;
