@@ -3975,6 +3975,9 @@ unit = "e1948"
 addr = "1948:0006"
 size = 74
 evidence = ["segment"]
+name = "_SoundTimerIsr"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1948_0050"
@@ -3982,6 +3985,9 @@ unit = "e1948"
 addr = "1948:0050"
 size = 631
 evidence = ["near"]
+name = "_SoundTick"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1948_02c7"
@@ -3989,6 +3995,9 @@ unit = "e1948"
 addr = "1948:02C7"
 size = 42
 evidence = ["near"]
+name = "_VoiceOn"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1948_02f1"
@@ -3996,6 +4005,9 @@ unit = "e1948"
 addr = "1948:02F1"
 size = 37
 evidence = ["near"]
+name = "_VoiceOff"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1948_0316"
@@ -4003,6 +4015,9 @@ unit = "e1948"
 addr = "1948:0316"
 size = 52
 evidence = ["near"]
+name = "_SetVoicePitch"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1948_034a"
@@ -4010,6 +4025,9 @@ unit = "e1948"
 addr = "1948:034A"
 size = 29
 evidence = ["near"]
+name = "_SetThreeVoices"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1948_0367"
@@ -4017,6 +4035,9 @@ unit = "e1948"
 addr = "1948:0367"
 size = 16
 evidence = ["near"]
+name = "_SetOneVoice"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1948_0377"
@@ -4024,6 +4045,9 @@ unit = "e1948"
 addr = "1948:0377"
 size = 99
 evidence = ["far", "frame"]
+name = "_SoundDriverInstall"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1948_03da"
@@ -4031,6 +4055,9 @@ unit = "e1948"
 addr = "1948:03DA"
 size = 62
 evidence = ["far", "frame"]
+name = "_SoundDriverUninstall"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1948_0418"
@@ -4038,6 +4065,9 @@ unit = "e1948"
 addr = "1948:0418"
 size = 43
 evidence = ["far", "frame"]
+name = "_StartSound"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1948_0443"
@@ -4045,6 +4075,9 @@ unit = "e1948"
 addr = "1948:0443"
 size = 21
 evidence = ["frame"]
+name = "_StopSound"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1948_0458"
@@ -4052,6 +4085,9 @@ unit = "e1948"
 addr = "1948:0458"
 size = 19
 evidence = ["far", "frame"]
+name = "_SoundDriverResume"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1948_046b"
@@ -4059,6 +4095,9 @@ unit = "e1948"
 addr = "1948:046B"
 size = 22
 evidence = ["far", "frame"]
+name = "_SoundDriverPause"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1990_0001"
