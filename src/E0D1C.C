@@ -42,6 +42,9 @@ extern int g54F4; /*@ ds:54F4 */            /* the row of the animated list 0D1C
 extern unsigned long g848A; /*@ ds:848A */  /* a tick counter compared with gFC5E by 0D1C:0454 */
 extern unsigned long gFC5E; /*@ ds:FC5E */  /* the next tick 0D1C:0454 may draw at */
 extern signed char g1CE7[]; /*@ ds:1CE7 */  /* per-row colours for the list 0D1C:0454 draws */
+extern signed char gF57E; /*@ ds:F57E */    /* a colour read by 0D1C:0C21 */
+extern signed char gFB4C; /*@ ds:FB4C */    /* a colour read by 0D1C:0C21 */
+extern signed char gF53A; /*@ ds:F53A */    /* a colour read by 0D1C:0C21 */
 extern signed char g54F6[]; /*@ ds:54F6 */  /* byte table indexed by a character's m17 in 0D1C:059B */
 extern unsigned char gFBD2; /*@ ds:FBD2 */  /* bit 0 gates the icon colour row in 0D1C:070F (src/E07A9.C) */
 extern int g8102; /*@ ds:8102 */            /* nonzero: a colour row exists (src/E07A9.C) */
@@ -60,7 +63,13 @@ extern struct ItemInfo gA9F5[]; /*@ ds:A9F5 */
 
 struct Obj28 {              /* 28-byte object records at ds:8A82 (see src/E08E6.C) */
     char b0;                /* +0: an index into the ds:1A3B table */
-    char pad01[0x1C - 0x01];
+    char pad01;
+    int m02;                /* +2, read by 0D1C:09CB */
+    char pad04;
+    char m05;               /* +5, written by 0D1C:09CB */
+    char pad06[0x16 - 0x06];
+    char m16;               /* +0x16, bit 3 set by 0D1C:09CB */
+    char pad17[0x1C - 0x17];
 };
 extern struct Obj28 gObjs[]; /*@ ds:8A82 */
 
@@ -113,8 +122,12 @@ extern void DrawBox(int x1, int y1, int x2, int y2, int colour); /*@ 1A1F:000C *
 extern int GetIndexedByte(char index, char limit, char offset); /*@ 0A72:0006 */
 extern char GetClassSlotByte(char row, char slot); /*@ 0A72:0509 */
 extern int FindClassSlot(int value, char classIndex); /*@ 0A72:007B */
+extern int GetClampedTableByte(int col, int row); /*@ 0A72:0597 */
 extern void f1A29_008B(int mode, void far *src, int x, int y, int region); /*@ 1A29:008B */
 extern void f1A29_000F(int mode, void far *src, int x, int y, int region); /*@ 1A29:000F */
+extern void f082C_09D5(int x1, int y1, int x2, int y2, int c1, int c2, int c3); /*@ 082C:09D5 */
+extern int f17A6_0314(int obj, int volume); /*@ 17A6:0314 */
+extern void f08E6_0FBE(struct Obj28 far *obj, int n); /*@ 08E6:0FBE */
 
 int f0D1C_0670(int who, int mask);
 int f0D1C_02DC(void);
@@ -563,7 +576,30 @@ int f0D1C_02DC(void);
     }
     return (best << 8) + bestVal;
 }
-/*@ 0D1C:09CB stub */ void f0D1C_09CB(void) {}
+/* 0D1C:09CB: Purpose unknown: a per-object check. It takes the object's ds:1A3B record's m19 as
+   a row and GetClampedTableByte(b, m19) as a value; a value of -1 calls f08E6_0FBE(obj, 100) and
+   returns 1. Otherwise, when `a` is below the value it returns 0; else it sets bit 3 of
+   obj->m16, stores (f17A6_0314(obj->m02, gSoundVolume) ^ 4) >> 1 in obj->m05 and returns 1.
+   Called by 0D1C:0A43 and 17A6. DRAFT: matches every byte except the block ordering of the two
+   `return 1` paths (the original falls the success path into the shared return; ours jumps to it
+   after the -1 path), a one-byte difference. */
+/*@ 0D1C:09CB draft */ int f0D1C_09CB(struct Obj28 far *obj, int threshold, int column)
+{
+    int row;
+    int value;
+
+    row = gTable1A3B[obj->b0].m19;
+    value = GetClampedTableByte(column, row);
+    if (value == -1) {
+        f08E6_0FBE(obj, 100);
+    } else if (threshold < value) {
+        return 0;
+    } else {
+        obj->m16 |= 8;
+        obj->m05 = (f17A6_0314(obj->m02, gSoundVolume) ^ 4) >> 1;
+    }
+    return 1;
+}
 /*@ 0D1C:0A43 stub */ void f0D1C_0A43(void) {}
 /* 0D1C:0BAB: Purpose unknown: a percentage check on the object `obj`: through gObjs[obj].b0 it
    reads gTable1A3B[b0].m1A and returns 1 when RollDice(1, 100, 0) is below it, otherwise 0.
@@ -581,4 +617,37 @@ int f0D1C_02DC(void);
 {
     return (gTable1A3B[gObjs[obj].b0].m0E & 4) && (gA9F5[flag].m00 & 4) == 0;
 }
-/*@ 0D1C:0C21 stub */ void f0D1C_0C21(void) {}
+/* 0D1C:0C21: Purpose unknown: draws a framed rectangle at (x, y) size w by h through 082C:09D5.
+   It hides the pointer, draws the whole rectangle in the colours picked by `a` (gF57E, gF57E
+   when `a`, else gFB4C and gF53A) with -1 as the third colour, then shrinks the rectangle by one
+   on each side and draws the inner border in gFB4C/gF53A with a third colour of -1 when `b`,
+   else gF57E, and shows the pointer. Called by overlay 1 and overlay 6. */
+/*@ 0D1C:0C21 */ void f0D1C_0C21(int x, int y, int width, int height, int first, int second)
+{
+    int x1;
+    int y1;
+    int x2;
+    int y2;
+    int c1;
+    int c2;
+
+    LockHidePointer();
+    x1 = x;
+    y1 = y;
+    x2 = x + width - 1;
+    y2 = y + height - 1;
+    if (first) {
+        c2 = gF57E;
+        c1 = gF57E;
+    } else {
+        c1 = gFB4C;
+        c2 = gF53A;
+    }
+    f082C_09D5(x1, y1, x2, y2, c1, c2, -1);
+    x1++;
+    y1++;
+    x2--;
+    y2--;
+    f082C_09D5(x1, y1, x2, y2, gFB4C, gF53A, second ? -1 : gF57E);
+    LockShowPointer();
+}
