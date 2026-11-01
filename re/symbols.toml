@@ -4310,6 +4310,9 @@ unit = "e1a47"
 addr = "1A47:0005"
 size = 356
 evidence = ["far", "segment"]
+name = "f1A47_0005"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "e1a47_0169"
@@ -4317,6 +4320,9 @@ unit = "e1a47"
 addr = "1A47:0169"
 size = 37
 evidence = ["far", "frame"]
+name = "f1A47_0169"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "e1a47_018e"
@@ -4324,6 +4330,9 @@ unit = "e1a47"
 addr = "1A47:018E"
 size = 54
 evidence = ["frame"]
+name = "f1A47_018E"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "e1a63_0004"
