@@ -51,6 +51,7 @@ extern char far gStrings2003; /*@ 2003:0000 */    /* the message string table */
 extern struct Six g7F40; /*@ ds:7F40 */         /* six zero bytes, the counter template */
 extern int g811F; /*@ ds:811F */
 extern int g8115; /*@ ds:8115 */
+extern int g159; /*@ ds:0159 */                 /* holds gF57E while ovl6:0B9B is on screen */
 extern int gFE60; /*@ ds:FE60 */
 extern int gFE62; /*@ ds:FE62 */
 extern int gFE64; /*@ ds:FE64 */
@@ -217,4 +218,40 @@ extern void *memchr(void *s, int c, unsigned n); /*@ 0000:6319 */
     }
     return 0;
 }
-/*@ ovl6:0B9B stub */ void Ovl6_0B9B(void) {}
+/* ovl6:0B9B: shows the modal warning box for message number `message` in the far string table at
+   2003:0000. It saves the region (g811F), g8115 and the font, selects the 8x8 font and region 2,
+   stores gF57E in ds:0159, fills the panel (f0D1C_0C21) and draws the message string through
+   f082C_0898 inside a clip (ClipRect). Then it waits up to 0x78 frames for a key (1AAD:038E),
+   clears the pending key (1AAD:0480) and restores the font, region and g8115. Called by the camp
+   loop for "You can't rest here, monsters are near." */
+/*@ ovl6:0B9B */ void f0B9B(int message)
+{
+    register int i;
+    register int savedRegion;
+    int savedSelect;
+    void *savedFont;
+
+    savedRegion = g8115;
+    savedFont = gFont1A47;
+    savedSelect = g811F;
+    f1A47_0169(gFE5A);
+    LockHidePointer();
+    g159 = gF57E;
+    f1DE7_00B6(0xb);
+    g8115 = 2;
+    f0D1C_0C21(gFE64 << 3, gFE66, gFE62 << 3, gFE60, 0, 0);
+    f082C_0898(f0D1C_07A7(&gStrings2003, message), (gFE64 << 3) + 5, gFE66 + 5, 0xf, 0);
+    ClipRect(gFE64, gFE66, gFE64, gFE66, gFE62, gFE60, 2, 0);
+    LockShowPointer();
+    for (i = 0; i < 0x78; i++) {
+        if (f1AAD_038E()) {
+            f1AAD_0480();
+            break;
+        }
+        WaitFrames(1);
+    }
+    g8115 = savedRegion;
+    f1A47_0169(savedFont);
+    f1DE7_0009(savedSelect);
+    f1AAD_0480();
+}
