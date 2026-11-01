@@ -1,0 +1,140 @@
+# Eye of the Beholder (DOS) Decompilation: Process Specification
+
+| | |
+|---|---|
+| Version | 0.1 (Phase 0, 2026-10-31) |
+| Target | Westwood / SSI *Eye of the Beholder*, DOS, the files in `eob/` (hashes in `re/inputs.toml`) |
+| Output | C source in `src/` that the original compiler turns into the original's machine code, a rebuild of the game from it, a living design doc in `docs/design/` |
+| Model | `poolrad-decomp` (SPEC 0.8, ADR-002): same proof ladder, same agent process, adapted to C |
+
+This document says **what** we build, **how** we prove it is right, and **how agents do the work**. `AGENTS.md` is the agent operating manual; playbooks are in `docs/process/playbooks/`; what we learn about the game goes in `docs/design/WHITEPAPER.md`.
+
+---
+
+## 1. Outcomes
+
+| ID | Outcome | Measure of done |
+|---|---|---|
+| O1 | C source for the whole game | Every routine of `EOB.EXE`, `INTRO.EXE` and `START1.EXE` outside the Borland runtime library is C (or assembly where the original was assembly) that the pinned toolchain turns into the original's instructions (L2) |
+| O2 | A rebuild | `make rebuild` compiles and links `src/` into programs whose load modules, relocation tables and FBOV overlay data are identical to the originals, and the rebuilt programs play the golden sessions identically in the oracle |
+| O3 | A design doc | `docs/design/WHITEPAPER.md` covers every subsystem with evidence-tagged claims |
+| O4 | Readable source | Real names for modules, functions, globals, parameters, constants and types, with evidence; a comment on every module and function |
+| O5 | A portable build | The matched C, with a platform layer replacing DOS, video and sound, built natively (later phase) |
+
+Non-goals for now: bug fixes or enhancements to game behaviour.
+
+---
+
+## 2. Pinned inputs
+
+Every tool works on exactly the files in `re/inputs.toml` (`make inputs`). **The copy is the unofficial fan patch "1.9"** (`eob/version.nfo`, release 2006-07-11), built on the official 1.7, not the retail release. Decided by the human on 2026-10-31: work from these files.
+
+| File | Bytes | Notes |
+|---|---:|---|
+| `EOB.EXE` | 264,480 | The game. Turbo C++, TLINK 3.0, not packed. 201,552-byte load module, 2,504 relocations, then 52,688 bytes of FBOV overlay data. File date 1991-04-29 |
+| `INTRO.EXE` | 88,032 | The introduction. Same toolchain; 72,160-byte load module, 12,288 bytes of FBOV data |
+| `START1.EXE` | 8,652 | The setup menu (graphics, sound, mouse); runs `INTRO.EXE`. Says "Eye of the Beholder Version 1.9": **edited by the patch** |
+| `CGA.OVL`, `EGA.OVL`, `MCGA.OVL`, `TGA.OVL` | 10,594 to 13,271 | Graphics drivers loaded by the game (MZ files without an entry point) |
+| `EOBDATA1.PAK` to `EOBDATA6.PAK` | | Westwood PAK archives, 193 files; dated 2006, so rewritten by the patch |
+| `FONT6.FNT`, `FONT8.FNT` | | Fonts |
+| `version.nfo` | | The patch's release notes |
+
+Not pinned: `LEVELS.TMP` and `EOBDATA.SAV`, which the game writes while it runs (saving, changing level). Tools that need them copy them first.
+
+Consequences of the patched copy:
+
+- What the patch changed is not known yet. The data changes (items, maps, NPCs) matter to the whitepaper, not to matching; code changes matter to matching, since a hex edit may give bytes no compiler wrote. Such a byte is recorded as a patch site (`re/patches.toml`, Phase 1), and the rebuild applies it after linking, as poolrad's DOS port applies its patch series.
+- If a retail copy becomes available, diffing it against `eob/` identifies the patch sites directly. That is a human decision (rule 6 of `AGENTS.md`).
+
+---
+
+## 3. What the binaries are (verified facts that shape the approach)
+
+Evidence is in the whitepaper, section 2.
+
+1. **Language: Borland Turbo C++.** All three programs carry "Turbo C++ - Copyright 1990 Borland Intl." and the Borland C runtime strings ("Abnormal program termination", "Null pointer assignment" in `START1.EXE`); the EXE headers carry TLINK 3.0's signature. Which release (1.0 of 1990 or 1.01 of 1991) is decided in Phase 1 by comparing the runtime library, as poolrad did for Turbo Pascal.
+2. **Memory model: large code** (far calls; `retf` dominates). Medium versus large data is a Phase 1 question.
+3. **Segments.** The FBOV header points to TLINK's segment table: 99 entries in `EOB.EXE` (58 code, 22 data, 7 overlay stubs, 12 of a fourth kind), 54 in `INTRO.EXE`. This gives the exact boundary of every code segment, and with Borland's one code segment per source file, of most source modules. DGROUP is paragraph `212E` in `EOB.EXE`; 127,887 bytes of resident code.
+4. **Overlays (VROOMM).** 7 overlaid segments in `EOB.EXE` (125 entries, 50,641 bytes of code) and 1 in `INTRO.EXE` (22 entries, 11,741 bytes). The stub layout is Turbo Pascal's; the overlay data is appended to the EXE instead of a separate `.OVR` file. `make overlays` validates both.
+5. **No packing.** The load modules are analysed as they are.
+6. **Assembly.** Some code is hand-written: a segment with 36 `iret` and 77 `out` (interrupt handlers, timer, sound, video), near-return code, and probably the four graphics drivers. Assembly is matched as assembly (TASM source), as poolrad's sound driver.
+7. **Data.** The 6 PAK archives parse with one layout and rebuild byte for byte (`make pak`).
+
+---
+
+## 4. Approach
+
+### 4.1 ADR-001: matching C with the original toolchain (2026-10-31)
+
+Decided from the poolrad experience (its ADR-002 replaced behaviour-matching C after four days):
+
+1. **Proof by identity.** `make match` compiles our C with the compiler that built the game and compares instructions; the compiler, not a test, says the source is the program.
+2. **One pass to C.** Unlike poolrad (Pascal first, C translation later), the original language is C, so the matched source is the C we want.
+3. **Independence of functions.** A function is proven on its own: callees need only prototypes, globals only declarations.
+4. **The runtime is the compiler's.** The Borland runtime library (`CL.LIB` or the model's equivalent, `C0x.OBJ`) is linked, never decompiled.
+5. **A real rebuild** when everything matches, compared byte for byte (O2).
+
+Known differences from Turbo Pascal, to be settled with probes (`make tcc`, Phase 1):
+
+- Register variables (SI, DI) are chosen by the compiler from the declarations, and their order changes the code.
+- Optimisation switches (`-O`, `-Z`, `-G`, `-r`) and the model (`-ml`, `-mm`) change the code; they are found per module, as poolrad found `$O+` per unit.
+- String literals go to the module's part of `_DATA`, not before the function: matching compares them by content and module, and the rebuild needs the module order of DGROUP.
+- `switch` statements compile to jump tables in the code segment.
+
+### 4.2 The gate before building the matcher
+
+Phase 1 ends with a **go/no-go spike**: three to five functions of one small C module matched by hand with the pinned compiler (playbook 10, step 8). If register allocation or switches cannot be reproduced, the approach is reconsidered before any matcher is written.
+
+---
+
+## 5. Repository layout
+
+```
+AGENTS.md              agent operating manual; CLAUDE.md imports it
+Makefile               every command
+eob/                   original game files (pinned, read-only)
+docs/spec/SPEC.md      this document
+docs/setup/            environment setup; SETUP-tc.md for the compiler
+docs/process/playbooks step-by-step procedures
+docs/design/           WHITEPAPER.md (how the game works)
+docs/reference/        prior art and licence rules
+re/                    reverse-engineering database (text): inputs.toml now; units, symbols, data names from Phase 1
+tools/setup/           doctor.sh, inputs.py, build-emu2.sh
+tools/re/              mzutil.py, fbov.py, pak.py
+tests/unit/            pytest
+work/status.md         where the project stands
+build/                 generated, ignored; build/toolchain/ holds the compiler (never committed)
+```
+
+---
+
+## 6. Verification ladder (as in poolrad)
+
+| Level | Name | Evidence |
+|---|---|---|
+| L0 | Drafted | The function is C in its module and the module compiles with the pinned toolchain |
+| L2 | Matched | `make match`: instructions identical, every address field names the same thing (global, function, literal, segment) |
+| L3 | Rebuilt | The function's module is byte-identical in `make rebuild`, and the rebuilt programs pass the goldens |
+
+Only tools write levels. The oracle (Phase 2) is a Unicorn PC in virtual time, as poolrad's, extended for what EOB needs that Pool of Radiance did not: VGA mode 13h, the mouse (INT 33h), AdLib (port 388h), and a game that runs in real time from the timer interrupt, so recordings must replay timer ticks exactly.
+
+---
+
+## 7. Agentic workflow
+
+As poolrad's SPEC section 9 (roles, packets, locks, worktrees, integrator, reviewer independence), brought over when Phase 3 starts. Until then work is done in one session at a time on `main`.
+
+---
+
+## 10. Phases
+
+| Phase | Deliverable | Exit check |
+|---|---|---|
+| P0 Bootstrap | Pinned inputs, environment check, overlay and segment manifest, PAK reader | `make doctor` and `make p0-check` pass. Done 2026-10-31 |
+| P1 Map and toolchain | Turbo C++ release pinned by runtime comparison, compiler switches and memory model, `re/units.toml` (module per code segment), function enumeration, runtime library identified, assembly modules flagged, patch sites found, the go/no-go spike | spike passes; `make p1-check` |
+| P2 Oracle and data | Unicorn PC with VGA, mouse, AdLib, timer; goldens; codecs for CPS, CMP, VCN/VMP, MAZ, INF, DAT | goldens repeatable; codec round trips |
+| P3 Match harness | `make match` for C modules and TASM modules; the agent process | negative fixtures rejected |
+| P4 Match | every function at L2 | status |
+| P5 Rebuild | identical programs | `make rebuild`, goldens on the rebuild |
+| P6 Consistency | one vocabulary across modules | review |
+| P7 Portable build | platform layer, native build | goldens |

@@ -1,3 +1,15 @@
+# generated
+build/
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+# local tool installs (emu2)
+tools/vendor/
+# written by the game while it runs; not pinned (SPEC section 2)
+eob/LEVELS.TMP
+# editors / OS
+.DS_Store
 # public copy: the original game files are yours to supply (eob/README.md)
 eob/*
 !eob/README.md

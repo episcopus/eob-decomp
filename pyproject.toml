@@ -1,0 +1,13 @@
+[project]
+name = "eob-decomp-tools"
+version = "0.1.0"
+description = "Tooling for the Eye of the Beholder (DOS) matching decompilation"
+requires-python = ">=3.11,<3.14"
+dependencies = [
+    "capstone>=5.0,<7",    # disassembly for mapping and work packets
+    "unicorn>=2.1.4,<3",   # oracle: x86 16-bit real mode emulation (Phase 2)
+    "pytest>=8",           # tool and codec tests
+]
+
+[tool.uv]
+package = false
