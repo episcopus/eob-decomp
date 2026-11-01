@@ -3751,7 +3751,7 @@ size = 113
 evidence = ["near", "segment"]
 name = "FindMaskBit"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e14ef_0078"
@@ -3761,7 +3761,7 @@ size = 105
 evidence = ["near", "frame"]
 name = "BlinkText"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e14ef_00e1"
@@ -3771,7 +3771,7 @@ size = 38
 evidence = ["near", "frame"]
 name = "PointInRect"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e14ef_0107"
@@ -3781,7 +3781,7 @@ size = 77
 evidence = ["frame"]
 name = "CountMaskBits"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e14ef_0154"
@@ -3791,7 +3791,7 @@ size = 288
 evidence = ["frame"]
 name = "DrawOptionList"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e14ef_0274"
@@ -3799,7 +3799,10 @@ unit = "e14ef"
 addr = "14EF:0274"
 size = 789
 evidence = ["frame"]
-notes = "draft 2026-11-01 (src/E14EF.C): the function is correct and complete; the only reason `make match` reports a draft is the matcher's assembler. The original was assembled by TASM 2.0 with SMART off, which keeps the four separate case tails `row = 0` (down 14EF:03E6, first 14EF:03EC) and `row = rows` (up 14EF:03D2, last 14EF:03F2); TCC's internal assembler (the `-c` build the matcher uses) cross-jumps the later copy into the earlier one and drops 7 bytes, so the switch table lands at 14EF:0556 instead of 14EF:055D. Built with `-B` (TCC compile via TASM, `-ml -O -Z -B` plus TASM `/jNOSMART`) the whole unit matches byte for byte: 6 of 6 functions, unit 1410 bytes, UpdateOptionList 789 bytes. Evidence: `TCC -B` run via a harness that copies build/toolchain/tasm20/BIN/TASM.EXE into the work dir (cmatch cannot, its TCC invocation has no TASM on its drive); the plain `-c` run gives 5 ok + 1 draft at +0141. TASM needs SMART off for two reasons: E14EF has no small immediate to expose it, but E19EC.C does (`or bx,1` -> TASM SMART gives 0x83, the original and TASM `/jNOSMART` give 0x81); SMART on/off is a TASM directive, not a listed switch. The click case was rewritten as `if (PointInRect) { compute; break; } gFC7A = key; break;` (the positive form) so the success path is the fall-through and the failure is taken, matching 14EF:0417 `je`; the negative `if (!PointInRect) { ... }` form made the optimizer branch the other way (ours `jne success`). Same class as 0ACD:091C. Open for the human: should the matcher assemble C units with TASM `/jNOSMART` (it reproduces both E14EF and E19EC) instead of the internal assembler?"
+notes = "matched 2026-11-01 with `-B` (TCC -S, then TASM with SMART off): the four separate `row = 0` / `row = rows` case tails (14EF:03E6, 03EC, 03D2, 03F2) survive; TCC's internal assembler cross-jumps the later copy into the earlier one and drops 7 bytes (switch table at 14EF:0556 instead of 14EF:055D). Detail in src/E14EF.C."
+name = "UpdateOptionList"
+level = "L2"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e1547_0009"

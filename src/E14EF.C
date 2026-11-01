@@ -9,6 +9,8 @@
    and moves the selection. The panel records, the mask and the rectangle are all this code's
    evidence. Placeholder names. */
 
+/*@flags -ml -O -Z -B */
+
 struct Panel {                  /* 16-byte records at ds:017F, eight of them */
     int x;                      /* +0: column offset from ds:FE64 (times eight pixels) */
     int y;                      /* +2: row offset from ds:FE66 */
@@ -172,13 +174,15 @@ enum {
    the rectangle built from ds:FE64/ds:FE66, ds:8100/8101 and ds:FC78 against the last click
    (ds:8140/8142) and the current cursor (ds:8138/813A, when ds:5D1A lets the pointer pick). `counter`
    is bumped once and `extra` is never read: both callers only ever pass zero.
-   Assembler note: the original was assembled by TASM 2.0 with SMART off, which keeps the four
-   separate `row = 0` / `row = rows` case tails (14EF:03E6, 03EC, 03D2, 03F2); TCC's internal
-   assembler (the matcher's `-c` build) cross-jumps the later copy into the earlier one and drops
-   7 bytes, so the switch table lands at 14EF:0556 instead of 14EF:055D and `make match` reports a
-   draft. Built with `-B` (TASM, SMART off: `-ml -O -Z -B` and `/jNOSMART`) the whole unit matches
-   byte for byte (14EF:0274, 789 bytes). Same class as 0ACD:091C. */
-/*@ 14EF:0274 draft */ int UpdateOptionList(int panel, char far * far *names, int counter, int extra,
+   Assembler note: the four separate `row = 0` / `row = rows` case tails (14EF:03E6, 03EC, 03D2,
+   03F2) show the unit was compiled through the assembler (`-B`: TCC -S, then TASM with SMART off),
+   which keeps them. TCC's internal assembler cross-jumps the later copy into the earlier one and
+   drops 7 bytes, so the switch table would land at 14EF:0556 instead of 14EF:055D; the file's -B
+   flag makes the matcher do the same (playbook 30, E14EF 2026-11-01).
+   The KEY_CLICK case is written in the positive form (`if (PointInRect) { ...; break; } gFC7A = key;`)
+   so the success path falls through and the failure is taken, matching 14EF:0417 `je`; the negated
+   form made the optimizer branch the other way. Same class as 0ACD:091C. */
+/*@ 14EF:0274 */ int UpdateOptionList(int panel, char far * far *names, int counter, int extra,
                                    long mask, int shift)
 {
     int rows;
