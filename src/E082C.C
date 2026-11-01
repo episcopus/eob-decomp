@@ -33,6 +33,8 @@ extern int g8115; /*@ ds:8115: nonzero while a status line is up (set to 2 by Lo
 extern unsigned long gTicks; /*@ ds:848A: BIOS-like tick counter, stepped by the INT 1Ch handler */
 extern char gNameBuf[]; /*@ ds:FE6E */ /* buffer the filename/format helpers build into */
 extern char gOverlayBuf[]; /*@ ds:113F */ /* a DGROUP buffer the overlay loader is passed */
+extern char gCursorChar; /*@ ds:31AC: the one character drawn at the editing cursor */
+extern char gCursorOn; /*@ ds:FC4C: nonzero while the cursor is drawn (blinks in the editor) */
 
 extern int strlen(char far *s); /*@ 0000:67F6 */
 extern int rand(void); /*@ 0000:55B7 */
@@ -64,12 +66,144 @@ extern int f1AAD_038E(void); /*@ 1AAD:038E */
 extern int f1AAD_053A(void); /*@ 1AAD:053A */
 extern void f1AAD_0009(void); /*@ 1AAD:0009 */
 
-/* 082C:000B: Purpose unknown: the interactive text-field editor. It draws a string with its
-   cursor, then loops reading a key (1AAD:038E waits for one, 1AAD:053A returns it) and editing
-   the buffer in place with left/right/home/end/backspace/delete and the character keys, redrawing
-   the field after every change and returning the cursor position, or -1 on Escape. Not written
-   yet: 1050 bytes of key handling. */
-/*@ 082C:000B stub */ void EditTextField(void) {}
+/* siblings of this file called before they are defined */
+void DrawShadowText(char far *text, int x, int y, int color, int extra);
+
+/* 082C:000B: Purpose unknown: the interactive text-field editor. It draws a string at (x, y)
+   (x in 8-pixel cells) with its cursor, then loops reading a key (1AAD:038E waits for one,
+   1AAD:053A returns it), blinking the cursor every two ticks through gCursorOn, and edits the
+   buffer in place: printable keys insert (with a leading-space guard), backspace (8), delete
+   (0x7E), left (0xB5) and right (0xB3) move, Escape (0x1B) returns -1 and Return (0x0D) returns
+   the new length. The field's screen area is saved and restored with ClipRect (width maxlen+2,
+   height 9); the string and the cursor character are drawn with DrawShadowText. Draft: matches
+   through +0x1CC, then -O tail-merges the two `text[c] = 0` stores (maxlen in the insert path and
+   cur in the append path) and the ES:BX reuse differs; see re/symbols.toml, e082c_000b. */
+/*@ 082C:000B draft */ int EditTextField(char far *text, char x, char y, char maxlen, char color,
+                                        char attr, char cursorAttr)
+{
+    char cur;
+    char n;
+    unsigned long saved;
+    int key;
+    int i;
+
+    n = strlen(text);
+    if (n > maxlen) {
+        n = maxlen;
+        text[maxlen] = 0;
+    }
+    cur = n;
+    if (cur >= maxlen)
+        cur--;
+    ClipRect(x - 1, y, 0, 0xbf, maxlen + 2, 9, 0, 2);
+    DrawShadowText(text, x * 8, y, color, attr);
+    if (cur < n)
+        gCursorChar = text[cur];
+    else
+        gCursorChar = ' ';
+    DrawShadowText(&gCursorChar, (x + cur) * 8, y, color, cursorAttr);
+    gCursorOn = 1;
+    saved = gTicks;
+    for (;;) {
+        while (!f1AAD_038E()) {
+            if (saved + 2 <= gTicks) {
+                saved = gTicks;
+                if (gCursorOn) {
+                    DrawShadowText(&gCursorChar, (x + cur) * 8, y, color, cursorAttr);
+                    gCursorOn = 0;
+                } else
+                    gCursorOn = 1;
+            }
+        }
+        key = f1AAD_053A() & 0xff;
+        if (key == 0xad)
+            key = 0x7e;
+        if (key == 0x7f)
+            key = 0x7e;
+        if (key == 8)
+            goto special;
+        if (key == 0x1b)
+            goto special;
+        if (key == 0xd)
+            goto special;
+        if (key == 0x7e)
+            goto special;
+        if (key == 0xb5)
+            goto special;
+        if (key == 0xb3)
+            goto special;
+        if (key < 0x20)
+            goto special;
+        if (key > 0x7e)
+            goto special;
+        if (cur == 0 && key == 0x20)
+            goto redraw;
+        if (cur < n) {
+            for (i = maxlen - 1; cur <= i; i--)
+                text[i + 1] = text[i];
+            text[cur] = toupper(key);
+            cur++;
+            if (n == maxlen)
+                text[maxlen] = 0;
+        } else {
+            if (cur == maxlen) {
+                cur--;
+                n--;
+            }
+            text[cur] = toupper(key);
+            cur++;
+            text[cur] = 0;
+        }
+        n++;
+        if (n > maxlen)
+            n = maxlen;
+        if (cur > maxlen - 1)
+            cur = maxlen - 1;
+        goto redraw;
+    special:
+        if (key == 8) {
+            if (cur < n) {
+                if (cur <= 0)
+                    goto redraw;
+                for (i = cur; i < maxlen; i++)
+                    text[i - 1] = text[i];
+                cur--;
+                n--;
+                text[n] = 0;
+            } else {
+                if (n <= 0)
+                    goto redraw;
+                n--;
+                text[n] = 0;
+                cur--;
+            }
+        } else if (key == 0xb5) {
+            if (cur > 0)
+                cur--;
+        } else if (key == 0xb3) {
+            if (cur < n && cur < maxlen - 1)
+                cur++;
+        } else if (key == 0x7e) {
+            if (text[cur] != 0) {
+                memmove(text + cur, text + cur + 1, n - cur);
+                n--;
+            }
+        }
+    redraw:
+        ClipRect(x - 1, y, 0, 0xbf, maxlen + 2, 9, 0, 2);
+        DrawShadowText(text, x * 8, y, color, attr);
+        if (cur < n)
+            gCursorChar = text[cur];
+        else
+            gCursorChar = ' ';
+        DrawShadowText(&gCursorChar, (x + cur) * 8, y, color, cursorAttr);
+        if (key == 0xd || key == 0x1b)
+            break;
+    }
+    if (key == 0x1b)
+        return -1;
+    return n;
+}
 
 /* 082C:0425: busy-waits until the 32-bit tick counter ds:848A has advanced `ticks` ticks. The
    counter is stepped by the INT 1Ch handler (src/E1D8F.ASM), so this is a delay in BIOS ticks. */
