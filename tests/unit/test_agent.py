@@ -228,3 +228,19 @@ def test_readability_rules(tmp_path):
     assert rules == {"R1", "R2", "R3", "R4"}
     named = readability.check_file(tmp_path / "GOOD.C", {"ds:FE6C": "gVideoMode"}, {})
     assert [r for _, r, _ in named] == ["R5"]
+
+
+def test_apply_takes_names_from_definitions(tmp_path, monkeypatch):
+    """A unit names its own function in its file; a file that calls it by a placeholder gets that name
+    at integration, and two real names for one address are left for a person."""
+    src = tmp_path / "src"
+    src.mkdir()
+    (src / "E1BBE.C").write_text('/*@ 1BBE:0332 */ void LockShowPointer(void)\n{\n}\n')
+    (src / "E14EF.C").write_text('extern void f1BBE_0332(void); /*@ 1BBE:0332 */\nvoid g(void) { f1BBE_0332(); }\n')
+    (src / "E1AAA.C").write_text('/*@ 1AAA:0005 */ int RandomRange(int lo)\n{\n    return lo;\n}\n')
+    (src / "E0001.C").write_text('extern int PickNumber(int lo); /*@ 1AAA:0005 */\n')
+    monkeypatch.setattr(rename, "SRC", src)
+    monkeypatch.setattr(rename, "LOG", tmp_path / "renames.toml")
+    rename.apply()
+    assert "LockShowPointer();" in (src / "E14EF.C").read_text()
+    assert "PickNumber" in (src / "E0001.C").read_text()          # a real name: not overwritten
