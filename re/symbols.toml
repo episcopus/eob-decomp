@@ -1661,6 +1661,9 @@ unit = "e0a72"
 addr = "0A72:0006"
 size = 117
 evidence = ["far", "segment"]
+name = "GetIndexedByte"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0a72_007b"
@@ -1668,6 +1671,9 @@ unit = "e0a72"
 addr = "0A72:007B"
 size = 84
 evidence = ["far", "frame"]
+name = "FindClassSlot"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0a72_00cf"
@@ -1675,6 +1681,9 @@ unit = "e0a72"
 addr = "0A72:00CF"
 size = 89
 evidence = ["far", "frame"]
+name = "GetDerivedStatA"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0a72_0128"
@@ -1682,6 +1691,9 @@ unit = "e0a72"
 addr = "0A72:0128"
 size = 89
 evidence = ["far", "frame"]
+name = "GetDerivedStatB"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0a72_0181"
@@ -1709,6 +1721,9 @@ unit = "e0a72"
 addr = "0A72:01AE"
 size = 261
 evidence = ["far", "frame"]
+name = "RollDamage"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0a72_02b3"
@@ -1716,6 +1731,9 @@ unit = "e0a72"
 addr = "0A72:02B3"
 size = 241
 evidence = ["frame"]
+name = "MaxDamage"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0a72_03a4"
@@ -1723,6 +1741,9 @@ unit = "e0a72"
 addr = "0A72:03A4"
 size = 196
 evidence = ["frame"]
+name = "MinDamage"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0a72_0468"
@@ -1730,6 +1751,9 @@ unit = "e0a72"
 addr = "0A72:0468"
 size = 79
 evidence = ["far", "frame"]
+name = "FormatRatioText"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0a72_04b7"
@@ -1737,6 +1761,9 @@ unit = "e0a72"
 addr = "0A72:04B7"
 size = 82
 evidence = ["far", "frame"]
+name = "GetClassSlotLong"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0a72_0509"
@@ -1754,6 +1781,8 @@ unit = "e0a72"
 addr = "0A72:0522"
 size = 106
 evidence = ["far", "frame"]
+name = "GetScaledValue"
+notes = "draft 2026-11-01 (src/E0A72.C): matches except at 0A72:052F, where -O keeps `cls` (g116E[m20]) in CL across the idiv; the original spills it to [bp-2] and reloads it for both table reads. Tried: volatile cls (then num is promoted instead), an extra local, declaration initializers, char casts, and inlining g116E[m20] in both subscripts (compiler keeps the value in a register, no frame). Open: a source shape where Turbo C promotes neither char local."
 
 [[function]]
 id = "e0a72_058c"
