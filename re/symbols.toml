@@ -4100,6 +4100,9 @@ unit = "e19bc"
 addr = "19BC:0007"
 size = 304
 evidence = ["far", "segment"]
+name = "MemAlloc"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "e19bc_0137"
@@ -4107,6 +4110,9 @@ unit = "e19bc"
 addr = "19BC:0137"
 size = 83
 evidence = ["far", "frame"]
+name = "MemFree"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "e19bc_018a"
@@ -4114,6 +4120,9 @@ unit = "e19bc"
 addr = "19BC:018A"
 size = 179
 evidence = ["far", "frame"]
+name = "MemRealloc"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "e19bc_023d"
@@ -4121,6 +4130,9 @@ unit = "e19bc"
 addr = "19BC:023D"
 size = 121
 evidence = ["far", "frame"]
+name = "LargestFreeBlock"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "e19bc_02b6"
@@ -4128,6 +4140,9 @@ unit = "e19bc"
 addr = "19BC:02B6"
 size = 41
 evidence = ["frame"]
+name = "OutOfMemory"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "e19ea_0000"

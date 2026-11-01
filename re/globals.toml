@@ -5,34 +5,47 @@
 id = "ds:80CA"
 name = "gDrawText"
 why = "a far function pointer that draws text: its callers 082C:0864 to 08FF pass a far string, x, y, a colour (0Ch, then 0Fh for the shadow) and a flag (review of e1aa6)"
+
+[[global]]
+id = "ds:810A"
+name = "gAllocFailHook"
+why = "far function pointer to 19BC:02B6 (OutOfMemory), called by MemAlloc when farmalloc fails (evidence: the lcall [0x810a] at 19BC:0063 and the pointer stored at DGROUP 810A)"
+
 [[global]]
 id = "ds:009F"
 name = "gRegions"
 why = "the 16-byte region records read by the selector 1A29:0189 and by 082C:0650; record 0 is 0,0,40,200 = left, top, width in 8-pixel columns, height in lines (review of e1a29)"
+
 [[global]]
 id = "ds:8108"
 name = "gCurRegion"
 why = "the index of the region 1A29:0189 selected last; the drawing wrappers compare their region argument with it to decide whether to reselect (1A29:001D) (review of e1a29)"
+
 [[global]]
 id = "ds:FE48"
 name = "gRegionLeft"
 why = "the current region's left edge in 8-pixel columns, loaded from record word 0 by 1A29:019A (review of e1a29)"
+
 [[global]]
 id = "ds:FE4A"
 name = "gRegionLeftPx"
 why = "the current region's left edge in pixels (gRegionLeft * 8), added to x by the drawing wrappers (1A29:0036) (review of e1a29)"
+
 [[global]]
 id = "ds:FE4C"
 name = "gRegionRight"
 why = "the current region's right edge (left + width), pushed to the driver as its second argument at 1A29:01D3 (review of e1a29)"
+
 [[global]]
 id = "ds:FE46"
 name = "gRegionTop"
 why = "the current region's top line, loaded from record word 1 by 1A29:01BC and added to y by the wrappers (review of e1a29)"
+
 [[global]]
 id = "ds:FE44"
 name = "gRegionBottom"
 why = "the current region's bottom line (top + height), pushed to the driver as its first argument at 1A29:01CE (review of e1a29)"
+
 [[global]]
 id = "ds:80B6"
 name = "gSetRegion"

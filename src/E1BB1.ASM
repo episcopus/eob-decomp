@@ -41,7 +41,7 @@
         EXTRN   _f1BBE_00ED:FAR         ; @ 1BBE:00ED
         EXTRN   _MemAlloc:FAR           ; @ 19BC:0007
         EXTRN   _MemFree:FAR            ; @ 19BC:0137
-        EXTRN   _f19BC_023D:FAR         ; @ 19BC:023D: returns the largest free block (DX:AX)
+        EXTRN   _LargestFreeBlock:FAR         ; @ 19BC:023D: returns the largest free block (DX:AX)
 
         PUBLIC  _f1BB1_0002             ; @ 1BB1:0002
 _f1BB1_0002 PROC FAR
@@ -96,7 +96,7 @@ setsize:
         add     ax,16
         mov     si,ax
         ASSUME  CS:NOTHING
-        call    far ptr _f19BC_023D
+        call    far ptr _LargestFreeBlock
         ASSUME  CS:_TEXT
         or      dx,dx
         jne     alloc

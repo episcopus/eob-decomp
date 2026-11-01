@@ -38,6 +38,42 @@ why = "normalises a far pointer: Unpack4 (1D9A:0013) calls it on its source and 
 date = "2026-11-01"
 
 [[rename]]
+id = "19BC:023D=LargestFreeBlock"
+addr = "19BC:023D"
+old = "f19BC_023D"
+new = "LargestFreeBlock"
+kind = "function"
+why = "returns the largest free far heap block (farcoreleft + farheapwalk, less 16); callers 1BB1:0002 compare it with their needed size"
+date = "2026-11-01"
+
+[[rename]]
+id = "19BC:02B6=OutOfMemory"
+addr = "19BC:02B6"
+old = ""
+new = "OutOfMemory"
+kind = "function"
+why = "allocation failure hook at ds:810A called by MemAlloc when farmalloc fails; prints the Memory Allocation Error string, restores video mode 7 and exits"
+date = "2026-11-01"
+
+[[rename]]
+id = "19BC:018A=MemRealloc"
+addr = "19BC:018A"
+old = ""
+new = "MemRealloc"
+kind = "function"
+why = "resizes a MemAlloc block, reads and rewrites the header byte, calls realloc; called by 1C00:00A8 with (0, seg, size)"
+date = "2026-11-01"
+
+[[rename]]
+id = "ds:810A=gAllocFailHook"
+addr = "ds:810A"
+old = ""
+new = "gAllocFailHook"
+kind = "global"
+why = "far function pointer to 19BC:02B6 (OutOfMemory), called by MemAlloc when farmalloc fails (evidence: the lcall [0x810a] at 19BC:0063 and the pointer stored at DGROUP 810A)"
+date = "2026-11-01"
+
+[[rename]]
 id = "ds:009F=gRegions"
 addr = "ds:009F"
 old = "gImages"
