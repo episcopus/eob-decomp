@@ -155,3 +155,11 @@ why = "the table at ds:DDE4 is far pointers to item icon images, not names: ovl2
 id = "ds:80D2"
 name = "gFn80D2"
 why = "a far function pointer called with a pointer to a 16-byte colour table, not text: E07A9 passes a row of the 1600-byte ITEMRMP buffer (ds:F534 + n<<4) or the one-byte dummy at ds:0090, and the other callers pass the 16-byte tables at ds:1CD3 and ds:1CE3 (review of e07a9)"
+[[global]]
+id = "ds:812A"
+name = "gBufSeg"
+why = "the shared unpack work buffer's segment, stored by SetUnpackBuffer (1B82:0217) and read by Unpack (1B82:00C7) for formats 1 and 2 when it is large enough (src/E1B82.C; WHITEPAPER 147)"
+[[global]]
+id = "ds:812C"
+name = "gBufSize"
+why = "the shared unpack work buffer's size in bytes, stored by SetUnpackBuffer (1B82:0217) and compared by Unpack (1B82:00C7) with 0x3C00/0xFC00 to decide whether to allocate (src/E1B82.C; WHITEPAPER 147)"
