@@ -1,0 +1,27 @@
+# Review: e1d8f
+
+Reviewer: rev-sonnet
+Commit reviewed: 984852abaef5e03ec2482e038f62af4a6a470e4a
+
+Playbook 70. Judge what a matching file can still get wrong: names, types, comments, structure.
+The matcher already proved the bytes; do not re-prove them, read for meaning.
+
+## Findings
+
+Each finding is a checkbox. `must-fix` blocks `make review-pass` until a decompiler ticks it off
+(with the commit that fixes it); `should` and `note` do not block.
+
+- [ ] should src/E1D8F.ASM:4-5: "The handler bumps a bank of 16-bit counters" is inaccurate. From the bytes at 1D8F:0055..00B4 the handler has one 16-bit counter and four 32-bit (lo/hi) counters: ds:8488 (16-bit, always); ds:848A:848C (32-bit, always); ds:848E:8490 (32-bit, only if ds:849E bit 0); ds:8492:8494 (32-bit, only if ds:849E bit 1); ds:8496:8498 (32-bit, always, the one the reader at 1D8F:0006 returns). Say that, and name the 32-bit carry as `inc lo; jne; inc hi`.
+- [ ] should src/E1D8F.ASM:8-17 (and 1D8F:0002 in the header): the function labelled 1D8F:0002 starts with the four zero bytes of the saved vector; the first instruction (`cli`, byte FA) is at 1D8F:0006, and the reader's real entry is 1D8F:0006. Calling 1D8F:0002 would execute `00 00` as `add [bx+si],al` (twice). The map put the unit start at the data slot, which is fine for matching, but a comment should say "entry is 0006; 0002..0005 is data". No direct `9a 02 00 8f 1d` or `9a 06 00 8f 1d` exists in the resident image of EOB.EXE, and no other word pair `0006:1D8F`/`0002:1D8F` either, so "called by: none found" in the packet is real; the reader may be called from an overlay (ovl03 has many `9a 06 00 ..` but with the overlay stub segment, unresolved here). Do not claim a caller for it.
+- [ ] should src/E1D8F.ASM:1-6: add the DGROUP evidence for `mov ax,212Eh` at 1D8F:0057: 212E is DGROUP (the MZ relocation table has an entry for 1D8F:0058, so the literal is a load-time segment, not a constant), and the handler needs it because the interrupt arrives with an unknown DS. The same goes for the ds: addresses (all in DGROUP).
+- [ ] should src/E1D8F.ASM:4-6: back "timer support" and "countdown" with the users found in EOB.EXE: 849A:849C is stored with small values (`c7 06 9a 84 08 00 / c7 06 9c 84 00 00`, e.g. at linear 0x9521, 0x957a; 1 at 0x9c91; 0 at 0x94e6) and is polled in a loop `mov ax,[849A]; or ax,[849C]; jne` at linear 0x3B1A1 (a busy wait until the countdown reaches zero). Bit 1 of ds:849E is set (`or word [849E],2`, 957a, 9c9d, f7f5, 11ddc ...) and cleared (`and word [849E],0FFFD`, 94b8, 9c43, f621 ...) by game code. That makes "countdown is polled by game code" and "bit 1 gates the 8492:8494 counter" proven; the INT 1Ch = BIOS 18.2 Hz tick reading is [H] (nothing in the bytes gives the rate).
+- [ ] note ds:849E bit 0 is never set: no `or [849E],1` or any other store with bit 0 exists in EOB.EXE (all 16 references to 0x849E are the two tests in this handler plus the `and ,0FFFD` / `or ,2` pairs), and the static value at DGROUP:849E is 0. So the counter at ds:848E:8490 can never move and ds:8490/848E have no other reader (only the handler references them). Harmless, but do not name it as a feature.
+- [ ] note Install (1D8F:0010) clobbers DX (`mov dx,55h`, not saved) while it saves AX, BX, DS, ES; uninstall (1D8F:0038) saves AX, DS, DX, ES. Caller 07C8:00E4 (`9a 10 00 8f 1d`) and 07C8:05DE (`9a 38 00 8f 1d`) confirmed byte-exact. Both functions are far, save BP with a frame but have no locals or arguments.
+- [ ] note Behaviour a reader could trip over: (a) calling install twice stores our own handler as the "old" vector, so the handler's `jmp dword ptr cs:[2]` would jump to itself forever; (b) uninstall before install restores vector 0000:0000 (cs:[2]/[4] are zero at load, `mov ds,cs:[4]`, `mov dx,cs:[2]`). The handler tests `cs:[4]` only (segment) for "no old vector". This is the original's behaviour; not to be fixed.
+- [ ] note The handler does not push flags or use cli, and returns with `iret` only when no old vector was saved; otherwise it jumps to the old vector, whose own `iret` returns to the interrupted code. It preserves only AX and DS. Correct for a hook of INT 1Ch.
+- [ ] note Sizes and layout agree with the code: 2..5 vector slot, 6..0F reader (14 bytes counted from 0002 as 0E), 10..37 install (40), 38..BA uninstall plus handler (131). The handler is inside the range of 1D8F:0038 only because the map has no entry for 0055; a later split (handler as its own function, e.g. at 1D8F:0055 reached only through the vector) would be an improvement but the matcher shows no problem.
+- [ ] note Names `_f1D8F_*` are address placeholders, which is fine. Names that would be justified by the bytes: `_f1D8F_0002` read of the 32-bit tick (GetTicks), `_f1D8F_0010` (HookInt1C), `_f1D8F_0038` (UnhookInt1C). Not applied; no must-fix. No collisions with other files of src/ (no other file mentions ds:8488..849E).
+
+## Summary
+
+The unit is three small far functions (185 bytes) plus the interrupt handler, and its source is readable and almost fully accurate: the vector save/restore, the DGROUP switch, the 32-bit increments and the chain-or-iret tail all match the bytes and both call sites. Two comments overstate or omit: "a bank of 16-bit counters" (there is one 16-bit and four 32-bit counters, two gated by ds:849E bits 0 and 1) and the entry of the reader (real code starts at 1D8F:0006, after the saved-vector slot). The INT 1Ch / 18.2 Hz reading is [H]. Names are placeholders with no evidence problem. No must-fix.
