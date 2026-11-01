@@ -42,7 +42,7 @@ Proven by matching two whole modules, `e0cf7` (6 functions, 591 bytes) and `e07a
 
 Idioms settled by matching (playbook 30 has the full list): an assignment tested and the result unused (`mov [g],ax; or ax,ax`) is an `if (g = x) ;` with an empty body (`SetUnpackBuffer`, 1B82:0217); two `continue` tests merged into one `||` keep ES:BX loaded (`UpdateObjects`, 08E6:0CC8); a `switch`'s case bodies are laid out in source order, so the jump table gives the order of the `case` labels.
 
-Not reproduced yet (drafts, notes in `re/symbols.toml`): `0ACD:091C`, where the original keeps two identical tails that our `-O` merges.
+`0ACD:091C` and `14EF:0274` keep identical case tails that the matcher's build merges (draft notes in `re/symbols.toml`). That merge is not `-O`: it is TCC's **internal assembler**, which cross-jumps a later basic block into an earlier identical one, while the original was assembled by **TASM 2.0 with SMART off**, which does not (found 2026-11-01 on `e14ef`: with `TCC -B` via TASM the whole unit matches, 6 of 6, 1410 bytes; `14EF:0274` 789 bytes). SMART off is also what fixes `e19ec`'s immediates (`or bx,1` is `0x81` in the original, `0x83` under TASM SMART, a TASM directive, not a listed switch). Open: the matcher assembles C units with TCC's internal assembler, so it cannot yet reproduce these units; its TCC invocation also has no TASM on the drive it mounts.
 
 No game code uses floating point: no emulator interrupts (`INT 34h` to `3Dh`) in any code segment. The switches are `cflags` in `tools/re/tc_toolchain.toml`; a module that needs others records them (`match_flags` in `re/symbols.toml`).
 
