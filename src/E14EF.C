@@ -22,8 +22,8 @@ struct Panel {                  /* 16-byte records at ds:017F, eight of them */
 
 extern struct Panel gPanels[]; /*@ ds:017F */
 /* the panel area's top-left corner: x is in eight-pixel cells, y in pixels (see DrawOptionList) */
-extern int gFE64; /*@ ds:FE64 */
-extern int gFE66; /*@ ds:FE66 */
+extern int gTextLeft; /*@ ds:FE64 */
+extern int gTextTop; /*@ ds:FE66 */
 extern int gFC78; /*@ ds:FC78: extra pixels between lines, written by DrawOptionList, read by UpdateOptionList */
 extern int gFC7A; /*@ ds:FC7A: the key UpdateOptionList did not handle, read by its overlay callers */
 extern int g5D1A; /*@ ds:5D1A: nonzero lets the pointer position pick the entry in DrawOptionList */
@@ -32,7 +32,7 @@ extern int g8142; /*@ ds:8142: y of the last click, tested by UpdateOptionList *
 extern char gFontWidth1A47; /*@ ds:8100 */
 extern char gFontHeight1A47; /*@ ds:8101 */
 extern int g8102; /*@ ds:8102 */
-extern int g814A; /*@ ds:814A */
+extern int gMouseDisabled; /*@ ds:814A */
 extern int gCursorX; /*@ ds:8138: mouse x (E1A72.ASM) */
 extern int gCursorY; /*@ ds:813A: mouse y (E1A72.ASM) */
 extern int g8134; /*@ ds:8134: accumulated button changes (E1A72.ASM) */
@@ -130,8 +130,8 @@ extern void WaitFrames(int n); /*@ 1A16:000B */
     register int glyph;
 
     panelDef = &gPanels[panel];
-    y = gFE66 + panelDef->y;
-    x = (gFE64 + panelDef->x) << 3;
+    y = gTextTop + panelDef->y;
+    x = (gTextLeft + panelDef->x) << 3;
     sel = FindMaskBit(panelDef->sel, mask, shift);
     n = panelDef->height;
     LockHidePointer();
@@ -139,7 +139,7 @@ extern void WaitFrames(int n); /*@ 1A16:000B */
         glyph = FindMaskBit(i, mask, shift);
         dy = y + gFontHeight1A47 * i + i * spacing;
         f082C_0898(names[glyph], x, dy, !g8102 ? 1 : panelDef->colorA, 0);
-        if (glyph == sel && (g5D1A || g814A))
+        if (glyph == sel && (g5D1A || gMouseDisabled))
             gDrawText(names[glyph], x, dy, panelDef->colorB, 0);
     }
     gFC78 = spacing;
@@ -163,21 +163,21 @@ enum {
     KEY_LAST2     = 0x67
 };
 
-/* 14EF:0274: Purpose unknown: the input half of the option-list panel. It reads a masked key from
-   1AAD:05D3 when 1AAD:0471 says one is waiting and moves the panel's selection (ds:017F + n*16,
-   field +8) according to it: up/down, first/last, a click inside the panel rectangle (ds:8140/8142
-   against the rectangle built from ds:FE64/ds:FE66, ds:8100/8101 and ds:FC78) or the confirm keys.
-   It redraws the old and new rows when the selection moved (one frame, 1BBE:0307/0332) and blinks
-   the confirmed row (BlinkText). Returns the index of the confirmed string in `names`, -1 when
-   nothing was confirmed, and stores the key it did not handle in ds:FC7A. `counter` is bumped once
-   and `extra` is never read: both callers only ever pass zero. Every case body, the rectangle and
-   the draws reproduce the original except the case tails: our -O merges the identical `row = 0`
-   (down plus first) and `row = rows` (up plus last) tails, the original keeps all four copies
-   (7 bytes longer; the same unresolved -O tail merge as 0ACD:091C, whitepaper 2.1.1). The merge
-   acts on the emitted code, not on the source: an unfoldable `rows - rows` still stores through the
-   shared `mov [bp-1a], al`, and `*(char *)&row`, a block, an empty `else`, `'\0'`, `rows & 0` and
-   ungrouped first/first2 labels all keep or change the bytes (re/symbols.toml, e14ef_0274, has the
-   full list and why -O and the C front end are fixed). Placeholder names. */
+/* 14EF:0274: the input half of the option-list panel: read the pending key (1AAD:0471/05D3,
+   masked with 0x8ff) and move the panel's selected row accordingly, then redraw the rows that
+   changed and blink a confirmed one. `panel` indexes the 16-byte records at ds:017F, `names` is
+   the caller's array of far strings, `mask`/`shift` map a row to a bit of the selectable-entry
+   mask. Returns the index of the confirmed string in `names` (FindMaskBit of the chosen row), -1
+   when nothing was confirmed; stores the key it did not handle in ds:FC7A. The mouse goes through
+   the rectangle built from ds:FE64/ds:FE66, ds:8100/8101 and ds:FC78 against the last click
+   (ds:8140/8142) and the current cursor (ds:8138/813A, when ds:5D1A lets the pointer pick). `counter`
+   is bumped once and `extra` is never read: both callers only ever pass zero.
+   Assembler note: the original was assembled by TASM 2.0 with SMART off, which keeps the four
+   separate `row = 0` / `row = rows` case tails (14EF:03E6, 03EC, 03D2, 03F2); TCC's internal
+   assembler (the matcher's `-c` build) cross-jumps the later copy into the earlier one and drops
+   7 bytes, so the switch table lands at 14EF:0556 instead of 14EF:055D and `make match` reports a
+   draft. Built with `-B` (TASM, SMART off: `-ml -O -Z -B` and `/jNOSMART`) the whole unit matches
+   byte for byte (14EF:0274, 789 bytes). Same class as 0ACD:091C. */
 /*@ 14EF:0274 draft */ int UpdateOptionList(int panel, char far * far *names, int counter, int extra,
                                    long mask, int shift)
 {
@@ -208,19 +208,19 @@ enum {
     picked = -1;
     lineheight = gFontHeight1A47 + gFC78;
     halfspace = gFC78 >> 1;
-    ybase = gFE66 + panelDef->y;
-    xbase = (gFE64 + panelDef->x) << 3;
+    ybase = gTextTop + panelDef->y;
+    xbase = (gTextLeft + panelDef->x) << 3;
     colorA = !g8102 ? 1 : panelDef->colorA;
     colorB = panelDef->colorB;
     key = 0;
     gFC7A = 0;
     if (f1AAD_0471())
         key = f1AAD_05D3() & 0x8ff;
-    left = (gFE64 << 3) + panelDef->x * gFontWidth1A47;
-    top = gFE66 + panelDef->y - halfspace;
+    left = (gTextLeft << 3) + panelDef->x * gFontWidth1A47;
+    top = gTextTop + panelDef->y - halfspace;
     right = left + panelDef->width * gFontWidth1A47 - 1;
     bottom = top + panelDef->height * lineheight - 1;
-    if (!g814A) {
+    if (!gMouseDisabled) {
         cursory = gCursorY;
         if (PointInRect(gCursorX, cursory, left, top, right, bottom) && g5D1A)
             row = (cursory - top) / lineheight;
@@ -246,12 +246,12 @@ enum {
         break;
     case KEY_CLICK:
     case KEY_CLICK2:
-        if (!PointInRect(g8140, g8142, left, top, right, bottom)) {
-            gFC7A = key;
+        if (PointInRect(g8140, g8142, left, top, right, bottom)) {
+            row = (g8142 - top) / lineheight;
+            picked = row;
             break;
         }
-        row = (g8142 - top) / lineheight;
-        picked = row;
+        gFC7A = key;
         break;
     case KEY_CONFIRM:
     case KEY_CONFIRM2:

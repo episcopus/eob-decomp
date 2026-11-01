@@ -34,12 +34,12 @@ extern void interrupt (far *gFC08)();  /*@ ds:FC08: the INT 3Fh vector main repl
 extern void (far *gFn80FA)(void);     /*@ ds:80FA: exit hook main sets to 07C8:061D */
 extern int (far *gAllocFailHook)(void); /*@ ds:810A: allocation failure hook, main sets 07C8:0625 */
 extern int g8148;                     /*@ ds:8148: 1 when the mouse event handler is installed */
-extern int g814A;                     /*@ ds:814A: 0 disables the mouse handler body */
+extern int gMouseDisabled;                     /*@ ds:814A: 0 disables the mouse handler body */
 extern unsigned char g3092;           /*@ ds:3092: 1 once start-up reached its end */
 extern unsigned char g3056;           /*@ ds:3056: 1 while the overlay manager is running */
 extern int g80EA;                     /*@ ds:80EA: set to 1 during start-up, meaning unknown */
-extern int g811B;                     /*@ ds:811B: 0x0C, a screen extent used during start-up */
-extern int g811D;                     /*@ ds:811D: 0x0F, a screen extent used during start-up */
+extern int gTextAttr2;                     /*@ ds:811B: 0x0C, a screen extent used during start-up */
+extern int gTextAttr1;                     /*@ ds:811D: 0x0F, a screen extent used during start-up */
 extern void (far *gFn80BA)(void far *table); /*@ ds:80BA: far function, takes a colour table */
 extern void (far *gFn8056)(void);     /*@ ds:8056: far function called before the fonts load */
 extern unsigned char far *gFE68;      /*@ ds:FE68: buffer for the loaded palette */
@@ -72,7 +72,11 @@ extern void StartupAlloc(int argc, char far * far *argv); /*@ 07A9:000A */
 extern void f1AAD_0718(void);                     /*@ 1AAD:0718 */
 extern void InstallHardErr(void);                 /*@ 1A63:0019 */
 extern void f1D8F_0010(void);                     /*@ 1D8F:0010 */
-extern void f16A5_0D78(long a, int b);           /*@ 16A5:0D78 */
+/* 16A5:0D78: stores its 32-bit second argument as a far pointer at ds:FC7C (the callee reads
+   [bp+8] into ds:FC7C and [bp+0xa] into ds:FC7E) and ignores the first word argument, so main calls
+   it as f16A5_0D78(0, 0L): the word first is what makes Turbo C push 0L then the word, exactly as
+   the original does. */
+extern void f16A5_0D78(int arg, long value);      /*@ 16A5:0D78 */
 extern void far *f1A47_0005(char far *name);      /*@ 1A47:0005 */
 extern void f1A47_0169(void far *font);           /*@ 1A47:0169 */
 extern int CheckMemoryChain(void);                /*@ 1990:0071 */
@@ -80,7 +84,7 @@ extern unsigned ReserveMemoryBelowVideo(int n);   /*@ 1990:0133 */
 extern void MouseInit(void);                      /*@ 1A72:00DA */
 extern int RunOverlayRequest(void far *req);      /*@ 1C00:0055 */
 extern void f1C0E_13E7(void);                     /*@ 1C0E:13E7 */
-extern void f1DE7_0009(int n);                    /*@ 1DE7:0009 */
+extern void SetTextWindow(int n);                    /*@ 1DE7:0009 */
 extern void CalibrateRetrace(void);               /*@ 1A65:000E */
 extern void SoundDriverInstall(void);             /*@ 1948:0377 */
 extern void SoundDriverResume(void);              /*@ 1948:0458 */
@@ -88,6 +92,7 @@ extern void f0_3F77(void);                        /*@ 0000:3F77: e_text, the PC 
 extern long time(long far *tloc);                 /*@ 0000:5831 */
 extern void srand(unsigned seed);                 /*@ 0000:55A6 */
 extern void far *memset(void far *dst, int c, unsigned n); /*@ 0000:6384 */
+extern void far *MemAlloc(unsigned long size, int flags); /*@ 19BC:0007 */
 /* Declared as a far object, not a function: the matcher cannot map a far function pointer taken from
    another unit and passed as an argument, but an object at 1A72:0006 gives the same segment:offset
    when its address is taken. Int3FHandler is the INT 3Fh handler main installs (E1A72.ASM). */
@@ -104,12 +109,9 @@ int AllocationFailure(void);
    takes the first switch on the graphics choice: a built-in 16-byte colour table at ds:3057 for
    the first two modes, otherwise it loads eobpal.col into ds:FE68, both through the far function at
    ds:80BA, and then calls 16A5:0D78 and StartupAlloc. Returns 0, and runs the shut-down 07C8:058A
-   once start-up got far enough.
-   Draft: every byte matches except the code offset stored for 07C8:061D into ds:80FA, which is a
-   distance from main's start and so depends on the size of the 07C8:0199 draft below (ours is
-   longer than the original). The function name is `Main`, not `main`, because the matcher's link
+   once start-up got far enough. The function name is `Main`, not `main`, because the matcher's link
    stub already defines `_main` for the C0 startup. */
-/*@ 07C8:0001 draft */ int Main(int argc, char far * far *argv)
+/*@ 07C8:0001 */ int Main(int argc, char far * far *argv)
 {
     int mouse;
 
@@ -144,14 +146,14 @@ int AllocationFailure(void);
             break;
         }
         g80EA = 1;
-        g811D = 0xf;
-        g811B = 0xc;
-        f16A5_0D78(0L, 0);
+        gTextAttr1 = 0xf;
+        gTextAttr2 = 0xc;
+        f16A5_0D78(0, 0L);
         if (g3092) {
             if (!g8148)
-                g814A = 1;
+                gMouseDisabled = 1;
             else
-                g814A = !mouse;
+                gMouseDisabled = !mouse;
             StartupAlloc(argc, argv);
         }
     }
@@ -164,11 +166,10 @@ int AllocationFailure(void);
    mouse, loads the graphics overlay named by g8102 through the table at ds:3074 (cga/tga/ega/mcga/
    vga.ovl), builds the page/buffer segment table at ds:FC0C for the mode, loads the two fonts, sets
    up the palette buffer, starts the overlay manager, seeds rand from the clock and turns the chosen
-   sound card on. Returns 1 when it got that far, 0 on any of the errors it prints.
-   Draft: the run-through matches up to +0009; the first difference is where the compiler places the
-   shared `return 0` block and the trampoline for the unsupported-graphics path, so the function is
-   a few bytes longer than the original and the whole error-block layout downstream differs. */
-/*@ 07C8:0199 draft */ int StartupGame(void)
+   sound card on. Returns 1 when it got that far, 0 on any of the errors it prints. The `fail` label
+   is the "unsupported graphics" path (g8102 == 0x36) and the two `goto`s into the sound cases keep
+   the three sound bodies behind `fail`, which is the order the original has. */
+/*@ 07C8:0199 */ int StartupGame(void)
 {
     int memtop;
 
@@ -202,6 +203,8 @@ int AllocationFailure(void);
         f1AAD_053A();
         return 0;
     }
+    /* the render/page table ds:FC0C, eight segment words, filled per graphics mode: screen pages
+       and the pages backing the three 64000, 32000 and 52000 byte buffers. */
     switch (g8102) {
     case 0:
         gSegsFC0C[0] = gSegsFC0C[1] = 0xb800;
@@ -210,8 +213,11 @@ int AllocationFailure(void);
         gSegsFC0C[6] = gSegsFC0C[7] = FP_SEG(MemAlloc(0xcb20L, 0x20));
         break;
     case 1:
-        gSegsFC0C[0] = gSegsFC0C[1] = 0xb800;
-        gSegsFC0C[2] = gSegsFC0C[3] = memtop;
+        /* the original writes slots 0 and 1 as two immediate stores and slots 2 and 3 through ax
+           (the Tandy mode); keep the separate statements so the code is byte for byte. */
+        gSegsFC0C[0] = 0xb800;
+        gSegsFC0C[1] = 0xb800;
+        gSegsFC0C[3] = gSegsFC0C[2] = memtop;
         gSegsFC0C[4] = gSegsFC0C[5] = FP_SEG(MemAlloc(0x7f40L, 0x20));
         gSegsFC0C[6] = gSegsFC0C[7] = FP_SEG(MemAlloc(0xcb20L, 0x20));
         break;
@@ -244,9 +250,7 @@ int AllocationFailure(void);
     gFn8056();
     gFE5A = f1A47_0005("Font8.fnt");
     gA9C0 = f1A47_0005("FONT6.FNT");
-    if (!gFE5A)
-        goto font_error;
-    if (!gA9C0)
+    if (!gFE5A || !gA9C0)
         goto font_error;
     f1A47_0169(gFE5A);
     switch (g8102 - 1) {
@@ -265,7 +269,23 @@ int AllocationFailure(void);
         gFn80BA(gFE68);
         break;
     }
-    goto started;
+    f1C0E_13E7();
+    g3056 = 1;
+    CalibrateRetrace();
+    srand(time(NULL));
+    SetTextWindow(0);
+    g3092 = 1;
+    /* the three sound bodies sit after `fail` in the original, so the cases jump forward to them
+       and share the one `return 1` tail; see the function comment. */
+    switch (gSoundCard) {
+    case 0:
+        goto speaker;
+    case 1:
+        goto soundcard;
+    case 2:
+        goto tandy;
+    }
+    goto done;
 font_error:
     f1DDD_002D(7);
     PrintString("\r\nUnable to load font ");
@@ -275,27 +295,18 @@ font_error:
     return 0;
 fail:
     return 0;
-started:
-    f1C0E_13E7();
-    g3056 = 1;
-    CalibrateRetrace();
-    srand(time(NULL));
-    f1DE7_0009(0);
-    g3092 = 1;
-    switch (gSoundCard) {
-    case 0:
-        f0_3F77();
-        break;
-    case 1:
-        SoundDriverInstall();
-        break;
-    case 2:
-        SoundDriverInstall();
-        gSpeakerOn = 1;
-        gSpeakerMode = 1;
-        SoundDriverResume();
-        break;
-    }
+speaker:
+    f0_3F77();
+    goto done;
+soundcard:
+    SoundDriverInstall();
+    goto done;
+tandy:
+    SoundDriverInstall();
+    gSpeakerOn = 1;
+    gSpeakerMode = 1;
+    SoundDriverResume();
+done:
     return 1;
 }
 

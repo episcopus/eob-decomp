@@ -56,14 +56,14 @@ Checks (tools/re/disasm.py on eob/EOB.EXE, read only): 1BB1:0034/003A/003E (heig
 
 ### Findings
 
-- [ ] must-fix src/E1BB1.ASM:32-34 and :59-60: "so the writer is unknown" and "(writer unknown)" are wrong. ds:8172/8174 are written by 1A72:02FE (`_SetFarPointer`, src/E1A72.ASM:420-460: `mov [8172],ax` at 1A72:031C and `mov [8174],bx` at 1A72:031F) and read by 1A72:033A (`_GetFarPointer`, src/E1A72.ASM:462-473). This unit and E1BF3 only read them (1BB1:00A9..00AD). Name the writer; the statement that this unit and E1BF3 do not write them holds.
-- [ ] must-fix src/E1BB1.ASM:5-6 and re/renames.toml:176-181 (WHY of SetMousePointerShape): the caller citation "E07A9.C:92-94" points at the purpose comment of f07A9_010C, not at the calls. The calls are at src/E07A9.C:119-122 (`SetMousePointerShape(8, 8, ...)` and `(0, 0, ...)`). The renames WHY also calls the caller "Level07A9"; its current name is f07A9_010C (re/renames.toml:428). Correct both.
-- [ ] should src/E1BB1.ASM:7: "nothing here says "level" or "name"" is review history, not a fact about the code. Drop it and cite the evidence that the table holds icon images: src/E07A9.C:40-42 (ovl2:03D5..0413 fills entries 1..0x58 from the ITEMICN sheet).
-- [ ] should src/E1BB1.ASM:21-24: the check is skipped when the high word of LargestFreeBlock is nonzero (1BB1:0080..0082, `or dx,dx; jne alloc`), so a free block of 64 KB or more passes without the comparison. The header says the check "needs LargestFreeBlock to return at least that result plus 16"; add the exception.
-- [ ] should src/E1BB1.ASM:169-173 (QUIRK 1BB1:00C6, second paragraph): "holds only when ds:816C was nonzero when 1BBE:0002 was called" is true in practice but gives the wrong reason. The nested path (1BBE:0015 `jne 0075`, then 00E0 `inc [8146]`) increments the count without looking at ds:816C. The count can only be nonzero after a hide that saw a buffer, because ds:816C is stored once (1BB1:00A5, only with a nonzero MemAlloc segment) and never cleared (a byte scan of eob/EOB.EXE finds one store to 816C). Say both ways the hide can be counted: the count was already nonzero (nested), or ds:816C was nonzero on entry (1BBE:0017).
-- [ ] should src/E1BB1.ASM:130 and :144: the 16 in `add ax,16` (1BB1:0076) and `sub ax,16` (1BB1:0091) is the heap block that LargestFreeBlock takes off (src/E19BC.C:5, "less one 16 byte block"; :142). Rule 4 of docs/process/READABILITY.md: name it (for example `HEAP_BLOCK EQU 16` beside the record offsets) and keep the citation in the comment.
-- [ ] should src/E1BB1.ASM:14-36: the header uses raw addresses where the global already has a name: ds:8146 is gHideDepth (re/globals.toml:180) and ds:812E is gPointerBusy (the EXTRN at line 49). Use the names (rule 7). ds:814A, ds:8138/813A and ds:8176 have no names and stay raw.
-- [ ] should src/E1BB1.ASM:16-17: "the same unit as the region records of 1A29" has no citation. src/E1A29.C:19 and :21 say the region's left edge and width are in 8-pixel columns; cite them.
+- [x] must-fix src/E1BB1.ASM:32-34 and :59-60: "so the writer is unknown" and "(writer unknown)" are wrong. ds:8172/8174 are written by 1A72:02FE (`_SetFarPointer`, src/E1A72.ASM:420-460: `mov [8172],ax` at 1A72:031C and `mov [8174],bx` at 1A72:031F) and read by 1A72:033A (`_GetFarPointer`, src/E1A72.ASM:462-473). This unit and E1BF3 only read them (1BB1:00A9..00AD). Name the writer; the statement that this unit and E1BF3 do not write them holds. Fixed in b9bf160: the header (now lines 35-38) says the writer is _SetFarPointer (1A72:02FE, src/E1A72.ASM:442-443) and the reader is _GetFarPointer (1A72:033A), and the two EXTRN comments (now lines 66-69) say "written by _SetFarPointer 1A72:02FE ... read by _GetFarPointer 1A72:033A"; the claim that this unit and E1BF3 only read them stays. Verified at 1A72:031C/031F and 1A72:0344/0347 with tools/re/disasm.py.
+- [x] must-fix src/E1BB1.ASM:5-6 and re/renames.toml:176-181 (WHY of SetMousePointerShape): the caller citation "E07A9.C:92-94" points at the purpose comment of f07A9_010C, not at the calls. The calls are at src/E07A9.C:119-122 (`SetMousePointerShape(8, 8, ...)` and `(0, 0, ...)`). The renames WHY also calls the caller "Level07A9"; its current name is f07A9_010C (re/renames.toml:428). Correct both. Fixed in b9bf160: the header (now lines 5-7) says the caller passes the hot spot (8,8) when its n is above 0 and (0,0) otherwise and the record gIconsDDE4[n] in both cases, citing the two calls at E07A9.C:127-130 (the review's 119-122 is stale; the current calls are at src/E07A9.C:127-130). re/renames.toml:181 now names the caller f07A9_010C (07A9:010C) and cites E07A9.C:127-130, and the same stale citation in re/renames.toml:208/:217 and re/globals.toml:67/:72 is corrected too.
+- [x] should src/E1BB1.ASM:7: "nothing here says "level" or "name"" is review history, not a fact about the code. Drop it and cite the evidence that the table holds icon images: src/E07A9.C:40-42 (ovl2:03D5..0413 fills entries 1..0x58 from the ITEMICN sheet). Fixed in b9bf160: the header (now lines 5-7) drops that sentence and cites the item icon images at E07A9.C:41-43 (the gIconsDDE4 comment; it moved to 41-43 in the current file).
+- [x] should src/E1BB1.ASM:21-24: the check is skipped when the high word of LargestFreeBlock is nonzero (1BB1:0080..0082, `or dx,dx; jne alloc`), so a free block of 64 KB or more passes without the comparison. The header says the check "needs LargestFreeBlock to return at least that result plus 16"; add the exception. Fixed in b9bf160: the header (now lines 21-27) says the comparison is skipped when the block's high word DX is nonzero (1BB1:0080 `or dx,dx`; 1BB1:0082 `jne`), so a free block of 64 KB or more passes without the test.
+- [x] should src/E1BB1.ASM:169-173 (QUIRK 1BB1:00C6, second paragraph): "holds only when ds:816C was nonzero when 1BBE:0002 was called" is true in practice but gives the wrong reason. The nested path (1BBE:0015 `jne 0075`, then 00E0 `inc [8146]`) increments the count without looking at ds:816C. The count can only be nonzero after a hide that saw a buffer, because ds:816C is stored once (1BB1:00A5, only with a nonzero MemAlloc segment) and never cleared (a byte scan of eob/EOB.EXE finds one store to 816C). Say both ways the hide can be counted: the count was already nonzero (nested), or ds:816C was nonzero on entry (1BBE:0017). Fixed in b9bf160: the QUIRK (now lines 178-186) gives both ways the count can be nonzero (it was already nonzero, so 1BBE:0015 `jne 0075` reaches 1BBE:00E0 `inc [8146]` with no buffer test; or ds:816C was nonzero on entry, so 1BBE:0017 passes the buffer test and increments), adds that ds:816C is stored once at 1BB1:00A5 and never cleared, and keeps that when ds:816C is 0 and the count is 0 the hide is not counted (1BBE:0017).
+- [x] should src/E1BB1.ASM:130 and :144: the 16 in `add ax,16` (1BB1:0076) and `sub ax,16` (1BB1:0091) is the heap block that LargestFreeBlock takes off (src/E19BC.C:5, "less one 16 byte block"; :142). Rule 4 of docs/process/READABILITY.md: name it (for example `HEAP_BLOCK EQU 16` beside the record offsets) and keep the citation in the comment. Fixed in b9bf160: `HEAP_BLOCK EQU 16` is defined beside the record offsets (now lines 51-53) with the E19BC.C:142 citation, and the code reads `add ax,HEAP_BLOCK` (line 139) and `sub ax,HEAP_BLOCK` (line 153), each with a short comment; make match still 1 of 1 (208 bytes), so the immediate is unchanged.
+- [x] should src/E1BB1.ASM:14-36: the header uses raw addresses where the global already has a name: ds:8146 is gHideDepth (re/globals.toml:180) and ds:812E is gPointerBusy (the EXTRN at line 49). Use the names (rule 7). ds:814A, ds:8138/813A and ds:8176 have no names and stay raw. Fixed in b9bf160: the header now writes gHideDepth (ds:8146) at lines 32 and 34 and gPointerBusy (ds:812E) at line 40, each keeping its address; ds:814A and the other unnamed globals stay raw.
+- [x] should src/E1BB1.ASM:16-17: "the same unit as the region records of 1A29" has no citation. src/E1A29.C:19 and :21 say the region's left edge and width are in 8-pixel columns; cite them. Fixed in b9bf160: the header (now line 18) cites E1A29.C:19-22, the Region struct whose left edge and width are in 8-pixel columns.
 - [ ] note src/E1BBE.ASM:75-76 (unit 1BBE, for its own review, not this one): "Nothing happens when ... already hidden (gHideDepth non-zero)" is wrong. 1BBE:0015 `jne 0075` goes to 00E0 `inc [8146]`, so a nested hide increments the count. This unit's header has it right.
 - [ ] note src/E1A72.ASM:7 and :32 (unit 1A72, for its owner): ds:812E is "semaphore" there and "busy flag" in src/E1BB1.ASM and src/E1BF3.ASM. The first review asked for one term in both files; E1A72 was not covered.
 - [ ] note src/E07A9.C:57-58 (unit e07a9, for its owner): "stores the hot-spot offset" is loose: 1BB1:0002 stores two words, the hot spot x and y (ds:8158/815A).
@@ -71,3 +71,87 @@ Checks (tools/re/disasm.py on eob/EOB.EXE, read only): 1BB1:0034/003A/003E (heig
 ### Summary (second review)
 
 The unit is understandable from its source. The byte-level claims in the header hold against the 1BB1 and 1BBE disassembly and the E19BC allocator, and the first review's fixes are in place. Two claims must be fixed before a pass: the writer of ds:8172/8174 (1A72:02FE, not unknown) and the caller citation and name (in the header and in re/renames.toml). The shoulds are precision: the high-word case of the margin check, the reason for QUIRK 2, the magic 16, raw addresses where a name exists, and one citation. Placeholders g80AA, g80A2 and g80C6 stay: their evidence is in the EXTRN comments. Verdict: review-failed.
+
+## Decompiler response (second review, b9bf160)
+
+Both must-fix items and all six `should` items are addressed in commit b9bf160 (src/E1BB1.ASM,
+re/renames.toml, re/globals.toml); each is ticked above with what changed. The header now names
+_SetFarPointer (1A72:02FE) as the writer and _GetFarPointer (1A72:033A) as the reader of
+ds:8172/8174, and the two EXTRN comments name them; the caller is f07A9_010C (07A9:010C), cited at
+E07A9.C:127-130 (the review's 119-122 is stale, the calls are at 127-130 in the current file), and
+re/renames.toml:181 is corrected too, as is the same stale citation in re/renames.toml:208/:217 and
+re/globals.toml:67/:72. The header drops the review-history sentence and cites the
+item icon images (E07A9.C:41-43); it states the margin comparison is skipped when the block's high
+word DX is nonzero (1BB1:0080/0082); the second QUIRK gives both ways the hide count can be nonzero
+(nested, or ds:816C nonzero on entry) and that ds:816C is stored once (1BB1:00A5) and never cleared;
+`HEAP_BLOCK EQU 16` names the heap block at 1BB1:0076/0091; the header uses gHideDepth and
+gPointerBusy; and the 8-pixel column claim cites E1A29.C:19-22. Verified: `make match
+FILE=src/E1BB1.ASM` 1 of 1 (208 of 208 bytes), `make readability UNIT=e1bb1` 0 findings. Rechecked
+against tools/re/disasm.py: 1A72:031C/031F (writes), 1A72:0344/0347 (reads), 1BBE:0015/0075/00E0
+(nested increment), 1BBE:0017 (buffer test), 1BB1:00A5 (the single store to 816C), 1BB1:0076/0080/0082/0091.
+
+The three `note` items are for other units, not this one: src/E1BBE.ASM:75-76 is unit 1BBE's own
+file, src/E1A72.ASM:7/:32 is unit 1A72's, and src/E07A9.C:57-58 is unit e07a9's. This unit's branch
+does not change other units' files, so they stay open for their owners.
+
+## Third review (rev-haiku, at 572030b)
+
+Commit reviewed: 572030b (main when I started; review/e1bb1 is at main and src/E1BB1.ASM is the b9bf160 version). The
+two earlier rounds are ticked above. I rechecked them against the bytes with tools/re/disasm.py on eob/EOB.EXE (read
+only): 1BB1:0008, 000F and 00C8 (the busy flag); 1BB1:0034, 003A and 003E (the shape reads); 1BB1:0044..0050 (the buffer
+and size tests); 1BB1:0054..005C (the free); 1BB1:0069..006F (the stores and the size query); 1BB1:0076..0095 (the margin
+test and MemAlloc's push order); 1BB1:00A9..00BD (the 80AA, ShowPointer and 80A2 order). The E19BC.C flags comment
+(lines 29-32), the E07A9.C calls (127-130), the E1A29.C citation (19-22) and the E1A72.ASM writes (442-443) all match.
+`make match FILE=src/E1BB1.ASM` is 1 of 1 and `make readability UNIT=e1bb1` is 0 findings.
+
+### Findings
+
+- [ ] must-fix src/E1BB1.ASM header, the paragraph "If the size changed, the old buffer is freed and the size query
+  [ds:80C6] is called", and the function comment "resizing the save-under buffer when the sprite size changed": the
+  size query and MemAlloc do not run only on a size change. 1BB1:0044 `je 0066` skips the free and goes to the query
+  whenever ds:816C is 0, so the first call always queries and allocates (no free). With a buffer, only a size change
+  frees it (1BB1:0050 `je 00A9` goes to ready when the size is the same, 1BB1:0058..005C frees otherwise). Say: "with a
+  buffer and a changed size, the old buffer is freed (1BB1:0058..005C); the size query and MemAlloc run when there is
+  no buffer yet (1BB1:0044) or the size changed; with a buffer and the same size the call goes straight to the show
+  (1BB1:0050)." Change the function comment to match.
+- [ ] should src/E1BB1.ASM header, "The size comes from the shape record": the store addresses are off. 1BB1:0034 only
+  reads byte +3, and the store into ds:8154 is 1BB1:0066 (`mov [8154],ax`). The width store into ds:8156 is 1BB1:006A
+  (`mov [8156],dx`); 1BB1:003E is the `inc dx`. Cite the stores at 0066 and 006A, and keep 0034, 003A and 003E for
+  the reads and the +1.
+- [ ] should src/E1BB1.ASM:88..94 (the MemAlloc call) and its EXTRN line: the second argument is flags 0 (`mov ax,0`
+  and `push ax` at 1BB1:0088..008B), and the unit never says so. E19BC.C:29-32 gives the bits: 0x10 zeroes the block,
+  0x20 aligns it to a paragraph; 0 is neither. Say so in the call's comment.
+- [ ] should src/E1BB1.ASM, the HEAP_BLOCK comment and the header's margin paragraph: the quote "less one 16 byte
+  block" is E19BC.C:5 (the unit header), and the subtraction is E19BC.C:142 (`max -= 0x10`). Cite both, not only :142
+  with the quote.
+- [ ] should src/E1BB1.ASM header, the ASSUME paragraph (the last lines of the header): the header says `ASSUME CS:NOTHING`
+  around each direct far call is what keeps TASM from turning `lcall` into `push cs; call`. The playbook gives another
+  mechanism for that: `call far ptr` with the callee declared as EXTRN is the 9A form (docs/process/playbooks/30-lift-module.md:29).
+  Either show the ASSUME lines are needed (for example, remove them in a scratch copy and see whether `make match` still
+  reports 1 of 1 with the same bytes), or tag the claim [H].
+- [ ] note packet: `make packet UNIT=e1bb1` lists ovl2:0000 Ovl2_0000 (EOV2.C) as a caller of 1BB1:0002. EOV2.C:14 defines
+  Ovl2_0000 as an empty stub, and no build/re/eob-overlays/*.bin contains the bytes 9A 02 00 B1 1B. That search does not
+  settle it (an overlay may hold the segment unrelocated), so the header keeps the caller it cites, f07A9_010C (E07A9.C:128
+  and :130). For the map owner: check whether the packet's caller is a real call.
+- [ ] note the return value: the function returns 1 in AX on success (1BB1:00C1) and 0 on failure (1BB1:00C6). The
+  prototype at src/E07A9.C:63 is void and both callers (E07A9.C:128, :130) ignore the value. The header says "returns 1,
+  or 0 when no block can be allocated", but 0 is also returned when the largest-block test fails (1BB1:0084..0086, before
+  MemAlloc). Say "0 when the block is too small or MemAlloc fails". No change is needed in src/E07A9.C.
+- [ ] note src/E07A9.C:127-130 (the caller, for the e07a9 owner): the else branch passes gIconsDDE4[0] with (0, 0). E07A9.C:43
+  says index 0 is "none". If that entry is a null far pointer, 1BB1:0034 reads the shape at 0000:0003. Whether n can be
+  0 there (a zero icon number reaches the call through gTable8DD2[n].icon) is not checked here.
+- [ ] note src/E1BBE.ASM:65 (for the 1BBE owner): "the sprite size query (1BB1:0094)" cites the wrong address. The call to
+  [ds:80C6] is at 1BB1:006F (`lcall [0x80c6]`); 1BB1:0094 is the `sub ax,16` before MemAlloc.
+- [ ] note the open notes from the earlier rounds still stand for their owners: src/E1BBE.ASM:72..76 ("already hidden"
+  is wrong, a nested hide increments the count, 1BBE:0015); src/E1A72.ASM:7 and :32 and src/E1BBE.ASM:28, :273 and :353
+  call ds:812E "semaphore" where this unit and E1BF3 say "busy flag" (the global is gPointerBusy).
+
+### Summary (third review)
+
+The unit is understandable from its source alone. The names have evidence in the header and the registry: SetMousePointerShape
+(one caller, f07A9_010C, E07A9.C:127-130), the shape and buffer globals (the 1BB1 and 1BBE reads and writes), gPointerBusy
+(test and increment, 1BB1:0008/000F and release 00C8), gHideDepth, HidePointer and ShowPointer (1BBE:0002 and 00ED), and
+HEAP_BLOCK. The placeholders are g80AA, g80A2 and g80C6 (the callees behind them are not lifted; their evidence is the
+call sites and the comments in E1BBE.ASM and E1BF3.ASM), and g8172/g8174 (the writer and reader are named, the argument's
+meaning is not). One must-fix remains: the header says the size query and reallocation happen only on a size change, but
+the first call with no buffer does them too. Verdict: review-failed.

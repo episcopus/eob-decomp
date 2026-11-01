@@ -16,9 +16,9 @@
 ; is saved with push/pop ax, which the compiler's C functions never do; the far call through a
 ; DGROUP pointer and the busy-wait on _gPointerBusy are the style of E1BB1 and E1BF3).
 ;
-; Globals src/ already names keep those names: _gPointerBusy, g814A, gPointerHeight, gPointerWidth8,
+; Globals src/ already names keep those names: _gPointerBusy, gMouseDisabled, gPointerHeight, gPointerWidth8,
 ; gPointerHotX, gPointerHotY, gPointerBackOff, gPointerBackSeg, gPointerShapeOff, gPointerShapeSeg,
-; g8172, g8174, g80AA, g80A2 and g80C6 from src/E1BB1.ASM (and g814A from
+; g8172, g8174, g80AA, g80A2 and g80C6 from src/E1BB1.ASM (and gMouseDisabled from
 ; src/E07A9.C, gDraw80C2 from src/E1A29.C). The byte at 1BBE:0001 is the unit's segment start, as
 ; in 1BB1:0001 and 1BF3:000D.
 
@@ -29,7 +29,7 @@
         EXTRN   _gCursorX:WORD          ; @ ds:8138: mouse position, x in pixels (1BF3/1A72 own it)
         EXTRN   _gCursorY:WORD          ; @ ds:813A: mouse position, y in pixels
         EXTRN   _gHideDepth:WORD        ; @ ds:8146: hide depth, 0 = drawn (1BBE:0002/00ED change it)
-        EXTRN   g814A:WORD              ; @ ds:814A: non-zero disables the pointer (E07A9 tests it too)
+        EXTRN   gMouseDisabled:WORD              ; @ ds:814A: non-zero disables the pointer (E07A9 tests it too)
         EXTRN   _gPointerHeight:WORD     ; @ ds:8154: sprite height in pixels (record byte +3, 1BB1)
         EXTRN   _gPointerWidth8:WORD     ; @ ds:8156: sprite width in 8-pixel columns (byte +2 + 1)
         EXTRN   _gPointerHotX:WORD       ; @ ds:8158: hot spot, x in pixels (subtracted from gCursorX)
@@ -72,7 +72,7 @@
 _f1BBE_0001 LABEL BYTE                    ; @ 1BBE:0001
         db      0
 
-; 1BBE:0002 HidePointer: hide the pointer. Nothing happens when the pointer is disabled (g814A),
+; 1BBE:0002 HidePointer: hide the pointer. Nothing happens when the pointer is disabled (gMouseDisabled),
 ; when it is already hidden (gHideDepth non-zero) or when no save-under buffer exists (_gPointerBackSeg zero).
 ; Otherwise the rectangle the pointer covers is recomputed from the position it was last drawn at
 ; (gDrawnX/gDrawnY) less the hot spot (_gPointerHotX/_gPointerHotY) and the sprite size (_gPointerHeight/_gPointerWidth8; the x in
@@ -86,7 +86,7 @@ _HidePointer PROC FAR
         push    bp
         mov     bp,sp
         push    ax
-        cmp     word ptr [g814A],0
+        cmp     word ptr [gMouseDisabled],0
         je      enabled
 disabled: jmp     HideDone
 enabled: cmp     word ptr [_gHideDepth],0
@@ -162,7 +162,7 @@ HideDone: pop    ax
         ret
 _HidePointer ENDP
 
-; 1BBE:00ED ShowPointer: show the pointer. Nothing happens when it is disabled (g814A), when it is
+; 1BBE:00ED ShowPointer: show the pointer. Nothing happens when it is disabled (gMouseDisabled), when it is
 ; not hidden (gHideDepth zero) or when no save-under buffer exists (_gPointerBackSeg). Otherwise gHideDepth
 ; is decremented and, only at zero, the current mouse position (gCursorX/gCursorY) is copied to
 ; the position being drawn at (gDrawnX/gDrawnY), the rectangle is recomputed and clipped exactly
@@ -175,7 +175,7 @@ _ShowPointer PROC FAR
         push    bp
         mov     bp,sp
         push    ax
-        cmp     word ptr [g814A],0
+        cmp     word ptr [gMouseDisabled],0
         jne     L015B
         cmp     word ptr [_gHideDepth],0
         je      L015B

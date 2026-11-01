@@ -178,7 +178,7 @@ addr = "1BB1:0002"
 old = "f1BB1_0002"
 new = "SetMousePointerShape"
 kind = "function"
-why = "1BB1:0002 stores a hot-spot offset (ds:8158/815A) and a pointer shape record (ds:816E/8170), resizes the save-under buffer ds:816A/816C from the record's height (byte +3) and width in 8-pixel units (byte +2 + 1), and hides/shows the pointer through 1BBE:0002 and 1BBE:00ED around the change; caller Level07A9 passes (8,8) for the sprite centre [H] and (0,0) for its corner (E07A9.C:92-94, review of e1bb1). The (8,8) is the centre of a 16 by 16 cell if the record is 16 wide by 16 tall, which is not proven here [H] (review of e07a9)"
+why = "1BB1:0002 stores the hot spot x and y (ds:8158/815A) and a pointer shape record (ds:816E/8170), resizes the save-under buffer ds:816A/816C from the record's height (byte +3) and width in 8-pixel units (byte +2 + 1), and hides/shows the pointer through 1BBE:0002 and 1BBE:00ED around the change; the caller f07A9_010C (07A9:010C) passes the hot spot (8,8) when its n is above 0 and (0,0) otherwise, and the record gIconsDDE4[n] in both cases (E07A9.C:127-130, review of e1bb1). The (8,8) is the centre of a 16 by 16 cell if the record is 16 wide by 16 tall, which is not proven here [H] (review of e07a9)"
 date = "2026-11-01"
 
 [[rename]]
@@ -205,7 +205,7 @@ addr = "ds:8158"
 old = "g8158"
 new = "gPointerHotX"
 kind = "global"
-why = "the hot-spot x subtracted from the last drawn pointer position ds:815C before drawing: set from argument 1 at 1BB1:001B and used at 1BBE:0021 and 1BBE:0117 (the caller passes 8 or 0, E07A9.C:92-94)"
+why = "the hot-spot x subtracted from the last drawn pointer position ds:815C before drawing: set from argument 1 at 1BB1:001B and used at 1BBE:0021 and 1BBE:0117 (the caller passes 8 or 0, E07A9.C:127-130)"
 date = "2026-11-01"
 
 [[rename]]
@@ -214,7 +214,7 @@ addr = "ds:815A"
 old = "g815A"
 new = "gPointerHotY"
 kind = "global"
-why = "the hot-spot y subtracted from the last drawn pointer position ds:815E before drawing: set from argument 2 at 1BB1:0021 and used at 1BBE:002B and 1BBE:0127 (the caller passes 8 or 0, E07A9.C:92-94)"
+why = "the hot-spot y subtracted from the last drawn pointer position ds:815E before drawing: set from argument 2 at 1BB1:0021 and used at 1BBE:002B and 1BBE:0127 (the caller passes 8 or 0, E07A9.C:127-130)"
 date = "2026-11-01"
 
 [[rename]]
@@ -727,7 +727,7 @@ addr = "19FC:0008"
 old = ""
 new = "CompressLcw"
 kind = "function"
-why = "LCW encoder: writes the tokens Unpack4 (1D9A:0013, src/E1B82.C:22) reads (short back references, absolute copies, fills, literals), the inverse of that decoder; wwfmt.py lcw, whitepaper 4.2. Entry corrected from 19FC:0007 to 19FC:0008 by the e19fc review: 19FC:0007 is the segment-start marker byte (data, a separate public byte symbol _f19FC_0007) and the encoder's first instruction, push bp, is at 19FC:0008"
+why = "LCW encoder: writes the tokens Unpack4 (1D9A:0013, src/E1B82.C:39) reads (short back references, absolute copies, fills, literals), the inverse of that decoder; wwfmt.py lcw, whitepaper 4.2. Entry corrected from 19FC:0007 to 19FC:0008 by the e19fc review: 19FC:0007 is the segment-start marker byte (data, a separate public byte symbol _f19FC_0007) and the encoder's first instruction, push bp, is at 19FC:0008. The Unpack4 source line is :39 (where it is declared); the earlier :22 was the WorkBuffer union's closing brace, corrected by the round 4 review"
 date = "2026-11-01"
 
 [[rename]]
@@ -764,6 +764,69 @@ old = "g812E"
 new = "gPointerBusy"
 kind = "global"
 why = "the word ds:812E is a busy flag, not a lock: 1BB1:0008 and 1BF3:0080 test it then increment it (not atomic), and 1BB1:00C8 and 1BF3:0085 decrement it; SetMousePointerShape and the 1BF3 cursor setters hold it across their work (review of e1bb1)"
+date = "2026-11-01"
+
+[[rename]]
+id = "ds:814A=gMouseDisabled"
+addr = "ds:814A"
+old = "g814A"
+new = "gMouseDisabled"
+kind = "global"
+why = "nonzero disables the mouse: the INT 33h handler body skips all of its work (1A72:254-255) and HidePointer/ShowPointer do nothing (1BBE:89-90, 178); 1A72:215 sets it to 1 at install and the overlay loader 1C00:00D4 clears it once a driver overlay has loaded and its entry has run, which enables the handler and the pointer; E07A9.C:113 and E14EF.C:142, 223 test it the same way"
+date = "2026-11-01"
+
+[[rename]]
+id = "1DE7:060A=DrawText"
+addr = "1DE7:060A"
+old = ""
+new = "DrawText"
+kind = "function"
+why = "the text console's string renderer: E07A9:010C passes \" taken.\\r\" and this unit's PrintIntText passes a decimal buffer (1DE7:05DF); it is the DrawText the header comment names"
+date = "2026-11-01"
+
+[[rename]]
+id = "1DE7:0009=SetTextWindow"
+addr = "1DE7:0009"
+old = ""
+new = "SetTextWindow"
+kind = "function"
+why = "makes a region index the active text window: saves the live colours and cursor into the old record, loads the new record's edges and saved words (1DE7:0009; declared f1DE7_0009 by src/E07C8.C)"
+date = "2026-11-01"
+
+[[rename]]
+id = "ds:FE64=gTextLeft"
+addr = "ds:FE64"
+old = ""
+new = "gTextLeft"
+kind = "global"
+why = "the active text window's left edge in 8-pixel columns, loaded from region record word 0 by SetTextWindow (1DE7:0009) and used to place text and fills (1DE7:03B2, 1DE7:0344); the panel origin x in src/E14EF.C"
+date = "2026-11-01"
+
+[[rename]]
+id = "ds:FE66=gTextTop"
+addr = "ds:FE66"
+old = ""
+new = "gTextTop"
+kind = "global"
+why = "the active text window's top edge in pixel rows, loaded from region record word 1 by SetTextWindow (1DE7:0009) and used to place text and fills (1DE7:03B2, 1DE7:0344); the panel origin y in src/E14EF.C"
+date = "2026-11-01"
+
+[[rename]]
+id = "ds:811D=gTextAttr1"
+addr = "ds:811D"
+old = ""
+new = "gTextAttr1"
+kind = "global"
+why = "the first text attribute (foreground colour) passed to the draw-text hook ds:80CA (1DE7:03B2, 1DE7:060A) and set by DrawText control code 0x06; default 0x0F at E07C8:147"
+date = "2026-11-01"
+
+[[rename]]
+id = "ds:811B=gTextAttr2"
+addr = "ds:811B"
+old = ""
+new = "gTextAttr2"
+kind = "global"
+why = "the second text attribute (the fill colour of ClearTextRegion and of the redrawn scroll line) passed to the rectangle hook ds:806A and to the draw-text hook (1DE7:0344, 1DE7:03B2) and set by DrawText control code 0x02; default 0x0C at E07C8:148"
 date = "2026-11-01"
 
 [[rename]]

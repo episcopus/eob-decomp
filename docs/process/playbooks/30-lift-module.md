@@ -58,6 +58,7 @@ Examples: `src/E0CF7.C`, `src/E07A9.C` (whole units), `src/E08E6.C` (a jump tabl
 | one `les bx` for two tests that both `continue` | one `if (a || b) continue;` (two `if`s put a label between them and reload) |
 | case bodies of a jump table in some order | the `case` labels in that order in the source |
 | `inc sp; inc sp` or `add sp,4` after calls, `pop cx` nowhere | the unit was compiled with `-G`: `/*@flags -ml -O -Z -G */` |
+| identical jump tails kept separately (several `case`s ending in the same store, each with its own copy), where our build merges them into one | the unit was compiled through the assembler (`TCC -B`, which inline `asm` forces): `/*@flags -ml -O -Z -B */`; `make match` then runs `TCC -S` and TASM `/ml /jNOSMART` (e14ef, 2026-11-01) |
 | `test byte ptr [g],1` | `g & 1` on a char |
 | a `cmp` whose result is unused, after a conditional jump | an `if` with an empty body: `if (a == 0 && p[1][1]) ;` |
 
