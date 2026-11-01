@@ -3787,6 +3787,9 @@ unit = "e1658"
 addr = "1658:0003"
 size = 27
 evidence = ["near", "segment"]
+name = "LinkNode"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e1658_001e"
@@ -3794,6 +3797,9 @@ unit = "e1658"
 addr = "1658:001E"
 size = 85
 evidence = ["far", "near", "frame"]
+name = "ListAdd"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e1658_0073"
@@ -3801,6 +3807,9 @@ unit = "e1658"
 addr = "1658:0073"
 size = 225
 evidence = ["frame"]
+name = "ToggleNode"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e1658_0154"
@@ -3808,6 +3817,9 @@ unit = "e1658"
 addr = "1658:0154"
 size = 39
 evidence = ["frame"]
+name = "DisableNode"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e1658_017b"
@@ -3815,6 +3827,9 @@ unit = "e1658"
 addr = "1658:017B"
 size = 39
 evidence = ["frame"]
+name = "EnableNode"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e1658_01a2"
@@ -3822,6 +3837,9 @@ unit = "e1658"
 addr = "1658:01A2"
 size = 68
 evidence = ["frame"]
+name = "FindNode"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e1658_01e6"
@@ -3829,6 +3847,9 @@ unit = "e1658"
 addr = "1658:01E6"
 size = 271
 evidence = ["frame"]
+name = "ResetNode"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e1658_02f5"
@@ -3836,6 +3857,9 @@ unit = "e1658"
 addr = "1658:02F5"
 size = 225
 evidence = ["frame"]
+name = "SetNode"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e1658_03d6"
@@ -3843,6 +3867,9 @@ unit = "e1658"
 addr = "1658:03D6"
 size = 209
 evidence = ["frame"]
+name = "InsertNode"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e1658_04a7"
@@ -3850,6 +3877,9 @@ unit = "e1658"
 addr = "1658:04A7"
 size = 20
 evidence = ["frame"]
+name = "IsNodeEnabled"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e1658_04bb"
@@ -3857,6 +3887,9 @@ unit = "e1658"
 addr = "1658:04BB"
 size = 15
 evidence = ["frame"]
+name = "GetNodeState0"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e1658_04ca"
@@ -3864,6 +3897,9 @@ unit = "e1658"
 addr = "1658:04CA"
 size = 15
 evidence = ["frame"]
+name = "GetNodeState1"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e16a5_0009"
