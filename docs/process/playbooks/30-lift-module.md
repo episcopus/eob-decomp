@@ -21,7 +21,10 @@ More annotations:
 /*@ 0ACD:091C draft */ void Turn091C(int how)             /* written, not matching yet: compared and
                                                               reported, never a failure, never L2 */
 /*@ ovl2:0110 */ void LoadItemTypes(void)                 /* a function of overlay 2 */
+extern unsigned char far gDrvReg; /*@ 0000:3B36 */        /* a far object in another segment */
 ```
+
+**Data outside DGROUP** (`mov ax,<relocated segment>; mov es,ax; ... es:[off]`, for example a byte kept in an assembly unit's code segment): declare it as a far object with its segment and offset, `extern unsigned char far gDrvReg; /*@ 0000:3B36 */` (in assembly `EXTRN _gDrvReg:BYTE ; @ 0000:3B36`), and use it by name. `MK_FP` with a constant segment compiles to `xor ax,ax` and cannot match (escalation e177d, 2026-11-01).
 
 Siblings must be in the file (as stubs) and in address order: a call to a function of the same file compiles to `push cs; call near`, to an extern to a far call. Callers elsewhere reach an overlay function through its stub entry (`2106:002A` for entry 2 of the stub at `2106`, entries at +20h, 5 bytes each).
 
