@@ -4902,6 +4902,9 @@ unit = "e1d8c"
 addr = "1D8C:0000"
 size = 50
 evidence = ["far", "segment"]
+name = "_f1D8C_0000"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1d8f_0002"
