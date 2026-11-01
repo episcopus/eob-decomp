@@ -37,12 +37,13 @@ struct CharRec {
     int mE3;                  /* +E3: flags tested by 05ED and 07CA */
     char padE5[0xE7 - 0xE5];
     unsigned char mE7;        /* +E7: a counter cleared by 07CA */
-    unsigned char mE8[];      /* +E8: a byte table cleared at +E8 + slot by 0770 */
+    unsigned char mE8[0xF3 - 0xE8]; /* +E8: a byte table cleared at +E8 + slot by 0770 */
 };
 
 /* The 18-byte records at ds:DD2C, 10 of them, walked by 0285 and 0D63. */
 struct DDRec {
     char active;              /* +00: nonzero: the record is live */
+    char pad01;
     int m02;                  /* +02 */
     int m04;                  /* +04 */
     char m06;                 /* +06 */
@@ -50,6 +51,7 @@ struct DDRec {
     char pad08[0x0C - 0x08];
     char m0C;                 /* +0C: flags, bit 0x20 tested by 0285 */
     char m0D;                 /* +0D */
+    char pad0E[0x12 - 0x0E];
 };
 
 extern struct Effect gEffects[]; /*@ ds:5BA8 */
@@ -86,8 +88,6 @@ extern void f0EF3_0D78(int a, int b); /*@ 0EF3:0D78 */
 extern void f0BD2_01D0(void far *head, int key, int item, int sound); /*@ 0BD2:01D0 */
 extern int f0BD2_02B9(void far *head, int key, int item); /*@ 0BD2:02B9 */
 
-void f1414_0B2E(void);
-
 /* 1414:0000: the selected-character blink effect, entry 0 of the table (16-tick period 9). It
    flips the phase g5CAA; when the phase turns on it saves gFB34 (the highlighted member),
    replaces it with 0xFF, redraws that member's row through f1547_0991 and restores gFB34, and
@@ -108,11 +108,26 @@ void f1414_0B2E(void);
     slot++;
 }
 /*@ 1414:003E stub */ void f1414_003E(void) {}
-/*@ 1414:0172 stub */ void f1414_0172(void) {}
-/*@ 1414:020F stub */ void f1414_020F(void) {}
+/*@ 1414:0172 stub */ int f1414_0172(struct DDRec far *rec, int a, int b) { return 0; }
+/*@ 1414:020F stub */ void f1414_020F(struct DDRec far *rec) {}
 /*@ 1414:0285 stub */ void f1414_0285(void) {}
 /*@ 1414:03B4 stub */ void f1414_03B4(void) {}
-/*@ 1414:04B0 stub */ void f1414_04B0(void) {}
+/* 1414:04B0: effect 13 of the table. Toggles gFB78, then walks the 18 far pointers at ds:EF6A,
+   adding gA9C6 to each target and setting gDF4C when a byte there is 0x34 ('4'). QUIRK
+   1414:04B4: the argument is incremented by value, so the increment has no effect. */
+/*@ 1414:04B0 */ void CheckFarTable(int unused)
+{
+    int i;
+
+    unused++;
+    gFB78 ^= 1;
+    for (i = 0; i < 0x12; i++) {
+        if (gEF6A[i][gA9C6] == 0x34) {
+            gDF4C = 1;
+            break;
+        }
+    }
+}
 
 /* 1414:04E7: the effect tick: for every entry of gEffects whose expiry (gTimer, the 32-bit tick
    counter) has passed, call its handler with its argument; when the handler leaves the entry
@@ -164,10 +179,91 @@ void f1414_0B2E(void);
     UpdateObjects(kind);
 }
 /*@ 1414:05ED stub */ void f1414_05ED(void) {}
-/*@ 1414:0770 stub */ void f1414_0770(void) {}
+/* 1414:0770: toggles or clears one of a character's 10 effect slots. In modes 0 and 2 it flips
+   bit `slot` of gChars[who].m1E, then modes 0, 1 and 2 clear gChars[who].mE8[slot] and redraw
+   the member's row through f1547_0991; any other mode does nothing. Called by 07CA. */
+/*@ 1414:0770 */ void SetCharEffectSlot(int who, int mode, int slot)
+{
+    switch (mode) {
+    case 0:
+    case 2:
+        gChars[who].m1E ^= 1 << slot;
+        /* falls through */
+    case 1:
+        gChars[who].mE8[slot] = 0;
+        f1547_0991(who);
+    }
+}
 /*@ 1414:07CA stub */ void f1414_07CA(void) {}
-/*@ 1414:0B2E stub */ void f1414_0B2E(void) {}
-/*@ 1414:0C2D stub */ void f1414_0C2D(void) {}
+
+/* 1414:0B2E: re-arms effect `who` + 6 for every party member `who` that passes f0D1C_0670(who, 1).
+   It takes the smallest nonzero of the member's 10 effect times gChars[who].mAD and, when there
+   is one, sets the entry's period to that time minus gTimer and arms it; when all ten are zero it
+   sets the period to -1 and disarms it. Called by 0ACD, 0D1C:035A, 0C2D and overlays 1 and 3. */
+/*@ 1414:0B2E */ void RearmCharEffects(void)
+{
+    struct CharRec far *rec;
+    struct Effect far *e;
+    int idx;
+    unsigned long min;
+    int who;
+    int i;
+
+    who = 0;
+    rec = gChars;
+    for (; who < 6; who++, rec++) {
+        if (!f0D1C_0670(who, 1))
+            continue;
+        min = -1;
+        for (i = 0; i < 10; i++) {
+            if (rec->mAD[i] < min && rec->mAD[i] != 0)
+                min = rec->mAD[i];
+        }
+        idx = who + 6;
+        e = &gEffects[idx];
+        if (min != -1) {
+            e->period = min - g8492;
+            ArmEffect(idx, 1);
+        } else {
+            e->period = min;
+            ArmEffect(idx, 0);
+        }
+    }
+}
+/* 1414:0C2D: clears effect slot `value` of character `who`: for each of the member's 10 effect
+   slots whose gChars[who].mD5 equals `value`, clears the type byte and the 32-bit time
+   gChars[who].mAD, then re-arms the per-member effects through 0B2E. Called by 0EF3 and
+   overlay 5. */
+/*@ 1414:0C2D */ void ClearCharEffectSlot(int who, int value)
+{
+    struct CharRec far *rec;
+    int i;
+
+    rec = &gChars[who];
+    for (i = 0; i < 10; i++) {
+        if (rec->mD5[i] == value) {
+            rec->mD5[i] = 0;
+            rec->mAD[i] = 0;
+        }
+    }
+    RearmCharEffects();
+}
 /*@ 1414:0C82 stub */ void f1414_0C82(void) {}
 /*@ 1414:0CE7 stub */ void f1414_0CE7(void) {}
-/*@ 1414:0D63 stub */ void f1414_0D63(void) {}
+/* 1414:0D63: walks the 10 records at ds:DD2C and, for every live one whose 0172 test passes,
+   runs 020F on it. Called by UpdateObjects (08E6:0CC8) and 122E:0001. */
+/*@ 1414:0D63 */ void UpdateDDEffects(void)
+{
+    struct DDRec far *rec;
+    int result;
+    int i;
+
+    rec = gDD2C;
+    for (i = 0; i < 10; i++, rec++) {
+        if (rec->active != 0) {
+            result = f1414_0172(rec, rec->m04, rec->m06);
+            if (result)
+                f1414_020F(rec);
+        }
+    }
+}
