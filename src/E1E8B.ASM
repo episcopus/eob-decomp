@@ -22,13 +22,16 @@
                                          ; the smart code generator would shorten (TASM 2.0)
 
 ; 1E8B:0004: not a function but the manager's data words at the start of its code segment: the
-; segment of its own data (20B5, its cs:[4]), DGROUP (212E, its cs:[6]), the "PATH=" environment
-; name (1E8B:0008) and the runtime-patched word cs:[0D] at 1E8B:000D. Kept as a stub because the
-; words need segment relocations this file's skeleton does not express yet.
-        PUBLIC  _f1E8B_0004              ; @ 1E8B:0004 stub
-_f1E8B_0004 PROC FAR
-        ret
-_f1E8B_0004 ENDP
+; segment of its own data (20B5, which the code reads as cs:[4]), DGROUP (212E, cs:[6]), the "PATH="
+; environment name (1E8B:0008) and the runtime-patched word cs:[0D] at 1E8B:000D (set by 0286).
+; The words are written as plain constants because the original relocations store exactly these
+; segment values (EOB.EXE loads at paragraph 0). QUIRK 0004: the original unit starts at frame
+; offset 4 while this module's code segment starts at offset 0, so the code's hardcoded cs:[4],
+; cs:[6] and cs:[0D] name offsets 4, 6 and 0D of this file's segment rather than these three words;
+; the bytes are identical, and a separate code segment cannot carry the original frame offset.
+        dw      20B5h
+        dw      212Eh
+        db      'PATH=',0,0
 
 ; 1E8B:000F: initialise the overlay manager. It opens the program's own file (01B3, or the name in
 ; the far pointer argument at [bp+6] through 01A7, or the PATH search 01F3), reads and checks the MZ

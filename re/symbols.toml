@@ -5482,6 +5482,8 @@ unit = "e1e8b"
 addr = "1E8B:0004"
 size = 11
 evidence = ["segment"]
+level = "L2"
+notes = "not a function: bytes of the unit outside its functions (a marker or padding), matched with the whole unit"
 
 [[function]]
 id = "e1e8b_000f"
