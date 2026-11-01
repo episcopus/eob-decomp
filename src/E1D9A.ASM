@@ -26,10 +26,11 @@ _UnpackScratch LABEL BYTE               ; @ 1D9A:000B
 
 ; 1D9A:0013: expand a stream to len bytes. src (far, [bp+6]) and dst (far, [bp+0Ah]) are normalized,
 ; the output start and end offsets are kept in cs:[109h]/cs:[10Dh]. Loop: a control byte with bit 7
-; clear copies ((byte >> 4) + 3) bytes from (next byte) back in the output; 80h ends; 81h..0BFh copy
-; (byte & 3Fh) bytes straight from the input; 0C0h..0FDh copy (byte & 3Fh) + 3 bytes from an absolute
-; output offset after a word; 0FEh fills a word count of one byte; 0FFh copies a word count from a
-; word offset. Every count is clamped to the bytes left. Returns the bytes written in AX.
+; clear copies ((byte >> 4) + 3) bytes from a 12-bit distance behind the output cursor (the low
+; nibble of the control byte and the next byte); 80h ends; 81h..0BFh copy (byte & 3Fh) bytes straight
+; from the input; 0C0h..0FDh copy (byte & 3Fh) + 3 bytes from an absolute output offset after a word;
+; 0FEh fills a word count of one byte; 0FFh copies a word count from a word offset. Every count is
+; clamped to the bytes left. Returns the bytes written in AX.
         PUBLIC  _Unpack4                ; @ 1D9A:0013
 _Unpack4 PROC FAR
         push    bp
@@ -242,12 +243,13 @@ u3_exit:
         dw      0,0,0                   ; 1D9A:0185 Unpack1's saved output offset and count
 
 ; 1D9A:018B: expand the dictionary format 1 into the work segment ([bp+0Ah]). The stream starts with
-; a 16-bit output limit and a skipped word; codes are 12 bits (1D9A:0299). A code whose high byte is
-; nonzero names an entry in the work segment's 4-byte offset table at BP: it holds a far pointer to
-; a dictionary string and its length. Copy that string, then emit the byte it ends with (the next
-; match byte); a zero high byte is a literal. Entries are added to the table as the output grows,
-; up to 3C00h. The table pairs (offset at cs:[185h], count at cs:[189h]) and cs:[187h] hold the
-; dictionary pointer while copying.
+; a 16-bit output limit and a skipped word; codes are 12 bits (1D9A:0299). A code with a nonzero high
+; byte names an entry of the work segment's table at BP: a 4-byte (offset, length) pair into the
+; output at BP + 4 * (code - 100h). Copy that string to the output and make it the new previous
+; string; a code naming the entry being made copies the previous string and appends its first byte.
+; A zero high byte is a literal (a one byte previous string). Entries are added while the table is
+; below 3C00h. cs:[185h] is the current string length, cs:[187h] its output offset, cs:[189h] the
+; length being stored.
         PUBLIC  _Unpack1                ; @ 1D9A:018B
 _Unpack1 PROC FAR
         push    bp
@@ -361,9 +363,9 @@ u1_reset:
 _Unpack1 ENDP
 
 ; 1D9A:0299: read the next 12-bit code from the packed stream (whose segment Unpack1 saved in
-; cs:[10h]). It counts codes in cs:[12h]: every other call takes a big-endian word and keeps its
-; low 12 bits; the rest take the same word shifted right four (consuming one byte), so the two
-; reads together take 12 bits from every 3 bytes.
+; cs:[10h]). A counter in cs:[12h] alternates: the first call returns (byte << 4) | (next >> 4) and
+; advances one byte, the next returns ((byte & 0Fh) << 8) | next and advances two, so two codes
+; share every three bytes.
         PUBLIC  _ReadCode1              ; @ 1D9A:0299
 _ReadCode1 PROC NEAR
         mov     cl,4
@@ -401,11 +403,10 @@ u1_exit:
         dw      0                       ; 1D9A:02C9 Unpack2's next reader state
 
 ; 1D9A:02CB: expand the dictionary format 2 into the work segment ([bp+0Ah]), as Unpack1 but with
-; 14-bit codes (1D9A:03CC) and two tables in the work segment: the entry offsets at BP and the entry
-; lengths at BP+7E00h. The output limit is 7E00h; entries grow by 2 words per match. Each code with
-; a nonzero high byte is a dictionary entry (index * 2 for the offset, * 2 for the length); a zero
-; high byte is a literal. cs:[2C9h] steps the code reader, cs:[185h]/[189h]/[187h] hold the table
-; pair and the dictionary pointer while copying.
+; 14-bit codes (1D9A:03CC) and two word tables in the work segment: the entry offsets at BP and the
+; entry lengths at BP+7E00h, at word index (code - 100h). A code with a nonzero high byte is a
+; dictionary entry, a zero high byte a literal. The tables stop when BP reaches 7E00h; cs:[2C9h]
+; steps the code reader and cs:[185h]/[189h]/[187h] are Unpack1's string state.
         PUBLIC  _Unpack2                ; @ 1D9A:02CB
 _Unpack2 PROC FAR
         push    bp
@@ -517,9 +518,9 @@ u2_reset:
 _Unpack2 ENDP
 
 ; 1D9A:03CC: read the next 14-bit code of format 2 from the packed stream (segment in cs:[10h]).
-; cs:[2C9h] holds the address of the next of four reader states; each state reads its bits, stores
-; the following state and returns. State 3F1h reads 14 bits from a word, 400h reads 14 bits from a
-; byte pair, 3D8h reads 14 bits across two bytes and 412h reads the low 14 bits of a byte pair.
+; cs:[2C9h] holds the address of the next of four reader states; each state extracts some bits,
+; stores the following state and returns. The four cycle 400h, 412h, 3D8h, 3F1h and Unpack2 starts
+; them at 400h, so the states take 1 or 2 bytes in turn.
         PUBLIC  _ReadCode2              ; @ 1D9A:03CC
 _ReadCode2 PROC NEAR
         push    ds
