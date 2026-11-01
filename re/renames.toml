@@ -133,7 +133,7 @@ addr = "ds:FE44"
 old = "gImgY"
 new = "gRegionBottom"
 kind = "global"
-why = "the current region's bottom line (top + height), pushed to the driver as its first argument at 1A29:01CE (review of e1a29)"
+why = "the current region's bottom line (top + height), pushed first at 1A29:01CE, so it is the fourth argument of the driver setter call at 1A29:01DB (the convention pushes right to left) (review of e1a29)"
 date = "2026-11-01"
 
 [[rename]]
@@ -151,7 +151,7 @@ addr = "1A29:0189"
 old = "f1A29_0189"
 new = "SelectRegion"
 kind = "function"
-why = "reads a region record from ds:009F, expands it into ds:FE44/FE46/FE48/FE4A/FE4C and calls the driver region setter; called by every drawing wrapper and by 1DE7:02FE (review of e1a29)"
+why = "reads a region record from ds:009F, expands it into ds:FE44/FE46/FE48/FE4A/FE4C and calls the driver region setter; called by every drawing wrapper and, conditionally, by 1DE7:02FE when the record it rewrote is the current one (1DE7:0333 cmp si, [8108]; 1DE7:0337 jne skips the call) (review of e1a29)"
 date = "2026-11-01"
 
 [[rename]]
