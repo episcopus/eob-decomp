@@ -5,7 +5,7 @@
   make readability GATE=1            fails only on findings that are not in work/readability-baseline.txt,
                                      in the files READABILITY_FILES names when it is set (make integrate:
                                      the files the hand-off changed), or during a merge in the files the
-                                     merge brings, else in every file
+                                     merge brings, else in the files this checkout changes against main
   make readability BASELINE=1        rewrites the baseline from the current findings (the human, when
                                      the rules change; it only ever shrinks otherwise)
 
@@ -162,6 +162,17 @@ def merging() -> bool:
     return r.returncode == 0 and (ROOT / r.stdout.strip()).exists()
 
 
+def changed_from_main() -> list[str]:
+    """What this checkout changes against main: its branch's commits and its uncommitted edits (on
+    main itself, only the uncommitted edits)."""
+    import subprocess
+    out = set()
+    for args in (["diff", "--name-only", "main...HEAD"], ["diff", "--name-only", "HEAD"]):
+        r = subprocess.run(["git", *args], cwd=ROOT, capture_output=True, text=True)
+        out.update(r.stdout.split())
+    return sorted(out)
+
+
 def changed_in_merge() -> list[str]:
     """The files the merge in progress changes (what the branch brings)."""
     import subprocess
@@ -193,8 +204,8 @@ def main(argv=None) -> int:
         return 0
     base = baseline()
     only = os.environ.get("READABILITY_FILES")
-    if a.gate and only is None and merging():
-        only = " ".join(changed_in_merge())
+    if a.gate and only is None:
+        only = " ".join(changed_in_merge() if merging() else changed_from_main())
     if a.gate and only is not None:
         names = {Path(f).name for f in only.split() if f.startswith("src/")}
         found = [f for f in found if f[0].split("|")[0] in names]
