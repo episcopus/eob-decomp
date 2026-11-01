@@ -31,7 +31,7 @@ extern int g8140; /*@ ds:8140: x of the last click (src/E14EF.C) */
 extern int g8142; /*@ ds:8142: y of the last click (src/E14EF.C) */
 extern int g8115; /*@ ds:8115: nonzero while a status line is up (set to 2 by LoadOverlayScreen) */
 extern unsigned long gTicks; /*@ ds:848A: BIOS-like tick counter, stepped by the INT 1Ch handler */
-extern char gNameBuf[]; /*@ ds:FE6E */ /* buffer the filename/format helpers build into */
+extern char gFileNameBuf[]; /*@ ds:FE6E */ /* buffer the filename/format helpers build into */
 extern char gOverlayBuf[]; /*@ ds:113F */ /* a DGROUP buffer the overlay loader is passed */
 extern char gCursorChar; /*@ ds:31AC: the one character drawn at the editing cursor */
 extern char gCursorOn; /*@ ds:FC4C: nonzero while the cursor is drawn (blinks in the editor) */
@@ -248,15 +248,15 @@ void DrawShadowText(char far *text, int x, int y, int color, int extra);
 }
 
 /* 082C:051B: build the art file name "%s.%s" (name plus CPS for the CPS video mode 3 at ds:8102,
-   otherwise EGA) into gNameBuf, load it with LoadPacked (source/destination kind `srcKind`/`dstKind`),
+   otherwise EGA) into gFileNameBuf, load it with LoadPacked (source/destination kind `srcKind`/`dstKind`),
    and, unless `mode` is -1, blit the loaded page through the driver pair 19EC:002A. In two special
    cases it also clips the frame with ClipRect: video modes 0 and 1 with `mode` 2 (kind 4, extras
    4 and 2) and video mode 2 with `mode` 0 (kind 2, extras 2 and 0); every other case uses `mode` as
    the kind. `extra` is passed to 19EC:002A and then bumped by one. */
 /*@ 082C:051B */ void LoadScreenImage(char far *name, char far *extra, int srcKind, int dstKind, int mode)
 {
-    sprintf(gNameBuf, "%s.%s", name, g8102 == 3 ? "CPS" : "EGA");
-    LoadPacked(gNameBuf, srcKind, dstKind);
+    sprintf(gFileNameBuf, "%s.%s", name, g8102 == 3 ? "CPS" : "EGA");
+    LoadPacked(gFileNameBuf, srcKind, dstKind);
     if (mode == -1)
         goto done;
     if ((g8102 == 0 || g8102 == 1) && mode == 2) {
@@ -372,10 +372,10 @@ done:
     saved = g8115;
     g8115 = 0;
     if (heapcheck() >= 0)
-        sprintf(gNameBuf, "%lu:%lu", LargestFreeBlock(), farcoreleft());
+        sprintf(gFileNameBuf, "%lu:%lu", LargestFreeBlock(), farcoreleft());
     else
-        sprintf(gNameBuf, "HEAP CORRUPT!! (free memory) = %lu\n", LargestFreeBlock());
-    gDrawText(gNameBuf, x, y, 0xf, 0xc);
+        sprintf(gFileNameBuf, "HEAP CORRUPT!! (free memory) = %lu\n", LargestFreeBlock());
+    gDrawText(gFileNameBuf, x, y, 0xf, 0xc);
     if (wait)
         f1AAD_053A();
     g8115 = saved;
@@ -479,11 +479,11 @@ done:
     return value;
 }
 
-/* 082C:0AE8: format "%s%d.%s" into gNameBuf (a far string, an int and a far string), the shape of
+/* 082C:0AE8: format "%s%d.%s" into gFileNameBuf (a far string, an int and a far string), the shape of
    a numbered art file name. */
 /*@ 082C:0AE8 */ void FormatName(char far *prefix, int number, char far *suffix)
 {
-    sprintf(gNameBuf, "%s%d.%s", prefix, number, suffix);
+    sprintf(gFileNameBuf, "%s%d.%s", prefix, number, suffix);
 }
 
 /* 082C:0B0E: draw one line of text at (x, y) with gDrawText and then print the memory report

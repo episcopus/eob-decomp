@@ -864,3 +864,12 @@ new = "gFillRect"
 kind = "global"
 why = "a far rectangle-fill routine called with (x1, y1, x2, y2, attribute): E082C.C:436 fills the bevel interior, E1DE7.C:221/246 fill and redraw text-window rectangles; so gFillRect, not the address-suffix placeholder gRect806A"
 date = "2026-11-01"
+
+[[rename]]
+id = "ds:FE6E=gFileNameBuf"
+addr = "ds:FE6E"
+old = "gNameBuf"
+new = "gFileNameBuf"
+kind = "global"
+why = "the scratch text buffer EOV2 LoadItemSheets formats ITEMRMP.%s into for FileOpen (src/EOV2.C:294) and EOV6/E082C format filenames and messages into; main already named it so"
+date = "2026-11-01"

@@ -325,3 +325,7 @@ why = "the second text attribute (the fill colour of ClearTextRegion and of the 
 id = "ds:806A"
 name = "gFillRect"
 why = "a far rectangle-fill routine called with (x1, y1, x2, y2, attribute): E082C.C:436 fills the bevel interior, E1DE7.C:221/246 fill and redraw text-window rectangles; so gFillRect, not the address-suffix placeholder gRect806A"
+[[global]]
+id = "ds:FE6E"
+name = "gFileNameBuf"
+why = "the scratch text buffer EOV2 LoadItemSheets formats ITEMRMP.%s into for FileOpen (src/EOV2.C:294) and EOV6/E082C format filenames and messages into; main already named it so"
