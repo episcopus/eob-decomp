@@ -5566,6 +5566,9 @@ unit = "e1e8b"
 addr = "1E8B:0286"
 size = 121
 evidence = ["near"]
+name = "_InitOverlayRecords"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1e8b_02ff"
@@ -5617,6 +5620,9 @@ unit = "e1e8b"
 addr = "1E8B:0536"
 size = 74
 evidence = ["near"]
+name = "_AgeOverlayRecords"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1e8b_0580"
@@ -5624,6 +5630,9 @@ unit = "e1e8b"
 addr = "1E8B:0580"
 size = 123
 evidence = ["near"]
+name = "_LoadOverlayRecord"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1e8b_05fb"
@@ -5641,6 +5650,9 @@ unit = "e1e8b"
 addr = "1E8B:0613"
 size = 59
 evidence = ["near"]
+name = "_DiscardOverlayRecords"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1e8b_064e"
@@ -5648,6 +5660,9 @@ unit = "e1e8b"
 addr = "1E8B:064E"
 size = 33
 evidence = ["near"]
+name = "_RestoreOverlayVersionTable"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1e8b_066f"
@@ -5675,6 +5690,9 @@ unit = "e1e8b"
 addr = "1E8B:06C0"
 size = 81
 evidence = ["near"]
+name = "_MoveOverlayRecord"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1e8b_0711"

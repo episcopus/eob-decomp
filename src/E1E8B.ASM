@@ -12,6 +12,8 @@
 
         .MODEL  LARGE
         EXTRN   _gOverlayIndex:BYTE      ; @ 20C1:0000 (segment 20C1, the overlay index table)
+        EXTRN   _gOverlayList:BYTE       ; @ 20BF:0000 (segment 20BF, the overlay record list head)
+        EXTRN   _OverlayHalt:FAR         ; @ 0000:503F (runtime library, build/re/rtl_compare.json)
         .CODE
 
         PUBLIC  _f1E8B_0004              ; @ 1E8B:0004 stub
@@ -269,10 +271,67 @@ hdr_out:
         ret
 _ReadOverlayHeaderBytes ENDP
 
-        PUBLIC  _f1E8B_0286              ; @ 1E8B:0286 stub
-_f1E8B_0286 PROC NEAR
+; 1E8B:0286: build the overlay record list and size it. It stores DGROUP:0079 + 10h (the start of
+; free memory after the program) into cs:000D, then walks the record table at 20BF:00C0 in 8-byte
+; steps: for each record marked word +4 bit 1 with a non-zero word +2, it points the record at its
+; own segment (ES:0012), sets ES:0018 to the 4A2h marker when ES:001A is not FF, adds the DGROUP
+; [00A4]:[00A6] size to ES:0004:0006, and keeps the largest total (through 0789). It ends by
+; storing the largest size + 2 at 20B5:00AA. Evidence: the 20BF:00C0 table, the 4A2h marker (also
+; cleared at 05FB), the 00A4/00A6 size and the 0789 call.
+        NOSMART                          ; contains LEA of an absolute address (029F)
+        PUBLIC  _InitOverlayRecords      ; @ 1E8B:0286
+_InitOverlayRecords PROC NEAR
+        mov     ax,DGROUP
+        mov     es,ax
+        mov     ax,es:[79h]
+        add     ax,10h
+        mov     word ptr cs:[0dH],ax
+        mov     ax,seg _gOverlayList
+        mov     es,ax
+        xor     bx,bx
+        xor     di,di
+        lea     si,ds:[0C0h]
+init_test:
+        test    word ptr [si+4],2
+        je      short init_next
+        cmp     word ptr [si+2],0
+        jne     short init_take
+init_next:
+        jmp     short init_adv
+        nop
+init_take:
+        mov     ax,[si]
+        push    es
+        mov     es:[12h],ax
+        mov     es,ax
+        cmp     byte ptr es:[1ah],0FFh
+        jne     short init_use
+        pop     es
+        jmp     short init_adv
+        nop
+init_use:
+        pop     ax
+        mov     word ptr es:[18h],4A2h
+        mov     ax,ds:[0A4h]
+        mov     dx,ds:[0A6h]
+        add     word ptr es:[4],ax
+        adc     word ptr es:[6],dx
+        call    _OverlayTotalParagraphs
+        cmp     bx,dx
+        jae     short init_adv
+        xchg    bx,dx
+init_adv:
+        add     si,8
+        cmp     si,3D8h
+        jae     short init_done
+        jmp     short init_test
+init_done:
+        xor     ax,ax
+        add     bx,2
+        mov     ds:[0AAh],bx
         ret
-_f1E8B_0286 ENDP
+_InitOverlayRecords ENDP
+        SMART
 
         PUBLIC  _f1E8B_02FF              ; @ 1E8B:02FF stub
 _f1E8B_02FF PROC NEAR
@@ -438,15 +497,111 @@ _f1E8B_04D0 PROC FAR
         ret
 _f1E8B_04D0 ENDP
 
-        PUBLIC  _f1E8B_0536              ; @ 1E8B:0536 stub
-_f1E8B_0536 PROC NEAR
+; 1E8B:0536: age the overlay records after a version-record update. It bumps the 20B5:00AC counter,
+; then for each record in the 20B5:00BC chain: when its ES:0010 entry is set, marks it used (ES:001B
+; = 1, ES:001A |= 4); otherwise sets the unused bit (ES:001A |= 8), re-adds the record through 0512
+; (0536), updates ES:000E and calls the record's ES:0018 routine, relinking through 0711. It ends
+; when the byte count 0761 says no older record remains, then stores the new top at ES:0010. It
+; aborts through __OverlayHalt (0000:503F) if the overlay routine fails. Evidence: the [00AC]/[00BA]
+; counters, the ES:001A bit flags, the [00A8] limit and the __OverlayHalt jump.
+        PUBLIC  _AgeOverlayRecords       ; @ 1E8B:0536
+_AgeOverlayRecords PROC NEAR
+        push    es
+        inc     word ptr ds:[0BAh]
+        call    _OverlayTotalParagraphs
+        jmp     short age_test
+age_loop:
+        popf
+        push    dx
+        jae     short age_replace
+        call    _DiscardOverlayRecords
+age_replace:
+        mov     es,ds:[0BCh]
+        mov     ax,es:[1Ch]
+        mov     ds:[0BCh],ax
+        cmp     byte ptr es:[1Bh],0
+        jne     short age_dec
+        call    _ReleaseOverlayFpuState
+        call    _OverlayCodeParagraphs
+        jmp     short age_pop
+age_dec:
+        dec     byte ptr es:[1Bh]
+        call    _MoveOverlayRecord
+        call    _LinkOverlayRecord
+age_pop:
+        pop     dx
+age_test:
+        call    _OverlayBytesRemaining
+        pushf
+        cmp     dx,ax
+        ja      short age_loop
+        popf
+        pop     es
+        mov     ax,ds:[0B0h]
+        mov     es:[10h],ax
         ret
-_f1E8B_0536 ENDP
+_AgeOverlayRecords ENDP
 
-        PUBLIC  _f1E8B_0580              ; @ 1E8B:0580 stub
-_f1E8B_0580 PROC NEAR
+; 1E8B:0580: bring an overlay record ES: into memory. It bumps the 20B5:00AC counter, marks the
+; record used or unused (ES:001B/ES:001A), ages the records through 0536 or runs the record's
+; ES:0018 routine, relinks through 0711, and then, while the overlay's entry chain at 20B5:00BC has
+; records (0761 says how many bytes are left), clears or restores each record's version table (068D
+; and 077D) until the remaining size reaches the 20B5:00A8 limit. A failed overlay routine jumps to
+; __OverlayHalt. Evidence: the ES:001A/001B flags, the 0536/0711/064E/0761/068D/077D calls, the
+; [00A8] limit and the __OverlayHalt jump.
+        PUBLIC  _LoadOverlayRecord       ; @ 1E8B:0580
+_LoadOverlayRecord PROC NEAR
+        inc     word ptr ds:[0ACh]
+        cmp     word ptr es:[10h],0
+        je      short load_unused
+        mov     byte ptr es:[1Bh],1
+        or      byte ptr es:[1Ah],4
+        jmp     short load_after
+        nop
+load_unused:
+        or      byte ptr es:[1Ah],8
+        call    _AgeOverlayRecords
+        push    ds
+        dec     ax
+        mov     ds,ax
+        mov     ds:[0Eh],es
+        pop     ds
+        call    word ptr es:[18h]
+        jb      short load_halt
+        call    _LinkOverlayRecord
+load_after:
+        call    _RestoreOverlayVersionTable
+        mov     al,es:[1Ah]
+        and     al,3
+        add     byte ptr es:[1Bh],al
+        push    es
+        call    _OverlayBytesRemaining
+        mov     es,ds:[0BCh]
+load_chain:
+        mov     cx,es:[1Ch]
+        jcxz    short load_out
+        cmp     ax,ds:[0A8h]
+        jae     short load_out
+        push    cx
+        push    ax
+        cmp     byte ptr es:[1Bh],0
+        je      short load_clear
+        xor     ax,ax
+        jmp     short load_add
+load_clear:
+        call    _ClearOverlayVersionTable
+        call    _OverlayCodeParagraphs
+load_add:
+        pop     cx
+        pop     es
+        add     ax,cx
+        jmp     short load_chain
+load_out:
+        pop     es
         ret
-_f1E8B_0580 ENDP
+load_halt:
+        jmp     far ptr _OverlayHalt
+_LoadOverlayRecord ENDP
 
 ; 1E8B:05FB: release the numeric coprocessor state of the overlay record ES: the entry at ES:0018
 ; holds 4A2h when the emulator (or a real FPU) installed its own replacement, so call the previous
@@ -463,15 +618,59 @@ fpu_done:
         ret
 _ReleaseOverlayFpuState ENDP
 
-        PUBLIC  _f1E8B_0613              ; @ 1E8B:0613 stub
-_f1E8B_0613 PROC NEAR
+; 1E8B:0613: discard every overlay record in the 20B5:00BC chain. It walks the chain through
+; ES:[001C], counts the records in CX, then walks it back (the segments are on the stack) from the
+; end, unlinking each from the 20B5:00BC head via 06C0. It then resets the running size at 20B5:00B0
+; to the file size 20B5:00B4. Evidence: the ES:001C chain, the 06C0/077D calls and the [00B4] reset.
+        PUBLIC  _DiscardOverlayRecords   ; @ 1E8B:0613
+_DiscardOverlayRecords PROC NEAR
+        mov     ax,ds:[0BCh]
+        xor     cx,cx
+disc_walk:
+        inc     cx
+        push    ax
+        mov     es,ax
+        mov     ax,es:[1Ch]
+        or      ax,ax
+        jne     short disc_walk
+        mov     ds:[0BCh],ax
+        mov     ax,ds:[0B6h]
+        mov     ds:[0B0h],ax
+disc_unlink:
+        pop     es
+        push    cx
+        mov     ax,ds:[0BCh]
+        mov     es:[1Ch],ax
+        mov     ds:[0BCh],es
+        call    _OverlayCodeParagraphs
+        sub     ds:[0B0h],ax
+        call    _MoveOverlayRecord
+        pop     cx
+        loop    disc_unlink
+        mov     ax,ds:[0B4h]
+        mov     ds:[0B0h],ax
         ret
-_f1E8B_0613 ENDP
+_DiscardOverlayRecords ENDP
 
-        PUBLIC  _f1E8B_064E              ; @ 1E8B:064E stub
-_f1E8B_064E PROC NEAR
+; 1E8B:064E: restore an overlay record's version table. With no version records (ES:000C = 0) it
+; does nothing; when the record's marker at ES:0020 is 0EAh (a live overlay entry) it falls into
+; _FillOverlayVersionTable at 066F; otherwise it strips the record's entry from the patch table
+; (072F) and, when a version chain at ES:0002 exists, re-fills the table. Evidence: the ES:000C
+; test, the 0EAh marker and the 072F call.
+        PUBLIC  _RestoreOverlayVersionTable ; @ 1E8B:064E
+_RestoreOverlayVersionTable PROC NEAR
+        cmp     word ptr es:[0Ch],0
+        jne     short rest_have
         ret
-_f1E8B_064E ENDP
+rest_have:
+        cmp     byte ptr es:[20h],0EAh
+        je      short ver_ret
+        mov     cx,es:[2]
+        jcxz    _FillOverlayVersionTable
+        mov     ax,es:[10h]
+        mov     dx,es
+        call    _PatchOverlayEntryVector
+_RestoreOverlayVersionTable ENDP
 
 ; 1E8B:066F: fill the CX overlay-version records at ES:0020 with the entry-point far pointer
 ; (0EAh, the offset at ES:0010 and the base segment ES), so a later load can find the overlay's
@@ -491,6 +690,7 @@ fill_ver:
         mov     ax,bx
         stosw
         loop    fill_ver
+ver_ret:
         ret
 _FillOverlayVersionTable ENDP
 
@@ -523,10 +723,54 @@ clr_out:
         ret
 _ClearOverlayVersionTable ENDP
 
-        PUBLIC  _f1E8B_06C0              ; @ 1E8B:06C0 stub
-_f1E8B_06C0 PROC NEAR
+; 1E8B:06C0: move the overlay record ES: in memory. It moves ES:0008 bytes (in words) from the old
+; base ES:0010 to the new base 20B5:00B0, forward or backward (STD) depending on the direction, then
+; updates ES:000E and, unless ES:0020 is CDh, strips the record from the patch table (073B) and
+; clears the CX version records at ES:0023. Evidence: the ES:0008 length, the ES:0010/DGROUP:00B0
+; bases, the rep movsw direction choice and the 073B call.
+        PUBLIC  _MoveOverlayRecord       ; @ 1E8B:06C0
+_MoveOverlayRecord PROC NEAR
+        mov     ax,ds:[0B0h]
+        mov     dx,es:[10h]
+        mov     es:[10h],ax
+        mov     cx,es:[8]
+        inc     cx
+        shr     cx,1
+        xor     si,si
+        cld
+        cmp     ax,dx
+        jb      short move_forward
+        mov     si,cx
+        dec     si
+        shl     si,1
+        std
+move_forward:
+        mov     di,si
+        push    ds
+        push    es
+        mov     ds,dx
+        mov     es,ax
+        rep movsw
+        cld
+        dec     ax
+        mov     ds,ax
+        pop     es
+        mov     ds:[0Eh],es
+        inc     ax
+        pop     ds
+        cmp     byte ptr es:[20h],0CDh
+        je      short move_out
+        call    _FindOverlaySlot
+        mov     cx,es:[0Ch]
+        mov     di,23h
+        cld
+move_label:
+        stosw
+        add     di,3
+        loop    move_label
+move_out:
         ret
-_f1E8B_06C0 ENDP
+_MoveOverlayRecord ENDP
 
 ; 1E8B:0711: add the paragraph count of the overlay record ES to the running total at 20B5:00B0,
 ; then link that record into the tail of the list held at 20BF:001C (walking the [001C] successor
