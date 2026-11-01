@@ -48,6 +48,8 @@ No game code uses floating point: no emulator interrupts (`INT 34h` to `3Dh`) in
 
 Three negative tests confirm the matcher rejects a near miss: a loop bound changed from 52 to 53, the wrong table passed, and an extra store (scratch probe, 2026-10-31).
 
+
+**Some units were compiled through the assembler** [V] (escalation e14ef, 2026-11-01). Turbo C++'s own code generation (`-c`) merges identical jump tails; in `UpdateOptionList` (14EF:0274) the original keeps four case tails apart, and only `TCC -S` followed by TASM gives those bytes: the whole unit e14ef matches (6 of 6, 1,410 bytes) that way and not otherwise. That is what `TCC -B` does, which a file with inline `asm` gets automatically. The assembler encoded instructions without TASM 2.0's SMART forms (with SMART, `or bx,1` becomes `83` where the original has `81`), as TASM 2.0 `/jNOSMART` does, or an earlier TASM [H]. Of the 24 C units matched on 2026-11-01, all but E07C8 also match this way, so the switch is per file: `/*@flags ... -B */`. It does not explain `0ACD:091C`.
 ### 2.1.2 What segment 0 holds
 
 Segment `0000` (`_TEXT`, 31,386 bytes) starts with `C0L` (524 bytes), then 19,996 bytes that are not library code (`0000:020C` to `0000:5028`), then the runtime library from `0000:5028` (`OVRHALT`, the first module found) to the end, 10,866 bytes. The 20 KB are assembly: lookup tables kept in the code segment, a routine that loads DS from CS to fix up a table of words (`0000:03FA`), near calls. [H] They are Westwood's assembly modules that use `_TEXT` (what TASM's simplified segments name a large-model module's code), linked between the startup and the library; units `e_c0`, `e_text`, `e_lib` in `re/units.toml`. `INTRO.EXE` has the same three parts, its library from `0000:5400`.
