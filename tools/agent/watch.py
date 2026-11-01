@@ -6,7 +6,9 @@
 One screen: progress on main (and what the claimed worktrees have matched but not merged yet);
 every agent of the run with its state (a session on a unit with its model, minutes and the cost
 OpenCode reports so far; idle; backing off after a provider refusal; stopped), the last line of its
-log; the spend of the run so far; hand-offs waiting (escalations and rejections first); units both
+log; the costs: per agent (sessions, functions matched, USD of finished sessions and of the running
+one, USD per function matched), per model, for this run (with USD per hour) and for every run so
+far (from the events log; a session OpenCode could not price counts as 0 and is flagged); hand-offs waiting (escalations and rejections first); units both
 tiers gave up on (for the human); the latest events. It only reads, so it is safe to leave running.
 """
 from __future__ import annotations
@@ -93,6 +95,65 @@ def describe(e: dict) -> str:
     return "%s %s" % (k, " ".join("%s=%s" % (a, b) for a, b in e.items() if a not in ("time", "event")))
 
 
+def money(x: float | None) -> str:
+    return "-" if x is None else "%.2f" % x
+
+
+def tally(evs: list[dict]) -> dict:
+    """Sessions, functions gained at L2, and USD of finished worker sessions."""
+    t = {"sessions": 0, "gained": 0, "cost": 0.0, "unknown": 0}
+    for e in evs:
+        t["sessions"] += 1
+        t["gained"] += max((e.get("l2_after") or 0) - (e.get("l2_before") or 0), 0)
+        if e.get("cost") is None:
+            t["unknown"] += 1
+        t["cost"] += e.get("cost") or 0.0
+    return t
+
+
+def costs(state: dict, statuses: dict, running: dict[str, float], width: int) -> list[str]:
+    """Spend per agent, per model, for this run and for every run so far: finished sessions as
+    OpenCode reported them when they ended, plus what the running sessions have spent so far."""
+    allev = [e for e in events() if e.get("event") == "worker-session"]
+    started = state.get("started", "")
+    runev = [e for e in allev if state and e.get("time", "") >= started]
+    out = [section("costs (USD)", width)]
+    head = "  %-15s %-22s %8s %8s %9s %9s %9s %10s" % (
+        "agent", "model", "sessions", "matched", "finished", "running", "total", "per match")
+    out.append(c(BOLD, head))
+    names = sorted({e.get("agent") for e in runev} | set(running))
+    models: dict[str, list] = {}
+
+    def row(label: str, model: str, t: dict, run_now: float) -> str:
+        total = t["cost"] + run_now
+        per = total / t["gained"] if t["gained"] else None
+        return "  %-15s %-22s %8d %8d %9s %9s %9s %10s%s" % (
+            cut(label, 15), cut(model, 22), t["sessions"], t["gained"], money(t["cost"]),
+            money(run_now) if run_now else "-", money(total), money(per),
+            c(DIM, "  (%d without a cost)" % t["unknown"]) if t["unknown"] else "")
+    for n in names:
+        mine = [e for e in runev if e.get("agent") == n]
+        model = (statuses.get(n, {}).get("model") or next((e.get("model") for e in mine if e.get("model")), "") or "")
+        model = model.split("/")[-1]
+        models.setdefault(model, [[], 0.0])
+        models[model][0] += mine
+        models[model][1] += running.get(n, 0.0)
+        out.append(row(n, model, tally(mine), running.get(n, 0.0)))
+    if not names:
+        out.append(c(DIM, "  no session in this run yet"))
+    if len(models) > 1:
+        for m, (evs, now) in sorted(models.items()):
+            out.append(c(DIM, row("  model", m, tally(evs), now)))
+    if state:
+        t = tally(runev)
+        total = t["cost"] + sum(running.values())
+        hours = max(minutes_since(started), 1) / 60
+        out.append(c(BOLD, row("this run", "%dm, USD %.2f/hour" % (minutes_since(started), total / hours),
+                               t, sum(running.values()))))
+    out.append(row("all runs", "every session so far", tally(allev), sum(running.values())))
+    return out
+
+
 def screen(width: int) -> str:
     out = []
     state = runmod.load_state()
@@ -130,8 +191,7 @@ def screen(width: int) -> str:
     out.append(section("agents", width))
     statuses = common.agent_statuses()
     sessions = state.get("sessions", {})
-    run_cost = sum(e.get("cost") or 0 for e in events(started) if e.get("event") == "worker-session") if state else 0.0
-    live = 0.0
+    running: dict[str, float] = {}
     for name in sorted(set(sessions) | ({k for k, v in statuses.items() if v.get("state") != "stopped"})):
         v, st = sessions.get(name, {}), statuses.get(name, {})
         alive = runmod.alive(v["pid"]) if v.get("pid") else (st.get("pid") and runmod.alive(st["pid"]))
@@ -145,7 +205,7 @@ def screen(width: int) -> str:
             what = s
             if alive and s == "session":
                 cost = live_cost(st.get("session_id", ""))
-                live += cost or 0
+                running[name] = cost or 0.0
                 what = "%s %s %dm %s" % (c(GREEN, "session"), st.get("key"), minutes_since(st.get("started", "")),
                                          "USD %.2f" % cost if cost is not None else "")
             elif s == "backoff":
@@ -157,8 +217,7 @@ def screen(width: int) -> str:
         out.append("  %-15s %-28s %s" % (name, cut(label, 28), cut(what, max(width - 48, 20))))
         if v.get("log"):
             out.append(c(DIM, "  %15s %s" % ("", cut(runmod.last_line(v["log"]), max(width - 18, 20)))))
-    if state:
-        out.append("  spend this run: USD %.2f finished sessions + USD %.2f running" % (run_cost, live))
+    out += costs(state, statuses, running, width)
 
     out.append(section("hand-offs", width))
     files = sorted(common.state_dir("eob-handoffs").glob("*.md"), key=lambda p: p.stat().st_mtime)
