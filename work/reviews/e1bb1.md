@@ -93,3 +93,65 @@ against tools/re/disasm.py: 1A72:031C/031F (writes), 1A72:0344/0347 (reads), 1BB
 The three `note` items are for other units, not this one: src/E1BBE.ASM:75-76 is unit 1BBE's own
 file, src/E1A72.ASM:7/:32 is unit 1A72's, and src/E07A9.C:57-58 is unit e07a9's. This unit's branch
 does not change other units' files, so they stay open for their owners.
+
+## Third review (rev-haiku, at 572030b)
+
+Commit reviewed: 572030b (main when I started; review/e1bb1 is at main and src/E1BB1.ASM is the b9bf160 version). The
+two earlier rounds are ticked above. I rechecked them against the bytes with tools/re/disasm.py on eob/EOB.EXE (read
+only): 1BB1:0008, 000F and 00C8 (the busy flag); 1BB1:0034, 003A and 003E (the shape reads); 1BB1:0044..0050 (the buffer
+and size tests); 1BB1:0054..005C (the free); 1BB1:0069..006F (the stores and the size query); 1BB1:0076..0095 (the margin
+test and MemAlloc's push order); 1BB1:00A9..00BD (the 80AA, ShowPointer and 80A2 order). The E19BC.C flags comment
+(lines 29-32), the E07A9.C calls (127-130), the E1A29.C citation (19-22) and the E1A72.ASM writes (442-443) all match.
+`make match FILE=src/E1BB1.ASM` is 1 of 1 and `make readability UNIT=e1bb1` is 0 findings.
+
+### Findings
+
+- [ ] must-fix src/E1BB1.ASM header, the paragraph "If the size changed, the old buffer is freed and the size query
+  [ds:80C6] is called", and the function comment "resizing the save-under buffer when the sprite size changed": the
+  size query and MemAlloc do not run only on a size change. 1BB1:0044 `je 0066` skips the free and goes to the query
+  whenever ds:816C is 0, so the first call always queries and allocates (no free). With a buffer, only a size change
+  frees it (1BB1:0050 `je 00A9` goes to ready when the size is the same, 1BB1:0058..005C frees otherwise). Say: "with a
+  buffer and a changed size, the old buffer is freed (1BB1:0058..005C); the size query and MemAlloc run when there is
+  no buffer yet (1BB1:0044) or the size changed; with a buffer and the same size the call goes straight to the show
+  (1BB1:0050)." Change the function comment to match.
+- [ ] should src/E1BB1.ASM header, "The size comes from the shape record": the store addresses are off. 1BB1:0034 only
+  reads byte +3, and the store into ds:8154 is 1BB1:0066 (`mov [8154],ax`). The width store into ds:8156 is 1BB1:006A
+  (`mov [8156],dx`); 1BB1:003E is the `inc dx`. Cite the stores at 0066 and 006A, and keep 0034, 003A and 003E for
+  the reads and the +1.
+- [ ] should src/E1BB1.ASM:88..94 (the MemAlloc call) and its EXTRN line: the second argument is flags 0 (`mov ax,0`
+  and `push ax` at 1BB1:0088..008B), and the unit never says so. E19BC.C:29-32 gives the bits: 0x10 zeroes the block,
+  0x20 aligns it to a paragraph; 0 is neither. Say so in the call's comment.
+- [ ] should src/E1BB1.ASM, the HEAP_BLOCK comment and the header's margin paragraph: the quote "less one 16 byte
+  block" is E19BC.C:5 (the unit header), and the subtraction is E19BC.C:142 (`max -= 0x10`). Cite both, not only :142
+  with the quote.
+- [ ] should src/E1BB1.ASM header, the ASSUME paragraph (the last lines of the header): the header says `ASSUME CS:NOTHING`
+  around each direct far call is what keeps TASM from turning `lcall` into `push cs; call`. The playbook gives another
+  mechanism for that: `call far ptr` with the callee declared as EXTRN is the 9A form (docs/process/playbooks/30-lift-module.md:29).
+  Either show the ASSUME lines are needed (for example, remove them in a scratch copy and see whether `make match` still
+  reports 1 of 1 with the same bytes), or tag the claim [H].
+- [ ] note packet: `make packet UNIT=e1bb1` lists ovl2:0000 Ovl2_0000 (EOV2.C) as a caller of 1BB1:0002. EOV2.C:14 defines
+  Ovl2_0000 as an empty stub, and no build/re/eob-overlays/*.bin contains the bytes 9A 02 00 B1 1B. That search does not
+  settle it (an overlay may hold the segment unrelocated), so the header keeps the caller it cites, f07A9_010C (E07A9.C:128
+  and :130). For the map owner: check whether the packet's caller is a real call.
+- [ ] note the return value: the function returns 1 in AX on success (1BB1:00C1) and 0 on failure (1BB1:00C6). The
+  prototype at src/E07A9.C:63 is void and both callers (E07A9.C:128, :130) ignore the value. The header says "returns 1,
+  or 0 when no block can be allocated", but 0 is also returned when the largest-block test fails (1BB1:0084..0086, before
+  MemAlloc). Say "0 when the block is too small or MemAlloc fails". No change is needed in src/E07A9.C.
+- [ ] note src/E07A9.C:127-130 (the caller, for the e07a9 owner): the else branch passes gIconsDDE4[0] with (0, 0). E07A9.C:43
+  says index 0 is "none". If that entry is a null far pointer, 1BB1:0034 reads the shape at 0000:0003. Whether n can be
+  0 there (a zero icon number reaches the call through gTable8DD2[n].icon) is not checked here.
+- [ ] note src/E1BBE.ASM:65 (for the 1BBE owner): "the sprite size query (1BB1:0094)" cites the wrong address. The call to
+  [ds:80C6] is at 1BB1:006F (`lcall [0x80c6]`); 1BB1:0094 is the `sub ax,16` before MemAlloc.
+- [ ] note the open notes from the earlier rounds still stand for their owners: src/E1BBE.ASM:72..76 ("already hidden"
+  is wrong, a nested hide increments the count, 1BBE:0015); src/E1A72.ASM:7 and :32 and src/E1BBE.ASM:28, :273 and :353
+  call ds:812E "semaphore" where this unit and E1BF3 say "busy flag" (the global is gPointerBusy).
+
+### Summary (third review)
+
+The unit is understandable from its source alone. The names have evidence in the header and the registry: SetMousePointerShape
+(one caller, f07A9_010C, E07A9.C:127-130), the shape and buffer globals (the 1BB1 and 1BBE reads and writes), gPointerBusy
+(test and increment, 1BB1:0008/000F and release 00C8), gHideDepth, HidePointer and ShowPointer (1BBE:0002 and 00ED), and
+HEAP_BLOCK. The placeholders are g80AA, g80A2 and g80C6 (the callees behind them are not lifted; their evidence is the
+call sites and the comments in E1BBE.ASM and E1BF3.ASM), and g8172/g8174 (the writer and reader are named, the argument's
+meaning is not). One must-fix remains: the header says the size query and reallocation happen only on a size change, but
+the first call with no buffer does them too. Verdict: review-failed.
