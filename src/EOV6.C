@@ -89,11 +89,248 @@ extern void ClipRect(int x1, int y1, int x2, int y2, int width, int height, int 
 extern int f1AAD_038E(void); /*@ 1AAD:038E */
 extern void f1AAD_0480(void); /*@ 1AAD:0480 */
 extern int fOvl1_243A(int what); /*@ 2102:0039 */
-extern int f0A72_007B(int value, int classIndex); /*@ 0A72:007B */
+extern int FindClassSlot(int value, int classIndex); /*@ 0A72:007B */
 extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
 extern void *memchr(void *s, int c, unsigned n); /*@ 0000:6319 */
 
-/*@ ovl6:0000 stub */ int Ovl6_0000(void) { return 0; }
+int f07E2(void);
+void f0858(int hours, int draw);
+int f09D2(void);
+int f0A92(void);
+void f0B9B(int message);
+
+/* ovl6:0000: the rest/camp loop, the overlay's entry. In six sub-steps (ds:tick) per hour it
+   increments each member's spell group counters, memorises a spell when one of the 30 memorized
+   slots at +0x55 or known slots at +0x37 is negative ("%s gained %s." / "%s memorized %s."),
+   spends a healer's memorized slots ("%s casts healing on %s.") to top up the most wounded member
+   and, every eight hours, grants the class-2 spell, levels members up or down and updates the
+   object list. Each hour it prints "Hours rested: %-4d" (f0858), every read of a key or the end
+   of the rest shows the warning box (f0B9B). Returns 1 or 0 when the camp could not start, or the
+   09D2 result otherwise. Called by the in-game menu through the overlay entry (stub 212A:0020). */
+/*@ ovl6:0000 draft */ int CampLoop(void)
+{
+    int healerFound;
+    int flag4;
+    int result;
+    int flag8;
+    int gained;
+    char *slots;
+    struct Six counters = g7F40;
+    int healAmount;
+    int foundWounded;
+    int hours;
+    int tick;
+    int member;
+    int i;
+
+    hours = 0;
+    if (f09D2())
+        return 1;
+    f0D1C_0C21(gFE64 << 3, gFE66, gFE62 << 3, gFE60, 0, 0);
+    flag8 = 0;
+    for (member = 0; member < 6; member++) {
+        if (f0D1C_0670(member, 1))
+            flag8 |= !f0D1C_0670(member, 0x10);
+    }
+    if (flag8) {
+        if (fOvl1_243A(0x3b) == 0)
+            return 0;
+    }
+    flag4 = 0;
+    healerFound = 0;
+    foundWounded = f07E2();
+    if (foundWounded > 0) {
+        for (member = 0; member < 6; member++) {
+            if (FindClassSlot(2, gChars[member].classIndex) == -1)
+                continue;
+            if (gChars[member].hp <= 0)
+                continue;
+            if (gChars[member].name[0] == 0)
+                continue;
+            if (gChars[member].level <= 0)
+                continue;
+            healerFound = fOvl1_243A(0x28);
+            break;
+        }
+    }
+    f1DE7_00B6(7);
+    foundWounded = f07E2();
+    tick = 0;
+    f0858(hours, 1);
+    f1DE7_0009(7);
+    f1A47_0169(gA9C0);
+    for (;;) {
+        tick++;
+        for (i = 0; i < 6; i++) {
+            counters.b[i]++;
+            if (gChars[i].level == 0)
+                continue;
+            if (!f0D1C_0670(i, 5))
+                continue;
+            slots = &gChars[i].memorized[0];
+            for (member = 0; member < 0x1e; member++) {
+                if (member / 6 + '0' >= counters.b[i])
+                    break;
+                if (*slots >= 0) {
+                    slots++;
+                    continue;
+                }
+                *slots = -*slots;
+                counters.b[i] = 0x30;
+                sprintf(gFE6E, "%s gained %s.\r", &gChars[i].name[0],
+                        gSpells151F[*slots].name);
+                LockHidePointer();
+                f1DE7_060A(gFE6E);
+                LockShowPointer();
+                WaitFrames(5);
+                break;
+            }
+            if (f0D1C_00F1(i, 0x1d, -1) == -1)
+                continue;
+            slots = &gChars[i].known[0];
+            for (member = 0; member < 0x1e; member++) {
+                if (member / 6 + '0' >= counters.b[i])
+                    break;
+                if (*slots >= 0) {
+                    slots++;
+                    continue;
+                }
+                *slots = -*slots;
+                counters.b[i] = 0x30;
+                sprintf(gFE6E, "%s memorized %s.\r", &gChars[i].name[0],
+                        gSpells1344[*slots].name);
+                LockHidePointer();
+                f1DE7_060A(gFE6E);
+                LockShowPointer();
+                WaitFrames(5);
+                break;
+            }
+        }
+        if (healerFound && foundWounded) {
+            for (i = 0; i < 6; i++) {
+                if (FindClassSlot(2, gChars[i].classIndex) == -1)
+                    continue;
+                if (memchr(&gChars[i].memorized[0], -2, 0x1e) != 0
+                    || memchr(&gChars[i].memorized[0], -0xf, 0x1e) != 0
+                    || memchr(&gChars[i].memorized[0], -0x14, 0x1e) != 0)
+                    break;
+                slots = &gChars[i].memorized[0];
+                for (member = 0; member < 0x1e; member++) {
+                    healAmount = 0;
+                    switch (*slots) {
+                    case 2:
+                        healAmount = RollDice(1, 8, 0);
+                        break;
+                    case 0xf:
+                        healAmount = RollDice(2, 8, 1);
+                        break;
+                    case 0x14:
+                        healAmount = RollDice(3, 8, 3);
+                        break;
+                    }
+                    *slots = -*slots;
+                    slots++;
+                    if (!healAmount)
+                        break;
+                    counters.b[i] = 0;
+                    foundWounded--;
+                    sprintf(gFE6E, "%s casts healing on %s.\r", &gChars[i].name[0],
+                            &gChars[foundWounded].name[0]);
+                    LockHidePointer();
+                    f1DE7_060A(gFE6E);
+                    LockShowPointer();
+                    WaitFrames(5);
+                    if (gChars[foundWounded].hp + healAmount > gChars[foundWounded].maxhp)
+                        gChars[foundWounded].hp = gChars[foundWounded].maxhp;
+                    else
+                        gChars[foundWounded].hp += healAmount;
+                    foundWounded++;
+                }
+                if (foundWounded == 0)
+                    break;
+            }
+        }
+        if (tick == 6) {
+            tick = 0;
+            hours++;
+            g8492 += 0x7ff8L;
+            f0858(hours, 0);
+            for (member = 0; member < 6; member++) {
+                if (!f0D1C_0670(member, 1))
+                    continue;
+                if (f0D1C_0670(member, 0x10))
+                    continue;
+                f0DE8_09B9(member, 0xa);
+                f082C_0425(5);
+            }
+            if (hours % 8 == 0) {
+                gained = 0;
+                for (member = 0; member < 6; member++) {
+                    if (gChars[member].classIndex == 2) {
+                        slots = memchr(&gChars[member].memorized[0], 0xffe8, 6);
+                        if (slots)
+                            *slots = 0x18;
+                        else if (!memchr(&gChars[member].memorized[0], 0x18, 6))
+                            *(char *)memchr(&gChars[member].memorized[0], 0, 6) = 0x18;
+                    }
+                    if (!f0D1C_0670(member, 3))
+                        continue;
+                    if (gChars[member].level == 0) {
+                        if (hours % 0x18 == 0 && gChars[member].hp > 0xf6) {
+                            f0DE8_09B9(member, 1);
+                            gained = 1;
+                            f1A47_0169(gA9C0);
+                            f1547_0991(member);
+                        }
+                        continue;
+                    }
+                    if (gChars[member].hp < gChars[member].maxhp) {
+                        gChars[member].hp++;
+                        f1A47_0169(gA9C0);
+                        f1547_0991(member);
+                    }
+                    if (f0D1C_0163(member, 2) < 0) {
+                        if (gChars[member].level > 5) {
+                            gChars[member].level -= 5;
+                        } else {
+                            gChars[member].level = 0;
+                            gained = 1;
+                        }
+                    }
+                }
+                if (gained) {
+                    if (fOvl1_243A(0x2f) == 0) {
+                        f0858(hours, 1);
+                        flag4 = 0;
+                        foundWounded = 0;
+                        goto done;
+                    }
+                    f0858(hours, 1);
+                    foundWounded = f07E2();
+                }
+            }
+        }
+        if (f0A92() == 0 && !flag4 && foundWounded) {
+            flag4 = fOvl1_243A(0x29);
+            f0858(hours, 1);
+            if (!flag4)
+                goto done;
+        }
+        if (!f1AAD_038E()) {
+            result = f09D2();
+            if ((f0A92() || (foundWounded && (flag4 || healerFound)))
+                && !f1AAD_038E() && result == 0)
+                continue;
+        }
+done:
+        f1AAD_0480();
+        f1DE7_0009(4);
+        f1A47_0169(gFE5A);
+        if (!foundWounded && !result)
+            f0B9B(0x2b);
+        return result;
+    }
+}
 
 /* ovl6:07E2: the 0-based index plus one of the party member with the lowest current hit points and
    hit points below his maximum (at most 0x384), or zero when no member needs healing. Called by
@@ -200,14 +437,14 @@ extern void *memchr(void *s, int c, unsigned n); /*@ 0000:6319 */
             continue;
         if (gChars[member].level <= 0)
             continue;
-        if (f0A72_007B(2, gChars[member].classIndex) != -1
-            || f0A72_007B(4, gChars[member].classIndex) != 0) {
+        if (FindClassSlot(2, gChars[member].classIndex) != -1
+            || FindClassSlot(4, gChars[member].classIndex) != 0) {
             slots = &gChars[member].memorized[0];
             for (i = 0; i < 0x1e; i++)
                 if (*slots++ < 0)
                     return 1;
         }
-        if (f0A72_007B(1, gChars[member].classIndex) == -1)
+        if (FindClassSlot(1, gChars[member].classIndex) == -1)
             continue;
         if (f0D1C_00F1(member, 0x1d, -1) == -1)
             continue;
