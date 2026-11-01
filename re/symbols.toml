@@ -3906,7 +3906,7 @@ unit = "e177d"
 addr = "177D:000A"
 size = 102
 evidence = ["far", "segment"]
-name = "f177D_000A"
+name = "LoadSoundDriver"
 level = "L2"
 match_flags = "-ml -O -Z"
 
@@ -3916,7 +3916,7 @@ unit = "e177d"
 addr = "177D:0070"
 size = 131
 evidence = ["far", "frame"]
-name = "f177D_0070"
+name = "PlaySound"
 level = "L2"
 match_flags = "-ml -O -Z"
 
@@ -3926,7 +3926,7 @@ unit = "e177d"
 addr = "177D:00F3"
 size = 19
 evidence = ["far", "frame"]
-name = "f177D_00F3"
+name = "PlaySoundDefault"
 level = "L2"
 match_flags = "-ml -O -Z"
 
@@ -3936,7 +3936,10 @@ unit = "e177d"
 addr = "177D:0106"
 size = 394
 evidence = ["far", "frame"]
-notes = "draft 2026-11-01 (src/E177D.C): everything matches except the two far accesses to the sound driver register at 0000:3B36 (the 13000-byte block 177D:000A loads into the code segment). Both `mov ax,0` (177D:0136 and 177D:01F3) carry an MZ relocation (linear 0x17906 and 0x179CD) and the raw word is 0000, so the original's segment word names the first load segment (the e_text code segment), not DGROUP (0x212E) and not this unit (177D). The offset 0x3B36 is a plain displacement (no relocation), so the source is `MK_FP(<segment symbol>, 0x3B36)`, not a far object access. Our source cannot reach that word as cmatch compares it: `MK_FP(0,0x3b36)` gives `xor ax,ax` (2 bytes, no reloc); `extern unsigned char far gDrv;` gives `mov ax, seg _gDrv` relocated to DGROUP (cmatch: segment 212E, original 0000); `MK_FP(FP_SEG(f0_03AA),0x3b36)` gives `mov ax, seg _f0_03AA` relocated to the unit's code segment (cmatch: segment 177D, original 0000; this form is the draft). cmatch explains a relocated segment word only when it is DGROUP (orig.dgroup) or this unit's own segment (unit_frame); the original names segment 0, which neither rule allows (tools/match/cmatch.py 271-286). No C form found that emits `mov ax,0; mov es,ax` with no relocation: 232 flag combinations and many constant/`MK_FP`/`_seg`/`FP_SEG`/far-object forms all give `xor ax,ax`; the 0ACD `mov ax,0; push ax` (no reloc) is a zero argument, not a segment. Rest of the function: -ml -O -Z; the tail is a ternary `g5E24 = b ? f17A6_0F61(gFBCA,b) : 0;` and the body uses a register local `n` (SI)."
+notes = "resolved 2026-11-01: the two far accesses are the far object gDrvReg annotated 0000:3B36; task/far-data taught cmatch to prove a far object in that segment (src/E177D.C)."
+name = "PlaySoundVolume"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e17a6_0000"

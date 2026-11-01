@@ -1,23 +1,28 @@
-/* Unit at EOB.EXE 177D:000A (646 bytes, 4 functions): load a sound driver (adlib.dat or
-   pcgamesn.dat) into a 120-byte buffer and a 13000-byte block that sits in the near code
-   segment, fix up the block's word table, then play driver commands by poking that table.
-   177D:0106 reads and writes the driver register byte at 0000:3B36 (the code-segment block);
-   its source is written as a draft: see re/symbols.toml e177d_0106 for what blocks it.
-   Placeholder names. */
+/* Unit at EOB.EXE 177D:000A (646 bytes, 4 functions): the sound driver loader and the routines
+   that play a game sound through it. LoadSoundDriver (177D:000A) opens adlib.dat or pcgamesn.dat
+   by gSoundCard (ds:B892), reads the 120-byte game-number to driver-number map into gSoundMap
+   (ds:DCAC) and the driver's 32C8h data block into the code segment (the far pointer 0000:03AA
+   points at it), then fixes the block's word table (0000:03FA). PlaySound (177D:0070) plays the
+   driver sound a game number maps to; PlaySoundVolume (177D:0106) plays it at a volume, first
+   stopping or retuning the sound already playing, and PlaySoundDefault (177D:00F3) calls it at
+   the global volume gSoundVolume (ds:FBCA). The byte at 0000:3B36 is the loaded driver's register.
+   Whitepaper 2.7 (AdLib) and 4.4 (ADLIB.DAT / PCGAMESN.DAT). Compiled -ml -O -Z. */
 
 #include <dos.h>
 
-extern unsigned char far *gBufDCAC; /*@ ds:DCAC */
-extern int g80E6; /*@ ds:80E6 */
-extern unsigned char gB892; /*@ ds:B892 */
-extern unsigned char g9E; /*@ ds:009E */
-extern unsigned char g8A67; /*@ ds:8A67 */
-extern int g5E22; /*@ ds:5E22 */
-extern int g5E24; /*@ ds:5E24 */
-extern int g5E26; /*@ ds:5E26 */
-extern int g5E28; /*@ ds:5E28 */
-extern int g5E2A; /*@ ds:5E2A */
-extern int gFBCA; /*@ ds:FBCA */
+extern unsigned char far *gSoundMap; /*@ ds:DCAC */
+extern int gSoundOn; /*@ ds:80E6 */
+extern unsigned char gSoundCard; /*@ ds:B892 */
+extern unsigned char gSpeakerMode; /*@ ds:009E */
+extern unsigned char gSpeakerOn; /*@ ds:8A67 */
+extern int gCurSound; /*@ ds:5E22 */
+extern int gCurVolume; /*@ ds:5E24 */
+extern int gPrevSound; /*@ ds:5E26 */
+extern int gSoundLevel; /*@ ds:5E28 */
+extern int gSoundAmp; /*@ ds:5E2A */
+extern int gSoundVolume; /*@ ds:FBCA */
+
+extern unsigned char far gDrvReg; /*@ 0000:3B36 */
 
 extern int FileOpen(char far *name, int mode); /*@ 1C0E:00DB */
 extern void FileRead(int handle, void far *buf, unsigned long len); /*@ 1C0E:0400 */
@@ -32,96 +37,115 @@ extern void f1948_0418(void far *p); /*@ 1948:0418 */
 extern void f1948_0458(void); /*@ 1948:0458 */
 extern int f17A6_0F61(int x, int y); /*@ 17A6:0F61 */
 
-/*@ 177D:000A */ void f177D_000A(void)
+/* 177D:000A: opens the driver file chosen by gSoundCard (adlib.dat when 0, pcgamesn.dat
+   otherwise), reads its 120-byte sound map into gSoundMap and its data block into the code
+   segment, closes the file and fixes the block's word table. Called by StartupAlloc (07A9:000A). */
+/*@ 177D:000A */ void LoadSoundDriver(void)
 {
-    int h;
+    int handle;
 
-    if (gB892 == 0)
-        h = FileOpen("adlib.dat", 1);
+    if (gSoundCard == 0)
+        handle = FileOpen("adlib.dat", 1);
     else
-        h = FileOpen("pcgamesn.dat", 1);
-    FileRead(h, gBufDCAC, 120L);
-    FileRead(h, f0_03AA(), 0x32C8L);
-    FileClose(h);
+        handle = FileOpen("pcgamesn.dat", 1);
+    FileRead(handle, gSoundMap, 120L);
+    FileRead(handle, f0_03AA(), 0x32C8L);
+    FileClose(handle);
     f0_03FA();
 }
 
-/*@ 177D:0070 */ void f177D_0070(int i)
+/* 177D:0070: plays the game sound numbered `sound`: its driver number comes from gSoundMap and
+   a value of 96h or more is ignored. On AdLib the driver number is handed to 0000:400C; on the
+   PC speaker the sign of the number gates the speaker (gSpeakerOn) when gSpeakerMode is 1 and
+   the low seven bits select a routine through 0000:03E3. Does nothing when sound is off
+   (gSoundOn). Called by many game routines to make a sound effect. */
+/*@ 177D:0070 */ void PlaySound(int sound)
 {
-    int c;
-    void far *p;
+    int driverSound;
+    void far *routine;
 
-    if (!g80E6)
+    if (!gSoundOn)
         return;
-    c = gBufDCAC[i];
-    if (c < 0x96) {
-        if (gB892 == 0) {
-            f0_400C(c);
+    driverSound = gSoundMap[sound];
+    if (driverSound < 0x96) {
+        if (gSoundCard == 0) {
+            f0_400C(driverSound);
             return;
         }
-        if (g9E == 1) {
-            if (c < 0 && g8A67) {
-                g8A67 = 0;
+        if (gSpeakerMode == 1) {
+            if (driverSound < 0 && gSpeakerOn) {
+                gSpeakerOn = 0;
                 f1948_0458();
             }
-            if (c > 0 && g8A67 == 0) {
-                g8A67 = 1;
+            if (driverSound > 0 && gSpeakerOn == 0) {
+                gSpeakerOn = 1;
                 f1948_0458();
             }
         }
-        c &= 0x7f;
-        p = f0_03E3(c);
-        f1948_0418(p);
+        driverSound &= 0x7f;
+        routine = f0_03E3(driverSound);
+        f1948_0418(routine);
     }
 }
-void f177D_0106(int a, int b);
+void PlaySoundVolume(int sound, int volume);
 
-/*@ 177D:00F3 */ void f177D_00F3(int a)
+/* 177D:00F3: plays the game sound numbered `sound` at the current global volume gSoundVolume.
+   A thin wrapper over PlaySoundVolume for the callers that do not give a volume themselves. */
+/*@ 177D:00F3 */ void PlaySoundDefault(int sound)
 {
-    f177D_0106(a, gFBCA);
+    PlaySoundVolume(sound, gSoundVolume);
 }
-/*@ 177D:0106 draft */ void f177D_0106(int a, int b)
-{
-    int n;
-    void far *p;
 
-    if (!g80E6)
+/* 177D:0106: plays the game sound numbered `sound` at `volume`. When a sound is already
+   playing (gCurSound) it first restores the driver registers of the loaded sound (gPrevSound,
+   gSoundLevel, gSoundAmp), then loads the new sound's register values through 0000:03CA and,
+   for a volume above zero, fades the level towards full attenuation and writes the amplitude
+   (0000:03B0), starts it (0000:400C on AdLib, 0000:03E3 on the PC speaker) and pokes the driver
+   register gDrvReg; the PC-speaker path also gates the speaker through gSpeakerOn when
+   gSpeakerMode is 1. Finally gCurVolume is computed from `volume` through 17A6:0F61(gSoundVolume,
+   volume) and gCurSound is set from gSoundMap[sound]. Does nothing when sound is off (gSoundOn). */
+/*@ 177D:0106 */ void PlaySoundVolume(int sound, int volume)
+{
+    int level;
+    void far *routine;
+
+    if (!gSoundOn)
         return;
-    if (g5E22 > 0) {
-        if (gB892 == 0) {
-            if (g5E24 < 0x10) {
-                while (*(unsigned char far *)MK_FP(FP_SEG(f0_03AA), 0x3b36))
+    if (gCurSound > 0) {
+        if (gSoundCard == 0) {
+            if (gCurVolume < 0x10) {
+                while (gDrvReg)
                     ;
-                f0_03B0(g5E26, 3, g5E28);
-                f0_03B0(g5E26, 1, g5E2A);
-                g5E26 = g5E22;
-                g5E28 = f0_03CA(g5E22, 3);
-                g5E2A = f0_03CA(g5E22, 1);
-                n = g5E28 = f0_03CA(g5E22, 3);
-                if (g5E24 > 0) {
-                    n = g5E28 + ((0x3f - g5E28) * (g5E24 - 1) >> 4);
-                    f0_03B0(g5E22, 3, n);
-                    f0_03B0(g5E22, 1, 0x20 - g5E24);
+                f0_03B0(gPrevSound, 3, gSoundLevel);
+                f0_03B0(gPrevSound, 1, gSoundAmp);
+                gPrevSound = gCurSound;
+                gSoundLevel = f0_03CA(gCurSound, 3);
+                gSoundAmp = f0_03CA(gCurSound, 1);
+                level = gSoundLevel = f0_03CA(gCurSound, 3);
+                if (gCurVolume > 0) {
+                    level = gSoundLevel + ((0x3f - gSoundLevel) * (gCurVolume - 1) >> 4);
+                    f0_03B0(gCurSound, 3, level);
+                    f0_03B0(gCurSound, 1, 0x20 - gCurVolume);
                 }
-                f0_400C(g5E22);
-                *(unsigned char far *)MK_FP(FP_SEG(f0_03AA), 0x3b36) = 0xb;
+                f0_400C(gCurSound);
+                gDrvReg = 0xb;
             }
         } else {
-            if (g9E == 1) {
-                if (g5E22 < 0 && g8A67) {
-                    g8A67 = 0;
+            if (gSpeakerMode == 1) {
+                if (gCurSound < 0 && gSpeakerOn) {
+                    gSpeakerOn = 0;
                     f1948_0458();
                 }
-                if (g5E22 > 0 && g8A67 == 0) {
-                    g8A67 = 1;
+                if (gCurSound > 0 && gSpeakerOn == 0) {
+                    gSpeakerOn = 1;
                     f1948_0458();
                 }
             }
-            g5E22 &= 0x7f;
-            p = f0_03E3(g5E22);
-            f1948_0418(p);
+            gCurSound &= 0x7f;
+            routine = f0_03E3(gCurSound);
+            f1948_0418(routine);
         }
     }
-    g5E24 = b ? f17A6_0F61(gFBCA, b) : 0;
-    g5E22 = gBufDCAC[a];
+    gCurVolume = volume ? f17A6_0F61(gSoundVolume, volume) : 0;
+    gCurSound = gSoundMap[sound];
 }

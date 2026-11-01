@@ -12,7 +12,7 @@ extern char gF43C; /*@ ds:F43C */
 extern char gFB45; /*@ ds:FB45 */
 extern void far *gBuf8DCA; /*@ ds:8DCA */
 extern void far *gBufF43E; /*@ ds:F43E */
-extern void far *gBufDCAC; /*@ ds:DCAC */
+extern void far *gSoundMap; /*@ ds:DCAC */
 extern void far *gBufDCFC; /*@ ds:DCFC */
 extern char far *gBufF534; /*@ ds:F534 */
 extern void far *gObjDCA6; /*@ ds:DCA6 */
@@ -34,7 +34,7 @@ extern void far *gNamesDDE4[]; /*@ ds:DDE4 */
 
 extern void far *MemAlloc(unsigned long size, int flags); /*@ 19BC:0007 */
 extern void far *f19EC_0002(int kind); /*@ 19EC:0002 */
-extern void f177D_000A(void); /*@ 177D:000A */
+extern void LoadSoundDriver(void); /*@ 177D:000A */
 extern void SetUnpackBuffer(int a, unsigned b); /*@ 1B82:0217 */
 extern void Ovl2Entry2(void); /*@ 2106:002A */
 extern void f1A47_0169(void far *p); /*@ 1A47:0169 */
@@ -54,13 +54,13 @@ extern void f1BB1_0002(int a, int b, void far *name); /*@ 1BB1:0002 */
     gFB45 = 0;
     gBuf8DCA = MemAlloc(7500L, 0x20);
     gBufF43E = MemAlloc(6000L, 0);
-    gBufDCAC = MemAlloc(120L, 0);
+    gSoundMap = MemAlloc(120L, 0);
     gBufDCFC = MemAlloc(4096L, 0);
     gBufF534 = MemAlloc(1600L, 0);
     gObjDCA6 = f19EC_0002(7);
     gObjDF4E = f19EC_0002(5);
     gObjEFC2 = f19EC_0002(3);
-    f177D_000A();
+    LoadSoundDriver();
     SetUnpackBuffer(gFC1A, 0xFC00);
     g810E = 0;
     Ovl2Entry2();
