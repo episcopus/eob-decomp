@@ -56,7 +56,7 @@ extern void Ovl2Entry8(void); /*@ 2106:0048 */
 extern void f0ACD_0E8A(void); /*@ 0ACD:0E8A */
 extern void f0D1C_0304(int n); /*@ 0D1C:0304 */
 extern void f0BD2_05B5(int n); /*@ 0BD2:05B5 */
-extern void f1DE7_060A(char far *text); /*@ 1DE7:060A */
+extern void DrawText(char far *text); /*@ 1DE7:060A */
 extern void f17A6_197E(void far *icon, void far *a, void far *b, int c); /*@ 17A6:197E */
 /* 1BB1:0002 stores the hot-spot offset and a pointer shape record; the caller passes the hot spot
    (8,8) when n > 0 and (0,0) otherwise, and the record gIconsDDE4[n] in both cases (see below). */
@@ -106,7 +106,7 @@ extern void SetMousePointerShape(int hotX, int hotY, void far *icon); /*@ 1BB1:0
     if (n) {
         if (g811F == 7) {
             f0BD2_05B5(n);
-            f1DE7_060A(" taken.\r");
+            DrawText(" taken.\r");
         }
         n = gTable8DD2[n].icon;
     }

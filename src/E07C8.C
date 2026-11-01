@@ -38,8 +38,8 @@ extern int gMouseDisabled;                     /*@ ds:814A: 0 disables the mouse
 extern unsigned char g3092;           /*@ ds:3092: 1 once start-up reached its end */
 extern unsigned char g3056;           /*@ ds:3056: 1 while the overlay manager is running */
 extern int g80EA;                     /*@ ds:80EA: set to 1 during start-up, meaning unknown */
-extern int g811B;                     /*@ ds:811B: 0x0C, a screen extent used during start-up */
-extern int g811D;                     /*@ ds:811D: 0x0F, a screen extent used during start-up */
+extern int gTextAttr2;                     /*@ ds:811B: 0x0C, a screen extent used during start-up */
+extern int gTextAttr1;                     /*@ ds:811D: 0x0F, a screen extent used during start-up */
 extern void (far *gFn80BA)(void far *table); /*@ ds:80BA: far function, takes a colour table */
 extern void (far *gFn8056)(void);     /*@ ds:8056: far function called before the fonts load */
 extern unsigned char far *gFE68;      /*@ ds:FE68: buffer for the loaded palette */
@@ -84,7 +84,7 @@ extern unsigned ReserveMemoryBelowVideo(int n);   /*@ 1990:0133 */
 extern void MouseInit(void);                      /*@ 1A72:00DA */
 extern int RunOverlayRequest(void far *req);      /*@ 1C00:0055 */
 extern void f1C0E_13E7(void);                     /*@ 1C0E:13E7 */
-extern void f1DE7_0009(int n);                    /*@ 1DE7:0009 */
+extern void SetTextWindow(int n);                    /*@ 1DE7:0009 */
 extern void CalibrateRetrace(void);               /*@ 1A65:000E */
 extern void SoundDriverInstall(void);             /*@ 1948:0377 */
 extern void SoundDriverResume(void);              /*@ 1948:0458 */
@@ -146,8 +146,8 @@ int AllocationFailure(void);
             break;
         }
         g80EA = 1;
-        g811D = 0xf;
-        g811B = 0xc;
+        gTextAttr1 = 0xf;
+        gTextAttr2 = 0xc;
         f16A5_0D78(0, 0L);
         if (g3092) {
             if (!g8148)
@@ -273,7 +273,7 @@ int AllocationFailure(void);
     g3056 = 1;
     CalibrateRetrace();
     srand(time(NULL));
-    f1DE7_0009(0);
+    SetTextWindow(0);
     g3092 = 1;
     /* the three sound bodies sit after `fail` in the original, so the cases jump forward to them
        and share the one `return 1` tail; see the function comment. */

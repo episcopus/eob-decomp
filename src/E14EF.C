@@ -22,8 +22,8 @@ struct Panel {                  /* 16-byte records at ds:017F, eight of them */
 
 extern struct Panel gPanels[]; /*@ ds:017F */
 /* the panel area's top-left corner: x is in eight-pixel cells, y in pixels (see DrawOptionList) */
-extern int gFE64; /*@ ds:FE64 */
-extern int gFE66; /*@ ds:FE66 */
+extern int gTextLeft; /*@ ds:FE64 */
+extern int gTextTop; /*@ ds:FE66 */
 extern int gFC78; /*@ ds:FC78: extra pixels between lines, written by DrawOptionList, read by UpdateOptionList */
 extern int gFC7A; /*@ ds:FC7A: the key UpdateOptionList did not handle, read by its overlay callers */
 extern int g5D1A; /*@ ds:5D1A: nonzero lets the pointer position pick the entry in DrawOptionList */
@@ -130,8 +130,8 @@ extern void WaitFrames(int n); /*@ 1A16:000B */
     register int glyph;
 
     panelDef = &gPanels[panel];
-    y = gFE66 + panelDef->y;
-    x = (gFE64 + panelDef->x) << 3;
+    y = gTextTop + panelDef->y;
+    x = (gTextLeft + panelDef->x) << 3;
     sel = FindMaskBit(panelDef->sel, mask, shift);
     n = panelDef->height;
     LockHidePointer();
@@ -208,16 +208,16 @@ enum {
     picked = -1;
     lineheight = gFontHeight1A47 + gFC78;
     halfspace = gFC78 >> 1;
-    ybase = gFE66 + panelDef->y;
-    xbase = (gFE64 + panelDef->x) << 3;
+    ybase = gTextTop + panelDef->y;
+    xbase = (gTextLeft + panelDef->x) << 3;
     colorA = !g8102 ? 1 : panelDef->colorA;
     colorB = panelDef->colorB;
     key = 0;
     gFC7A = 0;
     if (f1AAD_0471())
         key = f1AAD_05D3() & 0x8ff;
-    left = (gFE64 << 3) + panelDef->x * gFontWidth1A47;
-    top = gFE66 + panelDef->y - halfspace;
+    left = (gTextLeft << 3) + panelDef->x * gFontWidth1A47;
+    top = gTextTop + panelDef->y - halfspace;
     right = left + panelDef->width * gFontWidth1A47 - 1;
     bottom = top + panelDef->height * lineheight - 1;
     if (!gMouseDisabled) {

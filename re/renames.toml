@@ -774,3 +774,57 @@ new = "gMouseDisabled"
 kind = "global"
 why = "nonzero disables the mouse: the INT 33h handler body skips all of its work (1A72:254-255) and HidePointer/ShowPointer do nothing (1BBE:89-90, 178); 1A72:215 sets it to 1 at install and the overlay loader 1C00:00D4 clears it once a driver overlay has loaded and its entry has run, which enables the handler and the pointer; E07A9.C:113 and E14EF.C:142, 223 test it the same way"
 date = "2026-11-01"
+
+[[rename]]
+id = "1DE7:060A=DrawText"
+addr = "1DE7:060A"
+old = ""
+new = "DrawText"
+kind = "function"
+why = "the text console's string renderer: E07A9:010C passes \" taken.\\r\" and this unit's PrintIntText passes a decimal buffer (1DE7:05DF); it is the DrawText the header comment names"
+date = "2026-11-01"
+
+[[rename]]
+id = "1DE7:0009=SetTextWindow"
+addr = "1DE7:0009"
+old = ""
+new = "SetTextWindow"
+kind = "function"
+why = "makes a region index the active text window: saves the live colours and cursor into the old record, loads the new record's edges and saved words (1DE7:0009; declared f1DE7_0009 by src/E07C8.C)"
+date = "2026-11-01"
+
+[[rename]]
+id = "ds:FE64=gTextLeft"
+addr = "ds:FE64"
+old = ""
+new = "gTextLeft"
+kind = "global"
+why = "the active text window's left edge in 8-pixel columns, loaded from region record word 0 by SetTextWindow (1DE7:0009) and used to place text and fills (1DE7:03B2, 1DE7:0344); the panel origin x in src/E14EF.C"
+date = "2026-11-01"
+
+[[rename]]
+id = "ds:FE66=gTextTop"
+addr = "ds:FE66"
+old = ""
+new = "gTextTop"
+kind = "global"
+why = "the active text window's top edge in pixel rows, loaded from region record word 1 by SetTextWindow (1DE7:0009) and used to place text and fills (1DE7:03B2, 1DE7:0344); the panel origin y in src/E14EF.C"
+date = "2026-11-01"
+
+[[rename]]
+id = "ds:811D=gTextAttr1"
+addr = "ds:811D"
+old = ""
+new = "gTextAttr1"
+kind = "global"
+why = "the first text attribute (foreground colour) passed to the draw-text hook ds:80CA (1DE7:03B2, 1DE7:060A) and set by DrawText control code 0x06; default 0x0F at E07C8:147"
+date = "2026-11-01"
+
+[[rename]]
+id = "ds:811B=gTextAttr2"
+addr = "ds:811B"
+old = ""
+new = "gTextAttr2"
+kind = "global"
+why = "the second text attribute (the fill colour of ClearTextRegion and of the redrawn scroll line) passed to the rectangle hook ds:806A and to the draw-text hook (1DE7:0344, 1DE7:03B2) and set by DrawText control code 0x02; default 0x0C at E07C8:148"
+date = "2026-11-01"

@@ -5462,6 +5462,9 @@ unit = "e1de7"
 addr = "1DE7:0009"
 size = 173
 evidence = ["far", "near", "segment"]
+level = "L2"
+match_flags = "-ml -O -Z -G"
+name = "SetTextWindow"
 
 [[function]]
 id = "e1de7_00b6"
@@ -5469,6 +5472,9 @@ unit = "e1de7"
 addr = "1DE7:00B6"
 size = 19
 evidence = ["frame"]
+name = "SetTextWindowAndClear"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "e1de7_00c9"
@@ -5476,6 +5482,9 @@ unit = "e1de7"
 addr = "1DE7:00C9"
 size = 405
 evidence = ["frame"]
+name = "DrawTextFrame"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "e1de7_025e"
@@ -5483,6 +5492,9 @@ unit = "e1de7"
 addr = "1DE7:025E"
 size = 160
 evidence = ["far", "frame"]
+name = "DrawTileRun"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "e1de7_02fe"
@@ -5490,6 +5502,9 @@ unit = "e1de7"
 addr = "1DE7:02FE"
 size = 70
 evidence = ["frame"]
+name = "SetRegionExtents"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "e1de7_0344"
@@ -5497,6 +5512,9 @@ unit = "e1de7"
 addr = "1DE7:0344"
 size = 110
 evidence = ["far", "frame"]
+name = "ClearTextRegion"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "e1de7_03b2"
@@ -5504,6 +5522,9 @@ unit = "e1de7"
 addr = "1DE7:03B2"
 size = 557
 evidence = ["near", "frame"]
+name = "DrawTextLine"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "e1de7_05df"
@@ -5511,6 +5532,9 @@ unit = "e1de7"
 addr = "1DE7:05DF"
 size = 43
 evidence = ["frame"]
+name = "PrintIntText"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "e1de7_060a"
@@ -5518,6 +5542,9 @@ unit = "e1de7"
 addr = "1DE7:060A"
 size = 1082
 evidence = ["far", "frame"]
+name = "DrawText"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "e1e8b_0004"
