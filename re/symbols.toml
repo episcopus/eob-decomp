@@ -4733,6 +4733,9 @@ unit = "e1bf3"
 addr = "1BF3:000D"
 size = 1
 evidence = ["segment"]
+name = "_f1BF3_000D"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1bf3_000e"
