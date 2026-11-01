@@ -2326,6 +2326,9 @@ unit = "e0d1c"
 addr = "0D1C:0080"
 size = 90
 evidence = ["far", "frame"]
+name = "f0D1C_0080"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0d1c_00da"
@@ -2333,6 +2336,9 @@ unit = "e0d1c"
 addr = "0D1C:00DA"
 size = 23
 evidence = ["far", "near", "frame"]
+name = "f0D1C_00DA"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0d1c_00f1"

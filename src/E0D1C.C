@@ -30,6 +30,10 @@ extern char gDF4C; /*@ ds:DF4C */        /* set to 1 when 0D1C:0006 finds the va
 extern signed char gA99A; /*@ ds:A99A */ /* the selected character index (src/E0ACD.C) */
 extern char gF51A; /*@ ds:F51A */        /* the selected row (src/E0ACD.C) */
 extern struct CharRec gChars[]; /*@ ds:F580 */
+extern signed char g1790[]; /*@ ds:1790 */  /* byte table indexed by the second argument of 0D1C:00DA */
+extern signed char g547E[]; /*@ ds:547E */  /* byte table indexed by the second argument of 0D1C:0080 */
+extern char gB894[]; /*@ ds:B894 */         /* nine-byte records; +4 (ds:B898) is tested by 0D1C:0080 */
+extern signed char g194B[]; /*@ ds:194B */  /* byte table read by 0D1C:0080 */
 
 extern void f1547_0991(int dir); /*@ 1547:0991 */
 
@@ -82,8 +86,30 @@ extern void f1547_0991(int dir); /*@ 1547:0991 */
 {
     value++;
 }
-/*@ 0D1C:0080 stub */ void f0D1C_0080(void) {}
-/*@ 0D1C:00DA stub */ void f0D1C_00DA(void) {}
+/* 0D1C:0080: Purpose unknown: computes a ten-bit value x through 0D1C:00DA, then looks up
+   gB894[x * 9 + g547E[page]] in g194B; returns -1 unless that byte is odd and gB894[x * 9 + 4] has
+   no bits 0..2 set, otherwise returns x. The callers (0ACD key handlers) pass gFBCC as b, so
+   g547E and g1790 are indexed by a page number 0..3. */
+/*@ 0D1C:0080 */ int f0D1C_0080(int value, signed char page)
+{
+    int x;
+    int flag;
+
+    x = f0D1C_00DA(value, page);
+    flag = g194B[gB894[x * 9 + g547E[page]]];
+    if (!(flag & 1))
+        return -1;
+    if (gB894[x * 9 + 4] & 7)
+        return -1;
+    return x;
+}
+
+/* 0D1C:00DA: Purpose unknown: returns (value + g1790[page]) & 0x3FF, a ten-bit value. g1790 is a
+   byte table indexed by `page` (gFBCC at the call sites). Called by 0D1C:0080 and 0D1C:0A43. */
+/*@ 0D1C:00DA */ int f0D1C_00DA(int value, int page)
+{
+    return (value + g1790[page]) & 0x3FF;
+}
 /*@ 0D1C:00F1 stub */ void f0D1C_00F1(void) {}
 /*@ 0D1C:0163 stub */ void f0D1C_0163(void) {}
 /*@ 0D1C:01CA stub */ void f0D1C_01CA(void) {}
