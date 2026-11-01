@@ -6757,6 +6757,9 @@ unit = "eov6"
 addr = "ovl6:07E2"
 size = 118
 evidence = ["ovl", "near", "frame"]
+name = "f07E2"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov6_0858"
