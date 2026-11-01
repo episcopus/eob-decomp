@@ -239,7 +239,8 @@ int f0D1C_02DC(void);
 
     rec = &gChars[who];
     for (i = 25; i <= 26; i++) {
-        if (item = rec->m77[i]) {
+        item = rec->m77[i];
+        if (item) {
             if (gTable8DD2[item].m02 == 0x2F && gTable8DD2[item].m0B == fieldB)
                 return 1;
         }
@@ -512,10 +513,10 @@ int f0D1C_02DC(void);
         return 0;
     if (slot1 == 0)
         return 1;
-    if ((gA9F5[m1].m09 & 0x7f) <= 0 || (gA9F5[m1].m09 & 0x7f) >= 4)
-        return result1;
-    if (gA9F5[m1].m01 != 0)
-        return 0;
+    if ((gA9F5[m1].m09 & 0x7f) > 0 && (gA9F5[m1].m09 & 0x7f) < 4) {
+        if (gA9F5[m1].m01 != 0)
+            return 0;
+    }
     return result1;
 }
 /* 0D1C:08B1: Purpose unknown: returns 1 when one of the first two carried items of the character
@@ -577,12 +578,10 @@ int f0D1C_02DC(void);
     return (best << 8) + bestVal;
 }
 /* 0D1C:09CB: Purpose unknown: a per-object check. It takes the object's ds:1A3B record's m19 as
-   a row and GetClampedTableByte(b, m19) as a value; a value of -1 calls f08E6_0FBE(obj, 100) and
-   returns 1. Otherwise, when `a` is below the value it returns 0; else it sets bit 3 of
-   obj->m16, stores (f17A6_0314(obj->m02, gSoundVolume) ^ 4) >> 1 in obj->m05 and returns 1.
-   Called by 0D1C:0A43 and 17A6. DRAFT: matches every byte except the block ordering of the two
-   `return 1` paths (the original falls the success path into the shared return; ours jumps to it
-   after the -1 path), a one-byte difference. */
+   a row and GetClampedTableByte(column, m19) as a value. A value of -1 calls f08E6_0FBE(obj, 100)
+   and returns 1. Otherwise, when `threshold` is below the value it returns 0; else it sets bit 3
+   of obj->m16, stores (f17A6_0314(obj->m02, gSoundVolume) ^ 4) >> 1 in obj->m05 and returns 1.
+   Called by 0D1C:0A43 and 17A6. */
 /*@ 0D1C:09CB draft */ int f0D1C_09CB(struct Obj28 far *obj, int threshold, int column)
 {
     int row;
@@ -590,15 +589,17 @@ int f0D1C_02DC(void);
 
     row = gTable1A3B[obj->b0].m19;
     value = GetClampedTableByte(column, row);
-    if (value == -1) {
-        f08E6_0FBE(obj, 100);
-    } else if (threshold < value) {
-        return 0;
+    if (value != -1) {
+        if (threshold >= value) {
+            obj->m16 |= 8;
+            obj->m05 = (f17A6_0314(obj->m02, gSoundVolume) ^ 4) >> 1;
+            return 1;
+        }
     } else {
-        obj->m16 |= 8;
-        obj->m05 = (f17A6_0314(obj->m02, gSoundVolume) ^ 4) >> 1;
+        f08E6_0FBE(obj, 100);
+        return 1;
     }
-    return 1;
+    return 0;
 }
 /*@ 0D1C:0A43 stub */ void f0D1C_0A43(void) {}
 /* 0D1C:0BAB: Purpose unknown: a percentage check on the object `obj`: through gObjs[obj].b0 it
