@@ -28,6 +28,7 @@ from oracle.input import Script, Mouse, no_mouse  # noqa: E402
 
 GAME = ROOT / "eob"
 DEFAULT_ARGS = "3 4 0 homie 3"
+PROGRAM_ARGS = {"EOB.EXE": DEFAULT_ARGS, "INTRO.EXE": "3 4 0 homie"}   # INTRO.EXE: as START1.EXE runs it
 
 
 def command_line(args: str, mouse: bool, sound: str | None) -> str:
@@ -39,10 +40,41 @@ def command_line(args: str, mouse: bool, sound: str | None) -> str:
     return " ".join(a)
 
 
+def pinned() -> set[str]:
+    """The names of the pinned files of eob/ (re/inputs.toml)."""
+    import tomllib
+    files = tomllib.loads((ROOT / "re" / "inputs.toml").read_text())["file"]
+    return {Path(k).name.upper() for k in files}
+
+
+def hide_unpinned(m: Machine) -> None:
+    """A run sees only the pinned files of eob/: EOBDATA.SAV and LEVELS.TMP, which the game writes,
+    differ from one checkout to the next (SPEC 2), so a session that needs them says which
+    (`option save`, use_save)."""
+    keep = pinned()
+    for full in list(m.vfs.host_index):
+        if full.rsplit("\\", 1)[-1] not in keep:
+            m.vfs.deleted.add(full)
+
+
+def use_save(m: Machine, save: Path) -> None:
+    """Serve `save` as EOBDATA.SAV, and LEVELS.TMP as the game leaves it after saving that game: the
+    save's 12 level states (whitepaper 4.4; loading a game reads LEVELS.TMP before it rewrites it,
+    and stalls when the file is missing)."""
+    sys.path.insert(0, str(ROOT / "tools" / "re"))
+    import eobfmt
+    m.vfs.alias("EOBDATA.SAV", save)
+    m.vfs.deleted.discard(m.vfs.mount + "\\EOBDATA.SAV")
+    levels = eobfmt.save(save.read_bytes())["levels"]
+    m.vfs.layer[m.vfs.mount + "\\LEVELS.TMP"] = bytearray(levels)
+    m.vfs.deleted.discard(m.vfs.mount + "\\LEVELS.TMP")
+
+
 def build_machine(program: str = "EOB.EXE", args: str = DEFAULT_ARGS, *, mouse: bool = False,
                   sound: str | None = None, insn_per_sec: int = 1_000_000) -> Machine:
     args = command_line(args, mouse, sound)
     m = Machine(GAME / program, GAME, cmdline=b" " + args.encode("latin-1"), insn_per_sec=insn_per_sec)
+    hide_unpinned(m)
     if mouse:
         Mouse(m)
     else:
@@ -68,15 +100,16 @@ def sound_digest(m: Machine) -> str:
     return h.hexdigest()
 
 
-def run_session(script_text: str | None, *, out: Path, max_insns: int, args: str = DEFAULT_ARGS,
+def run_session(script_text: str | None, *, out: Path, max_insns: int, args: str | None = None,
                 mouse: bool = False, sound: str | None = None, shot_every: int = 0,
-                save: Path | None = None) -> dict:
+                save: Path | None = None, program: str = "EOB.EXE") -> dict:
+    args = args or PROGRAM_ARGS[program]
     (out / "shots").mkdir(parents=True, exist_ok=True)
     for p in (out / "shots").glob("*.png"):
         p.unlink()
-    m = build_machine(args=args, mouse=mouse, sound=sound)
+    m = build_machine(program, args=args, mouse=mouse, sound=sound)
     if save is not None:                   # the saved game the run sees (EOBDATA.SAV is not pinned)
-        m.vfs.alias("EOBDATA.SAV", save)
+        use_save(m, save)
     checkpoints = []
     script = Script(script_text or "")
 
@@ -105,7 +138,7 @@ def run_session(script_text: str | None, *, out: Path, max_insns: int, args: str
     except OracleError as e:
         code, reason = 4, "oracle: %s" % e
     final = shot(m, out / "shots" / "final.png")
-    summary = {"program": "EOB.EXE", "args": command_line(args, mouse, sound), "stop": reason, "code": code,
+    summary = {"program": program, "args": command_line(args, mouse, sound), "stop": reason, "code": code,
                "instructions": m.insns, "video_mode": "%02Xh" % m.ega.mode, "digest": m.state_digest(),
                "final_image": final, "checkpoints": checkpoints, "script_done": script.done(),
                "ints": {"%02X" % k: v for k, v in sorted(m.int_counts.items())},
@@ -120,7 +153,8 @@ def run_session(script_text: str | None, *, out: Path, max_insns: int, args: str
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--script")
-    ap.add_argument("--args", default=DEFAULT_ARGS)
+    ap.add_argument("--program", default="EOB.EXE", help="EOB.EXE or INTRO.EXE")
+    ap.add_argument("--args", help="default: %s" % PROGRAM_ARGS)
     ap.add_argument("--mouse", action="store_true")
     ap.add_argument("--sound", choices=["adlib"])
     ap.add_argument("--max-insns", type=int, default=50_000_000)
@@ -130,9 +164,10 @@ def main(argv=None) -> int:
     a = ap.parse_args(argv)
     text = Path(a.script).read_text() if a.script else None
     s = run_session(text, out=Path(a.out), max_insns=a.max_insns, args=a.args, mouse=a.mouse, sound=a.sound,
-                    shot_every=a.shot_every, save=Path(a.save) if a.save else None)
-    print("EOB.EXE: %s after %d instructions, video mode %s, state %s, %d checkpoints" % (
-        s["stop"], s["instructions"], s["video_mode"], s["digest"][:16], len(s["checkpoints"])))
+                    shot_every=a.shot_every, save=Path(a.save) if a.save else None,
+                    program=a.program)
+    print("%s: %s after %d instructions, video mode %s, state %s, %d checkpoints" % (
+        s["program"], s["stop"], s["instructions"], s["video_mode"], s["digest"][:16], len(s["checkpoints"])))
     return s["code"]
 
 

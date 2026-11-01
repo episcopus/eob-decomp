@@ -116,6 +116,8 @@ The padding between records is 0 to 42 bytes in `EOB.EXE` and 169 bytes after `I
 
 Without enough memory `main` prints "Not enough memory to run program." through `PrintString` (19EA:0000, `src/E19EA.ASM`).
 
+`INTRO.EXE` does not exec `EOB.EXE` [V] (oracle, sessions `intro-play` and `intro-skip`). When the intro ends (after 147 s of virtual time) or on ESC it writes the command tail " 3 4 0 homie 3 0" (its own four arguments, the video mode to restore, and a sixth argument "0" [H] unused by `main`) into its own PSP, fills the PSP's two FCBs with DOS 29h, loads `EOB.EXE` with DOS 4B03h (load overlay) at segment 1000h, the same place DOS loads it, and jumps to it. So `EOB.EXE` addresses are the same whether it runs alone or after the intro, and the title menu belongs to `EOB.EXE`.
+
 ### 2.7 Input and sound
 
 - **Keyboard: the game's own INT 9 handler.** `EOB.EXE` never calls INT 16h; its handler (assembly unit `e1aad`) reads scancodes from port 60h (1AAD:080C) and acknowledges the interrupt controller itself. It buffers keys: keys typed before the title menu exists are applied once it does (oracle, `tests/sessions/boot-title.keys`).
@@ -142,10 +144,31 @@ Without enough memory `main` prints "Not enough memory to run program." through 
 
 CPS, CMP, EGA, INF, VCN and ECN files share the header the game's loader reads (`LoadPacked` and `Unpack`, 1B82:0041 and 1B82:00C7, `src/E1B82.C`): u16 size of the rest (some files: the file size), u8 format, u8 0, u32 unpacked size (`src+2`), u16 bytes of palette that follow (`src+6`). `Unpack` switches on the format: 0 stored (copied from `src+8`), 1 and 2 decoded with a work buffer of 3C00h and FC00h bytes (allocated unless the shared buffer `ds:812A`, size `ds:812C`, is big enough), 3, and 4 (LCW, after the palette).
 
-`make data` (`tools/re/wwfmt.py`) decodes every file: 150 files of format 4 unpack to exactly their declared size (LCW as published: back references, literals, absolute copies, fills). `TITLE-V.CMP` with `TITLE-V.COL` is the title picture. One anomaly: `EOBTITLE.CMP` decodes coherently for 31,962 bytes (99 rows of a title picture), then a fill of 13,082 bytes and garbage past 64,000; [H] damaged in this copy. Not decoded yet: six EGA pictures in format 1, the 12 `.DAT` files, `ITEMRMP.VGA`.
+`make data` (`tools/re/wwfmt.py`) decodes every file: 150 files of format 4 unpack to exactly their declared size (LCW as published: back references, literals, absolute copies, fills). `TITLE-V.CMP` with `TITLE-V.COL` is the title picture. One anomaly: `EOBTITLE.CMP` decodes coherently for 31,962 bytes (99 rows of a title picture), then a fill of 13,082 bytes and garbage past 64,000; [H] damaged in this copy. The game's own routine agrees [V]: `tests/unit/test_wwfmt.py` runs Unpack4 (1D9A:0013) in the oracle on all 131 files of format 4 and compares every byte, `EOBTITLE.CMP` included (the game writes the same 64,000 bytes, so the file is odd, not the decoder).
+
+Format 1 [V] (1D9A:018B, `wwfmt.lzw12`; the five EGA wall-set pictures `BRICK1`, `BRICK2`, `BRICK3`, `BLUE`, `DROW`): 12-bit LZW. Codes are big-endian, two in three bytes (1D9A:0299 alternates whole and half bytes). A code below 100h is a literal; from 100h it names a dictionary entry, which is (offset, length) of a string already written to the output, 4 bytes in the 3C00h work buffer, so at most F00h entries, then no more are added and the dictionary is never reset. Each code after the first adds the previous string plus the first byte of the current one; a code naming the entry being made is the previous string plus its own first byte. The game's routine, run in the oracle on the five files, writes the same bytes. No pinned file uses formats 2 or 3.
 
 ### 4.3 Mazes and tables
 
 `LEVELn.MAZ` (12 files): u16 width 32, u16 height 32, u16 4 bytes per cell, then the cells (4,102 bytes). `.VMP` and `.EMP`: u16 count, then u16 entries. `.PAL` and `.COL`: 768 bytes, 6-bit VGA colours. `EOBDATA4.PAK` lists its eight `.COL` files twice.
 
 [H] (ScummVM's Kyra engine, read only): `.INF` is the level script bytecode; the four bytes of a maze cell are its four walls.
+
+### 4.4 The game's own files
+
+`tools/re/eobfmt.py`, `make data`, `tests/unit/test_eobfmt.py`. Files without the Westwood header. Where the loader was not read yet, the layout comes from the reads the oracle sees during `load-walk`: the read sizes in order, and the caller of the read through the BP chain, resolved to overlay code from the memory at the time of the read (overlays are swapped; resolving at the end of the run gave wrong overlays). The field meanings are [H] until the code that uses them is lifted.
+
+| File | Layout | Evidence |
+|---|---|---|
+| `FONT6.FNT`, `FONT8.FNT` | u16 bytes after this field; u16 offsets[128] of the glyphs; u8 height, u8 width at 102h; 128 glyphs from 104h, height × ((width + 7) / 8) bytes, one bit per pixel. 6 × 6 and 8 × 8 | [V] 1A47:0005 checks each of these |
+| `TEXT.DAT` | u16 offsets of 51 NUL-terminated strings, the table ending at the first: the dwarf and other story texts | invariants over the file |
+| `ITEM.DAT` | u16 count (432), records of 14 bytes; u16 count (98), names of 35 bytes | read by ovl2:005E (the call returns to ovl2:0088), which `LoadItemData` (ovl2:09CC, `src/EOV2.C`, L2) calls |
+| `ITEMTYPE.DAT` | u16 count (57), records of 16 bytes | [V] `LoadItemTypes` (ovl2:0110, `src/EOV2.C`, L2): count, then a 16-byte `FileRead` per record into `ds:A9F0` |
+| wall set `.DAT` (`BRICK`, `BLUE`, `GREEN`, `XANATHA`, `DROW`) | u16 count, decorations of 52 bytes; u16 count, rectangles of 8 bytes [H] (x, y, w, h); a decoration's first 10 bytes index the rectangles or are FFh | read by ovl3:0096 (the call returns there), three times per level load; the index invariant holds in all five |
+| `ITEMRMP.VGA`, `ITEMRMP.EGA` | 1,600 bytes read whole (the name is `ITEMRMP.%s` by display); [H] 100 rows of 16 colours | read at ovl2:0484 (in ovl2:0171, called from ovl2:0577, which `StartupAlloc` calls); [V] into the 1,600-byte buffer `ds:F534` that `StartupAlloc` (07A9:000A, `src/E07A9.C`) allocates |
+| `ADLIB.DAT`, `PCGAMESN.DAT` | u8 map[120] from the game's sound number to the driver's (values from 96h are ignored, 177D:0070), then the driver's data, at most 32C8h bytes: u16 offsets, the first one the size of their table | [V] 177D:000A loads `adlib.dat` or `pcgamesn.dat` by `ds:B892`; the map goes to the 120-byte buffer `ds:DCAC` that `StartupAlloc` allocates, which calls 177D:000A next |
+| `PCSOUND.DAT`, `SOUND.DAT` | the same layout [H]; `EOB.EXE` names them only in its PAK catalogue, and `SOUND.DAT`'s data (13,019 bytes) would not fit the buffer: [H] not used | |
+| `EOBDATA.SAV` | 6 characters of 243 bytes (u8 index, u8 in the party, name[11], ...), 64 bytes, 500 items of 14 bytes (the `ITEM.DAT` record size), 12 level states of 2,040 bytes, 3 bytes, 96 bytes: 33,101 bytes | read by ovl3:160A (the call returns there); decode and encode give the same bytes |
+| `LEVELS.TMP` | 12 level states of 2,040 bytes | [V] loading the test save makes the game write the save's 12 level states here, in order (slow test); one is read back per level (the call returns to ovl3:1194). A run of the oracle hides both files unless the session names a save: `LEVELS.TMP` is then made from the save, as the game leaves it after saving (loading reads it before rewriting it and stalls without it) |
+
+Every file of the PAKs and both fonts decode (`make data`). The file names in the data segment around `ds:1EE0` are the PAK catalogue (which archive holds which file), not the loaders' arguments: the loaders build names with `%s.%s` and `ITEMRMP.%s`, or use lower-case copies (`adlib.dat`, ds:5E2C).

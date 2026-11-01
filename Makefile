@@ -4,7 +4,8 @@
 PY ?= $(if $(wildcard .venv/bin/python),.venv/bin/python,python3)
 PROGRAMS := eob/EOB.EXE eob/INTRO.EXE eob/START1.EXE
 
-.PHONY: help setup doctor inputs overlays pak data emu2 test p0-check tc-install tc-check rtl-compare map match oracle-run golden test-slow
+.PHONY: help setup doctor inputs overlays pak data emu2 test p0-check tc-install tc-check rtl-compare map match oracle-run golden test-slow \
+	match-gate check queue next claim locks unlock packet skeleton handoff handoffs handoff-done integrate review-pass worker progress hooks
 
 help:
 	@echo "Phase 0:  setup doctor inputs overlays pak emu2 test p0-check"
@@ -12,6 +13,8 @@ help:
 	@echo "Phase 1:  map match [FILE=src/E0CF7.C] [WRITE=1]"
 	@echo "Phase 2:  data oracle-run [INSNS=30000000] [ARGS='3 4 0 homie 3'] [SCRIPT=tests/sessions/x.keys]"
 	@echo "          golden [NAME=x] [CHECK=1] test-slow"
+	@echo "Phase 3:  match-gate check progress queue next packet skeleton (playbook 30)"
+	@echo "          claim locks unlock handoff handoffs integrate handoff-done review-pass worker (playbooks 70, 90)"
 	@echo "See AGENTS.md and docs/spec/SPEC.md."
 
 setup:            ## create .venv with the Python tools (uv)
@@ -32,8 +35,10 @@ overlays:         ## segment table and FBOV overlay manifest of each program (bu
 pak:              ## verify every PAK archive (directory, tiling, byte-exact round trip)
 	$(PY) tools/re/pak.py verify eob/
 
-data: pak         ## decode every data file of the PAKs (LCW, mazes, tables, palettes; whitepaper 4)
+data: pak         ## decode every data file: PAKs, fonts, the test save (whitepaper 4)
 	$(PY) tools/re/wwfmt.py verify eob/
+	$(PY) tools/re/eobfmt.py verify eob/
+	$(PY) tools/re/eobfmt.py save tests/sessions/fixtures/EOBDATA.SAV
 
 emu2:             ## build the headless DOS emulator that runs the Turbo C++ tools
 	sh tools/setup/build-emu2.sh
@@ -67,6 +72,57 @@ test:             ## Python tests (the fast set)
 
 test-slow:        ## the tests that run the game: every golden session (about half a minute)
 	$(PY) -m pytest -q -m slow tests/unit
+
+match-gate:       ## every src/ unit matches, every L2 function is still proven, every negative fixture is rejected
+	$(PY) tools/match/gate.py -v
+
+check: inputs test match-gate test-slow  ## everything a merge must pass (make integrate runs it)
+	@echo "check: OK"
+
+progress:         ## functions at L2, complete and reviewed units, claims and hand-offs
+	$(PY) tools/agent/progress.py
+
+queue:            ## the claim order from re/units.toml (WRITE=1 writes work/queue.toml)
+	$(PY) tools/agent/next.py --queue
+
+next:             ## the next unit to claim (REVIEW=1: the next unit to review)
+	$(PY) tools/agent/next.py
+
+claim:            ## start work: AGENT=<name> [UNIT=<id>] [REVIEW=1] [TASK=<name>]; prints the worktree
+	$(PY) tools/agent/claim.py
+
+locks:            ## the claims
+	$(PY) tools/agent/claim.py --list
+
+unlock:           ## give a claim back: UNIT=<key> AGENT=<owner> [FORCE=1 REASON="<the human's instruction>"]
+	$(PY) tools/agent/claim.py --unlock
+
+packet:           ## build/packets/<id>.md, everything to start a unit: UNIT=<id>
+	$(PY) tools/agent/packet.py
+
+skeleton:         ## src/<ID>.C (or .ASM) with every function a stub: UNIT=<id>
+	$(PY) tools/agent/skeleton.py
+
+handoff:          ## from your worktree: AGENT= UNIT= STATE=complete|partial|blocked|review-passed|review-failed|escalate NOTE="..."
+	$(PY) tools/agent/handoff.py
+
+handoffs:         ## what waits: escalations first, then branches
+	$(PY) tools/agent/handoff.py --list
+
+handoff-done:     ## the human settles an escalation: KEY=<key> DECISION="..."
+	$(PY) tools/agent/integrate.py --done
+
+integrate:        ## merge every waiting hand-off into main through make check: [KEY=<key>] [DRY=1]
+	$(PY) tools/agent/integrate.py
+
+review-pass:      ## record a passed review: UNIT=<id> AGENT=<reviewer> [CHECK=1]
+	$(PY) tools/agent/review.py
+
+worker:           ## supervisor running model sessions on claimed units: AGENT= [ROLE=] [UNIT=] [SESSIONS=] [TIMEOUT=] [SESSION_CMD=] [DRY=1]
+	$(PY) tools/agent/worker.py
+
+hooks:            ## install the pre-commit guard (git config core.hooksPath tools/agent/hooks)
+	git config core.hooksPath tools/agent/hooks
 
 p0-check: inputs overlays pak test  ## Phase 0 exit criteria (SPEC section 10)
 	@echo "p0-check: OK"

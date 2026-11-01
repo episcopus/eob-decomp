@@ -1,0 +1,49 @@
+{
+ "program": "INTRO.EXE",
+ "stop": "script quit",
+ "instructions": 163952040,
+ "video_mode": "13h",
+ "digest": "58969fccec6fd00db94946b0e486b0db990f85ab20c54498f98d7245ed2b6a42",
+ "final_image": "8febf5f0ef28452b4c49afe82096451715a6864f96554e0e75fb9d99bcf09959",
+ "script_done": true,
+ "sound_digest": "067d5a72eded678b68ed176c999ec709325fb017f97817592d7d34ae1f2a9ba5",
+ "adlib_writes": 0,
+ "checkpoints": [
+  {
+   "kind": "shot",
+   "name": "present",
+   "instructions": 16119220,
+   "digest": "361365295f32b9f5ea3accaff728c5bc4cf13a8bc523905a74b883300c8557cf",
+   "image": "995258627a5f12d32fe07a178b4e0bc3c8dfcfef16e7567bb55802aa6410627d"
+  },
+  {
+   "kind": "shot",
+   "name": "waterdeep",
+   "instructions": 43543000,
+   "digest": "382e88c87dfe3094cd434c38041eb9cef493b13b479e6ca2e2f939e30583b74f",
+   "image": "f87b051da3edd842f292bfbe1c9deca001f2744e3c24c210e470877b55f7ac44"
+  },
+  {
+   "kind": "shot",
+   "name": "middle",
+   "instructions": 92974260,
+   "digest": "84e7ffa7d11eba3ffe7e2dee581238f68f060dae6d5c1e2de59ff48454e35848",
+   "image": "c962efa1dce4437a334a77be33f945062824852de21c6fa576c5ffe9978c2c9d"
+  },
+  {
+   "kind": "shot",
+   "name": "late",
+   "instructions": 131397040,
+   "digest": "ae26e67e1b1e255f0a763554da09db9af6664e854478faaf6b3e093cdc637c78",
+   "image": "7a47baf7f71b64421d3bcf480375afe52868cc3b64484831416812e60498ff42"
+  },
+  {
+   "kind": "shot",
+   "name": "title",
+   "instructions": 163952040,
+   "digest": "58969fccec6fd00db94946b0e486b0db990f85ab20c54498f98d7245ed2b6a42",
+   "image": "8febf5f0ef28452b4c49afe82096451715a6864f96554e0e75fb9d99bcf09959"
+  }
+ ],
+ "args": "3 4 0 homie"
+}

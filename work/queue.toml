@@ -1,0 +1,242 @@
+# The order in which units are claimed (make claim, make next). Made by `make queue WRITE=1`
+# from re/units.toml: the game units of EOB.EXE, smallest first. The human may reorder it.
+
+[[unit]]
+id = "e19ea"
+# asm 19EA:0000, 34 bytes, 1 functions
+
+[[unit]]
+id = "e1a63"
+# asm 1A63:0004, 42 bytes, 2 functions
+
+[[unit]]
+id = "e1a16"
+# asm 1A16:000B, 43 bytes, 2 functions
+
+[[unit]]
+id = "e1d8c"
+# asm 1D8C:0000, 50 bytes, 1 functions
+
+[[unit]]
+id = "e1aa6"
+# asm 1AA6:000F, 54 bytes, 1 functions
+
+[[unit]]
+id = "e1aaa"
+# unknown 1AAA:0005, 55 bytes, 1 functions
+
+[[unit]]
+id = "e1ba4"
+# asm 1BA4:000C, 57 bytes, 1 functions
+
+[[unit]]
+id = "e1de4"
+# asm 1DE4:0000, 57 bytes, 2 functions
+
+[[unit]]
+id = "e1a19"
+# asm 1A19:0006, 102 bytes, 2 functions
+
+[[unit]]
+id = "e1ddd"
+# asm 1DDD:0006, 106 bytes, 2 functions
+
+[[unit]]
+id = "e19ec"
+# c 19EC:0002, 124 bytes, 3 functions
+
+[[unit]]
+id = "e19f3"
+# unknown 19F3:000E, 137 bytes, 1 functions
+
+[[unit]]
+id = "e1ba8"
+# asm 1BA8:0005, 140 bytes, 4 functions
+
+[[unit]]
+id = "e1a1f"
+# unknown 1A1F:000C, 163 bytes, 1 functions
+
+[[unit]]
+id = "e1d8f"
+# asm 1D8F:0002, 185 bytes, 3 functions
+
+[[unit]]
+id = "e1bf3"
+# asm 1BF3:000D, 196 bytes, 4 functions
+
+[[unit]]
+id = "e1a65"
+# unknown 1A65:000E, 200 bytes, 1 functions
+
+[[unit]]
+id = "e1bb1"
+# asm 1BB1:0001, 208 bytes, 2 functions
+
+[[unit]]
+id = "e1c00"
+# asm 1C00:0001, 235 bytes, 3 functions
+
+[[unit]]
+id = "e19fc"
+# asm 19FC:0007, 420 bytes, 1 functions
+
+[[unit]]
+id = "e1a47"
+# c 1A47:0005, 447 bytes, 3 functions
+
+[[unit]]
+id = "e1a29"
+# c 1A29:000F, 470 bytes, 7 functions
+
+[[unit]]
+id = "e07a9"
+# c 07A9:000A, 487 bytes, 2 functions
+
+[[unit]]
+id = "e1b82"
+# c 1B82:0009, 547 bytes, 4 functions
+
+[[unit]]
+id = "e0cf7"
+# c 0CF7:0007, 591 bytes, 6 functions
+
+[[unit]]
+id = "e177d"
+# c 177D:000A, 646 bytes, 4 functions
+
+[[unit]]
+id = "e1990"
+# asm 1990:0001, 710 bytes, 5 functions
+
+[[unit]]
+id = "e19bc"
+# c 19BC:0007, 728 bytes, 5 functions
+
+[[unit]]
+id = "e1a72"
+# asm 1A72:0006, 841 bytes, 8 functions
+
+[[unit]]
+id = "e1bbe"
+# asm 1BBE:0001, 860 bytes, 7 functions
+
+[[unit]]
+id = "e1d9a"
+# asm 1D9A:000B, 1067 bytes, 8 functions
+
+[[unit]]
+id = "e1948"
+# asm 1948:0006, 1147 bytes, 13 functions
+
+[[unit]]
+id = "e1658"
+# c 1658:0003, 1238 bytes, 12 functions
+
+[[unit]]
+id = "e14ef"
+# c 14EF:0007, 1410 bytes, 6 functions
+
+[[unit]]
+id = "e0a72"
+# c 0A72:0006, 1458 bytes, 15 functions
+
+[[unit]]
+id = "e07c8"
+# c 07C8:0001, 1610 bytes, 5 functions
+
+[[unit]]
+id = "e1e8b"
+# asm 1E8B:0004, 2329 bytes, 31 functions
+
+[[unit]]
+id = "e1de7"
+# c 1DE7:0009, 2619 bytes, 9 functions
+
+[[unit]]
+id = "e082c"
+# c 082C:000B, 2976 bytes, 28 functions
+
+[[unit]]
+id = "eov6"
+# c ovl6:0000, 3258 bytes, 6 functions
+
+[[unit]]
+id = "e0d1c"
+# c 0D1C:0006, 3265 bytes, 26 functions
+
+[[unit]]
+id = "eov2"
+# unknown ovl2:0000, 3332 bytes, 11 functions
+
+[[unit]]
+id = "e1aad"
+# asm 1AAD:000C, 3405 bytes, 19 functions
+
+[[unit]]
+id = "e16a5"
+# c 16A5:0009, 3457 bytes, 5 functions
+
+[[unit]]
+id = "e1414"
+# c 1414:0000, 3511 bytes, 19 functions
+
+[[unit]]
+id = "e0acd"
+# c 0ACD:0008, 4182 bytes, 35 functions
+
+[[unit]]
+id = "e0de8"
+# c 0DE8:0007, 4279 bytes, 20 functions
+
+[[unit]]
+id = "e1547"
+# c 1547:0009, 4362 bytes, 8 functions
+
+[[unit]]
+id = "e0bd2"
+# c 0BD2:000E, 4681 bytes, 22 functions
+
+[[unit]]
+id = "e1c0e"
+# c 1C0E:000C, 6099 bytes, 31 functions
+
+[[unit]]
+id = "e08e6"
+# c 08E6:000B, 6331 bytes, 36 functions
+
+[[unit]]
+id = "e17a6"
+# asm 17A6:0000, 6694 bytes, 4 functions
+
+[[unit]]
+id = "eov3"
+# c ovl3:0000, 6961 bytes, 23 functions
+
+[[unit]]
+id = "e122e"
+# c 122E:0001, 7775 bytes, 40 functions
+
+[[unit]]
+id = "eov5"
+# c ovl5:0000, 8094 bytes, 31 functions
+
+[[unit]]
+id = "eov4"
+# c ovl4:0000, 8259 bytes, 18 functions
+
+[[unit]]
+id = "eov1"
+# asm ovl1:0000, 9864 bytes, 12 functions
+
+[[unit]]
+id = "eov0"
+# c ovl0:0000, 10873 bytes, 35 functions
+
+[[unit]]
+id = "e0ef3"
+# c 0EF3:000E, 13219 bytes, 104 functions
+
+[[unit]]
+id = "e_text"
+# asm 0000:020C, 19996 bytes, 34 functions

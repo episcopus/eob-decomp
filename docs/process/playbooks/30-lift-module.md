@@ -31,10 +31,14 @@ Examples: `src/E0CF7.C`, `src/E07A9.C` (whole units), `src/E08E6.C` (a jump tabl
 
 ## Steps
 
-1. Disassemble the unit: `.venv/bin/python tools/re/disasm.py eob/EOB.EXE <SEG>` (far calls marked `reloc`, DGROUP strings decoded).
-2. Write the C, routine by routine, in address order. Declare every callee and global with its annotation; a callee's signature comes from what the caller pushes (`push` order is right to left, `add sp,n` gives the bytes).
-3. `make match FILE=src/<ID>.C`. The first difference is printed with both instructions; `tools/match/cmatch.py FILE --show NAME` prints ours and the original side by side.
-4. When everything matches, `make match FILE=src/<ID>.C WRITE=1` records L2 in `re/symbols.toml`.
+1. Claim the unit from the main checkout: `make claim AGENT=<your name> [UNIT=<id>]` (without UNIT, the next of `work/queue.toml`). Work in the worktree it prints (`../eob-worktrees/<id>`, branch `unit/<id>`), nowhere else. Playbook 90 has the whole loop.
+2. `make packet UNIT=<id>` and read `build/packets/<id>.md`: the unit's functions with their callers and callees (overlay calls resolved through their stub entries), the globals and callees `src/` already names (reuse those names and annotations), and the disassembly of every function not at L2 with call targets and known globals named. `tools/re/disasm.py eob/EOB.EXE <SEG>` disassembles any range.
+3. No file yet: `make skeleton UNIT=<id>` writes `src/<ID>.C` (or `.ASM`) with every function a stub. Replace stubs with code, one function at a time, in address order. Declare every callee and global with its annotation; a callee's signature comes from what the caller pushes (`push` order is right to left, `add sp,n` gives the bytes).
+4. `make match FILE=src/<ID>.C`. The first difference is printed with both instructions; `tools/match/cmatch.py FILE --show NAME` prints ours and the original side by side.
+5. A function matches: `make match FILE=src/<ID>.C WRITE=1` records L2 in `re/symbols.toml`; commit (`<unit>: <what> (<function ids>) [L2]`).
+6. Done, stuck, or out of time: every function of the file matched, a `stub`, or a `draft` with a note; commit; `make handoff AGENT=<you> UNIT=<id> STATE=complete|partial|blocked NOTE="..."` from the worktree. `make handoff` refuses a file that does not match and a branch that changes what it may not (below). A question for the human is `STATE=escalate`.
+
+`make integrate` (playbook 90) merges the branch through `make check`; if it rejects it, `make claim` with the same AGENT gives you the worktree back with the reason.
 
 ## Idioms found so far (Turbo C++ 1.00, `-ml -O -Z`; whitepaper 2.1.1)
 
@@ -56,5 +60,6 @@ Examples: `src/E0CF7.C`, `src/E07A9.C` (whole units), `src/E08E6.C` (a jump tabl
 
 ## Rules
 
-- Never change the matcher to make a function match; never use `__emit__` or inline bytes.
+- Never change the matcher to make a function match; never use `__emit__` or inline bytes. A unit branch cannot change `tools/match/`, its negative fixtures (`tests/match/negative/`), the agent tools, the spec, the pins or `eob/`: the pre-commit hook (`make hooks`; `make claim` installs it) and `make handoff` refuse it. A matcher problem is an escalation.
+- `make match-gate` is the matcher's regression gate (part of `make check`): every file of `src/` matches, every function recorded at L2 is still proven by `src/`, and every negative fixture is rejected with a difference. A fixture is a matched unit with one deliberate defect (a constant, a global, a callee, a struct field, a string, an operator, a case label, a near call to the wrong sibling, an overlay global, missing switches, an assembly jump); a change to the matcher that lets one through fails the gate.
 - Five failed attempts on one function: stop, write what you tried in its `notes` in `re/symbols.toml`, move on.

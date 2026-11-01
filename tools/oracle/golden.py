@@ -26,7 +26,7 @@ from oracle import run  # noqa: E402
 
 SESSIONS = ROOT / "tests" / "sessions"
 GOLDEN = SESSIONS / "golden"
-KEEP = ("stop", "instructions", "video_mode", "digest", "final_image", "script_done", "sound_digest", "adlib_writes")
+KEEP = ("program", "stop", "instructions", "video_mode", "digest", "final_image", "script_done", "sound_digest", "adlib_writes")
 
 
 def play(name: str, out: Path) -> dict:
@@ -34,7 +34,8 @@ def play(name: str, out: Path) -> dict:
     opts = Script(text).options
     save = SESSIONS / opts["save"] if "save" in opts else None
     s = run.run_session(text, out=out, max_insns=int(opts.get("insns", 60_000_000)),
-                        mouse="mouse" in opts, sound=opts.get("sound"), save=save)
+                        mouse="mouse" in opts, sound=opts.get("sound"), save=save,
+                        program=opts.get("program", "EOB.EXE"))
     g = {k: s[k] for k in KEEP}
     g["checkpoints"] = [{k: c[k] for k in ("kind", "name", "instructions", "digest", "image") if k in c}
                         for c in s["checkpoints"]]

@@ -1,0 +1,8 @@
+#!/bin/sh
+# Installed by `make claim` and `make hooks` (git config core.hooksPath tools/agent/hooks).
+# Refuses a commit that changes eob/ or build/, adds an en or em dash, or, on a unit/ or review/
+# branch, changes the spec, the pins, the matcher, its fixtures or the agent tools (tools/agent/safety.py).
+top=$(git rev-parse --show-toplevel)
+py="$top/.venv/bin/python"
+[ -x "$py" ] || py=python3
+exec "$py" "$top/tools/agent/safety.py" --staged

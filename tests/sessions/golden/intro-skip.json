@@ -1,0 +1,35 @@
+{
+ "program": "INTRO.EXE",
+ "stop": "script quit",
+ "instructions": 65209020,
+ "video_mode": "13h",
+ "digest": "cdbd70c7f9e02d44ddd7ff33673bc8270149d78ab2b7a165a92109281ec24c3c",
+ "final_image": "3c55a8180443128ab0ee39a35a6a0297d21160e661c315b400ac84eda4ed8fa5",
+ "script_done": true,
+ "sound_digest": "c7f67791fe6516835ed98e4d586db94419e36e0c4f7f2e940f97e94dc767ae5f",
+ "adlib_writes": 0,
+ "checkpoints": [
+  {
+   "kind": "shot",
+   "name": "intro",
+   "instructions": 21611720,
+   "digest": "f0e7b3fa779a5a79f96422c0c7a6416bc1ccfe91adbf66cbdc7aba32e3a71e8b",
+   "image": "044ae3f9afaf17597970e098f98f9aa9ff49832c5bd7263c4e4b56873d4648d0"
+  },
+  {
+   "kind": "shot",
+   "name": "title",
+   "instructions": 37799070,
+   "digest": "fde96ed4e64b492928d650d33320347c853fd607b2f422304989a9ff4ef38214",
+   "image": "8febf5f0ef28452b4c49afe82096451715a6864f96554e0e75fb9d99bcf09959"
+  },
+  {
+   "kind": "shot",
+   "name": "dungeon",
+   "instructions": 65209020,
+   "digest": "cdbd70c7f9e02d44ddd7ff33673bc8270149d78ab2b7a165a92109281ec24c3c",
+   "image": "3c55a8180443128ab0ee39a35a6a0297d21160e661c315b400ac84eda4ed8fa5"
+  }
+ ],
+ "args": "3 4 0 homie"
+}

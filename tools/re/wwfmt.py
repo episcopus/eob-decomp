@@ -17,9 +17,15 @@ copies from the output written so far:
   11cc cccc pppppppp pppppppp      copy cccccc+3 bytes from the absolute output offset
   FE nnnn vv            fill nnnn bytes with vv
   FF nnnn pppp          copy nnnn bytes from the absolute output offset pppp
+The game's own LCW routine (1D9A:0013) gives the same bytes for every pinned file
+(tests/unit/test_wwfmt.py runs it in the oracle).
+
+Format 1 (`lzw12`, 1D9A:018B): 12-bit LZW whose dictionary entries point back into the output.
+Formats 2 and 3 are in the loader but no pinned file uses them.
 
 Other formats: MAZ (u16 width, u16 height, u16 bytes per cell, then cells), VMP and EMP (u16 count,
-then u16 entries), PAL and COL (768 bytes of 6-bit VGA palette).
+then u16 entries), PAL and COL (768 bytes of 6-bit VGA palette). The game's own files (DAT, FNT,
+the item remap tables, saves) are in eobfmt.py.
 
   wwfmt.py verify eob/                          every file of every PAK, decoded and checked
   wwfmt.py png eob/EOBDATA1.PAK TITLE-V.CMP OUT.PNG [--palette EOBDATA2.PAK:EOBPAL.COL]
@@ -30,13 +36,15 @@ import glob, os, struct, sys
 from collections import Counter
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import eobfmt  # noqa: E402
 import pak  # noqa: E402
 
 COMPRESSED = {"CPS", "CMP", "EGA", "INF", "VCN", "ECN"}
 # Files that do not decode to their declared size, with what is known (whitepaper 4.2).
 KNOWN = {
     "EOBTITLE.CMP": "LCW stream decodes coherently for 31962 bytes (99 rows of a title picture), "
-                    "then a fill of 13082 bytes (FE 1A 33 4C) and garbage past 64000; damaged in this copy? "
+                    "then a fill of 13082 bytes (FE 1A 33 4C) and garbage past 64000; the game's own routine "
+                    "(1D9A:0013) writes the same 64000 bytes, so the file, not the decoder, is odd. "
                     "Named by EOB.EXE and INTRO.EXE",
 }
 
@@ -83,6 +91,49 @@ def lcw(src: bytes, size: int) -> bytes:
     return bytes(out)
 
 
+def lzw12(src: bytes, size: int) -> bytes:
+    """Format 1, as EOB.EXE 1D9A:018B decodes it: 12-bit codes, big-endian, packed two to three
+    bytes; codes below 100h are literals, a code from 100h names a dictionary entry. An entry is
+    (offset, length) of a string already in the output, so the dictionary takes 4 bytes per entry
+    in the 3C00h work buffer (F00h entries); when it is full, no more are added. Every code after
+    the first adds the previous string plus the first byte of the current one."""
+    out, i, odd = bytearray(), 0, True
+    entries: list[tuple[int, int]] = []
+
+    def code() -> int:
+        nonlocal i, odd
+        if odd:                                  # high 8 bits from this byte, low 4 from the next
+            c = (src[i] << 4) | (src[i + 1] >> 4)
+            i += 1
+        else:                                    # low 4 bits of this byte, then the next byte
+            c = ((src[i] & 0x0F) << 8) | src[i + 1]
+            i += 2
+        odd = not odd
+        return c
+
+    out.append(code() & 0xFF)
+    prev, prev_len = 0, 1                        # the previous string: dx and cs:[185h]
+    while len(out) < size:
+        c = code()
+        start = len(out)
+        if c < 0x100:
+            out.append(c)
+            n = 1
+        elif c - 0x100 < len(entries):
+            off, n = entries[c - 0x100]
+            for k in range(n):
+                out.append(out[off + k])
+        else:                                    # the entry being made: previous string + its first byte
+            n = prev_len + 1
+            for k in range(prev_len):
+                out.append(out[prev + k])
+            out.append(out[prev])
+        if len(entries) < 0xF00:
+            entries.append((prev, prev_len + 1))
+        prev, prev_len = start, n
+    return bytes(out[:size])
+
+
 def unpack(d: bytes) -> tuple[bytes, bytes]:
     """(data, palette) of a compressed file."""
     h = header(d)
@@ -92,6 +143,8 @@ def unpack(d: bytes) -> tuple[bytes, bytes]:
     palette, body = body[:h["palette"]], body[h["palette"]:]
     if h["format"] == 0:
         return body[:h["unpacked"]], palette
+    if h["format"] == 1:
+        return lzw12(body, h["unpacked"]), palette
     if h["format"] == 4:
         return lcw(body, h["unpacked"]), palette
     raise ValueError("format %d not decoded yet" % h["format"])
@@ -118,6 +171,9 @@ def verify(folder: str) -> int:
             ext = e["name"].rsplit(".", 1)[-1].upper()
             d = e["data"]
             try:
+                if eobfmt.decode(e["name"], d) is not None:
+                    counts["%s (eobfmt)" % ext] += 1
+                    continue
                 h = header(d) if ext in COMPRESSED or ext == "EGA" else None
                 if h:
                     data, _ = unpack(d)
@@ -139,7 +195,7 @@ def verify(folder: str) -> int:
                     counts[ext] += 1
                 else:
                     counts[ext + " not decoded"] += 1
-            except ValueError as err:
+            except ValueError as err:              # eobfmt.FormatError too
                 counts[ext + " not decoded"] += 1
                 if "not decoded yet" not in str(err):
                     bad += 1

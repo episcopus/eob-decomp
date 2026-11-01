@@ -1,4 +1,5 @@
 {
+ "program": "EOB.EXE",
  "stop": "script quit",
  "instructions": 49662090,
  "video_mode": "13h",

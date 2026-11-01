@@ -35,7 +35,7 @@ changes whatever the segment alignment). Over each function, byte by byte:
     annotated function, or a runtime library function, located in the original through
     build/re/rtl_compare.json (`symbols`), which our link does not move.
 
-  cmatch.py FILE [--program eob/EOB.EXE] [--flags="-ml -O -Z"] [--write] [--show NAME]
+  cmatch.py FILE [--program eob/EOB.EXE] [--flags="-ml -O -Z"] [--write] [--show NAME] [--unit ID]
 --write records level L2 and the name of every matched function in re/symbols.toml.
 Exit code 0 when every annotated function defined in the file matches.
 """
@@ -348,10 +348,11 @@ def why(fname, k, what, a: Build, at_a, orig: Original, at_o) -> str:
 
 # ---------------------------------------------------------------- main
 
-def unit_of(path: Path) -> dict | None:
+def unit_of(path: Path, unit: str | None = None) -> dict | None:
+    """The registry entry of the file's unit: `unit`, or the file name (src/E0CF7.C is e0cf7)."""
     p = ROOT / "re" / "units.toml"
     units = tomllib.loads(p.read_text()).get("unit", []) if p.exists() else []
-    return next((u for u in units if u["id"] == path.stem.lower()), None)
+    return next((u for u in units if u["id"] == (unit or path.stem).lower()), None)
 
 
 def write_levels(names_by_addr: dict, flags: str) -> int:
@@ -383,6 +384,7 @@ def main() -> int:
     ap.add_argument("--release", default=None)
     ap.add_argument("--write", action="store_true")
     ap.add_argument("--show", metavar="NAME", help="print ours and the original side by side")
+    ap.add_argument("--unit", help="the unit, when the file name is not its id (negative fixtures)")
     a = ap.parse_args()
     path = Path(a.file)
     asm = path.suffix.upper() == ".ASM"
@@ -398,7 +400,10 @@ def main() -> int:
     (w / src_name).write_text(src.replace("\r\n", "\n").replace("\n", "\r\n"))
     A, B = link(w, release, flags, src_name, funcs, data, defined, asm)
     program = Path(a.program)
-    u = unit_of(path)
+    if a.write and a.unit:
+        print("cmatch: --write records levels from src/ only, not from a file named with --unit")
+        return 2
+    u = unit_of(path, a.unit)
     ovl = u.get("overlay") if u else None
     if ovl is None:
         o = next((funcs[n][0] for n in defined if isinstance(funcs[n][0], str)), None)

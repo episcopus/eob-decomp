@@ -563,8 +563,70 @@ class Dos:
 
     f51 = f62 = lambda self, m, al: m.set("bx", self.psp)
 
+    def f29(self, m, al):
+        """Parse a file name into an FCB (Turbo C's exec fills the two FCBs of the child's PSP this
+        way). DS:SI the text, ES:DI the FCB; AL bit 0: skip leading separators, bits 1 to 3: keep the
+        FCB's drive, name, extension when the text has none. Returns AL 0, 1 (wildcards) or FFh (bad
+        drive) and SI after the name."""
+        ds, si, es, di = m.get("ds"), m.get("si"), m.get("es"), m.get("di")
+        text = m.read(ds, si, 128)
+        seps = b":.;,=+ \t"
+        i = 0
+        if al & 1:
+            while i < len(text) and text[i:i + 1] in (b" ", b"\t", b";", b",", b"=", b"+", b":", b"."):
+                i += 1
+        else:
+            while i < len(text) and text[i:i + 1] in (b" ", b"\t"):
+                i += 1
+        fcb = bytearray(m.read(es, di, 12))
+        result = 0
+        if text[i + 1:i + 2] == b":" and text[i:i + 1].isalpha():
+            fcb[0] = text[i:i + 1].upper()[0] - 0x40
+            i += 2
+        elif not al & 2:
+            fcb[0] = 0
+
+        def field(n, keep):
+            nonlocal i, result
+            start, out = i, bytearray()
+            while i < len(text) and text[i] > 0x20 and text[i] not in seps + b'/\\"[]<>|':
+                c = text[i]
+                if c == ord("*"):
+                    out += b"?" * (n - len(out))
+                    result = 1
+                elif len(out) < n:
+                    if c == ord("?"):
+                        result = 1
+                    out.append(c)
+                i += 1
+            if i == start and keep:
+                return None
+            return bytes(out.upper()).ljust(n, b" ")[:n]
+        name = field(8, al & 4)
+        if name is not None:
+            fcb[1:9] = name
+        ext = None
+        if text[i:i + 1] == b".":
+            i += 1
+            ext = field(3, False)
+        elif not al & 8:
+            ext = b"   "
+        if ext is not None:
+            fcb[9:12] = ext
+        m.write(es, di, bytes(fcb))
+        m.set("si", (si + i) & 0xFFFF)
+        m.set("ax", (m.get("ax") & 0xFF00) | result)
+
     def f4B(self, m, al):
         path = self._path(m)
+        if al == 0:
+            # load and execute: the run ends here, with the child's command line (INTRO.EXE runs EOB.EXE)
+            block = m.read(m.get("es"), m.get("bx"), 6)
+            toff, tseg = struct.unpack_from("<HH", block, 2)
+            n = m.rb(tseg, toff)
+            tail = bytes(m.read(tseg, toff + 1, n)).decode("latin-1")
+            self.exec_request = (path, tail)
+            raise Stop("exec %s%s" % (path.split("\\")[-1].upper(), tail))
         if al != 3:
             m.unimplemented("INT 21h AH=4Bh AL=%02Xh EXEC of %r" % (al, path))
             m.err(2)

@@ -1,0 +1,14 @@
+# intro-skip: INTRO.EXE, ESC during the intro: INTRO hands over to EOB.EXE at once; ENTER on EOB's
+# title menu loads the saved game in fixtures/. The whole chain after START1.EXE, in one run.
+option program INTRO.EXE
+option save fixtures/EOBDATA.SAV
+option insns 100000000
+wait 400
+shot intro
+key ESC
+wait 300
+shot title
+key ENTER
+wait 500
+shot dungeon
+quit

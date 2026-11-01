@@ -1,0 +1,16 @@
+# intro-play: INTRO.EXE as START1.EXE runs it ("3 4 0 homie"), no keys. The intro plays for 147 s of
+# virtual time, then INTRO loads EOB.EXE into its own memory (DOS 4B03h) with the command line
+# " 3 4 0 homie 3 0" and jumps to it (whitepaper 2.6); EOB.EXE shows its title menu.
+option program INTRO.EXE
+option insns 175000000
+wait 300
+shot present
+wait 500
+shot waterdeep
+wait 900
+shot middle
+wait 700
+shot late
+wait 600
+shot title
+quit
