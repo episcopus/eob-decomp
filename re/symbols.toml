@@ -1225,6 +1225,9 @@ unit = "e082c"
 addr = "082C:000B"
 size = 1050
 evidence = ["segment"]
+name = "EditTextField"
+level = "L2"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e082c_0425"
@@ -1232,6 +1235,9 @@ unit = "e082c"
 addr = "082C:0425"
 size = 51
 evidence = ["far", "frame"]
+name = "WaitTicks"
+level = "L2"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e082c_0458"
@@ -1239,6 +1245,9 @@ unit = "e082c"
 addr = "082C:0458"
 size = 108
 evidence = ["far", "frame"]
+name = "RollDice"
+level = "L2"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e082c_04c4"
@@ -1246,6 +1255,9 @@ unit = "e082c"
 addr = "082C:04C4"
 size = 87
 evidence = ["far", "frame"]
+name = "DrawRect"
+level = "L2"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e082c_051b"
@@ -1253,6 +1265,9 @@ unit = "e082c"
 addr = "082C:051B"
 size = 209
 evidence = ["far", "near", "frame"]
+name = "LoadScreenImage"
+level = "L2"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e082c_05ec"
@@ -1260,6 +1275,9 @@ unit = "e082c"
 addr = "082C:05EC"
 size = 39
 evidence = ["frame"]
+name = "LoadOverlayScreen"
+level = "L2"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e082c_0613"
@@ -1267,6 +1285,9 @@ unit = "e082c"
 addr = "082C:0613"
 size = 40
 evidence = ["far", "near", "frame"]
+name = "IsPointInsideRect"
+level = "L2"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e082c_063b"
@@ -1274,6 +1295,9 @@ unit = "e082c"
 addr = "082C:063B"
 size = 70
 evidence = ["far", "frame"]
+name = "DrawRegion000F"
+level = "L2"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e082c_0681"
@@ -1281,6 +1305,9 @@ unit = "e082c"
 addr = "082C:0681"
 size = 70
 evidence = ["far", "frame"]
+name = "DrawRegion004D"
+level = "L2"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e082c_06c7"
@@ -1288,6 +1315,9 @@ unit = "e082c"
 addr = "082C:06C7"
 size = 70
 evidence = ["frame"]
+name = "DrawRegion008B"
+level = "L2"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e082c_070d"
@@ -1295,6 +1325,9 @@ unit = "e082c"
 addr = "082C:070D"
 size = 64
 evidence = ["frame"]
+name = "DrawRegion00C9"
+level = "L2"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e082c_074d"
@@ -1302,6 +1335,9 @@ unit = "e082c"
 addr = "082C:074D"
 size = 87
 evidence = ["frame"]
+name = "DrawBevelBox"
+level = "L2"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e082c_07a4"
@@ -1309,6 +1345,9 @@ unit = "e082c"
 addr = "082C:07A4"
 size = 33
 evidence = ["far", "frame"]
+name = "SwapChars"
+level = "L2"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e082c_07c5"
@@ -1316,6 +1355,9 @@ unit = "e082c"
 addr = "082C:07C5"
 size = 85
 evidence = ["frame"]
+name = "RotateBlocks"
+level = "L2"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e082c_081a"
@@ -1323,6 +1365,9 @@ unit = "e082c"
 addr = "082C:081A"
 size = 126
 evidence = ["near", "frame"]
+name = "ShowMemoryDiagnostics"
+level = "L2"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e082c_0898"
@@ -1330,6 +1375,9 @@ unit = "e082c"
 addr = "082C:0898"
 size = 114
 evidence = ["far", "frame"]
+name = "DrawShadowText"
+level = "L2"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e082c_090a"
@@ -1337,6 +1385,9 @@ unit = "e082c"
 addr = "082C:090A"
 size = 106
 evidence = ["frame"]
+name = "DrawShadowInt"
+level = "L2"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e082c_0974"
@@ -1344,6 +1395,9 @@ unit = "e082c"
 addr = "082C:0974"
 size = 50
 evidence = ["far", "frame"]
+name = "NumberWidthLong"
+level = "L2"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e082c_09a6"
@@ -1351,6 +1405,9 @@ unit = "e082c"
 addr = "082C:09A6"
 size = 47
 evidence = ["far", "frame"]
+name = "NumberWidthInt"
+level = "L2"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e082c_09d5"
@@ -1358,6 +1415,9 @@ unit = "e082c"
 addr = "082C:09D5"
 size = 126
 evidence = ["far", "frame"]
+name = "DrawFilledPanel"
+level = "L2"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e082c_0a53"
@@ -1365,6 +1425,9 @@ unit = "e082c"
 addr = "082C:0A53"
 size = 10
 evidence = ["frame"]
+name = "QuitGame"
+level = "L2"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e082c_0a5d"
@@ -1372,6 +1435,9 @@ unit = "e082c"
 addr = "082C:0A5D"
 size = 32
 evidence = ["far", "frame"]
+name = "ClickInRect"
+level = "L2"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e082c_0a7d"
@@ -1379,6 +1445,9 @@ unit = "e082c"
 addr = "082C:0A7D"
 size = 55
 evidence = ["frame"]
+name = "ReadFileBytes"
+level = "L2"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e082c_0ab4"
@@ -1386,6 +1455,9 @@ unit = "e082c"
 addr = "082C:0AB4"
 size = 52
 evidence = ["far", "frame"]
+name = "ClampValue"
+level = "L2"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e082c_0ae8"
@@ -1393,6 +1465,9 @@ unit = "e082c"
 addr = "082C:0AE8"
 size = 38
 evidence = ["frame"]
+name = "FormatName"
+level = "L2"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e082c_0b0e"
@@ -1400,6 +1475,9 @@ unit = "e082c"
 addr = "082C:0B0E"
 size = 53
 evidence = ["frame"]
+name = "ShowStatus"
+level = "L2"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e082c_0b43"
@@ -1407,6 +1485,9 @@ unit = "e082c"
 addr = "082C:0B43"
 size = 76
 evidence = ["far", "frame"]
+name = "DelaySeconds"
+level = "L2"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e082c_0b8f"
@@ -1414,6 +1495,9 @@ unit = "e082c"
 addr = "082C:0B8F"
 size = 28
 evidence = ["far", "frame"]
+name = "SayAndBeep"
+level = "L2"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e08e6_000b"

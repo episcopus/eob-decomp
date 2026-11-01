@@ -40,7 +40,7 @@ extern int gCursorY; /*@ ds:813A: mouse y (E1A72.ASM) */
 extern int g8134; /*@ ds:8134: accumulated button changes (E1A72.ASM) */
 extern void (far *gDrawText)(char far *text, int a, int b, int c, int d); /*@ ds:80CA */
 
-extern void f082C_0898(char far *text, int a, int b, int c, int d); /*@ 082C:0898 */
+extern void DrawShadowText(char far *text, int a, int b, int c, int d); /*@ 082C:0898 */
 extern void LockHidePointer(void); /*@ 1BBE:0307: start a frame (redraws through the mouse callbacks) */
 extern void LockShowPointer(void); /*@ 1BBE:0332: end a frame */
 extern int IsKeyPending(void); /*@ 1AAD:0471: nonzero when a key is waiting */
@@ -140,7 +140,7 @@ extern void WaitFrames(int n); /*@ 1A16:000B */
     for (i = 0; i < n; i++) {
         glyph = FindMaskBit(i, mask, shift);
         dy = y + gFontHeight1A47 * i + i * spacing;
-        f082C_0898(names[glyph], x, dy, !g8102 ? 1 : panelDef->colorA, 0);
+        DrawShadowText(names[glyph], x, dy, !g8102 ? 1 : panelDef->colorA, 0);
         if (glyph == sel && (g5D1A || gMouseDisabled))
             gDrawText(names[glyph], x, dy, panelDef->colorB, 0);
     }

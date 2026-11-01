@@ -146,7 +146,7 @@ extern struct Triple6 gA99C[]; /*@ ds:A99C */
 extern long gEFD4[]; /*@ ds:EFD4 */
 extern char gBuf1CE7[]; /*@ ds:1CE7 */
 extern char gData65EA[]; /*@ ds:65EA */
-extern char gSheet113F[]; /*@ ds:113F */
+extern char gOverlayBuf[]; /*@ ds:113F */
 extern char far *gOptionNames[]; /*@ ds:65DE */
 
 /* the loaded sprite sheets, at fixed paragraphs of the overlay's own data (TLINK segment table) */
@@ -160,15 +160,15 @@ extern unsigned char far gSheetITEMICN[]; /*@ 20A9:0000 */
    returns the cell's far address, filled in at load time [H]. */
 extern void far * (far *gGetSpriteCell)(int x, int y, int w, int h, void far *sheet); /*@ ds:8086 */
 extern int (far *gFn8072)(int a, int b); /*@ ds:8072 */
-extern void (far *gFn806A)(int a, int b, int c, int d, int e); /*@ ds:806A */
+extern void (far *gFillRect)(int a, int b, int c, int d, int e); /*@ ds:806A */
 extern void (far *gFn807E)(int x, int y, int w, int h, void far *buf); /*@ ds:807E */
 extern void (far *gFn804A)(int x, int y, int w, int h, void far *buf); /*@ ds:804A */
 
-extern void f082C_05EC(char far *name, int a, int b); /*@ 082C:05EC */
-extern void f082C_051B(char far *name, char far *buf, int a, int b, int c); /*@ 082C:051B */
-extern void f082C_09D5(int a, int b, int c, int d, int e, int f, int g); /*@ 082C:09D5 */
-extern int f082C_000B(char far *buf, char a, char b, char c, char d, char e, char f); /*@ 082C:000B */
-extern void f082C_0898(char far *text, int a, int b, int c, int d); /*@ 082C:0898 */
+extern void LoadOverlayScreen(char far *name, int a, int b); /*@ 082C:05EC */
+extern void LoadScreenImage(char far *name, char far *buf, int a, int b, int c); /*@ 082C:051B */
+extern void DrawFilledPanel(int a, int b, int c, int d, int e, int f, int g); /*@ 082C:09D5 */
+extern int EditTextField(char far *buf, char a, char b, char c, char d, char e, char f); /*@ 082C:000B */
+extern void DrawShadowText(char far *text, int a, int b, int c, int d); /*@ 082C:0898 */
 extern int far RollDice(char count, char sides, char bonus); /*@ 082C:0458 */
 extern void f19EC_002A(int a, int b, char far *c); /*@ 19EC:002A */
 extern void far *MemAlloc(unsigned long size, int flags); /*@ 19BC:0007 */
@@ -205,8 +205,8 @@ extern void FileClose(int handle); /*@ 1C0E:03BB */
    (0,0). Called first by LoadItemData. */
 /*@ ovl2:0000 */ void SetPointerShape(void)
 {
-    f082C_05EC("ITEMICN", 5, 3);
-    gIconsDDE4[0] = gGetSpriteCell(0, 0, 2, 0x10, gSheet113F);
+    LoadOverlayScreen("ITEMICN", 5, 3);
+    gIconsDDE4[0] = gGetSpriteCell(0, 0, 2, 0x10, gOverlayBuf);
     gPtrDD00 = gIconsDDE4[0];
     SetMousePointerShape(0, 0, gPtrDD00);
     g8115 = 0;
@@ -258,21 +258,21 @@ extern void FileClose(int handle); /*@ 1C0E:03BB */
     int i;
     int j;
 
-    f082C_05EC("ITEML1", 5, 3);
+    LoadOverlayScreen("ITEML1", 5, 3);
     for (i = 0; i < 0xe; i++)
         for (j = 0; j < 4; j++)
             gItemL1Icons[i][j] = gGetSpriteCell(gCellPosL1[i].x,
                 gCellPosL1[i].y + gCellDX[j], gCellSize1[j].w, gCellSize1[j].h,
                 gSheetITEML1);
 
-    f082C_05EC("ITEMS1", 5, 3);
+    LoadOverlayScreen("ITEMS1", 5, 3);
     for (i = 0; i < 0x17; i++)
         for (j = 0; j < 4; j++)
             gItemS1Icons[i][j] = gGetSpriteCell(gCellPosS1[i].x,
                 gCellPosS1[i].y + gCellDX[j], gCellSize2[j].w, gCellSize2[j].h,
                 gSheetITEMS1);
 
-    f082C_05EC("THROWN", 5, 3);
+    LoadOverlayScreen("THROWN", 5, 3);
     for (i = 0; i < 0xc; i++)
         for (j = 0; j < 4; j++)
             gThrownIcons[i][j] = gGetSpriteCell(gCellPosS1[i].x,
@@ -285,7 +285,7 @@ extern void FileClose(int handle); /*@ 1C0E:03BB */
     gThrownIcon3 = gGetSpriteCell(0x10, 0x90, 5, 0x18, gSheetTHROWN);
     gThrownIcon4 = gGetSpriteCell(0x10, 0xa8, 5, 0x10, gSheetTHROWN);
 
-    f082C_05EC("ITEMICN", 5, 3);
+    LoadOverlayScreen("ITEMICN", 5, 3);
     for (i = 1; i < 0x59; i++)
         gIconsDDE4[i] = gGetSpriteCell((i % 20) * 2, (i / 20) * 16, 2, 0x10, gSheetITEMICN);
 
@@ -331,10 +331,10 @@ extern void FileClose(int handle); /*@ 1C0E:03BB */
     char j;
 
     LoadItemSheets();
-    f082C_05EC("DECORATE", 5, 3);
+    LoadOverlayScreen("DECORATE", 5, 3);
     for (i = 0; i < 6; i++)
         gIntroCells[i] = gGetSpriteCell(gCellDef65C6[i].x, gCellDef65C6[i].y,
-            gCellDef65C6[i].w, gCellDef65C6[i].h, gSheet113F);
+            gCellDef65C6[i].w, gCellDef65C6[i].h, gOverlayBuf);
     gIconDD1C = gGetSpriteCell(0x1d, 0, 2, 0x10, gSheetDECORATE);
     gIconDD20 = gGetSpriteCell(0x1f, 0, 2, 0x10, gSheetDECORATE);
     gIconDD24 = gGetSpriteCell(0x21, 0, 2, 0x10, gSheetDECORATE);
@@ -348,7 +348,7 @@ extern void FileClose(int handle); /*@ 1C0E:03BB */
     g8115 = 0;
 }
 
-/* ovl2:078D: Purpose unknown. Loads the INTRO sheet into gSheet113F and fills the DROW/creature
+/* ovl2:078D: Purpose unknown. Loads the INTRO sheet into gOverlayBuf and fills the DROW/creature
    icon tables (through gGetSpriteCell, at ds:F4BE and ds:A92A) after drawing the "intro" panels;
    the sprite cells it slices use the byte tables at ds:65C0/65C3/65C6 and the sheet segments
    DECORATE (2069) and 20A9. Called by LoadItemData. */
@@ -356,12 +356,12 @@ extern void FileClose(int handle); /*@ 1C0E:03BB */
 {
     int handle;
 
-    f082C_051B("INTRO", gSheet113F, 5, 3, 2);
+    LoadScreenImage("INTRO", gOverlayBuf, 5, 3, 2);
     g8115 = 2;
     handle = gFn8072(0, 0);
-    gFn806A(0, 0x9f, 0x13f, 0xc7, handle);
-    f082C_09D5(0x4d, 0xa5, 0xf9, 0xc1, 0xd, 0xe, 0xc);
-    f082C_09D5(0x4c, 0xa4, 0xfa, 0xc2, 0xd, 0xe, -1);
+    gFillRect(0, 0x9f, 0x13f, 0xc7, handle);
+    DrawFilledPanel(0x4d, 0xa5, 0xf9, 0xc1, 0xd, 0xe, 0xc);
+    DrawFilledPanel(0x4c, 0xa4, 0xfa, 0xc2, 0xd, 0xe, -1);
     ClipRect(0, 0, 0, 0, 0x28, 0xc8, 2, 0);
     g8115 = 0;
 }
@@ -482,9 +482,9 @@ extern void FileClose(int handle); /*@ 1C0E:03BB */
     gFn807E(gTextLeft, gTextTop, gTextWidth, gTextHeight, gSegDF4E);
     tries = 0;
     ClearTextRegion();
-    f082C_09D5(gTextLeft * 8, gTextTop, (gTextLeft + gTextWidth) * 8 - 1, gTextTop + gTextHeight - 1,
+    DrawFilledPanel(gTextLeft * 8, gTextTop, (gTextLeft + gTextWidth) * 8 - 1, gTextTop + gTextHeight - 1,
         gFB4C, gF53A, -1);
-    f082C_09D5(gTextLeft * 8 + 1, gTextTop + 1, (gTextLeft + gTextWidth) * 8 - 2, gTextTop + gTextHeight - 2,
+    DrawFilledPanel(gTextLeft * 8 + 1, gTextTop + 1, (gTextLeft + gTextWidth) * 8 - 2, gTextTop + gTextHeight - 2,
         gFB4C, gF53A, -1);
     gRegions[g811F].left++;
     gRegions[g811F].top += 2;
@@ -497,11 +497,11 @@ extern void FileClose(int handle); /*@ 1C0E:03BB */
         f1A29_000F(0, gItemL1Icons[gWordCells[pick].row][0], 0x64, 2, 0xd);
         sprintf(text, "\r\r\r\rOn the page with this symbol...\r\rFind line %d\rEnter word %d\r",
             gWordCells[pick].line, gWordCells[pick].word);
-        f082C_0898(text, (gTextLeft + 1) * 8, gTextTop, gTextAttr1, gTextAttr2);
+        DrawShadowText(text, (gTextLeft + 1) * 8, gTextTop, gTextAttr1, gTextAttr2);
         input[0] = 0;
-        f082C_09D5(0x4c, 0x64, 0xd0, 0x71, gF53A, gFB4C, -1);
-        f082C_09D5(0x4d, 0x65, 0xcf, 0x70, gF53A, gFB4C, -1);
-        while (f082C_000B(input, 0xa, 0x67, 0xf, (char)gTextAttr1, (char)gTextAttr2, 8) < 1)
+        DrawFilledPanel(0x4c, 0x64, 0xd0, 0x71, gF53A, gFB4C, -1);
+        DrawFilledPanel(0x4d, 0x65, 0xcf, 0x70, gF53A, gFB4C, -1);
+        while (EditTextField(input, 0xa, 0x67, 0xf, (char)gTextAttr1, (char)gTextAttr2, 8) < 1)
             ;
         while (input[strlen(input) - 1] == ' ')
             input[strlen(input) - 1] = 0;

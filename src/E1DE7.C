@@ -59,7 +59,7 @@ extern char gFontHeight1A47; /*@ ds:8101 */  /* font cell height (src/E1A47.C) *
 extern void (far *gTile805A)(void far *src, int x, int y); /*@ ds:805A */
 /* ds:806A: a far routine called with (x1, y1, x2, y2, colour) like the line routine at ds:8062
    (src/E1A1F.C); ClearTextRegion and DrawTextLine fill and clip rectangles through it. */
-extern void (far *gRect806A)(int x1, int y1, int x2, int y2, int colour); /*@ ds:806A */
+extern void (far *gFillRect)(int x1, int y1, int x2, int y2, int colour); /*@ ds:806A */
 extern void (far *gDrawText)(char far *text, int a, int b, int c, int d); /*@ ds:80CA */  /* src/E1AA6.C */
 /* ds:8117: a far routine called when the cursor is on the last line of the window (the scroll
    hook); gScrollOn (ds:8110) gates it. */
@@ -218,7 +218,7 @@ extern unsigned far *gFrameTable[]; /*@ ds:113B */
     rightPx = (gTextLeft + gTextWidth) * 8;
     bottom = gTextTop + gTextHeight;
     HidePointerZone(leftPx, top, rightPx, bottom);
-    gRect806A(leftPx, top, rightPx - 1, bottom - 1, gTextAttr2);
+    gFillRect(leftPx, top, rightPx - 1, bottom - 1, gTextAttr2);
     ShowPointerZone();
     gTextCol = gTextRow = 0;
 }
@@ -243,7 +243,7 @@ extern unsigned far *gFrameTable[]; /*@ ds:113B */
         HidePointerZone(gTextLeft * 8, gTextTop, (gTextLeft + gTextWidth) * 8, gTextTop + gTextHeight);
         line = (gTextHeight / gFontHeight1A47 - 1) * gFontHeight1A47;
         ClipRect(gTextLeft, gTextTop + gFontHeight1A47, gTextLeft, gTextTop, gTextWidth, line, g8115, g8115);
-        gRect806A(gTextLeft * 8, gTextTop + line, (gTextLeft + gTextWidth) * 8 - 1,
+        gFillRect(gTextLeft * 8, gTextTop + line, (gTextLeft + gTextWidth) * 8 - 1,
                   gTextTop + line + gFontHeight1A47 - 1, gTextAttr2);
         gDrawText(text, gTextLeft * 8, gTextTop + line, gTextAttr1, gTextAttr2);
         ShowPointerZone();

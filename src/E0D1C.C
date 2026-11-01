@@ -40,7 +40,7 @@ extern int gSoundVolume; /*@ ds:FBCA */     /* the global sound volume (src/E177
 extern int gFBCC; /*@ ds:FBCC */            /* a page number 0..3 (kept modulo 4 by 0ACD) */
 extern int g54F2; /*@ ds:54F2 */            /* the index drawn by 0D1C:0454, -1 when none */
 extern int g54F4; /*@ ds:54F4 */            /* the row of the animated list 0D1C:0454 draws */
-extern unsigned long g848A; /*@ ds:848A */  /* a tick counter compared with gFC5E by 0D1C:0454 */
+extern unsigned long gTicks; /*@ ds:848A */  /* a tick counter compared with gFC5E by 0D1C:0454 */
 extern unsigned long gFC5E; /*@ ds:FC5E */  /* the next tick 0D1C:0454 may draw at */
 extern signed char g1CE7[]; /*@ ds:1CE7 */  /* per-row colours for the list 0D1C:0454 draws */
 extern signed char gF57E; /*@ ds:F57E */    /* a colour read by 0D1C:0C21 */
@@ -139,7 +139,7 @@ extern int FindClassSlot(int value, char classIndex); /*@ 0A72:007B */
 extern int GetClampedTableByte(int col, int row); /*@ 0A72:0597 */
 extern void f1A29_008B(int mode, void far *src, int x, int y, int region); /*@ 1A29:008B */
 extern void f1A29_000F(int mode, void far *src, int x, int y, int region); /*@ 1A29:000F */
-extern void f082C_09D5(int x1, int y1, int x2, int y2, int c1, int c2, int c3); /*@ 082C:09D5 */
+extern void DrawFilledPanel(int x1, int y1, int x2, int y2, int c1, int c2, int c3); /*@ 082C:09D5 */
 extern int f17A6_0314(int obj, int volume); /*@ 17A6:0314 */
 extern void f08E6_0FBE(struct Obj28 far *obj, int n); /*@ 08E6:0FBE */
 
@@ -361,9 +361,9 @@ int f0D1C_02DC(void);
 /* 0D1C:0454: draws the animated row list at ds:5482. When `index` differs from the stored g54F2
    it hides the pointer, erases the old row (DrawBox over gRows5482[g54F2] in colour 0xC), shows
    the pointer, resets the row counter g54F4 to 0, stores `index` in g54F2 and records the
-   current tick (gFC5E = g848A). Otherwise, when a row is selected and one tick has passed, it
+   current tick (gFC5E = gTicks). Otherwise, when a row is selected and one tick has passed, it
    draws the next row g1CE7[g54F4] in the row's colour, advances g54F4 (wrapping to 0 at a zero
-   colour) and sets gFC5E = g848A + 1. Called by overlays 0 and 1. */
+   colour) and sets gFC5E = gTicks + 1. Called by overlays 0 and 1. */
 /*@ 0D1C:0454 */ void DrawRowList(int index)
 {
     int x1;
@@ -380,10 +380,10 @@ int f0D1C_02DC(void);
         }
         g54F4 = 0;
         g54F2 = index;
-        gFC5E = g848A;
+        gFC5E = gTicks;
     } else {
         if (g54F2 != -1) {
-            if (g848A > gFC5E) {
+            if (gTicks > gFC5E) {
                 if (g1CE7[g54F4] == 0)
                     g54F4 = 0;
                 x1 = gRows5482[g54F2].m0;
@@ -394,7 +394,7 @@ int f0D1C_02DC(void);
                 DrawBox(x1, y1, x2, y2, g1CE7[g54F4]);
                 LockShowPointer();
                 g54F4++;
-                gFC5E = g848A + 1;
+                gFC5E = gTicks + 1;
             }
         }
     }
@@ -713,11 +713,11 @@ int f0D1C_02DC(void);
         c1 = gFB4C;
         c2 = gF53A;
     }
-    f082C_09D5(x1, y1, x2, y2, c1, c2, -1);
+    DrawFilledPanel(x1, y1, x2, y2, c1, c2, -1);
     x1++;
     y1++;
     x2--;
     y2--;
-    f082C_09D5(x1, y1, x2, y2, gFB4C, gF53A, second ? -1 : gF57E);
+    DrawFilledPanel(x1, y1, x2, y2, gFB4C, gF53A, second ? -1 : gF57E);
     LockShowPointer();
 }

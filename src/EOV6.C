@@ -78,8 +78,8 @@ extern int FindCarriedSlot(int member, int what, int which); /*@ 0D1C:00F1 */
 extern int f0D1C_0163(int member, int what); /*@ 0D1C:0163 */
 extern void f0D1C_0C21(int x, int y, int width, int height, int c, int d); /*@ 0D1C:0C21 */
 extern char *SkipStrings(char *s, int n); /*@ 0D1C:07A7 */
-extern void f082C_0898(char *text, int x, int y, int colour, int flag); /*@ 082C:0898 */
-extern void f082C_0425(int n); /*@ 082C:0425 */
+extern void DrawShadowText(char *text, int x, int y, int colour, int flag); /*@ 082C:0898 */
+extern void WaitTicks(int n); /*@ 082C:0425 */
 extern int far RollDice(char count, char sides, char bonus); /*@ 082C:0458 */
 extern int f17A6_0F61(int x, int y); /*@ 17A6:0F61 */
 extern void f1547_0991(int member); /*@ 1547:0991 */
@@ -261,7 +261,7 @@ void f0B9B(int message);
                 if (f0D1C_0670(member, 0x10))
                     continue;
                 f0DE8_09B9(member, 0xa);
-                f082C_0425(5);
+                WaitTicks(5);
             }
             if (hours % 8 == 0) {
                 gained = 0;
@@ -355,7 +355,7 @@ done:
 
 /* ovl6:0858: shows the camp panel and the "Hours rested" line. It selects the 8x8 font and the
    region 0xa, and when `draw` is nonzero clears g8115, hides the pointer, fills the panel
-   rectangle (f0D1C_0C21) inside its clip (ClipRect), draws the title through f082C_0898 and shows
+   rectangle (f0D1C_0C21) inside its clip (ClipRect), draws the title through DrawShadowText and shows
    the pointer again. Then it formats "Hours rested: %-4d" with gFileNameBuf and, with g8115 set to 2,
    draws the line in the colour gF57E inside a second clip. Finally it waits ten frames and
    restores the font and the region. Called by the camp loop. */
@@ -374,13 +374,13 @@ done:
         ClearTextRegion();
         f0D1C_0C21(gTextLeft << 3, gTextTop, gTextWidth << 3, gTextHeight, 0, 0);
         ClipRect(gTextLeft, gTextTop, gTextLeft, gTextTop, gTextWidth, gTextHeight, 0, 2);
-        f082C_0898(SkipStrings(&gStrings2003, 0x2a), (gTextLeft + 1) << 3, gTextTop + 5, 9, 0);
+        DrawShadowText(SkipStrings(&gStrings2003, 0x2a), (gTextLeft + 1) << 3, gTextTop + 5, 9, 0);
         LockShowPointer();
     }
     sprintf(gFileNameBuf, "Hours rested: %-4d", hours);
     g8115 = 2;
     LockHidePointer();
-    f082C_0898(gFileNameBuf, (gTextLeft + 1) << 3, gTextTop + 0x14, 0xf, gF57E);
+    DrawShadowText(gFileNameBuf, (gTextLeft + 1) << 3, gTextTop + 0x14, 0xf, gF57E);
     g8115 = 0;
     ClipRect(gTextLeft + 1, gTextTop + 0x14, gTextLeft + 1, gTextTop + 0x14, 0x12, 8, 2, 0);
     LockShowPointer();
@@ -458,7 +458,7 @@ done:
 /* ovl6:0B9B: shows the modal warning box for message number `message` in the far string table at
    2003:0000. It saves the region (g811F), g8115 and the font, selects the 8x8 font and region 2,
    stores gF57E in ds:0159, fills the panel (f0D1C_0C21) and draws the message string through
-   f082C_0898 inside a clip (ClipRect). Then it waits up to 0x78 frames for a key (1AAD:038E),
+   DrawShadowText inside a clip (ClipRect). Then it waits up to 0x78 frames for a key (1AAD:038E),
    clears the pending key (1AAD:0480) and restores the font, region and g8115. Called by the camp
    loop for "You can't rest here, monsters are near." */
 /*@ ovl6:0B9B */ void f0B9B(int message)
@@ -477,7 +477,7 @@ done:
     SetTextWindowAndClear(0xb);
     g8115 = 2;
     f0D1C_0C21(gTextLeft << 3, gTextTop, gTextWidth << 3, gTextHeight, 0, 0);
-    f082C_0898(SkipStrings(&gStrings2003, message), (gTextLeft << 3) + 5, gTextTop + 5, 0xf, 0);
+    DrawShadowText(SkipStrings(&gStrings2003, message), (gTextLeft << 3) + 5, gTextTop + 5, 0xf, 0);
     ClipRect(gTextLeft, gTextTop, gTextLeft, gTextTop, gTextWidth, gTextHeight, 2, 0);
     LockShowPointer();
     for (i = 0; i < 0x78; i++) {
