@@ -173,8 +173,11 @@ enum {
    and `extra` is never read: both callers only ever pass zero. Every case body, the rectangle and
    the draws reproduce the original except the case tails: our -O merges the identical `row = 0`
    (down plus first) and `row = rows` (up plus last) tails, the original keeps all four copies
-   (7 bytes longer; the same unresolved -O tail merge as 0ACD:091C, whitepaper 2.1.1). Placeholder
-   names. */
+   (7 bytes longer; the same unresolved -O tail merge as 0ACD:091C, whitepaper 2.1.1). The merge
+   acts on the emitted code, not on the source: an unfoldable `rows - rows` still stores through the
+   shared `mov [bp-1a], al`, and `*(char *)&row`, a block, an empty `else`, `'\0'`, `rows & 0` and
+   ungrouped first/first2 labels all keep or change the bytes (re/symbols.toml, e14ef_0274, has the
+   full list and why -O and the C front end are fixed). Placeholder names. */
 /*@ 14EF:0274 draft */ int UpdateOptionList(int panel, char far * far *names, int counter, int extra,
                                    long mask, int shift)
 {
