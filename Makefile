@@ -5,7 +5,8 @@ PY ?= $(if $(wildcard .venv/bin/python),.venv/bin/python,python3)
 PROGRAMS := eob/EOB.EXE eob/INTRO.EXE eob/START1.EXE
 
 .PHONY: help setup doctor inputs overlays pak data emu2 test p0-check tc-install tc-check rtl-compare map match oracle-run golden test-slow \
-	match-gate check queue next claim locks unlock packet skeleton handoff handoffs handoff-done integrate review-pass worker progress hooks
+	match-gate check queue next claim locks unlock packet skeleton handoff handoffs handoff-done integrate review-pass worker progress hooks \
+	merge-driver start-run stop-run run-status run-add
 
 help:
 	@echo "Phase 0:  setup doctor inputs overlays pak emu2 test p0-check"
@@ -15,6 +16,7 @@ help:
 	@echo "          golden [NAME=x] [CHECK=1] test-slow"
 	@echo "Phase 3:  match-gate check progress queue next packet skeleton (playbook 30)"
 	@echo "          claim locks unlock handoff handoffs integrate handoff-done review-pass worker (playbooks 70, 90)"
+	@echo "          start-run run-status run-add stop-run (work/roster.toml), hooks merge-driver"
 	@echo "See AGENTS.md and docs/spec/SPEC.md."
 
 setup:            ## create .venv with the Python tools (uv)
@@ -121,8 +123,23 @@ review-pass:      ## record a passed review: UNIT=<id> AGENT=<reviewer> [CHECK=1
 worker:           ## supervisor running model sessions on claimed units: AGENT= [ROLE=] [UNIT=] [SESSIONS=] [TIMEOUT=] [SESSION_CMD=] [DRY=1]
 	$(PY) tools/agent/worker.py
 
-hooks:            ## install the pre-commit guard (git config core.hooksPath tools/agent/hooks)
-	git config core.hooksPath tools/agent/hooks
+hooks:            ## install the pre-commit guard and the registry merge driver (git config of this clone)
+	$(PY) -c "import sys; sys.path.insert(0, 'tools/agent'); import common; common.install_git_config()"
+	@echo "hooks: core.hooksPath and merge.eob-registry set"
+
+merge-driver: hooks  ## the same: re/symbols.toml and re/units.toml merge entry by entry
+
+start-run:        ## check, then start every entry of work/roster.toml in the background (DRY=1: show and check only)
+	$(PY) tools/agent/run.py start $(if $(DRY),--dry)
+
+stop-run:         ## drain the run: workers finish (WAIT minutes, default 30), the integrator finishes, a last integrate
+	$(PY) tools/agent/run.py stop $(if $(WAIT),--wait $(WAIT))
+
+run-status:       ## each roster entry: alive, its claim, the last line of its log; then make progress
+	$(PY) tools/agent/run.py status
+
+run-add:          ## start (or restart) one roster entry in the running run: NAME=<name>
+	$(PY) tools/agent/run.py add $(NAME)
 
 p0-check: inputs overlays pak test  ## Phase 0 exit criteria (SPEC section 10)
 	@echo "p0-check: OK"

@@ -41,7 +41,7 @@ def setup(key: str, branch: str) -> Path:
         else:
             common.git("worktree", "add", "-b", branch, str(wt), "main", cwd=main_dir)
     common.link_untracked(wt)
-    common.git("config", "core.hooksPath", "tools/agent/hooks", cwd=main_dir)
+    common.install_git_config()
     return wt
 
 
@@ -52,39 +52,48 @@ def claim(agent: str, uid: str = "", review: bool = False, task: str = "") -> tu
     if common.git("status", "--porcelain", "--untracked-files=no", cwd=main_dir):
         raise ValueError("main has uncommitted changes; a branch starts from committed main. Wait for the "
                          "human; never stash, reset or clean main")
-    if task:
-        key, branch = common.identifier(task, "task"), "task/%s" % task
-    else:
-        if uid:
-            common.identifier(uid, "unit")
-            if uid not in common.queue():
-                raise ValueError("%s is not in work/queue.toml" % uid)
-            if review and not common.unit_complete(uid):
-                raise ValueError("%s is not complete on main; review a unit once it is merged complete" % uid)
+    explicit = bool(uid or task)
+    if uid:
+        common.identifier(uid, "unit")
+        if uid not in common.queue():
+            raise ValueError("%s is not in work/queue.toml" % uid)
+        if review and not common.unit_complete(uid):
+            raise ValueError("%s is not complete on main; review a unit once it is merged complete" % uid)
+    for _attempt in range(50):
+        if task:
+            key, branch = common.identifier(task, "task"), "task/%s" % task
         else:
-            uid = (nxt.next_review() if review else nxt.next_unit()) or ""
-            if not uid:
-                raise ValueError("nothing to %s: the queue is done, locked or waiting for integration"
-                                 % ("review" if review else "claim"))
-        key = ("review-" if review else "") + uid
-        branch = "%s/%s" % ("review" if review else "unit", uid)
-    owner = common.lock_owner(key)
-    if owner == agent:
-        print("claim: %s is already yours; reusing its worktree and branch" % key)
-        h = common.handoff_path(key)
-        if h.exists() and common.fields(h.read_text()).get("integrate") == "rejected":
-            f = common.fields(h.read_text())
-            print("claim: the last hand-off was rejected by make integrate: %s (log %s)" % (
-                f.get("integrate_reason"), f.get("integrate_log")))
-    else:
+            if not explicit:
+                uid = (nxt.next_review() if review else nxt.next_unit()) or ""
+                if not uid:
+                    raise ValueError("nothing to %s: the queue is done, locked or waiting for integration"
+                                     % ("review" if review else "claim"))
+            key = ("review-" if review else "") + uid
+            branch = "%s/%s" % ("review" if review else "unit", uid)
+        owner = common.lock_owner(key)
+        if owner == agent:
+            print("claim: %s is already yours; reusing its worktree and branch" % key)
+            h = common.handoff_path(key)
+            if h.exists() and common.fields(h.read_text()).get("integrate") == "rejected":
+                f = common.fields(h.read_text())
+                print("claim: the last hand-off was rejected by make integrate: %s (log %s)" % (
+                    f.get("integrate_reason"), f.get("integrate_log")))
+            break
         h = common.handoff_path(key)
         if h.exists() and not (common.fields(h.read_text()).get("integrate") == "rejected"
                                and common.fields(h.read_text()).get("agent") == agent):
-            raise ValueError("%s has a hand-off waiting for integration; do not duplicate it" % key)
-        if not common.try_lock(key, {"key": key, "agent": agent, "branch": branch, "host": socket.gethostname(),
-                                     "started": common.now()}):
-            raise ValueError("%s is claimed by %s" % (key, owner))
-        common.event("claim", agent=agent, key=key, branch=branch)
+            if explicit:
+                raise ValueError("%s has a hand-off waiting for integration; do not duplicate it" % key)
+            continue
+        if common.try_lock(key, {"key": key, "agent": agent, "branch": branch, "host": socket.gethostname(),
+                                 "started": common.now()}):
+            common.event("claim", agent=agent, key=key, branch=branch)
+            break
+        if explicit:
+            raise ValueError("%s is claimed by %s" % (key, common.lock_owner(key)))
+        # another agent took it between `next` and the lock: take the next one
+    else:
+        raise ValueError("could not take a unit: every candidate was taken while choosing")
     try:
         wt = setup(key, branch)
     except (RuntimeError, ValueError, OSError):

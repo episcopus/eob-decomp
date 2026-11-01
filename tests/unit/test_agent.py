@@ -68,3 +68,77 @@ def test_the_gate_fails_on_a_fixture_that_matches(tmp_path, monkeypatch, capsys)
     monkeypatch.setattr(gate, "NEGATIVE", tmp_path)
     assert gate.main([]) == 1
     assert "e19ea-unchanged.ASM was not rejected" in capsys.readouterr().out
+
+
+import subprocess  # noqa: E402
+
+import merge_registry  # noqa: E402
+import run as run_mod  # noqa: E402
+
+REGISTRY = '''# header
+
+[[function]]
+id = "a"
+addr = "0001:0000"
+
+[[function]]
+id = "b"
+addr = "0001:0010"
+
+[[function]]
+id = "c"
+addr = "0001:0020"
+'''
+
+
+def test_merge_registry_rules():
+    ours = REGISTRY.replace('addr = "0001:0000"\n', 'addr = "0001:0000"\nname = "A"\nlevel = "L2"\n')
+    theirs = REGISTRY.replace('addr = "0001:0010"\n', 'addr = "0001:0010"\nname = "B"\nlevel = "L2"\n')
+    out, conflicts = merge_registry.merge(REGISTRY, ours, theirs)
+    assert not conflicts and 'name = "A"' in out and 'name = "B"' in out
+    assert merge_registry.merge(REGISTRY, REGISTRY, REGISTRY) == (REGISTRY, [])
+    other = REGISTRY.replace('addr = "0001:0000"\n', 'addr = "0001:0000"\nname = "Z"\n')
+    out, conflicts = merge_registry.merge(REGISTRY, ours, other)
+    assert conflicts == ['"a"'] and "<<<<<<< ours" in out
+    n1 = REGISTRY.replace('addr = "0001:0020"\n', 'addr = "0001:0020"\nnotes = "x"\n')
+    n2 = REGISTRY.replace('addr = "0001:0020"\n', 'addr = "0001:0020"\nnotes = "y"\n')
+    assert 'notes = "x; y"' in merge_registry.merge(REGISTRY, n1, n2)[0]
+    added = REGISTRY + '\n[[function]]\nid = "d"\naddr = "0001:0030"\n'
+    out, _ = merge_registry.merge(REGISTRY, ours, added)
+    assert out.index('id = "c"') < out.index('id = "d"') and 'name = "A"' in out
+
+
+def test_merge_driver_through_git(tmp_path):
+    """One branch matches a function, another notes something about it: git's line merge conflicts
+    (both append to the same entry), the driver merges the fields."""
+    def g(*a):
+        return subprocess.run(["git", *a], cwd=tmp_path, capture_output=True, text=True)
+    g("init", "-q", "-b", "main")
+    g("config", "user.email", "t@example.com")
+    g("config", "user.name", "t")
+    (tmp_path / ".gitattributes").write_text("symbols.toml merge=eob-registry\n")
+    (tmp_path / "symbols.toml").write_text(REGISTRY)
+    g("add", "-A"), g("commit", "-qm", "base")
+    g("checkout", "-qb", "one")
+    (tmp_path / "symbols.toml").write_text(REGISTRY.replace('addr = "0001:0000"\n', 'addr = "0001:0000"\nname = "A"\nlevel = "L2"\n'))
+    g("commit", "-qam", "one")
+    g("checkout", "-q", "main")
+    (tmp_path / "symbols.toml").write_text(REGISTRY.replace('addr = "0001:0000"\n', 'addr = "0001:0000"\nnotes = "three words pushed"\n'))
+    g("commit", "-qam", "two")
+    assert g("merge", "-q", "--no-edit", "one").returncode != 0          # without the driver
+    g("merge", "--abort")
+    g("config", "merge.eob-registry.driver", "%s %s %%O %%A %%B" % (sys.executable, ROOT / "tools/agent/merge_registry.py"))
+    r = g("merge", "-q", "--no-edit", "one")
+    assert r.returncode == 0, r.stdout + r.stderr
+    text = (tmp_path / "symbols.toml").read_text()
+    assert 'level = "L2"' in text and 'notes = "three words pushed"' in text
+
+
+def test_roster_and_commands():
+    run, entries = run_mod.roster()
+    assert {e["role"] for e in entries} <= set(run_mod.ROLES)
+    for e in entries:
+        cmd = run_mod.command(run, e)
+        assert cmd[1] == ("tools/agent/integrator.py" if e["role"] == "integrator" else "tools/agent/worker.py")
+        if e["role"] != "integrator":
+            assert cmd[cmd.index("--agent") + 1] == e["name"] and "--session-cmd" in cmd

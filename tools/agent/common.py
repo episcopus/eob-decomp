@@ -134,6 +134,15 @@ def worktree_of(key: str) -> Path:
     return main_checkout().parent / "eob-worktrees" / key
 
 
+def install_git_config() -> None:
+    """Per-clone settings the process needs (shared by every worktree of the clone): the
+    pre-commit guard and the registry's merge driver (.gitattributes)."""
+    main_dir = main_checkout()
+    git("config", "core.hooksPath", "tools/agent/hooks", cwd=main_dir)
+    git("config", "merge.eob-registry.name", "registry entries by id (tools/agent/merge_registry.py)", cwd=main_dir)
+    git("config", "merge.eob-registry.driver", "python3 tools/agent/merge_registry.py %O %A %B", cwd=main_dir)
+
+
 def link_untracked(wt: Path) -> None:
     for rel in LINKS:
         src, dst = main_checkout() / rel, wt / rel

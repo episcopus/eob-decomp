@@ -1,0 +1,3 @@
+# Registry files merge entry by entry (tools/agent/merge_registry.py; make merge-driver).
+re/symbols.toml merge=eob-registry
+re/units.toml merge=eob-registry

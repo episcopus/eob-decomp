@@ -1,0 +1,33 @@
+# The roster `make start-run` starts (playbook 90): one process per entry, in the background, each
+# with its log in build/run/<name>.log. Decompilers and reviewers are workers (tools/agent/worker.py):
+# each claims a unit, runs one model session on it, settles the claim, and claims again. The
+# integrator (tools/agent/integrator.py) runs `make integrate` every `interval` seconds and ends the
+# run after `idle_stop` minutes with nothing claimed or waiting.
+#
+# `session_cmd` is the command a worker runs for each session, in the unit's worktree, with the
+# prompt on its standard input (tools/agent/worker_prompt.md). It must be set to a tool installed
+# here; `make start-run` refuses to start when its program is not on the PATH. Any entry may override
+# session_cmd, timeout (minutes per session) and sessions (per worker).
+
+[run]
+session_cmd = "claude -p --permission-mode acceptEdits"
+timeout = 60
+sessions = 50
+
+[[session]]
+name = "int"
+role = "integrator"
+interval = 120
+idle_stop = 60
+
+[[session]]
+name = "dec1"
+role = "decompiler"
+
+[[session]]
+name = "dec2"
+role = "decompiler"
+
+[[session]]
+name = "rev1"
+role = "reviewer"

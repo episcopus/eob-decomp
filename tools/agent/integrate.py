@@ -20,6 +20,7 @@ DRY=1 merges and checks without touching main. Escalations are never merged: the
 from __future__ import annotations
 
 import argparse
+import fcntl
 import os
 import shutil
 import subprocess
@@ -130,11 +131,18 @@ def main(argv=None) -> int:
             print("handoff-done: %s archived" % a.key)
             return 0
         common.require_main("integrate")
+        common.install_git_config()
         if common.git("status", "--porcelain", "--untracked-files=no"):
             raise ValueError("main has uncommitted changes; integrate only from a clean main")
     except (ValueError, RuntimeError) as e:
         print("integrate: %s" % e, file=sys.stderr)
         return 2
+    guard = open(common.common_dir() / "eob-integrate.lock", "w")
+    try:                                   # one integration at a time (the integrator, a human)
+        fcntl.flock(guard, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except BlockingIOError:
+        print("integrate: another make integrate is running; try again when it is done")
+        return 3
     files = sorted(common.state_dir("eob-handoffs").glob("*.md"), key=lambda p: p.stat().st_mtime)
     keys = []
     for p in files:

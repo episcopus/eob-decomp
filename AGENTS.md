@@ -56,6 +56,7 @@ You are working on a **matching decompilation of Westwood's Eye of the Beholder 
 | `make handoff AGENT= UNIT= STATE= NOTE=` | From your worktree: the branch is ready, or a question for the human (`STATE=escalate`) |
 | `make review-pass UNIT= AGENT=` | Record a passed review (playbook 70) |
 | `make handoffs`, `make integrate`, `make handoff-done`, `make locks`, `make unlock`, `make worker`, `make hooks` | The human's side (playbook 90) |
+| `make start-run [DRY=1]`, `make run-status`, `make run-add NAME=`, `make stop-run [WAIT=]` | A run of `work/roster.toml`: workers and the integrator in the background (playbook 90) |
 
 ## Playbooks
 
