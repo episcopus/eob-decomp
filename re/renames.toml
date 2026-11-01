@@ -387,3 +387,12 @@ new = "gSoundVolume"
 kind = "global"
 why = "the default sound volume PlaySoundDefault (177D:00F3) passes and PlaySoundVolume uses to derive the level"
 date = "2026-11-01"
+
+[[rename]]
+id = "19F3:000E=ClipRect"
+addr = "19F3:000E"
+old = "ClipDrawRect"
+new = "ClipRect"
+kind = "function"
+why = "clips a rectangle request before ds:8052; no draw is shown"
+date = "2026-11-01"

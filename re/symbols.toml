@@ -4209,7 +4209,7 @@ unit = "e19f3"
 addr = "19F3:000E"
 size = 137
 evidence = ["far", "segment"]
-name = "ClipDrawRect"
+name = "ClipRect"
 level = "L2"
 match_flags = "-ml -O -Z"
 
