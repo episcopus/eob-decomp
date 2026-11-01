@@ -56,14 +56,16 @@ struct DDRec {
     char m0A;                 /* +0A */
     char m0B;                 /* +0B */
     char m0C;                 /* +0C: flags, bit 0x20 tested by 0285 */
-    char m0D;                 /* +0D */
+    unsigned char m0D;        /* +0D: a counter decremented by 003E */
     int (far *fn)(struct DDRec far *rec); /* +0E: called by 0172 when active is 2 */
 };
 
 /* The 14-byte records at ds:8DD2 (src/E0D1C.C names the same table Entry14); 020F clears the low
    two bits of the byte at +3 of one. */
 struct Entry14 {
-    char pad00[3];
+    char m00;                 /* +00 */
+    signed char icon;         /* +01: an index into g181F */
+    signed char m02;          /* +02 */
     unsigned char m03;        /* +03: 020F clears its low two bits */
     char pad04[0x0E - 0x04];
 };
@@ -83,7 +85,10 @@ extern struct CharRec gChars[]; /*@ ds:F580 */
 extern struct DDRec gDD2C[]; /*@ ds:DD2C */   /* 10 records, 18 bytes each */
 extern struct Entry14 gTable8DD2[]; /*@ ds:8DD2 */ /* 14-byte records (src/E0D1C.C) */
 extern struct Obj28 gObjs[]; /*@ ds:8A82 */   /* 30 records, 28 bytes each (src/E08E6.C) */
-extern unsigned char gB894[]; /*@ ds:B894 */    /* nine-byte records (src/E0D1C.C) */
+extern char gB894[]; /*@ ds:B894 */             /* nine-byte records (src/E0D1C.C) */
+extern signed char g194B[]; /*@ ds:194B */      /* byte table indexed by a gB894 byte (src/E0D1C.C) */
+extern signed char g181F[]; /*@ ds:181F */      /* byte table indexed by a ds:8DD2 icon in 003E */
+extern int gEFD2; /*@ ds:EFD2 */                /* an error code set by 003E */
 extern int gSoundVolume; /*@ ds:FBCA */         /* the global sound volume (src/E177D.C) */
 extern unsigned char far *gEF6A[]; /*@ ds:EF6A */ /* 18 far pointers, walked by 04B0 */
 extern signed char gA9C6; /*@ ds:A9C6 */      /* an offset added into gEF6A's targets */
@@ -135,7 +140,50 @@ extern int f0BD2_02B9(void far *head, int key, int item); /*@ 0BD2:02B9 */
     }
     slot++;
 }
-/*@ 1414:003E stub */ void f1414_003E(void) {}
+/* 1414:003E: the per-record step 0285 runs for every live ds:DD2C record. It reads a status byte
+   db = gB894[a * 9 + (rec->m07 ^ 2)] and bits = g194B[db]. A record in state 1 whose bits say so
+   (bits bit 0, a nonzero m02, or bits bit 1 together with a ds:8DD2 icon of 15 or more) is moved
+   onto character `a`: the old head f0BD2_02B9 is drained into f0BD2_01D0 at gB894[a * 9 + 5],
+   m04 and m06 are set to `a` and `b | 4`, m0D is decremented and it returns 1; otherwise gEFD2 is
+   0x10. Any other record is moved when bits bit 0 is set or when m04 already equals `a` (m0D is
+   decremented unless it is -1) and returns 1; otherwise gEFD2 is 1. The two failure paths report
+   through 122E:0896(rec->m07, a) and return 0. Called by 0285. */
+/*@ 1414:003E */ int f1414_003E(struct DDRec far *rec, register int a, int b)
+{
+    int flag;
+    int hit;
+    int db;
+    int m08;
+    register int bits;
+
+    db = gB894[a * 9 + (rec->m07 ^ 2)];
+    bits = g194B[db];
+    if (rec->active == 1) {
+        m08 = rec->m08;
+        flag = g181F[gTable8DD2[m08].icon] >= 0xF;
+        hit = (bits & 1) || rec->m02 != 0 || ((bits & 2) && flag);
+        if (hit) {
+            f0BD2_02B9((int far *)(gB894 + rec->m04 * 9 + 5), 0, m08);
+            f0BD2_01D0((int far *)(gB894 + a * 9 + 5), a, m08, b | 4);
+            rec->m04 = a;
+            rec->m06 = b;
+            rec->m0D--;
+            return 1;
+        }
+        gEFD2 = 0x10;
+    } else {
+        if ((bits & 1) || rec->m04 == a) {
+            rec->m04 = a;
+            rec->m06 = b;
+            if (rec->m0D != 0xFF)
+                rec->m0D--;
+            return 1;
+        }
+        gEFD2 = 1;
+    }
+    f122E_0896(a, rec->m07);
+    return 0;
+}
 /* 1414:0172: the per-record test 0285 and 0D63 use. It returns 0 when the record already has a
    nonzero m02. A record in state 2 runs its cell callback rec->fn(rec) and returns that res. Otherwise it looks up gB894[a * 9 + 4]: when that byte has bits 0..2 set it scans the 30 objects
    at ds:8A82 for one that f08E6_189D accepts and that f0DE8_02D4 then also accepts, returning 1
