@@ -1,11 +1,13 @@
 # generated
 build/
 .venv/
+.venv
 __pycache__/
 *.pyc
 .pytest_cache/
 # local tool installs (emu2)
 tools/vendor/
+tools/vendor
 # written by the game while it runs; not pinned (SPEC section 2)
 eob/LEVELS.TMP
 # editors / OS

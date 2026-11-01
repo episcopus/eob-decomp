@@ -64,10 +64,14 @@ def integrate_one(key: str, dry: bool) -> bool:
         if problems:
             raise Rejected("forbidden changes: " + "; ".join(problems))
         common.git("worktree", "add", "-b", tbranch, str(tmp), "main", cwd=main_dir)
-        common.link_untracked(tmp)
         r = subprocess.run(["git", "merge", "--no-ff", "--no-commit", commit], cwd=tmp, capture_output=True, text=True)
         if r.returncode:
-            raise Rejected("merge conflict: %s" % (r.stdout + r.stderr).strip().splitlines()[-1])
+            lines = [l.strip() for l in (r.stdout + r.stderr).splitlines() if l.strip()]
+            raise Rejected("merge conflict: %s" % "; ".join(lines[-4:]))
+        # The links to the main checkout's tools (.venv, tools/vendor, ...) are never part of a merge,
+        # even when a branch committed them (git add -A in a worktree, before .gitignore matched links)
+        common.git("rm", "-r", "-q", "--cached", "--ignore-unmatch", "--", *common.LINKS, cwd=tmp)
+        common.link_untracked(tmp)
         with open(log, "w") as out:
             r = subprocess.run(["make", "check"], cwd=tmp, stdout=out, stderr=subprocess.STDOUT)
         if r.returncode:
