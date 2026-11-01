@@ -5489,6 +5489,9 @@ unit = "e1e8b"
 addr = "1E8B:000F"
 size = 293
 evidence = ["far"]
+name = "_InitOverlayManager"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1e8b_0134"

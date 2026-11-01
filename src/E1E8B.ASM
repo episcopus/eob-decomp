@@ -15,19 +15,153 @@
         EXTRN   _gOverlayList:BYTE       ; @ 20BF:0000 (segment 20BF, the overlay record list head)
         EXTRN   _OverlayHalt:FAR         ; @ 0000:503F (runtime library, build/re/rtl_compare.json)
         .CODE
+        NOSMART                          ; 000F, 0134, 0185, 01A7, 01F3 and 0250 contain LEA of an
+                                         ; absolute address or a far call to a sibling, both of which
+                                         ; the smart code generator would shorten (TASM 2.0)
 
+; 1E8B:0004: not a function but the manager's data words at the start of its code segment: the
+; segment of its own data (20B5, its cs:[4]), DGROUP (212E, its cs:[6]), the "PATH=" environment
+; name (1E8B:0008) and the runtime-patched word cs:[0D] at 1E8B:000D. Kept as a stub because the
+; words need segment relocations this file's skeleton does not express yet.
         PUBLIC  _f1E8B_0004              ; @ 1E8B:0004 stub
 _f1E8B_0004 PROC FAR
         ret
 _f1E8B_0004 ENDP
 
-        PUBLIC  _f1E8B_000F              ; @ 1E8B:000F stub
-_f1E8B_000F PROC FAR
-        ret
-_f1E8B_000F ENDP
+; 1E8B:000F: initialise the overlay manager. It opens the program's own file (01B3, or the name in
+; the far pointer argument at [bp+6] through 01A7, or the PATH search 01F3), reads and checks the MZ
+; header and walks the file's FBOV records (the "FB"/"OV" signature, the record offset and length
+; from the 10h-byte header at [bp-14h]) to store the overlay-file offset, its base and size at
+; DGROUP:84B2/84B4 and 20B5:00A4/00A6, then swaps the overlay file open again
+; (_SwapAndReopenOverlayFile), sizes the free area from the arguments at [bp+0Ah]/[bp+0Ch]
+; (_InitOverlayRecords) and maps the records (_MapOverlayRecords). Returns AX = 0 on success, 0FFFEh
+; for a missing file and 0FFFFh for a bad file. Evidence: the MZ 5A4Dh test, the FBOV 4246h/564Fh
+; tests, the 10h header size, the 84B2/84B4 and 00A4..00A8 globals and the 01B3/01A7/01F3/0276/
+; 0134/0286/02FF calls.
+        PUBLIC  _InitOverlayManager      ; @ 1E8B:000F
+_InitOverlayManager PROC FAR
+        push    bp
+        mov     bp,sp
+        sub     sp,14h
+        push    ds
+        mov     ds,word ptr cs:[4]
+        push    si
+        push    di
+        cld
+        cmp     word ptr ds:[0A0h],0
+        jne     short init_begin
+        jmp     init_ok
+init_begin:
+        call    _OpenOwnOverlayFile
+        jae     short init_opened
+        mov     ax,[bp+6]
+        or      ax,[bp+8]
+        jne     short init_have
+        mov     word ptr [bp+6],318h
+        mov     word ptr [bp+8],20C1h
+init_have:
+        call    _OpenNamedOverlayFile
+        jae     short init_opened
+        call    _OpenOverlayFileViaPath
+        jae     short init_opened
+        mov     ax,0FFFEh
+        jmp     init_fail
+init_closefail:
+        mov     ah,3Eh
+        int     21h
+        mov     ax,0FFFFh
+        jmp     init_fail
+init_opened:
+        mov     bx,ax
+        mov     ds:[0B8h],bx
+        mov     cx,14h
+        call    _ReadOverlayHeaderBytes
+        mov     cx,0FFFDh
+        jb      short init_closefail
+        xor     ax,ax
+        xor     dx,dx
+        cmp     word ptr [bp-14h],5A4Dh
+        je      short init_mz
+        mov     cx,0FFFCh
+        jmp     short init_closefail
+init_mz:
+        mov     ax,[bp-10h]
+        mov     cx,[bp-12h]
+        jcxz    short init_nopara
+        dec     ax
+init_nopara:
+        mov     dx,200h
+        mul     dx
+        add     ax,cx
+init_seek:
+        push    dx
+        push    ax
+        mov     cx,dx
+        mov     dx,ax
+        mov     ax,4200h
+        int     21h
+        mov     cx,10h
+        call    _ReadOverlayHeaderBytes
+        pop     ax
+        pop     dx
+        mov     cx,0FFFDh
+        jb      short init_closefail
+        add     ax,10h
+        adc     dx,0
+        cmp     word ptr [bp-14h],4246h
+        mov     cx,0FFFCh
+        jne     short init_closefail
+        cmp     word ptr [bp-12h],564Fh
+        je      short init_fbov
+        add     ax,[bp-10h]
+        adc     dx,[bp-0Eh]
+        jmp     short init_seek
+init_fbov:
+        mov     ds:[0A4h],ax
+        mov     ds:[0A6h],dx
+        mov     es,word ptr cs:[6]
+        mov     ax,[bp-10h]
+        mov     es:[84B2h],ax
+        mov     ax,[bp-0Eh]
+        mov     es:[84B4h],ax
+        mov     ah,3Eh
+        int     21h
+        mov     word ptr ds:[0B8h],0
+        call    far ptr _SwapAndReopenOverlayFile
+        mov     ax,[bp+0Ch]
+        inc     ax
+        mov     ds:[0B4h],ax
+        mov     ds:[0B0h],ax
+        mov     bx,[bp+0Ah]
+        mov     ds:[0B6h],bx
+        call    _InitOverlayRecords
+        mov     bx,ds:[0B6h]
+        sub     bx,ds:[0B4h]
+        cmp     bx,ds:[0AAh]
+        jae     short init_size
+        mov     cx,0FFFBh
+        jmp     init_closefail
+init_size:
+        shr     bx,1
+        shr     bx,1
+        mov     ds:[0A8h],bx
+        call    _MapOverlayRecords
+        jae     short init_ok
+        mov     bx,ds:[0B8h]
+        mov     cx,0FFFFh
+        jmp     short init_fail
+        nop
+init_ok:
+        xor     ax,ax
+init_fail:
+        pop     di
+        pop     si
+        pop     ds
+        mov     sp,bp
+        pop     bp
+        retf    8
+_InitOverlayManager ENDP
 
-        NOSMART                          ; 0134, 01A7, 01F3 and 0250 contain LEA of an absolute address,
-                                         ; and 0185 a far call the smart code generator would shorten
 ; 1E8B:0134: swap and (re)open the overlay file. It saves the current INT [20B5:00A1] vector,
 ; installs the previously saved one from 20B5:0004:0002, stashes the one just read for the next swap,
 ; then closes the file handle at 20B5:00B8 and reopens the file named in the 20B5:001C buffer (or
