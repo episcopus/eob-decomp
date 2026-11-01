@@ -4240,6 +4240,9 @@ unit = "e1a29"
 addr = "1A29:000F"
 size = 62
 evidence = ["far", "segment"]
+name = "f1A29_000F"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "e1a29_004d"
@@ -4247,6 +4250,9 @@ unit = "e1a29"
 addr = "1A29:004D"
 size = 62
 evidence = ["far", "frame"]
+name = "f1A29_004D"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "e1a29_008b"
@@ -4254,6 +4260,9 @@ unit = "e1a29"
 addr = "1A29:008B"
 size = 62
 evidence = ["far", "frame"]
+name = "f1A29_008B"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "e1a29_00c9"
@@ -4261,6 +4270,9 @@ unit = "e1a29"
 addr = "1A29:00C9"
 size = 62
 evidence = ["far", "frame"]
+name = "f1A29_00C9"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "e1a29_0107"
@@ -4268,6 +4280,9 @@ unit = "e1a29"
 addr = "1A29:0107"
 size = 65
 evidence = ["frame"]
+name = "f1A29_0107"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "e1a29_0148"
@@ -4275,6 +4290,9 @@ unit = "e1a29"
 addr = "1A29:0148"
 size = 65
 evidence = ["frame"]
+name = "f1A29_0148"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "e1a29_0189"
@@ -4282,6 +4300,9 @@ unit = "e1a29"
 addr = "1A29:0189"
 size = 92
 evidence = ["far", "frame"]
+name = "f1A29_0189"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "e1a47_0005"
