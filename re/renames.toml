@@ -677,6 +677,24 @@ why = "the shared unpack work buffer's size in bytes, stored by SetUnpackBuffer 
 date = "2026-11-01"
 
 [[rename]]
+id = "1BBE:0307=LockHidePointer"
+addr = "1BBE:0307"
+old = "f1BBE_0307"
+new = "LockHidePointer"
+kind = "function"
+why = "hide the pointer, bracketed by the pointer semaphore: PUBLIC _LockHidePointer at 1BBE:0307 (src/E1BBE.ASM)"
+date = "2026-11-01"
+
+[[rename]]
+id = "1BBE:0332=LockShowPointer"
+addr = "1BBE:0332"
+old = "f1BBE_0332"
+new = "LockShowPointer"
+kind = "function"
+why = "show the pointer, bracketed by the pointer semaphore: PUBLIC _LockShowPointer at 1BBE:0332 (src/E1BBE.ASM)"
+date = "2026-11-01"
+
+[[rename]]
 id = "19FC:0008=CompressLcw"
 addr = "19FC:0008"
 old = ""
