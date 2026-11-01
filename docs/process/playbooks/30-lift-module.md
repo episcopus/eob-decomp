@@ -1,6 +1,6 @@
-# 30 Decompile a C module to L2
+# 30 Decompile a unit to L2
 
-**Inputs:** a unit of kind `c` in `re/units.toml`, its functions in `re/symbols.toml`.
+**Inputs:** a unit in `re/units.toml` (kind `c`, `asm` or `unknown`: the kind is a guess until it matches), its functions in `re/symbols.toml`.
 
 ## The source file
 
@@ -12,13 +12,28 @@ extern void far *ListAdd(void far *list, void far *item); /*@ 1658:001E */  /* a
 /*@ 0CF7:0007 */ void ListInit(struct Node far *head)                 /* a function of this unit */
 ```
 
-`src/E0CF7.C` and `src/E07A9.C` are the first two (the go/no-go spike, SPEC 4.2).
+More annotations:
+
+```c
+/*@flags -ml -O -Z -G */                                  /* the file's switches (default: cflags) */
+/*@ 08E6:00C3 stub */ void Obj00C3(struct Obj28 far *o) {}  /* a sibling not written yet: called near
+                                                              by this file's functions, not compared */
+/*@ 0ACD:091C draft */ void Turn091C(int how)             /* written, not matching yet: compared and
+                                                              reported, never a failure, never L2 */
+/*@ ovl2:0110 */ void LoadItemTypes(void)                 /* a function of overlay 2 */
+```
+
+Siblings must be in the file (as stubs) and in address order: a call to a function of the same file compiles to `push cs; call near`, to an extern to a far call. Callers elsewhere reach an overlay function through its stub entry (`2106:002A` for entry 2 of the stub at `2106`, entries at +20h, 5 bytes each).
+
+**Assembly units** are `src/<ID>.ASM`, assembled by TASM 2.0 with `/mx`, `.MODEL LARGE` (the code segment is word aligned): `PUBLIC _Name ; @ 19EA:0000`, `EXTRN _Callee:FAR ; @ ...`. Write forward jumps as plain `jmp label`: TASM is one pass and pads a forward `jmp` that turns out short with a NOP (`EB xx 90`), as the original shows. Data inside the code segment is written where it is (`src/E1990.ASM`).
+
+Examples: `src/E0CF7.C`, `src/E07A9.C` (whole units), `src/E08E6.C` (a jump table, stub siblings), `src/E1B82.C` (`-G`), `src/EOV2.C` (overlay), `src/E19EA.ASM`, `src/E1990.ASM`.
 
 ## Steps
 
 1. Disassemble the unit: `.venv/bin/python tools/re/disasm.py eob/EOB.EXE <SEG>` (far calls marked `reloc`, DGROUP strings decoded).
 2. Write the C, routine by routine, in address order. Declare every callee and global with its annotation; a callee's signature comes from what the caller pushes (`push` order is right to left, `add sp,n` gives the bytes).
-3. `make match FILE=src/<ID>.C`. The first difference is printed with both instructions; `-v` on `tools/match/cmatch.py` prints the whole comparison.
+3. `make match FILE=src/<ID>.C`. The first difference is printed with both instructions; `tools/match/cmatch.py FILE --show NAME` prints ours and the original side by side.
 4. When everything matches, `make match FILE=src/<ID>.C WRITE=1` records L2 in `re/symbols.toml`.
 
 ## Idioms found so far (Turbo C++ 1.00, `-ml -O -Z`; whitepaper 2.1.1)
@@ -32,6 +47,10 @@ extern void far *ListAdd(void far *list, void far *item); /*@ 1658:001E */  /* a
 | `xor ax,ax; push ax` reused for the next argument | `-Z`: the same constant is not reloaded |
 | two branches ending in a jump to one shared call | `if (c) f(a); else f(b);` (`-O` merges the tails), not `f(c ? a : b)` |
 | `cmp x,0; je L; jmp far_end` | `if (!x) { long body }` |
+| `mov [g],ax; or ax,ax` and no jump | `if (g = x) ;` (an empty body; a macro compiled out?) |
+| one `les bx` for two tests that both `continue` | one `if (a || b) continue;` (two `if`s put a label between them and reload) |
+| case bodies of a jump table in some order | the `case` labels in that order in the source |
+| `inc sp; inc sp` or `add sp,4` after calls, `pop cx` nowhere | the unit was compiled with `-G`: `/*@flags -ml -O -Z -G */` |
 | `test byte ptr [g],1` | `g & 1` on a char |
 | a `cmp` whose result is unused, after a conditional jump | an `if` with an empty body: `if (a == 0 && p[1][1]) ;` |
 

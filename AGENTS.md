@@ -17,6 +17,7 @@ You are working on a **matching decompilation of Westwood's Eye of the Beholder 
 - **The Borland runtime library is library**: linked, never decompiled.
 - **The compiler is proprietary**: it lives in `build/toolchain/` (ignored by git), is installed by the human (`docs/setup/SETUP-tc.md`), and is never committed.
 - Segment boundaries come from TLINK's segment table (`make overlays`), not from guesses.
+- **Switches can differ by unit** (`-G` in `e1b82`); the file says which (`/*@flags ... */`).
 
 ## Ground rules
 
@@ -40,7 +41,9 @@ You are working on a **matching decompilation of Westwood's Eye of the Beholder 
 | `make tc-install` / `make tc-check` | Install the Turbo C++ and TASM releases from `build/toolchain/dist/`; verify them |
 | `make rtl-compare` | Which Turbo C++ release's runtime is in `EOB.EXE` (several minutes) |
 | `make map` | Enumerate functions; write `re/units.toml` and `re/symbols.toml` (playbook 10) |
-| `make match [FILE=src/X.C] [WRITE=1]` | Prove C modules against `EOB.EXE`; `WRITE=1` records L2 (playbook 30) |
+| `make match [FILE=src/X.C] [WRITE=1]` | Prove C and assembly units against `EOB.EXE`; `WRITE=1` records L2 (playbook 30) |
+| `make data` | Decode every data file of the PAKs (whitepaper 4) |
+| `make oracle-run [INSNS=] [ARGS=]` | Run the original `EOB.EXE` in the emulator (playbook 25) |
 | `make test` | Python tests |
 | `make p0-check` | Phase 0 exit criteria |
 
@@ -50,6 +53,7 @@ You are working on a **matching decompilation of Westwood's Eye of the Beholder 
 |---|---|
 | `00-bootstrap.md` | Setting up or repairing the environment |
 | `10-map.md` | Segments, units, functions |
-| `30-lift-module.md` | Decompiling a C module to L2: the source conventions and the idioms found so far |
+| `25-oracle.md` | Running the original in the emulator |
+| `30-lift-module.md` | Decompiling a unit (C or assembly) to L2: annotations, stubs, drafts, the idioms found so far |
 
 Later playbooks are brought over from poolrad as each phase starts (SPEC section 10).

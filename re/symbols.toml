@@ -1532,6 +1532,9 @@ unit = "e08e6"
 addr = "08E6:0CC8"
 size = 258
 evidence = ["far", "frame"]
+name = "UpdateObjects"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e08e6_0dca"
@@ -1938,6 +1941,7 @@ unit = "e0acd"
 addr = "0ACD:091C"
 size = 211
 evidence = ["near", "frame"]
+notes = "draft 2026-10-31 (src/E0ACD.C): everything matches except tail merging. With -O our build merges `gF51A = 0; break;` of case 0 into the end of case 2, and `gF51A = 1; break;` of case 2 into case 0; the original keeps both (11 bytes longer). Without -O, -Z has no effect and jump chains stay (13 bytes longer); -G uses add sp; -P (C++) still merges. Tried: early break, if/else, for(;;) with inner break, default label, no final break, volatile. Open: another switch, or the compiler's tail-merge rule."
 
 [[function]]
 id = "e0acd_09ef"
@@ -4056,6 +4060,9 @@ unit = "e1990"
 addr = "1990:0010"
 size = 97
 evidence = ["near"]
+name = "CheckMCB"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1990_0071"
@@ -4119,6 +4126,9 @@ unit = "e19ea"
 addr = "19EA:0000"
 size = 34
 evidence = ["far", "segment"]
+name = "_PrintString"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e19ec_0002"
@@ -4490,6 +4500,9 @@ unit = "e1b82"
 addr = "1B82:0009"
 size = 56
 evidence = ["far", "segment"]
+name = "LoadFile"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "e1b82_0041"
@@ -4497,6 +4510,9 @@ unit = "e1b82"
 addr = "1B82:0041"
 size = 134
 evidence = ["far", "frame"]
+name = "LoadPacked"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "e1b82_00c7"
@@ -4504,6 +4520,7 @@ unit = "e1b82"
 addr = "1B82:00C7"
 size = 336
 evidence = ["far", "frame"]
+notes = "draft 2026-10-31 (src/E1B82.C, -G): the original sign-extends the format byte to long (cbw; cwd) and switches on the int in AX through a 5-entry table, with 8 bytes of locals. switch((long)*src) gives the cwd but a table search and a 4-byte temporary; (int)(long)*src folds the cwd away; long case labels change nothing. The rest of the unit matches."
 
 [[function]]
 id = "e1b82_0217"
@@ -4511,6 +4528,9 @@ unit = "e1b82"
 addr = "1B82:0217"
 size = 21
 evidence = ["far"]
+name = "SetUnpackBuffer"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "e1ba4_000c"
@@ -5617,6 +5637,9 @@ unit = "eov2"
 addr = "ovl2:0110"
 size = 97
 evidence = ["ovl", "near", "frame"]
+name = "LoadItemTypes"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov2_0171"
@@ -5666,6 +5689,9 @@ unit = "eov2"
 addr = "ovl2:09CC"
 size = 33
 evidence = ["ovl", "frame"]
+name = "LoadItemData"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov2_09ed"

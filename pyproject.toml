@@ -8,6 +8,7 @@ dependencies = [
     "unicorn>=2.1.4,<3",   # oracle: x86 16-bit real mode emulation (Phase 2)
     "pytest>=8",           # tool and codec tests
     "py7zr>=0.22",         # unpacks the toolchain archives (tools/re/tc_toolchain.py)
+    "pillow>=10",          # pictures of decoded data (tools/re/wwfmt.py png)
 ]
 
 [tool.uv]

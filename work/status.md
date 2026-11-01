@@ -5,7 +5,9 @@
 | Phase | State |
 |---|---|
 | P0 Bootstrap | done: `make doctor`, `make p0-check` (16 files pinned; 99 + 54 segments; 7 + 1 overlays; 6 PAKs, 193 files) |
-| P1 Map and toolchain | toolchain pinned (Turbo C++ 1.00, `-ml -O -Z`, TLINK 3.0; TASM 2.0 [H]); map written (`make map`: EOB.EXE 62 units, 885 functions; INTRO.EXE 33 units, 250 functions, 21 shared); **go/no-go passed**: 8 functions in 2 whole units at L2 (`make match`). Next: the rest of the matcher (assembly units, jump tables, overlay code, shifted-data builds), then Phase 2 |
+| P1 Map and toolchain | done: Turbo C++ 1.00, `-ml -O -Z` (some units `-G`), TLINK 3.0, TASM 2.0 [H]; `make map`: EOB.EXE 62 units, 885 functions; INTRO.EXE 33 units, 250 functions |
+| P2 Oracle and data | started: `make data` decodes 162 of 182 files (LCW, mazes, tables, palettes; one anomaly); `make oracle-run` boots EOB.EXE to its title menu, deterministically. Next: key scripts and goldens, sound, mouse |
+| P3 Match harness | `make match`: C, assembly, overlays, jump tables, partial units; 16 functions in 8 units at L2, 2 drafts. Next: the agent process from poolrad |
 
 ## Environment
 

@@ -29,14 +29,24 @@ def cstring(img: bytes, at: int) -> str | None:
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("exe")
-    ap.add_argument("seg", type=lambda s: int(s, 16))
+    ap.add_argument("seg")
     ap.add_argument("--start", type=lambda s: int(s, 16), default=0)
     ap.add_argument("--len", type=int, default=None)
     ap.add_argument("--dgroup", type=lambda s: int(s, 16), default=0x212E)
     a = ap.parse_args()
     mz = read_mz(open(a.exe, "rb").read())
     img, relocs = mz["image"], {s * 16 + o for o, s in mz["relocs"]}
-    man = os.path.join("build", "re", os.path.splitext(os.path.basename(a.exe))[0].lower() + ".json")
+    stem = os.path.splitext(os.path.basename(a.exe))[0].lower()
+    man = os.path.join("build", "re", stem + ".json")
+    dgroup_img = img
+    if a.seg.lower().startswith("ovl"):
+        n = int(a.seg[3:])
+        img = open(os.path.join("build", "re", stem + "-overlays", "ovl%02d.bin" % n), "rb").read()
+        relocs = set(json.load(open(man))["overlays"][n]["fixups"])
+        a.seg = 0
+        man = ""
+    else:
+        a.seg = int(a.seg, 16)
     seg_end = None
     if os.path.exists(man):
         for s in json.load(open(man))["segments"]:
@@ -51,7 +61,7 @@ def main() -> int:
             note.append("reloc")
         for m in re.finditer(r"0x([0-9a-f]+)", i.op_str):
             v = int(m.group(1), 16)
-            s = cstring(img, a.dgroup * 16 + v) if v >= 0x10 else None
+            s = cstring(dgroup_img, a.dgroup * 16 + v) if v >= 0x10 else None
             if s and ("[" in i.op_str or i.mnemonic in ("mov", "push")):
                 note.append('ds:%04x "%s"' % (v, s))
         if i.mnemonic in ("ret", "retf"):

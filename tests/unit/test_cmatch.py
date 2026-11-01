@@ -14,6 +14,7 @@ extern char gFlag; /*@ ds:F3B9 */
 extern void far *gTable[]; /*@ ds:5102 */
 extern void (far *gPrint)(char far *text); /*@ ds:80D2 */
 extern struct Node far *ListAdd(struct Node far *list, void far *item); /*@ 1658:001E */
+/*@ 0CF7:0003 stub */ void Sib(void) {}
 /*@ 0CF7:0007 */ void ListInit(struct Node far *head)
 {
 }
@@ -21,16 +22,17 @@ extern struct Node far *ListAdd(struct Node far *list, void far *item); /*@ 1658
 
 
 def test_annotations():
-    funcs, data, defined = cmatch.parse_annotations(SRC)
+    funcs, data, defined, stubs = cmatch.parse_annotations(SRC)
     assert data == {"gFlag": 0xF3B9, "gTable": 0x5102, "gPrint": 0x80D2}
-    assert funcs == {"ListAdd": 0x1658 * 16 + 0x1E, "ListInit": 0x0CF7 * 16 + 7}
-    assert defined == {"ListInit"}
+    assert funcs == {"ListAdd": (0x1658, 0x1E), "ListInit": (0x0CF7, 7), "Sib": (0x0CF7, 3)}
+    assert defined == {"ListInit", "Sib"} and stubs == {"Sib"}
 
 
 def test_stub_defines_every_extern():
-    stub = cmatch.stub_source(*cmatch.parse_annotations(SRC))
-    assert "char gFlag[256];" in stub and "void far ListAdd(void) {}" in stub
-    assert "ListInit" not in stub and "int main(void)" in stub
+    funcs, data, defined, _ = cmatch.parse_annotations(SRC)
+    stub = cmatch.stub_source(funcs, data, defined, pad=True)
+    assert "_gFlag db 256 dup (0)" in stub and "_ListAdd PROC FAR" in stub and "padd db 273" in stub
+    assert "ListInit" not in stub and "Sib" not in stub and "_main PROC FAR" in stub
 
 
 def test_segments_are_byte_aligned():

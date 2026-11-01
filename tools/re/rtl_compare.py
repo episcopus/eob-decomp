@@ -8,6 +8,10 @@ except address fields (displacements, immediates, call and jump targets), which 
 between two links. The release whose modules are all found is the one that built the program.
 
   rtl_compare.py [--target eob/EOB.EXE] [--model l] [--releases tc100,tc101] [-o build/re/rtl_compare.json]
+                 [--reuse]   recompute only the symbols from an existing report and reference link
+
+The report also gives, per release, `symbols`: every public code symbol of a found module with its
+linear address in the target (the matcher resolves calls into the library with it).
 """
 from __future__ import annotations
 
@@ -121,13 +125,37 @@ def find(code: bytes, target: bytes, limit: int) -> int | None:
     return None
 
 
+def library_symbols(w: Path, found: dict) -> dict[str, int]:
+    """Public code symbols of the found modules, at their linear address in the target."""
+    mods = module_code(w)
+    pubs = {}
+    for line in (w / "R.MAP").read_text("latin-1").splitlines():
+        m = re.match(r"\s*([0-9A-F]{4}):([0-9A-F]{4})\s+(?:idle\s+)?(\S+)\s*$", line)
+        if m:
+            pubs[m.group(3)] = int(m.group(1), 16) * 16 + int(m.group(2), 16)
+    out = {}
+    for name, lin in pubs.items():
+        for mod, start, length in mods:
+            if start <= lin < start + length and mod in found:
+                out[name] = found[mod] + (lin - start)
+    return out
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--target", default=str(ROOT / "eob" / "EOB.EXE"))
     ap.add_argument("--model", default="l")
     ap.add_argument("--releases", default="tc100,tc101")
     ap.add_argument("-o", "--out", default=str(ROOT / "build" / "re" / "rtl_compare.json"))
+    ap.add_argument("--reuse", action="store_true")
     a = ap.parse_args()
+    if a.reuse:
+        report = json.load(open(a.out))
+        for rel, r in report.items():
+            r["symbols"] = library_symbols(WORK / rel / r["model"], r["found"])
+            print("%s: %d library symbols located" % (rel, len(r["symbols"])))
+        json.dump(report, open(a.out, "w"), indent=1)
+        return 0
     target = read_mz(open(a.target, "rb").read())["image"]
     limit = len(target)
     report = {}
@@ -141,7 +169,8 @@ def main() -> int:
                 missing.append(mod)
             else:
                 found[mod] = at
-        report[rel] = {"model": a.model, "found": found, "missing": missing}
+        report[rel] = {"model": a.model, "found": found, "missing": missing,
+                       "symbols": library_symbols(w, found)}
         print("%s -m%s: %d of %d library modules found in %s" % (
             rel, a.model, len(found), len(found) + len(missing), os.path.basename(a.target)))
     Path(a.out).parent.mkdir(parents=True, exist_ok=True)

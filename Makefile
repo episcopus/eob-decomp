@@ -4,12 +4,13 @@
 PY ?= $(if $(wildcard .venv/bin/python),.venv/bin/python,python3)
 PROGRAMS := eob/EOB.EXE eob/INTRO.EXE eob/START1.EXE
 
-.PHONY: help setup doctor inputs overlays pak emu2 test p0-check tc-install tc-check rtl-compare map match
+.PHONY: help setup doctor inputs overlays pak data emu2 test p0-check tc-install tc-check rtl-compare map match oracle-run
 
 help:
 	@echo "Phase 0:  setup doctor inputs overlays pak emu2 test p0-check"
 	@echo "Toolchain: tc-install tc-check rtl-compare (docs/setup/SETUP-tc.md)"
 	@echo "Phase 1:  map match [FILE=src/E0CF7.C] [WRITE=1]"
+	@echo "Phase 2:  data oracle-run [INSNS=30000000] [ARGS='3 4 0 homie 3']"
 	@echo "See AGENTS.md and docs/spec/SPEC.md."
 
 setup:            ## create .venv with the Python tools (uv)
@@ -30,6 +31,9 @@ overlays:         ## segment table and FBOV overlay manifest of each program (bu
 pak:              ## verify every PAK archive (directory, tiling, byte-exact round trip)
 	$(PY) tools/re/pak.py verify eob/
 
+data: pak         ## decode every data file of the PAKs (LCW, mazes, tables, palettes; whitepaper 4)
+	$(PY) tools/re/wwfmt.py verify eob/
+
 emu2:             ## build the headless DOS emulator that runs the Turbo C++ tools
 	sh tools/setup/build-emu2.sh
 
@@ -47,9 +51,12 @@ map: overlays     ## enumerate functions, write re/units.toml and re/symbols.tom
 	$(PY) tools/re/functions.py eob/INTRO.EXE build/re/intro.json -o build/re/intro-functions.json
 	$(PY) tools/re/map_units.py --write
 
-match:            ## prove C modules against EOB.EXE (FILE=src/X.C, default every src/*.C; WRITE=1 records L2)
-	@rc=0; for f in $(or $(FILE),$(wildcard src/*.C)); do echo "== $$f"; \
+match:            ## prove C and assembly units against EOB.EXE (FILE=src/X.C, default every src/*.C and *.ASM; WRITE=1 records L2)
+	@rc=0; for f in $(or $(FILE),$(wildcard src/*.C src/*.ASM)); do echo "== $$f"; \
 	  $(PY) tools/match/cmatch.py $$f $(if $(WRITE),--write) || rc=1; done; exit $$rc
+
+oracle-run:       ## run the original EOB.EXE in the oracle (build/oracle/run: summary.json, shots/final.png)
+	$(PY) tools/oracle/run.py --max-insns $(or $(INSNS),30000000) $(if $(ARGS),--args "$(ARGS)")
 
 test:             ## Python tests
 	$(PY) -m pytest -q tests/unit

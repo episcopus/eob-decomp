@@ -36,6 +36,12 @@ Proven by matching two whole modules, `e0cf7` (6 functions, 591 bytes) and `e07a
 | no `-N` (no stack check, default) | `-N` breaks both modules |
 | `-K`, `-a`, `-d` | not decided: these modules use no plain `char`, no structure layout that `-a` changes and no repeated string |
 
+**Switches differ by unit.** `e1b82` (`src/E1B82.C`) is compiled with `-G` (optimise for speed): it cleans the stack after calls with `inc sp; inc sp` and `add sp,4` where the `-O -Z` units use `pop cx`; 3 of its 4 functions match with `-ml -O -Z -G`, none without `-G`. The small units `e1a16` and `e1a63` show the same pattern. A source file names its switches with `/*@flags ... */` (playbook 30).
+
+Idioms settled by matching (playbook 30 has the full list): an assignment tested and the result unused (`mov [g],ax; or ax,ax`) is an `if (g = x) ;` with an empty body (`SetUnpackBuffer`, 1B82:0217); two `continue` tests merged into one `||` keep ES:BX loaded (`UpdateObjects`, 08E6:0CC8); a `switch`'s case bodies are laid out in source order, so the jump table gives the order of the `case` labels.
+
+Not reproduced yet (drafts, notes in `re/symbols.toml`): `0ACD:091C`, where the original keeps two identical tails that our `-O` merges, and `1B82:00C7`, where the original sign-extends the switch value to 32 bits without a temporary.
+
 No game code uses floating point: no emulator interrupts (`INT 34h` to `3Dh`) in any code segment. The switches are `cflags` in `tools/re/tc_toolchain.toml`; a module that needs others records them (`match_flags` in `re/symbols.toml`).
 
 Three negative tests confirm the matcher rejects a near miss: a loop bound changed from 52 to 53, the wrong table passed, and an extra store (scratch probe, 2026-10-31).
@@ -83,6 +89,8 @@ Overlay stub segments in the load module have Turbo Pascal's layout (poolrad whi
 | `EOB.EXE` | `20F6 2102 2106 210C 2116 211E 212A` | 125 | 50,641 |
 | `INTRO.EXE` | `0E96` | 22 | 11,741 |
 
+**Segment fixups in overlay code hold a byte offset into the segment table** (index times 8), not a paragraph: overlay 2 calls `FileOpen` as `0188:00DB`, and entry 49 (188h / 8) of the table is `1C0E`, where the resident code calls it as `1C0E:00DB`. `tools/match/cmatch.py` translates them (`Original.seg`). Overlay code compiles with the resident units' switches: `ovl2:0110` and `ovl2:09CC` match without `-Y` (`src/EOV2.C`).
+
 The padding between records is 0 to 42 bytes in `EOB.EXE` and 169 bytes after `INTRO.EXE`'s one record; the rule is not established. Fixup offsets within a record come in runs that descend within each 1 KB of code (not explained yet).
 
 ### 2.4 INTRO.EXE and START1.EXE
@@ -92,7 +100,23 @@ The padding between records is 0 to 42 bytes in `EOB.EXE` and 169 bytes after `I
 
 ### 2.5 Graphics drivers
 
-`CGA.OVL`, `EGA.OVL`, `MCGA.OVL`, `TGA.OVL`: MZ files with 40 relocations each and entry `0000:0000`, loaded by the game ("Could not load overlay" message in `EOB.EXE`). `EOB.EXE` also names `vga.ovl`, which is not in the copy. [H] Assembly.
+`CGA.OVL`, `EGA.OVL`, `MCGA.OVL`, `TGA.OVL`: MZ files with 40 relocations each and entry `0000:0000`, loaded by the game with DOS function 4B03h (load overlay: an image relocated to a segment of the caller's choosing, no PSP); the VGA mode loads `MCGA.OVL` (oracle trace, section 2.6). `EOB.EXE` also names `vga.ovl`, which is not in the copy. [H] Assembly.
+
+### 2.6 Start-up and command line
+
+`START1.EXE` asks for graphics, sound and the mouse and runs `spawnl(.., "INTRO.EXE", "INTRO.EXE", graphics, sound, mouse, "homie", NULL)` (START1 0000:0447), each choice a one-character string ('0' + index). `INTRO.EXE` passes them on to `EOB.EXE` with a fifth argument. `main` (07C8:0001):
+
+| Argument | Use |
+|---|---|
+| `argv[1][0]` | graphics: `ds:8102`, reduced by '1' in 07C8:0199 to 1 Tandy (the MCB check `CheckMCB` runs), 3 VGA (clears A000:0000 with `memset`, palette `eobpal.col`), then the mode number from the table at `ds:84A2` through `int86` (1DDD:002D) |
+| `argv[2][0]` | sound: `ds:B892` = digit - '1'; `ds:80E6` = sound on unless '4' |
+| `argv[3][0]` | mouse: digit - '0' |
+| `argv[4]` | must be "homie" (`strcmp`), or the program ends at once: the reason for the string found in Phase 0 |
+| `argv[5]` | `atol`: `ds:84A0`, the video mode restored on exit |
+
+Without enough memory `main` prints "Not enough memory to run program." through `PrintString` (19EA:0000, `src/E19EA.ASM`).
+
+**In the oracle** (`make oracle-run`, `tools/oracle/run.py`, arguments `3 4 0 homie 3`), `EOB.EXE` sets mode 13h, loads `MCGA.OVL`, both fonts and four PAKs, runs the overlay manager, and shows its title menu ("Load game in progress", "Start a new party", "Exit to DOS") after 30 million instructions; two runs end in the same state digest (`tests/unit/test_oracle.py`).
 
 ## 4. Data files
 
@@ -106,4 +130,14 @@ The padding between records is 0 to 42 bytes in `EOB.EXE` and 169 bytes after `I
 | EOBDATA2 | 2 | `DOOR.EGA`, `EOBPAL.COL` |
 | EOBDATA3 to 6 | 174 | per level set: wall graphics (`.VCN`, `.VMP`, `.ECN`, `.EMP`), pictures (`.CPS`, `.EGA`), palettes (`.PAL`, `.COL`), `.DAT`, level maps (`LEVELn.MAZ`) and scripts (`LEVELn.INF`) |
 
-[H] (ScummVM's Kyra engine, read only): `.CPS` and `.CMP` are Westwood compressed pictures (LCW, "format 80"), `.INF` is the level script bytecode. Codecs come in Phase 2.
+### 4.2 Compressed files
+
+CPS, CMP, EGA, INF, VCN and ECN files share the header the game's loader reads (`LoadPacked` and `Unpack`, 1B82:0041 and 1B82:00C7, `src/E1B82.C`): u16 size of the rest (some files: the file size), u8 format, u8 0, u32 unpacked size (`src+2`), u16 bytes of palette that follow (`src+6`). `Unpack` switches on the format: 0 stored (copied from `src+8`), 1 and 2 decoded with a work buffer of 3C00h and FC00h bytes (allocated unless the shared buffer `ds:812A`, size `ds:812C`, is big enough), 3, and 4 (LCW, after the palette).
+
+`make data` (`tools/re/wwfmt.py`) decodes every file: 150 files of format 4 unpack to exactly their declared size (LCW as published: back references, literals, absolute copies, fills). `TITLE-V.CMP` with `TITLE-V.COL` is the title picture. One anomaly: `EOBTITLE.CMP` decodes coherently for 31,962 bytes (99 rows of a title picture), then a fill of 13,082 bytes and garbage past 64,000; [H] damaged in this copy. Not decoded yet: six EGA pictures in format 1, the 12 `.DAT` files, `ITEMRMP.VGA`.
+
+### 4.3 Mazes and tables
+
+`LEVELn.MAZ` (12 files): u16 width 32, u16 height 32, u16 4 bytes per cell, then the cells (4,102 bytes). `.VMP` and `.EMP`: u16 count, then u16 entries. `.PAL` and `.COL`: 768 bytes, 6-bit VGA colours. `EOBDATA4.PAK` lists its eight `.COL` files twice.
+
+[H] (ScummVM's Kyra engine, read only): `.INF` is the level script bytecode; the four bytes of a maze cell are its four walls.
