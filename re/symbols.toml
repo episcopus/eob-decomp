@@ -4129,6 +4129,7 @@ evidence = ["far", "segment"]
 name = "_PrintString"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-01 rev-sonnet"
 
 [[function]]
 id = "e19ec_0002"
