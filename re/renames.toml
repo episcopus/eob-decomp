@@ -727,7 +727,7 @@ addr = "19FC:0008"
 old = ""
 new = "CompressLcw"
 kind = "function"
-why = "LCW encoder: writes the tokens Unpack4 (1D9A:0013, src/E1B82.C:22) reads (short back references, absolute copies, fills, literals), the inverse of that decoder; wwfmt.py lcw, whitepaper 4.2. Entry corrected from 19FC:0007 to 19FC:0008 by the e19fc review: 19FC:0007 is the segment-start marker byte (data, a separate public byte symbol _f19FC_0007) and the encoder's first instruction, push bp, is at 19FC:0008"
+why = "LCW encoder: writes the tokens Unpack4 (1D9A:0013, src/E1B82.C:39) reads (short back references, absolute copies, fills, literals), the inverse of that decoder; wwfmt.py lcw, whitepaper 4.2. Entry corrected from 19FC:0007 to 19FC:0008 by the e19fc review: 19FC:0007 is the segment-start marker byte (data, a separate public byte symbol _f19FC_0007) and the encoder's first instruction, push bp, is at 19FC:0008. The Unpack4 source line is :39 (where it is declared); the earlier :22 was the WorkBuffer union's closing brace, corrected by the round 4 review"
 date = "2026-11-01"
 
 [[rename]]
