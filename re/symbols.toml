@@ -4379,6 +4379,7 @@ evidence = ["far", "segment"]
 name = "RandomRange"
 level = "L2"
 match_flags = "-ml -O -Z"
+review = "passed 2026-11-01 rev-sonnet"
 
 [[function]]
 id = "e1aad_000c"
