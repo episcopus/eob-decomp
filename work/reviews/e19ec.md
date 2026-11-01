@@ -1,7 +1,7 @@
 # Review: e19ec
 
 Reviewer: rev-sonnet
-Commit reviewed: 8afc719b2730588a3f7f5fe83f8ce0e7a71e447e
+Commit reviewed: 8afc719b2730588a3f7f5fe83f8ce0e7a71e447e (first pass); re-review at 36d77ba6058a5e4014be8869973523d717099b8b
 
 Playbook 70. Judge what a matching file can still get wrong: names, types, comments, structure.
 The matcher already proved the bytes; do not re-prove them, read for meaning.
@@ -25,3 +25,16 @@ Each finding is a checkbox. `must-fix` blocks `make review-pass` until a decompi
 The code is three tiny far functions and matches; the C is clear. The prose is not: the header and the name `ObjAlloc` claim an "object arena" and a 1-based kind, which the bytes contradict. The table at ds:FC0C is a per-video-mode list of screen and off-screen page segments filled in `main` (07C8:02A4..03D9), indexed with the low bit forced on or off. Two must-fix items (header comment, the confident name `ObjAlloc`); both are in the review above, with the evidence. The other two functions are properly placeholder-named. Review failed until the header and name are corrected.
 
 Decompiler response (195b005): both must-fix items and the two should items are addressed. Header now describes the per-video-mode page/buffer segment table with the 07C8 fill addresses; `ObjAlloc` is renamed `f19EC_0002` (placeholders elsewhere unchanged); the extern declarations and call sites in E07A9.C and E1B82.C follow the rename. `make match FILE=src/E19EC.C` exits 0 (3 of 3); E07A9.C and E1B82.C still match.
+
+## Re-review (36d77ba)
+
+Reviewer: rev-sonnet. Rechecked the fixes against the bytes (tools/re/disasm.py eob/EOB.EXE 19EC and 07C8).
+
+- Match: `make match FILE=src/E19EC.C` gives 3 of 3, unit complete (124 bytes). Callers in E07A9.C (60..62) and E1B82.C (42, 43) use `f19EC_0002`; re/symbols.toml names agree; no `ObjAlloc` left in src/.
+- Header: slot rule (`or bx,1` at 19EC:0008, `and bx,0FFFEh` at 19EC:001C), the pairs written with one segment (07C8:02A7/02AA, 02C0..02C6 via `mov ax,dx` at 02C4, 02DC..02E2, 02F8..02FE), constants 0xB800/0xA000/0xA200/0xA400/0xA800 and the MemAlloc (19BC:0007) sizes 0xFA00/0x7D00/0xCB20/0xFDE8 all check out. The jump on ds:8102 (cmp bx,4 at 07C8:0295, `jmp cs:[bx+580h]` at 029F) is right.
+- f19EC_002A: arguments pushed d, c, seg[b], seg[a], `lcall [8046]`, `add sp,8` (19EC:005D..0077), so the call is handler(seg[a], seg[b], c, d) as written. The [H] tag and the unknown c, d are honest.
+
+- [ ] should src/E19EC.C:5-8: the fill list is incomplete: the mode 4 block also stores the constant 0xAC00 into ds:FC18 (07C8:03E0) and MemAllocs 0xFC00 bytes for ds:FC1A (07C8:03EC; E07A9.C:64 passes gFC1A with 0xFC00 to f1B82_0217). Add them to the header list.
+- [ ] note The mode 1 block (07C8:0304..0315) stores `si` (not a constant) into ds:FC10 and ds:FC12; si is not traced, so the header's "screen segments and page segments" is a description of the usual case only.
+
+No open must-fix. Review passed.
