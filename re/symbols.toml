@@ -4049,6 +4049,9 @@ unit = "e16a5"
 addr = "16A5:0009"
 size = 81
 evidence = ["segment"]
+name = "DispatchKey"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e16a5_005a"
@@ -4056,6 +4059,9 @@ unit = "e16a5"
 addr = "16A5:005A"
 size = 99
 evidence = ["far", "frame"]
+name = "DispatchKeyWait"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e16a5_00bd"
@@ -4077,6 +4083,9 @@ unit = "e16a5"
 addr = "16A5:0D78"
 size = 18
 evidence = ["far", "frame"]
+name = "SetNodeCallback"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e177d_000a"
