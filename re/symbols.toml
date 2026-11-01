@@ -4318,6 +4318,7 @@ evidence = ["far", "segment"]
 name = "f1A47_0005"
 level = "L2"
 match_flags = "-ml -O -Z -G"
+review = "passed 2026-11-01 rev-sonnet"
 
 [[function]]
 id = "e1a47_0169"
@@ -4328,6 +4329,7 @@ evidence = ["far", "frame"]
 name = "f1A47_0169"
 level = "L2"
 match_flags = "-ml -O -Z -G"
+review = "passed 2026-11-01 rev-sonnet"
 
 [[function]]
 id = "e1a47_018e"
@@ -4338,6 +4340,7 @@ evidence = ["frame"]
 name = "f1A47_018E"
 level = "L2"
 match_flags = "-ml -O -Z -G"
+review = "passed 2026-11-01 rev-sonnet"
 
 [[function]]
 id = "e1a63_0004"
