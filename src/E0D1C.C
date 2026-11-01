@@ -140,7 +140,29 @@ extern void f1547_0991(int dir); /*@ 1547:0991 */
     }
     return -1;
 }
-/*@ 0D1C:0163 stub */ void f0D1C_0163(void) {}
+/* 0D1C:0163: Purpose unknown: over the last two of the 27 word slots of gChars[who].m77 (25
+   and 26), returns 1 when one of them holds an item (an index into the ds:8DD2 records) whose
+   m02 is 0x2F and whose m0B equals `fieldB`, otherwise 0. Slots 25 and 26 are the only two
+   inspected. Called by 122E, 1414 and overlays 1 and 6. DRAFT: matches every byte except that the
+   original reloads `item` into AX before the first multiply (0D1C:018A `mov ax, di`); ours
+   forwards the value AX still holds from the test (two bytes shorter). */
+/*@ 0D1C:0163 draft */ int f0D1C_0163(int who, int fieldB)
+{
+    struct CharRec far *c;
+    int item;
+    int i;
+
+    c = &gChars[who];
+    for (i = 25; i <= 26; i++) {
+        if (item = c->m77[i]) {
+            if (gTable8DD2[item].m02 == 0x2F) {
+                if (gTable8DD2[item].m0B == fieldB)
+                    return 1;
+            }
+        }
+    }
+    return 0;
+}
 /*@ 0D1C:01CA stub */ void f0D1C_01CA(void) {}
 /*@ 0D1C:02DC stub */ void f0D1C_02DC(void) {}
 /*@ 0D1C:0304 stub */ void f0D1C_0304(void) {}
