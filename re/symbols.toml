@@ -4795,6 +4795,9 @@ unit = "e1aad"
 addr = "1AAD:0718"
 size = 734
 evidence = ["far"]
+name = "_InstallKeyboard"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1aad_09f6"

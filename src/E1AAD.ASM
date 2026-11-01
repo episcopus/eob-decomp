@@ -43,7 +43,8 @@ kKeyBitMasks    db 01h,02h,04h,08h,10h,20h,40h,80h   ; 1AAD:000C: 8 bytes, bit f
         db      00h,02h,08h,00h,08h,00h,10h,00h
         db      10h,00h,10h,00h,10h,00h,20h,00h
         db      20h,00h,40h,00h,40h,00h,80h,00h
-        db      80h,00h,00h,01h,00h,00h,00h,00h
+        db      80h,00h,00h,01h
+kChainFarPtr    dd 00000000h    ; 1AAD:0048: far pointer called when AL is 6Eh (1AAD:099B)
 kExtendKeys     db 38h,1Dh,52h,53h,4Bh,47h,4Fh,48h,50h,49h,51h,4Dh   ; 1AAD:004C: 17 bytes, extended-key codes for 1AAD:0718
         db      35h,1Ch,37h,46h,3Eh
         db      40h,4Bh,4Ch,4Fh,50h,51h,53h,54h      ; 1AAD:005D
@@ -675,10 +676,328 @@ f05F1_0712:
         or      ax,ax
         retf
 
-        PUBLIC  _f1AAD_0718              ; @ 1AAD:0718 stub
-_f1AAD_0718 PROC FAR
-        ret
-_f1AAD_0718 ENDP
+; 1AAD:0718: install the keyboard driver. It records the BIOS shift state (40:17/18/96) into
+; kShiftFlags/kKeyFlag204/kKeyFlag206/kKeyFlag207 and seeds kKeyFlag20F/kKeyFlag210, then chains
+; INT 9 to the handler at 1AAD:07C0 (through INT 21h 35h/25h, saving the old vector at
+; kInt9SavedOff/kInt9SavedSeg) and INT 23h (Ctrl-C) to the IRET at 1AAD:09F5 (saving it at
+; kInt23SavedOff/kInt23SavedSeg). The handler body at 1AAD:07C0 (inside this region) reads the
+; scancode from port 60h, tracks E0/E1 prefixes, translates the scancode through 1AAD:0186, updates
+; the held-key bitmap 1AAD:01FF and the modifier byte kModifierOut, toggles gSoundOn/g80E8 on the
+; Ctrl/Alt sound keys, and appends the event to the ring (or chains to the old INT 9 vector when it
+; does not consume the key). The iret and the two data bytes at 1AAD:09F2 finish the region. Called
+; from main at 07C8:008F. Purpose unknown: several of the port/handler paths.
+        PUBLIC  _InstallKeyboard          ; @ 1AAD:0718
+_InstallKeyboard PROC FAR
+        push    ax
+        push    bx
+        push    ds
+        push    dx
+        push    es
+        mov     ax,0040h
+        mov     es,ax
+        mov     al,byte ptr es:[17h]
+        test    al,40h
+        je      f0718_0730
+        or      word ptr cs:[kShiftFlags],1
+f0718_0730:
+        test    al,20h
+        je      f0718_073A
+        or      word ptr cs:[kShiftFlags],2
+f0718_073A:
+        test    al,2
+        je      f0718_0744
+        or      byte ptr cs:[kKeyFlag204],10h
+f0718_0744:
+        and     al,1
+        shl     al,1
+        mov     ah,al
+        mov     al,byte ptr es:[18h]
+        shl     al,1
+        shl     al,1
+        and     al,0Ch
+        or      ah,al
+        mov     al,byte ptr es:[96h]
+        test    al,8
+        je      f0718_0761
+        or      ah,40h
+f0718_0761:
+        mov     byte ptr cs:[kKeyFlag206],ah
+        test    al,4
+        je      f0718_0770
+        or      byte ptr cs:[kKeyFlag207],1
+f0718_0770:
+        test    al,2
+        je      f0718_077A
+        mov     byte ptr cs:[kKeyFlag20F],1
+f0718_077A:
+        test    al,1
+        je      f0718_0784
+        mov     byte ptr cs:[kKeyFlag210],2
+f0718_0784:
+        mov     ax,3509h
+        int     21h
+        mov     word ptr cs:[kInt9SavedOff],bx
+        mov     word ptr cs:[kInt9SavedSeg],es
+        mov     bx,cs
+        mov     ds,bx
+        mov     dx,07C0h
+        mov     ax,2509h
+        int     21h
+        mov     ax,3523h
+        int     21h
+        mov     word ptr cs:[kInt23SavedOff],bx
+        mov     word ptr cs:[kInt23SavedSeg],es
+        mov     bx,cs
+        mov     ds,bx
+        mov     dx,09F5h
+        mov     ax,2523h
+        int     21h
+        pop     es
+        pop     dx
+        pop     ds
+        pop     bx
+        pop     ax
+        retf
+_InstallKeyboard ENDP
+
+; 1AAD:07C0: the INT 9 handler installed above (inside the install function's region, not a
+; separate map function). It clears kShiftFlags bits 0/1, ORs in the live BIOS shift state, copies
+; ds:80EA into kModifierState, reads a scancode from port 60h and either swallows it (E1/E0
+; prefix, break code) or translates and buffers it. kKeyMode9F2/kScanCode9F3 hold the state of the
+; prefix path. It ends by chaining to the saved INT 9 vector (1AAD:09BD) or acknowledging the PIC
+; itself (1AAD:09CA). Purpose unknown: the exact scan-code paths.
+f0718_07C0:
+        push    ax
+        push    bx
+        push    cx
+        push    di
+        push    ds
+        push    dx
+        push    es
+        push    si
+        and     word ptr cs:[kShiftFlags],0FFFCh
+        mov     ax,0040h
+        mov     es,ax
+        test    byte ptr es:[17h],40h
+        je      f0718_07E1
+        or      word ptr cs:[kShiftFlags],1
+f0718_07E1:
+        test    byte ptr es:[17h],20h
+        je      f0718_07EF
+        or      word ptr cs:[kShiftFlags],2
+f0718_07EF:
+        mov     ax,212Eh
+        mov     ds,ax
+        mov     ax,[g80EA]
+        mov     cs:[kModifierState],ax
+        mov     dx,word ptr cs:[kModifierState]
+        mov     ax,cs
+        mov     ds,ax
+        mov     es,ax
+        cld
+        xor     ah,ah
+        mov     bx,0101h
+        in      al,60h
+        cmp     al,0E1h
+        jne     f0718_0818
+        mov     byte ptr cs:[kKeyFlag210],3
+f0718_0818:
+        cmp     byte ptr cs:[kKeyFlag210],0
+        je      f0718_082E
+        dec     byte ptr cs:[kKeyFlag210]
+        test    dx,80h
+        jne     f0718_0838
+        jmp     f0718_09CA
+f0718_082E:
+        cmp     al,0E0h
+        jne     f0718_083B
+        mov     byte ptr cs:[kKeyFlag20F],1
+f0718_0838:
+        jmp     f0718_09BD
+f0718_083B:
+        test    al,80h
+        je      f0718_0843
+        xor     bl,bl
+        and     al,7Fh
+f0718_0843:
+        cmp     byte ptr cs:[kKeyFlag20F],0
+        je      f0718_086F
+        mov     byte ptr cs:[kKeyFlag20F],0
+        mov     byte ptr cs:[kKeyMode9F2],1
+        mov     di,4Ch
+        mov     cx,11h
+        repne   scasb
+        mov     al,byte ptr [di+0Fh]
+        or      cx,cx
+        jne     f0718_0876
+        mov     byte ptr cs:[kKeyMode9F2],0
+        jmp     f0718_09CA
+f0718_086F:
+        mov     di,ax
+        mov     al,byte ptr cs:[di+kScanToKey]
+f0718_0876:
+        mov     word ptr cs:[kScanCode9F3],di
+        mov     di,ax
+        shr     di,1
+        shr     di,1
+        shr     di,1
+        mov     cl,al
+        and     cl,7
+        shl     bl,cl
+        shl     bh,cl
+        not     bh
+        mov     cl,byte ptr cs:[di+kKeyDownBits]
+        and     cl,bl
+        and     byte ptr cs:[di+kKeyDownBits],bh
+        or      byte ptr cs:[di+kKeyDownBits],bl
+        test    byte ptr cs:[kKeyFlag206],4
+        jne     f0718_08AF
+        test    byte ptr cs:[kKeyFlag207],1
+        je      f0718_08B2
+f0718_08AF:
+        or      ah,2
+f0718_08B2:
+        test    byte ptr cs:[kKeyFlag206],50h
+        je      f0718_08BD
+        or      ah,4
+f0718_08BD:
+        cmp     byte ptr cs:[kKeyMode9F2],0
+        je      f0718_08DE
+        mov     byte ptr cs:[kKeyMode9F2],0
+        test    dx,2
+        jne     f0718_08DE
+        mov     si,word ptr cs:[kScanCode9F3]
+        mov     al,byte ptr [si+1Fh]
+        cmp     si,21h
+        jge     f0718_0917
+f0718_08DE:
+        test    byte ptr cs:[kKeyFlag204],10h
+        jne     f0718_08EE
+        test    byte ptr cs:[kKeyFlag206],2
+        je      f0718_08F1
+f0718_08EE:
+        or      ah,1
+f0718_08F1:
+        test    word ptr cs:[kShiftFlags],1
+        je      f0718_0904
+        test    byte ptr cs:[di+kKeyBitTable1],ch
+        je      f0718_0904
+        xor     ah,1
+f0718_0904:
+        test    word ptr cs:[kShiftFlags],2
+        je      f0718_0917
+        test    byte ptr cs:[di+kKeyBitTable2],ch
+        je      f0718_0917
+        xor     ah,1
+f0718_0917:
+        mov     byte ptr cs:[kModifierOut],ah
+        test    dx,1
+        jne     f0718_0929
+        or      cl,cl
+        je      f0718_0929
+        jmp     f0718_09CA
+f0718_0929:
+        cmp     ax,0668h
+        je      f0718_0937
+        cmp     ax,064Ch
+        je      f0718_0937
+        or      bl,bl
+        jne     f0718_093A
+f0718_0937:
+        jmp     f0718_09BD
+f0718_093A:
+        mov     di,word ptr cs:[kKeyBufWrite]
+        mov     si,di
+        add     di,2
+        and     di,0FFh
+        cmp     di,word ptr cs:[kKeyBufRead]
+        je      f0718_0959
+        mov     word ptr cs:[si+kKeyBuf],ax
+        mov     word ptr cs:[kKeyBufWrite],di
+f0718_0959:
+        mov     di,OFFSET kSpecialKeys
+        mov     cx,9
+        repne   scasb
+        or      cx,cx
+        jne     f0718_09BD
+        cmp     ax,0420h
+        je      f0718_0971
+        cmp     ax,0434h
+        je      f0718_0981
+        jne     f0718_098F
+f0718_0971:
+        push    ds
+        push    ax
+        mov     ax,212Eh
+        mov     ds,ax
+        xor     word ptr [gSoundOn],1
+        pop     ax
+        pop     ds
+        jmp     short f0718_098F
+f0718_0981:
+        push    ds
+        push    ax
+        mov     ax,212Eh
+        mov     ds,ax
+        xor     word ptr [g80E8],1
+        pop     ax
+        pop     ds
+f0718_098F:
+        cmp     al,6Eh
+        jne     f0718_09A0
+        cmp     word ptr cs:[kChainFarPtr+2],0
+        je      f0718_09A0
+        call    dword ptr cs:[kChainFarPtr]
+f0718_09A0:
+        mov     di,14h
+        mov     cx,1Ch
+        shr     cx,1
+        repne   scasw
+        or      cx,cx
+        je      f0718_09B7
+        mov     bx,word ptr [di+18h]
+        and     bx,dx
+        jne     f0718_09BD
+        jmp     short f0718_09CA
+f0718_09B7:
+        test    dx,4
+        je      f0718_09CA
+f0718_09BD:
+        pop     si
+        pop     es
+        pop     dx
+        pop     ds
+        pop     di
+        pop     cx
+        pop     bx
+        pop     ax
+        jmp     dword ptr cs:[kInt9SavedOff]
+f0718_09CA:
+        in      al,61h
+        mov     ah,al
+        or      al,80h
+        out     61h,al
+        xchg    ah,al
+        out     61h,al
+        mov     ax,0040h
+        mov     es,ax
+        mov     al,byte ptr es:[96h]
+        and     al,0FDh
+        mov     byte ptr es:[96h],al
+        mov     al,20h
+        out     20h,al
+        pop     si
+        pop     es
+        pop     dx
+        pop     ds
+        pop     di
+        pop     cx
+        pop     bx
+        pop     ax
+        iret
+kKeyMode9F2     db 00h          ; 1AAD:09F2: 1 while the previous event was an extended key
+kScanCode9F3    dw 0000h        ; 1AAD:09F3: scancode of the event being handled
+        iret                    ; 1AAD:09F5: the INT 23h handler installed at 1AAD:07B2
 
         PUBLIC  _f1AAD_09F6              ; @ 1AAD:09F6 stub
 _f1AAD_09F6 PROC FAR
