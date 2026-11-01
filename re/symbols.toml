@@ -4283,6 +4283,9 @@ unit = "e1a63"
 addr = "1A63:0004"
 size = 21
 evidence = ["segment"]
+name = "HardErrHandler"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "e1a63_0019"
@@ -4290,6 +4293,9 @@ unit = "e1a63"
 addr = "1A63:0019"
 size = 21
 evidence = ["far", "frame"]
+name = "InstallHardErr"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "e1a65_000e"
