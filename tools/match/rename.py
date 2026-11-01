@@ -3,8 +3,8 @@
 
   make rename OLD=<name or address> NEW=<Name> WHY="<evidence>"
   make rename APPLY=1          give every address of re/renames.toml its recorded name in src/, and every
-                               function the name its defining file gives it where other files still use
-                               a placeholder (make integrate runs it after every merge)
+                               address that src/ calls by one real name and otherwise by placeholders
+                               that name everywhere (make integrate runs it after every merge)
 
 The matcher ties a name to the original by its annotation (`/*@ ds:FC0C */`, `/*@ 19EC:0016 */`), not
 by the name, so every file of src/ declares what it uses under a name of its own, and two files can
@@ -213,34 +213,27 @@ def whitepaper(olds: list[str], new: str) -> int:
 PLACEHOLDER = re.compile(r"^_?(f[0-9A-F]{4}_[0-9A-F]{4}|Ovl\d+_[0-9A-F]{4}|g[0-9A-F]{4}|gFn[0-9A-F]{4}|sub\w*_[0-9A-F]{4})$")
 
 
-def definitions() -> dict[str, str]:
-    """address -> the name the file that defines the function gives it (not a stub, not a placeholder):
-    a unit names its own functions in its own file, often without `make rename`."""
-    out = {}
+def real_names() -> dict[str, str]:
+    """address -> its one real name, where src/ gives it exactly one real name and otherwise only
+    placeholders (a unit names its own function, or a global it understands, in its own file)."""
+    seen: dict[str, set] = {}
     for p in sources():
         asm = p.suffix.upper() == ".ASM"
-        funcs, _, defined, stubs = cmatch.parse_annotations(p.read_text(), asm)
-        for n in defined - stubs:
+        for n, addr in bindings(p).items():
             bare = n[1:] if asm and n.startswith("_") else n
-            seg, off = funcs[n]
-            addr = norm("%s:%X" % (seg if isinstance(seg, str) else "%04X" % seg, off))
             if not PLACEHOLDER.match(bare):
-                out[addr] = bare
-    return out
+                seen.setdefault(addr, set()).add(bare)
+    return {a: next(iter(ns)) for a, ns in seen.items() if len(ns) == 1}
 
 
 def apply() -> int:
-    """Every address gets its recorded name (re/renames.toml), and a function the defining file names
-    gets that name in the files that still call it by a placeholder. Two real names for one address
+    """Every address gets its recorded name (re/renames.toml); an address that src/ calls by one real
+    name and otherwise by placeholders gets that name everywhere. Two real names for one address
     stay as they are: `make readability` reports them for a person to settle with `make rename`."""
     n = 0
     names = recorded()
-    for addr, new in definitions().items():
-        if addr in names:
-            continue
-        local_names = {m.lstrip("_") for p in sources() for m, a in bindings(p).items() if a == addr}
-        if all(m == new or PLACEHOLDER.match(m) for m in local_names):
-            names[addr] = new
+    for addr, new in real_names().items():
+        names.setdefault(addr, new)
     for addr, new in names.items():
         try:
             olds, changed = rename_address(addr, new)
