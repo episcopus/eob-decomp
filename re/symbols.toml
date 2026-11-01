@@ -5163,6 +5163,7 @@ evidence = ["segment"]
 name = "f1DDD_0006"
 level = "L2"
 match_flags = "-ml -O -Z"
+review = "passed 2026-11-01 rev-haiku"
 
 [[function]]
 id = "e1ddd_002d"
@@ -5173,6 +5174,7 @@ evidence = ["far", "frame"]
 name = "f1DDD_002D"
 level = "L2"
 match_flags = "-ml -O -Z"
+review = "passed 2026-11-01 rev-haiku"
 
 [[function]]
 id = "e1de4_0000"
