@@ -333,10 +333,98 @@ init_done:
 _InitOverlayRecords ENDP
         SMART
 
-        PUBLIC  _f1E8B_02FF              ; @ 1E8B:02FF stub
-_f1E8B_02FF PROC NEAR
+; 1E8B:02FF: load an overlay into memory. It starts from the free segment 20B5:00B2, walks the
+; overlay's own file records (ES:[0012] chain) fitting each in the free space up to 20B5:00B6, links
+; them through 20B5:001C, then reloads the overlay file: it computes the 4 KB-rounded size, reads
+; the image with 03C4, applies the relocations (03FD) and fills the version table (066F), then calls
+; the overlay's entry through 20B5:0016 repeatedly until its successor chain at ES:001C ends.
+; Returns carry set on a read or overlay failure. The tail at 03B7 is an uncalled sibling that
+; converts a DX:AX byte count to a segment value. Evidence: the 00B2/00B4/00B6 free-memory words,
+; the 0012/001C record chain, the 03C4/03FD/066F calls and the 20B5:0016 far pointer.
+        PUBLIC  _MapOverlayRecords        ; @ 1E8B:02FF
+_MapOverlayRecords PROC NEAR
+        mov     cx,ds:[0B2h]
+        mov     ds:[0BCh],cx
+        mov     bx,cx
+        mov     si,ds:[0B4h]
+        mov     di,ds:[0B6h]
+        push    ds
+chain_next:
+        mov     ds,cx
+        mov     cx,ds:[12h]
+        jcxz    short chain_tail
+        mov     es,cx
+        mov     ax,es:[4]
+        mov     dx,es:[6]
+        sub     ax,ds:[4]
+        sbb     dx,ds:[6]
+        mov     cx,10h
+        div     cx
+        add     ax,si
+        cmp     ax,di
+        ja      short chain_tail
+        mov     ds:[10h],si
+        mov     si,ax
+        mov     cx,es
+        mov     ds:[1Ch],cx
+        mov     bx,ds
+        jmp     short chain_next
+chain_tail:
+        mov     ds,bx
+        mov     word ptr ds:[1Ch],0
+        pop     ds
+        mov     ds:[0B0h],si
+        mov     ax,ds:[0B4h]
+        sub     si,ax
+        jne     short chain_load
+        jmp     short chain_out
+        nop
+chain_load:
+        mov     cl,4
+        rol     si,cl
+        mov     di,si
+        and     di,0Fh
+        and     si,0FFF0h
+        mov     es,ds:[0BCh]
+        mov     dx,es:[4]
+        mov     cx,es:[6]
+        call    _ReadOverlayImage
+        jb      short chain_ret
+        mov     ax,ds:[0BCh]
+        push    ds
+chain_read:
+        mov     es,ax
+        mov     cx,es:[0Ah]
+        jcxz    short chain_ver
+        call    _ApplyOverlayRelocations
+chain_ver:
+        call    _FillOverlayVersionTable
+        mov     ax,es:[10h]
+        dec     ax
+        mov     ds,ax
+        mov     ds:[0Eh],es
+        push    es
+        mov     ax,0FFFFh
+        mov     bx,ax
+        mov     ds,word ptr cs:[4]
+        call    dword ptr ds:[16h]
+        pop     es
+        mov     ax,es:[1Ch]
+        or      ax,ax
+        jne     short chain_read
+        pop     ds
+chain_out:
+        clc
+chain_ret:
         ret
-_f1E8B_02FF ENDP
+; 1E8B:03B7: uncalled sibling in this range: DX:AX bytes to a segment value.
+        mov     cl,4
+        shr     ax,cl
+        ror     dx,cl
+        and     dx,0F000h
+        or      ax,dx
+        ret
+_MapOverlayRecords ENDP
 
 ; 1E8B:03C4: read SI:DI bytes of the overlay image from the open file into memory, four KB at a
 ; time. It seeks to DX:CX in the file (INT 21h/4200h), then loops reading 0FFF0h bytes (or SI when
@@ -499,8 +587,8 @@ _f1E8B_04D0 ENDP
 
 ; 1E8B:0536: age the overlay records after a version-record update. It bumps the 20B5:00AC counter,
 ; then for each record in the 20B5:00BC chain: when its ES:0010 entry is set, marks it used (ES:001B
-; = 1, ES:001A |= 4); otherwise sets the unused bit (ES:001A |= 8), re-adds the record through 0512
-; (0536), updates ES:000E and calls the record's ES:0018 routine, relinking through 0711. It ends
+; = 1, ES:001A |= 4); otherwise sets the unused bit (ES:001A |= 8), calls 0613 on it, updates
+; ES:000E, calls the record's ES:0018 routine and relinks it through 0711. It ends
 ; when the byte count 0761 says no older record remains, then stores the new top at ES:0010. It
 ; aborts through __OverlayHalt (0000:503F) if the overlay routine fails. Evidence: the [00AC]/[00BA]
 ; counters, the ES:001A bit flags, the [00A8] limit and the __OverlayHalt jump.

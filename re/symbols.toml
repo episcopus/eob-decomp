@@ -5576,6 +5576,9 @@ unit = "e1e8b"
 addr = "1E8B:02FF"
 size = 197
 evidence = ["near"]
+name = "_MapOverlayRecords"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1e8b_03c4"
