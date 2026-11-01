@@ -999,38 +999,399 @@ kKeyMode9F2     db 00h          ; 1AAD:09F2: 1 while the previous event was an e
 kScanCode9F3    dw 0000h        ; 1AAD:09F3: scancode of the event being handled
         iret                    ; 1AAD:09F5: the INT 23h handler installed at 1AAD:07B2
 
-        PUBLIC  _f1AAD_09F6              ; @ 1AAD:09F6 stub
-_f1AAD_09F6 PROC FAR
-        ret
-_f1AAD_09F6 ENDP
+; 1AAD:09F6: remove the keyboard driver. It restores INT 23h from kInt23SavedOff/kInt23SavedSeg
+; and INT 9 from kInt9SavedOff/kInt9SavedSeg through INT 21h 25h. Called from the exit path at
+; 07C8:058A.
+        PUBLIC  _RemoveKeyboard         ; @ 1AAD:09F6
+_RemoveKeyboard PROC FAR
+        push    ax
+        push    ds
+        push    dx
+        mov     dx,word ptr cs:[kInt23SavedSeg]
+        mov     ds,dx
+        mov     dx,word ptr cs:[kInt23SavedOff]
+        mov     ax,2523h
+        int     21h
+        mov     dx,word ptr cs:[kInt9SavedSeg]
+        mov     ds,dx
+        mov     dx,word ptr cs:[kInt9SavedOff]
+        mov     ax,2509h
+        int     21h
+        pop     dx
+        pop     ds
+        pop     ax
+        retf
+_RemoveKeyboard ENDP
 
-        PUBLIC  _f1AAD_0A1F              ; @ 1AAD:0A1F stub
-_f1AAD_0A1F PROC FAR
-        ret
-_f1AAD_0A1F ENDP
+; 1AAD:0A1F: queue one input event (the code at [bp+6], low 12 bits) into the ring. Code 41h/42h
+; queues three words: the code and the mouse position es:8138/es:813A; code 43h/44h queues the code
+; three times; anything else queues one word. It tests the ring for room first (write index walking
+; to the read index) and returns the code in AX, or 0 when the ring is full. ES is DGROUP (212Eh)
+; and DS is the unit's segment for the whole call. Purpose unknown: its entry (no direct caller in
+; the map; probably a far pointer call).
+        PUBLIC  _QueueInputEvent        ; @ 1AAD:0A1F
+_QueueInputEvent PROC FAR
+        push    bp
+        mov     bp,sp
+        push    di
+        push    si
+        push    ds
+        push    es
+        mov     ax,212Eh
+        mov     es,ax
+        mov     ax,cs
+        mov     ds,ax
+        mov     ax,[bp+6]
+        and     ax,0FFFh
+        cli
+        or      al,al
+        jne     f0A1F_0A3D
+f0A1F_0A3A:
+        jmp     f0A1F_0B05
+f0A1F_0A3D:
+        cmp     al,41h
+        jae     f0A1F_0A44
+        jmp     f0A1F_0AE4
+f0A1F_0A44:
+        cmp     al,42h
+        ja      f0A1F_0A98
+        mov     di,word ptr cs:[kKeyBufWrite]
+        mov     si,di
+        add     di,6
+        and     di,0FFh
+        cmp     si,di
+        ja      f0A1F_0A61
+        cmp     si,word ptr cs:[kKeyBufRead]
+        jae     f0A1F_0A68
+f0A1F_0A61:
+        cmp     di,word ptr cs:[kKeyBufRead]
+        jae     f0A1F_0A3A
+f0A1F_0A68:
+        mov     word ptr cs:[si+kKeyBuf],ax
+        mov     bp,ax
+        mov     ax,word ptr es:[_gCursorX]
+        add     si,2
+        and     si,0FFh
+        mov     word ptr cs:[si+kKeyBuf],ax
+        mov     ax,word ptr es:[_gCursorY]
+        add     si,2
+        and     si,0FFh
+        mov     word ptr cs:[si+kKeyBuf],ax
+        mov     word ptr cs:[kKeyBufWrite],di
+        mov     ax,bp
+        jmp     short f0A1F_0B07
+f0A1F_0A98:
+        cmp     al,44h
+        ja      f0A1F_0AE4
+        mov     di,word ptr cs:[kKeyBufWrite]
+        mov     si,di
+        add     di,2
+        and     di,0FFh
+        cmp     si,di
+        ja      f0A1F_0AB5
+        cmp     si,word ptr cs:[kKeyBufRead]
+        jae     f0A1F_0ABC
+f0A1F_0AB5:
+        cmp     di,word ptr cs:[kKeyBufRead]
+        jae     f0A1F_0B05
+f0A1F_0ABC:
+        mov     word ptr cs:[si+kKeyBuf],ax
+        mov     bp,ax
+        add     si,2
+        and     si,0FFh
+        mov     word ptr cs:[si+kKeyBuf],ax
+        add     si,2
+        and     si,0FFh
+        mov     word ptr cs:[si+kKeyBuf],ax
+        mov     word ptr cs:[kKeyBufWrite],di
+        mov     ax,bp
+        jmp     short f0A1F_0B07
+f0A1F_0AE4:
+        mov     di,word ptr cs:[kKeyBufWrite]
+        mov     si,di
+        add     di,2
+        and     di,0FFh
+        cmp     di,word ptr cs:[kKeyBufRead]
+        je      f0A1F_0B05
+        mov     word ptr cs:[si+kKeyBuf],ax
+        mov     word ptr cs:[kKeyBufWrite],di
+        jmp     short f0A1F_0B07
+f0A1F_0B05:
+        xor     ax,ax
+f0A1F_0B07:
+        sti
+        pop     es
+        pop     ds
+        pop     si
+        pop     di
+        pop     bp
+        retf
+_QueueInputEvent ENDP
 
-        PUBLIC  _f1AAD_0B0E              ; @ 1AAD:0B0E stub
-_f1AAD_0B0E PROC FAR
-        ret
-_f1AAD_0B0E ENDP
+; 1AAD:0B0E: the mouse-button glue called from the INT 33h handler (1A72:017A) with the new button
+; state at [bp+6]. It xors that with the last state (kMouseButtons) and, for each changed button,
+; builds the key code 41h/42h, folds in kModifierOut and the shift-bit-0 test through
+; kShiftFlags, sets the held bit with 1AAD:0BF1 and queues the event with 1AAD:0B9C. It stores the
+; new state back to kMouseButtons. Purpose unknown: the exact key-code convention.
+        PUBLIC  _HandleMouseButtons     ; @ 1AAD:0B0E
+_HandleMouseButtons PROC FAR
+        push    bp
+        mov     bp,sp
+        push    bx
+        push    cx
+        push    dx
+        push    di
+        push    si
+        push    ds
+        push    es
+        mov     dl,[bp+6]
+        mov     ch,byte ptr cs:[kMouseButtons]
+        xor     ch,dl
+        mov     ax,ds
+        mov     es,ax
+        mov     ax,cs
+        mov     ds,ax
+        xor     ax,ax
+        test    ch,1
+        je      f0B0E_0B5E
+        mov     bx,0101h
+        mov     ax,41h
+        test    dl,1
+        jne     f0B0E_0B3E
+        xor     bl,bl
+f0B0E_0B3E:
+        call    _SetKeyDownBit
+        mov     ah,byte ptr cs:[kModifierOut]
+        test    word ptr cs:[kShiftFlags],1
+        je      f0B0E_0B52
+        or      ah,1
+f0B0E_0B52:
+        or      bl,bl
+        jne     f0B0E_0B59
+        or      ah,8
+f0B0E_0B59:
+        call    _QueueMouseEvent
+        je      f0B0E_0B8E
+f0B0E_0B5E:
+        test    ch,2
+        je      f0B0E_0B8E
+        mov     bx,0101h
+        mov     ax,42h
+        test    dl,2
+        jne     f0B0E_0B70
+        xor     bl,bl
+f0B0E_0B70:
+        call    _SetKeyDownBit
+        mov     ah,byte ptr cs:[kModifierOut]
+        test    word ptr cs:[kShiftFlags],1
+        je      f0B0E_0B84
+        or      ah,1
+f0B0E_0B84:
+        or      bl,bl
+        jne     f0B0E_0B8B
+        or      ah,8
+f0B0E_0B8B:
+        call    _QueueMouseEvent
+f0B0E_0B8E:
+        mov     byte ptr cs:[kMouseButtons],dl
+        pop     es
+        pop     ds
+        pop     si
+        pop     di
+        pop     dx
+        pop     cx
+        pop     bx
+        pop     bp
+        retf
+_HandleMouseButtons ENDP
 
-        PUBLIC  _f1AAD_0B9C              ; @ 1AAD:0B9C stub
-_f1AAD_0B9C PROC NEAR
+; 1AAD:0B9C: queue a three-word mouse event (the code in AX and the position es:813C/es:813E) into
+; the ring, returning AX (0 when the ring is full). A near helper of 1AAD:0B0E.
+        PUBLIC  _QueueMouseEvent        ; @ 1AAD:0B9C
+_QueueMouseEvent PROC NEAR
+        mov     di,word ptr cs:[kKeyBufWrite]
+        mov     si,di
+        add     di,6
+        and     di,0FFh
+        cmp     si,di
+        ja      f0B9C_0BB5
+        cmp     si,word ptr cs:[kKeyBufRead]
+        jae     f0B9C_0BBC
+f0B9C_0BB5:
+        cmp     di,word ptr cs:[kKeyBufRead]
+        jae     f0B9C_0BEC
+f0B9C_0BBC:
+        mov     word ptr cs:[si+kKeyBuf],ax
+        mov     bp,ax
+        mov     ax,word ptr es:[g813C]
+        add     si,2
+        and     si,0FFh
+        mov     word ptr cs:[si+kKeyBuf],ax
+        mov     ax,word ptr es:[g813E]
+        add     si,2
+        and     si,0FFh
+        mov     word ptr cs:[si+kKeyBuf],ax
+        mov     word ptr cs:[kKeyBufWrite],di
+        mov     ax,bp
+        jmp     short f0B9C_0BEE
+f0B9C_0BEC:
+        xor     ax,ax
+f0B9C_0BEE:
+        or      ax,ax
         ret
-_f1AAD_0B9C ENDP
+_QueueMouseEvent ENDP
 
-        PUBLIC  _f1AAD_0BF1              ; @ 1AAD:0BF1 stub
-_f1AAD_0BF1 PROC NEAR
+; 1AAD:0BF1: set the held-down bit for the key code in AX to the mask BL (0 for a key-up), folding
+; it into the bitmap kKeyDownBits at kKeyDownBits+(key>>3), and return the bit's old state in CL.
+; A near helper of 1AAD:0B0E.
+        PUBLIC  _SetKeyDownBit          ; @ 1AAD:0BF1
+_SetKeyDownBit PROC NEAR
+        mov     di,ax
+        shr     di,1
+        shr     di,1
+        shr     di,1
+        mov     cl,al
+        and     cl,7
+        shl     bl,cl
+        shl     bh,cl
+        not     bh
+        mov     cl,byte ptr cs:[di+kKeyDownBits]
+        and     cl,bl
+        and     byte ptr cs:[di+kKeyDownBits],bh
+        or      byte ptr cs:[di+kKeyDownBits],bl
         ret
-_f1AAD_0BF1 ENDP
+_SetKeyDownBit ENDP
+kMouseButtons   db 00h          ; 1AAD:0C16: mouse button state last handled by 1AAD:0B0E
 
-        PUBLIC  _ProcessKeyEvent         ; @ 1AAD:0C17 stub
+; 1AAD:0C17: the recorded-input event handler, called after an event is taken from the ring
+; (1AAD:053A/0588/05D3). In state 0 (ds:80EC = 0) it does nothing. In state 1 it writes the last
+; decoded key (ds:80EF) and the pacing count (ds:8488) to the file handle g80ED through
+; 1C0E:0578 (4 bytes), and for a mouse key (41h..44h) writes ds:80F3/ds:80F5 instead, then clears
+; the count. In state 2 it reads 4 bytes through FileRead into kRecKeyD1E/kRecCountD20; on success
+; it copies them to ds:80EF/ds:80F1 and, for a mouse key, reads 4 more bytes into kRecXD22/kRecYD24
+; and copies them to ds:80F3/ds:80F5 and gCursorX/gCursorY (setting ds:8136). A failed read sets
+; ds:80F7. Purpose unknown: the exact file format and why state 2 reads rather than writes.
+        PUBLIC  _ProcessKeyEvent        ; @ 1AAD:0C17
 _ProcessKeyEvent PROC NEAR
+        push    ax
+        cmp     byte ptr [g80EC],0
+        jne     f0C17_0C22
+        jmp     f0C17_0D18
+f0C17_0C22:
+        mov     ax,[g80EF]
+        cmp     byte ptr [g80EC],1
+        jne     f0C17_0C91
+        mov     word ptr cs:[kRecKeyD1E],ax
+        mov     ax,[g8488]
+        mov     word ptr cs:[kRecCountD20],ax
+        push    word ptr cs:[kRecLenD1A+2]
+        push    word ptr cs:[kRecLenD1A]
+        push    cs
+        mov     ax,OFFSET kRecKeyD1E
+        push    ax
+        push    word ptr [g80ED]
+        call    far ptr _f1C0E_0578
+        add     sp,0Ah
+        mov     ax,word ptr cs:[kRecKeyD1E]
+        cmp     ax,41h
+        jb      f0C17_0C88
+        cmp     al,44h
+        ja      f0C17_0C88
+        mov     ax,[g80F3]
+        mov     word ptr cs:[kRecKeyD1E],ax
+        mov     ax,[g80F5]
+        mov     word ptr cs:[kRecCountD20],ax
+        push    word ptr cs:[kRecLenD1A+2]
+        push    word ptr cs:[kRecLenD1A]
+        push    cs
+        mov     ax,OFFSET kRecKeyD1E
+        push    ax
+        push    word ptr [g80ED]
+        call    far ptr _f1C0E_0578
+        add     sp,0Ah
+f0C17_0C88:
+        mov     word ptr [g8488],0
+f0C17_0C8E:
+        jmp     f0C17_0D18
+f0C17_0C91:
+        cmp     byte ptr [g80EC],2
+        jne     f0C17_0C8E
+        push    word ptr cs:[kRecLenD1A+2]
+        push    word ptr cs:[kRecLenD1A]
+        push    cs
+        mov     ax,OFFSET kRecKeyD1E
+        push    ax
+        push    word ptr [g80ED]
+        call    far ptr _FileRead
+        add     sp,0Ah
+        or      ax,ax
+        je      f0C17_0D12
+        mov     ax,word ptr cs:[kRecCountD20]
+        mov     [g80F1],ax
+        mov     ax,word ptr cs:[kRecKeyD1E]
+        mov     [g80EF],ax
+        cmp     ax,41h
+        jb      f0C17_0D0A
+        cmp     al,44h
+        ja      f0C17_0D0A
+        push    word ptr cs:[kRecLenD1A+2]
+        push    word ptr cs:[kRecLenD1A]
+        push    cs
+        mov     ax,OFFSET kRecKeyD1E
+        add     ax,4
+        push    ax
+        push    word ptr [g80ED]
+        call    far ptr _FileRead
+        add     sp,0Ah
+        or      ax,ax
+        je      f0C17_0D12
+        mov     ax,word ptr cs:[kRecXD22]
+        mov     [g80F3],ax
+        mov     [_gCursorX],ax
+        mov     ax,word ptr cs:[kRecYD24]
+        mov     [g80F5],ax
+        mov     [_gCursorY],ax
+        mov     word ptr [g8136],1
+f0C17_0D0A:
+        mov     word ptr [g8488],0
+        jmp     short f0C17_0D18
+f0C17_0D12:
+        mov     word ptr [g80F7],1
+f0C17_0D18:
+        pop     ax
         ret
 _ProcessKeyEvent ENDP
+kRecLenD1A      dd 4            ; 1AAD:0D1A: length for the recorded-input reads/writes (low word)
+kRecKeyD1E      dw 0000h        ; 1AAD:0D1E: key read from or written to the recording
+kRecCountD20    dw 0000h        ; 1AAD:0D20: count that goes with it
+kRecXD22        dw 0000h        ; 1AAD:0D22: mouse x read from the recording
+kRecYD24        dw 0000h        ; 1AAD:0D24: mouse y read from the recording
 
-        PUBLIC  _InjectRecordedKey       ; @ 1AAD:0D26 stub
+; 1AAD:0D26: inject the recorded key at the ring read index, called first by every reader
+; (1AAD:038E/0409/0471). In state 0 or 1 it returns at once; otherwise, unless ds:80F7 is set
+; (the recording ended), it writes ds:80EF at kKeyBuf+kKeyBufRead when the pacing count ds:8488
+; has reached ds:80F1, and 0 otherwise. Purpose unknown: how the injected value is consumed.
+        PUBLIC  _InjectRecordedKey      ; @ 1AAD:0D26
 _InjectRecordedKey PROC NEAR
+        cmp     byte ptr [g80EC],0
+        je      f0D26_0D58
+        cmp     byte ptr [g80EC],1
+        je      f0D26_0D58
+        cmp     word ptr [g80F7],0
+        jne     f0D26_0D49
+        mov     ax,[g80F1]
+        cmp     [g8488],ax
+        jb      f0D26_0D49
+        mov     ax,[g80EF]
+        jmp     short f0D26_0D4C
+f0D26_0D49:
+        mov     ax,0
+f0D26_0D4C:
+        push    di
+        mov     di,word ptr cs:[kKeyBufRead]
+        mov     word ptr cs:[di+kKeyBuf],ax
+        pop     di
+f0D26_0D58:
         ret
 _InjectRecordedKey ENDP
 

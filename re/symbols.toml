@@ -4688,6 +4688,8 @@ unit = "e1aad"
 addr = "1AAD:000C"
 size = 535
 evidence = ["segment"]
+level = "L2"
+notes = "not a function: bytes of the unit outside its functions (a marker or padding), matched with the whole unit"
 
 [[function]]
 id = "e1aad_0223"
@@ -4805,6 +4807,9 @@ unit = "e1aad"
 addr = "1AAD:09F6"
 size = 41
 evidence = ["far"]
+name = "_RemoveKeyboard"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1aad_0a1f"
@@ -4812,6 +4817,9 @@ unit = "e1aad"
 addr = "1AAD:0A1F"
 size = 239
 evidence = ["frame"]
+name = "_QueueInputEvent"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1aad_0b0e"
@@ -4819,6 +4827,9 @@ unit = "e1aad"
 addr = "1AAD:0B0E"
 size = 142
 evidence = ["far", "frame"]
+name = "_HandleMouseButtons"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1aad_0b9c"
@@ -4826,6 +4837,9 @@ unit = "e1aad"
 addr = "1AAD:0B9C"
 size = 85
 evidence = ["near"]
+name = "_QueueMouseEvent"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1aad_0bf1"
@@ -4833,6 +4847,9 @@ unit = "e1aad"
 addr = "1AAD:0BF1"
 size = 38
 evidence = ["near"]
+name = "_SetKeyDownBit"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1aad_0c17"
@@ -4840,6 +4857,9 @@ unit = "e1aad"
 addr = "1AAD:0C17"
 size = 271
 evidence = ["near"]
+name = "_ProcessKeyEvent"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1aad_0d26"
@@ -4847,6 +4867,9 @@ unit = "e1aad"
 addr = "1AAD:0D26"
 size = 51
 evidence = ["near"]
+name = "_InjectRecordedKey"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1b82_0009"
