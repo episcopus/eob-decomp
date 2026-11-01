@@ -1,0 +1,27 @@
+{
+ "stop": "script quit",
+ "instructions": 54871045,
+ "video_mode": "13h",
+ "digest": "c61c0bc7aa0723ffaccdc739adc946e4d8e0ecc08f721c973cb9f6f40fb7e6aa",
+ "final_image": "764ff9c9621e78e71cef8b96d9fd9ad560ecedd5e48caac741b96ad72815531e",
+ "script_done": true,
+ "sound_digest": "067d5a72eded678b68ed176c999ec709325fb017f97817592d7d34ae1f2a9ba5",
+ "adlib_writes": 0,
+ "checkpoints": [
+  {
+   "kind": "shot",
+   "name": "character-generation",
+   "instructions": 49268695,
+   "digest": "ee7498eb8746f68b5525706952034e77262337c2868c7e83d6f4bf774b2fb3a3",
+   "image": "96ca836073a680b79af4ccbf2939650abc68231227d39bd39f164691bd27e594"
+  },
+  {
+   "kind": "shot",
+   "name": "first-box",
+   "instructions": 54871045,
+   "digest": "c61c0bc7aa0723ffaccdc739adc946e4d8e0ecc08f721c973cb9f6f40fb7e6aa",
+   "image": "764ff9c9621e78e71cef8b96d9fd9ad560ecedd5e48caac741b96ad72815531e"
+  }
+ ],
+ "args": "3 4 1 homie 3"
+}

@@ -4,13 +4,14 @@
 PY ?= $(if $(wildcard .venv/bin/python),.venv/bin/python,python3)
 PROGRAMS := eob/EOB.EXE eob/INTRO.EXE eob/START1.EXE
 
-.PHONY: help setup doctor inputs overlays pak data emu2 test p0-check tc-install tc-check rtl-compare map match oracle-run
+.PHONY: help setup doctor inputs overlays pak data emu2 test p0-check tc-install tc-check rtl-compare map match oracle-run golden test-slow
 
 help:
 	@echo "Phase 0:  setup doctor inputs overlays pak emu2 test p0-check"
 	@echo "Toolchain: tc-install tc-check rtl-compare (docs/setup/SETUP-tc.md)"
 	@echo "Phase 1:  map match [FILE=src/E0CF7.C] [WRITE=1]"
-	@echo "Phase 2:  data oracle-run [INSNS=30000000] [ARGS='3 4 0 homie 3']"
+	@echo "Phase 2:  data oracle-run [INSNS=30000000] [ARGS='3 4 0 homie 3'] [SCRIPT=tests/sessions/x.keys]"
+	@echo "          golden [NAME=x] [CHECK=1] test-slow"
 	@echo "See AGENTS.md and docs/spec/SPEC.md."
 
 setup:            ## create .venv with the Python tools (uv)
@@ -55,11 +56,17 @@ match:            ## prove C and assembly units against EOB.EXE (FILE=src/X.C, d
 	@rc=0; for f in $(or $(FILE),$(wildcard src/*.C src/*.ASM)); do echo "== $$f"; \
 	  $(PY) tools/match/cmatch.py $$f $(if $(WRITE),--write) || rc=1; done; exit $$rc
 
-oracle-run:       ## run the original EOB.EXE in the oracle (build/oracle/run: summary.json, shots/final.png)
-	$(PY) tools/oracle/run.py --max-insns $(or $(INSNS),30000000) $(if $(ARGS),--args "$(ARGS)")
+oracle-run:       ## run the original EOB.EXE in the oracle (build/oracle/run: summary.json, shots/)
+	$(PY) tools/oracle/run.py --max-insns $(or $(INSNS),30000000) $(if $(ARGS),--args "$(ARGS)") $(if $(SCRIPT),--script $(SCRIPT))
 
-test:             ## Python tests
-	$(PY) -m pytest -q tests/unit
+golden:           ## record the golden sessions (NAME=x for one; CHECK=1 verifies instead)
+	$(PY) tools/oracle/golden.py $(if $(CHECK),--check) $(NAME)
+
+test:             ## Python tests (the fast set)
+	$(PY) -m pytest -q -m "not slow" tests/unit
+
+test-slow:        ## the tests that run the game: every golden session (about half a minute)
+	$(PY) -m pytest -q -m slow tests/unit
 
 p0-check: inputs overlays pak test  ## Phase 0 exit criteria (SPEC section 10)
 	@echo "p0-check: OK"

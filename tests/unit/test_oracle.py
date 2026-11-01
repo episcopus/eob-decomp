@@ -7,6 +7,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)
 sys.path.insert(0, os.path.join(ROOT, "tools"))
 
 
+@pytest.mark.slow
 def test_boot_to_title_is_deterministic(tmp_path):
     if not os.path.exists(os.path.join(ROOT, "eob", "EOB.EXE")):
         pytest.skip("eob/ not present")

@@ -1,0 +1,7 @@
+# boot-adlib: boot-title with AdLib sound: the game initialises the OPL2 (waveform select on, rhythm
+# off, every operator silent) and shows the title menu. The sound digest covers the register writes.
+option sound adlib
+option insns 40000000
+wait 600
+shot title
+quit

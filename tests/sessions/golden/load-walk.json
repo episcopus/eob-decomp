@@ -1,0 +1,41 @@
+{
+ "stop": "script quit",
+ "instructions": 66305211,
+ "video_mode": "13h",
+ "digest": "2c8855c225718f70f318f43bf72040dbbce28df0f0ca2bdb711e7b4d21fc03a0",
+ "final_image": "6a70917795b39b89ba7dae215946df794233c51a9b2f3a4d85b7782ea36fef1d",
+ "script_done": true,
+ "sound_digest": "391e5163570c6a2858bdb04f0e84347c57970789c109c5d052abe7b989c7b72b",
+ "adlib_writes": 5334,
+ "checkpoints": [
+  {
+   "kind": "shot",
+   "name": "dungeon",
+   "instructions": 58297092,
+   "digest": "63a83dd0e78a480292bb1a13ab7ba259b7247a1d9e59d015ee15dab0dbb4f9d7",
+   "image": "3c55a8180443128ab0ee39a35a6a0297d21160e661c315b400ac84eda4ed8fa5"
+  },
+  {
+   "kind": "shot",
+   "name": "blocked",
+   "instructions": 60208926,
+   "digest": "6258d65c45d55101877c87443c5b84a0138fa36e8ad6759ddcd7a10585ddaf83",
+   "image": "b1185d01717d34f8114b95dc36329735b82acfd4c7a3f59be98877d09b45ef05"
+  },
+  {
+   "kind": "shot",
+   "name": "walked",
+   "instructions": 64251357,
+   "digest": "de819fff55727b9b5d44f5d69d81ceeef7528d6532a685fd0a5310c776d62b8b",
+   "image": "449d4430cf1158b9e70c1f95d0815db5398b4020f9f593dddd124288abb1ae79"
+  },
+  {
+   "kind": "shot",
+   "name": "turned",
+   "instructions": 66305211,
+   "digest": "2c8855c225718f70f318f43bf72040dbbce28df0f0ca2bdb711e7b4d21fc03a0",
+   "image": "6a70917795b39b89ba7dae215946df794233c51a9b2f3a4d85b7782ea36fef1d"
+  }
+ ],
+ "args": "3 1 0 homie 3"
+}

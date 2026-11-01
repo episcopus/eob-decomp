@@ -1,0 +1,22 @@
+# load-walk: "Load game in progress" with the saved game in fixtures/ (four characters on level 1),
+# AdLib sound on (about 10,000 register writes). UP walks into rubble ("You can't go that way"); the
+# arrows move without turning: RIGHT steps one square sideways, UP is blocked again, LEFT steps back.
+option sound adlib
+option save fixtures/EOBDATA.SAV
+option insns 90000000
+wait 600
+key ENTER
+wait 500
+shot dungeon
+key UP
+wait 40
+shot blocked
+key RIGHT                # one square to the right
+wait 40
+key UP                   # blocked again
+wait 40
+shot walked
+key LEFT                 # back in front of the rubble
+wait 40
+shot turned
+quit

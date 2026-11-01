@@ -43,8 +43,10 @@ You are working on a **matching decompilation of Westwood's Eye of the Beholder 
 | `make map` | Enumerate functions; write `re/units.toml` and `re/symbols.toml` (playbook 10) |
 | `make match [FILE=src/X.C] [WRITE=1]` | Prove C and assembly units against `EOB.EXE`; `WRITE=1` records L2 (playbook 30) |
 | `make data` | Decode every data file of the PAKs (whitepaper 4) |
-| `make oracle-run [INSNS=] [ARGS=]` | Run the original `EOB.EXE` in the emulator (playbook 25) |
-| `make test` | Python tests |
+| `make oracle-run [INSNS=] [ARGS=] [SCRIPT=]` | Run the original `EOB.EXE` in the emulator (playbook 25) |
+| `make golden [NAME=] [CHECK=1]` | Record or verify the golden sessions in `tests/sessions/` |
+| `make test-slow` | The tests that run the game (every golden) |
+| `make test` | Python tests (the fast set) |
 | `make p0-check` | Phase 0 exit criteria |
 
 ## Playbooks

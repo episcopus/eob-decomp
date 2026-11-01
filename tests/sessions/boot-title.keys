@@ -1,0 +1,12 @@
+# boot-title: EOB.EXE from start to its title menu (VGA, no sound, no mouse), then down to
+# "Start a new party" and back. The menu is up after about 30 million instructions (550 ticks).
+option insns 40000000
+wait 600
+shot title
+key DOWN
+wait 10
+shot menu-new-party
+key UP
+wait 10
+digest menu-load
+quit

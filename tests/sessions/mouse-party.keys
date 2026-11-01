@@ -1,0 +1,14 @@
+# mouse-party: with a mouse, click "Start a new party" on the title menu, then the first
+# character box of Character Generation.
+option mouse
+option insns 70000000
+wait 600
+mouse 160 100
+wait 5
+click 160 177
+wait 300
+shot character-generation
+click 40 75
+wait 100
+shot first-box
+quit

@@ -37,6 +37,7 @@ STUB_SEG, STUB_OFF0 = 0xF000, 0x1000
 ROM_INT8 = (0xF000, 0x2000)       # real x86 code for the default timer interrupt
 ROM_IRQ_EOI = (0xF000, 0x2040)    # default handler for IRQ1..7: EOI + IRET
 ROM_IRET = (0xF000, 0x0000)       # generic IRET
+ROM_MOUSE = (0xF000, 0x3000)      # mouse event trampoline (see input.py); its data at F000:3080
 
 FLAG_CF, FLAG_ZF, FLAG_IF, FLAG_TF, FLAG_DF = 0x0001, 0x0040, 0x0200, 0x0100, 0x0400
 # A timer interrupt that stays pending this long was never delivered: the guest is spinning with
@@ -135,6 +136,16 @@ class Machine:
         self.tandy_log = []                # (time, byte) every write to the Tandy sound chip (port C0h)
         self.port_log_unhandled: dict = {}
 
+        # --- keyboard controller (port 60h, IRQ1) and mouse events (input.py) ----------
+        from collections import deque
+        self.kbd_queue = deque()           # scancodes waiting to be sent, one IRQ1 each
+        self.kbd_data = None               # the byte port 60h returns
+        self.irq1_pending = False
+        self.irq1_in_service = False
+        self.mouse = None                  # input.Mouse when a driver is installed
+        self.mouse_busy = False            # a mouse event handler is running
+
+        self.port_handlers: dict[int, tuple] = {}   # port -> (read(port, size), write(port, size, val)): devices
         self.services: dict[int, callable] = {}
         self.routine_hooks: dict[int, callable] = {}
         self.breakpoints: dict[int, list] = {}     # linear address -> callbacks (add_breakpoint)
@@ -331,6 +342,8 @@ class Machine:
         self.deliver_interrupt(n)
 
     def _on_stub(self, uc, addr, size, _ud) -> None:
+        if (addr - STUB_BASE) % 4:
+            return                         # a stub's second instruction (input.py: NOP; IRET for INT 33h)
         n = (addr - STUB_BASE) // 4
         self.service_counts[n] = self.service_counts.get(n, 0) + 1
         fn = self.services.get(n)
@@ -360,6 +373,8 @@ class Machine:
         self.port_write(port, size, val)
 
     def port_read(self, port: int, size: int) -> int:
+        if port in self.port_handlers:
+            return self.port_handlers[port][0](port, size)
         if 0x3B0 <= port <= 0x3DF:
             return self.ega.port_read(port, size)
         if port == 0x40:
@@ -367,7 +382,7 @@ class Machine:
         if port == 0x42:
             return (self.now() // 5) & 0xFF
         if port == 0x60:
-            return self.bios.kbd_port60()
+            return self.kbd_data if self.kbd_data is not None else self.bios.kbd_port60()
         if port == 0x61:
             return self.port61
         if port == 0x21:
@@ -379,11 +394,16 @@ class Machine:
         return self._unhandled_port("in", port, size, 0xFF if size == 1 else 0xFFFF)
 
     def port_write(self, port: int, size: int, val: int) -> None:
+        if port in self.port_handlers:
+            return self.port_handlers[port][1](port, size, val)
         if 0x3B0 <= port <= 0x3DF:
             self.ega.port_write(port, size, val)
         elif port == 0x20:
-            if val & 0xE0 == 0x20:                     # EOI
-                self.irq0_in_service = False
+            if val & 0xE0 == 0x20:                     # EOI: the highest priority request in service
+                if self.irq0_in_service:
+                    self.irq0_in_service = False
+                else:
+                    self.irq1_in_service = False
         elif port == 0x21:
             self.pic_mask = val & 0xFF
         elif port == 0x43:
@@ -495,6 +515,27 @@ class Machine:
         self.irq0_in_service = True
         self.deliver_interrupt(0x08)
 
+    def _try_deliver_irq1(self) -> None:
+        """The keyboard: one scancode per IRQ1, below the timer in priority."""
+        if not self.irq1_pending and not self.irq1_in_service and self.kbd_queue:
+            self.kbd_data = self.kbd_queue.popleft()
+            self.irq1_pending = True
+        if not self.irq1_pending or self.irq1_in_service or self.irq0_in_service or (self.pic_mask & 2):
+            return
+        if not (self.get("flags") & FLAG_IF):
+            return
+        self.irq1_pending = False
+        self.irq1_in_service = True
+        self.deliver_interrupt(0x09)
+
+    def _try_deliver_mouse(self) -> None:
+        if self.mouse is None or self.mouse_busy or self.irq0_in_service or self.irq1_in_service:
+            return
+        if not (self.get("flags") & FLAG_IF):
+            return
+        if self.mouse.deliver(self):
+            self.mouse_busy = True
+
     def run(self, max_insns: int = 50_000_000, on_chunk=None) -> str:
         """Run until the program exits, a hook raises Stop, or max_insns more instructions executed.
         Returns the stop reason."""
@@ -513,11 +554,14 @@ class Machine:
                     self.irq0_owed -= 1                  # replay: raised as the recording's reads say
                     self._raise_irq0()
                 self._try_deliver_irq0()
+                self._try_deliver_irq1()
+                self._try_deliver_mouse()
                 if self.irq0_pending and self.insns - self._pending_since > STALL_INSNS:
                     raise OracleError("stalled: a timer interrupt has been pending for %d instructions with "
                                       "interrupts off, at %04X:%04X (a read that can never be answered?)" % (
                                           self.insns - self._pending_since, self.get("cs"), self.get("ip")))
-                if self.irq0_pending:
+                if self.irq0_pending or self.irq1_pending or self.kbd_queue or (
+                        self.mouse is not None and self.mouse.events):
                     chunk = 100                      # waiting for IF; look again soon
                 elif self.irq0_owed is not None:
                     chunk = 50_000                   # replay: no clock event to stop at

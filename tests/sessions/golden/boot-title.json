@@ -1,0 +1,33 @@
+{
+ "stop": "script quit",
+ "instructions": 33923200,
+ "video_mode": "13h",
+ "digest": "a1d4f6da9297221a989ac000fdb9f7bab06a2c88e1091099b36d75a2e5cd05ef",
+ "final_image": "8febf5f0ef28452b4c49afe82096451715a6864f96554e0e75fb9d99bcf09959",
+ "script_done": true,
+ "sound_digest": "1def66fb1d1bd4c281fd1581368d24032ff3db97a66b9fd2b9fbd36451f626d6",
+ "adlib_writes": 0,
+ "checkpoints": [
+  {
+   "kind": "shot",
+   "name": "title",
+   "instructions": 32605000,
+   "digest": "533f5faa9845c5e943f1ca07eeeaa4036e84cecc41e1719baa996469a8dfb5d7",
+   "image": "8febf5f0ef28452b4c49afe82096451715a6864f96554e0e75fb9d99bcf09959"
+  },
+  {
+   "kind": "shot",
+   "name": "menu-new-party",
+   "instructions": 33264100,
+   "digest": "c2789ba666fb01461d39c8dcabe643597c4d0f314c7b50e9b6b27cfc56c11386",
+   "image": "02ea8f81efc25bb3e46aeb53cba988d47fb98c948d768c6189eaccbfcd703b1b"
+  },
+  {
+   "kind": "digest",
+   "name": "menu-load",
+   "instructions": 33923200,
+   "digest": "a1d4f6da9297221a989ac000fdb9f7bab06a2c88e1091099b36d75a2e5cd05ef"
+  }
+ ],
+ "args": "3 4 0 homie 3"
+}

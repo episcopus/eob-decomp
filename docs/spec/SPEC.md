@@ -148,7 +148,7 @@ As poolrad's SPEC section 9 (roles, packets, locks, worktrees, integrator, revie
 |---|---|---|
 | P0 Bootstrap | Pinned inputs, environment check, overlay and segment manifest, PAK reader | `make doctor` and `make p0-check` pass. Done 2026-10-31 |
 | P1 Map and toolchain | Done 2026-10-31. Turbo C++ release pinned by runtime comparison (1.00), compiler switches and memory model, `re/units.toml` (module per code segment), function enumeration, runtime library identified, assembly modules flagged, patch sites found, the go/no-go spike | spike passes; `make p1-check` |
-| P2 Oracle and data | Unicorn PC with VGA, mouse, AdLib, timer; goldens; codecs for CPS, CMP, VCN/VMP, MAZ, INF, DAT | goldens repeatable; codec round trips. Started 2026-10-31: `make data` decodes 162 of 182 files; `make oracle-run` boots EOB.EXE to its title menu, deterministically (poolrad's machine, plus VGA mode 13h and the DAC, DOS load-overlay, no mouse) |
+| P2 Oracle and data | Unicorn PC with VGA, mouse, AdLib, timer; goldens; codecs for CPS, CMP, VCN/VMP, MAZ, INF, DAT | goldens repeatable; codec round trips. Started 2026-10-31: `make data` decodes 162 of 182 files; `make oracle-run` boots EOB.EXE to its title menu, deterministically (poolrad's machine, plus VGA mode 13h and the DAC, DOS load-overlay); keyboard (IRQ1), mouse (INT 33h events) and AdLib modelled; 5 golden sessions (`make golden CHECK=1`), up to walking in the dungeon of a saved game |
 | P3 Match harness | `make match` for C modules and TASM modules (done 2026-10-31, section 4.2); the agent process (from poolrad: claims, workers, integration, review) | negative fixtures rejected |
 | P4 Match | every function at L2 | status |
 | P5 Rebuild | identical programs | `make rebuild`, goldens on the rebuild |

@@ -1,0 +1,20 @@
+{
+ "stop": "script quit",
+ "instructions": 49662090,
+ "video_mode": "13h",
+ "digest": "48f33ce0a413af554e39762716856f345ba21bed0a0eabcf5e4af9f34895406b",
+ "final_image": "bc280727f7f05e1748aaef383eb04eca96bd46edffb5582ce94ba0b03d0a5338",
+ "script_done": true,
+ "sound_digest": "1def66fb1d1bd4c281fd1581368d24032ff3db97a66b9fd2b9fbd36451f626d6",
+ "adlib_writes": 0,
+ "checkpoints": [
+  {
+   "kind": "shot",
+   "name": "character-generation",
+   "instructions": 49662090,
+   "digest": "48f33ce0a413af554e39762716856f345ba21bed0a0eabcf5e4af9f34895406b",
+   "image": "bc280727f7f05e1748aaef383eb04eca96bd46edffb5582ce94ba0b03d0a5338"
+  }
+ ],
+ "args": "3 4 0 homie 3"
+}

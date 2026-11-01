@@ -116,6 +116,14 @@ The padding between records is 0 to 42 bytes in `EOB.EXE` and 169 bytes after `I
 
 Without enough memory `main` prints "Not enough memory to run program." through `PrintString` (19EA:0000, `src/E19EA.ASM`).
 
+### 2.7 Input and sound
+
+- **Keyboard: the game's own INT 9 handler.** `EOB.EXE` never calls INT 16h; its handler (assembly unit `e1aad`) reads scancodes from port 60h (1AAD:080C) and acknowledges the interrupt controller itself. It buffers keys: keys typed before the title menu exists are applied once it does (oracle, `tests/sessions/boot-title.keys`).
+- **Mouse: an INT 33h event handler.** The game (1A72:0106) looks at the INT 33h vector and decides there is no driver if it is null or points at an `IRET`; otherwise it resets the driver (function 0, expects FFFFh), reads the position (function 3) and treats x above A0h as a 640-wide range (doubling its own x), sets the position (4), installs a handler at 1A72:017A for moves and both buttons (function 0Ch, mask 1Fh) and shows the pointer (1). The game draws its own pointer.
+- **Arrow keys move without turning**: UP forward, LEFT and RIGHT one square sideways (`tests/sessions/load-walk.keys`).
+- **AdLib**: with sound '1' the game does not detect the card; it sets waveform select (register 01h = 20h), clears the CSM and rhythm registers and puts every operator at full attenuation (40h to 55h = 3Fh): 21 writes before the title menu. In the dungeon it makes about 10,000 register writes in 25 seconds of play.
+- **Saved game**: "Load game in progress" reads `EOBDATA.SAV` and writes `LEVELS.TMP` (the levels visited, kept while playing).
+
 **In the oracle** (`make oracle-run`, `tools/oracle/run.py`, arguments `3 4 0 homie 3`), `EOB.EXE` sets mode 13h, loads `MCGA.OVL`, both fonts and four PAKs, runs the overlay manager, and shows its title menu ("Load game in progress", "Start a new party", "Exit to DOS") after 30 million instructions; two runs end in the same state digest (`tests/unit/test_oracle.py`).
 
 ## 4. Data files

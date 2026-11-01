@@ -1,0 +1,9 @@
+# new-party: from the title menu, "Start a new party" opens Character Generation.
+option insns 60000000
+wait 600
+key DOWN
+wait 10
+key ENTER
+wait 300
+shot character-generation
+quit

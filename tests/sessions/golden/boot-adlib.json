@@ -1,0 +1,20 @@
+{
+ "stop": "script quit",
+ "instructions": 32544403,
+ "video_mode": "13h",
+ "digest": "7b5e2b37249dba519515b50b600a2785ba0221466b9a5f889c3e67c48506d046",
+ "final_image": "8febf5f0ef28452b4c49afe82096451715a6864f96554e0e75fb9d99bcf09959",
+ "script_done": true,
+ "sound_digest": "59337d5507bf6abc4de7dbaff3220ddd2f737425dd10c3f6725b5c7fc7ba6adf",
+ "adlib_writes": 21,
+ "checkpoints": [
+  {
+   "kind": "shot",
+   "name": "title",
+   "instructions": 32544403,
+   "digest": "7b5e2b37249dba519515b50b600a2785ba0221466b9a5f889c3e67c48506d046",
+   "image": "8febf5f0ef28452b4c49afe82096451715a6864f96554e0e75fb9d99bcf09959"
+  }
+ ],
+ "args": "3 1 0 homie 3"
+}
