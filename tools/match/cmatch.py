@@ -9,6 +9,9 @@ of the declaration or definition (`;` comments in assembly):
                                                         is called through its stub entry, 2106:002A)
     /*@ 0CF7:0007 */ void ListInit(...)                a function of this unit
     /*@ ovl6:0123 */ void f(...)                       a function of overlay 6 (offset in its code)
+    extern unsigned char far gReg; /*@ 0000:3B36 */    a far object in another segment (data in an
+                                                        assembly unit's code segment): mov ax,seg gReg
+                                                        then es:[gReg]; EXTRN _gReg:BYTE in assembly
     /*@ 08E6:00C3 stub */ void f00C3(...) {}           a sibling not decompiled yet (called near by
                                                         the functions of this file; not compared)
     /*@ 0ACD:091C draft */ void f(...)                 written but not matching yet: compared and
@@ -29,7 +32,9 @@ changes whatever the segment alignment). Over each function, byte by byte:
                         file (same text)
       moved by little   an offset into this unit's own code (jump tables, labels): the same
                         distance from the function's start
-      relocation        DGROUP, this unit's segment, or the segment of the far pointer before it
+      relocation        DGROUP, this unit's segment, the segment of the far pointer before it, or
+                        the segment of a far object (its own stub segment FAR_SSSS)
+      moved by 111h+    from FAR_BASE up: the offset of a far object (same name, same offset in it)
   - a near call (E8) reaches the function of this file with the same name;
   - a far pointer (offset word, then a relocated segment word) to a function names it: an
     annotated function, or a runtime library function, located in the original through
@@ -65,6 +70,8 @@ PAD_CODE = 0x113  # code pad: with byte or word alignment the unit's offset in i
 # ---------------------------------------------------------------- the source
 
 DRAFTS: set = set()
+FARDATA: set = set()   # externs annotated seg:off that are data, not functions: far objects in another segment
+FAR_BASE = 0x8000      # their offsets in our stub start here, apart from anything in DGROUP
 
 
 def parse_annotations(src: str, asm: bool = False) -> tuple[dict, dict, set, set]:
@@ -73,6 +80,7 @@ def parse_annotations(src: str, asm: bool = False) -> tuple[dict, dict, set, set
     Functions marked `draft` (written, not matching yet) go to DRAFTS: compared, not failures."""
     funcs, data, defined, stubs = {}, {}, set(), set()
     DRAFTS.clear()
+    FARDATA.clear()
     for line in src.splitlines():
         m = ANNOT.search(line)
         if not m:
@@ -94,6 +102,11 @@ def parse_annotations(src: str, asm: bool = False) -> tuple[dict, dict, set, set
             continue
         seg, off = addr.split(":")
         funcs[name] = (seg.lower(), int(off, 16)) if seg.lower().startswith("ovl") else (int(seg, 16), int(off, 16))
+        if not is_def and not seg.lower().startswith("ovl"):
+            # far data: `extern unsigned char far gX; /*@ 0000:3B36 */`, `EXTRN _gX:BYTE ; @ 0000:3B36`
+            if (asm and re.search(r":\s*(BYTE|WORD|DWORD)\b", decl, re.I)) or (
+                    not asm and not re.search(r"\b%s\s*\(" % re.escape(name), decl) and not fp):
+                FARDATA.add(name)
         if is_def:
             defined.add(name)
             if m.group(2) and m.group(2).strip() == "stub":
@@ -114,8 +127,19 @@ def stub_source(funcs: dict, data: dict, defined: set, pad: bool, cname: bool = 
     out.append(".CODE")
     if pad:
         out.append("padc db %d dup (90h)" % PAD_CODE)
-    for n in sorted(set(funcs) - defined):
+    for n in sorted(set(funcs) - defined - FARDATA):
         out += ["PUBLIC %s" % sym(n), "%s PROC FAR" % sym(n), "ret", "%s ENDP" % sym(n)]
+    # far data: one segment per original segment (FAR_SSSS), the objects at offsets that are unique
+    # across them (FAR_BASE + 256 * i); the pad build moves them by PAD, as it moves DGROUP
+    i = 0
+    for seg in sorted({funcs[n][0] for n in FARDATA}):
+        out.append("FAR_%04X SEGMENT PARA PUBLIC 'FAR_DATA'" % seg)
+        names = sorted(n for n in FARDATA if funcs[n][0] == seg)
+        out.append("db %d dup (0)" % (FAR_BASE + 256 * i + (PAD if pad else 0)))
+        for n in names:
+            out += ["PUBLIC %s" % sym(n), "%s db 256 dup (0)" % sym(n)]
+            i += 1
+        out.append("FAR_%04X ENDS" % seg)
     out += ["PUBLIC _main", "_main PROC FAR", "xor ax,ax", "ret", "_main ENDP", "END"]
     return "\r\n".join(out) + "\r\n"
 
@@ -130,6 +154,7 @@ class Build:
         self.image = mz["image"]
         self.relocs = {s * 16 + o for o, s in mz["relocs"]}
         self.publics, self.dgroup, self.unit, self.lits = {}, None, None, (0, 0)
+        self.far_frames: dict[int, int] = {}       # frame of a FAR_SSSS stub segment -> SSSS
         for line in (w / exe.replace(".EXE", ".MAP")).read_text("latin-1").splitlines():
             m = re.match(r"\s*([0-9A-F]{4}):([0-9A-F]{4}) ([0-9A-F]{4}) C=(\w+)\s+S=(\S+)\s+G=(\S+)\s+M=(\S+)", line)
             if m:
@@ -137,6 +162,8 @@ class Build:
                 cls, seg, grp, mod = m.group(4), m.group(5), m.group(6), m.group(7).upper()
                 if grp == "DGROUP" and self.dgroup is None:
                     self.dgroup = frame
+                if re.fullmatch(r"FAR_[0-9A-F]{4}", seg):
+                    self.far_frames[frame] = int(seg[4:], 16)
                 if cls == "CODE" and mod.startswith("U."):
                     self.unit = (frame, off, ln)
                 if mod.startswith("U.") and seg == "_DATA":
@@ -227,6 +254,12 @@ def compare(fname, a: Build, b: Build, at_a: int, at_b: int, length: int, orig: 
     uob = b.unit[1]
     data_a = {a.name(n): (a.publics[a.name(n)] - a.dgroup * 16, d) for n, d in data.items() if a.name(n)}
     func_of = {a.name(n): n for n in funcs if a.name(n)}
+    far_a = {}                                       # offset in its stub segment -> (name, original seg:off)
+    for n in FARDATA:
+        if a.name(n):
+            lin = a.publics[a.name(n)]
+            frame = max(f for f in a.far_frames if f * 16 <= lin)
+            far_a[lin - frame * 16] = (n, funcs[n])
 
     def fail(k, what):
         return why(fname, k, what, a, at_a, orig, at_o)
@@ -278,6 +311,8 @@ def compare(fname, a: Build, b: Build, at_a: int, at_b: int, length: int, orig: 
                 want = orig.dgroup
             elif va == ufa:
                 want = unit_frame
+            elif va in a.far_frames:                 # the segment of a far object (FARDATA)
+                want = a.far_frames[va]
             else:
                 return fail(k, "segment word %04X not explained" % va)
             if want is not None and vo != want:
@@ -300,6 +335,11 @@ def compare(fname, a: Build, b: Build, at_a: int, at_b: int, length: int, orig: 
             elif a.lits[0] <= va < a.lits[1]:
                 if a.cstr(va) != orig.cstr(vo):
                     return fail(k, "literal %r, original %r" % (a.cstr(va), orig.cstr(vo)))
+            elif va >= FAR_BASE and far_a and max((o for o in far_a if o <= va), default=-1) >= va - 255:
+                o = max(o for o in far_a if o <= va)
+                n, (seg, off) = far_a[o]
+                if vo != (off + va - o) & 0xFFFF:
+                    return fail(k, "%s+%d is %04X:%04X, original offset %04X" % (n, va - o, seg, off + va - o, vo))
             else:
                 return fail(k, "address %04X not explained" % va)
         elif delta == (uob - uoa) & 0xFFFF:  # an offset into this unit's code: compared from the function start
@@ -355,8 +395,28 @@ def unit_of(path: Path, unit: str | None = None) -> dict | None:
     return next((u for u in units if u["id"] == (unit or path.stem).lower()), None)
 
 
-def write_levels(names_by_addr: dict, flags: str) -> int:
-    """Set name, level = "L2" and match_flags on the registry entries of matched functions."""
+def gaps_match(A, B, orig, covered: list, u: dict) -> bool:
+    """The unit's bytes outside its functions (a start marker, padding, data between them) equal
+    the original's, and do not move between our two links."""
+    frame, off = (int(x, 16) for x in u["start"].split(":"))
+    ours, theirs = A.unit[0] * 16 + A.unit[1], frame * 16 + off
+    inside = set()
+    for at, n in covered:
+        inside.update(range(at - ours, at - ours + n))
+    shift = (B.unit[0] * 16 + B.unit[1]) - ours
+    for k in range(A.unit[2]):
+        if k in inside:
+            continue
+        if A.image[ours + k] != B.image[ours + shift + k] or A.image[ours + k] != orig.image[theirs + k]:
+            return False
+    return True
+
+
+def write_levels(names_by_addr: dict, flags: str, whole_unit: str | None = None) -> int:
+    """Set name, level = "L2" and match_flags on the registry entries of matched functions. When the
+    whole unit matched (every function, and the bytes between them), its entries that are not
+    functions of the source (a start marker, padding the map took for a function) get L2 too, with
+    a note."""
     p = ROOT / "re" / "symbols.toml"
     blocks = p.read_text().split("[[function]]\n")
     n = 0
@@ -368,6 +428,11 @@ def write_levels(names_by_addr: dict, flags: str) -> int:
         key = (s.lower() if s.lower().startswith("ovl") else int(s, 16), int(m.group(2), 16))
         name = names_by_addr.get(key)
         if not name:
+            if whole_unit and re.search(r'^unit = "%s"$' % re.escape(whole_unit), b, re.M) \
+                    and not re.search(r'^level = ', b, re.M):
+                blocks[i] = b.rstrip("\n") + '\nlevel = "L2"\nnotes = "not a function: bytes of the unit outside its ' \
+                    'functions (a marker or padding), matched with the whole unit"\n\n'
+                n += 1
             continue
         b = re.sub(r'^(name|level|match_flags) = .*\n', "", b, flags=re.M)
         blocks[i] = b.rstrip("\n") + '\nname = "%s"\nlevel = "L2"\nmatch_flags = "%s"\n\n' % (name, flags)
@@ -414,7 +479,7 @@ def main() -> int:
         unit_frame, unit_base = (int(x, 16) for x in u["start"].split(":"))
     ours_end = A.unit[0] * 16 + A.unit[1] + A.unit[2]
     starts = sorted(A.publics[A.name(n)] for n in defined if A.name(n))
-    bad, matched = 0, []
+    bad, matched, covered = 0, [], []
     for n in sorted(defined - stubs, key=lambda n: A.publics.get(A.name(n) or "", 1 << 30)):
         pub = A.name(n)
         if not pub:
@@ -426,6 +491,7 @@ def main() -> int:
         seg, off = funcs[n]
         at_o = off if isinstance(seg, str) else seg * 16 + off
         err = compare(n, A, B, at_a, at_b, length, orig, at_o, unit_frame, unit_base, funcs, data)
+        covered.append((at_a, length))
         if a.show == n:
             side_by_side(A, at_a, length, orig, at_o)
         if err and n in DRAFTS:
@@ -436,14 +502,17 @@ def main() -> int:
         if not err:
             matched.append(n)
     drafts = sum(1 for n in DRAFTS if n not in matched)
+    whole = False
     if u and not bad and not stubs and not drafts:
+        whole = A.unit[2] == u["bytes"] and ovl is None and gaps_match(A, B, orig, covered, u)
         print("unit %s %s: ours %d bytes, the unit %d" % (
-            u["id"], "complete" if A.unit[2] == u["bytes"] else "not complete", A.unit[2], u["bytes"]))
+            u["id"], "complete" if whole else "not complete", A.unit[2], u["bytes"]))
     print("cmatch: %d of %d functions match%s%s" % (
         len(defined - stubs) - bad - drafts, len(defined - stubs),
         ", %d drafts" % drafts if drafts else "", ", %d stubs" % len(stubs) if stubs else ""))
     if a.write and program.name.upper() == "EOB.EXE":
-        n = write_levels({funcs[k]: k for k in matched}, "tasm /mx" if asm else " ".join(flags))
+        n = write_levels({funcs[k]: k for k in matched}, "tasm /mx" if asm else " ".join(flags),
+                         u["id"] if whole else None)
         print("cmatch: recorded L2 for %d functions in re/symbols.toml" % n)
     return 1 if bad else 0
 

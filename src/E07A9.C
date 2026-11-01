@@ -33,9 +33,9 @@ extern void far *gDF48; /*@ ds:DF48 */
 extern void far *gNamesDDE4[]; /*@ ds:DDE4 */
 
 extern void far *MemAlloc(unsigned long size, int flags); /*@ 19BC:0007 */
-extern void far *ObjAlloc(int kind); /*@ 19EC:0002 */
+extern void far *f19EC_0002(int kind); /*@ 19EC:0002 */
 extern void f177D_000A(void); /*@ 177D:000A */
-extern void f1B82_0217(int a, unsigned b); /*@ 1B82:0217 */
+extern void SetUnpackBuffer(int a, unsigned b); /*@ 1B82:0217 */
 extern void Ovl2Entry2(void); /*@ 2106:002A */
 extern void f1A47_0169(void far *p); /*@ 1A47:0169 */
 extern void Ovl2Entry8(void); /*@ 2106:0048 */
@@ -57,11 +57,11 @@ extern void f1BB1_0002(int a, int b, void far *name); /*@ 1BB1:0002 */
     gBufDCAC = MemAlloc(120L, 0);
     gBufDCFC = MemAlloc(4096L, 0);
     gBufF534 = MemAlloc(1600L, 0);
-    gObjDCA6 = ObjAlloc(7);
-    gObjDF4E = ObjAlloc(5);
-    gObjEFC2 = ObjAlloc(3);
+    gObjDCA6 = f19EC_0002(7);
+    gObjDF4E = f19EC_0002(5);
+    gObjEFC2 = f19EC_0002(3);
     f177D_000A();
-    f1B82_0217(gFC1A, 0xFC00);
+    SetUnpackBuffer(gFC1A, 0xFC00);
     g810E = 0;
     Ovl2Entry2();
     f1A47_0169(gA9C0);

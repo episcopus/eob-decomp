@@ -52,6 +52,7 @@ You are working on a **matching decompilation of Westwood's Eye of the Beholder 
 | `make check` | Everything a merge must pass: inputs, fast tests, match-gate, slow tests (`make integrate` runs it) |
 | `make progress`, `make next [REVIEW=1]`, `make queue [WRITE=1]` | Where things stand; what to take next; the claim order (`work/queue.toml`) |
 | `make claim AGENT= [UNIT=] [REVIEW=1] [TASK=]` | Lock a unit and get its worktree `../eob-worktrees/<key>` (playbooks 30, 70) |
+| `make rename OLD= NEW= WHY=`, `make readability [UNIT=]` | One name per address, everywhere, with its evidence; the naming and comment rules (`docs/process/READABILITY.md`) |
 | `make packet UNIT=`, `make skeleton UNIT=` | Everything to start a unit (`build/packets/<id>.md`); its source file with every function a stub |
 | `make handoff AGENT= UNIT= STATE= NOTE=` | From your worktree: the branch is ready, or a question for the human (`STATE=escalate`) |
 | `make review-pass UNIT= AGENT=` | Record a passed review (playbook 70) |

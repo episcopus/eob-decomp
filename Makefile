@@ -6,7 +6,7 @@ PROGRAMS := eob/EOB.EXE eob/INTRO.EXE eob/START1.EXE
 
 .PHONY: help setup doctor inputs overlays pak data emu2 test p0-check tc-install tc-check rtl-compare map match oracle-run golden test-slow \
 	match-gate check queue next claim locks unlock packet skeleton handoff handoffs handoff-done integrate review-pass worker progress \
-	start-run stop-run run-status run-add watch-agents smoke-agent
+	start-run stop-run run-status run-add watch-agents smoke-agent readability readability-gate rename
 
 help:
 	@echo "Phase 0:  setup doctor inputs overlays pak emu2 test p0-check"
@@ -14,7 +14,7 @@ help:
 	@echo "Phase 1:  map match [FILE=src/E0CF7.C] [WRITE=1]"
 	@echo "Phase 2:  data oracle-run [INSNS=30000000] [ARGS='3 4 0 homie 3'] [SCRIPT=tests/sessions/x.keys]"
 	@echo "          golden [NAME=x] [CHECK=1] test-slow"
-	@echo "Phase 3:  match-gate check progress queue next packet skeleton (playbook 30)"
+	@echo "Phase 3:  match-gate check progress queue next packet skeleton rename readability (playbook 30)"
 	@echo "          claim locks unlock handoff handoffs integrate handoff-done review-pass worker (playbooks 70, 90)"
 	@echo "          smoke-agent start-run watch-agents run-status run-add stop-run (work/roster.toml)"
 	@echo "See AGENTS.md and docs/spec/SPEC.md."
@@ -78,8 +78,17 @@ test-slow:        ## the tests that run the game: every golden session (about ha
 match-gate:       ## every src/ unit matches, every L2 function is still proven, every negative fixture is rejected
 	$(PY) tools/match/gate.py -v
 
-check: inputs test match-gate test-slow  ## everything a merge must pass (make integrate runs it)
+check: inputs test match-gate readability-gate test-slow  ## everything a merge must pass (make integrate runs it)
 	@echo "check: OK"
+
+readability:      ## the checkable naming and comment rules (docs/process/READABILITY.md): [UNIT=<id>] [BASELINE=1]
+	$(PY) tools/match/readability.py $(UNIT) $(if $(BASELINE),--baseline)
+
+readability-gate: ## fail on readability findings not in work/readability-baseline.txt (part of make check)
+	$(PY) tools/match/readability.py --gate
+
+rename:           ## give a function or global its real name everywhere: OLD=<name or address> NEW=<Name> WHY="<evidence>"; APPLY=1 re-applies the recorded renames
+	$(PY) tools/match/rename.py $(if $(APPLY),--apply)
 
 progress:         ## functions at L2, complete and reviewed units, claims and hand-offs
 	$(PY) tools/agent/progress.py
