@@ -44,6 +44,8 @@ def next_unit(tier: int = 1, max_attempts: int = 2) -> str | None:
             continue
         if common.unit_complete(uid, fs) and not common.open_must_fix(uid):
             continue
+        if common.unit_blocked(uid, fs) and not common.open_must_fix(uid):
+            continue                       # waits for the human (make watch-agents lists it)
         a = att.get(uid, {})
         t1 = a.get("1", 0) >= common.TIER1_ATTEMPTS
         if tier == 1 and not t1:
@@ -51,6 +53,11 @@ def next_unit(tier: int = 1, max_attempts: int = 2) -> str | None:
         if tier == 2 and t1 and a.get("2", 0) < max_attempts:
             return uid
     return None
+
+
+def blocked_units() -> list[str]:
+    fs = common.functions()
+    return [u for u in common.queue() if common.unit_blocked(u, fs)]
 
 
 def stuck(max_attempts: int = 2) -> list[str]:
