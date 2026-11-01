@@ -16,7 +16,8 @@ of the declaration or definition (`;` comments in assembly):
                                                         the functions of this file; not compared)
     /*@ 0ACD:091C draft */ void f(...)                 written but not matching yet: compared and
                                                         reported, not a failure, never L2
-    /*@flags -ml -O -Z -G */                          the file's switches (default: cflags)
+    /*@flags -ml -O -Z -G */                          the file's switches (default: cflags); -B: compiled
+                                                        through the assembler (TCC -S, then TASM /ml /jNOSMART)
     PUBLIC Blit ; @ 19EA:0000                          the same in assembly
 
 How it proves: the unit is compiled once (TCC with `cflags` of tools/re/tc_toolchain.toml, or TASM
@@ -71,7 +72,10 @@ PAD_CODE = 0x113  # code pad: with byte or word alignment the unit's offset in i
 
 DRAFTS: set = set()
 FARDATA: set = set()   # externs annotated seg:off that are data, not functions: far objects in another segment
-FAR_BASE = 0x8000      # their offsets in our stub start here, apart from anything in DGROUP
+FAR_BASE = 0x8000
+# -B: units compiled through the assembler. Their bytes come from TASM without SMART encoding: with
+# SMART, TASM 2.0 shortens `or bx,1` to 83 and changes other forms the original has (e14ef, e19ec)
+TASM_OPTS = ["/ml", "/jNOSMART"]      # their offsets in our stub start here, apart from anything in DGROUP
 
 
 def parse_annotations(src: str, asm: bool = False) -> tuple[dict, dict, set, set]:
@@ -191,9 +195,17 @@ def link(w: Path, release: str, flags: list, src_name: str, funcs, data, defined
     if asm:
         r = tc.run(tc.manifest()["pinned_asm"], "TASM", ["/mx", src_name], cwd=w)
     else:
-        r = tc.run(release, "TCC", ["-c", "-ID:\\INCLUDE"] + flags + [src_name], cwd=w)
+        if "-B" in flags:
+            # compiled through the assembler, as TCC -B does (inline asm forces it): TCC writes U.ASM
+            # (-S) and TASM assembles it; TCC cannot start TASM itself under emu2. TCC's own assembler
+            # merges identical jump tails that the original keeps (e14ef: four case tails)
+            r = tc.run(release, "TCC", ["-S", "-ID:\\INCLUDE"] + [f for f in flags if f != "-B"] + [src_name], cwd=w)
+            if (w / "U.ASM").exists():
+                r = tc.run(tc.manifest()["pinned_asm"], "TASM", TASM_OPTS + ["U.ASM"], cwd=w)
+        else:
+            r = tc.run(release, "TCC", ["-c", "-ID:\\INCLUDE"] + flags + [src_name], cwd=w)
     out = r.stdout.decode("latin-1")
-    failed = re.search(r"\*\*Error\*\*", out) if asm else re.search(r"^Error ", out, re.M)
+    failed = re.search(r"\*\*Error\*\*", out) if (asm or "-B" in flags) else re.search(r"^Error ", out, re.M)
     if not (w / "U.OBJ").exists() or failed:
         raise SystemExit(out)
     builds = []
