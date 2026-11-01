@@ -300,3 +300,19 @@ why = "the word ds:812E is a busy flag, not a lock: 1BB1:0008 and 1BF3:0080 test
 id = "ds:814A"
 name = "gMouseDisabled"
 why = "nonzero disables the mouse: the INT 33h handler body skips all of its work (1A72:254-255) and HidePointer/ShowPointer do nothing (1BBE:89-90, 178); 1A72:215 sets it to 1 at install and the overlay loader 1C00:00D4 clears it once a driver overlay has loaded and its entry has run, which enables the handler and the pointer; E07A9.C:113 and E14EF.C:142, 223 test it the same way"
+[[global]]
+id = "ds:FE64"
+name = "gTextLeft"
+why = "the active text window's left edge in 8-pixel columns, loaded from region record word 0 by SetTextWindow (1DE7:0009) and used to place text and fills (1DE7:03B2, 1DE7:0344); the panel origin x in src/E14EF.C"
+[[global]]
+id = "ds:FE66"
+name = "gTextTop"
+why = "the active text window's top edge in pixel rows, loaded from region record word 1 by SetTextWindow (1DE7:0009) and used to place text and fills (1DE7:03B2, 1DE7:0344); the panel origin y in src/E14EF.C"
+[[global]]
+id = "ds:811D"
+name = "gTextAttr1"
+why = "the first text attribute (foreground colour) passed to the draw-text hook ds:80CA (1DE7:03B2, 1DE7:060A) and set by DrawText control code 0x06; default 0x0F at E07C8:147"
+[[global]]
+id = "ds:811B"
+name = "gTextAttr2"
+why = "the second text attribute (the fill colour of ClearTextRegion and of the redrawn scroll line) passed to the rectangle hook ds:806A and to the draw-text hook (1DE7:0344, 1DE7:03B2) and set by DrawText control code 0x02; default 0x0C at E07C8:148"
