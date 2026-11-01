@@ -4604,6 +4604,7 @@ evidence = ["segment"]
 name = "_f1BA8_0005"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-01 rev-sonnet"
 
 [[function]]
 id = "e1ba8_0006"
@@ -4614,6 +4615,7 @@ evidence = ["far"]
 name = "_f1BA8_0006"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-01 rev-sonnet"
 
 [[function]]
 id = "e1ba8_0072"
@@ -4624,6 +4626,7 @@ evidence = ["far", "frame"]
 name = "_f1BA8_0072"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-01 rev-sonnet"
 
 [[function]]
 id = "e1ba8_0081"
@@ -4634,6 +4637,7 @@ evidence = ["far", "near"]
 name = "_f1BA8_0081"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-01 rev-sonnet"
 
 [[function]]
 id = "e1bb1_0001"
