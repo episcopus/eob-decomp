@@ -1263,7 +1263,9 @@ unit = "e082c"
 addr = "082C:051B"
 size = 209
 evidence = ["far", "near", "frame"]
-notes = "draft 2026-11-01 (src/E082C.C): matches except one branch byte at +0x4C. The original tests `mode == -1` as `je 0xca` (skip the whole body) while ours emits `jne body; jmp end`; the same block-ordering difference puts the -O-merged ClipRect tail (200,40,0,0,0,0) after the 2,0 call in the original and after the 4,2 call in ours. Tried: `if (mode != -1) {...}`, `if (mode == -1) ; else {...}`, `if (mode == -1) { extra++; return; }`, `goto out`, and `switch (mode) { case -1: }`; all give `jne` or a jump table. The 4,2 and 2,0 ClipRect calls and their extras (4,2)/(2,0) and the f19EC_002A kinds 4/2/mode are confirmed by the body. Open: the source shape that makes -O place the shared tail last."
+name = "LoadScreenImage"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e082c_05ec"

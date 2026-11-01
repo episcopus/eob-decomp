@@ -247,32 +247,28 @@ void DrawShadowText(char far *text, int x, int y, int color, int extra);
     gDrawLine(x2, y1, x2, y2, colour);
 }
 
-/* 082C:051B: build the art file name "%s.%s" (name and CPS or EGA for the video mode at ds:8102)
-   into gNameBuf, load it with LoadPacked (source and destination kind `srcKind`/`dstKind`), and
-   when `mode` is not -1 copy the loaded page over the screen through the driver pair 19EC:002A and
-   ClipRect, choosing the kind and clip extras by the video mode and `mode`. `extra` is passed to
-   19EC:002A and then bumped. Draft: our shared ClipRect tail is placed before the frame that the
-   mode-2 branch needs, so one branch byte differs (2 bytes; re/symbols.toml, e082c_051b). */
-/*@ 082C:051B draft */ void LoadScreenImage(char far *name, char far *extra, int srcKind, int dstKind, int mode)
+/* 082C:051B: build the art file name "%s.%s" (name plus CPS for the CPS video mode 3 at ds:8102,
+   otherwise EGA) into gNameBuf, load it with LoadPacked (source/destination kind `srcKind`/`dstKind`),
+   and, unless `mode` is -1, blit the loaded page through the driver pair 19EC:002A. In two special
+   cases it also clips the frame with ClipRect: video modes 0 and 1 with `mode` 2 (kind 4, extras
+   4 and 2) and video mode 2 with `mode` 0 (kind 2, extras 2 and 0); every other case uses `mode` as
+   the kind. `extra` is passed to 19EC:002A and then bumped by one. */
+/*@ 082C:051B */ void LoadScreenImage(char far *name, char far *extra, int srcKind, int dstKind, int mode)
 {
     sprintf(gNameBuf, "%s.%s", name, g8102 == 3 ? "CPS" : "EGA");
     LoadPacked(gNameBuf, srcKind, dstKind);
-    if (mode != -1) {
-        if (g8102 == 0 || g8102 == 1) {
-            if (mode == 2) {
-                f19EC_002A(dstKind, 4, FP_OFF(extra), FP_SEG(extra));
-                ClipRect(0, 0, 0, 0, 40, 200, 4, 2);
-            } else
-                f19EC_002A(dstKind, mode, FP_OFF(extra), FP_SEG(extra));
-        } else if (g8102 == 2) {
-            if (mode == 0) {
-                f19EC_002A(dstKind, 2, FP_OFF(extra), FP_SEG(extra));
-                ClipRect(0, 0, 0, 0, 40, 200, 2, 0);
-            } else
-                f19EC_002A(dstKind, mode, FP_OFF(extra), FP_SEG(extra));
-        } else
-            f19EC_002A(dstKind, mode, FP_OFF(extra), FP_SEG(extra));
+    if (mode == -1)
+        goto done;
+    if ((g8102 == 0 || g8102 == 1) && mode == 2) {
+        f19EC_002A(dstKind, 4, FP_OFF(extra), FP_SEG(extra));
+        ClipRect(0, 0, 0, 0, 40, 200, 4, 2);
+    } else if (g8102 != 2 || mode != 0)
+        f19EC_002A(dstKind, mode, FP_OFF(extra), FP_SEG(extra));
+    else {
+        f19EC_002A(dstKind, 2, FP_OFF(extra), FP_SEG(extra));
+        ClipRect(0, 0, 0, 0, 40, 200, 2, 0);
     }
+done:
     extra++;
 }
 
