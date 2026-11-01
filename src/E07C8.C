@@ -53,8 +53,8 @@ extern void far *gOverlayFiles[];     /*@ ds:3074: the cga/tga/ega/mcga/vga over
 extern struct OverlayRequest gOverlayRequest; /*@ ds:8121: the request RunOverlayRequest runs */
 
 extern void PrintString(char far *s);             /*@ 19EA:0000 */
-extern void f1AAD_053A(void);                     /*@ 1AAD:053A */
-extern void f1AAD_09F6(void);                     /*@ 1AAD:09F6 */
+extern void WaitGameKey(void);                     /*@ 1AAD:053A */
+extern void RemoveKeyboard(void);                     /*@ 1AAD:09F6 */
 extern void f1DDD_002D(int mode);                 /*@ 1DDD:002D */
 extern void TrimMemoryToVideo(void);              /*@ 1990:027D */
 extern void MouseDisable(void);                   /*@ 1A72:0285 */
@@ -69,7 +69,7 @@ extern int strcmp(char far *a, char far *b);      /*@ 0000:679D */
 extern long LargestFreeBlock(void);               /*@ 19BC:023D */
 extern void LoadFile(char far *name, void far *buf, unsigned len); /*@ 1B82:0009 */
 extern void StartupAlloc(int argc, char far * far *argv); /*@ 07A9:000A */
-extern void f1AAD_0718(void);                     /*@ 1AAD:0718 */
+extern void InstallKeyboard(void);                     /*@ 1AAD:0718 */
 extern void InstallHardErr(void);                 /*@ 1A63:0019 */
 extern void f1D8F_0010(void);                     /*@ 1D8F:0010 */
 /* 16A5:0D78: stores its 32-bit second argument as a far pointer at ds:FC7C (the callee reads
@@ -130,7 +130,7 @@ int AllocationFailure(void);
     }
     gFn80FA = f07C8_061D;
     gAllocFailHook = AllocationFailure;
-    f1AAD_0718();
+    InstallKeyboard();
     InstallHardErr();
     f1D8F_0010();
     if (StartupGame() == 1) {
@@ -181,7 +181,7 @@ int AllocationFailure(void);
         if (CheckMemoryChain()) {
             f1DDD_002D(7);
             PrintString("\r\nMemory chain corrupt!\r\n");
-            f1AAD_053A();
+            WaitGameKey();
             return 0;
         }
         f1DDD_002D(g8102);
@@ -200,7 +200,7 @@ int AllocationFailure(void);
         PrintString("\r\nCould not load overlay \"");
         PrintString(gOverlayRequest.name);
         PrintString("\".  Press a key to return to DOS...\r\n");
-        f1AAD_053A();
+        WaitGameKey();
         return 0;
     }
     /* the render/page table ds:FC0C, eight segment words, filled per graphics mode: screen pages
@@ -291,7 +291,7 @@ font_error:
     PrintString("\r\nUnable to load font ");
     PrintString("Font8.fnt");
     PrintString(". Reinstall program.\r\n");
-    f1AAD_053A();
+    WaitGameKey();
     return 0;
 fail:
     return 0;
@@ -337,7 +337,7 @@ done:
     if (g3056)
         f1C0E_13FD();
     f1D8F_0038();
-    f1AAD_09F6();
+    RemoveKeyboard();
     f1DDD_002D(7);
     setvect(0x3f, gFC08);
     if (g8102 == 1)
@@ -360,7 +360,7 @@ done:
 {
     f1DDD_002D(7);
     PrintString("\r\nAllocation failure, returning to DOS!");
-    f1AAD_053A();
+    WaitGameKey();
     ShutdownGame();
     return 0;
 }

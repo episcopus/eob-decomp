@@ -106,37 +106,52 @@ test and MemAlloc's push order); 1BB1:00A9..00BD (the 80AA, ShowPointer and 80A2
 
 ### Findings
 
-- [ ] must-fix src/E1BB1.ASM header, the paragraph "If the size changed, the old buffer is freed and the size query
+- [x] must-fix src/E1BB1.ASM header, the paragraph "If the size changed, the old buffer is freed and the size query
   [ds:80C6] is called", and the function comment "resizing the save-under buffer when the sprite size changed": the
   size query and MemAlloc do not run only on a size change. 1BB1:0044 `je 0066` skips the free and goes to the query
   whenever ds:816C is 0, so the first call always queries and allocates (no free). With a buffer, only a size change
   frees it (1BB1:0050 `je 00A9` goes to ready when the size is the same, 1BB1:0058..005C frees otherwise). Say: "with a
   buffer and a changed size, the old buffer is freed (1BB1:0058..005C); the size query and MemAlloc run when there is
   no buffer yet (1BB1:0044) or the size changed; with a buffer and the same size the call goes straight to the show
-  (1BB1:0050)." Change the function comment to match.
-- [ ] should src/E1BB1.ASM header, "The size comes from the shape record": the store addresses are off. 1BB1:0034 only
+  (1BB1:0050)." Change the function comment to match. Fixed in d6b6337: the header now says the buffer path depends on
+  the buffer and the size, with no buffer (1BB1:0044 `je 0066`) skipping the free and running the query and MemAlloc,
+  a buffer with a changed size (1BB1:004A/0050) freeing first (1BB1:0058..005C), and a buffer with the same size
+  going straight to the show (1BB1:0050 `je 00A9`). The function comment now says the buffer is allocated when there is
+  none yet or the sprite size changed, freeing an existing buffer of a changed size first.
+- [x] should src/E1BB1.ASM header, "The size comes from the shape record": the store addresses are off. 1BB1:0034 only
   reads byte +3, and the store into ds:8154 is 1BB1:0066 (`mov [8154],ax`). The width store into ds:8156 is 1BB1:006A
   (`mov [8156],dx`); 1BB1:003E is the `inc dx`. Cite the stores at 0066 and 006A, and keep 0034, 003A and 003E for
-  the reads and the +1.
-- [ ] should src/E1BB1.ASM:88..94 (the MemAlloc call) and its EXTRN line: the second argument is flags 0 (`mov ax,0`
+  the reads and the +1. Fixed in d6b6337: the header now says byte SHAPE_HEIGHT_BYTE (+3) is read at 1BB1:0034 and
+  stored unchanged at ds:8154 (1BB1:0066), and byte SHAPE_WIDTH_BYTE (+2) is read at 1BB1:003A and, plus 1
+  (1BB1:003E `inc dx`), stored at ds:8156 (1BB1:006A).
+- [x] should src/E1BB1.ASM:88..94 (the MemAlloc call) and its EXTRN line: the second argument is flags 0 (`mov ax,0`
   and `push ax` at 1BB1:0088..008B), and the unit never says so. E19BC.C:29-32 gives the bits: 0x10 zeroes the block,
-  0x20 aligns it to a paragraph; 0 is neither. Say so in the call's comment.
-- [ ] should src/E1BB1.ASM, the HEAP_BLOCK comment and the header's margin paragraph: the quote "less one 16 byte
+  0x20 aligns it to a paragraph; 0 is neither. Say so in the call's comment. Fixed in d6b6337: the call site now
+  comments `mov ax,0` and `push ax` (1BB1:0088..008B) as MemAlloc's flags argument, 0, neither zero-fill (0x10) nor
+  paragraph align (0x20), citing E19BC.C:29-32, and labels the other two pushes as the size high and low words.
+- [x] should src/E1BB1.ASM, the HEAP_BLOCK comment and the header's margin paragraph: the quote "less one 16 byte
   block" is E19BC.C:5 (the unit header), and the subtraction is E19BC.C:142 (`max -= 0x10`). Cite both, not only :142
-  with the quote.
-- [ ] should src/E1BB1.ASM header, the ASSUME paragraph (the last lines of the header): the header says `ASSUME CS:NOTHING`
+  with the quote. Fixed in d6b6337: the header's margin paragraph and the HEAP_BLOCK comment now cite E19BC.C:142 for
+  the subtraction and E19BC.C:5 for the "less one 16 byte block" quote.
+- [x] should src/E1BB1.ASM header, the ASSUME paragraph (the last lines of the header): the header says `ASSUME CS:NOTHING`
   around each direct far call is what keeps TASM from turning `lcall` into `push cs; call`. The playbook gives another
   mechanism for that: `call far ptr` with the callee declared as EXTRN is the 9A form (docs/process/playbooks/30-lift-module.md:29).
   Either show the ASSUME lines are needed (for example, remove them in a scratch copy and see whether `make match` still
-  reports 1 of 1 with the same bytes), or tag the claim [H].
+  reports 1 of 1 with the same bytes), or tag the claim [H]. Fixed in d6b6337: the test was run. Removing the
+  `ASSUME CS:NOTHING` lines (scratch copy) makes `make match FILE=src/E1BB1.ASM` report 0 of 1 with "byte 0E, original
+  9A (ours push cs; original lcall 0x1bbe, 2)" at the first far call (1BB1:0013), and the ASSUME lines were restored.
+  The header now says removing the lines turns the first `lcall` into `push cs; call` (our 0E where the original has 9A
+  at 1BB1:0013).
 - [ ] note packet: `make packet UNIT=e1bb1` lists ovl2:0000 Ovl2_0000 (EOV2.C) as a caller of 1BB1:0002. EOV2.C:14 defines
   Ovl2_0000 as an empty stub, and no build/re/eob-overlays/*.bin contains the bytes 9A 02 00 B1 1B. That search does not
   settle it (an overlay may hold the segment unrelocated), so the header keeps the caller it cites, f07A9_010C (E07A9.C:128
   and :130). For the map owner: check whether the packet's caller is a real call.
-- [ ] note the return value: the function returns 1 in AX on success (1BB1:00C1) and 0 on failure (1BB1:00C6). The
+- [x] note the return value: the function returns 1 in AX on success (1BB1:00C1) and 0 on failure (1BB1:00C6). The
   prototype at src/E07A9.C:63 is void and both callers (E07A9.C:128, :130) ignore the value. The header says "returns 1,
   or 0 when no block can be allocated", but 0 is also returned when the largest-block test fails (1BB1:0084..0086, before
-  MemAlloc). Say "0 when the block is too small or MemAlloc fails". No change is needed in src/E07A9.C.
+  MemAlloc). Say "0 when the block is too small or MemAlloc fails". No change is needed in src/E07A9.C. Fixed in
+  d6b6337: the header now says it returns 0 when the block is too small (the margin test at 1BB1:0084..0086) or MemAlloc
+  fails (1BB1:009D..00A0); src/E07A9.C is unchanged.
 - [ ] note src/E07A9.C:127-130 (the caller, for the e07a9 owner): the else branch passes gIconsDDE4[0] with (0, 0). E07A9.C:43
   says index 0 is "none". If that entry is a null far pointer, 1BB1:0034 reads the shape at 0000:0003. Whether n can be
   0 there (a zero icon number reaches the call through gTable8DD2[n].icon) is not checked here.
@@ -145,6 +160,32 @@ test and MemAlloc's push order); 1BB1:00A9..00BD (the 80AA, ShowPointer and 80A2
 - [ ] note the open notes from the earlier rounds still stand for their owners: src/E1BBE.ASM:72..76 ("already hidden"
   is wrong, a nested hide increments the count, 1BBE:0015); src/E1A72.ASM:7 and :32 and src/E1BBE.ASM:28, :273 and :353
   call ds:812E "semaphore" where this unit and E1BF3 say "busy flag" (the global is gPointerBusy).
+
+### Decompiler response (third review, d6b6337)
+
+The one must-fix and all four `should` findings are addressed in d6b6337 (src/E1BB1.ASM); the
+return-value note is fixed there too. The header now gives the three buffer paths (no buffer:
+1BB1:0044 `je 0066` skips the free and runs the size query and MemAlloc; a buffer with a changed
+size: freed at 1BB1:0058..005C first; a buffer with the same size: 1BB1:0050 `je 00A9` goes
+straight to the show), and the function comment matches. The size paragraph cites the reads at
+1BB1:0034/003A and the `inc dx` at 1BB1:003E for the height, width and +1, and the stores at
+1BB1:0066 (ds:8154) and 1BB1:006A (ds:8156). The MemAlloc call comments its flags argument (0,
+neither 0x10 zero-fill nor 0x20 paragraph align, E19BC.C:29-32) and the size's high and low words.
+The HEAP_BLOCK comment and the margin paragraph cite E19BC.C:142 for the subtraction and E19BC.C:5
+for the quote. The ASSUME claim is proven, not tagged: removing the `ASSUME CS:NOTHING` lines in a
+scratch copy gives 0 of 1 with "byte 0E, original 9A (ours push cs; original lcall 0x1bbe, 2)" at
+1BB1:0013, then the lines were restored. The return value is now "0 when the block is too small
+(1BB1:0084..0086) or MemAlloc fails (1BB1:009D..00A0)".
+
+The three open `note` items are for other units, not this one: the packet's ovl2:0000 caller is
+for the map owner, src/E07A9.C:127-130 is unit e07a9's, and src/E1BBE.ASM:65 is unit 1BBE's; the
+"semaphore" wording in src/E1A72.ASM and src/E1BBE.ASM is those units' files too. This unit's
+branch does not change other units' files, so they stay open for their owners.
+
+Verified: `make match FILE=src/E1BB1.ASM` 1 of 1 (208 of 208 bytes), `make readability UNIT=e1bb1`
+0 findings. Rechecked against tools/re/disasm.py: 1BB1:0034/003A/003E (the shape reads and +1),
+1BB1:0044/004A/0050/0058..005C (the buffer paths), 1BB1:0066/006A (the stores), 1BB1:0088..008B
+(the flags push), 1BB1:0084..0086/009D..00A0 (the two zero returns).
 
 ### Summary (third review)
 
@@ -155,3 +196,115 @@ HEAP_BLOCK. The placeholders are g80AA, g80A2 and g80C6 (the callees behind them
 call sites and the comments in E1BBE.ASM and E1BF3.ASM), and g8172/g8174 (the writer and reader are named, the argument's
 meaning is not). One must-fix remains: the header says the size query and reallocation happen only on a size change, but
 the first call with no buffer does them too. Verdict: review-failed.
+
+## Fourth review (rev-haiku, at 976601e)
+
+Reviewer: rev-haiku. Commit reviewed: 976601e (review/e1bb1). main (2478224) differs from it only in
+src/E1C00.ASM and two review files, so src/E1BB1.ASM is the d6b6337 version that the third round checked.
+The three earlier rounds are ticked above; this round reads the unit again from its source and its callers.
+This file was appended to, not replaced from TEMPLATE.md, to keep the three rounds of history.
+
+Checks: `make match FILE=src/E1BB1.ASM` 1 of 1 (208 of 208 bytes); `make readability UNIT=e1bb1` 0 findings.
+Read only, against eob/EOB.EXE with tools/re/disasm.py: 1BB1 (whole unit: the hide at 0013, the hot spot and
+record stores 0018..0030, the buffer paths 003F..0056, the size query 006F, the margin test 0076..0086, MemAlloc
+0088..009A, the 80AA/ShowPointer/80A2 order 00A9..00BD, the return values 00C1/00C6); 1BBE 0006..0017, 0075,
+00E0 (the hide), 0077..00B3 (the clips), 00B9..00DD (the restore), 00ED..00F8 and 01B9..01F4 (show, save
+through [80AE], draw through [80C2]), 0111..0127 (the show's position). E1A72.ASM:442-443 (the writes of
+8172/8174) and :440-441 (the reads); E1BF3.ASM:61-62 and :81..108 (only pushes and the busy flag). E19BC.C:5
+("less one 16 byte block"), :28-33 (the flags), :34 (MemAlloc's parameters), :142 (`max -= 0x10`). E1A29.C:19-22
+(8-pixel columns). src/EOV2.C:206-211 and :451, and `make match FILE=src/EOV2.C` 11 of 11 (the overlay caller is in
+the bytes). The disassembly agrees with every byte-level claim in the header except the points below.
+
+### Findings
+
+- [x] must-fix src/E1BB1.ASM:5-7: "Called from f07A9_010C ... and the record gIconsDDE4[n] in both cases" names one
+  caller, but there are two. `SetPointerShape` at ovl2:0000 (src/EOV2.C:206-211) calls
+  `SetMousePointerShape(0, 0, gPtrDD00)`, with gPtrDD00 = gIconsDDE4[0] (EOV2.C:210), and LoadItemData
+  (ovl2:09CC, EOV2.C:451) calls SetPointerShape. The call is in the overlay bytes (EOV2 matches 11 of 11). Name
+  both callers with their arguments; "gIconsDDE4[n] in both cases" holds only for f07A9_010C. The third round's
+  summary ("one caller") is wrong for the same reason, and the round-3 note asking whether the packet's ovl2:0000
+  caller is a real call is answered: it is. Fixed in fd20bb5: the header (now lines 5-16) names both
+  callers, f07A9_010C (the two calls at E07A9.C:164 and :166, the record gIconsDDE4[n] in both cases) and
+  SetPointerShape (ovl2:0000, src/EOV2.C:206-211, passing (0,0) and gPtrDD00 = gIconsDDE4[0] at
+  EOV2.C:210-211), and says LoadItemData calls SetPointerShape at start-up (EOV2.C:451).
+- [x] must-fix src/E1BB1.ASM:7, re/renames.toml:181, :208, :217, re/globals.toml:67 and :72: the citation
+  "E07A9.C:127-130" for the two calls is stale. In the current file they are at src/E07A9.C:164 and :166
+  (`SetMousePointerShape(8, 8, gIconsDDE4[n])` and `(0, 0, gIconsDDE4[n])`; `grep -n "SetMousePointerShape(" src/E07A9.C`).
+  The icon-table citation "E07A9.C:41-43" in src/E1BB1.ASM:7 is also stale: the comment is at E07A9.C:64-68, above
+  `gIconsDDE4` (E07A9.C:69). Cite the current lines. Fixed in fd20bb5: src/E1BB1.ASM:7 now cites
+  E07A9.C:164 and :166 and the gIconsDDE4 comment at E07A9.C:64-68 (the declaration at :69);
+  re/renames.toml:181, :208 and :217 and re/globals.toml:67 and :72 cite E07A9.C:164 and :166.
+- [x] should src/E1BB1.ASM:8-9: "the hot spot ds:8158/815A is subtracted from the last drawn pointer position
+  ds:815C/815E (1BBE:001E..002F, 1BBE:0111..012E)". The hide (1BBE:001E..002F) subtracts from ds:815C/815E. The
+  show does not: 1BBE:0111 and :0121 store the mouse position into ds:815C/815E, and 1BBE:0117 and :0127 subtract
+  the hot spot from that same mouse position to get the rectangle. Say that the show sets the drawn position to the
+  mouse position and subtracts the hot spot from it. Fixed in fd20bb5: the header (now lines 10-13) separates the
+  two: the hide 1BBE:0002 subtracts the hot spot ds:8158/815A from the last drawn position ds:815C/815E
+  (1BBE:001E..002F); the show 1BBE:00ED sets that drawn position to the mouse position ds:8138/813A
+  (1BBE:0111/0114 and 1BBE:0121/0124) and subtracts the hot spot from it (1BBE:0117/0127).
+- [x] should src/E1BB1.ASM:15-17: the clip citations are off. "1BBE:0095 adds it to the pointer's y and clips to 200":
+  1BBE:0095 adds the height to the top edge ds:8178 to make the bottom edge ds:817C; the clip to 200 is at
+  1BBE:00AB..00B3. "1BBE:005F adds it to x>>3 and clips to 40": the right edge ds:817A is clipped to 40 at
+  1BBE:0077..007E, and the left edge at 1BBE:0051..005A. Cite those addresses. Fixed in fd20bb5: the header (now
+  lines 18-25) says 1BBE:0095 adds the height to the top edge ds:8178 to make the bottom edge ds:817C, with the
+  clip to 200 at 1BBE:00AB..00B3; and 1BBE:005F adds the width to the left edge x>>3 to make the right edge
+  ds:817A, with the left edge tested for 40 at 1BBE:0051..005A and the right edge clipped to 40 at
+  1BBE:0077..007E.
+- [x] should src/E1BB1.ASM:180-183 (QUIRK 1BB1:00C6, first paragraph): the dangling buffer comes only from a
+  failure after a resize freed the old buffer (1BB1:0058..005C), or from a first-time failure, which leaves ds:816C
+  zero. The comment omits the worse case: a later call with a different size calls MemFree on the freed block again
+  (1BB1:0044 `jne` to 0052, then 0058..005C with ds:816A/816C), a double free. Say both. Fixed in fd20bb5: the
+  QUIRK (now lines 187-192) states the dangling-buffer failure after a resize free (1BB1:0058..005C), the later
+  same-size call passing `je ready` (1BB1:0050) with a dangling buffer, and the later different-size call
+  (1BB1:0046/004C, `jne 0052` at 1BB1:004A) freeing the already-freed block again (1BB1:0058..005C), a double
+  free; the first-time failure (ds:816C == 0) still leaves it zero and retries.
+- [ ] note the other units' notes from rounds 2 and 3 are still open for their owners and this branch does not touch
+  them: src/E1BBE.ASM:65 cites "1BB1:0094" for the size query (the call is at 1BB1:006F); the "already hidden" wording
+  at src/E1BBE.ASM:72..76 (1BBE:0015 `jne 0075` increments the count); the "semaphore" wording for ds:812E at
+  src/E1A72.ASM:7 and :32 and src/E1BBE.ASM (where this unit says busy flag); and src/E07A9.C:86-87 "stores the
+  hot-spot offset" (1BB1:0002 stores two words, the hot spot x and y).
+- [ ] note for the e07a9 owner (src/E07A9.C:127-130, now :164 and :166): the round-3 question about gIconsDDE4[0] being
+  null is partly answered: SetPointerShape writes gIconsDDE4[0] (EOV2.C:209) before it passes it at EOV2.C:210, and
+  LoadItemData runs at start-up. Whether f07A9_010C can run before that write is not checked here.
+
+## Decompiler response (fourth review, fd20bb5)
+
+Both must-fix items and all three `should` items are addressed in commit fd20bb5 (src/E1BB1.ASM,
+re/renames.toml, re/globals.toml); each is ticked above with what changed. The header now names both
+callers: f07A9_010C (the two calls at E07A9.C:164 and :166, the record gIconsDDE4[n] in both cases)
+and SetPointerShape (ovl2:0000, src/EOV2.C:206-211, passing (0,0) and gPtrDD00 = gIconsDDE4[0] at
+EOV2.C:210-211), with LoadItemData calling it at start-up (EOV2.C:451); the stale citations are now
+E07A9.C:164 and :166 (the gIconsDDE4 comment at E07A9.C:64-68, its declaration at :69), in the header
+and in re/renames.toml:181, :208, :217 and re/globals.toml:67, :72. The header separates the hide
+(1BBE:0002 subtracts the hot spot from the last drawn position ds:815C/815E, 1BBE:001E..002F) from
+the show (1BBE:00ED sets that position to the mouse position ds:8138/813A and subtracts the hot
+spot, 1BBE:0111..012E), corrects the clip citations (height to the bottom edge ds:817C at
+1BBE:0095/0099, clip to 200 at 1BBE:00AB..00B3; width to the right edge ds:817A at 1BBE:005F/0063,
+left-edge test at 1BBE:0051..005A, right-edge clip at 1BBE:0077..007E), and gives the QUIRK 1
+double free (a later different-size call at 1BB1:0046/004C, `jne 0052` at 1BB1:004A, frees
+ds:816A/816C again at 1BB1:0058..005C).
+
+The three `note` items are for other units, not this one: src/E1BBE.ASM:65 and :72..76 are unit
+1BBE's file, the "semaphore" wording in src/E1A72.ASM and src/E1BBE.ASM is those units' files, and
+src/E07A9.C:86-87 and the gIconsDDE4[0] question are unit e07a9's. This unit's branch does not change
+other units' files, so they stay open for their owners.
+
+Verified: `make match FILE=src/E1BB1.ASM` 1 of 1 (208 of 208 bytes), `make readability UNIT=e1bb1`
+0 findings. Rechecked against tools/re/disasm.py: 1BB1:003F..0065 (the buffer paths and the free),
+1BB1:0046/004A/004C/0050 (the size compares and the two size outcomes), 1BB1:0076/0080/0082/0091,
+1BB1:00A5 (the single store to 816C), 1BBE:001E..002F (the hide subtract), 1BBE:0051..005A/005F/0063/
+0066..006D/0077..007E (the x clips), 1BBE:0095/0099/00A3/00AB..00B3 (the y clips), and 1BBE:0111..012E
+(the show's position and subtract).
+
+### Summary (fourth review)
+
+The unit is understandable from its source, and the byte-level claims hold against the disassembly: the hide and show
+order, the height and width reads and stores (1BB1:0034/003A/003E, 0066/006A), the three buffer paths, the margin test with
+both 16s and the high-word skip, the MemAlloc flags and size pushes, the return values, the busy flag, the writer and
+reader of ds:8172/8174, and the 1BBE hide and show behaviour. The name SetMousePointerShape stands: it has the hot spot, the
+record, the buffer and the hide and show. Two must-fix items remain. The header names one caller, but the overlay-2
+SetPointerShape (EOV2.C:206-211, matched) is a second, and the call-site citations (E07A9.C:127-130 and 41-43) point at lines
+that moved. The shoulds are the show-half wording, the clip citations in the header, and the QUIRK 1 double-free case. The
+placeholders stay on purpose: g80AA, g80A2 and g80C6 (their callees are not lifted; the evidence is in the E1BBE.ASM EXTRN
+comments and the call sites), and g8172/g8174 (named by writer and reader, the argument's meaning is not known). Verdict:
+review-failed.

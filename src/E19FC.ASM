@@ -1,12 +1,14 @@
 ; Unit at EOB.EXE 19FC:0007 (420 bytes, 1 function), kind asm [H] by the map. The one function is
-; CompressLcw (19FC:0008), the inverse of Unpack4 (1D9A:0013, src/E1B82.C:39): an LCW encoder for
-; the format-4 compressed files of whitepaper 4.2. What the encoder is for in the game is unknown:
-; no caller was found (see the note below).
+; CompressLcw (19FC:0008), the inverse of Unpack4 (1D9A:0013, src/E1B82.C:40): an LCW encoder for
+; the format-4 compressed files of whitepaper 4.2. Its only caller is ovl3:0FD1 (eov3_0fd1, no src/
+; file yet), which builds a 4096-byte block (ovl3:0FFA to 101F) and calls the encoder once on it;
+; what the caller does with the stream is its own unit's question.
 ;
-; The unit is written in assembly, which the map's kind asm says only as a guess [H]: it keeps its
-; state in the code segment through cs: overrides and scans with the repe/repne string instructions,
-; which the C compiler does not emit for C source. That the source was assembly and not C is
-; therefore inferred from those forms, not proven.
+; The unit is written in assembly [H]: it keeps its state in the code segment through cs: overrides
+; and scans with the repe/repne string instructions, neither of which Turbo C++ 1.00 emits for C
+; source [H]. That the source was assembly and not C is inferred from those forms, not proven: the
+; map's kind asm is [H] (re/units.toml, which keeps it [H] until the unit's code is matched), and a
+; matching assembly file shows that the bytes are right, not the language they were written in.
 ;
 ; A byte oriented LZ encoder: it reads an input buffer (arg 1, a far pointer) of a given length
 ; (arg 3, a word) and writes a compressed stream to arg 2 (a far pointer), returning the number of
@@ -25,22 +27,30 @@
 ; of 41h or more equal bytes are found by scanning with repe scasb and become FEh fills; shorter
 ; matches are searched with repne scasb over the input base and extended with repe cmpsb. The eight
 ; words of state are kept in the code segment, each with its role in the data comments below. The
-; token set above is the one of the decoder model tools/re/wwfmt.py lcw [H]; no round trip of this
-; encoder has run.
+; token set above is the decoder's: WHITEPAPER 4.2 records that the game's own Unpack4 (1D9A:0013)
+; decodes all 131 format-4 files byte for byte (tests/unit/test_wwfmt.py), and tools/re/wwfmt.py
+; lcw [H] models it. The encoder side is unverified: no round trip of this encoder has run.
 ;
-; No caller was found: the packet reports no direct call (tools/agent/packet.py:149 checks direct
-; calls only), and a byte search of EOB.EXE and the seven overlay images (build/re/eob-overlays)
-; finds neither the far call bytes 9a 07 00 fc 19 / 9a 08 00 fc 19 nor a bare far pointer
-; 07 00 fc 19 / 08 00 fc 19. The overlays were searched here; the game role stays unknown.
+; The caller is ovl3:0FD1 (eov3_0fd1): the call at ovl3:1033 is a far call whose segment word the
+; overlay fixup at ovl3:1036 (build/re/eob.json overlay 3) relocates to segment index 28, which is
+; 19FC (segments[28], para 6652), so it reaches 19FC:0008; the same call sits in the FBOV copy of
+; overlay 3 at EOB.EXE 0x3ADB3. A byte search for 9a 08 00 fc 19 misses it because an overlay
+; stores the segment index, not the paragraph. The caller builds the source block first: ovl3:0FFA
+; to 101F write 4096 bytes (1024 records of 4) from a table in ds with a 9-byte stride into
+; [ds:DCFE]:[ds:DCFC], that is gBufDCFC (src/E07A9.C:32, a 4096-byte start-up allocation), and then
+; passes a length of 1000h (4096) and that same far pointer as the source.
 ;
 ; The limits the encoder keeps: matches shorter than 3 bytes become literals; the short 00h..7Fh
 ; form is used only for lengths 3..0Ah and distances <= 0FFFh; C0h..FDh carry lengths up to 40h;
 ; longer matches take FFh; literal runs are capped at 3Fh bytes (a full count byte starts a new
-; 80h run). All offsets are 16 bits from the normalised starts, and add bp,dx (end of the source)
-; wraps at 10000h when offset + length passes FFFFh; the output has the same limit. A caller must
-; keep both buffers inside 64 KiB from their normalised starts, and pass a length of at least 1: the
-; first literal (81h plus one byte) is written before any length test, so a length of 0 copies bytes
-; at and past the source start instead of producing an empty stream.
+; 80h run). All offsets are 16 bits from the normalised starts: bp = start + length (19FC:0034,
+; 19FC:0036) is a 16-bit sum that wraps at 10000h, and the output has the same limit. A caller
+; must keep both buffers inside 64 KiB from their normalised starts and pass a length of at least 2.
+; The first literal (81h plus one byte) is written before any length test and mainloop (19FC:0053)
+; runs with none, so a length of 1 encodes the byte past the end as a second literal (the stream
+; 82h, src[0], src[1], 80h decodes to 2 bytes), and if those two bytes are equal the match scan
+; (19FC:00B6) makes gBestLen FFFFh and si wraps back to the source start, so the stream does not
+; stop at the end test; a length of 0 is worse still. This is read from the code, not run.
 ;
 ; QUIRK 19FC:007E and 19FC:00D7: when a run of equal bytes reaches the end of the source, repe scasb
 ; (the fill scan) or repe cmpsb (the match extension) runs out of count with DI one past the last
@@ -49,13 +59,14 @@
 ; correct, because the last byte is then emitted as a literal or a shorter match. This is the
 ; original's behaviour, not a decompile error.
 ;
-; The map's segment starts at 19FC:0007, a lone 00 byte that is data, not code: the segment table
-; (build/re/eob.json) has the 19F3 unit (segment 27, start 106302) at 137 bytes, so it ends at
-; 106439, which is 19FC:0007 (19FC is paragraph 6652, linear 106432; 19FC:0000..0006 repeat the
-; 19F3 unit's last seven bytes). The 00 is therefore the first byte after the 19F3 unit and the
-; 19FC segment's first byte in the table. It is emitted as a public byte symbol (_f19FC_0007) so
-; the registry records it at L2, and CompressLcw starts at 19FC:0008 with the same 419 code bytes.
-; The unit stays 420 bytes.
+; The map's segment starts at 19FC:0007, a lone 00 byte that is data, not code: nothing falls
+; through to it, because the 19F3 unit ends in its retf at 19F3:0096 (the byte before the 00, at
+; EOB.EXE 116678). The segment table (build/re/eob.json) has the 19F3 unit (segment 27, start
+; 106302) at 137 bytes, so it ends at 106439, which is 19FC:0007 (19FC is paragraph 6652, linear
+; 106432; 19FC:0000..0006 repeat the 19F3 unit's last seven bytes). The 00 is therefore the byte
+; after that retf and the 19FC segment's first byte in the table, just before the encoder's push bp
+; at 19FC:0008. It is emitted as a public byte symbol (_f19FC_0007), and CompressLcw starts at
+; 19FC:0008 with the same 419 code bytes. The unit stays 420 bytes.
 
         .MODEL  LARGE
 
@@ -70,8 +81,10 @@ _f19FC_0007 LABEL BYTE                   ; @ 19FC:0007
 ; 19FC:0008: encode. Arg 1 at [bp+6]/[bp+8] is the source far pointer, arg 2 at [bp+0Ah]/[bp+0Ch] the
 ; destination, arg 3 at [bp+0Eh] the source length in bytes. Returns AX = the number of bytes written
 ; to the destination, the whole stream (the leading 81h byte and the trailing 80h end byte included).
-; Reads and writes the eight cs: state words declared below; the epilogue restores SI, ES, DS and DI
-; to the values the caller had, so AX is the only result.
+; Reads and writes the eight cs: state words declared below; the finish block (19FC:0187) runs into
+; the epilogue, which pops si, es, dx, ds, di, cx, bx and bp at 19FC:0192 to 0199, so it restores
+; every register except AX, which is the only result. The function ends in a plain retf: the caller
+; pops the ten argument bytes (add sp,0Ah at ovl3:1038).
         PUBLIC  _CompressLcw             ; @ 19FC:0008
 _CompressLcw PROC FAR
         push    bp
@@ -112,7 +125,7 @@ mainloop:                               ; 19FC:0053
         mov     di,ds
         mov     es,di                   ; es = the source segment for the searches
         mov     di,cs:[gInBase]
-        mov     word ptr cs:[gBestLen],1
+        mov     word ptr cs:[gBestLen],1 ; 1 = no match yet (3 or more is a match)
 search:                                 ; 19FC:006F
         mov     al,[si]
         cmp     al,[si+40h]             ; precheck: a candidate fill run (byte 40h ahead equal)
@@ -256,7 +269,8 @@ gInBase  dw 0                           ; 19FC:019F  input start (normalised off
 gLitHdr  dw 0                           ; 19FC:01A1  output offset of the open literal run's count byte
 gOutSeg  dw 0                           ; 19FC:01A3  output segment, saved while es holds the source
 gOutPtr  dw 0                           ; 19FC:01A5  output position, saved while es holds the source
-gBestLen dw 0                           ; 19FC:01A7  best match length so far
+gBestLen dw 0                           ; 19FC:01A7  best match length so far (1 = none yet; 3 or
+                                        ;   more is a match)
 gBestPos dw 0                           ; 19FC:01A9  best match input offset so far
 
         END

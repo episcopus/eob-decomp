@@ -56,7 +56,7 @@ extern int gTextHeight; /*@ ds:FE60 */
 extern int gTextWidth; /*@ ds:FE62 */
 extern int gTextLeft; /*@ ds:FE64 */
 extern int gTextTop; /*@ ds:FE66 */
-extern char gFE6E[]; /*@ ds:FE6E */              /* the text buffer ovl6:0858 formats into */
+extern char gFileNameBuf[]; /*@ ds:FE6E */              /* the text buffer ovl6:0858 formats into */
 extern void *gFont1A47; /*@ ds:FE4E */          /* the current font (1A47:0169 records it) */
 extern void *gFE5A; /*@ ds:FE5A */              /* the 8x8 font loaded from Font8.fnt */
 extern void *gA9C0; /*@ ds:A9C0 */              /* the 6x6 font loaded from FONT6.FNT */
@@ -74,10 +74,10 @@ extern void DrawText(char *text); /*@ 1DE7:060A */
 extern void f1A47_0169(void *font); /*@ 1A47:0169 */
 extern void WaitFrames(int n); /*@ 1A16:000B */
 extern int f0D1C_0670(int member, int what); /*@ 0D1C:0670 */
-extern int f0D1C_00F1(int member, int what, int which); /*@ 0D1C:00F1 */
+extern int FindCarriedSlot(int member, int what, int which); /*@ 0D1C:00F1 */
 extern int f0D1C_0163(int member, int what); /*@ 0D1C:0163 */
 extern void f0D1C_0C21(int x, int y, int width, int height, int c, int d); /*@ 0D1C:0C21 */
-extern char *f0D1C_07A7(char *s, int n); /*@ 0D1C:07A7 */
+extern char *SkipStrings(char *s, int n); /*@ 0D1C:07A7 */
 extern void f082C_0898(char *text, int x, int y, int colour, int flag); /*@ 082C:0898 */
 extern void f082C_0425(int n); /*@ 082C:0425 */
 extern int far RollDice(char count, char sides, char bonus); /*@ 082C:0458 */
@@ -86,8 +86,8 @@ extern void f1547_0991(int member); /*@ 1547:0991 */
 extern void f0DE8_09B9(int member, int what); /*@ 0DE8:09B9 */
 extern void UpdateObjects(int kind); /*@ 08E6:0CC8 */
 extern void ClipRect(int x1, int y1, int x2, int y2, int width, int height, int extra1, int extra2); /*@ 19F3:000E */
-extern int f1AAD_038E(void); /*@ 1AAD:038E */
-extern void f1AAD_0480(void); /*@ 1AAD:0480 */
+extern int ReadKey(void); /*@ 1AAD:038E */
+extern void FlushKeyBuffer(void); /*@ 1AAD:0480 */
 extern int fOvl1_243A(int what); /*@ 2102:0039 */
 extern int FindClassSlot(int value, int classIndex); /*@ 0A72:007B */
 extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
@@ -177,15 +177,15 @@ void f0B9B(int message);
                 }
                 *slots = -*slots;
                 counters.b[i] = 0x30;
-                sprintf(gFE6E, "%s gained %s.\r", &gChars[i].name[0],
+                sprintf(gFileNameBuf, "%s gained %s.\r", &gChars[i].name[0],
                         gSpells151F[*slots].name);
                 LockHidePointer();
-                DrawText(gFE6E);
+                DrawText(gFileNameBuf);
                 LockShowPointer();
                 WaitFrames(5);
                 break;
             }
-            if (f0D1C_00F1(i, 0x1d, -1) == -1)
+            if (FindCarriedSlot(i, 0x1d, -1) == -1)
                 continue;
             slots = &gChars[i].known[0];
             for (member = 0; member < 0x1e; member++) {
@@ -197,10 +197,10 @@ void f0B9B(int message);
                 }
                 *slots = -*slots;
                 counters.b[i] = 0x30;
-                sprintf(gFE6E, "%s memorized %s.\r", &gChars[i].name[0],
+                sprintf(gFileNameBuf, "%s memorized %s.\r", &gChars[i].name[0],
                         gSpells1344[*slots].name);
                 LockHidePointer();
-                DrawText(gFE6E);
+                DrawText(gFileNameBuf);
                 LockShowPointer();
                 WaitFrames(5);
                 break;
@@ -234,10 +234,10 @@ void f0B9B(int message);
                         break;
                     counters.b[i] = 0;
                     foundWounded--;
-                    sprintf(gFE6E, "%s casts healing on %s.\r", &gChars[i].name[0],
+                    sprintf(gFileNameBuf, "%s casts healing on %s.\r", &gChars[i].name[0],
                             &gChars[foundWounded].name[0]);
                     LockHidePointer();
-                    DrawText(gFE6E);
+                    DrawText(gFileNameBuf);
                     LockShowPointer();
                     WaitFrames(5);
                     if (gChars[foundWounded].hp + healAmount > gChars[foundWounded].maxhp)
@@ -316,14 +316,14 @@ void f0B9B(int message);
             if (!flag4)
                 goto done;
         }
-        if (!f1AAD_038E()) {
+        if (!ReadKey()) {
             result = f09D2();
             if ((f0A92() || (foundWounded && (flag4 || healerFound)))
-                && !f1AAD_038E() && result == 0)
+                && !ReadKey() && result == 0)
                 continue;
         }
 done:
-        f1AAD_0480();
+        FlushKeyBuffer();
         SetTextWindow(4);
         f1A47_0169(gFE5A);
         if (!foundWounded && !result)
@@ -356,7 +356,7 @@ done:
 /* ovl6:0858: shows the camp panel and the "Hours rested" line. It selects the 8x8 font and the
    region 0xa, and when `draw` is nonzero clears g8115, hides the pointer, fills the panel
    rectangle (f0D1C_0C21) inside its clip (ClipRect), draws the title through f082C_0898 and shows
-   the pointer again. Then it formats "Hours rested: %-4d" with gFE6E and, with g8115 set to 2,
+   the pointer again. Then it formats "Hours rested: %-4d" with gFileNameBuf and, with g8115 set to 2,
    draws the line in the colour gF57E inside a second clip. Finally it waits ten frames and
    restores the font and the region. Called by the camp loop. */
 /*@ ovl6:0858 */ void f0858(int hours, int draw)
@@ -374,13 +374,13 @@ done:
         ClearTextRegion();
         f0D1C_0C21(gTextLeft << 3, gTextTop, gTextWidth << 3, gTextHeight, 0, 0);
         ClipRect(gTextLeft, gTextTop, gTextLeft, gTextTop, gTextWidth, gTextHeight, 0, 2);
-        f082C_0898(f0D1C_07A7(&gStrings2003, 0x2a), (gTextLeft + 1) << 3, gTextTop + 5, 9, 0);
+        f082C_0898(SkipStrings(&gStrings2003, 0x2a), (gTextLeft + 1) << 3, gTextTop + 5, 9, 0);
         LockShowPointer();
     }
-    sprintf(gFE6E, "Hours rested: %-4d", hours);
+    sprintf(gFileNameBuf, "Hours rested: %-4d", hours);
     g8115 = 2;
     LockHidePointer();
-    f082C_0898(gFE6E, (gTextLeft + 1) << 3, gTextTop + 0x14, 0xf, gF57E);
+    f082C_0898(gFileNameBuf, (gTextLeft + 1) << 3, gTextTop + 0x14, 0xf, gF57E);
     g8115 = 0;
     ClipRect(gTextLeft + 1, gTextTop + 0x14, gTextLeft + 1, gTextTop + 0x14, 0x12, 8, 2, 0);
     LockShowPointer();
@@ -446,7 +446,7 @@ done:
         }
         if (FindClassSlot(1, gChars[member].classIndex) == -1)
             continue;
-        if (f0D1C_00F1(member, 0x1d, -1) == -1)
+        if (FindCarriedSlot(member, 0x1d, -1) == -1)
             continue;
         slots = &gChars[member].known[0];
         for (i = 0; i < 0x1e; i++)
@@ -477,12 +477,12 @@ done:
     SetTextWindowAndClear(0xb);
     g8115 = 2;
     f0D1C_0C21(gTextLeft << 3, gTextTop, gTextWidth << 3, gTextHeight, 0, 0);
-    f082C_0898(f0D1C_07A7(&gStrings2003, message), (gTextLeft << 3) + 5, gTextTop + 5, 0xf, 0);
+    f082C_0898(SkipStrings(&gStrings2003, message), (gTextLeft << 3) + 5, gTextTop + 5, 0xf, 0);
     ClipRect(gTextLeft, gTextTop, gTextLeft, gTextTop, gTextWidth, gTextHeight, 2, 0);
     LockShowPointer();
     for (i = 0; i < 0x78; i++) {
-        if (f1AAD_038E()) {
-            f1AAD_0480();
+        if (ReadKey()) {
+            FlushKeyBuffer();
             break;
         }
         WaitFrames(1);
@@ -490,5 +490,5 @@ done:
     g8115 = savedRegion;
     f1A47_0169(savedFont);
     SetTextWindow(savedSelect);
-    f1AAD_0480();
+    FlushKeyBuffer();
 }

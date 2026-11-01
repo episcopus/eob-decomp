@@ -1,16 +1,21 @@
 ; Unit at EOB.EXE 1C00:0001 (235 bytes, 3 functions), kind asm [H] by the map. This is the game's
-; loader for named MZ overlay files, the graphics drivers (CGA.OVL, EGA.OVL, MCGA.OVL and TGA.OVL,
-; the names at file offset 26BA1h of EOB.EXE, WHITEPAPER 2.5), which it loads with DOS function
-; 4B03h (load overlay) [H]. It is not the INT 3Fh VROOMM trap: VROOMM is the Borland runtime's
-; overlay manager, which loads the FBOV segments appended to EOB.EXE (WHITEPAPER 2.3), and the
-; game's hook around it is the handler at 1A72:0006, installed at 07C8:008F (src/E1A72.ASM:61 to
-; 69); this unit never touches INT 3Fh. 1C00:0000 is a lone retf (cb) and 1C00:0001 a lone 0 byte,
-; both before the first function at the even offset 0002 [H data]. 1C00:0002 allocates an 0FA00h
-; byte block (MemAlloc, flags 20h), loads an overlay image into it with DOS INT 21h/4B03 and
-; reports BX = 0 on success, 0FFFFh on failure; and 1C00:0055 takes a far pointer to an overlay
-; request (word 0 = the DGROUP offset of the request name, word +2 = the name's segment, words +4
-; and +6 = the entry arguments), loads the overlay, resizes the block 1C00:0002 loaded the overlay
-; into, to the overlay's size (MemRealloc), and calls the overlay's entry through that block.
+; loader for named MZ overlay files, the graphics drivers (cga.ovl, tga.ovl, ega.ovl, mcga.ovl and
+; vga.ovl, the five names at file offset 26BA1h of EOB.EXE, WHITEPAPER 2.5), which it loads with
+; DOS function 4B03h (load overlay) [H]. The table gOverlayFiles (E07C8.C:52, ds:3074) holds all
+; five, but WHITEPAPER 2.5 says vga.ovl is not in the copy and 2.6 says the VGA mode loads
+; MCGA.OVL. It is not the INT 3Fh VROOMM trap: VROOMM is the Borland runtime's overlay manager,
+; which loads the FBOV segments appended to EOB.EXE (WHITEPAPER 2.3), and the game's hook around
+; it is the handler at 1A72:0006, installed at 07C8:008F (src/E1A72.ASM:61 to 69); this unit
+; never touches INT 3Fh. 1C00:0000 is a lone retf (cb) and 1C00:0001 a lone 0 byte, both before
+; the first function at the even offset 0002 [H data]. 1C00:0002 allocates an 0FA00h byte block
+; (MemAlloc, flags 20h), loads an overlay image into it with DOS INT 21h/4B03 and reports BX = 0
+; on success, 0FFFFh on failure; and 1C00:0055 takes a far pointer to an overlay request (word 0 =
+; the DGROUP offset of the request name, word +2 = the name's segment, words +4 and +6 = the two
+; arguments of the pointer the entry returns), loads the overlay, then calls the entry at the
+; overlay segment:0000 with 27h, 1A16h and that segment (1C00:0088 to 0091), resizes the block
+; 1C00:0002 loaded the overlay into, to the overlay's size (MemRealloc, 1C00:00A8), and calls the
+; pointer the entry returned (818Eh, 8190h) through the reallocated block, with the request's two
+; words (1C00:00C0).
 ; DGROUP is 212Eh, as in E1A72.ASM (lines 81, 252, 435, 470) and E1D8F.ASM (line 78).
 ;
 ; Far calls to another unit (9A off seg) are declared at module level, after .MODEL LARGE and before
@@ -25,7 +30,9 @@
         EXTRN   g8148:WORD              ; @ ds:8148: 1 when the mouse driver handler is installed
                                         ;   (E1A72.ASM)
         EXTRN   gMouseDisabled:WORD     ; @ ds:814A: non-zero disables the mouse handler body and
-                                        ;   the pointer (E1A72.ASM:254-255, E1BBE.ASM:89-90)
+                                        ;   the pointer (E1A72.ASM:254-255, E1BBE.ASM:89-90);
+                                        ;   Main sets it from the mouse argument after start-up
+                                        ;   (E07C8.C:153-156, the strongest evidence for the name)
 
         .CODE
 
@@ -42,9 +49,10 @@
 ; overlay named by DS:DX through the INT 21h/4B03 parameter block at ES:BX = DGROUP:818Ah: word 0
 ; is the load segment (the word at DGROUP:818Ah) and word 1 is the relocation factor
 ; (DGROUP:818Ch, which no file in src/ writes, so check it in the oracle before a port relies on
-; it). Return BX = 0 on success or 0FFFFh on failure. It is called near with a pushed CS
-; (`push cs; call`) and ends with retf, so it returns far; only 1C00:0055 calls it, passing
-; BX = 818Ah, ES = DGROUP and DS:DX from the request.
+; it). Return BX = 0 on success or 0FFFFh on failure. The caller reaches it with `push cs; call`
+; (1C00:0073 to 0074), which is a near call: it pushes CS as an extra word below the return address,
+; and the function's retf pops that word as well as the return address. Only 1C00:0055 calls it,
+; passing BX = 818Ah, ES = DGROUP and DS:DX from the request.
         PUBLIC  _LoadOverlayImage       ; @ 1C00:0002
 _LoadOverlayImage PROC NEAR
         push    bp
@@ -89,42 +97,55 @@ ldout:  pop     bp
 _LoadOverlayImage ENDP
 
 ; 1C00:0055: run an overlay request. [bp+6..+9] is a far pointer to the request (the caller, inside
-; main at 07C8:0199, passes DS:8121 at 07C8:0254): word 0 is the DGROUP offset of the name, word
-; +2 is the name's segment, and the two words at +4 and +6 are the entry arguments. The loader
-; takes the segment of the name from its own DS (from [bp+8], the segment of the request, at
-; 1C00:0062) and the offset from word 0 (1C00:0065); it never reads word +2. The load therefore
-; assumes the request's segment is the name's segment, which holds here because the caller passes
-; its own DGROUP: it copies word +2 from DS:[bx+3076h] at 07C8:0245 and stores it at 07C8:0251, and
-; on failure reads it back, pushing [8123h] and [8121h] as a far pointer to PrintString at
-; 07C8:027B to 0283. Word +2 is the caller's copy for that print, not an input to the load.
+; StartupGame at 07C8:0199, E07C8.C:172 and the packet, passes DS:8121 at 07C8:0254): word 0 is the
+; DGROUP offset of the name, word +2 is the name's segment, and the two words at +4 and +6 are the
+; two arguments of the pointer the entry returns. The loader takes the segment of the name from its
+; own DS (from [bp+8], the segment of the request, at 1C00:0062) and the offset from word 0
+; (1C00:0065); it never reads word +2. The load therefore assumes the request's segment is the
+; name's segment [H]: nothing in this unit or in the caller's bytes shows that the table word at
+; ds:3076h (copied to word +2 at 07C8:0245 and 0251) is DGROUP's segment; it is a segment in the
+; EXE that the loader relocates. The caller copies word +2 from DS:[bx+3076h] at 07C8:0245 and
+; stores it at 07C8:0251, and on failure reads it back, pushing [8123h] and [8121h] as a far
+; pointer to PrintString at 07C8:027B to 0283. Word +2 is the caller's copy for that print, not an
+; input to the load.
 ; Load the overlay image with 1C00:0002. Then push the overlay segment (the word at DGROUP:818Ah),
 ; 1A16h, 27h and call the entry at segment:0000 (the 0 is the call target offset stored at 818Eh):
 ; the entry's first argument is 27h and its third is the overlay segment. 1A16h is the segment of
 ; src/E1A16.C (WaitFrames); that the overlay is handed a resident segment is evidence, what it does
 ; with it is not established, so both arguments stay placeholders. The entry returns AX = its
-; function offset (stored at 818Eh) and BX = its size in paragraphs; four `shl bx,1` make that size
-; in bytes. The three `pop cx` that drop the entry's arguments leave CX = the overlay segment pushed
-; at 1C00:0088, and that CX is the pointer's segment in the MemRealloc call: MemRealloc (19BC:018A,
-; E19BC.C) takes (void far *ptr, unsigned size), so the call pushes the size, CX as the segment and
-; then 0 as the offset (re/renames.toml records the call as (0, seg, size)), and it resizes the
-; overlay's own block at segment:0000 to that size and keeps its contents. This function stores 0
-; at 818Eh and the segment at 8190h.
-; On success, once the entry has returned, it enables the mouse when the handler is installed:
-; g8148 is 1 when the mouse driver handler is installed (E1A72.ASM:43, set at :214, cleared at
-; :200), and when it is set the loader clears gMouseDisabled (ds:814Ah). That flag is set to 1 at
-; install (E1A72.ASM:215), and a non-zero value disables the handler: the INT 33h handler body skips
-; all of its work on non-zero (E1A72.ASM:254-255) and HidePointer and ShowPointer do nothing on
-; non-zero (E1BBE.ASM:89-90, 178), while E07A9.C:113 and E14EF.C:223 run their pointer work only
-; when it is zero. Clearing it after a driver overlay has loaded and its entry has run therefore
-; turns the handler and the pointer on [H].
-; Then it calls the pointer the entry returned through the reallocated block with the two words
-; from the request. AX = 0 on success, 0FFFFh on failure, which the caller compares with -1.
+; function offset (stored at 818Eh) and BX = its size in paragraphs [H] (read from how the bytes use
+; the two results: AX is stored at 818Eh, BX is multiplied by 16 at 1C00:009B to 00A1, not from the
+; overlay's own code); four `shl bx,1` make that size in bytes. The three `pop cx` that drop the
+; entry's arguments leave CX = the overlay segment pushed at 1C00:0088, and that CX is the pointer's
+; segment in the MemRealloc call: MemRealloc (19BC:018A, E19BC.C) takes (void far *ptr, unsigned
+; size), so the call pushes the size, CX as the segment and then 0 as the offset (re/renames.toml
+; records the call as (0, seg, size)), and it resizes the overlay's own block at segment:0000 to
+; that size and keeps its contents. This function stores 0 at 818Eh and the segment at 8190h.
+; Then it calls the pointer the entry returned through the reallocated block with the request's two
+; words: `pop si` restores SI = request + 4, `lodsw` reads word +4 into BX and `lodsw` reads word +6
+; into AX, then `push ax; push bx` precedes `lcall [818Eh]` (1C00:00B8 to 00C0), so word +4 is the
+; pointer's first argument and word +6 its second. On success (the `jb short failsub` at
+; 1C00:00C6), when the mouse handler is installed (g8148) the loader clears gMouseDisabled
+; (1C00:00CD to 00D4). g8148 is 1 when the mouse driver handler is installed (E1A72.ASM:43, set at
+; :214, cleared at :200). gMouseDisabled is set to 1 at install (E1A72.ASM:215), and a non-zero
+; value disables the handler: the INT 33h handler body skips all of its work on non-zero
+; (E1A72.ASM:254-255) and HidePointer and ShowPointer do nothing on non-zero (E1BBE.ASM:89-90,
+; 178), while E07A9.C:146 and E14EF.C:227 run their pointer work only when it is zero. Clearing it
+; after a driver overlay has loaded and the pointer the entry returned has run therefore turns the
+; handler and the pointer on [H]. This clear is not the last word: after start-up returns 1, when
+; g3092 is set (E07C8.C:152), Main sets the flag again from the mouse command-line argument,
+; `if (!g8148) gMouseDisabled = 1; else gMouseDisabled = !mouse;` (E07C8.C:153-156), so the mouse
+; argument decides the final value. AX = 0 on success, 0FFFFh on failure, which the caller compares
+; with -1.
 ; A load failure or a failed MemRealloc or the second entry call leaves the 0FA00h block allocated;
 ; nothing frees it. No free on failure, not observable, because the caller prints the message, waits
-; for a key (lcall 1AAD:053A at 07C8:01DA) and returns from main at once (07C8:0265 to 0277, 01D2
-; to 01E1, 0575). The first entry call's AX, BX and flags are not checked; only the second call is
-; (the `jb short failsub` after the second call). Who writes the entry arguments at DGROUP:8125h
-; and 8127h is not established; the caller bytes at 07C8:0249 to 0258 write only 8121h and 8123h.
+; for a key (lcall 1AAD:053A at 07C8:01DA) and returns to Main through the shared epilogue of
+; StartupGame at 07C8:0575 (pop si, pop bp, retf; 07C8:0265 to 0277, 01D2 to 01E1); Main then runs
+; ShutdownGame (E07C8.C:160, 07C8:058A), which ends in exit(0) (E07C8.C:345), so the block is never
+; used again. The first entry call's AX, BX and flags are not checked; only the second call is
+; (the `jb short failsub` after the second call). Who writes the two arguments of the entry's
+; pointer at DGROUP:8125h and 8127h (request +4 and +6) is not established; the caller bytes at
+; 07C8:0249 to 0258 write only 8121h and 8123h.
         PUBLIC  _RunOverlayRequest      ; @ 1C00:0055
 _RunOverlayRequest PROC FAR
         push    bp
@@ -194,8 +215,10 @@ _RunOverlayRequest PROC FAR
         mov     word ptr [gMouseDisabled],0
 done:   xor     ax,ax
         jmp     short exit1
-; The failure path pops ds then si, the reverse of the success path above; both words pushed before
-; the load call are discarded and the epilogue restores DS and SI.
+; The failure path pops ds then si (1C00:00DE, 00DF), the reverse of the success path above: `pop
+; ds` takes the word pushed as si (1C00:006B) and `pop si` takes the word pushed as ds (1C00:006A),
+; so ds and si swap values. It is harmless, because the epilogue pops at 1C00:00E3 to 00E6 restore
+; si and ds from the entry pushes; both words pushed before the load call are discarded.
 fail:   pop     ds
         pop     si
 failsub:

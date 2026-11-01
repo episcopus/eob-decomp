@@ -2368,6 +2368,9 @@ unit = "e0d1c"
 addr = "0D1C:0006"
 size = 57
 evidence = ["far", "segment"]
+name = "f0D1C_0006"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0d1c_003f"
@@ -2375,6 +2378,9 @@ unit = "e0d1c"
 addr = "0D1C:003F"
 size = 46
 evidence = ["far", "frame"]
+name = "SelectCharacter"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0d1c_006d"
@@ -2382,6 +2388,9 @@ unit = "e0d1c"
 addr = "0D1C:006D"
 size = 11
 evidence = ["far", "frame"]
+name = "f0D1C_006D"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0d1c_0078"
@@ -2389,6 +2398,9 @@ unit = "e0d1c"
 addr = "0D1C:0078"
 size = 8
 evidence = ["far", "frame"]
+name = "f0D1C_0078"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0d1c_0080"
@@ -2396,6 +2408,9 @@ unit = "e0d1c"
 addr = "0D1C:0080"
 size = 90
 evidence = ["far", "frame"]
+name = "f0D1C_0080"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0d1c_00da"
@@ -2403,6 +2418,9 @@ unit = "e0d1c"
 addr = "0D1C:00DA"
 size = 23
 evidence = ["far", "near", "frame"]
+name = "f0D1C_00DA"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0d1c_00f1"
@@ -2410,6 +2428,9 @@ unit = "e0d1c"
 addr = "0D1C:00F1"
 size = 114
 evidence = ["near", "frame"]
+name = "FindCarriedSlot"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0d1c_0163"
@@ -2424,6 +2445,9 @@ unit = "e0d1c"
 addr = "0D1C:01CA"
 size = 274
 evidence = ["frame"]
+name = "RemoveCarriedItems"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0d1c_02dc"
@@ -2431,6 +2455,9 @@ unit = "e0d1c"
 addr = "0D1C:02DC"
 size = 40
 evidence = ["far", "frame"]
+name = "f0D1C_02DC"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0d1c_0304"
@@ -2438,6 +2465,9 @@ unit = "e0d1c"
 addr = "0D1C:0304"
 size = 86
 evidence = ["far", "frame"]
+name = "SetCurrentItem"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0d1c_035a"
@@ -2445,6 +2475,9 @@ unit = "e0d1c"
 addr = "0D1C:035A"
 size = 250
 evidence = ["frame"]
+name = "f0D1C_035A"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0d1c_0454"
@@ -2452,6 +2485,9 @@ unit = "e0d1c"
 addr = "0D1C:0454"
 size = 303
 evidence = ["frame"]
+name = "DrawRowList"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0d1c_0583"
@@ -2459,6 +2495,9 @@ unit = "e0d1c"
 addr = "0D1C:0583"
 size = 24
 evidence = ["far", "frame"]
+name = "RedrawCharacters"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0d1c_059b"
@@ -2466,6 +2505,9 @@ unit = "e0d1c"
 addr = "0D1C:059B"
 size = 213
 evidence = ["far", "frame"]
+name = "f0D1C_059B"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0d1c_0670"
@@ -2473,6 +2515,9 @@ unit = "e0d1c"
 addr = "0D1C:0670"
 size = 159
 evidence = ["far", "near", "frame"]
+name = "f0D1C_0670"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0d1c_070f"
@@ -2480,6 +2525,9 @@ unit = "e0d1c"
 addr = "0D1C:070F"
 size = 152
 evidence = ["far", "frame"]
+name = "f0D1C_070F"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0d1c_07a7"
@@ -2487,6 +2535,9 @@ unit = "e0d1c"
 addr = "0D1C:07A7"
 size = 52
 evidence = ["far", "frame"]
+name = "SkipStrings"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0d1c_07db"
@@ -2501,6 +2552,9 @@ unit = "e0d1c"
 addr = "0D1C:08B1"
 size = 82
 evidence = ["near", "frame"]
+name = "f0D1C_08B1"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0d1c_0903"
@@ -2529,6 +2583,9 @@ unit = "e0d1c"
 addr = "0D1C:0BAB"
 size = 64
 evidence = ["far", "frame"]
+name = "f0D1C_0BAB"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0d1c_0beb"
@@ -2536,6 +2593,9 @@ unit = "e0d1c"
 addr = "0D1C:0BEB"
 size = 54
 evidence = ["far", "frame"]
+name = "f0D1C_0BEB"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0d1c_0c21"
@@ -2543,6 +2603,9 @@ unit = "e0d1c"
 addr = "0D1C:0C21"
 size = 166
 evidence = ["frame"]
+name = "f0D1C_0C21"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0de8_0007"
@@ -3833,7 +3896,7 @@ size = 113
 evidence = ["near", "segment"]
 name = "FindMaskBit"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e14ef_0078"
@@ -3843,7 +3906,7 @@ size = 105
 evidence = ["near", "frame"]
 name = "BlinkText"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e14ef_00e1"
@@ -3853,7 +3916,7 @@ size = 38
 evidence = ["near", "frame"]
 name = "PointInRect"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e14ef_0107"
@@ -3863,7 +3926,7 @@ size = 77
 evidence = ["frame"]
 name = "CountMaskBits"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e14ef_0154"
@@ -3873,7 +3936,7 @@ size = 288
 evidence = ["frame"]
 name = "DrawOptionList"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e14ef_0274"
@@ -3881,7 +3944,10 @@ unit = "e14ef"
 addr = "14EF:0274"
 size = 789
 evidence = ["frame"]
-notes = "draft 2026-11-01 (src/E14EF.C): the function is correct and complete; the only reason `make match` reports a draft is the matcher's assembler. The original was assembled by TASM 2.0 with SMART off, which keeps the four separate case tails `row = 0` (down 14EF:03E6, first 14EF:03EC) and `row = rows` (up 14EF:03D2, last 14EF:03F2); TCC's internal assembler (the `-c` build the matcher uses) cross-jumps the later copy into the earlier one and drops 7 bytes, so the switch table lands at 14EF:0556 instead of 14EF:055D. Built with `-B` (TCC compile via TASM, `-ml -O -Z -B` plus TASM `/jNOSMART`) the whole unit matches byte for byte: 6 of 6 functions, unit 1410 bytes, UpdateOptionList 789 bytes. Evidence: `TCC -B` run via a harness that copies build/toolchain/tasm20/BIN/TASM.EXE into the work dir (cmatch cannot, its TCC invocation has no TASM on its drive); the plain `-c` run gives 5 ok + 1 draft at +0141. TASM needs SMART off for two reasons: E14EF has no small immediate to expose it, but E19EC.C does (`or bx,1` -> TASM SMART gives 0x83, the original and TASM `/jNOSMART` give 0x81); SMART on/off is a TASM directive, not a listed switch. The click case was rewritten as `if (PointInRect) { compute; break; } gFC7A = key; break;` (the positive form) so the success path is the fall-through and the failure is taken, matching 14EF:0417 `je`; the negative `if (!PointInRect) { ... }` form made the optimizer branch the other way (ours `jne success`). Same class as 0ACD:091C. Open for the human: should the matcher assemble C units with TASM `/jNOSMART` (it reproduces both E14EF and E19EC) instead of the internal assembler?"
+notes = "matched 2026-11-01 with `-B` (TCC -S, then TASM with SMART off): the four separate `row = 0` / `row = rows` case tails (14EF:03E6, 03EC, 03D2, 03F2) survive; TCC's internal assembler cross-jumps the later copy into the earlier one and drops 7 bytes (switch table at 14EF:0556 instead of 14EF:055D). Detail in src/E14EF.C."
+name = "UpdateOptionList"
+level = "L2"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e1547_0009"
@@ -4767,6 +4833,8 @@ unit = "e1aad"
 addr = "1AAD:000C"
 size = 535
 evidence = ["segment"]
+level = "L2"
+notes = "not a function: bytes of the unit outside its functions (a marker or padding), matched with the whole unit"
 
 [[function]]
 id = "e1aad_0223"
@@ -4774,6 +4842,9 @@ unit = "e1aad"
 addr = "1AAD:0223"
 size = 363
 evidence = ["near"]
+name = "_TranslateKey"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1aad_038e"
@@ -4781,6 +4852,9 @@ unit = "e1aad"
 addr = "1AAD:038E"
 size = 123
 evidence = ["far"]
+name = "_ReadKey"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1aad_0409"
@@ -4788,6 +4862,9 @@ unit = "e1aad"
 addr = "1AAD:0409"
 size = 104
 evidence = ["far"]
+name = "_ReadKeySpecial"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1aad_0471"
@@ -4795,6 +4872,9 @@ unit = "e1aad"
 addr = "1AAD:0471"
 size = 15
 evidence = ["far"]
+name = "_IsKeyPending"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1aad_0480"
@@ -4802,6 +4882,9 @@ unit = "e1aad"
 addr = "1AAD:0480"
 size = 13
 evidence = ["far"]
+name = "_FlushKeyBuffer"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1aad_048d"
@@ -4809,6 +4892,9 @@ unit = "e1aad"
 addr = "1AAD:048D"
 size = 173
 evidence = ["near"]
+name = "_DequeueKeyEvent"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1aad_053a"
@@ -4816,6 +4902,9 @@ unit = "e1aad"
 addr = "1AAD:053A"
 size = 78
 evidence = ["far"]
+name = "_WaitGameKey"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1aad_0588"
@@ -4823,6 +4912,9 @@ unit = "e1aad"
 addr = "1AAD:0588"
 size = 75
 evidence = ["far"]
+name = "_WaitGameKey2"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1aad_05d3"
@@ -4830,6 +4922,9 @@ unit = "e1aad"
 addr = "1AAD:05D3"
 size = 30
 evidence = ["far"]
+name = "_WaitKeyEvent"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1aad_05f1"
@@ -4837,6 +4932,9 @@ unit = "e1aad"
 addr = "1AAD:05F1"
 size = 295
 evidence = ["far", "near", "frame"]
+name = "_GetKeyState"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1aad_0718"
@@ -4844,6 +4942,9 @@ unit = "e1aad"
 addr = "1AAD:0718"
 size = 734
 evidence = ["far"]
+name = "_InstallKeyboard"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1aad_09f6"
@@ -4851,6 +4952,9 @@ unit = "e1aad"
 addr = "1AAD:09F6"
 size = 41
 evidence = ["far"]
+name = "_RemoveKeyboard"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1aad_0a1f"
@@ -4858,6 +4962,9 @@ unit = "e1aad"
 addr = "1AAD:0A1F"
 size = 239
 evidence = ["frame"]
+name = "_QueueInputEvent"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1aad_0b0e"
@@ -4865,6 +4972,9 @@ unit = "e1aad"
 addr = "1AAD:0B0E"
 size = 142
 evidence = ["far", "frame"]
+name = "_HandleMouseButtons"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1aad_0b9c"
@@ -4872,6 +4982,9 @@ unit = "e1aad"
 addr = "1AAD:0B9C"
 size = 85
 evidence = ["near"]
+name = "_QueueMouseEvent"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1aad_0bf1"
@@ -4879,6 +4992,9 @@ unit = "e1aad"
 addr = "1AAD:0BF1"
 size = 38
 evidence = ["near"]
+name = "_SetKeyDownBit"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1aad_0c17"
@@ -4886,6 +5002,9 @@ unit = "e1aad"
 addr = "1AAD:0C17"
 size = 271
 evidence = ["near"]
+name = "_ProcessKeyEvent"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1aad_0d26"
@@ -4893,6 +5012,9 @@ unit = "e1aad"
 addr = "1AAD:0D26"
 size = 51
 evidence = ["near"]
+name = "_InjectRecordedKey"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1b82_0009"
@@ -6272,6 +6394,9 @@ unit = "eov2"
 addr = "ovl2:0000"
 size = 94
 evidence = ["ovl", "near", "segment"]
+name = "SetPointerShape"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov2_005e"
@@ -6279,6 +6404,9 @@ unit = "eov2"
 addr = "ovl2:005E"
 size = 178
 evidence = ["ovl", "near", "frame"]
+name = "LoadItems"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov2_0110"
@@ -6296,6 +6424,9 @@ unit = "eov2"
 addr = "ovl2:0171"
 size = 805
 evidence = ["ovl", "near", "frame"]
+name = "LoadItemSheets"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov2_0496"
@@ -6303,6 +6434,9 @@ unit = "eov2"
 addr = "ovl2:0496"
 size = 225
 evidence = ["ovl", "near", "frame"]
+name = "InitGameTables"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov2_0577"
@@ -6310,6 +6444,9 @@ unit = "eov2"
 addr = "ovl2:0577"
 size = 534
 evidence = ["ovl", "frame"]
+name = "LoadDecorateIcons"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov2_078d"
@@ -6317,6 +6454,9 @@ unit = "eov2"
 addr = "ovl2:078D"
 size = 185
 evidence = ["ovl", "near", "frame"]
+name = "LoadIntroIcons"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov2_0846"
@@ -6324,6 +6464,9 @@ unit = "eov2"
 addr = "ovl2:0846"
 size = 241
 evidence = ["ovl", "near", "frame"]
+name = "LoadGamePanel"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov2_0937"
@@ -6331,6 +6474,9 @@ unit = "eov2"
 addr = "ovl2:0937"
 size = 149
 evidence = ["ovl", "near", "frame"]
+name = "SetUiPalette"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov2_09cc"
@@ -6348,6 +6494,9 @@ unit = "eov2"
 addr = "ovl2:09ED"
 size = 791
 evidence = ["ovl", "frame"]
+name = "FindWordPanel"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov3_0000"
@@ -6860,7 +7009,7 @@ addr = "ovl6:0000"
 size = 2018
 evidence = ["ovl", "segment"]
 name = "CampLoop"
-notes = "draft: the camp loop is written from the disassembly and reads correctly, but it does not match. First difference at +0008: the copy of the six zero bytes at ds:7F40 into the local spell-group counter array emits `lea ax,[bp-14]; push ss` where the original emits `push ss; lea ax,[bp-14]` (the argument-style far pointer push; a plain struct assignment, a struct initializer, a struct pointer dereference and a char-array cast all compile to the other order, and passing &local to a function gives the argument order but calls the function). Behind that the tick/hour control flow (six sub-steps per hour, hours%8, hours%0x18), the two 30-slot spell scans, the healing scan and the string-table far object (segment 2003 offset 0, the far strings at 0x20030) still diverge. Evidence for names: f0858 prints Hours rested, f09D2 tests monsters near, f0A92 tests ready to rest, f0B9B draws the warning box, f07E2 finds the most wounded member. The spell record stride 0x13, the tables ds:151F and ds:1344, the 0x151F/0x151f far name pointer and the 28-byte ds:8A84 monster records are from the disassembly. Five failed attempts on the copy ordering."
+notes = "blocked: the struct copy at +0008: the original pushes ss before lea ax,[bp-14] (and ds before mov ax,7F40) for F_SCOPY@ 0000:78C9, as all 15 F_SCOPY@ sites of EOB.EXE do; tc100 and tc101 push after, in every construct and switch tried (escalation eov6, 2026-11-01), also through TASM (-B) and as C++ (-P). A compiler build question for the human.; draft: the camp loop is written from the disassembly and reads correctly, but it does not match. First difference at +0008: the copy of the six zero bytes at ds:7F40 into the local spell-group counter array emits `lea ax,[bp-14]; push ss` where the original emits `push ss; lea ax,[bp-14]` (the argument-style far pointer push; a plain struct assignment, a struct initializer, a struct pointer dereference and a char-array cast all compile to the other order, and passing &local to a function gives the argument order but calls the function). Behind that the tick/hour control flow (six sub-steps per hour, hours%8, hours%0x18), the two 30-slot spell scans, the healing scan and the string-table far object (segment 2003 offset 0, the far strings at 0x20030) still diverge. Evidence for names: f0858 prints Hours rested, f09D2 tests monsters near, f0A92 tests ready to rest, f0B9B draws the warning box, f07E2 finds the most wounded member. The spell record stride 0x13, the tables ds:151F and ds:1344, the 0x151F/0x151f far name pointer and the 28-byte ds:8A84 monster records are from the disassembly. Five failed attempts on the copy ordering.; draft: the camp loop is written from the disassembly and reads correctly, but it does not match. First difference at +0008: the copy of the six zero bytes at ds:7F40 into the local spell-group counter array. The original emits `push ss; lea ax,[bp-14]; push ax; push ds; mov ax,0x7f40; push ax; mov cx,6; lcall 0,0x78c9`; the pinned tc100 emits `lea ax,[bp-14]; push ss; push ax; mov ax,0x7f40; push ds; push ax; mov cx,6; lcall 0,0x78c9`, i.e. the offset load and the segment push are swapped. 0:78C9 is F_SCOPY@ (build/re/rtl_compare.json, tc100 symbols), the compiler's struct-copy helper, called with (src, dest) and the count in CX. Evidence (2026-11-01): all 15 `lcall 0,0x78c9` sites in EOB.EXE are seg-first, `push ss`/`push ds` before the `lea`/`mov ax`; they are 0ACD:064C, 0ACD:065E, three in unit e122e (0x122E:08AD, 0FEE, 1DBC) and ten in overlay code, none in a function already at L2. Reproduced with both installed compilers (tc100 and tc101) and every struct-copy construct tried: assignment, declaration with initializer, struct pointer dereference, register pointer dereference, array element, struct member, union, cast to far pointer, by-value parameter, return value, typedef, structs of size 3 to 0x40, anonymous struct, global=local, local=local; and flags -O/-O-, -Z/-Z-, -G, -a, -k, -1 to -6, -mc/-mm/-ms/-mh, -b, -r, -Y, -v, -d, -X. All emit lea-first. The compiler's argument-push path (a call with far pointer arguments, e.g. memcpy/movmem/bcopy, or passing &local) does emit seg-first but calls the real function (_memcpy/_movmem/_bcopy) and pushes the size instead of using CX. So the original compiler either inlined constant-size memcpy/movmem into F_SCOPY@ (this TCC.EXE does not) or its struct-copy codegen differs from the archive's tc100. This is a matcher/compiler question (escalated). Behind it the tick/hour control flow (six sub-steps per hour, hours%8, hours%0x18), the two 30-slot spell scans, the healing scan and the string-table far object (segment 2003 offset 0, the far strings at 0x20030) also diverge. Evidence for names: f0858 prints Hours rested, f09D2 tests monsters near, f0A92 tests ready to rest, f0B9B draws the warning box, f07E2 finds the most wounded member. The spell record stride 0x13, the tables ds:151F and ds:1344, the 0x151F/0x151f far name pointer and the 28-byte ds:8A84 monster records are from the disassembly."
 
 [[function]]
 id = "eov6_07e2"

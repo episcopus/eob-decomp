@@ -172,6 +172,21 @@ def unit_functions(uid: str, fs: list[dict] | None = None) -> list[dict]:
     return [f for f in (fs or functions()) if f["unit"] == uid]
 
 
+BLOCKED = re.compile(r"(?<![A-Za-z])blocked:", re.I)
+
+
+def blocked(f: dict) -> bool:
+    """A function whose difference no source form produces (a compiler question for the human): its
+    notes in re/symbols.toml say `blocked:` with the evidence."""
+    return bool(BLOCKED.search(str(f.get("notes", ""))))
+
+
+def unit_blocked(uid: str, fs: list[dict] | None = None) -> bool:
+    """Every function of the unit not at L2 is blocked: nothing a session can do until the human answers."""
+    rest = [f for f in unit_functions(uid, fs) if f.get("level") not in ("L2", "L3")]
+    return bool(rest) and all(blocked(f) for f in rest)
+
+
 def unit_complete(uid: str, fs: list[dict] | None = None) -> bool:
     rs = unit_functions(uid, fs)
     return bool(rs) and all(f.get("level") in ("L2", "L3") for f in rs)
