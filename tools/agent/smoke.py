@@ -13,7 +13,7 @@ entry's role (a candidate before it goes into the roster).
 
 PASS: the session ran (the provider did not refuse it), its claim ended in a hand-off, the merge
 passed `make check`, and a decompiler's unit has more functions at L2 than before (a reviewer's
-smoke test, NAME=rev-sonnet, needs a complete unit: UNIT=e0cf7). Exit code 0 on PASS.
+smoke test, NAME=rev-haiku, needs a complete unit: UNIT=e0cf7). Exit code 0 on PASS.
 """
 from __future__ import annotations
 

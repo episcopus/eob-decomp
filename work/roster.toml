@@ -69,8 +69,11 @@ timeout = 150
 cost_cap = 8
 max_attempts = 2
 
+# The reviewer: Claude Haiku 5.5 since 2026-11-01. On the same two units Sonnet 5.5 had reviewed
+# (e1ba4, e1de4) it found the same main problems for USD 0.02 to 0.03 a review against Sonnet's 0.17
+# to 0.35, stricter (two must-fix where Sonnet wrote should) and with one miss (playbook 90).
 [[session]]
-name = "rev-sonnet"
+name = "rev-haiku"
 role = "reviewer"
-model = "openrouter/anthropic/claude-sonnet-5.5"
+model = "openrouter/anthropic/claude-haiku-5.5"
 variant = "high"
