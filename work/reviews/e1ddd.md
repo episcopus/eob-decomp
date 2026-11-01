@@ -1,7 +1,7 @@
-# Review: <unit id>
+# Review: e1ddd
 
-Reviewer: rev-sonnet
-Commit reviewed: 780ddb57e1299c491e644bec4a67634956072240
+Reviewer: rev-haiku
+Commit reviewed: 81b2233f24aa88499596cd2ea3dd4226d495da7b
 
 Playbook 70. Judge what a matching file can still get wrong: names, types, comments, structure.
 The matcher already proved the bytes; do not re-prove them, read for meaning.
@@ -11,17 +11,26 @@ The matcher already proved the bytes; do not re-prove them, read for meaning.
 Each finding is a checkbox. `must-fix` blocks `make review-pass` until a decompiler ticks it off
 (with the commit that fixes it); `should` and `note` do not block.
 
-Second review round. The first round (commits a3ca08c, b6bbb6b in git history) failed the unit on
-the int86 argument and an "always calls" claim; both were fixed (ee48384) and I re-read them against
-the bytes: they are right now (0000:60BD pushed as int86(0x10, &FF46, &FF36) at 1DDD:0019..001D and
-0061..0065; ds:84A2..84AE = 4,9,0D,13,13,7,2 and ds:84B0 = 0 in the image).
-
-- [ ] must-fix src/E1DDD.C:13: "The callers pass i = 7, so that comparison reads g84A2[7]" is wrong as a general statement. The image has 8 far calls to 1DDD:002D (bytes 9a 2d 00 dd 1d at file offsets 0xa648, 0xa668, 0xa6b2, 0xa6e9, 0xa9a8, 0xaa6c, 0xaaac, 0x1c67d). Six push 7 (07C8:01C4, 0265, 0524, 05E8, 0628 and 19BC:02B9). Two push the word ds:8102 (the graphics mode argv[1][0] reduced by '1', WHITEPAPER 111): 07C8:01E4 (`push word ptr [0x8102]` then lcall 1DDD:002D) and 07C8:022E (same). Those two are the in range case that takes the mode from the ds:84A2 table, and the compare against ds:84A0 then really reads a table entry (call skipped when the video mode is already the restore mode). The comment describes only the i = 7 case and the review text "all four callers push 7" in the previous round was also incomplete. Say: callers push either 7 (6 sites, the restore case: the else branch, g84A2[7] = ds:84B0 = 0, calls only when ds:84A0 is nonzero) or ds:8102 (2 sites, 07C8:01E4 and 022E, the table case).
-- [ ] should src/E1DDD.C:11-12: "the word at ds:84A0 (argv[5] ...)". Confirmed it is a word: 07C8:0074 calls 0000:5D63 with the far string pointer argv[5] and stores only AX at 07C8:007B (`mov [84A0], ax`, DX is not stored). WHITEPAPER 115 calls it `atol`; the bytes show a word store, so 5D63 looks like atoi (an int result). The C file is right; the whitepaper line is the thing to fix (not in scope for a unit branch). Keeping the word type in the file is correct; maybe say "atoi-like, int result [H]".
-- [ ] note f1DDD_0006 (get video mode) has no direct far call in the image (no bytes 9a 06 00 dd 1d); it may be dead code or reached some other way. Its name stays a placeholder; nothing here is wrong.
-- [ ] note f1DDD_002D semantics worth recording once a name is wanted: at the table path (i < 7) it is "set video mode i unless it equals the restore mode"; at i = 7 it is "restore the mode in ds:84A0" (and skips when ds:84A0 is 0, which is the image default before argv[5] is parsed). The code is not a bug, it is how the original reads past the table.
-- [ ] note `make match FILE=src/E1DDD.C` exits 0 here: 2 of 2 functions match, unit complete 106 bytes. Code reading for meaning (types, unsigned for mode words, f60BD void with a comment, int return for f1DDD_0006 returning AL masked to 8 bits) is fine.
+- [ ] should src/E1DDD.C:36: f1DDD_0006 keeps a placeholder name, but the bytes give evidence: it stores 0F00h in the in union (AH = 0Fh) and returns AL of the out AX. That is INT 10h AH=0Fh, get current video mode. Name it from that (for example `GetVideoMode`) and put the evidence in its comment.
+- [ ] should src/E1DDD.C:43: f1DDD_002D keeps a placeholder name, but the evidence is there: INT 10h AH=00h (set video mode) with the mode taken from g84A2[i], or from g84A0 when i = 7. Callers: 07C8:01E4 and 022E push ds:8102 (the graphics mode, WHITEPAPER 111); 07C8:01C4, 0265, 0524, 05E8, 0628 and 19BC:02B9 push 7 (the restore). Name it from that (`SetGraphicsMode` fits the WHITEPAPER 111 wording), and keep both paths visible in the name's comment, so the restore path is not hidden.
+- [ ] should src/E1DDD.C:36, 43: each function's comment is only its address (`/*@ 1DDD:0006 */`); the explanation sits in the unit header. READABILITY R3 wants a comment of 8 words or more right above each function, with its address. Move each function's paragraph there (`make readability UNIT=e1ddd` reports this; it is in the baseline, so the gate passes).
+- [ ] should src/E1DDD.C:30: `unsigned g84A2[]` is unsized, but the i = 7 path reads g84A2[7] (ds:84B0, 0 in the image) in the comparison at line 49. A port must keep that read. Mark it `QUIRK 1DDD:002D:` (READABILITY, Quirks: looks wrong, not a bug, not fixed), and either size the array 8 with entry 7 described as outside the 7 word table, or say so in the declaration comment.
+- [ ] should src/E1DDD.C:29-32: the four placeholder globals have address-only declaration comments. READABILITY (placeholder globals) wants what is known, and the unit header already has it: gFF46 and gFF36 are the AX word of the int86 in and out REGS unions; g84A0 is the restore mode from argv[5] (07C8:0069..007B: `les bx,[bp+8]`, push the far pointer, `lcall 0000:5D63`, `mov [84A0],ax`); g84A2 is the 7 word mode table (4, 9, 0Dh, 13h, 13h, 7, 2). Put that in each declaration, and name them with `make rename` (for example gRegsIn, gRegsOut, gRestoreMode, gModeTable), with the evidence in WHY.
+- [ ] should src/E1DDD.C:28: "That routine is Borland's int86" has no [H] tag. I checked the shape on our bytes: 0000:60BD calls segread at 0000:66BB, builds an `int N` stub at 0000:60EF (0xCD at [bp-0xd], N from its first argument), and tests AL against 25h and 26h at 0000:6114. That supports the identity, but the name comes from recall (the header says the routine is not in build/re/rtl_compare.json). Tag it [H], or give the rtl-compare result.
+- [ ] should src/E1DDD.C:34: the int86 comment sits between the declarations and f1DDD_0006. It belongs on the `f60BD` declaration (line 28).
+- [ ] should docs/design/WHITEPAPER.md:115: it calls argv[5] `atol`. The bytes (07C8:0074 calls the routine with the far pointer argv[5]; 07C8:007B stores only AX) and this unit's header say an int result (atoi-like, [H]). Rule 7 wants the whitepaper and the unit to agree. Owner: the whitepaper (the human, or the 07C8 owner).
+- [ ] should src/E19BC.C:23 and 148-154 (owner: e19bc, not this unit): (a) the extern is `int f1DDD_002D(int i)`, but this unit defines `void` and returns nothing, so the declaration should be `void`. (b) The OutOfMemory comment (148-151) says it "restores video mode 7". Per this unit, argument 7 means restore the mode in ds:84A0 (argv[5]); mode 7 is table entry 5 (g84A2[5] = 7), not entry 7. Not a blocker for this unit, but the e19bc owner should fix both.
+- [ ] note 1DDD:0000..0005 (bytes 5a 59 5b 58 5d cb: pop dx, pop cx, pop bx, pop ax, pop bp, retf): checked in eob/EOB.EXE at file offset 0x205d0. It is the tail of the previous function, not padding, so the header is right to leave it out of the unit.
+- [ ] note f1DDD_0006 has no far call site in the image: the bytes 9a 06 00 dd 1d occur 0 times (f1DDD_002D's bytes 9a 2d 00 dd 1d occur 8 times, as the header says). Keep that in its comment: it may be unreached.
+- [ ] note the header's statement that ds:84B0 is 0 covers the image only. Nothing in this unit writes it, but a runtime write to ds:84B0 would change the restore path. Not checked here.
+- [ ] note types: g84A0 is `unsigned`, but the header calls its source an int result (atoi-like). The code is the same either way; choose one and say why when the names are fixed.
 
 ## Summary
 
-The unit is two INT 10h video mode calls through Borland int86 and is understandable from the header, except that the header misstates which arguments reach f1DDD_002D: it says the callers pass 7, but two of the eight sites pass ds:8102 and use the table. That one comment is a must-fix, no code change needed. Names stay placeholders (no evidence of the callers' roles beyond the whitepaper), which is fine.
+The unit is understandable from its header and source. It is two INT 10h video mode calls through the runtime int86 (0000:60BD): f1DDD_0006 reads the mode (AH=0Fh) and f1DDD_002D sets it (AH=00h), either from the 7 word table (index below 7) or from the restore mode (index 7). I checked the header against the bytes: the 6 bytes before the unit, the 8 call sites of f1DDD_002D (7 pushed at 6 sites, ds:8102 at 2), the argv[5] store, and the int86 stub at 0000:60BD to 60EF to 6114. All of them hold. No must-fix: the code, the callee's behaviour and the header's facts are right.
+
+What is still open is naming, not truth. The two functions and four globals keep placeholder names, but the evidence to name them exists (the findings above), so these are `should` items. The unit's functions also lack the per-function comments R3 asks for. The biggest cross-unit issue is not in this unit: `src/E19BC.C` declares f1DDD_002D as `int` and says OutOfMemory "restores video mode 7", which reads argument 7 as a mode rather than the restore index. That is owned by e19bc and is noted above.
+
+## Earlier rounds
+
+Rounds 1 (a3ca08c) and 2 (f20f7ea) by rev-sonnet: their must-fix items (the int86 argument, the "always calls" claim, the callers' arguments) were all ticked off by ee48384, b6bbb6b and 27926ed. The text is in git history.
