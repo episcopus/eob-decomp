@@ -144,14 +144,16 @@ Playbook 70. Judge what the file can still get wrong; the bytes were proved by `
 
 ### Findings
 
-- [ ] must-fix src/E19FC.ASM:2 and re/renames.toml (the WHY of `19FC:0008=CompressLcw`): the Unpack4
+- [x] must-fix src/E19FC.ASM:2 and re/renames.toml (the WHY of `19FC:0008=CompressLcw`): the Unpack4
   citation "src/E1B82.C:39" is off by one. `grep -n Unpack4 src/E1B82.C` gives line 40, the declaration
   `extern void Unpack4(char far *src, void far *dst, int len); /*@ 1D9A:0013 */`. Line 39 is Unpack2.
   Round 4 changed :22 to :39 and the check did not catch the second slip. Cite :40 in both places. (The
   rename WHY is in `re/renames.toml`; it goes through `make rename` or the registry entry, as the
   decompiler sees fit.)
+  Fixed in 0fb2ab8: src/E19FC.ASM:2 and the re/renames.toml WHY now cite src/E1B82.C:40, and the WHY
+  records that :39 was Unpack2.
 
-- [ ] must-fix src/E19FC.ASM:31-34: "No caller was found" and "the packet reports no direct call" are
+- [x] must-fix src/E19FC.ASM:31-34: "No caller was found" and "the packet reports no direct call" are
   wrong. The caller is `ovl3:0FD1` (placeholder `eov3_0fd1`, no src/ file yet): the call at `ovl3:1033`
   is relocated by the overlay fixup at `ovl3:1036` to segment index 28, which is 19FC, so it reaches
   19FC:0008 (evidence: `build/re/eob.json` overlay 3 fixups and segments[28]; the FBOV copy at
@@ -159,8 +161,11 @@ Playbook 70. Judge what the file can still get wrong; the bytes were proved by `
   segment index, not the paragraph. `tools/agent/packet.py` (`Program.target`, lines 60-77) resolves the
   fixup, so the packet's caller list is right. Say this in the header, cite `ovl3:1033` and `eov3_0fd1`,
   and drop the note that the packet checks direct calls only.
+  Fixed in 0fb2ab8: the header names the caller `ovl3:0FD1` (eov3_0fd1), cites `ovl3:1033`, the fixup at
+  `ovl3:1036`, segment index 28 and the FBOV copy at 0x3ADB3, and drops the "no direct call" note. It
+  also states the block size (1000h) and the source (gBufDCFC); the caller's own role stays with eov3.
 
-- [ ] must-fix src/E19FC.ASM:40-43: "pass a length of at least 1" is wrong; the minimum is 2. The first
+- [x] must-fix src/E19FC.ASM:40-43: "pass a length of at least 1" is wrong; the minimum is 2. The first
   literal is written at 104-107, and then `mainloop` (108) runs with no length test; the only end test is
   at `loopend` (231-234). With length 1, the first search reads the byte past the end (117) and encodes
   it as a second literal, so the stream 82h, src[0], src[1], 80h decodes to 2 bytes. If those two bytes
@@ -169,34 +174,53 @@ Playbook 70. Judge what the file can still get wrong; the bytes were proved by `
   because the first mainloop pass is at start+1, which is below the end. This is from reading the code,
   not a run. Change the limit to "at least 2" and say what a shorter length does (or that the caller must
   not pass one).
+  Fixed in 0fb2ab8: the limits paragraph now requires a length of at least 2 and says a length of 1
+  encodes the byte past the end as a second literal (82h, src[0], src[1], 80h, 2 bytes), with the equal
+  bytes case making gBestLen FFFFh and si wrapping back to the source start; a length of 0 is worse.
+  Marked read from the code, not run. The garbled sentence in the same paragraph is rewritten too (see
+  the next should).
 
-- [ ] should src/E19FC.ASM:73-74: "the epilogue restores SI, ES, DS and DI ... so AX is the only result"
+- [x] should src/E19FC.ASM:73-74: "the epilogue restores SI, ES, DS and DI ... so AX is the only result"
   is true but names four registers where the epilogue restores every register except AX (the pops at
   240-247 also restore DX, CX, BX and BP). Say that.
+  Fixed in 0fb2ab8: the function comment now says the epilogue (19FC:0187) pops si, es, dx, ds, di, cx,
+  bx and bp, so it restores every register except AX, which is the only result.
 
-- [ ] should src/E19FC.ASM:1-9: "which the C compiler does not emit for C source" is a claim about
+- [x] should src/E19FC.ASM:1-9: "which the C compiler does not emit for C source" is a claim about
   Turbo C++ 1.00 output made from recall. Ground rule 1 says how the compiler treats an idiom is settled
   by compiling it. Either tag it [H] or compile one sample if the toolchain is installed (`make tc-check`).
   Line 6, "The unit is written in assembly", is the same kind of claim; tag it [H] too.
+  Fixed in 0fb2ab8: both claims carry [H] (the assembly claim on the phrase, the cs: / string-instruction
+  claim names Turbo C++ 1.00 explicitly). No sample compiled; the toolchain was not exercised here.
 
-- [ ] should src/E19FC.ASM:14-29: the token meanings cite `tools/re/wwfmt.py lcw` as [H]. WHITEPAPER 4.2
+- [x] should src/E19FC.ASM:14-29: the token meanings cite `tools/re/wwfmt.py lcw` as [H]. WHITEPAPER 4.2
   says the decoder Unpack4 (1D9A:0013) matches the oracle byte for byte on all 131 format-4 files
   (`tests/unit/test_wwfmt.py`). Cite that for the decoder side of the token set. The encoder side is
   still unverified, and the header already says no round trip has run.
+  Fixed in 0fb2ab8: the token paragraph now cites WHITEPAPER 4.2 and tests/unit/test_wwfmt.py for the
+  decoder side (Unpack4 on all 131 format-4 files) and keeps tools/re/wwfmt.py lcw as the [H] model;
+  the encoder side is named unverified.
 
-- [ ] should src/E19FC.ASM:39-41: the sentence "All offsets are 16 bits ... and add bp,dx (end of the
+- [x] should src/E19FC.ASM:39-41: the sentence "All offsets are 16 bits ... and add bp,dx (end of the
   source) wraps at 10000h when offset + length passes FFFFh" is a fragment. It means that bp = start +
   length (98-99) is a 16-bit sum that wraps at 10000h. Rewrite it as that.
+  Fixed in 0fb2ab8: the sentence now reads "bp = start + length (19FC:0034, 19FC:0036) is a 16-bit sum
+  that wraps at 10000h, and the output has the same limit".
 
-- [ ] should src/E19FC.ASM:65-68: "data, not code" is right in that nothing falls through to 19FC:0007 (the
+- [x] should src/E19FC.ASM:65-68: "data, not code" is right in that nothing falls through to 19FC:0007 (the
   19F3 unit ends in retf, 19F3:0096), but the header gives no reason. Add "the byte after the 19F3 unit's
   retf, before the encoder's push bp (19FC:0008)".
+  Fixed in 0fb2ab8: the marker paragraph now says nothing falls through to the 00 because the 19F3 unit
+  ends in its retf at 19F3:0096 (EOB.EXE 116678), and that the 00 is the byte after that retf, just
+  before the encoder's push bp at 19FC:0008.
 
-- [ ] note: the caller is the lead the header's "the game role stays unknown" needs. `ovl3:0FD1` compresses
+- [x] note: the caller is the lead the header's "the game role stays unknown" needs. `ovl3:0FD1` compresses
   one 4096-byte block from `gBufDCFC` (ds:DCFC) per call, and it also calls 1BA8:0006 (Unpack0, src/E1B82.C:36,
   `ovl3:108F`) and an indirect call through `ds:80CA` (`ovl3:106C`, named gDrawText in src/E1AA6.C:7,
   not checked here). Its role is for the eov3 review. The header can state the block size and the source
   without naming the caller's role.
+  Fixed in 0fb2ab8: the header states the caller, the length 1000h (4096) and the source gBufDCFC, and
+  leaves the caller's role to the eov3 review.
 
 ### Summary
 
