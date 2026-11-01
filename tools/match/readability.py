@@ -4,7 +4,8 @@
   make readability [UNIT=<id>]       every unit with a source file, or one; prints every finding
   make readability GATE=1            fails only on findings that are not in work/readability-baseline.txt,
                                      in the files READABILITY_FILES names when it is set (make integrate:
-                                     the files the hand-off changed), else in every file
+                                     the files the hand-off changed), or during a merge in the files the
+                                     merge brings, else in every file
   make readability BASELINE=1        rewrites the baseline from the current findings (the human, when
                                      the rules change; it only ever shrinks otherwise)
 
@@ -154,6 +155,20 @@ def findings(unit: str = "") -> list[tuple[str, str, str]]:
     return [f for p in files for f in check_file(p, recorded, names_by_addr)]
 
 
+def merging() -> bool:
+    """A merge is in progress in this checkout (make integrate's temporary worktree)."""
+    import subprocess
+    r = subprocess.run(["git", "rev-parse", "--git-path", "MERGE_HEAD"], cwd=ROOT, capture_output=True, text=True)
+    return r.returncode == 0 and (ROOT / r.stdout.strip()).exists()
+
+
+def changed_in_merge() -> list[str]:
+    """The files the merge in progress changes (what the branch brings)."""
+    import subprocess
+    r = subprocess.run(["git", "diff", "--name-only", "--cached", "HEAD"], cwd=ROOT, capture_output=True, text=True)
+    return r.stdout.split()
+
+
 def baseline() -> set[str]:
     return {l.strip() for l in BASELINE.read_text().splitlines() if l.strip() and not l.startswith("#")} \
         if BASELINE.exists() else set()
@@ -178,6 +193,8 @@ def main(argv=None) -> int:
         return 0
     base = baseline()
     only = os.environ.get("READABILITY_FILES")
+    if a.gate and only is None and merging():
+        only = " ".join(changed_in_merge())
     if a.gate and only is not None:
         names = {Path(f).name for f in only.split() if f.startswith("src/")}
         found = [f for f in found if f[0].split("|")[0] in names]
