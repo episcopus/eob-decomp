@@ -4557,6 +4557,9 @@ unit = "e1ba4"
 addr = "1BA4:000C"
 size = 57
 evidence = ["far", "segment"]
+name = "f1BA4_000C"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e1ba8_0005"
