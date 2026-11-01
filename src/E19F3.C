@@ -7,10 +7,11 @@
    move shifts its partner on the same axis and the size by the same amount: a moves c and
    e, c moves a and e, b moves d and f, d moves b and f. The eight ints then go on
    unchanged in source order (their push order in the bytes is h, g, f, e, d, c, b, a).
-   The names a..h are placeholders: a and c are the axis paired with size e and b and d the
-   axis paired with size f, as their shared corrections show; g and h are passed through
-   untouched. No caller was inspected, so what 40 and 200 measure, and what the far routine
-   does, are unknown. */
+   The names a..h are placeholders: a and c are two x origins with e their extent, b and d
+   two y origins with f their extent, as their shared corrections show; g and h are passed
+   through untouched. Call sites push the eight ints (add sp,10h): 082C:05DD passes
+   a=b=c=d=0, e=40, f=200, g=2, h=0, and 0EF3:071E the same origins with e=22, f=120, g=0,
+   h=2. What 40 and 200 measure, and what the far routine does, are still unknown. */
 
 extern void (far *gFar8052)(int a, int b, int c, int d, int e, int f, int g, int h); /*@ ds:8052 */
 
