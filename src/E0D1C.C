@@ -49,6 +49,14 @@ extern char far *gBufF534; /*@ ds:F534 */   /* the 1600-byte ITEMRMP buffer (src
 extern void (far *gFn80D2)(void far *map); /*@ ds:80D2 */ /* the far colour-table callback (src/E07A9.C) */
 extern void far *gIconsDDE4[]; /*@ ds:DDE4 */ /* the item icon far pointers (src/E07A9.C) */
 
+struct ItemInfo {           /* 16-byte records at ds:A9F6; read by 0D1C:07DB */
+    signed char m00;        /* +0 (ds:A9F6) */
+    char pad01[7];
+    int m08;                /* +8 (ds:A9FE) */
+    char pad0A[6];
+};
+extern struct ItemInfo gA9F6[]; /*@ ds:A9F6 */
+
 struct Row8 {               /* eight-byte rows at ds:5482, four words: a DrawBox rectangle */
     int m0;
     int m2;
@@ -78,6 +86,7 @@ extern void f1547_07E7(char who, char slot); /*@ 1547:07E7 */
 extern void f0BD2_0917(int who, int slot, int one); /*@ 0BD2:0917 */
 extern void f0BD2_01D0(void far *head, int key, int item, int sound); /*@ 0BD2:01D0 */
 extern int f0BD2_02B9(void far *head, int key, int item); /*@ 0BD2:02B9 */
+extern int f0BD2_11FD(int who, int slot); /*@ 0BD2:11FD */
 extern void f07A9_010C(int n); /*@ 07A9:010C */
 extern int far RollDice(char count, char sides, char bonus); /*@ 082C:0458 */
 extern void f1414_0B2E(void); /*@ 1414:0B2E */
@@ -442,8 +451,60 @@ int f0D1C_02DC(void);
     }
     return cursor;
 }
-/*@ 0D1C:07DB stub */ void f0D1C_07DB(void) {}
-/*@ 0D1C:08B1 stub */ void f0D1C_08B1(void) {}
+/* 0D1C:07DB: Purpose unknown: combines the first two carried items of gChars[who] (slots 0 and
+   1). Each slot's item is passed to f0BD2_11FD and its ds:8DD2 record's m02 indexes the 16-byte
+   records at ds:A9F6. With `flag` 0 it returns 1 when slot 0 holds an item and f0BD2_11FD also
+   accepted it. Otherwise it returns 0 when slot 0 holds an item whose gA9F6[m02].m00 is 2, then
+   1 when slot 1 is empty, and for a slot-1 item whose gA9F6[m1].m08 (low 7 bits) is 1, 2 or 3,
+   0 when gA9F6[m1].m00 is nonzero, else the slot-1 result. Called by 0BD2:1001, 0DE8:0D5E and
+   1547:07E7. Placeholder: what the values mean is not established. DRAFT: matches every byte
+   except that the compiler lays the `A <= 0 || A >= 4` return out with a two-byte trampoline
+   (0D1C:0897 `jmp`); the original branches straight to the shared return. */
+/*@ 0D1C:07DB draft */ int f0D1C_07DB(int who, int flag)
+{
+    int slot0;
+    int result0;
+    int slot1;
+    int result1;
+    int m0;
+    int m1;
+
+    slot0 = gChars[who].m77[0];
+    result0 = f0BD2_11FD(who, slot0);
+    m0 = gTable8DD2[slot0].m02;
+    if (flag == 0)
+        return slot0 == 0 || result0 != 0;
+    slot1 = gChars[who].m77[1];
+    result1 = f0BD2_11FD(who, slot1);
+    m1 = gTable8DD2[slot1].m02;
+    if (slot0 != 0 && gA9F6[m0].m00 == 2)
+        return 0;
+    if (slot1 == 0)
+        return 1;
+    if ((gA9F6[m1].m08 & 0x7f) <= 0 || (gA9F6[m1].m08 & 0x7f) >= 4)
+        return result1;
+    if (gA9F6[m1].m00 != 0)
+        return 0;
+    return result1;
+}
+/* 0D1C:08B1: Purpose unknown: returns 1 when one of the first two carried items of the character
+   record `rec` (m77[0] or m77[1]) holds a nonzero item whose ds:8DD2 record's m02 indexes a
+   ds:A9F6 record with m08 == 6, otherwise 0. The pointer is a character record (the slots are at
+   +77). Called by 0D1C:0903. */
+/*@ 0D1C:08B1 */ int f0D1C_08B1(struct CharRec far *rec)
+{
+    int item;
+    int i;
+
+    for (i = 0; i <= 1; i++) {
+        if (rec->m77[i]) {
+            item = gTable8DD2[rec->m77[i]].m02;
+            if (gA9F6[item].m08 == 6)
+                return 1;
+        }
+    }
+    return 0;
+}
 /*@ 0D1C:0903 stub */ void f0D1C_0903(void) {}
 /*@ 0D1C:09CB stub */ void f0D1C_09CB(void) {}
 /*@ 0D1C:0A43 stub */ void f0D1C_0A43(void) {}

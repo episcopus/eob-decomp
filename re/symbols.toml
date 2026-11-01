@@ -2470,6 +2470,9 @@ unit = "e0d1c"
 addr = "0D1C:08B1"
 size = 82
 evidence = ["near", "frame"]
+name = "f0D1C_08B1"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0d1c_0903"
