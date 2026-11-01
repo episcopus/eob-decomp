@@ -3689,6 +3689,9 @@ unit = "e14ef"
 addr = "14EF:0007"
 size = 113
 evidence = ["near", "segment"]
+name = "FindMaskBit"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e14ef_0078"
@@ -3696,6 +3699,9 @@ unit = "e14ef"
 addr = "14EF:0078"
 size = 105
 evidence = ["near", "frame"]
+name = "BlinkText"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e14ef_00e1"
@@ -3703,6 +3709,9 @@ unit = "e14ef"
 addr = "14EF:00E1"
 size = 38
 evidence = ["near", "frame"]
+name = "PointInRect"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e14ef_0107"
@@ -3710,6 +3719,9 @@ unit = "e14ef"
 addr = "14EF:0107"
 size = 77
 evidence = ["frame"]
+name = "CountMaskBits"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e14ef_0154"
