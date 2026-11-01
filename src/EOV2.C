@@ -48,6 +48,16 @@ struct Triple6 {            /* six bytes, the record InitGameTables clears */
     char c[2];
 };
 
+struct Pos2 {               /* a word pair, the per-cell origin tables */
+    int x;
+    int y;
+};
+
+struct Size2 {              /* a byte pair, the per-cell width/height tables */
+    char w;
+    char h;
+};
+
 extern int g8102; /*@ ds:8102 */
 extern int g8115; /*@ ds:8115 */
 extern char g811B; /*@ ds:811B */
@@ -56,6 +66,20 @@ extern int g811F; /*@ ds:811F */
 extern struct Region gRegions[]; /*@ ds:009F */
 extern struct ItemType gItemTypes[]; /*@ ds:A9F0 */
 extern struct ItemRec gItems[]; /*@ ds:8DD0 */
+extern struct Pos2 gCellPosL1[]; /*@ ds:64F8 */
+extern struct Pos2 gCellPosS1[]; /*@ ds:6534 */
+extern char gCellDX[]; /*@ ds:65AC */
+extern struct Size2 gCellSize1[]; /*@ ds:65B0 */
+extern struct Size2 gCellSize2[]; /*@ ds:65B8 */
+extern void far *gItemL1Icons[][4]; /*@ ds:EC9A */
+extern void far *gItemS1Icons[][4]; /*@ ds:ED8A */
+extern void far *gThrownIcons[][4]; /*@ ds:F2F8 */
+extern void far *gThrownIcon0; /*@ ds:FB38 */
+extern void far *gThrownIcon1; /*@ ds:FB3C */
+extern void far *gThrownIcon2; /*@ ds:FB40 */
+extern void far *gThrownIcon3; /*@ ds:EFB4 */
+extern void far *gThrownIcon4; /*@ ds:EFBE */
+extern char gFileNameBuf[]; /*@ ds:FE6E */
 extern int gItemCount; /*@ ds:E066 */
 extern int gItemNameCount; /*@ ds:F516 */
 extern unsigned char far gItemNames[]; /*@ 1F28:0000 */
@@ -194,8 +218,55 @@ extern void FileClose(int handle); /*@ 1C0E:03BB */
     FileClose(handle);
 }
 
-/* ovl2:0171 stub */
-/*@ ovl2:0171 stub */ void Ovl2_0171(void) {}
+/* ovl2:0171: loads the four item icon sheets (ITEML1, ITEMS1, THROWN, ITEMICN), slices every cell
+   out of them through gGetSpriteCell into the icon tables (gItemL1Icons, gItemS1Icons,
+   gThrownIcons, gIconsDDE4) and the five single THROWN cells, allocates the 0x12C-byte item
+   description buffer (gDF48), then reads ITEMRMP.VGA (g8102 == 3) or ITEMRMP.EGA into gBufF534.
+   Called by Ovl2_0577 right before it loads DECORATE. */
+/*@ ovl2:0171 */ void LoadItemSheets(void)
+{
+    int handle;
+    int i;
+    int j;
+
+    f082C_05EC("ITEML1", 5, 3);
+    for (i = 0; i < 0xe; i++)
+        for (j = 0; j < 4; j++)
+            gItemL1Icons[i][j] = gGetSpriteCell(gCellPosL1[i].x,
+                gCellPosL1[i].y + gCellDX[j], gCellSize1[j].w, gCellSize1[j].h,
+                gSheetITEML1);
+
+    f082C_05EC("ITEMS1", 5, 3);
+    for (i = 0; i < 0x17; i++)
+        for (j = 0; j < 4; j++)
+            gItemS1Icons[i][j] = gGetSpriteCell(gCellPosS1[i].x,
+                gCellPosS1[i].y + gCellDX[j], gCellSize2[j].w, gCellSize2[j].h,
+                gSheetITEMS1);
+
+    f082C_05EC("THROWN", 5, 3);
+    for (i = 0; i < 0xc; i++)
+        for (j = 0; j < 4; j++)
+            gThrownIcons[i][j] = gGetSpriteCell(gCellPosS1[i].x,
+                gCellPosS1[i].y + gCellDX[j], gCellSize2[j].w, gCellSize2[j].h,
+                gSheetTHROWN);
+
+    gThrownIcon0 = gGetSpriteCell(0x10, 0, 4, 0x18, gSheetTHROWN);
+    gThrownIcon1 = gGetSpriteCell(0x10, 0x18, 4, 0x18, gSheetTHROWN);
+    gThrownIcon2 = gGetSpriteCell(0x10, 0x30, 3, 0x18, gSheetTHROWN);
+    gThrownIcon3 = gGetSpriteCell(0x10, 0x90, 5, 0x18, gSheetTHROWN);
+    gThrownIcon4 = gGetSpriteCell(0x10, 0xa8, 5, 0x10, gSheetTHROWN);
+
+    f082C_05EC("ITEMICN", 5, 3);
+    for (i = 1; i < 0x59; i++)
+        gIconsDDE4[i] = gGetSpriteCell((i % 20) * 2, (i / 20) * 16, 2, 0x10, gSheetITEMICN);
+
+    gDF48 = MemAlloc(0x12cL, 0);
+    g8115 = 0;
+    sprintf(gFileNameBuf, "ITEMRMP.%s", g8102 == 3 ? "VGA" : "EGA");
+    handle = FileOpen(gFileNameBuf, 1);
+    FileRead(handle, gBufF534, 0x640L);
+    FileClose(handle);
+}
 
 /* ovl2:0496: clears the item, spell and creature tables and allocates one 0x514-byte scratch
    buffer for each of the six character records (gChars[i].buf). Called by LoadItemData. */
