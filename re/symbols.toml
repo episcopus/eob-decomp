@@ -5001,6 +5001,9 @@ unit = "e1de4"
 addr = "1DE4:0000"
 size = 13
 evidence = ["far", "segment"]
+name = "_f1DE4_0000"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1de4_000d"
@@ -5008,6 +5011,9 @@ unit = "e1de4"
 addr = "1DE4:000D"
 size = 44
 evidence = ["far", "frame"]
+name = "_f1DE4_000D"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1de7_0009"
