@@ -40,14 +40,15 @@ clampedy:
         mov     dx, ds:[8150h]
 storey: mov     ds:[813Ah], dx
         cmp     word ptr ds:[8148h], 0
-        je      moved
+        je      checkmove
         cmp     word ptr ds:[8144h], 1
-        jne     position
+        jne     setpos
         shl     cx, 1
-position:
+setpos:
         mov     ax, 4
         int     33h
-moved:  mov     ax, ds:[8138h]
+checkmove:
+        mov     ax, ds:[8138h]
         cmp     ds:[815Ch], ax
         jne     redraw
         mov     ax, ds:[813Ah]
