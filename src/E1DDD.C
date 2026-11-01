@@ -1,18 +1,31 @@
-/* Unit at EOB.EXE 1DDD:0006 (106 bytes, 2 functions). Both set the word at ds:FF46 and
-   then call the runtime routine at 0000:60BD with three arguments, the count 16 and the
-   far addresses ds:FF46 and ds:FF36. f1DDD_0006 sets ds:FF46 to 0xF00 and returns the low
-   byte of the word at ds:FF36. f1DDD_002D takes an index: for i below 7 it uses the 7 word
-   table at ds:84A2, otherwise the word at ds:84A0; the call happens only when ds:84A2[i]
-   differs from ds:84A0 (the caller at 07C8:01C4 passes 7, so it always calls). Placeholder
-   names; the runtime routine at 0000:60BD is not in build/re/rtl_compare.json. */
+/* Unit at EOB.EXE 1DDD:0006 (106 bytes, 2 functions). Two INT 10h video BIOS calls through
+   the runtime int86 at 0000:60BD. That routine is Borland's int86(intno, inregs, outregs): it
+   saves the segment registers with segread (0000:66BB) and then runs 0000:60EF, which builds
+   an "int N" stub on its own stack (0xCD at [bp-0xd], N = the low byte of its first argument
+   at 0000:6109) and lcalls it (0000:614B); the 25h/26h test at 0000:6114 is the absolute disk
+   read/write special case. The unit passes ds:FF46 as the in register union and ds:FF36 as the
+   out one; each is the .x.ax word of a 16 byte union REGS [H].
+   f1DDD_0006 is INT 10h AH=0Fh (get current video mode): it puts 0F00h in the in union
+   (AH=0Fh), calls int86(0x10, &gFF46, &gFF36), and returns the low byte (AL) of the out AX.
+   f1DDD_002D is INT 10h AH=00h (set video mode) with AL = the mode: for an index below 7 it
+   takes the mode from the 7 word table at ds:84A2 (4, 9, 0Dh, 13h, 13h, 7, 2), otherwise the
+   word at ds:84A0 (argv[5], the video mode restored on exit). It puts the mode in the in union
+   and calls int86 only when g84A2[i] differs from ds:84A0. The callers pass i = 7, so that
+   comparison reads g84A2[7] = ds:84B0, one word past the 7 entry table (g84A2[] is unbounded
+   here); ds:84B0 is 0 in the image, so the call happens only when ds:84A0 is nonzero.
+   Placeholder names; the runtime int86 is not in build/re/rtl_compare.json. The 6 bytes at
+   1DDD:0000..0005 before the first function (pop dx, cx, bx, ax; pop bp; retf) are code, not
+   padding, and are outside this unit. */
 
 /*@flags -ml -O -Z */
 
-extern void f60BD(unsigned n, void far *src, void far *dst); /*@ 0000:60BD */
+extern void f60BD(int intno, void far *inregs, void far *outregs); /*@ 0000:60BD */
 extern unsigned g84A0; /*@ ds:84A0 */
 extern unsigned g84A2[]; /*@ ds:84A2 */
 extern unsigned gFF46; /*@ ds:FF46 */
 extern unsigned gFF36; /*@ ds:FF36 */
+
+/* int86 returns the output AX; declared void here because both callers ignore it. */
 
 /*@ 1DDD:0006 */ int f1DDD_0006(void)
 {
