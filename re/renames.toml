@@ -54,3 +54,12 @@ new = "OutOfMemory"
 kind = "function"
 why = "allocation failure hook at ds:810A called by MemAlloc when farmalloc fails; prints the Memory Allocation Error string, restores video mode 7 and exits"
 date = "2026-11-01"
+
+[[rename]]
+id = "19BC:018A=MemRealloc"
+addr = "19BC:018A"
+old = ""
+new = "MemRealloc"
+kind = "function"
+why = "resizes a MemAlloc block, reads and rewrites the header byte, calls realloc; called by 1C00:00A8 with (0, seg, size)"
+date = "2026-11-01"

@@ -4105,6 +4105,7 @@ unit = "e19bc"
 addr = "19BC:018A"
 size = 179
 evidence = ["far", "frame"]
+name = "MemRealloc"
 
 [[function]]
 id = "e19bc_023d"

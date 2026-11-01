@@ -46,7 +46,33 @@ extern void f07C8_058A(void); /*@ 07C8:058A */
     g810E--;
 }
 
-/*@ 19BC:018A stub */ void f19BC_018A(void) {}
+/* 19BC:018A: resize a block from MemAlloc, the counterpart of MemFree. It reads the flags byte
+   before the block (at segment minus one, offset plus 15) and, for a paragraph aligned block
+   (0x20), reallocs at the block recovered from the header's low nibble, stores a fresh header
+   just before the new block and returns it at offset 0 of the next segment; otherwise it
+   reallocs at the header address, restores the flags byte and returns the block one byte in. */
+/*@ 19BC:018A */ void far *MemRealloc(void far *ptr, unsigned size)
+{
+    unsigned char far *blk;
+    unsigned char low;
+    unsigned char high;
+
+    blk = (unsigned char far *)MK_FP(FP_SEG(ptr) - 1, FP_OFF(ptr) + 15);
+    low = *blk & 0xf;
+    high = *blk & 0xf0;
+    size += (high & 0x20) ? 0x10 : 1;
+    if (high & 0x20) {
+        blk = realloc((void far *)MK_FP(FP_SEG(blk), 15 - low), size);
+        low = 0x10 - (unsigned char)FP_OFF(blk);
+        (blk - 1)[low] = (low - 1) | high;
+        blk = MK_FP(FP_SEG(blk) + 1, 0);
+    } else {
+        blk = realloc(blk, size);
+        *blk = high;
+        blk++;
+    }
+    return blk;
+}
 
 /* 19BC:023D: the largest free block the far heap can hand out, in bytes, or 0 when there is no
    usable block. It starts from farcoreleft and then walks the heap (farheapwalk returns 2 while a
