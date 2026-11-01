@@ -196,3 +196,70 @@ HEAP_BLOCK. The placeholders are g80AA, g80A2 and g80C6 (the callees behind them
 call sites and the comments in E1BBE.ASM and E1BF3.ASM), and g8172/g8174 (the writer and reader are named, the argument's
 meaning is not). One must-fix remains: the header says the size query and reallocation happen only on a size change, but
 the first call with no buffer does them too. Verdict: review-failed.
+
+## Fourth review (rev-haiku, at 976601e)
+
+Reviewer: rev-haiku. Commit reviewed: 976601e (review/e1bb1). main (2478224) differs from it only in
+src/E1C00.ASM and two review files, so src/E1BB1.ASM is the d6b6337 version that the third round checked.
+The three earlier rounds are ticked above; this round reads the unit again from its source and its callers.
+This file was appended to, not replaced from TEMPLATE.md, to keep the three rounds of history.
+
+Checks: `make match FILE=src/E1BB1.ASM` 1 of 1 (208 of 208 bytes); `make readability UNIT=e1bb1` 0 findings.
+Read only, against eob/EOB.EXE with tools/re/disasm.py: 1BB1 (whole unit: the hide at 0013, the hot spot and
+record stores 0018..0030, the buffer paths 003F..0056, the size query 006F, the margin test 0076..0086, MemAlloc
+0088..009A, the 80AA/ShowPointer/80A2 order 00A9..00BD, the return values 00C1/00C6); 1BBE 0006..0017, 0075,
+00E0 (the hide), 0077..00B3 (the clips), 00B9..00DD (the restore), 00ED..00F8 and 01B9..01F4 (show, save
+through [80AE], draw through [80C2]), 0111..0127 (the show's position). E1A72.ASM:442-443 (the writes of
+8172/8174) and :440-441 (the reads); E1BF3.ASM:61-62 and :81..108 (only pushes and the busy flag). E19BC.C:5
+("less one 16 byte block"), :28-33 (the flags), :34 (MemAlloc's parameters), :142 (`max -= 0x10`). E1A29.C:19-22
+(8-pixel columns). src/EOV2.C:206-211 and :451, and `make match FILE=src/EOV2.C` 11 of 11 (the overlay caller is in
+the bytes). The disassembly agrees with every byte-level claim in the header except the points below.
+
+### Findings
+
+- [ ] must-fix src/E1BB1.ASM:5-7: "Called from f07A9_010C ... and the record gIconsDDE4[n] in both cases" names one
+  caller, but there are two. `SetPointerShape` at ovl2:0000 (src/EOV2.C:206-211) calls
+  `SetMousePointerShape(0, 0, gPtrDD00)`, with gPtrDD00 = gIconsDDE4[0] (EOV2.C:210), and LoadItemData
+  (ovl2:09CC, EOV2.C:451) calls SetPointerShape. The call is in the overlay bytes (EOV2 matches 11 of 11). Name
+  both callers with their arguments; "gIconsDDE4[n] in both cases" holds only for f07A9_010C. The third round's
+  summary ("one caller") is wrong for the same reason, and the round-3 note asking whether the packet's ovl2:0000
+  caller is a real call is answered: it is.
+- [ ] must-fix src/E1BB1.ASM:7, re/renames.toml:181, :208, :217, re/globals.toml:67 and :72: the citation
+  "E07A9.C:127-130" for the two calls is stale. In the current file they are at src/E07A9.C:164 and :166
+  (`SetMousePointerShape(8, 8, gIconsDDE4[n])` and `(0, 0, gIconsDDE4[n])`; `grep -n "SetMousePointerShape(" src/E07A9.C`).
+  The icon-table citation "E07A9.C:41-43" in src/E1BB1.ASM:7 is also stale: the comment is at E07A9.C:64-68, above
+  `gIconsDDE4` (E07A9.C:69). Cite the current lines.
+- [ ] should src/E1BB1.ASM:8-9: "the hot spot ds:8158/815A is subtracted from the last drawn pointer position
+  ds:815C/815E (1BBE:001E..002F, 1BBE:0111..012E)". The hide (1BBE:001E..002F) subtracts from ds:815C/815E. The
+  show does not: 1BBE:0111 and :0121 store the mouse position into ds:815C/815E, and 1BBE:0117 and :0127 subtract
+  the hot spot from that same mouse position to get the rectangle. Say that the show sets the drawn position to the
+  mouse position and subtracts the hot spot from it.
+- [ ] should src/E1BB1.ASM:15-17: the clip citations are off. "1BBE:0095 adds it to the pointer's y and clips to 200":
+  1BBE:0095 adds the height to the top edge ds:8178 to make the bottom edge ds:817C; the clip to 200 is at
+  1BBE:00AB..00B3. "1BBE:005F adds it to x>>3 and clips to 40": the right edge ds:817A is clipped to 40 at
+  1BBE:0077..007E, and the left edge at 1BBE:0051..005A. Cite those addresses.
+- [ ] should src/E1BB1.ASM:180-183 (QUIRK 1BB1:00C6, first paragraph): the dangling buffer comes only from a
+  failure after a resize freed the old buffer (1BB1:0058..005C), or from a first-time failure, which leaves ds:816C
+  zero. The comment omits the worse case: a later call with a different size calls MemFree on the freed block again
+  (1BB1:0044 `jne` to 0052, then 0058..005C with ds:816A/816C), a double free. Say both.
+- [ ] note the other units' notes from rounds 2 and 3 are still open for their owners and this branch does not touch
+  them: src/E1BBE.ASM:65 cites "1BB1:0094" for the size query (the call is at 1BB1:006F); the "already hidden" wording
+  at src/E1BBE.ASM:72..76 (1BBE:0015 `jne 0075` increments the count); the "semaphore" wording for ds:812E at
+  src/E1A72.ASM:7 and :32 and src/E1BBE.ASM (where this unit says busy flag); and src/E07A9.C:86-87 "stores the
+  hot-spot offset" (1BB1:0002 stores two words, the hot spot x and y).
+- [ ] note for the e07a9 owner (src/E07A9.C:127-130, now :164 and :166): the round-3 question about gIconsDDE4[0] being
+  null is partly answered: SetPointerShape writes gIconsDDE4[0] (EOV2.C:209) before it passes it at EOV2.C:210, and
+  LoadItemData runs at start-up. Whether f07A9_010C can run before that write is not checked here.
+
+### Summary (fourth review)
+
+The unit is understandable from its source, and the byte-level claims hold against the disassembly: the hide and show
+order, the height and width reads and stores (1BB1:0034/003A/003E, 0066/006A), the three buffer paths, the margin test with
+both 16s and the high-word skip, the MemAlloc flags and size pushes, the return values, the busy flag, the writer and
+reader of ds:8172/8174, and the 1BBE hide and show behaviour. The name SetMousePointerShape stands: it has the hot spot, the
+record, the buffer and the hide and show. Two must-fix items remain. The header names one caller, but the overlay-2
+SetPointerShape (EOV2.C:206-211, matched) is a second, and the call-site citations (E07A9.C:127-130 and 41-43) point at lines
+that moved. The shoulds are the show-half wording, the clip citations in the header, and the QUIRK 1 double-free case. The
+placeholders stay on purpose: g80AA, g80A2 and g80C6 (their callees are not lifted; the evidence is in the E1BBE.ASM EXTRN
+comments and the call sites), and g8172/g8174 (named by writer and reader, the argument's meaning is not known). Verdict:
+review-failed.
