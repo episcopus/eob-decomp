@@ -48,8 +48,10 @@ extern int g8102;          /*@ ds:8102 */  /* the video mode (src/E07A9.C); 3 an
    the cell shifted by 5 (or, for g8102 3 and 4, 6) and added to this far base. Only read here. */
 extern void far *gTileBuf; /*@ ds:FE56 */
 
-extern unsigned char gFontWidth1A47;  /*@ ds:8100 */  /* font cell width (src/E1A47.C) */
-extern unsigned char gFontHeight1A47; /*@ ds:8101 */  /* font cell height (src/E1A47.C) */
+/* The font geometry bytes are signed here: the original sign-extends them (cbw), src/E1A47.C
+   declares them unsigned. */
+extern char gFontWidth1A47;  /*@ ds:8100 */  /* font cell width (src/E1A47.C) */
+extern char gFontHeight1A47; /*@ ds:8101 */  /* font cell height (src/E1A47.C) */
 
 /* ds:805A: a far routine the frame corners are drawn through, called with a tile source far
    pointer and a cell position (src, x, y). No writer or other caller. */
@@ -61,7 +63,10 @@ extern void (far *gDrawText)(char far *text, int a, int b, int c, int d); /*@ ds
 /* ds:8117: a far routine called when the cursor is on the last line of the window (the scroll
    hook); gScrollOn (ds:8110) gates it. */
 extern void (far *gScroll8117)(void);  /*@ ds:8117 */
-extern int gScrollOn;      /*@ ds:8110 */
+extern char gScrollOn;     /*@ ds:8110 */
+/* ds:8115: written with immediates in many units of the resident code and by overlays; passed
+   twice as the two extra arguments of ClipRect here, so the role is not established. */
+extern int g8115;          /*@ ds:8115 */
 
 /* 1DE7:0009: make `region` (an index into gRegions) the active text window. The first call only
    sets gTextSaved; after that, the window being left has its live attributes and cursor saved back
@@ -89,6 +94,8 @@ extern int gScrollOn;      /*@ ds:8110 */
     gTextRow = gRegions[region].saved3;
 }
 
+extern void ClipRect(int x1, int y1, int x2, int y2, int width, int height, int extra1, int extra2); /*@ 19F3:000E */
+extern unsigned strlen(char far *s); /*@ 0000:67F6 */
 extern void HidePointerZone(int left, int top, int right, int bottom); /*@ 1BBE:01FE */
 extern void ShowPointerZone(void); /*@ 1BBE:02C2 */
 
@@ -214,7 +221,60 @@ extern unsigned far *gFrameTable[]; /*@ ds:113B */
     ShowPointerZone();
     gTextCol = gTextRow = 0;
 }
-/*@ 1DE7:03B2 stub */ void f1DE7_03B2(void) {}
+/* 1DE7:03B2: draw `text` at the cursor and consume it (text[0] is set to 0). The row is
+   gTextRow * font height below the window top and the column gTextCol * font width right of its
+   left edge. When that row has no room for a full line left, the scroll hook ds:8117 is called
+   (gated by ds:8110), the last visible line is clipped and refilled (ClipRect, ds:806A) and the
+   text drawn on it. `newline` non-zero advances to the next row at once; zero instead advances the
+   column by strlen(text), wrapping to the next row only when the text no longer fits the window
+   width. Called only by DrawText (1DE7:060A), which flushes each completed line through it. */
+/*@ 1DE7:03B2 */ void DrawTextLine(char far *text, int newline)
+{
+    int y;
+    int x;
+    int line;
+
+    if (gFontHeight1A47 * gTextRow > gTextHeight - gFontHeight1A47 && gScrollOn && gScroll8117)
+        gScroll8117();
+    y = gFontHeight1A47 * gTextRow;
+    x = gFontWidth1A47 * gTextCol;
+    if (gTextHeight - gFontHeight1A47 < y) {
+        HidePointerZone(gTextLeft * 8, gTextTop, (gTextLeft + gTextWidth) * 8, gTextTop + gTextHeight);
+        line = (gTextHeight / gFontHeight1A47 - 1) * gFontHeight1A47;
+        ClipRect(gTextLeft, gTextTop + gFontHeight1A47, gTextLeft, gTextTop, gTextWidth, line, g8115, g8115);
+        gRect806A(gTextLeft * 8, gTextTop + line, (gTextLeft + gTextWidth) * 8 - 1,
+                  gTextTop + line + gFontHeight1A47 - 1, gTextAttr2);
+        gDrawText(text, gTextLeft * 8, gTextTop + line, gTextAttr1, gTextAttr2);
+        ShowPointerZone();
+        if (newline) {
+            gTextCol = 0;
+            gTextRow++;
+        } else {
+            gTextRow = line / gFontHeight1A47;
+            gTextCol += strlen(text);
+            if (gTextWidth * 8 - gFontWidth1A47 < gFontWidth1A47 * gTextCol) {
+                gTextCol = 0;
+                gTextRow++;
+            }
+        }
+    } else {
+        y += gTextTop;
+        HidePointerZone(gTextLeft * 8, y, (gTextLeft + gTextWidth) * 8, y + gFontHeight1A47);
+        gDrawText(text, gTextLeft * 8 + x, y, gTextAttr1, gTextAttr2);
+        ShowPointerZone();
+        if (newline) {
+            gTextCol = 0;
+            gTextRow++;
+        } else {
+            gTextCol += strlen(text);
+            if (gTextWidth * 8 - gFontWidth1A47 < gFontWidth1A47 * gTextCol) {
+                gTextCol = 0;
+                gTextRow++;
+            }
+        }
+    }
+    text[0] = 0;
+}
 /* 1DE7:05DF: print `value` in decimal into the text window. The value is formatted into a local
    30-byte buffer and handed to DrawText (1DE7:060A). No caller was found in the resident code. */
 /*@ 1DE7:05DF */ void PrintIntText(int value)
