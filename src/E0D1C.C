@@ -32,8 +32,11 @@ extern char gF51A; /*@ ds:F51A */        /* the selected row (src/E0ACD.C) */
 extern struct CharRec gChars[]; /*@ ds:F580 */
 extern signed char g1790[]; /*@ ds:1790 */  /* byte table indexed by the second argument of 0D1C:00DA */
 extern signed char g547E[]; /*@ ds:547E */  /* byte table indexed by the second argument of 0D1C:0080 */
-extern char gB894[]; /*@ ds:B894 */         /* nine-byte records; +4 (ds:B898) is tested by 0D1C:0080 */
+extern char gB894[]; /*@ ds:B894 */         /* nine-byte records; +4 (ds:B898) is tested by 0D1C:0080 and +5 (ds:B899) is a list head used by 0D1C:035A */
 extern signed char g194B[]; /*@ ds:194B */  /* byte table read by 0D1C:0080 */
+extern signed char g1A1B[]; /*@ ds:1A1B */  /* per-page sound table read by 0D1C:035A */
+extern int gSoundVolume; /*@ ds:FBCA */     /* the global sound volume (src/E177D.C) */
+extern int gFBCC; /*@ ds:FBCC */            /* a page number 0..3 (kept modulo 4 by 0ACD) */
 
 struct Entry14 {            /* the 14-byte records E07A9 calls Entry14; view based at ds:8DD2 (E07A9) */
     unsigned char flags;    /* +0 (ds:8DD2), read by 07A9:015C */
@@ -54,7 +57,11 @@ extern int gMouseDisabled; /*@ ds:814A */    /* nonzero disables the mouse (src/
 extern void f1547_0991(int dir); /*@ 1547:0991 */
 extern void f1547_07E7(char who, char slot); /*@ 1547:07E7 */
 extern void f0BD2_0917(int who, int slot, int one); /*@ 0BD2:0917 */
+extern void f0BD2_01D0(void far *head, int key, int item, int sound); /*@ 0BD2:01D0 */
+extern int f0BD2_02B9(void far *head, int key, int item); /*@ 0BD2:02B9 */
 extern void f07A9_010C(int n); /*@ 07A9:010C */
+extern int far RollDice(char count, char sides, char bonus); /*@ 082C:0458 */
+extern void f1414_0B2E(void); /*@ 1414:0B2E */
 
 int f0D1C_0670(int who, int mask);
 int f0D1C_02DC(void);
@@ -167,10 +174,8 @@ int f0D1C_02DC(void);
     rec = &gChars[who];
     for (i = 25; i <= 26; i++) {
         if (item = rec->m77[i]) {
-            if (gTable8DD2[item].m02 == 0x2F) {
-                if (gTable8DD2[item].m0B == fieldB)
-                    return 1;
-            }
+            if (gTable8DD2[item].m02 == 0x2F && gTable8DD2[item].m0B == fieldB)
+                return 1;
         }
     }
     return 0;
@@ -241,7 +246,37 @@ int f0D1C_02DC(void);
             f0BD2_0917(gF51A, 1, 0);
     }
 }
-/*@ 0D1C:035A stub */ void f0D1C_035A(void) {}
+/* 0D1C:035A: Purpose unknown: clears gChars[who].m01 and then, for each of the 27 word slots of
+   gChars[who].m77 except slot 16 (which is a list head at +97), queues the item in the slot
+   through f0BD2_01D0 at the head gSoundVolume * 9 + 5 (the nine-byte records at ds:B894) with a
+   random sound g1A1B[gFBCC * 4 + RollDice(1, 2, -1)]. Then it drains the slot-16 list through
+   f0BD2_02B9 and queues each returned item the same way. Finally, when `who` is the selected
+   character, gA99A is cleared to 0, and f1414_0B2E runs. Called by overlays 1 and 5. */
+/*@ 0D1C:035A */ void f0D1C_035A(int who)
+{
+    struct CharRec far *rec;
+    int item;
+    int i;
+
+    rec = &gChars[who];
+    rec->m01 = 0;
+    for (i = 0; i < 27; i++) {
+        if (i == 16)
+            continue;
+        if (item = rec->m77[i]) {
+            f0BD2_01D0((int far *)(gB894 + gSoundVolume * 9 + 5), gSoundVolume, item,
+                    g1A1B[gFBCC * 4 + RollDice(1, 2, -1)]);
+        }
+    }
+    while (rec->m77[16]) {
+        item = f0BD2_02B9(&rec->m77[16], 0, -1);
+        f0BD2_01D0((int far *)(gB894 + gSoundVolume * 9 + 5), gSoundVolume, item,
+                g1A1B[gFBCC * 4 + RollDice(1, 2, -1)]);
+    }
+    if (gA99A == who)
+        gA99A = 0;
+    f1414_0B2E();
+}
 /*@ 0D1C:0454 stub */ void f0D1C_0454(void) {}
 /*@ 0D1C:0583 stub */ void f0D1C_0583(void) {}
 /*@ 0D1C:059B stub */ void f0D1C_059B(void) {}
