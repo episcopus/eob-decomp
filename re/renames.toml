@@ -774,3 +774,12 @@ new = "gMouseDisabled"
 kind = "global"
 why = "nonzero disables the mouse: the INT 33h handler body skips all of its work (1A72:254-255) and HidePointer/ShowPointer do nothing (1BBE:89-90, 178); 1A72:215 sets it to 1 at install and the overlay loader 1C00:00D4 clears it once a driver overlay has loaded and its entry has run, which enables the handler and the pointer; E07A9.C:113 and E14EF.C:142, 223 test it the same way"
 date = "2026-11-01"
+
+[[rename]]
+id = "0D1C:0304=SetCurrentItem"
+addr = "0D1C:0304"
+old = "f0D1C_0304"
+new = "SetCurrentItem"
+kind = "function"
+why = "stores the item index of the currently displayed slot (gFBCE when the mouse is enabled, else gChars[gA99A].m77[gF51A]); read back by 0D1C:02DC and called by f07A9_010C"
+date = "2026-11-01"

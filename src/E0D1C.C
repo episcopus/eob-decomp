@@ -225,7 +225,22 @@ int f0D1C_02DC(void);
         return gFBCE;
     return gChars[gA99A].m77[gF51A];
 }
-/*@ 0D1C:0304 stub */ void f0D1C_0304(void) {}
+/* 0D1C:0304: stores `n` as the item index in the current slot: gFBCE when the mouse is enabled,
+   or gChars[gA99A].m77[gF51A] when it is disabled. When the mouse is disabled it also redraws
+   the slot, through f1547_0991(gA99A) when gFB44 is 0 and f0BD2_0917(gF51A, 1, 0) otherwise.
+   Called by f07A9_010C to set the icon shown for a selected item. */
+/*@ 0D1C:0304 */ void SetCurrentItem(int n)
+{
+    if (!gMouseDisabled) {
+        gFBCE = n;
+    } else {
+        gChars[gA99A].m77[gF51A] = n;
+        if (gFB44 == 0)
+            f1547_0991(gA99A);
+        else
+            f0BD2_0917(gF51A, 1, 0);
+    }
+}
 /*@ 0D1C:035A stub */ void f0D1C_035A(void) {}
 /*@ 0D1C:0454 stub */ void f0D1C_0454(void) {}
 /*@ 0D1C:0583 stub */ void f0D1C_0583(void) {}

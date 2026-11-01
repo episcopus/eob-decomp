@@ -2383,6 +2383,9 @@ unit = "e0d1c"
 addr = "0D1C:0304"
 size = 86
 evidence = ["far", "frame"]
+name = "SetCurrentItem"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0d1c_035a"
