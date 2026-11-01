@@ -4592,6 +4592,9 @@ unit = "e1ba8"
 addr = "1BA8:0005"
 size = 1
 evidence = ["segment"]
+name = "_f1BA8_0005"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1ba8_0006"
@@ -4599,6 +4602,9 @@ unit = "e1ba8"
 addr = "1BA8:0006"
 size = 108
 evidence = ["far"]
+name = "_f1BA8_0006"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1ba8_0072"
@@ -4606,6 +4612,9 @@ unit = "e1ba8"
 addr = "1BA8:0072"
 size = 15
 evidence = ["far", "frame"]
+name = "_f1BA8_0072"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1ba8_0081"
@@ -4613,6 +4622,9 @@ unit = "e1ba8"
 addr = "1BA8:0081"
 size = 16
 evidence = ["far", "near"]
+name = "_f1BA8_0081"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1bb1_0001"
