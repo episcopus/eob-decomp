@@ -23,7 +23,7 @@ extern int f1C0E_0E5B(unsigned a, unsigned char b); /*@ 1C0E:0E5B: first retry b
 extern int f1DDD_002D(int i); /*@ 1DDD:002D */
 extern void PrintString(char far *s); /*@ 19EA:0000 */
 extern void f1AAD_053A(void); /*@ 1AAD:053A */
-extern void f07C8_058A(void); /*@ 07C8:058A */
+extern void ShutdownGame(void); /*@ 07C8:058A */
 
 /* 19BC:0007: allocate a far block of size bytes. It asks farmalloc for one extra byte (or 16 for
    a 0x20 request) and retries: first the hook f1C0E_0E5B(0, 0xff) is tried, then the failure hook
@@ -154,6 +154,6 @@ extern void f07C8_058A(void); /*@ 07C8:058A */
     f1DDD_002D(7);
     PrintString("Memory Allocation Error! Press any key to exit to DOS.");
     f1AAD_053A();
-    f07C8_058A();
+    ShutdownGame();
     return 0;
 }

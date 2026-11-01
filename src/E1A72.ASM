@@ -18,7 +18,7 @@
         EXTRN   _open:FAR               ; @ 0000:6443 (runtime OPEN module, E1A47.C)
         EXTRN   _close:FAR              ; @ 0000:50C5 (runtime, E1A47.C)
         EXTRN   _f1C0E_1310:FAR         ; @ 1C0E:1310 (locates and opens the overlay file)
-        EXTRN   _f07C8_058A:FAR         ; @ 07C8:058A (cleanup and exit, E19BC.C)
+        EXTRN   _ShutdownGame:FAR         ; @ 07C8:058A (cleanup and exit, E19BC.C)
         EXTRN   _f1AAD_0B0E:FAR         ; @ 1AAD:0B0E (keyboard glue, takes the button state)
         EXTRN   _HidePointer:FAR         ; @ 1BBE:0002 (E1BB1.ASM)
         EXTRN   _ShowPointer:FAR         ; @ 1BBE:00ED (E1BB1.ASM)
@@ -134,7 +134,7 @@ L0080:  or      si,si
         push    ax
         call    dword ptr [g8104]
         add     sp,6
-        call    far ptr _f07C8_058A
+        call    far ptr _ShutdownGame
 L0099:  mov     ax,1
         push    ax
         push    ds
@@ -154,7 +154,7 @@ L0099:  mov     ax,1
         push    ax
         call    dword ptr [g8104]
         add     sp,6
-        call    far ptr _f07C8_058A
+        call    far ptr _ShutdownGame
 L00CD:  pop     bp
         pop     di
         pop     si
