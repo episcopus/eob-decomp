@@ -4177,6 +4177,9 @@ unit = "e19fc"
 addr = "19FC:0007"
 size = 420
 evidence = ["segment"]
+name = "_f19FC_0007"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1a16_000b"
