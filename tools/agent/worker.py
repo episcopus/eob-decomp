@@ -79,6 +79,12 @@ class Stopped(Exception):
 def prompt(agent: str, role: str, key: str, branch: str, wt: Path, rejected: str = "", tier: int = 1) -> str:
     unit = key[7:] if key.startswith("review-") else key
     playbook, first, states = ROLES[role]
+    if role == "decompiler" and common.open_must_fix(unit):
+        first = ("The unit's review, work/reviews/%s.md, has open must-fix findings: that is why you have it, "
+                 "even if every function is at L2. Fix each finding from the evidence it cites (a name: `make "
+                 "rename`; a comment or a type: in the source), keep `make match FILE=...` passing, tick the "
+                 "finding `- [x]` with a note of what you changed, commit, and hand off STATE=complete. Then, if "
+                 "functions remain below L2: " % unit) + first
     if tier == 2:
         first = ("Earlier sessions of a cheaper model gave up on this unit without matching more of it: "
                  "read the notes of its functions in re/symbols.toml and `git log main..HEAD` before you "
