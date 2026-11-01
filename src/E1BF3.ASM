@@ -11,8 +11,8 @@
 
         .MODEL  LARGE
 
-        EXTRN   _f1BBE_0002:FAR          ; @ 1BBE:0002
-        EXTRN   _f1BBE_00ED:FAR          ; @ 1BBE:00ED
+        EXTRN   _HidePointer:FAR          ; @ 1BBE:0002
+        EXTRN   _ShowPointer:FAR          ; @ 1BBE:00ED
 
         .CODE
 
@@ -62,8 +62,8 @@ redraw:
         push    word ptr ds:[8172h]
         call    dword ptr ds:[80AAh]
         add     sp, 4
-        call    _f1BBE_0002
-        call    _f1BBE_00ED
+        call    _HidePointer
+        call    _ShowPointer
         call    dword ptr ds:[80A2h]
 done:   ret
 _f1BF3_000E ENDP

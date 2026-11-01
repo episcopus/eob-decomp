@@ -50,3 +50,91 @@ why = "the current region's bottom line (top + height), pushed to the driver as 
 id = "ds:80B6"
 name = "gSetRegion"
 why = "a far function pointer called with (left, right, top, bottom) after a region is selected; no writer in the resident code, filled at load time [H] (review of e1a29)"
+[[global]]
+id = "ds:804E"
+name = "gRestoreRect"
+why = "a far function pointer called as (x, y, w, h, void far *buf) that writes a buffer rectangle back to the screen: 0EF3:08B1 restores the 16 rectangles saved before the palette was drawn, and 1BBE:0002 uses it to erase the pointer (E1BBE.ASM)"
+[[global]]
+id = "ds:80AE"
+name = "gSaveRect"
+why = "a far function pointer called as (x, y, w, h, void far *buf) that copies a screen rectangle into a buffer: 0EF3:0757 saves 16 rectangles before drawing the palette, and 1BBE:00ED saves the screen under the pointer before drawing the shape (E1BBE.ASM)"
+[[global]]
+id = "ds:8138"
+name = "gCursorX"
+why = "the mouse position, x in pixels: written by the mouse setup 1A72:00E6 and the INT 33h handler 1A72:0219, compared with 815C by 1A72:0221, and read by 1BBE:00ED to place the pointer (E1BBE.ASM)"
+[[global]]
+id = "ds:813A"
+name = "gCursorY"
+why = "the mouse position, y in pixels: written by the mouse setup 1A72:00EC and the INT 33h handler 1A72:021D, compared with 815E by 1A72:022F, and read by 1BBE:00ED (E1BBE.ASM)"
+[[global]]
+id = "ds:8146"
+name = "gHideDepth"
+why = "the pointer hide depth: 1BBE:0002 increments it and 1BBE:00ED decrements it and only draws at zero, 1A72:00F2 sets it to 1 at start-up and 1A72:0235 skips the pointer work while it is non-zero (E1BBE.ASM)"
+[[global]]
+id = "ds:815C"
+name = "gDrawnX"
+why = "the x the pointer was last drawn at, in pixels: 1BBE:00ED copies 8138 here before drawing, 1A72:0225 compares it with 8138 to decide whether to draw (E1BBE.ASM)"
+[[global]]
+id = "ds:815E"
+name = "gDrawnY"
+why = "the y the pointer was last drawn at, in pixels: 1BBE:00ED copies 813A here before drawing, 1A72:022F compares it with 813A (E1BBE.ASM)"
+[[global]]
+id = "ds:8160"
+name = "gPointerState"
+why = "the pointer state word: 1BBE:01FE sets bit 8000 when it hides the pointer, 1BBE:02C2 clears the word and tests bit 4000 (redraw requested) when showing, 1A72:0204 sets bit 4000 and 1A72:0242 tests bit 8000; the low byte is a counter 1BBE:01FE advances and 1BBE:02C2 decrements (E1BBE.ASM)"
+[[global]]
+id = "ds:8162"
+name = "gZoneLeft"
+why = "the left edge of the zone the pointer is hidden over, in pixels: 1BBE:01FE stores its first argument here and reduces it by the sprite width, 1A72:0244 tests the cursor against it (E1BBE.ASM)"
+[[global]]
+id = "ds:8164"
+name = "gZoneTop"
+why = "the top edge of the hide zone, in pixels: 1BBE:01FE stores its second argument here and reduces it by the sprite height, 1A72:0250 tests the cursor against it (E1BBE.ASM)"
+[[global]]
+id = "ds:8166"
+name = "gZoneRight"
+why = "the right edge of the hide zone, in pixels: 1BBE:01FE stores its third argument here, 1A72:024A tests the cursor against it (E1BBE.ASM)"
+[[global]]
+id = "ds:8168"
+name = "gZoneBottom"
+why = "the bottom edge of the hide zone, in pixels: 1BBE:01FE stores its fourth argument here, 1A72:0256 tests the cursor against it (E1BBE.ASM)"
+[[global]]
+id = "ds:8176"
+name = "gRectLeft"
+why = "the clipped rectangle's left edge: 1BBE:0002/00ED write the pointer x here, divide it by 8 and clip it to 0..40 columns before the [ds:804E]/[ds:80AE] call; 1BBE:01FE writes it in pixels rounded down to a multiple of 8 (E1BBE.ASM)"
+[[global]]
+id = "ds:8178"
+name = "gRectTop"
+why = "the clipped rectangle's top row: 1BBE:0002/00ED write the pointer y here, clip it to 0..200 and pass it to [ds:804E]/[ds:80AE] (E1BBE.ASM)"
+[[global]]
+id = "ds:817A"
+name = "gRectRight"
+why = "the clipped rectangle's right edge: x/8 plus the sprite width in columns, clipped to 40; the width passed to [ds:804E]/[ds:80AE] is this minus ds:8176 (E1BBE.ASM)"
+[[global]]
+id = "ds:817C"
+name = "gRectBottom"
+why = "the clipped rectangle's bottom row: the pointer y plus the sprite height in pixels, clipped to 200; the height passed to [ds:804E]/[ds:80AE] is this minus ds:8178 (E1BBE.ASM)"
+[[global]]
+id = "ds:817E"
+name = "gShapeX"
+why = "the x the pointer shape is drawn at, in pixels and unclipped: 1BBE:00ED copies 8138 - 8158 here and pushes it to [ds:80C2] (E1BBE.ASM)"
+[[global]]
+id = "ds:8180"
+name = "gShapeY"
+why = "the y the pointer shape is drawn at, in pixels and unclipped: 1BBE:00ED copies 813A - 815A here and pushes it to [ds:80C2] (E1BBE.ASM)"
+[[global]]
+id = "ds:8182"
+name = "gSpriteHeight"
+why = "a copy of the sprite height ds:8154, the clip bound for the pointer y in 1BBE:0002/00ED (E1BBE.ASM)"
+[[global]]
+id = "ds:8184"
+name = "gNegSpriteHeight"
+why = "minus the sprite height ds:8154, the lower clip bound for the pointer y in 1BBE:0002/00ED (E1BBE.ASM)"
+[[global]]
+id = "ds:8186"
+name = "gSpriteWidth"
+why = "a copy of the sprite width ds:8156 in 8-pixel columns, the clip bound for the pointer x in 1BBE:0002/00ED (E1BBE.ASM)"
+[[global]]
+id = "ds:8188"
+name = "gNegSpriteWidth"
+why = "minus the sprite width ds:8156, the lower clip bound for the pointer x divided by 8 in 1BBE:0002/00ED (E1BBE.ASM)"

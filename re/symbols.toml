@@ -4728,6 +4728,9 @@ unit = "e1bbe"
 addr = "1BBE:0001"
 size = 1
 evidence = ["segment"]
+name = "_f1BBE_0001"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1bbe_0002"
@@ -4735,6 +4738,9 @@ unit = "e1bbe"
 addr = "1BBE:0002"
 size = 235
 evidence = ["far", "near"]
+name = "_HidePointer"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1bbe_00ed"
@@ -4742,6 +4748,9 @@ unit = "e1bbe"
 addr = "1BBE:00ED"
 size = 273
 evidence = ["far", "near", "frame"]
+name = "_ShowPointer"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1bbe_01fe"
@@ -4749,6 +4758,9 @@ unit = "e1bbe"
 addr = "1BBE:01FE"
 size = 196
 evidence = ["far", "frame"]
+name = "_HidePointerZone"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1bbe_02c2"
@@ -4756,6 +4768,9 @@ unit = "e1bbe"
 addr = "1BBE:02C2"
 size = 69
 evidence = ["far", "frame"]
+name = "_ShowPointerZone"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1bbe_0307"
@@ -4763,6 +4778,9 @@ unit = "e1bbe"
 addr = "1BBE:0307"
 size = 43
 evidence = ["far", "frame"]
+name = "_LockHidePointer"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1bbe_0332"
@@ -4770,6 +4788,9 @@ unit = "e1bbe"
 addr = "1BBE:0332"
 size = 43
 evidence = ["far", "frame"]
+name = "_LockShowPointer"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1bf3_000d"

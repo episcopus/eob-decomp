@@ -37,8 +37,8 @@
         _TEXT   SEGMENT WORD PUBLIC 'CODE'
         ASSUME  CS:_TEXT, DS:DGROUP
         db      0                       ; 1BB1:0001: the unit's start marker byte (segment evidence)
-        EXTRN   _f1BBE_0002:FAR         ; @ 1BBE:0002
-        EXTRN   _f1BBE_00ED:FAR         ; @ 1BBE:00ED
+        EXTRN   _HidePointer:FAR         ; @ 1BBE:0002
+        EXTRN   _ShowPointer:FAR         ; @ 1BBE:00ED
         EXTRN   _MemAlloc:FAR           ; @ 19BC:0007
         EXTRN   _MemFree:FAR            ; @ 19BC:0137
         EXTRN   _LargestFreeBlock:FAR         ; @ 19BC:023D: returns the largest free block (DX:AX)
@@ -55,7 +55,7 @@ acquire:
         jne     acquire
         inc     word ptr [g812E]
         ASSUME  CS:NOTHING
-        call    far ptr _f1BBE_0002
+        call    far ptr _HidePointer
         ASSUME  CS:_TEXT
         mov     ax,[bp+6]
         mov     word ptr [g8158],ax
@@ -122,7 +122,7 @@ ready:  push    word ptr [g8174]
         call    dword ptr [g80AA]
         add     sp,4
         ASSUME  CS:NOTHING
-        call    far ptr _f1BBE_00ED
+        call    far ptr _ShowPointer
         ASSUME  CS:_TEXT
         call    dword ptr [g80A2]
         mov     ax,1
