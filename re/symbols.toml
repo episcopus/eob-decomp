@@ -4066,6 +4066,8 @@ unit = "e1990"
 addr = "1990:0001"
 size = 15
 evidence = ["segment"]
+level = "L2"
+notes = "not a function: bytes of the unit outside its functions (a marker or padding), matched with the whole unit"
 
 [[function]]
 id = "e1990_0010"
