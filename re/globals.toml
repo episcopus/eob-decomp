@@ -54,12 +54,12 @@ why = "a far function pointer called with (left, right, top, bottom) after a reg
 [[global]]
 id = "ds:8154"
 name = "gPointerHeight"
-why = "the pointer sprite's height in pixels: filled from shape record byte +3 (1BB1:0034) and added to the pointer's y before clipping to 200 (1BBE:0095)"
+why = "the pointer sprite's height in pixels: filled from shape record byte +3 (1BB1:0034); 1BBE:0002 copies it to gSpriteHeight (ds:8182) and negates it into gNegSpriteHeight (ds:8184), and 1BBE:0095 adds that copy to the pointer's top edge before clipping the bottom edge to 200"
 
 [[global]]
 id = "ds:8156"
 name = "gPointerWidth8"
-why = "the pointer sprite's width in 8-pixel units: filled from shape record byte +2 plus 1 (1BB1:003A) and added to the pointer's x>>3 before clipping to 40 (1BBE:005F)"
+why = "the pointer sprite's width in 8-pixel units: filled from shape record byte +2 plus 1 (1BB1:003A); 1BBE:0002 copies it to gSpriteWidth (ds:8186) and negates it into gNegSpriteWidth (ds:8188), and 1BBE:005F adds that copy to the pointer's left edge before clipping the right edge to 40"
 
 [[global]]
 id = "ds:8158"
@@ -325,6 +325,7 @@ why = "the second text attribute (the fill colour of ClearTextRegion and of the 
 id = "ds:806A"
 name = "gFillRect"
 why = "a far rectangle-fill routine called with (x1, y1, x2, y2, attribute): E082C.C:436 fills the bevel interior, E1DE7.C:221/246 fill and redraw text-window rectangles; so gFillRect, not the address-suffix placeholder gRect806A"
+
 [[global]]
 id = "ds:FE6E"
 name = "gFileNameBuf"
