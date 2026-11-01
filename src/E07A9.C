@@ -44,7 +44,7 @@ extern void f0D1C_0304(int n); /*@ 0D1C:0304 */
 extern void f0BD2_05B5(int n); /*@ 0BD2:05B5 */
 extern void f1DE7_060A(char far *text); /*@ 1DE7:060A */
 extern void f17A6_197E(void far *name, void far *a, void far *b, int c); /*@ 17A6:197E */
-extern void f1BB1_0002(int a, int b, void far *name); /*@ 1BB1:0002 */
+extern void SetMousePointerShape(int a, int b, void far *name); /*@ 1BB1:0002 */
 
 /*@ 07A9:000A */ void StartupAlloc(int argc, char far * far *argv)
 {
@@ -89,8 +89,8 @@ extern void f1BB1_0002(int a, int b, void far *name); /*@ 1BB1:0002 */
             n = 0x59;
         }
         if (n > 0)
-            f1BB1_0002(8, 8, gNamesDDE4[n]);
+            SetMousePointerShape(8, 8, gNamesDDE4[n]);
         else
-            f1BB1_0002(0, 0, gNamesDDE4[n]);
+            SetMousePointerShape(0, 0, gNamesDDE4[n]);
     }
 }

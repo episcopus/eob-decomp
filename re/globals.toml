@@ -50,3 +50,35 @@ why = "the current region's bottom line (top + height), pushed to the driver as 
 id = "ds:80B6"
 name = "gSetRegion"
 why = "a far function pointer called with (left, right, top, bottom) after a region is selected; no writer in the resident code, filled at load time [H] (review of e1a29)"
+[[global]]
+id = "ds:8154"
+name = "gPointerHeight"
+why = "the pointer sprite's height in pixels: filled from shape record byte +3 (1BB1:0034) and added to the pointer's y before clipping to 200 (1BBE:0095)"
+[[global]]
+id = "ds:8156"
+name = "gPointerWidth8"
+why = "the pointer sprite's width in 8-pixel units: filled from shape record byte +2 plus 1 (1BB1:003A) and added to the pointer's x>>3 before clipping to 40 (1BBE:005F)"
+[[global]]
+id = "ds:8158"
+name = "gPointerHotX"
+why = "the hot-spot x subtracted from the last drawn pointer position ds:815C before drawing: set from argument 1 at 1BB1:001B and used at 1BBE:0021 and 1BBE:0117 (the caller passes 8 or 0, E07A9.C:92-94)"
+[[global]]
+id = "ds:815A"
+name = "gPointerHotY"
+why = "the hot-spot y subtracted from the last drawn pointer position ds:815E before drawing: set from argument 2 at 1BB1:0021 and used at 1BBE:002B and 1BBE:0127 (the caller passes 8 or 0, E07A9.C:92-94)"
+[[global]]
+id = "ds:816A"
+name = "gPointerBackOff"
+why = "the save-under buffer offset: 1BBE:0002 restores the saved screen through it and 1BBE:00ED saves the background into it; 1BB1:0002 frees and reallocates it when the sprite size changes"
+[[global]]
+id = "ds:816C"
+name = "gPointerBackSeg"
+why = "the save-under buffer segment (0 = none): 1BBE:0002/00ED keep the screen behind the pointer in it; 1BB1:0002 tests it before reusing the buffer"
+[[global]]
+id = "ds:816E"
+name = "gPointerShapeOff"
+why = "the pointer shape record's offset: set from the far pointer argument at 1BB1:0027 and drawn by 1BBE:00ED through [ds:80C2]"
+[[global]]
+id = "ds:8170"
+name = "gPointerShapeSeg"
+why = "the pointer shape record's segment: set from the far pointer argument at 1BB1:002E and drawn by 1BBE:00ED through [ds:80C2]"
