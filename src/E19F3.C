@@ -1,45 +1,57 @@
-/* Unit at EOB.EXE 19F3:000E (137 bytes, 1 function): adjust a drawing or copy request
-   before passing it to the far routine behind the function pointer at ds:8052. All the
-   compares are signed. e is capped at 40 and f at 200 when larger, as plain size caps not
-   tied to any origin (a = 30, e = 40 passes unclipped). a and c are rejected, the function
-   returns without calling, when they reach 40; b and d have no upper test and nothing is
-   capped on that side beyond f. Each of a, b, c, d is lowered to 0 when negative, and that
-   move shifts its partner on the same axis and the size by the same amount: a moves c and
-   e, c moves a and e, b moves d and f, d moves b and f. The eight ints then go on
-   unchanged in source order (their push order in the bytes is h, g, f, e, d, c, b, a).
-   The names a..h are placeholders: a and c are two x origins with e their extent, b and d
-   two y origins with f their extent, as their shared corrections show; g and h are passed
-   through untouched. Call sites push the eight ints (add sp,10h): 082C:05DD passes
-   a=b=c=d=0, e=40, f=200, g=2, h=0, and 0EF3:071E the same origins with e=22, f=120, g=0,
-   h=2. What 40 and 200 measure, and what the far routine does, are still unknown. */
+/* Unit at EOB.EXE 19F3:000E (137 bytes, 1 function): adjust a rectangle request before
+   passing it to the far routine behind the function pointer at ds:8052. The eight ints are
+   two origins, a width and a height: x1 and x2 are two x origins sharing the width as their
+   extent, y1 and y2 two y origins sharing the height, as their own corrections show. The
+   units are the region table's (src/E1A29.C): x in 8-pixel columns, y in lines, so the cap
+   of 40 on the width is the 320-pixel screen and the cap of 200 on the height its 200
+   lines; region record 0 is 0,0,40,200, the full screen, matching the call at 082C:05DD. All
+   the compares are signed. The width and height are capped at 40 and 200 when larger, as
+   plain size caps not tied to any origin (x1 = 30, width = 40 passes unclipped). x1 and x2
+   are rejected, the function returns without calling, when they reach 40; y1 and y2 have no
+   upper test and nothing is capped on that side beyond the height. Each of x1, y1, x2, y2 is
+   lowered to 0 when negative, and that move shifts its partner on the same axis and the size
+   by the same amount: x1 moves x2 and the width, x2 moves x1 and the width, y1 moves y2 and
+   the height, y2 moves y1 and the height. The eight ints then go on unchanged in source
+   order (their push order in the bytes is extra2, extra1, height, width, y2, x2, y1, x1).
+   extra1 and extra2 are passed through untouched; nothing in this unit reads them and their
+   roles are unknown. Call sites push the eight ints (add sp,10h): 082C:05DD passes
+   x1=y1=x2=y2=0, width=40, height=200, extra1=2, extra2=0, and 0EF3:071E the same origins
+   with width=22, height=120, extra1=0, extra2=2. What the far routine does is still
+   unknown. */
 
-extern void (far *gFar8052)(int a, int b, int c, int d, int e, int f, int g, int h); /*@ ds:8052 */
+extern void (far *gFar8052)(int x1, int y1, int x2, int y2, int width, int height, int extra1, int extra2); /*@ ds:8052 */
 
-/*@ 19F3:000E */ void ClipDrawRect(int a, int b, int c, int d, int e, int f, int g, int h)
+/* 19F3:000E: clips a rectangle request, then hands it to the far routine ds:8052. Takes the
+   two origins (x1, y1 and x2, y2), a width and a height in the region table's units (x in
+   8-pixel columns, y in lines; src/E1A29.C), and extra1 and extra2, which it forwards
+   untouched. It caps the width at 40 columns and the height at 200 lines, moves a negative
+   origin to 0 together with its partner origin and the size, and returns early, without the
+   call, when an x origin has reached 40 columns. */
+/*@ 19F3:000E */ void ClipRect(int x1, int y1, int x2, int y2, int width, int height, int extra1, int extra2)
 {
-    if (e > 40) e = 40;
-    if (f > 200) f = 200;
-    if (a < 0) {
-        c -= a;
-        e += a;
-        a = 0;
+    if (width > 40) width = 40;
+    if (height > 200) height = 200;
+    if (x1 < 0) {
+        x2 -= x1;
+        width += x1;
+        x1 = 0;
     }
-    if (a >= 40) return;
-    if (c >= 40) return;
-    if (c < 0) {
-        a -= c;
-        e += c;
-        c = 0;
+    if (x1 >= 40) return;
+    if (x2 >= 40) return;
+    if (x2 < 0) {
+        x1 -= x2;
+        width += x2;
+        x2 = 0;
     }
-    if (b < 0) {
-        d -= b;
-        f += b;
-        b = 0;
+    if (y1 < 0) {
+        y2 -= y1;
+        height += y1;
+        y1 = 0;
     }
-    if (d < 0) {
-        b -= d;
-        f += d;
-        d = 0;
+    if (y2 < 0) {
+        y1 -= y2;
+        height += y2;
+        y2 = 0;
     }
-    gFar8052(a, b, c, d, e, f, g, h);
+    gFar8052(x1, y1, x2, y2, width, height, extra1, extra2);
 }

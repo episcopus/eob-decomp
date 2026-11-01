@@ -155,6 +155,276 @@ why = "reads a region record from ds:009F, expands it into ds:FE44/FE46/FE48/FE4
 date = "2026-11-01"
 
 [[rename]]
+id = "1A72:02FA=EnableInterrupts"
+addr = "1A72:02FA"
+old = "f1A72_02FA"
+new = "EnableInterrupts"
+kind = "function"
+why = "a two byte sti; retf wrapper, called around the retrace calibration at 1A65:000E (src/E1A72.ASM)"
+date = "2026-11-01"
+
+[[rename]]
+id = "1A72:02FC=DisableInterrupts"
+addr = "1A72:02FC"
+old = "f1A72_02FC"
+new = "DisableInterrupts"
+kind = "function"
+why = "a two byte cli; retf wrapper, called around the retrace calibration at 1A65:000E (src/E1A72.ASM)"
+date = "2026-11-01"
+
+[[rename]]
+id = "1BB1:0002=SetMousePointerShape"
+addr = "1BB1:0002"
+old = "f1BB1_0002"
+new = "SetMousePointerShape"
+kind = "function"
+why = "1BB1:0002 stores a hot-spot offset (ds:8158/815A) and a pointer shape record (ds:816E/8170), resizes the save-under buffer ds:816A/816C from the record's height (byte +3) and width in 8-pixel units (byte +2 + 1), and hides/shows the pointer through 1BBE:0002 and 1BBE:00ED around the change; caller Level07A9 passes (8,8) for the sprite centre and (0,0) for its corner (E07A9.C:92-94, review of e1bb1)"
+date = "2026-11-01"
+
+[[rename]]
+id = "ds:8154=gPointerHeight"
+addr = "ds:8154"
+old = "g8154"
+new = "gPointerHeight"
+kind = "global"
+why = "the pointer sprite's height in pixels: filled from shape record byte +3 (1BB1:0034) and added to the pointer's y before clipping to 200 (1BBE:0095)"
+date = "2026-11-01"
+
+[[rename]]
+id = "ds:8156=gPointerWidth8"
+addr = "ds:8156"
+old = "g8156"
+new = "gPointerWidth8"
+kind = "global"
+why = "the pointer sprite's width in 8-pixel units: filled from shape record byte +2 plus 1 (1BB1:003A) and added to the pointer's x>>3 before clipping to 40 (1BBE:005F)"
+date = "2026-11-01"
+
+[[rename]]
+id = "ds:8158=gPointerHotX"
+addr = "ds:8158"
+old = "g8158"
+new = "gPointerHotX"
+kind = "global"
+why = "the hot-spot x subtracted from the last drawn pointer position ds:815C before drawing: set from argument 1 at 1BB1:001B and used at 1BBE:0021 and 1BBE:0117 (the caller passes 8 or 0, E07A9.C:92-94)"
+date = "2026-11-01"
+
+[[rename]]
+id = "ds:815A=gPointerHotY"
+addr = "ds:815A"
+old = "g815A"
+new = "gPointerHotY"
+kind = "global"
+why = "the hot-spot y subtracted from the last drawn pointer position ds:815E before drawing: set from argument 2 at 1BB1:0021 and used at 1BBE:002B and 1BBE:0127 (the caller passes 8 or 0, E07A9.C:92-94)"
+date = "2026-11-01"
+
+[[rename]]
+id = "ds:816A=gPointerBackOff"
+addr = "ds:816A"
+old = "g816A"
+new = "gPointerBackOff"
+kind = "global"
+why = "the save-under buffer offset: 1BBE:0002 restores the saved screen through it and 1BBE:00ED saves the background into it; 1BB1:0002 frees and reallocates it when the sprite size changes"
+date = "2026-11-01"
+
+[[rename]]
+id = "ds:816C=gPointerBackSeg"
+addr = "ds:816C"
+old = "g816C"
+new = "gPointerBackSeg"
+kind = "global"
+why = "the save-under buffer segment (0 = none): 1BBE:0002/00ED keep the screen behind the pointer in it; 1BB1:0002 tests it before reusing the buffer"
+date = "2026-11-01"
+
+[[rename]]
+id = "ds:816E=gPointerShapeOff"
+addr = "ds:816E"
+old = "g816E"
+new = "gPointerShapeOff"
+kind = "global"
+why = "the pointer shape record's offset: set from the far pointer argument at 1BB1:0027 and drawn by 1BBE:00ED through [ds:80C2]"
+date = "2026-11-01"
+
+[[rename]]
+id = "ds:8170=gPointerShapeSeg"
+addr = "ds:8170"
+old = "g8170"
+new = "gPointerShapeSeg"
+kind = "global"
+why = "the pointer shape record's segment: set from the far pointer argument at 1BB1:002E and drawn by 1BBE:00ED through [ds:80C2]"
+date = "2026-11-01"
+
+[[rename]]
+id = "177D:000A=LoadSoundDriver"
+addr = "177D:000A"
+old = "f177D_000A"
+new = "LoadSoundDriver"
+kind = "function"
+why = "loads adlib.dat or pcgamesn.dat into gSoundMap and the code-segment driver block; called by StartupAlloc 07A9:0063"
+date = "2026-11-01"
+
+[[rename]]
+id = "177D:0070=PlaySound"
+addr = "177D:0070"
+old = ""
+new = "PlaySound"
+kind = "function"
+why = "plays the driver sound a game sound number maps to (game numbers through the map in ds:DCAC, 96h ignored); called by the game to make sound effects"
+date = "2026-11-01"
+
+[[rename]]
+id = "177D:00F3=PlaySoundDefault"
+addr = "177D:00F3"
+old = ""
+new = "PlaySoundDefault"
+kind = "function"
+why = "calls PlaySoundVolume with the global volume ds:FBCA; the wrapper the game uses when it gives no volume"
+date = "2026-11-01"
+
+[[rename]]
+id = "177D:0106=PlaySoundVolume"
+addr = "177D:0106"
+old = ""
+new = "PlaySoundVolume"
+kind = "function"
+why = "plays a game sound at a volume, retuning the sound already playing; carries the driver register write and the volume fade"
+date = "2026-11-01"
+
+[[rename]]
+id = "ds:DCAC=gSoundMap"
+addr = "ds:DCAC"
+old = "gBufDCAC"
+new = "gSoundMap"
+kind = "global"
+why = "the 120-byte u8 map from the game sound number to the driver's, read by LoadSoundDriver (177D:000A) and indexed by PlaySound (177D:0070); whitepaper 4.4"
+date = "2026-11-01"
+
+[[rename]]
+id = "ds:80E6=gSoundOn"
+addr = "ds:80E6"
+old = ""
+new = "gSoundOn"
+kind = "global"
+why = "the sound-on flag from argv[2] (whitepaper 2.6): PlaySound and PlaySoundVolume return at once when it is zero"
+date = "2026-11-01"
+
+[[rename]]
+id = "ds:B892=gSoundCard"
+addr = "ds:B892"
+old = ""
+new = "gSoundCard"
+kind = "global"
+why = "the sound choice from argv[2] minus '1' (whitepaper 2.6): 0 opens adlib.dat, nonzero pcgamesn.dat, and it picks the AdLib or PC-speaker play path"
+date = "2026-11-01"
+
+[[rename]]
+id = "ds:009E=gSpeakerMode"
+addr = "ds:009E"
+old = ""
+new = "gSpeakerMode"
+kind = "global"
+why = "Purpose unknown: when 1 the PC-speaker path of PlaySound/PlaySoundVolume gates the speaker on the sign of the sound number through ds:8A67"
+date = "2026-11-01"
+
+[[rename]]
+id = "ds:8A67=gSpeakerOn"
+addr = "ds:8A67"
+old = ""
+new = "gSpeakerOn"
+kind = "global"
+why = "the PC-speaker gate bit toggled by the sign of the sound number when gSpeakerMode is 1, then applied by 1948:0458"
+date = "2026-11-01"
+
+[[rename]]
+id = "ds:5E22=gCurSound"
+addr = "ds:5E22"
+old = ""
+new = "gCurSound"
+kind = "global"
+why = "the driver sound number PlaySoundVolume is playing; it guards the retune and becomes gSoundMap[sound] at the end"
+date = "2026-11-01"
+
+[[rename]]
+id = "ds:5E24=gCurVolume"
+addr = "ds:5E24"
+old = ""
+new = "gCurVolume"
+kind = "global"
+why = "the volume of gCurSound (0..0x10); zero means stop, 10h or more skips the AdLib play"
+date = "2026-11-01"
+
+[[rename]]
+id = "ds:5E26=gPrevSound"
+addr = "ds:5E26"
+old = ""
+new = "gPrevSound"
+kind = "global"
+why = "the sound whose driver registers gSoundLevel and gSoundAmp hold, restored through 0000:03B0 before the next sound"
+date = "2026-11-01"
+
+[[rename]]
+id = "ds:5E28=gSoundLevel"
+addr = "ds:5E28"
+old = ""
+new = "gSoundLevel"
+kind = "global"
+why = "the driver level written to register 3 of the current sound (0000:03B0/0000:03CA)"
+date = "2026-11-01"
+
+[[rename]]
+id = "ds:5E2A=gSoundAmp"
+addr = "ds:5E2A"
+old = ""
+new = "gSoundAmp"
+kind = "global"
+why = "the driver amplitude written to register 1 of the current sound (0000:03B0/0000:03CA)"
+date = "2026-11-01"
+
+[[rename]]
+id = "ds:FBCA=gSoundVolume"
+addr = "ds:FBCA"
+old = ""
+new = "gSoundVolume"
+kind = "global"
+why = "the default sound volume PlaySoundDefault (177D:00F3) passes and PlaySoundVolume uses to derive the level"
+date = "2026-11-01"
+
+[[rename]]
+id = "ds:DDE4=gIconsDDE4"
+addr = "ds:DDE4"
+old = "gNamesDDE4"
+new = "gIconsDDE4"
+kind = "global"
+why = "the table at ds:DDE4 is far pointers to item icon images, not names: ovl2:03D5..0413 fills entries 1..0x58 from the call through [ds:8086] with a 16x16 cell position on the 20-per-row ITEMICN sheet (the string at ds:677D), and 07A9:018F passes each to the sprite drawer f17A6_197E/f1BB1_0002 (review of e07a9)"
+date = "2026-11-01"
+
+[[rename]]
+id = "ds:80D2=gFn80D2"
+addr = "ds:80D2"
+old = "gPrint80D2"
+new = "gFn80D2"
+kind = "global"
+why = "a far function pointer called with a pointer to a 16-byte colour table, not text: E07A9 passes a row of the 1600-byte ITEMRMP buffer (ds:F534 + n<<4) or the one-byte dummy at ds:0090, and the other callers pass the 16-byte tables at ds:1CD3 and ds:1CE3 (review of e07a9)"
+date = "2026-11-01"
+
+[[rename]]
+id = "07A9:010C=f07A9_010C"
+addr = "07A9:010C"
+old = "Level07A9"
+new = "f07A9_010C"
+kind = "function"
+why = "the old name Level07A9 claimed a level routine with no evidence; the bytes only show an item icon display routine (review of e07a9), so keep a placeholder until the purpose is pinned"
+date = "2026-11-01"
+
+[[rename]]
+id = "19F3:000E=ClipRect"
+addr = "19F3:000E"
+old = "ClipDrawRect"
+new = "ClipRect"
+kind = "function"
+why = "clips a rectangle request before ds:8052; no draw is shown"
+date = "2026-11-01"
+
+[[rename]]
 id = "1BBE:0002=HidePointer"
 addr = "1BBE:0002"
 old = "f1BBE_0002"

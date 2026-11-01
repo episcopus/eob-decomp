@@ -1,7 +1,5 @@
 # Readability findings that existed when the rules came in (tools/match/readability.py).
 # The gate fails only on findings not listed here. Fix them and delete the lines.
-E07A9.C|R3|07A9:000A
-E07A9.C|R3|07A9:010C
 E08E6.C|R4|08E6:0CC8
 E19EC.C|R2|19EC:0016
 E19EC.C|R2|19EC:002A
@@ -9,8 +7,6 @@ E19EC.C|R3|19EC:0002
 E19EC.C|R3|19EC:0016
 E19EC.C|R3|19EC:002A
 E19EC.C|R4|19EC:002A
-E19F3.C|R3|19F3:000E
-E19F3.C|R4|19F3:000E
 E19FC.ASM|R2|19FC:0007
 E1A16.C|R3|1A16:000B
 E1A16.C|R3|1A16:0027

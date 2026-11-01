@@ -1,8 +1,8 @@
 ; Unit at EOB.EXE 1BBE:0001 (860 bytes, 7 functions): the game's own mouse pointer, its hide and
 ; show halves and the wrappers that call them. The pointer is drawn by [ds:80C2] (gDraw80C2 in
-; src/E1A29.C) from the shape record g816E/g8170, positioned at the mouse position gCursorX/
-; gCursorY less the hot spot g8158/g815A; before it is drawn at a new place the screen under it is
-; saved through [ds:80AE] (gSaveRect) into the buffer g816A/g816C, and to erase it the saved
+; src/E1A29.C) from the shape record _gPointerShapeOff/_gPointerShapeSeg, positioned at the mouse position gCursorX/
+; gCursorY less the hot spot _gPointerHotX/_gPointerHotY; before it is drawn at a new place the screen under it is
+; saved through [ds:80AE] (gSaveRect) into the buffer _gPointerBackOff/_gPointerBackSeg, and to erase it the saved
 ; background is written back through [ds:804E] (gRestoreRect). 1BBE:0002 HidePointer is the hide
 ; half: restore the background, then gHideDepth++. 1BBE:00ED ShowPointer is the show half:
 ; gHideDepth is decremented and, only at zero, move the drawn position to the mouse position, save
@@ -15,8 +15,8 @@
 ; is saved with push/pop ax, which the compiler's C functions never do; the far call through a
 ; DGROUP pointer and the busy-wait on g812E are the style of E1BB1 and E1BF3).
 ;
-; Globals src/ already names keep those names: g812E, g814A, g8154, g8156, g8158, g815A, g816A,
-; g816C, g816E, g8170, g8172, g8174, g80AA, g80A2 and g80C6 from src/E1BB1.ASM (and g814A from
+; Globals src/ already names keep those names: g812E, g814A, _gPointerHeight, _gPointerWidth8, _gPointerHotX, _gPointerHotY, _gPointerBackOff,
+; _gPointerBackSeg, _gPointerShapeOff, _gPointerShapeSeg, g8172, g8174, g80AA, g80A2 and g80C6 from src/E1BB1.ASM (and g814A from
 ; src/E07A9.C, gDraw80C2 from src/E1A29.C). The byte at 1BBE:0001 is the unit's segment start, as
 ; in 1BB1:0001 and 1BF3:000D.
 
@@ -28,10 +28,10 @@
         EXTRN   _gCursorY:WORD          ; @ ds:813A: mouse position, y in pixels
         EXTRN   _gHideDepth:WORD        ; @ ds:8146: hide depth, 0 = drawn (1BBE:0002/00ED change it)
         EXTRN   g814A:WORD              ; @ ds:814A: non-zero disables the pointer (E07A9 tests it too)
-        EXTRN   g8154:WORD              ; @ ds:8154: sprite height in pixels (record byte +3, 1BB1)
-        EXTRN   g8156:WORD              ; @ ds:8156: sprite width in 8-pixel columns (byte +2 + 1)
-        EXTRN   g8158:WORD              ; @ ds:8158: hot spot, x in pixels (subtracted from gCursorX)
-        EXTRN   g815A:WORD              ; @ ds:815A: hot spot, y in pixels
+        EXTRN   _gPointerHeight:WORD              ; @ ds:8154: sprite height in pixels (record byte +3, 1BB1)
+        EXTRN   _gPointerWidth8:WORD              ; @ ds:8156: sprite width in 8-pixel columns (byte +2 + 1)
+        EXTRN   _gPointerHotX:WORD              ; @ ds:8158: hot spot, x in pixels (subtracted from gCursorX)
+        EXTRN   _gPointerHotY:WORD              ; @ ds:815A: hot spot, y in pixels
         EXTRN   _gDrawnX:WORD           ; @ ds:815C: position drawn at last, x in pixels
         EXTRN   _gDrawnY:WORD           ; @ ds:815E: position drawn at last, y in pixels
         EXTRN   _gPointerState:WORD     ; @ ds:8160: bit 8000 hidden, bit 4000 redraw, low byte a count
@@ -39,10 +39,10 @@
         EXTRN   _gZoneTop:WORD          ; @ ds:8164: hide zone, top in pixels
         EXTRN   _gZoneRight:WORD        ; @ ds:8166: hide zone, right in pixels
         EXTRN   _gZoneBottom:WORD       ; @ ds:8168: hide zone, bottom in pixels
-        EXTRN   g816A:WORD              ; @ ds:816A: save-under buffer, far offset (1BB1 allocates)
-        EXTRN   g816C:WORD              ; @ ds:816C: save-under buffer, far segment, 0 = none
-        EXTRN   g816E:WORD              ; @ ds:816E: pointer shape record, far offset (1BB1 stores it)
-        EXTRN   g8170:WORD              ; @ ds:8170: pointer shape record, far segment
+        EXTRN   _gPointerBackOff:WORD              ; @ ds:816A: save-under buffer, far offset (1BB1 allocates)
+        EXTRN   _gPointerBackSeg:WORD              ; @ ds:816C: save-under buffer, far segment, 0 = none
+        EXTRN   _gPointerShapeOff:WORD              ; @ ds:816E: pointer shape record, far offset (1BB1 stores it)
+        EXTRN   _gPointerShapeSeg:WORD              ; @ ds:8170: pointer shape record, far segment
         EXTRN   g8172:WORD              ; @ ds:8172: far pointer handed to [ds:80AA], offset
         EXTRN   g8174:WORD              ; @ ds:8174: far pointer handed to [ds:80AA], segment
         EXTRN   _gRectLeft:WORD         ; @ ds:8176: clipped rectangle, left in 8-pixel columns
@@ -51,10 +51,10 @@
         EXTRN   _gRectBottom:WORD       ; @ ds:817C: clipped rectangle, bottom in pixel rows
         EXTRN   _gShapeX:WORD           ; @ ds:817E: shape drawn at, x in pixels, unclipped
         EXTRN   _gShapeY:WORD           ; @ ds:8180: shape drawn at, y in pixels, unclipped
-        EXTRN   _gSpriteHeight:WORD     ; @ ds:8182: copy of g8154, the upper y clip bound
-        EXTRN   _gNegSpriteHeight:WORD  ; @ ds:8184: minus g8154, the lower y clip bound
-        EXTRN   _gSpriteWidth:WORD      ; @ ds:8186: copy of g8156, the upper x clip bound
-        EXTRN   _gNegSpriteWidth:WORD   ; @ ds:8188: minus g8156, the lower x clip bound
+        EXTRN   _gSpriteHeight:WORD     ; @ ds:8182: copy of _gPointerHeight, the upper y clip bound
+        EXTRN   _gNegSpriteHeight:WORD  ; @ ds:8184: minus _gPointerHeight, the lower y clip bound
+        EXTRN   _gSpriteWidth:WORD      ; @ ds:8186: copy of _gPointerWidth8, the upper x clip bound
+        EXTRN   _gNegSpriteWidth:WORD   ; @ ds:8188: minus _gPointerWidth8, the lower x clip bound
         EXTRN   _gRestoreRect:DWORD     ; @ ds:804E: far fn (x, y, w, h, buf): buffer back to screen
         EXTRN   _gSaveRect:DWORD        ; @ ds:80AE: far fn (x, y, w, h, buf): screen into buffer
         EXTRN   g80AA:DWORD             ; @ ds:80AA: far fn (g8172/g8174) before the pointer work
@@ -71,11 +71,11 @@ _f1BBE_0001 LABEL BYTE                    ; @ 1BBE:0001
         db      0
 
 ; 1BBE:0002 HidePointer: hide the pointer. Nothing happens when the pointer is disabled (g814A),
-; when it is already hidden (gHideDepth non-zero) or when no save-under buffer exists (g816C zero).
+; when it is already hidden (gHideDepth non-zero) or when no save-under buffer exists (_gPointerBackSeg zero).
 ; Otherwise the rectangle the pointer covers is recomputed from the position it was last drawn at
-; (gDrawnX/gDrawnY) less the hot spot (g8158/g815A) and the sprite size (g8154/g8156; the x in
+; (gDrawnX/gDrawnY) less the hot spot (_gPointerHotX/_gPointerHotY) and the sprite size (_gPointerHeight/_gPointerWidth8; the x in
 ; 8-pixel columns, the y in rows, each clipped to the 40x200 screen), the saved background is
-; written back to the screen through [ds:804E] (x, y, w, h, g816A/g816C) and gHideDepth is
+; written back to the screen through [ds:804E] (x, y, w, h, _gPointerBackOff/_gPointerBackSeg) and gHideDepth is
 ; incremented. The height and width used are the ones 1BB1 stored before it calls here, which is
 ; what keeps the buffer valid while the shape is replaced. Called by 1BB1:0002, 1BF3:000E and
 ; 1A72, and by the wrappers below. Pushes AX only to preserve the caller's.
@@ -89,19 +89,19 @@ _HidePointer PROC FAR
 disabled: jmp     HideDone
 enabled: cmp     word ptr [_gHideDepth],0
         jne     L0075
-        cmp     word ptr [g816C],0
+        cmp     word ptr [_gPointerBackSeg],0
         je      disabled
         mov     ax,[_gDrawnX]
-        sub     ax,[g8158]
+        sub     ax,[_gPointerHotX]
         mov     [_gRectLeft],ax
         mov     ax,[_gDrawnY]
-        sub     ax,[g815A]
+        sub     ax,[_gPointerHotY]
         mov     [_gRectTop],ax
-        mov     ax,[g8154]
+        mov     ax,[_gPointerHeight]
         mov     [_gSpriteHeight],ax
         neg     ax
         mov     [_gNegSpriteHeight],ax
-        mov     ax,[g8156]
+        mov     ax,[_gPointerWidth8]
         mov     [_gSpriteWidth],ax
         neg     ax
         mov     [_gNegSpriteWidth],ax
@@ -139,8 +139,8 @@ L0084:  mov     ax,[_gRectTop]
 L00AB:  cmp     word ptr [_gRectBottom],0C8h
         jle     L00B9
         mov     word ptr [_gRectBottom],0C8h
-L00B9:  push    word ptr [g816C]
-        push    word ptr [g816A]
+L00B9:  push    word ptr [_gPointerBackSeg]
+        push    word ptr [_gPointerBackOff]
         mov     ax,[_gRectBottom]
         sub     ax,[_gRectTop]
         push    ax
@@ -161,11 +161,11 @@ HideDone: pop    ax
 _HidePointer ENDP
 
 ; 1BBE:00ED ShowPointer: show the pointer. Nothing happens when it is disabled (g814A), when it is
-; not hidden (gHideDepth zero) or when no save-under buffer exists (g816C). Otherwise gHideDepth
+; not hidden (gHideDepth zero) or when no save-under buffer exists (_gPointerBackSeg). Otherwise gHideDepth
 ; is decremented and, only at zero, the current mouse position (gCursorX/gCursorY) is copied to
 ; the position being drawn at (gDrawnX/gDrawnY), the rectangle is recomputed and clipped exactly
-; as in 1BBE:0002, the screen under it is saved through [ds:80AE] (x, y, w, h, g816A/g816C) and the
-; shape record g816E/g8170 is drawn at the unclipped position gShapeX/gShapeY through [ds:80C2]
+; as in 1BBE:0002, the screen under it is saved through [ds:80AE] (x, y, w, h, _gPointerBackOff/_gPointerBackSeg) and the
+; shape record _gPointerShapeOff/_gPointerShapeSeg is drawn at the unclipped position gShapeX/gShapeY through [ds:80C2]
 ; (mode 0). Called by 1BB1:0002, 1BF3:000E and 1A72, and by the wrappers below. Pushes AX to
 ; preserve the caller's.
         PUBLIC  _ShowPointer            ; @ 1BBE:00ED
@@ -180,23 +180,23 @@ _ShowPointer PROC FAR
         dec     word ptr [_gHideDepth]
         cmp     word ptr [_gHideDepth],0
         jne     L015B
-        cmp     word ptr [g816C],0
+        cmp     word ptr [_gPointerBackSeg],0
         je      L015B
         mov     ax,[_gCursorX]
         mov     [_gDrawnX],ax
-        sub     ax,[g8158]
+        sub     ax,[_gPointerHotX]
         mov     [_gRectLeft],ax
         mov     [_gShapeX],ax
         mov     ax,[_gCursorY]
         mov     [_gDrawnY],ax
-        sub     ax,[g815A]
+        sub     ax,[_gPointerHotY]
         mov     [_gRectTop],ax
         mov     [_gShapeY],ax
-        mov     ax,[g8154]
+        mov     ax,[_gPointerHeight]
         mov     [_gSpriteHeight],ax
         neg     ax
         mov     [_gNegSpriteHeight],ax
-        mov     ax,[g8156]
+        mov     ax,[_gPointerWidth8]
         mov     [_gSpriteWidth],ax
         neg     ax
         mov     [_gNegSpriteWidth],ax
@@ -234,8 +234,8 @@ L0184:  mov     ax,[_gRectTop]
 L01AB:  cmp     word ptr [_gRectBottom],0C8h
         jle     L01B9
         mov     word ptr [_gRectBottom],0C8h
-L01B9:  push    word ptr [g816C]
-        push    word ptr [g816A]
+L01B9:  push    word ptr [_gPointerBackSeg]
+        push    word ptr [_gPointerBackOff]
         mov     ax,[_gRectBottom]
         sub     ax,[_gRectTop]
         push    ax
@@ -249,8 +249,8 @@ L01B9:  push    word ptr [g816C]
         add     sp,0Ch
         push    word ptr [_gShapeY]
         push    word ptr [_gShapeX]
-        push    word ptr [g8170]
-        push    word ptr [g816E]
+        push    word ptr [_gPointerShapeSeg]
+        push    word ptr [_gPointerShapeOff]
         mov     ax,0
         push    ax
         call    dword ptr [gDraw80C2]
@@ -300,10 +300,10 @@ L0234:  mov     [_gZoneLeft],cx
         mov     [_gZoneRight],si
         mov     [_gZoneBottom],di
         mov     ax,[_gDrawnX]
-        sub     ax,[g8158]
+        sub     ax,[_gPointerHotX]
         and     ax,0FFF8h
         mov     [_gRectLeft],ax
-        mov     bx,[g8156]
+        mov     bx,[_gPointerWidth8]
         shl     bx,1
         shl     bx,1
         shl     bx,1
@@ -311,9 +311,9 @@ L0234:  mov     [_gZoneLeft],cx
         add     ax,bx
         mov     [_gRectRight],ax
         mov     ax,[_gDrawnY]
-        sub     ax,[g815A]
+        sub     ax,[_gPointerHotY]
         mov     [_gRectTop],ax
-        mov     bx,[g8154]
+        mov     bx,[_gPointerHeight]
         sub     [_gZoneTop],bx
         add     ax,bx
         mov     [_gRectBottom],ax
