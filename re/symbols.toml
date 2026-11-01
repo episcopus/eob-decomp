@@ -4731,7 +4731,7 @@ unit = "e1bb1"
 addr = "1BB1:0002"
 size = 207
 evidence = ["far"]
-name = "_f1BB1_0002"
+name = "SetMousePointerShape"
 level = "L2"
 match_flags = "tasm /mx"
 
