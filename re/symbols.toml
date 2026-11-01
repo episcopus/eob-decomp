@@ -4977,6 +4977,7 @@ evidence = ["segment"]
 name = "_f1D8F_0002"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-01 rev-sonnet"
 
 [[function]]
 id = "e1d8f_0010"
@@ -4987,6 +4988,7 @@ evidence = ["far", "frame"]
 name = "_f1D8F_0010"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-01 rev-sonnet"
 
 [[function]]
 id = "e1d8f_0038"
@@ -4997,6 +4999,7 @@ evidence = ["far", "frame"]
 name = "_f1D8F_0038"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-01 rev-sonnet"
 
 [[function]]
 id = "e1d9a_000b"
