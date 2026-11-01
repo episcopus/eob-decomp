@@ -684,3 +684,30 @@ new = "CompressLcw"
 kind = "function"
 why = "LCW encoder: writes the tokens Unpack4 (1D9A:0013, src/E1B82.C:22) reads (short back references, absolute copies, fills, literals), the inverse of that decoder; wwfmt.py lcw, whitepaper 4.2"
 date = "2026-11-01"
+
+[[rename]]
+id = "07C8:058A=ShutdownGame"
+addr = "07C8:058A"
+old = "f07C8_058A"
+new = "ShutdownGame"
+kind = "function"
+why = "stops sound, mouse and the overlay manager, restores video mode 7 and the old INT 3Fh vector and exits the program; called by main and by the allocation failure hook (07C8:058A)"
+date = "2026-11-01"
+
+[[rename]]
+id = "07C8:0625=AllocationFailure"
+addr = "07C8:0625"
+old = "f07C8_0625"
+new = "AllocationFailure"
+kind = "function"
+why = "the allocation failure hook main stores at ds:810A: restores video mode 7, prints 'Allocation failure, returning to DOS!', waits for a key and runs the shut-down path (07C8:0625)"
+date = "2026-11-01"
+
+[[rename]]
+id = "07C8:0199=StartupGame"
+addr = "07C8:0199"
+old = "f07C8_0199"
+new = "StartupGame"
+kind = "function"
+why = "the start-up after main: sets the video mode, sizes memory, loads the graphics overlay and the two fonts, builds the ds:FC0C buffer table, starts the overlay manager and turns sound on (07C8:0199)"
+date = "2026-11-01"

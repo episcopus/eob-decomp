@@ -1182,6 +1182,7 @@ unit = "e07c8"
 addr = "07C8:0199"
 size = 1009
 evidence = ["far"]
+name = "StartupGame"
 
 [[function]]
 id = "e07c8_058a"
@@ -1189,6 +1190,7 @@ unit = "e07c8"
 addr = "07C8:058A"
 size = 147
 evidence = ["far", "near"]
+name = "ShutdownGame"
 
 [[function]]
 id = "e07c8_061d"
@@ -1203,6 +1205,7 @@ unit = "e07c8"
 addr = "07C8:0625"
 size = 38
 evidence = ["frame"]
+name = "AllocationFailure"
 
 [[function]]
 id = "e082c_000b"

@@ -88,12 +88,15 @@ extern void f0_3F77(void);                        /*@ 0000:3F77: e_text, the PC 
 extern long time(long far *tloc);                 /*@ 0000:5831 */
 extern void srand(unsigned seed);                 /*@ 0000:55A6 */
 extern void far *memset(void far *dst, int c, unsigned n); /*@ 0000:6384 */
-extern unsigned char far Int3FHandler;            /*@ 1A72:0006: the INT 3Fh handler main installs */
+/* Declared as a far object, not a function: the matcher cannot map a far function pointer taken from
+   another unit and passed as an argument, but an object at 1A72:0006 gives the same segment:offset
+   when its address is taken. Int3FHandler is the INT 3Fh handler main installs (E1A72.ASM). */
+extern unsigned char far Int3FHandler;            /*@ 1A72:0006 */
 
-int f07C8_0199(void);
-void f07C8_058A(void);
+int StartupGame(void);
+void ShutdownGame(void);
 int f07C8_061D(void);
-int f07C8_0625(void);
+int AllocationFailure(void);
 
 /* 07C8:0001: main. Reads the four one-character arguments the launcher passes (graphics, sound,
    mouse, the "homie" marker) and the video mode to restore, installs the INT 3Fh handler and the
@@ -101,8 +104,12 @@ int f07C8_0625(void);
    takes the first switch on the graphics choice: a built-in 16-byte colour table at ds:3057 for
    the first two modes, otherwise it loads eobpal.col into ds:FE68, both through the far function at
    ds:80BA, and then calls 16A5:0D78 and StartupAlloc. Returns 0, and runs the shut-down 07C8:058A
-   once start-up got far enough. */
-/*@ 07C8:0001 */ int Main(int argc, char far * far *argv)
+   once start-up got far enough.
+   Draft: every byte matches except the code offset stored for 07C8:061D into ds:80FA, which is a
+   distance from main's start and so depends on the size of the 07C8:0199 draft below (ours is
+   longer than the original). The function name is `Main`, not `main`, because the matcher's link
+   stub already defines `_main` for the C0 startup. */
+/*@ 07C8:0001 draft */ int Main(int argc, char far * far *argv)
 {
     int mouse;
 
@@ -120,11 +127,11 @@ int f07C8_0625(void);
         return 0;
     }
     gFn80FA = f07C8_061D;
-    gAllocFailHook = f07C8_0625;
+    gAllocFailHook = AllocationFailure;
     f1AAD_0718();
     InstallHardErr();
     f1D8F_0010();
-    if (f07C8_0199() == 1) {
+    if (StartupGame() == 1) {
         switch (g8102 - 1) {
         case 0:
         case 1:
@@ -148,7 +155,7 @@ int f07C8_0625(void);
             StartupAlloc(argc, argv);
         }
     }
-    f07C8_058A();
+    ShutdownGame();
     return 0;
 }
 /* 07C8:0199: the start-up. First it lowers g8102 by '1' (the argument digit is '1' past the choice),
@@ -157,8 +164,11 @@ int f07C8_0625(void);
    mouse, loads the graphics overlay named by g8102 through the table at ds:3074 (cga/tga/ega/mcga/
    vga.ovl), builds the page/buffer segment table at ds:FC0C for the mode, loads the two fonts, sets
    up the palette buffer, starts the overlay manager, seeds rand from the clock and turns the chosen
-   sound card on. Returns 1 when it got that far, 0 on any of the errors it prints. */
-/*@ 07C8:0199 */ int f07C8_0199(void)
+   sound card on. Returns 1 when it got that far, 0 on any of the errors it prints.
+   Draft: the run-through matches up to +0009; the first difference is where the compiler places the
+   shared `return 0` block and the trampoline for the unsupported-graphics path, so the function is
+   a few bytes longer than the original and the whole error-block layout downstream differs. */
+/*@ 07C8:0199 draft */ int StartupGame(void)
 {
     int memtop;
 
@@ -171,7 +181,6 @@ int f07C8_0625(void);
             f1DDD_002D(7);
             PrintString("\r\nMemory chain corrupt!\r\n");
             f1AAD_053A();
-fail:
             return 0;
         }
         f1DDD_002D(g8102);
@@ -264,6 +273,8 @@ font_error:
     PrintString(". Reinstall program.\r\n");
     f1AAD_053A();
     return 0;
+fail:
+    return 0;
 started:
     f1C0E_13E7();
     g3056 = 1;
@@ -293,7 +304,7 @@ started:
    calls the exit hook at ds:80FA, disables the mouse handler, stops the overlay manager, restores
    video mode 7 and the old INT 3Fh vector, returns the Tandy memory to the video buffer, and exits
    the program through the runtime's exit(). Called by main. */
-/*@ 07C8:058A */ void f07C8_058A(void)
+/*@ 07C8:058A */ void ShutdownGame(void)
 {
     switch (gSoundCard) {
     case 0:
@@ -334,11 +345,11 @@ started:
 /* 07C8:0625: the allocation failure hook. Restores video mode 7, prints "Allocation failure,
    returning to DOS!", waits for a key and runs the shut-down path. main stores it at ds:810A, the
    pointer MemAlloc (19BC:0007) calls when a far allocation fails. */
-/*@ 07C8:0625 */ int f07C8_0625(void)
+/*@ 07C8:0625 */ int AllocationFailure(void)
 {
     f1DDD_002D(7);
     PrintString("\r\nAllocation failure, returning to DOS!");
     f1AAD_053A();
-    f07C8_058A();
+    ShutdownGame();
     return 0;
 }
