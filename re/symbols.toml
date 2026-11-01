@@ -4070,6 +4070,9 @@ unit = "e1990"
 addr = "1990:0071"
 size = 194
 evidence = ["far", "frame"]
+name = "CheckMemoryChain"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1990_0133"
@@ -4077,6 +4080,9 @@ unit = "e1990"
 addr = "1990:0133"
 size = 330
 evidence = ["far", "frame"]
+name = "ReserveMemoryBelowVideo"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1990_027d"
@@ -4084,6 +4090,9 @@ unit = "e1990"
 addr = "1990:027D"
 size = 74
 evidence = ["far", "frame"]
+name = "TrimMemoryToVideo"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e19bc_0007"
