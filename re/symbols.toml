@@ -4171,6 +4171,9 @@ unit = "e1a16"
 addr = "1A16:000B"
 size = 28
 evidence = ["far", "near", "segment"]
+name = "WaitFrames"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "e1a16_0027"
@@ -4178,6 +4181,9 @@ unit = "e1a16"
 addr = "1A16:0027"
 size = 15
 evidence = ["far", "frame"]
+name = "WaitFrame"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "e1a19_0006"
