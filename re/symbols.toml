@@ -4303,6 +4303,9 @@ unit = "e1a65"
 addr = "1A65:000E"
 size = 200
 evidence = ["far", "segment"]
+name = "CalibrateRetrace"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e1a72_0006"
