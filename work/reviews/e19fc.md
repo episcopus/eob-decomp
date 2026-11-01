@@ -32,7 +32,7 @@ What I checked (read-only; no game run; no source edited):
 Each finding is a checkbox. `must-fix` blocks `make review-pass` until a decompiler ticks it off
 (with the commit that fixes it); `should` and `note` do not block.
 
-- [ ] must-fix src/E19FC.ASM:44-46: `_CompressLcw PROC FAR` begins with `db 0`, so the entry the name and
+- [x] must-fix src/E19FC.ASM:44-46: `_CompressLcw PROC FAR` begins with `db 0`, so the entry the name and
   the PUBLIC label give (19FC:0007) is the marker byte, not code. In `eob/EOB.EXE` the bytes at 19FC:0007
   are `00 55 8B` (the disassembly is `add byte ptr [di - 75h], dl`), and the first instruction, `push bp`,
   is at 19FC:0008. A far call to 19FC:0007 would run the marker. The same kind of marker is handled
@@ -44,28 +44,45 @@ Each finding is a checkbox. `must-fix` blocks `make review-pass` until a decompi
   "a segment-start byte the map gives to this unit" then says that the byte is data. The registry
   (`make rename`, `re/symbols.toml`, `re/renames.toml` for 19FC:0007) has to follow the new entry address;
   `make match` must stay green.
+  -- Fixed: the marker byte is now its own public byte symbol (`_f19FC_0007 LABEL BYTE`, `db 0`, data)
+  and `_CompressLcw PROC FAR` starts at 19FC:0008 with the same 419 code bytes; `make match` prints 2
+  of 2 and the unit 420 bytes. The header wording is fixed too. The registry follows: re/symbols.toml
+  e19fc_0007 is the 1-byte marker (name `_f19FC_0007`) and e19fc_0008 is CompressLcw (419 bytes,
+  evidence frame), and re/renames.toml's CompressLcw entry moved to 19FC:0008.
 
-- [ ] should src/E19FC.ASM:1-3 (unit comment): no whitepaper section. READABILITY.md (Unit) asks for "the
+- [x] should src/E19FC.ASM:1-3 (unit comment): no whitepaper section. READABILITY.md (Unit) asks for "the
   whitepaper section", and the rename WHY in `re/renames.toml:433` already cites "whitepaper 4.2"
   (`docs/design/WHITEPAPER.md`, "### 4.2 Compressed files"). Add it to the header.
+  -- Fixed: the header line 2-3 now cites "the format-4 compressed files of whitepaper 4.2".
 
-- [ ] should src/E19FC.ASM:14-16: "the decoder adds it to its output base, the same index, because the
+- [x] should src/E19FC.ASM:14-16: "the decoder adds it to its output base, the same index, because the
   decompressed prefix has the same length" is hard to follow. What holds: the absolute copy word is an
   index from the start of the decompressed output (`tools/re/wwfmt.py` `lcw`, `out[pos + k]`; Unpack4
   agrees on all 131 files in `tests/unit/test_wwfmt.py`), and the encoder measures it from the input start
   (gInBase), so the two agree because the decoded prefix has the same length as the input prefix. Say that.
+  -- Fixed: the header now says the word-form distance is an index from the start of the decompressed
+  output: the encoder measures it from cs:gInBase (the input start) and the decoder adds it to its output
+  start, and the two agree because the decoded prefix has the same length as the input prefix it came from.
 
-- [ ] should src/E19FC.ASM:124-127 and 138-139: the quick reject (compare the byte at gBestLen-1 before
+- [x] should src/E19FC.ASM:124-127 and 138-139: the quick reject (compare the byte at gBestLen-1 before
   extending) and the `jb search` that drops a shorter candidate carry no reason. Say that a candidate can only
   beat gBestLen if it agrees at offset gBestLen-1, and that an equal length replaces the earlier match
   because the later candidate is nearer (a smaller distance, which can use the 2-byte short form).
+  -- Fixed: a comment at the compare says a candidate can only beat gBestLen if it agrees at offset
+  gBestLen-1; the `jb search` comment says an equal length replaces the earlier match, because the later
+  candidate is nearer and a smaller distance can use the 2-byte short form.
 
-- [ ] note src/E19FC.ASM:1: the map gives `kind asm [H]`, and the header does not say why this unit is
+- [x] note src/E19FC.ASM:1: the map gives `kind asm [H]`, and the header does not say why this unit is
   assembly and not C (`src/E1B82.C:2-9` says why its unit is C++). If the reason is known (the cs: overrides
   and the repe/repne string code), say it; if not, say that it is not known.
+  -- Fixed: the header now says the unit is taken to be assembly [H] because it keeps state in the code
+  segment through cs: overrides and scans with the repe/repne string instructions, forms the C compiler
+  does not emit for C source, so the kind is inferred from those forms, not proven.
 
-- [ ] note src/E19FC.ASM:2: `CompressLcw` does not say that the function returns the byte count. The header
+- [x] note src/E19FC.ASM:2: `CompressLcw` does not say that the function returns the byte count. The header
   does (line 6, "returning the number of bytes written"); that is enough for a name.
+  -- Fixed: the comment above the definition at 19FC:0008 now says it returns AX = the number of bytes
+  written to the destination.
 
 ## Summary
 
