@@ -4304,6 +4304,7 @@ evidence = ["segment"]
 name = "HardErrHandler"
 level = "L2"
 match_flags = "-ml -O -Z -G"
+review = "passed 2026-11-01 rev-sonnet"
 
 [[function]]
 id = "e1a63_0019"
@@ -4314,6 +4315,7 @@ evidence = ["far", "frame"]
 name = "InstallHardErr"
 level = "L2"
 match_flags = "-ml -O -Z -G"
+review = "passed 2026-11-01 rev-sonnet"
 
 [[function]]
 id = "e1a65_000e"
