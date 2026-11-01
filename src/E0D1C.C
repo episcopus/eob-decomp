@@ -35,6 +35,16 @@ extern signed char g547E[]; /*@ ds:547E */  /* byte table indexed by the second 
 extern char gB894[]; /*@ ds:B894 */         /* nine-byte records; +4 (ds:B898) is tested by 0D1C:0080 */
 extern signed char g194B[]; /*@ ds:194B */  /* byte table read by 0D1C:0080 */
 
+struct Entry14 {            /* the 14-byte records E07A9 calls Entry14; view based at ds:8DD2 (E07A9) */
+    unsigned char flags;    /* +0 (ds:8DD2), read by 07A9:015C */
+    signed char icon;       /* +1 (ds:8DD3), read by 07A9:0141 */
+    signed char m02;        /* +2 (ds:8DD4), compared by 0D1C:00F1 */
+    char pad03[0x0B - 0x03];
+    signed char m0B;        /* +0xB (ds:8DDD), compared by 0D1C:00F1 */
+    char pad0C[0x0E - 0x0C];
+};
+extern struct Entry14 gTable8DD2[]; /*@ ds:8DD2 */
+
 extern void f1547_0991(int dir); /*@ 1547:0991 */
 
 /* 0D1C:0006: Purpose unknown: the value `value` is looked for in the 15 words at ds:A9C8; when
@@ -110,7 +120,26 @@ extern void f1547_0991(int dir); /*@ 1547:0991 */
 {
     return (value + g1790[page]) & 0x3FF;
 }
-/*@ 0D1C:00F1 stub */ void f0D1C_00F1(void) {}
+/* 0D1C:00F1: finds the first of the 27 word slots of gChars[who].m77 that holds an item (a
+   nonzero index into the 14-byte records at ds:8DD2) whose m02 equals `field2` and whose m0B
+   equals `fieldB`. A `field2` or `fieldB` of -1 is a wildcard. Returns the slot number, or -1.
+   Called by 0D1C:01CA and from overlays 1 and 6. */
+/*@ 0D1C:00F1 */ int FindCarriedSlot(int who, int field2, int fieldB)
+{
+    int far *slot;
+    unsigned i;
+
+    slot = gChars[who].m77;
+    for (i = 0; i < 27; slot++, i++) {
+        if (*slot != 0) {
+            if (gTable8DD2[*slot].m02 == field2 || field2 == -1) {
+                if (gTable8DD2[*slot].m0B == fieldB || fieldB == -1)
+                    return i;
+            }
+        }
+    }
+    return -1;
+}
 /*@ 0D1C:0163 stub */ void f0D1C_0163(void) {}
 /*@ 0D1C:01CA stub */ void f0D1C_01CA(void) {}
 /*@ 0D1C:02DC stub */ void f0D1C_02DC(void) {}

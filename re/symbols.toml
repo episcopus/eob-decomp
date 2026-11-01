@@ -2346,6 +2346,9 @@ unit = "e0d1c"
 addr = "0D1C:00F1"
 size = 114
 evidence = ["near", "frame"]
+name = "FindCarriedSlot"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0d1c_0163"
