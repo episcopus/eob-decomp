@@ -113,10 +113,56 @@ void f1414_0B2E(void);
 /*@ 1414:0285 stub */ void f1414_0285(void) {}
 /*@ 1414:03B4 stub */ void f1414_03B4(void) {}
 /*@ 1414:04B0 stub */ void f1414_04B0(void) {}
-/*@ 1414:04E7 stub */ void f1414_04E7(void) {}
-/*@ 1414:055B stub */ void f1414_055B(void) {}
-/*@ 1414:05A4 stub */ void f1414_05A4(void) {}
-/*@ 1414:05DF stub */ void f1414_05DF(void) {}
+
+/* 1414:04E7: the effect tick: for every entry of gEffects whose expiry (gTimer, the 32-bit tick
+   counter) has passed, call its handler with its argument; when the handler leaves the entry
+   active, re-arm it by adding the entry's period to the expiry. Finally runs 08E6:1410. An entry
+   the handler disarms (active 0) is left alone. Called by 0ACD when a key or menu passes. */
+/*@ 1414:04E7 */ void RunEffects(void)
+{
+    struct Effect far *e;
+    int i;
+
+    i = 0;
+    e = gEffects;
+    for (; i < gEffectCount; i++, e++) {
+        if (e->active != 0 && e->expiry < g8492) {
+            e->fn(e->arg);
+            if (e->active != 0)
+                e->expiry = g8492 + e->period;
+        }
+    }
+    f08E6_1410();
+}
+
+/* 1414:055B: arms effect `idx` at its table period (like 05A4) and also stores `arg` in the
+   entry's argument word (+0C) and `sub` in its byte (+0E). Called by 122E and 0ACD. */
+/*@ 1414:055B */ void ArmEffectWith(int idx, int arg, int sub, int active)
+{
+    struct Effect far *e;
+
+    e = &gEffects[idx];
+    e->active = active;
+    e->expiry = g8492 + e->period;
+    e->arg = arg;
+    e->sub = sub;
+}
+/* 1414:05A4: (re-)arms effect `idx` at its table period: stores `active` and sets the expiry to
+   gTimer plus the entry's period. Called by many units (0ACD, 0D1C, 1414). */
+/*@ 1414:05A4 */ void ArmEffect(int idx, int active)
+{
+    struct Effect far *e;
+
+    e = &gEffects[idx];
+    e->active = active;
+    e->expiry = g8492 + e->period;
+}
+/* 1414:05DF: effects 2 to 5 of the table call this to run the object-list update of one kind
+   through UpdateObjects (08E6:0CC8). */
+/*@ 1414:05DF */ void UpdateEffectObjects(int kind)
+{
+    UpdateObjects(kind);
+}
 /*@ 1414:05ED stub */ void f1414_05ED(void) {}
 /*@ 1414:0770 stub */ void f1414_0770(void) {}
 /*@ 1414:07CA stub */ void f1414_07CA(void) {}
