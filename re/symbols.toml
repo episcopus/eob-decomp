@@ -1689,6 +1689,9 @@ unit = "e0a72"
 addr = "0A72:0181"
 size = 28
 evidence = ["far", "frame"]
+name = "GetCharM15Value"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0a72_019d"
@@ -1696,6 +1699,9 @@ unit = "e0a72"
 addr = "0A72:019D"
 size = 17
 evidence = ["far", "frame"]
+name = "GetClassWord"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0a72_01ae"
@@ -1738,6 +1744,9 @@ unit = "e0a72"
 addr = "0A72:0509"
 size = 25
 evidence = ["far", "frame"]
+name = "GetClassSlotByte"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0a72_0522"
@@ -1752,6 +1761,9 @@ unit = "e0a72"
 addr = "0A72:058C"
 size = 11
 evidence = ["far", "frame"]
+name = "SubtractInts"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0a72_0597"
@@ -1759,6 +1771,9 @@ unit = "e0a72"
 addr = "0A72:0597"
 size = 33
 evidence = ["far", "frame"]
+name = "GetClampedTableByte"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0acd_0008"
