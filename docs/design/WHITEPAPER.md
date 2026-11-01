@@ -36,11 +36,13 @@ Proven by matching two whole modules, `e0cf7` (6 functions, 591 bytes) and `e07a
 | no `-N` (no stack check, default) | `-N` breaks both modules |
 | `-K`, `-a`, `-d` | not decided: these modules use no plain `char`, no structure layout that `-a` changes and no repeated string |
 
-**Switches differ by unit.** `e1b82` (`src/E1B82.C`) is compiled with `-G` (optimise for speed): it cleans the stack after calls with `inc sp; inc sp` and `add sp,4` where the `-O -Z` units use `pop cx`; 3 of its 4 functions match with `-ml -O -Z -G`, none without `-G`. The small units `e1a16` and `e1a63` show the same pattern. A source file names its switches with `/*@flags ... */` (playbook 30).
+**Switches differ by unit.** `e1b82` (`src/E1B82.C`) is compiled with `-G` (optimise for speed): it cleans the stack after calls with `inc sp; inc sp` and `add sp,4` where the `-O -Z` units use `pop cx`. Its four functions match with `-ml -O -Z -G -P`, three of them with `-ml -O -Z -G` and none without `-G`. The small units `e1a16` and `e1a63` show the same `-G` pattern. A source file names its switches with `/*@flags ... */` (playbook 30).
+
+**The C and C++ front ends differ.** `e1b82`'s `Unpack` (1B82:00C7) sign-extends its format byte to long and then switches on the low word (`mov al,es:[bx]; cbw; cwd; mov bx,ax; cmp bx,4; jbe; shl bx,1; jmp cs:[bx+20d]`). `TCC`'s C front end folds `(int)(long)char` to `char` (leaving `cbw` without `cwd`) and never turns a `long` switch into a jump table, while its C++ front end (`-P`) keeps the `cwd` and emits exactly these bytes. So a unit that shows a `long` conversion before a jump table is C++ (`-P`, names then mangled, so the file wraps its definitions in `extern "C"` for the matcher). The same front end can also fold `FP_SEG(p)` on a far-pointer local to `push dx` where the C front end reloads the segment; the original 1B82 pushes the memory word, so the file keeps the block's two halves in a union.
 
 Idioms settled by matching (playbook 30 has the full list): an assignment tested and the result unused (`mov [g],ax; or ax,ax`) is an `if (g = x) ;` with an empty body (`SetUnpackBuffer`, 1B82:0217); two `continue` tests merged into one `||` keep ES:BX loaded (`UpdateObjects`, 08E6:0CC8); a `switch`'s case bodies are laid out in source order, so the jump table gives the order of the `case` labels.
 
-Not reproduced yet (drafts, notes in `re/symbols.toml`): `0ACD:091C`, where the original keeps two identical tails that our `-O` merges, and `1B82:00C7`, where the original sign-extends the switch value to 32 bits without a temporary.
+Not reproduced yet (drafts, notes in `re/symbols.toml`): `0ACD:091C`, where the original keeps two identical tails that our `-O` merges.
 
 No game code uses floating point: no emulator interrupts (`INT 34h` to `3Dh`) in any code segment. The switches are `cflags` in `tools/re/tc_toolchain.toml`; a module that needs others records them (`match_flags` in `re/symbols.toml`).
 
