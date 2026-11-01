@@ -4353,6 +4353,9 @@ unit = "e1aa6"
 addr = "1AA6:000F"
 size = 54
 evidence = ["far", "segment"]
+name = "PrintInt"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e1aaa_0005"
