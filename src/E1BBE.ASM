@@ -12,11 +12,11 @@
 ; rectangle the pointer was hidden over (gZoneLeft..gZoneBottom, read by the mouse handler
 ; 1A72:0244) and the gPointerState redraw flag; 1BBE:0307 LockHidePointer and 1BBE:0332
 ; LockShowPointer hide and show without that state. Every wrapper takes the pointer semaphore
-; g812E and brackets its work with [ds:80AA] and [ds:80A2]. The unit is hand-written assembly (AX
+; _gPointerBusy and brackets its work with [ds:80AA] and [ds:80A2]. The unit is hand-written assembly (AX
 ; is saved with push/pop ax, which the compiler's C functions never do; the far call through a
-; DGROUP pointer and the busy-wait on g812E are the style of E1BB1 and E1BF3).
+; DGROUP pointer and the busy-wait on _gPointerBusy are the style of E1BB1 and E1BF3).
 ;
-; Globals src/ already names keep those names: g812E, g814A, gPointerHeight, gPointerWidth8,
+; Globals src/ already names keep those names: _gPointerBusy, g814A, gPointerHeight, gPointerWidth8,
 ; gPointerHotX, gPointerHotY, gPointerBackOff, gPointerBackSeg, gPointerShapeOff, gPointerShapeSeg,
 ; g8172, g8174, g80AA, g80A2 and g80C6 from src/E1BB1.ASM (and g814A from
 ; src/E07A9.C, gDraw80C2 from src/E1A29.C). The byte at 1BBE:0001 is the unit's segment start, as
@@ -25,7 +25,7 @@
         .MODEL  LARGE
 
         .DATA
-        EXTRN   g812E:WORD              ; @ ds:812E: pointer semaphore, 0 = free (busy-wait acquire)
+        EXTRN   _gPointerBusy:WORD              ; @ ds:812E: pointer semaphore, 0 = free (busy-wait acquire)
         EXTRN   _gCursorX:WORD          ; @ ds:8138: mouse position, x in pixels (1BF3/1A72 own it)
         EXTRN   _gCursorY:WORD          ; @ ds:813A: mouse position, y in pixels
         EXTRN   _gHideDepth:WORD        ; @ ds:8146: hide depth, 0 = drawn (1BBE:0002/00ED change it)
@@ -286,9 +286,9 @@ _HidePointerZone PROC FAR
         mov     dx,[bp+8]
         mov     si,[bp+0Ah]
         mov     di,[bp+0Ch]
-L0213:  cmp     word ptr [g812E],0
+L0213:  cmp     word ptr [_gPointerBusy],0
         jne     L0213
-        inc     word ptr [g812E]
+        inc     word ptr [_gPointerBusy]
         test    word ptr [_gPointerState],8000h
         je      L0234
         mov     ax,[_gPointerState]
@@ -336,7 +336,7 @@ L029F:  push    word ptr [g8174]
         push    cs
         call    near ptr _HidePointer
         call    dword ptr [g80A2]
-L02B6:  dec     word ptr [g812E]
+L02B6:  dec     word ptr [_gPointerBusy]
         pop     si
         pop     dx
         pop     di
@@ -357,9 +357,9 @@ _ShowPointerZone PROC FAR
         push    bp
         mov     bp,sp
         push    ax
-L02C6:  cmp     word ptr [g812E],0
+L02C6:  cmp     word ptr [_gPointerBusy],0
         jne     L02C6
-        inc     word ptr [g812E]
+        inc     word ptr [_gPointerBusy]
         mov     ax,[_gPointerState]
         cmp     al,0
         je      L02DE
@@ -375,7 +375,7 @@ L02E9:  push    word ptr [g8174]
         push    cs
         call    near ptr _ShowPointer
         call    dword ptr [g80A2]
-L0300:  dec     word ptr [g812E]
+L0300:  dec     word ptr [_gPointerBusy]
         pop     ax
         pop     bp
         ret
@@ -388,9 +388,9 @@ _ShowPointerZone ENDP
 _LockHidePointer PROC FAR
         push    bp
         mov     bp,sp
-L030A:  cmp     word ptr [g812E],0
+L030A:  cmp     word ptr [_gPointerBusy],0
         jne     L030A
-        inc     word ptr [g812E]
+        inc     word ptr [_gPointerBusy]
         push    word ptr [g8174]
         push    word ptr [g8172]
         call    dword ptr [g80AA]
@@ -398,7 +398,7 @@ L030A:  cmp     word ptr [g812E],0
         push    cs
         call    near ptr _HidePointer
         call    dword ptr [g80A2]
-        dec     word ptr [g812E]
+        dec     word ptr [_gPointerBusy]
         pop     bp
         ret
 _LockHidePointer ENDP
@@ -410,9 +410,9 @@ _LockHidePointer ENDP
 _LockShowPointer PROC FAR
         push    bp
         mov     bp,sp
-L0335:  cmp     word ptr [g812E],0
+L0335:  cmp     word ptr [_gPointerBusy],0
         jne     L0335
-        inc     word ptr [g812E]
+        inc     word ptr [_gPointerBusy]
         push    word ptr [g8174]
         push    word ptr [g8172]
         call    dword ptr [g80AA]
@@ -420,7 +420,7 @@ L0335:  cmp     word ptr [g812E],0
         push    cs
         call    near ptr _ShowPointer
         call    dword ptr [g80A2]
-        dec     word ptr [g812E]
+        dec     word ptr [_gPointerBusy]
         pop     bp
         ret
 _LockShowPointer ENDP

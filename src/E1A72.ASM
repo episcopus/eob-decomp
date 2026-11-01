@@ -29,7 +29,7 @@
         EXTRN   g80EC:BYTE              ; @ ds:80EC: compared with 2 before the position update
         EXTRN   g8104:DWORD             ; @ ds:8104: indirect far function, (far string, 2)
         EXTRN   g8111:DWORD             ; @ ds:8111: indirect far function, (far string, 2)
-        EXTRN   g812E:WORD              ; @ ds:812E: semaphore, 0 = free (busy-wait acquire)
+        EXTRN   _gPointerBusy:WORD              ; @ ds:812E: semaphore, 0 = free (busy-wait acquire)
         EXTRN   g8130:WORD              ; @ ds:8130: mouse buttons seen by the last event
         EXTRN   g8132:WORD              ; @ ds:8132: button bits or-ed into every event
         EXTRN   g8134:WORD              ; @ ds:8134: accumulated button changes
@@ -281,7 +281,7 @@ L01B8:  cmp     word ptr [g8130],bx
 L01D7:  cmp     bx,0
         je      L01E2
         mov     word ptr [g8136],1
-L01E2:  cmp     word ptr [g812E],0
+L01E2:  cmp     word ptr [_gPointerBusy],0
         je      L020C
 L01E9:  jmp     L027F
 L01EC:  push    word ptr [g8174]
@@ -292,7 +292,7 @@ L01EC:  push    word ptr [g8174]
         call    dword ptr [g80A2]
         or      word ptr [_gPointerState],4000h
         jmp     short L0279
-L020C:  mov     word ptr [g812E],1
+L020C:  mov     word ptr [_gPointerBusy],1
         cmp     byte ptr [g80EC],2
         je      L0221
         mov     word ptr [_gCursorX],cx
@@ -322,7 +322,7 @@ L025C:  push    word ptr [g8174]
         call    far ptr _HidePointer
         call    far ptr _ShowPointer
         call    dword ptr [g80A2]
-L0279:  mov     word ptr [g812E],0
+L0279:  mov     word ptr [_gPointerBusy],0
 L027F:  popf
         pop     dx
         pop     cx
@@ -374,9 +374,9 @@ _MouseInRect PROC FAR
         mov     si,[bp+0Ah]
         mov     dx,[bp+8]
         mov     di,[bp+0Ch]
-L02B9:  cmp     word ptr [g812E],0
+L02B9:  cmp     word ptr [_gPointerBusy],0
         jne     L02B9
-        inc     word ptr [g812E]
+        inc     word ptr [_gPointerBusy]
         mov     ax,[_gDrawnX]
         mov     [g8026],ax
         mov     ax,[_gDrawnY]
@@ -392,7 +392,7 @@ L02B9:  cmp     word ptr [g812E],0
         mov     ax,1
         jmp     short L02F0
 L02ED:  mov     ax,0
-L02F0:  dec     word ptr [g812E]
+L02F0:  dec     word ptr [_gPointerBusy]
         pop     si
         pop     dx
         pop     di
