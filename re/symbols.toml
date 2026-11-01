@@ -4126,10 +4126,10 @@ unit = "e19ea"
 addr = "19EA:0000"
 size = 34
 evidence = ["far", "segment"]
+review = "passed 2026-11-01 rev-sonnet"
 name = "_PrintString"
 level = "L2"
 match_flags = "tasm /mx"
-review = "passed 2026-11-01 rev-sonnet"
 
 [[function]]
 id = "e19ec_0002"
@@ -4667,6 +4667,8 @@ unit = "e1bb1"
 addr = "1BB1:0001"
 size = 1
 evidence = ["segment"]
+level = "L2"
+notes = "not a function: bytes of the unit outside its functions (a marker or padding), matched with the whole unit"
 
 [[function]]
 id = "e1bb1_0002"
@@ -4733,6 +4735,8 @@ unit = "e1bf3"
 addr = "1BF3:000D"
 size = 1
 evidence = ["segment"]
+level = "L2"
+notes = "not a function: bytes of the unit outside its functions (a marker or padding), matched with the whole unit"
 
 [[function]]
 id = "e1bf3_000e"
