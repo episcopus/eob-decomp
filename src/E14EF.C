@@ -110,10 +110,17 @@ extern void WaitFrames(int n); /*@ 1A16:000B */
     return count;
 }
 
+/* 14EF:0154: draw the option list of panel `panel`. It takes the panel's record (ds:017F), computes
+   its origin from ds:FE64 (times eight, so a cell column) and ds:FE66, finds the currently selected
+   entry with FindMaskBit, then draws every selectable entry (FindMaskBit for each row index) through
+   082C:0898 with the panel colour, inside one frame (1BBE:0307/0332). The selected entry is drawn
+   again with the panel's second colour when ds:5D1A is set (the pointer picks entries) or ds:814A is
+   not (the handler runs). Finally it stores the row spacing in ds:FC78, clears the pending key
+   (1AAD:0480) and the accumulated button changes (ds:8134). */
 /*@ 14EF:0154 */ void DrawOptionList(int panel, char far * far *names, long mask, int shift,
                                    int spacing)
 {
-    struct Panel *p;
+    struct Panel *panelDef;
     int y;
     int x;
     int sel;
@@ -122,18 +129,18 @@ extern void WaitFrames(int n); /*@ 1A16:000B */
     register int i;
     register int glyph;
 
-    p = &gPanels[panel];
-    y = gFE66 + p->y;
-    x = (gFE64 + p->x) << 3;
-    sel = FindMaskBit(p->sel, mask, shift);
-    n = p->height;
+    panelDef = &gPanels[panel];
+    y = gFE66 + panelDef->y;
+    x = (gFE64 + panelDef->x) << 3;
+    sel = FindMaskBit(panelDef->sel, mask, shift);
+    n = panelDef->height;
     f1BBE_0307();
     for (i = 0; i < n; i++) {
         glyph = FindMaskBit(i, mask, shift);
         dy = y + gFontHeight1A47 * i + i * spacing;
-        f082C_0898(names[glyph], x, dy, !g8102 ? 1 : p->colorA, 0);
+        f082C_0898(names[glyph], x, dy, !g8102 ? 1 : panelDef->colorA, 0);
         if (glyph == sel && (g5D1A || g814A))
-            gDrawText(names[glyph], x, dy, p->colorB, 0);
+            gDrawText(names[glyph], x, dy, panelDef->colorB, 0);
     }
     gFC78 = spacing;
     f1BBE_0332();
