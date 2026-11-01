@@ -6,9 +6,10 @@
    one. DrawTextFrame (1DE7:00C9) draws the frame, DrawTileRun (1DE7:025E) the runs of tiles it is
    built from, SetRegionExtents (1DE7:02FE) writes a record, ClearTextRegion (1DE7:0344) blanks a
    window, DrawTextLine (1DE7:03B2) draws one line at the cursor, PrintIntText (1DE7:05DF) prints
-   an integer and DrawText (1DE7:060A) renders a string with embedded control codes. Placeholder
-   names until the callers name them. Compiled with -G (the two-byte argument clean-ups are
-   `inc sp; inc sp`). */
+   an integer and DrawText (1DE7:060A) renders a string with embedded control codes. The names say
+   what each routine does; the game meaning of the two text attributes (ds:811B, ds:811D) and of
+   ds:8115 is not established. Compiled with -G (the two-byte argument clean-ups are `inc sp; inc
+   sp`). */
 
 /*@flags -ml -O -Z -G */
 
@@ -17,8 +18,8 @@ struct Region {             /* 16 bytes: four edges, then four words of saved st
     int top;                /* top edge, in pixel rows */
     int width;              /* width, in 8-pixel columns */
     int height;             /* height, in pixel rows */
-    int saved0;             /* per-window state copied in and out by SelectTextRegion: two */
-    int saved1;             /* attributes (saved0/saved1) and the cursor column and row (saved2/saved3) */
+    int saved0;             /* per-window state copied in and out by SetTextWindow: two attributes */
+    int saved1;             /* (saved0/saved1) and the cursor column and row (saved2/saved3) */
     int saved2;
     int saved3;
 };
@@ -27,7 +28,7 @@ extern struct Region gRegions[];  /*@ ds:009F */  /* the region table (src/E1A29
 extern int gCurRegion;            /*@ ds:8108 */  /* the region selected last (src/E1A29.C) */
 void SelectRegion(int region);    /*@ 1A29:0189 */
 
-/* The active window's live state. SelectTextRegion loads the four edges from the record and puts
+/* The active window's live state. SetTextWindow loads the four edges from the record and puts
    the record's saved words into the cursor and attribute globals; the drawing routines work from
    these, not from the record. */
 extern int gTextLeft;      /*@ ds:FE64 */  /* the window's left edge, in 8-pixel columns */
@@ -39,7 +40,7 @@ extern int gTextAttr2;     /*@ ds:811B */  /* second text attribute, the colour 
                                            /* ClearTextRegion's fill (saved1) */
 extern int gTextCol;       /*@ ds:FE52 */  /* cursor column, in font widths (saved2) */
 extern int gTextRow;       /*@ ds:FE54 */  /* cursor row, in font heights (saved3) */
-extern int gTextSaved;     /*@ ds:FEC0 */  /* 0 until the first SelectTextRegion, which then saves the */
+extern int gTextSaved;     /*@ ds:FEC0 */  /* 0 until the first SetTextWindow, which then saves the */
                                            /* window switched away from */
 extern int g811F;          /*@ ds:811F */  /* the current window's record index (src/E07A9.C reads it) */
 extern int g8102;          /*@ ds:8102 */  /* the video mode (src/E07A9.C); 3 and 4 select the 6-bit cells */
