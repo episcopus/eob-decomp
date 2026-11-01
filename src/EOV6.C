@@ -56,7 +56,7 @@ extern int gTextHeight; /*@ ds:FE60 */
 extern int gTextWidth; /*@ ds:FE62 */
 extern int gTextLeft; /*@ ds:FE64 */
 extern int gTextTop; /*@ ds:FE66 */
-extern char gFE6E[]; /*@ ds:FE6E */              /* the text buffer ovl6:0858 formats into */
+extern char gFileNameBuf[]; /*@ ds:FE6E */              /* the text buffer ovl6:0858 formats into */
 extern void *gFont1A47; /*@ ds:FE4E */          /* the current font (1A47:0169 records it) */
 extern void *gFE5A; /*@ ds:FE5A */              /* the 8x8 font loaded from Font8.fnt */
 extern void *gA9C0; /*@ ds:A9C0 */              /* the 6x6 font loaded from FONT6.FNT */
@@ -177,10 +177,10 @@ void f0B9B(int message);
                 }
                 *slots = -*slots;
                 counters.b[i] = 0x30;
-                sprintf(gFE6E, "%s gained %s.\r", &gChars[i].name[0],
+                sprintf(gFileNameBuf, "%s gained %s.\r", &gChars[i].name[0],
                         gSpells151F[*slots].name);
                 LockHidePointer();
-                DrawText(gFE6E);
+                DrawText(gFileNameBuf);
                 LockShowPointer();
                 WaitFrames(5);
                 break;
@@ -197,10 +197,10 @@ void f0B9B(int message);
                 }
                 *slots = -*slots;
                 counters.b[i] = 0x30;
-                sprintf(gFE6E, "%s memorized %s.\r", &gChars[i].name[0],
+                sprintf(gFileNameBuf, "%s memorized %s.\r", &gChars[i].name[0],
                         gSpells1344[*slots].name);
                 LockHidePointer();
-                DrawText(gFE6E);
+                DrawText(gFileNameBuf);
                 LockShowPointer();
                 WaitFrames(5);
                 break;
@@ -234,10 +234,10 @@ void f0B9B(int message);
                         break;
                     counters.b[i] = 0;
                     foundWounded--;
-                    sprintf(gFE6E, "%s casts healing on %s.\r", &gChars[i].name[0],
+                    sprintf(gFileNameBuf, "%s casts healing on %s.\r", &gChars[i].name[0],
                             &gChars[foundWounded].name[0]);
                     LockHidePointer();
-                    DrawText(gFE6E);
+                    DrawText(gFileNameBuf);
                     LockShowPointer();
                     WaitFrames(5);
                     if (gChars[foundWounded].hp + healAmount > gChars[foundWounded].maxhp)
@@ -356,7 +356,7 @@ done:
 /* ovl6:0858: shows the camp panel and the "Hours rested" line. It selects the 8x8 font and the
    region 0xa, and when `draw` is nonzero clears g8115, hides the pointer, fills the panel
    rectangle (f0D1C_0C21) inside its clip (ClipRect), draws the title through f082C_0898 and shows
-   the pointer again. Then it formats "Hours rested: %-4d" with gFE6E and, with g8115 set to 2,
+   the pointer again. Then it formats "Hours rested: %-4d" with gFileNameBuf and, with g8115 set to 2,
    draws the line in the colour gF57E inside a second clip. Finally it waits ten frames and
    restores the font and the region. Called by the camp loop. */
 /*@ ovl6:0858 */ void f0858(int hours, int draw)
@@ -377,10 +377,10 @@ done:
         f082C_0898(f0D1C_07A7(&gStrings2003, 0x2a), (gTextLeft + 1) << 3, gTextTop + 5, 9, 0);
         LockShowPointer();
     }
-    sprintf(gFE6E, "Hours rested: %-4d", hours);
+    sprintf(gFileNameBuf, "Hours rested: %-4d", hours);
     g8115 = 2;
     LockHidePointer();
-    f082C_0898(gFE6E, (gTextLeft + 1) << 3, gTextTop + 0x14, 0xf, gF57E);
+    f082C_0898(gFileNameBuf, (gTextLeft + 1) << 3, gTextTop + 0x14, 0xf, gF57E);
     g8115 = 0;
     ClipRect(gTextLeft + 1, gTextTop + 0x14, gTextLeft + 1, gTextTop + 0x14, 0x12, 8, 2, 0);
     LockShowPointer();

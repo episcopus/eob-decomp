@@ -6193,6 +6193,9 @@ unit = "eov2"
 addr = "ovl2:0000"
 size = 94
 evidence = ["ovl", "near", "segment"]
+name = "SetPointerShape"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov2_005e"
@@ -6200,6 +6203,9 @@ unit = "eov2"
 addr = "ovl2:005E"
 size = 178
 evidence = ["ovl", "near", "frame"]
+name = "LoadItems"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov2_0110"
@@ -6217,6 +6223,9 @@ unit = "eov2"
 addr = "ovl2:0171"
 size = 805
 evidence = ["ovl", "near", "frame"]
+name = "LoadItemSheets"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov2_0496"
@@ -6224,6 +6233,9 @@ unit = "eov2"
 addr = "ovl2:0496"
 size = 225
 evidence = ["ovl", "near", "frame"]
+name = "InitGameTables"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov2_0577"
@@ -6231,6 +6243,9 @@ unit = "eov2"
 addr = "ovl2:0577"
 size = 534
 evidence = ["ovl", "frame"]
+name = "LoadDecorateIcons"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov2_078d"
@@ -6238,6 +6253,9 @@ unit = "eov2"
 addr = "ovl2:078D"
 size = 185
 evidence = ["ovl", "near", "frame"]
+name = "LoadIntroIcons"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov2_0846"
@@ -6245,6 +6263,9 @@ unit = "eov2"
 addr = "ovl2:0846"
 size = 241
 evidence = ["ovl", "near", "frame"]
+name = "LoadGamePanel"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov2_0937"
@@ -6252,6 +6273,9 @@ unit = "eov2"
 addr = "ovl2:0937"
 size = 149
 evidence = ["ovl", "near", "frame"]
+name = "SetUiPalette"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov2_09cc"
@@ -6269,6 +6293,9 @@ unit = "eov2"
 addr = "ovl2:09ED"
 size = 791
 evidence = ["ovl", "frame"]
+name = "FindWordPanel"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov3_0000"
