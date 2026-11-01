@@ -10,7 +10,7 @@
 
 struct CharRec {            /* 243-byte (0xF3) character records at ds:F580; see src/E0A72.C */
     char pad00;
-    signed char m01;        /* +01 */
+    unsigned char m01;      /* +01 */
     char pad02[0x17 - 0x02];
     signed char m17;        /* +17 */
     char pad18[0x1B - 0x18];
@@ -376,7 +376,29 @@ int f0D1C_02DC(void);
     }
     return RollDice(1, 20, 0) >= value;
 }
-/*@ 0D1C:0670 stub */ int f0D1C_0670(int who, int mask) { return 0; }
+/* 0D1C:0670: Purpose unknown: tests up to five character conditions selected by `mask` and
+   returns 1 only when all the selected ones hold (AND of results, starting from 1). Bit 1:
+   gChars[who].m01 & 1. Bit 2: m1B > -10. Bit 4: m1B > 0. Bit 8: not (m01 & 4). Bit 16: not
+   (m01 & 2). Called by 0D1C:01CA and, with mask 1, by Turn091C (src/E0ACD.C) and other units. */
+/*@ 0D1C:0670 */ int f0D1C_0670(int who, int mask)
+{
+    struct CharRec far *rec;
+    int result;
+
+    result = 1;
+    rec = &gChars[who];
+    if (mask & 1)
+        result &= rec->m01 & 1;
+    if (mask & 2)
+        result &= rec->m1B > -10;
+    if (mask & 4)
+        result &= rec->m1B > 0;
+    if (mask & 8)
+        result &= (rec->m01 & 4) == 0;
+    if (mask & 16)
+        result &= (rec->m01 & 2) == 0;
+    return result;
+}
 /*@ 0D1C:070F stub */ void f0D1C_070F(void) {}
 /*@ 0D1C:07A7 stub */ void f0D1C_07A7(void) {}
 /*@ 0D1C:07DB stub */ void f0D1C_07DB(void) {}
