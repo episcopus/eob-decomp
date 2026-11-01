@@ -5769,6 +5769,9 @@ unit = "e1e8b"
 addr = "1E8B:07D7"
 size = 152
 evidence = ["frame"]
+name = "_ReleaseOverlayRecords"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1e8b_086f"
@@ -5776,6 +5779,9 @@ unit = "e1e8b"
 addr = "1E8B:086F"
 size = 174
 evidence = ["frame"]
+name = "_OverlayManagerEntry"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "eov0_0000"

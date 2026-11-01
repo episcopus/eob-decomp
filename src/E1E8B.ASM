@@ -14,6 +14,8 @@
         EXTRN   _gOverlayIndex:BYTE      ; @ 20C1:0000 (segment 20C1, the overlay index table)
         EXTRN   _gOverlayList:BYTE       ; @ 20BF:0000 (segment 20BF, the overlay record list head)
         EXTRN   _OverlayHalt:FAR         ; @ 0000:503F (runtime library, build/re/rtl_compare.json)
+        EXTRN   _farmalloc:FAR           ; @ 0000:72DE (runtime library, build/re/rtl_compare.json)
+        EXTRN   _abort:FAR               ; @ 0000:01F1 (runtime library, build/re/rtl_compare.json)
         .CODE
         NOSMART                          ; 000F, 0134, 0185, 01A7, 01F3 and 0250 contain LEA of an
                                          ; absolute address or a far call to a sibling, both of which
@@ -1192,14 +1194,181 @@ rec_loaded:
         retf
 _OverlayTotalParagraphs ENDP
 
-        PUBLIC  _f1E8B_07D7              ; @ 1E8B:07D7 stub
-_f1E8B_07D7 PROC FAR
-        ret
-_f1E8B_07D7 ENDP
+; 1E8B:07D7: release overlay records that match the current overlay id (20B5:00A0) and are below
+; the base 20B5:00B4. It walks the record table at SS:BP: when an entry's word 0 is odd it steps one
+; level down; for a matching ES:[di] id that is not the current entry it sets the found byte [bp-2]
+; and points ES:[di+2] at itself, then, when a record was marked, walks the table again and patches
+; matching ES:[0]:ES:[2] entries through the SS:[bx+2] link. This is the manager's flush path.
+; Evidence: the SS:BP table, the [00A0] id / [00B4] base comparisons, the [bp-2] found byte and the
+; ES:[0]/ES:[2] far pointer patch.
+        PUBLIC  _ReleaseOverlayRecords   ; @ 1E8B:07D7
+_ReleaseOverlayRecords PROC FAR
+        push    bp
+        mov     bp,sp
+        sub     sp,2
+        mov     byte ptr [bp-2],0
+        push    ds
+        mov     ds,word ptr cs:[4]
+        push    si
+        push    di
+        mov     bx,bp
+        mov     ax,ds:[0A0h]
+        mov     dx,ds:[0B4h]
+        jmp     short drop_scan
+drop_advance:
+        shl     si,1
+        mov     bx,si
+drop_scan:
+        cmp     bx,cx
+        jae     short drop_check
+        mov     si,ss:[bx]
+        shr     si,1
+        je      short drop_check
+        jb      short drop_advance
+        mov     di,ss:[bx+4]
+        cmp     di,dx
+        jae     short drop_advance
+        mov     es,di
+        mov     di,ss:[bx+2]
+        or      di,di
+        jne     short drop_advance
+        cmp     word ptr es:[di],ax
+        jne     short drop_advance
+        mov     byte ptr [bp-2],1
+        mov     word ptr es:[di+2],di
+        jmp     short drop_advance
+drop_check:
+        cmp     byte ptr [bp-2],1
+        je      short drop_second
+        jmp     short drop_out
+        nop
+drop_next:
+        shl     si,1
+        mov     bx,si
+drop_second:
+        mov     si,ss:[bx]
+        shr     si,1
+        je      short drop_out
+        jb      short drop_next
+        mov     di,ss:[bx+4]
+        cmp     di,dx
+        jae     short drop_next
+        mov     es,di
+        mov     di,ss:[bx+2]
+        or      di,di
+        je      short drop_next
+        cmp     word ptr es:[0],ax
+        jne     short drop_next
+        cmp     word ptr es:[2],0
+        jne     short drop_next
+        xchg    word ptr es:[2],di
+        mov     word ptr ss:[bx+2],di
+        jmp     short drop_next
+drop_out:
+        pop     di
+        pop     si
+        pop     ds
+        mov     sp,bp
+        pop     bp
+        retf
+_ReleaseOverlayRecords ENDP
 
-        PUBLIC  _f1E8B_086F              ; @ 1E8B:086F stub
-_f1E8B_086F PROC FAR
-        ret
-_f1E8B_086F ENDP
+; 1E8B:086F: the overlay manager entry. Given a record at ES:[bp+8] whose id at ES:[0] equals the
+; current overlay id 20B5:00A0, it loads the record (_LoadOverlayRecord) when it has no loaded copy
+; (ES:0010) or its version marker ES:0020 is not CDh, then calls the record's routine through the
+; 20B5:0016 far pointer, returning ES:0010 in [bp+8]. The two one-byte returns at 08C7 (and 08C8) are
+; unused tails. The entry at 08C9 is the program's own overlay-memory bootstrap: it runs
+; _InitOverlayRecords, takes the larger of 20B5:00AA and DGROUP:3088, allocates that many paragraphs
+; plus one with _farmalloc, and calls _InitOverlayManager over the block ([bp-style far args 0,0,
+; bx, dx]); on failure it jumps to _abort. Evidence: the ES:[0] id test, the ES:0010/ES:0020 markers,
+; the 20B5:0016 far pointer, the DGROUP:3088 word and the _farmalloc/_InitOverlayManager calls.
+        NOSMART                          ; 086F does a far call to a sibling (090B)
+        PUBLIC  _OverlayManagerEntry     ; @ 1E8B:086F
+_OverlayManagerEntry PROC FAR
+        push    bp
+        mov     bp,sp
+        push    ds
+        mov     ds,word ptr cs:[4]
+        mov     es,[bp+8]
+        mov     cx,ds:[0A0h]
+        cmp     cx,es:[0]
+        jne     short entry_out
+        cmp     word ptr es:[10h],0
+        je      short entry_load
+        cmp     byte ptr es:[20h],0CDh
+        jne     short entry_call
+entry_load:
+        mov     word ptr [bp+8],0
+        push    si
+        push    di
+        call    _LoadOverlayRecord
+        pop     di
+        pop     si
+        mov     bx,[bp+6]
+        push    es
+        mov     al,es:[1Ah]
+        and     al,8
+        and     byte ptr es:[1Ah],0F7h
+        cbw
+        mov     ds,word ptr cs:[4]
+        call    dword ptr ds:[16h]
+        pop     es
+entry_call:
+        mov     ax,es:[10h]
+        mov     [bp+8],ax
+entry_out:
+        pop     ds
+        pop     bp
+        retf
+        retn
+        retf
+; 1E8B:08C9: allocate the overlay memory and start the manager.
+        push    ds
+        push    si
+        push    di
+        mov     ax,20B5h
+        mov     ds,ax
+        call    _InitOverlayRecords
+        mov     bx,ds:[0AAh]
+        mov     ax,212Eh
+        mov     ds,ax
+        cmp     bx,ds:[3088h]
+        jae     short boot_have
+        mov     bx,ds:[3088h]
+        jmp     short boot_size
+boot_have:
+        shl     bx,1
+boot_size:
+        inc     bx
+        push    bx
+        mov     ax,10h
+        mul     bx
+        push    dx
+        push    ax
+        call    far ptr _farmalloc
+        pop     bx
+        pop     bx
+        pop     bx
+        mov     cx,ax
+        or      cx,dx
+        jcxz    short boot_abort
+        inc     dx
+        add     bx,dx
+        push    dx
+        push    bx
+        xor     ax,ax
+        push    ax
+        push    ax
+        call    far ptr _InitOverlayManager
+        or      ax,ax
+        jne     short boot_abort
+        pop     di
+        pop     si
+        pop     ds
+        retf
+boot_abort:
+        jmp     far ptr _abort
+_OverlayManagerEntry ENDP
+        SMART
 
         END
