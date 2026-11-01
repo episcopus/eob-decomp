@@ -147,4 +147,136 @@ extern void WaitFrames(int n); /*@ 1A16:000B */
     f1AAD_0480();
     g8134 = 0;
 }
-/*@ 14EF:0274 stub */ int UpdateOptionList(void) { return 0; }
+/* the key codes UpdateOptionList accepts; the switch table at 14EF:055D lists them. One game key and
+   one keyboard key share each action, and the mouse buttons arrive as KEY_CLICK/KEY_CLICK_ALT. */
+enum {
+    KEY_CONFIRM   = 0x2B,
+    KEY_CONFIRM2  = 0x3D,
+    KEY_CONFIRM3  = 0x61,
+    KEY_CLICK     = 0x41,
+    KEY_CLICK2    = 0x42,
+    KEY_FIRST     = 0x5B,
+    KEY_LAST      = 0x5D,
+    KEY_UP        = 0x60,
+    KEY_DOWN      = 0x62,
+    KEY_FIRST2    = 0x65,
+    KEY_LAST2     = 0x67
+};
+
+/* 14EF:0274: Purpose unknown: the input half of the option-list panel. It reads a masked key from
+   1AAD:05D3 when 1AAD:0471 says one is waiting and moves the panel's selection (ds:017F + n*16,
+   field +8) according to it: up/down, first/last, a click inside the panel rectangle (ds:8140/8142
+   against the rectangle built from ds:FE64/ds:FE66, ds:8100/8101 and ds:FC78) or the confirm keys.
+   It redraws the old and new rows when the selection moved (one frame, 1BBE:0307/0332) and blinks
+   the confirmed row (BlinkText). Returns the index of the confirmed string in `names`, -1 when
+   nothing was confirmed, and stores the key it did not handle in ds:FC7A. `counter` is bumped once
+   and `extra` is never read: both callers only ever pass zero. Every case body, the rectangle and
+   the draws reproduce the original except the case tails: our -O merges the identical `row = 0`
+   (down plus first) and `row = rows` (up plus last) tails, the original keeps all four copies
+   (7 bytes longer; the same unresolved -O tail merge as 0ACD:091C, whitepaper 2.1.1). Placeholder
+   names. */
+/*@ 14EF:0274 draft */ int UpdateOptionList(int panel, char far * far *names, int counter, int extra,
+                                   long mask, int shift)
+{
+    int rows;
+    int picked;
+    int key;
+    int ybase;
+    int xbase;
+    int left;
+    int right;
+    int top;
+    int bottom;
+    int cursory;
+    int halfspace;
+    char colorA;
+    char colorB;
+    char prev;
+    char row;
+    char glyph;
+    struct Panel *panelDef;
+    register int lineheight;
+    register int lineY;
+
+    counter++;
+    panelDef = &gPanels[panel];
+    rows = panelDef->height - 1;
+    row = prev = panelDef->sel % (rows + 1);
+    picked = -1;
+    lineheight = gFontHeight1A47 + gFC78;
+    halfspace = gFC78 >> 1;
+    ybase = gFE66 + panelDef->y;
+    xbase = (gFE64 + panelDef->x) << 3;
+    colorA = !g8102 ? 1 : panelDef->colorA;
+    colorB = panelDef->colorB;
+    key = 0;
+    gFC7A = 0;
+    if (f1AAD_0471())
+        key = f1AAD_05D3() & 0x8ff;
+    left = (gFE64 << 3) + panelDef->x * gFontWidth1A47;
+    top = gFE66 + panelDef->y - halfspace;
+    right = left + panelDef->width * gFontWidth1A47 - 1;
+    bottom = top + panelDef->height * lineheight - 1;
+    if (!g814A) {
+        cursory = g813A;
+        if (PointInRect(g8138, cursory, left, top, right, bottom) && g5D1A)
+            row = (cursory - top) / lineheight;
+    }
+    switch (key) {
+    case KEY_UP:
+        row--;
+        if (row < 0)
+            row = rows;
+        break;
+    case KEY_DOWN:
+        row++;
+        if (row > rows)
+            row = 0;
+        break;
+    case KEY_FIRST:
+    case KEY_FIRST2:
+        row = 0;
+        break;
+    case KEY_LAST:
+    case KEY_LAST2:
+        row = rows;
+        break;
+    case KEY_CLICK:
+    case KEY_CLICK2:
+        if (!PointInRect(g8140, g8142, left, top, right, bottom)) {
+            gFC7A = key;
+            break;
+        }
+        row = (g8142 - top) / lineheight;
+        picked = row;
+        break;
+    case KEY_CONFIRM:
+    case KEY_CONFIRM2:
+    case KEY_CONFIRM3:
+        picked = row;
+        break;
+    default:
+        gFC7A = key;
+        break;
+    }
+    if (row != prev) {
+        f1BBE_0307();
+        glyph = FindMaskBit(prev, mask, shift);
+        lineY = ybase + lineheight * prev;
+        gDrawText(names[glyph], xbase, lineY, colorA, 0);
+        glyph = FindMaskBit(row, mask, shift);
+        lineY = ybase + lineheight * row;
+        gDrawText(names[glyph], xbase, lineY, colorB, 0);
+        f1BBE_0332();
+    }
+    if (picked != -1) {
+        glyph = FindMaskBit(picked, mask, shift);
+        f1BBE_0307();
+        lineY = ybase + lineheight * row;
+        BlinkText(names[glyph], xbase, lineY, colorA, colorB, 0);
+        f1BBE_0332();
+        picked = glyph;
+    }
+    panelDef->sel = row;
+    return picked;
+}
