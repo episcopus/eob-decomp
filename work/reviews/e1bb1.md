@@ -327,40 +327,59 @@ and the clip citations.
 
 ### Findings
 
-- [ ] must-fix src/E1BB1.ASM:25: "E1A29.C:19-22" does not show the width. In src/E1A29.C, line 19 is blank, `struct Region {`
+- [x] must-fix src/E1BB1.ASM:25: "E1A29.C:19-22" does not show the width. In src/E1A29.C, line 19 is blank, `struct Region {`
   is at :20, `int left;` (left edge, in 8-pixel columns) is at :21, and `int width;` (width, in 8-pixel columns) is at :23.
-  Cite E1A29.C:21 and :23 (`grep -n "8-pixel" src/E1A29.C` to check).
-- [ ] should src/E1BB1.ASM:22-24: "the left edge is tested for 40" is incomplete. 1BBE:0051..0055 (`cmp ax,[8188]; jle`)
+  Cite E1A29.C:21 and :23 (`grep -n "8-pixel" src/E1A29.C` to check). Fixed in 6bb99d7: the header now cites "the region's
+  left edge at E1A29.C:21 and its width at E1A29.C:23" (confirmed: `int left;` at E1A29.C:21, `int width;` at :23).
+- [x] should src/E1BB1.ASM:22-24: "the left edge is tested for 40" is incomplete. 1BBE:0051..0055 (`cmp ax,[8188]; jle`)
   skips the rectangle when the left edge is at or below the negated width (ds:8188), and 1BBE:0057..005A (`cmp ax,28h; jge`)
-  skips it when the left edge is 40 or more. Say both tests.
-- [ ] should src/E1BB1.ASM:45-46: the show is described only as "decrements the count and, at zero, copies the position,
+  skips it when the left edge is 40 or more. Say both tests. Fixed in 6bb99d7: the header now says the left edge is skipped
+  when it is at or below the negated width gNegSpriteWidth (ds:8188, 1BBE:0051..0055) or 40 or more (1BBE:0057..005A).
+- [x] should src/E1BB1.ASM:45-46: the show is described only as "decrements the count and, at zero, copies the position,
   saves the background and draws". The code (1BBE:00ED..010F) also does nothing when ds:814A is set (00F1), when the count
   is 0 on entry (00F8), when the count is still nonzero after the decrement (0103), and when ds:816C is 0 (010A). The
   decrement comes before the buffer test, so a show with no buffer still decrements. The QUIRK 2 argument depends on
-  this gating; say it.
-- [ ] should src/E1BB1.ASM:11-25 and :43: the header writes raw addresses where the registry already has a name (docs/process/
+  this gating; say it. Fixed in 6bb99d7: the header now lists all four gates (gMouseDisabled at 1BBE:00F1, count 0 on entry
+  at 1BBE:00F8, count still nonzero after the decrement at 1BBE:0103, gPointerBackSeg 0 at 1BBE:010A) and says the decrement
+  (1BBE:00FF) comes before the buffer test, so a show with no buffer still decrements.
+- [x] should src/E1BB1.ASM:11-25 and :43: the header writes raw addresses where the registry already has a name (docs/process/
   READABILITY.md rule 7): ds:8158/815A (gPointerHotX/gPointerHotY, re/globals.toml:66 and the EXTRN at :74-75), ds:815C/815E
   (gDrawnX/gDrawnY, re/globals.toml:186 and :191), ds:8138/813A (gCursorX/gCursorY, re/globals.toml:171 and :176), ds:814A
   (gMouseDisabled), ds:8154/8156 (gPointerHeight/gPointerWidth8), ds:8176/817A/8178/817C (gRectLeft, gRectRight, gRectTop,
   gRectBottom), and ds:816A/816C/816E/8170 (the gPointerBack and gPointerShape globals). The second-round finding said
   ds:814A, ds:8138/813A and ds:8176 "have no names and stay raw" (and b9bf160 kept them raw); re/globals.toml now names all
   three, so that statement is out of date. Use the names, keeping the address where a reader needs it. (ds:8146 is already gHideDepth in the header.)
-- [ ] should src/E1BB1.ASM:19-23: "in 1BBE:0002 1BBE:0095 adds it" and "in 1BBE:0002 1BBE:005F adds it" repeat the unit name
+  Fixed in 6bb99d7: the header now uses gPointerHotX/gPointerHotY (ds:8158/815A), gDrawnX/gDrawnY (ds:815C/815E),
+  gCursorX/gCursorY (ds:8138/813A), gMouseDisabled (ds:814A), gPointerHeight (ds:8154), gPointerWidth8 (ds:8156),
+  gRectLeft/gRectRight/gRectTop/gRectBottom (ds:8176/817A/8178/817C), gPointerBackOff/gPointerBackSeg (ds:816A/816C),
+  gPointerShapeOff/gPointerShapeSeg (ds:816E/8170), gNegSpriteWidth (ds:8188) and gPointerBusy (ds:812E), each keeping its
+  address. g8172/g8174 stay placeholders (their names are the declared EXTRN names).
+- [x] should src/E1BB1.ASM:19-23: "in 1BBE:0002 1BBE:0095 adds it" and "in 1BBE:0002 1BBE:005F adds it" repeat the unit name
   and read as one phrase. Say "1BBE:0002 uses it: 1BBE:0095 adds it to the top edge ds:8178 ...", and the same for the width
-  at 1BBE:005F.
-- [ ] should src/E1BB1.ASM:62: "shape record byte +2: width in 8-pixel units" is not what the code shows. The code reads the
+  at 1BBE:005F. Fixed in 6bb99d7: the header now reads "1BBE:0002 uses it: 1BBE:0095 adds it to the top edge gRectTop
+  (ds:8178) ..." and "1BBE:0002 uses the stored width: 1BBE:005F adds it to the left edge gRectLeft (ds:8176 ...)".
+- [x] should src/E1BB1.ASM:62: "shape record byte +2: width in 8-pixel units" is not what the code shows. The code reads the
   byte and stores it plus one (1BB1:003A, `inc dx` at 003E, stored at 006A), so the byte's own meaning is not "the width in
   8-pixel units" by the code alone. Say what the code does ("the stored width is the byte plus one") and mark the byte's
-  meaning [H] (a count less one is a reading, not a proof).
-- [ ] should src/E1BB1.ASM:99-102 (the function comment): the result is missing. The function returns 1 on success (1BB1:00C1)
+  meaning [H] (a count less one is a reading, not a proof). Fixed in 6bb99d7: SHAPE_WIDTH_BYTE now reads "shape record byte
+  +2: read at 1BB1:003A, stored plus one; the byte's own meaning (a count one less than the width in 8-pixel units) is a
+  reading [H]", the code comment at the load says "stored width is this byte plus one (1BB1:003E)", and the header says the
+  code shows only that the stored width is the byte plus one, the byte's own meaning [H].
+- [x] should src/E1BB1.ASM:99-102 (the function comment): the result is missing. The function returns 1 on success (1BB1:00C1)
   and 0 when the block is too small (1BB1:0084..0086) or MemAlloc fails (1BB1:009D..00A0). The header says so; rule 3 asks
   for the result in the function comment. The prototype is void (src/E07A9.C:88) and both callers ignore the value.
-- [ ] should src/E1BB1.ASM:55-57: "the module uses explicit segments like the runtime startup" has no citation. Either cite
-  what the startup's segments look like (C0L, the whitepaper's startup section) or drop the comparison.
-- [ ] note re/renames.toml (the gPointerHeight and gPointerWidth8 entries, about lines 185-197): "added to the pointer's y
+  Fixed in 6bb99d7: the function comment now ends "Returns 1, or 0 when the largest-block test fails (1BB1:0084..0086) or
+  MemAlloc returns no segment (1BB1:009D..00A0); both callers ignore the value and the prototype is void (E07A9.C:88)".
+- [x] should src/E1BB1.ASM:55-57: "the module uses explicit segments like the runtime startup" has no citation. Either cite
+  what the startup's segments look like (C0L, the whitepaper's startup section) or drop the comparison. Fixed in 6bb99d7:
+  the comparison is dropped; the header now says "so the module declares its own segments".
+- [x] note re/renames.toml (the gPointerHeight and gPointerWidth8 entries, about lines 185-197): "added to the pointer's y
   before clipping" and "added to the pointer's x>>3" name the wrong copy. 1BBE:0032..0035 and 003D..0040 copy 8154/8156 to
   ds:8182/8186 (gSpriteHeight/gSpriteWidth) and negate them; 1BBE:0095 and 005F add the copies. The WHY should say so. This
-  is registry text, not src/; the owner of the next registry edit can fix it.
+  is registry text, not src/; the owner of the next registry edit can fix it. Fixed in 6bb99d7: the gPointerHeight and
+  gPointerWidth8 WHY entries in re/renames.toml and re/globals.toml now say 1BBE:0002 copies the value to gSpriteHeight
+  (ds:8182) / gSpriteWidth (ds:8186) and negates it into gNegSpriteHeight (ds:8184) / gNegSpriteWidth (ds:8188), and
+  1BBE:0095 / 1BBE:005F add that copy.
 - [ ] note the open notes from rounds 2 to 4 are for their owners and this branch does not touch them: the "already hidden"
   wording in src/E1BBE.ASM:72..76 (1BBE:0015 `jne 0075` increments the count, checked again this round); the "semaphore"
   wording for ds:812E in src/E1A72.ASM:7 and :32, src/E1BBE.ASM:28, :273, :353 and the WHY at re/renames.toml:712; the
@@ -377,3 +396,33 @@ lifted; the evidence is the call sites and the E1BBE and E1BF3 comments), and g8
 argument's meaning is not known). One must-fix remains, a wrong line citation for the width (E1A29.C:23, not 19-22); the
 shoulds are the show's gating, the left-edge test, the raw addresses that now have registry names, the width byte, the
 function result and one uncited comparison. Verdict: review-failed.
+
+## Decompiler response (fifth review, 6bb99d7)
+
+The one must-fix and all seven `should` items are addressed in commit 6bb99d7 (src/E1BB1.ASM,
+re/renames.toml, re/globals.toml); each is ticked above with what changed. The width citation is now
+E1A29.C:21 (left edge) and :23 (width); the header gives both left-edge tests (at or below
+gNegSpriteWidth ds:8188 at 1BBE:0051..0055, and 40 or more at 1BBE:0057..005A); the show's four
+gates and the decrement-before-the-buffer-test order are stated (1BBE:00F1, 00F8, 00FF, 0103,
+010A); the header uses the registry names for gPointerHotX/gPointerHotY, gDrawnX/gDrawnY,
+gCursorX/gCursorY, gMouseDisabled, gPointerHeight, gPointerWidth8, gRectLeft/gRectRight/gRectTop/
+gRectBottom, gPointerBackOff/gPointerBackSeg, gPointerShapeOff/gPointerShapeSeg, gNegSpriteWidth
+and gPointerBusy (each keeping its ds address); the "1BBE:0002 1BBE:0095 adds it" phrasing is split
+into "1BBE:0002 uses it: 1BBE:0095 adds it ..."; SHAPE_WIDTH_BYTE and the load comment now say the
+stored width is the byte plus one and tag the byte's own meaning [H]; the function comment gives
+the result (1, or 0 when the margin test at 1BB1:0084..0086 or MemAlloc at 1BB1:009D..00A0 fails,
+with the void prototype E07A9.C:88); and the uncited "like the runtime startup" comparison is
+dropped. The gPointerHeight and gPointerWidth8 WHY entries in re/renames.toml and re/globals.toml
+now name the copies (gSpriteHeight ds:8182, gSpriteWidth ds:8186) that 1BBE:0095 and 1BBE:005F add.
+
+Verified: `make match FILE=src/E1BB1.ASM` 1 of 1 (208 of 208 bytes), `make readability UNIT=e1bb1`
+0 findings, both re/globals.toml and re/renames.toml parse. Rechecked against tools/re/disasm.py:
+1BBE:001E..002F (the hide subtract), 1BBE:0051..005A (the two left-edge tests), 1BBE:005F/0063 (the
+right edge), 1BBE:0077..007E (the right clip), 1BBE:0095/0099 (the bottom edge), 1BBE:00AB..00B3
+(the bottom clip), 1BBE:00F1/00F8/00FF/0103/010A (the show gating), 1BBE:0111..012E (the show's
+position), 1BBE:0032..0045 (the copies and their negations), 1BB1:0034/003A/003E (the shape reads
+and the +1), 1BB1:0066/006A (the stores).
+
+The one remaining `note` (the open notes from rounds 2 to 4) is for other units, not this one:
+src/E1BBE.ASM, src/E1A72.ASM and src/E07A9.C are those units' files. This unit's branch does not
+change other units' files, so they stay open for their owners.
