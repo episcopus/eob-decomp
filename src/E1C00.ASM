@@ -1,30 +1,33 @@
-; Unit at EOB.EXE 1C00:0001 (235 bytes, 3 functions), kind asm [H] by the map. The first byte is a
-; pad, then the VROOMM overlay loader: allocate a 0FA00h byte block, load an overlay into it with
-; DOS INT 21h/4B03, keep the block in DGROUP:818Ah and call its entry point at segment:0000.
-; Placeholder names; DGROUP is 212Eh as everywhere in EOB.EXE.
+; Unit at EOB.EXE 1C00:0001 (235 bytes, 3 functions), kind asm [H] by the map. This is the VROOMM
+; overlay loader. 1C00:0001 is a one byte alignment pad; 1C00:0002 allocates an 0FA00h byte block
+; (MemAlloc, flags 20h), loads an overlay image into it with DOS INT 21h/4B03 and reports BX = 0 on
+; success, 0FFFFh on failure; and 1C00:0055 takes a far pointer to an overlay request (word 0 = the
+; DGROUP offset of the request name, then two words of entry arguments), loads the overlay, allocates
+; a record for it and calls the overlay's entry through that block. DGROUP is 212Eh as everywhere
+; in EOB.EXE.
 ;
-; The externals are declared in a segment of their own so that TASM treats them as far (9A) calls:
-; in .MODEL LARGE a bare `EXTRN name:FAR` is assumed to live in the module's own code segment and
-; the call is written as `push cs; call near` instead.
+; Far calls to another unit (9A off seg) are declared at module level, after .MODEL LARGE and before
+; .CODE, outside any segment, and written `call far ptr _Name` (playbook 30): a plain `call _Name`
+; assembles as `push cs; call near`, and an EXTRN inside a segment of its own leaves the segment
+; word 0000.
 
         .MODEL  LARGE
 
-STUB_TEXT SEGMENT PARA PUBLIC 'CODE'
-        EXTRN   _MemAlloc:FAR           ; @ 19BC:0007 (E07A9.C)
-        EXTRN   _sub19BC_018A:FAR       ; @ 19BC:018A
-STUB_TEXT ENDS
+        EXTRN   _MemAlloc:FAR           ; @ 19BC:0007 (E19BC.C)
+        EXTRN   _MemRealloc:FAR         ; @ 19BC:018A (E19BC.C)
 
         .CODE
 
-; 1C00:0001: alignment pad before 1C00:0002 (one zero byte)
-        PUBLIC  _f1C00_0001             ; @ 1C00:0001
-_f1C00_0001 db  0
+; 1C00:0001: alignment pad before 1C00:0002 (one zero byte).
+        db      0
 
-; 1C00:0002: allocate 0FA00h bytes (MemAlloc, flags 20h), store the handle word at DGROUP:818Ah,
-; then load an overlay into it with INT 21h/4B03 and return BX = 0 on success, 0FFFFh on failure.
-; Called near (push cs; call) only from 1C00:0055, which passes BX = 818Ah and ES = DGROUP.
-        PUBLIC  _f1C00_0002             ; @ 1C00:0002 draft
-_f1C00_0002 PROC NEAR
+; 1C00:0002: load an overlay image. Allocate an 0FA00h byte block of DGROUP (MemAlloc with flags
+; 20h, which returns it paragraph aligned), keep its segment at DGROUP:818Ah, save SP and SS across
+; the call (INT 21h/4B03 uses the caller's stack), then load the overlay named by DS:DX into the
+; load block ES:BX = DGROUP:818Ah. Return BX = 0 on success or 0FFFFh on failure. It is called near
+; only from 1C00:0055, which passes BX = 818Ah, ES = DGROUP and DS:DX from the request.
+        PUBLIC  _LoadOverlayImage       ; @ 1C00:0002
+_LoadOverlayImage PROC NEAR
         push    bp
         mov     bp,sp
         push    dx
@@ -39,7 +42,7 @@ _f1C00_0002 PROC NEAR
         push    ax
         mov     ax,0FA00h
         push    ax
-        call    _MemAlloc
+        call    far ptr _MemAlloc
         add     sp,6
         pop     es
         pop     ds
@@ -64,15 +67,16 @@ ldok:   pop     dx
         xor     bx,bx
 ldout:  pop     bp
         retf
-_f1C00_0002 ENDP
+_LoadOverlayImage ENDP
 
-; 1C00:0055: [bp+6..+9] is a far pointer to an overlay request struct (caller 07C8:0254 passes
-; DS:8121). DX = the struct's first word; the loader is called, then the loaded overlay's first
-; entry (DGROUP:818Eh = 0, DGROUP:8190h = its segment) is called with (0, 1A16h, 27h); the result
-; BX is scaled by 16 and a record is allocated (19BC:018A) and filled. AX = 0 on success, 0FFFFh on
-; failure, which the caller compares with ax,-1.
-        PUBLIC  _f1C00_0055             ; @ 1C00:0055 draft
-_f1C00_0055 PROC FAR
+; 1C00:0055: run an overlay request. [bp+6..+9] is a far pointer to the request (caller 07C8:0254
+; passes DS:8121): word 0 is the DGROUP offset the loader is given in DS:DX, and the two words at
+; +4 are the entry arguments. Load the overlay image with 1C00:0002, call the loaded overlay's entry
+; at segment:0000 with (0, 1A16h, 27h), scale its return by 16 and MemRealloc a record of that size
+; at offset 0, then call the pointer the entry returned through the reallocated block with the two
+; words from the request. AX = 0 on success, 0FFFFh on failure, which the caller compares with -1.
+        PUBLIC  _RunOverlayRequest      ; @ 1C00:0055
+_RunOverlayRequest PROC FAR
         push    bp
         mov     bp,sp
         push    bx
@@ -92,7 +96,7 @@ _f1C00_0055 PROC FAR
         mov     ax,ds
         mov     es,ax
         push    cs
-        call    _f1C00_0002
+        call    _LoadOverlayImage
         cmp     bx,-1
         je      short fail
         mov     ax,ds:[818Ah]
@@ -117,7 +121,7 @@ _f1C00_0055 PROC FAR
         push    cx
         xor     bx,bx
         push    bx
-        call    _sub19BC_018A
+        call    far ptr _MemRealloc
         add     sp,6
         or      ax,dx
         je      short fail
@@ -153,6 +157,6 @@ exit1:  pop     si
         pop     bx
         pop     bp
         retf
-_f1C00_0055 ENDP
+_RunOverlayRequest ENDP
 
         END
