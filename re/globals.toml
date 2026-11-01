@@ -5,3 +5,7 @@
 id = "ds:80CA"
 name = "gDrawText"
 why = "a far function pointer that draws text: its callers 082C:0864 to 08FF pass a far string, x, y, a colour (0Ch, then 0Fh for the shadow) and a flag (review of e1aa6)"
+[[global]]
+id = "ds:810A"
+name = "gAllocFailHook"
+why = "far function pointer to 19BC:02B6 (OutOfMemory), called by MemAlloc when farmalloc fails (evidence: the lcall [0x810a] at 19BC:0063 and the pointer stored at DGROUP 810A)"

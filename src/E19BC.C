@@ -1,10 +1,9 @@
 /* Unit at EOB.EXE 19BC:0007 (728 bytes, 5 functions): the game's far memory manager, a thin
    layer over the Turbo C++ far heap. MemAlloc calls farmalloc for the size plus a one or 16 byte
    header, normalizes the returned pointer and stores a flags byte just before the block;
-   MemFree calls farfree; f19BC_018A calls realloc and rewrites the header; LargestFreeBlock
+   MemFree calls farfree; MemRealloc calls realloc and rewrites the header; LargestFreeBlock
    returns the largest free block (farcoreleft and farheapwalk, less one 16 byte block);
-   OutOfMemory prints "Memory Allocation Error! Press any key to exit to DOS." and gives up.
-   Placeholder names. */
+   OutOfMemory prints "Memory Allocation Error! Press any key to exit to DOS." and gives up. */
 
 /*@flags -ml -O -Z -G */
 
