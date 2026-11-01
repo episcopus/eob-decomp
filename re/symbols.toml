@@ -4405,6 +4405,9 @@ unit = "e1a72"
 addr = "1A72:0006"
 size = 212
 evidence = ["segment"]
+name = "_Int3FHandler"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1a72_00da"
@@ -4412,6 +4415,9 @@ unit = "e1a72"
 addr = "1A72:00DA"
 size = 427
 evidence = ["far"]
+name = "_MouseInit"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1a72_0285"
@@ -4419,6 +4425,9 @@ unit = "e1a72"
 addr = "1A72:0285"
 size = 33
 evidence = ["far", "frame"]
+name = "_MouseDisable"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1a72_02a6"
@@ -4426,6 +4435,9 @@ unit = "e1a72"
 addr = "1A72:02A6"
 size = 84
 evidence = ["far", "frame"]
+name = "_MouseInRect"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1a72_02fa"
@@ -4433,6 +4445,9 @@ unit = "e1a72"
 addr = "1A72:02FA"
 size = 2
 evidence = ["far"]
+name = "_EnableInterrupts"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1a72_02fc"
@@ -4440,6 +4455,9 @@ unit = "e1a72"
 addr = "1A72:02FC"
 size = 2
 evidence = ["far"]
+name = "_DisableInterrupts"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1a72_02fe"
@@ -4447,6 +4465,9 @@ unit = "e1a72"
 addr = "1A72:02FE"
 size = 60
 evidence = ["frame"]
+name = "_SetFarPointer"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1a72_033a"
@@ -4454,6 +4475,9 @@ unit = "e1a72"
 addr = "1A72:033A"
 size = 21
 evidence = ["frame"]
+name = "_GetFarPointer"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1aa6_000f"
