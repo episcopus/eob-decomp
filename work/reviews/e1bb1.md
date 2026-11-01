@@ -106,37 +106,52 @@ test and MemAlloc's push order); 1BB1:00A9..00BD (the 80AA, ShowPointer and 80A2
 
 ### Findings
 
-- [ ] must-fix src/E1BB1.ASM header, the paragraph "If the size changed, the old buffer is freed and the size query
+- [x] must-fix src/E1BB1.ASM header, the paragraph "If the size changed, the old buffer is freed and the size query
   [ds:80C6] is called", and the function comment "resizing the save-under buffer when the sprite size changed": the
   size query and MemAlloc do not run only on a size change. 1BB1:0044 `je 0066` skips the free and goes to the query
   whenever ds:816C is 0, so the first call always queries and allocates (no free). With a buffer, only a size change
   frees it (1BB1:0050 `je 00A9` goes to ready when the size is the same, 1BB1:0058..005C frees otherwise). Say: "with a
   buffer and a changed size, the old buffer is freed (1BB1:0058..005C); the size query and MemAlloc run when there is
   no buffer yet (1BB1:0044) or the size changed; with a buffer and the same size the call goes straight to the show
-  (1BB1:0050)." Change the function comment to match.
-- [ ] should src/E1BB1.ASM header, "The size comes from the shape record": the store addresses are off. 1BB1:0034 only
+  (1BB1:0050)." Change the function comment to match. Fixed in FIXHASH: the header now says the buffer path depends on
+  the buffer and the size, with no buffer (1BB1:0044 `je 0066`) skipping the free and running the query and MemAlloc,
+  a buffer with a changed size (1BB1:004A/0050) freeing first (1BB1:0058..005C), and a buffer with the same size
+  going straight to the show (1BB1:0050 `je 00A9`). The function comment now says the buffer is allocated when there is
+  none yet or the sprite size changed, freeing an existing buffer of a changed size first.
+- [x] should src/E1BB1.ASM header, "The size comes from the shape record": the store addresses are off. 1BB1:0034 only
   reads byte +3, and the store into ds:8154 is 1BB1:0066 (`mov [8154],ax`). The width store into ds:8156 is 1BB1:006A
   (`mov [8156],dx`); 1BB1:003E is the `inc dx`. Cite the stores at 0066 and 006A, and keep 0034, 003A and 003E for
-  the reads and the +1.
-- [ ] should src/E1BB1.ASM:88..94 (the MemAlloc call) and its EXTRN line: the second argument is flags 0 (`mov ax,0`
+  the reads and the +1. Fixed in FIXHASH: the header now says byte SHAPE_HEIGHT_BYTE (+3) is read at 1BB1:0034 and
+  stored unchanged at ds:8154 (1BB1:0066), and byte SHAPE_WIDTH_BYTE (+2) is read at 1BB1:003A and, plus 1
+  (1BB1:003E `inc dx`), stored at ds:8156 (1BB1:006A).
+- [x] should src/E1BB1.ASM:88..94 (the MemAlloc call) and its EXTRN line: the second argument is flags 0 (`mov ax,0`
   and `push ax` at 1BB1:0088..008B), and the unit never says so. E19BC.C:29-32 gives the bits: 0x10 zeroes the block,
-  0x20 aligns it to a paragraph; 0 is neither. Say so in the call's comment.
-- [ ] should src/E1BB1.ASM, the HEAP_BLOCK comment and the header's margin paragraph: the quote "less one 16 byte
+  0x20 aligns it to a paragraph; 0 is neither. Say so in the call's comment. Fixed in FIXHASH: the call site now
+  comments `mov ax,0` and `push ax` (1BB1:0088..008B) as MemAlloc's flags argument, 0, neither zero-fill (0x10) nor
+  paragraph align (0x20), citing E19BC.C:29-32, and labels the other two pushes as the size high and low words.
+- [x] should src/E1BB1.ASM, the HEAP_BLOCK comment and the header's margin paragraph: the quote "less one 16 byte
   block" is E19BC.C:5 (the unit header), and the subtraction is E19BC.C:142 (`max -= 0x10`). Cite both, not only :142
-  with the quote.
-- [ ] should src/E1BB1.ASM header, the ASSUME paragraph (the last lines of the header): the header says `ASSUME CS:NOTHING`
+  with the quote. Fixed in FIXHASH: the header's margin paragraph and the HEAP_BLOCK comment now cite E19BC.C:142 for
+  the subtraction and E19BC.C:5 for the "less one 16 byte block" quote.
+- [x] should src/E1BB1.ASM header, the ASSUME paragraph (the last lines of the header): the header says `ASSUME CS:NOTHING`
   around each direct far call is what keeps TASM from turning `lcall` into `push cs; call`. The playbook gives another
   mechanism for that: `call far ptr` with the callee declared as EXTRN is the 9A form (docs/process/playbooks/30-lift-module.md:29).
   Either show the ASSUME lines are needed (for example, remove them in a scratch copy and see whether `make match` still
-  reports 1 of 1 with the same bytes), or tag the claim [H].
+  reports 1 of 1 with the same bytes), or tag the claim [H]. Fixed in FIXHASH: the test was run. Removing the
+  `ASSUME CS:NOTHING` lines (scratch copy) makes `make match FILE=src/E1BB1.ASM` report 0 of 1 with "byte 0E, original
+  9A (ours push cs; original lcall 0x1bbe, 2)" at the first far call (1BB1:0013), and the ASSUME lines were restored.
+  The header now says removing the lines turns the first `lcall` into `push cs; call` (our 0E where the original has 9A
+  at 1BB1:0013).
 - [ ] note packet: `make packet UNIT=e1bb1` lists ovl2:0000 Ovl2_0000 (EOV2.C) as a caller of 1BB1:0002. EOV2.C:14 defines
   Ovl2_0000 as an empty stub, and no build/re/eob-overlays/*.bin contains the bytes 9A 02 00 B1 1B. That search does not
   settle it (an overlay may hold the segment unrelocated), so the header keeps the caller it cites, f07A9_010C (E07A9.C:128
   and :130). For the map owner: check whether the packet's caller is a real call.
-- [ ] note the return value: the function returns 1 in AX on success (1BB1:00C1) and 0 on failure (1BB1:00C6). The
+- [x] note the return value: the function returns 1 in AX on success (1BB1:00C1) and 0 on failure (1BB1:00C6). The
   prototype at src/E07A9.C:63 is void and both callers (E07A9.C:128, :130) ignore the value. The header says "returns 1,
   or 0 when no block can be allocated", but 0 is also returned when the largest-block test fails (1BB1:0084..0086, before
-  MemAlloc). Say "0 when the block is too small or MemAlloc fails". No change is needed in src/E07A9.C.
+  MemAlloc). Say "0 when the block is too small or MemAlloc fails". No change is needed in src/E07A9.C. Fixed in
+  FIXHASH: the header now says it returns 0 when the block is too small (the margin test at 1BB1:0084..0086) or MemAlloc
+  fails (1BB1:009D..00A0); src/E07A9.C is unchanged.
 - [ ] note src/E07A9.C:127-130 (the caller, for the e07a9 owner): the else branch passes gIconsDDE4[0] with (0, 0). E07A9.C:43
   says index 0 is "none". If that entry is a null far pointer, 1BB1:0034 reads the shape at 0000:0003. Whether n can be
   0 there (a zero icon number reaches the call through gTable8DD2[n].icon) is not checked here.
@@ -145,6 +160,32 @@ test and MemAlloc's push order); 1BB1:00A9..00BD (the 80AA, ShowPointer and 80A2
 - [ ] note the open notes from the earlier rounds still stand for their owners: src/E1BBE.ASM:72..76 ("already hidden"
   is wrong, a nested hide increments the count, 1BBE:0015); src/E1A72.ASM:7 and :32 and src/E1BBE.ASM:28, :273 and :353
   call ds:812E "semaphore" where this unit and E1BF3 say "busy flag" (the global is gPointerBusy).
+
+### Decompiler response (third review, FIXHASH)
+
+The one must-fix and all four `should` findings are addressed in FIXHASH (src/E1BB1.ASM); the
+return-value note is fixed there too. The header now gives the three buffer paths (no buffer:
+1BB1:0044 `je 0066` skips the free and runs the size query and MemAlloc; a buffer with a changed
+size: freed at 1BB1:0058..005C first; a buffer with the same size: 1BB1:0050 `je 00A9` goes
+straight to the show), and the function comment matches. The size paragraph cites the reads at
+1BB1:0034/003A and the `inc dx` at 1BB1:003E for the height, width and +1, and the stores at
+1BB1:0066 (ds:8154) and 1BB1:006A (ds:8156). The MemAlloc call comments its flags argument (0,
+neither 0x10 zero-fill nor 0x20 paragraph align, E19BC.C:29-32) and the size's high and low words.
+The HEAP_BLOCK comment and the margin paragraph cite E19BC.C:142 for the subtraction and E19BC.C:5
+for the quote. The ASSUME claim is proven, not tagged: removing the `ASSUME CS:NOTHING` lines in a
+scratch copy gives 0 of 1 with "byte 0E, original 9A (ours push cs; original lcall 0x1bbe, 2)" at
+1BB1:0013, then the lines were restored. The return value is now "0 when the block is too small
+(1BB1:0084..0086) or MemAlloc fails (1BB1:009D..00A0)".
+
+The three open `note` items are for other units, not this one: the packet's ovl2:0000 caller is
+for the map owner, src/E07A9.C:127-130 is unit e07a9's, and src/E1BBE.ASM:65 is unit 1BBE's; the
+"semaphore" wording in src/E1A72.ASM and src/E1BBE.ASM is those units' files too. This unit's
+branch does not change other units' files, so they stay open for their owners.
+
+Verified: `make match FILE=src/E1BB1.ASM` 1 of 1 (208 of 208 bytes), `make readability UNIT=e1bb1`
+0 findings. Rechecked against tools/re/disasm.py: 1BB1:0034/003A/003E (the shape reads and +1),
+1BB1:0044/004A/0050/0058..005C (the buffer paths), 1BB1:0066/006A (the stores), 1BB1:0088..008B
+(the flags push), 1BB1:0084..0086/009D..00A0 (the two zero returns).
 
 ### Summary (third review)
 
