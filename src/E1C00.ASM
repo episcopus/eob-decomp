@@ -21,11 +21,15 @@
 ; 1C00:0001: alignment pad before 1C00:0002 (one zero byte).
         db      0
 
-; 1C00:0002: load an overlay image. Allocate an 0FA00h byte block of DGROUP (MemAlloc with flags
-; 20h, which returns it paragraph aligned), keep its segment at DGROUP:818Ah, save SP and SS across
-; the call (INT 21h/4B03 uses the caller's stack), then load the overlay named by DS:DX into the
-; load block ES:BX = DGROUP:818Ah. Return BX = 0 on success or 0FFFFh on failure. It is called near
-; only from 1C00:0055, which passes BX = 818Ah, ES = DGROUP and DS:DX from the request.
+; 1C00:0002: load an overlay image. Allocate a 0FA00h byte far block (MemAlloc, flag 20h) and keep
+; its segment at DGROUP:818Ah: MemAlloc returns MK_FP(seg + 1, 0) for flag 0x20 (19BC:0007), so its
+; offset is 0 and `or ax,dx` (line 54) leaves the segment in AX, which `mov es:[bx],ax` (line 60)
+; stores. Save SP and SS across the call (the reason is not established [H]), then load the overlay
+; named by DS:DX through the INT 21h/4B03 parameter block at ES:BX = DGROUP:818Ah: word 0 is the
+; load segment (the word at DGROUP:818Ah) and word 1 is the relocation factor (DGROUP:818Ch).
+; Return BX = 0 on success or 0FFFFh on failure. It is called near with a pushed CS (`push cs;
+; call`, lines 110-111) and ends with retf, so it returns far; only 1C00:0055 calls it, passing BX = 818Ah,
+; ES = DGROUP and DS:DX from the request.
         PUBLIC  _LoadOverlayImage       ; @ 1C00:0002
 _LoadOverlayImage PROC NEAR
         push    bp
@@ -70,11 +74,19 @@ ldout:  pop     bp
 _LoadOverlayImage ENDP
 
 ; 1C00:0055: run an overlay request. [bp+6..+9] is a far pointer to the request (caller 07C8:0254
-; passes DS:8121): word 0 is the DGROUP offset the loader is given in DS:DX, and the two words at
-; +4 are the entry arguments. Load the overlay image with 1C00:0002, call the loaded overlay's entry
-; at segment:0000 with (0, 1A16h, 27h), scale its return by 16 and MemRealloc a record of that size
-; at offset 0, then call the pointer the entry returned through the reallocated block with the two
+; passes DS:8121): word 0 is the DGROUP offset the loader is given in DS:DX, word +2 is never read
+; by this function (the caller writes it at 07C8:0251), and the two words at +4 are the entry
+; arguments. Load the overlay image with 1C00:0002. Then push the overlay segment (the word at
+; DGROUP:818Ah), 1A16h, 27h and call the entry at segment:0000 (the 0 is the call target offset
+; stored at 818Eh): the entry's first argument is 27h and its third is the overlay segment. The
+; entry returns AX = its function offset (stored at 818Eh) and BX = its size in paragraphs; four
+; `shl bx,1` make that size in bytes. MemRealloc (19BC:018A) resizes the overlay's own block at
+; segment:0000 to that size and keeps its contents. This function stores 0 at 818Eh and the segment
+; at 8190h, and on success clears g814A (ds:814Ah) when ds:8148h (the driver present flag) is
+; nonzero. Then it calls the pointer the entry returned through the reallocated block with the two
 ; words from the request. AX = 0 on success, 0FFFFh on failure, which the caller compares with -1.
+; A load failure or a failed MemRealloc or entry call leaves the 0FA00h block allocated; nothing
+; frees it. Candidate QUIRK 1C00:0002/1C00:0055: no free on failure.
         PUBLIC  _RunOverlayRequest      ; @ 1C00:0055
 _RunOverlayRequest PROC FAR
         push    bp

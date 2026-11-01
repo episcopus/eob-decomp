@@ -1165,7 +1165,7 @@ unit = "e07a9"
 addr = "07A9:010C"
 size = 229
 evidence = ["far", "frame"]
-name = "Level07A9"
+name = "f07A9_010C"
 level = "L2"
 match_flags = "-ml -O -Z"
 
@@ -3787,6 +3787,9 @@ unit = "e1658"
 addr = "1658:0003"
 size = 27
 evidence = ["near", "segment"]
+name = "LinkNode"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e1658_001e"
@@ -3794,6 +3797,9 @@ unit = "e1658"
 addr = "1658:001E"
 size = 85
 evidence = ["far", "near", "frame"]
+name = "ListAdd"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e1658_0073"
@@ -3801,6 +3807,9 @@ unit = "e1658"
 addr = "1658:0073"
 size = 225
 evidence = ["frame"]
+name = "ToggleNode"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e1658_0154"
@@ -3808,6 +3817,9 @@ unit = "e1658"
 addr = "1658:0154"
 size = 39
 evidence = ["frame"]
+name = "DisableNode"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e1658_017b"
@@ -3815,6 +3827,9 @@ unit = "e1658"
 addr = "1658:017B"
 size = 39
 evidence = ["frame"]
+name = "EnableNode"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e1658_01a2"
@@ -3822,6 +3837,9 @@ unit = "e1658"
 addr = "1658:01A2"
 size = 68
 evidence = ["frame"]
+name = "FindNode"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e1658_01e6"
@@ -3829,6 +3847,9 @@ unit = "e1658"
 addr = "1658:01E6"
 size = 271
 evidence = ["frame"]
+name = "ResetNode"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e1658_02f5"
@@ -3836,6 +3857,9 @@ unit = "e1658"
 addr = "1658:02F5"
 size = 225
 evidence = ["frame"]
+name = "SetNode"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e1658_03d6"
@@ -3843,6 +3867,9 @@ unit = "e1658"
 addr = "1658:03D6"
 size = 209
 evidence = ["frame"]
+name = "InsertNode"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e1658_04a7"
@@ -3850,6 +3877,9 @@ unit = "e1658"
 addr = "1658:04A7"
 size = 20
 evidence = ["frame"]
+name = "IsNodeEnabled"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e1658_04bb"
@@ -3857,6 +3887,9 @@ unit = "e1658"
 addr = "1658:04BB"
 size = 15
 evidence = ["frame"]
+name = "GetNodeState0"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e1658_04ca"
@@ -3864,6 +3897,9 @@ unit = "e1658"
 addr = "1658:04CA"
 size = 15
 evidence = ["frame"]
+name = "GetNodeState1"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e16a5_0009"
@@ -4209,7 +4245,7 @@ unit = "e19f3"
 addr = "19F3:000E"
 size = 137
 evidence = ["far", "segment"]
-name = "ClipDrawRect"
+name = "ClipRect"
 level = "L2"
 match_flags = "-ml -O -Z"
 
@@ -4219,9 +4255,9 @@ unit = "e19fc"
 addr = "19FC:0007"
 size = 420
 evidence = ["segment"]
-name = "_f19FC_0007"
 level = "L2"
 match_flags = "tasm /mx"
+name = "CompressLcw"
 
 [[function]]
 id = "e1a16_000b"
@@ -4420,6 +4456,9 @@ unit = "e1a72"
 addr = "1A72:0006"
 size = 212
 evidence = ["segment"]
+name = "_Int3FHandler"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1a72_00da"
@@ -4427,6 +4466,9 @@ unit = "e1a72"
 addr = "1A72:00DA"
 size = 427
 evidence = ["far"]
+name = "_MouseInit"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1a72_0285"
@@ -4434,6 +4476,9 @@ unit = "e1a72"
 addr = "1A72:0285"
 size = 33
 evidence = ["far", "frame"]
+name = "_MouseDisable"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1a72_02a6"
@@ -4441,6 +4486,9 @@ unit = "e1a72"
 addr = "1A72:02A6"
 size = 84
 evidence = ["far", "frame"]
+name = "_MouseInRect"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1a72_02fa"
@@ -4448,6 +4496,9 @@ unit = "e1a72"
 addr = "1A72:02FA"
 size = 2
 evidence = ["far"]
+name = "_EnableInterrupts"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1a72_02fc"
@@ -4455,6 +4506,9 @@ unit = "e1a72"
 addr = "1A72:02FC"
 size = 2
 evidence = ["far"]
+name = "_DisableInterrupts"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1a72_02fe"
@@ -4462,6 +4516,9 @@ unit = "e1a72"
 addr = "1A72:02FE"
 size = 60
 evidence = ["frame"]
+name = "_SetFarPointer"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1a72_033a"
@@ -4469,6 +4526,9 @@ unit = "e1a72"
 addr = "1A72:033A"
 size = 21
 evidence = ["frame"]
+name = "_GetFarPointer"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1aa6_000f"
@@ -4633,7 +4693,7 @@ size = 56
 evidence = ["far", "segment"]
 name = "LoadFile"
 level = "L2"
-match_flags = "-ml -O -Z -G"
+match_flags = "-ml -O -Z -G -P"
 
 [[function]]
 id = "e1b82_0041"
@@ -4643,7 +4703,7 @@ size = 134
 evidence = ["far", "frame"]
 name = "LoadPacked"
 level = "L2"
-match_flags = "-ml -O -Z -G"
+match_flags = "-ml -O -Z -G -P"
 
 [[function]]
 id = "e1b82_00c7"
@@ -4651,7 +4711,10 @@ unit = "e1b82"
 addr = "1B82:00C7"
 size = 336
 evidence = ["far", "frame"]
-notes = "draft 2026-11-01 (src/E1B82.C, -G): the original sign-extends the format byte to long (cbw; cwd) and switches on the int in AX through a 5-entry jump table (cmp bx,4; jbe; shl bx,1; jmp cs:[bx+20d]), with 8 bytes of locals and n in SI. switch(*src) and switch((int)(long)*src) give the matching sub sp,8 frame and the jump table but fold the cwd away (ours differs only by the missing cbw; cwd). switch((long)*src) keeps the cwd but the pinned compilers tc100 and tc101, under -O -Z -G and every other flag tried (-1 -2 -a -b- -k -N -B -C -r- -X and -O- -G- -Z-), compile a long switch to a 4-byte compare search (mov cx,5; mov bx,offset; mov ax,cs:[bx]; cmp ax,[bp-4]; cmp ax,dx) with a 4-byte temporary, sub sp,0xc, never a jump table. Assigning the long to a variable (auto, register or static) adds the store (mov [bp-x],ax; mov bx,ax; mov [bp-y],dx) the original lacks, and (int)(long)char is folded in the front end even with -O-. There is no 32-bit linear switch anywhere in EOB.EXE (no mov ax,cs:[bx+10], no cmp ax,dx in a switch loop), so the original build may have emitted a jump table for this long switch. long case labels, case order and a default change nothing. The other three functions of the unit match. Question for the human: is there a source form the pinned compiler turns into cbw; cwd plus a jump table, or did the EOB build use a slightly different compiler?"
+notes = "2026-11-01: the format byte is sign-extended to long and the switch runs on the int in AX (cbw; cwd; mov bx,ax; cmp bx,4; jbe; shl bx,1; jmp cs:[bx+20d], 8 bytes of locals, n in SI). tc100/tc101 fold (int)(long)char to char in C mode and never give a long switch a jump table, so the unit is compiled as C++ with -P: the C++ front end keeps the cbw;cwd for (int)(long)*src and emits exactly these bytes. -P mangles names, so src/E1B82.C wraps the definitions in extern \"C\" for cmatch. Another -P effect: FP_SEG(work) on a far-pointer local folds to push dx, but the original reloads the segment (push [bp-2], 1B82:013F/0197), so the work block is kept in a union (WorkBuffer) read as words[1]."
+name = "Unpack"
+level = "L2"
+match_flags = "-ml -O -Z -G -P"
 
 [[function]]
 id = "e1b82_0217"
@@ -4661,7 +4724,7 @@ size = 21
 evidence = ["far"]
 name = "SetUnpackBuffer"
 level = "L2"
-match_flags = "-ml -O -Z -G"
+match_flags = "-ml -O -Z -G -P"
 
 [[function]]
 id = "e1ba4_000c"
@@ -4743,6 +4806,9 @@ unit = "e1bbe"
 addr = "1BBE:0001"
 size = 1
 evidence = ["segment"]
+name = "_f1BBE_0001"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1bbe_0002"
@@ -4750,6 +4816,9 @@ unit = "e1bbe"
 addr = "1BBE:0002"
 size = 235
 evidence = ["far", "near"]
+name = "_HidePointer"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1bbe_00ed"
@@ -4757,6 +4826,9 @@ unit = "e1bbe"
 addr = "1BBE:00ED"
 size = 273
 evidence = ["far", "near", "frame"]
+name = "_ShowPointer"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1bbe_01fe"
@@ -4764,6 +4836,9 @@ unit = "e1bbe"
 addr = "1BBE:01FE"
 size = 196
 evidence = ["far", "frame"]
+name = "_HidePointerZone"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1bbe_02c2"
@@ -4771,6 +4846,9 @@ unit = "e1bbe"
 addr = "1BBE:02C2"
 size = 69
 evidence = ["far", "frame"]
+name = "_ShowPointerZone"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1bbe_0307"
@@ -4778,6 +4856,9 @@ unit = "e1bbe"
 addr = "1BBE:0307"
 size = 43
 evidence = ["far", "frame"]
+name = "_LockHidePointer"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1bbe_0332"
@@ -4785,6 +4866,9 @@ unit = "e1bbe"
 addr = "1BBE:0332"
 size = 43
 evidence = ["far", "frame"]
+name = "_LockShowPointer"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1bf3_000d"
@@ -5127,6 +5211,9 @@ unit = "e1d9a"
 addr = "1D9A:000B"
 size = 8
 evidence = ["segment"]
+name = "_UnpackScratch"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1d9a_0013"
@@ -5134,6 +5221,9 @@ unit = "e1d9a"
 addr = "1D9A:0013"
 size = 256
 evidence = ["far"]
+name = "_Unpack4"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1d9a_0113"
@@ -5141,6 +5231,9 @@ unit = "e1d9a"
 addr = "1D9A:0113"
 size = 79
 evidence = ["far"]
+name = "_Unpack3"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1d9a_0162"
@@ -5148,6 +5241,9 @@ unit = "e1d9a"
 addr = "1D9A:0162"
 size = 41
 evidence = ["near"]
+name = "_NormDest"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1d9a_018b"
@@ -5155,6 +5251,9 @@ unit = "e1d9a"
 addr = "1D9A:018B"
 size = 270
 evidence = ["far"]
+name = "_Unpack1"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1d9a_0299"
@@ -5162,6 +5261,9 @@ unit = "e1d9a"
 addr = "1D9A:0299"
 size = 50
 evidence = ["near"]
+name = "_ReadCode1"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1d9a_02cb"
@@ -5169,6 +5271,9 @@ unit = "e1d9a"
 addr = "1D9A:02CB"
 size = 257
 evidence = ["far"]
+name = "_Unpack2"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1d9a_03cc"
@@ -5176,6 +5281,9 @@ unit = "e1d9a"
 addr = "1D9A:03CC"
 size = 106
 evidence = ["near"]
+name = "_ReadCode2"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e1ddd_0006"

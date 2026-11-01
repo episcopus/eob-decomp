@@ -2,10 +2,9 @@
 ; single 00 byte with `segment` evidence (the unit's start marker, like 1990:0001); the one real
 ; function follows at 1BB1:0002.
 ;
-; 1BB1:0002 sets the mouse pointer's shape. Called from Level07A9 (07A9:010C) with a hot spot and
-; a pointer shape record: the caller passes the literal hot spot (8, 8) when its n is above 0 and
-; (0, 0) otherwise, and the record gNamesDDE4[n] in both cases (E07A9.C:91-94; that is only the
-; caller's name for the table, nothing here says "level" or "name"). Unit 1BBE shows what the
+; 1BB1:0002 sets the mouse pointer's shape. Called from f07A9_010C (07A9:010C) with a hot-spot
+; offset (8,8) when n > 0 or (0,0) otherwise, and a pointer shape record gIconsDDE4[n] (E07A9.C:92-94;
+; the table holds item icon images, nothing here says "level" or "name"). Unit 1BBE shows what the
 ; globals are: the hot spot ds:8158/815A is subtracted from the last drawn pointer position
 ; ds:815C/815E (1BBE:001E..002F, 1BBE:0111..012E), and the shape record ds:816E/8170 is what
 ; 1BBE:00ED draws through [ds:80C2]. The save-under buffer ds:816A/816C is the screen behind the
@@ -68,8 +67,8 @@
         _TEXT   SEGMENT WORD PUBLIC 'CODE'
         ASSUME  CS:_TEXT, DS:DGROUP
         db      0                       ; 1BB1:0001: the unit's start marker byte (segment evidence)
-        EXTRN   _f1BBE_0002:FAR         ; @ 1BBE:0002: hide the pointer (restore background, ++ds:8146)
-        EXTRN   _f1BBE_00ED:FAR         ; @ 1BBE:00ED: show the pointer (--ds:8146, save, draw)
+        EXTRN   _HidePointer:FAR        ; @ 1BBE:0002: hide the pointer (restore background, ++gHideDepth)
+        EXTRN   _ShowPointer:FAR        ; @ 1BBE:00ED: show the pointer (--gHideDepth, save, draw)
         EXTRN   _MemAlloc:FAR           ; @ 19BC:0007
         EXTRN   _MemFree:FAR            ; @ 19BC:0137
         EXTRN   _LargestFreeBlock:FAR         ; @ 19BC:023D: returns the largest free block (DX:AX)
@@ -90,7 +89,7 @@ acquire:
         jne     acquire
         inc     word ptr [_gPointerBusy]
         ASSUME  CS:NOTHING
-        call    far ptr _f1BBE_0002
+        call    far ptr _HidePointer
         ASSUME  CS:_TEXT
         mov     ax,[bp+6]
         mov     word ptr [_gPointerHotX],ax
@@ -157,7 +156,7 @@ ready:  push    word ptr [g8174]
         call    dword ptr [g80AA]
         add     sp,4
         ASSUME  CS:NOTHING
-        call    far ptr _f1BBE_00ED
+        call    far ptr _ShowPointer
         ASSUME  CS:_TEXT
         call    dword ptr [g80A2]
         mov     ax,1
