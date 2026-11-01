@@ -16,14 +16,21 @@ The files in `eob/` are the unofficial fan patch "1.9" (`eob/version.nfo`: "base
 
 - "Turbo C++ - Copyright 1990 Borland Intl." in all three programs; Borland C runtime messages ("Divide error", "Abnormal program termination"; `START1.EXE` also "Null pointer assignment"). `strings`.
 - EXE header bytes `FB 30 6A 72` at `1Eh`: the TLINK signature, version 30h (TLINK 3.0). `tools/re/mzutil.py` (`tlink`), `tests/unit/test_fbov.py`.
-- [H] Turbo C++ 1.0 (1990) or 1.01 (1991); both may carry the same banner. Settled in Phase 1 by comparing the runtime.
+- **The release is Turbo C++ 1.00** (May 1990), large model, not 1.01 (February 1991). Both releases print "Version 1.0x Copyright (c) 1990", and TLINK 3.0 (with 1.00) and 3.01 (with 1.01) both write version byte 30h, so neither the banner nor the header decides. The code does:
+  - **Startup.** A program linked with 1.00's `C0L.OBJ` and `CL.LIB` has the same first 524 bytes as `EOB.EXE` except 16 instructions, all address fields: the DGROUP paragraph, DS offsets of runtime variables, the init table segments, call targets (`main` is called at `07C8:0001`). 1.01's startup is 522 bytes and differs in 287 bytes. Scratch probe, 2026-10-31.
+  - **Runtime modules.** `make rtl-compare` (`tools/re/rtl_compare.py`) links every module of `CL.LIB` and `OVERLAY.LIB` for each release and looks for each in `EOB.EXE`, instruction by instruction with address fields ignored. 1.00: 59 modules found; 1.01: 56, a subset. `FCORELFT`, `IOERROR` and `SETARGV` are found only as 1.00's. Modules that keep data in their code are not decoded by that comparison; scored by equal bytes instead (above 85%), `FFLUSH`, `FLUSHALL`, `FSEEK`, `TIMECVT`, `XFFLUSH`, `INT86`, `TZSET`, `VPRINTER` and `FARHEAP` fit only 1.00's version, and none fits only 1.01's.
+- TASM 2.0 came with the same `TLINK.EXE` as Turbo C++ 1.00 (identical SHA-256), TASM 2.01 with 1.01's. [H] The assembly modules were assembled by TASM 2.0.
+
+### 2.1.1 What segment 0 holds
+
+Segment `0000` (`_TEXT`, 31,386 bytes) starts with `C0L` (524 bytes), then 19,996 bytes that are not library code (`0x020C` to `0x505C`), then the runtime library from `0x505C` to the end (the found modules above, `OVRDATA`, `OVRHP`, `OVRHALT` of the overlay manager among them). [H] The 20 KB are Westwood's own modules that use `_TEXT`, which is what TASM's simplified segments name the code of a large-model assembly module: hand-written assembly linked between the startup and the library.
 
 ### 2.2 EOB.EXE layout
 
 - Entry `0000:0000` is Borland's startup (`c0`): `mov dx,212Eh` then DOS version (`int 21h`, `ah=30h`) and `mov ds,dx`. DGROUP is paragraph `212E`. Stack `312D:0080`.
 - The FBOV header (section 2.3) gives the file offset of TLINK's segment table, 144,400 (load module offset `20C10h`, the segment at paragraph `20C1`), 99 entries of 8 bytes: paragraph, last offset (size - 1, `FFFF` when empty), kind, flags. `make overlays` writes it to `build/re/eob.json`.
 - Kinds: 1 code (58 segments, 127,887 bytes), 0 data (22 segments, 73,168 bytes, DGROUP among them, `212E`, last offset `FFE4`), 3 overlay stub (7), 4 not established (12 entries, sizes 0 to 12). The flags of code segments take values 0 to 15; meaning not established.
-- Segment `0000` is 31,386 bytes with 136 near returns: [H] the startup and the assembly part of the runtime, which Borland puts in `_TEXT`. Segment `17A6` (6,694 bytes) has 36 `iret`, 77 `out` and `int 10h`: [H] hand-written interrupt and hardware code. Small segments from `19EA` to `1E8B`: [H] C runtime modules.
+- Segment `0000` is 31,386 bytes with 136 near returns: the startup, about 20 KB of non-library code, and the runtime library (section 2.1.1). Segment `17A6` (6,694 bytes) has 36 `iret`, 77 `out` and `int 10h`: [H] hand-written interrupt and hardware code. Small segments from `19EA` to `1E8B`: [H] C runtime modules.
 
 ### 2.3 Overlays (VROOMM)
 

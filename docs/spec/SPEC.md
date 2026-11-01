@@ -46,14 +46,26 @@ Consequences of the patched copy:
 - What the patch changed is not known yet. The data changes (items, maps, NPCs) matter to the whitepaper, not to matching; code changes matter to matching, since a hex edit may give bytes no compiler wrote. Such a byte is recorded as a patch site (`re/patches.toml`, Phase 1), and the rebuild applies it after linking, as poolrad's DOS port applies its patch series.
 - If a retail copy becomes available, diffing it against `eob/` identifies the patch sites directly. That is a human decision (rule 6 of `AGENTS.md`).
 
+**Pinned toolchain** (2026-10-31, whitepaper 2.1). The programs were built with **Turbo C++ 1.00** (May 1990) and its TLINK 3.0. Turbo C++ 1.01 (February 1991) was compared and eliminated. Both print the same "Copyright (c) 1990" banner and TLINK 3.01 writes the same 30h version byte, so only the code decides. Installed by `make tc-install` from the archives in `build/toolchain/dist/`, checked by `make tc-check` against `tools/re/tc_toolchain.toml`; never committed.
+
+| File (release `tc100`) | Bytes | SHA-256 |
+|---|---:|---|
+| `BIN/TCC.EXE` | 458,560 | `1d08bb9fbd575782fee50391573e2e0c73747b823c7d8cbe9f7b2f13f751e7d4` |
+| `BIN/TLINK.EXE` | 53,414 | `9e6e32c0efa26010748aba9fa2de75f7fd693fc7dc69ed97229795f160b9ed51` |
+| `LIB/C0L.OBJ` | 2,236 | `b51e146481a6764978b27a31e537a88ab2fb2f79da50b6a263833c6a644fbff1` |
+| `LIB/CL.LIB` | 196,096 | `cf45945fa4017ae11b321fc56a17af547123b050e653e9f940af0040dd41d0f0` |
+| `LIB/OVERLAY.LIB` | 14,336 | `d4b73dceb1a675d5579ff91c5b524a09a5d30ec034d8db503bfa0a6851d198aa` |
+
+The assembler is provisionally **TASM 2.0** (`tasm20`, May 1990): it shipped with the same TLINK (identical hash) as Turbo C++ 1.00. [H] until an assembly module is matched; TASM 2.01 is installed for that comparison.
+
 ---
 
 ## 3. What the binaries are (verified facts that shape the approach)
 
 Evidence is in the whitepaper, section 2.
 
-1. **Language: Borland Turbo C++.** All three programs carry "Turbo C++ - Copyright 1990 Borland Intl." and the Borland C runtime strings ("Abnormal program termination", "Null pointer assignment" in `START1.EXE`); the EXE headers carry TLINK 3.0's signature. Which release (1.0 of 1990 or 1.01 of 1991) is decided in Phase 1 by comparing the runtime library, as poolrad did for Turbo Pascal.
-2. **Memory model: large code** (far calls; `retf` dominates). Medium versus large data is a Phase 1 question.
+1. **Language: Borland Turbo C++ 1.00.** All three programs carry "Turbo C++ - Copyright 1990 Borland Intl." and the Borland C runtime strings; the EXE headers carry TLINK's signature. The startup code of `EOB.EXE` is 1.00's `C0L.OBJ` (all 16 differing instructions are address fields), and its runtime modules are 1.00's (`make rtl-compare`, whitepaper 2.1).
+2. **Memory model: large** (the large-model startup and `CL.LIB` match). Whether every module was compiled `-ml` is checked per module in Phase 1.
 3. **Segments.** The FBOV header points to TLINK's segment table: 99 entries in `EOB.EXE` (58 code, 22 data, 7 overlay stubs, 12 of a fourth kind), 54 in `INTRO.EXE`. This gives the exact boundary of every code segment, and with Borland's one code segment per source file, of most source modules. DGROUP is paragraph `212E` in `EOB.EXE`; 127,887 bytes of resident code.
 4. **Overlays (VROOMM).** 7 overlaid segments in `EOB.EXE` (125 entries, 50,641 bytes of code) and 1 in `INTRO.EXE` (22 entries, 11,741 bytes). The stub layout is Turbo Pascal's; the overlay data is appended to the EXE instead of a separate `.OVR` file. `make overlays` validates both.
 5. **No packing.** The load modules are analysed as they are.
@@ -131,7 +143,7 @@ As poolrad's SPEC section 9 (roles, packets, locks, worktrees, integrator, revie
 | Phase | Deliverable | Exit check |
 |---|---|---|
 | P0 Bootstrap | Pinned inputs, environment check, overlay and segment manifest, PAK reader | `make doctor` and `make p0-check` pass. Done 2026-10-31 |
-| P1 Map and toolchain | Turbo C++ release pinned by runtime comparison, compiler switches and memory model, `re/units.toml` (module per code segment), function enumeration, runtime library identified, assembly modules flagged, patch sites found, the go/no-go spike | spike passes; `make p1-check` |
+| P1 Map and toolchain | Turbo C++ release pinned by runtime comparison (done 2026-10-31: 1.00), compiler switches and memory model, `re/units.toml` (module per code segment), function enumeration, runtime library identified, assembly modules flagged, patch sites found, the go/no-go spike | spike passes; `make p1-check` |
 | P2 Oracle and data | Unicorn PC with VGA, mouse, AdLib, timer; goldens; codecs for CPS, CMP, VCN/VMP, MAZ, INF, DAT | goldens repeatable; codec round trips |
 | P3 Match harness | `make match` for C modules and TASM modules; the agent process | negative fixtures rejected |
 | P4 Match | every function at L2 | status |

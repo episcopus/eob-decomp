@@ -1,0 +1,68 @@
+# Candidate Borland toolchains for the compiler pin (WHITEPAPER 2.1, docs/setup/SETUP-tc.md).
+# The archives are NOT in git: the human puts them in build/toolchain/dist/, then `make tc-install`.
+# Source of all four archives: WinWorld (winworldpc.com.txt inside each), placed 2026-10-31.
+# Licence: proprietary (Borland, now Embarcadero); Turbo C++ 1.01 is also offered free by
+# Embarcadero. Local use for comparison and matching only; never commit.
+#
+# zips: PKZIP archive on the disks -> directory under build/toolchain/<release>/
+# files: hashes of the installed files the project depends on (filled by the first install)
+
+# The compiler that built EOB.EXE (WHITEPAPER 2.1, `make rtl-compare`).
+pinned = "tc100"
+# [H] The assembler: TASM 2.0 shipped with Turbo C++ 1.0 (same TLINK.EXE, same dates); not proven
+# until an assembly module is matched.
+pinned_asm = "tasm20"
+
+[release.tc100]
+label = "Turbo C++ 1.0 (disks dated 1990-05-04)"
+archive = "Borland Turbo CPP 1.00 (5.25-360k).7z"
+archive_sha256 = "625d9f31a0a182177c097f7942be9818f4262a66954b34c65a3235dacfd76f28"
+zips = { "TCC.ZIP" = "BIN", "BIN1.ZIP" = "BIN", "BIN2.ZIP" = "BIN", "INCLUDE.ZIP" = "INCLUDE", "STARTUP.ZIP" = "STARTUP", "SLIB.ZIP" = "LIB", "MLIB.ZIP" = "LIB", "CLIB.ZIP" = "LIB", "LLIB.ZIP" = "LIB", "HLIB.ZIP" = "LIB", "XLIB.ZIP" = "LIB" }
+
+[release.tc100.files]
+"BIN/TCC.EXE" = "1d08bb9fbd575782fee50391573e2e0c73747b823c7d8cbe9f7b2f13f751e7d4"
+"BIN/TLINK.EXE" = "9e6e32c0efa26010748aba9fa2de75f7fd693fc7dc69ed97229795f160b9ed51"
+"BIN/TLIB.EXE" = "c3b5e314c1102b037a5d4008ecd83df33e09f55cd7cc2320af85f8944b3a7199"
+"LIB/C0L.OBJ" = "b51e146481a6764978b27a31e537a88ab2fb2f79da50b6a263833c6a644fbff1"
+"LIB/CL.LIB" = "cf45945fa4017ae11b321fc56a17af547123b050e653e9f940af0040dd41d0f0"
+"LIB/OVERLAY.LIB" = "d4b73dceb1a675d5579ff91c5b524a09a5d30ec034d8db503bfa0a6851d198aa"
+"LIB/EMU.LIB" = "98a1d8e342bad3a2dae48205ee56c039d5f24c87e3d64b63a1aee8ca2f52a2ff"
+"LIB/MATHL.LIB" = "a9cc1259d38d37108af30b05982083fa904c60c6c3707fefc008a69268c91061"
+"STARTUP/C0.ASM" = "01bc4fd653edfe0b48a4feeedae061ccf252527bf58608488095e4791f857783"
+
+[release.tc101]
+label = "Turbo C++ 1.01 (disks dated 1991-02-27)"
+archive = "Borland Turbo C++ 1.01 (3.5).7z"
+archive_sha256 = "309fa97716484311b34e47c79f545168f655f23bedb261c25c47be2c208f75a8"
+zips = { "TCC.ZIP" = "BIN", "BIN1.ZIP" = "BIN", "BIN2.ZIP" = "BIN", "INCLUDE.ZIP" = "INCLUDE", "STARTUP.ZIP" = "STARTUP", "SLIB.ZIP" = "LIB", "MLIB.ZIP" = "LIB", "CLIB.ZIP" = "LIB", "LLIB.ZIP" = "LIB", "HLIB.ZIP" = "LIB", "XLIB.ZIP" = "LIB" }
+
+[release.tc101.files]
+"BIN/TCC.EXE" = "74cedc2863e9ba7776917b713cb2956b38d982731bebbd008468d203ba07d272"
+"BIN/TLINK.EXE" = "85b3e87c76c754f5333a8651aa8049b3c398f4285de3b18e5af1fa8f6cdc86ce"
+"BIN/TLIB.EXE" = "e0fe4b91d4e0f90d8a15366b54b3304688d47622827e56bec95d24a77f8c0b9a"
+"LIB/C0L.OBJ" = "b4567fecd58f281f2f5d00f012ecc1a1587539c633263ee51f8cef33e8ed7524"
+"LIB/CL.LIB" = "6939b86af9ef1e6061d458a7569587f75e2b571e400e99fc1ca29e82529eac85"
+"LIB/OVERLAY.LIB" = "6b5df1f56a32db04e14f81ed64218436c02b4700a0366af01a0e06f7e5803af1"
+"LIB/EMU.LIB" = "32d3f57e391ff703003d9a79d92e4983925f13c7781212d43ea111c680b81efb"
+"LIB/MATHL.LIB" = "b475ab49dba67cc7547b26e586cbfb761688375f81874561a9dddf6a827149ad"
+"STARTUP/C0.ASM" = "f989bec015af61ca4a62c385899294ee32038ef9d1255530229d9cb3d338a44c"
+
+[release.tasm20]
+label = "Turbo Assembler 2.0 (disks dated 1990-05-07)"
+archive = "Borland Turbo Assembler 2.0 (5.25-360k).7z"
+archive_sha256 = "16972bb93e57addc97e8b95c723d9a163e859d77586373ac636e6f093f4b65c7"
+zips = { "TASM.ZIP" = "BIN" }
+
+[release.tasm20.files]
+"BIN/TASM.EXE" = "672cc3814fb66fcb73550aa5ad98049bb52ebcd66c66dcdedbe81d83335e62ff"
+"BIN/TLINK.EXE" = "9e6e32c0efa26010748aba9fa2de75f7fd693fc7dc69ed97229795f160b9ed51"
+
+[release.tasm201]
+label = "Turbo Assembler 2.01 (disks dated 1990-10-29)"
+archive = "Borland Turbo Assembler 2.01 (5.25).7z"
+archive_sha256 = "51ee01ef7db24d9d922a1b75e851efffb137053ae84672585630588251b7d3c6"
+zips = { "TASM.ZIP" = "BIN" }
+
+[release.tasm201.files]
+"BIN/TASM.EXE" = "48dd9b48dd83a0041ea4b820379146b10de5f44b3e2633778a35d062f2e1814c"
+"BIN/TLINK.EXE" = "85b3e87c76c754f5333a8651aa8049b3c398f4285de3b18e5af1fa8f6cdc86ce"

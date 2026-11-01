@@ -11,7 +11,7 @@ You are working on a **matching decompilation of Westwood's Eye of the Beholder 
 
 ## Facts you must not get wrong
 
-- The programs (`EOB.EXE`, `INTRO.EXE`, `START1.EXE`) were built with **Borland Turbo C++ (1990 banner) and TLINK 3.0**, with VROOMM overlays appended to the EXE as FBOV data. The exact release is a Phase 1 result; until then do not assume 1.0 or 1.01.
+- The programs (`EOB.EXE`, `INTRO.EXE`, `START1.EXE`) were built with **Borland Turbo C++ 1.00, large model, and its TLINK 3.0**, with VROOMM overlays appended to the EXE as FBOV data. Not 1.01 (`make rtl-compare`, whitepaper 2.1). The assembler is provisionally TASM 2.0 [H].
 - **The copy in `eob/` is the fan patch "1.9"**, not the retail release (SPEC section 2). Some bytes may be hex edits no compiler wrote; record them as patch sites, never force them with C.
 - `LEVELS.TMP` and `EOBDATA.SAV` are written by the game and not pinned. Never run the game inside `eob/` from a tool; copy the files first.
 - **The Borland runtime library is library**: linked, never decompiled.
@@ -37,6 +37,8 @@ You are working on a **matching decompilation of Westwood's Eye of the Beholder 
 | `make overlays` | TLINK segment table and FBOV overlay manifest of each program (`build/re/<program>.json`, overlay code in `build/re/<program>-overlays/`) |
 | `make pak` | Verify every PAK archive, byte-exact round trip |
 | `make emu2` | Build the headless DOS emulator for the compiler |
+| `make tc-install` / `make tc-check` | Install the Turbo C++ and TASM releases from `build/toolchain/dist/`; verify them |
+| `make rtl-compare` | Which Turbo C++ release's runtime is in `EOB.EXE` (several minutes) |
 | `make test` | Python tests |
 | `make p0-check` | Phase 0 exit criteria |
 

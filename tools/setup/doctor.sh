@@ -31,7 +31,7 @@ opt "dosbox-x"       "command -v dosbox-x" "dosbox-x --version 2>&1 | grep -i -m
 echo "== Turbo C++ toolchain (docs/setup/SETUP-tc.md)"
 opt "emu2"           "test -x tools/vendor/emu2/emu2" "echo emu2 \$(git -C tools/vendor/emu2 rev-parse --short HEAD 2>/dev/null)" "make emu2"
 opt "toolchain archives" "ls build/toolchain/dist/* >/dev/null 2>&1" "echo \$(ls build/toolchain/dist | wc -l | tr -d ' ') files in build/toolchain/dist" "put the Turbo C++ archives in build/toolchain/dist/ (docs/setup/SETUP-tc.md)"
-opt "TCC.EXE"        "ls build/toolchain/*/BIN/TCC.EXE >/dev/null 2>&1" "ls build/toolchain/*/BIN/TCC.EXE | tr '\n' ' '" "installed in Phase 1 from the archives (docs/setup/SETUP-tc.md)"
+opt "toolchain installed" "$PY tools/re/tc_toolchain.py check" "$PY tools/re/tc_toolchain.py check | tail -1" "make tc-install (docs/setup/SETUP-tc.md)"
 
 echo "== inputs"
 TMP=$(mktemp)

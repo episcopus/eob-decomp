@@ -1,19 +1,36 @@
-# The reference toolchain: Borland Turbo C++
+# The reference toolchain: Borland Turbo C++ 1.00
 
-The game was built with Turbo C++ (1990 banner) and TLINK 3.0 (whitepaper 2.1). From Phase 1 on the compiler is on the critical path: it proves every function and rebuilds the game. It is proprietary: it lives in `build/toolchain/` (ignored by git) and is never committed or copied into `src/`.
+The game was built with **Turbo C++ 1.00** and its TLINK 3.0 (whitepaper 2.1, SPEC section 2). From Phase 1 on the compiler is on the critical path: it proves every function and rebuilds the game. It is proprietary: it lives in `build/toolchain/` (ignored by git) and is never committed or copied into `src/`.
 
-## What to get (a human step)
+## The archives
 
-| Archive | Why | Where |
+Put these in `build/toolchain/dist/` with these names (WinWorld disk sets; hashes in `tools/re/tc_toolchain.toml`). Agents do not download or sign in for these; the human does.
+
+| Release | Archive | Role |
 |---|---|---|
-| Turbo C++ 1.01 | Candidate release; free from Embarcadero | Embarcadero "Antique Software" (needs a free account): https://cc.embarcadero.com/Item/26014 |
-| Turbo C++ 1.0 | The other candidate; the runtime comparison decides | Original disks or a software archive |
-| Turbo Assembler (TASM 2.x) | Hand-written modules are matched as assembly | Came with Turbo C++ Professional / Borland C++ 2.0 |
+| `tc100` | `Borland Turbo CPP 1.00 (5.25-360k).7z` | **Pinned compiler** |
+| `tc101` | `Borland Turbo C++ 1.01 (3.5).7z` | Eliminated; kept for comparisons |
+| `tasm20` | `Borland Turbo Assembler 2.0 (5.25-360k).7z` | Provisional assembler |
+| `tasm201` | `Borland Turbo Assembler 2.01 (5.25).7z` | Kept for the assembler comparison |
 
-Put the archives, as downloaded, in `build/toolchain/dist/`. `make doctor` reports them. Agents do not download or sign in for these; the human does.
+## Install
 
-## Then (Phase 1)
+```sh
+make emu2          # headless DOS emulator (same commit as poolrad-decomp)
+make tc-install    # 7z -> FAT12 disk images -> PKZIP archives -> build/toolchain/<release>/
+make tc-check      # installed files against their pinned hashes
+```
 
-1. `make emu2`: the headless DOS emulator (same commit as poolrad-decomp) that runs `TCC.EXE`, `TLINK.EXE` and `TASM.EXE`.
-2. Install each release under `build/toolchain/<release>/` and record the hashes of `TCC.EXE`, `TLINK.EXE`, the libraries and `C0*.OBJ` in `tools/re/tc_toolchain.toml` (as poolrad's `tp_toolchain.toml`).
-3. Compare the runtime: link an empty program per memory model and compare the startup and library modules with `EOB.EXE` segment `0000` and the small runtime segments. The release and model whose bytes match are pinned in SPEC section 2.
+Each release is laid out as `BIN/` (TCC, TLINK, TLIB, MAKE, TASM), `LIB/` (`C0x.OBJ`, `Cx.LIB`, `MATHx.LIB`, `EMU.LIB`, `OVERLAY.LIB`), `INCLUDE/`, `STARTUP/` (`C0.ASM`, the startup source). Only the command-line tools are installed; the IDE (`TC.CA1`, split archives) is not needed.
+
+## Running a tool
+
+```sh
+.venv/bin/python tools/re/tc_toolchain.py run tc100 TCC -ml -c -ID:\\INCLUDE FILE.C
+```
+
+Drive `C:` is the current directory, drive `D:` the release (`D:\INCLUDE`, `D:\LIB`). Output file names come back in lower case on macOS.
+
+## Re-proving the pin
+
+`make rtl-compare` (several minutes) links every module of each release's large-model library and reports how many are found in `EOB.EXE`; `build/re/rtl_compare.json` has the addresses.

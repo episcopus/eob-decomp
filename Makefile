@@ -4,10 +4,11 @@
 PY ?= $(if $(wildcard .venv/bin/python),.venv/bin/python,python3)
 PROGRAMS := eob/EOB.EXE eob/INTRO.EXE eob/START1.EXE
 
-.PHONY: help setup doctor inputs overlays pak emu2 test p0-check
+.PHONY: help setup doctor inputs overlays pak emu2 test p0-check tc-install tc-check rtl-compare
 
 help:
 	@echo "Phase 0:  setup doctor inputs overlays pak emu2 test p0-check"
+	@echo "Toolchain: tc-install tc-check rtl-compare (docs/setup/SETUP-tc.md)"
 	@echo "See AGENTS.md and docs/spec/SPEC.md."
 
 setup:            ## create .venv with the Python tools (uv)
@@ -30,6 +31,15 @@ pak:              ## verify every PAK archive (directory, tiling, byte-exact rou
 
 emu2:             ## build the headless DOS emulator that runs the Turbo C++ tools
 	sh tools/setup/build-emu2.sh
+
+tc-install:       ## unpack the Turbo C++ and TASM archives from build/toolchain/dist/ (FORCE=1 to redo)
+	$(PY) tools/re/tc_toolchain.py install $(if $(FORCE),--force)
+
+tc-check:         ## verify the installed toolchain files against tools/re/tc_toolchain.toml
+	$(PY) tools/re/tc_toolchain.py check
+
+rtl-compare:      ## which Turbo C++ release's runtime is in EOB.EXE (several minutes; build/re/rtl_compare.json)
+	$(PY) tools/re/rtl_compare.py
 
 test:             ## Python tests
 	$(PY) -m pytest -q tests/unit
