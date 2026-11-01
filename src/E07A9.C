@@ -45,7 +45,7 @@ extern void far *gIconsDDE4[]; /*@ ds:DDE4 */
 extern void far *MemAlloc(unsigned long size, int flags); /*@ 19BC:0007 */
 extern void far *f19EC_0002(int kind); /*@ 19EC:0002 */
 extern void LoadSoundDriver(void); /*@ 177D:000A */
-extern void SetUnpackBuffer(int a, unsigned b); /*@ 1B82:0217 */
+extern void SetUnpackBuffer(unsigned seg, unsigned size); /*@ 1B82:0217 */
 extern void Ovl2Entry2(void); /*@ 2106:002A */
 extern void f1A47_0169(void far *p); /*@ 1A47:0169 */
 extern void Ovl2Entry8(void); /*@ 2106:0048 */
