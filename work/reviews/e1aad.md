@@ -1,10 +1,56 @@
 # Review: e1aad
 
 Reviewer: rev-haiku
-Commit reviewed: 49e4d94 (round 3; main, with the round 2 fixes in 6e64486). Round 2 was 3331b69, round 1 was 7d0dd48.
+Commit reviewed: b4eaa33 (round 4; main at 6dbf414 has the same E1AAD files). Round 3 was 49e4d94, round 2 was 3331b69, round 1 was 7d0dd48.
 
 Playbook 70. Judge what a matching file can still get wrong: names, types, comments, structure.
 The matcher already proved the bytes; do not re-prove them, read for meaning.
+
+## Round 4 (b4eaa33)
+
+Judged only what the later-round rule asks: the round 3 must-fix and should items, and the diff since
+49e4d94 in `src/E1AAD.ASM` (the `re/symbols.toml` and `re/globals.toml` changes are other units'
+match flags and names; none names a 1AAD address or a name of this unit). Checked against the code:
+the 1AAD:0588 state 2 skip (lines 539-540), DispatchKey (E16A5.C:146-153: ReadKeySpecial at :152,
+WaitGameKey2 at :153, the key passed on with 0x8000 and its high byte kept), the two `or ah,8` sites
+(lines 1221, 1242), the 0223 index wrap (`sub bl,4Bh` at 166, `sub bl,0Fh` at 175, the table read at
+176). `make match FILE=src/E1AAD.ASM` is 18 of 18 (3405 of 3405 bytes); `make readability UNIT=e1aad`
+is 0 findings.
+
+Round 3 items fixed right, ticks stay: the 0409 and 0B0E headers (no E16A5.C:127-128 cite; DispatchKey
+at 16A5:0009 is named), the g80EC list (1AAD:0588 is in it, lines 539-540), and the 0223 QUIRK marker.
+The round 3 g8488 item is not fixed right (reopened below).
+
+### Findings
+
+- [ ] must-fix src/E1AAD.ASM:49-52 (the g8488 extern; round 3 must-fix, reopened): the comment cites
+  "line 1360, after the FileWrite calls" and "line 1403, the 0D0A path", but in this file those lines
+  are not the clears. Line 1360 is the second `call far ptr _FileWrite`; line 1403 is
+  `mov [_gCursorY],ax` in the successful mouse read. The clears are at line 1363 (label f0C17_0C88
+  at 1362, the fall-through after the FileWrite calls at 1343 and 1360) and at line 1406 (label
+  f0C17_0D0A at 1405, after a successful replay read; a failed read goes to 0D12 and does not clear).
+  The round 3 numbers were taken from the older file; the three lines added above them in round 3's
+  fixes moved them. Fix: cite the clears by address, which the labels give and which never move:
+  "(1AAD:0C88, after the FileWrite calls at 1343 and 1360)" and "(1AAD:0D0A, after a successful replay
+  read)". Check the fix with `make match` (no byte moves) and by reading the two labels.
+
+- [ ] should src/E1AAD.ASM:115-116 (the 1AAD:0223 QUIRK, changed in round 3): "that branch is entered
+  for all of 4Bh..6Dh" reads as unconditional. The Ctrl-function branch is taken only when
+  kModifierState bit 200h is clear and kShiftFlagsCopy bit 2 is set (lines 167-170). The sentence
+  before it says so, but "that branch is entered for all" does not. Write "when the flags select it,
+  it is entered for all of 4Bh..6Dh". The wrap itself is right: AL 4Bh..59h give bl 0..0Eh, and the
+  byte `sub bl,0Fh` gives F1h..FFh, past the 20-byte table.
+
+- [ ] note for other owners (round 1, 2 and 3 notes, still open, not this unit): src/EOV1.ASM:114 and
+  src/EOV3.C:29 still say g80E8 is "toggled by the Ctrl-key handling"; src/E1A72.ASM:35 still says
+  "game state, 0/1/2" for g80EC; src/E07C8.C:93-99 still cites 1AAD:0718 for the install copy of
+  ds:80EA, where the read is in the handler body (1AAD:07C0). Their owners should align them.
+
+### Summary
+
+One must-fix is open: the g8488 cites (round 3's) name the wrong lines. The fix is the two addresses
+1AAD:0C88 and 1AAD:0D0A. One should on the 0223 QUIRK wording. Nothing is escalated: each item is a
+comment, with no matcher, spec or pin question.
 
 ## Round 3 (49e4d94)
 
@@ -36,7 +82,8 @@ a comment, with no matcher, spec or pin question.
 
 ### Findings
 
-- [x] must-fix src/E1AAD.ASM:47-51 (the g8488 extern; the round 2 note at :44-47 that this round
+- [ ] must-fix src/E1AAD.ASM:47-51 (reopened in round 4: the cites are still wrong, see round 4; the
+  round 3 item: the g8488 extern; the round 2 note at :44-47 that this round
   reopens): "1AAD:0C17 writes 0 after a recorded write (line 1350) and after a replay read (line
   1393)". Neither line clears ds:8488. Line 1350 is `mov word ptr cs:[kRecCountD20],ax`, the mouse
   count load after `mov ax,[g80F5]` at 1349. Line 1393 is `or ax,ax`, the test of a FileRead result.
