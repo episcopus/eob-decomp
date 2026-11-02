@@ -96,8 +96,8 @@ struct Entry14 {
 };
 extern struct Entry14 gTable8DD2[]; /*@ ds:8DD2 */
 extern signed char g1A1B[]; /*@ ds:1A1B */  /* per-page sound table (src/E0D1C.C) */
-extern int g36B0[]; /*@ ds:36B0 */          /* a per-slot word (screen row) compared with g5E12 */
-extern int g5E12; /*@ ds:5E12 */
+extern int g36B0[]; /*@ ds:36B0 */          /* a per-slot word (screen row) compared with gHitY */
+extern int gHitY; /*@ ds:5E12 */
 extern unsigned g5E1C; /*@ ds:5E1C */       /* src/E1658.C */
 extern signed char g36D0[]; /*@ ds:36D0 */  /* a per-row four-byte action table (09EF) */
 extern signed char g373C[]; /*@ ds:373C */  /* a per-page byte table read by 0A61 */
@@ -349,7 +349,7 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
 }
 
 /* 0ACD:0415: Purpose unknown: when f0D1C_0670 accepts the record's slot it hides the pointer, sets
-   a flag from g36B0[slot] against g5E12 and dispatches to f0BD2_0C8E or f0BD2_1001 (by the low
+   a flag from g36B0[slot] against gHitY and dispatches to f0BD2_0C8E or f0BD2_1001 (by the low
    bits of g5E1C), then shows the pointer. Returns 1. */
 /*@ 0ACD:0415 */ int Action0415(struct Action far *action)
 {
@@ -359,7 +359,7 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
     if (!f0D1C_0670(slot, 1))
         return 1;
     LockHidePointer();
-    if (g36B0[slot] <= g5E12)
+    if (g36B0[slot] <= gHitY)
         flag = 1;
     else
         flag = 0;
