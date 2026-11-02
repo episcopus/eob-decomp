@@ -53,8 +53,8 @@ extern int gFC78; /*@ ds:FC78: extra pixels between lines, written by DrawOption
 extern int gFC7A; /*@ ds:FC7A: the key UpdateOptionList did not handle; its reader is PickAlignment
                      (src/EOV0.C:1259, :1261), which tests it for 0x6e/0x32 and 0x41/0x42 before
                      IsPointInRect on the last click g8140/g8142 (:1262) */
-extern int g5D1A; /*@ ds:5D1A: nonzero lets the pointer position pick the entry in UpdateOptionList (:301)
-                      and, together with gMouseDisabled, makes DrawOptionList draw the selected row in
+extern int g5D1A; /*@ ds:5D1A: nonzero lets the pointer position pick the entry in UpdateOptionList (:301),
+                      and it or gMouseDisabled being nonzero makes DrawOptionList draw the selected row in
                       colorB (:209-210). No writer is found in src/ */
 extern int g8140; /*@ ds:8140: x of the last click; the click event writes it (src/E1AAD.ASM:396) and
                       src/EOV0.C:1204 clears it; tested against a panel rectangle by UpdateOptionList (:325),
@@ -70,9 +70,9 @@ extern int g8102; /*@ ds:8102: the graphics choice from argv[1][0], 1 Tandy and 
                       initialised). A zero here makes the normal text colour 1 (:208, :289); what a
                       zero means for the graphics choice is not established */
 extern int gMouseDisabled; /*@ ds:814A: nonzero disables the mouse: the INT 33h handler at 1A72:017A
-                              returns at once, and InitMouse sets it to 1 before it installs the
-                              handler (1A72:0150, src/E1A72.ASM:100; the store is src/E1A72.ASM:325,
-                              the line after the gMouseHandlerInstalled store at :324) */
+                              returns at once. InitMouse sets it to 1 (src/E1A72.ASM:325, the line
+                              after the gMouseHandlerInstalled store at :324); src/E1A72.ASM:100
+                              gives the same order, "before it installs the handler (1A72:0150)" */
 extern int gCursorX; /*@ ds:8138: mouse x in pixels (src/E1A72.ASM:65); tested with the pixel rectangle (:301) */
 extern int gCursorY; /*@ ds:813A: mouse y in pixels (src/E1A72.ASM:73) */
 extern int g8134; /*@ ds:8134: accumulated button changes; the INT 33h handler folds each change into
@@ -100,9 +100,9 @@ extern void WaitFrames(int n); /*@ 1A16:000B */
    bit of `mask` scanning from bit `shift` up, minus shift (the result is an index counted from
    shift). The two loops first skip n set bits, then advance to the next set bit. A set mask bit
    means "selectable entry", so for the mask -1L every entry is selectable and the n-th entry is
-   just n, returned at once. Precondition: the callers keep n at or below the number of set bits
-   from shift up; the second loop has no bound, so if fewer than n set bits remain the test at bit
-   32 and above is never true and the loop runs past the top of the mask. */
+   just n, returned at once. Precondition: the callers keep n below the number of set bits from
+   shift up; the second loop has no bound, so when n is at least that number it consumes every set
+   bit, finds no set bit above the n-th, and runs past the top of the mask. */
 /*@ 14EF:0007 */ int FindMaskBit(int n, long mask, int shift)
 {
     int i;
@@ -125,8 +125,8 @@ extern void WaitFrames(int n); /*@ 1A16:000B */
    (:139), wait two frames more (after it, :140). `text` is the far string to draw, `x` and `y` its
    pixel position, `colorA` the normal colour and `colorB` the selected colour. `extra` is passed as
    the fifth argument of gDrawText; what it means is not established, and the one caller,
-   UpdateOptionList (:355), always passes 0. Called on the entry just chosen, so this is the
-   "confirm" flash. */
+   UpdateOptionList (:355), always passes 0. Called on any pick, by a confirm key (:335) or a click
+   inside the rectangle (:327); reading it as a "confirm" flash is [H]. */
 /*@ 14EF:0078 */ void BlinkText(char far *text, int x, int y, char colorA, char colorB, char extra)
 {
     int i;
@@ -293,7 +293,7 @@ enum {
     if (IsKeyPending())
         key = WaitKeyEvent() & KEY_CODE_MASK;
     left = (gTextLeft << 3) + panelDef->x * gFontWidth; /* QUIRK 14EF:0336: x and width scaled by gFontWidth; the draws use << 3 */
-    top = gTextTop + panelDef->y - halfspace; /* each row's band starts half the extra line spacing above its text: rows are drawn at ybase + lineheight * k (:344, :347) and the click row is (cursory - top) / lineheight (:302) */
+    top = gTextTop + panelDef->y - halfspace; /* each row's band starts half the extra line spacing above its text: rows are drawn at ybase + lineheight * k (:344, :347), the pointer row is (cursory - top) / lineheight (:302) and the click row is (g8142 - top) / lineheight (:326) */
     right = left + panelDef->width * gFontWidth - 1;
     bottom = top + panelDef->height * lineheight - 1;
     if (!gMouseDisabled) {
