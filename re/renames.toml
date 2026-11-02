@@ -178,7 +178,7 @@ addr = "1BB1:0002"
 old = "f1BB1_0002"
 new = "SetMousePointerShape"
 kind = "function"
-why = "1BB1:0002 stores the hot spot x and y (ds:8158/815A) and a pointer shape record (ds:816E/8170), resizes the save-under buffer ds:816A/816C from the record's height (byte +3) and width in 8-pixel units (byte +2 + 1), and hides/shows the pointer through 1BBE:0002 and 1BBE:00ED around the change; f07A9_010C (07A9:010C) calls it with the hot spot (8,8) when its n is above 0 and (0,0) otherwise, and the record gIconsDDE4[n] in both cases (E07A9.C:229 and :231), and SetPointerShape (ovl2:0000, src/EOV2.C:206-211) calls it with (0,0) and gPtrDD00 = gIconsDDE4[0] (EOV2.C:210-211). The (8,8) is the centre of a 16 by 16 cell if the record is 16 wide by 16 tall, which is not proven here [H] (review of e07a9)"
+why = "1BB1:0002 stores the hot spot x and y (ds:8158/815A) and a pointer shape record (ds:816E/8170), resizes the save-under buffer ds:816A/816C from the record's height (byte +3) and width in 8-pixel units (byte +2 + 1), and hides/shows the pointer through 1BBE:0002 and 1BBE:00ED around the change; SetMouseItem (07A9:010C) calls it with the hot spot (8,8) when its n is above 0 and (0,0) otherwise, and the record gIconsDDE4[n] in both cases (E07A9.C:229 and :231), and SetPointerShape (ovl2:0000, src/EOV2.C:206-211) calls it with (0,0) and gPtrDD00 = gIconsDDE4[0] (EOV2.C:210-211). The (8,8) is the centre of a 16 by 16 cell if the record is 16 wide by 16 tall, which is not proven here [H] (review of e07a9)"
 date = "2026-11-01"
 
 [[rename]]
@@ -196,7 +196,7 @@ addr = "ds:8156"
 old = "g8156"
 new = "gPointerWidth8"
 kind = "global"
-why = "the pointer sprite's width in 8-pixel units: filled from shape record byte +2 plus 1 (1BB1:003A); 1BBE:0002 copies it to gSpriteWidth (ds:8186) and negates it into gNegSpriteWidth (ds:8188), and 1BBE:005F adds that copy to the pointer's left edge before clipping the right edge to 40"
+why = "the pointer sprite's width in 8-pixel units: filled from shape record byte +2 plus 1 (1BB1:003A); 1BBE:0002 copies it to gSpriteWidth (ds:8186) and negates it into gNegSpriteWidth (ds:8188), and 1BBE:005F adds that copy to the pointer's left edge before clipping the right edge to 40. The unit is proven in 1BBE: x is shifted right three times (1BBE:0048..004F sar ax,1), the column is stored (1BBE:005C) and the right edge is clipped to 0x28 = 40 columns (1BBE:0077..007E)"
 date = "2026-11-01"
 
 [[rename]]
@@ -781,7 +781,7 @@ addr = "0D1C:0304"
 old = "f0D1C_0304"
 new = "SetCurrentItem"
 kind = "function"
-why = "stores the item index of the currently displayed slot (gFBCE when the mouse is enabled, else gChars[gA99A].m77[gF51A]); read back by 0D1C:02DC and called by f07A9_010C"
+why = "stores the item index of the currently displayed slot (gFBCE when the mouse is enabled, else gChars[gA99A].m77[gF51A]); read back by 0D1C:02DC and called by SetMouseItem"
 date = "2026-11-01"
 
 [[rename]]

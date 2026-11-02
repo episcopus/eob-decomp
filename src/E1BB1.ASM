@@ -1,10 +1,10 @@
-; Unit at EOB.EXE 1BB1:0001 (208 bytes, 2 functions), kind asm [H] by the map. 1BB1:0001 is a
-; single 00 byte with `segment` evidence (the unit's start marker, like 1990:0001); the one real
-; function follows at 1BB1:0002. The pointer is the game's own, moved by the INT 33h handler
-; (docs/design/WHITEPAPER.md section 2.7 Input and sound, the mouse bullet at line 130: "The game
-; draws its own pointer").
+; Unit at EOB.EXE 1BB1:0001 (208 bytes: one function and the 1-byte marker at 1BB1:0001), kind asm
+; [H] by the map. 1BB1:0001 is a single 00 byte with `segment` evidence (the unit's start marker,
+; like 1990:0001); the one real function follows at 1BB1:0002. The pointer is the game's own, moved
+; by the INT 33h handler (docs/design/WHITEPAPER.md section 2.7 Input and sound, the mouse bullet at
+; line 130: "The game draws its own pointer").
 ;
-; 1BB1:0002 sets the mouse pointer's shape. Two callers. f07A9_010C (07A9:010C) passes the hot spot
+; 1BB1:0002 sets the mouse pointer's shape. Two callers. SetMouseItem (07A9:010C) passes the hot spot
 ; (8,8) when its n is above 0 and (0,0) otherwise, and the record gIconsDDE4[n] in both cases (the
 ; two calls at E07A9.C:229 and :231, SetMousePointerShape(MOUSE_HOTSPOT, MOUSE_HOTSPOT, gIconsDDE4[n])
 ; and SetMousePointerShape(0, 0, gIconsDDE4[n]); the table holds item icon images, E07A9.C:114-120,
@@ -22,14 +22,14 @@
 ; (+2) is read at 1BB1:003A and, plus 1 (1BB1:003E `inc dx`), stored at gPointerWidth8 (ds:8156,
 ; 1BB1:006A); the code shows only that the stored width is the byte plus one, so the byte's own
 ; meaning (a count one less than the width in 8-pixel units; a region record uses the same unit,
-; E1A29.C:21 and :23) is a reading [H]. The stored width of 0 means 1 column; a stored height of 0
-; is 0 pixels. 1BBE:0002 turns the pair into the hide and show rectangle and clips it (the copies
+; E1A29.C:21 and :23) is a reading [H]. A width byte of 0 stores width 1; a stored height of 0 is 0
+; pixels. 1BBE:0002 turns the pair into the hide and show rectangle and clips it (the copies
 ; gSpriteHeight/gSpriteWidth and the clip bounds are in src/E1BBE.ASM). The buffer path depends on
-; the buffer and the
-; size: with no buffer yet (gPointerBackSeg ds:816C == 0) the free is skipped (1BB1:0044 `je 0066`)
-; and the size query and MemAlloc run; with a buffer and a changed size (height or width differ,
-; 1BB1:004A/0050) the old buffer is freed (1BB1:0058..005C) before the query and MemAlloc; with a
-; buffer and the same size the call goes straight to the show (1BB1:0050 `je 00A9`). The size
+; the buffer and the size: with no buffer yet (gPointerBackSeg ds:816C == 0) the free is skipped
+; (1BB1:0044 `je 0066`) and the size query and MemAlloc run; with a buffer and a changed size
+; (height or width differ, 1BB1:004A/0050) the old buffer is freed (1BB1:0058..005C) before the
+; query and MemAlloc; with a buffer and the same size the call goes straight to the show
+; (1BB1:0050 `je 00A9`). The size
 ; query [ds:80C6] is called as (width, height) and its result is the new buffer size. The check
 ; needs LargestFreeBlock (19BC:023D) to return at least that result plus HEAP_BLOCK (16, 1BB1:0076
 ; `add ax,HEAP_BLOCK`), and that function already subtracts 16 from the raw largest free block
@@ -41,10 +41,11 @@
 ;
 ; The order is what keeps the old buffer valid: 1BBE:0002 hides the pointer first, while the old
 ; buffer and sizes are still in place, then the globals are overwritten, the buffer is resized,
-; and 1BBE:00ED shows the pointer again and draws the new shape. Both halves gate on
-; gMouseDisabled (ds:814A), on the hide count gHideDepth (ds:8146) and on the
-; buffer gPointerBackSeg (ds:816C), and each skips its screen work when the pointer rectangle is
-; off screen; the gates and the clips are in src/E1BBE.ASM. The pair
+; and 1BBE:00ED shows the pointer again and draws the new shape. Both halves share the gates
+; gMouseDisabled (ds:814A) and the hide count gHideDepth (ds:8146); the hide reads the buffer
+; gPointerBackSeg (ds:816C) only when the count is 0 (1BBE:0017), the show reads it as its fourth
+; gate after the count (1BBE:010A). Each skips its screen work when the pointer rectangle is off
+; screen; the gates and the clips are in src/E1BBE.ASM. The pair
 ; [ds:80AA] on the far pointer ds:8172/8174 and [ds:80A2] brackets only the show call at
 ; 1BB1:00B8 (1BB1:00B1 and 1BB1:00BD); this unit and E1BF3 only read ds:8172/8174, which
 ; _SetFarPointer (1A72:02FE, src/E1A72.ASM:442-443) writes and _GetFarPointer (1A72:033A) reads.
@@ -63,16 +64,19 @@
                                  ; byte's own meaning (a count one less than the width in 8-pixel
                                  ; units) is a reading [H]
         SHAPE_HEIGHT_BYTE EQU 3  ; shape record byte +3: height in pixels, read at 1BB1:0034
-        HEAP_BLOCK        EQU 16 ; bytes per heap block; LargestFreeBlock subtracts one from the raw
-                                 ; block (E19BC.C:142 `max -= 0x10`; the quote "less one 16 byte
-                                 ; block" is its header, E19BC.C:5) and this unit adds it back for
+        HEAP_BLOCK        EQU 16 ; the 16 that LargestFreeBlock takes off the raw block
+                                 ; (E19BC.C:142 `max -= 0x10`; the quote "less one 16 byte
+                                 ; block" is its header, E19BC.C:5); this unit adds it back for
                                  ; the margin (1BB1:0076) and removes it for MemAlloc (1BB1:0091)
 
         _DATA   SEGMENT WORD PUBLIC 'DATA'
         EXTRN   _gPointerBusy:WORD      ; @ ds:812E: busy flag, 0 = free; a test then an
                                         ; increment, not a lock, acquired by busy-wait
         EXTRN   _gPointerHeight:WORD    ; @ ds:8154: pointer height in pixels, from shape byte +3
-        EXTRN   _gPointerWidth8:WORD    ; @ ds:8156: pointer width in 8-pixel units, shape byte +2 + 1
+        EXTRN   _gPointerWidth8:WORD    ; @ ds:8156: pointer width in 8-pixel units, shape byte +2 + 1;
+                                        ; the unit is read in 1BBE:0002, which shifts x right 3
+                                        ; (1BBE:0048..004F), stores the column (1BBE:005C) and clips
+                                        ; the right edge to 0x28 = 40 columns (1BBE:0077..007E)
         EXTRN   _gPointerHotX:WORD      ; @ ds:8158: pointer hot spot, x (argument 1)
         EXTRN   _gPointerHotY:WORD      ; @ ds:815A: pointer hot spot, y (argument 2)
         EXTRN   _gPointerBackOff:WORD   ; @ ds:816A: save-under buffer, far offset
@@ -191,14 +195,14 @@ ready:  push    word ptr [g8174]
         call    dword ptr [g80A2]
         mov     ax,1
         jmp     short release
-; QUIRK 1BB1:00C6: on failure the old buffer was already freed at resize (1BB1:0058..005C) and the
+; QUIRK 1 (1BB1:00C6): on failure the old buffer was already freed at resize (1BB1:0058..005C) and the
 ; new size is already stored, but ds:816A/816C still hold the freed pointer. A later call with the
 ; same size passes `je ready` (1BB1:0050) with a dangling buffer, and a later call with a different
 ; size (1BB1:0046/004C, `jne 0052` at 1BB1:004A) frees the already-freed block again (1BB1:0058..005C
 ; with ds:816A/816C), a double free. A first-time failure (ds:816C == 0) leaves it zero and the next
 ; call retries.
 ;
-; QUIRK 1BB1:00C6: the failure path also skips the 1BBE:00ED call above, so the hide 1BBE:0002
+; QUIRK 2 (1BB1:00C6): the failure path also skips the 1BBE:00ED call above, so the hide 1BBE:0002
 ; did is never undone and the pointer stays hidden until something else balances the count. The
 ; count can be nonzero two ways: it was already nonzero, so 1BBE:0002 only increments it (1BBE:0015
 ; `jne 0075` to 1BBE:00E0 `inc [8146]`, no buffer test), or ds:816C (the buffer) was nonzero on

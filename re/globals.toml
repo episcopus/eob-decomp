@@ -59,7 +59,7 @@ why = "the pointer sprite's height in pixels: filled from shape record byte +3 (
 [[global]]
 id = "ds:8156"
 name = "gPointerWidth8"
-why = "the pointer sprite's width in 8-pixel units: filled from shape record byte +2 plus 1 (1BB1:003A); 1BBE:0002 copies it to gSpriteWidth (ds:8186) and negates it into gNegSpriteWidth (ds:8188), and 1BBE:005F adds that copy to the pointer's left edge before clipping the right edge to 40"
+why = "the pointer sprite's width in 8-pixel units: filled from shape record byte +2 plus 1 (1BB1:003A); 1BBE:0002 copies it to gSpriteWidth (ds:8186) and negates it into gNegSpriteWidth (ds:8188), and 1BBE:005F adds that copy to the pointer's left edge before clipping the right edge to 40. The unit is proven in 1BBE: x is shifted right three times (1BBE:0048..004F sar ax,1), the column is stored (1BBE:005C) and the right edge is clipped to 0x28 = 40 columns (1BBE:0077..007E)"
 
 [[global]]
 id = "ds:8158"
