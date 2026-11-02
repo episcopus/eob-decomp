@@ -84,7 +84,9 @@ int FindFile(char far *name);            /*@ 1C0E:1645: defined later in the fil
 int IsFileInMemory(char far *name);      /*@ 1C0E:1161: defined later in the file */
 int FindLoadedFile(char far *name);      /*@ 1C0E:11D3: defined later in the file */
 int LocateOverlayFile(char far *name);   /*@ 1C0E:1310: defined later in the file */
-int f1C0E_144E(int index);               /*@ 1C0E:144E: defined later in the file */
+int LoadFileSlot(int index);               /*@ 1C0E:144E: defined later in the file */
+long ReadFromMemory(int index, void far *dst, long len); /*@ 1C0E:1240: defined later in the file */
+long LookupFileEntry(int handle, char far *name); /*@ 1C0E:172E: defined later in the file */
 
 /* A cached file, a 19-byte record at ds:01FF (index * 19 + ds:01FF). The name is a C string; an
    empty name ends the table. */
@@ -94,25 +96,23 @@ struct FileEntry {
     char far *data;             /* +0x08: the in-memory copy when the slot is loaded */
     int link;                   /* +0x0C: < 0: LINK_INDEX is the index of the entry this aliases */
     long pos;                   /* +0x0E: the read/write position in the file */
-    unsigned char flags;        /* +0x12: FLAG_KEEP and the low FLAG_BITS */
+    signed char flags;          /* +0x12: FLAG_KEEP and the low FLAG_BITS */
 };
 
 extern struct FileEntry gFiles[];        /*@ ds:01FF */
 extern int gFileHandles[];               /*@ ds:FEEA: DOS handle or SLOT_FREE per slot */
+extern long gSlotOffsets[];              /*@ ds:FEC2: the record's start offset per slot */
+extern long gSlotLengths[];              /*@ ds:FF0C: the record's length per slot */
 
 /* 1C0E:000C: resize the file in slot `index` to `size` bytes and return 1 when that succeeded, 0
-   when the slot is loaded in memory (nothing to resize) or chsize failed. DRAFT: every byte matches
-   but the layout of the two `return 0` tails (the original keeps them apart, TCC -O folds the first
-   into `je`), no source form found yet. */
-/*@ 1C0E:000C draft */ int SetFileSize(int index, long size)
+   when the slot is loaded in memory (nothing to resize) or chsize failed. */
+/*@ 1C0E:000C */ int SetFileSize(int index, long size)
 {
     int handle = gFileHandles[index];
 
-    if (handle & FILE_IN_MEMORY)
-        return 0;
-    if (chsize(handle & HANDLE_MASK, size) == -1)
-        return 0;
-    return 1;
+    if (!(handle & FILE_IN_MEMORY))
+        return chsize(handle & HANDLE_MASK, size) != -1;
+    return 0;
 }
 
 /* 1C0E:0046: upper case from the last backslash of `name` on (so the file name part, leaving a
@@ -142,7 +142,96 @@ extern int gFileHandles[];               /*@ ds:FEEA: DOS handle or SLOT_FREE pe
     ShutdownGame();
 }
 
-/*@ 1C0E:00DB stub */ int FileOpen(char far *name, int mode) { }
+/* 1C0E:00DB: open the file `name` in one of three modes and give it a cache slot. Mode 1 (0x8001,
+   read) reuses an in-memory copy or checks and loads the file from disk; mode 2 (0x8002, write) and
+   mode 3 (0x8004, read/write) delete and recreate the file, retrying on failure; any other mode
+   reports code 1 then a fatal code 0xC. An existing in-memory copy is dropped unless mode is 1, the
+   file is located (following the alias link when its record points at another entry), opened with
+   retry, and its directory entry recorded for a linked file (LookupFileEntry). Finally the first
+   free slot takes the handle (FILE_IN_MEMORY | index for a loaded file, else the DOS handle with
+   FILE_LINKED set) with the record's offset and length, and its index is returned. */
+/*@ 1C0E:00DB */ int FileOpen(char far *name, int mode)
+{
+    int fd;
+    int access;
+    int slot;
+    int found;
+    int i;
+
+    switch (mode) {
+    case 1:
+        if (!IsFileInMemory(name)) {
+            while (!CheckFile(name))
+                if (!RetryFile(2, name))
+                    return -1;
+            DropFile(name);
+        }
+        access = FILE_IN_MEMORY | O_RDONLY;
+        break;
+    case 2:
+        access = FILE_IN_MEMORY | O_WRONLY;
+        DeleteFile(name);
+        ResetFile(name);
+        /* fall through */
+    case 3:
+        if (!CheckFile(name))
+            while (!ResetFile(name))
+                if (!RetryFile(0, name))
+                    return -1;
+        if (mode == 3)
+            access = FILE_IN_MEMORY | O_RDWR;
+        break;
+    default:
+        RetryFile(1, name);
+        FatalError(0xc, name);
+        ShutdownGame();
+        break;
+    }
+
+    if (IsFileInMemory(name) && mode != 1) {
+        slot = FindLoadedFile(name);
+        MemFree(gFiles[slot].data);
+        gFiles[slot].data = 0;
+    }
+
+    if (!IsFileInMemory(name)) {
+        found = FindFile(name);
+        if (found != -1) {
+            if (gFiles[found].link < 0)
+                name = gFiles[gFiles[found].link & LINK_INDEX].name;
+            else
+                found = -1;
+        }
+        fd = open(name, access, S_IREAD | S_IWRITE);
+        while (fd == -1) {
+            fd = open(name, access, S_IREAD | S_IWRITE);
+            if (fd == -1)
+                if (!RetryFile(2, name))
+                    return -1;
+        }
+        if (found != -1) {
+            LookupFileEntry(fd, gFiles[found].name);
+            fd |= FILE_LINKED;
+        }
+    } else {
+        fd = FindLoadedFile(name);
+        gFiles[fd].pos = 0;
+        fd |= FILE_IN_MEMORY;
+    }
+
+    slot = MAX_FILES;
+    for (i = 0; i < MAX_FILES; i++)
+        if (gFileHandles[i] == SLOT_FREE) {
+            slot = i;
+            break;
+        }
+    if (slot == MAX_FILES)
+        FatalError(3, name);
+    gFileHandles[slot] = fd;
+    gSlotOffsets[slot] = gRecordOffset;
+    gSlotLengths[slot] = gRecordLength;
+    return slot;
+}
 
 /* 1C0E:03BB: close the file in slot `index`: report code 4 when the slot is already free, close
    the DOS handle unless the slot is loaded in memory, then mark the slot free. */
@@ -157,17 +246,171 @@ extern int gFileHandles[];               /*@ ds:FEEA: DOS handle or SLOT_FREE pe
     gFileHandles[index] = SLOT_FREE;
 }
 
-/*@ 1C0E:0400 stub */ void FileRead(int index, void far *buf, unsigned long len) { }
-/*@ 1C0E:0578 stub */ void FileWrite(int index, void far *buf, unsigned long len) { }
-/*@ 1C0E:06E5 stub */ void SeekFile(int index, long offset, int whence) { }
+/* 1C0E:0400: read up to `len` bytes from the file in cache slot `index` into `buf` and return the
+   number of bytes read (0 when a read failed). A file loaded in memory is copied through
+   1C0E:1240; a linked record (FILE_LINKED) is clamped to what is left of the record from the
+   current position. The bytes are read in 0xFA00 byte chunks, each buffer normalised through
+   1BA8:0072. DRAFT: everything matches except the codegen of the loop's `buf += n`; the original
+   adds `n` to the far offset in registers (1C0E:0519), TCC -O here folds it into an integer add to
+   the low word, no source form found yet. */
+/*@ 1C0E:0400 draft */ long FileRead(int index, char far *buf, unsigned long len)
+{
+    int handle;
+    unsigned long total;
+    long remaining;
+    long pos;
+    int n;
+
+    handle = gFileHandles[index];
+    if (handle == SLOT_FREE)
+        FatalError(5, 0);
+    if (handle & FILE_IN_MEMORY)
+        return ReadFromMemory(handle & HANDLE_MASK, buf, len);
+    if (handle & FILE_LINKED) {
+        pos = lseek(handle & HANDLE_MASK, 0, 1);
+        pos -= gSlotOffsets[index];
+        remaining = gSlotLengths[index] - pos;
+        if (len > remaining)
+            len = remaining;
+    }
+    handle &= HANDLE_MASK;
+    total = 0;
+    while (len > 0xfa00) {
+        buf = f1BA8_0072(buf);
+        n = read(handle, buf, 0xfa00);
+        len -= 0xfa00;
+        if (n == -1)
+            return 0;
+        total = total + n;
+        buf += n;
+    }
+    buf = f1BA8_0072(buf);
+    n = read(handle, buf, len);
+    if (n == -1)
+        return 0;
+    return total + n;
+}
+/* 1C0E:0578: write up to `len` bytes from `buf` to the file in cache slot `index` and return the
+   number of bytes written (0 on a short write). A file loaded in memory cannot be written (code 9);
+   a linked record (FILE_LINKED) is clamped to what is left of the record from the current position.
+   The bytes are written in 0xFA00 byte chunks, each buffer normalised through 1BA8:0072. DRAFT:
+   everything matches except the codegen of the loop's `buf` advance; the original adds the constant
+   to the far offset in AX (1C0E:067D), TCC -O here loads the segment into AX and the offset into DX,
+   so the add is one byte longer; no source form found yet. */
+/*@ 1C0E:0578 draft */ long FileWrite(int index, char far *buf, unsigned long len)
+{
+    int handle;
+    unsigned long total;
+    long pos;
+    long remaining;
+    unsigned n;
+
+    handle = gFileHandles[index];
+    if (handle == SLOT_FREE)
+        FatalError(6, 0);
+    if (handle & FILE_IN_MEMORY)
+        FatalError(9, 0);
+    if (handle & FILE_LINKED) {
+        pos = lseek(handle & HANDLE_MASK, 0, 1);
+        pos -= gSlotOffsets[index];
+        remaining = gSlotLengths[index] - pos;
+        if (len > remaining)
+            len = remaining;
+    }
+    handle &= HANDLE_MASK;
+    total = 0;
+    while (len > 0xfa00) {
+        buf = f1BA8_0072(buf);
+        n = write(handle, buf, 0xfa00);
+        if (n != 0xfa00)
+            return 0;
+        len -= 0xfa00;
+        total += 0xfa00;
+        buf = &buf[0xfa00];
+    }
+    buf = f1BA8_0072(buf);
+    n = write(handle, buf, len);
+    if (n != len)
+        return 0;
+    return total + len;
+}
+/* 1C0E:06E5: move the read/write position of the file in cache slot `index`. A file loaded in
+   memory has its slot position set (SEEK_SET clamps to the size, SEEK_CUR and SEEK_END add `offset`
+   and clamp to [0, size]) and the new position is returned; an open file lseeks, shifting `offset`
+   by the record's start and length for a linked record, and returns the result. `whence` 0, 1 and 2
+   are the runtime's SEEK_SET, SEEK_CUR and SEEK_END; any other reports code 8. DRAFT: the in-memory
+   SEEK_SET clamp and the non-memory branch lay the long comparisons out with the branches in the
+   other order; the values and control flow are right, no source form found yet. */
+/*@ 1C0E:06E5 draft */ long SeekFile(int index, long offset, int whence)
+{
+    register int handle;
+    int record;
+    long pos;
+    long result;
+
+    handle = gFileHandles[index];
+    if (handle == SLOT_FREE)
+        FatalError(7, 0);
+    if (handle & FILE_IN_MEMORY) {
+        record = handle & HANDLE_MASK;
+        pos = gFiles[record].pos;
+        switch (whence) {
+        case 0:
+            if (gFiles[record].size <= offset)
+                pos = gFiles[record].size;
+            else
+                pos = offset;
+            break;
+        case 1:
+            pos += offset;
+            if (pos > gFiles[record].size)
+                pos = gFiles[record].size;
+            if (pos < 0)
+                pos = 0;
+            break;
+        case 2:
+            pos = gFiles[record].size + offset;
+            if (pos > gFiles[record].size)
+                pos = gFiles[record].size;
+            if (pos < 0)
+                pos = 0;
+            break;
+        default:
+            FatalError(8, 0);
+            break;
+        }
+        gFiles[record].pos = pos;
+        return pos;
+    }
+    switch (whence) {
+    case 0:
+        if (handle & FILE_LINKED)
+            offset += gSlotOffsets[index];
+        result = lseek(handle & HANDLE_MASK, offset, 0);
+        break;
+    case 1:
+        result = lseek(handle & HANDLE_MASK, offset, 1);
+        break;
+    case 2:
+        if (handle & FILE_LINKED) {
+            offset -= gSlotOffsets[index];
+            offset += gSlotLengths[index];
+        }
+        result = lseek(handle & HANDLE_MASK, offset, 2);
+        break;
+    default:
+        FatalError(8, 0);
+        break;
+    }
+    return result;
+}
 /* 1C0E:091B: locate and verify the file `name` (upper cased in place) without caching it: follow a
    negative link in the slot's record to the name of the entry it aliases, find the file on one of
    the drives (1C0E:1310), open it and, for a positively linked record (link > 0), check its length
    against the record (a zero length in the record is always accepted); a wrong length reports code
    0xE, a missing file (open failed) reports 0xF. Returns 1 when the file is present and its length
-   is right. DRAFT: the logic and nearly every byte match, TCC -O lays the `if (index == -1)` exit
-   out as `je` where the original keeps a two-jump form; no source form found yet. */
-/*@ 1C0E:091B draft */ int CheckFile(char far *name)
+   is right. */
+/*@ 1C0E:091B */ int CheckFile(char far *name)
 {
     int index = -1;
     int fd;
@@ -181,7 +424,11 @@ extern int gFileHandles[];               /*@ ds:FEEA: DOS handle or SLOT_FREE pe
     fd = open(name, O_RDONLY | O_BINARY);
     if (fd == -1)
         FatalError(0xf, name);
-    if (index != -1 && gFiles[index].link > 0) {
+    if (index == -1) {
+        close(fd);
+        return 1;
+    }
+    if (gFiles[index].link > 0) {
         if (filelength(fd) != gFiles[index].size && gFiles[index].size != 0) {
             close(fd);
             FatalError(0xe, name);
@@ -234,10 +481,8 @@ extern int gFileHandles[];               /*@ ds:FEEA: DOS handle or SLOT_FREE pe
 
 /* 1C0E:0DC3: return the index of the loaded slot to evict for a `minSize` byte request: the one
    whose data is in memory, whose size is at least `minSize`, whose flags are at most `maxFlags`
-   and whose flags are the smallest of those candidates; -1 when there is none. DRAFT: the loops and
-   values are right, TCC -O lays the signed size compare (1C0E:0DC3+46) out with the branches in the
-   other order; no source form found yet. */
-/*@ 1C0E:0DC3 draft */ int FindEvictableFile(int minSize, unsigned char maxFlags)
+   and whose flags are the smallest of those candidates; -1 when there is none. */
+/*@ 1C0E:0DC3 */ int FindEvictableFile(int minSize, unsigned char maxFlags)
 {
     int count;
     int slot = -1;
@@ -249,22 +494,22 @@ extern int gFileHandles[];               /*@ ds:FEEA: DOS handle or SLOT_FREE pe
     for (i = 0; i < count; i++) {
         if (gFiles[i].data == 0)
             continue;
-        if (gFiles[i].size < minSize)
-            continue;
-        if (gFiles[i].flags > maxFlags)
-            continue;
-        if (slot == -1 || gFiles[i].flags < gFiles[slot].flags)
-            slot = i;
+        if (gFiles[i].size >= minSize) {
+            if (gFiles[i].flags <= maxFlags) {
+                if (slot == -1)
+                    slot = i;
+                else if (gFiles[i].flags < gFiles[slot].flags)
+                    slot = i;
+            }
+        }
     }
     return slot;
 }
 
 /* 1C0E:0E5B: first retry before the out-of-memory hook (src/E19BC.C): drop the in-memory copy of
    the least important slot that can hold a `size` byte request (1C0E:0DC3) and return 1; return 0
-   when no slot qualifies or any slot's handle happens to equal its own index. DRAFT: the code is
-   right but the three `return 0` tails that the original keeps apart and shares are folded into
-   inline zeros by TCC -O; no source form found yet. */
-/*@ 1C0E:0E5B draft */ int EvictFile(unsigned size, unsigned char flags)
+   when no slot qualifies or any slot's handle happens to equal its own index. */
+/*@ 1C0E:0E5B */ int EvictFile(unsigned size, unsigned char flags)
 {
     int i = 0;
     int slot;
@@ -279,13 +524,12 @@ extern int gFileHandles[];               /*@ ds:FEEA: DOS handle or SLOT_FREE pe
             blocked = 1;
             i = 10;
         }
-    if (blocked)
-        return 0;
-    if (i != 10)
-        return 0;
-    MemFree(gFiles[slot].data);
-    gFiles[slot].data = 0;
-    return 1;
+    if (!blocked && i == 10) {
+        MemFree(gFiles[slot].data);
+        gFiles[slot].data = 0;
+        return 1;
+    }
+    return 0;
 }
 
 /* 1C0E:0EE7: free every slot's in-memory copy and, for every slot still open, run the retry
@@ -305,7 +549,64 @@ extern int gFileHandles[];               /*@ ds:FEEA: DOS handle or SLOT_FREE pe
             RetryFile(0xb, 0);
 }
 
-/*@ 1C0E:0F6E stub */ void f1C0E_0F6E(void) { }
+/* 1C0E:0F6E: build the overlay cache table: mark every slot free, upper case every entry's name and
+   clear its memory copy, counting the entries flagged FLAG_KEEP; then allocate a table of their
+   indices and a table of their flag bits, fill them, sort them by flag bits (descending, the index
+   table moved in parallel), and for every kept entry check its index and drop it into memory
+   through 1C0E:144E. Nothing happens when no entry is flagged. Called by InitOverlayCache. DRAFT:
+   the logic is right, but the sort's two temporaries and the loop variables do not settle into the
+   original's stack slots (the frame here is two bytes short of the original's 0x14); no source form
+   found yet. */
+/*@ 1C0E:0F6E draft */ void BuildFileCache(void)
+{
+    int count;
+    register int i;
+    int n;
+    int j;
+    int k;
+    int far *keep;
+    char far *order;
+    int savedOrder;
+    int savedKeep;
+
+    count = 0;
+    for (i = 0; i < MAX_FILES; i++)
+        gFileHandles[i] = SLOT_FREE;
+    for (i = 0; gFiles[i].name[0] != 0; i++) {
+        strupr(gFiles[i].name);
+        gFiles[i].data = 0;
+        if (gFiles[i].flags & FLAG_KEEP)
+            count++;
+    }
+    if (count == 0)
+        return;
+    keep = MemAlloc(count * sizeof(int), 0);
+    order = MemAlloc(count, 0);
+    n = 0;
+    for (j = 0; j < i; j++)
+        if (gFiles[j].flags & FLAG_KEEP) {
+            keep[n] = j;
+            order[n] = gFiles[j].flags & FLAG_BITS;
+            n++;
+        }
+    for (k = count - 1; k >= 0; k--)
+        for (j = 0; j < k; j++)
+            if (order[j] < order[j + 1]) {
+                savedOrder = order[j];
+                savedKeep = keep[j];
+                order[j] = order[j + 1];
+                keep[j] = keep[j + 1];
+                order[j + 1] = savedOrder;
+                keep[j + 1] = savedKeep;
+            }
+    for (j = 0; j < count; j++) {
+        if (keep[j] < 0 || keep[j] >= i)
+            FatalError(0x11, 0);
+        LoadFileSlot(keep[j]);
+    }
+    MemFree(order);
+    MemFree(keep);
+}
 
 /* 1C0E:1161: 1 when the file `name` (upper cased in place) has an in-memory copy, 0 when it is not
    in the table or not loaded. */
@@ -400,7 +701,7 @@ extern int gFileHandles[];               /*@ ds:FEEA: DOS handle or SLOT_FREE pe
 {
     gSavedDrive = getdisk();
     FindLastDrive();
-    f1C0E_0F6E();
+    BuildFileCache();
 }
 
 /* 1C0E:13FD: the shutdown half of the overlay cache: free every loaded copy (1C0E:0EE7) and go
@@ -412,22 +713,75 @@ extern int gFileHandles[];               /*@ ds:FEEA: DOS handle or SLOT_FREE pe
 }
 
 /* 1C0E:1411: look `name` up; when the slot exists and its flags have 0x40 set, drop the slot
-   through 1C0E:144E and return 1, otherwise 0. DRAFT: the values are right, TCC -O folds the two
-   `return 0` tails into inline zeros where the original keeps one and falls through the other; no
-   source form found yet. */
-/*@ 1C0E:1411 draft */ int DropFile(char far *name)
+   through 1C0E:144E and return 1, otherwise 0. */
+/*@ 1C0E:1411 */ int DropFile(char far *name)
 {
     int index = FindFile(name);
 
     if (index == -1)
         return 0;
-    if (!(gFiles[index].flags & 0x40))
-        return 0;
-    f1C0E_144E(index);
-    return 1;
+    if (gFiles[index].flags & 0x40) {
+        LoadFileSlot(index);
+        return 1;
+    }
+    return 0;
 }
 
-/*@ 1C0E:144E stub */ int f1C0E_144E(int index) { }
+/* 1C0E:144E: load the file in cache slot `index` into memory. A slot with no size reports code 0x10;
+   the copy is allocated (through the free-block hook, evicting another slot first when the largest
+   free block is too small), the file is opened (through the aliased entry when the slot's link is
+   negative, recording the looked-up record length), its length is checked for a linked record, and
+   the bytes are read into the copy; the slot's data pointer is set and 1 is returned. A failed
+   allocation, open or read frees the copy and returns 0. DRAFT: every byte matches except the last
+   read's success/failure blocks, where the original reloads no far pointer and jumps over the
+   failure to a shared `mov ax,1` (1C0E:1603), one byte longer; no source form found yet. */
+/*@ 1C0E:144E draft */ int LoadFileSlot(int index)
+{
+    void far *data;
+    struct FileEntry far *entry;
+    struct FileEntry far *alias;
+    int fd;
+
+    data = 0;
+    entry = &gFiles[index];
+    if (entry->size <= 0) {
+        FatalError(0x10, entry->name);
+        return 0;
+    }
+    if (LargestFreeBlock() >= entry->size)
+        data = MemAlloc(entry->size, 0);
+    else
+        data = 0;
+    if (data == 0) {
+        if (!EvictFile(entry->size, entry->flags))
+            return 0;
+        data = MemAlloc(entry->size, 0);
+    }
+    if (entry->link > 0) {
+        fd = open(entry->name, 0x8001, 0x180);
+    } else {
+        alias = &gFiles[gFiles[index].link & LINK_INDEX];
+        fd = open(alias->name, 0x8001, 0x180);
+        entry->size = LookupFileEntry(fd, entry->name);
+    }
+    if (fd == -1) {
+        MemFree(data);
+        return 0;
+    }
+    if (entry->link > 0) {
+        if (filelength(fd) != entry->size) {
+            FatalError(0xe, entry->name);
+            return 0;
+        }
+    }
+    if (read(fd, data, entry->size) != entry->size) {
+        MemFree(data);
+        return 0;
+    }
+    entry->data = data;
+    close(fd);
+    return 1;
+}
 
 /* 1C0E:1645: return the index of the slot named `name` exactly, or -1. */
 /*@ 1C0E:1645 */ int FindFile(char far *name)

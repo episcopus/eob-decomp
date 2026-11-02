@@ -5672,6 +5672,9 @@ unit = "e1c0e"
 addr = "1C0E:000C"
 size = 58
 evidence = ["segment"]
+name = "SetFileSize"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "e1c0e_0046"
@@ -5699,6 +5702,9 @@ unit = "e1c0e"
 addr = "1C0E:00DB"
 size = 736
 evidence = ["far", "frame"]
+name = "FileOpen"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "e1c0e_03bb"
@@ -5737,6 +5743,9 @@ unit = "e1c0e"
 addr = "1C0E:091B"
 size = 282
 evidence = ["far", "frame"]
+name = "CheckFile"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "e1c0e_0a35"
@@ -5781,6 +5790,9 @@ unit = "e1c0e"
 addr = "1C0E:0DC3"
 size = 152
 evidence = ["near", "frame"]
+name = "FindEvictableFile"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "e1c0e_0e5b"
@@ -5789,6 +5801,8 @@ addr = "1C0E:0E5B"
 size = 140
 evidence = ["far", "near", "frame"]
 name = "EvictFile"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "e1c0e_0ee7"
@@ -5883,6 +5897,9 @@ unit = "e1c0e"
 addr = "1C0E:1411"
 size = 61
 evidence = ["far", "frame"]
+name = "DropFile"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "e1c0e_144e"
