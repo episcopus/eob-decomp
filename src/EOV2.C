@@ -87,7 +87,7 @@ extern struct ItemType gItemTypes[]; /*@ ds:A9F0 */
 extern struct ItemRec gItems[]; /*@ ds:8DD0 */
 extern struct Pos2 gCellPosL1[]; /*@ ds:64F8 */
 extern struct Pos2 gCellPosS1[]; /*@ ds:6534 */
-extern char gCellDX[]; /*@ ds:65AC */ /* four per-column y offsets added to a cell's y in LoadItemSheets (src/EOV2.C:268, :275, :282) */
+extern char gCellDX[]; /*@ ds:65AC */ /* four per-column y offsets added to a cell's y in LoadItemSheets (src/EOV2.C:269, :276, :283) */
 extern struct Size2 gCellSize1[]; /*@ ds:65B0 */
 extern struct Size2 gCellSize2[]; /*@ ds:65B8 */
 extern void far *gItemL1Icons[][4]; /*@ ds:EC9A */
@@ -99,12 +99,12 @@ extern void far *gThrownIcon2; /*@ ds:FB40 */
 extern void far *gThrownIcon3; /*@ ds:EFB4 */
 extern void far *gThrownIcon4; /*@ ds:EFBE */
 extern char gFileNameBuf[]; /*@ ds:FE6E */
-extern int gColour179; /*@ ds:0179 */ /* a text colour FindWordPanel copies from gF57E (src/EOV2.C:482); no reader in src/ yet */
+extern int gColour179; /*@ ds:0179 */ /* a text colour FindWordPanel copies from gF57E (src/EOV2.C:501); no reader in src/ yet */
 extern struct WordCell gWordCells[]; /*@ ds:65F0 */
-extern unsigned char g65C0[]; /*@ ds:65C0 */ /* the three per-column cell heights of the gIconTableA92A loop (src/EOV2.C:350) */
-extern unsigned char g65C3[]; /*@ ds:65C3 */ /* the three per-column cell y origins of the gIconTableA92A loop (src/EOV2.C:350) */
+extern unsigned char g65C0[]; /*@ ds:65C0 */ /* the three per-column cell heights of the gIconTableA92A loop (src/EOV2.C:357) */
+extern unsigned char g65C3[]; /*@ ds:65C3 */ /* the three per-column cell y origins of the gIconTableA92A loop (src/EOV2.C:357) */
 extern struct Cell4 gCellDef65C6[]; /*@ ds:65C6 */ /* the six decoration-cell rectangles LoadDecorateIcons cuts from gOverlayBuf */
-extern void far *gIntroCells[]; /*@ ds:F4BE */ /* the six decoration cells LoadDecorateIcons cuts from gOverlayBuf (src/EOV2.C:339); src/EOV4.C:955 indexes the table */
+extern void far *gIntroCells[]; /*@ ds:F4BE */ /* the six decoration cells LoadDecorateIcons cuts from gOverlayBuf (src/EOV2.C:346); src/EOV4.C:955 indexes the table */
 extern char far *gFlashFrames[]; /*@ ds:DD1C */ /* the flash-frame images src/E0EF3.C lays over a member, indexed by frame - 1 (src/E0EF3.C:356, :707, :773); that reader uses only the three entries at DD1C, DD20 and DD24 (the mask and shift give frames 1 to 3), and LoadDecorateIcons fills them; the next slot DD28 is the separate icon pointer gIconDD28 */
 extern char far *gIconDD28; /*@ ds:DD28 */ /* the icon table src/EOV1.ASM:87 draws member icons from, filled by LoadDecorateIcons at the slot after gFlashFrames */
 extern void far *gIconF2F4; /*@ ds:F2F4 */
@@ -116,7 +116,7 @@ extern int gItemNameCount; /*@ ds:F516 */
 extern unsigned char far gItemNames[]; /*@ 1F28:0000 */
 extern struct CharRec gChars[]; /*@ ds:F580 */
 extern void far *gIconsDDE4[]; /*@ ds:DDE4 */
-extern void far *gPtrDD00; /*@ ds:DD00 */ /* the mouse pointer image: gIconsDDE4[0], set by SetPointerShape (src/EOV2.C:213) and given to SetMousePointerShape (src/E1BB1.ASM:12) */
+extern void far *gPtrDD00; /*@ ds:DD00 */ /* the mouse pointer image: gIconsDDE4[0], set by SetPointerShape (src/EOV2.C:214) and given to SetMousePointerShape (src/E1BB1.ASM:12) */
 extern void far *gDF48; /*@ ds:DF48 */
 extern void far *gSegDF4E; /*@ ds:DF4E */
 extern char far *gBufF534; /*@ ds:F534 */
@@ -143,7 +143,7 @@ extern char gIconTable; /*@ ds:FB34 */ /* this unit and src/E0ACD.C:42, src/E141
 extern int gEFC8; /*@ ds:EFC8 */ /* a word cleared by InitGameTables; no other reader in src/ yet */
 extern int gEFCA; /*@ ds:EFCA */ /* a word cleared by InitGameTables; no other reader in src/ yet */
 extern void far *gB802[]; /*@ ds:B802 */ /* 36 far map-icon pointers (src/EOV3.C:146, freed at :390-401), cleared by InitGameTables */
-extern long gFB5E[]; /*@ ds:FB5E */ /* six far size-record pointers (src/EOV3.C:138), cleared by InitGameTables */
+extern long gFB5E[]; /*@ ds:FB5E */ /* six size-record pointers (src/EOV3.C:138 declares them longs; src/EOV4.C:756 declares them struct SlotSize far *), cleared by InitGameTables */
 extern struct SlotPos gA99C[]; /*@ ds:A99C */
 extern void far *gRectKinds[]; /*@ ds:EFD4 */ /* 200 far size-record pointers (src/EOV3.C:14, freed at :230-241; src/E122E.C:98 declares them struct RectKind far *), cleared by InitGameTables */
 extern char gBuf1CE7[]; /*@ ds:1CE7 */
@@ -162,7 +162,7 @@ extern unsigned char far gSheetITEMICN[]; /*@ 20A9:0000 */
    are the cell's origin on the sheet and w and h its width and height (the unit of the sheet
    coordinates is not established, src/E07A9.C:59-61); the cells differ in size, the ITEMICN item
    icons are 2 by 0x10 and the item and decoration sheets use widths 3 to 5 and heights 8 to 0x20
-   (src/EOV2.C:264-290, :338-347). Filled in at load time [H]. */
+   (src/EOV2.C:268-294, :346-357). Filled in at load time [H]. */
 extern void far * (far *gGetSpriteCell)(int x, int y, int w, int h, void far *sheet); /*@ ds:8086 */
 extern int (far *gFn8072)(int x, int y); /*@ ds:8072 */ /* saves the pixels under (x, y) and returns a handle (src/E0EF3.C:389) */
 extern void (far *gFillRect)(int x1, int y1, int x2, int y2, int colour); /*@ ds:806A */ /* the rectangle fill hook (src/E082C.C:63) */
