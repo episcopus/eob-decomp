@@ -1,7 +1,7 @@
 # Review: e1bbe
 
 Reviewer: rev-haiku
-Commit reviewed: 421cd1e7a31c20710200fe18247bdf159a34d76c (round 3, main; src/E1BBE.ASM is identical to the review branch at 8225102, which is on main). Round 2 was reviewed at 089dfd1 and round 1 at 0cfccb1 (see below). E1A72.ASM has moved on main since round 2 (commit e856ab9), which is why round 3 finds stale citations.
+Commit reviewed: 433dc71 for round 4 (main; src/E1BBE.ASM is unchanged since 5cfa933). Earlier: 421cd1e7a31c20710200fe18247bdf159a34d76c (round 3, main; src/E1BBE.ASM is identical to the review branch at 8225102, which is on main). Round 2 was reviewed at 089dfd1 and round 1 at 0cfccb1 (see below). E1A72.ASM has moved on main since round 2 (commit e856ab9), which is why round 3 finds stale citations.
 
 Playbook 70. Judge what a matching file can still get wrong: names, types, comments, structure.
 The matcher already proved the bytes; do not re-prove them, read for meaning.
@@ -10,6 +10,65 @@ The matcher already proved the bytes; do not re-prove them, read for meaning.
 
 Each finding is a checkbox. `must-fix` blocks `make review-pass` until a decompiler ticks it off
 (with the commit that fixes it); `should` and `note` do not block.
+
+### Round 4 (review of commit 433dc71, src/E1BBE.ASM unchanged since 5cfa933)
+
+Checked: `make match FILE=src/E1BBE.ASM` 7 of 7 (860 bytes), exit 0; `make readability UNIT=e1bbe` 0 findings; the
+round 3 fixes are in the code and their citations hold (E1A72.ASM:233-234 and :355-356 with the g80EC test at :353,
+E1BB1.ASM:130 before the size stores at :162-164, E1BF3.ASM:35). The call lists in build/packets/e1bbe.md match the
+Lock and Zone header claims (the Lock lists differ as the header says; the two Zone lists are identical). Each
+function's header was traced against its code path by path, including the jumps that skip the hide and show calls.
+
+- [ ] must-fix src/E1BBE.ASM:305-307 (HidePointerZone header): "Either way the hide call [ds:80AA], 1BBE:0002,
+  [ds:80A2] runs" is wrong. When the pointer's rectangle misses the argument rectangle, the compares at
+  src/E1BBE.ASM:356-363 jump to L02B6 (`jl`, `jg`, `jle`, `jg`), which skips the hide and the bracket at L029F
+  (:365-371). Only gPointerState = 8000h is left. The hide runs on the already-hidden path (:332 `jmp short L029F`)
+  and when the rectangles overlap (:364 sets 4000h, then falls into L029F). Say that; "either way" must go.
+- [ ] must-fix src/E1BBE.ASM:49, :297 and :305 (and the unit header, :11-13): bit 8000h is called "hidden" (the
+  `_gPointerState` declaration says "bit 8000 hidden"; the HidePointerZone header says "when the pointer is already
+  hidden (gPointerState bit 8000)" and "8000h (hidden)"). A disjoint zone hide (see the finding above) sets 8000h and
+  hides nothing, so the pointer is not hidden. The handler's own use shows the meaning: src/E1A72.ASM:365 tests 8000h
+  before the zone test (:367-372), and the in-zone path at 1A72:01EC then hides the pointer and sets 4000h
+  (:350). So 8000h means a zone hide is in force; 4000h means a redraw is owed at the show (set by the first hide
+  when the rectangles overlap, and by the handler's in-zone hide). Reword the three places.
+- [ ] should src/E1BBE.ASM:297-298 and :305-306: a repeat hide (the already-hidden path, :021E to :029F) runs the
+  hide without recomputing the rectangle or the overlap, so bit 4000h is decided by the first hide only. The show
+  balances the count first (:394-400), so the code is consistent; the header should say the overlap test is made
+  only at the first hide, so the reader does not take 4000h as per-hide.
+- [ ] should src/E1BBE.ASM:116 and :120 (HidePointer): the label `disabled` names the gMouseDisabled exit (:115-116),
+  but it is also the target of the no-buffer exit (`je disabled`, :120, taken when _gPointerBackSeg is zero).
+  Rename the label for both cases (a label rename changes no bytes; the matcher confirms).
+- [ ] should src/E1BBE.ASM:307 (HidePointerZone header, "always paired with 1BBE:02C2"): the packet call lists are
+  identical (build/packets/e1bbe.md: the same 14 callers for both), which supports "at the same call sites"; the code
+  does not show that every hide is followed by its show. "Always" is the overclaim round 2 removed from the Lock
+  comments. Soften it the same way.
+- [ ] should src/E1BBE.ASM:11-13 and :295-304 (zone wording): the zone is the caller's rectangle, not "the rectangle
+  the pointer was hidden over". src/E16A5.C:536 passes the node's box grown by the sprite size, and HidePointerZone
+  stores it with left and top reduced again by the sprite size (1BBE:0234-0272). Say "the zone (the caller's
+  rectangle)" in both headers.
+- [ ] should src/E1BBE.ASM:41 and :84 (gMouseDisabled, gDraw80C2): the bare spellings are still open from round 1, and
+  the other EXTRNs of C-declared globals in this unit carry the underscore (_gHideDepth for gHideDepth, _gSaveRect for
+  gSaveRect and _gRestoreRect, _gPointerBusy). The C declarations are src/E07A9.C:200 (gMouseDisabled) and
+  src/E1A29.C:57 (gDraw80C2). A bare EXTRN names a different symbol than the underscored one, so if these names are
+  linked as written they do not resolve. The matcher (cmatch) strips leading underscores, so it cannot tell. This is
+  a convention across E1A72, E1C00, E1BBE and E1BB1, not a matcher or spec question: the human should decide it
+  once; the unit should follow the decision.
+- [ ] note routed to the e1a72 owner: src/E1A72.ASM:85-86 and :292-293 say 8000h is "hidden over the hide zone", the
+  same wording as the finding above. Its header comments at :81-83, :88, :92 and :420 still cite E1BBE.ASM lines
+  (188, 193, 328-332, 338-339) that no longer hold the cited code; round 3 routed this and it is still open.
+- [ ] note routed (round 3, not rechecked this round): src/E1A29.C:50, :54, :73 and src/E1C00.ASM:41, :287 cite
+  E1BBE.ASM lines that have moved. Owners: e1a29, e1c00.
+- [ ] note still open from round 1, another owner: src/E07C8.C:37 still says "0 disables the mouse handler body";
+  the code and src/E07A9.C:200 say non-zero disables. Route to the E07C8 owner.
+- [ ] note names checked and supported this round: the far calls to g80AA (pushed g8172/g8174) and g80A2 (no
+  arguments) match src/E1BB1.ASM:195, :200 and src/E1A72.ASM:346, :349; the HidePointer and ShowPointer callers
+  (src/E1A72.ASM:348, :380-381; src/E1BF3.ASM:65-66; src/E1BB1.ASM:130, :198) match the header's list; gSaveRect and
+  gRestoreRect take (x, y, w, h, buf) as the pushes at :166-177 and :266-277 give, and as src/E1C0E.C:533, :576 and
+  src/E0BD2.C:622 call them; HidePointerZone's (left, top, right, bottom) matches src/E16A5.C:91; ShowPointerZone
+  matches src/E16A5.C:92 and :676; LockHidePointer and LockShowPointer match src/E14EF.C:44-45 ("start a frame",
+  "end a frame").
+- [ ] note _f1BBE_0001 stays a placeholder (its evidence is the segment start); the g80AA and g80A2 names rest on their
+  call sites, which the header says.
 
 ### Round 3 (review of commit 421cd1e, src/E1BBE.ASM at 8225102)
 
@@ -121,6 +180,14 @@ ShowPointerZone, LockHidePointer, LockShowPointer), and the prototypes in src/ w
 - [ ] note g80AA, g80A2 are names with no evidence beyond the call sites (the header says so). They are placeholders and fine as they are; g8172 and g8174 are the far pointer argument pair (src/E1A72.ASM:69-70).
 
 ## Summary
+
+Round 4 (433dc71). The unit's bytes and readability gates are clean, the round 3 fixes hold, and the names are
+supported by their callers and their evidence. Two statements are still wrong and block a pass: the HidePointerZone
+header says the hide call runs whether or not the rectangles overlap (a disjoint rectangle skips it), and bit 8000h
+is called "hidden" when a disjoint zone hide leaves the pointer visible (the handler uses it as "zone in force").
+Shoulds: the repeat-hide and 4000h wording, the `disabled` label used for two exits, "always paired" in the Zone
+header, the zone wording, and the open bare-EXTRN spelling (a convention the human should decide across units).
+Result: review-failed. The decompiler fixes the two must-fix items, then hands off again.
 
 Round 3 (421cd1e). The unit is understandable from its source: the names are supported by their callers and their
 evidence, the prototypes in src/ agree, and the bytes and readability gates are clean. Three statements are still
