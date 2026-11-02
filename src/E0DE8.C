@@ -619,4 +619,20 @@ fail:
     return value;
 }
 
-/*@ 0DE8:101A stub */ void f0DE8_101A(void) {}
+/* 0DE8:101A: applies the status effect `mask` to character `who` and announces it. It returns
+   early when the m01 bit is already set and `flag` is nonzero, or when the f0D1C_059B(who, attack)
+   check succeeds, otherwise ORs `mask` into m01, arms ApplyCharEffect(who, count * 0x222, value, 1)
+   and formats "%s is %s!" with the character's name and `text`. Called by 08E6:0765, 08E6:10F3
+   and 0BD2:0D2D. */
+/*@ 0DE8:101A */ void f0DE8_101A(int who, int mask, char far *text, int attack, int count,
+                                 int value, int flag)
+{
+    if ((gChars[who].m01 & mask) != 0 && flag != 0)
+        return;
+    if (f0D1C_059B(who, attack))
+        return;
+    gChars[who].m01 |= mask;
+    ApplyCharEffect(who, count * 0x222, value, 1);
+    sprintf(gFileNameBuf, "%s is %s!\r", gChars[who].name, text);
+    DrawText(gFileNameBuf);
+}
