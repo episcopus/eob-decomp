@@ -28,7 +28,7 @@ extern void (far *gPutPixel)(int x, int y, int color);              /*@ ds:1F2A 
 extern void (far *gSetPalette)(char far *palette);                  /*@ ds:1F46 */
 
 /* Globals of this unit's DGROUP (INTRO.EXE, paragraph 0E9F). */
-extern int gGraphicsMode;               /*@ ds:1F8E */
+extern int gGraphicsChoice;             /*@ ds:1F8E */  /* the graphics choice: argv[1][0] + 1 then 0x31 less (0892:0010, 0892:0258) */
 extern int gDrawPage;                   /*@ ds:1FA1 */
 extern long gFrameDelay;                /*@ ds:2326 */
 extern int gAbort;                      /*@ ds:2D1C */
@@ -53,21 +53,22 @@ extern void FileClose(int index); /*@ 0B5D:03B1 */
 extern void Unpack4(char far *src, void far *dst, int len); /*@ 0CE9:0009 */
 
 /* The sound driver. The INTRO addresses differ from EOB's (0000:400C -> 0000:43E7, 1948:0418
-   -> 084A:0417); the names are the EOB ones (src/E177D.C:129, src/E1948.ASM:41). */
-extern unsigned char far *gSoundMap;    /*@ ds:28A0 */  /* the game-number to driver-number map */
-extern int gSoundCard;                  /*@ ds:28C6 */  /* 1 AdLib, 2 PC speaker, 3 Tandy */
+   -> 084A:0417). The routine names follow EOB's 177D:0070 and 1948:0418; gSoundBuf and
+   gSoundChoice are the names the front end gives them (0892:06D1, 0892:06A9). */
+extern unsigned char far *gSoundBuf;    /*@ ds:28A0 */  /* the game-number to driver-number map */
+extern int gSoundChoice;                  /*@ ds:28C6 */  /* 1 AdLib, 2 PC speaker, 3 Tandy */
 extern unsigned char gTandyOn;          /*@ ds:289B */  /* the PC speaker / Tandy driver select */
 extern void QueueSound(int sound);      /*@ 0000:43E7 */
 extern void far *GetSoundData(int idx); /*@ 0000:03E3 */
 extern void StartSound(void far *routine); /*@ 084A:0417 */
 extern void SoundDriverResume(void);    /*@ 084A:0457 */
 
-/* The palette and image buffers of this unit's DGROUP. gPalette is a far pointer the front end
+/* The palette and image buffers of this unit's DGROUP. gPaletteBuf is a far pointer the front end
    allocates and fills (i0892:05A2..061A); gOverlayBuf and gCopyBuf are the DGROUP buffers
    f19EC_002A hands to its copy handler, EOB.EXE's gOverlayBuf at ds:113F: ovl0:2A99 passes
    gOverlayBuf and ovl0:003A passes gCopyBuf (ds:1BEA) for the title copy and gOverlayBuf
    (ds:1C0A, 32 bytes into the same zeroed region) for the text copy. */
-extern unsigned char far *gPalette;     /*@ ds:2D42 */
+extern unsigned char far *gPaletteBuf;     /*@ ds:2D42 */
 extern unsigned char gOverlayBuf[];     /*@ ds:1C0A */
 extern unsigned char gCopyBuf[];        /*@ ds:1BEA */
 extern unsigned char gEgaPalette[16];   /*@ ds:19E7 */
@@ -125,13 +126,13 @@ void PlayIntroSequence(void);
 void PlayLogoSequence(void);
 
 /* ovl0:0000: the introduction overlay's entry point. Clears the abort flag, for the two
-   non-VGA modes (gGraphicsMode 1 and 2) starts the driver through ds:1EE2 and applies the
+   non-VGA modes (gGraphicsChoice 1 and 2) starts the driver through ds:1EE2 and applies the
    fixed palette at ds:19E7, plays the logo sequence (ovl0:2A99), then the scenes
    (ovl0:003A) unless a key aborted the intro. */
 /*@ ovl0:0000 */ void RunIntro(void)
 {
     gAbort = 0;
-    if (gGraphicsMode == 1 || gGraphicsMode == 2) {
+    if (gGraphicsChoice == 1 || gGraphicsChoice == 2) {
         gUnknown1EE2();
         gSetPalette(gEgaPalette);
     }
@@ -142,7 +143,7 @@ void PlayLogoSequence(void);
 
 /* ovl0:003A: plays the title card and then every scene. It sets the intro's driver flag
    (ds:1F76 bit 0), draws on page 0 and holds the title for 120 ticks: the TITLE-V card on the
-   VGA mode (gGraphicsMode 3), TITLE-E otherwise, then the WESTWOOD palette, sound 2, the
+   VGA mode (gGraphicsChoice 3), TITLE-E otherwise, then the WESTWOOD palette, sound 2, the
    buffer copies and the dissolve from page 2 to page 0. Then TEXT.CMP, another copy and a
    6-tick wait. Each of the eight scene functions follows guarded by the abort flag, so a key
    during a wait skips the rest of the intro. */
@@ -151,7 +152,7 @@ void PlayLogoSequence(void);
     gDriverState |= 1;
     gDrawPage = 0;
     gFrameDelay = 0x78;
-    if (gGraphicsMode != 3)
+    if (gGraphicsChoice != 3)
         LoadPackedImage("TITLE-E.CMP", 3, 5);
     else
         LoadPackedImage("TITLE-V.CMP", 3, 5);
@@ -424,16 +425,16 @@ void PlayLogoSequence(void);
             }
         }
 }
-/* ovl0:2A4E: reads a 768-byte .COL palette file into gPalette and applies it, only on the VGA
-   mode (gGraphicsMode 3). The first colour (black) is cleared and one frame is waited before
+/* ovl0:2A4E: reads a 768-byte .COL palette file into gPaletteBuf and applies it, only on the VGA
+   mode (gGraphicsChoice 3). The first colour (black) is cleared and one frame is waited before
    the driver is given the palette, so the screen blanks first. */
 /*@ ovl0:2A4E */ void LoadPalette(char far *name)
 {
-    if (gGraphicsMode == 3) {
-        LoadFile(name, gPalette, 0x300);
-        gPalette[0] = gPalette[1] = gPalette[2] = 0;
+    if (gGraphicsChoice == 3) {
+        LoadFile(name, gPaletteBuf, 0x300);
+        gPaletteBuf[0] = gPaletteBuf[1] = gPaletteBuf[2] = 0;
         WaitFrame();
-        gSetPalette(gPalette);
+        gSetPalette(gPaletteBuf);
     }
 }
 /* ovl0:2A99: plays the Westwood logo card: loads WESTWOOD.CMP into the buffer slots 5/3,
@@ -543,12 +544,12 @@ void PlayLogoSequence(void);
 }
 
 /* ovl0:2D4E: plays the game sound numbered `sound` (the argument is an index, not a driver
-   number). The driver number comes from gSoundMap (a byte; 0xFF means silence). gSoundCard
+   number). The driver number comes from gSoundBuf (a byte; 0xFF means silence). gSoundChoice
    selects the path: 1 (AdLib) queues the driver number and returns, 2 (PC speaker) and 3
    (Tandy) start the speaker routine the low seven bits select through GetSoundData; an
    unknown card does nothing. On the Tandy path a nonzero driver number resumes the driver
    only while gTandyOn is clear. This is the EOB PlaySound (src/E177D.C:166) with a one-based
-   gSoundCard, without the sound-on test and the 0x96 map cutoff.
+   gSoundChoice, without the sound-on test and the 0x96 map cutoff.
    The map byte is kept both in mapByte and, zero extended, in driverSound (SI), which is why
    the index and the later tests share a register; the EOB twin keeps only the int.
    QUIRK 2DB4: like the EOB code the `driverSound < 0` test is dead (the map byte is zero
@@ -560,11 +561,11 @@ void PlayLogoSequence(void);
     void far *routine;
 
     driverSound = sound;
-    mapByte = gSoundMap[driverSound];
+    mapByte = gSoundBuf[driverSound];
     if (mapByte == 0xFF)
         mapByte = 0;
     driverSound = mapByte;
-    switch (gSoundCard) {
+    switch (gSoundChoice) {
     case 1:
         QueueSound(driverSound);
         return;

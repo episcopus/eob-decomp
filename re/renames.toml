@@ -2178,3 +2178,39 @@ new = "LoadIntroScreen"
 kind = "function"
 why = "ovl2:078D loads the INTRO screen into gOverlayBuf, draws two option-panel frames and clips the region; it slices no sprite cells. The icon slicer is LoadDecorateIcons at ovl2:0577"
 date = "2026-11-02"
+
+[[rename]]
+id = "intro/ds:28A0=gSoundBuf"
+addr = "intro/ds:28A0"
+old = "gSoundMap"
+new = "gSoundBuf"
+kind = "global"
+why = "I0892.C (already merged) declares intro/ds:28A0 as gSoundBuf, the 120-byte buffer StartupGame allocates and FileRead fills (SOUND_MAP_SIZE 0x78); IOV0.C called it gSoundMap, so one address keeps one name across src/"
+date = "2026-11-02"
+
+[[rename]]
+id = "intro/ds:28C6=gSoundChoice"
+addr = "intro/ds:28C6"
+old = "gSoundCard"
+new = "gSoundChoice"
+kind = "global"
+why = "I0892.C (already merged) declares intro/ds:28C6 as gSoundChoice (atol(argv[2]); 1 AdLib, 2 PC speaker, 3 Tandy); IOV0.C called it gSoundCard, so one address keeps one name across src/"
+date = "2026-11-02"
+
+[[rename]]
+id = "intro/ds:2D42=gPaletteBuf"
+addr = "intro/ds:2D42"
+old = "gPalette"
+new = "gPaletteBuf"
+kind = "global"
+why = "I0892.C (already merged) declares intro/ds:2D42 as gPaletteBuf, the palette buffer StartupGame allocates and main loads palette.col into; IOV0.C called it gPalette, so one address keeps one name across src/"
+date = "2026-11-02"
+
+[[rename]]
+id = "intro/ds:1F8E=gGraphicsChoice"
+addr = "intro/ds:1F8E"
+old = "gGraphicsMode"
+new = "gGraphicsChoice"
+kind = "global"
+why = "I0892.C (already merged) declares intro/ds:1F8E as gGraphicsChoice (argv[1][0] + 1, reduced by 0x31 to the graphics choice); IOV0.C called it gGraphicsMode, so one address keeps one name across src/. make rename declines this name because EOB.EXE's ds:8102 already uses it for the same concept in another program"
+date = "2026-11-02"
