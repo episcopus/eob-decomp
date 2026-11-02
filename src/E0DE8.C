@@ -339,7 +339,32 @@ fail:
     return -1;
 }
 
-/*@ 0DE8:0474 stub */ void f0DE8_0474(void) {}
+/* 0DE8:0474: moves a carried item into gChars[who].m77[slot]. With `flag` set and the special
+   slot m77[16] occupied, it takes that slot's item through f0BD2_02B9 (key 0, item -1). Otherwise
+   it scans slots 24 down to 22 for the first occupied item whose gTable8DD2 m02 is not `type` (or
+   `type` is -1) and moves that item to `slot`, clearing the source. Called by 0DE8:0537.
+   DRAFT: matches except one reload of `item` before the m02 expression (ours mov ax,[bp-2],
+   original keeps the array load in AX). */
+/*@ 0DE8:0474 draft */ void f0DE8_0474(int who, int slot, int type, int flag)
+{
+    int i;
+    int item;
+
+    if (flag != 0 && gChars[who].m77[16] != 0) {
+        gChars[who].m77[slot] = f0BD2_02B9(&gChars[who].m77[16], 0, -1);
+    } else {
+        for (i = 0x18; i >= 0x16; i--) {
+            item = gChars[who].m77[i];
+            if (item == 0)
+                continue;
+            if (gTable8DD2[item].m02 == type && type != -1)
+                continue;
+            gChars[who].m77[slot] = item;
+            gChars[who].m77[i] = 0;
+            break;
+        }
+    }
+}
 /*@ 0DE8:0537 stub */ void f0DE8_0537(void) {}
 /*@ 0DE8:05BB stub */ void f0DE8_05BB(void) {}
 /*@ 0DE8:0763 stub */ void f0DE8_0763(void) {}
