@@ -96,16 +96,17 @@ extern unsigned gSegsFC0C[]; /*@ ds:FC0C */
    StartupAlloc sets it to 0 at 07A9:00E6, after its five allocations, so they are no longer
    counted: Purpose unknown. */
 extern unsigned g810E; /*@ ds:810E */
-extern void far *gA9C0; /*@ ds:A9C0 */  /* the 6x6 font loaded from FONT6.FNT (src/E07C8.C:48,
-                                           loaded at 07C8:0252) */
-extern int g811F; /*@ ds:811F */  /* the current window's record index (src/E1DE7.C:45); FindWordPanel
-                                     saves it (src/EOV2.C:476) and indexes gRegions[g811F] with it
-                                     (src/EOV2.C:489-492, 517-520) */
+extern void far *gA9C0; /*@ ds:A9C0 */  /* the 6x6 font loaded from FONT6.FNT (src/E07C8.C:48 and
+                                           :252, the call at 07C8:0419, the store at 07C8:0420) */
+extern int g811F; /*@ ds:811F */  /* this unit tests it as 7 to gate the " taken." message
+                                     (07A9:011E, 0123); FindWordPanel saves it (src/EOV2.C:476) and
+                                     indexes gRegions[g811F] with it (src/EOV2.C:489-492, 517-520) */
 extern struct Entry14 gTable8DD2[]; /*@ ds:8DD2 */
 extern int gMouseDisabled; /*@ ds:814A */  /* nonzero disables the mouse pointer code: the test at
                                               07A9:0148 (`cmp [814A],0; je`) runs SetMouseItem's body
-                                              when zero. main sets it before StartupAlloc: 1 when there
-                                              is no mouse handler, else !mouse (src/E07C8.C:154-156);
+                                              when zero. main sets it before StartupAlloc: 1 when
+                                              !gMouseHandlerInstalled, else !mouse
+                                              (src/E07C8.C:153-156);
                                               src/E0D1C.C:110 says the same */
 extern int gFBCE; /*@ ds:FBCE */  /* the item index shown by the mouse (src/E0D1C.C:109); SetCurrentItem
                                      stores it (0D1C:0311) */
@@ -161,12 +162,12 @@ extern void SetUnpackBuffer(unsigned seg, unsigned size); /*@ 1B82:0217 */
 extern void LoadItemData(void); /*@ 2106:002A */
 extern void f1A47_0169(char far *font); /*@ 1A47:0169 */
 /* the overlay entry at stub 2106:0048 resolves to ovl2:0577 LoadDecorateIcons (src/EOV2.C:328), which
-   leads to the ITEMRMP read (ovl2:0484, via ovl2:0171; docs/design/WHITEPAPER.md, the ITEMRMP.VGA/EGA
+   leads to the ITEMRMP read (ovl2:047F, via ovl2:0171; docs/design/WHITEPAPER.md, the ITEMRMP.VGA/EGA
    row). The stub is named after its target, like LoadItemData above. */
 extern void LoadDecorateIcons(void); /*@ 2106:0048 */
 extern void RunMapLoop(void); /*@ 0ACD:0E8A */
 extern void SetCurrentItem(int n); /*@ 0D1C:0304 */
-/* 0BD2:05B5 tests the item flag bit 0x40 (src/E0BD2.C:14-15). Called at 07A9:0126 with the item
+/* 0BD2:05B5 tests the item flag bit 0x40 (src/E0BD2.C:15-16). Called at 07A9:0126 with the item
    index, just before the " taken.\r" message (07A9:012D), when g811F == 7. Purpose unknown. */
 extern void DrawItemName(int n); /*@ 0BD2:05B5 */
 extern void DrawText(char far *text); /*@ 1DE7:060A */
@@ -207,7 +208,7 @@ extern void SetMousePointerShape(int hotX, int hotY, void far *icon); /*@ 1BB1:0
         ;
     gFB45 = 0;
     /* of the five start-up allocations only this block asks for flag 0x20 (the other four pass 0;
-       0x20 also appears in src/E07C8.C:211-247 and src/E1B82.C:114, 122 (Unpack)): E19BC.C:56-59 turns it
+       0x20 also appears in src/E07C8.C:211-247 and src/E1B82.C:140, 148 (Unpack)): E19BC.C:56-59 turns it
        into an offset-0 block, the block shape E1B82.C:18-22 describes for the work buffer. Why
        this block alone gets the flag is Purpose unknown. */
     gBuf8DCA = MemAlloc(7500L, MEMALLOC_ALIGNED);
@@ -259,7 +260,7 @@ extern void SetMousePointerShape(int hotX, int hotY, void far *icon); /*@ 1BB1:0
                 /* QUIRK 07A9:0184: when g8102 == 0 the argument is the one-byte literal at
                    ds:0090, a dummy. g8102 only chooses the ITEMRMP name, "VGA" (ds:6790) when
                    it is 3 and "EGA" (ds:6794) otherwise (ovl2:0432..0446); the ITEMRMP read
-                   itself (ovl2:0478) has no branch on g8102. Why g8102 == 0 gets the dummy is
+                   itself (ovl2:047F) has no branch on g8102. Why g8102 == 0 gets the dummy is
                    Purpose unknown. */
                 gFn80D2("");
             TranslateImage(gIconsDDE4[item], gDF48, g80E2, g8102);
