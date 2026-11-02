@@ -1,19 +1,23 @@
 /* Unit at EOB.EXE 14EF:0007 (1410 bytes, 6 functions): the shared option-list panel the overlays
    show for the in-game menus. A panel is a 16-byte record at ds:017F (the array size is not
-   established) giving its x and y offsets from the origin ds:FE64/ds:FE66, its size in characters,
-   the selected row and two colours. The caller passes the array of far strings to show, a 32-bit
-   mask of the selectable entries and a shift for that mask. FindMaskBit (14EF:0007) returns the
-   n-th set bit of the mask; CountMaskBits (14EF:0107) counts the set bits of a range;
-   IsPointInRect (14EF:00E1) is the point-in-rectangle test; BlinkText (14EF:0078) flashes one entry
-   between two colours; DrawOptionList (14EF:0154) lays the list out and draws it; UpdateOptionList
-   (14EF:0274) reads a key or a click and moves the selection. The 16-byte stride and field offsets
-   come from DrawOptionList (14EF:0154): it reads y at :169, x at :170, sel at :171 and height at
-   :172; the mask and shift come from the callers. Every caller in src/ passes mask 0xffffffff and
-   shift 0 (src/EOV0.C:786, :787; src/EOV2.C:380, :383), so FindMaskBit always takes its
-   all-ones shortcut (its bit scan is reached by no known caller) and CountMaskBits is reached only
-   from the two stub callers ovl0:207A and ovl0:2238 (src/EOV0.C:809-810), which pass shift 0 with
-   n 15 and 9 (overlay disassembly at ovl0:20DD and ovl0:228E). The flags and the build through the
-   assembler (`-B`) are whitepaper 2.1.1. Placeholder names. */
+   established) giving its x and y offsets from the origin ds:FE64/ds:FE66, its width in characters
+   and height in lines, the selected row and two colours. The caller passes the array of far strings
+   to show, a 32-bit mask of the selectable entries and a shift for that mask. FindMaskBit
+   (14EF:0007) returns the n-th set bit of the mask; CountMaskBits (14EF:0107) counts the set bits of
+   a range; IsPointInRect (14EF:00E1) is the point-in-rectangle test; BlinkText (14EF:0078) flashes
+   one entry between two colours; DrawOptionList (14EF:0154) lays the list out and draws it;
+   UpdateOptionList (14EF:0274) reads a key or a click and moves the selection. The 16-byte stride
+   and field offsets come from DrawOptionList (14EF:0154), which reads y at :169, x at :170, sel at
+   :171 and height at :172, and from UpdateOptionList (14EF:0274), which reads width at :260 and
+   colorA/colorB at :252-253; DrawOptionList also reads colorA/colorB at :177, :179. The mask and
+   shift come from the callers. PickOption (src/EOV0.C:1148, :1149) and LoadGamePanel
+   (src/EOV2.C:380, :383) pass the all-ones mask 0xffffffff with shift 0, the case FindMaskBit
+   returns n for at once; PickClass (src/EOV0.C:1203, :1215) and PickAlignment (src/EOV0.C:1253,
+   :1257) pass gTable6081[race] & mask and gTable6099[classIndex] & mask with shift 0, masks other
+   than -1 (mask -5 when a party member has align >= 6, :1189-1190; mask 0xfe3f when one has m20 ==
+   2, :1241-1242), so FindMaskBit's bit scan is reached in play. CountMaskBits is called by PickClass
+   with n 15 (:1193) and PickAlignment with n 9 (:1244), both with shift 0 (see its comment). The
+   flags and the build through the assembler (`-B`) are whitepaper 2.1.1. Placeholder names. */
 
 /*@flags -ml -O -Z -B */
 
@@ -44,7 +48,9 @@ extern struct Panel gPanels[]; /*@ ds:017F */
 extern int gTextLeft; /*@ ds:FE64 */
 extern int gTextTop; /*@ ds:FE66 */
 extern int gFC78; /*@ ds:FC78: extra pixels between lines, written by DrawOptionList, read by UpdateOptionList */
-extern int gFC7A; /*@ ds:FC7A: the key UpdateOptionList did not handle; written here, its reader is not yet identified */
+extern int gFC7A; /*@ ds:FC7A: the key UpdateOptionList did not handle; its reader is PickAlignment
+                     (src/EOV0.C:1259, :1261), which tests it for 0x6e/0x32 and 0x41/0x42 before
+                     IsPointInRect on the last click g8140/g8142 (:1262) */
 extern int g5D1A; /*@ ds:5D1A: nonzero lets the pointer position pick the entry in UpdateOptionList and
                       makes DrawOptionList draw the selected row in colorB (:178) */
 extern int g8140; /*@ ds:8140: x of the last click, tested by UpdateOptionList */
@@ -125,9 +131,12 @@ extern void WaitFrames(int n); /*@ 1A16:000B */
 
 /* 14EF:0107: the number of set bits of `mask` among bit numbers shift..shift+n-1. Returns n when
    every bit is set (-1L), the "all selectable" case. The bit test uses the 16-bit `1 << (i + shift)`
-   (`i` is an int, so 1 << 16 is 0 and bits 16 and up are never counted); the two external callers
-   ovl0:207A and ovl0:2238 pass shift 0 with n 15 and 9 (overlay disassembly at ovl0:20DD and
-   ovl0:228E), so i + shift stays below 16 and the 16-bit form is safe. */
+   (`i` is an int, so 1 << 16 is 0 and bits 16 and up are never counted); its src/ callers PickClass
+   (src/EOV0.C:1193) and PickAlignment (src/EOV0.C:1244) pass shift 0 with n 15 and 9 (the overlay
+   disassembly at ovl0:20DD `mov ax,0xf` and ovl0:228E `mov ax,9` is a second witness), so i + shift
+   is at most 14 and the 16-bit form is safe for them. QUIRK 14EF:0107: a call that did reach bit 15
+   would test the int `1 << 15` (-32768, sign-extended to 0xFFFF8000 in the long AND), so that bit
+   would count as "any of bits 15 to 31", not bit 15 alone; a port must keep it. */
 /*@ 14EF:0107 */ int CountMaskBits(int n, long mask, int shift)
 {
     int i;
@@ -215,8 +224,8 @@ enum {
    cursor (ds:8138/813A), when ds:5D1A lets the pointer pick and the mouse is enabled
    (!gMouseDisabled, :262). The rectangle uses the font width, so it agrees with DrawOptionList's
    eight-pixel cells only while the cell is eight pixels wide. `counter` is a placeholder: it is
-   bumped once and never read; `extra` is never read. Both callers pass a long zero (0L), which fills
-   the same four bytes as this int pair (src/EOV0.C:787; src/EOV2.C:383). */
+   bumped once and never read; `extra` is never read. Every caller passes a long zero (0L), which
+   fills the same four bytes as this int pair (src/EOV0.C:1149, :1215, :1257; src/EOV2.C:383). */
 /*@ 14EF:0274 */ int UpdateOptionList(int panel, char far * far *names, int counter, int extra,
                                    long mask, int shift)
 {
