@@ -1386,3 +1386,12 @@ new = "gAllocCount"
 kind = "global"
 why = "net allocation counter: MemAlloc adds one per successful allocation (src/E19BC.C:97) and MemFree subtracts one on every call (src/E19BC.C:120), and StartupAlloc clears it (src/E07A9.C:242); what reads the count is unknown, so the name says what it holds"
 date = "2026-11-01"
+
+[[rename]]
+id = "ds:5E2A=gSoundReg1"
+addr = "ds:5E2A"
+old = "gSoundAmp"
+new = "gSoundReg1"
+kind = "global"
+why = "the value read from register 1 of the recorded sound gCurSound (177D:0182 to 0191), written back to register 1 of gPrevSound on the next call (177D:0156 to 0167 through 0000:03B0); Purpose unknown: 177D:01DA writes driver register 1 with the value 20h - gCurAttenuation, and what that value means is not known. Named gSoundReg1, not gSoundAmp, because the bytes do not show an amplitude"
+date = "2026-11-01"

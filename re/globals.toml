@@ -138,8 +138,8 @@ why = "the value read from register 3 of the recorded sound gCurSound (177D:0170
 
 [[global]]
 id = "ds:5E2A"
-name = "gSoundAmp"
-why = "the value read from register 1 of the recorded sound gCurSound (177D:0182 to 0191), written back to register 1 of gPrevSound on the next call (177D:0156 to 0167 through 0000:03B0); Purpose unknown: the AdLib write is 20h - gCurAttenuation (177D:01DA), and 20h is the OPL register block 20h (waveform and multiplier), not clearly an amplitude"
+name = "gSoundReg1"
+why = "the value read from register 1 of the recorded sound gCurSound (177D:0182 to 0191), written back to register 1 of gPrevSound on the next call (177D:0156 to 0167 through 0000:03B0); Purpose unknown: 177D:01DA writes driver register 1 with the value 20h - gCurAttenuation, and what that value means is not known. Named gSoundReg1, not gSoundAmp, because the bytes do not show an amplitude"
 
 [[global]]
 id = "ds:FBCA"
