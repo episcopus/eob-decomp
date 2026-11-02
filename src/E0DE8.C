@@ -12,7 +12,9 @@
 /*@flags -ml -O -Z */
 
 struct CharRec {            /* the 243-byte (0xF3) character records at ds:F580; see src/E0A72.C */
-    char pad00[0x0D];
+    char pad00;
+    unsigned char m01;      /* +01: status bits (0D1C:0670, 0DE8:09B9) */
+    char pad02[0x0D - 0x02];
     signed char m0D;        /* +0D */
     char pad0E;
     signed char m0F;        /* +0F */
@@ -156,7 +158,7 @@ extern int f0EF3_04F7(int who); /*@ 0EF3:04F7 */
 extern void f08E6_0FBE(struct Obj28 far *obj, int n); /*@ 08E6:0FBE */
 extern void f0EF3_12A1(void far *arg, int n); /*@ 0EF3:12A1 */
 extern void f0EF3_0F86(void far *arg); /*@ 0EF3:0F86 */
-extern void ApplyCharEffect(char who, int a, long b, char c, char d); /*@ 1414:05ED */
+extern void ApplyCharEffect(char who, long interval, char value, char firstEmpty); /*@ 1414:05ED */
 extern void f1547_0991(int dir); /*@ 1547:0991 */
 extern void f1547_033F(int who); /*@ 1547:033F */
 extern void f1547_0544(int who); /*@ 1547:0544 */
@@ -170,7 +172,7 @@ extern void DelaySeconds(int n); /*@ 082C:0B43 */
 extern void ShutdownGame(void); /*@ 07C8:058A */
 extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
 
-int f0DE8_09B9(int who, int what);  /* forward: 01FF reaches it with a far call */
+void f0DE8_09B9(int who, int what);  /* forward: 01FF reaches it with a far call */
 
 /* 0DE8:0007: the to-hit roll of character `who` against object `obj`. It derives an attack bonus
    from the item `slot` (the m02 kind selects the m0B weapon value when it is 1..3), adds either
@@ -477,7 +479,54 @@ fail:
     ShutdownGame();
 }
 
-/*@ 0DE8:09B9 stub */ int f0DE8_09B9(int who, int what) { return 0; }
+/* 0DE8:09B9: applies `amount` points of damage to character `who`. When f0D1C_0670(who, 3) holds
+   it derates mE2 (clamped at 0), subtracts from hp, stores the amount in mE7, and at or below -10
+   sets hp to -10, clears mE2, clears mE3 bit 2 and keeps only bit 0 of m01; it plays sound 0x16
+   for the death and 0x15 otherwise, runs the mDF descending effect through f0EF3_0F86 when it runs
+   out, redraws through f1547_0991 (or f1547_0544 when gFB44 is set), triggers the party-wipe
+   ending when hp is at or below -10 and arms ApplyCharEffect(who, 0x12, 6, 1). Called by 0EF3,
+   0E08E6, 122E, 1414 and overlay 6.
+   DRAFT: the mE2 clamp differs. The original tests the record offset, not the byte: it emits
+   `mov ax,[bp-4]; add ax,0xdf; or ax,ax; jae` (rec + mDF, always nonzero) before the mE2 store,
+   where ours emits `cmp byte es:[bp-4+0xe2],0; jge`. */
+/*@ 0DE8:09B9 draft */ void f0DE8_09B9(int who, int amount)
+{
+    struct CharRec far *rec;
+
+    if (!f0D1C_0670(who, 3))
+        return;
+    rec = &gChars[who];
+    if (rec->mE2 != 0) {
+        rec->mE2 -= amount;
+        if (rec->mE2 < 0)
+            rec->mE2 = 0;
+    }
+    rec->hp -= amount;
+    rec->mE7 = amount;
+    if (rec->hp <= -10) {
+        rec->hp = -10;
+        rec->mE2 = 0;
+        rec->mE3 &= ~4;
+        rec->m01 &= 1;
+        PlaySound(0x16);
+    } else {
+        PlaySound(0x15);
+    }
+    if (rec->mDF > 0) {
+        rec->mDF -= amount;
+        if (rec->mDF <= 0) {
+            rec->mDF = 0;
+            f0EF3_0F86(rec);
+        }
+    }
+    if (gFB44 == 0)
+        f1547_0991(who);
+    else
+        f1547_0544(who);
+    if (rec->hp <= -10)
+        f0DE8_093B();
+    ApplyCharEffect(who, 0x12, 6, 1);
+}
 /* 0DE8:0ADB: heals character `who` by `amount` hit points when the f0D1C_0670(who, 3) condition
    holds, clamping at the record's m1C maximum, then redraws the character through f1547_033F and
    f1547_0991. Called by 0BD2, 0EF3 and 122E. */
