@@ -118,6 +118,14 @@ extern char gText7F07[]; /*@ ds:7F07 */
 extern char gText7F0F[]; /*@ ds:7F0F */
 extern char gText7F18[]; /*@ ds:7F18 */
 extern char gText7F20[]; /*@ ds:7F20 */
+extern char gText7F27[]; /*@ ds:7F27 */
+extern char gText7F30[]; /*@ ds:7F30 */
+extern char gText7F38[]; /*@ ds:7F38 */
+extern int far *gBufDCFC; /*@ ds:DCFC */
+extern int g169; /*@ ds:0169 */
+extern int (far *gFn8072)(int a, int b); /*@ ds:8072 */
+extern void (far *gFn809E)(int x, int y, int handle); /*@ ds:809E */
+extern int RandomRange(int low, int high); /*@ 1AAA:0005 */
 extern char gF542[]; /*@ ds:F542 */
 extern int g8117; /*@ ds:8117 */
 extern int g8119; /*@ ds:8119 */
@@ -679,4 +687,56 @@ void PrintTableString(int index, int flag);
     LockShowPointer();
 }
 /*@ ovl5:1CDD stub */ void Ovl5_1CDD(int n) {}
-/*@ ovl5:1E1B stub */ void Ovl5_1E1B(int a, int b, int x, int y, int c, int d) {}
+/* ovl5:1E1B: shuffles an (cols x rows) grid and draws it. It fills two index arrays in the
+   gBufDCFC buffer (the x indices and, at +0x280, the y indices) with 0..cols-1 and 0..rows-1,
+   Fisher-Yates shuffles each with RandomRange, then for each row k and column i draws the cell
+   at (x + xs[i], y + ys[j]) (j wrapping at rows) through the far pointers ds:8072 and ds:809E,
+   with g8115 set to attr1 for the first call and attr2 for the second. Called by the 1204
+   animation. */
+/*@ ovl5:1E1B draft */ void ShuffleGrid(int x, int y, unsigned cols, unsigned rows, int attr1, int attr2)
+{
+    int far *xs;
+    int far *ys;
+    int i;
+    int j;
+    int k;
+    int swapped;
+    int pick;
+    int saved;
+    int cy;
+
+    xs = gBufDCFC;
+    ys = (int far *)((char far *)xs + 0x280);
+    for (i = 0; i < cols; i++)
+        xs[i] = i;
+    for (i = 0; i < rows; i++)
+        ys[i] = i;
+    for (i = 0; i < cols; i++) {
+        pick = RandomRange(0, cols - 1);
+        swapped = xs[pick];
+        xs[pick] = xs[i];
+        xs[i] = swapped;
+    }
+    for (i = 0; i < rows; i++) {
+        pick = RandomRange(0, rows - 1);
+        swapped = ys[pick];
+        ys[pick] = ys[i];
+        ys[i] = swapped;
+    }
+    saved = g8115;
+    for (k = 0; k < rows; k++) {
+        j = k;
+        for (i = 0; i < cols; i++) {
+            pick = x + xs[i];
+            cy = y + ys[j];
+            j++;
+            if (j >= rows)
+                j = 0;
+            g8115 = attr1;
+            swapped = gFn8072(pick, cy);
+            g8115 = attr2;
+            gFn809E(pick, cy, swapped);
+        }
+    }
+    g8115 = saved;
+}
