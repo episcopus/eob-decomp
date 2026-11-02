@@ -2014,9 +2014,9 @@ unit = "e0a72"
 addr = "0A72:019D"
 size = 17
 evidence = ["far", "frame"]
-name = "GetClassWord"
 level = "L2"
 match_flags = "-ml -O -Z"
+name = "GetArmourClassBase"
 
 [[function]]
 id = "e0a72_01ae"

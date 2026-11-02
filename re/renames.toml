@@ -1656,3 +1656,12 @@ new = "StopAdlibDriver"
 kind = "function"
 why = "the AdLib driver off (gSoundCard 0 is AdLib, src/E177D.C:178): ShutdownGame's case 0 calls it to restore the saved INT 08h vector, reset the AdLib through ResetVoices (src/E_TEXT.ASM:125-152, :140) and stop PIT channel 0; the old 'PC speaker driver off' label is wrong"
 date = "2026-11-01"
+
+[[rename]]
+id = "0A72:019D=GetArmourClassBase"
+addr = "0A72:019D"
+old = "GetClassWord"
+new = "GetArmourClassBase"
+kind = "function"
+why = "0A72:019D returns g349E[+15 stat byte], the base that 0DE8:0D5E turns into the armour class m1D: base = GetArmourClassBase(rec->m15); rec->m1D = base + 10 (E0DE8.C:684-685), and 0EF3:0F0B compares m1D against GetArmourClassBase(m15) + 6 (E0EF3.C:405); the old name said class word, the result is one component of the armour class"
+date = "2026-11-01"
