@@ -2223,3 +2223,12 @@ new = "DrawMemberFood"
 kind = "function"
 why = "m23 is a food/hunger value: EatFood (0ACD:07E0, src/E0ACD.C:571-577) adds the food item's m0B to m23 clamped to 100 and then calls this to redraw the bar, and DecayMemberState (1414:0C82, src/E1414.C:656-657) subtracts one from m23 each tick for a living member and calls it. The bar is 0..100, so it is the food/hunger bar, not a level."
 date = "2026-11-02"
+
+[[rename]]
+id = "0000:4CB1=GetVoiceDelay"
+addr = "0000:4CB1"
+old = "GetVoiceState"
+new = "GetVoiceDelay"
+kind = "function"
+why = "returns the voice record byte at +5, the note delay counter StartVoiceNote sets and UpdateVoices counts down (4CB1, 41D8); the sixth entry of the driver entry table at 3944 (review of e_text)"
+date = "2026-11-02"

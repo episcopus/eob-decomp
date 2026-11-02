@@ -396,9 +396,9 @@ unit = "e_text"
 addr = "0000:4CB1"
 size = 31
 evidence = ["frame"]
-name = "_GetVoiceState"
 level = "L2"
 match_flags = "tasm /mx"
+name = "GetVoiceDelay"
 
 [[function]]
 id = "e0000_4cd0"
