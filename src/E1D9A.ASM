@@ -1,7 +1,8 @@
 ; Unit at EOB.EXE 1D9A:000B (1067 bytes, 8 functions): the four packed-file decoders the loader
-; (E1B82.C Unpack, by the format byte) calls. Unpack1, Unpack2 and Unpack3 take source and
-; destination segments (E1B82.C:69 to :71); 1D9A:0013 Unpack4 takes far pointers and normalizes
-; both with 1BA8:0081 NormFar (E1B82.C:72). Unpack4 expands an LCW stream (format 4: literal runs,
+; (E1B82.C Unpack, by the format byte) calls. Unpack3 takes source and destination segments
+; (E1B82.C:69); Unpack1 and Unpack2 take those and a work segment too (E1B82.C:70 and :71);
+; 1D9A:0013 Unpack4 takes far pointers (E1B82.C:72) and normalizes both with 1BA8:0081 NormFar
+; (this file, :54 and :59). Unpack4 expands an LCW stream (format 4: literal runs,
 ; back references, a word-count fill and a word-offset copy) to a fixed length; 1D9A:0113 Unpack3
 ; [H] expands a literal and fill stream to a 32-bit length; 1D9A:018B Unpack1 (format 1, verified)
 ; and 1D9A:02CB Unpack2 [H] expand the two dictionary formats into a work segment, building an
@@ -12,8 +13,10 @@
 ; internal.
 ;
 ; The scratch words the decoders keep in their own code segment are addressed by their absolute
-; offsets (cs:[0Ch], cs:[10h], cs:[12h] at the unit start, cs:[185h]/[187h]/[189h] in Unpack1's
-; range, cs:[2C9h] in Unpack2's), exactly as the original encodes them.
+; offsets: cs:[0Ch], cs:[10h], cs:[12h] at the unit start; cs:[109h]/cs:[10Bh]/cs:[10Dh] (Unpack4's
+; output start, bytes left and output end, set at :63, :74 and :65) in the dw at 1D9A:0109;
+; cs:[185h]/[187h]/[189h] in Unpack1's range; cs:[2C9h] in Unpack2's, exactly as the original
+; encodes them.
 
         .MODEL  LARGE
 
@@ -164,9 +167,10 @@ _Unpack4 ENDP
 ; that many copies of the next byte; a byte at or above 80h fills (100h - byte) copies of the next
 ; byte. Stops when the 32-bit length runs out. No pinned file uses format 3 (WHITEPAPER.md:155), so
 ; the behaviour is read from the bytes only.
-; QUIRK 1D9A:0113: a count is not clamped to the bytes left (Unpack4 clamps, src/E1D9A.ASM:81 to
-; :83 and :99 to :101); a count that runs past the 32-bit length wraps BX:DX in _NormDest and the
-; loop keeps writing. No pinned file uses format 3, so whether any input reaches this is unverified.
+; QUIRK 1D9A:0113: a count is not clamped to the bytes left (Unpack4 clamps, src/E1D9A.ASM:88 to
+; :90, :106 to :108, :127 to :129 and :144 to :146); a count that runs past the 32-bit length wraps
+; BX:DX in _NormDest and the loop keeps writing. No pinned file uses format 3, so whether any input
+; reaches this is unverified.
         PUBLIC  _Unpack3                ; @ 1D9A:0113
 _Unpack3 PROC FAR
         push    bp
@@ -220,6 +224,8 @@ _Unpack3 ENDP
 
 ; 1D9A:0162: subtract the count about to be emitted (CX) from the 32-bit output remainder (BX:DX)
 ; and renormalize the destination far pointer ES:DI (carry DI's paragraphs into ES, keep DI below 16).
+; The name is for the renormalization; the subtraction is Unpack3's length bookkeeping (the remainder
+; is the bytes still to emit).
         PUBLIC  _NormDest               ; @ 1D9A:0162
 _NormDest PROC NEAR
         sub     bx,cx
@@ -249,15 +255,18 @@ u3_exit:
         pop     ax
         pop     bp
         retf
-        dw      0,0,0                   ; 1D9A:0185 Unpack1's saved output offset and count
+        dw      0,0,0                   ; 1D9A:0185 Unpack1's previous string length (+0), the output offset of the string this code emits (+2), that string's length (+4)
 
 ; 1D9A:018B: expand the dictionary format 1 into the work segment ([bp+0Ah]). The stream starts with
-; a 16-bit output limit and a header word holding the number of bytes to skip; codes are 12 bits
-; (1D9A:0299). A code with a nonzero high byte names an entry of the work segment's table at BP: a
-; 4-byte (offset, length) pair into the output at BP + 4 * (code - 100h). Copy that string to the
-; output and make it the new previous string; a code naming the entry being made copies the previous
-; string and appends its first byte. A zero high byte is a literal (a one byte previous string).
-; Entries are added while the table is below 3C00h. cs:[185h] is the length of the previous string
+; the 32-bit unpacked size (its low word is the output limit used here and its high word is read and
+; dropped, WHITEPAPER.md:151) and a header word holding the number of bytes to skip; codes are 12
+; bits (1D9A:0299). A code with a nonzero high byte names an entry of the work segment's table: a
+; 4-byte (output offset, length) pair at offset 4 * (code - 100h). BP is the bytes filled so far, so
+; the table starts at offset 0 (:300) and grows with BP; a pair at or above BP names the entry being
+; made. Copy that string to the output and make it the new previous string; a code naming the entry
+; being made copies the previous string and appends its first byte. A zero high byte is a literal:
+; its byte is written and becomes the previous string, of length one (:367, :376 to :380). Entries
+; are added while the table is below 3C00h. cs:[185h] is the length of the previous string
 ; (the last code's); cs:[187h] is the output offset of the string this code emits, cs:[189h] its
 ; length.
         PUBLIC  _Unpack1                ; @ 1D9A:018B
@@ -413,10 +422,12 @@ u1_exit:
         dw      0                       ; 1D9A:02C9 Unpack2's next reader state
 
 ; 1D9A:02CB [H]: expand the dictionary format 2 into the work segment ([bp+0Ah]), as Unpack1 but
-; with 14-bit codes (1D9A:03CC) and two word tables in the work segment: the entry offsets at BP and
-; the entry lengths at BP+7E00h, at word index (code - 100h). A code with a nonzero high byte is a
-; dictionary entry, a zero high byte a literal. The tables stop when BP reaches 7E00h; cs:[2C9h]
-; steps the code reader and cs:[185h]/[189h]/[187h] are Unpack1's string state. No pinned file uses
+; with 14-bit codes (1D9A:03CC) and two word tables in the work segment: the entry offsets at byte
+; offset 2 * (code - 100h) and the entry lengths at that offset + 7E00h (:483, :499). BP is the
+; bytes filled so far, so the tables start at offset 0 (:460) and grow with BP (:496 stores at BP).
+; A code with a nonzero high byte is a dictionary entry, a zero high byte a literal. The tables stop
+; when BP reaches 7E00h; cs:[2C9h] steps the code reader and cs:[185h]/[189h] hold Unpack1's
+; previous and current string lengths (Unpack2 never touches cs:[187h]). No pinned file uses
 ; format 2 (WHITEPAPER.md:155), so the behaviour is read from the bytes only.
         PUBLIC  _Unpack2                ; @ 1D9A:02CB
 _Unpack2 PROC FAR
