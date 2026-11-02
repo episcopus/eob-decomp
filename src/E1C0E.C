@@ -1,12 +1,16 @@
 /* Unit at EOB.EXE 1C0E:000C (6099 bytes, 31 functions): the overlay file cache. This is the file
-   layer the VROOMM overlay manager and the data loaders go through. FileOpen (1C0E:00DB) hands out
-   a slot in a ten entry table of cached files (the records at ds:01FF, the DOS handles at ds:FEEA),
-   FileRead (1C0E:0400) and FileWrite (1C0E:0578) move bytes in and out of the slot's memory copy or
-   its open handle, FileClose (1C0E:03BB) releases it, and 1C0E:1645/1161/11D3/168E look a name up
-   and follow the link field that groups aliased entries. 1C0E:13E7/:13FD initialise and tear the
-   cache down at startup (E07C8.C), 1C0E:1310 finds the program file on disk (E1A72.ASM), and
-   1C0E:0E5B/0DC3 choose a slot to evict under a size limit. Placeholder DGROUP names mark the fields
-   whose exact role is inferred from this code only. */
+   layer the VROOMM overlay manager and the data loaders go through. FileOpen (1C0E:00DB) takes a
+   DOS handle slot from a ten entry handle table (gFileHandles at ds:FEEA, MAX_FILES) for a record
+   in the file table at ds:01FF, whose records run to the first empty name (203 of them in this
+   image; gFiles). FileRead (1C0E:0400) and FileWrite (1C0E:0578) move bytes in and out of the
+   record's memory copy or its open handle, FileClose (1C0E:03BB) releases it, and FileOpen
+   (1C0E:00DB), IsFileInMemory (1C0E:1161) and FindLoadedFile (1C0E:11D3) look a record up by name;
+   only ResolveFileLink (1C0E:168E) follows the link field that groups aliased records.
+   1C0E:13E7/:13FD initialise and tear the cache down at startup (E07C8.C), 1C0E:1310 finds the
+   named file (any overlay or data file, not the program) on a drive (called from the INT 3Fh hook
+   1A72:0006 and CheckFile 1C0E:091B), and 1C0E:0E5B/0DC3 choose a record to evict under a size
+   limit. Placeholder DGROUP names mark the fields whose exact role is inferred from this code
+   only. */
 
 /*@flags -ml -O -Z -G */
 
@@ -136,11 +140,16 @@ extern long gSlotLengths[];              /*@ ds:FF0C: the record's length per sl
     return 0;
 }
 
-/* 1C0E:0046: upper case from the last backslash of `name` on (so the file name part, leaving a
-   directory prefix alone) and hand the result with `mode` to the retry handler at ds:8111,
-   returning its result. Called before an overlay open fails (FileOpen modes 0 and 2) and when a
-   name lookup misses (1C0E:11D3 mode 0xA, 1C0E:0EE7/0F6E mode 0xB). Purpose unknown: the mode
-   codes. */
+/* 1C0E:0046: hand `name`, upper cased to the last backslash it contains, and the error `mode` to
+   the retry handler at ds:8111 (the file error dialog, 1C0E:0ADD) and return its result. `mode` is
+   an index into gErrorText: 2 "Could not find" (FileOpen's CheckFile loop and the FindLoadedFile
+   miss at 1C0E:11D3 with 0xA), 0 "Could not create the file on disk." (FileOpen's ResetFile loop),
+   1 "Illegal MODE in Open_File." (FileOpen's bad mode) and 0xB "You are exiting with open files."
+   (FreeAllCachedFiles 1C0E:0EE7; BuildFileCache, 1C0E:0F6E, calls no RetryFile).
+   QUIRK 1C0E:0060: the loop sets `base` to the backslash strchr found and the next strchr(base)
+   finds that same backslash, so a name that contains a backslash never leaves the loop; a name
+   without one is upper-cased whole (1C0E:0088). No name in the 203 record table holds a backslash,
+   so the loop runs once and stops. */
 /*@ 1C0E:0046 */ int RetryFile(int mode, char far *name)
 {
     char far *base;
@@ -163,14 +172,18 @@ extern long gSlotLengths[];              /*@ ds:FF0C: the record's length per sl
     ShutdownGame();
 }
 
-/* 1C0E:00DB: open the file `name` in one of three modes and give it a cache slot. Mode 1 (0x8001,
-   read) reuses an in-memory copy or checks and loads the file from disk; mode 2 (0x8002, write) and
-   mode 3 (0x8004, read/write) delete and recreate the file, retrying on failure; any other mode
-   reports code 1 then a fatal code 0xC. An existing in-memory copy is dropped unless mode is 1, the
-   file is located (following the alias link when its record points at another entry), opened with
-   retry, and its directory entry recorded for a linked file (LookupFileEntry). Finally the first
-   free slot takes the handle (FILE_IN_MEMORY | index for a loaded file, else the DOS handle with
-   FILE_LINKED set) with the record's offset and length, and its index is returned. */
+/* 1C0E:00DB: open the file `name` in one of three modes and give it a DOS handle slot. Mode 1
+   (O_BINARY | O_RDONLY) reuses an in-memory copy or checks and loads the file from disk; mode 2
+   (O_BINARY | O_WRONLY, write) deletes the file and recreates it (DeleteFile then ResetFile), mode
+   3 (O_BINARY | O_RDWR, read/write) does not delete it; both then run ResetFile, retrying through
+   RetryFile mode 0, while CheckFile fails; any other mode reports RetryFile mode 1 ("Illegal MODE
+   in Open_File.") then a fatal code 0xC. An existing in-memory copy is dropped unless mode is 1,
+   the file is located (following the alias link when its record points at another entry), opened
+   with retry, and its directory entry recorded for an aliased record (LookupFileEntry). Finally
+   the first free handle slot takes the handle (FILE_IN_MEMORY | the record index for a loaded
+   file, else the DOS handle with FILE_LINKED set) with the record's offset and length, and its
+   index is returned. The local `fd` holds a DOS handle, or a record index once FILE_IN_MEMORY is
+   set. */
 /*@ 1C0E:00DB */ int FileOpen(char far *name, int mode)
 {
     int fd;
@@ -187,10 +200,10 @@ extern long gSlotLengths[];              /*@ ds:FF0C: the record's length per sl
                     return -1;
             DropFile(name);
         }
-        access = FILE_IN_MEMORY | O_RDONLY;
+        access = O_BINARY | O_RDONLY;
         break;
     case 2:
-        access = FILE_IN_MEMORY | O_WRONLY;
+        access = O_BINARY | O_WRONLY;
         DeleteFile(name);
         ResetFile(name);
         /* fall through */
@@ -200,7 +213,7 @@ extern long gSlotLengths[];              /*@ ds:FF0C: the record's length per sl
                 if (!RetryFile(0, name))
                     return -1;
         if (mode == 3)
-            access = FILE_IN_MEMORY | O_RDWR;
+            access = O_BINARY | O_RDWR;
         break;
     default:
         RetryFile(1, name);
@@ -423,11 +436,12 @@ extern long gSlotLengths[];              /*@ ds:FF0C: the record's length per sl
     return result;
 }
 /* 1C0E:091B: locate and verify the file `name` (upper cased in place) without caching it: follow a
-   negative link in the slot's record to the name of the entry it aliases, find the file on one of
-   the drives (1C0E:1310), open it and, for a positively linked record (link > 0), check its length
-   against the record (a zero length in the record is always accepted); a wrong length reports code
-   0xE, a missing file (open failed) reports 0xF. Returns 1 when the file is present and its length
-   is right. */
+   negative link in the record to the name of the entry it aliases, find the file on one of the
+   drives (1C0E:1310), open it and, for a plain file (link > 0), check its length against the
+   record (a zero length in the record is always accepted); a wrong length reports code 0xE. A file
+   that LocateOverlayFile cannot find makes this function return 0 with no code, so the caller
+   retries or gives up; only a file that was located and then fails to open reports 0xF ("Internal
+   Error in File_Exists()"). Returns 1 when the file is present and its length is right. */
 /*@ 1C0E:091B */ int CheckFile(char far *name)
 {
     int index = -1;
@@ -668,14 +682,15 @@ extern long gSlotLengths[];              /*@ ds:FF0C: the record's length per sl
             RetryFile(0xb, 0);
 }
 
-/* 1C0E:0F6E: build the overlay cache table: mark every slot free, upper case every entry's name and
-   clear its memory copy, counting the entries flagged FLAG_KEEP; then allocate a table of their
-   indices and a table of their flag bits, fill them, sort them by flag bits (descending, the index
-   table moved in parallel), and for every kept entry check its index and drop it into memory
-   through 1C0E:144E. Nothing happens when no entry is flagged. Called by InitOverlayCache. The two
-   tables hold `count` entries, so the index allocation is `keep = MemAlloc(count * 2, 0)` (an int
-   each, sign-extended) and the sort reads `keep[m]` and `*(keep + m + 1)`, the form the original
-   indexes with (base + m + one int, 1C0E:1042). */
+/* 1C0E:0F6E: build the file cache table: mark every handle slot free, then upper case every
+   record's name and clear its memory copy, counting the records flagged FLAG_KEEP. When none is
+   flagged, return after those two loops (the names and copies are still cleared). Otherwise
+   allocate a table of their indices and a table of their flag bits, fill them, sort them by flag
+   bits (descending, the index table moved in parallel), and for every kept record check its index
+   and load it into memory through 1C0E:144E. Called by InitOverlayCache. The two tables hold
+   `count` entries, so the index allocation is `keep = MemAlloc(count * 2, 0)` (an int each,
+   sign-extended) and the sort reads `keep[m]` and `*(keep + m + 1)`; the original indexes with one
+   `les bx, [bp-6]` (1C0E:1041), an `add bx, ax` (1C0E:1044) and a store (1C0E:1049). */
 /*@ 1C0E:0F6E */ void BuildFileCache(void)
 {
     int count;
@@ -803,9 +818,10 @@ extern long gSlotLengths[];              /*@ ds:FF0C: the record's length per sl
     return 0;
 }
 
-/* 1C0E:13BB: grow the text window outward by `cells` 8-pixel columns on both sides and `cells`
-   lines on both edges: left and top move out, width and height grow by twice `cells` (a negative
-   `cells` shrinks it back). */
+/* 1C0E:13BB: grow the text window outward by `cells` cells on every edge (a negative `cells`
+   shrinks it back). Left and width (ds:FE64, ds:FE62) are in 8-pixel columns, so left moves out by
+   `cells` columns and width grows by 2 * `cells` columns; top (ds:FE66) moves up by `cells * 8`
+   pixel rows and height (ds:FE60) grows by `cells * 16` pixel rows per cell. */
 /*@ 1C0E:13BB */ void ExpandTextWindow(int cells)
 {
     gTextLeft -= cells;
@@ -846,14 +862,22 @@ extern long gSlotLengths[];              /*@ ds:FF0C: the record's length per sl
     return 0;
 }
 
-/* 1C0E:144E: load the file in cache slot `index` into memory. A slot with no size reports code 0x10;
-   the copy is allocated (through the free-block hook, evicting another slot first when the largest
-   free block is too small), the file is opened (through the aliased entry when the slot's link is
-   negative, recording the looked-up record length), its length is checked for a linked record, and
-   the bytes are read into the copy; the slot's data pointer is set and 1 is returned. A failed
-   allocation, open or read frees the copy and returns 0. The evict and final read are written as
-   success-if/else-failure blocks so that the original's branch polarity and the tail `mov ax,1`
-   after the failure block (1C0E:1603) come out. */
+/* 1C0E:144E: load the record `index` of gFiles into memory. A record with no size reports code
+   0x10; the copy is allocated (through the free-block hook, evicting another record first when the
+   largest free block is too small), the file is opened (through the aliased record when link <= 0,
+   recording the looked-up record length), its length is checked for a plain file (link > 0), and
+   the bytes are read into the copy; the record's data pointer is set and 1 is returned. A failed
+   first allocation, open or read frees the copy and returns 0.
+   QUIRK 1C0E:144E: the own-file test is `entry->link > 0` (1C0E:1520, `jle` at 1C0E:1525), so
+   every link <= 0 takes the alias branch, and link 0 too: the alias is then gFiles[0 &
+   LINK_INDEX], the record itself, so such a file is looked for through its own name (the image has
+   link 0 on INTRO.EXE, record 0). FileOpen and CheckFile test `link < 0` for an alias, so the two
+   tests disagree.
+   QUIRK 1C0E:144E: after EvictFile returns 1 the second `MemAlloc(entry->size, 0)` (1C0E:1508) is
+   not tested, so a NULL copy goes on to open and read.
+   The evict and final read are written as success-if/else-failure blocks so that the original's
+   branch polarity and the tail `mov ax, 1` (1C0E:163D, reached by the success path's `jmp 0x163d`
+   at 1C0E:1629) come out. */
 /*@ 1C0E:144E */ int LoadFileSlot(int index)
 {
     void far *data;
