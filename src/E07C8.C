@@ -81,7 +81,7 @@ extern void far *f1A47_0005(char far *name);      /*@ 1A47:0005 */
 extern void f1A47_0169(void far *font);           /*@ 1A47:0169 */
 extern int CheckMemoryChain(void);                /*@ 1990:0071 */
 extern unsigned ReserveMemoryBelowVideo(int n);   /*@ 1990:0133 */
-extern void MouseInit(void);                      /*@ 1A72:00DA */
+extern void InitMouse(void);                      /*@ 1A72:00DA */
 extern int RunOverlayRequest(void far *req);      /*@ 1C00:0055 */
 extern void InitOverlayCache(void);                     /*@ 1C0E:13E7 */
 extern void SetTextWindow(int n);                    /*@ 1DE7:0009 */
@@ -193,7 +193,7 @@ int AllocationFailure(void);
         break;
     }
     f1DDD_002D(g8102);
-    MouseInit();
+    InitMouse();
     gOverlayRequest.name = gOverlayFiles[g8102];
     if (RunOverlayRequest(&gOverlayRequest) == -1) {
         f1DDD_002D(7);

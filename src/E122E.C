@@ -73,7 +73,7 @@ extern void fOvl5_1A82(int x); /*@ 211E:0057 */   /* overlay 5 entry, ovl5:1A82 
 extern void Obj0150(void); /*@ 08E6:0150 */
 extern void UpdateDDEffects(void); /*@ 1414:0D63 */
 extern void DrawText(char far *text); /*@ 1DE7:060A */
-extern int MouseInRect(int left, int top, int right, int bottom); /*@ 1A72:02A6 */
+extern int IsMouseInRect(int left, int top, int right, int bottom); /*@ 1A72:02A6 */
 extern int f0D1C_00DA(int value, int page); /*@ 0D1C:00DA */
 extern int gSoundVolume; /*@ ds:FBCA */        /* the global sound volume (src/E08E6.C) */
 extern int gF540; /*@ ds:F540 */               /* counts sound-volume changes (src/E08E6.C) */
@@ -233,7 +233,7 @@ void f122E_1DA8(int a, int b);  /* forward: 1DA8 comes after its callers */
    in g194B, draw the slot's message. Returns 1 when it drew, 0 otherwise. */
 /*@ 122E:0847 */ int CheckMemberSlotRect(int id, int slot)
 {
-    if (MouseInRect(0x28, 0x10, 0x88, 0x58)) {
+    if (IsMouseInRect(0x28, 0x10, 0x88, 0x58)) {
         if (g194B[gB894[id * 9 + slot]] & 0x20) {
             DrawText(gText5B78);
             return 1;

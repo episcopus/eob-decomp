@@ -1332,3 +1332,21 @@ new = "gMcbSeg"
 kind = "global"
 why = "MCB of our own allocated block, set by CheckMemoryChain at 1990:0088 and read by CheckMCB and CheckMemoryChain; READABILITY.md asks for the g prefix (no other file declares the address; it is code segment data annotated with a plain `;` comment, so rename.py could not bind it and the label was renamed in place)"
 date = "2026-11-01"
+
+[[rename]]
+id = "1A72:02A6=IsMouseInRect"
+addr = "1A72:02A6"
+old = "MouseInRect"
+new = "IsMouseInRect"
+kind = "function"
+why = "a test that returns 1 or 0 reads as a question (docs/process/READABILITY.md); review of e1a72"
+date = "2026-11-01"
+
+[[rename]]
+id = "1A72:00DA=InitMouse"
+addr = "1A72:00DA"
+old = "MouseInit"
+new = "InitMouse"
+kind = "function"
+why = "a function name is a verb phrase (docs/process/READABILITY.md); it detects the driver and installs the handler (1A72:00DA); review of e1a72"
+date = "2026-11-01"
