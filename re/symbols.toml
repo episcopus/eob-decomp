@@ -5742,6 +5742,9 @@ unit = "e1c0e"
 addr = "1C0E:06E5"
 size = 566
 evidence = ["frame"]
+name = "SeekFile"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "e1c0e_091b"

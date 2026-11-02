@@ -339,10 +339,11 @@ extern long gSlotLengths[];              /*@ ds:FF0C: the record's length per sl
    memory has its slot position set (SEEK_SET clamps to the size, SEEK_CUR and SEEK_END add `offset`
    and clamp to [0, size]) and the new position is returned; an open file lseeks, shifting `offset`
    by the record's start and length for a linked record, and returns the result. `whence` 0, 1 and 2
-   are the runtime's SEEK_SET, SEEK_CUR and SEEK_END; any other reports code 8. DRAFT: the in-memory
-   SEEK_SET clamp and the non-memory branch lay the long comparisons out with the branches in the
-   other order; the values and control flow are right, no source form found yet. */
-/*@ 1C0E:06E5 draft */ long SeekFile(int index, long offset, int whence)
+   are the runtime's SEEK_SET, SEEK_CUR and SEEK_END; any other reports code 8. The in-memory switch
+   lists SEEK_END before SEEK_CUR so its body falls through into the SEEK_CUR clamp, and the
+   non-memory branch passes `whence` itself as lseek's third argument, which is why the original
+   pushes [bp+0xc] instead of a literal 0/1/2 (1C0E:0870, :0890, :08AF). */
+/*@ 1C0E:06E5 */ long SeekFile(int index, long offset, int whence)
 {
     register int handle;
     int record;
@@ -357,24 +358,21 @@ extern long gSlotLengths[];              /*@ ds:FF0C: the record's length per sl
         pos = gFiles[record].pos;
         switch (whence) {
         case 0:
-            if (gFiles[record].size <= offset)
+            if (gFiles[record].size < offset)
                 pos = gFiles[record].size;
             else
                 pos = offset;
             break;
-        case 1:
-            pos += offset;
-            if (pos > gFiles[record].size)
-                pos = gFiles[record].size;
-            if (pos < 0)
-                pos = 0;
-            break;
         case 2:
-            pos = gFiles[record].size + offset;
-            if (pos > gFiles[record].size)
+            pos = gFiles[record].size;
+            /* fall through: SEEK_END is the size, then the SEEK_CUR clamp below */
+        case 1:
+            if (pos + offset > gFiles[record].size)
                 pos = gFiles[record].size;
-            if (pos < 0)
+            else if (pos + offset < 0)
                 pos = 0;
+            else
+                pos += offset;
             break;
         default:
             FatalError(8, 0);
@@ -387,17 +385,17 @@ extern long gSlotLengths[];              /*@ ds:FF0C: the record's length per sl
     case 0:
         if (handle & FILE_LINKED)
             offset += gSlotOffsets[index];
-        result = lseek(handle & HANDLE_MASK, offset, 0);
+        result = lseek(handle & HANDLE_MASK, offset, whence);
         break;
     case 1:
-        result = lseek(handle & HANDLE_MASK, offset, 1);
+        result = lseek(handle & HANDLE_MASK, offset, whence);
         break;
     case 2:
         if (handle & FILE_LINKED) {
             offset -= gSlotOffsets[index];
             offset += gSlotLengths[index];
         }
-        result = lseek(handle & HANDLE_MASK, offset, 2);
+        result = lseek(handle & HANDLE_MASK, offset, whence);
         break;
     default:
         FatalError(8, 0);
