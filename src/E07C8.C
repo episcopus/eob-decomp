@@ -28,7 +28,7 @@ extern int g8102;                     /*@ ds:8102: graphics choice, argument dig
 extern char gSoundCard;               /*@ ds:B892: sound choice, argument digit minus '1' */
 extern int gSoundOn;                  /*@ ds:80E6: nonzero unless sound was '4' */
 extern unsigned char gSpeakerMode;    /*@ ds:009E: 1 while the speaker is enabled */
-extern unsigned char gSpeakerOn;      /*@ ds:8A67: 1 while the speaker is on */
+extern unsigned char gTandyOn;      /*@ ds:8A67: 1 while the speaker is on */
 extern unsigned g84A0;                /*@ ds:84A0: video mode argument, restored on exit */
 extern void interrupt (far *gFC08)();  /*@ ds:FC08: the INT 3Fh vector main replaced */
 extern void (far *gFn80FA)(void);     /*@ ds:80FA: exit hook main sets to 07C8:061D */
@@ -303,7 +303,7 @@ soundcard:
     goto done;
 tandy:
     SoundDriverInstall();
-    gSpeakerOn = 1;
+    gTandyOn = 1;
     gSpeakerMode = 1;
     SoundDriverResume();
 done:
@@ -326,7 +326,7 @@ done:
         break;
     case 2:
         SoundDriverPause();
-        gSpeakerOn = 0;
+        gTandyOn = 0;
         SoundDriverUninstall();
         break;
     }
