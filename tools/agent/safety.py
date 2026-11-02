@@ -45,8 +45,9 @@ def findings(paths: list[str], added: list[tuple[str, str]], branch: str, read=N
             try:
                 tomllib.loads(text)
             except tomllib.TOMLDecodeError as e:
-                out.append("%s: not valid TOML: %s (in a basic string, a backslash starts an escape: "
-                           "write a backtick as it is, a backslash as \\\\)" % (p, e))
+                hint = (" (in a basic string, a backslash starts an escape: write a backtick as it is, a "
+                        "backslash as \\\\)" if "Unescaped" in str(e) else "")
+                out.append("%s: not valid TOML: %s%s" % (p, e, hint))
     return out
 
 
