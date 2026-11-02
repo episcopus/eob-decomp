@@ -8794,7 +8794,7 @@ unit = "eov5"
 addr = "ovl5:0B58"
 size = 102
 evidence = ["ovl", "near", "frame"]
-name = "Menu1"
+name = "ItemPanelDispatch"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 
