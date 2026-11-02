@@ -18,11 +18,24 @@ names still hold. Each finding is a comment or a cite; no code change is asked f
 Each finding is a checkbox. `must-fix` blocks `make review-pass` until a decompiler ticks it off
 (with the commit that fixes it); `should` and `note` do not block.
 
-- [ ] must-fix src/E14EF.C:69-71 (ds:8134): "the map screen clears it (src/E0ACD.C:119)" cites a declaration, not the clear. E0ACD.C:119 is `extern int g8134;` with the comment "set to 0 by the map screen (src/E14EF.C)", so the two comments cite each other and neither shows the store. The store is src/E0ACD.C:886 (`g8134 = 0;` in RunMapLoop, 0ACD:0E8A). Cite :886. (evidence: src/E0ACD.C:119, :880-886)
-- [ ] must-fix src/E14EF.C:132-139 (CountMaskBits comment): "1 << 16 is 0 and bits 16 and up are never counted" is a claim about a shift by 16 on bytes that no caller reaches (src/EOV0.C:1193 and :1244 pass n 15 and 9 with shift 0, so i + shift stays at most 14). It is recall of 8086 shift behaviour, and C leaves a shift by the full width of an int undefined. Tag it [H] or drop it. The bit-15 reading (the int `1 << 15` sign-extended in the long AND) is C's own promotion rule, but it is not exercised on our bytes either; tag it the same way. (evidence: src/EOV0.C:1193, :1244; AGENTS.md ground rule 1)
-- [ ] should src/E14EF.C:51-57 (g8140, g8142): "tested by UpdateOptionList" names one reader, but this file's own gFC7A comment (:51-53) says PickAlignment tests them at src/EOV0.C:1262, and others read them: src/EOV5.C:377 and :483, src/E16A5.C:224-225 and :240-241 (into gHitX and gHitY), and the wrapper at src/E082C.C:465. src/EOV0.C:1204 writes them. Say "tested by UpdateOptionList and PickAlignment (src/EOV0.C:1262)" so no reader takes the last click to be UpdateOptionList's alone. (evidence: the greps above)
-- [ ] should src/E14EF.C:243-247 (UpdateOptionList locals): `colorA`, `colorB`, `prev`, `row` and `entry` are `char` with no reason given. The header gives one for gFontWidth (:58-59), so these should have one too: if the match needs char, say so at the declarations; if the reason is not known, say `Purpose unknown:` for the type and leave it to make match. (evidence: src/E1A47.C:13 for the gFontWidth case)
-- [ ] should src/E14EF.C:42 (struct Panel, `pad` at +e): the name says padding, but the only evidence is "not read in this unit". src/EOV0.C:185 names the same field pad. Keep the placeholder and say what is known (the eighth word of the 16-byte record, unread here), or name it by its offset. (evidence: :42; src/EOV0.C:185)
+- [x] must-fix src/E14EF.C:69-71 (ds:8134): cite fixed in 8bbeafe. The comment now cites the clear at
+  src/E0ACD.C:886 (`g8134 = 0;` in RunMapLoop), not :119. (evidence: src/E0ACD.C:886)
+- [x] must-fix src/E14EF.C:132-139 (CountMaskBits comment): fixed in 8bbeafe. The facts that stay are
+  that the src/ callers PickClass (src/EOV0.C:1193) and PickAlignment (src/EOV0.C:1244) pass shift 0
+  with n 15 and 9, so i + shift is at most 14. The `1 << 16` is 0 and the `1 << 15` sign-extension are
+  now both tagged `[H] recall, not proven on our bytes` and said to be reached by no caller; the
+  QUIRK tag is gone. (evidence: src/EOV0.C:1193, :1244; AGENTS.md ground rule 1)
+- [x] should src/E14EF.C:51-57 (g8140, g8142): fixed in 8bbeafe. The declarations now say
+  "tested against a panel rectangle by UpdateOptionList (:297) and PickAlignment (src/EOV0.C:1262)",
+  plus the readers into gHitX/gHitY (src/E16A5.C:224-225, :240-241) and the wrapper
+  (src/E082C.C:465), and that src/EOV0.C:1204 writes them. (evidence: the greps above)
+- [x] should src/E14EF.C:243-247 (UpdateOptionList locals): fixed in 8bbeafe. A comment above the five
+  says char is required by the match: the original keeps each in a byte (`mov byte ptr [bp-..]`), and
+  making any one an int fails make match (UpdateOptionList +0005 grows the frame, byte stores widen to
+  word); each local also has a one-line purpose now. (evidence: src/E14EF.C:243-247; make match)
+- [x] should src/E14EF.C:42 (struct Panel, `pad` at +e): fixed in 8bbeafe. The field comment now says
+  "the eighth word of the 16-byte record; not read in this unit", keeping the placeholder name.
+  (evidence: :42; src/EOV0.C:185)
 - [ ] note Callee names differ by unit for one routine: 14EF:00E1 is IsPointInRect here and in src/EOV0.C:205, while 082C:0613 is IsPointInsideRect in src/E082C.C:302 and src/EOV5.C:187, and the comment at src/E082C.C:300-301 says "Same test as PointInRect at 14EF:00E1". They are two addresses, so `make rename` does not force a choice; READABILITY.md puts cross-unit harmonisation in phase 6. Routed, not edited.
 - [ ] note make readability still does not check line cites (round 4's note, still open): the two stale cites above passed it with 0 findings.
 - [ ] note the routed notes of rounds 1 to 4 still stand: src/EOV5.C:373 and :468 still write the literals 0x8FF and 0x8ff, not KEY_CODE_MASK; src/EOV0.C:143 and src/EOV2.C:181 declare UpdateOptionList with `long counter` and no `extra`; src/EOV0.C:204 declares CountMaskBits with `char shift`; src/EOV0.C:177-186 declares a second struct Panel; src/E082C.C:300-301 "Same test as PointInRect".
