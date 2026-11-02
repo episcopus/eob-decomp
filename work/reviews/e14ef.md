@@ -59,8 +59,9 @@ Each finding is a checkbox. `must-fix` blocks `make review-pass` until a decompi
   `mov word ptr [gMouseDisabled],1` is src/E1A72.ASM:314, after `mov word ptr
   [gMouseHandlerInstalled],1` at :313. The 1A72:0150 address is the one src/E1A72.ASM:99 gives for
   "before it installs the handler". (evidence: src/E1A72.ASM:297, :313-314, :99)
-- [x] must-fix src/E14EF.C:70-71 (gCursorX, gCursorY) [fixed in 93c7755: gCursorX cites
-  src/E1A72.ASM:65 and the pixel test at :283; gCursorY cites src/E1A72.ASM:73]: "(src/E1A72.ASM:60)" points inside the g8134
+- [x] must-fix src/E14EF.C:70-71 (gCursorX, gCursorY) [fixed in 93c7755, the pixel-test cite
+  corrected to :282 in d49f8bd: gCursorX cites src/E1A72.ASM:65 and the pixel test at :282; gCursorY
+  cites src/E1A72.ASM:73]: "(src/E1A72.ASM:60)" points inside the g8134
   comment block (line 60 is "(E0ACD.C:886, 0ACD:0E8A)"); the gCursorX declaration is at :64 and gCursorY
   at :72. "tested with the pixel rectangle (:272-273)" points at the IsKeyPending and WaitKeyEvent lines;
   the test is `IsPointInRect(gCursorX, cursory, ...)` at :280. (evidence: src/E1A72.ASM:64, :72;
