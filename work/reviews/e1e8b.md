@@ -1,5 +1,77 @@
 # Review: e1e8b
 
+# Round 4
+
+Reviewer: rev-haiku
+Commit reviewed: 4afb5a6 (main; review/e1e8b was at the same commit when I started)
+
+Playbook 70. Judge what a matching file can still get wrong: names, types, comments, structure.
+The matcher already proved the bytes; do not re-prove them, read for meaning.
+
+Checked: `make match FILE=src/E1E8B.ASM` 30 of 30 functions, exit 0; `make readability UNIT=e1e8b` 0 findings; the names in re/symbols.toml for the 30 functions equal the PUBLIC names in src/E1E8B.ASM. The round 3 fixes hold (0789, 03FD, 0536, 05FB, 0580's back link, 000F, 0286, 04D0).
+Evidence used: src/E1E8B.ASM (all of it); build/packets/e1e8b.md (callers, from `make packet UNIT=e1e8b`); eob/EOB.EXE, read only: 1E8B:0004 holds B5 20 2E 21 "PATH", and 20C1:0318 holds "eob.exe" (99 entries of 8 bytes end at 0318h); build/toolchain/tc100/STARTUP/C0.ASM:164-165 and :675-677 (_envseg, _psp); build/re/rtl/tc100/l/r.map:1549 and :1640 (__envseg at DGROUP:0075, __psp at DGROUP:0079). Searched src/, re/ and docs/ for any caller of 1E8B:08C9 and for overlay stubs that call 1E8B:086F: none.
+
+## Findings
+
+Each finding is a checkbox. `must-fix` blocks `make review-pass` until a decompiler ticks it off
+(with the commit that fixes it); `should` and `note` do not block.
+
+### 02FF MapOverlayRecords
+
+- [ ] must-fix src/E1E8B.ASM:515: "Returns carry set on a read or overlay failure" claims an overlay failure that the code never reports. Carry is set only when the image read fails (`jb chain_ret` after `_ReadOverlayImage`, :567). The overlay entry call (:585) is followed by `or ax,ax` (:588), and the normal exit clears carry (`clc`, :592; `jmp chain_out`, :555). Say: carry set when the image read fails (03C4).
+- [ ] must-fix src/E1E8B.ASM:506-507: "It takes the free segment 20B5:00B2" names 00B2 as free memory with no evidence. The code reads 20B5:00B2 as the first record (`mov cx,ds:[0B2h]`, :521) and stores it as the chain head 20B5:00BC (:522), then reads that record's fields (:529 to :533). The free area is 20B5:00B4 to 00B6 (:524 to :525), and the image is read into segment 00B4 (AX from :552, the call at :566). Say that 00B2 is the first record of the chain, set outside this unit.
+- [ ] must-fix src/E1E8B.ASM:509-510: "links each record to its successor ... fitting each" does not match the walk. A record is placed only when its own word 0012 is non-zero (`jcxz chain_tail`, :530), so the last record of the 0012 chain is never placed. The last placed record then has its link cleared (`mov word ptr ds:[1Ch],0`, :549), which drops its link to that unplaced record. Each record's size comes from its successor's offset (:532 to :537), so the unplaced record is the end of the image. That reads as an end marker, but this is not established. Say what the walk places and what it leaves out.
+- [ ] should src/E1E8B.ASM:512 and :604: "SI:DI" puts the high word second. The code makes SI the low word and DI the high word (`mov di,si; and di,0Fh; and si,0FFF0h`, :560 to :562; 03C4 takes SI as the count when DI is zero, :626 to :628). Elsewhere the file writes high:low (DX:AX in the 03B7 tail, :595). Say "SI is the low word, DI the high word" in both headers.
+
+### 0250 CopyNameAndOpenOverlay
+
+- [ ] must-fix src/E1E8B.ASM:392: "into the 20B5:001C buffer" is true only for 01A7. The copy goes to ES:DI (`stosb`, :403 and :408). 01B3 passes DI = the offset past the last backslash (`mov di,bx`, :315), and 01F3 passes DI = the offset after the directory it has copied (:358 to :379). Only the open always uses 20B5:001C (`lea dx,ds:[1Ch]`, :410). Say the copy goes to ES:DI and the open is of 20B5:001C.
+
+### 01F3 OverlayFileViaPath
+
+- [ ] must-fix src/E1E8B.ASM:325-326: the header says the directory is copied into 20B5:001C and then "calling 0250 to open the file". The 0250 call (:383) also copies the caller's name, through the far pointer at [bp+6] (`lds si,[bp+6]` in 0250, :396), after the directory. The file opened is the directory plus that name. Say so; as written a reader takes the directory itself for the file.
+- [ ] should src/E1E8B.ASM:323-325: the header paragraph is ragged ("bytes equal the "PATH=" literal" is one short line). Rewrap it to the unit's width.
+
+### 0442 RelocateOverlayPointer
+
+- [ ] must-fix src/E1E8B.ASM:700-702: "must both be 0B8h" and "the same masked 50h (`push ax`)" are not what the code checks. The mask 0F807h keeps the low three bits, which are the register field of `mov r16,imm16` (B8+r) and `push r16` (50+r). The code accepts any register r, as long as all four bytes use the same one: `cmp al,cl` (:724), `cmp cx,ax` (:730), `cmp ax,dx` (:735). Say: B8+r at ES:BX-1 and ES:BX+3, 50+r at ES:BX+2 and ES:BX+6, one r in all four (`mov ax` and `push ax` are the r = 0 case).
+
+### 07D7 DropStaleOverlaySlots
+
+- [ ] must-fix src/E1E8B.ASM:1299-1300: "When a record was marked, it walks the table again" is wrong about where the second pass starts. `drop_second` (:1348) does not reset BX to SS:BP: it reads SS:[BX] where the first pass stopped (:1323 or :1326). If the first pass stopped on a zero link, the second pass reads that same link and leaves at once (`je drop_out`, :1351). If it stopped at the table end, the second pass reads past CX, since the `cmp bx,cx` test (:1322) is only in the first pass. Say where the second pass starts and what it visits.
+
+### 0580 LoadOverlayRecord
+
+- [ ] must-fix src/E1E8B.ASM:891-893: "walks the overlay's entry chain ... each record whose use counter ES:001B is zero adds its code paragraphs" is wrong for the last record. `load_chain` tests the successor before the current record: `mov cx,es:[1Ch]` and `jcxz load_out` (:925 to :926) come first, so the record whose ES:001C is zero is never counted or cleared. The walk starts at the head 20B5:00BC (:923). Say that each record with a successor is examined, and that the last one is not (why is not established).
+
+### 086F OverlayManagerEntry
+
+- [ ] must-fix src/E1E8B.ASM:1376-1377 and :1383-1384: "reached from the overlay stubs" and "08C9 is a second entry of this same PROC, the program's overlay-memory bootstrap" have no evidence in the repo. build/packets/e1e8b.md gives "(no direct call found)" for 1E8B:086F. No file in src/, re/ or docs/ refers to 1E8B:08C9 or to a stub that calls 086F, and nothing in this unit calls or jumps to 08C9 (it has no label). Say "entered from outside this unit; no caller found in the repo", and mark the bootstrap role [H] or Purpose unknown. The body from :1432 to :1476 does match the description (the paragraph count, the farmalloc call, the arguments at [bp+6] to [bp+0Ch]).
+
+### Other headers
+
+- [ ] should src/E1E8B.ASM:422 (0276): "000F keeps its handle at 20B5:00B8 and moves it to BX before each call" is not what 000F does. It sets BX once from the open handle (`mov bx,ax`, :95), and both calls (:98, :124) rely on BX surviving the seek (INT 21h/4200h does not change BX). Say it once.
+- [ ] should src/E1E8B.ASM:776-782 (04D0): the header does not say the routine receives BX. `pop bx` at :820 takes back the request word pushed at :805 (`push word ptr es:[bx]`), so the call at :826 passes AX = bit 3 and BX = the request word. Say so.
+- [ ] should src/E1E8B.ASM:783 (04D0 evidence line): "the ES:001A bit 8 read and clear" names a different bit from the header (:780 to :781: bit 3, value 8). Write "bit 3 (value 8)".
+- [ ] should src/E1E8B.ASM:844 (0536): "takes its code paragraphs (077D)" suggests the value is used. The AX from 077D (:867) is overwritten by 0761 in `age_test` (:876), and 077D only computes AX, so this call has no effect. Say so, or drop it from the description.
+- [ ] should src/E1E8B.ASM:888 and :894 (0580): "marks the record used or unused (ES:001B/ES:001A)" omits that the loaded path sets ES:001B to 1 (:901) and ES:001A bit 2 (value 4, :902), that the unused path sets bit 3 (value 8, :906), and that ES:001B gets the low two bits of ES:001A added (`add byte ptr es:[1Bh],al`, :919 to :920). "A failed overlay routine jumps to __OverlayHalt" (:894) is the carry of the loader at ES:0018 (`call word ptr es:[18h]; jb load_halt`, :913 to :914), not an overlay routine.
+- [ ] should src/E1E8B.ASM:1234-1235 (077D): "The 11h is the 10h record header plus one more byte" states a 10h header without evidence. The 10h-byte header this file reads is the FBOV header of 000F (:123 to :124); whether the 11h includes that header is not shown. Mark [H] or say not established.
+- [ ] should src/E1E8B.ASM:651-652 (03FD): "the fixup word" names two different words: the table entry read by `lodsw` (:675), which is the offset of the word to fix, and the value at ES:BX (`mov di,es:[bx]`, :677) whose bit 0 is tested (:685). Name each once ("table entry", "segment-table index word") and use those names in the flag sentence.
+- [ ] should src/E1E8B.ASM:1178-1179 (073B): "a set low bit only skips that entry's match test" omits that a link word of 0 or 1 ends the walk: `shr cx,1` then `je slot_out` (:1193 to :1194) run before the low-bit test. Say it.
+
+## Confirmed, no change
+
+- 0185: no function in this unit writes 20B5:0012 or 20B5:0014 (the only word-0012 store, :475, is to ES = 20BF).
+- 000F: the 1E8B:0004 data words and the "eob.exe" default name at 20C1:0318 match the header (checked against the bytes of eob/EOB.EXE).
+- 0286: _psp at DGROUP:0079 (C0.ASM:677, r.map:1640) and the 99-entry table at 20B5:00C0 (`cmp si,3D8h`) match the header.
+- 066F and 068D: the 5-byte stub form (CD 3F at +0, offset at +2, zero at +4) and the far-jump form (0EAh, offset at +1, segment at +3) match the code.
+- 06C0 (back link at word 0Eh, the 073B call with AX = new base and DX = old base), 072F, 064E control flow, 0613 relink, 0761, 077D and 0789 arithmetic, 05FB, and the 086F load condition all match their headers.
+- 03B7 and 07A1: no caller in src/ or the packet; "uncalled in this unit" stands.
+
+## Summary
+
+Round 4: the unit reads as the overlay manager it is, and the round 3 fixes hold. Nine must-fix items, all header claims: a carry claim in 02FF; the 02FF free-segment name and the record walk that leaves the last 0012 record unplaced; the 0250 copy destination and the 01F3 file name; the 0442 register test; the 07D7 second-pass start; the 0580 walk that skips the last record; and the 086F/08C9 entry claims with no caller evidence. No placeholder name is left without a "Purpose unknown" note. There is no matcher, spec or pin question: the odd behaviour (the unplaced 02FF record, the 0580 last record, the 07D7 second pass) is in the original code and is to be described, not changed, so nothing is escalated. Verdict: review-failed, 9 must-fix items, all comment corrections (no code change is asked for).
+
 # Round 3
 
 Reviewer: rev-haiku
