@@ -5,8 +5,8 @@
    overlays and the two fonts and turns sound on. For the Tandy graphics choice (gGraphicsChoice 1)
    only it checks the memory chain, reserves 2 x 32 KB below the probed video segment and stores
    atol(g8894->number) in gMemTopSeg (:311; ReserveMemoryBelowVideo(3) returns the Tandy buffer
-   base, which is written at :345; whether the stored value is the video top is [H], src/E1990.ASM:386-397). For the
-   VGA choice it clears A000:0000. On the way out 07C8:058A stops sound, calls the exit hook, removes the mouse handler, shuts the overlay cache down, restores the INT 1Ch vector, removes the keyboard, restores the video mode, puts back the old INT 3Fh vector, shrinks memory for the Tandy graphics choice only (TrimMemoryToVideo, :476-477), and exits. 07C8:061D returns 1 (the exit hook at ds:80FA) and 07C8:0625 is the allocation failure hook at ds:810A. WHITEPAPER 2.6 and 4.4. Compiled -ml -O -Z. */
+   base, written at :345; whether that value is the video top is [H], src/E1990.ASM:386-397).
+   For the VGA choice it clears A000:0000. On the way out 07C8:058A stops sound, calls the exit hook, removes the mouse handler, shuts the overlay cache down, restores the INT 1Ch vector, removes the keyboard, restores the video mode, puts back the old INT 3Fh vector, shrinks memory for the Tandy graphics choice only (TrimMemoryToVideo, :476-477), and exits. 07C8:061D returns 1 (the exit hook at ds:80FA) and 07C8:0625 is the allocation failure hook at ds:810A. WHITEPAPER 2.6 and 4.4. Compiled -ml -O -Z. */
 
 #include <dos.h>
 
