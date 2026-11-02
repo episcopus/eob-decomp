@@ -3938,6 +3938,7 @@ unit = "e122e"
 addr = "122E:0960"
 size = 182
 evidence = ["frame"]
+notes = "draft 2026-11-01: the switch over the opcode matches every byte except its tail: the original keeps the 0xFFE9 case's `script++` in place (122E:09F1 `inc [bp+6]` then `jmp`, FFED's `inc` at 122E:09E6 before its `cwde`/store at 122E:09E5-09ED), so three case tails are separate. Our -ml -O -Z build merges the two increments into one shared `inc [bp+6]` at the common return path, 3 bytes shorter (the first difference is the FFED compare target at 122E:0026, ours 0x93 against 0x96). The case order FFF7, FFE9, FFED gives the original body layout exactly. Tried: `*script++` in both cases, splitting `*script` and `script++`, the (signed char) cast on the FFED read, and both source orders; TCC's tail merge always joins the increments. Also tried if/else-if (no reload expected): see the note history."
 
 [[function]]
 id = "e122e_0a16"
