@@ -2511,3 +2511,12 @@ new = "SelectPartyMember"
 kind = "function"
 why = "ovl1:0416 shows the prompts 'Select a character from your party who would like to learn spells' (0x17), 'pray for spells' (0x1A), 'scribe spells' (0x31) and 'Select the character you wish to drop.' (0x35) as the header of menu 3 and returns the chosen member slot or -1"
 date = "2026-11-02"
+
+[[rename]]
+id = "ovl1:243A=AskYesNo"
+addr = "ovl1:243A"
+old = "ChooseListEntry"
+new = "AskYesNo"
+kind = "function"
+why = "ovl1:243A builds menu 5 whose buttons are the gStrings2003 messages 0x26 'Yes' and 0x27 'No', shows the question message (0x37 'Are you sure you wish to LOAD a saved game?', 0x36 SAVE, 0x2E exit the game; EOV6.C asks 0x28/0x29/0x3B the same way) and returns 1 for Yes, 0 for No"
+date = "2026-11-02"

@@ -248,7 +248,7 @@ struct Node far *BuildMenuButtons(int menu);
 void ShowMessage(int message);
 void FreeFarList(struct Node far *list);
 void DrawListNode(struct Node far *node, int panelFirst, int highlight, int panelSecond);
-int ChooseListEntry(int message);
+int AskYesNo(int message);
 
 /* ovl1:0000: drops party member `who` (0 to 5) from the party: the "Drop Character" button of the camp
    menu (RunCampMenu passes the member SelectPartyMember(0x35) picked, "Select the character you wish to
@@ -742,7 +742,7 @@ int ChooseListEntry(int message);
 }
 /* ovl1:1516: frees every node of a far linked list: each node's first four bytes are the far
    pointer to the next one, and the walk ends at a null pointer. Called by RunCampMenu,
-   ChooseListEntry and the other screens with the head BuildMenuButtons returned. */
+   AskYesNo and the other screens with the head BuildMenuButtons returned. */
 /*@ ovl1:1516 */ void FreeFarList(struct Node far *list)
 {
     struct Node far *next;
@@ -762,7 +762,7 @@ int ChooseListEntry(int message);
    6 when `highlight` is nonzero, else 1 (0xF when gGraphicsChoice is nonzero). It goes through the
    text routine gDrawText when panelFirst or panelSecond is set (the panel already holds a
    background), else through DrawShadowText. The pointer is hidden while it draws. Called by
-   BuildMenuButtons, SelectPartyMember, RunCampMenu and ChooseListEntry: (node, 0, 0, 1) un-highlights,
+   BuildMenuButtons, SelectPartyMember, RunCampMenu and AskYesNo: (node, 0, 0, 1) un-highlights,
    (node, 0, 1, 1) highlights and (node, 1, 1, 1) draws the pressed button. */
 /*@ ovl1:1551 */ void DrawListNode(struct Node far *node, int panelFirst, int highlight, int panelSecond)
 {
@@ -810,7 +810,7 @@ int ChooseListEntry(int message);
    SpellSlotScreen), Scribe Scrolls (ovl1:1691), Preferences and Game Options (open the menu), Exit
    (leaves the camp from menu 0, goes back to menu 0 from the others; "Your party needs to rest to gain
    spells." first when gNeedsRest is set), Load Game and Save Game (after a yes/no box through
-   ChooseListEntry), Drop Character (needs more than four members), Quit Game, the four
+   AskYesNo), Drop Character (needs more than four members), Quit Game, the four
    Preferences toggles (tunes, sounds, bar graphs, mouse; each rewrites its "... are ON/OFF" label in
    gStrings2003) and the cursor keys: 0x5B and 0x65 light the first button; 0x60 and 0x62 step the
    highlight to the previous or next selectable button (definition flag bit 1), wrapping; 0x5D and
@@ -983,7 +983,7 @@ int ChooseListEntry(int message);
             }
             break;
         case BTN_LOAD:
-            if (ChooseListEntry(0x37)) {
+            if (AskYesNo(0x37)) {
                 reloadInvent = 1;
                 LockHidePointer();
                 DrawOptionField();
@@ -1008,7 +1008,7 @@ int ChooseListEntry(int message);
                 nextMenu = MENU_GAME_OPTIONS;
             break;
         case BTN_SAVE:
-            if (ChooseListEntry(0x36)) {
+            if (AskYesNo(0x36)) {
                 int slot;
 
                 slot = FileOpen("EOBDATA.SAV", 1);
@@ -1047,7 +1047,7 @@ int ChooseListEntry(int message);
             nextMenu = MENU_GAME_OPTIONS;
             break;
         case BTN_QUIT:
-            if (ChooseListEntry(0x2e))
+            if (AskYesNo(0x2e))
                 ShutdownGame();
             nextMenu = MENU_CAMP;
             break;
@@ -1131,4 +1131,90 @@ int ChooseListEntry(int message);
     return 1;
 }
 
-/*@ ovl1:243A stub */ int ChooseListEntry(int message) { return 0; }
+/* ovl1:243A: a Yes/No box: it shows the gStrings2003 message `message` (for example 0x37 "Are you sure
+   you wish to LOAD a saved game?", 0x36 for saving, 0x2E for quitting) over the two buttons of menu 5
+   (Yes is button 0x8021, No 0x8022) and returns 1 for Yes, 0 for No. It selects the 8x8 font and
+   clears gStatusLine, builds the list, draws the message at (gTextLeft * 8 + 8, gTextTop + 4) and
+   keeps one button highlighted (`lit`, starting with none; `hot` is the one to light, starting with
+   Yes at 0). The keys 0x5C and 0x66 flip `hot`, 0x2B, 0x3D and 0x61 take the highlighted button
+   (Yes when it is button 0), a click answers 1 or 0 at once, and with the mouse enabled any other
+   key looks for a selectable button under the pointer. The chosen button is flashed (DrawListNode
+   0, 1, 1 after a pressed look) before the list is freed and the font and window restored.
+   QUIRK ovl1:2558: the confirm keys store `lit + 0x8021` into `key`, which is never read again. */
+/*@ ovl1:243A */ int AskYesNo(int message)
+{
+    struct Node far *list;
+    struct Node far *node;
+    int savedWindow;
+    void far *savedFont;
+    int key;
+    int looping;
+    int result;
+    int lit;
+    int hot;
+
+    savedWindow = gTextRegion;
+    savedFont = gFont1A47;
+    gStatusLine = 0;
+    f1A47_0169(gFont8x8);
+    list = BuildMenuButtons(5);
+    LockHidePointer();
+    DrawShadowText(SkipStrings(&gStrings2003, message), (gTextLeft + 1) << 3, gTextTop + 4, 0xf, 0);
+    LockShowPointer();
+    lit = -1;
+    hot = 0;
+    looping = 1;
+    while (looping) {
+        if (hot != lit) {
+            if (lit != -1)
+                DrawListNode(FindNode(list, lit + 0x21), 0, 0, 1);
+            DrawListNode(FindNode(list, hot + 0x21), 0, 1, 1);
+            lit = hot;
+        }
+        key = DispatchKeyWait(list);
+        switch (key) {
+        case 0x5c:
+        case 0x66:
+            hot ^= 1;
+            break;
+        case 0x2b:
+        case 0x3d:
+        case 0x61:
+            result = lit == 0;
+            key = lit + 0x8021;
+            looping = 0;
+            break;
+        case 0x8021:
+            result = 1;
+            looping = 0;
+            break;
+        case 0x8022:
+            result = 0;
+            looping = 0;
+            break;
+        default:
+            if (!gMouseDisabled) {
+                for (node = list; node; node = node->next) {
+                    if ((node->defFlags & 2) &&
+                        IsPointInRect(gCursorX, gCursorY, node->x, node->y, node->x + node->width,
+                            node->y + node->height)) {
+                        hot = node->key - 0x21;
+                        break;
+                    }
+                }
+            }
+            break;
+        }
+        if (looping == 0) {
+            node = FindNode(list, lit + 0x21);
+            DrawListNode(node, 1, 1, 1);
+            WaitFrames(5);
+            DrawListNode(node, 0, 1, 1);
+            hot = lit;
+        }
+    }
+    FreeFarList(list);
+    f1A47_0169(savedFont);
+    SetTextWindow(savedWindow);
+    return result;
+}

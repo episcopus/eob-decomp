@@ -8104,9 +8104,9 @@ unit = "eov1"
 addr = "ovl1:243A"
 size = 590
 evidence = ["ovl"]
-name = "_ChooseListEntry"
+name = "AskYesNo"
 level = "L2"
-match_flags = "tasm /mx"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "eov2_0000"
