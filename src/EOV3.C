@@ -15,6 +15,20 @@ extern void far *gEFD4[]; /*@ ds:EFD4 */
 extern int gF538; /*@ ds:F538 */
 
 extern void LoadOverlayScreen(char far *name, int a, int b); /*@ 082C:05EC */
+extern void LoadScreenImage(char far *name, char far *extra, int srcKind, int dstKind, int mode); /*@ 082C:051B */
+extern void LoadPacked(char far *name, int srcKind, int dstKind); /*@ 1B82:0041 */
+extern void SetPlaneTables(void far *t1, void far *t2); /*@ 17A6:037E */
+extern void ExpandNibbles(void far *src, void far *dst); /*@ 17A6:0F1F */
+extern void BuildMask(void far *p); /*@ 17A6:18EA */
+extern void (far *gFn808E)(void far *buf, int a, int b); /*@ ds:808E */
+extern char gF4D6[16]; /*@ ds:F4D6 */       /* a 16-byte plane table (src/E17A6.ASM) */
+extern char gFB4D[16]; /*@ ds:FB4D */       /* a 16-byte plane table (src/E17A6.ASM) */
+extern unsigned char far gSheet2067[]; /*@ 2067:0000 */  /* the INVENT sheet (src/E0ACD.C) */
+extern unsigned char far gSheetDECORATE[]; /*@ 2069:0000 */  /* the PLAYFLD sheet (src/E0ACD.C) */
+extern int g80E8; /*@ ds:80E8 */            /* toggled by Ctrl-key handling (src/E1AAD.ASM) */
+extern int gSoundOn; /*@ ds:80E6 */
+extern char gF43C; /*@ ds:F43C */
+extern char gAD20[]; /*@ ds:AD20 */         /* a 96-byte saved-game buffer (Purpose unknown) */
 extern int FileOpen(char far *name, int mode); /*@ 1C0E:00DB */
 extern void FileRead(int handle, void far *buf, unsigned long len); /*@ 1C0E:0400 */
 extern void FileClose(int handle); /*@ 1C0E:03BB */
@@ -69,6 +83,7 @@ struct CharRec {            /* 243-byte character records at ds:F580 (src/E08E6.
 
 extern struct CharRec gChars[]; /*@ ds:F580 */
 extern void LoadLevelState(int action); /*@ ovl3:1147 */
+extern void ResetLevel(void); /*@ ovl3:19F7 */
 extern long SeekFile(int index, long offset, int whence); /*@ 1C0E:06E5 */
 extern void far *gSegEFC2; /*@ ds:EFC2 */
 extern void far *f1BA8_0072(void far *p); /*@ 1BA8:0072 */
@@ -483,7 +498,53 @@ done:
     }
     RearmCharEffects();
 }
-/*@ ovl3:1368 stub */ void Ovl3_1368(void) {}
+/* ovl3:1368: saves the game. It first writes the current level state to LEVELS.TMP slot gFBC8-1
+   through ovl3:0FD1 and sets that slot's bit in ds:FBD0, then deletes and recreates EOBDATA.SAV
+   (mode 2) and writes, checking each length: the six 243-byte characters ds:F580 (after
+   AgeCharTimers and before AdvanceCharTimers), the 0x40-byte header at ds:FBC8, the 500 14-byte
+   items ds:8DD0, the 0x5FA0-byte screen buffer gSegEFC2, the single bytes ds:80E8, ds:80E6 and
+   ds:F43C, and the 0x60-byte buffer ds:AD20. Returns 1 when every write wrote its full length,
+   else 0, and reloads the INVENT screen. Called by overlay 1 (ovl1:1ACD). */
+/*@ ovl3:1368 */ int SaveGame(void)
+{
+    int slot;
+    int handle;
+    int ok;
+    long len;
+
+    slot = gFBC8 - 1;
+    ResetLevel();
+    handle = FileOpen("LEVELS.TMP", 1);
+    FileRead(handle, gSegEFC2, 0x5fa0L);
+    FileClose(handle);
+    PackLevelState((char far *)gSegEFC2 + (long)slot * 0x7f8);
+    gFBD0 |= 1 << slot;
+    handle = FileOpen("EOBDATA.SAV", 1);
+    FileClose(handle);
+    handle = FileOpen("EOBDATA.SAV", 2);
+    ok = 1;
+    if (ok) {
+        AgeCharTimers();
+        len = 0x5b2;
+        ok &= (FileWrite(handle, (char far *)gChars, len) == len);
+        AdvanceCharTimers();
+        len = 0x40;
+        ok &= (FileWrite(handle, (char far *)&gFBC8, len) == len);
+        len = 0x1b58;
+        ok &= (FileWrite(handle, (char far *)gItems, len) == len);
+        len = 0x5fa0;
+        ok &= (FileWrite(handle, gSegEFC2, len) == len);
+        ok &= (FileWrite(handle, (char far *)&g80E8, 1L) == 1L);
+        ok &= (FileWrite(handle, (char far *)&gSoundOn, 1L) == 1L);
+        ok &= (FileWrite(handle, (char far *)&gF43C, 1L) == 1L);
+        len = 0x60;
+        ok &= (FileWrite(handle, (char far *)gAD20, len) == len);
+        FileClose(handle);
+        LoadScreenImage("INVENT", (char far *)gSheet2067, 5, 3, 2);
+    }
+    return ok;
+}
+
 /*@ ovl3:15B9 stub */ void Ovl3_15B9(void) {}
 /* ovl3:19F7: resets the level. It clears the m0A byte of the 30 gObjs objects, clears every live
    ds:DD2C effect record (disarming the low two bits of its item's m03 when it was active), then,
