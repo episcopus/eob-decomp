@@ -1,7 +1,7 @@
 # Review: eov2
 
 Reviewer: rev-haiku
-Commit reviewed: c2b1de9 (main; round 3 reviewed c2b1de9, round 2 e8be50a, round 1 4649fc4)
+Commit reviewed: 3b0319b (main; round 4 reviewed 3b0319b, round 3 c2b1de9, round 2 e8be50a, round 1 4649fc4)
 
 Playbook 70. Judge what a matching file can still get wrong: names, types, comments, structure.
 The matcher already proved the bytes; do not re-prove them, read for meaning.
@@ -10,6 +10,35 @@ The matcher already proved the bytes; do not re-prove them, read for meaning.
 
 Each finding is a checkbox. `must-fix` blocks `make review-pass` until a decompiler ticks it off
 (with the commit that fixes it); `should` and `note` do not block.
+
+### Round 4 (rev-haiku, at 3b0319b)
+
+Playbook 70, later round. Judged: the two round 3 must-fix items (fix commit 067dd64 and its merge af4e7b8 on
+main) and the changes since c2b1de9 on main (`git diff c2b1de9 main -- src/EOV2.C re/symbols.toml
+re/globals.toml`: src/EOV2.C comments and declarations only; re/symbols.toml has no eov2 or ovl2 entry;
+re/globals.toml's ds:FE5A line now cites EOV2.C:133, which is the gFont8x8 declaration). `make match
+FILE=src/EOV2.C` 11 of 11 (3332 bytes); `make readability UNIT=eov2` 0 findings. Checked against the code:
+the frame readers (src/E0EF3.C:695-696 and :770-771: `frame = ...; if (frame-- == 0) continue;`, then
+gFlashFrames[frame] at :707 and :773), so frame 0 is skipped and the frames 1 to 3 index [0..2]; the
+gIconTable readings in E0ACD.C:48, E1547.C:128 and E1414.C:107 (the party member being moved, -1 when none)
+and the BlinkSelected body (1414:0000, src/E1414.C:147-160: it saves gIconTable, writes 0xFF, redraws with
+RedrawMember and restores it); the f6815 decode bytes (eob/EOB.EXE file offset 0x2800 + 0x6822: the loop
+2c 41 3c 19 77 05 04 61 88 44 ff, ac 22 c0 75 f0, then 0000:6832 92 (xchg dx,ax), 8c da (mov dx,ds), 1f, 5e, 5d,
+cb, so 6832-6838 is right); the header cites (E082C.C:313-314 mode -1 test, :329 the "With mode -1" comment,
+:337 the LoadScreenImage call); the g65C0 and g65C3 loop at src/EOV2.C:366-368; gFillRect at E082C.C:64 and
+the 40 by 200 ClipRect at E082C.C:317; the LoadGamePanel entry 1 font cites (E1C0E.C:57, E07C8.C:376-377).
+Both round 3 must-fix items are fixed right in substance, ticks stay. The gIconTable comment's two line
+cites into E1414.C are stale by one line (below, shoulds).
+
+- [ ] should src/EOV2.C:151 (gIconTable): "src/E1414.C:106" is now the declaration at src/E1414.C:107 (the
+  comment "the index of the party member being moved, -1" starts on that line). Cite :107, or the address.
+- [ ] should src/EOV2.C:151 (gIconTable): "the BlinkSelected comment (1414:0000, src/E1414.C:141-145)" is now
+  the comment at src/E1414.C:142-146 (the function is at :147). The address 1414:0000 is right; drop the
+  line range or cite :142-146.
+
+Round 4 result: no must-fix open; two shoulds, both stale line cites in the one changed line. The open
+notes of rounds 1 to 3 stay as they are (they do not block). Nothing escalated: no matcher, spec or pin
+question.
 
 ### Round 3 (rev-haiku, at c2b1de9)
 
