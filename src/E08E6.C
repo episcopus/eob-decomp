@@ -95,10 +95,10 @@ extern int g320E[]; /*@ ds:320E */
 extern char g31F2[]; /*@ ds:31F2 */
 extern char g31F6[]; /*@ ds:31F6 */
 extern int gPartyCell; /*@ ds:FBCA */   /* the party's map cell (src/E177D.C:92): this unit reads
-                                           the word as a cell at :217, :220, :332, :401, :467, :543,
-                                           :547 and :1010. The question is open: src/E0ACD.C:56 and
-                                           src/E122E.C:197 still call it the sound volume, and
-                                           SetSoundVolume (src/E122E.C:212-213) writes
+                                           the word as a cell at :219, :222, :334, :403, :469, :545,
+                                           :549 and :1012. The question is open: src/E0ACD.C:56 and
+                                           src/E122E.C:196 still call it the sound volume, and
+                                           SetSoundVolume (src/E122E.C:212) writes
                                            gPartyCell = volume; the E122E and E0ACD reviews must
                                            settle it */
 extern char gF442; /*@ ds:F442 */
