@@ -494,12 +494,12 @@ void Obj10F3(struct Obj28 far *obj);   /* forward: 05EA reaches it before its de
    mind blast and paralyzes every affected member; 21 rolls 1d4 and, under 3, turns through Obj073F
    and plays g3223[roll] after g3220[roll], else announces the wounds spell and hits every affected
    member. Every action then runs the overlay-4 entry, clears gDF4C, decrements m19 unless it is 0xff
-   and sets m18 to 5, returning 1. Called by 0AB8. DRAFT: every case matches except the last
-   PlaySoundVolume(0x6c, id) of case 21, which ours tail-merges into the shared `push ax; call; pop;
-   pop` block that case 4, case 16 and the roll<3 path jump to (0A5E); the original keeps that call
-   inline (0765:01A2 `mov ax, 0x6c; push ax; lcall 177D:0106`) and jumps to the tail, a 5-byte -O
-   basic-block layout difference. The same statement as a separate `if (roll >= 3)`, a `goto` label
-   and `break` do not change it. */
+   and sets m18 to 5, returning 1. Called by 0AB8. DRAFT, blocked: a -O cross-jump question: every
+   case matches except the last PlaySoundVolume(0x6c, id) of case 21, which ours tail-merges into the
+   shared `push ax; call; pop; pop` block that case 4, case 16 and the roll<3 path jump to (0A5E);
+   the original keeps that call inline (0765:01A2 `mov ax, 0x6c; push ax; lcall 177D:0106`) and jumps
+   to the tail, a 5-byte basic-block layout difference. The same statement as a separate
+   `if (roll >= 3)`, a `goto` label, a nested block and `break` do not change it. */
 /*@ 08E6:0765 draft */ int Obj0765(struct Obj28 far *obj)
 {
     struct Entry27 far *rec;
@@ -625,12 +625,13 @@ void Obj10F3(struct Obj28 far *obj);   /* forward: 05EA reaches it before its de
    turns through TurnObject(obj, -1, dir), sets the state to -1 and returns. The second half looks up
    handle = f0D1C_00DA(id, orient): when TurnObject(obj, handle, -1) fails it turns the other way,
    TurnObject(obj, -1, (orient - arg) & 3), and clears the state, else it sets the state to 1.
-   Called by UpdateObjects. Purpose unknown: what g1991 and the state values select. DRAFT: the body
-   matches up to the state==0 store, but ours cross-jumps the two `obj->state = -1` tails (0B94:0083
-   and 0B94:00A4 in the original stay apart; ours merges them and adds a `les bx` reload at 0x83, a
-   6-byte -O cross-jump difference). Compiling the unit with -B makes this function match exactly,
-   but -B breaks Obj00C3 (08E6:00C3), which matches under -ml -O -Z, so the unit's flags are not -B
-   and no -O source form found yet keeps the tails apart. blocked: a compiler cross-jump question. */
+   Called by UpdateObjects. Purpose unknown: what g1991 and the state values select. DRAFT,
+   blocked: a -O cross-jump question. The body matches up to the state==0 store, but ours cross-jumps
+   the two `obj->state = -1` tails (0B94:0083 and 0B94:00A4 in the original stay apart; ours merges
+   them and adds a `les bx` reload at 0x83, a 6-byte difference). A -B build of the unit makes this
+   function match exactly, but -B gives every `||` chain its first test as `jne` over `jmp` and no
+   source form (a unit test, an explicit `if`, a `switch`, separate `if`s) removes that, so -B breaks
+   Obj00C3 (08E6:00C3), which matches -ml -O -Z; hence the flags stay. */
 /*@ 08E6:0B94 draft */ void Obj0B94(struct Obj28 far *obj, int arg)
 {
     int handle;
@@ -942,10 +943,13 @@ second:
 /* 08E6:1410: when the effect mode gF51B and its deadline say an effect is due, run the 122E entry
    with (0, 0x20): when no object of the 30 has a count left, run 0EC3 on the first object (from
    index 1) whose 17A6:0F61(id, gSoundVolume) is over 3; then advance the deadline by gF510 and
-   clear gF540. Called by 1414:04E7 and overlay 6. DRAFT: the six 32-bit deadline comparisons are
-   written and the mode-1 and mode-2 tests now agree, but the second half of the mode-3 test
+   clear gF540. Called by 1414:04E7 and overlay 6. DRAFT, blocked: a -O branch-layout question. The
+   mode-1, mode-2 and the mode-3 first test agree; only the second half of the mode-3 test
    `gDeadline >= g8492` is laid out the other way round: ours (1410:005A `jb` skip, fall through to
-   fire) where the original has `jae` fire, `jmp` skip. */
+   `fire` at 1410:005C) where the original has `jae` fire (1410:006A) then `jmp` skip (1410:006C).
+   Writing the test as `g8492 <= gDeadline`, `!(gDeadline < g8492)`, an empty `if`/`else`, or with the
+   inner `return` removed all give ours; the compiler inverts the low-word branch because `fire` is
+   the next block. */
 /*@ 08E6:1410 draft */ void Obj1410(void)
 {
     int i, any;
@@ -1108,10 +1112,13 @@ fire:
 }
 /* 08E6:17FD: fill `list` with gObjs indices and end it with -1: when scanAll is set, every object
    whose id is key; otherwise when scanFiltered is set, the single index 1775(key, field, flags)
-   finds; otherwise the first object 189D accepts for (key, field). Called by 0D1C:0A43. DRAFT: the
-   body is written and the first two branches agree; the shared `list++` tail after the scanFiltered
-   and 189D branches is placed 12 bytes nearer in the original (17FD:0059 `jmp` 0x28 to the tail, ours
-   0x34), a -O basic-block layout difference. */
+   finds; otherwise the first object 189D accepts for (key, field). Called by 0D1C:0A43. DRAFT,
+   blocked: a -O cross-jump direction question. The two `*list++` tails (scanFiltered and the 189D
+   found branch) are identical; ours keeps the scanFiltered copy (17FD:0058 `add word [bp + 6], 2`)
+   and the found branch jumps back to it (17FD:0086), so the scanFiltered test reaches the loop at
+   17FD:005E and ours differs at +0x41; the original keeps the found copy at 17FD:0082 and the
+   scanFiltered path jumps forward to it (17FD:0058 `jmp` +0x28). Writing `list++` inside each branch
+   or once after the `if`/`else` does not move the copy the compiler keeps. */
 /*@ 08E6:17FD draft */ void Obj17FD(int far *list, int key, int field, char flags, char scanAll, char scanFiltered)
 {
     struct Obj28 far *obj;
@@ -1119,23 +1126,20 @@ fire:
 
     if (scanAll) {
         for (i = 0, obj = gObjs; i < 30; i++, obj++) {
-            if (obj->id == key) {
-                *list = i;
-                list++;
-            }
+            if (obj->id == key)
+                *list++ = i;
         }
     } else {
         if (scanFiltered) {
-            *list = Obj1775(key, field, flags);
+            *list++ = Obj1775(key, field, flags);
         } else {
             for (i = 0, obj = gObjs; i < 30; i++, obj++) {
                 if (Obj189D(obj, key, field)) {
-                    *list = i;
+                    *list++ = i;
                     break;
                 }
             }
         }
-        list++;
     }
     *list = -1;
 }
