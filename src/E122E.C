@@ -5,12 +5,15 @@
    opcode consumed, or jump the pointer; the driver stops when a handler sets gA9EC. 147F is the big
    sub-dispatcher with its own in-segment jump table; the map folded the 122E:1194 play-sound handler
    into 1097 and the 122E:1A3B drain-item handler into 147F, and both are separate functions here.
-   Below L2: the writer 147F (stub) and four drafts (ForceDoorAction 0325, ItemSlotAction 06D0,
-   WriteObjectFieldOp 0960, WriteObjectRunOp 0A16), each with its difference in re/symbols.toml. */
+   Below L2: five drafts (ForceDoorAction 0325, ItemSlotAction 06D0, WriteObjectFieldOp 0960,
+   WriteObjectRunOp 0A16, EvaluateScriptExpr 147F), each with its difference in re/symbols.toml. */
 
 /*@flags -ml -O -Z */
 
 extern signed char gB894[]; /*@ ds:B894 */     /* nine-byte per-object records (src/E08E6.C) */
+extern int gEvalStack[]; /*@ ds:A95C */         /* the script-expression value stack (122E:147F) */
+extern int gEvalTop; /*@ ds:A9EE */             /* the index into gEvalStack (122E:147F) */
+extern char g1231[]; /*@ ds:1231 */             /* per-class byte table (src/E0BD2.C) */
 extern signed char gTable18BF[]; /*@ ds:18BF */ /* per-object-kind table (Purpose unknown) */
 extern int gEFD2; /*@ ds:EFD2 */               /* the mode the driver runs a script in (src/E0ACD.C) */
 extern char gA9EC; /*@ ds:A9EC */              /* set by a handler to stop the driver's script walk */
@@ -122,9 +125,14 @@ struct CharRec {                                /* the 243-byte character record
     signed char m0F;                            /* +0F: a level or score (src/E0BD2.C) */
     char pad10[0x1B - 0x10];
     signed char m1B;                            /* +1B: 122E:0325 skips a character at or below 0 */
-    char pad1C[0x77 - 0x1C];
+    char pad1C[0x20 - 0x1C];
+    signed char m20;                            /* +20: indexes g1231 (122E:147F) */
+    signed char m21;                            /* +21: halved and matched by 122E:147F */
+    char pad22[0x77 - 0x22];
     int items[0x1b];                            /* +77: 27 item slots */
-    char padAD[0xf3 - 0xad];
+    char padAD[0xE3 - 0xAD];
+    long lE3;                                   /* +E3: bit 2 tested by 122E:147F */
+    char padE7[0xf3 - 0xE7];
 };
 
 struct Item14 {                                 /* the 14-byte item records at ds:8DD2 (src/E0BD2.C) */
@@ -133,7 +141,9 @@ struct Item14 {                                 /* the 14-byte item records at d
     signed char m02;                            /* +02 (ds:8DD4): the item type (src/E0BD2.C) */
     signed char m03;                            /* +03 (ds:8DD5): the key (src/E0BD2.C) */
     int m04;                                    /* +04 (ds:8DD6): the key, -1 when free (src/E0BD2.C) */
-    char pad06[0x0e - 0x06];
+    char pad06[0x0B - 0x06];
+    signed char m0B;                            /* +0B (ds:8DDD): read by 122E:147F */
+    char pad0C[0x0e - 0x0C];
 };
 
 extern struct CharRec gChars[]; /*@ ds:F580 */
@@ -1027,7 +1037,178 @@ done:
     }
     return (long)(script - start);
 }
-/*@ 122E:147F stub */ long f122E_147F(char far *script) { return 0; }
+/* 122E:147F: the sub-dispatcher of opcode 0xFFE8. It evaluates a postfix script expression over a
+   global word stack (gEvalStack/gEvalTop): most sub-opcodes push a value, the binary sub-opcodes
+   pop two and push a comparison or a logical result, and 0xFFEE ends the expression, returning how
+   far the script moved (jumping to gBuf8DCA + word when the popped value is 0). A sub-opcode byte
+   in 0..0x7f is pushed as a literal; a negative one not in the table is a no-op. Case order follows
+   the original's body layout. Draft: it does not match yet; the remaining differences are the
+   register allocation of the three member-scan loops and the FFF5 argument order (see its note in
+   re/symbols.toml). */
+/*@ 122E:147F draft */ long EvaluateScriptExpr(char far *script)
+{
+    int op;
+    int value;
+    int t1;
+    int t2;
+    int i;
+    register int lhs;
+    register int rhs;
+    char far *start;
+
+    start = script;
+    while ((op = *script++) != 0xFFEE) {
+        switch (op) {
+        case 0xFFE0:
+            gEvalStack[gEvalTop++] = gFB36;
+            break;
+        case 0xFFED:
+            gEvalStack[gEvalTop++] = gFBCC;
+            break;
+        case 0xFFF7:
+            value = *(int far *)script;
+            script += 2;
+            gEvalStack[gEvalTop++] = (signed char)gB894[value * 9];
+            break;
+        case 0xFFF5:
+            t2 = *script++;
+            value = *(int far *)script;
+            script += 2;
+            gEvalStack[gEvalTop++] = ScanListItem(&gB899[value * 9], -1,
+                                                  t2 == -1 ? -1 : t2, 1);
+            break;
+        case 0xFFF3:
+            value = *(int far *)script;
+            script += 2;
+            gEvalStack[gEvalTop++] = ObjectCountIsOdd(value);
+            break;
+        case 0xFFF2:
+            t1 = *(int far *)script;
+            script += 2;
+            value = *(int far *)script;
+            script += 2;
+            gEvalStack[gEvalTop++] = ScanListItem(&gB899[value * 9], t1, -1, 0);
+            break;
+        case 0xFFF1:
+            value = *(int far *)script;
+            script += 2;
+            gEvalStack[gEvalTop++] = (gPartyCell == value);
+            break;
+        case 0xFFF0:
+            t2 = *script++;
+            gEvalStack[gEvalTop++] = (gFC04 & (1L << t2)) != 0;
+            break;
+        case 0xFFEF:
+            t2 = *script++;
+            gEvalStack[gEvalTop++] = (gActionFlags[gFBC8] & (1L << t2)) != 0;
+            break;
+        case 0xFFE8:
+            t1 = f0D1C_02DC();
+            if (*script == (char)0xE1)
+                gEvalStack[gEvalTop++] = gTable8DD2[t1].m02;
+            else if (*script == (char)0xF5)
+                gEvalStack[gEvalTop++] = t1;
+            else
+                gEvalStack[gEvalTop++] = gTable8DD2[t1].m0B;
+            script++;
+            break;
+        case 0xFFEA:
+            t1 = *script++;
+            value = *(int far *)script;
+            script += 2;
+            gEvalStack[gEvalTop++] = (signed char)gB894[value * 9 + t1];
+            break;
+        case 0xFFDD:
+            t1 = *script++;
+            lhs = 0;
+            for (i = 0; i < 6; i++) {
+                if ((gChars[i].status & 1) && (gChars[i].m21 >> 1) == t1) {
+                    lhs = 1;
+                    break;
+                }
+            }
+            gEvalStack[gEvalTop++] = lhs;
+            break;
+        case 0xFFDC:
+            t1 = *script++;
+            lhs = 0;
+            for (i = 0; i < 6; i++) {
+                if ((gChars[i].status & 1) && (g1231[gChars[i].m20] & t1)) {
+                    lhs = 1;
+                    break;
+                }
+            }
+            gEvalStack[gEvalTop++] = lhs;
+            break;
+        case 0xFFDB:
+            value = *script++;
+            t2 = *script++;
+            t1 = *script++;
+            gEvalStack[gEvalTop++] = RollDice(value, t2, t1);
+            break;
+        case 0xFFFF:
+            rhs = gEvalStack[--gEvalTop];
+            lhs = gEvalStack[--gEvalTop];
+            gEvalStack[gEvalTop++] = (lhs == rhs);
+            break;
+        case 0xFFFE:
+            rhs = gEvalStack[--gEvalTop];
+            lhs = gEvalStack[--gEvalTop];
+            gEvalStack[gEvalTop++] = (lhs != rhs);
+            break;
+        case 0xFFFD:
+            rhs = gEvalStack[--gEvalTop];
+            lhs = gEvalStack[--gEvalTop];
+            gEvalStack[gEvalTop++] = (lhs >= rhs);
+            break;
+        case 0xFFFC:
+            rhs = gEvalStack[--gEvalTop];
+            lhs = gEvalStack[--gEvalTop];
+            gEvalStack[gEvalTop++] = (lhs > rhs);
+            break;
+        case 0xFFFB:
+            rhs = gEvalStack[--gEvalTop];
+            lhs = gEvalStack[--gEvalTop];
+            gEvalStack[gEvalTop++] = (lhs <= rhs);
+            break;
+        case 0xFFFA:
+            rhs = gEvalStack[--gEvalTop];
+            lhs = gEvalStack[--gEvalTop];
+            gEvalStack[gEvalTop++] = (lhs < rhs);
+            break;
+        case 0xFFF9:
+            rhs = gEvalStack[--gEvalTop];
+            lhs = gEvalStack[--gEvalTop];
+            gEvalStack[gEvalTop++] = (lhs != 0 && rhs != 0);
+            break;
+        case 0xFFF8:
+            rhs = gEvalStack[--gEvalTop];
+            lhs = gEvalStack[--gEvalTop];
+            gEvalStack[gEvalTop++] = (lhs != 0 || rhs != 0);
+            break;
+        case 0xFFDA:
+            lhs = 0;
+            for (i = 0; i < 6; i++) {
+                if ((gChars[i].status & 1) && (gChars[i].lE3 & 4) == 0) {
+                    lhs = 1;
+                    break;
+                }
+            }
+            gEvalStack[gEvalTop++] = !lhs;
+            break;
+        default:
+            if (op >= 0 && op < 0x80)
+                gEvalStack[gEvalTop++] = op;
+            break;
+        }
+    }
+    value = gEvalStack[--gEvalTop];
+    if (value != 0)
+        script += 2;
+    else
+        script = (char far *)gBuf8DCA + *(int far *)script;
+    return (long)(script - start);
+}
 
 /* 122E:1A3B: the drain-item opcode. It reads a byte: 0xFFFF clears slot -1 of member 0, 0xFFFE
    drains every item of the list `vol` (read as a word), and any other byte drains the list `vol`
@@ -1213,7 +1394,7 @@ done:
         WriteObjectFieldOp, WriteObjectRunOp, ArmMember, DisarmMember, SpawnObjectOp,
         ReassignObjectsOp, MoveCarriedItemOp, ShowTextOp, SetActionFlagsOp, PlaySoundOp,
         ClearActionBit, HealPartyMember, DamagePartyMember, JumpToScriptOffset, ScriptStop,
-        PopScriptPointer, PushScriptPointer, f122E_147F, DrainItemOp, LoadLevelOp,
+        PopScriptPointer, PushScriptPointer, EvaluateScriptExpr, DrainItemOp, LoadLevelOp,
         AddExperienceOp, TakeItemOp, AddEffectOp, TurnPageOp, MarkMemberItemsOp, CallOverlayOp
     };
     char far *script;
