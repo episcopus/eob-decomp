@@ -2436,6 +2436,8 @@ addr = "0BD2:04AA"
 size = 267
 evidence = ["far", "frame"]
 name = "DrainListItem"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0bd2_05b5"

@@ -391,8 +391,8 @@ next:
 {
     int start;
     int item;
-    int next;
     int count;
+    int saved;
 
     item = *(int *)(gB899 + vol * 9);
     if (item == 0)
@@ -401,19 +401,20 @@ next:
     count = 0;
     start = item;
     while (item != start || count == 0) {
-        if (type == -1 || gItems[item].m02 == type) {
+        if (gItems[item].m02 == type || type == -1) {
             gItems[item].m04 = -1;
             gItems[item].m0A = 0;
-            next = gItems[item].m08;
-            gItems[item].m08 = 0;
-            gItems[item].m06 = 0;
+            saved = item;
+            item = gItems[item].m08;
+            gItems[saved].m08 = 0;
+            gItems[saved].m06 = 0;
         } else {
-            next = gItems[item].m08;
-            gItems[item].m08 = 0;
-            gItems[item].m06 = 0;
-            InsertListItem((void far *)(gB899 + vol * 9), vol, item, gItems[item].m03);
+            saved = item;
+            item = gItems[item].m08;
+            gItems[saved].m08 = 0;
+            gItems[saved].m06 = 0;
+            InsertListItem((void far *)(gB899 + vol * 9), vol, saved, gItems[saved].m03);
         }
-        item = next;
         count++;
     }
 }
