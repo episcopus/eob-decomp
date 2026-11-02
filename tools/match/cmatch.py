@@ -384,8 +384,11 @@ def compare(fname, a: Build, b: Build, at_a: int, at_b: int, length: int, orig: 
             elif a.lits[0] <= va < a.lits[1]:
                 if a.cstr(va) != orig.cstr(vo):
                     return fail(k, "literal %r, original %r" % (a.cstr(va), orig.cstr(vo)))
-            elif va >= FAR_BASE and far_a and max((o for o in far_a if o <= va), default=-1) >= va - 255:
-                o = max(o for o in far_a if o <= va)
+            elif va >= FAR_BASE - 256 and far_a and min(far_a, key=lambda o: abs(va - o)) - 256 <= va < \
+                    min(far_a, key=lambda o: abs(va - o)) + 256:
+                # the nearest far object; a displacement may be negative (gMapTiles[i - 1] at offset 0
+                # folds to es:[bx-1], offset FFFF: eov3, 2026-11-02)
+                o = min(far_a, key=lambda o: abs(va - o))
                 n, (seg, off) = far_a[o]
                 if vo != (off + va - o) & 0xFFFF:
                     return fail(k, "%s+%d is %04X:%04X, original offset %04X" % (n, va - o, seg, off + va - o, vo))
