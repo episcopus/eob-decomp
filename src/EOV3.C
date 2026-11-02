@@ -2,9 +2,10 @@
    .DAT (ovl3:004F), slices map icon cells (ovl3:03A2, 0624, 069E, 0718), builds the ds:B899 item
    list (ovl3:0951), loads and unpacks a level state from LEVELS.TMP (ovl3:09AA, 109D, 1147) and
    packs and saves it (ovl3:0FD1, 11AF), ages and advances the character timers (ovl3:123D, 12F1)
-   and resets the level (ovl3:19F7). The entry at 210C:0039 (ovl3:15B9) loads a saved game. 17 of
-   the 23 functions are decompiled to L2, ovl3:03A2 is a blocked draft, and 01C8, 07A5, 0A7C,
-   1368, 15B9 are stubs. Placeholder names where no evidence. */
+   and resets the level (ovl3:19F7). The entry at 210C:0039 (ovl3:15B9) loads a saved game, and
+   ovl3:0A7C mounts a level's map screen. 20 of the 23 functions are decompiled to L2; ovl3:01C8,
+   03A2 and 0A7C are blocked drafts, all on cmatch's far-object handling (see ovl3:0A7C's comment).
+   Placeholder names where no evidence. */
 
 /*@flags -ml -O -Z */
 
@@ -189,6 +190,35 @@ extern unsigned char g6900[]; /*@ ds:6900 */
 extern signed char far gMapTiles[]; /*@ 1F1D:0000 */
 
 #define MAPSHEET ((void far *)((char far *)MK_FP(0x1d8, 0) + (gMapTiles[gFBC8 - 1] << 5)))
+
+extern int gFlags849E; /*@ ds:849E */
+extern char gF51B; /*@ ds:F51B */
+extern int gF510; /*@ ds:F510 */
+extern int gFB32; /*@ ds:FB32 */
+extern int gF540; /*@ ds:F540 */
+extern unsigned long gDeadline; /*@ ds:F512 */
+extern char gFB45; /*@ ds:FB45 */
+extern char far *gBuf8DCA; /*@ ds:8DCA */   /* the 7500-byte unpacked level script (src/E07A9.C) */
+extern char far *gBufF43E; /*@ ds:F43E */   /* the 6000-byte level graphics file (src/E07A9.C) */
+extern unsigned char far *gFE68; /*@ ds:FE68 */  /* the 0x300-byte palette file (src/E07C8.C) */
+extern void FormatName(char far *prefix, int number, char far *suffix); /*@ 082C:0AE8 */
+extern void Unpack(char far *src, void far *dst); /*@ 1B82:00C7 */
+extern void LoadFile(char far *name, void far *buf, unsigned len); /*@ 1B82:0009 */
+extern void Obj131D(int index, int kind, int id, int frame, int orient, int b0, int m07, int type, int timer, int m12, int m14); /*@ 08E6:131D */
+extern void PlaySound(int sound); /*@ 177D:0070 */
+
+struct T16 {                /* the 16-byte timer records ovl3:0A7C fills from the level script */
+    unsigned long f0;       /* +0: the script (index, value) value / the derived deadline */
+    char pad04[0xc];
+};
+extern struct T16 g5BCC[]; /*@ ds:5BCC */
+extern struct T16 g5BD0[]; /*@ ds:5BD0 */
+extern struct T16 g5BDC[]; /*@ ds:5BDC */
+
+/* ds:6A80 holds the three map icon loaders (LoadMapIcons6 at stub 0x25, LoadMapIcons6b at 0x34,
+   LoadNamedIcons at 0x2A); ovl3:0A7C copies them into a local array through F_SCOPY (0000:78C9).
+   The template is ds:6A80; its far pointers are overlay stub entries, which the flat link cannot
+   reproduce, so the copy is the matcher gap at +000F (see the function's note). */
 
 struct WallDec {            /* a 52-byte wall set decoration */
     char idx[0xc];
@@ -499,7 +529,178 @@ done:
         }
     }
 }
-/*@ ovl3:0A7C stub */ void Ovl3_0A7C(int level) {}
+/* ovl3:0A7C: loads the map screen for level `level`. It reads the level's packed script
+   "LEVEL<n>.INF" (FormatName, FileOpen, FileRead into gSegDF4E, Unpack into gBuf8DCA), names its
+   two object/screen files through LoadObjects and a "%s.%s" sprite name, loads the sprite file
+   into gBufF43E and, in VGA mode, the "%s.PAL" palette, then frees the effect/map/pointer tables.
+   The rest of the script: four LoadMapCells arguments, the header bytes gF51B/gF510/gFB32 and the
+   gDeadline/gF540 timers, two far function-pointer records (the local `handlers` list of the icon
+   loaders, called with 0 and 0x12), a run of (index, value) timer pairs stored into the 16-byte
+   g5BCC/g5BDC records, four g5BD0 deadlines derived from g5BCC plus the tick counter g8492, the 30
+   14-byte object records handed to Obj131D (or skipped by 0x1a4 when the level was already
+   unpacked), the wall/object records (0xEC introduces a 0x18-byte wall set through LoadWallSet,
+   otherwise a five-byte RegisterWallObject record), the item records keyed against gB894, and
+   finally the wall textures (LoadWallTextures with the gMapTiles[gFBC8-1] sheet) and the INVENT
+   screen. Called by EnterMapScreen (0ACD:0F72) and ResetMapScreen (0ACD:1033), and by ovl3:15B9.
+   blocked: two far-address forms cmatch cannot explain. (1) The local `handlers` array is
+   initialised from a list, so its far function pointers land in a compiler-generated template
+   copied by F_SCOPY (0000:78C9) from ds:6A80; the original template holds the overlay stub entries
+   (0x210C:0025/0034/002A), our flat link holds the code-segment offsets, so the template bytes
+   differ and the draft stops at +000F (`mov ax,0x6a80`). (2) The sheet form gMapTiles[gFBC8-1] at
+   ovl3:0F69 is the same far-object access as ovl3:03A2 (+04ED). Both are kept as the honest source
+   form. */
+/*@ ovl3:0A7C draft */ void LoadMapScreen(int level)
+{
+    int scriptWord;
+    int itemIdx;
+    int itemCount;
+    int handlerIdx;
+    int objType;
+    int objTimer;
+    int objM12;
+    int objM14;
+    int recIndex;
+    int objIndex;
+    int objId;
+    int objFrame;
+    int objOrient;
+    int objM07;
+    int objB0;
+    int objKind;
+    int scriptCount;
+    int payloadLen;
+    int nObjects;
+    char far *script;
+    void (far *handlers[3])(char far *, int) = { LoadMapIcons6, LoadMapIcons6b, LoadNamedIcons };
+    int i;
+    int handle;
+
+    gFlags849E &= ~2;
+    gFBC8 = level;
+    FormatName("LEVEL", level, "INF");
+    handle = FileOpen(gFileNameBuf, 1);
+    FileRead(handle, (char far *)&payloadLen, 2L);
+    FileRead(handle, (char far *)gSegDF4E, (long)payloadLen);
+    FileClose(handle);
+    Unpack((char far *)gSegDF4E, gBuf8DCA);
+    script = gBuf8DCA + 2;
+    LoadObjects(script);
+    script += 12;
+    sprintf(gFileNameBuf, "%s.%s", script, g8102 == 3 ? "VMP" : "EMP");
+    handle = FileOpen(gFileNameBuf, 1);
+    FileRead(handle, gBufF43E, 2L);
+    FileRead(handle, gBufF43E, 0x1770L);
+    FileClose(handle);
+    if (g8102 == 3) {
+        sprintf(gFileNameBuf, "%s.PAL", script);
+        LoadFile(gFileNameBuf, gFE68, 0x300);
+    }
+    script += 0x18;
+    FreeEffectTables();
+    FreeMapIcons(0, 0x24);
+    FreePtrTable();
+    LoadMapCells(script[0], script[1], script[2], script[3]);
+    script += 4;
+    gF51B = script[0];
+    script++;
+    gF510 = *(int far *)script;
+    script += 2;
+    gFB32 = *(int far *)script;
+    script += 2;
+    gDeadline = g8492 + gF510;
+    gF540 = 0;
+    handlerIdx = script[0];
+    script++;
+    if (handlerIdx != -1)
+        handlers[handlerIdx](script, 0);
+    script += 12;
+    handlerIdx = script[0];
+    script++;
+    if (handlerIdx != -1)
+        handlers[handlerIdx](script, 0x12);
+    script += 12;
+    for (;;) {
+        recIndex = script[0];
+        script++;
+        if (recIndex == -1)
+            break;
+        recIndex *= 2;
+        g5BCC[recIndex].f0 = (unsigned long)script[0];
+        g5BDC[recIndex].f0 = (unsigned long)script[0];
+        script++;
+    }
+    for (i = 0; i < 4; i++) {
+        if (i & 1)
+            g5BD0[i].f0 = g8492 + (g5BCC[i].f0 >> 1);
+        else
+            g5BD0[i].f0 = g8492 + g5BCC[i].f0;
+    }
+    if (!(gFBD0 & (1 << (level - 1)))) {
+        memset(gObjs, 0, 0x348);
+        for (i = 0; i < 0x1e; i++) {
+            objIndex = script[0];
+            script++;
+            objKind = script[0];
+            script++;
+            objId = *(int far *)script;
+            script += 2;
+            objFrame = script[0];
+            script++;
+            objOrient = script[0];
+            script++;
+            objB0 = script[0];
+            script++;
+            objM07 = script[0];
+            script++;
+            objType = script[0];
+            script++;
+            objTimer = script[0];
+            script++;
+            objM12 = *(int far *)script;
+            script += 2;
+            objM14 = *(int far *)script;
+            script += 2;
+            Obj131D(objIndex, objKind, objId, objFrame, objOrient, objB0, objM07, objType, objTimer,
+                objM12, objM14);
+        }
+    } else
+        script += 0x1a4;
+    scriptCount = *(int far *)script;
+    script += 2;
+    nObjects = 0;
+    for (i = 0; i < scriptCount; i++) {
+        if (*script++ == 0xec) {
+            LoadWallSet(script, script + 0xc);
+            script += 0x18;
+        } else {
+            nObjects++;
+            RegisterWallObject(script[0], script[1], script[2], script[3], script[4]);
+            script += 5;
+        }
+    }
+    g8115 = 0;
+    scriptWord = *(int far *)gBuf8DCA;
+    script = gBuf8DCA + scriptWord;
+    itemCount = *(int far *)script;
+    script += 2;
+    for (i = 0; i < 0x400; i++)
+        *(unsigned short far *)(gB899 + i * 9) = 0;
+    RebuildItemList();
+    for (i = 0; i < itemCount; i++) {
+        itemIdx = *(int far *)script;
+        script += 2;
+        ((unsigned char far *)gB894)[itemIdx * 9 + 4] |= script[0];
+        script++;
+        scriptWord = *(int far *)script;
+        script += 2;
+        *(unsigned short far *)((char far *)gB894 + itemIdx * 9 + 7) = scriptWord;
+    }
+    LoadWallTextures(gBuf8DCA + 0x1a, MAPSHEET);
+    LoadScreenImage("INVENT", (char far *)MK_FP(0x1f0, 0), 5, 3, 2);
+    gFlags849E |= 2;
+    PlaySound(0);
+    gFB45 = 1;
+}
 /* ovl3:0FD1: packs the level state into `buf`. It copies the four gB894 bytes of each of the 0x400
    records into gBufDCFC, compresses gBufDCFC (0x1000 bytes) into `buf` with CompressLcw and, when
    the stream is longer than 0x4B0, prints "Map compression failure: size of map = %d" and shuts the
@@ -750,7 +951,7 @@ done:
             }
         }
         if (gA998 != (char)0xff) {
-            Ovl3_0A7C(gFBC8);
+            LoadMapScreen(gFBC8);
             LoadScreenImage("PLAYFLD", (char far *)gSheetDECORATE, 5, 3, 0);
             fOvl4_1EDE();
             LoadScreenImage("INVENT", (char far *)gSheet2067, 5, 3, 2);

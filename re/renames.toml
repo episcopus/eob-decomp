@@ -1370,6 +1370,15 @@ why = "a function name is a verb phrase (docs/process/READABILITY.md); it detect
 date = "2026-11-01"
 
 [[rename]]
+id = "ovl3:0A7C=LoadMapScreen"
+addr = "ovl3:0A7C"
+old = "Ovl3_0A7C"
+new = "LoadMapScreen"
+kind = "function"
+why = "loads the map screen for a level: opens LEVEL<n>.INF, unpacks the level script, builds the objects, wall records and item list and loads the wall textures; called by EnterMapScreen (0ACD:0F72) and ResetMapScreen (0ACD:1033)"
+date = "2026-11-01"
+
+[[rename]]
 id = "ds:810E=gAllocCount"
 addr = "ds:810E"
 old = "g810E"
