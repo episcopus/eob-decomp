@@ -84,7 +84,7 @@ int FindFile(char far *name);            /*@ 1C0E:1645: defined later in the fil
 int IsFileInMemory(char far *name);      /*@ 1C0E:1161: defined later in the file */
 int FindLoadedFile(char far *name);      /*@ 1C0E:11D3: defined later in the file */
 int LocateOverlayFile(char far *name);   /*@ 1C0E:1310: defined later in the file */
-int f1C0E_144E(int index);               /*@ 1C0E:144E: defined later in the file */
+int LoadFileSlot(int index);               /*@ 1C0E:144E: defined later in the file */
 long ReadFromMemory(int index, void far *dst, long len); /*@ 1C0E:1240: defined later in the file */
 long LookupFileEntry(int handle, char far *name); /*@ 1C0E:172E: defined later in the file */
 
@@ -549,7 +549,64 @@ extern long gSlotLengths[];              /*@ ds:FF0C: the record's length per sl
             RetryFile(0xb, 0);
 }
 
-/*@ 1C0E:0F6E stub */ void f1C0E_0F6E(void) { }
+/* 1C0E:0F6E: build the overlay cache table: mark every slot free, upper case every entry's name and
+   clear its memory copy, counting the entries flagged FLAG_KEEP; then allocate a table of their
+   indices and a table of their flag bits, fill them, sort them by flag bits (descending, the index
+   table moved in parallel), and for every kept entry check its index and drop it into memory
+   through 1C0E:144E. Nothing happens when no entry is flagged. Called by InitOverlayCache. DRAFT:
+   the logic is right, but the sort's two temporaries and the loop variables do not settle into the
+   original's stack slots (the frame here is two bytes short of the original's 0x14); no source form
+   found yet. */
+/*@ 1C0E:0F6E draft */ void BuildFileCache(void)
+{
+    int count;
+    register int i;
+    int n;
+    int j;
+    int k;
+    int far *keep;
+    char far *order;
+    int savedOrder;
+    int savedKeep;
+
+    count = 0;
+    for (i = 0; i < MAX_FILES; i++)
+        gFileHandles[i] = SLOT_FREE;
+    for (i = 0; gFiles[i].name[0] != 0; i++) {
+        strupr(gFiles[i].name);
+        gFiles[i].data = 0;
+        if (gFiles[i].flags & FLAG_KEEP)
+            count++;
+    }
+    if (count == 0)
+        return;
+    keep = MemAlloc(count * sizeof(int), 0);
+    order = MemAlloc(count, 0);
+    n = 0;
+    for (j = 0; j < i; j++)
+        if (gFiles[j].flags & FLAG_KEEP) {
+            keep[n] = j;
+            order[n] = gFiles[j].flags & FLAG_BITS;
+            n++;
+        }
+    for (k = count - 1; k >= 0; k--)
+        for (j = 0; j < k; j++)
+            if (order[j] < order[j + 1]) {
+                savedOrder = order[j];
+                savedKeep = keep[j];
+                order[j] = order[j + 1];
+                keep[j] = keep[j + 1];
+                order[j + 1] = savedOrder;
+                keep[j + 1] = savedKeep;
+            }
+    for (j = 0; j < count; j++) {
+        if (keep[j] < 0 || keep[j] >= i)
+            FatalError(0x11, 0);
+        LoadFileSlot(keep[j]);
+    }
+    MemFree(order);
+    MemFree(keep);
+}
 
 /* 1C0E:1161: 1 when the file `name` (upper cased in place) has an in-memory copy, 0 when it is not
    in the table or not loaded. */
@@ -644,7 +701,7 @@ extern long gSlotLengths[];              /*@ ds:FF0C: the record's length per sl
 {
     gSavedDrive = getdisk();
     FindLastDrive();
-    f1C0E_0F6E();
+    BuildFileCache();
 }
 
 /* 1C0E:13FD: the shutdown half of the overlay cache: free every loaded copy (1C0E:0EE7) and go
@@ -664,13 +721,67 @@ extern long gSlotLengths[];              /*@ ds:FF0C: the record's length per sl
     if (index == -1)
         return 0;
     if (gFiles[index].flags & 0x40) {
-        f1C0E_144E(index);
+        LoadFileSlot(index);
         return 1;
     }
     return 0;
 }
 
-/*@ 1C0E:144E stub */ int f1C0E_144E(int index) { }
+/* 1C0E:144E: load the file in cache slot `index` into memory. A slot with no size reports code 0x10;
+   the copy is allocated (through the free-block hook, evicting another slot first when the largest
+   free block is too small), the file is opened (through the aliased entry when the slot's link is
+   negative, recording the looked-up record length), its length is checked for a linked record, and
+   the bytes are read into the copy; the slot's data pointer is set and 1 is returned. A failed
+   allocation, open or read frees the copy and returns 0. DRAFT: every byte matches except the last
+   read's success/failure blocks, where the original reloads no far pointer and jumps over the
+   failure to a shared `mov ax,1` (1C0E:1603), one byte longer; no source form found yet. */
+/*@ 1C0E:144E draft */ int LoadFileSlot(int index)
+{
+    void far *data;
+    struct FileEntry far *entry;
+    struct FileEntry far *alias;
+    int fd;
+
+    data = 0;
+    entry = &gFiles[index];
+    if (entry->size <= 0) {
+        FatalError(0x10, entry->name);
+        return 0;
+    }
+    if (LargestFreeBlock() >= entry->size)
+        data = MemAlloc(entry->size, 0);
+    else
+        data = 0;
+    if (data == 0) {
+        if (!EvictFile(entry->size, entry->flags))
+            return 0;
+        data = MemAlloc(entry->size, 0);
+    }
+    if (entry->link > 0) {
+        fd = open(entry->name, 0x8001, 0x180);
+    } else {
+        alias = &gFiles[gFiles[index].link & LINK_INDEX];
+        fd = open(alias->name, 0x8001, 0x180);
+        entry->size = LookupFileEntry(fd, entry->name);
+    }
+    if (fd == -1) {
+        MemFree(data);
+        return 0;
+    }
+    if (entry->link > 0) {
+        if (filelength(fd) != entry->size) {
+            FatalError(0xe, entry->name);
+            return 0;
+        }
+    }
+    if (read(fd, data, entry->size) != entry->size) {
+        MemFree(data);
+        return 0;
+    }
+    entry->data = data;
+    close(fd);
+    return 1;
+}
 
 /* 1C0E:1645: return the index of the slot named `name` exactly, or -1. */
 /*@ 1C0E:1645 */ int FindFile(char far *name)
