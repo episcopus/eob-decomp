@@ -667,21 +667,22 @@ extern long gSlotLengths[];              /*@ ds:FF0C: the record's length per sl
    clear its memory copy, counting the entries flagged FLAG_KEEP; then allocate a table of their
    indices and a table of their flag bits, fill them, sort them by flag bits (descending, the index
    table moved in parallel), and for every kept entry check its index and drop it into memory
-   through 1C0E:144E. Nothing happens when no entry is flagged. Called by InitOverlayCache. DRAFT:
-   the logic is right, but the sort's two temporaries and the loop variables do not settle into the
-   original's stack slots (the frame here is two bytes short of the original's 0x14); no source form
-   found yet. */
-/*@ 1C0E:0F6E draft */ void BuildFileCache(void)
+   through 1C0E:144E. Nothing happens when no entry is flagged. Called by InitOverlayCache. The two
+   tables hold `count` entries, so the index allocation is `keep = MemAlloc(count * 2, 0)` (an int
+   each, sign-extended) and the sort reads `keep[m]` and `*(keep + m + 1)`, the form the original
+   indexes with (base + m + one int, 1C0E:1042). */
+/*@ 1C0E:0F6E */ void BuildFileCache(void)
 {
     int count;
-    register int i;
-    int n;
-    int j;
-    int k;
     int far *keep;
-    char far *order;
+    unsigned char far *order;
+    int j;
+    int n;
+    int k;
     int savedOrder;
     int savedKeep;
+    register int i;
+    int idx;
 
     count = 0;
     for (i = 0; i < MAX_FILES; i++)
@@ -694,24 +695,23 @@ extern long gSlotLengths[];              /*@ ds:FF0C: the record's length per sl
     }
     if (count == 0)
         return;
-    keep = MemAlloc(count * sizeof(int), 0);
+    keep = MemAlloc(count * 2, 0);   /* 2 bytes per int */
     order = MemAlloc(count, 0);
-    n = 0;
-    for (j = 0; j < i; j++)
+    for (j = n = 0; j < i; j++)
         if (gFiles[j].flags & FLAG_KEEP) {
             keep[n] = j;
             order[n] = gFiles[j].flags & FLAG_BITS;
             n++;
         }
     for (k = count - 1; k >= 0; k--)
-        for (j = 0; j < k; j++)
-            if (order[j] < order[j + 1]) {
-                savedOrder = order[j];
-                savedKeep = keep[j];
-                order[j] = order[j + 1];
-                keep[j] = keep[j + 1];
-                order[j + 1] = savedOrder;
-                keep[j + 1] = savedKeep;
+        for (idx = 0; idx < k; idx++)
+            if (order[idx] < order[idx + 1]) {
+                savedOrder = order[idx];
+                savedKeep = keep[idx];
+                order[idx] = order[idx + 1];
+                keep[idx] = *(keep + idx + 1);
+                order[idx + 1] = savedOrder;
+                *(keep + idx + 1) = savedKeep;
             }
     for (j = 0; j < count; j++) {
         if (keep[j] < 0 || keep[j] >= i)

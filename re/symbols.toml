@@ -5832,6 +5832,9 @@ unit = "e1c0e"
 addr = "1C0E:0F6E"
 size = 499
 evidence = ["near", "frame"]
+name = "BuildFileCache"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "e1c0e_1161"
