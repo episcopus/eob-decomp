@@ -1449,3 +1449,21 @@ new = "RemoveMouseHandler"
 kind = "function"
 why = "a function name is a verb phrase (docs/process/READABILITY.md); it removes the INT 33h handler, its own header says 'remove the mouse event handler' (1A72:0285); callers E07C8.C:60 and :336; review of e1a72 round 2"
 date = "2026-11-01"
+
+[[rename]]
+id = "ovl5:0455=SelectMenu"
+addr = "ovl5:0455"
+old = "Ovl5_0455"
+new = "SelectMenu"
+kind = "function"
+why = "draws and runs an overlay menu of count rows from the position tables and returns the chosen row (ovl5:0455; callers pass gText7B23/gText7BBA/... menus)"
+date = "2026-11-01"
+
+[[rename]]
+id = "ovl5:0DBB=ResurrectPicker"
+addr = "ovl5:0DBB"
+old = "Ovl5_0DBB"
+new = "ResurrectPicker"
+kind = "function"
+why = "the resurrect panel's which-one picker: builds the far string list of BuildDeathList's gTableF4E6 entries (gChars/gCharPool names), runs SelectMenu and heals or resurrects the chosen entry (ovl5:0DBB, called by ResurrectPanel)"
+date = "2026-11-01"

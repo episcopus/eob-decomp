@@ -8,6 +8,8 @@
 
 /*@flags -ml -O -Z */
 
+#include <stdlib.h>     /* abs, the inline __abs__ the select lists use */
+
 struct Cell4 {              /* a four-byte sprite-cell definition, x, y, w, h (src/EOV2.C) */
     unsigned char x;
     unsigned char y;
@@ -108,6 +110,7 @@ extern char gText7CB7[]; /*@ ds:7CB7 */
 extern char gText7CBC[]; /*@ ds:7CBC */
 extern char gText7D0E[]; /*@ ds:7D0E */
 extern char gText7D77[]; /*@ ds:7D77 */
+extern char gText7D9E[]; /*@ ds:7D9E */
 extern char gText7BA6[]; /*@ ds:7BA6 */
 extern char gText7BB2[]; /*@ ds:7BB2 */
 extern char gText7BCA[]; /*@ ds:7BCA */
@@ -192,11 +195,11 @@ extern void FileClose(int handle); /*@ 1C0E:03BB */
 extern void f1A47_0169(void far *font); /*@ 1A47:0169 */
 
 /* siblings not decompiled yet: their real signatures, so callers compile */
-int Ovl5_0455(char first, char count, char far **names);
+int SelectMenu(char first, char count, char far **names);
 void Ovl5_0924(void);
 void Ovl5_0BBE(void);
 void Ovl5_0C9D(void);
-void Ovl5_0DBB(void);
+void ResurrectPicker(void);
 void Ovl5_0EB9(void);
 void Ovl5_0F77(void);
 void Ovl5_10A6(void);
@@ -412,14 +415,14 @@ enum {
    or three (a three-row column-major grid, wrapping). Returns the confirmed row index, after
    clearing the panel. Called by every menu panel of the overlay (067B, 0828, 0924, 09C5, 0AB1,
    0B16, 0EB9, 0F77, 102C, 1087, 10A6, 119E). */
-/*@ ovl5:0455 */ int Ovl5_0455(char first, char count, char far **names)
+/*@ ovl5:0455 draft */ int SelectMenu(char first, char count, char far **names)
 {
     int ybase;
     int sel;
     int key;
     int drawn;
     int j;
-    int c;
+    int keycode;
     int i;
 
     ybase = gTextTop + (gTextRow + 1) * gFontHeight1A47 + 4;
@@ -445,8 +448,8 @@ enum {
                 break;
             }
         }
-        c = key;
-        switch (c) {
+        keycode = key;
+        switch (keycode) {
         case KEY_CLICK:
         case KEY_CLICK2:
             for (j = 0; j < count; j++) {
@@ -495,7 +498,7 @@ enum {
    names[] with the six party members' names (gChars[i].name, ds + i*0xF3 + 2) and appends the
    "CANCEL" string ds:7B9F, at the same time counting how many members are present (flags bit 0).
    When every slot is taken it clears the panel, draws the title ds:7CBC and shows the seven-entry
-   menu table through Ovl5_0455; choosing CANCEL (index 6) returns 0, any other choice is applied
+   menu table through SelectMenu; choosing CANCEL (index 6) returns 0, any other choice is applied
    through f0D1C_035A. A free slot returns 1 at once. Called by 0828. */
 /*@ ovl5:067B */ int ChooseChar(void)
 {
@@ -513,7 +516,7 @@ enum {
     if (count > 5) {
         ClearPanel();
         DrawText(gText7CBC);
-        sel = Ovl5_0455(2, 7, names);
+        sel = SelectMenu(2, 7, names);
         if (sel == 6)
             return 0;
         f0D1C_035A(sel);
@@ -567,7 +570,7 @@ enum {
 
     ClearPanel();
     PrintTableString(which, 0);
-    sel = Ovl5_0455(0, 2, (void far *)gText7B23);
+    sel = SelectMenu(0, 2, (void far *)gText7B23);
     switch (sel) {
     case 0:
         if (head != -1) {
@@ -611,11 +614,11 @@ enum {
         ClearPanel();
         PrintTableString(8, 0);
         if (gFC04 & 0x2000L) {
-            sel = Ovl5_0455(0, 2, (void far *)gText7BB2);
+            sel = SelectMenu(0, 2, (void far *)gText7BB2);
             if (sel == 1)
                 sel = 2;
         } else {
-            sel = Ovl5_0455(2, 3, (void far *)gText7BA6);
+            sel = SelectMenu(2, 3, (void far *)gText7BA6);
         }
         switch (sel) {
         case 0:
@@ -648,7 +651,7 @@ enum {
     if (!(gFC04 & 0x8000L)) {
         gFC04 |= 0x8000L;
         PrintTableString(3, 0);
-        sel = Ovl5_0455(0, 2, (void far *)gText7BBA);
+        sel = SelectMenu(0, 2, (void far *)gText7BBA);
         if (sel == 0)
             PrintTableString(4, 0);
         else if (sel == 1)
@@ -657,7 +660,7 @@ enum {
         PrintTableString(0xd, 0);
     }
     if (whole)
-        sel = Ovl5_0455(0, 2, (void far *)gText7BC2);
+        sel = SelectMenu(0, 2, (void far *)gText7BC2);
     else
         sel = 1;
     if (sel == 0) {
@@ -804,7 +807,49 @@ enum {
         i++;
     }
 }
-/*@ ovl5:0DBB stub */ void Ovl5_0DBB(void) {}
+/* ovl5:0DBB: the resurrect panel's "which one?" picker. It clears the panel, draws the title
+   ds:7D9E, builds the far string list of the entries BuildDeathList left in gTableF4E6
+   (gCountDDE0 of them): a non-negative entry is a party member (gChars[entry].name), a negative
+   entry -k-1 is the pre-made character gCharPool[k].name. It then runs the 0455 menu (first row
+   2) and acts on the chosen entry: a party member is healed to full (hp = maxhp); a pool character
+   has its item class 0x21 removed, becomes the selected character gEFC6, redraws the portrait and
+   runs the add-character panel with the head message suppressed (-1). Called by 0EB9.
+   blocked: the pool-name address. The body matches except ovl5:0DFD, where the original folds
+   gCharPool[-1].name to the literal `add ax, 0x71A7` (gCharPool is ds:7298, its name field +2, one
+   record 0xF3 back). Every source form tried (gCharPool[-k-1].name, gCharPool[-k].name - 0xF3,
+   a separate index local) folds to that same negative displacement, and our build relocates it to
+   the symbol `gCharPool`, but cmatch's DGROUP heuristic (tools/match/cmatch.py compare, the
+   `off <= va` symbol pick) cannot symbolize a DGROUP offset that lies before the nearest symbol:
+   it resolves our relocated word to gCellDef7B2B+15 (ds:7B3A) instead of ds:71A7. A matcher gap
+   for a reference before a DGROUP symbol (the far-object branch at cmatch.py:387 handles negative
+   displacements, the DGROUP branch at :373 does not). */
+/*@ ovl5:0DBB draft */ void ResurrectPicker(void)
+{
+    char far *names[20];
+    int sel;
+    int i;
+    int n;
+
+    ClearPanel();
+    DrawText(gText7D9E);
+    for (i = 0; i < gCountDDE0; i++) {
+        if (gTableF4E6[i] < 0)
+            names[i] = gCharPool[-gTableF4E6[i] - 1].name;
+        else
+            names[i] = gChars[gTableF4E6[i]].name;
+    }
+    sel = SelectMenu(2, gCountDDE0, names);
+    n = gTableF4E6[sel];
+    if (n >= 0) {
+        gChars[n].hp = gChars[n].maxhp;
+    } else {
+        n = abs(n) - 1;
+        RemoveCarriedItems(0x21, n + 1);
+        gEFC6 = n;
+        DrawCharPortrait(2);
+        AddCharPanel(n, n * 2 + 0x20, -1, n * 2 + 0x21);
+    }
+}
 /* ovl5:0EB9: the resurrect/heal NPC panel. When gFC04 bit 0x10000 is clear it draws message
    0x18; when bit 0x20000 is set it draws message 0xb; otherwise it draws message 9 and shows the
    menu ds:7BD2 (3 entries) when BuildDeathList found something, or ds:7BCA (2 entries) otherwise.
@@ -820,9 +865,9 @@ enum {
         } else {
             PrintTableString(9, 0);
             if (BuildDeathList()) {
-                sel = Ovl5_0455(2, 3, (void far *)gText7BD2);
+                sel = SelectMenu(2, 3, (void far *)gText7BD2);
             } else {
-                sel = Ovl5_0455(0, 2, (void far *)gText7BCA);
+                sel = SelectMenu(0, 2, (void far *)gText7BCA);
                 if (sel == 1)
                     sel = 2;
             }
@@ -832,7 +877,7 @@ enum {
                 gFC04 |= 0x20000L;
                 break;
             case 1:
-                Ovl5_0DBB();
+                ResurrectPicker();
                 gFC04 |= 0x20000L;
                 break;
             }
@@ -852,7 +897,7 @@ enum {
     int i;
 
     PrintTableString(0x12, 0);
-    sel = Ovl5_0455(0, 2, (void far *)gText7BDE);
+    sel = SelectMenu(0, 2, (void far *)gText7BDE);
     switch (sel) {
     case 0:
         gFC04 |= 0x8000000L;
@@ -880,7 +925,7 @@ enum {
     int sel;
 
     PrintTableString(0xe, 0);
-    sel = Ovl5_0455(2, 3, (void far *)gText7BE6);
+    sel = SelectMenu(2, 3, (void far *)gText7BE6);
     switch (sel) {
     case 0:
         gFC04 |= 0x200000L;
@@ -911,7 +956,7 @@ enum {
     int j;
 
     PrintTableString(0x10, 0);
-    sel = Ovl5_0455(0, 2, (void far *)gText7BF2);
+    sel = SelectMenu(0, 2, (void far *)gText7BF2);
     if (sel == 0) {
         PrintTableString(0x11, 1);
         for (i = 0; i < 6; i++) {
@@ -936,7 +981,7 @@ enum {
     int sel;
 
     PrintTableString(0x16, 0);
-    sel = Ovl5_0455(2, 3, (void far *)gText7BFA);
+    sel = SelectMenu(2, 3, (void far *)gText7BFA);
     switch (sel) {
     case 0:
         AddCharPanel(8, 0x1b, 0x2c, 0x2d);
