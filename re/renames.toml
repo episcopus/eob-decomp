@@ -2385,3 +2385,12 @@ new = "GetVoiceDelay"
 kind = "function"
 why = "returns the voice record byte at +5, the note delay counter StartVoiceNote sets and UpdateVoices counts down (4CB1, 41D8); the sixth entry of the driver entry table at 3944 (review of e_text)"
 date = "2026-11-02"
+
+[[rename]]
+id = "intro/0000:50C8=WriteVoiceLevels"
+addr = "intro/0000:50C8"
+old = "WriteVoiceReg"
+new = "WriteVoiceLevels"
+kind = "function"
+why = "it writes the voice's carrier total level register 43h and, for an additive voice, the modulator total level register 40h (50C8 to 5116); WriteVoiceReg was vague (review of i_text)"
+date = "2026-11-02"

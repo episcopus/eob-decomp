@@ -1133,7 +1133,7 @@ L_4827:
         jmp    L_45D7
 L_4836:                 ; script byte 9Eh
         mov       byte ptr [di + 20h], ah
-        call    _WriteVoiceReg
+        call    _WriteVoiceLevels
         jmp    L_45D7
 L_483F:                 ; script byte A0h
         call    _StartVoiceNote
@@ -1182,7 +1182,7 @@ L_488D:                 ; script byte ACh
         shl       bl, 1
         mov       di, word ptr [bx + gVoiceRecordPtrs]
         mov       byte ptr [di], al
-        call    _WriteVoiceReg
+        call    _WriteVoiceLevels
         pop       di
         pop       ax
         mov       byte ptr ds:[gVoiceIndex], al
@@ -1199,7 +1199,7 @@ L_48AE:                 ; script byte ADh
         mov       di, word ptr [bx + gVoiceRecordPtrs]
         add       al, byte ptr [di]
         mov       byte ptr [di], al
-        call    _WriteVoiceReg
+        call    _WriteVoiceLevels
         pop       di
         pop       ax
         mov       byte ptr ds:[gVoiceIndex], al
@@ -1231,7 +1231,7 @@ L_48EF:                 ; script byte AFh
 L_490D:                 ; script byte B0h
         add       ah, byte ptr [di + 20h]
         mov       byte ptr [di + 20h], ah
-        call    _WriteVoiceReg
+        call    _WriteVoiceLevels
         jmp    L_45D7
 L_4919:                 ; script byte B3h
         mov       al, byte ptr ds:[gVoiceIndex]
@@ -2145,8 +2145,8 @@ L_50C1:
 _AdlibWaitAfterIndex ENDP
 
 ; 0000:50C8: writes register 43h (carrier level) of the voice's operator (gOperatorOffsets, 422C) and, when record byte 31h (the connection bit) is set, register 40h (modulator level, an additive voice)
-        PUBLIC  _WriteVoiceReg              ; @ 0000:50C8
-_WriteVoiceReg PROC NEAR
+        PUBLIC  _WriteVoiceLevels              ; @ 0000:50C8
+_WriteVoiceLevels PROC NEAR
         call    _VoiceCarrierLevel
         mov       bx, offset gOperatorOffsets
         add       bl, byte ptr ds:[gVoiceIndex]
@@ -2165,7 +2165,7 @@ _WriteVoiceReg PROC NEAR
         call    _AdlibWrite
 L_50F6:
         ret
-_WriteVoiceReg ENDP
+_WriteVoiceLevels ENDP
 
 ; 0000:50F7: computes the value of the carrier operator's level register (43h plus the operator offset) for the voice record at di:
 ; the level bits (3Fh) of record byte 2Fh (the patch's carrier byte, set by LoadVoicePatch) plus the bytes at 20h, 00h and 30h, less the high
