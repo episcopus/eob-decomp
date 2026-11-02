@@ -10,7 +10,7 @@
    full screen, matching the call at 082C:05DD. That reading is an inference [H] from the caps
    and record 0; the callers support the columns reading (E1DE7.C:245-248 and EOV6.C:375-376
    pass gTextLeft, gTextTop, gTextWidth and gTextHeight unshifted to ClipRect, while the same
-   variables are multiplied by 8 or shifted by 3 for the pixel arguments of gRect806A, gDrawText
+   variables are multiplied by 8 or shifted by 3 for the pixel arguments of gFillRect, gDrawText
    and f0D1C_0C21 there). All the compares are signed. The width and height are capped at
    SCREEN_COLUMNS and SCREEN_LINES when larger, as plain size caps not tied to any origin;
    nothing clips the far edge x1 + width (x1 = 30, width = 40 passes unclipped). x1 and x2 are
@@ -51,15 +51,19 @@
      0EF3:0860  (0,0,0,0, 22,120, 2,0)
      082C:006D  ([bp+a]-1, [bp+c], 0, 191, [bp+e]+2, 9, 0,2)
      082C:038A  (0, 191, [bp+a]-1, [bp+c], [bp+e]+2, 9, 2,0)
-   The only src/ call whose two y origins differ is 1DE7:03B2 (E1DE7.C:245): y1 =
+   Three src/ calls pass y origins that differ: 1DE7:03B2 (E1DE7.C:245) has y1 =
    gTextTop + one line and y2 = gTextTop, a one-line scroll that clips and refills the last
-   visible line (E1DE7.C:228). That fits x1, y1 as a source and x2, y2 as a destination, a
-   lead [H] to test against the far routine, not evidence yet. Every other src/ call with named
-   origins passes x1 = x2 and y1 = y2 (EOV6.C:376, :385, :481).
+   visible line (E1DE7.C:228); 082C:006D (E082C.C:113) has y1 = y and y2 = 0xbf (the pushes at
+   082C:0062 and 082C:005B); 082C:038A (E082C.C:209) has the same pair in the other order,
+   y1 = 0xbf and y2 = y (the pushes at 082C:0383 and 082C:0378). The
+   1DE7:03B2 reading fits x1, y1 as a source and x2, y2 as a destination, a lead [H] to test
+   against the far routine, not evidence yet. The x1 = x2, y1 = y2 pattern holds for the
+   named-origin calls at EOV6.C:376, :385 and :481, and for the literal-zero calls at
+   EOV2.C:365, 082C:05DD and the two 0EF3 calls.
    The two call sites 082C:006D and 082C:038A disagree on which y origin holds 191 (y2 for
    006D, y1 for 038A), so the 006D rectangle's coverage is not settled by the bytes; the [H]
-   reading of y in lines rests
-   on the height cap and region record 0, both below. The whitepaper has no section on the
+   reading of y in lines rests on the height cap and region record 0, both below. The
+   whitepaper has no section on the
    region table, the 8-pixel columns, the screen bounds or ds:8052 yet. What the far routine
    does is still unknown. */
 
@@ -74,9 +78,13 @@
 #define SCREEN_LINES 200
 
 /* ds:8052: the function pointer this unit calls through. The load image holds 00 00 00 00
-   here, so it is zero in the file. A zero pointer makes the lcall at 19F3:008C call
+   here, so it is zero in the file. The DGROUP base 0x212E (the disassembler's default, a [H]
+   until the startup code that sets DS is cited) puts ds:8052 at file offset 0x2BB32 (the
+   0x2800 MZ header + 0x212E0 + 0x8052), inside the 0x31350-byte load module, and the 8 bytes
+   there are zero. A zero pointer makes the lcall at 19F3:008C call
    0000:0000, the interrupt vector table, not a defined routine [H]; it must be set before
-   19F3:008C calls through it (an inference from the zero image; no setter found). ds:8052 may
+   19F3:008C calls through it (an inference from the zero image; no direct write to ds:8052 in
+   EOB.EXE or the overlay binaries, a byte scan, indirect writes not searched). ds:8052 may
    be one slot of the screen driver's pointer table, filled outside the resident code [H]: it
    sits on the same 2 mod 4 offset grid as the driver pointers named in src/ (ds:8062
    gDrawLine, ds:8096, ds:809A, ds:80A6, ds:80C2, ds:80D6, ds:80DA, ds:80AE, ds:80B6), which
@@ -91,7 +99,8 @@ extern void (far *gFar8052)(int x1, int y1, int x2, int y2, int width, int heigh
    lines, moves a negative origin to 0 together with its partner origin and the size, and
    returns early, without the call, when an x origin has reached SCREEN_COLUMNS columns. It
    clips the origins and the sizes only: it does not clip the far edge x1 + width, so an
-   origin below SCREEN_COLUMNS passes with any width (x1 = 30, width = 40 passes). */
+   origin below SCREEN_COLUMNS passes with any width up to SCREEN_COLUMNS, and a negative
+   width unchanged (x1 = 30, width = 40 passes). */
 /*@ 19F3:000E */ void ClipRect(int x1, int y1, int x2, int y2, int width, int height, int extra1, int extra2)
 {
     if (width > SCREEN_COLUMNS) width = SCREEN_COLUMNS;
