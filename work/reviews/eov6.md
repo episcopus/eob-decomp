@@ -32,19 +32,27 @@ now state the sign the code shows (positive: ready to cast; negative: spent or n
 stays. The round 2 shoulds hold: the f0858 cite, the DrawShadowText declaration, the level cite, the
 QUIRK and the FindClassSlot note. The flag 3 gate is in, with one gap (the should below).
 
-- [ ] must-fix src/EOV6.C:116 (the CampLoop header, the 24-hour sentence): "every 24 hours it damages a
+- [x] must-fix src/EOV6.C:116 (the CampLoop header, the 24-hour sentence): "every 24 hours it damages a
   member with flag 3 at level 0 above 0xf6 hit points" is wrong. `hp` is a `signed char` (src/EOV6.C:17),
   and the test at :320 is `hp > (signed char)0xf6`, that is hp > -10. No member has 246 hit points as a
   signed char, so the sentence names a threshold no member can reach. Say "above -10 hit points
   (hp > (signed char)0xf6; hp is a signed char)". The sentence was rewritten by d105793 (the flag 3 gate),
   so it is a changed line.
-- [ ] should src/EOV6.C:113-115: the regain and the level drop (:306-319) apply only to a member above level
+  Fixed: the 24-hour sentence now reads "every 24 hours it damages a member with flag 3 at level 0 above
+  -10 hit points (hp > (signed char)0xf6; hp is a signed char)". Comment text only; `make match
+  FILE=src/EOV6.C` 6 of 6 (3258 bytes), exit 0; `make readability UNIT=eov6` 0 findings.
+- [x] should src/EOV6.C:113-115: the regain and the level drop (:306-319) apply only to a member above level
   0 (`if (gChars[member].level != 0)`), and the 24-hour damage to a member at level 0 (:320). The header
   gives the level 0 condition for the damage only. Say "for a member with flag 3 above level 0".
+  Fixed: the header now reads "for a member with flag 3 above level 0 (`if (!f0D1C_0670(member, 3))
+  continue;`), regains one hit point ... and drops the level ..."; the 24-hour damage keeps its own level
+  0 wording. Comment text only; match and readability as above.
 - [ ] should src/E082C.C:465 (owner e082c, the DrawShadowText header): "src/EOV6.C:399" is a stale line cite
   into this unit. src/EOV6.C:399 is `if (draw) {`; the two DrawShadowText calls of f0858 are at
   src/EOV6.C:405 and :411. The owner should cite the address (f0858, ovl6:0858) or those two lines. This
   unit's file does not change for it.
+  Not changed here (dec-deepseek): the cite is in src/E082C.C, owned by e082c; this unit (eov6) has no
+  change for it. Left for the e082c owner.
 - [ ] note make match still prints "unit eov6 not complete: ours 3258 bytes, the unit 3258" (rounds 1 and 2).
   The print is the cmatch `ovl is None` test (tools/match/cmatch.py:605). review-pass does not depend on it:
   tools/agent/review.py:29 checks unit_complete (every function at L2, tools/agent/common.py:190). A cosmetic
@@ -52,6 +60,15 @@ QUIRK and the FindClassSlot note. The flag 3 gate is in, with one gap (the shoul
 
 Round 3 verdict: not passed. One must-fix (new: the 24-hour threshold, a changed line). The round 2
 must-fix is fixed right and stays ticked.
+
+## Round 3 fixes (dec-deepseek)
+
+The one must-fix and the one should are fixed in src/EOV6.C (the CampLoop header only): the 24-hour
+damage now reads "above -10 hit points (hp > (signed char)0xf6; hp is a signed char)" and the regain
+and level drop now read "for a member with flag 3 above level 0". The E082C.C cite is in the e082c
+owner's file, so it is left for that owner. No code byte changed: `make match FILE=src/EOV6.C` is 6 of
+6, 3258 of 3258 bytes, exit 0, and `make readability UNIT=eov6` is 0 findings. The note (the matcher
+never printing "complete" for an overlay unit) is a matcher question for the human.
 
 ### Round 2 (rev-haiku, at dbf4ce2)
 
