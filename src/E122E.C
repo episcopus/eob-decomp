@@ -1,9 +1,13 @@
-/* Unit at EOB.EXE 122E:0001 (7775 bytes, 40 functions). The game's action script interpreter: the
-   driver at 122E:1DA8 walks a member's compiled script with a table of 26 far handler pointers and
-   dispatches each opcode byte to one of the handlers below. The handlers take the current script
-   pointer (a far char pointer) and return how many bytes the opcode consumed, or jump the pointer;
-   the driver stops when a handler sets gA9EC. 147F is the big dispatcher with its own in-segment jump
-   table. Names are placeholders until evidence names them. */
+/* Unit at EOB.EXE 122E:0001 (7775 bytes, 40 functions of the map). The game's action script
+   interpreter: the driver at 122E:1DA8 (RunMemberScript) walks a member's compiled script with a
+   table of 26 far handler pointers and dispatches each opcode byte to one of the handlers below.
+   The handlers take the current script pointer (a far char pointer) and return how many bytes the
+   opcode consumed, or jump the pointer; the driver stops when a handler sets gA9EC. 147F is the big
+   sub-dispatcher with its own in-segment jump table; the map folded the 122E:1194 play-sound handler
+   into 1097 and the 122E:1A3B drain-item handler into 147F, and both are separate functions here.
+   Below L2: the writer 147F (stub) and nine drafts (ArmMemberEffect 0154, ForceDoorAction 0325,
+   ItemSlotAction 06D0, WriteObjectFieldOp 0960, WriteObjectRunOp 0A16, AddEffectOp 0C4D, ShowTextOp
+   0FDC and MarkMemberItemsOp 1CAD), each with its difference in re/symbols.toml. */
 
 /*@flags -ml -O -Z */
 
