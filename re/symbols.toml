@@ -6774,6 +6774,9 @@ unit = "eov0"
 addr = "ovl0:00AF"
 size = 72
 evidence = ["near", "frame"]
+name = "FreeIconTable"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov0_00f7"
