@@ -18,38 +18,50 @@ below (unticked), whose new wording is wrong. Four must-fix items in total; the 
 
 #### Round 2 must-fix
 
-- [ ] must-fix src/EOV3.C:826-834 (SaveGame header; reopens the round 1 should on the INVENT reload, now
+- [x] must-fix src/EOV3.C:826-834 (SaveGame header; reopens the round 1 should on the INVENT reload, now
   unticked): "only when every write succeeded does it reload the INVENT screen" is false. `ok = 1` (:852)
   is followed by `if (ok)` (:853), which is always true, so `LoadScreenImage("INVENT", ...)` (:870) runs
   after the writes whether or not they succeeded; the `ok &=` writes (:856-868) only set the return value.
   Say that the reload runs after the writes unconditionally and that the return value reports them. The
   source matches the original (`make match` 23 of 23), and it has no test of the write results before :870.
-- [ ] must-fix src/EOV3.C:877-890 (LoadGame header; reopens the round 1 should on "alive" and "occupied",
+  Fixed in 89e940a: the header now says the `if (ok)` at :853 follows `ok = 1`, so the INVENT reload at
+  :870 runs after the writes whether or not they succeeded, and the `ok &=` writes only compute the
+  return value.
+- [x] must-fix src/EOV3.C:877-890 (LoadGame header; reopens the round 1 should on "alive" and "occupied",
   now unticked): "for each occupied character (m01 nonzero), cuts its 4 by 32 cell out of gOverlayBuf".
   The cut (:946-949) runs only when `rec->m01 != 0 && rec->m22 >= 0`. An occupied character with m22 < 0
   is not cut there (it sets `flag` at :951), and it is cut in the OUTTAKE pass (:958-961). Say "with m22 >= 0".
-- [ ] must-fix src/EOV3.C:369-370 (LoadMapCells header, from cd7af2f): "it slices the two cells at `dstB`
+  Fixed in 89e940a: the header now says a character with m01 nonzero and m22 >= 0 is cut, and that one with
+  m01 nonzero and m22 < 0 sets `flag` at :951 instead.
+- [x] must-fix src/EOV3.C:369-370 (LoadMapCells header, from cd7af2f): "it slices the two cells at `dstB`
   the same way". The srcB loop (:391) is `for (i = 0; i < 3; i++)` and fills gFB5E[dstB+i] and
   gA99C[dstB+i] for three cells, as srcA does. Say three.
-- [ ] must-fix src/EOV3.C:237-238 (FreePtrTable header, from 0bd5b44): "resets the wall-record slot count
+  Fixed in 89e940a: the header now says the srcB branch slices the three cells at `dstB`.
+- [x] must-fix src/EOV3.C:237-238 (FreePtrTable header, from 0bd5b44): "resets the wall-record slot count
   ds:F538, which also empties gWallRecs". The body (:250) sets `gF538 = 0` and nothing else; gWallRecs is
   not cleared. Its only readers (RegisterWallObject, :326-340) index it by gF538, so the old records stay
   in memory until the next RegisterWallObject overwrites them from slot 0. Say that, not "empties".
+  Fixed in 89e940a: the header now says gWallRecs itself is not cleared and that its records stay in
+  memory because it is only read through gF538, until the next RegisterWallObject overwrites from slot 0.
 
 #### Round 2 should
 
-- [ ] should src/EOV3.C:560 (LoadMapScreen header, from cd7af2f) and :774 (SaveLevelState header): the
+- [x] should src/EOV3.C:560 (LoadMapScreen header, from cd7af2f) and :774 (SaveLevelState header): the
   line cites into src/E122E.C are off. :1287 is `SaveLevelState(gFBC8)` (E122E.C:1287) and the LoadMapScreen
   call is at :1288; :1268 is the LoadLevelOp definition line. The address 122E:1AAB and the stubs (210C:007A,
   210C:002F) are right; cite the address and drop the line.
+  Fixed in 89e940a: both headers now cite LoadLevelOp (122E:1AAB, through the 210C:007A / 210C:002F stub)
+  and the src/E122E.C line numbers are dropped.
 - [ ] should, cross-unit (not this file): src/EOV5.C:210, :1042, :1147 and :1162 still declare and call
   `FreeEffectTables`. The round 1 fix said `make rename` renamed it "everywhere"; re/renames.toml:2183 has
   the entry, but the EOV5 references were not changed. The EOV5 owner (or the integrator, with
   `make rename`) should use FreeSlotTables. The C name is not in the bytes, so the match is unaffected.
-- [ ] should src/EOV3.C:886-889 (LoadGame header): "inserts it with a RollDice-chosen per-cell sound". The
+- [x] should src/EOV3.C:886-889 (LoadGame header): "inserts it with a RollDice-chosen per-cell sound". The
   code (:974-976) takes the sound from `g1A1B[gFBCC * 4 + RollDice(1, 2, -1)]` and passes gPartyCell as the
   key. Nothing here shows "per-cell" as the sound's meaning; say "a sound from the g1A1B table, picked by
   RollDice(1, 2, -1)" or give the evidence.
+  Fixed in 89e940a: the header now says the item is inserted with a sound from the g1A1B table picked by
+  RollDice(1, 2, -1), keyed by gPartyCell.
 
 #### Round 2 note
 
@@ -183,17 +195,21 @@ Round 1 (at 01237b0). `make match FILE=src/EOV3.C`: cmatch 23 of 23 functions ma
   (:670-671). Add them.
   Fixed in cd7af2f: the header now names LoadLevelOp (122E:1AAB, through the 210C:007A stub), the
   gFlags849E bit 2 clear and set, the 0x400 item-list head clear, PlaySound(0) and gFB45 = 1.
-- [ ] should src/EOV3.C:804-810 (SaveGame header): omits `ResetLevel()` at :819, which runs first. Say that
+- [x] should src/EOV3.C:804-810 (SaveGame header): omits `ResetLevel()` at :819, which runs first. Say that
   the INVENT reload (:846) happens only when every write succeeded (:829). The probe FileOpen/FileClose of
   EOBDATA.SAV before the mode-2 open (:825-826) is not mentioned.
   Fixed in 0bd5b44: the header now names ResetLevel, the EOBDATA.SAV probe, and that the INVENT reload
   runs only when every write succeeded. Reopened in round 2: the reload is not gated on the writes.
-- [ ] should src/EOV3.C:857-858 (LoadGame header): "draws each alive character's 0x514-byte sprite out of
+  Fixed in 89e940a (the reopened point): the header now says the `if (ok)` at :853 follows `ok = 1`, so the
+  reload runs after the writes unconditionally and the return value reports them.
+- [x] should src/EOV3.C:857-858 (LoadGame header): "draws each alive character's 0x514-byte sprite out of
   gOverlayBuf". The code cuts a 4 by 32 cell with gFn8082 (:919), unpacks it into rec->sprite (:920) and
   frees it (:921). It does not draw. "alive" is not evidenced: rec->m01 is "status bits; 0 when the slot is
   empty" (:116), so the test is "occupied". Say "cuts" and "occupied", or give the evidence for alive.
   Fixed in 0bd5b44: the header now says it cuts a 4 by 32 cell, unpacks it into the sprite buffer and
   frees it, for each occupied character (m01 nonzero). Reopened in round 2: the cut also needs m22 >= 0.
+  Fixed in 89e940a (the reopened point): the header now says a character with m01 nonzero and m22 >= 0 is
+  cut, and one with m01 nonzero and m22 < 0 sets `flag` at :951 instead.
 - [x] should src/EOV3.C:610-615, 618-620 (LoadMapScreen, `recIndex`): it is a timer slot index (index*2 into
   g5BCC and g5BDC), not a record index. RegisterWallObject uses `recordIndex` for the wall chain. Rename the
   local (e.g. timerIdx) so one word does not name two things.
