@@ -76,9 +76,15 @@ struct Tgt {
     char m0C;               /* +0C: the effect flag bits */
 };
 
+/* The 28-byte object records at ds:8A82 (src/E08E6.C); this unit only needs the stride. */
+struct Obj28 {
+    char pad00[0x1C];
+};
+
 extern struct CharRec gChars[];         /*@ ds:F580 */
 extern struct Entry14 gTable8DD2[];     /*@ ds:8DD2 */
 extern struct ItemType gItemTypes[];    /*@ ds:A9F0 */
+extern struct Obj28 gObjs[];            /*@ ds:8A82 */
 
 extern struct CharRec far *gCurRec;     /*@ ds:F51C */ /* the far pointer to the current record */
 extern signed char gCurMember;          /*@ ds:DCFA */ /* the member an effect targets, redrawn last */
@@ -89,8 +95,8 @@ extern signed char gEFB8;               /*@ ds:EFB8 */ /* an effect value passed
 extern signed char g8DD5;               /*@ ds:8DD5 */ /* cleared by 0EF3:0418 */
 extern signed char gA999;               /*@ ds:A999 */ /* the member 0EF3:1233 redraws */
 extern signed char gA99A;               /*@ ds:A99A */ /* the selected character index */
-extern signed char gFC74;               /*@ ds:FC74 */ /* saved with gFC76 by 0EF3:026F and restored */
-extern signed char gFC76;               /*@ ds:FC76 */
+extern int gFC74;                       /*@ ds:FC74 */ /* saved with gFC76 by 0EF3:026F and restored */
+extern int gFC76;                       /*@ ds:FC76 */
 extern char gF43D;                      /*@ ds:F43D */
 extern unsigned char gFBD2;             /*@ ds:FBD2 */
 extern char gFB44;                      /*@ ds:FB44 */
@@ -100,9 +106,13 @@ extern int gPartyCell;                  /*@ ds:FBCA */
 extern char gDF4C;                      /*@ ds:DF4C */
 extern char gFileNameBuf[];             /*@ ds:FE6E */
 
+extern signed char gAt5717[];          /*@ ds:5717 */ /* a per-member byte: nonzero when the member
+                                                     can use melee effects (read by 0EF3:0E1B) */
 extern signed char gTable5733[];        /*@ ds:5733 */ /* four cell deltas walked by 0EF3:17D8 */
 
 extern char gText57A3[];                /*@ ds:57A3 */
+extern char gText57F1[];                /*@ ds:57F1 */
+extern char gText5809[];                /*@ ds:5809 */
 extern char gText587A[];                /*@ ds:587A */
 extern char gText58AF[];                /*@ ds:58AF */
 extern char gText58BB[];                /*@ ds:58BB */
@@ -132,6 +142,9 @@ extern int f0D1C_0BAB(int obj); /*@ 0D1C:0BAB */
 extern int f0D1C_00DA(int value, int page); /*@ 0D1C:00DA */
 extern int f0D1C_02DC(void); /*@ 0D1C:02DC */
 extern int f0D1C_0670(int who, int mask); /*@ 0D1C:0670 */
+extern int f0BD2_0106(int who, int row); /*@ 0BD2:0106 */
+extern int Obj15B4(char who, int value); /*@ 08E6:15B4 */
+extern void DamageObject(struct Obj28 far *obj, int n); /*@ 08E6:0FBE */
 extern void SetMouseItem(int n); /*@ 07A9:010C */
 extern void f1BF3_00A8(int dx, int dy); /*@ 1BF3:00A8 */
 extern int sprintf(char far *buf, char far *fmt, ...); /*@ 0000:57AE */
@@ -329,7 +342,38 @@ extern void BuildList5(void); /*@ 0CF7:0211 */
 
 /*@ 0EF3:0D78 stub */ void f0EF3_0D78(int a, int b) {}
 
-/*@ 0EF3:0E1B stub */ void f0EF3_0E1B(int count, int sides, int bonus) {}
+/* 0EF3:0E1B: hit one object with a melee effect: when the panel member has the per-member flag
+   ds:5717 cleared, say the string ds:5809 with the member's name; otherwise find the object the
+   current page faces (0D1C:00DA and 08E6:15B4). A member with no object gets the string ds:57F1;
+   otherwise, when RollToHit accepts the object and 0D1C:0BAB does not reject it, roll count d
+   sides plus bonus and damage the object. Called by 0EF3:1B43, 0EF3:1EF3 and 0EF3:1FF9.
+   DRAFT: the body is right but the original spills the 0D1C:00DA result to [bp-2] and keeps the
+   08E6:15B4 result in SI and the damage in DI; our build puts the 00DA result in DI instead
+   (`make match` differs at the branch after the call). */
+/*@ 0EF3:0E1B draft */ void CastMeleeEffect(int count, int sides, int bonus)
+{
+    int target;
+    int obj;
+    int dmg;
+
+    if (gAt5717[gPanelMember] != 0) {
+        target = f0D1C_00DA(gPartyCell, gFBCC);
+        obj = Obj15B4(gPanelMember, target);
+        if (obj != -1) {
+            if (RollToHit(gPanelMember, obj, 0, 1)) {
+                dmg = RollDice(count, sides, bonus);
+                if (!f0D1C_0BAB(obj))
+                    DamageObject(&gObjs[obj], dmg);
+            }
+        } else {
+            sprintf(gFileNameBuf, gText57F1, gChars[gPanelMember].name);
+            SayAndBeep(gFileNameBuf);
+        }
+    } else {
+        sprintf(gFileNameBuf, gText5809, gChars[gPanelMember].name);
+        SayAndBeep(gFileNameBuf);
+    }
+}
 
 /*@ 0EF3:0F0B stub */ void f0EF3_0F0B(void) {}
 
@@ -667,7 +711,7 @@ extern void BuildList5(void); /*@ 0CF7:0211 */
 /* 0EF3:1B43: apply the 1d8 melee effect at 0EF3:0E1B. Called through a table. */
 /*@ 0EF3:1B43 */ void CastMelee1d8(void)
 {
-    f0EF3_0E1B(1, 8, 0);
+    CastMeleeEffect(1, 8, 0);
 }
 
 /* 0EF3:1B5A: set the current record's effect flag bit 0x200 and apply a 3-turn effect. */
@@ -811,7 +855,7 @@ extern void BuildList5(void); /*@ 0CF7:0211 */
 /* 0EF3:1EF3: apply the 2d8+1 melee effect at 0EF3:0E1B. Called through a table. */
 /*@ 0EF3:1EF3 */ void CastMelee2d8(void)
 {
-    f0EF3_0E1B(2, 8, 1);
+    CastMeleeEffect(2, 8, 1);
 }
 
 /* 0EF3:1F0B: when the current record is alive (m01 nonzero) clear its poison effect through
@@ -870,7 +914,7 @@ extern void BuildList5(void); /*@ 0CF7:0211 */
 /* 0EF3:1FF9: apply the 3d8+3 melee effect at 0EF3:0E1B. Called through a table. */
 /*@ 0EF3:1FF9 */ void CastMelee3d8(void)
 {
-    f0EF3_0E1B(3, 8, 3);
+    CastMeleeEffect(3, 8, 3);
 }
 
 /* 0EF3:2011: add the panel member's effect record of mode 8 through 0EF3:097B. */
@@ -971,11 +1015,40 @@ extern void BuildList5(void); /*@ 0CF7:0211 */
 
 /*@ 0EF3:25BD stub */ void f0EF3_25BD(void) {}
 
-/*@ 0EF3:2604 stub */ void f0EF3_2604(void) {}
+/* 0EF3:2604: use the item in one of a member's rows. When the item's type is 0x22 or 0x23, or
+   its type is 0x30 and its flags low six bits are exactly 1, run 0BD2:0106(who, slot); for a
+   type 0x30 item with any other flag count, just decrement its flags. Called through a table.
+   DRAFT: the body is right but the original computes who*0xF3 before reading slot and keeps the
+   item in SI; our build caches slot in DI first (`make match` differs at the first instruction). */
+/*@ 0EF3:2604 draft */ void UseItemRow(int who, int slot)
+{
+    int item;
 
-/*@ 0EF3:2676 stub */ void f0EF3_2676(void) {}
+    item = gChars[who].m77[slot];
+    if (gTable8DD2[item].m02 == 0x22 || gTable8DD2[item].m02 == 0x23) {
+        f0BD2_0106(who, slot);
+    } else if (gTable8DD2[item].m02 == 0x30) {
+        if ((gTable8DD2[item].flags & 0x3F) == 1)
+            f0BD2_0106(who, slot);
+        else
+            gTable8DD2[item].flags--;
+    }
+}
 
-/*@ 0EF3:28ED stub */ void f0EF3_28ED(int a, int b, int c) {}
+/*@ 0EF3:2676 stub */ void f0EF3_2676(int a, int b) {}
+
+/* 0EF3:28ED: save the panel member in ds:FC74 and gF43D in ds:FC76, start a condition slot
+   (g8DCE = c + 1), make `a` the panel member, set gF43D when `b` is over 0x19, and run the panel
+   action 0EF3:2676(b, c) that uses them. Called by the item-use and turn-undead paths. */
+/*@ 0EF3:28ED */ void StartPanelAction(char who, int action, int kind)
+{
+    gFC74 = gPanelMember;
+    gFC76 = gF43D;
+    g8DCE = kind + 1;
+    gPanelMember = who;
+    gF43D = (action > 0x19);
+    f0EF3_2676(action, kind);
+}
 
 /*@ 0EF3:2929 stub */ void f0EF3_2929(void) {}
 

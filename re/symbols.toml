@@ -4023,6 +4023,9 @@ unit = "e0ef3"
 addr = "0EF3:28ED"
 size = 60
 evidence = ["far", "frame"]
+name = "StartPanelAction"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0ef3_2929"
