@@ -1,5 +1,30 @@
 # Review: e1de7
 
+# Round 6
+
+Reviewer: rev-haiku
+Commit reviewed: 0251ee7 (main). review/e1de7 is at eb98f52 with the same src/E1DE7.C and work/reviews/e1de7.md; src/E1DE7.C last changed in 51a5247 (the round 5 fixes, merged in 154f9ab).
+
+Playbook 70. Judge what a matching file can still get wrong: names, types, comments, structure.
+The matcher already proved the bytes; do not re-prove them, read for meaning.
+
+Checked: `make match FILE=src/E1DE7.C` 9 of 9 functions ok, 2619 bytes; `make readability UNIT=e1de7` 0 findings. Then: every line cite in this file against its target (the round 5 fixes at :164-166, :198, :169, :171-177, :179, :270, :284, :286 are right; the cross-file cites E082C.C:64, :330, :431, :432, :440; EOV5.C:161-162, :1110, :1114-1115, :1254-1255, :1317-1318; E1C0E.C:589; E16A5.C:511; E1A29.C:38; E14EF.C:68; E07C8.C:226, :259, :260, :293, :295; E1A47.C:13-14; E19F3.C:1-5; E1AA6.C:14; E1A1F.C:1-8); the caller lists in the comments against `make packet UNIT=e1de7`; and the "no caller" claims against the packet's call graph (tools/agent/packet.py `calls()`, which walks every mapped function, resident and overlay). I also ran a literal byte scan of eob/EOB.EXE and build/re/eob-overlays/*.bin for the far-call bytes of PrintIntText (`9a df 05 e7 1d`) and DrawTextFrame (`9a c9 00 e7 1d`): no hit in EOB.EXE and none in the overlays. The same scan finds the 5 resident calls to SetTextWindow (`9a 09 00 e7 1d`) but no overlay call, although the packet lists overlay callers for SetTextWindow (ovl1:13F7, ovl2:0846, ovl5:160A and others). So a literal scan cannot show that an overlay has no call.
+
+## Findings
+
+- [ ] must-fix src/E1DE7.C:148-149 (DrawTextFrame): "a byte scan of eob/EOB.EXE and of the overlay images finds no call to it" names a scan that cannot establish that. The literal scan misses overlay callers that the packet lists for SetTextWindow (see Checked). The evidence for "no caller" is the packet's call graph: `make packet UNIT=e1de7` shows "(no direct call found)" for 1DE7:00C9, built by tools/agent/packet.py `calls()` over the resident and overlay functions. Cite that instead. (Evidence: the scan above; packet.py:79-89; the packet row for 1DE7:00C9.)
+- [ ] must-fix src/E1DE7.C:312-313 (PrintIntText): "the overlay images were not scanned" is wrong. The packet's call graph covers the overlay functions (it lists overlay callers such as ovl1:13F7 and ovl6:0858 for resident routines), and it lists no direct caller of 1DE7:05DF. Say that: the call graph over the resident and overlay functions the map lists finds no direct call. (Evidence: the packet rows for 1DE7:0009 and 1DE7:060A; packet.py:79-89.)
+- [ ] should src/E1DE7.C:67-68 (ds:805A): "No direct store found; the slot is zero in the image" does not say how the store search was run. The packet does not search stores. A literal byte search for the disp16 of ds:805A is valid for stores (they encode the address), so say that search and its scope (eob/EOB.EXE and the overlay bins), and keep the call evidence on the packet.
+- [ ] should src/E1DE7.C:74 (gDrawText): `/* src/E1AA6.C */` reads as the file that defines the routine behind ds:80CA. It is a caller: PrintInt (src/E1AA6.C:14) passes it five arguments. The routine itself is not identified (src/E082C.C, the DrawShadowText header near :446-448, says what the hook does with its last argument is unknown). Say "called by src/E1AA6.C:14; the routine is not identified".
+- [ ] should src/E1DE7.C:268, :276-286 and :256 (DrawTextLine, local `line`): the name does not say what the value is. :276 sets it to `(gTextHeight / gFontHeight - 1) * gFontHeight`, which is the y offset of the bottom drawn line inside the window, and it is also the height of the copied part (:277), the offset of the refill (:278-280) and the source of gTextRow (:286). Give the local a name for that (for example the offset of the bottom line) in this file. The header at :256 says "with height `line`" and omits the width argument, gTextWidth (:277, fifth argument), which a porter needs to repeat the copy.
+- [ ] note src/E082C.C:446 (another unit's DrawShadowText header): "gTextAttr2 at src/E1DE7.C:271 and :287" is stale. The calls are at :280 and :296 now (:271 is the scroll hook call, :287 the column update). The e082c review already has this as a must-fix; routed to its owner.
+- [ ] note the -G claim (src/E1DE7.C:16-17, the `inc sp; inc sp` clean-ups) is still untested, as in rounds 1 to 5. The header states it as fact; the match shows these bytes under -G, and no build without -G was made. No change asked.
+- [ ] note the ds:8117 names and types: `gScrollHook` is a far function pointer here and `extern int gScrollHook` at src/EOV5.C:161; "scroll" is an inference from the gate (round 5). The owner of EOV5.C decides the type. No change asked.
+
+## Summary
+
+Round 6: the code is the same as in round 5 and matches (9 of 9, 2619 bytes). The round 5 fixes are right: every line cite in this file now points at its target, and the names of the nine functions, the window model and the frame code read correctly from the source. Two must-fix items are new, and both are about how "no caller" was established: the DrawTextFrame comment names a byte scan of the overlays that cannot find overlay callers, and the PrintIntText comment says the overlay images were not scanned, which the packet's call graph contradicts. Two shoulds: the gDrawText cite (a caller, not the routine), and the local `line` with its omitted ClipRect width; plus the store-search method for ds:805A. No matcher, spec or pin question, so nothing is escalated. Round 6 fails review on two must-fix items, both comment wording on the evidence for "no caller"; no code change is asked.
+
 # Round 5
 
 Reviewer: rev-haiku
