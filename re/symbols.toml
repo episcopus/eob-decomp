@@ -3324,6 +3324,9 @@ unit = "e0ef3"
 addr = "0EF3:0665"
 size = 130
 evidence = ["far", "near", "frame"]
+name = "FlashPartyMembers"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0ef3_06e7"

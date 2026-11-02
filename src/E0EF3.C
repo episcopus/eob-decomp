@@ -533,17 +533,15 @@ extern void f0EF3_2A53(int a, int b, int c, int d, int e, void far *p); /*@ 0EF3
 /*@ 0EF3:05BD stub */ void f0EF3_05BD(int a, int b) {}
 
 /* 0EF3:0665: run the "flash" animation for one member or the whole party: eight passes over the
-   living members (m01 bit 0, and either no panel is open or `who` is the panel member), each
-   drawing through 0EF3:05BD and waiting two ticks, then redraw each member. `who` is a member
-   index, or -1 for the whole party. Called by 0EF3:08CF and the item effect at 0BD2:0D2D.
-   DRAFT: the original loads `who` into SI and compares SI; our build compares the parameter in
-   memory (`make match` differs at the first compare, `register int who` makes it worse). */
-/*@ 0EF3:0665 draft */ void FlashPartyMembers(int who)
+   living members (m01 bit 0, and either no panel is open or the member is the selected one gA99A),
+   each drawing one frame through 0EF3:05BD and waiting two ticks, then redraw each member. `who`
+   is a member index, or -1 for the whole party; the function reuses the parameter as the walk
+   index. Called by 0EF3:08CF and the item effect at 0BD2:0D2D. */
+/*@ 0EF3:0665 */ void FlashPartyMembers(int who)
 {
     int first;
     int last;
     int pass;
-    int i;
 
     if (who == -1) {
         first = 0;
@@ -552,14 +550,14 @@ extern void f0EF3_2A53(int a, int b, int c, int d, int e, void far *p); /*@ 0EF3
         first = last = who;
     }
     for (pass = 0; pass < 8; pass++) {
-        for (i = first; i <= last; i++) {
-            if ((gChars[i].m01 & 1) && (gFB44 == 0 || i == gA99A))
-                f0EF3_05BD(i, pass);
+        for (who = first; who <= last; who++) {
+            if ((gChars[who].m01 & 1) && (gFB44 == 0 || who == gA99A))
+                f0EF3_05BD(who, pass);
         }
         WaitTicks(2);
     }
-    for (i = first; i <= last; i++)
-        RedrawMember(i);
+    for (who = first; who <= last; who++)
+        RedrawMember(who);
 }
 
 /*@ 0EF3:06E7 stub */ void f0EF3_06E7(void) {}
