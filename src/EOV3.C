@@ -41,6 +41,24 @@ struct Rect {               /* a four-word cell rectangle (x, y, w, h) */
 extern void far * (far *gGetSpriteCell)(int x, int y, int w, int h, void far *sheet); /*@ ds:8086 */
 extern int sprintf(char far *buf, char far *fmt, ...); /*@ 0000:57AE */
 extern int gFBC8; /*@ ds:FBC8 */
+extern char gB899[]; /*@ ds:B899 */        /* the nine-byte record list head (src/E0ACD.C) */
+extern void InsertListItem(void far *head, int key, int item, int sound); /*@ 0BD2:01D0 */
+
+struct ItemRecord {         /* the 14-byte records at ds:8DD0 (src/E0BD2.C) */
+    signed char m00;        /* +0 */
+    signed char m01;        /* +1 */
+    unsigned char flags;    /* +2 */
+    signed char icon;       /* +3 */
+    signed char m02;        /* +4 */
+    signed char m03;        /* +5 */
+    int m04;                /* +6: the key, -1 when free */
+    int m06;                /* +8 */
+    int m08;                /* +0xa */
+    signed char m0A;        /* +0xc: gFBC8 or -1 */
+    signed char m0B;        /* +0xd */
+};
+
+extern struct ItemRecord gItems[]; /*@ ds:8DD0 */
 extern unsigned char g6840[]; /*@ ds:6840 */
 extern unsigned char g68A0[]; /*@ ds:68A0 */
 extern unsigned char g6900[]; /*@ ds:6900 */
@@ -177,7 +195,21 @@ second:
 done:
     g8115 = 0;
 }
-/*@ ovl3:05D2 stub */ void Ovl3_05D2(void) {}
+/* ovl3:05D2: frees and clears the `count` map icon pointers in gB802 starting at index `base`.
+   Called by ovl3:0A7C and overlay 5. */
+/*@ ovl3:05D2 */ void FreeMapIcons(int base, int count)
+{
+    int i;
+    int end;
+
+    end = base + count;
+    for (i = base; i < end; i++) {
+        if (gB802[i]) {
+            farfree(gB802[i]);
+            gB802[i] = 0;
+        }
+    }
+}
 /* ovl3:0624: loads the overlay screen `screen` and slices six map icon cells out of gOverlayBuf
    (ds:113F), one per 4-word rectangle in the table at ds:6930, into gB802 starting at index
    `dest`. Clears g8115. No direct caller found. */
@@ -226,7 +258,19 @@ done:
     g8115 = 0;
 }
 /*@ ovl3:07A5 stub */ void Ovl3_07A5(void) {}
-/*@ ovl3:0951 stub */ void Ovl3_0951(void) {}
+/* ovl3:0951: rebuilds the ds:B899 item list: walks the 500 items at ds:8DD0 and, for every item
+   whose m0A is the current action gFBC8 and whose key m04 is positive, inserts it through
+   InsertListItem. Called by ovl3:0A7C. */
+/*@ ovl3:0951 */ void RebuildItemList(void)
+{
+    struct ItemRecord far *rec;
+    int i;
+
+    for (rec = gItems, i = 0; i < 0x1f4; rec++, i++) {
+        if (rec->m0A == gFBC8 && rec->m04 > 0)
+            InsertListItem((void far *)(gB899 + rec->m04 * 9), rec->m04, i, rec->m03);
+    }
+}
 /*@ ovl3:09AA stub */ void Ovl3_09AA(void) {}
 /*@ ovl3:0A7C stub */ void Ovl3_0A7C(void) {}
 /*@ ovl3:0FD1 stub */ void Ovl3_0FD1(void) {}

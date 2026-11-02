@@ -7071,6 +7071,9 @@ unit = "eov3"
 addr = "ovl3:05D2"
 size = 82
 evidence = ["ovl", "near", "frame"]
+name = "FreeMapIcons"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov3_0624"
@@ -7115,6 +7118,9 @@ unit = "eov3"
 addr = "ovl3:0951"
 size = 89
 evidence = ["ovl", "near", "frame"]
+name = "RebuildItemList"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov3_09aa"
