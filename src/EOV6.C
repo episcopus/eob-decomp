@@ -22,10 +22,12 @@ struct CharRec {
     char pad21[0x23 - 0x21];
     unsigned char level;       /* +23: the character's level [H], inferred from ovl6:0000's tests
                                   (0 stops the spell scan and the regain; 5 or less drops to 0);
-                                  src/E0A72.C:21 leaves +23 as padding */
+                                  src/E0A72.C:29 leaves +23 as padding */
     char pad24[0x37 - 0x24];
     signed char known[30];     /* +37: spell slots, negative: a spell to be memorised */
-    signed char memorized[30]; /* +55: spell slots, negative: a spell ready to cast */
+    signed char memorized[30]; /* +55: spell slots, positive: a spell ready to cast; negative:
+                                  spent or not yet regained (CampLoop turns it positive as
+                                  "gained") */
     char pad73[0xF3 - 0x55 - 30];
 };
 
@@ -63,7 +65,7 @@ extern void *gFont1A47; /*@ ds:FE4E */          /* the current font (1A47:0169 r
 extern void *gFE5A; /*@ ds:FE5A */              /* the 8x8 font loaded from Font8.fnt */
 extern void *gA9C0; /*@ ds:A9C0 */              /* the 6x6 font loaded from FONT6.FNT */
 extern int gPartyCell; /*@ ds:FBCA */
-extern signed char gF57E; /*@ ds:F57E */        /* the extra argument ovl6:0858 passes; 082C:0898
+extern signed char gF57E; /*@ ds:F57E */        /* the colour2 argument ovl6:0858 passes; 082C:0898
                                                    forwards it to its first shadow draw only */
 extern char gF442; /*@ ds:F442 */               /* 1 while ovl6:09D2 updates the objects */
 extern unsigned long g8492; /*@ ds:8492 */      /* the 32-bit counter the 1Ch handler bumps */
@@ -81,7 +83,7 @@ extern int FindCarriedSlot(int who, int field2, int fieldB); /*@ 0D1C:00F1 */
 extern int f0D1C_0163(int member, int what); /*@ 0D1C:0163 */
 extern void f0D1C_0C21(int x, int y, int width, int height, int c, int d); /*@ 0D1C:0C21 */
 extern char *SkipStrings(char *s, int n); /*@ 0D1C:07A7 */
-extern void DrawShadowText(char *text, int x, int y, int color, int extra); /*@ 082C:0898 */
+extern void DrawShadowText(char *text, int x, int y, int colour, int colour2); /*@ 082C:0898 */
 extern void WaitTicks(int n); /*@ 082C:0425 */
 extern int far RollDice(char count, char sides, char bonus); /*@ 082C:0458 */
 extern int Distance(int x, int y); /*@ 17A6:0F61 */
@@ -107,19 +109,23 @@ void f0B9B(int message);
    slots at +0x55 or known slots at +0x37 is negative ("%s gained %s." / "%s memorized %s."), and
    spends a healer's memorized slots ("%s casts healing on %s.") to top up the most wounded member.
    Each hour it prints "Hours rested: %-4d" (f0858) and damages by 10 hit points every member with
-   flag 1 and without flag 0x10 (DamageCharacter(member, 10)). Every eight hours it grants the
-   class-2 spell 0x18, regains one hit point of a member below his maximum, and drops the level of a
-   member whose 0D1C:0163(member, 2) is negative (by 5, or to 0 when at 5 or less); every 24 hours
-   it damages a member at level 0 above 0xf6 hit points. It never updates the object list: only
-   f09D2 does (UpdateObjects), at the start and on each key test. On the done path, when the last
-   f09D2 result was 0 and no member is wounded, it shows the warning box f0B9B(0x2b), "All
-   characters are fully rested." (gStrings2003 message 0x2b). It returns 1 when the opening f09D2
-   found an object near and 0 when the "Poisoned party members will die!" picker answers 0; every
-   other exit returns `result`, which is assigned only by the f09D2 call in the key test, so the
-   two gotos and the ReadKey branch return whatever the frame held (the caller tests AX,
+   flag 1 and without flag 0x10 (DamageCharacter(member, 10)). Every eight hours it puts the class-2
+   spell 0x18 into a memorized slot of a member whose classIndex is 2, and, for a member with flag 3
+   (`if (!f0D1C_0670(member, 3)) continue;`), regains one hit point of a member below his maximum and
+   drops the level of a member whose 0D1C:0163(member, 2) is negative (by 5, or to 0 when at 5 or
+   less); every 24 hours it damages a member with flag 3 at level 0 above 0xf6 hit points. It never
+   updates the object list: only f09D2 does (UpdateObjects), at the start and on each key test. On
+   the done path, when the last f09D2 result was 0 and no member is wounded, it shows the warning box
+   f0B9B(0x2b), "All characters are fully rested." (gStrings2003 message 0x2b). It returns 1 when the
+   opening f09D2 found an object near and 0 when the "Poisoned party members will die!" picker
+   answers 0; every other exit returns `result`, which is assigned only by the f09D2 call in the key
+   test, so the two gotos and the ReadKey branch return whatever the frame held (the caller tests AX,
    src/EOV1.ASM:3692-3694).
-   QUIRK ovl6:07D9: `return result` reads the local before any assignment on the paths that reach
-   the done label without going through the key test (ovl6:0718, ovl6:0765 and the ReadKey exits).
+   QUIRK ovl6:07C9, ovl6:07D9: the done path reads the local before any assignment on the paths that
+   reach it without going through the key test (the two gotos at ovl6:0718 and ovl6:0765 and the
+   ReadKey exits): the warning-box test `!foundWounded && !result` (ovl6:07C9, `cmp word ptr
+   [bp-6],0`) and the final `return result` (ovl6:07D9) both read it, so the box may show and the
+   value returned is whatever the frame held.
    Called from ovl1:1ED2 through the overlay's stub entry 212A:0039.
 
    The six zero bytes at +0008 are a local array initialiser, `unsigned char counters[6]`,
@@ -131,7 +137,7 @@ void f0B9B(int message);
 {
     int flag2;                 /* fOvl1_243A(0x28), the healer picker's answer (meaning unknown) */
     int flag4;
-    int result;                /* the last f09D2 answer; unassigned on the goto paths (QUIRK 07D9) */
+    int result;                /* the last f09D2 answer; unassigned on the goto paths (QUIRK 07C9, 07D9) */
     int flag8;
     int changed;               /* set when a member drops to level 0 or takes the 24-hour damage */
     char *slots;
@@ -378,9 +384,9 @@ done:
    region 0xa, and when `draw` is nonzero clears gStatusLine, hides the pointer, fills the panel
    rectangle (f0D1C_0C21) inside its clip (ClipRect), draws the title through DrawShadowText and shows
    the pointer again. Then it formats "Hours rested: %-4d" with gFileNameBuf and, with gStatusLine set to 2,
-   draws the line in color 0xf with gF57E as the first shadow draw's extra argument inside a second
-   clip (src/E082C.C:403-408). Finally it waits ten frames and restores the font and the region.
-   Called by the camp loop. */
+   draws the line in colour 0xf with gF57E as the colour2 (fifth) argument of the first shadow draw
+   only (DrawShadowText 082C:0898) inside a second clip. Finally it waits ten frames and restores the
+   font and the region. Called by the camp loop. */
 /*@ ovl6:0858 */ void f0858(int hours, int draw)
 {
     void *savedFont;
@@ -445,10 +451,11 @@ done:
     return 0;
 }
 /* ovl6:0A92: one when some party member (with hit points and a level) still has a spell to spend:
-   a negative "memorized" slot (a spell ready to cast) for a class whose slots 2 or 4 apply, or a
-   negative "known" slot (a spell still to be memorised) for a class whose slot 1 applies and
-   0D1C:00F1(member, 0x1d, -1) does not return -1. Returns zero when the party can rest. Called
-   by the camp loop. */
+   a negative "memorized" slot (a spell spent or not yet regained; a positive one is ready to cast)
+   for a class whose slot 2 matches (FindClassSlot(2, classIndex) != -1) or whose slot 4 test does
+   not return 0 (FindClassSlot(4, classIndex) != 0), or a negative "known" slot (a spell still to be
+   memorised) for a class whose slot 1 applies and 0D1C:00F1(member, 0x1d, -1) does not return -1.
+   Returns zero when the party can rest. Called by the camp loop. */
 /*@ ovl6:0A92 */ int f0A92(void)
 {
     register int member;

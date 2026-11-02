@@ -22,7 +22,7 @@ disassembling build/re/eob-overlays/ovl06.bin (ovl6:0718 and 0765 are the two go
 eob/EOB.EXE (index 0x2B is " All characters are fully rested.", index 0x3B is "Poisoned party members
 will die! Rest anyway?"). The other round 1 items I re-checked against the code hold.
 
-- [ ] must-fix src/EOV6.C:447-451 (the f0A92 header) and src/EOV6.C:28 (the struct comment on
+- [x] must-fix src/EOV6.C:447-451 (the f0A92 header) and src/EOV6.C:28 (the struct comment on
   `memorized`): both say a negative memorized slot is "a spell ready to cast". Round 1 item 27 was
   ticked, but its fix states the opposite of the code, so it is reopened. The sign runs the other
   way: a positive memorized slot is ready to cast; a negative one is spent or not yet regained.
@@ -34,24 +34,43 @@ will die! Rest anyway?"). The other round 1 items I re-checked against the code 
   memorized slot it spends (src/E0EF3.C:2031). Fix both places to say: a negative memorized slot is
   spent or not yet regained (CampLoop turns it positive as "gained"); a positive one is ready to cast.
   The known-slot wording (negative: to be memorised) is right.
-- [ ] should src/EOV6.C:381-382 (the f0858 header): "src/E082C.C:403-408" is stale; those lines are
+  Fixed: the f0A92 header now reads "a negative 'memorized' slot (a spell spent or not yet regained;
+  a positive one is ready to cast)" and the struct comment on `memorized` now reads "positive: a
+  spell ready to cast; negative: spent or not yet regained (CampLoop turns it positive as 'gained')".
+  Comments only; make match FILE=src/EOV6.C 6 of 6 (3258 bytes), exit 0.
+- [x] should src/EOV6.C:381-382 (the f0858 header): "src/E082C.C:403-408" is stale; those lines are
   now gDrawLine. The claim holds: DrawShadowText forwards its fifth argument to its first shadow draw
   only (src/E082C.C:465-471, address 082C:0898). Cite the address.
-- [ ] should src/EOV6.C:84: the declaration names the parameters `color` and `extra`. The owner now
+  Fixed: the f0858 header now cites DrawShadowText 082C:0898 (the address) instead of the stale line
+  range, and says gF57E is the colour2 (fifth) argument of the first shadow draw only.
+- [x] should src/EOV6.C:84: the declaration names the parameters `color` and `extra`. The owner now
   names them `colour` and `colour2` (src/E082C.C:465, after the e082c round 4 rename). Align with the
   owner's names.
-- [ ] should src/EOV6.C:111-113 (the CampLoop header): the eight-hour regain, level drop and class-2
+  Fixed: the declaration is now `DrawShadowText(char *text, int x, int y, int colour, int colour2)`,
+  matching the owner (src/E082C.C:465); the gF57E comment now calls it the colour2 argument.
+- [x] should src/EOV6.C:111-113 (the CampLoop header): the eight-hour regain, level drop and class-2
   spell, and the 24-hour damage, apply only to members with flag 3 (src/EOV6.C:298-299,
   `if (!f0D1C_0670(member, 3)) continue;`). The header says "a member" throughout. Say "a member
   with flag 3".
-- [ ] should src/EOV6.C:114-122 (the CampLoop header and QUIRK): the warning box test
+  Fixed: the header now says the regain, level drop and 24-hour damage are "for a member with flag 3
+  (`if (!f0D1C_0670(member, 3)) continue;`)". The class-2 spell 0x18 is a separate case: the code
+  applies it to a member whose classIndex is 2, before the flag-3 test (src/EOV6.C:292-297), so the
+  header names that gate too rather than lumping it with flag 3.
+- [x] should src/EOV6.C:114-122 (the CampLoop header and QUIRK): the warning box test
   `if (!foundWounded && !result)` (src/EOV6.C:349) also reads `result` on the goto paths
   (ovl6:07C9, `cmp word ptr [bp-6],0`, the same slot as 07D9). The QUIRK names only `return result`,
   and the box sentence says "the last f09D2 result was 0", which is unset on those paths. Name both reads.
-- [ ] should src/EOV6.C:25: "src/E0A72.C:21 leaves +23 as padding" is a stale line cite. The padding is
+  Fixed: the QUIRK now reads "QUIRK ovl6:07C9, ovl6:07D9" and names both reads: the box test
+  `!foundWounded && !result` (ovl6:07C9) and the final `return result` (ovl6:07D9). The `result`
+  declaration comment now cites both addresses.
+- [x] should src/EOV6.C:25: "src/E0A72.C:21 leaves +23 as padding" is a stale line cite. The padding is
   `char pad21[3]` in struct CharRec at src/E0A72.C:29 (+21 to +23). The claim holds; cite :29.
-- [ ] note src/EOV6.C:463-464: the f0A92 second test is `FindClassSlot(4, ...) != 0` (the first is
+  Fixed: the `level` comment now cites src/E0A72.C:29.
+- [x] note src/EOV6.C:463-464: the f0A92 second test is `FindClassSlot(4, ...) != 0` (the first is
   `!= -1`). The header's "slots 2 or 4 apply" does not show that; a reader may take it for a typo.
+  Addressed: the header now spells both tests out, "slot 2 matches (FindClassSlot(2, classIndex) != -1)
+  or whose slot 4 test does not return 0 (FindClassSlot(4, classIndex) != 0)", so the asymmetry is
+  visible.
 - [ ] note make match: still prints "unit eov6 not complete: ours 3258 bytes, the unit 3258" (round 1
   note, unchanged). A matcher question for the human.
 
