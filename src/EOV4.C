@@ -128,7 +128,7 @@ struct Region {             /* the 16-byte region records at ds:009F (src/E1DE7.
 };
 
 extern struct Region gRegions[]; /*@ ds:009F */
-extern int gFBC8; /*@ ds:FBC8 */                 /* the current page 0..3 (src/E0ACD.C) */
+extern int gFBC8; /*@ ds:FBC8 */                 /* the current action (src/E0D1C.C) */
 extern int gFBCC; /*@ ds:FBCC */                 /* the current page 0..3 (src/E08E6.C) */
 extern signed char g6F4E[]; /*@ ds:6F4E */       /* row value table this unit indexes */
 extern signed char g6F6D[]; /*@ ds:6F6D */       /* per-page index into ds:6F4E */
@@ -758,14 +758,14 @@ extern struct SlotPos gA99C[]; /*@ ds:A99C */
 extern int gF1; /*@ ds:00F1 */               /* a region top (src/EOV5.C) */
 extern int gF5; /*@ ds:00F5 */               /* a region height (this unit) */
 extern signed char g716E[]; /*@ ds:716E */   /* per heading, a column base (this unit) */
-extern signed char g70F0[]; /*@ ds:70F0 */   /* per index y base, page 1..3 (this unit) */
-extern signed char g70F4[]; /*@ ds:70F4 */   /* per index y base, page 4..6 (this unit) */
-extern signed char g70F8[]; /*@ ds:70F8 */   /* per index y base, page 7..9 (this unit) */
-extern signed char g70FC[]; /*@ ds:70FC */   /* per index y base, page 10..11 (this unit) */
-extern signed char g70FF[]; /*@ ds:70FF */   /* per index y base, page 10..11, second draw (this unit) */
-extern signed char g7102[]; /*@ ds:7102 */   /* per index y base, page 12 (this unit) */
-extern int g7106[]; /*@ ds:7106 */           /* per slot x, page 4..6 (this unit) */
-extern int g7108[]; /*@ ds:7108 */           /* per slot y, page 4..6 (this unit) */
+extern signed char g70F0[]; /*@ ds:70F0 */   /* per index y base, action 1..3 (this unit) */
+extern signed char g70F4[]; /*@ ds:70F4 */   /* per index y base, action 4..6 (this unit) */
+extern signed char g70F8[]; /*@ ds:70F8 */   /* per index y base, action 7..9 (this unit) */
+extern signed char g70FC[]; /*@ ds:70FC */   /* per index y base, action 10..11 (this unit) */
+extern signed char g70FF[]; /*@ ds:70FF */   /* per index y base, action 10..11, second draw (this unit) */
+extern signed char g7102[]; /*@ ds:7102 */   /* per index y base, action 12 (this unit) */
+extern int g7106[]; /*@ ds:7106 */           /* per slot x, action 4..6 (this unit) */
+extern int g7108[]; /*@ ds:7108 */           /* per slot y, action 4..6 (this unit) */
 extern signed char g714E[]; /*@ ds:714E */   /* per heading nudge base (this unit) */
 extern signed char g718E[]; /*@ ds:718E */   /* per index nudge a (this unit) */
 extern signed char g7192[]; /*@ ds:7192 */   /* per index nudge b (this unit) */
@@ -776,10 +776,10 @@ extern signed char g71A2[]; /*@ ds:71A2 */   /* per index nudge f (this unit) */
 
 #define NO_RECORD -1        /* a ds:18BF byte that means "this heading has no size record" */
 
-/* ovl4:1411: draws the wall face(s) one view slot shows for one page (ds:FBC8). It selects the
+/* ovl4:1411: draws the wall face(s) one view slot shows for the current action (ds:FBC8). It selects the
    slot's size record gFB5E[col] (col = g716E[heading] + 2 - g1A09[slot]) and its x base
-   g1D61[(slot*5+4)*2]; unless the page is 7..9 it first fits region 5 to the column extent. For
-   pages 1..3 and 12 it draws one region at the record with a y base from ds:70F0/ds:7102 nudged by
+   g1D61[(slot*5+4)*2]; unless the action is 7..9 it first fits region 5 to the column extent. For
+   actions 1..3 and 12 it draws one region at the record with a y base from ds:70F0/ds:7102 nudged by
    ds:718E/ds:7192 when the heading is below 0x1e; 4..6 draws the record twice (region 000F and
    004D, mirrored) at a y base ds:70F4 and fits the region to ds:7106/ds:7108, then redraws region 5
    at the column extent; 7..9 draws gFB5E[col+3] first, then fits the column extent and draws the
@@ -787,7 +787,7 @@ extern signed char g71A2[]; /*@ ds:71A2 */   /* per index nudge f (this unit) */
    with a nudge from ds:719E/ds:71A2. Every case, when ds:18BF of the heading is NO_RECORD (0xff),
    also draws the ds:A99C[col] position record, which needs its own x and y. Finally SetRegionRect
    fits region 5 to the visible span. Called by DrawViewSlots at ovl4:1E2E when the slot is below 15
-   and the record's ds:194B bit 3 is set. Purpose unknown: what the pages, the size records and the
+   and the record's ds:194B bit 3 is set. Purpose unknown: what the actions, the size records and the
    nudges mean, and what the 0x1e heading threshold selects.
    QUIRK ovl4:1411: in cases 10 and 11 the slot parameter is dead and the compiler reuses its stack
    slot for the case's y nudge, so `slot` is reassigned there and no longer holds the slot number. */
