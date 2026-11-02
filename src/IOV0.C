@@ -6,10 +6,10 @@
    DAND, WESTWOOD). The whole unit is drawn through the driver pointers the front end fills at
    load time (ds:1EE2 and its neighbours), which this page only partly names.
    The scene functions are named after the .CMP/.COL files they load: PlayWtrdpScene (ovl0:015D,
-   WTRDP1..3) is written; 06E2 (ORB, TOWRMAGE, a four sprite array it blits with BlitImage and
-   draws through f1A29_000F), 0B20 (TOWRMAGE), 1265, 15F9, 1DF3 and 23A3 are still stubs. They
-   are long ClipRect/frame animations; every utility they use (LoadPackedImage, LoadPalette,
-   PlaySound, Dissolve, BlitImage, DrawGrid, GrowFrame, WaitFrameDelay, f19EC_002A) is matched. */
+   WTRDP1..3) and PlayOrbScene (ovl0:06E2, ORB/TOWRMAGE) are written; 0B20 (TOWRMAGE), 1265,
+   15F9, 1DF3 and 23A3 are still stubs. They are long ClipRect/frame animations; every utility
+   they use (LoadPackedImage, LoadPalette, PlaySound, Dissolve, BlitImage, DrawGrid, GrowFrame,
+   WaitFrameDelay, f19EC_002A) is matched. */
 
 /*@flags -ml -O -Z -G */
 
@@ -99,7 +99,7 @@ extern int gOrderY[200];                /*@ ds:2B8C */
    shows as 90 0E E8). */
 void PlayIntroSequence(void);
 void PlayWtrdpScene(void);
-void Ovl0_06E2(void);
+void PlayOrbScene(void);
 void BlitImage(int x1, int y1, int x2, int y2, int width, int height, int mode);
 void Ovl0_0B20(void);
 void ClearBottomBar(void);
@@ -167,7 +167,7 @@ void PlayLogoSequence(void);
     if (!gAbort)
         Ovl0_0B20();
     if (!gAbort)
-        Ovl0_06E2();
+        PlayOrbScene();
     if (!gAbort)
         PlayWtrdpScene();
     if (!gAbort)
@@ -292,7 +292,60 @@ extern void MemFree(void far *block); /*@ 094F:0137 */
         MemFree(stars[i]);
     }
 }
-/*@ ovl0:06E2 stub */ void Ovl0_06E2(void) {}
+/* ovl0:06E2: the ORB/TOWRMAGE scene, the orb and the tower mage. It loads ORB.CMP and cuts the
+   orb sprite, loads TOWRMAGE.CMP and cuts the mage's four animation frames, then in two passes
+   over five steps (i from -1 to 3, then from 3 down to -1) draws the orb and, once i is a real
+   frame, the frame over it, each step wiping a 0x14 by 0x88 window. A key aborts like the other
+   scenes. All the scratch images are freed at the end. */
+/*@ ovl0:06E2 */ void PlayOrbScene(void)
+{
+    void far *orb;
+    void far *mage[4];
+    int i;
+
+    LoadPackedImage("ORB.CMP", 5, 3);
+    gDrawPage = 2;
+    orb = gMakeImage(0, 0, 0x14, 0x88, gOverlayBuf);
+    LoadPackedImage("TOWRMAGE.CMP", 5, 3);
+    mage[3] = gMakeImage(0x10, 0, 0x10, 0x68, gOverlayBuf);
+    gFillRect(0, 0, 0x7f, 0x67, 0xc);
+    for (i = 1; i < 4; i++) {
+        BlitImage(0x80, 0, 0, 0, 0x80, 0x68, i);
+        mage[3 - i] = gMakeImage(0, 0, 0x10, 0x68, gOverlayBuf);
+    }
+    gFillRect(0, 0, 0x9f, 0x87, 0xc);
+    gDrawPage = 0;
+    f19EC_002A(3, 4, FP_OFF(gOverlayBuf), FP_SEG(gOverlayBuf));
+    WaitFrameDelay();
+    gUnknown1EE2();
+    PlaySound(6);
+    for (i = -1; i < 4; i++) {
+        gFrameDelay = 3;
+        if (i >= 0)
+            f1A29_000F(2, mage[i], 0x10, 0x10, 0);
+        f1A29_000F(2, orb, 0, 0, 0);
+        ClipRect(0, 0, 0xa, 0x18, 0x14, 0x88, 2, 0);
+        WaitFrameDelay();
+    }
+    ClipRect(0, 0x40, 0, 0xa8, 0x28, 0x10, 6, 0);
+    DelayFrames(0x28);
+    PlaySound(6);
+    for (i = 3; i > -2; i--) {
+        gFrameDelay = 3;
+        gDrawPage = 2;
+        gFillRect(0x10, 0x10, 0x8f, 0x77, 0xc);
+        gDrawPage = 0;
+        if (i >= 0)
+            f1A29_000F(2, mage[i], 0x10, 0x10, 0);
+        f1A29_000F(2, orb, 0, 0, 0);
+        ClipRect(0, 0, 0xa, 0x18, 0x14, 0x88, 2, 0);
+        WaitFrameDelay();
+    }
+    for (i = 0; i < 4; i++)
+        MemFree(mage[i]);
+    gFrameDelay = 0x28;
+    MemFree(orb);
+}
 /* ovl0:09AD: copies an image between two rectangles of the same video buffer (slot 3, the
    segment f19EC_0002(3) returns), from the rectangle at (x1,y1) to the one at (x2,y2), each
    row `width` bytes wide and `height` lines high. `mode` selects the byte interleave:

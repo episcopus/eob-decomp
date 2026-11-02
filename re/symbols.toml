@@ -11181,6 +11181,9 @@ unit = "iov0"
 addr = "ovl0:06E2"
 size = 715
 evidence = ["ovl", "near", "frame"]
+name = "PlayOrbScene"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "iov0_09ad"

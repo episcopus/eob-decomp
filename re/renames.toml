@@ -2268,3 +2268,12 @@ new = "PlayWtrdpScene"
 kind = "function"
 why = "it loads WTRDP1/2/3.CMP and the WTRDP2.COL palette (ovl0:015D +0167, +0182, +02da, +032e), the tutorial scene"
 date = "2026-11-02"
+
+[[rename]]
+id = "intro/ovl0:06E2=PlayOrbScene"
+addr = "intro/ovl0:06E2"
+old = "Ovl0_06E2"
+new = "PlayOrbScene"
+kind = "function"
+why = "it loads ORB.CMP and TOWRMAGE.CMP and animates the orb and the four tower-mage frames (ovl0:06E2 +06E9, +072B)"
+date = "2026-11-02"
