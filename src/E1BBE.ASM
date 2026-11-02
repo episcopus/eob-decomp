@@ -29,6 +29,14 @@
 
         .MODEL  LARGE
 
+        SCREEN_COLUMNS  EQU 28h ; the 40 eight-pixel columns of the 320 pixel screen (320 / 8): the x
+                                ; clip bound in HidePointer (1BBE:0057) and ShowPointer (1BBE:0156) and
+                                ; the right edge of the pointer rectangle
+        SCREEN_ROWS     EQU 0C8h ; the 200 pixel rows: the y clip bound in HidePointer (1BBE:0090) and
+                                 ; ShowPointer (1BBE:0190) and the bottom edge of the pointer rectangle
+        COLUMN_MASK     EQU 0FFF8h ; rounds a pixel x down to the 8-pixel column that holds it
+                                   ; (HidePointerZone, 1BBE:024B)
+
         .DATA
         EXTRN   _gPointerBusy:WORD              ; @ ds:812E: pointer busy flag, 0 = free; the wrappers below
                                                 ; wait while it is set and then increment it (not atomic;
@@ -47,7 +55,7 @@
                                         ; src/E1BF3.ASM:35)
         EXTRN   _gCursorY:WORD          ; @ ds:813A: mouse position, y in pixels
         EXTRN   _gHideDepth:WORD        ; @ ds:8146: hide depth, 0 = drawn (1BBE:0002/00ED change it);
-                                        ; InitMouse starts it at 1 and the state at 0 (src/E1A72.ASM:288-289),
+                                        ; InitMouse starts it at 1 and the state at 0 (src/E1A72.ASM:289-290),
                                         ; so the pointer starts hidden until the first show
         EXTRN   _gMouseDisabled:WORD              ; @ ds:814A: non-zero disables the pointer (E07A9 tests it too)
         EXTRN   _gPointerHeight:WORD     ; @ ds:8154: sprite height in pixels (record byte +3, 1BB1)
@@ -84,8 +92,8 @@
         EXTRN   _gPointerShapeSeg:WORD   ; @ ds:8170: pointer shape record, far segment
         EXTRN   g8172:WORD              ; @ ds:8172: far pointer handed to [ds:80AA], offset; the 17A6
                                         ; unit saves and restores the 16 bytes under it (SetFarPointer
-                                        ; and GetFarPointer, src/E1A72.ASM:138-146 and :550-554; the
-                                        ; saved copy is E17A6.ASM:93-95)
+                                        ; and GetFarPointer, src/E1A72.ASM:551-556; the sentence is at
+                                        ; :555; the saved copy is E17A6.ASM:93-95)
         EXTRN   g8174:WORD              ; @ ds:8174: the same far pointer, segment (pushed first)
         EXTRN   _gRectLeft:WORD         ; @ ds:8176: pointer rectangle, left; in 8-pixel columns and
                                         ; clipped in HidePointer/ShowPointer, in pixels and unclipped
@@ -97,10 +105,10 @@
         EXTRN   _gShapeX:WORD           ; @ ds:817E: shape drawn at, x in pixels, unclipped
         EXTRN   _gShapeY:WORD           ; @ ds:8180: shape drawn at, y in pixels, unclipped
         EXTRN   _gSpriteHeight:WORD     ; @ ds:8182: copy of _gPointerHeight, the sprite height in pixel
-                                        ; rows; added to the top to get the bottom (clip bounds 0 and 0C8h)
+                                        ; rows; added to the top to get the bottom (clip bounds 0 and SCREEN_ROWS)
         EXTRN   _gNegSpriteHeight:WORD  ; @ ds:8184: minus _gPointerHeight, the lower y clip bound in rows
         EXTRN   _gSpriteWidth:WORD      ; @ ds:8186: copy of _gPointerWidth8, the sprite width in 8-pixel
-                                        ; columns; added to the left to get the right (bounds 0 and 28h)
+                                        ; columns; added to the left to get the right (bounds 0 and SCREEN_COLUMNS)
         EXTRN   _gNegSpriteWidth:WORD   ; @ ds:8188: minus _gPointerWidth8, the lower x clip bound in columns
         EXTRN   _gRestoreRect:DWORD     ; @ ds:804E: far fn (x, y, w, h, buf): buffer back to screen;
                                         ; x and w are in 8-pixel columns, y and h in pixel rows
@@ -178,7 +186,7 @@ enabled: cmp     word ptr [_gHideDepth],0
         sar     ax,1
         cmp     ax,[_gNegSpriteWidth]
         jle     L0075
-        cmp     ax,28h
+        cmp     ax,SCREEN_COLUMNS
         jge     L0075
         mov     [_gRectLeft],ax
         add     ax,[_gSpriteWidth]
@@ -188,13 +196,13 @@ enabled: cmp     word ptr [_gHideDepth],0
         mov     word ptr [_gRectLeft],0
         jmp     short L0084
 L0075:  jmp     short L00E0
-L0077:  cmp     word ptr [_gRectRight],28h
+L0077:  cmp     word ptr [_gRectRight],SCREEN_COLUMNS
         jle     L0084
-        mov     word ptr [_gRectRight],28h
+        mov     word ptr [_gRectRight],SCREEN_COLUMNS
 L0084:  mov     ax,[_gRectTop]
         cmp     ax,[_gNegSpriteHeight]
         jle     L00E0
-        cmp     ax,0C8h
+        cmp     ax,SCREEN_ROWS
         jge     L00E0
         mov     [_gRectTop],ax
         add     ax,[_gSpriteHeight]
@@ -203,9 +211,9 @@ L0084:  mov     ax,[_gRectTop]
         jge     L00AB
         mov     word ptr [_gRectTop],0
         jmp     short L00B9
-L00AB:  cmp     word ptr [_gRectBottom],0C8h
+L00AB:  cmp     word ptr [_gRectBottom],SCREEN_ROWS
         jle     L00B9
-        mov     word ptr [_gRectBottom],0C8h
+        mov     word ptr [_gRectBottom],SCREEN_ROWS
 L00B9:  push    word ptr [_gPointerBackSeg]
         push    word ptr [_gPointerBackOff]
         mov     ax,[_gRectBottom]
@@ -233,14 +241,17 @@ _HidePointer ENDP
 ; is not hidden (gHideDepth zero, 1BBE:00FD). Otherwise gHideDepth is decremented first (1BBE:00FF), so
 ; the count still changes even when no save-under buffer exists (_gPointerBackSeg, 1BBE:010F) or the
 ; rectangle is off screen (1BBE:0154, 018B and 0190 reach ShowDone after the decrement, and the
-; off-screen fall-through at 1BBE:0159 reaches the jmp ShowDone at 1BBE:015B); only
-; at zero, with a buffer and an on-screen rectangle, the current mouse position (gCursorX/gCursorY) is
-; copied to the position being drawn at (gDrawnX/gDrawnY), the rectangle is recomputed and clipped as in
-; 1BBE:0002, the screen under it is saved through [ds:80AE] (x, y, w, h, _gPointerBackOff/_gPointerBackSeg) and the
-; shape record _gPointerShapeOff/_gPointerShapeSeg is drawn at the unclipped position gShapeX/gShapeY through [ds:80C2]
-; (mode 0). Called by 1BB1:0002, 1BF3:000E and the mouse handler inside _InitMouse (1A72:00DA;
-; the handler entry is 1A72:017A) at src/E1A72.ASM, label L025C (after its _HidePointer call),
-; and by the wrappers below. Pushes AX to preserve the caller's.
+; off-screen fall-through at 1BBE:0159 reaches the jmp ShowDone at 1BBE:015B); at zero with a buffer
+; the current mouse position (gCursorX/gCursorY) is copied to the position being drawn at
+; (gDrawnX/gDrawnY) before the on-screen test (1BBE:0111-0114 and 0121-0124), so an off-screen show
+; still moves the drawn position (QUIRK 1BBE:0111); the on-screen test (1BBE:0150-0159) then gates
+; only the rectangle, the save and the draw: with an on-screen rectangle the rectangle is recomputed
+; and clipped as in 1BBE:0002, the screen under it is saved through [ds:80AE] (x, y, w, h,
+; _gPointerBackOff/_gPointerBackSeg) and the shape record _gPointerShapeOff/_gPointerShapeSeg is drawn
+; at the unclipped position gShapeX/gShapeY through [ds:80C2] (mode 0). Called by 1BB1:0002,
+; 1BF3:000E and the mouse handler inside _InitMouse (1A72:00DA; the handler entry is 1A72:017A) at
+; src/E1A72.ASM, label L025C (after its _HidePointer call), and by the wrappers below. Pushes AX to
+; preserve the caller's.
         PUBLIC  _ShowPointer            ; @ 1BBE:00ED
 _ShowPointer PROC FAR
         push    bp
@@ -279,7 +290,7 @@ _ShowPointer PROC FAR
         sar     ax,1
         cmp     ax,[_gNegSpriteWidth]
         jle     L015B
-        cmp     ax,28h
+        cmp     ax,SCREEN_COLUMNS
         jl      L015E
 L015B:  jmp     ShowDone
 L015E:  mov     [_gRectLeft],ax
@@ -289,13 +300,13 @@ L015E:  mov     [_gRectLeft],ax
         jge     L0177
         mov     word ptr [_gRectLeft],0
         jmp     short L0184
-L0177:  cmp     word ptr [_gRectRight],28h
+L0177:  cmp     word ptr [_gRectRight],SCREEN_COLUMNS
         jle     L0184
-        mov     word ptr [_gRectRight],28h
+        mov     word ptr [_gRectRight],SCREEN_COLUMNS
 L0184:  mov     ax,[_gRectTop]
         cmp     ax,[_gNegSpriteHeight]
         jle     L015B
-        cmp     ax,0C8h
+        cmp     ax,SCREEN_ROWS
         jge     L015B
         mov     [_gRectTop],ax
         add     ax,[_gSpriteHeight]
@@ -304,9 +315,9 @@ L0184:  mov     ax,[_gRectTop]
         jge     L01AB
         mov     word ptr [_gRectTop],0
         jmp     short L01B9
-L01AB:  cmp     word ptr [_gRectBottom],0C8h
+L01AB:  cmp     word ptr [_gRectBottom],SCREEN_ROWS
         jle     L01B9
-        mov     word ptr [_gRectBottom],0C8h
+        mov     word ptr [_gRectBottom],SCREEN_ROWS
 L01B9:  push    word ptr [_gPointerBackSeg]
         push    word ptr [_gPointerBackOff]
         mov     ax,[_gRectBottom]
@@ -340,13 +351,15 @@ _ShowPointer ENDP
 ; repeated without recomputing the zone or the rectangle, so bit 4000 is decided by the first hide
 ; alone (1BBE:0232 jmp short L029F); otherwise the four arguments are stored in gZoneLeft..gZoneBottom,
 ; with right and bottom as given (1BBE:023C, 0240) but left and top reduced by the sprite width and
-; height in pixels (1BBE:025B and 0272; 1A72:0244 reads the zone to test whether the cursor has entered
+; height in pixels (1BBE:025B and 0272; 1A72:0244 reads the zone to test whether the cursor is inside
 ; it), the pointer's rectangle is computed in pixels without clipping (left x rounded down to a multiple
 ; of 8, right = left + sprite width, top = the drawn y less the hot spot y (no rounding), bottom = top +
 ; sprite height; 1BBE:0244..0278), and gPointerState is set to 8000h (a zone hide is in force). If that
 ; rectangle overlaps the zone, bit 4000 (a redraw is owed at the show) is set (1BBE:0299) and the code
 ; falls into the bracket; a disjoint rectangle jumps to 1BBE:02B6, skipping the hide and the bracket and
-; leaving only 8000h. The bracket is [ds:80AA], 1BBE:0002, [ds:80A2] (1BBE:029F). The push cs before
+; leaving only 8000h (QUIRK 1BBE:02B6: a disjoint hide hides nothing but still sets 8000h, which the
+; handler reads; a port that omits it changes the handler's later behaviour). The bracket is [ds:80AA],
+; 1BBE:0002, [ds:80A2] (1BBE:029F). The push cs before
 ; the near call to 1BBE:0002 (1BBE:02AE-02AF) makes that pair a far call: the callee is a FAR proc,
 ; so its RETF (1BBE:00EC) pops the CS the push put on the stack; 1BBE:02F8, 0324 and 034F are the same
 ; form. Then the busy flag is released. Called by 0EF3, 16A5, 1DE7 and the overlays; the packet lists
@@ -382,7 +395,7 @@ L0234:  mov     [_gZoneLeft],cx
         mov     [_gZoneBottom],di
         mov     ax,[_gDrawnX]
         sub     ax,[_gPointerHotX]
-        and     ax,0FFF8h
+        and     ax,COLUMN_MASK
         mov     [_gRectLeft],ax
         mov     bx,[_gPointerWidth8]
         shl     bx,1
@@ -462,10 +475,10 @@ L0300:  dec     word ptr [_gPointerBusy]
 _ShowPointerZone ENDP
 
 ; 1BBE:0307 LockHidePointer: hide the pointer, taking the busy flag and bracketing the work with
-; [ds:80AA] and [ds:80A2]. "Lock" is the callers' name for the frame bracket (src/E14EF.C:75 calls
-; LockHidePointer "start a frame" and :76 calls LockShowPointer "end a frame"), not mutual exclusion:
-; the busy flag is a test then an increment (1BBE:030A), not atomic (src/E1BB1.ASM:53 says the same
-; of its acquire). Like 1BBE:01FE without the rectangle, the zone and the redraw flag.
+; [ds:80AA] and [ds:80A2]. "Lock" is the callers' name for the frame bracket (the declarations give
+; LockHidePointer "start a frame" and LockShowPointer "end a frame", src/E14EF.C:80-81), not mutual
+; exclusion: the busy flag is a test then an increment (1BBE:030A), not atomic (src/E1BB1.ASM:53 says
+; the same of its acquire). Like 1BBE:01FE without the rectangle, the zone and the redraw flag.
 ; Called by many units of the resident code and the overlays, usually paired with 1BBE:0332 (the
 ; call-site lists differ: 0ACD:0E8A, 0ACD:0F72, ovl0:2547 and ovl5:17C8 call only the show, ovl0:28F9
 ; only the hide).
