@@ -6,9 +6,9 @@
 ;
 ; 1BB1:0002 sets the mouse pointer's shape. Two callers. SetMouseItem (07A9:010C) passes the hot spot
 ; (8,8) when its n is above 0 and (0,0) otherwise, and the record gIconsDDE4[n] in both cases (the
-; two calls at E07A9.C:229 and :231, SetMousePointerShape(MOUSE_HOTSPOT, MOUSE_HOTSPOT, gIconsDDE4[n])
-; and SetMousePointerShape(0, 0, gIconsDDE4[n]); the table holds item icon images, E07A9.C:114-120,
-; the comment just above gIconsDDE4 at :121). SetPointerShape (ovl2:0000, src/EOV2.C:206-211) passes (0,0) and
+; calls SetMousePointerShape(MOUSE_HOTSPOT, MOUSE_HOTSPOT, gIconsDDE4[n]) and
+; SetMousePointerShape(0, 0, gIconsDDE4[n]) in src/E07A9.C; the table holds item icon images, the
+; comment just above gIconsDDE4). SetPointerShape (ovl2:0000, src/EOV2.C:206-211) passes (0,0) and
 ; gPtrDD00, which it has just set to gIconsDDE4[0] (EOV2.C:210-211); LoadItemData calls
 ; SetPointerShape at start-up (EOV2.C:451). The globals this function fills are the pointer's hot
 ; spot gPointerHotX/gPointerHotY (ds:8158/815A), its shape record gPointerShapeOff/gPointerShapeSeg
@@ -72,7 +72,9 @@
         _DATA   SEGMENT WORD PUBLIC 'DATA'
         EXTRN   _gPointerBusy:WORD      ; @ ds:812E: busy flag, 0 = free; a test then an
                                         ; increment, not a lock, acquired by busy-wait
-        EXTRN   _gPointerHeight:WORD    ; @ ds:8154: pointer height in pixels, from shape byte +3
+        EXTRN   _gPointerHeight:WORD    ; @ ds:8154: pointer height in pixels, from shape byte +3;
+                                        ; the rectangle's top and bottom edges are clipped to 200
+                                        ; at 1BBE:008D..0099
         EXTRN   _gPointerWidth8:WORD    ; @ ds:8156: pointer width in 8-pixel units, shape byte +2 + 1;
                                         ; the unit is read in 1BBE:0002, which shifts x right 3
                                         ; (1BBE:0048..004F), stores the column (1BBE:005C) and clips
@@ -87,7 +89,8 @@
                                         ; _SetFarPointer 1A72:02FE (src/E1A72.ASM:442), read by _GetFarPointer 1A72:033A
         EXTRN   g8174:WORD              ; @ ds:8174: argument of the [ds:80AA] call, segment; written by
                                         ; _SetFarPointer 1A72:02FE (src/E1A72.ASM:443), read by _GetFarPointer 1A72:033A
-        EXTRN   g80C6:DWORD             ; @ ds:80C6: indirect far function, buffer size (width, height)
+        EXTRN   g80C6:DWORD             ; @ ds:80C6: indirect far function, returns the save-under buffer
+                                        ; size in bytes; called as (width, height) at 1BB1:006F
         EXTRN   g80AA:DWORD             ; @ ds:80AA: indirect far function, called with ds:8172/8174
         EXTRN   g80A2:DWORD             ; @ ds:80A2: indirect far function, no arguments
         _DATA   ENDS
@@ -102,14 +105,16 @@
                                         ; at zero, with a buffer, when on screen)
         EXTRN   _MemAlloc:FAR           ; @ 19BC:0007
         EXTRN   _MemFree:FAR            ; @ 19BC:0137
-        EXTRN   _LargestFreeBlock:FAR         ; @ 19BC:023D: returns the largest free block (DX:AX)
+        EXTRN   _LargestFreeBlock:FAR         ; @ 19BC:023D: returns the largest free block (DX:AX), less
+                                              ; one 16 byte block and clamped at 0 (E19BC.C:128-130, :142)
 
 ; 1BB1:0002: set the mouse pointer shape to the record at (argument 3, argument 4) and the hot
 ; spot to (argument 1, argument 2). Allocates the save-under buffer when there is none yet or the
 ; sprite size changed (freeing an existing buffer of a changed size first); hides the pointer
 ; before overwriting the globals and shows it after, all under the busy flag gPointerBusy (ds:812E).
 ; Returns 1, or 0 when the largest-block test fails (1BB1:0084..0086) or MemAlloc returns no
-; segment (1BB1:009D..00A0); both callers ignore the value and the prototype is void (E07A9.C:144).
+; segment (1BB1:009D..00A0); both callers ignore the value and the prototype (src/E07A9.C, src/EOV2.C)
+; is void.
         PUBLIC  _SetMousePointerShape             ; @ 1BB1:0002
 _SetMousePointerShape PROC FAR
         push    bp
@@ -195,14 +200,14 @@ ready:  push    word ptr [g8174]
         call    dword ptr [g80A2]
         mov     ax,1
         jmp     short release
-; QUIRK 1 (1BB1:00C6): on failure the old buffer was already freed at resize (1BB1:0058..005C) and the
+; QUIRK 1BB1:0058: on failure the old buffer was already freed at resize (1BB1:0058..005C) and the
 ; new size is already stored, but ds:816A/816C still hold the freed pointer. A later call with the
 ; same size passes `je ready` (1BB1:0050) with a dangling buffer, and a later call with a different
 ; size (1BB1:0046/004C, `jne 0052` at 1BB1:004A) frees the already-freed block again (1BB1:0058..005C
 ; with ds:816A/816C), a double free. A first-time failure (ds:816C == 0) leaves it zero and the next
 ; call retries.
 ;
-; QUIRK 2 (1BB1:00C6): the failure path also skips the 1BBE:00ED call above, so the hide 1BBE:0002
+; QUIRK 1BB1:00C6: the failure path also skips the 1BBE:00ED call above, so the hide 1BBE:0002
 ; did is never undone and the pointer stays hidden until something else balances the count. The
 ; count can be nonzero two ways: it was already nonzero, so 1BBE:0002 only increments it (1BBE:0015
 ; `jne 0075` to 1BBE:00E0 `inc [8146]`, no buffer test), or ds:816C (the buffer) was nonzero on

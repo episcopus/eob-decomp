@@ -630,12 +630,12 @@ Checks: `make match FILE=src/E1BB1.ASM` 1 of 1 (208 bytes); `make readability UN
 
 ### Findings
 
-- [ ] must-fix src/E1BB1.ASM:9-10, and the same citations in re/renames.toml:181, :208, :217 and re/globals.toml:67, :72: the E07A9.C lines are stale again. On main the two calls are at src/E07A9.C:245 (`SetMousePointerShape(MOUSE_HOTSPOT, MOUSE_HOTSPOT, gIconsDDE4[n])`) and :247 (`SetMousePointerShape(0, 0, gIconsDDE4[n])`), not :229 and :231. The icon comment is at src/E07A9.C:127-132 with `extern void far *gIconsDDE4[]` at :133; lines 114-120 hold the gFn80D2 and gDF48 comments, not the icon table. Evidence: `grep -n "SetMousePointerShape(" src/E07A9.C` (245, 247) and `grep -n "gIconsDDE4\[\]" src/E07A9.C` (133). Fix: name the caller SetMouseItem (07A9:010C) with the call text, and give no E07A9.C line numbers (see the note below).
-- [ ] must-fix src/E1BB1.ASM:112: "the prototype is void (E07A9.C:144)" points at a comment line (src/E07A9.C:144 is the stub note text). The prototype is at src/E07A9.C:160 (`extern void SetMousePointerShape(int hotX, int hotY, void far *icon);`), and src/EOV2.C:184 declares it too. Evidence: `sed -n 144p src/E07A9.C` (a comment) and `grep -n "extern void SetMousePointerShape" src/E07A9.C` (160).
-- [ ] should src/E1BB1.ASM:105 (`_LargestFreeBlock`): "returns the largest free block (DX:AX)" leaves out the 16 it takes off. src/E19BC.C:128-130 says it keeps the largest block not in use, subtracts one 16 byte paragraph and clamps at 0 (`max -= 0x10`, E19BC.C:142). The call-site comment (line 163) says this; the EXTRN comment should too.
-- [ ] should src/E1BB1.ASM:90 (`g80C6`): "buffer size (width, height)" does not say what the value is. It is the save-under buffer size in bytes: it becomes the size MemAlloc gets (1BB1:0091, after the margin at 1BB1:0076), and MemAlloc takes bytes (src/E19BC.C:2 and :34, farmalloc). Say "returns the save-under buffer size in bytes".
-- [ ] should src/E1BB1.ASM:75 (`_gPointerHeight`, "in pixels"): the pixel reading rests on the clip in 1BBE, which is not cited here. 1BBE:008D (`cmp ax,0C8h`, 200 lines) clips the top and bottom edges of the rectangle that the height builds (1BBE:0092..0099). Cite 1BBE:008D..0099.
-- [ ] should src/E1BB1.ASM:198 and :205: the labels "QUIRK 1 (1BB1:00C6):" and "QUIRK 2 (1BB1:00C6):" are not the `QUIRK <address>:` form of docs/process/READABILITY.md, and both name the same address. QUIRK 1's cause is the free at 1BB1:0058..005C, and 1BB1:00C6 is only where the stale state is left behind. Head them `QUIRK 1BB1:0058:` (the double free and the dangling pointer) and `QUIRK 1BB1:00C6:` (the unbalanced hide, QUIRK 2).
+- [x] must-fix src/E1BB1.ASM:9-10, and the same citations in re/renames.toml:181, :208, :217 and re/globals.toml:67, :72: the E07A9.C lines are stale again. On main the two calls are at src/E07A9.C:245 (`SetMousePointerShape(MOUSE_HOTSPOT, MOUSE_HOTSPOT, gIconsDDE4[n])`) and :247 (`SetMousePointerShape(0, 0, gIconsDDE4[n])`), not :229 and :231. The icon comment is at src/E07A9.C:127-132 with `extern void far *gIconsDDE4[]` at :133; lines 114-120 hold the gFn80D2 and gDF48 comments, not the icon table. Evidence: `grep -n "SetMousePointerShape(" src/E07A9.C` (245, 247) and `grep -n "gIconsDDE4\[\]" src/E07A9.C` (133). Fix: name the caller SetMouseItem (07A9:010C) with the call text, and give no E07A9.C line numbers (see the note below). Fixed in 30e5d81: as the note asked, the citations are now by function id and call text with no E07A9.C line numbers. src/E1BB1.ASM:7-11 names SetMouseItem (07A9:010C) and the two calls by their text `SetMousePointerShape(MOUSE_HOTSPOT, MOUSE_HOTSPOT, gIconsDDE4[n])` and `SetMousePointerShape(0, 0, gIconsDDE4[n])` in src/E07A9.C, and the item icon table by its comment above gIconsDDE4 (no lines). re/renames.toml:181 (SetMousePointerShape) says "(src/E07A9.C)" and :208/:217 (gPointerHotX/HotY) and re/globals.toml:67/:72 say "the caller SetMouseItem (07A9:010C) passes 8 or 0, src/E07A9.C".
+- [x] must-fix src/E1BB1.ASM:112: "the prototype is void (E07A9.C:144)" points at a comment line (src/E07A9.C:144 is the stub note text). The prototype is at src/E07A9.C:160 (`extern void SetMousePointerShape(int hotX, int hotY, void far *icon);`), and src/EOV2.C:184 declares it too. Evidence: `sed -n 144p src/E07A9.C` (a comment) and `grep -n "extern void SetMousePointerShape" src/E07A9.C` (160). Fixed in 30e5d81: the function comment (now lines 112-113) says "the prototype (src/E07A9.C, src/EOV2.C) is void", naming both files without the stale line.
+- [x] should src/E1BB1.ASM:105 (`_LargestFreeBlock`): "returns the largest free block (DX:AX)" leaves out the 16 it takes off. src/E19BC.C:128-130 says it keeps the largest block not in use, subtracts one 16 byte paragraph and clamps at 0 (`max -= 0x10`, E19BC.C:142). The call-site comment (line 163) says this; the EXTRN comment should too. Fixed in 30e5d81: the EXTRN comment now reads "returns the largest free block (DX:AX), less one 16 byte block and clamped at 0 (E19BC.C:128-130, :142)".
+- [x] should src/E1BB1.ASM:90 (`g80C6`): "buffer size (width, height)" does not say what the value is. It is the save-under buffer size in bytes: it becomes the size MemAlloc gets (1BB1:0091, after the margin at 1BB1:0076), and MemAlloc takes bytes (src/E19BC.C:2 and :34, farmalloc). Say "returns the save-under buffer size in bytes". Fixed in 30e5d81: the EXTRN comment now reads "indirect far function, returns the save-under buffer size in bytes; called as (width, height) at 1BB1:006F".
+- [x] should src/E1BB1.ASM:75 (`_gPointerHeight`, "in pixels"): the pixel reading rests on the clip in 1BBE, which is not cited here. 1BBE:008D (`cmp ax,0C8h`, 200 lines) clips the top and bottom edges of the rectangle that the height builds (1BBE:0092..0099). Cite 1BBE:008D..0099. Fixed in 30e5d81: the EXTRN comment now cites 1BBE:008D..0099 as the 200 clip that gives the pixel reading.
+- [x] should src/E1BB1.ASM:198 and :205: the labels "QUIRK 1 (1BB1:00C6):" and "QUIRK 2 (1BB1:00C6):" are not the `QUIRK <address>:` form of docs/process/READABILITY.md, and both name the same address. QUIRK 1's cause is the free at 1BB1:0058..005C, and 1BB1:00C6 is only where the stale state is left behind. Head them `QUIRK 1BB1:0058:` (the double free and the dangling pointer) and `QUIRK 1BB1:00C6:` (the unbalanced hide, QUIRK 2). Fixed in 30e5d81: the labels are now `QUIRK 1BB1:0058:` (the dangling pointer and double free) and `QUIRK 1BB1:00C6:` (the unbalanced hide).
 - [ ] note the placeholders g80AA, g80A2 and g80C6 are named by their call sites and the comments in src/E1BBE.ASM and src/E1BF3.ASM (the callees are not lifted), and g8172 and g8174 by their writer and reader. That meets the playbook. The style differs from src/E07A9.C, which names the function pointer at ds:80D2 gFn80D2 (src/E07A9.C:116); the gFn or g choice for these pointers is for phase 6 (READABILITY rule 7).
 - [ ] note the open notes for other owners, still true at 8457bad, and this branch does not touch them: src/E1BBE.ASM:65 cites "1BB1:0094" for the size query (the call is at 1BB1:006F); src/E1BBE.ASM:76 says "already hidden" (1BBE:0015 `jne 0075` increments the count); "semaphore" for ds:812E in src/E1A72.ASM:7 and :32 and src/E1BBE.ASM:28 (this unit says busy flag); src/E07A9.C:158 says "stores the hot-spot offset" (1BB1:001B and :0021 store two words); and whether SetMouseItem can run before gIconsDDE4[0] is written (src/EOV2.C:209).
 - [ ] note the line citations to other units have gone stale in rounds 7 to 10. Cite the function id and the call text, which survive a merge, as the ninth round's note asked.
@@ -643,3 +643,37 @@ Checks: `make match FILE=src/E1BB1.ASM` 1 of 1 (208 bytes); `make readability UN
 ### Summary (tenth review)
 
 The unit is understandable from its source alone. Every byte-level claim in the header and the QUIRK notes holds against the disassembly, and the names have their evidence: SetMousePointerShape (two callers, SetMouseItem and SetPointerShape), gPointerBusy, gHideDepth, HidePointer and ShowPointer, the shape and buffer globals, and HEAP_BLOCK. The placeholders stay on purpose. What is wrong is the citations of src/E07A9.C: the two calls, the icon table and the prototype appear in the header, the function comment and four registry WHY texts, and they point at lines that do not hold those statements on main. That is the one must-fix, and it has now recurred in four rounds (7 to 10), so the fix should be to cite the function and its call text, not a new line number. The shoulds are precision: the 16 that LargestFreeBlock takes off, the unit of g80C6, the pixel citation and the QUIRK labels. Verdict: review-failed.
+
+## Decompiler response (tenth review, 30e5d81)
+
+Both must-fix items and all four `should` items are addressed in commit 30e5d81 (src/E1BB1.ASM,
+re/renames.toml, re/globals.toml); each is ticked above with what changed.
+
+The stale citation has now cost four rounds, so the header follows the note and cites the caller by
+function id and call text, with no src/E07A9.C line numbers: src/E1BB1.ASM:7-11 names SetMouseItem
+(07A9:010C) and the two calls `SetMousePointerShape(MOUSE_HOTSPOT, MOUSE_HOTSPOT, gIconsDDE4[n])`
+and `SetMousePointerShape(0, 0, gIconsDDE4[n])` in src/E07A9.C, and the item icon table by the
+comment above gIconsDDE4. The four registry WHY texts follow: re/renames.toml:181 says
+"(src/E07A9.C)", and re/renames.toml:208/:217 (gPointerHotX/gPointerHotY) and re/globals.toml:67/:72
+say "the caller SetMouseItem (07A9:010C) passes 8 or 0, src/E07A9.C". The function comment (now
+lines 112-113) says the prototype (src/E07A9.C, src/EOV2.C) is void, naming both files without a
+line.
+
+The four shoulds: the _LargestFreeBlock EXTRN comment now says the return is "less one 16 byte block
+and clamped at 0 (E19BC.C:128-130, :142)"; g80C6 now says it "returns the save-under buffer size in
+bytes; called as (width, height) at 1BB1:006F"; _gPointerHeight cites the 200 clip at
+1BBE:008D..0099 for the pixel reading; and the QUIRK labels are `QUIRK 1BB1:0058:` (the dangling
+pointer and double free) and `QUIRK 1BB1:00C6:` (the unbalanced hide).
+
+Verified: `make match FILE=src/E1BB1.ASM` 1 of 1 (208 of 208 bytes, _SetMousePointerShape 207
+bytes), `make readability UNIT=e1bb1` 0 findings, and re/globals.toml and re/renames.toml parse. The
+changes are comments and registry text only; the bytes are unchanged. Rechecked the current line
+numbers with `grep -n "SetMousePointerShape" src/E07A9.C` (prototype 160, calls 245 and 247) and
+`grep -n "gIconsDDE4\[\]" src/E07A9.C` (133): the header and the registry no longer cite any of
+these lines.
+
+The open `note` items are for other owners or informational: the placeholders g80AA, g80A2, g80C6,
+g8172 and g8174 stay (the callees are not lifted; the evidence is the call sites), and the remaining
+open notes name src/E1BBE.ASM, src/E1A72.ASM and src/E07A9.C. This unit's branch does not change
+other units' files.
+
