@@ -23,3 +23,59 @@ the records they point to, read with `tools/re/mzutil.py`), and a byte search of
 ## Summary
 
 The unit matches and is small and readable, but its one type is wrong in a way that matters for every later unit that touches these lists: `struct Node { int a; int b; }` is really a far `next` pointer at offset 0 of a 60-byte DGROUP record (proved by `ListAdd` at 1658:001E and by the table contents), and the header comment describes the data the wrong way round. Both are must-fix; they do not change the bytes. The names `gFlag`, `gList`, `gTable*`, `BuildList*` are acceptable placeholders (no evidence yet for the real meaning, and the review file records the evidence collected so far: the 0/1 writers of ds:F3B9, the 60-byte stride, the consumer `16A5:005A`).
+
+## Second review (rev-haiku)
+
+Reviewer: rev-haiku
+Commit reviewed: 7ee067dbd9e047dcfe78345a34a3f717098109b2 (main when I started; src/E0CF7.C at 651da2c)
+
+Playbook 70, read for meaning. The earlier round's must-fixes are in the source and I checked them against the
+bytes: `make match FILE=src/E0CF7.C` 6 of 6 (591 bytes); `make readability UNIT=e0cf7` 0 findings. Evidence I
+checked this round: the segment table in build/re/eob.json (segment 0CF7 is 591 bytes, the whole code segment);
+`ListAdd` at 1658:001E (walks to the node whose link is null, stores the item there, zeroes the item's link, returns
+the saved head); the writers of ds:F3B9 (0EF3:2281 stores 1 and calls BuildList1 at 0EF3:2286; 0EF3:2541 stores 0 and
+is a caller of BuildList1 to 3; 0ACD:0FA9 stores 0); all eight tables read from DGROUP (261 entries, all relocated to
+segment 212E).
+
+## Findings
+
+- [ ] must-fix src/E0CF7.C:5-7 (`The records the tables point at are 60 bytes each in DGROUP`): the 0x3C grid is
+  proven, the record size is not. Every table entry is 6 mod 60, and the closest two distinct records are 60 bytes
+  apart, so the records sit on a 60-byte grid. Nothing in the bytes shows each record is 60 bytes long. The node
+  layout in src/E1658.C:9-18 reaches +0x33 (52 bytes), so the real size is somewhere from 52 to 60. Say "spaced on a
+  60-byte grid", or give the size and its evidence.
+- [ ] should src/E0CF7.C:8 (`struct Node`): src/E1658.C:9 defines another `struct Node` for the same list nodes
+  (far `next` at +00, `key` at +04, `flags` at +0E, `state` at +2E, `callback` at +30). Two units with one tag and
+  different members will collide once a shared header exists. Use the E1658 definition (its first member is the same
+  far `next`) or give this one another tag.
+- [ ] should src/E0CF7.C:12 (`gList`): cite the consumer. src/E16A5.C:56-60 says `DispatchKeyWait` dispatches a key to
+  "the node list `head`", and that overlays 0 and 1 and 0ACD:0E6C each pass the list head at ds:FB48. That is the
+  strongest evidence in the file for what gList is: the screen node list the key dispatcher walks, not only "the list
+  built last". The name can stay; the comment should carry the evidence.
+- [ ] should src/E0CF7.C:1-2 (`Go/no-go spike for the toolchain (SPEC 4.2)`): project history, not what the code does,
+  and it will go stale. Move it to the work notes or drop it.
+- [ ] should src/E0CF7.C:3 (`Names are placeholders until the callers and the tables are understood`): the packet
+  lists every caller and the tables are decoded, so the line says less than the file knows. Say what is still
+  unknown instead: the meaning of gFlag (and so of the a and b sets), and the numbering of BuildList1 to BuildList5.
+- [ ] should src/E0CF7.C:10-11 (`gFlag`): name the writer context. 0EF3:2541 is the function that stores 0 and calls
+  BuildList1 to 3; 0EF3:2281 stores 1 and calls BuildList1 at 0EF3:2286. Those two callers are where a reader would
+  look first, and the comment gives only the store addresses.
+- [ ] note the tables: the first entry of tables 1a, 1b, 2a, 2b, 3a and 3b is the same record, ds:4836 (tables 4 and 5
+  start at 0x3E9A and 0x4B7E). So the a and b sets differ only after their first node, and every BuildList1 to 3 call
+  runs ListInit on ds:4836. A reader who expects the a and b heads to differ will be misled; the comment at the
+  tables could say so.
+- [ ] note src/E1658.C:6-7 says ListAdd is at "0CF7:001E". That address is inside ListInit (0CF7:0007); ListAdd is at
+  1658:001E, as src/E1658.C:51 says. Not in this unit; the E1658 owner should fix it.
+- [ ] note BuildList1 to BuildList5 are named by their table number, not by what the tables are. That is acceptable
+  for now (the bodies say what they do) and the numbers follow the tables, so leave them until the a and b meaning
+  is known.
+
+## Summary
+
+The unit is small and matches, and its names and types now agree with the bytes except for one size claim:
+the 60 in "60 bytes each" is the grid spacing the tables show, not a proven record size (must-fix above). The
+rest is clarity: a `struct Node` tag that differs from E1658's, a header that describes the project instead of the
+code, and a gList comment that does not yet cite the dispatcher that reads it (E16A5.C). Names still standing on
+purpose: gFlag ("meaning unknown"; three writers, two sets), gTable1a to gTable5 and BuildList1 to BuildList5 (table
+numbering, no evidence for the real use), ListInit (sets gList to the head and clears its link: matches the bytes).
+Nothing here is a matcher or spec question, so no escalation.
