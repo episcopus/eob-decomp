@@ -1341,3 +1341,12 @@ new = "HitTestObjectKind"
 kind = "function"
 why = "122E:0055 hit-tests the last click against the click-region chain of the object kind its argument names: it walks the ds:E06B records via their next field and tests each against ClickInRect (called by PerformItemSlotAction 122E:05DF and the item-slot actions 0620, 0678, 06D0 with a gTable18BF kind)"
 date = "2026-11-01"
+
+[[rename]]
+id = "122E:0896=DispatchSlotHandler"
+addr = "122E:0896"
+old = "f122E_0896"
+new = "DispatchSlotHandler"
+kind = "function"
+why = "122E:0896 dispatches the slot action: it gates on the g1905 selector and the gEFD2 mask, then calls the handler at handlers[g1905[..]-1](id, slot) from the local table copied from ds:5A18 (called by RunRowHandler 122E:0933 and Action08E7 0ACD:08E7)"
+date = "2026-11-01"

@@ -40,6 +40,7 @@ extern void PlaySound(int sound); /*@ 177D:0070 */
 extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
 extern char gFileNameBuf[]; /*@ ds:FE6E */     /* the text buffer sprintf formats into (src/E082C.C) */
 extern int gForceDoorRoll[]; /*@ ds:59B0 */    /* force-door roll thresholds, indexed by CharRec.m0D (122E:0325) */
+extern signed char g1905[]; /*@ ds:1905 */     /* per-object-kind handler selector (src/E0DE8.C) */
 
 /* The 52-byte click-region records at ds:E06B, one chain per object kind (122E:0055 walks `next`).
    `kind` indexes gRectKinds; bit 0 of `flags` mirrors `x` about the 176-pixel screen width. */
@@ -466,10 +467,39 @@ void f122E_1DA8(int a, int b);  /* forward: 1DA8 comes after its callers */
     }
     return 0;
 }
-/*@ 122E:0896 stub */ int f122E_0896(int a, int b) { return 0; }
+/* 122E:0896: the row handler. It flips bit 1 of the slot, looks the object there up in gB894, and
+   when its g1905 selector is nonzero, the driver mode gEFD2 has the selector's bit set
+   ((gB894[id*9+4] & 0xf8) >> 3 | 0xe0) and the selector minus one is not negative, calls that
+   handler (a local table of far function pointers copied from the compiler template at ds:5A18)
+   with (id, slot). Then it clears the driver mode and marks the action dirty. Returns 0 when a
+   guard fails, else the handler's result. */
+/*@ 122E:0896 draft */ int DispatchSlotHandler(int id, int slot)
+{
+    int (far *handlers[10])(int, int) = {
+        MemberSlotClickAction, PerformItemSlotAction, IncreaseItemSlot, DecreaseItemSlot,
+        ForceDoorAction, CheckMemberSlotRect, 0, 0, 0, ItemSlotAction
+    };
+    int idx;
+    int mask;
+    int result;
+
+    slot ^= 2;
+    idx = gB894[id * 9 + slot];
+    if (g1905[idx] == 0)
+        return 0;
+    mask = ((gB894[id * 9 + 4] & 0xf8) >> 3) | 0xe0;
+    if (!(gEFD2 & mask))
+        return 0;
+    if (g1905[idx] - 1 < 0)
+        return 0;
+    result = handlers[g1905[idx] - 1](id, slot);
+    gEFD2 = 0;
+    gDF4C = 1;
+    return result;
+}
 
 /* 122E:0933: set the driver mode to 0x40, work out the member's row through f0D1C_00DA and run the
-   row handler f122E_0896. QUIRK 122E:0933: the argument is raised by 0x3c and then never read. */
+   row handler DispatchSlotHandler. QUIRK 122E:0933: the argument is raised by 0x3c and then never read. */
 /*@ 122E:0933 */ void RunRowHandler(int entry)
 {
     int x;
@@ -477,7 +507,7 @@ void f122E_1DA8(int a, int b);  /* forward: 1DA8 comes after its callers */
     entry += 0x3c;
     gEFD2 = 0x40;
     x = f0D1C_00DA(gSoundVolume, gFBCC);
-    f122E_0896(x, gFBCC);
+    DispatchSlotHandler(x, gFBCC);
 }
 /* 122E:0960: sub-opcode that writes gB894 fields: 0xFFE9 stores a byte into gB894[id * 9 + index],
    0xFFED sets the page gFBCC, and 0xFFF7 fills the first four bytes of gB894[id * 9] with a byte.
