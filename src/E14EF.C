@@ -1,24 +1,24 @@
-/* Unit at EOB.EXE 14EF:0007 (1410 bytes, 6 functions): the shared option list the overlays show for
-   the in-game menus. A panel record is a 16-byte record at ds:017F (the array size is not
-   established) giving its x and y offsets from the origin ds:FE64/ds:FE66, its width in characters
-   and height in lines, the selected row and two colours; the list is drawn from that record. The
-   caller passes the array of far strings to show, a 32-bit mask of the selectable entries and a
-   shift for that mask. FindMaskBit
-   (14EF:0007) returns the index, counted from shift, of the n-th selectable entry; CountMaskBits (14EF:0107) counts the set bits of
-   a range; IsPointInRect (14EF:00E1) is the point-in-rectangle test; BlinkText (14EF:0078) flashes
-   one entry between two colours; DrawOptionList (14EF:0154) lays the list out and draws it;
-   UpdateOptionList (14EF:0274) reads a key or a click and moves the selection. The 16-byte stride
-   and field offsets come from DrawOptionList (14EF:0154), which reads y at :194, x at :195, sel at
-   :196, height at :197, colorA at :202 and colorB at :204, and from UpdateOptionList (14EF:0274),
-   which reads height at :273, sel at :274, y at :278, x at :279, colorA at :280, colorB at :281 and
-   width at :288. The mask and shift come from the callers. PickOption (src/EOV0.C:1148, :1149) and
-   LoadGamePanel (src/EOV2.C:380, :383) pass the all-ones mask 0xffffffff with shift 0, the case FindMaskBit
-   returns n for at once; PickClass (src/EOV0.C:1203, :1215) and PickAlignment (src/EOV0.C:1253,
-   :1257) pass gTable6081[race] & mask and gTable6099[classIndex] & mask with shift 0, masks other
-   than -1 (mask -5 when a party member has align >= 6, :1189-1190; mask 0xfe3f when one has m20 ==
-   2, :1241-1242), so FindMaskBit's bit scan is reached in play. CountMaskBits is called by PickClass
-   with n 15 (:1193) and PickAlignment with n 9 (:1244), both with shift 0 (see its comment). The
-   flags and the build through the assembler (`-B`) are whitepaper 2.1.1. Placeholder names. */
+/* Unit at EOB.EXE 14EF:0007 (1410 bytes, 6 functions): the shared option list the overlays show for the in-game
+   menus. A panel record is a 16-byte record at ds:017F (the array size is not established) giving its x and y
+   offsets from the origin ds:FE64/ds:FE66, its width in characters and height in lines, the selected row and two
+   colours; the list is drawn from that record. The caller passes the array of far strings to show, a 32-bit mask
+   of the selectable entries and a shift for that mask. FindMaskBit (14EF:0007) returns the index, counted from
+   shift, of the n-th selectable entry; CountMaskBits (14EF:0107) counts the set bits of a range; IsPointInRect
+   (14EF:00E1) is the point-in-rectangle test; BlinkText (14EF:0078) flashes one entry between two colours;
+   DrawOptionList (14EF:0154) lays the list out and draws it; UpdateOptionList (14EF:0274) reads a key or a click
+   and moves the selection. The 16-byte stride and field offsets come from DrawOptionList (14EF:0154), which reads
+   y at :194, x at :195, sel at :196, height at :197, colorA at :202 and colorB at :204, and from UpdateOptionList
+   (14EF:0274), which reads height at :273, sel at :274, y at :278, x at :279, colorA at :280, colorB at :281 and
+   width at :288. The mask and shift come from the callers. PickOption (src/EOV0.C:1148, :1149) and LoadGamePanel
+   (src/EOV2.C:380, :383) pass the all-ones mask 0xffffffff with shift 0, the case FindMaskBit returns n for at
+   once; PickClass (src/EOV0.C:1203, :1215) and PickAlignment (src/EOV0.C:1253, :1257) pass gTable6081[race] & mask
+   and gTable6099[classIndex] & mask with shift 0, masks other than -1 (mask -5 when a party member has align >= 6,
+   :1189-1190; mask 0xfe3f when one has m20 == 2, :1241-1242), so FindMaskBit's bit scan is reached in play.
+   CountMaskBits is called by PickClass with n 15 (:1193) and PickAlignment with n 9 (:1244), both with shift 0
+   (see its comment). The flags and the build through the assembler (`-B`) are whitepaper 2.1.1. The modulo at
+   UpdateOptionList :274 and the two `/ lineheight` divisions (:293, :317) divide by zero if the panel height or
+   gFontHeight + gFC78 is zero; whether either can be zero is not established. Placeholder names. A bare `:NNN` in
+   a comment in this file is a line of this file; `SSSS:NNNN` is a disassembly address. */
 
 /*@flags -ml -O -Z -B */
 
@@ -81,11 +81,11 @@ extern void (far *gDrawText)(char far *text, int x, int y, int color, int extra)
 extern void DrawShadowText(char far *text, int x, int y, int color, int extra); /*@ 082C:0898 */
 /* 1BBE:0307: hide the pointer inside a frame. It waits for the pointer busy flag ds:812E to be free
    and takes it (1BBE:030A), calls the far hook [ds:80AA] with the pointer at ds:8172/8174, calls
-   HidePointer, calls the far hook [ds:80A2], then releases the flag (src/E1BBE.ASM:489-502). The
+   HidePointer, calls the far hook [ds:80A2], then releases the flag (src/E1BBE.ASM:493-506). The
    callers call the pair a frame bracket; the two hooks' role is Purpose unknown, src/ names them only
-   as "far fn (g8172/g8174)" and "far fn (no arguments)" (src/E1BBE.ASM:126-127, src/E1A72.ASM:32-33) */
+   as "far fn (g8172/g8174)" and "far fn (no arguments)" (src/E1BBE.ASM:130-131, src/E1A72.ASM:32-33) */
 extern void LockHidePointer(void); /*@ 1BBE:0307 */
-extern void LockShowPointer(void); /*@ 1BBE:0332: the same bracket around ShowPointer (src/E1BBE.ASM:512-525) */
+extern void LockShowPointer(void); /*@ 1BBE:0332: the same bracket around ShowPointer (src/E1BBE.ASM:516-529) */
 extern int IsKeyPending(void); /*@ 1AAD:0471: nonzero when an event waits in the ring (src/E1AAD.ASM:337-338) */
 extern void FlushKeyBuffer(void); /*@ 1AAD:0480: discard every buffered event (src/E1AAD.ASM:350-351) */
 extern int WaitKeyEvent(void); /*@ 1AAD:05D3: read a key; returned unfiltered, the callers mask with
