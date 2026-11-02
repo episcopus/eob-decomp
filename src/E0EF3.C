@@ -174,6 +174,15 @@ extern char gText57C8[];                /*@ ds:57C8 */ /* said by 0EF3:08CF when
 extern unsigned char gEffectSound[];    /*@ ds:1355 */ /* one record per effect value, stride 0x13;
                                                            the first byte is a sound id (0EF3:08CF) */
 extern void (far *gFnEFBA)(void);       /*@ ds:EFBA */ /* a redraw hook run by 0EF3:08CF */
+extern char gFlag;                      /*@ ds:F3B9 */ /* cleared by 0EF3:2541 (E0ACD.C) */
+extern void far *gSegDF4E;              /*@ ds:DF4E */ /* the slot-5 buffer (E07A9.C) */
+extern void (far *gRestoreRect)(int x, int y, int width, int height, void far *buf); /*@ ds:804E */
+extern void HidePointerZone(int left, int top, int right, int bottom); /*@ 1BBE:01FE */
+extern void ShowPointerZone(void);      /*@ 1BBE:02C2 */
+extern void DrawViewRows(void);         /*@ 2116:0034 */ /* overlay 4 entry, ovl4:1EDE */
+extern char far *gDD14;                 /*@ ds:DD14 */ /* a far byte table 0EF3:25BD scans */
+extern signed char gDDE2;               /*@ ds:DDE2 */ /* the member 0EF3:25BD saves */
+extern signed char gA9C5;               /*@ ds:A9C5 */ /* a counter 0EF3:25BD walks */
 
 /* The record 0EF3:08CF, 0EF3:2541 and 0EF3:25BD take: an action context with the member it applies
    to at +0x38 (-1 when none) and a result word at +4 the functions hand back. */
@@ -184,7 +193,7 @@ struct ActRec {
     signed char m38;        /* +38: the member the action applies to, -1 when none */
 };
 
-extern int f0EF3_2541(struct ActRec far *rec); /*@ 0EF3:2541 */
+extern int RedrawPartyPanel(struct ActRec far *rec); /*@ 0EF3:2541 */
 
 extern void SwapChars(char far *pa, char far *pb); /*@ 082C:07A4 */
 extern void RedrawMember(int dir); /*@ 1547:0991 */
@@ -585,7 +594,7 @@ extern void f0EF3_2A53(int a, int b, int c, int d, int e, void far *p); /*@ 0EF3
     if (g8DCE != 0)
         FinishMemberEffect();
     else
-        f0EF3_2541(rec);
+        RedrawPartyPanel(rec);
     return rec->m04;
 }
 
@@ -1358,9 +1367,51 @@ extern void f0EF3_2A53(int a, int b, int c, int d, int e, void far *p); /*@ 0EF3
 
 /*@ 0EF3:2295 stub */ void f0EF3_2295(void) {}
 
-/*@ 0EF3:2541 stub */ int f0EF3_2541(struct ActRec far *rec) {}
+/* 0EF3:2541: redraw the party panel after an action: clear the key-flag gFlag, hide the pointer
+   and restore the panel rectangle (8, 0x7a, 0x0e by 0x37) from the slot-5 buffer gSegDF4E plus
+   0x61a8, show the pointer, draw the view rows, and rebuild the active item list (BuildList1 to 3
+   by gFB44). Returns the action record's +4 word. */
+/*@ 0EF3:2541 */ int RedrawPartyPanel(struct ActRec far *rec)
+{
+    gFlag = 0;
+    HidePointerZone(0x40, 0x78, 0xB0, 0xB1);
+    gRestoreRect(8, 0x7A, 0x0E, 0x37, (char far *)gSegDF4E + 0x61A8);
+    ShowPointerZone();
+    DrawViewRows();
+    switch (gFB44) {
+    case 0:
+        BuildList1();
+        break;
+    case 1:
+        BuildList2();
+        break;
+    case 2:
+        BuildList3();
+        break;
+    }
+    return rec->m04;
+}
 
-/*@ 0EF3:25BD stub */ void f0EF3_25BD(void) {}
+/* 0EF3:25BD: Purpose unknown: save the action record's member (+0x38) in ds:DDE2, then hunt along
+   that member's row (six bytes) of the far table ds:DD14 (row base gDDE2 * 6) for the first byte
+   over zero, breaking at six. It then runs 0EF3:2295 (the item panel) and returns the record's +4
+   word. Its caller and what the row holds are not established.
+   DRAFT: the original hoists the row base into ES:BX once (`les bx,[ds:DD14]; add bx,gDDE2*6`)
+   and adds gA9C5 each pass; our build sums the index first and reloads the far pointer
+   (`make match` differs after the multiply, +0x13). A declared far pointer adds a frame the
+   original does not have. */
+/*@ 0EF3:25BD draft */ int f0EF3_25BD(struct ActRec far *rec)
+{
+    gDDE2 = rec->m38;
+    gA9C5 = 0;
+    while (gA9C5 < 6) {
+        if (gDD14[gDDE2 * 6 + gA9C5] > 0)
+            break;
+        gA9C5++;
+    }
+    f0EF3_2295();
+    return rec->m04;
+}
 
 /* 0EF3:2604: use the item in one of a member's rows. When the item's type is 0x22 or 0x23, or
    its type is 0x30 and its flags low six bits are exactly 1, run 0BD2:0106(who, slot); for a

@@ -3250,6 +3250,9 @@ unit = "e0ef3"
 addr = "0EF3:035A"
 size = 126
 evidence = ["near", "frame"]
+name = "CreateItemType"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0ef3_03d8"
@@ -4107,6 +4110,9 @@ unit = "e0ef3"
 addr = "0EF3:2541"
 size = 124
 evidence = ["far", "near", "frame"]
+name = "RedrawPartyPanel"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0ef3_25bd"
