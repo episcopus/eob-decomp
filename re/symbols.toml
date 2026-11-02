@@ -8073,6 +8073,7 @@ evidence = ["ovl", "near", "segment"]
 name = "SetPointerShape"
 level = "L2"
 match_flags = "-ml -O -Z"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "eov2_005e"
@@ -8083,6 +8084,7 @@ evidence = ["ovl", "near", "frame"]
 name = "LoadItems"
 level = "L2"
 match_flags = "-ml -O -Z"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "eov2_0110"
@@ -8093,6 +8095,7 @@ evidence = ["ovl", "near", "frame"]
 name = "LoadItemTypes"
 level = "L2"
 match_flags = "-ml -O -Z"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "eov2_0171"
@@ -8103,6 +8106,7 @@ evidence = ["ovl", "near", "frame"]
 name = "LoadItemSheets"
 level = "L2"
 match_flags = "-ml -O -Z"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "eov2_0496"
@@ -8113,6 +8117,7 @@ evidence = ["ovl", "near", "frame"]
 name = "InitGameTables"
 level = "L2"
 match_flags = "-ml -O -Z"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "eov2_0577"
@@ -8123,6 +8128,7 @@ evidence = ["ovl", "frame"]
 name = "LoadDecorateIcons"
 level = "L2"
 match_flags = "-ml -O -Z"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "eov2_078d"
@@ -8133,6 +8139,7 @@ evidence = ["ovl", "near", "frame"]
 name = "LoadIntroScreen"
 level = "L2"
 match_flags = "-ml -O -Z"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "eov2_0846"
@@ -8143,6 +8150,7 @@ evidence = ["ovl", "near", "frame"]
 name = "LoadGamePanel"
 level = "L2"
 match_flags = "-ml -O -Z"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "eov2_0937"
@@ -8153,6 +8161,7 @@ evidence = ["ovl", "near", "frame"]
 name = "SetUiPalette"
 level = "L2"
 match_flags = "-ml -O -Z"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "eov2_09cc"
@@ -8163,6 +8172,7 @@ evidence = ["ovl", "frame"]
 name = "LoadItemData"
 level = "L2"
 match_flags = "-ml -O -Z"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "eov2_09ed"
@@ -8173,6 +8183,7 @@ evidence = ["ovl", "frame"]
 name = "FindWordPanel"
 level = "L2"
 match_flags = "-ml -O -Z"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "eov3_0000"
