@@ -2,9 +2,8 @@
    per-type behaviour routines of the game's map objects: UpdateObjects walks the 30 28-byte object
    records at ds:8A82 (struct Obj28, indexed by the 27-byte character records at ds:1A3B, struct
    Entry27) and dispatches each live object by its type to the 000B/00C3/03FE/0AB8/0B34/0B94/0CA6
-   behaviours. 26 functions are at L2, four are drafts (0EC3, 106B, 1410, 17FD) and six are stubs
-   (0309, 0430, 05EA, 0765, 0B94, 10F3). Whitespace and empty-body stubs keep the siblings in
-   address order. */
+   behaviours. 29 functions are at L2, six are drafts (0EC3, 0765, 0B94, 106B, 1410, 17FD) and one is
+   a stub (10F3). Whitespace and empty-body stubs keep the siblings in address order. */
 
 struct Obj28 {              /* 28-byte records, 30 of them at ds:8A82 */
     char b0;                /* +0: index into the ds:1A3B table (the character record) */
@@ -51,14 +50,28 @@ struct Entry27 {            /* 27-byte records at ds:1A3B, indexed by Obj28.b0 (
 };
 
 struct CharRec {            /* 243-byte character records at ds:F580; the fields this unit reads */
-    char pad00[0x1D];
+    char pad00[2];
+    char name[0x0B];        /* +02: the character's name, NUL padded (src/E0DE8.C) */
+    char pad0D[0x1D - 0x0D];
     signed char m1D;        /* +0x1D */
     char pad1E[0xE3 - 0x1E];
     int mE3;                /* +0xE3 */
     char padE5[0xF3 - 0xE5];
 };
 
+struct Entry14 {            /* 14-byte item records at ds:8DD2 (src/E0D1C.C) */
+    unsigned char flags;    /* +0 (ds:8DD2) */
+    signed char icon;       /* +1 (ds:8DD3) */
+    signed char m02;        /* +2 (ds:8DD4): the item type */
+    char pad03;
+    int m04;                /* +4 (ds:8DD6): the key; -1 when free */
+    char pad06[0x0B - 0x06];
+    signed char m0B;        /* +0xB (ds:8DDD) */
+    char pad0C[0x0E - 0x0C];
+};
+
 extern struct CharRec gChars[]; /*@ ds:F580 */
+extern struct Entry14 gTable8DD2[]; /*@ ds:8DD2 */
 
 extern struct Obj28 gObjs[]; /*@ ds:8A82 */
 extern signed char gArg3237[]; /*@ ds:3237 */
@@ -67,6 +80,10 @@ extern signed char g323B[]; /*@ ds:323B */
 extern unsigned char gB894[]; /*@ ds:B894 */
 extern struct Entry27 gTable1A3B[]; /*@ ds:1A3B */
 extern signed char g194B[]; /*@ ds:194B */
+extern signed char g1790[]; /*@ ds:1790 */
+extern int g321E; /*@ ds:321E */
+extern int g31FE[]; /*@ ds:31FE */
+extern int g320E[]; /*@ ds:320E */
 extern char g31F2[]; /*@ ds:31F2 */
 extern char g31F6[]; /*@ ds:31F6 */
 extern int gSoundVolume; /*@ ds:FBCA */
@@ -114,6 +131,21 @@ extern int f17A6_0314(int obj, int volume); /*@ 17A6:0314 */
 extern int f0D1C_0006(int value); /*@ 0D1C:0006 */
 extern int f0D1C_00DA(int value, int page); /*@ 0D1C:00DA */
 extern void fOvl4_1F51(int n); /*@ 2116:005C */   /* overlay 4 entry, ovl4:1F51 */
+extern void PlaySoundVolume(int sound, int volume); /*@ 177D:0106 */
+extern void PlaySoundDefault(int sound); /*@ 177D:00F3 */
+extern int f0D1C_0670(int who, int mask); /*@ 0D1C:0670 */
+extern void DamageCharacter(int who, int amount); /*@ 0DE8:09B9 */
+extern void ApplyStatusEffect(int who, int mask, char far *text, int attack, int count, int value, int flag); /*@ 0DE8:101A */
+extern void RedrawMember(int dir); /*@ 1547:0991 */
+extern void DrawText(char far *text); /*@ 1DE7:060A */
+extern int sprintf(char far *buf, char far *fmt, ...); /*@ 0000:57AE */
+extern int AddDDEffect(int who, int item, int volume, int kind, int page, int type); /*@ 0BD2:07DE */
+extern char gFileNameBuf[]; /*@ ds:FE6E */
+extern signed char g3220[]; /*@ ds:3220 */
+extern signed char g3223[]; /*@ ds:3223 */
+extern signed char g3226[]; /*@ ds:3226 */
+extern signed char g322F[]; /*@ ds:322F */
+void Obj10F3(struct Obj28 far *obj);   /* forward: 05EA reaches it before its definition */
 
 /* 08E6:000B: reset an object whose type is not 7, 8 or 0xa: clear the type, pick an orientation
    from 17A6:0314(id, gSoundVolume) and set flag bit 3. Called by 0EF3:1702. */
@@ -249,7 +281,47 @@ extern void fOvl4_1F51(int n); /*@ 2116:005C */   /* overlay 4 entry, ovl4:1F51 
     f0D1C_0006(id);
 }
 
-/*@ 08E6:0309 stub */ int TurnObject(struct Obj28 far *obj, int arg2, int arg3) { return 0; }
+/* 08E6:0309: turn an object toward a new id and orientation. When `id` is not -1 and differs from
+   the object's own id, look up the nine-byte gB894 record for `id` and pick the byte at +orient^2:
+   when g194B of that byte has no bit 2, or `id` is the current gSoundVolume, fail (0). When the
+   record's +4 count has bits 0..2 set and `id` is nonzero, take the frame FindObjectFrameBit picks
+   (fail if none) and move the object to (id, orient); for a plain turn (`id` is the object's own id
+   or -1) only `orient` is applied when it is not -1. Then notify f0D1C_0006 of the old id and,
+   unless gF442 is set, play the object's record m17 through PlaySoundVolume. Returns 1 on success.
+   Called by 0430, 0B34 and 0B94 (StepObjectOrient passes -1 to leave a field alone). */
+/*@ 08E6:0309 */ int TurnObject(struct Obj28 far *obj, int id, int orient)
+{
+    char far *rec;
+    char dir;
+    char frame;
+    int oldId;
+
+    oldId = obj->id;
+    if (obj->id != id && id != -1) {
+        rec = (char far *)&gB894[id * 9];
+        if (orient == -1)
+            orient = obj->orient;
+        dir = orient ^ 2;
+        if ((g194B[rec[dir]] & 4) == 0)
+            return 0;
+        if (id == gSoundVolume)
+            return 0;
+        if ((rec[4] & 7) && id != 0) {
+            frame = FindObjectFrameBit(obj, id);
+            if (frame == -1)
+                return 0;
+            obj->frame = frame;
+        }
+        MoveObjectToId(obj, id, orient);
+        orient = -1;
+    }
+    if (orient != -1)
+        obj->orient = orient;
+    f0D1C_0006(oldId);
+    if (!gF442)
+        PlaySoundVolume(gTable1A3B[obj->b0].m17, obj->id);
+    return 1;
+}
 
 /* 08E6:03FE: for an object with flag bit 0 set: when its type is 8, run the 0055 cleanup, when the
    type is not 0xa, clear the type and reset its sound field. Called by UpdateObjects. */
@@ -264,7 +336,73 @@ extern void fOvl4_1F51(int n); /*@ 2116:005C */   /* overlay 4 entry, ovl4:1F51 
         }
     }
 }
-/*@ 08E6:0430 stub */ void Obj0430(struct Obj28 far *obj, int value) {}
+/* 08E6:0430: turn an object toward the direction f17A6_0314(id, value) reports. When the object's
+   state is over 6 it resets it to 0 and toggles g321E, which selects the direction table g31FE or
+   g320E. The target -1 leaves the object alone; bit 3 of m16 XORs 4 into it. When the target is even
+   and id + g1790[target >> 1] equals gSoundVolume, the object takes one step through TurnObject with
+   -1 (orientation + 1 when the difference from 2*orient is under 5, else - 1). Otherwise the
+   difference picks a direction and the loop walks the eight orientations from 7 down to 0, adding
+   the table byte, skipping odd directions, and turning through TurnObject(obj, f0D1C_00DA(id,
+   dir >> 1), dir >> 1); the first turn that succeeds returns. Called by 0AB8. */
+/*@ 08E6:0430 */ void Obj0430(struct Obj28 far *obj, int value)
+{
+    int target;
+    int handle;
+    int i;
+    int id;
+    register int diff;
+    register int dir;
+    int far *table;
+
+    if (obj->state > 6) {
+        obj->state = 0;
+        g321E ^= 1;
+    }
+    table = g31FE;
+    if (g321E != 0)
+        table = g320E;
+    dir = obj->orient * 2;
+    id = obj->id;
+    target = f17A6_0314(id, value);
+    if (target == -1)
+        return;
+    if (obj->m16 & 8)
+        target ^= 4;
+    diff = (target - dir) & 7;
+    if (!(target & 1) && id + g1790[target >> 1] == gSoundVolume) {
+        if (diff != 0 && diff < 5)
+            dir = obj->orient + 1;
+        else if (diff != 0)
+            dir = obj->orient - 1;
+        dir &= 3;
+        TurnObject(obj, -1, dir);
+        return;
+    }
+    if (diff != 0) {
+        if (target & 1) {
+            if (diff < 5)
+                dir++;
+            else
+                dir--;
+        } else {
+            if (diff < 5)
+                dir += 2;
+            else
+                dir -= 2;
+        }
+        dir &= 7;
+    }
+    for (i = 7; i > -1; i--) {
+        dir = (dir + table[i]) & 7;
+        if (dir & 1) {
+            handle = 0;
+        } else {
+            handle = f0D1C_00DA(id, dir >> 1);
+        }
+        if (handle != 0 && TurnObject(obj, handle, dir >> 1) != 0)
+            return;
+    }
+}
 /* 08E6:058A: give an object the frame the first free id frame bit picks; when its gB894 count is 1
    its frame is 4 instead. Called by 05EA. */
 /*@ 08E6:058A */ void SetObjectFrameFromId(struct Obj28 far *obj)
@@ -282,14 +420,168 @@ extern void fOvl4_1F51(int n); /*@ 2116:005C */   /* overlay 4 entry, ovl4:1F51 
     }
     f0D1C_0006(obj->id);
 }
-/*@ 08E6:05EA stub */ int Obj05EA(struct Obj28 far *obj, int v) { return 0; }
+/* 08E6:05EA: check the object against `handle` and turn it. When `handle` is -1 it is recomputed as
+   f0D1C_00DA(obj->id, obj->orient); when it is not the current gSoundVolume the object does nothing
+   and 0 is returned. Otherwise, when Obj103D(obj) is 0 the object takes the frame SetObjectFrameFromId
+   picks and 1 is returned. Else m16 bit 2 toggles, and when it is not now set 1 is returned. Then
+   f0D1C_0006(obj->id) decides: when nonzero the object plays gTable1A3B[b0].m16 only when b0 is 4,
+   runs the 0xfe/0xff m0A sequence with the countdown and the overlay-4 entry, and does not repeat the
+   sound when b0 is not 4; when it is zero the sound plays unconditionally. Either way 10F3 runs and,
+   when the id was found, m0A clears, the toggle flips, gDF4C is set, gFlags849E bit 1 is set and the
+   countdown is 8. Returns 1. Called by 0AB8. */
+/*@ 08E6:05EA */ int Obj05EA(struct Obj28 far *obj, int handle)
+{
+    register int found;
+
+    if (handle == -1)
+        handle = f0D1C_00DA(obj->id, obj->orient);
+    if (handle != gSoundVolume)
+        return 0;
+    if (Obj103D(obj) != 0) {
+        obj->m16 ^= 4;
+        if (obj->m16 & 4) {
+            found = f0D1C_0006(obj->id);
+            if (found != 0) {
+                gFlags849E &= ~2;
+                if (obj->b0 == 4)
+                    PlaySoundDefault(gTable1A3B[obj->b0].m16);
+                obj->m0A = 0xfe;
+                gCount849A = 0;
+                fOvl4_1F51(1);
+                obj->m0A = 0xff;
+                if (obj->b0 != 4)
+                    PlaySoundDefault(gTable1A3B[obj->b0].m16);
+                gCount849A = 8;
+                fOvl4_1F51(1);
+            } else {
+                PlaySoundDefault(gTable1A3B[obj->b0].m16);
+            }
+            Obj10F3(obj);
+            if (found != 0) {
+                obj->m0A = 0;
+                obj->toggle ^= 1;
+                gDF4C = 1;
+                gFlags849E |= 2;
+                gCount849A = 8;
+            }
+        }
+    } else {
+        SetObjectFrameFromId(obj);
+    }
+    return 1;
+}
 /* 08E6:073F: pass an object's id, frame and orientation and a caller value to 0EF3:097B with 0xff.
    Called by 0765 as Obj073F(obj, value). Purpose unknown: what 0EF3:097B does with them is not known. */
 /*@ 08E6:073F */ void Obj073F(struct Obj28 far *obj, int value)
 {
     f0EF3_097B(0xff, value, obj->id, obj->frame, obj->orient);
 }
-/*@ 08E6:0765 stub */ int Obj0765(struct Obj28 far *obj) { return 0; }
+/* 08E6:0765: the object's action for UpdateObjects. It returns 0 unless the object's 1A3B record
+   has m0E bit 6, the object has m19 left and m18 is zero (otherwise m18 is decremented and 0 is
+   returned). It then checks f17A6_0F61(id, gSoundVolume) is at most 3 and f17A6_0314(id,
+   gSoundVolume) equals orient * 2, and walks f0D1C_00DA(id, orient), following it until it reaches
+   gSoundVolume; each step must have g194B[gB894[value * 9 + (orient ^ 2)]] bits 0..1 set and no
+   gB894[value * 9 + 4] count, else 0 is returned. The action then switches on b0: 4 turns to 9 and
+   plays 0x1f; 14 plays g322F[m19] and turns through Obj073F(obj, g3226[m19]); 15 frees an item 0x3c
+   and queues AddDDEffect(-1, item, id, frame, orient, gTable8DD2[item].m02), freeing it when that
+   fails; 16 calls 0EF3:097B(0xff, 0, id, frame, orient) and plays 0x55; 17 plays 0x53, announces the
+   mind blast and paralyzes every affected member; 21 rolls 1d4 and, under 3, turns through Obj073F
+   and plays g3223[roll] after g3220[roll], else announces the wounds spell and hits every affected
+   member. Every action then runs the overlay-4 entry, clears gDF4C, decrements m19 unless it is 0xff
+   and sets m18 to 5, returning 1. Called by 0AB8. DRAFT: every case matches except the last
+   PlaySoundVolume(0x6c, id) of case 21, which ours tail-merges into the shared `push ax; call; pop;
+   pop` block that case 4, case 16 and the roll<3 path jump to (0A5E); the original keeps that call
+   inline (0765:01A2 `mov ax, 0x6c; push ax; lcall 177D:0106`) and jumps to the tail, a 5-byte -O
+   basic-block layout difference. The same statement as a separate `if (roll >= 3)`, a `goto` label
+   and `break` do not change it. */
+/*@ 08E6:0765 draft */ int Obj0765(struct Obj28 far *obj)
+{
+    struct Entry27 far *rec;
+    int value;
+    int orient;
+    int arg;
+    int item;
+    int roll;
+    int i;
+
+    rec = &gTable1A3B[obj->b0];
+    if ((rec->m0E & 0x40) == 0 || obj->m19 == 0)
+        return 0;
+    if (obj->m18 != 0) {
+        obj->m18--;
+        return 0;
+    }
+    if (f17A6_0F61(obj->id, gSoundVolume) > 3)
+        return 0;
+    if (f17A6_0314(obj->id, gSoundVolume) != obj->orient * 2)
+        return 0;
+    orient = obj->orient;
+    value = f0D1C_00DA(obj->id, orient);
+    while (value != gSoundVolume) {
+        if ((g194B[(signed char)gB894[value * 9 + (orient ^ 2)]] & 3) == 0
+                || (gB894[value * 9 + 4] & 7))
+            return 0;
+        value = f0D1C_00DA(value, orient);
+    }
+    switch (obj->b0) {
+    case 21:
+        roll = RollDice(1, 4, 0xff);
+        if (roll < 3) {
+            arg = g3220[roll];
+            Obj073F(obj, arg);
+            PlaySoundVolume(g3223[roll], obj->id);
+        } else {
+            for (i = 0; i < 6; i++) {
+                if (f0D1C_0670(i, 3)) {
+                    sprintf(gFileNameBuf, "%s is hit by a cause serious wounds spell!\r",
+                            (char far *)gChars[i].name);
+                    DrawText(gFileNameBuf);
+                    DamageCharacter(i, RollDice(2, 8, 1));
+                    break;
+                }
+            }
+            PlaySoundVolume(0x6c, obj->id);
+        }
+        break;
+    case 4:
+        Obj073F(obj, 9);
+        PlaySoundVolume(0x1f, obj->id);
+        break;
+    case 14:
+        arg = g3226[obj->m19];
+        PlaySoundVolume(g322F[obj->m19], obj->id);
+        Obj073F(obj, arg);
+        break;
+    case 15:
+        item = CopyItemToFreeSlot(0x3c);
+        if (item != 0) {
+            if (AddDDEffect(-1, item, obj->id, obj->frame, obj->orient,
+                            gTable8DD2[item].m02) == 0)
+                gTable8DD2[item].m04 = -1;
+        }
+        break;
+    case 17:
+        PlaySoundVolume(0x53, obj->id);
+        DrawText("The party is hit with a psychic mind blast!\r");
+        for (i = 0; i < 6; i++) {
+            if (f0D1C_0670(i, 3)) {
+                ApplyStatusEffect(i, 4, "paralyzed", 1, 5, 9, 1);
+                RedrawMember(i);
+            }
+        }
+        break;
+    case 16:
+        f0EF3_097B(0xff, 0, obj->id, obj->frame, obj->orient);
+        PlaySoundVolume(0x55, obj->id);
+        break;
+    }
+    fOvl4_1F51(1);
+    gDF4C = 0;
+    if (obj->m19 != 0xff)
+        obj->m19--;
+    obj->m18 = 5;
+    return 1;
+}
 /* 08E6:0AB8: run the type-0 object update: notify 0765 and 05EA, clear m0A, turn it with 0430 and
    run 05EA with -1 when its record's m0E has bit 3 set. Called by UpdateObjects. */
 /*@ 08E6:0AB8 */ void Obj0AB8(struct Obj28 far *obj)
@@ -319,7 +611,56 @@ extern void fOvl4_1F51(int n); /*@ 2116:005C */   /* overlay 4 entry, ovl4:1F51 
         TurnObject(obj, -1, obj->orient);
     }
 }
-/*@ 08E6:0B94 stub */ void Obj0B94(struct Obj28 far *obj, int arg) {}
+/* 08E6:0B94: turn an object by `arg` quarters. A state below zero falls straight to the second half;
+   a state of zero first steps the object through StepObjectOrient(obj, -arg). It then looks up the
+   direction dir = (orient + arg) & 3, cur = f0D1C_00DA(id, dir) and the byte g1991[dir]: when the
+   g194B record at gB894[cur * 9 + g1991[dir]] has bit 2 clear it leaves a state of zero as -1 and
+   returns, and a nonzero state with that bit clear falls through to the second half. Otherwise it
+   turns through TurnObject(obj, -1, dir), sets the state to -1 and returns. The second half looks up
+   handle = f0D1C_00DA(id, orient): when TurnObject(obj, handle, -1) fails it turns the other way,
+   TurnObject(obj, -1, (orient - arg) & 3), and clears the state, else it sets the state to 1.
+   Called by UpdateObjects. Purpose unknown: what g1991 and the state values select. DRAFT: the body
+   matches up to the state==0 store, but ours cross-jumps the two `obj->state = -1` tails (0B94:0083
+   and 0B94:00A4 in the original stay apart; ours merges them and adds a `les bx` reload at 0x83, a
+   6-byte -O cross-jump difference). Compiling the unit with -B makes this function match exactly,
+   but -B breaks Obj00C3 (08E6:00C3), which matches under -ml -O -Z, so the unit's flags are not -B
+   and no -O source form found yet keeps the tails apart. blocked: a compiler cross-jump question. */
+/*@ 08E6:0B94 draft */ void Obj0B94(struct Obj28 far *obj, int arg)
+{
+    int handle;
+    int cur;
+    int add;
+    register int dir;
+    register int bits;
+
+    if (obj->state >= 0) {
+        if (obj->state == 0)
+            StepObjectOrient(obj, -arg);
+        dir = (obj->orient + arg) & 3;
+        cur = f0D1C_00DA(obj->id, dir);
+        add = g1991[dir];
+        bits = g194B[(signed char)gB894[cur * 9 + add]] & 4;
+        if (obj->state == 0) {
+            if (bits == 0)
+                obj->state = -1;
+            return;
+        }
+        if (bits == 0)
+            goto second;
+        TurnObject(obj, -1, dir);
+        obj->state = -1;
+        return;
+    }
+second:
+    handle = f0D1C_00DA(obj->id, obj->orient);
+    if (TurnObject(obj, handle, -1) == 0) {
+        dir = (obj->orient - arg) & 3;
+        TurnObject(obj, -1, dir);
+        obj->state = 0;
+    } else {
+        obj->state = 1;
+    }
+}
 /* 08E6:0CA6: count an object's timer down and clear its type when it reaches zero. Called for the
    object types 7 and 10 by UpdateObjects (08E6:0CC8). */
 /*@ 08E6:0CA6 */ void Obj0CA6(struct Obj28 far *obj)
@@ -473,7 +814,7 @@ extern void fOvl4_1F51(int n); /*@ 2116:005C */   /* overlay 4 entry, ovl4:1F51 
 }
 /* 08E6:103D: an object's orientation row byte: 1 when its frame is 4, else the byte at
    ds:323B[orient * 4 + frame]. Called by 05EA. */
-/*@ 08E6:103D */ int Obj103D(struct Obj28 far *obj, int unused)
+/*@ 08E6:103D */ int Obj103D(struct Obj28 far *obj)
 {
     if (obj->frame == 4)
         return 1;
@@ -502,7 +843,7 @@ extern void fOvl4_1F51(int n); /*@ 2116:005C */   /* overlay 4 entry, ovl4:1F51 
     need = SubtractInts(gTable1A3B[index].m01, gChars[who].m1D);
     return roll >= need || roll == 0x14;
 }
-/*@ 08E6:10F3 stub */ void Obj10F3(void) {}
+/*@ 08E6:10F3 stub */ void Obj10F3(struct Obj28 far *obj) {}
 /* 08E6:131D: build object `index` from scratch: clear it, set its b0, kind, frame, orientation,
    m07, type and timer and its record's m19, roll its count from the record's m02 (or 1d4 when m02
    is 0xff), set m12 and m14, and move it to `id`. Does nothing when id is 0. Called by 1505. */
