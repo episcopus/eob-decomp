@@ -3835,6 +3835,7 @@ unit = "e122e"
 addr = "122E:0154"
 size = 133
 evidence = ["near", "frame"]
+notes = "draft 2026-11-01: every byte matches except the flag test at 122E:0199-01A8, where the original reads `mov al,[bx+0x194b]; cwde; test ax,1` (sign-extends the byte before testing bit 0, 10 bytes). Our -ml -O -Z build folds it to `test byte [bx+0x194b],1` (7 bytes, 3 shorter). Full function 130 against 133 bytes. Tried: `g194B[...] & 1`, `& 1) != 0`, `== 1` (gives `and ax,1; cmp ax,1`), `% 2` (gives idiv), casting the byte to int/char/signed char, an int local (adds a stack slot), and g194B declared signed char/char/unsigned char; TCC always folds the `& 1` to a memory byte test. The earlier `& 8` test in the same function stays a byte test in the original, so the source form that keeps the sign-extended value is not identified. The sibling DisarmMemberEffect (122E:01D9) has the same `& 1` but the original there DOES use a byte test, so the two differ in source."
 
 [[function]]
 id = "e122e_01d9"
@@ -3842,6 +3843,9 @@ unit = "e122e"
 addr = "122E:01D9"
 size = 152
 evidence = ["near", "frame"]
+name = "DisarmMemberEffect"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e122e_0271"

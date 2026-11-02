@@ -20,6 +20,11 @@ extern unsigned long gFC04; /*@ ds:FC04 */     /* effect flags (src/E08E6.C) */
 extern char gB899[]; /*@ ds:B899 */            /* the nine-byte record list head (src/E0ACD.C) */
 extern int gFBCE; /*@ ds:FBCE */               /* the item index shown by the mouse (src/E07A9.C) */
 extern int gB800; /*@ ds:B800 */               /* the member whose script is running (122E:1DA8) */
+extern char gDragActive; /*@ ds:5C77 */        /* nonzero while a member is picked for arming (122E:0154) */
+extern int gDragMember; /*@ ds:5C74 */         /* the member picked for arming (122E:0154) */
+extern signed char g5C76; /*@ ds:5C76 */       /* the mode byte 03B4 reads (src/E1414.C) */
+extern void ArmEffectWith(int idx, int arg, int sub, int active); /*@ 1414:055B */
+extern void AdjustMemberStatus(int who); /*@ 1414:03B4 */
 extern int gFBCC; /*@ ds:FBCC */               /* a page number 0..3 (src/E08E6.C) */
 extern char gEFB2; /*@ ds:EFB2 */              /* set when the sound page changes (src/E0ACD.C) */
 extern char gDF4C; /*@ ds:DF4C */              /* set to 1 when an action took effect (src/E08E6.C) */
@@ -54,7 +59,7 @@ extern int MouseInRect(int left, int top, int right, int bottom); /*@ 1A72:02A6 
 extern int f0D1C_00DA(int value, int page); /*@ 0D1C:00DA */
 extern int gSoundVolume; /*@ ds:FBCA */        /* the global sound volume (src/E08E6.C) */
 extern int gF540; /*@ ds:F540 */               /* counts sound-volume changes (src/E08E6.C) */
-extern signed char g194B[]; /*@ ds:194B */     /* per-object bit flags (src/E08E6.C) */
+extern char g194B[]; /*@ ds:194B */             /* per-object bit flags (src/E08E6.C) */
 extern char gText5AB5[]; /*@ ds:5AB5 */        /* message drawn when the sound volume changes (122E:0001) */
 extern char gText5B78[]; /*@ ds:5B78 */        /* message drawn for a highlighted member slot (122E:0847) */
 void f122E_1DA8(int a, int b);  /* forward: 1DA8 comes after its callers */
@@ -89,8 +94,48 @@ void f122E_1DA8(int a, int b);  /* forward: 1DA8 comes after its callers */
     return 0;
 }
 
-/*@ 122E:0154 stub */ void f122E_0154(int who) {}
-/*@ 122E:01D9 stub */ void f122E_01D9(int who) {}
+/* 122E:0154: arm effect 0xC on member `who`. While a member is picked (gDragActive), arming either
+   matches the picked member (and turns g5C76 on) or does nothing. Otherwise it picks the member's
+   free flag slot, arms the effect twice around AdjustMemberStatus. */
+/*@ 122E:0154 draft */ void ArmMemberEffect(int who)
+{
+    int idx;
+
+    if (gDragActive != 0) {
+        if (gDragMember == who)
+            g5C76 = 1;
+        return;
+    }
+    idx = (g194B[gB894[who * 9]] & 8) ? 0 : 1;
+    if (g194B[gB894[who * 9 + idx]] & 1)
+        return;
+    ArmEffectWith(0xc, who, 1, 1);
+    AdjustMemberStatus(who);
+    ArmEffectWith(0xc, who, 1, 1);
+}
+
+/* 122E:01D9: disarm effect 0xC on member `who`. It does nothing while the member still has a frame
+   count (gB894[who * 9 + 4] & 7). While a member is picked, disarming either matches the picked
+   member (and turns g5C76 off) or does nothing. Otherwise it arms the effect with arg -1 twice
+   around AdjustMemberStatus when the flag slot is armed. */
+/*@ 122E:01D9 */ void DisarmMemberEffect(int who)
+{
+    int idx;
+
+    if (gB894[who * 9 + 4] & 7)
+        return;
+    if (gDragActive != 0) {
+        if (gDragMember == who)
+            g5C76 = (signed char)0xff;
+        return;
+    }
+    idx = (g194B[gB894[who * 9]] & 8) ? 0 : 1;
+    if ((g194B[gB894[who * 9 + idx]] & 1) == 0)
+        return;
+    ArmEffectWith(0xc, who, 0xffff, 1);
+    AdjustMemberStatus(who);
+    ArmEffectWith(0xc, who, 0xffff, 1);
+}
 /*@ 122E:0271 stub */ void f122E_0271(void) {}
 /*@ 122E:0325 stub */ void f122E_0325(void) {}
 /*@ 122E:04CA stub */ void f122E_04CA(void) {}
@@ -178,7 +223,7 @@ void f122E_1DA8(int a, int b);  /* forward: 1DA8 comes after its callers */
 
     who = *(int far *)script;
     script += 2;
-    f122E_0154(who);
+    ArmMemberEffect(who);
     return (long)(script - start);
 }
 
@@ -191,7 +236,7 @@ void f122E_1DA8(int a, int b);  /* forward: 1DA8 comes after its callers */
 
     who = *(int far *)script;
     script += 2;
-    f122E_01D9(who);
+    DisarmMemberEffect(who);
     return (long)(script - start);
 }
 /*@ 122E:0B89 stub */ void f122E_0B89(void) {}
