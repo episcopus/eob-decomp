@@ -18,10 +18,11 @@
 ; 1A16h and that segment (1C00:0088 to 0091), resizes the block 1C00:0002 loaded the overlay into,
 ; to the overlay's size [H] (MemRealloc, 1C00:00A8), and calls the pointer the entry returned
 ; (offset at 818Eh, segment at 8190h) with the request's two words (1C00:00C0). The caller
-; StartupGame's DS, the request segment (the direct caller _RunOverlayRequest's DS and ES) and the
-; name's segment are all DGROUP at run time (the 1C00:0055 comment gives the evidence, including
-; the start code that sets DS). Each access uses the segment the code leaves in DS or ES, not one
-; segment for all; the comment inside 1C00:0055 lists them.
+; StartupGame's DS, the request segment (which _RunOverlayRequest itself loads into DS and ES at
+; 1C00:0062 and 1C00:0071) and the name's segment are all DGROUP at run time (the 1C00:0055
+; comment gives the evidence, including the start code that sets DS). Each access uses the
+; segment the code leaves in DS or ES, not one segment for all; the comment inside 1C00:0055 lists
+; them.
 ; DGROUP is paragraph 212Eh of the load image (the value the fixups hold; the loader adds the load
 ; segment), as in E1A72.ASM (lines 81, 252, 435, 470) and E1D8F.ASM (line 78).
 ;
@@ -68,7 +69,7 @@
 ; and the function's retf pops that word as well as the return address. Only 1C00:0055 calls it,
 ; passing BX = 818Ah, ES = the request segment and DS:DX from the request.
         PUBLIC  _LoadOverlayImage       ; @ 1C00:0002
-_LoadOverlayImage PROC NEAR
+_LoadOverlayImage PROC NEAR    ; `push cs; call` (1C00:0073), so the `retf` pops CS
         push    bp
         mov     bp,sp
         push    dx
@@ -89,11 +90,11 @@ _LoadOverlayImage PROC NEAR
         pop     ds
         pop     bx
         or      ax,dx
-        jne     short ldok
+        jne     short loaded
         pop     dx
         mov     bx,0FFFFh
-        jmp     short ldout
-ldok:   pop     dx
+        jmp     short loadexit
+loaded: pop     dx
         mov     es:[bx],ax
         mov     ds:[8192h],sp
         mov     ds:[8194h],ss
@@ -104,9 +105,9 @@ ldok:   pop     dx
         mov     sp,ds:[8192h]
         mov     ss,ds:[8194h]
         mov     bx,0FFFFh
-        jb      short ldout
+        jb      short loadexit
         xor     bx,bx
-ldout:  pop     bp
+loadexit: pop   bp
         retf
 _LoadOverlayImage ENDP
 
@@ -219,13 +220,13 @@ _RunOverlayRequest PROC FAR
         add     sp,6
 ; The failure test after MemRealloc (`or ax,dx; je short fail` at 1C00:00B0 to 00B2) does not see a
 ; failed realloc of this 0x20 block: MemRealloc's 0x20 path does `blk = realloc(...)` and then
-; returns MK_FP(FP_SEG(blk) + 1, 0) (E19BC.C:113 to 117), so a NULL comes back as 0001:0000,
+; returns MK_FP(FP_SEG(blk) + 1, 0) (E19BC.C:142 to 145), so a NULL comes back as 0001:0000,
 ; non-zero: the test falls through, the code stores the segment 1 at 8190h and calls the pointer at
 ; 0001:AX. Shrinking a block is not expected to fail [H].
         or      ax,dx
         je      short fail
         mov     ds:[8190h],dx
-; MemRealloc's DX (the reallocated block's segment, FP_SEG(blk) + 1 on the 0x20 path, E19BC.C:117)
+; MemRealloc's DX (the new block's segment, FP_SEG(blk) + 1 on the 0x20 path, E19BC.C:142 to 145)
 ; is stored at 8190h at 1C00:00B4, so the second `lcall [818Eh]` (1C00:00C0) calls the pointer the
 ; entry returned, whose offset is the entry's AX (818Eh) and whose segment is MemRealloc's result
 ; (8190h); its target is read through the request segment (see above), and the segment can differ
@@ -264,9 +265,9 @@ _RunOverlayRequest PROC FAR
         mov     ax,212Eh
         mov     ds,ax
         cmp     word ptr [gMouseHandlerInstalled],0
-        je      short done
+        je      short succeeded
         mov     word ptr [gMouseDisabled],0
-done:   xor     ax,ax
+succeeded: xor  ax,ax
         jmp     short returnpath
 ; fail: is reached from two places: a failed overlay load (the `cmp bx,-1; je short fail` at
 ; 1C00:007A) and a failed MemRealloc (`or ax,dx; je short fail` at 1C00:00B2); both go through the
