@@ -7628,6 +7628,9 @@ unit = "eov5"
 addr = "ovl5:09C5"
 size = 236
 evidence = ["ovl", "near", "frame"]
+name = "GiveItemPanel"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov5_0ab1"

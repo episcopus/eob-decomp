@@ -99,6 +99,8 @@ extern char gTable7B7D[]; /*@ ds:7B7D */
 extern char gTable7B83[]; /*@ ds:7B83 */
 extern char gText7B23[]; /*@ ds:7B23 */
 extern char gText7B9F[]; /*@ ds:7B9F */
+extern char gText7BBA[]; /*@ ds:7BBA */
+extern char gText7BC2[]; /*@ ds:7BC2 */
 extern char gText7CBC[]; /*@ ds:7CBC */
 extern char gText7D77[]; /*@ ds:7D77 */
 extern char gText7BA6[]; /*@ ds:7BA6 */
@@ -188,7 +190,6 @@ int Ovl5_0455(char offset, char count, void far *names);
 void Ovl5_070E(int who);
 void Ovl5_0828(int who, int which, int head, int other);
 void Ovl5_0924(void);
-void Ovl5_09C5(void);
 void Ovl5_0BBE(void);
 void Ovl5_0C9D(void);
 void Ovl5_0DBB(void);
@@ -400,7 +401,46 @@ char gTable7B89[] = { 0x3B, 0xA6, 0x04, 0x70, 0xDC, 0x04, 0x70, 0xDC, 0x04, 0x70
     }
 }
 
-/*@ ovl5:09C5 stub */ void Ovl5_09C5(void) {}
+/* ovl5:09C5: the "give / take an item" panel. On the first pass (gFC04 bit 0x8000 clear) it sets
+   that bit and shows the two-entry menu ds:7BBA; choice 0 draws message 4, choice 1 records that
+   the whole party is to be used (the local flag cleared) and the panel is left. Otherwise it draws
+   message 0xd. When the flag is still set it shows the menu ds:7BC2; choice 0 queues the six
+   healing items 0x37 and the item 0x3e on the current page, clears gFC04 bit 0x8000, sets gFC04
+   bit 0x10000 and runs the character panel 0828(7, 7, 0x1d, 0x1e); choice 1 (or a free-party
+   choice) draws message 5. Called by the panel dispatcher 0B58. */
+/*@ ovl5:09C5 */ void GiveItemPanel(void)
+{
+    int whole;
+    int sel;
+    int i;
+
+    whole = 1;
+    if (!(gFC04 & 0x8000L)) {
+        gFC04 |= 0x8000L;
+        PrintTableString(3, 0);
+        sel = Ovl5_0455(0, 2, (void far *)gText7BBA);
+        if (sel == 0)
+            PrintTableString(4, 0);
+        else if (sel == 1)
+            whole = 0;
+    } else {
+        PrintTableString(0xd, 0);
+    }
+    if (whole)
+        sel = Ovl5_0455(0, 2, (void far *)gText7BC2);
+    else
+        sel = 1;
+    if (sel == 0) {
+        for (i = 0; i < 6; i++)
+            QueueItem(0x37);
+        QueueItem(0x3e);
+        gFC04 |= 0x10000L;
+        PrintTableString(6, 1);
+        Ovl5_0828(7, 7, 0x1d, 0x1e);
+    } else {
+        PrintTableString(5, 1);
+    }
+}
 /* ovl5:0AB1: returns 1 when some party member (flags bit 0) has m22 == 0xf7, after drawing menu
    strings 0x19 and 0x1a and setting the 0x80000 bit of gFC04; otherwise 0. Called by the panel
    dispatcher 0B58. */
@@ -445,7 +485,7 @@ char gTable7B89[] = { 0x3B, 0xA6, 0x04, 0x70, 0xDC, 0x04, 0x70, 0xDC, 0x04, 0x70
 
     done = 0;
     if (!(gFC04 & 0x10000L)) {
-        Ovl5_09C5();
+        GiveItemPanel();
         done = 1;
     }
     if (!(gFC04 & 0x80000L))
