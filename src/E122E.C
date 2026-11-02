@@ -62,7 +62,7 @@ extern char gF542[]; /*@ ds:F542 */            /* a message buffer (src/E0ACD.C)
 extern char gFlag; /*@ ds:F3B9 */              /* a mode byte (src/E0ACD.C) */
 extern int Action01E3(void far *action); /*@ 0ACD:01E3 */
 extern void RedrawPartyPanel(char far *text); /*@ 0EF3:2541 */
-extern void Ovl3_0A7C(int n); /*@ 210C:007A */  /* overlay 3 entry, ovl3:0A7C */
+extern void LoadMapScreen(int n); /*@ 210C:007A */  /* overlay 3 entry, ovl3:0A7C */
 extern void SaveLevelState(int level); /*@ 210C:002F */  /* overlay 3 entry, ovl3:11AF */
 extern void ResetLevel(void); /*@ 210C:007F */  /* overlay 3 entry, ovl3:19F7 */
 extern void fOvl4_2039(void); /*@ 2116:0043 */  /* overlay 4 entry */
@@ -1285,7 +1285,7 @@ done:
         gFBCC = v2;
     ResetLevel();
     SaveLevelState(gFBC8);
-    Ovl3_0A7C(v1);
+    LoadMapScreen(v1);
     LoadScreenImage(gText5BA1, (char far *)gSheet2067, 5, 3, 2);
     fOvl4_2039();
     SetSoundVolume(id);
