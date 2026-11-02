@@ -273,7 +273,30 @@ int f0DE8_09B9(int who, int what);  /* forward: 01FF reaches it with a far call 
     }
     return 0;
 }
-/*@ 0DE8:02D4 stub */ void f0DE8_02D4(void) {}
+/* 0DE8:02D4: tests and runs the attack of a ds:DD2C record against object `idx`. It takes the
+   record's m08 slot, m0A item type and m0B attacker; when m0B is valid it first demands the
+   0007 to-hit roll, then rolls 011A damage for the item type (or 1 when the type does not attack)
+   and hands the object to f08E6_0FBE. Returns 0 when the to-hit fails, else 1. Called by
+   1414:0172 via TestDDEffect. */
+/*@ 0DE8:02D4 */ int f0DE8_02D4(struct DDRec far *rec, int idx)
+{
+    int slot;
+    int itemType;
+    int who;
+    int damage;
+
+    slot = rec->m08;
+    itemType = rec->m0A;
+    who = rec->m0B;
+    if (who != -1 && !f0DE8_0007(who, idx, slot, 0))
+        return 0;
+    if (f0DE8_01D7(itemType))
+        damage = f0DE8_011A(who, idx, slot, itemType, 0);
+    else
+        damage = 1;
+    f08E6_0FBE(&gObjs[idx], damage);
+    return 1;
+}
 /*@ 0DE8:0359 stub */ void f0DE8_0359(void) {}
 /*@ 0DE8:0474 stub */ void f0DE8_0474(void) {}
 /*@ 0DE8:0537 stub */ void f0DE8_0537(void) {}
