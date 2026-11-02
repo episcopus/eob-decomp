@@ -7550,6 +7550,9 @@ unit = "eov5"
 addr = "ovl5:025F"
 size = 330
 evidence = ["ovl", "near", "frame"]
+name = "MessagePanel"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov5_03a9"

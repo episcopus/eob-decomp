@@ -76,6 +76,7 @@ extern int gCursorY; /*@ ds:813A */
 extern int g8140; /*@ ds:8140 */
 extern int g8142; /*@ ds:8142 */
 extern int gMouseDisabled; /*@ ds:814A */
+extern int gHideDepth; /*@ ds:8146 */
 extern int gEFC6; /*@ ds:EFC6 */
 extern int gFE42; /*@ ds:FE42 */
 extern char gScrollOn; /*@ ds:8110 */
@@ -103,6 +104,7 @@ extern char gText7B23[]; /*@ ds:7B23 */
 extern char gText7B9F[]; /*@ ds:7B9F */
 extern char gText7BBA[]; /*@ ds:7BBA */
 extern char gText7BC2[]; /*@ ds:7BC2 */
+extern char gText7CB7[]; /*@ ds:7CB7 */
 extern char gText7CBC[]; /*@ ds:7CBC */
 extern char gText7D0E[]; /*@ ds:7D0E */
 extern char gText7D77[]; /*@ ds:7D77 */
@@ -190,7 +192,6 @@ extern void FileClose(int handle); /*@ 1C0E:03BB */
 extern void f1A47_0169(void far *font); /*@ 1A47:0169 */
 
 /* siblings not decompiled yet: their real signatures, so callers compile */
-void Ovl5_025F(void);
 int Ovl5_0455(char offset, char count, void far *names);
 void Ovl5_0924(void);
 void Ovl5_0BBE(void);
@@ -300,7 +301,68 @@ char gTable7B89[] = { 0x3B, 0xA6, 0x04, 0x70, 0xDC, 0x04, 0x70, 0xDC, 0x04, 0x70
     ShowPointerZone();
 }
 
-/*@ ovl5:025F stub */ void Ovl5_025F(void) {}
+/* ovl5:025F: the modal message box. It picks one of two rectangles from gFE42 (the two player
+   windows), hides the pointer, fills the panel in the three colours, draws ds:7CB7 in colour 0xf
+   and shows the pointer. It then waits for a key or a click: a click anywhere in the box, or one of
+   the keys 0x2b, 0x34, 0x3d, dismisses it, as do the keys 0x41 and 0x42 only when the click lies
+   inside the box. In the end it restores the pointer lock, refills the rectangle and clears the
+   text region. Called by PrintTableString (03A9) after its message. */
+/*@ ovl5:025F */ void MessagePanel(void)
+{
+    int done;
+    int redraws;
+    int key;
+    int right;
+    int bottom;
+    int left;
+    int top;
+
+    if (gFE42) {
+        left = 0x8B;
+        top = 0xA2;
+        right = 0xA9;
+        bottom = 0xAA;
+    } else {
+        left = 0x11D;
+        top = 0xBD;
+        right = 0x13B;
+        bottom = 0xC5;
+    }
+    HidePointerZone(left, top, right, bottom);
+    DrawFilledPanel(left, top, right, bottom, gFB4C, gF53A, gF57E);
+    gDrawText(gText7CB7, left + 4, top + 2, 0xF, 0);
+    ShowPointerZone();
+    FlushKeyBuffer();
+    redraws = gHideDepth;
+    if (!gMouseDisabled) {
+        while (gHideDepth)
+            LockShowPointer();
+    }
+    done = 1;
+    do {
+        key = WaitKeyEvent() & 0x8FF;
+        switch (key) {
+        case 0x41:
+        case 0x42:
+            if (!IsPointInsideRect(g8140, g8142, left, top, right, bottom))
+                break;
+            /* fall through */
+        case 0x2B:
+        case 0x34:
+        case 0x3D:
+            done = 0;
+            break;
+        }
+    } while (done);
+    if (!gMouseDisabled) {
+        while (redraws--)
+            LockHidePointer();
+    }
+    LockHidePointer();
+    gFillRect(left, top, right, bottom, gF57E);
+    ClearTextRegion();
+    LockShowPointer();
+}
 /* ovl5:03A9: draws string `index` (1-based) of the string-offset table pointed at by gSegDF4E
    (the word at index-1 is an offset from that base), then, when `flag` is nonzero, the modal
    message panel 025F. The strings are the overlay's own yes/no menu labels. */
@@ -314,7 +376,7 @@ char gTable7B89[] = { 0x3B, 0xA6, 0x04, 0x70, 0xDC, 0x04, 0x70, 0xDC, 0x04, 0x70
     off = ((int far *)offsets)[index];
     DrawText(gSegDF4E + off);
     if (flag)
-        Ovl5_025F();
+        MessagePanel();
 }
 
 /* ovl5:03EF: one row of the overlay's menu: fills a bevelled panel (x, y)-(x+0x5e, y+8) in the
@@ -411,7 +473,7 @@ char gTable7B89[] = { 0x3B, 0xA6, 0x04, 0x70, 0xDC, 0x04, 0x70, 0xDC, 0x04, 0x70
         } else {
             sprintf(gFileNameBuf, gText7D0E, gCharPool[who].name);
             DrawText(gFileNameBuf);
-            Ovl5_025F();
+            MessagePanel();
         }
         RemoveCarriedItems(0x21, who + 1);
         if (ChooseChar())
@@ -560,7 +622,7 @@ char gTable7B89[] = { 0x3B, 0xA6, 0x04, 0x70, 0xDC, 0x04, 0x70, 0xDC, 0x04, 0x70
         done |= CheckRemove6();
     if (!done) {
         DrawText(gText7D77);
-        Ovl5_025F();
+        MessagePanel();
     }
 }
 
