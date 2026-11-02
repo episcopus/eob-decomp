@@ -474,7 +474,7 @@ why = "an indirect far function that returns the save-under buffer size in bytes
 [[global]]
 id = "ds:FE5A"
 name = "gFont8x8"
-why = "the 8x8 font loaded from Font8.fnt; E07C8.C:118 loads it and 1C0E:0ADD (DisplayFileError) switches the text font to it through 1A47:0169 (EOV1.ASM:65 and EOV2.C:124 declare the same address)"
+why = "the 8x8 font loaded from Font8.fnt; E07C8.C:118 loads it and 1C0E:0ADD (DisplayFileError) switches the text font to it through 1A47:0169 (EOV1.ASM:65 and EOV2.C:133 declare the same address)"
 
 [[global]]
 id = "ds:8104"

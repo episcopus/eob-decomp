@@ -29,13 +29,17 @@ g65C3 comments, the SlotSize struct and gA99C type, the LoadIntroScreen region, 
 Two round 2 items are not fixed right, because a changed line states a wrong claim: gFlashFrames and
 gIconTable (both below, must-fix again).
 
-- [ ] must-fix src/EOV2.C:117 (gFlashFrames comment; reopens the round 2 gFlashFrames item): "Both
+- [x] must-fix src/EOV2.C:117 (gFlashFrames comment; reopens the round 2 gFlashFrames item): "Both
   readers only produce frames 1 to 3". The same comment says "both only ever give 0 to 3", and the
   code gives 0 to 3: DrawFlashFrame (src/E0EF3.C:696) and FlashViewDamage (src/E0EF3.C:771) both
   run `if (frame-- == 0) continue;`, so frame 0 is skipped and frames 1 to 3 index gFlashFrames[0..2].
   Say that: the masks give 0 to 3, 0 means no frame and is skipped, so the array holds the three
   entries DD1C, DD20 and DD24. The table values and the range are right.
-- [ ] must-fix src/EOV2.C:151 (gIconTable comment; reopens the round 2 gIconTable item): "src/E1414.C:101
+  Fixed: the comment now says the readers compute a frame 0 to 3 and then skip 0 (if (frame-- == 0)
+  continue;, src/E0EF3.C:696, :771), so 0 means no frame and frames 1 to 3 index gFlashFrames[0..2],
+  and the array holds the three entries DD1C, DD20 and DD24 that LoadDecorateIcons fills
+  (src/EOV2.C:117).
+- [x] must-fix src/EOV2.C:151 (gIconTable comment; reopens the round 2 gIconTable item): "src/E1414.C:101
   ... the character the blink highlights (src/E1414.C:133 names it the highlighted member)". Neither
   line says that now. E1414.C:106 declares gIconTable as "the index of the party member being moved,
   -1 when none", and the BlinkSelected comment (1414:0000, src/E1414.C:141-145) saves gIconTable (the
@@ -43,22 +47,35 @@ gIconTable (both below, must-fix again).
   as a quote in src/E0ACD.C:50. Cite E1414 as it reads now: it reads the byte as the member being moved,
   like this unit, src/E0ACD.C and src/E1547.C. The cross-unit conflict with src/E0EF3.C:227 (an array of
   far sprite pointers) stays as it is.
-- [ ] should src/EOV2.C:9-13 (header): the cites into src/E082C.C are one or two lines off. The mode -1
+  Fixed: the comment now cites src/E1414.C:106 (the index of the party member being moved, -1 when
+  none) and the BlinkSelected comment (1414:0000, src/E1414.C:141-145), which saves and restores it as
+  that member; the blink-highlight wording is gone (src/EOV2.C:151).
+- [x] should src/EOV2.C:9-13 (header): the cites into src/E082C.C are one or two lines off. The mode -1
   test is at src/E082C.C:313-314 (not :314-315), the LoadScreenImage call in LoadOverlayScreen at :337
   (not :338), and the "With mode -1" comment at :329-330 (not :330-331). The facts cited are right.
-- [ ] should src/EOV2.C:113-114 (g65C0 and g65C3): "(src/EOV2.C:357)" is this file's own line, which is
+  Fixed: the header now cites src/E082C.C:313-314, :337 and :329-330 (src/EOV2.C:9-13).
+- [x] should src/EOV2.C:113-114 (g65C0 and g65C3): "(src/EOV2.C:357)" is this file's own line, which is
   now the loop at src/EOV2.C:366-368. Cite 366-368.
-- [ ] should src/EOV2.C:376-377 (LoadIntroScreen comment) and src/EOV2.C:177 (gFillRect): the 40 by 200
+  Fixed: both comments now cite src/EOV2.C:366-368 (src/EOV2.C:113-114).
+- [x] should src/EOV2.C:376-377 (LoadIntroScreen comment) and src/EOV2.C:177 (gFillRect): the 40 by 200
   ClipRect is at src/E082C.C:317 (not :318), and the gFillRect colour parameter at src/E082C.C:64 (not :63).
-- [ ] should src/EOV2.C:399 (LoadGamePanel entry 1): "src/E1C0E.C:53" is the gRestoreRect line. The
+  Fixed: the LoadIntroScreen comment and the gFillRect declaration now cite src/E082C.C:317 and :64
+  (src/EOV2.C:177, :376-377).
+- [x] should src/EOV2.C:399 (LoadGamePanel entry 1): "src/E1C0E.C:53" is the gRestoreRect line. The
   declaration "the 8x8 font loaded from Font8.fnt" is src/E1C0E.C:57. Cite :57.
-- [ ] should src/EOV2.C:151 (gIconTable): src/E0ACD.C:42 is now the declaration at src/E0ACD.C:48, and
+  Fixed: the entry 1 comment now cites src/E1C0E.C:57 (src/EOV2.C:399).
+- [x] should src/EOV2.C:151 (gIconTable): src/E0ACD.C:42 is now the declaration at src/E0ACD.C:48, and
   src/E1547.C:107 is now the declaration at src/E1547.C:128. The readings they state are right.
-- [ ] should re/globals.toml, ds:FE5A (changed in this range): "EOV2.C:124 declare the same address" is
+  Fixed: the comment now cites src/E0ACD.C:48 and src/E1547.C:128 (src/EOV2.C:151); same edit as the
+  must-fix above.
+- [x] should re/globals.toml, ds:FE5A (changed in this range): "EOV2.C:124 declare the same address" is
   now src/EOV2.C:133. A log file, so the owner of the globals log corrects it.
-- [ ] note the f6815 comment summarises the decode as "... the loop, mov dx,ds, retf". The routine
+  Fixed: re/globals.toml ds:FE5A now says EOV2.C:133 declares the same address.
+- [x] note the f6815 comment summarises the decode as "... the loop, mov dx,ds, retf". The routine
   ends with `xchg dx,ax` at 0000:6832 before `mov dx,ds` at 0000:6833, which puts the offset in ax.
   The dx:ax return is right; the summary could cite 0000:6832-6838.
+  Fixed: the comment now reads "the loop, then 0000:6832-6838: xchg dx,ax, mov dx,ds, pop ds, pop si,
+  pop bp, retf" (src/EOV2.C:207-210).
 - [ ] note the round 2 notes (the item table base at src/EOV2.C:29 and :83, and the gIconTable type against
   src/E0EF3.C:227) are not re-judged here and stay open as notes.
 

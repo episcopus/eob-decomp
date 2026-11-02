@@ -8,9 +8,9 @@
    paragraphs of the overlay's own data (ITEML1 at 20A3, ITEMS1 at 20A5, THROWN at 20A7, ITEMICN at
    20A9 and DECORATE at 2069, from TLINK's segment table); gOverlayBuf (ds:113F) is the DGROUP image
    buffer the art loads land in. LoadOverlayScreen passes mode -1, which makes LoadScreenImage
-   return before the 19EC:002A blit (src/E082C.C:314-315, :338), so only a load with another mode,
+   return before the 19EC:002A blit (src/E082C.C:313-314, :337), so only a load with another mode,
    such as the INTRO load below (ovl2:078D, mode 2), hands the buffer to 19EC:002A as its `extra`
-   pointer (src/E082C.C:330-331, src/E19EC.C:29-35). Cells are cut by the function pointer ds:8086
+   pointer (src/E082C.C:329-330, src/E19EC.C:29-35). Cells are cut by the function pointer ds:8086
    (gGetSpriteCell):
    LoadItemSheets slices from the sheet paragraphs, while SetPointerShape and the six gIntroCells of
    LoadDecorateIcons slice from gOverlayBuf. ITEMICN is loaded and sliced twice: SetPointerShape
@@ -110,11 +110,11 @@ extern void far *gThrownIcon4; /*@ ds:EFBE */
 extern char gFileNameBuf[]; /*@ ds:FE6E */
 extern int gColour179; /*@ ds:0179 */ /* a text colour FindWordPanel copies from gF57E (src/EOV2.C:501); no reader in src/ yet */
 extern struct WordCell gWordCells[]; /*@ ds:65F0 */
-extern unsigned char g65C0[]; /*@ ds:65C0 */ /* the three per-row cell heights of the gIconTableA92A loop, indexed by the row i (0..2) (src/EOV2.C:357) */
-extern unsigned char g65C3[]; /*@ ds:65C3 */ /* the three per-row cell y origins of the gIconTableA92A loop, indexed by the row i (0..2) (src/EOV2.C:357) */
+extern unsigned char g65C0[]; /*@ ds:65C0 */ /* the three per-row cell heights of the gIconTableA92A loop, indexed by the row i (0..2) (src/EOV2.C:366-368) */
+extern unsigned char g65C3[]; /*@ ds:65C3 */ /* the three per-row cell y origins of the gIconTableA92A loop, indexed by the row i (0..2) (src/EOV2.C:366-368) */
 extern struct Cell4 gCellDef65C6[]; /*@ ds:65C6 */ /* the six decoration-cell rectangles LoadDecorateIcons cuts from gOverlayBuf */
 extern void far *gIntroCells[]; /*@ ds:F4BE */ /* the six decoration cells LoadDecorateIcons cuts from gOverlayBuf (src/EOV2.C:346); src/EOV4.C:955 indexes the table */
-extern char far *gFlashFrames[]; /*@ ds:DD1C */ /* the flash-frame images src/E0EF3.C lays over a member, indexed by frame - 1 (src/E0EF3.C:356, :707, :773). Both readers only produce frames 1 to 3, so it holds the three entries at DD1C, DD20 and DD24: DrawFlashFrame (0EF3:05BD) computes (gFlashPassMask[pass] & gFlashFrameMask[i]) >> gFlashFrameShift[i] from the bytes at ds:5621 (40 90 e4 b9 6e 1b 06 01), ds:5629 (c0 30 0c 03) and ds:562D (06 04 02 00), and FlashViewDamage (0EF3:06E7) does the same with gFlashPass2 (ds:564B), gFlashFrame2 (ds:5677) and gFlashShift2 (ds:56B7, shifts 0x1e to 0); both only ever give 0 to 3. LoadDecorateIcons fills the three; the next slot DD28 is the separate icon pointer gIconDD28 */
+extern char far *gFlashFrames[]; /*@ ds:DD1C */ /* the flash-frame images src/E0EF3.C lays over a member, indexed by frame - 1 (src/E0EF3.C:356, :707, :773). The readers compute a frame 0 to 3 and then skip 0 (if (frame-- == 0) continue;, src/E0EF3.C:696, :771), so 0 means no frame and frames 1 to 3 index gFlashFrames[0..2]: DrawFlashFrame (0EF3:05BD) computes (gFlashPassMask[pass] & gFlashFrameMask[i]) >> gFlashFrameShift[i] from the bytes at ds:5621 (40 90 e4 b9 6e 1b 06 01), ds:5629 (c0 30 0c 03) and ds:562D (06 04 02 00), and FlashViewDamage (0EF3:06E7) does the same with gFlashPass2 (ds:564B), gFlashFrame2 (ds:5677) and gFlashShift2 (ds:56B7, shifts 0x1e to 0). So the array holds the three entries DD1C, DD20 and DD24 that LoadDecorateIcons fills; the next slot DD28 is the separate icon pointer gIconDD28 */
 extern char far *gIconDD28; /*@ ds:DD28 */ /* the icon table src/EOV1.ASM:87 draws member icons from, filled by LoadDecorateIcons at the slot after gFlashFrames */
 extern void far *gIconF2F4; /*@ ds:F2F4 */
 extern void far *gIconDC94; /*@ ds:DC94 */
@@ -148,7 +148,7 @@ extern char gA95A; /*@ ds:A95A */ /* the outer colour of the action panel (src/E
 extern char gA998; /*@ ds:A998 */ /* nonzero tells EnterMapScreen (src/E0ACD.C:911) to show the inventory and the loaded map; the saved-game panel writes it in LoadGamePanel */
 extern char g8A6C; /*@ ds:8A6C */ /* the fill colour of the action panel (src/E1547.C:379), set by SetUiPalette */
 extern char g8A7D; /*@ ds:8A7D */ /* the third colour of the action panel (src/E1547.C:379), set by SetUiPalette */
-extern char gIconTable; /*@ ds:FB34 */ /* this unit, src/E0ACD.C:42 and src/E1547.C:107 read it as the party member being moved (-1 when none), and src/E1414.C:101 as the character the blink highlights (src/E1414.C:133 names it the highlighted member); src/E0EF3.C:227 declares ds:FB34 as an array of far sprite pointers (a cross-unit conflict to settle) */
+extern char gIconTable; /*@ ds:FB34 */ /* this unit, src/E0ACD.C:48, src/E1414.C:106 and src/E1547.C:128 read it as the party member being moved (-1 when none); the BlinkSelected comment (1414:0000, src/E1414.C:141-145) saves and restores it as that member. src/E0EF3.C:227 declares ds:FB34 as an array of far sprite pointers (a cross-unit conflict to settle) */
 extern int gEFC8; /*@ ds:EFC8 */ /* a word cleared by InitGameTables; no other reader in src/ yet */
 extern int gEFCA; /*@ ds:EFCA */ /* a word cleared by InitGameTables; no other reader in src/ yet */
 extern void far *gB802[]; /*@ ds:B802 */ /* 36 far map-icon pointers (src/EOV3.C:146, freed at :390-401), cleared by InitGameTables */
@@ -174,7 +174,7 @@ extern unsigned char far gSheetITEMICN[]; /*@ 20A9:0000 */
    (src/EOV2.C:268-294, :346-357). Filled in at load time [H]. */
 extern void far * (far *gGetSpriteCell)(int x, int y, int w, int h, void far *sheet); /*@ ds:8086 */
 extern int (far *gFn8072)(int x, int y); /*@ ds:8072 */ /* saves the pixels under (x, y) and returns a handle (src/E0EF3.C:389) */
-extern void (far *gFillRect)(int x1, int y1, int x2, int y2, int colour); /*@ ds:806A */ /* the rectangle fill hook (src/E082C.C:63) */
+extern void (far *gFillRect)(int x1, int y1, int x2, int y2, int colour); /*@ ds:806A */ /* the rectangle fill hook (src/E082C.C:64) */
 extern void (far *gFn807E)(int x, int y, int w, int h, void far *buf); /*@ ds:807E */
 extern void (far *gFn804A)(int x, int y, int w, int h, void far *buf); /*@ ds:804A */
 
@@ -206,8 +206,8 @@ extern int sprintf(char far *buf, char far *fmt, ...); /*@ 0000:57AE */
 extern void exit(int status); /*@ 0000:50F3 */
 extern int f6815(char far *s); /*@ 0000:6815 */ /* runtime-library strlwr: lowercases the far string
    in place ('A' to 'Z' get +0x20 and are stored back, 0000:6822-682C) and returns the pointer in
-   dx:ax (0000:6815 decode: push bp, mov bp,sp, push si, cld, lds si,[bp+6], the loop, mov dx,ds,
-   retf) */
+   dx:ax (0000:6815 decode: push bp, mov bp,sp, push si, cld, lds si,[bp+6], the loop, then
+   0000:6832-6838: xchg dx,ax, mov dx,ds, pop ds, pop si, pop bp, retf) */
 extern int LoadGame(void); /*@ 210C:0039 */ /* overlay 3 entry (its target is ovl3:15B9, named LoadGame by src/EOV3.C:863): returns nonzero when a saved game was loaded, otherwise the caller prints "Unable to load your saved game!" */
 extern void RunCharacterPanel(void); /*@ 20F6:0052 */ /* overlay 0 entry (its target is ovl0:28F9, the character panel's main loop named by src/EOV0.C:1447-1455) */
 
@@ -373,8 +373,8 @@ extern void FileClose(int handle); /*@ 1C0E:03BB */
    gOverlayBuf (LoadScreenImage, mode 2), marks the status line up, saves the pixels under (0, 0)
    with gFn8072 and fills the rectangle (0, 0x9f)-(0x13f, 0xc7) with the returned handle as
    gFillRect's colour argument (a saved-pixel handle used as a colour; src/E0EF3.C:389-390,
-   src/E082C.C:63), draws the two panel frames, clips a 40 by 200 region at (0, 0) (0x28 and 0xc8
-   are the width and height, the same rectangle src/E082C.C:318 makes) and clears the status line.
+   src/E082C.C:64), draws the two panel frames, clips a 40 by 200 region at (0, 0) (0x28 and 0xc8
+   are the width and height, the same rectangle src/E082C.C:317 makes) and clears the status line.
    It cuts no sprite cells. Called by LoadItemData. */
 /*@ ovl2:078D */ void LoadIntroScreen(void)
 {
@@ -396,7 +396,7 @@ extern void FileClose(int handle); /*@ 1C0E:03BB */
    when it succeeded; both are nonzero, which is how EnterMapScreen (src/E0ACD.C:909-918) later
    shows the loaded map and the inventory. On failure it prints "Unable to load your saved game!",
    clears gA998 and redraws the panel to wait again. Entry 1 sets gA998 to 0, selects the 8x8 font
-   (f1A47_0169 with gFont8x8, the Font8.fnt loaded at src/E07C8.C:376, src/E1C0E.C:53) and runs
+   (f1A47_0169 with gFont8x8, the Font8.fnt loaded at src/E07C8.C:376, src/E1C0E.C:57) and runs
    RunCharacterPanel (ovl0:28F9), then restores the 6x6 font (gA9C0, the FONT6.FNT loaded at
    src/E07C8.C:377, src/EOV0.C:168, src/EOV3.C:42): the "Start a new party" entry [H]
    (docs/design/WHITEPAPER.md:137). Entry 2 shuts the game down with exit. Called by LoadItemData. */
