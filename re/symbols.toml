@@ -8866,7 +8866,9 @@ addr = "ovl5:1A82"
 size = 603
 evidence = ["ovl", "frame"]
 name = "CharOverlay"
-notes = "blocked: the constant-segment far object, with 1CDD. The body matches up to ovl5:1ABD, where our build loads gSeg1D0's relocated frame (`mov ax,0x1a8a` here) and stub offset; the original reaches the screen segment 01D0 with the literal `mov ax,0x1d0`. src/EOV5.C declares gSeg1D0 a far object at 01D0:0000; `(void far *)0x1D00L` gives the documented MK_FP form (`xor ax,ax`, escalation e177d), so no source form was found. The same wall hits the two 01F8/01F0 LoadScreenImage buffers at the end (see eov5_1cdd). Everything else matches: the font save/restore, the gFB44/gFlag/gF542 redraws, the mode 8/9/0xa dispatch (1204, 17C8, ovl2:09ED), the item screen and the eight menu panels, and the 1D8 text copy."
+notes = "matched 2026-11-02. The earlier block is resolved: the far-object annotations 01D0/01D8/01F8/01F0 were the overlay's raw segment-table words (entry index*8), not paragraphs; the resolved segments are 1F1D/1F1E/2069/2067, i.e. gMapTiles/gMapSheet/gSheetDECORATE/gSheet2067, which the other overlay units (src/EOV2.C, src/EOV3.C) already annotate that way. Reading gMapTiles as signed char gives the original's sign-extending cbw (unsigned char gave mov ah,0, a one-byte shift). The eight menu cases are laid out 0,1,2,3,4,6,5,7 in the source, so the cs:1CCD jump table maps mode 5 to the 10A6 body and mode 6 to the 1087 body."
+level = "L2"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "eov5_1cdd"
@@ -8874,7 +8876,10 @@ unit = "eov5"
 addr = "ovl5:1CDD"
 size = 318
 evidence = ["ovl"]
-notes = "blocked: the constant-segment screen buffers, the same wall CharOverlay (1A82) hits. The body matches up to +00E2; the two LoadScreenImage buffers ds:7F30 and ds:7F38 take the far object gSeg1F8 (segment 01F8, offset 0) and gSeg1F0 (segment 01F0), which the original reaches with the literal words `mov ax,0x1f8` then `mov ax,0` (ovl5:1DB9/1DBC and ovl5:1DD9/1DDC). Our build loads the object's relocated frame (0x1a76 here) and its stub offset (0x8300/0x8200), so the pair is not the literal segment:offset the original has. `(void far *)0x1F80L` gives the documented MK_FP form (`xor ax,ax`, escalation e177d), so no source form was found; src/EOV5.C declares gSeg1F8/gSeg1F0 as far objects at 01F8:0000 / 01F0:0000. Everything else in the function (the file read into gSegDF4E, the panel, PrintTableString, fOvl3_07A5(0, gOverlayBuf), the redraw) matches."
+notes = "matched 2026-11-02 with 1A82: the same segment-table fix (gSheetDECORATE/gSheet2067 = 2069/2067, not the raw 01F8/01F0). The last call is the ovl4:1F51 entry; an undeclared DrawViewFrame(1) left it as lcall 0,0, declared as fOvl4_1F51 it matches."
+name = "UseItemPanel"
+level = "L2"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "eov5_1e1b"
@@ -8883,6 +8888,9 @@ addr = "ovl5:1E1B"
 size = 387
 evidence = ["ovl", "near", "frame"]
 name = "ShuffleGrid"
+level = "L2"
+match_flags = "-ml -O -Z -v"
+notes = "matched 2026-11-02: each Fisher-Yates shuffle copies the loop index into the DI-resident register local (the original's mov di,si) and indexes with it; a third register variable spills (the frame grows), so the same register local serves the shuffle index and the draw loop's y coordinate."
 
 [[function]]
 id = "eov6_0000"
