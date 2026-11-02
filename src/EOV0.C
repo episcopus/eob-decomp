@@ -47,13 +47,20 @@ extern int g8115; /*@ ds:8115 */ /* nonzero while a status line is up (src/E082C
 extern char gStr613D[]; /*@ ds:613D */ /* the string the party-status report draws (Purpose unknown) */
 extern void DrawRowList(int index); /*@ 0D1C:0454 */
 
-struct CharRec {                /* 243-byte character records at ds:F580 (src/E08E6.C) */
+struct CharRec {                /* 243-byte character records at ds:F580 (src/E0A72.C) */
     char pad00;
     unsigned char m01;          /* +01: status bits */
     char name[0x0b];            /* +02: the character's name, NUL padded */
-    char pad0d[0xf3 - 0x0d];
+    char pad0d[0x20 - 0x0d];
+    signed char m20;            /* +20: indexes g1231 (src/E0DE8.C) */
+    char pad21[0x73 - 0x21];
+    long m7375;                 /* +73: a 32-bit value 280D sets to 0x26c (Purpose unknown) */
+    char pad77[0xf3 - 0x77];
 };
 extern struct CharRec gChars[]; /*@ ds:F580 */
+extern signed char g1231[]; /*@ ds:1231 */ /* byte table indexed by gChars[].m20 (src/E0BD2.C) */
+extern int far RollDice(char count, char sides, char bonus); /*@ 082C:0458 */
+extern void far *gPtrsFC8C[]; /*@ ds:FC8C */ /* the 0x43 overlay buffers 28B0 frees */
 extern void (far *gDrawText)(char far *text, int a, int b, int c, int d); /*@ ds:80CA */
 extern char far *gFont1A47; /*@ ds:FE4E */ /* the current font (src/E1547.C) */
 extern void far *gA9C0; /*@ ds:A9C0 */ /* the 6x6 font loaded from FONT6.FNT (src/E07A9.C) */
@@ -316,7 +323,26 @@ extern void far *g5E64[0x11]; /*@ ds:5E64 */ /* the 17 sliced icon pointers this
 /*@ ovl0:0EE5 stub */ void Ovl0_0EE5(void) {}
 /*@ ovl0:1071 stub */ void Ovl0_1071(void) {}
 /*@ ovl0:10F6 stub */ void Ovl0_10F6(void) {}
-/*@ ovl0:1177 stub */ void Ovl0_1177(void) {}
+/* ovl0:1177: rolls an ability score: four 1d6 rolls summed with the lowest dropped. Returns the
+   sum as a byte. Called by ovl0:1BF2. */
+/*@ ovl0:1177 */ char RollAbilityScore(void)
+{
+    int sum;
+    int roll;
+    int i;
+    int min;
+
+    min = 0xa;
+    sum = 0;
+    for (i = 0; i < 4; i++) {
+        roll = RollDice(1, 6, 0);
+        sum += roll;
+        if (roll < min)
+            min = roll;
+    }
+    sum -= min;
+    return sum;
+}
 /*@ ovl0:11BA stub */ void Ovl0_11BA(void) {}
 /*@ ovl0:1224 stub */ void Ovl0_1224(void) {}
 /*@ ovl0:135D stub */ void Ovl0_135D(void) {}
@@ -324,13 +350,53 @@ extern void far *g5E64[0x11]; /*@ ds:5E64 */ /* the 17 sliced icon pointers this
 /*@ ovl0:1BF2 stub */ void Ovl0_1BF2(void) {}
 /*@ ovl0:1EA9 stub */ void Ovl0_1EA9(void) {}
 /*@ ovl0:1F66 stub */ void Ovl0_1F66(void) {}
-/*@ ovl0:2051 stub */ void Ovl0_2051(void) {}
+/* ovl0:2051: returns the index (0-based) of the `n`th set bit of `mask`, scanning up to `count`
+   bits; when fewer than `n` bits are set it returns `count`. No direct caller found. */
+/*@ ovl0:2051 */ int FindNthSetBit(int mask, int n, int count)
+{
+    int remaining;
+    int i;
+
+    remaining = n;
+    for (i = 0; i < count; i++) {
+        if (mask & (1 << i)) {
+            remaining--;
+            if (remaining == 0)
+                break;
+        }
+    }
+    return i;
+}
 /*@ ovl0:207A stub */ void Ovl0_207A(void) {}
 /*@ ovl0:2238 stub */ void Ovl0_2238(void) {}
 /*@ ovl0:23EC stub */ void Ovl0_23EC(void) {}
 /*@ ovl0:2547 stub */ void Ovl0_2547(void) {}
 /*@ ovl0:26C6 stub */ void Ovl0_26C6(void) {}
-/*@ ovl0:280D stub */ void Ovl0_280D(void) {}
+/* ovl0:280D: for each of the first four characters whose class byte g1231[gChars[i].m20] has bit 2
+   set, sets the 32-bit gChars[i].m7375 to 0x26c. Called by ovl0:28F9. Purpose unknown. */
+/*@ ovl0:280D */ void InitCharSlotValues(void)
+{
+    int i;
+
+    for (i = 0; i < 4; i++) {
+        if (g1231[gChars[i].m20] & 2)
+            gChars[i].m7375 = 0x26c;
+    }
+}
+
 /*@ ovl0:284A stub */ void Ovl0_284A(void) {}
-/*@ ovl0:28B0 stub */ void Ovl0_28B0(void) {}
+
+/* ovl0:28B0: releases the panel's buffers: every far pointer in the 0x43-entry table gPtrsFC8C,
+   then the 17-icon table through FreeIconTable, then every far pointer in the 0x13-entry table
+   gNodePtrs. Called by ovl0:28F9. */
+/*@ ovl0:28B0 */ void FreePanelBuffers(void)
+{
+    int i;
+
+    for (i = 0; i < 0x43; i++)
+        farfree(gPtrsFC8C[i]);
+    FreeIconTable();
+    for (i = 0; i < 0x13; i++)
+        farfree(gNodePtrs[i]);
+}
 /*@ ovl0:28F9 stub */ void Ovl0_28F9(void) {}

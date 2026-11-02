@@ -6916,6 +6916,9 @@ unit = "eov0"
 addr = "ovl0:1177"
 size = 67
 evidence = ["ovl", "near", "frame"]
+name = "RollAbilityScore"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov0_11ba"
@@ -6972,6 +6975,9 @@ unit = "eov0"
 addr = "ovl0:2051"
 size = 41
 evidence = ["ovl", "frame"]
+name = "FindNthSetBit"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov0_207a"
@@ -7014,6 +7020,9 @@ unit = "eov0"
 addr = "ovl0:280D"
 size = 61
 evidence = ["ovl", "near", "frame"]
+name = "InitCharSlotValues"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov0_284a"
@@ -7028,6 +7037,9 @@ unit = "eov0"
 addr = "ovl0:28B0"
 size = 73
 evidence = ["ovl", "near", "frame"]
+name = "FreePanelBuffers"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov0_28f9"
