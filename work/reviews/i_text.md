@@ -31,29 +31,36 @@ Round 1 must-fix items: 313 (gBusyCountdown), 182 (3EFB), 87 (SetSoundByte), 182
 the INTRO caller) fix is right in the address, its line cites are stale (round 2 should, item 3). 240 (gRhythmKeyBits) is NOT
 fixed right: reopened (round 2 item 1).
 
-- [ ] must-fix src/I_TEXT.ASM:241 (gRhythmKeyBits; round 1 must-fix reopened). Two claims in the comment are wrong.
+- [x] must-fix src/I_TEXT.ASM:241 (gRhythmKeyBits; round 1 must-fix reopened). Two claims in the comment are wrong.
   (a) "its readers test bit 5 as rhythm mode (VoiceKeyOff line 1829, VoiceSilence line 2282)": both readers test the whole
   byte for nonzero (`cmp byte ptr ds:[gRhythmKeyBits], 0` at lines 1829 and 2282); bit 5 is not tested anywhere.
   (b) "the OR of every C2h operand since the last C3h" omits the direct store `mov byte ptr ds:[gRhythmKeyBits], 20h` at
   line 1481, which is inside the C1h handler (L_4B01 at line 1398, L_4BE0 at line 1487). Fix: say C1h sets it to 20h
   (line 1481), C2h ORs its operand into it (lines 1502 to 1503), C3h clears it (line 1512), and VoiceKeyOff (1829) and
-  VoiceSilence (2282) test it for nonzero.
+  VoiceSilence (2282) test it for nonzero. **Fixed:** Rewrote gRhythmKeyBits: C1h sets it to 20h (line 1481), C2h ORs
+  its operand into it (lines 1502 to 1503), C3h clears it (line 1512); VoiceKeyOff (1829) and VoiceSilence (2282) test it
+  for nonzero (commit e4b4fe5).
 
-- [ ] must-fix src/I_TEXT.ASM:242 (gTempoRate; a round 1 should, changed by the fix, now wrong). Two citations name the
+- [x] must-fix src/I_TEXT.ASM:242 (gTempoRate; a round 1 should, changed by the fix, now wrong). Two citations name the
   wrong code. (a) "copied to a voice's speed byte [di+25h] when its follow flag [di+40h] is set (line 1783 to 1784)": the
   copy is at lines 781 to 784 (cmp [di+40h] at 781, mov al,gTempoRate at 783, mov [di+25h],al at 784, in the UpdateVoices
   loop before L_45A5); lines 1783 and 1784 are the A0 register setup in SetVoicePitch. (b) "by commands A9h and BAh (lines
   1118 and 1340)": line 1118 (L_4881, script byte A9h) stores its own operand AH into [di+25h] and does not read
   gTempoRate. The byte is written only by command A6h (L_4871, line 1111), and copied by BAh (L_4A7B, line 1340). Fix:
   "written by A6h (line 1111); copied into a voice's speed byte [di+25h] by BAh (line 1340) and, when [di+40h] is set,
-  by the UpdateVoices copy (lines 781 to 784)".
+  by the UpdateVoices copy (lines 781 to 784)". **Fixed:** Rewrote gTempoRate: written by A6h (line 1111); copied into a
+  voice's speed byte [di+25h] by BAh (line 1340) and, when [di+40h] is set, by the UpdateVoices copy (lines 781 to 784)
+  (commit e4b4fe5).
 
-- [ ] should src/I_TEXT.ASM:493 (the 43A5 header): the address is right, but "src/I0892.C:420" and "declared at
+- [x] should src/I_TEXT.ASM:493 (the 43A5 header): the address is right, but "src/I0892.C:420" and "declared at
   I0892.C:127" are stale. ShutdownGame is at I0892.C:444 and calls StopAdlibDriver at I0892.C:454; the extern is at
-  I0892.C:149. Cite the address (0892:0835) and, if a line is kept, the current lines. E07C8.C:451 is right.
+  I0892.C:149. Cite the address (0892:0835) and, if a line is kept, the current lines. E07C8.C:451 is right. **Fixed:**
+  The header now says ShutdownGame at 0892:0835 (src/I0892.C:444, calls it at line 454; the extern is at I0892.C:149)
+  (commit e4b4fe5).
 
-- [ ] should src/I_TEXT.ASM:254 (gRhythmLevelC): the C6h list "lines 1659, 1670, 1681 and 1692" omits line 1648, the store
+- [x] should src/I_TEXT.ASM:254 (gRhythmLevelC): the C6h list "lines 1659, 1670, 1681 and 1692" omits line 1648, the store
   `mov byte ptr ds:[gRhythmLevelB+2], al` inside L_4D6B (line 1643). L_4D6B does store into B; add 1648 to the list.
+  **Fixed:** The gRhythmLevelC comment now lists 1648 with 1659, 1670, 1681 and 1692 (commit e4b4fe5).
 
 - note src/I_TEXT.ASM:2106 (WriteVoiceReg): the test is `cmp byte ptr [di + 31h], 0`, a nonzero test of the whole byte.
   It is "the connection bit" only if byte 31h holds bit 0 and nothing else (the C0h comment says LoadVoicePatch keeps bit 0
@@ -63,8 +70,11 @@ fixed right: reopened (round 2 item 1).
   `_RebaseDriverBlock` entry, covers 16216 bytes, including both INT 08h handlers). review-pass stamps only the entries
   that exist, so the split (one entry per function) is still needed before a passing review. Not changed in this round.
 
-- [ ] should carried from round 1 (still open): rename `WriteVoiceReg` to `WriteVoiceLevels` (make rename); cite WHITEPAPER
-  2.1.2 and 2.4 in the unit header; list the voice-record fields once (src/I_TEXT.ASM:281 to 282).
+- [x] should carried from round 1 (still open): rename `WriteVoiceReg` to `WriteVoiceLevels` (make rename); cite WHITEPAPER
+  2.1.2 and 2.4 in the unit header; list the voice-record fields once (src/I_TEXT.ASM:281 to 282). **Fixed:** Renamed
+  intro/0000:50C8 via `make rename` (re/renames.toml, commit d05bca0; 7 uses in src/I_TEXT.ASM); the unit header cites
+  WHITEPAPER 2.1.2 and 2.4; the 43h-byte voice-record field list is at src/I_TEXT.ASM:283 to 334 (offsets +00h to +42h
+  with their setters and readers) (commit e4b4fe5).
 
 ### Round 1
 
@@ -76,7 +86,7 @@ fixed right: reopened (round 2 item 1).
 
 - [x] must-fix src/I_TEXT.ASM:87 (the 03B0 SetSoundByte header): "idx selects the 300-word table at 0416" is wrong. idx selects one word of that table (lines 94 to 95: the near pointer at cs:0416 + 2 * idx), and reg is the offset into the record that word points to (lines 96 to 98). E177D.C:251 to 252 passes idx as the sound number and reg as 3 or 1. **Fixed:** Corrected the SetSoundByte comment: idx selects one word of the 300-word table (cs:0416 + 2*idx); reg offsets into the record that word points to.
 
-- [ ] must-fix src/I_TEXT.ASM:240 (gRhythmKeyBits), REOPENED in round 2 (round 2 item 1): "the key bits last written to register BDh (bit 5 is the rhythm mode)" does not describe the byte. C2h stores `operand | old value` (lines 1502 to 1503), so the byte is the OR of every C2h operand since the last C3h, which clears it (line 1512). It is not the last value written to BDh, which also carries gRegBDDepth and 20h (lines 1504 to 1506). Its readers test it as rhythm mode (lines 1829 and 2282). **Fixed:** Rewrote gRhythmKeyBits as the OR of every C2h operand since the last C3h (which clears it), not the last BDh write; its readers test bit 5 as rhythm mode.
+- [x] must-fix src/I_TEXT.ASM:240 (gRhythmKeyBits), REOPENED in round 2 (round 2 item 1): "the key bits last written to register BDh (bit 5 is the rhythm mode)" does not describe the byte. C2h stores `operand | old value` (lines 1502 to 1503), so the byte is the OR of every C2h operand since the last C3h, which clears it (line 1512). It is not the last value written to BDh, which also carries gRegBDDepth and 20h (lines 1504 to 1506). Its readers test it as rhythm mode (lines 1829 and 2282). **Fixed (round 2):** Rewrote gRhythmKeyBits: C1h sets it to 20h (line 1481), C2h ORs its operand into it (lines 1502 to 1503), C3h clears it (line 1512); VoiceKeyOff (1829) and VoiceSilence (2282) test it for nonzero (commit e4b4fe5).
 
 - [x] must-fix src/I_TEXT.ASM:1826 (the 4EF7 VoiceKeyOff header): "skips the first six voices while a sample plays" is wrong. The routine returns at once when gRhythmKeyBits is nonzero (rhythm mode on) and the voice index is 6 or more (lines 1829 to 1833). Voice 9 gets no B0 write (lines 1835 to 1836). No sample test appears in the routine. Say: skips voices 6 to 9 while rhythm mode is on. **Fixed:** Corrected VoiceKeyOff: while rhythm mode is on it skips voices 6 to 9 (not the first six while a sample plays); voice 9 gets no B0 write.
 
@@ -126,11 +136,11 @@ fixed right: reopened (round 2 item 1).
 
 - [x] should src/I_TEXT.ASM:121 (GetSoundData): "returns the far driver routine pointer cs:[0416 + 2*idx]" reads as if the pointer were at that address. The function returns dx = cs and ax = the word stored there (lines 127 to 132). **Fixed:** Said the function returns dx = cs and ax = the word at cs:[0416 + 2*idx], not a pointer stored there.
 
-- [ ] should src/I_TEXT.ASM:2096 (WriteVoiceReg): the name is vague. It writes the two total-level registers (43h and 40h). A name such as WriteVoiceLevels says what it does; use `make rename` for it.
+- [x] should src/I_TEXT.ASM:2096 (WriteVoiceReg): the name is vague. It writes the two total-level registers (43h and 40h). A name such as WriteVoiceLevels says what it does; use `make rename` for it. **Fixed:** Renamed to WriteVoiceLevels (make rename, intro/0000:50C8, commit d05bca0).
 
-- [ ] should src/I_TEXT.ASM:1 to 19 (the unit header): no whitepaper section is cited, and READABILITY asks for one. Cite WHITEPAPER 2.1.2 (what segment 0 holds) and 2.4 (INTRO.EXE).
+- [x] should src/I_TEXT.ASM:1 to 19 (the unit header): no whitepaper section is cited, and READABILITY asks for one. Cite WHITEPAPER 2.1.2 (what segment 0 holds) and 2.4 (INTRO.EXE). **Fixed:** The header now cites WHITEPAPER 2.1.2 and 2.4 (commit e4b4fe5).
 
-- [ ] should src/I_TEXT.ASM:281 to 282 (the voice records): the record fields (+3, +5, +8, +20h, +25h, +28h, +29h, +2Bh, +40h and the rest) are documented only where the code uses them. One comment, or EQU names, listing the fields would let the next reader follow the code without searching.
+- [x] should src/I_TEXT.ASM:281 to 282 (the voice records): the record fields (+3, +5, +8, +20h, +25h, +28h, +29h, +2Bh, +40h and the rest) are documented only where the code uses them. One comment, or EQU names, listing the fields would let the next reader follow the code without searching. **Fixed:** Added the 43h-byte field list (offsets +00h to +42h, each with its setters and readers) at src/I_TEXT.ASM:283 to 334 (commit e4b4fe5).
 
 - [ ] note src/I_TEXT.ASM:309 to 316 and E177D.C:249: nothing in this build decrements a busy byte, and 3B36 is zero spare data here (inside gBlockSpare). If INTRO's code reaches PlaySoundAtCell's busy wait (E177D.C:249), that wait cannot end. The callers in src/I0*.C do not show whether it does. This is a question for the human, not a finding against this file.
 
