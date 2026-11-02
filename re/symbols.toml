@@ -10866,6 +10866,9 @@ unit = "iov0"
 addr = "ovl0:09AD"
 size = 371
 evidence = ["ovl", "near", "frame"]
+name = "BlitImage"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "iov0_0b20"
@@ -10955,6 +10958,9 @@ unit = "iov0"
 addr = "ovl0:2913"
 size = 182
 evidence = ["ovl", "frame"]
+name = "RevealInStrips"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "iov0_29c9"
@@ -10962,6 +10968,9 @@ unit = "iov0"
 addr = "ovl0:29C9"
 size = 133
 evidence = ["ovl", "near", "frame"]
+name = "DrawGrid"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "iov0_2a4e"

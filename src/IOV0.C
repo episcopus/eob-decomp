@@ -85,7 +85,7 @@ extern unsigned char RandomByte(void);  /*@ 0CDA:0006 */
 void PlayIntroSequence(void);
 void Ovl0_015D(void);
 void Ovl0_06E2(void);
-void Ovl0_09AD(void);
+void BlitImage(int x1, int y1, int x2, int y2, int width, int height, int mode);
 void Ovl0_0B20(void);
 void ClearBottomBar(void);
 void WaitFrameDelay(void);
@@ -96,8 +96,9 @@ void Ovl0_1265(void);
 void Ovl0_15F9(void);
 void Ovl0_1DF3(void);
 void Ovl0_23A3(void);
-void Ovl0_2913(void);
-void Ovl0_29C9(void);
+void RevealInStrips(void);
+void DrawGrid(void);
+extern void ClipRect(int x1, int y1, int x2, int y2, int width, int height, int extra1, int extra2); /*@ 0986:000E */
 void LoadPalette(char far *name);
 void LoadPackedImage(char far *name, int srcKind, int dstKind);
 void Dissolve(int x, int y, int width, int height, int fromPage, int toPage);
@@ -128,7 +129,81 @@ void Ovl0_2A99(void);
 /*@ ovl0:003A stub */ void PlayIntroSequence(void) {}
 /*@ ovl0:015D stub */ void Ovl0_015D(void) {}
 /*@ ovl0:06E2 stub */ void Ovl0_06E2(void) {}
-/*@ ovl0:09AD stub */ void Ovl0_09AD(void) {}
+/* 0E96:09AD: copies an image between two rectangles of the same video buffer (slot 3, the
+   segment f19EC_0002(3) returns), from the rectangle at (x1,y1) to the one at (x2,y2), each
+   row `width` bytes wide and `height` lines high. `mode` selects the byte interleave:
+     0: nothing;
+     1: two source rows per pass, the low bytes (i even) and the high bytes (i odd) written
+        into alternate destination rows, the other byte cleared;
+     2: one source row per pass in the low bytes, the destination's second row cleared, the
+        source advancing two rows;
+     3: every third source row is written with three clears per byte, the two rows between
+        are cleared.
+   Used by the scene functions to build the layered sprites (ovl0:015D, ovl0:06E2). */
+/*@ ovl0:09AD */ void BlitImage(int x1, int y1, int x2, int y2, int width, int height, int mode)
+{
+    int i;
+    char far *src;
+    char far *dst;
+    int row;
+
+    src = dst = (char far *)f19EC_0002(3);
+    src += x1 + y1 * 320;
+    dst += x2 + y2 * 320;
+    switch (mode) {
+    case 1:
+        while (height > 0) {
+            for (i = 0; i < width; i += 2) {
+                dst[i] = src[i];
+                dst[i + 1] = 0;
+            }
+            dst += 320;
+            src += 320;
+            for (i = 0; i < width; i += 2) {
+                dst[i] = 0;
+                dst[i + 1] = src[i + 1];
+            }
+            dst += 320;
+            src += 320;
+            height -= 2;
+        }
+        break;
+    case 2:
+        while (height > 0) {
+            for (i = 0; i < width; i += 2) {
+                dst[i] = src[i];
+                dst[i + 1] = 0;
+            }
+            dst += 320;
+            for (i = 0; i < width; i++)
+                dst[i] = 0;
+            dst += 320;
+            src += 640;
+            height -= 2;
+        }
+        break;
+    case 3:
+        row = 0;
+        while (row < height) {
+            if (row % 3) {
+                for (i = 0; i < width; i++)
+                    dst[i] = 0;
+            } else {
+                for (i = 0; i < width - 3; i += 3) {
+                    dst[i] = src[i];
+                    dst[i + 1] = 0;
+                    dst[i + 2] = 0;
+                }
+                for (; i < width; i++)
+                    dst[i] = 0;
+            }
+            row++;
+            dst += 320;
+            src += 320;
+        }
+        break;
+    }
+}
 /*@ ovl0:0B20 stub */ void Ovl0_0B20(void) {}
 /* 0E96:0FAA: clears the bottom bar of the screen, the rectangle from (0,168) to (319,199),
    with colour 12 on the page the caller wants visible (page 0), then puts the driver's
@@ -189,8 +264,55 @@ void Ovl0_2A99(void);
 /*@ ovl0:15F9 stub */ void Ovl0_15F9(void) {}
 /*@ ovl0:1DF3 stub */ void Ovl0_1DF3(void) {}
 /*@ ovl0:23A3 stub */ void Ovl0_23A3(void) {}
-/*@ ovl0:2913 stub */ void Ovl0_2913(void) {}
-/*@ ovl0:29C9 stub */ void Ovl0_29C9(void) {}
+/* 0E96:2913: reveals the screen in horizontal strips. For each step 0..6 it walks the 25
+   eight-line strips top to bottom and clips each strip twice: the whole strip (height
+   7 - step, so the bottom part of it) and its single moving line at si*8 + 7 - step; a frame
+   is waited after each step, and the screen is finally unclipped (the whole 40 by 200 region
+   again). No caller of this function was found in INTRO.EXE (make packet). */
+/*@ ovl0:2913 */ void RevealInStrips(void)
+{
+    int step;
+    int strip;
+
+    for (step = 0; step < 7; step++) {
+        gFrameDelay = 1;
+        for (strip = 0; strip < 25; strip++) {
+            ClipRect(0, strip * 8 + 1, 0, strip * 8, 40, 7 - step, 0, 0);
+            ClipRect(0, strip * 8 + 7 - step, 0, strip * 8 + 7 - step, 40, 1, 2, 0);
+        }
+        WaitFrameDelay();
+    }
+    ClipRect(0, 0, 0, 0, 40, 200, 2, 0);
+}
+
+/* 0E96:29C9: draws a grid over the whole screen in colour 12: for two passes it draws the
+   vertical lines at x = 1, 9, ... (the odd-numbered lines) and the horizontal lines at
+   y = 0, 8, ... (the even ones), each pass offset by one pixel. Called before the card scenes
+   (ovl0:0B20) and by the TOWRMAGE scene (ovl0:0B20 twice more). */
+/*@ ovl0:29C9 */ void DrawGrid(void)
+{
+    int line;
+    int pass;
+    int x;
+    int y;
+
+    for (pass = 0; pass < 2; pass++)
+        for (line = 0; line < 8; line++) {
+            if (line & 1) {
+                x = line + pass;
+                while (x < 320) {
+                    gDrawLine(x, 0, x, 199, 12);
+                    x += 8;
+                }
+            } else {
+                y = line + pass;
+                while (y < 200) {
+                    gDrawLine(0, y, 319, y, 12);
+                    y += 8;
+                }
+            }
+        }
+}
 /* 0E96:2A4E: reads a 768-byte .COL palette file into gPalette and applies it, only on the VGA
    mode (gGraphicsMode 3). The first colour (black) is cleared and one frame is waited before
    the driver is given the palette, so the screen blanks first. */
