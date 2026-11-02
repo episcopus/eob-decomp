@@ -7182,6 +7182,7 @@ unit = "eov3"
 addr = "ovl3:01C8"
 size = 338
 evidence = ["ovl", "near", "frame"]
+notes = "blocked: same as ovl3:03A2. The map sheet index gMapTiles[gFBC8-1] folds into a disp16 (our far object's stub offset FAR_BASE=8000h plus -1 gives 7FFFh, the original's object offset 0 plus -1 gives FFFFh); cmatch.py:370 only explains a displacement >= FAR_BASE. The draft matches up to that instruction (+00C5). The honest source form is kept in src/EOV3.C."
 
 [[function]]
 id = "eov3_031a"
@@ -7247,6 +7248,9 @@ unit = "eov3"
 addr = "ovl3:07A5"
 size = 428
 evidence = ["ovl", "near", "frame"]
+name = "LoadWallTextures"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov3_0951"
@@ -7341,6 +7345,9 @@ unit = "eov3"
 addr = "ovl3:1368"
 size = 593
 evidence = ["ovl", "frame"]
+name = "SaveGame"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov3_15b9"
@@ -7348,6 +7355,9 @@ unit = "eov3"
 addr = "ovl3:15B9"
 size = 1086
 evidence = ["ovl", "frame"]
+name = "LoadGame"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov3_19f7"
