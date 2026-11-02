@@ -9199,6 +9199,9 @@ unit = "i0892"
 addr = "0892:0000"
 size = 577
 evidence = ["far", "segment"]
+name = "Main"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "i0892_0241"
@@ -9206,6 +9209,9 @@ unit = "i0892"
 addr = "0892:0241"
 size = 1524
 evidence = ["far"]
+name = "StartupGame"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "i0892_0835"
