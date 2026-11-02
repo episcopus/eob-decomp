@@ -67,11 +67,13 @@ struct ItemType {
 /* The record 0EF3:0A3F and its callers read: an effect target with a member index at +0xB and a
    bit mask at +0xC. Only the fields this unit touches are named. */
 struct Tgt {
-    char pad00[4];
+    signed char m00;        /* +00: set to 0 then 2 by 0EF3:00CD */
+    char pad01[3];
     int m04;                /* +04: the target cell, compared with gPartyCell */
     char m06;               /* +06 */
     char m07;               /* +07 */
-    char pad08[0x0B - 0x08];
+    int m08;                /* +08: an index into ds:55E6 (0EF3:0A3F compares it with 5) */
+    char pad0A;
     signed char m0B;        /* +0B: a member index */
     char m0C;               /* +0C: the effect flag bits */
 };
@@ -173,6 +175,26 @@ extern void BuildList2(void); /*@ 0CF7:00B4 */
 extern void BuildList3(void); /*@ 0CF7:0140 */
 extern void BuildList5(void); /*@ 0CF7:0211 */
 
+extern signed char g55E6[];      /*@ ds:55E6 */ /* an animation index per Tgt.m08 */
+extern void far *gAnimTable[];   /*@ ds:5615 */ /* far-pointer animation templates, indexed by
+                                                   0EF3:00CD and passed to 0EF3:2A53 */
+extern int gAngleA9C8[];         /*@ ds:A9C8 */ /* 18 words searched for the target cell by 0EF3:00CD
+                                                   (the heading table of EOV4.C) */
+extern signed char g55EF[];      /*@ ds:55EF */ /* DrawViewSlots start slot per object index */
+extern signed char g1A09[];      /*@ ds:1A09 */ /* per-slot object index (EOV4.C) */
+extern int g1D61[];              /*@ ds:1D61 */ /* per-slot, per-part x table (EOV4.C) */
+extern int g8115;                /*@ ds:8115 */ /* nonzero while a status line is up (E082C.C) */
+extern int gDD18;                /*@ ds:DD18 */ /* the animation's origin x, written here and read by
+                                                   0EF3:2A53 */
+extern int gDD1A;                /*@ ds:DD1A */ /* the animation's origin y */
+extern void (far *gFillRect)(int x1, int y1, int x2, int y2, int pattern); /*@ ds:806A */
+extern void ComputeViewSpan(int slot, int far *left, int far *right, int region); /*@ 2116:0052 */
+extern void DrawViewFrame(int full); /*@ 2116:005C */
+extern void DrawViewSlots(int start); /*@ 2116:0025 */
+extern void LockHidePointer(void); /*@ 1BBE:0307 */
+extern void LockShowPointer(void); /*@ 1BBE:0332 */
+extern void f0EF3_2A53(int a, int b, int c, int d, int e, void far *p); /*@ 0EF3:2A53 */
+
 /* 0EF3:000E: bubble-sorts each of the ten six-byte rows that start at a character's +0x37 spell
    field, swapping the first two bytes of a row while the row's weight decreases. The weight
    pushes an empty byte (0) to the end (0x50) and a negative byte after the positive ones
@@ -215,7 +237,67 @@ extern void BuildList5(void); /*@ 0CF7:0211 */
     }
 }
 
-/*@ 0EF3:00CD stub */ void f0EF3_00CD(void far *rec) {}
+/* 0EF3:00CD: play the melee hit animation on the view slot the target's cell points at. It maps
+   the record's cell (+4) to a word index in the 18-word heading table ds:A9C8, rejects the last
+   entry and entry 0x0F, then computes the slot's view span. It clears the record's +0 byte,
+   redraws a full view frame, sets the status line flag, blanks the view box through the gFillRect
+   hook, draws the view slots from g55EF, computes the span again, hides the pointer, sets the
+   animation origin (ds:DD18 from g1D61, ds:DD1A = 0x30), plays sound 0x23 and runs the effect
+   animation 0EF3:2A53 with the template gAnimTable[g55E6[m08]] chosen per object index. Called by
+   the melee attacker 0EF3:0A3F on a hit with the record's flag bit 0x40, and by 1414:0285. */
+/*@ 0EF3:00CD */ void AnimateMeleeHit(struct Tgt far *rec)
+{
+    void far *anim;
+    int left;
+    int right;
+    int cell;
+    int index;
+    register int slot;
+    register int objIndex;
+
+    cell = rec->m04;
+    index = g55E6[rec->m08];
+    anim = gAnimTable[index];
+    for (slot = 0; slot < 0x12; slot++) {
+        if (gAngleA9C8[slot] == cell)
+            break;
+    }
+    if (slot > 0x11)
+        return;
+    if (slot == 0xF)
+        return;
+    objIndex = g1A09[slot];
+    ComputeViewSpan(slot, &left, &right, 5);
+    if (right < left)
+        return;
+    rec->m00 = 0;
+    DrawViewFrame(1);
+    rec->m00 = 2;
+    g8115 = 2;
+    gFillRect(0, 0, 0xB0, 0x78, 0);
+    DrawViewSlots(g55EF[objIndex]);
+    g8115 = 0;
+    ComputeViewSpan(slot, &left, &right, 5);
+    LockHidePointer();
+    gDD18 = g1D61[(slot * 5 + 4) * 2] + 0x58;
+    gDD1A = 0x30;
+    PlaySound(0x23);
+    switch (objIndex) {
+    case 0:
+        f0EF3_2A53(3, 0x93, 0x23, 0x14, 7, anim);
+        break;
+    case 1:
+        f0EF3_2A53(2, 0x93, 0x23, 0x14, 7, anim);
+        break;
+    case 2:
+        f0EF3_2A53(1, 0x93, 0x23, 0x14, 7, anim);
+        break;
+    case 3:
+        f0EF3_2A53(0, 0x1CC, 0x32, 0x14, 4, anim);
+        break;
+    }
+    LockShowPointer();
+}
 
 /* 0EF3:026F: ends one condition slot on the panel member. It clears a bit at index g8DCE in the
    member's +0x1E condition byte, applies a 0x12-tick char effect whose value is the slot number
@@ -1177,6 +1259,6 @@ extern void BuildList5(void); /*@ 0CF7:0211 */
 
 /*@ 0EF3:2929 stub */ void f0EF3_2929(void) {}
 
-/*@ 0EF3:2A53 stub */ void f0EF3_2A53(void) {}
+/*@ 0EF3:2A53 stub */ void f0EF3_2A53(int a, int b, int c, int d, int e, void far *p) {}
 
 /*@ 0EF3:2EBC stub */ void f0EF3_2EBC(void) {}
