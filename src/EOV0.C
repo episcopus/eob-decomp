@@ -980,7 +980,51 @@ int PickAlignment(int classIndex); /* ovl0:2238, defined below */
     }
     return sel;
 }
-/*@ ovl0:23EC stub */ void Ovl0_23EC(void) {}
+/* ovl0:23EC: the character-creation driver. It walks a three-step loop over the new member gDCB0:
+   step 0 picks its race (PickOption), step 1 its class (ovl0:207A PickClass) and step 2 its alignment
+   (ovl0:2238 PickAlignment); each step that the picker reported as confirmed (0x6e, the mouse's
+   accept) steps the index back one instead of forward, so the loop ends only after all three were
+   taken. It then rolls the member's stats (ovl0:1BF2), opens the panel loop (ovl0:0DDC) and, until
+   the name is non-empty, redraws the row and page, edits the name field with EditTextField and
+   redraws the centred name. Called by ovl0:28F9. Purpose unknown: row ds:DD12. */
+/*@ ovl0:23EC */ void CreateCharacter(void)
+{
+    int step;
+    int confirmed;
+    int len;
+
+    SetTextWindow(2);
+    step = 0;
+    do {
+        confirmed = 0;
+        switch (step) {
+        case 0:
+            gChars[gDCB0].m1F = PickOption();
+            break;
+        case 1:
+            confirmed = (gChars[gDCB0].m20 = PickClass(gChars[gDCB0].m1F)) == 0x6e;
+            break;
+        case 2:
+            confirmed = (gChars[gDCB0].align = PickAlignment(gChars[gDCB0].m20)) == 0x6e;
+            break;
+        }
+        step++;
+        if (confirmed)
+            step -= 2;
+    } while (step != 3);
+    RollCharacterStats(gDCB0);
+    Ovl0_0DDC();
+    gChars[gDCB0].name[0] = 0;
+    do {
+        DrawPanelRow(gDD12);
+        DrawCharPanel(gDCB0, 0);
+        LockHidePointer();
+        DrawShadowText(gStr626C, 0x95, 0x64, 9, 0);
+        len = EditTextField(gChars[gDCB0].name, 0x18, 0x64, 0xa, 0xf, 0, 8);
+        LockShowPointer();
+        DrawCharName(gDCB0, len, 2);
+    } while (gChars[gDCB0].name[0] == 0);
+}
 /* ovl0:2547: loads the character panel's screens and slices its icon buffers. It allocates the 0x13
    0x3c-byte gNodePtrs nodes, loads three named screens (gStr6272, gStr627B, gStr6283) and slices
    the 0x2c panel cells gPtrsFC8C ((i%10)*4, (i/10)*0x20) and ten row cells gPtrsFD54 (0, i*4) out
@@ -1165,9 +1209,9 @@ int PickAlignment(int classIndex); /* ovl0:2238, defined below */
                 if (Ovl0_0EE5())
                     flag = 1;
                 if (gChars[gDCB0].name[0] == 0 && save != gDCB0)
-                    Ovl0_23EC();
+                    CreateCharacter();
             } else
-                Ovl0_23EC();
+                CreateCharacter();
             list = BuildRowNodeList(0, 5);
             ShowReportLine1();
         }

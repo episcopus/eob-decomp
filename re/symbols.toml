@@ -7370,6 +7370,9 @@ unit = "eov0"
 addr = "ovl0:23EC"
 size = 347
 evidence = ["ovl", "near", "frame"]
+name = "CreateCharacter"
+level = "L2"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "eov0_2547"

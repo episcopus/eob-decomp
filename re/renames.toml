@@ -1629,3 +1629,12 @@ new = "RollCharacterStats"
 kind = "function"
 why = "ovl0:1BF2 rolls a fresh character's six ability scores, m24/exp per class, hit points and the class combat tables; called by 0DDC and 23EC"
 date = "2026-11-01"
+
+[[rename]]
+id = "ovl0:23EC=CreateCharacter"
+addr = "ovl0:23EC"
+old = "Ovl0_23EC"
+new = "CreateCharacter"
+kind = "function"
+why = "ovl0:23EC is the character-creation driver: race (PickOption), class (207A), alignment (2238), RollCharacterStats (1BF2), the panel loop (0DDC) and the name field; called by 28F9"
+date = "2026-11-01"
