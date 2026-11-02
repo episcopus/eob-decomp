@@ -1,7 +1,7 @@
 # Review: eov2
 
 Reviewer: rev-haiku
-Commit reviewed: 4649fc4e934c35603067c2804a0d464664b3b095
+Commit reviewed: e8be50a (main; round 2 reviewed e8be50a, round 1 reviewed 4649fc4)
 
 Playbook 70. Judge what a matching file can still get wrong: names, types, comments, structure.
 The matcher already proved the bytes; do not re-prove them, read for meaning.
@@ -10,6 +10,65 @@ The matcher already proved the bytes; do not re-prove them, read for meaning.
 
 Each finding is a checkbox. `must-fix` blocks `make review-pass` until a decompiler ticks it off
 (with the commit that fixes it); `should` and `note` do not block.
+
+### Round 2 (rev-haiku, at e8be50a)
+
+Playbook 70, later round. Judged: the round 1 must-fix and should items (fix commits 5b7df34 and
+867f836, merged in d3dc267) and the changes since 4649fc4 on main (`git diff 4649fc4 main -- src/EOV2.C
+re/symbols.toml re/globals.toml`: src/EOV2.C; re/globals.toml has only gClickX and gClickY of other
+units; re/symbols.toml has no ovl2 entry). Round 1 items: all fixed right and their ticks stay, except
+the gFlashFrames item (reopened below). The round 1 fixes added five wrong or unevidenced claims in
+changed lines, and two shoulds. `make match FILE=src/EOV2.C` exits 0, 11 of 11 functions match (3332
+bytes); the changes are comments, declarations and names only. Checked against the code and the other
+units: the LoadIntroScreen and LoadGamePanel bodies, the InitGameTables and SetPointerShape bodies, the
+f6815 bytes (below), and the cited lines in src/E082C.C, src/E19EC.C, src/E0EF3.C, src/E0ACD.C,
+src/EOV0.C, src/EOV3.C, src/EOV4.C, src/EOV5.C, src/E122E.C, src/E1414.C, src/E1547.C, src/E1BB1.ASM,
+src/E07A9.C, src/E07C8.C, src/E1C0E.C, src/E0D1C.C and re/symbols.toml.
+
+- [ ] must-fix src/EOV2.C:386-387 (LoadGamePanel comment, entry 1): "selects the 6x6 font (f1A47_0169
+  with gFE5A) ... then restores the 8x8 font". The code selects gFE5A (:418) and restores gA9C0 (:420),
+  and the two fonts are the other way round: gFE5A is the 8x8 font (src/E07C8.C:376 loads Font8.fnt
+  into it; src/E1C0E.C:53 "the 8x8 font"), and gA9C0 is the 6x6 font (src/E07C8.C:377 loads FONT6.FNT;
+  src/EOV0.C:168, src/EOV3.C:42). Say that entry 1 selects the 8x8 font gFE5A, runs the character
+  panel and restores the 6x6 font gA9C0.
+- [ ] must-fix src/EOV2.C:9-10 (header): "gOverlayBuf ... is the DGROUP image buffer the same load hands
+  to 19EC:002A as its `extra` pointer". LoadOverlayScreen (src/E082C.C:338) passes mode -1, and
+  LoadScreenImage returns before any f19EC_002A call when mode is -1 (src/E082C.C:314-315; its comment
+  at :330-331 says the same). The buffer reaches 19EC:002A only from loads with another mode, such as the
+  INTRO load at src/EOV2.C:371 (mode 2). Fix the sentence so it does not say the art loads reach 19EC.
+- [ ] must-fix src/EOV2.C:108 (gFlashFrames; reopens the round 1 item): "that reader uses only the three
+  entries at DD1C, DD20 and DD24 (the mask and shift give frames 1 to 3)". No mask, shift or frame value
+  is cited, and src/ does not show it. The first reader's tables are gFlashFrameMask (ds:5629) and
+  gFlashFrameShift (ds:562D) (src/E0EF3.C:350-351), with gFlashPassMask (ds:5621, :349). A second reader
+  at src/E0EF3.C:768-773 loops over sixteen frames with gFlashPass2, gFlashFrame2 and gFlashShift2
+  (src/E0EF3.C:362-364, the 0EF3:06E7 reader) and also indexes gFlashFrames[frame], so "that reader"
+  names only one of them. Either give the table values and the frame range each reader can produce
+  (the bytes at ds:5621, 5629, 562D, and the long tables at 564B, 5677 and 56B7), or mark the frame range
+  [H] and drop the three-entry claim. The claim decides whether DD28 (gIconDD28) is a separate variable.
+- [ ] must-fix src/EOV2.C:104-105 (g65C0 and g65C3): "the three per-column cell heights" and "the three
+  per-column cell y origins". The loop at src/EOV2.C:355-357 indexes both by i, the row:
+  gIconTableA92A[i * 4 + j], with x = j * 3 by column j. They are per row, not per column.
+- [ ] must-fix src/EOV2.C:142 (gIconTable): "src/E1414.C:101 ... read it as the party member being moved
+  (-1 when none)". src/E1414.C:101 says "the character the blink highlights", and E1414.C:133 says "the
+  highlighted member"; neither says "being moved" or -1. Only src/E0ACD.C:42 and src/E1547.C:107 say that.
+  Cite E1414 for what it says; the cross-unit note below stays.
+- [ ] should src/EOV2.C:50-51 (struct SlotPos): `void far *rec` with "the far slot-size record". The same six
+  bytes are declared `struct SlotSize far *rec` in src/E122E.C:113 (the record type is at :107-111).
+  Use that type (define struct SlotSize, or say in the comment why this unit keeps void far *).
+- [ ] should src/EOV2.C:365 (LoadIntroScreen comment): "clips the region (0, 0)-(0x28, 0xc8)". The call is
+  ClipRect(0, 0, 0, 0, 0x28, 0xc8, 2, 0): x1 to y2 are 0, and 0x28 and 0xc8 are the width and height
+  (src/E082C.C:318 makes the same 40 by 200 rectangle). Say "a 40 by 200 region at (0, 0)".
+- note verified, no change asked: the f6815 declaration (src/EOV2.C:198-199, "0000:6822-682C lowercases
+  'A' to 'Z'") is right. I decoded eob/EOB.EXE at 0000:6815 (file offset 0x2800 + 0x6815): push bp, mov bp,sp,
+  push si, cld, push ds, lds si,[bp+6], then the loop at 6822 (sub al,0x41; cmp al,0x19; ja; add al,0x61;
+  mov [si-1],al) with lodsb and jnz back to 6822, then mov dx,ds, pop ds, pop si, pop bp, retf with the
+  pointer in dx:ax. The comment could cite those bytes instead of [H].
+
+Round 2 result: five must-fix items open (four new wrong or unevidenced claims in changed lines, one
+reopened round 1 item). Nothing else needs a decompiler's decision; nothing escalated: no matcher,
+spec or pin question.
+
+### Round 1 (rev-haiku, at 4649fc4)
 
 - [x] must-fix src/EOV2.C:351-355 (LoadIntroIcons, name and comment): the comment says it fills the DROW/creature icon tables through gGetSpriteCell (ds:F4BE, ds:A92A) and slices with ds:65C0/65C3/65C6. The body (359-365) loads the INTRO screen into gOverlayBuf (LoadScreenImage), sets gStatusLine, fills a rectangle, draws two DrawFilledPanel frames and calls ClipRect. It calls no gGetSpriteCell and writes no table; that description belongs to LoadDecorateIcons (328-349). Rename it to what the body does (for example LoadIntroScreen) and rewrite the comment. The argument also needs explaining: `handle` is gFn8072's return value, which src/E0EF3.C:389-390 says is a saved-pixel handle, but it is passed as the colour of gFillRect (src/E082C.C:63 names that parameter colour).
   Fixed: renamed to LoadIntroScreen with `make rename` (logged in re/renames.toml), and the comment now says it loads the INTRO page into gOverlayBuf, marks the status line, fills the rectangle (0,0x9f)-(0x13f,0xc7) with the saved-pixel handle gFn8072(0,0) returns, passed as gFillRect's colour argument (src/E0EF3.C:389-390, src/E082C.C:63), draws the two panel frames and clips the region; it cuts no sprite cells (src/EOV2.C:361-368).
@@ -60,6 +119,6 @@ Each finding is a checkbox. `must-fix` blocks `make review-pass` until a decompi
 - [ ] note matcher output: `make match FILE=src/EOV2.C` exits 0 with 11 of 11 functions matching, but prints "unit eov2 not complete" even though the byte counts agree (3332 and 3332). tools/match/cmatch.py:606 requires `ovl is None`, so no overlay unit can print complete. The packet says complete True and the agent tools use re/symbols.toml, so this does not block the review; it is a matcher message for the human.
 - [ ] note verified: build/re/eob.json overlays[2] (stub 2106) lists entry 2 at ovl2:09CC and entry 8 at ovl2:0577, as the header says. The stub addresses 2106:002A and 2106:0048 were not checked.
 
-## Summary
+### Round 1 summary
 
 The matcher proves all 11 functions (readability 0 findings), and most names are backed by the calls and strings they cite (LoadItems, LoadItemTypes, LoadItemSheets, FindWordPanel, the item and palette globals). The unit is not yet understandable from its source alone: four comments describe code that is not there or says the wrong thing (LoadIntroIcons, LoadDecorateIcons, LoadGamePanel's "three tries", InitGameTables, SetUiPalette's Tandy mode), and three declarations disagree with the other units that read the same bytes (fOVL0_28F9 is RunCharacterPanel in EOV0.C, gA99C and gRectKinds and gB802 have other types or layouts, gFlashFrames is an array). Placeholders that are fine as they are: f1A47_0169, f1A29_000F, the library routine f6815 once its comment says what it does, and gFn804A/gFn807E, whose names agree with src/E0ACD.C, src/E0EF3.C and src/EOV5.C. The item table base (8DD0 or 8DD2) is open between units and is a note, not a must-fix here.
