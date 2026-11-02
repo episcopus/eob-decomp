@@ -7,11 +7,11 @@
    fires the callback SetNodeCallback (16A5:0D78) installs at ds:FC7C. The key codes 0x41/0x42 are
    the mouse buttons E14EF.C names KEY_CLICK and KEY_CLICK2 (the table at 14EF:055D); the pair
    0xC6/0xC7 is the mouse's confirm keys (ovl0:207A PickClass tests it). Placeholder names. The
-   unit was compiled through the assembler (the flags line records -B): only that keeps DrawNode's
+   unit was compiled with debug information (the flags line records -v): that keeps DrawNode's
    identical restart tails (the gStatusLine and gFC80 save/restore around each kind) as separate
-   copies, where TCC's own assembler merges them into one (the e14ef idiom). */
+   copies, where a build without it merges them into one (whitepaper 2.1.1). */
 
-/*@flags -ml -O -Z -B */
+/*@flags -ml -O -Z -v */
 
 struct Region {                 /* 16-byte records at ds:009F (src/E1A29.C): origin, size, then the
                                    text window's two attributes and cursor position (attr1/attr2/
