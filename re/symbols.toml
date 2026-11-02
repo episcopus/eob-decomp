@@ -7815,6 +7815,9 @@ unit = "eov5"
 addr = "ovl5:17C8"
 size = 698
 evidence = ["ovl", "near", "frame"]
+name = "EndingAnimation"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov5_1a82"

@@ -9,6 +9,7 @@
 /*@flags -ml -O -Z */
 
 #include <stdlib.h>     /* abs, the inline __abs__ the select lists use */
+#include <dos.h>        /* FP_OFF/FP_SEG, the blit calls split a far pointer */
 
 struct Cell4 {              /* a four-byte sprite-cell definition, x, y, w, h (src/EOV2.C) */
     unsigned char x;
@@ -115,6 +116,9 @@ extern char gText7E53[]; /*@ ds:7E53 */
 extern char gText7E5C[]; /*@ ds:7E5C */
 extern char gText7EDB[]; /*@ ds:7EDB */
 extern char gText7EDD[]; /*@ ds:7EDD */
+extern char gText7EEF[]; /*@ ds:7EEF */
+extern char gText7EF7[]; /*@ ds:7EF7 */
+extern char gText7EFF[]; /*@ ds:7EFF */
 extern char gText7BA6[]; /*@ ds:7BA6 */
 extern char gText7BB2[]; /*@ ds:7BB2 */
 extern char gText7BCA[]; /*@ ds:7BCA */
@@ -190,6 +194,9 @@ extern void Action01E3(char far *text); /*@ 0ACD:01E3 */
 extern void f0EF3_2541(char far *text); /*@ 0EF3:2541 */
 extern void fOvl2_09ED(void); /*@ 2106:0039 */  /* overlay 2 entry, ovl2:09ED */
 extern void fOvl3_07A5(char far *name, char far *sheet); /*@ 210C:0052 */  /* overlay 3 entry, ovl3:07A5 */
+extern void FreePtrTable(void); /*@ 210C:0048 */  /* overlay 3 entry, ovl3:0000 */
+extern void FreeEffectTables(void); /*@ 210C:003E */  /* overlay 3 entry, ovl3:031A */
+extern void FreeMapIcons(int base, int count); /*@ 210C:0061 */  /* overlay 3 entry, ovl3:05D2 */
 extern void fOvl4_1F51(int n); /*@ 2116:005C */  /* overlay 4 entry, ovl4:1F51 */
 extern void LoadOverlayScreen(char far *name, int a, int b); /*@ 082C:05EC */
 extern void LoadScreenImage(char far *name, void far *buf, int a, int b, int c); /*@ 082C:051B */
@@ -197,6 +204,10 @@ extern int FileOpen(char far *name, int mode); /*@ 1C0E:00DB */
 extern void FileRead(int handle, void far *buf, unsigned long len); /*@ 1C0E:0400 */
 extern void FileClose(int handle); /*@ 1C0E:03BB */
 extern void f1A47_0169(void far *font); /*@ 1A47:0169 */
+extern void ShutdownGame(void); /*@ 07C8:058A */
+extern void far *f19EC_0002(int kind); /*@ 19EC:0002 */
+extern void f19EC_002A(int a, int b, int c, int d); /*@ 19EC:002A */
+extern int gF1; /*@ ds:00F1 */
 
 /* siblings not decompiled yet: their real signatures, so callers compile */
 int SelectMenu(char first, char count, char far **names);
@@ -209,7 +220,7 @@ void Ovl5_0F77(void);
 void Ovl5_10A6(void);
 void Ovl5_119E(void);
 void Ovl5_1204(void);
-void Ovl5_17C8(void);
+void EndingAnimation(void);
 void Ovl5_1A82(int mode);
 void Ovl5_1E1B(int a, int b, int x, int y, int c, int d);
 
@@ -1050,7 +1061,69 @@ enum {
     }
     gScrollOn = 0;
 }
-/*@ ovl5:17C8 stub */ void Ovl5_17C8(void) {}
+/* ovl5:17C8: the second ending animation (mode 9). It tears down the dungeon resources
+   (FreeEffectTables, FreeMapIcons(0,0x24), FreePtrTable), loads ds:7EEF and builds the four
+   sprite cells from gOverlayBuf (a 2x2 grid of 0xE x 0x58 cells), loads ds:7EF7 and slices one
+   0x10 x 0x5f cell, blits ds:7EFF, then plays ten frames: six clipped cells (with the sounds
+   0x48, 0x36, 0x36, 0x22) and four from the sliced cell (sound 0x2a). It then clears g8115,
+   fills the action field with f19EC_0002(5) (gFn807E), sets gF1 to 8 and runs the 19-step
+   explosion: each step plays 0x77, blits the page (gFn804A), draws the sliced cell moving from
+   y=-0x5a in steps of 5, clips the portrait region and waits 2 ticks. It finally plays sound 5,
+   clears gF1, waits 0x3c ticks, shows the pointer, runs the winning-party panel (160A), frees the
+   five cells and shuts the game down. Called from the menu dispatcher 1A82 (mode 9). */
+/*@ ovl5:17C8 */ void EndingAnimation(void)
+{
+    void far *sprites[4];
+    void far *cell;
+    int i;
+
+    FreeEffectTables();
+    FreeMapIcons(0, 0x24);
+    FreePtrTable();
+    LoadOverlayScreen(gText7EEF, 5, 3);
+    for (i = 0; i < 4; i++)
+        sprites[i] = gFn8082((i % 2) * 0xe, (i / 2) * 0x58, 0xe, 0x58, gOverlayBuf);
+    LoadOverlayScreen(gText7EF7, 5, 3);
+    cell = gFn8082(0x16, 0, 0x10, 0x5f, gOverlayBuf);
+    LoadScreenImage(gText7EFF, gOverlayBuf, 5, 3, -1);
+    f19EC_002A(3, 2, FP_OFF(gOverlayBuf), FP_SEG(gOverlayBuf));
+    for (i = 0; i < 0xa; i++) {
+        if (i == 2)
+            PlaySound(0x48);
+        if (i == 4)
+            PlaySound(0x36);
+        if (i == 6)
+            PlaySound(0x36);
+        PlaySound(0x22);
+        if (i < 6) {
+            ClipRect((i % 3) * 0xd, (i / 3) * 0x58, 4, 0xa, 0xd, 0x58, 2, 0);
+        } else {
+            PlaySound(0x2a);
+            f1A29_000F(0, sprites[i - 6], 0x20, 0xa, 0);
+        }
+        WaitTicks(4);
+    }
+    g8115 = 0;
+    gFn807E(0, 0, 0x16, 0x78, f19EC_0002(5));
+    gF1 = 8;
+    for (i = 0; i < 0x13; i++) {
+        PlaySound(0x77);
+        g8115 = 2;
+        gFn804A(0, 0, 0x16, 0x78, f19EC_0002(5));
+        f1A29_000F(2, cell, 0x18, i * 5 + 0xffa6, 5);
+        ClipRect(0, 0, 0, 0, 0x16, 0x78, 2, 0);
+        WaitTicks(2);
+    }
+    PlaySound(5);
+    gF1 = 0;
+    WaitTicks(0x3c);
+    LockShowPointer();
+    WinnerPanel();
+    for (i = 0; i < 4; i++)
+        farfree(sprites[i]);
+    farfree(cell);
+    ShutdownGame();
+}
 /* ovl5:1A82: the overlay's entry and dispatcher (reached from 122E:1D76 and the overlay's stub
    entry). It hides the pointer, saves the current font, handles the gFB44/gFlag message redraws
    and the overlay-4 call, then dispatches `mode`: 8 runs the 1204 animation, 9 the 17C8 one and
@@ -1080,7 +1153,7 @@ enum {
         Ovl5_1204();
         break;
     case 9:
-        Ovl5_17C8();
+        EndingAnimation();
         break;
     case 0xa:
         fOvl2_09ED();

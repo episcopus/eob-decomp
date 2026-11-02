@@ -1476,3 +1476,12 @@ new = "WinnerPanel"
 kind = "function"
 why = "the winning-party password screen: draws the four winners' names and a checksum password from gChars, then waits (ovl5:160A, called from CharOverlay mode 0xb)"
 date = "2026-11-01"
+
+[[rename]]
+id = "ovl5:17C8=EndingAnimation"
+addr = "ovl5:17C8"
+old = "Ovl5_17C8"
+new = "EndingAnimation"
+kind = "function"
+why = "the second ending animation (CharOverlay mode 9): tears down the dungeon, builds the sprite cells from gOverlayBuf, plays the ten-frame and 19-step sequences, shows the winning-party panel and shuts the game down (ovl5:17C8, called from CharOverlay)"
+date = "2026-11-01"
