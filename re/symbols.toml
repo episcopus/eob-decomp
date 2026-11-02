@@ -2492,6 +2492,9 @@ unit = "e0bd2"
 addr = "0BD2:0AF2"
 size = 174
 evidence = ["far", "near", "frame"]
+name = "f0BD2_0AF2"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0bd2_0ba0"

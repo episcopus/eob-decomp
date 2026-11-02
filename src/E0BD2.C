@@ -640,10 +640,11 @@ next:
         mask = gItemTypes[gItems[item].m02].m00.word;
     else
         mask = -1;
-    if (g1C8D[row] & mask)
-        return 1;
-    DrawText("You cant put that item there.\r");
-    return 0;
+    if (!(g1C8D[row] & mask)) {
+        DrawText("You cant put that item there.\r");
+        return 0;
+    }
+    return 1;
 }
 /* 0BD2:0BA0: uses the item in slot `slot` of the selected character through 0BD2:0AF2. On success
    it either installs the item (slot 0x10) or swaps the mouse's item, redraws the row and recomputes
