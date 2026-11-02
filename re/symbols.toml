@@ -3341,6 +3341,9 @@ unit = "e0ef3"
 addr = "0EF3:08CF"
 size = 172
 evidence = ["frame"]
+name = "ApplyMemberEffect"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0ef3_097b"

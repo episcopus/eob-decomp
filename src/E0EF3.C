@@ -171,7 +171,7 @@ extern char gText58D1[];                /*@ ds:58D1 */
 extern char gText58ED[];                /*@ ds:58ED */
 extern char gText57C3[];                /*@ ds:57C3 */ /* drawn by 0EF3:08CF */
 extern char gText57C8[];                /*@ ds:57C8 */ /* said by 0EF3:08CF when no member is set */
-extern unsigned char gEffectSound[];    /*@ ds:1355 */ /* one record per effect value, stride 0x13;
+extern signed char gEffectSound[];      /*@ ds:1355 */ /* one record per effect value, stride 0x13;
                                                            the first byte is a sound id (0EF3:08CF) */
 extern void (far *gFnEFBA)(void);       /*@ ds:EFBA */ /* a redraw hook run by 0EF3:08CF */
 extern char gFlag;                      /*@ ds:F3B9 */ /* cleared by 0EF3:2541 (E0ACD.C) */
@@ -568,24 +568,22 @@ extern void f0EF3_2A53(int a, int b, int c, int d, int e, void far *p); /*@ 0EF3
    redraw hook ds:EFBA and redraws it; a dead member just returns the record's +4 word. When the
    record names no member (-1) it says ds:57C8. It then finishes the open condition slot through
    0EF3:026F when g8DCE is set, else redraws the panel through 0EF3:2541. Reached through a
-   pointer; returns the record's +4 word. DRAFT: the body is right but the original lays the
-   alive test out as `test byte es:[bx+1],1; jne alive; jmp done` where our build emits the
-   shorter inverted `je done` (`make match` differs at the branch, +0x10). */
-/*@ 0EF3:08CF draft */ int ApplyMemberEffect(struct ActRec far *rec)
+   pointer; returns the record's +4 word. The alive test is an early return
+   (`if ((m01 & 1) == 0) return rec->m04;`), which is why the original lays it out as
+   `test ...; jne alive; jmp done` rather than an inverted `je`. */
+/*@ 0EF3:08CF */ int ApplyMemberEffect(struct ActRec far *rec)
 {
     gCurMember = rec->m38;
     if (gCurMember != -1) {
         gCurRec = &gChars[gCurMember];
-        if (gCurRec->m01 & 1) {
-            DrawText(gCurRec->name);
-            DrawText(gText57C3);
-            PlaySound(gEffectSound[gEFB8 * 0x13]);
-            FlashPartyMembers(gCurMember);
-            gFnEFBA();
-            RedrawMember(gCurMember);
-        } else {
+        if ((gCurRec->m01 & 1) == 0)
             return rec->m04;
-        }
+        DrawText(gCurRec->name);
+        DrawText(gText57C3);
+        PlaySound(gEffectSound[gEFB8 * 0x13]);
+        FlashPartyMembers(gCurMember);
+        gFnEFBA();
+        RedrawMember(gCurMember);
     } else {
         SayAndBeep(gText57C8);
     }
