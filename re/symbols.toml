@@ -7185,6 +7185,9 @@ unit = "eov3"
 addr = "ovl3:123D"
 size = 180
 evidence = ["ovl", "near", "frame"]
+name = "AgeCharTimers"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov3_12f1"
@@ -7192,6 +7195,9 @@ unit = "eov3"
 addr = "ovl3:12F1"
 size = 119
 evidence = ["ovl", "near", "frame"]
+name = "AdvanceCharTimers"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov3_1368"

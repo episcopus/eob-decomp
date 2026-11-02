@@ -31,6 +31,17 @@ struct Obj28 {              /* 28-byte records, 30 of them at ds:8A82 (src/E08E6
 };
 
 extern struct Obj28 gObjs[]; /*@ ds:8A82 */
+extern unsigned long g8492; /*@ ds:8492 */
+extern int f0D1C_0670(int who, int mask); /*@ 0D1C:0670 */
+extern void RearmCharEffects(void); /*@ 1414:0B2E */
+
+struct CharRec {            /* 243-byte character records at ds:F580 (src/E08E6.C) */
+    char pad00[0xad];
+    unsigned long timer[10]; /* +0xAD: ten 32-bit countdowns */
+    char padD5[0xf3 - 0xd5];
+};
+
+extern struct CharRec gChars[]; /*@ ds:F580 */
 extern void LoadLevelState(int action); /*@ ovl3:1147 */
 extern long SeekFile(int index, long offset, int whence); /*@ 1C0E:06E5 */
 extern void far *gSegEFC2; /*@ ds:EFC2 */
@@ -407,8 +418,45 @@ done:
     FileWrite(handle, state, 0x7f8L);
     FileClose(handle);
     gFBD0 |= 1 << (level - 1);
-}/*@ ovl3:123D stub */ void Ovl3_123D(void) {}
-/*@ ovl3:12F1 stub */ void Ovl3_12F1(void) {}
+}/* ovl3:123D: ages the ten 32-bit countdowns at gChars+0xAD for every character that passes
+   f0D1C_0670(i, 1): a countdown greater than the tick counter g8492 loses g8492, and a smaller
+   nonzero one is set to 1. Called by ovl3:1368. */
+/*@ ovl3:123D */ void AgeCharTimers(void)
+{
+    struct CharRec far *rec;
+    int i;
+    int j;
+
+    for (rec = gChars, i = 0; i < 6; i++, rec++) {
+        if (f0D1C_0670(i, 1)) {
+            for (j = 0; j < 0xa; j++) {
+                if (rec->timer[j] > g8492)
+                    rec->timer[j] -= g8492;
+                else if (rec->timer[j])
+                    rec->timer[j] = 1;
+            }
+        }
+    }
+}
+/* ovl3:12F1: the counterpart of ovl3:123D: adds the tick counter g8492 to every nonzero countdown
+   at gChars+0xAD for each character that passes f0D1C_0670(i, 1), then calls RearmCharEffects.
+   Called by ovl3:1368 and ovl3:15B9. */
+/*@ ovl3:12F1 */ void AdvanceCharTimers(void)
+{
+    struct CharRec far *rec;
+    int i;
+    int j;
+
+    for (rec = gChars, i = 0; i < 6; i++, rec++) {
+        if (f0D1C_0670(i, 1)) {
+            for (j = 0; j < 0xa; j++) {
+                if (rec->timer[j])
+                    rec->timer[j] += g8492;
+            }
+        }
+    }
+    RearmCharEffects();
+}
 /*@ ovl3:1368 stub */ void Ovl3_1368(void) {}
 /*@ ovl3:15B9 stub */ void Ovl3_15B9(void) {}
 /*@ ovl3:19F7 stub */ void Ovl3_19F7(void) {}
