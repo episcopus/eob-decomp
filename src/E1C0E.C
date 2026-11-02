@@ -144,12 +144,11 @@ extern long gSlotLengths[];              /*@ ds:FF0C: the record's length per sl
 
 /* 1C0E:0046: hand `name` (upper cased; see QUIRK 1C0E:0060) and the error `mode` to the retry
    handler at ds:8111 (the file error dialog, 1C0E:0ADD) and return its result. `mode` is an index
-   into gErrorText: 0 "Could not create the file on disk." (FileOpen's ResetFile loop,
-   src/E1C0E.C:219), 1 "Illegal MODE in Open_File." (FileOpen's bad mode, src/E1C0E.C:225),
-   2 "Could not find" (FileOpen's CheckFile loop, src/E1C0E.C:205, and its open retry loop,
-   src/E1C0E.C:249), 0xA "Trying to Get_Resident_Index on unknown file." (FindLoadedFile,
-   src/E1C0E.C:793) and 0xB "You are exiting with open files." (FreeAllCachedFiles,
-   src/E1C0E.C:702; BuildFileCache, 1C0E:0F6E, calls no RetryFile).
+   into gErrorText: 0 "Could not create the file on disk." (FileOpen's ResetFile loop, 1C0E:00DB),
+   1 "Illegal MODE in Open_File." (FileOpen's bad-mode branch, 1C0E:00DB), 2 "Could not find"
+   (FileOpen's CheckFile loop and its open retry loop, 1C0E:00DB), 0xA "Trying to
+   Get_Resident_Index on unknown file." (FindLoadedFile, 1C0E:11D3) and 0xB "You are exiting with
+   open files." (FreeAllCachedFiles, 1C0E:0EE7; BuildFileCache, 1C0E:0F6E, calls no RetryFile).
    QUIRK 1C0E:0060: the loop sets `base` to the backslash strchr found and the next strchr(base)
    finds that same backslash, so a name that contains a backslash never leaves the loop; a name
    without one is upper-cased whole (1C0E:0088). No name in the 203 record table holds a backslash,
@@ -688,9 +687,9 @@ extern long gSlotLengths[];              /*@ ds:FF0C: the record's length per sl
 /* 1C0E:0EE7: free every record's in-memory copy and, for every handle slot still open, run the
    retry handler (gRetryHandler) with mode 0xB. Called by 1C0E:13FD on shutdown.
    QUIRK 1C0E:0EE7: the RetryFile(0xb, 0) call passes a null name, so RetryFile runs strchr and
-   strupr on 0000:0000, the interrupt vector table: strupr stores every byte back (only a lowercase
-   letter changes) and a backslash among those bytes would make its loop (QUIRK 1C0E:0060) never
-   end. */
+   strupr on 0000:0000, the interrupt vector table: strupr writes back only the bytes that are
+   lowercase letters (the store at 0000:687F, reached only for a to z), and a backslash among those
+   bytes would make its loop (QUIRK 1C0E:0060) never end. */
 /*@ 1C0E:0EE7 */ void FreeAllCachedFiles(void)
 {
     int i;
@@ -899,7 +898,9 @@ extern long gSlotLengths[];              /*@ ds:FF0C: the record's length per sl
    the bytes are read into the copy; the record's data pointer is set and 1 is returned. A failed
    first allocation has no copy to free (`data` is 0) and returns 0 only when EvictFile
    (1C0E:0E5B) also fails, freeing nothing; only a failed open (1C0E:15A0) or read (1C0E:162B)
-   frees the copy and returns 0.
+   frees the copy and returns 0. The size-mismatch path (FatalError(0xe), 1C0E:15E2) also returns 0
+   without freeing, which is consistent because FatalError never returns: it shuts the game down
+   through ShutdownGame, whose body ends in exit(0) (src/E07C8.C:478).
    QUIRK 1C0E:144E: the own-file test is `entry->link > 0` (1C0E:1520, `jle` at 1C0E:1525), so
    every link <= 0 takes the alias branch: the alias is `gFiles[gFiles[index].link & LINK_INDEX]`
    (the link load at 1C0E:154C, the mask at 1C0E:1550), so with link 0 it is record 0 for every
