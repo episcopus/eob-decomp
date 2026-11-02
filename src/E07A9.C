@@ -14,9 +14,11 @@
    argument in every video mode, while slot 7's own block is 0xCB20 bytes in cases 0 to 3,
    src/E07C8.C:213, 222, 231, 237, and 0xFC00 only in case 4, src/E07C8.C:247), clears ds:810E
    (07A9:00E6), loads the item tables (LoadItemData, 07A9:00EC), selects the 6x6 font as the
-   current font (1A47:0169(gA9C0), 07A9:00F9) and reads ITEMRMP (LoadDecorateIcons, Ovl2 entry 8,
-   07A9:0100). It ends by running the map loop (RunMapLoop, 0ACD:0E8A, 07A9:0105), which runs the
-   game. The second function (07A9:010C SetMouseItem) redraws the item icon for the current slot
+   current font (1A47:0169(gA9C0), 07A9:00F9) and loads the item sheets (LoadDecorateIcons, Ovl2
+   entry 8, 07A9:0100), which reads ITEMRMP (FileRead at ovl2:047F, inside LoadItemSheets,
+   src/EOV2.C:255 and :296, called at src/EOV2.C:333). It ends by running the map loop (RunMapLoop,
+   0ACD:0E8A, 07A9:0105), which runs the game. The second function (07A9:010C SetMouseItem)
+   redraws the item icon for the current slot
    (the one the mouse shows, ds:FBCE). Overlay entries are reached through the stub at 2106
    (entries 2 and 8). Placeholder names remain where no evidence is given. */
 
@@ -27,7 +29,9 @@
    (the bit marks an item with an icon) is an inference from that branch: the bytes show only the
    gate, and the same byte is tested for 0x20, 0x08 and 0x10 elsewhere (see Entry14.flags below). */
 #define ITEM_FLAG_ICON 0x80
-/* the MemAlloc flag that returns a paragraph-aligned, offset-0 block (src/E19BC.C:56-59) */
+/* the MemAlloc flag that returns a paragraph-aligned, offset-0 block: the bit is defined at
+   src/E19BC.C:42-46, the block shape is described at src/E19BC.C:49-57 and the code is at
+   src/E19BC.C:80-83 */
 #define MEMALLOC_ALIGNED 0x20
 /* the size SetUnpackBuffer is given for the shared unpack work buffer, 0xFC00 in every video
    mode (07A9:00D7); slot 7's own block is 0xCB20 bytes in cases 0 to 3 (src/E07C8.C:213, 222,
@@ -64,8 +68,10 @@ extern char gF43C; /*@ ds:F43C */  /* written by StartupAlloc (07A9:000D, set to
                                       "%3d of %-3d" when it is set (src/E1547.C:269, the comment at
                                       src/E1547.C:235-238). Purpose unknown */
 extern char gFB45; /*@ ds:FB45 */  /* written by StartupAlloc (07A9:0024, set to 0); Purpose unknown */
-extern void far *gBuf8DCA; /*@ ds:8DCA */  /* start-up far allocation, 7500 bytes (07A9:002F) */
-extern void far *gBufF43E; /*@ ds:F43E */  /* start-up far allocation, 6000 bytes (07A9:0046) */
+extern void far *gBuf8DCA; /*@ ds:8DCA */  /* start-up far allocation, 7500 bytes (07A9:002F); no
+                                              reader found in src/, Purpose unknown */
+extern void far *gBufF43E; /*@ ds:F43E */  /* start-up far allocation, 6000 bytes (07A9:0046); no
+                                              reader found in src/, Purpose unknown */
 extern unsigned char far *gSoundMap; /*@ ds:DCAC */  /* the 120-byte sound map (game number to
                                                          driver number), read from the driver file
                                                          (adlib.dat or pcgamesn.dat, src/E177D.C:2-3) */
@@ -84,7 +90,10 @@ extern void far *gSegDF4E; /*@ ds:DF4E */  /* slot 5's buffer segment, f19EC_000
                                               0xF3-byte character record through it (three Unpack0
                                               copies, src/E0ACD.C:307-309), and FindWordPanel
                                               passes it to gFn807E and gFn804A (src/EOV2.C:482, 522) */
-extern void far *gSegEFC2; /*@ ds:EFC2 */  /* slot 3's buffer segment, f19EC_0002(3) (07A9:00CB); overlay 3
+extern void far *gSegEFC2; /*@ ds:EFC2 */  /* slot 3's buffer segment, f19EC_0002(3) (07A9:00CB); the
+                                              resident E17A6 reader calls it the saved screen buffer
+                                              (src/E17A6.ASM:22), read at src/E17A6.ASM:256-257 when
+                                              g8102 != 2 [H]. Overlay 3
                                               reads the far pointer (ds:EFC2 and ds:EFC4): ovl3:0815, 0833,
                                               0855 (function at ovl3:07A5), ovl3:1186, 119E, 11B6 (ovl3:1147),
                                               ovl3:1396, 13C0, 14BF (ovl3:1368), ovl3:15C1, 164D (ovl3:15B9, the
@@ -92,9 +101,10 @@ extern void far *gSegEFC2; /*@ ds:EFC2 */  /* slot 3's buffer segment, f19EC_000
 /* the page/buffer segment table (src/E07C8.C:49, src/E19EC.C:15), whose eighth word at ds:FC1A
    is slot 7, the segment gSegDCA6 holds (f19EC_0002(7), 07A9:00A3). */
 extern unsigned gSegsFC0C[]; /*@ ds:FC0C */
-/* the live MemAlloc block count (src/E19BC.C:73 adds one, src/E19BC.C:95 takes one away).
-   StartupAlloc sets it to 0 at 07A9:00E6, after its five allocations, so they are no longer
-   counted: Purpose unknown. */
+/* the net allocation counter: MemAlloc adds one at src/E19BC.C:97 and MemFree subtracts one at
+   src/E19BC.C:120, so it is the number of successful MemAlloc calls minus the number of MemFree
+   calls and can fall below the number of live blocks (src/E19BC.C:17-21). StartupAlloc sets it
+   to 0 at 07A9:00E6, after its five allocations, so they are no longer counted: Purpose unknown. */
 extern unsigned g810E; /*@ ds:810E */
 extern void far *gA9C0; /*@ ds:A9C0 */  /* the 6x6 font loaded from FONT6.FNT (src/E07C8.C:48 and
                                            :252, the call at 07C8:0419, the store at 07C8:0420) */
@@ -155,11 +165,15 @@ extern void far *gDF48; /*@ ds:DF48 */  /* the 0x12C-byte buffer LoadItemSheets 
 extern void far *gIconsDDE4[]; /*@ ds:DDE4 */
 
 extern void far *MemAlloc(unsigned long size, int flags); /*@ 19BC:0007 */
+/* returns MK_FP(gSegsFC0C[kind | 1], 0): offset 0 and the segment word at the table slot
+   (src/E19EC.C:20); the placeholder name stays. */
 extern void far *f19EC_0002(int kind); /*@ 19EC:0002 */
 extern void LoadSoundDriver(void); /*@ 177D:000A */
 extern void SetUnpackBuffer(unsigned seg, unsigned size); /*@ 1B82:0217 */
 /* the overlay entry at stub 2106:002A resolves to ovl2:09CC LoadItemData (src/EOV2.C:449). */
 extern void LoadItemData(void); /*@ 2106:002A */
+/* sets gFont1A47 = font and reads the font's width and height bytes (src/E1A47.C:81-85); the
+   placeholder name stays. */
 extern void f1A47_0169(char far *font); /*@ 1A47:0169 */
 /* the overlay entry at stub 2106:0048 resolves to ovl2:0577 LoadDecorateIcons (src/EOV2.C:328), which
    leads to the ITEMRMP read (ovl2:047F, via ovl2:0171; docs/design/WHITEPAPER.md, the ITEMRMP.VGA/EGA
@@ -167,9 +181,11 @@ extern void f1A47_0169(char far *font); /*@ 1A47:0169 */
 extern void LoadDecorateIcons(void); /*@ 2106:0048 */
 extern void RunMapLoop(void); /*@ 0ACD:0E8A */
 extern void SetCurrentItem(int n); /*@ 0D1C:0304 */
-/* 0BD2:05B5 tests the item flag bit 0x40 (src/E0BD2.C:15-16). Called at 07A9:0126 with the item
-   index, just before the " taken.\r" message (07A9:012D), when g811F == 7. Purpose unknown. */
-extern void DrawItemName(int n); /*@ 0BD2:05B5 */
+/* 0BD2:05B5 draws item `item`'s name into the text buffer (src/E0BD2.C:426-437), with the flag
+   bit 0x40 and name-table cases. Called at 07A9:0126 with the item index, just before the
+   " taken.\r" message (07A9:012D), when g811F == 7. Why the name is asked for here is Purpose
+   unknown. */
+extern void DrawItemName(int item); /*@ 0BD2:05B5 */
 extern void DrawText(char far *text); /*@ 1DE7:060A */
 /* 17A6:197E copies from the first argument to the second through a translation table: it loads
    ds:si from the first (17A6:1989-198C; the loop uses movsw and lodsb) and es:di from the second
@@ -194,9 +210,10 @@ extern void SetMousePointerShape(int hotX, int hotY, void far *icon); /*@ 1BB1:0
    passes the slot 7 segment (gSegsFC0C[7], the word at ds:FC1A) and size 0xFC00 to SetUnpackBuffer
    (1B82:0217, 07A9:00DB; see the header for the size's relation to the video mode), clears ds:810E
    (07A9:00E6), loads the item tables (LoadItemData, Ovl2 stub entry 2, 07A9:00EC), selects the 6x6
-   font as the current font (1A47:0169(gA9C0), 07A9:00F9), and reads ITEMRMP (LoadDecorateIcons, Ovl2 stub entry 8,
-   07A9:0100). It ends by running the map loop (RunMapLoop, 0ACD:0E8A, 07A9:0105), which runs the
-   game. Sets ds:F43C = 1 and ds:FB45 = 0. */
+   font as the current font (1A47:0169(gA9C0), 07A9:00F9), and loads the item sheets
+   (LoadDecorateIcons, Ovl2 stub entry 8, 07A9:0100), which reads ITEMRMP (FileRead at ovl2:047F,
+   inside LoadItemSheets, src/EOV2.C:255 and :296). It ends by running the map loop (RunMapLoop,
+   0ACD:0E8A, 07A9:0105), which runs the game. Sets ds:F43C = 1 and ds:FB45 = 0. */
 /*@ 07A9:000A */ void StartupAlloc(int argc, char far * far *argv)
 {
     gF43C = 1;
@@ -208,9 +225,10 @@ extern void SetMousePointerShape(int hotX, int hotY, void far *icon); /*@ 1BB1:0
         ;
     gFB45 = 0;
     /* of the five start-up allocations only this block asks for flag 0x20 (the other four pass 0;
-       0x20 also appears in src/E07C8.C:211-247 and src/E1B82.C:140, 148 (Unpack)): E19BC.C:56-59 turns it
-       into an offset-0 block, the block shape E1B82.C:18-22 describes for the work buffer. Why
-       this block alone gets the flag is Purpose unknown. */
+       0x20 also appears in src/E07C8.C:211-247 and src/E1B82.C:155, 164 (Unpack)): the bit is
+       defined at E19BC.C:42-46, and E19BC.C:49-57 (code at :80-83) turns it into an offset-0
+       block, the block shape E1B82.C:21-25 describes for the work buffer. Why this block alone
+       gets the flag is Purpose unknown. */
     gBuf8DCA = MemAlloc(7500L, MEMALLOC_ALIGNED);
     gBufF43E = MemAlloc(6000L, 0);
     gSoundMap = MemAlloc(120L, 0);
@@ -238,7 +256,7 @@ extern void SetMousePointerShape(int hotX, int hotY, void far *icon); /*@ 1BB1:0
    01B1): the icon's 16-byte colour row (gBufF534 + (item << 4), item now the icon number, or the
    dummy byte at ds:0090 when g8102 == 0) is passed to ds:80D2, the icon is translated into gDF48
    by 17A6:197E, and the translated image becomes the mouse pointer (item set to ICON_SLOT_TRANSLATED, 0x59, so item > 0 at
-   07A9:01B9, and gIconsDDE4[ICON_SLOT_TRANSLATED] passed to 1BB1:0002 at (8,8)). When either gate
+   07A9:01BC, and gIconsDDE4[ICON_SLOT_TRANSLATED] passed to 1BB1:0002 at (8,8)). When either gate
    fails the branch is skipped (07A9:0161 and 0168, je 0x1bc) and the plain item icon becomes the
    pointer (gIconsDDE4[item] at 07A9:01BC onward); the (0,0) call belongs to that path, when the icon
    number is 0 and item is 0. Why g811F == 7 gets the " taken." message is Purpose unknown. */
