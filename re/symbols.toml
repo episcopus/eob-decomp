@@ -5495,6 +5495,7 @@ size = 788
 evidence = ["segment"]
 level = "L2"
 notes = "not a function: bytes of the unit outside its functions (a marker or padding), matched with the whole unit"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e17a6_0314"
@@ -5505,6 +5506,7 @@ evidence = ["far"]
 level = "L2"
 match_flags = "tasm /mx"
 name = "_DirectionFromPoints"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e17a6_0f61"
@@ -5515,6 +5517,7 @@ evidence = ["far"]
 level = "L2"
 match_flags = "tasm /mx"
 name = "_Distance"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e17a6_197e"
@@ -5525,6 +5528,7 @@ evidence = ["far"]
 level = "L2"
 match_flags = "tasm /mx"
 name = "_TranslateImage"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e17a6_037e"
@@ -5535,6 +5539,7 @@ name = "_SetPlaneTables"
 level = "L2"
 match_flags = "tasm /mx"
 notes = "not listed by the map: a function of the source, its bounds proven by the whole-unit match"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e17a6_03e7"
@@ -5545,6 +5550,7 @@ name = "_DrawTile"
 level = "L2"
 match_flags = "tasm /mx"
 notes = "not listed by the map: a function of the source, its bounds proven by the whole-unit match"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e17a6_0d20"
@@ -5555,6 +5561,7 @@ name = "_BlitMaskedByte"
 level = "L2"
 match_flags = "tasm /mx"
 notes = "not listed by the map: a function of the source, its bounds proven by the whole-unit match"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e17a6_0e53"
@@ -5565,6 +5572,7 @@ name = "_BlitMaskedWord"
 level = "L2"
 match_flags = "tasm /mx"
 notes = "not listed by the map: a function of the source, its bounds proven by the whole-unit match"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e17a6_0eee"
@@ -5575,6 +5583,7 @@ name = "_SetPlaneAndWrite"
 level = "L2"
 match_flags = "tasm /mx"
 notes = "not listed by the map: a function of the source, its bounds proven by the whole-unit match"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e17a6_0f1f"
@@ -5585,6 +5594,7 @@ name = "_ExpandNibbles"
 level = "L2"
 match_flags = "tasm /mx"
 notes = "not listed by the map: a function of the source, its bounds proven by the whole-unit match"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e17a6_0f9d"
@@ -5595,6 +5605,7 @@ name = "_FindNeighbour"
 level = "L2"
 match_flags = "tasm /mx"
 notes = "not listed by the map: a function of the source, its bounds proven by the whole-unit match"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e17a6_0ffa"
@@ -5605,6 +5616,7 @@ name = "_BlitSpriteDefault"
 level = "L2"
 match_flags = "tasm /mx"
 notes = "not listed by the map: a function of the source, its bounds proven by the whole-unit match"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e17a6_109a"
@@ -5615,6 +5627,7 @@ name = "_BlitSpriteRowDefault"
 level = "L2"
 match_flags = "tasm /mx"
 notes = "not listed by the map: a function of the source, its bounds proven by the whole-unit match"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e17a6_11cd"
@@ -5625,6 +5638,7 @@ name = "_BlitSpriteCga"
 level = "L2"
 match_flags = "tasm /mx"
 notes = "not listed by the map: a function of the source, its bounds proven by the whole-unit match"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e17a6_128b"
@@ -5635,6 +5649,7 @@ name = "_BlitSpriteRowCga"
 level = "L2"
 match_flags = "tasm /mx"
 notes = "not listed by the map: a function of the source, its bounds proven by the whole-unit match"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e17a6_12ec"
@@ -5645,6 +5660,7 @@ name = "_BlitSpriteRowCga2"
 level = "L2"
 match_flags = "tasm /mx"
 notes = "not listed by the map: a function of the source, its bounds proven by the whole-unit match"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e17a6_1715"
@@ -5655,6 +5671,7 @@ name = "_BlitSpriteEga"
 level = "L2"
 match_flags = "tasm /mx"
 notes = "not listed by the map: a function of the source, its bounds proven by the whole-unit match"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e17a6_179e"
@@ -5665,6 +5682,7 @@ name = "_BlitSpriteRowEga"
 level = "L2"
 match_flags = "tasm /mx"
 notes = "not listed by the map: a function of the source, its bounds proven by the whole-unit match"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e17a6_18ea"
@@ -5675,6 +5693,7 @@ name = "_BuildMask"
 level = "L2"
 match_flags = "tasm /mx"
 notes = "not listed by the map: a function of the source, its bounds proven by the whole-unit match"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1948_0006"
