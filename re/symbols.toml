@@ -8987,6 +8987,9 @@ unit = "i_text"
 addr = "0000:03AA"
 size = 6
 evidence = ["far"]
+name = "_GetDriverBlock"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "i0000_03b0"
@@ -8994,6 +8997,9 @@ unit = "i_text"
 addr = "0000:03B0"
 size = 26
 evidence = ["frame"]
+name = "_SetSoundByte"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "i0000_03ca"
@@ -9001,6 +9007,9 @@ unit = "i_text"
 addr = "0000:03CA"
 size = 25
 evidence = ["frame"]
+name = "_GetSoundByte"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "i0000_03e3"
@@ -9008,6 +9017,9 @@ unit = "i_text"
 addr = "0000:03E3"
 size = 23
 evidence = ["frame"]
+name = "_GetSoundData"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "i0000_03fa"
@@ -9015,6 +9027,9 @@ unit = "i_text"
 addr = "0000:03FA"
 size = 16216
 evidence = ["far"]
+name = "_RebaseDriverBlock"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "i0000_4352"
@@ -9022,6 +9037,9 @@ unit = "i_text"
 addr = "0000:4352"
 size = 83
 evidence = ["far"]
+name = "_StartAdlibDriver"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "i0000_43a5"
@@ -9029,6 +9047,9 @@ unit = "i_text"
 addr = "0000:43A5"
 size = 4240
 evidence = ["far"]
+name = "_StopAdlibDriver"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "i0000_5435"
