@@ -613,7 +613,71 @@ fail:
     DrawText(gFileNameBuf);
     PlaySound(0x17);
 }
-/*@ 0DE8:0D5E stub */ void f0DE8_0D5E(void) {}
+/* 0DE8:0D5E: computes the armour class m1D of character `who`. It starts from GetClassWord(m15) + 10,
+   then for the four slots named by g553E adds the item type's m04 and subtracts the slot's m0B when
+   the item m02 passes the gItemTypes m0E and g1231[m20] tests (slot 2 also needs f0D1C_07DB), and
+   when m77[17]'s slot m0B is 0 subtracts the larger m0B of the m77[25]/m77[26] items. It clamps
+   against base + 6 while mDF holds, caps at 4 when mE3 bit 1 is set and at 5 + (f0EF3_04F7 - 5) / 3
+   when mE3 bit 8 is set. Called by 0ACD, 0BD2, 0EF3 and overlays 0 and 5. */
+/*@ 0DE8:0D5E */ void f0DE8_0D5E(int who)
+{
+    int itemType;
+    int limit;
+    int max;
+    int b;
+    int value;
+    int base;
+    int i;
+    int item;
+    struct CharRec far *rec;
+
+    rec = &gChars[who];
+    base = GetClassWord(rec->m15);
+    rec->m1D = base + 10;
+    for (i = 0; i < 4; i++) {
+        item = rec->m77[g553E[i]];
+        if (item == 0)
+            continue;
+        if (i == 2 && !f0D1C_07DB(who, 1))
+            continue;
+        itemType = gTable8DD2[item].m02;
+        value = gItemTypes[itemType].m05 & g1231[rec->m20];
+        if ((gItemTypes[itemType].m0E & 0x7f) != 0 || value == 0)
+            continue;
+        if (i >= 1 && i <= 2 && itemType != 0x1b)
+            continue;
+        rec->m1D += gItemTypes[itemType].m04;
+        rec->m1D -= gTable8DD2[item].m0B;
+    }
+    item = rec->m77[17];
+    if (gTable8DD2[item].m0B == 0) {
+        max = 0;
+        b = 0;
+        item = rec->m77[25];
+        if (item != 0 && (gItemTypes[gTable8DD2[item].m02].m0E & 0x7f) == 0)
+            max = gTable8DD2[item].m0B;
+        item = rec->m77[26];
+        if (item != 0 && (gItemTypes[gTable8DD2[item].m02].m0E & 0x7f) == 0)
+            b = gTable8DD2[item].m0B;
+        max = max > b ? max : b;
+        rec->m1D -= max;
+    }
+    if (rec->mDF > 0) {
+        if (rec->m1D > base + 6)
+            rec->m1D = base + 6;
+        else
+            rec->mDF = 0;
+    }
+    if ((rec->mE3 & 2) != 0 && rec->m1D > 4)
+        rec->m1D = 4;
+    if ((rec->mE3 & 0x100) != 0) {
+        limit = 5;
+        if (f0EF3_04F7(who) > 5)
+            limit += (f0EF3_04F7(who) - 5) / 3;
+        if (rec->m1D > limit)
+            rec->m1D = limit;
+    }
+}
 /* 0DE8:0F98: a saving-throw style keeper: halves `value` when the f0D1C_059B test for character
    `who` succeeds (a d20 roll at or above the character's class value). Called by 0EF3:0A3F,
    0EF3:20A8 and 0DE8:101A. */
