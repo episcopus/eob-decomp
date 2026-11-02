@@ -144,7 +144,7 @@ why = "Purpose unknown: the driver value written to register 1 of the current so
 [[global]]
 id = "ds:FBCA"
 name = "gSoundVolume"
-why = "the sound setting PlaySoundDefault (177D:00F3) passes and PlaySoundVolume scales by f17A6_0F61 to get gCurAttenuation; also indexes the nine-byte records at ds:B894 in src/E0D1C.C:334, is compared with an index in src/E1414.C:220, and is passed to f17A6_0F61 in src/EOV6.C:393"
+why = "the sound setting PlaySoundDefault (177D:00F3) passes; PlaySoundVolume passes it as the first argument of f17A6_0F61 together with its volume argument to get gCurAttenuation; also indexes the nine-byte records at ds:B894 in src/E0D1C.C:352 and :358, is compared with an index in src/E1414.C:221, and is passed to f17A6_0F61 in src/EOV6.C:413"
 
 [[global]]
 id = "ds:DDE4"

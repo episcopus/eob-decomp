@@ -27,7 +27,9 @@
 /* Purpose unknown: the base the AdLib amplitude write subtracts gCurAttenuation from (177D:01DA);
    20h is the OPL register block 20h (waveform and multiplier), so this may not be an amplitude */
 #define AMP_BASE 0x20
-/* Purpose unknown: the value stored in the busy byte gDrvReg after a start (177D:0201) */
+/* Purpose unknown: the value stored in the busy byte gDrvReg after a start (177D:0201). The driver's
+   own timer counts gDrvReg down (0000:3EAF to 3EB6: cmp [3B36], 0; je; dec byte [3B36]), so 0Bh is a
+   number of timer passes the program waits out */
 #define DRIVER_BUSY 0x0b
 
 extern unsigned char far *gSoundMap; /*@ ds:DCAC */  /* the 120-byte u8 game-number to driver-number
@@ -38,7 +40,10 @@ extern int gSoundOn; /*@ ds:80E6 */  /* the sound-on flag from argv[2] (whitepap
 extern unsigned char gSoundCard; /*@ ds:B892 */  /* the sound choice from argv[2] minus '1' (whitepaper
                                                     2.6): 0 opens adlib.dat (the AdLib path), nonzero
                                                     pcgamesn.dat; 1 is the PC speaker and 2 the Tandy
-                                                    speaker (src/E07C8.C:281-287). The value is 0..2;
+                                                    speaker, from the whitepaper 2.4 menu order (AdLib or
+                                                    Sound Blaster, PC speaker, Tandy speaker) and the PC
+                                                    speaker / Tandy driver at src/E1948.ASM:1-2, with the
+                                                    Tandy path at src/E07C8.C:306-307. The value is 0..2;
                                                     src/E07C8.C:28 declares it char */
 extern unsigned char gSpeakerMode; /*@ ds:009E */  /* 1 only on the Tandy path (src/E07C8.C:307), where
                                                       the speaker path of PlaySound/PlaySoundVolume drives
@@ -67,10 +72,12 @@ extern int gSoundAmp; /*@ ds:5E2A */  /* the driver value written to register 1 
                                          (0000:03B0/0000:03CA); Purpose unknown: the AdLib write is
                                          20h - gCurAttenuation (177D:01DA), and 20h is the OPL register
                                          block 20h (waveform and multiplier), not clearly an amplitude */
-extern int gSoundVolume; /*@ ds:FBCA */  /* the sound setting PlaySoundDefault passes; PlaySoundVolume
-                                           scales it by f17A6_0F61 to get gCurAttenuation (177D:026A). Also
-                                           read by src/E0D1C.C:334, compared with an index by
-                                           src/E1414.C:220 and passed to f17A6_0F61 in src/EOV6.C:393 */
+extern int gSoundVolume; /*@ ds:FBCA */  /* the sound setting PlaySoundDefault (177D:00F3) passes;
+                                           PlaySoundVolume passes it as the first argument of
+                                           f17A6_0F61 together with its `volume` to get gCurAttenuation
+                                           (177D:026A pushes it, 177D:026E is the call). Also read by
+                                           src/E0D1C.C:352 and :358, compared with an index by
+                                           src/E1414.C:221 and passed to f17A6_0F61 in src/EOV6.C:413 */
 
 extern unsigned char far gDrvReg; /*@ 0000:3B36 */  /* the driver's busy flag: the program waits for
                                                        it to clear before it writes the sound
@@ -80,14 +87,21 @@ extern unsigned char far gDrvReg; /*@ 0000:3B36 */  /* the driver's busy flag: t
 extern int FileOpen(char far *name, int mode); /*@ 1C0E:00DB */
 extern void FileRead(int handle, void far *buf, unsigned long len); /*@ 1C0E:0400 */
 extern void FileClose(int handle); /*@ 1C0E:03BB */
-extern void far *f0_03AA(void); /*@ 0000:03AA */
+extern void far *f0_03AA(void); /*@ 0000:03AA */ /* returns the block's address, dx:ax = cs:0416
+                                                    (0000:03AA to 03AF) */
 /* writes the byte `value` at driver register `reg` of driver sound `idx`: `idx` indexes the
    block's 300-word table at 0000:0416 and `reg` offsets it (0000:03B7 to 03C4) */
 extern void f0_03B0(int idx, int reg, int value); /*@ 0000:03B0 */
 /* reads that byte back from the same place, zero-extended (0000:03CA to 03E2) */
 extern int f0_03CA(int idx, int reg); /*@ 0000:03CA */
+/* returns the driver routine pointer for sound `idx`, the far pointer cs:[0416 + 2*idx]
+   (0000:03E3 to 03F8) */
 extern void far *f0_03E3(int idx); /*@ 0000:03E3 */
+/* makes the block's 300-word table absolute: adds 0416 to each of the words at 0000:0416
+   (cx = 12Ch, 0000:03FD to 0410) */
 extern void f0_03FA(void); /*@ 0000:03FA */
+/* queues `sound` for the driver: appends it to a 16-entry ring (head at 0000:3B7F, index masked
+   with 0Fh, 0000:400C to 4023) */
 extern void f0_400C(int sound); /*@ 0000:400C */
 extern void StartSound(void far *p); /*@ 1948:0418 */
 extern void SoundDriverResume(void); /*@ 1948:0458 */
@@ -120,7 +134,8 @@ void PlaySoundVolume(int sound, int volume);
    driver number is handed to 0000:400C. On the other cards (1 PC speaker, 2 Tandy speaker) the low
    seven bits select a driver routine through 0000:03E3 and start it through 1948:0418; when
    gSpeakerMode is 1 (the Tandy path, src/E07C8.C:307) a nonzero number sets gSpeakerOn to 1 and
-   resumes the driver through 1948:0458 (1 is Tandy, 0 the PC speaker, E1948.ASM:7). QUIRK
+   resumes the driver through 1948:0458, but only when gSpeakerOn is currently 0 (177D:00C1 to 00CD;
+   1 is Tandy, 0 the PC speaker, E1948.ASM:7). QUIRK
    177D:00A8: the `driverSound < 0` test (the `gSpeakerOn = 0` block) is dead: the map byte is
    zero-extended into driverSound (`mov ah, 0` at 177D:0088), so driverSound is 0..0FFh and nothing
    here ever clears gSpeakerOn. Does
@@ -154,33 +169,39 @@ void PlaySoundVolume(int sound, int volume);
     }
 }
 
-/* 177D:00F3: plays the game sound numbered `sound` at the current global volume gSoundVolume.
-   A thin wrapper over PlaySoundVolume for the callers that do not give a volume themselves. */
+/* 177D:00F3: passes the game sound numbered `sound` to PlaySoundVolume with the global sound
+   setting gSoundVolume (ds:FBCA) as its volume, for the callers that do not give a volume
+   themselves. Like every PlaySoundVolume call it does not play `sound` now: PlaySoundVolume plays
+   the sound recorded by the previous call and records `sound` for the next (QUIRK 177D:0106). */
 /*@ 177D:00F3 */ void PlaySoundDefault(int sound)
 {
     PlaySoundVolume(sound, gSoundVolume);
 }
 
-/* 177D:0106: records the game sound numbered `sound` and the attenuation `volume` for a later call,
-   and, when a sound was already recorded by the previous call (gCurSound > 0), first retunes and
-   restarts that recorded sound at the attenuation that call recorded. So a call plays the sound of
-   the call before it, and the new `sound` and `volume` are read only at the end (177D:0261 to 0288:
-   `volume` through f17A6_0F61 at 177D:026A, `sound` through gSoundMap at 177D:0288); the first call
-   after load (gCurSound 0) plays nothing. On AdLib (gSoundCard 0) and only when the recorded
-   attenuation gCurAttenuation is below 10h (177D:012B): it waits for the busy byte gDrvReg to clear,
-   restores the loaded sound's registers (gPrevSound, gSoundLevel, gSoundAmp) through 0000:03B0,
-   reloads them from the recorded sound through 0000:03CA, and, when gCurAttenuation is above zero,
-   fades the level towards full attenuation and writes the amplitude (0000:03B0); then starts the
-   recorded sound through 0000:400C and sets gDrvReg to 0Bh. On the other cards (1 PC speaker,
-   2 Tandy speaker) there is no attenuation test and no restore: the recorded sound starts on every
-   call through 0000:03E3 and 1948:0418, and when gSpeakerMode is 1 (the Tandy path) a nonzero sound
-   sets gSpeakerOn to 1. QUIRK 177D:0106: the recorded sound gCurSound is played, not the new
-   `sound`; the new number is stored only at 177D:0288. QUIRK 177D:0210: the `gCurSound < 0` test
-   (the `gSpeakerOn = 0` block) is dead for the same reason as in PlaySound: gCurSound is the
-   zero-extended map byte (`mov ah, 0` at 177D:0286), so it is never negative. QUIRK 177D:0288:
-   unlike PlaySound there is no `gSoundMap[sound] < 96h` test, so
-   a map value of 96h or more is recorded and played by the next call (through 0000:400C at
-   177D:01F2 on AdLib, left masked to seven bits at 177D:0240 on the speaker cards). Finally
+/* 177D:0106: records the game sound numbered `sound` and the volume `volume` for a later call;
+   `volume` becomes the attenuation gCurAttenuation = volume ? f17A6_0F61(gSoundVolume, volume) : 0
+   (177D:0261 to 0279: 177D:0267 pushes `volume`, 177D:026A pushes gSoundVolume, 177D:026E is the
+   call). When a sound was already recorded by the previous call (gCurSound > 0), it first retunes
+   and restarts that recorded sound at the attenuation that call recorded. So a call plays the sound
+   of the call before it, and the new `sound` and `volume` are read only at the end (the map byte for
+   `sound` is read at 177D:0283, zero-extended at 0286 and stored into gCurSound at 177D:0288); the
+   first call after load (gCurSound 0) plays nothing. On AdLib (gSoundCard 0) and only when the
+   recorded attenuation gCurAttenuation is below 10h (177D:012B): it waits for the busy byte gDrvReg
+   to clear, restores the loaded sound's registers (gPrevSound, gSoundLevel, gSoundAmp) through
+   0000:03B0, reloads them from the recorded sound through 0000:03CA, and, when gCurAttenuation is
+   above zero, fades the level towards full attenuation and writes the driver register-1 value
+   20h - gCurAttenuation (0000:03B0, 177D:01DA; whether that value is an amplitude is not known);
+   then starts the recorded sound through 0000:400C and sets gDrvReg to 0Bh. On the other cards
+   (1 PC speaker, 2 Tandy speaker) there is no attenuation test and no restore: the recorded sound
+   starts on every call through 0000:03E3 and 1948:0418, and when gSpeakerMode is 1 (the Tandy path)
+   a nonzero sound sets gSpeakerOn to 1 and resumes the driver through 1948:0458, but only when
+   gSpeakerOn is currently 0 (177D:022F to 023B). QUIRK 177D:0106: the recorded sound gCurSound is
+   played, not the new `sound`; the new number is stored only at 177D:0288. QUIRK 177D:0210: the
+   `gCurSound < 0` test (the `gSpeakerOn = 0` block) is dead for the same reason as in PlaySound:
+   gCurSound is the zero-extended map byte (`mov ah, 0` at 177D:0286), so it is never negative.
+   QUIRK 177D:0288: unlike PlaySound there is no `gSoundMap[sound] < 96h` test, so a map value of 96h
+   or more is recorded and played by the next call (through 0000:400C at 177D:01F2 on AdLib, left
+   masked to seven bits at 177D:0240 on the speaker cards). Finally
    gCurAttenuation = volume ? f17A6_0F61(gSoundVolume, volume) : 0, then gCurSound =
    gSoundMap[sound]. Does nothing when sound is off (gSoundOn). */
 /*@ 177D:0106 */ void PlaySoundVolume(int sound, int volume)
