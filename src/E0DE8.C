@@ -54,7 +54,9 @@ struct Obj28 {              /* the 28-byte object records at ds:8A82; see src/E0
 
 struct Entry27 {            /* the 27-byte records at ds:1A3B; see src/E0D1C.C */
     signed char m00;        /* +0: a class byte for 0A72:0522 */
-    char pad01[0x0E - 0x01];
+    char m01;               /* +1 */
+    signed char m02;        /* +2: a class byte read by 0FCA */
+    char pad03[0x0E - 0x03];
     signed char m0E;        /* +0E: bit 0 tested by 011A */
     int m0F;                /* +0F */
     char pad11[0x19 - 0x11];
@@ -180,6 +182,32 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
 /*@ 0DE8:0C2B stub */ void f0DE8_0C2B(void) {}
 /*@ 0DE8:0C82 stub */ void f0DE8_0C82(void) {}
 /*@ 0DE8:0D5E stub */ void f0DE8_0D5E(void) {}
-/*@ 0DE8:0F98 stub */ void f0DE8_0F98(void) {}
-/*@ 0DE8:0FCA stub */ void f0DE8_0FCA(void) {}
+/* 0DE8:0F98: a saving-throw style keeper: halves `value` when the f0D1C_059B test for character
+   `who` succeeds (a d20 roll at or above the character's class value). Called by 0EF3:0A3F,
+   0EF3:20A8 and 0DE8:101A. */
+/*@ 0DE8:0F98 */ int f0DE8_0F98(int who, int value)
+{
+    int chance;
+
+    chance = f0D1C_059B(who, 4);
+    if (RollDice(1, 20, 0) >= chance)
+        value >>= 1;
+    return value;
+}
+
+/* 0DE8:0FCA: the same half-on-success keeper for the type byte at `type`: it derives a class
+   value through the byte at gTable1A3B[*type].m02 and GetIndexedByte, then halves `value` on a
+   d20 roll at or above it. Called by 0EF3:0A3F. */
+/*@ 0DE8:0FCA */ int f0DE8_0FCA(char far *type, int value)
+{
+    int chance;
+    int classByte;
+
+    classByte = gTable1A3B[*type].m02;
+    chance = GetIndexedByte(0, classByte, 4);
+    if (RollDice(1, 20, 0) >= chance)
+        value >>= 1;
+    return value;
+}
+
 /*@ 0DE8:101A stub */ void f0DE8_101A(void) {}
