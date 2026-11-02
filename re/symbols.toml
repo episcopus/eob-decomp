@@ -94,9 +94,25 @@ match_flags = "tasm /mx"
 id = "e0000_03fa"
 unit = "e_text"
 addr = "0000:03FA"
-size = 15229
+size = 14956
 evidence = ["far"]
-notes = "stub: the range is the 32c8h driver block LoadSoundDriver loads at run time, the two INT 08h handlers at 3E66h and 3EE5h and their tables, none of which the map listed as functions. Only the first 28 bytes (03FAh to 0415h, the 300-word rebase) are code the source would write; a stub keeps the run-time block out of src/. See src/E_TEXT.ASM."
+notes = "split 2026-11-02 (escalation e_text): 03FAh to 3E65h is the 28-byte rebase code at 03FAh to 0415h, then the 32C8h driver block LoadSoundDriver loads at run time and its tables (14369 of the 14956 bytes are zero). Write the code as instructions and the block and tables as data definitions (db, dw, dup (0)); when the whole unit matches, make match records this entry L2 as the bytes between functions. The two INT 08h handlers that followed are their own entries (0000:3E66, 0000:3EE5)."
+
+[[function]]
+id = "e0000_3e66"
+unit = "e_text"
+addr = "0000:3E66"
+size = 127
+evidence = ["iret"]
+notes = "INT 08h handler (push ax; push bx; push dx; push ds ... iret), split from e0000_03fa 2026-11-02"
+
+[[function]]
+id = "e0000_3ee5"
+unit = "e_text"
+addr = "0000:3EE5"
+size = 146
+evidence = ["iret"]
+notes = "INT 08h handler (push ax; push dx; push ds; push si ... iret), split from e0000_03fa 2026-11-02"
 
 [[function]]
 id = "e0000_3f77"
