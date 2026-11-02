@@ -2016,3 +2016,30 @@ new = "gEnvPtr"
 kind = "global"
 why = "ds:8894 is the far pointer StartupGame dereferences as gEnvPtr->number (E07C8.C:263, 07C8:0212); src/E1990.ASM:22-26 already calls it gEnvPtr, and nothing in src/ or docs/ writes the pointer, so the object's address is unknown"
 date = "2026-11-02"
+
+[[rename]]
+id = "ds:805A=gDraw805A"
+addr = "ds:805A"
+old = "gTile805A"
+new = "gDraw805A"
+kind = "global"
+why = "a far tile routine drawn with (tile, x, y): DrawTextFrame draws its four corners through it (1DE7:0130, 0163, 0196, 01CC) and DrawTileRun its four edges (1DE7:025E), the same signature as ds:805E (gDraw805E)"
+date = "2026-11-02"
+
+[[rename]]
+id = "ds:8117=gScrollHook"
+addr = "ds:8117"
+old = "gScroll8117"
+new = "gScrollHook"
+kind = "global"
+why = "the far routine DrawTextLine calls when the cursor is on the last line of the window (1DE7:03B2), gated by gScrollOn (ds:8110); overlay 5 sets the pair at ds:8117/ds:8119 when it opens windows 0xC and 9 (src/EOV5.C:1114-1115, :1254-1255, :1317-1318; declared int g8117 and int g8119 at EOV5.C:161-162)"
+date = "2026-11-02"
+
+[[rename]]
+id = "ds:811F=gTextRegion"
+addr = "ds:811F"
+old = "g811F"
+new = "gTextRegion"
+kind = "global"
+why = "the record index of the current text window: SetTextWindow stores it as gRegions[g811F] (1DE7:0009; src/E1A29.C:38, src/E1C0E.C:577 keeps it in saved811F); E07A9.C, E1C0E.C, EOV1.ASM, EOV2.C and EOV6.C read it"
+date = "2026-11-02"
