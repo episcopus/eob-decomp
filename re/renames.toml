@@ -2475,3 +2475,30 @@ new = "DropCharacter"
 kind = "function"
 why = "ovl1:0000 is the Drop Character button of the camp menu (ovl1:1ACD passes MemberCommand(0x35), message 0x35 'Select the character you wish to drop.'); 0D1C:035A puts the member's items on the floor of the party cell and clears the member's status bits"
 date = "2026-11-02"
+
+[[rename]]
+id = "ds:1278=gMageSpellNames"
+addr = "ds:1278"
+old = "g1278"
+new = "gMageSpellNames"
+kind = "global"
+why = "ds:1278 is a table of far name pointers whose strings, decoded from the EXE, are the 25 mage spell names (Armor, Burning Hands, Detect Magic, Magic Missile ... Hold Monster); ovl1:0881 draws spell rows from it and 0BD2:05B5 builds scroll names from it"
+date = "2026-11-02"
+
+[[rename]]
+id = "ds:12E0=gClericSpellNames"
+addr = "ds:12E0"
+old = "g12E0"
+new = "gClericSpellNames"
+kind = "global"
+why = "ds:12E0 is a table of far name pointers whose strings, decoded from the EXE, are the 24 cleric spell names (Bless, Cure Light Wnds ... Lay on Hands); ovl1:0881 draws spell rows from it (cleric flag) and 0BD2:05B5 builds scroll names from it"
+date = "2026-11-02"
+
+[[rename]]
+id = "ovl1:0881=DrawSpellRow"
+addr = "ovl1:0881"
+old = "ShowItemName"
+new = "DrawSpellRow"
+kind = "function"
+why = "ovl1:0881 formats '%-18s %1d' from gMageSpellNames/gClericSpellNames (ds:1278/ds:12E0, decoded: mage and cleric spell names) and gFDEA[spell*2] and draws it at row*9+0x32; its only caller is the spell-slot screen ovl1:097A"
+date = "2026-11-02"

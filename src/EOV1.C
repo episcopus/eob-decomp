@@ -141,6 +141,10 @@ extern void far *gA9C0; /*@ ds:A9C0 */
 extern void far *gSegDF4E; /*@ ds:DF4E */
 extern int gTextRegion; /*@ ds:811F */
 extern int gFD98; /*@ ds:FD98 */
+extern char far *gMageSpellNames[]; /*@ ds:1278 */
+extern char far *gClericSpellNames[]; /*@ ds:12E0 */
+extern char gFDEA[]; /*@ ds:FDEA */
+extern char gFileNameBuf[]; /*@ ds:FE6E */
 extern int g159; /*@ ds:0159 */ /* a copy of gF57E that ShowMessage and ovl6:0B9B store; no reader found */
 extern int gNeedsRest; /*@ ds:FE2C */
 extern int gTunesOn; /*@ ds:80E8 */
@@ -246,7 +250,36 @@ int ChooseListEntry(int message);
 /*@ ovl1:00DD stub */ void BuildSpellSlots(void) {}
 /*@ ovl1:025D stub */ void SpendSpellSlot(void) {}
 /*@ ovl1:0416 stub */ int MemberCommand(int key) { return 0; }
-/*@ ovl1:0881 stub */ void ShowItemName(void) {}
+/* ovl1:0881: draws one row of the spell-slot screen: the name and the count of spell `spell` on row
+   `row` (a negative row draws nothing). The row sits at y = row * 9 + 0x32, x = 8. For a nonzero
+   `spell` it formats "%-18s %1d" into gFileNameBuf from the spell's name (gClericSpellNames when
+   `cleric` is set, else gMageSpellNames; both are far name pointers indexed by the spell number) and
+   its count, the byte gFDEA[spell * 2]; `noShadow` picks the plain text routine gDrawText, else
+   DrawShadowText with gF57E as the shadow; the colour is 6 when `highlight` is set, else 1 (0xF when
+   gGraphicsChoice is nonzero). For spell 0 with `noShadow` clear it blanks the row instead by
+   filling x 6 to 0xA8, y to y + 8 with gF57E through gFillRect. The pointer is hidden while it
+   draws. Called by SpellSlotScreen. */
+/*@ ovl1:0881 */ void DrawSpellRow(int spell, int row, int cleric, int noShadow, int highlight)
+{
+    int y;
+    int colour;
+
+    colour = gGraphicsChoice == 0 ? 1 : 0xf;
+    if (row < 0)
+        return;
+    y = row * 9 + 0x32;
+    LockHidePointer();
+    if (spell != 0) {
+        sprintf(gFileNameBuf, "%-18s %1d",
+            cleric ? gClericSpellNames[spell] : gMageSpellNames[spell], gFDEA[spell * 2]);
+        if (noShadow)
+            gDrawText(gFileNameBuf, 8, y, highlight ? 6 : colour, 0);
+        else
+            DrawShadowText(gFileNameBuf, 8, y, highlight ? 6 : colour, gF57E);
+    } else if (!noShadow)
+        gFillRect(6, y, 0xa8, y + 8, gF57E);
+    LockShowPointer();
+}
 /*@ ovl1:097A stub */ void SpellSlotScreen(int member, int flag) {}
 /* ovl1:10DE: returns the word that labels an option state: gStrings2003 message 0x15 "ON" when `on`
    is nonzero, else 0x16 "OFF". RunCampMenu formats it into its "Tunes are %-3s" style labels. */

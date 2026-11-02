@@ -501,3 +501,11 @@ why = "ovl1:1ACD formats the 'Bar Graphs are %-3s' button label (gStrings2003 me
 id = "ds:FE2C"
 name = "gNeedsRest"
 why = "ovl1:025D sets it when a spell slot is retired; ovl1:1ACD shows message 0x2C 'Your party needs to rest to gain spells.' when Exit is pressed with it set, and clears it when CampLoop (Rest Party) returns 0"
+[[global]]
+id = "ds:1278"
+name = "gMageSpellNames"
+why = "ds:1278 is a table of far name pointers whose strings, decoded from the EXE, are the 25 mage spell names (Armor, Burning Hands, Detect Magic, Magic Missile ... Hold Monster); ovl1:0881 draws spell rows from it and 0BD2:05B5 builds scroll names from it"
+[[global]]
+id = "ds:12E0"
+name = "gClericSpellNames"
+why = "ds:12E0 is a table of far name pointers whose strings, decoded from the EXE, are the 24 cleric spell names (Bless, Cure Light Wnds ... Lay on Hands); ovl1:0881 draws spell rows from it (cleric flag) and 0BD2:05B5 builds scroll names from it"
