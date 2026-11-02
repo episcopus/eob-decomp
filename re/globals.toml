@@ -299,7 +299,7 @@ why = "the word ds:812E is a busy flag, not a lock: 1BB1:0008 and 1BF3:0080 test
 [[global]]
 id = "ds:814A"
 name = "gMouseDisabled"
-why = "nonzero disables the mouse: the INT 33h handler body skips all of its work (1A72:254-255) and HidePointer/ShowPointer do nothing (1BBE:89-90, 178); 1A72:215 sets it to 1 at install and the overlay loader 1C00:00D4 clears it once a driver overlay has loaded and its entry has run, which enables the handler and the pointer; E07A9.C:113 and E14EF.C:142, 223 test it the same way"
+why = "nonzero disables the mouse: the INT 33h handler body skips all of its work (1A72:254-255) and HidePointer/ShowPointer do nothing (1BBE:89-90, 178); 1A72:215 sets it to 1 at install and the overlay loader 1C00:00D4 clears it once a driver overlay has loaded and its entry has run, which enables the handler and the pointer; the test at 07A9:0148 (SetMouseItem, 07A9:010C) and E14EF.C:144 and E14EF.C:227 test it the same way"
 
 [[global]]
 id = "ds:FE64"
