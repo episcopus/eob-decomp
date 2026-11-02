@@ -2404,6 +2404,8 @@ addr = "0BD2:0385"
 size = 137
 evidence = ["far", "near", "frame"]
 name = "ScanListItem"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0bd2_040e"

@@ -238,8 +238,8 @@ void DrawItemName(int item);
 /*@ 0BD2:01D0 draft */ void InsertListItem(void far *head, int key, int item, int sound)
 {
     struct ItemRecord *rec;
-    struct ItemRecord *cur;
     struct ItemRecord *next;
+    struct ItemRecord *cur;
 
     if (item == 0)
         return;
@@ -343,9 +343,9 @@ next:
         first = 0;
         cur = rec->m08;
     }
-    if (count == 0)
-        return 0;
-    return n;
+    if (count != 0)
+        return n;
+    return 0;
 }
 
 /* 0BD2:040E: sets bit 0x40 of the flags of every item in the circular list `head`. */
