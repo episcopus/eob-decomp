@@ -28,7 +28,7 @@ struct OverlayRequest {     /* the request 1C00:0055 runs, ds:8121 */
                                src/ says who writes ds:8125/ds:8127; this unit reads only `name` */
 };
 
-extern int g8102;                     /*@ ds:8102: graphics choice: argv[1][0] + 1 at :187, less
+extern int g8102;                     /*@ ds:8102: graphics choice: argv[1][0] + 1 at :218, less
                                          0x31 in 0199 (:287), so the digit 0..4 indexes
                                          gOverlayFiles (ds:3074, the five name pointers in EOB.EXE
                                          order: 0 cga, 1 tandy, 2 ega, 3 mcga/VGA, 4 vga;
@@ -36,16 +36,16 @@ extern int g8102;                     /*@ ds:8102: graphics choice: argv[1][0] +
 extern char gSoundCard;               /*@ ds:B892: sound choice, argument digit minus '1' (0 AdLib,
                                          1 PC speaker, 2 Tandy; argument '4' gives 3, which neither
                                          the start-up switch (:398) nor the shut-down switch (:438)
-                                         handles, so 3 means no card; src/E177D.C:52 declares it
-                                         unsigned char and the value is 0..3 in both; char keeps the
-                                         code) */
+                                         handles, so 3 leaves sound off through gSoundOn (:220);
+                                         src/E177D.C:52 declares it unsigned char and the value is
+                                         0..3 in both; char keeps the code) */
 extern int gSoundOn;                  /*@ ds:80E6: nonzero unless sound was '4' at start-up, and
                                          toggled at run time (`xor word ptr [gSoundOn],1` at
                                          src/E1AAD.ASM:935) and written by the sound option
                                          (src/EOV1.ASM:3741). src/E1AAD.ASM:17 declares it BYTE
                                          and src/EOV1.ASM:115 WORD; int keeps the code */
-extern unsigned char gSpeakerMode;    /*@ ds:009E: 1 only on the Tandy path (:385); the PC speaker
-                                         path (:380) leaves it 0. PlaySound (src/E177D.C:182) gates
+extern unsigned char gSpeakerMode;    /*@ ds:009E: 1 only on the Tandy path (:425); the PC speaker
+                                         path (:420) leaves it 0. PlaySound (src/E177D.C:182) gates
                                          the gTandyOn toggle on it. The name is inherited from before
                                          the evidence and is not evidence of a PC speaker mode;
                                          Purpose unknown beyond the above */
@@ -58,9 +58,9 @@ extern unsigned gRestoreMode;         /*@ ds:84A0: the video mode restored on ex
                                          :483; src/E1DDD.C:12-21) */
 extern void interrupt (far *gFC08)();  /*@ ds:FC08: the previous INT 3Fh vector: main saves the
                                          installed one here (:225) and ShutdownGame puts it back
-                                         (:423). src/E1A72.ASM:160 calls it the previous INT 3Fh
+                                         (:464). src/E1A72.ASM:160 calls it the previous INT 3Fh
                                          vector and 1A72:0006 chains to it */
-extern int (far *gFn80FA)(void);      /*@ ds:80FA: exit hook main sets to 07C8:061D (:200); its
+extern int (far *gFn80FA)(void);      /*@ ds:80FA: exit hook main sets to 07C8:061D (:233); its
                                          target returns int (f07C8_061D, :475) and the result is
                                          ignored at :456 */
 extern int (far *gAllocFailHook)(void); /*@ ds:810A: allocation failure hook, main sets 07C8:0625 */
@@ -71,12 +71,12 @@ extern int gMouseDisabled;            /*@ ds:814A: nonzero disables the mouse ha
                                          src/E122E.C:48, src/E1C00.ASM:281-290). main sets it to 1
                                          when no driver is installed (:256) and otherwise to
                                          !mouseChoice (:258), so the mouse argument decides it */
-extern unsigned char g3092;           /*@ ds:3092: start-up-completed flag: set to 1 at :355, just
+extern unsigned char g3092;           /*@ ds:3092: start-up-completed flag: set to 1 at :395, just
                                          before the sound card is started (:398-426), and every
                                          `return 1` of StartupGame (:428) comes after it; main then
                                          tests it at :254, sets the mouse and calls StartupAlloc.
                                          Readers: src/E1A72.ASM:104 and src/E1C00.ASM:291 */
-extern unsigned char g3056;           /*@ ds:3056: set to 1 at :351 right after InitOverlayCache and
+extern unsigned char g3056;           /*@ ds:3056: set to 1 at :391 right after InitOverlayCache and
                                          tested only by ShutdownGame (:459) before
                                          ShutdownOverlayCache; no other unit reads ds:3056 */
 extern int g80EA;                     /*@ ds:80EA: start-up flag set to 1 by main (:250). Copied
@@ -92,7 +92,7 @@ extern int gTextAttr2;                /*@ ds:811B: the second text attribute, th
 extern int gTextAttr1;                /*@ ds:811D: the first text attribute, the foreground colour,
                                          default 0x0F (src/E122E.C:74, src/E1DE7.C:38,
                                          src/EOV2.C:500) */
-extern void (far *gFn80BA)(void far *table); /*@ ds:80BA: far function, takes a colour table */
+extern void (far *gFn80BA)(void far *table); /*@ ds:80BA: the palette setter (src/EOV4.C:1035, :1060), called with the palette buffers (:242, :247, :377, :387); Purpose unknown beyond the palette: nothing in src/ assigns ds:80BA */
 extern void (far *gFn8056)(void);     /*@ ds:8056: far function called before the fonts load
                                          (:364). Purpose unknown: nothing in src/ assigns ds:8056
                                          (re/renames.toml:1297 has the name as inherited) */
@@ -428,11 +428,11 @@ done:
     return 1;
 }
 
-/* 07C8:058A: the shut-down path. Stops sound the way the chosen card needs (the AdLib driver off
-   for gSoundCard 0, the Tandy driver silenced to one voice and uninstalled for 2, only uninstalled
-   for 1), calls the exit hook at ds:80FA, removes the mouse handler, stops the overlay manager,
-   restores the mode from gRestoreMode (argv[5]; :463) and the old INT 3Fh vector, returns the Tandy
-   memory to the probed segment, and exits the program through the runtime's exit(). Called by main. */
+/* 07C8:058A: the shut-down path, called by main. Stops sound the way the chosen card needs (AdLib
+   driver off for gSoundCard 0, Tandy driver silenced to one voice and uninstalled for 2, only
+   uninstalled for 1), calls the exit hook at ds:80FA, removes the mouse handler, stops the overlay
+   manager, restores the mode (argv[5]; :463) and the old INT 3Fh vector, then shrinks the last block
+   to gMemTopSeg (the atol value; whether that is the video top is [H]; src/E1990.ASM:386-391; also on the failed memory path); exit(). */
 /*@ 07C8:058A */ void ShutdownGame(void)
 {
     switch (gSoundCard) {
