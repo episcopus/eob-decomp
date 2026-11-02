@@ -1,14 +1,15 @@
 ; Unit at EOB.EXE 1A72:0006 (841 bytes, 8 functions), kind asm [H] by the map. Low level support
 ; code: the game's INT 33h mouse driver glue plus a few interrupt and far pointer helpers. InitMouse
-; (1A72:00DA) detects the driver, initialises the mouse variables in DGROUP (8130h..8174h), installs
+; (1A72:00DA) detects the driver, initialises the mouse state the game reads (DGROUP:8138, 813A,
+; 8144, 8146, 8148, 814A, 814E, 8152 and 8160), installs
 ; the event handler at 1A72:017A and returns 1 when a driver is present (0 otherwise). The handler
 ; at 1A72:017A, which sits inside InitMouse, clamps the position, hands the button state to the
 ; keyboard glue 1AAD:0B0E and redraws through the far pointers at DGROUP:80AA and DGROUP:80A2 under
-; the busy flag at DGROUP:812E. IsMouseInRect (1A72:02A6) tests the current position against a
-; rectangle; RemoveMouseHandler (1A72:0285) removes the handler; 1A72:02FA and 1A72:02FC enable and
-; disable interrupts; 1A72:02FE and 1A72:033A set and read the far pointer at DGROUP:8172/8174
-; (1A72:02FE also copies 16 bytes from the old target to the new one). 1A72:0006 is the INT 3Fh
-; handler main installs (07C8:008F), it chains through DGROUP:FC08 (the previous vector), probes
+; the busy flag at DGROUP:812E. IsMouseInRect (1A72:02A6) tests the position the pointer was last
+; drawn at against a rectangle; RemoveMouseHandler (1A72:0285) removes the handler; 1A72:02FA and
+; 1A72:02FC enable and disable interrupts; 1A72:02FE and 1A72:033A set and read the far pointer at
+; DGROUP:8172/8174 (1A72:02FE also copies 16 bytes from the old target to the new one). 1A72:0006
+; is the INT 3Fh handler main installs (07C8:008F), it chains through DGROUP:FC08 (the previous
 ; EOB.EXE through 1C0E:1310 to find the drive it is on and reopens it with the runtime's _open.
 ; Placeholder DGROUP names mark the mouse state whose exact role is inferred from this code only.
 
@@ -29,8 +30,10 @@
         EXTRN   g80A2:DWORD             ; @ ds:80A2: indirect far function, no arguments
         EXTRN   g80AA:DWORD             ; @ ds:80AA: indirect far function, called with ds:8172/8174
         EXTRN   g80EC:BYTE              ; @ ds:80EC: compared with 2 before the position update
-        EXTRN   g8104:DWORD             ; @ ds:8104: indirect far function, (far string, 2)
-        EXTRN   g8111:DWORD             ; @ ds:8111: indirect far function, (far string, 2)
+        EXTRN   g8104:DWORD             ; @ ds:8104: the fatal file error handler (E1C0E.C:66),
+        ;                                              called as (2, name) on the two give-up exits
+        EXTRN   g8111:DWORD             ; @ ds:8111: the retry file error handler (E1C0E.C:67),
+        ;                                              called as (2, name) after a failed probe
         EXTRN   _gPointerBusy:WORD              ; @ ds:812E: busy flag, 0 = free; the game takes it with
         ;                                              a test then a store, so it is not a lock
         EXTRN   g8130:WORD              ; @ ds:8130: mouse buttons seen by the last event
@@ -43,29 +46,37 @@
         EXTRN   g8136:WORD              ; @ ds:8136: latched to 1 once any button has been seen;
         ;                                              this unit never clears it, E1AAD.ASM:1356
         ;                                              sets it too and nothing in src/ clears it
-        EXTRN   _gCursorX:WORD              ; @ ds:8138: working mouse x (set to the middle on init)
-        EXTRN   _gCursorY:WORD              ; @ ds:813A: working mouse y (set to the middle on init)
+        EXTRN   _gCursorX:WORD              ; @ ds:8138: mouse x in pixels (set to the middle on
+        ;                                              init); the handler rewrites it only when the
+        ;                                              busy flag is free and DGROUP:80EC is not 2
+        EXTRN   _gCursorY:WORD              ; @ ds:813A: mouse y in pixels (set to the middle on
+        ;                                              init); the handler rewrites it under the same
+        ;                                              conditions as x
         EXTRN   g813C:WORD              ; @ ds:813C: x of the event just handled
         EXTRN   g813E:WORD              ; @ ds:813E: y of the event just handled
-        EXTRN   g8144:WORD              ; @ ds:8144: 1 when the driver's reset x is not 0A0h, the
-        ;                                              640 wide mode test (InitMouse)
+        EXTRN   g8144:WORD              ; @ ds:8144: 1 when the driver's reset x is not 0A0h, which
+        ;                                              InitMouse reads as a 640 wide mode [H]
         EXTRN   _gHideDepth:WORD              ; @ ds:8146: nonzero suppresses the pointer redraw;
         ;                                              InitMouse sets it to 1, so the pointer starts
         ;                                              hidden until ShowPointer runs
-        EXTRN   gMouseHandlerInstalled:WORD              ; @ ds:8148: 1 when the mouse driver handler is installed
+        EXTRN   gMouseHandlerInstalled:WORD              ; @ ds:8148: records that the mouse driver
+        ;                                              handler was installed (1 at install, 0 when no
+        ;                                              driver is found); RemoveMouseHandler clears
+        ;                                              nothing, so it still reads 1 after removal
         EXTRN   gMouseDisabled:WORD              ; @ ds:814A: nonzero disables the mouse: the handler
         ;                                              returns at once and the pointer hide/show do
         ;                                              nothing. InitMouse sets it to 1 before it
-        ;                                              installs the handler (1A72:0150), Main sets it
-        ;                                              from the mouse argument when no handler is
-        ;                                              installed (E07C8.C:153-156), and the overlay
-        ;                                              loader clears it (E1C00.ASM:269); E07A9.C
-        ;                                              tests it too
+        ;                                              installs the handler (1A72:0150); Main then
+        ;                                              forces it to 1 when no handler is installed and
+        ;                                              otherwise sets it to !mouse (E07C8.C:153-156);
+        ;                                              the overlay loader clears it when a handler is
+        ;                                              installed (E1C00.ASM:298); E07A9.C tests it
+        ;                                              too
         EXTRN   g814E:WORD              ; @ ds:814E: screen width minus 1, 13Fh; the handler clamps
         ;                                              with the literal 13Fh, not with this variable
-        EXTRN   g8152:WORD              ; @ ds:8152: screen height minus 1, 0C7h (set at :222);
-        ;                                              this unit never reads it: the handler clamps
-        ;                                              no y at all
+        EXTRN   g8152:WORD              ; @ ds:8152: screen height minus 1, 0C7h (set at
+        ;                                              1A72:0104); this unit never reads it: the
+        ;                                              handler clamps no y at all
         EXTRN   _gDrawnX:WORD              ; @ ds:815C: the position the pointer was last drawn at,
         ;                                              copied there by ShowPointer (E1BBE.ASM:188, :193)
         EXTRN   _gDrawnY:WORD              ; @ ds:815E: the position the pointer was last drawn at,
@@ -73,9 +84,12 @@
         EXTRN   _gPointerState:WORD              ; @ ds:8160: pointer state bits: 8000h the pointer is
         ;                                              hidden over the hide zone, 4000h a redraw is
         ;                                              requested, low byte a counter (E1BBE.ASM)
-        EXTRN   _gZoneLeft:WORD              ; @ ds:8162: hide zone, left in pixels (1BBE hides the
-        ;                                              pointer over this rectangle; 1A72:0244 tests it)
-        EXTRN   _gZoneTop:WORD              ; @ ds:8164: hide zone, top in pixels
+        EXTRN   _gZoneLeft:WORD              ; @ ds:8162: hide zone, left in pixels, stored reduced
+        ;                                              (the argument less the pointer width, E1BBE.ASM:328-332);
+        ;                                              1A72:0244 compares it, but the QUIRK there
+        ;                                              skips the check
+        EXTRN   _gZoneTop:WORD              ; @ ds:8164: hide zone, top in pixels, stored reduced
+        ;                                              (the argument less the pointer height, E1BBE.ASM:338-339)
         EXTRN   _gZoneRight:WORD              ; @ ds:8166: hide zone, right in pixels
         EXTRN   _gZoneBottom:WORD              ; @ ds:8168: hide zone, bottom in pixels
         EXTRN   g8172:WORD              ; @ ds:8172: far pointer argument, offset
@@ -92,10 +106,11 @@
 ; fails). It saves everything, points DS at DGROUP and calls `access("EOB.EXE", 0)`: when that
 ; returns zero (the program file is accessible) it goes straight to the chain. Otherwise it closes
 ; the file handle kept at 20B5h:00B8h, probes EOB.EXE through 1C0E:1310 (which opens it only to
-; find its drive and closes it at once; the indirect helpers at DGROUP:8111 and DGROUP:8104 run in
-; between) and reopens it with `open("EOB.EXE", O_RDONLY)`, storing the new handle at
-; 20B5h:00B8h; every failing path calls 07C8:058A. Which of the two paths is the normal case is not
-; established.
+; find its drive and closes it at once) and reopens it with `open("EOB.EXE", O_RDONLY)`, storing the
+; new handle at 20B5h:00B8h. After each failed probe it asks the retry file error handler at
+; DGROUP:8111 (E1C0E.C:67), whose 0 return gives up the loop; on the two give-up exits (1A72:0080
+; and 1A72:00B8) it reports to the fatal file error handler at DGROUP:8104 (E1C0E.C:66) with code 2
+; and calls 07C8:058A. Which of the two paths is the normal case is not established.
         PUBLIC  _Int3FHandler           ; @ 1A72:0006
 _Int3FHandler PROC FAR
         push    ax
@@ -200,8 +215,8 @@ _Int3FHandler ENDP
 ; 1A72:00DA: initialise the mouse driver through INT 33h and install the event handler. It reads
 ; the INT 33h vector (INT 21h/35h) and treats a null vector or one whose first byte is CFh (an
 ; IRET, no driver) as absent. It resets the driver (function 0, expects FFFFh) and reads the
-; position (function 3): when that x is NOT 0A0h the driver is not in the usual 320 wide mode, so
-; it records 640 wide mode (DGROUP:8144 = 1) and doubles the constant centre 0A0h before setting
+; position (function 3): when that x is NOT 0A0h it takes the driver to be in 640 wide mode [H], so
+; it records that (DGROUP:8144 = 1) and doubles the constant centre 0A0h before setting
 ; the position (function 4). It installs 1A72:017A for moves and both buttons (function 0Ch, mask
 ; 1Fh) and returns 1 in AX; with no driver it returns 0. Called from StartupGame (07C8:0199,
 ; E07C8.C:196). The DGROUP defaults are the middle of a 320x200 screen and the screen bounds.
@@ -279,9 +294,11 @@ L0174:  pop     es
 ; (hidden over the hide zone) set and the position in the zone it calls DGROUP:80AA (with
 ; DGROUP:8172/8174), HidePointer (1BBE:0002) and DGROUP:80A2, then sets 4000h (1A72:01EC);
 ; otherwise it calls DGROUP:80AA, HidePointer, ShowPointer (1BBE:00ED) and DGROUP:80A2 (1A72:025C).
+; With the busy flag set the event publishes no position and draws nothing, and nothing is kept for
+; a later event; the button change above it has already gone through.
 ; QUIRK 1A72:0248: the `x < gZoneLeft` test jumps into the y test, so the hide zone's left edge is
-; never enforced (only x > gZoneRight and y outside [top, bottom] leave the zone). It chains to
-; nothing: the vector belongs to the game.
+; never enforced (only x > gZoneRight and y outside [top, bottom] leave the zone). The handler calls
+; no earlier mouse handler (none is saved in this unit).
 MouseEventHandler:
         push    ds
         push    ax
