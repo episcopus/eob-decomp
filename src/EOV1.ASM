@@ -43,6 +43,9 @@
         EXTRN   _f1A29_000F:FAR         ; @ 1A29:000F (E082C.C)
         EXTRN   _FindNode:FAR           ; @ 1658:01A2 (E1658.C)
         EXTRN   _PointInRect:FAR        ; @ 14EF:00E1 (E14EF.C)
+        EXTRN   _MemAlloc:FAR           ; @ 19BC:0007 (E19BC.C)
+        EXTRN   _ListAdd:FAR            ; @ 1658:001E (E0CF7.C)
+        EXTRN   _movmem:FAR             ; @ 0000:63A3: move n bytes (library)
 
         EXTRN   gChars:BYTE             ; @ ds:F580: 6 character records of 0xF3 bytes (E08E6.C)
         EXTRN   gBufDCFC:DWORD          ; @ ds:DCFC: 4096-byte scratch allocation (E07A9.C)
@@ -85,6 +88,11 @@
         EXTRN   g62F2:BYTE              ; @ ds:62F2: per-member icon row table (ovl1:0416)
         EXTRN   g62F8:BYTE              ; @ ds:62F8: per-member icon column table (ovl1:0416)
         EXTRN   gFD98:WORD              ; @ ds:FD98: cleared while the member icons are drawn (ovl1:0416)
+        EXTRN   g5E20:BYTE              ; @ ds:5E20: nonzero when the mouse moved (E16A5.C)
+        EXTRN   gNodeTemplate:BYTE      ; @ ds:3A62: the 0x3c-byte node template (EOV0.C)
+        EXTRN   gMemberMenu:BYTE        ; @ ds:628C: six five-byte per-member menu records (this unit)
+        EXTRN   gColourTable:BYTE       ; @ ds:00A9: sixteen 16-byte colour records, indexed by attribute << 4
+        EXTRN   gSpellInfo9:BYTE        ; @ 208E:0000: nine-byte per-entry text/box records (this unit)
 
         .CODE
 
@@ -1227,8 +1235,297 @@ _Ovl1_097A PROC FAR
         ret
 _Ovl1_097A ENDP
 
-        PUBLIC  _Ovl1_1153               ; @ ovl1:1153 stub
+; ovl1:1153: build and return the far linked list of the menu rows for member `who`. It reads the
+; five-byte gMemberMenu[who] record (message index, attribute, first table index, row count, colour),
+; tints gColourTable[attribute] with gF57E, clears text window `attribute` and fills it through
+; f0D1C_0C21, then draws the record's message (gStrings2003[message index] through SkipStrings and
+; DrawShadowText). For i in 0..count-1 it allocates a 0x3c-byte node, copies gNodeTemplate over it
+; and fills it from gSpellInfo9[first + i]: key index+1, key06 = rec+5, key08 = rec+5+0x100, x =
+; rec+1<<3, y = rec+2, width = rec+3<<3, height = rec+4, flags 0x1100, the far record pointer at
+; +0x34/+0x36 and rec+7 at +0x38; the node is drawn once through _Ovl1_1551 and chained with
+; ListAdd. At the end it clips the text window, sets g5E20, flushes the key buffer and clears g8115.
+; Called by ovl1:0416, 097A, 1551, 1ACD and 243A with a member index and returns the list head.
+; Purpose unknown: the exact meaning of the menu fields and of the 9-byte record bytes.
+        PUBLIC  _Ovl1_1153              ; @ ovl1:1153 draft
 _Ovl1_1153 PROC FAR
+        push    bp
+        mov     bp,sp
+        sub     sp,0Ah
+        push    si
+        push    di
+        mov     di,[bp+6]
+        mov     word ptr [g8115],2
+        mov     ax,di
+        mov     dx,5
+        imul    dx
+        mov     bx,ax
+        cmp     byte ptr [bx+gMemberMenu+1],0
+        je      short f1153_11CD
+        mov     ax,di
+        mov     dx,5
+        imul    dx
+        mov     bx,ax
+        mov     al,byte ptr [bx+gMemberMenu+1]
+        cbw
+        mov     cl,4
+        shl     ax,cl
+        push    ax
+        mov     al,[gF57E]
+        cbw
+        pop     bx
+        mov     word ptr [bx+gColourTable],ax
+        mov     ax,di
+        mov     dx,5
+        imul    dx
+        mov     bx,ax
+        mov     al,byte ptr [bx+gMemberMenu+1]
+        cbw
+        push    ax
+        call    far ptr _SetTextWindowAndClear
+        pop     cx
+        xor     ax,ax
+        push    ax
+        push    ax
+        push    word ptr [gTextHeight]
+        mov     ax,[gTextWidth]
+        shl     ax,1
+        shl     ax,1
+        shl     ax,1
+        push    ax
+        push    word ptr [gTextTop]
+        mov     ax,[gTextLeft]
+        shl     ax,1
+        shl     ax,1
+        shl     ax,1
+        push    ax
+        call    far ptr _f0D1C_0C21
+        add     sp,0Ch
+f1153_11CD:
+        xor     ax,ax
+        push    ax
+        mov     ax,di
+        mov     dx,5
+        imul    dx
+        mov     bx,ax
+        mov     al,byte ptr [bx+gMemberMenu+4]
+        cbw
+        push    ax
+        mov     ax,5
+        push    ax
+        push    ax
+        mov     ax,di
+        mov     dx,5
+        imul    dx
+        mov     bx,ax
+        mov     al,byte ptr [bx+gMemberMenu]
+        cbw
+        push    ax
+        mov     ax,SEG gStrings2003
+        push    ax
+        mov     ax,OFFSET gStrings2003
+        push    ax
+        call    far ptr _SkipStrings
+        add     sp,6
+        push    dx
+        push    ax
+        call    far ptr _DrawShadowText
+        add     sp,0Ch
+        mov     word ptr [bp-6],0
+        mov     word ptr [bp-4],0
+        mov     word ptr [bp-2],0
+        jmp     f1153_1394
+f1153_121F:
+        mov     ax,di
+        mov     dx,5
+        imul    dx
+        mov     bx,ax
+        mov     al,byte ptr [bx+gMemberMenu+2]
+        cbw
+        mov     dx,[bp-2]
+        add     dx,ax
+        mov     si,dx
+        xor     ax,ax
+        push    ax
+        mov     dx,3Ch
+        push    ax
+        push    dx
+        call    far ptr _MemAlloc
+        add     sp,6
+        mov     [bp-0Ah],ax
+        mov     [bp-8],dx
+        mov     ax,3Ch
+        push    ax
+        push    dx
+        push    word ptr [bp-0Ah]
+        push    ds
+        mov     ax,OFFSET gNodeTemplate
+        push    ax
+        call    far ptr _movmem
+        add     sp,0Ah
+        les     bx,[bp-0Ah]
+        mov     ax,si
+        inc     ax
+        mov     word ptr es:[bx+4],ax
+        mov     ax,si
+        mov     dx,9
+        imul    dx
+        mov     dx,SEG gSpellInfo9
+        mov     bx,ax
+        mov     es,dx
+        NOSMART
+        mov     ax,word ptr es:[bx+5]
+        SMART
+        les     bx,[bp-0Ah]
+        mov     word ptr es:[bx+6],ax
+        mov     ax,si
+        mov     dx,9
+        imul    dx
+        mov     dx,SEG gSpellInfo9
+        mov     bx,ax
+        mov     es,dx
+        NOSMART
+        mov     ax,word ptr es:[bx+5]
+        SMART
+        add     ax,100h
+        les     bx,[bp-0Ah]
+        mov     word ptr es:[bx+8],ax
+        mov     ax,si
+        mov     dx,9
+        imul    dx
+        mov     dx,SEG gSpellInfo9
+        mov     bx,ax
+        mov     es,dx
+        NOSMART
+        mov     al,byte ptr es:[bx+1]
+        SMART
+        mov     ah,0
+        shl     ax,1
+        shl     ax,1
+        shl     ax,1
+        les     bx,[bp-0Ah]
+        mov     word ptr es:[bx+1Eh],ax
+        mov     ax,si
+        mov     dx,9
+        imul    dx
+        mov     dx,SEG gSpellInfo9
+        mov     bx,ax
+        mov     es,dx
+        NOSMART
+        mov     al,byte ptr es:[bx+2]
+        SMART
+        mov     ah,0
+        les     bx,[bp-0Ah]
+        mov     word ptr es:[bx+20h],ax
+        mov     ax,si
+        mov     dx,9
+        imul    dx
+        mov     dx,SEG gSpellInfo9
+        mov     bx,ax
+        mov     es,dx
+        NOSMART
+        mov     al,byte ptr es:[bx+3]
+        SMART
+        mov     ah,0
+        shl     ax,1
+        shl     ax,1
+        shl     ax,1
+        les     bx,[bp-0Ah]
+        mov     word ptr es:[bx+22h],ax
+        mov     ax,si
+        mov     dx,9
+        imul    dx
+        mov     dx,SEG gSpellInfo9
+        mov     bx,ax
+        mov     es,dx
+        NOSMART
+        mov     al,byte ptr es:[bx+4]
+        SMART
+        mov     ah,0
+        les     bx,[bp-0Ah]
+        mov     word ptr es:[bx+24h],ax
+        mov     ax,si
+        mov     dx,9
+        imul     dx
+        NOSMART
+        add     ax,0
+        SMART
+        mov     word ptr es:[bx+34h],ax
+        mov     word ptr es:[bx+36h],SEG gSpellInfo9
+        mov     word ptr es:[bx+0Eh],1100h
+        mov     ax,si
+        mov     dx,9
+        imul     dx
+        mov     dx,SEG gSpellInfo9
+        mov     bx,ax
+        mov     es,dx
+        NOSMART
+        mov     ax,word ptr es:[bx+7]
+        SMART
+        les     bx,[bp-0Ah]
+        mov     word ptr es:[bx+38h],ax
+        xor     ax,ax
+        push    ax
+        push    ax
+        push    ax
+        push    word ptr [bp-8]
+        push    bx
+        nop
+        push    cs
+        call    near ptr _Ovl1_1551
+        add     sp,0Ah
+        mov     ax,[bp-6]
+        or      ax,[bp-4]
+        je      short f1153_1385
+        push    word ptr [bp-8]
+        push    word ptr [bp-0Ah]
+        push    word ptr [bp-4]
+        push    word ptr [bp-6]
+        call    far ptr _ListAdd
+        add     sp,8
+        mov     [bp-6],ax
+        mov     [bp-4],dx
+        jmp     short f1153_1391
+f1153_1385:
+        mov     ax,[bp-8]
+        mov     dx,[bp-6]
+        mov     [bp-6],dx
+        mov     [bp-4],ax
+f1153_1391:
+        inc     word ptr [bp-2]
+f1153_1394:
+        mov     ax,di
+        mov     dx,5
+        imul    dx
+        mov     bx,ax
+        mov     al,byte ptr [bx+gMemberMenu+3]
+        cbw
+        cmp     ax,[bp-2]
+        jle     short f1153_13AA
+        jmp     f1153_121F
+f1153_13AA:
+        call    far ptr _LockHidePointer
+        xor     ax,ax
+        push    ax
+        mov     ax,2
+        push    ax
+        push    word ptr [gTextHeight]
+        push    word ptr [gTextWidth]
+        push    word ptr [gTextTop]
+        push    word ptr [gTextLeft]
+        push    word ptr [gTextTop]
+        push    word ptr [gTextLeft]
+        call    far ptr _ClipRect
+        add     sp,10h
+        call    far ptr _LockShowPointer
+        mov     byte ptr [g5E20],1
+        call    far ptr _FlushKeyBuffer
+        mov     word ptr [g8115],0
+        mov     dx,[bp-4]
+        mov     ax,[bp-6]
+        pop     di
+        pop     si
+        mov     sp,bp
+        pop     bp
         ret
 _Ovl1_1153 ENDP
 
