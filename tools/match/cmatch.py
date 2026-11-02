@@ -517,11 +517,16 @@ def gaps_match(A, B, orig, covered: list, u: dict) -> bool:
     return True
 
 
-def write_levels(names_by_addr: dict, flags: str, whole_unit: str | None = None, program: str = "EOB.EXE") -> int:
+def write_levels(names_by_addr: dict, flags: str, whole_unit: str | None = None, program: str = "EOB.EXE",
+                 sizes: dict | None = None) -> int:
     """Set name, level = "L2" and match_flags on the registry entries of matched functions. When the
     whole unit matched (every function, and the bytes between them), its entries that are not
     functions of the source (a start marker, padding the map took for a function) get L2 too, with
-    a note. Only entries of units of `program` (EOB.EXE and INTRO.EXE spell overlay addresses alike)."""
+    a note. Only entries of units of `program` (EOB.EXE and INTRO.EXE spell overlay addresses alike).
+
+    A whole-unit match also proves the source's function boundaries: a matched function the map did
+    not list (`sizes` gives its length) gets an entry of its own, and the entry that covered its bytes
+    ends where it starts (e17a6, 2026-11-02: four map entries, eighteen functions)."""
     p = ROOT / "re" / "symbols.toml"
     blocks = p.read_text().split("[[function]]\n")
     units_toml = ROOT / "re" / "units.toml"
@@ -545,8 +550,36 @@ def write_levels(names_by_addr: dict, flags: str, whole_unit: str | None = None,
         b = re.sub(r'^(name|level|match_flags) = .*\n', "", b, flags=re.M)
         blocks[i] = b.rstrip("\n") + '\nname = "%s"\nlevel = "L2"\nmatch_flags = "%s"\n\n' % (name, flags)
         n += 1
+    if whole_unit and sizes:
+        n += split_entries(blocks, whole_unit, names_by_addr, sizes, flags)
     p.write_text("[[function]]\n".join(blocks))
     return n
+
+
+def split_entries(blocks: list, uid: str, names_by_addr: dict, sizes: dict, flags: str) -> int:
+    """Add the entries a whole-unit match proves and the map missed; shorten the entries around them."""
+    def key(b):
+        m = re.search(r'^addr = "(\w+):([0-9A-F]{4})"$', b, re.M)
+        s = m.group(1)
+        return (s.lower() if s.lower().startswith("ovl") else int(s, 16), int(m.group(2), 16))
+    mine = [i for i, b in enumerate(blocks) if re.search(r'^unit = "%s"$' % re.escape(uid), b, re.M)]
+    have = {key(blocks[i]): i for i in mine}
+    missing = sorted(k for k in names_by_addr if k not in have and k in sizes)
+    if not missing:
+        return 0
+    starts = sorted(set(have) | set(missing), key=lambda k: k[1])
+    for k, i in have.items():                         # an entry ends where the next function starts
+        nxt = [s[1] for s in starts if s[1] > k[1]]
+        m = re.search(r"^size = (\d+)$", blocks[i], re.M)
+        if nxt and m and k[1] + int(m.group(1)) > nxt[0]:
+            blocks[i] = blocks[i].replace(m.group(0), "size = %d" % (nxt[0] - k[1]), 1)
+    seg = lambda k: k[0] if isinstance(k[0], str) else "%04X" % k[0]
+    new = ['id = "%s_%04x"\nunit = "%s"\naddr = "%s:%04X"\nsize = %d\nname = "%s"\nlevel = "L2"\nmatch_flags = "%s"\n'
+           'notes = "not listed by the map: a function of the source, its bounds proven by the whole-unit match"\n\n'
+           % (uid, k[1], uid, seg(k), k[1], sizes[k], names_by_addr[k], flags) for k in missing]
+    at = max(mine) + 1
+    blocks[at:at] = new
+    return len(new)
 
 
 def main() -> int:
@@ -587,7 +620,7 @@ def main() -> int:
         unit_frame, unit_base = (int(x, 16) for x in u["start"].split(":"))
     ours_end = A.unit[0] * 16 + A.unit[1] + A.unit[2]
     starts = sorted(A.publics[A.name(n)] for n in defined if A.name(n))
-    bad, matched, covered = 0, [], []
+    bad, matched, covered, lengths = 0, [], [], {}
     for n in sorted(defined - stubs, key=lambda n: A.publics.get(A.name(n) or "", 1 << 30)):
         pub = A.name(n)
         if not pub:
@@ -600,6 +633,7 @@ def main() -> int:
         at_o = off if isinstance(seg, str) else seg * 16 + off
         err = compare(n, A, B, at_a, at_b, length, orig, at_o, unit_frame, unit_base, funcs, data)
         covered.append((at_a, length))
+        lengths[funcs[n]] = length
         if a.show == n:
             side_by_side(A, at_a, length, orig, at_o)
         if err and n in DRAFTS:
@@ -625,7 +659,7 @@ def main() -> int:
         ", %d drafts" % drafts if drafts else "", ", %d stubs" % len(stubs) if stubs else ""))
     if a.write and program.name.upper() in ("EOB.EXE", "INTRO.EXE"):
         n = write_levels({funcs[k]: k for k in matched}, "tasm /mx" if asm else " ".join(flags),
-                         u["id"] if whole else None, program.name.upper())
+                         u["id"] if whole else None, program.name.upper(), lengths)
         print("cmatch: recorded L2 for %d functions in re/symbols.toml" % n)
     return 1 if bad else 0
 
