@@ -121,9 +121,18 @@
         ;                                              copied by ShowPointer (1BBE:0111-0114)
         EXTRN   _gDrawnY:WORD              ; @ ds:815E: the position the pointer was last drawn at,
         ;                                              copied by ShowPointer (1BBE:0121-0124)
-        EXTRN   _gPointerState:WORD              ; @ ds:8160: pointer state bits: 8000h the pointer
-        ;                                              is hidden over the hide zone, 4000h a redraw
-        ;                                              is requested, low byte a counter (E1BBE.ASM)
+        EXTRN   _gPointerState:WORD              ; @ ds:8160: pointer state bits: 8000h a zone hide
+        ;                                              is in force, set by HidePointerZone
+        ;                                              (1BBE:027B); the pointer is hidden only
+        ;                                              when the rectangle overlaps the zone
+        ;                                              (1BBE:0281-0297; a disjoint rectangle
+        ;                                              jumps to 1BBE:02B6 with 8000h set). 4000h
+        ;                                              a redraw is owed at the next
+        ;                                              ShowPointerZone (1BBE:02E4, :02E9); low
+        ;                                              byte counts the extra zone hides,
+        ;                                              saturating at 0FFh (HidePointerZone
+        ;                                              inc al 1BBE:0229, undone at :022D;
+        ;                                              ShowPointerZone dec 1BBE:02D8)
         EXTRN   _gZoneLeft:WORD              ; @ ds:8162: hide zone, left in pixels, stored reduced
         ;                                              (the argument less the pointer width, the
         ;                                              store at 1BBE:0234 and the reduction at
@@ -349,8 +358,8 @@ L0174:  pop     es
 ; to DGROUP:8138/813A (unless DGROUP:80EC is 2), and when the published position (DGROUP:8138/
 ; 813A) differs from the position last drawn (DGROUP:815C/815E) and redraws are not
 ; suppressed (DGROUP:8146 = 0) it redraws through the far pointers: with gPointerState bit 8000h
-; (hidden over the hide zone) set and the position in the zone it calls DGROUP:80AA (with
-; DGROUP:8172/8174), HidePointer (1BBE:0002) and DGROUP:80A2, then sets 4000h (1A72:01EC);
+; (a zone hide is in force) set and the position in the zone it calls DGROUP:80AA (with
+; DGROUP:8172/8174), HidePointer (1BBE:0002) and DGROUP:80A2, then sets 4000h (1A72:0204);
 ; otherwise it calls DGROUP:80AA, HidePointer, ShowPointer (1BBE:00ED) and DGROUP:80A2 (1A72:025C).
 ; With the busy flag set the event publishes no position and draws nothing; its position was
 ; already stored at DGROUP:813C/813E (1A72:019E), and the button change above it has already
