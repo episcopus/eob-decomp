@@ -23,7 +23,7 @@ struct Cell {               /* the header gGetSpriteCell returns; bytes +1 and +
 
 struct CharRec {            /* 243-byte (0xF3) character records at ds:F580 (src/EOV6.C) */
     char index;             /* +00 */
-    char flags;             /* +01: status bits (only bit 0 is read here) */    char name[0x0B];        /* +02: the character's name, NUL padded */
+    unsigned char flags;    /* +01: status bits (only bit 0 is read here) */    char name[0x0B];        /* +02: the character's name, NUL padded */
     char pad0D[0x1B - 0x0D];
     signed char hp;         /* +1B: current hit points */
     signed char maxhp;      /* +1C: maximum hit points */
@@ -99,6 +99,7 @@ extern char gTable7B7D[]; /*@ ds:7B7D */
 extern char gTable7B83[]; /*@ ds:7B83 */
 extern char gText7B23[]; /*@ ds:7B23 */
 extern char gText7B9F[]; /*@ ds:7B9F */
+extern char gText7CBC[]; /*@ ds:7CBC */
 extern char gText7D77[]; /*@ ds:7D77 */
 extern char gText7BA6[]; /*@ ds:7BA6 */
 extern char gText7BB2[]; /*@ ds:7BB2 */
@@ -151,6 +152,7 @@ extern void ClearTextRegion(void); /*@ 1DE7:0344 */
 extern void SetTextWindow(int n); /*@ 1DE7:0009 */
 extern void DrawText(char far *text); /*@ 1DE7:060A */
 extern void DrawFilledPanel(int x1, int y1, int x2, int y2, int c1, int c2, int c3); /*@ 082C:09D5 */
+extern void ClipRect(int x1, int y1, int x2, int y2, int width, int height, int extra1, int extra2); /*@ 19F3:000E */
 extern int IsPointInsideRect(int x, int y, int left, int top, int right, int bottom); /*@ 082C:0613 */
 extern int far RollDice(char count, char sides, char bonus); /*@ 082C:0458 */
 extern void WaitTicks(int n); /*@ 082C:0425 */
@@ -181,10 +183,8 @@ extern void FileClose(int handle); /*@ 1C0E:03BB */
 extern void f1A47_0169(void far *font); /*@ 1A47:0169 */
 
 /* siblings not decompiled yet: their real signatures, so callers compile */
-void Ovl5_00A1(int mode);
 void Ovl5_025F(void);
 int Ovl5_0455(char offset, char count, void far *names);
-void Ovl5_067B(void);
 void Ovl5_070E(int who);
 void Ovl5_0828(int who, int which, int head, int other);
 void Ovl5_0924(void);
@@ -230,7 +230,62 @@ void PrintTableString(int index, int flag);
     farfree(cell);
 }
 
-/*@ ovl5:00A1 stub */ void Ovl5_00A1(int mode) {}
+/* ovl5:00A1: draws the character portrait for the current panel. It clips the portrait region
+   (0,0)-(0x16,0x78) and copies the three per-character cell-index tables ds:7B77, ds:7B7D and
+   ds:7B83 (one six-entry row per party member) into locals, then draws the cells the `mode`
+   selects through DrawSheetCell: the fixed cells 2, 7, 6, 0x12, 0x11 and 4, or, for modes 1 and
+   2, the current character's own cells, indexed by the selected member gEFC6. Called by the
+   overlay dispatcher 1A82 for modes 0..7 and by the resurrect list 0DBB with mode 2. */
+/*@ ovl5:00A1 draft */ void DrawCharPortrait(int mode)
+{
+    char head[6] = { 9, 8, 8, 9, 9, 0x0A };         /* ds:7B77 */
+    char body[6] = { 0x0D, 0x0B, 0x0C, 0x0E, 0x0F, 0x10 };  /* ds:7B7D */
+    char feet[6] = { 0x34, 0x31, 0x31, 0x34, 0x34, 0x45 };  /* ds:7B83 */
+
+    ClipRect(0, 0, 0, 0, 0x16, 0x78, 6, 0);
+    switch (mode) {
+    case 0:
+        DrawSheetCell(2, 0x58, 0x68);
+        break;
+    case 1:
+        if (gEFC6 == -1) {
+            DrawSheetCell(0, 0x58, 0x68);
+        } else {
+            DrawSheetCell(0, 0x3C, 0x68);
+            DrawSheetCell(5, 0x74, 0x68);
+        }
+        break;
+    case 2:
+        if (gEFC6 == -1) {
+            DrawSheetCell(3, 0x58, 0x68);
+        } else {
+            DrawSheetCell(3, 0x3C, 0x68);
+            DrawSheetCell(head[gEFC6], 0x74, 0x68);
+            DrawSheetCell(body[gEFC6], 0x74, feet[gEFC6]);
+        }
+        break;
+    case 3:
+        DrawSheetCell(7, 0x58, 0x68);
+        break;
+    case 4:
+        DrawSheetCell(6, 0x58, 0x68);
+        break;
+    case 5:
+        DrawSheetCell(0x12, 0x58, 0x58);
+        break;
+    case 6:
+        DrawSheetCell(0x11, 0x58, 0x68);
+        break;
+    case 7:
+        DrawSheetCell(4, 0x58, 0x68);
+        break;
+    }
+}
+
+/* The menu x-position table ds:7B89, defined here because the original lays it out right after
+   00A1's three array initialisers (the matcher compares that block by content); 0455 reads it. */
+char gTable7B89[] = { 0x3B, 0xA6, 0x04, 0x70, 0xDC, 0x04, 0x70, 0xDC, 0x04, 0x70, 0xDC }; /*@ ds:7B89 */
+
 /* ovl5:021C: clears the character panel (1, 0x7a)-(0x13e, 0xc7): hides the pointer, clears the
    text region, fills the rectangle with gF57E and shows the pointer again. Called before every
    panel of the overlay draws itself. */
@@ -269,7 +324,35 @@ void PrintTableString(int index, int flag);
 }
 
 /*@ ovl5:0455 stub */ int Ovl5_0455(char offset, char count, void far *names) {}
-/*@ ovl5:067B stub */ void Ovl5_067B(void) {}
+/* ovl5:067B: the "which character?" selector of the 0828 panel. It fills the far-pointer array
+   names[] with the six party members' names (gChars[i].name, ds + i*0xF3 + 2) and appends the
+   "CANCEL" string ds:7B9F, at the same time counting how many members are present (flags bit 0).
+   When every slot is taken it clears the panel, draws the title ds:7CBC and shows the seven-entry
+   menu table through Ovl5_0455; choosing CANCEL (index 6) returns 0, any other choice is applied
+   through f0D1C_035A. A free slot returns 1 at once. Called by 0828. */
+/*@ ovl5:067B */ int ChooseChar(void)
+{
+    char far *names[7];
+    int count;
+    int i;
+    int sel;
+
+    count = i = 0;
+    for (; i < 6; i++) {
+        count += gChars[i].flags & 1;
+        names[i] = gChars[i].name;
+    }
+    names[6] = gText7B9F;
+    if (count > 5) {
+        ClearPanel();
+        DrawText(gText7CBC);
+        sel = Ovl5_0455(2, 7, names);
+        if (sel == 6)
+            return 0;
+        f0D1C_035A(sel);
+    }
+    return 1;
+}
 /*@ ovl5:070E stub */ void Ovl5_070E(int who) {}
 /*@ ovl5:0828 stub */ void Ovl5_0828(int who, int which, int head, int other) {}
 /* ovl5:08D2: turns item `n` into a carried item (CopyItemToFreeSlot) and queues it on the list
@@ -632,7 +715,7 @@ void PrintTableString(int index, int flag);
     default:
         LoadOverlayScreen(gText7F07, 5, 3);
         ClipRect(0, 0, 0, 0, 0x16, 0x78, 0, 6);
-        Ovl5_00A1(mode);
+        DrawCharPortrait(mode);
         LockShowPointer();
         handle = FileOpen(gText7F0F, 1);
         FileRead(handle, gSegDF4E, 0x7d00L);
