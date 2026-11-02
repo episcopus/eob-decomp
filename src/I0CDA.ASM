@@ -23,20 +23,26 @@
 ;   al = (b0 >> 2) - b0 - carry           (sbb al,es:[si]; es:[si] is still the old b0)
 ;   al = al >> 1                          (shr; bit 0 of that result into the carry)
 ;   b0 = (b0 >> 1) | (carry << 7)         (rcr)
-;   AX = b0 ^ b1, AH = 0
+;   AX = new b0 ^ new b1, AH = 0          (the bytes the rcl and rcr just wrote)
 ;
-; The shifts act on the copy in AL, not on DGROUP:2310; the byte there is only read until the rcr
-; writes it. Only b2 and b1 shift left (rcl), b0 shifts right (rcr). ES and SI are saved; DS is
-; never read. The far twin is E1D8C.ASM (the same code over DGROUP:8484 in EOB.EXE).
+; The two shr (lines 60 and 61) act on the copy in AL; DGROUP:2310 is only read until the rcr at
+; line 67 writes it. Only b2 and b1 shift left (rcl), b0 shifts right (rcr). ES and SI are
+; saved; DS is never read. The far twin is E1D8C.ASM (the same code over DGROUP:8484 in EOB.EXE).
 ;
 ; Callers: the INTRO copy is reached from the overlay ovl0 by eleven relocatable far calls
-; (`9a 06 00 d0 00`, the segment word a fixup to this unit's segment 0CDA) in five functions
-; (ovl0:015D, 0FD9, 1265, 1DF3, 23A3); each continues `mov ah,0` and uses the byte as a small value
-; (`idiv` by 31, `and ax,7`, `test al,1`, `and ax,3`). The EOB copy is called twice from game unit
-; e0ef3 (0EF3:2FA2, 0EF3:305F; src/E1D8C.ASM).
+; (`9a 06 00 d0 00`, the segment word a fixup to this unit's segment 0CDA) in five functions:
+; ovl0:015D (sites 05F5, 0644, 0650), ovl0:0FD9 (1015), ovl0:1265 (1397, 157A),
+; ovl0:1DF3 (2043, 2092, 209E) and ovl0:23A3 (26F6, 2797), the sites as ovl00.bin offsets.
+; Eight sites continue `mov ah,0` (05F5, 0644, 1397, 157A, 2043, 2092, 26F6, 2797); 0650 and
+; 209E test only the low byte (`test al,1`), and 1015 drops the result (its next bytes,
+; `mov ax,[2326h]; or ax,[2328h]`, are the caller's own loop test). The byte is used as a small
+; value: `idiv` by 31 (05F5, 2043), `test ax,7` (0644, 2092), `and ax,3` then three `shl ax,1`
+; (1397), `test ax,3` (157A), `test al,1` (0650, 209E) and `and ax,7; add ax,0x19` (26F6, 2797).
+; The EOB copy is called twice from game unit e0ef3 (0EF3:2FA2, 0EF3:305F; src/E1D8C.ASM).
 ;
-; Purpose unknown: those uses support "random byte" and nothing more specific, so the placeholder
-; name stays.
+; The name _RandomByte has evidence: the routine steps the 24-bit state at DGROUP:2310 (the seed
+; 34 12 76 in the image) and returns a byte of it, and its callers use the byte as a random value
+; (src/IOV0.C declares and calls it RandomByte). No caller narrows it further.
         PUBLIC  _RandomByte              ; @ 0CDA:0006
 _RandomByte PROC FAR
         push    bp

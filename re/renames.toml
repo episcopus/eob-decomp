@@ -2385,3 +2385,12 @@ new = "GetVoiceDelay"
 kind = "function"
 why = "returns the voice record byte at +5, the note delay counter StartVoiceNote sets and UpdateVoices counts down (4CB1, 41D8); the sixth entry of the driver entry table at 3944 (review of e_text)"
 date = "2026-11-02"
+
+[[rename]]
+id = "intro/0CDA:0006=RandomByte"
+addr = "intro/0CDA:0006"
+old = ""
+new = "RandomByte"
+kind = "function"
+why = "0CDA:0006 steps the 24-bit state at DGROUP:2310 (seed 34 12 76 in the image) and returns a byte; src/IOV0.C declares it and its callers use the byte as a random value (mod 31, & 7, & 3, & 1)"
+date = "2026-11-02"
