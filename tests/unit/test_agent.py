@@ -69,6 +69,22 @@ def test_worker_prompt():
         assert "open must-fix findings" in worker.prompt("w1", "decompiler", "e0cf7", "unit/e0cf7", Path("/tmp/wt"))
     finally:
         cm.open_must_fix = real
+    p = worker.prompt("w1", "decompiler", "e0cf7", "unit/e0cf7", Path("/tmp/wt"), "LEFT")
+    assert "uncommitted changes" in p and "rejected" not in p.split("Then continue")[0]
+
+
+def test_left_claims(tmp_path, monkeypatch):
+    """A claim of this agent with no hand-off and a dirty worktree is its to retake; a clean one is not."""
+    import common as cm
+    locks, handoffs = tmp_path / "locks", tmp_path / "handoffs"
+    locks.mkdir(); handoffs.mkdir()
+    monkeypatch.setattr(cm, "state_dir", lambda n: locks if n == "eob-locks" else handoffs)
+    for k in ("dirty", "clean", "other"):
+        (locks / ("%s.lock" % k)).write_text("key = %s\nagent = %s\nbranch = unit/%s\n" % (k, "w9" if k == "other" else "w1", k))
+        (tmp_path / k).mkdir()
+    monkeypatch.setattr(cm, "worktree_of", lambda k: tmp_path / k)
+    monkeypatch.setattr(cm, "git", lambda *a, cwd=None, check=True: " M src/X.C" if cwd and cwd.name in ("dirty", "other") else "")
+    assert worker.left_claims("w1") == [("dirty", "LEFT")]
 
 
 def test_the_gate_fails_on_a_fixture_that_matches(tmp_path, monkeypatch, capsys):

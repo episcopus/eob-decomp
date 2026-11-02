@@ -8,7 +8,9 @@ Normally `make start-run` starts one per roster entry; the human may start one b
 session (at most SESSIONS):
 
   1. claim: its own hand-off that `make integrate` rejected (once per worker run, with the reason
-     in the prompt), else UNIT, else the next unit for its tier (`make next`), or a review;
+     in the prompt), else its own claim a session left with uncommitted changes (once per worker run;
+     nothing else would take it: `make next` skips claimed units), else UNIT, else the next unit for
+     its tier (`make next`), or a review;
   2. run the session command in the unit's worktree, the prompt (tools/agent/worker_prompt.md,
      filled in) in a file. The default runs OpenCode on its background service, which holds the
      provider credentials, with a session id chosen here so the session can be found again:
@@ -90,7 +92,11 @@ def prompt(agent: str, role: str, key: str, branch: str, wt: Path, rejected: str
         first = ("Earlier sessions of a cheaper model gave up on this unit without matching more of it: "
                  "read the notes of its functions in re/symbols.toml and `git log main..HEAD` before you "
                  "start, and take one hard function at a time. ") + first
-    if rejected:
+    if rejected == "LEFT":
+        first = ("Your last session on this branch ended with uncommitted changes, often a commit the "
+                 "pre-commit hook refused (`git commit` prints why). Run `git status` and `git diff --cached`, "
+                 "fix what the hook reports, commit, and hand off. Then continue: ") + first
+    elif rejected:
         first = ("Your last hand-off of this branch was rejected by make integrate: %s. Fix that first (a "
                  "merge conflict: `git merge main` in this worktree and keep both sides; a failed check: "
                  "read the log). Then continue: " % rejected) + first
@@ -105,6 +111,20 @@ def rejected_handoffs(agent: str) -> list[tuple[str, str]]:
         f = common.fields(p.read_text())
         if f.get("agent") == agent and f.get("integrate") == "rejected":
             out.append((p.stem, "%s (log %s)" % (f.get("integrate_reason", ""), f.get("integrate_log", ""))))
+    return out
+
+
+def left_claims(agent: str) -> list[tuple[str, str]]:
+    """(key, reason) of this agent's claims with no hand-off whose worktree has uncommitted changes: a
+    session ended before it committed (often a commit the pre-commit hook refused)."""
+    out = []
+    for p in sorted(common.state_dir("eob-locks").glob("*.lock"), key=lambda p: p.stat().st_mtime):
+        f = common.fields(p.read_text())
+        key, wt = f.get("key", p.stem), common.worktree_of(f.get("key", p.stem))
+        if f.get("agent") != agent or common.handoff_path(key).exists() or not wt.exists():
+            continue
+        if common.git("status", "--porcelain", "--untracked-files=no", cwd=wt, check=False):
+            out.append((key, "LEFT"))
     return out
 
 
@@ -258,7 +278,7 @@ def loop(a) -> int:
             print("worker: tools/agent changed; restarting the worker with the new code", flush=True)
             common.agent_status(a.agent, state="reloading", **status)
             os.execv(sys.executable, [sys.executable] + sys.argv)
-        rejected = [r for r in rejected_handoffs(a.agent) if r[0] not in retried][:1]
+        rejected = [r for r in rejected_handoffs(a.agent) + left_claims(a.agent) if r[0] not in retried][:1]
         retried.update(k for k, _ in rejected)
         try:
             if rejected:
@@ -282,7 +302,7 @@ def loop(a) -> int:
         before, fixes_before = common.l2_count(wt, uid), common.must_fix_count(wt, uid)
         head_before = common.git("rev-parse", branch, check=False)
         print("worker: session %d on %s (%s%s) in %s, log %s" % (n, key, model or "session_cmd",
-              ", after a rejection" if rejected else "", wt, log), flush=True)
+              (", left uncommitted" if rejected[0][1] == "LEFT" else ", after a rejection") if rejected else "", wt, log), flush=True)
         started = common.now()
 
         def on_start(session_id, key=key, log=log, started=started):
