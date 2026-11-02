@@ -58,7 +58,7 @@ extern void RemoveKeyboard(void);                     /*@ 1AAD:09F6 */
 extern void f1DDD_002D(int mode);                 /*@ 1DDD:002D */
 extern void TrimMemoryToVideo(void);              /*@ 1990:027D */
 extern void MouseDisable(void);                   /*@ 1A72:0285 */
-extern void f1C0E_13FD(void);                     /*@ 1C0E:13FD */
+extern void ShutdownOverlayCache(void);                     /*@ 1C0E:13FD */
 extern void f1D8F_0038(void);                     /*@ 1D8F:0038 */
 extern void SoundDriverPause(void);               /*@ 1948:046B */
 extern void SoundDriverUninstall(void);           /*@ 1948:03DA */
@@ -83,7 +83,7 @@ extern int CheckMemoryChain(void);                /*@ 1990:0071 */
 extern unsigned ReserveMemoryBelowVideo(int n);   /*@ 1990:0133 */
 extern void MouseInit(void);                      /*@ 1A72:00DA */
 extern int RunOverlayRequest(void far *req);      /*@ 1C00:0055 */
-extern void f1C0E_13E7(void);                     /*@ 1C0E:13E7 */
+extern void InitOverlayCache(void);                     /*@ 1C0E:13E7 */
 extern void SetTextWindow(int n);                    /*@ 1DE7:0009 */
 extern void CalibrateRetrace(void);               /*@ 1A65:000E */
 extern void SoundDriverInstall(void);             /*@ 1948:0377 */
@@ -269,7 +269,7 @@ int AllocationFailure(void);
         gFn80BA(gFE68);
         break;
     }
-    f1C0E_13E7();
+    InitOverlayCache();
     g3056 = 1;
     CalibrateRetrace();
     srand(time(NULL));
@@ -335,7 +335,7 @@ done:
     if (g8148)
         MouseDisable();
     if (g3056)
-        f1C0E_13FD();
+        ShutdownOverlayCache();
     f1D8F_0038();
     RemoveKeyboard();
     f1DDD_002D(7);

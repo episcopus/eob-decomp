@@ -19,14 +19,14 @@ extern int (far *gAllocFailHook)(void); /*@ ds:810A: holds 19BC:02B6 (OutOfMemor
    0000:6384 in this large model build, a far pointer fill. */
 
 extern void far *f1BA8_0072(void far *p); /*@ 1BA8:0072: normalizes a far pointer to DX:AX */
-extern int f1C0E_0E5B(unsigned a, unsigned char b); /*@ 1C0E:0E5B: first retry before the OOM hook */
+extern int EvictFile(unsigned a, unsigned char b); /*@ 1C0E:0E5B: first retry before the OOM hook */
 extern int f1DDD_002D(int i); /*@ 1DDD:002D */
 extern void PrintString(char far *s); /*@ 19EA:0000 */
 extern void WaitGameKey(void); /*@ 1AAD:053A */
 extern void ShutdownGame(void); /*@ 07C8:058A */
 
 /* 19BC:0007: allocate a far block of size bytes. It asks farmalloc for one extra byte (or 16 for
-   a 0x20 request) and retries: first the hook f1C0E_0E5B(0, 0xff) is tried, then the failure hook
+   a 0x20 request) and retries: first the hook EvictFile(0, 0xff) is tried, then the failure hook
    at ds:810A; only when both return 0 does it give up with NULL. It normalizes the pointer, stores
    the flags byte just before the block (paragraph aligned for flag 0x20) and, for flag 0x10, zero
    fills the whole block in 0xFA00 byte chunks. ds:810E counts the live blocks. The two stage
@@ -42,7 +42,7 @@ extern void ShutdownGame(void); /*@ 07C8:058A */
     size += (flags & 0x20) ? 0x10 : 1;
     for (;;) {
         while ((blk = (unsigned char far *)farmalloc(size)) == NULL) {
-            if (f1C0E_0E5B(0, 0xff))
+            if (EvictFile(0, 0xff))
                 continue;
             break;
         }

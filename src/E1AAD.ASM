@@ -11,7 +11,7 @@
         .MODEL  LARGE
 
         EXTRN   _FileRead:FAR           ; @ 1C0E:0400 (reads handle, far buffer, unsigned long length)
-        EXTRN   _f1C0E_0578:FAR         ; @ 1C0E:0578 (the write twin of FileRead: same arguments)
+        EXTRN   _FileWrite:FAR         ; @ 1C0E:0578 (the write twin of FileRead: same arguments)
 
         .DATA
         EXTRN   gSoundOn:BYTE           ; @ ds:80E6: sound on unless argv[2] was '4' (E07C8.C)
@@ -1292,7 +1292,7 @@ f0C17_0C22:
         mov     ax,OFFSET kRecKeyD1E
         push    ax
         push    word ptr [g80ED]
-        call    far ptr _f1C0E_0578
+        call    far ptr _FileWrite
         add     sp,0Ah
         mov     ax,word ptr cs:[kRecKeyD1E]
         cmp     ax,41h
@@ -1309,7 +1309,7 @@ f0C17_0C22:
         mov     ax,OFFSET kRecKeyD1E
         push    ax
         push    word ptr [g80ED]
-        call    far ptr _f1C0E_0578
+        call    far ptr _FileWrite
         add     sp,0Ah
 f0C17_0C88:
         mov     word ptr [g8488],0

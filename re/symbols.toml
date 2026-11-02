@@ -5477,6 +5477,9 @@ unit = "e1c0e"
 addr = "1C0E:0046"
 size = 100
 evidence = ["near", "frame"]
+name = "RetryFile"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "e1c0e_00aa"
@@ -5484,6 +5487,9 @@ unit = "e1c0e"
 addr = "1C0E:00AA"
 size = 49
 evidence = ["near", "frame"]
+name = "FatalError"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "e1c0e_00db"
@@ -5498,6 +5504,9 @@ unit = "e1c0e"
 addr = "1C0E:03BB"
 size = 69
 evidence = ["far", "frame"]
+name = "FileClose"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "e1c0e_0400"
@@ -5533,6 +5542,9 @@ unit = "e1c0e"
 addr = "1C0E:0A35"
 size = 104
 evidence = ["far", "near", "frame"]
+name = "DeleteFile"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "e1c0e_0a9d"
@@ -5540,6 +5552,9 @@ unit = "e1c0e"
 addr = "1C0E:0A9D"
 size = 64
 evidence = ["far", "frame"]
+name = "ResetFile"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "e1c0e_0add"
@@ -5554,6 +5569,9 @@ unit = "e1c0e"
 addr = "1C0E:0D9B"
 size = 40
 evidence = ["frame"]
+name = "ShowMessage"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "e1c0e_0dc3"
@@ -5568,6 +5586,7 @@ unit = "e1c0e"
 addr = "1C0E:0E5B"
 size = 140
 evidence = ["far", "near", "frame"]
+name = "EvictFile"
 
 [[function]]
 id = "e1c0e_0ee7"
@@ -5575,6 +5594,9 @@ unit = "e1c0e"
 addr = "1C0E:0EE7"
 size = 135
 evidence = ["near", "frame"]
+name = "FreeAllCachedFiles"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "e1c0e_0f6e"
@@ -5589,6 +5611,9 @@ unit = "e1c0e"
 addr = "1C0E:1161"
 size = 114
 evidence = ["far", "frame"]
+name = "IsFileInMemory"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "e1c0e_11d3"
@@ -5596,6 +5621,9 @@ unit = "e1c0e"
 addr = "1C0E:11D3"
 size = 109
 evidence = ["far", "frame"]
+name = "FindLoadedFile"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "e1c0e_1240"
@@ -5603,6 +5631,9 @@ unit = "e1c0e"
 addr = "1C0E:1240"
 size = 208
 evidence = ["far", "frame"]
+name = "ReadFromMemory"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "e1c0e_1310"
@@ -5610,6 +5641,9 @@ unit = "e1c0e"
 addr = "1C0E:1310"
 size = 171
 evidence = ["far", "frame"]
+level = "L2"
+match_flags = "-ml -O -Z -G"
+name = "LocateOverlayFile"
 
 [[function]]
 id = "e1c0e_13bb"
@@ -5617,6 +5651,9 @@ unit = "e1c0e"
 addr = "1C0E:13BB"
 size = 44
 evidence = ["far", "frame"]
+name = "ExpandTextWindow"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "e1c0e_13e7"
@@ -5624,6 +5661,9 @@ unit = "e1c0e"
 addr = "1C0E:13E7"
 size = 22
 evidence = ["far", "frame"]
+level = "L2"
+match_flags = "-ml -O -Z -G"
+name = "InitOverlayCache"
 
 [[function]]
 id = "e1c0e_13fd"
@@ -5631,6 +5671,9 @@ unit = "e1c0e"
 addr = "1C0E:13FD"
 size = 20
 evidence = ["far", "frame"]
+level = "L2"
+match_flags = "-ml -O -Z -G"
+name = "ShutdownOverlayCache"
 
 [[function]]
 id = "e1c0e_1411"
@@ -5652,6 +5695,9 @@ unit = "e1c0e"
 addr = "1C0E:1645"
 size = 73
 evidence = ["far", "frame"]
+name = "FindFile"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "e1c0e_168e"
@@ -5659,6 +5705,9 @@ unit = "e1c0e"
 addr = "1C0E:168E"
 size = 140
 evidence = ["far", "frame"]
+name = "ResolveFileLink"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "e1c0e_171a"
@@ -5666,6 +5715,9 @@ unit = "e1c0e"
 addr = "1C0E:171A"
 size = 10
 evidence = ["frame"]
+name = "ClearSearchAllDrives"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "e1c0e_1724"
@@ -5673,6 +5725,9 @@ unit = "e1c0e"
 addr = "1C0E:1724"
 size = 10
 evidence = ["frame"]
+name = "SetSearchAllDrives"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "e1c0e_172e"
@@ -5680,6 +5735,9 @@ unit = "e1c0e"
 addr = "1C0E:172E"
 size = 177
 evidence = ["far", "frame"]
+name = "LookupFileEntry"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "e1d8c_0000"

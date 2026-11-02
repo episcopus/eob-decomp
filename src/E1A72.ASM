@@ -17,7 +17,7 @@
         EXTRN   _access:FAR             ; @ 0000:505D (runtime ACCESS module)
         EXTRN   _open:FAR               ; @ 0000:6443 (runtime OPEN module, E1A47.C)
         EXTRN   _close:FAR              ; @ 0000:50C5 (runtime, E1A47.C)
-        EXTRN   _f1C0E_1310:FAR         ; @ 1C0E:1310 (locates and opens the overlay file)
+        EXTRN   _LocateOverlayFile:FAR         ; @ 1C0E:1310 (locates and opens the overlay file)
         EXTRN   _ShutdownGame:FAR         ; @ 07C8:058A (cleanup and exit, E19BC.C)
         EXTRN   _HandleMouseButtons:FAR         ; @ 1AAD:0B0E (keyboard glue, takes the button state)
         EXTRN   _HidePointer:FAR         ; @ 1BBE:0002 (E1BB1.ASM)
@@ -101,7 +101,7 @@ L002E:  mov     ax,20B5h
 L003F:  push    ds
         mov     ax,308Ah
         push    ax
-        call    far ptr _f1C0E_1310
+        call    far ptr _LocateOverlayFile
         add     sp,4
         or      ax,ax
         je      L007C
@@ -118,7 +118,7 @@ L0054:  push    ds
         push    ds
         mov     ax,308Ah
         push    ax
-        call    far ptr _f1C0E_1310
+        call    far ptr _LocateOverlayFile
         add     sp,4
         or      ax,ax
         je      L007C
