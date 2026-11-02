@@ -3353,6 +3353,9 @@ unit = "e0ef3"
 addr = "0EF3:06E7"
 size = 488
 evidence = ["far", "near", "frame"]
+name = "FlashViewDamage"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0ef3_08cf"

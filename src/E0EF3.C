@@ -218,6 +218,7 @@ extern void far *gIconTable[];          /*@ ds:FB34 */ /* far sprite pointers in
 extern void DrawRegion000F(int mode, void far *src, int x, int y, int region); /*@ 082C:063B */
 extern void DrawRegion004D(int mode, void far *src, int x, int y, int region); /*@ 082C:0681 */
 extern void Obj16D6(int key, char count, char sides, char bonus, char flag); /*@ 08E6:16D6 */
+extern void ClipRect(int x1, int y1, int x2, int y2, int width, int height, int extra1, int extra2); /*@ 19F3:000E */
 
 extern char gText57A3[];                /*@ ds:57A3 */
 extern char gText57F1[];                /*@ ds:57F1 */
@@ -240,6 +241,7 @@ extern void (far *gFnEFBA)(void);       /*@ ds:EFBA */ /* a redraw hook run by 0
 extern char gFlag;                      /*@ ds:F3B9 */ /* cleared by 0EF3:2541 (E0ACD.C) */
 extern void far *gSegDF4E;              /*@ ds:DF4E */ /* the slot-5 buffer (E07A9.C) */
 extern void (far *gRestoreRect)(int x, int y, int width, int height, void far *buf); /*@ ds:804E */
+extern void (far *gFn804A)(int x, int y, int width, int height, void far *buf); /*@ ds:804A */
 extern void (far *gSaveRect)(int x, int y, int width, int height, void far *buf); /*@ ds:80AE */
 extern void HidePointerZone(int left, int top, int right, int bottom); /*@ 1BBE:01FE */
 extern void ShowPointerZone(void);      /*@ 1BBE:02C2 */
@@ -322,6 +324,15 @@ extern int gFlashBaseX[];        /*@ ds:5639 */ /* six per-member x bases */
 extern signed char gFlashBaseY[];/*@ ds:5645 */ /* six per-member y bases */
 extern char far *gFlashFrames[]; /*@ ds:DD1C */ /* far image pointers, indexed by frame - 1 */
 extern void f1A29_000F(int mode, void far *src, int x, int y, int region); /*@ 1A29:000F */
+extern int gFlags849E;           /*@ ds:849E */ /* bit 1 gates the object animation frames
+                                                    (src/E08E6.C) */
+extern char far *gBufDCFC;       /*@ ds:DCFC */ /* the 4096-byte screen scratch buffer, one far
+                                                    allocation (src/E07A9.C) */
+extern unsigned long gFlashPass2[]; /*@ ds:564B */ /* per-pass long masks for 0EF3:06E7 */
+extern unsigned long gFlashFrame2[];/*@ ds:5677 */ /* per-frame long masks for 0EF3:06E7 */
+extern unsigned char gFlashShift2[];/*@ ds:56B7 */ /* per-frame shift for 0EF3:06E7 */
+extern unsigned char gFlashX2[];    /*@ ds:56C7 */ /* per-frame x in pixels for 0EF3:06E7 */
+extern unsigned char gFlashY2[];    /*@ ds:56D7 */ /* per-frame y in pixels for 0EF3:06E7 */
 extern signed char g1A09[];      /*@ ds:1A09 */ /* per-slot object index (EOV4.C) */
 extern int g1D61[];              /*@ ds:1D61 */ /* per-slot, per-part x table (EOV4.C) */
 extern int g8115;                /*@ ds:8115 */ /* nonzero while a status line is up (E082C.C) */
@@ -674,7 +685,53 @@ extern void f0EF3_2A53(int a, int b, int c, int d, int e, void far *p); /*@ 0EF3
         RedrawMember(who);
 }
 
-/*@ 0EF3:06E7 stub */ void f0EF3_06E7(void) {}
+/* 0EF3:06E7: flash damage over the view. It saves the sixteen 2-by-0x10 pixel cells described by
+   gFlashX2/gFlashY2 into the scratch buffer (256 bytes each), then runs eleven passes: restore the
+   cells, and for each of the sixteen frames take the unsigned long gFlashPass2[pass] masked by
+   gFlashFrame2[i] and shifted right by gFlashShift2[i]; when the result is nonzero draw
+   gFlashFrames[frame] at (gFlashX2[i], gFlashY2[i]) through 1A29:000F, then hide the pointer,
+   re-clip the view box, show the pointer and wait two ticks. A final restore leaves the view as it
+   was. It clears gFlags849E bit 1 for the duration. Called by the wand, turn-undead and
+   clear-objects paths (0BD2:0EE8, 0D1C:0A43, 0EF3:1702). */
+/*@ 0EF3:06E7 */ void FlashViewDamage(void)
+{
+    int x;
+    int y;
+    int frame;
+    int i;
+    int pass;
+
+    gFlags849E &= ~2;
+    HidePointerZone(0, 0, 0xB0, 0x78);
+    ClipRect(0, 0, 0, 0, 0x16, 0x78, 0, 2);
+    for (i = 0; i < 0x10; i++)
+        gSaveRect(gFlashX2[i] >> 3, gFlashY2[i], 2, 0x10, gBufDCFC + (i << 8));
+    for (pass = 0; pass < 0xB; pass++) {
+        g8115 = 2;
+        for (i = 0; i < 0x10; i++) {
+            x = gFlashX2[i];
+            y = gFlashY2[i];
+            gFn804A(gFlashX2[i] >> 3, gFlashY2[i], 2, 0x10, gBufDCFC + (i << 8));
+        }
+        for (i = 0; i < 0x10; i++) {
+            frame = (gFlashPass2[pass] & gFlashFrame2[i]) >> gFlashShift2[i];
+            x = gFlashX2[i];
+            y = gFlashY2[i];
+            if (frame-- == 0)
+                continue;
+            f1A29_000F(2, gFlashFrames[frame], x, y, 0);
+        }
+        g8115 = 0;
+        HidePointerZone(0, 0, 0xB0, 0x78);
+        ClipRect(0, 0, 0, 0, 0x16, 0x78, 2, 0);
+        ShowPointerZone();
+        WaitTicks(2);
+    }
+    for (i = 0; i < 0x10; i++)
+        gRestoreRect(gFlashX2[i] >> 3, gFlashY2[i], 2, 0x10, gBufDCFC + (i << 8));
+    ShowPointerZone();
+    gFlags849E |= 2;
+}
 
 /* 0EF3:08CF: apply one action record to the member it names (+0x38). It makes that member current
    and, while the member is alive (m01 bit 0), draws its name and the message ds:57C3, plays the
