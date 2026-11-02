@@ -3486,6 +3486,8 @@ addr = "0EF3:0A3F"
 size = 825
 evidence = ["near", "frame"]
 name = "DamageTargetCell"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0ef3_0d78"

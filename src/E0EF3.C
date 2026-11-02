@@ -802,8 +802,10 @@ extern void f0EF3_2A53(int a, int b, int c, int d, int e, void far *p); /*@ 0EF3
    unless 0D1C:0BAB rejects it. Otherwise, when the cell is the party cell and the member index is
    negative (or flag 0x10 is set), either walk the six members (flag 2) or pick one from the
    g1A2B table and damage it. Finally, when anything was hit and the record's +0xC has bit 0x40,
-   run the animation 0EF3:00CD; a record whose +8 is 5 clears the hit. Returns the hit flag. */
-/*@ 0EF3:0A3F draft */ int DamageTargetCell(struct Tgt far *rec, int count, int sides, int bonus, int n)
+   run the animation 0EF3:00CD; a record whose +8 is 5 clears the hit. Returns the hit flag.
+   The picking branch keeps the `hit = 1` at the end of the chain, so its source is the negated
+   form `if (m08 != 0 || (mE3 & 2) == 0) { ... } else hit = 1;`, not `if (m08 == 0 && (mE3 & 2))`. */
+/*@ 0EF3:0A3F */ int DamageTargetCell(struct Tgt far *rec, int count, int sides, int bonus, int n)
 {
     char dmg;
     char flag01;
@@ -858,9 +860,7 @@ extern void f0EF3_2A53(int a, int b, int c, int d, int e, void far *p); /*@ 0EF3
                 i = idx + 2;
             else
                 i = idx;
-            if (rec->m08 == 0 && (gChars[i].mE3 & 2)) {
-                hit = 1;
-            } else {
+            if (rec->m08 != 0 || (gChars[i].mE3 & 2) == 0) {
                 if ((gChars[i].m01 & 1) && (Obj106B(gObjs, i) || !flag04)) {
                     dmg = RollDice(count, sides, bonus) * n;
                     if (flag08)
@@ -868,6 +868,8 @@ extern void f0EF3_2A53(int a, int b, int c, int d, int e, void far *p); /*@ 0EF3
                     hit = 1;
                     DamageCharacter(i, dmg);
                 }
+            } else {
+                hit = 1;
             }
         }
     }
