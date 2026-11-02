@@ -135,7 +135,9 @@ extern void LockShowPointer(void); /*@ 1BBE:0332 */
 extern void DrawBox(int x1, int y1, int x2, int y2, int colour); /*@ 1A1F:000C */
 extern int GetIndexedByte(char index, char limit, char offset); /*@ 0A72:0006 */
 extern char GetClassSlotByte(char row, char slot); /*@ 0A72:0509 */
-extern int FindClassSlot(int value, char classIndex); /*@ 0A72:007B */
+extern int FindClassSlot(int value, int classIndex); /*@ 0A72:007B */
+/* the original sign-extends the m20 argument at 0D1C:0942 and 0D1C:0977 (`mov al,es:[bx+0x20];
+   cwde; push ax`), so the second parameter is int, not char */
 extern int GetClampedTableByte(int col, int row); /*@ 0A72:0597 */
 extern void f1A29_008B(int mode, void far *src, int x, int y, int region); /*@ 1A29:008B */
 extern void f1A29_000F(int mode, void far *src, int x, int y, int region); /*@ 1A29:000F */
