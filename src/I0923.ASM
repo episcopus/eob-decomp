@@ -16,7 +16,7 @@
 gVideoTopSeg  dw 0                      ; 0923:0004: the base of the memory reserved below the
                                         ;   probed segment (the caller at 0892:02A6 takes
                                         ;   ReserveMemoryBelowVideo's result into DI at 0892:02AD
-                                        ;   and uses it as memtop, src/I0892.C:268 and :297).
+                                        ;   and uses it as memtop (src/I0892.C:296, :325).
                                         ;   "Video top" is a hypothesis [H]: ReserveMemoryBelowVideo
                                         ;   probes the segment whose B800:0000 marker aliases (or A000,
                                         ;   0923:0139 to 0150) and subtracts (n-1) x 32 KB
@@ -54,8 +54,11 @@ gMcbSeg       dw 0                      ; 0923:000E: MCB of the one-paragraph bl
 ; DGROUP's frame (0E9F) is 057Ch paragraphs above this segment's (0923): 057C0h + 28C4h = 8084h. The
 ; word has no relocation in the EXE, so the assembler resolved it to a constant. ReserveMemoryBelowVideo
 ; stores the end of DOS memory here (0923:01F0) and TrimMemoryToVideo reads it back (0923:02B3); i0892
-; reads it at 0892:01D8 and itoa's the word into the last execl argument for EOB.EXE (src/I0892.C:234),
-; which stores its own memory top from that number (src/E07C8.C:311).
+; reads it at 0892:01D8, itoa's it into g28B4 (src/I0892.C:262) and passes g28B4 as the last execl
+; argument (src/I0892.C:264). That EOB.EXE then sets its own gMemTopSeg from atol of the number behind
+; g8894 (src/E07C8.C:311) is a hypothesis [H]: no file in src/ reads argv[6] (src/E07C8.C reads argv[1]
+; to argv[5], :229 to :235) and nothing in src/ or docs/ writes ds:8894 (src/E1990.ASM:23-26), so the
+; link from this number to EOB's word is not shown, and the writer of ds:8894 is unknown.
 gMemTopSeg    equ 8084h
 
 ; 0923:0010: walk the MCB chain from gMcbSeg, merging free blocks; AX = 0 if it ends with a
@@ -386,13 +389,13 @@ ReserveMemoryBelowVideo ENDP
 ; or far pointer to this function exists, so it is dead code here. With gMemTopSeg at its loaded
 ; value, 0 (its DGROUP word 0E9F:28C4 is 00 00 in eob/INTRO.EXE, image offset 112B4h), the last
 ; block's size is set to 0 less its data segment (0923:02B0 to 02B9), a wrapped 16 bit value, and
-; the walk (0923:0299 to 02AC) only looks for a 'Z' type, so it does not stop at a broken chain. The name's
-; claim that this value is the video top is a hypothesis [H]: the bytes show only that the last
+; the walk (0923:0299 to 02AC) only looks for a 'Z' type, so it does not stop at a broken chain. The
+; name's claim that this value is the video top is a hypothesis [H]: the bytes show only that the last
 ; block is set to end at gMemTopSeg (0923:02B0 to 02B9). ReserveMemoryBelowVideo stored the end of
-; DOS memory there (0923:01F0). Like ReserveMemoryBelowVideo, it allocates the one-paragraph block (INT 21h
-; AH=48h at 0923:0288) without testing the carry flag: on failure AX is DOS's error code (7 or 8),
-; the MCB type is read at segment 6 or 7 (0923:028B to 028E), and the one-word-out exit marked
-; below is taken when that byte is not 'M'.
+; DOS memory there (0923:01F0). Like ReserveMemoryBelowVideo, it allocates the one-paragraph block
+; (INT 21h AH=48h at 0923:0288) without testing the carry flag: on failure AX is DOS's error code
+; (7 or 8), the MCB type is read at segment 6 or 7 (0923:028B to 028E), and the one-word-out exit
+; marked below is taken when that byte is not 'M'.
         PUBLIC  TrimMemoryToVideo       ; @ 0923:027D
 TrimMemoryToVideo PROC FAR
         push    bp
