@@ -141,6 +141,7 @@ extern void far *gA9C0; /*@ ds:A9C0 */
 extern void far *gSegDF4E; /*@ ds:DF4E */
 extern int gTextRegion; /*@ ds:811F */
 extern int gFD98; /*@ ds:FD98 */
+extern int g159; /*@ ds:0159 */ /* a copy of gF57E that ShowMessage and ovl6:0B9B store; no reader found */
 extern int gNeedsRest; /*@ ds:FE2C */
 extern int gTunesOn; /*@ ds:80E8 */
 extern int gSoundOn; /*@ ds:80E6 */
@@ -178,6 +179,7 @@ extern void FlushKeyBuffer(void); /*@ 1AAD:0480 */
 extern void farfree(void far *block); /*@ 0000:71EE */
 extern void (far *gFn804A)(int x, int y, int w, int h, void far *buf); /*@ ds:804A */
 extern int WaitGameKey(void); /*@ 1AAD:053A */
+extern int ReadKey(void); /*@ 1AAD:038E */
 extern int Action01E3(char far *text); /*@ 0ACD:01E3 */
 extern int RedrawPartyPanel(struct ActRec far *rec); /*@ 0EF3:2541 */
 extern int f0D1C_0670(int who, int mask); /*@ 0D1C:0670 */
@@ -324,7 +326,44 @@ int ChooseListEntry(int message);
     return list;
 }
 
-/*@ ovl1:13F7 stub */ void ShowMessage(int message) {}
+/* ovl1:13F7: shows the gStrings2003 message `message` in a framed box (text window 11) and waits for
+   a key or at most 0x78 frames. It hides the pointer, selects the 8x8 font gFont8x8, copies the
+   shadow colour gF57E into g159, sets gStatusLine to 2 while it draws and fills and clips the window
+   rectangle; the text goes at (left * 8 + 5, top + 5) in colour 0xF. It then polls ReadKey one frame
+   at a time (WaitFrames(1)); a key press flushes the key buffer and ends the wait. Afterwards the
+   status line, font and text window are restored and the key buffer flushed again. Called by
+   RunCampMenu, MemberCommand and DrawListNode. */
+/*@ ovl1:13F7 */ void ShowMessage(int message)
+{
+    int savedWindow;
+    void far *savedFont;
+    int savedStatus;
+    int i;
+
+    savedStatus = gStatusLine;
+    savedFont = gFont1A47;
+    savedWindow = gTextRegion;
+    f1A47_0169(gFont8x8);
+    LockHidePointer();
+    g159 = gF57E;
+    SetTextWindowAndClear(0xb);
+    gStatusLine = 2;
+    f0D1C_0C21(gTextLeft << 3, gTextTop, gTextWidth << 3, gTextHeight, 0, 0);
+    DrawShadowText(SkipStrings(&gStrings2003, message), (gTextLeft << 3) + 5, gTextTop + 5, 0xf, 0);
+    ClipRect(gTextLeft, gTextTop, gTextLeft, gTextTop, gTextWidth, gTextHeight, 2, 0);
+    LockShowPointer();
+    for (i = 0; i < 0x78; i++) {
+        if (ReadKey()) {
+            FlushKeyBuffer();
+            break;
+        }
+        WaitFrames(1);
+    }
+    gStatusLine = savedStatus;
+    f1A47_0169(savedFont);
+    SetTextWindow(savedWindow);
+    FlushKeyBuffer();
+}
 /* ovl1:1516: frees every node of a far linked list: each node's first four bytes are the far
    pointer to the next one, and the walk ends at a null pointer. Called by RunCampMenu,
    ChooseListEntry and the other screens with the head BuildMenuButtons returned. */
