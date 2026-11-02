@@ -3,7 +3,7 @@
    the object records at ds:8A82 and the 9-byte tile records at ds:B894, clipped through the
    drawing wrappers in src/E082C.C. The unit is still being lifted. */
 
-/*@flags -ml -O -Z -B */
+/*@flags -ml -O -Z -v */
 
 extern signed char gHead199D[]; /*@ ds:199D */  /* rows of 18 signed heading offsets */
 extern unsigned char gB894[]; /*@ ds:B894 */    /* 9-byte tile records (src/E08E6.C) */
@@ -161,8 +161,8 @@ extern unsigned char gViewBufADB0[]; /*@ ds:ADB0 */  /* the view pixel buffer (t
    ds:F43E; each row walks `width` words and each of the `height` rows advances the destination by
    a 0x16-word row. Words outside columns 0..0x15 are skipped, and only nonzero source words are
    stored. Called by Ovl4_044B at ovl4:04B4 and ovl4:04CD. Purpose unknown: what the buffers hold.
-   The three duplicated increment tails are kept apart only through the assembler (-B), as the
-   original shows (TCC -S then TASM; without it our build merges the continue tails). */
+   The three duplicated increment tails are kept apart by the file's -v (debug information), as
+   the original shows; without it our build merges the continue tails (whitepaper 2.1.1). */
 /*@ ovl4:02A5 */ void CopyViewColumn(char x, char y, char page, int x2, char width, char height)
 {
     unsigned int far *dst;
@@ -544,11 +544,10 @@ extern void DrawRegion00C9(int mode, void far *src, int x, int y, int region); /
    DRAFT: the prologue, frame (sub sp,0x36) and body match through the object scan; the first
    difference is the far-pointer store into the local `arr` (0xD1B+0079: ours `93 xchg bx,ax`,
    original `87 D8 xchg ax,bx`). TCC -S emits `xchg bx,ax`, and TASM 2.0, 2.01, 1.0 and 1.01 all
-   assemble both spellings as the one-byte 93, so no source form gives the original's two-byte
-   87 D8 under this file's -B flag; without -B (TCC's own assembler) the byte is 87 D8, but then
-   CopyViewColumn's three separate continue tails merge. That per-function assembler split (0D1B
-   and 19C4 want TCC's assembler, CopyViewColumn wants TASM) is a matcher question, not a source
-   form (playbook 30). */
+   assemble both spellings as the one-byte 93, so the original's two-byte 87 D8
+   came from TCC's own assembler. Since 2026-11-02 the file builds with -v instead of -B (TCC's own
+   assembler, CopyViewColumn's tails still apart), and this store matches; the first difference is
+   now a later jump target (+00BD). */
 /*@ ovl4:0D1B draft */ void Ovl4_0D1B(int slot)
 {
     struct Entry27 far *info;
@@ -905,10 +904,9 @@ extern signed char g71A2[]; /*@ ds:71A2 */   /* per index nudge f (this unit) */
 }
 /* ovl4:19C4: not lifted yet. It builds a five-entry far-pointer list from the ds:DD2C records whose
    +4 matches the slot heading, then draws each entry through the ds:F2F8 or ds:EC9A sprite tables
-   and DrawRegion000F/004D. Blocked like Ovl4_0D1B: it has the far-pointer store into a local array
-   at 19C4:1A6B (87 D8 xchg ax,bx), which the file's -B (TASM) assembles as the one-byte 93 while
-   the original (TCC's own assembler) keeps two bytes, so this function cannot match under the -B
-   that CopyViewColumn needs. See re/symbols.toml (eov4_19c4). */
+   and DrawRegion000F/004D. Its far-pointer store into a local array at 19C4:1A6B (87 D8 xchg
+   ax,bx) is TCC's own assembler's form, which the file's -v build (since 2026-11-02) gives; under
+   the earlier -B it could not match. See re/symbols.toml (eov4_19c4). */
 /*@ ovl4:19C4 stub */ void Ovl4_19C4(int slot) {}
 
 extern signed char g7272[]; /*@ ds:7272 */   /* per-column x base correction (this unit) */

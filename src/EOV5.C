@@ -6,7 +6,7 @@
    ds:7B89/7B94 position tables, and its 160A prints the winning-party password. Names are
    placeholders until evidence names them. */
 
-/*@flags -ml -O -Z */
+/*@flags -ml -O -Z -v */
 
 #include <stdlib.h>     /* abs, the inline __abs__ the select lists use */
 #include <dos.h>        /* FP_OFF/FP_SEG, the blit calls split a far pointer */
@@ -270,7 +270,7 @@ void PrintTableString(int index, int flag);
    selects through DrawSheetCell: the fixed cells 2, 7, 6, 0x12, 0x11 and 4, or, for modes 1 and
    2, the current character's own cells, indexed by the selected member gEFC6. Called by the
    overlay dispatcher 1A82 for modes 0..7 and by the resurrect list 0DBB with mode 2. */
-/*@ ovl5:00A1 draft */ void DrawCharPortrait(int mode)
+/*@ ovl5:00A1 */ void DrawCharPortrait(int mode)
 {
     char head[6] = { 9, 8, 8, 9, 9, 0x0A };         /* ds:7B77 */
     char body[6] = { 0x0D, 0x0B, 0x0C, 0x0E, 0x0F, 0x10 };  /* ds:7B7D */

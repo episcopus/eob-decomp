@@ -6,7 +6,7 @@
    drawing code. Most meanings are not established, so most function names say what a function
    does rather than what the game calls it. */
 
-/*@flags -ml -O -Z */
+/*@flags -ml -O -Z -v */
 
 struct CharRec {            /* 243-byte (0xF3) character records at ds:F580; see src/E0A72.C */
     char pad00;
@@ -561,7 +561,7 @@ int f0D1C_02DC(void);
    + best value, or 0 when none qualifies. Called by 0D1C:0A43. DRAFT: matches every byte except
    that the two branches share one trailing `bestVal = ...; best = who;` store (0D1C:099F) with a
    jump; the original repeats the pair inline in each branch (eight bytes longer). */
-/*@ 0D1C:0903 draft */ int f0D1C_0903(void)
+/*@ 0D1C:0903 */ int f0D1C_0903(void)
 {
     struct CharRec far *rec;
     int bestVal;
