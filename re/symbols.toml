@@ -7074,6 +7074,9 @@ unit = "eov3"
 addr = "ovl3:0000"
 size = 79
 evidence = ["ovl", "near", "segment"]
+name = "FreePtrTable"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov3_004f"
@@ -7081,6 +7084,9 @@ unit = "eov3"
 addr = "ovl3:004F"
 size = 347
 evidence = ["ovl", "near", "frame"]
+name = "LoadWallSet"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov3_01aa"
@@ -7088,6 +7094,9 @@ unit = "eov3"
 addr = "ovl3:01AA"
 size = 30
 evidence = ["ovl", "frame"]
+name = "IsBitSet"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov3_01c8"
@@ -7102,6 +7111,9 @@ unit = "eov3"
 addr = "ovl3:031A"
 size = 136
 evidence = ["ovl", "near", "frame"]
+name = "FreeEffectTables"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov3_03a2"
@@ -7109,6 +7121,7 @@ unit = "eov3"
 addr = "ovl3:03A2"
 size = 560
 evidence = ["ovl", "near", "frame"]
+notes = "blocked: the far object at 1F1D:0000 is indexed [gFBC8-1]; the compiler folds the -1 into a disp16 0xFFFF, so our build's displacement is FAR_BASE-1 (0x7FFF) and cmatch.py:370 only explains a displacement >= FAR_BASE. The honest source form is kept in src/EOV3.C."
 
 [[function]]
 id = "eov3_05d2"
@@ -7116,6 +7129,9 @@ unit = "eov3"
 addr = "ovl3:05D2"
 size = 82
 evidence = ["ovl", "near", "frame"]
+name = "FreeMapIcons"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov3_0624"
@@ -7123,6 +7139,9 @@ unit = "eov3"
 addr = "ovl3:0624"
 size = 122
 evidence = ["ovl", "frame"]
+name = "LoadMapIcons6"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov3_069e"
@@ -7130,6 +7149,9 @@ unit = "eov3"
 addr = "ovl3:069E"
 size = 122
 evidence = ["ovl", "frame"]
+name = "LoadMapIcons6b"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov3_0718"
@@ -7137,6 +7159,9 @@ unit = "eov3"
 addr = "ovl3:0718"
 size = 141
 evidence = ["ovl", "frame"]
+name = "LoadNamedIcons"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov3_07a5"
@@ -7151,6 +7176,9 @@ unit = "eov3"
 addr = "ovl3:0951"
 size = 89
 evidence = ["ovl", "near", "frame"]
+name = "RebuildItemList"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov3_09aa"
@@ -7158,6 +7186,9 @@ unit = "eov3"
 addr = "ovl3:09AA"
 size = 210
 evidence = ["ovl", "near", "frame"]
+name = "LoadObjects"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov3_0a7c"
@@ -7172,6 +7203,9 @@ unit = "eov3"
 addr = "ovl3:0FD1"
 size = 204
 evidence = ["ovl", "near", "frame"]
+name = "PackLevelState"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov3_109d"
@@ -7179,6 +7213,9 @@ unit = "eov3"
 addr = "ovl3:109D"
 size = 170
 evidence = ["ovl", "near", "frame"]
+name = "UnpackLevelState"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov3_1147"
@@ -7186,6 +7223,9 @@ unit = "eov3"
 addr = "ovl3:1147"
 size = 104
 evidence = ["ovl", "near", "frame"]
+name = "LoadLevelState"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov3_11af"
@@ -7193,6 +7233,9 @@ unit = "eov3"
 addr = "ovl3:11AF"
 size = 142
 evidence = ["ovl", "frame"]
+name = "SaveLevelState"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov3_123d"
@@ -7200,6 +7243,9 @@ unit = "eov3"
 addr = "ovl3:123D"
 size = 180
 evidence = ["ovl", "near", "frame"]
+name = "AgeCharTimers"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov3_12f1"
@@ -7207,6 +7253,9 @@ unit = "eov3"
 addr = "ovl3:12F1"
 size = 119
 evidence = ["ovl", "near", "frame"]
+name = "AdvanceCharTimers"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov3_1368"
@@ -7228,6 +7277,9 @@ unit = "eov3"
 addr = "ovl3:19F7"
 size = 314
 evidence = ["ovl", "near", "frame"]
+name = "ResetLevel"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov4_0000"
