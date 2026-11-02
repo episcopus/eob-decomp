@@ -478,7 +478,24 @@ fail:
 }
 
 /*@ 0DE8:09B9 stub */ int f0DE8_09B9(int who, int what) { return 0; }
-/*@ 0DE8:0ADB stub */ void f0DE8_0ADB(void) {}
+/* 0DE8:0ADB: heals character `who` by `amount` hit points when the f0D1C_0670(who, 3) condition
+   holds, clamping at the record's m1C maximum, then redraws the character through f1547_033F and
+   f1547_0991. Called by 0BD2, 0EF3 and 122E. */
+/*@ 0DE8:0ADB */ void f0DE8_0ADB(int who, int amount)
+{
+    struct CharRec far *rec;
+
+    if (!f0D1C_0670(who, 3))
+        return;
+    rec = &gChars[who];
+    if (rec->hp + amount > rec->m1C)
+        rec->hp = rec->m1C;
+    else
+        rec->hp = rec->hp + amount;
+    f1547_033F(who);
+    f1547_0991(who);
+}
+
 /*@ 0DE8:0B45 stub */ void f0DE8_0B45(void) {}
 /*@ 0DE8:0C2B stub */ void f0DE8_0C2B(void) {}
 /*@ 0DE8:0C82 stub */ void f0DE8_0C82(void) {}
