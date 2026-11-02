@@ -6804,6 +6804,9 @@ unit = "eov0"
 addr = "ovl0:037A"
 size = 56
 evidence = ["near", "frame"]
+name = "FlashPanelIcon"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov0_03b2"

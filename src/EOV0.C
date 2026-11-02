@@ -11,6 +11,7 @@ extern void far * (far *gFn8082)(int x, int y, int w, int h, void far *buf); /*@
 extern void farfree(void far *block); /*@ 0000:71EE */
 extern void PlaySound(int sound); /*@ 177D:0070 */
 extern int DispatchKeyWait(void far *list); /*@ 16A5:005A */
+extern void WaitFrames(int n); /*@ 1A16:000B */
 extern unsigned char far g3A0; /*@ 0000:03A0 */ /* a flag in the resident segment (Purpose unknown) */
 
 struct IconDef9 {               /* the 17 9-byte icon definitions at 2084 (17 * 9 = 153 bytes) */
@@ -115,7 +116,16 @@ extern void far *g5E64[0x11]; /*@ ds:5E64 */ /* the 17 sliced icon pointers this
         gIcons2080[cellRow].height, 2, 0);
     ShowPointerZone();
 }
-/*@ ovl0:037A stub */ void Ovl0_037A(void) {}
+/* ovl0:037A: flashes the panel icon `index`: draws it in its selected form (mode 1), plays sound
+   0x4c, waits 5 frames and draws it again in its plain form (mode 0). Called by ovl0:0A5E, 0DDC,
+   0EE5, 135D, 207A, 2238 and 28F9. */
+/*@ ovl0:037A */ void FlashPanelIcon(int index)
+{
+    DrawPanelIcon(index, 1, 0);
+    PlaySound(0x4c);
+    WaitFrames(5);
+    DrawPanelIcon(index, 0, 0);
+}
 /*@ ovl0:03B2 stub */ void Ovl0_03B2(void) {}
 /*@ ovl0:042F stub */ void Ovl0_042F(void) {}
 /*@ ovl0:0504 stub */ void Ovl0_0504(void) {}
