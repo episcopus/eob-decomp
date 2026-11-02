@@ -7278,6 +7278,7 @@ unit = "eov3"
 addr = "ovl3:0A7C"
 size = 1365
 evidence = ["ovl", "near", "frame"]
+notes = "blocked: matcher: the local array at +000F is initialised from a template at ds:6A80 that holds far function pointers (overlay stub entries 210C:0025/0034/002A); cmatch compares templates as C strings, not byte by byte with relocations (escalation eov3, 2026-11-02, question 2)"
 
 [[function]]
 id = "eov3_0fd1"
