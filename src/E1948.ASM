@@ -1,14 +1,15 @@
 ; Unit at EOB.EXE 1948:0006 (1147 bytes, 13 functions): the PC speaker and Tandy (SN76489) sound
 ; driver. It plays a stream of note and command bytes for up to three voices on an INT 8 handler
-; that the game installs (1948:0377) and removes (1948:03DA). The handler chases the BIOS INT 8
-; every sixteenth tick; _SoundTick (1948:0050) advances each voice in the song, picks the note's
-; period from a table (PC speaker or Tandy), programs the pitch (1948:0316) and turns the voice on
-; or off (1948:02C7 / 1948:02F1). _StartSound (1948:0418) is the entry 177D:0070 uses to start a
-; sound; the driver is selected by gSpeakerOn (ds:8A67): 1 is Tandy, 0 is the PC speaker
-; (whitepaper 2.7, the sound choice in 2.6, E177D.C).
+; that the game installs (1948:0377) and removes (1948:03DA). The handler chains to the BIOS INT 8
+; handler every sixteenth tick; _SoundTick (1948:0050) advances each voice in the song, picks the
+; note's period from a table (PC speaker or Tandy), programs the pitch (1948:0316) and turns the
+; voice on or off (1948:02C7 / 1948:02F1). _StartSound (1948:0418) starts a sound for PlaySound
+; (177D:0070) and PlaySoundAtCell (177D:0106, src/E177D.C:274); the driver is selected by gTandyOn
+; (ds:8A67): 1 is Tandy, 0 is the PC speaker (StartupGame installs and selects it, src/E07C8.C:
+; 302-308; the play path starts sounds through StartSound, src/E177D.C:161-186).
 ;
 ; The driver keeps its state in its own segment (the loaded DS is 29B8h; DGROUP is 212Eh, whitepaper
-; 2.x, so DS = DGROUP + 88Ah and the driver's offset 1C7h is gSpeakerOn at DGROUP:8A67). The
+; 2.2, so DS = DGROUP + 88Ah and the driver's offset 1C7h is gTandyOn at DGROUP:8A67). The
 ; offsets below are the driver-segment ones; the code and the note tables (at 1Ah for the PC
 ; speaker, DAh for Tandy) live in the loaded driver data, not in this code segment.
 
@@ -18,7 +19,8 @@
 ; 29B8h itself, and TASM then encodes every `[reg+name]` as a word displacement (16-bit), as the
 ; original shows (the offsets in the original are 16-bit even where they fit in a byte).
 SND     SEGMENT PARA PUBLIC 'SNDDATA'
-        db      6 dup (?)                ; 06h chain reload and count live here
+        db      6 dup (?)                ; 0 to 5: unused in this segment; the saved INT 8 vector
+                                         ; lives in the code segment at 1948:0006
 gChainReload    dw      ?               ; 06h: 0Fh, reload for the BIOS chain countdown
 gChainCount     dw      ?               ; 08h: counts down; at 0 the handler chains to the BIOS
 gSongPos        dw      ?               ; 0Ah: current song position, offset
@@ -33,20 +35,29 @@ gVoiceCount     dw      ?               ; 19Bh: active voices, 3 Tandy or 1 PC s
 gPlaying        db      ?               ; 19Dh: 1 while a song is playing
 gStartRequest   db      ?               ; 19Eh: 1 = (re)load the song at gSongPtr
 gStopRequest    db      ?               ; 19Fh: 1 = mute every voice
-gVoiceRestart   db      4 dup (?)       ; 1A0h: byte per voice, 1 = re-issue the note
-gVoiceActive    db      4 dup (?)       ; 1A4h: byte per voice, 1 while a note is sounding
+gVoiceRestart   db      4 dup (?)       ; 1A0h: byte per voice, 1 silences the voice this tick
+                                         ; (1948:0278 falls through to muteVoice); only 0 is written
+                                         ; here (1948:0081 and 027F), the writer of 1 is unknown
+gVoiceActive    db      4 dup (?)       ; 1A4h: byte per voice, 1 = read the next note or command
+                                         ; this tick (set at 1948:007C and 0273); 0 = a note is
+                                         ; sounding and its duration counts down (set at 1948:0151)
 gVoiceSilent    db      4 dup (?)       ; 1A8h: byte per voice, 1 while the voice is muted
 gVoiceDuration  dw      4 dup (?)       ; 1ACh: word per voice, ticks left of the note
-gVoiceTandyVol  db      4 dup (?)       ; 1B4h: byte per voice, Tandy attenuation nibble
+gVoiceTandyVol  db      4 dup (?)       ; 1B4h: byte per voice, Tandy volume 0 silent to 15
+                                         ; loudest; _VoiceOn sends its inverse to the chip
 gVoiceAmp       db      4 dup (?)       ; 1B8h: byte per voice, length multiplier
 gVoiceRepeat1   db      4 dup (?)       ; 1BCh: byte per voice, counter for command CEh
 gVoiceRepeat2   db      4 dup (?)       ; 1C0h: byte per voice, counter for command D2h
 gVoiceDelay1    db      ?               ; 1C4h: countdown before voice 1 plays
 gVoiceDelay2    db      ?               ; 1C5h: countdown before voice 2 plays
-gRunning        db      ?               ; 1C6h: 1 while the driver has an active song
-gSpeakerOn      db      ?               ; 1C7h: 1 Tandy, 0 PC speaker (ds:8A67)
-gTickCount      dw      ?               ; 1C8h: handler tick counter, reloads gTickPhase
-gTickPhase      db      ?               ; 1CAh: handler phase counter, wraps at 3Bh
+gRunning        db      ?               ; 1C6h: 1 while the driver has an active song; written
+                                         ; here (1948:0057, 02BB and 0439), read nowhere in this unit
+gTandyOn        db      ?               ; @ ds:8A67: 1 Tandy, 0 PC speaker
+gTickCount      dw      ?               ; 1C8h: handler tick counter, 0 to 123h (292 ticks, about
+                                         ; one second at 291 Hz [H]); when it passes 123h it wraps to
+                                         ; 0 and gTickPhase counts [H] seconds up to 60
+gTickPhase      db      ?               ; 1CAh: handler phase counter, wraps at 3Bh, counts [H]
+                                         ; seconds up to 60
 SND     ENDS
 
         .CODE
@@ -54,7 +65,7 @@ SND     ENDS
 
 ; 1948:0006: the INT 8 timer handler installed at 1948:000A. Its first four bytes are the saved
 ; BIOS INT 8 vector (offset, segment) that the install routine writes and the handler chains to;
-; the ivector is read through CS, the counters through DS. Every tick it calls _SoundTick; once
+; the vector is read through CS, the counters through DS. Every tick it calls _SoundTick; once
 ; every sixteenth it does not acknowledge the PIC but jumps to the old BIOS handler instead, so
 ; the BIOS clock still ticks at its own rate.
         PUBLIC  _SoundTimerIsr          ; @ 1948:0006
@@ -101,9 +112,11 @@ _SoundTimerIsr ENDP
 ; 1948:0050: advance the song by one tick. A start request (gStartRequest) reloads the song
 ; pointer, restarts the voices (delay counters 23h and 46h) and clears the stop request; then,
 ; for each active voice up to gVoiceCount, it reads note and command bytes from the song data at
-; gSongPos+gVoicePos[voice] and issues the tone and the voice on/off. Commands 80h and up set the
-; repeat counters (CDh, D1h), loop back (CEh, D2h), rest (E6h), set or add to the note length (E2h,
-; E8h, E9h) or end the voice. When all voices end silent, the song stops. Called by the handler.
+; gSongPos+gVoicePos[voice] and issues the tone and the voice on/off. Note bytes 00h to 5Fh index
+; the 96-entry note table; 60h to 7Fh are neither notes nor commands and silence the voice
+; (1948:010B). Commands 80h and up set the repeat counters (CDh, D1h), loop back (CEh, D2h), play
+; a note at an explicit frequency (E6h), set the length multiplier (E2h), subtract from or add to
+; it (E8h, E9h) or end the voice. When all voices end silent, the song stops. Called by the handler.
         PUBLIC  _SoundTick              ; @ 1948:0050
 _SoundTick PROC NEAR
         cmp     byte ptr [gStartRequest], 0
@@ -171,6 +184,7 @@ readFirst:
         mov     es, [gSongPosSeg]
         mov     bx, [gSongPos]
         add     bx, bp
+; 00h to 5Fh: a note table index; 60h to 7Fh: neither a note nor a command, it silences the voice
 readLoop:
         mov     al, es:[bx]
         or      al, al
@@ -183,7 +197,7 @@ playNote:
         xor     ah, ah
         shl     ax, 1
         mov     di, ax
-        cmp     byte ptr [gSpeakerOn], 1
+        cmp     byte ptr [gTandyOn], 1
         je      useTandyTable
         mov     ax, [di+gNoteTablePc]
         jmp     afterTable
@@ -203,7 +217,8 @@ noteDone:
         inc     bx
         xor     ah, ah
         mov     al, es:[bx]
-        inc     al
+        inc     al              ; QUIRK 1948:0142: a duration byte of 0FFh wraps to 0, so this
+                                ; note lasts amp minus 1 ticks, not 256 times amp minus 1
         mul     byte ptr [si+gVoiceAmp]
         dec     ax
         mov     [di+gVoiceDuration], ax
@@ -277,16 +292,17 @@ cmdE6:
         cmp     al, 0E6h
         jne     cmdE2
         inc     bx
-        cmp     byte ptr [gSpeakerOn], 1
+        cmp     byte ptr [gTandyOn], 1
         je      cmdE6Tandy
         mov     dx, 12h
         mov     ax, 34DCh
-        div     word ptr es:[bx]
+        div     word ptr es:[bx]  ; QUIRK 1948:01E3: INT 0 when the quotient exceeds 0FFFFh,
+                                  ; a frequency word of 18 or less [H]
         jmp     cmdE6After
 cmdE6Tandy:
         mov     dx, 1
         mov     ax, 0B4F4h
-        div     word ptr es:[bx]
+        div     word ptr es:[bx]  ; QUIRK 1948:01EF: INT 0 for a frequency word of 1 [H]
         cmp     ax, 400h
         jb      cmdE6After
         mov     ax, 3FFh
@@ -314,7 +330,9 @@ cmdE8:
         mov     al, es:[bx]
         sub     byte ptr [si+gVoiceAmp], al
         jno     cmdE8Ok
-        jne     cmdE8Ok
+        jne     cmdE8Ok         ; QUIRK 1948:0228: on the overflow path this always jumps, because a
+                                ; zero result cannot overflow and sub sets ZF only for a zero
+                                ; result, so a zero amplitude is kept (the clamp to 1 at 022A is dead)
         mov     byte ptr [si+gVoiceAmp], 1
 cmdE8Ok:
         inc     bx
@@ -326,7 +344,8 @@ cmdE9:
         inc     bx
         mov     al, es:[bx]
         add     byte ptr [si+gVoiceAmp], al
-        jno     cmdE9Ok
+        jno     cmdE9Ok         ; QUIRK 1948:0242: saturates to 0FFh only on signed overflow, so 100
+                                ; plus 100 gives 255 but 200 plus 100 wraps to 44
         mov     byte ptr [si+gVoiceAmp], 0FFh
 cmdE9Ok:
         inc     bx
@@ -387,10 +406,11 @@ _SoundTick ENDP
 
 ; 1948:02C7: turn the current voice on. On the PC speaker it sets the port 61h gate and data
 ; bits; on Tandy it writes the voice's volume register of the SN76489 with the voice's stored
-; attenuation (gVoiceTandyVol, inverted). SI is the voice.
+; volume (gVoiceTandyVol) inverted, because the chip takes 0 as loudest and 15 as off [H]. SI is
+; the voice.
         PUBLIC  _VoiceOn                ; @ 1948:02C7
 _VoiceOn PROC NEAR
-        cmp     byte ptr [gSpeakerOn], 1
+        cmp     byte ptr [gTandyOn], 1
         je      tandyOn
         in      al, 61h
         or      al, 3
@@ -413,11 +433,11 @@ tandyOn:
 _VoiceOn ENDP
 
 ; 1948:02F1: turn the current voice off. On the PC speaker it clears the port 61h gate and data
-; bits; on Tandy it writes the voice's volume register with full attenuation (silence). SI is the
-; voice.
+; bits; on Tandy it writes the voice's volume register with 0Fh, the chip's full attenuation
+; (silence) [H]. SI is the voice.
         PUBLIC  _VoiceOff               ; @ 1948:02F1
 _VoiceOff PROC NEAR
-        cmp     byte ptr [gSpeakerOn], 1
+        cmp     byte ptr [gTandyOn], 1
         je      tandyOff
         in      al, 61h
         and     al, 0FCh
@@ -443,7 +463,7 @@ _VoiceOff ENDP
 ; nibble, then the high bits). SI is the voice.
         PUBLIC  _SetVoicePitch          ; @ 1948:0316
 _SetVoicePitch PROC NEAR
-        cmp     byte ptr [gSpeakerOn], 1
+        cmp     byte ptr [gTandyOn], 1
         je      tandyPitch
         out     42h, al
         mov     al, ah
@@ -472,8 +492,9 @@ tandyPitch:
 _SetVoicePitch ENDP
 
 ; 1948:034A: three-voice output. Sets gVoiceCount = 3, silences all four voices through _VoiceOff
-; (so the Tandy chip is quiet) and sets the port 61h bits 5 and 6. Called by the install routine
-; on Tandy (1948:0377) and by _SoundDriverResume (1948:0458).
+; (so the Tandy chip is quiet) and sets the port 61h bits 5 and 6 (their meaning is unknown; the
+; code only sets them). Called by the install routine on Tandy (1948:0377), _SoundDriverResume
+; (1948:0458), _SoundDriverUninstall (1948:03DA) and _SoundDriverPause (1948:046B).
         PUBLIC  _SetThreeVoices         ; @ 1948:034A
 _SetThreeVoices PROC NEAR
         mov     word ptr [gVoiceCount], 3
@@ -492,8 +513,8 @@ _SetThreeVoices ENDP
 
 ; 1948:0367: one-voice output. Sets gVoiceCount = 1 and restores port 61h from the value saved at
 ; install (gPort61Save), clearing the gate and data bits. Called by the install routine on the PC
-; speaker (1948:0377) and by the uninstall routine. QUIRK 1948:036D: the port 61h read is thrown
-; away, the stored value is written instead.
+; speaker (1948:0377), the uninstall routine (1948:03DA) and _SoundDriverPause (1948:046B).
+; QUIRK 1948:036D: the port 61h read is thrown away, the stored value is written instead.
         PUBLIC  _SetOneVoice            ; @ 1948:0367
 _SetOneVoice PROC NEAR
         mov     word ptr [gVoiceCount], 1
@@ -506,10 +527,11 @@ _SetOneVoice ENDP
 
 ; 1948:0377: install the driver. Saves the BIOS INT 8 vector in the handler's own words
 ; (cs:oldInt8Off/oldInt8Seg), sets the chain reload (gChainReload = 0Fh) and count (0) so the
-; handler passes one tick in sixteen to the BIOS, points INT 8 at cs:000Ah and programs PIT channel
-; 2 (mode B6h) with divisor 1000h, then remembers port 61h in gPort61Save and sets the output up
-; for Tandy (_SetThreeVoices) or the PC speaker (_SetOneVoice). Called by main (07C8:0557, 055E)
-; after the sound card choice.
+; handler passes one tick in sixteen to the BIOS and points INT 8 at cs:000Ah. It programs PIT
+; channel 0 to mode 3 with divisor 1000h (about 291 Hz [H]) and then puts channel 2 in mode 3
+; without loading its count (_SetVoicePitch loads it, 1948:0316), remembers port 61h in
+; gPort61Save and sets the output up for Tandy (_SetThreeVoices) or the PC speaker (_SetOneVoice).
+; Called by StartupGame after the sound card choice (src/E07C8.C:302 and 305).
         PUBLIC  _SoundDriverInstall     ; @ 1948:0377
 _SoundDriverInstall PROC FAR
         push    bp
@@ -545,7 +567,7 @@ _SoundDriverInstall PROC FAR
         in      al, 61h
         mov     [gPort61Save], al
         out     61h, al
-        cmp     byte ptr [gSpeakerOn], 1
+        cmp     byte ptr [gTandyOn], 1
         je      installTandy
         call    _SetOneVoice
         jmp     installDone
@@ -559,9 +581,10 @@ installDone:
         ret
 _SoundDriverInstall ENDP
 
-; 1948:03DA: remove the driver. Restores the saved BIOS INT 8 vector (cs:oldInt8Off/oldInt8Seg),
-; programs PIT channel 2 with divisor 0 and, on Tandy, silences the three voices before
-; _SetOneVoice restores port 61h. Called by the game's exit path (07C8:05B4).
+; 1948:03DA: remove the driver. Restores the saved BIOS INT 8 vector (cs:oldInt8Off/oldInt8Seg)
+; and programs PIT channel 0 to mode 3 with divisor 0 (65536, about 18.2 Hz, the BIOS divisor);
+; on Tandy it silences the three voices before _SetOneVoice restores port 61h. Called by
+; ShutdownGame (src/E07C8.C:325 and 330, the gSoundCard 1 and 2 cases).
         PUBLIC  _SoundDriverUninstall   ; @ 1948:03DA
 _SoundDriverUninstall PROC FAR
         push    bp
@@ -585,7 +608,7 @@ _SoundDriverUninstall PROC FAR
         mov     al, ah
         out     40h, al
         pop     ds
-        cmp     byte ptr [gSpeakerOn], 1
+        cmp     byte ptr [gTandyOn], 1
         jne     uninstallSpeaker
         call    _SetThreeVoices
 uninstallSpeaker:
@@ -599,8 +622,10 @@ _SoundDriverUninstall ENDP
 
 ; 1948:0418: start a sound. Stores the far pointer to its song data in gSongPtr/gSongPtrSeg and
 ; sets the run, play and start-request flags so the next handler tick loads it. The pointer is
-; the routine 0000:03E3 returns for the chosen driver sound (E177D.C's play path). Argument: a
-; far pointer at [bp+6] offset, [bp+8] segment.
+; the one 0000:03E3 returns for the chosen driver sound (src/E177D.C:114-115 calls it a driver
+; routine pointer; _SoundTick reads its bytes as notes and commands, so this file reads it as a
+; song data pointer). Called by PlaySound (177D:0070) and PlaySoundAtCell (177D:0106;
+; src/E177D.C:274). Argument: a far pointer at [bp+6] offset, [bp+8] segment.
         PUBLIC  _StartSound             ; @ 1948:0418
 _StartSound PROC FAR
         push    bp
@@ -625,7 +650,8 @@ _StartSound PROC FAR
 _StartSound ENDP
 
 ; 1948:0443: ask the driver to stop. Sets gStopRequest, which makes the next tick mute every voice
-; and, once all are silent, clear the play flags.
+; and, once all are silent, clear the play flags. Purpose unknown: the packet finds no direct
+; caller, so who asks for a stop is unknown.
         PUBLIC  _StopSound              ; @ 1948:0443
 _StopSound PROC FAR
         push    bp
@@ -643,8 +669,9 @@ _StopSound PROC FAR
         ret
 _StopSound ENDP
 
-; 1948:0458: restart the three-voice output (_SetThreeVoices). E177D.C calls it when the PC
-; speaker gate bit gSpeakerOn changes, and main calls it once after the Tandy install.
+; 1948:0458: restart the three-voice output (_SetThreeVoices). E177D.C calls it when the driver
+; select gTandyOn changes (src/E177D.C:175-181 and 261-267), and StartupGame calls it once after
+; the Tandy install (src/E07C8.C:305-308).
         PUBLIC  _SoundDriverResume      ; @ 1948:0458
 _SoundDriverResume PROC FAR
         push    bp
@@ -663,7 +690,9 @@ _SoundDriverResume PROC FAR
 _SoundDriverResume ENDP
 
 ; 1948:046B: silence the three voices (_SetThreeVoices) and then fall back to one-voice output
-; (_SetOneVoice). Called on the Tandy exit path (07C8:05AA) before the driver is uninstalled.
+; (_SetOneVoice). Only used on the way out: ShutdownGame's Tandy case calls it just before
+; gTandyOn = 0 and _SoundDriverUninstall (src/E07C8.C:328-330), and nothing resumes the output
+; afterwards. Because gTandyOn is then 0, _SoundDriverUninstall skips its Tandy step (1948:0406).
         PUBLIC  _SoundDriverPause       ; @ 1948:046B
 _SoundDriverPause PROC FAR
         push    bp

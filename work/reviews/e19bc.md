@@ -97,3 +97,70 @@ are the current ones. Also fixed an unflagged stale cite: OutOfMemory's MemAlloc
 src/ and the disassembly (tools/re/disasm.py 19BC:018A to 020C, 0137 to 0189, 00E0 to 0103).
 `make match FILE=src/E19BC.C` 5 of 5 (728 bytes); `make readability UNIT=e19bc` 0 findings. The four
 notes stay for the owners they name. Review result: fixed, ready for re-review.
+
+## Round 3 (rev-haiku, main e1ffddc)
+
+Reviewer: rev-haiku. Commit reviewed: e1ffddc (main; the review/e19bc branch is at the same commit, and src/E19BC.C is
+the round 2 fix from b2c039b). The round 1 and round 2 sections above are kept; their items stay ticked.
+Checks run: `make match FILE=src/E19BC.C` 5 of 5 (728 bytes); `make readability UNIT=e19bc` 0 findings.
+Read for meaning, not bytes. Cites checked against the source (not re-proved): src/E1C00.ASM:215-294 (the
+`call far ptr _MemRealloc` at :243, `or ax,dx; je short fail` at :250-251, `call dword ptr ds:[818Eh]` at :269),
+src/E07A9.C:37, :148, :276, :286 (StartupAlloc), src/E1B82.C:43, :165, :174, src/E1C0E.C:34, :46, :566, :604, :617,
+:631, :637, :870-876, src/E1AAD.ASM:443-483 (WaitGameKey ends `call _ProcessKeyEvent; retf`), src/E1DDD.C:10-21 and
+:43-51, src/E07C8.C:96-132 (Main, no allocation before :132), :326-365 (ShutdownGame ends `exit(0)` at :345;
+AllocationFailure at :359), src/E1BA8.ASM:81-93, src/E19EA.ASM:7-8 (PrintString), src/E1BB1.ASM:28-41, :160-183
+(the 16 is called a margin at E1BB1.ASM:70), src/E082C.C:78, :133, build/toolchain/tc100/INCLUDE/ALLOC.H:13 (_HEAPOK 2)
+and MEM.H:32, :53 (size_t is unsigned, so memset's count is 16-bit). Every `src/` caller of MemAlloc passes 0 or 0x20
+(E07C8.C:211-266, E1C0E.C:531, :703-704, :871, :876, E1B82.C:165, :174, E07A9.C:276-280, E1A47.C:61, EOV2.C:292,
+:319, E177D.C:45), so MEMALLOC_ZERO_FILL has no caller, as the comment says. Every EvictFile caller is at E19BC.C:84
+(EVICT_ANY) or E1C0E.C:875 (entry->flags), as the EVICT_ANY comment says. The round 2 fixes are in place.
+
+## Findings
+
+- [ ] should src/E19BC.C:162, :171-172 (MemRealloc): `hdrLow` holds the old low nibble and then the new alignment pad
+  (`hdrLow = 0x10 - (unsigned char)FP_OFF(blk)`). MemAlloc calls the same value `pad` (src/E19BC.C:77, :96). A separate
+  `pad` local would say what it is, and the header comment (:142-146) would then not need "reuses hdrLow". Check with
+  `make match` after the rename: a new local can change register use even though the source meaning is the same.
+- [ ] should src/E19BC.C:182-188 (LargestFreeBlock): the reason for the `max -= 0x10` is not stated. The callers call that
+  16 a margin: src/E1BB1.ASM:70 ("the margin (1BB1:0076) and removes it for MemAlloc"), src/E1BB1.ASM:34-40, :168-169
+  ("add back the 16 that LargestFreeBlock takes off"). Say that, with those cites, or say the reason is unknown. (The
+  MemAlloc aligned pad, src/E19BC.C:81, is a candidate reason, but the subtraction is unconditional, so it is not proven.)
+- [ ] should src/E19BC.C:116-118 (MemFree comment): "The header byte (at segment minus one, offset plus 15)" describes
+  the aligned header only. For a non-aligned block the header is the byte just before the block (src/E19BC.C:100-101,
+  MemAlloc), and MK_FP(seg-1, off+15) is the same linear byte as seg:off-1 (MemFree :130 and :135). Say so, or the reader
+  will take the segment-minus-one form as the only layout.
+- [ ] should src/E19BC.C:24 and :210 (comments on the Main and OutOfMemory paths): the function is `Main` in
+  src/E07C8.C:114, and the file there says the name is `Main`, not `main`, because of the C0 link stub. Use `Main` here too.
+- [ ] should src/E19BC.C:32-34 (f1BA8_0072): the name is a placeholder with evidence: its body is `push cs; call near ptr
+  _NormFar` (src/E1BA8.ASM:81-87), and _NormFar is at src/E1BA8.ASM:92-93 (1BA8:0081). The placeholder is allowed, but
+  "the name stays a placeholder" gives no reason. Say why (for example, the E1BA8 owner has not named the pair), or
+  name the wrapper after the evidence and rename it with `make rename` across src/.
+- [ ] should src/E19BC.C:62-72 (MemAlloc comment): the hook's return value is not stated. A nonzero return from
+  `gAllocFailHook()` makes MemAlloc retry farmalloc (src/E19BC.C:88-89, `continue`); a zero return gives up with NULL.
+  The comment implies this ("only when both return 0 does it give up"); say it outright.
+- [ ] note src/E19BC.C:1-9 (file header): the claims about the `add sp,n` sites and the `pop` in the -O -Z units were
+  checked by the round 2 reviewer (tools/re/disasm.py), not by me; I did not re-run them.
+- [ ] note the MEMALLOC_ALIGNED and ZERO_FILL defines are repeated in src/E07A9.C:37, src/E1B82.C:43 and src/E19BC.C:49
+  (and E07A9.C and E1B82.C each carry their own cite block). Whether they belong in one shared header is an owner's call.
+- [ ] note carried from rounds 1 and 2, still open for their owners: MemAlloc's `int flags` is a bit mask (`unsigned` fits
+  the value better, E19BC.C:73); f1DDD_002D's parameter is `mode` here and in src/E07C8.C:58 but `i` in src/E1DDD.C:43;
+  LargestFreeBlock is `unsigned long` in src/E082C.C:65 but `long` here, src/E07C8.C:69 and src/E1C0E.C:34; WaitGameKey
+  is void at src/E07C8.C:56 and src/EOV2.C:185 but int here (its value is the key, E1AAD.ASM:481-482).
+- [ ] note cross-unit, for the E07C8 owner: the AllocationFailure comment (src/E07C8.C:356) says "Restores video mode 7",
+  but f1DDD_002D(7) loads the video mode from ds:84A0 (src/E1DDD.C:45-48) and calls the BIOS only when that is nonzero
+  (src/E1DDD.C:49), as src/E19BC.C:212-216 says.
+- [ ] note cross-unit stale cites, for their owners: src/E1C00.ASM:246-247 cites "E19BC.C:142 to 145" for the 0x20
+  return, which is now src/E19BC.C:173; src/E1BB1.ASM:168-169 cites "E19BC.C:142" for the subtraction, which is now
+  src/E19BC.C:200 (`max -= 0x10`). src/E07A9.C:273-275 cites "src/E19BC.C:62-66 (code at :80 and :94-97)"; the code is
+  at :81 and :94-97.
+
+## Summary
+
+The unit is understandable from its source alone. The names MemAlloc, MemFree, MemRealloc, LargestFreeBlock and
+OutOfMemory each have evidence (callers in src/E1C00.ASM, src/E1C0E.C and src/E1BB1.ASM, the message string, the header
+flag bits, and the ALLOC.H calls), and the shared names (gAllocFailHook at ds:810A, gAllocCount at ds:810E, EvictFile,
+PrintString, WaitGameKey, ShutdownGame) agree with src/. The round 2 must-fix cites and mechanism claims are now correct.
+I found no wrong name, cite or claim in this round, so no must-fix. The open items are clarity: the local reuse in
+MemRealloc, the unstated reason for the 16 margin, the linear-address wording in MemFree, the `Main` name, and the
+placeholder on f1BA8_0072, all shoulds. Review result: review-passed (no must-fix open). No matcher or spec question,
+so no escalation.

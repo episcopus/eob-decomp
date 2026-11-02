@@ -4620,7 +4620,7 @@ unit = "e1658"
 addr = "1658:01E6"
 size = 271
 evidence = ["frame"]
-name = "ResetNode"
+name = "ClearNode"
 level = "L2"
 match_flags = "-ml -O -Z"
 
@@ -4660,7 +4660,7 @@ unit = "e1658"
 addr = "1658:04BB"
 size = 15
 evidence = ["frame"]
-name = "GetNodeState0"
+name = "IsNodeOn"
 level = "L2"
 match_flags = "-ml -O -Z"
 
@@ -4946,6 +4946,7 @@ size = 15
 evidence = ["segment"]
 level = "L2"
 notes = "not a function: bytes of the unit outside its functions (a marker or padding), matched with the whole unit"
+review = "passed 2026-11-01 rev-haiku"
 
 [[function]]
 id = "e1990_0010"
@@ -4956,6 +4957,7 @@ evidence = ["near"]
 name = "CheckMCB"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-01 rev-haiku"
 
 [[function]]
 id = "e1990_0071"
@@ -4966,6 +4968,7 @@ evidence = ["far", "frame"]
 name = "CheckMemoryChain"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-01 rev-haiku"
 
 [[function]]
 id = "e1990_0133"
@@ -4976,6 +4979,7 @@ evidence = ["far", "frame"]
 name = "ReserveMemoryBelowVideo"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-01 rev-haiku"
 
 [[function]]
 id = "e1990_027d"
@@ -4986,6 +4990,7 @@ evidence = ["far", "frame"]
 name = "TrimMemoryToVideo"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-01 rev-haiku"
 
 [[function]]
 id = "e19bc_0007"
@@ -4996,6 +5001,7 @@ evidence = ["far", "segment"]
 name = "MemAlloc"
 level = "L2"
 match_flags = "-ml -O -Z -G"
+review = "passed 2026-11-01 rev-haiku"
 
 [[function]]
 id = "e19bc_0137"
@@ -5006,6 +5012,7 @@ evidence = ["far", "frame"]
 name = "MemFree"
 level = "L2"
 match_flags = "-ml -O -Z -G"
+review = "passed 2026-11-01 rev-haiku"
 
 [[function]]
 id = "e19bc_018a"
@@ -5016,6 +5023,7 @@ evidence = ["far", "frame"]
 name = "MemRealloc"
 level = "L2"
 match_flags = "-ml -O -Z -G"
+review = "passed 2026-11-01 rev-haiku"
 
 [[function]]
 id = "e19bc_023d"
@@ -5026,6 +5034,7 @@ evidence = ["far", "frame"]
 name = "LargestFreeBlock"
 level = "L2"
 match_flags = "-ml -O -Z -G"
+review = "passed 2026-11-01 rev-haiku"
 
 [[function]]
 id = "e19bc_02b6"
@@ -5036,6 +5045,7 @@ evidence = ["frame"]
 name = "OutOfMemory"
 level = "L2"
 match_flags = "-ml -O -Z -G"
+review = "passed 2026-11-01 rev-haiku"
 
 [[function]]
 id = "e19ea_0000"

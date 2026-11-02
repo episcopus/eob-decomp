@@ -59,8 +59,8 @@ extern unsigned char gSoundCard; /*@ ds:B892 */  /* the sound choice from argv[2
                                                     src/E07C8.C:28 declares it char */
 extern unsigned char gSpeakerMode; /*@ ds:009E */  /* 1 only on the Tandy path (src/E07C8.C:307), where
                                                       the speaker path of PlaySound/PlaySoundAtCell drives
-                                                      gSpeakerOn; Purpose unknown beyond that */
-extern unsigned char gSpeakerOn; /*@ ds:8A67 */  /* the PC speaker / Tandy driver select applied by
+                                                      gTandyOn; Purpose unknown beyond that */
+extern unsigned char gTandyOn; /*@ ds:8A67 */  /* the PC speaker / Tandy driver select applied by
                                                     1948:0458 (E1948.ASM: 1 is Tandy, 0 is PC speaker);
                                                     PlaySound and PlaySoundAtCell set it to 1, and
                                                     their 0 stores (177D:00B3, 177D:021E) are dead:
@@ -158,12 +158,12 @@ void PlaySoundAtCell(int sound, int cell);
    (unsigned char, so 0..0FFh) and a value of 96h or more is ignored. On AdLib (gSoundCard 0) the
    driver number is handed to 0000:400C. On the other cards (1 PC speaker, 2 Tandy speaker) the low
    seven bits select a driver routine through 0000:03E3 and start it through 1948:0418; when
-   gSpeakerMode is 1 (the Tandy path, src/E07C8.C:307) a nonzero number sets gSpeakerOn to 1 and
-   resumes the driver through 1948:0458, but only when gSpeakerOn is currently 0 (177D:00C1 to 00CD;
+   gSpeakerMode is 1 (the Tandy path, src/E07C8.C:307) a nonzero number sets gTandyOn to 1 and
+   resumes the driver through 1948:0458, but only when gTandyOn is currently 0 (177D:00C1 to 00CD;
    1 is Tandy, 0 the PC speaker, E1948.ASM:7). QUIRK
-   177D:00A8: the `driverSound < 0` test (the `gSpeakerOn = 0` block) is dead: the map byte is
+   177D:00A8: the `driverSound < 0` test (the `gTandyOn = 0` block) is dead: the map byte is
    zero-extended into driverSound (`mov ah, 0` at 177D:0088), so driverSound is 0..0FFh; nothing here
-   ever clears gSpeakerOn, and the only 0 store in this unit (177D:00B3, in PlaySound) is dead, inside
+   ever clears gTandyOn, and the only 0 store in this unit (177D:00B3, in PlaySound) is dead, inside
    that block. Does nothing when sound is off (gSoundOn). Called by many game routines to make a sound
    effect. */
 /*@ 177D:0070 */ void PlaySound(int sound)
@@ -180,12 +180,12 @@ void PlaySoundAtCell(int sound, int cell);
             return;
         }
         if (gSpeakerMode == 1) {
-            if (driverSound < 0 && gSpeakerOn) {
-                gSpeakerOn = 0;
+            if (driverSound < 0 && gTandyOn) {
+                gTandyOn = 0;
                 SoundDriverResume();
             }
-            if (driverSound > 0 && gSpeakerOn == 0) {
-                gSpeakerOn = 1;
+            if (driverSound > 0 && gTandyOn == 0) {
+                gTandyOn = 1;
                 SoundDriverResume();
             }
         }
@@ -225,10 +225,10 @@ void PlaySoundAtCell(int sound, int cell);
    sound through 0000:400C and sets gDrvReg to 0Bh. On the other cards (1 PC speaker, 2 Tandy
    speaker) there is no attenuation test and no restore: the recorded sound starts on every call
    through 0000:03E3 and 1948:0418, and when gSpeakerMode is 1 (the Tandy path) the recorded sound sets
-   gSpeakerOn to 1 and resumes the driver through 1948:0458, but only when gSpeakerOn is currently 0
+   gTandyOn to 1 and resumes the driver through 1948:0458, but only when gTandyOn is currently 0
    (177D:022F to 023B). QUIRK 177D:0106: the recorded sound gCurSound is played, not the new
    `sound`; the new number is stored only at 177D:0288. QUIRK 177D:0210: the `gCurSound < 0` test
-   (the `gSpeakerOn = 0` block) is dead twice over: it sits inside the `gCurSound > 0` guard
+   (the `gTandyOn = 0` block) is dead twice over: it sits inside the `gCurSound > 0` guard
    (177D:0117), so it cannot be reached with a negative gCurSound, and gCurSound is the
    zero-extended map byte (`mov ah, 0` at 177D:0286), so it is never negative anyway. QUIRK 177D:0288:
    unlike PlaySound there is no `gSoundMap[sound] < 96h` test, so a map value of 96h or more is
@@ -269,12 +269,12 @@ void PlaySoundAtCell(int sound, int cell);
             }
         } else {
             if (gSpeakerMode == 1) {
-                if (gCurSound < 0 && gSpeakerOn) {
-                    gSpeakerOn = 0;
+                if (gCurSound < 0 && gTandyOn) {
+                    gTandyOn = 0;
                     SoundDriverResume();
                 }
-                if (gCurSound > 0 && gSpeakerOn == 0) {
-                    gSpeakerOn = 1;
+                if (gCurSound > 0 && gTandyOn == 0) {
+                    gTandyOn = 1;
                     SoundDriverResume();
                 }
             }

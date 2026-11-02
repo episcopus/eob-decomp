@@ -1,7 +1,7 @@
 # Review: e1bbe
 
 Reviewer: rev-haiku
-Commit reviewed: 0cfccb167685c1c9763731631b76cc97ae20ad2c (main when started; src/E1BBE.ASM, E1BB1.ASM and E1A72.ASM are unchanged since 3fd51898334634ed6bc3e2286f1c7a44308e39c5, the branch point)
+Commit reviewed: 089dfd1b7632a454fb314db7218dec4e1ca100ea (round 2; src/E1BBE.ASM is identical on main 2dcebd7, and E1A72.ASM, E1BB1.ASM, E1BF3.ASM and E07C8.C are unchanged there). Round 1 was reviewed at 0cfccb1 (see Round 1 below).
 
 Playbook 70. Judge what a matching file can still get wrong: names, types, comments, structure.
 The matcher already proved the bytes; do not re-prove them, read for meaning.
@@ -10,6 +10,19 @@ The matcher already proved the bytes; do not re-prove them, read for meaning.
 
 Each finding is a checkbox. `must-fix` blocks `make review-pass` until a decompiler ticks it off
 (with the commit that fixes it); `should` and `note` do not block.
+
+### Round 2 (review of commit 089dfd1)
+
+- [ ] must-fix src/E1BBE.ASM:33-34 (_gCursorX): "written at src/E1A72.ASM:324-325" is wrong; those lines do not write the cursor. The writers are src/E1A72.ASM:338-339 (the handler stores the clamped position) and src/E1A72.ASM:218-219 (InitMouse sets 0A0h and 64h). The round 1 fix copied the wrong lines. (Evidence: grep for `_gCursorX` in src/E1A72.ASM on main gives lines 46, 218, 338 and 340; src/E1BF3.ASM:35 is right.)
+- [ ] must-fix src/E1BBE.ASM:184 (ShowPointer header): "1BBE:0154, 0159, 018B and 0190 jump to ShowDone" is wrong for 0159. The `jl` at 1BBE:0159 (line 230) jumps to 1BBE:015E, the on-screen path; when it falls through it reaches the `jmp ShowDone` at 1BBE:015B (line 231). 1BBE:0154 (`jle` to 015B), 018B and 0190 are the jumps that reach ShowDone. (Evidence: lines 228-232, 243-246; the label L015E is line 232.)
+- [ ] must-fix src/E1BBE.ASM:88-89 (HidePointer header): "Does nothing when the pointer is disabled (gMouseDisabled) or when no save-under buffer exists" is wrong for a hide while already hidden. The hidden test (lines 108-109) runs before the buffer test (lines 110-111), so with gHideDepth non-zero and no buffer the call still increments gHideDepth (1BBE:0015 to 00E0). The no-buffer exit applies only when the pointer is not hidden. (Evidence: lines 108-111 and 173.)
+- [ ] should src/E1BBE.ASM:173-175 (HidePointer): the depth guard (`inc`, `jne HideDone`, `dec` on wrap) is not explained here, though the same guard for the state byte is explained in the HidePointerZone header (lines 285-287). Say that gHideDepth saturates at 0FFFFh and why (a wrap to zero would make a hidden pointer look shown).
+- [ ] should src/E1BBE.ASM:46-47 (_gZoneLeft): "less the sprite width" does not say the unit. The code subtracts _gPointerWidth8 shifted left three times (lines 328-332), so it is the sprite width in pixels (_gPointerWidth8 times 8). The top is reduced by _gPointerHeight with no shift (lines 338-339), since the height is already in pixels. Say so.
+- [ ] should src/E1BBE.ASM:14-15 (unit header): "Every wrapper takes the pointer semaphore ... and brackets its work with [ds:80AA] and [ds:80A2]" is not true of the no-redraw exit of ShowPointerZone: with a zero count and bit 4000h clear it clears gPointerState and releases the semaphore with no bracket (lines 389-391 and 399-401). Say "every wrapper that hides or draws".
+- [ ] note Round 1 note on g8172 and g8174 cited src/E1A72.ASM:69-70; in the current E1A72.ASM the pair is declared at lines 81-82.
+- [ ] note Still open, another owner: src/E07C8.C:37 on main still says "0 disables the mouse handler body". src/E1BBE.ASM:37, src/E07A9.C:184 and src/E1C00.ASM:40 say non-zero disables. Route to the E07C8 owner.
+
+### Round 1 (commit cf49f97, fixed in 8868249)
 
 - [x] must-fix src/E1BBE.ASM:76 (HidePointer, 1BBE:0002 comment): "Nothing happens ... when it is already hidden (gHideDepth non-zero)" is wrong. When gHideDepth is non-zero the code skips the restore (lines 92-93 and 125) but still increments gHideDepth (lines 157-158), so a nested hide is counted. Say that a hide while hidden only increments the depth. (Evidence: lines 92-93, 125, 157-159.) Fixed: the comment now says a hide while already hidden (1BBE:0015) only increments gHideDepth instead of restoring, and cites the off-screen increments (1BBE:0055/005A/008B/0090 to 1BBE:00E0).
 - [x] must-fix src/E1BBE.ASM:268-269 (HidePointerZone comment): "the four arguments are stored in gZoneLeft..gZoneBottom" is wrong for left and top. Left is stored as the argument less the sprite width in pixels (lines 300 and 312), top as the argument less the sprite height (lines 301 and 318-319). Right and bottom are stored as given (lines 302-303). (Evidence: E1BBE.ASM:300-303, 312, 318-319; E1A72.ASM:64-68 reads the stored values.) Fixed: the gZoneLeft..gZoneBottom declaration now says left and top are stored as the argument less the sprite width/height (1BBE:0234/025B and 0238/0272) and right and bottom as given (1BBE:023C/0240).
@@ -35,5 +48,9 @@ Each finding is a checkbox. `must-fix` blocks `make review-pass` until a decompi
 - [ ] note g80AA, g80A2 are names with no evidence beyond the call sites (the header says so). They are placeholders and fine as they are; g8172 and g8174 are the far pointer argument pair (src/E1A72.ASM:69-70).
 
 ## Summary
+
+Round 2 (089dfd1). The names hold against the evidence, and the round 1 fixes are in the code, but this round found three wrong statements, one of them introduced by the round 1 fix: the cursor writers cited for gCursorX (lines 324-325 are not writes), the 0159 exit in ShowPointer's header (a fall-through, not a jump to ShowDone), and HidePointer's claim that a hide with no buffer does nothing (it nests while hidden). I counted the instruction sizes from the labels, and the other addresses in the header, HidePointer, ShowPointer, HidePointerZone and ShowPointerZone hold (for example 1BBE:0015, 0055, 005A, 008B, 0090, 00FD, 010F, 021E, 0229, 022D, 0234, 025B, 0272). The far-call argument order matches the pushes. Still open from round 1: the underscore spelling of the bare EXTRN names (gMouseDisabled, gDraw80C2, g80AA, g80A2, g8172, g8174), which is an unchecked should to decide across units, and the note on src/E07C8.C:37. Placeholders kept on purpose: _f1BBE_0001 (its evidence is the segment start) and the far pointers g80AA, g80A2, g8172 and g8174 (their evidence is the call sites). Result: review-failed. The decompiler fixes the three must-fix lines and the shoulds, then hands off again.
+
+### Round 1 summary
 
 The seven functions match (860 bytes, make match 7 of 7) and make readability reports 0 findings. The names are mostly supported: the function names follow from their callers (src/E1BB1.ASM, src/E1A72.ASM, src/E14EF.C, src/E0ACD.C) and from what each function does, and the external names agree with the C prototypes that use them. The problems are in the comments, not the names. Seven must-fix items are wrong statements: HidePointer's "nothing happens when already hidden" (it nests), HidePointerZone's storage of the zone (left and top are reduced by the sprite size), its rectangle ("exactly as 1BBE:0002", but in pixels and unclipped), the count's limit (it saturates at FFh, not zero), the sprite-size bounds comments (the sizes are not clip bounds), the rectangle comments that ignore HidePointerZone, and g80C6 (a buffer size query, not a sprite size query). With those corrected the unit can be understood from its source alone. Placeholders left: _f1BBE_0001 (kept on purpose), g80AA and g80A2 (call sites only). The unit is reviewed as round 1; the decompiler should fix the must-fix items and hand off again.
