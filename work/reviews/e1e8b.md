@@ -1,5 +1,78 @@
 # Review: e1e8b
 
+# Round 6
+
+Reviewer: rev-haiku
+Commit reviewed: 13cd754 (main; review/e1e8b was at the same commit when I started)
+
+Playbook 70. Judge what a matching file can still get wrong: names, types, comments, structure.
+The matcher already proved the bytes; do not re-prove them, read for meaning.
+
+Checked: `make match FILE=src/E1E8B.ASM` 30 of 30 functions, exit 0 (no source change this round); `make readability UNIT=e1e8b` 0 findings. The round 5 fixes I traced hold (the EXTRN, the 1E8B:04A0 label, the 000F close on BX, the 0580 stored ES, the 07D7 walk start). This round I traced each function's control flow and stack use against its header, not only the header's wording.
+Evidence used: src/E1E8B.ASM (all of it); build/packets/e1e8b.md (callers); eob/EOB.EXE, read only: the segment table at image 20C10h (the kind word, 99 entries), the stub bytes of 20F6, 2102 and 2106 (+0 to +24), and the MZ relocation table (entries 1E8B:0004 and 1E8B:0006 are present); docs/design/WHITEPAPER.md 2.3 (the stub table, checked against those bytes).
+
+## Findings
+
+Each finding is a checkbox. `must-fix` blocks `make review-pass` until a decompiler ticks it off
+(with the commit that fixes it); `should` and `note` do not block.
+
+### 0286 InitOverlayRecords (the 0012 chain)
+
+- [ ] must-fix src/E1E8B.ASM:459-469: "the store runs while ES is still the head" is true only for the first taken entry. The store `mov es:[12h],ax` (:494) writes word 0012 of whatever ES is. After a taken entry ES stays on that record: `pop ax` (:502) pops the saved ES into AX (AX is overwritten at :504), and nothing restores ES on that path (`mov es,ax`, :495). So the first taken entry's segment goes into the list head 20BF:0012, and each later taken entry's segment goes into word 0012 of the previously taken record. That word is the link 02FF walks (`mov cx,ds:[12h]`, :554: a record's own 0012 is its next record). Also "switches ES to that record" holds only for a taken entry: an FF entry is restored with `pop es` (:498). Say that the record links are the 0012 chain. 20BF:0012 has no reader in this unit, so "purpose unknown" stays for it. Evidence: :491-504 and :546-555.
+- [ ] must-fix QUIRK 1E8B:0286 (src/E1E8B.ASM:494-499 and :554-555): the store at :494 runs before the FF test at :496, so a skipped entry's segment is written into the previous record's 0012 as well. The next taken entry overwrites that word. If no taken entry follows, the last taken record keeps the segment of the last skipped entry in its 0012, and 02FF reads that word as the next record (:554) and places that entry. Trace: taken T1, then skipped S1 and S2 at the end: T1.0012 = S2. Mark it in the 0286 header as `QUIRK 1E8B:0286` (READABILITY item 6), and say that the original's intent is not established. Evidence: the trace above, :491-499.
+- [ ] should src/E1E8B.ASM:502: `pop ax` balances the `push es` at :493 and discards the saved ES. It reads like a register use. Say so in a short comment.
+
+### 04D0 OverlayCallHandler
+
+- [ ] must-fix QUIRK 1E8B:04D0 (src/E1E8B.ASM:840-847): the multi path does `add bp,6` and calls _LoadOverlayRecord with BP still moved (BP is not restored before the call, and the handler has no other `bp,6`). In the same path the saved BP word (the handler's own `push bp`, at the new `[bp-6]`) and the interrupt frame's FLAGS word (the new `[bp]`, old `[bp+6]`) are exchanged around the call (:841-843) and swapped back after it (:845-847). The net stack effect is nil, but during the call the two words are swapped and BP is not the handler frame. _FindOverlaySlot (073B) starts its walk at BP (`mov cx,[bp]`, :1236), and it is reached from _LoadOverlayRecord through 06C0 and 072F. So its first slot differs from the single path, where BP is the handler frame. The header says none of this. Mark it as `QUIRK 1E8B:04D0` and say what the swap is for, or that it is not established.
+- [ ] must-fix QUIRK 1E8B:04D0 (src/E1E8B.ASM:833-835 and :865): `sub word ptr [bp+2],2` changes the interrupt frame's return IP, and IRET (:865) resumes there. `push bp; mov bp,sp` leaves that frame at [bp+2] = IP, [bp+4] = CS, [bp+6] = FLAGS, and `les bx,[bp+2]` (:833) reads the request address from the same slot. The header never says [bp+2] is the return IP, nor that the resume point moves by -2. For the stub form in WHITEPAPER 2.3 (`CD 3F`, then the offset word), the new IP is the INT itself. Say where the IRET resumes, or mark the resume point not established [H]. The same applies to the words "the single entry at [bp+2]" and "the two-word form at [bp+6]/[bp+2]", which read like stack arguments.
+
+### 0613 DiscardOverlayRecords
+
+- [ ] must-fix src/E1E8B.ASM:1007-1015 and the name at :1016: the routine discards no record. It sets 20B5:00BC to 0 (:1027), then pops the records last first and puts each back on the head (`mov ax,ds:[0BCh]; mov es:[1Ch],ax; mov ds:[0BCh],es`, :1033-1035). So every record is still on the chain when it returns, in its original order (head = the first record, the last link stays 0). What changes is each record's image base: 06C0 moves the image and sets the new base (:1139), with the base working down from 20B5:00B0 (:1037). Nothing clears ES:0010 here (that is 05FB's job, :1003). The header's "discards every overlay record" and "which is the unlink" claim more than the code does; "unlink" is a relink. Rename the routine for what it does (every record's image is moved to the free top, the chain is kept), or show what leaves the chain. Evidence: :1018-1043, :1139, :1003.
+
+### 073B FindOverlaySlot and 072F PatchOverlayEntryVector
+
+- [ ] should src/E1E8B.ASM:1218-1225 (073B): the header says "overlay slot table" and "the table at SS:BP" without saying that the table is the stack. The walk starts at BP and follows the saved BP word (`mov cx,[bp]`, :1236). Each slot is a stack frame whose SS:[BP+4] is the far return segment (`cmp dx,[bp+4]`, :1240), and 072F swaps SS:[BP+2], the return offset (`xchg ss:[bx+2],cx`, :1213). The 07D7 header already says "saved-BP chain"; say the same here. The reading of [bp+4] as a far return segment follows from the frame layout and is [H] until a call site shows it.
+
+### 0711 LinkOverlayRecord
+
+- [ ] should src/E1E8B.ASM:1179-1183: "the list held at 20BF:001C" should name the list. 20BF is the segment of `_gOverlayList` (EXTRN, :17), and this is its 1C chain. The aging walks use a different head, 20B5:00BC (0536 :891, 0580 :961, 0613 :1018, 0761 :1262). The header should say whether the two chains are the same chain. The code does not establish that; a reader would otherwise take the 0711 tail for the chain the aging walks.
+
+### 0134 SwapAndReopenOverlayFile and 0185 ShutdownOverlayManager (names)
+
+- [ ] should src/E1E8B.ASM:193-201 (0134): the name says "reopen", but the close path (a handle is open, :220-226) does not reopen. Either rename it for the toggle, or say in the header that the name is for the open path and the close is the other half. Note the header already says "no reopen on this path"; the name still claims it.
+- [ ] should src/E1E8B.ASM:238-245 (0185): "shutdown" is a guess. The evidence is the handle close and the vector restore (:250-252); the packet finds no caller. Say "Shutdown is a guess", as 05FB does for "release hook".
+
+### 02FF MapOverlayRecords
+
+- [ ] should src/E1E8B.ASM:525: the first sentence says "load an overlay into memory", but the name says map. The routine places the records (:566-572), reads the image (:591) and calls the entries (:610). Make the first sentence match the name, or rename.
+
+### 086F OverlayManagerEntry
+
+- [ ] should src/E1E8B.ASM:1459-1460 and :1477: the load path zeroes the caller's [bp+8] before the load (`mov word ptr [bp+8],0`, :1460) and sets it to ES:0010 after the call (:1477). The header says only the second store. Add the first.
+
+### File level: registry and map (notes)
+
+- [ ] note: four second entries sit inside another function's range: the 04A2 record loader (:783-800) inside `_RelocateOverlayPointer` (PROC :739 to ENDP :801), 03B7 (:620-626) inside `_MapOverlayRecords`, 07A1 (:1312-1336) inside `_OverlayTotalParagraphs`, and 08C9 (:1484-1528) inside `_OverlayManagerEntry`. Each header says so, but the map has one function each. The 04A2 loader matters most: 0286 stores its offset at each record's ES:0018. This is for `make map`, not a fix in this unit.
+- [ ] note: no code in this unit writes the overlay id word 20B5:00A0 (its only reference is the `cmp` at :79). The 000F "not initialised" reading (:79-81) depends on a writer outside this unit. The value the records need is 3FCDh (the stub's CD 3F), which the ES:0000 test at :1453 compares. Say so in the 000F header.
+- [ ] note: WHITEPAPER 2.3's stub table is two bytes off, and this unit is right. In eob/EOB.EXE (read only), stub 2102 has CD 3F at +0, 0000 at +2, the file offset u32 at +4 (2C20 0000, 11,296), the code bytes at +8 (9,864), the fixup bytes at +A (414), the entry count at +C (6), and the 5-byte entries start at +20 (CD 3F at +20 and +25), not at +1E. The unit's offsets (ES:0004, 0008, 000A, 000C, 0020) match the bytes. Not a src/ fix; the whitepaper owner should correct the table.
+
+## Confirmed, no change
+
+- 0286: `test word ptr [si+4],2` with a non-zero `[si+2]` picks exactly the seven kind-3 entries, segments 20F6, 2102, 2106, 210C, 2116, 211E and 212A, the same seven paragraphs WHITEPAPER 2.3 lists (checked against the segment table at image 20C10h).
+- 0004: the MZ relocation table has the entries at 1E8B:0004 and 1E8B:0006 (the round 5 finding holds).
+- 02FF: the last record of the 0012 chain is not placed, and the last placed record's 1C is cleared (:554-555, :572-574), as the header says. 0580: the last chain record (ES:001C zero, :963-964) is not examined, as the header says.
+- 02FF: the image size in SI:DI is paragraphs times 16, with SI low and DI high (`rol` split, :583-587), as the header says.
+- 0442: the masks and the B8+r / 50+r pairs (:742-765) match the header; the +2 slot compare matches the stub form 068D writes.
+- 07D7: the second-pass start and its zero-link and table-end behaviour match the header (:1372, :1399-1401).
+- 08C9 (uncalled, marked [H]): the size formula (00AA doubled when at least DGROUP:3088, else 3088, plus one) and the argument pushes match the header.
+- 0761, 0789, 077D, 064E, 066F, 068D and 0536: arithmetic and stack balance (including the pushf/popf pairs in 0536) match their headers.
+
+## Summary
+
+Round 6: the unit reads as the overlay manager it is, and the round 5 fixes hold. Five must-fix items: the 0286 header says the 0012 store writes the list head, but after the first taken entry it writes each record's link; the trailing skipped entries leave a link that 02FF follows (a QUIRK to mark); the 04D0 multi path moves BP and swaps two frame words around the load call (a QUIRK to mark); the 04D0 handler moves its own IRET return IP by -2 and the header does not say so (a QUIRK to mark); and the 0613 name, since the routine keeps every record on the chain and only moves their images. The should items are clarity fixes. Nothing is escalated: none is a matcher, spec or pin question, and the 0286 and 04D0 behaviour is in the original code, to be described and not changed. The WHITEPAPER 2.3 stub table is a documentation error for the human to correct, noted above. Verdict: review-failed, 5 must-fix items, all comments, names and QUIRK marks; no code change is asked for.
+
 # Round 5
 
 Reviewer: rev-haiku
