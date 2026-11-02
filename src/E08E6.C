@@ -90,7 +90,7 @@ extern int g31FE[]; /*@ ds:31FE */
 extern int g320E[]; /*@ ds:320E */
 extern char g31F2[]; /*@ ds:31F2 */
 extern char g31F6[]; /*@ ds:31F6 */
-extern int gSoundVolume; /*@ ds:FBCA */
+extern int gPartyCell; /*@ ds:FBCA */
 extern char gF442; /*@ ds:F442 */
 extern unsigned long gFC04; /*@ ds:FC04 */
 extern unsigned long gCount849A; /*@ ds:849A */
@@ -138,7 +138,7 @@ extern int DirectionFromPoints(int obj, int volume); /*@ 17A6:0314 */
 extern int f0D1C_0006(int value); /*@ 0D1C:0006 */
 extern int f0D1C_00DA(int value, int page); /*@ 0D1C:00DA */
 extern void fOvl4_1F51(int n); /*@ 2116:005C */   /* overlay 4 entry, ovl4:1F51 */
-extern void PlaySoundVolume(int sound, int volume); /*@ 177D:0106 */
+extern void PlaySoundAtCell(int sound, int volume); /*@ 177D:0106 */
 extern void PlaySoundDefault(int sound); /*@ 177D:00F3 */
 extern int f0D1C_0670(int who, int mask); /*@ 0D1C:0670 */
 extern void DamageCharacter(int who, int amount); /*@ 0DE8:09B9 */
@@ -157,13 +157,13 @@ extern void ReportLostItem(int who); /*@ 0BD2:000E */
 void Obj10F3(struct Obj28 far *obj);   /* forward: 05EA reaches it before its definition */
 
 /* 08E6:000B: reset an object whose type is not 7, 8 or 0xa: clear the type, pick an orientation
-   from 17A6:0314(id, gSoundVolume) and set flag bit 3. Called by 0EF3:1702. */
+   from 17A6:0314(id, gPartyCell) and set flag bit 3. Called by 0EF3:1702. */
 /*@ 08E6:000B */ void ClearObjectType(struct Obj28 far *obj)
 {
     if (obj->type == 7 || obj->type == 8 || obj->type == 0xa)
         return;
     obj->type = 0;
-    obj->orient = (DirectionFromPoints(obj->id, gSoundVolume) ^ 4) >> 1;
+    obj->orient = (DirectionFromPoints(obj->id, gPartyCell) ^ 4) >> 1;
     obj->m16 |= 8;
 }
 
@@ -178,7 +178,7 @@ void Obj10F3(struct Obj28 far *obj);   /* forward: 05EA reaches it before its de
     for (obj = gObjs, i = 0; i < 30; i++, obj++) {
         if (obj->type == 8) {
             obj->type = 0;
-            obj->m10 = gSoundVolume;
+            obj->m10 = gPartyCell;
             last = obj;
         }
     }
@@ -189,40 +189,45 @@ void Obj10F3(struct Obj28 far *obj);   /* forward: 05EA reaches it before its de
 }
 
 /* 08E6:00C3: for an object whose type is not 7, 8, 9 or 0xa and whose count is positive: run
-   17A6:0F61(id, gSoundVolume) and 17A6:0314(id, gSoundVolume); when the first is under 4 and the
+   17A6:0F61(id, gPartyCell) and 17A6:0314(id, gPartyCell); when the first is under 4 and the
    second minus twice the orientation, minus 3, wrapped into 0..7, is over 2 or the first is under 2,
    clear the type and reset the sound field. Called by 0150 and UpdateObjects. Purpose unknown: what
-   the two 17A6 calls compute. DRAFT, blocked: a TCC -B codegen question, the same class as
-   0D1C:09AD (re/symbols.toml e0d1c: the first conditional's forward target sits on TCC's 127-byte
-   estimate boundary, so TCC -S emits the far form `jne @@; jmp` and TASM /jNOSMART /m2 keeps it).
-   The unit is -B (that is what makes 0765, 0B94, 17FD and 1410 match); under -B this `&&` body
-   matches byte for byte except one 3-byte instruction: the original reloads `les bx,[bp+6]` at
-   08E6:00F2 before pushing obj->id (08E6:00EE `push [ds:FBCA]`; 08E6:00F2 `les bx,[bp+6]`;
-   08E6:00F5 `push es:[bx+2]`), while ours reuses the bx the `&&` chain already holds and so is 3
-   bytes short (ours je 0x86 against the original je 0x89). TCC keeps a far pointer in ES:BX and
-   drops it at a block boundary; every form tried (the `&&` chain, separate `if` returns, a switch,
-   nested ifs, `goto`, do/while(0), for(;;), while, block-scoped locals, register locals, an explicit
-   `else`, separate single-condition `if`s, `if(...) goto body;`, a `switch` on the type) either
-   keeps the cached bx as ours does or lays the first test out as `jne @@; jmp` instead of `je`. The
-   `||` early-return form DOES reload but its first test is `jne @@; jmp` under -B (it matches only
-   without -B, where TCC's own assembler shortens the jump; then 0765, 0B94 and 17FD do not match).
-   So no single flag set gives all 36; -B gives 35 (this one blocked), -ml -O -Z gives 33. */
+   the two 17A6 calls compute. DRAFT. blocked: a TCC -S codegen question, one 3-byte instruction.
+   Under -B this body matches byte for byte except that the original reloads `les bx,[bp+6]` at
+   08E6:00F2 before the Distance argument obj->id (08E6:00EE `push [ds:FBCA]`; 08E6:00F2
+   `les bx,[bp+6]`; 08E6:00F5 `push es:[bx+2]`), while ours reuses the bx the five-test `&&` chain
+   already holds, so ours is 3 bytes short (ours je 0x86 against the original je 0x89). The reload
+   is what TCC emits when it has not proved the far pointer still lives in ES:BX; it shows up in the
+   original exactly where a body is a jump target (the else branch at 03FE:041F, the statement after
+   a `||` chain, and the `if (cond) ; else { body }` layout, probed 2026-11-01), but here the body
+   is fall-through after the `jle`, and -O (jump optimisation) is what suppresses the redundant load
+   (WHITEPAPER 2.1.1). Every source form tried either keeps the cached bx as ours does or lays the
+   first test out as `jne @@; jmp` instead of `je`: the `&&` chain, one-line, parenthesised and
+   negated conditions, nested ifs (with and without braces), a `switch`, `goto`, an empty-body `if`,
+   do/while(0), for(;;), while, a nested block, a declaration initialiser, `register` and separate
+   locals, a bare `obj;`, an assignment inside the condition, casts, the `if (cond) ; else { body }`
+   layout, and the `||` early-return form (which reloads but lays the first test as `jne @@; jmp`
+   under /jNOSMART; it matches only without -B, where TCC's own assembler shortens the jump, and then
+   0765, 0B94 and 17FD do not match). Flags probed on the whole unit 2026-11-01: -ml -O -Z -B 35 of
+   36, -ml -O -Z 32, -ml -O -Z -G -B 10, -ml -Z -B 2; -B is the only set that reaches 35 and the one
+   missing function is this. C++ -P, -1 and -k make no difference. Evidence in re/symbols.toml
+   e08e6_00c3 (notes). */
 /*@ 08E6:00C3 draft */ void Obj00C3(struct Obj28 far *obj)
 {
     int first, dir;
 
     if (obj->type != 7 && obj->type != 8 && obj->type != 9 && obj->type != 0xa
             && obj->count > 0) {
-        first = Distance(obj->id, gSoundVolume);
+        first = Distance(obj->id, gPartyCell);
         if (first >= 4)
             return;
-        dir = DirectionFromPoints(obj->id, gSoundVolume) - obj->orient * 2 - 3;
+        dir = DirectionFromPoints(obj->id, gPartyCell) - obj->orient * 2 - 3;
         if (dir < 0)
             dir += 8;
         if (dir <= 2 && first >= 2)
             return;
         obj->type = 0;
-        obj->m10 = gSoundVolume;
+        obj->m10 = gPartyCell;
     }
 }
 
@@ -307,11 +312,11 @@ void Obj10F3(struct Obj28 far *obj);   /* forward: 05EA reaches it before its de
 
 /* 08E6:0309: turn an object toward a new id and orientation. When `id` is not -1 and differs from
    the object's own id, look up the nine-byte gB894 record for `id` and pick the byte at +orient^2:
-   when g194B of that byte has no bit 2, or `id` is the current gSoundVolume, fail (0). When the
+   when g194B of that byte has no bit 2, or `id` is the current gPartyCell, fail (0). When the
    record's +4 count has bits 0..2 set and `id` is nonzero, take the frame FindObjectFrameBit picks
    (fail if none) and move the object to (id, orient); for a plain turn (`id` is the object's own id
    or -1) only `orient` is applied when it is not -1. Then notify f0D1C_0006 of the old id and,
-   unless gF442 is set, play the object's record m17 through PlaySoundVolume. Returns 1 on success.
+   unless gF442 is set, play the object's record m17 through PlaySoundAtCell. Returns 1 on success.
    Called by 0430, 0B34 and 0B94 (StepObjectOrient passes -1 to leave a field alone). */
 /*@ 08E6:0309 */ int TurnObject(struct Obj28 far *obj, int id, int orient)
 {
@@ -328,7 +333,7 @@ void Obj10F3(struct Obj28 far *obj);   /* forward: 05EA reaches it before its de
         dir = orient ^ 2;
         if ((g194B[rec[dir]] & 4) == 0)
             return 0;
-        if (id == gSoundVolume)
+        if (id == gPartyCell)
             return 0;
         if ((rec[4] & 7) && id != 0) {
             frame = FindObjectFrameBit(obj, id);
@@ -343,7 +348,7 @@ void Obj10F3(struct Obj28 far *obj);   /* forward: 05EA reaches it before its de
         obj->orient = orient;
     f0D1C_0006(oldId);
     if (!gF442)
-        PlaySoundVolume(gTable1A3B[obj->b0].m17, obj->id);
+        PlaySoundAtCell(gTable1A3B[obj->b0].m17, obj->id);
     return 1;
 }
 
@@ -356,14 +361,14 @@ void Obj10F3(struct Obj28 far *obj);   /* forward: 05EA reaches it before its de
             ClearType8Objects();
         } else {
             obj->type = 0;
-            obj->m10 = gSoundVolume;
+            obj->m10 = gPartyCell;
         }
     }
 }
 /* 08E6:0430: turn an object toward the direction DirectionFromPoints(id, value) reports. When the object's
    state is over 6 it resets it to 0 and toggles g321E, which selects the direction table g31FE or
    g320E. The target -1 leaves the object alone; bit 3 of m16 XORs 4 into it. When the target is even
-   and id + g1790[target >> 1] equals gSoundVolume, the object takes one step through TurnObject with
+   and id + g1790[target >> 1] equals gPartyCell, the object takes one step through TurnObject with
    -1 (orientation + 1 when the difference from 2*orient is under 5, else - 1). Otherwise the
    difference picks a direction and the loop walks the eight orientations from 7 down to 0, adding
    the table byte, skipping odd directions, and turning through TurnObject(obj, f0D1C_00DA(id,
@@ -393,7 +398,7 @@ void Obj10F3(struct Obj28 far *obj);   /* forward: 05EA reaches it before its de
     if (obj->m16 & 8)
         target ^= 4;
     diff = (target - dir) & 7;
-    if (!(target & 1) && id + g1790[target >> 1] == gSoundVolume) {
+    if (!(target & 1) && id + g1790[target >> 1] == gPartyCell) {
         if (diff != 0 && diff < 5)
             dir = obj->orient + 1;
         else if (diff != 0)
@@ -445,7 +450,7 @@ void Obj10F3(struct Obj28 far *obj);   /* forward: 05EA reaches it before its de
     f0D1C_0006(obj->id);
 }
 /* 08E6:05EA: check the object against `handle` and turn it. When `handle` is -1 it is recomputed as
-   f0D1C_00DA(obj->id, obj->orient); when it is not the current gSoundVolume the object does nothing
+   f0D1C_00DA(obj->id, obj->orient); when it is not the current gPartyCell the object does nothing
    and 0 is returned. Otherwise, when Obj103D(obj) is 0 the object takes the frame SetObjectFrameFromId
    picks and 1 is returned. Else m16 bit 2 toggles, and when it is not now set 1 is returned. Then
    f0D1C_0006(obj->id) decides: when nonzero the object plays gTable1A3B[b0].m16 only when b0 is 4,
@@ -459,7 +464,7 @@ void Obj10F3(struct Obj28 far *obj);   /* forward: 05EA reaches it before its de
 
     if (handle == -1)
         handle = f0D1C_00DA(obj->id, obj->orient);
-    if (handle != gSoundVolume)
+    if (handle != gPartyCell)
         return 0;
     if (Obj103D(obj) != 0) {
         obj->m16 ^= 4;
@@ -502,9 +507,9 @@ void Obj10F3(struct Obj28 far *obj);   /* forward: 05EA reaches it before its de
 }
 /* 08E6:0765: the object's action for UpdateObjects. It returns 0 unless the object's 1A3B record
    has m0E bit 6, the object has m19 left and m18 is zero (otherwise m18 is decremented and 0 is
-   returned). It then checks Distance(id, gSoundVolume) is at most 3 and DirectionFromPoints(id,
-   gSoundVolume) equals orient * 2, and walks f0D1C_00DA(id, orient), following it until it reaches
-   gSoundVolume; each step must have g194B[gB894[value * 9 + (orient ^ 2)]] bits 0..1 set and no
+   returned). It then checks Distance(id, gPartyCell) is at most 3 and DirectionFromPoints(id,
+   gPartyCell) equals orient * 2, and walks f0D1C_00DA(id, orient), following it until it reaches
+   gPartyCell; each step must have g194B[gB894[value * 9 + (orient ^ 2)]] bits 0..1 set and no
    gB894[value * 9 + 4] count, else 0 is returned. The action then switches on b0: 4 turns to 9 and
    plays 0x1f; 14 plays g322F[m19] and turns through Obj073F(obj, g3226[m19]); 15 frees an item 0x3c
    and queues AddDDEffect(-1, item, id, frame, orient, gTable8DD2[item].m02), freeing it when that
@@ -513,7 +518,7 @@ void Obj10F3(struct Obj28 far *obj);   /* forward: 05EA reaches it before its de
    and plays g3223[roll] after g3220[roll], else announces the wounds spell and hits every affected
    member. Every action then runs the overlay-4 entry, clears gDF4C, decrements m19 unless it is 0xff
    and sets m18 to 5, returning 1. Called by 0AB8. The unit's -B flag is what keeps case 21's
-   PlaySoundVolume(0x6c, id) at 08E6:0907 inline instead of tail-merging it into the shared block at
+   PlaySoundAtCell(0x6c, id) at 08E6:0907 inline instead of tail-merging it into the shared block at
    08E6:0A5E. */
 /*@ 08E6:0765 */ int Obj0765(struct Obj28 far *obj)
 {
@@ -532,13 +537,13 @@ void Obj10F3(struct Obj28 far *obj);   /* forward: 05EA reaches it before its de
         obj->m18--;
         return 0;
     }
-    if (Distance(obj->id, gSoundVolume) > 3)
+    if (Distance(obj->id, gPartyCell) > 3)
         return 0;
-    if (DirectionFromPoints(obj->id, gSoundVolume) != obj->orient * 2)
+    if (DirectionFromPoints(obj->id, gPartyCell) != obj->orient * 2)
         return 0;
     orient = obj->orient;
     value = f0D1C_00DA(obj->id, orient);
-    while (value != gSoundVolume) {
+    while (value != gPartyCell) {
         if ((g194B[(signed char)gB894[value * 9 + (orient ^ 2)]] & 3) == 0
                 || (gB894[value * 9 + 4] & 7))
             return 0;
@@ -550,7 +555,7 @@ void Obj10F3(struct Obj28 far *obj);   /* forward: 05EA reaches it before its de
         if (roll < 3) {
             arg = g3220[roll];
             Obj073F(obj, arg);
-            PlaySoundVolume(g3223[roll], obj->id);
+            PlaySoundAtCell(g3223[roll], obj->id);
         } else {
             for (i = 0; i < 6; i++) {
                 if (f0D1C_0670(i, 3)) {
@@ -561,16 +566,16 @@ void Obj10F3(struct Obj28 far *obj);   /* forward: 05EA reaches it before its de
                     break;
                 }
             }
-            PlaySoundVolume(0x6c, obj->id);
+            PlaySoundAtCell(0x6c, obj->id);
         }
         break;
     case 4:
         Obj073F(obj, 9);
-        PlaySoundVolume(0x1f, obj->id);
+        PlaySoundAtCell(0x1f, obj->id);
         break;
     case 14:
         arg = g3226[obj->m19];
-        PlaySoundVolume(g322F[obj->m19], obj->id);
+        PlaySoundAtCell(g322F[obj->m19], obj->id);
         Obj073F(obj, arg);
         break;
     case 15:
@@ -582,7 +587,7 @@ void Obj10F3(struct Obj28 far *obj);   /* forward: 05EA reaches it before its de
         }
         break;
     case 17:
-        PlaySoundVolume(0x53, obj->id);
+        PlaySoundAtCell(0x53, obj->id);
         DrawText("The party is hit with a psychic mind blast!\r");
         for (i = 0; i < 6; i++) {
             if (f0D1C_0670(i, 3)) {
@@ -593,7 +598,7 @@ void Obj10F3(struct Obj28 far *obj);   /* forward: 05EA reaches it before its de
         break;
     case 16:
         f0EF3_097B(0xff, 0, obj->id, obj->frame, obj->orient);
-        PlaySoundVolume(0x55, obj->id);
+        PlaySoundAtCell(0x55, obj->id);
         break;
     }
     fOvl4_1F51(1);
@@ -955,7 +960,7 @@ second:
    behind g8492 (gDeadline < g8492); mode 2 fires when gF540 has reached gFB32; mode 3 fires when
    either holds; any other mode does nothing. Firing runs the 122E entry with (0, 0x20), then, when
    no object of the 30 (from index 1) has a count left, runs 0EC3 on the first object whose
-   17A6:0F61(id, gSoundVolume) is over 3. Either way it resets the deadline to g8492 + gF510 and
+   17A6:0F61(id, gPartyCell) is over 3. Either way it resets the deadline to g8492 + gF510 and
    clears gF540. Called by 1414:04E7 and overlay 6. The unit's -B flag is what keeps the mode-3
    low-word branch at 1410:005A the right way round that a -O build inverts. */
 /*@ 08E6:1410 */ void Obj1410(void)
@@ -988,7 +993,7 @@ fire:
     }
     if (any == 0) {
         for (i = 1; i < 30; i++) {
-            if (Distance(gObjs[i].id, gSoundVolume) > 3) {
+            if (Distance(gObjs[i].id, gPartyCell) > 3) {
                 Obj0EC3(&gObjs[i]);
                 break;
             }

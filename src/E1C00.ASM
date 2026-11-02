@@ -13,16 +13,16 @@
 ; 1C00:0002 allocates an 0FA00h byte block (MemAlloc, flags 20h), loads an overlay image into it
 ; with DOS INT 21h/4B03 and reports BX = 0 on success, 0FFFFh on failure; and 1C00:0055 takes a
 ; far pointer to an overlay request (word 0 = the offset of the request name in the request's
-; segment; word +2 = the name's segment; words +4 and +6 = the two arguments of the pointer the
-; entry returns), loads the overlay, then calls the entry at the overlay segment:0000 with 27h,
-; 1A16h and that segment (1C00:0088 to 0091), resizes the block 1C00:0002 loaded the overlay into,
-; to the overlay's size [H] (MemRealloc, 1C00:00A8), and calls the pointer the entry returned
-; (offset at 818Eh, segment at 8190h) with the request's two words (1C00:00C0). The caller
-; StartupGame's DS, the request segment (which _RunOverlayRequest itself loads into DS and ES at
-; 1C00:0062 and 1C00:0071) and the name's segment are all DGROUP at run time (the 1C00:0055
-; comment gives the evidence, including the start code that sets DS). Each access uses the
-; segment the code leaves in DS or ES, not one segment for all; the comment inside 1C00:0055 lists
-; them.
+; segment; word +2 = the name's segment; words +4 and +6 = a far pointer (offset, segment) to the
+; table the entry's pointer walks), loads the overlay, then calls the entry at the overlay
+; segment:0000 with 27h, 1A16h and that segment (1C00:0088 to 0091), resizes the block 1C00:0002
+; loaded the overlay into, to the overlay's size (the entry's BX; MemRealloc, 1C00:00A8), and calls
+; the pointer the entry returned (offset at 818Eh, segment at 8190h) with the request's words +4
+; and +6 (1C00:00C0). The caller StartupGame's DS, the request segment (which _RunOverlayRequest
+; itself loads into DS and ES at 1C00:0062 and 1C00:0071) and the name's segment are all DGROUP at
+; run time (the 1C00:0055 comment gives the evidence, including the start code that sets DS). Each
+; access uses the segment the code leaves in DS or ES, not one segment for all; the comment inside
+; 1C00:0055 lists them.
 ; DGROUP is paragraph 212Eh of the load image (the value the fixups hold; the loader adds the load
 ; segment), as in E1A72.ASM (lines 81, 252, 435, 470) and E1D8F.ASM (line 78).
 ;
@@ -57,9 +57,10 @@
 ; `mov es:[bx],ax` after it stores. This 0FA00h is the block the loader reserves for the overlay;
 ; 1C00:0055 later shrinks it to the overlay's real size with MemRealloc (the reason for this size is
 ; not established [H]: 0FA00h is 64000 bytes, one 320 by 200 screen, but nothing in the bytes says
-; that is why). Which segment each access uses, and why the header's DGROUP:818Ah to 8194h holds
-; (the caller StartupGame's DS is DGROUP, which 07C8:0254 `push ds` passes), is spelled out once in
-; the 1C00:0055 comment.
+; that is why; the four overlays in eob/ are 10082 to 12759 bytes, so it is enough for any of them,
+; and vga.ovl is not in the copy). Which segment each access uses, and why the header's
+; DGROUP:818Ah to 8194h holds (the caller StartupGame's DS is DGROUP, which 07C8:0254 `push ds`
+; passes), is spelled out once in the 1C00:0055 comment.
 ; Save SP and SS across the call (the reason is not established [H]), then load the overlay named by
 ; DS:DX through the INT 21h/4B03 parameter block at ES:BX = request_seg:818Ah. Word 0 is the load
 ; segment (the word at 818Ah through that segment) and word 1 is the relocation factor (818Ch
@@ -102,6 +103,9 @@ loaded: pop     dx
         int     21h
         mov     ax,212Eh
         mov     ds,ax
+; Restore SP then SS in the original's order (1C00:0044, 0048): between the two, SS is the one DOS
+; left and SP is the saved one, with interrupts enabled. The original does this and a matching file
+; must keep it; a later port should load SS first. [H] on the hazard: it is not observed.
         mov     sp,ds:[8192h]
         mov     ss,ds:[8194h]
         mov     bx,0FFFFh
@@ -113,9 +117,12 @@ _LoadOverlayImage ENDP
 
 ; 1C00:0055: run an overlay request. [bp+6..+9] is a far pointer to the request (the caller, inside
 ; StartupGame at 07C8:0199, E07C8.C:172, passes DS:8121 at 07C8:0254): word 0 is the offset of the
-; request name in the request's segment; word +2 is the name's segment; the two words at +4 and +6
-; are the two arguments of the pointer the entry returns (who writes DGROUP:8125h and 8127h, request
-; +4 and +6, is not established; the caller bytes at 07C8:0249 to 0258 write only 8121h and 8123h).
+; request name in the request's segment; word +2 is the name's segment; words +4 and +6 are a far
+; pointer (offset then segment) to a table that the pointer the entry returns walks through DS:SI
+; in word pairs (it reads `mov si,[bp+6]` and `mov ds,[bp+8]`: cga.ovl 111Bh and 111Eh, ega.ovl
+; 0EF7h and 0EFAh, mcga.ovl 0BF2h and 0BF5h, tga.ovl 0F0Fh and 0F12h). Who writes DGROUP:8125h and
+; 8127h (request +4 and +6) is not established; the caller bytes at 07C8:0249 to 0258 write only
+; 8121h and 8123h.
 ; It loads the image with 1C00:0002, calls the entry at the overlay segment:0000 with 27h, 1A16h
 ; and that segment (1C00:0088 to 0091), resizes the block with MemRealloc (1C00:00A8), calls the
 ; pointer the entry returned (1C00:00C0) and, when the mouse handler is installed, clears
@@ -159,7 +166,10 @@ _RunOverlayRequest PROC FAR
 ; (1C00:0054) does not restore DS; on the MemAlloc-failure return DS is the request segment that
 ; `pop ds` (1C00:0022) restored, which is DGROUP too, so 1C00:0002 returns with DS = DGROUP on
 ; every path and the caller sees DGROUP at 1C00:0077 (212Eh is the value the reload's fixup holds;
-; the loader adds the load segment). 1C00:00C0 (the second `lcall [818Eh]`) reads its target
+; the loader adds the load segment). The entry call (1C00:0091) leaves DS alone, so the stores at
+; 1C00:0098 and 00B4 after it still use DGROUP: the four entries in eob/ write no DS (cga.ovl
+; 1168h to 1184h, ega.ovl 0FBDh to 0FD1h, mcga.ovl 0C3Fh to 0C5Bh, tga.ovl 0F5Ch to 0F78h).
+; 1C00:00C0 (the second `lcall [818Eh]`) reads its target
 ; through the request segment, which `pop ds` (1C00:00B9) restores from the word pushed at
 ; 1C00:006A: it calls the pointer stored at DGROUP:818Eh. These pairs hold only because the request
 ; segment is DGROUP (the header's claim, from 07C8:019D and 07C8:0254): the SP and SS save at
@@ -181,10 +191,15 @@ _RunOverlayRequest PROC FAR
         je      short fail
 ; On success this function stores 0 at 818Eh (the offset) and the overlay segment (the word at
 ; DGROUP:818Ah, loaded into AX at 1C00:007C) at 8190h (1C00:0081 and 0085), then pushes that
-; segment, 1A16h and 27h and calls the entry at segment:0000 through [818Eh] (the 0 is the call
-; target offset): the entry's first argument is 27h and its third is the overlay segment. 1A16h is
-; the segment of src/E1A16.C (WaitFrames); that the overlay is handed a resident segment is
-; evidence, what it does with it is not established, so both arguments stay placeholders.
+; segment, 1A16h and 27h and calls the entry at segment:0000 through [818Eh]: offset 0 jumps to the
+; entry (cga.ovl `e9 65 11` at image 0000h jumps to 1168h, ega.ovl `e9 ba 0f` to 0FBDh, mcga.ovl
+; `e9 3c 0c` to 0C3Fh, tga.ovl `e9 59 0f` to 0F5Ch), and the 0 is the call's target offset. The
+; entry's first argument is 27h and its third the overlay segment; 1A16h is the segment of
+; src/E1A16.C (WaitFrames). What the overlay does with them is not shown by the four entries in
+; eob/ (cga.ovl 1168h to 1184h, ega.ovl 0FBDh to 0FD1h and its helper 0F51h, mcga.ovl 0C3Fh to
+; 0C5Bh, tga.ovl 0F5Ch to 0F78h): each only does `push bp; mov bp,sp`, pushes and pops its own
+; registers, and retf, with no `[bp+n]` read and no write to DS, so 27h, 1A16h and the overlay
+; segment stay placeholders.
         mov     ax,ds:[818Ah]
         xor     bx,bx
         mov     ds:[818Eh],bx
@@ -198,10 +213,13 @@ _RunOverlayRequest PROC FAR
         pop     cx
         pop     cx
         pop     cx
-; The entry returns AX = its function offset [H], which this function stores at 818Eh (1C00:0098),
-; and BX = its size in paragraphs [H] (read from how the bytes use the two results: AX is stored at
-; 818Eh and is the call offset of the second `lcall [818Eh]` at 1C00:00C0, BX is multiplied by 16
-; at 1C00:009B to 00A1, not from the overlay's own code); four `shl bx,1` make that size in bytes.
+; The entry returns AX = its function offset and BX = its size in paragraphs, evidenced by the
+; entries in eob/: cga.ovl 1168h to 1184h sets BX = 31D7h (its image size: 13271 file bytes minus
+; the 512-byte MZ header), `shr bx,cl` by 4 (117Ah) then `inc bx` (117Ch) so BX = image paragraphs
+; + 1, then AX = 110Fh (117Dh, the pointer's offset in the overlay segment) and retf; ega.ovl
+; 0FBDh gives BX = 2762h and AX 0EEBh, mcga.ovl 0C3Fh gives 2C38h and AX 0BE6h and tga.ovl 0F5Ch
+; gives 2AB0h and AX 0F03h. AX is stored at 818Eh and is the call offset of the pointer call at
+; 1C00:00C0; four `shl bx,1` (1C00:009B to 00A1) make BX the MemRealloc size in bytes.
 ; The three `pop cx` that drop the entry's arguments leave CX = the overlay segment pushed at
 ; 1C00:0088, and that CX is the pointer's segment in the MemRealloc call: MemRealloc (19BC:018A,
 ; E19BC.C) takes (void far *ptr, unsigned size), so the call pushes the size, CX as the segment and
@@ -245,19 +263,22 @@ _RunOverlayRequest PROC FAR
         call    dword ptr ds:[818Eh]
         pop     cx
         pop     cx
-; Only the second entry call's carry flag is tested (`jb short failret` at 1C00:00C6 tests the
-; carry flag the call left, the entry's failure convention [H]; the two `pop cx` before it do not
-; change the flags, and it tests neither AX nor BX). The first entry call's AX, BX and flags are
-; not checked.
+; Only the pointer call's carry flag is tested (`jb short failret` at 1C00:00C6 tests the carry
+; flag the call left, which is the pointer's failure convention, not the entry's: each overlay's
+; pointer clears it on success and sets it on failure (cga.ovl clc 115Ah/stc 115Dh, ega.ovl clc
+; 0F36h/stc 0F39h, mcga.ovl clc 0C31h/stc 0C34h, tga.ovl clc 0F4Eh/stc 0F51h), while the entry
+; sets no failure flag (cga.ovl 1168h to 1184h ends with `shr bx,cl`, `mov ax,110Fh`, `retf`);
+; the two `pop cx` before it do not change the flags, and it tests neither AX nor BX). The first
+; entry call's AX, BX and flags are not checked.
         jb      short failret
 ; On success (the `jb short failret` at 1C00:00C6 not taken), when the mouse handler is installed
 ; (gMouseHandlerInstalled) the loader clears gMouseDisabled (1C00:00CD to 00D4).
 ; gMouseHandlerInstalled is 1 when the mouse driver handler is installed (E1A72.ASM:43, set at :214,
 ; cleared at :200). gMouseDisabled is set to 1 at install (E1A72.ASM:215), and a non-zero value
 ; disables the handler: the INT 33h handler body skips all work on non-zero (E1A72.ASM:254-255) and
-; HidePointer and ShowPointer do nothing on non-zero (E1BBE.ASM:89-90, 178), while E07A9.C:254
-; (the `if (!gMouseDisabled)` test in SetMouseItem, E07A9.C:244, at 07A9:0148) and E14EF.C:227 run
-; their pointer work only when it is zero. Clearing it after a driver overlay has loaded and the
+; HidePointer and ShowPointer do nothing on non-zero (E1BBE.ASM:89-90, 178), while SetMouseItem
+; (07A9:010C, its `if (!gMouseDisabled)` test at 07A9:0148: `cmp [814A],0; je`) and E14EF.C:227
+; run their pointer work only when it is zero. Clearing it after a driver overlay has loaded and the
 ; pointer the entry returned has run therefore turns the handler and the pointer on [H]. This clear
 ; is not the last word: after start-up returns 1, when g3092 is set (E07C8.C:152), Main sets the
 ; flag again from the mouse command-line argument, `if (!gMouseHandlerInstalled) gMouseDisabled = 1;
@@ -272,7 +293,7 @@ succeeded: xor  ax,ax
 ; fail: is reached from two places: a failed overlay load (the `cmp bx,-1; je short fail` at
 ; 1C00:007A) and a failed MemRealloc (`or ax,dx; je short fail` at 1C00:00B2); both go through the
 ; same ds/si swap below and fall through into the shared failure return at 1C00:00E0. A load
-; failure, a failed realloc or the second entry call leaves the 0FA00h block allocated; nothing
+; failure, a failed realloc or the pointer call leaves the 0FA00h block allocated; nothing
 ; frees it. That is not observable, because the caller prints the message, waits for a key
 ; (lcall 1AAD:053A at 07C8:01DA) and returns to Main through the shared epilogue of StartupGame at
 ; 07C8:0575 (pop si, pop bp, retf; 07C8:0265 to 0277, 01D2 to 01E1); Main then runs ShutdownGame
@@ -284,7 +305,7 @@ succeeded: xor  ax,ax
 fail:   pop     ds
         pop     si
 failret:                        ; the shared 0FFFFh failure return (1C00:00E0): `fail:` falls into
-                                ; it, and the second entry call's carry set jumps here (the
+                                ; it, and the pointer call's carry set jumps here (the
                                 ; `jb short failret` at 1C00:00C6)
         mov     ax,0FFFFh
 returnpath:                     ; the shared return before the epilogue pops (1C00:00E3)

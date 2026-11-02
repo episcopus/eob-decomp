@@ -36,7 +36,7 @@ extern signed char g547E[]; /*@ ds:547E */  /* byte table indexed by the second 
 extern char gB894[]; /*@ ds:B894 */         /* nine-byte records; +4 (ds:B898) is tested by 0D1C:0080 and +5 (ds:B899) is a list head used by 0D1C:035A */
 extern signed char g194B[]; /*@ ds:194B */  /* byte table read by 0D1C:0080 */
 extern signed char g1A1B[]; /*@ ds:1A1B */  /* per-page sound table read by 0D1C:035A */
-extern int gSoundVolume; /*@ ds:FBCA */     /* the global sound volume (src/E177D.C) */
+extern int gPartyCell; /*@ ds:FBCA */     /* the global sound volume (src/E177D.C) */
 extern int gFBCC; /*@ ds:FBCC */            /* a page number 0..3 (kept modulo 4 by 0ACD) */
 extern int g54F2; /*@ ds:54F2 */            /* the index drawn by 0D1C:0454, -1 when none */
 extern int g54F4; /*@ ds:54F4 */            /* the row of the animated list 0D1C:0454 draws */
@@ -333,7 +333,7 @@ int f0D1C_02DC(void);
 }
 /* 0D1C:035A: Purpose unknown: clears gChars[who].m01 and then, for each of the 27 word slots of
    gChars[who].m77 except slot 16 (which is a list head at +97), queues the item in the slot
-   through InsertListItem at the head gSoundVolume * 9 + 5 (the nine-byte records at ds:B894) with a
+   through InsertListItem at the head gPartyCell * 9 + 5 (the nine-byte records at ds:B894) with a
    random sound g1A1B[gFBCC * 4 + RollDice(1, 2, -1)]. Then it drains the slot-16 list through
    RemoveListItem and queues each returned item the same way. Finally, when `who` is the selected
    character, gA99A is cleared to 0, and RearmCharEffects runs. Called by overlays 1 and 5. */
@@ -349,13 +349,13 @@ int f0D1C_02DC(void);
         if (i == 16)
             continue;
         if (item = rec->m77[i]) {
-            InsertListItem((int far *)(gB894 + gSoundVolume * 9 + 5), gSoundVolume, item,
+            InsertListItem((int far *)(gB894 + gPartyCell * 9 + 5), gPartyCell, item,
                     g1A1B[gFBCC * 4 + RollDice(1, 2, -1)]);
         }
     }
     while (rec->m77[16]) {
         item = RemoveListItem(&rec->m77[16], 0, -1);
-        InsertListItem((int far *)(gB894 + gSoundVolume * 9 + 5), gSoundVolume, item,
+        InsertListItem((int far *)(gB894 + gPartyCell * 9 + 5), gPartyCell, item,
                 g1A1B[gFBCC * 4 + RollDice(1, 2, -1)]);
     }
     if (gA99A == who)
@@ -597,7 +597,7 @@ int f0D1C_02DC(void);
 /* 0D1C:09CB: Purpose unknown: a per-object check. It takes the object's ds:1A3B record's m19 as
    a row and GetClampedTableByte(column, m19) as a value. A value of -1 calls DamageObject(obj, 100)
    and returns 1. Otherwise, when `threshold` is below the value it returns 0; else it sets bit 3
-   of obj->m16, stores (DirectionFromPoints(obj->m02, gSoundVolume) ^ 4) >> 1 in obj->m05 and returns 1.
+   of obj->m16, stores (DirectionFromPoints(obj->m02, gPartyCell) ^ 4) >> 1 in obj->m05 and returns 1.
    Called by 0D1C:0A43 and 17A6. */
 /*@ 0D1C:09CB */ int f0D1C_09CB(struct Obj28 far *obj, int threshold, int column)
 {
@@ -609,7 +609,7 @@ int f0D1C_02DC(void);
     if (value != -1) {
         if (threshold >= value) {
             obj->m16 |= 8;
-            obj->m05 = (DirectionFromPoints(obj->m02, gSoundVolume) ^ 4) >> 1;
+            obj->m05 = (DirectionFromPoints(obj->m02, gPartyCell) ^ 4) >> 1;
             return 1;
         }
     } else {
@@ -619,7 +619,7 @@ int f0D1C_02DC(void);
     return 0;
 }
 /* 0D1C:0A43: the "turn undead" action. When gFBC8 is 2 or 7 it derives a ten-bit key from
-   gSoundVolume and gFBCC (f0D1C_00DA) and requires gB894[key * 9 + 4] & 7 to be nonzero, then
+   gPartyCell and gFBCC (f0D1C_00DA) and requires gB894[key * 9 + 4] & 7 to be nonzero, then
    asks f0D1C_0903 for the best qualifying party member (its low byte the member's value, its
    high byte the member's index) and rolls 1d20. It lists the objects whose ds:8DD2 record's m02
    equals key (f08E6_17FD) and, for each object whose ds:1A3B record's m0F has bit 2 set and whose
@@ -644,7 +644,7 @@ int f0D1C_02DC(void);
     if (gFBC8 != 2 && gFBC8 != 7)
         return;
     turned = 0;
-    key = f0D1C_00DA(gSoundVolume, gFBCC);
+    key = f0D1C_00DA(gPartyCell, gFBCC);
     value = (unsigned char)gB894[key * 9 + 4] & 7;
     if (value == 0)
         return;

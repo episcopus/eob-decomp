@@ -15,8 +15,40 @@ extern void far *gEFD4[]; /*@ ds:EFD4 */
 extern int gF538; /*@ ds:F538 */
 
 extern void LoadOverlayScreen(char far *name, int a, int b); /*@ 082C:05EC */
+extern void LoadScreenImage(char far *name, char far *extra, int srcKind, int dstKind, int mode); /*@ 082C:051B */
+extern void LoadPacked(char far *name, int srcKind, int dstKind); /*@ 1B82:0041 */
+extern void SetPlaneTables(void far *t1, void far *t2); /*@ 17A6:037E */
+extern void ExpandNibbles(void far *src, void far *dst); /*@ 17A6:0F1F */
+extern void BuildMask(void far *p); /*@ 17A6:18EA */
+extern void (far *gFn808E)(void far *buf, int a, int b); /*@ ds:808E */
+extern char gF4D6[16]; /*@ ds:F4D6 */       /* a 16-byte plane table (src/E17A6.ASM) */
+extern char gFB4D[16]; /*@ ds:FB4D */       /* a 16-byte plane table (src/E17A6.ASM) */
+extern unsigned char far gSheet2067[]; /*@ 2067:0000 */  /* the INVENT sheet (src/E0ACD.C) */
+extern unsigned char far gSheetDECORATE[]; /*@ 2069:0000 */  /* the PLAYFLD sheet (src/E0ACD.C) */
+extern int g80E8; /*@ ds:80E8 */            /* toggled by Ctrl-key handling (src/E1AAD.ASM) */
+extern int gSoundOn; /*@ ds:80E6 */
+extern char gF43C; /*@ ds:F43C */
+extern char gAD20[]; /*@ ds:AD20 */         /* a 96-byte saved-game buffer (Purpose unknown) */
+extern char *strcpy(char far *dest, char far *src); /*@ 0000:67CD */
+extern void far *gSegDCA6; /*@ ds:DCA6 */   /* the far pointer f19EC_0002(7) returns (src/E07A9.C) */
+extern int g8102; /*@ ds:8102 */            /* the video mode the game initialised (src/E082C.C) */
+extern char gWallNameBuf[]; /*@ ds:FE2E */  /* the wall texture name kept between LoadWallTextures calls (ovl3:07A5) */
+extern void far *(far *gFn8082)(int x, int y, int w, int h, void far *buf); /*@ ds:8082 */
+extern void fOvl4_1EDE(void); /*@ 2116:0034 */  /* overlay 4 entry, ovl4:1EDE */
+extern void f1A47_0169(char far *font); /*@ 1A47:0169 */
+extern void RedrawCharacters(void); /*@ 0D1C:0583 */
+extern void SetMouseItem(int item); /*@ 07A9:010C */
+extern int far RollDice(char count, char sides, char bonus); /*@ 082C:0458 */
+extern void far *gA9C0; /*@ ds:A9C0 */      /* the current 6x6 font (src/E07A9.C) */
+extern char gA998; /*@ ds:A998 */           /* src/E0ACD.C */
+extern signed char g1A1B[]; /*@ ds:1A1B */  /* per-cell sound table (src/E0ACD.C) */
+extern int gPartyCell; /*@ ds:FBCA */
+extern int gFBCC; /*@ ds:FBCC */
+extern int gFBCE; /*@ ds:FBCE */
+extern int gMouseDisabled; /*@ ds:814A */
+extern unsigned gBlockSizes[]; /*@ ds:6A8C */  /* the six EOBDATA.SAV block sizes (ovl3:1368 saves them in this order) */
 extern int FileOpen(char far *name, int mode); /*@ 1C0E:00DB */
-extern void FileRead(int handle, void far *buf, unsigned long len); /*@ 1C0E:0400 */
+extern long FileRead(int handle, char far *buf, unsigned long len); /*@ 1C0E:0400 */
 extern void FileClose(int handle); /*@ 1C0E:03BB */
 extern void *memset(void far *s, int c, unsigned n); /*@ 0000:6384 */
 extern void far *gSegDF4E; /*@ ds:DF4E */
@@ -24,6 +56,22 @@ extern void far *gE062; /*@ ds:E062 */
 extern char gB894[]; /*@ ds:B894 */
 extern int gFBD0; /*@ ds:FBD0 */
 extern void far *gBufDCFC; /*@ ds:DCFC */
+extern unsigned char gTable1879[]; /*@ ds:1879 */  /* the four parallel per-kind tables at ds:1879..0x1990 */
+extern void movmem(void far *src, void far *dst, unsigned n); /*@ 0000:63A3 */
+
+struct Cell8 {              /* the 8-byte sprite rectangles gE062 points at (ovl3:01C8, 03A2) */
+    int w0;
+    int w1;
+    int w2;
+    int w3;
+};
+
+struct WallRec {            /* the 0x34-byte wall records at ds:E040 (ovl3:01C8) */
+    signed char next;       /* +0: the next record index, set to index+1 once visited */
+    char pad01[0x29];
+    unsigned char cells[0xa]; /* +0x2a: ten map cell indices, 0xFF = none */
+};
+extern struct WallRec gWallRecs[]; /*@ ds:E040 */
 extern void Unpack0(char far *src, void far *dst, long len); /*@ 1BA8:0006 */
 extern void Unpack4(char far *src, void far *dst, int len); /*@ 1D9A:0013 */
 
@@ -41,6 +89,8 @@ extern unsigned long g8492; /*@ ds:8492 */
 extern int f0D1C_0670(int who, int mask); /*@ 0D1C:0670 */
 extern void RearmCharEffects(void); /*@ 1414:0B2E */
 extern signed char g194B[]; /*@ ds:194B */
+extern signed char gTable18BF[]; /*@ ds:18BF */  /* per-object-kind table (src/E122E.C) */
+extern unsigned char g1905[]; /*@ ds:1905 */     /* a 256-byte table gB894 indexes into (src/E0DE8.C) */
 extern int gDragMember; /*@ ds:5C74 */
 extern signed char g5C76; /*@ ds:5C76 */
 extern char gDragActive; /*@ ds:5C77 */
@@ -62,13 +112,20 @@ extern struct DDRec gDD2C[]; /*@ ds:DD2C */
 extern struct Entry14 gTable8DD2[]; /*@ ds:8DD2 */
 
 struct CharRec {            /* 243-byte character records at ds:F580 (src/E08E6.C) */
-    char pad00[0xad];
+    char pad00;
+    unsigned char m01;      /* +1: status bits (src/E08E6.C); 0 when the slot is empty */
+    char pad02[0x22 - 0x02];
+    signed char m22;        /* +0x22: the character's cell row/column (src/E0D1C.C) */
+    char pad23[0x33 - 0x23];
+    void far *sprite;       /* +0x33: the character's packed sprite buffer */
+    char pad37[0xad - 0x37];
     unsigned long timer[10]; /* +0xAD: ten 32-bit countdowns */
     char padD5[0xf3 - 0xd5];
 };
 
 extern struct CharRec gChars[]; /*@ ds:F580 */
 extern void LoadLevelState(int action); /*@ ovl3:1147 */
+extern void ResetLevel(void); /*@ ovl3:19F7 */
 extern long SeekFile(int index, long offset, int whence); /*@ 1C0E:06E5 */
 extern void far *gSegEFC2; /*@ ds:EFC2 */
 extern void far *f1BA8_0072(void far *p); /*@ 1BA8:0072 */
@@ -202,7 +259,50 @@ struct WallDec {            /* a 52-byte wall set decoration */
 {
     return (value & (1 << bit)) ? 1 : 0;
 }
-/*@ ovl3:01C8 stub */ void Ovl3_01C8(void) {}
+/* ovl3:01C8: registers a placed wall object `kind` (the first byte of a five-byte level record,
+   the rest `a`, `next`, `c`, `d`). It stores the four per-kind tables at ds:1879 (a into the
+   first, gF538+1 into ds:18BF, c into ds:1905 and d^4 into ds:194B), then, unless `next` is -1
+   (clearing ds:18BF[kind]), walks the chain of 0x34-byte wall records starting at `next`: it
+   copies the decoration from gSegDF4E+0x3E80+next*0x34 into gWallRecs[gF538] and, for each of its
+   ten cell indices that has no sprite yet in ds:EFD4, slices the cell's 8-byte rectangle out of
+   gE062 through ds:8086 with the map sheet (gMapTiles[gFBC8-1] cells). gF538 (the record count) is
+   bumped and the chain link is rewired; the loop ends when the link is 0 (-1). Called by
+   ovl3:0A7C. blocked: the gMapTiles[gFBC8-1] access (cmatch cannot explain an object indexed with
+   a folded -1, see ovl3:03A2), so it stays a draft. */
+/*@ ovl3:01C8 draft */ void RegisterWallObject(int kind, signed char field1879, int recordIndex, signed char field1905, signed char objectFlags)
+{
+    int i;
+    int cell;
+    struct Cell8 far *rect;
+
+    gTable1879[kind] = field1879;
+    gTable18BF[kind] = gF538 + 1;
+    g1905[kind] = field1905;
+    g194B[kind] = objectFlags;
+    g194B[kind] ^= 4;
+    if (recordIndex != -1) {
+        while (recordIndex != -1) {
+            movmem((void far *)((char far *)gSegDF4E + recordIndex * 0x34 + 0x3e80),
+                   (void far *)gWallRecs[gF538].cells, 0x34);
+            for (i = 0; i < 0xa; i++) {
+                cell = gWallRecs[gF538].cells[i];
+                if (cell == 0xff)
+                    continue;
+                if (gEFD4[cell])
+                    continue;
+                rect = &((struct Cell8 far *)gE062)[cell];
+                gEFD4[cell] = gGetSpriteCell(rect->w0, rect->w1, rect->w2, rect->w3, MAPSHEET);
+            }
+            gF538++;
+            recordIndex = gWallRecs[gF538].next;
+            if (recordIndex)
+                gWallRecs[gF538].next = gF538 + 1;
+            else
+                recordIndex = -1;
+        }
+    } else
+        gTable18BF[kind] = 0;
+}
 /* ovl3:031A: frees and clears the six far pointers in the tables at ds:FB5E (stride 4) and the six
    in ds:A99C.v (stride 6). The counterpart of the allocation InitGameTables (ovl2:0496) makes.
    Called by ovl3:0A7C and overlay 5. */
@@ -324,7 +424,40 @@ done:
             g6A50[si + 3], gOverlayBuf);
     g8115 = 0;
 }
-/*@ ovl3:07A5 stub */ void Ovl3_07A5(void) {}
+/* ovl3:07A5: loads a wall texture set for `name`. It builds the file name "<name>.VCN" (VGA mode
+   3) or "<name>.ECN" (otherwise), or an empty name when `name` is NULL, into gFileNameBuf, loads
+   it packed with LoadPacked, unpacks three 16-byte plane tables from gSegEFC2+2, +0x12 and +0x22
+   into ds:F4D6, ds:FB4D and gSegDCA6 and the 0xCB20-byte texture block after them through
+   ovl3:0FD1's counterpart, then sets the plane tables (17A6:037E). In EGA mode 2 it expands the
+   planes into gSegDF4E (17A6:0F1F) and blits them to the A400 planar window through the driver
+   ds:808E; in CGA mode 0 it slices a 1x8 cell from `sheet`, frees it and build-masks gSegDCA6
+   (17A6:18EA). It leaves gFileNameBuf empty. Called by ovl3:0A7C. */
+/*@ ovl3:07A5 */ void LoadWallTextures(char far *name, char far *sheet)
+{
+    void far *cell;
+
+    if (name)
+        sprintf(gFileNameBuf, "%s.%s", name, g8102 == 3 ? "VCN" : "ECN");
+    else
+        strcpy(gFileNameBuf, gWallNameBuf);
+    LoadPacked(gFileNameBuf, 7, 3);
+    Unpack0((char far *)gSegEFC2 + 2, (void far *)gF4D6, 0x10L);
+    Unpack0((char far *)gSegEFC2 + 0x12, (void far *)gFB4D, 0x10L);
+    Unpack0((char far *)gSegEFC2 + 0x22, gSegDCA6, 0xcb20L);
+    SetPlaneTables((void far *)gF4D6, (void far *)gFB4D);
+    if (g8102 == 2) {
+        gFn808E(gSegDCA6, 0xa400, 0xfa00);
+        ExpandNibbles(gSegDCA6, gSegDF4E);
+        gFn808E(gSegDF4E, 0xaa00, 0x7d00);
+        ExpandNibbles((char far *)gSegDCA6 + 0x7d00, gSegDF4E);
+        gFn808E(gSegDF4E, 0xabf4, 0x7d00);
+    } else if (g8102 == 0) {
+        cell = gGetSpriteCell(0, 0, 1, 8, sheet);
+        farfree(cell);
+        BuildMask(gSegDCA6);
+    }
+    strcpy(gWallNameBuf, gFileNameBuf);
+}
 /* ovl3:0951: rebuilds the ds:B899 item list: walks the 500 items at ds:8DD0 and, for every item
    whose m0A is the current action gFBC8 and whose key m04 is positive, inserts it through
    InsertListItem. Called by ovl3:0A7C. */
@@ -366,7 +499,7 @@ done:
         }
     }
 }
-/*@ ovl3:0A7C stub */ void Ovl3_0A7C(void) {}
+/*@ ovl3:0A7C stub */ void Ovl3_0A7C(int level) {}
 /* ovl3:0FD1: packs the level state into `buf`. It copies the four gB894 bytes of each of the 0x400
    records into gBufDCFC, compresses gBufDCFC (0x1000 bytes) into `buf` with CompressLcw and, when
    the stream is longer than 0x4B0, prints "Map compression failure: size of map = %d" and shuts the
@@ -483,8 +616,158 @@ done:
     }
     RearmCharEffects();
 }
-/*@ ovl3:1368 stub */ void Ovl3_1368(void) {}
-/*@ ovl3:15B9 stub */ void Ovl3_15B9(void) {}
+/* ovl3:1368: saves the game. It first writes the current level state to LEVELS.TMP slot gFBC8-1
+   through ovl3:0FD1 and sets that slot's bit in ds:FBD0, then deletes and recreates EOBDATA.SAV
+   (mode 2) and writes, checking each length: the six 243-byte characters ds:F580 (after
+   AgeCharTimers and before AdvanceCharTimers), the 0x40-byte header at ds:FBC8, the 500 14-byte
+   items ds:8DD0, the 0x5FA0-byte screen buffer gSegEFC2, the single bytes ds:80E8, ds:80E6 and
+   ds:F43C, and the 0x60-byte buffer ds:AD20. Returns 1 when every write wrote its full length,
+   else 0, and reloads the INVENT screen. Called by overlay 1 (ovl1:1ACD). */
+/*@ ovl3:1368 */ int SaveGame(void)
+{
+    int slot;
+    int handle;
+    int ok;
+    long len;
+
+    slot = gFBC8 - 1;
+    ResetLevel();
+    handle = FileOpen("LEVELS.TMP", 1);
+    FileRead(handle, gSegEFC2, 0x5fa0L);
+    FileClose(handle);
+    PackLevelState((char far *)gSegEFC2 + (long)slot * 0x7f8);
+    gFBD0 |= 1 << slot;
+    handle = FileOpen("EOBDATA.SAV", 1);
+    FileClose(handle);
+    handle = FileOpen("EOBDATA.SAV", 2);
+    ok = 1;
+    if (ok) {
+        AgeCharTimers();
+        len = 0x5b2;
+        ok &= (FileWrite(handle, (char far *)gChars, len) == len);
+        AdvanceCharTimers();
+        len = 0x40;
+        ok &= (FileWrite(handle, (char far *)&gFBC8, len) == len);
+        len = 0x1b58;
+        ok &= (FileWrite(handle, (char far *)gItems, len) == len);
+        len = 0x5fa0;
+        ok &= (FileWrite(handle, gSegEFC2, len) == len);
+        ok &= (FileWrite(handle, (char far *)&g80E8, 1L) == 1L);
+        ok &= (FileWrite(handle, (char far *)&gSoundOn, 1L) == 1L);
+        ok &= (FileWrite(handle, (char far *)&gF43C, 1L) == 1L);
+        len = 0x60;
+        ok &= (FileWrite(handle, (char far *)gAD20, len) == len);
+        FileClose(handle);
+        LoadScreenImage("INVENT", (char far *)gSheet2067, 5, 3, 2);
+    }
+    return ok;
+}
+
+/* ovl3:15B9: loads a saved game from EOBDATA.SAV. It reads the six blocks whose sizes are the
+   table at ds:6A8C into gSegEFC2 (checking each length), then resets the level, unpacks the
+   character block into gChars (restoring the six sprite pointers around it, then
+   AdvanceCharTimers), the 0x40-byte header into ds:FBC8 and the item block into gItems; it writes
+   the level-state block to LEVELS.TMP slot gFBC8 and stores the three single bytes ds:80E8 (the
+   Ctrl flag), ds:80E6 (gSoundOn) and ds:F43C, unpacks the 0x60 bytes into ds:AD20, loads the
+   CHARGENA screen and draws each alive character's 0x514-byte sprite out of gOverlayBuf (through
+   ds:8082; the front row into the OUTTAKE screen when any character sits there). Unless ds:A998
+   is -1 it then rebuilds the map screen (ovl3:0A7C), reloads PLAYFLD and INVENT, hands gA9C0 to
+   f1A47_0169, redraws the characters and either restores the mouse item or, when a mouse item is
+   shown, inserts it with a random per-cell sound. Sets ds:A998 to 1 on success, 0 on failure, and
+   returns that flag. Called by overlay 1 (ovl1:1ACD) and overlay 2 (ovl2:0846). */
+/*@ ovl3:15B9 */ int LoadGame(void)
+{
+    int handle;
+    int ok;
+    int flag;
+    int idx;
+    char far *buf;
+    void far *cell;
+    struct CharRec far *rec;
+    void far *sprites[6];
+    int i;
+    int j;
+
+    buf = (char far *)gSegEFC2;
+    handle = FileOpen("EOBDATA.SAV", 1);
+    ok = 1;
+    if (ok) {
+        for (i = 0; i < 6; i++) {
+            ok &= (FileRead(handle, buf, gBlockSizes[i]) == gBlockSizes[i]);
+            buf += gBlockSizes[i];
+        }
+        FileClose(handle);
+    }
+    if (ok) {
+        ResetLevel();
+        buf = (char far *)gSegEFC2;
+        for (j = 0; j < 6; j++)
+            sprites[j] = gChars[j].sprite;
+        Unpack0(buf, (char far *)gChars, gBlockSizes[0]);
+        buf += gBlockSizes[0];
+        for (j = 0; j < 6; j++)
+            gChars[j].sprite = sprites[j];
+        AdvanceCharTimers();
+        Unpack0(buf, (char far *)&gFBC8, gBlockSizes[1]);
+        buf += gBlockSizes[1];
+        Unpack0(buf, (char far *)gItems, gBlockSizes[2]);
+        buf += gBlockSizes[2];
+        handle = FileOpen("LEVELS.TMP", 1);
+        FileClose(handle);
+        handle = FileOpen("LEVELS.TMP", 2);
+        FileWrite(handle, buf, gBlockSizes[3]);
+        FileClose(handle);
+        buf += gBlockSizes[3];
+        g80E8 = buf[0];
+        buf++;
+        gSoundOn = buf[0];
+        buf++;
+        gF43C = buf[0];
+        buf++;
+        Unpack0(buf, (char far *)gAD20, gBlockSizes[5]);
+        buf += gBlockSizes[5];
+        LoadOverlayScreen("CHARGENA", 5, 3);
+        flag = 0;
+        for (i = 0; i < 6; i++) {
+            rec = &gChars[i];
+            if (rec->m01 != 0 && rec->m22 >= 0) {
+                cell = gFn8082((rec->m22 % 10) * 4, (rec->m22 / 10) * 32, 4, 0x20, gOverlayBuf);
+                Unpack0(cell, rec->sprite, 0x514L);
+                farfree(cell);
+            } else
+                flag = 1;
+        }
+        if (flag) {
+            LoadOverlayScreen("OUTTAKE", 5, 3);
+            flag = 0;
+            for (i = 0; i < 6; i++) {
+                rec = &gChars[i];
+                if (rec->m01 != 0 && rec->m22 < 0) {
+                    cell = gFn8082(-(rec->m22 + 1) * 4, 0xa0, 4, 0x20, gOverlayBuf);
+                    Unpack0(cell, rec->sprite, 0x514L);
+                    farfree(cell);
+                }
+            }
+        }
+        if (gA998 != (char)0xff) {
+            Ovl3_0A7C(gFBC8);
+            LoadScreenImage("PLAYFLD", (char far *)gSheetDECORATE, 5, 3, 0);
+            fOvl4_1EDE();
+            LoadScreenImage("INVENT", (char far *)gSheet2067, 5, 3, 2);
+            f1A47_0169((char far *)gA9C0);
+            RedrawCharacters();
+            if (gMouseDisabled == 0)
+                SetMouseItem(gFBCE);
+            else if (gFBCE) {
+                idx = g1A1B[gFBCC * 4 + RollDice(1, 2, -1)];
+                InsertListItem((void far *)(gB899 + gPartyCell * 9), gPartyCell, gFBCE, idx);
+            }
+        }
+        gA998 = 1;
+    } else
+        gA998 = 0;
+    return ok;
+}
 /* ovl3:19F7: resets the level. It clears the m0A byte of the 30 gObjs objects, clears every live
    ds:DD2C effect record (disarming the low two bits of its item's m03 when it was active), then,
    when gDragActive is set, walks the gB894 record of character gDragMember adding the mode byte g5C76 to the

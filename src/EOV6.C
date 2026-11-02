@@ -54,7 +54,7 @@ extern char gFileNameBuf[]; /*@ ds:FE6E */              /* the text buffer ovl6:
 extern void *gFont1A47; /*@ ds:FE4E */          /* the current font (1A47:0169 records it) */
 extern void *gFE5A; /*@ ds:FE5A */              /* the 8x8 font loaded from Font8.fnt */
 extern void *gA9C0; /*@ ds:A9C0 */              /* the 6x6 font loaded from FONT6.FNT */
-extern int gSoundVolume; /*@ ds:FBCA */
+extern int gPartyCell; /*@ ds:FBCA */
 extern signed char gF57E; /*@ ds:F57E */        /* the colour 082C:0898 draws with (ovl6:0858) */
 extern signed char gF442; /*@ ds:F442 */        /* 1 while ovl6:09D2 updates the objects */
 extern unsigned long g8492; /*@ ds:8492 */      /* the 32-bit counter the 1Ch handler bumps */
@@ -390,7 +390,7 @@ done:
 }
 /* ovl6:09D2: the "monsters are near" test. It selects the 6x6 font, marks the object update
    (gF442) and updates objects 0 and 1, then scans the 30 28-byte records at ds:8A84: when
-   Distance(gSoundVolume, record.value) is below two a monster is close, so it switches back to
+   Distance(gPartyCell, record.value) is below two a monster is close, so it switches back to
    the previous region (saved in g811F), draws "\rYou can't rest here, monsters are near." and
    returns 1. Restores the caller's font and returns 0 when nothing is close. Called at the start
    of the camp loop. */
@@ -407,7 +407,7 @@ done:
     UpdateObjects(1);
     gF442 = 0;
     for (i = 0; i < 0x1e; i++) {
-        if (Distance(gSoundVolume, gTable8A84[i].value) < 2) {
+        if (Distance(gPartyCell, gTable8A84[i].value) < 2) {
             member = g811F;
             SetTextWindow(7);
             g8115 = 0;

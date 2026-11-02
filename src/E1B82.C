@@ -38,10 +38,11 @@ typedef union {
 #define FORMAT_LITERAL_FILL 3L /* a literal and fill stream (Unpack3) */
 #define FORMAT_LCW         4L  /* LCW (Unpack4) */
 
-/* the MemAlloc flag that returns a paragraph-aligned, offset-0 block (src/E19BC.C:56-59) */
+/* the MemAlloc flag that returns a paragraph-aligned, offset-0 block: the bit is defined at
+   src/E19BC.C:46, and the block shape it gives is at src/E19BC.C:80-83 */
 #define MEMALLOC_ALIGNED 0x20
 /* work-buffer sizes of formats 1 and 2 (docs/design/WHITEPAPER.md:151); UNPACK_BUFFER_SIZE in
-   src/E07A9.C:35 is the size of the shared buffer, a different thing that happens to equal format
+   src/E07A9.C:39 is the size of the shared buffer, a different thing that happens to equal format
    2's */
 #define FORMAT1_BUFFER_SIZE 0x3C00
 #define FORMAT2_BUFFER_SIZE 0xFC00
@@ -52,9 +53,13 @@ extern unsigned gBufSeg; /*@ ds:812A: the shared work buffer's segment, recorded
 extern unsigned gBufSize; /*@ ds:812C: its size, formats 1 and 2 use it when large enough */
 
 extern int FileOpen(char far *name, int mode); /*@ 1C0E:00DB */
-/* FileRead and FileClose take the slot index FileOpen returned, not a DOS handle: FileRead reads the
-   DOS handle out of gFileHandles[index] (src/E1C0E.C:285, FileRead at 1C0E:0400), as FileClose does
-   (src/E1C0E.C:261, FileClose at 1C0E:03BB). FileRead returns the number of bytes read, up to len. */
+/* FileRead and FileClose take the slot index FileOpen returned, not a DOS handle. FileRead reads
+   through the slot's entry: its low bits are a DOS handle for a disk slot (HANDLE_MASK,
+   src/E1C0E.C:85, applied at src/E1C0E.C:297) or an index into memory for a slot held in memory
+   (FILE_IN_MEMORY, src/E1C0E.C:86, which src/E1C0E.C:288-289 hands to ReadFromMemory). FileClose
+   reads gFileHandles[index] and closes the DOS handle unless the slot is in memory
+   (src/E1C0E.C:261, at 1C0E:03BB). FileRead returns the number of bytes read, up to len
+   (src/E1C0E.C:277, at 1C0E:0400). */
 extern long FileRead(int index, char far *buf, unsigned long len); /*@ 1C0E:0400 */
 extern void FileClose(int index); /*@ 1C0E:03BB */
 extern void far *f19EC_0002(int kind); /*@ 19EC:0002 */
@@ -82,7 +87,7 @@ void Unpack(char far *src, void far *dst);
 {
     int slot;
 
-    slot = FileOpen(name, 1);
+    slot = FileOpen(name, 1);   /* mode 1: read (src/E1C0E.C:166) */
     FileRead(slot, (char far *)buf, len);
     FileClose(slot);
 }
@@ -101,10 +106,11 @@ void Unpack(char far *src, void far *dst);
 
     src = f19EC_0002(srcKind);
     dst = f19EC_0002(dstKind);
-    slot = FileOpen(name, 1);
+    slot = FileOpen(name, 1);   /* mode 1: read (src/E1C0E.C:166) */
     /* the packed block's byte length: WHITEPAPER 4.2 (WHITEPAPER.md:151) gives this u16 as the "size
        of the rest (some files: the file size)"; LoadPacked reads up to that many bytes after the
-       word, so for a "file size" file the read runs past the rest of the block */
+       word, so for a "file size" file it asks for more bytes than the block holds, and FileRead
+       stops at the end of the file (up to len bytes, src/E1C0E.C:270-271) */
     /* &packedLen is a stack address taken as a far pointer: -ml puts the stack in DGROUP, so its
        segment is DS */
     FileRead(slot, (char far *)&packedLen, 2L);
@@ -124,6 +130,9 @@ void Unpack(char far *src, void far *dst);
         (the decoder uses only its low word, 1D9A:003B/0043), skips the u16 byte count at block offset
         +6 (WHITEPAPER 4.2 (WHITEPAPER.md:151) calls it palette bytes [H]; no pinned file shows a
         non-zero value) and calls Unpack4 with the data at block offset +8+skipLen.
+   Cases 1 to 3 pass only segments (FP_SEG(src), FP_SEG(dst) and the work segment), so they rely on
+   the block and the output sitting at offset 0, as LoadPacked's f19EC_0002 pointers do (src/E19EC.C:20);
+   the decoders take segments (src/E1D9A.ASM:156, :245), so a port of Unpack must keep that rule.
    The original sign-extends the format byte (cbw; cwd) and switches on the int in AX. The C++ front
    end (-P) emits those bytes; the C front end folds the extension away (re/symbols.toml note on
    1B82:00C7). The case bodies follow the source order 0, 3, 1, 2, 4 (1B82:00E7, 010D, 011E, 0176,
@@ -134,7 +143,7 @@ void Unpack(char far *src, void far *dst);
 /*@ 1B82:00C7 */ void Unpack(char far *src, void far *dst)
 {
     WorkBuffer work;
-    long size;
+    long unpackedSize;
     unsigned skipLen;
 
     /* the cast keeps the format byte's sign extension: the original emits cbw; cwd at 1B82:00D4-00D5
@@ -149,9 +158,10 @@ void Unpack(char far *src, void far *dst);
     case FORMAT_LZW_12:
         if (gBufSize < FORMAT1_BUFFER_SIZE) {
             /* QUIRK 1B82:0131: the MemAlloc result is stored and passed on untested. MemAlloc returns
-               NULL only when the failure hook returns 0 (src/E19BC.C:44-53); the installed hook
-               AllocationFailure ends in ShutdownGame, which does not return (src/E07C8.C:359-366), so
-               the NULL is not reached in practice, but the missing test is what the bytes show */
+               NULL only when the failure hook returns 0 (src/E19BC.C:73-77, the rule is described at
+               src/E19BC.C:49-53); the installed hook AllocationFailure ends in ShutdownGame, which
+               does not return (src/E07C8.C:359-366), so the NULL is not reached in practice, but the
+               missing test is what the bytes show */
             work.block = MemAlloc((unsigned long)FORMAT1_BUFFER_SIZE, MEMALLOC_ALIGNED);
             Unpack1(FP_SEG(src), FP_SEG(dst), work.words[1]);
             MemFree(work.block);
@@ -169,7 +179,7 @@ void Unpack(char far *src, void far *dst);
         break;
     case FORMAT_LCW:
         src += 2;                   /* block offset +2: skip the format byte and the pad byte */
-        size = *(long far *)src;    /* block offset +2: the 32-bit unpacked size */
+        unpackedSize = *(long far *)src; /* block offset +2: the 32-bit unpacked size */
         src += 4;
         /* block offset +6: a u16 byte count that Unpack skips; 0 in all 131 format-4 entries of the
            PAK files. WHITEPAPER 4.2 (WHITEPAPER.md:151) calls it palette bytes [H]: no pinned file
@@ -177,16 +187,16 @@ void Unpack(char far *src, void far *dst);
         skipLen = *(unsigned far *)src;
         src += 2;
         src += skipLen;
-        Unpack4(src, dst, (int)size); /* Unpack4 uses size's low word (1D9A:003B) */
+        Unpack4(src, dst, (int)unpackedSize); /* Unpack4 uses its low word (1D9A:003B) */
         break;
     }
 }
 
 /* 1B82:0217: records the shared work buffer's segment and size, the one formats 1 and 2 in Unpack use
    when it is large enough. StartupAlloc calls it once at 07A9:00DF, with slot 7's segment
-   (gSegsFC0C[7], f19EC_0002(7)) pushed at 07A9:00DB and size UNPACK_BUFFER_SIZE (src/E07A9.C:222, in
-   StartupAlloc, whose header is src/E07A9.C:193-194; UNPACK_BUFFER_SIZE is defined at
-   src/E07A9.C:35). Both arguments are plain stores tested and discarded (the empty if bodies are
+   (gSegsFC0C[7], f19EC_0002(7)) pushed at 07A9:00DB and size UNPACK_BUFFER_SIZE (src/E07A9.C:241, in
+   StartupAlloc, whose header is src/E07A9.C:202-216; UNPACK_BUFFER_SIZE is defined at
+   src/E07A9.C:39). Both arguments are plain stores tested and discarded (the empty if bodies are
    what the bytes show, 1B82:0217-022C). */
 /*@ 1B82:0217 */ void SetUnpackBuffer(unsigned seg, unsigned size)
 {

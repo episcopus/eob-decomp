@@ -75,7 +75,7 @@ extern void UpdateDDEffects(void); /*@ 1414:0D63 */
 extern void DrawText(char far *text); /*@ 1DE7:060A */
 extern int IsMouseInRect(int left, int top, int right, int bottom); /*@ 1A72:02A6 */
 extern int f0D1C_00DA(int value, int page); /*@ 0D1C:00DA */
-extern int gSoundVolume; /*@ ds:FBCA */        /* the global sound volume (src/E08E6.C) */
+extern int gPartyCell; /*@ ds:FBCA */        /* the global sound volume (src/E08E6.C) */
 extern int gF540; /*@ ds:F540 */               /* counts sound-volume changes (src/E08E6.C) */
 extern char g194B[]; /*@ ds:194B */             /* per-object bit flags (src/E08E6.C) */
 extern char gText5AB5[]; /*@ ds:5AB5 */        /* message drawn when the sound volume changes (122E:0001) */
@@ -90,8 +90,8 @@ void f122E_1DA8(int a, int b);  /* forward: 1DA8 comes after its callers */
     int old;
 
     Obj0150();
-    old = gSoundVolume;
-    gSoundVolume = volume;
+    old = gPartyCell;
+    gPartyCell = volume;
     f122E_1DA8(old, 2);
     f122E_1DA8(volume, 1);
     Obj0150();
@@ -251,7 +251,7 @@ void f122E_1DA8(int a, int b);  /* forward: 1DA8 comes after its callers */
 
     entry += 0x3c;
     gEFD2 = 0x40;
-    x = f0D1C_00DA(gSoundVolume, gFBCC);
+    x = f0D1C_00DA(gPartyCell, gFBCC);
     f122E_0896(x, gFBCC);
 }
 /* 122E:0960: sub-opcode that writes gB894 fields: 0xFFE9 stores a byte into gB894[id * 9 + index],
@@ -601,7 +601,7 @@ void f122E_1DA8(int a, int b);  /* forward: 1DA8 comes after its callers */
 
     id = *(int far *)script;
     script += 2;
-    if (id == gSoundVolume) {
+    if (id == gPartyCell) {
         rec = gChars;
         for (i = 0; i < 6; i++) {
             rec = &gChars[i];

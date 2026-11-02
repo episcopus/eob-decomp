@@ -1526,6 +1526,7 @@ addr = "08E6:00C3"
 size = 141
 evidence = ["near", "frame"]
 name = "Obj00C3"
+notes = "blocked: a TCC -S codegen question, one 3-byte instruction. The original reloads les bx,[bp+6] at 08E6:00F2 before the Distance argument obj->id (08E6:00EE push [ds:FBCA]; 08E6:00F2 les bx,[bp+6]; 08E6:00F5 push es:[bx+2]); ours reuses the bx the five-test && chain already holds, so ours is 3 bytes short (ours je 0x86, original je 0x89). The unit is -B (0765, 0B94, 17FD and 1410 need it); under -B the body matches byte for byte except that load. The reload is what TCC emits when it has not proved the far pointer still lives in ES:BX; it appears in the original exactly where a body is a jump target (the else branch at 03FE:041F, the statement after a || chain, and the if(cond) ; else { body } layout, probed 2026-11-01), but here the body is fall-through after the jle. -O (jump optimisation) is what suppresses the redundant load (WHITEPAPER 2.1.1). Forms tried, each either keeping the cached bx as ours does or laying the first test as jne @@; jmp instead of je: the && chain, one-line, parenthesised and negated conditions, nested ifs (with and without braces), switch, goto, empty-body if, do/while(0), for(;;), while, a nested block, a declaration initialiser, register and separate locals, a bare obj;, an assignment inside the condition, casts, the if(cond) ; else { body } layout, and the || early-return form (which reloads but its first test is jne @@; jmp under /jNOSMART; it matches only without -B and then 0765, 0B94 and 17FD do not match). Flags probed on the whole unit 2026-11-01: -ml -O -Z -B 35 of 36, -ml -O -Z 32, -ml -O -Z -G -B 10, -ml -Z -B 2; -B is the only set that reaches 35 and the one missing function is this one. C++ -P, -1 and -k make no difference. src/E08E6.C carries the same evidence."
 
 [[function]]
 id = "e08e6_0150"
@@ -4724,7 +4725,7 @@ addr = "177D:0106"
 size = 394
 evidence = ["far", "frame"]
 notes = "resolved 2026-11-01: the two far accesses are the far object gDrvReg annotated 0000:3B36; task/far-data taught cmatch to prove a far object in that segment (src/E177D.C)."
-name = "PlaySoundVolume"
+name = "PlaySoundAtCell"
 level = "L2"
 match_flags = "-ml -O -Z"
 
@@ -5573,6 +5574,7 @@ evidence = ["far", "segment"]
 name = "LoadFile"
 level = "L2"
 match_flags = "-ml -O -Z -G -P"
+review = "passed 2026-11-01 rev-haiku"
 
 [[function]]
 id = "e1b82_0041"
@@ -5583,6 +5585,7 @@ evidence = ["far", "frame"]
 name = "LoadPacked"
 level = "L2"
 match_flags = "-ml -O -Z -G -P"
+review = "passed 2026-11-01 rev-haiku"
 
 [[function]]
 id = "e1b82_00c7"
@@ -5594,6 +5597,7 @@ notes = "2026-11-01: the format byte is sign-extended to long and the switch run
 name = "Unpack"
 level = "L2"
 match_flags = "-ml -O -Z -G -P"
+review = "passed 2026-11-01 rev-haiku"
 
 [[function]]
 id = "e1b82_0217"
@@ -5604,6 +5608,7 @@ evidence = ["far"]
 name = "SetUnpackBuffer"
 level = "L2"
 match_flags = "-ml -O -Z -G -P"
+review = "passed 2026-11-01 rev-haiku"
 
 [[function]]
 id = "e1ba4_000c"
@@ -7177,6 +7182,7 @@ unit = "eov3"
 addr = "ovl3:01C8"
 size = 338
 evidence = ["ovl", "near", "frame"]
+notes = "blocked: same as ovl3:03A2. The map sheet index gMapTiles[gFBC8-1] folds into a disp16 (our far object's stub offset FAR_BASE=8000h plus -1 gives 7FFFh, the original's object offset 0 plus -1 gives FFFFh); cmatch.py:370 only explains a displacement >= FAR_BASE. The draft matches up to that instruction (+00C5). The honest source form is kept in src/EOV3.C."
 
 [[function]]
 id = "eov3_031a"
@@ -7242,6 +7248,9 @@ unit = "eov3"
 addr = "ovl3:07A5"
 size = 428
 evidence = ["ovl", "near", "frame"]
+name = "LoadWallTextures"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov3_0951"
@@ -7336,6 +7345,9 @@ unit = "eov3"
 addr = "ovl3:1368"
 size = 593
 evidence = ["ovl", "frame"]
+name = "SaveGame"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov3_15b9"
@@ -7343,6 +7355,9 @@ unit = "eov3"
 addr = "ovl3:15B9"
 size = 1086
 evidence = ["ovl", "frame"]
+name = "LoadGame"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov3_19f7"
@@ -7516,6 +7531,9 @@ unit = "eov5"
 addr = "ovl5:0000"
 size = 161
 evidence = ["ovl", "near", "segment"]
+name = "DrawSheetCell"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov5_00a1"
@@ -7530,6 +7548,9 @@ unit = "eov5"
 addr = "ovl5:021C"
 size = 67
 evidence = ["ovl", "near"]
+name = "ClearPanel"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov5_025f"
@@ -7544,6 +7565,9 @@ unit = "eov5"
 addr = "ovl5:03A9"
 size = 70
 evidence = ["ovl", "near"]
+name = "PrintTableString"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov5_03ef"
@@ -7551,6 +7575,9 @@ unit = "eov5"
 addr = "ovl5:03EF"
 size = 102
 evidence = ["ovl", "near", "frame"]
+name = "DrawMenuRow"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov5_0455"
@@ -7586,6 +7613,9 @@ unit = "eov5"
 addr = "ovl5:08D2"
 size = 82
 evidence = ["ovl", "near", "frame"]
+name = "QueueItem"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov5_0924"
@@ -7593,6 +7623,9 @@ unit = "eov5"
 addr = "ovl5:0924"
 size = 161
 evidence = ["ovl", "near", "frame"]
+name = "TemplePanel"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov5_09c5"
@@ -7607,6 +7640,9 @@ unit = "eov5"
 addr = "ovl5:0AB1"
 size = 101
 evidence = ["ovl", "near", "frame"]
+name = "CheckChar0F7"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov5_0b16"
@@ -7614,6 +7650,9 @@ unit = "eov5"
 addr = "ovl5:0B16"
 size = 66
 evidence = ["ovl", "near", "frame"]
+name = "CheckRemove6"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov5_0b58"
@@ -7621,6 +7660,9 @@ unit = "eov5"
 addr = "ovl5:0B58"
 size = 102
 evidence = ["ovl", "near", "frame"]
+name = "Menu1"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov5_0bbe"
@@ -7649,6 +7691,9 @@ unit = "eov5"
 addr = "ovl5:0EB9"
 size = 190
 evidence = ["ovl", "near", "frame"]
+name = "ResurrectPanel"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov5_0f77"
@@ -7656,6 +7701,9 @@ unit = "eov5"
 addr = "ovl5:0F77"
 size = 181
 evidence = ["ovl", "near", "frame"]
+name = "AttackPanel"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov5_102c"
@@ -7663,6 +7711,9 @@ unit = "eov5"
 addr = "ovl5:102C"
 size = 91
 evidence = ["ovl", "near", "frame"]
+name = "KillHerPanel"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov5_1087"
@@ -7670,6 +7721,9 @@ unit = "eov5"
 addr = "ovl5:1087"
 size = 31
 evidence = ["ovl", "near", "frame"]
+name = "QuitPanel"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov5_10a6"
@@ -7677,6 +7731,9 @@ unit = "eov5"
 addr = "ovl5:10A6"
 size = 248
 evidence = ["ovl", "near", "frame"]
+name = "SurrenderPanel"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov5_119e"
@@ -7684,6 +7741,9 @@ unit = "eov5"
 addr = "ovl5:119E"
 size = 102
 evidence = ["ovl", "near", "frame"]
+name = "FreeHimPanel"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov5_1204"
