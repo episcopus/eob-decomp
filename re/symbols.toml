@@ -4618,7 +4618,7 @@ unit = "e1658"
 addr = "1658:01E6"
 size = 271
 evidence = ["frame"]
-name = "ResetNode"
+name = "ClearNode"
 level = "L2"
 match_flags = "-ml -O -Z"
 
@@ -4658,7 +4658,7 @@ unit = "e1658"
 addr = "1658:04BB"
 size = 15
 evidence = ["frame"]
-name = "GetNodeState0"
+name = "IsNodeOn"
 level = "L2"
 match_flags = "-ml -O -Z"
 
