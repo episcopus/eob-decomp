@@ -4,7 +4,8 @@
    ds:A9C8, and it draws the party rows through the rectangle and region front ends. Several
    helpers are pulled in from the character unit (0A72), the object unit (08E6) and the resident
    drawing code. Most meanings are not established, so most function names say what a function
-   does rather than what the game calls it. */
+   does rather than what the game calls it. The unit is compiled with -v, the debug information
+   that keeps identical code tails apart while TCC still sizes the jumps (whitepaper 2.1.1). */
 
 /*@flags -ml -O -Z -v */
 
@@ -29,14 +30,22 @@ struct CharRec {            /* 243-byte (0xF3) character records at ds:F580; see
 extern int gA9C8[]; /*@ ds:A9C8 */       /* a 15-word table searched by 0D1C:0006 */
 extern char gDF4C; /*@ ds:DF4C */        /* set to 1 when 0D1C:0006 finds the value */
 extern signed char gA99A; /*@ ds:A99A */ /* the selected character index (src/E0ACD.C) */
-extern char gF51A; /*@ ds:F51A */        /* the selected row (src/E0ACD.C) */
+extern char gF51A; /*@ ds:F51A */        /* an index into the 27 word slots of gChars[gA99A].m77
+                                            (0D1C:02DC, 0D1C:0304); slot 16 is the own-list head
+                                            0D1C:035A drains. E0ACD disagrees: it reads it as an
+                                            action-menu row 0..2 with 0x10 for the own list */
 extern struct CharRec gChars[]; /*@ ds:F580 */
 extern signed char g1790[]; /*@ ds:1790 */  /* byte table indexed by the second argument of 0D1C:00DA */
 extern signed char g547E[]; /*@ ds:547E */  /* byte table indexed by the second argument of 0D1C:0080 */
 extern char gB894[]; /*@ ds:B894 */         /* nine-byte records; +4 (ds:B898) is tested by 0D1C:0080 and +5 (ds:B899) is a list head used by 0D1C:035A */
 extern signed char g194B[]; /*@ ds:194B */  /* byte table read by 0D1C:0080 */
 extern signed char g1A1B[]; /*@ ds:1A1B */  /* per-page sound table read by 0D1C:035A */
-extern int gPartyCell; /*@ ds:FBCA */     /* the global sound volume (src/E177D.C) */
+extern int gPartyCell; /*@ ds:FBCA */     /* the party's map cell: 0D1C:035A indexes the nine-byte
+                                            records (gB894 + gPartyCell * 9 + 5) and passes it as the
+                                            InsertListItem key, and 0D1C:09CB passes it as the second
+                                            point of DirectionFromPoints. E177D.C:92 and EOV4.C:524
+                                            read it as the map cell too; E0ACD.C:55 calls it the sound
+                                            volume (disagreement, work/reviews/e0d1c.md) */
 extern int gFBCC; /*@ ds:FBCC */            /* a page number 0..3 (kept modulo 4 by 0ACD) */
 extern int g54F2; /*@ ds:54F2 */            /* the index drawn by 0D1C:0454, -1 when none */
 extern int g54F4; /*@ ds:54F4 */            /* the row of the animated list 0D1C:0454 draws */
@@ -53,8 +62,8 @@ extern char far *gBufF534; /*@ ds:F534 */   /* the 1600-byte ITEMRMP buffer (src
 extern void (far *gFn80D2)(void far *map); /*@ ds:80D2 */ /* the far colour-table callback (src/E07A9.C) */
 extern void far *gIconsDDE4[]; /*@ ds:DDE4 */ /* the item icon far pointers (src/E07A9.C) */
 
-struct ItemInfo {           /* 16-byte records at ds:A9F5; read by 0D1C:07DB and 0D1C:0BEB */
-    signed char m00;        /* +0 (ds:A9F5), bit 4 tested by 0D1C:0BEB */
+struct ItemInfo {           /* 16-byte records at ds:A9F5; read by 0D1C:07DB, 0D1C:08B1 and 0D1C:0BEB */
+    signed char m00;        /* +0 (ds:A9F5), bit 2 tested by 0D1C:0BEB */
     signed char m01;        /* +1 (ds:A9F6), compared by 0D1C:07DB */
     char pad02[7];
     int m09;                /* +9 (ds:A9FE), tested by 0D1C:07DB */
@@ -65,9 +74,9 @@ extern struct ItemInfo gA9F5[]; /*@ ds:A9F5 */
 struct Obj28 {              /* 28-byte object records at ds:8A82 (see src/E08E6.C) */
     char b0;                /* +0: an index into the ds:1A3B table */
     char pad01;
-    int m02;                /* +2, read by 0D1C:09CB */
+    int id;                 /* +2: the object's map cell, read by 0D1C:09CB */
     char pad04;
-    char m05;               /* +5, written by 0D1C:09CB */
+    char orient;            /* +5: the orientation quarter (times 2 is a direction), written by 0D1C:09CB */
     char pad06[0x16 - 0x06];
     char m16;               /* +0x16, bit 3 set by 0D1C:09CB */
     char pad17[0x1C - 0x17];
@@ -86,16 +95,16 @@ struct Entry27 {            /* 27-byte records at ds:1A3B, indexed by gObjs[obj]
 extern struct Entry27 gTable1A3B[]; /*@ ds:1A3B */
 
 struct Row8 {               /* eight-byte rows at ds:5482, four words: a DrawBox rectangle */
-    int m0;
-    int m2;
-    int m4;
-    int m6;
+    int x1;
+    int y1;
+    int x2;
+    int y2;
 };
 extern struct Row8 gRows5482[]; /*@ ds:5482 */
 
 struct Entry14 {            /* the 14-byte records E07A9 calls Entry14; view based at ds:8DD2 (E07A9) */
     unsigned char flags;    /* +0 (ds:8DD2), read by 07A9:015C */
-    signed char icon;       /* +1 (ds:8DD3), read by 07A9:0141 */
+    signed char icon;       /* +1 (ds:8DD3), read by 07A9:0141 and 0D1C:070F */
     signed char m02;        /* +2 (ds:8DD4), compared by 0D1C:00F1 and 0D1C:01CA */
     char pad03;
     int m04;                /* +4 (ds:8DD6), set to -1 by 0D1C:01CA */
@@ -105,7 +114,7 @@ struct Entry14 {            /* the 14-byte records E07A9 calls Entry14; view bas
 };
 extern struct Entry14 gTable8DD2[]; /*@ ds:8DD2 */
 
-extern char gFB44; /*@ ds:FB44 */            /* a mode byte: 0 and 1 gate 0D1C:01CA's redraws */
+extern char gFB44; /*@ ds:FB44 */            /* a mode byte: 0 and 1 gate the redraws in 0D1C:01CA and 0D1C:0304 */
 extern int gFBCE; /*@ ds:FBCE */             /* the item index shown by the mouse (src/E07A9.C) */
 extern int gMouseDisabled; /*@ ds:814A */    /* nonzero disables the mouse (src/E07A9.C) */
 extern int gFBC8; /*@ ds:FBC8 */             /* the current action: 2 or 7 gates the turn-undead
@@ -114,7 +123,7 @@ extern int gF518; /*@ ds:F518 */             /* set to 1 while an object is bein
 extern char gFileNameBuf[]; /*@ ds:FE6E */   /* the text buffer sprintf formats into (src/EOV2.C) */
 
 extern void f08E6_17FD(int far *list, int key, int field, char flags, char scanAll, char scanFiltered); /*@ 08E6:17FD */
-/* fills `list` with the gObjs indices whose m02 equals key, terminated by -1; flags, scanAll
+/* fills `list` with the gObjs indices whose id equals key, terminated by -1; flags, scanAll
    and scanFiltered select the scan (Purpose unknown) */
 extern void FlashViewDamage(void); /*@ 0EF3:06E7 */
 extern void f08E6_0E48(void); /*@ 08E6:0E48 */
@@ -122,12 +131,12 @@ extern void PlaySound(int sound); /*@ 177D:0070 */
 extern void DrawText(char far *text); /*@ 1DE7:060A */
 extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
 
-extern void RedrawMember(int dir); /*@ 1547:0991 */
+extern void RedrawMember(int who); /*@ 1547:0991 */
 extern void DrawMemberSlot(char who, char slot); /*@ 1547:07E7 */
 extern void DrawItemRow(int who, int slot, int one); /*@ 0BD2:0917 */
 extern void InsertListItem(void far *head, int key, int item, int sound); /*@ 0BD2:01D0 */
 extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
-extern int ItemClassAllowed(int who, int slot); /*@ 0BD2:11FD */
+extern int ItemClassAllowed(int who, int item); /*@ 0BD2:11FD */
 extern void SetMouseItem(int n); /*@ 07A9:010C */
 extern int far RollDice(char count, char sides, char bonus); /*@ 082C:0458 */
 extern void RearmCharEffects(void); /*@ 1414:0B2E */
@@ -136,14 +145,14 @@ extern void LockShowPointer(void); /*@ 1BBE:0332 */
 extern void DrawBox(int x1, int y1, int x2, int y2, int colour); /*@ 1A1F:000C */
 extern int GetIndexedByte(char index, char limit, char offset); /*@ 0A72:0006 */
 extern char GetClassSlotByte(char row, char slot); /*@ 0A72:0509 */
-extern int FindClassSlot(int value, int classIndex); /*@ 0A72:007B */
+extern int FindClassSlot(int slotId, int classIndex); /*@ 0A72:007B */
 /* the original sign-extends the m20 argument at 0D1C:0942 and 0D1C:0977 (`mov al,es:[bx+0x20];
    cwde; push ax`), so the second parameter is int, not char */
 extern int GetClampedTableByte(int col, int row); /*@ 0A72:0597 */
 extern void f1A29_008B(int mode, void far *src, int x, int y, int region); /*@ 1A29:008B */
 extern void f1A29_000F(int mode, void far *src, int x, int y, int region); /*@ 1A29:000F */
 extern void DrawFilledPanel(int x1, int y1, int x2, int y2, int c1, int c2, int c3); /*@ 082C:09D5 */
-extern int DirectionFromPoints(int obj, int volume); /*@ 17A6:0314 */
+extern int DirectionFromPoints(int fromCell, int toCell); /*@ 17A6:0314 */
 extern void DamageObject(struct Obj28 far *obj, int n); /*@ 08E6:0FBE */
 
 int f0D1C_0670(int who, int mask);
@@ -167,18 +176,18 @@ int GetCurrentItem(void);
     return 0;
 }
 
-/* 0D1C:003F: selects the party member at index `value` (the signed char at ds:A99A). When
-   `value` differs from the current one, the old index and the new index are passed to RedrawMember
+/* 0D1C:003F: selects the party member at index `who` (the signed char at ds:A99A). When
+   `who` differs from the current one, the old index and the new index are passed to RedrawMember
    (which redraws that member's row), and nothing is done when they are equal. gA99A indexes the
    character records read by 0D1C:0670 and is toggled 0..5 by Turn091C (src/E0ACD.C). Called by
    0ACD, 0DE8, 0EF3, 1414 and overlays 1, 5 and 6. */
-/*@ 0D1C:003F */ void SelectCharacter(int value)
+/*@ 0D1C:003F */ void SelectCharacter(int who)
 {
     int old;
 
-    if (gA99A != value) {
+    if (gA99A != who) {
         old = gA99A;
-        gA99A = value;
+        gA99A = who;
         RedrawMember(old);
         RedrawMember(gA99A);
     }
@@ -200,7 +209,7 @@ int GetCurrentItem(void);
 }
 /* 0D1C:0080: Purpose unknown: computes a ten-bit value x through 0D1C:00DA, then looks up
    gB894[x * 9 + g547E[page]] in g194B; returns -1 unless that byte is odd and gB894[x * 9 + 4] has
-   no bits 0..2 set, otherwise returns x. The callers (0ACD key handlers) pass gFBCC as b, so
+   no bits 0..2 set, otherwise returns x. The callers (0ACD key handlers) pass gFBCC as `page`, so
    g547E and g1790 are indexed by a page number 0..3. */
 /*@ 0D1C:0080 */ int f0D1C_0080(int value, signed char page)
 {
@@ -307,9 +316,9 @@ int GetCurrentItem(void);
     }
     return found;
 }
-/* 0D1C:02DC: Purpose unknown: returns the item index in the currently displayed slot: gFBCE
-   when the mouse is disabled, otherwise gChars[gA99A].m77[gF51A]. Called by 0D1C:01CA and from
-   many other units. */
+/* 0D1C:02DC: returns the item index of the currently displayed slot: gFBCE when the mouse is
+   enabled, otherwise gChars[gA99A].m77[gF51A]. The getter of the SetCurrentItem pair (0D1C:0304).
+   Called by 0D1C:01CA and from many other units. */
 /*@ 0D1C:02DC */ int GetCurrentItem(void)
 {
     if (!gMouseDisabled)
@@ -379,8 +388,8 @@ int GetCurrentItem(void);
     if (g54F2 != index) {
         if (g54F2 != -1) {
             LockHidePointer();
-            DrawBox(gRows5482[g54F2].m0, gRows5482[g54F2].m2, gRows5482[g54F2].m4,
-                    gRows5482[g54F2].m6, 0xC);
+            DrawBox(gRows5482[g54F2].x1, gRows5482[g54F2].y1, gRows5482[g54F2].x2,
+                    gRows5482[g54F2].y2, 0xC);
             LockShowPointer();
         }
         g54F4 = 0;
@@ -391,10 +400,10 @@ int GetCurrentItem(void);
             if (gTicks > gFC5E) {
                 if (g1CE7[g54F4] == 0)
                     g54F4 = 0;
-                x1 = gRows5482[g54F2].m0;
-                y1 = gRows5482[g54F2].m2;
-                x2 = gRows5482[g54F2].m4;
-                y2 = gRows5482[g54F2].m6;
+                x1 = gRows5482[g54F2].x1;
+                y1 = gRows5482[g54F2].y1;
+                x2 = gRows5482[g54F2].x2;
+                y2 = gRows5482[g54F2].y2;
                 LockHidePointer();
                 DrawBox(x1, y1, x2, y2, g1CE7[g54F4]);
                 LockShowPointer();
@@ -417,8 +426,9 @@ int GetCurrentItem(void);
 /* 0D1C:059B: Purpose unknown: a per-character check against a 1d20 roll. It derives a class
    slot from gChars[who].m20 (GetClassSlotByte, with 4 and 5 folded to 0), a value from
    GetIndexedByte(classSlot, m24, `attack`), then, depending on a level-like value m1F * 2
-   (3 or 5, and separately 4), for `attack` 4, 0 or 1, subtracts g54F6[m17]; finally it returns
-   1 when RollDice(1, 20, 0) >= value. QUIRK 0D1C:0609/0604: m1F * 2 is even, so the tests for 3
+   (3 or 5, and separately 4), for `attack` 4, 0 or 1 in the 3-or-5 case and for `attack` 4 or 1
+   in the level-4 case, subtracts g54F6[m17]; finally it returns 1 when RollDice(1, 20, 0) >=
+   value. QUIRK 0D1C:0609/0604: m1F * 2 is even, so the tests for 3
    and 5 can never hold; the original still has them. Called by 0DE8:0F98 and 0DE8:101A. */
 /*@ 0D1C:059B */ int f0D1C_059B(int who, int attack)
 {
@@ -444,8 +454,8 @@ int GetCurrentItem(void);
     return RollDice(1, 20, 0) >= value;
 }
 /* 0D1C:0670: Purpose unknown: tests up to five character conditions selected by `mask` and
-   returns 1 only when all the selected ones hold (AND of results, starting from 1). Bit 1:
-   gChars[who].m01 & 1. Bit 2: m1B > -10. Bit 4: m1B > 0. Bit 8: not (m01 & 4). Bit 16: not
+   returns 1 only when all the selected ones hold (AND of results, starting from 1). mask 1:
+   gChars[who].m01 & 1. mask 2: m1B > -10. mask 4: m1B > 0. mask 8: not (m01 & 4). mask 16: not
    (m01 & 2). Called by 0D1C:01CA and, with mask 1, by Turn091C (src/E0ACD.C) and other units. */
 /*@ 0D1C:0670 */ int f0D1C_0670(int who, int mask)
 {
@@ -466,11 +476,11 @@ int GetCurrentItem(void);
         result &= (rec->m01 & 2) == 0;
     return result;
 }
-/* 0D1C:070F: Purpose unknown: draws the item icon of the ds:8DD2 record `n` at (x, y). It reads
-   the record's icon number; when gFBD2 bit 0 is set and the record's flags have 0x80, it first
-   selects the icon's 16-byte colour row (gBufF534 + (icon << 4), or the empty string at ds:550A
-   when gGraphicsChoice is 0) through gFn80D2 and draws through f1A29_008B, otherwise through f1A29_000F.
-   Called by 0BD2 (three sites) and 1547:07E7. */
+/* 0D1C:070F: draws the item icon of the ds:8DD2 record `n` at (x, y), the far pointer
+   gIconsDDE4[icon]. Colour-row path, Purpose unknown: when gFBD2 bit 0 is set and the record's
+   flags have 0x80, it first selects the icon's 16-byte colour row (gBufF534 + (icon << 4), or the
+   empty string at ds:550A when gGraphicsChoice is 0) through gFn80D2 and draws through f1A29_008B,
+   otherwise through f1A29_000F. Called by 0BD2 (three sites) and 1547:07E7. */
 /*@ 0D1C:070F */ void DrawItemIcon(int mode, int n, int x, int y)
 {
     int icon;
@@ -503,9 +513,9 @@ int GetCurrentItem(void);
     return cursor;
 }
 /* 0D1C:07DB: Purpose unknown: combines the first two carried items of gChars[who] (slots 0 and
-   1). Each slot's item is passed to f0BD2_11FD and its ds:8DD2 record's m02 indexes the 16-byte
-   records at ds:A9F6. With `flag` 0 it returns 1 when slot 0 holds an item and ItemClassAllowed also
-   accepted it. Otherwise it returns 0 when slot 0 holds an item whose gA9F5[m02].m01 is 2, then
+   1). Each slot's item is passed to ItemClassAllowed and its ds:8DD2 record's m02 indexes the
+   16-byte records at ds:A9F5. With `flag` 0 it returns 1 when slot 0 is empty or ItemClassAllowed
+   accepted its item. Otherwise it returns 0 when slot 0 holds an item whose gA9F5[m02].m01 is 2, then
    1 when slot 1 is empty, and for a slot-1 item whose gA9F5[m1].m09 (low 7 bits) is 1, 2 or 3,
    0 when gA9F5[m1].m01 is nonzero, else the slot-1 result. Called by 0BD2:1001, 0DE8:0D5E and
    1547:07E7. Placeholder: what the values mean is not established. */
@@ -559,9 +569,7 @@ int GetCurrentItem(void);
    qualifies when f0D1C_0670(who, 0xD) and f0D1C_08B1(rec) hold; for it the code takes
    FindClassSlot(2, m20) and, failing that, FindClassSlot(4, m20), and compares the member's
    m24[slot] (minus 2 in the second case) with the best so far. The result is (best member << 8)
-   + best value, or 0 when none qualifies. Called by 0D1C:0A43. DRAFT: matches every byte except
-   that the two branches share one trailing `bestVal = ...; best = who;` store (0D1C:099F) with a
-   jump; the original repeats the pair inline in each branch (eight bytes longer). */
+   + best value, or 0 when none qualifies. Called by 0D1C:0A43. */
 /*@ 0D1C:0903 */ int f0D1C_0903(void)
 {
     struct CharRec far *rec;
@@ -598,7 +606,7 @@ int GetCurrentItem(void);
 /* 0D1C:09CB: Purpose unknown: a per-object check. It takes the object's ds:1A3B record's m19 as
    a row and GetClampedTableByte(column, m19) as a value. A value of -1 calls DamageObject(obj, 100)
    and returns 1. Otherwise, when `threshold` is below the value it returns 0; else it sets bit 3
-   of obj->m16, stores (DirectionFromPoints(obj->m02, gPartyCell) ^ 4) >> 1 in obj->m05 and returns 1.
+   of obj->m16, stores (DirectionFromPoints(obj->id, gPartyCell) ^ 4) >> 1 in obj->orient and returns 1.
    Called by 0D1C:0A43 and 17A6. */
 /*@ 0D1C:09CB */ int f0D1C_09CB(struct Obj28 far *obj, int threshold, int column)
 {
@@ -610,7 +618,7 @@ int GetCurrentItem(void);
     if (value != -1) {
         if (threshold >= value) {
             obj->m16 |= 8;
-            obj->m05 = (DirectionFromPoints(obj->m02, gPartyCell) ^ 4) >> 1;
+            obj->orient = (DirectionFromPoints(obj->id, gPartyCell) ^ 4) >> 1;
             return 1;
         }
     } else {
@@ -622,13 +630,13 @@ int GetCurrentItem(void);
 /* 0D1C:0A43: the "turn undead" action. When gFBC8 is 2 or 7 it derives a ten-bit key from
    gPartyCell and gFBCC (f0D1C_00DA) and requires gB894[key * 9 + 4] & 7 to be nonzero, then
    asks f0D1C_0903 for the best qualifying party member (its low byte the member's value, its
-   high byte the member's index) and rolls 1d20. It lists the objects whose ds:8DD2 record's m02
-   equals key (f08E6_17FD) and, for each object whose ds:1A3B record's m0F has bit 2 set and whose
-   m16 has bit 4 clear, sets gF518, marks the object (m16 |= 0x10) and runs f0D1C_09CB(obj, roll,
-   member value), ORing the results. When any object turned it formats "%s uses the power to turn
-   undead!" (ds:550E) with the best member's name, draws it, plays sound 0x5F and runs 0EF3:06E7
-   and 08E6:0E48. gF518 is cleared at the end on the normal path. Called by 0ACD:0E8A. DRAFT:
-   matches every byte except one idiom in the m0F test (below). */
+   high byte the member's index) and rolls 1d20. It lists the gObjs indices whose ds:8A82 object
+   record's m02 equals key (f08E6_17FD) and, for each object whose ds:1A3B record's m0F has bit 2
+   set and whose m16 has bit 4 clear, sets gF518, marks the object (m16 |= 0x10) and runs
+   f0D1C_09CB(obj, roll, member value), ORing the results. When any object turned it formats "%s
+   uses the power to turn undead!" (ds:550E) with the best member's name, draws it, plays sound
+   0x5F and runs 0EF3:06E7 and 08E6:0E48. gF518 is cleared at the end on the normal path. Called
+   by 0ACD:0E8A. */
 /*@ 0D1C:0A43 */ void TurnUndead(void)
 {
     struct Obj28 far *obj;
@@ -676,27 +684,28 @@ int GetCurrentItem(void);
     }
     gF518 = 0;
 }
-/* 0D1C:0BAB: Purpose unknown: a percentage check on the object `obj`: through gObjs[obj].b0 it
-   reads gTable1A3B[b0].m1A and returns 1 when RollDice(1, 100, 0) is below it, otherwise 0.
-   Called by 0DE8:0359. */
-/*@ 0D1C:0BAB */ int f0D1C_0BAB(int obj)
+/* 0D1C:0BAB: Purpose unknown: a percentage check on the object `objIndex` (its ds:8A82 record,
+   not a pointer like 0D1C:09CB's `obj`): through gObjs[objIndex].b0 it reads gTable1A3B[b0].m1A
+   and returns 1 when RollDice(1, 100, 0) is below it, otherwise 0. Called by 0DE8:0359. */
+/*@ 0D1C:0BAB */ int f0D1C_0BAB(int objIndex)
 {
     int chance;
 
-    chance = gTable1A3B[gObjs[obj].b0].m1A;
+    chance = gTable1A3B[gObjs[objIndex].b0].m1A;
     return RollDice(1, 100, 0) < chance;
 }
 /* 0D1C:0BEB: Purpose unknown: returns 1 when gTable1A3B[gObjs[obj].b0].m0E has bit 2 set and
-   gA9F5[flag].m00 has bit 4 clear, otherwise 0. Called by 0DE8:0359. */
-/*@ 0D1C:0BEB */ int f0D1C_0BEB(int obj, int flag)
+   gA9F5[item].m00 has bit 2 clear, otherwise 0. `item` indexes the ItemInfo records. Called by
+   0DE8:0359. */
+/*@ 0D1C:0BEB */ int f0D1C_0BEB(int obj, int item)
 {
-    return (gTable1A3B[gObjs[obj].b0].m0E & 4) && (gA9F5[flag].m00 & 4) == 0;
+    return (gTable1A3B[gObjs[obj].b0].m0E & 4) && (gA9F5[item].m00 & 4) == 0;
 }
-/* 0D1C:0C21: Purpose unknown: draws a framed rectangle at (x, y) size w by h through 082C:09D5.
-   It hides the pointer, draws the whole rectangle in the colours picked by `a` (gF57E, gF57E
-   when `a`, else gFB4C and gF53A) with -1 as the third colour, then shrinks the rectangle by one
-   on each side and draws the inner border in gFB4C/gF53A with a third colour of -1 when `b`,
-   else gF57E, and shows the pointer. Called by overlay 1 and overlay 6. */
+/* 0D1C:0C21: Purpose unknown: draws a framed rectangle at (x, y) `width` by `height` through
+   082C:09D5. It hides the pointer, draws the whole rectangle in the colours picked by `first`
+   (gF57E, gF57E when `first`, else gFB4C and gF53A) with -1 as the third colour, then shrinks the
+   rectangle by one on each side and draws the inner border in gFB4C/gF53A with a third colour of
+   -1 when `second`, else gF57E, and shows the pointer. Called by overlay 1 and overlay 6. */
 /*@ 0D1C:0C21 */ void f0D1C_0C21(int x, int y, int width, int height, int first, int second)
 {
     int x1;
