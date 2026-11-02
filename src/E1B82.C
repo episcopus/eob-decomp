@@ -41,7 +41,9 @@ extern void Unpack4(char far *src, void far *dst, int len); /*@ 1D9A:0013 */
 
 void Unpack(char far *src, void far *dst);
 
-/* 1B82:0009: reads len bytes of the file called name into buf: FileOpen in mode 1, FileRead, FileClose. */
+/* 1B82:0009: reads len bytes of the file called name into buf: FileOpen in mode 1, FileRead, FileClose.
+   QUIRK 1B82:0009: the FileOpen result is not checked. The handle is kept in SI (1B82:001F) and goes
+   straight to FileRead with no test, so a failed open reads through an invalid handle. */
 /*@ 1B82:0009 */ void LoadFile(char far *name, void far *buf, unsigned len)
 {
     int handle;
@@ -51,9 +53,9 @@ void Unpack(char far *src, void far *dst);
     FileClose(handle);
 }
 
-/* 1B82:0041: loads a packed file: takes the source and destination segments for srcKind/dstKind from
+/* 1B82:0041: loads a packed file: takes far pointers at offset 0 (segments) for srcKind/dstKind from
    f19EC_0002, reads a 2-byte length then that many bytes into src, closes the file, and unpacks src
-   into dst. */
+   into dst. QUIRK 1B82:0041: as in LoadFile, the FileOpen result is not checked before FileRead. */
 /*@ 1B82:0041 */ void LoadPacked(char far *name, int srcKind, int dstKind)
 {
     unsigned packedLen;
@@ -71,23 +73,27 @@ void Unpack(char far *src, void far *dst);
 }
 
 /* 1B82:00C7: unpacks the block src into dst by its first byte, the format:
-     0: Unpack0 copies the long count at block offset +2 and the data at block offset +8;
+     0: Unpack0 gets the data at block offset +8 and the 32-bit unpacked size at block offset +2 as
+        its length, and copies that many bytes;
      3: Unpack3 receives the source and destination segments;
      1 and 2: Unpack1/Unpack2 get a 0x3C00/0xFC00 byte work buffer, the shared one at gBufSeg when
               gBufSize is large enough, otherwise a MemAlloc'd block freed after the call;
      4: Unpack reads the long unpacked size at block offset +2 and passes it on as Unpack4's length
         (the decoder uses only its low word, 1D9A:003B/0043), skips the u16 at block offset +6 (the
         palette bytes the format header carries before the data, WHITEPAPER 147) and calls Unpack4
-        with the data at block offset +8+n.
+        with the data at block offset +8+skipLen.
    The original sign-extends the format byte (cbw; cwd) and switches on the int in AX. The C++ front
    end (-P) emits those bytes; the C front end folds the extension away (re/symbols.toml note on
    1B82:00C7). The case bodies follow the source order 0, 3, 1, 2, 4 (1B82:00E7, 010D, 011E, 0176,
-   01CC), and the table at cs:020D is indexed by format value. */
+   01CC), and the table at cs:020D is indexed by format value.
+   QUIRK 1B82:00C7: the switch has no default, so a format byte outside 0 to 4 leaves dst untouched.
+   The bytes test the format with `cmp bx, 4` at 1B82:00D8 and an unsigned jump, so a format above 4,
+   including the negative values 0x80 to 0xFF, skips the switch. */
 /*@ 1B82:00C7 */ void Unpack(char far *src, void far *dst)
 {
     WorkBuffer work;
     long size;
-    int n;
+    int skipLen;
 
     switch ((int)(long)*src) {
     case 0L:
@@ -116,9 +122,9 @@ void Unpack(char far *src, void far *dst);
         src += 2;                   /* block offset +2: skip the format byte and the pad byte */
         size = *(long far *)src;    /* block offset +2: the 32-bit unpacked size */
         src += 4;
-        n = *(int far *)src;        /* block offset +6: the u16 palette byte count (WHITEPAPER 147), 0 in every pinned file */
+        skipLen = *(int far *)src;  /* block offset +6: the u16 palette byte count (WHITEPAPER 147), 0 in all 131 format-4 entries of the PAK files */
         src += 2;
-        src += n;
+        src += skipLen;
         Unpack4(src, dst, size);    /* Unpack4 uses size's low word (1D9A:003B) */
         break;
     }
