@@ -28,9 +28,9 @@ struct CharRec {
     signed char m20;      /* +20: an index into a class table, read by 0A72:0522 and 0DE8:0B45 */
     char pad21[3];
     signed char m24[3];   /* +24: the three class-slot levels: LevelUpSlot increments m24[slot]
-                             when a slot gains a level (E0DE8.C:650), E1547.C:570-571 prints it as
-                             the slot's level-like byte (E1547.C:563-564), and 0A72:0522 reads
-                             element [0] */
+                             when a slot gains a level (E0DE8.C:650), E1547.C:570 reads it as
+                             `slotValue` and E1547.C:573-574 prints it as the slot's level-like byte
+                             (E1547.C:563-564), and 0A72:0522 reads element [0] */
     char pad27[0xF3 - 0x27];
 };
 
@@ -162,10 +162,11 @@ char GetClassSlotByte(char row, char slot); /*@ 0A72:0509 */
 }
 
 /* 0A72:01AE: a random hit-point total for class `classIndex`. It rolls the three hit dice groups
-   (RollDice(count, sides) for the class's dice sides g174B, g175A and g1769), scales by the
-   per-stat multiplier g1778[m17 - 1] (capped at 2 while g174B[classIndex] < 10), then adds
-   multiplier * count: the first group's term is always added, while the second and third are added
-   only when both their count and their sides are nonzero. Finally it divides by 3 when g1769 is
+   (RollDice(count, sides) for the class's dice sides g174B, g175A and g1769), then looks up the
+   per-stat multiplier g1778[m17 - 1] and adds multiplier * count for each group: the first group's
+   term is always added, while the second and third are added only when both their count and their
+   sides are nonzero. The multiplier is capped at 2 while g174B[classIndex] < 10 (group A's dice are
+   small); no reason for that cap is known from src/. Finally it divides by 3 when g1769 is
    nonzero or by 2 when only g175A is nonzero. The counts are the three class-slot levels m24[0..2],
    one die per level: RollCharacterStats calls RollHitPoints(m20, m17, m24[0], m24[1], m24[2]) for a
    new character (EOV0.C:1107-1108), while LevelUpSlot calls it with one die for the single slot
@@ -293,22 +294,23 @@ char GetClassSlotByte(char row, char slot); /*@ 0A72:0509 */
 /* 0A72:0509: the byte ds:35D4[row * 4 + slot] for a 4-wide table. A slot's byte is -1 (0xFF) when
    the class has no such slot: 0A72:007B scans slots 0, 1 and 2 for a match, 0A72:04B7 uses the
    byte as an index into g35BC and returns -1 when it is -1, and the callers test for -1
-   (E1547.C:566, E0DE8.C:610; E0DE8.C:614 tests 0A72:04B7's long result, not this byte)
-   (0D1C:059B compares the result with 4 and 5). A non-negative byte indexes g1219, the
-   per-class-slot names, at E1547.C:568 (g1219 is declared at E1547.C:124), as well as g35BC.
-   Purpose unknown. */
+   (E1547.C:566, E0DE8.C:610; E0DE8.C:614 tests 0A72:04B7's long result, not this byte). A
+   non-negative byte indexes g1219, the per-class-slot names, at E1547.C:568 (g1219 is declared at
+   E1547.C:124), and g35BC, and 0D1C:059B passes it to GetIndexedByte as `index`, the g3406 buffer,
+   after folding 4 and 5 to 0 (E0D1C.C:430-433). Purpose unknown. */
 /*@ 0A72:0509 */ char GetClassSlotByte(char row, char slot)
 {
     return g35D4[row * 4 + slot];
 }
 
 /* 0A72:0522: 20 - (m24[0] - 1) / g3614[g116E[m20]] * g3610[g116E[m20]] - classByte, computed in
-   bytes. It is the d20 number a to-hit roll must reach before the attacker bonus: its only caller
-   0DE8:0007 computes `ac = GetHitTarget(who, gTable1A3B[b0].m00) - bonus` (E0DE8.C:206) and then
-   compares a d20 roll against it (`return roll >= ac;`, E0DE8.C:214). `classByte` is the +0 field
-   of the target's ds:1A3B entry (E0DE8.C:57), m20 is the character's class index into ds:116E,
-   and m24[0] is the character's first class-slot level at +24, taken as the level less one here
-   and passed as GetIndexedByte's limit at E0D1C.C:433. Build note: `result` is what
+   bytes. It is the d20 number a to-hit roll must reach before the attacker bonus is subtracted:
+   its only caller 0DE8:0007 computes `ac = GetHitTarget(who, gTable1A3B[b0].m00) - bonus`
+   (E0DE8.C:206) and then compares a d20 roll against it (`return roll >= ac;`, E0DE8.C:214).
+   `classByte` is the +0 field of the target's ds:1A3B entry (E0DE8.C:57), m20 is the character's
+   class index into ds:116E, and m24[0] is the character's first class-slot level at +24; this
+   function subtracts 1 from it (`num`), while E0D1C.C:433 passes the unchanged m24[0] as
+   GetIndexedByte's limit, so the less-one value is used only here. Build note: `result` is what
    keeps the two lookups in memory; without it -O promotes `cls` (or `num`) to CL and the spills
    differ from the original. */
 /*@ 0A72:0522 */ char GetHitTarget(char who, char classByte)
