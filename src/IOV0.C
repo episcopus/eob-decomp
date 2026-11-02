@@ -7,10 +7,10 @@
    load time (ds:1EE2 and its neighbours), which this page only partly names.
    The scene functions are named after the .CMP/.COL files they load: PlayWtrdpScene (ovl0:015D,
    WTRDP1..3), PlayOrbScene (ovl0:06E2, ORB/TOWRMAGE), PlayTowerMageScene (ovl0:0B20,
-   TOWRMAGE) and PlayKingScene (ovl0:1265, KING/ADVENTUR) are written; 15F9, 1DF3 and 23A3 are
-   still stubs. They are long ClipRect/frame animations; every utility they use (LoadPackedImage,
-   LoadPalette, PlaySound, Dissolve, BlitImage, DrawGrid, GrowFrame, WaitFrameDelay,
-   f19EC_002A) is matched. */
+   TOWRMAGE), PlayKingScene (ovl0:1265, KING/ADVENTUR) and PlayHandsScene (ovl0:15F9, HANDS) are
+   written; 1DF3 and 23A3 are still stubs. They are long ClipRect/frame animations; every utility
+   they use (LoadPackedImage, LoadPalette, PlaySound, Dissolve, BlitImage, DrawGrid, GrowFrame,
+   WaitFrameDelay, f19EC_002A) is matched. */
 
 /*@flags -ml -O -Z -G */
 
@@ -109,7 +109,7 @@ void DelayFrames(unsigned frames);
 void GrowFrame(int left, int top, int dstLeft, int dstTop, int x, int y, int width, int height, int curWidth, int curHeight, int addW, int addH);
 int SignOf(int value);
 void PlayKingScene(void);
-void Ovl0_15F9(void);
+void PlayHandsScene(void);
 void Ovl0_1DF3(void);
 void Ovl0_23A3(void);
 void RevealInStrips(void);
@@ -174,7 +174,7 @@ void PlayLogoSequence(void);
     if (!gAbort)
         PlayKingScene();
     if (!gAbort)
-        Ovl0_15F9();
+        PlayHandsScene();
     if (!gAbort)
         Ovl0_1DF3();
     if (!gAbort)
@@ -692,7 +692,125 @@ extern int gKingStep[8];                /*@ ds:1CF4 */  /* Purpose unknown: per-
     for (i = 0; i < 4; i++)
         MemFree(imgs[i]);
 }
-/*@ ovl0:15F9 stub */ void Ovl0_15F9(void) {}
+/* ovl0:15F9: the HANDS scene. Three phases of hand animation, each a GrowFrame opening a framed
+   box, a DelayFrames hold and a loop that slides two or three images cut from gOverlayBuf and
+   wipes a ClipRect band. `tall` is the second image's moving height in the last phase. Every
+   phase frees its images before the next. Sound 0xB/0xC/0xD/0xA play at the phase boundaries. */
+/*@ ovl0:15F9 */ void PlayHandsScene(void)
+{
+    void far *sprites[3];
+    register int i;
+    register int tall;
+
+    gDrawPage = 2;
+    sprites[0] = gMakeImage(0, 0x8c, 0x15, 0x3c, gOverlayBuf);
+    sprites[1] = gMakeImage(0x15, 0x8c, 0xc, 0x3c, gOverlayBuf);
+    LoadPackedImage("HANDS.CMP", 3, 5);
+    WaitFrameDelay();
+    ClearBottomBar();
+    gFillRect(0, 0, 0xbf, 0x3f, 0x9d);
+    f1A29_000F(2, sprites[0], 0, 4, 0);
+    f1A29_000F(2, sprites[1], 0x97, 4, 0);
+    GrowFrame(0x19, 8, 0x12, 4, 3, 0, 0x15, 8, 6, 0, 0x1c, 0x17);
+    ClipRect(0, 0x80, 0, 0xb0, 0x28, 0x10, 6, 0);
+    DelayFrames(0xf);
+    PlaySound(0xb);
+    for (i = 0xffea; i <= 0x14; i += 4) {
+        gFrameDelay = 1;
+        gFillRect(0, 0, 0xa7, 0x3f, 0x9d);
+        f1A29_000F(2, sprites[0], i, 4, 0);
+        f1A29_000F(2, sprites[1], 0x7f - (i + 0x16), 4, 0);
+        ClipRect(0, 0, 0x12, 0x20, 0x15, 0x40, 2, 0);
+        WaitFrameDelay();
+    }
+    PlaySound(0xa);
+    MemFree(sprites[1]);
+    MemFree(sprites[0]);
+    DelayFrames(0xf);
+    gDrawPage = 4;
+    sprites[0] = gMakeImage(0x11, 0, 0xb, 0x78, gOverlayBuf);
+    sprites[1] = gMakeImage(0x1c, 0x70, 1, 0x1f, gOverlayBuf);
+    sprites[2] = gMakeImage(9, 0x8a, 0xe, 0x36, gOverlayBuf);
+    gDrawPage = 2;
+    gFillRect(0, 0, 0x87, 0x3f, 0x9d);
+    f1A29_000F(2, sprites[0], 0x20, 0xffb0, 0);
+    f1A29_000F(2, sprites[1], 0x28, 0xfff0, 0);
+    GrowFrame(0x12, 0x10, 0xa, 0xc, 0, 0, 0x11, 8, 0x11, 3, 0x19, 0xa);
+    DelayFrames(0xf);
+    for (i = 0xffb0; i <= 0; i += 4) {
+        gFrameDelay = 1;
+        gFillRect(0, 0, 0x87, 0x3f, 0x9d);
+        f1A29_000F(2, sprites[0], 0x20, i, 0);
+        f1A29_000F(2, sprites[1], 0x28, i + 0x40, 0);
+        ClipRect(0, 0, 0xa, 0x60, 0x11, 0x40, 2, 0);
+        WaitFrameDelay();
+    }
+    PlaySound(0xc);
+    DelayFrames(5);
+    for (i = 0; i > -0x36; i -= 4) {
+        gFrameDelay = 1;
+        gFillRect(0, 0, 0x87, 0x3f, 0x9d);
+        f1A29_000F(2, sprites[2], 0xc, i + 0x40, 0);
+        f1A29_000F(2, sprites[0], 0x20, i, 0);
+        ClipRect(0, 0, 0xa, 0x60, 0x11, 0x40, 2, 0);
+        WaitFrameDelay();
+    }
+    DelayFrames(0xf);
+    MemFree(sprites[2]);
+    MemFree(sprites[1]);
+    MemFree(sprites[0]);
+    gDrawPage = 4;
+    sprites[0] = gMakeImage(0, 0, 0x11, 0x88, gOverlayBuf);
+    sprites[1] = gMakeImage(0, 0x88, 9, 0x30, gOverlayBuf);
+    gDrawPage = 2;
+    gFillRect(0, 0, 0x8f, 0x5f, 0x9d);
+    f1A29_000F(2, sprites[0], 0xffc8, 0xffc8, 0);
+    f1A29_000F(2, sprites[1], 0x34, 0x31, 0);
+    GrowFrame(9, 6, 0, 0, 0, 0, 0x12, 0xc, 8, 0xb, 0x15, 0xa);
+    DelayFrames(0xf);
+    PlaySound(0xb);
+    for (i = 0xffc8; i <= -8; i += 4) {
+        gFrameDelay = 1;
+        gFillRect(0, 0, 0x8f, 0x5f, 0x9d);
+        f1A29_000F(2, sprites[0], i, i, 0);
+        f1A29_000F(2, sprites[1], (i == -8 ? 1 : 0) * 3 + 0x34, (i == -8 ? 1 : 0) * 3 + 0x31, 0);
+        ClipRect(0, 0, 0, 0, 0x12, 0x60, 2, 0);
+        WaitFrameDelay();
+    }
+    PlaySound(0xa);
+    DelayFrames(0xf);
+    MemFree(sprites[1]);
+    MemFree(sprites[0]);
+    DelayFrames(0xf);
+    gDrawPage = 4;
+    sprites[0] = gMakeImage(0x1c, 0, 0xb, 0x28, gOverlayBuf);
+    sprites[1] = gMakeImage(0x1c, 0x28, 0xa, 0x48, gOverlayBuf);
+    gDrawPage = 2;
+    gFillRect(0, 0, 0x57, 0x70, 0x9d);
+    f1A29_000F(2, sprites[1], 0, 0x5a, 0);
+    GrowFrame(0x14, 0xd, 0xf, 6, 0, 0, 0xb, 0xe, 0, 0, 0x18, 0x10);
+    DelayFrames(0xf);
+    tall = 0x5a;
+    for (i = 0xffd8; i <= 0; i += 4) {
+        gFrameDelay = 1;
+        gFillRect(0, 0, 0x57, 0x70, 0x9d);
+        f1A29_000F(2, sprites[1], 0, tall, 0);
+        ClipRect(0, 0, 0xf, 0x30, 0xb, 0x70, 2, 0);
+        WaitFrameDelay();
+        tall -= 5;
+    }
+    PlaySound(0xd);
+    for (i = 0xffd8; i <= 0; i += 4) {
+        gFrameDelay = 1;
+        gFillRect(0, 0, 0x57, 0x27, 0x9d);
+        f1A29_000F(2, sprites[0], 0, i, 0);
+        ClipRect(0, 0, 0xf, 0x30, 0xb, 0x28, 2, 0);
+        WaitFrameDelay();
+    }
+    MemFree(sprites[1]);
+    MemFree(sprites[0]);
+    gFrameDelay = 0x30;
+}
 /*@ ovl0:1DF3 stub */ void Ovl0_1DF3(void) {}
 /*@ ovl0:23A3 stub */ void Ovl0_23A3(void) {}
 /* ovl0:2913: reveals the screen in horizontal strips. For each step 0..6 it walks the 25

@@ -2295,3 +2295,12 @@ new = "PlayKingScene"
 kind = "function"
 why = "it loads KING.CMP and ADVENTUR.CMP and walks four king sprites down over the adventurer (ovl0:1265 +1276, +134c)"
 date = "2026-11-02"
+
+[[rename]]
+id = "intro/ovl0:15F9=PlayHandsScene"
+addr = "intro/ovl0:15F9"
+old = "Ovl0_15F9"
+new = "PlayHandsScene"
+kind = "function"
+why = "it loads HANDS.CMP and animates the three hand sprites in three GrowFrame/ClipRect phases (ovl0:15F9 +1653)"
+date = "2026-11-02"
