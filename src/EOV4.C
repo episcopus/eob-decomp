@@ -47,49 +47,51 @@ extern void SetRegionExtents(int region, int left, int top, int width, int heigh
 extern signed char g6B82[]; /*@ ds:6B82 */   /* per slot,i signed column adjustment (this unit) */
 extern signed char g6CC6[]; /*@ ds:6CC6 */   /* per slot,i signed {left,right} bounds (this unit) */
 
-/* ovl4:0097: computes the visible left and right columns of one view slot. When the slot's pair in
-   gViewSlots (at ds:DCB2) is not -1 it just returns that pair. Otherwise it starts from 0..0x16 and
-   walks the 18 tile records (gEF6A[i][gA9C6]): a record whose ds:194B flag has bit 3 clear
-   contributes its ds:6B82 column adjustment (a positive value pulls *right left, a negative one
-   pulls *left right, and -40 is skipped while -41 forces an empty left), a record whose bit 3 is
-   set contributes its ds:6CC6 {left,right} bounds; the walk stops when *right falls below *left.
-   The pair is cached back into gViewSlots and SetRegionRect fits region `region` to the span.
-   Called by Ovl4_1E18 at ovl4:1E23. Purpose unknown: what the records and adjustments mean.
-   DRAFT: the register allocation differs. The original has sub sp,6 (bp-2 i, bp-4 pair, bp-6
-   heading), keeps 2*slot in SI across the `if` (the shared index of the condition, the two loads
-   and the final stores) and adjust in DI; ours promotes `slot` to DI (the index recomputed per use)
-   or the loop counter to SI, giving sub sp,4. A local `j = (slot + i) * 2` is needed so the else's
-   index takes SI; with it every local but `adjust` is in memory. `register int pair` then reproduces
-   the whole if/then and the entry (sub sp,6, pair in SI), but the compiler drops the else's
-   redundant `pair = 2 * slot`, so the end label (and the then tail `jmp`) lands one byte early
-   (+0037); recomputing pair in the else adds 7 bytes instead. Tried all declaration orders of
-   {i,pair,heading,adjust,j} with every `register` subset, `pair` vs inline `2 * slot` in the
-   condition, `slot *= 18` vs `slot = slot * 18`, a `while` loop, -B, -G and -r-; none changes it. */
-/*@ ovl4:0097 draft */ void ComputeViewSpan(int slot, int far *left, int far *right, int region)
-{
-    int pair;
-    int i;
-    int heading;
-    int adjust;
+#define VIEW_SLOTS 18       /* the ds:EF6A tile records a slot's span is built from */
+#define VIEW_RIGHT 0x16     /* the rightmost column of the view, in 8-pixel columns */
+#define VIEW_BOTTOM 0xf     /* the bottom of the view region, in 8-pixel rows */
+#define ADJUST_SKIP -40     /* a ds:6B82 adjustment that leaves the span unchanged */
+#define ADJUST_EMPTY -41    /* a ds:6B82 adjustment that forces an empty span */
+#define TILE_FLAG 8         /* ds:194B bit 3: the record carries ds:6CC6 bounds, not an adjustment */
 
-    pair = 2 * slot;
-    if (gViewSlots[pair] != -1) {
-        *left = gViewSlots[pair];
-        *right = gViewSlots[pair + 1];
+/* ovl4:0097: computes the visible left and right columns of one view slot and fits region `region`
+   to them. `slot` indexes the view slots and gEF6A; `left`/`right` receive the span (2-pixel
+   columns). When the slot's cached pair in gViewSlots (at ds:DCB2, two words per slot) is not -1 it
+   returns that pair. Otherwise it starts at 0..VIEW_RIGHT and walks the VIEW_SLOTS tile records
+   gEF6A[i][gA9C6]: a record whose ds:194B heading flag has bit 3 clear contributes its ds:6B82
+   column adjustment (a positive value pulls *right left, a negative one pulls *left right; an
+   adjustment of ADJUST_SKIP on a record with a zero ds:1879 count is ignored and ADJUST_EMPTY
+   forces an empty span), a record whose bit 3 is set narrows the span with its ds:6CC6
+   {left,right} bounds; the walk stops when *right falls below *left. The pair is cached back into
+   gViewSlots and SetRegionRect fits `region` to (left, right). Called by Ovl4_1E18 at ovl4:1E23.
+   Purpose unknown: what the records and adjustments mean.
+   QUIRK ovl4:0097: the local `j` is used as the pair index before the loop and as the ds:6CC6
+   column index inside it; both are `2 * slot`, so the value is reused rather than recomputed. */
+/*@ ovl4:0097 */ void ComputeViewSpan(int slot, int far *left, int far *right, int region)
+{
+    int i;
+    int pair;
+    int heading;
+    register int adjust;
+    register int j;
+
+    j = 2 * slot;
+    if (gViewSlots[j] != -1) {
+        *left = gViewSlots[j];
+        *right = gViewSlots[j + 1];
     } else {
         *left = 0;
-        *right = 0x16;
-        slot = slot * 18;
-        for (i = 0; i < 18; i++) {
+        *right = VIEW_RIGHT;
+        pair = 2 * slot;
+        slot *= VIEW_SLOTS;
+        for (i = 0; i < VIEW_SLOTS; i++) {
             heading = gEF6A[i][gA9C6];
-            if ((g194B[heading] & 8) == 0) {
+            if (!(g194B[heading] & TILE_FLAG)) {
                 adjust = g6B82[slot + i];
-                if (g1879[heading] == 0)
+                if (g1879[heading] == 0 || adjust == ADJUST_SKIP)
                     continue;
-                if (adjust == -40)
-                    continue;
-                if (adjust == -41) {
-                    *left = 0x16;
+                if (adjust == ADJUST_EMPTY) {
+                    *left = VIEW_RIGHT;
                     *right = 0;
                     break;
                 }
@@ -98,20 +100,22 @@ extern signed char g6CC6[]; /*@ ds:6CC6 */   /* per slot,i signed {left,right} b
                 if (adjust < 0 && -adjust > *left)
                     *left = -adjust;
             } else {
-                if (g6CC6[(slot + i) * 2] > *left)
-                    *left = g6CC6[(slot + i) * 2];
-                if (g6CC6[(slot + i) * 2 + 1] < *right)
-                    *right = g6CC6[(slot + i) * 2 + 1];
+                j = (slot + i) * 2;
+                if (g6CC6[j] > *left)
+                    *left = g6CC6[j];
+                j++;
+                if (g6CC6[j] < *right)
+                    *right = g6CC6[j];
             }
             if (*right < *left)
                 break;
         }
         gViewSlots[pair] = *left;
-        gViewSlots[pair + 1] = *right;
+        pair++;
+        gViewSlots[pair] = *right;
     }
-    SetRegionRect(region, *left, 0, *right, 0xf);
+    SetRegionRect(region, *left, 0, *right, VIEW_BOTTOM);
 }
-
 struct Region {             /* the 16-byte region records at ds:009F (src/E1DE7.C) */
     int left;               /* +0 */
     int top;                /* +2 */

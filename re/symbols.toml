@@ -7675,6 +7675,9 @@ unit = "eov4"
 addr = "ovl4:0097"
 size = 391
 evidence = ["ovl", "near", "frame"]
+name = "ComputeViewSpan"
+level = "L2"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "eov4_021e"
