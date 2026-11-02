@@ -1,7 +1,7 @@
 # Review: eov5
 
 Reviewer: rev-haiku
-Commit reviewed: 5767eb38ee1512e5c9994792c9e8fc61ed181448 (round 1), 5fadbc39b1563e907468dc17cae60b2c3d78d625 (round 2, main)
+Commit reviewed: 5767eb38ee1512e5c9994792c9e8fc61ed181448 (round 1), 5fadbc39b1563e907468dc17cae60b2c3d78d625 (round 2), d1a3d98 (round 3, main)
 
 Playbook 70. Judge what a matching file can still get wrong: names, types, comments, structure.
 The matcher already proved the bytes; do not re-prove them, read for meaning.
@@ -17,6 +17,34 @@ Evidence used: the code in `src/EOV5.C` (line numbers below); the call lists in
 `eob/EOB.EXE`, read only (`strings`, `grep -b`). The EXE literals line up with the ds addresses
 (file-offset differences equal ds-address differences, within one byte, e.g. ds:7B9F "CANCEL" to
 ds:7D9E "Which should be resurrected?").
+
+### Round 3 (2026-11-02, reviewed at d1a3d98: the round 2 fixes of b2dac64 are on main)
+
+Judged as playbook 70 "Later rounds" asks: each round 2 must-fix against the current code, and every changed hunk of `src/EOV5.C` since 5fadbc3 (`git diff 5fadbc3 main -- src/EOV5.C`: eight hunks, comments and one blank line), the `eov5` entries of `re/symbols.toml` (no hunk since 5fadbc3) and the `re/globals.toml` hunks of that range. The round 1 and round 2 items are not read again in full.
+
+Round 2 must-fix: all three are fixed right (ticks stay). The cite 0D1C:01CA (:604, :779) is RemoveCarriedItems's address (`re/symbols.toml`; `/*@ 0D1C:01CA */` at src/E0D1C.C:286), and src/E0D1C.C:285 is its header with the "not established" sentence. ResurrectPicker (:857-859) now states what the match fixes and what is not established, with no safety claim. GiveItemPanel (:680) says "through QueueItem", which is the call at :707-708 for both 0x37 and 0x3e. SurrenderPanel (:984) says the list keyed by gPartyCell with the sound from gFBCC: InsertListItem at :1002-1003 takes `gPartyCell` and `g1A1B[gFBCC * 4 + ...]`, as QueueItem does at :639-640.
+
+Round 2 shoulds: the key-code comment (:336) now cites UpdateOptionList as 14EF:0274, which is its header at src/E14EF.C:239, and says "prev/next". The "same game keys" claim holds against src/E14EF.C:222-237: the mask 0x8ff, confirm 0x2B, 0x3D, 0x61, mouse buttons 0x41, 0x42 and up/down 0x60, 0x62 are all there; 0x5C and 0x66 are not, as the comment says. The stray blank line in ShuffleGrid is gone (:1401-1406). The round 2 should on `re/globals.toml` ds:FBCA (the E17A6 cite) is already 17A6:0F61 at 5fadbc3 and on main, so it is done.
+
+Changed hunks sound: the CharOverlay header (:1227-1228) and its call (:1303) pass 0 as the name and `gMapSheet + (gMapTiles[gFBC8 - 1] << 5)` as the sheet; "a NULL name reuses the current wall name" matches src/EOV3.C:471 and "loads a wall texture set" src/EOV3.C:470. The "current level" wording is gone.
+
+#### Clarity and names (should)
+
+- [ ] should src/EOV5.C:1227-1228 (CharOverlay header): "for the sheet gMapSheet + (gMapTiles[gFBC8 - 1] << 5)" gives the expression but not what it selects. The offset picks the map sheet for the tile byte gMapTiles[gFBC8 - 1]; src/EOV3.C:199 (MAPSHEET) and src/EOV3.C:367 say so. Say that, as round 1 asked for the "current level" note. Not a wrong claim, so not a must-fix.
+
+#### Notes for the next reader
+
+- [ ] note `re/globals.toml` ds:FBCA (gPartyCell, unchanged since 5fadbc3): its why still cites other files by line (src/E0ACD.C:939, src/EOV6.C:410, src/E08E6.C:351 and :558 to :601, :336, :467, src/E0D1C.C:352). The e08e6 and e0d1c reviews already flagged these; their owners take them, not this unit.
+- [ ] note `make match FILE=src/EOV5.C` prints "unit eov5 not complete: ours 8094 bytes, the unit 8094" with exit 0. tools/match/cmatch.py:653-656 sets `whole` only when `ovl is None`, so an overlay unit always prints "not complete". This answers the round 2 side note: it is the output for every overlay unit, not a matcher fault found here, and not escalated.
+
+#### Verified (no finding)
+
+- Every changed hunk of src/EOV5.C since 5fadbc3 is comment or blank-line text; the code lines match the comments checked above (GiveItemPanel :707-708, SurrenderPanel :1002-1003, QueueItem :639-640, ResurrectPicker :869-875 and :877-882).
+- `make match FILE=src/EOV5.C`: 31 of 31 functions match, exit 0. `make readability UNIT=eov5`: 0 findings.
+
+#### Summary (round 3)
+
+No must-fix open: the three round 2 must-fix items are fixed right and the changed lines are sound. One should (the CharOverlay header should say what the sheet offset selects) and two notes do not block.
 
 ### Round 2 (2026-11-02, reviewed at 5fadbc3: the round 1 fixes of 3eefda8 are on main)
 
@@ -38,7 +66,7 @@ Round 1 must-fix: all 20 are fixed right (ticks stay). Evidence: the eight dispa
 
 - [x] should src/EOV5.C:1403: a stray blank line before the closing brace of ShuffleGrid's inner loop (added with the round 1 fix). Delete it; no code changes. [fixed b2dac64: blank line deleted, no code changes]
 
-- [ ] should re/globals.toml, ds:FBCA (gPartyCell; changed since 5767eb3): "(src/E17A6.ASM:1466)" is a line in the middle of another function (`add si, 3`). Distance is at 17A6:0F61 (src/E17A6.ASM:1489-1532). The claim is right: E17A6.ASM:1490-1491 says each argument is a packed y * 32 + x cell with x in the low five bits. Cite 17A6:0F61 by address. This is another unit's file; the owner of E17A6 and `re/globals.toml` takes it.
+- [x] should re/globals.toml, ds:FBCA (gPartyCell; changed since 5767eb3): "(src/E17A6.ASM:1466)" is a line in the middle of another function (`add si, 3`). Distance is at 17A6:0F61 (src/E17A6.ASM:1489-1532). The claim is right: E17A6.ASM:1490-1491 says each argument is a packed y * 32 + x cell with x in the low five bits. Cite 17A6:0F61 by address. This is another unit's file; the owner of E17A6 and `re/globals.toml` takes it. [done before round 3: the ds:FBCA why cites "(17A6:0F61, 177D:026A)" at 5fadbc3 and on main; checked in round 3]
 
 #### Notes for the next reader
 
