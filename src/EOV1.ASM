@@ -4071,7 +4071,7 @@ f1ACD_223A:
         push    word ptr es:[bx+1Eh]
         push    word ptr [gCursorY]
         push    word ptr [gCursorX]
-        call    far ptr _PointInRect
+        call    far ptr _IsPointInRect
         add     sp,0Ch
         or      ax,ax
         je      short f1ACD_2281
@@ -4236,7 +4236,7 @@ _Ovl1_1ACD ENDP
 ; SkipStrings(gStrings2003, message) and DrawShadowText, then loops: it highlights the current node
 ; with _DrawListNode (after _FindNode(index+0x21)), waits with DispatchKeyWait, and switches on the
 ; key (table at ovl1:266C, 7 keys): 0x5C/0x66 toggle `di`, 0x2B/0x3D/0x61 remove the node and walk
-; the list to the node under the mouse (gCursorX/gCursorY through PointInRect), 0x8021/0x8022 end
+; the list to the node under the mouse (gCursorX/gCursorY through IsPointInRect), 0x8021/0x8022 end
 ; the loop with a result flag. On exit it frees the list, restores the font and g811F through
 ; _f1A47_0169 and SetTextWindow and returns the flag. Called from ovl1:1ACD and the camp loop
 ; (ovl6:0000). Purpose unknown: what the returned flag means and which menu `message` names.
