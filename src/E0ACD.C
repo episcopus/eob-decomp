@@ -51,6 +51,9 @@ extern int gF3BA; /*@ ds:F3BA */            /* the item just picked, -1 when non
 extern int g374A[]; /*@ ds:374A */          /* a per-page word flag read by 0BA6 */
 extern char gF542[]; /*@ ds:F542 */         /* a message buffer passed to 0EF3:2541 when gFlag is set */
 extern char gDF4C; /*@ ds:DF4C */           /* set to 1 when an action took effect (src/E0D1C.C) */
+extern char gB894[]; /*@ ds:B894 */         /* nine-byte object records (src/E0D1C.C) */
+extern signed char g194B[]; /*@ ds:194B */  /* per-object bit flags (src/E0D1C.C) */
+extern signed char gA9C6; /*@ ds:A9C6 */    /* an offset into a gB894 record (src/E0DE8.C) */
 
 extern int f0D1C_00DA(int value, int page); /*@ 0D1C:00DA */
 extern int f0D1C_0080(int value, signed char page); /*@ 0D1C:0080 */
@@ -471,14 +474,52 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
     return action->result;
 }
 
-/* 0ACD:0644 stub: blocked: the original copies the 4-byte table at ds:36BC and the 16-byte table
-   at ds:36C0 into stack locals with F_SCOPY (0000:78C9), which pushes the destination segment
-   before the offset; the pinned compiler's struct copy pushes the offset first (whitepaper 2.1.1,
-   eov6). The rest of the function (the sound/spell dispatch through gB894 and g194B) cannot be
-   written until the copies are. */
-/*@ 0ACD:0644 stub */ int Action0644(struct Action far *action)
+/* 0ACD:0644: uses the item in the slot at `action` on the selected character. For slot 0 or 1 the
+   volume is the global gSoundVolume; for a higher slot it is gSoundVolume plus the per-page
+   pageVolume[] adjustment and the action only proceeds when the object there (gB894/g194B) is
+   flagged (bits 0..3 of g194B). The per-page, per-slot kind is slotKind[]; a nonzero current item
+   is queued for use through InsertListItem (and the sound f122E_1DA8), otherwise the first matching
+   entry of the volume's list is removed through RemoveListItem and shown with SetMouseItem. Any
+   effect sets gDF4C. Returns 1. The two tables are local arrays initialised from constant lists, as
+   the original copies them with F_SCOPY (0000:78C9) in the segment-first order that form produces
+   (whitepaper 2.1.1). */
+/*@ 0ACD:0644 */ int Action0644(struct Action far *action)
 {
-    return action->result;
+    char pageVolume[4] = { 0xE0, 0x01, 0x20, 0xFF };
+    char slotKind[4][4] = {
+        { 0, 1, 2, 3 },
+        { 1, 3, 0, 2 },
+        { 3, 2, 1, 0 },
+        { 2, 0, 3, 1 },
+    };
+    register int slot;
+    register int vol;
+    int removed;
+
+    slot = action->slot;
+    if (slot < 2) {
+        vol = gSoundVolume;
+    } else {
+        vol = gSoundVolume + pageVolume[gFBCC];
+        if (!(g194B[gB894[vol * 9 + gA9C6]] & 0xB))
+            return 1;
+    }
+    /* one register variable: slot is reused to hold the per-page kind, as the original does. */
+    slot = slotKind[gFBCC][slot];
+    if (f0D1C_02DC() == 0) {
+        removed = RemoveListItem((void far *)(gB899 + vol * 9), slot, -1);
+        if (removed) {
+            f122E_1DA8(vol, 8);
+            SetMouseItem(removed);
+            gDF4C = 1;
+        }
+    } else {
+        InsertListItem((void far *)(gB899 + vol * 9), vol, f0D1C_02DC(), slot);
+        f122E_1DA8(vol, 4);
+        SetMouseItem(0);
+        gDF4C = 1;
+    }
+    return 1;
 }
 
 /* 0ACD:0753: advances the menu step gDCAA, wrapping above 2 to 1, then moves the selected row

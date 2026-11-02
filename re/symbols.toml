@@ -2176,6 +2176,9 @@ addr = "0ACD:0644"
 size = 271
 evidence = ["frame"]
 notes = "stub, blocked (src/E0ACD.C): the prologue copies the 4-byte table at ds:36BC and the 16-byte table at ds:36C0 into stack locals with F_SCOPY@ (0000:78C9). The original pushes the destination segment before the destination offset (`push ss; lea ax,[bp-4]; push ax; push ds; mov ax,0x36bc; push ax; mov cx,4; lcall 0,0x78c9`); the pinned tc100/tc101 struct copy pushes the offset first, in every construct and switch tried (whitepaper 2.1.1; escalation eov6, 2026-11-01, all 15 F_SCOPY@ sites in EOB.EXE are segment-first). The sound/spell dispatch behind it (through gB894 and g194B) is not written until the copies are."
+name = "Action0644"
+level = "L2"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e0acd_0753"
@@ -2254,10 +2257,10 @@ unit = "e0acd"
 addr = "0ACD:0A34"
 size = 45
 evidence = ["near", "frame"]
+notes = "matched 2026-11-01: case 0 is `Turn091C(dir); goto done;` and case 1 falls through to `done: return;`, not `break`. With a plain switch/break the compiler cross-jumps the two calls' argument cleanup (`pop cx` after each), one byte shorter than the original."
 name = "Action0A34"
 level = "L2"
 match_flags = "-ml -O -Z -B"
-notes = "matched 2026-11-01: case 0 is `Turn091C(dir); goto done;` and case 1 falls through to `done: return;`, not `break`. With a plain switch/break the compiler cross-jumps the two calls' argument cleanup (`pop cx` after each), one byte shorter than the original."
 
 [[function]]
 id = "e0acd_0a61"
