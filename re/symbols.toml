@@ -3986,6 +3986,9 @@ unit = "e122e"
 addr = "122E:11E8"
 size = 134
 evidence = ["frame"]
+name = "ClearActionBit"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e122e_126e"
@@ -4003,6 +4006,9 @@ unit = "e122e"
 addr = "122E:12CE"
 size = 207
 evidence = ["frame"]
+name = "DamagePartyMember"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e122e_139d"
@@ -4027,6 +4033,9 @@ unit = "e122e"
 addr = "122E:13E0"
 size = 66
 evidence = ["frame"]
+name = "PopScriptPointer"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e122e_1422"
@@ -4034,6 +4043,9 @@ unit = "e122e"
 addr = "122E:1422"
 size = 93
 evidence = ["frame"]
+name = "PushScriptPointer"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e122e_147f"
