@@ -10,8 +10,9 @@
    (082C:0425/0B43), the memory report (082C:081A/0B0E), ReadFileBytes (082C:0A7D), the block swap
    SwapBlocks (082C:07C5), ClampOrWrap (082C:0AB4), the rectangle hit tests (082C:0613/0A5D), the
    quit wrapper (082C:0A53) and SayAndPlaySound (082C:0B8F). Only the four DrawRegion front ends
-   in this unit read the region table at ds:009F (src/E1A29.C); the unit also reads the screen text
-   pointer at ds:80CA (src/E14EF.C), the line pointer at ds:8062 (src/E1A1F.C) and the game's
+   in this unit read the region table at ds:009F (src/E1A29.C); the unit also calls the draw-text
+   routine pointer gDrawText at ds:80CA (src/E14EF.C), the line routine pointer gDrawLine at
+   ds:8062 (src/E1A1F.C) and reads the game's
    32-bit tick counter at ds:848A (incremented by the INT 1Ch handler, src/E1D8F.ASM). The graphics
    mode gGraphicsChoice and the video modes are whitepaper 2.6; the -B build through the assembler
    (playbook 30) is whitepaper 2.1.1. Placeholder names until the callers name them. */
@@ -47,10 +48,15 @@ enum {
     KeyEsc = 0x1b,
     KeySpace = 0x20,
     KeyDelete = 0x7e,          /* the code of '~' as well; the editor folds it onto delete (see above) */
+    KeyKeypadDel = 0xad,       /* keypad Del (1AAD:0357); the editor folds it onto KeyDelete below */
+    KeyAsciiDel = 0x7f,        /* ASCII DEL; the editor folds it onto KeyDelete below */
     KeyTilde = 0x7e,           /* the printable-range top; same value as KeyDelete (QUIRK 082C:01C1) */
     KeyLeft = 0xb5,
     KeyRight = 0xb3
 };
+
+/* DrawFilledPanel's "draw no interior" value; its callers pass -1 for it (src/EOV2.C:502, :503). */
+#define NO_FILL (-1)
 
 extern struct Region gRegions[]; /*@ ds:009F */
 extern void (far *gDrawLine)(int x1, int y1, int x2, int y2, int colour); /*@ ds:8062 */
@@ -60,10 +66,10 @@ extern int gGraphicsChoice; /*@ ds:8102: the graphics mode chosen at start-up: 0
                              3 mcga/VGA, 4 vga (src/E07C8.C:39-43, the list at :42; src/E17A6.ASM:233
                              names 3 MCGA; whitepaper 2.6: 1 Tandy, 3 VGA). LoadScreenImage picks CPS
                              for 3, the MCGA/VGA art suffix (the sprintf below) */
-extern int g8140; /*@ ds:8140: x of the last click, written by src/E1AAD.ASM:396 and also read by src/E14EF.C:325 */
-extern int g8142; /*@ ds:8142: y of the last click, written by src/E1AAD.ASM:405 and also read by src/E14EF.C:325 */
+extern int gClickX; /*@ ds:8140: x of the last click, written by src/E1AAD.ASM:396 and also read by src/E14EF.C:325 */
+extern int gClickY; /*@ ds:8142: y of the last click, written by src/E1AAD.ASM:405 and also read by src/E14EF.C:325 */
 extern int gStatusLine; /*@ ds:8115: nonzero while a status line is up (set to 2 by LoadOverlayScreen) */
-extern unsigned long gTicks; /*@ ds:848A: the game's own 32-bit tick counter, stepped by the INT 1Ch handler at src/E1D8F.ASM:91 (`inc word ptr ds:[848Ah]`; handler :84-93) */
+extern unsigned long gTicks; /*@ ds:848A: the game's own 32-bit tick counter, stepped by the INT 1Ch handler at src/E1D8F.ASM:76 (label 1D8F:0055); the increment of ds:848A is at src/E1D8F.ASM:91 (`inc word ptr ds:[848Ah]`) */
 extern char gFileNameBuf[]; /*@ ds:FE6E */ /* the shared text buffer the filename/format helpers and the memory report build into */
 extern char gOverlayBuf[]; /*@ ds:113F */ /* the DGROUP image buffer, passed as LoadScreenImage's extra pointer to f19EC_002A, which hands it to the far handler at ds:8046 only when two slots hold non-zero segments that differ (src/E19EC.C:29-35); overlays cut sprite cells out of it (src/EOV2.C:209, src/EOV5.C:1021) */
 extern char gCursorChar; /*@ ds:31AC: the one character drawn at the editing cursor */
@@ -86,7 +92,7 @@ extern void PrintInt(int value, int a, int b, int c, int d); /*@ 1AA6:000F */
 extern long LargestFreeBlock(void); /*@ 19BC:023D */
 extern int FileOpen(char far *name, int mode); /*@ 1C0E:00DB */
 extern long FileRead(int slot, void far *buf, unsigned long len); /*@ 1C0E:0400: returns the byte count; `slot` is FileOpen's slot index, not a DOS handle (src/E1B82.C:56-63) */
-extern void FileClose(int handle); /*@ 1C0E:03BB */
+extern void FileClose(int slot); /*@ 1C0E:03BB: `slot` is FileOpen's slot index, not a DOS handle (src/E1B82.C:56-64) */
 extern void ShutdownGame(void); /*@ 07C8:058A */
 extern void PlaySound(int sound); /*@ 177D:0070 */
 extern void DrawText(char far *text); /*@ 1DE7:060A */  /* the text console's string renderer (src/E1DE7.C) */
@@ -158,10 +164,9 @@ void DrawShadowText(char far *text, int x, int y, int colour, int colour2);
             }
         }
         key = WaitGameKey() & 0xff;
-        if (key == 0xad)               /* 0xAD is keypad Del (1AAD:0357); 0x7F is the other code
-                                          the editor folds to KeyDelete */
+        if (key == KeyKeypadDel)
             key = KeyDelete;
-        if (key == 0x7f)
+        if (key == KeyAsciiDel)
             key = KeyDelete;
         if (key == KeyBackspace)
             goto special;
@@ -324,8 +329,9 @@ done:
    line as up (gStatusLine = 2). With mode -1 LoadScreenImage skips the 19EC:002A blit, so nothing
    is drawn here: the page reaches the screen only when `dstKind` is itself a screen slot (segment
    0xB800 or 0xA000, src/E19EC.C:5-7). Called by many overlays, all with dstKind 3, for example
-   src/EOV0.C:1328 and src/EOV2.C:208. The name comes from the gOverlayBuf argument it passes
-   (the DGROUP image buffer), not from the game's VROOMM code overlays. */
+   src/EOV0.C:1328 and src/EOV2.C:208. `name` is the art name the caller passes (for example
+   "ITEMICN", src/EOV2.C:208); gOverlayBuf is the `extra` pointer passed on to LoadScreenImage. The
+   "Overlay" in this name refers to that buffer, the DGROUP image buffer, not a VROOMM code overlay. */
 /*@ 082C:05EC */ void LoadOverlayScreen(char far *name, int srcKind, int dstKind)
 {
     LoadScreenImage(name, gOverlayBuf, srcKind, dstKind, -1);
@@ -333,8 +339,9 @@ done:
 }
 
 /* 082C:0613: the point (x, y) is inside the inclusive rectangle built from its left, top, right
-   and bottom edges: 1 when all four tests hold, 0 otherwise. Same test as IsPointInRect at
-   14EF:00E1 (src/E14EF.C:146); this copy is reached with the last click (ClickInRect). */
+   and bottom edges: 1 when all four tests hold, 0 otherwise. The name is a second name for the same
+   test as IsPointInRect at 14EF:00E1 (src/E14EF.C:146); a naming pass should settle one name across
+   the project. This copy is reached with the last click (ClickInRect). */
 /*@ 082C:0613 */ int IsPointInsideRect(int x, int y, int left, int top, int right, int bottom)
 {
     if (x < left || x > right)
@@ -344,9 +351,9 @@ done:
     return 1;
 }
 
-/* 082C:063B: draw through the region front end 1A29:000F (the name's suffix is that front end's
-   address) with the coordinates made relative to `region`: x is first rounded down to an even
-   value and the region's left edge in pixels (left * 8) is subtracted, y has the region's top
+/* 082C:063B: the region front end 1A29:000F is Purpose unknown, so this wrapper's name is only that
+   front end's address. It makes the coordinates relative to `region`: x is first rounded down to an
+   even value and the region's left edge in pixels (left * 8) is subtracted, y has the region's top
    line subtracted. */
 /*@ 082C:063B */ void DrawRegion000F(int mode, void far *src, int x, int y, int region)
 {
@@ -356,8 +363,9 @@ done:
     f1A29_000F(mode, src, x, y, region);
 }
 
-/* 082C:0681: like DrawRegion000F but through the region front end 1A29:004D (the name's suffix
-   is that front end's address). */
+/* 082C:0681: like DrawRegion000F (even rounding of x and the region-relative coordinates) but
+   through the region front end 1A29:004D, which is Purpose unknown, so the name is only that
+   front end's address. */
 /*@ 082C:0681 */ void DrawRegion004D(int mode, void far *src, int x, int y, int region)
 {
     x &= -2;
@@ -366,8 +374,9 @@ done:
     f1A29_004D(mode, src, x, y, region);
 }
 
-/* 082C:06C7: like DrawRegion000F but through the region front end 1A29:008B (the name's suffix
-   is that front end's address). */
+/* 082C:06C7: like DrawRegion000F (even rounding of x and the region-relative coordinates) but
+   through the region front end 1A29:008B, which is Purpose unknown, so the name is only that
+   front end's address. */
 /*@ 082C:06C7 */ void DrawRegion008B(int mode, void far *src, int x, int y, int region)
 {
     x &= -2;
@@ -376,8 +385,9 @@ done:
     f1A29_008B(mode, src, x, y, region);
 }
 
-/* 082C:070D: like DrawRegion000F but through the region front end 1A29:00C9 (the name's suffix
-   is that front end's address) and without the even rounding of x. */
+/* 082C:070D: like DrawRegion000F through the region front end 1A29:00C9, which is Purpose unknown,
+   so the name is only that front end's address; unlike the other three wrappers it does not round
+   x down to an even value. */
 /*@ 082C:070D */ void DrawRegion00C9(int mode, void far *src, int x, int y, int region)
 {
     x -= gRegions[region].left * 8;
@@ -412,7 +422,7 @@ done:
    `len` is a signed int widened to the long Unpack0 wants. The only caller passes pa = gChars[si],
    pb = gChars[di], pc = gBufDCFC (src/EOV1.ASM:200-219), so it swaps two party records through the
    scratch buffer. src/EOV1.ASM:157 still calls this a rotation: a note for that unit. */
-/*@ 082C:07C5 */ void SwapBlocks(char far *pa, char far *pb, char far *pc, register int len)
+/*@ 082C:07C5 */ void SwapBlocks(char far *pa, char far *pb, char far *pc, int len)
 {
     Unpack0(pa, pc, len);
     Unpack0(pb, pa, len);
@@ -425,7 +435,9 @@ done:
    _farheapcheck, build/re/rtl_compare.json) it prints the "%lu:%lu" report with the largest free
    block and then farcoreleft; when heapcheck reports corruption it prints the "HEAP CORRUPT!!"
    message with the largest free block. gStatusLine, the status-line flag, is cleared while the
-   report is drawn and restored after. The report is built in gFileNameBuf, the shared text buffer. */
+   report is drawn and restored after. The report is built in gFileNameBuf, the shared text buffer.
+   Both cited files sit under build/ (git-ignored, so absent from a clean clone): ALLOC.H is
+   installed by `make tc-install` and rtl_compare.json written by `make rtl-compare`. */
 /*@ 082C:081A */ void ShowMemoryDiagnostics(int x, int y, int wait)
 {
     int saved;
@@ -444,12 +456,12 @@ done:
 
 /* 082C:0898: draw one text string at (x, y): first its drop shadow at (x-1, y), (x, y+1) and
    (x-1, y+1) in the shadow colour 0x0C, then the text itself in `colour`. `colour2` is forwarded as
-   the fifth argument of the first shadow draw only; that argument is a second colour in every
-   caller that passes one (gTextAttr2 at src/E1DE7.C:280 and :296, hiColour and fill at
-   src/E0EF3.C:1937/1946, EditTextField's `attr` above), so `colour2` is a second colour; what the
-   hook at ds:80CA does with it is unknown (Purpose unknown). Called by the character panel
-   (src/E1547.C:521-545), the name list (src/E14EF.C:208), the word-find editor (src/EOV2.C:500)
-   and src/EOV6.C:399. */
+   the fifth argument of the first shadow draw only, the argument of the draw hook gDrawText
+   (ds:80CA) that is a colour in the hook's direct calls (gTextAttr2 at src/E1DE7.C:280 and :296,
+   hiColour and fill at src/E0EF3.C:1937/1946), so `colour2` is a second colour; what the hook does
+   with it is unknown (Purpose unknown). Called by the character panel (src/E1547.C:521-545), the
+   name list (src/E14EF.C:208), the word-find editor (src/EOV2.C:500) and src/EOV6.C:399, among
+   others (the packet also lists EditTextField, DrawOptionList and the ovl0 and ovl1 panels). */
 /*@ 082C:0898 */ void DrawShadowText(char far *text, int x, int y, int colour, int colour2)
 {
     gDrawText(text, x - 1, y, 0xc, colour2);
@@ -491,13 +503,13 @@ done:
     return strlen(buf) * 3;
 }
 
-/* 082C:09D5: draw a filled bevelled panel: when `fill` is not -1 the interior (x1+1, y1+1)-(x2-1,
+/* 082C:09D5: draw a filled bevelled panel: when `fill` is not NO_FILL the interior (x1+1, y1+1)-(x2-1,
    y2-1) is filled through ds:806A, then the top and right edges are drawn in `colourA` (the top
    starting at x1+1 and the right ending at y2-1, so they miss the top-left and bottom-right
    corners) and the left and bottom edges in `colourB`. */
 /*@ 082C:09D5 */ void DrawFilledPanel(int x1, int y1, int x2, int y2, int colourA, int colourB, int fill)
 {
-    if (fill != -1)
+    if (fill != NO_FILL)
         gFillRect(x1 + 1, y1 + 1, x2 - 1, y2 - 1, fill);
     gDrawLine(x1 + 1, y1, x2, y1, colourA);
     gDrawLine(x2, y1, x2, y2 - 1, colourA);
@@ -505,7 +517,8 @@ done:
     gDrawLine(x1, y2, x2, y2, colourB);
 }
 
-/* 082C:0A53: the thin wrapper that calls ShutdownGame (07C8:058A), which ends in exit(0) (src/E19BC.C:218). No caller found in src/. */
+/* 082C:0A53: the thin wrapper that calls ShutdownGame (07C8:058A), whose body ends in exit(0)
+   (src/E07C8.C:478). No caller found in src/. */
 /*@ 082C:0A53 */ void QuitGame(void)
 {
     ShutdownGame();
@@ -515,12 +528,13 @@ done:
    A wrapper over IsPointInsideRect with the click globals as the point. */
 /*@ 082C:0A5D */ int ClickInRect(int left, int top, int right, int bottom)
 {
-    return IsPointInsideRect(g8140, g8142, left, top, right, bottom);
+    return IsPointInsideRect(gClickX, gClickY, left, top, right, bottom);
 }
 
 /* 082C:0A7D: read `len` bytes of the file `name` into `buf`: FileOpen in mode 1, FileRead, then
-   FileClose. It takes its length as a long argument, as LoadPacked and LoadFile read theirs from
-   the file. QUIRK 082C:0A7D: the FileOpen result is not checked before FileRead, as in
+   FileClose. `len` is a long, the type of FileRead's `len` (src/E1C0E.C:277); LoadFile takes an
+   `unsigned len` (src/E1B82.C:86) and only LoadPacked reads a length from the file
+   (src/E1B82.C:95-96). QUIRK 082C:0A7D: the FileOpen result is not checked before FileRead, as in
    LoadFile/LoadPacked (src/E1B82.C:97-98), and the byte count FileRead returns is discarded, as
    LoadFile discards it (src/E1B82.C:78-79). No caller found in src/. */
 /*@ 082C:0A7D */ void ReadFileBytes(char far *name, void far *buf, unsigned long len)
@@ -570,10 +584,10 @@ done:
     ShowMemoryDiagnostics(x, y + 8, 1);
 }
 
-/* 082C:0B43: wait `seconds` seconds (18 BIOS ticks each) and then wait for a key: busy-wait on the
-   tick counter, clear the pending key (1AAD:0480), block until 1AAD:038E reports one, and clear it
-   again. */
-/*@ 082C:0B43 */ void DelaySecondsOrKey(int seconds)
+/* 082C:0B43: wait `seconds` seconds (about 18.2 BIOS ticks a second, so `seconds * 18` is the
+   target) and then wait for a key: busy-wait on the tick counter, clear the pending key
+   (1AAD:0480), block until 1AAD:038E reports one, and clear it again. */
+/*@ 082C:0B43 */ void DelaySecondsThenKey(int seconds)
 {
     unsigned long target;
 

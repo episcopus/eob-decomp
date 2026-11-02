@@ -2142,3 +2142,30 @@ new = "f1E8B_0185"
 kind = "function"
 why = "review of e1e8b round 7: no caller is found (packet) and the only evidence is the handle close and the vector restore, so the descriptive name is a claim beyond it; keep a placeholder with Purpose unknown until the caller is found"
 date = "2026-11-02"
+
+[[rename]]
+id = "082C:0B43=DelaySecondsThenKey"
+addr = "082C:0B43"
+old = "DelaySecondsOrKey"
+new = "DelaySecondsThenKey"
+kind = "function"
+why = "the routine waits its full delay and then reads a key; the busy-wait at 082C:0B47 has no key test; caller E0DE8.C:526 shows the party-wiped message then ShutdownGame"
+date = "2026-11-02"
+
+[[rename]]
+id = "ds:8140=gClickX"
+addr = "ds:8140"
+old = "g8140"
+new = "gClickX"
+kind = "global"
+why = "x of the last mouse click, written at src/E1AAD.ASM:396 and read as a point by ClickInRect (src/E1AAD.ASM:516-518)"
+date = "2026-11-02"
+
+[[rename]]
+id = "ds:8142=gClickY"
+addr = "ds:8142"
+old = "g8142"
+new = "gClickY"
+kind = "global"
+why = "y of the last mouse click, written at src/E1AAD.ASM:405 and read as a point by ClickInRect (src/E1AAD.ASM:516-518)"
+date = "2026-11-02"
