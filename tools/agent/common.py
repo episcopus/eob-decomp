@@ -210,6 +210,14 @@ def source_of(uid: str) -> Path | None:
     return None
 
 
+def must_fix_count(root: Path, uid: str) -> int:
+    """Open must-fix findings of the unit's review in the checkout `root` (a worktree counts its own)."""
+    p = root / "work/reviews" / ("%s.md" % uid)
+    if not p.exists():
+        return 0
+    return sum(1 for l in p.read_text().splitlines() if re.match(r"\s*-\s*\[ \]\s*must-fix\b", l, re.I))
+
+
 def open_must_fix(uid: str) -> list[str]:
     """Open must-fix findings of the unit's review (work/reviews/<unit>.md): `- [ ] must-fix ...`."""
     p = ROOT / "work/reviews" / ("%s.md" % uid)
