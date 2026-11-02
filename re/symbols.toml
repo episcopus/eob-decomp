@@ -4724,9 +4724,9 @@ addr = "177D:0106"
 size = 394
 evidence = ["far", "frame"]
 notes = "resolved 2026-11-01: the two far accesses are the far object gDrvReg annotated 0000:3B36; task/far-data taught cmatch to prove a far object in that segment (src/E177D.C)."
-name = "PlaySoundVolume"
 level = "L2"
 match_flags = "-ml -O -Z"
+name = "PlaySoundAtCell"
 
 [[function]]
 id = "e17a6_0000"
