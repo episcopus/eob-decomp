@@ -821,14 +821,16 @@ done:
    into a 5-byte control-code buffer initialised from the compiler template at ds:5A48, hides the
    pointer, draws the original text, the buffer, the buffer with the two saved text attributes,
    and a newline, then shows the pointer. Returns the bytes read. */
-/*@ 122E:0FDC draft */ long ShowTextOp(char far *script)
+/*@ 122E:0FDC */ long ShowTextOp(char far *script)
 {
-    char buf[5] = { 6, 0x21, 2, 0x21, 0 };
-    char far *start = script;
-    char far *text = script;
     int attr1;
     int attr2;
+    char far *start;
+    char far *text;
+    char buf[5] = { 6, 0x21, 2, 0x21, 0 };
 
+    start = script;
+    text = script;
     while (*script != 0)
         script++;
     script++;
