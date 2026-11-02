@@ -1,6 +1,51 @@
 # Review: e14ef
 
 Reviewer: rev-haiku
+Commit reviewed: 98f74ac (main; review/e14ef at the same commit; `make match FILE=src/E14EF.C`: 6 of 6, 1410 bytes; `make readability UNIT=e14ef`: 0 findings)
+
+Playbook 70. Judge what a matching file can still get wrong: names, types, comments, structure.
+The matcher already proved the bytes; do not re-prove them, read for meaning.
+
+Round 3. Rounds 1 and 2 (kept below) are ticked and their fixes hold. This round found that the
+callers changed under the unit: src/EOV0.C is complete (b57c9eb), so ovl0:207A PickClass and
+ovl0:2238 PickAlignment are no longer stubs, and they pass masks other than all-ones. The header,
+the CountMaskBits and UpdateOptionList comments cite the old stub lines, and the reader of ds:FC7A
+is now in src/. Four must-fix, all comments; no name or type is wrong.
+
+## Findings
+
+Each finding is a checkbox. `must-fix` blocks `make review-pass` until a decompiler ticks it off
+(with the commit that fixes it); `should` and `note` do not block.
+
+- [ ] must-fix src/E14EF.C:11-15 (header, the callers paragraph): "Every caller in src/ passes mask 0xffffffff and shift 0 (src/EOV0.C:786, :787; src/EOV2.C:380, :383) ... FindMaskBit always takes its all-ones shortcut (its bit scan is reached by no known caller) and CountMaskBits is reached only from the two stub callers ovl0:207A and ovl0:2238 (src/EOV0.C:809-810)" is no longer true. src/EOV0.C:1180 (PickClass, ovl0:207A) and src/EOV0.C:1233 (PickAlignment, ovl0:2238) are decompiled in src/ and pass masks other than -1: PickClass passes gTable6081[race] & mask to CountMaskBits (:1193), DrawOptionList (:1203) and UpdateOptionList (:1215), with mask -5 when a party member has align >= 6 (:1189-1190); PickAlignment passes gTable6099[classIndex] & mask to CountMaskBits (:1244), DrawOptionList (:1253) and UpdateOptionList (:1257), with mask 0xfe3f when a party member has m20 == 2 (:1241-1242). So the bit scan in FindMaskBit is reached in play. PickOption (src/EOV0.C:1148-1149, 0xffffffffL, shift 0) and src/EOV2.C:380, :383 pass the all-ones mask. src/EOV0.C:786-787 and :809-810 now hold unrelated comments. Fix: name the src/ callers and their masks at these lines, and drop the stub and "no known caller" claims. (evidence: src/EOV0.C:1148-1149, :1193, :1203, :1215, :1244, :1253, :1257, :1189-1190, :1241-1242; b57c9eb)
+- [ ] must-fix src/E14EF.C:126-130 (CountMaskBits comment): "the two external callers ovl0:207A and ovl0:2238 pass shift 0 with n 15 and 9 (overlay disassembly at ovl0:20DD and ovl0:228E)". Those callers are in src/ now: CountMaskBits(15, ..., 0) at src/EOV0.C:1193 and CountMaskBits(9, ..., 0) at src/EOV0.C:1244. "External" is stale; cite the source (the disassembly can stay as a second witness). The 16-bit safety claim still holds: with n 15 and shift 0, i + shift is at most 14. (evidence: src/EOV0.C:1193, :1244)
+- [ ] must-fix src/E14EF.C:218-219 (UpdateOptionList comment): "Both callers pass a long zero (0L) ... (src/EOV0.C:787; src/EOV2.C:383)". src/EOV0.C:787 is a comment about other code now. Every caller passes 0L: src/EOV0.C:1149 (PickOption), :1215 (PickClass), :1257 (PickAlignment) and src/EOV2.C:383 (LoadGamePanel). Say "every caller" and cite those lines. (evidence: src/EOV0.C:1149, :1215, :1257; src/EOV2.C:383)
+- [ ] must-fix src/E14EF.C:47 (ds:FC7A): "written here, its reader is not yet identified" is wrong. The reader is src/EOV0.C:1259 and :1261 in PickAlignment (ovl0:2238): it tests gFC7A == 0x6e or 0x32 (:1259), and 0x41 or 0x42 (:1261), then IsPointInRect on g8140/g8142 (:1262). Name the reader with those lines. (evidence: src/EOV0.C:1259, :1261, :1262; src/EOV0.C:198)
+- [ ] should src/E14EF.C:3: "its size in characters" covers both width and height, but height (+6, struct Panel line 34) is in lines. Say "its width in characters and height in lines".
+- [ ] should src/E14EF.C:9-10: the header says the stride and field offsets come from DrawOptionList's reads at :169-:172 (x, y, sel, height). The other offsets have no address in the header: width (+4) is read at :260 (UpdateOptionList), colorA and colorB at :252-253 (UpdateOptionList) and :177, :179 (DrawOptionList). Add them, so every offset has an address.
+- [ ] should src/E14EF.C:126-130 (CountMaskBits): for i + shift = 15 the int `1 << 15` is -32768, which sign-extends to 0xFFFF8000 in the long AND, so bit 15 is tested as "any of bits 15 to 31", not as bit 15. No caller reaches it (i + shift is at most 14 with n 15 and shift 0), but the comment says only that bits 16 and up are never counted. Say what bit 15 does, and mark `QUIRK 14EF:0107:` if a port must keep it.
+- [ ] note src/E14EF.C:192 (KEY_CODE_MASK, "the callers' filter"): the two other callers of WaitKeyEvent that apply this filter, src/EOV5.C:373 and :468, still write the literal 0x8FF and 0x8ff, not this name. Nothing to change here; the EOV5 owner may name it. (evidence: src/EOV5.C:373, :468)
+- [ ] note src/EOV0.C:177-186 declares a second `struct Panel` for the same 16-byte record. Its +8 field is "the selected entry", where src/E14EF.C:35 says the selected row, counted among the selectable entries (the distinction FindMaskBit makes). Routed to the EOV0 owner; not edited here.
+- [ ] note src/EOV0.C:143 and :204 declare UpdateOptionList with `long counter` and CountMaskBits with `char shift`, where src/E14EF.C has int counter and extra and int shift. The bytes agree for the callers. Routed to the EOV0 owner.
+- [ ] note src/E082C.C:300-302: "Same test as PointInRect at 14EF:00E1" is stale. This file's name is IsPointInRect (:119), used by src/EOV0.C:205 and src/EOV1.ASM:48. E082C's IsPointInsideRect (082C:0613, src/E082C.C:302) is a separate routine at a different address. Routed to the E082C owner.
+- [ ] note stale citations of this file in other units, routed and not edited: src/E1A72.ASM:54 "E14EF.C:150" (the g8134 clear is now :184); src/E1BBE.ASM:431 "E14EF.C:44-45" (the LockHidePointer and LockShowPointer externs are now :69-70); src/E1C00.ASM:288 "E14EF.C:227" (the mouse-enabled test is now :262); re/globals.toml:302 and re/renames.toml:775 cite E14EF.C:144 and :227, which have moved too.
+
+## Summary
+
+The unit is understandable from its source alone, and the names still hold: DrawOptionList,
+UpdateOptionList, IsPointInRect, FindMaskBit, CountMaskBits and BlinkText say what the code does,
+and the round 1 and round 2 fixes hold. What fails is the evidence in the comments, because it was
+true when written and has since moved. The stub callers (ovl0:207A and ovl0:2238) are now decompiled
+callers in src/ that pass other masks, which changes what FindMaskBit's general path does in play.
+The reader of ds:FC7A is now in src/. Four must-fix items, all comments; no name or type is wrong.
+The matcher (6 of 6) and the readability check (0 findings) were re-run on 98f74ac. No matcher, spec
+or pin question; nothing escalated.
+
+---
+
+# Round 2 (kept)
+
+Reviewer: rev-haiku
 Commit reviewed: 2dd86e3 (main; review/e14ef at a5b4f64; src/E14EF.C is identical on both)
 
 Playbook 70. Judge what a matching file can still get wrong: names, types, comments, structure.
