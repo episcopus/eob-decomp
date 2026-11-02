@@ -350,7 +350,177 @@ extern void DrawRegion000F(int mode, void far *src, int x, int y, int region); /
     }
 }
 
-/*@ ovl4:0D1B stub */ void Ovl4_0D1B(int slot) {}
+/* The 28-byte object records at ds:8A82 and the 27-byte records at ds:1A3B (src/E08E6.C). */
+struct Obj28 {
+    char b0;                /* +0: index into the ds:1A3B table */
+    signed char kind;       /* +1 */
+    int id;                 /* +2 */
+    char frame;             /* +4 */
+    char orient;            /* +5 */
+    char toggle;            /* +6 */
+    char m07;               /* +7 */
+    signed char type;       /* +8 */
+    signed char state;      /* +9 */
+    char m0A;               /* +A */
+    char timer;             /* +B */
+    int hitPoints;          /* +C */
+    int count;              /* +E */
+    int m10;
+    int m12;
+    int m14;
+    char m16;               /* +16: flag byte */
+    char m17;               /* +17 */
+    char m18;
+    char m19;
+    char m1A;
+    char m1B;
+};
+struct Entry27 {
+    char pad00;
+    char m01;
+    char m02;
+    char m03;
+    char m04[3][3];
+    char pad0D;
+    char m0E;               /* +0xE: bits tested here */
+    char pad0F[0x13 - 0x0F];
+    int m13;
+    char m15;               /* +0x15: tested here */
+    char m16;
+    char m17;
+    char m18;
+    char pad19[0x1B - 0x19];
+};
+extern struct Obj28 gObjs[]; /*@ ds:8A82 */
+extern struct Entry27 gTable1A3B[]; /*@ ds:1A3B */
+extern signed char g6FBE[]; /*@ ds:6FBE */   /* byte table indexed by g1A09[slot] (this unit) */
+extern signed char g7001[]; /*@ ds:7001 */   /* per-page, per-frame byte (this unit) */
+extern signed char g6FC1[]; /*@ ds:6FC1 */   /* sprite table A (this unit) */
+extern signed char g6FE1[]; /*@ ds:6FE1 */   /* sprite table B (this unit) */
+extern signed char g7015[]; /*@ ds:7015 */   /* per-row y nudge (this unit) */
+extern void far *gB7FE[]; /*@ ds:B7FE */     /* far sprite cells indexed by sprite plus nudge (this unit) */
+extern void far *gBufDCFC; /*@ ds:DCFC */    /* start-up far allocation, 4096 bytes (src/E07A9.C) */
+extern int g8102; /*@ ds:8102 */             /* the video mode/format (src/E07A9.C) */
+extern int gPartyCell; /*@ ds:FBCA */        /* the current map cell id (src/E08E6.C) */
+extern void (far *gFn80D2)(char far *map); /*@ ds:80D2 */  /* the far colour-table callback (src/E07A9.C) */
+extern char g1CD3[]; /*@ ds:1CD3 */
+extern char g1CE3[]; /*@ ds:1CE3 */
+extern void BlitSpriteEga(void far *src, void far *dst); /*@ 17A6:1715 */
+extern void BlitSpriteCga(void far *src, void far *dst); /*@ 17A6:11CD */
+extern void BlitSpriteDefault(void far *src, void far *dst); /*@ 17A6:0FFA */
+extern void DrawRegion004D(int mode, void far *src, int x, int y, int region); /*@ 082C:0681 */
+extern void DrawRegion008B(int mode, void far *src, int x, int y, int region); /*@ 082C:06C7 */
+extern void DrawRegion00C9(int mode, void far *src, int x, int y, int region); /*@ 082C:070D */
+
+/* ovl4:0D1B: draws the map objects whose ds:8A82 record id matches the cell the player's facing
+   points at. The cell id is (gPartyCell + gHead199D[gFBCC * 18 + slot]) & 0x3ff; the 30 object
+   records are scanned and each matching one is put in a 5-entry far-pointer slot indexed by
+   g7001[gFBCC * 5 + obj->frame]. Each non-empty slot is then blitted g6FBE[g1A09[slot]] times into
+   ds:DCFC through the sprite blitter the video mode selects, positioned by ds:1D61/ds:1D63 nudged
+   by the object's ds:1A3B record and its +0x17 byte, and drawn by one of four DrawRegion wrappers
+   (which one depends on the sprite's sign and the +0x16 flag bit 2, which also runs the colour
+   callback ds:80D2 with ds:1CD3 or ds:1CE3). Called by DrawViewSlots when the tile record's byte
+   +4 has any of bits 0..2. Purpose unknown: what the counters and the four wrappers mean.
+   DRAFT: the prologue, frame (sub sp,0x36) and body match through the object scan; the first
+   difference is the far-pointer store into the local `arr` (0xD1B+0079: ours `93 xchg bx,ax`,
+   original `87 D8 xchg ax,bx`). TCC -S emits `xchg bx,ax`, and TASM 2.0, 2.01, 1.0 and 1.01 all
+   assemble both spellings as the one-byte 93, so no source form gives the original's two-byte
+   87 D8 under this file's -B flag; without -B (TCC's own assembler) the byte is 87 D8, but then
+   CopyViewColumn's three separate continue tails merge. That per-function assembler split (0D1B
+   and 19C4 want TCC's assembler, CopyViewColumn wants TASM) is a matcher question, not a source
+   form (playbook 30). */
+/*@ ovl4:0D1B draft */ void Ovl4_0D1B(int slot)
+{
+    struct Entry27 far *info;
+    struct Obj28 far *obj;
+    int sprite;
+    int x;
+    int k;
+    int spriteAbs;
+    int tileRow;
+    int cellId;
+    int spriteBase;
+    int page5;
+    int n;
+    int page4;
+    int nudge;
+    char far *cell;
+    struct Obj28 far *arr[5];
+    register int i;
+    register int y;
+
+    tileRow = g6FBE[g1A09[slot]];
+    cellId = (gPartyCell + gHead199D[gFBCC * 18 + slot]) & 0x3ff;
+    page5 = gFBCC * 5;
+    page4 = gFBCC * 4;
+    for (i = 0; i < 5; i++)
+        arr[i] = 0;
+    obj = gObjs;
+    i = 0;
+    while (i < 0x1e) {
+        if (obj->id == cellId)
+            arr[g7001[page5 + obj->frame]] = obj;
+        i++;
+        obj++;
+    }
+    for (page5 = 0; page5 < 5; page5++) {
+        if (arr[page5] == 0)
+            continue;
+        obj = arr[page5];
+        info = &gTable1A3B[obj->b0];
+        if (info->m0E & 2)
+            sprite = g6FC1[(obj->toggle << 4) + page4 + obj->orient];
+        else
+            sprite = g6FE1[(obj->toggle << 4) + page4 + obj->orient];
+        if (tileRow == 0) {
+            if (obj->m0A == 0xfe)
+                sprite = 5;
+            else if (obj->m0A == 0xff)
+                sprite = 6;
+        }
+        spriteAbs = abs(sprite);
+        nudge = obj->m07 ? 0x12 : 0;
+        cell = gB7FE[spriteAbs + nudge];
+        for (n = tileRow; n != 0; n--) {
+            if (g8102 == 2)
+                BlitSpriteEga(cell, gBufDCFC);
+            else if (g8102 == 0)
+                BlitSpriteCga(cell, gBufDCFC);
+            else
+                BlitSpriteDefault(cell, gBufDCFC);
+            cell = gBufDCFC;
+        }
+        if (obj->frame != 4)
+            spriteBase = g1A2B[page4 + obj->frame];
+        else
+            spriteBase = 4;
+        k = (slot * 5 + spriteBase) * 2;
+        x = g1D61[k] + 0x58;
+        y = g1D63[k] + 0x7f;
+        info = &gTable1A3B[obj->b0];
+        if (info->m15 == 1 && (spriteAbs == 1 || spriteAbs > 3))
+            y += g7015[tileRow];
+        x -= (((signed char far *)cell)[2] << 3) >> 1;
+        y -= ((signed char far *)cell)[1];
+        x += (obj->m17 & 0xf0) >> 4;
+        y += obj->m17 & 0xf;
+        if (obj->m16 & 2) {
+            if (g8102 == 0)
+                gFn80D2(g1CE3);
+            else
+                gFn80D2(g1CD3);
+            if (sprite >= 0)
+                DrawRegion008B(2, cell, x, y, 5);
+            else
+                DrawRegion00C9(2, cell, x, y, 5);
+        } else {
+            if (sprite >= 0)
+                DrawRegion000F(2, cell, x, y, 5);
+            else
+                DrawRegion004D(2, cell, x, y, 5);
+        }
+    }
+}
 /*@ ovl4:1091 stub */ void Ovl4_1091(int slot) {}
 /*@ ovl4:1411 stub */ void Ovl4_1411(int slot) {}
 /*@ ovl4:19C4 stub */ void Ovl4_19C4(int slot) {}
@@ -359,7 +529,6 @@ extern signed char g7272[]; /*@ ds:7272 */   /* per-column x base correction (th
 extern signed char g7275[]; /*@ ds:7275 */   /* per-column y base (this unit) */
 extern void far *gIntroCells[]; /*@ ds:F4BE */  /* sprite cell table (src/EOV2.C) */
 extern int gFB78; /*@ ds:FB78 */            /* toggled by 1414:04B0 (src/E1414.C) */
-extern void DrawRegion000F(int mode, void far *src, int x, int y, int region); /*@ 082C:063B */
 extern signed char far gCellBytes[]; /*@ 20AB:0000 */  /* the cell bytes drawn here */
 
 #define CELL_ROW_BYTES 0x1a   /* one sprite row: CELL_COLS cells of two bytes (x then y) */
@@ -470,9 +639,7 @@ extern void ShowPointerZone(void); /*@ 1BBE:02C2 */
     g7296 = gFBCC;
 }
 
-extern int gPartyCell; /*@ ds:FBCA */     /* the global sound volume (src/E08E6.C) */
 extern char gFB45; /*@ ds:FB45 */           /* request flag, cleared here (src/E07A9.C) */
-extern int g8102; /*@ ds:8102 */            /* the video mode/format (src/E07A9.C) */
 extern char gF442; /*@ ds:F442 */           /* gate checked here (src/E08E6.C) */
 extern char gFlag; /*@ ds:F3B9 */           /* selects a table set (src/E0ACD.C) */
 extern char gDF4C; /*@ ds:DF4C */           /* a notify flag, cleared here (src/E08E6.C) */
