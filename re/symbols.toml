@@ -9849,6 +9849,9 @@ unit = "i0b10"
 addr = "0B10:0000"
 size = 108
 evidence = ["far", "segment"]
+name = "_Unpack0"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "i0b10_006c"
@@ -9856,6 +9859,9 @@ unit = "i0b10"
 addr = "0B10:006C"
 size = 15
 evidence = ["far", "frame"]
+name = "_NormalizeFarPointer"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "i0b10_007b"
@@ -9863,6 +9869,9 @@ unit = "i0b10"
 addr = "0B10:007B"
 size = 16
 evidence = ["far", "near"]
+name = "_NormFar"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "i0b18_000b"
