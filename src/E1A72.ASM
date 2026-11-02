@@ -11,8 +11,8 @@
 ; 1A72:02FC enable and disable interrupts; 1A72:02FE and 1A72:033A set and read the far pointer at
 ; DGROUP:8172/8174 (1A72:02FE also copies 16 bytes from the old target to the new one). 1A72:0006
 ; is the INT 3Fh handler main installs (07C8:008F): it chains to the INT 3Fh vector saved at
-; DGROUP:FC08 (set at 07C8:0088, E07C8.C:162), and when EOB.EXE is not accessible it re-finds and
-; reopens EOB.EXE through 1C0E:1310 with the runtime's _open.
+; DGROUP:FC08 (set at 07C8:0088, E07C8.C:162), and when EOB.EXE is not accessible it probes for it
+; through 1C0E:1310 and reopens it with the runtime's _open.
 ; Placeholder DGROUP names mark the mouse state whose exact role is inferred from this code only.
 
         .MODEL  LARGE
@@ -56,8 +56,9 @@
         ;                                              replacement is behaviour a port must keep
         EXTRN   g8134:WORD              ; @ ds:8134: accumulated button changes; DrawOptionList
         ;                                              (14EF:0154) clears it as its last statement
-        ;                                              (E14EF.C:193), and RunMapLoop clears it on
-        ;                                              entry (E0ACD.C:886, 0ACD:0E8A)
+        ;                                              (14EF:0268, E14EF.C:197), and RunMapLoop
+        ;                                              clears it at its start, after EnterMapScreen
+        ;                                              (0ACD:0E8A, E0ACD.C:886)
         EXTRN   g8136:WORD              ; @ ds:8136: latched to 1 once any button has been seen;
         ;                                              this unit never clears it, E1AAD.ASM:1356
         ;                                              sets it too and nothing in src/ clears it
