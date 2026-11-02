@@ -568,7 +568,7 @@ void RunMemberScript(int who, int mode);  /* forward: 1DA8 comes after its calle
 /* 122E:0960: sub-opcode that writes gB894 fields: 0xFFE9 stores a byte into gB894[id * 9 + index],
    0xFFED sets the page gFBCC, and 0xFFF7 fills the first four bytes of gB894[id * 9] with a byte.
    Returns the bytes read. */
-/*@ 122E:0960 draft */ long WriteObjectFieldOp(char far *script)
+/*@ 122E:0960 */ long WriteObjectFieldOp(char far *script)
 {
     char far *start = script;
     int id;
@@ -590,7 +590,11 @@ void RunMemberScript(int who, int mode);  /* forward: 1DA8 comes after its calle
         gB894[id * 9 + value] = *script++;
         break;
     case 0xFFED:
-        gFBCC = *script++;
+        /* the value goes through the local so the increment stays before the cwde/store: with
+           `gFBCC = *script++;` the compiler defers the increment to the shared tail and merges it
+           with the 0xFFE9 case's (122E:09F1, 122E:09FE). */
+        value = *script++;
+        gFBCC = value;
         break;
     }
     return (long)(script - start);
@@ -626,7 +630,7 @@ void RunMemberScript(int who, int mode);  /* forward: 1DA8 comes after its calle
     case 0xFFEA:
         id = *(int far *)script;
         script += 2;
-        f122E_0271(id, -1);
+        ToggleArmEffect(id, -1);
         break;
     }
     return (long)(script - start);
