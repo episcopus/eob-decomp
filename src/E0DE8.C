@@ -135,15 +135,15 @@ extern char gB894[]; /*@ ds:B894 */          /* nine-byte records; +0x19C bytes 
 extern char gFileNameBuf[]; /*@ ds:FE6E */   /* the text buffer sprintf formats into (src/EOV2.C) */
 
 extern int far RollDice(char count, char sides, char bonus); /*@ 082C:0458 */
-extern int GetDerivedStatA(int who); /*@ 0A72:00CF */
-extern int GetDerivedStatB(int who); /*@ 0A72:0128 */
+extern int GetStrengthToHitBonus(int who); /*@ 0A72:00CF */
+extern int GetStrengthDamageBonus(int who); /*@ 0A72:0128 */
 extern int GetCharM15Value(int who); /*@ 0A72:0181 */
 extern char GetHitTarget(char who, char classByte); /*@ 0A72:0522 */
 extern char GetClassSlotByte(char row, char slot); /*@ 0A72:0509 */
 extern long GetClassSlotExpThreshold(char indexA, char indexB, char level); /*@ 0A72:04B7 */
 extern int GetArmourClassBase(char classIndex); /*@ 0A72:019D */
 extern int GetIndexedByte(char index, char limit, char offset); /*@ 0A72:0006 */
-extern int RollDamage(char who, char level, char countA, char countB, char countC); /*@ 0A72:01AE */
+extern int RollHitPoints(char who, char level, char countA, char countB, char countC); /*@ 0A72:01AE */
 extern int f0D1C_0670(int who, int mask); /*@ 0D1C:0670 */
 extern int f0D1C_00DA(int value, int page); /*@ 0D1C:00DA */
 extern int f0D1C_0BAB(int obj); /*@ 0D1C:0BAB */
@@ -198,7 +198,7 @@ void LevelUpSlot(int who, int attr, int slot);  /* forward: 0B45 reaches it with
     else
         bonus = 0;
     if (flag != 0)
-        bonus += GetDerivedStatA(who);
+        bonus += GetStrengthToHitBonus(who);
     else
         bonus += GetCharM15Value(who);
     b0 = gObjs[obj].b0;
@@ -214,7 +214,7 @@ void LevelUpSlot(int who, int attr, int slot);  /* forward: 0B45 reaches it with
     return roll >= ac;
 }
 
-/* 0DE8:011A: the damage a hit deals. It starts from GetDerivedStatB(who) when `flag` is set and
+/* 0DE8:011A: the damage a hit deals. It starts from GetStrengthDamageBonus(who) when `flag` is set and
    `who` is valid, then adds a damage roll from the item type `itemType` (dice at m0A/m0B or
    m07/m08 with the m09 bonus, the choice depending on whether `obj`'s gTable1A3B entry has m0E
    bit 0 set) plus the item slot's m0B, or the bare RollDice(1, 2, 0) when `slot` is 0, and clamps
@@ -225,7 +225,7 @@ void LevelUpSlot(int who, int attr, int slot);  /* forward: 0B45 reaches it with
     int total;
 
     if (flag != 0 && who != -1)
-        total = GetDerivedStatB(who);
+        total = GetStrengthDamageBonus(who);
     else
         total = 0;
     if (slot != 0) {
@@ -639,7 +639,7 @@ fail:
 }
 
 /* 0DE8:0C82: levels character `who` up in class slot `slot`. It bumps that m24 slot and, for the
-   three slots 0/1/2, rolls one die of the matching damage group through RollDamage(attr, m17),
+   three slots 0/1/2, rolls one die of the matching damage group through RollHitPoints(attr, m17),
    adding the result to both hp and m1C, then formats "%s has gained a level of experience." into
    gFileNameBuf for the character's name, redraws through RedrawMember, draws the text and plays
    sound 0x17. Called by 0DE8:0B45. */
@@ -649,11 +649,11 @@ fail:
 
     gChars[who].m24[slot]++;
     if (slot == 0)
-        damage = RollDamage(attr, gChars[who].m17, 1, 0, 0);
+        damage = RollHitPoints(attr, gChars[who].m17, 1, 0, 0);
     else if (slot == 1)
-        damage = RollDamage(attr, gChars[who].m17, 0, 1, 0);
+        damage = RollHitPoints(attr, gChars[who].m17, 0, 1, 0);
     else if (slot == 2)
-        damage = RollDamage(attr, gChars[who].m17, 0, 0, 1);
+        damage = RollHitPoints(attr, gChars[who].m17, 0, 0, 1);
     gChars[who].hp += damage;
     gChars[who].m1C += damage;
     sprintf(gFileNameBuf, "\x06\x01%s has gained a level of experience.\x06\x0f\r",

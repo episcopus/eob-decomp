@@ -97,9 +97,9 @@ struct ItemSlot {               /* 4-byte records at ds:60D5 (ovl0:26C6) */
 extern struct ItemSlot g60D5[]; /*@ ds:60D5 */ /* the per-class item/slot table ovl0:26C6 walks (Purpose unknown) */
 extern char g6101[]; /*@ ds:6101 */ /* the per-class four-entry item table ovl0:26C6 walks (Purpose unknown) */
 extern int GetArmourClassBase(char m15); /*@ 0A72:019D */
-extern int RollDamage(char who, char level, char countA, char countB, char countC); /*@ 0A72:01AE */
-extern int MaxDamage(char who, char level, char countA, char countB, char countC); /*@ 0A72:02B3 */
-extern int MinDamage(char who, char level, char countA, char countB, char countC); /*@ 0A72:03A4 */
+extern int RollHitPoints(char who, char level, char countA, char countB, char countC); /*@ 0A72:01AE */
+extern int MaxHitPoints(char who, char level, char countA, char countB, char countC); /*@ 0A72:02B3 */
+extern int MinHitPoints(char who, char level, char countA, char countB, char countC); /*@ 0A72:03A4 */
 extern int gDCA4; /*@ ds:DCA4 */ /* the max damage ovl0:135D recomputes (src/E0DE8.C) */
 extern int gDD10; /*@ ds:DD10 */ /* the min damage ovl0:135D recomputes (src/E08E6.C) */
 extern struct Node far *FindNode(struct Node far *head, unsigned key); /*@ 1658:01A2 */
@@ -893,9 +893,9 @@ int PickAlignment(int classIndex); /* ovl0:2238, defined below */
     count = *percent;
     move = index;
     if (index == 6) {
-        gDCA4 = MaxDamage(gChars[gDCB0].m20, gChars[gDCB0].m17, gChars[gDCB0].m24[0],
+        gDCA4 = MaxHitPoints(gChars[gDCB0].m20, gChars[gDCB0].m17, gChars[gDCB0].m24[0],
             gChars[gDCB0].m24[1], gChars[gDCB0].m24[2]);
-        gDD10 = MinDamage(gChars[gDCB0].m20, gChars[gDCB0].m17, gChars[gDCB0].m24[0],
+        gDD10 = MinHitPoints(gChars[gDCB0].m20, gChars[gDCB0].m17, gChars[gDCB0].m24[0],
             gChars[gDCB0].m24[1], gChars[gDCB0].m24[2]);
     }
     while (!flag) {
@@ -983,9 +983,9 @@ int PickAlignment(int classIndex); /* ovl0:2238, defined below */
             DrawShadowText(gFileNameBuf, node->x + 0x20, node->y, 6, 0);
             if (index == 4) {
                 old = gChars[gDCB0].m1B;
-                gDCA4 = MaxDamage(gChars[gDCB0].m20, gChars[gDCB0].m17, gChars[gDCB0].m24[0],
+                gDCA4 = MaxHitPoints(gChars[gDCB0].m20, gChars[gDCB0].m17, gChars[gDCB0].m24[0],
                     gChars[gDCB0].m24[1], gChars[gDCB0].m24[2]);
-                gDD10 = MinDamage(gChars[gDCB0].m20, gChars[gDCB0].m17, gChars[gDCB0].m24[0],
+                gDD10 = MinHitPoints(gChars[gDCB0].m20, gChars[gDCB0].m17, gChars[gDCB0].m24[0],
                     gChars[gDCB0].m24[1], gChars[gDCB0].m24[2]);
                 gChars[gDCB0].m1B = gChars[gDCB0].m1C
                     = gChars[gDCB0].m1B < gDD10 ? gDD10 : gChars[gDCB0].m1B;
@@ -1076,7 +1076,7 @@ int PickAlignment(int classIndex); /* ovl0:2238, defined below */
    up to gOutDD04 and down to gOutDC98, and when the strength roll is exactly 18 the low byte gets a
    percentile roll (1d100) in its high half. The six values are stored into the record's stat pairs
    (m0D/m0E, m0F/m10 and m11/m12..m19/m1A), m1D becomes GetArmourClassBase(m15) + 10, and the hit points
-   m1B/m1C become RollDamage(class, m17, the three m24 slots). Called by ovl0:0DDC and ovl0:23EC. */
+   m1B/m1C become RollHitPoints(class, m17, the three m24 slots). Called by ovl0:0DDC and ovl0:23EC. */
 /*@ ovl0:1BF2 */ void RollCharacterStats(int who)
 {
     int scores[6];
@@ -1104,7 +1104,7 @@ int PickAlignment(int classIndex); /* ovl0:2238, defined below */
     gChars[who].m17 = gChars[who].m18 = scores[4];
     gChars[who].m19 = gChars[who].m1A = scores[5];
     gChars[who].m1D = GetArmourClassBase(scores[3]) + 0xa;
-    gChars[who].m1B = gChars[who].m1C = RollDamage(gChars[who].m20, gChars[who].m17,
+    gChars[who].m1B = gChars[who].m1C = RollHitPoints(gChars[who].m20, gChars[who].m17,
         gChars[who].m24[0], gChars[who].m24[1], gChars[who].m24[2]);
 }
 /* ovl0:1EA9: builds two six-word combat tables for the current character gDCB0. For each of the
