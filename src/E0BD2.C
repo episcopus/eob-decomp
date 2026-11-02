@@ -233,10 +233,13 @@ void DrawItemName(int item);
 
 /* 0BD2:01D0: inserts the item `item` at the head of the circular list `head`, stamping it with the
    key `key` and the sound `sound` (m0A becomes gFBC8 or -1 by the key's sign). BLOCKED: compiler
-   register allocation. Every byte matches except the prologue, where our build promotes `key` to
-   the DI register variable (0BD2:01D8 `mov di,[bp+0xa]`); the original leaves it in memory and
-   reloads it from AX in each branch (`mov ax,[bp+0xa]; mov es:[bx+6],ax; or ax,ax`). Many source
-   forms tried (see the notes in re/symbols.toml) still preload it into DI. */
+   register allocation. The original's frame is 0xc bytes (rec, next, cur): `item` is the SI
+   register variable (0BD2:01D8 `mov si,[bp+0xc]`), DI is a temporary holding cur->m06 (0BD2:0251
+   to 029B), and `key` stays in memory and is reloaded in each branch (0BD2:0212, 0268, 0276). Our
+   build promotes `key`: bare it takes DI and the cur->m06 temporary falls to AX and reloads; with a
+   `link` local taking DI it caches `key` in CX. The branch-1 `mov ax,si` (0BD2:0201) is the chained
+   assignment `rec->m08 = rec->m06 = item;`. Many source forms tried (see re/symbols.toml) still
+   promote or cache key. */
 /*@ 0BD2:01D0 draft */ void InsertListItem(void far *head, int key, int item, int sound)
 {
     struct ItemRecord *rec;
@@ -248,8 +251,7 @@ void DrawItemName(int item);
     rec = &gItems[item];
     if (*(int far *)head == 0) {
         *(int far *)head = item;
-        rec->m06 = item;
-        rec->m08 = item;
+        rec->m08 = rec->m06 = item;
         rec->m03 = sound;
         rec->m04 = key;
         if (key >= 0)
