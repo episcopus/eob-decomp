@@ -1645,12 +1645,8 @@ void f0EF3_2295(void);
 /* 0EF3:25BD: Purpose unknown: save the action record's member (+0x38) in ds:DDE2, then hunt along
    that member's row (six bytes) of the far table ds:DD14 (row base gDDE2 * 6) for the first byte
    over zero, breaking at six. It then runs 0EF3:2295 (the item panel) and returns the record's +4
-   word. Its caller and what the row holds are not established.
-   DRAFT: the original hoists the row base into ES:BX once (`les bx,[ds:DD14]; add bx,gDDE2*6`)
-   and adds gA9C5 each pass; our build sums the index first and reloads the far pointer
-   (`make match` differs after the multiply, +0x13). A declared far pointer adds a frame the
-   original does not have. */
-/*@ 0EF3:25BD draft */ int f0EF3_25BD(struct ActRec far *rec)
+   word. Its caller and what the row holds are not established. */
+/*@ 0EF3:25BD */ int f0EF3_25BD(struct ActRec far *rec)
 {
     gDDE2 = rec->m38;
     gA9C5 = 0;
@@ -1732,17 +1728,17 @@ void f0EF3_2295(void);
         do {
             gA9C5 += step;
             gA9C5 = ClampValue(gA9C5, 0, 6, 1);
-            if (gDD14[gDDE2 * 6 + gA9C5] > 0)
+            if ((gDD14 + gDDE2 * 6)[gA9C5] > 0)
                 break;
         } while (gA9C5 != 6);
         f0EF3_2295();
     } else {
-        if (gDD14[gDDE2 * 6 + key] > 0 || key == 7) {
+        if ((gDD14 + gDDE2 * 6)[key] > 0 || key == 7) {
             if (key < 6)
                 gA9C5 = key;
             if (gA9C5 < 6) {
                 f0EF3_2295();
-                value = gDD14[gDDE2 * 6 + gA9C5];
+                value = (gDD14 + gDDE2 * 6)[gA9C5];
                 if (gF43D == 1)
                     value += 0x19;
                 f0EF3_2676(value, 0);

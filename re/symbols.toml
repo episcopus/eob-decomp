@@ -3317,9 +3317,9 @@ unit = "e0ef3"
 addr = "0EF3:05BD"
 size = 168
 evidence = ["near", "frame"]
+name = "DrawFlashFrame"
 level = "L2"
 match_flags = "-ml -O -Z"
-name = "DrawFlashFrame"
 
 [[function]]
 id = "e0ef3_0665"
@@ -4147,6 +4147,9 @@ unit = "e0ef3"
 addr = "0EF3:25BD"
 size = 71
 evidence = ["frame"]
+name = "f0EF3_25BD"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0ef3_2604"
