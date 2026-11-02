@@ -23,28 +23,43 @@ Judged: the round 1 must-fix items, and the diff since aa139872 (`src/I0CDA.ASM`
 - Round 1 should 3 (the step list) is right: each step matches lines 53 to 63. Its new sentence is
   not (see the third must-fix below).
 
-- [ ] must-fix src/I0CDA.ASM:32-36 (callers): "each continues `mov ah,0`" is wrong for three of the
+- [x] must-fix src/I0CDA.ASM:32-36 (callers): "each continues `mov ah,0`" is wrong for three of the
   eleven sites. Eight continue with `mov ah,0` (ovl0:05F5, 0644, 1397, 157A, 2043, 2092, 26F6, 2797).
   ovl0:0650 and ovl0:209E continue with `test al,1; je`, and ovl0:1015 continues with
   `mov ax,[2326h]; or ax,[2328h]`, which is not `mov ah,0` and not a small value either. The forms
   named in the list are also off: the bytes are `test ax,7` at ovl0:0644 and 2092, `test ax,3` at
   157A, `and ax,7` at 26F6 and 2797, `and ax,3` at 1397, `idiv` by 31 at 05F5 and 2043. Say what
   the bytes do, per site or as counts (the ovl0 offsets are the `ovl00.bin` offsets, `make overlays`
-  rebuilds that file).
-- [ ] must-fix src/I0CDA.ASM:38-41 and re/symbols.toml:10610 (name): the comment says "Purpose
+  rebuilds that file). FIXED 6ea511f: the comment now lists the sites per containing function
+  (ovl0:015D 05F5/0644/0650, ovl0:0FD9 1015, ovl0:1265 1397/157A, ovl0:1DF3 2043/2092/209E,
+  ovl0:23A3 26F6/2797), says eight continue `mov ah,0` (05F5, 0644, 1397, 157A, 2043, 2092, 26F6,
+  2797), 0650 and 209E only `test al,1`, and 1015 drops the result (its next bytes are the caller's
+  `mov ax,[2326h]; or ax,[2328h]` loop test); the forms are given as the bytes do them: `idiv` by 31
+  (05F5, 2043), `test ax,7` (0644, 2092), `and ax,3` then three `shl ax,1` (1397), `test ax,3`
+  (157A), `test al,1` (0650, 209E), `and ax,7; add ax,0x19` (26F6, 2797).
+- [x] must-fix src/I0CDA.ASM:38-41 and re/symbols.toml:10610 (name): the comment says "Purpose
   unknown ... so the placeholder name stays", but the source now names the routine `_RandomByte`
   (line 41) and re/symbols.toml still has `name = "_f0CDA_0006"`. The name itself has evidence: the
   routine is a 24-bit state step that returns a byte (the seed in the image), and src/IOV0.C:87
   already calls it `RandomByte`. So the comment is what is wrong. Fix the comment to say that
   (the step, the seed, and the callers using the byte as a random value), drop "placeholder", and
-  run `make rename` so re/symbols.toml carries `_RandomByte` too.
-- [ ] must-fix src/I0CDA.ASM:28 (the sentence added for round 1 should 3): "The shifts act on the
+  run `make rename` so re/symbols.toml carries `_RandomByte` too. FIXED 6ea511f: the comment now
+  says the name `_RandomByte` has evidence (the 24-bit step over DGROUP:2310, the seed 34 12 76,
+  and the callers using the byte as a random value) with no placeholder wording; `make rename
+  OLD=intro/0CDA:0006 NEW=RandomByte` logged it, and `make match WRITE=1` set the asm-convention
+  name `_RandomByte` in re/symbols.toml:10631.
+- [x] must-fix src/I0CDA.ASM:28 (the sentence added for round 1 should 3): "The shifts act on the
   copy in AL, not on DGROUP:2310" is false. The `rcr byte ptr es:[si],1` at line 61 shifts
   DGROUP:2310 itself, and the next sentence of the comment says the rcr writes it. Only the two
   `shr al,1` (lines 54 and 55) act on AL. Reword to "The two shr (lines 54 and 55) act on the copy
-  in AL; DGROUP:2310 is only read until the rcr at line 61 writes it."
-- [ ] should src/I0CDA.ASM:26: "AX = b0 ^ b1" uses the values after the rcl and the rcr (lines 62 and
-  63 read the bytes they wrote); say "new b0 ^ new b1" so the last step is checkable.
+  in AL; DGROUP:2310 is only read until the rcr at line 61 writes it." FIXED 6ea511f: the comment
+  reads "The two shr (lines 60 and 61) act on the copy in AL; DGROUP:2310 is only read until the
+  rcr at line 67 writes it." (the two shr and the rcr moved to lines 60, 61 and 67 when the caller
+  and name comments grew).
+- [x] should src/I0CDA.ASM:26: "AX = b0 ^ b1" uses the values after the rcl and the rcr (lines
+  62 and 63 read the bytes they wrote); say "new b0 ^ new b1" so the last step is checkable.
+  FIXED 6ea511f: the step now reads "AX = new b0 ^ new b1, AH = 0 (the bytes the rcl and rcr just
+  wrote)".
 - [ ] note: the far twin E1D8C.ASM keeps `_f1D8C_0000` (re/symbols.toml:6982). If `RandomByte` is
   the name, the twin needs the same name at its next review; not a finding of this unit.
 
