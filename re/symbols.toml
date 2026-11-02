@@ -2156,6 +2156,7 @@ unit = "e0bd2"
 addr = "0BD2:000E"
 size = 248
 evidence = ["far", "segment"]
+name = "ReportLostItem"
 
 [[function]]
 id = "e0bd2_0106"
@@ -2170,6 +2171,7 @@ unit = "e0bd2"
 addr = "0BD2:019F"
 size = 49
 evidence = ["frame"]
+name = "RedrawSelectedRow"
 
 [[function]]
 id = "e0bd2_01d0"
@@ -2177,6 +2179,7 @@ unit = "e0bd2"
 addr = "0BD2:01D0"
 size = 233
 evidence = ["far", "near", "frame"]
+name = "InsertListItem"
 
 [[function]]
 id = "e0bd2_02b9"
@@ -2184,6 +2187,7 @@ unit = "e0bd2"
 addr = "0BD2:02B9"
 size = 204
 evidence = ["far", "near", "frame"]
+name = "RemoveListItem"
 
 [[function]]
 id = "e0bd2_0385"
@@ -2191,6 +2195,7 @@ unit = "e0bd2"
 addr = "0BD2:0385"
 size = 137
 evidence = ["far", "near", "frame"]
+name = "ScanListItem"
 
 [[function]]
 id = "e0bd2_040e"
@@ -2198,6 +2203,7 @@ unit = "e0bd2"
 addr = "0BD2:040E"
 size = 74
 evidence = ["far", "frame"]
+name = "MarkListItems"
 
 [[function]]
 id = "e0bd2_0458"
@@ -2205,6 +2211,7 @@ unit = "e0bd2"
 addr = "0BD2:0458"
 size = 82
 evidence = ["far", "frame"]
+name = "PushListItem"
 
 [[function]]
 id = "e0bd2_04aa"
@@ -2212,6 +2219,7 @@ unit = "e0bd2"
 addr = "0BD2:04AA"
 size = 267
 evidence = ["far", "frame"]
+name = "DrainListItem"
 
 [[function]]
 id = "e0bd2_05b5"
@@ -2226,6 +2234,7 @@ unit = "e0bd2"
 addr = "0BD2:07DE"
 size = 192
 evidence = ["far"]
+name = "AddDDEffect"
 
 [[function]]
 id = "e0bd2_089e"
@@ -2233,6 +2242,7 @@ unit = "e0bd2"
 addr = "0BD2:089E"
 size = 121
 evidence = ["far", "frame"]
+name = "CopyItemToFreeSlot"
 
 [[function]]
 id = "e0bd2_0917"
@@ -2240,6 +2250,7 @@ unit = "e0bd2"
 addr = "0BD2:0917"
 size = 423
 evidence = ["far", "near", "frame"]
+name = "DrawItemRow"
 
 [[function]]
 id = "e0bd2_0abe"
@@ -2247,6 +2258,7 @@ unit = "e0bd2"
 addr = "0BD2:0ABE"
 size = 52
 evidence = ["far", "frame"]
+name = "RedrawRowArea"
 
 [[function]]
 id = "e0bd2_0af2"
@@ -2261,6 +2273,7 @@ unit = "e0bd2"
 addr = "0BD2:0BA0"
 size = 238
 evidence = ["far", "frame"]
+name = "UseSelectedItem"
 
 [[function]]
 id = "e0bd2_0c8e"
@@ -2268,6 +2281,7 @@ unit = "e0bd2"
 addr = "0BD2:0C8E"
 size = 159
 evidence = ["far", "frame"]
+name = "SwapSelectedItem"
 
 [[function]]
 id = "e0bd2_0d2d"
@@ -2282,6 +2296,7 @@ unit = "e0bd2"
 addr = "0BD2:0EE8"
 size = 281
 evidence = ["near"]
+name = "UseWandItem"
 
 [[function]]
 id = "e0bd2_1001"
@@ -2296,6 +2311,7 @@ unit = "e0bd2"
 addr = "0BD2:11FD"
 size = 71
 evidence = ["far"]
+name = "ItemClassAllowed"
 
 [[function]]
 id = "e0bd2_1244"
@@ -2303,6 +2319,7 @@ unit = "e0bd2"
 addr = "0BD2:1244"
 size = 19
 evidence = ["far", "frame"]
+name = "FirstTwoSlots"
 
 [[function]]
 id = "e0cf7_0007"

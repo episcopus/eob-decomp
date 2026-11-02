@@ -123,10 +123,10 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
 
 extern void f1547_0991(int dir); /*@ 1547:0991 */
 extern void DrawMemberSlot(char who, char slot); /*@ 1547:07E7 */
-extern void f0BD2_0917(int who, int slot, int one); /*@ 0BD2:0917 */
-extern void f0BD2_01D0(void far *head, int key, int item, int sound); /*@ 0BD2:01D0 */
-extern int f0BD2_02B9(void far *head, int key, int item); /*@ 0BD2:02B9 */
-extern int f0BD2_11FD(int who, int slot); /*@ 0BD2:11FD */
+extern void DrawItemRow(int who, int slot, int one); /*@ 0BD2:0917 */
+extern void InsertListItem(void far *head, int key, int item, int sound); /*@ 0BD2:01D0 */
+extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
+extern int ItemClassAllowed(int who, int slot); /*@ 0BD2:11FD */
 extern void SetMouseItem(int n); /*@ 07A9:010C */
 extern int far RollDice(char count, char sides, char bonus); /*@ 082C:0458 */
 extern void RearmCharEffects(void); /*@ 1414:0B2E */
@@ -268,7 +268,7 @@ int f0D1C_02DC(void);
    (FindCarriedSlot's match): clears the item's m04 (sets it to -1), clears the character's slot,
    and redraws. Returns 1 when at least one item was removed, otherwise 0. The redraw paths: when
    gFB44 is 0 and the slot is one of the first two of a character before the sixth, DrawMemberSlot;
-   when gFB44 is 1 and the character is the selected one, f0BD2_0917; and when the mouse is
+   when gFB44 is 1 and the character is the selected one, DrawItemRow; and when the mouse is
    enabled, the item in the slot f0D1C_02DC names is cleared and redrawn through SetMouseItem.
    Called by overlays 5. What m02, m0B and m04 mean is not established. */
 /*@ 0D1C:01CA */ int RemoveCarriedItems(int field2, int fieldB)
@@ -292,7 +292,7 @@ int f0D1C_02DC(void);
                     DrawMemberSlot(who, slot);
             }
             if (gFB44 == 1 && gA99A == who)
-                f0BD2_0917(who, slot, 1);
+                DrawItemRow(who, slot, 1);
             if (!gMouseDisabled) {
                 item = f0D1C_02DC();
                 if (gTable8DD2[item].m02 == field2) {
@@ -315,7 +315,7 @@ int f0D1C_02DC(void);
 }
 /* 0D1C:0304: stores `n` as the item index in the current slot: gFBCE when the mouse is enabled,
    or gChars[gA99A].m77[gF51A] when it is disabled. When the mouse is disabled it also redraws
-   the slot, through f1547_0991(gA99A) when gFB44 is 0 and f0BD2_0917(gF51A, 1, 0) otherwise.
+   the slot, through f1547_0991(gA99A) when gFB44 is 0 and DrawItemRow(gF51A, 1, 0) otherwise.
    Called by SetMouseItem to set the icon shown for a selected item. */
 /*@ 0D1C:0304 */ void SetCurrentItem(int n)
 {
@@ -326,14 +326,14 @@ int f0D1C_02DC(void);
         if (gFB44 == 0)
             f1547_0991(gA99A);
         else
-            f0BD2_0917(gF51A, 1, 0);
+            DrawItemRow(gF51A, 1, 0);
     }
 }
 /* 0D1C:035A: Purpose unknown: clears gChars[who].m01 and then, for each of the 27 word slots of
    gChars[who].m77 except slot 16 (which is a list head at +97), queues the item in the slot
-   through f0BD2_01D0 at the head gSoundVolume * 9 + 5 (the nine-byte records at ds:B894) with a
+   through InsertListItem at the head gSoundVolume * 9 + 5 (the nine-byte records at ds:B894) with a
    random sound g1A1B[gFBCC * 4 + RollDice(1, 2, -1)]. Then it drains the slot-16 list through
-   f0BD2_02B9 and queues each returned item the same way. Finally, when `who` is the selected
+   RemoveListItem and queues each returned item the same way. Finally, when `who` is the selected
    character, gA99A is cleared to 0, and RearmCharEffects runs. Called by overlays 1 and 5. */
 /*@ 0D1C:035A */ void f0D1C_035A(int who)
 {
@@ -347,13 +347,13 @@ int f0D1C_02DC(void);
         if (i == 16)
             continue;
         if (item = rec->m77[i]) {
-            f0BD2_01D0((int far *)(gB894 + gSoundVolume * 9 + 5), gSoundVolume, item,
+            InsertListItem((int far *)(gB894 + gSoundVolume * 9 + 5), gSoundVolume, item,
                     g1A1B[gFBCC * 4 + RollDice(1, 2, -1)]);
         }
     }
     while (rec->m77[16]) {
-        item = f0BD2_02B9(&rec->m77[16], 0, -1);
-        f0BD2_01D0((int far *)(gB894 + gSoundVolume * 9 + 5), gSoundVolume, item,
+        item = RemoveListItem(&rec->m77[16], 0, -1);
+        InsertListItem((int far *)(gB894 + gSoundVolume * 9 + 5), gSoundVolume, item,
                 g1A1B[gFBCC * 4 + RollDice(1, 2, -1)]);
     }
     if (gA99A == who)
@@ -501,7 +501,7 @@ int f0D1C_02DC(void);
 }
 /* 0D1C:07DB: Purpose unknown: combines the first two carried items of gChars[who] (slots 0 and
    1). Each slot's item is passed to f0BD2_11FD and its ds:8DD2 record's m02 indexes the 16-byte
-   records at ds:A9F6. With `flag` 0 it returns 1 when slot 0 holds an item and f0BD2_11FD also
+   records at ds:A9F6. With `flag` 0 it returns 1 when slot 0 holds an item and ItemClassAllowed also
    accepted it. Otherwise it returns 0 when slot 0 holds an item whose gA9F5[m02].m01 is 2, then
    1 when slot 1 is empty, and for a slot-1 item whose gA9F5[m1].m09 (low 7 bits) is 1, 2 or 3,
    0 when gA9F5[m1].m01 is nonzero, else the slot-1 result. Called by 0BD2:1001, 0DE8:0D5E and
@@ -516,12 +516,12 @@ int f0D1C_02DC(void);
     int m1;
 
     slot0 = gChars[who].m77[0];
-    result0 = f0BD2_11FD(who, slot0);
+    result0 = ItemClassAllowed(who, slot0);
     m0 = gTable8DD2[slot0].m02;
     if (flag == 0)
         return slot0 == 0 || result0 != 0;
     slot1 = gChars[who].m77[1];
-    result1 = f0BD2_11FD(who, slot1);
+    result1 = ItemClassAllowed(who, slot1);
     m1 = gTable8DD2[slot1].m02;
     if (slot0 != 0 && gA9F5[m0].m01 == 2)
         return 0;

@@ -148,9 +148,9 @@ extern int f0D1C_0BAB(int obj); /*@ 0D1C:0BAB */
 extern int f0D1C_0BEB(int obj, int flag); /*@ 0D1C:0BEB */
 extern int f0D1C_059B(int who, int attack); /*@ 0D1C:059B */
 extern int f0D1C_07DB(int who, int flag); /*@ 0D1C:07DB */
-extern int f0BD2_02B9(void far *head, int key, int item); /*@ 0BD2:02B9 */
-extern int f0BD2_07DE(int who, int field, int volume, int tableByte, int page, int m02); /*@ 0BD2:07DE */
-extern int f0BD2_07DE(int who, int slot, int a, int b, int c, int d); /*@ 0BD2:07DE */
+extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
+extern int AddDDEffect(int who, int field, int volume, int tableByte, int page, int m02); /*@ 0BD2:07DE */
+extern int AddDDEffect(int who, int slot, int a, int b, int c, int d); /*@ 0BD2:07DE */
 extern int f08E6_15B4(char a, int b); /*@ 08E6:15B4 */
 extern int f0EF3_04F7(int who); /*@ 0EF3:04F7 */
 extern void f08E6_0FBE(struct Obj28 far *obj, int n); /*@ 08E6:0FBE */
@@ -347,7 +347,7 @@ fail:
 }
 
 /* 0DE8:0474: moves a carried item into gChars[who].m77[slot]. With `flag` set and the special
-   slot m77[16] occupied, it takes that slot's item through f0BD2_02B9 (key 0, item -1). Otherwise
+   slot m77[16] occupied, it takes that slot's item through RemoveListItem (key 0, item -1). Otherwise
    it scans slots 24 down to 22 for the first occupied item whose gTable8DD2 m02 is not `type` (or
    `type` is -1) and moves that item to `slot`, clearing the source. Called by 0DE8:0537. */
 /*@ 0DE8:0474 */ void MoveCarriedItem(int who, int slot, int type, int flag)
@@ -356,7 +356,7 @@ fail:
     int item;
 
     if (flag != 0 && gChars[who].m77[16] != 0) {
-        gChars[who].m77[slot] = f0BD2_02B9(&gChars[who].m77[16], 0, -1);
+        gChars[who].m77[slot] = RemoveListItem(&gChars[who].m77[16], 0, -1);
     } else {
         for (i = 0x18; i >= 0x16; i--) {
             item = gChars[who].m77[i];
@@ -369,7 +369,7 @@ fail:
     }
 }
 /* 0DE8:0537: tries to use the item in the carried slot `slot` of character `who` against the
-   item type `field`. It dispatches through f0BD2_07DE (the item's m02, gFBCC, the g1A1B page
+   item type `field`. It dispatches through AddDDEffect (the item's m02, gFBCC, the g1A1B page
    byte, gSoundVolume); on success it plays sound 0x0B, clears gChars[who].m77[slot] and refills
    it through MoveCarriedItem(who, slot, -1, 0), setting gDF4C. Returns 0. Called by 0DE8:0763. */
 /*@ 0DE8:0537 */ int UseCarriedItem(int who, int slot, int field)
@@ -379,7 +379,7 @@ fail:
     idx = who;
     if (idx > 3)
         idx -= 2;
-    if (f0BD2_07DE(who, field, gSoundVolume, g1A1B[gFBCC * 4 + idx], gFBCC,
+    if (AddDDEffect(who, field, gSoundVolume, g1A1B[gFBCC * 4 + idx], gFBCC,
                    gTable8DD2[field].m02)) {
         PlaySound(0xb);
         gChars[who].m77[slot] = 0;
@@ -391,9 +391,9 @@ fail:
 
 /* 0DE8:05BB: picks the item for the action `slot` and runs it. The item's m02 indexes g552F to a
    `kind`; kind 0x10 takes the first m77[0], m77[1] or the special m77[16] slot whose own m02 is
-   0x10 (clearing the slot, pulling m77[16] through f0BD2_02B9), otherwise it scans all 27 slots
+   0x10 (clearing the slot, pulling m77[16] through RemoveListItem), otherwise it scans all 27 slots
    for the first whose item m02 equals `kind` (clearing it and redrawing with f1547_0991 when the
-   slot is below 2). A found item is dispatched through f0BD2_07DE (sound 0x1A when m02 is 7, else
+   slot is below 2). A found item is dispatched through AddDDEffect (sound 0x1A when m02 is 7, else
    0x0B, setting gDF4C), returning 0, or -4 when no item was found. Called by 0DE8:0763. */
 /*@ 0DE8:05BB */ int UseItemByKind(int who, int slot)
 {
@@ -420,7 +420,7 @@ fail:
                 gChars[who].m77[1] = 0;
         }
         if (item == 0 && gChars[who].m77[16] != 0)
-            item = f0BD2_02B9(&gChars[who].m77[16], 0, -1);
+            item = RemoveListItem(&gChars[who].m77[16], 0, -1);
     } else {
         for (i = 0; i < 0x1b; i++) {
             if (gTable8DD2[gChars[who].m77[i]].m02 == kind) {
@@ -436,7 +436,7 @@ fail:
         idx = who;
         if (idx > 3)
             idx -= 2;
-        if (f0BD2_07DE(who, item, gSoundVolume, g1A1B[idx + gFBCC * 4], gFBCC, m02)) {
+        if (AddDDEffect(who, item, gSoundVolume, g1A1B[idx + gFBCC * 4], gFBCC, m02)) {
             if (m02 == 7)
                 PlaySound(0x1a);
             else
