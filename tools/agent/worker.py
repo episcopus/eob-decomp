@@ -20,8 +20,9 @@ session (at most SESSIONS):
      otherwise go on) after TIMEOUT minutes, when OpenCode reports COST_CAP USD spent, or on SIGTERM;
   3. settle the claim: the session's own hand-off; else a `partial` hand-off of new commits that
      match; else the claim is released (nothing committed) or left for the human;
-  4. count the attempt: a decompiler session that recorded no new function at L2 counts one attempt
-     of its tier on the unit; progress clears the count (common.record_attempt). Tier 1 gives a unit
+  4. count the attempt: a decompiler session that matched no new function and fixed no must-fix
+     review finding counts one attempt of its tier on the unit; progress clears the count
+     (common.record_attempt). Tier 1 gives a unit
      up after TIER1_ATTEMPTS, tier 2 (the stronger model) after MAX_ATTEMPTS.
 
 Between sessions it restarts itself (same arguments) when tools/agent/worker.py, common.py,
@@ -278,7 +279,7 @@ def loop(a) -> int:
         branch = common.fields(common.lock_path(key).read_text())["branch"]
         uid = key[7:] if key.startswith("review-") else key
         log = logs / ("%s-%d-%s.log" % (time.strftime("%Y%m%dT%H%M%S"), n, key))
-        before = common.l2_count(wt, uid)
+        before, fixes_before = common.l2_count(wt, uid), common.must_fix_count(wt, uid)
         head_before = common.git("rev-parse", branch, check=False)
         print("worker: session %d on %s (%s%s) in %s, log %s" % (n, key, model or "session_cmd",
               ", after a rejection" if rejected else "", wt, log), flush=True)
@@ -292,10 +293,11 @@ def loop(a) -> int:
             a.timeout * 60, log, model_flag, "%s %s" % (a.agent, key), a.cost_cap, on_start)
         outcome = settle(a.agent, key, branch, wt, head_before)
         after = common.l2_count(wt, uid) if wt.exists() else common.l2_count(common.ROOT, uid)
-        moved = common.git("rev-parse", branch, check=False) != head_before
+        fixes_after = common.must_fix_count(wt, uid) if wt.exists() else fixes_before
         if a.role == "decompiler" and not r["refused"] and r["code"] != "stopped":
-            # progress: more functions at L2, or new work handed off (a review's must-fix findings fixed)
-            common.record_attempt(uid, a.tier, after > before or (moved and outcome in ("handed-off", "auto-handed-off")))
+            # progress: more functions at L2, or fewer open must-fix review findings. A session that only
+            # rewrote drafts is an attempt, so a unit tier 1 cannot finish reaches tier 2
+            common.record_attempt(uid, a.tier, after > before or fixes_after < fixes_before)
         common.event("worker-session", agent=a.agent, key=key, tier=a.tier, model=a.model, outcome=outcome,
                      exit=r["code"], cost=r["cost"], seconds=r["seconds"], session_id=r["session_id"],
                      l2_before=before, l2_after=after, refused=r["refused"])
