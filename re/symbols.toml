@@ -7219,6 +7219,9 @@ unit = "eov3"
 addr = "ovl3:19F7"
 size = 314
 evidence = ["ovl", "near", "frame"]
+name = "ResetLevel"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov4_0000"
