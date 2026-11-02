@@ -8,7 +8,8 @@
    1A29:000F for kind 1, text through gDrawText ds:80CA for kind 2, a tile through gDraw805E
    ds:805E for kind 3, the src10 pointer as a far callback for kind 4 (E16A5.C:655-657), and a
    box through DrawBox 1A1F:000C or gDraw8066 ds:8066 for kinds 5 and 0, where kind 0 draws the
-   box only when the mode bytes say so (E16A5.C:663-671).
+   box only when the mode bytes say so: mode 2 draws with no state test, and mode 3 also needs
+   0x0008 (modeB) or 0x0010 (modeC) set (E16A5.C:663-671).
    The five state operations here (0073, 0154, 017B, 01E6, 02F5) and the dispatcher 16A5:00BD
    call it. ListAdd (1658:001E), used by other units, appends to a list; InsertNode (1658:03D6)
    here inserts in key order. Names and the unknown bit meanings are placeholders until the
@@ -40,8 +41,10 @@ struct Node {
    is 0x81 (1 with the latch bit) unless the global is already 1. In each pair g5E1C is tested
    first, so when both bits are set only the g5E1C write happens and g5E1E is written only when
    0x0400 (or 0x0100) is clear. The 0x80 of 0x81/0x83 then makes
-   the whole block a no-op for the next state operation until DispatchNodeEvent sets the mode
-   again. */
+   the whole block a no-op for the next state operation. While the mouse is enabled,
+   DispatchNodeEvent sets the mode on every call (E16A5.C:205-212, inside the gMouseDisabled
+   gate at E16A5.C:202-245); while it is disabled only a key match writes the mode
+   (E16A5.C:293, 299), which clears the latch. */
 #define NODE_INACTIVE   0x0008
 #define NODE_FLAG_ON    0x0001  /* picks BUTTON_MODE_NODE_ON over BUTTON_MODE_NODE_OFF */
 #define NODE_FLAG_ON_5E1C  0x0400 /* with NODE_FLAG_ON set: g5E1C gets 0x83 unless it is already 3 */
@@ -56,8 +59,11 @@ struct Node {
    node's 0x0001 flag is clear (E16A5.C:347-365), and BUTTON_MODE_NODE_ON toggles it on its 0x0400
    flag when the 0x0001 flag is set, with the 0x0002 flag clearing it (E16A5.C:366-378). This
    unit writes 3 or 1 with the 0x80 latch bit set (0x83, 0x81) so the block is a no-op for the
-   next state operation until DispatchNodeEvent sets the mode again; E0ACD.C:369 reads the mode
-   back as (g5E1C & 0x7F) == 1, so 0x80 is a flag beside the mode value, not part of it. */
+   next state operation. While the mouse is enabled, DispatchNodeEvent sets the mode on every
+   call (E16A5.C:205-212, inside the gMouseDisabled gate at E16A5.C:202-245); while it is
+   disabled only a key match writes the mode (E16A5.C:293, 299), which clears the latch.
+   E0ACD.C:369 reads the mode back as (g5E1C & 0x7F) == 1, so 0x80 is a flag beside the mode
+   value, not part of it. */
 #define BUTTON_MODE_NODE_OFF 1
 #define BUTTON_MODE_NODE_ON  3
 #define BUTTON_MODE_LATCH    0x80
