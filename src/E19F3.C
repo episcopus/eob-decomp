@@ -1,15 +1,17 @@
 /* Unit at EOB.EXE 19F3:000E (137 bytes, 1 function): adjust a rectangle request before
    passing it to the far routine behind the function pointer at ds:8052. The eight ints are
    two origins (x1, y1 and x2, y2), a width, a height and two extras that pass through
-   untouched. The width is read as the shared extent of the x origin
-   pair [H]: the bytes move it with whichever x origin is raised (19F3:0036 for x1, 19F3:004B
-   for x2), and move the height with whichever y origin is raised (19F3:005C, 19F3:0070); no
-   code states that reading. The units are the region table's [H]: x in 8-pixel columns, y in
+   untouched. The width is read as the extent from x1 to the far edge [H]: when an origin is
+   raised to 0, the width moves by that origin's amount (19F3:0036 for x1, 19F3:004B for x2),
+   so x1 + width, the far edge, stays where it was; the height moves the same way with
+   whichever y origin is raised (19F3:005C, 19F3:0070). No code states that reading. The units
+   are the region table's [H]: x in 8-pixel columns, y in
    lines (src/E1A29.C), so the cap of SCREEN_COLUMNS on the width is the 320-pixel screen and
    the cap of SCREEN_LINES on the height its 200 lines; region record 0 is 0,0,40,200, the
    full screen, matching the call at 082C:05DD. That reading is an inference [H] from the caps
-   and record 0; the callers support the columns reading (E1DE7.C:245-248 and EOV6.C:375-376
-   pass gTextLeft, gTextTop, gTextWidth and gTextHeight unshifted to ClipRect, while the same
+   and record 0; the callers support the columns reading (E1DE7.C:245 to :248 pass gTextLeft,
+   gTextTop and gTextWidth unshifted to ClipRect and the whole-line height `line` derived from
+   gTextHeight at E1DE7.C:244, while EOV6.C:376 and :481 pass gTextHeight itself; the same
    variables are multiplied by 8 or shifted by 3 for the pixel arguments of gFillRect, gDrawText
    and f0D1C_0C21 there). All the compares are signed. The width and height are capped at
    SCREEN_COLUMNS and SCREEN_LINES when larger, as plain size caps not tied to any origin;
@@ -41,7 +43,11 @@
    extra1, height, width, y2, x2, y1, x1). extra1 and extra2 are passed through untouched;
    nothing in this unit reads them and their roles are unknown, and the callers do not settle
    them either: E1DE7.C:245 passes g8115 for both extras, whose role E1DE7.C:69 says is not
-   established. The five call sites below push the eight ints (add sp,10h); they are the 082C
+   established. One lead [H]: E082C.C:280 and :285 pass extra1 equal to the value given as
+   19EC:002A's second argument in both LoadScreenImage cases (4 with extras 4,2; 2 with extras
+   2,0), which hints extra1 is a driver kind, but the other call sites (E082C.C:113 with 0,2;
+   E082C.C:209 with 2,0; E1DE7.C:245 with g8115 twice) do not fit that. The five call sites
+   below push the eight ints (add sp,10h); they are the 082C
    and 0EF3 call sites this header checked, not every caller, since the packet lists 30
    callers across the resident code and overlays ovl0 to ovl6. Calls (x1, y1, x2, y2, width,
    height, extra1, extra2):
@@ -51,12 +57,13 @@
      0EF3:0860  (0,0,0,0, 22,120, 2,0)
      082C:006D  ([bp+a]-1, [bp+c], 0, 191, [bp+e]+2, 9, 0,2)
      082C:038A  (0, 191, [bp+a]-1, [bp+c], [bp+e]+2, 9, 2,0)
-   Three src/ calls pass y origins that differ: 1DE7:03B2 (E1DE7.C:245) has y1 =
+   Three src/ calls pass y origins that differ: the one in DrawTextLine, whose entry is
+   1DE7:03B2 (E1DE7.C:245), is made at 1DE7:0474 (pushes 1DE7:0450 to 0470) with y1 =
    gTextTop + one line and y2 = gTextTop, a one-line scroll that clips and refills the last
    visible line (E1DE7.C:228); 082C:006D (E082C.C:113) has y1 = y and y2 = 0xbf (the pushes at
    082C:0062 and 082C:005B); 082C:038A (E082C.C:209) has the same pair in the other order,
    y1 = 0xbf and y2 = y (the pushes at 082C:0383 and 082C:0378). The
-   1DE7:03B2 reading fits x1, y1 as a source and x2, y2 as a destination, a lead [H] to test
+   1DE7:0474 reading fits x1, y1 as a source and x2, y2 as a destination, a lead [H] to test
    against the far routine, not evidence yet. The x1 = x2, y1 = y2 pattern holds for the
    named-origin calls at EOV6.C:376, :385 and :481, and for the literal-zero calls at
    EOV2.C:365, 082C:05DD and the two 0EF3 calls.
@@ -73,15 +80,18 @@
    (src/E1A29.C, EOB.EXE file offset 0x23B7F), the DGROUP screen bounds g814E = 13Fh (319) and
    g8152 = 0C7h (199), screen width and height minus one, set at src/E1A72.ASM:191-192 and
    declared at src/E1A72.ASM:45-46, and the 40x200 screen the pointer sprite is clipped to
-   (src/E1BBE.ASM:79). */
+   (src/E1BBE.ASM:79). The same region record at 0x23B7F (00 00 00 00 28 00 c8 00) lands on
+   the DGROUP base 0x212E used below, which is some support for that [H] base, not proof. */
 #define SCREEN_COLUMNS 40
 #define SCREEN_LINES 200
 
-/* ds:8052: the function pointer this unit calls through. The load image holds 00 00 00 00
-   here, so it is zero in the file. The DGROUP base 0x212E (the disassembler's default, a [H]
-   until the startup code that sets DS is cited) puts ds:8052 at file offset 0x2BB32 (the
-   0x2800 MZ header + 0x212E0 + 0x8052), inside the 0x31350-byte load module, and the 8 bytes
-   there are zero. A zero pointer makes the lcall at 19F3:008C call
+/* ds:8052: the function pointer this unit calls through. It is a 4-byte far pointer, and the
+   load image holds 00 00 00 00 here, so it is zero in the file. The DGROUP base 0x212E (the
+   disassembler's default, a [H] until the startup code that sets DS is cited) puts ds:8052 at
+   file offset 0x2BB32 (the 0x2800 MZ header + 0x212E0 + 0x8052), inside the 0x31350-byte load
+   image that starts at the 0x2800-byte header, and the 8 bytes there are zero: the 4-byte
+   pointer at ds:8052 to ds:8055 and the 4 unused bytes after it at ds:8056 to ds:8059. A
+   zero pointer makes the lcall at 19F3:008C call
    0000:0000, the interrupt vector table, not a defined routine [H]; it must be set before
    19F3:008C calls through it (an inference from the zero image; no direct write to ds:8052 in
    EOB.EXE or the overlay binaries, a byte scan, indirect writes not searched). ds:8052 may
@@ -113,6 +123,9 @@ extern void (far *gFar8052)(int x1, int y1, int x2, int y2, int width, int heigh
     }
     if (x1 >= SCREEN_COLUMNS) return;
     if (x2 >= SCREEN_COLUMNS) return;
+    /* QUIRK 19F3:0045: this shift comes after both x tests and rewrites x1, which no later
+       test reads; see the header for an origin past SCREEN_COLUMNS that still reaches the far
+       routine. */
     if (x2 < 0) {
         x1 -= x2;
         width += x2;
