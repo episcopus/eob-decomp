@@ -25,7 +25,7 @@
 struct Unk8894 {            /* the object the pointer at ds:8894 (g8894) points at. The object's
                                own address is unknown: nothing in src/ or docs/ writes the pointer
                                at ds:8894 (src/E1990.ASM:23-26). g8894 is the name E1990 uses */
-    char pad[0x18];
+    char unknown[0x18];     /* +0x00 to +0x17: not read in src/; contents unknown */
     char far *number;       /* +0x18: a far pointer to a numeric string */
 };
 
@@ -73,8 +73,8 @@ extern int (far *gFn80FA)(void);      /*@ ds:80FA: exit hook main sets to 07C8:0
                                          ignored at :464 */
 extern int (far *gAllocFailHook)(void); /*@ ds:810A: allocation failure hook. The image starts it at OutOfMemory (19BC:02B6, src/E19BC.C:23-25); main replaces it with 07C8:0625 (:242), so at run time it is AllocationFailure, not OutOfMemory */
 extern int gMouseHandlerInstalled;    /*@ ds:8148: 1 once the mouse driver handler was installed
-                                         (src/E1A72.ASM:324), 0 when no driver is found (:318);
-                                         declared at src/E1A72.ASM:92-96 */
+                                         (src/E1A72.ASM:324), 0 when no driver is found (:310,
+                                         the L0118 path); declared at src/E1A72.ASM:92-96 */
 extern int gMouseDisabled;            /*@ ds:814A: nonzero disables the mouse handler (src/E0ACD.C:111,
                                          src/E122E.C:48, src/E1C00.ASM:281-290). main sets it to 1
                                          when no driver is installed (:264) and otherwise to
@@ -95,11 +95,11 @@ extern int g80EA;                     /*@ ds:80EA: start-up flag set to 1 by mai
                                          src/E1AAD.ASM:548-573, the copy at :573), which copies on
                                          every call. Purpose unknown beyond that */
 extern int gTextAttr2;                /*@ ds:811B: the second text attribute, the fill colour: ClearTextRegion
-                                         fills the window with it (src/E1DE7.C:237), the redrawn scroll line uses it
-                                         and passes it to the draw-text hook (src/E1DE7.C:263-264); main sets DEFAULT_TEXT_ATTR2 (0xC) at start-up (:260); declared in src/E122E.C:75 and src/E1DE7.C:43, read with gTextAttr1 in src/EOV2.C:500 */
+                                         fills the window with it (src/E1DE7.C:241), the redrawn scroll line fills
+                                         with it and passes it to the draw-text hook (src/E1DE7.C:270-271); main sets DEFAULT_TEXT_ATTR2 (0xC) at start-up (:260); declared in src/E122E.C:75 and src/E1DE7.C:44, read with gTextAttr1 in src/EOV2.C:500 */
 extern int gTextAttr1;                /*@ ds:811D: the first text attribute, the foreground colour,
                                          set by main to DEFAULT_TEXT_ATTR1 (0xF) at start-up (:259) and passed to
-                                         the draw-text hook (src/E1DE7.C:264); declared in src/E122E.C:74 and src/E1DE7.C:41, read with gTextAttr2 in src/EOV2.C:500 */
+                                         the draw-text hook (src/E1DE7.C:271); declared in src/E122E.C:74 and src/E1DE7.C:42, read with gTextAttr2 in src/EOV2.C:500 */
 extern void (far *gFn80BA)(void far *table); /*@ ds:80BA: the palette setter (src/EOV4.C:1035, :1060), called with the palette buffers (:250, :255, :385, :395); Purpose unknown beyond the palette: nothing in src/ assigns ds:80BA */
 extern void (far *gFn8056)(void);     /*@ ds:8056: far function called before the fonts load
                                          (:372). Purpose unknown: nothing in src/ assigns ds:8056
