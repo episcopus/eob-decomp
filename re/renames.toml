@@ -1431,3 +1431,12 @@ new = "gAllocCount"
 kind = "global"
 why = "net allocation counter: MemAlloc adds one per successful allocation (src/E19BC.C:97) and MemFree subtracts one on every call (src/E19BC.C:120), and StartupAlloc clears it (src/E07A9.C:242); what reads the count is unknown, so the name says what it holds"
 date = "2026-11-01"
+
+[[rename]]
+id = "1A72:0285=RemoveMouseHandler"
+addr = "1A72:0285"
+old = "MouseDisable"
+new = "RemoveMouseHandler"
+kind = "function"
+why = "a function name is a verb phrase (docs/process/READABILITY.md); it removes the INT 33h handler, its own header says 'remove the mouse event handler' (1A72:0285); callers E07C8.C:60 and :336; review of e1a72 round 2"
+date = "2026-11-01"

@@ -57,7 +57,7 @@ extern void WaitGameKey(void);                     /*@ 1AAD:053A */
 extern void RemoveKeyboard(void);                     /*@ 1AAD:09F6 */
 extern void f1DDD_002D(int mode);                 /*@ 1DDD:002D */
 extern void TrimMemoryToVideo(void);              /*@ 1990:027D */
-extern void MouseDisable(void);                   /*@ 1A72:0285 */
+extern void RemoveMouseHandler(void);                   /*@ 1A72:0285 */
 extern void ShutdownOverlayCache(void);                     /*@ 1C0E:13FD */
 extern void f1D8F_0038(void);                     /*@ 1D8F:0038 */
 extern void SoundDriverPause(void);               /*@ 1948:046B */
@@ -333,7 +333,7 @@ done:
     if (gFn80FA)
         gFn80FA();
     if (gMouseHandlerInstalled)
-        MouseDisable();
+        RemoveMouseHandler();
     if (g3056)
         ShutdownOverlayCache();
     f1D8F_0038();

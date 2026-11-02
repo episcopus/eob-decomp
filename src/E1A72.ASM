@@ -5,7 +5,7 @@
 ; at 1A72:017A, which sits inside InitMouse, clamps the position, hands the button state to the
 ; keyboard glue 1AAD:0B0E and redraws through the far pointers at DGROUP:80AA and DGROUP:80A2 under
 ; the busy flag at DGROUP:812E. IsMouseInRect (1A72:02A6) tests the current position against a
-; rectangle; MouseDisable (1A72:0285) removes the handler; 1A72:02FA and 1A72:02FC enable and
+; rectangle; RemoveMouseHandler (1A72:0285) removes the handler; 1A72:02FA and 1A72:02FC enable and
 ; disable interrupts; 1A72:02FE and 1A72:033A set and read the far pointer at DGROUP:8172/8174
 ; (1A72:02FE also copies 16 bytes from the old target to the new one). 1A72:0006 is the INT 3Fh
 ; handler main installs (07C8:008F), it chains through DGROUP:FC08 (the previous vector), probes
@@ -34,12 +34,15 @@
         EXTRN   _gPointerBusy:WORD              ; @ ds:812E: busy flag, 0 = free; the game takes it with
         ;                                              a test then a store, so it is not a lock
         EXTRN   g8130:WORD              ; @ ds:8130: mouse buttons seen by the last event
-        EXTRN   g8132:WORD              ; @ ds:8132: a mask the handler folds into the buttons when
-        ;                                              it is nonzero and the middle bit (BX bit 2,
-        ;                                              value 4) is set, replacing the low two bits
+        EXTRN   g8132:WORD              ; @ ds:8132: a mask the handler or-s into the low two button
+        ;                                              bits when it is nonzero and the middle bit (BX
+        ;                                              bit 2, value 4) is set: BX becomes (BX and 3)
+        ;                                              or the mask, so the old low two bits are kept and
+        ;                                              the middle bit and every other bit are dropped
         EXTRN   g8134:WORD              ; @ ds:8134: accumulated button changes
         EXTRN   g8136:WORD              ; @ ds:8136: latched to 1 once any button has been seen;
-        ;                                              this unit never clears it
+        ;                                              this unit never clears it, E1AAD.ASM:1356
+        ;                                              sets it too and nothing in src/ clears it
         EXTRN   _gCursorX:WORD              ; @ ds:8138: working mouse x (set to the middle on init)
         EXTRN   _gCursorY:WORD              ; @ ds:813A: working mouse y (set to the middle on init)
         EXTRN   g813C:WORD              ; @ ds:813C: x of the event just handled
@@ -52,12 +55,21 @@
         EXTRN   gMouseHandlerInstalled:WORD              ; @ ds:8148: 1 when the mouse driver handler is installed
         EXTRN   gMouseDisabled:WORD              ; @ ds:814A: nonzero disables the mouse: the handler
         ;                                              returns at once and the pointer hide/show do
-        ;                                              nothing (E07A9.C tests it too)
+        ;                                              nothing. InitMouse sets it to 1 before it
+        ;                                              installs the handler (1A72:0150), Main sets it
+        ;                                              from the mouse argument when no handler is
+        ;                                              installed (E07C8.C:153-156), and the overlay
+        ;                                              loader clears it (E1C00.ASM:269); E07A9.C
+        ;                                              tests it too
         EXTRN   g814E:WORD              ; @ ds:814E: screen width minus 1, 13Fh; the handler clamps
         ;                                              with the literal 13Fh, not with this variable
-        EXTRN   g8152:WORD              ; @ ds:8152: screen height minus 1, 0C7h
-        EXTRN   _gDrawnX:WORD              ; @ ds:815C: last position handed to the game
-        EXTRN   _gDrawnY:WORD              ; @ ds:815E: last position handed to the game
+        EXTRN   g8152:WORD              ; @ ds:8152: screen height minus 1, 0C7h (set at :222);
+        ;                                              this unit never reads it: the handler clamps
+        ;                                              no y at all
+        EXTRN   _gDrawnX:WORD              ; @ ds:815C: the position the pointer was last drawn at,
+        ;                                              copied there by ShowPointer (E1BBE.ASM:188, :193)
+        EXTRN   _gDrawnY:WORD              ; @ ds:815E: the position the pointer was last drawn at,
+        ;                                              copied there by ShowPointer (E1BBE.ASM:188, :193)
         EXTRN   _gPointerState:WORD              ; @ ds:8160: pointer state bits: 8000h the pointer is
         ;                                              hidden over the hide zone, 4000h a redraw is
         ;                                              requested, low byte a counter (E1BBE.ASM)
@@ -68,8 +80,8 @@
         EXTRN   _gZoneBottom:WORD              ; @ ds:8168: hide zone, bottom in pixels
         EXTRN   g8172:WORD              ; @ ds:8172: far pointer argument, offset
         EXTRN   g8174:WORD              ; @ ds:8174: far pointer argument, segment
-        EXTRN   g8026:WORD              ; @ ds:8026: scratch copy of the reported x (IsMouseInRect)
-        EXTRN   g8028:WORD              ; @ ds:8028: scratch copy of the reported y (IsMouseInRect)
+        EXTRN   g8026:WORD              ; @ ds:8026: scratch copy of gDrawnX made by IsMouseInRect
+        EXTRN   g8028:WORD              ; @ ds:8028: scratch copy of gDrawnY made by IsMouseInRect
         EXTRN   gFC08:DWORD             ; @ ds:FC08: previous INT 3Fh vector, chained by 1A72:0006
         .CODE
 
@@ -255,9 +267,11 @@ L0174:  pop     es
 ; separate function). CX = x, DX = y, BX = buttons. With DGROUP:814A nonzero it does nothing (a
 ; nonzero word disables the handler). In 640 wide mode it halves x, clamps x to 13Fh and keeps the
 ; event position at DGROUP:813C/813E. When the mask at DGROUP:8132 is nonzero and the middle button
-; bit (BX bit 2, value 4) is set, it replaces the low two button bits with the mask (`and bx,3;
-; or bx,ax`, 1A72:01A6). The installed mask 1Fh (INT 33h function 0Ch) asks for moves and the left
-; and right buttons only [H], so the middle bit is seen only on a move event. When the buttons
+; bit (BX bit 2, value 4) is set, it sets BX to (BX and 3) or the mask (`and bx,3; or bx,ax`,
+; 1A72:01A6): the old low two bits are kept and the middle bit and every other bit are dropped. The
+; installed mask 1Fh (INT 33h function 0Ch) requests moves and left and right presses and releases
+; [H]; BX carries the full button state on each of those events, so the middle bit (4) reaches the
+; handler whenever the middle button is held, though a middle press or release alone never calls it. When the buttons
 ; changed it calls the keyboard glue 1AAD:0B0E and folds
 ; the change into DGROUP:8134. With the busy flag free it publishes the position to
 ; DGROUP:8138/813A (unless DGROUP:80EC is 2), and when the position moved and redraws are not
@@ -359,10 +373,10 @@ L027F:  popf
 _InitMouse ENDP
 
 ; 1A72:0285: remove the mouse event handler, but only when one was installed (DGROUP:8148 = 1).
-; INT 33h function 0Ch with mask 0 clears the handler; ES:DX is set to CS:1A72:017A as INT 33h
-; expects even for a null mask. Called from the exit path at 07C8:058A.
-        PUBLIC  _MouseDisable           ; @ 1A72:0285
-_MouseDisable PROC FAR
+; INT 33h function 0Ch with mask 0 clears the handler; ES:DX = CS:1A72:017A with mask 0 (INT 33h
+; wants ES:DX set even for a null mask [H]). Called from the exit path at 07C8:058A.
+        PUBLIC  _RemoveMouseHandler           ; @ 1A72:0285
+_RemoveMouseHandler PROC FAR
         push    bp
         mov     bp,sp
         cmp     word ptr [gMouseHandlerInstalled],0
@@ -383,11 +397,14 @@ _MouseDisable PROC FAR
         pop     ax
 L02A4:  pop     bp
         ret
-_MouseDisable ENDP
+_RemoveMouseHandler ENDP
 
-; 1A72:02A6: 1 when the last position handed to the game (DGROUP:815C/815E, copied through
-; DGROUP:8026/8028 under the busy flag) lies inside the rectangle [bp+6, bp+0Ah] x [bp+8, bp+0Ch]
-; inclusive, 0 otherwise. Arguments are x1, y1, x2, y2 words; called from UI code (122E:0847,
+; 1A72:02A6: 1 when the position the pointer was last drawn at (DGROUP:815C/815E, the copy ShowPointer
+; makes of the mouse position at E1BBE.ASM:188, :193, so it is where the pointer sits after a show)
+; lies inside the rectangle [bp+6, bp+0Ah] x [bp+8, bp+0Ch]
+; inclusive, 0 otherwise. It spins at 1A72:02B9 while the busy flag at DGROUP:812E is set, takes the
+; flag, copies the drawn position through DGROUP:8026/8028, tests it and releases the flag.
+; Arguments are x1, y1, x2, y2 words; called from UI code (122E:0847,
 ; overlay 0 at 207A, overlay 1 at 1551).
         PUBLIC  _IsMouseInRect            ; @ 1A72:02A6
 _IsMouseInRect PROC FAR
