@@ -68,8 +68,10 @@ extern unsigned char gSearchAllDrives;   /*@ ds:81EA: nonzero: 1C0E:1310 also sc
 #define FLAG_BITS      0x3f
 #define LINK_INDEX     0x7fff
 
-/* open() flags and create mode (fcntl.h), used by 1C0E:0A9D. */
-#define O_RDWR         0x0002
+/* open() flags and create mode (fcntl.h, STAT.H), used by 1C0E:0A9D and the file locators. */
+#define O_RDONLY       0x0001
+#define O_WRONLY       0x0002
+#define O_RDWR         0x0004
 #define O_CREAT        0x0100
 #define O_BINARY       0x8000
 #define S_IREAD        0x0100
@@ -155,7 +157,37 @@ extern int gFileHandles[];               /*@ ds:FEEA: DOS handle or SLOT_FREE pe
 /*@ 1C0E:0400 stub */ void FileRead(int index, void far *buf, unsigned long len) { }
 /*@ 1C0E:0578 stub */ void FileWrite(int index, void far *buf, unsigned long len) { }
 /*@ 1C0E:06E5 stub */ void SeekFile(int index, long offset, int whence) { }
-/*@ 1C0E:091B stub */ int f1C0E_091B(char far *name) { }
+/* 1C0E:091B: locate and verify the file `name` (upper cased in place) without caching it: follow a
+   negative link in the slot's record to the name of the entry it aliases, find the file on one of
+   the drives (1C0E:1310), open it and, for a positively linked record (link > 0), check its length
+   against the record (a zero length in the record is always accepted); a wrong length reports code
+   0xE, a missing file (open failed) reports 0xF. Returns 1 when the file is present and its length
+   is right. DRAFT: the logic and nearly every byte match, TCC -O lays the `if (index == -1)` exit
+   out as `je` where the original keeps a two-jump form; no source form found yet. */
+/*@ 1C0E:091B draft */ int CheckFile(char far *name)
+{
+    int index = -1;
+    int fd;
+
+    name = strupr(name);
+    index = FindFile(name);
+    if (index != -1 && gFiles[index].link < 0)
+        name = gFiles[gFiles[index].link & LINK_INDEX].name;
+    if (!LocateOverlayFile(name))
+        return 0;
+    fd = open(name, O_RDONLY | O_BINARY);
+    if (fd == -1)
+        FatalError(0xf, name);
+    if (index != -1 && gFiles[index].link > 0) {
+        if (filelength(fd) != gFiles[index].size && gFiles[index].size != 0) {
+            close(fd);
+            FatalError(0xe, name);
+            return 0;
+        }
+    }
+    close(fd);
+    return 1;
+}
 /* 1C0E:0A35: delete the file `name`: drop any in-memory copy from its slot first, then remove it
    from disk. Returns 1 when the file was removed (remove returned 0). Called by 1C0E:00DB and by
    1C0E:0A9D before recreating the file. */
@@ -177,7 +209,7 @@ extern int gFileHandles[];               /*@ ds:FEEA: DOS handle or SLOT_FREE pe
     int fd;
 
     DeleteFile(name);
-    fd = open(name, O_CREAT | O_RDWR | O_BINARY, S_IREAD | S_IWRITE);
+    fd = open(name, O_CREAT | O_WRONLY | O_BINARY, S_IREAD | S_IWRITE);
     if (fd == -1)
         return 0;
     close(fd);
@@ -327,7 +359,7 @@ extern int gFileHandles[];               /*@ ds:FEEA: DOS handle or SLOT_FREE pe
     int drive;
 
     name = strupr(name);
-    fd = open(name, 0x8001);
+    fd = open(name, O_RDONLY | O_BINARY);
     if (fd != -1) {
         close(fd);
         return saved + 1;
@@ -338,7 +370,7 @@ extern int gFileHandles[];               /*@ ds:FEEA: DOS handle or SLOT_FREE pe
         if (!IsLastLogicalDrive(drive))
             continue;
         setdisk(drive);
-        fd = open(name, 0x8001);
+        fd = open(name, O_RDONLY | O_BINARY);
         if (fd != -1) {
             close(fd);
             return drive + 1;
