@@ -78,7 +78,12 @@ struct WallDec {            /* a 52-byte wall set decoration */
     FileClose(handle);
 }
 
-/*@ ovl3:01AA stub */ void Ovl3_01AA(void) {}
+/* ovl3:01AA: Purpose unknown. Returns 1 when bit `bit` (the second argument, a char) is set in the
+   signed char `value` (the first argument), else 0. */
+/*@ ovl3:01AA */ int IsBitSet(signed char value, char bit)
+{
+    return (value & (1 << bit)) ? 1 : 0;
+}
 /*@ ovl3:01C8 stub */ void Ovl3_01C8(void) {}
 /*@ ovl3:031A stub */ void Ovl3_031A(void) {}
 /*@ ovl3:03A2 stub */ void Ovl3_03A2(void) {}

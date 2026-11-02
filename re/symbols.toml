@@ -7036,6 +7036,9 @@ unit = "eov3"
 addr = "ovl3:01AA"
 size = 30
 evidence = ["ovl", "frame"]
+name = "IsBitSet"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov3_01c8"
