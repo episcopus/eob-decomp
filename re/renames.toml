@@ -2043,3 +2043,12 @@ new = "gTextRegion"
 kind = "global"
 why = "the record index of the current text window: SetTextWindow stores it as gRegions[g811F] (1DE7:0009; src/E1A29.C:38, src/E1C0E.C:577 keeps it in saved811F); E07A9.C, E1C0E.C, EOV1.ASM, EOV2.C and EOV6.C read it"
 date = "2026-11-02"
+
+[[rename]]
+id = "ds:8894=g8894"
+addr = "ds:8894"
+old = "gEnvPtr"
+new = "g8894"
+kind = "global"
+why = "ds:8894 is the far pointer StartupGame dereferences as g8894->number (E07C8.C:263); nothing in src/ or docs/ shows it is the DOS environment pointer (that block is the one E1990 relocates from PSP:002C, src/E1990.ASM:3, :44), and nothing in src/ or docs/ writes the pointer, so the object and its address are unknown; a placeholder name fits"
+date = "2026-11-02"
