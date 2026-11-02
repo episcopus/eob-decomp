@@ -47,6 +47,8 @@ extern int gSoundVolume; /*@ ds:FBCA */     /* the global sound volume (src/E0D1
 extern char gEFB2; /*@ ds:EFB2 */           /* set to 0xff when the sound page changes */
 extern char gDCAA; /*@ ds:DCAA */           /* a 1..2 step counter (0753) */
 extern int gEFD2; /*@ ds:EFD2 */            /* set to 0xff by 08E7 */
+extern int gF3BA; /*@ ds:F3BA */            /* the item just picked, -1 when none (0BA6) */
+extern int g374A[]; /*@ ds:374A */          /* a per-page word flag read by 0BA6 */
 extern char gF542[]; /*@ ds:F542 */         /* a message buffer passed to 0EF3:2541 when gFlag is set */
 extern char gDF4C; /*@ ds:DF4C */           /* set to 1 when an action took effect (src/E0D1C.C) */
 
@@ -116,7 +118,7 @@ extern char gFileNameBuf[]; /*@ ds:FE6E */  /* the text buffer sprintf formats i
 extern unsigned char far gSheetDECORATE[]; /*@ 2069:0000 */  /* the DECORATE sheet (src/EOV2.C) */
 extern unsigned char far gSheet2067[]; /*@ 2067:0000 */      /* the sheet at segment 2067 (0F72) */
 
-extern void f0BD2_0AF2(int a, int b, int c); /*@ 0BD2:0AF2 */
+extern int f0BD2_0AF2(int a, int b, int c); /*@ 0BD2:0AF2 */
 extern void f0BD2_0458(int a, int b, int c); /*@ 0BD2:0458 */
 extern void f0BD2_01D0(void far *head, int key, int item, int sound); /*@ 0BD2:01D0 */
 extern int f0BD2_02B9(void far *head, int key, int item); /*@ 0BD2:02B9 */
@@ -687,9 +689,85 @@ call:
     f0DE8_0D5E(gA99A);
 }
 
-/* 0ACD:0BA6 draft: the list pick handler. Not written yet. */
-/*@ 0ACD:0BA6 draft */ void Action0BA6(void)
+/* 0ACD:0BA6 draft: the list pick handler. It takes the item list for the current volume (or, when
+   that list is empty, for the key from f0D1C_00DA) and scans up to five pages: it steps the page
+   byte gEFB2 (wrapping to 0..3, arming gF3BA when the page changed), picks the page's volume from
+   f0D1C_00DA when g374A[gEFB2] is set, and asks f0BD2_02B9 for the first item of that volume's
+   ds:B899 record list with the kind g1A1B[gFBCC * 4 + gEFB2]. When a fresh item is found it marks
+   it used (f0BD2_0AF2) and shows it (f0BD2_0458 and f122E_1DA8, or f07A9_010C / f1547_0991 and
+   f0BD2_01D0 at row 0x10), sets gDF4C, and stops; an empty or repeated item runs f0BD2_01D0 and
+   clears gF3BA. It redraws gA99A through f0DE8_0D5E at the end. Everything matches except one
+   byte: the original stores the picked item with `mov [gF3BA], ax`, our build with
+   `mov [gF3BA], di` (both hold the item); the same value, a different register the source cannot
+   choose. Open: another form of the gF3BA assignment. */
+/*@ 0ACD:0BA6 draft */ void PickListItem(void)
 {
+    int flag;
+    int value;
+    int count;
+    int cur;
+    int vol;
+    int item;
+
+    vol = gSoundVolume;
+    if (*(int *)(gB899 + vol * 9) == 0) {
+        if (*(int *)(gB899 + f0D1C_00DA(vol, gFBCC) * 9) == 0)
+            goto done;
+    }
+    count = 0;
+    flag = 0;
+    do {
+        if (gEFB2 == -1)
+            gF3BA = -1;
+        if (gF3BA == -1) {
+            gEFB2 = (gEFB2 + 1) & 3;
+            count++;
+        }
+        if (g374A[gEFB2] != 0)
+            vol = f0D1C_00DA(gSoundVolume, gFBCC);
+        else
+            vol = gSoundVolume;
+        value = g1A1B[gFBCC * 4 + gEFB2];
+        item = f0BD2_02B9((void far *)(gB899 + vol * 9), value, -1);
+        if (item == 0 || item == gF3BA)
+            goto miss;
+        flag = 1;
+        if (gF3BA == -1)
+            gF3BA = item;
+        if (gF51A != 0x10) {
+            cur = f0D1C_02DC();
+            if (f0BD2_0AF2(item, gA99A, gF51A)) {
+                if (cur != 0) {
+                    f0BD2_0458(vol, cur, value);
+                    f122E_1DA8(vol, 4);
+                }
+                f07A9_010C(item);
+            } else {
+                f0BD2_0458(vol, item, value);
+                f122E_1DA8(vol, 4);
+            }
+        } else {
+            if (f0BD2_0AF2(item, gA99A, gF51A)) {
+                f0BD2_01D0((void far *)gChars[gA99A].m97, 0xFFFE, item, 0);
+                f1547_0991(gA99A);
+            } else {
+                f0BD2_0458(vol, item, value);
+                f122E_1DA8(vol, 4);
+            }
+        }
+        gDF4C = 1;
+        goto next;
+    miss:
+        if (item != 0) {
+            f0BD2_01D0((void far *)(gB899 + vol * 9), vol, item, value);
+            f122E_1DA8(vol, 4);
+        }
+        gF3BA = -1;
+    next:
+        ;
+    } while (flag == 0 && count < 5);
+done:
+    f0DE8_0D5E(gA99A);
 }
 
 /* 0ACD:0D9D: the key dispatcher for the map screen. It acts only while the mouse is disabled and
@@ -725,7 +803,7 @@ call:
         break;
     case 0x23:
         if (gFB44 != 2)
-            Action0BA6();
+            PickListItem();
         break;
     case 0x12:
         dir = 0;
