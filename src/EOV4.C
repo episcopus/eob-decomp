@@ -741,7 +741,168 @@ extern struct ViewWallRec gViewWalls[]; /*@ ds:E06A */
         }
     }
 }
-/*@ ovl4:1411 stub */ void Ovl4_1411(int slot) {}
+/* The 3-byte size record a gFB5E entry points at (src/E122E.C declares the same layout). */
+struct SlotSize {
+    char pad00;
+    signed char height;     /* +1: base height in pixels */
+    signed char width;      /* +2: base width in eighths */
+};
+/* The 6-byte slot-position records at ds:A99C: a far size record, then x and y (src/E122E.C). */
+struct SlotPos {
+    struct SlotSize far *rec;   /* +0 */
+    unsigned char x;            /* +4 */
+    unsigned char y;            /* +5 */
+};
+extern struct SlotSize far *gFB5E[]; /*@ ds:FB5E */  /* per column, a far size record (src/EOV3.C) */
+extern struct SlotPos gA99C[]; /*@ ds:A99C */
+extern int gF1; /*@ ds:00F1 */               /* a region top (src/EOV5.C) */
+extern int gF5; /*@ ds:00F5 */               /* a region height (this unit) */
+extern signed char g716E[]; /*@ ds:716E */   /* per heading, a column base (this unit) */
+extern signed char g70F0[]; /*@ ds:70F0 */   /* per index y base, page 1..3 (this unit) */
+extern signed char g70F4[]; /*@ ds:70F4 */   /* per index y base, page 4..6 (this unit) */
+extern signed char g70F8[]; /*@ ds:70F8 */   /* per index y base, page 7..9 (this unit) */
+extern signed char g70FC[]; /*@ ds:70FC */   /* per index y base, page 10..11 (this unit) */
+extern signed char g70FF[]; /*@ ds:70FF */   /* per index y base, page 10..11, second draw (this unit) */
+extern signed char g7102[]; /*@ ds:7102 */   /* per index y base, page 12 (this unit) */
+extern int g7106[]; /*@ ds:7106 */           /* per slot x, page 4..6 (this unit) */
+extern int g7108[]; /*@ ds:7108 */           /* per slot y, page 4..6 (this unit) */
+extern signed char g714E[]; /*@ ds:714E */   /* per heading nudge base (this unit) */
+extern signed char g718E[]; /*@ ds:718E */   /* per index nudge a (this unit) */
+extern signed char g7192[]; /*@ ds:7192 */   /* per index nudge b (this unit) */
+extern signed char g7196[]; /*@ ds:7196 */   /* per index nudge c (this unit) */
+extern signed char g719A[]; /*@ ds:719A */   /* per index nudge d (this unit) */
+extern signed char g719E[]; /*@ ds:719E */   /* per index nudge e (this unit) */
+extern signed char g71A2[]; /*@ ds:71A2 */   /* per index nudge f (this unit) */
+
+#define NO_RECORD -1        /* a ds:18BF byte that means "this heading has no size record" */
+
+/* ovl4:1411: draws the wall face(s) one view slot shows for one page (ds:FBC8). It selects the
+   slot's size record gFB5E[col] (col = g716E[heading] + 2 - g1A09[slot]) and its x base
+   g1D61[(slot*5+4)*2]; unless the page is 7..9 it first fits region 5 to the column extent. For
+   pages 1..3 and 12 it draws one region at the record with a y base from ds:70F0/ds:7102 nudged by
+   ds:718E/ds:7192 when the heading is below 0x1e; 4..6 draws the record twice (region 000F and
+   004D, mirrored) at a y base ds:70F4 and fits the region to ds:7106/ds:7108, then redraws region 5
+   at the column extent; 7..9 draws gFB5E[col+3] first, then fits the column extent and draws the
+   record at y base ds:70F8; 10..11 draws gFB5E[col] and gFB5E[col+3] at y bases ds:70FC/ds:70FF
+   with a nudge from ds:719E/ds:71A2. Every case, when ds:18BF of the heading is NO_RECORD (0xff),
+   also draws the ds:A99C[col] position record, which needs its own x and y. Finally SetRegionRect
+   fits region 5 to the visible span. Called by DrawViewSlots at ovl4:1E2E when the slot is below 15
+   and the record's ds:194B bit 3 is set. Purpose unknown: what the pages, the size records and the
+   nudges mean, and what the 0x1e heading threshold selects.
+   QUIRK ovl4:1411: in cases 10 and 11 the slot parameter is dead and the compiler reuses its stack
+   slot for the case's y nudge, so `slot` is reassigned there and no longer holds the slot number. */
+/*@ ovl4:1411 */ void Ovl4_1411(int slot)
+{
+    int top;
+    int bottom;
+    int heading;
+    int x;
+    int left;
+    int right;
+    int backX;
+    int col;
+    int shift;
+    int xBase;
+    struct SlotSize far *rec;
+    int idx;
+    register int y;
+
+    idx = g1A09[slot];
+    heading = gEF6A[slot][gA9C6];
+    col = g716E[heading] + 2 - idx;
+    rec = gFB5E[col];
+    xBase = g1D61[(slot * 5 + 4) * 2];
+    x = xBase + 0x58;
+    if (gFBC8 < 7 || gFBC8 > 9)
+        SetRegionColumnExtent(slot, &top, &bottom, 5);
+    switch (gFBC8) {
+    case 1:
+    case 2:
+    case 3:
+    case 12:
+        if (gFBC8 != 0xc)
+            y = g70F0[idx] - rec->height;
+        else
+            y = g7102[idx] - rec->height;
+        x -= (rec->width << 3) >> 1;
+        if (gEF6A[slot][gA9C6] < 0x1e)
+            y -= (heading - g714E[heading]) * g718E[idx];
+        else
+            y -= g7192[g1A09[slot]];
+        DrawRegion000F(2, rec, x, y, 5);
+        if (gTable18BF[heading] == NO_RECORD) {
+            x = gA99C[col].x + xBase;
+            y = gA99C[col].y;
+            DrawRegion000F(2, gA99C[col].rec, x, y, 5);
+        }
+        break;
+    case 4:
+    case 5:
+    case 6:
+        y = g70F4[idx] - rec->height;
+        left = g7106[slot * 2] >> 3;
+        right = g7108[slot * 2] >> 3;
+        if (gViewColLeft > left)
+            left = gViewColLeft;
+        if (gViewColRight < right)
+            right = gViewColRight;
+        SetRegionExtents(5, left, gF1, right - left, gF5);
+        if (gEF6A[slot][gA9C6] < 0x1e)
+            shift = -((heading - g714E[heading]) * g7196[idx]);
+        else
+            shift = -g719A[g1A09[slot]];
+        shift -= rec->width << 3;
+        DrawRegion000F(2, rec, x + shift, y, 5);
+        shift += rec->width << 3;
+        DrawRegion004D(2, rec, x - shift, y, 5);
+        if (gTable18BF[heading] == NO_RECORD) {
+            x = gA99C[col].x + xBase - shift;
+            y = gA99C[col].y;
+            DrawRegion000F(2, gA99C[col].rec, x, y, 5);
+        }
+        break;
+    case 7:
+    case 8:
+    case 9:
+        y = g70F8[idx];
+        backX = x - ((gFB5E[col + 3]->width << 3) >> 1);
+        x -= (rec->width << 3) >> 1;
+        y -= gFB5E[col + 3]->height;
+        DrawRegion000F(2, gFB5E[col + 3], backX, y, 5);
+        SetRegionColumnExtent(slot, &top, &bottom, 5);
+        y = g70F8[idx];
+        if (gEF6A[slot][gA9C6] < 0x1e)
+            y -= (heading - g714E[heading]) * g718E[idx];
+        else
+            y -= g7192[g1A09[slot]];
+        DrawRegion000F(2, rec, x, y, 5);
+        if (gTable18BF[heading] == NO_RECORD) {
+            x = gA99C[col].x + xBase;
+            y = gA99C[col].y;
+            DrawRegion000F(2, gA99C[col].rec, x, y, 5);
+        }
+        break;
+    case 10:
+    case 11:
+        if (gEF6A[slot][gA9C6] < 0x1e)
+            slot = -((heading - g714E[heading]) * g719E[idx]);
+        else
+            slot = -g71A2[g1A09[slot]];
+        x -= (rec->width << 3) >> 1;
+        y = g70FC[idx];
+        DrawRegion000F(2, gFB5E[col], x, y + slot, 5);
+        slot = (slot >> 2) + (slot >> 3);
+        y = g70FF[idx];
+        DrawRegion000F(2, gFB5E[col + 3], x, y - slot, 5);
+        if (gTable18BF[heading] == NO_RECORD) {
+            x = gA99C[col].x + xBase;
+            y = gA99C[col].y;
+            DrawRegion000F(2, gA99C[col].rec, x, y, 5);
+        }
+        break;
+    }
+    SetRegionRect(5, gViewColLeft, 0, gViewColRight, 0xf);
+}
 /*@ ovl4:19C4 stub */ void Ovl4_19C4(int slot) {}
 
 extern signed char g7272[]; /*@ ds:7272 */   /* per-column x base correction (this unit) */
