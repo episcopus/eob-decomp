@@ -15,23 +15,21 @@ extern int gAngleA9C8[]; /*@ ds:A9C8 */         /* 18 heading words, the masked 
 extern int gViewSlots[]; /*@ ds:DCB2 */         /* 18 {left,right} view-slot pairs (this unit) */
 
 /* ovl4:0000: for each of the 18 view slots, compute a heading word from `base` plus the slot's
-   signed offset in the 18-byte row `row` of ds:199D, masked to 10 bits, store it in the heading
-   table at ds:A9C8, point the slot's ds:EF6A entry at the 9-byte tile record for that heading in
-   ds:B894, and reset the slot to -1 in both halves of the view-slot array at ds:DCB2. Called by
-   Ovl4_044B at ovl4:04D3. Purpose unknown: the meaning of `row` and of the 18 slots. DRAFT: the
-   shape matches but the register allocator puts `off` in DI where the original uses CX (tried
-   `off = row * 18` inline, `off = row; off *= 18`, `register`, and declaration orders). */
-/*@ ovl4:0000 draft */ void InitViewSlots(int base, int row)
+   signed offset in the 18-byte row `row` of ds:199D (row is scaled by 18 first), masked to 10 bits,
+   store it in the heading table at ds:A9C8, point the slot's ds:EF6A entry at the 9-byte tile
+   record for that heading in ds:B894, and reset the slot to -1 in both halves of the view-slot
+   array at ds:DCB2. Called by Ovl4_044B at ovl4:04D3. Purpose unknown: the meaning of `row` and of
+   the 18 slots. */
+/*@ ovl4:0000 */ void InitViewSlots(int base, int row)
 {
     int heading;
-    int si;
-    int off = row * 18;
+    int i;
 
-    for (si = 0; si < 18; si++) {
-        gAngleA9C8[si] = heading = (base + gHead199D[si + off]) & 0x3FF;
-        gEF6A[si] = (signed char far *)&gB894[heading * 9];
-        gViewSlots[si + 18] = -1;
-        gViewSlots[si] = -1;
+    row *= 18;
+    for (i = 0; i < 18; i++) {
+        heading = gAngleA9C8[i] = (base + gHead199D[row + i]) & 0x3FF;
+        gEF6A[i] = (signed char far *)&gB894[heading * 9];
+        gViewSlots[i] = gViewSlots[i + 18] = -1;
     }
 }
 
