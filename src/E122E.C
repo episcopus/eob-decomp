@@ -27,6 +27,7 @@ extern void ArmEffectWith(int idx, int arg, int sub, int active); /*@ 1414:055B 
 extern void AdjustMemberStatus(int who); /*@ 1414:03B4 */
 extern void Obj1505(int kind, int id, int frame, int orient, int b0, int m07, int type, int timer, int m12, int m14); /*@ 08E6:1505 */
 extern void MarkListItems(void far *head); /*@ 0BD2:040E */
+extern int ScanListItem(void far *head, int target, int type, int count); /*@ 0BD2:0385 */
 extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
 extern void PushListItem(int who, int item, int value); /*@ 0BD2:0458 */
 extern int AddDDEffect(int who, int item, int volume, int kind, int page, int type); /*@ 0BD2:07DE */
@@ -121,7 +122,7 @@ struct Item14 {                                 /* the 14-byte item records at d
     unsigned char flags;                        /* +00 (ds:8DD2) */
     signed char icon;                           /* +01 (ds:8DD3): indexes g181F (122E:06D0) */
     signed char m02;                            /* +02 (ds:8DD4): the item type (src/E0BD2.C) */
-    char pad03;
+    signed char m03;                            /* +03 (ds:8DD5): the key (src/E0BD2.C) */
     int m04;                                    /* +04 (ds:8DD6): the key, -1 when free (src/E0BD2.C) */
     char pad06[0x0e - 0x06];
 };
@@ -144,6 +145,15 @@ struct DDRec {
 };
 
 extern struct DDRec gDD2C[]; /*@ ds:DD2C */    /* 10 records, 18 bytes each */
+
+struct Obj28 {                                  /* the 28-byte object records at ds:8A82 (src/E08E6.C) */
+    char pad00[2];
+    int id;                                     /* +2 (ds:8A84): the object id */
+    char frame;                                 /* +4 (ds:8A86) */
+    char pad05[0x1c - 5];
+};
+extern struct Obj28 gObjs[]; /*@ ds:8A82 */
+extern void MoveObjectToId(struct Obj28 far *obj, int id, int orient); /*@ 08E6:0297 */
 
 extern int CopyItemToFreeSlot(int n); /*@ 0BD2:089E */
 extern void SetMouseItem(int n); /*@ 07A9:010C */
@@ -694,7 +704,58 @@ void f122E_1DA8(int a, int b);  /* forward: 1DA8 comes after its callers */
     }
     return (long)(script - start);
 }
-/*@ 122E:0D57 stub */ void f122E_0D57(void) {}
+/* 122E:0D57: reassign objects, items and effects from one id to another. It reads an opcode (a byte),
+   for 0xFFE8 sets the sound volume, for 0xFFF3 moves every gObjs record whose id matches `v` to
+   `id`, and for 0xFFF5 moves every item of the gB899 list of `v` to the list of `id` (keeping each
+   item's m03 key) and retargets every live gDD2C effect from `v` to `id`. Sets gDF4C. Returns the
+   bytes read. */
+/*@ 122E:0D57 */ long ReassignObjectsOp(char far *script)
+{
+    struct Obj28 far *obj;
+    struct DDRec far *rec;
+    int saved;
+    int op;
+    int srcId;
+    int item;
+    char far *start = script;
+    register int id;
+    register int i;
+
+    if ((op = *script++) != 0xfff1) {
+        srcId = *(int far *)script;
+        script += 2;
+    }
+    id = *(int far *)script;
+    script += 2;
+    switch (op) {
+    case 0xffe8:
+        SetSoundVolume(id);
+        break;
+    case 0xfff3:
+        obj = gObjs;
+        for (i = 0; i < 0x1e; i++) {
+            if (obj->id == srcId)
+                MoveObjectToId(obj, id, obj->frame);
+            obj++;
+        }
+        break;
+    case 0xfff5:
+        while ((item = ScanListItem(&gB899[srcId * 9], -1, -1, 0)) != 0) {
+            saved = gTable8DD2[item].m03;
+            RemoveListItem(&gB899[srcId * 9], 0, item);
+            InsertListItem(&gB899[id * 9], id, item, saved);
+        }
+        rec = gDD2C;
+        for (i = 0; i < 0xa; i++) {
+            if (rec->active == 1 && rec->m04 == srcId)
+                rec->m04 = id;
+            rec++;
+        }
+        break;
+    }
+    gDF4C = 1;
+    return (long)(script - start);
+}
 /* 122E:0E9B: move one item out of a party member's carried list. It reads a member index `who` (a
    random live member when -1), a destination list `id` and a trailing byte, finds a carried item
    whose g181F icon size is at least 0xf by scanning the member's 27 slots from a random start

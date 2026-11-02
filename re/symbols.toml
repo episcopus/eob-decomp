@@ -4038,6 +4038,9 @@ unit = "e122e"
 addr = "122E:0D57"
 size = 324
 evidence = ["frame"]
+name = "ReassignObjectsOp"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e122e_0e9b"
