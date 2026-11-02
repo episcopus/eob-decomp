@@ -303,6 +303,15 @@ extern void far *gAnimTable[];   /*@ ds:5615 */ /* far-pointer animation templat
 extern int gAngleA9C8[];         /*@ ds:A9C8 */ /* 18 words searched for the target cell by 0EF3:00CD
                                                    (the heading table of EOV4.C) */
 extern signed char g55EF[];      /*@ ds:55EF */ /* DrawViewSlots start slot per object index */
+extern unsigned char gFlashPassMask[]; /*@ ds:5621 */ /* eight per-pass bytes */
+extern unsigned char gFlashFrameMask[];/*@ ds:5629 */ /* four per-frame mask bytes */
+extern signed char gFlashFrameShift[];/*@ ds:562d */ /* four per-frame shift counts */
+struct FlashDelta { signed char dx; signed char dy; }; /* 2 bytes at ds:5631 */
+extern struct FlashDelta gFlashDelta[]; /*@ ds:5631 */ /* four per-frame offsets */
+extern int gFlashBaseX[];        /*@ ds:5639 */ /* six per-member x bases */
+extern signed char gFlashBaseY[];/*@ ds:5645 */ /* six per-member y bases */
+extern char far *gFlashFrames[]; /*@ ds:DD1C */ /* far image pointers, indexed by frame - 1 */
+extern void f1A29_000F(int mode, void far *src, int x, int y, int region); /*@ 1A29:000F */
 extern signed char g1A09[];      /*@ ds:1A09 */ /* per-slot object index (EOV4.C) */
 extern int g1D61[];              /*@ ds:1D61 */ /* per-slot, per-part x table (EOV4.C) */
 extern int g8115;                /*@ ds:8115 */ /* nonzero while a status line is up (E082C.C) */
@@ -597,7 +606,35 @@ extern void f0EF3_2A53(int a, int b, int c, int d, int e, void far *p); /*@ 0EF3
     BuildList5();
 }
 
-/*@ 0EF3:05BD stub */ void f0EF3_05BD(int a, int b) {}
+/* 0EF3:05BD: draw one flash frame for member `who` at pass `pass`: redraw the member, then for
+   each of the four frame bits (the gFlashPassMask[pass] bits selected by gFlashFrameMask, shifted
+   down by gFlashFrameShift) draw the image gFlashFrames[frame - 1] at the member's flash base
+   (gFlashBaseX[who] * 8, gFlashBaseY[who], or 0xB5, 3 while a status line is up) plus the frame's
+   gFlashDelta offset. Called by 0EF3:0665. */
+/*@ 0EF3:05BD */ void DrawFlashFrame(int who, int pass)
+{
+    register int i;
+    int x;
+    int frame;
+    register int y;
+
+    RedrawMember(who);
+    for (i = 0; i < 4; i++) {
+        frame = (gFlashPassMask[pass] & gFlashFrameMask[i]) >> gFlashFrameShift[i];
+        if (frame-- == 0)
+            continue;
+        if (gFB44 == 0) {
+            x = gFlashBaseX[who] * 8;
+            y = gFlashBaseY[who];
+        } else {
+            x = 0xB5;
+            y = 3;
+        }
+        y += gFlashDelta[i].dy;
+        x += gFlashDelta[i].dx - 8;
+        f1A29_000F(0, gFlashFrames[frame], x, y, 0);
+    }
+}
 
 /* 0EF3:0665: run the "flash" animation for one member or the whole party: eight passes over the
    living members (m01 bit 0, and either no panel is open or the member is the selected one gA99A),
@@ -619,7 +656,7 @@ extern void f0EF3_2A53(int a, int b, int c, int d, int e, void far *p); /*@ 0EF3
     for (pass = 0; pass < 8; pass++) {
         for (who = first; who <= last; who++) {
             if ((gChars[who].m01 & 1) && (gFB44 == 0 || who == gA99A))
-                f0EF3_05BD(who, pass);
+                DrawFlashFrame(who, pass);
         }
         WaitTicks(2);
     }

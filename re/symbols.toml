@@ -3317,6 +3317,9 @@ unit = "e0ef3"
 addr = "0EF3:05BD"
 size = 168
 evidence = ["near", "frame"]
+level = "L2"
+match_flags = "-ml -O -Z"
+name = "DrawFlashFrame"
 
 [[function]]
 id = "e0ef3_0665"
@@ -3753,9 +3756,9 @@ unit = "e0ef3"
 addr = "0EF3:18D8"
 size = 311
 evidence = ["frame"]
+name = "CastConeOfCold"
 level = "L2"
 match_flags = "-ml -O -Z"
-name = "CastConeOfCold"
 
 [[function]]
 id = "e0ef3_1a0f"
