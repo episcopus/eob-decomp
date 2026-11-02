@@ -43,9 +43,9 @@
 ; 1E8B:000F: initialise the overlay manager. It returns success at once (the jmp at 1E8B:0025) when
 ; the current overlay id word 20B5:00A0 is already zero (the manager is already initialised, or no
 ; overlay id is set yet; which of the two is not established; no code in this unit writes 20B5:00A0,
-; the writer is outside this unit, and the value the records need is 3FCDh, the stub's CD 3F, which
-; 086F compares a record's ES:0000 against). Otherwise it opens the program's own
-; file (01B3, or the name in the far pointer argument at [bp+6] through 01A7, or the PATH search
+; the writer is outside this unit, and the records need that word to be 3FCDh, the stub's CD 3F;
+; 086F compares a record's ES:0000 against the overlay id word 20B5:00A0). Otherwise it opens the
+; program's own file (01B3, or the name in the far pointer argument at [bp+6] through 01A7, or the PATH search
 ; 01F3; when the caller passes none, 000F substitutes 20C1:0318, the "eob.exe" string just past the
 ; 99-entry segment table), reads and checks the MZ header and walks the file's FBOV records (the
 ; "FB"/"OV" signature and the record offset and length from the 10h-byte header at [bp-14h]). On the
@@ -829,9 +829,11 @@ _RelocateOverlayPointer ENDP
 ; `push word ptr es:[bx]` pushes the stub's request word. `sub word ptr [bp+2],2` lowers the saved IP
 ; by 2 and IRET (:903) resumes there. The decremented [bp+2] is the offset the stub was reached at,
 ; not a stack argument. A zero result is the single entry at the record's own offset 0 (the record
-; word ES:0000, which 086F tests against 3FCDh, the CD 3F stub): an INT 3F at record offset 0 leaves
+; word ES:0000, which 086F tests against the overlay id word 20B5:00A0 (:1502-1503); the records need
+; that word to be 3FCDh, the CD 3F stub): an INT 3F at record offset 0 leaves
 ; the saved IP at 2, and the decrement makes it 0. A non-zero result is an entry in the ES:0020 version
-; table: for such an entry 0580's load runs 064E, which rewrites the entry to 0EAh (the far jump)
+; table (EOB.EXE stub 2102 has CD 3F at +0 and the 5-byte entries at +20 and +25): for such an entry
+; 0580's load runs 064E, which rewrites the entry to 0EAh (the far jump)
 ; before the IRET when the record has version records (ES:000C non-zero), so the IRET lands on the live
 ; far jump. For the single entry at record offset 0, nothing in this unit writes that word (066F
 ; starts at ES:0020 and the ES:0000 accesses are reads), so what stops the INT running again is not
