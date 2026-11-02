@@ -28,6 +28,7 @@ extern void AdjustMemberStatus(int who); /*@ 1414:03B4 */
 extern void Obj1505(int kind, int id, int frame, int orient, int b0, int m07, int type, int timer, int m12, int m14); /*@ 08E6:1505 */
 extern void MarkListItems(void far *head); /*@ 0BD2:040E */
 extern int ClickInRect(int left, int top, int right, int bottom); /*@ 082C:0A5D */
+extern void PlaySound(int sound); /*@ 177D:0070 */
 extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
 extern char gFileNameBuf[]; /*@ ds:FE6E */     /* the text buffer sprintf formats into (src/E082C.C) */
 extern int gForceDoorRoll[]; /*@ ds:59B0 */    /* force-door roll thresholds, indexed by CharRec.m0D (122E:0325) */
@@ -54,6 +55,25 @@ struct RectKind {                               /* the per-kind size record gRec
 
 extern struct SlotRegion gSlotRegions[]; /*@ ds:E06B */
 extern struct RectKind far *gRectKinds[]; /*@ ds:EFD4 */
+extern char far *gEF9E; /*@ ds:EF9E */         /* a far byte array the clicked member row indexes (122E:04CA) */
+extern signed char gA9C6; /*@ ds:A9C6 */       /* the member row the mouse is over (src/E0ACD.C) */
+extern char g59F8[]; /*@ ds:59F8 */            /* maps a member row (gEF9E[gA9C6]) to a gA99C entry (122E:04CA) */
+extern char g59D8[]; /*@ ds:59D8 */            /* maps a member row to a column offset (122E:04CA) */
+extern int g1E75; /*@ ds:1E75 */               /* the viewport x origin added to a slot's x (122E:04CA) */
+
+/* The six-byte slot-position records at ds:A99C (src/EOV3.C calls them Triple6): a far pointer to
+   a size record, then the slot's x and y. */
+struct SlotSize {                               /* the 3-byte size record a gA99C entry points at */
+    char pad00;
+    signed char height;                         /* +1: base height in pixels */
+    signed char width;                          /* +2: base width in eighths */
+};
+struct SlotPos {
+    struct SlotSize far *rec;                   /* +0: the far size record */
+    unsigned char x;                            /* +4 */
+    unsigned char y;                            /* +5 */
+};
+extern struct SlotPos gA99C[]; /*@ ds:A99C */
 
 struct CharRec {                                /* the 243-byte character records at ds:F580 */
     char pad00;
@@ -291,7 +311,48 @@ void f122E_1DA8(int a, int b);  /* forward: 1DA8 comes after its callers */
     }
     return 0;
 }
-/*@ 122E:04CA stub */ void f122E_04CA(void) {}
+/* 122E:04CA: the member-slot click handler. It turns the clicked row (gEF9E[gA9C6]) into a gA99C
+   slot entry (through g59F8), builds the slot's screen rectangle from the entry's x/y and the
+   far size record's width (in eighths) and height, all inset by 4 and offset by g1E75, and for the
+   item actions (gFBC8 4, 5, 6) shifts x by the scroll column (row - g59D8[row]) * 9, or by 4 when
+   the row is at least 0x1e. A hit, or a driver not in mode 0x40, toggles the arm effect and plays
+   sound 6 and returns 1; otherwise it defers to CheckMemberSlotRect and returns its result. */
+/*@ 122E:04CA */ int MemberSlotClickAction(int id, int slot)
+{
+    register int x;
+    register int row;
+    int y;
+    int idx;
+    int width;
+    int height;
+    int top;
+    struct SlotSize far *rec;
+
+    row = gEF9E[gA9C6];
+    idx = g59F8[row];
+    rec = gA99C[idx].rec;
+    top = g1E75;
+    x = gA99C[idx].x + top - 4;
+    y = gA99C[idx].y - 4;
+    width = rec->width * 8 + 8;
+    height = rec->height + 8;
+    switch (gFBC8) {
+    case 4:
+    case 5:
+    case 6:
+        if (gEF9E[gA9C6] < 0x1e)
+            x += (row - g59D8[row]) * 9;
+        else
+            x += 4;
+        break;
+    }
+    if (ClickInRect(x, y, x + width, y + height) || gEFD2 != 0x40) {
+        ToggleArmEffect(id, slot);
+        PlaySound(6);
+        return 1;
+    }
+    return CheckMemberSlotRect(id, slot);
+}
 
 /* 122E:05DF: look up the object kind in gB894[id * 9 + slot] and, if HitTestObjectKind accepts it, run the
    driver for `id` in the current mode gEFD2. Returns 1 when it ran, 0 otherwise. */
