@@ -84,6 +84,7 @@ extern int gPartyCell; /*@ ds:FBCA */
 extern signed char g1A1B[]; /*@ ds:1A1B */
 extern char gB899[]; /*@ ds:B899 */
 extern struct CharRec gChars[]; /*@ ds:F580 */
+extern struct CharRec gCharPool[]; /*@ ds:7298 */  /* the pre-made character records 070E copies into gChars */
 extern struct Entry14 gTable8DD2[]; /*@ ds:8DD2 */
 extern struct ItemInfo gA9F5[]; /*@ ds:A9F5 */
 extern struct Obj28 gObjs[]; /*@ ds:8A82 */
@@ -102,6 +103,7 @@ extern char gText7B9F[]; /*@ ds:7B9F */
 extern char gText7BBA[]; /*@ ds:7BBA */
 extern char gText7BC2[]; /*@ ds:7BC2 */
 extern char gText7CBC[]; /*@ ds:7CBC */
+extern char gText7D0E[]; /*@ ds:7D0E */
 extern char gText7D77[]; /*@ ds:7D77 */
 extern char gText7BA6[]; /*@ ds:7BA6 */
 extern char gText7BB2[]; /*@ ds:7BB2 */
@@ -188,7 +190,6 @@ extern void f1A47_0169(void far *font); /*@ 1A47:0169 */
 void Ovl5_025F(void);
 int Ovl5_0455(char offset, char count, void far *names);
 void Ovl5_070E(int who);
-void Ovl5_0828(int who, int which, int head, int other);
 void Ovl5_0924(void);
 void Ovl5_0BBE(void);
 void Ovl5_0C9D(void);
@@ -355,7 +356,37 @@ char gTable7B89[] = { 0x3B, 0xA6, 0x04, 0x70, 0xDC, 0x04, 0x70, 0xDC, 0x04, 0x70
     return 1;
 }
 /*@ ovl5:070E stub */ void Ovl5_070E(int who) {}
-/*@ ovl5:0828 stub */ void Ovl5_0828(int who, int which, int head, int other) {}
+/* ovl5:0828: the character add panel. It clears the panel, draws message `which`, then shows the
+   two-entry menu ds:7B23. Choice 0 ("join") either draws message `head` or, when `head` is -1,
+   builds and draws "<name> joins the party." (ds:7D0E) for gCharPool[who] and shows the modal
+   message 025F; it then removes the item class 0x21 from character `who`+1 and, when ChooseChar
+   finds a free slot, adds the character through 070E. Choice 1 draws message `other`. Called by
+   the panels 0924, 09C5, 0DBB and 119E. */
+/*@ ovl5:0828 */ void AddCharPanel(int who, int which, int head, int other)
+{
+    int sel;
+
+    ClearPanel();
+    PrintTableString(which, 0);
+    sel = Ovl5_0455(0, 2, (void far *)gText7B23);
+    switch (sel) {
+    case 0:
+        if (head != -1) {
+            PrintTableString(head, 1);
+        } else {
+            sprintf(gFileNameBuf, gText7D0E, gCharPool[who].name);
+            DrawText(gFileNameBuf);
+            Ovl5_025F();
+        }
+        RemoveCarriedItems(0x21, who + 1);
+        if (ChooseChar())
+            Ovl5_070E(who);
+        break;
+    case 1:
+        PrintTableString(other, 1);
+        break;
+    }
+}
 /* ovl5:08D2: turns item `n` into a carried item (CopyItemToFreeSlot) and queues it on the list
    head gB899 for the current sound page (gPartyCell) with a random page sound. Called by the
    panels that add an item to a character. */
@@ -389,7 +420,7 @@ char gTable7B89[] = { 0x3B, 0xA6, 0x04, 0x70, 0xDC, 0x04, 0x70, 0xDC, 0x04, 0x70
         }
         switch (sel) {
         case 0:
-            Ovl5_0828(6, 0xc, 0x17, 2);
+            AddCharPanel(6, 0xc, 0x17, 2);
             gFC04 |= 0x4000L;
             break;
         case 1:
@@ -436,7 +467,7 @@ char gTable7B89[] = { 0x3B, 0xA6, 0x04, 0x70, 0xDC, 0x04, 0x70, 0xDC, 0x04, 0x70
         QueueItem(0x3e);
         gFC04 |= 0x10000L;
         PrintTableString(6, 1);
-        Ovl5_0828(7, 7, 0x1d, 0x1e);
+        AddCharPanel(7, 7, 0x1d, 0x1e);
     } else {
         PrintTableString(5, 1);
     }
@@ -705,7 +736,7 @@ char gTable7B89[] = { 0x3B, 0xA6, 0x04, 0x70, 0xDC, 0x04, 0x70, 0xDC, 0x04, 0x70
     sel = Ovl5_0455(2, 3, (void far *)gText7BFA);
     switch (sel) {
     case 0:
-        Ovl5_0828(8, 0x1b, 0x2c, 0x2d);
+        AddCharPanel(8, 0x1b, 0x2c, 0x2d);
         break;
     case 1:
         PrintTableString(0x1f, 1);

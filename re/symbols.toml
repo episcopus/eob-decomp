@@ -7601,6 +7601,9 @@ unit = "eov5"
 addr = "ovl5:0828"
 size = 170
 evidence = ["ovl", "near", "frame"]
+name = "AddCharPanel"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov5_08d2"
