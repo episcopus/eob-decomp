@@ -6,10 +6,12 @@
 ; direct caller in the map (it is reached through the overlay dispatch) and calls most of the
 ; others, including ovl1:0000. The 30 counters at ds:FDEC, the byte table ds:FD9A and the 9-byte
 ; lists at ds:FDBA are the spell tables ovl1:00DD builds and ovl1:025D steps. Status: ovl1:0000,
-; 00DD, 025D, 0416, 0881, 13F7, 1516, 1551 (DrawListNode) and 243A are matched (L2); ovl1:1153 is a
+; 00DD, 025D, 0416, 0881, 097A (the spell-slot screen, with its three option-field helpers at
+; 10DE/1107/112D), 13F7, 1516, 1551 (DrawListNode) and 243A are matched (L2); ovl1:1153 is a
 ; draft (its far-array reads need TCC's internal assembler, see its registry note: this unit is C);
-; ovl1:097A and 1ACD are stubs. Names not proven by an address or a caller come from the code alone
-; and are marked in each function's comment. See whitepaper 2.7 and 4.
+; ovl1:1691 (the 1084-byte routine the map folds into 1551) and 1ACD are stubs. Names not proven
+; by an address or a caller come from the code alone and are marked in each function's comment.
+; See whitepaper 2.7 and 4.
 
         .MODEL  LARGE
 
@@ -48,6 +50,8 @@
         EXTRN   _ListAdd:FAR            ; @ 1658:001E (E0CF7.C)
         EXTRN   _movmem:FAR             ; @ 0000:63A3: move n bytes (library)
         EXTRN   _strlen:FAR             ; @ 0000:67F6: string length (library)
+        EXTRN   _f0D1C_0163:FAR         ; @ 0D1C:0163 (E0D1C.C)
+        EXTRN   _RedrawCharacters:FAR   ; @ 0D1C:0583 (E0ACD.C)
 
         EXTRN   gChars:BYTE             ; @ ds:F580: 6 character records of 0xF3 bytes (E08E6.C)
         EXTRN   gBufDCFC:DWORD          ; @ ds:DCFC: 4096-byte scratch allocation (E07A9.C)
@@ -95,6 +99,14 @@
         EXTRN   gMemberMenu:BYTE        ; @ ds:628C: six five-byte per-member menu records (this unit)
         EXTRN   gColourTable:BYTE       ; @ ds:00A9: sixteen 16-byte colour records, indexed by attribute << 4
         EXTRN   gSpellInfo9:BYTE        ; @ 208E:0000: nine-byte per-entry text/box records (this unit)
+        EXTRN   g62FE:BYTE              ; @ ds:62FE: spell-level to slot-count table, class/kind map A
+        EXTRN   g6330:BYTE              ; @ ds:6330: spell-level to slot-count table, class/kind map B
+        EXTRN   g6358:BYTE              ; @ ds:6358: spell-level to slot-count table, class/kind map C
+        EXTRN   g6394:BYTE              ; @ ds:6394: spell-level to slot-count table, class/kind map D
+        EXTRN   g6465:BYTE              ; @ ds:6465: the "%d of %d Remaining.  " format string
+        EXTRN   gSaveRect:DWORD         ; @ ds:80AE: far save-rectangle routine (E0BD2.C)
+        EXTRN   gFn804A:DWORD           ; @ ds:804A: far blit routine (E0ACD.C)
+        EXTRN   gSegDF4E:DWORD          ; @ ds:DF4E: far pointer to the option-field buffer (E07A9.C)
 
         .CODE
 
@@ -1232,10 +1244,890 @@ f0881_0976:
         ret
 _ShowItemName ENDP
 
-        PUBLIC  _Ovl1_097A               ; @ ovl1:097A stub
-_Ovl1_097A PROC FAR
+; ovl1:097A: the spell-slot screen for member `who` (a negative index returns at once). It picks
+; the member's spell table: FindClassSlot(rec+0x20, 2, else 4, else 1) selects the class slot and
+; rec[slot]+0x24 (minus 1 for kinds 2 and 1) indexes one of the five-byte-per-level tables
+; g62FE+g6330, g6358 or g6394 into a local count[5]; the long `mask` (parameters 3 and 4) is the
+; slot mask passed to BuildSpellSlots and parameter 2 is its flag (0 copies the far pointer at
+; rec+0x73). BuildSpellSlots(who, count, mask, flag) then fills the spell lists and _Ovl1_1153(4)
+; builds the menu. The loop draws rows and item names, reads DispatchKeyWait and switches on a
+; 20-entry key table (0x0C..0x8020) to move the cursor, add or remove one point and redraw the
+; "%d of %d Remaining.  " line (g6465). On exit it frees the list, restores the fonts, redraws the
+; member and calls SpendSpellSlot(who, flag). Called from ovl1:1ACD with the member chosen by
+; ovl1:0416. Purpose unknown: whether the screen casts or memorizes (why `flag` picks the table)
+; and what the long mask means.
+; Stack frame: [bp+6] `who`; [bp+8] `flag`; [bp+0Ch]/[bp+0Eh] the long `mask`; [bp-6..-2] `count[5]`;
+; [bp-0Ch]/[bp-0Ah] the table bases; [bp-10h]/[bp-0Eh] `mask` copy; [bp-12h] `flag` copy;
+; [bp-18h]/[bp-16h] the far `list`; [bp-1Ch]/[bp-1Ah] the far `node`; [bp-20h] `sel`; [bp-1Eh] `cur`;
+; [bp-22h] `pending`; [bp-24h] `key`; [bp-26h] `looping`; [bp-28h]/[bp-2Ah] redraw flags; si `sel`,
+; di `i`/`cur`.
+        PUBLIC  _SpellSlotScreen         ; @ ovl1:097A
+_SpellSlotScreen PROC FAR
+        push    bp
+        mov     bp,sp
+        sub     sp,2Ah
+        push    si
+        push    di
+        cmp     word ptr [bp+6],-1
+        jne     short f097A_098B
+        jmp     f097A_1088
+f097A_098B:
+        mov     ax,[bp+6]
+        mov     dx,0F3h
+        imul    dx
+        mov     bx,ax
+        mov     al,[bx+gChars+13h]
+        cbw
+        add     ax,0FFF4h
+        mov     [bp-0Ch],ax
+        or      ax,ax
+        jge     short f097A_09A8
+        xor     ax,ax
+        jmp     short f097A_09AB
+f097A_09A8:
+        mov     ax,[bp-0Ch]
+f097A_09AB:
+        mov     [bp-0Ch],ax
+        cmp     word ptr [bp+8],0
+        jne     short f097A_09B7
+        jmp     f097A_0A9F
+f097A_09B7:
+        mov     ax,[bp+6]
+        mov     dx,0F3h
+        imul    dx
+        mov     bx,ax
+        mov     al,[bx+gChars+20h]
+        cbw
+        push    ax
+        mov     ax,2
+        push    ax
+        call    far ptr _FindClassSlot
+        pop     cx
+        pop     cx
+        mov     [bp-8],ax
+        cmp     ax,0FFFFh
+        je      short f097A_0A2C
+        mov     ax,[bp+6]
+        mov     dx,0F3h
+        imul    dx
+        add     ax,[bp-8]
+        mov     bx,ax
+        mov     al,[bx+gChars+24h]
+        cbw
+        dec     ax
+        mov     [bp-0Ah],ax
+        xor     di,di
+        jmp     short f097A_0A1B
+f097A_09F4:
+        mov     ax,[bp-0Ah]
+        mov     dx,5
+        imul    dx
+        mov     bx,ax
+        mov     al,[bx+di+62FEh]
+        mov     [bp+di-6],al
+        or      al,al
+        je      short f097A_0A1A
+        mov     ax,[bp-0Ch]
+        mov     dx,5
+        imul    dx
+        mov     bx,ax
+        mov     al,[bx+di+6330h]
+        add     [bp+di-6],al
+f097A_0A1A:
+        inc     di
+f097A_0A1B:
+        cmp     di,5
+        jl      short f097A_09F4
+        mov     word ptr [bp-10h],0FFFFh
+        mov     word ptr [bp-0Eh],7Bh
+        jmp     short f097A_0A97
+f097A_0A2C:
+        mov     ax,[bp+6]
+        mov     dx,0F3h
+        imul    dx
+        mov     bx,ax
+        mov     al,[bx+gChars+20h]
+        cbw
+        push    ax
+        mov     ax,4
+        push    ax
+        call    far ptr _FindClassSlot
+        pop     cx
+        pop     cx
+        mov     [bp-8],ax
+        cmp     ax,0FFFFh
+        je      short f097A_0A97
+        mov     ax,[bp+6]
+        mov     dx,0F3h
+        imul    dx
+        add     ax,[bp-8]
+        mov     bx,ax
+        mov     al,[bx+gChars+24h]
+        cbw
+        mov     [bp-0Ah],ax
+        or      ax,ax
+        jge     short f097A_0A6C
+        xor     ax,ax
+        jmp     short f097A_0A6F
+f097A_0A6C:
+        mov     ax,[bp-0Ah]
+f097A_0A6F:
+        mov     [bp-0Ah],ax
+        xor     di,di
+        jmp     short f097A_0A88
+f097A_0A76:
+        mov     ax,[bp-0Ah]
+        mov     dx,5
+        imul    dx
+        mov     bx,ax
+        mov     al,[bx+di+6358h]
+        mov     [bp+di-6],al
+        inc     di
+f097A_0A88:
+        cmp     di,5
+        jl      short f097A_0A76
+        mov     word ptr [bp-10h],0FF2h
+        mov     word ptr [bp-0Eh],80h
+f097A_0A97:
+        mov     word ptr [bp-12h],1
+        jmp     f097A_0B28
+f097A_0A9F:
+        mov     ax,[bp+6]
+        mov     dx,0F3h
+        imul    dx
+        mov     bx,ax
+        mov     al,[bx+gChars+20h]
+        cbw
+        push    ax
+        mov     ax,1
+        push    ax
+        call    far ptr _FindClassSlot
+        pop     cx
+        pop     cx
+        mov     [bp-8],ax
+        cmp     ax,0FFFFh
+        je      short f097A_0B0B
+        mov     ax,[bp+6]
+        mov     dx,0F3h
+        imul    dx
+        add     ax,[bp-8]
+        mov     bx,ax
+        mov     al,[bx+gChars+24h]
+        cbw
+        dec     ax
+        mov     [bp-0Ah],ax
+        xor     di,di
+        jmp     short f097A_0AEE
+f097A_0ADC:
+        mov     ax,[bp-0Ah]
+        mov     dx,5
+        imul    dx
+        mov     bx,ax
+        mov     al,[bx+di+6394h]
+        mov     [bp+di-6],al
+        inc     di
+f097A_0AEE:
+        cmp     di,5
+        jl      short f097A_0ADC
+        mov     ax,[bp+6]
+        mov     dx,0F3h
+        imul    dx
+        mov     bx,ax
+        mov     ax,word ptr [bx+gChars+75h]
+        mov     dx,word ptr [bx+gChars+73h]
+        mov     [bp-10h],dx
+        mov     [bp-0Eh],ax
+f097A_0B0B:
+        mov     ax,1
+        push    ax
+        push    word ptr [bp+6]
+        call    far ptr _f0D1C_0163
+        pop     cx
+        pop     cx
+        or      ax,ax
+        je      short f097A_0B23
+        shl     byte ptr [bp-3],1
+        shl     byte ptr [bp-2],1
+f097A_0B23:
+        mov     word ptr [bp-12h],0
+f097A_0B28:
+        push    word ptr [bp-12h]
+        push    word ptr [bp-0Eh]
+        push    word ptr [bp-10h]
+        push    ss
+        lea     ax,[bp-6]
+        push    ax
+        push    word ptr [bp+6]
+        push    cs
+        call    near ptr _BuildSpellSlots
+        add     sp,0Ch
+        mov     word ptr [bp-18h],0
+        mov     word ptr [bp-16h],0
+        mov     word ptr [bp-28h],1
+        mov     ax,0FFFFh
+        mov     [bp-20h],ax
+        mov     si,ax
+        xor     ax,ax
+        mov     [bp-22h],ax
+        mov     [bp-1Eh],ax
+        mov     ax,4
+        push    ax
+        nop
+        push    cs
+        call    near ptr _Ovl1_1153
+        pop     cx
+        mov     [bp-18h],ax
+        mov     [bp-16h],dx
+        mov     word ptr [bp-26h],1
+        jmp     f097A_1035
+f097A_0B77:
+        push    word ptr [bp+6]
+        call    far ptr _DrawRowList
+        pop     cx
+        cmp     word ptr [bp-1Eh],0
+        jge     short f097A_0B8B
+        mov     word ptr [bp-1Eh],4
+f097A_0B8B:
+        cmp     word ptr [bp-1Eh],4
+        jle     short f097A_0B96
+        mov     word ptr [bp-1Eh],0
+f097A_0B96:
+        cmp     si,[bp-1Eh]
+        je      short f097A_0C13
+        or      si,si
+        jl      short f097A_0BCD
+        mov     ax,si
+        add     ax,1Bh
+        push    ax
+        push    word ptr [bp-16h]
+        push    word ptr [bp-18h]
+        call    far ptr _FindNode
+        add     sp,6
+        mov     [bp-1Ch],ax
+        mov     [bp-1Ah],dx
+        mov     ax,1
+        push    ax
+        xor     ax,ax
+        push    ax
+        push    ax
+        push    dx
+        push    word ptr [bp-1Ch]
+        nop
+        push    cs
+        call    near ptr _DrawListNode
+        add     sp,0Ah
+f097A_0BCD:
+        mov     ax,[bp-1Eh]
+        add     ax,1Bh
+        push    ax
+        push    word ptr [bp-16h]
+        push    word ptr [bp-18h]
+        call    far ptr _FindNode
+        add     sp,6
+        mov     [bp-1Ch],ax
+        mov     [bp-1Ah],dx
+        mov     ax,1
+        push    ax
+        push    ax
+        xor     ax,ax
+        push    ax
+        push    dx
+        push    word ptr [bp-1Ch]
+        nop
+        push    cs
+        call    near ptr _DrawListNode
+        add     sp,0Ah
+        mov     word ptr [bp-22h],0
+        mov     word ptr [bp-20h],0FFFFh
+        mov     si,[bp-1Eh]
+        mov     word ptr [bp-28h],1
+        mov     word ptr [bp-2Ah],1
+f097A_0C13:
+        cmp     word ptr [bp-2Ah],0
+        je      short f097A_0C8A
+        mov     word ptr [bp-2Ah],0
+        mov     word ptr [g8115],2
+        mov     di,1
+        jmp     short f097A_0C4B
+f097A_0C29:
+        xor     ax,ax
+        push    ax
+        push    ax
+        push    word ptr [bp-12h]
+        mov     ax,di
+        dec     ax
+        push    ax
+        mov     ax,si
+        mov     dx,9
+        imul    dx
+        mov     bx,ax
+        mov     al,[bx+di+gFDBA]
+        cbw
+        push    ax
+        push    cs
+        call    near ptr _ShowItemName
+        add     sp,0Ah
+        inc     di
+f097A_0C4B:
+        cmp     di,9
+        jl      short f097A_0C29
+        mov     word ptr [g8115],0
+        call    far ptr _LockHidePointer
+        xor     ax,ax
+        push    ax
+        mov     ax,2
+        push    ax
+        mov     ax,48h
+        push    ax
+        mov     ax,16h
+        push    ax
+        mov     ax,32h
+        push    ax
+        xor     ax,ax
+        push    ax
+        mov     ax,32h
+        push    ax
+        xor     ax,ax
+        push    ax
+        call    far ptr _ClipRect
+        add     sp,10h
+        call    far ptr _LockShowPointer
+        mov     word ptr [bp-20h],0FFFFh
+f097A_0C8A:
+        cmp     word ptr [bp-28h],0
+        je      short f097A_0CE2
+        mov     word ptr [bp-28h],0
+        mov     al,[bp+si-6]
+        cbw
+        push    ax
+        mov     al,[bp+si-6]
+        cbw
+        push    ax
+        mov     al,[si+gFDE7]
+        cbw
+        pop     dx
+        sub     dx,ax
+        push    dx
+        push    ds
+        mov     ax,6465h
+        push    ax
+        push    ds
+        mov     ax,OFFSET gFileNameBuf
+        push    ax
+        call    far ptr _sprintf
+        add     sp,0Ch
+        call    far ptr _LockHidePointer
+        mov     al,[gF57E]
+        cbw
+        push    ax
+        mov     ax,9
+        push    ax
+        mov     ax,26h
+        push    ax
+        mov     ax,8
+        push    ax
+        push    ds
+        mov     ax,OFFSET gFileNameBuf
+        push    ax
+        call    far ptr _DrawShadowText
+        add     sp,0Ch
+        call    far ptr _LockShowPointer
+f097A_0CE2:
+        cmp     word ptr [bp-22h],0
+        jge     short f097A_0CFA
+        mov     ax,si
+        mov     dx,9
+        imul    dx
+        mov     bx,ax
+        mov     al,[bx+gFDBA]
+        cbw
+        dec     ax
+        mov     [bp-22h],ax
+f097A_0CFA:
+        mov     ax,si
+        mov     dx,9
+        imul    dx
+        mov     bx,ax
+        mov     al,[bx+gFDBA]
+        cbw
+        cmp     ax,[bp-22h]
+        jg      short f097A_0D12
+        mov     word ptr [bp-22h],0
+f097A_0D12:
+        mov     ax,[bp-22h]
+        cmp     ax,[bp-20h]
+        je      short f097A_0D6A
+        xor     ax,ax
+        push    ax
+        mov     ax,1
+        push    ax
+        push    word ptr [bp-12h]
+        push    word ptr [bp-20h]
+        mov     ax,si
+        mov     dx,9
+        imul    dx
+        add     ax,[bp-20h]
+        mov     bx,ax
+        mov     al,[bx+gFDBA+1]
+        cbw
+        push    ax
+        push    cs
+        call    near ptr _ShowItemName
+        add     sp,0Ah
+        mov     ax,1
+        push    ax
+        push    ax
+        push    word ptr [bp-12h]
+        push    word ptr [bp-22h]
+        mov     ax,si
+        mov     dx,9
+        imul    dx
+        add     ax,[bp-22h]
+        mov     bx,ax
+        mov     al,[bx+gFDBA+1]
+        cbw
+        push    ax
+        push    cs
+        call    near ptr _ShowItemName
+        add     sp,0Ah
+        mov     ax,[bp-22h]
+        mov     [bp-20h],ax
+f097A_0D6A:
+        push    word ptr [bp-16h]
+        push    word ptr [bp-18h]
+        call    far ptr _DispatchKeyWait
+        pop     cx
+        pop     cx
+        mov     [bp-24h],ax
+        cmp     ax,5Ch
+        je      short f097A_0DA5
+        cmp     ax,66h
+        je      short f097A_0D93
+        cmp     ax,6Eh
+        je      short f097A_0D8B
+        jmp     short f097A_0DBA
+f097A_0D8B:
+        mov     word ptr [bp-24h],801Ah
+        jmp     f097A_0E1A
+f097A_0D93:
+        mov     ax,si
+        inc     ax
+        mov     bx,5
+        cwd
+        idiv    bx
+        add     dx,801Bh
+        mov     [bp-24h],dx
+        jmp     short f097A_0E1A
+f097A_0DA5:
+        or      si,si
+        jne     short f097A_0DB0
+        mov     word ptr [bp-24h],801Fh
+        jmp     short f097A_0E1A
+f097A_0DB0:
+        mov     ax,si
+        add     ax,801Ah
+        mov     [bp-24h],ax
+        jmp     short f097A_0E1A
+f097A_0DBA:
+        cmp     word ptr [gMouseDisabled],0
+        jne     short f097A_0E1A
+        mov     ax,7Ah
+        push    ax
+        mov     ax,0A8h
+        push    ax
+        mov     ax,32h
+        push    ax
+        mov     ax,8
+        push    ax
+        push    word ptr [gCursorY]
+        push    word ptr [gCursorX]
+        call    far ptr _PointInRect
+        add     sp,0Ch
+        or      ax,ax
+        je      short f097A_0E1A
+        mov     ax,[gCursorY]
+        add     ax,0FFCEh
+        mov     bx,9
+        cwd
+        idiv    bx
+        mov     [bp-22h],ax
+        mov     ax,si
+        mov     dx,9
+        imul    dx
+        mov     bx,ax
+        mov     al,[bx+gFDBA]
+        cbw
+        dec     ax
+        cmp     ax,[bp-22h]
+        jge     short f097A_0E1A
+        mov     ax,si
+        mov     dx,9
+        imul    dx
+        mov     bx,ax
+        mov     al,[bx+gFDBA]
+        cbw
+        dec     ax
+        mov     [bp-22h],ax
+f097A_0E1A:
+        test    word ptr [bp-24h],8000h
+        je      short f097A_0E6E
+        mov     ax,[bp-24h]
+        and     ax,7FFFh
+        push    ax
+        push    word ptr [bp-16h]
+        push    word ptr [bp-18h]
+        call    far ptr _FindNode
+        add     sp,6
+        mov     [bp-1Ch],ax
+        mov     [bp-1Ah],dx
+        mov     ax,1
+        push    ax
+        push    ax
+        push    ax
+        push    dx
+        push    word ptr [bp-1Ch]
+        nop
+        push    cs
+        call    near ptr _DrawListNode
+        add     sp,0Ah
+        mov     ax,5
+        push    ax
+        call    far ptr _WaitFrames
+        pop     cx
+        mov     ax,1
+        push    ax
+        xor     ax,ax
+        push    ax
+        push    ax
+        push    word ptr [bp-1Ah]
+        push    word ptr [bp-1Ch]
+        nop
+        push    cs
+        call    near ptr _DrawListNode
+        add     sp,0Ah
+f097A_0E6E:
+        mov     ax,[bp-24h]
+        mov     [bp-14h],ax
+        mov     cx,14h
+        mov     bx,108Eh
+f097A_0E7A:
+        mov     ax,word ptr cs:[bx]
+        cmp     ax,[bp-14h]
+        je      short f097A_0E89
+        inc     bx
+        inc     bx
+        loop    f097A_0E7A
+        jmp     f097A_1035
+f097A_0E89:
+        jmp     word ptr cs:[bx+28h]
+f097A_0E8D:
+        mov     ax,[bp-24h]
+        sub     ax,801Bh
+        mov     [bp-1Eh],ax
+        cmp     ax,si
+        je      short f097A_0E9D
+        jmp     f097A_1035
+f097A_0E9D:
+        mov     ax,[bp-24h]
+        and     ax,7FFFh
+        push    ax
+        push    word ptr [bp-16h]
+        push    word ptr [bp-18h]
+        call    far ptr _FindNode
+        add     sp,6
+        mov     [bp-1Ch],ax
+        mov     [bp-1Ah],dx
+        mov     ax,1
+        push    ax
+        push    ax
+        xor     ax,ax
+        push    ax
+        push    dx
+        push    word ptr [bp-1Ch]
+        nop
+        push    cs
+        call    near ptr _DrawListNode
+        add     sp,0Ah
+        jmp     f097A_1035
+f097A_0ECF:
+        cmp     byte ptr [si+gFDE7],0
+        jne     short f097A_0ED9
+        jmp     f097A_1035
+f097A_0ED9:
+        mov     di,1
+        jmp     short f097A_0F10
+f097A_0EDE:
+        mov     ax,si
+        mov     dx,9
+        imul    dx
+        mov     bx,ax
+        mov     al,[bx+di+gFDBA]
+        cbw
+        shl     ax,1
+        mov     bx,ax
+        mov     al,[bx+gFDEA]
+        sub     byte ptr [si+gFDE7],al
+        mov     ax,si
+        mov     dx,9
+        imul    dx
+        mov     bx,ax
+        mov     al,[bx+di+gFDBA]
+        cbw
+        shl     ax,1
+        mov     bx,ax
+        mov     byte ptr [bx+gFDEA],0
+        inc     di
+f097A_0F10:
+        mov     ax,si
+        mov     dx,9
+        imul    dx
+        mov     bx,ax
+        mov     al,[bx+gFDBA]
+        cbw
+        cmp     ax,di
+        jge     short f097A_0EDE
+        mov     word ptr [bp-28h],1
+        mov     word ptr [bp-2Ah],1
+        jmp     f097A_1035
+f097A_0F2F:
+        call    far ptr _RedrawCharacters
+        mov     word ptr [bp-26h],0
+        jmp     f097A_1035
+f097A_0F3C:
+        mov     ax,[bp-20h]
+        inc     ax
+        jmp     short f097A_0F5E
+f097A_0F42:
+        mov     word ptr [bp-22h],0
+        jmp     f097A_1035
+f097A_0F4A:
+        mov     ax,[bp-20h]
+        jmp     short f097A_0F5D
+f097A_0F4F:
+        mov     ax,si
+        mov     dx,9
+        imul    dx
+        mov     bx,ax
+        mov     al,[bx+gFDBA]
+        cbw
+f097A_0F5D:
+        dec     ax
+f097A_0F5E:
+        mov     [bp-22h],ax
+        jmp     f097A_1035
+f097A_0F64:
+        mov     al,[bp+si-6]
+        cbw
+        push    ax
+        mov     al,[si+gFDE7]
+        cbw
+        pop     dx
+        sub     dx,ax
+        jg      short f097A_0F76
+        jmp     f097A_1035
+f097A_0F76:
+        cmp     word ptr [bp-20h],-1
+        jg      short f097A_0F7F
+        jmp     f097A_1035
+f097A_0F7F:
+        mov     ax,si
+        mov     dx,9
+        imul    dx
+        add     ax,[bp-20h]
+        mov     bx,ax
+        mov     al,[bx+gFDBA+1]
+        cbw
+        shl     ax,1
+        mov     bx,ax
+        inc     byte ptr [bx+gFDEA]
+        inc     byte ptr [si+gFDE7]
+        mov     ax,1
+        push    ax
+        xor     ax,ax
+        push    ax
+        push    word ptr [bp-12h]
+        push    word ptr [bp-20h]
+        mov     ax,[bp-1Eh]
+        mov     dx,9
+        imul    dx
+        add     ax,[bp-20h]
+        mov     bx,ax
+        mov     al,[bx+gFDBA+1]
+        cbw
+        push    ax
+        push    cs
+        call    near ptr _ShowItemName
+        add     sp,0Ah
+        mov     word ptr [bp-28h],1
+        jmp     short f097A_1035
+f097A_0FCA:
+        cmp     byte ptr [bp+si-6],0
+        je      short f097A_1035
+        mov     ax,si
+        mov     dx,9
+        imul    dx
+        add     ax,[bp-20h]
+        mov     bx,ax
+        mov     al,[bx+gFDBA+1]
+        cbw
+        shl     ax,1
+        mov     bx,ax
+        cmp     byte ptr [bx+gFDEA],0
+        je      short f097A_1035
+        mov     ax,si
+        mov     dx,9
+        imul    dx
+        add     ax,[bp-20h]
+        mov     bx,ax
+        mov     al,[bx+gFDBA+1]
+        cbw
+        shl     ax,1
+        mov     bx,ax
+        dec     byte ptr [bx+gFDEA]
+        dec     byte ptr [si+gFDE7]
+        mov     ax,1
+        push    ax
+        xor     ax,ax
+        push    ax
+        push    word ptr [bp-12h]
+        push    word ptr [bp-20h]
+        mov     ax,[bp-1Eh]
+        mov     dx,9
+        imul    dx
+        add     ax,[bp-20h]
+        mov     bx,ax
+        mov     al,[bx+gFDBA+1]
+        cbw
+        push    ax
+        push    cs
+        call    near ptr _ShowItemName
+        add     sp,0Ah
+        mov     word ptr [bp-28h],1
+f097A_1035:
+        cmp     word ptr [bp-26h],0
+        je      short f097A_103E
+        jmp     f097A_0B77
+f097A_103E:
+        push    word ptr [bp-16h]
+        push    word ptr [bp-18h]
+        nop
+        push    cs
+        call    near ptr _FreeFarList
+        pop     cx
+        pop     cx
+        mov     ax,0FFFFh
+        push    ax
+        call    far ptr _DrawRowList
+        pop     cx
+        push    word ptr [gA9C0+2]
+        push    word ptr [gA9C0]
+        call    far ptr _f1A47_0169
+        pop     cx
+        pop     cx
+        push    word ptr [bp+6]
+        call    far ptr _RedrawMember
+        pop     cx
+        push    word ptr [gFE5A+2]
+        push    word ptr [gFE5A]
+        call    far ptr _f1A47_0169
+        pop     cx
+        pop     cx
+        push    word ptr [bp-12h]
+        push    word ptr [bp+6]
+        push    cs
+        call    near ptr _SpendSpellSlot
+        pop     cx
+        pop     cx
+f097A_1088:
+        pop     di
+        pop     si
+        mov     sp,bp
+        pop     bp
         ret
-_Ovl1_097A ENDP
+f097A_108E:
+        dw      0Ch, 0Dh, 2Bh, 3Dh, 42h, 5Bh, 5Dh, 60h, 61h, 62h, 69h, 6Ah
+        dw      8019h, 801Ah, 801Bh, 801Ch, 801Dh, 801Eh, 801Fh, 8020h
+        dw      f097A_0FCA, f097A_0F64, f097A_0F64, f097A_0F64, f097A_0FCA, f097A_0F42
+        dw      f097A_0F4F, f097A_0F4A, f097A_0F64, f097A_0F3C, f097A_0FCA, f097A_0F64
+        dw      f097A_0ECF, f097A_0F2F, f097A_0E8D, f097A_0E8D, f097A_0E8D, f097A_0E8D
+        dw      f097A_0E8D, f097A_0F64
+_SpellSlotScreen ENDP
+
+; ovl1:10DE: return the far string picked by the flag `which` (index 0x16 when `which` is 0, 0x15
+; otherwise) from the string table at segment 01E8. Called by ovl1:1ACD to label the option states.
+        PUBLIC  _BoolString             ; @ ovl1:10DE
+_BoolString PROC FAR
+        push    bp
+        mov     bp,sp
+        push    si
+        mov     si,[bp+6]
+        or      si,si
+        je      short f10DE_10EE
+        mov     ax,15h
+        jmp     short f10DE_10F1
+f10DE_10EE:
+        mov     ax,16h
+f10DE_10F1:
+        mov     si,ax
+        push    ax
+        mov     ax,1E8h
+        push    ax
+        mov     ax,0
+        push    ax
+        call    far ptr _SkipStrings
+        add     sp,6
+        pop     si
+        pop     bp
+        ret
+_BoolString ENDP
+
+; ovl1:1107: save the option-field rectangle (0,0x78)-(0x16,0x18) into the buffer at gSegDF4E
+; plus 0x4E20 through gSaveRect. Called by ovl1:1ACD around the options page.
+        PUBLIC  _SaveOptionField        ; @ ovl1:1107
+_SaveOptionField PROC FAR
+        push    bp
+        mov     bp,sp
+        mov     ax,word ptr [gSegDF4E]
+        add     ax,4E20h
+        push    word ptr [gSegDF4E+2]
+        push    ax
+        mov     ax,18h
+        push    ax
+        mov     ax,16h
+        push    ax
+        mov     ax,78h
+        push    ax
+        xor     ax,ax
+        push    ax
+        call    dword ptr [gSaveRect]
+        add     sp,0Ch
+        pop     bp
+        ret
+_SaveOptionField ENDP
+
+; ovl1:112D: redraw the option-field rectangle (0,0x78)-(0x16,0x18) from the buffer at gSegDF4E
+; plus 0x4E20 through gFn804A. Called by ovl1:1ACD around the options page.
+        PUBLIC  _DrawOptionField        ; @ ovl1:112D
+_DrawOptionField PROC FAR
+        push    bp
+        mov     bp,sp
+        mov     ax,word ptr [gSegDF4E]
+        add     ax,4E20h
+        push    word ptr [gSegDF4E+2]
+        push    ax
+        mov     ax,18h
+        push    ax
+        mov     ax,16h
+        push    ax
+        mov     ax,78h
+        push    ax
+        xor     ax,ax
+        push    ax
+        call    dword ptr [gFn804A]
+        add     sp,0Ch
+        pop     bp
+        ret
+_DrawOptionField ENDP
 
 ; ovl1:1153: build and return the far linked list of the menu rows for member `who`. It reads the
 ; five-byte gMemberMenu[who] record (message index, attribute, first table index, row count, colour),

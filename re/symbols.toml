@@ -7475,6 +7475,9 @@ unit = "eov1"
 addr = "ovl1:097A"
 size = 2009
 evidence = ["frame"]
+name = "_SpellSlotScreen"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "eov1_1153"
