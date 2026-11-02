@@ -7203,7 +7203,9 @@ unit = "eov3"
 addr = "ovl3:01C8"
 size = 338
 evidence = ["ovl", "near", "frame"]
-notes = "blocked: same as ovl3:03A2. The map sheet index gMapTiles[gFBC8-1] folds into a disp16 (our far object's stub offset FAR_BASE=8000h plus -1 gives 7FFFh, the original's object offset 0 plus -1 gives FFFFh); cmatch.py:370 only explains a displacement >= FAR_BASE. The draft matches up to that instruction (+00C5). The honest source form is kept in src/EOV3.C."
+name = "RegisterWallObject"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov3_031a"
@@ -7221,7 +7223,9 @@ unit = "eov3"
 addr = "ovl3:03A2"
 size = 560
 evidence = ["ovl", "near", "frame"]
-notes = "blocked: the far object at 1F1D:0000 is indexed [gFBC8-1]; the compiler folds the -1 into a disp16 0xFFFF, so our build's displacement is FAR_BASE-1 (0x7FFF) and cmatch.py:370 only explains a displacement >= FAR_BASE. The honest source form is kept in src/EOV3.C."
+name = "LoadMapCells"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov3_05d2"
@@ -7300,7 +7304,8 @@ addr = "ovl3:0A7C"
 size = 1365
 evidence = ["ovl", "near", "frame"]
 name = "LoadMapScreen"
-notes = "unblocked 2026-11-01 (escalation eov3 answered): cmatch now compares the initialiser template at ds:6A80 byte by byte, its far pointers by the function they name (overlay stub entries 210C:0025/0034/002A), and explains far-object displacements below FAR_BASE (the folded -1 of gMapTiles[gFBC8-1]); the draft in src/EOV3.C passes +000F and next differs at +024A"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov3_0fd1"
