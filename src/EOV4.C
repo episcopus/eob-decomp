@@ -47,49 +47,51 @@ extern void SetRegionExtents(int region, int left, int top, int width, int heigh
 extern signed char g6B82[]; /*@ ds:6B82 */   /* per slot,i signed column adjustment (this unit) */
 extern signed char g6CC6[]; /*@ ds:6CC6 */   /* per slot,i signed {left,right} bounds (this unit) */
 
-/* ovl4:0097: computes the visible left and right columns of one view slot. When the slot's pair in
-   gViewSlots (at ds:DCB2) is not -1 it just returns that pair. Otherwise it starts from 0..0x16 and
-   walks the 18 tile records (gEF6A[i][gA9C6]): a record whose ds:194B flag has bit 3 clear
-   contributes its ds:6B82 column adjustment (a positive value pulls *right left, a negative one
-   pulls *left right, and -40 is skipped while -41 forces an empty left), a record whose bit 3 is
-   set contributes its ds:6CC6 {left,right} bounds; the walk stops when *right falls below *left.
-   The pair is cached back into gViewSlots and SetRegionRect fits region `region` to the span.
-   Called by Ovl4_1E18 at ovl4:1E23. Purpose unknown: what the records and adjustments mean.
-   DRAFT: the register allocation differs. The original has sub sp,6 (bp-2 i, bp-4 pair, bp-6
-   heading), keeps 2*slot in SI across the `if` (the shared index of the condition, the two loads
-   and the final stores) and adjust in DI; ours promotes `slot` to DI (the index recomputed per use)
-   or the loop counter to SI, giving sub sp,4. A local `j = (slot + i) * 2` is needed so the else's
-   index takes SI; with it every local but `adjust` is in memory. `register int pair` then reproduces
-   the whole if/then and the entry (sub sp,6, pair in SI), but the compiler drops the else's
-   redundant `pair = 2 * slot`, so the end label (and the then tail `jmp`) lands one byte early
-   (+0037); recomputing pair in the else adds 7 bytes instead. Tried all declaration orders of
-   {i,pair,heading,adjust,j} with every `register` subset, `pair` vs inline `2 * slot` in the
-   condition, `slot *= 18` vs `slot = slot * 18`, a `while` loop, -B, -G and -r-; none changes it. */
-/*@ ovl4:0097 draft */ void ComputeViewSpan(int slot, int far *left, int far *right, int region)
-{
-    int pair;
-    int i;
-    int heading;
-    int adjust;
+#define VIEW_SLOTS 18       /* the ds:EF6A tile records a slot's span is built from */
+#define VIEW_RIGHT 0x16     /* the rightmost column of the view, in 8-pixel columns */
+#define VIEW_BOTTOM 0xf     /* the bottom of the view region, in 8-pixel rows */
+#define ADJUST_SKIP -40     /* a ds:6B82 adjustment that leaves the span unchanged */
+#define ADJUST_EMPTY -41    /* a ds:6B82 adjustment that forces an empty span */
+#define TILE_FLAG 8         /* ds:194B bit 3: the record carries ds:6CC6 bounds, not an adjustment */
 
-    pair = 2 * slot;
-    if (gViewSlots[pair] != -1) {
-        *left = gViewSlots[pair];
-        *right = gViewSlots[pair + 1];
+/* ovl4:0097: computes the visible left and right columns of one view slot and fits region `region`
+   to them. `slot` indexes the view slots and gEF6A; `left`/`right` receive the span (2-pixel
+   columns). When the slot's cached pair in gViewSlots (at ds:DCB2, two words per slot) is not -1 it
+   returns that pair. Otherwise it starts at 0..VIEW_RIGHT and walks the VIEW_SLOTS tile records
+   gEF6A[i][gA9C6]: a record whose ds:194B heading flag has bit 3 clear contributes its ds:6B82
+   column adjustment (a positive value pulls *right left, a negative one pulls *left right; an
+   adjustment of ADJUST_SKIP on a record with a zero ds:1879 count is ignored and ADJUST_EMPTY
+   forces an empty span), a record whose bit 3 is set narrows the span with its ds:6CC6
+   {left,right} bounds; the walk stops when *right falls below *left. The pair is cached back into
+   gViewSlots and SetRegionRect fits `region` to (left, right). Called by Ovl4_1E18 at ovl4:1E23.
+   Purpose unknown: what the records and adjustments mean.
+   QUIRK ovl4:0097: the local `j` is used as the pair index before the loop and as the ds:6CC6
+   column index inside it; both are `2 * slot`, so the value is reused rather than recomputed. */
+/*@ ovl4:0097 */ void ComputeViewSpan(int slot, int far *left, int far *right, int region)
+{
+    int i;
+    int pair;
+    int heading;
+    register int adjust;
+    register int j;
+
+    j = 2 * slot;
+    if (gViewSlots[j] != -1) {
+        *left = gViewSlots[j];
+        *right = gViewSlots[j + 1];
     } else {
         *left = 0;
-        *right = 0x16;
-        slot = slot * 18;
-        for (i = 0; i < 18; i++) {
+        *right = VIEW_RIGHT;
+        pair = 2 * slot;
+        slot *= VIEW_SLOTS;
+        for (i = 0; i < VIEW_SLOTS; i++) {
             heading = gEF6A[i][gA9C6];
-            if ((g194B[heading] & 8) == 0) {
+            if (!(g194B[heading] & TILE_FLAG)) {
                 adjust = g6B82[slot + i];
-                if (g1879[heading] == 0)
+                if (g1879[heading] == 0 || adjust == ADJUST_SKIP)
                     continue;
-                if (adjust == -40)
-                    continue;
-                if (adjust == -41) {
-                    *left = 0x16;
+                if (adjust == ADJUST_EMPTY) {
+                    *left = VIEW_RIGHT;
                     *right = 0;
                     break;
                 }
@@ -98,20 +100,22 @@ extern signed char g6CC6[]; /*@ ds:6CC6 */   /* per slot,i signed {left,right} b
                 if (adjust < 0 && -adjust > *left)
                     *left = -adjust;
             } else {
-                if (g6CC6[(slot + i) * 2] > *left)
-                    *left = g6CC6[(slot + i) * 2];
-                if (g6CC6[(slot + i) * 2 + 1] < *right)
-                    *right = g6CC6[(slot + i) * 2 + 1];
+                j = (slot + i) * 2;
+                if (g6CC6[j] > *left)
+                    *left = g6CC6[j];
+                j++;
+                if (g6CC6[j] < *right)
+                    *right = g6CC6[j];
             }
             if (*right < *left)
                 break;
         }
         gViewSlots[pair] = *left;
-        gViewSlots[pair + 1] = *right;
+        pair++;
+        gViewSlots[pair] = *right;
     }
-    SetRegionRect(region, *left, 0, *right, 0xf);
+    SetRegionRect(region, *left, 0, *right, VIEW_BOTTOM);
 }
-
 struct Region {             /* the 16-byte region records at ds:009F (src/E1DE7.C) */
     int left;               /* +0 */
     int top;                /* +2 */
@@ -124,7 +128,7 @@ struct Region {             /* the 16-byte region records at ds:009F (src/E1DE7.
 };
 
 extern struct Region gRegions[]; /*@ ds:009F */
-extern int gFBC8; /*@ ds:FBC8 */                 /* the current page 0..3 (src/E0ACD.C) */
+extern int gFBC8; /*@ ds:FBC8 */                 /* the current action (src/E0D1C.C) */
 extern int gFBCC; /*@ ds:FBCC */                 /* the current page 0..3 (src/E08E6.C) */
 extern signed char g6F4E[]; /*@ ds:6F4E */       /* row value table this unit indexes */
 extern signed char g6F6D[]; /*@ ds:6F6D */       /* per-page index into ds:6F4E */
@@ -737,7 +741,174 @@ extern struct ViewWallRec gViewWalls[]; /*@ ds:E06A */
         }
     }
 }
-/*@ ovl4:1411 stub */ void Ovl4_1411(int slot) {}
+/* The 3-byte size record a gFB5E entry points at (src/E122E.C declares the same layout). */
+struct SlotSize {
+    char pad00;
+    signed char height;     /* +1: base height in pixels */
+    signed char width;      /* +2: base width in eighths */
+};
+/* The 6-byte slot-position records at ds:A99C: a far size record, then x and y (src/E122E.C). */
+struct SlotPos {
+    struct SlotSize far *rec;   /* +0 */
+    unsigned char x;            /* +4 */
+    unsigned char y;            /* +5 */
+};
+extern struct SlotSize far *gFB5E[]; /*@ ds:FB5E */  /* per column, a far size record (src/EOV3.C) */
+extern struct SlotPos gA99C[]; /*@ ds:A99C */
+extern int gF1; /*@ ds:00F1 */               /* a region top (src/EOV5.C) */
+extern int gF5; /*@ ds:00F5 */               /* a region height (this unit) */
+extern signed char g716E[]; /*@ ds:716E */   /* per heading, a column base (this unit) */
+extern signed char g70F0[]; /*@ ds:70F0 */   /* per index y base, action 1..3 (this unit) */
+extern signed char g70F4[]; /*@ ds:70F4 */   /* per index y base, action 4..6 (this unit) */
+extern signed char g70F8[]; /*@ ds:70F8 */   /* per index y base, action 7..9 (this unit) */
+extern signed char g70FC[]; /*@ ds:70FC */   /* per index y base, action 10..11 (this unit) */
+extern signed char g70FF[]; /*@ ds:70FF */   /* per index y base, action 10..11, second draw (this unit) */
+extern signed char g7102[]; /*@ ds:7102 */   /* per index y base, action 12 (this unit) */
+extern int g7106[]; /*@ ds:7106 */           /* per slot x, action 4..6 (this unit) */
+extern int g7108[]; /*@ ds:7108 */           /* per slot y, action 4..6 (this unit) */
+extern signed char g714E[]; /*@ ds:714E */   /* per heading nudge base (this unit) */
+extern signed char g718E[]; /*@ ds:718E */   /* per index nudge a (this unit) */
+extern signed char g7192[]; /*@ ds:7192 */   /* per index nudge b (this unit) */
+extern signed char g7196[]; /*@ ds:7196 */   /* per index nudge c (this unit) */
+extern signed char g719A[]; /*@ ds:719A */   /* per index nudge d (this unit) */
+extern signed char g719E[]; /*@ ds:719E */   /* per index nudge e (this unit) */
+extern signed char g71A2[]; /*@ ds:71A2 */   /* per index nudge f (this unit) */
+
+#define NO_RECORD -1        /* a ds:18BF byte that means "this heading has no size record" */
+
+/* ovl4:1411: draws the wall face(s) one view slot shows for the current action (ds:FBC8). It selects the
+   slot's size record gFB5E[col] (col = g716E[heading] + 2 - g1A09[slot]) and its x base
+   g1D61[(slot*5+4)*2]; unless the action is 7..9 it first fits region 5 to the column extent. For
+   actions 1..3 and 12 it draws one region at the record with a y base from ds:70F0/ds:7102 nudged by
+   ds:718E/ds:7192 when the heading is below 0x1e; 4..6 draws the record twice (region 000F and
+   004D, mirrored) at a y base ds:70F4 and fits the region to ds:7106/ds:7108, then redraws region 5
+   at the column extent; 7..9 draws gFB5E[col+3] first, then fits the column extent and draws the
+   record at y base ds:70F8; 10..11 draws gFB5E[col] and gFB5E[col+3] at y bases ds:70FC/ds:70FF
+   with a nudge from ds:719E/ds:71A2. Every case, when ds:18BF of the heading is NO_RECORD (0xff),
+   also draws the ds:A99C[col] position record, which needs its own x and y. Finally SetRegionRect
+   fits region 5 to the visible span. Called by DrawViewSlots at ovl4:1E2E when the slot is below 15
+   and the record's ds:194B bit 3 is set. Purpose unknown: what the actions, the size records and the
+   nudges mean, and what the 0x1e heading threshold selects.
+   QUIRK ovl4:1411: in cases 10 and 11 the slot parameter is dead and the compiler reuses its stack
+   slot for the case's y nudge, so `slot` is reassigned there and no longer holds the slot number. */
+/*@ ovl4:1411 */ void Ovl4_1411(int slot)
+{
+    int top;
+    int bottom;
+    int heading;
+    int x;
+    int left;
+    int right;
+    int backX;
+    int col;
+    int shift;
+    int xBase;
+    struct SlotSize far *rec;
+    int idx;
+    register int y;
+
+    idx = g1A09[slot];
+    heading = gEF6A[slot][gA9C6];
+    col = g716E[heading] + 2 - idx;
+    rec = gFB5E[col];
+    xBase = g1D61[(slot * 5 + 4) * 2];
+    x = xBase + 0x58;
+    if (gFBC8 < 7 || gFBC8 > 9)
+        SetRegionColumnExtent(slot, &top, &bottom, 5);
+    switch (gFBC8) {
+    case 1:
+    case 2:
+    case 3:
+    case 12:
+        if (gFBC8 != 0xc)
+            y = g70F0[idx] - rec->height;
+        else
+            y = g7102[idx] - rec->height;
+        x -= (rec->width << 3) >> 1;
+        if (gEF6A[slot][gA9C6] < 0x1e)
+            y -= (heading - g714E[heading]) * g718E[idx];
+        else
+            y -= g7192[g1A09[slot]];
+        DrawRegion000F(2, rec, x, y, 5);
+        if (gTable18BF[heading] == NO_RECORD) {
+            x = gA99C[col].x + xBase;
+            y = gA99C[col].y;
+            DrawRegion000F(2, gA99C[col].rec, x, y, 5);
+        }
+        break;
+    case 4:
+    case 5:
+    case 6:
+        y = g70F4[idx] - rec->height;
+        left = g7106[slot * 2] >> 3;
+        right = g7108[slot * 2] >> 3;
+        if (gViewColLeft > left)
+            left = gViewColLeft;
+        if (gViewColRight < right)
+            right = gViewColRight;
+        SetRegionExtents(5, left, gF1, right - left, gF5);
+        if (gEF6A[slot][gA9C6] < 0x1e)
+            shift = -((heading - g714E[heading]) * g7196[idx]);
+        else
+            shift = -g719A[g1A09[slot]];
+        shift -= rec->width << 3;
+        DrawRegion000F(2, rec, x + shift, y, 5);
+        shift += rec->width << 3;
+        DrawRegion004D(2, rec, x - shift, y, 5);
+        if (gTable18BF[heading] == NO_RECORD) {
+            x = gA99C[col].x + xBase - shift;
+            y = gA99C[col].y;
+            DrawRegion000F(2, gA99C[col].rec, x, y, 5);
+        }
+        break;
+    case 7:
+    case 8:
+    case 9:
+        y = g70F8[idx];
+        backX = x - ((gFB5E[col + 3]->width << 3) >> 1);
+        x -= (rec->width << 3) >> 1;
+        y -= gFB5E[col + 3]->height;
+        DrawRegion000F(2, gFB5E[col + 3], backX, y, 5);
+        SetRegionColumnExtent(slot, &top, &bottom, 5);
+        y = g70F8[idx];
+        if (gEF6A[slot][gA9C6] < 0x1e)
+            y -= (heading - g714E[heading]) * g718E[idx];
+        else
+            y -= g7192[g1A09[slot]];
+        DrawRegion000F(2, rec, x, y, 5);
+        if (gTable18BF[heading] == NO_RECORD) {
+            x = gA99C[col].x + xBase;
+            y = gA99C[col].y;
+            DrawRegion000F(2, gA99C[col].rec, x, y, 5);
+        }
+        break;
+    case 10:
+    case 11:
+        if (gEF6A[slot][gA9C6] < 0x1e)
+            slot = -((heading - g714E[heading]) * g719E[idx]);
+        else
+            slot = -g71A2[g1A09[slot]];
+        x -= (rec->width << 3) >> 1;
+        y = g70FC[idx];
+        DrawRegion000F(2, gFB5E[col], x, y + slot, 5);
+        slot = (slot >> 2) + (slot >> 3);
+        y = g70FF[idx];
+        DrawRegion000F(2, gFB5E[col + 3], x, y - slot, 5);
+        if (gTable18BF[heading] == NO_RECORD) {
+            x = gA99C[col].x + xBase;
+            y = gA99C[col].y;
+            DrawRegion000F(2, gA99C[col].rec, x, y, 5);
+        }
+        break;
+    }
+    SetRegionRect(5, gViewColLeft, 0, gViewColRight, 0xf);
+}
+/* ovl4:19C4: not lifted yet. It builds a five-entry far-pointer list from the ds:DD2C records whose
+   +4 matches the slot heading, then draws each entry through the ds:F2F8 or ds:EC9A sprite tables
+   and DrawRegion000F/004D. Blocked like Ovl4_0D1B: it has the far-pointer store into a local array
+   at 19C4:1A6B (87 D8 xchg ax,bx), which the file's -B (TASM) assembles as the one-byte 93 while
+   the original (TCC's own assembler) keeps two bytes, so this function cannot match under the -B
+   that CopyViewColumn needs. See re/symbols.toml (eov4_19c4). */
 /*@ ovl4:19C4 stub */ void Ovl4_19C4(int slot) {}
 
 extern signed char g7272[]; /*@ ds:7272 */   /* per-column x base correction (this unit) */

@@ -1595,6 +1595,33 @@ why = "1948:046B silences the three voices (_SetThreeVoices 1948:034A) then drop
 date = "2026-11-01"
 
 [[rename]]
+id = "14EF:00E1=IsPointInRect"
+addr = "14EF:00E1"
+old = "PointInRect"
+new = "IsPointInRect"
+kind = "function"
+why = "A test reads as a question (READABILITY.md); src/E082C.C:300 calls the same test IsPointInsideRect"
+date = "2026-11-01"
+
+[[rename]]
+id = "ds:8100=gFontWidth"
+addr = "ds:8100"
+old = "gFontWidth1A47"
+new = "gFontWidth"
+kind = "global"
+why = "font cell width; the source is src/E1A47.C and src/E1DE7.C:54-55 calls it the font cell width"
+date = "2026-11-01"
+
+[[rename]]
+id = "ds:8101=gFontHeight"
+addr = "ds:8101"
+old = "gFontHeight1A47"
+new = "gFontHeight"
+kind = "global"
+why = "font cell height; the source is src/E1A47.C and src/E1DE7.C:54-55 calls it the font cell height"
+date = "2026-11-01"
+
+[[rename]]
 id = "0A72:0468=FormatStrengthPercent"
 addr = "0A72:0468"
 old = "FormatRatioText"
@@ -1610,4 +1637,22 @@ old = "GetScaledValue"
 new = "GetHitTarget"
 kind = "function"
 why = "0A72:0522 returns the number a d20 to-hit roll must reach before the attacker bonus; its only caller 0DE8:0007 computes ac = GetHitTarget(who, gTable1A3B[b0].m00) - bonus and compares a d20 roll against it"
+date = "2026-11-01"
+
+[[rename]]
+id = "0000:3F77=StartAdlibDriver"
+addr = "0000:3F77"
+old = "f0_3F77"
+new = "StartAdlibDriver"
+kind = "function"
+why = "gSoundCard 0 is AdLib (src/E177D.C:147-149 opens adlib.dat; :178 'On AdLib (gSoundCard 0)'): StartupGame's case 0 calls it to start the e_text AdLib driver, hooking INT 08h and programming PIT channel 0 (src/E_TEXT.ASM:81-123), then resets the AdLib through ResetVoices (src/E_TEXT.ASM:101, :351-359); the old 'PC speaker driver on' label is wrong (WHITEPAPER.md:107, :134)"
+date = "2026-11-01"
+
+[[rename]]
+id = "0000:3FCA=StopAdlibDriver"
+addr = "0000:3FCA"
+old = "f0_3FCA"
+new = "StopAdlibDriver"
+kind = "function"
+why = "the AdLib driver off (gSoundCard 0 is AdLib, src/E177D.C:178): ShutdownGame's case 0 calls it to restore the saved INT 08h vector, reset the AdLib through ResetVoices (src/E_TEXT.ASM:125-152, :140) and stop PIT channel 0; the old 'PC speaker driver off' label is wrong"
 date = "2026-11-01"

@@ -51,8 +51,8 @@ extern void far *gTileBuf; /*@ ds:FE56 */
 
 /* The font geometry bytes are signed here: the original sign-extends them (cbw), src/E1A47.C
    declares them unsigned. */
-extern char gFontWidth1A47;  /*@ ds:8100 */  /* font cell width (src/E1A47.C) */
-extern char gFontHeight1A47; /*@ ds:8101 */  /* font cell height (src/E1A47.C) */
+extern char gFontWidth;  /*@ ds:8100 */  /* font cell width (src/E1A47.C) */
+extern char gFontHeight; /*@ ds:8101 */  /* font cell height (src/E1A47.C) */
 
 /* ds:805A: a far routine the frame corners are drawn through, called with a tile source far
    pointer and a cell position (src, x, y). No writer or other caller. */
@@ -235,32 +235,32 @@ extern unsigned far *gFrameTable[]; /*@ ds:113B */
     int x;
     int line;
 
-    if (gFontHeight1A47 * gTextRow > gTextHeight - gFontHeight1A47 && gScrollOn && gScroll8117)
+    if (gFontHeight * gTextRow > gTextHeight - gFontHeight && gScrollOn && gScroll8117)
         gScroll8117();
-    y = gFontHeight1A47 * gTextRow;
-    x = gFontWidth1A47 * gTextCol;
-    if (gTextHeight - gFontHeight1A47 < y) {
+    y = gFontHeight * gTextRow;
+    x = gFontWidth * gTextCol;
+    if (gTextHeight - gFontHeight < y) {
         HidePointerZone(gTextLeft * 8, gTextTop, (gTextLeft + gTextWidth) * 8, gTextTop + gTextHeight);
-        line = (gTextHeight / gFontHeight1A47 - 1) * gFontHeight1A47;
-        ClipRect(gTextLeft, gTextTop + gFontHeight1A47, gTextLeft, gTextTop, gTextWidth, line, g8115, g8115);
+        line = (gTextHeight / gFontHeight - 1) * gFontHeight;
+        ClipRect(gTextLeft, gTextTop + gFontHeight, gTextLeft, gTextTop, gTextWidth, line, g8115, g8115);
         gFillRect(gTextLeft * 8, gTextTop + line, (gTextLeft + gTextWidth) * 8 - 1,
-                  gTextTop + line + gFontHeight1A47 - 1, gTextAttr2);
+                  gTextTop + line + gFontHeight - 1, gTextAttr2);
         gDrawText(text, gTextLeft * 8, gTextTop + line, gTextAttr1, gTextAttr2);
         ShowPointerZone();
         if (newline) {
             gTextCol = 0;
             gTextRow++;
         } else {
-            gTextRow = line / gFontHeight1A47;
+            gTextRow = line / gFontHeight;
             gTextCol += strlen(text);
-            if (gTextWidth * 8 - gFontWidth1A47 < gFontWidth1A47 * gTextCol) {
+            if (gTextWidth * 8 - gFontWidth < gFontWidth * gTextCol) {
                 gTextCol = 0;
                 gTextRow++;
             }
         }
     } else {
         y += gTextTop;
-        HidePointerZone(gTextLeft * 8, y, (gTextLeft + gTextWidth) * 8, y + gFontHeight1A47);
+        HidePointerZone(gTextLeft * 8, y, (gTextLeft + gTextWidth) * 8, y + gFontHeight);
         gDrawText(text, gTextLeft * 8 + x, y, gTextAttr1, gTextAttr2);
         ShowPointerZone();
         if (newline) {
@@ -268,7 +268,7 @@ extern unsigned far *gFrameTable[]; /*@ ds:113B */
             gTextRow++;
         } else {
             gTextCol += strlen(text);
-            if (gTextWidth * 8 - gFontWidth1A47 < gFontWidth1A47 * gTextCol) {
+            if (gTextWidth * 8 - gFontWidth < gFontWidth * gTextCol) {
                 gTextCol = 0;
                 gTextRow++;
             }
@@ -319,7 +319,7 @@ extern char *strcpy(char far *dest, char far *src); /*@ 0000:67CD */
         }
         if (ch == 0x0d) {
             word[len] = 0;
-            if ((len + col) * gFontWidth1A47 <= gTextWidth * 8) {
+            if ((len + col) * gFontWidth <= gTextWidth * 8) {
                 strcat(line, word);
                 DrawTextLine(line, 1);
             } else {
@@ -329,7 +329,7 @@ extern char *strcpy(char far *dest, char far *src); /*@ 0000:67CD */
             col = len = 0;
         } else if (ch == 0x02) {
             word[len] = 0;
-            if ((len + col) * gFontWidth1A47 <= gTextWidth * 8) {
+            if ((len + col) * gFontWidth <= gTextWidth * 8) {
                 strcat(line, word);
                 DrawTextLine(line, 0);
             } else {
@@ -341,7 +341,7 @@ extern char *strcpy(char far *dest, char far *src); /*@ 0000:67CD */
             gTextAttr2 = text[pos++];
         } else if (ch == 0x06) {
             word[len] = 0;
-            if ((len + col) * gFontWidth1A47 <= gTextWidth * 8) {
+            if ((len + col) * gFontWidth <= gTextWidth * 8) {
                 strcat(line, word);
                 DrawTextLine(line, 0);
             } else {
@@ -353,7 +353,7 @@ extern char *strcpy(char far *dest, char far *src); /*@ 0000:67CD */
             gTextAttr1 = text[pos++];
         } else if (ch == 0x09) {
             word[len] = 0;
-            if ((len + col) * gFontWidth1A47 <= gTextWidth * 8) {
+            if ((len + col) * gFontWidth <= gTextWidth * 8) {
                 strcat(line, word);
                 DrawTextLine(line, 0);
             } else {
@@ -364,7 +364,7 @@ extern char *strcpy(char far *dest, char far *src); /*@ 0000:67CD */
             col = text[pos];
             gTextCol = col;
             pos++;
-            if ((col + 1) * gFontWidth1A47 >= gTextWidth * 8)
+            if ((col + 1) * gFontWidth >= gTextWidth * 8)
                 col = gTextCol = 0;
         } else if (ch == 0x13) {
             n = text[pos++];
@@ -379,13 +379,13 @@ extern char *strcpy(char far *dest, char far *src); /*@ 0000:67CD */
                 len = 0;
             }
         } else if (ch == ' ') {
-            if ((len + col) * gFontWidth1A47 <= gTextWidth * 8) {
-                if ((len + col + 1) * gFontWidth1A47 <= gTextWidth * 8 && len + col != 0)
+            if ((len + col) * gFontWidth <= gTextWidth * 8) {
+                if ((len + col + 1) * gFontWidth <= gTextWidth * 8 && len + col != 0)
                     word[len++] = ' ';
                 word[len] = 0;
                 strcat(line, word);
             } else {
-                if ((len + 1) * gFontWidth1A47 <= gTextWidth * 8 && len != 0)
+                if ((len + 1) * gFontWidth <= gTextWidth * 8 && len != 0)
                     word[len++] = ' ';
                 word[len] = 0;
                 DrawTextLine(line, 1);
@@ -398,7 +398,7 @@ extern char *strcpy(char far *dest, char far *src); /*@ 0000:67CD */
             /* QUIRK 1DE7:09A6: the append is written in both arms of this if, so the compiler
                merges the two identical tails and emits a `jmp` to the join, which is the next
                instruction (EB 00). */
-            if (len * gFontWidth1A47 >= gTextWidth * 8) {
+            if (len * gFontWidth >= gTextWidth * 8) {
                 if (line[0])
                     DrawTextLine(line, 1);
                 word[len] = 0;
@@ -413,7 +413,7 @@ extern char *strcpy(char far *dest, char far *src); /*@ 0000:67CD */
     }
     if (len != 0 || line[0] != 0) {
         word[len] = 0;
-        if (gTextWidth * 8 - gFontWidth1A47 >= (len + col) * gFontWidth1A47) {
+        if (gTextWidth * 8 - gFontWidth >= (len + col) * gFontWidth) {
             strcat(line, word);
             DrawTextLine(line, 0);
         } else {

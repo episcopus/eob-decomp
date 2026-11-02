@@ -45,7 +45,7 @@
         EXTRN   _DispatchKeyWait:FAR    ; @ 16A5:005A (E0ACD.C)
         EXTRN   _f1A29_000F:FAR         ; @ 1A29:000F (E082C.C)
         EXTRN   _FindNode:FAR           ; @ 1658:01A2 (E1658.C)
-        EXTRN   _PointInRect:FAR        ; @ 14EF:00E1 (E14EF.C)
+        EXTRN   _IsPointInRect:FAR        ; @ 14EF:00E1 (E14EF.C)
         EXTRN   _MemAlloc:FAR           ; @ 19BC:0007 (E19BC.C)
         EXTRN   _ListAdd:FAR            ; @ 1658:001E (E0CF7.C)
         EXTRN   _movmem:FAR             ; @ 0000:63A3: move n bytes (library)
@@ -1781,7 +1781,7 @@ f097A_0DBA:
         push    ax
         push    word ptr [gCursorY]
         push    word ptr [gCursorX]
-        call    far ptr _PointInRect
+        call    far ptr _IsPointInRect
         add     sp,0Ch
         or      ax,ax
         je      short f097A_0E1A
@@ -4404,7 +4404,7 @@ f243A_2587:
         push    word ptr es:[bx+1Eh]
         push    word ptr [gCursorY]
         push    word ptr [gCursorX]
-        call    far ptr _PointInRect
+        call    far ptr _IsPointInRect
         add     sp,0Ch
         or      ax,ax
         je      short f243A_25CE

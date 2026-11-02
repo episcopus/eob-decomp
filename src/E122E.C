@@ -1045,14 +1045,16 @@ done:
     }
     return (long)(script - start);
 }
-/* 122E:147F: the sub-dispatcher of opcode 0xFFE8. It evaluates a postfix script expression over a
+/* 122E:147F: the sub-dispatcher the driver reaches for opcode 0xFFEE (handler index 17 of
+   RunMemberScript's table). It evaluates a postfix script expression over a
    global word stack (gEvalStack/gEvalTop): most sub-opcodes push a value, the binary sub-opcodes
    pop two and push a comparison or a logical result, and 0xFFEE ends the expression, returning how
    far the script moved (jumping to gBuf8DCA + word when the popped value is 0). A sub-opcode byte
    in 0..0x7f is pushed as a literal; a negative one not in the table is a no-op. Case order follows
-   the original's body layout. Draft: it does not match yet; the remaining differences are the
-   register allocation of the three member-scan loops and the FFF5 argument order (see its note in
-   re/symbols.toml). */
+   the original's body layout, and the case labels are read from the jump table at 122E:19EF (the
+   item-type case is 0xFFE7 and the gB894 byte case is 0xFFE9, not 0xFFE8/0xFFEA). Draft: it does not
+   match yet; the remaining differences are the tail-merge class and the register allocation of the
+   three member-scan loops (see its note in re/symbols.toml). */
 /*@ 122E:147F draft */ long EvaluateScriptExpr(char far *script)
 {
     int op;
@@ -1103,14 +1105,23 @@ done:
             gEvalStack[gEvalTop++] = (gPartyCell == value);
             break;
         case 0xFFF0:
+            /* The original writes the two arms out (each its own store) rather than `... = (cond)
+               != 0`: the `!= 0` form makes TCC share the store-0 tail, where the original inlines
+               store 0 in each case and shares store 1. */
             t2 = *script++;
-            gEvalStack[gEvalTop++] = (gFC04 & (1L << t2)) != 0;
+            if (gFC04 & (1L << t2))
+                gEvalStack[gEvalTop++] = 1;
+            else
+                gEvalStack[gEvalTop++] = 0;
             break;
         case 0xFFEF:
             t2 = *script++;
-            gEvalStack[gEvalTop++] = (gActionFlags[gFBC8] & (1L << t2)) != 0;
+            if (gActionFlags[gFBC8] & (1L << t2))
+                gEvalStack[gEvalTop++] = 1;
+            else
+                gEvalStack[gEvalTop++] = 0;
             break;
-        case 0xFFE8:
+        case 0xFFE7:
             t1 = f0D1C_02DC();
             if (*script == (char)0xE1)
                 gEvalStack[gEvalTop++] = gTable8DD2[t1].m02;
@@ -1120,7 +1131,7 @@ done:
                 gEvalStack[gEvalTop++] = gTable8DD2[t1].m0B;
             script++;
             break;
-        case 0xFFEA:
+        case 0xFFE9:
             t1 = *script++;
             value = *(int far *)script;
             script += 2;
@@ -1195,14 +1206,18 @@ done:
             gEvalStack[gEvalTop++] = (lhs != 0 || rhs != 0);
             break;
         case 0xFFDA:
-            lhs = 0;
-            for (i = 0; i < 6; i++) {
-                if ((gChars[i].status & 1) && (gChars[i].lE3 & 4) == 0) {
-                    lhs = 1;
+            /* The original reuses `lhs` as the loop counter and `rhs` as the flag here (counter in
+               SI, flag in DI), unlike the FFDD/FFDC loops (counter in memory, flag in SI), and its
+               status test is `(status & 1) == 1` (`mov al; mov ah,0; and ax,1; cmp ax,1`), not the
+               byte test `status & 1` those loops use. */
+            rhs = 0;
+            for (lhs = 0; lhs < 6; lhs++) {
+                if ((gChars[lhs].status & 1) == 1 && (gChars[lhs].lE3 & 4) == 0) {
+                    rhs = 1;
                     break;
                 }
             }
-            gEvalStack[gEvalTop++] = !lhs;
+            gEvalStack[gEvalTop++] = !rhs;
             break;
         default:
             if (op >= 0 && op < 0x80)

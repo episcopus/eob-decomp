@@ -79,8 +79,8 @@ _f0_03FA PROC NEAR
 _f0_03FA ENDP
 
 ; 0000:3F77: the PC speaker driver on: installs the INT 08h handler at 3E66, programs the PIT and clears the ring
-        PUBLIC  _f0_3F77              ; @ 0000:3F77
-_f0_3F77 PROC NEAR
+        PUBLIC  _StartAdlibDriver              ; @ 0000:3F77
+_StartAdlibDriver PROC NEAR
         push      ds
         push      es
         push      si
@@ -120,11 +120,11 @@ L_3FAE:
         pop       es
         pop       ds
         retf
-_f0_3F77 ENDP
+_StartAdlibDriver ENDP
 
 ; 0000:3FCA: the PC speaker driver off: restores the saved INT 08h vector and stops the PIT (E07C8.C:65)
-        PUBLIC  _f0_3FCA              ; @ 0000:3FCA
-_f0_3FCA PROC NEAR
+        PUBLIC  _StopAdlibDriver              ; @ 0000:3FCA
+_StopAdlibDriver PROC NEAR
         push      ds
         mov       ax, cs
         mov       ds, ax
@@ -149,7 +149,7 @@ L_3FF0:
         out       40h, al
         pop       ds
         retf
-_f0_3FCA ENDP
+_StopAdlibDriver ENDP
 
 ; 0000:3FF4: the driver tick, called from the INT 08h handler at 3E66 every 0ch passes: processes the ring, the voices and the tempo
         PUBLIC  _SoundDriverTick              ; @ 0000:3FF4
