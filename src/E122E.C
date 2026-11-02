@@ -5,8 +5,8 @@
    opcode consumed, or jump the pointer; the driver stops when a handler sets gA9EC. 147F is the big
    sub-dispatcher with its own in-segment jump table; the map folded the 122E:1194 play-sound handler
    into 1097 and the 122E:1A3B drain-item handler into 147F, and both are separate functions here.
-   Below L2: five drafts (ForceDoorAction 0325, ItemSlotAction 06D0, WriteObjectFieldOp 0960,
-   WriteObjectRunOp 0A16, EvaluateScriptExpr 147F), each with its difference in re/symbols.toml. */
+   Below L2: four drafts (ForceDoorAction 0325, ItemSlotAction 06D0, WriteObjectRunOp 0A16,
+   EvaluateScriptExpr 147F), each with its difference in re/symbols.toml. */
 
 /*@flags -ml -O -Z */
 
@@ -472,34 +472,36 @@ void RunMemberScript(int who, int mode);  /* forward: 1DA8 comes after its calle
    the item type is 0x10) or says it cannot go there and pushes it back; otherwise it either takes
    the item onto the mouse (nothing shown) or, when an item is shown, inserts the shown item back
    into the slot unless its g181F size says it is too large. Returns 0 when the kind is not
-   clickable, else 1. */
+   clickable, else 1. The outer `if` around the body (rather than an early `return 0`) is what puts
+   the single `xor ax,ax` at 122E:083F; the three inner branches each return 1. */
 /*@ 122E:06D0 draft */ int ItemSlotAction(int id, int slot)
 {
     register int item;
     int kind;
 
     kind = gTable18BF[gB894[id * 9 + slot]];
-    if (!HitTestObjectKind(kind))
-        return 0;
-    if (gMouseDisabled != 0 && gF51A == 0x10) {
-        item = RemoveListItem(&gB899[id * 9], 8, -1);
-        if (gTable8DD2[item].m02 == 0x10) {
-            InsertListItem(&gChars[gA99A].items[16], -2, item, 0);
-            DrawItemRow(0x10, 1, 0);
-        } else {
-            DrawText("You can't put that item there.\r");
-            PushListItem(id, item, 8);
+    if (HitTestObjectKind(kind)) {
+        if (gMouseDisabled != 0 && gF51A == 0x10) {
+            item = RemoveListItem(&gB899[id * 9], 8, -1);
+            if (gTable8DD2[item].m02 == 0x10) {
+                InsertListItem(&gChars[gA99A].items[16], -2, item, 0);
+                DrawItemRow(0x10, 1, 0);
+            } else {
+                DrawText("You can't put that item there.\r");
+                PushListItem(id, item, 8);
+            }
+            return 1;
         }
-    } else if (f0D1C_02DC() == 0) {
-        item = RemoveListItem(&gB899[id * 9], 8, -1);
-        if (item != 0) {
+        if (f0D1C_02DC() == 0) {
+            item = RemoveListItem(&gB899[id * 9], 8, -1);
+            if (item == 0)
+                return 1;
             RunMemberScript(id, 8);
             SetMouseItem(item);
             gDF4C = 1;
+            return 1;
         }
-    } else {
-        item = f0D1C_02DC();
-        if (g181F[gTable8DD2[item].icon] > 0xe) {
+        if (g181F[gTable8DD2[f0D1C_02DC()].icon] > 0xe) {
             InsertListItem(&gB899[id * 9], id, f0D1C_02DC(), 8);
             RunMemberScript(id, 4);
             SetMouseItem(0);
@@ -507,8 +509,9 @@ void RunMemberScript(int who, int mode);  /* forward: 1DA8 comes after its calle
         } else {
             DrawText("The item is too large to fit.\r");
         }
+        return 1;
     }
-    return 1;
+    return 0;
 }
 
 /* 122E:0847: when the mouse is over the member slot's rectangle and the slot's object has flag 0x20
