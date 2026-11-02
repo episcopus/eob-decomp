@@ -3837,6 +3837,9 @@ unit = "e122e"
 addr = "122E:0001"
 size = 84
 evidence = ["far", "near", "segment"]
+name = "SetSoundVolume"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e122e_0055"
@@ -3851,6 +3854,9 @@ unit = "e122e"
 addr = "122E:0137"
 size = 29
 evidence = ["near", "frame"]
+name = "ObjectCountIsOdd"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e122e_0154"
@@ -3858,6 +3864,7 @@ unit = "e122e"
 addr = "122E:0154"
 size = 133
 evidence = ["near", "frame"]
+notes = "draft 2026-11-01: every byte matches except the flag test at 122E:0199-01A8, where the original reads `mov al,[bx+0x194b]; cwde; test ax,1` (sign-extends the byte before testing bit 0, 10 bytes). Our -ml -O -Z build folds it to `test byte [bx+0x194b],1` (7 bytes, 3 shorter). Full function 130 against 133 bytes. Tried: `g194B[...] & 1`, `& 1) != 0`, `== 1` (gives `and ax,1; cmp ax,1`), `% 2` (gives idiv), casting the byte to int/char/signed char, an int local (adds a stack slot), and g194B declared signed char/char/unsigned char; TCC always folds the `& 1` to a memory byte test. The earlier `& 8` test in the same function stays a byte test in the original, so the source form that keeps the sign-extended value is not identified. The sibling DisarmMemberEffect (122E:01D9) has the same `& 1` but the original there DOES use a byte test, so the two differ in source."
 
 [[function]]
 id = "e122e_01d9"
@@ -3865,6 +3872,9 @@ unit = "e122e"
 addr = "122E:01D9"
 size = 152
 evidence = ["near", "frame"]
+name = "DisarmMemberEffect"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e122e_0271"
@@ -3872,6 +3882,9 @@ unit = "e122e"
 addr = "122E:0271"
 size = 180
 evidence = ["near", "frame"]
+name = "ToggleArmEffect"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e122e_0325"
@@ -3893,6 +3906,9 @@ unit = "e122e"
 addr = "122E:05DF"
 size = 65
 evidence = ["frame"]
+name = "PerformItemSlotAction"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e122e_0620"
@@ -3900,6 +3916,9 @@ unit = "e122e"
 addr = "122E:0620"
 size = 88
 evidence = ["frame"]
+name = "IncreaseItemSlot"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e122e_0678"
@@ -3907,6 +3926,9 @@ unit = "e122e"
 addr = "122E:0678"
 size = 88
 evidence = ["frame"]
+name = "DecreaseItemSlot"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e122e_06d0"
@@ -3921,6 +3943,9 @@ unit = "e122e"
 addr = "122E:0847"
 size = 79
 evidence = ["far", "frame"]
+name = "CheckMemberSlotRect"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e122e_0896"
@@ -3935,6 +3960,9 @@ unit = "e122e"
 addr = "122E:0933"
 size = 45
 evidence = ["frame"]
+name = "RunRowHandler"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e122e_0960"
@@ -3942,6 +3970,7 @@ unit = "e122e"
 addr = "122E:0960"
 size = 182
 evidence = ["frame"]
+notes = "draft 2026-11-01: the switch over the opcode matches every byte except its tail: the original keeps the 0xFFE9 case's `script++` in place (122E:09F1 `inc [bp+6]` then `jmp`, FFED's `inc` at 122E:09E6 before its `cwde`/store at 122E:09E5-09ED), so three case tails are separate. Our -ml -O -Z build merges the two increments into one shared `inc [bp+6]` at the common return path, 3 bytes shorter (the first difference is the FFED compare target at 122E:0026, ours 0x93 against 0x96). The case order FFF7, FFE9, FFED gives the original body layout exactly. Tried: `*script++` in both cases, splitting `*script` and `script++`, the (signed char) cast on the FFED read, and both source orders; TCC's tail merge always joins the increments. Also tried if/else-if (no reload expected): see the note history."
 
 [[function]]
 id = "e122e_0a16"
@@ -3949,6 +3978,7 @@ unit = "e122e"
 addr = "122E:0A16"
 size = 269
 evidence = ["frame"]
+notes = "draft 2026-11-01: with the unit's default -ml -O -Z our build merges the two 0xFFF7 branches' final `mov bx,ax; mov [bx-0x4769],dl` store (the not-equal branch jumps into the equal branch's tail at 122E:09E0, 6 bytes shorter; first difference at 122E:0022, ours jmp 0xE2 against 0xE8). The original keeps both four-store sequences separate, the assembler (-B) signature. With `/*@flags -ml -O -Z -B */` this function matches exactly (269 bytes), but the same flag set breaks DisarmMemberEffect (122E:01D9): TCC -S estimates its `if (gB894[who*9+4] & 7) return;` branch as too far and emits `je continue; jmp end` where the original has one short `jne end` (the boundary class of whitepaper 2.1.1). So the unit's assembler-vs-inline flag is unresolved: this function says -B, DisarmMemberEffect says inline. Escalation candidate (unit flags). Source order FFF7 then FFEA reproduces the original compare order (ascending) and body layout."
 
 [[function]]
 id = "e122e_0b23"
@@ -3956,6 +3986,9 @@ unit = "e122e"
 addr = "122E:0B23"
 size = 51
 evidence = ["frame"]
+name = "ArmMember"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e122e_0b56"
@@ -3963,6 +3996,9 @@ unit = "e122e"
 addr = "122E:0B56"
 size = 51
 evidence = ["frame"]
+name = "DisarmMember"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e122e_0b89"
@@ -3970,6 +4006,9 @@ unit = "e122e"
 addr = "122E:0B89"
 size = 196
 evidence = ["frame"]
+name = "SpawnObjectOp"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e122e_0c4d"
@@ -4012,6 +4051,9 @@ unit = "e122e"
 addr = "122E:11E8"
 size = 134
 evidence = ["frame"]
+name = "ClearActionBit"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e122e_126e"
@@ -4019,6 +4061,9 @@ unit = "e122e"
 addr = "122E:126E"
 size = 96
 evidence = ["frame"]
+name = "HealPartyMember"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e122e_12ce"
@@ -4026,6 +4071,9 @@ unit = "e122e"
 addr = "122E:12CE"
 size = 207
 evidence = ["frame"]
+name = "DamagePartyMember"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e122e_139d"
@@ -4033,6 +4081,9 @@ unit = "e122e"
 addr = "122E:139D"
 size = 52
 evidence = ["frame"]
+name = "JumpToScriptOffset"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e122e_13d1"
@@ -4040,6 +4091,9 @@ unit = "e122e"
 addr = "122E:13D1"
 size = 15
 evidence = ["frame"]
+name = "ScriptStop"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e122e_13e0"
@@ -4047,6 +4101,9 @@ unit = "e122e"
 addr = "122E:13E0"
 size = 66
 evidence = ["frame"]
+name = "PopScriptPointer"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e122e_1422"
@@ -4054,6 +4111,9 @@ unit = "e122e"
 addr = "122E:1422"
 size = 93
 evidence = ["frame"]
+name = "PushScriptPointer"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e122e_147f"
@@ -4075,6 +4135,9 @@ unit = "e122e"
 addr = "122E:1B5A"
 size = 64
 evidence = ["frame"]
+name = "AddExperienceOp"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e122e_1b9a"
@@ -4082,6 +4145,9 @@ unit = "e122e"
 addr = "122E:1B9A"
 size = 124
 evidence = ["frame"]
+name = "TakeItemOp"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e122e_1c16"
@@ -4089,6 +4155,9 @@ unit = "e122e"
 addr = "122E:1C16"
 size = 151
 evidence = ["frame"]
+name = "TurnPageOp"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e122e_1cad"
@@ -4096,6 +4165,7 @@ unit = "e122e"
 addr = "122E:1CAD"
 size = 201
 evidence = ["frame"]
+notes = "draft 2026-11-01: first difference is the local layout (122E:001C: ours stores the read word at [bp-6], the original at [bp-8]). The original frame is 0xc bytes: start at -0xc..-9, the read word at -8..-7, the CharRec far pointer at -6..-3; the two loop counters and the item are registers (SI and DI). Our -ml -O -Z build keeps the far pointer at -4..-1 and leaves -8..-7 unused. Tried declaration orders rec/id/start and id/rec/start, and `register int i; register int j;`; the pointer keeps the top slot. The body (the gSoundVolume gate, the six 243-byte CharRec walk with gB894-like items at +0x77, the 0x40 flag on gTable8DD2[item], MarkListItems(rec + 0x97) and the final MarkListItems(&gB899[id*9])) is written from the disassembly."
 
 [[function]]
 id = "e122e_1d76"
@@ -4103,6 +4173,9 @@ unit = "e122e"
 addr = "122E:1D76"
 size = 50
 evidence = ["frame"]
+name = "CallOverlayOp"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e122e_1da8"

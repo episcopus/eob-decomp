@@ -41,9 +41,9 @@ extern unsigned long g8492; /*@ ds:8492 */
 extern int f0D1C_0670(int who, int mask); /*@ 0D1C:0670 */
 extern void RearmCharEffects(void); /*@ 1414:0B2E */
 extern signed char g194B[]; /*@ ds:194B */
-extern int g5C74; /*@ ds:5C74 */
+extern int gDragMember; /*@ ds:5C74 */
 extern signed char g5C76; /*@ ds:5C76 */
-extern char g5C77; /*@ ds:5C77 */
+extern char gDragActive; /*@ ds:5C77 */
 
 struct DDRec {              /* 18-byte effect records, 10 of them at ds:DD2C (src/E1414.C) */
     char active;            /* +0: 1 or 2 when live */
@@ -487,8 +487,8 @@ done:
 /*@ ovl3:15B9 stub */ void Ovl3_15B9(void) {}
 /* ovl3:19F7: resets the level. It clears the m0A byte of the 30 gObjs objects, clears every live
    ds:DD2C effect record (disarming the low two bits of its item's m03 when it was active), then,
-   when g5C77 is set, walks the gB894 record of character g5C74 adding the mode byte g5C76 to the
-   two bytes of its slot until the g194B flag has bit 0x30, and clears g5C77. Called by ovl3:1368
+   when gDragActive is set, walks the gB894 record of character gDragMember adding the mode byte g5C76 to the
+   two bytes of its slot until the g194B flag has bit 0x30, and clears gDragActive. Called by ovl3:1368
    and ovl3:15B9. */
 /*@ ovl3:19F7 */ void ResetLevel(void)
 {
@@ -507,14 +507,14 @@ done:
         if (gDD2C[i].active == 2)
             gDD2C[i].active = 0;
     }
-    if (g5C77) {
-        who = g5C74;
+    if (gDragActive) {
+        who = gDragMember;
         sel = g5C76;
         slot = (g194B[gB894[who * 9]] & 8) ? 0 : 1;
         while ((g194B[gB894[who * 9 + slot]] & 0x30) == 0) {
             gB894[who * 9 + slot] += sel;
             gB894[who * 9 + slot + 2] += sel;
         }
-        g5C77 = 0;
+        gDragActive = 0;
     }
 }

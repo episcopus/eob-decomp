@@ -67,7 +67,7 @@ extern int AddDDEffect(int who, int item, int volume, int kind, int page, int ty
 extern void ArmEffect(int a, int b); /*@ 1414:05A4 */
 extern void RearmCharEffects(void); /*@ 1414:0B2E */
 extern void SetMouseItem(int n); /*@ 07A9:010C */
-extern void f122E_0001(int n); /*@ 122E:0001 */
+extern void SetSoundVolume(int n); /*@ 122E:0001 */
 extern void f122E_0896(int a, int b); /*@ 122E:0896 */
 extern void ComputeArmourClass(int who); /*@ 0DE8:0D5E */
 extern int far RollDice(char count, char sides, char bonus); /*@ 082C:0458 */
@@ -392,14 +392,14 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
 }
 
 /* 0ACD:04F8: plays the sound for the current page: f0D1C_0080 maps gSoundVolume and gFBCC to a
-   sound, played through f122E_0001, and the "You can't go that way." fallback runs when it is -1.
+   sound, played through SetSoundVolume, and the "You can't go that way." fallback runs when it is -1.
    Returns the record's +4. */
 /*@ 0ACD:04F8 */ int Action04F8(struct Action far *action)
 {
     int x = f0D1C_0080(gSoundVolume, gFBCC);
 
     if (x != -1)
-        f122E_0001(x);
+        SetSoundVolume(x);
     else
         MoveBlocked();
     return action->result;
@@ -412,7 +412,7 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
     int x = f0D1C_0080(gSoundVolume, page);
 
     if (x != -1)
-        f122E_0001(x);
+        SetSoundVolume(x);
     else
         MoveBlocked();
     return action->result;
@@ -452,7 +452,7 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
         page = 3;
     x = f0D1C_0080(gSoundVolume, page);
     if (x != -1)
-        f122E_0001(x);
+        SetSoundVolume(x);
     else
         MoveBlocked();
     return action->result;
@@ -468,7 +468,7 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
     x = f0D1C_0080(gSoundVolume, page);
 
     if (x != -1)
-        f122E_0001(x);
+        SetSoundVolume(x);
     else
         MoveBlocked();
     return action->result;
