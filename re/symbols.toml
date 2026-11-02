@@ -7893,9 +7893,9 @@ unit = "eov2"
 addr = "ovl2:078D"
 size = 185
 evidence = ["ovl", "near", "frame"]
-name = "LoadIntroIcons"
 level = "L2"
 match_flags = "-ml -O -Z"
+name = "LoadIntroScreen"
 
 [[function]]
 id = "eov2_0846"
