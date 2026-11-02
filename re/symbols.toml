@@ -7009,6 +7009,9 @@ unit = "eov1"
 addr = "ovl1:0000"
 size = 221
 evidence = ["segment"]
+name = "_RotateOutMember"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "eov1_00dd"
@@ -7016,6 +7019,9 @@ unit = "eov1"
 addr = "ovl1:00DD"
 size = 384
 evidence = ["near", "frame"]
+name = "_BuildSpellSlots"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "eov1_025d"
@@ -7023,6 +7029,9 @@ unit = "eov1"
 addr = "ovl1:025D"
 size = 441
 evidence = ["near", "frame"]
+name = "_SpendSpellSlot"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "eov1_0416"
@@ -7037,6 +7046,9 @@ unit = "eov1"
 addr = "ovl1:0881"
 size = 249
 evidence = ["near"]
+name = "_ShowItemName"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "eov1_097a"
@@ -7058,6 +7070,9 @@ unit = "eov1"
 addr = "ovl1:13F7"
 size = 287
 evidence = ["ovl", "near"]
+name = "_ShowMessage"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "eov1_1516"
@@ -7065,6 +7080,9 @@ unit = "eov1"
 addr = "ovl1:1516"
 size = 59
 evidence = ["ovl", "near"]
+name = "_FreeFarList"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "eov1_1551"
