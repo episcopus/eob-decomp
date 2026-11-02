@@ -23,7 +23,7 @@
         EXTRN   g80EC:BYTE              ; @ ds:80EC: input mode, 0/1/2: 1 writes the recorded input
                                         ; stream (1AAD:0C17), 2 replays it (1AAD:0C17/0D26). In state
                                         ; 2 the readers skip the wait for a ring event
-                                        ; (1AAD:038E/053A/05D3) and take the ring slot that
+                                        ; (1AAD:038E/053A/0588/05D3) and take the ring slot that
                                         ; 1AAD:0D26 has filled
         EXTRN   g80ED:WORD              ; @ ds:80ED: file handle for the recorded input stream
         EXTRN   g80EF:WORD              ; @ ds:80EF: key of the recorded event last decoded. 1AAD:048D
@@ -49,7 +49,8 @@
                                         ; stores its value with each recorded event and 1AAD:0D26
                                         ; waits for it to reach the stored count (ds:80F1). The unit
                                         ; also clears it: 1AAD:0C17 writes 0 after a recorded write
-                                        ; (line 1350) and after a replay read (line 1393)
+                                        ; (line 1360, after the FileWrite calls) and after a replay
+                                        ; read (line 1403, the 0D0A path)
         .CODE
 
 ; The unit's data and hand-written tables, in the code segment (the map took 1AAD:000C..0222 for
@@ -111,7 +112,9 @@ kModifierOut    db 00h   ; 1AAD:0222: modifier bits published to 1AAD:0B0E
 ; AH & 2 masks the result to the low 5 bits when the key is in the bit table at 1AAD:01DF. Key
 ; codes 4Bh..6Dh (the numeric keypad) take the table at 1AAD:0357 unless kShiftFlagsCopy bit 2 is
 ; set and kModifierState bit 200h is clear, when they take the Ctrl-function table 1AAD:037Ah
-; instead (its keys are 5Ah..6Dh, indexed by AL-5Ah). Key codes 70h..79h subtract a base (0C5h, or
+; instead (its keys are 5Ah..6Dh, indexed by AL-5Ah). QUIRK 1AAD:0223: that branch is entered for
+; all of 4Bh..6Dh, but AL 4Bh..59h give an index of F1h..FFh (the two subtractions are byte-sized),
+; so the read runs past the 20-byte Ctrl-function table. Key codes 70h..79h subtract a base (0C5h, or
 ; 98h/A2h/ACh by the control bits) and return the difference. Key codes 41h..4Ah (the mouse codes
 ; 41h and 42h among them) come back as 0C6h..0CFh (+85h). Key codes 3Eh..40h and 7Ah and above come
 ; back with bit 80h set, and 6Eh returns ESC (1Bh). The tables hold ASCII for the main letter/digit
@@ -311,7 +314,7 @@ _ReadKey ENDP
 ; without consuming it: the return path does not store kKeyBufRead, so the key stays in the ring.
 ; Like 1AAD:038E it calls 1AAD:0D26 first, copies kShiftFlags to kShiftFlagsCopy, and translates a
 ; nonzero key through 1AAD:0223. Called by DispatchKey (16A5:0009, E16A5.C), the node-list
-; dispatcher, to test before taking the key with 1AAD:0588 (E16A5.C:127-128).
+; dispatcher, to test before taking the key with 1AAD:0588.
         PUBLIC  _ReadKeySpecial          ; @ 1AAD:0409
 _ReadKeySpecial PROC FAR
         call    _InjectRecordedKey
@@ -1177,7 +1180,7 @@ _QueueInputEvent ENDP
 ; kShiftFlags, sets the held bit with 1AAD:0BF1 and queues the event with 1AAD:0B9C. A button
 ; release (BL = 0) also sets the 08h bit of AH, at 1AAD:0B56 and 1AAD:0B88; 1AAD:038E and
 ; 1AAD:053A discard that bit, but 1AAD:0409 and 1AAD:0588 do not, and 0588 is what DispatchKey
-; calls after 0409 (E16A5.C:127-128), so a release (41h or 42h) does reach the game through
+; (16A5:0009) calls after 0409, so a release (41h or 42h) does reach the game through
 ; DispatchKey. It stores the new state back to kMouseButtons. Purpose unknown: the exact key-code
 ; convention.
         PUBLIC  _HandleMouseButtons     ; @ 1AAD:0B0E
