@@ -40,6 +40,10 @@ changes whatever the segment alignment). Over each function, byte by byte:
   - a far pointer (offset word, then a relocated segment word) to a function names it: an
     annotated function, or a runtime library function, located in the original through
     build/re/rtl_compare.json (`symbols`), which our link does not move.
+  - an initialiser template (the DGROUP bytes a local array is copied from: `mov ax,offset;
+    push ax; mov cx,n; call F_SCOPY@`) holds the same n bytes; a far pointer in it (a relocated
+    segment word in the original's load module) must name the same function, an overlay function
+    as its stub entry (the overlay manifest of `make overlays`).
 
   cmatch.py FILE [--program eob/EOB.EXE] [--flags="-ml -O -Z"] [--write] [--show NAME] [--unit ID]
 --write records level L2 and the name of every matched function in re/symbols.toml.
@@ -245,6 +249,13 @@ class Original:
             self.segtable = [s["para"] for s in man["segments"]]
         lib = ROOT / "build" / "re" / ("rtl_compare.json" if program.name.upper() == "EOB.EXE" else "rtl_intro.json")
         self.library = json.loads(lib.read_text())["tc100"].get("symbols", {}) if lib.exists() else {}
+        # data of the load module (initialiser templates in DGROUP hold relocated far pointers)
+        self.lm_relocs = {s * 16 + o for o, s in mz["relocs"]}
+        man_path = ROOT / "build" / "re" / ("%s.json" % program.stem.lower())
+        man = json.loads(man_path.read_text()) if man_path.exists() else {"overlays": []}
+        # an overlay function is reached through its stub entry: (overlay, code offset) -> (stub, entry offset)
+        self.stub_entry = {(o["overlay"], e["code_offset"]): (o["stub_para"], 0x20 + 5 * e["index"])
+                           for o in man["overlays"] for e in o["entries"]}
 
     def word(self, p: int) -> int:
         return struct.unpack_from("<H", self.image, p)[0]
@@ -364,6 +375,12 @@ def compare(fname, a: Build, b: Build, at_a: int, at_b: int, length: int, orig: 
                 want = data_a[g[1]][1] + (va - g[0])
                 if vo != want:
                     return fail(k, "%s+%d is ds:%04X, original ds:%04X" % (g[1].lstrip("_"), va - g[0], want, vo))
+            elif a.lits[0] <= va < a.lits[1] and template_size(a, pa):
+                # an initialiser template copied by F_SCOPY@ (`push ax; mov cx,n; call`): its n bytes,
+                # far pointers in it by name (an overlay function as its stub entry)
+                bad_template = compare_template(a, b, orig, va, vb, vo, template_size(a, pa), funcs, func_of)
+                if bad_template:
+                    return fail(k, bad_template)
             elif a.lits[0] <= va < a.lits[1]:
                 if a.cstr(va) != orig.cstr(vo):
                     return fail(k, "literal %r, original %r" % (a.cstr(va), orig.cstr(vo)))
@@ -383,6 +400,48 @@ def compare(fname, a: Build, b: Build, at_a: int, at_b: int, length: int, orig: 
         else:
             return fail(k, "field %04X moved by %04X: not explained" % (va, delta))
         k += 2
+    return None
+
+
+def template_size(a: Build, pa: int) -> int:
+    """The size of the initialiser template whose address is the word at pa (mov ax,offset), from the
+    F_SCOPY@ call that follows: push ax; mov cx,n; call far. 0 when it is not one."""
+    tail = a.image[pa + 2:pa + 7]
+    if len(tail) == 5 and tail[0] == 0x50 and tail[1] == 0xB9 and tail[4] == 0x9A:
+        return struct.unpack_from("<H", tail, 2)[0]
+    return 0
+
+
+def compare_template(a: Build, b: Build, orig: Original, va: int, vb: int, vo: int, n: int, funcs: dict,
+                     func_of: dict) -> str | None:
+    """None when the template's n bytes are the original's: plain bytes equal, and every far pointer
+    (an offset word, then a relocated segment word) names the same function."""
+    pa, pb, po = a.dgroup * 16 + va, b.dgroup * 16 + vb, orig.dgroup * 16 + vo
+    om = orig.load_module
+    i = 0
+    while i < n:
+        if pa + i + 2 in a.relocs and i + 4 <= n:
+            target = a.word(pa + i + 2) * 16 + a.word(pa + i)
+            pub = a.by_linear.get(target)
+            got = struct.unpack_from("<HH", om, po + i)
+            if pub not in func_of:
+                return "template ds:%04X+%d: far pointer to %05X, not an annotated function" % (vo, i, target)
+            seg, off = funcs[func_of[pub]]
+            if isinstance(seg, str):
+                want = orig.stub_entry.get((int(seg[3:]), off))
+                want = (want[1], want[0]) if want else None
+            else:
+                want = (off, seg)
+            if po + i + 2 not in orig.lm_relocs or got != want:
+                return "template ds:%04X+%d: far pointer to %s, original %04X:%04X" % (
+                    vo, i, func_of[pub], got[1], got[0])
+            i += 4
+            continue
+        if a.image[pa + i] != b.image[pb + i]:
+            return "template ds:%04X+%d: a field moves that is not a far pointer" % (vo, i)
+        if a.image[pa + i] != om[po + i]:
+            return "template ds:%04X+%d: byte %02X, original %02X" % (vo, i, a.image[pa + i], om[po + i])
+        i += 1
     return None
 
 
