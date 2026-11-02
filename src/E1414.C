@@ -94,7 +94,8 @@ extern unsigned char far *gEF6A[]; /*@ ds:EF6A */ /* 18 far pointers, walked by 
 extern signed char gA9C6; /*@ ds:A9C6 */      /* an offset added into gEF6A's targets */
 extern int gFB78; /*@ ds:FB78 */              /* a flag toggled by 04B0 */
 extern signed char g5CAA; /*@ ds:5CAA */      /* the blink phase toggled by 0000 */
-extern signed char g5CAB[]; /*@ ds:5CAB */    /* a byte table indexed by direction in 0285 */
+extern signed char g5C76; /*@ ds:5C76 */      /* the mode byte 03B4 reads (0ACD toggles it 1/-1) */
+extern unsigned char g5CAB[]; /*@ ds:5CAB */  /* a byte table indexed by direction in 0285 */
 extern char gFB34; /*@ ds:FB34 */             /* the character the blink highlights (src/EOV2.C) */
 extern char gDF4C; /*@ ds:DF4C */             /* set when the object table has a hit (src/E0D1C.C) */
 extern unsigned long g8492; /*@ ds:8492 */    /* the 32-bit tick counter (src/EOV6.C) */
@@ -109,6 +110,8 @@ extern int far RollDice(char count, char sides, char bonus); /*@ 082C:0458 */
 extern void UpdateObjects(int kind); /*@ 08E6:0CC8 */
 extern void f08E6_1410(void); /*@ 08E6:1410 */
 extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
+
+void ArmEffect(int idx, int active);
 extern void DrawText(char *text); /*@ 1DE7:060A */
 extern void f1547_04A0(int member); /*@ 1547:04A0 */
 extern void f122E_0896(int member, int a); /*@ 122E:0896 */
@@ -116,7 +119,7 @@ extern void f122E_1DA8(int member, int a); /*@ 122E:1DA8 */
 extern int f08E6_189D(struct Obj28 far *obj, int a, int b); /*@ 08E6:189D */
 extern int f0DE8_01FF(struct DDRec far *rec); /*@ 0DE8:01FF */
 extern int f0DE8_02D4(struct DDRec far *rec, int idx); /*@ 0DE8:02D4 */
-extern void f0EF3_00CD(int seg, int off); /*@ 0EF3:00CD */
+extern void f0EF3_00CD(struct DDRec far *rec); /*@ 0EF3:00CD */
 extern void f0EF3_0D78(int a, int b); /*@ 0EF3:0D78 */
 extern void f0BD2_01D0(void far *head, int key, int item, int sound); /*@ 0BD2:01D0 */
 extern int f0BD2_02B9(void far *head, int key, int item); /*@ 0BD2:02B9 */
@@ -235,8 +238,89 @@ extern int f0BD2_02B9(void far *head, int key, int item); /*@ 0BD2:02B9 */
     rec->m0A = 0;
     rec->m08 = 0;
 }
-/*@ 1414:0285 stub */ void f1414_0285(void) {}
-/*@ 1414:03B4 stub */ void f1414_03B4(void) {}
+/* 1414:0285: the DD-record step, effect 1 of the table. For every live ds:DD2C record it looks
+   up the direction byte sel = g5CAB[rec->m07 * 4 + (rec->m06 & 3)]. When sel has bit 7 set the
+   target index is f0D1C_00DA(rec->m04, rec->m07) and m02 is cleared, otherwise it is rec->m04
+   itself. f1414_003E(rec, value, sel) then either, when it succeeds, redraws a translated target
+   through 122E:1DA8(value, 0x10) and re-tests with TestDDEffect, or, when it fails and m0C has
+   bit 0x20, runs 0EF3:00CD(rec) unless TestDDEffect(rec, m04, m06) accepts. The record is
+   cleared through ClearDDEffect when clearIt holds (initially m0D == 0) and gDF4C is set. QUIRK
+   1414:028D: the argument is incremented by value, so the increment has no effect. DRAFT: matches
+   every byte except the shared `clearIt = 1` tail, which the pinned compiler merges into one
+   store reached by a jump while the original keeps a separate store in each branch (5 bytes). */
+/*@ 1414:0285 draft */ void MoveDDEffects(int unused)
+{
+    int value;
+    register int sel;
+    int clearIt;
+    int i;
+    int high;
+    struct DDRec far *rec;
+
+    unused++;
+    i = 0;
+    rec = gDD2C;
+    for (; i < 10; i++, rec++) {
+        if (rec->active != 0) {
+            clearIt = rec->m0D == 0;
+            sel = g5CAB[rec->m07 * 4 + (rec->m06 & 3)];
+            high = sel & 0x80;
+            if (high) {
+                sel &= 3;
+                value = f0D1C_00DA(rec->m04, rec->m07);
+                rec->m02 = 0;
+            } else {
+                value = rec->m04;
+            }
+            if (f1414_003E(rec, value, sel)) {
+                if (high)
+                    f122E_1DA8(value, 0x10);
+                if (TestDDEffect(rec, value, sel))
+                    clearIt = 1;
+            } else {
+                if (rec->m0C & 0x20) {
+                    if (!TestDDEffect(rec, rec->m04, rec->m06))
+                        f0EF3_00CD(rec);
+                }
+                clearIt = 1;
+            }
+            if (clearIt)
+                ClearDDEffect(rec);
+            gDF4C = 1;
+        }
+    }
+}
+/* 1414:03B4: effect 12 of the table. For character `who` it picks the record gB894[who * 9]
+   whose g194B flag has no bit 3 (slot 1) or one (slot 0), and reads that record's flag. When the
+   global mode byte g5C76 is -1 with bit 5 set, or 1 with bit 4 set, it disarms effect 0xC and
+   returns. Otherwise it adds g5C76 to the record's bytes +0 (the flag index) and +2, reads the
+   flag again and plays sound 5 when bit 5 is set, 4 when g5C76 is -1, else 3, then reports `who`
+   through f0D1C_0006. Called by 122E and by the table. */
+/*@ 1414:03B4 */ void AdjustMemberStatus(int who)
+{
+    int sel;
+    register int bits;
+    int slot;
+
+    sel = g5C76;
+    bits = g194B[gB894[who * 9]];
+    slot = (bits & 8) ? 0 : 1;
+    bits = g194B[gB894[who * 9 + slot]];
+    if ((sel == -1 && (bits & 0x20)) || (sel == 1 && (bits & 0x10))) {
+        ArmEffect(0xC, 0);
+        return;
+    }
+    gB894[who * 9 + slot] += sel;
+    gB894[who * 9 + slot + 2] += sel;
+    bits = g194B[gB894[who * 9 + slot]];
+    if (bits & 0x20)
+        PlaySoundDefault(5);
+    else if (sel == -1)
+        PlaySoundDefault(4);
+    else
+        PlaySoundDefault(3);
+    f0D1C_0006(who);
+}
 /* 1414:04B0: effect 13 of the table. Toggles gFB78, then walks the 18 far pointers at ds:EF6A,
    adding gA9C6 to each target and setting gDF4C when a byte there is 0x34 ('4'). QUIRK
    1414:04B4: the argument is incremented by value, so the increment has no effect. */
