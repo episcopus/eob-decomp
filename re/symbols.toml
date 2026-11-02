@@ -9506,6 +9506,7 @@ evidence = ["segment"]
 name = "_SetVgaPalette"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "i0923_0004"
