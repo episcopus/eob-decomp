@@ -7908,6 +7908,9 @@ unit = "eov4"
 addr = "ovl4:0097"
 size = 391
 evidence = ["ovl", "near", "frame"]
+name = "ComputeViewSpan"
+level = "L2"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "eov4_021e"
@@ -7993,6 +7996,9 @@ unit = "eov4"
 addr = "ovl4:1411"
 size = 1459
 evidence = ["ovl", "near", "frame"]
+name = "Ovl4_1411"
+level = "L2"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "eov4_19c4"
@@ -8000,6 +8006,7 @@ unit = "eov4"
 addr = "ovl4:19C4"
 size = 860
 evidence = ["ovl", "near"]
+notes = "blocked: unit-flag class (like 122E and eov4_0d1b). 19C4 builds a five-entry far-pointer list from the ds:DD2C records and stores into a local array at 19C4:1A6B with 87 D8 xchg ax,bx (two bytes, the original came from TCC's own assembler). Under this file's -B (TCC -S then TASM) that store assembles as the one-byte 93, so the function is one byte short and every later branch displacement differs; TASM 2.0, 2.01, 1.0 and 1.01 all assemble both xchg spellings as 93 (probed 2026-11-01). Without -B the byte is right but CopyViewColumn's three separate continue tails merge. Not lifted yet; left a stub with the block in src/EOV4.C."
 
 [[function]]
 id = "eov4_1d20"
