@@ -1,11 +1,14 @@
-; Unit at overlay 1 of EOB.EXE (segment 2102, file offset 0, 9864 bytes, 12 functions), kind asm
-; [H] by the map. It is the party display and inventory overlay: it reads and rewrites the party's
-; records at ds:F580 (gChars, 6 records of 0xF3 bytes, E08E6.C), draws rows and items through
+; Unit at overlay 1 of EOB.EXE (segment 2102, 9864 bytes, 12 functions), kind asm [H] by the map.
+; It is the party display and inventory overlay: it reads and rewrites the party's records at
+; ds:F580 (gChars, 6 records of 0xF3 bytes, E08E6.C), draws rows and items through
 ; DrawRowList/DrawShadowText and the icon table ds:DD28 (gIconDD28, EOV2.C), and searches class
-; slots with FindClassSlot and carried slots with FindCarriedSlot (E0D1C.C). ovl1:1ACD is the
-; overlay entry point (its caller is the overlay dispatch, no direct call found) and ovl1:0000 is
-; reached from it. Most functions are still stubs or drafts; names marked unknown are inferred from
-; the code only. Whitepaper 4 (data) and 2.7.
+; slots with FindClassSlot and carried slots with FindCarriedSlot (E0D1C.C). ovl1:1ACD has no
+; direct caller in the map (it is reached through the overlay dispatch) and calls most of the
+; others, including ovl1:0000. The 30 counters at ds:FDEC, the byte table ds:FD9A and the 9-byte
+; lists at ds:FDBA are the spell tables ovl1:00DD builds and ovl1:025D steps. Status: ovl1:0000,
+; 00DD, 025D, 0881, 13F7 and 1516 are matched (L2); the rest are stubs. Names not proven by an
+; address or a caller come from the code alone and are marked in each function's comment. See
+; whitepaper 2.7 and 4.
 
         .MODEL  LARGE
 
@@ -185,7 +188,8 @@ _RotateOutMember ENDP
 ; (0x20), copies the class spell-level map (gMap62C9 when `flag`, gMap62AF otherwise) into gFD9A
 ; with strcpy, and sets the spell-list pointer p to rec+0x55 (memorized) when `flag`, rec+0x37
 ; (known) otherwise. First it walks up to 0x1E signed bytes of p (positive ones counted in
-; gFDEB + 2*c, negatives in gFDEC + 2*(-c) after decrementing) and counts gFD9A[c] in gFDE6 + c.
+; gFDEB + 2*c, negatives in gFDEC + 2*(-c) after decrementing) and counts the slot gFD9A[c] in
+; gFDE6 + slot.
 ; Then, for each bit i of `mask` (a long, 1L << i through F_LXLSH@), it takes slot di = gFD9A[i]-1
 ; and, when the source far array `spells` has a nonzero entry there (or `flag` is clear), appends
 ; i+1 to the gFDBA record of di (its first byte is the count, then the indices). Called by
@@ -369,12 +373,14 @@ _BuildSpellSlots ENDP
 
 ; ovl1:025D: spend one step of the spell counters for character `who`. It returns when `who` is
 ; negative; otherwise it clears the 30 bytes at rec+0x37 (known slots) or rec+0x55 (memorized
-; slots) when `flag` is set, then walks the 32 counters gFDEC + i*2: it keeps the pair's low byte
-; as the maximum of the two, and when the paired byte reaches 0 it retires a spell (decrementing
-; the counter) and, for every free slot si of the six, writes gFD9A[i] into rec[si] of the known
-; or memorized group (i+1, or its negation when the counter's other byte ran out), setting gFE2C
-; in the latter case. gFD9A and gFDEC are the tables ovl1:00DD fills from the character's spell
-; book. Called by ovl1:097A. Purpose unknown: the exact counter semantics.
+; slots) when `flag` is set, then walks the 32 two-byte counters gFDEC + i*2. It first clamps the
+; pair's second byte down to the first when the first is smaller; when the second byte is nonzero
+; it decrements both and, for the gFD9A[i]-th slot record of the known or memorized group, writes
+; the spell index i+1 into the first free sub-slot si of its six. When the second byte is 0 it
+; instead decrements the first byte, sets gFE2C and writes the negation of i+1 the same way.
+; gFD9A and gFDEC are the tables
+; ovl1:00DD fills from the character's spell book. Called by ovl1:097A. Purpose unknown: the exact
+; counter semantics and why one path negates the slot index.
         PUBLIC  _SpendSpellSlot         ; @ ovl1:025D
 _SpendSpellSlot PROC FAR
         push    bp
@@ -578,9 +584,9 @@ _Ovl1_0416 ENDP
 ; row * 9 + 0x32, hides the pointer and, for a nonzero `item`, formats
 ; sprintf(gFileNameBuf, "%-18s %1d", nameTable[item], count[item]) where nameTable is g12E0 when
 ; `mode` is set and g1278 otherwise, and count is the byte at gFDEA + item*2. `style` 0 draws it
-; through DrawShadowText with the colour from gF57E (or 6 when `hi` is set), nonzero draws it
-; through gDrawText in colour `base` (or 6 when `hi` is set); a zero `item` with `style` 0 instead
-; fills the row's background through gFillRect in gF57E. The pointer is shown again. Called from
+; through DrawShadowText in colour `base` (or 6 when `hi` is set) with extra gF57E, nonzero draws
+; it through gDrawText in the same colour with extra 0; a zero `item` with `style` 0 instead fills
+; the row's background through gFillRect in gF57E. The pointer is shown again. Called from
 ; ovl1:097A. Purpose unknown: the exact meaning of `mode`, `style` and `hi`.
         PUBLIC  _ShowItemName          ; @ ovl1:0881
 _ShowItemName PROC FAR
