@@ -4045,6 +4045,9 @@ unit = "e122e"
 addr = "122E:0E9B"
 size = 321
 evidence = ["frame"]
+name = "MoveCarriedItemOp"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e122e_0fdc"

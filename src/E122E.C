@@ -695,7 +695,53 @@ void f122E_1DA8(int a, int b);  /* forward: 1DA8 comes after its callers */
     return (long)(script - start);
 }
 /*@ 122E:0D57 stub */ void f122E_0D57(void) {}
-/*@ 122E:0E9B stub */ void f122E_0E9B(void) {}
+/* 122E:0E9B: move one item out of a party member's carried list. It reads a member index `who` (a
+   random live member when -1), a destination list `id` and a trailing byte, finds a carried item
+   whose g181F icon size is at least 0xf by scanning the member's 27 slots from a random start
+   (skipping the first two and slot 0x10 unless the member is the one on screen), clears its slot and
+   inserts it into the gB899 list of `id`. Returns the bytes read. */
+/*@ 122E:0E9B */ long MoveCarriedItemOp(char far *script)
+{
+    int id;
+    int item;
+    int count;
+    int third;
+    char far *start = script;
+    register int who;
+    register int idx;
+
+    who = *script++;
+    id = *(int far *)script;
+    script += 2;
+    third = *script++;
+    if (who == -1)
+        who = RollDice(1, 6, -1);
+    while (!gChars[who].status) {
+        who++;
+        if (who > 5)
+            who = 0;
+    }
+    if (gFB44 != 0 && gA99A == who)
+        goto done;
+    item = 0;
+    idx = RollDice(1, 0x1b, 0);
+    for (count = 0; count < 0x1b; count++) {
+        if ((gFB44 != 0 || idx > 1) && idx != 0x10) {
+            item = gChars[who].items[idx];
+            if (item != 0 && g181F[gTable8DD2[item].icon] >= 0xf)
+                break;
+        }
+        idx++;
+        if (idx >= 0x1b)
+            idx = 0;
+    }
+    if (count < 0x1b && item != 0) {
+        gChars[who].items[idx] = 0;
+        InsertListItem(&gB899[id * 9], id, item, third);
+    }
+done:
+    return (long)(script - start);
+}
 /* 122E:0FDC: the show-text opcode. It skips the script to the text's NUL, then reads two bytes
    into a 5-byte control-code buffer initialised from the compiler template at ds:5A48, hides the
    pointer, draws the original text, the buffer, the buffer with the two saved text attributes,
