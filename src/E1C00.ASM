@@ -2,24 +2,25 @@
 ; the map. This is the game's loader for named MZ overlay files, the graphics drivers (cga.ovl,
 ; tga.ovl, ega.ovl, mcga.ovl and vga.ovl, the five names at file offset 26BA1h of EOB.EXE,
 ; WHITEPAPER 2.5), which it loads with DOS function 4B03h (load overlay) [H]. The table
-; gOverlayFiles (E07C8.C:52, ds:3074) holds all five, but WHITEPAPER 2.5 says vga.ovl is not in
-; the copy and the VGA mode loads MCGA.OVL. It is not the INT 3Fh VROOMM trap: VROOMM is the
-; Borland runtime's overlay manager, which loads the FBOV segments appended to EOB.EXE
-; (WHITEPAPER 2.3), and the game's hook around it is the handler at 1A72:0006, installed at
-; 07C8:008F (src/E1A72.ASM:61 to 69); this unit never touches INT 3Fh. 1C00:0000 is a lone retf
-; (cb) and 1C00:0001 a lone 0 byte, both before the first function at the even offset 0002
-; [H data]. 1C00:0002 allocates an 0FA00h byte block (MemAlloc, flags 20h), loads an overlay image
-; into it with DOS INT 21h/4B03 and reports BX = 0
-; on success, 0FFFFh on failure; and 1C00:0055 takes a far pointer to an overlay request (word 0 =
-; the offset of the request name in the request's segment, which is DGROUP if the caller's DS is
-; [H]; word +2 = the name's segment; words +4 and +6 = the two arguments of the pointer the entry
-; returns), loads the overlay, then calls the entry at the overlay segment:0000 with 27h, 1A16h
-; and that segment (1C00:0088 to 0091), resizes the block 1C00:0002 loaded the overlay into, to
-; the overlay's size [H] (MemRealloc, 1C00:00A8), and calls the
-; pointer the entry returned (offset at 818Eh, segment at 8190h), whose target is read through the
-; caller's DS (DGROUP only if the caller's DS is [H]), with the request's two words (1C00:00C0).
-; Each access uses the segment the code leaves in DS or ES, not one segment for all; the 1C00:0055
-; comment lists them.
+; gOverlayFiles (E07C8.C:52, ds:3074) holds all five, its five segment words are load-time fixups
+; to DGROUP and its five name offsets are DGROUP:30C1h to 30E2h (see the 1C00:0055 comment); but
+; WHITEPAPER 2.5 says vga.ovl is not in the copy and the VGA mode loads MCGA.OVL. It is not the
+; INT 3Fh VROOMM trap: VROOMM is the Borland runtime's overlay manager, which loads the FBOV
+; segments appended to EOB.EXE (WHITEPAPER 2.3), and the game's hook around it is the handler at
+; 1A72:0006, installed at 07C8:008F (src/E1A72.ASM:61 to 69); this unit never touches INT 3Fh.
+; The unit starts at 1C00:0001, the lone 0 byte before the first function at the even offset 0002
+; [H data]; the byte before the unit, 1C00:0000, is a lone retf (cb), outside the 235 bytes.
+; 1C00:0002 allocates an 0FA00h byte block (MemAlloc, flags 20h), loads an overlay image into it
+; with DOS INT 21h/4B03 and reports BX = 0 on success, 0FFFFh on failure; and 1C00:0055 takes a
+; far pointer to an overlay request (word 0 = the offset of the request name in the request's
+; segment; word +2 = the name's segment; words +4 and +6 = the two arguments of the pointer the
+; entry returns), loads the overlay, then calls the entry at the overlay segment:0000 with 27h,
+; 1A16h and that segment (1C00:0088 to 0091), resizes the block 1C00:0002 loaded the overlay into,
+; to the overlay's size [H] (MemRealloc, 1C00:00A8), and calls the pointer the entry returned
+; (offset at 818Eh, segment at 8190h) with the request's two words (1C00:00C0). The caller's DS,
+; the request's segment and the name's segment are all DGROUP at run time (the 1C00:0055 comment
+; gives the evidence). Each access uses the segment the code leaves in DS or ES, not one segment
+; for all; the 1C00:0055 comment lists them.
 ; DGROUP is 212Eh, as in E1A72.ASM (lines 81, 252, 435, 470) and E1D8F.ASM (line 78).
 ;
 ; Far calls to another unit (9A off seg) are declared at module level, after .MODEL LARGE and before
@@ -35,12 +36,16 @@
                                         ;   installed (E1A72.ASM)
         EXTRN   gMouseDisabled:WORD     ; @ ds:814A: non-zero disables the mouse handler body and
                                         ;   the pointer (E1A72.ASM:254-255, E1BBE.ASM:89-90);
-                                        ;   Main sets it from the mouse argument after start-up
-                                        ;   (E07C8.C:153-156, the strongest evidence for the name)
+                                        ;   after start-up returns 1, Main stores 1 when the handler
+                                        ;   is not installed, and `!mouse` (the command-line digit,
+                                        ;   E07C8.C:121) when it is (E07C8.C:152-156, the strongest
+                                        ;   evidence for the name)
 
         .CODE
 
-; 1C00:0001: a lone 0 byte before the first function at the even offset 0002 (data, not code) [H].
+; 1C00:0001: the unit's first byte, a lone 0 before the first function at the even offset 0002
+; (data, not code) [H]; 1C00:0000, the byte before the unit, is a lone retf (cb) and is not one
+; of the 235 bytes.
         db      0
 
 ; 1C00:0002: load an overlay image. Allocate a 0FA00h byte far block (MemAlloc, flag 20h) and store
@@ -50,8 +55,8 @@
 ; 1C00:0055 later shrinks it to the overlay's real size with MemRealloc (the reason for this size is
 ; not established [H]: 0FA00h is 64000 bytes, one 320 by 200 screen, but nothing in the bytes says
 ; that is why). Which segment each access uses is spelled out once in the 1C00:0055 comment; the
-; header's DGROUP:818Ah to 8194h is right only if the caller's DS is DGROUP, which 07C8:0254
-; `push ds` passes [H].
+; header's DGROUP:818Ah to 8194h holds because the caller's DS is DGROUP, which 07C8:0254
+; `push ds` passes (the 1C00:0055 comment gives the evidence).
 ; Save SP and SS across the call (the reason is not established [H]), then load the overlay named by
 ; DS:DX through the INT 21h/4B03 parameter block at ES:BX = request_seg:818Ah. Word 0 is the load
 ; segment (the word at 818Ah through that segment) and word 1 is the relocation factor (818Ch
@@ -105,17 +110,22 @@ _LoadOverlayImage ENDP
 
 ; 1C00:0055: run an overlay request. [bp+6..+9] is a far pointer to the request (the caller, inside
 ; StartupGame at 07C8:0199, E07C8.C:172, passes DS:8121 at 07C8:0254): word 0 is the offset of the
-; request name in the request's segment, which is DGROUP if the caller's DS is [H]; word +2 is the
-; name's segment, and the two words at +4 and +6 are the two arguments of the pointer the entry
-; returns. The loader takes the segment of the name from its own DS (from [bp+8], the segment of the
-; request, at 1C00:0062) and the offset from word 0
-; (1C00:0065); it never reads word +2. The load therefore assumes the request's segment is the
-; name's segment [H]: nothing in this unit or in the caller's bytes shows that the table word at
-; ds:3076h (copied to word +2 at 07C8:0245 and 0251) is DGROUP's segment; it is a segment in the
-; EXE that the loader relocates. The caller copies word +2 from DS:[bx+3076h] at 07C8:0245 and
-; stores it at 07C8:0251, and on failure reads it back, pushing [8123h] and [8121h] as a far
-; pointer to PrintString at 07C8:027B to 0283. Word +2 is the caller's copy for that print, not an
-; input to the load.
+; request name in the request's segment; word +2 is the name's segment; the two words at +4 and +6
+; are the two arguments of the pointer the entry returns. The caller's DS is DGROUP: StartupGame
+; reads the DGROUP global ds:8102 through DS from its entry (07C8:019D, `cmp word ptr [8102h],36h`;
+; also 07C8:01A7) and no instruction from 07C8:0199 to the `push ds` at 07C8:0254 changes DS (no
+; `mov ds`, `lds` or `pop ds`; checked with tools/re/disasm.py), so the DS it passes is DGROUP. The
+; loader takes the segment of the name from its own DS ([bp+8], the segment of the request, at
+; 1C00:0062) and the offset from word 0 (1C00:0065); it never reads word +2. The request's segment,
+; the name's segment and the caller's DS are therefore all DGROUP at run time: the MZ fixup list
+; has a load-time fixup at each of the five segment words of gOverlayFiles (ds:3076h, 307Ah, 307Eh,
+; 3082h and 3086h), each patched to 212Eh, the DGROUP paragraph (the fixup at 1C00:000A loads the
+; same 212Eh), so the caller copies DGROUP into word +2 at 07C8:0245 and 0251. The caller also
+; reads word +2 back on failure, pushing [8123h] and [8121h] as a far pointer to PrintString at
+; 07C8:027B to 0283. Word +2 is the caller's copy for that print, not an input to the load. The
+; five name offsets gOverlayFiles holds are 30C1h, 30C9h, 30D1h, 30D9h and 30E2h (DGROUP offsets),
+; the file offsets 26BA1h, 26BA9h, 26BB1h, 26BB9h and 26BC2h (cga.ovl, tga.ovl, ega.ovl, mcga.ovl
+; and vga.ovl) minus 23AE0h (DGROUP's file offset).
 ; The segment each access uses, not one segment for all (bytes 1C00:0002 to 00C0): 1C00:002F
 ; (`es:[bx] = AX`, BX = 818Ah) uses the caller's ES, and 1C00:0032 and 0036 (the SP and SS save)
 ; use the caller's DS, which `pop es`/`pop ds` (1C00:0021 to 0022) restore after the MemAlloc call.
@@ -124,8 +134,7 @@ _LoadOverlayImage ENDP
 ; `retf` (1C00:0054) does not restore DS, so 1C00:0002 returns with DS = 212Eh and the caller sees
 ; DS = 212Eh at 1C00:0077. 1C00:00C0 (the second `lcall [818Eh]`) reads its target through the
 ; caller's DS, which `pop ds` (1C00:00B9) restores from the word pushed at 1C00:006A (the request
-; segment): it calls the pointer stored at DGROUP:818Eh only if the caller's DS is DGROUP [H], and
-; reads request_seg:818Eh otherwise.
+; segment, which is DGROUP): it calls the pointer stored at DGROUP:818Eh.
 ; Load the overlay image with 1C00:0002. On success this function stores 0 at 818Eh (the offset) and
 ; the overlay segment (the word at DGROUP:818Ah, loaded into AX at 1C00:007C) at 8190h (1C00:0081
 ; and 0085), then pushes that segment, 1A16h and 27h and calls the entry at segment:0000 through
@@ -173,8 +182,10 @@ _LoadOverlayImage ENDP
 ; for a key (lcall 1AAD:053A at 07C8:01DA) and returns to Main through the shared epilogue of
 ; StartupGame at 07C8:0575 (pop si, pop bp, retf; 07C8:0265 to 0277, 01D2 to 01E1); Main then runs
 ; ShutdownGame (E07C8.C:160, 07C8:058A), which ends in exit(0) (E07C8.C:345), so the block is never
-; used again. The first entry call's AX, BX and flags are not checked; only the second call is
-; (the `jb short ptrfail` after the second call). Who writes the two arguments of the entry's
+; used again. The first entry call's AX, BX and flags are not checked; only the second call's
+; carry flag is (`jb short ptrfail` at 1C00:00C6 tests the carry flag the call left, the entry's
+; failure convention [H]; the two `pop cx` before it do not change the flags, and it tests neither
+; AX nor BX). Who writes the two arguments of the entry's
 ; pointer at DGROUP:8125h and 8127h (request +4 and +6) is not established; the caller bytes at
 ; 07C8:0249 to 0258 write only 8121h and 8123h.
         PUBLIC  _RunOverlayRequest      ; @ 1C00:0055
@@ -254,7 +265,7 @@ done:   xor     ax,ax
 ; si and ds from the entry pushes; both words pushed before the load call are discarded.
 fail:   pop     ds
         pop     si
-ptrfail:                        ; the second entry call failed (1C00:00C6): return 0FFFFh
+ptrfail:                        ; the call returned with carry set (1C00:00C6): return 0FFFFh
         mov     ax,0FFFFh
 returnpath:                     ; the shared return before the epilogue pops (1C00:00E3)
         pop     si
