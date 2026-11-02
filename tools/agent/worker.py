@@ -83,6 +83,11 @@ class Stopped(Exception):
 def prompt(agent: str, role: str, key: str, branch: str, wt: Path, rejected: str = "", tier: int = 1) -> str:
     unit = key[7:] if key.startswith("review-") else key
     playbook, first, states = ROLES[role]
+    if role == "reviewer" and (common.ROOT / "work/reviews" / ("%s.md" % unit)).exists():
+        first = ("work/reviews/{unit}.md has earlier rounds: this is a later round (playbook 70, \"Later rounds\"). "
+                 "Do not copy the template or read the whole unit again: add a round, check the previous round's "
+                 "must-fix items and the diff since the commit it reviewed; a must-fix only for an item not fixed "
+                 "right or a wrong claim in a changed line; a stale line citation into another file is a should.")
     if role == "decompiler" and common.open_must_fix(unit):
         first = ("The unit's review, work/reviews/%s.md, has open must-fix findings: that is why you have it, "
                  "even if every function is at L2. Fix each finding from the evidence it cites (a name: `make "

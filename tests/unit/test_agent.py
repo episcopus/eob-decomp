@@ -90,6 +90,11 @@ def test_safety_merge_of_main(tmp_path, monkeypatch):
 def test_worker_prompt():
     p = worker.prompt("w1", "reviewer", "review-e0cf7", "review/e0cf7", Path("/tmp/wt"))
     assert "UNIT=e0cf7 STATE=<review-passed|review-failed>" in p and "70-review.md" in p
+    import common as cm0
+    reviews = cm0.ROOT / "work/reviews"
+    later = next((p.stem for p in reviews.glob("e*.md")), None)
+    if later:                                   # a unit reviewed before: a later round, not a full read
+        assert "later round" in worker.prompt("w1", "reviewer", "review-" + later, "review/" + later, Path("/tmp/wt"))
     p = worker.prompt("w1", "decompiler", "e0cf7", "unit/e0cf7", Path("/tmp/wt"))
     assert "make packet UNIT=e0cf7" in p and "{" not in p
     import common as cm
