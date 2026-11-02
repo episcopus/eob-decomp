@@ -610,3 +610,8 @@ why = "ds:7F30 holds the file name PLAYFLD (EOB.EXE literal)"
 id = "ds:7F38"
 name = "gFileNameInvent2"
 why = "ds:7F38 holds the file name INVENT (EOB.EXE literal)"
+
+[[global]]
+id = "ds:5737"
+name = "g5737"
+why = "ds:5737 is a word table of animation frames (0EF3:2EBC reads it as frameTable[row6 >> 8], :2415), not a string; the gText prefix is this file's prefix for strings. No other src/ file names ds:5737"

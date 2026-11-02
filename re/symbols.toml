@@ -4213,7 +4213,7 @@ unit = "e0ef3"
 addr = "0EF3:1DC0"
 size = 31
 evidence = ["frame"]
-name = "SetMemberLevels"
+name = "FillPartyFood"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 

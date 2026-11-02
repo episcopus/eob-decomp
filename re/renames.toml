@@ -2603,6 +2603,24 @@ why = "draws the item icon of the ds:8DD2 record n at (x, y) from gIconsDDE4 (ds
 date = "2026-11-02"
 
 [[rename]]
+id = "0EF3:1DC0=FillPartyFood"
+addr = "0EF3:1DC0"
+old = "SetMemberLevels"
+new = "FillPartyFood"
+kind = "function"
+why = "0EF3:1DC0 sets every member's +0x23 to 100, the hunger/food value EatFood clamps at 100 (src/E0ACD.C:108, :623); 0BD2 case 5 does the same write (src/E0BD2.C:746)"
+date = "2026-11-02"
+
+[[rename]]
+id = "ds:5737=g5737"
+addr = "ds:5737"
+old = "gText5737"
+new = "g5737"
+kind = "global"
+why = "ds:5737 is a word table of animation frames (0EF3:2EBC reads it as frameTable[row6 >> 8], :2415), not a string; the gText prefix is this file's prefix for strings. No other src/ file names ds:5737"
+date = "2026-11-02"
+
+[[rename]]
 id = "ovl1:1153=BuildMenuButtons"
 addr = "ovl1:1153"
 old = "Ovl1_1153"
