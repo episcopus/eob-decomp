@@ -140,7 +140,7 @@ void f0BD2_05B5(int item);
    of character `who` from there, wrapping, for the first item whose type flags have 0x80. It clears
    the slot, prints "<name> has lost her/his " (the possessive by m1F bit 0), draws the item's name
    through 0BD2:05B5 and ".\r", and redraws the character's row. */
-/*@ 0BD2:000E */ void f0BD2_000E(int who)
+/*@ 0BD2:000E */ void ReportLostItem(int who)
 {
     int i;
     int item;

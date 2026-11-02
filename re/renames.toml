@@ -1206,3 +1206,12 @@ new = "FirstTwoSlots"
 kind = "function"
 why = "0BD2:1244 returns slot when 0 or 1, else -1"
 date = "2026-11-01"
+
+[[rename]]
+id = "0BD2:000E=ReportLostItem"
+addr = "0BD2:000E"
+old = "f0BD2_000E"
+new = "ReportLostItem"
+kind = "function"
+why = "0BD2:000E prints the 'has lost her/his <item>' message and clears the slot"
+date = "2026-11-01"

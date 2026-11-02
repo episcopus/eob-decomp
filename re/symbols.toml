@@ -2156,6 +2156,7 @@ unit = "e0bd2"
 addr = "0BD2:000E"
 size = 248
 evidence = ["far", "segment"]
+name = "ReportLostItem"
 
 [[function]]
 id = "e0bd2_0106"
