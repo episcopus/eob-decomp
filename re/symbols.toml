@@ -94,9 +94,41 @@ match_flags = "tasm /mx"
 id = "e0000_03fa"
 unit = "e_text"
 addr = "0000:03FA"
-size = 15229
+size = 28
 evidence = ["far"]
-notes = "stub: the range is the 32c8h driver block LoadSoundDriver loads at run time, the two INT 08h handlers at 3E66h and 3EE5h and their tables, none of which the map listed as functions. Only the first 28 bytes (03FAh to 0415h, the 300-word rebase) are code the source would write; a stub keeps the run-time block out of src/. See src/E_TEXT.ASM."
+level = "L2"
+match_flags = "tasm /mx"
+name = "RebaseDriverBlock"
+
+[[function]]
+id = "e0000_0416"
+unit = "e_text"
+addr = "0000:0416"
+size = 14928
+evidence = ["data"]
+notes = "not a function the map found: the driver's data between the rebase function and the first INT 08h handler (the 32c8h block LoadSoundDriver loads at run time, tables, variables, voice records), 0416h to 3E65h. The map listed 03FAh to 3F76h as one function."
+
+[[function]]
+id = "e0000_3e66"
+unit = "e_text"
+addr = "0000:3E66"
+size = 127
+evidence = ["install"]
+notes = "not found by the map: an INT 08h handler, installed by 3F77h (mov dx,3E66h; int 21h 2508h), never called."
+name = "_AdlibTimerIsr"
+level = "L2"
+match_flags = "tasm /mx"
+
+[[function]]
+id = "e0000_3ee5"
+unit = "e_text"
+addr = "0000:3EE5"
+size = 146
+evidence = ["install"]
+notes = "not found by the map: an INT 08h handler, installed by 4B7Fh (mov dx,3EE5h; int 21h 2508h), never called."
+name = "_SampleTimerIsr"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e0000_3f77"

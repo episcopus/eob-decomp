@@ -1656,3 +1656,12 @@ new = "StopAdlibDriver"
 kind = "function"
 why = "the AdLib driver off (gSoundCard 0 is AdLib, src/E177D.C:178): ShutdownGame's case 0 calls it to restore the saved INT 08h vector, reset the AdLib through ResetVoices (src/E_TEXT.ASM:125-152, :140) and stop PIT channel 0; the old 'PC speaker driver off' label is wrong"
 date = "2026-11-01"
+
+[[rename]]
+id = "0000:03FA=RebaseDriverBlock"
+addr = "0000:03FA"
+old = "f0_03FA"
+new = "RebaseDriverBlock"
+kind = "function"
+why = "0000:03FA adds 0416h to each of the 300 words at cs:0416h (cx = 12Ch, 03FD to 0410), the block's offset table; LoadSoundDriver (E177D.C:154) calls it right after FileRead of the 32C8h block into cs:0416h"
+date = "2026-11-01"

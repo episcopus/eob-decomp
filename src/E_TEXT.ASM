@@ -72,11 +72,179 @@ _f0_03E3 PROC NEAR
         retf
 _f0_03E3 ENDP
 
-; 0000:03FA: adds the 0416 base to the driver block 300-word table; keeps the loaded 32C8h block and the two ISRs after it
-        PUBLIC  _f0_03FA              ; @ 0000:03FA stub
-_f0_03FA PROC NEAR
+; 0000:03FA: makes the driver block's offset table absolute: adds 0416h to each of the 300 words at cs:0416h (cx = 12Ch, 03FD to 0410),
+; so the block's file offsets become near pointers into cs. Called once by LoadSoundDriver (E177D.C) after it reads the 32C8h
+; block from adlib.dat or pcgamesn.dat into cs:0416h; saves and restores cx, di and ds. Far routine, no arguments.
+        PUBLIC  _RebaseDriverBlock              ; @ 0000:03FA
+_RebaseDriverBlock PROC NEAR
+        push      cx
+        push      di
+        push      ds
+        mov       cx, 12ch
+        mov       ax, cs
+        mov       ds, ax
+        xor       di, di
+        mov       ax, 416h
+L_0409:
+        add       word ptr [di + 416h], ax
+        add       di, 2
+        loop    L_0409
+        pop       ds
+        pop       di
+        pop       cx
+        retf
+_RebaseDriverBlock ENDP
+
+; 0000:0416: the driver's data (a stub): the 32C8h driver block, tables, variables, voice records
+        PUBLIC  _DriverData              ; @ 0000:0416 stub
+_DriverData PROC NEAR
         ret
-_f0_03FA ENDP
+_DriverData ENDP
+
+; 0000:3E66: the AdLib driver's INT 08h handler, installed by StartAdlibDriver (3F77: mov dx,3E66h; int 21h 2508h, 3F97 to 3F9D).
+; The PIT runs at divisor 0555h there (3FA2 to 3FB0), 874 Hz if its clock is the usual 1193182 Hz [H], and this handler divides it down:
+;   - while byte 3B42 is nonzero, counts 3B44 down; at zero it toggles the key-on bit (20h) of voice 0's register B0h image (the
+;     byte at +28h of the voice record 3B93, VoiceKeyOn sets the same bit), writes the register to the card, and reloads 3B44
+;     from 3B43;
+;   - counts the byte 3B36 down to zero (nothing else in this file reads or writes it: Purpose unknown);
+;   - every 0Ch passes (72.8 Hz) calls SoundDriverTick (3FF4);
+;   - every 30h passes (18.2 Hz) chains to the saved BIOS handler, the vector StartAdlibDriver stored at 3B66 (offset) and 3B68
+;     (segment); that handler sends the end of interrupt, so this path does not; on every other pass it sends EOI itself.
+; Saves and restores ax, bx, dx and ds; DS is set to CS, where the driver keeps its variables.
+        PUBLIC  _AdlibTimerIsr              ; @ 0000:3E66
+_AdlibTimerIsr PROC NEAR
+        push      ax
+        push      bx
+        push      dx
+        push      ds
+        cld
+        mov       ax, cs
+        mov       ds, ax
+        cmp       byte ptr ds:[3b42h], 0
+        je    L_3EAF
+        dec       byte ptr ds:[3b44h]
+        jne    L_3EAF
+        mov       bx, 3b93h
+        mov       al, byte ptr [bx + 28h]
+        mov       ah, al
+        and       al, 1fh
+        xor       byte ptr ds:[3b49h], 0ffh
+        mov       ah, byte ptr ds:[3b49h]
+        and       ah, 20h
+        or        al, ah
+        mov       byte ptr [bx + 28h], al
+        mov       bl, al
+        mov       dx, 388h
+        mov       al, 0b0h
+        out       dx, al
+        call    _AdlibDelay4
+        mov       al, bl
+        inc       dx
+        out       dx, al
+        call    _AdlibDelay17
+        mov       al, byte ptr ds:[3b43h]
+        mov       byte ptr ds:[3b44h], al
+L_3EAF:
+        cmp       byte ptr ds:[3b36h], 0
+        je    L_3EBA
+        dec       byte ptr ds:[3b36h]
+L_3EBA:
+        dec       byte ptr ds:[3b6eh]
+        jne    L_3EC8
+        mov       byte ptr ds:[3b6eh], 0ch
+        call    _SoundDriverTick
+L_3EC8:
+        dec       byte ptr ds:[3b6fh]
+        jne    L_3EDC
+        mov       byte ptr ds:[3b6fh], 30h
+        pop       ds
+        pop       dx
+        pop       bx
+        pop       ax
+        jmp       dword ptr cs:[3b66h]
+L_3EDC:
+        mov       al, 20h
+        out       20h, al
+        pop       ds
+        pop       dx
+        pop       bx
+        pop       ax
+        iret
+_AdlibTimerIsr ENDP
+
+; 0000:3EE5: the INT 08h handler that plays a sample, installed by StartSample (4B7F: mov dx,3EE5h; int 21h 2508h, 4C49 to 4C4F)
+; in place of 3E66, with the PIT at divisor 004Bh (4C51 to 4C61), about 15.9 kHz on the same clock [H]. Each pass reads one 4-bit delta from the sample at the far
+; pointer cs:3B78/3B7A (low nibble of a byte first, then the high one, 3B74 counts the passes), adds it to the level byte at
+; 3B75 when bit 3 is clear and subtracts (value and 7) when it is set, and writes the level to the AdLib data port 389h (the
+; register StartSample selected last, 40h, at 4C2B to 4C37). The sample ends after 3B76 bytes from the start 3B7C, or at once when 3B7E (set by
+; StartSample, SetSamplePlaying) is zero: then it puts the PIT back to 0555h, clears 3B78, restores the INT 08h vector StartSample
+; saved at 3B6A/3B6C (the vector 3E66 was installed as) and clears the voice enable 3B3F (UpdateVoices runs only while it is nonzero).
+; QUIRK 3EE5: it always sends EOI itself and never chains to the BIOS handler, so the BIOS clock loses the ticks of a sample.
+        PUBLIC  _SampleTimerIsr              ; @ 0000:3EE5
+_SampleTimerIsr PROC NEAR
+        push      ax
+        push      dx
+        push      ds
+        push      si
+        cmp       byte ptr cs:[3b7eh], 0
+        je    L_3F40
+        lds       si, dword ptr cs:[3b78h]
+        cld
+        lodsb
+        mov       ah, byte ptr cs:[3b75h]
+        test      byte ptr cs:[3b74h], 1
+        je    L_3F0E
+        shr       al, 1
+        shr       al, 1
+        shr       al, 1
+        shr       al, 1
+        inc       si
+L_3F0E:
+        dec       si
+        and       al, 0fh
+        test      al, 8
+        jne    L_3F19
+        add       ah, al
+        jmp short    L_3F1D
+L_3F19:
+        and       al, 7
+        sub       ah, al
+L_3F1D:
+        mov       al, ah
+        mov       byte ptr cs:[3b75h], ah
+        mov       dx, 389h
+        out       dx, al
+        dec       byte ptr cs:[3b74h]
+        mov       word ptr cs:[3b78h], si
+        mov       ax, si
+        sub       ax, word ptr cs:[3b7ch]
+        cmp       ax, word ptr cs:[3b76h]
+        jb    L_3F6E
+L_3F40:
+        mov       al, 36h
+        out       43h, al
+        mov       al, 55h
+        out       40h, al
+        mov       al, 5
+        out       40h, al
+        mov       word ptr cs:[3b78h], 0
+        mov       si, 20h
+        xor       ax, ax
+        mov       ds, ax
+        mov       dx, word ptr cs:[3b6ah]
+        mov       ax, word ptr cs:[3b6ch]
+        mov       word ptr [si], dx
+        mov       word ptr [si + 2], ax
+        mov       byte ptr cs:[3b3fh], 0
+L_3F6E:
+        mov       al, 20h
+        out       20h, al
+        pop       si
+        pop       ds
+        pop       dx
+        pop       ax
+        iret
+_SampleTimerIsr ENDP
 
 ; 0000:3F77: the AdLib driver on: installs the INT 08h handler at 3E66, resets the AdLib voices (413B), programs the PIT and clears the ring
         PUBLIC  _StartAdlibDriver              ; @ 0000:3F77
