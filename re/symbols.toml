@@ -11155,6 +11155,9 @@ unit = "iov0"
 addr = "ovl0:0000"
 size = 58
 evidence = ["ovl", "segment"]
+name = "RunIntro"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "iov0_003a"
@@ -11162,6 +11165,9 @@ unit = "iov0"
 addr = "ovl0:003A"
 size = 291
 evidence = ["ovl", "near", "frame"]
+name = "PlayIntroSequence"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "iov0_015d"
@@ -11183,6 +11189,9 @@ unit = "iov0"
 addr = "ovl0:09AD"
 size = 371
 evidence = ["ovl", "near", "frame"]
+name = "BlitImage"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "iov0_0b20"
@@ -11197,6 +11206,9 @@ unit = "iov0"
 addr = "ovl0:0FAA"
 size = 47
 evidence = ["ovl", "near", "frame"]
+name = "ClearBottomBar"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "iov0_0fd9"
@@ -11204,6 +11216,9 @@ unit = "iov0"
 addr = "ovl0:0FD9"
 size = 76
 evidence = ["ovl", "near", "frame"]
+name = "WaitFrameDelay"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "iov0_1025"
@@ -11211,6 +11226,9 @@ unit = "iov0"
 addr = "ovl0:1025"
 size = 28
 evidence = ["ovl", "near", "frame"]
+name = "DelayFrames"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "iov0_1041"
@@ -11218,6 +11236,9 @@ unit = "iov0"
 addr = "ovl0:1041"
 size = 519
 evidence = ["ovl", "near", "frame"]
+name = "GrowFrame"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "iov0_1248"
@@ -11225,6 +11246,9 @@ unit = "iov0"
 addr = "ovl0:1248"
 size = 29
 evidence = ["ovl", "near", "frame"]
+name = "SignOf"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "iov0_1265"
@@ -11260,6 +11284,9 @@ unit = "iov0"
 addr = "ovl0:2913"
 size = 182
 evidence = ["ovl", "frame"]
+name = "RevealInStrips"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "iov0_29c9"
@@ -11267,6 +11294,9 @@ unit = "iov0"
 addr = "ovl0:29C9"
 size = 133
 evidence = ["ovl", "near", "frame"]
+name = "DrawGrid"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "iov0_2a4e"
@@ -11274,6 +11304,9 @@ unit = "iov0"
 addr = "ovl0:2A4E"
 size = 75
 evidence = ["ovl", "near", "frame"]
+name = "LoadPalette"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "iov0_2a99"
@@ -11281,6 +11314,9 @@ unit = "iov0"
 addr = "ovl0:2A99"
 size = 230
 evidence = ["ovl", "near", "frame"]
+name = "PlayLogoSequence"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "iov0_2b7f"
@@ -11288,6 +11324,9 @@ unit = "iov0"
 addr = "ovl0:2B7F"
 size = 142
 evidence = ["ovl", "near", "frame"]
+name = "LoadPackedImage"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "iov0_2c0d"
@@ -11295,6 +11334,9 @@ unit = "iov0"
 addr = "ovl0:2C0D"
 size = 321
 evidence = ["ovl", "near", "frame"]
+name = "Dissolve"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "iov0_2d4e"
@@ -11302,3 +11344,6 @@ unit = "iov0"
 addr = "ovl0:2D4E"
 size = 143
 evidence = ["ovl", "near", "frame"]
+name = "PlaySound"
+level = "L2"
+match_flags = "-ml -O -Z -G"
