@@ -7709,6 +7709,9 @@ unit = "eov5"
 addr = "ovl5:0BBE"
 size = 223
 evidence = ["ovl", "near", "frame"]
+name = "BuildDeathList"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov5_0c9d"

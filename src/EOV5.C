@@ -192,7 +192,7 @@ extern void FileClose(int handle); /*@ 1C0E:03BB */
 extern void f1A47_0169(void far *font); /*@ 1A47:0169 */
 
 /* siblings not decompiled yet: their real signatures, so callers compile */
-int Ovl5_0455(char offset, char count, void far *names);
+int Ovl5_0455(char first, char count, char far **names);
 void Ovl5_0924(void);
 void Ovl5_0BBE(void);
 void Ovl5_0C9D(void);
@@ -388,7 +388,109 @@ char gTable7B89[] = { 0x3B, 0xA6, 0x04, 0x70, 0xDC, 0x04, 0x70, 0xDC, 0x04, 0x70
     gDrawText(text, x + 0x30 - strlen(text) * 3, y + 2, colour, 0);
 }
 
-/*@ ovl5:0455 stub */ int Ovl5_0455(char offset, char count, void far *names) {}
+/* the key codes this menu accepts; the switch table at ovl5:0657 lists them. The three confirm
+   keys, the two mouse-button keys and up/down are the same game keys as src/E14EF.C's
+   UpdateOptionList; 0x5c and 0x66 are this menu's own left/right (or prev/next) keys. */
+enum {
+    KEY_CONFIRM  = 0x2B,
+    KEY_CONFIRM2 = 0x3D,
+    KEY_CONFIRM3 = 0x61,
+    KEY_CLICK    = 0x41,
+    KEY_CLICK2   = 0x42,
+    KEY_PREV     = 0x5C,
+    KEY_UP       = 0x60,
+    KEY_DOWN     = 0x62,
+    KEY_NEXT     = 0x66
+};
+
+/* ovl5:0455: draws and runs one of the overlay's menus: the `count` rows starting at position
+   `first` in the ds:7B89/ds:7B94 position tables, labelled with the far strings names[0..count-1].
+   Each row is a DrawMenuRow panel; the highlighted row (i) is drawn in colour 9, the others in
+   0xf. It redraws only when the highlight moved, then reads a key and also checks the mouse. The
+   mouse-button keys 0x41/0x42 confirm the row under the last click (g8140/g8142); the confirm keys
+   0x2b/0x3d/0x61 confirm the highlighted row; 0x5c/0x66 and 0x60/0x62 move the highlight by one
+   or three (a three-row column-major grid, wrapping). Returns the confirmed row index, after
+   clearing the panel. Called by every menu panel of the overlay (067B, 0828, 0924, 09C5, 0AB1,
+   0B16, 0EB9, 0F77, 102C, 1087, 10A6, 119E). */
+/*@ ovl5:0455 */ int Ovl5_0455(char first, char count, char far **names)
+{
+    int ybase;
+    int sel;
+    int key;
+    int drawn;
+    int j;
+    int c;
+    int i;
+
+    ybase = gTextTop + (gTextRow + 1) * gFontHeight1A47 + 4;
+    drawn = sel = -1;
+    i = 0;
+    do {
+        LockHidePointer();
+        if (drawn != i) {
+            for (j = 0; j < count; j++) {
+                DrawMenuRow(gTable7B89[first + j], ybase + gTable7B94[first + j],
+                            i == j ? 9 : 0xf, names[j]);
+            }
+            drawn = i;
+        }
+        LockShowPointer();
+        key = WaitKeyEvent() & 0x8ff;
+        for (j = 0; j < count; j++) {
+            if (IsPointInsideRect(gCursorX, gCursorY, gTable7B89[first + j],
+                                  ybase + gTable7B94[first + j],
+                                  gTable7B89[first + j] + 0x5e,
+                                  ybase + gTable7B94[first + j] + 8)) {
+                i = j;
+                break;
+            }
+        }
+        c = key;
+        switch (c) {
+        case KEY_CLICK:
+        case KEY_CLICK2:
+            for (j = 0; j < count; j++) {
+                if (IsPointInsideRect(g8140, g8142, gTable7B89[first + j],
+                                      ybase + gTable7B94[first + j],
+                                      gTable7B89[first + j] + 0x5e,
+                                      ybase + gTable7B94[first + j] + 8)) {
+                    sel = j;
+                    break;
+                }
+            }
+            break;
+        case KEY_PREV:
+            i--;
+            if (i < 0)
+                i = count - 1 <= 2 ? count - 1 : 2;
+            break;
+        case KEY_NEXT:
+            i++;
+            if (i > 2 || count - 1 < i)
+                i = 0;
+            break;
+        case KEY_DOWN:
+            if (i + 3 < count)
+                i += 3;
+            else if (i > 3)
+                i -= 3;
+            /* falls through (the original has no break here) */
+        case KEY_UP:
+            if (i > 3)
+                i -= 3;
+            else if (i + 3 < count)
+                i += 3;
+            break;
+        case KEY_CONFIRM:
+        case KEY_CONFIRM2:
+        case KEY_CONFIRM3:
+            sel = i;
+            break;
+        }
+    } while (sel == -1);
+    ClearPanel();
+    return sel;
+}
 /* ovl5:067B: the "which character?" selector of the 0828 panel. It fills the far-pointer array
    names[] with the six party members' names (gChars[i].name, ds + i*0xF3 + 2) and appends the
    "CANCEL" string ds:7B9F, at the same time counting how many members are present (flags bit 0).
@@ -628,38 +730,42 @@ char gTable7B89[] = { 0x3B, 0xA6, 0x04, 0x70, 0xDC, 0x04, 0x70, 0xDC, 0x04, 0x70
 
 /* ovl5:0BBE: builds the list at ds:F4E6 (count in gCountDDE0) of the characters and items the
    resurrect/heal panel 0EB9 may act on: first every character whose flags bit 0 is set and whose
-   m22 is 0xf7; then, for every character with flags bit 0 set, each of its 25 item slots whose
-   item type's gA9F5[type].m09 bit 0..6 equals 8, as -gTable8DD2[item].m0B. Returns the count.
-   Called by 0EB9. The only remaining difference is the counter's initialisation: the original
-   zeroes `i` and gCountDDE0 through one AX (`xor ax,ax; mov si,ax; mov [dde0],ax`); every source
-   form tried puts the store of gCountDDE0 first, so this stays a draft until a form is found. */
-/*@ ovl5:0BBE draft */ int BuildDeathList(void)
+   hit points are -10 (0xf6, a dead member); then, for every character with flags bit 0 set, each
+   of its 25 item slots whose item type's gA9F5[type].m09 bit 0..6 equals 8, as
+   -gTable8DD2[item].m0B. Returns the count. Called by 0EB9. The counters are zeroed through one
+   AX (`gCountDDE0 = i = 0`), the two flags tests are a `continue` pair (which makes the build
+   reload the far pointer, ovl5:0BE9), and the three locals are declared type, kind, item (TC lays
+   the frame out in declaration order, ovl5:0C4D/0C5E/0C37), all as the original has them. */
+/*@ ovl5:0BBE */ int BuildDeathList(void)
 {
     struct CharRec far *rec;
-    int item;
     int type;
     int kind;
+    int item;
     int i;
     int j;
 
-    i = gCountDDE0 = 0;
+    gCountDDE0 = i = 0;
     for (; i < 6; i++) {
         rec = &gChars[i];
-        if ((rec->flags & 1) && rec->m22 == 0xf7)
-            gTableF4E6[gCountDDE0++] = i;
+        if ((rec->flags & 1) == 0)
+            continue;
+        if (rec->hp != -10)
+            continue;
+        gTableF4E6[gCountDDE0++] = i;
     }
     for (i = 0; i < 6; i++) {
         rec = &gChars[i];
-        if (!(rec->flags & 1))
-            continue;
-        for (j = 0; j < 0x19; j++) {
-            item = rec->m77[j];
-            if (!item)
-                continue;
-            type = gTable8DD2[item].m02;
-            kind = gA9F5[type].m09 & 0x7f;
-            if (kind == 8)
-                gTableF4E6[gCountDDE0++] = -gTable8DD2[item].m0B;
+        if (rec->flags & 1) {
+            for (j = 0; j < 0x19; j++) {
+                item = rec->m77[j];
+                if (!item)
+                    continue;
+                type = gTable8DD2[item].m02;
+                kind = gA9F5[type].m09 & 0x7f;
+                if (kind == 8)
+                    gTableF4E6[gCountDDE0++] = -gTable8DD2[item].m0B;
+            }
         }
     }
     return gCountDDE0;
