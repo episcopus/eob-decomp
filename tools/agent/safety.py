@@ -72,7 +72,10 @@ def branch_findings(branch: str, cwd: Path | None = None, rev: str | None = None
 
 
 def staged_findings() -> list[str]:
-    paths = common.git("diff", "--cached", "--name-only").splitlines()
+    # A merge commit stages what the other side brings: judge what the branch itself changes. Merging
+    # main, that is the index against main (MERGE_HEAD), not main's own edits to the matcher or tools
+    merging = common.git("rev-parse", "-q", "--verify", "MERGE_HEAD", check=False)
+    paths = common.git("diff", "--cached", "--name-only", *([merging] if merging else [])).splitlines()
     branch = common.git("branch", "--show-current", check=False)
     def read(p):
         return common.git("show", ":" + p, check=False) or None

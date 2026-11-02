@@ -79,7 +79,9 @@ def merge_entry(o: list | None, a: list, b: list) -> tuple[list[str], bool]:
         v, c = merge_value(k, do.get(k), da.get(k), db.get(k))
         if c:
             conflict = True
-            lines += ["<<<<<<< ours", "%s = %s" % (k, da.get(k)), "=======", "%s = %s" % (k, db.get(k)), ">>>>>>> theirs"]
+            # a side that deleted the field shows no line (not `key = None`, which is not TOML)
+            side = lambda d: ["%s = %s" % (k, d[k])] if d.get(k) is not None else []
+            lines += ["<<<<<<< ours"] + side(da) + ["======="] + side(db) + [">>>>>>> theirs"]
         elif v is not None:
             lines.append("%s = %s" % (k, v))
     return lines, conflict

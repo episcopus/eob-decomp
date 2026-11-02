@@ -57,6 +57,36 @@ def test_skeleton_has_a_stub_per_function():
     assert "/*@ ovl2:0110 stub */ void LoadItemTypes(void) {}" in skeleton.text("eov2")[1]
 
 
+def test_safety_merge_of_main(tmp_path, monkeypatch):
+    """A unit branch that merges main stages main's edits to the matcher: only what the branch itself
+    changes is judged (the e_text merge of 2026-11-02 was refused for main's tools/match/rename.py)."""
+    import subprocess
+    import common as cm
+
+    def g(*a):
+        subprocess.run(["git", *a], cwd=tmp_path, check=True, capture_output=True)
+    g("init", "-q", "-b", "main")
+    g("config", "user.email", "t@t"); g("config", "user.name", "t")
+    (tmp_path / "tools/match").mkdir(parents=True)
+    (tmp_path / "tools/match/rename.py").write_text("a\n")
+    (tmp_path / "src").mkdir()
+    (tmp_path / "src/X.C").write_text("x\n")
+    g("add", "-A"); g("commit", "-qm", "base")
+    g("checkout", "-qb", "unit/x")
+    (tmp_path / "src/X.C").write_text("y\n")
+    g("commit", "-qam", "unit")
+    g("checkout", "-q", "main")
+    (tmp_path / "tools/match/rename.py").write_text("b\n")
+    g("commit", "-qam", "tool fix")
+    g("checkout", "-q", "unit/x")
+    g("merge", "-q", "--no-commit", "--no-ff", "main")
+    monkeypatch.setattr(cm, "ROOT", tmp_path)
+    assert safety.staged_findings() == []
+    (tmp_path / "tools/match/rename.py").write_text("c\n")       # the branch's own edit is still refused
+    g("add", "-A")
+    assert safety.staged_findings()
+
+
 def test_worker_prompt():
     p = worker.prompt("w1", "reviewer", "review-e0cf7", "review/e0cf7", Path("/tmp/wt"))
     assert "UNIT=e0cf7 STATE=<review-passed|review-failed>" in p and "70-review.md" in p
@@ -134,6 +164,10 @@ def test_merge_registry_rules():
     added = REGISTRY + '\n[[function]]\nid = "d"\naddr = "0001:0030"\n'
     out, _ = merge_registry.merge(REGISTRY, ours, added)
     assert out.index('id = "c"') < out.index('id = "d"') and 'name = "A"' in out
+    base = REGISTRY.replace('addr = "0001:0020"\n', 'addr = "0001:0020"\nsize = 9\n')
+    grew = REGISTRY.replace('addr = "0001:0020"\n', 'addr = "0001:0020"\nsize = 12\n')
+    out, conflicts = merge_registry.merge(base, REGISTRY, grew)                # ours deleted the field
+    assert conflicts and "None" not in out and "<<<<<<< ours\n=======\nsize = 12\n>>>>>>> theirs" in out
 
 
 def test_merge_driver_through_git(tmp_path):
