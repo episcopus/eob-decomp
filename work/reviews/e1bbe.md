@@ -1,7 +1,7 @@
 # Review: e1bbe
 
 Reviewer: rev-haiku
-Commit reviewed: 433dc71 for round 4 (main; src/E1BBE.ASM is unchanged since 5cfa933). Earlier: 421cd1e7a31c20710200fe18247bdf159a34d76c (round 3, main; src/E1BBE.ASM is identical to the review branch at 8225102, which is on main). Round 2 was reviewed at 089dfd1 and round 1 at 0cfccb1 (see below). E1A72.ASM has moved on main since round 2 (commit e856ab9), which is why round 3 finds stale citations.
+Commit reviewed: d1538ee for round 5 (main; src/E1BBE.ASM last changed at 6ddaa61, src/E1A72.ASM at 65ebeb1; both are identical in this worktree). Round 4: 433dc71 (main; src/E1BBE.ASM is unchanged since 5cfa933). Earlier: 421cd1e7a31c20710200fe18247bdf159a34d76c (round 3, main; src/E1BBE.ASM is identical to the review branch at 8225102, which is on main). Round 2 was reviewed at 089dfd1 and round 1 at 0cfccb1 (see below). E1A72.ASM has moved on main since round 2 (commit e856ab9), which is why round 3 finds stale citations.
 
 Playbook 70. Judge what a matching file can still get wrong: names, types, comments, structure.
 The matcher already proved the bytes; do not re-prove them, read for meaning.
@@ -10,6 +10,55 @@ The matcher already proved the bytes; do not re-prove them, read for meaning.
 
 Each finding is a checkbox. `must-fix` blocks `make review-pass` until a decompiler ticks it off
 (with the commit that fixes it); `should` and `note` do not block.
+
+### Round 5 (review of commit d1538ee, src/E1BBE.ASM unchanged since 6ddaa61)
+
+Checked: `make match FILE=src/E1BBE.ASM` 7 of 7 (860 bytes), exit 0; `make readability UNIT=e1bbe` 0 findings. The
+round 4 fixes are in the code. The addresses in the headers agree with the code: I counted the labels and jumps of
+HidePointer, ShowPointer, HidePointerZone, ShowPointerZone and the two Lock wrappers (1BBE:0015, 0055, 005A, 0075,
+0234, 0238, 023C, 0240, 025B, 0272, 0281, 0299, 029F, 02B6, 02DE, 0300, 021E, 0229, 022D, 0232, 00FD, 00FF, 010A,
+010F, 0213, 02C6, 030A, 0335). The cross-unit citations to E1BB1.ASM (:21-25, :53, :73, :88-95, :130, :162-164,
+:193-200), E1BF3.ASM:35, E14EF.C:44-45, E16A5.C:91-92, E1A29.C:57, E1C0E.C:49-50 and E0BD2.C:112 hold. The
+citations to E1A72.ASM at :353 and :368 hold; those at :355-356 and :233-234 do not (see the first must-fix).
+
+- [ ] must-fix src/E1BBE.ASM:36-38 (_gCursorX): the citations are stale. E1A72.ASM has moved since round 3: the
+  handler's writes are at :358-359 (`mov [_gCursorX],cx`, `mov [_gCursorY],dx`), the g80EC test is at :356-357
+  (`cmp byte ptr [g80EC],2`, `je`), and :355-356 is now `mov [_gPointerBusy],1` and that compare. InitMouse's
+  `mov [_gCursorX],0A0h` is at :236-237, not :233-234. (Evidence: grep `_gCursorX` in src/E1A72.ASM gives :49, :236,
+  :358 and :360. src/E1BF3.ASM:35 is still right.) Cite :358-359, :356-357 and :236-237. The e1a72 review routed the
+  same stale citations to this unit (work/reviews/e1a72.md, the note on src/E1BBE.ASM:36-37), and this is the
+  third round the cites have drifted; re-grep each E1A72 line before citing it.
+- [ ] must-fix src/E1BBE.ASM:16, :17, :32, :301, :313, :395 and :426 (the word "semaphore" for _gPointerBusy): a
+  semaphore promises mutual exclusion, and this unit says it does not (:427-429: "not mutual exclusion", "not
+  atomic"). The e1a72 review already ruled the same word wrong for this flag (work/reviews/e1a72.md, must-fix at
+  :19, and the note at :141: "The E1BBE owner should use the same term"). re/globals.toml:297 and src/E1BB1.ASM:53
+  and :73 say "busy flag". Use "busy flag" in all seven places ("takes the busy flag", "releases the busy flag");
+  keep the name `_gPointerBusy`.
+- [ ] must-fix src/E1BBE.ASM:32-35 (_gPointerBusy): "each taker tests then increments" is false for the mouse
+  handler, which is also a taker of this flag. The handler tests it and drops its event when it is set (src/E1A72.ASM
+  :344-346, `jmp L027F` at :346 with no position update), sets it to 1 when free (:355) and clears it to 0 at :386.
+  It does not increment and it does not wait. A porter needs both behaviours: the wrappers in this unit wait while
+  the flag is set (1BBE:0213, 02C6, 030A, 0335) and then increment it, and the handler drops its event. Say so, with
+  the citations to :344-346, :355 and :386.
+- [ ] should src/E1BBE.ASM:42 and :89 (gMouseDisabled, gDraw80C2): the bare spellings are still open (rounds 1 to 4).
+  The playbook gives the form for a C-declared object: docs/process/playbooks/30-lift-module.md:27, `EXTRN _gDrvReg:BYTE
+  ; @ 0000:3B36`. Both names are C declarations (src/E07A9.C:203 `extern int gMouseDisabled`, src/E1A29.C:57
+  `extern void (far *gDraw80C2)`), and this unit already uses the underscored form for every other C-declared name.
+  Applying the playbook gives `_gMouseDisabled` and `_gDraw80C2`. The same bare form is in E1A72.ASM:67, E1C00.ASM:40
+  and EOV1.ASM:84, so the fix crosses units. Not escalated: it is a naming convention, and the matcher does not see
+  the spelling. The human should confirm the rule once, then the units follow it.
+- [ ] should src/E1BBE.ASM:112-113 and :206-207 (HidePointer and ShowPointer headers, "Called by 1BB1:0002, 1BF3:000E and
+  1A72"): "1A72" names no function. The packet lists the callers: InitMouse (1A72:00DA) and the mouse handler's two
+  calls (src/E1A72.ASM:351 and :383). Name them, so the list can be checked against the packet.
+- [ ] note names checked and supported this round: the far pointers g8172 and g8174 and the far functions g80AA and
+  g80A2 are declared in src/E1BB1.ASM:88-95 with the same meanings, and their pushes and calls (src/E1BB1.ASM:193-200,
+  src/E1A72.ASM:347-352 and :379-381) match this unit's; gSaveRect and gRestoreRect (src/E1C0E.C:49-50,
+  src/E0BD2.C:112) take (x, y, w, h, buf) as the pushes at src/E1BBE.ASM:174-184 and :274-284 give; gDraw80C2 takes (mode, src, x,
+  y) as the pushes at :287-293 give and as src/E1A29.C:57 declares; HidePointerZone and ShowPointerZone match
+  src/E16A5.C:91-92; LockHidePointer and LockShowPointer match src/E14EF.C:44-45 ("start a frame", "end a frame").
+- [ ] note the cross-unit citations routed in rounds 1 to 4 (src/E1A72.ASM header cites, src/E1A29.C:50 and :54,
+  src/E1C00.ASM:41, :287, src/E07C8.C:37) are not rechecked this round; they belong to their owners.
+- [ ] note _f1BBE_0001 stays a placeholder (its evidence is the segment start).
 
 ### Round 4 (review of commit 433dc71, src/E1BBE.ASM unchanged since 5cfa933)
 
@@ -194,6 +243,15 @@ ShowPointerZone, LockHidePointer, LockShowPointer), and the prototypes in src/ w
 - [ ] note g80AA, g80A2 are names with no evidence beyond the call sites (the header says so). They are placeholders and fine as they are; g8172 and g8174 are the far pointer argument pair (src/E1A72.ASM:69-70).
 
 ## Summary
+
+Round 5 (d1538ee). The unit's bytes and readability gates are clean, and the addresses in the headers agree with the
+code. Three statements still block a pass. (1) The _gCursorX citations into E1A72.ASM point at the wrong lines, because
+that file moved after round 3. (2) "semaphore" is still used for _gPointerBusy here, though the e1a72 review ruled it
+wrong for this flag and routed it to this unit. (3) "each taker tests then increments" is false for the mouse handler,
+which sets the flag to 1, clears it to 0 and drops its event when it is set. Shoulds: the bare EXTRN spellings (the
+playbook form is underscored for C-declared data; a cross-unit rule for the human to confirm) and the "1A72" caller
+names. Nothing escalated: every item is a citation, a term or a comment, not a matcher or spec question.
+Result: review-failed. The decompiler fixes the three must-fix items, ticks them with the commit, and hands off again.
 
 Round 4 (433dc71). The unit's bytes and readability gates are clean, the round 3 fixes hold, and the names are
 supported by their callers and their evidence. Two statements are still wrong and block a pass: the HidePointerZone
