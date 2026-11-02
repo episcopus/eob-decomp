@@ -637,7 +637,106 @@ extern void DrawRegion00C9(int mode, void far *src, int x, int y, int region); /
         }
     }
 }
-/*@ ovl4:1091 stub */ void Ovl4_1091(int slot) {}
+extern signed char gTable18BF[]; /*@ ds:18BF */   /* per-object-kind table (src/E122E.C) */
+extern void far *gWallFaces[]; /*@ ds:7018 */      /* per slot, two far pointers to a wall face record (this unit) */
+extern signed char gWallOffsets[]; /*@ ds:70A8 */  /* per wall face, its signed segment offset (this unit) */
+extern int gWallXBias[]; /*@ ds:70CC */            /* per slot, the x base when the face flag bit 2 is clear (this unit) */
+
+struct RectKind {           /* the per-kind size record gRectKinds points at (src/E122E.C) */
+    char pad00;
+    signed char height;     /* +1 */
+    signed char width;      /* +2: base width in eighths */
+};
+struct ViewWallRec {        /* the 0x34-byte wall records at ds:E06A this unit walks (src/EOV3.C) */
+    unsigned char cells[0xa]; /* +00: ten cell indices, 0xff = none */
+    signed char next;       /* +0A: the next record, nonpositive ends the walk */
+    char flags;             /* +0B: bits 0 and 1 reflect the offset, bit 2 selects the x base */
+    int x[0xa];             /* +0C: the per-cell x, the cell index doubled apart */
+    int y[0xa];             /* +20: the per-cell y, the cell index doubled apart */
+};
+extern struct RectKind far *gRectKinds[]; /*@ ds:EFD4 */  /* per-cell far size records (src/E122E.C) */
+extern struct ViewWallRec gViewWalls[]; /*@ ds:E06A */
+
+/* ovl4:1091: draws the wall faces of one view slot. The slot has two faces (ds:7018[slot*2] and
+   ds:7018[slot*2+1]); each face, when its far pointer is set, starts a chain of 0x34-byte wall
+   records at ds:E06A. The chain head is gTable18BF of the byte the face's first byte selects in the
+   slot's ds:EF6A tile record, and `next` (which is read after the index is decremented) walks it.
+   The face's signed offset ds:70A8[face] picks the cell within each record (b = |offset| - 1) and
+   its sign picks the DrawRegion wrapper: a nonnegative offset draws the cell at its x, a negative
+   one mirrors it about the 0xb0-pixel screen. The second face (slot*2) also reads the record's
+   flags: bit 0 (or bit 1 with the parity ds:F4BC) reflects the offset, and bit 2 adds either
+   g1D61[(slot*5+4)*2] or ds:70CC[slot] to x. Called by DrawViewSlots at ovl4:1E2E. Purpose unknown:
+   what the wall faces and the ds:E06A records are. */
+/*@ ovl4:1091 */ void Ovl4_1091(int slot)
+{
+    signed char offA;
+    signed char offB;
+    char sideA;
+    char sideB;
+    char seg;
+    int y;
+    int delta;
+    int flags;
+    unsigned char spr;
+    int n;
+    int x;
+
+    sideA = slot * 2;
+    sideB = sideA + 1;
+    if (gWallFaces[sideB]) {
+        offB = *(unsigned char far *)gWallFaces[sideB];
+        for (n = gTable18BF[gEF6A[slot][offB]]; n > 0; n = gViewWalls[n].next) {
+            n--;
+            delta = gWallOffsets[sideB];
+            seg = (delta < 0 ? -delta : delta) - 1;
+            spr = gViewWalls[n].cells[seg];
+            if (spr != 0xff) {
+                if (delta >= 0) {
+                    x = gViewWalls[n].x[seg];
+                } else {
+                    x = 0xb0 - gViewWalls[n].x[seg];
+                    x -= gRectKinds[spr]->width << 3;
+                }
+                y = gViewWalls[n].y[seg];
+                if (delta >= 0)
+                    DrawRegion000F(2, gRectKinds[spr], x, y, 5);
+                else
+                    DrawRegion004D(2, gRectKinds[spr], x, y, 5);
+            }
+        }
+    }
+    if (gWallFaces[sideA]) {
+        offA = *(unsigned char far *)gWallFaces[sideA];
+        for (n = gTable18BF[gEF6A[slot][offA]]; n > 0; n = gViewWalls[n].next) {
+            n--;
+            flags = gViewWalls[n].flags;
+            delta = gWallOffsets[sideA];
+            if ((flags & 1) || ((flags & 2) && gF4BC))
+                delta = -delta;
+            seg = (delta < 0 ? -delta : delta) - 1;
+            spr = gViewWalls[n].cells[seg];
+            if (spr != 0xff) {
+                if (delta >= 0) {
+                    if (flags & 4)
+                        x = gViewWalls[n].x[seg] + g1D61[(slot * 5 + 4) * 2];
+                    else
+                        x = gViewWalls[n].x[seg] + gWallXBias[slot];
+                } else {
+                    if (flags & 4)
+                        x = 0xb0 - gViewWalls[n].x[seg] + g1D61[(slot * 5 + 4) * 2];
+                    else
+                        x = 0xb0 - gViewWalls[n].x[seg] + gWallXBias[slot];
+                    x -= gRectKinds[spr]->width << 3;
+                }
+                y = gViewWalls[n].y[seg];
+                if (delta >= 0)
+                    DrawRegion000F(2, gRectKinds[spr], x, y, 5);
+                else
+                    DrawRegion004D(2, gRectKinds[spr], x, y, 5);
+            }
+        }
+    }
+}
 /*@ ovl4:1411 stub */ void Ovl4_1411(int slot) {}
 /*@ ovl4:19C4 stub */ void Ovl4_19C4(int slot) {}
 

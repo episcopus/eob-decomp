@@ -7620,6 +7620,9 @@ unit = "eov4"
 addr = "ovl4:1091"
 size = 896
 evidence = ["ovl", "near", "frame"]
+name = "Ovl4_1091"
+level = "L2"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "eov4_1411"
