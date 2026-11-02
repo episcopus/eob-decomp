@@ -239,7 +239,117 @@ extern signed char g194B[]; /*@ ds:194B */  /* per-slot byte flags (src/E08E6.C)
 }
 
 /*@ ovl4:044B stub */ void Ovl4_044B(int arg0, int arg1) {}
-/*@ ovl4:0AD0 stub */ void Ovl4_0AD0(int slot, int field) {}
+
+/* A 14-byte item record at ds:8DD0 (src/E0BD2.C declares the same layout). */
+struct ItemRecord {
+    signed char m00;
+    signed char m01;
+    unsigned char flags;
+    signed char icon;       /* +3: indexes ds:181F */
+    signed char m02;
+    signed char m03;        /* +5: the kind tested here */
+    int m04;
+    int m06;                /* +8: one link of the circular list */
+    int m08;
+    signed char m0A;
+    signed char m0B;
+};
+extern struct ItemRecord gItems[]; /*@ ds:8DD0 */
+extern signed char g1A2B[]; /*@ ds:1A2B */   /* per-page sprite base (src/E0DE8.C) */
+extern signed char g181F[]; /*@ ds:181F */   /* byte table indexed by an item icon (src/E122E.C) */
+extern signed char g6F86[]; /*@ ds:6F86 */   /* per-slot byte (this unit) */
+extern signed char g6F98[]; /*@ ds:6F98 */   /* per-slot, per-part byte (this unit) */
+extern int g6FA8[]; /*@ ds:6FA8 */           /* per-slot y base (this unit) */
+extern int g6FAE[]; /*@ ds:6FAE */           /* per-part x/y nudge (this unit) */
+extern int g1D61[]; /*@ ds:1D61 */           /* per-slot, per-part x table (this unit) */
+extern int g1D63[]; /*@ ds:1D63 */           /* per-slot, per-part y table (this unit) */
+extern void far *gEC9A[][4]; /*@ ds:EC9A */  /* far sprite cells, one 4-cell row per icon (this unit) */
+extern int g19E5[]; /*@ ds:19E5 */           /* per-slot x base (this unit) */
+extern int gViewColLeft; /*@ ds:FE3E */      /* the visible left column (this unit) */
+extern int gViewColRight; /*@ ds:FE40 */     /* the visible right column (this unit) */
+extern void DrawRegion000F(int mode, void far *src, int x, int y, int region); /*@ 082C:063B */
+
+/* ovl4:0AD0: draws the map object that one view slot's tile record names at word +5, as a run of
+   sprite cells taken from the circular item list at ds:8DD0. `slot` is the view slot, `field` the
+   index of the object: it starts at gItems[field]'s +8 link (the item's list), remembers that link
+   as the head and walks the list back to it. For each item, the kind +5 picks the sprite base
+   ds:1A2B[gFBCC * 4 + (kind & 3)]; the cell position comes from ds:1D61/ds:1D63 (or, when the kind
+   is 8, from g19E5[slot] and g6FA8[g1A09[slot]] with sprite 0) and is nudged by ds:6FAE at
+   `field & 7` and `(field >> 1) & 7`; the cell itself is ds:EC9A[g181F[icon]][frame], its byte +2
+   (in 8-pixel units) and byte +1 shift the position. Items whose kind is 8 or below 4 are drawn;
+   the rest are skipped. The tile's ds:194B flags and its ds:1879 count gate the slot; bit 3 of the
+   flags also recomputes the span of ds:6F86[slot] and pulls the object up 4 pixels. After the list,
+   when that span slot was set, the slot's own span is recomputed. Called by DrawViewSlots when the
+   tile record's word +5 is nonzero. Purpose unknown: what the tables and the object are. */
+/*@ ovl4:0AD0 */ void Ovl4_0AD0(int slot, int field)
+{
+    int x;
+    int frame;
+    int sprite;
+    int head;
+    int k;
+    int flags;
+    signed char first;
+    void far *cell;
+    signed char is8;
+    signed char tile;
+    signed char spanSlot;
+    struct ItemRecord far *rec;
+    register int slotReg;   /* the slot number, the original keeps it in a register */
+    register int y;
+
+    slotReg = slot;
+    tile = gB894[gAngleA9C8[slotReg] * 9 + gA9C6];
+    if (slotReg == 0x10)
+        flags = 0x80;
+    else
+        flags = g194B[tile];
+    if (g1879[tile] != 0 && !(flags & 0x80))
+        return;
+
+    field = gItems[field].m06;
+    head = field;
+    first = 1;
+    while (field != head || first) {
+        rec = &gItems[field];
+        is8 = (rec->m03 == 8);
+        if (is8 == 1 || rec->m03 < 4) {
+            spanSlot = -1;
+            sprite = g1A2B[gFBCC * 4 + (rec->m03 & 3)];
+            if (is8)
+                sprite = 4;
+            k = (slotReg * 5 + sprite) * 2;
+            x = g1D61[k] + 0x58;
+            if (is8) {
+                x = g19E5[slotReg];
+                y = g6FA8[g1A09[slotReg]];
+                sprite = 0;
+            } else {
+                y = g1D63[k] + 0x7c;
+            }
+            frame = g6F98[g1A09[slotReg] * 4 + sprite];
+            if ((flags & 8) && sprite < 2 && frame != 0) {
+                spanSlot = g6F86[slotReg];
+                if (spanSlot != -1)
+                    ComputeViewSpan(spanSlot, &gViewColLeft, &gViewColRight, 5);
+                y -= 4;
+            }
+            if (frame >= 0) {
+                cell = gEC9A[g181F[rec->icon]][frame];
+                x -= (((signed char far *)cell)[2] << 3) >> 1;
+                x += g6FAE[field & 7] * 2;
+                y -= ((signed char far *)cell)[1];
+                y += g6FAE[(field >> 1) & 7];
+                DrawRegion000F(2, cell, x, y, 5);
+            }
+        }
+        field = rec->m06;
+        first = 0;
+        if (spanSlot != -1)
+            ComputeViewSpan(slotReg, &gViewColLeft, &gViewColRight, 5);
+    }
+}
+
 /*@ ovl4:0D1B stub */ void Ovl4_0D1B(int slot) {}
 /*@ ovl4:1091 stub */ void Ovl4_1091(int slot) {}
 /*@ ovl4:1411 stub */ void Ovl4_1411(int slot) {}
@@ -247,7 +357,6 @@ extern signed char g194B[]; /*@ ds:194B */  /* per-slot byte flags (src/E08E6.C)
 
 extern signed char g7272[]; /*@ ds:7272 */   /* per-column x base correction (this unit) */
 extern signed char g7275[]; /*@ ds:7275 */   /* per-column y base (this unit) */
-extern int g19E5[]; /*@ ds:19E5 */          /* per-slot x base (this unit) */
 extern void far *gIntroCells[]; /*@ ds:F4BE */  /* sprite cell table (src/EOV2.C) */
 extern int gFB78; /*@ ds:FB78 */            /* toggled by 1414:04B0 (src/E1414.C) */
 extern void DrawRegion000F(int mode, void far *src, int x, int y, int region); /*@ 082C:063B */
@@ -300,8 +409,6 @@ extern signed char far gCellBytes[]; /*@ 20AB:0000 */  /* the cell bytes drawn h
 
 extern signed char g7278[]; /*@ ds:7278 */     /* per-view-slot byte (this unit) */
 extern signed char gA9C6; /*@ ds:A9C6 */       /* offset into the gEF6A target (src/E0ACD.C) */
-extern int gViewColLeft; /*@ ds:FE3E */        /* the visible left column (this unit) */
-extern int gViewColRight; /*@ ds:FE40 */       /* the visible right column (this unit) */
 
 /* ovl4:1E18: walks the view slots from `start` to 17. For each, ds:7278 gives the slot number,
    Ovl4_0097 computes the visible column span into ds:FE3E/ds:FE40 and the slot is drawn only if
@@ -363,7 +470,6 @@ extern void ShowPointerZone(void); /*@ 1BBE:02C2 */
     g7296 = gFBCC;
 }
 
-extern int gFBCC; /*@ ds:FBCC */            /* the current page 0..3 (src/E08E6.C) */
 extern int gPartyCell; /*@ ds:FBCA */     /* the global sound volume (src/E08E6.C) */
 extern char gFB45; /*@ ds:FB45 */           /* request flag, cleared here (src/E07A9.C) */
 extern int g8102; /*@ ds:8102 */            /* the video mode/format (src/E07A9.C) */
