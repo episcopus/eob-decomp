@@ -8,12 +8,12 @@
    window, DrawTextLine (1DE7:03B2) draws one line at the cursor, PrintIntText (1DE7:05DF) prints
    an integer and DrawText (1DE7:060A) renders a string with embedded control codes. The names say
    what each routine does. The two text attributes are ds:811D (gTextAttr1, the foreground colour,
-   default 0x0F at E07C8.C:259, DEFAULT_TEXT_ATTR1) and ds:811B (gTextAttr2, the fill colour of
-   ClearTextRegion and of the redrawn scroll line, default 0x0C at E07C8.C:260, DEFAULT_TEXT_ATTR2);
+   default 0x0F at E07C8.C:262, DEFAULT_TEXT_ATTR1 at :21) and ds:811B (gTextAttr2, the fill colour of
+   ClearTextRegion and of the redrawn scroll line, default 0x0C at E07C8.C:263, DEFAULT_TEXT_ATTR2 at :21);
    the initial region record gRegions[0] at ds:009F (file offset 0x23B7F) holds attr1 = 0x0F and
    attr2 = 0x0C (ds:00A7 and ds:00A9). ds:8115 is the status-line flag
-   (src/E082C.C:65; set to 2 by LoadOverlayScreen at :332, saved and cleared around
-   the memory report at :433 and :434). Compiled with -G (the two-byte argument clean-ups are
+   (src/E082C.C:71; set to 2 by LoadOverlayScreen at 082C:05EC, saved and cleared around
+   the memory report at 082C:081A). Compiled with -G (the two-byte argument clean-ups are
    `inc sp; inc sp`). */
 
 /*@flags -ml -O -Z -G */
@@ -41,7 +41,7 @@ extern int gTextTop;       /*@ ds:FE66 */  /* the window's top edge, in pixel ro
 extern int gTextWidth;     /*@ ds:FE62 */  /* the window's width, in 8-pixel columns */
 extern int gTextHeight;    /*@ ds:FE60 */  /* the window's height, in pixel rows */
 extern int gTextAttr1;     /*@ ds:811D */  /* first text attribute (foreground colour), passed to the */
-                                           /* draw-text hook (attr1); default 0x0F at E07C8.C:259 (DEFAULT_TEXT_ATTR1) */
+                                           /* draw-text hook (attr1); default 0x0F (E07C8.C:262, DEFAULT_TEXT_ATTR1 at :21) */
 extern int gTextAttr2;     /*@ ds:811B */  /* second text attribute (the fill colour of ClearTextRegion and of */
                                            /* the redrawn scroll line), passed to the rectangle and draw-text hooks (attr2) */
 extern int gTextCol;       /*@ ds:FE52 */  /* cursor column, in font widths (column) */
@@ -49,7 +49,7 @@ extern int gTextRow;       /*@ ds:FE54 */  /* cursor row, in font heights (row) 
 extern int gTextSaved;     /*@ ds:FEC0 */  /* 0 until the first SetTextWindow, which only sets it to 1; */
                                            /* each later call saves the window it leaves */
 extern int gTextRegion;          /*@ ds:811F */  /* the current text window's record index, stored as gRegions[gTextRegion] by SetTextWindow (1DE7:0009; src/E1A29.C:38, src/E1C0E.C:577) */
-extern int gGraphicsChoice;          /*@ ds:8102 */  /* the graphics choice, written twice at start-up: Main sets it to argv[1][0] + 1 (src/E07C8.C:226), then StartupGame subtracts 0x31 (src/E07C8.C:295), after the 0x36 check at :293, so the stored value is the character code plus one until :295 and the digit 0..4 only after it. src/E07C8.C:39-43 says the digit indexes gOverlayFiles (0 cga, 1 tandy, 2 ega, 3 mcga/VGA, 4 vga); src/E14EF.C:68 reads it as the graphics choice, 1 Tandy and 3 VGA; 3 and 4 select the 6-bit cells (DrawTextFrame at src/E1DE7.C:164-166 and DrawTileRun at :198 use shift 6), 64-byte steps instead of 32 */
+extern int gGraphicsChoice;          /*@ ds:8102 */  /* the graphics choice, written twice at start-up: Main sets it to argv[1][0] + 1 (src/E07C8.C:229), then StartupGame subtracts 0x31 (src/E07C8.C:298), after the 0x36 check at :296, so the stored value is the character code plus one until :298 and the digit 0..4 only after it. src/E07C8.C:44 says the digit indexes gOverlayFiles (0 cga, 1 tandy, 2 ega, 3 mcga/VGA, 4 vga); src/E14EF.C:68 reads it as the graphics choice, 1 Tandy and 3 VGA; 3 and 4 select the 6-bit cells (DrawTextFrame at src/E1DE7.C:164-166 and DrawTileRun at :198 use shift 6), 64-byte steps instead of 32 */
 
 /* The tile graphics the frame is drawn from: a cell's byte offset is the tile table's word for
    the cell shifted by 5 (or, for gGraphicsChoice 3 and 4, 6) and added to this far base. Only read
@@ -64,12 +64,16 @@ extern char gFontHeight; /*@ ds:8101 */  /* font cell height (src/E1A47.C) */
 /* ds:805A: a far tile routine called with a tile source far pointer and a cell position
    (src, x, y). DrawTextFrame draws the four corners through it (1DE7:0130, 0163, 0196, 01CC) and
    DrawTileRun the frame edges (1DE7:025E); its first argument is a four-byte far pointer `void far *src`,
-   not the same signature as ds:805E (gDraw805E, src/E16A5.C:88), which takes an int tile. No
-   direct store found: a byte search of eob/EOB.EXE and the overlay bins for its disp16 finds none. */
+   not the same signature as ds:805E (gDraw805E, src/E16A5.C:88), which takes an int tile. No store
+   to the slot found: a byte search of eob/EOB.EXE and the overlay bins for its disp16 (5a 80) in
+   the store forms (A3, 89 06, C7 06 and 8C 06 with that disp16) finds none, and the overlay bins
+   hold no occurrence of the disp16 at all. The search does find six occurrences of the disp16 in
+   eob/EOB.EXE: the five far calls `ff 1e 5a 80` (four in DrawTextFrame, one in DrawTileRun) and one
+   `3e 40 5a 80` at file offset 0x1d4f0, which is not a store to the slot. */
 extern void (far *gDraw805A)(void far *src, int x, int y); /*@ ds:805A */
 /* ds:806A: a far routine called with (x1, y1, x2, y2, colour) like the line routine at ds:8062
    (src/E1A1F.C); ClearTextRegion and DrawTextLine fill rectangles through it. The value
-   passed is a colour (gTextAttr2); the parameter is named `colour` (src/E082C.C:57). */
+   passed is a colour (gTextAttr2); the parameter is named `colour` (src/E082C.C:63). */
 extern void (far *gFillRect)(int x1, int y1, int x2, int y2, int colour); /*@ ds:806A */
 extern void (far *gDrawText)(char far *text, int x, int y, int color, int extra); /*@ ds:80CA */  /* called by src/E1AA6.C:14 (PrintInt passes it five arguments); the routine is not identified */
 /* ds:8117: a far routine DrawTextLine calls when the cursor row starts below the last full line
@@ -79,9 +83,9 @@ extern void (far *gDrawText)(char far *text, int x, int y, int color, int extra)
    words 0xAC and 0x2D0 at EOV5.C:1114-1115 are the offset and segment of the far pointer). */
 extern void (far *gScrollHook)(void);  /*@ ds:8117 */
 extern char gScrollOn;     /*@ ds:8110 */  /* overlay 5 sets it to 1 beside the hook (EOV5.C:1110, :1114-1115) and the hook is gated by it at src/E1DE7.C:270 */
-/* ds:8115: the status-line flag, nonzero while a status line is up (src/E082C.C:65); it is set to 2
-   by LoadOverlayScreen (E082C.C:329, :332) and saved and cleared around the memory report
-   ShowMemoryDiagnostics (E082C.C:429; saved at :433, cleared at :434, restored at :442) and the
+/* ds:8115: the status-line flag, nonzero while a status line is up (src/E082C.C:71); it is set to 2
+   by LoadOverlayScreen (082C:05EC), saved and cleared around the memory report
+   ShowMemoryDiagnostics (082C:081A) and the
    message box (src/E1C0E.C:589), and cleared while a node is drawn (src/E16A5.C:511). Passed twice
    as the two extra arguments of ClipRect here. */
 extern int gStatusLine;          /*@ ds:8115 */
