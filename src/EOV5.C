@@ -339,27 +339,32 @@ void PrintTableString(int index, int flag);
    m22 is 0xf7; then, for every character with flags bit 0 set, each of its 25 item slots whose
    item type's gA9F5[type].m09 bit 0..6 equals 8, as -gTable8DD2[item].m0B. Returns the count.
    Called by 0EB9. */
-/*@ ovl5:0BBE */ int BuildDeathList(void)
+/*@ ovl5:0BBE draft */ int BuildDeathList(void)
 {
-    int i;
-    int j;
+    struct CharRec far *rec;
     int item;
     int type;
+    int kind;
+    int i;
+    int j;
 
-    gCountDDE0 = 0;
-    for (i = 0; i < 6; i++) {
-        if ((gChars[i].flags & 1) && gChars[i].m22 == 0xf7)
+    i = gCountDDE0 = 0;
+    for (; i < 6; i++) {
+        rec = &gChars[i];
+        if ((rec->flags & 1) && rec->m22 == 0xf7)
             gTableF4E6[gCountDDE0++] = i;
     }
     for (i = 0; i < 6; i++) {
-        if (!(gChars[i].flags & 1))
+        rec = &gChars[i];
+        if (!(rec->flags & 1))
             continue;
         for (j = 0; j < 0x19; j++) {
-            item = gChars[i].m77[j];
+            item = rec->m77[j];
             if (!item)
                 continue;
             type = gTable8DD2[item].m02;
-            if ((gA9F5[type].m09 & 0x7f) == 8)
+            kind = gA9F5[type].m09 & 0x7f;
+            if (kind == 8)
                 gTableF4E6[gCountDDE0++] = -gTable8DD2[item].m0B;
         }
     }
@@ -369,14 +374,14 @@ void PrintTableString(int index, int flag);
    accepts (mask 3) clears its flag bits 1..2, clears bit 7 of its effect flags, clears effect slot
    -0x22 and, while it is below its maximum hit points, spends one cure (1d8+9, clamped to the
    maximum) and heals it again. Called by the resurrect panel 0EB9. */
-/*@ ovl5:0C9D */ void HealLoop(void)
+/*@ ovl5:0C9D draft */ void HealLoop(void)
 {
     int i;
     int cures;
     int heal;
 
-    cures = RollDice(1, 3, 2);
     i = 0;
+    cures = RollDice(1, 3, 2);
     while (cures && i < 6) {
         if (!f0D1C_0670(i, 3)) {
             i++;
@@ -388,10 +393,10 @@ void PrintTableString(int index, int flag);
         if (gChars[i].hp < gChars[i].maxhp) {
             cures--;
             heal = RollDice(1, 8, 9);
-            if (gChars[i].hp + heal <= gChars[i].maxhp)
-                gChars[i].hp += heal;
-            else
+            if (gChars[i].hp + heal > gChars[i].maxhp)
                 gChars[i].hp = gChars[i].maxhp;
+            else
+                gChars[i].hp += heal;
             continue;
         }
         i++;
