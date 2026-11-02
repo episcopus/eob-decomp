@@ -1526,6 +1526,9 @@ unit = "e08e6"
 addr = "08E6:0150"
 size = 46
 evidence = ["far", "frame"]
+name = "Obj0150"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e08e6_017e"
@@ -1561,6 +1564,9 @@ unit = "e08e6"
 addr = "08E6:03FE"
 size = 50
 evidence = ["near", "frame"]
+name = "Obj03FE"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e08e6_0430"
@@ -1589,6 +1595,9 @@ unit = "e08e6"
 addr = "08E6:073F"
 size = 38
 evidence = ["near", "frame"]
+name = "Obj073F"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e08e6_0765"
@@ -1624,6 +1633,9 @@ unit = "e08e6"
 addr = "08E6:0CA6"
 size = 34
 evidence = ["near", "frame"]
+name = "Obj0CA6"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e08e6_0cc8"
@@ -1669,6 +1681,9 @@ unit = "e08e6"
 addr = "08E6:103D"
 size = 46
 evidence = ["far", "frame"]
+name = "Obj103D"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e08e6_106b"
@@ -1753,6 +1768,9 @@ unit = "e08e6"
 addr = "08E6:189D"
 size = 41
 evidence = ["far", "frame"]
+name = "Obj189D"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0a72_0006"
