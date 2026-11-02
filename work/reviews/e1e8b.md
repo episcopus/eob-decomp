@@ -1,6 +1,86 @@
 # Review: e1e8b
 
-# Round 6
+# Round 7
+
+Reviewer: rev-haiku
+Commit reviewed: 1c684cb (review/e1e8b). main was at eb98f52 when I checked; src/E1E8B.ASM, work/reviews/e1e8b.md, re/symbols.toml and re/renames.toml are identical on both.
+
+Playbook 70. Judge what a matching file can still get wrong: names, types, comments, structure.
+The matcher already proved the bytes; do not re-prove them, read for meaning.
+
+Checked: `make match FILE=src/E1E8B.ASM` 30 of 30 functions, exit 0; `make readability UNIT=e1e8b` 0 findings. The round 6 fixes hold (the 0286 link wording, the QUIRK marks, the 0613 name, and the 073B, 0711, 0134, 0185, 02FF and 086F headers match their code).
+Evidence used: src/E1E8B.ASM (all of it); build/packets/e1e8b.md (callers). This round I searched every line-number cite in the comments (`:NNN`) and checked each against the line it names, and I traced the stack and flag effects of 000F, 0134, 04D0, 0185, 0536, 0580, 0613 and the 08C9 bootstrap from the code.
+
+## Findings
+
+Each finding is a checkbox. `must-fix` blocks `make review-pass` until a decompiler ticks it off
+(with the commit that fixes it); `should` and `note` do not block.
+
+### 04D0 OverlayCallHandler and 07D7 (stale cites)
+
+- [ ] must-fix src/E1E8B.ASM:824 (04D0 header): "IRET (:865)" cites the wrong line. The `iret` is at :893; :865 is the single path's `call _LoadOverlayRecord`. Write :893. (Evidence: grep for `iret` and the call; lines 865 and 893.)
+- [ ] must-fix src/E1E8B.ASM:1383 (07D7 header): "when the first pass stopped on a zero link (:1369)" cites into 07A1 (:1369 is `rec_loaded:`). The first pass's zero-link exit is `je short drop_check` at :1412, after `shr si,1` at :1411. Write :1412. (Evidence: lines 1369, 1411 to 1412, and the second pass's zero-link exit `je short drop_out` at :1437.)
+
+### 000F InitOverlayManager
+
+- [ ] should src/E1E8B.ASM:56-58: the free-area stores are listed as 00B4 and 00B6, but the code also sets the running top 20B5:00B0 to the same base (`mov ds:[0B0h],ax`, :164). Say it. (Evidence: :161 to :166.)
+
+### One word, two names: 20B5:00B0
+
+- [ ] should src/E1E8B.ASM:1210 (0711 header): "the running total at 20B5:00B0". The other headers call the same word the running top (0536 :901, 0580 :960, 0761 :1290). The code fits "top": 0613 sets it to the free top and moves records down from it, 0761 measures from it to a record base, and 02FF stores the chain's end there (:590). Use "running top" (READABILITY, what the reviewer judges, item 7).
+
+### 02FF MapOverlayRecords
+
+- [ ] should src/E1E8B.ASM:553-554: "calls the overlay's entry through 20B5:0016 repeatedly" does not say what the entry gets. The code passes AX = 0FFFFh and BX = 0FFFFh (:621-622). Say so, and mark what -1 means [H], as 04D0 (AX = bit, BX = request word) and 086F (BX = [bp+6]) say for their calls.
+
+### 04D0 OverlayCallHandler (the two paths)
+
+- [ ] should src/E1E8B.ASM:827 (04D0 header): "a zero result of the decrement is the single entry" does not say which entry. The record's first word is the stub: 086F tests ES:0000 against 3FCDh, which is CD 3F (:1489 to :1490). An INT 3F at record offset 0 leaves the saved IP at 2, and the decrement makes it 0. Say that, or mark it [H].
+- [ ] should src/E1E8B.ASM:824-826 (04D0 header): the header says IRET resumes at the INT. For an entry in the ES:0020 version table, 0580's load runs 064E at :983, which rewrites it to 0EAh (the far jump) before the IRET, when the record has version records (ES:000C non-zero). For the single entry at ES:0000, nothing in this unit writes that word (066F starts at ES:0020, :1109; the ES:0000 accesses are reads), so what stops the INT running again is not shown. Say that, or mark it not established.
+
+### 0442 RelocateOverlayPointer
+
+- [ ] should src/E1E8B.ASM:737-739 (0442 header): "DS:0020, the record's own version table". DS is the frame paragraph from the 20C1 table (`mov ds,dx`, :755). 066F and 068D write the table at ES:0020 with ES = the record header paragraph, while 03FD runs with ES = the code base (`mov es,dx`, :712). DS:0020 is the record's table only if the frame is the header paragraph, and nothing in the unit shows that. Mark [H] or give the evidence.
+
+### 0185 ShutdownOverlayManager
+
+- [ ] should src/E1E8B.ASM:259-265 and the header at :241-248: the two pointers are called as `push cs; call near`. The pushed CS stays on the stack unless the callee returns with retf or ret 2, and the `pop ds; pop bp; retf` at :263 to :265 depends on that. The header says the callee "sees CS" but not that it must pop it. Say so.
+- [ ] should src/E1E8B.ASM:241 and :249 (name): "Shutdown is a guess". READABILITY says a name beyond the evidence is `Purpose unknown:` with what is known. The evidence is the handle close and the vector restore, and the packet finds no caller. Rename to the placeholder form with `Purpose unknown:`, or say why the name is still the better claim.
+
+### 08C9 bootstrap (086F header, :1462 to :1480; code :1521 to :1566)
+
+- [ ] should src/E1E8B.ASM:1462-1480: "_InitOverlayManager over the block" does not give the two arguments, and the arithmetic does not sit inside the block. `inc bx` (:1538) makes M = the count plus one paragraphs, and farmalloc is given 16*M bytes (:1540 to :1544). With the returned offset taken as zero (this code does not check it), the block runs from seg to seg+M (exclusive). After `inc dx` (:1551) and `add bx,dx` (:1552), 000F gets base = DX+1 = seg+2 and top = BX = M+seg+1, one paragraph past the block's end. State the two arguments, and say whether the free area is meant to cover the block (mark [H] if not established).
+
+### 0613 CompactOverlayRecords
+
+- [ ] should src/E1E8B.ASM:1051 and :1061: the labels `disc_walk` and `disc_unlink` keep the old discard name, and the loop at :1061 relinks (the header says so). A label rename does not change the bytes; take it with the next change to this unit.
+
+### Notes
+
+- [ ] note: main moved to eb98f52 after this branch was cut at 1c684cb. None of this unit's files changed between the two commits, so this review stands for main.
+- [ ] note: 0185's `Shutdown` and 05FB's `Release hook` are the two names the file calls guesses. 05FB has the clearing store and the 20B5:0010 call as evidence, so its name is backed more than 0185's.
+
+## Confirmed, no change
+
+- 000F: the 00A0 early exit (:81 to :83), the MZ size from the last-page and page words (:118 to :125), the 16-byte FBOV header reads and the 84B2/84B4 and 00A4/00A6 stores (:150 to :156), and the BX-based free-area path (:168 to :173).
+- 0134: the two vector stores (:216 to :222) and the close and open branches (:223 to :234).
+- 01B3, 01A7, 01F3 and 0250: the copies go to ES:DI, the open is of 20B5:001C, and the 12-byte limit of 0250 (:423 to :431) applies only to 0250's name.
+- 0286: the taken test (:497 to :500), the 99-entry end (:527, `cmp si,3D8h`), the 0012 store before the FF test (QUIRK marked, :507 before :509), and the largest-total and 00AA store (:521 to :533).
+- 02FF: both walk exits (:569, :579), the SI:DI byte count (:598 to :601), and the head and tail stores (:588 to :590).
+- 03C4: the 0FFFh paragraph step and the carry on a short read (:672 to :674).
+- 03FD and 0442: the table index and the 8-byte entry step (:723), and the B8+r and 50+r masks with one r in all four bytes (:756 to :779).
+- 0536 and 0580: the carry branches (:919 to :931, :965 to :986) and the successor-first test (:991 to :992).
+- 0613: the relink order (:1064 to :1066) and the head ending as the first record.
+- 064E, 066F and 068D: the stub form (CD 3F at +0, offset at +2, zero at +4, :1146 to :1152) and the far-jump form (EA at +0, offset at +1, base at +3, :1113 to :1118).
+- 06C0: the copy direction (:1176 to :1181), the 073B call and the 23h, +5 stride (:1200 to :1205).
+- 0711: the tail link into the 20BF chain (:1223 to :1229).
+- 0761: the borrow and the fallback with carry (:1298 to :1308).
+- 073B: the link word of 0 or 1 ends the walk, and a set low bit only skips the match (:1269 to :1277).
+- 086F: the ES:0000 id test and both [bp+8] stores (:1488 to :1514).
+
+## Summary
+
+Round 7: the unit reads as the overlay manager it is, and the round 6 fixes hold. Two must-fix items, both stale line cites in comments (the 04D0 IRET cite and the 07D7 zero-link cite); the code is right. The should items are clarity: the 000F store to the running top, one name for 20B5:00B0, the entry arguments of 02FF, the single-entry and resume evidence in 04D0, the DS:0020 claim in 0442 (an unproved frame), the CS balance and the name of 0185, the 08C9 arguments, and two labels in 0613. Nothing is escalated: none is a matcher, spec or pin question, and the open points are about what the original does, which the headers should mark and not change. Verdict: review-failed, 2 must-fix (cites only), no code change is asked for.
 
 Reviewer: rev-haiku
 Commit reviewed: 13cd754 (main; review/e1e8b was at the same commit when I started)
