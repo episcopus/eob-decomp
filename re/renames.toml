@@ -1719,3 +1719,12 @@ new = "GetArmourClassBase"
 kind = "function"
 why = "0A72:019D returns g349E[+15 stat byte], the base that 0DE8:0D5E turns into the armour class m1D: base = GetArmourClassBase(rec->m15); rec->m1D = base + 10 (E0DE8.C:684-685), and 0EF3:0F0B compares m1D against GetArmourClassBase(m15) + 6 (E0EF3.C:405); the old name said class word, the result is one component of the armour class"
 date = "2026-11-01"
+
+[[rename]]
+id = "0A72:04B7=GetClassSlotExpThreshold"
+addr = "0A72:04B7"
+old = "GetClassSlotLong"
+new = "GetClassSlotExpThreshold"
+kind = "function"
+why = "0A72:04B7 returns the 32-bit experience threshold for reaching level m24[i]+1: AddExperience adds the share to the slot's experience total m27[i] and levels the slot up when m27[i] passes this value (E0DE8.C:613-615); the old name said long, the result is the experience threshold"
+date = "2026-11-02"

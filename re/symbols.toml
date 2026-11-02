@@ -2080,9 +2080,9 @@ unit = "e0a72"
 addr = "0A72:04B7"
 size = 82
 evidence = ["far", "frame"]
-name = "GetClassSlotLong"
 level = "L2"
 match_flags = "-ml -O -Z"
+name = "GetClassSlotExpThreshold"
 
 [[function]]
 id = "e0a72_0509"

@@ -140,7 +140,7 @@ extern int GetDerivedStatB(int who); /*@ 0A72:0128 */
 extern int GetCharM15Value(int who); /*@ 0A72:0181 */
 extern char GetHitTarget(char who, char classByte); /*@ 0A72:0522 */
 extern char GetClassSlotByte(char row, char slot); /*@ 0A72:0509 */
-extern long GetClassSlotLong(char indexA, char indexB, char level); /*@ 0A72:04B7 */
+extern long GetClassSlotExpThreshold(char indexA, char indexB, char level); /*@ 0A72:04B7 */
 extern int GetArmourClassBase(char classIndex); /*@ 0A72:019D */
 extern int GetIndexedByte(char index, char limit, char offset); /*@ 0A72:0006 */
 extern int RollDamage(char who, char level, char countA, char countB, char countC); /*@ 0A72:01AE */
@@ -596,7 +596,7 @@ fail:
 /* 0DE8:0B45: adds `amount` experience to character `who`'s three class slots. It divides `amount`
    by g115F[cls] (the per-class divisor for m20), then for each slot 0..2 that GetClassSlotByte
    accepts, accumulates the share into that slot's m27 total, reads the slot's next-level threshold
-   through GetClassSlotLong(cls, i, m24[i] + 1) and levels the slot up through LevelUpSlot when the
+   through GetClassSlotExpThreshold(cls, i, m24[i] + 1) and levels the slot up through LevelUpSlot when the
    total has passed it. Called by 082C:... and 0DE8:0C2B. */
 /*@ 0DE8:0B45 */ void AddExperience(int who, int amount)
 {
@@ -610,7 +610,7 @@ fail:
         if (GetClassSlotByte(cls, i) == -1)
             continue;
         gChars[who].m27[i] += amount;
-        value = GetClassSlotLong(cls, i, gChars[who].m24[i] + 1);
+        value = GetClassSlotExpThreshold(cls, i, gChars[who].m24[i] + 1);
         if (value != -1 && gChars[who].m27[i] > value)
             LevelUpSlot(who, cls, i);
     }
