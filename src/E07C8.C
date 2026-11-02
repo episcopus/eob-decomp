@@ -33,7 +33,7 @@ extern unsigned g84A0;                /*@ ds:84A0: video mode argument, restored
 extern void interrupt (far *gFC08)();  /*@ ds:FC08: the INT 3Fh vector main replaced */
 extern void (far *gFn80FA)(void);     /*@ ds:80FA: exit hook main sets to 07C8:061D */
 extern int (far *gAllocFailHook)(void); /*@ ds:810A: allocation failure hook, main sets 07C8:0625 */
-extern int g8148;                     /*@ ds:8148: 1 when the mouse event handler is installed */
+extern int gMouseHandlerInstalled;                     /*@ ds:8148: 1 when the mouse event handler is installed */
 extern int gMouseDisabled;                     /*@ ds:814A: 0 disables the mouse handler body */
 extern unsigned char g3092;           /*@ ds:3092: 1 once start-up reached its end */
 extern unsigned char g3056;           /*@ ds:3056: 1 while the overlay manager is running */
@@ -150,7 +150,7 @@ int AllocationFailure(void);
         gTextAttr2 = 0xc;
         SetNodeCallback(0, 0L);
         if (g3092) {
-            if (!g8148)
+            if (!gMouseHandlerInstalled)
                 gMouseDisabled = 1;
             else
                 gMouseDisabled = !mouse;
@@ -332,7 +332,7 @@ done:
     }
     if (gFn80FA)
         gFn80FA();
-    if (g8148)
+    if (gMouseHandlerInstalled)
         MouseDisable();
     if (g3056)
         ShutdownOverlayCache();

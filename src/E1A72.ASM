@@ -40,7 +40,7 @@
         EXTRN   g813E:WORD              ; @ ds:813E: y of the event just handled
         EXTRN   g8144:WORD              ; @ ds:8144: 1 when the driver reports a 640 wide range
         EXTRN   _gHideDepth:WORD              ; @ ds:8146: nonzero suppresses the redraw
-        EXTRN   g8148:WORD              ; @ ds:8148: 1 when the mouse driver handler is installed
+        EXTRN   gMouseHandlerInstalled:WORD              ; @ ds:8148: 1 when the mouse driver handler is installed
         EXTRN   gMouseDisabled:WORD              ; @ ds:814A: 0 disables the handler body (E07A9.C)
         EXTRN   g814E:WORD              ; @ ds:814E: screen width minus 1, 13Fh
         EXTRN   g8152:WORD              ; @ ds:8152: screen height minus 1, 0C7h
@@ -197,7 +197,7 @@ _MouseInit PROC FAR
         cmp     bl,0CFh
         jne     L0123
 L0118:  mov     ax,0
-        mov     word ptr [g8148],0
+        mov     word ptr [gMouseHandlerInstalled],0
         jmp     short L0174
 L0123:  mov     ax,0
         int     33h
@@ -211,7 +211,7 @@ L0123:  mov     ax,0
         mov     word ptr [g8144],1
 L0144:  mov     cx,0A0h
         mov     dx,64h
-        mov     word ptr [g8148],1
+        mov     word ptr [gMouseHandlerInstalled],1
         mov     word ptr [gMouseDisabled],1
         cmp     word ptr [g8144],1
         jne     L015F
@@ -338,7 +338,7 @@ _MouseInit ENDP
 _MouseDisable PROC FAR
         push    bp
         mov     bp,sp
-        cmp     word ptr [g8148],0
+        cmp     word ptr [gMouseHandlerInstalled],0
         je      L02A4
         push    ax
         push    cx
