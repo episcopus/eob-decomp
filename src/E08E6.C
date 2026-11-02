@@ -1,6 +1,10 @@
 /* Unit at EOB.EXE 08E6:000B (6331 bytes, 36 functions); the object update dispatch and the
-   per-type behaviour routines of the game's map objects. One function decompiled so far, its
-   siblings are stubs. Placeholder names. */
+   per-type behaviour routines of the game's map objects: UpdateObjects walks the 30 28-byte object
+   records at ds:8A82 (struct Obj28, indexed by the 27-byte character records at ds:1A3B, struct
+   Entry27) and dispatches each live object by its type to the 000B/00C3/03FE/0AB8/0B34/0B94/0CA6
+   behaviours. 26 functions are at L2, four are drafts (0EC3, 106B, 1410, 17FD) and six are stubs
+   (0309, 0430, 05EA, 0765, 0B94, 10F3). Whitespace and empty-body stubs keep the siblings in
+   address order. */
 
 struct Obj28 {              /* 28-byte records, 30 of them at ds:8A82 */
     char b0;                /* +0: index into the ds:1A3B table (the character record) */
