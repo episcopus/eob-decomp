@@ -29,6 +29,10 @@ extern void Obj1505(int kind, int id, int frame, int orient, int b0, int m07, in
 extern void MarkListItems(void far *head); /*@ 0BD2:040E */
 extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
 extern void PushListItem(int who, int item, int value); /*@ 0BD2:0458 */
+extern int AddDDEffect(int who, int item, int volume, int kind, int page, int type); /*@ 0BD2:07DE */
+extern void f0EF3_097B(char a, int b, int c, int d, int e); /*@ 0EF3:097B */
+extern char gF43D; /*@ ds:F43D */              /* cleared around the f0EF3_097B call (122E:0C4D) */
+extern char g5A40[]; /*@ ds:5A40 */            /* byte table indexed by two script bytes (122E:0C4D) */
 extern void DrawItemRow(int who, int slot, int one); /*@ 0BD2:0917 */
 extern int f0D1C_02DC(void); /*@ 0D1C:02DC */
 extern int gMouseDisabled; /*@ ds:814A */      /* nonzero disables the mouse (src/E07A9.C) */
@@ -102,7 +106,9 @@ struct Item14 {                                 /* the 14-byte item records at d
     unsigned char flags;                        /* +00 (ds:8DD2) */
     signed char icon;                           /* +01 (ds:8DD3): indexes g181F (122E:06D0) */
     signed char m02;                            /* +02 (ds:8DD4): the item type (src/E0BD2.C) */
-    char pad03[0x0e - 0x03];
+    char pad03;
+    int m04;                                    /* +04 (ds:8DD6): the key, -1 when free (src/E0BD2.C) */
+    char pad06[0x0e - 0x06];
 };
 
 extern struct CharRec gChars[]; /*@ ds:F580 */
@@ -635,7 +641,44 @@ void f122E_1DA8(int a, int b);  /* forward: 1DA8 comes after its callers */
     Obj1505(kind, id, frame, orient, b0, m07, type, timer, m12, m14);
     return (long)(script - start);
 }
-/*@ 122E:0C4D stub */ void f122E_0C4D(void) {}
+/* 122E:0C4D: the 0xDF/other effect-adding opcode. It reads the opcode byte (0xDF sets `flag`), a
+   byte, a word, and two more bytes. When the opcode was not 0xDF it copies the first byte's item
+   into a free slot and adds a DD effect with the word as the volume and g5A40[third + second * 2]
+   as the kind; a zero result frees the slot again (m04 = -1). When it was 0xDF it clears gF43D
+   around a f0EF3_097B call with the same fields. Returns the bytes read. */
+/*@ 122E:0C4D draft */ long AddEffectOp(char far *script)
+{
+    char v1;
+    char v2;
+    char v3;
+    char saved;
+    char flag;
+    char far *start = script;
+    int id;
+    int item;
+
+    flag = (*script == (char)0xdf);
+    script++;
+    v1 = *script;
+    script += 2;
+    id = *(int far *)script;
+    script += 2;
+    v2 = *script++;
+    v3 = *script++;
+    if (!flag) {
+        item = CopyItemToFreeSlot(v1);
+        if (item == 0)
+            return (long)(script - start);
+        if (AddDDEffect(-1, item, id, g5A40[v2 * 2 + v3], v2, gTable8DD2[item].m02) == 0)
+            gTable8DD2[item].m04 = -1;
+    } else {
+        saved = gF43D;
+        gF43D = 0;
+        f0EF3_097B(-1, v1, id, g5A40[v2 * 2 + v3], v2);
+        gF43D = saved;
+    }
+    return (long)(script - start);
+}
 /*@ 122E:0D57 stub */ void f122E_0D57(void) {}
 /*@ 122E:0E9B stub */ void f122E_0E9B(void) {}
 /*@ 122E:0FDC stub */ void f122E_0FDC(void) {}
