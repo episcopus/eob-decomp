@@ -16,7 +16,7 @@
 
         .MODEL  LARGE
         .CODE
-        ASSUME  ds:@code
+        ASSUME  ds:@code                ; the driver runs with DS = CS: its variables are addressed through DS
 
 ; 0000:020C: the pitch curve tables (data, 405 bytes). gCurveTablePtrs holds six near pointers, indexed by 2 * a curve number
 ; (mov bx,[bx+20Ch] in the script command that starts a pitch effect; GetDriverTable returns 020Ch for its argument 4);
