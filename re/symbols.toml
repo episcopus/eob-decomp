@@ -3944,6 +3944,8 @@ unit = "e122e"
 addr = "122E:06D0"
 size = 375
 evidence = ["frame"]
+name = "ItemSlotAction"
+notes = "draft 2026-11-01: matches every byte except the `return 0` at the top: the original shares one `xor ax,ax` at the function end (122E:083F) and its early exit is `or ax,ax; jne 122E:0032; jmp 122E:083F`, while our -ml -O -Z build emits `or ax,ax; jne 122E:0034; xor ax,ax; jmp 122E:00xx` inline (2 bytes longer; first difference 122E:002E). The body layout of the early-return form matches the original exactly. Tried: the early `if (!HitTestObjectKind(kind)) return 0;` (this, 2 bytes long), the same wrapped in `if (HitTestObjectKind(kind)) { ...; return 1; } return 0;` (the body then lays out differently, 17 bytes short: the two 6-byte cleanups merge on the wrong side and the shared `mov ax,1` moves to the end), an explicit `return 1` after the mouse-disabled branch, `goto ret0` with `ret0: return 0;` at the end, and inlining f0D1C_02DC() in the size check. All the rest (the kind gate, the mouse-disabled/row-0x10 branch, the two RemoveListItem paths, the item-type and g181F size checks) is written from the disassembly."
 
 [[function]]
 id = "e122e_0847"

@@ -27,6 +27,14 @@ extern void ArmEffectWith(int idx, int arg, int sub, int active); /*@ 1414:055B 
 extern void AdjustMemberStatus(int who); /*@ 1414:03B4 */
 extern void Obj1505(int kind, int id, int frame, int orient, int b0, int m07, int type, int timer, int m12, int m14); /*@ 08E6:1505 */
 extern void MarkListItems(void far *head); /*@ 0BD2:040E */
+extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
+extern void PushListItem(int who, int item, int value); /*@ 0BD2:0458 */
+extern void DrawItemRow(int who, int slot, int one); /*@ 0BD2:0917 */
+extern int f0D1C_02DC(void); /*@ 0D1C:02DC */
+extern int gMouseDisabled; /*@ ds:814A */      /* nonzero disables the mouse (src/E07A9.C) */
+extern char gF51A; /*@ ds:F51A */              /* the selected action row 0..2 (src/E0ACD.C) */
+extern signed char gA99A; /*@ ds:A99A */       /* the selected character index (src/E0ACD.C) */
+extern signed char g181F[]; /*@ ds:181F */     /* byte table indexed by an item icon (src/E1414.C) */
 extern int ClickInRect(int left, int top, int right, int bottom); /*@ 082C:0A5D */
 extern void PlaySound(int sound); /*@ 177D:0070 */
 extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
@@ -89,9 +97,11 @@ struct CharRec {                                /* the 243-byte character record
     char padAD[0xf3 - 0xad];
 };
 
-struct Item14 {                                 /* the 14-byte item records at ds:8DD2 */
-    unsigned char flags;                        /* +00 */
-    char pad01[0x0e - 0x01];
+struct Item14 {                                 /* the 14-byte item records at ds:8DD2 (src/E0BD2.C) */
+    unsigned char flags;                        /* +00 (ds:8DD2) */
+    signed char icon;                           /* +01 (ds:8DD3): indexes g181F (122E:06D0) */
+    signed char m02;                            /* +02 (ds:8DD4): the item type (src/E0BD2.C) */
+    char pad03[0x0e - 0x03];
 };
 
 extern struct CharRec gChars[]; /*@ ds:F580 */
@@ -399,7 +409,50 @@ void f122E_1DA8(int a, int b);  /* forward: 1DA8 comes after its callers */
     }
     return 0;
 }
-/*@ 122E:06D0 stub */ void f122E_06D0(void) {}
+/* 122E:06D0: the item-slot action. It resolves the clicked slot's object kind and, when
+   HitTestObjectKind accepts it, acts on the item: with the mouse disabled and row 0x10 selected,
+   it removes the slot's item and either drops it into the selected character's carried list (when
+   the item type is 0x10) or says it cannot go there and pushes it back; otherwise it either takes
+   the item onto the mouse (nothing shown) or, when an item is shown, inserts the shown item back
+   into the slot unless its g181F size says it is too large. Returns 0 when the kind is not
+   clickable, else 1. */
+/*@ 122E:06D0 draft */ int ItemSlotAction(int id, int slot)
+{
+    register int item;
+    int kind;
+
+    kind = gTable18BF[gB894[id * 9 + slot]];
+    if (!HitTestObjectKind(kind))
+        return 0;
+    if (gMouseDisabled != 0 && gF51A == 0x10) {
+        item = RemoveListItem(&gB899[id * 9], 8, -1);
+        if (gTable8DD2[item].m02 == 0x10) {
+            InsertListItem(&gChars[gA99A].items[16], -2, item, 0);
+            DrawItemRow(0x10, 1, 0);
+        } else {
+            DrawText("You can't put that item there.\r");
+            PushListItem(id, item, 8);
+        }
+    } else if (f0D1C_02DC() == 0) {
+        item = RemoveListItem(&gB899[id * 9], 8, -1);
+        if (item != 0) {
+            f122E_1DA8(id, 8);
+            SetMouseItem(item);
+            gDF4C = 1;
+        }
+    } else {
+        item = f0D1C_02DC();
+        if (g181F[gTable8DD2[item].icon] > 0xe) {
+            InsertListItem(&gB899[id * 9], id, f0D1C_02DC(), 8);
+            f122E_1DA8(id, 4);
+            SetMouseItem(0);
+            gDF4C = 1;
+        } else {
+            DrawText("The item is too large to fit.\r");
+        }
+    }
+    return 1;
+}
 
 /* 122E:0847: when the mouse is over the member slot's rectangle and the slot's object has flag 0x20
    in g194B, draw the slot's message. Returns 1 when it drew, 0 otherwise. */
