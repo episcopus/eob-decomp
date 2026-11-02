@@ -2259,3 +2259,12 @@ new = "DrawMemberFood"
 kind = "function"
 why = "m23 is a food/hunger value: EatFood (0ACD:07E0, src/E0ACD.C:571-577) adds the food item's m0B to m23 clamped to 100 and then calls this to redraw the bar, and DecayMemberState (1414:0C82, src/E1414.C:656-657) subtracts one from m23 each tick for a living member and calls it. The bar is 0..100, so it is the food/hunger bar, not a level."
 date = "2026-11-02"
+
+[[rename]]
+id = "intro/ovl0:015D=PlayWtrdpScene"
+addr = "intro/ovl0:015D"
+old = "Ovl0_015D"
+new = "PlayWtrdpScene"
+kind = "function"
+why = "it loads WTRDP1/2/3.CMP and the WTRDP2.COL palette (ovl0:015D +0167, +0182, +02da, +032e), the tutorial scene"
+date = "2026-11-02"

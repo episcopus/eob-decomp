@@ -5,11 +5,11 @@
    WTRDP1..3, ORB, TOWRMAGE, KING, ADVENTUR, HANDS, TUNNEL, ZOOMTUNL, AVALANCH, SSI, PRESENT,
    DAND, WESTWOOD). The whole unit is drawn through the driver pointers the front end fills at
    load time (ds:1EE2 and its neighbours), which this page only partly names.
-   The seven scene functions are still stubs: ovl0:015D (WTRDP1..3), 06E2 (ORB, TOWRMAGE, a
-   four sprite array it blits with BlitImage and draws through f1A29_000F), 0B20 (TOWRMAGE),
-   1265, 15F9, 1DF3 and 23A3. They are long ClipRect/frame animations; every utility they use
-   (LoadPackedImage, LoadPalette, PlaySound, Dissolve, BlitImage, DrawGrid, GrowFrame,
-   WaitFrameDelay, f19EC_002A) is matched. */
+   The scene functions are named after the .CMP/.COL files they load: PlayWtrdpScene (ovl0:015D,
+   WTRDP1..3) is written; 06E2 (ORB, TOWRMAGE, a four sprite array it blits with BlitImage and
+   draws through f1A29_000F), 0B20 (TOWRMAGE), 1265, 15F9, 1DF3 and 23A3 are still stubs. They
+   are long ClipRect/frame animations; every utility they use (LoadPackedImage, LoadPalette,
+   PlaySound, Dissolve, BlitImage, DrawGrid, GrowFrame, WaitFrameDelay, f19EC_002A) is matched. */
 
 /*@flags -ml -O -Z -G */
 
@@ -98,7 +98,7 @@ extern int gOrderY[200];                /*@ ds:2B8C */
    overlay's far call, which TLINK rewrites to nop; push cs; call near, the form the original
    shows as 90 0E E8). */
 void PlayIntroSequence(void);
-void Ovl0_015D(void);
+void PlayWtrdpScene(void);
 void Ovl0_06E2(void);
 void BlitImage(int x1, int y1, int x2, int y2, int width, int height, int mode);
 void Ovl0_0B20(void);
@@ -169,7 +169,7 @@ void PlayLogoSequence(void);
     if (!gAbort)
         Ovl0_06E2();
     if (!gAbort)
-        Ovl0_015D();
+        PlayWtrdpScene();
     if (!gAbort)
         Ovl0_1265();
     if (!gAbort)
@@ -181,7 +181,117 @@ void PlayLogoSequence(void);
     if (!gAbort)
         DrawGrid();
 }
-/*@ ovl0:015D stub */ void Ovl0_015D(void) {}
+/* One animation tile slot: an image pointer, or (in slot 3, once it has been freed) the moving
+   window position the main loop of ovl0:015D slides across the screen. */
+union SpriteSlot {
+    void far *image;
+    struct { int y; int x; } win;
+};
+
+/* The byte and word tables ovl0:015D walks: each has one entry per animation tile. What the
+   entries mean is not established yet; the code uses the first three to cut 31 tiles out of
+   gOverlayBuf and the last two to place a tile at random. */
+extern unsigned char gTileX[31];        /*@ ds:1C2A */  /* Purpose unknown: x of each tile, ovl0:015D */
+extern unsigned char gTileY[31];        /*@ ds:1C49 */  /* Purpose unknown: y row of each tile, ovl0:015D */
+extern unsigned gStarX[31];             /*@ ds:1C68 */  /* Purpose unknown: x to draw each star, ovl0:015D */
+extern unsigned char gStarY[31];        /*@ ds:1CA6 */  /* Purpose unknown: y/colour of each star, ovl0:015D */
+extern unsigned char gTileScale[31];    /*@ ds:1CC5 */  /* Purpose unknown: size of each tile, ovl0:015D */
+extern void f1A29_000F(int mode, void far *src, int x, int y, int region); /*@ 0998:0008 */
+extern void MemFree(void far *block); /*@ 094F:0137 */
+
+/* ovl0:015D: the WTRDP scene, the tutorial corridor. It loads the WTRDP2 palette and the
+   WTRDP1..3 images, cuts the title sprite and, in the main loop, slides a window (x from 0x108
+   down, y from 0x0B up) across the screen: each step draws one of the three 5 by 0x20 frames
+   four times and drops five random star tiles taken from gOverlayBuf, occasionally playing a
+   sound. A three-step wipe then clears the screen. All the scratch images (the four sprites,
+   31 stars and three frames) are freed at the end. */
+/*@ ovl0:015D */ void PlayWtrdpScene(void)
+{
+    int k;
+    union SpriteSlot sprites[4];
+    void far *stars[31];
+    void far *frames[3];
+    int i;
+    int frame;
+
+    LoadPalette("WTRDP2.COL");
+    gDrawPage = 2;
+    LoadPackedImage("WTRDP1.CMP", 5, 3);
+    sprites[3].image = gMakeImage(0, 0, 0x14, 0x88, gOverlayBuf);
+    for (i = 1; i < 4; i++) {
+        BlitImage(0, 0, 0, 0, 0xa0, 0x88, i);
+        sprites[3 - i].image = gMakeImage(0, 0, 0x14, 0x88, gOverlayBuf);
+    }
+    f19EC_002A(3, 4, FP_OFF(gOverlayBuf), FP_SEG(gOverlayBuf));
+    WaitFrameDelay();
+    ClearBottomBar();
+    PlaySound(6);
+    for (i = 0; i < 4; i++) {
+        gFrameDelay = 3;
+        f1A29_000F(0, sprites[i].image, 0x50, 0x18, 0);
+        MemFree(sprites[i].image);
+        WaitFrameDelay();
+    }
+    ClipRect(0, 0x50, 0, 0xa8, 0x28, 0x10, 6, 0);
+    gDrawPage = 2;
+    gFrameDelay = 0x32;
+    sprites[0].image = gMakeImage(0x14, 0, 0x14, 0x88, gOverlayBuf);
+    LoadPackedImage("WTRDP2.CMP", 5, 3);
+    sprites[1].image = gMakeImage(0, 0, 0x14, 0x88, gOverlayBuf);
+    sprites[2].image = gMakeImage(0x14, 0, 0x14, 0x88, gOverlayBuf);
+    LoadPackedImage("WTRDP3.CMP", 5, 3);
+    gDrawPage = 2;
+    for (i = 0; i < 31; i++)
+        stars[i] = gMakeImage(gTileX[i], gTileY[i] * 8 + 0x88, gTileScale[i], gTileScale[i] * 8, gOverlayBuf);
+    for (i = 0; i < 3; i++)
+        frames[i] = gMakeImage(i * 5, 0x98, 5, 0x20, gOverlayBuf);
+    f19EC_002A(3, 4, FP_OFF(gOverlayBuf), FP_SEG(gOverlayBuf));
+    for (i = 0; i < 3; i++) {
+        WaitFrameDelay();
+        gFillRect(0, 0, 0x9f, 0x87, 0xc);
+        f1A29_000F(2, sprites[i].image, 0, 0, 0);
+        ClipRect(0, 0, 0xa, 0x18, 0x14, 0x88, 2, 0);
+        gFrameDelay = 3;
+    }
+    gFrameDelay = 4;
+    ClipRect(0, 0, 0xa, 0x18, 0x14, 0x88, 4, 0);
+    WaitFrameDelay();
+    gFrameDelay = 4;
+    ClipRect(0x14, 0, 0xa, 0x18, 0x14, 0x88, 4, 0);
+    ClearBottomBar();
+    WaitFrameDelay();
+    ClipRect(0, 0xb8, 5, 0xb8, 0x1d, 0x10, 4, 0);
+    sprites[3].win.x = 0x108;
+    sprites[3].win.y = 0xb;
+    for (i = 0; i <= 0x46; i++) {
+        gFrameDelay = 3;
+        ClipRect((sprites[3].win.x - 2) >> 3, sprites[3].win.y - 2, 0, 0, 6, 0x24, 4, 4);
+        frame = i & 3;
+        if (frame == 3)
+            frame = 1;
+        f1A29_000F(4, frames[frame], sprites[3].win.x, sprites[3].win.y, 0);
+        ClipRect((sprites[3].win.x - 2) >> 3, sprites[3].win.y - 2,
+                 (sprites[3].win.x - 0x52) >> 3, sprites[3].win.y + 0x16, 6, 0x24, 4, 0);
+        ClipRect(0, 0, (sprites[3].win.x - 2) >> 3, sprites[3].win.y - 2, 6, 0x24, 4, 4);
+        sprites[3].win.x--;
+        sprites[3].win.y++;
+        for (k = 0; k < 5; k++) {
+            frame = RandomByte() % 31;
+            f1A29_000F(0, stars[frame], gStarX[frame] - 0x50, gStarY[frame] + 0x18, 0);
+        }
+        if (!(RandomByte() & 7))
+            PlaySound((RandomByte() & 1) ? 5 : 0xe);
+        WaitFrameDelay();
+    }
+    gDrawPage = 0;
+    for (i = 0; i < 31; i++) {
+        if (i < 3) {
+            MemFree(sprites[i].image);
+            MemFree(frames[i]);
+        }
+        MemFree(stars[i]);
+    }
+}
 /*@ ovl0:06E2 stub */ void Ovl0_06E2(void) {}
 /* ovl0:09AD: copies an image between two rectangles of the same video buffer (slot 3, the
    segment f19EC_0002(3) returns), from the rectangle at (x1,y1) to the one at (x2,y2), each

@@ -11171,6 +11171,9 @@ unit = "iov0"
 addr = "ovl0:015D"
 size = 1413
 evidence = ["ovl", "near", "frame"]
+name = "PlayWtrdpScene"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "iov0_06e2"
@@ -11343,3 +11346,4 @@ evidence = ["ovl", "near", "frame"]
 name = "PlaySound"
 level = "L2"
 match_flags = "-ml -O -Z -G"
+
