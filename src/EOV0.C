@@ -54,7 +54,7 @@ extern char gStr613D[]; /*@ ds:613D */ /* the string the party-status report dra
 extern void DrawRowList(int index); /*@ 0D1C:0454 */
 
 struct CharRec {                /* 243-byte character records at ds:F580 (src/E0A72.C) */
-    char index00;               /* +00: the character index ovl0:26C6 writes (src/EOV0.C:1368) */
+    char index00;               /* +00: the character index ovl0:26C6 writes */
     unsigned char m01;          /* +01: status bits */
     char name[0x0b];            /* +02: the character's name, NUL padded */
     char m0D;                   /* +0D: the source of 284A's byte copy */
@@ -100,8 +100,8 @@ extern int GetArmourClassBase(char m15); /*@ 0A72:019D */
 extern int RollHitPoints(char classIndex, char m17, char countA, char countB, char countC); /*@ 0A72:01AE */
 extern int MaxHitPoints(char classIndex, char m17, char countA, char countB, char countC); /*@ 0A72:02B3 */
 extern int MinHitPoints(char classIndex, char m17, char countA, char countB, char countC); /*@ 0A72:03A4 */
-extern int gDCA4; /*@ ds:DCA4 */ /* the max hit points ovl0:135D recomputes through MaxHitPoints (src/EOV0.C:896, src/E0A72.C:206); src/E0DE8.C:132 gives the same byte a char meaning (a conflict left to E0DE8.C) */
-extern int gDD10; /*@ ds:DD10 */ /* the min hit points ovl0:135D recomputes through MinHitPoints (src/EOV0.C:898, src/E0A72.C:231); src/E08E6.C also uses the byte as a 0/1 damage flag (src/E08E6.C:784, :823) */
+extern int gDCA4; /*@ ds:DCA4 */ /* the max hit points ovl0:135D recomputes through MaxHitPoints (0A72:02B3); src/E0DE8.C:132 gives the same byte a char meaning (a conflict left to E0DE8.C) */
+extern int gDD10; /*@ ds:DD10 */ /* the min hit points ovl0:135D recomputes through MinHitPoints (0A72:03A4); src/E08E6.C also uses the byte as a 0/1 damage flag (08E6:0E48 clears it, 08E6:0FBE sets it to 1) */
 extern struct Node far *FindNode(struct Node far *head, unsigned key); /*@ 1658:01A2 */
 extern char gStr6227[]; /*@ ds:6227 */ /* a value format ovl0:135D uses (Purpose unknown) */
 extern char gStr622A[]; /*@ ds:622A */ /* a value format ovl0:135D uses (Purpose unknown) */
@@ -115,8 +115,8 @@ extern int CopyItemToFreeSlot(int n); /*@ 0BD2:089E */
 extern void ComputeArmourClass(int who); /*@ 0DE8:0D5E */
 extern signed char g1231[]; /*@ ds:1231 */ /* byte table indexed by gChars[].m20 (src/E0BD2.C) */
 extern int far RollDice(char count, char sides, char bonus); /*@ 082C:0458 */
-extern void far *gPtrsFC8C[]; /*@ ds:FC8C */ /* the overlay screen buffers, ds:FC8C up to ds:FD98 (0x43 far pointers); ovl0:28B0 frees all of them, InitPanelScreens sets only the first 0x2c (src/EOV0.C:1329-1330) and entries 0x32..0x3b alias the ten gPtrsFD54 row cells */
-extern int gDCB0; /*@ ds:DCB0 */ /* the current character index for the panel: RunCharacterPanel toggles it (src/EOV0.C:1476-1490) and the panel routines index gChars[gDCB0]. Purpose unknown beyond "current character" */
+extern void far *gPtrsFC8C[]; /*@ ds:FC8C */ /* the overlay screen buffers, ds:FC8C up to ds:FD98 (0x43 far pointers); ovl0:28B0 frees all of them, InitPanelScreens sets only the first 0x2c (ovl0:2547) and entries 0x32..0x3b alias the ten gPtrsFD54 row cells */
+extern int gDCB0; /*@ ds:DCB0 */ /* the current character index for the panel: RunCharacterPanel toggles it (ovl0:28F9) and the panel routines index gChars[gDCB0]. Purpose unknown beyond "current character" */
 extern int gPanelX5E54[]; /*@ ds:5E54 */ /* per-character x read by ovl0:11BA (Purpose unknown) */
 extern int gPanelY5E5C[]; /*@ ds:5E5C */ /* per-character y read by ovl0:11BA (Purpose unknown) */
 extern char gStr61CB[]; /*@ ds:61CB */ /* a fixed report label (Purpose unknown) */
@@ -154,7 +154,7 @@ extern char gStr61B9[]; /*@ ds:61B9 */ /* a format string ovl0:065B selects (Pur
 extern char gStr61BC[]; /*@ ds:61BC */ /* a format string ovl0:065B selects (Purpose unknown) */
 extern char gStr61C2[]; /*@ ds:61C2 */ /* a format string ovl0:065B selects (Purpose unknown) */
 extern char far *g115D[]; /*@ ds:115D */ /* six far string pointers ovl0:065B draws in a column (Purpose unknown) */
-extern int gFC8A; /*@ ds:FC8A */ /* the parity of the key ovl0:1F66 last handled (Purpose unknown) */
+extern int gFC8A; /*@ ds:FC8A */ /* the parity of the race index PickOption (ovl0:1F66) returned (Purpose unknown) */
 extern unsigned long gTicks; /*@ ds:848A */ /* the 32-bit tick counter (src/E082C.C) */
 extern signed char g5EB0; /*@ ds:5EB0 */ /* the character ovl0:1224 last drew (Purpose unknown) */
 extern signed char gFC84; /*@ ds:FC84 */ /* the character panel's animation frame 0..9 (Purpose unknown) */
@@ -172,7 +172,7 @@ extern int gNamePosX[]; /*@ ds:5E44 */ /* the x of each panel name slot (Purpose
 extern int gNamePosY[]; /*@ ds:5E4C */ /* the y of each panel name slot (Purpose unknown) */
 extern char gStr618C[]; /*@ ds:618C */ /* a fixed panel label (Purpose unknown) */
 extern struct Node far *ListAdd(struct Node far *head, struct Node far *item); /*@ 1658:001E */
-extern char g5E20; /*@ ds:5E20 */ /* nonzero forces the row-list walk to rebuild and redraw the whole list (src/E16A5.C:130); BuildRowNodeList sets it (src/EOV0.C:368), not the mouse */
+extern char g5E20; /*@ ds:5E20 */ /* nonzero forces the row-list walk to rebuild and redraw the whole list (16A5:00BD); BuildRowNodeList sets it (ovl0:042F), not the mouse */
 
 struct Panel {                  /* the 16-byte option-list records at ds:017F (src/E14EF.C) */
     int x;                      /* +0 */
@@ -489,12 +489,13 @@ int PickClass(int race);           /* ovl0:207A, defined below */
 int PickAlignment(int classIndex); /* ovl0:2238, defined below */
 
 /* ovl0:0A5E: the party-position screen. It lays out a six-row list from row 0x15, picks the first
-   free slot for the current member gDCB0 (FindSlot from slot 0x1a when the last option key was odd,
-   else from 0) and then, until a slot is confirmed (cur), redraws the four member cells: cell i
-   gets gPtrsFC8C[taken[i]] at (0xb0 + i*0x20, 0x42), with the four slots walked by FindSlot. It then
-   waits for a key (ovl0:1224 animates first) and turns it into a command: 0x2b/0x61 confirm (3), the
-   left keys 0x5c/0x8001 blink icon 0xc and step left (1), the right keys 0x66/0x8002 blink icon 0xd
-   and step right (2), the 0x8003..0x8006 keys pick position key-3 and confirm, anything else loops.
+   free slot for the current member gDCB0 (FindSlot from slot 0x1a when gFC8A, the parity of the race
+   choice PickOption returned, is odd, else from 0) and then, until a slot is confirmed (cur), redraws
+   the four member cells: cell i gets gPtrsFC8C[taken[i]] at (0xb0 + i*0x20, 0x42), with the four
+   slots walked by FindSlot. It then waits for a key (ovl0:1224 animates first) and turns it into a
+   command: 0x2b/0x61 confirm (3), the left keys 0x5c/0x8001 blink icon 0xc and step left (1), the
+   right keys 0x66/0x8002 blink icon 0xd and step right (2), the 0x8003..0x8006 keys pick position
+   key-3 and confirm, anything else loops.
    A command of 1/2 slides the slot through FindSlot when `pos` sits at an end (or the mouse is
    enabled), else steps `pos`; a command of 3 records `pos`. On exit it stores the chosen slot into
    g5EAC[gDCB0] and the record's m22, unpacks the chosen cell into the member's sprite and redraws
@@ -631,7 +632,7 @@ int PickAlignment(int classIndex); /* ovl0:2238, defined below */
    the seven ability/stat fields (Ovl0_1ADD) or pick the party slot (ovl0:0A5E), each redrawing the
    page and list. The enter key 0x61 and key 0x8004 flash icon 6 and set key to 1, which draws the
    current row list and returns 0; any other key sets key to 0, so the loop continues. Called by
-   CreateCharacter (src/EOV0.C:1305). Purpose unknown: the 0x8001..0x8004 key codes. */
+   CreateCharacter (ovl0:23EC). Purpose unknown: the 0x8001..0x8004 key codes. */
 /*@ ovl0:0DDC */ int Ovl0_0DDC(void)
 {
     struct Node far *list;
@@ -859,16 +860,17 @@ int PickAlignment(int classIndex); /* ovl0:2238, defined below */
     gFC85 = gFC84;
 }
 /* ovl0:135D: the field editor of the character editor. `index` is the field (0..6), `value` its
-   byte and `percent` the strength percentile, read on every call (src/EOV0.C:893) but used only for
-   index 0 (the callers pass a null far pointer for indexes 1..6, src/EOV0.C:1045-1060). It draws the
+   byte and `percent` the strength percentile, read on every call (ovl0:135D) but used only for
+   index 0 (the callers pass a null far pointer for indexes 1..6, ovl0:1ADD). It draws the
    panel page (ovl0:065B mode 3), finds the list node index+1 and its box, writes the field into
    gFileNameBuf and draws it, then loops: each pass reads a key (ovl0:1224 animates first). The
    decrement keys 0xc/0x5c/0x69/0x8009 blink icon 0xb and lower the value, the increment keys
    0xd/0x66/0x6a/0x8008 blink icon 0xa and raise it, 0x60/0x62 step the returned field index (mod 7),
    and 0x61/0x6e/0x800a confirm (icon 9). A changed value is clamped (index 0 between gOutDD04[0] and
    gOutDC98[0] & 0xff, with a strength above 0x12 moved into the percentile and the percentile reset,
-   later indexes between gOutDD04[index] and gOutDC98[index]), stored, and index 6 copies it to m1C,
-   index 4 recomputes the derived hit points (m1B/m1C from gDCA4/gDD10) or index 3 the armour class m1D
+   later indexes between gOutDD04[index] and gOutDC98[index]), stored, and index 6 copies it to m1C
+   (on entry for index 6 it also recomputes gDCA4/gDD10 from MaxHitPoints/MinHitPoints), index 4
+   recomputes the derived hit points (m1B/m1C from gDCA4/gDD10) or index 3 the armour class m1D
    (GetArmourClassBase + 10). A key that changed nothing but set the done flag redraws the value and
    ends. Returns the field index to move to (-2 for the confirm key). Called by ovl0:1ADD. Purpose
    unknown: the per-index special cases and formats. */
@@ -1029,13 +1031,12 @@ int PickAlignment(int classIndex); /* ovl0:2238, defined below */
     }
     return move;
 }
-/* ovl0:1ADD: Purpose unknown: edits one of the seven ability/stat fields of the current character. It draws the page
-   through ovl0:065B(mode 3) and loops over the field index i (0..6); for each it opens the field
-   with EditStatField(i, &gChars[gDCB0].<field>, second) and redraws the page. Field 0 passes both
-   m0D and m0F;
-   fields 1..6 pass m11, m13, m15, m17, m19 and m1B with no second field. A return of -2 leaves, a
-   negative return wraps i to 6, then i is taken modulo 7. Finally it redraws the page through
-   ovl0:065B(mode 1). Called by ovl0:0DDC. */
+/* ovl0:1ADD: Purpose unknown: edits one of the seven ability/stat fields of the current character.
+   It draws the page through ovl0:065B(mode 3) and loops over the field index i (0..6); for each it
+   opens the field with EditStatField(i, &gChars[gDCB0].<field>, second) and redraws the page.
+   Field 0 passes both m0D and m0F; fields 1..6 pass m11, m13, m15, m17, m19 and m1B with no second
+   field. A return of -2 leaves, a negative return wraps i to 6, then i is taken modulo 7. Finally
+   it redraws the page through ovl0:065B(mode 1). Called by ovl0:0DDC. */
 /*@ ovl0:1ADD */ void Ovl0_1ADD(void)
 {
     int i;
@@ -1080,9 +1081,9 @@ int PickAlignment(int classIndex); /* ovl0:2238, defined below */
    three class slots it copies gTable5EF9[class * 4 + slot] into the record's m24 and the 32-bit
    5000 / gTable5EFC[class * 4] into its exp; it then builds the class combat tables (ovl0:1EA9) and
    rolls the six abilities: each is RollAbilityScore plus the per-race-pair bonus gTable5EB1, clamped
-   up to gOutDD04, then, when the strength roll is exactly 18, the low byte gets a percentile roll
-   (1d100) ORed into its high half, and finally clamped down to gOutDC98. The order matters for the
-   0x12 case. The six values are stored into the record's stat pairs (m0D/m0E, m0F/m10 and
+   up to gOutDD04; then, when the strength roll is exactly 18, the 1d100 percentile roll is ORed
+   into the high byte (the low byte stays 18), and finally clamped down to gOutDC98. The order matters
+   for the 0x12 case. The six values are stored into the record's stat pairs (m0D/m0E, m0F/m10 and
    m11/m12..m19/m1A), m1D becomes GetArmourClassBase(m15) + 10, and the hit points m1B/m1C become
    RollHitPoints(class, m17, the three m24 slots). Called by ovl0:0DDC and ovl0:23EC. */
 /*@ ovl0:1BF2 */ void RollCharacterStats(int who)
@@ -1238,7 +1239,8 @@ int PickAlignment(int classIndex); /* ovl0:2238, defined below */
    did not handle 0x6e/0x32 or the mouse buttons 0x41/0x42 whose last click (gClickX, gClickY) lies in
    the list box; a confirmed entry (UpdateOptionList not -1) ends the loop. Returns
    the chosen alignment index, or 0x6e when it was confirmed by the mouse or the keys 0x6e/0x32
-   (icon 5 flashed). Called by ovl0:23EC for the class member. */
+   (icon 5 flashed). Called by ovl0:23EC (CreateCharacter) for the new member's alignment pick, given
+   its class. */
 /*@ ovl0:2238 */ int PickAlignment(int classIndex)
 {
     register int mask;
