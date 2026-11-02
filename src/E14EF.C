@@ -69,7 +69,7 @@ extern int g8102; /*@ ds:8102: a zero here makes the normal text colour 1 (:192,
 extern int gMouseDisabled; /*@ ds:814A: nonzero disables the mouse: the INT 33h handler at 1A72:017A
                               returns at once, and InitMouse sets it to 1 before it installs the
                               handler (1A72:0150, src/E1A72.ASM:100; store at src/E1A72.ASM:315) */
-extern int gCursorX; /*@ ds:8138: mouse x in pixels (src/E1A72.ASM:65); tested with the pixel rectangle (:283) */
+extern int gCursorX; /*@ ds:8138: mouse x in pixels (src/E1A72.ASM:65); tested with the pixel rectangle (:282) */
 extern int gCursorY; /*@ ds:813A: mouse y in pixels (src/E1A72.ASM:73) */
 extern int g8134; /*@ ds:8134: accumulated button changes; the INT 33h handler folds each change into
                       it (or ax,[g8134]; mov [g8134],ax, src/E1A72.ASM:400-401), this file clears it
