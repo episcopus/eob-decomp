@@ -104,7 +104,7 @@ extern char gFB44; /*@ ds:FB44 */              /* the display mode byte 07CA cas
 extern char gFileNameBuf[]; /*@ ds:FE6E */     /* the text buffer 07CA formats into (src/EOV2.C) */
 extern unsigned long g8492; /*@ ds:8492 */    /* the 32-bit tick counter (src/EOV6.C) */
 
-extern void f1547_0991(int member); /*@ 1547:0991 */
+extern void RedrawMember(int member); /*@ 1547:0991 */
 extern void PlaySoundDefault(int sound); /*@ 177D:00F3 */
 extern int f0D1C_0006(int value); /*@ 0D1C:0006 */
 extern int f0D1C_00DA(int value, int page); /*@ 0D1C:00DA */
@@ -131,7 +131,7 @@ extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
 
 /* 1414:0000: the selected-character blink effect, entry 0 of the table (16-tick period 9). It
    flips the phase g5CAA; when the phase turns on it saves gFB34 (the highlighted member),
-   replaces it with 0xFF, redraws that member's row through f1547_0991 and restores gFB34, and
+   replaces it with 0xFF, redraws that member's row through RedrawMember and restores gFB34, and
    when the phase turns off it just redraws gFB34's row. QUIRK 1414:0037: the argument comes in
    on the stack and is incremented by value, so the increment has no effect. */
 /*@ 1414:0000 */ void BlinkSelected(int slot)
@@ -141,10 +141,10 @@ extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
     if (g5CAA ^= 1) {
         old = gFB34;
         gFB34 = 0xFF;
-        f1547_0991(old);
+        RedrawMember(old);
         gFB34 = old;
     } else {
-        f1547_0991(gFB34);
+        RedrawMember(gFB34);
     }
     slot++;
 }
@@ -454,7 +454,7 @@ extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
 }
 /* 1414:0770: toggles or clears one of a character's 10 effect slots. In modes 0 and 2 it flips
    bit `slot` of gChars[who].m1E, then modes 0, 1 and 2 clear gChars[who].mE8[slot] and redraw
-   the member's row through f1547_0991; any other mode does nothing. Called by 07CA. */
+   the member's row through RedrawMember; any other mode does nothing. Called by 07CA. */
 /*@ 1414:0770 */ void SetCharEffectSlot(int who, int mode, int slot)
 {
     switch (mode) {
@@ -464,7 +464,7 @@ extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
         /* falls through */
     case 1:
         gChars[who].mE8[slot] = 0;
-        f1547_0991(who);
+        RedrawMember(who);
     }
 }
 /* 1414:07CA: the per-character effect runner, entries 6 to 11 of the table (one per member). For
@@ -538,7 +538,7 @@ extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
                 break;
             case 6:
                 rec->mE7 = 0;
-                f1547_0991(who);
+                RedrawMember(who);
                 break;
             case 7:
                 sprintf(gFileNameBuf, "%s no longer has giant strength.\r", rec->name);
@@ -546,7 +546,7 @@ extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
                 rec->m0D = rec->m0E;
                 rec->m0F = rec->m10;
                 if (gFB44 == 2)
-                    f1547_0991(who);
+                    RedrawMember(who);
                 break;
             case 8:
                 if (rec->m01 & 2) {
@@ -558,7 +558,7 @@ extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
                     ApplyCharEffect(who, 0x222L, 8, 1);
                 } else {
                     rec->m01 &= ~2;
-                    f1547_0991(who);
+                    RedrawMember(who);
                 }
                 break;
             case 9:
@@ -566,7 +566,7 @@ extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
                     sprintf(gFileNameBuf, "%s is no longer paralyzed!\r", rec->name);
                     DrawText(gFileNameBuf);
                     rec->m01 &= ~4;
-                    f1547_0991(who);
+                    RedrawMember(who);
                 }
                 break;
             }

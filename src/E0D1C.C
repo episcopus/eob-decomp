@@ -121,7 +121,7 @@ extern void PlaySound(int sound); /*@ 177D:0070 */
 extern void DrawText(char far *text); /*@ 1DE7:060A */
 extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
 
-extern void f1547_0991(int dir); /*@ 1547:0991 */
+extern void RedrawMember(int dir); /*@ 1547:0991 */
 extern void DrawMemberSlot(char who, char slot); /*@ 1547:07E7 */
 extern void DrawItemRow(int who, int slot, int one); /*@ 0BD2:0917 */
 extern void InsertListItem(void far *head, int key, int item, int sound); /*@ 0BD2:01D0 */
@@ -167,7 +167,7 @@ int f0D1C_02DC(void);
 }
 
 /* 0D1C:003F: selects the party member at index `value` (the signed char at ds:A99A). When
-   `value` differs from the current one, the old index and the new index are passed to f1547_0991
+   `value` differs from the current one, the old index and the new index are passed to RedrawMember
    (which redraws that member's row), and nothing is done when they are equal. gA99A indexes the
    character records read by 0D1C:0670 and is toggled 0..5 by Turn091C (src/E0ACD.C). Called by
    0ACD, 0DE8, 0EF3, 1414 and overlays 1, 5 and 6. */
@@ -178,8 +178,8 @@ int f0D1C_02DC(void);
     if (gA99A != value) {
         old = gA99A;
         gA99A = value;
-        f1547_0991(old);
-        f1547_0991(gA99A);
+        RedrawMember(old);
+        RedrawMember(gA99A);
     }
 }
 
@@ -315,7 +315,7 @@ int f0D1C_02DC(void);
 }
 /* 0D1C:0304: stores `n` as the item index in the current slot: gFBCE when the mouse is enabled,
    or gChars[gA99A].m77[gF51A] when it is disabled. When the mouse is disabled it also redraws
-   the slot, through f1547_0991(gA99A) when gFB44 is 0 and DrawItemRow(gF51A, 1, 0) otherwise.
+   the slot, through RedrawMember(gA99A) when gFB44 is 0 and DrawItemRow(gF51A, 1, 0) otherwise.
    Called by SetMouseItem to set the icon shown for a selected item. */
 /*@ 0D1C:0304 */ void SetCurrentItem(int n)
 {
@@ -324,7 +324,7 @@ int f0D1C_02DC(void);
     } else {
         gChars[gA99A].m77[gF51A] = n;
         if (gFB44 == 0)
-            f1547_0991(gA99A);
+            RedrawMember(gA99A);
         else
             DrawItemRow(gF51A, 1, 0);
     }
@@ -401,7 +401,7 @@ int f0D1C_02DC(void);
         }
     }
 }
-/* 0D1C:0583: calls f1547_0991 (which redraws one character's row) for each of the six party
+/* 0D1C:0583: calls RedrawMember (which redraws one character's row) for each of the six party
    members. Called by 0ACD, 0EF3 and overlays 1, 3 and 5 after a change that affects the whole
    party. */
 /*@ 0D1C:0583 */ void RedrawCharacters(void)
@@ -409,7 +409,7 @@ int f0D1C_02DC(void);
     int i;
 
     for (i = 0; i < 6; i++)
-        f1547_0991(i);
+        RedrawMember(i);
 }
 /* 0D1C:059B: Purpose unknown: a per-character check against a 1d20 roll. It derives a class
    slot from gChars[who].m20 (GetClassSlotByte, with 4 and 5 folded to 0), a value from

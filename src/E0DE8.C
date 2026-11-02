@@ -157,7 +157,7 @@ extern void DamageObject(struct Obj28 far *obj, int n); /*@ 08E6:0FBE */
 extern void f0EF3_12A1(void far *arg); /*@ 0EF3:12A1 */
 extern void f0EF3_0F86(void far *arg); /*@ 0EF3:0F86 */
 extern void ApplyCharEffect(char who, long interval, char value, char firstEmpty); /*@ 1414:05ED */
-extern void f1547_0991(int dir); /*@ 1547:0991 */
+extern void RedrawMember(int dir); /*@ 1547:0991 */
 extern void DrawMemberHp(int who); /*@ 1547:033F */
 extern void DrawMemberPortrait(int who); /*@ 1547:0544 */
 extern void PlaySound(int sound); /*@ 177D:0070 */
@@ -392,7 +392,7 @@ fail:
 /* 0DE8:05BB: picks the item for the action `slot` and runs it. The item's m02 indexes g552F to a
    `kind`; kind 0x10 takes the first m77[0], m77[1] or the special m77[16] slot whose own m02 is
    0x10 (clearing the slot, pulling m77[16] through RemoveListItem), otherwise it scans all 27 slots
-   for the first whose item m02 equals `kind` (clearing it and redrawing with f1547_0991 when the
+   for the first whose item m02 equals `kind` (clearing it and redrawing with RedrawMember when the
    slot is below 2). A found item is dispatched through AddDDEffect (sound 0x1A when m02 is 7, else
    0x0B, setting gDF4C), returning 0, or -4 when no item was found. Called by 0DE8:0763. */
 /*@ 0DE8:05BB */ int UseItemByKind(int who, int slot)
@@ -427,7 +427,7 @@ fail:
                 item = gChars[who].m77[i];
                 gChars[who].m77[i] = 0;
                 if (i < 2)
-                    f1547_0991(who);
+                    RedrawMember(who);
                 break;
             }
         }
@@ -478,7 +478,7 @@ fail:
         break;
     case 3:
         result = UseItemByKind(who, field);
-        f1547_0991(who);
+        RedrawMember(who);
         break;
     }
     if (result > 0) {
@@ -487,7 +487,7 @@ fail:
                 gChars[who].hp = 0x7f;
             else
                 gChars[who].hp += result;
-            f1547_0991(who);
+            RedrawMember(who);
         }
         if (gTable8DD2[field].flags & 0x10)
             gChars[who].m77[slot] = 0;
@@ -495,7 +495,7 @@ fail:
     }
     gChars[who].m1E ^= 1 << slot;
     gChars[who].mE8[slot] = result;
-    f1547_0991(who);
+    RedrawMember(who);
     if (result < -2)
         ApplyCharEffect(who, 0x12, slot, 1);
     else
@@ -529,7 +529,7 @@ fail:
    it derates mE2 (clamped at 0), subtracts from hp, stores the amount in mE7, and at or below -10
    sets hp to -10, clears mE2, clears mE3 bit 2 and keeps only bit 0 of m01; it plays sound 0x16
    for the death and 0x15 otherwise, runs the mDF descending effect through f0EF3_0F86 when it runs
-   out, redraws through f1547_0991 (or DrawMemberPortrait when gFB44 is set), triggers the party-wipe
+   out, redraws through RedrawMember (or DrawMemberPortrait when gFB44 is set), triggers the party-wipe
    ending when hp is at or below -10 and arms ApplyCharEffect(who, 0x12, 6, 1). Called by 0EF3,
    0E08E6, 122E, 1414 and overlay 6.
    QUIRK 0DE8:09FD: the mE2 clamp reads `if (&rec->mDF < 0)`, a far-pointer comparison that is
@@ -566,7 +566,7 @@ fail:
         }
     }
     if (gFB44 == 0)
-        f1547_0991(who);
+        RedrawMember(who);
     else
         DrawMemberPortrait(who);
     if (rec->hp <= -10)
@@ -575,7 +575,7 @@ fail:
 }
 /* 0DE8:0ADB: heals character `who` by `amount` hit points when the f0D1C_0670(who, 3) condition
    holds, clamping at the record's m1C maximum, then redraws the character through DrawMemberHp and
-   f1547_0991. Called by 0BD2, 0EF3 and 122E. */
+   RedrawMember. Called by 0BD2, 0EF3 and 122E. */
 /*@ 0DE8:0ADB */ void HealCharacter(int who, int amount)
 {
     struct CharRec far *rec;
@@ -588,7 +588,7 @@ fail:
     else
         rec->hp = rec->hp + amount;
     DrawMemberHp(who);
-    f1547_0991(who);
+    RedrawMember(who);
 }
 
 /* 0DE8:0B45: adds `amount` experience to character `who`'s three class slots. It divides `amount`
@@ -639,7 +639,7 @@ fail:
 /* 0DE8:0C82: levels character `who` up in class slot `slot`. It bumps that m24 slot and, for the
    three slots 0/1/2, rolls one die of the matching damage group through RollDamage(attr, m17),
    adding the result to both hp and m1C, then formats "%s has gained a level of experience." into
-   gFileNameBuf for the character's name, redraws through f1547_0991, draws the text and plays
+   gFileNameBuf for the character's name, redraws through RedrawMember, draws the text and plays
    sound 0x17. Called by 0DE8:0B45. */
 /*@ 0DE8:0C82 */ void LevelUpSlot(int who, int attr, int slot)
 {
@@ -656,7 +656,7 @@ fail:
     gChars[who].m1C += damage;
     sprintf(gFileNameBuf, "\x06\x01%s has gained a level of experience.\x06\x0f\r",
             gChars[who].name);
-    f1547_0991(who);
+    RedrawMember(who);
     DrawText(gFileNameBuf);
     PlaySound(0x17);
 }

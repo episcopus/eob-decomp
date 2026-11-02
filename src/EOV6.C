@@ -82,7 +82,7 @@ extern void DrawShadowText(char *text, int x, int y, int colour, int flag); /*@ 
 extern void WaitTicks(int n); /*@ 082C:0425 */
 extern int far RollDice(char count, char sides, char bonus); /*@ 082C:0458 */
 extern int f17A6_0F61(int x, int y); /*@ 17A6:0F61 */
-extern void f1547_0991(int member); /*@ 1547:0991 */
+extern void RedrawMember(int member); /*@ 1547:0991 */
 extern void DamageCharacter(int member, int what); /*@ 0DE8:09B9 */
 extern void UpdateObjects(int kind); /*@ 08E6:0CC8 */
 extern void ClipRect(int x1, int y1, int x2, int y2, int width, int height, int extra1, int extra2); /*@ 19F3:000E */
@@ -280,14 +280,14 @@ void f0B9B(int message);
                             DamageCharacter(member, 1);
                             gained = 1;
                             f1A47_0169(gA9C0);
-                            f1547_0991(member);
+                            RedrawMember(member);
                         }
                         continue;
                     }
                     if (gChars[member].hp < gChars[member].maxhp) {
                         gChars[member].hp++;
                         f1A47_0169(gA9C0);
-                        f1547_0991(member);
+                        RedrawMember(member);
                     }
                     if (f0D1C_0163(member, 2) < 0) {
                         if (gChars[member].level > 5) {

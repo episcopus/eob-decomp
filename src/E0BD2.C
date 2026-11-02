@@ -116,7 +116,7 @@ extern void MoveObjectToId(struct Obj28 far *obj, int a, int b); /*@ 08E6:0297 *
 
 extern int f0D1C_02DC(void); /*@ 0D1C:02DC */
 extern void SetMouseItem(int n); /*@ 07A9:010C */
-extern void f1547_0991(int who); /*@ 1547:0991 */
+extern void RedrawMember(int who); /*@ 1547:0991 */
 extern void f0D1C_070F(int mode, int n, int x, int y); /*@ 0D1C:070F */
 extern void DrawText(char far *text); /*@ 1DE7:060A */
 extern void ComputeArmourClass(int who); /*@ 0DE8:0D5E */
@@ -165,7 +165,7 @@ void f0BD2_05B5(int item);
         if (++roll >= 0x1b)
             roll = 0;
     }
-    f1547_0991(who);
+    RedrawMember(who);
 }
 
 /* 0BD2:0106: Purpose unknown: clears item slot `row` of character `who` (or the mouse's slot when
@@ -186,7 +186,7 @@ void f0BD2_05B5(int item);
         if (gFB44 == 1)
             DrawItemRow(row, 1, 0);
         else if (gFB44 == 0)
-            f1547_0991(who);
+            RedrawMember(who);
     }
     return gItems[item].m0B;
 }
@@ -511,7 +511,7 @@ next:
 {
     if (one)
         gSaveRect(0x16, 0, 0x12, 0xA8, gSegDF4E);
-    f1547_0991(gA99A);
+    RedrawMember(gA99A);
 }
 
 /* 0BD2:0AF2: Purpose unknown: when `row` is 0x11 and `item` is carried, checks that character `who`
@@ -590,7 +590,7 @@ next:
     if (g1C8D[row] & mask) {
         SetMouseItem(item);
         gChars[who].m77[row] = slot;
-        f1547_0991(who);
+        RedrawMember(who);
     }
     ComputeArmourClass(who);
 }

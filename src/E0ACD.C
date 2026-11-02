@@ -28,7 +28,7 @@ extern void DrawText(char far *text); /*@ 1DE7:060A */
 extern void PlaySound(int sound); /*@ 177D:0070 */
 extern void FlushKeyBuffer(void); /*@ 1AAD:0480 */
 extern int f0D1C_0670(int who, int mask); /*@ 0D1C:0670 */
-extern void f1547_0991(int dir); /*@ 1547:0991 */
+extern void RedrawMember(int dir); /*@ 1547:0991 */
 extern void LockHidePointer(void); /*@ 1BBE:0307 */
 extern void LockShowPointer(void); /*@ 1BBE:0332 */
 extern void RedrawRowArea(int one); /*@ 0BD2:0ABE */
@@ -267,7 +267,7 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
     gF51A = 0;
     gFB44 = 0;
     for (i = 0; i < 6; i++)
-        f1547_0991(i);
+        RedrawMember(i);
     g8115 = 0;
     ClipRect(0, 0, 0x16, 0, 0x12, 0xa8, 2, 0);
     BuildList1();
@@ -296,7 +296,7 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
         if (gFlag)
             f0EF3_2541(gF542);
         BuildList4();
-        f1547_0991(gFB34);
+        RedrawMember(gFB34);
         ArmEffect(0, 1);
     } else {
         old = gFB34;
@@ -306,9 +306,9 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
         Unpack0((char far *)gSegDF4E, (void far *)(gChars + slot), 0xF3L);
         ArmEffect(0, 0);
         gFB34 = -1;
-        f1547_0991(old);
+        RedrawMember(old);
         SelectCharacter(slot);
-        f1547_0991(slot);
+        RedrawMember(slot);
         BuildList1();
         RearmCharEffects();
     }
@@ -326,7 +326,7 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
     ArmEffect(0, 0);
     old = gFB34;
     gFB34 = -1;
-    f1547_0991(old);
+    RedrawMember(old);
     BuildList1();
     LockShowPointer();
     return action->result;
@@ -602,9 +602,9 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
         }
         break;
     }
-    f1547_0991(old);
+    RedrawMember(old);
     if (gA99A != old)
-        f1547_0991(gA99A);
+        RedrawMember(gA99A);
 }
 
 /* 0ACD:09EF: sets the selected action row gF51A from the four-byte table g36D0[old * 4 + dir] and
@@ -643,7 +643,7 @@ done:
    when the item's flags have bit 0x20 or the item is 0. It then computes the per-page value
    g373C[gFBCC * 2 + g3744[gA99A]]: `used` zero runs InsertListItem over the volume's ds:B899 record
    list and f122E_1DA8, otherwise AddDDEffect returns whether the use took effect. On success it
-   redraws (SetMouseItem, or f1547_0991 at row 0x10) and sets gDF4C and gEFB2; on no effect at row
+   redraws (SetMouseItem, or RedrawMember at row 0x10) and sets gDF4C and gEFB2; on no effect at row
    0x10 it runs InsertListItem over the character's +0x97 table. Always redraws gA99A at the end. */
 /*@ 0ACD:0A61 */ void MoveListItem(int used)
 {
@@ -677,7 +677,7 @@ done:
         if (gMouseDisabled == 0 || gF51A != 0x10)
             SetMouseItem(0);
         else
-            f1547_0991(gA99A);
+            RedrawMember(gA99A);
         gDF4C = 1;
         gEFB2 = 0xff;
     } else {
@@ -693,7 +693,7 @@ call:
    byte gEFB2 (wrapping to 0..3, arming gF3BA when the page changed), picks the page's volume from
    f0D1C_00DA when g374A[gEFB2] is set, and asks RemoveListItem for the first item of that volume's
    ds:B899 record list with the kind g1A1B[gFBCC * 4 + gEFB2]. When a fresh item is found it marks
-   it used (f0BD2_0AF2) and shows it (PushListItem and f122E_1DA8, or SetMouseItem / f1547_0991 and
+   it used (f0BD2_0AF2) and shows it (PushListItem and f122E_1DA8, or SetMouseItem / RedrawMember and
    InsertListItem at row 0x10), sets gDF4C, and stops; an empty or repeated item runs InsertListItem and
    clears gF3BA. It redraws gA99A through ComputeArmourClass at the end. blocked: matches every byte
    except the store at 0ACD:0C7F, which the original writes with `mov [gF3BA], ax` (the 3-byte a3 form)
@@ -757,7 +757,7 @@ call:
         } else {
             if (f0BD2_0AF2(item, gA99A, gF51A)) {
                 InsertListItem((void far *)gChars[gA99A].m97, 0xFFFE, item, 0);
-                f1547_0991(gA99A);
+                RedrawMember(gA99A);
             } else {
                 PushListItem(vol, item, value);
                 f122E_1DA8(vol, 4);
