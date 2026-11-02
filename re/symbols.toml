@@ -7152,6 +7152,9 @@ unit = "eov3"
 addr = "ovl3:109D"
 size = 170
 evidence = ["ovl", "near", "frame"]
+name = "UnpackLevelState"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov3_1147"
@@ -7159,6 +7162,9 @@ unit = "eov3"
 addr = "ovl3:1147"
 size = 104
 evidence = ["ovl", "near", "frame"]
+name = "LoadLevelState"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov3_11af"

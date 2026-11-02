@@ -19,7 +19,21 @@ extern void far *gSegDF4E; /*@ ds:DF4E */
 extern void far *gE062; /*@ ds:E062 */
 extern char gB894[]; /*@ ds:B894 */
 extern int gFBD0; /*@ ds:FBD0 */
-extern void f1147(int action); /*@ ovl3:1147 */
+extern void far *gBufDCFC; /*@ ds:DCFC */
+extern void Unpack0(char far *src, void far *dst, long len); /*@ 1BA8:0006 */
+extern void Unpack4(char far *src, void far *dst, int len); /*@ 1D9A:0013 */
+
+struct Obj28 {              /* 28-byte records, 30 of them at ds:8A82 (src/E08E6.C) */
+    char b0;                /* +0 */
+    signed char kind;       /* +1 */
+    int id;                 /* +2 */
+    char rest[0x18];        /* +4 */
+};
+
+extern struct Obj28 gObjs[]; /*@ ds:8A82 */
+extern void LoadLevelState(int action); /*@ ovl3:1147 */
+extern long SeekFile(int index, long offset, int whence); /*@ 1C0E:06E5 */
+extern void far *gSegEFC2; /*@ ds:EFC2 */
 extern long gFB5E[]; /*@ ds:FB5E */
 
 struct Triple6 {            /* six bytes, the record InitGameTables clears */
@@ -297,7 +311,7 @@ done:
     FileRead(handle, gSegDF4E, 0x1000L);
     FileClose(handle);
     if (gFBD0 & (1 << (gFBC8 - 1))) {
-        f1147(gFBC8);
+        LoadLevelState(gFBC8);
     } else {
         src = (char far *)gSegDF4E;
         dst = (struct ObjRec far *)gB894;
@@ -310,8 +324,40 @@ done:
 }
 /*@ ovl3:0A7C stub */ void Ovl3_0A7C(void) {}
 /*@ ovl3:0FD1 stub */ void Ovl3_0FD1(void) {}
-/*@ ovl3:109D stub */ void Ovl3_109D(void) {}
-/*@ ovl3:1147 stub */ void f1147(int action) {}
+/* ovl3:109D: unpacks a level state. `buf` is the 0x7F8-byte level state ovl3:1147 read. It
+   Unpack4s 0x1000 bytes of `buf` into gBufDCFC and Unpack0s the 0x348 bytes at `buf`+0x4B0 into
+   gObjs, copies the four gBufDCFC bytes of each of the 0x400 gB894 records into its +0 field, then
+   bumps the +4 byte of every gB894 record the 30 gObjs objects index by id. Called by ovl3:1147. */
+/*@ ovl3:109D */ void UnpackLevelState(void far *buf)
+{
+    char far *dst;
+    char far *src;
+    int i;
+    int j;
+
+    src = (char far *)gBufDCFC;
+    dst = (char far *)buf + 0x4b0;
+    Unpack4(buf, src, 0x1000);
+    for (i = 0; i < 0x400; i++)
+        for (j = 0; j < 4; j++)
+            gB894[i * 9 + j] = *src++;
+    Unpack0(dst, gObjs, 0x348L);
+    for (i = 0; i < 0x1e; i++)
+        gB894[gObjs[i].id * 9 + 4]++;
+}
+/* ovl3:1147: reads the level state `action` from LEVELS.TMP: opens the file, seeks to
+   (action-1)*0x7F8 and reads 0x7F8 bytes into gSegEFC2, closes it and hands gSegEFC2 to ovl3:109D.
+   Called by ovl3:09AA. */
+/*@ ovl3:1147 */ void LoadLevelState(int action)
+{
+    int handle;
+
+    handle = FileOpen("LEVELS.TMP", 1);
+    SeekFile(handle, (long)(action - 1) * 0x7f8, 0);
+    FileRead(handle, gSegEFC2, 0x7f8L);
+    FileClose(handle);
+    UnpackLevelState(gSegEFC2);
+}
 /*@ ovl3:11AF stub */ void Ovl3_11AF(void) {}
 /*@ ovl3:123D stub */ void Ovl3_123D(void) {}
 /*@ ovl3:12F1 stub */ void Ovl3_12F1(void) {}
