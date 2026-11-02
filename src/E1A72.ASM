@@ -30,7 +30,8 @@
 
         .DATA
         EXTRN   g80A2:DWORD             ; @ ds:80A2: indirect far function, no arguments
-        EXTRN   g80AA:DWORD             ; @ ds:80AA: indirect far function, called with ds:8172/8174
+        EXTRN   g80AA:DWORD             ; @ ds:80AA: indirect far function, takes one far pointer
+        ;                                              argument (the pointer at ds:8172/8174)
         EXTRN   g80EC:BYTE              ; @ ds:80EC: game state, 0/1/2 (E1AAD.ASM:20); the handler
         ;                                              compares it with 2 and skips the position
         ;                                              update when it is 2 (1A72:0212)
@@ -52,7 +53,7 @@
         ;                                              QUIRK 1A72:01A6: the (BX and 3) or mask
         ;                                              replacement is behaviour a port must keep
         EXTRN   g8134:WORD              ; @ ds:8134: accumulated button changes; the map screen
-        ;                                              clears it (E14EF.C:169, E0ACD.C:886)
+        ;                                              clears it (E14EF.C:184, E0ACD.C:886)
         EXTRN   g8136:WORD              ; @ ds:8136: latched to 1 once any button has been seen;
         ;                                              this unit never clears it, E1AAD.ASM:1356
         ;                                              sets it too and nothing in src/ clears it
@@ -92,10 +93,10 @@
         ;                                              the overlay loader clears it when a handler
         ;                                              is installed (E1C00.ASM:298); many units test
         ;                                              it (E07A9, E0ACD, E0BD2, E0D1C, E14EF,
-        ;                                              E16A5, E1547, EOV3, EOV5); HidePointer and
-        ;                                              ShowPointer do
-        ;                                              nothing when it is set (the tests at
-        ;                                              1BBE:0006 and 1BBE:00F1)
+        ;                                              E16A5, E1547, E122E, EOV0, EOV1, EOV3,
+        ;                                              EOV5; the list is partial); HidePointer and
+        ;                                              ShowPointer do nothing when it is set (the
+        ;                                              tests at 1BBE:0006 and 1BBE:00F1)
         EXTRN   g814E:WORD              ; @ ds:814E: screen width minus 1, 13Fh; the handler clamps
         ;                                              with the literal 13Fh, not with this variable
         EXTRN   g8152:WORD              ; @ ds:8152: screen height minus 1, 0C7h (set at
@@ -112,7 +113,7 @@
         ;                                              (the argument less the pointer width, the
         ;                                              store at 1BBE:0234 and the reduction at
         ;                                              1BBE:025B); the
-        ;                                              QUIRK at 1A72:0244 skips the check
+        ;                                              QUIRK at 1A72:0248 skips the check
         EXTRN   _gZoneTop:WORD              ; @ ds:8164: hide zone, top in pixels, stored reduced
         ;                                              (the argument less the pointer height, the
         ;                                              store at 1BBE:0238 and the reduction at
@@ -318,25 +319,28 @@ L0174:  pop     es
 ; nonzero word disables the handler). In 640 wide mode it halves x; in every mode it clamps x to
 ; 13Fh (only x is clamped: nothing here bounds y, so the driver's range is the only y bound [H]) and
 ; keeps the event position at DGROUP:813C/813E. When the mask at DGROUP:8132 is nonzero
-; and the middle button bit (BX bit 2, value 4) is set, it sets BX to (BX and 3) or the mask
+; and the middle button bit [H] (BX bit 2, value 4) is set, it sets BX to (BX and 3) or the mask
 ; (`and bx,3; or bx,ax`, 1A72:01A6): the old low two bits are kept and the middle bit and every
 ; other bit are dropped. The installed mask 1Fh (INT 33h function 0Ch) requests moves and left and
 ; right presses and releases [H]; BX carries the full button state on each event the handler gets,
 ; so the middle bit (4) reaches it on each event while the middle button is held, though a middle
 ; press or release alone never calls it. When the buttons changed it calls the keyboard glue
 ; 1AAD:0B0E and folds the change into DGROUP:8134. With the busy flag free it publishes the position
-; to DGROUP:8138/813A (unless DGROUP:80EC is 2), and when the position moved and redraws are not
+; to DGROUP:8138/813A (unless DGROUP:80EC is 2), and when the published position (DGROUP:8138/
+; 813A) differs from the position last drawn (DGROUP:815C/815E) and redraws are not
 ; suppressed (DGROUP:8146 = 0) it redraws through the far pointers: with gPointerState bit 8000h
 ; (hidden over the hide zone) set and the position in the zone it calls DGROUP:80AA (with
 ; DGROUP:8172/8174), HidePointer (1BBE:0002) and DGROUP:80A2, then sets 4000h (1A72:01EC);
 ; otherwise it calls DGROUP:80AA, HidePointer, ShowPointer (1BBE:00ED) and DGROUP:80A2 (1A72:025C).
-; With the busy flag set the event publishes no position and draws nothing, and nothing is kept for
-; a later event; the button change above it has already gone through.
+; With the busy flag set the event publishes no position and draws nothing; its position was
+; already stored at DGROUP:813C/813E (1A72:019E), and the button change above it has already
+; gone through.
 ; QUIRK 1A72:0229: when x changed the handler jumps over the y reload (`jne 0x235` skips
-; `mov dx,[_gCursorY]` at 1A72:022B), so the zone test at 1A72:0244 reads the event's y. It equals
-; the published _gCursorY unless DGROUP:80EC is 2 (the store at 1A72:021D was skipped), when the
-; zone test uses the event y while the x test uses the published _gCursorX (reloaded at
-; 1A72:0221).
+; `mov dx,[_gCursorY]` at 1A72:022B), so the zone test at 1A72:0244 reads the event's y.
+; HandleMouseButtons preserves DX (`push dx` at 1AAD:0B13 and `pop dx` at 1AAD:0B97), so that y
+; survives the call. It equals the published _gCursorY unless DGROUP:80EC is 2 (the store at
+; 1A72:021D was skipped), when the zone test uses the event y while the x test uses the published
+; _gCursorX (reloaded at 1A72:0221).
 ; QUIRK 1A72:0248: the `x < gZoneLeft` test jumps into the y test, so the hide zone's left edge is
 ; never enforced (only x > gZoneRight and y outside [top, bottom] leave the zone). The handler calls
 ; no earlier mouse handler (none is saved in this unit).
@@ -465,9 +469,10 @@ _RemoveMouseHandler ENDP
 ; basis) lies inside the rectangle [bp+6, bp+0Ah] x [bp+8, bp+0Ch]
 ; inclusive, 0 otherwise. It spins at 1A72:02B9 while the busy flag at DGROUP:812E is set, takes the
 ; flag, copies the drawn position through DGROUP:8026/8028, tests it and releases the flag.
-; Arguments are x1, y1, x2, y2 words; the only caller in src/ is CheckMemberSlotRect
-; (122E:0847, the call in E122E.C, extern at :195); the overlay code also reaches it from overlay 0
-; at 207A and overlay 1 at 1551 [H] (no source for those yet).
+; Arguments are x1, y1, x2, y2 words. The callers in src/ are CheckMemberSlotRect
+; (122E:0847, the call at E122E.C:522, extern at :195), PickClass (ovl0:207A, the call at
+; EOV0.C:1208, function at EOV0.C:1180) and _Ovl1_1691 (EOV1.ASM:3096, function at
+; EOV1.ASM:2791; EOV1.ASM:2779 says the map folds that routine into range 1551).
         PUBLIC  _IsMouseInRect            ; @ 1A72:02A6
 _IsMouseInRect PROC FAR
         push    bp
