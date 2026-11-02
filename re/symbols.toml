@@ -7018,6 +7018,9 @@ unit = "eov0"
 addr = "ovl0:2547"
 size = 383
 evidence = ["ovl", "near", "frame"]
+name = "InitPanelScreens"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov0_26c6"

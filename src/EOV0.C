@@ -6,6 +6,8 @@
 
 /*@flags -ml -O -Z */
 
+#include <dos.h>
+
 extern char gOverlayBuf[]; /*@ ds:113F */ /* the overlay screen buffer the cell slicer reads */
 extern void far * (far *gFn8082)(int x, int y, int w, int h, void far *buf); /*@ ds:8082 */
 extern void farfree(void far *block); /*@ 0000:71EE */
@@ -92,6 +94,15 @@ extern int gTable5F7D[][6]; /*@ ds:5F7D */ /* per-class rows read by ovl0:1EA9 (
 extern int gOutDD04[6]; /*@ ds:DD04 */ /* six words ovl0:1EA9 writes (Purpose unknown) */
 extern int gOutDC98[6]; /*@ ds:DC98 */ /* six words ovl0:1EA9 writes (Purpose unknown) */
 extern signed char g116E[]; /*@ ds:116E */ /* per-class byte (src/E0A72.C) */
+extern void far *MemAlloc(unsigned long size, int flags); /*@ 19BC:0007 */
+extern void *LoadOverlayScreen(char far *name, int srcKind, int dstKind); /*@ 082C:05EC */
+extern void *LoadScreenImage(char far *name, char far *extra, int srcKind, int dstKind, int mode); /*@ 082C:051B */
+extern void f19EC_002A(int a, int b, int c, int d); /*@ 19EC:002A */
+extern int g8102; /*@ ds:8102 */ /* the video mode the game initialised (src/E082C.C) */
+extern void far *gPtrsFD54[]; /*@ ds:FD54 */ /* the ten overlay buffers ovl0:2547 slices (Purpose unknown) */
+extern char gStr6272[]; /*@ ds:6272 */ /* a screen name (Purpose unknown) */
+extern char gStr627B[]; /*@ ds:627B */ /* a screen name (Purpose unknown) */
+extern char gStr6283[]; /*@ ds:6283 */ /* a screen name (Purpose unknown) */
 extern void (far *gDrawText)(char far *text, int a, int b, int c, int d); /*@ ds:80CA */
 extern char far *gFont1A47; /*@ ds:FE4E */ /* the current font (src/E1547.C) */
 extern void far *gA9C0; /*@ ds:A9C0 */ /* the 6x6 font loaded from FONT6.FNT (src/E07A9.C) */
@@ -469,8 +480,35 @@ extern void far *g5E64[0x11]; /*@ ds:5E64 */ /* the 17 sliced icon pointers this
 /*@ ovl0:207A stub */ void Ovl0_207A(void) {}
 /*@ ovl0:2238 stub */ void Ovl0_2238(void) {}
 /*@ ovl0:23EC stub */ void Ovl0_23EC(void) {}
-/*@ ovl0:2547 stub */ void Ovl0_2547(void) {}
-/*@ ovl0:26C6 stub */ void Ovl0_26C6(void) {}
+/* ovl0:2547: loads the character panel's screens and slices its icon buffers. It allocates the 0x13
+   0x3c-byte gNodePtrs nodes, loads three named screens (gStr6272, gStr627B, gStr6283) and slices
+   the 0x2c panel cells gPtrsFC8C ((i%10)*4, (i/10)*0x20) and ten row cells gPtrsFD54 (0, i*4) out
+   of gOverlayBuf through ds:8082, builds the 17-icon table and, in video modes 0 and 1, blits
+   gOverlayBuf with f19EC_002A and clips the panel. Called by ovl0:28F9. */
+/*@ ovl0:2547 */ void InitPanelScreens(void)
+{
+    int i;
+
+    for (i = 0; i < 0x13; i++)
+        gNodePtrs[i] = (struct Node far *)MemAlloc(0x3cL, 0);
+    LoadOverlayScreen(gStr6272, 5, 3);
+    for (i = 0; i < 0x2c; i++)
+        gPtrsFC8C[i] = gFn8082((i % 10) * 4, (i / 10) * 0x20, 4, 0x20, gOverlayBuf);
+    g8115 = 0;
+    LoadScreenImage(gStr627B, gOverlayBuf, 5, 3, 0);
+    LoadOverlayScreen(gStr6283, 5, 3);
+    for (i = 0; i < 0xa; i++)
+        gPtrsFD54[i] = gFn8082(i * 4, 0, 4, 0x20, gOverlayBuf);
+    BuildIconTable();
+    if (g8102 == 0 || g8102 == 1) {
+        f19EC_002A(3, 4, FP_OFF(gOverlayBuf), FP_SEG(gOverlayBuf));
+        ClipRect(0, 0, 0, 0, 0x28, 0xc8, 4, 2);
+    } else
+        f19EC_002A(3, 2, FP_OFF(gOverlayBuf), FP_SEG(gOverlayBuf));
+    g8115 = 0;
+    ClipRect(0x12, 0x40, 0, 0, 0x14, 0x80, 0, 2);
+    LockShowPointer();
+}/*@ ovl0:26C6 stub */ void Ovl0_26C6(void) {}
 /* ovl0:280D: for each of the first four characters whose class byte g1231[gChars[i].m20] has bit 2
    set, sets the 32-bit gChars[i].m7375 to 0x26c. Called by ovl0:28F9. Purpose unknown. */
 /*@ ovl0:280D */ void InitCharSlotValues(void)
