@@ -8630,6 +8630,8 @@ addr = "ovl5:0455"
 size = 550
 evidence = ["ovl", "near", "frame"]
 name = "SelectMenu"
+level = "L2"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "eov5_067b"
@@ -8738,6 +8740,8 @@ addr = "ovl5:0C9D"
 size = 286
 evidence = ["ovl", "near", "frame"]
 name = "HealLoop"
+level = "L2"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "eov5_0dbb"
