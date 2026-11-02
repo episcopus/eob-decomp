@@ -783,11 +783,11 @@ _SoundDriverResume ENDP
 ; 1948:046B: silence the three voices (_SetThreeVoices) and then fall back to one-voice output
 ; (_SetOneVoice). The flags _SetThreeVoices sets (1948:0352) end the song at the next tick:
 ; _SetOneVoice leaves gVoiceCount at 1 (1948:036D), the end-of-song count (1948:029A to 02BB) counts
-; that one voice as flagged and clears gPlaying (1948:02B6). The uninstall follows at once
-; (src/E07C8.C:374-376) and removes the handler, but a tick can still run before it. Only used on the
-; way out: ShutdownGame's Tandy case calls it just before gTandyOn = 0 and _SoundDriverUninstall
-; (src/E07C8.C:374-376), and nothing resumes the output afterwards. Because gTandyOn is then 0,
-; _SoundDriverUninstall skips its Tandy step (1948:0406).
+; that one voice as flagged and clears gPlaying (1948:02B6). Only used on the way out: ShutdownGame's
+; Tandy case calls it just before gTandyOn = 0 and _SoundDriverUninstall (src/E07C8.C:374-376), and
+; nothing resumes the output afterwards. The uninstall follows at once and removes the handler, but a
+; tick can still run before it. Because gTandyOn is then 0, _SoundDriverUninstall skips its Tandy
+; step (1948:0406).
         PUBLIC  _SoundDriverSilenceToOneVoice       ; @ 1948:046B
 _SoundDriverSilenceToOneVoice PROC FAR
         push    bp
