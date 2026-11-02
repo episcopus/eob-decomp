@@ -5,7 +5,7 @@
    status effect, and is reached from the action handlers of 0ACD and the object/effect units.
    Placeholder names remain where the evidence names the behaviour but not the game concept. */
 
-/*@flags -ml -O -Z */
+/*@flags -ml -O -Z -v */
 
 /* A 14-byte item record. src/E0D1C.C declares the same layout with its base at ds:8DD2 (Entry14);
    the code here computes the base at ds:8DD0 and uses the fields below. */
@@ -232,31 +232,41 @@ void DrawItemName(int item);
 }
 
 /* 0BD2:01D0: inserts the item `item` at the head of the circular list `head`, stamping it with the
-   key `key` and the sound `sound` (m0A becomes gFBC8 or -1 by the key's sign). DRAFT: our build
-   preloads key into DI (`mov di,[bp+0xa]`) where the original loads item into SI first; the rest of
-   the body follows, so it is a register-allocation difference, not a source one. */
+   key `key` and the sound `sound` (m0A becomes gFBC8 or -1 by the key's sign). BLOCKED: compiler
+   register allocation. The original's frame is 0xc bytes (rec, next, cur): `item` is the SI
+   register variable (0BD2:01D8 `mov si,[bp+0xc]`), DI is a temporary holding cur->m06 (0BD2:0251
+   to 029B), and `key` stays in memory and is reloaded in each branch (0BD2:0212, 0268, 0276). Our
+   build promotes `key`: bare it takes DI and the cur->m06 temporary falls to AX and reloads; with a
+   `link` local taking DI it caches `key` in CX. The branch-1 `mov ax,si` (0BD2:0201) is the chained
+   assignment `rec->m08 = rec->m06 = item;`. Many source forms tried (see re/symbols.toml) still
+   promote or cache key. */
 /*@ 0BD2:01D0 draft */ void InsertListItem(void far *head, int key, int item, int sound)
 {
     struct ItemRecord *rec;
-    struct ItemRecord *cur;
     struct ItemRecord *next;
+    struct ItemRecord *cur;
 
     if (item == 0)
         return;
     rec = &gItems[item];
     if (*(int far *)head == 0) {
         *(int far *)head = item;
-        rec->m06 = item;
-        rec->m08 = item;
+        rec->m08 = rec->m06 = item;
         rec->m03 = sound;
         rec->m04 = key;
-        rec->m0A = key >= 0 ? gFBC8 : -1;
+        if (key >= 0)
+            rec->m0A = gFBC8;
+        else
+            rec->m0A = -1;
     } else {
         cur = &gItems[*(int far *)head];
         next = &gItems[cur->m06];
         rec->m04 = key;
         rec->m03 = sound;
-        rec->m0A = key >= 0 ? gFBC8 : -1;
+        if (key >= 0)
+            rec->m0A = gFBC8;
+        else
+            rec->m0A = -1;
         rec->m08 = next->m08;
         rec->m06 = cur->m06;
         next->m08 = item;
@@ -269,13 +279,13 @@ void DrawItemName(int item);
    `target` is -1) or that equals `target`, unlinks it, and returns the item; 0 when none matches.
    DRAFT: our build keeps the loop counter in CX and `next` in DI, the original the counter in DI and
    `next` in CX; same instructions otherwise. */
-/*@ 0BD2:02B9 draft */ int RemoveListItem(void far *head, int key, int target)
+/*@ 0BD2:02B9 */ int RemoveListItem(void far *head, int key, int target)
 {
     int start;
     int item;
-    int i;
     int link;
     int next;
+    int i;
     struct ItemRecord *rec;
 
     item = *(int far *)head;
@@ -300,11 +310,10 @@ found:
         rec->m06 = 0;
         rec->m04 = 0;
         rec->m0A = 0;
-        if (*(int far *)head == item) {
+        if (*(int far *)head == item)
             *(int far *)head = next;
-            if (*(int far *)head == item)
-                *(int far *)head = 0;
-        }
+        if (*(int far *)head == item)
+            *(int far *)head = 0;
         return item;
 next:
         i++;
@@ -317,7 +326,7 @@ next:
    `type` (or all when `type` is -1), otherwise the item `target` itself; returns the first match's
    index when `count` is 0, otherwise the number of matches. Purpose unknown. DRAFT: the original's
    first `return 0` is a `jmp` to the shared `xor ax,ax` tail (3 bytes); ours materialises it (5). */
-/*@ 0BD2:0385 draft */ int ScanListItem(void far *head, int target, int type, int count)
+/*@ 0BD2:0385 */ int ScanListItem(void far *head, int target, int type, int count)
 {
     int start;
     int cur;
@@ -343,9 +352,9 @@ next:
         first = 0;
         cur = rec->m08;
     }
-    if (count == 0)
-        return 0;
-    return n;
+    if (count != 0)
+        return n;
+    return 0;
 }
 
 /* 0BD2:040E: sets bit 0x40 of the flags of every item in the circular list `head`. */
@@ -382,12 +391,12 @@ next:
    -1) are freed (m04 = -1, m0A = 0); the others are re-queued through 0BD2:01D0 in their original
    order. Purpose unknown. DRAFT: our build keeps `count` in DI, the original on the stack with DI as
    a scratch (`mov di,si`); two bytes apart. */
-/*@ 0BD2:04AA draft */ void DrainListItem(int vol, int type)
+/*@ 0BD2:04AA */ void DrainListItem(int vol, int type)
 {
     int start;
     int item;
-    int next;
     int count;
+    int saved;
 
     item = *(int *)(gB899 + vol * 9);
     if (item == 0)
@@ -396,19 +405,20 @@ next:
     count = 0;
     start = item;
     while (item != start || count == 0) {
-        if (type == -1 || gItems[item].m02 == type) {
+        if (gItems[item].m02 == type || type == -1) {
             gItems[item].m04 = -1;
             gItems[item].m0A = 0;
-            next = gItems[item].m08;
-            gItems[item].m08 = 0;
-            gItems[item].m06 = 0;
+            saved = item;
+            item = gItems[item].m08;
+            gItems[saved].m08 = 0;
+            gItems[saved].m06 = 0;
         } else {
-            next = gItems[item].m08;
-            gItems[item].m08 = 0;
-            gItems[item].m06 = 0;
-            InsertListItem((void far *)(gB899 + vol * 9), vol, item, gItems[item].m03);
+            saved = item;
+            item = gItems[item].m08;
+            gItems[saved].m08 = 0;
+            gItems[saved].m06 = 0;
+            InsertListItem((void far *)(gB899 + vol * 9), vol, saved, gItems[saved].m03);
         }
-        item = next;
         count++;
     }
 }
@@ -419,12 +429,12 @@ next:
    with "%s +%d" or "Cursed %s %d", and types 9, 10, 16, 14 and 18 use "Mage Scroll", "Cleric
    Scroll", "Ring", "Potion" or "Wand" joined with " of " to a per-m0B far pointer (ds:1278,
    ds:12E0) or a SkipStrings walk (ds:37B4, ds:37E1, ds:3837). Otherwise the second (or the first)
-   name is copied whole. The buffer is drawn with DrawText. Called by 0BD2:000E.
-   DRAFT: every field, literal and branch matches in shape; the remaining bytes are TCC's internal
-   assembler merging identical tails that the original keeps, as in 0BD2:1001: the `strcpy(buf, firstName)`
-   of case 0..3 (0BD2:06AC), the two sprintf forms (0BD2:066C, 068C) and the trailing strcpy
-   (0BD2:0748) are each inline in the original but cross-jumped in ours (0x22 bytes short). */
-/*@ 0BD2:05B5 draft */ void DrawItemName(int item)
+   name is copied whole. The buffer is drawn with DrawText. Called by 0BD2:000E. The names chosen by
+   the item type's m0E low 7 bits are the ones the jump table at 0BD2:07B8 shows (0..3, 9, 10, 14,
+   16, 18; all the rest fall to the default). Case 0..3's name selection must be written as an
+   `if (m0B != 0) { if (m0B < 0) ... else ... } else strcpy(...)`, or the compiler folds its
+   `strcpy(buf, firstName)` into the default case's copy. */
+/*@ 0BD2:05B5 */ void DrawItemName(int item)
 {
     signed char m0B;
     char cls;
@@ -448,12 +458,13 @@ next:
         case 1:
         case 2:
         case 3:
-            if (m0B == 0)
+            if (m0B != 0) {
+                if (m0B < 0)
+                    sprintf(buf, "Cursed %s %d", firstName, m0B);
+                else
+                    sprintf(buf, "%s +%d", firstName, m0B);
+            } else
                 strcpy(buf, firstName);
-            else if (m0B < 0)
-                sprintf(buf, "Cursed %s %d", firstName, m0B);
-            else
-                sprintf(buf, "%s +%d", firstName, m0B);
             break;
         case 9:
             str1 = "Mage Scroll";
@@ -617,7 +628,7 @@ next:
    have 0x20, 1 otherwise, printing a message when the row's class mask does not cover the item.
    DRAFT: TCC tail-merges the two DrawText calls in opposite directions (ours jumps the first
    message forward, the original jumps the second back to the first). */
-/*@ 0BD2:0AF2 draft */ int f0BD2_0AF2(int item, int who, int row)
+/*@ 0BD2:0AF2 */ int f0BD2_0AF2(int item, int who, int row)
 {
     int mask;
 
@@ -634,10 +645,11 @@ next:
         mask = gItemTypes[gItems[item].m02].m00.word;
     else
         mask = -1;
-    if (g1C8D[row] & mask)
-        return 1;
-    DrawText("You cant put that item there.\r");
-    return 0;
+    if (!(g1C8D[row] & mask)) {
+        DrawText("You cant put that item there.\r");
+        return 0;
+    }
+    return 1;
 }
 /* 0BD2:0BA0: uses the item in slot `slot` of the selected character through 0BD2:0AF2. On success
    it either installs the item (slot 0x10) or swaps the mouse's item, redraws the row and recomputes
@@ -698,15 +710,10 @@ next:
    dispatches on m0B: 1 restores a class index and heals, 2 and 3 heal by a dice roll, 4 poisons
    through 0DE8:101A, 5 sets m23 to 100, 6 and 8 run the 0EF3 helpers, 7 sets effect flag 4. After
    the switch it announces "%s feels <effect>!\r" with the effect name from the ds:3893 table,
-   except for effect 4 when m01 bit 1 is set. Called by 0BD2:1001.
-   DRAFT: every byte matches but one TCC tail merge. `case 5` and `case 7` both end in
-   `RedrawMember(who)`; the original keeps case 7's `push [bp+6]; lcall RedrawMember` inline
-   (0BD2:0E6E, sharing only its `pop cx` with case 8 at 0BD2:0E89), while our build cross-jumps
-   case 7's pair back into case 5's at 0BD2:0112 and merges case 5's `pop cx` into the shared one
-   (0BD2:0153), 9 bytes short. Tried `if (gFB44 != 0)`, `if (gFB44 == 0) break;`, an `else break;`,
-   braces with the break inside, `default: break;` and `kind != 4` against `kind - 1 != 3`; the
-   cross-jump stays. */
-/*@ 0BD2:0D2D draft */ void ApplyItemEffect(int who, int slot)
+   except for effect 4 when m01 bit 1 is set. Called by 0BD2:1001. This unit is compiled with
+   `-v` (source-level debugging), which keeps `case 5` and `case 7`'s `RedrawMember(who)` calls
+   apart where `-Z` alone cross-jumps them. */
+/*@ 0BD2:0D2D */ void ApplyItemEffect(int who, int slot)
 {
     struct CharRec *rec;
     int kind;
@@ -731,7 +738,7 @@ next:
         break;
     case 4:
         ApplyStatusEffect(who, 2, "poisoned", 0, 1, 8, 1);
-        rec->mE3 &= 0xFF7F;
+        rec->mE3 &= ~0x80;
         break;
     case 5:
         f0EF3_0665(who);
@@ -808,13 +815,10 @@ next:
    switches on the item type's m0E low 7 bits and either draws a message, eats, uses the item
    through 0DE8:0763, arms 0EF3:21E0, dispatches through 0EF3:28ED or the overlay 5 entry, applies
    the item effect (0BD2:0D2D) or uses it as a wand (0BD2:0EE8). Called by 0ACD:0415 and 0ACD:0D9D.
-   DRAFT: the code and the switch table match in shape, but TCC's internal assembler merges tails
-   that the original keeps: the `pop cx; pop cx` after `DrawText(" can not use this item.\r")`
-   (0BD2:10A9) and after the 0EF3:21E0 call (0BD2:112C) are each kept inline by the original but
-   hoisted into one shared block by our build, and case 9's tail cross-jumps into case 10's store
-   (`mov word ptr [bp - 8], ax`, 0BD2:1161). 0x1F bytes short. Tried `-ml -O` (no -Z) and `-B`;
-   -B breaks ReportLostItem, so the unit stays -Z. */
-/*@ 0BD2:1001 draft */ void UseItemSlot(int who, int slot)
+   The `case` bodies are in the source order the jump table shows (0/16, 1/2/3, 5/6, 7,
+   4/8/12/13/15, 9, 10, 11, 14, 18); compiling the unit through the `-v` source-level-debug
+   switch keeps the per-case `pop cx; pop cx` call cleanups apart the way the original does. */
+/*@ 0BD2:1001 */ void UseItemSlot(int who, int slot)
 {
     int item;
     int type;
@@ -855,13 +859,6 @@ next:
             break;
         UseItem(who, slot, item);
         break;
-    case 4:
-    case 8:
-    case 12:
-    case 13:
-    case 15:
-        DrawText("This item is not used in this way.\r");
-        break;
     case 5:
     case 6:
         if (gFB44 == 0)
@@ -870,6 +867,13 @@ next:
     case 7:
         if (gMouseDisabled != 0)
             EatFood(who);
+        break;
+    case 4:
+    case 8:
+    case 12:
+    case 13:
+    case 15:
+        DrawText("This item is not used in this way.\r");
         break;
     case 9:
         if (gFB44 == 0) {

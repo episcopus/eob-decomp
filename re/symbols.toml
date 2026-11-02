@@ -2359,7 +2359,7 @@ size = 248
 evidence = ["far", "segment"]
 name = "ReportLostItem"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e0bd2_0106"
@@ -2369,7 +2369,7 @@ size = 153
 evidence = ["far", "near", "frame"]
 name = "f0BD2_0106"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e0bd2_019f"
@@ -2379,7 +2379,7 @@ size = 49
 evidence = ["frame"]
 name = "RedrawSelectedRow"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e0bd2_01d0"
@@ -2388,6 +2388,7 @@ addr = "0BD2:01D0"
 size = 233
 evidence = ["far", "near", "frame"]
 name = "InsertListItem"
+notes = "blocked: compiler register allocation. The original's frame is exactly 0xc bytes (rec, next, cur as three far pointers), so `item` (0BD2:01D8 `mov si, word ptr [bp + 0xc]`) is the only named register variable; DI is a compiler temporary holding `cur->m06` from 0BD2:0251 (`mov bx, ax; mov di, word ptr [bx - 0x7228]`) to 0BD2:029B, and `key` stays in memory and is reloaded in each branch (0BD2:0212 and 0BD2:0268 `mov ax, word ptr [bp + 0xa]; mov word ptr es:[bx + 6], ax`, the else test at 0BD2:0276 `cmp word ptr [bp + 0xa], 0`). Our build instead promotes `key`: bare, it takes DI (0BD2:01D8 `mov di, word ptr [bp + 0xa]`) and the `cur->m06` temporary falls into AX and is reloaded (two loads of es:[bx + 8]); with a `link` local taking DI the build caches `key` in CX (prologue `mov cx, word ptr [bp + 0xa]`). A dead `(void)&key;` frees DI, but the compiler then does not common `cur->m06` into DI (it reloads twice), so the original's DI temporary is a register variable or a CSE our build will not form. Also found: the original's branch-1 `mov ax, si` before the two stores (0BD2:0201) is the chained assignment `rec->m08 = rec->m06 = item;`, not `rec->m06 = item; rec->m08 = item;` (which stores SI directly). Tried: the `key >= 0 ? gFBC8 : -1` ternary, `0 <= key`, `!(key < 0)`, the inverted `if (key < 0)`, a combined `rec->m0A = (rec->m04 = key) >= 0 ? ...`, testing `rec->m04` instead of `key`, `volatile int key`, `register` on item or link or key, all declaration orders of rec/next/cur and link (block and function scope), and the same body under -O, -Z-, -v, -r-, -G and -B and under TCC 1.00 and 1.01; all still promote or cache key. No source form found."
 
 [[function]]
 id = "e0bd2_02b9"
@@ -2396,6 +2397,8 @@ addr = "0BD2:02B9"
 size = 204
 evidence = ["far", "near", "frame"]
 name = "RemoveListItem"
+level = "L2"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e0bd2_0385"
@@ -2404,6 +2407,8 @@ addr = "0BD2:0385"
 size = 137
 evidence = ["far", "near", "frame"]
 name = "ScanListItem"
+level = "L2"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e0bd2_040e"
@@ -2413,7 +2418,7 @@ size = 74
 evidence = ["far", "frame"]
 name = "MarkListItems"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e0bd2_0458"
@@ -2423,7 +2428,7 @@ size = 82
 evidence = ["far", "frame"]
 name = "PushListItem"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e0bd2_04aa"
@@ -2432,6 +2437,8 @@ addr = "0BD2:04AA"
 size = 267
 evidence = ["far", "frame"]
 name = "DrainListItem"
+level = "L2"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e0bd2_05b5"
@@ -2439,6 +2446,9 @@ unit = "e0bd2"
 addr = "0BD2:05B5"
 size = 553
 evidence = ["far", "frame"]
+name = "DrawItemName"
+level = "L2"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e0bd2_07de"
@@ -2448,7 +2458,7 @@ size = 192
 evidence = ["far"]
 name = "AddDDEffect"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e0bd2_089e"
@@ -2458,7 +2468,7 @@ size = 121
 evidence = ["far", "frame"]
 name = "CopyItemToFreeSlot"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e0bd2_0917"
@@ -2468,7 +2478,7 @@ size = 423
 evidence = ["far", "near", "frame"]
 name = "DrawItemRow"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e0bd2_0abe"
@@ -2478,7 +2488,7 @@ size = 52
 evidence = ["far", "frame"]
 name = "RedrawRowArea"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e0bd2_0af2"
@@ -2486,6 +2496,9 @@ unit = "e0bd2"
 addr = "0BD2:0AF2"
 size = 174
 evidence = ["far", "near", "frame"]
+name = "f0BD2_0AF2"
+level = "L2"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e0bd2_0ba0"
@@ -2495,7 +2508,7 @@ size = 238
 evidence = ["far", "frame"]
 name = "UseSelectedItem"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e0bd2_0c8e"
@@ -2505,7 +2518,7 @@ size = 159
 evidence = ["far", "frame"]
 name = "SwapSelectedItem"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e0bd2_0d2d"
@@ -2513,6 +2526,9 @@ unit = "e0bd2"
 addr = "0BD2:0D2D"
 size = 443
 evidence = ["near", "frame"]
+name = "ApplyItemEffect"
+level = "L2"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e0bd2_0ee8"
@@ -2522,7 +2538,7 @@ size = 281
 evidence = ["near"]
 name = "UseWandItem"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e0bd2_1001"
@@ -2530,6 +2546,9 @@ unit = "e0bd2"
 addr = "0BD2:1001"
 size = 508
 evidence = ["far", "frame"]
+name = "UseItemSlot"
+level = "L2"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e0bd2_11fd"
@@ -2539,7 +2558,7 @@ size = 71
 evidence = ["far"]
 name = "ItemClassAllowed"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e0bd2_1244"
@@ -2549,7 +2568,7 @@ size = 19
 evidence = ["far", "frame"]
 name = "FirstTwoSlots"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e0cf7_0007"
