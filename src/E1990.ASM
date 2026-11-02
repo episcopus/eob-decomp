@@ -89,8 +89,11 @@ done:   pop     es
         ret
 CheckMCB ENDP
 
-; 1990:0071: allocate a one-paragraph block to reach the MCB chain, walk it, and when the current
-; block is the environment block (the MCB of the segment at PSP:002C) move it. The copy is
+; 1990:0071: allocate a one-paragraph block to reach the MCB chain and walk it. A free block is
+; skipped (owner word zero, 1990:00B4 to 00BA); a block whose owner is not this program is skipped
+; (owner must equal ds, which holds the PSP, 1990:00BC to 00C3); and a block whose MCB is not the
+; segment at PSP:002C minus one is skipped (1990:00C5 to 00C9). When the current block is the
+; environment block (its MCB is PSP:002C minus one) it is moved. The copy is
 ; requested with the same size (1990:00D6 to 1990:00D9) and DOS chooses where the copy goes (its
 ; default allocation strategy, which this unit leaves unchanged: there is no INT 21h AH=58h),
 ; PSP:002C is pointed at the copy (1990:00DD), the bytes are copied (1990:00EC to 1990:00FD)
@@ -198,9 +201,13 @@ CheckMemoryChain ENDP
 ; A000:0000, then reserve room below it. The argument n is the first word argument of the far call,
 ; at bp+6; it is a count of 32 KB steps, not the graphics mode: the code computes (n-1) shifted by
 ; 11 paragraphs (1990:01A8 to 1990:01B4), so it reserves (n-1) x 32 KB below the probed top. The
-; only caller passes 3 (src/E07C8.C:188, lcall at 07C8:01F2), a 64 KB reserve. Then it shrinks the
-; last block of the chain, the one whose type is 'Z' (1990:01DE to 1990:01E4, store at
-; 1990:021D; the owner is not checked), points PSP:002C at the moved block's data segment (its MCB
+; only caller passes 3 (src/E07C8.C:188, lcall at 07C8:01F2), a 64 KB reserve. It reaches the
+; chain by allocating a one-paragraph block (INT 21h AH=48h at 1990:01C0) but does not test the
+; carry flag, unlike CheckMemoryChain (jae at 1990:0080): when the allocation fails AX holds DOS's
+; error code (7 or 8), so the MCB type is read at segment 6 or 7; if that byte is not 'M' the
+; one-word-out exit marked below is taken, and if it is 'M' the chain is walked from there. Then
+; it shrinks the last block of the chain, the one whose type is 'Z' (1990:01DE to 1990:01E4, store
+; at 1990:021D; the owner is not checked), points PSP:002C at the moved block's data segment (its MCB
 ; plus one, 1990:0256 to 025B), moves any block CheckMemoryChain had relocated and frees it, calls
 ; CheckMCB (1990:0271) to merge the freed block into the chain, and stores the new top into
 ; PSP:0002 (1990:0264). The result is gVideoTopSeg after the step at 1990:0202 to 0207 (loaded at
@@ -268,11 +275,14 @@ probeEnd:
         mov     es,ax
         cmp     byte ptr es:[0],4Dh
         je      chainHead
-; QUIRK 1990:01CE: the jump to retTop is taken when the one-paragraph block's MCB type is not 'M'
-;   (1990:01C6 to 01CC); it leaves that block's segment pushed, so the exit pops one word out (the
-;   far return takes the wrong words) and the block is not freed. In a valid chain a block that is
-;   not 'M' is the 'Z' block, so the path is taken when the one-paragraph block is the last one; the
-;   code does not test for a corrupt chain.
+; QUIRK 1990:01CE: the jump to retTop is taken when the byte at the block's MCB is not 'M' (test to
+;   branch at 1990:01C6 to 01CC); it leaves that segment pushed, so the exit pops one word out (the
+;   far return takes the wrong words) and the block is not freed. Two ways in: in a valid chain a
+;   block that is not 'M' is the 'Z' block, so the path is taken when the one-paragraph block is the
+;   last one, and the code does not test for a corrupt chain; and the allocation that finds the block
+;   does not test its own result (1990:01C0, no carry check, unlike CheckMemoryChain's jae at
+;   1990:0080), so on failure AX is DOS's error code (7 or 8), the MCB type is read at the segment
+;   made from it (1990:01C3 to 01C6), and the path is taken when that byte is not 'M'.
         jmp     retTop
 chainHead:
         push    ax
@@ -351,8 +361,12 @@ ReserveMemoryBelowVideo ENDP
 ; 1990:027D: shrink the last MCB of the chain down to gMemTopSeg, then free the one-paragraph
 ; block. The value is not the video top: ReserveMemoryBelowVideo stored the end of DOS memory there
 ; (1990:01F0), and StartupGame overwrote it with atol(gEnvPtr->number) (07C8:0212) before the exit
-; path calls this function, so Trim uses the stored number, not a value Reserve left. Called from
-; ShutdownGame at exit for the Tandy mode, when ds:8102 is 1 (07C8:060D, src/E07C8.C:343-344).
+; path calls this function, so Trim uses the stored number, not a value Reserve left. Like
+; ReserveMemoryBelowVideo, it allocates the one-paragraph block (INT 21h AH=48h at 1990:0288)
+; without testing the carry flag: on failure AX is DOS's error code (7 or 8), the MCB type is read
+; at segment 6 or 7 (1990:028B to 028E), and the one-word-out exit marked below is taken when that
+; byte is not 'M'. Called from ShutdownGame at exit for the Tandy mode, when ds:8102 is 1
+; (07C8:060D, src/E07C8.C:343-344).
         PUBLIC  TrimMemoryToVideo       ; @ 1990:027D
 TrimMemoryToVideo PROC FAR
         push    bp
@@ -368,11 +382,14 @@ TrimMemoryToVideo PROC FAR
         mov     es,ax
         cmp     byte ptr es:[0],4Dh
         je      trimLast
-; QUIRK 1990:0296: the jump to trimDone is taken when the one-paragraph block's MCB type is not 'M'
-;   (1990:0294 to 0296); it leaves that block's segment pushed, so the exit pops one word out (the
-;   far return takes the wrong words) and the block is not freed. In a valid chain a block that is
-;   not 'M' is the 'Z' block, so the path is taken when the one-paragraph block is the last one; the
-;   code does not test for a corrupt chain.
+; QUIRK 1990:0296: the jump to trimDone is taken when the byte at the block's MCB is not 'M' (test to
+;   branch at 1990:028E to 0296); it leaves that segment pushed, so the exit pops one word out (the
+;   far return takes the wrong words) and the block is not freed. Two ways in: in a valid chain a
+;   block that is not 'M' is the 'Z' block, so the path is taken when the one-paragraph block is the
+;   last one, and the code does not test for a corrupt chain; and the allocation that finds the block
+;   does not test its own result (1990:0288, no carry check, unlike CheckMemoryChain's jae at
+;   1990:0080), so on failure AX is DOS's error code (7 or 8), the MCB type is read at the segment
+;   made from it (1990:028B to 028E), and the path is taken when that byte is not 'M'.
         jmp     trimDone
 trimLast:
         push    ax
