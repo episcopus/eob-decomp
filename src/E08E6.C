@@ -192,21 +192,26 @@ void Obj10F3(struct Obj28 far *obj);   /* forward: 05EA reaches it before its de
    17A6:0F61(id, gPartyCell) and 17A6:0314(id, gPartyCell); when the first is under 4 and the
    second minus twice the orientation, minus 3, wrapped into 0..7, is over 2 or the first is under 2,
    clear the type and reset the sound field. Called by 0150 and UpdateObjects. Purpose unknown: what
-   the two 17A6 calls compute. DRAFT, blocked: a TCC -B codegen question, the same class as
-   0D1C:09AD (re/symbols.toml e0d1c: the first conditional's forward target sits on TCC's 127-byte
-   estimate boundary, so TCC -S emits the far form `jne @@; jmp` and TASM /jNOSMART /m2 keeps it).
-   The unit is -B (that is what makes 0765, 0B94, 17FD and 1410 match); under -B this `&&` body
-   matches byte for byte except one 3-byte instruction: the original reloads `les bx,[bp+6]` at
-   08E6:00F2 before pushing obj->id (08E6:00EE `push [ds:FBCA]`; 08E6:00F2 `les bx,[bp+6]`;
-   08E6:00F5 `push es:[bx+2]`), while ours reuses the bx the `&&` chain already holds and so is 3
-   bytes short (ours je 0x86 against the original je 0x89). TCC keeps a far pointer in ES:BX and
-   drops it at a block boundary; every form tried (the `&&` chain, separate `if` returns, a switch,
-   nested ifs, `goto`, do/while(0), for(;;), while, block-scoped locals, register locals, an explicit
-   `else`, separate single-condition `if`s, `if(...) goto body;`, a `switch` on the type) either
-   keeps the cached bx as ours does or lays the first test out as `jne @@; jmp` instead of `je`. The
-   `||` early-return form DOES reload but its first test is `jne @@; jmp` under -B (it matches only
-   without -B, where TCC's own assembler shortens the jump; then 0765, 0B94 and 17FD do not match).
-   So no single flag set gives all 36; -B gives 35 (this one blocked), -ml -O -Z gives 33. */
+   the two 17A6 calls compute. DRAFT. blocked: a TCC -S codegen question, one 3-byte instruction.
+   Under -B this body matches byte for byte except that the original reloads `les bx,[bp+6]` at
+   08E6:00F2 before the Distance argument obj->id (08E6:00EE `push [ds:FBCA]`; 08E6:00F2
+   `les bx,[bp+6]`; 08E6:00F5 `push es:[bx+2]`), while ours reuses the bx the five-test `&&` chain
+   already holds, so ours is 3 bytes short (ours je 0x86 against the original je 0x89). The reload
+   is what TCC emits when it has not proved the far pointer still lives in ES:BX; it shows up in the
+   original exactly where a body is a jump target (the else branch at 03FE:041F, the statement after
+   a `||` chain, and the `if (cond) ; else { body }` layout, probed 2026-11-01), but here the body
+   is fall-through after the `jle`, and -O (jump optimisation) is what suppresses the redundant load
+   (WHITEPAPER 2.1.1). Every source form tried either keeps the cached bx as ours does or lays the
+   first test out as `jne @@; jmp` instead of `je`: the `&&` chain, one-line, parenthesised and
+   negated conditions, nested ifs (with and without braces), a `switch`, `goto`, an empty-body `if`,
+   do/while(0), for(;;), while, a nested block, a declaration initialiser, `register` and separate
+   locals, a bare `obj;`, an assignment inside the condition, casts, the `if (cond) ; else { body }`
+   layout, and the `||` early-return form (which reloads but lays the first test as `jne @@; jmp`
+   under /jNOSMART; it matches only without -B, where TCC's own assembler shortens the jump, and then
+   0765, 0B94 and 17FD do not match). Flags probed on the whole unit 2026-11-01: -ml -O -Z -B 35 of
+   36, -ml -O -Z 32, -ml -O -Z -G -B 10, -ml -Z -B 2; -B is the only set that reaches 35 and the one
+   missing function is this. C++ -P, -1 and -k make no difference. Evidence in re/symbols.toml
+   e08e6_00c3 (notes). */
 /*@ 08E6:00C3 draft */ void Obj00C3(struct Obj28 far *obj)
 {
     int first, dir;
