@@ -486,12 +486,12 @@ extern long gSlotLengths[];              /*@ ds:FF0C: the record's length per sl
 /* 1C0E:0ADD: the file error dialog. It hides the mouse pointer, saves the status-line flag, the
    window region and the current font, switches to the 8x8 font gFE5A and the region g80FE, and
    frames the window with four 0xf lines through gDrawLine. It shows the message gErrorText[code]
-   (the array of FatalError texts at ds:8196); when `code` is 2 ("Could not find") it also shows the
-   file `name`, wrapped in gErrorText[18] ("\r "), the "Insert disk " and "into any drive." literals
-   and, when ResolveFileLink(name) is not -1, its value as a disk digit (0x31 + the link). It waits
-   for a key; ESC clears the box, shows gErrorText[12] ("A fatal disk error has occurred. Now
-   returning to DOS.") and shuts the game down. Afterwards the saved attributes, region, font and
-   status flag are restored, the saved screen rectangle is written back (gRestoreRect) and the
+   (the array of FatalError texts at ds:8196); when `code` is MSG_NOT_FOUND ("Could not find") it
+   also shows the file `name`, wrapped in MSG_LINE_BREAK, the "Insert disk " and "into any drive."
+   literals and, when ResolveFileLink(name) is not -1, its value as a disk digit ('1' + the link).
+   It waits for a key; ESC clears the box, shows MSG_DISK_ERROR ("A fatal disk error has occurred.
+   Now returning to DOS.") and shuts the game down. Afterwards the saved attributes, region, font
+   and status flag are restored, the saved screen rectangle is written back (gRestoreRect) and the
    buffer is freed. Returns 1. `code` is a FatalError code (1C0E:00AA) or a RetryFile mode
    (1C0E:0046): the handlers at ds:8104 and ds:8111 are initialised to 0D9B and to this function. */
 /*@ 1C0E:0ADD */ int DisplayFileError(int code, char far *name)
