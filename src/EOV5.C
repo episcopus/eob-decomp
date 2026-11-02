@@ -30,7 +30,8 @@ struct CharRec {            /* 243-byte (0xF3) character records at ds:F580 (src
     char pad1D[0x22 - 0x1D];
     unsigned char m22;      /* +22: compared with 0xf7 by 0AB1 (src/E0D1C.C:0415 uses it too) */
     char pad23[0x33 - 0x23];
-    long m33;               /* +33: a value the record swap at 070E preserves */
+    void far *m33;          /* +33: a far pointer to the character's picture buffer, preserved by
+                                   the record swap at 070E (the movmem destination there) */
     char pad37[0x77 - 0x37];
     int m77[25];            /* +77: 25 item-slot words (the carried and equipped items) */
     char padA9[0xE3 - 0xA9];
@@ -142,6 +143,7 @@ extern unsigned char far gSeg1F8[]; /*@ 01F8:0000 */
 extern unsigned char far gSeg1F0[]; /*@ 01F0:0000 */
 
 extern void far * (far *gGetSpriteCell)(int x, int y, int w, int h, void far *sheet); /*@ ds:8086 */
+extern void far * (far *gFn8082)(int x, int y, int w, int h, void far *buf); /*@ ds:8082 */
 extern void (far *gFillRect)(int x1, int y1, int x2, int y2, int pattern); /*@ ds:806A */
 extern void (far *gDrawText)(char far *text, int x, int y, int colour, int flag); /*@ ds:80CA */
 extern void (far *gFn804A)(int x, int y, int w, int h, void far *buf); /*@ ds:804A */
@@ -166,6 +168,7 @@ extern void PlaySound(int sound); /*@ 177D:0070 */
 extern int sprintf(char far *buf, char far *fmt, ...); /*@ 0000:57AE */
 extern unsigned strlen(char far *s); /*@ 0000:67F6 */
 extern void farfree(void far *p); /*@ 0000:71EE */
+extern void movmem(void far *src, void far *dst, unsigned n); /*@ 0000:63A3 */
 extern int CopyItemToFreeSlot(int n); /*@ 0BD2:089E */
 extern void InsertListItem(void far *head, int key, int item, int sound); /*@ 0BD2:01D0 */
 extern int RemoveCarriedItems(int field2, int fieldB); /*@ 0D1C:01CA */
@@ -189,7 +192,6 @@ extern void f1A47_0169(void far *font); /*@ 1A47:0169 */
 /* siblings not decompiled yet: their real signatures, so callers compile */
 void Ovl5_025F(void);
 int Ovl5_0455(char offset, char count, void far *names);
-void Ovl5_070E(int who);
 void Ovl5_0924(void);
 void Ovl5_0BBE(void);
 void Ovl5_0C9D(void);
@@ -355,7 +357,41 @@ char gTable7B89[] = { 0x3B, 0xA6, 0x04, 0x70, 0xDC, 0x04, 0x70, 0xDC, 0x04, 0x70
     }
     return 1;
 }
-/*@ ovl5:070E stub */ void Ovl5_070E(int who) {}
+/* ovl5:070E: adds the character `which` of the pool ds:7298 to the party. It finds the first slot
+   of gChars whose flags bit 0 is clear, saves that slot's picture pointer m33, copies the pool
+   record over it through movmem, restores m33, recomputes the armour class, requeues every carried
+   item through CopyItemToFreeSlot, then slices the character's sprite cell
+   (gGetSpriteCell(which*4, 0xa0, 4, 0x20, gOverlayBuf)) into the picture buffer m33 and frees the
+   slice. Called by AddCharPanel. */
+/*@ ovl5:070E */ void AddPartyMember(int which)
+{
+    struct CharRec far *rec;
+    void far *saved;   /* the slot's picture pointer, then the sliced sprite cell */
+    int slot;
+    int i;
+
+    slot = i = 0;
+    for (; i < 6; i++) {
+        if ((gChars[i].flags & 1) == 0) {
+            slot = i;
+            break;
+        }
+    }
+    rec = &gChars[slot];
+    saved = rec->m33;
+    movmem((void far *)&gCharPool[which], (void far *)rec, 0xF3);
+    rec->m33 = saved;
+    ComputeArmourClass(slot);
+    for (i = 0; i < 0x19; i++) {
+        if (rec->m77[i])
+            rec->m77[i] = CopyItemToFreeSlot(rec->m77[i]);
+    }
+    g8115 = 2;
+    saved = gFn8082(which * 4, 0xA0, 4, 0x20, gOverlayBuf);
+    movmem(saved, rec->m33, 0x514);
+    farfree(saved);
+    g8115 = 0;
+}
 /* ovl5:0828: the character add panel. It clears the panel, draws message `which`, then shows the
    two-entry menu ds:7B23. Choice 0 ("join") either draws message `head` or, when `head` is -1,
    builds and draws "<name> joins the party." (ds:7D0E) for gCharPool[who] and shows the modal
@@ -380,7 +416,7 @@ char gTable7B89[] = { 0x3B, 0xA6, 0x04, 0x70, 0xDC, 0x04, 0x70, 0xDC, 0x04, 0x70
         }
         RemoveCarriedItems(0x21, who + 1);
         if (ChooseChar())
-            Ovl5_070E(who);
+            AddPartyMember(who);
         break;
     case 1:
         PrintTableString(other, 1);

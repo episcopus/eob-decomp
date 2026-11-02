@@ -7594,6 +7594,9 @@ unit = "eov5"
 addr = "ovl5:070E"
 size = 282
 evidence = ["ovl", "near", "frame"]
+name = "AddPartyMember"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov5_0828"
