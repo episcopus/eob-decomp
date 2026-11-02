@@ -1,5 +1,30 @@
 # Review: e1de7
 
+# Round 7
+
+Reviewer: rev-haiku
+Commit reviewed: 5131050 (main); review/e1de7 is at the same commit. The round 6 fixes are in 93e0f14 (ticked in 431d7b7). Changed since round 6's commit 0251ee7: `git diff 0251ee7 main -- src/E1DE7.C re/symbols.toml re/globals.toml` (src/E1DE7.C only; the re/symbols.toml and re/globals.toml changes are other units' names).
+
+Playbook 70, later round. Judge the round 6 must-fix items and the changed lines only.
+
+Checked: `make match FILE=src/E1DE7.C` 9 of 9 functions ok, 2619 bytes; `make readability UNIT=e1de7` 0 findings. Round 6 items: the DrawTextFrame and PrintIntText "no caller" comments now cite the packet's call graph, and `make packet UNIT=e1de7` shows "(no direct call found)" for 1DE7:00C9 and 1DE7:05DF. tools/agent/packet.py `calls()` (:79-89) walks every unit whose name starts with "e", which includes eov0 to eov6, so the overlay callers are covered. Both fixed right. The gDrawText cite is right (src/E1AA6.C:14 is in PrintInt, which passes five arguments), and the DrawTextLine `bottomLine` local, its header and its cites (:256, :262, :276 to :286) are right. The round 6 should on ds:805A names the search and its scope, but the result it states is wrong (first finding). Then every cite in the changed lines against its target (`sed -n` and `grep -n` on src/E082C.C, src/E07C8.C, src/E1AA6.C, src/EOV5.C).
+
+Store search, run here: the disp16 bytes `5a 80` occur six times in eob/EOB.EXE (file offsets 0x1d4f0, 0x207a2, 0x207d5, 0x20808, 0x2083e, 0x20925) and nowhere in build/re/eob-overlays/ovl00.bin to ovl06.bin. Five of the six are `ff 1e 5a 80` (the far calls through the slot: four in DrawTextFrame, one in DrawTileRun). The sixth, at 0x1d4f0, is `3e 40 5a 80`, which is not a store to the slot.
+
+## Findings
+
+- [ ] must-fix src/E1DE7.C:67-68 (ds:805A): "a byte search of eob/EOB.EXE and the overlay bins for its disp16 finds none" is wrong as stated. The search for the disp16 finds six hits in eob/EOB.EXE: five are the far calls `ff 1e 5a 80` (four in DrawTextFrame, one in DrawTileRun), and one at file offset 0x1d4f0 (`3e 40 5a 80`) is not a store. The overlay bins have none. The claim the search supports is "no store": say that, and say the search was for store forms (A3, 89 06, C7 06 or 8C 06 with disp16 5a 80), with the five calls named as calls. (Evidence: the byte search above; the store forms are the encodings of a direct store to the slot.)
+- [ ] should src/E1DE7.C:52 (gGraphicsChoice): the cites into src/E07C8.C are stale. "Main sets it to argv[1][0] + 1 (src/E07C8.C:226)" should be :229 (`gGraphicsChoice = argv[1][0] + 1;`; :226 is the mouseChoice comment). "StartupGame subtracts 0x31 (src/E07C8.C:295), after the 0x36 check at :293" should be :298 (`gGraphicsChoice -= 0x31;`) and :296 (`if (gGraphicsChoice == 0x36)`). "src/E07C8.C:39-43 says the digit indexes gOverlayFiles" should be :44 (gOverlayFiles, in the comment at :42 to :44). E07C8.C's own comment at :42 gives :229 and :298. Replace the line cites with the addresses where the unit has them, or with the current line.
+- [ ] should src/E1DE7.C:11-12 and :43-44 (the default attributes): "default 0x0F at E07C8.C:259" and "0x0C at E07C8.C:260" are stale. The enum is at src/E07C8.C:21 (`DEFAULT_TEXT_ATTR1 = 0x0F, DEFAULT_TEXT_ATTR2 = 0x0C`), and start-up assigns them at :262 and :263.
+- [ ] should src/E1DE7.C:15 and :82 to :86 (ds:8115): the cites into src/E082C.C are stale. The declaration is at E082C.C:71 (not :65). LoadOverlayScreen sets gStatusLine at :338 (not :332; :329 is a comment that mentions it). ShowMemoryDiagnostics (E082C.C:441, address 082C:081A) saves gStatusLine at :445, clears it at :446 and restores it at :454 (not :429, :433, :434, :442). Cite the addresses 082C:05EC (LoadOverlayScreen) and 082C:081A (ShowMemoryDiagnostics) instead, since they do not move with the file.
+- [ ] should src/E1DE7.C:70-72 (ds:806A): "the parameter is named `colour` (src/E082C.C:57)" cites a blank line. The declaration is at src/E082C.C:63. The claim itself holds at :63.
+- [ ] note the last parameter of ds:806A now has two names in src/: `colour` here and in src/E082C.C:63, `pattern` in src/E0BD2.C:113, src/E0EF3.C:373, src/E1547.C:90, src/EOV4.C:1036 and src/EOV5.C:172, and `a` to `e` in src/EOV2.C:163. This file's comment does not claim it is the shared name, so nothing is asked here; the owners of the shared declaration decide one set.
+- [ ] note the -G claim (src/E1DE7.C:16-17, the `inc sp; inc sp` clean-ups) and the gScrollHook type and name (EOV5.C:161) are as in rounds 1 to 6. No change asked.
+
+## Summary
+
+Round 7: the code is unchanged in its bytes and names (9 of 9, 2619 bytes, readability 0 findings). Round 6's two must-fix items are fixed right, and the packet's call graph is the right evidence for "no caller". The round 6 should on the ds:805A store search names the search but states its result wrongly: the disp16 search finds six hits, not none. That is the one must-fix. The other changed lines carry stale line cites into src/E07C8.C, src/E082C.C and src/E1DE7.C's own ds:806A note, which are shoulds (replace with addresses where the unit has them). No matcher, spec or pin question, so nothing is escalated. Round 7 fails review on one must-fix, a comment about how a store was searched; no code change is asked.
+
 # Round 6
 
 Reviewer: rev-haiku
