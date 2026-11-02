@@ -147,7 +147,7 @@ extern int DirectionFromPoints(int obj, int volume); /*@ 17A6:0314 */
 extern void DamageObject(struct Obj28 far *obj, int n); /*@ 08E6:0FBE */
 
 int f0D1C_0670(int who, int mask);
-int f0D1C_02DC(void);
+int GetCurrentItem(void);
 
 /* 0D1C:0006: Purpose unknown: the value `value` is looked for in the 15 words at ds:A9C8; when
    it is found, ds:DF4C is set to 1 and the function returns 1, otherwise it returns 0. Called
@@ -272,7 +272,7 @@ int f0D1C_02DC(void);
    and redraws. Returns 1 when at least one item was removed, otherwise 0. The redraw paths: when
    gFB44 is 0 and the slot is one of the first two of a character before the sixth, DrawMemberSlot;
    when gFB44 is 1 and the character is the selected one, DrawItemRow; and when the mouse is
-   enabled, the item in the slot f0D1C_02DC names is cleared and redrawn through SetMouseItem.
+   enabled, the item in the slot GetCurrentItem names is cleared and redrawn through SetMouseItem.
    Called by overlays 5. What m02, m0B and m04 mean is not established. */
 /*@ 0D1C:01CA */ int RemoveCarriedItems(int field2, int fieldB)
 {
@@ -297,7 +297,7 @@ int f0D1C_02DC(void);
             if (gFB44 == 1 && gA99A == who)
                 DrawItemRow(who, slot, 1);
             if (!gMouseDisabled) {
-                item = f0D1C_02DC();
+                item = GetCurrentItem();
                 if (gTable8DD2[item].m02 == field2) {
                     gTable8DD2[item].m04 = -1;
                     SetMouseItem(0);
@@ -310,7 +310,7 @@ int f0D1C_02DC(void);
 /* 0D1C:02DC: Purpose unknown: returns the item index in the currently displayed slot: gFBCE
    when the mouse is disabled, otherwise gChars[gA99A].m77[gF51A]. Called by 0D1C:01CA and from
    many other units. */
-/*@ 0D1C:02DC */ int f0D1C_02DC(void)
+/*@ 0D1C:02DC */ int GetCurrentItem(void)
 {
     if (!gMouseDisabled)
         return gFBCE;
@@ -471,7 +471,7 @@ int f0D1C_02DC(void);
    selects the icon's 16-byte colour row (gBufF534 + (icon << 4), or the empty string at ds:550A
    when gGraphicsChoice is 0) through gFn80D2 and draws through f1A29_008B, otherwise through f1A29_000F.
    Called by 0BD2 (three sites) and 1547:07E7. */
-/*@ 0D1C:070F */ void f0D1C_070F(int mode, int n, int x, int y)
+/*@ 0D1C:070F */ void DrawItemIcon(int mode, int n, int x, int y)
 {
     int icon;
 

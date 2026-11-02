@@ -2385,3 +2385,21 @@ new = "GetVoiceDelay"
 kind = "function"
 why = "returns the voice record byte at +5, the note delay counter StartVoiceNote sets and UpdateVoices counts down (4CB1, 41D8); the sixth entry of the driver entry table at 3944 (review of e_text)"
 date = "2026-11-02"
+
+[[rename]]
+id = "0D1C:02DC=GetCurrentItem"
+addr = "0D1C:02DC"
+old = "f0D1C_02DC"
+new = "GetCurrentItem"
+kind = "function"
+why = "the getter of the SetCurrentItem pair (0D1C:0304): returns gFBCE when the mouse is enabled, else gChars[gA99A].m77[gF51A]; SetMouseItem (07A9:010C) calls the setter and E0ACD, E0BD2, E122E and E0EF3 call this as the current item (review of e0d1c)"
+date = "2026-11-02"
+
+[[rename]]
+id = "0D1C:070F=DrawItemIcon"
+addr = "0D1C:070F"
+old = "f0D1C_070F"
+new = "DrawItemIcon"
+kind = "function"
+why = "draws the item icon of the ds:8DD2 record n at (x, y) from gIconsDDE4 (ds:DDE4); callers 0BD2:0917 (three sites, E0BD2.C:610) and 1547:07E7 (E1547.C:471) (review of e0d1c)"
+date = "2026-11-02"
