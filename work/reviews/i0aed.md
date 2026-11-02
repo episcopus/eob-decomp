@@ -1,10 +1,54 @@
 # Review: i0aed
 
 Reviewer: rev-haiku
-Commit reviewed: 6003a3d (main when I started; the branch review/i0aed was at aa13987 and I fast-forwarded it to main first; src/I0AED.C is the same in both)
+Commit reviewed: 41f1cda (round 2, main; round 1 reviewed 6003a3d, the branch review/i0aed was at aa13987 and I fast-forwarded it to main first; src/I0AED.C is the same in both)
 
 Playbook 70. Judge what a matching file can still get wrong: names, types, comments, structure.
 The matcher already proved the bytes; do not re-prove them, read for meaning.
+
+## Round 2 (41f1cda)
+
+Later round (playbook 70): the round 1 must-fix items, and what changed since 6003a3d in src/I0AED.C,
+re/symbols.toml and re/globals.toml. No line for this unit in re/symbols.toml or re/globals.toml changed
+(the hunks there are other units). `make match FILE=src/I0AED.C` 4 of 4 functions, 547 of 547 bytes;
+`make readability UNIT=i0aed` 0 findings.
+
+Round 1 must-fix items, each checked against the cited code:
+
+- Codec labels (round 1 must-fix 1): fixed right. Format 2 is 14-bit: src/E1D9A.ASM:11 and :542 (1D9A:03CC,
+  `_ReadCode2` in the header at :13). Format 3's label is [H] at src/E1D9A.ASM:7; WHITEPAPER 4.2 says "No
+  pinned file uses formats 2 or 3". FORMAT_LITERAL_FILL carries [H]. The tick stays.
+- SetUnpackBuffer not in re/symbols.toml (round 1 must-fix 2): fixed right. re/units.toml gives the unit
+  `functions = 3`; re/symbols.toml has i0aed_021b, 0AED:021B, 21 bytes. The tick stays.
+- AllocationFailure and ShutdownGame (round 1 must-fix 3): fixed right. 07C8:0625 is src/E07C8.C:492, which
+  calls ShutdownGame at :497; ShutdownGame is 07C8:058A at src/E07C8.C:447. The tick stays.
+
+Changed lines since 6003a3d, checked:
+
+- Twin header: with the ten jump-table bytes at 0AED:0211 (1B82:020D) treated as data, `tools/match/twin.py`'s
+  `check('e1b82', 'i0aed')` passes (reason None; a scratch run, no file changed). The EOB table words are
+  00E7, 011E, 0176, 010D, 01CC and the INTRO words 00EB, 0122, 017A, 0111, 01D0, each exactly +4. The header's
+  "547 bytes, 4 functions" matches re/units.toml (e1b82 and i0aed both 547, functions 4 and 3 respectively
+  for the INTRO unit; the file says 4 because the map's i0aed_021b entry is now separate).
+- MEMALLOC_ALIGNED: defined at src/E19BC.C:49, block shape at :94-102 (both read). The QUIRK addresses
+  19BC:0031 to 0069 (retry, src/E19BC.C:70 and :209) and the NULL return at 19BC:0073 to 0077 were read from
+  the MemAlloc listing (`cmatch.py --show MemAlloc`: NULL return at function offsets 006C to 0070, retry at
+  002A to 0062, which is 19BC:0031 to 0069 and 19BC:0073 to 0077 after the +7 of the function start).
+- WHITEPAPER: 4.2 is the section with the "bytes of palette that follow" quote and the formats 1, 2, 3 and 4
+  statements; 2.1.1 has the -P front end and the -G switches note. All section names, no line numbers.
+- src/E1D9A.ASM:163-174 (Unpack3 takes src at [bp+6] and dst at [bp+8]) and :285 (`mov es,[bp+8]` inside
+  `_Unpack1`, which starts at :273): both correct.
+- StartupAlloc (07A9:000A) calls SetUnpackBuffer at src/E07A9.C:348 (read); the 0AED:0221 and 0229 stores are
+  in SetUnpackBuffer's range (021B to 0230).
+
+## Findings (round 2)
+
+- [ ] should src/I0AED.C:204-205: "StartupAlloc (07A9:000A) calls it once (src/E07A9.C:348); its stores are at
+  0AED:0221 and 0229". "its" follows StartupAlloc in the sentence, and the stores belong to SetUnpackBuffer.
+  Say "the stores in SetUnpackBuffer are at 0AED:0221 and 0229". The claim is right; only the pronoun can be
+  read wrongly.
+
+No must-fix: the three round 1 must-fix items are fixed right and every changed line is sound.
 
 ## Round 1 (6003a3d)
 
