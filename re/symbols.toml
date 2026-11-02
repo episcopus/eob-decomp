@@ -7846,7 +7846,7 @@ addr = "ovl5:1E1B"
 size = 387
 evidence = ["ovl", "near", "frame"]
 name = "ShuffleGrid"
-notes = "blocked: TC registers the shuffle index. The body matches up to ovl5:005A; the original keeps pick in [bp-0xe] (`mov [bp-0xe],ax` at ovl5:0061) and swapped in [bp-0xa], and copies i to DI (`mov di,si` at ovl5:0064, then `es:[di*2+base]`), while our build registers pick in DI (`mov di,ax` at ovl5:0061) and puts swapped at [bp-0xe]; the function is then 2 bytes short. Tried declaration-order swaps of pick/swapped; TC still picks pick for DI. A source form that stops it choosing pick would match."
+notes = "blocked: TC registers the shuffle index. The body matches up to ovl5:005A; the original keeps pick in [bp-0xe] (`mov [bp-0xe],ax` at ovl5:0061) and swapped in [bp-0xa], and copies i to DI (`mov di,si` at ovl5:0064, then `es:[di*2+base]`), so it registers only i (SI); our build registers pick in DI (`mov di,ax` at ovl5:0061) and puts swapped at [bp-0xe], 2 bytes short. Tried: declaration order swaps (pick/swapped, and the original's swapped/k/pick/j/saved slot order), `register int cy`, and unsigned pick; TC keeps choosing a second variable (pick, or cy when it is register). A source form that leaves TC registering only i would match."
 
 [[function]]
 id = "eov6_0000"
