@@ -114,7 +114,7 @@ extern void f1A47_0169(char far *font); /*@ 1A47:0169 */
    leads to the ITEMRMP read (ovl2:0484, via ovl2:0171; docs/design/WHITEPAPER.md, the ITEMRMP.VGA/EGA
    row). The stub is named after its target, like LoadItemData above. */
 extern void LoadDecorateIcons(void); /*@ 2106:0048 */
-extern void f0ACD_0E8A(void); /*@ 0ACD:0E8A */
+extern void RunMapLoop(void); /*@ 0ACD:0E8A */
 extern void SetCurrentItem(int n); /*@ 0D1C:0304 */
 extern void f0BD2_05B5(int n); /*@ 0BD2:05B5 */
 extern void DrawText(char far *text); /*@ 1DE7:060A */
@@ -161,7 +161,7 @@ extern void SetMousePointerShape(int hotX, int hotY, void far *icon); /*@ 1BB1:0
     LoadItemData();
     f1A47_0169(gA9C0);
     LoadDecorateIcons();
-    f0ACD_0E8A();
+    RunMapLoop();
 }
 
 /* 07A9:010C: sets the item shown by the mouse to `n` and shows its icon. SetCurrentItem stores the
