@@ -1,6 +1,87 @@
 # Review: e14ef
 
 Reviewer: rev-haiku
+Commit reviewed: 46c82be (main; src/E14EF.C last changed in d49f8bd; `make match FILE=src/E14EF.C`: 6 of 6, 1410 bytes, exit 0; `make readability UNIT=e14ef`: 0 findings)
+
+Playbook 70. Judge what a matching file can still get wrong: names, types, comments, structure.
+The matcher already proved the bytes; do not re-prove them, read for meaning.
+
+Round 7. Round 6's ten items are ticked and hold, except for the cites this round re-checked. I checked
+every cite in the file against the current text: the header's field reads (:184-194, :263-278), the
+caller cites into src/EOV0.C (:1148, :1149, :1193, :1203, :1204, :1215, :1244, :1253, :1257, :1259,
+:1261, :1262), src/EOV2.C (:380, :383), src/E16A5.C (:224, :225, :240, :241), src/E082C.C (:465, the
+ClickInRect wrapper), src/E0ACD.C (:886), src/E1AAD.ASM (:337-338, :350-351, :396, :405), src/E1A72.ASM
+(:65, :73, :100, :199 in-file) and the overlay witnesses (build/re/eob-overlays/ovl00.bin: B8 0F 00 at
+0x20DD, B8 09 00 at 0x228E). The caller masks, the gFC7A reader, the key codes and the FindMaskBit and
+CountMaskBits logic are right. Two cites into src/E1A72.ASM are off by one line, and one comment claims
+a behaviour the source does not show. Those are the must-fix items; the rest are shoulds and notes.
+
+## Findings
+
+Each finding is a checkbox. `must-fix` blocks `make review-pass` until a decompiler ticks it off
+(with the commit that fixes it); `should` and `note` do not block.
+
+- [ ] must-fix src/E14EF.C:69-71 (gMouseDisabled): "store at src/E1A72.ASM:315" is the
+  `gMouseHandlerInstalled` store. `mov word ptr [gMouseDisabled],1` is src/E1A72.ASM:316 (the
+  store that follows it at :315, then the INT 33h set-handler call at :320-327). The 1A72:0150
+  address and the order claim ("before it installs the handler") are right. (evidence:
+  `grep -n "\[gMouseDisabled\]"` src/E1A72.ASM: :316; sed 312-316 shows :315 is `[gMouseHandlerInstalled],1`)
+- [ ] must-fix src/E14EF.C:74-76 (g8134): "(or ax,[g8134]; mov [g8134],ax, src/E1A72.ASM:400-401)"
+  points at `xor ax,bx` (:400) and the `or` (:401). The pair is `or ax,[g8134]` at src/E1A72.ASM:401
+  and `mov [g8134],ax` at :402; cite 401-402. (evidence: `grep -n "\[g8134\]"` src/E1A72.ASM: :401, :402)
+- [ ] must-fix src/E14EF.C:80 (extern LockHidePointer): "start a frame (redraws through the mouse
+  callbacks)". Nothing in src/ names ds:80AA or ds:80A2 as mouse callbacks. They are "far fn" and
+  "far fn (no arguments)" (src/E1BBE.ASM:115-116; src/E1A72.ASM:32-33 "indirect far function"). The
+  bracket is the busy flag (1BBE:030A) then [ds:80AA](g8172, g8174), HidePointer, [ds:80A2]
+  (src/E1BBE.ASM:464-489), and the "start a frame" name is the callers' word (src/E1BBE.ASM:465-466).
+  Say what the bracket does, and mark the hooks' role Purpose unknown (or cite where they are
+  set to a redraw routine). (evidence: src/E1BBE.ASM:115-116, :464-489; src/E1A72.ASM:32-33)
+- [ ] should src/E14EF.C:110-113 and :114 (BlinkText): the comment says what the blink does but not its
+  parameters. `text`, `x`, `y` and `colorA`/`colorB` (normal and selected colour) are not stated, and
+  `extra` is passed as the fifth argument of gDrawText (:120, :122) without a word on what it is.
+  The one caller, UpdateOptionList (:336), always passes 0 (`BlinkText(names[entry], xbase, lineY,
+  colorA, colorB, 0)`). Name what it is or say "not established; always 0 from UpdateOptionList", as
+  `extra` is said to be in UpdateOptionList. (evidence: src/E14EF.C:336, :120-124)
+- [ ] should src/E14EF.C:46-49 (gTextLeft, gTextTop): the comment calls them "the panel area's top-left
+  corner", while src/E1C0E.C:60-61 says "the text window's left edge, 8-pixel columns" and "the text
+  window's top edge, pixel rows", and src/E1DE7.C:34 says "the window's left edge". The panel's x and y
+  are offsets from these, so say "the text window's top-left corner (E1C0E.C:60-61)". (evidence: src/E1C0E.C:60-61;
+  src/E1DE7.C:34)
+- [ ] should src/E14EF.C:1-20 (header) and :33 (struct comment) wording: "panel" is used both for the
+  16-byte record (gPanels, :33) and for the list drawn from it and the screen area. Pick one for the
+  record and say the list is its drawing. This is wording only.
+- [ ] note src/E16A5.C:62 (`IsKeyPending` comment, another unit): "nonzero when a key is waiting; same as
+  E14EF.C". This file says "nonzero when an event waits in the ring" (:82, the callee comment at
+  src/E1AAD.ASM:337-338). Routed to the E16A5 owner; not edited here.
+- [ ] note the UpdateOptionList prototype differs by file: src/EOV0.C:143 and src/EOV2.C:181 declare
+  `long counter` and five parameters, while this file defines `int counter, int extra` and six. The
+  bytes agree (every caller passes 0L, :233-234), but a call compiled against the five-parameter
+  prototype would not compile against this definition. Routed to the EOV0 and EOV2 owners.
+- [ ] note the stale cites of this file in other units are still open: re/renames.toml:775 cites
+  "E14EF.C:227" and ":144" (the mouse-enabled test and the g5D1A test are now :280 and :193), and
+  src/E1A72.ASM:57-60 says the g8134 clear is "on entry" (round 6's note). Owners route them; not
+  edited here.
+- [ ] note height 0 divides by zero at :264 (`panelDef->sel % (lastRow + 1)`); whether height can be 0 is not
+  established (src/EOV0.C:1194, :1245 set it from CountMaskBits). Round 6's note, still open.
+
+## Summary
+
+The unit is understandable from its source alone, and the names still hold: DrawOptionList,
+UpdateOptionList, IsPointInRect, FindMaskBit, CountMaskBits and BlinkText say what the code does. The
+shared globals agree with the other files of src/. The logic claims check: FindMaskBit returns the
+bit number of the n-th (zero-based) set bit minus shift, the caller masks are right, and the key codes
+match the switch table. What fails is two line cites into src/E1A72.ASM (the gMouseDisabled store at
+:316 and the g8134 pair at :401-402) and one comment claim (the mouse callbacks of LockHidePointer)
+that no source backs. Three must-fix items, all comments, no code change. The placeholders are honest
+and need no change: gFC78, g5D1A, g8102 (meaning not established), g8134, g8140, g8142, `counter`,
+`extra` and `pad`. The matcher (6 of 6) and the readability check (0 findings) were re-run on
+46c82be. No matcher, spec or pin question; nothing escalated.
+
+---
+
+# Round 6 (kept)
+
+Reviewer: rev-haiku
 Commit reviewed: 731aeba (review/e14ef; src/E14EF.C last changed in 8bbeafe; `make match FILE=src/E14EF.C`: 6 of 6, 1410 bytes, exit 0; `make readability UNIT=e14ef`: 0 findings)
 
 Playbook 70. Judge what a matching file can still get wrong: names, types, comments, structure.
