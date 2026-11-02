@@ -55,8 +55,8 @@ struct CharRec {            /* 243-byte character records at ds:F580; the fields
     char pad0D[0x1D - 0x0D];
     signed char m1D;        /* +0x1D */
     char pad1E[0xE3 - 0x1E];
-    int mE3;                /* +0xE3 */
-    char padE5[0xF3 - 0xE5];
+    unsigned long mE3;      /* +0xE3: status flags; a bit test compiles as and/or (long) */
+    char padE7[0xF3 - 0xE7];
 };
 
 struct Entry14 {            /* 14-byte item records at ds:8DD2 (src/E0D1C.C) */
@@ -822,11 +822,8 @@ second:
 }
 /* 08E6:106B: roll 1d20 for a hit against character `who`; a roll of 20 always hits; otherwise the
    target's mE3 bit 9 costs 2 and gFBD2 bit 5 costs 1. The hit succeeds when the roll reaches
-   SubtractInts(the object's record m01, the character's m1D). Called by 10F3 and 0EF3:0A3F.
-   DRAFT: blocked on the project-wide mE3 `and ax, K; or ax, 0` codegen (the same as 0D1C:0A43 and
-   1547:0009): ours folds `gChars[who].mE3 & 0x200` into `test word ptr [..], 0x200`
-   (106B:0033), the original is `mov ax, es:[..]; and ax, 0x200; or ax, 0; je`. */
-/*@ 08E6:106B draft */ int Obj106B(struct Obj28 far *obj, int who)
+   SubtractInts(the object's record m01, the character's m1D). Called by 10F3 and 0EF3:0A3F. */
+/*@ 08E6:106B */ int Obj106B(struct Obj28 far *obj, int who)
 {
     int index;
     int roll;
