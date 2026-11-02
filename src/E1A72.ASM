@@ -9,9 +9,9 @@
 ; drawn at against a rectangle; RemoveMouseHandler (1A72:0285) removes the handler; 1A72:02FA and
 ; 1A72:02FC enable and disable interrupts; 1A72:02FE and 1A72:033A set and read the far pointer at
 ; DGROUP:8172/8174 (1A72:02FE also copies 16 bytes from the old target to the new one). 1A72:0006
-; is the INT 3Fh handler main installs (07C8:008F): it chains to the vector saved at DGROUP:FC08
-; (the previous owner), and when EOB.EXE is not accessible it re-finds and reopens EOB.EXE through
-; 1C0E:1310 with the runtime's _open.
+; is the INT 3Fh handler main installs (07C8:008F): it chains to the INT 3Fh vector saved at
+; DGROUP:FC08 (E07C8.C:125), and when EOB.EXE is not accessible it re-finds and reopens EOB.EXE
+; through 1C0E:1310 with the runtime's _open.
 ; Placeholder DGROUP names mark the mouse state whose exact role is inferred from this code only.
 
         .MODEL  LARGE
@@ -30,7 +30,9 @@
         .DATA
         EXTRN   g80A2:DWORD             ; @ ds:80A2: indirect far function, no arguments
         EXTRN   g80AA:DWORD             ; @ ds:80AA: indirect far function, called with ds:8172/8174
-        EXTRN   g80EC:BYTE              ; @ ds:80EC: compared with 2 before the position update
+        EXTRN   g80EC:BYTE              ; @ ds:80EC: game state, 0/1/2 (E1AAD.ASM:20); the handler
+        ;                                              compares it with 2 and skips the position
+        ;                                              update when it is 2 (1A72:0212)
         EXTRN   g8104:DWORD             ; @ ds:8104: the fatal file error handler (E1C0E.C:66),
         ;                                              called as (2, name) on the two give-up exits
         EXTRN   g8111:DWORD             ; @ ds:8111: the retry file error handler (E1C0E.C:67),
@@ -59,12 +61,18 @@
         EXTRN   _gCursorY:WORD              ; @ ds:813A: mouse y in pixels (set to the middle on
         ;                                              init); the handler rewrites it under the same
         ;                                              conditions as x
-        EXTRN   g813C:WORD              ; @ ds:813C: x of the event just handled
-        EXTRN   g813E:WORD              ; @ ds:813E: y of the event just handled
+        EXTRN   g813C:WORD              ; @ ds:813C: x of the event just handled, after the 640 wide
+        ;                                              halving and the 13Fh clamp (1A72:0193-019B);
+        ;                                              the keyboard glue queues it and g813E
+        ;                                              (E1AAD.ASM:1228 and :1232)
+        EXTRN   g813E:WORD              ; @ ds:813E: y of the event just handled; the keyboard glue
+        ;                                              queues it after g813C (E1AAD.ASM:1232)
         EXTRN   g8144:WORD              ; @ ds:8144: 1 when the x that function 3 reads after the
         ;                                              reset is not 0A0h, which InitMouse reads as a
         ;                                              640 wide mode [H]
-        EXTRN   _gHideDepth:WORD              ; @ ds:8146: nonzero suppresses the pointer redraw;
+        EXTRN   _gHideDepth:WORD              ; @ ds:8146: hide count; the pointer is drawn only at
+        ;                                              zero. HidePointer adds one (1BBE:00E0) and
+        ;                                              ShowPointer takes one away (1BBE:00FF);
         ;                                              InitMouse sets it to 1, so the pointer starts
         ;                                              hidden until ShowPointer runs
         EXTRN   gMouseHandlerInstalled:WORD              ; @ ds:8148: records that the mouse driver
@@ -83,34 +91,42 @@
         ;                                              (E1C00.ASM:298); many units test it (E07A9,
         ;                                              E0ACD, E0BD2, E0D1C, E14EF, E16A5, E1547,
         ;                                              EOV3, EOV5); HidePointer and ShowPointer do
-        ;                                              nothing when it is set (E1BBE.ASM:111, :205)
+        ;                                              nothing when it is set (the tests at
+        ;                                              1BBE:0006 and 1BBE:00F1, E1BBE.ASM:119, :213)
         EXTRN   g814E:WORD              ; @ ds:814E: screen width minus 1, 13Fh; the handler clamps
         ;                                              with the literal 13Fh, not with this variable
         EXTRN   g8152:WORD              ; @ ds:8152: screen height minus 1, 0C7h (set at
         ;                                              1A72:0104); this unit never reads it: the
         ;                                              handler clamps no y at all
         EXTRN   _gDrawnX:WORD              ; @ ds:815C: the position the pointer was last drawn at,
-        ;                                              copied by ShowPointer (E1BBE.ASM:217-218)
+        ;                                              copied by ShowPointer (1BBE:0111-0114,
+        ;                                              E1BBE.ASM:222-223)
         EXTRN   _gDrawnY:WORD              ; @ ds:815E: the position the pointer was last drawn at,
-        ;                                              copied by ShowPointer (E1BBE.ASM:222-223)
+        ;                                              copied by ShowPointer (1BBE:0121-0124,
+        ;                                              E1BBE.ASM:227-228)
         EXTRN   _gPointerState:WORD              ; @ ds:8160: pointer state bits: 8000h the pointer
         ;                                              is hidden over the hide zone, 4000h a redraw
         ;                                              is requested, low byte a counter (E1BBE.ASM)
         EXTRN   _gZoneLeft:WORD              ; @ ds:8162: hide zone, left in pixels, stored reduced
-        ;                                              (the argument less the pointer width,
-        ;                                              E1BBE.ASM:345, store at :333-334); the QUIRK
-        ;                                              at 1A72:0244 skips the check
+        ;                                              (the argument less the pointer width, the
+        ;                                              store at 1BBE:0234 and the reduction at
+        ;                                              1BBE:025B, E1BBE.ASM:341 and :353); the
+        ;                                              QUIRK at 1A72:0244 skips the check
         EXTRN   _gZoneTop:WORD              ; @ ds:8164: hide zone, top in pixels, stored reduced
-        ;                                              (the argument less the pointer height,
-        ;                                              E1BBE.ASM:352, store at :333-334)
-        EXTRN   _gZoneRight:WORD              ; @ ds:8166: hide zone, right in pixels
-        EXTRN   _gZoneBottom:WORD              ; @ ds:8168: hide zone, bottom in pixels
+        ;                                              (the argument less the pointer height, the
+        ;                                              store at 1BBE:0238 and the reduction at
+        ;                                              1BBE:0272, E1BBE.ASM:342 and :360)
+        EXTRN   _gZoneRight:WORD              ; @ ds:8166: hide zone, right in pixels, stored as
+        ;                                              given (1BBE:023C, E1BBE.ASM:343)
+        EXTRN   _gZoneBottom:WORD              ; @ ds:8168: hide zone, bottom in pixels, stored as
+        ;                                              given (1BBE:0240, E1BBE.ASM:344)
         EXTRN   g8172:WORD              ; @ ds:8172: far pointer handed to DGROUP:80AA as its
-        ;                                              argument, offset (E1BBE.ASM:63), the far
-        ;                                              pointer SetFarPointer stores, GetFarPointer
-        ;                                              reads; 17A6 points it at its 16-byte save
-        ;                                              buffer (E17A6.ASM:95, calls at :283, :356)
-        EXTRN   g8174:WORD              ; @ ds:8174: the same far pointer, segment (E1BBE.ASM:64)
+        ;                                              argument, offset (declared at E1BBE.ASM:68),
+        ;                                              the far pointer SetFarPointer stores,
+        ;                                              GetFarPointer reads; 17A6 points it at its
+        ;                                              16-byte save buffer (E17A6.ASM:95, calls at
+        ;                                              :283, :356)
+        EXTRN   g8174:WORD              ; @ ds:8174: the same far pointer, segment (E1BBE.ASM:69)
         EXTRN   g8026:WORD              ; @ ds:8026: scratch copy of gDrawnX made by IsMouseInRect
         EXTRN   g8028:WORD              ; @ ds:8028: scratch copy of gDrawnY made by IsMouseInRect
         EXTRN   gFC08:DWORD             ; @ ds:FC08: previous INT 3Fh vector, chained by 1A72:0006
@@ -437,14 +453,14 @@ L02A4:  pop     bp
 _RemoveMouseHandler ENDP
 
 ; 1A72:02A6: 1 when the position the pointer was last drawn at (DGROUP:815C/815E, the copy
-; ShowPointer makes of the mouse position at E1BBE.ASM:217-218, :222-223, so it is where the
-; pointer sits after a show)
+; ShowPointer makes of the mouse position at 1BBE:0111-0114 and 1BBE:0121-0124, E1BBE.ASM:222-223
+; and :227-228, so it is where the pointer sits after a show)
 ; lies inside the rectangle [bp+6, bp+0Ah] x [bp+8, bp+0Ch]
 ; inclusive, 0 otherwise. It spins at 1A72:02B9 while the busy flag at DGROUP:812E is set, takes the
 ; flag, copies the drawn position through DGROUP:8026/8028, tests it and releases the flag.
 ; Arguments are x1, y1, x2, y2 words; the only caller in src/ is CheckMemberSlotRect
-; (122E:0847, E122E.C:518); the overlay code also reaches it from overlay 0 at 207A and overlay 1
-; at 1551 [H] (no source for those yet).
+; (122E:0847, the call in E122E.C, extern at :195); the overlay code also reaches it from overlay 0
+; at 207A and overlay 1 at 1551 [H] (no source for those yet).
         PUBLIC  _IsMouseInRect            ; @ 1A72:02A6
 _IsMouseInRect PROC FAR
         push    bp
@@ -502,8 +518,10 @@ _DisableInterrupts ENDP
 
 ; 1A72:02FE: point the far pointer at DGROUP:8172/8174 at the offset in [bp+6] and the segment in
 ; [bp+8]. When the old segment was nonzero it copies 16 bytes from the old target to the new one,
-; with interrupts disabled around the whole sequence. Called from the 17A6 unit at 0459 with
-; CS:0304 and at 050D with the buffer whose pointer 17A6:0446 saved through 033A.
+; with interrupts disabled around the whole sequence (`cli` at 1A72:0313); it ends with an
+; unconditional `sti` (1A72:0330), so a caller that enters with interrupts off returns with them on.
+; Called from the 17A6 unit at 0459 with CS:0304 and at 050D with the buffer whose pointer 17A6:0446
+; saved through 033A.
         PUBLIC  _SetFarPointer          ; @ 1A72:02FE
 _SetFarPointer PROC FAR
         push    bp
@@ -543,8 +561,9 @@ L0330:  sti
 _SetFarPointer ENDP
 
 ; 1A72:033A: return the far pointer at DGROUP:8172/8174 in DX:AX, with interrupts disabled only
-; around the two loads. Called from the 17A6 unit at 0446, which saves the result and passes
-; CS:0304 to 02FE.
+; around the two loads (`cli` at 1A72:0343). It ends with an unconditional `sti` (1A72:034B), so a
+; caller that enters with interrupts off returns with them on. Called from the 17A6 unit at 0446,
+; which saves the result and passes CS:0304 to 02FE.
         PUBLIC  _GetFarPointer          ; @ 1A72:033A
 _GetFarPointer PROC FAR
         push    bp
