@@ -1,6 +1,10 @@
-/* Overlay 3 of EOB.EXE (6961 bytes, 23 functions). Purpose unknown at this point: the unit owns the
-   wall set loader (ovl3:004F), the free list at ds:EFD4, the map/level screen setup and the table of
-   0x34-byte records at ds:E06A. Placeholder names. */
+/* Overlay 3 of EOB.EXE (6961 bytes, 23 functions, the map and level overlay). It loads a wall set
+   .DAT (ovl3:004F), slices map icon cells (ovl3:03A2, 0624, 069E, 0718), builds the ds:B899 item
+   list (ovl3:0951), loads and unpacks a level state from LEVELS.TMP (ovl3:09AA, 109D, 1147) and
+   packs and saves it (ovl3:0FD1, 11AF), ages and advances the character timers (ovl3:123D, 12F1)
+   and resets the level (ovl3:19F7). The entry at 210C:0039 (ovl3:15B9) loads a saved game. 17 of
+   the 23 functions are decompiled to L2, ovl3:03A2 is a blocked draft, and 01C8, 07A5, 0A7C,
+   1368, 15B9 are stubs. Placeholder names where no evidence. */
 
 /*@flags -ml -O -Z */
 
