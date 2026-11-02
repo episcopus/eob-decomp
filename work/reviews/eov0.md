@@ -25,44 +25,55 @@ toggles and confirm keys (EOV0.C:1485-1505), the Ovl0_1ADD and PickAlignment cal
 (E0A72.C:180, :206, :231, :263; E082C.C:65). All fixed right in substance: the ticks stay. The round 1 items that
 were only about citations are covered by the round 2 should items below.
 
-- [ ] must-fix src/EOV0.C:1083-1084 (RollCharacterStats): "when the strength roll is exactly 18 the low byte gets a
+- [x] must-fix src/EOV0.C:1083-1084 (RollCharacterStats): "when the strength roll is exactly 18 the low byte gets a
   percentile roll (1d100) ORed into its high half". The code is `scores[0] |= RollDice(1, 0x64, 0) << 8`
   (src/EOV0.C:1102-1103): the roll goes into the high byte of the word, and the low byte (the strength, m0D) stays
   0x12. The high byte is the percentile m0F (src/EOV0.C:1107-1108). Say the high byte gets the 1d100 roll (ORed in)
-  and the low byte stays 18. This line was changed in 4ac62b0 and still names the wrong byte.
-- [ ] should src/EOV0.C:103-104: the cites `src/EOV0.C:896` and `src/EOV0.C:898` are stale; the MaxHitPoints and
+  and the low byte stays 18. This line was changed in 4ac62b0 and still names the wrong byte. (fixed cd1070f: the
+  sentence now says the 1d100 percentile roll is ORed into the high byte and the low byte stays 18.)
+- [x] should src/EOV0.C:103-104: the cites `src/EOV0.C:896` and `src/EOV0.C:898` are stale; the MaxHitPoints and
   MinHitPoints calls are now at EOV0.C:902 and 904 (and 992, 994). `src/E08E6.C:784, :823` are stale: the 0/1 flag
   uses are E08E6.C:766 (`gF518 = gDD10 = 0`) and :805 (`gDD10 = 1`). The claims hold. Replace the line numbers
   with addresses (ovl0:135D for the writes, 08E6:xxxx for the flag uses, as the owner of E08E6.C gives them).
-- [ ] should src/EOV0.C:175: the cite `src/E16A5.C:130` is stale; the declaration with the same meaning is now
+  (fixed cd1070f: both comments now cite ovl0:135D and 0A72:02B3/0A72:03A4 for the writes, and 08E6:0E48,
+  08E6:0FBE for the flag uses.)
+- [x] should src/EOV0.C:175: the cite `src/E16A5.C:130` is stale; the declaration with the same meaning is now
   src/E16A5.C:132 (its writers are at :283 and :300). The meaning holds. Use the address of the list walk instead
-  of the line.
-- [ ] should src/EOV0.C:57: the cite `(src/EOV0.C:1368)` for `index00` is stale; `rec->index00 = i` is now at
-  src/EOV0.C:1379 (ovl0:26C6).
-- [ ] should src/EOV0.C:118: `(src/EOV0.C:1329-1330)` for the 0x2c cells is stale; the loop is at src/EOV0.C:1340-1341.
-- [ ] should src/EOV0.C:119: `(src/EOV0.C:1476-1490)` for the gDCB0 toggles is stale; the toggles are at
-  src/EOV0.C:1485-1491 (RunCharacterPanel starts at 1466).
-- [ ] should src/EOV0.C:634: `CreateCharacter (src/EOV0.C:1305)` is stale; the `Ovl0_0DDC()` call is at
-  src/EOV0.C:1315 (1305 is the PickClass step). The caller claim holds.
-- [ ] should src/EOV0.C:862-863 (EditStatField): `(src/EOV0.C:893)` for the read of `*percent` is stale (the read,
+  of the line. (fixed cd1070f: the comment cites 16A5:00BD, the DispatchNodeEvent walk, and ovl0:042F for the set.)
+- [x] should src/EOV0.C:57: the cite `(src/EOV0.C:1368)` for `index00` is stale; `rec->index00 = i` is now at
+  src/EOV0.C:1379 (ovl0:26C6). (fixed cd1070f: the comment cites only the address ovl0:26C6.)
+- [x] should src/EOV0.C:118: `(src/EOV0.C:1329-1330)` for the 0x2c cells is stale; the loop is at src/EOV0.C:1340-1341.
+  (fixed cd1070f: the comment cites ovl0:2547.)
+- [x] should src/EOV0.C:119: `(src/EOV0.C:1476-1490)` for the gDCB0 toggles is stale; the toggles are at
+  src/EOV0.C:1485-1491 (RunCharacterPanel starts at 1466). (fixed cd1070f: the comment cites ovl0:28F9.)
+- [x] should src/EOV0.C:634: `CreateCharacter (src/EOV0.C:1305)` is stale; the `Ovl0_0DDC()` call is at
+  src/EOV0.C:1315 (1305 is the PickClass step). The caller claim holds. (fixed cd1070f: the comment cites
+  ovl0:23EC.)
+- [x] should src/EOV0.C:862-863 (EditStatField): `(src/EOV0.C:893)` for the read of `*percent` is stale (the read,
   `count = *percent;`, is at EOV0.C:899; 893 is LockHidePointer). `(src/EOV0.C:1045-1060)` for the callers is stale;
-  they are at EOV0.C:1049-1067. The "read on every call, used only for index 0" claim is right.
-- [ ] should src/EOV0.C:870-872 (EditStatField): the index-6 description says only that it copies the value to m1C.
+  they are at EOV0.C:1049-1067. The "read on every call, used only for index 0" claim is right. (fixed cd1070f:
+  the comment cites ovl0:135D for the read and ovl0:1ADD for the callers.)
+- [x] should src/EOV0.C:870-872 (EditStatField): the index-6 description says only that it copies the value to m1C.
   The code also recomputes gDCA4 and gDD10 on entry for index 6 (src/EOV0.C:901-906), which the comment does not
-  mention. Add it.
-- [ ] should src/EOV0.C:1032-1038 (Ovl0_1ADD): line 1035 ends in "m0F;" and the next line starts a new
-  sentence, and line 1032 runs past 110 columns. Reflow the paragraph like the rest of the file.
-- [ ] should src/EOV0.C:1241 (PickAlignment "Called by ovl0:23EC for the class member."): the same unclear wording
+  mention. Add it. (fixed cd1070f: the comment now says index 6 also recomputes gDCA4/gDD10 from
+  MaxHitPoints/MinHitPoints on entry.)
+- [x] should src/EOV0.C:1032-1038 (Ovl0_1ADD): line 1035 ends in "m0F;" and the next line starts a new
+  sentence, and line 1032 runs past 110 columns. Reflow the paragraph like the rest of the file. (fixed cd1070f:
+  the paragraph is reflowed, the first line is under 110 columns, and the m0F sentence runs on into the fields
+  1..6 sentence.)
+- [x] should src/EOV0.C:1241 (PickAlignment "Called by ovl0:23EC for the class member."): the same unclear wording
   round 1 asked to fix for PickClass ("the race member"). CreateCharacter calls PickAlignment for step 2, the new
-  member's alignment pick (src/EOV0.C:1307). Say so.
-- [ ] note src/EOV0.C:491-492 (PickPartySlot): "FindSlot from slot 0x1a when the last option key was odd". gFC8A is
+  member's alignment pick (src/EOV0.C:1307). Say so. (fixed cd1070f: now "Called by ovl0:23EC (CreateCharacter)
+  for the new member's alignment pick, given its class.")
+- [x] note src/EOV0.C:491-492 (PickPartySlot): "FindSlot from slot 0x1a when the last option key was odd". gFC8A is
   the parity of the PickOption choice (src/EOV0.C:1160), not of the last key. This header line was not changed by
-  round 1; it is a note.
-- [ ] note src/EOV1.ASM:97 says g5E20 is "nonzero when the mouse moved (E16A5.C)", the same wrong meaning round 1
-  removed from src/EOV0.C:175. The EOV1 file is another unit's: route it to that owner.
-- [ ] note src/E0BD2.C:102 declares g1231 and cites "(src/E0DE8.C)", and src/E0DE8.C:119 calls it "a byte table
-  used by 0D5E". This unit cites E0BD2.C as the owner (round 1 item 51, with the packet). Not decidable from this
-  file; the E0BD2 and E0DE8 owners should agree on it.
+  round 1; it is a note. (fixed cd1070f: the header now says gFC8A is the parity of the race choice PickOption
+  returned, and the gFC8A declaration comment now matches.)
+- [ ] note routed to the EOV1 owner (not edited here): src/EOV1.ASM:97 says g5E20 is "nonzero when the mouse moved
+  (E16A5.C)", the same wrong meaning round 1 removed from src/EOV0.C:175.
+- [ ] note routed to the E0BD2 and E0DE8 owners (not decided here): src/E0BD2.C:102 declares g1231 and cites
+  "(src/E0DE8.C)", and src/E0DE8.C:119 calls it "a byte table used by 0D5E". This unit cites E0BD2.C as the owner
+  (round 1 item 51, with the packet). The two owners should agree on it.
 
 Round 2 verdict: one must-fix (the RollCharacterStats byte, a wrong claim in a changed line). Nothing escalated: no
 matcher, spec or pin question. `make match FILE=src/EOV0.C` 35 of 35 (10873 bytes, the "not complete" line is the
@@ -110,7 +121,7 @@ Fixed by commit 4ac62b0 (comment and name changes only; `make match FILE=src/EOV
 - [x] should src/EOV0.C:4: the header says the unit shows "the status/rest screens". Nothing in this unit draws a rest screen; it draws the party-status report (DrawPartyStatus, src/EOV0.C:375-395) and the report lines. Name what it does. (fixed 4ac62b0: the header now names the party-status report and the report lines.)
 - [x] should src/EOV0.C:103: type conflict on `ds:DCA4`. This unit declares it `int` and EditStatField writes hit points into it (src/EOV0.C:896). src/E0DE8.C:132 declares the same byte as `char` ("the object acting this step, set by 0359"), and E0DE8.C:342 sets it to a target. The two units give the byte different meanings. Not decidable from this file; the owner of E0DE8.C should say which unit's use is the right one. (fixed 4ac62b0: the comment now records both meanings and leaves the decision to E0DE8.C; this unit keeps `int` because it stores a MaxHitPoints result.)
 - [ ] note src/EOV0.C:21: `g3A0` (0000:03A0) is described as "a flag in the resident segment (Purpose unknown)". That is fine as a placeholder. The address is outside this unit's overlay; the next reader should not look for it in the overlay buffers.
-- [ ] note build/packets/eov0.md "Globals src/ already names" lists `ds:8082` as `x`, while the file names it `gFn8082` (src/EOV0.C:16) and src/EOV3.C:36 uses the same name. This is a symbol-table name, not a source problem; `make rename` can settle it.
+- [ ] note routed to the tools owner (agent tools are not on this branch): build/packets/eov0.md "Globals src/ already names" lists `ds:8082` as `x`, while the file names it `gFn8082` (src/EOV0.C:16) and src/EOV3.C:37, src/EOV5.C:171 use the same name. `make rename` cannot settle it: tools/agent/packet.py:109 (`known_names`) reads the first word before `(`/`[`/`;`/`=`/`,` on each annotated line, and the function-pointer declaration `void far * (far *gFn8082)(int x, ...)` yields the parameter `x`; the registry is not consulted. Same cause as the e07c8 packet note (tooling).
 - [ ] note `make match FILE=src/EOV0.C` prints "unit eov0 not complete" even when all 35 functions match and the packet says `complete = True`. tools/match/cmatch.py:619-620 requires `ovl is None`, so an overlay unit can never print "complete" there. `make review-pass` checks completeness with tools/agent/common.unit_complete, not this line, so it is not blocked by it. Human to decide whether the wording should change.
 - [ ] note the functions whose behaviour is clear from the code and read well: DrawPanelIcon's mode and row logic (src/EOV0.C:285-290), FindSlot (src/EOV0.C:592-596), InitRowNode (src/EOV0.C:330-333), and Ovl0_1224's frame stepping (src/EOV0.C:829-834). Their names and address comments agree with the code.
 
@@ -130,3 +141,9 @@ printing quirk for overlay units (see the note above), not a unit fault.
 Round 1 fixes: commit 4ac62b0 ticks all 20 must-fix items and every should item except the two
 notes left for other owners. Comment-only: no code changed, `make match FILE=src/EOV0.C` still 35 of
 35 and `make readability UNIT=eov0` still 0 findings.
+
+Round 2 fixes: commit cd1070f ticks the one must-fix and every should item, plus the in-file note
+(PickPartySlot `gFC8A`). Comment-only: no code changed, `make match FILE=src/EOV0.C` 35 of 35 and
+`make readability UNIT=eov0` 0 findings. The two notes for other owners (EOV1.ASM:97, the
+E0BD2/E0DE8 g1231 owner) stay routed; the `ds:8082 x` packet note is routed to the tools owner (it
+is the packet parser at tools/agent/packet.py:109, not this unit's source).
