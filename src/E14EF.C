@@ -1,16 +1,17 @@
-/* Unit at EOB.EXE 14EF:0007 (1410 bytes, 6 functions): the shared option-list panel the overlays
-   show for the in-game menus. A panel is a 16-byte record at ds:017F (the array size is not
+/* Unit at EOB.EXE 14EF:0007 (1410 bytes, 6 functions): the shared option list the overlays show for
+   the in-game menus. A panel record is a 16-byte record at ds:017F (the array size is not
    established) giving its x and y offsets from the origin ds:FE64/ds:FE66, its width in characters
-   and height in lines, the selected row and two colours. The caller passes the array of far strings
-   to show, a 32-bit mask of the selectable entries and a shift for that mask. FindMaskBit
+   and height in lines, the selected row and two colours; the list is drawn from that record. The
+   caller passes the array of far strings to show, a 32-bit mask of the selectable entries and a
+   shift for that mask. FindMaskBit
    (14EF:0007) returns the index, counted from shift, of the n-th selectable entry; CountMaskBits (14EF:0107) counts the set bits of
    a range; IsPointInRect (14EF:00E1) is the point-in-rectangle test; BlinkText (14EF:0078) flashes
    one entry between two colours; DrawOptionList (14EF:0154) lays the list out and draws it;
    UpdateOptionList (14EF:0274) reads a key or a click and moves the selection. The 16-byte stride
-   and field offsets come from DrawOptionList (14EF:0154), which reads y at :184, x at :185, sel at
-   :186, height at :187, colorA at :192 and colorB at :194, and from UpdateOptionList (14EF:0274),
-   which reads height at :263, sel at :264, y at :268, x at :269, colorA at :270, colorB at :271 and
-   width at :278. The mask and shift come from the callers. PickOption (src/EOV0.C:1148, :1149) and
+   and field offsets come from DrawOptionList (14EF:0154), which reads y at :194, x at :195, sel at
+   :196, height at :197, colorA at :202 and colorB at :204, and from UpdateOptionList (14EF:0274),
+   which reads height at :273, sel at :274, y at :278, x at :279, colorA at :280, colorB at :281 and
+   width at :288. The mask and shift come from the callers. PickOption (src/EOV0.C:1148, :1149) and
    LoadGamePanel (src/EOV2.C:380, :383) pass the all-ones mask 0xffffffff with shift 0, the case FindMaskBit
    returns n for at once; PickClass (src/EOV0.C:1203, :1215) and PickAlignment (src/EOV0.C:1253,
    :1257) pass gTable6081[race] & mask and gTable6099[classIndex] & mask with shift 0, masks other
@@ -30,9 +31,9 @@
    through and the failure is taken, matching 14EF:0417 `je`; the negated form made the optimizer
    branch the other way. Same class as 0ACD:091C. */
 
-struct Panel {                  /* 16-byte records at ds:017F */
+struct Panel {                  /* the panel record the option list is drawn from; 16-byte records at ds:017F */
     int x;                      /* +0: column offset from ds:FE64; eight-pixel cells in both draw loops
-                                   (<< 3 at :185 and :269); the hit rectangle uses the font width (:276) */
+                                   (<< 3 at :195 and :279); the hit rectangle uses the font width (:286) */
     int y;                      /* +2: row offset from ds:FE66 */
     int width;                  /* +4: width in characters */
     int height;                 /* +6: height in lines */
@@ -43,9 +44,9 @@ struct Panel {                  /* 16-byte records at ds:017F */
 };
 
 extern struct Panel gPanels[]; /*@ ds:017F */
-/* the panel area's top-left corner: x is in 8-pixel columns (<< 3 at :185, :269 and :276,
-   src/E1C0E.C:60), y in pixels; the panel's x is eight-pixel cells in both draw loops (:185, :269)
-   and font-width units in the hit rectangle (:276) */
+/* the text window's top-left corner (src/E1C0E.C:60-61, src/E1DE7.C:34): x is in 8-pixel columns
+   (<< 3 at :195, :279 and :286), y in pixels; the panel's x is eight-pixel cells in both draw loops
+   (:195, :279) and font-width units in the hit rectangle (:286) */
 extern int gTextLeft; /*@ ds:FE64 */
 extern int gTextTop; /*@ ds:FE66 */
 extern int gFC78; /*@ ds:FC78: extra pixels between lines, written by DrawOptionList, read by UpdateOptionList */
@@ -53,32 +54,38 @@ extern int gFC7A; /*@ ds:FC7A: the key UpdateOptionList did not handle; its read
                      (src/EOV0.C:1259, :1261), which tests it for 0x6e/0x32 and 0x41/0x42 before
                      IsPointInRect on the last click g8140/g8142 (:1262) */
 extern int g5D1A; /*@ ds:5D1A: nonzero lets the pointer position pick the entry in UpdateOptionList and
-                      makes DrawOptionList draw the selected row in colorB (:193-194) */
+                      makes DrawOptionList draw the selected row in colorB (:203-204) */
 extern int g8140; /*@ ds:8140: x of the last click; the click event writes it (src/E1AAD.ASM:396) and
-                      src/EOV0.C:1204 clears it; tested against a panel rectangle by UpdateOptionList (:306),
+                      src/EOV0.C:1204 clears it; tested against a panel rectangle by UpdateOptionList (:316),
                       PickAlignment (src/EOV0.C:1262) and the wrapper src/E082C.C:465, and read into
                       gHitX by src/E16A5.C:224, :240 */
 extern int g8142; /*@ ds:8142: y of the last click; the click event writes it (src/E1AAD.ASM:405) and
-                      src/EOV0.C:1204 clears it; same readers as g8140 (:307, src/E16A5.C:225, :241) */
+                      src/EOV0.C:1204 clears it; same readers as g8140 (:317, src/E16A5.C:225, :241) */
 extern char gFontWidth; /*@ ds:8100: font cell width; src/E1A47.C declares it unsigned char, but
                             unsigned char here fails make match, so this file keeps char */
 extern char gFontHeight; /*@ ds:8101: font cell height; src/E1A47.C declares it unsigned char (same) */
-extern int g8102; /*@ ds:8102: a zero here makes the normal text colour 1 (:192, :270); what it means
+extern int g8102; /*@ ds:8102: a zero here makes the normal text colour 1 (:202, :280); what it means
                       is not established (src/E07C8.C:30 calls it the graphics choice, src/E1C0E.C:59
                       the video mode the game initialised) */
 extern int gMouseDisabled; /*@ ds:814A: nonzero disables the mouse: the INT 33h handler at 1A72:017A
                               returns at once, and InitMouse sets it to 1 before it installs the
-                              handler (1A72:0150, src/E1A72.ASM:100; store at src/E1A72.ASM:315) */
-extern int gCursorX; /*@ ds:8138: mouse x in pixels (src/E1A72.ASM:65); tested with the pixel rectangle (:282) */
+                              handler (1A72:0150, src/E1A72.ASM:100; the store is src/E1A72.ASM:316,
+                              the line after the gMouseHandlerInstalled store at :315) */
+extern int gCursorX; /*@ ds:8138: mouse x in pixels (src/E1A72.ASM:65); tested with the pixel rectangle (:292) */
 extern int gCursorY; /*@ ds:813A: mouse y in pixels (src/E1A72.ASM:73) */
 extern int g8134; /*@ ds:8134: accumulated button changes; the INT 33h handler folds each change into
-                      it (or ax,[g8134]; mov [g8134],ax, src/E1A72.ASM:400-401), this file clears it
-                      (:199) and RunMapLoop clears it after the map screen is entered (src/E0ACD.C:886) */
+                      it (or ax,[g8134] at src/E1A72.ASM:401; mov [g8134],ax at :402), this file clears
+                      it (:209) and RunMapLoop clears it after the map screen is entered (src/E0ACD.C:886) */
 extern void (far *gDrawText)(char far *text, int x, int y, int color, int extra); /*@ ds:80CA */
 
 extern void DrawShadowText(char far *text, int x, int y, int color, int extra); /*@ 082C:0898 */
-extern void LockHidePointer(void); /*@ 1BBE:0307: start a frame (redraws through the mouse callbacks) */
-extern void LockShowPointer(void); /*@ 1BBE:0332: end a frame */
+/* 1BBE:0307: hide the pointer inside a frame. It waits for the pointer busy flag ds:812E to be free
+   and takes it (1BBE:030A), calls the far hook [ds:80AA] with the pointer at ds:8172/8174, calls
+   HidePointer, calls the far hook [ds:80A2], then releases the flag (src/E1BBE.ASM:489-499). The
+   callers call the pair a frame bracket; the two hooks' role is Purpose unknown, src/ names them only
+   as "far fn (g8172/g8174)" and "far fn (no arguments)" (src/E1BBE.ASM:123-124, src/E1A72.ASM:32-33) */
+extern void LockHidePointer(void); /*@ 1BBE:0307 */
+extern void LockShowPointer(void); /*@ 1BBE:0332: the same bracket around ShowPointer (src/E1BBE.ASM:512-522) */
 extern int IsKeyPending(void); /*@ 1AAD:0471: nonzero when an event waits in the ring (src/E1AAD.ASM:337-338) */
 extern void FlushKeyBuffer(void); /*@ 1AAD:0480: discard every buffered event (src/E1AAD.ASM:350-351) */
 extern int WaitKeyEvent(void); /*@ 1AAD:05D3: read a key; returned unfiltered, the callers mask with
@@ -109,8 +116,11 @@ extern void WaitFrames(int n); /*@ 1A16:000B */
 
 /* 14EF:0078: blink one entry between its normal colour and its selected colour: three times, draw it
    with colorB, wait two frames, draw it with colorA, wait two frames, redrawing only inside the
-   frame begun by 1BBE:0307 and ended by 1BBE:0332. Called by UpdateOptionList on the entry just
-   chosen, so this is the "confirm" flash. */
+   frame begun by 1BBE:0307 and ended by 1BBE:0332. `text` is the far string to draw, `x` and `y` its
+   pixel position, `colorA` the normal colour and `colorB` the selected colour. `extra` is passed as
+   the fifth argument of gDrawText; what it means is not established, and the one caller,
+   UpdateOptionList (:346), always passes 0. Called on the entry just chosen, so this is the
+   "confirm" flash. */
 /*@ 14EF:0078 */ void BlinkText(char far *text, int x, int y, char colorA, char colorB, char extra)
 {
     int i;
@@ -205,7 +215,7 @@ extern void WaitFrames(int n); /*@ 1A16:000B */
    1AAD:048D stores the click into ds:8140/ds:8142. */
 enum {
     KEY_CODE_MASK = 0x8ff,      /* the callers' filter: bits 0-7 and bit 11 of the key word */
-    KEY_CONFIRM   = 0x2B,       /* confirm: the row is picked (:316) */
+    KEY_CONFIRM   = 0x2B,       /* confirm: the row is picked (:326) */
     KEY_CONFIRM2  = 0x3D,       /* second confirm code */
     KEY_CONFIRM3  = 0x61,       /* third confirm code */
     KEY_CLICK     = 0x41,       /* mouse button 0 changed (1AAD:0B0E; INT 33h left [H]) */
@@ -224,11 +234,11 @@ enum {
    caller's array of far strings, `mask`/`shift` map a row to a bit of the selectable-entry mask.
    Returns the index of the confirmed string in `names` (FindMaskBit of the chosen row), -1 when
    nothing was confirmed; stores the key it did not handle in ds:FC7A. `picked` holds the selectable
-   row at first (:308, :316) and then, for the return, the string index (:338, with the comment at
+   row at first (:318, :326) and then, for the return, the string index (:348, with the comment at
    the assignment). The mouse goes through the rectangle built from ds:FE64/ds:FE66, ds:8100/8101
    (the font width and height) and ds:FC78 against the last click (ds:8140/8142) and the current
    cursor (ds:8138/813A), when ds:5D1A lets the pointer pick and the mouse is enabled
-   (!gMouseDisabled, :280). The rectangle uses the font width, so it agrees with DrawOptionList's
+   (!gMouseDisabled, :290). The rectangle uses the font width, so it agrees with DrawOptionList's
    eight-pixel cells only while the cell is eight pixels wide. `counter` is a placeholder: it is
    bumped once and never read; `extra` is never read. Every caller passes a long zero (0L), which
    fills the same four bytes as this int pair (src/EOV0.C:1149, :1215, :1257; src/EOV2.C:383). */

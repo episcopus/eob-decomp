@@ -21,35 +21,49 @@ a behaviour the source does not show. Those are the must-fix items; the rest are
 Each finding is a checkbox. `must-fix` blocks `make review-pass` until a decompiler ticks it off
 (with the commit that fixes it); `should` and `note` do not block.
 
-- [ ] must-fix src/E14EF.C:69-71 (gMouseDisabled): "store at src/E1A72.ASM:315" is the
+- [x] must-fix src/E14EF.C:69-71 (gMouseDisabled): "store at src/E1A72.ASM:315" is the
   `gMouseHandlerInstalled` store. `mov word ptr [gMouseDisabled],1` is src/E1A72.ASM:316 (the
   store that follows it at :315, then the INT 33h set-handler call at :320-327). The 1A72:0150
   address and the order claim ("before it installs the handler") are right. (evidence:
   `grep -n "\[gMouseDisabled\]"` src/E1A72.ASM: :316; sed 312-316 shows :315 is `[gMouseHandlerInstalled],1`)
-- [ ] must-fix src/E14EF.C:74-76 (g8134): "(or ax,[g8134]; mov [g8134],ax, src/E1A72.ASM:400-401)"
+  [fixed in e2502f9: the comment now cites the store at src/E1A72.ASM:316 and says :315 is the
+  gMouseHandlerInstalled store]
+- [x] must-fix src/E14EF.C:74-76 (g8134): "(or ax,[g8134]; mov [g8134],ax, src/E1A72.ASM:400-401)"
   points at `xor ax,bx` (:400) and the `or` (:401). The pair is `or ax,[g8134]` at src/E1A72.ASM:401
   and `mov [g8134],ax` at :402; cite 401-402. (evidence: `grep -n "\[g8134\]"` src/E1A72.ASM: :401, :402)
-- [ ] must-fix src/E14EF.C:80 (extern LockHidePointer): "start a frame (redraws through the mouse
+  [fixed in e2502f9: the comment now cites `or ax,[g8134]` at :401 and `mov [g8134],ax` at :402]
+- [x] must-fix src/E14EF.C:80 (extern LockHidePointer): "start a frame (redraws through the mouse
   callbacks)". Nothing in src/ names ds:80AA or ds:80A2 as mouse callbacks. They are "far fn" and
   "far fn (no arguments)" (src/E1BBE.ASM:115-116; src/E1A72.ASM:32-33 "indirect far function"). The
   bracket is the busy flag (1BBE:030A) then [ds:80AA](g8172, g8174), HidePointer, [ds:80A2]
   (src/E1BBE.ASM:464-489), and the "start a frame" name is the callers' word (src/E1BBE.ASM:465-466).
   Say what the bracket does, and mark the hooks' role Purpose unknown (or cite where they are
   set to a redraw routine). (evidence: src/E1BBE.ASM:115-116, :464-489; src/E1A72.ASM:32-33)
-- [ ] should src/E14EF.C:110-113 and :114 (BlinkText): the comment says what the blink does but not its
+  [fixed in e2502f9: the comment now says the bracket waits for and takes the busy flag ds:812E
+  (1BBE:030A), calls [ds:80AA] with ds:8172/8174, HidePointer, [ds:80A2], then releases the flag
+  (src/E1BBE.ASM:489-499), and marks the two hooks' role Purpose unknown with the "far fn" cites
+  (src/E1BBE.ASM:123-124, src/E1A72.ASM:32-33); LockShowPointer cites its own bracket at :512-522]
+- [x] should src/E14EF.C:110-113 and :114 (BlinkText): the comment says what the blink does but not its
   parameters. `text`, `x`, `y` and `colorA`/`colorB` (normal and selected colour) are not stated, and
   `extra` is passed as the fifth argument of gDrawText (:120, :122) without a word on what it is.
   The one caller, UpdateOptionList (:336), always passes 0 (`BlinkText(names[entry], xbase, lineY,
   colorA, colorB, 0)`). Name what it is or say "not established; always 0 from UpdateOptionList", as
   `extra` is said to be in UpdateOptionList. (evidence: src/E14EF.C:336, :120-124)
-- [ ] should src/E14EF.C:46-49 (gTextLeft, gTextTop): the comment calls them "the panel area's top-left
+  [fixed in e2502f9: the comment now names text, x, y, colorA (normal) and colorB (selected), and
+  says `extra` is the fifth gDrawText argument, not established, always 0 from UpdateOptionList (:346)]
+- [x] should src/E14EF.C:46-49 (gTextLeft, gTextTop): the comment calls them "the panel area's top-left
   corner", while src/E1C0E.C:60-61 says "the text window's left edge, 8-pixel columns" and "the text
   window's top edge, pixel rows", and src/E1DE7.C:34 says "the window's left edge". The panel's x and y
   are offsets from these, so say "the text window's top-left corner (E1C0E.C:60-61)". (evidence: src/E1C0E.C:60-61;
   src/E1DE7.C:34)
-- [ ] should src/E14EF.C:1-20 (header) and :33 (struct comment) wording: "panel" is used both for the
+  [fixed in e2502f9: the comment now says "the text window's top-left corner (src/E1C0E.C:60-61,
+  src/E1DE7.C:34)"]
+- [x] should src/E14EF.C:1-20 (header) and :33 (struct comment) wording: "panel" is used both for the
   16-byte record (gPanels, :33) and for the list drawn from it and the screen area. Pick one for the
   record and say the list is its drawing. This is wording only.
+  [fixed in e2502f9: the header now says "the shared option list" and "a panel record is a 16-byte
+  record ...; the list is drawn from that record"; the struct comment says "the panel record the
+  option list is drawn from"]
 - [ ] note src/E16A5.C:62 (`IsKeyPending` comment, another unit): "nonzero when a key is waiting; same as
   E14EF.C". This file says "nonzero when an event waits in the ring" (:82, the callee comment at
   src/E1AAD.ASM:337-338). Routed to the E16A5 owner; not edited here.
