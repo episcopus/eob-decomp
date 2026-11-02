@@ -46,6 +46,16 @@ struct Entry27 {            /* 27-byte records at ds:1A3B, indexed by Obj28.b0 (
     char pad19[0x1B - 0x19];
 };
 
+struct CharRec {            /* 243-byte character records at ds:F580; the fields this unit reads */
+    char pad00[0x1D];
+    signed char m1D;        /* +0x1D */
+    char pad1E[0xE3 - 0x1E];
+    int mE3;                /* +0xE3 */
+    char padE5[0xF3 - 0xE5];
+};
+
+extern struct CharRec gChars[]; /*@ ds:F580 */
+
 extern struct Obj28 gObjs[]; /*@ ds:8A82 */
 extern signed char gArg3237[]; /*@ ds:3237 */
 extern signed char gArg3234[]; /*@ ds:3234 */
@@ -69,6 +79,10 @@ extern char g1CE3[]; /*@ ds:1CE3 */
 extern void (far *gFn80D2)(char far *map); /*@ ds:80D2 */
 extern char g1991[]; /*@ ds:1991 */
 extern char gTable32C3[]; /*@ ds:32C3 */
+extern char gTable329B[]; /*@ ds:329B */
+extern char gTable32BB[]; /*@ ds:32BB */
+extern int gFBCC; /*@ ds:FBCC */
+extern unsigned char gFBD2; /*@ ds:FBD2 */
 extern unsigned long gDeadline; /*@ ds:F512 */   /* a 32-bit deadline at ds:F512:F514 */
 extern unsigned long g8492; /*@ ds:8492 */       /* the 32-bit tick counter (src/E0ACD.C) */
 extern int gF510; /*@ ds:F510 */
@@ -81,6 +95,9 @@ extern void f0EF3_097B(char a, int b, int c, int d, int e); /*@ 0EF3:097B */
 extern int f0BD2_089E(int n); /*@ 0BD2:089E */
 extern void f0BD2_01D0(void far *head, int key, int item, int sound); /*@ 0BD2:01D0 */
 extern int f17A6_0F61(int x, int y); /*@ 17A6:0F61 */
+extern int f0D1C_0BAB(int obj); /*@ 0D1C:0BAB */
+extern int GetIndexedByte(char index, char limit, char offset); /*@ 0A72:0006 */
+extern int SubtractInts(int minuend, int subtrahend); /*@ 0A72:058C */
 extern int far RollDice(char count, char sides, char bonus); /*@ 082C:0458 */
 extern void AddPartyExperience(int amount); /*@ 0DE8:0C2B */
 extern void f122E_1DA8(int a, int b); /*@ 122E:1DA8 */
@@ -399,7 +416,7 @@ extern void fOvl4_1F51(int n); /*@ 2116:005C */   /* overlay 4 entry, ovl4:1F51 
    0BD2:01D0 with the object's id and hit; give the party the record's m13 experience, move the
    object to id 0, shut the game down when its b0 is 0x15, and clear the type-8 objects. Called by
    0E48, 0FBE and 1410. */
-/*@ 08E6:0EC3 */ void Obj0EC3(struct Obj28 far *obj)
+/*@ 08E6:0EC3 draft */ void Obj0EC3(struct Obj28 far *obj)
 {
     int roll;
 
@@ -454,29 +471,53 @@ extern void fOvl4_1F51(int n); /*@ 2116:005C */   /* overlay 4 entry, ovl4:1F51 
         return 1;
     return g323B[obj->orient * 4 + obj->frame];
 }
-/*@ 08E6:106B stub */ void Obj106B(void) {}
+/* 08E6:106B: roll 1d20 for a hit against character `who`; a roll of 20 always hits; otherwise the
+   target's mE3 bit 9 costs 2 and gFBD2 bit 5 costs 1. The hit succeeds when the roll reaches
+   SubtractInts(the object's record m01, the character's m1D). Called by 10F3 and 0EF3:0A3F. */
+/*@ 08E6:106B draft */ int Obj106B(struct Obj28 far *obj, int who)
+{
+    int index;
+    int roll;
+    int need;
+
+    index = obj->b0;
+    roll = RollDice(1, 0x14, 0);
+    if (roll != 0x14) {
+        if (gChars[who].mE3 & 0x200)
+            roll -= 2;
+        if (gFBD2 & 0x20)
+            roll--;
+    }
+    need = SubtractInts(gTable1A3B[index].m01, gChars[who].m1D);
+    return roll >= need || roll == 0x14;
+}
 /*@ 08E6:10F3 stub */ void Obj10F3(void) {}
 /*@ 08E6:131D stub */ void Obj131D(int index) {}
 /* 08E6:1410: when the effect mode gF51B and its deadline say an effect is due, run the 122E entry
    with (0, 0x20): when no object of the 30 has a count left, run 0EC3 on the first object (from
    index 1) whose 17A6:0F61(id, gSoundVolume) is over 3; then advance the deadline by gF510 and
    clear gF540. Called by 1414:04E7 and overlay 6. */
-/*@ 08E6:1410 */ void Obj1410(void)
+/*@ 08E6:1410 draft */ void Obj1410(void)
 {
     int i, any;
 
     if (gF51B == 1) {
-        if (g8492 > gDeadline)
+        if (gDeadline >= g8492)
+            ;
+        else
             goto fire;
     }
     if (gF51B == 2) {
-        if (gF540 < gFB32)
+        if (gF540 >= gFB32)
             goto fire;
     }
-    if (gF51B != 3)
+    if (gF51B == 3) {
+        if (gF540 >= gFB32)
+            goto fire;
+        if (gDeadline >= g8492)
+            goto fire;
         return;
-    if (gF540 >= gFB32 || gDeadline >= g8492)
-        goto fire;
+    }
     return;
 fire:
     f122E_1DA8(0, 0x20);
@@ -512,14 +553,72 @@ fire:
             list[obj->frame] = i;
     }
 }
-/*@ 08E6:15B4 stub */ void Obj15B4(void) {}
-/*@ 08E6:1634 stub */ void Obj1634(void) {}
-/*@ 08E6:16D6 stub */ void Obj16D6(void) {}
+/* 08E6:15B4: list the objects with id `b`, then return list[4] when set, else the first of the four
+   indices in gTable329B + gFBCC * 8 + (a & 1) * 4 whose list entry is set, else -1. Called by
+   0DE8:0359 and 0EF3:0E1B. */
+/*@ 08E6:15B4 */ int Obj15B4(char who, int value)
+{
+    int list[6];
+    char far *row;
+    int i;
+
+    BuildObjectIdList(list, value);
+    if (list[4] != -1)
+        return list[4];
+    row = gTable329B + gFBCC * 8 + (who & 1) * 4;
+    for (i = 0; i < 4; i++, row++) {
+        if (list[*row] != -1)
+            return list[*row];
+    }
+    return -1;
+}
+/* 08E6:1634: roll RollDice(count, sides, bonus) against the object `index`: when `flag` is set and
+   a 1d20 reaches GetIndexedByte(0, gTable1A3B[b0].m02, 4), halve the roll when flag is 1, else
+   zero it; then, unless 0D1C:0BAB rejects the object, damage it by the roll. Called by 16D6. */
+/*@ 08E6:1634 */ void Obj1634(char index, char count, char sides, char bonus, char flag)
+{
+    int roll;
+    int cls;
+    int save;
+
+    cls = gTable1A3B[gObjs[index].b0].m02;
+    roll = RollDice(count, sides, bonus);
+    if (flag != 0) {
+        save = GetIndexedByte(0, cls, 4);
+        if (RollDice(1, 0x14, 0) >= save) {
+            if (flag == 1)
+                roll >>= 1;
+            else
+                roll = 0;
+        }
+    }
+    if (f0D1C_0BAB(index) == 0)
+        DamageObject(&gObjs[index], roll);
+}
+/* 08E6:16D6: list the objects with id `key`, mark gF518, damage list[4] and then the two indices
+   in gTable32BB + gFBCC * 2 through 1634, and run the 0E48 cleanup. Called by 0EF3:0F99. */
+/*@ 08E6:16D6 */ void Obj16D6(int key, char count, char sides, char bonus, char flag)
+{
+    int list[6];
+    char far *row;
+    int i;
+
+    BuildObjectIdList(list, key);
+    gF518 = 1;
+    if (list[4] != -1)
+        Obj1634(list[4], count, sides, bonus, flag);
+    row = gTable32BB + gFBCC * 2;
+    for (i = 0; i < 2; i++, row++) {
+        if (list[*row] != -1)
+            Obj1634(list[*row], count, sides, bonus, flag);
+    }
+    Obj0E48();
+}
 /* 08E6:1775: find the object whose id is `key`: when its frame equals `b` return its index;
    otherwise scan the four bytes of gTable32C3 + a * 16 + b * 4 and remember the first (lowest) slot
    whose byte equals the object's frame and beats the current best slot. Returns -1 when none. Called
    by 17FD. Purpose unknown: what the two index arguments select. */
-/*@ 08E6:1775 */ int Obj1775(int key, int b, int a)
+/*@ 08E6:1775 */ int Obj1775(int key, int field, int flags)
 {
     char far *row;
     int best, bestSlot;
@@ -529,9 +628,9 @@ fire:
     best = -1;
     bestSlot = 5;
     for (i = 0, obj = gObjs; i < 30; i++, obj++) {
-        row = gTable32C3 + a * 16 + b * 4;
+        row = gTable32C3 + flags * 16 + field * 4;
         if (obj->id == key) {
-            if (obj->frame == b)
+            if (obj->frame == field)
                 return i;
             for (slot = 0; slot < 4; slot++) {
                 if (obj->frame == row[slot] && slot < bestSlot) {
@@ -543,7 +642,36 @@ fire:
     }
     return best;
 }
-/*@ 08E6:17FD stub */ void Obj17FD(void) {}
+/* 08E6:17FD: fill `list` with gObjs indices and end it with -1: when scanAll is set, every object
+   whose id is key; otherwise when scanFiltered is set, the single index 1775(key, field, flags)
+   finds; otherwise the first object 189D accepts for (key, field). Called by 0D1C:0A43. */
+/*@ 08E6:17FD draft */ void Obj17FD(int far *list, int key, int field, char flags, char scanAll, char scanFiltered)
+{
+    struct Obj28 far *obj;
+    int i;
+
+    if (scanAll) {
+        for (i = 0, obj = gObjs; i < 30; i++, obj++) {
+            if (obj->id == key) {
+                *list = i;
+                list++;
+            }
+        }
+    } else {
+        if (scanFiltered) {
+            *list = Obj1775(key, field, flags);
+        } else {
+            for (i = 0, obj = gObjs; i < 30; i++, obj++) {
+                if (Obj189D(obj, key, field)) {
+                    *list = i;
+                    break;
+                }
+            }
+        }
+        list++;
+    }
+    *list = -1;
+}
 /* 08E6:189D: does this object have the given key as its id and either the given field or 4 as its
    frame? Returns 1 when it does, else 0. Called by 0D1C:09CB through E1414 (which passes an object,
    an index and a selection). */
