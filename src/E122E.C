@@ -62,6 +62,7 @@ extern void ResetLevel(void); /*@ 210C:007F */  /* overlay 3 entry, ovl3:19F7 */
 extern void fOvl4_2039(void); /*@ 2116:0043 */  /* overlay 4 entry */
 extern void LoadScreenImage(char far *name, char far *extra, int srcKind, int dstKind, int mode); /*@ 082C:051B */
 extern char gText5BA1[]; /*@ ds:5BA1 */        /* the "INVENT" screen name (122E:1AAB) */
+extern unsigned char far gSheet2067[]; /*@ 2067:0000 */ /* the sheet at segment 2067 (src/E0ACD.C) */
 extern void LockHidePointer(void); /*@ 1BBE:0307 */
 extern void LockShowPointer(void); /*@ 1BBE:0332 */
 extern int gTextAttr1; /*@ ds:811D */          /* the first text attribute (src/E07C8.C) */
@@ -1053,7 +1054,7 @@ done:
    gPartyCell and the byte as gFBCC (unless 0xFF), resets and saves the level, runs ovl3:0A7C,
    loads the INVENT screen (gText5BA1) with the 0:0x2067 page, runs ovl4:2039, sets the sound volume
    and stops the script driver (gA9EC). Returns 0. */
-/*@ 122E:1AAB draft */ long LoadLevelOp(char far *script)
+/*@ 122E:1AAB */ int LoadLevelOp(char far *script)
 {
     char v1;
     char v2;
@@ -1074,7 +1075,7 @@ done:
     ResetLevel();
     SaveLevelState(gFBC8);
     Ovl3_0A7C(v1);
-    LoadScreenImage(gText5BA1, (char far *)0x2067, 5, 3, 2);
+    LoadScreenImage(gText5BA1, (char far *)gSheet2067, 5, 3, 2);
     fOvl4_2039();
     SetSoundVolume(id);
     gA9EC = 1;
