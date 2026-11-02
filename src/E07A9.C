@@ -81,10 +81,13 @@ extern char gF43C; /*@ ds:F43C */  /* written by StartupAlloc (07A9:000D, set to
                                       src/E1547.C:235-238). Purpose unknown */
 extern char gFB45; /*@ ds:FB45 */  /* written by StartupAlloc (07A9:0024, set to 0); the overlay 3
                                       LoadMapScreen sets it to 1 (src/EOV3.C:686), and the overlay 4
-                                      DrawViewFrame (ovl4:1F51, src/EOV4.C:878) tests it with video mode 3
-                                      (src/EOV4.C:883) and clears it (src/EOV4.C:890; declared "request
-                                      flag, cleared here", src/EOV4.C:857). What the request is is
-                                      Purpose unknown */
+                                      DrawViewFrame (ovl4:1F51, src/EOV4.C:1049) tests it with video mode 3
+                                      (src/EOV4.C:1054) and, when set, loads the palette gFE68 through
+                                      gFn80BA (src/EOV4.C:1060) and clears it (src/EOV4.C:1061). The
+                                      declaration is src/EOV4.C:1028 ("request flag, cleared here") and
+                                      its comment at :1045 says the same; main makes the start-up palette
+                                      call too (gFn80BA(gFE68), src/E07C8.C:182, described at :145-147).
+                                      What the request is is Purpose unknown */
 extern void far *gBuf8DCA; /*@ ds:8DCA */  /* start-up far allocation, 7500 bytes (07A9:002F); the base
                                               of the 122E action-script driver's script (declared
                                               src/E122E.C:22): JumpToScriptOffset (122E:139D,
@@ -92,10 +95,10 @@ extern void far *gBuf8DCA; /*@ ds:8DCA */  /* start-up far allocation, 7500 byte
                                               (src/E122E.C:1005, the comment at :999-1000), and
                                               PushScriptPointer (122E:1422, src/E122E.C:1034) does the
                                               same (src/E122E.C:1044, the comment at :1031-1033).
-                                              EvaluateScriptExpr (122E:147F, a draft, src/E122E.C:1056)
-                                              jumps to the base with the word offset at src/E122E.C:1217,
-                                              and RunMemberScript (122E:1DA8, src/E122E.C:1399) starts its
-                                              script walk at it (src/E122E.C:1423). Overlay
+                                              EvaluateScriptExpr (122E:147F, a draft, src/E122E.C:1058)
+                                              jumps to the base with the word offset at src/E122E.C:1232,
+                                              and RunMemberScript (122E:1DA8, src/E122E.C:1414) starts its
+                                              script walk at it (src/E122E.C:1438). Overlay
                                               3 uses it too: LoadMapScreen unpacks LEVEL<n>.INF into it
                                               (src/EOV3.C:573-574, "the 7500-byte unpacked level
                                               script", src/EOV3.C:200), reads the item records through
@@ -107,11 +110,11 @@ extern void far *gBufF43E; /*@ ds:F43E */  /* start-up far allocation, 6000 byte
                                               overlay 3 LoadMapScreen fills it from the level graphics
                                               file (src/EOV3.C:579-580, "the 6000-byte level
                                               graphics file", src/EOV3.C:201 [H]), and the overlay 4
-                                              page-buffer readers CopyViewColumn (its source
-                                              assignment at src/EOV4.C:171) and ToggleViewColumn
-                                              (source at src/EOV4.C:208, pixel read at :214) read it
-                                              as the page buffer (src/EOV4.C:155-156). Purpose
-                                              unknown */
+                                              page-buffer readers CopyViewColumn (src/EOV4.C:166, its
+                                              source assignment at :175) and ToggleViewColumn
+                                              (src/EOV4.C:203, source at :212, pixel read at :218)
+                                              read it as the page buffer (the comment at
+                                              src/EOV4.C:159). Purpose unknown */
 extern unsigned char far *gSoundMap; /*@ ds:DCAC */  /* the 120-byte sound map (game number to
                                                          driver number), read from the driver file
                                                          (adlib.dat or pcgamesn.dat, src/E177D.C:2-3) */
@@ -138,9 +141,9 @@ extern void far *gSegDCA6; /*@ ds:DCA6 */  /* the far pointer f19EC_0002(7) retu
                                               0xCB20-byte texture block through it (src/EOV3.C:471),
                                               expands and masks it (src/EOV3.C:474-478 and :482; the
                                               comment above LoadWallTextures, src/EOV3.C:454-459), and
-                                              DrawViewFrame draws from it (DrawTile(gSegDCA6), src/EOV4.C:881;
+                                              DrawViewFrame draws from it (DrawTile(gSegDCA6), src/EOV4.C:1052;
                                               declared "the far pointer DrawTile draws",
-                                              src/EOV4.C:862) */
+                                              src/EOV4.C:1033) */
 extern void far *gSegDF4E; /*@ ds:DF4E */  /* slot 5's far pointer, f19EC_0002(5) (07A9:00BA); the
                                               action screen's swap buffer: Action01E3 (src/E0ACD.C:263)
                                               blits it to the action field through gFn804A
