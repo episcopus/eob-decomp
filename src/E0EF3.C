@@ -383,7 +383,8 @@ extern void f0EF3_2A53(int scale, int spread, int count, int divisor, /*@ 0EF3:2
                        int falloff, void far *frameTable);
 extern unsigned char f1D8C_0000(void); /*@ 1D8C:0000 */ /* a 2-bit pseudo-random byte (E1D8C.ASM) */
 extern int RandomRange(int low, int high); /*@ 1AAA:0005 */
-extern int IsPointInsideRect(int x, int y, int left, int top, int right, int bottom); /*@ 082C:0613 */
+extern int IsPointInsideRect(int x, int y, int left, int top, int right, /*@ 082C:0613 */
+                             int bottom);
 extern void WaitFrame(void); /*@ 1A16:0027 */
 extern int (far *gFn8072)(int x, int y); /*@ ds:8072 */ /* saves the pixels under (x, y), returns a
                                                            handle (src/EOV5.C) */
@@ -392,7 +393,7 @@ extern void (far *gFn809E)(int x, int y, int handle); /*@ ds:809E */ /* puts a s
 extern int g579B[];              /*@ ds:579B */ /* a per-scale word bound 0EF3:2A53 clamps y to */
 extern int gEF;                  /*@ ds:00EF */ /* the view region's left, in eighths (this unit) */
 extern int gF1;                  /*@ ds:00F1 */ /* the view region's top (src/EOV4.C) */
-extern int gF3;                  /*@ ds:00F3 */ /* the view region's width, in eighths (this unit) */
+extern int gF3;                  /*@ ds:00F3 */ /* the view region's width in eighths */
 extern int gF5;                  /*@ ds:00F5 */ /* the view region's height (src/EOV4.C) */
 extern int gFC62;                /*@ ds:FC62 */ /* 0EF3:2A53's and 0EF3:2EBC's loop index */
 extern int gFC64;                /*@ ds:FC64 */ /* 0EF3:2A53's current animation frame's byte */
@@ -403,7 +404,7 @@ extern int gFC6A;                /*@ ds:FC6A */ /* the animation's origin y, sav
 extern int gFC6C;                /*@ ds:FC6C */ /* a particle's x pixel */
 extern int gFC6E;                /*@ ds:FC6E */ /* a particle's y pixel */
 extern int gFC70;                /*@ ds:FC70 */ /* g8115 saved while the animation runs */
-extern int gFC72;                /*@ ds:FC72 */ /* the handle gSaveFrame returned under the pointer */
+extern int gFC72;                /*@ ds:FC72 */ /* the handle gFn8072 returned under the pointer */
 
 /* 0EF3:000E: bubble-sorts each of the ten six-byte rows that start at a character's +0x37 spell
    field, swapping the first two bytes of a row while the row's weight decreases. The weight
@@ -1414,7 +1415,8 @@ extern int gFC72;                /*@ ds:FC72 */ /* the handle gSaveFrame returne
 /* 0EF3:18D3: an empty function reached through a table; nothing to do. */
 /*@ 0EF3:18D3 */ void EmptyFunction18D3(void) {}
 
-void AnimateConeOfCold(int count, int spread, int step, int cycle, int divisor, int far *frameTable);
+void AnimateConeOfCold(int count, int spread, int step, int cycle, int divisor,
+                       int far *frameTable);
 /* 0EF3:18D8: the cone of cold. It reads the panel member's class-slot 1 value, blanks the view
    (g8115 = 2, gFillRect, DrawViewSlots(7), g8115 = 0), hides the pointer, runs the cone drawing
    0EF3:2EBC(0x96, 0x32, 0xa, 1, 0x64, ds:5737) and shows it again. It sets gF518 and, for each of
