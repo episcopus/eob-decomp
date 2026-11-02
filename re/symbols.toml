@@ -1505,6 +1505,9 @@ unit = "e08e6"
 addr = "08E6:000B"
 size = 74
 evidence = ["far", "segment"]
+name = "ClearObjectType"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e08e6_0055"
@@ -1512,6 +1515,9 @@ unit = "e08e6"
 addr = "08E6:0055"
 size = 110
 evidence = ["near", "frame"]
+name = "ClearType8Objects"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e08e6_00c3"
@@ -1536,6 +1542,9 @@ unit = "e08e6"
 addr = "08E6:017E"
 size = 154
 evidence = ["near", "frame"]
+name = "BuildObjectFrameMask"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e08e6_0218"
@@ -1543,6 +1552,9 @@ unit = "e08e6"
 addr = "08E6:0218"
 size = 127
 evidence = ["near", "frame"]
+name = "FindObjectFrameBit"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e08e6_0297"
@@ -1550,6 +1562,9 @@ unit = "e08e6"
 addr = "08E6:0297"
 size = 114
 evidence = ["far", "near", "frame"]
+name = "MoveObjectToId"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e08e6_0309"
@@ -1581,6 +1596,9 @@ unit = "e08e6"
 addr = "08E6:058A"
 size = 96
 evidence = ["near", "frame"]
+name = "SetObjectFrameFromId"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e08e6_05ea"
@@ -1612,6 +1630,9 @@ unit = "e08e6"
 addr = "08E6:0AB8"
 size = 124
 evidence = ["near"]
+name = "Obj0AB8"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e08e6_0b34"
@@ -1619,6 +1640,9 @@ unit = "e08e6"
 addr = "08E6:0B34"
 size = 96
 evidence = ["near", "frame"]
+name = "StepObjectOrient"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e08e6_0b94"
@@ -1653,6 +1677,9 @@ unit = "e08e6"
 addr = "08E6:0DCA"
 size = 126
 evidence = ["near"]
+name = "RestoreObjectFlags"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e08e6_0e48"
@@ -1674,6 +1701,9 @@ unit = "e08e6"
 addr = "08E6:0FBE"
 size = 127
 evidence = ["far", "near", "frame"]
+name = "DamageObject"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e08e6_103d"
