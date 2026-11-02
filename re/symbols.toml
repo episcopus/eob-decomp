@@ -3038,7 +3038,7 @@ unit = "e0d1c"
 addr = "0D1C:02DC"
 size = 40
 evidence = ["far", "frame"]
-name = "f0D1C_02DC"
+name = "GetCurrentItem"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 
@@ -3108,7 +3108,7 @@ unit = "e0d1c"
 addr = "0D1C:070F"
 size = 152
 evidence = ["far", "frame"]
-name = "f0D1C_070F"
+name = "DrawItemIcon"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 

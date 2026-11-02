@@ -324,7 +324,7 @@ extern void WaitTicks(int n); /*@ 082C:0425 */
 extern void ClearCharEffectSlot(int who, int what); /*@ 1414:0C2D */
 extern int f0D1C_0BAB(int obj); /*@ 0D1C:0BAB */
 extern int f0D1C_00DA(int value, int page); /*@ 0D1C:00DA */
-extern int f0D1C_02DC(void); /*@ 0D1C:02DC */
+extern int GetCurrentItem(void); /*@ 0D1C:02DC */
 extern int f0D1C_0670(int who, int mask); /*@ 0D1C:0670 */
 extern int f0BD2_0106(int who, int row); /*@ 0BD2:0106 */
 extern int Obj15B4(char who, int value); /*@ 08E6:15B4 */
@@ -1047,7 +1047,7 @@ extern int gFC72;                /*@ ds:FC72 */ /* the handle gFn8072 returned u
 /*@ 0EF3:1069 */ void EnterSwapMode(void)
 {
     gFBD2 |= 1;
-    SetMouseItem(f0D1C_02DC());
+    SetMouseItem(GetCurrentItem());
     f1BF3_00A8(0, 0);
     RedrawCharacters();
     ApplyTimedCharEffect(gEFB8, 0, 0x222L, 2, 1);
@@ -1058,7 +1058,7 @@ extern int gFC72;                /*@ ds:FC72 */ /* the handle gFn8072 returned u
 /*@ 0EF3:10AE */ void LeaveSwapMode(void)
 {
     gFBD2 &= ~1;
-    SetMouseItem(f0D1C_02DC());
+    SetMouseItem(GetCurrentItem());
     f1BF3_00A8(0, 0);
 }
 

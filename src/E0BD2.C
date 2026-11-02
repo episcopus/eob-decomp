@@ -136,7 +136,7 @@ extern char g37E1[]; /*@ ds:37E1 */        /* a string table SkipStrings walks (
 extern char g3837[]; /*@ ds:3837 */        /* a string table SkipStrings walks (0BD2:05B5) */
 
 extern int f0D1C_00DA(int value, int page); /*@ 0D1C:00DA */
-extern int f0D1C_02DC(void); /*@ 0D1C:02DC */
+extern int GetCurrentItem(void); /*@ 0D1C:02DC */
 extern int f0D1C_0670(int who, int mask); /*@ 0D1C:0670 */
 extern int f0D1C_07DB(int who, int flag); /*@ 0D1C:07DB */
 extern void UseItem(int who, int slot, int field); /*@ 0DE8:0763 */
@@ -145,7 +145,7 @@ extern void OpenSpellPanel(int who, int flag); /*@ 0EF3:21E0 */
 extern void fOvl5_1CDD(int x); /*@ 211E:0093 */  /* overlay 5 entry, ovl5:1CDD */
 extern void SetMouseItem(int n); /*@ 07A9:010C */
 extern void RedrawMember(int who); /*@ 1547:0991 */
-extern void f0D1C_070F(int mode, int n, int x, int y); /*@ 0D1C:070F */
+extern void DrawItemIcon(int mode, int n, int x, int y); /*@ 0D1C:070F */
 extern void DrawText(char far *text); /*@ 1DE7:060A */
 extern void ComputeArmourClass(int who); /*@ 0DE8:0D5E */
 extern void PlaySound(int sound); /*@ 177D:0070 */
@@ -205,7 +205,7 @@ void DrawItemName(int item);
     int item;
 
     if (row == -1)
-        item = f0D1C_02DC();
+        item = GetCurrentItem();
     else
         item = gChars[who].m77[row];
     gItems[item].m04 = -1;
@@ -607,9 +607,9 @@ next:
     }
     if (item != 0 && g3875[who] != 1) {
         if (g3875[who] != 2)
-            f0D1C_070F(one, item, x, y);
+            DrawItemIcon(one, item, x, y);
         else
-            f0D1C_070F(one, item, x - 4, y - 4);
+            DrawItemIcon(one, item, x - 4, y - 4);
     }
     gStatusLine = saved;
 }
@@ -660,7 +660,7 @@ next:
     int item;
 
     saved = gChars[gA99A].m77[slot];
-    item = f0D1C_02DC();
+    item = GetCurrentItem();
     if (!f0BD2_0AF2(item, gA99A, slot))
         return;
     if (slot != 0x10) {
@@ -691,7 +691,7 @@ next:
     item = gChars[who].m77[row];
     if (gItems[item].flags & 0x20)
         return;
-    slot = f0D1C_02DC();
+    slot = GetCurrentItem();
     type = gItems[slot].m02;
     if (slot != 0)
         mask = gItemTypes[type].m00.byte;

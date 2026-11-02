@@ -120,7 +120,7 @@ extern void f1A29_000F(int statusLine, void far *src, int x, int y, int region);
 extern void ClipRect(int x1, int y1, int x2, int y2, int width, int height, int extra1, int extra2); /*@ 19F3:000E */
 extern void LockHidePointer(void); /*@ 1BBE:0307 */
 extern void LockShowPointer(void); /*@ 1BBE:0332 */
-extern void f0D1C_070F(int mode, int n, int x, int y); /*@ 0D1C:070F */
+extern void DrawItemIcon(int mode, int n, int x, int y); /*@ 0D1C:070F */
 extern int f0D1C_07DB(int who, int flag); /*@ 0D1C:07DB */
 
 extern char far *gFont1A47; /*@ ds:FE4E */  /* the current font (src/E1A47.C) */
@@ -445,7 +445,7 @@ extern void DrawItemRow(int who, int slot, int one); /*@ 0BD2:0917 */
    line is up. It hides the pointer, fills the panel in gFB4C/gF53A/gF57E, and outlines it in colour
    0xF when the mouse is DISABLED and the slot is the selected one (gMouseDisabled, gA99A, gF51A).
    When the record's mE8[slot] is set it draws the item-use label DrawActionLabel; else it draws the
-   item icon through f0D1C_070F, or the empty-slot icon gEmptySlotIcons[slot] through f1A29_000F,
+   item icon through DrawItemIcon, or the empty-slot icon gEmptySlotIcons[slot] through f1A29_000F,
    and then, in that else branch only, draws the highlight icon gIcon8A7E when the slot's m1E bit is
    set, or f0D1C_07DB(who, slot) returns 0, or hp is 0 or below, or m01 bit 2 (paralyzed) is set.
    Called by RedrawMember (0991) and RemoveCarriedItems (0D1C:01CA, src/E0D1C.C:294). */
@@ -468,7 +468,7 @@ extern void DrawItemRow(int who, int slot, int one); /*@ 0BD2:0917 */
         DrawActionLabel(x, y, gChars[who].mE8[slot]);
     } else {
         if (item != 0)
-            f0D1C_070F(gStatusLine, item, x + 8, y);
+            DrawItemIcon(gStatusLine, item, x + 8, y);
         else
             f1A29_000F(gStatusLine, gEmptySlotIcons[slot], x + 8, y, 0);
         if ((gChars[who].m1E & (1 << slot)) || f0D1C_07DB(who, slot) == 0

@@ -79,7 +79,7 @@ extern signed char gA9C6; /*@ ds:A9C6 */    /* an offset into a gB894 record (sr
 
 extern int f0D1C_00DA(int value, int page); /*@ 0D1C:00DA */
 extern int f0D1C_0080(int value, signed char page); /*@ 0D1C:0080 */
-extern int f0D1C_02DC(void); /*@ 0D1C:02DC */
+extern int GetCurrentItem(void); /*@ 0D1C:02DC */
 extern void SelectCharacter(int value); /*@ 0D1C:003F */
 extern void f0D1C_006D(int first, int second); /*@ 0D1C:006D */
 extern void f0D1C_0078(int value); /*@ 0D1C:0078 */
@@ -423,12 +423,12 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
 }
 
 /* 0ACD:0494: the "use item on the selected character" action. It takes the current item from
-   f0D1C_02DC and passes it, the selected character gA99A, the volume, the per-page kind
+   GetCurrentItem and passes it, the selected character gA99A, the volume, the per-page kind
    g1A1B[slot + gFBCC * 4], the page gFBCC and the item type to AddDDEffect; a nonzero result sets
    the mouse item to none (SetMouseItem(0)) and sets gDF4C. Returns the record's +4. */
 /*@ 0ACD:0494 */ int Action0494(struct Action far *action)
 {
-    int item = f0D1C_02DC();
+    int item = GetCurrentItem();
 
     if (item) {
         if (AddDDEffect(gA99A, item, gPartyCell, g1A1B[action->slot + gFBCC * 4], gFBCC,
@@ -557,7 +557,7 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
     }
     /* one register variable: slot is reused to hold the per-page kind, as the original does. */
     slot = slotKind[gFBCC][slot];
-    if (f0D1C_02DC() == 0) {
+    if (GetCurrentItem() == 0) {
         removed = RemoveListItem((void far *)(gB899 + vol * 9), slot, -1);
         if (removed) {
             RunMemberScript(vol, 8);
@@ -565,7 +565,7 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
             gDF4C = 1;
         }
     } else {
-        InsertListItem((void far *)(gB899 + vol * 9), vol, f0D1C_02DC(), slot);
+        InsertListItem((void far *)(gB899 + vol * 9), vol, GetCurrentItem(), slot);
         RunMemberScript(vol, 4);
         SetMouseItem(0);
         gDF4C = 1;
@@ -618,7 +618,7 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
         DrawText(gFileNameBuf);
         return;
     }
-    item = f0D1C_02DC();
+    item = GetCurrentItem();
     if (gTable8DD2[item].m02 == 0x1F || gTable8DD2[item].m02 == 0x31) {
         if (rec->m23 + gTable8DD2[item].m0B > 100)
             rec->m23 = 100;
@@ -732,7 +732,7 @@ done:
 
 /* 0ACD:0A61: the list move/use handler. In mode 2 (gFB44 == 2) or the rest phase (gDCAA == 5) it
    only recomputes the armour class of gA99A (ComputeArmourClass, 0DE8:0D5E). Otherwise it takes the
-   current item (f0D1C_02DC, or RemoveListItem over the character's +0x97 sub-table at row 0x10) and
+   current item (GetCurrentItem, or RemoveListItem over the character's +0x97 sub-table at row 0x10) and
    gives up without redrawing when the item's flags have bit 0x20 or the item is 0. It then computes
    the per-page value g373C[gFBCC * 2 + g3744[gA99A]]: `used` zero runs InsertListItem over the
    volume's ds:B899 record list and RunMemberScript, otherwise AddDDEffect returns whether the use
@@ -751,7 +751,7 @@ done:
     if (gDCAA == 5)
         goto call;
     if (gF51A != 0x10) {
-        item = f0D1C_02DC();
+        item = GetCurrentItem();
         if (gTable8DD2[item].flags & 0x20)
             return;
     } else {
@@ -835,7 +835,7 @@ call:
             if (gF3BA == -1)
                 gF3BA = item;
             if (gF51A != 0x10) {
-                cur = f0D1C_02DC();
+                cur = GetCurrentItem();
                 if (f0BD2_0AF2(item, gA99A, gF51A)) {
                     if (cur != 0) {
                         PushListItem(vol, cur, value);

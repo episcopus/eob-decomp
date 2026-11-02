@@ -43,7 +43,7 @@ extern void StartCellEffect(char a, int b, int c, int d, int e); /*@ 0EF3:097B *
 extern char gF43D; /*@ ds:F43D */              /* cleared around the StartCellEffect call (122E:0C4D) */
 extern char g5A40[]; /*@ ds:5A40 */            /* byte table indexed by two script bytes (122E:0C4D) */
 extern void DrawItemRow(int who, int slot, int one); /*@ 0BD2:0917 */
-extern int f0D1C_02DC(void); /*@ 0D1C:02DC */
+extern int GetCurrentItem(void); /*@ 0D1C:02DC */
 extern int gMouseDisabled; /*@ ds:814A */      /* nonzero disables the mouse (src/E07A9.C) */
 extern char gF51A; /*@ ds:F51A */              /* the selected action row 0..2 (src/E0ACD.C) */
 extern signed char gA99A; /*@ ds:A99A */       /* the selected character index (src/E0ACD.C) */
@@ -494,7 +494,7 @@ void RunMemberScript(int who, int mode);  /* forward: 1DA8 comes after its calle
             }
             return 1;
         }
-        if (f0D1C_02DC() == 0) {
+        if (GetCurrentItem() == 0) {
             item = RemoveListItem(&gB899[id * 9], 8, -1);
             if (item == 0)
                 return 1;
@@ -503,8 +503,8 @@ void RunMemberScript(int who, int mode);  /* forward: 1DA8 comes after its calle
             gDF4C = 1;
             return 1;
         }
-        if (g181F[gTable8DD2[f0D1C_02DC()].icon] > 0xe) {
-            InsertListItem(&gB899[id * 9], id, f0D1C_02DC(), 8);
+        if (g181F[gTable8DD2[GetCurrentItem()].icon] > 0xe) {
+            InsertListItem(&gB899[id * 9], id, GetCurrentItem(), 8);
             RunMemberScript(id, 4);
             SetMouseItem(0);
             gDF4C = 1;
@@ -1127,7 +1127,7 @@ done:
                 gEvalStack[gEvalTop++] = 0;
             break;
         case 0xFFE7:
-            t1 = f0D1C_02DC();
+            t1 = GetCurrentItem();
             if (*script == (char)0xE1)
                 gEvalStack[gEvalTop++] = gTable8DD2[t1].m02;
             else if (*script == (char)0xF5)
