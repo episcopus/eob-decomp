@@ -4602,9 +4602,9 @@ unit = "e1658"
 addr = "1658:01E6"
 size = 271
 evidence = ["frame"]
-name = "ResetNode"
 level = "L2"
 match_flags = "-ml -O -Z"
+name = "ClearNode"
 
 [[function]]
 id = "e1658_02f5"
@@ -4642,9 +4642,9 @@ unit = "e1658"
 addr = "1658:04BB"
 size = 15
 evidence = ["frame"]
-name = "GetNodeState0"
 level = "L2"
 match_flags = "-ml -O -Z"
+name = "IsNodeOn"
 
 [[function]]
 id = "e1658_04ca"

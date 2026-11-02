@@ -1449,3 +1449,21 @@ new = "RemoveMouseHandler"
 kind = "function"
 why = "a function name is a verb phrase (docs/process/READABILITY.md); it removes the INT 33h handler, its own header says 'remove the mouse event handler' (1A72:0285); callers E07C8.C:60 and :336; review of e1a72 round 2"
 date = "2026-11-01"
+
+[[rename]]
+id = "1658:01E6=ClearNode"
+addr = "1658:01E6"
+old = "ResetNode"
+new = "ClearNode"
+kind = "function"
+why = "01E6 clears the on bit (NODE_STATE_ON) and 0x0002, marks 0x0010 and clears 0x0004, the counterpart of SetNode (02F5) which sets the on bit; no caller found, so it cannot be proven to reset anything (review of e1658)"
+date = "2026-11-01"
+
+[[rename]]
+id = "1658:04BB=IsNodeOn"
+addr = "1658:04BB"
+old = "GetNodeState0"
+new = "IsNodeOn"
+kind = "function"
+why = "04BB reads the state word and returns the on bit (NODE_STATE_ON, 0x0001), the bit 0073 toggles and 02F5 sets; 'State0' named the bit index, not what it tests (review of e1658)"
+date = "2026-11-01"
