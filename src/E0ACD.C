@@ -65,6 +65,7 @@ extern void f07A9_010C(int n); /*@ 07A9:010C */
 extern void f122E_0001(int n); /*@ 122E:0001 */
 extern void f122E_0896(int a, int b); /*@ 122E:0896 */
 extern void f0DE8_0D5E(int who); /*@ 0DE8:0D5E */
+extern int far RollDice(char count, char sides, char bonus); /*@ 082C:0458 */
 extern void BuildList4(void); /*@ 0CF7:01CC */
 extern void Unpack0(char far *src, void far *dst, long len); /*@ 1BA8:0006 */
 extern void f0EF3_2541(char far *text); /*@ 0EF3:2541 */
@@ -103,10 +104,9 @@ extern int gFBC8; /*@ ds:FBC8 */            /* the current action (src/E0D1C.C) 
 extern int gFBCE; /*@ ds:FBCE */            /* the item index shown by the mouse (src/E07A9.C) */
 extern void far *gA9C0; /*@ ds:A9C0 */       /* the current 6x6 font (src/E07A9.C) */
 extern void far *gList; /*@ ds:FB48 */      /* the head of the list built last (src/E0CF7.C) */
-extern long gFC5A; /*@ ds:FC5A */           /* a far timeout counter (0E8A) */
-extern int gFC58; /*@ ds:FC58 */            /* the saved sound volume (0E8A) */
-extern int g8492; /*@ ds:8492 */            /* the low word of the timeout base (src/EOV6.C) */
-extern int g8494; /*@ ds:8494 */            /* the high word of the timeout base (0E8A) */
+extern unsigned long gFC5A; /*@ ds:FC5A */  /* the map timeout counter (0E8A) */
+extern int gFC58; /*@ ds:FC58 */            /* the sound volume saved by the map loop (0E8A) */
+extern unsigned long g8492; /*@ ds:8492 */  /* the 32-bit counter the 1Ch handler bumps (src/EOV6.C) */
 extern int g8134; /*@ ds:8134 */            /* set to 0 by the map screen (src/E14EF.C) */
 extern char gFileNameBuf[]; /*@ ds:FE6E */  /* the text buffer sprintf formats into (src/E082C.C) */
 extern unsigned char far gSheetDECORATE[]; /*@ 2069:0000 */  /* the DECORATE sheet (src/EOV2.C) */
@@ -706,9 +706,34 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
     Action0D9D(key);
 }
 
-/* 0ACD:0E8A draft: the map timeout/encounter loop. Not written yet. Called from the start-up. */
-/*@ 0ACD:0E8A draft */ void RunMapLoop(void)
+/* 0ACD:0E8A: the map timeout/encounter loop, run from the start-up after the item tables are
+   loaded. It arms the timeout gFC5A from one 1d10 roll times 0x12 plus the 32-bit counter g8492,
+   enters the map screen, then loops: saves the volume, services the key dispatcher (Action0E6C)
+   and f1414_04E7, runs the overlay effect when gDF4C is set, and when gFC5A has run below g8492
+   while gFBC8 is in 1..3 re-arms the timeout and plays the volume-bumped sound 0x1E. Each pass
+   plays the default sound and runs TurnUndead. */
+/*@ 0ACD:0E8A */ void RunMapLoop(void)
 {
+    gFC5A = g8492 + (long)(RollDice(1, 10, 3) * 0x12);
+    EnterMapScreen();
+    LockShowPointer();
+    gFC58 = gSoundVolume;
+    g8134 = 0;
+    for (;;) {
+        gFC58 = gSoundVolume;
+        Action0E6C();
+        f1414_04E7();
+        if (gDF4C)
+            fOvl4_1F51(1);
+        if (gFC5A < g8492) {
+            if (gFBC8 > 0 && gFBC8 < 4) {
+                gFC5A = g8492 + (long)(RollDice(1, 10, 3) * 0x12);
+                PlaySoundVolume(0x1E, gSoundVolume + RollDice(1, 12, -1));
+            }
+        }
+        PlaySoundDefault(0);
+        TurnUndead();
+    }
 }
 
 /* 0ACD:0F72: enters the map screen: shows the inventory when gA998 is set, otherwise 1033; shows
