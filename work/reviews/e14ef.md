@@ -1,6 +1,91 @@
 # Review: e14ef
 
-# Round 10
+# Round 11
+
+Reviewer: rev-haiku
+Commit reviewed: d3d5d75 (main and review/e14ef; `make match FILE=src/E14EF.C`: 6 of 6, 1410 bytes, exit 0;
+`make readability UNIT=e14ef`: 0 findings, 0 new)
+
+Playbook 70. Judge what a matching file can still get wrong: names, types, comments, structure.
+The matcher already proved the bytes; do not re-prove them, read for meaning.
+
+Round 11. Round 10's ticks hold for the WaitKeyEvent and KEY_CODE_MASK comments (:93-96, :223-225: the maskers
+are UpdateOptionList :294 and src/EOV5.C:373, :468, and src/E16A5.C:151 reads the key raw), for the g8102 and
+g5D1A text, the UpdateOptionList header (:251-253), the struct `pad` field (:43) and the dead increment (:280).
+Re-checked this round: the callers of CountMaskBits and FindMaskBit (src/EOV0.C:1148-1149, :1193-1194, :1203,
+:1215, :1244-1245, :1253, :1257, :1262; src/EOV2.C:380, :383), WaitKeyEvent's callers (src/EOV0.C:1211,
+src/EOV3.C:710, src/E16A5.C:151-152, src/EOV5.C:373, :468), the g8140/g8142 readers (src/E082C.C:465,
+src/E16A5.C:224-225, :240-241, src/E1AAD.ASM:396, :405), the gTextLeft/gTextTop cites (src/E1C0E.C:60-61,
+src/E1DE7.C:34), the E1A72.ASM stores (:325, :410-411, :386, :65, :73), src/E0ACD.C:886, gFontWidth in
+src/E1A47.C:13, the callee names (WaitFrames, FlushKeyBuffer, IsKeyPending, LockHidePointer, LockShowPointer,
+DrawShadowText), and the WHITEPAPER cites (2.1.1 at :24; 2.6 at :119). One must-fix: the round 10 fix to the
+FindMaskBit precondition is on the wrong side of the boundary. Shoulds and notes below.
+
+## Findings
+
+Each finding is a checkbox. `must-fix` blocks `make review-pass` until a decompiler ticks it off
+(with the commit that fixes it); `should` and `note` do not block.
+
+- [ ] must-fix src/E14EF.C:103 (FindMaskBit header, "the callers keep n at or below the number of set bits from
+  shift up"): the bound is wrong by one. n is zero-based, so the callers need n below the count, and at n equal
+  to the count the second loop finds no set bit and runs past the top of the mask. Trace with shift 0 and mask
+  bits 0 and 2 set (count 2): n = 1 gives the first loop one consumed bit (bit 0), then the second loop stops at
+  bit 2, returning 2 as intended; n = 2 consumes bits 0 and 2, leaves i at 3, and finds no set bit above it. The
+  callers keep n below the count: PickClass sets gPanels[2].height = CountMaskBits(15, ...) (src/EOV0.C:1193-1194)
+  and DrawOptionList draws i < height (src/E14EF.C:205, FindMaskBit(i) at :206); PickAlignment does the same with
+  9 (src/EOV0.C:1244-1245, :1253). The round 10 finding said "n or fewer set bits", which is this condition; the
+  e9f3c0f wording turned it into "at or below". Fix the bound to "below the number of set bits from shift up" and
+  the failing case to "when n is at least that number". (evidence: the two loops at :113-119; the callers above)
+- [ ] should src/E14EF.C:56-58 (g5D1A): "nonzero lets ... and, together with gMouseDisabled, makes DrawOptionList
+  draw the selected row in colorB" reads as a conjunction. The test at :209 is `g5D1A || gMouseDisabled`: either
+  one is enough, as the DrawOptionList header (:184-185) says. Say "or gMouseDisabled is nonzero".
+  (evidence: src/E14EF.C:209)
+- [ ] should src/E14EF.C:296 (the `top` line): "the click row is (cursory - top) / lineheight (:302)" names
+  the pointer pick: `cursory` is gCursorY (:300) and :302 is the pointer row. The mouse click row is
+  `(g8142 - top) / lineheight` at :326, from the click at g8142. Say "the pointer row (:302)" and name the click
+  row at :326. (evidence: src/E14EF.C:300-302, :325-326)
+- [ ] should src/E14EF.C:74 (gMouseDisabled): "InitMouse sets it to 1 before it installs the handler
+  (1A72:0150, src/E1A72.ASM:100; the store is src/E1A72.ASM:325 ...)". Line 100 of src/E1A72.ASM is the
+  comment block of the extern, not code; the store the claim rests on is :325 (the line after the
+  gMouseHandlerInstalled store at :324). Cite :325 as the store and keep :100 only as the
+  source's own description. (evidence: `sed -n 97,101p src/E1A72.ASM`, `sed -n 322,326p src/E1A72.ASM`)
+- [ ] should src/E14EF.C:128-129 (BlinkText, "so this is the 'confirm' flash"): nothing in src/ names the
+  flash; the one caller calls BlinkText whenever picked != -1 (src/E14EF.C:351-355), which is a confirm key
+  (:335) or a click inside the rectangle (:327). Say the flash runs on any pick, or mark "confirm" as an inference
+  ([H]) and cite the path. Or drop the word.
+- [ ] note src/E14EF.C:161 (the CountMaskBits [H] paragraph): unchanged, and still correct to keep [H]; no caller
+  reaches the shift edge (EOV0.C:1193 and :1244 pass shift 0).
+- [ ] note src/E14EF.C:144-151 and src/E082C.C:302 (IsPointInRect and IsPointInsideRect): the two are separate
+  functions with the same inclusive test (082C:0613 at src/E082C.C:302, declared at src/EOV5.C:187 and
+  src/E0EF3.C:386; src/E082C.C:303-308 tests the four edges, and its header says "Same test as PointInRect at
+  14EF:00E1"). Not a claim error here; the next reader should know that src/ names the same test two ways.
+- [ ] note QUIRK 14EF:027C (:280): not looked up in a disassembly this round. The operand `[bp+0xc]` in the
+  reviewer's note is consistent with `counter` being the third parameter (cdecl: the first parameter at the lowest
+  address, so panel at [bp+6], names at [bp+8], counter at [bp+0xc]). Round 10 recorded the disassembly; keep it.
+- [ ] note routed, still stale in other owners' files (not edited here): re/renames.toml:775 cites "E14EF.C:227"
+  and "E14EF.C:144" for the gMouseDisabled tests (they are :299-301 and :203-209 now); re/globals.toml:302 is
+  the same. Routed since round 9.
+- [ ] note other owners' declarations that disagree with this unit's types (not edited here, re-confirmed by grep):
+  src/EOV0.C:204 declares `CountMaskBits(int n, long mask, char shift)` (here shift is int); src/EOV3.C:136
+  declares `WaitKeyEvent` as `void`, while src/E16A5.C:63 and src/EOV0.C:208 use int and E16A5 uses the result
+  (:151). src/EOV0.C:143 and src/EOV2.C:181 declare UpdateOptionList with one `long counter` (the header covers
+  this).
+
+## Summary
+
+The unit is understandable from its source alone. The names hold against their evidence: FindMaskBit,
+CountMaskBits, IsPointInRect, BlinkText, DrawOptionList and UpdateOptionList say what their code does, and the
+shared globals and callees agree with the other files of src/ (gPanels and its fields, gTextLeft and gTextTop,
+gFC7A, gFontWidth, g8140 and g8142, g8134, gMouseDisabled, gCursorX and gCursorY; the callee names). What fails
+is one precondition: round 10's fix wrote "at or below" for FindMaskBit's n, and the bound is "below" (the
+two-bit trace and the callers at src/EOV0.C:1193-1194 and :1244-1245 show it). Four shoulds are smaller: the
+g5D1A "together with" reads as AND, the `top` line calls the pointer pick the click row, the gMouseDisabled
+store is cited at a comment line, and the BlinkText "confirm" flash is an inference. The matcher and readability
+checks pass (6 of 6, 0 findings); no matcher, spec or pin question, nothing escalated.
+
+---
+
+# Round 10 (kept)
 
 Reviewer: rev-haiku
 Commit reviewed: 9b56e94 (review/e14ef; src/E14EF.C is identical on main ae3ade4, last changed in a8b109f; `make match FILE=src/E14EF.C`: 6 of 6, 1410 bytes, exit 0; `make readability UNIT=e14ef`: 0 findings)
