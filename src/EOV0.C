@@ -454,6 +454,7 @@ extern void far *g5E64[0x11]; /*@ ds:5E64 */ /* the 17 sliced icon pointers this
 void Ovl0_1224(void);              /* ovl0:1224, defined below */
 void Ovl0_1ADD(void);              /* ovl0:1ADD, defined below */
 void Ovl0_1BF2(int who);           /* ovl0:1BF2, defined below */
+void DrawPanelRow(int index);      /* ovl0:11BA, defined below */
 /* ovl0:0DDC: the character panel's function-key loop. It opens the panel page, builds the 0x1b-based
    four-row list, then until a key ends it redraws the animation and waits: the enter key (0x61) and
    key 0x8004 flash icon 6 and keep looping, keys 0x8001/0x8002/0x8003 flash icons 4/7/8 and run the
@@ -510,7 +511,81 @@ void Ovl0_1BF2(int who);           /* ovl0:1BF2, defined below */
         return 0;
     }
 }
-/*@ ovl0:0EE5 stub */ int Ovl0_0EE5(void) {}
+/* ovl0:0EE5: the character-editor loop. It builds a seven-row list, draws the character page through
+   ovl0:065B(mode 2), then until the current character has a name and no exit was asked for it waits
+   for a key: the four 0x8001..0x8004 keys pick the character (key & 0xff) - 1, 0x8005 returns 1
+   (leaving the editor), 0x8006 and the enter/left/right keys flash icon 9 and clear the result,
+   0x8007 erases the current character's name (icon 0x10, DrawCharName, DrawPanelRow), and 0x5c/0x66
+   and 0x60/0x62 flip the character index's bit 0 and bit 1. Every pass redraws the row list and, when
+   the selection moved to a named character, the page. Returns the result. Called by ovl0:28F9. */
+/*@ ovl0:0EE5 */ int Ovl0_0EE5(void)
+{
+    int key;
+    int result;
+    struct Node far *list;
+    register int pos;
+    register int flag;
+
+    list = BuildRowNodeList(0, 7);
+    FlushKeyBuffer();
+    DrawRowList(-1);
+    result = 0;
+    flag = 0;
+    Ovl0_065B(gDCB0, 2);
+    while (gChars[gDCB0].name[0] != 0 && !flag) {
+        DrawRowList(gDCB0 + 6);
+        key = WaitKeyOrPause(list);
+        pos = gDCB0;
+        switch (key) {
+        case 0x8001:
+        case 0x8002:
+        case 0x8003:
+        case 0x8004:
+            pos = (key & 0xff) - 1;
+            break;
+        case 0x8005:
+            result = 1;
+            flag = 1;
+            break;
+        case 0x2b:
+        case 0x3d:
+        case 0x61:
+        case 0x6e:
+        case 0x8006:
+            FlashPanelIcon(9);
+            result = 0;
+            flag = 1;
+            break;
+        case 0x8007:
+            if (gChars[gDCB0].name) {
+                FlashPanelIcon(0x10);
+                gChars[gDCB0].name[0] = 0;
+                DrawCharName(gDCB0, 1, 0xc);
+                DrawPanelRow(gDCB0 + 0x32);
+            }
+            break;
+        case 0x5c:
+        case 0x66:
+            pos ^= 1;
+            break;
+        case 0x60:
+        case 0x62:
+            pos ^= 2;
+            break;
+        }
+        if (flag)
+            DrawRowList(-1);
+        if (gChars[pos].name[0] == 0)
+            flag = 1;
+        if (pos != gDCB0) {
+            gDCB0 = pos;
+            DrawRowList(-1);
+            if (!flag)
+                Ovl0_065B(gDCB0, 2);
+        }
+    }
+    return result;
+}
 /* ovl0:1071: draws the panel report line gStr61CB at (0xa8, 0x10) over a fresh region (g8115 = 2
    while it draws), restores g8115, redraws the report box and then calls DrawPartyStatus. Called
    by ovl0:28F9. Purpose unknown. */
