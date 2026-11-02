@@ -76,7 +76,8 @@ struct CharRec {
     char name[0x0B];        /* +2: the character's name, NUL padded (src/E0D1C.C) */
     char pad0D[0x23 - 0x0D];
     unsigned char m23;      /* +0x23: a hunger/food value clamped to 100 by EatFood (07E0) */
-    char pad24[0xF3 - 0x24];
+    char pad24[0x97 - 0x24];
+    char m97[0xF3 - 0x97];  /* +0x97: a sub-table 0D1C:02B9 and 0D1C:01D0 browse (0A61) */
 };
 extern struct CharRec gChars[]; /*@ ds:F580 */
 
@@ -97,6 +98,9 @@ extern int g36B0[]; /*@ ds:36B0 */          /* a per-slot word (screen row) comp
 extern int g5E12; /*@ ds:5E12 */
 extern unsigned g5E1C; /*@ ds:5E1C */       /* src/E1658.C */
 extern signed char g36D0[]; /*@ ds:36D0 */  /* a per-row four-byte action table (09EF) */
+extern signed char g373C[]; /*@ ds:373C */  /* a per-page byte table read by 0A61 */
+extern signed char g3744[]; /*@ ds:3744 */  /* a per-character byte table read by 0A61 */
+extern char gB899[]; /*@ ds:B899 */         /* the nine-byte record list head (src/E0D1C.C) */
 extern char gFlag; /*@ ds:F3B9 */           /* picks the "a" table set when nonzero (src/E0CF7.C) */
 extern char gA998; /*@ ds:A998 */           /* src/EOV2.C */
 extern int gMouseDisabled; /*@ ds:814A */   /* nonzero disables the mouse (src/E07A9.C) */
@@ -632,10 +636,55 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
     }
 }
 
-/* 0ACD:0A61 draft: the list scroll/move handler. Not written yet. */
-/*@ 0ACD:0A61 draft */ void Action0A61(int dir)
+/* 0ACD:0A61: the list move/use handler. In mode 2 (gFB44 == 2) or the rest phase (gDCAA == 5) it
+   only redraws gA99A through f0DE8_0D5E. Otherwise it takes the current item (f0D1C_02DC, or
+   f0BD2_02B9 over the character's +0x97 sub-table at row 0x10) and gives up without redrawing
+   when the item's flags have bit 0x20 or the item is 0. It then computes the per-page value
+   g373C[gFBCC * 2 + g3744[gA99A]]: `used` zero runs f0BD2_01D0 over the volume's ds:B899 record
+   list and f122E_1DA8, otherwise f0BD2_07DE returns whether the use took effect. On success it
+   redraws (f07A9_010C, or f1547_0991 at row 0x10) and sets gDF4C and gEFB2; on no effect at row
+   0x10 it runs f0BD2_01D0 over the character's +0x97 table. Always redraws gA99A at the end. */
+/*@ 0ACD:0A61 */ void MoveListItem(int used)
 {
-    (void)dir;
+    int item;
+    int flag;
+    int value;
+
+    if (gFB44 == 2)
+        goto call;
+    if (gDCAA == 5)
+        goto call;
+    if (gF51A != 0x10) {
+        item = f0D1C_02DC();
+        if (gTable8DD2[item].flags & 0x20)
+            return;
+    } else {
+        item = f0BD2_02B9((void far *)gChars[gA99A].m97, 0, -1);
+    }
+    if (item == 0)
+        return;
+    flag = 1;
+    value = g3744[gA99A];
+    value = g373C[gFBCC * 2 + value];
+    if (used == 0) {
+        f0BD2_01D0((void far *)(gB899 + gSoundVolume * 9), gSoundVolume, item, value);
+        f122E_1DA8(gSoundVolume, 4);
+    } else {
+        flag = f0BD2_07DE(gA99A, item, gSoundVolume, value, gFBCC, gTable8DD2[item].m02);
+    }
+    if (flag != 0) {
+        if (gMouseDisabled == 0 || gF51A != 0x10)
+            f07A9_010C(0);
+        else
+            f1547_0991(gA99A);
+        gDF4C = 1;
+        gEFB2 = 0xff;
+    } else {
+        if (gF51A == 0x10)
+            f0BD2_01D0((void far *)gChars[gA99A].m97, 0xFFFE, item, 0);
+    }
+call:
+    f0DE8_0D5E(gA99A);
 }
 
 /* 0ACD:0BA6 draft: the list pick handler. Not written yet. */
@@ -646,7 +695,7 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
 /* 0ACD:0D9D: the key dispatcher for the map screen. It acts only while the mouse is disabled and
    outside the rest phase (gDCAA != 5). It searches the nine-entry (key, handler) table at
    cs:0E48; key 0x12/0x20/0x2e/0x1f set the direction dir 0/1/2/3, key 0x34 runs Action08E7, key
-   0x17 calls f0BD2_1001(gA99A, gF51A), keys 0x21 and 0x15 call Action0A61(0) and Action0A61(1)
+   0x17 calls f0BD2_1001(gA99A, gF51A), keys 0x21 and 0x15 call MoveListItem(0) and MoveListItem(1)
    and key 0x23 calls Action0BA6. The four action cases are skipped in mode 2 (gFB44 == 2), and a
    direction set is passed to Action0A34 unless the mode is 2. */
 /*@ 0ACD:0D9D */ void Action0D9D(int key)
@@ -668,11 +717,11 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
         break;
     case 0x21:
         if (gFB44 != 2)
-            Action0A61(0);
+            MoveListItem(0);
         break;
     case 0x15:
         if (gFB44 != 2)
-            Action0A61(1);
+            MoveListItem(1);
         break;
     case 0x23:
         if (gFB44 != 2)
