@@ -5506,6 +5506,7 @@ unit = "e1c0e"
 addr = "1C0E:0E5B"
 size = 140
 evidence = ["far", "near", "frame"]
+name = "EvictFile"
 
 [[function]]
 id = "e1c0e_0ee7"
@@ -5560,9 +5561,9 @@ unit = "e1c0e"
 addr = "1C0E:1310"
 size = 171
 evidence = ["far", "frame"]
-name = "LocateOverlayFile"
 level = "L2"
 match_flags = "-ml -O -Z -G"
+name = "LocateOverlayFile"
 
 [[function]]
 id = "e1c0e_13bb"
@@ -5580,9 +5581,9 @@ unit = "e1c0e"
 addr = "1C0E:13E7"
 size = 22
 evidence = ["far", "frame"]
-name = "InitOverlayCache"
 level = "L2"
 match_flags = "-ml -O -Z -G"
+name = "InitOverlayCache"
 
 [[function]]
 id = "e1c0e_13fd"
@@ -5590,9 +5591,9 @@ unit = "e1c0e"
 addr = "1C0E:13FD"
 size = 20
 evidence = ["far", "frame"]
-name = "ShutdownOverlayCache"
 level = "L2"
 match_flags = "-ml -O -Z -G"
+name = "ShutdownOverlayCache"
 
 [[function]]
 id = "e1c0e_1411"

@@ -1062,3 +1062,48 @@ new = "SetMouseItem"
 kind = "function"
 why = "it sets the mouse item: SetCurrentItem stores n in ds:FBCE (the item index shown by the mouse, src/E0D1C.C:108) unless gMouseDisabled, shows \" taken.\" for the current window record, and passes the item's icon gIconsDDE4[n] to the pointer shape setter; src/E0D1C.C:270 and :298 say an item is cleared and redrawn through it (review of e07a9)"
 date = "2026-11-01"
+
+[[rename]]
+id = "1C0E:13E7=InitOverlayCache"
+addr = "1C0E:13E7"
+old = ""
+new = "InitOverlayCache"
+kind = "function"
+why = "1C0E:13E7 is the startup half of the overlay file cache (getdisk, FindLastDrive, 1C0E:0F6E); called from StartupGame (E07C8.C:272)"
+date = "2026-11-01"
+
+[[rename]]
+id = "1C0E:13FD=ShutdownOverlayCache"
+addr = "1C0E:13FD"
+old = ""
+new = "ShutdownOverlayCache"
+kind = "function"
+why = "1C0E:13FD is the shutdown half (1C0E:0EE7 then setdisk of the saved drive); called from ShutdownGame (E07C8.C:338)"
+date = "2026-11-01"
+
+[[rename]]
+id = "1C0E:0E5B=EvictFile"
+addr = "1C0E:0E5B"
+old = ""
+new = "EvictFile"
+kind = "function"
+why = "1C0E:0E5B drops the in-memory copy of the least important loaded slot under a size limit; it is the first retry before the OOM hook (E19BC.C:45)"
+date = "2026-11-01"
+
+[[rename]]
+id = "1C0E:1310=LocateOverlayFile"
+addr = "1C0E:1310"
+old = ""
+new = "LocateOverlayFile"
+kind = "function"
+why = "1C0E:1310 finds EOB.EXE on the current or another drive and opens it; called from the INT 3Fh handler (E1A72.ASM:104,:121)"
+date = "2026-11-01"
+
+[[rename]]
+id = "ds:81EA=gSearchAllDrives"
+addr = "ds:81EA"
+old = ""
+new = "gSearchAllDrives"
+kind = "global"
+why = "the flag 1C0E:1310 tests before scanning every logical drive for the overlay file; set by 1C0E:1724 and cleared by 1C0E:171A"
+date = "2026-11-01"
