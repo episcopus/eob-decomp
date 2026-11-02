@@ -4,7 +4,12 @@
    function of this file named after the .CMP/.COL files it loads (TITLE-E/TITLE-V, TEXT,
    WTRDP1..3, ORB, TOWRMAGE, KING, ADVENTUR, HANDS, TUNNEL, ZOOMTUNL, AVALANCH, SSI, PRESENT,
    DAND, WESTWOOD). The whole unit is drawn through the driver pointers the front end fills at
-   load time (ds:1EE2 and its neighbours), which this page only partly names. */
+   load time (ds:1EE2 and its neighbours), which this page only partly names.
+   The seven scene functions are still stubs: ovl0:015D (WTRDP1..3), 06E2 (ORB, TOWRMAGE, a
+   four sprite array it blits with BlitImage and draws through f1A29_000F), 0B20 (TOWRMAGE),
+   1265, 15F9, 1DF3 and 23A3. They are long ClipRect/frame animations; every utility they use
+   (LoadPackedImage, LoadPalette, PlaySound, Dissolve, BlitImage, DrawGrid, GrowFrame,
+   WaitFrameDelay, f19EC_002A) is matched. */
 
 /*@flags -ml -O -Z -G */
 
