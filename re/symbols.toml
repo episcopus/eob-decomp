@@ -3220,9 +3220,9 @@ unit = "e0ef3"
 addr = "0EF3:00CD"
 size = 418
 evidence = ["far", "near", "frame"]
-name = "AnimateMeleeHit"
 level = "L2"
 match_flags = "-ml -O -Z"
+name = "AnimateEffect"
 
 [[function]]
 id = "e0ef3_026f"
@@ -4113,9 +4113,9 @@ unit = "e0ef3"
 addr = "0EF3:2541"
 size = 124
 evidence = ["far", "near", "frame"]
-name = "RedrawPartyPanel"
 level = "L2"
 match_flags = "-ml -O -Z"
+name = "RedrawPartyPanel"
 
 [[function]]
 id = "e0ef3_25bd"

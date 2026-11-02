@@ -300,7 +300,7 @@ extern void f0EF3_2A53(int a, int b, int c, int d, int e, void far *p); /*@ 0EF3
    animation origin (ds:DD18 from g1D61, ds:DD1A = 0x30), plays sound 0x23 and runs the effect
    animation 0EF3:2A53 with the template gAnimTable[g55E6[m08]] chosen per object index. Called by
    the melee attacker 0EF3:0A3F on a hit with the record's flag bit 0x40, and by 1414:0285. */
-/*@ 0EF3:00CD */ void AnimateMeleeHit(struct Tgt far *rec)
+/*@ 0EF3:00CD */ void AnimateEffect(struct Tgt far *rec)
 {
     void far *anim;
     int left;
