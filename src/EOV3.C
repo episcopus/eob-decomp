@@ -3,8 +3,7 @@
    list (ovl3:0951), loads and unpacks a level state from LEVELS.TMP (ovl3:09AA, 109D, 1147) and
    packs and saves it (ovl3:0FD1, 11AF), ages and advances the character timers (ovl3:123D, 12F1)
    and resets the level (ovl3:19F7). The entry at 210C:0039 (ovl3:15B9) loads a saved game, and
-   ovl3:0A7C mounts a level's map screen. 20 of the 23 functions are decompiled to L2; ovl3:01C8,
-   03A2 and 0A7C are blocked drafts, all on cmatch's far-object handling (see ovl3:0A7C's comment).
+   ovl3:0A7C mounts a level's map screen. All 23 functions are decompiled to L2.
    Placeholder names where no evidence. */
 
 /*@flags -ml -O -Z */
@@ -215,10 +214,10 @@ extern struct T16 g5BCC[]; /*@ ds:5BCC */
 extern struct T16 g5BD0[]; /*@ ds:5BD0 */
 extern struct T16 g5BDC[]; /*@ ds:5BDC */
 
-/* ds:6A80 holds the three map icon loaders (LoadMapIcons6 at stub 0x25, LoadMapIcons6b at 0x34,
-   LoadNamedIcons at 0x2A); ovl3:0A7C copies them into a local array through F_SCOPY (0000:78C9).
-   The template is ds:6A80; its far pointers are overlay stub entries, which the flat link cannot
-   reproduce, so the copy is the matcher gap at +000F (see the function's note). */
+/* ds:6A80 is the initialiser template for ovl3:0A7C's local `handlers` array: the three map icon
+   loaders LoadMapIcons6 (stub entry 0x25), LoadNamedIcons (0x2A) and LoadMapIcons6b (0x34), which
+   ovl3:0A7C copies into the array through F_SCOPY (0000:78C9). Its far pointers are overlay stub
+   entries, which `make match` compares by the function they name. */
 
 struct WallDec {            /* a 52-byte wall set decoration */
     char idx[0xc];
@@ -297,9 +296,8 @@ struct WallDec {            /* a 52-byte wall set decoration */
    ten cell indices that has no sprite yet in ds:EFD4, slices the cell's 8-byte rectangle out of
    gE062 through ds:8086 with the map sheet (gMapTiles[gFBC8-1] cells). gF538 (the record count) is
    bumped and the chain link is rewired; the loop ends when the link is 0 (-1). Called by
-   ovl3:0A7C. blocked: the gMapTiles[gFBC8-1] access (cmatch cannot explain an object indexed with
-   a folded -1, see ovl3:03A2), so it stays a draft. */
-/*@ ovl3:01C8 draft */ void RegisterWallObject(int kind, signed char field1879, int recordIndex, signed char field1905, signed char objectFlags)
+   ovl3:0A7C. */
+/*@ ovl3:01C8 */ void RegisterWallObject(int kind, int field1879, int recordIndex, int field1905, int objectFlags)
 {
     int i;
     int cell;
@@ -356,11 +354,8 @@ struct WallDec {            /* a 52-byte wall set decoration */
    (when not -1) it slices three cells from the 4-byte rectangles at ds:6840 into gFB5E starting at
    `dstA` and three more from ds:68A0 into gA99C[dstA].v, and copies the two gA99C[dstA].c bytes
    from ds:6900. For `srcB` (when not -1) it does the same at `dstB`. Clears g8115. Called by
-   ovl3:0A7C. blocked: cmatch cannot explain the far object's offset: the table at 1F1D:0000 is
-   indexed [gFBC8-1], which the compiler folds to `es:[bx-1]` (disp16 FFFF), so our build's
-   displacement is FAR_BASE-1 (7FFF) and cmatch only explains a displacement >= FAR_BASE
-   (cmatch.py:370). The honest annotation (1F1D:0000) and index are kept. */
-/*@ ovl3:03A2 draft */ void LoadMapCells(int srcA, int dstA, int srcB, int dstB)
+   ovl3:0A7C. */
+/*@ ovl3:03A2 */ void LoadMapCells(int srcA, int dstA, int srcB, int dstB)
 {
     int i;
     int j;
@@ -385,7 +380,7 @@ second:
             g6840[j + 3], MAPSHEET);
         gA99C[dstB + i].v = (long)gGetSpriteCell(g68A0[j], g68A0[j + 1], g68A0[j + 2],
             g68A0[j + 3], MAPSHEET);
-        j = srcA * 6 + i * 2;
+        j = srcA * 6 + i * 2;   /* QUIRK ovl3:0597: the srcB branch reads srcA's ds:6900 pair too */
         gA99C[dstB + i].c[0] = g6900[j];
         gA99C[dstB + i].c[1] = g6900[j + 1];
     }
@@ -541,15 +536,8 @@ done:
    unpacked), the wall/object records (0xEC introduces a 0x18-byte wall set through LoadWallSet,
    otherwise a five-byte RegisterWallObject record), the item records keyed against gB894, and
    finally the wall textures (LoadWallTextures with the gMapTiles[gFBC8-1] sheet) and the INVENT
-   screen. Called by EnterMapScreen (0ACD:0F72) and ResetMapScreen (0ACD:1033), and by ovl3:15B9.
-   blocked: two far-address forms cmatch cannot explain. (1) The local `handlers` array is
-   initialised from a list, so its far function pointers land in a compiler-generated template
-   copied by F_SCOPY (0000:78C9) from ds:6A80; the original template holds the overlay stub entries
-   (0x210C:0025/0034/002A), our flat link holds the code-segment offsets, so the template bytes
-   differ and the draft stops at +000F (`mov ax,0x6a80`). (2) The sheet form gMapTiles[gFBC8-1] at
-   ovl3:0F69 is the same far-object access as ovl3:03A2 (+04ED). Both are kept as the honest source
-   form. */
-/*@ ovl3:0A7C draft */ void LoadMapScreen(int level)
+   screen. Called by EnterMapScreen (0ACD:0F72) and ResetMapScreen (0ACD:1033), and by ovl3:15B9. */
+/*@ ovl3:0A7C */ void LoadMapScreen(int level)
 {
     int scriptWord;
     int itemIdx;
@@ -619,12 +607,8 @@ done:
     if (handlerIdx != -1)
         handlers[handlerIdx](script, 0x12);
     script += 12;
-    for (;;) {
-        recIndex = script[0];
-        script++;
-        if (recIndex == -1)
-            break;
-        recIndex *= 2;
+    while ((recIndex = *script++) != -1) {
+        recIndex <<= 1;
         g5BCC[recIndex].f0 = (unsigned long)script[0];
         g5BDC[recIndex].f0 = (unsigned long)script[0];
         script++;
@@ -669,7 +653,7 @@ done:
     script += 2;
     nObjects = 0;
     for (i = 0; i < scriptCount; i++) {
-        if (*script++ == 0xec) {
+        if (*script++ == (char)0xec) {   /* 0xEC: a 0x18-byte wall set, else a wall object record */
             LoadWallSet(script, script + 0xc);
             script += 0x18;
         } else {
@@ -696,7 +680,7 @@ done:
         *(unsigned short far *)((char far *)gB894 + itemIdx * 9 + 7) = scriptWord;
     }
     LoadWallTextures(gBuf8DCA + 0x1a, MAPSHEET);
-    LoadScreenImage("INVENT", (char far *)MK_FP(0x1f0, 0), 5, 3, 2);
+    LoadScreenImage("INVENT", (char far *)gSheet2067, 5, 3, 2);
     gFlags849E |= 2;
     PlaySound(0);
     gFB45 = 1;
