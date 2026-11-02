@@ -12,7 +12,7 @@
 
 extern void farfree(void far *block); /*@ 0000:71EE */
 extern void far *gRectKinds[]; /*@ ds:EFD4 */
-extern int gF538; /*@ ds:F538 */
+extern int gF538; /*@ ds:F538 */            /* the wall-record slot count RegisterWallObject advances; Reset by FreePtrTable */
 
 extern void LoadOverlayScreen(char far *name, int a, int b); /*@ 082C:05EC */
 extern void LoadScreenImage(char far *name, char far *extra, int srcKind, int dstKind, int mode); /*@ 082C:051B */
@@ -54,7 +54,7 @@ extern void *memset(void far *s, int c, unsigned n); /*@ 0000:6384 */
 extern void far *gSegDF4E; /*@ ds:DF4E */
 extern void far *gE062; /*@ ds:E062 */
 extern char gB894[]; /*@ ds:B894 */
-extern int gFBD0; /*@ ds:FBD0 */
+extern int gFBD0; /*@ ds:FBD0 */            /* the saved-level bit mask: bit level-1 is set by SaveLevelState and SaveGame and tested by LoadObjects and LoadMapScreen */
 extern void far *gBufDCFC; /*@ ds:DCFC */
 extern unsigned char gTable1879[]; /*@ ds:1879 */  /* the four parallel per-kind tables at ds:1879..0x1990 */
 extern void movmem(void far *src, void far *dst, unsigned n); /*@ 0000:63A3 */
@@ -66,10 +66,14 @@ struct Cell8 {              /* the 8-byte sprite rectangles gE062 points at (ovl
     int w3;
 };
 
-struct WallRec {            /* the 0x34-byte wall records at ds:E040 (ovl3:01C8) */
-    signed char next;       /* +0: the next record index, set to index+1 once visited */
+struct WallRec {            /* a 0x34-byte slot at ds:E040 (ovl3:01C8): RegisterWallObject copies a
+                               0x34-byte wall-set decoration into cells (+0x2a), so the decoration's
+                               byte 0x0a lands at +0 of the following slot */
+    signed char next;       /* +0: the copied decoration's byte 0x0a, read back as the chain link after
+                               the slot is filled (then set to index+1) */
     char pad01[0x29];
-    unsigned char cells[0xa]; /* +0x2a: ten map cell indices, 0xFF = none */
+    unsigned char cells[0xa]; /* +0x2a: the copied decoration's first ten bytes, ten map cell indices,
+                                 0xFF = none */
 };
 extern struct WallRec gWallRecs[]; /*@ ds:E040 */
 extern void Unpack0(char far *src, void far *dst, long len); /*@ 1BA8:0006 */
@@ -104,7 +108,7 @@ struct DDRec {              /* 18-byte effect records, 10 of them at ds:DD2C (sr
 
 struct Entry14 {            /* 14-byte records at ds:8DD2 (src/E0D1C.C) */
     char pad00[3];
-    unsigned char m03;      /* +3: its low two bits are cleared here */
+    unsigned char m03;      /* +3: ResetLevel keeps its low two bits and clears bits 2 to 7 */
     char pad04[0xa];
 };
 
@@ -186,7 +190,10 @@ struct ObjRec {             /* nine-byte object records at ds:B894 (src/E0D1C.C)
 extern unsigned char g6840[]; /*@ ds:6840 */
 extern unsigned char g68A0[]; /*@ ds:68A0 */
 extern unsigned char g6900[]; /*@ ds:6900 */
-extern signed char far gMapTiles[]; /*@ 1F1D:0000 */
+extern signed char far gMapTiles[]; /*@ 1F1D:0000 */  /* the map tile byte table, read by the map screen
+                                                         sheet computation (the overlay stores the
+                                                         segment-table index 01D0, which resolves to
+                                                         paragraph 1F1D; src/EOV5.C calls it gSeg1D0) */
 
 #define MAPSHEET ((void far *)((char far *)MK_FP(0x1d8, 0) + (gMapTiles[gFBC8 - 1] << 5)))
 
@@ -226,7 +233,8 @@ struct WallDec {            /* a 52-byte wall set decoration */
 };
 
 /* ovl3:0000: frees every far pointer in the 200-entry table at ds:EFD4 (farfree), clears each slot
-   and resets the counter ds:F538. Called by ovl3:0A7C and overlay 5. */
+   and resets the wall-record slot count ds:F538, which also empties gWallRecs. Called by ovl3:0A7C
+   and overlay 5. */
 /*@ ovl3:0000 */ void FreePtrTable(void)
 {
     int i;
@@ -282,20 +290,23 @@ struct WallDec {            /* a 52-byte wall set decoration */
     FileClose(handle);
 }
 
-/* ovl3:01AA: Purpose unknown. Returns 1 when bit `bit` (the second argument, a char) is set in the
+/* ovl3:01AA: Purpose unknown: returns 1 when bit `bit` (the second argument, a char) is set in the
    signed char `value` (the first argument), else 0. */
 /*@ ovl3:01AA */ int IsBitSet(signed char value, char bit)
 {
     return (value & (1 << bit)) ? 1 : 0;
 }
 /* ovl3:01C8: registers a placed wall object `kind` (the first byte of a five-byte level record,
-   the rest `a`, `next`, `c`, `d`). It stores the four per-kind tables at ds:1879 (a into the
-   first, gF538+1 into ds:18BF, c into ds:1905 and d^4 into ds:194B), then, unless `next` is -1
-   (clearing ds:18BF[kind]), walks the chain of 0x34-byte wall records starting at `next`: it
-   copies the decoration from gSegDF4E+0x3E80+next*0x34 into gWallRecs[gF538] and, for each of its
-   ten cell indices that has no sprite yet in ds:EFD4, slices the cell's 8-byte rectangle out of
-   gE062 through ds:8086 with the map sheet (gMapTiles[gFBC8-1] cells). gF538 (the record count) is
-   bumped and the chain link is rewired; the loop ends when the link is 0 (-1). Called by
+   the rest `field1879`, `recordIndex`, `field1905`, `objectFlags`). It stores the four per-kind
+   tables at ds:1879 (field1879 into the first, gF538+1 into ds:18BF, field1905 into ds:1905 and
+   objectFlags^4 into ds:194B), then, unless `recordIndex` is -1 (clearing ds:18BF[kind]), walks
+   the chain of 0x34-byte wall decorations starting at `recordIndex`: it copies the 0x34 bytes at
+   gSegDF4E+0x3E80+recordIndex*0x34 into gWallRecs[gF538].cells, 52 bytes at +0x2a of the slot, so
+   the decoration's byte 0x0a lands at +0 of the next slot. For each of the ten cell indices in
+   those first ten bytes that has no sprite yet in ds:EFD4, it slices the cell's 8-byte rectangle
+   out of gE062 through ds:8086 with the map sheet (gMapTiles[gFBC8-1] cells). gF538 (the slot
+   count) is bumped and the link is the decoration byte 0x0a now at gWallRecs[gF538].next: when it
+   is nonzero it is set to gF538+1 and the walk continues, otherwise the loop ends. Called by
    ovl3:0A7C. */
 /*@ ovl3:01C8 */ void RegisterWallObject(int kind, int field1879, int recordIndex, int field1905, int objectFlags)
 {
@@ -331,10 +342,10 @@ struct WallDec {            /* a 52-byte wall set decoration */
     } else
         gTable18BF[kind] = 0;
 }
-/* ovl3:031A: frees and clears the six far pointers in the tables at ds:FB5E (stride 4) and the six
-   in ds:A99C.v (stride 6). The counterpart of the allocation InitGameTables (ovl2:0496) makes.
-   Called by ovl3:0A7C and overlay 5. */
-/*@ ovl3:031A */ void FreeEffectTables(void)
+/* ovl3:031A: frees and clears the six far pointers in the per-slot size-record table ds:FB5E and
+   the six size-record pointers in the SlotPos records at ds:A99C. The counterpart of the
+   allocation InitGameTables (ovl2:0496) makes. Called by ovl3:0A7C and overlay 5. */
+/*@ ovl3:031A */ void FreeSlotTables(void)
 {
     int i;
 
@@ -450,13 +461,14 @@ done:
     gStatusLine = 0;
 }
 /* ovl3:07A5: loads a wall texture set for `name`. It builds the file name "<name>.VCN" (VGA mode
-   3) or "<name>.ECN" (otherwise), or an empty name when `name` is NULL, into gFileNameBuf, loads
-   it packed with LoadPacked, unpacks three 16-byte plane tables from gSegEFC2+2, +0x12 and +0x22
-   into ds:F4D6, ds:FB4D and gSegDCA6 and the 0xCB20-byte texture block after them through
-   ovl3:0FD1's counterpart, then sets the plane tables (17A6:037E). In EGA mode 2 it expands the
-   planes into gSegDF4E (17A6:0F1F) and blits them to the A400 planar window through the driver
-   ds:808E; in CGA mode 0 it slices a 1x8 cell from `sheet`, frees it and build-masks gSegDCA6
-   (17A6:18EA). It leaves gFileNameBuf empty. Called by ovl3:0A7C. */
+   3) or "<name>.ECN" (otherwise) into gFileNameBuf; when `name` is NULL it reuses the name kept
+   in gWallNameBuf. It loads the file packed with LoadPacked, then Unpacks (Unpack0, 1BA8:0006)
+   the two 16-byte plane tables at gSegEFC2+2 and +0x12 into ds:F4D6 and ds:FB4D and the
+   0xCB20-byte texture block at gSegEFC2+0x22 into gSegDCA6, then sets the plane tables
+   (17A6:037E). In EGA mode 2 it expands the planes into gSegDF4E (17A6:0F1F) and blits them to
+   the A400 planar window through the driver ds:808E; in CGA mode 0 it slices a 1x8 cell from
+   `sheet`, frees it and build-masks gSegDCA6 (17A6:18EA). At the end it keeps the name just used
+   by copying gFileNameBuf into gWallNameBuf. Called by ovl3:0A7C. */
 /*@ ovl3:07A5 */ void LoadWallTextures(char far *name, char far *sheet)
 {
     void far *cell;
@@ -527,7 +539,8 @@ done:
 /* ovl3:0A7C: loads the map screen for level `level`. It reads the level's packed script
    "LEVEL<n>.INF" (FormatName, FileOpen, FileRead into gSegDF4E, Unpack into gBuf8DCA), names its
    two object/screen files through LoadObjects and a "%s.%s" sprite name, loads the sprite file
-   into gBufF43E and, in VGA mode, the "%s.PAL" palette, then frees the effect/map/pointer tables.
+   into gBufF43E and, in VGA mode, the "%s.PAL" palette, then frees the slot, map-icon and pointer
+   tables (FreeSlotTables, FreeMapIcons and FreePtrTable).
    The rest of the script: four LoadMapCells arguments, the header bytes gF51B/gF510/gFB32 and the
    gDeadline/gF540 timers, two far function-pointer records (the local `handlers` list of the icon
    loaders, called with 0 and 0x12), a run of (index, value) timer pairs stored into the 16-byte
@@ -584,7 +597,7 @@ done:
         LoadFile(gFileNameBuf, gFE68, 0x300);
     }
     script += 0x18;
-    FreeEffectTables();
+    FreeSlotTables();
     FreeMapIcons(0, 0x24);
     FreePtrTable();
     LoadMapCells(script[0], script[1], script[2], script[3]);
@@ -749,7 +762,7 @@ done:
 /* ovl3:11AF: saves the level state `level` to LEVELS.TMP: normalizes gSegEFC2+0xC800 into a far
    pointer, hands it to ovl3:0FD1, opens LEVELS.TMP for writing (mode 3), seeks to
    (level-1)*0x7F8, writes 0x7F8 bytes from the buffer, closes it and sets bit level-1 of gFBD0.
-   Called by overlay 0 (122E:1AAB). */
+   Called by LoadLevelOp (122E:1AAB, src/E122E.C:1268, through the 210C:002F stub). */
 /*@ ovl3:11AF */ void SaveLevelState(int level)
 {
     char far *state;
@@ -801,13 +814,15 @@ done:
     }
     RearmCharEffects();
 }
-/* ovl3:1368: saves the game. It first writes the current level state to LEVELS.TMP slot gFBC8-1
-   through ovl3:0FD1 and sets that slot's bit in ds:FBD0, then deletes and recreates EOBDATA.SAV
-   (mode 2) and writes, checking each length: the six 243-byte characters ds:F580 (after
-   AgeCharTimers and before AdvanceCharTimers), the 0x40-byte header at ds:FBC8, the 500 14-byte
-   items ds:8DD0, the 0x5FA0-byte screen buffer gSegEFC2, the single bytes ds:80E8, ds:80E6 and
-   ds:F43C, and the 0x60-byte buffer ds:AD20. Returns 1 when every write wrote its full length,
-   else 0, and reloads the INVENT screen. Called by overlay 1 (ovl1:1ACD). */
+/* ovl3:1368: saves the game. It runs ResetLevel, reads the whole 0x5FA0-byte LEVELS.TMP image
+   into gSegEFC2 (mode 1), packs the level state into the in-memory image at gSegEFC2 +
+   (gFBC8-1)*0x7F8 through ovl3:0FD1, sets bit gFBC8-1 in ds:FBD0, probes EOBDATA.SAV (a mode-1
+   FileOpen/FileClose), then deletes and recreates EOBDATA.SAV (mode 2) and writes, checking each
+   length: the six 243-byte characters ds:F580 (after AgeCharTimers and before AdvanceCharTimers),
+   the 0x40-byte header at ds:FBC8, the 500 14-byte items ds:8DD0, the 0x5FA0-byte image
+   gSegEFC2, the single bytes ds:80E8, ds:80E6 and ds:F43C, and the 0x60-byte buffer ds:AD20.
+   Returns 1 when every write wrote its full length, else 0; only when every write succeeded does
+   it reload the INVENT screen. Called by overlay 1 (ovl1:1ACD). */
 /*@ ovl3:1368 */ int SaveGame(void)
 {
     int slot;
@@ -851,15 +866,19 @@ done:
 /* ovl3:15B9: loads a saved game from EOBDATA.SAV. It reads the six blocks whose sizes are the
    table at ds:6A8C into gSegEFC2 (checking each length), then resets the level, unpacks the
    character block into gChars (restoring the six sprite pointers around it, then
-   AdvanceCharTimers), the 0x40-byte header into ds:FBC8 and the item block into gItems; it writes
-   the level-state block to LEVELS.TMP slot gFBC8 and stores the three single bytes ds:80E8 (the
-   Ctrl flag), ds:80E6 (gSoundOn) and ds:F43C, unpacks the 0x60 bytes into ds:AD20, loads the
-   CHARGENA screen and draws each alive character's 0x514-byte sprite out of gOverlayBuf (through
-   ds:8082; the front row into the OUTTAKE screen when any character sits there). Unless ds:A998
-   is -1 it then rebuilds the map screen (ovl3:0A7C), reloads PLAYFLD and INVENT, hands gA9C0 to
-   f1A47_0169, redraws the characters and either restores the mouse item or, when a mouse item is
-   shown, inserts it with a random per-cell sound. Sets ds:A998 to 1 on success, 0 on failure, and
-   returns that flag. Called by overlay 1 (ovl1:1ACD) and overlay 2 (ovl2:0846). */
+   AdvanceCharTimers), the 0x40-byte header into ds:FBC8 and the item block into gItems. It
+   recreates LEVELS.TMP from block 3 (mode 2 deletes and recreates the file; FileWrite starts at
+   offset 0 and carries the whole gBlockSizes[3] image). It stores the three single bytes ds:80E8
+   (the Ctrl flag), ds:80E6 (gSoundOn) and ds:F43C, unpacks the 0x60 bytes into ds:AD20, loads
+   the CHARGENA screen and, for each occupied character (m01 nonzero), cuts its 4 by 32 cell out
+   of gOverlayBuf (through ds:8082), unpacks it into its 0x514-byte sprite buffer and frees it;
+   when any slot is empty or any occupied character has m22 < 0 it then loads the OUTTAKE screen
+   and draws the m22 < 0 characters' sprites into it. Unless ds:A998 is -1 it then rebuilds the
+   map screen (ovl3:0A7C), reloads PLAYFLD and INVENT, hands gA9C0 to f1A47_0169, redraws the
+   characters, and either restores the mouse item when the mouse is enabled (gMouseDisabled is 0)
+   or, when the mouse is disabled and gFBCE is nonzero, inserts it with a RollDice-chosen per-cell
+   sound. Sets ds:A998 to 1 on success, 0 on failure, and returns that flag. Called by overlay 1
+   (ovl1:1ACD) and overlay 2 (ovl2:0846). */
 /*@ ovl3:15B9 */ int LoadGame(void)
 {
     int handle;
@@ -954,10 +973,11 @@ done:
     return ok;
 }
 /* ovl3:19F7: resets the level. It clears the m0A byte of the 30 gObjs objects, clears every live
-   ds:DD2C effect record (disarming the low two bits of its item's m03 when it was active), then,
-   when gDragActive is set, walks the gB894 record of character gDragMember adding the mode byte g5C76 to the
-   two bytes of its slot until the g194B flag has bit 0x30, and clears gDragActive. Called by ovl3:1368
-   and ovl3:15B9. */
+   ds:DD2C effect record (for an active 1, keeping only the low two bits of the m03 byte of the
+   ds:8DD2 record its m08 indexes, then clearing its active byte; an active 2 is just cleared),
+   then, when gDragActive is set, walks the gB894 record of character gDragMember adding the mode
+   byte g5C76 to two bytes of its slot until the g194B flag of that slot has bit 0x30 set (the
+   loop has no other bound), and clears gDragActive. Called by ovl3:1368 and ovl3:15B9. */
 /*@ ovl3:19F7 */ void ResetLevel(void)
 {
     int i;
