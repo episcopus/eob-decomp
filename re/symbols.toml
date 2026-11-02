@@ -7232,6 +7232,9 @@ unit = "eov4"
 addr = "ovl4:0066"
 size = 49
 evidence = ["ovl", "near", "frame"]
+name = "SetRegionRect"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov4_0097"
@@ -7246,6 +7249,9 @@ unit = "eov4"
 addr = "ovl4:021E"
 size = 135
 evidence = ["ovl", "near", "frame"]
+name = "SetRegionColumnExtent"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov4_02a5"
@@ -7323,6 +7329,9 @@ unit = "eov4"
 addr = "ovl4:1E18"
 size = 198
 evidence = ["ovl", "near", "frame"]
+name = "DrawViewSlots"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov4_1ede"
@@ -7344,6 +7353,9 @@ unit = "eov4"
 addr = "ovl4:2039"
 size = 10
 evidence = ["ovl", "frame"]
+name = "NoOp2039"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov5_0000"
