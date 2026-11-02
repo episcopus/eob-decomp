@@ -7592,6 +7592,9 @@ unit = "eov4"
 addr = "ovl4:044B"
 size = 1669
 evidence = ["ovl", "near", "frame"]
+name = "Ovl4_044B"
+level = "L2"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "eov4_0ad0"

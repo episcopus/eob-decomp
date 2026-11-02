@@ -232,7 +232,129 @@ extern signed char g194B[]; /*@ ds:194B */  /* per-slot byte flags (src/E08E6.C)
     return slot != 0 && !(g194B[slot] & 8);
 }
 
-/*@ ovl4:044B stub */ void Ovl4_044B(int arg0, int arg1) {}
+extern signed char g1991[]; /*@ ds:1991 */   /* per-page index into a gEF6A target (src/E08E6.C) */
+extern signed char g1995[]; /*@ ds:1995 */   /* per-page index into a gEF6A target (this unit) */
+extern signed char g1999[]; /*@ ds:1999 */   /* per-page index into a gEF6A target (this unit) */
+extern signed char gEFB9; /*@ ds:EFB9 */     /* the second per-page gEF6A target index (this unit) */
+extern signed char gEFD0; /*@ ds:EFD0 */     /* the third per-page gEF6A target index (this unit) */
+extern int gF4BC; /*@ ds:F4BC */             /* the cell and page parity (this unit) */
+
+/* ovl4:044B: draws the whole view page. It caches the three per-page gEF6A target offsets
+   (g1991, g1995 and g1999 at the page index, into gA9C6, gEFB9 and gEFD0), clears the 0x14a-word
+   view buffer at ds:ADB0, computes a parity from the cell (`base`) and the page into ds:F4BC, copies
+   or toggles the top strip (page 1, x2 -0x14a), initialises the 18 view slots through InitViewSlots,
+   and then walks a fixed list of rectangles. Each rectangle selects one of the page's tile records
+   (gEF6A[i] at one of the three offsets) and, when the byte is a live slot (or a nonzero record,
+   for the ones that are always drawn), copies or toggles its column (x, y, width, height, source x2)
+   from the page buffer into the view buffer. The records with a ds:194B bit 3 also pick a second
+   record and draw whichever of the two the flag selects. Called by DrawViewFrame at ovl4:1F6B.
+   Purpose unknown: what the tile records and the many rectangles are. */
+/*@ ovl4:044B */ void Ovl4_044B(int base, int row)
+{
+    int i;
+    int slot;
+    int slot2;
+
+    gA9C6 = g1991[gFBCC];
+    gEFB9 = g1995[gFBCC];
+    gEFD0 = g1999[gFBCC];
+    for (i = 0; i < 0x14a; i++)
+        ((unsigned int *)gViewBufADB0)[i] = 0;
+    gF4BC = ((base >> 5) + (base & 0x1f) + gFBCC) & 1;
+    if (gF4BC == 0)
+        CopyViewColumn(0, 0xf, 1, 0xfeb6, 0x16, 0xf);
+    else
+        ToggleViewColumn(0, 0xf, 1, 0xfeb6, 0x16, 0xf);
+    InitViewSlots(base, row);
+
+    slot = gEF6A[0][gEFB9];
+    if (slot)
+        CopyViewColumn(0xfe, 3, slot, 0x66, 3, 5);
+    slot = gEF6A[6][gEFD0];
+    if (slot)
+        ToggleViewColumn(0x15, 3, slot, 0x66, 3, 5);
+    slot = gEF6A[1][gEFB9];
+    slot2 = gEF6A[2][gA9C6];
+    if (IsSlotLive(slot) && !(g194B[slot2] & 8))
+        CopyViewColumn(2, 3, slot, 0x66, 3, 5);
+    else if (slot != 0 && (g194B[slot2] & 8))
+        CopyViewColumn(2, 3, slot2, 0x66, 3, 5);
+    slot = gEF6A[5][gEFD0];
+    slot2 = gEF6A[4][gA9C6];
+    if (IsSlotLive(slot) && !(g194B[slot2] & 8))
+        ToggleViewColumn(0x11, 3, slot, 0x66, 3, 5);
+    else if (slot != 0 && (g194B[slot2] & 8))
+        ToggleViewColumn(0x11, 3, slot2, 0x66, 3, 5);
+    slot = gEF6A[2][gEFB9];
+    if (slot)
+        CopyViewColumn(8, 3, slot, 0x61, 1, 5);
+    slot = gEF6A[4][gEFD0];
+    if (slot)
+        ToggleViewColumn(0xd, 3, slot, 0x61, 1, 5);
+    if (IsSlotLive(gEF6A[1][gA9C6]))
+        CopyViewColumn(0xfc, 3, gEF6A[1][gA9C6], 0x81, 6, 5);
+    if (IsSlotLive(gEF6A[5][gA9C6]))
+        CopyViewColumn(0x14, 3, gEF6A[5][gA9C6], 0x81, 6, 5);
+    if (IsSlotLive(gEF6A[2][gA9C6]))
+        CopyViewColumn(2, 3, gEF6A[2][gA9C6], 0x81, 6, 5);
+    if (IsSlotLive(gEF6A[4][gA9C6]))
+        CopyViewColumn(0xe, 3, gEF6A[4][gA9C6], 0x81, 6, 5);
+    slot = gEF6A[3][gA9C6];
+    if (slot)
+        CopyViewColumn(8, 3, slot, 0x81, 6, 5);
+    slot = gEF6A[7][gEFB9];
+    if (slot)
+        CopyViewColumn(0, 3, slot, 0x75, 2, 6);
+    slot = gEF6A[11][gEFD0];
+    if (slot)
+        ToggleViewColumn(0x14, 3, slot, 0x75, 2, 6);
+    slot = gEF6A[8][gEFB9];
+    if (slot)
+        CopyViewColumn(6, 2, slot, 0x51, 2, 8);
+    slot = gEF6A[10][gEFD0];
+    if (slot)
+        ToggleViewColumn(0xe, 2, slot, 0x51, 2, 8);
+    if (IsSlotLive(gEF6A[8][gA9C6]))
+        CopyViewColumn(0xfc, 2, gEF6A[8][gA9C6], 0x9f, 0xa, 8);
+    if (IsSlotLive(gEF6A[10][gA9C6]))
+        CopyViewColumn(0x10, 2, gEF6A[10][gA9C6], 0x9f, 0xa, 8);
+    slot = gEF6A[9][gA9C6];
+    if (slot)
+        CopyViewColumn(6, 2, slot, 0x9f, 0xa, 8);
+    slot = gEF6A[12][gEFB9];
+    if (slot)
+        CopyViewColumn(3, 1, slot, 0x2d, 3, 0xc);
+    slot = gEF6A[14][gEFD0];
+    if (slot)
+        ToggleViewColumn(0x10, 1, slot, 0x2d, 3, 0xc);
+    slot = gEF6A[12][gA9C6];
+    slot2 = gEF6A[13][gA9C6];
+    if (!(g194B[slot] & 8))
+        CopyViewColumn(0xf3, 1, slot, 0xef, 0x10, 0xc);
+    slot = gEF6A[14][gA9C6];
+    if (!(g194B[slot] & 8))
+        CopyViewColumn(0x13, 1, slot, 0xef, 0x10, 0xc);
+    slot = gEF6A[13][gA9C6];
+    if (slot)
+        CopyViewColumn(3, 1, slot, 0xef, 0x10, 0xc);
+    slot = gEF6A[15][gEFB9];
+    slot2 = gEF6A[17][gEFD0];
+    if (gFBC8 > 6 && gFBC8 < 0xa) {
+        if (slot2 == 0x17)
+            slot2 = 0;
+        if (slot2 == 0x18)
+            slot2 = 0;
+    } else if (gFBC8 > 3) {
+        if (slot == 0x18)
+            slot = 0;
+        if (slot2 == 0x17)
+            slot2 = 0;
+    }
+    if (slot)
+        CopyViewColumn(0, 0, slot, 0, 3, 0xf);
+    if (slot2)
+        ToggleViewColumn(0x13, 0, slot2, 0, 3, 0xf);
+}
 
 /* A 14-byte item record at ds:8DD0 (src/E0BD2.C declares the same layout). */
 struct ItemRecord {
