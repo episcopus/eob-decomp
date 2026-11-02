@@ -51,14 +51,28 @@ struct Entry27 {            /* 27-byte records at ds:1A3B, indexed by Obj28.b0 (
 };
 
 struct CharRec {            /* 243-byte character records at ds:F580; the fields this unit reads */
-    char pad00[0x1D];
+    char pad00[2];
+    char name[0x0B];        /* +02: the character's name, NUL padded (src/E0DE8.C) */
+    char pad0D[0x1D - 0x0D];
     signed char m1D;        /* +0x1D */
     char pad1E[0xE3 - 0x1E];
     int mE3;                /* +0xE3 */
     char padE5[0xF3 - 0xE5];
 };
 
+struct Entry14 {            /* 14-byte item records at ds:8DD2 (src/E0D1C.C) */
+    unsigned char flags;    /* +0 (ds:8DD2) */
+    signed char icon;       /* +1 (ds:8DD3) */
+    signed char m02;        /* +2 (ds:8DD4): the item type */
+    char pad03;
+    int m04;                /* +4 (ds:8DD6): the key; -1 when free */
+    char pad06[0x0B - 0x06];
+    signed char m0B;        /* +0xB (ds:8DDD) */
+    char pad0C[0x0E - 0x0C];
+};
+
 extern struct CharRec gChars[]; /*@ ds:F580 */
+extern struct Entry14 gTable8DD2[]; /*@ ds:8DD2 */
 
 extern struct Obj28 gObjs[]; /*@ ds:8A82 */
 extern signed char gArg3237[]; /*@ ds:3237 */
@@ -120,6 +134,18 @@ extern int f0D1C_00DA(int value, int page); /*@ 0D1C:00DA */
 extern void fOvl4_1F51(int n); /*@ 2116:005C */   /* overlay 4 entry, ovl4:1F51 */
 extern void PlaySoundVolume(int sound, int volume); /*@ 177D:0106 */
 extern void PlaySoundDefault(int sound); /*@ 177D:00F3 */
+extern int f0D1C_0670(int who, int mask); /*@ 0D1C:0670 */
+extern void DamageCharacter(int who, int amount); /*@ 0DE8:09B9 */
+extern void ApplyStatusEffect(int who, int mask, char far *text, int attack, int count, int value, int flag); /*@ 0DE8:101A */
+extern void RedrawMember(int dir); /*@ 1547:0991 */
+extern void DrawText(char far *text); /*@ 1DE7:060A */
+extern int sprintf(char far *buf, char far *fmt, ...); /*@ 0000:57AE */
+extern int AddDDEffect(int who, int item, int volume, int kind, int page, int type); /*@ 0BD2:07DE */
+extern char gFileNameBuf[]; /*@ ds:FE6E */
+extern signed char g3220[]; /*@ ds:3220 */
+extern signed char g3223[]; /*@ ds:3223 */
+extern signed char g3226[]; /*@ ds:3226 */
+extern signed char g322F[]; /*@ ds:322F */
 void Obj10F3(struct Obj28 far *obj);   /* forward: 05EA reaches it before its definition */
 
 /* 08E6:000B: reset an object whose type is not 7, 8 or 0xa: clear the type, pick an orientation
@@ -451,7 +477,112 @@ void Obj10F3(struct Obj28 far *obj);   /* forward: 05EA reaches it before its de
 {
     f0EF3_097B(0xff, value, obj->id, obj->frame, obj->orient);
 }
-/*@ 08E6:0765 stub */ int Obj0765(struct Obj28 far *obj) { return 0; }
+/* 08E6:0765: the object's action for UpdateObjects. It returns 0 unless the object's 1A3B record
+   has m0E bit 6, the object has m19 left and m18 is zero (otherwise m18 is decremented and 0 is
+   returned). It then checks f17A6_0F61(id, gSoundVolume) is at most 3 and f17A6_0314(id,
+   gSoundVolume) equals orient * 2, and walks f0D1C_00DA(id, orient), following it until it reaches
+   gSoundVolume; each step must have g194B[gB894[value * 9 + (orient ^ 2)]] bits 0..1 set and no
+   gB894[value * 9 + 4] count, else 0 is returned. The action then switches on b0: 4 turns to 9 and
+   plays 0x1f; 14 plays g322F[m19] and turns through Obj073F(obj, g3226[m19]); 15 frees an item 0x3c
+   and queues AddDDEffect(-1, item, id, frame, orient, gTable8DD2[item].m02), freeing it when that
+   fails; 16 calls 0EF3:097B(0xff, 0, id, frame, orient) and plays 0x55; 17 plays 0x53, announces the
+   mind blast and paralyzes every affected member; 21 rolls 1d4 and, under 3, turns through Obj073F
+   and plays g3223[roll] after g3220[roll], else announces the wounds spell and hits every affected
+   member. Every action then runs the overlay-4 entry, clears gDF4C, decrements m19 unless it is 0xff
+   and sets m18 to 5, returning 1. Called by 0AB8. DRAFT: every case matches except the last
+   PlaySoundVolume(0x6c, id) of case 21, which ours tail-merges into the shared `push ax; call; pop;
+   pop` block that case 4, case 16 and the roll<3 path jump to (0A5E); the original keeps that call
+   inline (0765:01A2 `mov ax, 0x6c; push ax; lcall 177D:0106`) and jumps to the tail, a 5-byte -O
+   basic-block layout difference. The same statement as a separate `if (roll >= 3)`, a `goto` label
+   and `break` do not change it. */
+/*@ 08E6:0765 draft */ int Obj0765(struct Obj28 far *obj)
+{
+    struct Entry27 far *rec;
+    int value;
+    int orient;
+    int arg;
+    int item;
+    int roll;
+    int i;
+
+    rec = &gTable1A3B[obj->b0];
+    if ((rec->m0E & 0x40) == 0 || obj->m19 == 0)
+        return 0;
+    if (obj->m18 != 0) {
+        obj->m18--;
+        return 0;
+    }
+    if (f17A6_0F61(obj->id, gSoundVolume) > 3)
+        return 0;
+    if (f17A6_0314(obj->id, gSoundVolume) != obj->orient * 2)
+        return 0;
+    orient = obj->orient;
+    value = f0D1C_00DA(obj->id, orient);
+    while (value != gSoundVolume) {
+        if ((g194B[(signed char)gB894[value * 9 + (orient ^ 2)]] & 3) == 0
+                || (gB894[value * 9 + 4] & 7))
+            return 0;
+        value = f0D1C_00DA(value, orient);
+    }
+    switch (obj->b0) {
+    case 21:
+        roll = RollDice(1, 4, 0xff);
+        if (roll < 3) {
+            arg = g3220[roll];
+            Obj073F(obj, arg);
+            PlaySoundVolume(g3223[roll], obj->id);
+        } else {
+            for (i = 0; i < 6; i++) {
+                if (f0D1C_0670(i, 3)) {
+                    sprintf(gFileNameBuf, "%s is hit by a cause serious wounds spell!\r",
+                            (char far *)gChars[i].name);
+                    DrawText(gFileNameBuf);
+                    DamageCharacter(i, RollDice(2, 8, 1));
+                    break;
+                }
+            }
+            PlaySoundVolume(0x6c, obj->id);
+        }
+        break;
+    case 4:
+        Obj073F(obj, 9);
+        PlaySoundVolume(0x1f, obj->id);
+        break;
+    case 14:
+        arg = g3226[obj->m19];
+        PlaySoundVolume(g322F[obj->m19], obj->id);
+        Obj073F(obj, arg);
+        break;
+    case 15:
+        item = CopyItemToFreeSlot(0x3c);
+        if (item != 0) {
+            if (AddDDEffect(-1, item, obj->id, obj->frame, obj->orient,
+                            gTable8DD2[item].m02) == 0)
+                gTable8DD2[item].m04 = -1;
+        }
+        break;
+    case 17:
+        PlaySoundVolume(0x53, obj->id);
+        DrawText("The party is hit with a psychic mind blast!\r");
+        for (i = 0; i < 6; i++) {
+            if (f0D1C_0670(i, 3)) {
+                ApplyStatusEffect(i, 4, "paralyzed", 1, 5, 9, 1);
+                RedrawMember(i);
+            }
+        }
+        break;
+    case 16:
+        f0EF3_097B(0xff, 0, obj->id, obj->frame, obj->orient);
+        PlaySoundVolume(0x55, obj->id);
+        break;
+    }
+    fOvl4_1F51(1);
+    gDF4C = 0;
+    if (obj->m19 != 0xff)
+        obj->m19--;
+    obj->m18 = 5;
+    return 1;
+}
 /* 08E6:0AB8: run the type-0 object update: notify 0765 and 05EA, clear m0A, turn it with 0430 and
    run 05EA with -1 when its record's m0E has bit 3 set. Called by UpdateObjects. */
 /*@ 08E6:0AB8 */ void Obj0AB8(struct Obj28 far *obj)
