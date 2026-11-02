@@ -3505,7 +3505,7 @@ unit = "e0ef3"
 addr = "0EF3:0E1B"
 size = 240
 evidence = ["near", "frame"]
-notes = "blocked: unit-flag class (WHITEPAPER 2.1.1). Body written and matching up to +0x15. With the file's -ml -O -Z TCC's internal assembler cross-jumps the two `sprintf`+`SayAndBeep` message tails (obj==-1 at 0EF3:0EAB, outer else at 0EF3:0ED9; their bytes are identical from +0x14) into one shared suffix, so ours is ~0x1D bytes short and the outer-else `jmp` target is off (ours jmp 0xa1, original 0xbe). With -B (TCC -S then TASM /jNOSMART /m2) the tails stay apart but TCC -S then emits the whole outer-else jump 2 bytes long (ours jmp 0xc0, original 0xbe), and -B breaks three other functions of the unit: DrawMemberIcons (0F99, +0x83 `jge 0x87; jmp` against the original `jl 0xb`), DispelMagic (131A, +0xAC the same), DamageTargetCell (0A3F, +0x14B `jmp 0x308` against 0x306). Neither flag set matches the unit (with -c 99 of 100 non-stub functions match, with -B 96). No source form found: the two tails are byte-identical from the format push, so the internal assembler always merges them. Same open problem as 0ACD:091C and 0D1C:096C."
+notes = "blocked: unit-flag class (WHITEPAPER 2.1.1). Body written and matching up to +0x15. With the file's -ml -O -Z TCC's internal assembler cross-jumps the two `sprintf`+`SayAndBeep` message tails (obj==-1 at 0EF3:0EAB, outer else at 0EF3:0ED9; their bytes are identical from +0x14) into one shared suffix, so ours is ~0x1D bytes short and the outer-else `jmp` target is off (ours jmp 0xa1, original 0xbe). With -B (TCC -S then TASM /jNOSMART /m2) the tails stay apart but TCC -S then emits the whole outer-else jump 2 bytes long (ours jmp 0xc0, original 0xbe), and -B breaks three other functions of the unit: DrawMemberIcons (0F99, +0x83 `jge 0x87; jmp` against the original `jl 0xb`), DispelMagic (131A, +0xAC the same), DamageTargetCell (0A3F, +0x14B `jmp 0x308` against 0x306). Neither flag set matches the unit (with -c 102 of 102 non-draft functions match, with -B 99 of 104: the same three break, and the two animations match either way). No source form found: the two tails are byte-identical from the format push, so the internal assembler always merges them. Same open problem as 0ACD:091C and 0D1C:096C."
 
 [[function]]
 id = "e0ef3_0f0b"
@@ -4342,6 +4342,9 @@ unit = "e0ef3"
 addr = "0EF3:2A53"
 size = 1129
 evidence = ["far", "frame"]
+name = "f0EF3_2A53"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0ef3_2ebc"
@@ -4349,6 +4352,9 @@ unit = "e0ef3"
 addr = "0EF3:2EBC"
 size = 1269
 evidence = ["far", "frame"]
+name = "AnimateConeOfCold"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e122e_0001"
@@ -5088,6 +5094,7 @@ evidence = ["near", "segment"]
 name = "LinkNode"
 level = "L2"
 match_flags = "-ml -O -Z"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1658_001e"
@@ -5098,6 +5105,7 @@ evidence = ["far", "near", "frame"]
 name = "ListAdd"
 level = "L2"
 match_flags = "-ml -O -Z"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1658_0073"
@@ -5108,6 +5116,7 @@ evidence = ["frame"]
 name = "ToggleNode"
 level = "L2"
 match_flags = "-ml -O -Z"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1658_0154"
@@ -5118,6 +5127,7 @@ evidence = ["frame"]
 name = "DisableNode"
 level = "L2"
 match_flags = "-ml -O -Z"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1658_017b"
@@ -5128,6 +5138,7 @@ evidence = ["frame"]
 name = "EnableNode"
 level = "L2"
 match_flags = "-ml -O -Z"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1658_01a2"
@@ -5138,6 +5149,7 @@ evidence = ["frame"]
 name = "FindNode"
 level = "L2"
 match_flags = "-ml -O -Z"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1658_01e6"
@@ -5148,6 +5160,7 @@ evidence = ["frame"]
 name = "ClearNode"
 level = "L2"
 match_flags = "-ml -O -Z"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1658_02f5"
@@ -5158,6 +5171,7 @@ evidence = ["frame"]
 name = "SetNode"
 level = "L2"
 match_flags = "-ml -O -Z"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1658_03d6"
@@ -5168,6 +5182,7 @@ evidence = ["frame"]
 name = "InsertNode"
 level = "L2"
 match_flags = "-ml -O -Z"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1658_04a7"
@@ -5178,6 +5193,7 @@ evidence = ["frame"]
 name = "IsNodeEnabled"
 level = "L2"
 match_flags = "-ml -O -Z"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1658_04bb"
@@ -5188,6 +5204,7 @@ evidence = ["frame"]
 name = "IsNodeOn"
 level = "L2"
 match_flags = "-ml -O -Z"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1658_04ca"
@@ -5198,6 +5215,7 @@ evidence = ["frame"]
 name = "GetNodeState1"
 level = "L2"
 match_flags = "-ml -O -Z"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e16a5_0009"
@@ -5871,6 +5889,7 @@ evidence = ["segment"]
 name = "_Int3FHandler"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1a72_00da"
@@ -5881,6 +5900,7 @@ evidence = ["far"]
 name = "InitMouse"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1a72_0285"
@@ -5891,6 +5911,7 @@ evidence = ["far", "frame"]
 name = "RemoveMouseHandler"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1a72_02a6"
@@ -5901,6 +5922,7 @@ evidence = ["far", "frame"]
 name = "IsMouseInRect"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1a72_02fa"
@@ -5911,6 +5933,7 @@ evidence = ["far"]
 name = "_EnableInterrupts"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1a72_02fc"
@@ -5921,6 +5944,7 @@ evidence = ["far"]
 name = "_DisableInterrupts"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1a72_02fe"
@@ -5931,6 +5955,7 @@ evidence = ["frame"]
 name = "_SetFarPointer"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1a72_033a"
@@ -5941,6 +5966,7 @@ evidence = ["frame"]
 name = "_GetFarPointer"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1aa6_000f"
@@ -6283,6 +6309,7 @@ evidence = ["segment"]
 name = "_f1BBE_0001"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1bbe_0002"
@@ -6293,6 +6320,7 @@ evidence = ["far", "near"]
 name = "_HidePointer"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1bbe_00ed"
@@ -6303,6 +6331,7 @@ evidence = ["far", "near", "frame"]
 name = "_ShowPointer"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1bbe_01fe"
@@ -6313,6 +6342,7 @@ evidence = ["far", "frame"]
 name = "_HidePointerZone"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1bbe_02c2"
@@ -6323,6 +6353,7 @@ evidence = ["far", "frame"]
 name = "_ShowPointerZone"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1bbe_0307"
@@ -6333,6 +6364,7 @@ evidence = ["far", "frame"]
 name = "LockHidePointer"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1bbe_0332"
@@ -6343,6 +6375,7 @@ evidence = ["far", "frame"]
 name = "LockShowPointer"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1bf3_000d"

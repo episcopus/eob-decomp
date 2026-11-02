@@ -32,8 +32,8 @@
    branch the other way. Same class as 0ACD:091C. */
 
 struct Panel {                  /* the panel record the option list is drawn from; 16-byte records at ds:017F */
-    int x;                      /* +0: column offset from ds:FE64; eight-pixel cells in both draw loops
-                                   (<< 3 at :195 and :279); the hit rectangle uses the font width (:286) */
+    int x;                      /* +0: column offset from ds:FE64; eight-pixel cells in both drawing
+                                   functions (<< 3 at :195 and :279); the hit rectangle uses the font width (:286) */
     int y;                      /* +2: row offset from ds:FE66 */
     int width;                  /* +4: width in characters */
     int height;                 /* +6: height in lines */
@@ -45,7 +45,7 @@ struct Panel {                  /* the panel record the option list is drawn fro
 
 extern struct Panel gPanels[]; /*@ ds:017F */
 /* the text window's top-left corner (src/E1C0E.C:60-61, src/E1DE7.C:34): x is in 8-pixel columns
-   (<< 3 at :195, :279 and :286), y in pixels; the panel's x is eight-pixel cells in both draw loops
+   (<< 3 at :195, :279 and :286), y in pixels; the panel's x is eight-pixel cells in both drawing functions
    (:195, :279) and font-width units in the hit rectangle (:286) */
 extern int gTextLeft; /*@ ds:FE64 */
 extern int gTextTop; /*@ ds:FE66 */
@@ -69,23 +69,23 @@ extern int g8102; /*@ ds:8102: a zero here makes the normal text colour 1 (:202,
                       the video mode the game initialised) */
 extern int gMouseDisabled; /*@ ds:814A: nonzero disables the mouse: the INT 33h handler at 1A72:017A
                               returns at once, and InitMouse sets it to 1 before it installs the
-                              handler (1A72:0150, src/E1A72.ASM:100; the store is src/E1A72.ASM:316,
-                              the line after the gMouseHandlerInstalled store at :315) */
+                              handler (1A72:0150, src/E1A72.ASM:100; the store is src/E1A72.ASM:325,
+                              the line after the gMouseHandlerInstalled store at :324) */
 extern int gCursorX; /*@ ds:8138: mouse x in pixels (src/E1A72.ASM:65); tested with the pixel rectangle (:292) */
 extern int gCursorY; /*@ ds:813A: mouse y in pixels (src/E1A72.ASM:73) */
 extern int g8134; /*@ ds:8134: accumulated button changes; the INT 33h handler folds each change into
-                      it (or ax,[g8134] at src/E1A72.ASM:401; mov [g8134],ax at :402), this file clears
+                      it (or ax,[g8134] at src/E1A72.ASM:410; mov [g8134],ax at :411), this file clears
                       it (:209) and RunMapLoop clears it after the map screen is entered (src/E0ACD.C:886) */
 extern void (far *gDrawText)(char far *text, int x, int y, int color, int extra); /*@ ds:80CA */
 
 extern void DrawShadowText(char far *text, int x, int y, int color, int extra); /*@ 082C:0898 */
 /* 1BBE:0307: hide the pointer inside a frame. It waits for the pointer busy flag ds:812E to be free
    and takes it (1BBE:030A), calls the far hook [ds:80AA] with the pointer at ds:8172/8174, calls
-   HidePointer, calls the far hook [ds:80A2], then releases the flag (src/E1BBE.ASM:489-499). The
+   HidePointer, calls the far hook [ds:80A2], then releases the flag (src/E1BBE.ASM:489-502). The
    callers call the pair a frame bracket; the two hooks' role is Purpose unknown, src/ names them only
-   as "far fn (g8172/g8174)" and "far fn (no arguments)" (src/E1BBE.ASM:123-124, src/E1A72.ASM:32-33) */
+   as "far fn (g8172/g8174)" and "far fn (no arguments)" (src/E1BBE.ASM:126-127, src/E1A72.ASM:32-33) */
 extern void LockHidePointer(void); /*@ 1BBE:0307 */
-extern void LockShowPointer(void); /*@ 1BBE:0332: the same bracket around ShowPointer (src/E1BBE.ASM:512-522) */
+extern void LockShowPointer(void); /*@ 1BBE:0332: the same bracket around ShowPointer (src/E1BBE.ASM:512-525) */
 extern int IsKeyPending(void); /*@ 1AAD:0471: nonzero when an event waits in the ring (src/E1AAD.ASM:337-338) */
 extern void FlushKeyBuffer(void); /*@ 1AAD:0480: discard every buffered event (src/E1AAD.ASM:350-351) */
 extern int WaitKeyEvent(void); /*@ 1AAD:05D3: read a key; returned unfiltered, the callers mask with
@@ -115,8 +115,8 @@ extern void WaitFrames(int n); /*@ 1A16:000B */
 }
 
 /* 14EF:0078: blink one entry between its normal colour and its selected colour: three times, draw it
-   with colorB, wait two frames, draw it with colorA, wait two frames, redrawing only inside the
-   frame begun by 1BBE:0307 and ended by 1BBE:0332. `text` is the far string to draw, `x` and `y` its
+   with colorB, wait two frames (inside the frame, :131), draw it with colorA, close the frame
+   (:133), wait two frames more (after it, :134). `text` is the far string to draw, `x` and `y` its
    pixel position, `colorA` the normal colour and `colorB` the selected colour. `extra` is passed as
    the fifth argument of gDrawText; what it means is not established, and the one caller,
    UpdateOptionList (:346), always passes 0. Called on the entry just chosen, so this is the
@@ -237,9 +237,9 @@ enum {
    row at first (:318, :326) and then, for the return, the string index (:348, with the comment at
    the assignment). The mouse goes through the rectangle built from ds:FE64/ds:FE66, ds:8100/8101
    (the font width and height) and ds:FC78 against the last click (ds:8140/8142) and the current
-   cursor (ds:8138/813A), when ds:5D1A lets the pointer pick and the mouse is enabled
-   (!gMouseDisabled, :290). The rectangle uses the font width, so it agrees with DrawOptionList's
-   eight-pixel cells only while the cell is eight pixels wide. `counter` is a placeholder: it is
+   cursor (ds:8138/813A). The cursor pick needs !gMouseDisabled (:290) and ds:5D1A (:292); the click
+   test (:316) is not gated (the handler returns at once while gMouseDisabled is set, src/E1A72.ASM:386-387). The
+   rectangle uses the font width, so it agrees with the eight-pixel draw only while the cell is eight pixels wide. `counter` is a placeholder: it is
    bumped once and never read; `extra` is never read. Every caller passes a long zero (0L), which
    fills the same four bytes as this int pair (src/EOV0.C:1149, :1215, :1257; src/EOV2.C:383). */
 /*@ 14EF:0274 */ int UpdateOptionList(int panel, char far * far *names, int counter, int extra,
@@ -283,7 +283,7 @@ enum {
     gFC7A = 0;
     if (IsKeyPending())
         key = WaitKeyEvent() & KEY_CODE_MASK;
-    left = (gTextLeft << 3) + panelDef->x * gFontWidth;
+    left = (gTextLeft << 3) + panelDef->x * gFontWidth; /* QUIRK 14EF:0336: x and width scaled by gFontWidth; the draws use << 3 */
     top = gTextTop + panelDef->y - halfspace;
     right = left + panelDef->width * gFontWidth - 1;
     bottom = top + panelDef->height * lineheight - 1;
