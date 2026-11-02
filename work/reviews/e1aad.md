@@ -24,21 +24,26 @@ partly fixed). Nothing is escalated: each is a comment, with no matcher, spec or
 
 ### Findings
 
-- [ ] must-fix src/E1AAD.ASM:716 (the 1AAD:0718 header; round 1 should at :18, reopened): "toggles
+- [x] must-fix src/E1AAD.ASM:716 (the 1AAD:0718 header; round 1 should at :18, reopened): "toggles
   gSoundOn/g80E8 on the Ctrl/Alt sound keys". Round 1 named this line and asked for the keys, not
   Ctrl or Alt. The code tests AX=0420h (gSoundOn) and AX=0434h (g80E8) at lines 957-961, and no Ctrl
   or Alt bit. The g80E8 comment at :18-21 was fixed; this header was not. Fix: "toggles gSoundOn on key
   0420h (S) and g80E8 on key 0434h (M)".
+  Fixed (dec-deepseek-3): the 1AAD:0718 header now reads "toggles gSoundOn on key 0420h (S) and g80E8
+  on key 0434h (M)".
 
-- [ ] must-fix src/E1AAD.ASM:1170-1171 (the 1AAD:0B0E header): "so a release never reaches the game" is
+- [x] must-fix src/E1AAD.ASM:1170-1171 (the 1AAD:0B0E header): "so a release never reaches the game" is
   wrong. 1AAD:038E (266-267) and 1AAD:053A (498-499) do test and discard the release bit, but
   1AAD:0409 (326-337) and 1AAD:0588 (540-546) do not, and 0588 is what DispatchKey calls after 0409
   (E16A5.C:127-128) before it dispatches the key to the node list. So a release (41h or 42h with the
   bit set) reaches the game through DispatchKey. Say which readers discard it (038E, 053A) and which
   do not (0409, 0588). The same wording "AH bit 8" is also at src/E1AAD.ASM:230 and :465. AH has no
   bit 8; the code tests and sets the value 08h (`test ah,8`, `or ah,8`). Write "the 08h bit of AH".
+  Fixed (dec-deepseek-3): the 1AAD:0B0E header now says 038E and 053A discard the 08h bit, 0409 and
+  0588 do not, and a release reaches the game through DispatchKey; "AH bit 8" is now "the 08h bit of
+  AH" at :230, :465 and also :512 and :1170.
 
-- [ ] must-fix src/E1AAD.ASM:104-106 (the 1AAD:0223 header): two wrong claims in a changed line.
+- [x] must-fix src/E1AAD.ASM:104-106 (the 1AAD:0223 header): two wrong claims in a changed line.
   (a) "a game code above 80h otherwise": the keypad table 1AAD:0357 (kKeypadCodes, lines 222-224) holds
   the ASCII codes 2Fh, 2Ah, 2Dh, 2Bh and 0Dh, and the Ctrl-function table 1AAD:037A (kCtrlFnCodes,
   225-226) holds the ASCII digits 30h..39h and symbols. (b) "41h..4Ah (the Ctrl-function keys)": the
@@ -47,8 +52,12 @@ partly fixed). Nothing is escalated: each is a comment, with no matcher, spec or
   (lines 1195, 1216), and TranslateKey maps the range 41h..4Ah to 0C6h..0CFh (lines 191-194). Fix the
   clause: "41h..4Ah (the mouse codes 41h and 42h among them) come back as 0C6h..0CFh; 5Ah..6Dh take the
   Ctrl-function table; the keypad and that table hold some ASCII codes; otherwise game codes above 80h".
+  Fixed (dec-deepseek-3): the 1AAD:0223 header now names the Ctrl-function table's keys as 5Ah..6Dh
+  indexed by AL-5Ah, says 41h..4Ah (the mouse codes 41h and 42h among them) come back as 0C6h..0CFh,
+  and says the tables hold ASCII for the main table and for some keypad and Ctrl-function entries,
+  otherwise the result is a game code above 80h.
 
-- [ ] must-fix src/E1AAD.ASM:20-30 (the g80EC and g80EF externs): both describe the state 2 readers
+- [x] must-fix src/E1AAD.ASM:20-30 (the g80EC and g80EF externs): both describe the state 2 readers
   wrongly. (a) g80EF (lines 27-30): "in state 2 the readers use ds:80EF instead of the ring
   (1AAD:038E/0409/048D)". Only 1AAD:048D does (lines 401-403, `mov ax,[g80EF]`). 1AAD:038E (254-259)
   and 0409 (324-329) read the ring slot in state 2, and 1AAD:0D26 fills that slot with ds:80EF
@@ -56,23 +65,35 @@ partly fixed). Nothing is escalated: each is a comment, with no matcher, spec or
   (1AAD:038E/053A/05D3)". 038E still reads the ring slot in state 2 (line 255); what 038E, 053A (481)
   and 05D3 (563) skip is the wait for a ring event. Fix both: the state 2 readers take the value
   from the ring slot that 0D26 filled (038E, 0409), except 048D, which reads ds:80EF directly.
+  Fixed (dec-deepseek-3): g80EC now says the state 2 readers skip the wait for a ring event and take
+  the ring slot that 1AAD:0D26 has filled; g80EF now says 1AAD:048D reads ds:80EF back directly in
+  state 2 and the other state 2 readers (1AAD:038E/0409) read the ring slot that 0D26 filled with it.
 
-- [ ] should src/E1AAD.ASM:235 (the 1AAD:038E header): "(EOV6.C:339, :342, :508)" is stale. EOV6.C now
+- [x] should src/E1AAD.ASM:235 (the 1AAD:038E header): "(EOV6.C:339, :342, :508)" is stale. EOV6.C now
   calls ReadKey at lines 346, 349 and 516. Cite the callers by address instead (the packet lists
   ovl6:0000 CampLoop, ovl6:0B9B, 082C:000B, 082C:0B43, ovl0:207A, ovl1:13F7). "Do not consume the key
   here" is true of the ReadKey call, but the callers flush the ring after the call (FlushKeyBuffer at
   EOV6.C:353 and :517). Say so, so the header is not read as "callers never consume".
+  Fixed (dec-deepseek-3): the 1AAD:038E header now lists the callers by address (EditTextField
+  082C:000B, DelaySecondsThenKey 082C:0B43, PickClass ovl0:207A, ShowMessage ovl1:13F7, CampLoop
+  ovl6:0000, f0B9B ovl6:0B9B) and says they flush the ring afterwards (FlushKeyBuffer, EOV6.C:353
+  and :517).
 
-- [ ] should src/E1AAD.ASM:64 (kExtendKeys map): "1AAD:005D: the map it reads at [di+0Fh]". The
+- [x] should src/E1AAD.ASM:64 (kExtendKeys map): "1AAD:005D: the map it reads at [di+0Fh]". The
   read is at 1AAD:005C+i (di after `repne scasb` is 4Ch+i+1, plus 0Fh), so entry 0 of the map is
   1AAD:005C, the last byte of kExtendKeys, and 005D is entry 1. Write the map base as 1AAD:005C.
+  Fixed (dec-deepseek-3): the map comment now reads 1AAD:005C and says entry i is at 1AAD:005C+i,
+  so entry 0 is the 3Eh above and 005D is entry 1.
 
-- [ ] note src/E1AAD.ASM:44-47 (g8488): "tick counter" is right, but the unit also clears the count
+- [x] note src/E1AAD.ASM:44-47 (g8488): "tick counter" is right, but the unit also clears the count
   itself: 1AAD:0C17 writes 0 at line 1393, and the replay path at line 1350. Say so, so the counter is
   not read as one that only counts up.
+  Fixed (dec-deepseek-3): the g8488 comment now says 1AAD:0C17 writes 0 after a recorded write
+  (line 1350) and after a replay read (line 1393).
 
-- [ ] note src/E1AAD.ASM:306 (the 0409 header): "(E16A5.C:60-61, :127-128)". Lines 60-61 of E16A5.C
+- [x] note src/E1AAD.ASM:306 (the 0409 header): "(E16A5.C:60-61, :127-128)". Lines 60-61 of E16A5.C
   are the extern declarations of ReadKeySpecial and WaitGameKey2, not calls. The calls are at :127-128.
+  Fixed (dec-deepseek-3): the 0409 header now cites only E16A5.C:127-128.
 
 - [ ] note for other owners (not this unit, round 1 notes still open): src/E07C8.C:93-99 (the
   InstallKeyboard copy cite, round 1); src/E1A72.ASM:35 still says "game state, 0/1/2" for g80EC;
@@ -85,6 +106,36 @@ Round 1's nine must-fix items are fixed right; their ticks stay. Round 1's shoul
 header) is only partly fixed and is reopened. Four must-fix items are open in this round: the 0718
 header, the 0B0E release claim, the 0223 header, and the g80EC and g80EF readers. The rest are shoulds
 and notes. Nothing is escalated.
+
+## Decompiler response (dec-deepseek-3, round 2)
+
+All four must-fix items, the two shoulds and the two notes for this unit are fixed in `src/E1AAD.ASM`;
+`make match FILE=src/E1AAD.ASM` is 18 of 18 (3405 of 3405 bytes) and `make readability UNIT=e1aad` is
+0 findings. The findings are comments only; no byte moved.
+
+- 1AAD:0718 header: now "toggles gSoundOn on key 0420h (S) and g80E8 on key 0434h (M)".
+- 1AAD:0B0E header: now says 038E and 053A discard the 08h bit of AH, 0409 and 0588 do not, and a
+  release (41h or 42h) reaches the game through DispatchKey (E16A5.C:127-128). "AH bit 8" is now "the
+  08h bit of AH" in the 038E (:230), 053A (:465) and 0588 (:512) headers too.
+- 1AAD:0223 header: now says the Ctrl-function table's keys are 5Ah..6Dh (indexed by AL-5Ah), that
+  41h..4Ah (the mouse codes 41h and 42h among them) come back as 0C6h..0CFh, and that the tables hold
+  ASCII for the main table and for some keypad and Ctrl-function entries, a game code above 80h
+  otherwise.
+- g80EC/g80EF externs: g80EC now says the state 2 readers skip the wait for a ring event and take the
+  ring slot that 1AAD:0D26 has filled; g80EF now says 1AAD:048D reads ds:80EF back directly in state 2
+  and the other state 2 readers (1AAD:038E/0409) read the ring slot that 0D26 filled with it.
+- 1AAD:038E header (:235): the EOV6.C line cites are replaced by the packet's caller list by address
+  (EditTextField 082C:000B, DelaySecondsThenKey 082C:0B43, PickClass ovl0:207A, ShowMessage ovl1:13F7,
+  CampLoop ovl6:0000, f0B9B ovl6:0B9B), and it now says the callers flush the ring afterwards
+  (FlushKeyBuffer, EOV6.C:353 and :517).
+- kExtendKeys map (:64): the map base is now 1AAD:005C, with the note that entry i is 1AAD:005C+i (so
+  entry 0 is the 3Eh above and 005D is entry 1).
+- g8488 (:44-47): now adds that 1AAD:0C17 writes 0 after a recorded write (line 1350) and after a
+  replay read (line 1393).
+- 0409 header (:306): now cites only E16A5.C:127-128 (60-61 are the extern declarations).
+
+The "note for other owners" stays open: src/E07C8.C:93-99, src/E1A72.ASM:35, src/EOV1.ASM:114 and
+src/EOV3.C:28 belong to other units and are not changed on this branch.
 
 ## Round 1 (7d0dd48)
 
