@@ -33,13 +33,16 @@
                                                 ; wait while it is set and then increment it (not atomic;
                                                 ; src/E1BB1.ASM:53 says the same of its acquire; 1BBE:0213,
                                                 ; 02C6, 030A and 0335), while the mouse handler tests it and
-                                                ; drops its event when set (src/E1A72.ASM:376-378), sets it to 1
-                                                ; when free (:387) and clears it to 0 (:418). It does not
-                                                ; increment and does not wait.
+                                                ; drops its event when set (src/E1A72.ASM:382-384: the test at
+                                                ; :382, the free path `je L020C` at :383 and the drop at :384
+                                                ; `L01E9: jmp L027F` with no position update), sets it to 1 when
+                                                ; free (:393, label L020C) and clears it to 0 (:425, label
+                                                ; L0279). It does not increment and does not wait.
         EXTRN   _gCursorX:WORD          ; @ ds:8138: mouse position, x in pixels (written by the handler
-                                        ; at src/E1A72.ASM:390-391, skipped when g80EC is 2 at
-                                        ; :388-389; set to 0A0h by InitMouse at src/E1A72.ASM:267-268;
-                                        ; and written by src/E1BF3.ASM:35)
+                                        ; at src/E1A72.ASM:396-397, skipped by `je L0221` at :395 when
+                                        ; `cmp byte ptr [g80EC],2` at :394 is 2; set to 0A0h and 64h by
+                                        ; InitMouse at src/E1A72.ASM:268-269; and written by
+                                        ; src/E1BF3.ASM:35)
         EXTRN   _gCursorY:WORD          ; @ ds:813A: mouse position, y in pixels
         EXTRN   _gHideDepth:WORD        ; @ ds:8146: hide depth, 0 = drawn (1BBE:0002/00ED change it)
         EXTRN   _gMouseDisabled:WORD              ; @ ds:814A: non-zero disables the pointer (E07A9 tests it too)
@@ -54,9 +57,10 @@
         EXTRN   _gDrawnY:WORD           ; @ ds:815E: position drawn at last, y in pixels
         EXTRN   _gPointerState:WORD     ; @ ds:8160: bit 8000 a zone hide is in force, bit 4000 a
                                         ; redraw is owed at the show, low byte a repeat count (1BBE:01FE/
-                                        ; 02C2; the handler tests 8000h at src/E1A72.ASM:400, before
-                                        ; its zone test at :402, and sets 4000h for a hide in the zone,
-                                        ; on the path that calls _HidePointer at :383, at :385)
+                                        ; 02C2; the handler tests 8000h at src/E1A72.ASM:407, before
+                                        ; its zone test at :409-417, and sets 4000h at :391 for a hide in
+                                        ; the zone, on the path (label L01EC) that calls _HidePointer at
+                                        ; :389, inside the bracket at :385-390)
         EXTRN   _gZoneLeft:WORD         ; @ ds:8162: hide zone, left in pixels, stored as the argument
                                         ; less the sprite width in pixels (_gPointerWidth8 shifted left
                                         ; three times, 1BBE:0234, 025B); the handler's left test is
@@ -87,8 +91,12 @@
         EXTRN   _gSpriteWidth:WORD      ; @ ds:8186: copy of _gPointerWidth8, the sprite width; added to
                                         ; the left to get the right (the clip bounds are 0 and 28h)
         EXTRN   _gNegSpriteWidth:WORD   ; @ ds:8188: minus _gPointerWidth8, the lower x clip bound
-        EXTRN   _gRestoreRect:DWORD     ; @ ds:804E: far fn (x, y, w, h, buf): buffer back to screen
-        EXTRN   _gSaveRect:DWORD        ; @ ds:80AE: far fn (x, y, w, h, buf): screen into buffer
+        EXTRN   _gRestoreRect:DWORD     ; @ ds:804E: far fn (x, y, w, h, buf): buffer back to screen;
+                                        ; x and w are in 8-pixel columns, y and h in pixel rows
+                                        ; (HidePointer shifts the left edge right by three, 1BBE:147-149)
+        EXTRN   _gSaveRect:DWORD        ; @ ds:80AE: far fn (x, y, w, h, buf): screen into buffer;
+                                        ; x and w are in 8-pixel columns, y and h in pixel rows
+                                        ; (ShowPointer shifts the left edge right by three, 1BBE:248-250)
         EXTRN   g80AA:DWORD             ; @ ds:80AA: far fn (g8172/g8174) before the pointer work
         EXTRN   g80A2:DWORD             ; @ ds:80A2: far fn (no arguments) after the pointer work
         EXTRN   _gDraw80C2:DWORD         ; @ ds:80C2: far fn (mode, void far *src, x, y)
@@ -116,7 +124,8 @@ _f1BBE_0001 LABEL BYTE                    ; @ 1BBE:0001
 ; before it stores the new sizes (src/E1BB1.ASM:162-164), which is what keeps the old buffer valid
 ; while the shape is replaced. Called by 1BB1:0002, 1BF3:000E,
 ; the mouse handler inside _InitMouse (1A72:00DA; the handler entry is 1A72:017A) at
-; src/E1A72.ASM:383 and :415, and by the wrappers below. Pushes AX only to preserve the caller's.
+; src/E1A72.ASM:389 (the in-zone hide, label L01EC) and :422 (the hide in the L025C path),
+; and by the wrappers below. Pushes AX only to preserve the caller's.
         PUBLIC  _HidePointer            ; @ 1BBE:0002
 _HidePointer PROC FAR
         push    bp
@@ -210,8 +219,8 @@ _HidePointer ENDP
 ; 1BBE:0002, the screen under it is saved through [ds:80AE] (x, y, w, h, _gPointerBackOff/_gPointerBackSeg) and the
 ; shape record _gPointerShapeOff/_gPointerShapeSeg is drawn at the unclipped position gShapeX/gShapeY through [ds:80C2]
 ; (mode 0). Called by 1BB1:0002, 1BF3:000E and the mouse handler inside _InitMouse (1A72:00DA;
-; the handler entry is 1A72:017A) at src/E1A72.ASM:416, and by the wrappers below. Pushes AX to
-; preserve the caller's.
+; the handler entry is 1A72:017A) at src/E1A72.ASM:423 (the L025C path, after the hide at :422),
+; and by the wrappers below. Pushes AX to preserve the caller's.
         PUBLIC  _ShowPointer            ; @ 1BBE:00ED
 _ShowPointer PROC FAR
         push    bp
