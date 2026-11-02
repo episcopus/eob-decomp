@@ -77,6 +77,7 @@ struct Obj28 {
     int m02;                /* +2 */
     char pad04[0x16 - 0x04];
     char m16;               /* +0x16 */
+    char pad17[0x1C - 0x17];
 };
 extern struct Obj28 gObjs[]; /*@ ds:8A82 */
 
@@ -114,6 +115,7 @@ extern void f0EF3_28ED(int a, int b, int c); /*@ 0EF3:28ED */
 extern void f0EF3_06E7(void); /*@ 0EF3:06E7 */
 extern void MoveObjectToId(struct Obj28 far *obj, int a, int b); /*@ 08E6:0297 */
 
+extern int f0D1C_00DA(int value, int page); /*@ 0D1C:00DA */
 extern int f0D1C_02DC(void); /*@ 0D1C:02DC */
 extern void SetMouseItem(int n); /*@ 07A9:010C */
 extern void RedrawMember(int who); /*@ 1547:0991 */
@@ -600,10 +602,8 @@ next:
 /* 0BD2:0EE8: uses the wand in slot `slot` of character `who`. When the item's m0B is 0 it reports
    no effect; when it is not 5 it dispatches through 0EF3:28ED with g38FA[m0B]; for 5 it plays the
    wand sound, and when the surroundings pass the g194B/gB894 tests, activates every gObjs record
-   whose m02 matches the page index, otherwise reports no effect. DRAFT: our build keeps the loop
-   counter in a register (0xa-byte frame), the original on the stack (0xc), and uses the same
-   instruction sequence otherwise. */
-/*@ 0BD2:0EE8 draft */ void UseWandItem(int who, int slot)
+   whose m02 matches the page index, otherwise reports no effect. */
+/*@ 0BD2:0EE8 */ void UseWandItem(int who, int slot)
 {
     int effect;
     int x;
@@ -611,6 +611,7 @@ next:
     int i;
     struct Obj28 *obj;
     int type;
+    int page;
 
     type = gItems[gChars[who].m77[slot]].m0B;
     if (type == 0) {
@@ -622,12 +623,13 @@ next:
         f0EF3_28ED(who, effect, slot);
         return;
     }
-    x = f0D1C_00DA(gSoundVolume, gFBCC);
-    y = f0D1C_00DA(x, gFBCC);
+    page = gFBCC;
+    x = f0D1C_00DA(gSoundVolume, page);
+    y = f0D1C_00DA(x, page);
     PlaySound(0x62);
     f0EF3_06E7();
-    if ((g194B[gB894[y * 9 + (gFBCC ^ 2)]] & 4) && !(gB894[y * 9 + 4] & 7)
-            && (gB894[x * 9 + 4] & 7)) {
+    if ((g194B[gB894[y * 9 + (page ^ 2)]] & 4) && (gB894[y * 9 + 4] & 7) == 0
+            && (gB894[x * 9 + 4] & 7) != 0) {
         obj = gObjs;
         for (i = 0; i < 30; i++, obj++) {
             if (obj->m02 == x) {
