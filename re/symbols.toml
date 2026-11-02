@@ -1985,6 +1985,9 @@ unit = "e0acd"
 addr = "0ACD:0008"
 size = 32
 evidence = ["near", "segment"]
+name = "MoveBlocked"
+level = "L2"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e0acd_0028"
@@ -1992,6 +1995,9 @@ unit = "e0acd"
 addr = "0ACD:0028"
 size = 12
 evidence = ["frame"]
+name = "GetActionResult"
+level = "L2"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e0acd_0034"
@@ -1999,6 +2005,9 @@ unit = "e0acd"
 addr = "0ACD:0034"
 size = 88
 evidence = ["frame"]
+name = "Action0034"
+level = "L2"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e0acd_008c"
@@ -2006,6 +2015,9 @@ unit = "e0acd"
 addr = "0ACD:008C"
 size = 95
 evidence = ["frame"]
+name = "Action008C"
+level = "L2"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e0acd_00eb"
@@ -2013,6 +2025,9 @@ unit = "e0acd"
 addr = "0ACD:00EB"
 size = 163
 evidence = ["frame"]
+name = "Action00EB"
+level = "L2"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e0acd_018e"
@@ -2020,6 +2035,9 @@ unit = "e0acd"
 addr = "0ACD:018E"
 size = 50
 evidence = ["frame"]
+name = "Action018E"
+level = "L2"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e0acd_01c0"
@@ -2027,6 +2045,9 @@ unit = "e0acd"
 addr = "0ACD:01C0"
 size = 35
 evidence = ["frame"]
+name = "Action01C0"
+level = "L2"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e0acd_01e3"
@@ -2034,6 +2055,9 @@ unit = "e0acd"
 addr = "0ACD:01E3"
 size = 129
 evidence = ["far", "frame"]
+name = "Action01E3"
+level = "L2"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e0acd_0264"
@@ -2041,6 +2065,9 @@ unit = "e0acd"
 addr = "0ACD:0264"
 size = 303
 evidence = ["frame"]
+name = "Action0264"
+level = "L2"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e0acd_0393"
@@ -2048,6 +2075,9 @@ unit = "e0acd"
 addr = "0ACD:0393"
 size = 58
 evidence = ["frame"]
+name = "Action0393"
+level = "L2"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e0acd_03cd"
@@ -2055,6 +2085,9 @@ unit = "e0acd"
 addr = "0ACD:03CD"
 size = 72
 evidence = ["frame"]
+name = "StepActionRow"
+level = "L2"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e0acd_0415"
@@ -2062,6 +2095,9 @@ unit = "e0acd"
 addr = "0ACD:0415"
 size = 127
 evidence = ["frame"]
+name = "Action0415"
+level = "L2"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e0acd_0494"
@@ -2069,6 +2105,9 @@ unit = "e0acd"
 addr = "0ACD:0494"
 size = 100
 evidence = ["frame"]
+name = "Action0494"
+level = "L2"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e0acd_04f8"
@@ -2076,6 +2115,9 @@ unit = "e0acd"
 addr = "0ACD:04F8"
 size = 49
 evidence = ["frame"]
+name = "Action04F8"
+level = "L2"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e0acd_0529"
@@ -2083,6 +2125,9 @@ unit = "e0acd"
 addr = "0ACD:0529"
 size = 67
 evidence = ["frame"]
+name = "Action0529"
+level = "L2"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e0acd_056c"
@@ -2090,6 +2135,9 @@ unit = "e0acd"
 addr = "0ACD:056C"
 size = 39
 evidence = ["frame"]
+name = "Action056C"
+level = "L2"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e0acd_0593"
@@ -2097,6 +2145,9 @@ unit = "e0acd"
 addr = "0ACD:0593"
 size = 39
 evidence = ["frame"]
+name = "Action0593"
+level = "L2"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e0acd_05ba"
@@ -2104,6 +2155,9 @@ unit = "e0acd"
 addr = "0ACD:05BA"
 size = 69
 evidence = ["frame"]
+name = "Action05BA"
+level = "L2"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e0acd_05ff"
@@ -2111,6 +2165,9 @@ unit = "e0acd"
 addr = "0ACD:05FF"
 size = 69
 evidence = ["frame"]
+name = "Action05FF"
+level = "L2"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e0acd_0644"
@@ -2118,6 +2175,7 @@ unit = "e0acd"
 addr = "0ACD:0644"
 size = 271
 evidence = ["frame"]
+notes = "stub, blocked (src/E0ACD.C): the prologue copies the 4-byte table at ds:36BC and the 16-byte table at ds:36C0 into stack locals with F_SCOPY@ (0000:78C9). The original pushes the destination segment before the destination offset (`push ss; lea ax,[bp-4]; push ax; push ds; mov ax,0x36bc; push ax; mov cx,4; lcall 0,0x78c9`); the pinned tc100/tc101 struct copy pushes the offset first, in every construct and switch tried (whitepaper 2.1.1; escalation eov6, 2026-11-01, all 15 F_SCOPY@ sites in EOB.EXE are segment-first). The sound/spell dispatch behind it (through gB894 and g194B) is not written until the copies are."
 
 [[function]]
 id = "e0acd_0753"
@@ -2125,6 +2183,9 @@ unit = "e0acd"
 addr = "0ACD:0753"
 size = 57
 evidence = ["frame"]
+name = "StepMenuPhase"
+level = "L2"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e0acd_078c"
@@ -2132,6 +2193,9 @@ unit = "e0acd"
 addr = "0ACD:078C"
 size = 84
 evidence = ["frame"]
+name = "Action078C"
+level = "L2"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e0acd_07e0"
@@ -2139,6 +2203,9 @@ unit = "e0acd"
 addr = "0ACD:07E0"
 size = 241
 evidence = ["far", "near", "frame"]
+name = "EatFood"
+level = "L2"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e0acd_08d1"
@@ -2146,6 +2213,9 @@ unit = "e0acd"
 addr = "0ACD:08D1"
 size = 22
 evidence = ["frame"]
+name = "Action08D1"
+level = "L2"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e0acd_08e7"
@@ -2153,6 +2223,9 @@ unit = "e0acd"
 addr = "0ACD:08E7"
 size = 53
 evidence = ["near", "frame"]
+name = "Action08E7"
+level = "L2"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e0acd_091c"
@@ -2160,7 +2233,10 @@ unit = "e0acd"
 addr = "0ACD:091C"
 size = 211
 evidence = ["near", "frame"]
-notes = "draft 2026-10-31 (src/E0ACD.C): everything matches except tail merging. With -O our build merges `gF51A = 0; break;` of case 0 into the end of case 2, and `gF51A = 1; break;` of case 2 into case 0; the original keeps both (11 bytes longer). Without -O, -Z has no effect and jump chains stay (13 bytes longer); -G uses add sp; -P (C++) still merges. Tried: early break, if/else, for(;;) with inner break, default label, no final break, volatile. Open: another switch, or the compiler's tail-merge rule."
+notes = "matched 2026-11-01: the two character searches are `do { ... } while (!f0D1C_0670(gA99A, 1)); gF51A = v;` loops, not `for(;;) { ...; if (f0D1C_0670(gA99A, 1)) { gF51A = v; break; } }`. With the for(;;) form the compiler cross-jumps case 0's `gF51A = 0` into case 2's and case 2's `gF51A = 1` into case 0's (11 bytes shorter); with the do/while the two stores stay apart, as the original has them."
+name = "Turn091C"
+level = "L2"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e0acd_09ef"
@@ -2168,6 +2244,9 @@ unit = "e0acd"
 addr = "0ACD:09EF"
 size = 69
 evidence = ["near"]
+name = "SetActionRow"
+level = "L2"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e0acd_0a34"
@@ -2175,6 +2254,10 @@ unit = "e0acd"
 addr = "0ACD:0A34"
 size = 45
 evidence = ["near", "frame"]
+name = "Action0A34"
+level = "L2"
+match_flags = "-ml -O -Z -B"
+notes = "matched 2026-11-01: case 0 is `Turn091C(dir); goto done;` and case 1 falls through to `done: return;`, not `break`. With a plain switch/break the compiler cross-jumps the two calls' argument cleanup (`pop cx` after each), one byte shorter than the original."
 
 [[function]]
 id = "e0acd_0a61"
@@ -2182,6 +2265,9 @@ unit = "e0acd"
 addr = "0ACD:0A61"
 size = 325
 evidence = ["near", "frame"]
+name = "MoveListItem"
+level = "L2"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e0acd_0ba6"
@@ -2189,6 +2275,7 @@ unit = "e0acd"
 addr = "0ACD:0BA6"
 size = 503
 evidence = ["near", "frame"]
+notes = "draft 2026-11-01 (src/E0ACD.C): matches every byte except the store at 0ACD:0C7F. The original writes the picked item with `mov [gF3BA], ax` (the 3-byte a3 form); our build writes `mov [gF3BA], di` (89 3e, one byte longer), shifting every later jump by one. The value is the same (di is proven to hold the item: it is pushed as the first argument of f0BD2_0AF2, PushListItem and SetMouseItem later, and ax still holds it from the call at 0ACD:0C59). TCC's own assembly for this unit shows it keeps the value in both registers at that point (the comparison two statements earlier is `cmp ax, word ptr DGROUP:_gF3BA` while the register variable is di), and it stores the register variable. All bytes before the store are identical, so the source form of that one statement decides the register. Tried ~30 forms at `flag = 1; if (gF3BA == -1) gF3BA = item;`: the inline assignment in the preceding if, `!item` for `item == 0`, the store before/after `flag`, a cast, a ternary, `item + 0`, `(item, item)`, `item ^ 0`, `item | 0`, `item * 1`, `item / 1`, `(int)`, `(long)`, pointer and volatile dereferences, `register`, `unsigned`, a moved declaration, and do/while, while/break, for(once), extra braces/trailing statements around it. Every one still emits `mov [gF3BA], di` (some add bytes). blocked: no source form tried makes tc100 store the register variable item from ax; the original compiler did. The same class as the tail-merge and F_SCOPY build questions (eov6, 0ACD:091C)."
 
 [[function]]
 id = "e0acd_0d9d"
@@ -2196,6 +2283,9 @@ unit = "e0acd"
 addr = "0ACD:0D9D"
 size = 207
 evidence = ["near", "frame"]
+name = "Action0D9D"
+level = "L2"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e0acd_0e6c"
@@ -2203,6 +2293,9 @@ unit = "e0acd"
 addr = "0ACD:0E6C"
 size = 30
 evidence = ["near"]
+name = "Action0E6C"
+level = "L2"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e0acd_0e8a"
@@ -2210,6 +2303,9 @@ unit = "e0acd"
 addr = "0ACD:0E8A"
 size = 232
 evidence = ["far", "frame"]
+name = "RunMapLoop"
+level = "L2"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e0acd_0f72"
@@ -2217,6 +2313,9 @@ unit = "e0acd"
 addr = "0ACD:0F72"
 size = 193
 evidence = ["far", "frame"]
+name = "EnterMapScreen"
+level = "L2"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e0acd_1033"
@@ -2224,6 +2323,9 @@ unit = "e0acd"
 addr = "0ACD:1033"
 size = 43
 evidence = ["far", "frame"]
+name = "ResetMapScreen"
+level = "L2"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e0bd2_000e"

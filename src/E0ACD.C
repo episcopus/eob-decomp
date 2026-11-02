@@ -559,13 +559,15 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
     ComputeArmourClass(gA99A);
 }
 
-/* 0ACD:091C draft: a switch over a four-entry jump table at 0ACD:09E7, cases 1 and 3 shared.
-   Everything matches except tail merging: with -O our build merges `gF51A = 0; break;` of case 0
-   into the end of case 2, and `gF51A = 1; break;` of case 2 into case 0; the original keeps both
-   (11 bytes longer). Without -O, -Z has no effect and jump chains stay (13 bytes longer); -G uses
-   add sp; -P (C++) still merges. Tried: early break, if/else, for(;;) with inner break, default
-   label, no final break, volatile. Open: another switch, or the compiler's tail-merge rule. */
-/*@ 0ACD:091C draft */ void Turn091C(int how)
+/* 0ACD:091C: the "turn" action, a switch over the four-entry jump table at 0ACD:09E7 (cases 1 and
+   3 shared). Case 0 resets the action row gF51A to 0 when it is already set, otherwise steps the
+   selected character down by 2 (modulo 6) until f0D1C_0670 accepts it and sets gF51A to 1. Case 2
+   is the mirror: it sets gF51A to 1 when it is clear, otherwise steps the character up by 2
+   (modulo 6) until accepted and clears gF51A. Cases 1 and 3 toggle the low bit of the character
+   when accepted. It redraws the old character row and, when the character changed, the new one.
+   how is the direction. The two searches are do/while loops: a `for(;;)` form makes the compiler
+   cross-jump the two gF51A stores (the original keeps them apart). */
+/*@ 0ACD:091C */ void Turn091C(int how)
 {
     int old = gA99A;
 
@@ -573,16 +575,14 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
     case 0:
         if (gF51A)
             gF51A = 0;
-        else
-            for (;;) {
+        else {
+            do {
                 gA99A -= 2;
                 if (gA99A < 0)
                     gA99A += 6;
-                if (f0D1C_0670(gA99A, 1)) {
-                    gF51A = 1;
-                    break;
-                }
-            }
+            } while (!f0D1C_0670(gA99A, 1));
+            gF51A = 1;
+        }
         break;
     case 1:
     case 3:
@@ -592,16 +592,14 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
     case 2:
         if (!gF51A)
             gF51A = 1;
-        else
-            for (;;) {
+        else {
+            do {
                 gA99A += 2;
                 if (gA99A > 5)
                     gA99A -= 6;
-                if (f0D1C_0670(gA99A, 1)) {
-                    gF51A = 0;
-                    break;
-                }
-            }
+            } while (!f0D1C_0670(gA99A, 1));
+            gF51A = 0;
+        }
         break;
     }
     f1547_0991(old);
@@ -620,22 +618,23 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
     DrawItemRow(gF51A, 1, 0);
 }
 
-/* 0ACD:0A34 draft: the row/character turn dispatcher: does nothing in the rest phase
-   (gDCAA == 5), calls Turn091C in mode 0 or SetActionRow in mode 1. Dir is the direction. Our
-   build merges case 0's argument cleanup into case 1's (one byte shorter); the original keeps it
-   apart, the same tail-merge class as 091C (see its note). */
-/*@ 0ACD:0A34 draft */ void Action0A34(int dir)
+/* 0ACD:0A34: the row/character turn dispatcher: does nothing in the rest phase (gDCAA == 5), calls
+   Turn091C in mode 0 or SetActionRow in mode 1 with the direction dir. Case 0 jumps to the shared
+   exit rather than breaking: a plain `break` makes the compiler cross-jump the two calls' argument
+   cleanup, which the original keeps apart. */
+/*@ 0ACD:0A34 */ void Action0A34(int dir)
 {
     if (gDCAA == 5)
         return;
     switch (gFB44) {
     case 0:
         Turn091C(dir);
-        break;
+        goto done;
     case 1:
         SetActionRow(dir);
-        break;
     }
+done:
+    return;
 }
 
 /* 0ACD:0A61: the list move/use handler. In mode 2 (gFB44 == 2) or the rest phase (gDCAA == 5) it
@@ -696,10 +695,19 @@ call:
    ds:B899 record list with the kind g1A1B[gFBCC * 4 + gEFB2]. When a fresh item is found it marks
    it used (f0BD2_0AF2) and shows it (PushListItem and f122E_1DA8, or SetMouseItem / f1547_0991 and
    InsertListItem at row 0x10), sets gDF4C, and stops; an empty or repeated item runs InsertListItem and
-   clears gF3BA. It redraws gA99A through ComputeArmourClass at the end. Everything matches except one
-   byte: the original stores the picked item with `mov [gF3BA], ax`, our build with
-   `mov [gF3BA], di` (both hold the item); the same value, a different register the source cannot
-   choose. Open: another form of the gF3BA assignment. */
+   clears gF3BA. It redraws gA99A through ComputeArmourClass at the end. blocked: matches every byte
+   except the store at 0ACD:0C7F, which the original writes with `mov [gF3BA], ax` (the 3-byte a3 form)
+   and our build with `mov [gF3BA], di` (89 3e, one byte longer, shifting every later jump). Both
+   registers hold the item (di is pushed as the first argument of f0BD2_0AF2, PushListItem and
+   SetMouseItem later; ax still holds it from the call at 0ACD:0C59, and TCC's own assembly for this
+   unit compares with `cmp ax, word ptr DGROUP:_gF3BA` yet stores the di register variable). All bytes
+   before the store are identical, so the source form of that one statement decides the register. Tried (all still emit
+   di): inline assignment in the preceding if, `!item`, the store before/after `flag`, a cast,
+   a ternary, `item + 0`, `(item, item)`, `item ^ 0`, `item | 0`, `item * 1`, `item / 1`, `(int)`,
+   `(long)`, pointer and volatile dereferences, `register`, `unsigned`, a moved declaration, and
+   do/while, while/break, for(once) and extra braces/trailing statements around it. No source form
+   tried makes tc100 store the register variable item from ax; the original compiler did. The same
+   compiler-build class as the F_SCOPY order (eov6) and 0ACD:091C. */
 /*@ 0ACD:0BA6 draft */ void PickListItem(void)
 {
     int flag;
