@@ -8595,8 +8595,10 @@ unit = "eov5"
 addr = "ovl5:0C9D"
 size = 286
 evidence = ["ovl", "near", "frame"]
-name = "HealLoop"
 notes = "retry under -v (2026-11-02): the unit now builds with -v, which keeps identical tails apart; the difference below was found under the wrong switches. Earlier: the two hit-point store tails. The body matches up to ovl5:0D7E; the original keeps the two stores separate (`mov [bx-0xa65],al` after `hp = maxhp` at ovl5:0D7E, then `jmp 0xDA9`, and again after `hp += heal` at ovl5:0D9F), each recomputing &gChars[i]; our -ml -O -Z build cross-jumps them into one shared store (the same class as 0ACD:091C, 14EF:0274 and 0D1C:096C: TCC's internal assembler, WHITEPAPER 2.1.1). Through the assembler (-B) the tails stay apart (the function is then one byte off at ovl5:0CB9), but -B breaks SurrenderPanel and ChooseChar, so the unit's one /*@flags*/ cannot express it (see eov5_00a1). Tried if/else and its reverse, braces, a local for the new hp, and -B."
+name = "HealLoop"
+level = "L2"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "eov5_0dbb"

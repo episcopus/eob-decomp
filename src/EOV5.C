@@ -807,10 +807,10 @@ enum {
 /* ovl5:0C9D: heals the party. Rolls 1d3+2 "cures", then for each party member that f0D1C_0670
    accepts (mask 3) clears its flag bits 1..2, clears bit 7 of its effect flags, clears effect slot
    -0x22 and, while it is below its maximum hit points, spends one cure (1d8+9, clamped to the
-   maximum) and heals it again. Called by the resurrect panel 0EB9. The only remaining difference
-   is that the original keeps the two hit-point stores separate while ours merges their tails into
-   one shared store; no source form tried keeps them apart, so this stays a draft. */
-/*@ ovl5:0C9D draft */ void HealLoop(void)
+   maximum) and heals it again. A member that is already at full hit points and one the effect
+   cannot be applied to are both skipped with i++, written as two separate branches so the two
+   increment tails stay apart (the original emits both). Called by the resurrect panel 0EB9. */
+/*@ ovl5:0C9D */ void HealLoop(void)
 {
     int i;
     int cures;
@@ -819,23 +819,23 @@ enum {
     i = 0;
     cures = RollDice(1, 3, 2);
     while (cures && i < 6) {
-        if (!f0D1C_0670(i, 3)) {
+        if (f0D1C_0670(i, 3)) {
+            gChars[i].flags &= 0xf9;
+            gChars[i].mE3 &= ~0x80L;
+            ClearCharEffectSlot(i, -0x22);
+            if (gChars[i].hp < gChars[i].maxhp) {
+                cures--;
+                heal = RollDice(1, 8, 9);
+                if (gChars[i].hp + heal > gChars[i].maxhp)
+                    gChars[i].hp = gChars[i].maxhp;
+                else
+                    gChars[i].hp += heal;
+            } else {
+                i++;
+            }
+        } else {
             i++;
-            continue;
         }
-        gChars[i].flags &= 0xf9;
-        gChars[i].mE3 &= ~0x80L;
-        ClearCharEffectSlot(i, -0x22);
-        if (gChars[i].hp < gChars[i].maxhp) {
-            cures--;
-            heal = RollDice(1, 8, 9);
-            if (gChars[i].hp + heal > gChars[i].maxhp)
-                gChars[i].hp = gChars[i].maxhp;
-            else
-                gChars[i].hp += heal;
-            continue;
-        }
-        i++;
     }
 }
 /* ovl5:0DBB: the resurrect panel's "which one?" picker. It clears the panel, draws the title
