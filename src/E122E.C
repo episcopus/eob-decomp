@@ -26,6 +26,23 @@ extern signed char g5C76; /*@ ds:5C76 */       /* the mode byte 03B4 reads (src/
 extern void ArmEffectWith(int idx, int arg, int sub, int active); /*@ 1414:055B */
 extern void AdjustMemberStatus(int who); /*@ 1414:03B4 */
 extern void Obj1505(int kind, int id, int frame, int orient, int b0, int m07, int type, int timer, int m12, int m14); /*@ 08E6:1505 */
+extern void MarkListItems(void far *head); /*@ 0BD2:040E */
+
+struct CharRec {                                /* the 243-byte character records at ds:F580 */
+    char pad00;
+    unsigned char status;                       /* +01: bit 0 is live */
+    char pad02[0x77 - 0x02];
+    int items[0x1b];                            /* +77: 27 item slots */
+    char padAD[0xf3 - 0xad];
+};
+
+struct Item14 {                                 /* the 14-byte item records at ds:8DD2 */
+    unsigned char flags;                        /* +00 */
+    char pad01[0x0e - 0x01];
+};
+
+extern struct CharRec gChars[]; /*@ ds:F580 */
+extern struct Item14 gTable8DD2[]; /*@ ds:8DD2 */
 extern int gFBCC; /*@ ds:FBCC */               /* a page number 0..3 (src/E08E6.C) */
 extern char gEFB2; /*@ ds:EFB2 */              /* set when the sound page changes (src/E0ACD.C) */
 extern char gDF4C; /*@ ds:DF4C */              /* set to 1 when an action took effect (src/E08E6.C) */
@@ -569,7 +586,38 @@ void f122E_1DA8(int a, int b);  /* forward: 1DA8 comes after its callers */
     }
     return (long)(script - start);
 }
-/*@ 122E:1CAD stub */ void f122E_1CAD(void) {}
+/* 122E:1CAD: sub-opcode that marks a member's item list: read a member/character index and, when it
+   matches the sound volume (the running character), set flag 0x40 on every item in the first-item
+   list of each of that character's six 243-byte records that has bit 0 of its status set, and mark
+   each record's list (rec + 0x97). Always marks the gB899 list of the index. Returns the bytes read. */
+/*@ 122E:1CAD draft */ long MarkMemberItemsOp(char far *script)
+{
+    struct CharRec far *rec;
+    int id;
+    register int i;
+    register int j;
+    int item;
+    char far *start = script;
+
+    id = *(int far *)script;
+    script += 2;
+    if (id == gSoundVolume) {
+        rec = gChars;
+        for (i = 0; i < 6; i++) {
+            rec = &gChars[i];
+            if (rec->status & 1) {
+                for (j = 0; j < 0x1b; j++) {
+                    item = rec->items[j];
+                    if (item != 0)
+                        gTable8DD2[item].flags |= 0x40;
+                }
+                MarkListItems((char far *)rec + 0x97);
+            }
+        }
+    }
+    MarkListItems(&gB899[id * 9]);
+    return (long)(script - start);
+}
 
 /* 122E:1D76: sub-opcode that passes its byte argument to overlay 5 (ovl5:1A82). Returns the bytes
    read. */
