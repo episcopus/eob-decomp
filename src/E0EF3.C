@@ -59,9 +59,35 @@ struct Entry14 {
 
 /* A 16-byte item-type record at ds:A9F0 (src/E0BD2.C names the same table). */
 struct ItemType {
-    char pad00[4];
-    signed char m04;        /* +4: set to 0xE2 when a freed item's type is freed too */
-    char pad05[0x10 - 0x05];
+    int m00;                /* +00: a word 0EF3:035A writes from its first argument */
+    int m02;                /* +02: a word 0EF3:035A writes from its second argument */
+    unsigned char m04;      /* +04: set to 0xE2 when the type is free (FreeItemRecord, 0EF3:035A) */
+    signed char m05;        /* +05 */
+    signed char m06;        /* +06: cleared by 0EF3:035A */
+    signed char m07;        /* +07 */
+    signed char m08;        /* +08 */
+    signed char m09;        /* +09 */
+    signed char m0A;        /* +0A */
+    signed char m0B;        /* +0B */
+    signed char m0C;        /* +0C */
+    char pad0D;
+    int m0E;                /* +0E */
+};
+
+/* A 14-byte item record at ds:8DD0 (src/E0BD2.C's struct ItemRecord; src/E0D1C.C views the same
+   table two bytes in at ds:8DD2 as Entry14). */
+struct ItemRecord {
+    signed char m00;        /* +00 */
+    signed char m01;        /* +01 */
+    unsigned char flags;    /* +02: bit 0x20 gates E0BD2.C's branch */
+    signed char icon;       /* +03: the icon number */
+    signed char m02;        /* +04: the item type */
+    signed char m03;        /* +05 */
+    int m04;                /* +06: the key; -2 when the record is free (0EF3:0418) */
+    int m06;                /* +08: one link of the circular list */
+    int m08;                /* +0A: the other link */
+    signed char m0A;        /* +0C */
+    signed char m0B;        /* +0D: the value 0BD2:01D0 returns */
 };
 
 /* The record 0EF3:0A3F and its callers read: an effect target with a member index at +0xB and a
@@ -101,7 +127,11 @@ struct Entry27 {
 
 extern struct CharRec gChars[];         /*@ ds:F580 */
 extern struct Entry14 gTable8DD2[];     /*@ ds:8DD2 */
+extern struct ItemRecord gItems[];      /*@ ds:8DD0 */
 extern struct ItemType gItemTypes[];    /*@ ds:A9F0 */
+/* The six item-type slots 0x33..0x38 the game creates at runtime live at ds:AD20, the same 96
+   bytes src/EOV3.C names gAD20 (its saved-game buffer). */
+extern struct ItemType gAD20[];         /*@ ds:AD20 */
 extern struct Obj28 gObjs[];            /*@ ds:8A82 */
 extern struct Entry27 gTable1A3B[];     /*@ ds:1A3B */
 
@@ -337,7 +367,37 @@ extern void f0EF3_2A53(int a, int b, int c, int d, int e, void far *p); /*@ 0EF3
     ApplyCharEffect(gCurMember, interval, -value, flag);
 }
 
-/*@ 0EF3:035A stub */ int f0EF3_035A(int a, int b, char c, char d, char e, char f, char g, int h) {}
+/* 0EF3:035A: allocate the first free item-type record: walk the 16-byte records at ds:A9F0 from
+   index 0x33 to 0x38 and stop at the first whose +4 type byte is 0xE2 (freed). It then fills the
+   record from its arguments (the two words at +0 and +2, the type at +4, the bytes at +5, +7/+0A,
+   +8/+0B and +9/+0C, and the word at +0xE) and zeroes +6, returning the record's index. Called by
+   the item creators 0EF3:1197, 0EF3:1656 and 0EF3:1D38 to make a new item type. */
+/*@ 0EF3:035A */ int CreateItemType(unsigned char word00, unsigned char word02, signed char type,
+                                    signed char m05, signed char m0A, signed char m0B,
+                                    signed char m0C, int word0E)
+{
+    struct ItemType far *rec;
+    register int index;
+
+    rec = gAD20;
+    for (index = 0x33; index < 0x39; index++, rec++) {
+        if (rec->m04 == 0xE2)
+            break;
+    }
+    rec->m00 = word00;
+    rec->m06 = 0;
+    rec->m02 = word02;
+    rec->m04 = type;
+    rec->m05 = m05;
+    rec->m0A = m0A;
+    rec->m07 = m0A;
+    rec->m0B = m0B;
+    rec->m08 = m0B;
+    rec->m0C = m0C;
+    rec->m09 = m0C;
+    rec->m0E = word0E;
+    return index;
+}
 
 /* 0EF3:03D8: free item record `n`: clear its key to -2, its +0xA byte to -1 and free its type's
    +4 byte (0xE2). Called by 0EF3:1233. */
@@ -348,7 +408,39 @@ extern void f0EF3_2A53(int a, int b, int c, int d, int e, void far *p); /*@ 0EF3
     gItemTypes[gTable8DD2[n].m02].m04 = 0xE2;
 }
 
-/*@ 0EF3:0418 stub */ int f0EF3_0418(char a, char b, char c, char d) {}
+/* 0EF3:0418: allocate a free item record: walk the 14-byte records at ds:8DD0 from index 0x0B to
+   0x10 and stop at the first whose +6 key is -2 (freed). It fills the record's flags (+2, from
+   arg1 plus 0x20), icon (+3), type (+4) and +0xD byte, clears the global ds:8DD5 and the record's
+   +0, +1, +6, +8 and +0xA fields, and returns the record's index (the item id). Called by the item
+   creators 0EF3:1197, 0EF3:1656 and 0EF3:1D38. DRAFT: the original keeps the zero it stores in
+   AL (`mov al,0; mov [ds:8DD5],al; cwde; ...`), a single char temporary reused for every store;
+   our build either stores the immediates directly or keeps the temporary in DL (`make match`
+   differs at the first zero store, +0x49). */
+/*@ 0EF3:0418 draft */ int CreateItemRecord(unsigned char flags, unsigned char icon, signed char m0B,
+                                              signed char type)
+{
+    signed char zero;
+    struct ItemRecord far *rec;
+    int index;
+
+    rec = &gItems[0xB];
+    for (index = 0xB; index < 0x11; index++, rec++) {
+        if (rec->m04 == -2)
+            break;
+    }
+    rec->flags = flags + 0x20;
+    rec->icon = icon;
+    rec->m02 = type;
+    rec->m0B = m0B;
+    zero = 0;
+    g8DD5 = zero;
+    rec->m04 = zero;
+    rec->m01 = zero;
+    rec->m00 = zero;
+    rec->m08 = zero;
+    rec->m06 = zero;
+    return index;
+}
 
 /* 0EF3:0482: returns 1 when the record's carried-item slot 1 is empty, else 0; used to pick the
    slot a created item goes into (callers 0EF3:1197, 0EF3:1656, 0EF3:1D38). */
@@ -576,8 +668,8 @@ extern void f0EF3_2A53(int a, int b, int c, int d, int e, void far *p); /*@ 0EF3
     register int slot, index;
 
     index = ItemSlot1Empty(gCurRec);
-    slot = f0EF3_035A(0, 0, 0, 0xF, 1, 8, GetClassSlot1Value(gPanelMember), 1);
-    gCurRec->m77[index] = f0EF3_0418(0x10, 0x52, 0, slot);
+    slot = CreateItemType(0, 0, 0, 0xF, 1, 8, GetClassSlot1Value(gPanelMember), 1);
+    gCurRec->m77[index] = CreateItemRecord(0x10, 0x52, 0, slot);
     RedrawMember(gPanelMember);
     ApplyTimedCharEffect(gEFB8, 0, 0x222L, 1, 1);
 }
@@ -755,8 +847,8 @@ extern void f0EF3_2A53(int a, int b, int c, int d, int e, void far *p); /*@ 0EF3
     register int index;
 
     index = ItemSlot1Empty(gCurRec);
-    slot = f0EF3_035A(0, 0, 0, 0xF, GetClassSlot1Value(gPanelMember) / 2, 6, 0, 1);
-    gCurRec->m77[index] = f0EF3_0418(0x18, 0x53, 0, slot);
+    slot = CreateItemType(0, 0, 0, 0xF, GetClassSlot1Value(gPanelMember) / 2, 6, 0, 1);
+    gCurRec->m77[index] = CreateItemRecord(0x18, 0x53, 0, slot);
     RedrawMember(gPanelMember);
     ApplyTimedCharEffect(gEFB8, 0, 0x222L, 1, 1);
 }
@@ -985,8 +1077,8 @@ extern void f0EF3_2A53(int a, int b, int c, int d, int e, void far *p); /*@ 0EF3
     register int index;
 
     index = ItemSlot1Empty(gCurRec);
-    slot = f0EF3_035A(0, 0, 0, 0xF, 1, 4, 4, 1);
-    gCurRec->m77[index] = f0EF3_0418(0, 0x54, 0, slot);
+    slot = CreateItemType(0, 0, 0, 0xF, 1, 4, 4, 1);
+    gCurRec->m77[index] = CreateItemRecord(0, 0x54, 0, slot);
     RedrawMember(gPanelMember);
     ApplyTimedCharEffect(gEFB8, 4, 0x222L, GetClassSlot24Value(gPanelMember) / 2, 1);
 }
