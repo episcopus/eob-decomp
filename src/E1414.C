@@ -387,7 +387,58 @@ extern int f0BD2_02B9(void far *head, int key, int item); /*@ 0BD2:02B9 */
 {
     UpdateObjects(kind);
 }
-/*@ 1414:05ED stub */ void f1414_05ED(void) {}
+/* 1414:05ED: applies a timed effect to character `who`. The interval is added to gTimer (time),
+   and effect `who` + 6 is armed. When that entry is inactive its period is set to `interval`,
+   the character's slot 0 is set to `time` and `value`, and the entry is armed. When it is active
+   the entry's expiry is pulled back to `time` if it is later, and then, in the first empty slot
+   when `firstEmpty` is nonzero, or in the slot whose mD5 already holds `value` (else the first
+   empty one) otherwise, the time and value are stored. Called by 0BD2, 0DE8, 0EF3 and 07CA. */
+/*@ 1414:05ED */ void ApplyCharEffect(char who, long interval, char value, char firstEmpty)
+{
+    struct Effect far *e;
+    struct CharRec far *rec;
+    unsigned long time;
+    int idx;
+    int i;
+    int slot;
+    int found;
+
+    idx = who + 6;
+    time = g8492 + interval;
+    e = &gEffects[idx];
+    rec = &gChars[who];
+    if (!e->active) {
+        e->period = interval;
+        rec->mAD[0] = time;
+        rec->mD5[0] = value;
+        ArmEffect(idx, 1);
+        return;
+    }
+    if (e->expiry > time)
+        e->expiry = time;
+    if (!firstEmpty) {
+        for (i = 0; i < 10; i++) {
+            if (rec->mAD[i] == 0) {
+                rec->mAD[i] = time;
+                rec->mD5[i] = value;
+                break;
+            }
+        }
+        return;
+    }
+    found = 0;
+    slot = -1;
+    for (i = 0; i < 10 && !found; i++) {
+        if (slot == -1 && rec->mAD[i] == 0)
+            slot = i;
+        if (found == 0 && rec->mD5[i] == value) {
+            slot = i;
+            found = 1;
+        }
+    }
+    rec->mAD[slot] = time;
+    rec->mD5[slot] = value;
+}
 /* 1414:0770: toggles or clears one of a character's 10 effect slots. In modes 0 and 2 it flips
    bit `slot` of gChars[who].m1E, then modes 0, 1 and 2 clear gChars[who].mE8[slot] and redraw
    the member's row through f1547_0991; any other mode does nothing. Called by 07CA. */
