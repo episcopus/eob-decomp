@@ -71,14 +71,13 @@ struct CharRec {                /* 243-byte character records at ds:F580 (src/E0
     char m1C;                   /* +1C: the destination of 284A's byte copy */
     char m1D;
     char m1E;
-    signed char m1F;            /* +1F: half of it indexes gTable5F35 (src/E0A72.C) */
-    signed char m20;            /* +20: indexes g1231 (src/E0DE8.C) */
-    char pad21[0x23 - 0x21];
+    signed char m1F;            /* +1F: the race index, half of it indexes gTable5F35 (src/E0A72.C) */
+    signed char m20;            /* +20: the class index, indexes g1231 (src/E0DE8.C) */
+    signed char align;          /* +21: index into the alignment-name table ds:1240 (src/E1547.C) */
+    signed char m22;            /* +22: the position ovl0:0A5E stores (Purpose unknown) */
     signed char m23;            /* +23: set to 0x64 by ovl0:26C6 (Purpose unknown) */
-    signed char m24;            /* +24: read by ovl0:065B (Purpose unknown) */
-    signed char m25;            /* +25: read by ovl0:065B (Purpose unknown) */
-    signed char m26;            /* +26: read by ovl0:065B (Purpose unknown) */
-    char pad27[0x33 - 0x27];
+    signed char m24[3];         /* +24: three per-class bytes ovl0:1BF2 fills from gTable5EF9 */
+    long exp[3];                /* +27: three 32-bit values ovl0:1BF2 fills (Purpose unknown) */
     void far *sprite;           /* +33: the character's packed sprite buffer (src/EOV3.C) */
     char pad37[0x73 - 0x37];
     long m7375;                 /* +73: a 32-bit value 280D sets to 0x26c (Purpose unknown) */
@@ -136,7 +135,6 @@ extern char gStr61B9[]; /*@ ds:61B9 */ /* a format string ovl0:065B selects (Pur
 extern char gStr61BC[]; /*@ ds:61BC */ /* a format string ovl0:065B selects (Purpose unknown) */
 extern char gStr61C2[]; /*@ ds:61C2 */ /* a format string ovl0:065B selects (Purpose unknown) */
 extern char far *g115D[]; /*@ ds:115D */ /* six far string pointers ovl0:065B draws in a column (Purpose unknown) */
-extern int g197; /*@ ds:0197 */ /* a panel field cleared by ovl0:1F66 (Purpose unknown) */
 extern int gFC8A; /*@ ds:FC8A */ /* the parity of the key ovl0:1F66 last handled (Purpose unknown) */
 extern unsigned long gTicks; /*@ ds:848A */ /* the 32-bit tick counter (src/E082C.C) */
 extern signed char g5EB0; /*@ ds:5EB0 */ /* the character ovl0:1224 last drew (Purpose unknown) */
@@ -156,6 +154,37 @@ extern int gNamePosY[]; /*@ ds:5E4C */ /* the y of each panel name slot (Purpose
 extern char gStr618C[]; /*@ ds:618C */ /* a fixed panel label (Purpose unknown) */
 extern struct Node far *ListAdd(struct Node far *head, struct Node far *item); /*@ 1658:001E */
 extern char g5E20; /*@ ds:5E20 */ /* nonzero when the mouse moved (src/E16A5.C) */
+
+struct Panel {                  /* the 16-byte option-list records at ds:017F (src/E14EF.C) */
+    int x;                      /* +0 */
+    int y;                      /* +2 */
+    int width;                  /* +4 */
+    int height;                 /* +6: the number of rows the list draws */
+    int sel;                    /* +8: the selected entry */
+    int colorA;                 /* +a */
+    int colorB;                 /* +c */
+    int pad;                    /* +e */
+};
+extern struct Panel gPanels[]; /*@ ds:017F */ /* the shared option-list panels (src/E14EF.C) */
+extern char far *g1240[]; /*@ ds:1240 */ /* the alignment names (src/E1547.C) */
+extern long gTable6081[]; /*@ ds:6081 */ /* the class-availability mask per race pair ovl0:207A picks */
+extern long gTable6099[]; /*@ ds:6099 */ /* the alignment-availability mask per class ovl0:2238 picks */
+extern int gTable5EB1[]; /*@ ds:5EB1 */ /* the six ability bonuses per race pair ovl0:1BF2 adds */
+extern unsigned char gTable5EF9[]; /*@ ds:5EF9 */ /* the four bytes per class ovl0:1BF2 copies to m24 */
+extern unsigned char gTable5EFC[]; /*@ ds:5EFC */ /* the divisor per class ovl0:1BF2 divides 5000 by */
+extern char gStr624C[]; /*@ ds:624C */ /* the caption ovl0:207A draws (Purpose unknown) */
+extern char gStr625A[]; /*@ ds:625A */ /* the caption ovl0:2238 draws (Purpose unknown) */
+extern char gStr626C[]; /*@ ds:626C */ /* the caption ovl0:23EC draws (Purpose unknown) */
+extern int gDD12; /*@ ds:DD12 */ /* the panel row ovl0:23EC redraws (Purpose unknown) */
+extern int gFC7A; /*@ ds:FC7A */ /* the key UpdateOptionList did not handle (src/E14EF.C) */
+extern int g8140; /*@ ds:8140 */ /* x of the last click (src/E082C.C) */
+extern int g8142; /*@ ds:8142 */ /* y of the last click (src/E082C.C) */
+extern int CountMaskBits(int n, long mask, char shift); /*@ 14EF:0107 */
+extern int PointInRect(int x, int y, int left, int top, int right, int bottom); /*@ 14EF:00E1 */
+extern int IsMouseInRect(int left, int top, int right, int bottom); /*@ 1A72:02A6 */
+extern int ReadKey(void); /*@ 1AAD:038E */
+extern int WaitKeyEvent(void); /*@ 1AAD:05D3 */
+extern int EditTextField(char far *text, char x, char y, char maxlen, char color, char attr, char cursorAttr); /*@ 082C:000B */
 
 struct Node {                   /* the 60-byte panel row records (src/E0CF7.C) */
     struct Node far *next;      /* +00: next node, or null at the tail */
@@ -395,11 +424,11 @@ extern void far *g5E64[0x11]; /*@ ds:5E64 */ /* the 17 sliced icon pointers this
     sprintf(gFileNameBuf, gStr61B3, gChars[index].m1D, gChars[index].m1C);
     DrawShadowText(gFileNameBuf, 0x118, 0x40, 0xf, 0);
     text = gStr61B9;
-    if (gChars[index].m25 > 0)
+    if (gChars[index].m24[1] > 0)
         text = gStr61BC;
-    if (gChars[index].m26 > 0)
+    if (gChars[index].m24[2] > 0)
         text = gStr61C2;
-    sprintf(gFileNameBuf, text, gChars[index].m24, gChars[index].m25, gChars[index].m26);
+    sprintf(gFileNameBuf, text, gChars[index].m24[0], gChars[index].m24[1], gChars[index].m24[2]);
     DrawShadowText(gFileNameBuf, 0x118, 0x50, 0xf, 0);
     switch (mode) {
     case 1:
@@ -468,6 +497,9 @@ void Ovl0_1224(void);              /* ovl0:1224, defined below */
 void Ovl0_1ADD(void);              /* ovl0:1ADD, defined below */
 void Ovl0_1BF2(int who);           /* ovl0:1BF2, defined below */
 void DrawPanelRow(int index);      /* ovl0:11BA, defined below */
+void BuildCombatTables(void);      /* ovl0:1EA9, defined below */
+int PickClass(int race);           /* ovl0:207A, defined below */
+int PickAlignment(int classIndex); /* ovl0:2238, defined below */
 /* ovl0:0DDC: the character panel's function-key loop. It opens the panel page, builds the 0x1b-based
    four-row list, then until a key ends it redraws the animation and waits: the enter key (0x61) and
    key 0x8004 flash icon 6 and keep looping, keys 0x8001/0x8002/0x8003 flash icons 4/7/8 and run the
@@ -784,7 +816,7 @@ void DrawPanelRow(int index);      /* ovl0:11BA, defined below */
     DrawShadowText(gStr623F, 0x93, 0x43, 9, 0);
     LockShowPointer();
     FlushKeyBuffer();
-    g197 = 0;
+    gPanels[1].sel = 0;
     DrawOptionList(1, g11AD, 0xffffffffL, 0, 0);
     while ((choice = UpdateOptionList(1, g11AD, 0L, 0xffffffffL, 0)) == -1)
         Ovl0_1224();
@@ -808,7 +840,58 @@ void DrawPanelRow(int index);      /* ovl0:11BA, defined below */
     }
     return i;
 }
-/*@ ovl0:207A stub */ void Ovl0_207A(void) {}
+/* ovl0:207A: the class picker of character creation. `race` is a party member's race index; it is
+   halved to index the per-race-pair class-availability mask gTable6081, and bit 2 is cleared from
+   that mask when any of the four named characters has an alignment of 6 or more. It counts the
+   available classes with CountMaskBits, sizes the shared panel 2 to them, draws the class names
+   g11DD through the option list and loops on the mouse or UpdateOptionList until it returns a choice
+   or the mouse's confirm keys 0xc6/0xc7. Returns the chosen class index, or 0x6e when the mouse
+   confirmed (drawn as icon 5 flashed). Called by ovl0:23EC for the race member. The `key &&` guard
+   in the mouse branch is redundant (neither 0xc6 nor 0xc7 is 0) but the original has its `or ax,ax`
+   test, so the source wrote it. */
+/*@ ovl0:207A */ int PickClass(int race)
+{
+    register int mask;
+    register int sel;
+    int done;
+    int key;
+
+    mask = -1;
+    for (sel = 0; sel < 4; sel++) {
+        if (gChars[sel].name[0] && gChars[sel].align >= 6)
+            mask = -5;
+    }
+    race /= 2;
+    sel = CountMaskBits(15, gTable6081[race] & mask, 0);
+    gPanels[2].height = sel;
+    gPanels[2].sel = 0;
+    FlushKeyBuffer();
+    Ovl0_1224();
+    LockHidePointer();
+    ClipRect(0, 0, 0x12, 0x40, 0x14, 0x80, 2, 0);
+    DrawShadowText(gStr624C, 0x93, 0x43, 9, 0);
+    DrawPanelIcon(5, 0, 0);
+    LockShowPointer();
+    DrawOptionList(2, g11DD, gTable6081[race] & mask, 0, 0);
+    done = g8140 = g8142 = 0;
+    sel = -1;
+    while (!done && sel == -1) {
+        Ovl0_1224();
+        if (IsMouseInRect(0x108, 0xab, 0x12f, 0xbb)) {
+            key = ReadKey();
+            if (key && (key == 0xc6 || key == 0xc7)) {
+                WaitKeyEvent();
+                done = 1;
+            }
+        } else
+            sel = UpdateOptionList(2, g11DD, 0L, gTable6081[race] & mask, 0);
+    }
+    if (done) {
+        FlashPanelIcon(5);
+        sel = 0x6e;
+    }
+    return sel;
+}
 /*@ ovl0:2238 stub */ void Ovl0_2238(void) {}
 /*@ ovl0:23EC stub */ void Ovl0_23EC(void) {}
 /* ovl0:2547: loads the character panel's screens and slices its icon buffers. It allocates the 0x13

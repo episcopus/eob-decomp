@@ -7347,6 +7347,9 @@ unit = "eov0"
 addr = "ovl0:207A"
 size = 446
 evidence = ["ovl", "near", "frame"]
+name = "PickClass"
+level = "L2"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "eov0_2238"
