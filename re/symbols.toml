@@ -2279,6 +2279,9 @@ addr = "0ACD:0BA6"
 size = 503
 evidence = ["near", "frame"]
 notes = "draft 2026-11-01 (src/E0ACD.C): matches every byte except the store at 0ACD:0C7F. The original writes the picked item with `mov [gF3BA], ax` (the 3-byte a3 form); our build writes `mov [gF3BA], di` (89 3e, one byte longer), shifting every later jump by one. The value is the same (di is proven to hold the item: it is pushed as the first argument of f0BD2_0AF2, PushListItem and SetMouseItem later, and ax still holds it from the call at 0ACD:0C59). TCC's own assembly for this unit shows it keeps the value in both registers at that point (the comparison two statements earlier is `cmp ax, word ptr DGROUP:_gF3BA` while the register variable is di), and it stores the register variable. All bytes before the store are identical, so the source form of that one statement decides the register. Tried ~30 forms at `flag = 1; if (gF3BA == -1) gF3BA = item;`: the inline assignment in the preceding if, `!item` for `item == 0`, the store before/after `flag`, a cast, a ternary, `item + 0`, `(item, item)`, `item ^ 0`, `item | 0`, `item * 1`, `item / 1`, `(int)`, `(long)`, pointer and volatile dereferences, `register`, `unsigned`, a moved declaration, and do/while, while/break, for(once), extra braces/trailing statements around it. Every one still emits `mov [gF3BA], di` (some add bytes). blocked: no source form tried makes tc100 store the register variable item from ax; the original compiler did. The same class as the tail-merge and F_SCOPY build questions (eov6, 0ACD:091C)."
+name = "PickListItem"
+level = "L2"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e0acd_0d9d"
