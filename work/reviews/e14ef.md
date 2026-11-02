@@ -1,8 +1,59 @@
 # Review: e14ef
 
 Reviewer: rev-haiku
-Commit reviewed: 98f74ac (main; review/e14ef at the same commit; `make match FILE=src/E14EF.C`: 6 of 6, 1410 bytes; `make readability UNIT=e14ef`: 0 findings)
+Commit reviewed: 62c8136 (main; review/e14ef at the same commit; src/E14EF.C last changed in 2b84265; `make match FILE=src/E14EF.C`: 6 of 6, 1410 bytes, exit 0; `make readability UNIT=e14ef`: 0 findings)
 
+Playbook 70. Judge what a matching file can still get wrong: names, types, comments, structure.
+The matcher already proved the bytes; do not re-prove them, read for meaning.
+
+Round 4. The names, types and the caller claims still hold: the callers in src/EOV0.C (:1148, :1149,
+:1189-1193, :1203, :1215, :1241-1244, :1253, :1257, :1259-1262) and src/EOV2.C (:380, :383) match the
+header, and the overlay witnesses for CountMaskBits (build/re/eob-overlays/ovl00.bin: B8 0F 00 at
+0x20DD, B8 09 00 at 0x228E) are right. What fails is the line citations. Round 3 wrote its cites
+against a file whose header then grew, and nothing re-checked them, so about twenty cites in this
+file now point at other lines (the header's field reads, the `picked` lines, the g5D1A, g8102 and
+g8134 notes, and two cites into src/E1A72.ASM). `make readability` reports 0 findings, so it does not
+catch stale cites. Each finding below is a comment fix; no code changes.
+
+## Findings
+
+Each finding is a checkbox. `must-fix` blocks `make review-pass` until a decompiler ticks it off
+(with the commit that fixes it); `should` and `note` do not block.
+
+- [ ] must-fix src/E14EF.C:10-12 (header, field offsets): "reads y at :169, x at :170, sel at :171 and height at :172" points at the local declarations. The reads are y at :178, x at :179, sel at :180 (FindMaskBit(panelDef->sel, ...)) and height at :181. "reads width at :260" is wrong: :260 is the x read (xbase); width is read at :269 (the right edge). "colorA/colorB at :252-253" are `counter++` and the panel pointer; they are at :261 and :262. "DrawOptionList also reads colorA/colorB at :177, :179" are at :186 (colorA) and :188 (colorB). (evidence: grep -n of src/E14EF.C, lines :169-172, :178-181, :186, :188, :252-253, :260-262, :269)
+- [ ] must-fix src/E14EF.C:220-221 (UpdateOptionList header): "`picked` holds the selectable row at first (:290, :298) and then ... the string index (:320, ...)". The row is stored in picked at :299 (click) and :307 (confirm); :290 is the `break;` of KEY_FIRST. The string index is assigned at :329 (the line that has the comment); :320 is a gDrawText call. (evidence: E14EF.C:289-290, :298-299, :307, :320, :329)
+- [ ] must-fix src/E14EF.C:225 (UpdateOptionList header): "(!gMouseDisabled, :262)" points at `colorB = panelDef->colorB;`. The test is at :271. (evidence: E14EF.C:262, :271)
+- [ ] must-fix src/E14EF.C:202 (KEY_CONFIRM): "the row is picked (:298)". Line 298 is the click case's `row = (g8142 - top) / lineheight;`. The confirm case that picks is :307 (`picked = row;` under `case KEY_CONFIRM`). (evidence: E14EF.C:298, :304-307)
+- [ ] must-fix src/E14EF.C:55 (g5D1A): "makes DrawOptionList draw the selected row in colorB (:178)". The test is at :187 (`entry == selEntry && (g5D1A || gMouseDisabled)`) and the draw is at :188; :178 is `y = gTextTop + panelDef->y;`. (evidence: E14EF.C:187-188)
+- [ ] must-fix src/E14EF.C:61 (g8102): "a zero here makes the normal text colour 1 (:177, :252)". The two tests are :186 (DrawOptionList) and :261 (UpdateOptionList). :177 is `panelDef = &gPanels[panel];` and :252 is `counter++`. (evidence: E14EF.C:186, :261)
+- [ ] must-fix src/E14EF.C:70-71 (g8134): "(or ax,[g8134]; mov [g8134],ax, src/E1A72.ASM:370-371)" points at other lines: the pair is src/E1A72.ASM:376-377. "this file clears it (:184)" is the `g8134 = 0;` at :193. (evidence: src/E1A72.ASM:376-377; E14EF.C:193)
+- [ ] must-fix src/E14EF.C:66 (gMouseDisabled): "InitMouse sets it to 1 before it installs the handler (1A72:0150, src/E1A72.ASM:295)". src/E1A72.ASM:295 is `mov word ptr [gMouseHandlerInstalled],1`; the store to gMouseDisabled is src/E1A72.ASM:296. The address 1A72:0150 was not checked here. (evidence: src/E1A72.ASM:286-300)
+- [ ] should src/E14EF.C:46-47 (gTextLeft): "x is in cell columns (eight pixels in DrawOptionList, the font width in UpdateOptionList)" mixes two units. gTextLeft is always in 8-pixel columns (`<< 3` at :260 and :267; src/E1C0E.C:60 "8-pixel columns"). The panel's x is 8-pixel cells in DrawOptionList (:179) and font-width units in UpdateOptionList (:267). Say that once for gTextLeft and once for the panel's x. (evidence: E14EF.C:179, :260, :267; src/E1C0E.C:60)
+- [ ] should src/E14EF.C:77-78 and :164 (IsKeyPending, FlushKeyBuffer, the DrawOptionList header): "nonzero when a key is waiting", "clear the pending key", "clears the pending key". The callees' comments say events, and the flush drops the whole ring: 1AAD:0471 is "1 when at least one event waits in the ring" (src/E1AAD.ASM:337-338) and 1AAD:0480 is "discarding every buffered event" (src/E1AAD.ASM:350-351). The ring also holds the mouse events 41h and 42h (1AAD:048D), so "event" is the true word. (evidence: src/E1AAD.ASM:337-338, :350-351)
+- [ ] should src/E14EF.C:67-68 (gCursorX, gCursorY): "mouse x (E1A72.ASM)" and "mouse y (E1A72.ASM)" give no unit. src/E1A72.ASM:59 and :62 say "mouse x in pixels" and "mouse y in pixels", and UpdateOptionList compares them with the pixel rectangle (E14EF.C:268, :272-273). Say pixels. (evidence: src/E1A72.ASM:59, :62; E14EF.C:268, :272-273)
+- [ ] note make readability does not check line citations (this round's ~20 stale cites passed it with 0 findings). A cite check on the citing line (grep the cited text at the cited line) would catch them; that is a tool question for the human, not a decompiler edit.
+- [ ] note the rounds 1 to 3 notes still stand and are routed, not edited here: WaitKeyEvent's callers (src/EOV5.C:373, :468 still write the literal 0x8FF, not KEY_CODE_MASK); the EOV0 prototypes src/EOV0.C:143 (UpdateOptionList with five parameters and `long counter`, no `extra`; the bytes agree) and :204 (`char shift`); the struct Panel copy at src/EOV0.C:177-186; src/E082C.C:300-302 ("same test as PointInRect"); and the stale cites of this file in src/E1A72.ASM, src/E1BBE.ASM, src/E1C00.ASM, re/globals.toml and re/renames.toml.
+
+## Summary
+
+The unit is understandable from its source alone. The names hold (DrawOptionList, UpdateOptionList,
+IsPointInRect, FindMaskBit, CountMaskBits, BlinkText, and the shared globals gFontWidth, gFontHeight,
+g8140, g8142, gMouseDisabled, gPanels), and so do the callers' masks and the gFC7A reader. What fails
+this round is the line citations: about twenty in this file's comments point at other lines, because
+round 3's header grew and its cites were not rechecked. Eight must-fix items (the citation blocks at
+:10-12, :220-221, :225, :202, :55, :61, :70-71, :66), each a comment fix with no code change. Two shoulds:
+the gTextLeft units and the event wording of IsKeyPending and FlushKeyBuffer, plus the pixel units of
+gCursorX and gCursorY. Placeholders are honest and need no change: gFC78, gFC7A (its reader is now
+named), g5D1A, g8102 (meaning not established), g8134, g8140, g8142, `counter`, `extra` and `pad`. The
+matcher (6 of 6) and the readability check (0 findings) were re-run on 62c8136. No matcher, spec or pin
+question; nothing escalated.
+
+---
+
+# Round 3 (kept)
+
+Reviewer: rev-haiku
+Commit reviewed: 98f74ac
 Playbook 70. Judge what a matching file can still get wrong: names, types, comments, structure.
 The matcher already proved the bytes; do not re-prove them, read for meaning.
 
