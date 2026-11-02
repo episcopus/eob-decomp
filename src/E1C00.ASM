@@ -17,10 +17,11 @@
 ; entry returns), loads the overlay, then calls the entry at the overlay segment:0000 with 27h,
 ; 1A16h and that segment (1C00:0088 to 0091), resizes the block 1C00:0002 loaded the overlay into,
 ; to the overlay's size [H] (MemRealloc, 1C00:00A8), and calls the pointer the entry returned
-; (offset at 818Eh, segment at 8190h) with the request's two words (1C00:00C0). The caller's DS,
-; the request's segment and the name's segment are all DGROUP at run time (the 1C00:0055 comment
-; gives the evidence, including the start code that sets DS). Each access uses the segment the
-; code leaves in DS or ES, not one segment for all; the 1C00:0055 comment lists them.
+; (offset at 818Eh, segment at 8190h) with the request's two words (1C00:00C0). The caller
+; StartupGame's DS, the request segment (the direct caller _RunOverlayRequest's DS and ES) and the
+; name's segment are all DGROUP at run time (the 1C00:0055 comment gives the evidence, including
+; the start code that sets DS). Each access uses the segment the code leaves in DS or ES, not one
+; segment for all; the 1C00:0055 comment lists them.
 ; DGROUP is paragraph 212Eh of the load image (the value the fixups hold; the loader adds the load
 ; segment), as in E1A72.ASM (lines 81, 252, 435, 470) and E1D8F.ASM (line 78).
 ;
@@ -56,8 +57,8 @@
 ; 1C00:0055 later shrinks it to the overlay's real size with MemRealloc (the reason for this size is
 ; not established [H]: 0FA00h is 64000 bytes, one 320 by 200 screen, but nothing in the bytes says
 ; that is why). Which segment each access uses, and why the header's DGROUP:818Ah to 8194h holds
-; (the caller's DS is DGROUP, which 07C8:0254 `push ds` passes), is spelled out once in the
-; 1C00:0055 comment.
+; (the caller StartupGame's DS is DGROUP, which 07C8:0254 `push ds` passes), is spelled out once in
+; the 1C00:0055 comment.
 ; Save SP and SS across the call (the reason is not established [H]), then load the overlay named by
 ; DS:DX through the INT 21h/4B03 parameter block at ES:BX = request_seg:818Ah. Word 0 is the load
 ; segment (the word at 818Ah through that segment) and word 1 is the relocation factor (818Ch
@@ -112,7 +113,7 @@ _LoadOverlayImage ENDP
 ; 1C00:0055: run an overlay request. [bp+6..+9] is a far pointer to the request (the caller, inside
 ; StartupGame at 07C8:0199, E07C8.C:172, passes DS:8121 at 07C8:0254): word 0 is the offset of the
 ; request name in the request's segment; word +2 is the name's segment; the two words at +4 and +6
-; are the two arguments of the pointer the entry returns. The caller's DS is DGROUP: StartupGame
+; are the two arguments of the pointer the entry returns. The caller StartupGame's DS is DGROUP: it
 ; reads the DGROUP global ds:8102 through DS from its entry (07C8:019D, `cmp word ptr [8102h],36h`;
 ; also 07C8:01A7) and no instruction from 07C8:0199 to the `push ds` at 07C8:0254 changes DS (no
 ; `mov ds`, `lds` or `pop ds`; checked with tools/re/disasm.py), so the DS it passes is the DS it
@@ -120,8 +121,8 @@ _LoadOverlayImage ENDP
 ; (BA 2E 21, the relocated word) and image offset 0014h is `mov ds,dx` (8E DA), at file offsets
 ; 2800h and 2814h (the c0 start-up order is [H]).
 ; The loader takes the segment of the name from its own DS ([bp+8], the segment of the request, at
-; 1C00:0062) and the offset from word 0 (1C00:0065); it never reads word +2. The request's segment,
-; the name's segment and the caller's DS are therefore all DGROUP at run time: the MZ fixup list
+; 1C00:0062) and the offset from word 0 (1C00:0065); it never reads word +2. The request segment,
+; the name's segment and StartupGame's DS are therefore all DGROUP at run time: the MZ fixup list
 ; has a load-time fixup at each of the five segment words of gOverlayFiles (ds:3076h, 307Ah, 307Eh,
 ; 3082h and 3086h), each holding 212Eh, the paragraph of the load image (the loader adds the load
 ; segment at run time, so DGROUP is that paragraph; the fixup at 1C00:000A holds the same 212Eh),
@@ -132,15 +133,17 @@ _LoadOverlayImage ENDP
 ; the file offsets 26BA1h, 26BA9h, 26BB1h, 26BB9h and 26BC2h (cga.ovl, tga.ovl, ega.ovl, mcga.ovl
 ; and vga.ovl) minus 23AE0h (DGROUP's file offset).
 ; The segment each access uses, not one segment for all (bytes 1C00:0002 to 00C0): 1C00:002F
-; (`es:[bx] = AX`, BX = 818Ah) uses the caller's ES, and 1C00:0032 and 0036 (the SP and SS save)
-; use the caller's DS, which `pop es`/`pop ds` (1C00:0021 to 0022) restore after the MemAlloc call.
-; 1C00:0044 and 0048 (the SP and SS restore) and 1C00:007C, 0081, 0085, 0098 and 00B4 use DGROUP:
-; the 1C00:0042 reload `mov ax,212Eh; mov ds,ax` is on the success path of 1C00:0002, and its
-; `retf` (1C00:0054) does not restore DS, so 1C00:0002 returns with DS = DGROUP and the caller
-; sees DGROUP at 1C00:0077 (212Eh is the value the reload's fixup holds; the loader adds the load
-; segment). 1C00:00C0 (the second `lcall [818Eh]`) reads its target through the
-; caller's DS, which `pop ds` (1C00:00B9) restores from the word pushed at 1C00:006A (the request
-; segment, which is DGROUP): it calls the pointer stored at DGROUP:818Eh.
+; (`es:[bx] = AX`, BX = 818Ah) and 1C00:0032 and 0036 (the SP and SS save) use the request segment,
+; which _RunOverlayRequest sets in DS and ES at 1C00:0062 and 1C00:0071 (the `pop es`/`pop ds` at
+; 1C00:0021 to 0022 restore it after the MemAlloc call). 1C00:0044 and 0048
+; (the SP and SS restore) and 1C00:007C, 0081, 0085, 0098 and 00B4 use DGROUP: the 1C00:0042 reload
+; `mov ax,212Eh; mov ds,ax` sets DS to DGROUP on the success path of 1C00:0002, and its `retf`
+; (1C00:0054) does not restore DS; on the MemAlloc-failure return DS is the request segment that
+; `pop ds` (1C00:0022) restored, which is DGROUP too, so 1C00:0002 returns with DS = DGROUP on
+; every path and the caller sees DGROUP at 1C00:0077 (212Eh is the value the reload's fixup holds;
+; the loader adds the load segment). 1C00:00C0 (the second `lcall [818Eh]`) reads its target
+; through the request segment, which `pop ds` (1C00:00B9) restores from the word pushed at
+; 1C00:006A: it calls the pointer stored at DGROUP:818Eh.
 ; Load the overlay image with 1C00:0002. On success this function stores 0 at 818Eh (the offset) and
 ; the overlay segment (the word at DGROUP:818Ah, loaded into AX at 1C00:007C) at 8190h (1C00:0081
 ; and 0085), then pushes that segment, 1A16h and 27h and calls the entry at segment:0000 through
@@ -159,7 +162,7 @@ _LoadOverlayImage ENDP
 ; its contents. MemRealloc's DX (the reallocated block's segment, FP_SEG(blk) + 1 on the 0x20 path,
 ; E19BC.C:117) is stored at 8190h at 1C00:00B4, so the second `lcall [818Eh]` (1C00:00C0) calls
 ; the pointer the entry returned, whose offset is the entry's AX (818Eh) and whose segment is
-; MemRealloc's result (8190h); its target is read through the caller's DS (see above), and the
+; MemRealloc's result (8190h); its target is read through the request segment (see above), and the
 ; segment can differ from the overlay segment the entry was called with if the heap moved the block
 ; [H]. It calls that pointer with the request's two words: `pop si` restores SI = request + 4, then
 ; `lodsw` reads word +4 into AX, `mov bx,ax` copies it to BX, and the second `lodsw` reads word +6
@@ -170,9 +173,10 @@ _LoadOverlayImage ENDP
 ; installed (E1A72.ASM:43, set at :214, cleared at :200). gMouseDisabled is set to 1 at install
 ; (E1A72.ASM:215), and a non-zero value disables the handler: the INT 33h handler body skips all
 ; of its work on non-zero (E1A72.ASM:254-255) and HidePointer and ShowPointer do nothing on
-; non-zero (E1BBE.ASM:89-90, 178), while E07A9.C:211 and E14EF.C:227 run their pointer work only
-; when it is zero. Clearing it after a driver overlay has loaded and the pointer the entry returned
-; has run therefore turns the handler and the pointer on [H]. This clear is not the last word:
+; non-zero (E1BBE.ASM:89-90, 178), while E07A9.C:249 (the `if (!gMouseDisabled)` test in
+; SetMouseItem, 07A9:010C) and E14EF.C:227 run their pointer work only when it is zero. Clearing it
+; after a driver overlay has loaded and the pointer the entry returned has run therefore turns the
+; handler and the pointer on [H]. This clear is not the last word:
 ; after start-up returns 1, when g3092 is set (E07C8.C:152), Main sets the flag again from the
 ; mouse command-line argument, `if (!gMouseHandlerInstalled) gMouseDisabled = 1; else gMouseDisabled
 ; = !mouse;` (E07C8.C:153-156), so the mouse argument decides the final value. AX = 0 on success,
