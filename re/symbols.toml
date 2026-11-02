@@ -2054,7 +2054,7 @@ unit = "e0a72"
 addr = "0A72:0468"
 size = 79
 evidence = ["far", "frame"]
-name = "FormatRatioText"
+name = "FormatStrengthPercent"
 level = "L2"
 match_flags = "-ml -O -Z"
 
@@ -2084,7 +2084,7 @@ unit = "e0a72"
 addr = "0A72:0522"
 size = 106
 evidence = ["far", "frame"]
-name = "GetScaledValue"
+name = "GetHitTarget"
 level = "L2"
 match_flags = "-ml -O -Z"
 

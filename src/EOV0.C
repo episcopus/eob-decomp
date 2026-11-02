@@ -128,7 +128,7 @@ extern char far *g11DD[]; /*@ ds:11DD */ /* the class names (src/E1547.C) */
 extern char gFileNameBuf[]; /*@ ds:FE6E */ /* the buffer sprintf formats into (src/E082C.C) */
 extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
 extern int strlen(char far *s); /*@ 0000:67F6 */
-extern char *FormatRatioText(char value, char percent); /*@ 0A72:0468 */
+extern char *FormatStrengthPercent(char value, char percent); /*@ 0A72:0468 */
 extern char gStr6197[]; /*@ ds:6197 */ /* a fixed panel label (Purpose unknown) */
 extern char gStr61A1[]; /*@ ds:61A1 */ /* a format string ovl0:065B uses (Purpose unknown) */
 extern char gStr61B3[]; /*@ ds:61B3 */ /* a format string ovl0:065B uses (Purpose unknown) */
@@ -387,7 +387,7 @@ extern void far *g5E64[0x11]; /*@ ds:5E64 */ /* the 17 sliced icon pointers this
     for (i = 8; i < 0xe; i++)
         DrawShadowText(g115D[i], 0xa3, i * 8, 0xf, 0);
     DrawShadowText(gStr6197, 0xf8, 0x40, 0xf, 0);
-    sprintf(gFileNameBuf, gStr61A1, FormatRatioText(gChars[index].m0D, gChars[index].m0F),
+    sprintf(gFileNameBuf, gStr61A1, FormatStrengthPercent(gChars[index].m0D, gChars[index].m0F),
         gChars[index].m11, gChars[index].m13, gChars[index].m15, gChars[index].m17,
         gChars[index].m19);
     DrawShadowText(gFileNameBuf, 0xc0, 0x40, 0xf, 0);

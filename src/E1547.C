@@ -14,9 +14,9 @@ struct CharRec {            /* the 243-byte (0xF3) records at ds:F580 (src/E0A72
     char pad00;
     unsigned char m01;      /* +01: status bits (src/E0D1C.C) */
     char name[0x0B];        /* +02: the NUL-padded name (src/EOV6.C) */
-    signed char m0D;        /* +0D (src/E0A72.C) */
+    signed char m0D;        /* +0D: the strength score, drawn by FormatStrengthPercent (src/E0A72.C) */
     signed char m0E;        /* +0E (src/E1414.C) */
-    signed char m0F;        /* +0F (src/E0A72.C) */
+    signed char m0F;        /* +0F: the exceptional strength percentile (src/E0A72.C) */
     signed char m10;        /* +10 (src/E1414.C) */
     signed char str;        /* +11: STRENGTH, the first of the six stat values (name ds:1195) */
     signed char m12;        /* +12 */
@@ -131,7 +131,7 @@ extern void PrintInt(int value, int a, int b, int c, int d); /*@ 1AA6:000F */
 extern void f1BA4_000C(long value, int a, int b, int c, int d); /*@ 1BA4:000C */
 extern int NumberWidthLong(long value); /*@ 082C:0974 */
 extern int NumberWidthInt(int value); /*@ 082C:09A6 */
-extern char *FormatRatioText(char value, char percent); /*@ 0A72:0468 */
+extern char *FormatStrengthPercent(char score, char percent); /*@ 0A72:0468 */
 extern char GetClassSlotByte(char row, char slot); /*@ 0A72:0509 */
 extern void DrawItemRow(int who, int slot, int one); /*@ 0BD2:0917 */
 /* 1547:0009: draws the bar at the member's block corner (g5D1F[who & 1], g5D21[who >> 1], the x
@@ -551,7 +551,7 @@ extern void DrawItemRow(int who, int slot, int one); /*@ 0BD2:0917 */
             gDrawText("ARMOR CLASS", 0xb7, 0x7c, 0xc, gFB7B);
             gDrawText("EXP", 0xef, 0x8a, 0xc, gFB7B);
             gDrawText("LVL", 0x116, 0x8a, 0xc, gFB7B);
-            gDrawText(FormatRatioText(rec->m0D, rec->m0F), 0x113, 0x52, 0xf, gFB7B);
+            gDrawText(FormatStrengthPercent(rec->m0D, rec->m0F), 0x113, 0x52, 0xf, gFB7B);
             PrintInt(rec->str, 0x113, 0x59, 0xf, gFB7B);
             PrintInt(rec->intel, 0x113, 0x60, 0xf, gFB7B);
             PrintInt(rec->wis, 0x113, 0x67, 0xf, gFB7B);

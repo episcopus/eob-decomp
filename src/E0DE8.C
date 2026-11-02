@@ -16,7 +16,9 @@ struct CharRec {            /* the 243-byte (0xF3) character records at ds:F580;
     unsigned char m01;      /* +01: status bits (0D1C:0670, 0DE8:09B9) */
     char name[0x0B];        /* +02: the character's name, NUL padded (0DE8:0C82) */
     char pad0D[0x15 - 0x0D];
-    signed char m15;        /* +15: an index into a class table (0A72:0181) */
+    signed char m15;        /* +15: one of the five further stat bytes (src/E0A72.C); indexes the
+                               per-stat table g349E for the armour-class base (GetClassWord, 0A72:019D)
+                               and the per-stat table ds:3474 (GetCharM15Value, 0A72:0181) */
     char pad16;
     signed char m17;        /* +17: an index into g54F6 (0D1C:059B) */
     char pad18[0x1B - 0x18];
@@ -52,7 +54,7 @@ struct Obj28 {              /* the 28-byte object records at ds:8A82; see src/E0
 };
 
 struct Entry27 {            /* the 27-byte records at ds:1A3B; see src/E0D1C.C */
-    signed char m00;        /* +0: a class byte for 0A72:0522 */
+    signed char m00;        /* +0: the target's class byte for GetHitTarget (0A72:0522) */
     char m01;               /* +1 */
     signed char m02;        /* +2: a class byte read by 0FCA */
     char pad03[0x0E - 0x03];
@@ -136,9 +138,9 @@ extern int far RollDice(char count, char sides, char bonus); /*@ 082C:0458 */
 extern int GetDerivedStatA(int who); /*@ 0A72:00CF */
 extern int GetDerivedStatB(int who); /*@ 0A72:0128 */
 extern int GetCharM15Value(int who); /*@ 0A72:0181 */
-extern char GetScaledValue(char who, char x); /*@ 0A72:0522 */
+extern char GetHitTarget(char who, char classByte); /*@ 0A72:0522 */
 extern char GetClassSlotByte(char row, char slot); /*@ 0A72:0509 */
-extern long GetClassSlotLong(char indexA, char indexB, char countC); /*@ 0A72:04B7 */
+extern long GetClassSlotLong(char indexA, char indexB, char level); /*@ 0A72:04B7 */
 extern int GetClassWord(char classIndex); /*@ 0A72:019D */
 extern int GetIndexedByte(char index, char limit, char offset); /*@ 0A72:0006 */
 extern int RollDamage(char who, char level, char countA, char countB, char countC); /*@ 0A72:01AE */
@@ -177,7 +179,7 @@ void LevelUpSlot(int who, int attr, int slot);  /* forward: 0B45 reaches it with
    from the item `slot` (the m02 kind selects the m0B weapon value when it is 1..3), adds either
    the derived stat A or the m15 char value depending on `flag`, marks gObjs[obj].m16 bit 0 as
    hit, and compares a d20 roll (raised by gFBD2 bits 4 and 5 and by gChars[who].mE3 bit 6, clamped
-   to 1..20) against GetScaledValue(who, gTable1A3B[gObjs[obj].b0].m00) minus the bonus. Returns 1
+   to 1..20) against GetHitTarget(who, gTable1A3B[gObjs[obj].b0].m00) minus the bonus. Returns 1
    when the roll reaches that armour class. Called by 0DE8:02D4 and 0DE8:0359. */
 /*@ 0DE8:0007 */ int RollToHit(int who, int obj, int slot, int flag)
 {
@@ -201,7 +203,7 @@ void LevelUpSlot(int who, int attr, int slot);  /* forward: 0B45 reaches it with
         bonus += GetCharM15Value(who);
     b0 = gObjs[obj].b0;
     gObjs[obj].m16 |= 1;
-    ac = GetScaledValue(who, gTable1A3B[b0].m00) - bonus;
+    ac = GetHitTarget(who, gTable1A3B[b0].m00) - bonus;
     roll = RollDice(1, 20, 0);
     if (gFBD2 & 0x30)
         roll++;
