@@ -158,7 +158,7 @@ extern int (far *gFn8072)(int a, int b); /*@ ds:8072 */
 extern void (far *gFn809E)(int x, int y, int handle); /*@ ds:809E */
 extern int RandomRange(int low, int high); /*@ 1AAA:0005 */
 extern char gF542[]; /*@ ds:F542 */
-extern int g8117; /*@ ds:8117 */
+extern int gScrollHook; /*@ ds:8117 */
 extern int g8119; /*@ ds:8119 */
 extern int g139; /*@ ds:0139 */
 extern int gFBC8; /*@ ds:FBC8 */
@@ -1111,7 +1111,7 @@ enum {
     gFE42 = 1;
     g169 = gF57E;
     SetTextWindow(0xc);
-    g8117 = 0xac;
+    gScrollHook = 0xac;
     g8119 = 0x2d0;
     LockHidePointer();
     DrawFilledPanel(0, 0, 0xaf, 0xae, gFB4C, gF53A, gF57E);
@@ -1251,7 +1251,7 @@ enum {
         gScrollOn = 1;
         g139 = gF57E;
         SetTextWindow(9);
-        g8117 = 0xac;
+        gScrollHook = 0xac;
         g8119 = 0x2d0;
         switch (mode) {
         case 0:
@@ -1314,7 +1314,7 @@ enum {
     gScrollOn = 1;
     g169 = gF57E;
     SetTextWindow(0xc);
-    g8117 = 0xac;
+    gScrollHook = 0xac;
     g8119 = 0x2d0;
     DrawFilledPanel(0, 0, 0xaf, 0xae, gFB4C, gF53A, gF57E);
     LockShowPointer();

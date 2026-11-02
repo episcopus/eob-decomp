@@ -214,9 +214,9 @@ extern void far *gA9C0; /*@ ds:A9C0 */  /* the 6x6 font loaded from FONT6.FNT (s
                                            6x6 size is eob/FONT6.FNT bytes 102h and 103h (6 and 6, the
                                            height and width bytes src/E1A47.C:81-85 reads),
                                            docs/design/WHITEPAPER.md:171 [V] */
-extern int g811F; /*@ ds:811F */  /* this unit tests it as 7 to gate the " taken." message
+extern int gTextRegion; /*@ ds:811F */  /* this unit tests it as 7 to gate the " taken." message
                                      (07A9:011E, 0123); FindWordPanel saves it (src/EOV2.C:476) and
-                                     indexes gRegions[g811F] with it (src/EOV2.C:489-492, 517-520) */
+                                     indexes gRegions[gTextRegion] with it (src/EOV2.C:489-492, 517-520) */
 extern struct Entry14 gTable8DD2[]; /*@ ds:8DD2 */
 extern int gMouseDisabled; /*@ ds:814A */  /* nonzero disables the mouse pointer code: the test at
                                               07A9:0148 (`cmp [814A],0; je`) runs SetMouseItem's body
@@ -290,7 +290,7 @@ extern void RunMapLoop(void); /*@ 0ACD:0E8A */
 extern void SetCurrentItem(int n); /*@ 0D1C:0304 */
 /* 0BD2:05B5 draws item `item`'s name into the text buffer (src/E0BD2.C:426-437), with the flag
    bit 0x40 and name-table cases. Called at 07A9:0126 with the item index, just before the
-   " taken.\r" message (07A9:012D), when g811F == 7. Why the name is asked for here is Purpose
+   " taken.\r" message (07A9:012D), when gTextRegion == 7. Why the name is asked for here is Purpose
    unknown. */
 extern void DrawItemName(int item); /*@ 0BD2:05B5 */
 extern void DrawText(char far *text); /*@ 1DE7:060A */
@@ -357,7 +357,7 @@ extern void SetMousePointerShape(int hotX, int hotY, void far *icon); /*@ 1BB1:0
    index item in ds:FBCE (gFBCE, the item index shown by the mouse, src/E0D1C.C:109) unless
    gMouseDisabled; src/E0D1C.C:274 says an item is cleared and redrawn through SetMouseItem, and the
    call SetMouseItem(0) is at src/E0D1C.C:302 (the tests leading to it at :298 and :300). A nonzero
-   item also passes " taken.\r" (ds:0094) to 1DE7:060A after 0BD2:05B5 when g811F == 7, and the
+   item also passes " taken.\r" (ds:0094) to 1DE7:060A after 0BD2:05B5 when gTextRegion == 7, and the
    record gTable8DD2[item].icon then supplies the icon number. When the current record
    gTable8DD2[gFBCE] has flag 0x80 and gFBD2 bit 0 is set, the flagged branch runs (07A9:015C to
    01B1): the icon's 16-byte colour row (gBufF534 + (item << 4), item now the icon number, or the
@@ -371,12 +371,12 @@ extern void SetMousePointerShape(int hotX, int hotY, void far *icon); /*@ 1BB1:0
    number and no test, so a negative number reads four bytes before the table for each step below
    zero (the table at ds:DDE4, entries of 4 bytes). No record in the pinned ITEM.DAT has a negative
    icon (432 records, icon numbers 1 to 97), so the game's data does not reach the read. Why
-   g811F == 7 gets the " taken." message is Purpose unknown. */
+   gTextRegion == 7 gets the " taken." message is Purpose unknown. */
 /*@ 07A9:010C */ void SetMouseItem(int item)
 {
     SetCurrentItem(item);
     if (item) {
-        if (g811F == 7) {
+        if (gTextRegion == 7) {
             DrawItemName(item);
             DrawText(" taken.\r");
         }

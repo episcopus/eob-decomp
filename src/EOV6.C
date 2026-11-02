@@ -43,7 +43,7 @@ extern struct Spell gSpells1344[]; /*@ ds:1344 */ /* far name pointers, indexed 
 extern struct Spell gSpells151F[]; /*@ ds:151F */
 extern struct Entry28 gTable8A84[]; /*@ ds:8A84 */ /* 28-byte records, 30 of them */
 extern char far gStrings2003; /*@ 2003:0000 */    /* the message string table */
-extern int g811F; /*@ ds:811F */
+extern int gTextRegion; /*@ ds:811F */
 extern int g8115; /*@ ds:8115 */
 extern int g159; /*@ ds:0159 */                 /* holds gF57E while ovl6:0B9B is on screen */
 extern int gTextHeight; /*@ ds:FE60 */
@@ -364,7 +364,7 @@ done:
     void *savedFont;
     register int region;
 
-    region = g811F;
+    region = gTextRegion;
     savedFont = gFont1A47;
     f1A47_0169(gFE5A);
     SetTextWindow(0xa);
@@ -391,7 +391,7 @@ done:
 /* ovl6:09D2: the "monsters are near" test. It selects the 6x6 font, marks the object update
    (gF442) and updates objects 0 and 1, then scans the 30 28-byte records at ds:8A84: when
    Distance(gPartyCell, record.value) is below two a monster is close, so it switches back to
-   the previous region (saved in g811F), draws "\rYou can't rest here, monsters are near." and
+   the previous region (saved in gTextRegion), draws "\rYou can't rest here, monsters are near." and
    returns 1. Restores the caller's font and returns 0 when nothing is close. Called at the start
    of the camp loop. */
 /*@ ovl6:09D2 */ int f09D2(void)
@@ -408,7 +408,7 @@ done:
     gF442 = 0;
     for (i = 0; i < 0x1e; i++) {
         if (Distance(gPartyCell, gTable8A84[i].value) < 2) {
-            member = g811F;
+            member = gTextRegion;
             SetTextWindow(7);
             g8115 = 0;
             LockHidePointer();
@@ -456,7 +456,7 @@ done:
     return 0;
 }
 /* ovl6:0B9B: shows the modal warning box for message number `message` in the far string table at
-   2003:0000. It saves the region (g811F), g8115 and the font, selects the 8x8 font and region 2,
+   2003:0000. It saves the region (gTextRegion), g8115 and the font, selects the 8x8 font and region 2,
    stores gF57E in ds:0159, fills the panel (f0D1C_0C21) and draws the message string through
    DrawShadowText inside a clip (ClipRect). Then it waits up to 0x78 frames for a key (1AAD:038E),
    clears the pending key (1AAD:0480) and restores the font, region and g8115. Called by the camp
@@ -470,7 +470,7 @@ done:
 
     savedRegion = g8115;
     savedFont = gFont1A47;
-    savedSelect = g811F;
+    savedSelect = gTextRegion;
     f1A47_0169(gFE5A);
     LockHidePointer();
     g159 = gF57E;

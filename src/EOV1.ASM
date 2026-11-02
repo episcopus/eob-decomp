@@ -58,7 +58,7 @@
         EXTRN   gFillRect:DWORD         ; @ ds:806A: far fill-rect routine (E082C.C)
         EXTRN   gMemberBoxes:WORD       ; @ ds:62E2: two 8-byte (x1,y1,x2,y2) member-list boxes
         EXTRN   g8115:WORD              ; @ ds:8115: nonzero while a status line is up (E082C.C)
-        EXTRN   g811F:WORD              ; @ ds:811F (E07A9.C)
+        EXTRN   gTextRegion:WORD              ; @ ds:811F (E07A9.C)
         EXTRN   g159:WORD               ; @ ds:0159 (EOV6.C)
         EXTRN   gF57E:BYTE              ; @ ds:F57E (E0BD2.C)
         EXTRN   gFont1A47:DWORD         ; @ ds:FE4E: the current far font pointer (E1547.C)
@@ -2464,7 +2464,7 @@ f1153_13AA:
 _Ovl1_1153 ENDP
 
 ; ovl1:13F7: show the message whose key is `message` for up to 0x78 frames. It saves g8115, the
-; current font and g811F, loads the 8x8 font (gFE5A), hides the pointer, copies gF57E into g159,
+; current font and gTextRegion, loads the 8x8 font (gFE5A), hides the pointer, copies gF57E into g159,
 ; clears text window 0xB, sets g8115 = 2, fills the region through f0D1C_0C21, draws the
 ; `message`-th string of the far table gStrings2003 (seg 2003:0000) at the text origin +5 through
 ; DrawShadowText, clips the text rectangle through ClipRect, shows the pointer and then polls
@@ -2483,7 +2483,7 @@ _ShowMessage PROC FAR
         mov     dx,word ptr [gFont1A47]
         mov     [bp-6],dx
         mov     [bp-4],ax
-        mov     ax,[g811F]
+        mov     ax,[gTextRegion]
         mov     [bp-2],ax
         push    word ptr [gFE5A+2]
         push    word ptr [gFE5A]
@@ -3242,7 +3242,7 @@ _Ovl1_1691 ENDP
 
 ; ovl1:1ACD: the character-display / member action loop (2413 bytes, no direct caller in the map; it
 ; is reached through the overlay dispatch). It drives the whole party panel: it saves the font and
-; g811F, clears three bytes of each member record, then loops on the far heap check (a "Far heap
+; gTextRegion, clears three bytes of each member record, then loops on the far heap check (a "Far heap
 ; corrupt!" box when it fails), reads the option-field toggles, builds the member list with
 ; _Ovl1_1153, waits with DispatchKeyWait and switches on a 0x17-entry key table at ovl1:23DE. Most
 ; cases call this unit's functions (ovl1:0000, 0416, 097A, 1153, 13F7, 1516, 1551, 1691, 243A) and
@@ -3287,7 +3287,7 @@ f1ACD_1AFB:
         mov     dx,word ptr [gFont1A47]
         mov     [bp-4],dx
         mov     [bp-2],ax
-        mov     ax,[g811F]
+        mov     ax,[gTextRegion]
         mov     [bp-6],ax
         xor     si,si
         jmp     short f1ACD_1B5A
@@ -4231,16 +4231,16 @@ _Ovl1_1ACD ENDP
 
 ; ovl1:243A: show the gStrings2003 message `message` as a header and a scrollable list of the
 ; member inventory slots, letting the player pick one with the keyboard or the mouse. It saves
-; g811F and the current font, clears g8115, selects the 8x8 font gFE5A, builds a far list of the
+; gTextRegion and the current font, clears g8115, selects the 8x8 font gFE5A, builds a far list of the
 ; nodes whose key is `cur+0x21` with _Ovl1_1153(5), hides the pointer, draws the message through
 ; SkipStrings(gStrings2003, message) and DrawShadowText, then loops: it highlights the current node
 ; with _DrawListNode (after _FindNode(index+0x21)), waits with DispatchKeyWait, and switches on the
 ; key (table at ovl1:266C, 7 keys): 0x5C/0x66 toggle `di`, 0x2B/0x3D/0x61 remove the node and walk
 ; the list to the node under the mouse (gCursorX/gCursorY through IsPointInRect), 0x8021/0x8022 end
-; the loop with a result flag. On exit it frees the list, restores the font and g811F through
+; the loop with a result flag. On exit it frees the list, restores the font and gTextRegion through
 ; _f1A47_0169 and SetTextWindow and returns the flag. Called from ovl1:1ACD and the camp loop
 ; (ovl6:0000). Purpose unknown: what the returned flag means and which menu `message` names.
-; Stack frame: [bp+6] `message`; [bp-0xa] saved g811F; [bp-0xe]/[bp-0xc] the saved font far pointer
+; Stack frame: [bp+6] `message`; [bp-0xa] saved gTextRegion; [bp-0xe]/[bp-0xc] the saved font far pointer
 ; (offset/segment); [bp-4]/[bp-2] the far `list` head (offset/segment); [bp-8]/[bp-6] the far list
 ; cursor; [bp-0x12] `looping`; [bp-0x10]/[bp-0x16] the key; [bp-0x14] the result; si `selected`;
 ; di `cur`.
@@ -4251,7 +4251,7 @@ _ChooseListEntry PROC FAR
         sub     sp,16h
         push    si
         push    di
-        mov     ax,[g811F]
+        mov     ax,[gTextRegion]
         mov     [bp-0Ah],ax
         mov     ax,word ptr [gFont1A47+2]
         mov     dx,word ptr [gFont1A47]

@@ -55,7 +55,7 @@ extern void far *gFont1A47;                        /*@ ds:FE4E: the current font
 
 /* DGROUP globals and indirect far functions. */
 extern int g8115;                        /*@ ds:8115: nonzero while a status line is up (E082C.C) */
-extern int g811F;                        /*@ ds:811F */
+extern int gTextRegion;                        /*@ ds:811F */
 extern int g8102;                        /*@ ds:8102: the video mode the game initialised (E07A9.C) */
 extern int gTextLeft;                    /*@ ds:FE64: the text window's left edge, 8-pixel columns */
 extern int gTextTop;                     /*@ ds:FE66: the text window's top edge, pixel rows */
@@ -516,7 +516,7 @@ extern long gSlotLengths[];              /*@ ds:FF0C: the record's length per sl
     saved8115 = g8115;
     g8115 = 0;
     title = gErrorText[code];
-    saved811F = g811F;
+    saved811F = gTextRegion;
     savedFont = gFont1A47;
     f1A47_0169(gFE5A);
     SetTextWindow(g80FE);

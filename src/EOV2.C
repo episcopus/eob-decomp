@@ -77,7 +77,7 @@ extern int g8102; /*@ ds:8102 */
 extern int g8115; /*@ ds:8115 */
 extern int gTextAttr2; /*@ ds:811B */
 extern int gTextAttr1; /*@ ds:811D */
-extern int g811F; /*@ ds:811F */
+extern int gTextRegion; /*@ ds:811F */
 extern struct Region gRegions[]; /*@ ds:009F */
 extern struct ItemType gItemTypes[]; /*@ ds:A9F0 */
 extern struct ItemRec gItems[]; /*@ ds:8DD0 */
@@ -473,7 +473,7 @@ extern void FileClose(int handle); /*@ 1C0E:03BB */
     int pick;
     int tries;
 
-    saveRegion = g811F;
+    saveRegion = gTextRegion;
     font = gFont1A47;
     f1A47_0169(gFE5A);
     gColour179 = gF57E;
@@ -486,10 +486,10 @@ extern void FileClose(int handle); /*@ 1C0E:03BB */
         gFB4C, gF53A, -1);
     DrawFilledPanel(gTextLeft * 8 + 1, gTextTop + 1, (gTextLeft + gTextWidth) * 8 - 2, gTextTop + gTextHeight - 2,
         gFB4C, gF53A, -1);
-    gRegions[g811F].left++;
-    gRegions[g811F].top += 2;
-    gRegions[g811F].width -= 2;
-    gRegions[g811F].height -= 0x10;
+    gRegions[gTextRegion].left++;
+    gRegions[gTextRegion].top += 2;
+    gRegions[gTextRegion].width -= 2;
+    gRegions[gTextRegion].height -= 0x10;
     SetTextWindow(0xd);
     for (;;) {
         pick = RollDice(1, 0x1e, -1);
@@ -514,10 +514,10 @@ extern void FileClose(int handle); /*@ 1C0E:03BB */
             exit(0);
         }
     }
-    gRegions[g811F].left--;
-    gRegions[g811F].top -= 2;
-    gRegions[g811F].width += 2;
-    gRegions[g811F].height += 0x10;
+    gRegions[gTextRegion].left--;
+    gRegions[gTextRegion].top -= 2;
+    gRegions[gTextRegion].width += 2;
+    gRegions[gTextRegion].height += 0x10;
     SetTextWindow(0xd);
     gFn804A(gTextLeft, gTextTop, gTextWidth, gTextHeight, gSegDF4E);
     SetTextWindow(saveRegion);
