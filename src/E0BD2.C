@@ -425,12 +425,12 @@ next:
    with "%s +%d" or "Cursed %s %d", and types 9, 10, 16, 14 and 18 use "Mage Scroll", "Cleric
    Scroll", "Ring", "Potion" or "Wand" joined with " of " to a per-m0B far pointer (ds:1278,
    ds:12E0) or a SkipStrings walk (ds:37B4, ds:37E1, ds:3837). Otherwise the second (or the first)
-   name is copied whole. The buffer is drawn with DrawText. Called by 0BD2:000E.
-   DRAFT: every field, literal and branch matches in shape; the remaining bytes are TCC's internal
-   assembler merging identical tails that the original keeps, as in 0BD2:1001: the `strcpy(buf, firstName)`
-   of case 0..3 (0BD2:06AC), the two sprintf forms (0BD2:066C, 068C) and the trailing strcpy
-   (0BD2:0748) are each inline in the original but cross-jumped in ours (0x22 bytes short). */
-/*@ 0BD2:05B5 draft */ void DrawItemName(int item)
+   name is copied whole. The buffer is drawn with DrawText. Called by 0BD2:000E. The names chosen by
+   the item type's m0E low 7 bits are the ones the jump table at 0BD2:07B8 shows (0..3, 9, 10, 14,
+   16, 18; all the rest fall to the default). Case 0..3's name selection must be written as an
+   `if (m0B != 0) { if (m0B < 0) ... else ... } else strcpy(...)`, or the compiler folds its
+   `strcpy(buf, firstName)` into the default case's copy. */
+/*@ 0BD2:05B5 */ void DrawItemName(int item)
 {
     signed char m0B;
     char cls;
@@ -454,12 +454,13 @@ next:
         case 1:
         case 2:
         case 3:
-            if (m0B == 0)
+            if (m0B != 0) {
+                if (m0B < 0)
+                    sprintf(buf, "Cursed %s %d", firstName, m0B);
+                else
+                    sprintf(buf, "%s +%d", firstName, m0B);
+            } else
                 strcpy(buf, firstName);
-            else if (m0B < 0)
-                sprintf(buf, "Cursed %s %d", firstName, m0B);
-            else
-                sprintf(buf, "%s +%d", firstName, m0B);
             break;
         case 9:
             str1 = "Mage Scroll";

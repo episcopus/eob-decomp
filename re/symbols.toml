@@ -2445,6 +2445,9 @@ unit = "e0bd2"
 addr = "0BD2:05B5"
 size = 553
 evidence = ["far", "frame"]
+name = "DrawItemName"
+level = "L2"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e0bd2_07de"
