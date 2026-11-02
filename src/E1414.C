@@ -23,12 +23,13 @@ struct Effect {
    the fields this unit touches are named. */
 struct CharRec {
     char pad00;
-    char m01;                 /* +01: a status byte cleared by the character cleanup */
-    char pad02[0x0D - 0x02];
-    signed char m0D;          /* +0D */
-    char pad0E;
-    signed char m0F;          /* +0F */
-    char pad10[0x1B - 0x10];
+    char m01;                 /* +01: status bits tested by 0C82 and 07CA */
+    char name[0x0D - 0x02];   /* +02: the character's NUL-padded name (src/EOV6.C) */
+    signed char m0D;          /* +0D: a copy of m0E made by 07CA case 7 */
+    signed char m0E;          /* +0E */
+    signed char m0F;          /* +0F: a copy of m10 made by 07CA case 7 */
+    signed char m10;          /* +10 */
+    char pad11[0x1B - 0x11];
     signed char hp;           /* +1B: current hit points (src/EOV6.C); 0C82 requires it above -10 */
     char pad1C[0x1E - 0x1C];
     unsigned char m1E;        /* +1E: a bit set/cleared by the per-slot helper 0770 */
@@ -98,6 +99,8 @@ extern signed char g5C76; /*@ ds:5C76 */      /* the mode byte 03B4 reads (0ACD 
 extern unsigned char g5CAB[]; /*@ ds:5CAB */  /* a byte table indexed by direction in 0285 */
 extern char gFB34; /*@ ds:FB34 */             /* the character the blink highlights (src/EOV2.C) */
 extern char gDF4C; /*@ ds:DF4C */             /* set when the object table has a hit (src/E0D1C.C) */
+extern char gFB44; /*@ ds:FB44 */              /* the display mode byte 07CA case 7 tests (src/E0D1C.C) */
+extern char gFileNameBuf[]; /*@ ds:FE6E */     /* the text buffer 07CA formats into (src/EOV2.C) */
 extern unsigned long g8492; /*@ ds:8492 */    /* the 32-bit tick counter (src/EOV6.C) */
 
 extern void f1547_0991(int member); /*@ 1547:0991 */
@@ -119,6 +122,7 @@ extern void f122E_1DA8(int member, int a); /*@ 122E:1DA8 */
 extern int f08E6_189D(struct Obj28 far *obj, int a, int b); /*@ 08E6:189D */
 extern int f0DE8_01FF(struct DDRec far *rec); /*@ 0DE8:01FF */
 extern int f0DE8_02D4(struct DDRec far *rec, int idx); /*@ 0DE8:02D4 */
+extern void f0DE8_09B9(int who, int what); /*@ 0DE8:09B9 */
 extern void f0EF3_00CD(struct DDRec far *rec); /*@ 0EF3:00CD */
 extern void f0EF3_0D78(int a, int b); /*@ 0EF3:0D78 */
 extern void f0BD2_01D0(void far *head, int key, int item, int sound); /*@ 0BD2:01D0 */
@@ -151,7 +155,7 @@ extern int f0BD2_02B9(void far *head, int key, int item); /*@ 0BD2:02B9 */
    0x10. Any other record is moved when bits bit 0 is set or when m04 already equals `a` (m0D is
    decremented unless it is -1) and returns 1; otherwise gEFD2 is 1. The two failure paths report
    through 122E:0896(rec->m07, a) and return 0. Called by 0285. */
-/*@ 1414:003E */ int f1414_003E(struct DDRec far *rec, register int a, int b)
+/*@ 1414:003E */ int StepDDEffect(struct DDRec far *rec, register int target, int sel)
 {
     int flag;
     int hit;
@@ -159,7 +163,7 @@ extern int f0BD2_02B9(void far *head, int key, int item); /*@ 0BD2:02B9 */
     int m08;
     register int bits;
 
-    db = gB894[a * 9 + (rec->m07 ^ 2)];
+    db = gB894[target * 9 + (rec->m07 ^ 2)];
     bits = g194B[db];
     if (rec->active == 1) {
         m08 = rec->m08;
@@ -167,24 +171,24 @@ extern int f0BD2_02B9(void far *head, int key, int item); /*@ 0BD2:02B9 */
         hit = (bits & 1) || rec->m02 != 0 || ((bits & 2) && flag);
         if (hit) {
             f0BD2_02B9((int far *)(gB894 + rec->m04 * 9 + 5), 0, m08);
-            f0BD2_01D0((int far *)(gB894 + a * 9 + 5), a, m08, b | 4);
-            rec->m04 = a;
-            rec->m06 = b;
+            f0BD2_01D0((int far *)(gB894 + target * 9 + 5), target, m08, sel | 4);
+            rec->m04 = target;
+            rec->m06 = sel;
             rec->m0D--;
             return 1;
         }
         gEFD2 = 0x10;
     } else {
-        if ((bits & 1) || rec->m04 == a) {
-            rec->m04 = a;
-            rec->m06 = b;
+        if ((bits & 1) || rec->m04 == target) {
+            rec->m04 = target;
+            rec->m06 = sel;
             if (rec->m0D != 0xFF)
                 rec->m0D--;
             return 1;
         }
         gEFD2 = 1;
     }
-    f122E_0896(a, rec->m07);
+    f122E_0896(target, rec->m07);
     return 0;
 }
 /* 1414:0172: the per-record test 0285 and 0D63 use. It returns 0 when the record already has a
@@ -192,7 +196,7 @@ extern int f0BD2_02B9(void far *head, int key, int item); /*@ 0BD2:02B9 */
    at ds:8A82 for one that f08E6_189D accepts and that f0DE8_02D4 then also accepts, returning 1
    on the first; when the bits are clear it runs f0DE8_01FF(rec) only when `a` is the current
    sound volume and returns that. Called by 0285 and 0D63. */
-/*@ 1414:0172 */ int TestDDEffect(struct DDRec far *rec, int a, int b)
+/*@ 1414:0172 */ int TestDDEffect(struct DDRec far *rec, int index, int sel)
 {
     struct Obj28 far *obj;
     int i;
@@ -202,18 +206,18 @@ extern int f0BD2_02B9(void far *head, int key, int item); /*@ 0BD2:02B9 */
     if (rec->active == 2) {
         return rec->fn(rec);
     }
-    if (gB894[a * 9 + 4] & 7) {
+    if (gB894[index * 9 + 4] & 7) {
         i = 0;
         obj = gObjs;
         for (; i < 30; i++, obj++) {
-            if (f08E6_189D(obj, a, b)) {
+            if (f08E6_189D(obj, index, sel)) {
                 if (f0DE8_02D4(rec, i))
                     return 1;
             }
         }
         return 0;
     } else {
-        if (a == gSoundVolume)
+        if (index == gSoundVolume)
             return f0DE8_01FF(rec);
         return 0;
     }
@@ -241,7 +245,7 @@ extern int f0BD2_02B9(void far *head, int key, int item); /*@ 0BD2:02B9 */
 /* 1414:0285: the DD-record step, effect 1 of the table. For every live ds:DD2C record it looks
    up the direction byte sel = g5CAB[rec->m07 * 4 + (rec->m06 & 3)]. When sel has bit 7 set the
    target index is f0D1C_00DA(rec->m04, rec->m07) and m02 is cleared, otherwise it is rec->m04
-   itself. f1414_003E(rec, value, sel) then either, when it succeeds, redraws a translated target
+   itself. StepDDEffect(rec, value, sel) then either, when it succeeds, redraws a translated target
    through 122E:1DA8(value, 0x10) and re-tests with TestDDEffect, or, when it fails and m0C has
    bit 0x20, runs 0EF3:00CD(rec) unless TestDDEffect(rec, m04, m06) accepts. The record is
    cleared through ClearDDEffect when clearIt holds (initially m0D == 0) and gDF4C is set. QUIRK
@@ -272,7 +276,7 @@ extern int f0BD2_02B9(void far *head, int key, int item); /*@ 0BD2:02B9 */
             } else {
                 value = rec->m04;
             }
-            if (f1414_003E(rec, value, sel)) {
+            if (StepDDEffect(rec, value, sel)) {
                 if (high)
                     f122E_1DA8(value, 0x10);
                 if (TestDDEffect(rec, value, sel))
@@ -344,16 +348,16 @@ extern int f0BD2_02B9(void far *head, int key, int item); /*@ 0BD2:02B9 */
    the handler disarms (active 0) is left alone. Called by 0ACD when a key or menu passes. */
 /*@ 1414:04E7 */ void RunEffects(void)
 {
-    struct Effect far *e;
+    struct Effect far *effect;
     int i;
 
     i = 0;
-    e = gEffects;
-    for (; i < gEffectCount; i++, e++) {
-        if (e->active != 0 && e->expiry < g8492) {
-            e->fn(e->arg);
-            if (e->active != 0)
-                e->expiry = g8492 + e->period;
+    effect = gEffects;
+    for (; i < gEffectCount; i++, effect++) {
+        if (effect->active != 0 && effect->expiry < g8492) {
+            effect->fn(effect->arg);
+            if (effect->active != 0)
+                effect->expiry = g8492 + effect->period;
         }
     }
     f08E6_1410();
@@ -363,23 +367,23 @@ extern int f0BD2_02B9(void far *head, int key, int item); /*@ 0BD2:02B9 */
    entry's argument word (+0C) and `sub` in its byte (+0E). Called by 122E and 0ACD. */
 /*@ 1414:055B */ void ArmEffectWith(int idx, int arg, int sub, int active)
 {
-    struct Effect far *e;
+    struct Effect far *effect;
 
-    e = &gEffects[idx];
-    e->active = active;
-    e->expiry = g8492 + e->period;
-    e->arg = arg;
-    e->sub = sub;
+    effect = &gEffects[idx];
+    effect->active = active;
+    effect->expiry = g8492 + effect->period;
+    effect->arg = arg;
+    effect->sub = sub;
 }
 /* 1414:05A4: (re-)arms effect `idx` at its table period: stores `active` and sets the expiry to
    gTimer plus the entry's period. Called by many units (0ACD, 0D1C, 1414). */
 /*@ 1414:05A4 */ void ArmEffect(int idx, int active)
 {
-    struct Effect far *e;
+    struct Effect far *effect;
 
-    e = &gEffects[idx];
-    e->active = active;
-    e->expiry = g8492 + e->period;
+    effect = &gEffects[idx];
+    effect->active = active;
+    effect->expiry = g8492 + effect->period;
 }
 /* 1414:05DF: effects 2 to 5 of the table call this to run the object-list update of one kind
    through UpdateObjects (08E6:0CC8). */
@@ -395,7 +399,7 @@ extern int f0BD2_02B9(void far *head, int key, int item); /*@ 0BD2:02B9 */
    empty one) otherwise, the time and value are stored. Called by 0BD2, 0DE8, 0EF3 and 07CA. */
 /*@ 1414:05ED */ void ApplyCharEffect(char who, long interval, char value, char firstEmpty)
 {
-    struct Effect far *e;
+    struct Effect far *effect;
     struct CharRec far *rec;
     unsigned long time;
     int idx;
@@ -405,17 +409,17 @@ extern int f0BD2_02B9(void far *head, int key, int item); /*@ 0BD2:02B9 */
 
     idx = who + 6;
     time = g8492 + interval;
-    e = &gEffects[idx];
+    effect = &gEffects[idx];
     rec = &gChars[who];
-    if (!e->active) {
-        e->period = interval;
+    if (!effect->active) {
+        effect->period = interval;
         rec->mAD[0] = time;
         rec->mD5[0] = value;
         ArmEffect(idx, 1);
         return;
     }
-    if (e->expiry > time)
-        e->expiry = time;
+    if (effect->expiry > time)
+        effect->expiry = time;
     if (!firstEmpty) {
         for (i = 0; i < 10; i++) {
             if (rec->mAD[i] == 0) {
@@ -454,7 +458,115 @@ extern int f0BD2_02B9(void far *head, int key, int item); /*@ 0BD2:02B9 */
         f1547_0991(who);
     }
 }
-/*@ 1414:07CA stub */ void f1414_07CA(void) {}
+/* 1414:07CA: the per-character effect runner, entries 6 to 11 of the table (one per member). For
+   every one of the member's 10 effect slots whose time gChars[who].mAD has passed, it clears the
+   slot and dispatches on the type byte gChars[who].mD5. A negative type runs 0EF3:0D78(who,
+   -type). Types 0, 1, 4 and 5 toggle a tracking bit through 0770; 2 and 3 arm a 0x24 (halved
+   when mE3 bit 3 is set) 4/5-type effect through 05ED; 6 clears mE7 and redraws the member; 7
+   prints "%s no longer has giant strength.", copies m0E/m10 into m0D/m0F and redraws in mode 2;
+   8 handles poison ("%s feels the effects of poison!") and re-arms effect 8, or clears m01 bit 1;
+   and 9 handles recovered paralysis ("%s is no longer paralyzed!") and clears m01 bit 2. It then
+   computes the smallest nonzero gChars[who].mAD and stores it (minus gTimer when there is one,
+   else -1 and it disarms effect who + 6) in gEffects[who + 6].period. Called from the table (and
+   0DE8, 0EF3, 0BD2). DRAFT: the dispatcher and every case are written, but the bytes diverge
+   early (the compiler lays the "has the time passed" test and the switch out differently); not
+   yet matched. */
+/*@ 1414:07CA draft */ void RunCharEffects(int who)
+{
+    unsigned long min;
+    unsigned long tl;
+    unsigned long value;
+    int i;
+    int type;
+    struct CharRec far *rec;
+
+    rec = &gChars[who];
+    for (i = 0; i < 10; i++) {
+        tl = rec->mAD[i];
+        if (tl == 0)
+            continue;
+        if (tl > g8492)
+            continue;
+        rec->mAD[i] = 0;
+        type = rec->mD5[i];
+        if (type < 0) {
+            f0EF3_0D78(-type, who);
+            continue;
+        }
+        switch (rec->mD5[i]) {
+        case 0:
+            SetCharEffectSlot(who, 0, 0);
+            break;
+        case 1:
+            SetCharEffectSlot(who, 0, 1);
+            break;
+        case 2:
+            SetCharEffectSlot(who, 1, 0);
+            value = 0x24;
+            if (rec->mE3 & 8)
+                value >>= 1;
+            ApplyCharEffect(who, value, 4, 1);
+            break;
+        case 3:
+            SetCharEffectSlot(who, 1, 1);
+            value = 0x24;
+            if (rec->mE3 & 8)
+                value >>= 1;
+            ApplyCharEffect(who, value, 5, 1);
+            break;
+        case 4:
+            SetCharEffectSlot(who, 2, 0);
+            break;
+        case 5:
+            SetCharEffectSlot(who, 2, 1);
+            break;
+        case 6:
+            rec->mE7 = 0;
+            f1547_0991(who);
+            break;
+        case 7:
+            sprintf(gFileNameBuf, "%s no longer has giant strength.\r", rec->name);
+            DrawText(gFileNameBuf);
+            rec->m0D = rec->m0E;
+            rec->m0F = rec->m10;
+            if (gFB44 == 2)
+                f1547_0991(who);
+            break;
+        case 8:
+            if (rec->m01 & 2) {
+                if ((rec->mE3 & 0x80) == 0) {
+                    f0DE8_09B9(who, 5);
+                    sprintf(gFileNameBuf, "%s feels the effects of poison!\r", rec->name);
+                    DrawText(gFileNameBuf);
+                }
+                ApplyCharEffect(who, 0x222L, 8, 1);
+            } else {
+                rec->m01 &= ~2;
+                f1547_0991(who);
+            }
+            break;
+        case 9:
+            if (rec->m01 & 4) {
+                sprintf(gFileNameBuf, "%s is no longer paralyzed!\r", rec->name);
+                DrawText(gFileNameBuf);
+                rec->m01 &= ~4;
+                f1547_0991(who);
+            }
+            break;
+        }
+    }
+    min = -1;
+    for (i = 0; i < 10; i++) {
+        if (rec->mAD[i] < min && rec->mAD[i] != 0)
+            min = rec->mAD[i];
+    }
+    if (min != -1) {
+        gEffects[who + 6].period = min - g8492;
+    } else {
+        gEffects[who + 6].period = min;
+        ArmEffect(who + 6, 0);
+    }
+}
 
 /* 1414:0B2E: re-arms effect `who` + 6 for every party member `who` that passes f0D1C_0670(who, 1).
    It takes the smallest nonzero of the member's 10 effect times gChars[who].mAD and, when there
@@ -463,7 +575,7 @@ extern int f0BD2_02B9(void far *head, int key, int item); /*@ 0BD2:02B9 */
 /*@ 1414:0B2E */ void RearmCharEffects(void)
 {
     struct CharRec far *rec;
-    struct Effect far *e;
+    struct Effect far *effect;
     int idx;
     unsigned long min;
     int who;
@@ -480,12 +592,12 @@ extern int f0BD2_02B9(void far *head, int key, int item); /*@ 0BD2:02B9 */
                 min = rec->mAD[i];
         }
         idx = who + 6;
-        e = &gEffects[idx];
+        effect = &gEffects[idx];
         if (min != -1) {
-            e->period = min - g8492;
+            effect->period = min - g8492;
             ArmEffect(idx, 1);
         } else {
-            e->period = min;
+            effect->period = min;
             ArmEffect(idx, 0);
         }
     }
