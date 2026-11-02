@@ -7,10 +7,9 @@
 ; others, including ovl1:0000. The 30 counters at ds:FDEC, the byte table ds:FD9A and the 9-byte
 ; lists at ds:FDBA are the spell tables ovl1:00DD builds and ovl1:025D steps. Status: ovl1:0000,
 ; 00DD, 025D, 0416, 0881, 097A (the spell-slot screen, with its three option-field helpers at
-; 10DE/1107/112D), 13F7, 1516, 1551 (DrawListNode) and 243A are matched (L2); ovl1:1153 and 1ACD
-; are drafts (each has a far-array read that needs TCC's internal assembler; see their registry
-; notes: this unit is C); ovl1:1691 (the 1084-byte routine the map folds into 1551) is a stub.
-; Names not proven
+; 10DE/1107/112D), 13F7, 1516, 1551 (DrawListNode), 1691 and 243A are matched (L2); ovl1:1153
+; and 1ACD are drafts (each has a far-array read that needs TCC's internal assembler; see their
+; registry notes: this unit is C). Names not proven
 ; by an address or a caller come from the code alone and are marked in each function's comment.
 ; See whitepaper 2.7 and 4.
 
@@ -130,6 +129,8 @@
         EXTRN   g64DD:BYTE              ; @ ds:64DD: "EOBDATA.SAV" save-file name
         EXTRN   g64E9:BYTE              ; @ ds:64E9: "PLAYFLD" screen-image name
         EXTRN   g64F1:BYTE              ; @ ds:64F1: "INVENT" screen-image name
+        EXTRN   gItems:BYTE             ; @ ds:8DD0: 0xE-byte item records (E0BD2.C)
+        EXTRN   g8142:WORD              ; @ ds:8142: y of the last mouse click (E14EF.C)
 
         EXTRN   _F_SCOPY@:FAR           ; @ 0000:78C9: block copy for a C local-array initialiser (library)
         EXTRN   _heapcheck:FAR          ; @ 0000:74B0: far-heap check (E082C.C)
@@ -145,6 +146,7 @@
         EXTRN   _fOvl3_1368:FAR         ; @ 210C:0089: overlay 3 entry, ovl3:1368 (SaveGame, EOV3.C)
         EXTRN   _fOvl4_1F51:FAR         ; @ 2116:005C: overlay 4 entry, ovl4:1F51 (DrawViewFrame, EOV4.C)
         EXTRN   _fOvl6_0000:FAR         ; @ 212A:0039: overlay 6 entry, ovl6:0000 (CampLoop, EOV6.C)
+        EXTRN   _IsMouseInRect:FAR      ; @ 1A72:02A6 (E1A72.ASM)
 
         .CODE
 
@@ -2774,14 +2776,468 @@ f1551_168B:
         ret
 _DrawListNode ENDP
 
-; ovl1:1691: the 1084-byte routine the map folds into 1551's range. It copies three zero templates
-; into local arrays with F_SCOPY@ (C local-array initialisers), builds a candidate list of party
-; members (f0D1C_0670, FindCarriedSlot), draws g1278 item names and gStrings2003 messages, and
-; switches on the eight-key table at ovl1:1AAD (0x2B, 0x3D, 0x60, 0x61, 0x62, 0x6E, 0x8023, 0x8024).
-; Called by ovl1:1ACD. Stub: the F_SCOPY templates need a data segment an ASM unit does not have yet.
-        PUBLIC  _Ovl1_1691               ; @ ovl1:1691 stub
+; ovl1:1691: the 1084-byte routine the map folds into 1551's range. It copies three compiler
+; local-array templates (ds:63CB, 640B and 644B, named here as offsets into the g6394 region) into
+; three local arrays with F_SCOPY@, scans the item records with FindCarriedSlot to build a candidate
+; list, then a second pass tests each candidate's 32-bit mask at gChars+0x73, draws the surviving
+; g1278 item names with DrawShadowText and loops on the eight-key table at ovl1:1AAD (0x2B, 0x3D,
+; 0x60, 0x61, 0x62, 0x6E, 0x8023, 0x8024). Called by ovl1:1ACD. Stack: [bp-8] the index; [bp-6] the
+; FindCarriedSlot count or the MemberCommand result; [bp-4]/[bp-2] the far list pointer; [bp-0xa]
+; the candidate count; [bp-0xc] `selected`; [bp-0xe] `key`; [bp-0x10] `looping`; [bp-0x12] a saved
+; mask word; [bp-0x14] the switch subject; the local arrays are a[0x40] at [bp-0x54], b[0x40] at
+; [bp-0x94] and c[0xC] at [bp-0xa0]; si/di are indexes.
+; Purpose unknown: what the three templates hold and which menu the message keys name.
+        PUBLIC  _Ovl1_1691               ; @ ovl1:1691
 _Ovl1_1691 PROC FAR
+        push    bp
+        mov     bp,sp
+        sub     sp,0A0h
+        push    si
+        push    di
+        mov     word ptr [bp-0Ah],0
+        push    ss
+        lea     ax,[bp-54h]
+        push    ax
+        push    ds
+        mov     ax,OFFSET g6394+37h      ; the 0x40-byte template at ds:63CB
+        push    ax
+        mov     cx,40h
+        call    far ptr _F_SCOPY@
+        push    ss
+        lea     ax,[bp-94h]
+        push    ax
+        push    ds
+        mov     ax,OFFSET g6394+77h      ; the 0x40-byte template at ds:640B
+        push    ax
+        mov     cx,40h
+        call    far ptr _F_SCOPY@
+        push    ss
+        lea     ax,[bp-0A0h]
+        push    ax
+        push    ds
+        mov     ax,OFFSET g6394+0B7h     ; the 0xC-byte template at ds:644B
+        push    ax
+        mov     cx,0Ch
+        call    far ptr _F_SCOPY@
+        mov     word ptr [bp-0Ah],0
+        mov     word ptr [bp-8],0
+        jmp     short f1691_1732
+f1691_16E3:
+        mov     word ptr [bp-6],0
+        jmp     short f1691_1729
+f1691_16EA:
+        mov     ax,[bp-8]
+        inc     ax
+        push    ax
+        mov     ax,22h
+        push    ax
+        push    word ptr [bp-6]
+        call    far ptr _FindCarriedSlot
+        add     sp,6
+        inc     ax
+        mov     bx,[bp-8]
+        shl     bx,1
+        lea     dx,[bp-54h]
+        add     bx,dx
+        mov     word ptr ss:[bx],ax
+        or      ax,ax
+        jle     short f1691_1726
+        mov     bx,[bp-8]
+        shl     bx,1
+        lea     ax,[bp-94h]
+        add     bx,ax
+        mov     ax,[bp-6]
+        mov     word ptr ss:[bx],ax
+        inc     word ptr [bp-0Ah]
+        jmp     short f1691_172F
+f1691_1726:
+        inc     word ptr [bp-6]
+f1691_1729:
+        cmp     word ptr [bp-6],6
+        jl      short f1691_16EA
+f1691_172F:
+        inc     word ptr [bp-8]
+f1691_1732:
+        cmp     word ptr [bp-8],20h
+        jl      short f1691_16E3
+        cmp     word ptr [bp-0Ah],0
+        jne     short f1691_174A
+        mov     ax,32h
+f1691_1741:
+        push    ax
+        call    far ptr _ShowMessage
+        pop     cx
+        jmp     f1691_1AA7
+f1691_174A:
+        mov     ax,31h
+        push    ax
+        call    far ptr _MemberCommand
+        pop     cx
+        mov     [bp-6],ax
+        cmp     ax,0FFFFh
+        jne     short f1691_175E
+        jmp     f1691_1AA7
+f1691_175E:
+        xor     si,si
+        mov     word ptr [bp-8],0
+        jmp     short f1691_17CD
+f1691_1767:
+        mov     bx,[bp-8]
+        shl     bx,1
+        lea     ax,[bp-54h]
+        add     bx,ax
+        cmp     word ptr ss:[bx],0
+        je      short f1691_17C5
+        xor     dx,dx
+        mov     ax,1
+        mov     cl,byte ptr [bp-8]
+        call    far ptr _F_LXLSH@
+        push    ax
+        mov     ax,[bp-6]
+        mov     bx,0F3h
+        push    dx
+        imul    bx
+        mov     bx,ax
+        mov     ax,word ptr [bx+gChars+75h]
+        mov     dx,word ptr [bx+gChars+73h]
+        pop     bx
+        pop     cx
+        and     dx,cx
+        and     ax,bx
+        or      dx,ax
+        je      short f1691_17B3
+        mov     bx,[bp-8]
+        shl     bx,1
+        lea     ax,[bp-54h]
+        add     bx,ax
+        mov     word ptr ss:[bx],0
+        jmp     short f1691_17C5
+f1691_17B3:
+        mov     bx,si
+        shl     bx,1
+        lea     ax,[bp-0A0h]
+        add     bx,ax
+        mov     ax,[bp-8]
+        inc     ax
+        mov     word ptr ss:[bx],ax
+        inc     si
+f1691_17C5:
+        cmp     si,6
+        jge     short f1691_17D3
+        inc     word ptr [bp-8]
+f1691_17CD:
+        cmp     word ptr [bp-8],20h
+        jl      short f1691_1767
+f1691_17D3:
+        or      si,si
+        jne     short f1691_17DD
+        mov     ax,33h
+        jmp     f1691_1741
+f1691_17DD:
+        mov     word ptr [bp-4],0
+        mov     word ptr [bp-2],0
+        mov     word ptr [bp-10h],1
+        jmp     f1691_1A94
+f1691_17EF:
+        cmp     word ptr [bp-10h],0
+        jne     short f1691_17F8
+        jmp     f1691_18B1
+f1691_17F8:
+        xor     si,si
+        mov     word ptr [bp-8],0
+        jmp     short f1691_182B
+f1691_1801:
+        mov     bx,[bp-8]
+        shl     bx,1
+        lea     ax,[bp-54h]
+        add     bx,ax
+        cmp     word ptr ss:[bx],0
+        je      short f1691_1823
+        mov     bx,si
+        shl     bx,1
+        lea     ax,[bp-0A0h]
+        add     bx,ax
+        mov     ax,[bp-8]
+        inc     ax
+        mov     word ptr ss:[bx],ax
+        inc     si
+f1691_1823:
+        cmp     si,6
+        jge     short f1691_1831
+        inc     word ptr [bp-8]
+f1691_182B:
+        cmp     word ptr [bp-8],20h
+        jl      short f1691_1801
+f1691_1831:
+        or      si,si
+        jne     short f1691_1838
+        jmp     f1691_1A9B
+f1691_1838:
+        push    word ptr [bp-2]
+        push    word ptr [bp-4]
+        call    far ptr _FreeFarList
+        pop     cx
+        pop     cx
+        mov     ax,6
+        push    ax
+        call    far ptr _Ovl1_1153
+        pop     cx
+        mov     [bp-4],ax
+        mov     [bp-2],dx
+        call    far ptr _LockHidePointer
+        mov     word ptr [bp-8],0
+        jmp     short f1691_189B
+f1691_185F:
+        xor     ax,ax
+        push    ax
+        mov     ax,0Fh
+        push    ax
+        mov     ax,[bp-8]
+        mov     dx,9
+        imul    dx
+        add     ax,32h
+        push    ax
+        mov     ax,8
+        push    ax
+        mov     bx,[bp-8]
+        shl     bx,1
+        lea     ax,[bp-0A0h]
+        add     bx,ax
+        mov     bx,word ptr ss:[bx]
+        shl     bx,1
+        shl     bx,1
+        push    word ptr [bx+g1278+2]
+        push    word ptr [bx+g1278]
+        call    far ptr _DrawShadowText
+        add     sp,0Ch
+        inc     word ptr [bp-8]
+f1691_189B:
+        cmp     word ptr [bp-8],si
+        jl      short f1691_185F
+        call    far ptr _LockShowPointer
+        mov     word ptr [bp-0Ch],0FFFFh
+        xor     di,di
+        mov     word ptr [bp-10h],0
+f1691_18B1:
+        cmp     word ptr [bp-0Ch],di
+        jne     short f1691_18B9
+        jmp     f1691_193C
+f1691_18B9:
+        call    far ptr _LockHidePointer
+        cmp     word ptr [bp-0Ch],0
+        jl      short f1691_18FC
+        xor     ax,ax
+        push    ax
+        mov     ax,0Fh
+        push    ax
+        mov     ax,[bp-0Ch]
+        mov     dx,9
+        imul    dx
+        add     ax,32h
+        push    ax
+        mov     ax,8
+        push    ax
+        mov     bx,[bp-0Ch]
+        shl     bx,1
+        lea     ax,[bp-0A0h]
+        add     bx,ax
+        mov     bx,word ptr ss:[bx]
+        shl     bx,1
+        shl     bx,1
+        push    word ptr [bx+g1278+2]
+        push    word ptr [bx+g1278]
+        call    dword ptr [gDrawText]
+        add     sp,0Ch
+f1691_18FC:
+        mov     [bp-0Ch],di
+        xor     ax,ax
+        push    ax
+        mov     ax,6
+        push    ax
+        mov     ax,[bp-0Ch]
+        mov     dx,9
+        imul    dx
+        add     ax,32h
+        push    ax
+        mov     ax,8
+        push    ax
+        mov     bx,[bp-0Ch]
+        shl     bx,1
+        lea     ax,[bp-0A0h]
+        add     bx,ax
+        mov     bx,word ptr ss:[bx]
+        shl     bx,1
+        shl     bx,1
+        push    word ptr [bx+g1278+2]
+        push    word ptr [bx+g1278]
+        call    dword ptr [gDrawText]
+        add     sp,0Ch
+        call    far ptr _LockShowPointer
+f1691_193C:
+        push    word ptr [bp-2]
+        push    word ptr [bp-4]
+        call    far ptr _DispatchKeyWait
+        pop     cx
+        pop     cx
+        mov     [bp-0Eh],ax
+        or      ax,ax
+        jne     short f1691_1981
+        mov     ax,si
+        mov     dx,9
+        imul    dx
+        add     ax,31h
+        push    ax
+        mov     ax,0B0h
+        push    ax
+        mov     ax,32h
+        push    ax
+        mov     ax,8
+        push    ax
+        call    far ptr _IsMouseInRect
+        add     sp,8
+        or      ax,ax
+        je      short f1691_1981
+        mov     ax,[gCursorY]
+        add     ax,0FFCEh
+        mov     bx,9
+        cwd
+        idiv    bx
+        mov     di,ax
+f1691_1981:
+        mov     ax,[bp-0Eh]
+        mov     [bp-14h],ax
+        mov     cx,8
+        mov     bx,1AADh
+f1691_198D:
+        mov     ax,word ptr cs:[bx]
+        cmp     ax,[bp-14h]
+        je      short f1691_199C
+        inc     bx
+        inc     bx
+        loop    f1691_198D
+        jmp     f1691_1A94
+f1691_199C:
+        jmp     word ptr cs:[bx+10h]
+f1691_19A0:
+        xor     si,si
+        jmp     f1691_1A94
+f1691_19A5:
+        mov     ax,[g8142]
+        add     ax,0FFCEh
+        mov     bx,9
+        cwd
+        idiv    bx
+        mov     di,ax
+        cmp     ax,si
+        jl      short f1691_19BD
+        mov     di,[bp-0Ch]
+        jmp     f1691_1A94
+f1691_19BD:
+        mov     bx,di
+        shl     bx,1
+        lea     ax,[bp-0A0h]
+        add     bx,ax
+        mov     ax,word ptr ss:[bx]
+        dec     ax
+        mov     [bp-8],ax
+        mov     bx,[bp-8]
+        shl     bx,1
+        lea     ax,[bp-94h]
+        add     bx,ax
+        mov     ax,word ptr ss:[bx]
+        mov     dx,0F3h
+        imul    dx
+        mov     bx,[bp-8]
+        shl     bx,1
+        lea     dx,[bp-54h]
+        add     bx,dx
+        mov     dx,word ptr ss:[bx]
+        shl     dx,1
+        add     ax,dx
+        mov     bx,ax
+        mov     ax,word ptr [bx+gChars+75h]
+        mov     [bp-12h],ax
+        xor     dx,dx
+        mov     ax,1
+        mov     cl,byte ptr [bp-8]
+        call    far ptr _F_LXLSH@
+        push    ax
+        mov     ax,[bp-6]
+        mov     bx,0F3h
+        push    dx
+        imul    bx
+        mov     bx,ax
+        pop     ax
+        pop     dx
+        or      word ptr [bx+gChars+73h],dx
+        or      word ptr [bx+gChars+75h],ax
+        mov     bx,[bp-8]
+        shl     bx,1
+        lea     ax,[bp-94h]
+        add     bx,ax
+        mov     ax,word ptr ss:[bx]
+        mov     dx,0F3h
+        imul    dx
+        mov     bx,[bp-8]
+        shl     bx,1
+        lea     dx,[bp-54h]
+        add     bx,dx
+        mov     dx,word ptr ss:[bx]
+        shl     dx,1
+        add     ax,dx
+        mov     bx,ax
+        mov     word ptr [bx+gChars+75h],0
+        mov     bx,[bp-8]
+        shl     bx,1
+        lea     ax,[bp-54h]
+        add     bx,ax
+        mov     word ptr ss:[bx],0
+        mov     ax,[bp-12h]
+        mov     dx,0Eh
+        imul    dx
+        mov     bx,ax
+        mov     word ptr [bx+gItems+6],0FFFFh
+        mov     word ptr [bp-10h],1
+        mov     bx,[bp-8]
+        shl     bx,1
+        lea     ax,[bp-94h]
+        add     bx,ax
+        push    word ptr ss:[bx]
+        call    far ptr _RedrawMember
+        pop     cx
+        dec     si
+        jmp     short f1691_1A94
+f1691_1A85:
+        mov     ax,di
+        add     ax,si
+        dec     ax
+        jmp     short f1691_1A8F
+f1691_1A8C:
+        mov     ax,di
+        inc     ax
+f1691_1A8F:
+        cwd
+        idiv    si
+        mov     di,dx
+f1691_1A94:
+        or      si,si
+        je      short f1691_1A9B
+        jmp     f1691_17EF
+f1691_1A9B:
+        push    word ptr [bp-2]
+        push    word ptr [bp-4]
+        call    far ptr _FreeFarList
+        pop     cx
+        pop     cx
+f1691_1AA7:
+        pop     di
+        pop     si
+        mov     sp,bp
+        pop     bp
         ret
+f1691_1AAD:
+        dw      2Bh, 3Dh, 60h, 61h, 62h, 6Eh, 8023h, 8024h
+        dw      f1691_19BD, f1691_19BD, f1691_1A85, f1691_19BD, f1691_1A8C, f1691_19A0, f1691_19A0, f1691_19A5
 _Ovl1_1691 ENDP
 
 ; ovl1:1ACD: the character-display / member action loop (2413 bytes, no direct caller in the map; it
