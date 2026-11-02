@@ -2385,3 +2385,12 @@ new = "GetVoiceDelay"
 kind = "function"
 why = "returns the voice record byte at +5, the note delay counter StartVoiceNote sets and UpdateVoices counts down (4CB1, 41D8); the sixth entry of the driver entry table at 3944 (review of e_text)"
 date = "2026-11-02"
+
+[[rename]]
+id = "intro/ds:1EE2=gFn1EE2"
+addr = "intro/ds:1EE2"
+old = "gUnknown1EE2"
+new = "gFn1EE2"
+kind = "global"
+why = "the driver routine the front end starts; src/I0892.C:97 calls it gFn1EE2 (StartupGame after the page table, :0544)"
+date = "2026-11-02"

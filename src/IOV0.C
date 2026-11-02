@@ -11,7 +11,8 @@
    HANDS), PlayTunnelScene (ovl0:1DF3, WTRDP3/ORB/TUNNEL/ZOOMTUNL) and PlayAvalancheScene
    (ovl0:23A3, AVALANCH/ZOOMTUNL). They are long ClipRect/frame animations; every utility they
    use (LoadPackedImage, LoadPalette, PlaySound, Dissolve, BlitImage, DrawGrid, GrowFrame,
-   WaitFrameDelay, f19EC_002A) is matched. */
+   WaitFrameDelay, f19EC_002A) is matched. Whitepaper 2.4 (INTRO.EXE, its overlay and its
+   shared library) and 2.6 (start-up). */
 
 /*@flags -ml -O -Z -G */
 
@@ -20,8 +21,9 @@
 /* The driver entry points. The front end fills these words at load time (i0892 sets ds:1F46
    from its palette setup at 0892:011D..0142); their DGROUP neighbours ds:1E98..1ED0 hold far
    pointers into this program's own segments, so the block is a driver vtable [H]. Only the
-   entries this unit calls are declared. */
-extern void (far *gUnknown1EE2)(void);                              /*@ ds:1EE2 */
+   entries this unit calls are declared. gFn1EE2 (ds:1EE2) is the routine StartupGame starts
+   after it fills the page table (src/I0892.C:97). */
+extern void (far *gFn1EE2)(void);                              /*@ ds:1EE2 */
 extern void (far *gDrawLine)(int x1, int y1, int x2, int y2, int color); /*@ ds:1EEE */
 extern void (far *gFillRect)(int x1, int y1, int x2, int y2, int color); /*@ ds:1EF6 */
 extern int (far *gGetPixel)(int x, int y);                          /*@ ds:1EFE */
@@ -32,7 +34,10 @@ extern void (far *gSetPalette)(char far *palette);                  /*@ ds:1F46 
 /* Globals of this unit's DGROUP (INTRO.EXE, paragraph 0E9F). */
 extern int gGraphicsChoice;             /*@ ds:1F8E */  /* the graphics choice: argv[1][0] + 1 then 0x31 less (0892:0010, 0892:0258) */
 extern int gDrawPage;                   /*@ ds:1FA1 */
-extern long gFrameDelay;                /*@ ds:2326 */
+extern long gFrameDelay;                /*@ ds:2326: the frame hold; DelayFrames writes an
+                                            unsigned count and clears the high word, so it is
+                                            32-bit, and the timer decrements it while
+                                            WaitFrameDelay spins */
 extern int gAbort;                      /*@ ds:2D1C */
 
 /* The keyboard routines of the library (i0a19, the twin of EOB.EXE's 1AAD input unit). */
@@ -41,12 +46,13 @@ extern int WaitGameKey(void);           /*@ 0A19:052E */
 extern void WaitFrame(void);            /*@ 098F:0023 */
 
 /* 097F:002A: hands a copy job to the far routine at ds:8046 when two buffer slots hold
-   distinct non-zero segments (src/E19EC.C:29). Its third and fourth arguments are a far
-   pointer the handler uses as the source mask/scratch buffer. */
-extern void f19EC_002A(int dstKind, int mode, int extraOff, int extraSeg); /*@ 097F:002A */
+   distinct non-zero segments (19EC:002A, src/E19EC.C:29-35). Its first two arguments are
+   buffer slots (ds:FC0C kinds); which is the source and which the destination is not shown.
+   The third and fourth are a far pointer the handler passes on, their role unknown [H]. */
+extern void f19EC_002A(int slotA, int slotB, int extraOff, int extraSeg); /*@ 097F:002A */
 
 /* 0AED:000D: reads a named file into a far buffer, the EOB LoadFile at 1B82:0009 linked at
-   another address (the twin unit is i0aed, no EOB twin). */
+   another address (the twin unit is i0aed). */
 extern void LoadFile(char far *name, void far *buf, unsigned len); /*@ 0AED:000D */
 extern void far *f19EC_0002(int kind); /*@ 097F:0002 */
 extern int FileOpen(char far *name, int mode); /*@ 0B5D:00D1 */
@@ -69,16 +75,16 @@ extern void SoundDriverResume(void);    /*@ 084A:0457 */
    allocates and fills (i0892:05A2..061A); gOverlayBuf and gCopyBuf are the DGROUP buffers
    f19EC_002A hands to its copy handler, EOB.EXE's gOverlayBuf at ds:113F: ovl0:2A99 passes
    gOverlayBuf and ovl0:003A passes gCopyBuf (ds:1BEA) for the title copy and gOverlayBuf
-   (ds:1C0A, 32 bytes into the same zeroed region) for the text copy. */
+   (ds:1C0A, 32 bytes into the same region) for the text copy. */
 extern unsigned char far *gPaletteBuf;     /*@ ds:2D42 */
 extern unsigned char gOverlayBuf[];     /*@ ds:1C0A */
 extern unsigned char gCopyBuf[];        /*@ ds:1BEA */
 extern unsigned char gEgaPalette[16];   /*@ ds:19E7 */
 extern int gDriverState;                /*@ ds:1F76 */  /* Purpose unknown: a driver flag; ovl0:003A sets bit 0 only */
 
-/* the delay of the Westwood logo card, in timer ticks: 50, read by PlayLogoSequence (ds:1D28) */
+/* the delay of the Westwood logo card, in timer ticks: 140, read by PlayLogoSequence (ds:1D28) */
 extern int gWestwoodDelay;              /*@ ds:1D28 */
-/* the delays of the four SSI logo cards (100, 50, 140, 140), read by PlayLogoSequence (ds:1D2A) */
+/* the delays of the four SSI logo cards (50, 100, 50, 140), read by PlayLogoSequence (ds:1D2A) */
 extern int gLogoDelays[4];              /*@ ds:1D2A */
 /* the CMP images of the four SSI logo cards (AND, SSI, PRESENT, DAND), read by PlayLogoSequence */
 extern char far *gLogoFiles[4];         /*@ ds:1D32 */
@@ -135,7 +141,7 @@ void PlayLogoSequence(void);
 {
     gAbort = 0;
     if (gGraphicsChoice == 1 || gGraphicsChoice == 2) {
-        gUnknown1EE2();
+        gFn1EE2();
         gSetPalette(gEgaPalette);
     }
     PlayLogoSequence();
@@ -144,11 +150,13 @@ void PlayLogoSequence(void);
 }
 
 /* ovl0:003A: plays the title card and then every scene. It sets the intro's driver flag
-   (ds:1F76 bit 0), draws on page 0 and holds the title for 120 ticks: the TITLE-V card on the
-   VGA mode (gGraphicsChoice 3), TITLE-E otherwise, then the WESTWOOD palette, sound 2, the
-   buffer copies and the dissolve from page 2 to page 0. Then TEXT.CMP, another copy and a
-   6-tick wait. Each of the eight scene functions follows guarded by the abort flag, so a key
-   during a wait skips the rest of the intro. */
+   (ds:1F76 bit 0), draws on page 0 and arms a 120-tick hold (gFrameDelay = 0x78). It loads the
+   TITLE-V card on the VGA mode (gGraphicsChoice 3), TITLE-E otherwise, waits one frame, applies
+   the WESTWOOD palette and plays sound 2, copies the title card out of gCopyBuf through
+   f19EC_002A (slots 5 and 2), and dissolves it from page 2 to page 0. Then it loads TEXT.CMP,
+   copies it out of gOverlayBuf (slots 5 and 6), and WaitFrameDelay waits the 120 ticks armed
+   above. Then the seven scene functions follow, DrawGrid last, each guarded by the abort flag,
+   so a key during a wait skips the rest of the intro. */
 /*@ ovl0:003A */ void PlayIntroSequence(void)
 {
     gDriverState |= 1;
@@ -190,23 +198,27 @@ union SpriteSlot {
     struct { int y; int x; } win;
 };
 
-/* The byte and word tables ovl0:015D walks: each has one entry per animation tile. What the
-   entries mean is not established yet; the code uses the first three to cut 31 tiles out of
-   gOverlayBuf and the last two to place a tile at random. */
+/* The byte and word tables ovl0:015D and ovl0:1DF3 walk, one entry per animation tile. What the
+   entries mean is not established yet: gMakeImage cuts the 31 tiles out of gOverlayBuf from
+   gTileX, gTileY and gTileScale (ovl0:015D:247, ovl0:1DF3:835), and the random star draws use
+   gStarX and gStarY (ovl0:015D:282, ovl0:1DF3:867). */
 extern unsigned char gTileX[31];        /*@ ds:1C2A */  /* Purpose unknown: x of each tile, ovl0:015D */
 extern unsigned char gTileY[31];        /*@ ds:1C49 */  /* Purpose unknown: y row of each tile, ovl0:015D */
 extern unsigned gStarX[31];             /*@ ds:1C68 */  /* Purpose unknown: x to draw each star, ovl0:015D */
-extern unsigned char gStarY[31];        /*@ ds:1CA6 */  /* Purpose unknown: y/colour of each star, ovl0:015D */
+extern unsigned char gStarY[31];        /*@ ds:1CA6 */  /* Purpose unknown: y of each star, ovl0:015D */
 extern unsigned char gTileScale[31];    /*@ ds:1CC5 */  /* Purpose unknown: size of each tile, ovl0:015D */
 extern void f1A29_000F(int mode, void far *src, int x, int y, int region); /*@ 0998:0008 */
 extern void MemFree(void far *block); /*@ 094F:0137 */
 
 /* ovl0:015D: the WTRDP scene, the tutorial corridor. It loads the WTRDP2 palette and the
    WTRDP1..3 images, cuts the title sprite and, in the main loop, slides a window (x from 0x108
-   down, y from 0x0B up) across the screen: each step draws one of the three 5 by 0x20 frames
-   four times and drops five random star tiles taken from gOverlayBuf, occasionally playing a
-   sound. A three-step wipe then clears the screen. All the scratch images (the four sprites,
-   31 stars and three frames) are freed at the end. */
+   down, y from 0x0B up) across the screen: each step draws one 5 by 0x20 frame, the index
+   cycling 0, 1, 2, 1 with i & 3 (271-274), and drops five random star tiles taken from
+   gOverlayBuf, occasionally playing a sound. A three-step wipe then clears the screen. The
+   first loop frees all four title sprites as it draws them (233-234); the slot of sprites[3]
+   is not cut again, so its freed slot becomes the window position the loop slides (266-267,
+   the union at 188-191). The 31 stars, the three frames and the three sprites re-cut at 240-243
+   are freed at the end (289-295). */
 /*@ ovl0:015D */ void PlayWtrdpScene(void)
 {
     int k;
@@ -319,7 +331,7 @@ extern void MemFree(void far *block); /*@ 094F:0137 */
     gDrawPage = 0;
     f19EC_002A(3, 4, FP_OFF(gOverlayBuf), FP_SEG(gOverlayBuf));
     WaitFrameDelay();
-    gUnknown1EE2();
+    gFn1EE2();
     PlaySound(6);
     for (i = -1; i < 4; i++) {
         gFrameDelay = 3;
@@ -356,8 +368,8 @@ extern void MemFree(void far *block); /*@ 094F:0137 */
         into alternate destination rows, the other byte cleared;
      2: one source row per pass in the low bytes, the destination's second row cleared, the
         source advancing two rows;
-     3: every third source row is written with three clears per byte, the two rows between
-        are cleared.
+     3: in each row whose index is a multiple of 3, every third byte is copied from the source
+        and the two bytes after it are cleared; the other rows are cleared whole.
    Used by the scene functions to build the layered sprites (ovl0:015D, ovl0:06E2). */
 /*@ ovl0:09AD */ void BlitImage(int x1, int y1, int x2, int y2, int width, int height, int mode)
 {
@@ -423,11 +435,13 @@ extern void MemFree(void far *block); /*@ 094F:0137 */
         break;
     }
 }
-/* ovl0:0B20: the TOWRMAGE scene. It draws the grid twice (once on the hidden page), wipes the
-   bottom bar, cuts the tower mage sprite out of gOverlayBuf, then plays three frame
-   animations: a 0x40-step reveal, then two 2-pixel sweeps that slide the mage and its frame
-   across the screen. `center` is the fixed 0x20 column the two sweeps pivot on. The mage
-   image is freed at the end. */
+/* ovl0:0B20: the TOWRMAGE scene. It draws the grid twice, both on page 0 (gDrawPage is 0 from
+   PlayIntroSequence and the second DrawGrid runs with it 0 again), wipes the bottom bar, cuts
+   the tower mage sprite out of gOverlayBuf, then plays frame animations: a 32-step reveal
+   (i in steps of 2 to 0x40, 457), then two sweeps in steps of 2, the second of which moves the
+   single mage image down the screen at x = 0x80 (491); there is no frame image. `center` is a
+   row (470, 483, 488) the second sweep compares with the step count (479). The mage image is
+   freed at the end. */
 /*@ ovl0:0B20 */ void PlayTowerMageScene(void)
 {
     int page;
@@ -442,7 +456,7 @@ extern void MemFree(void far *block); /*@ 094F:0137 */
     gDrawPage = 2;
     mage = gMakeImage(0, 0, 0x10, 0x38, gOverlayBuf);
     f19EC_002A(3, 4, FP_OFF(gOverlayBuf), FP_SEG(gOverlayBuf));
-    gUnknown1EE2();
+    gFn1EE2();
     for (i = 0; i < 0xc8; i += 0x40)
         ClipRect(0x10, 0x68, 0xc, i, 0x10, 0x40, 4, 2);
     gFillRect(0, 0xb8, 0x13f, 0xc7, 0xc);
@@ -450,7 +464,7 @@ extern void MemFree(void far *block); /*@ 094F:0137 */
     gDrawPage = 0;
     DrawGrid();
     gDrawPage = page;
-    gUnknown1EE2();
+    gFn1EE2();
     for (i = 0; i < 0xc8; i += 0x40)
         ClipRect(0x10, 0x68, 0, i, 0x10, 0x40, 4, 2);
     gDrawPage = 0;
@@ -498,9 +512,9 @@ extern void MemFree(void far *block); /*@ 094F:0137 */
     MemFree(mage);
 }
 /* ovl0:0FAA: clears the bottom bar of the screen, the rectangle from (0,168) to (319,199),
-   with colour 12 on the page the caller wants visible (page 0), then puts the driver's
-   current page (gDrawPage) back. Called by the scene functions between frames (ovl0:015D at
-   0217 and 04CF, and ovl0:15F9, ovl0:1DF3 and ovl0:23A3) to wipe the text on the bar. */
+   with colour 12. It always fills page 0 (the visible page) and restores gDrawPage afterwards.
+   Called by the scene functions between frames (ovl0:015D at 0217 and 04CF, and ovl0:15F9,
+   ovl0:1DF3 and ovl0:23A3) to wipe the text on the bar. */
 /*@ ovl0:0FAA */ void ClearBottomBar(void)
 {
     int page;
@@ -511,10 +525,11 @@ extern void MemFree(void far *block); /*@ 094F:0137 */
     gDrawPage = page;
 }
 
-/* ovl0:0FD9: waits out gFrameDelay, one pass per timer tick, polling the keyboard. A pending
-   key is taken: the rest of the key ring is drained (esc sets the abort flag gAbort, so the
-   caller skips the rest of the intro) and the delay is cleared, so any key skips the wait.
-   RandomByte is called once per pass even when a key was drained; it advances the seed at
+/* ovl0:0FD9: waits out gFrameDelay while polling the keyboard. This loop does not wait for a
+   tick: it spins while gFrameDelay is nonzero, and the timer (not in this unit) decrements it.
+   A pending key is taken: the rest of the key ring is drained (esc sets the abort flag gAbort,
+   so the caller skips the rest of the intro) and the delay is cleared, so any key skips the
+   wait. RandomByte is called once per pass even when a key was drained; it advances the seed at
    ds:2310 and its result is not used here. */
 /*@ ovl0:0FD9 */ void WaitFrameDelay(void)
 {
@@ -544,9 +559,11 @@ extern void MemFree(void far *block); /*@ 094F:0137 */
 /* ovl0:1041: grows and moves a framed rectangle, one frame at a time, with the clip rectangle
    passed to the driver each frame. The frame starts at (left, top) and walks towards
    (dstLeft, dstTop) a pixel at a time (SignOf), while its size (growW, growH) grows by 2 up to
-   (width, height) and the inner rect (curWidth, curHeight) grows to the destination; the
-   edges (right, bottom) shrink until the frame reaches them, then the loop ends. Called twice
-   by the ovl0:15F9 scene (16E6, 18DF) and twice by ovl0:1DF3 (1B1E, 1CCA). */
+   (width, height); the inner rect (curWidth, curHeight) grows to the destination and the edges
+   (right, bottom) shrink until the frame reaches them, then the loop ends. `x` and `y` are the
+   source position of the image, in 8-line rows (the ClipRect at 567); `addW` and `addH` set the
+   starting right and bottom edges (559-560). Called four times by PlayHandsScene (ovl0:15F9:
+   715, 739, 770, 792); PlayTunnelScene (ovl0:1DF3) does not call it. */
 /*@ ovl0:1041 */ void GrowFrame(int left, int top, int dstLeft, int dstTop, int x, int y, int width, int height,
                                int curWidth, int curHeight, int addW, int addH)
 {
@@ -610,16 +627,18 @@ extern void MemFree(void far *block); /*@ 094F:0137 */
     return 0;
 }
 /* The KING/ADVENTUR scene tables ovl0:1265 reads: the x and width of each of the four king
-   sprites, and the per-frame step of the adventurer's descent. */
+   sprites, and the per-frame step of their rise. */
 extern int gKingX[4];                   /*@ ds:1CE4 */  /* Purpose unknown: x of each king sprite, ovl0:1265 */
 extern int gKingW[4];                   /*@ ds:1CEC */  /* Purpose unknown: width of each king sprite, ovl0:1265 */
-extern int gKingStep[8];                /*@ ds:1CF4 */  /* Purpose unknown: per-frame descent step, ovl0:1265 */
+extern int gKingStep[8];                /*@ ds:1CF4 */  /* Purpose unknown: per-frame rise step, ovl0:1265 (-4, -8, -2, -2, 1, 0, 0, 0) */
 
 /* ovl0:1265: the KING/ADVENTUR scene. It loads KING.CMP and steps a framed rectangle open over
    ten frames, then loads ADVENTUR.CMP, cuts four king sprites out of gOverlayBuf at gKingX/
-   gKingW and gives each a random start height y and animation phase. In a loop it walks each
-   sprite down by gKingStep[phase] (clamped to 0x52..0xB6), drawing it and its frame, until all
-   four have fallen past the bottom; sound 7 plays on some frames. It clears the box and frees
+   gKingW and gives each a random start height y (0xB4 to 0xCC) and a fixed animation phase,
+   anim[i] = (i * 5) & 3. In a loop it walks each sprite up by gKingStep[phase] (only the top of
+   the range is clamped, to 0x52): a sprite at or past 0xB4 is not drawn but stays active, and
+   0xB6 is the bottom of the clip rectangle, not a clamp. It draws each sprite and its frame
+   until all four have risen to 0x52; sound 7 plays on some frames. It clears the box and frees
    the four sprites. */
 /*@ ovl0:1265 */ void PlayKingScene(void)
 {
@@ -693,10 +712,11 @@ extern int gKingStep[8];                /*@ ds:1CF4 */  /* Purpose unknown: per-
     for (i = 0; i < 4; i++)
         MemFree(imgs[i]);
 }
-/* ovl0:15F9: the HANDS scene. Three phases of hand animation, each a GrowFrame opening a framed
-   box, a DelayFrames hold and a loop that slides two or three images cut from gOverlayBuf and
-   wipes a ClipRect band. `tall` is the second image's moving height in the last phase. Every
-   phase frees its images before the next. Sound 0xB/0xC/0xD/0xA play at the phase boundaries. */
+/* ovl0:15F9: the HANDS scene. Four phases of hand animation, each opened by a GrowFrame
+   (715, 739, 770, 792), then a DelayFrames hold and a loop that slides two or three images cut
+   from gOverlayBuf and wipes a ClipRect band. `tall` is the second image's moving height in the
+   last phase. Every phase frees its images before the next. Sound 0xB/0xC/0xD/0xA play at the
+   phase boundaries. */
 /*@ ovl0:15F9 */ void PlayHandsScene(void)
 {
     void far *sprites[3];
@@ -814,8 +834,10 @@ extern int gKingStep[8];                /*@ ds:1CF4 */  /* Purpose unknown: per-
 }
 /* ovl0:1DF3: the WTRDP3/ORB/TUNNEL/ZOOMTUNL scene. It cuts the 31 star tiles and three frames
    out of WTRDP3.CMP and slides a window (x from 0x8C up, y from 0x80 down) with the same star
-   drop as ovl0:015D. Then it shows ORB.CMP through two GridFrame wipes, TUNNEL.CMP through a
-   shrinking box and a reveal, and ends on the ZOOMTUNL.COL palette. */
+   drop as ovl0:015D. Then it loads ORB.CMP, copies it (slots 5 and 2) and draws the grid (887),
+   a 19-step wipe (892-902), a shrinking box (905-910) and a reveal (911-915), all plain
+   ClipRect loops. TUNNEL.CMP is loaded only at 917, copied (918) and the screen is cleared
+   (921-923), and the scene ends on the ZOOMTUNL.COL palette. */
 /*@ ovl0:1DF3 */ void PlayTunnelScene(void)
 {
     void far *img;
@@ -934,9 +956,10 @@ extern unsigned char gZoomY2[6];        /*@ ds:1D22 */  /* Purpose unknown: y2 o
 extern void f1A29_004D(int mode, void far *src, int x, int y, int region); /*@ 0998:0046 */
 
 /* ovl0:23A3: the AVALANCH/ZOOMTUNL scene. It cuts two 0x14 by 0x78 panels out of gOverlayBuf,
-   flashes them three times, then wipes the screen with a growing box and a strip reveal before
-   loading AVALANCH.CMP and ZOOMTUNL.CMP, drawing the six ZOOMTUNL rectangles and closing the
-   bottom bar. Sound 8/9/6 play at the phase boundaries. */
+   flashes them three times (sound 7 each) with plain ClipRect wipes, and slides them. Then it
+   loads AVALANCH.CMP and plays sounds 8 and 4 while a 30-step clip loop and the six ZOOMTUNL
+   rectangles (gZoomX1..gZoomY2, 998-1006) draw, plays sound 9, loads ZOOMTUNL.CMP, plays
+   sound 6 and closes the bottom bar. */
 /*@ ovl0:23A3 */ void PlayAvalancheScene(void)
 {
     void far *imgA;
@@ -1024,9 +1047,9 @@ extern void f1A29_004D(int mode, void far *src, int x, int y, int region); /*@ 0
 }
 /* ovl0:2913: reveals the screen in horizontal strips. For each step 0..6 it walks the 25
    eight-line strips top to bottom and clips each strip twice: the whole strip (height
-   7 - step, so the bottom part of it) and its single moving line at si*8 + 7 - step; a frame
-   is waited after each step, and the screen is finally unclipped (the whole 40 by 200 region
-   again). No caller of this function was found in INTRO.EXE (make packet). */
+   7 - step, so the bottom part of it) and its single moving line at strip * 8 + 7 - step; a
+   frame is waited after each step, and the screen is finally unclipped (the whole 40 by 200
+   region again). No caller of this function was found in INTRO.EXE (make packet). */
 /*@ ovl0:2913 */ void RevealInStrips(void)
 {
     int step;
@@ -1046,8 +1069,8 @@ extern void f1A29_004D(int mode, void far *src, int x, int y, int region); /*@ 0
 /* ovl0:29C9: draws a grid over the whole screen in colour 12. In each of two passes, the odd
    lines of the eight-line band are vertical lines every 8 pixels starting at x = line + pass,
    the even ones horizontal lines starting at y = line + pass; the second pass fills the pixels
-   the first left out. Called by the title scene (ovl0:015D), the TOWRMAGE scene (ovl0:0B20,
-   twice) and ovl0:23A3. */
+   the first left out. Called by PlayIntroSequence (ovl0:003A:184), PlayTowerMageScene
+   (ovl0:0B20:439 and 451) and PlayTunnelScene (ovl0:1DF3:887). */
 /*@ ovl0:29C9 */ void DrawGrid(void)
 {
     int line;
@@ -1073,8 +1096,8 @@ extern void f1A29_004D(int mode, void far *src, int x, int y, int region); /*@ 0
         }
 }
 /* ovl0:2A4E: reads a 768-byte .COL palette file into gPaletteBuf and applies it, only on the VGA
-   mode (gGraphicsChoice 3). The first colour (black) is cleared and one frame is waited before
-   the driver is given the palette, so the screen blanks first. */
+   mode (gGraphicsChoice 3). It clears the first colour (black) to 0, 0, 0, waits one frame and
+   then hands the palette to the driver (gSetPalette). */
 /*@ ovl0:2A4E */ void LoadPalette(char far *name)
 {
     if (gGraphicsChoice == 3) {
@@ -1085,17 +1108,18 @@ extern void f1A29_004D(int mode, void far *src, int x, int y, int region); /*@ 0
     }
 }
 /* ovl0:2A99: plays the Westwood logo card: loads WESTWOOD.CMP into the buffer slots 5/3,
-   starts the driver, applies the WESTWOOD.COL palette, copies the buffers through
-   f19EC_002A, makes sound 1 and shows the card for gWestwoodDelay ticks. Then, unless a key
-   aborted, it shows the four SSI logo cards in turn (each from gLogoFiles into slots 5/3,
-   held for its gLogoDelays entry and dissolved from page 4 to page 0), and leaves a 50-tick
-   delay set. */
+   starts the driver, applies the WESTWOOD.COL palette, copies the buffers through f19EC_002A,
+   makes sound 1, arms gWestwoodDelay ticks and waits them. Then, unless a key aborted, it
+   shows the four SSI logo cards in turn (each from gLogoFiles into slots 5/3): for each it arms
+   its gLogoDelays entry, loads and copies the card, dissolves it from page 4 to page 0, and
+   only then waits out the delay (the hold comes after the dissolve). It leaves a 50-tick delay
+   set. */
 /*@ ovl0:2A99 */ void PlayLogoSequence(void)
 {
     int i;
 
     LoadPackedImage("WESTWOOD.CMP", 5, 3);
-    gUnknown1EE2();
+    gFn1EE2();
     LoadPalette("WESTWOOD.COL");
     f19EC_002A(3, 0, FP_OFF(gOverlayBuf), FP_SEG(gOverlayBuf));
     PlaySound(1);
@@ -1118,9 +1142,9 @@ extern void f1A29_004D(int mode, void far *src, int x, int y, int region); /*@ 0
    read buffer, the file's first word is the packed length, and the rest is unpacked by the LCW
    decoder Unpack4 (0CE9:0009) into dstKind. The unpacked size is fixed at 0xFA00 (64000, the
    largest screen image) and the block's 8-byte header is skipped. The EOB twin is LoadPacked
-   (src/E1B82.C:100), which dispatches on the format byte instead; these intro files are all
-   format 4. QUIRK: the FileOpen result is not checked, and the count FileRead returns is
-   discarded (as in the EOB twin). */
+   (1B82:0041, src/E1B82.C:100), which dispatches on the format byte instead; these intro files
+   are all format 4. QUIRK ovl0:2B7F: the FileOpen result is not checked, and the count FileRead
+   returns is discarded (as in the EOB twin). */
 /*@ ovl0:2B7F */ void LoadPackedImage(char far *name, int srcKind, int dstKind)
 {
     unsigned size;
@@ -1141,9 +1165,9 @@ extern void f1A29_004D(int mode, void far *src, int x, int y, int region); /*@ 0
    columns at ds:290C, gOrderY for the rows at ds:2B8C) are filled 0,1,2,... and then shuffled
    with RandomRange; the copy walks the columns in order and the shuffled rows cyclically, so
    the pixels appear to dissolve in. gDrawPage selects the read page for gGetPixel and the
-   write page for gPutPixel and is restored at the end. Called by the logo sequence
-   (ovl0:2A99). `value` is the swap temporary of the two shuffles and the pixel colour of the
-   copy; `pos` is the shuffled table entry and then the x coordinate. */
+   write page for gPutPixel and is restored at the end. Called by PlayLogoSequence (ovl0:2A99)
+   and PlayIntroSequence (ovl0:003A:165). `value` is the swap temporary of the two shuffles and
+   the pixel colour of the copy; `pos` is the shuffled table entry and then the x coordinate. */
 /*@ ovl0:2C0D */ void Dissolve(int x, int y, unsigned width, unsigned height, int fromPage, int toPage)
 {
     int value;
@@ -1195,8 +1219,8 @@ extern void f1A29_004D(int mode, void far *src, int x, int y, int region); /*@ 0
    selects the path: 1 (AdLib) queues the driver number and returns, 2 (PC speaker) and 3
    (Tandy) start the speaker routine the low seven bits select through GetSoundData; an
    unknown card does nothing. On the Tandy path a nonzero driver number resumes the driver
-   only while gTandyOn is clear. This is the EOB PlaySound (src/E177D.C:166) with a one-based
-   gSoundChoice, without the sound-on test and the 0x96 map cutoff.
+   only while gTandyOn is clear. This is the EOB PlaySound (177D:0070, src/E177D.C) with a
+   one-based gSoundChoice, without the sound-on test and the 0x96 map cutoff.
    The map byte is kept both in mapByte and, zero extended, in driverSound (SI), which is why
    the index and the later tests share a register; the EOB twin keeps only the int.
    QUIRK 2DB4: like the EOB code the `driverSound < 0` test is dead (the map byte is zero

@@ -485,3 +485,7 @@ why = "the fatal file error handler, a far pointer at ds:8104; the image holds 1
 id = "ds:8111"
 name = "gRetryHandler"
 why = "the retry file error handler, a far pointer at ds:8111; the image holds 1C0E:0ADD (DisplayFileError) there (EOB.EXE file offset 2BBF1) and RetryFile (1C0E:0046) calls it (E1A72.ASM:40)"
+[[global]]
+id = "intro/ds:1EE2"
+name = "gFn1EE2"
+why = "the driver routine the front end starts; src/I0892.C:97 calls it gFn1EE2 (StartupGame after the page table, :0544)"
