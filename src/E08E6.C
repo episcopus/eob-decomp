@@ -612,7 +612,56 @@ void Obj10F3(struct Obj28 far *obj);   /* forward: 05EA reaches it before its de
         TurnObject(obj, -1, obj->orient);
     }
 }
-/*@ 08E6:0B94 stub */ void Obj0B94(struct Obj28 far *obj, int arg) {}
+/* 08E6:0B94: turn an object by `arg` quarters. A state below zero falls straight to the second half;
+   a state of zero first steps the object through StepObjectOrient(obj, -arg). It then looks up the
+   direction dir = (orient + arg) & 3, cur = f0D1C_00DA(id, dir) and the byte g1991[dir]: when the
+   g194B record at gB894[cur * 9 + g1991[dir]] has bit 2 clear it leaves a state of zero as -1 and
+   returns, and a nonzero state with that bit clear falls through to the second half. Otherwise it
+   turns through TurnObject(obj, -1, dir), sets the state to -1 and returns. The second half looks up
+   handle = f0D1C_00DA(id, orient): when TurnObject(obj, handle, -1) fails it turns the other way,
+   TurnObject(obj, -1, (orient - arg) & 3), and clears the state, else it sets the state to 1.
+   Called by UpdateObjects. Purpose unknown: what g1991 and the state values select. DRAFT: the body
+   matches up to the state==0 store, but ours cross-jumps the two `obj->state = -1` tails (0B94:0083
+   and 0B94:00A4 in the original stay apart; ours merges them and adds a `les bx` reload at 0x83, a
+   6-byte -O cross-jump difference). Compiling the unit with -B makes this function match exactly,
+   but -B breaks Obj00C3 (08E6:00C3), which matches under -ml -O -Z, so the unit's flags are not -B
+   and no -O source form found yet keeps the tails apart. blocked: a compiler cross-jump question. */
+/*@ 08E6:0B94 draft */ void Obj0B94(struct Obj28 far *obj, int arg)
+{
+    int handle;
+    int cur;
+    int add;
+    register int dir;
+    register int bits;
+
+    if (obj->state >= 0) {
+        if (obj->state == 0)
+            StepObjectOrient(obj, -arg);
+        dir = (obj->orient + arg) & 3;
+        cur = f0D1C_00DA(obj->id, dir);
+        add = g1991[dir];
+        bits = g194B[(signed char)gB894[cur * 9 + add]] & 4;
+        if (obj->state == 0) {
+            if (bits == 0)
+                obj->state = -1;
+            return;
+        }
+        if (bits == 0)
+            goto second;
+        TurnObject(obj, -1, dir);
+        obj->state = -1;
+        return;
+    }
+second:
+    handle = f0D1C_00DA(obj->id, obj->orient);
+    if (TurnObject(obj, handle, -1) == 0) {
+        dir = (obj->orient - arg) & 3;
+        TurnObject(obj, -1, dir);
+        obj->state = 0;
+    } else {
+        obj->state = 1;
+    }
+}
 /* 08E6:0CA6: count an object's timer down and clear its type when it reaches zero. Called for the
    object types 7 and 10 by UpdateObjects (08E6:0CC8). */
 /*@ 08E6:0CA6 */ void Obj0CA6(struct Obj28 far *obj)
