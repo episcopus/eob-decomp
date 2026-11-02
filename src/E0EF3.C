@@ -33,7 +33,7 @@ struct CharRec {
     signed char memorized[30]; /* +55: spell slots */
     char pad73[0x77 - 0x73];
     int m77[27];            /* +77: carried-item slots; slot 0 and 1 hold the equipped items */
-    char padAD[0xD5 - 0xAD];
+    long mAD[10];           /* +AD: a 32-bit value per spell slot, cleared when its spell is removed */
     signed char mD5[10];    /* +D5: ten per-member bytes (spell slots) */
     signed char mDF;        /* +DF */
     signed char mE0;        /* +E0: a countdown */
@@ -125,6 +125,50 @@ struct Entry27 {
     char pad13[0x1B - 0x13];
 };
 
+/* The 18-byte effect records at ds:DD2C, ten of them (src/E1414.C and src/E122E.C name the same
+   records and the callback at +0x0E). */
+struct DDRec {
+    char active;             /* +00: 1 when the record is live, 2 runs fn (1414:0172) */
+    char pad01;
+    int m02;                 /* +02 */
+    int m04;                 /* +04: a character or object index */
+    char m06;                /* +06 */
+    signed char m07;         /* +07 */
+    int m08;                 /* +08: an index into the 14-byte records at ds:8DD2 */
+    char m0A;                /* +0A */
+    char m0B;                /* +0B */
+    char m0C;                /* +0C: flags, bit 0x20 tested by 1414:0285 */
+    unsigned char m0D;       /* +0D */
+    int (far *fn)(struct DDRec far *rec); /* +0E: called by 1414:0172 when active is 2 */
+};
+
+/* The 0x13-byte spell records at ds:1344 (src/EOV6.C names the table gSpells1344 and its +0 a far
+   name pointer). This unit reads the apply callback at +5 (through gFnEFBA), the DD callback at
+   +9 (copied into a DDRec.fn by 0EF3:097B) and the expire callback at +0xD (run by 0EF3:0D78 and
+   0EF3:131A); the sound id at +0x11 is ds:1355, gEffectSound. */
+struct Spell {
+    char *name;                             /* +00: the spell's name */
+    signed char flags;                      /* +04: bits 0..2 and 3 tested by 0EF3:0D78, bit 1 by 0EF3:2676 */
+    void (far *apply)(void);                /* +05: run through gFnEFBA when the spell is cast */
+    int (far *ddFn)(struct DDRec far *rec); /* +09: copied into DDRec.fn by 0EF3:097B */
+    void (far *remove)(struct CharRec far *rec); /* +0D: run when the spell expires */
+    signed char sound;                      /* +11: the sound id (ds:1355) */
+    char pad12;
+};
+
+/* The per-mode table at ds:56E7, four bytes per mode (0EF3:097B): the index of the mode's spell
+   in gSpells1344 and three bytes copied into a DDRec. */
+struct EffectMode {
+    signed char spell;       /* +00: an index into gSpells1344 */
+    signed char m01;         /* +01 -> DDRec.m0D */
+    signed char m02;         /* +02 -> DDRec.m0C */
+    signed char m03;         /* +03 -> DDRec.m0A */
+};
+
+extern struct DDRec gDD2C[];            /*@ ds:DD2C */ /* ten 18-byte records */
+extern struct Spell gSpells1344[];      /*@ ds:1344 */ /* 0x13-byte spell records */
+extern struct EffectMode gEffectModes[]; /*@ ds:56E7 */ /* four bytes per effect mode */
+
 extern struct CharRec gChars[];         /*@ ds:F580 */
 extern struct Entry14 gTable8DD2[];     /*@ ds:8DD2 */
 extern struct ItemRecord gItems[];      /*@ ds:8DD0 */
@@ -171,6 +215,8 @@ extern char gText58D1[];                /*@ ds:58D1 */
 extern char gText58ED[];                /*@ ds:58ED */
 extern char gText57C3[];                /*@ ds:57C3 */ /* drawn by 0EF3:08CF */
 extern char gText57C8[];                /*@ ds:57C8 */ /* said by 0EF3:08CF when no member is set */
+extern char gText57D9[];                /*@ ds:57D9 */ /* "%s's %s spell expires." (0EF3:0D78) */
+extern char gText5859[];                /*@ ds:5859 */ /* "All spells on %s are dispelled." (0EF3:131A) */
 extern signed char gEffectSound[];      /*@ ds:1355 */ /* one record per effect value, stride 0x13;
                                                            the first byte is a sound id (0EF3:08CF) */
 extern void (far *gFnEFBA)(void);       /*@ ds:EFBA */ /* a redraw hook run by 0EF3:08CF */
@@ -594,11 +640,58 @@ extern void f0EF3_2A53(int a, int b, int c, int d, int e, void far *p); /*@ 0EF3
     return rec->m04;
 }
 
-/*@ 0EF3:097B stub */ void f0EF3_097B(char a, int b, int c, int d, int e) {}
+/* 0EF3:097B: add one cell effect: find the first free of the ten 18-byte records at ds:DD2C (its
+   active byte clear) and, when one is found, put it in state 2 with m02 1, copy the mode entry
+   gEffectModes[mode] into m0C, m0D and m0A, fill m0B, m04, m06, m07 and m08 from the arguments,
+   and copy the DD callback of gSpells1344[gEffectModes[mode].spell] into the record's fn; set
+   gDF4C. Called by the effect wrappers 0EF3:10D2 to 0EF3:2011. */
+/*@ 0EF3:097B */ void StartCellEffect(char who, register int mode, int cell, int m06, int m07)
+{
+    int i;
+    struct DDRec far *rec;
+
+    rec = gDD2C;
+    for (i = 0; i < 10; i++, rec++) {
+        if (rec->active == 0)
+            break;
+    }
+    if (i == 10)
+        return;
+    rec->active = 2;
+    rec->m02 = 1;
+    rec->m0C = gEffectModes[mode].m02;
+    rec->m07 = m07;
+    rec->m0D = gEffectModes[mode].m01;
+    rec->m04 = cell;
+    rec->m06 = m06;
+    rec->m08 = mode;
+    rec->m0A = gEffectModes[mode].m03;
+    rec->m0B = who;
+    mode = gEffectModes[mode].spell;
+    rec->fn = gSpells1344[mode].ddFn;
+    gDF4C = 1;
+}
 
 /*@ 0EF3:0A3F stub */ int f0EF3_0A3F(void far *rec, int a, int b, int c, int n) {}
 
-/*@ 0EF3:0D78 stub */ void f0EF3_0D78(int a, int b) {}
+/* 0EF3:0D78: expire one spell on character `who`: format the message ds:57D9 with the member's
+   name and the spell's name, say it, remember `who` in gA999, then run the spell's expire callback
+   gSpells1344[spell].remove(&gChars[who]). When the spell's flags byte has bits 0..2 set redraw
+   the member, else when bit 3 is set redraw every character. Called by 1414:07CA. */
+/*@ 0EF3:0D78 */ void ExpireSpellEffect(register int spell, int who)
+{
+    struct CharRec far *rec;
+
+    rec = &gChars[who];
+    sprintf(gFileNameBuf, gText57D9, rec->name, gSpells1344[spell].name);
+    SayAndBeep(gFileNameBuf);
+    gA999 = who;
+    gSpells1344[spell].remove(rec);
+    if (gSpells1344[spell].flags & 7)
+        RedrawMember(who);
+    else if (gSpells1344[spell].flags & 8)
+        RedrawCharacters();
+}
 
 /* 0EF3:0E1B: hit one object with a melee effect: when the panel member has the per-member flag
    ds:5717 cleared, say the string ds:5809 with the member's name; otherwise find the object the
@@ -685,7 +778,7 @@ extern void f0EF3_2A53(int a, int b, int c, int d, int e, void far *p); /*@ 0EF3
 /* 0EF3:10D2: add the panel member's effect record of mode 0 through 0EF3:097B. */
 /*@ 0EF3:10D2 */ void AddEffectRecord0(void)
 {
-    f0EF3_097B(gPanelMember, 0, gPartyCell, gF3B8, gFBCC);
+    StartCellEffect(gPanelMember, 0, gPartyCell, gF3B8, gFBCC);
 }
 
 /* 0EF3:10F2: run the record's melee effect through 0EF3:0A3F with 1d4 and half the member's
@@ -774,7 +867,7 @@ extern void f0EF3_2A53(int a, int b, int c, int d, int e, void far *p); /*@ 0EF3
 /* 0EF3:12C2: add the panel member's effect record of mode 1 through 0EF3:097B. */
 /*@ 0EF3:12C2 */ void AddEffectRecord1(void)
 {
-    f0EF3_097B(gPanelMember, 1, gPartyCell, gF3B8, gFBCC);
+    StartCellEffect(gPanelMember, 1, gPartyCell, gF3B8, gFBCC);
 }
 
 /* 0EF3:12E3: run the record's melee effect through 0EF3:0A3F with 2d4 and a third of the
@@ -787,12 +880,42 @@ extern void f0EF3_2A53(int a, int b, int c, int d, int e, void far *p); /*@ 0EF3
 /* 0EF3:1315: an empty function reached through a table; nothing to do. */
 /*@ 0EF3:1315 */ void EmptyFunction1315(void) {}
 
-/*@ 0EF3:131A stub */ void f0EF3_131A(void) {}
+/* 0EF3:131A: the dispel-magic spell. Say "All spells on %s are dispelled." with the current
+   record's name, then for each of its ten spell slots: when the slot byte at +0xD5 is negative
+   the slot's spell expire callback gSpells1344[-slot].remove(gCurRec) runs, the slot and its
+   32-bit value at +0xAD are cleared; when the record's effect flag bit 2 is set ClearEffectFlag4
+   runs, and when its +0xDF penalty byte is over zero its armour class is recomputed. After the
+   loop the penalty, the effect flags (cleared twice) and the record's +0xE3 long are cleared and
+   the record's member is redrawn. Reached through the spell table (record 12's apply callback). */
+/*@ 0EF3:131A */ void DispelMagic(void)
+{
+    register int i;
+    register int spell;
+
+    sprintf(gFileNameBuf, gText5859, gCurRec->name);
+    SayAndBeep(gFileNameBuf);
+    for (i = 0; i < 10; i++) {
+        spell = gCurRec->mD5[i];
+        if (spell < 0) {
+            gSpells1344[-spell].remove(gCurRec);
+            gCurRec->mD5[i] = 0;
+            gCurRec->mAD[i] = 0;
+        }
+        if (gCurRec->mE3 & 4)
+            ClearEffectFlag4(gCurRec);
+        if (gCurRec->mDF > 0)
+            RecomputeArmourClass(gCurRec);
+    }
+    gCurRec->mDF = 0;
+    gCurRec->mE3 = 0;
+    gCurRec->mE3 = 0;
+    RedrawMember(gCurRec->m00);
+}
 
 /* 0EF3:13FD: add the panel member's effect record of mode 2 through 0EF3:097B. */
 /*@ 0EF3:13FD */ void AddEffectRecord2(void)
 {
-    f0EF3_097B(gPanelMember, 2, gPartyCell, gF3B8, gFBCC);
+    StartCellEffect(gPanelMember, 2, gPartyCell, gF3B8, gFBCC);
 }
 
 /* 0EF3:141E: run the record's 1d6 melee effect through 0EF3:0A3F. */
@@ -804,7 +927,7 @@ extern void f0EF3_2A53(int a, int b, int c, int d, int e, void far *p); /*@ 0EF3
 /* 0EF3:144A: add the panel member's effect record of mode 3 through 0EF3:097B. */
 /*@ 0EF3:144A */ void AddEffectRecord3(void)
 {
-    f0EF3_097B(gPanelMember, 3, gPartyCell, gF3B8, gFBCC);
+    StartCellEffect(gPanelMember, 3, gPartyCell, gF3B8, gFBCC);
 }
 
 /* 0EF3:146B: run the record's 5d6 melee effect through 0EF3:0A3F. */
@@ -837,7 +960,7 @@ extern void f0EF3_2A53(int a, int b, int c, int d, int e, void far *p); /*@ 0EF3
 /* 0EF3:150F: add the panel member's effect record of mode 4 through 0EF3:097B. */
 /*@ 0EF3:150F */ void AddEffectRecord4(void)
 {
-    f0EF3_097B(gPanelMember, 4, gPartyCell, gF3B8, gFBCC);
+    StartCellEffect(gPanelMember, 4, gPartyCell, gF3B8, gFBCC);
 }
 
 /* 0EF3:1530: list the objects that match the record's cell and field with Obj17FD, then walk the
@@ -886,7 +1009,7 @@ extern void f0EF3_2A53(int a, int b, int c, int d, int e, void far *p); /*@ 0EF3
 /* 0EF3:1609: add the panel member's effect record of mode 5 through 0EF3:097B. */
 /*@ 0EF3:1609 */ void AddEffectRecord5(void)
 {
-    f0EF3_097B(gPanelMember, 5, gPartyCell, gF3B8, gFBCC);
+    StartCellEffect(gPanelMember, 5, gPartyCell, gF3B8, gFBCC);
 }
 
 /* 0EF3:162A: run the record's 1d6 melee effect through 0EF3:0A3F. */
@@ -947,7 +1070,7 @@ extern void f0EF3_2A53(int a, int b, int c, int d, int e, void far *p); /*@ 0EF3
 /* 0EF3:17B7: add the panel member's effect record of mode 6 through 0EF3:097B. */
 /*@ 0EF3:17B7 */ void AddEffectRecord6(void)
 {
-    f0EF3_097B(gPanelMember, 6, gPartyCell, gF3B8, gFBCC);
+    StartCellEffect(gPanelMember, 6, gPartyCell, gF3B8, gFBCC);
 }
 
 /* 0EF3:17D8: run the record's 1d6 melee effect, then for each of the four cell deltas at ds:5733
@@ -1005,7 +1128,7 @@ extern void f0EF3_2A53(int a, int b, int c, int d, int e, void far *p); /*@ 0EF3
 /* 0EF3:1A0F: add the panel member's effect record of mode 7 through 0EF3:097B. */
 /*@ 0EF3:1A0F */ void AddEffectRecord7(void)
 {
-    f0EF3_097B(gPanelMember, 7, gPartyCell, gF3B8, gFBCC);
+    StartCellEffect(gPanelMember, 7, gPartyCell, gF3B8, gFBCC);
 }
 
 /* 0EF3:1A30: list the objects that match the record's cell and field with Obj17FD, then walk the
@@ -1275,7 +1398,7 @@ extern void f0EF3_2A53(int a, int b, int c, int d, int e, void far *p); /*@ 0EF3
 /* 0EF3:2011: add the panel member's effect record of mode 8 through 0EF3:097B. */
 /*@ 0EF3:2011 */ void AddEffectRecord8(void)
 {
-    f0EF3_097B(gPanelMember, 8, gPartyCell, gF3B8, gFBCC);
+    StartCellEffect(gPanelMember, 8, gPartyCell, gF3B8, gFBCC);
 }
 
 /* 0EF3:2032: run the record's 6d8 melee effect through 0EF3:0A3F. */

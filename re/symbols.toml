@@ -3351,6 +3351,9 @@ unit = "e0ef3"
 addr = "0EF3:097B"
 size = 196
 evidence = ["far", "near", "frame"]
+name = "StartCellEffect"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0ef3_0a3f"
@@ -3365,6 +3368,9 @@ unit = "e0ef3"
 addr = "0EF3:0D78"
 size = 163
 evidence = ["far", "frame"]
+name = "ExpireSpellEffect"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0ef3_0e1b"
@@ -3543,6 +3549,9 @@ unit = "e0ef3"
 addr = "0EF3:131A"
 size = 227
 evidence = ["frame"]
+name = "DispelMagic"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0ef3_13fd"
