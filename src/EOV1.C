@@ -12,6 +12,7 @@
 #define MENU_CAMP 0
 #define MENU_GAME_OPTIONS 1
 #define MENU_PREFERENCES 2
+#define MENU_SELECT_MEMBER 3
 
 /* gStrings2003 messages used as menu headers and status boxes */
 #define MSG_SELECT_OPTION 1
@@ -106,7 +107,16 @@ extern struct Menu gMenus[]; /*@ ds:628C */
 extern struct ButtonDef far gButtonDefs[]; /*@ 208E:0000 */
 struct ActRec;
 struct CharRec {                /* the 243-byte character records at ds:F580 (src/E0A72.C) */
-    char pad00[0x37];
+    char pad00;
+    unsigned char status;       /* +01: bit 0 set while the slot holds a character (0D1C:0670) */
+    char pad02[0x1B - 0x02];
+    signed char hp;             /* +1B: current hit points */
+    char pad1C[0x20 - 0x1C];
+    signed char classIndex;     /* +20: an index into the per-class tables (g1231, 0A72:007B) */
+    char pad21[0x23 - 0x21];
+    unsigned char food;         /* +23: the food value EatFood clamps (src/E0ACD.C) */
+    signed char classLevel[3];  /* +24: the level in each class slot (src/E0A72.C) */
+    char pad27[0x37 - 0x27];
     signed char known[30];      /* +37: the mage's spell slots: a spell number, negative while it is
                                    still to be memorised (src/EOV6.C) */
     signed char memorized[30];  /* +55: the cleric's spell slots, the same way */
@@ -163,6 +173,10 @@ extern char gMap62C9[]; /*@ ds:62C9 */ /* the spell level of each cleric spell, 
 extern void far *memset(void far *dst, int c, unsigned n); /*@ 0000:6384 */
 extern char *strcpy(char far *dest, char far *src); /*@ 0000:67CD */
 extern int gNeedsRest; /*@ ds:FE2C */
+extern unsigned char g62F2[]; /*@ ds:62F2 */
+extern unsigned char g62F8[]; /*@ ds:62F8 */
+extern signed char g1231[]; /*@ ds:1231 */
+extern void far *gIconDD28; /*@ ds:DD28 */
 extern int g159; /*@ ds:0159 */ /* a copy of gF57E that ShowMessage and ovl6:0B9B store; no reader found */
 extern int gNeedsRest; /*@ ds:FE2C */
 extern int gTunesOn; /*@ ds:80E8 */
@@ -206,6 +220,10 @@ extern int ReadKey(void); /*@ 1AAD:038E */
 extern int Action01E3(char far *text); /*@ 0ACD:01E3 */
 extern int RedrawPartyPanel(struct ActRec far *rec); /*@ 0EF3:2541 */
 extern int f0D1C_0670(int who, int mask); /*@ 0D1C:0670 */
+extern void f1A29_000F(int mode, void far *src, int x, int y, int region); /*@ 1A29:000F */
+extern void DrawRowList(int index); /*@ 0D1C:0454 */
+extern int FindClassSlot(int slotId, int classIndex); /*@ 0A72:007B */
+extern int FindCarriedSlot(int who, int field2, int fieldB); /*@ 0D1C:00F1 */
 extern void RedrawMember(int who); /*@ 1547:0991 */
 extern void f1A47_0169(void far *font); /*@ 1A47:0169 */
 extern int heapcheck(void); /*@ 0000:74B0 */
@@ -226,11 +244,14 @@ extern int SaveGame(void); /*@ 210C:0089 */
 extern int LoadGame(void); /*@ 210C:0039 */
 extern void DrawViewFrame(int full); /*@ 2116:005C */
 
+struct Node far *BuildMenuButtons(int menu);
+void ShowMessage(int message);
+void FreeFarList(struct Node far *list);
 void DrawListNode(struct Node far *node, int panelFirst, int highlight, int panelSecond);
 int ChooseListEntry(int message);
 
 /* ovl1:0000: drops party member `who` (0 to 5) from the party: the "Drop Character" button of the camp
-   menu (RunCampMenu passes the member MemberCommand(0x35) picked, "Select the character you wish to
+   menu (RunCampMenu passes the member SelectPartyMember(0x35) picked, "Select the character you wish to
    drop."). Nothing happens when `who` is negative or the slot holds no character (0D1C:0670 flag 1).
    0D1C:035A puts the member's items on the floor of the party's cell and clears its status bits.
    For a member of the four marching slots (below 4) the record of the reserve slot 5 (when it is
@@ -390,7 +411,187 @@ int ChooseListEntry(int message);
         }
     }
 }
-/*@ ovl1:0416 stub */ int MemberCommand(int key) { return 0; }
+/* ovl1:0416: the "select a character" box of the camp menu: it asks the player to pick one party member
+   for the action named by the gStrings2003 message `message`: 0x17 "Select a character from your party
+   who would like to learn spells.", 0x1A the same for praying, 0x31 scribing scrolls, 0x35 "Select the
+   character you wish to drop." Returns the member's slot (0 to 5), or -1 when none can be chosen or
+   the player cancels.
+   A member can be picked when its slot holds a character (status bit 0), it has hit points and food,
+   and the class bit `mode` (4 for message 0x1A, else 2) is set in g1231[classIndex]; for the drop
+   message any occupied slot will do. With nobody selectable it shows message 0x1C, 0x1B or 0x34 for
+   the three spell actions ("You don't have any Mage able to learn spells." and so on) and returns -1.
+   Members that cannot be picked get four icons drawn over their portrait box (gIconDD28) and gFD98
+   is set. With exactly one candidate that member is chosen at once, unless its paladin class slot
+   (FindClassSlot kind 4) is at level 8 or less (message 0x18, "Your Paladin is too low a level for
+   spells.", -1). Otherwise the header of menu 3 becomes `message` and its button list (the six
+   portrait boxes and Exit) is shown: the keys 0x12, 0x1F, 0x5C and 0x60 move the highlight to the
+   previous candidate, 0x20, 0x2E, 0x62 and 0x66 to the next (wrapping); 0x2B and 0x61 take the
+   highlighted member, a click on a portrait (0x8013 to 0x8018) takes that member when it is a
+   candidate, and 0x6E (Esc) or the Exit button (0x8012) flashes Exit and cancels. The highlight starts
+   on the first candidate, or on none (-1) when the mouse is enabled. After the loop the spell
+   actions are checked: mode 4 re-tests the paladin level (message 0x18), mode 2 needs a spell book
+   (FindCarriedSlot item 0x1D, else message 0x19, "The Mage has no Spell Book!"); the choice then
+   becomes -1. Called by RunCampMenu and by the scroll-scribing screen (ovl1:1691). */
+/*@ ovl1:0416 */ int SelectPartyMember(int message)
+{
+    struct Node far *list;
+    int key;
+    int sel;
+    char avail[6];
+    int count;
+    int mode;
+    int i;
+    int cur;
+
+    mode = message == 0x1a ? 4 : 2;
+    FlushKeyBuffer();
+    gFD98 = 0;
+    count = 0;
+    sel = -1;
+    for (i = 0; i < 6; i++) {
+        avail[i] = -1;
+        if ((gChars[i].status & 1) && gChars[i].hp > 0 && gChars[i].food != 0 &&
+                (mode & g1231[gChars[i].classIndex]) ||
+            message == 0x35 && (gChars[i].status & 1)) {
+            avail[i] = 0;
+            count++;
+            sel = i;
+        }
+    }
+    if (count == 0) {
+        switch (message) {
+        case 0x1a:
+            count = 0x1b;
+            break;
+        case 0x17:
+            count = 0x1c;
+            break;
+        case 0x31:
+            count = 0x34;
+            break;
+        }
+        ShowMessage(count);          /* count was 0: it carries the message index */
+        sel = -1;
+        return sel;
+    }
+    for (i = 0; i < 6; i++) {
+        if (avail[i] == -1 && f0D1C_0670(i, 1)) {
+            f1A29_000F(0, gIconDD28, g62F2[i] * 8, g62F8[i], 0);
+            f1A29_000F(0, gIconDD28, g62F2[i] * 8 + 0x10, g62F8[i], 0);
+            f1A29_000F(0, gIconDD28, g62F2[i] * 8 + 0x20, g62F8[i], 0);
+            f1A29_000F(0, gIconDD28, g62F2[i] * 8 + 0x30, g62F8[i], 0);
+            gFD98 = 1;
+        }
+    }
+    if (count == 1) {
+        int slot;
+
+        slot = FindClassSlot(4, gChars[sel].classIndex);
+        if (slot != -1) {
+            if (gChars[sel].classLevel[slot] <= 8) {
+                ShowMessage(0x18);
+                sel = -1;
+                return sel;
+            }
+        }
+        return sel;
+    }
+    gMenus[MENU_SELECT_MEMBER].message = message;
+    list = BuildMenuButtons(MENU_SELECT_MEMBER);
+    sel = -2;
+    for (cur = 0; cur < 6; cur++) {
+        if (!avail[cur])
+            break;
+    }
+    if (!gMouseDisabled)
+        cur = -1;
+    f1A47_0169(gA9C0);
+    while (sel == -2) {
+        key = DispatchKeyWait(list);
+        DrawRowList(cur);
+        switch (key) {
+        case 0x12:
+        case 0x1f:
+        case 0x5c:
+        case 0x60:
+            DrawRowList(-1);
+            RedrawMember(cur);
+            cur--;
+            if (cur < 0)
+                cur = 5;
+            while (avail[cur]) {
+                cur--;
+                if (cur < 0)
+                    cur = 5;
+            }
+            break;
+        case 0x20:
+        case 0x2e:
+        case 0x62:
+        case 0x66:
+            DrawRowList(-1);
+            RedrawMember(cur);
+            cur++;
+            if (cur >= 6)
+                cur = 0;
+            while (avail[cur]) {
+                cur++;
+                if (cur >= 6)
+                    cur = 0;
+            }
+            break;
+        case 0x6e:
+        case 0x8012:
+            f1A47_0169(gFont8x8);
+            DrawListNode(list, 1, 1, 1);
+            WaitFrames(5);
+            DrawListNode(list, 0, 0, 1);
+            sel = -1;
+            f1A47_0169(gA9C0);
+            break;
+        case 0x8013:
+        case 0x8014:
+        case 0x8015:
+        case 0x8016:
+        case 0x8017:
+        case 0x8018:
+            sel = key - 0x8013;
+            if (avail[sel] != 0)
+                sel = -2;
+            break;
+        case 0x2b:
+        case 0x61:
+            if (cur >= 0)
+                sel = cur;
+            break;
+        }
+    }
+    DrawRowList(-1);
+    if (cur != 0)
+        RedrawMember(cur);
+    f1A47_0169(gFont8x8);
+    if (sel != -1 && message != 0x35) {
+        if (mode == 4) {
+            int slot;
+
+            slot = FindClassSlot(4, gChars[sel].classIndex);
+            if (slot != -1) {
+                if (gChars[sel].classLevel[slot] <= 8) {
+                    ShowMessage(0x18);
+                    sel = -1;
+                }
+            }
+        }
+        if (mode == 2) {
+            if (FindCarriedSlot(sel, 0x1d, -1) == -1) {
+                ShowMessage(0x19);
+                sel = -1;
+            }
+        }
+    }
+    FreeFarList(list);
+    return sel;
+}
 /* ovl1:0881: draws one row of the spell-slot screen: the name and the count of spell `spell` on row
    `row` (a negative row draws nothing). The row sits at y = row * 9 + 0x32, x = 8. For a nonzero
    `spell` it formats "%-18s %1d" into gFileNameBuf from the spell's name (gClericSpellNames when
@@ -507,7 +708,7 @@ int ChooseListEntry(int message);
    rectangle; the text goes at (left * 8 + 5, top + 5) in colour 0xF. It then polls ReadKey one frame
    at a time (WaitFrames(1)); a key press flushes the key buffer and ends the wait. Afterwards the
    status line, font and text window are restored and the key buffer flushed again. Called by
-   RunCampMenu, MemberCommand and DrawListNode. */
+   RunCampMenu, SelectPartyMember and DrawListNode. */
 /*@ ovl1:13F7 */ void ShowMessage(int message)
 {
     int savedWindow;
@@ -561,7 +762,7 @@ int ChooseListEntry(int message);
    6 when `highlight` is nonzero, else 1 (0xF when gGraphicsChoice is nonzero). It goes through the
    text routine gDrawText when panelFirst or panelSecond is set (the panel already holds a
    background), else through DrawShadowText. The pointer is hidden while it draws. Called by
-   BuildMenuButtons, MemberCommand, RunCampMenu and ChooseListEntry: (node, 0, 0, 1) un-highlights,
+   BuildMenuButtons, SelectPartyMember, RunCampMenu and ChooseListEntry: (node, 0, 0, 1) un-highlights,
    (node, 0, 1, 1) highlights and (node, 1, 1, 1) draws the pressed button. */
 /*@ ovl1:1551 */ void DrawListNode(struct Node far *node, int panelFirst, int highlight, int panelSecond)
 {
@@ -605,7 +806,7 @@ int ChooseListEntry(int message);
    highlighted node, flashes the clicked node, and switches on the button (0x8000 + its entry
    number, see gMenus and gButtonDefs):
    Rest Party (CampLoop; a nonzero result leaves the camp, otherwise the party has rested and
-   gNeedsRest is cleared), Memorize Spells and Pray for Spells (MemberCommand picks the caster, then
+   gNeedsRest is cleared), Memorize Spells and Pray for Spells (SelectPartyMember picks the caster, then
    SpellSlotScreen), Scribe Scrolls (ovl1:1691), Preferences and Game Options (open the menu), Exit
    (leaves the camp from menu 0, goes back to menu 0 from the others; "Your party needs to rest to gain
    spells." first when gNeedsRest is set), Load Game and Save Game (after a yes/no box through
@@ -726,7 +927,7 @@ int ChooseListEntry(int message);
             if (members < 5)
                 ShowMessage(0x2d);       /* "You cannot have less than four characters." */
             else {
-                DropCharacter(MemberCommand(0x35));
+                DropCharacter(SelectPartyMember(0x35));
                 LockHidePointer();
                 LoadScreenImage("PLAYFLD", gOverlayBuf, 5, 3, 0);
                 reloadInvent = 1;
@@ -749,11 +950,11 @@ int ChooseListEntry(int message);
             nextMenu = MENU_CAMP;
             break;
         case BTN_MEMORIZE:
-            SpellSlotScreen(MemberCommand(0x17), 0);
+            SpellSlotScreen(SelectPartyMember(0x17), 0);
             nextMenu = MENU_CAMP;
             break;
         case BTN_PRAY:
-            SpellSlotScreen(MemberCommand(0x1a), 1);
+            SpellSlotScreen(SelectPartyMember(0x1a), 1);
             nextMenu = MENU_CAMP;
             break;
         case BTN_PREFERENCES:

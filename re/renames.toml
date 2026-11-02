@@ -2502,3 +2502,12 @@ new = "DrawSpellRow"
 kind = "function"
 why = "ovl1:0881 formats '%-18s %1d' from gMageSpellNames/gClericSpellNames (ds:1278/ds:12E0, decoded: mage and cleric spell names) and gFDEA[spell*2] and draws it at row*9+0x32; its only caller is the spell-slot screen ovl1:097A"
 date = "2026-11-02"
+
+[[rename]]
+id = "ovl1:0416=SelectPartyMember"
+addr = "ovl1:0416"
+old = "MemberCommand"
+new = "SelectPartyMember"
+kind = "function"
+why = "ovl1:0416 shows the prompts 'Select a character from your party who would like to learn spells' (0x17), 'pray for spells' (0x1A), 'scribe spells' (0x31) and 'Select the character you wish to drop.' (0x35) as the header of menu 3 and returns the chosen member slot or -1"
+date = "2026-11-02"
