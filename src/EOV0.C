@@ -26,6 +26,19 @@ struct IconDef9 {               /* the 17 9-byte icon definitions at 2084 (17 * 
 };
 extern struct IconDef9 far gIcons2084[]; /*@ 2084:0000 */
 
+struct IconDef4 {               /* 4-byte rectangle records at 2080 (the icon cell table) */
+    unsigned char left;         /* +0 */
+    unsigned char top;          /* +1 */
+    unsigned char width;        /* +2 */
+    unsigned char height;       /* +3 */
+};
+extern struct IconDef4 far gIcons2080[]; /*@ 2080:0000 */
+
+extern void ClipRect(int x1, int y1, int x2, int y2, int width, int height, int extra1, int extra2); /*@ 19F3:000E */
+extern void f1A29_000F(int mode, void far *src, int x, int y, int region); /*@ 1A29:000F */
+extern void HidePointerZone(int left, int top, int right, int bottom); /*@ 1BBE:01FE */
+extern void ShowPointerZone(void); /*@ 1BBE:02C2 */
+
 extern void far *g5E64[0x11]; /*@ ds:5E64 */ /* the 17 sliced icon pointers this unit builds and draws */
 
 /* ovl0:0000: builds the 17-entry far-pointer table g5E64. For each of the 17 icon definitions in
@@ -67,7 +80,41 @@ extern void far *g5E64[0x11]; /*@ ds:5E64 */ /* the 17 sliced icon pointers this
     }
     DispatchKeyWait(list);
 }
-/*@ ovl0:0128 stub */ void Ovl0_0128(void) {}
+/* ovl0:0128: draws one character-panel icon. It maps slot `index` (0..0x10) to the cell row
+   gIcons2084[index].m06 + `row`, clips the panel rectangle gIcons2080[row], draws the icon cell
+   g5E64[index] inside it through f1A29_000F (mode 2), and unless `mode` is 2 hides and shows the
+   mouse pointer around the icon's live area. The rectangle's top-left is (0x14, 0) in mode 0,
+   else the icon's own origin gIcons2084[index].m07 + 2 / m08 - 0x40. Called by ovl0:037A, 0504,
+   0A5E, 11BA, 207A and 2238. */
+/*@ ovl0:0128 */ void DrawPanelIcon(unsigned index, int rowBase, int mode)
+{
+    register int cellRow;
+    int x;
+    int y;
+
+    if (index >= 0x11)
+        return;
+    cellRow = gIcons2084[index].m06 + rowBase;
+    if (mode == 0) {
+        x = 0x14;
+        y = 0;
+    } else {
+        x = gIcons2084[index].m07 + 2;
+        y = gIcons2084[index].m08 - 0x40;
+    }
+    ClipRect(gIcons2080[cellRow].left, gIcons2080[cellRow].top, x, y, gIcons2080[cellRow].width,
+        gIcons2080[cellRow].height, 2, 2);
+    if (gIcons2084[index].w)
+        f1A29_000F(2, g5E64[index], (x << 3) + gIcons2084[index].m04, y + gIcons2084[index].m05, 0);
+    if (mode == 2)
+        return;
+    HidePointerZone(gIcons2084[index].m07 << 3, gIcons2084[index].m08,
+        (gIcons2084[index].m07 + gIcons2080[cellRow].width) << 3,
+        gIcons2084[index].m08 + gIcons2080[cellRow].height);
+    ClipRect(0x14, 0, gIcons2084[index].m07, gIcons2084[index].m08, gIcons2080[cellRow].width,
+        gIcons2080[cellRow].height, 2, 0);
+    ShowPointerZone();
+}
 /*@ ovl0:037A stub */ void Ovl0_037A(void) {}
 /*@ ovl0:03B2 stub */ void Ovl0_03B2(void) {}
 /*@ ovl0:042F stub */ void Ovl0_042F(void) {}

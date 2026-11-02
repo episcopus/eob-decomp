@@ -6794,6 +6794,9 @@ unit = "eov0"
 addr = "ovl0:0128"
 size = 594
 evidence = ["near", "frame"]
+name = "DrawPanelIcon"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov0_037a"
