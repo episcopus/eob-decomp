@@ -2,8 +2,9 @@
    one party member's block: the status bar (0009), the HP line and ratio bar (033F), the portrait
    (0544), the carried item slots (07E7), the action label (0642) and the title and stat lines
    (0991, which dispatches to the rest). It reads the 243-byte character records at ds:F580 (struct
-   CharRec, src/E0A72.C), the stat/class/race/alignment name tables at ds:1195, ds:11AD, ds:11DD
-   and ds:1240, and the per-member row layout byte tables at ds:5D1C..ds:5D4E. All 8 functions
+   CharRec, src/E0A72.C), the stat/class/race/alignment and per-class-slot name tables at ds:1195,
+   ds:11AD, ds:11DD, ds:1219 and ds:1240, and the per-member row layout byte tables at
+   ds:5D1C..ds:5D4F. All 8 functions
    are at L2. The record's mE3 field is a long, so its bit tests take the `and ax,K; or ax,0`
    form (e0d1c_0a43). */
 
@@ -488,7 +489,7 @@ extern void DrawItemRow(int who, int slot, int one); /*@ 0BD2:0917 */
         ClipRect(0x1e, 0xa8, x, y + 0x18, 8, 0x1a, 2, 2);
         savedStatusLine = g8115;
         g8115 = 2;
-        x <<= 3;
+        x <<= 3;    /* the layout tables hold 8-pixel columns; the text routines take pixels */
         if (gFB34 == who)
             gDrawText("Swapping", x + 2, y + 2, 8, gF57E);
         else
@@ -521,6 +522,9 @@ extern void DrawItemRow(int who, int slot, int one); /*@ 0BD2:0917 */
         DrawMemberHp(who);
         DrawMemberLevel(who);
         if (gFB44 == 1) {
+            /* the four status lines are drawn at x 0xdc..0xf7, y 0x9e; the hp + 10 and the
+               unsigned hp + 9 range test are how the original compiles hp == -10 (DEAD) and
+               -9 <= hp <= 0 (UNCONSCIOUS) */
             if (rec->hp + 10 == 0)
                 DrawShadowText("DEAD", 0xf7, 0x9e, 6, gFB7B);
             else if ((unsigned)(rec->hp + 9) < 10)
@@ -555,6 +559,9 @@ extern void DrawItemRow(int who, int slot, int one); /*@ 0BD2:0917 */
             PrintInt(rec->con, 0x113, 0x75, 0xf, gFB7B);
             PrintInt(rec->cha, 0x113, 0x7c, 0xf, gFB7B);
             for (n = 0; n < 3; n++) {
+                /* the three per-class-slot lines: the slot's name, its experience total (as a
+                   long, right-aligned at x 0xf7) and its level-like byte (right-aligned at
+                   0x11e); GetClassSlotByte returns -1 for a class with no such slot */
                 classSlot = GetClassSlotByte(rec->class, n);
                 if (classSlot == -1)
                     continue;
