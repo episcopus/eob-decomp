@@ -131,6 +131,12 @@ extern char g3893[]; /*@ ds:3893 */        /* the "feels ..." string table (0BD2
 
 extern int f0D1C_00DA(int value, int page); /*@ 0D1C:00DA */
 extern int f0D1C_02DC(void); /*@ 0D1C:02DC */
+extern int f0D1C_0670(int who, int mask); /*@ 0D1C:0670 */
+extern int f0D1C_07DB(int who, int flag); /*@ 0D1C:07DB */
+extern void UseItem(int who, int slot, int field); /*@ 0DE8:0763 */
+extern void EatFood(int index); /*@ 0ACD:07E0 */
+extern void f0EF3_21E0(int who, int flag); /*@ 0EF3:21E0 */
+extern void fOvl5_1CDD(int x); /*@ 211E:0093 */  /* overlay 5 entry, ovl5:1CDD */
 extern void SetMouseItem(int n); /*@ 07A9:010C */
 extern void RedrawMember(int who); /*@ 1547:0991 */
 extern void f0D1C_070F(int mode, int n, int x, int y); /*@ 0D1C:070F */
@@ -713,7 +719,100 @@ next:
     }
 }
 
-/*@ 0BD2:1001 stub */ void f0BD2_1001(void) {}
+/* 0BD2:1001: the "use the item in slot `slot`" action for character `who`. It returns early when
+   f0D1C_0670(who, 0x0D) refuses, and, when the slot maps to one of the first two carried slots
+   (0BD2:1244), when f0D1C_07DB refuses or the slot's m1E bit is set in mode 0. When the item type
+   may not be worn it draws the character's name and " can not use this item.\r". Otherwise it
+   switches on the item type's m0E low 7 bits and either draws a message, eats, uses the item
+   through 0DE8:0763, arms 0EF3:21E0, dispatches through 0EF3:28ED or the overlay 5 entry, applies
+   the item effect (0BD2:0D2D) or uses it as a wand (0BD2:0EE8). Called by 0ACD:0415 and 0ACD:0D9D.
+   DRAFT: the code and the switch table match in shape, but TCC's internal assembler merges tails
+   that the original keeps: the `pop cx; pop cx` after `DrawText(" can not use this item.\r")`
+   (0BD2:10A9) and after the 0EF3:21E0 call (0BD2:112C) are each kept inline by the original but
+   hoisted into one shared block by our build, and case 9's tail cross-jumps into case 10's store
+   (`mov word ptr [bp - 8], ax`, 0BD2:1161). 0x1F bytes short. Tried `-ml -O` (no -Z) and `-B`;
+   -B breaks ReportLostItem, so the unit stays -Z. */
+/*@ 0BD2:1001 draft */ void UseItemSlot(int who, int slot)
+{
+    int item;
+    int type;
+    int firstTwo;
+    int cls;
+    int value;
+    struct CharRec *rec;
+
+    rec = &gChars[who];
+    if (!f0D1C_0670(who, 0x0D))
+        return;
+    item = rec->m77[slot];
+    firstTwo = FirstTwoSlots(slot);
+    if (firstTwo != -1) {
+        if (!f0D1C_07DB(who, firstTwo))
+            return;
+        if (gFB44 == 0 && (gChars[who].m1E & (1 << slot)))
+            return;
+    }
+    if (!ItemClassAllowed(who, item)) {
+        DrawText(rec->name);
+        DrawText(" can not use this item.\r");
+        return;
+    }
+    if (item == 0 && firstTwo == -1)
+        return;
+    type = gItems[item].m02;
+    cls = gItemTypes[type].m0E.word & 0x7F;
+    switch (cls) {
+    case 0:
+    case 16:
+        DrawText("This item automatically used when worn.\r");
+        break;
+    case 1:
+    case 2:
+    case 3:
+        if (gFB44 != 0)
+            break;
+        UseItem(who, slot, item);
+        break;
+    case 4:
+    case 8:
+    case 12:
+    case 13:
+    case 15:
+        DrawText("This item is not used in this way.\r");
+        break;
+    case 5:
+    case 6:
+        if (gFB44 == 0)
+            f0EF3_21E0(who, cls == 6);
+        break;
+    case 7:
+        if (gMouseDisabled != 0)
+            EatFood(who);
+        break;
+    case 9:
+        if (gFB44 == 0) {
+            value = gItems[item].m0B;
+            f0EF3_28ED(who, value, firstTwo);
+        }
+        break;
+    case 10:
+        if (gFB44 == 0) {
+            value = gItems[item].m0B + 0x19;
+            f0EF3_28ED(who, value, firstTwo);
+        }
+        break;
+    case 11:
+        fOvl5_1CDD(gItems[item].m0B);
+        break;
+    case 14:
+        ApplyItemEffect(who, slot);
+        break;
+    case 18:
+        if (gFB44 == 0)
+            UseWandItem(who, slot);
+        break;
+    }
+}
 
 /* 0BD2:11FD: returns 1 when `item` is empty, otherwise the item-type byte gItemTypes[m02].m05 ANDed
    with g1231[gChars[who].m20]. Purpose unknown. */
