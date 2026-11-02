@@ -114,7 +114,7 @@ why = "Purpose unknown: 1 only on the Tandy path (src/E07C8.C:307), where the sp
 [[global]]
 id = "ds:8A67"
 name = "gSpeakerOn"
-why = "the PC speaker / Tandy driver select applied by 1948:0458 (E1948.ASM: 1 is Tandy, 0 is PC speaker); PlaySound (177D:0070) and PlaySoundVolume (177D:0106) only ever set it to 1, never to 0"
+why = "the PC speaker / Tandy driver select applied by 1948:0458 (E1948.ASM: 1 is Tandy, 0 is PC speaker); PlaySound (177D:0070) and PlaySoundVolume (177D:0106) set it to 1, and their 0 stores (177D:00B3, 177D:021E) are dead (inside the `driverSound < 0` / `gCurSound < 0` blocks); the live 0 writer is ShutdownGame (src/E07C8.C:329)"
 
 [[global]]
 id = "ds:5E22"
@@ -123,8 +123,8 @@ why = "the driver sound number recorded by the previous call of PlaySoundVolume;
 
 [[global]]
 id = "ds:5E24"
-name = "gCurVolume"
-why = "the volume of gCurSound (0..0x10); zero means stop, 10h or more skips the AdLib play"
+name = "gCurAttenuation"
+why = "the attenuation of the recorded sound gCurSound: 0 means no fade, a larger value fades the level further toward full attenuation (177D:01AF), and 10h or more skips the AdLib play (177D:012B); computed from f17A6_0F61(gSoundVolume, volume) at 177D:026E, used only in src/E177D.C"
 
 [[global]]
 id = "ds:5E26"
@@ -139,12 +139,12 @@ why = "the driver level written to register 3 of the current sound (0000:03B0/00
 [[global]]
 id = "ds:5E2A"
 name = "gSoundAmp"
-why = "Purpose unknown: the driver value written to register 1 of the current sound (0000:03B0/0000:03CA); the AdLib write is 20h - gCurVolume (177D:01DA), and 20h is the OPL register block 20h (waveform and multiplier), not clearly an amplitude"
+why = "Purpose unknown: the driver value written to register 1 of the current sound (0000:03B0/0000:03CA); the AdLib write is 20h - gCurAttenuation (177D:01DA), and 20h is the OPL register block 20h (waveform and multiplier), not clearly an amplitude"
 
 [[global]]
 id = "ds:FBCA"
 name = "gSoundVolume"
-why = "the sound setting PlaySoundDefault (177D:00F3) passes and PlaySoundVolume scales by f17A6_0F61 to get gCurVolume; also indexes the nine-byte records at ds:B894 in src/E0D1C.C:334, is compared with an index in src/E1414.C:220, and is passed to f17A6_0F61 in src/EOV6.C:393"
+why = "the sound setting PlaySoundDefault (177D:00F3) passes and PlaySoundVolume scales by f17A6_0F61 to get gCurAttenuation; also indexes the nine-byte records at ds:B894 in src/E0D1C.C:334, is compared with an index in src/E1414.C:220, and is passed to f17A6_0F61 in src/EOV6.C:393"
 
 [[global]]
 id = "ds:DDE4"

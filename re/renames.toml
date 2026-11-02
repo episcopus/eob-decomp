@@ -1280,6 +1280,15 @@ why = "1 when the mouse driver handler is installed: set to 1 at install (E1A72.
 date = "2026-11-01"
 
 [[rename]]
+id = "ds:5E24=gCurAttenuation"
+addr = "ds:5E24"
+old = "gCurVolume"
+new = "gCurAttenuation"
+kind = "global"
+why = "the attenuation of the recorded sound gCurSound: 0 means no fade, a larger value fades the level further toward full attenuation (177D:01AF), and 10h or more skips the AdLib play (177D:012B); computed from f17A6_0F61(gSoundVolume, volume) at 177D:026E, used only in src/E177D.C"
+date = "2026-11-01"
+
+[[rename]]
 id = "ds:8052=gFn8052"
 addr = "ds:8052"
 old = "gFar8052"
