@@ -61,12 +61,19 @@
         EXTRN   g8136:WORD              ; @ ds:8136: latched to 1 once any button has been seen;
         ;                                              this unit never clears it, E1AAD.ASM:1356
         ;                                              sets it too and nothing in src/ clears it
-        EXTRN   _gCursorX:WORD              ; @ ds:8138: mouse x in pixels (set to the middle on
-        ;                                              init); the handler rewrites it only when the
-        ;                                              busy flag is free and DGROUP:80EC is not 2
-        EXTRN   _gCursorY:WORD              ; @ ds:813A: mouse y in pixels (set to the middle on
-        ;                                              init); the handler rewrites it under the same
-        ;                                              conditions as x
+        EXTRN   _gCursorX:WORD              ; @ ds:8138: the cursor (mouse pointer) x in pixels.
+        ;                                              InitMouse sets it to the middle (1A72:00E6);
+        ;                                              the INT 33h handler rewrites it when the busy
+        ;                                              flag is free and DGROUP:80EC is not 2
+        ;                                              (1A72:0219); the pointer placer stores the
+        ;                                              clamped position (1BF3:000E, E1BF3.ASM:35)
+        ;                                              and the recorded-input glue stores it too
+        ;                                              (1AAD:0CF7, E1AAD.ASM:1352)
+        EXTRN   _gCursorY:WORD              ; @ ds:813A: the cursor (mouse pointer) y in pixels,
+        ;                                              the same writers as x: InitMouse (1A72:00EC),
+        ;                                              the handler (1A72:021D), the placer
+        ;                                              (E1BF3.ASM:44, 1BF3:0028) and the glue
+        ;                                              (1AAD:0D01, E1AAD.ASM:1355)
         EXTRN   g813C:WORD              ; @ ds:813C: x of the event just handled, after the 640 wide
         ;                                              halving and the 13Fh clamp (1A72:0193-019B);
         ;                                              the keyboard glue queues it and g813E
@@ -101,11 +108,14 @@
         ;                                              EOV5; the list is partial); HidePointer and
         ;                                              ShowPointer do nothing when it is set (the
         ;                                              tests at 1BBE:0006 and 1BBE:00F1)
-        EXTRN   g814E:WORD              ; @ ds:814E: screen width minus 1, 13Fh; the handler clamps
-        ;                                              with the literal 13Fh, not with this variable
-        EXTRN   g8152:WORD              ; @ ds:8152: screen height minus 1, 0C7h (set at
-        ;                                              1A72:0104); this unit never reads it: the
-        ;                                              handler clamps no y at all
+        EXTRN   g814E:WORD              ; @ ds:814E: screen width minus 1, 13Fh; the pointer
+        ;                                              placer reads it as the x clamp limit
+        ;                                              (E1BF3.ASM:29, :31); this unit clamps with
+        ;                                              the literal 13Fh, not with this variable
+        EXTRN   g8152:WORD              ; @ ds:8152: screen height minus 1, 0C7h, set at
+        ;                                              1A72:0104. The pointer placer reads it as
+        ;                                              the y clamp limit (E1BF3.ASM:38, :40); this
+        ;                                              unit never reads it and clamps no y
         EXTRN   _gDrawnX:WORD              ; @ ds:815C: the position the pointer was last drawn at,
         ;                                              copied by ShowPointer (1BBE:0111-0114)
         EXTRN   _gDrawnY:WORD              ; @ ds:815E: the position the pointer was last drawn at,
@@ -260,7 +270,8 @@ _Int3FHandler ENDP
 ; it records that (DGROUP:8144 = 1) and doubles the constant centre 0A0h before setting
 ; the position (function 4). It installs 1A72:017A for moves and the left and right buttons
 ; (function 0Ch, mask 1Fh) and returns 1 in AX; with no driver it returns 0. Called from StartupGame
-; (07C8:0199, E07C8.C:236). The DGROUP defaults are the middle of a 320x200 screen and the screen
+; (E07C8.C:236, the `lcall 1A72:00DA` at 07C8:0238; that function's entry is 07C8:0199). The
+; DGROUP defaults are the middle of a 320x200 screen and the screen
 ; bounds.
         PUBLIC  _InitMouse              ; @ 1A72:00DA
 _InitMouse PROC FAR
@@ -443,7 +454,7 @@ L027F:  popf
         ret
 _InitMouse ENDP
 
-; 1A72:0285: remove the mouse event handler, but only when one was installed (DGROUP:8148 = 1).
+; 1A72:0285: remove the mouse event handler, but only when one was installed (DGROUP:8148 nonzero).
 ; INT 33h function 0Ch with mask 0 clears the handler; ES:DX = CS:1A72:017A with mask 0 (INT 33h
 ; wants ES:DX set even for a null mask [H]). Called from ShutdownGame (07C8:058A, E07C8.C:361), at
 ; E07C8.C:382 under `if (gMouseHandlerInstalled)` (E07C8.C:381).
@@ -540,8 +551,11 @@ _DisableInterrupts ENDP
 ; [bp+8]. When the old segment was nonzero it copies 16 bytes from the old target to the new one,
 ; with interrupts disabled around the whole sequence (`cli` at 1A72:0313); it ends with an
 ; unconditional `sti` (1A72:0330), so a caller that enters with interrupts off returns with them on.
-; Called from the 17A6 unit at 0459 with CS:0304 and at 050D with the buffer whose pointer 17A6:0446
-; saved through 033A.
+; The 17A6 unit uses it to save and restore the 16 bytes under the pointer that DGROUP:80AA reads.
+; At 17A6:0446 it reads the pointer through 033A and saves it (gSavedFarOff and gSavedFarSeg,
+; E17A6.ASM:93-94), then calls this with CS:0304 (the 16 byte gSaveBuf, E17A6.ASM:95) at
+; 17A6:0459, which copies the game's bytes into the buffer; at 17A6:050D it calls this with
+; the saved pointer, which copies them back onto the game's buffer.
         PUBLIC  _SetFarPointer          ; @ 1A72:02FE
 _SetFarPointer PROC FAR
         push    bp
