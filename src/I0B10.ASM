@@ -1,12 +1,12 @@
 ; Unit at INTRO.EXE 0B10:0000 (139 bytes, 3 functions): far copy with normalized far pointers. It is
 ; the same module as EOB.EXE's 1BA8:0005 (src/E1BA8.ASM): the EOB unit starts at 1BA8:0005 (its one
 ; leading data byte) and this one at 0B10:0000, so the EOB module's Unpack0 is at unit offset 1 and
-; this one's at unit offset 0, and the two unit starts differ by five bytes: every function here sits
-; six bytes below its EOB twin (0B10:0000 against 1BA8:0006). Unpack0 (0B10:0000) copies CX bytes and
-; then BX blocks of 64 KiB, renormalizing both far pointers after every block; NormalizeFarPointer
-; (0B10:006C) normalizes a far pointer passed by value and returns it in DX:AX; NormFar (0B10:007B)
-; is the normalizer itself, given AX = offset, DX = segment it returns AX = offset and 0Fh, DX =
-; segment plus offset shifted right four.
+; this one's at unit offset 0, and their segment offsets differ by five (0005 against 0000): every
+; function here sits six bytes below its EOB twin (0B10:0000 against 1BA8:0006). Unpack0 (0B10:0000)
+; copies CX bytes and then BX blocks of 64 KiB, renormalizing both far pointers before the first copy
+; and after every block; NormalizeFarPointer (0B10:006C) normalizes a far pointer passed by value and
+; returns it in DX:AX; NormFar (0B10:007B) is the normalizer itself, given AX = offset, DX = segment
+; it returns AX = offset and 0Fh, DX = segment plus offset shifted right four.
 ;
 ; Unpack0 has two callers: Unpack (0AED:00CB, format 0 only, src/I0AED.C) and ReadFromMemory
 ; (0B5D:1236, a plain copy from an in-memory file, not an unpacker, EOB twin 1C0E:1240).
@@ -23,9 +23,10 @@
 
         PUBLIC  _Unpack0                ; @ 0B10:0000
 ; 0B10:0000: copy `len` bytes from the far pointer `src` to the far pointer `dst`, renormalizing both
-; after every block. src is at [bp+6] (offset) / [bp+8] (segment), dst at [bp+0Ah] / [bp+0Ch], and the
-; 32-bit len arrives as CX = low word at [bp+0Eh] and BX = high word at [bp+10h] (the blocks of
-; 64 KiB), the layout of the prototype in src/I0AED.C. Returns nothing.
+; far pointers before the first copy and after every block. src is at [bp+6] (offset) / [bp+8]
+; (segment), dst at [bp+0Ah] / [bp+0Ch]. The 32-bit len is on the stack, low word at [bp+0Eh] and
+; high word at [bp+10h]; the body loads them into CX and BX, and BX is the count of 64 KiB blocks,
+; the layout of the prototype in src/I0AED.C. Returns nothing.
 _Unpack0 PROC FAR
         push    bp
         mov     bp,sp
@@ -107,8 +108,8 @@ _NormalizeFarPointer ENDP
 
         PUBLIC  _NormFar                ; @ 0B10:007B
 ; 0B10:007B: normalize the far pointer AX = offset, DX = segment into DX:AX: AX becomes offset & 0Fh
-; and DX becomes segment plus offset shifted right four (the paragraph the offset's top nibble
-; points into). Returns the normalized pointer in DX:AX.
+; and DX becomes segment plus offset shifted right four (the whole paragraphs the offset holds, 0 to
+; 0FFFh). Returns the normalized pointer in DX:AX.
 _NormFar PROC FAR
         push    ax
         shr     ax,1
