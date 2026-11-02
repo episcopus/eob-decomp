@@ -158,8 +158,8 @@ extern void f0EF3_12A1(void far *arg); /*@ 0EF3:12A1 */
 extern void f0EF3_0F86(void far *arg); /*@ 0EF3:0F86 */
 extern void ApplyCharEffect(char who, long interval, char value, char firstEmpty); /*@ 1414:05ED */
 extern void f1547_0991(int dir); /*@ 1547:0991 */
-extern void f1547_033F(int who); /*@ 1547:033F */
-extern void f1547_0544(int who); /*@ 1547:0544 */
+extern void DrawMemberHp(int who); /*@ 1547:033F */
+extern void DrawMemberPortrait(int who); /*@ 1547:0544 */
 extern void PlaySound(int sound); /*@ 177D:0070 */
 extern void LockHidePointer(void); /*@ 1BBE:0307 */
 extern void LockShowPointer(void); /*@ 1BBE:0332 */
@@ -540,7 +540,7 @@ fail:
    it derates mE2 (clamped at 0), subtracts from hp, stores the amount in mE7, and at or below -10
    sets hp to -10, clears mE2, clears mE3 bit 2 and keeps only bit 0 of m01; it plays sound 0x16
    for the death and 0x15 otherwise, runs the mDF descending effect through f0EF3_0F86 when it runs
-   out, redraws through f1547_0991 (or f1547_0544 when gFB44 is set), triggers the party-wipe
+   out, redraws through f1547_0991 (or DrawMemberPortrait when gFB44 is set), triggers the party-wipe
    ending when hp is at or below -10 and arms ApplyCharEffect(who, 0x12, 6, 1). Called by 0EF3,
    0E08E6, 122E, 1414 and overlay 6.
    DRAFT: the mE2 clamp differs. The original tests the record offset, not the byte: it emits
@@ -579,13 +579,13 @@ fail:
     if (gFB44 == 0)
         f1547_0991(who);
     else
-        f1547_0544(who);
+        DrawMemberPortrait(who);
     if (rec->hp <= -10)
         CheckPartyWiped();
     ApplyCharEffect(who, 0x12, 6, 1);
 }
 /* 0DE8:0ADB: heals character `who` by `amount` hit points when the f0D1C_0670(who, 3) condition
-   holds, clamping at the record's m1C maximum, then redraws the character through f1547_033F and
+   holds, clamping at the record's m1C maximum, then redraws the character through DrawMemberHp and
    f1547_0991. Called by 0BD2, 0EF3 and 122E. */
 /*@ 0DE8:0ADB */ void HealCharacter(int who, int amount)
 {
@@ -598,7 +598,7 @@ fail:
         rec->hp = rec->m1C;
     else
         rec->hp = rec->hp + amount;
-    f1547_033F(who);
+    DrawMemberHp(who);
     f1547_0991(who);
 }
 

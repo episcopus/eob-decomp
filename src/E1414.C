@@ -116,7 +116,7 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
 
 void ArmEffect(int idx, int active);
 extern void DrawText(char *text); /*@ 1DE7:060A */
-extern void f1547_04A0(int member); /*@ 1547:04A0 */
+extern void DrawMemberLevel(int member); /*@ 1547:04A0 */
 extern void f122E_0896(int member, int a); /*@ 122E:0896 */
 extern void f122E_1DA8(int member, int a); /*@ 122E:1DA8 */
 extern int f08E6_189D(struct Obj28 far *obj, int a, int b); /*@ 08E6:189D */
@@ -656,7 +656,7 @@ extern int f0BD2_02B9(void far *head, int key, int item); /*@ 0BD2:02B9 */
         if (gChars[who].hp <= -10)
             continue;
         gChars[who].m23--;
-        f1547_04A0(who);
+        DrawMemberLevel(who);
     }
 }
 /* 1414:0CE7: effect 15 of the table. For every one of the 30 objects at ds:8A82 that wins a

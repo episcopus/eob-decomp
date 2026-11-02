@@ -122,7 +122,7 @@ extern void DrawText(char far *text); /*@ 1DE7:060A */
 extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
 
 extern void f1547_0991(int dir); /*@ 1547:0991 */
-extern void f1547_07E7(char who, char slot); /*@ 1547:07E7 */
+extern void DrawMemberSlot(char who, char slot); /*@ 1547:07E7 */
 extern void f0BD2_0917(int who, int slot, int one); /*@ 0BD2:0917 */
 extern void f0BD2_01D0(void far *head, int key, int item, int sound); /*@ 0BD2:01D0 */
 extern int f0BD2_02B9(void far *head, int key, int item); /*@ 0BD2:02B9 */
@@ -267,7 +267,7 @@ int f0D1C_02DC(void);
    all carried items whose ds:8DD2 record has m02 == `field2` and m0B == `fieldB`
    (FindCarriedSlot's match): clears the item's m04 (sets it to -1), clears the character's slot,
    and redraws. Returns 1 when at least one item was removed, otherwise 0. The redraw paths: when
-   gFB44 is 0 and the slot is one of the first two of a character before the sixth, f1547_07E7;
+   gFB44 is 0 and the slot is one of the first two of a character before the sixth, DrawMemberSlot;
    when gFB44 is 1 and the character is the selected one, f0BD2_0917; and when the mouse is
    enabled, the item in the slot f0D1C_02DC names is cleared and redrawn through SetMouseItem.
    Called by overlays 5. What m02, m0B and m04 mean is not established. */
@@ -289,7 +289,7 @@ int f0D1C_02DC(void);
             found = 1;
             if (gFB44 == 0) {
                 if (slot < 2 && who < 5)
-                    f1547_07E7(who, slot);
+                    DrawMemberSlot(who, slot);
             }
             if (gFB44 == 1 && gA99A == who)
                 f0BD2_0917(who, slot, 1);

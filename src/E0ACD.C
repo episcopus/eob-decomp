@@ -124,7 +124,7 @@ extern void f0BD2_01D0(void far *head, int key, int item, int sound); /*@ 0BD2:0
 extern int f0BD2_02B9(void far *head, int key, int item); /*@ 0BD2:02B9 */
 extern void f0BD2_0917(int who, int slot, int one); /*@ 0BD2:0917 */
 extern int DispatchKeyWait(void far *list); /*@ 16A5:005A */
-extern void f1547_04A0(int who); /*@ 1547:04A0 */
+extern void DrawMemberLevel(int who); /*@ 1547:04A0 */
 extern void f122E_1DA8(int a, int b); /*@ 122E:1DA8 */
 extern void RunEffects(void); /*@ 1414:04E7 */
 extern void TurnUndead(void); /*@ 0D1C:0A43 */
@@ -533,7 +533,7 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
             rec->m23 += gTable8DD2[item].m0B;
         gTable8DD2[item].m04 = -1;
         SetMouseItem(0);
-        f1547_04A0(index);
+        DrawMemberLevel(index);
         PlaySound(9);
     } else if (item != 0) {
         DrawText("You may only eat food!\r");
