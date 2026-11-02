@@ -143,7 +143,7 @@ extern int GetClampedTableByte(int col, int row); /*@ 0A72:0597 */
 extern void f1A29_008B(int mode, void far *src, int x, int y, int region); /*@ 1A29:008B */
 extern void f1A29_000F(int mode, void far *src, int x, int y, int region); /*@ 1A29:000F */
 extern void DrawFilledPanel(int x1, int y1, int x2, int y2, int c1, int c2, int c3); /*@ 082C:09D5 */
-extern int f17A6_0314(int obj, int volume); /*@ 17A6:0314 */
+extern int DirectionFromPoints(int obj, int volume); /*@ 17A6:0314 */
 extern void DamageObject(struct Obj28 far *obj, int n); /*@ 08E6:0FBE */
 
 int f0D1C_0670(int who, int mask);
@@ -597,7 +597,7 @@ int f0D1C_02DC(void);
 /* 0D1C:09CB: Purpose unknown: a per-object check. It takes the object's ds:1A3B record's m19 as
    a row and GetClampedTableByte(column, m19) as a value. A value of -1 calls DamageObject(obj, 100)
    and returns 1. Otherwise, when `threshold` is below the value it returns 0; else it sets bit 3
-   of obj->m16, stores (f17A6_0314(obj->m02, gSoundVolume) ^ 4) >> 1 in obj->m05 and returns 1.
+   of obj->m16, stores (DirectionFromPoints(obj->m02, gSoundVolume) ^ 4) >> 1 in obj->m05 and returns 1.
    Called by 0D1C:0A43 and 17A6. */
 /*@ 0D1C:09CB */ int f0D1C_09CB(struct Obj28 far *obj, int threshold, int column)
 {
@@ -609,7 +609,7 @@ int f0D1C_02DC(void);
     if (value != -1) {
         if (threshold >= value) {
             obj->m16 |= 8;
-            obj->m05 = (f17A6_0314(obj->m02, gSoundVolume) ^ 4) >> 1;
+            obj->m05 = (DirectionFromPoints(obj->m02, gSoundVolume) ^ 4) >> 1;
             return 1;
         }
     } else {

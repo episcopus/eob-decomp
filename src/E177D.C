@@ -64,7 +64,7 @@ extern int gCurAttenuation; /*@ ds:5E24 */  /* the attenuation of gCurSound: a l
                                           quieter (the level fades toward 3Fh, 177D:01AF to 01C7),
                                           zero means no fade but the sound still plays (177D:01A8
                                           skips only the fade); 10h or more skips the AdLib play
-                                          (177D:012B). From f17A6_0F61(gSoundVolume, volume) at
+                                          (177D:012B). From Distance(gSoundVolume, volume) at
                                           177D:026E, not bounded here; used only in this file */
 extern int gPrevSound; /*@ ds:5E26 */  /* the sound whose driver registers gSoundLevel and gSoundAmp hold,
                                           restored through 0000:03B0 before the next sound */
@@ -80,10 +80,10 @@ extern int gSoundAmp; /*@ ds:5E2A */  /* the value read from register 1 of the r
                                          block 20h (waveform and multiplier), not clearly an amplitude */
 extern int gSoundVolume; /*@ ds:FBCA */  /* the sound setting PlaySoundDefault (177D:00F3) passes;
                                            PlaySoundVolume passes it as the first argument of
-                                           f17A6_0F61 together with its `volume` to get gCurAttenuation
+                                           Distance together with its `volume` to get gCurAttenuation
                                            (177D:026A pushes it, 177D:026E is the call). Also read by
                                            src/E0D1C.C:352 and :358, compared with an index by
-                                           src/E1414.C:221 and passed to f17A6_0F61 in src/EOV6.C:410 */
+                                           src/E1414.C:221 and passed to Distance in src/EOV6.C:410 */
 
 extern unsigned char far gDrvReg; /*@ 0000:3B36 */  /* the driver's busy flag: the program waits for
                                                        it to clear before it writes the sound
@@ -114,7 +114,7 @@ extern void f0_03FA(void); /*@ 0000:03FA */
 extern void f0_400C(int sound); /*@ 0000:400C */
 extern void StartSound(void far *p); /*@ 1948:0418 */
 extern void SoundDriverResume(void); /*@ 1948:0458 */
-extern int f17A6_0F61(int x, int y); /*@ 17A6:0F61 */
+extern int Distance(int x, int y); /*@ 17A6:0F61 */
 
 /* forward declaration: PlaySoundDefault (177D:00F3) calls it before its definition below */
 void PlaySoundVolume(int sound, int volume);
@@ -189,7 +189,7 @@ void PlaySoundVolume(int sound, int volume);
 }
 
 /* 177D:0106: records the game sound numbered `sound` and the volume `volume` for a later call;
-   `volume` becomes the attenuation gCurAttenuation = volume ? f17A6_0F61(gSoundVolume, volume) : 0
+   `volume` becomes the attenuation gCurAttenuation = volume ? Distance(gSoundVolume, volume) : 0
    (177D:0261 to 0279: 177D:0267 pushes `volume`, 177D:026A pushes gSoundVolume, 177D:026E is the
    call). When a sound was already recorded by the previous call (gCurSound > 0), it first retunes
    and restarts that recorded sound at the attenuation that call recorded. So a call plays the sound
@@ -212,7 +212,7 @@ void PlaySoundVolume(int sound, int volume);
    QUIRK 177D:0288: unlike PlaySound there is no `gSoundMap[sound] < 96h` test, so a map value of 96h
    or more is recorded and played by the next call (through 0000:400C at 177D:01F2 on AdLib, left
    masked to seven bits at 177D:0240 on the speaker cards). Finally
-   gCurAttenuation = volume ? f17A6_0F61(gSoundVolume, volume) : 0, then gCurSound =
+   gCurAttenuation = volume ? Distance(gSoundVolume, volume) : 0, then gCurSound =
    gSoundMap[sound]. Does nothing when sound is off (gSoundOn). */
 /*@ 177D:0106 */ void PlaySoundVolume(int sound, int volume)
 {
@@ -260,6 +260,6 @@ void PlaySoundVolume(int sound, int volume);
             StartSound(routine);
         }
     }
-    gCurAttenuation = volume ? f17A6_0F61(gSoundVolume, volume) : 0;
+    gCurAttenuation = volume ? Distance(gSoundVolume, volume) : 0;
     gCurSound = gSoundMap[sound];
 }

@@ -75,7 +75,7 @@ extern char *SkipStrings(char *s, int n); /*@ 0D1C:07A7 */
 extern void DrawShadowText(char *text, int x, int y, int colour, int flag); /*@ 082C:0898 */
 extern void WaitTicks(int n); /*@ 082C:0425 */
 extern int far RollDice(char count, char sides, char bonus); /*@ 082C:0458 */
-extern int f17A6_0F61(int x, int y); /*@ 17A6:0F61 */
+extern int Distance(int x, int y); /*@ 17A6:0F61 */
 extern void RedrawMember(int member); /*@ 1547:0991 */
 extern void DamageCharacter(int member, int what); /*@ 0DE8:09B9 */
 extern void UpdateObjects(int kind); /*@ 08E6:0CC8 */
@@ -390,7 +390,7 @@ done:
 }
 /* ovl6:09D2: the "monsters are near" test. It selects the 6x6 font, marks the object update
    (gF442) and updates objects 0 and 1, then scans the 30 28-byte records at ds:8A84: when
-   f17A6_0F61(gSoundVolume, record.value) is below two a monster is close, so it switches back to
+   Distance(gSoundVolume, record.value) is below two a monster is close, so it switches back to
    the previous region (saved in g811F), draws "\rYou can't rest here, monsters are near." and
    returns 1. Restores the caller's font and returns 0 when nothing is close. Called at the start
    of the camp loop. */
@@ -407,7 +407,7 @@ done:
     UpdateObjects(1);
     gF442 = 0;
     for (i = 0; i < 0x1e; i++) {
-        if (f17A6_0F61(gSoundVolume, gTable8A84[i].value) < 2) {
+        if (Distance(gSoundVolume, gTable8A84[i].value) < 2) {
             member = g811F;
             SetTextWindow(7);
             g8115 = 0;
