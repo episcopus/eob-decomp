@@ -3,13 +3,16 @@
    singly linked list of screen items (nodes), 12 functions. A node is a struct with a far `next`
    pointer, an unsigned sort key, a flags word at +0E, a state word at +2E and a far callback at
    +30; the box coordinates the drawing routine uses sit at +1E..+24. DrawNode (16A5:07C3) first
-   reads the state word +2E: with the on bit 0x0001 set, modeB +0B picks the path; with 0x0004
-   set, modeC +0C does; only when both are clear does it draw by the kind +0A: art through
-   1A29:000F for kind 1, text through gDrawText ds:80CA for kind 2, a tile through gDraw805E
-   ds:805E for kind 3, the src10 pointer as a far callback for kind 4 (E16A5.C:655-657), and a
-   box through DrawBox 1A1F:000C or gDraw8066 ds:8066 for kinds 5 and 0, where kind 0 draws the
-   box only when the mode bytes say so: mode 2 draws with no state test, and mode 3 also needs
-   0x0008 (modeB) or 0x0010 (modeC) set (E16A5.C:663-671).
+   reads the state word +2E. The on bit 0x0001 and the 0x0004 bit are two separate tests: the
+   st1 block (E16A5.C:555) runs when 0x0001 is set and picks its path by modeB +0B, and the
+   st4 block (E16A5.C:597) runs when 0x0004 is set and picks its path by modeC +0C, so both run
+   when both bits are set. Only when both are clear does it draw by the kind +0A: the region
+   front end 1A29:000F for kind 1 (Purpose unknown, E1A29.C:68), called with the src14 or src10
+   pointer (E16A5.C:560, 643), text through gDrawText ds:80CA for kind 2, a tile through
+   gDraw805E ds:805E for kind 3, the src10 pointer as a far callback for kind 4 (E16A5.C:655-657),
+   and a box through DrawBox 1A1F:000C or gDraw8066 ds:8066 for kinds 5 and 0, where kind 0 draws
+   the box only when the mode bytes say so (inside this both-clear gate): mode 2 draws with no
+   state test, and mode 3 also needs 0x0008 (modeB) or 0x0010 (modeC) set (E16A5.C:663-671).
    The five state operations here (0073, 0154, 017B, 01E6, 02F5) and the dispatcher 16A5:00BD
    call it. ListAdd (1658:001E), used by other units, appends to a list; InsertNode (1658:03D6)
    here inserts in key order. Names and the unknown bit meanings are placeholders until the
@@ -99,7 +102,7 @@ extern unsigned g5E1E; /*@ ds:5E1E */
 extern void DrawNode(struct Node far *node); /*@ 16A5:07C3 */
 
 /* 1658:0003: stores the far pointer `next` in the node's own +00 field, so `node` is placed in
-   front of `next`, and returns `node`. InsertNode (1658:03D6, call at E1658.C:306) is the only
+   front of `next`, and returns `node`. InsertNode (1658:03D6, call at E1658.C:315) is the only
    caller in src/. */
 /*@ 1658:0003 */ struct Node far *LinkNode(struct Node far *next, struct Node far *node)
 {
@@ -195,7 +198,7 @@ extern void DrawNode(struct Node far *node); /*@ 16A5:07C3 */
    :3988, :4049, :4317, :4334, :4434; the EXTRN is at :47).
    QUIRK 1658:01A2: when the walk starts on the last node of a list (its `next` is null) and that
    node's key does not match, which includes every one-node list, `head = head->next`
-   (E1658.C:203) makes `head` a null far pointer; the loop test `while (head->next)` (E1658.C:204)
+   (E1658.C:212) makes `head` a null far pointer; the loop test `while (head->next)` (E1658.C:213)
    then reads the whole far pointer at 0000:0000 (both words; it is nonzero if either word is). If
    that pointer is nonzero the body runs again first and compares the key at 0000:0004; a match
    there returns the null pointer, the same as "not found", and otherwise the walk continues from
