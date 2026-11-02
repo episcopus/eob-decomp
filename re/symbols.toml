@@ -8790,6 +8790,7 @@ evidence = ["ovl", "near", "segment"]
 name = "DrawSheetCell"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "eov5_00a1"
@@ -8801,6 +8802,7 @@ notes = "matched 2026-11-02 under -v: the game modules were compiled with debug 
 name = "DrawCharPortrait"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "eov5_021c"
@@ -8811,6 +8813,7 @@ evidence = ["ovl", "near"]
 name = "ClearPanel"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "eov5_025f"
@@ -8821,6 +8824,7 @@ evidence = ["ovl", "near", "frame"]
 name = "MessagePanel"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "eov5_03a9"
@@ -8831,6 +8835,7 @@ evidence = ["ovl", "near"]
 name = "PrintTableString"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "eov5_03ef"
@@ -8841,6 +8846,7 @@ evidence = ["ovl", "near", "frame"]
 name = "DrawMenuRow"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "eov5_0455"
@@ -8851,6 +8857,7 @@ evidence = ["ovl", "near", "frame"]
 name = "SelectMenu"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "eov5_067b"
@@ -8861,6 +8868,7 @@ evidence = ["ovl", "near"]
 name = "ChooseChar"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "eov5_070e"
@@ -8871,6 +8879,7 @@ evidence = ["ovl", "near", "frame"]
 name = "AddPartyMember"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "eov5_0828"
@@ -8881,6 +8890,7 @@ evidence = ["ovl", "near", "frame"]
 name = "AddCharPanel"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "eov5_08d2"
@@ -8891,6 +8901,7 @@ evidence = ["ovl", "near", "frame"]
 name = "QueueItem"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "eov5_0924"
@@ -8901,6 +8912,7 @@ evidence = ["ovl", "near", "frame"]
 name = "TemplePanel"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "eov5_09c5"
@@ -8911,6 +8923,7 @@ evidence = ["ovl", "near", "frame"]
 name = "GiveItemPanel"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "eov5_0ab1"
@@ -8921,6 +8934,7 @@ evidence = ["ovl", "near", "frame"]
 name = "CheckChar0F7"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "eov5_0b16"
@@ -8931,6 +8945,7 @@ evidence = ["ovl", "near", "frame"]
 name = "CheckRemove6"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "eov5_0b58"
@@ -8941,6 +8956,7 @@ evidence = ["ovl", "near", "frame"]
 name = "ItemPanelDispatch"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "eov5_0bbe"
@@ -8951,6 +8967,7 @@ evidence = ["ovl", "near", "frame"]
 name = "BuildDeathList"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "eov5_0c9d"
@@ -8961,6 +8978,7 @@ evidence = ["ovl", "near", "frame"]
 name = "HealLoop"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "eov5_0dbb"
@@ -8971,6 +8989,7 @@ evidence = ["ovl", "near", "frame"]
 name = "ResurrectPicker"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "eov5_0eb9"
@@ -8981,6 +9000,7 @@ evidence = ["ovl", "near", "frame"]
 name = "ResurrectPanel"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "eov5_0f77"
@@ -8991,6 +9011,7 @@ evidence = ["ovl", "near", "frame"]
 name = "AttackPanel"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "eov5_102c"
@@ -9001,6 +9022,7 @@ evidence = ["ovl", "near", "frame"]
 name = "KillHerPanel"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "eov5_1087"
@@ -9011,6 +9033,7 @@ evidence = ["ovl", "near", "frame"]
 name = "QuitPanel"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "eov5_10a6"
@@ -9021,6 +9044,7 @@ evidence = ["ovl", "near", "frame"]
 name = "SurrenderPanel"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "eov5_119e"
@@ -9031,6 +9055,7 @@ evidence = ["ovl", "near", "frame"]
 name = "FreeHimPanel"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "eov5_1204"
@@ -9041,6 +9066,7 @@ evidence = ["ovl", "near", "frame"]
 name = "TileAnimation"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "eov5_160a"
@@ -9051,6 +9077,7 @@ evidence = ["ovl", "near", "frame"]
 name = "WinnerPanel"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "eov5_17c8"
@@ -9061,6 +9088,7 @@ evidence = ["ovl", "near", "frame"]
 name = "EndingAnimation"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "eov5_1a82"
@@ -9072,6 +9100,7 @@ name = "CharOverlay"
 notes = "matched 2026-11-02. The earlier block is resolved: the far-object annotations 01D0/01D8/01F8/01F0 were the overlay's raw segment-table words (entry index*8), not paragraphs; the resolved segments are 1F1D/1F1E/2069/2067, i.e. gMapTiles/gMapSheet/gSheetDECORATE/gSheet2067, which the other overlay units (src/EOV2.C, src/EOV3.C) already annotate that way. Reading gMapTiles as signed char gives the original's sign-extending cbw (unsigned char gave mov ah,0, a one-byte shift). The eight menu cases are laid out 0,1,2,3,4,6,5,7 in the source, so the cs:1CCD jump table maps mode 5 to the 10A6 body and mode 6 to the 1087 body."
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "eov5_1cdd"
@@ -9083,6 +9112,7 @@ notes = "matched 2026-11-02 with 1A82: the same segment-table fix (gSheetDECORAT
 name = "UseItemPanel"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "eov5_1e1b"
@@ -9094,6 +9124,7 @@ name = "ShuffleGrid"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 notes = "matched 2026-11-02: each Fisher-Yates shuffle copies the loop index into the DI-resident register local (the original's mov di,si) and indexes with it; a third register variable spills (the frame grows), so the same register local serves the shuffle index and the draw loop's y coordinate."
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "eov6_0000"
