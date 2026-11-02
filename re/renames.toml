@@ -1062,3 +1062,147 @@ new = "SetMouseItem"
 kind = "function"
 why = "it sets the mouse item: SetCurrentItem stores n in ds:FBCE (the item index shown by the mouse, src/E0D1C.C:108) unless gMouseDisabled, shows \" taken.\" for the current window record, and passes the item's icon gIconsDDE4[n] to the pointer shape setter; src/E0D1C.C:270 and :298 say an item is cleared and redrawn through it (review of e07a9)"
 date = "2026-11-01"
+
+[[rename]]
+id = "0BD2:019F=RedrawSelectedRow"
+addr = "0BD2:019F"
+old = "f0BD2_019F"
+new = "RedrawSelectedRow"
+kind = "function"
+why = "0BD2:019F dispatches on gFB44 to redraw the selected row through 0BD2:0BA0 or 0BD2:0C8E"
+date = "2026-11-01"
+
+[[rename]]
+id = "0BD2:01D0=InsertListItem"
+addr = "0BD2:01D0"
+old = "f0BD2_01D0"
+new = "InsertListItem"
+kind = "function"
+why = "0BD2:01D0 inserts item at the head of the circular list head through gItems m06/m08"
+date = "2026-11-01"
+
+[[rename]]
+id = "0BD2:02B9=RemoveListItem"
+addr = "0BD2:02B9"
+old = "f0BD2_02B9"
+new = "RemoveListItem"
+kind = "function"
+why = "0BD2:02B9 unlinks and returns the item whose m03 equals key or that equals target"
+date = "2026-11-01"
+
+[[rename]]
+id = "0BD2:0385=ScanListItem"
+addr = "0BD2:0385"
+old = "f0BD2_0385"
+new = "ScanListItem"
+kind = "function"
+why = "0BD2:0385 walks the circular list and returns the first match or a count"
+date = "2026-11-01"
+
+[[rename]]
+id = "0BD2:040E=MarkListItems"
+addr = "0BD2:040E"
+old = "f0BD2_040E"
+new = "MarkListItems"
+kind = "function"
+why = "0BD2:040E sets flags bit 0x40 of every item in the circular list"
+date = "2026-11-01"
+
+[[rename]]
+id = "0BD2:0458=PushListItem"
+addr = "0BD2:0458"
+old = "f0BD2_0458"
+new = "PushListItem"
+kind = "function"
+why = "0BD2:0458 queues an item at gB899 + vol*9 through 0BD2:01D0"
+date = "2026-11-01"
+
+[[rename]]
+id = "0BD2:04AA=DrainListItem"
+addr = "0BD2:04AA"
+old = "f0BD2_04AA"
+new = "DrainListItem"
+kind = "function"
+why = "0BD2:04AA drains the gB899 list, freeing or re-queueing each item"
+date = "2026-11-01"
+
+[[rename]]
+id = "0BD2:07DE=AddDDEffect"
+addr = "0BD2:07DE"
+old = "f0BD2_07DE"
+new = "AddDDEffect"
+kind = "function"
+why = "0BD2:07DE reserves a ds:DD2C effect record and queues the item"
+date = "2026-11-01"
+
+[[rename]]
+id = "0BD2:089E=CopyItemToFreeSlot"
+addr = "0BD2:089E"
+old = "f0BD2_089E"
+new = "CopyItemToFreeSlot"
+kind = "function"
+why = "0BD2:089E copies an item record into the first free slot from index 1"
+date = "2026-11-01"
+
+[[rename]]
+id = "0BD2:0917=DrawItemRow"
+addr = "0BD2:0917"
+old = "f0BD2_0917"
+new = "DrawItemRow"
+kind = "function"
+why = "0BD2:0917 draws a character's item row panel, count and icon"
+date = "2026-11-01"
+
+[[rename]]
+id = "0BD2:0ABE=RedrawRowArea"
+addr = "0BD2:0ABE"
+old = "f0BD2_0ABE"
+new = "RedrawRowArea"
+kind = "function"
+why = "0BD2:0ABE saves the item sheet rectangle and redraws the selected row"
+date = "2026-11-01"
+
+[[rename]]
+id = "0BD2:0BA0=UseSelectedItem"
+addr = "0BD2:0BA0"
+old = "f0BD2_0BA0"
+new = "UseSelectedItem"
+kind = "function"
+why = "0BD2:0BA0 uses the item in slot of the selected character through 0BD2:0AF2"
+date = "2026-11-01"
+
+[[rename]]
+id = "0BD2:0C8E=SwapSelectedItem"
+addr = "0BD2:0C8E"
+old = "f0BD2_0C8E"
+new = "SwapSelectedItem"
+kind = "function"
+why = "0BD2:0C8E swaps the item in a slot with the mouse's item"
+date = "2026-11-01"
+
+[[rename]]
+id = "0BD2:0EE8=UseWandItem"
+addr = "0BD2:0EE8"
+old = "f0BD2_0EE8"
+new = "UseWandItem"
+kind = "function"
+why = "0BD2:0EE8 uses the wand-like item in a slot"
+date = "2026-11-01"
+
+[[rename]]
+id = "0BD2:11FD=ItemClassAllowed"
+addr = "0BD2:11FD"
+old = "f0BD2_11FD"
+new = "ItemClassAllowed"
+kind = "function"
+why = "0BD2:11FD tests an item type's class mask against the character"
+date = "2026-11-01"
+
+[[rename]]
+id = "0BD2:1244=FirstTwoSlots"
+addr = "0BD2:1244"
+old = "f0BD2_1244"
+new = "FirstTwoSlots"
+kind = "function"
+why = "0BD2:1244 returns slot when 0 or 1, else -1"
+date = "2026-11-01"

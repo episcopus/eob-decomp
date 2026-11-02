@@ -109,6 +109,10 @@ extern int g17CE[]; /*@ ds:17CE */          /* a per-character word (the item ro
 extern unsigned char g1804[]; /*@ ds:1804 */ /* a per-character byte (the item row's y) */
 extern signed char g3875[]; /*@ ds:3875 */  /* a per-character byte (0, 1 or 2) */
 extern signed char g3890[]; /*@ ds:3890 */  /* a three-byte table read by 0BD2:0917 */
+extern signed char g38FA[]; /*@ ds:38FA */  /* a byte table indexed by an item's m0B in 0BD2:0EE8 */
+extern void f0EF3_28ED(int a, int b, int c); /*@ 0EF3:28ED */
+extern void f0EF3_06E7(void); /*@ 0EF3:06E7 */
+extern void f08E6_0297(struct Obj28 far *obj, int a, int b); /*@ 08E6:0297 */
 
 extern int f0D1C_02DC(void); /*@ 0D1C:02DC */
 extern void SetMouseItem(int n); /*@ 07A9:010C */
@@ -122,13 +126,13 @@ extern int sprintf(char far *buf, char far *fmt, ...); /*@ 0000:57AE */
 extern int far RollDice(char count, char sides, char bonus); /*@ 082C:0458 */
 
 /* functions of this unit, forward (address order) */
-void f0BD2_01D0(void far *head, int key, int item, int sound);
-int f0BD2_02B9(void far *head, int key, int target);
-void f0BD2_0917(int who, int slot, int one);
+void InsertListItem(void far *head, int key, int item, int sound);
+int RemoveListItem(void far *head, int key, int target);
+void DrawItemRow(int who, int slot, int one);
 int f0BD2_0AF2(int item, int who, int row);
-void f0BD2_0BA0(int slot);
-void f0BD2_0C8E(int who, int row);
-int f0BD2_11FD(int who, int item);
+void UseSelectedItem(int slot);
+void SwapSelectedItem(int who, int row);
+int ItemClassAllowed(int who, int item);
 
 /* functions of this unit, in address order (stubs not yet written) */
 /*@ 0BD2:000E stub */ void f0BD2_000E(void) {}
@@ -149,7 +153,7 @@ int f0BD2_11FD(int who, int item);
     } else {
         gChars[who].m77[row] = 0;
         if (gFB44 == 1)
-            f0BD2_0917(row, 1, 0);
+            DrawItemRow(row, 1, 0);
         else if (gFB44 == 0)
             f1547_0991(who);
     }
@@ -158,19 +162,19 @@ int f0BD2_11FD(int who, int item);
 
 /* 0BD2:019F: refreshes the current row: in mode 1 through 0BD2:0BA0 with the selected row, in any
    mode other than 2 through 0BD2:0C8E with the selected character and row. Purpose unknown. */
-/*@ 0BD2:019F */ void f0BD2_019F(void)
+/*@ 0BD2:019F */ void RedrawSelectedRow(void)
 {
     if (gFB44 == 1)
-        f0BD2_0BA0(gF51A);
+        UseSelectedItem(gF51A);
     else if (gFB44 != 2)
-        f0BD2_0C8E(gA99A, gF51A);
+        SwapSelectedItem(gA99A, gF51A);
 }
 
 /* 0BD2:01D0: inserts the item `item` at the head of the circular list `head`, stamping it with the
    key `key` and the sound `sound` (m0A becomes gFBC8 or -1 by the key's sign). DRAFT: our build
    preloads key into DI (`mov di,[bp+0xa]`) where the original loads item into SI first; the rest of
    the body follows, so it is a register-allocation difference, not a source one. */
-/*@ 0BD2:01D0 draft */ void f0BD2_01D0(void far *head, int key, int item, int sound)
+/*@ 0BD2:01D0 draft */ void InsertListItem(void far *head, int key, int item, int sound)
 {
     struct ItemRecord *rec;
     struct ItemRecord *cur;
@@ -204,7 +208,7 @@ int f0BD2_11FD(int who, int item);
    `target` is -1) or that equals `target`, unlinks it, and returns the item; 0 when none matches.
    DRAFT: our build keeps the loop counter in CX and `next` in DI, the original the counter in DI and
    `next` in CX; same instructions otherwise. */
-/*@ 0BD2:02B9 draft */ int f0BD2_02B9(void far *head, int key, int target)
+/*@ 0BD2:02B9 draft */ int RemoveListItem(void far *head, int key, int target)
 {
     int start;
     int item;
@@ -252,7 +256,7 @@ next:
    `type` (or all when `type` is -1), otherwise the item `target` itself; returns the first match's
    index when `count` is 0, otherwise the number of matches. Purpose unknown. DRAFT: the original's
    first `return 0` is a `jmp` to the shared `xor ax,ax` tail (3 bytes); ours materialises it (5). */
-/*@ 0BD2:0385 draft */ int f0BD2_0385(void far *head, int target, int type, int count)
+/*@ 0BD2:0385 draft */ int ScanListItem(void far *head, int target, int type, int count)
 {
     int start;
     int cur;
@@ -290,7 +294,7 @@ next:
 }
 
 /* 0BD2:040E: sets bit 0x40 of the flags of every item in the circular list `head`. */
-/*@ 0BD2:040E */ void f0BD2_040E(void far *head)
+/*@ 0BD2:040E */ void MarkListItems(void far *head)
 {
     int start;
     int item;
@@ -312,9 +316,9 @@ next:
 
 /* 0BD2:0458: queues item `item` at head gB899 + `vol` * 9 through 0BD2:01D0, then, while the item
    still links onward, makes that head the item's next. Purpose unknown. */
-/*@ 0BD2:0458 */ void f0BD2_0458(int vol, int item, int value)
+/*@ 0BD2:0458 */ void PushListItem(int vol, int item, int value)
 {
-    f0BD2_01D0((void far *)(gB899 + vol * 9), vol, item, value);
+    InsertListItem((void far *)(gB899 + vol * 9), vol, item, value);
     if (gItems[item].m08 != item)
         *(int *)(gB899 + vol * 9) = gItems[item].m08;
 }
@@ -323,7 +327,7 @@ next:
    -1) are freed (m04 = -1, m0A = 0); the others are re-queued through 0BD2:01D0 in their original
    order. Purpose unknown. DRAFT: our build keeps `count` in DI, the original on the stack with DI as
    a scratch (`mov di,si`); two bytes apart. */
-/*@ 0BD2:04AA draft */ void f0BD2_04AA(int vol, int type)
+/*@ 0BD2:04AA draft */ void DrainListItem(int vol, int type)
 {
     int start;
     int item;
@@ -347,7 +351,7 @@ next:
             next = gItems[item].m08;
             gItems[item].m08 = 0;
             gItems[item].m06 = 0;
-            f0BD2_01D0((void far *)(gB899 + vol * 9), vol, item, gItems[item].m03);
+            InsertListItem((void far *)(gB899 + vol * 9), vol, item, gItems[item].m03);
         }
         item = next;
         count++;
@@ -359,7 +363,7 @@ next:
 /* 0BD2:07DE: reserves one of the ten effect records at ds:DD2C (returning 0 when all are live),
    queues `item` through 0BD2:01D0 with sound `kind | 4`, fills the record from the arguments and
    the kind-7 sound, and returns 1. */
-/*@ 0BD2:07DE */ int f0BD2_07DE(int who, int item, int volume, int kind, int page, int type)
+/*@ 0BD2:07DE */ int AddDDEffect(int who, int item, int volume, int kind, int page, int type)
 {
     struct DDRec *rec;
     int i;
@@ -371,7 +375,7 @@ next:
     }
     if (i == 10)
         return 0;
-    f0BD2_01D0((void far *)(gB899 + volume * 9), volume, item, kind | 4);
+    InsertListItem((void far *)(gB899 + volume * 9), volume, item, kind | 4);
     rec->active = 1;
     rec->m02 = 1;
     rec->m0C = 0;
@@ -394,7 +398,7 @@ next:
 /* 0BD2:089E: when item record `item` is live (m04 != -1), finds the first free record from index 1
    on, copies `item`'s 14 bytes into it with Unpack0, and returns the new index; 0 when none is
    free. Purpose unknown. */
-/*@ 0BD2:089E */ int f0BD2_089E(int item)
+/*@ 0BD2:089E */ int CopyItemToFreeSlot(int item)
 {
     struct ItemRecord *cand;
     struct ItemRecord *src;
@@ -425,7 +429,7 @@ next:
    and y g1804[who] sized by g3890[g3875[who]], and, when `slot` is nonzero and the row is the
    party's, the item icon. `one` selects the input mode and is stored in g8115 for the duration.
    Called by 0D1C and 0ACD. Purpose unknown. */
-/*@ 0BD2:0917 */ void f0BD2_0917(int who, int slot, int one)
+/*@ 0BD2:0917 */ void DrawItemRow(int who, int slot, int one)
 {
     int y;
     int item;
@@ -450,7 +454,7 @@ next:
                     kind != 1 ? gF57E : -1);
         if (kind == 1) {
             gFillRect(0xE3, 0x41, 0xEE, 0x45, 0xC);
-            count = f0BD2_0385(&gChars[gA99A].m77[who], -1, -1, 1);
+            count = ScanListItem(&gChars[gA99A].m77[who], -1, -1, 1);
             if (count < 10)
                 x = 0xE9;
             else
@@ -472,7 +476,7 @@ next:
 
 /* 0BD2:0ABE: when `one` is set, saves the 18x168 item sheet rectangle through the save-rect hook,
    then redraws the selected character's row. */
-/*@ 0BD2:0ABE */ void f0BD2_0ABE(int one)
+/*@ 0BD2:0ABE */ void RedrawRowArea(int one)
 {
     if (one)
         gSaveRect(0x16, 0, 0x12, 0xA8, gSegDF4E);
@@ -489,7 +493,7 @@ next:
     int mask;
 
     if (row == 0x11 && item != 0) {
-        if (!f0BD2_11FD(who, item)) {
+        if (!ItemClassAllowed(who, item)) {
             sprintf(gFileNameBuf, "%s can't wear that type of armor.\r", gChars[who].name);
             DrawText(gFileNameBuf);
             return 0;
@@ -509,7 +513,7 @@ next:
 /* 0BD2:0BA0: uses the item in slot `slot` of the selected character through 0BD2:0AF2. On success
    it either installs the item (slot 0x10) or swaps the mouse's item, redraws the row and recomputes
    the armour class. Purpose unknown. */
-/*@ 0BD2:0BA0 */ void f0BD2_0BA0(int slot)
+/*@ 0BD2:0BA0 */ void UseSelectedItem(int slot)
 {
     int saved;
     int item;
@@ -521,22 +525,22 @@ next:
     if (slot != 0x10) {
         SetMouseItem(saved);
         gChars[gA99A].m77[slot] = item;
-        f0BD2_0917(slot, 1, 0);
+        DrawItemRow(slot, 1, 0);
         ComputeArmourClass(gA99A);
     } else if (item == 0) {
-        saved = f0BD2_02B9(&gChars[gA99A].m97[0], 0, -1);
-        f0BD2_0917(slot, 1, 0);
+        saved = RemoveListItem(&gChars[gA99A].m97[0], 0, -1);
+        DrawItemRow(slot, 1, 0);
         SetMouseItem(saved);
     } else {
-        f0BD2_01D0((void far *)&gChars[gA99A].m97[0], 0xFFFE, item, 0);
-        f0BD2_0917(slot, 1, 0);
+        InsertListItem((void far *)&gChars[gA99A].m97[0], 0xFFFE, item, 0);
+        DrawItemRow(slot, 1, 0);
         SetMouseItem(0);
     }
 }
 
 /* 0BD2:0C8E: swaps the item in slot `row` of character `who` with the mouse's item when the row's
    class mask covers it, redrawing and recomputing the armour class. Purpose unknown. */
-/*@ 0BD2:0C8E */ void f0BD2_0C8E(int who, int row)
+/*@ 0BD2:0C8E */ void SwapSelectedItem(int who, int row)
 {
     int item;
     int slot;
@@ -562,13 +566,54 @@ next:
 
 /*@ 0BD2:0D2D stub */ void f0BD2_0D2D(void) {}
 
-/*@ 0BD2:0EE8 stub */ void f0BD2_0EE8(void) {}
+/* 0BD2:0EE8: uses the wand in slot `slot` of character `who`. When the item's m0B is 0 it reports
+   no effect; when it is not 5 it dispatches through 0EF3:28ED with g38FA[m0B]; for 5 it plays the
+   wand sound, and when the surroundings pass the g194B/gB894 tests, activates every gObjs record
+   whose m02 matches the page index, otherwise reports no effect. DRAFT: our build keeps the loop
+   counter in a register (0xa-byte frame), the original on the stack (0xc), and uses the same
+   instruction sequence otherwise. */
+/*@ 0BD2:0EE8 draft */ void UseWandItem(int who, int slot)
+{
+    int effect;
+    int x;
+    int y;
+    int i;
+    struct Obj28 *obj;
+    int type;
+
+    type = gItems[gChars[who].m77[slot]].m0B;
+    if (type == 0) {
+        DrawText("The wand has no apparent magical effect\r");
+        return;
+    }
+    if (type != 5) {
+        effect = g38FA[type];
+        f0EF3_28ED(who, effect, slot);
+        return;
+    }
+    x = f0D1C_00DA(gSoundVolume, gFBCC);
+    y = f0D1C_00DA(x, gFBCC);
+    PlaySound(0x62);
+    f0EF3_06E7();
+    if ((g194B[gB894[y * 9 + (gFBCC ^ 2)]] & 4) && !(gB894[y * 9 + 4] & 7)
+            && (gB894[x * 9 + 4] & 7)) {
+        obj = gObjs;
+        for (i = 0; i < 30; i++, obj++) {
+            if (obj->m02 == x) {
+                f08E6_0297(obj, y, -1);
+                gDF4C = 1;
+            }
+        }
+    } else {
+        DrawText("no effect.\r");
+    }
+}
 
 /*@ 0BD2:1001 stub */ void f0BD2_1001(void) {}
 
 /* 0BD2:11FD: returns 1 when `item` is empty, otherwise the item-type byte gItemTypes[m02].m05 ANDed
    with g1231[gChars[who].m20]. Purpose unknown. */
-/*@ 0BD2:11FD */ int f0BD2_11FD(int who, int item)
+/*@ 0BD2:11FD */ int ItemClassAllowed(int who, int item)
 {
     int result;
 
@@ -581,7 +626,7 @@ next:
 }
 
 /* 0BD2:1244: returns `slot` when it is 0 or 1, otherwise -1. Purpose unknown. */
-/*@ 0BD2:1244 */ int f0BD2_1244(int slot)
+/*@ 0BD2:1244 */ int FirstTwoSlots(int slot)
 {
     if (slot > 1)
         return -1;
