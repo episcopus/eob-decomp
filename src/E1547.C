@@ -1,10 +1,11 @@
 /* Unit at EOB.EXE 1547:0009 (4362 bytes, 8 functions): the character information screen. It draws
-   one party member's block (the bar at 0009, the HP label and ratio bar at 033F, the two carried
-   item slots at 07E7, the title and the stat lines at 0991), and the 0991 dispatcher redraws a
-   single member on the six-member screen. It reads the 243-byte character records at ds:F580
-   (struct CharRec, src/E0A72.C), the stat/class/race/alignment name tables at ds:1195, ds:11AD,
-   ds:11DD and ds:1240, and the row layout byte tables at ds:5D1C..ds:5D4E. Placeholder names until
-   the callers and the tables are understood. */
+   one party member's block: the status bar (0009), the HP line and ratio bar (033F), the portrait
+   (0544), the carried item slots (07E7), the action label (0642) and the title and stat lines
+   (0991, which dispatches to the rest). It reads the 243-byte character records at ds:F580 (struct
+   CharRec, src/E0A72.C), the stat/class/race/alignment name tables at ds:1195, ds:11AD, ds:11DD
+   and ds:1240, and the per-member row layout byte tables at ds:5D1C..ds:5D4E. 5 of the 8
+   functions are at L2; 0009 and 0544 are drafts blocked on the TCC `or ax,0` idiom
+   (re/symbols.toml e0d1c_0a43), and 0991 is a stub for the same reason. */
 
 /*@flags -ml -O -Z */
 
@@ -76,6 +77,10 @@ extern unsigned char g5D33[]; /*@ ds:5D33 */ /* item slot y by ((who & 6) + slot
 extern int gMouseDisabled; /*@ ds:814A */    /* nonzero disables the mouse (src/E07A9.C) */
 extern char gF51A; /*@ ds:F51A */            /* the selected row (src/E0ACD.C) */
 extern void far *gIcon8A7E; /*@ ds:8A7E */   /* the empty-slot highlight icon (src/EOV2.C) */
+extern void far *gIconF2F4; /*@ ds:F2F4 */   /* the dead-member portrait icon (src/EOV2.C) */
+extern void far *gIconDC94; /*@ ds:DC94 */   /* the wounded-member overlay icon (src/EOV2.C) */
+extern signed char g5D2C[]; /*@ ds:5D2C */   /* portrait x by (who & 1): 8, 80 */
+extern signed char g5D2E[]; /*@ ds:5D2E */   /* portrait y by (who >> 1): 11, 63, 115 */
 extern void far *gIconsDDE4[]; /*@ ds:DDE4 */ /* the item icon far pointers (src/E0D1C.C) */
 extern void far *gEmptySlotIcons[]; /*@ ds:DF38 */ /* the two no-item slot icons, gIconsDDE4[0x55]
                                                   and [0x56] (0xDDE4 + 0x55 * 4) */
@@ -100,8 +105,12 @@ extern int f0D1C_07DB(int who, int flag); /*@ 0D1C:07DB */
    when exactly one holds it is a DrawRect in `colour` (6 or 3 by video mode) for the "in play"
    one, or colour 5 otherwise; when both hold the interior is hatched, each row drawn in `colour`
    for the first condition and 5 for the second. Purpose unknown: what mE3's bits, mDF and mE0
-   mean is not established. Called by 0991 only. */
-/*@ 1547:0009 */ void DrawMemberBar(int who)
+   mean is not established. Called by 0991 only. DRAFT: matches every byte except the flag tests,
+   which the original emits as `mov ax,es:[bx+0xE3]; and ax,K; or ax,0` (1547:0065 and 1547:008F)
+   while `-ml -O -Z` folds them to `test word [bx+..],K` (the blocked TCC `or ax,0` idiom,
+   re/symbols.toml e0d1c_0a43). An `(unsigned)` cast on the AND reaches the mov/and/or form but the
+   compiler still writes `or ax,ax` where the original has `or ax,0`. */
+/*@ 1547:0009 draft */ void DrawMemberBar(int who)
 {
     int colour;
     struct CharRec far *rec;
@@ -118,8 +127,8 @@ extern int f0D1C_07DB(int who, int flag); /*@ 0D1C:07DB */
     if (!g8115)
         x += 0xb0;
     rec = &gChars[who];
-    frame = (unsigned)(rec->mE3 & 0x302) || rec->mDF || rec->mE0;
-    lit = (unsigned)(rec->mE3 & 0x4c8) || (gFBD2 & 0x30);
+    frame = (rec->mE3 & 0x302) || rec->mDF || rec->mE0;
+    lit = (rec->mE3 & 0x4c8) || (gFBD2 & 0x30);
     if (!frame && !lit) {
         gDrawLine(x, y, x + 0x3e, y, gFB4C);
         gDrawLine(x, y + 0x31, x + 0x3e, y + 0x31, gF53A);
@@ -249,12 +258,8 @@ extern int f0D1C_07DB(int who, int flag); /*@ 0D1C:07DB */
    inventory is up). It returns unless gFB44 is nonzero, the member passes f0D1C_0670(member, 1),
    m01 bit 0 is set and (while gFB44 is nonzero) the member is the selected gA99A. The bar is at
    (0xfa, 0x19): value m23 against 100, 51 wide, 5 tall, the colour picked by a level state (1
-   below 0x21, 2 below 0x14, 0 above). Called by 1414:0C82 (DecayMemberState, src/E1414.C) only.
-   DRAFT: matches every byte except the second early return's branch form: the original ends it with
-   a short `je 009e` (1547:0023), our `-ml -O -Z` build expands it to `jne @@; jmp end; nop`
-   (3 bytes longer). Tried two ifs, `||`, `== 0`, `!`, `< 1`, `else`, nested ifs and a `goto`; all
-   expand. Same TCC branch-layout class as 0ACD:091C and 0D1C:0903 (playbook 30). */
-/*@ 1547:04A0 draft */ void DrawMemberLevel(int member)
+   below 0x21, 2 below 0x14, 0 above). Called by 1414:0C82 (DecayMemberState, src/E1414.C) only. */
+/*@ 1547:04A0 */ void DrawMemberLevel(int member)
 {
     struct CharRec far *rec;
     int state;
@@ -275,7 +280,49 @@ extern int f0D1C_07DB(int who, int flag); /*@ 0D1C:07DB */
         state = 2;
     DrawRatioBar(0xfa, 0x19, rec->m23, 0x64, 0x33, 5, g5D29[state], gFB7A);
 }
-/*@ 1547:0544 stub */ void f1547_0544(void) {}
+/* 1547:0544: draws one member's portrait on the character screen. It returns unless the member
+   passes f0D1C_0670(who, 1). The portrait corner is (g5D2C[who & 1], g5D2E[who >> 1]), the x
+   shifted by 0xB0 while no status line is up, or the fixed (0xb5, 3) while gFB44 is nonzero (and
+   only for the selected member gA99A). At hp == -10 it draws the dead portrait gIconF2F4 and
+   returns; when mE3 bit 2 is set and gFB44 is 0 it fills the portrait in colour 0xC and returns;
+   otherwise it draws the member's own portrait pointer (rec + 0x33) and, at hp below 1, the
+   wounded overlay gIconDC94. Called by f1547_0991 only. DRAFT: matches every byte except the mE3
+   bit test at 1547:05D6, where the original emits `and ax,4; or ax,0` and ours `test word
+   [bx+..],4` (the blocked TCC `or ax,0` idiom, re/symbols.toml e0d1c_0a43). */
+/*@ 1547:0544 draft */ void DrawMemberPortrait(int who)
+{
+    struct CharRec far *rec;
+    int x;
+    int y;
+
+    rec = &gChars[who];
+    if (!f0D1C_0670(who, 1))
+        return;
+    if (gFB44 == 0) {
+        x = g5D2C[who & 1];
+        y = g5D2E[who >> 1];
+        if (!g8115)
+            x += 0xb0;
+    } else {
+        if (gA99A != who)
+            return;
+        x = 0xb5;
+        y = 3;
+    }
+    if (rec->hp == -10) {
+        f1A29_000F(g8115, gIconF2F4, x, y, 0);
+        return;
+    }
+    if (rec->mE3 & 4) {
+        if (gFB44 == 0) {
+            gFillRect(x, y, x + 0x1f, y + 0x1f, 0xc);
+            return;
+        }
+    }
+    f1A29_000F(g8115, rec->portrait, x, y, 0);
+    if (rec->hp < 1)
+        f1A29_000F(g8115, gIconDC94, x, y, 0);
+}
 /* 1547:0642: draws the label of an item action at (x, y). It clears the second line buffer, sets
    the colour (0xF, or 2 while the video mode g8102 is 0), and then either draws the thrown-item
    icon gThrownIcon4 at (x - 1, y) through f1A29_000F when `action` is above -3, or fills a panel
@@ -335,7 +382,7 @@ extern int f0D1C_07DB(int who, int flag); /*@ 0D1C:07DB */
    line is up. It hides the pointer, fills the panel in gFB4C/gF53A/gF57E, outlines it in colour
    0xF when the mouse is enabled and the slot is the selected one (gA99A/gF51A), and then draws the
    slot: the action label DrawActionLabel when the record's mE8[slot] is set, else the item icon
-   through f0D1C_070F, else the empty-slot icon gIconsDDE4[0x55 + slot] through f1A29_000F. Last it
+   through f0D1C_070F, else the empty-slot icon gEmptySlotIcons[slot] through f1A29_000F. Last it
    draws the highlight icon gIcon8A7E unless the slot's m1E bit is set, f0D1C_07DB accepted it, hp
    is above 0 and m01 bit 2 is clear. Called by 0991 only. */
 /*@ 1547:07E7 */ void DrawMemberSlot(char who, char slot)
