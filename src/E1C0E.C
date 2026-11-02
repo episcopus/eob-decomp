@@ -58,6 +58,8 @@ extern int (far *g8111)(int mode, char far *name);  /*@ ds:8111: the retry file 
 extern signed char gLastDrive;           /*@ ds:FF00: highest drive _FindLastDrive found */
 extern int gSavedDrive;                  /*@ ds:FEFE: the drive getdisk returned at init */
 extern unsigned char gSearchAllDrives;   /*@ ds:81EA: nonzero: 1C0E:1310 also scans other drives */
+extern long gRecordLength;               /*@ ds:FF02: 1C0E:172E leaves the record's length here */
+extern long gRecordOffset;               /*@ ds:FF06: 1C0E:172E leaves the record's offset here */
 
 #define MAX_FILES      10
 #define SLOT_FREE      0x3fff   /* gFileHandles[i]: the slot holds no file */
@@ -466,4 +468,30 @@ extern int gFileHandles[];               /*@ ds:FEEA: DOS handle or SLOT_FREE pe
     gSearchAllDrives = 1;
 }
 
-/*@ 1C0E:172E stub */ long f1C0E_172E(int handle, char far *name) { }
+/* 1C0E:172E: walk the directory at the start of the open file `handle`: each record is a 4-byte
+   offset followed by a NUL-terminated name. Read past the records until `name` matches, read the
+   following record's offset, seek back to this record's offset and return the record's length
+   (next offset minus this offset), also left in ds:FF02 (length) and ds:FF06 (offset) for the
+   caller to store in the slot. */
+/*@ 1C0E:172E */ long LookupFileEntry(int handle, char far *name)
+{
+    char buf[14];
+    long offset;
+    long next;
+    int i;
+
+    handle &= HANDLE_MASK;
+    do {
+        read(handle, &offset, 4);
+        i = 0;
+        do {
+            read(handle, buf + i, 1);
+        } while (buf[i++] != 0);
+    } while (strcmp(buf, name) != 0);
+    read(handle, &next, 4);
+    lseek(handle, offset, 0);
+    next -= offset;
+    gRecordLength = next;
+    gRecordOffset = offset;
+    return next;
+}

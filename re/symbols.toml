@@ -5654,6 +5654,9 @@ unit = "e1c0e"
 addr = "1C0E:172E"
 size = 177
 evidence = ["far", "frame"]
+name = "LookupFileEntry"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "e1d8c_0000"
