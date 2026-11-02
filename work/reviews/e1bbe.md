@@ -17,38 +17,55 @@ Checked: `make match FILE=src/E1BBE.ASM` 7 of 7 (860 bytes) and `make readabilit
 function's behaviour in its header was re-read against the code (HidePointer, ShowPointer, HidePointerZone,
 ShowPointerZone, LockHidePointer, LockShowPointer), and the prototypes in src/ were checked (see the notes).
 
-- [ ] must-fix src/E1BBE.ASM:35-37 (_gCursorX): the cited writers are wrong. src/E1A72.ASM:338-339 is the
+- [x] must-fix src/E1BBE.ASM:35-37 (_gCursorX): the cited writers are wrong. src/E1A72.ASM:338-339 is the
   button-state store (`mov [g8134],ax`, `mov [g8130],bx`), not a cursor write. src/E1A72.ASM:218-219 no longer
   holds InitMouse; it has moved to :233-234 (`mov word ptr [_gCursorX],0A0h`, `[_gCursorY],64h`). The handler
   writes the cursor at src/E1A72.ASM:355-356 (`mov [_gCursorX],cx`, `[_gCursorY],dx`), skipped when g80EC is 2
   (:353-354). src/E1BF3.ASM:35 is right. Cite :233-234, :355-356 and E1BF3.ASM:35. This reopens the round 2
   item: its fix took the lines from an E1A72.ASM that main has since changed (e856ab9).
-- [ ] must-fix src/E1BBE.ASM:102-104 (HidePointer header): "The height and width used are the ones 1BB1 stored
+  Fixed: the _gCursorX comment now cites src/E1A72.ASM:355-356 (handler, skipped when g80EC is 2 at :353-354),
+  src/E1A72.ASM:233-234 (InitMouse sets 0A0h) and src/E1BF3.ASM:35; re-grepped at fix time (grep for `_gCursorX`
+  in src/E1A72.ASM gives :233, :355, :357, :360).
+- [x] must-fix src/E1BBE.ASM:102-104 (HidePointer header): "The height and width used are the ones 1BB1 stored
   before it calls here" is backwards. 1BB1 calls _HidePointer (src/E1BB1.ASM:130) before it stores the new hot
   spot, height and width (src/E1BB1.ASM:133-164: `mov [_gPointerHeight],ax` at :162, `[_gPointerWidth8],dx`
   at :164). HidePointer therefore reads the sizes still in place, the old shape's. src/E1BB1.ASM:42-44 says
   the same ("1BBE:0002 hides the pointer first, while the old buffer and sizes are still in place"). Say that.
-- [ ] must-fix src/E1BBE.ASM:299-300 (HidePointerZone header): "top as drawn" is wrong. The rectangle top is the
+  Fixed: the header now says the height and width used are the ones still in place, the old shape's, because
+  1BB1 calls here (src/E1BB1.ASM:130) before it stores the new sizes (src/E1BB1.ASM:162-164), which keeps the
+  old buffer valid while the shape is replaced.
+- [x] must-fix src/E1BBE.ASM:299-300 (HidePointerZone header): "top as drawn" is wrong. The rectangle top is the
   drawn y less the hot spot y, not rounded (src/E1BBE.ASM:344-346: `mov ax,[_gDrawnY]`, `sub ax,[_gPointerHotY]`,
   `mov [_gRectTop],ax`). The left is formed the same way (:333-336, then `and ax,0FFF8h`). Say "top is the
   drawn y less the hot spot y (no rounding)".
-- [ ] should src/E1BBE.ASM:414-416 (LockHidePointer, LockShowPointer): the name "Lock" is the callers' name
+  Fixed: the header now says top = the drawn y less the hot spot y (no rounding).
+- [x] should src/E1BBE.ASM:414-416 (LockHidePointer, LockShowPointer): the name "Lock" is the callers' name
   (src/E14EF.C:44-45 describe them as "start a frame" and "end a frame"), but the comment never says what is
   locked. The busy flag is a test then an increment, not a lock (src/E1BB1.ASM:53 says "not a lock"; this
   unit's own _gPointerBusy comment says it too). Say that Lock means the frame bracket (the busy flag and the
   [ds:80AA]/[ds:80A2] calls), not mutual exclusion. Keep the name, src/ uses it.
-- [ ] should src/E1BBE.ASM:136-147 (HidePointer header, "1BBE:0055, 005A, 008B and 0090 jump to the increment at
+  Fixed: both comments now say "Lock" is the callers' name for the frame bracket, not mutual exclusion, and
+  cite src/E14EF.C:44-45 ("start a frame"/"end a frame"), the test-then-increment at 1BBE:030A and
+  src/E1BB1.ASM:53; the name is kept.
+- [x] should src/E1BBE.ASM:136-147 (HidePointer header, "1BBE:0055, 005A, 008B and 0090 jump to the increment at
   1BBE:00E0"): the x tests (`jle L0075`, `jge L0075`, :136-139) reach 1BBE:00E0 through the `jmp short L00E0`
   at L0075 (:147), not directly. The y tests (:153, :155) jump straight to L00E0. Say "reach".
-- [ ] should src/E1BBE.ASM:379-383 (ShowPointerZone header): "the pointer is shown only when bit 4000 (redraw)
+  Fixed: the header now says 1BBE:0055 and 005A reach the increment at 1BBE:00E0 through the jmp short at
+  1BBE:0075, while 1BBE:008B and 0090 jump there directly.
+- [x] should src/E1BBE.ASM:379-383 (ShowPointerZone header): "the pointer is shown only when bit 4000 (redraw)
   was set" applies to the zero-count path only. A non-zero count shows the pointer regardless of bit 4000
   (src/E1BBE.ASM:393-397 `dec word ptr [_gPointerState]`, then `jmp short L02E9`). Put "at zero" into that
   sentence so the reader does not take it for both.
-- [ ] should src/E1BBE.ASM:22-24, :40, :64 (underscore spelling): the header lists "gPointerHeight, gPointerWidth8,
+  Fixed: the header now says a non-zero count decrements and shows the pointer regardless of bit 4000, and
+  "at zero" the state is cleared and the pointer is shown only when bit 4000 was set.
+- [x] should src/E1BBE.ASM:22-24, :40, :64 (underscore spelling): the header lists "gPointerHeight, gPointerWidth8,
   gMouseDisabled" without the underscore, the EXTRNs for the same names use _gPointerHeight, _gPointerWidth8, and
   gMouseDisabled is bare at :40 while _gCursorX has the underscore. src/E1A72.ASM does the same mix (`_gCursorX`
   at :49, bare `gMouseDisabled` at :66), as does src/E1C00.ASM:40. Still undecided from rounds 1 and 2; it is a
   convention for the three units, not this unit alone. Keep the header in the spelling the EXTRNs use.
+  Fixed: the header now spells the names as this file's EXTRNs do (_gPointerHeight, _gPointerWidth8,
+  _gPointerHotX, _gPointerHotY, _gPointerBackOff, _gPointerBackSeg, _gPointerShapeOff, _gPointerShapeSeg;
+  gMouseDisabled stays bare, matching its bare EXTRN at :41). The EXTRNs are unchanged.
 - [ ] note stale citations into this unit from other owners (routed, not changed here): src/E1A72.ASM:81, :83
   and :420 cite E1BBE.ASM:188 and :193 (the ShowPointer copies of gCursorX/gCursorY are now at :215 and :220);
   src/E1A72.ASM:88 cites :328-332 and :92 cites :338-339 (the zone shifts are now at :337-341 and :347-348);
