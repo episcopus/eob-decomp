@@ -234,10 +234,16 @@ def test_roster_rules():
 
 
 def test_tier_selection(monkeypatch):
-    """Tier 2 takes only units tier 1 gave up on; both giving up leaves the unit to the human."""
+    """Tier 2 takes only units tier 1 gave up on; both giving up leaves the unit to the human. A queue
+    of its own: the project's queue runs out as units complete (e0a72, 2026-11-02, left none)."""
     att = {}
     monkeypatch.setattr(common, "attempts", lambda: att)
     monkeypatch.setattr(nxt, "busy", lambda key: False)
+    monkeypatch.setattr(common, "queue", lambda: ["u1", "u2"])
+    monkeypatch.setattr(common, "functions", lambda: [])
+    monkeypatch.setattr(common, "unit_complete", lambda uid, fs: False)
+    monkeypatch.setattr(common, "unit_blocked", lambda uid, fs: False)
+    monkeypatch.setattr(common, "open_must_fix", lambda uid: [])
     first = nxt.next_unit(1)
     assert first and nxt.next_unit(2) is None
     att[first] = {"1": common.TIER1_ATTEMPTS}
