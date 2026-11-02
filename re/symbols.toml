@@ -3930,6 +3930,9 @@ unit = "e122e"
 addr = "122E:0B23"
 size = 51
 evidence = ["frame"]
+name = "ArmMember"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e122e_0b56"
@@ -3937,6 +3940,9 @@ unit = "e122e"
 addr = "122E:0B56"
 size = 51
 evidence = ["frame"]
+name = "DisarmMember"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e122e_0b89"
@@ -4016,6 +4022,9 @@ unit = "e122e"
 addr = "122E:139D"
 size = 52
 evidence = ["frame"]
+name = "JumpToScriptOffset"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e122e_13d1"

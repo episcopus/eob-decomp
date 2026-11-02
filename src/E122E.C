@@ -35,8 +35,8 @@ extern void fOvl5_1A82(int x); /*@ 211E:0057 */   /* overlay 5 entry, ovl5:1A82 
     return 0;
 }
 
-/*@ 122E:0154 stub */ void f122E_0154(void) {}
-/*@ 122E:01D9 stub */ void f122E_01D9(void) {}
+/*@ 122E:0154 stub */ void f122E_0154(int who) {}
+/*@ 122E:01D9 stub */ void f122E_01D9(int who) {}
 /*@ 122E:0271 stub */ void f122E_0271(void) {}
 /*@ 122E:0325 stub */ void f122E_0325(void) {}
 /*@ 122E:04CA stub */ void f122E_04CA(void) {}
@@ -49,8 +49,31 @@ extern void fOvl5_1A82(int x); /*@ 211E:0057 */   /* overlay 5 entry, ovl5:1A82 
 /*@ 122E:0933 stub */ void f122E_0933(void) {}
 /*@ 122E:0960 stub */ void f122E_0960(void) {}
 /*@ 122E:0A16 stub */ void f122E_0A16(void) {}
-/*@ 122E:0B23 stub */ void f122E_0B23(void) {}
-/*@ 122E:0B56 stub */ void f122E_0B56(void) {}
+/* 122E:0B23: sub-opcode that arms member effects: read a member index and hand it to f122E_0154.
+   Returns the bytes read. */
+/*@ 122E:0B23 */ long ArmMember(char far *script)
+{
+    char far *start = script;
+    int who;
+
+    who = *(int far *)script;
+    script += 2;
+    f122E_0154(who);
+    return (long)(script - start);
+}
+
+/* 122E:0B56: sub-opcode that disarms member effects: read a member index and hand it to f122E_01D9.
+   Returns the bytes read. */
+/*@ 122E:0B56 */ long DisarmMember(char far *script)
+{
+    char far *start = script;
+    int who;
+
+    who = *(int far *)script;
+    script += 2;
+    f122E_01D9(who);
+    return (long)(script - start);
+}
 /*@ 122E:0B89 stub */ void f122E_0B89(void) {}
 /*@ 122E:0C4D stub */ void f122E_0C4D(void) {}
 /*@ 122E:0D57 stub */ void f122E_0D57(void) {}
@@ -136,7 +159,15 @@ extern void fOvl5_1A82(int x); /*@ 211E:0057 */   /* overlay 5 entry, ovl5:1A82 
     return (long)(script - start);
 }
 
-/*@ 122E:139D stub */ void f122E_139D(void) {}
+/* 122E:139D: sub-opcode that jumps the script pointer to a word offset from the script base
+   gBuf8DCA. Returns the pointer's movement. */
+/*@ 122E:139D */ long JumpToScriptOffset(char far *script)
+{
+    char far *start = script;
+
+    script = (char far *)gBuf8DCA + *(int far *)script;
+    return (long)(script - start);
+}
 
 /* 122E:13D1: set the driver's stop flag and advance the script pointer by one; the driver stops its
    walk as soon as gA9EC is set. Returns 0. */
