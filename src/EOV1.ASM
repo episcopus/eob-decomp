@@ -57,7 +57,7 @@
         EXTRN   gBufDCFC:DWORD          ; @ ds:DCFC: 4096-byte scratch allocation (E07A9.C)
         EXTRN   gFillRect:DWORD         ; @ ds:806A: far fill-rect routine (E082C.C)
         EXTRN   gMemberBoxes:WORD       ; @ ds:62E2: two 8-byte (x1,y1,x2,y2) member-list boxes
-        EXTRN   g8115:WORD              ; @ ds:8115: nonzero while a status line is up (E082C.C)
+        EXTRN   gStatusLine:WORD              ; @ ds:8115: nonzero while a status line is up (E082C.C)
         EXTRN   gTextRegion:WORD              ; @ ds:811F (E07A9.C)
         EXTRN   g159:WORD               ; @ ds:0159 (EOV6.C)
         EXTRN   gF57E:BYTE              ; @ ds:F57E (E0BD2.C)
@@ -68,7 +68,7 @@
         EXTRN   gTextLeft:WORD          ; @ ds:FE64 (E14EF.C)
         EXTRN   gTextTop:WORD           ; @ ds:FE66 (E14EF.C)
         EXTRN   gStrings2003:BYTE       ; @ 2003:0000: the message string table (EOV6.C)
-        EXTRN   g8102:WORD              ; @ ds:8102: colour-row mode (E07A9.C)
+        EXTRN   gGraphicsChoice:WORD              ; @ ds:8102: colour-row mode (E07A9.C)
         EXTRN   g1278:WORD              ; @ ds:1278: far item-name pointer table (E0BD2.C)
         EXTRN   g12E0:WORD              ; @ ds:12E0: far item-name pointer table (E0BD2.C)
         EXTRN   gFmt645B:BYTE           ; @ ds:645B: the "%-18s %1d" format string
@@ -1151,7 +1151,7 @@ f0416_0839:
 _MemberCommand ENDP
 
 ; ovl1:0881: draw the name of item `item` on row `row` in the character display. It picks a base x
-; or colour (1, or 0xF when g8102 is nonzero), returns when `row` is negative, computes y =
+; or colour (1, or 0xF when gGraphicsChoice is nonzero), returns when `row` is negative, computes y =
 ; row * 9 + 0x32, hides the pointer and, for a nonzero `item`, formats
 ; sprintf(gFileNameBuf, "%-18s %1d", nameTable[item], count[item]) where nameTable is g12E0 when
 ; `mode` is set and g1278 otherwise, and count is the byte at gFDEA + item*2. `style` 0 draws it
@@ -1165,7 +1165,7 @@ _ShowItemName PROC FAR
         mov     bp,sp
         push    si
         push    di
-        cmp     word ptr [g8102],0
+        cmp     word ptr [gGraphicsChoice],0
         jne     short f0881_0892
         mov     ax,1
         jmp     short f0881_0895
@@ -1586,7 +1586,7 @@ f097A_0C13:
         cmp     word ptr [bp-2Ah],0
         je      short f097A_0C8A
         mov     word ptr [bp-2Ah],0
-        mov     word ptr [g8115],2
+        mov     word ptr [gStatusLine],2
         mov     di,1
         jmp     short f097A_0C4B
 f097A_0C29:
@@ -1611,7 +1611,7 @@ f097A_0C29:
 f097A_0C4B:
         cmp     di,9
         jl      short f097A_0C29
-        mov     word ptr [g8115],0
+        mov     word ptr [gStatusLine],0
         call    far ptr _LockHidePointer
         xor     ax,ax
         push    ax
@@ -2177,7 +2177,7 @@ _DrawOptionField ENDP
 ; and fills it from gSpellInfo9[first + i]: key index+1, key06 = rec+5, key08 = rec+5+0x100, x =
 ; rec+1<<3, y = rec+2, width = rec+3<<3, height = rec+4, flags 0x1100, the far record pointer at
 ; +0x34/+0x36 and rec+7 at +0x38; the node is drawn once through _DrawListNode and chained with
-; ListAdd. At the end it clips the text window, sets g5E20, flushes the key buffer and clears g8115.
+; ListAdd. At the end it clips the text window, sets g5E20, flushes the key buffer and clears gStatusLine.
 ; Called by ovl1:0416, 097A, 1551, 1ACD and 243A with a member index and returns the list head.
 ; Purpose unknown: the exact meaning of the menu fields and of the 9-byte record bytes.
         PUBLIC  _Ovl1_1153              ; @ ovl1:1153 draft
@@ -2188,7 +2188,7 @@ _Ovl1_1153 PROC FAR
         push    si
         push    di
         mov     di,[bp+6]
-        mov     word ptr [g8115],2
+        mov     word ptr [gStatusLine],2
         mov     ax,di
         mov     dx,5
         imul    dx
@@ -2453,7 +2453,7 @@ f1153_13AA:
         call    far ptr _LockShowPointer
         mov     byte ptr [g5E20],1
         call    far ptr _FlushKeyBuffer
-        mov     word ptr [g8115],0
+        mov     word ptr [gStatusLine],0
         mov     dx,[bp-4]
         mov     ax,[bp-6]
         pop     di
@@ -2463,13 +2463,13 @@ f1153_13AA:
         ret
 _Ovl1_1153 ENDP
 
-; ovl1:13F7: show the message whose key is `message` for up to 0x78 frames. It saves g8115, the
+; ovl1:13F7: show the message whose key is `message` for up to 0x78 frames. It saves gStatusLine, the
 ; current font and gTextRegion, loads the 8x8 font (gFE5A), hides the pointer, copies gF57E into g159,
-; clears text window 0xB, sets g8115 = 2, fills the region through f0D1C_0C21, draws the
+; clears text window 0xB, sets gStatusLine = 2, fills the region through f0D1C_0C21, draws the
 ; `message`-th string of the far table gStrings2003 (seg 2003:0000) at the text origin +5 through
 ; DrawShadowText, clips the text rectangle through ClipRect, shows the pointer and then polls
 ; ReadKey for up to 0x78 frames, flushing the key buffer and stopping on any key (WaitFrames(1) per
-; frame otherwise). It restores the font, text window and g8115 and flushes the buffer. Called from
+; frame otherwise). It restores the font, text window and gStatusLine and flushes the buffer. Called from
 ; ovl1:0416, ovl1:1551 and ovl1:1ACD with a message key.
         PUBLIC  _ShowMessage            ; @ ovl1:13F7
 _ShowMessage PROC FAR
@@ -2478,7 +2478,7 @@ _ShowMessage PROC FAR
         sub     sp,6
         push    si
         push    di
-        mov     di,[g8115]
+        mov     di,[gStatusLine]
         mov     ax,word ptr [gFont1A47+2]
         mov     dx,word ptr [gFont1A47]
         mov     [bp-6],dx
@@ -2498,7 +2498,7 @@ _ShowMessage PROC FAR
         push    ax
         call    far ptr _SetTextWindowAndClear
         pop     cx
-        mov     [g8115],2
+        mov     [gStatusLine],2
         xor     ax,ax
         push    ax
         push    ax
@@ -2571,7 +2571,7 @@ f13F7_14EC:
         cmp     si,78h
         jl      short f13F7_14D1
 f13F7_14F1:
-        mov     [g8115],di
+        mov     [gStatusLine],di
         push    word ptr [bp-4]
         push    word ptr [bp-6]
         call    far ptr _f1A47_0169
@@ -2625,7 +2625,7 @@ _FreeFarList ENDP
 
 ; ovl1:1551: draw the list node `node` (a far pointer to a 60-byte panel record, src/EOV0.C's
 ; struct Node) in the text window. It returns at once when `node` is null. `colour` is 1, or 0xF
-; when g8102 is nonzero. It reads the node's far record pointer (node+0x34/+0x36), hides the
+; when gGraphicsChoice is nonzero. It reads the node's far record pointer (node+0x34/+0x36), hides the
 ; pointer and, when the record's word +7 has bit 0, fills the node's box (node+0x1E..+0x24) through
 ; f0D1C_0C21 with the caller's arguments 2 and 3. It then draws the record's string:
 ; SkipStrings(gStrings2003, rec[0]) returns it and, when the record's word +7 has bit 2, it is
@@ -2646,7 +2646,7 @@ _DrawListNode PROC FAR
         jne     short f1551_1564
         jmp     f1551_168B
 f1551_1564:
-        cmp     word ptr [g8102],0
+        cmp     word ptr [gGraphicsChoice],0
         jne     short f1551_1570
         mov     ax,1
         jmp     short f1551_1573
@@ -3872,7 +3872,7 @@ f1ACD_2077:
         push    ax
         call    far ptr _ShowMessage
         pop     cx
-        cmp     word ptr [g8102],1
+        cmp     word ptr [gGraphicsChoice],1
         jne     short f1ACD_20D9
         mov     ax,2
         push    ax
@@ -3889,7 +3889,7 @@ f1ACD_2077:
         push    ax
         call    far ptr _LoadScreenImage
         add    sp,0Eh
-        mov     word ptr [g8115],2
+        mov     word ptr [gStatusLine],2
         mov     ax,word ptr [gSegDF4E]
         add     ax,4E20h
         push    word ptr [gSegDF4E+2]
@@ -3904,7 +3904,7 @@ f1ACD_2077:
         push    ax
         call    dword ptr [gFn807E]
         add     sp,0Ch
-        mov     word ptr [g8115],0
+        mov     word ptr [gStatusLine],0
         mov     word ptr [bp-1Ah],1
         jmp     short f1ACD_2113
 f1ACD_20D9:
@@ -4160,7 +4160,7 @@ f1ACD_2323:
         call    far ptr _f1A47_0169
         pop     cx
         pop     cx
-        mov     word ptr [g8115],2
+        mov     word ptr [gStatusLine],2
         call    far ptr _DrawOptionField
         push    word ptr [bp-6]
         call    far ptr _SetTextWindow
@@ -4169,7 +4169,7 @@ f1ACD_2323:
         push    ax
         call    far ptr _DrawViewFrame
         pop     cx
-        mov     word ptr [g8115],0
+        mov     word ptr [gStatusLine],0
         call    far ptr _LockHidePointer
         mov     ax,0Ah
         push    ax
@@ -4209,7 +4209,7 @@ f1ACD_23BB:
         call    far ptr _SetTextWindow
         pop     cx
         call    far ptr _LockShowPointer
-        mov     word ptr [g8115],0
+        mov     word ptr [gStatusLine],0
         NOSMART
         or      word ptr [gFlags849E],2
         SMART
@@ -4231,7 +4231,7 @@ _Ovl1_1ACD ENDP
 
 ; ovl1:243A: show the gStrings2003 message `message` as a header and a scrollable list of the
 ; member inventory slots, letting the player pick one with the keyboard or the mouse. It saves
-; gTextRegion and the current font, clears g8115, selects the 8x8 font gFE5A, builds a far list of the
+; gTextRegion and the current font, clears gStatusLine, selects the 8x8 font gFE5A, builds a far list of the
 ; nodes whose key is `cur+0x21` with _Ovl1_1153(5), hides the pointer, draws the message through
 ; SkipStrings(gStrings2003, message) and DrawShadowText, then loops: it highlights the current node
 ; with _DrawListNode (after _FindNode(index+0x21)), waits with DispatchKeyWait, and switches on the
@@ -4257,7 +4257,7 @@ _ChooseListEntry PROC FAR
         mov     dx,word ptr [gFont1A47]
         mov     [bp-0Eh],dx
         mov     [bp-0Ch],ax
-        mov     word ptr [g8115],0
+        mov     word ptr [gStatusLine],0
         push    word ptr [gFE5A+2]
         push    word ptr [gFE5A]
         call    far ptr _f1A47_0169

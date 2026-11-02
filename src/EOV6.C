@@ -44,7 +44,7 @@ extern struct Spell gSpells151F[]; /*@ ds:151F */
 extern struct Entry28 gTable8A84[]; /*@ ds:8A84 */ /* 28-byte records, 30 of them */
 extern char far gStrings2003; /*@ 2003:0000 */    /* the message string table */
 extern int gTextRegion; /*@ ds:811F */
-extern int g8115; /*@ ds:8115 */
+extern int gStatusLine; /*@ ds:8115 */
 extern int g159; /*@ ds:0159 */                 /* holds gF57E while ovl6:0B9B is on screen */
 extern int gTextHeight; /*@ ds:FE60 */
 extern int gTextWidth; /*@ ds:FE62 */
@@ -354,9 +354,9 @@ done:
 }
 
 /* ovl6:0858: shows the camp panel and the "Hours rested" line. It selects the 8x8 font and the
-   region 0xa, and when `draw` is nonzero clears g8115, hides the pointer, fills the panel
+   region 0xa, and when `draw` is nonzero clears gStatusLine, hides the pointer, fills the panel
    rectangle (f0D1C_0C21) inside its clip (ClipRect), draws the title through DrawShadowText and shows
-   the pointer again. Then it formats "Hours rested: %-4d" with gFileNameBuf and, with g8115 set to 2,
+   the pointer again. Then it formats "Hours rested: %-4d" with gFileNameBuf and, with gStatusLine set to 2,
    draws the line in the colour gF57E inside a second clip. Finally it waits ten frames and
    restores the font and the region. Called by the camp loop. */
 /*@ ovl6:0858 */ void f0858(int hours, int draw)
@@ -369,7 +369,7 @@ done:
     f1A47_0169(gFE5A);
     SetTextWindow(0xa);
     if (draw) {
-        g8115 = 0;
+        gStatusLine = 0;
         LockHidePointer();
         ClearTextRegion();
         f0D1C_0C21(gTextLeft << 3, gTextTop, gTextWidth << 3, gTextHeight, 0, 0);
@@ -378,10 +378,10 @@ done:
         LockShowPointer();
     }
     sprintf(gFileNameBuf, "Hours rested: %-4d", hours);
-    g8115 = 2;
+    gStatusLine = 2;
     LockHidePointer();
     DrawShadowText(gFileNameBuf, (gTextLeft + 1) << 3, gTextTop + 0x14, 0xf, gF57E);
-    g8115 = 0;
+    gStatusLine = 0;
     ClipRect(gTextLeft + 1, gTextTop + 0x14, gTextLeft + 1, gTextTop + 0x14, 0x12, 8, 2, 0);
     LockShowPointer();
     WaitFrames(0xa);
@@ -410,7 +410,7 @@ done:
         if (Distance(gPartyCell, gTable8A84[i].value) < 2) {
             member = gTextRegion;
             SetTextWindow(7);
-            g8115 = 0;
+            gStatusLine = 0;
             LockHidePointer();
             DrawText("\rYou can't rest here, monsters are near.");
             LockShowPointer();
@@ -456,10 +456,10 @@ done:
     return 0;
 }
 /* ovl6:0B9B: shows the modal warning box for message number `message` in the far string table at
-   2003:0000. It saves the region (gTextRegion), g8115 and the font, selects the 8x8 font and region 2,
+   2003:0000. It saves the region (gTextRegion), gStatusLine and the font, selects the 8x8 font and region 2,
    stores gF57E in ds:0159, fills the panel (f0D1C_0C21) and draws the message string through
    DrawShadowText inside a clip (ClipRect). Then it waits up to 0x78 frames for a key (1AAD:038E),
-   clears the pending key (1AAD:0480) and restores the font, region and g8115. Called by the camp
+   clears the pending key (1AAD:0480) and restores the font, region and gStatusLine. Called by the camp
    loop for "You can't rest here, monsters are near." */
 /*@ ovl6:0B9B */ void f0B9B(int message)
 {
@@ -468,14 +468,14 @@ done:
     int savedSelect;
     void *savedFont;
 
-    savedRegion = g8115;
+    savedRegion = gStatusLine;
     savedFont = gFont1A47;
     savedSelect = gTextRegion;
     f1A47_0169(gFE5A);
     LockHidePointer();
     g159 = gF57E;
     SetTextWindowAndClear(0xb);
-    g8115 = 2;
+    gStatusLine = 2;
     f0D1C_0C21(gTextLeft << 3, gTextTop, gTextWidth << 3, gTextHeight, 0, 0);
     DrawShadowText(SkipStrings(&gStrings2003, message), (gTextLeft << 3) + 5, gTextTop + 5, 0xf, 0);
     ClipRect(gTextLeft, gTextTop, gTextLeft, gTextTop, gTextWidth, gTextHeight, 2, 0);
@@ -487,7 +487,7 @@ done:
         }
         WaitFrames(1);
     }
-    g8115 = savedRegion;
+    gStatusLine = savedRegion;
     f1A47_0169(savedFont);
     SetTextWindow(savedSelect);
     FlushKeyBuffer();

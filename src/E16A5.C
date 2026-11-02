@@ -7,7 +7,7 @@
    at ds:FC7C. The two key event codes 0x41/0x42 and 0xC6/0xC7 are the mouse buttons: E14EF.C
    names the same pair KEY_CLICK and KEY_CLICK2. Placeholder names. The unit was compiled through
    the assembler (the flags line records -B): only that keeps DrawNode's identical restart tails
-   (the g8115 and gFC80 save/restore around each kind) as separate copies, where TCC's own
+   (the gStatusLine and gFC80 save/restore around each kind) as separate copies, where TCC's own
    assembler merges them into one (the e14ef idiom). */
 
 /*@flags -ml -O -Z -B */
@@ -81,7 +81,7 @@ void DrawNode(struct Node far *node);
 
 extern int gPointerHeight;   /*@ ds:8154: sprite height in pixels (E1BBE.ASM) */
 extern int gPointerWidth8;   /*@ ds:8156: sprite width in 8-pixel columns (E1BBE.ASM) */
-extern int g8115;            /*@ ds:8115: nonzero while a status line is up (src/E082C.C) */
+extern int gStatusLine;            /*@ ds:8115: nonzero while a status line is up (src/E082C.C) */
 extern int gFC80;            /*@ ds:FC80: a flag DrawNode clears while it draws a kind-1 node */
 extern struct Region gRegions[]; /*@ ds:009F */
 extern void (far *gDrawText)(void far *text, int x, int y, int color, int extra); /*@ ds:80CA */
@@ -561,33 +561,33 @@ done:
                 gFC80 = savedFC80;
             } else if (type == 2) {
                 if (!st4) {
-                    savedAttr = g8115;
-                    g8115 = 0;
+                    savedAttr = gStatusLine;
+                    gStatusLine = 0;
                     gDrawText(node->src14, x, y, node->color28, node->color29);
-                    g8115 = savedAttr;
+                    gStatusLine = savedAttr;
                 }
             } else if (type == 3) {
-                savedAttr = g8115;
-                g8115 = 0;
+                savedAttr = gStatusLine;
+                gStatusLine = 0;
                 gDraw805E(node->tile36, x >> 3, y);
-                g8115 = savedAttr;
+                gStatusLine = savedAttr;
             } else if (type == 4) {
                 if (node->src14)
                     ((NodeFn)node->src14)(node);
             }
         } else if (modeB == 2) {
             if (!st4) {
-                savedAttr = g8115;
-                g8115 = 0;
+                savedAttr = gStatusLine;
+                gStatusLine = 0;
                 DrawBox(x, y, x + node->width - 1, y + node->height - 1, node->color28);
-                g8115 = savedAttr;
+                gStatusLine = savedAttr;
             }
         } else if (modeB == 3) {
             if (!st4) {
-                savedAttr = g8115;
-                g8115 = 0;
+                savedAttr = gStatusLine;
+                gStatusLine = 0;
                 gDraw8066(x, y, x + node->width - 1, y + node->height - 1, node->color28);
-                g8115 = savedAttr;
+                gStatusLine = savedAttr;
             }
         } else if (modeB == 4) {
             if (node->src14)
@@ -602,34 +602,34 @@ done:
                 f1A29_000F(0, node->src18, x, y, region);
                 gFC80 = savedFC80;
             } else if (type == 2) {
-                savedAttr = g8115;
-                g8115 = 0;
+                savedAttr = gStatusLine;
+                gStatusLine = 0;
                 if (st1)
                     gDrawText(node->src18, x, y, node->color2C, node->color2D);
                 else
                     gDrawText(node->src18, x, y, node->color2A, node->color2B);
-                g8115 = savedAttr;
+                gStatusLine = savedAttr;
             } else if (type == 3) {
-                savedAttr = g8115;
-                g8115 = 0;
+                savedAttr = gStatusLine;
+                gStatusLine = 0;
                 gDraw805E(node->tile36, x >> 3, y);
-                g8115 = savedAttr;
+                gStatusLine = savedAttr;
             } else if (type == 4) {
                 if (node->src18)
                     ((NodeFn)node->src18)(node);
             }
         } else if (modeC == 2) {
-            savedAttr = g8115;
-            g8115 = 0;
+            savedAttr = gStatusLine;
+            gStatusLine = 0;
             colour = st1 ? node->color2C : node->color2A;
             DrawBox(x, y, x + node->width - 1, y + node->height - 1, colour);
-            g8115 = savedAttr;
+            gStatusLine = savedAttr;
         } else if (modeC == 3) {
-            savedAttr = g8115;
-            g8115 = 0;
+            savedAttr = gStatusLine;
+            gStatusLine = 0;
             colour = st1 ? node->color2C : node->color2A;
             gDraw8066(x, y, x + node->width - 1, y + node->height - 1, colour);
-            g8115 = savedAttr;
+            gStatusLine = savedAttr;
         } else if (modeC == 4) {
             if (node->src18)
                 ((NodeFn)node->src18)(node);
@@ -643,33 +643,33 @@ done:
                 f1A29_000F(0, node->src10, x, y, region);
                 gFC80 = savedFC80;
             } else if (type == 2) {
-                savedAttr = g8115;
-                g8115 = 0;
+                savedAttr = gStatusLine;
+                gStatusLine = 0;
                 gDrawText(node->src10, x, y, node->color26, node->color27);
-                g8115 = savedAttr;
+                gStatusLine = savedAttr;
             } else if (type == 3) {
-                savedAttr = g8115;
-                g8115 = 0;
+                savedAttr = gStatusLine;
+                gStatusLine = 0;
                 gDraw805E(node->tile34, x >> 3, y);
-                g8115 = savedAttr;
+                gStatusLine = savedAttr;
             } else if (type == 4) {
                 if (node->src10)
                     ((NodeFn)node->src10)(node);
             } else if (type == 5) {
-                savedAttr = g8115;
-                g8115 = 0;
+                savedAttr = gStatusLine;
+                gStatusLine = 0;
                 DrawBox(x, y, x + node->width - 1, y + node->height - 1, node->color26);
-                g8115 = savedAttr;
+                gStatusLine = savedAttr;
             } else if (type == 0) {
-                savedAttr = g8115;
-                g8115 = 0;
+                savedAttr = gStatusLine;
+                gStatusLine = 0;
                 if (modeB == 2 || modeC == 2)
                     DrawBox(x, y, x + node->width - 1, y + node->height - 1, node->color26);
                 else if (modeB == 3 && st8)
                     gDraw8066(x, y, x + node->width - 1, y + node->height - 1, node->color28);
                 else if (modeC == 3 && st10)
                     gDraw8066(x, y, x + node->width - 1, y + node->height - 1, node->color2A);
-                g8115 = savedAttr;
+                gStatusLine = savedAttr;
             }
         }
     }

@@ -835,8 +835,8 @@ addr = "ds:811D"
 old = ""
 new = "gTextAttr1"
 kind = "global"
-why = "the first text attribute (foreground colour) passed to the draw-text hook ds:80CA (1DE7:03B2, 1DE7:060A) and set by DrawText control code 0x06; default 0x0F at E07C8:147"
-date = "2026-11-01"
+why = "the first text attribute (foreground colour) passed to the draw-text hook ds:80CA (1DE7:03B2, 1DE7:060A) and set by DrawText control code 0x06; default 0x0F at E07C8.C:251; the initial region record gRegions[0] at ds:009F (file offset 0x23B7F) holds saved0 = 0x0F (ds:00A7)"
+date = "2026-11-02"
 
 [[rename]]
 id = "ds:811B=gTextAttr2"
@@ -844,8 +844,8 @@ addr = "ds:811B"
 old = ""
 new = "gTextAttr2"
 kind = "global"
-why = "the second text attribute (the fill colour of ClearTextRegion and of the redrawn scroll line) passed to the rectangle hook ds:806A and to the draw-text hook (1DE7:0344, 1DE7:03B2) and set by DrawText control code 0x02; default 0x0C at E07C8:148"
-date = "2026-11-01"
+why = "the second text attribute (the fill colour of ClearTextRegion and of the redrawn scroll line) passed to the rectangle hook ds:806A and to the draw-text hook (1DE7:0344, 1DE7:03B2) and set by DrawText control code 0x02; default 0x0C at E07C8.C:252; the initial region record gRegions[0] at ds:009F (file offset 0x23B7F) holds saved1 = 0x0C (ds:00A9)"
+date = "2026-11-02"
 
 [[rename]]
 id = "082C:0898=DrawShadowText"
@@ -862,8 +862,8 @@ addr = "ds:806A"
 old = ""
 new = "gFillRect"
 kind = "global"
-why = "a far rectangle-fill routine called with (x1, y1, x2, y2, attribute): E082C.C:436 fills the bevel interior, E1DE7.C:221/246 fill and redraw text-window rectangles; so gFillRect, not the address-suffix placeholder gRect806A"
-date = "2026-11-01"
+why = "a far rectangle-fill routine called with (x1, y1, x2, y2, pattern): E082C.C:442 fills the bevel interior, E1DE7.C:221/246 fill and redraw text-window rectangles; so gFillRect, not the address-suffix placeholder gRect806A"
+date = "2026-11-02"
 
 [[rename]]
 id = "ds:FE6E=gFileNameBuf"
@@ -1901,24 +1901,6 @@ why = "0EF3:0A3F rolls count d sides + bonus for each object or member at the re
 date = "2026-11-02"
 
 [[rename]]
-id = "ds:8138=gCursorX"
-addr = "ds:8138"
-old = ""
-new = "gCursorX"
-kind = "global"
-why = "the cursor (mouse pointer) x in pixels: InitMouse sets it to the middle of a 320x200 screen at 1A72:00E6, the INT 33h handler rewrites it when the busy flag ds:812E is free and ds:80EC is not 2 at 1A72:0219, the pointer placer stores the clamped position at 1BF3:000E (E1BF3.ASM:35), and the recorded-input glue stores it at 1AAD:0CF7 (E1AAD.ASM:1352)"
-date = "2026-11-02"
-
-[[rename]]
-id = "ds:813A=gCursorY"
-addr = "ds:813A"
-old = ""
-new = "gCursorY"
-kind = "global"
-why = "the cursor (mouse pointer) y in pixels: InitMouse sets it at 1A72:00EC, the INT 33h handler rewrites it under the same conditions as x at 1A72:021D, the pointer placer stores the clamped position at 1BF3:0028 (E1BF3.ASM:44), and the recorded-input glue stores it at 1AAD:0D01 (E1AAD.ASM:1355)"
-date = "2026-11-02"
-
-[[rename]]
 id = "0A72:01AE=RollHitPoints"
 addr = "0A72:01AE"
 old = "RollDamage"
@@ -2029,10 +2011,28 @@ date = "2026-11-02"
 [[rename]]
 id = "ds:8117=gScrollHook"
 addr = "ds:8117"
-old = "gScroll8117"
+old = ""
 new = "gScrollHook"
 kind = "global"
-why = "the far routine DrawTextLine calls when the cursor is on the last line of the window (1DE7:03B2), gated by gScrollOn (ds:8110); overlay 5 sets the pair at ds:8117/ds:8119 when it opens windows 0xC and 9 (src/EOV5.C:1114-1115, :1254-1255, :1317-1318; declared int g8117 and int g8119 at EOV5.C:161-162)"
+why = "the far routine DrawTextLine calls when the cursor row starts below the last full line (the same condition as the clip branch of DrawTextLine), gated by gScrollOn (ds:8110); overlay 5 sets the pair at ds:8117/ds:8119 when it opens windows 0xC and 9 (src/EOV5.C:1114-1115, :1254-1255, :1317-1318; EOV5.C:161 declares extern int gScrollHook; /*@ ds:8117 */ and g8119 at :162; the words 0xAC and 0x2D0 at EOV5.C:1114-1115 are the offset and segment of the far pointer)"
+date = "2026-11-02"
+
+[[rename]]
+id = "ds:8102=gGraphicsChoice"
+addr = "ds:8102"
+old = "g8102"
+new = "gGraphicsChoice"
+kind = "global"
+why = "the graphics choice: its only writer is src/E07C8.C:218, g8102 = argv[1][0] + 1; src/E07C8.C:31 says the digit 0..4 indexes gOverlayFiles (0 cga, 1 tandy, 2 ega, 3 mcga/VGA, 4 vga); src/E14EF.C:68 reads it as the graphics choice, 1 Tandy and 3 VGA; 3 and 4 select the 6-bit cells (src/E07C8.C:31)"
+date = "2026-11-02"
+
+[[rename]]
+id = "ds:8115=gStatusLine"
+addr = "ds:8115"
+old = "g8115"
+new = "gStatusLine"
+kind = "global"
+why = "the status-line flag in E082C.C:44, E1C0E.C:589, E16A5.C:511 and in the other declarations."
 date = "2026-11-02"
 
 [[rename]]
@@ -2078,15 +2078,6 @@ old = "ClampValue"
 new = "ClampOrWrap"
 kind = "function"
 why = "src/E082C.C:479-496 clamps when invert is 0 and wraps when invert is 1 (below low gives high, above high gives low); the only caller src/E0EF3.C:2137 uses the wrap"
-date = "2026-11-02"
-
-[[rename]]
-id = "ds:8102=gGraphicsMode"
-addr = "ds:8102"
-old = "g8102"
-new = "gGraphicsMode"
-kind = "global"
-why = "src/E07C8.C:31-34 lists 0 cga, 1 tandy, 2 ega, 3 mcga/VGA, 4 vga; src/E17A6.ASM:233 names 0 CGA, 1 Tandy, 2 EGA, 3 MCGA; whitepaper 2.6: 1 Tandy, 3 VGA"
 date = "2026-11-02"
 
 [[rename]]

@@ -10,7 +10,7 @@
    the four DrawRegion front ends read the region table at ds:009F (src/E1A29.C); the unit also
    reads the screen text pointer at ds:80CA (src/E14EF.C), the line pointer at ds:8062
    (src/E1A1F.C) and the game's 32-bit tick counter at ds:848A (incremented by the INT 1Ch
-   handler, src/E1D8F.ASM). The graphics mode gGraphicsMode and the video modes are whitepaper
+   handler, src/E1D8F.ASM). The graphics mode gGraphicsChoice and the video modes are whitepaper
    2.6; the -B build through the assembler (playbook 30) is whitepaper 2.1.1. Placeholder names
    until the callers name them. */
 
@@ -53,13 +53,13 @@ extern struct Region gRegions[]; /*@ ds:009F */
 extern void (far *gDrawLine)(int x1, int y1, int x2, int y2, int colour); /*@ ds:8062 */
 extern void (far *gFillRect)(int x1, int y1, int x2, int y2, int pattern); /*@ ds:806A */
 extern void (far *gDrawText)(char far *text, int x, int y, int colour, int extra); /*@ ds:80CA */
-extern int gGraphicsMode; /*@ ds:8102: the graphics mode chosen at start-up: 0 cga, 1 tandy, 2 ega,
+extern int gGraphicsChoice; /*@ ds:8102: the graphics mode chosen at start-up: 0 cga, 1 tandy, 2 ega,
                             3 mcga/VGA, 4 vga (src/E07C8.C:31-34; src/E17A6.ASM:233 names 3 MCGA;
                             whitepaper 2.6: 1 Tandy, 3 VGA). LoadScreenImage picks CPS for 3, the
                             MCGA/VGA art suffix (src/E082C.C:274) */
 extern int g8140; /*@ ds:8140: x of the last click (src/E14EF.C) */
 extern int g8142; /*@ ds:8142: y of the last click (src/E14EF.C) */
-extern int g8115; /*@ ds:8115: nonzero while a status line is up (set to 2 by LoadOverlayScreen) */
+extern int gStatusLine; /*@ ds:8115: nonzero while a status line is up (set to 2 by LoadOverlayScreen) */
 extern unsigned long gTicks; /*@ ds:848A: BIOS-like tick counter, stepped by the INT 1Ch handler */
 extern char gFileNameBuf[]; /*@ ds:FE6E */ /* the shared text buffer the filename/format helpers and the memory report build into */
 extern char gOverlayBuf[]; /*@ ds:113F */ /* the DGROUP screen buffer passed as LoadScreenImage's extra pointer to f19EC_002A, which hands it to the far handler at ds:8046 only when two slots differ (src/E19EC.C:29-35) */
@@ -287,7 +287,7 @@ void DrawShadowText(char far *text, int x, int y, int colour, int extra);
 }
 
 /* 082C:051B: build the art file name "%s.%s" (name plus CPS for the MCGA/VGA mode 3 at
-   gGraphicsMode, otherwise EGA) into gFileNameBuf, load it with LoadPacked
+   gGraphicsChoice, otherwise EGA) into gFileNameBuf, load it with LoadPacked
    (source/destination kind `srcKind`/`dstKind`), and, unless `mode` is -1, blit the loaded page
    through the driver pair 19EC:002A. In two special cases it also clips the frame with ClipRect:
    graphics modes 0 and 1 with `mode` 2 (kind 4, extras 4 and 2) and mode 2 with `mode` 0 (kind
@@ -297,14 +297,14 @@ void DrawShadowText(char far *text, int x, int y, int colour, int extra);
    dead. */
 /*@ 082C:051B */ void LoadScreenImage(char far *name, char far *extra, int srcKind, int dstKind, int mode)
 {
-    sprintf(gFileNameBuf, "%s.%s", name, gGraphicsMode == 3 ? "CPS" : "EGA");
+    sprintf(gFileNameBuf, "%s.%s", name, gGraphicsChoice == 3 ? "CPS" : "EGA");
     LoadPacked(gFileNameBuf, srcKind, dstKind);
     if (mode == -1)
         goto done;
-    if ((gGraphicsMode == 0 || gGraphicsMode == 1) && mode == 2) {
+    if ((gGraphicsChoice == 0 || gGraphicsChoice == 1) && mode == 2) {
         f19EC_002A(dstKind, 4, FP_OFF(extra), FP_SEG(extra));
         ClipRect(0, 0, 0, 0, 40, 200, 4, 2);
-    } else if (gGraphicsMode != 2 || mode != 0)
+    } else if (gGraphicsChoice != 2 || mode != 0)
         f19EC_002A(dstKind, mode, FP_OFF(extra), FP_SEG(extra));
     else {
         f19EC_002A(dstKind, 2, FP_OFF(extra), FP_SEG(extra));
@@ -315,14 +315,14 @@ done:
 }
 
 /* 082C:05EC: load the art page `name` into the slot `dstKind` (LoadPacked) and mark the status
-   line as up (g8115 = 2). With mode -1 LoadScreenImage skips the 19EC:002A blit, so nothing is
-   drawn here: the page reaches the screen only when `dstKind` is itself a screen slot (segment
+   line as up (gStatusLine = 2). With mode -1 LoadScreenImage skips the 19EC:002A blit, so nothing
+   is drawn here: the page reaches the screen only when `dstKind` is itself a screen slot (segment
    0xB800 or 0xA000, src/E19EC.C:5-7). Called by many overlays, all with dstKind 3, for example
    src/EOV0.C:1328 and src/EOV2.C:208. */
 /*@ 082C:05EC */ void LoadOverlayScreen(char far *name, int srcKind, int dstKind)
 {
     LoadScreenImage(name, gOverlayBuf, srcKind, dstKind, -1);
-    g8115 = 2;
+    gStatusLine = 2;
 }
 
 /* 082C:0613: the point (x, y) is inside the inclusive rectangle built from its left, top, right
@@ -414,14 +414,14 @@ done:
 /* 082C:081A: draw a one-line memory report at (x, y) through the text routine ds:80CA and, when
    `wait` is set, wait for a key. On a healthy far heap it prints "largest free:total free"; when
    heapcheck reports corruption it prints the "HEAP CORRUPT!!" message with the largest free block.
-   g8115, the status-line flag, is cleared while the report is drawn and restored after. The report
-   text is built in gFileNameBuf, the shared text buffer. */
+   gStatusLine, the status-line flag, is cleared while the report is drawn and restored after. The
+   report text is built in gFileNameBuf, the shared text buffer. */
 /*@ 082C:081A */ void ShowMemoryDiagnostics(int x, int y, int wait)
 {
     int saved;
 
-    saved = g8115;
-    g8115 = 0;
+    saved = gStatusLine;
+    gStatusLine = 0;
     if (heapcheck() >= 0)
         sprintf(gFileNameBuf, "%lu:%lu", LargestFreeBlock(), farcoreleft());
     else
@@ -429,7 +429,7 @@ done:
     gDrawText(gFileNameBuf, x, y, 0xf, 0xc);
     if (wait)
         WaitGameKey();
-    g8115 = saved;
+    gStatusLine = saved;
 }
 
 /* 082C:0898: draw one text string at (x, y): first its drop shadow at (x-1, y), (x, y+1) and

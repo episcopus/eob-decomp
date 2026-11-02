@@ -48,7 +48,7 @@ extern signed char gFB4C; /*@ ds:FB4C */    /* a colour read by 0D1C:0C21 */
 extern signed char gF53A; /*@ ds:F53A */    /* a colour read by 0D1C:0C21 */
 extern signed char g54F6[]; /*@ ds:54F6 */  /* byte table indexed by a character's m17 in 0D1C:059B */
 extern unsigned char gFBD2; /*@ ds:FBD2 */  /* bit 0 gates the icon colour row in 0D1C:070F (src/E07A9.C) */
-extern int g8102; /*@ ds:8102 */            /* nonzero: a colour row exists (src/E07A9.C) */
+extern int gGraphicsChoice; /*@ ds:8102 */            /* nonzero: a colour row exists (src/E07A9.C) */
 extern char far *gBufF534; /*@ ds:F534 */   /* the 1600-byte ITEMRMP buffer (src/E07A9.C) */
 extern void (far *gFn80D2)(void far *map); /*@ ds:80D2 */ /* the far colour-table callback (src/E07A9.C) */
 extern void far *gIconsDDE4[]; /*@ ds:DDE4 */ /* the item icon far pointers (src/E07A9.C) */
@@ -468,7 +468,7 @@ int f0D1C_02DC(void);
 /* 0D1C:070F: Purpose unknown: draws the item icon of the ds:8DD2 record `n` at (x, y). It reads
    the record's icon number; when gFBD2 bit 0 is set and the record's flags have 0x80, it first
    selects the icon's 16-byte colour row (gBufF534 + (icon << 4), or the empty string at ds:550A
-   when g8102 is 0) through gFn80D2 and draws through f1A29_008B, otherwise through f1A29_000F.
+   when gGraphicsChoice is 0) through gFn80D2 and draws through f1A29_008B, otherwise through f1A29_000F.
    Called by 0BD2 (three sites) and 1547:07E7. */
 /*@ 0D1C:070F */ void f0D1C_070F(int mode, int n, int x, int y)
 {
@@ -476,7 +476,7 @@ int f0D1C_02DC(void);
 
     icon = gTable8DD2[n].icon;
     if ((gFBD2 & 1) && (gTable8DD2[n].flags & 0x80)) {
-        if (g8102)
+        if (gGraphicsChoice)
             gFn80D2(gBufF534 + (icon << 4));
         else
             gFn80D2("");

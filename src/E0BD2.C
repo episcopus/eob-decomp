@@ -96,8 +96,8 @@ extern int gFBC8; /*@ ds:FBC8 */            /* the current action (src/E0D1C.C) 
 extern int gFBCC; /*@ ds:FBCC */            /* a page number 0..3 (src/E0D1C.C) */
 extern int gPartyCell; /*@ ds:FBCA */     /* the global sound volume (src/E177D.C) */
 extern int gMouseDisabled; /*@ ds:814A */   /* nonzero disables the mouse (src/E07A9.C) */
-extern int g8115; /*@ ds:8115 */            /* nonzero while a status line is up (src/E082C.C) */
-extern int g8102; /*@ ds:8102 */            /* nonzero: a colour row exists (src/E07A9.C) */
+extern int gStatusLine; /*@ ds:8115 */            /* nonzero while a status line is up (src/E082C.C) */
+extern int gGraphicsChoice; /*@ ds:8102 */            /* nonzero: a colour row exists (src/E07A9.C) */
 extern signed char g194B[]; /*@ ds:194B */  /* byte table (src/E0D1C.C) */
 extern signed char g1231[]; /*@ ds:1231 */  /* byte table indexed by gChars[].m20 (src/E0DE8.C) */
 extern int g1C8D[]; /*@ ds:1C8D */          /* per-row class mask (0BD2:0AF2/0C8E) */
@@ -567,7 +567,7 @@ next:
 
 /* 0BD2:0917: draws the item row of character `who`: a filled panel and rectangle at x g17CE[who]
    and y g1804[who] sized by g3890[g3875[who]], and, when `slot` is nonzero and the row is the
-   party's, the item icon. `one` selects the input mode and is stored in g8115 for the duration.
+   party's, the item icon. `one` selects the input mode and is stored in gStatusLine for the duration.
    Called by 0D1C and 0ACD. Purpose unknown. */
 /*@ 0BD2:0917 */ void DrawItemRow(int who, int slot, int one)
 {
@@ -579,14 +579,14 @@ next:
     int kind;
 
     kind = slot;
-    saved = g8115;
-    g8115 = one;
+    saved = gStatusLine;
+    gStatusLine = one;
     x = g17CE[who];
     y = g1804[who];
     item = gChars[gA99A].m77[who];
     if (kind != 0) {
         kind = g3875[who];
-        if (g8102 == 0)
+        if (gGraphicsChoice == 0)
             DrawFilledPanel(x - 1, y - 1, x + g3890[kind], y + g3890[kind], 3, 1,
                     kind != 1 ? gF57E : -1);
         else
@@ -611,7 +611,7 @@ next:
         else
             f0D1C_070F(one, item, x - 4, y - 4);
     }
-    g8115 = saved;
+    gStatusLine = saved;
 }
 
 /* 0BD2:0ABE: when `one` is set, saves the 18x168 item sheet rectangle through the save-rect hook,

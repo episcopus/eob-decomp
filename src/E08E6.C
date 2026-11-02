@@ -98,7 +98,7 @@ extern int gFlags849E; /*@ ds:849E */
 extern char gDF4C; /*@ ds:DF4C */
 extern int gF518; /*@ ds:F518 */
 extern int gDD10; /*@ ds:DD10 */
-extern int g8102; /*@ ds:8102 */
+extern int gGraphicsChoice; /*@ ds:8102 */
 extern char g1CD3[]; /*@ ds:1CD3 */
 extern char g1CE3[]; /*@ ds:1CE3 */
 extern void (far *gFn80D2)(char far *map); /*@ ds:80D2 */
@@ -740,7 +740,7 @@ second:
     if (gDF4C) {
         gFlags849E &= ~2;
         obj->m16 |= 2;
-        if (!g8102)
+        if (!gGraphicsChoice)
             gFn80D2(g1CE3);
         else
             gFn80D2(g1CD3);

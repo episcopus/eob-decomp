@@ -314,17 +314,17 @@ why = "the active text window's top edge in pixel rows, loaded from region recor
 [[global]]
 id = "ds:811D"
 name = "gTextAttr1"
-why = "the first text attribute (foreground colour) passed to the draw-text hook ds:80CA (1DE7:03B2, 1DE7:060A) and set by DrawText control code 0x06; default 0x0F at E07C8:147"
+why = "the first text attribute (foreground colour) passed to the draw-text hook ds:80CA (1DE7:03B2, 1DE7:060A) and set by DrawText control code 0x06; default 0x0F at E07C8.C:251; the initial region record gRegions[0] at ds:009F (file offset 0x23B7F) holds saved0 = 0x0F (ds:00A7)"
 
 [[global]]
 id = "ds:811B"
 name = "gTextAttr2"
-why = "the second text attribute (the fill colour of ClearTextRegion and of the redrawn scroll line) passed to the rectangle hook ds:806A and to the draw-text hook (1DE7:0344, 1DE7:03B2) and set by DrawText control code 0x02; default 0x0C at E07C8:148"
+why = "the second text attribute (the fill colour of ClearTextRegion and of the redrawn scroll line) passed to the rectangle hook ds:806A and to the draw-text hook (1DE7:0344, 1DE7:03B2) and set by DrawText control code 0x02; default 0x0C at E07C8.C:252; the initial region record gRegions[0] at ds:009F (file offset 0x23B7F) holds saved1 = 0x0C (ds:00A9)"
 
 [[global]]
 id = "ds:806A"
 name = "gFillRect"
-why = "a far rectangle-fill routine called with (x1, y1, x2, y2, attribute): E082C.C:436 fills the bevel interior, E1DE7.C:221/246 fill and redraw text-window rectangles; so gFillRect, not the address-suffix placeholder gRect806A"
+why = "a far rectangle-fill routine called with (x1, y1, x2, y2, pattern): E082C.C:442 fills the bevel interior, E1DE7.C:221/246 fill and redraw text-window rectangles; so gFillRect, not the address-suffix placeholder gRect806A"
 
 [[global]]
 id = "ds:FE6E"
@@ -350,46 +350,57 @@ why = "one pattern for unknown-purpose far function pointers (gFn8072, gFn8056, 
 id = "ds:810E"
 name = "gAllocCount"
 why = "net allocation counter: MemAlloc adds one per successful allocation (src/E19BC.C:97) and MemFree subtracts one on every call (src/E19BC.C:120), and StartupAlloc clears it (src/E07A9.C:242); what reads the count is unknown, so the name says what it holds"
+
 [[global]]
 id = "ds:88AA"
 name = "gSongBase"
 why = "the song base, not a current position: copied once from gSongPtr at song start (E1948.ASM 1948:006E and 0074) and read as the base of every voice (1948:00FA and 00FE); the value that moves is gVoicePos"
+
 [[global]]
 id = "ds:88AC"
 name = "gSongBaseSeg"
 why = "the song base segment, not a current position: copied once from gSongPtrSeg at song start (E1948.ASM 1948:0074) and read as the segment of every voice's song base (1948:00FE)"
+
 [[global]]
 id = "ds:8A58"
 name = "gVoiceLengthMul"
 why = "scales the note length, not an amplitude: its only read is mul on the note duration (E1948.ASM 1948:0144); set by E2h (1948:020F), changed by E8h and E9h (1948:0222, 022A, 023E, 0244) and set to 1 at song start (1948:008B); the Tandy volume is gVoiceTandyVol"
+
 [[global]]
 id = "ds:8A40"
 name = "gVoiceMute"
 why = "nonzero mutes the voice this tick, it does not restart it: E1948.ASM 1948:0278 falls through to muteVoice; only 0 is written in this unit (1948:0081 and 027F), the writer of 1 is unknown"
+
 [[global]]
 id = "ds:8A44"
 name = "gVoiceReadNext"
 why = "1 means the voice reads its next note or command this tick (set at E1948.ASM 1948:007C and 0273), not that a note sounds; 0 means a note is sounding and its duration counts down (set at 1948:0151; endCommand at 1948:0184 also leaves 0)"
+
 [[global]]
 id = "ds:8A6A"
 name = "gTickSeconds"
 why = "counts [H] seconds up to 60, not a phase: incremented once per 292-tick period (E1948.ASM 1948:001A) and wrapped at 3Bh (1948:0023 to 0025); nothing outside this unit reads it"
+
 [[global]]
 id = "ds:8100"
 name = "gFontWidth"
 why = "font cell width; the source is src/E1A47.C and src/E1DE7.C:54-55 calls it the font cell width"
+
 [[global]]
 id = "ds:8101"
 name = "gFontHeight"
 why = "font cell height; the source is src/E1A47.C and src/E1DE7.C:54-55 calls it the font cell height"
+
 [[global]]
 id = "ds:EFCC"
 name = "gNameTable"
 why = "the far table 0EF3:2295 reads names from; set to g12E0 or g1278 by 0EF3:21E0 (only E0EF3.C references ds:EFCC)"
+
 [[global]]
 id = "ds:84A0"
 name = "gRestoreMode"
 why = "ds:84A0 is set from argv[5] (E07C8.C:193) and put back through f1DDD_002D(7) at exit (:368, :422); E1DDD.C:43-49 uses it as the restore mode, work/reviews/e1ddd.md:18 suggests gRestoreMode"
+
 [[global]]
 id = "ds:8894"
 name = "g8894"
@@ -399,15 +410,23 @@ why = "ds:8894 is the far pointer StartupGame dereferences as g8894->number (E07
 id = "ds:805A"
 name = "gDraw805A"
 why = "a far tile routine drawn with (tile, x, y): DrawTextFrame draws its four corners through it (1DE7:0130, 0163, 0196, 01CC) and DrawTileRun its four edges (1DE7:025E), the same signature as ds:805E (gDraw805E)"
+
 [[global]]
 id = "ds:8117"
 name = "gScrollHook"
-why = "the far routine DrawTextLine calls when the cursor is on the last line of the window (1DE7:03B2), gated by gScrollOn (ds:8110); overlay 5 sets the pair at ds:8117/ds:8119 when it opens windows 0xC and 9 (src/EOV5.C:1114-1115, :1254-1255, :1317-1318; declared int g8117 and int g8119 at EOV5.C:161-162)"
+why = "the far routine DrawTextLine calls when the cursor row starts below the last full line (the same condition as the clip branch of DrawTextLine), gated by gScrollOn (ds:8110); overlay 5 sets the pair at ds:8117/ds:8119 when it opens windows 0xC and 9 (src/EOV5.C:1114-1115, :1254-1255, :1317-1318; EOV5.C:161 declares extern int gScrollHook; /*@ ds:8117 */ and g8119 at :162; the words 0xAC and 0x2D0 at EOV5.C:1114-1115 are the offset and segment of the far pointer)"
+
 [[global]]
 id = "ds:811F"
 name = "gTextRegion"
 why = "the record index of the current text window: SetTextWindow stores it as gRegions[g811F] (1DE7:0009; src/E1A29.C:38, src/E1C0E.C:577 keeps it in saved811F); E07A9.C, E1C0E.C, EOV1.ASM, EOV2.C and EOV6.C read it"
+
 [[global]]
 id = "ds:8102"
-name = "gGraphicsMode"
-why = "src/E07C8.C:31-34 lists 0 cga, 1 tandy, 2 ega, 3 mcga/VGA, 4 vga; src/E17A6.ASM:233 names 0 CGA, 1 Tandy, 2 EGA, 3 MCGA; whitepaper 2.6: 1 Tandy, 3 VGA"
+name = "gGraphicsChoice"
+why = "the graphics choice: its only writer is src/E07C8.C:218, g8102 = argv[1][0] + 1; src/E07C8.C:31 says the digit 0..4 indexes gOverlayFiles (0 cga, 1 tandy, 2 ega, 3 mcga/VGA, 4 vga); src/E17A6.ASM:233 names 0 CGA, 1 Tandy, 2 EGA, 3 MCGA; src/E14EF.C:68 reads it as the graphics choice, 1 Tandy and 3 VGA; 3 and 4 select the 6-bit cells; whitepaper 2.6: 1 Tandy, 3 VGA"
+
+[[global]]
+id = "ds:8115"
+name = "gStatusLine"
+why = "the status-line flag in E082C.C:44, E1C0E.C:589, E16A5.C:511 and in the other declarations."

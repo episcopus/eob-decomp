@@ -49,7 +49,7 @@ extern void movmem(void far *src, void far *dst, unsigned n); /*@ 0000:63A3 */
 extern void DrawShadowText(char far *text, int x, int y, int color, int extra); /*@ 082C:0898 */
 extern void LockHidePointer(void); /*@ 1BBE:0307 */
 extern void LockShowPointer(void); /*@ 1BBE:0332 */
-extern int g8115; /*@ ds:8115 */ /* nonzero while a status line is up (src/E082C.C) */
+extern int gStatusLine; /*@ ds:8115 */ /* nonzero while a status line is up (src/E082C.C) */
 extern char gStr613D[]; /*@ ds:613D */ /* the string the party-status report draws (Purpose unknown) */
 extern void DrawRowList(int index); /*@ 0D1C:0454 */
 
@@ -131,7 +131,7 @@ extern void far *MemAlloc(unsigned long size, int flags); /*@ 19BC:0007 */
 extern void *LoadOverlayScreen(char far *name, int srcKind, int dstKind); /*@ 082C:05EC */
 extern void *LoadScreenImage(char far *name, char far *extra, int srcKind, int dstKind, int mode); /*@ 082C:051B */
 extern void f19EC_002A(int a, int b, int c, int d); /*@ 19EC:002A */
-extern int g8102; /*@ ds:8102 */ /* the video mode the game initialised (src/E082C.C) */
+extern int gGraphicsChoice; /*@ ds:8102 */ /* the video mode the game initialised (src/E082C.C) */
 extern void far *gPtrsFD54[]; /*@ ds:FD54 */ /* the ten overlay buffers ovl0:2547 slices (Purpose unknown) */
 extern char gStr6272[]; /*@ ds:6272 */ /* a screen name (Purpose unknown) */
 extern char gStr627B[]; /*@ ds:627B */ /* a screen name (Purpose unknown) */
@@ -370,7 +370,7 @@ extern void far *g5E64[0x11]; /*@ ds:5E64 */ /* the 17 sliced icon pointers this
 }
 /* ovl0:0504: draws the party-status panel when all four front party slots hold a named character
    (a nonzero first name byte at gChars[i]+2). It counts them, and when there are four it shows the
-   gStr613D report over the status line (DrawShadowText, g8115 = 2), hides the pointer, clips the
+   gStr613D report over the status line (DrawShadowText, gStatusLine = 2), hides the pointer, clips the
    report box and draws panel icon 0xf; otherwise it draws icon 0xe. Called by ovl0:1071. */
 /*@ ovl0:0504 */ void DrawPartyStatus(void)
 {
@@ -383,9 +383,9 @@ extern void far *g5E64[0x11]; /*@ ds:5E64 */ /* the 17 sliced icon pointers this
             count++;
     count = (count == 4);
     if (count == 1) {
-        g8115 = 2;
+        gStatusLine = 2;
         DrawShadowText(gStr613D, 0xa8, 0x3d, 0xf, 0);
-        g8115 = 0;
+        gStatusLine = 0;
         LockHidePointer();
         ClipRect(0x15, 0x3d, 0x13, 0x7d, 0x11, 0x28, 2, 0);
         LockShowPointer();
@@ -427,7 +427,7 @@ extern void far *g5E64[0x11]; /*@ ds:5E64 */ /* the 17 sliced icon pointers this
 
     LockHidePointer();
     ClipRect(0, 0, 0x14, 0, 0x14, 0x80, 2, 2);
-    g8115 = 2;
+    gStatusLine = 2;
     if (mode != 4)
         f1A29_000F(2, gChars[index].sprite, 0xe0, 2, 0);
     text = gChars[index].name;
@@ -471,7 +471,7 @@ extern void far *g5E64[0x11]; /*@ ds:5E64 */ /* the 17 sliced icon pointers this
     }
     ClipRect(0x14, 0, 0x12, 0x40, 0x14, 0x80, 2, 0);
     LockShowPointer();
-    g8115 = 0;
+    gStatusLine = 0;
 }
 /* ovl0:0A4F: draws the row list index 0xa. No direct caller found (reached through an overlay entry
    or jump table). */
@@ -755,18 +755,18 @@ int PickAlignment(int classIndex); /* ovl0:2238, defined below */
     }
     return result;
 }
-/* ovl0:1071: draws the panel report line gStr61CB at (0xa8, 0x10) over a fresh region (g8115 = 2
-   while it draws), restores g8115, redraws the report box and then calls DrawPartyStatus. Called
+/* ovl0:1071: draws the panel report line gStr61CB at (0xa8, 0x10) over a fresh region (gStatusLine = 2
+   while it draws), restores gStatusLine, redraws the report box and then calls DrawPartyStatus. Called
    by ovl0:28F9. Purpose unknown. */
 /*@ ovl0:1071 */ void ShowReportLine1(void)
 {
     int saved;
 
     ClipRect(0, 0, 0x14, 0, 0x14, 0x80, 2, 2);
-    saved = g8115;
-    g8115 = 2;
+    saved = gStatusLine;
+    gStatusLine = 2;
     DrawShadowText(gStr61CB, 0xa8, 0x10, 0xf, 0);
-    g8115 = saved;
+    gStatusLine = saved;
     LockHidePointer();
     ClipRect(0x14, 0, 0x12, 0x40, 0x14, 0x80, 2, 0);
     LockShowPointer();
@@ -780,10 +780,10 @@ int PickAlignment(int classIndex); /* ovl0:2238, defined below */
     int saved;
 
     ClipRect(0, 0, 0x14, 0, 0x14, 0x80, 2, 2);
-    saved = g8115;
-    g8115 = 2;
+    saved = gStatusLine;
+    gStatusLine = 2;
     DrawShadowText(gStr6207, 0xa8, 0x20, 0xf, 0);
-    g8115 = saved;
+    gStatusLine = saved;
     LockHidePointer();
     ClipRect(0x14, 0, 0x12, 0x40, 0x14, 0x80, 2, 0);
     LockShowPointer();
@@ -1015,7 +1015,7 @@ int PickAlignment(int classIndex); /* ovl0:2238, defined below */
                 sprintf(gFileNameBuf, gStr6239, FormatStrengthPercent(*value, *percent));
             else
                 sprintf(gFileNameBuf, gStr623C, *value);
-            g8115 = 0;
+            gStatusLine = 0;
             LockHidePointer();
             gDrawText(gFileNameBuf, (node->x + 0x20) << 3, node->y, 0xf, 0);
             LockShowPointer();
@@ -1137,7 +1137,7 @@ int PickAlignment(int classIndex); /* ovl0:2238, defined below */
 {
     int choice;
 
-    g8115 = 0;
+    gStatusLine = 0;
     LockHidePointer();
     DrawRect(g6079[gDCB0], g607D[gDCB0], g6079[gDCB0] + 0x20, g607D[gDCB0] + 0x21, 0xc);
     ClipRect(0, 0, 0x12, 0x40, 0x14, 0x80, 2, 0);
@@ -1328,18 +1328,18 @@ int PickAlignment(int classIndex); /* ovl0:2238, defined below */
     LoadOverlayScreen(gStr6272, 5, 3);
     for (i = 0; i < 0x2c; i++)
         gPtrsFC8C[i] = gFn8082((i % 10) * 4, (i / 10) * 0x20, 4, 0x20, gOverlayBuf);
-    g8115 = 0;
+    gStatusLine = 0;
     LoadScreenImage(gStr627B, gOverlayBuf, 5, 3, 0);
     LoadOverlayScreen(gStr6283, 5, 3);
     for (i = 0; i < 0xa; i++)
         gPtrsFD54[i] = gFn8082(i * 4, 0, 4, 0x20, gOverlayBuf);
     BuildIconTable();
-    if (g8102 == 0 || g8102 == 1) {
+    if (gGraphicsChoice == 0 || gGraphicsChoice == 1) {
         f19EC_002A(3, 4, FP_OFF(gOverlayBuf), FP_SEG(gOverlayBuf));
         ClipRect(0, 0, 0, 0, 0x28, 0xc8, 4, 2);
     } else
         f19EC_002A(3, 2, FP_OFF(gOverlayBuf), FP_SEG(gOverlayBuf));
-    g8115 = 0;
+    gStatusLine = 0;
     ClipRect(0x12, 0x40, 0, 0, 0x14, 0x80, 0, 2);
     LockShowPointer();
 }

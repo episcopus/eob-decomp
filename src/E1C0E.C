@@ -54,9 +54,9 @@ extern void far *gFE5A;                            /*@ ds:FE5A: the 8x8 font loa
 extern void far *gFont1A47;                        /*@ ds:FE4E: the current font (E1A47.C) */
 
 /* DGROUP globals and indirect far functions. */
-extern int g8115;                        /*@ ds:8115: nonzero while a status line is up (E082C.C) */
+extern int gStatusLine;                        /*@ ds:8115: nonzero while a status line is up (E082C.C) */
 extern int gTextRegion;                        /*@ ds:811F */
-extern int g8102;                        /*@ ds:8102: the video mode the game initialised (E07A9.C) */
+extern int gGraphicsChoice;                        /*@ ds:8102: the video mode the game initialised (E07A9.C) */
 extern int gTextLeft;                    /*@ ds:FE64: the text window's left edge, 8-pixel columns */
 extern int gTextTop;                     /*@ ds:FE66: the text window's top edge, pixel rows */
 extern int gTextWidth;                   /*@ ds:FE62: the text window's width, 8-pixel columns */
@@ -513,8 +513,8 @@ extern long gSlotLengths[];              /*@ ds:FF0C: the record's length per sl
 
     bufSize = 0;
     LockHidePointer();
-    saved8115 = g8115;
-    g8115 = 0;
+    saved8115 = gStatusLine;
+    gStatusLine = 0;
     title = gErrorText[code];
     saved811F = gTextRegion;
     savedFont = gFont1A47;
@@ -580,7 +580,7 @@ extern long gSlotLengths[];              /*@ ds:FF0C: the record's length per sl
         MemFree(gMsgBuf);
         gMsgBuf = 0;
     }
-    g8115 = saved8115;
+    gStatusLine = saved8115;
     LockShowPointer();
     return 1;
 }
@@ -590,11 +590,11 @@ extern long gSlotLengths[];              /*@ ds:FF0C: the record's length per sl
    the old value back and return 1. */
 /*@ 1C0E:0D9B */ int ShowMessage(int index, char far *name)
 {
-    int saved = g8115;
+    int saved = gStatusLine;
 
-    g8115 = 0;
+    gStatusLine = 0;
     DisplayFileError(index, name);
-    g8115 = saved;
+    gStatusLine = saved;
     return 1;
 }
 
