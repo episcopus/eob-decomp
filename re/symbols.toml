@@ -8487,7 +8487,10 @@ unit = "eov4"
 addr = "ovl4:0D1B"
 size = 886
 evidence = ["ovl", "near", "frame"]
-notes = "retry under -v (2026-11-02): the unit now builds with -v, which keeps identical tails apart; the difference below was found under the wrong switches. Earlier: unit-flag class (like 122E). 0D1B wants TCC's inline assembler, CopyViewColumn wants -B. Under the file's -B (TCC -S then TASM) the prologue, frame (sub sp,0x36) and body match through the object scan, but the far-pointer store into the local arr at 0D1B:00A4 is ours 93 xchg bx,ax against the original's two-byte 87 D8 xchg ax,bx; TASM 2.0, 2.01, 1.0 and 1.01 all assemble both spellings as the one-byte 93 (probed 2026-11-01), so no source form gives 87 D8 through TASM. Without -B (TCC's own assembler) the byte is 87 D8 and the first difference moves to +00BD, but then CopyViewColumn's three separate continue tails merge (first difference +0019). Source forms tried for the store: void far *arr, struct Obj28 far *arr, a temp p = obj, *(arr+k), ((void far**)arr)[k], a pointer pa = arr, and an index local; none changes the encoding. The rest of the function (the 5-entry far-pointer list built from the 30 ds:8A82 objects, the blit into ds:DCFC and the four DrawRegion wrappers) is written from the disassembly."
+notes = "matched 2026-11-02 under -v (the file's actual flag, which also keeps CopyViewColumn's tails apart). Four source forms the bytes pin down: the object byte +0xA compares against (char)0xfe/(char)0xff so it is a byte compare (int constants sign-extend first); the absolute sprite is an explicit if/else (abs() is a library call); the +7 nudge is an if/else assigning the local (a ?: keeps the value in AX and stores once); the ds:1A3B m15 test indexes the table directly (only the m0E test keeps the far-pointer local). The earlier -B store question (87 D8 vs 93) is moot: -v is right."
+name = "Ovl4_0D1B"
+level = "L2"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "eov4_1091"

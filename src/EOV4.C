@@ -541,14 +541,13 @@ extern void DrawRegion00C9(int mode, void far *src, int x, int y, int region); /
    (which one depends on the sprite's sign and the +0x16 flag bit 2, which also runs the colour
    callback ds:80D2 with ds:1CD3 or ds:1CE3). Called by DrawViewSlots when the tile record's byte
    +4 has any of bits 0..2. Purpose unknown: what the counters and the four wrappers mean.
-   DRAFT: the prologue, frame (sub sp,0x36) and body match through the object scan; the first
-   difference is the far-pointer store into the local `arr` (0xD1B+0079: ours `93 xchg bx,ax`,
-   original `87 D8 xchg ax,bx`). TCC -S emits `xchg bx,ax`, and TASM 2.0, 2.01, 1.0 and 1.01 all
-   assemble both spellings as the one-byte 93, so the original's two-byte 87 D8
-   came from TCC's own assembler. Since 2026-11-02 the file builds with -v instead of -B (TCC's own
-   assembler, CopyViewColumn's tails still apart), and this store matches; the first difference is
-   now a later jump target (+00BD). */
-/*@ ovl4:0D1B draft */ void Ovl4_0D1B(int slot)
+   Four source forms TCC is picky about, all confirmed by the match: the object byte +0xA is tested
+   against (char)0xfe/(char)0xff so the compare is a byte compare (against int constants it would
+   sign-extend first); the absolute sprite is an explicit if/else (abs() compiles to a library
+   call); the +7 nudge is an if/else assigning the local (a ?: keeps the value in AX and stores
+   once); and the ds:1A3B record is indexed directly for the m15 test (only the m0E test keeps the
+   far-pointer local ds:1A3B `info`). */
+/*@ ovl4:0D1B */ void Ovl4_0D1B(int slot)
 {
     struct Entry27 far *info;
     struct Obj28 far *obj;
@@ -592,13 +591,19 @@ extern void DrawRegion00C9(int mode, void far *src, int x, int y, int region); /
         else
             sprite = g6FE1[(obj->toggle << 4) + page4 + obj->orient];
         if (tileRow == 0) {
-            if (obj->m0A == 0xfe)
+            if (obj->m0A == (char)0xfe)
                 sprite = 5;
-            else if (obj->m0A == 0xff)
+            else if (obj->m0A == (char)0xff)
                 sprite = 6;
         }
-        spriteAbs = abs(sprite);
-        nudge = obj->m07 ? 0x12 : 0;
+        if (sprite < 0)
+            spriteAbs = -sprite;
+        else
+            spriteAbs = sprite;
+        if (obj->m07)
+            nudge = 0x12;
+        else
+            nudge = 0;
         cell = gB7FE[spriteAbs + nudge];
         for (n = tileRow; n != 0; n--) {
             if (gGraphicsChoice == 2)
@@ -616,8 +621,7 @@ extern void DrawRegion00C9(int mode, void far *src, int x, int y, int region); /
         k = (slot * 5 + spriteBase) * 2;
         x = g1D61[k] + 0x58;
         y = g1D63[k] + 0x7f;
-        info = &gTable1A3B[obj->b0];
-        if (info->m15 == 1 && (spriteAbs == 1 || spriteAbs > 3))
+        if (gTable1A3B[obj->b0].m15 == 1 && (spriteAbs == 1 || spriteAbs > 3))
             y += g7015[tileRow];
         x -= (((signed char far *)cell)[2] << 3) >> 1;
         y -= ((signed char far *)cell)[1];
