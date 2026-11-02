@@ -4209,6 +4209,9 @@ unit = "e0ef3"
 addr = "0EF3:2929"
 size = 298
 evidence = ["frame"]
+name = "HandleSpellList"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0ef3_2a53"

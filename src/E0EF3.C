@@ -1820,12 +1820,9 @@ void f0EF3_2295(void);
    sets gA9C5 to the key when the key is under six and, below six, runs the panel body and casts
    the slot's spell through 0EF3:2676 (its value plus 0x19 when gF43D is 1), else redraws the
    party panel. Returns the node's +4 word. QUIRK 0EF3:2969: `found` is read uninitialised when the
-   first loop finds no slot. Reached through the list node's callback30.
-   DRAFT: the body is right but the original loads the far pointer before the second index in
-   `gDD14[gDDE2 * 6 + i]` (`les bx,[gDD14]; add bx,gDDE2*6; add bx,index`), while every form tried
-   (`gDD14[...]`, `(gDD14 + gDDE2*6)[...]`) sums the indexes or reloads the pointer in a different
-   order; the same compiler question as 0EF3:25BD (`make match` differs at the do-while, +0x89). */
-/*@ 0EF3:2929 draft */ int HandleSpellList(struct ActionNode far *node)
+   first loop finds no slot. Reached through the list node's callback30. The slot value plus 0x19
+   when gF43D is 1 is a ternary (the assigned local keeps the frame size). */
+/*@ 0EF3:2929 */ int HandleSpellList(struct ActionNode far *node)
 {
     int key;
     int found;
@@ -1858,8 +1855,7 @@ void f0EF3_2295(void);
             if (gA9C5 < 6) {
                 f0EF3_2295();
                 value = (gDD14 + gDDE2 * 6)[gA9C5];
-                if (gF43D == 1)
-                    value += 0x19;
+                value += (gF43D == 1 ? 0x19 : 0);
                 f0EF3_2676(value, 0);
             } else {
                 RedrawPartyPanel((struct ActRec far *)gF542);
