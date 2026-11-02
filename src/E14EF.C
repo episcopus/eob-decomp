@@ -15,18 +15,18 @@
    and gTable6099[classIndex] & mask with shift 0, masks other than -1 (mask -5 when a party member has align >= 6,
    :1189-1190; mask 0xfe3f when one has m20 == 2, :1241-1242), so FindMaskBit's bit scan is reached in play.
    CountMaskBits is called by PickClass with n 15 (:1193) and PickAlignment with n 9 (:1244), both with shift 0
-   (see its comment). The flags and the build through the assembler (`-B`) are whitepaper 2.1.1. The modulo at
+   (see its comment). The flags (`-v`, debug information) are whitepaper 2.1.1. The modulo at
    UpdateOptionList :283 and the two `/ lineheight` divisions (:302, :326) divide by zero if the panel height or
    gFontHeight + gFC78 is zero; whether either can be zero is not established. Placeholder names. A bare `:NNN` in
    a comment in this file is a line of this file; `SSSS:NNNN` is a disassembly address. */
 
-/*@flags -ml -O -Z -B */
+/*@flags -ml -O -Z -v */
 
-/* Assembler note: the four separate `row = 0` / `row = lastRow` case tails (14EF:03E6, 03EC, 03D2,
-   03F2) show the unit was compiled through the assembler (`-B`: TCC -S, then TASM with SMART off),
-   which keeps them. TCC's internal assembler cross-jumps the later copy into the earlier one and
-   drops 7 bytes, so the switch table would land at 14EF:0556 instead of 14EF:055D; the file's -B
-   flag makes the matcher do the same (playbook 30, E14EF 2026-11-01). The KEY_CLICK case is written
+/* Flags note: the four separate `row = 0` / `row = lastRow` case tails (14EF:03E6, 03EC, 03D2,
+   03F2) show the unit was compiled with debug information (`-v`), which keeps them. Without it TCC
+   cross-jumps the later copy into the earlier one and drops 7 bytes, so the switch table would land
+   at 14EF:0556 instead of 14EF:055D (2026-11-01 under -B, which also keeps them; -v since
+   2026-11-02, whitepaper 2.1.1). The KEY_CLICK case is written
    in the positive form (`if (IsPointInRect) { ...; break; } gFC7A = key;`) so the success path falls
    through and the failure is taken, matching 14EF:0417 `je`; the negated form made the optimizer
    branch the other way. Same class as 0ACD:091C. */

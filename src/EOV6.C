@@ -111,9 +111,10 @@ void f0B9B(int message);
    Each hour it prints "Hours rested: %-4d" (f0858) and damages by 10 hit points every member with
    flag 1 and without flag 0x10 (DamageCharacter(member, 10)). Every eight hours it puts the class-2
    spell 0x18 into a memorized slot of a member whose classIndex is 2, and, for a member with flag 3
-   (`if (!f0D1C_0670(member, 3)) continue;`), regains one hit point of a member below his maximum and
-   drops the level of a member whose 0D1C:0163(member, 2) is negative (by 5, or to 0 when at 5 or
-   less); every 24 hours it damages a member with flag 3 at level 0 above 0xf6 hit points. It never
+   above level 0 (`if (!f0D1C_0670(member, 3)) continue;`), regains one hit point of a member below
+   his maximum and drops the level of a member whose 0D1C:0163(member, 2) is negative (by 5, or to 0
+   when at 5 or less); every 24 hours it damages a member with flag 3 at level 0 above -10 hit points
+   (hp > (signed char)0xf6; hp is a signed char). It never
    updates the object list: only f09D2 does (UpdateObjects), at the start and on each key test. On
    the done path, when the last f09D2 result was 0 and no member is wounded, it shows the warning box
    f0B9B(0x2b), "All characters are fully rested." (gStrings2003 message 0x2b). It returns 1 when the

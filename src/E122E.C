@@ -8,7 +8,7 @@
    Below L2: four drafts (ForceDoorAction 0325, ItemSlotAction 06D0, WriteObjectRunOp 0A16,
    EvaluateScriptExpr 147F), each with its difference in re/symbols.toml. */
 
-/*@flags -ml -O -Z */
+/*@flags -ml -O -Z -v */
 
 extern signed char gB894[]; /*@ ds:B894 */     /* nine-byte per-object records (src/E08E6.C) */
 extern int gEvalStack[]; /*@ ds:A95C */         /* the script-expression value stack (122E:147F) */
@@ -606,7 +606,7 @@ void RunMemberScript(int who, int mode);  /* forward: 1DA8 comes after its calle
 /* 122E:0A16: sub-opcode that writes a run of four gB894 bytes: 0xFFF7 compares the record's first
    byte with a script byte and fills the first four bytes with the second script byte when they match
    (or the first when they do not); 0xFFEA hands a word and -1 to f122E_0271. Returns the bytes read. */
-/*@ 122E:0A16 draft */ long WriteObjectRunOp(char far *script)
+/*@ 122E:0A16 */ long WriteObjectRunOp(char far *script)
 {
     int id;
     int first;

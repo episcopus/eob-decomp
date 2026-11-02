@@ -1442,7 +1442,8 @@ size = 1050
 evidence = ["segment"]
 name = "EditTextField"
 level = "L2"
-match_flags = "-ml -O -Z -B"
+match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e082c_0425"
@@ -1452,7 +1453,8 @@ size = 51
 evidence = ["far", "frame"]
 name = "WaitTicks"
 level = "L2"
-match_flags = "-ml -O -Z -B"
+match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e082c_0458"
@@ -1462,7 +1464,8 @@ size = 108
 evidence = ["far", "frame"]
 name = "RollDice"
 level = "L2"
-match_flags = "-ml -O -Z -B"
+match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e082c_04c4"
@@ -1472,7 +1475,8 @@ size = 87
 evidence = ["far", "frame"]
 name = "DrawRect"
 level = "L2"
-match_flags = "-ml -O -Z -B"
+match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e082c_051b"
@@ -1482,7 +1486,8 @@ size = 209
 evidence = ["far", "near", "frame"]
 name = "LoadScreenImage"
 level = "L2"
-match_flags = "-ml -O -Z -B"
+match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e082c_05ec"
@@ -1492,7 +1497,8 @@ size = 39
 evidence = ["frame"]
 name = "LoadOverlayScreen"
 level = "L2"
-match_flags = "-ml -O -Z -B"
+match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e082c_0613"
@@ -1502,7 +1508,8 @@ size = 40
 evidence = ["far", "near", "frame"]
 name = "IsPointInsideRect"
 level = "L2"
-match_flags = "-ml -O -Z -B"
+match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e082c_063b"
@@ -1512,7 +1519,8 @@ size = 70
 evidence = ["far", "frame"]
 name = "DrawRegion000F"
 level = "L2"
-match_flags = "-ml -O -Z -B"
+match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e082c_0681"
@@ -1522,7 +1530,8 @@ size = 70
 evidence = ["far", "frame"]
 name = "DrawRegion004D"
 level = "L2"
-match_flags = "-ml -O -Z -B"
+match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e082c_06c7"
@@ -1532,7 +1541,8 @@ size = 70
 evidence = ["frame"]
 name = "DrawRegion008B"
 level = "L2"
-match_flags = "-ml -O -Z -B"
+match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e082c_070d"
@@ -1542,7 +1552,8 @@ size = 64
 evidence = ["frame"]
 name = "DrawRegion00C9"
 level = "L2"
-match_flags = "-ml -O -Z -B"
+match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e082c_074d"
@@ -1552,7 +1563,8 @@ size = 87
 evidence = ["frame"]
 name = "DrawBevelBox"
 level = "L2"
-match_flags = "-ml -O -Z -B"
+match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e082c_07a4"
@@ -1562,7 +1574,8 @@ size = 33
 evidence = ["far", "frame"]
 name = "SwapChars"
 level = "L2"
-match_flags = "-ml -O -Z -B"
+match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e082c_07c5"
@@ -1571,8 +1584,9 @@ addr = "082C:07C5"
 size = 85
 evidence = ["frame"]
 level = "L2"
-match_flags = "-ml -O -Z -B"
+match_flags = "-ml -O -Z -v"
 name = "SwapBlocks"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e082c_081a"
@@ -1582,7 +1596,8 @@ size = 126
 evidence = ["near", "frame"]
 name = "ShowMemoryDiagnostics"
 level = "L2"
-match_flags = "-ml -O -Z -B"
+match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e082c_0898"
@@ -1592,7 +1607,8 @@ size = 114
 evidence = ["far", "frame"]
 name = "DrawShadowText"
 level = "L2"
-match_flags = "-ml -O -Z -B"
+match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e082c_090a"
@@ -1602,7 +1618,8 @@ size = 106
 evidence = ["frame"]
 name = "DrawShadowInt"
 level = "L2"
-match_flags = "-ml -O -Z -B"
+match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e082c_0974"
@@ -1612,7 +1629,8 @@ size = 50
 evidence = ["far", "frame"]
 name = "NumberWidthLong"
 level = "L2"
-match_flags = "-ml -O -Z -B"
+match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e082c_09a6"
@@ -1622,7 +1640,8 @@ size = 47
 evidence = ["far", "frame"]
 name = "NumberWidthInt"
 level = "L2"
-match_flags = "-ml -O -Z -B"
+match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e082c_09d5"
@@ -1632,7 +1651,8 @@ size = 126
 evidence = ["far", "frame"]
 name = "DrawFilledPanel"
 level = "L2"
-match_flags = "-ml -O -Z -B"
+match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e082c_0a53"
@@ -1642,7 +1662,8 @@ size = 10
 evidence = ["frame"]
 name = "QuitGame"
 level = "L2"
-match_flags = "-ml -O -Z -B"
+match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e082c_0a5d"
@@ -1652,7 +1673,8 @@ size = 32
 evidence = ["far", "frame"]
 name = "ClickInRect"
 level = "L2"
-match_flags = "-ml -O -Z -B"
+match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e082c_0a7d"
@@ -1662,7 +1684,8 @@ size = 55
 evidence = ["frame"]
 name = "ReadFileBytes"
 level = "L2"
-match_flags = "-ml -O -Z -B"
+match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e082c_0ab4"
@@ -1671,8 +1694,9 @@ addr = "082C:0AB4"
 size = 52
 evidence = ["far", "frame"]
 level = "L2"
-match_flags = "-ml -O -Z -B"
+match_flags = "-ml -O -Z -v"
 name = "ClampOrWrap"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e082c_0ae8"
@@ -1682,7 +1706,8 @@ size = 38
 evidence = ["frame"]
 name = "FormatName"
 level = "L2"
-match_flags = "-ml -O -Z -B"
+match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e082c_0b0e"
@@ -1691,8 +1716,9 @@ addr = "082C:0B0E"
 size = 53
 evidence = ["frame"]
 level = "L2"
-match_flags = "-ml -O -Z -B"
+match_flags = "-ml -O -Z -v"
 name = "DrawTextAndMemoryReport"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e082c_0b43"
@@ -1701,8 +1727,9 @@ addr = "082C:0B43"
 size = 76
 evidence = ["far", "frame"]
 level = "L2"
-match_flags = "-ml -O -Z -B"
+match_flags = "-ml -O -Z -v"
 name = "DelaySecondsThenKey"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e082c_0b8f"
@@ -1711,8 +1738,9 @@ addr = "082C:0B8F"
 size = 28
 evidence = ["far", "frame"]
 level = "L2"
-match_flags = "-ml -O -Z -B"
+match_flags = "-ml -O -Z -v"
 name = "SayAndPlaySound"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e08e6_000b"
@@ -1722,7 +1750,7 @@ size = 74
 evidence = ["far", "segment"]
 name = "ClearObjectType"
 level = "L2"
-match_flags = "-ml -O -Z -B"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e08e6_0055"
@@ -1732,7 +1760,7 @@ size = 110
 evidence = ["near", "frame"]
 name = "ClearType8Objects"
 level = "L2"
-match_flags = "-ml -O -Z -B"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e08e6_00c3"
@@ -1741,7 +1769,7 @@ addr = "08E6:00C3"
 size = 141
 evidence = ["near", "frame"]
 name = "Obj00C3"
-notes = "blocked: a TCC -S codegen question, one 3-byte instruction. The original reloads les bx,[bp+6] at 08E6:00F2 before the Distance argument obj->id (08E6:00EE push [ds:FBCA]; 08E6:00F2 les bx,[bp+6]; 08E6:00F5 push es:[bx+2]); ours reuses the bx the five-test && chain already holds, so ours is 3 bytes short (ours je 0x86, original je 0x89). The unit is -B (0765, 0B94, 17FD and 1410 need it); under -B the body matches byte for byte except that load. The reload is what TCC emits when it has not proved the far pointer still lives in ES:BX; it appears in the original exactly where a body is a jump target (the else branch at 03FE:041F, the statement after a || chain, and the if(cond) ; else { body } layout, probed 2026-11-01), but here the body is fall-through after the jle. -O (jump optimisation) is what suppresses the redundant load (WHITEPAPER 2.1.1). Forms tried, each either keeping the cached bx as ours does or laying the first test as jne @@; jmp instead of je: the && chain, one-line, parenthesised and negated conditions, nested ifs (with and without braces), switch, goto, empty-body if, do/while(0), for(;;), while, a nested block, a declaration initialiser, register and separate locals, a bare obj;, an assignment inside the condition, casts, the if(cond) ; else { body } layout, and the || early-return form (which reloads but its first test is jne @@; jmp under /jNOSMART; it matches only without -B and then 0765, 0B94 and 17FD do not match). Flags probed on the whole unit 2026-11-01: -ml -O -Z -B 35 of 36, -ml -O -Z 32, -ml -O -Z -G -B 10, -ml -Z -B 2; -B is the only set that reaches 35 and the one missing function is this one. C++ -P, -1 and -k make no difference. src/E08E6.C carries the same evidence."
+notes = "retry under -v (2026-11-02): the unit now builds with -v, which keeps identical tails apart; the difference below was found under the wrong switches. Earlier: a TCC -S codegen question, one 3-byte instruction. The original reloads les bx,[bp+6] at 08E6:00F2 before the Distance argument obj->id (08E6:00EE push [ds:FBCA]; 08E6:00F2 les bx,[bp+6]; 08E6:00F5 push es:[bx+2]); ours reuses the bx the five-test && chain already holds, so ours is 3 bytes short (ours je 0x86, original je 0x89). The unit is -B (0765, 0B94, 17FD and 1410 need it); under -B the body matches byte for byte except that load. The reload is what TCC emits when it has not proved the far pointer still lives in ES:BX; it appears in the original exactly where a body is a jump target (the else branch at 03FE:041F, the statement after a || chain, and the if(cond) ; else { body } layout, probed 2026-11-01), but here the body is fall-through after the jle. -O (jump optimisation) is what suppresses the redundant load (WHITEPAPER 2.1.1). Forms tried, each either keeping the cached bx as ours does or laying the first test as jne @@; jmp instead of je: the && chain, one-line, parenthesised and negated conditions, nested ifs (with and without braces), switch, goto, empty-body if, do/while(0), for(;;), while, a nested block, a declaration initialiser, register and separate locals, a bare obj;, an assignment inside the condition, casts, the if(cond) ; else { body } layout, and the || early-return form (which reloads but its first test is jne @@; jmp under /jNOSMART; it matches only without -B and then 0765, 0B94 and 17FD do not match). Flags probed on the whole unit 2026-11-01: -ml -O -Z -B 35 of 36, -ml -O -Z 32, -ml -O -Z -G -B 10, -ml -Z -B 2; -B is the only set that reaches 35 and the one missing function is this one. C++ -P, -1 and -k make no difference. src/E08E6.C carries the same evidence."
 
 [[function]]
 id = "e08e6_0150"
@@ -1751,7 +1779,7 @@ size = 46
 evidence = ["far", "frame"]
 name = "Obj0150"
 level = "L2"
-match_flags = "-ml -O -Z -B"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e08e6_017e"
@@ -1761,7 +1789,7 @@ size = 154
 evidence = ["near", "frame"]
 name = "BuildObjectFrameMask"
 level = "L2"
-match_flags = "-ml -O -Z -B"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e08e6_0218"
@@ -1771,7 +1799,7 @@ size = 127
 evidence = ["near", "frame"]
 name = "FindObjectFrameBit"
 level = "L2"
-match_flags = "-ml -O -Z -B"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e08e6_0297"
@@ -1781,7 +1809,7 @@ size = 114
 evidence = ["far", "near", "frame"]
 name = "MoveObjectToId"
 level = "L2"
-match_flags = "-ml -O -Z -B"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e08e6_0309"
@@ -1791,7 +1819,7 @@ size = 245
 evidence = ["near", "frame"]
 name = "TurnObject"
 level = "L2"
-match_flags = "-ml -O -Z -B"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e08e6_03fe"
@@ -1801,7 +1829,7 @@ size = 50
 evidence = ["near", "frame"]
 name = "Obj03FE"
 level = "L2"
-match_flags = "-ml -O -Z -B"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e08e6_0430"
@@ -1811,7 +1839,7 @@ size = 346
 evidence = ["near", "frame"]
 name = "Obj0430"
 level = "L2"
-match_flags = "-ml -O -Z -B"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e08e6_058a"
@@ -1821,7 +1849,7 @@ size = 96
 evidence = ["near", "frame"]
 name = "SetObjectFrameFromId"
 level = "L2"
-match_flags = "-ml -O -Z -B"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e08e6_05ea"
@@ -1831,7 +1859,7 @@ size = 341
 evidence = ["near", "frame"]
 name = "Obj05EA"
 level = "L2"
-match_flags = "-ml -O -Z -B"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e08e6_073f"
@@ -1841,7 +1869,7 @@ size = 38
 evidence = ["near", "frame"]
 name = "Obj073F"
 level = "L2"
-match_flags = "-ml -O -Z -B"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e08e6_0765"
@@ -1851,7 +1879,7 @@ size = 851
 evidence = ["near", "frame"]
 name = "Obj0765"
 level = "L2"
-match_flags = "-ml -O -Z -B"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e08e6_0ab8"
@@ -1861,7 +1889,7 @@ size = 124
 evidence = ["near"]
 name = "Obj0AB8"
 level = "L2"
-match_flags = "-ml -O -Z -B"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e08e6_0b34"
@@ -1871,7 +1899,7 @@ size = 96
 evidence = ["near", "frame"]
 name = "StepObjectOrient"
 level = "L2"
-match_flags = "-ml -O -Z -B"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e08e6_0b94"
@@ -1881,7 +1909,7 @@ size = 274
 evidence = ["near", "frame"]
 name = "Obj0B94"
 level = "L2"
-match_flags = "-ml -O -Z -B"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e08e6_0ca6"
@@ -1891,7 +1919,7 @@ size = 34
 evidence = ["near", "frame"]
 name = "Obj0CA6"
 level = "L2"
-match_flags = "-ml -O -Z -B"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e08e6_0cc8"
@@ -1901,7 +1929,7 @@ size = 258
 evidence = ["far", "frame"]
 name = "UpdateObjects"
 level = "L2"
-match_flags = "-ml -O -Z -B"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e08e6_0dca"
@@ -1911,7 +1939,7 @@ size = 126
 evidence = ["near"]
 name = "RestoreObjectFlags"
 level = "L2"
-match_flags = "-ml -O -Z -B"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e08e6_0e48"
@@ -1921,7 +1949,7 @@ size = 123
 evidence = ["far", "near", "frame"]
 name = "Obj0E48"
 level = "L2"
-match_flags = "-ml -O -Z -B"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e08e6_0ec3"
@@ -1931,7 +1959,7 @@ size = 251
 evidence = ["far", "near", "frame"]
 name = "Obj0EC3"
 level = "L2"
-match_flags = "-ml -O -Z -B"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e08e6_0fbe"
@@ -1941,7 +1969,7 @@ size = 127
 evidence = ["far", "near", "frame"]
 name = "DamageObject"
 level = "L2"
-match_flags = "-ml -O -Z -B"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e08e6_103d"
@@ -1951,7 +1979,7 @@ size = 46
 evidence = ["far", "frame"]
 name = "Obj103D"
 level = "L2"
-match_flags = "-ml -O -Z -B"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e08e6_106b"
@@ -1961,7 +1989,7 @@ size = 136
 evidence = ["far", "near", "frame"]
 name = "Obj106B"
 level = "L2"
-match_flags = "-ml -O -Z -B"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e08e6_10f3"
@@ -1971,7 +1999,7 @@ size = 554
 evidence = ["far", "frame"]
 name = "Obj10F3"
 level = "L2"
-match_flags = "-ml -O -Z -B"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e08e6_131d"
@@ -1981,7 +2009,7 @@ size = 243
 evidence = ["near", "frame"]
 name = "Obj131D"
 level = "L2"
-match_flags = "-ml -O -Z -B"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e08e6_1410"
@@ -1991,7 +2019,7 @@ size = 245
 evidence = ["far", "frame"]
 name = "Obj1410"
 level = "L2"
-match_flags = "-ml -O -Z -B"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e08e6_1505"
@@ -2001,7 +2029,7 @@ size = 90
 evidence = ["far", "frame"]
 name = "Obj1505"
 level = "L2"
-match_flags = "-ml -O -Z -B"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e08e6_155f"
@@ -2011,7 +2039,7 @@ size = 85
 evidence = ["near", "frame"]
 name = "BuildObjectIdList"
 level = "L2"
-match_flags = "-ml -O -Z -B"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e08e6_15b4"
@@ -2021,7 +2049,7 @@ size = 128
 evidence = ["far", "frame"]
 name = "Obj15B4"
 level = "L2"
-match_flags = "-ml -O -Z -B"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e08e6_1634"
@@ -2031,7 +2059,7 @@ size = 162
 evidence = ["near", "frame"]
 name = "Obj1634"
 level = "L2"
-match_flags = "-ml -O -Z -B"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e08e6_16d6"
@@ -2041,7 +2069,7 @@ size = 159
 evidence = ["far", "frame"]
 name = "Obj16D6"
 level = "L2"
-match_flags = "-ml -O -Z -B"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e08e6_1775"
@@ -2051,7 +2079,7 @@ size = 136
 evidence = ["near", "frame"]
 name = "Obj1775"
 level = "L2"
-match_flags = "-ml -O -Z -B"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e08e6_17fd"
@@ -2061,7 +2089,7 @@ size = 160
 evidence = ["far", "frame"]
 name = "Obj17FD"
 level = "L2"
-match_flags = "-ml -O -Z -B"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e08e6_189d"
@@ -2071,7 +2099,7 @@ size = 41
 evidence = ["far", "frame"]
 name = "Obj189D"
 level = "L2"
-match_flags = "-ml -O -Z -B"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e0a72_0006"
@@ -2246,7 +2274,7 @@ size = 32
 evidence = ["near", "segment"]
 name = "MoveBlocked"
 level = "L2"
-match_flags = "-ml -O -Z -B"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e0acd_0028"
@@ -2256,7 +2284,7 @@ size = 12
 evidence = ["frame"]
 name = "GetActionResult"
 level = "L2"
-match_flags = "-ml -O -Z -B"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e0acd_0034"
@@ -2266,7 +2294,7 @@ size = 88
 evidence = ["frame"]
 name = "Action0034"
 level = "L2"
-match_flags = "-ml -O -Z -B"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e0acd_008c"
@@ -2276,7 +2304,7 @@ size = 95
 evidence = ["frame"]
 name = "Action008C"
 level = "L2"
-match_flags = "-ml -O -Z -B"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e0acd_00eb"
@@ -2286,7 +2314,7 @@ size = 163
 evidence = ["frame"]
 name = "Action00EB"
 level = "L2"
-match_flags = "-ml -O -Z -B"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e0acd_018e"
@@ -2296,7 +2324,7 @@ size = 50
 evidence = ["frame"]
 name = "Action018E"
 level = "L2"
-match_flags = "-ml -O -Z -B"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e0acd_01c0"
@@ -2306,7 +2334,7 @@ size = 35
 evidence = ["frame"]
 name = "Action01C0"
 level = "L2"
-match_flags = "-ml -O -Z -B"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e0acd_01e3"
@@ -2316,7 +2344,7 @@ size = 129
 evidence = ["far", "frame"]
 name = "Action01E3"
 level = "L2"
-match_flags = "-ml -O -Z -B"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e0acd_0264"
@@ -2326,7 +2354,7 @@ size = 303
 evidence = ["frame"]
 name = "Action0264"
 level = "L2"
-match_flags = "-ml -O -Z -B"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e0acd_0393"
@@ -2336,7 +2364,7 @@ size = 58
 evidence = ["frame"]
 name = "Action0393"
 level = "L2"
-match_flags = "-ml -O -Z -B"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e0acd_03cd"
@@ -2346,7 +2374,7 @@ size = 72
 evidence = ["frame"]
 name = "StepActionRow"
 level = "L2"
-match_flags = "-ml -O -Z -B"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e0acd_0415"
@@ -2356,7 +2384,7 @@ size = 127
 evidence = ["frame"]
 name = "Action0415"
 level = "L2"
-match_flags = "-ml -O -Z -B"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e0acd_0494"
@@ -2366,7 +2394,7 @@ size = 100
 evidence = ["frame"]
 name = "Action0494"
 level = "L2"
-match_flags = "-ml -O -Z -B"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e0acd_04f8"
@@ -2376,7 +2404,7 @@ size = 49
 evidence = ["frame"]
 name = "Action04F8"
 level = "L2"
-match_flags = "-ml -O -Z -B"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e0acd_0529"
@@ -2386,7 +2414,7 @@ size = 67
 evidence = ["frame"]
 name = "Action0529"
 level = "L2"
-match_flags = "-ml -O -Z -B"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e0acd_056c"
@@ -2396,7 +2424,7 @@ size = 39
 evidence = ["frame"]
 name = "Action056C"
 level = "L2"
-match_flags = "-ml -O -Z -B"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e0acd_0593"
@@ -2406,7 +2434,7 @@ size = 39
 evidence = ["frame"]
 name = "Action0593"
 level = "L2"
-match_flags = "-ml -O -Z -B"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e0acd_05ba"
@@ -2416,7 +2444,7 @@ size = 69
 evidence = ["frame"]
 name = "Action05BA"
 level = "L2"
-match_flags = "-ml -O -Z -B"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e0acd_05ff"
@@ -2426,7 +2454,7 @@ size = 69
 evidence = ["frame"]
 name = "Action05FF"
 level = "L2"
-match_flags = "-ml -O -Z -B"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e0acd_0644"
@@ -2437,7 +2465,7 @@ evidence = ["frame"]
 notes = "unblocked 2026-11-01: the two copies are local ARRAY initialisers (char pageVolume[4] = {...}; char slotKind[4][4] = {...};), the F_SCOPY@ segment-first form the whitepaper records (2.1.1, eov6), and the rest then matched (271 bytes). It copies the per-page volume adjustment into pageVolume and the per-page per-slot kind into slotKind, then: slot < 2 uses gSoundVolume, otherwise gSoundVolume + pageVolume[gFBCC] gated by g194B[gB894[vol*9+gA9C6]] & 0xB; the current item (f0D1C_02DC) is queued with InsertListItem(head, vol, f0D1C_02DC(), kind) or the first matching entry removed with RemoveListItem(head, kind, -1) and shown with SetMouseItem. The 0x16 frame is the 20-byte arrays plus one int (removed); slot and vol are register variables and slot is reused to hold the kind so tc100 needs only SI and DI."
 name = "Action0644"
 level = "L2"
-match_flags = "-ml -O -Z -B"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e0acd_0753"
@@ -2447,7 +2475,7 @@ size = 57
 evidence = ["frame"]
 name = "StepMenuPhase"
 level = "L2"
-match_flags = "-ml -O -Z -B"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e0acd_078c"
@@ -2457,7 +2485,7 @@ size = 84
 evidence = ["frame"]
 name = "Action078C"
 level = "L2"
-match_flags = "-ml -O -Z -B"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e0acd_07e0"
@@ -2467,7 +2495,7 @@ size = 241
 evidence = ["far", "near", "frame"]
 name = "EatFood"
 level = "L2"
-match_flags = "-ml -O -Z -B"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e0acd_08d1"
@@ -2477,7 +2505,7 @@ size = 22
 evidence = ["frame"]
 name = "Action08D1"
 level = "L2"
-match_flags = "-ml -O -Z -B"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e0acd_08e7"
@@ -2487,7 +2515,7 @@ size = 53
 evidence = ["near", "frame"]
 name = "Action08E7"
 level = "L2"
-match_flags = "-ml -O -Z -B"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e0acd_091c"
@@ -2498,7 +2526,7 @@ evidence = ["near", "frame"]
 notes = "matched 2026-11-01: the two character searches are `do { ... } while (!f0D1C_0670(gA99A, 1)); gF51A = v;` loops, not `for(;;) { ...; if (f0D1C_0670(gA99A, 1)) { gF51A = v; break; } }`. With the for(;;) form the compiler cross-jumps case 0's `gF51A = 0` into case 2's and case 2's `gF51A = 1` into case 0's (11 bytes shorter); with the do/while the two stores stay apart, as the original has them."
 name = "Turn091C"
 level = "L2"
-match_flags = "-ml -O -Z -B"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e0acd_09ef"
@@ -2508,7 +2536,7 @@ size = 69
 evidence = ["near"]
 name = "SetActionRow"
 level = "L2"
-match_flags = "-ml -O -Z -B"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e0acd_0a34"
@@ -2518,7 +2546,7 @@ size = 45
 evidence = ["near", "frame"]
 name = "Action0A34"
 level = "L2"
-match_flags = "-ml -O -Z -B"
+match_flags = "-ml -O -Z -v"
 notes = "matched 2026-11-01: case 0 is `Turn091C(dir); goto done;` and case 1 falls through to `done: return;`, not `break`. With a plain switch/break the compiler cross-jumps the two calls' argument cleanup (`pop cx` after each), one byte shorter than the original."
 
 [[function]]
@@ -2529,7 +2557,7 @@ size = 325
 evidence = ["near", "frame"]
 name = "MoveListItem"
 level = "L2"
-match_flags = "-ml -O -Z -B"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e0acd_0ba6"
@@ -2540,7 +2568,7 @@ evidence = ["near", "frame"]
 notes = "unblocked 2026-11-01: the store at 0ACD:0C7F is `mov [gF3BA], ax` (3-byte a3 form) only when the miss path is the `else` of a positive `if (item != 0 && item != gF3BA)`, not when it is a `goto miss`: with the goto, tc100 loads the DI register variable item (mov [gF3BA],di, 89 3e, 4 bytes, shifting every later jump by one); with the if/else the store takes the value still in AX from the RemoveListItem call at 0ACD:0C59 and the whole function matches (503 bytes). All the ~30 small variants of the store expression (cast, +0, self-assign, comma, pointer, register, unsigned, ternary, ...) still emitted DI; only the control-flow form changed it. The earlier draft note is kept: with a `goto miss` the store is `mov [gF3BA], di`."
 name = "PickListItem"
 level = "L2"
-match_flags = "-ml -O -Z -B"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e0acd_0d9d"
@@ -2550,7 +2578,7 @@ size = 207
 evidence = ["near", "frame"]
 name = "Action0D9D"
 level = "L2"
-match_flags = "-ml -O -Z -B"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e0acd_0e6c"
@@ -2560,7 +2588,7 @@ size = 30
 evidence = ["near"]
 name = "Action0E6C"
 level = "L2"
-match_flags = "-ml -O -Z -B"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e0acd_0e8a"
@@ -2570,7 +2598,7 @@ size = 232
 evidence = ["far", "frame"]
 name = "RunMapLoop"
 level = "L2"
-match_flags = "-ml -O -Z -B"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e0acd_0f72"
@@ -2580,7 +2608,7 @@ size = 193
 evidence = ["far", "frame"]
 name = "EnterMapScreen"
 level = "L2"
-match_flags = "-ml -O -Z -B"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e0acd_1033"
@@ -2590,7 +2618,7 @@ size = 43
 evidence = ["far", "frame"]
 name = "ResetMapScreen"
 level = "L2"
-match_flags = "-ml -O -Z -B"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e0bd2_000e"
@@ -2885,7 +2913,7 @@ size = 57
 evidence = ["far", "segment"]
 name = "f0D1C_0006"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e0d1c_003f"
@@ -2895,7 +2923,7 @@ size = 46
 evidence = ["far", "frame"]
 name = "SelectCharacter"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e0d1c_006d"
@@ -2905,7 +2933,7 @@ size = 11
 evidence = ["far", "frame"]
 name = "f0D1C_006D"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e0d1c_0078"
@@ -2915,7 +2943,7 @@ size = 8
 evidence = ["far", "frame"]
 name = "f0D1C_0078"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e0d1c_0080"
@@ -2925,7 +2953,7 @@ size = 90
 evidence = ["far", "frame"]
 name = "f0D1C_0080"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e0d1c_00da"
@@ -2935,7 +2963,7 @@ size = 23
 evidence = ["far", "near", "frame"]
 name = "f0D1C_00DA"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e0d1c_00f1"
@@ -2945,7 +2973,7 @@ size = 114
 evidence = ["near", "frame"]
 name = "FindCarriedSlot"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e0d1c_0163"
@@ -2953,7 +2981,7 @@ unit = "e0d1c"
 addr = "0D1C:0163"
 size = 103
 evidence = ["far", "frame"]
-notes = "blocked: compiler codegen. With `if (item = rec->m77[i])` the draft matches every byte except one 2-byte instruction: the original reloads `item` into AX before the first multiply (0D1C:0194 `mov ax,di`; both multiplies use `mov ax,di`), while our `-ml -O -Z` build still has AX equal to `item` from the `or ax,ax; je` at 0D1C:0190 and elides the first load (every later byte identical, 101 against 103 bytes). TCC `-O` redundant-register-load elimination. TCC -c probes on the same shape (far 14-byte struct, `if (item = a[i]) { if (tab[item]..) }`) elided it for every form tried: separate assignment then `if (item)`, `!= 0`, the multiply read as a second variable, `register`/`long`/`unsigned`/`volatile` item, nested ifs, `||`, a label or an empty block before the use, and an extra local; only dropping `-O` keeps the load, and `-ml -Z` matches only 6 of 26 functions. No source form found."
+notes = "retry under -v (2026-11-02): the unit now builds with -v, which keeps identical tails apart; the difference below was found under the wrong switches. Earlier: compiler codegen. With `if (item = rec->m77[i])` the draft matches every byte except one 2-byte instruction: the original reloads `item` into AX before the first multiply (0D1C:0194 `mov ax,di`; both multiplies use `mov ax,di`), while our `-ml -O -Z` build still has AX equal to `item` from the `or ax,ax; je` at 0D1C:0190 and elides the first load (every later byte identical, 101 against 103 bytes). TCC `-O` redundant-register-load elimination. TCC -c probes on the same shape (far 14-byte struct, `if (item = a[i]) { if (tab[item]..) }`) elided it for every form tried: separate assignment then `if (item)`, `!= 0`, the multiply read as a second variable, `register`/`long`/`unsigned`/`volatile` item, nested ifs, `||`, a label or an empty block before the use, and an extra local; only dropping `-O` keeps the load, and `-ml -Z` matches only 6 of 26 functions. No source form found."
 
 [[function]]
 id = "e0d1c_01ca"
@@ -2963,7 +2991,7 @@ size = 274
 evidence = ["frame"]
 name = "RemoveCarriedItems"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e0d1c_02dc"
@@ -2973,7 +3001,7 @@ size = 40
 evidence = ["far", "frame"]
 name = "f0D1C_02DC"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e0d1c_0304"
@@ -2983,7 +3011,7 @@ size = 86
 evidence = ["far", "frame"]
 name = "SetCurrentItem"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e0d1c_035a"
@@ -2993,7 +3021,7 @@ size = 250
 evidence = ["frame"]
 name = "f0D1C_035A"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e0d1c_0454"
@@ -3003,7 +3031,7 @@ size = 303
 evidence = ["frame"]
 name = "DrawRowList"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e0d1c_0583"
@@ -3013,7 +3041,7 @@ size = 24
 evidence = ["far", "frame"]
 name = "RedrawCharacters"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e0d1c_059b"
@@ -3023,7 +3051,7 @@ size = 213
 evidence = ["far", "frame"]
 name = "f0D1C_059B"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e0d1c_0670"
@@ -3033,7 +3061,7 @@ size = 159
 evidence = ["far", "near", "frame"]
 name = "f0D1C_0670"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e0d1c_070f"
@@ -3043,7 +3071,7 @@ size = 152
 evidence = ["far", "frame"]
 name = "f0D1C_070F"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e0d1c_07a7"
@@ -3053,7 +3081,7 @@ size = 52
 evidence = ["far", "frame"]
 name = "SkipStrings"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e0d1c_07db"
@@ -3063,7 +3091,7 @@ size = 214
 evidence = ["far", "frame"]
 name = "f0D1C_07DB"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e0d1c_08b1"
@@ -3073,7 +3101,7 @@ size = 82
 evidence = ["near", "frame"]
 name = "f0D1C_08B1"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e0d1c_0903"
@@ -3081,7 +3109,10 @@ unit = "e0d1c"
 addr = "0D1C:0903"
 size = 200
 evidence = ["near", "frame"]
-notes = "blocked: compiler codegen, and the unit cannot be `-B`. The original keeps both `bestVal = ...; best = who;` pairs inline (0D1C:096C and 0D1C:09A7, 200 bytes); our `-ml -O -Z` build cross-jumps the first pair into the second (a `jmp` to the shared store at 0D1C:099E, 6 bytes shorter). That is TCC's internal assembler (WHITEPAPER 2.1.1), the same class as 0ACD:091C, 14EF:0274 and 1414:034B. The assembler back-scans from the jump target and finds the pair there, so no source form avoids it: tried if/else and its reverse, two continues, one continue with a nested if, `&&`/`||`, goto, a trailing `continue` (the label still lands on the pair), braces, `else if`, `if (.. == 0) continue`, and every tail order. Through the assembler (`-B`, TCC -S then TASM /jNOSMART /m2) the tails stay apart but TCC -S emits the first `continue` in its far form (`jne @@7; jmp`, 2 bytes longer than the original `je` to 0D1C:09AD): the estimate sits on the 127-byte boundary and the -S pass takes it as too far, and TASM keeps it. DrawRowList needs the same internal-assembler inversion (`jne then; jmp else` against the original `je`, 0D1C:0465), so -B breaks it as well: 22 of 26 match with -B against 24 of 26 with -c. Applied here: the second parameter of FindClassSlot (0A72:007B) is `int` (the original sign-extends m20: `mov al,es:[bx+0x20]; cwde; push ax` at 0D1C:0942 and 0D1C:0977), which brings the draft within one cross-jump of the original.; blocked: CampLoop (ovl6:0000) matches every byte except its calls to its five later-defined siblings, which the original reaches with nop; push cs; call near (5 bytes, 90 0E E8) at ovl6:001F, 00AC, 012A, 013E, 04FD, 0707, 0722, 0729, 0731, 075A, 0770, 0778 and 07D3; our build emits a far call (9A) at each. The +0008 copy is fixed: it is a local ARRAY initialised from a list, char counters[6] = { 0, 0, 0, 0, 0, 0 } (TCC pushes ss before lea for that and lea first for a struct), and it now matches the original. Evidence that the nop+push cs is not a source form: (1) tc100, tc101, tc20, tc201 and bc20 all emit a far call (9A) for a call to a function defined later in the same file and push cs; call near (4 bytes, no nop) for one defined earlier; probes with -ml -O -Z plus -G, -Y, -Yf/-Yo/-Yn, -B, -P, -ms/-mc/-mm, near/far/pascal/cdecl/static prototypes, and empty statements or labels before the call never give 90 0E E8. (2) Every C overlay of EOB.EXE splits the same way: forward same-file calls are nop+push cs (ovl0 11, ovl1 19, ovl3 3, ovl5 1, ovl6 13) and backward ones are push cs with no nop (ovl0 83, ovl1 65, ovl2 8, ovl3 16, ovl4 52, ovl5 82); a non-overlay unit keeps a far call for a forward one (E1DE7 SetTextWindowAndClear reaches ClearTextRegion at 1DE7:00C2 with lcall). (3) ovl6 has 102 fixups, all segment words; 100 sit at a far call, and the 13 nop+push cs sites are not fixups, so a far call there was rewritten in place with a nop as the freed byte. That is the VROOMM overlay build (TLINK /o), which the matcher does not run: it links the unit as a plain segment, so our forward calls stay lcall. A matcher question: emulating the overlay patch, or building overlay units the overlay way, would match CampLoop. The body is written from the disassembly and reads correctly; the tick/hour control flow, the two 30-slot spell scans, the healing scan and the string-table far object (segment 2003, the far strings at 0x20030) are behind that first difference. Evidence for names: f0858 prints Hours rested, f09D2 tests monsters near, f0A92 tests ready to rest, f0B9B draws the warning box, f07E2 finds the most wounded member. The spell record stride 0x13, the tables ds:151F and ds:1344 and the 28-byte ds:8A84 monster records are from the disassembly."
+notes = "matched 2026-11-02 under -v: the game modules were compiled with debug information, which keeps identical code tails apart while TCC sizes the jumps (whitepaper 2.1.1); the earlier -B question is answered"
+name = "f0D1C_0903"
+level = "L2"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e0d1c_09cb"
@@ -3091,7 +3122,7 @@ size = 120
 evidence = ["near", "frame"]
 name = "f0D1C_09CB"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e0d1c_0a43"
@@ -3102,7 +3133,7 @@ evidence = ["far", "frame"]
 notes = "matched 2026-11-01: the m0F test at 0D1C:0B17 is `mov ax,word [bx+0x1a4a]; and ax,4; or ax,0; je`, TCC's bit test of a LONG. Declaring `Entry27.m0F` `long` (the pad moved to +0x13) reaches it and the function matches 360 of 360 bytes with `-ml -O -Z`; the same idiom blocks 1547 (mE3) and 1414. (was blocked) compiler codegen: with an `int` field TCC folds the test to `test word [bx+..],4`; tried `!= 0`, `!(..)`, `== 0`, `== 4`, `> 0`, nested ifs, `| 0`, `^ 0`, `+ 0`, `!!`, `4 & m0F`, unsigned/volatile field, and every flag set, none of which emits `or ax,0` (0D 00 00, distinct from `or ax,ax` 0B C0; 44 occurrences in EOB.EXE)."
 name = "TurnUndead"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e0d1c_0bab"
@@ -3112,7 +3143,7 @@ size = 64
 evidence = ["far", "frame"]
 name = "f0D1C_0BAB"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e0d1c_0beb"
@@ -3122,7 +3153,7 @@ size = 54
 evidence = ["far", "frame"]
 name = "f0D1C_0BEB"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e0d1c_0c21"
@@ -3132,7 +3163,7 @@ size = 166
 evidence = ["frame"]
 name = "f0D1C_0C21"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e0de8_0007"
@@ -4379,7 +4410,7 @@ size = 84
 evidence = ["far", "near", "segment"]
 name = "SetSoundVolume"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e122e_0055"
@@ -4389,7 +4420,7 @@ size = 226
 evidence = ["near", "frame"]
 name = "HitTestObjectKind"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e122e_0137"
@@ -4399,7 +4430,7 @@ size = 29
 evidence = ["near", "frame"]
 name = "ObjectCountIsOdd"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e122e_0154"
@@ -4410,7 +4441,7 @@ evidence = ["near", "frame"]
 notes = "2026-11-02: matches with the !! boolean-conversion form around the bit test. The original sign-extends the g194B byte before testing bit 0 (mov al,[bx+0x194b]; cwde; test ax,1, 8 bytes); a plain & 1 folds to a memory byte test in our build. The !! form reproduces the sign-extended bytes (133 total). The earlier & 8 test in the same function stays a byte test in the original, and the sibling DisarmMemberEffect (122E:01D9) uses a byte test for the same & 1."
 name = "ArmMemberEffect"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e122e_01d9"
@@ -4420,7 +4451,7 @@ size = 152
 evidence = ["near", "frame"]
 name = "DisarmMemberEffect"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e122e_0271"
@@ -4430,7 +4461,7 @@ size = 180
 evidence = ["near", "frame"]
 name = "ToggleArmEffect"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e122e_0325"
@@ -4439,7 +4470,7 @@ addr = "122E:0325"
 size = 421
 evidence = ["frame"]
 name = "ForceDoorAction"
-notes = "blocked: 2026-11-02: matches every byte except the two `mov si,di` tails at 122E:03C1 (the A<=B branch) and 122E:03C5 (the who<0 branch): the original keeps both plus the `jmp 122E:03C7` between them, our -ml -O -Z build cross-jumps them into one `mov si,di` (4 bytes short; first difference 122E:0028, ours jmp 0x199 against 0x19f). TCC -S for our build already emits the far-branch pair `or si,si` / `jge short @7@194` / `jmp short @7@218` (the then-branch placed after the else), where the original has one short `jl 122E:03C5`: the same jump-optimizer choice that leaves 0A16 and 06D0 one step short, not a source-order question. `-B` does not fix it (same pair, plus it breaks 01D9 and 1CAD). Tried 2026-11-02, all six give byte-identical output: `if (who<0) who=i; else if (A<=B) who=i;`, the braced form, `if (who<0) { who=i; continue; } if (A<=B) who=i;`, `if (who>=0) { if (A<=B) who=i; } else who=i;`, `else if (...) { who=i; }`, and `if (!(A<=B)) ; else who=i;`. Also tried (2026-11-01) `if (who>=0 && A>B) continue; who=i;` (one assignment, 6 short), `who=i+0` in either branch, and an extra `else who=who;` (2 short). TCC always merges the two `who=i` and picks the inverted pair. The rest of the function (the click gate, the six-character pick, the 1d20 roll against gForceDoorRoll[m0D], the messages and the gB894 slot rewrite) is written from the disassembly."
+notes = "retry under -v (2026-11-02): the unit now builds with -v, which keeps identical tails apart; the difference below was found under the wrong switches. Earlier: 2026-11-02: matches every byte except the two `mov si,di` tails at 122E:03C1 (the A<=B branch) and 122E:03C5 (the who<0 branch): the original keeps both plus the `jmp 122E:03C7` between them, our -ml -O -Z build cross-jumps them into one `mov si,di` (4 bytes short; first difference 122E:0028, ours jmp 0x199 against 0x19f). TCC -S for our build already emits the far-branch pair `or si,si` / `jge short @7@194` / `jmp short @7@218` (the then-branch placed after the else), where the original has one short `jl 122E:03C5`: the same jump-optimizer choice that leaves 0A16 and 06D0 one step short, not a source-order question. `-B` does not fix it (same pair, plus it breaks 01D9 and 1CAD). Tried 2026-11-02, all six give byte-identical output: `if (who<0) who=i; else if (A<=B) who=i;`, the braced form, `if (who<0) { who=i; continue; } if (A<=B) who=i;`, `if (who>=0) { if (A<=B) who=i; } else who=i;`, `else if (...) { who=i; }`, and `if (!(A<=B)) ; else who=i;`. Also tried (2026-11-01) `if (who>=0 && A>B) continue; who=i;` (one assignment, 6 short), `who=i+0` in either branch, and an extra `else who=who;` (2 short). TCC always merges the two `who=i` and picks the inverted pair. The rest of the function (the click gate, the six-character pick, the 1d20 roll against gForceDoorRoll[m0D], the messages and the gB894 slot rewrite) is written from the disassembly."
 
 [[function]]
 id = "e122e_04ca"
@@ -4449,7 +4480,7 @@ size = 277
 evidence = ["frame"]
 name = "MemberSlotClickAction"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e122e_05df"
@@ -4459,7 +4490,7 @@ size = 65
 evidence = ["frame"]
 name = "PerformItemSlotAction"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e122e_0620"
@@ -4469,7 +4500,7 @@ size = 88
 evidence = ["frame"]
 name = "IncreaseItemSlot"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e122e_0678"
@@ -4479,7 +4510,7 @@ size = 88
 evidence = ["frame"]
 name = "DecreaseItemSlot"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e122e_06d0"
@@ -4488,7 +4519,7 @@ addr = "122E:06D0"
 size = 375
 evidence = ["frame"]
 name = "ItemSlotAction"
-notes = "blocked: 2026-11-02: 1 byte short; the body now matches the original byte for byte from 122E:06D0 to the first `return 1` jump. The unit: `if (!HitTestObjectKind(kind)) return 0;` makes our build inline `xor ax,ax; jmp end` at the early exit (2 bytes longer, first difference 122E:002E, ours jne 0x34 against 0x32); wrapping the body in `if (HitTestObjectKind(kind)) { ... } return 0;` puts the one `xor ax,ax` at the end as the original has it and moves the difference to the last byte. Remaining: the early `return 1` in the f0D1C_02DC()==0 branch is emitted as a short `jmp` straight to the shared return-1 code at 122E:0789, while the original emits a near `jmp 122E:083C` to a per-statement `jmp 122E:0789` stub there (first difference 122E:06F0, ours jmp 0x16e against 0x16f): TCC's jump chaining of a `return 1` into the shared return label, the same optimizer family as 0325 and 0A16, no source form found. The three branches each return 1 explicitly and the f0D1C_02DC() call in the size check is inlined (`g181F[gTable8DD2[f0D1C_02DC()].icon]`), both required by the bytes. Tried 2026-11-02: `if (item==0) return 1;` (this), `if (item!=0) { ...; return 1; } return 1;`, `if (item!=0) { ... } return 1;`, the braced `if (item==0) { return 1; }` form, and a `goto ret1` with `ret1: return 1;` at the end (that one 17 bytes short). Also tried 2026-11-01: the early-return form (2 bytes off), `goto ret0` with `ret0: return 0;`, and inlining f0D1C_02DC() only in the size check."
+notes = "retry under -v (2026-11-02): the unit now builds with -v, which keeps identical tails apart; the difference below was found under the wrong switches. Earlier: 2026-11-02: 1 byte short; the body now matches the original byte for byte from 122E:06D0 to the first `return 1` jump. The unit: `if (!HitTestObjectKind(kind)) return 0;` makes our build inline `xor ax,ax; jmp end` at the early exit (2 bytes longer, first difference 122E:002E, ours jne 0x34 against 0x32); wrapping the body in `if (HitTestObjectKind(kind)) { ... } return 0;` puts the one `xor ax,ax` at the end as the original has it and moves the difference to the last byte. Remaining: the early `return 1` in the f0D1C_02DC()==0 branch is emitted as a short `jmp` straight to the shared return-1 code at 122E:0789, while the original emits a near `jmp 122E:083C` to a per-statement `jmp 122E:0789` stub there (first difference 122E:06F0, ours jmp 0x16e against 0x16f): TCC's jump chaining of a `return 1` into the shared return label, the same optimizer family as 0325 and 0A16, no source form found. The three branches each return 1 explicitly and the f0D1C_02DC() call in the size check is inlined (`g181F[gTable8DD2[f0D1C_02DC()].icon]`), both required by the bytes. Tried 2026-11-02: `if (item==0) return 1;` (this), `if (item!=0) { ...; return 1; } return 1;`, `if (item!=0) { ... } return 1;`, the braced `if (item==0) { return 1; }` form, and a `goto ret1` with `ret1: return 1;` at the end (that one 17 bytes short). Also tried 2026-11-01: the early-return form (2 bytes off), `goto ret0` with `ret0: return 0;`, and inlining f0D1C_02DC() only in the size check."
 
 [[function]]
 id = "e122e_0847"
@@ -4498,7 +4529,7 @@ size = 79
 evidence = ["far", "frame"]
 name = "CheckMemberSlotRect"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e122e_0896"
@@ -4508,7 +4539,7 @@ size = 157
 evidence = ["far", "near", "frame"]
 name = "DispatchSlotHandler"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e122e_0933"
@@ -4518,7 +4549,7 @@ size = 45
 evidence = ["frame"]
 name = "RunRowHandler"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e122e_0960"
@@ -4528,7 +4559,7 @@ size = 182
 evidence = ["frame"]
 name = "WriteObjectFieldOp"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e122e_0a16"
@@ -4536,7 +4567,10 @@ unit = "e122e"
 addr = "122E:0A16"
 size = 269
 evidence = ["frame"]
-notes = "blocked: 2026-11-02: with the unit's default -ml -O -Z our build merges the two 0xFFF7 branches' final `mov bx,ax; mov [bx-0x4769],dl` store (the not-equal branch jumps into the equal branch's tail at 122E:09E0, 6 bytes shorter; first difference at 122E:0022, ours jmp 0xE2 against 0xE8). The original keeps both four-store sequences separate (122E:0094-00A0 and 122E:00D6-00E2). With `/*@flags -ml -O -Z -B */` this function matches exactly (269 bytes): the merge is done by TCC's own assembler, so -S plus TASM keeps the tails. But -B breaks DisarmMemberEffect (122E:01D9) and MarkMemberItemsOp (122E:1CAD): TCC -S estimates their first `if (...) return;` branch (122E:01E1, 122E:1Cxx) as out of short range and emits `je continue; jmp end` where the original has one short `jne end` (the boundary class of whitepaper 2.1.1); -B with TASM's SMART jumps is worse still (30 of 42). Same unit-flag question as 0325 and 06D0; -O1 and -O2 change nothing. Tried 2026-11-01: both source orders, -B, if/else-if, a `switch` on the comparison, two separate `if`s, a `goto`, and chained assignment; TCC's assembler always merges the tails. Also fixed 2026-11-02: the 0xFFEA case calls the sibling ToggleArmEffect by name (not a placeholder `f122E_0271`), which is what makes the call `push cs; call` rather than `lcall`."
+notes = "matched 2026-11-02 under -v: the game modules were compiled with debug information, which keeps identical code tails apart while TCC sizes the jumps (whitepaper 2.1.1); the earlier -B question is answered"
+name = "WriteObjectRunOp"
+level = "L2"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e122e_0b23"
@@ -4546,7 +4580,7 @@ size = 51
 evidence = ["frame"]
 name = "ArmMember"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e122e_0b56"
@@ -4556,7 +4590,7 @@ size = 51
 evidence = ["frame"]
 name = "DisarmMember"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e122e_0b89"
@@ -4566,7 +4600,7 @@ size = 196
 evidence = ["frame"]
 name = "SpawnObjectOp"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e122e_0c4d"
@@ -4576,7 +4610,7 @@ size = 266
 evidence = ["frame"]
 name = "AddEffectOp"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e122e_0d57"
@@ -4586,7 +4620,7 @@ size = 324
 evidence = ["frame"]
 name = "ReassignObjectsOp"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e122e_0e9b"
@@ -4596,7 +4630,7 @@ size = 321
 evidence = ["frame"]
 name = "MoveCarriedItemOp"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e122e_0fdc"
@@ -4606,7 +4640,7 @@ size = 187
 evidence = ["frame"]
 name = "ShowTextOp"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e122e_1097"
@@ -4616,7 +4650,7 @@ size = 337
 evidence = ["frame"]
 name = "SetActionFlagsOp"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e122e_11e8"
@@ -4626,7 +4660,7 @@ size = 134
 evidence = ["frame"]
 name = "ClearActionBit"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e122e_126e"
@@ -4636,7 +4670,7 @@ size = 96
 evidence = ["frame"]
 name = "HealPartyMember"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e122e_12ce"
@@ -4646,7 +4680,7 @@ size = 207
 evidence = ["frame"]
 name = "DamagePartyMember"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e122e_139d"
@@ -4656,7 +4690,7 @@ size = 52
 evidence = ["frame"]
 name = "JumpToScriptOffset"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e122e_13d1"
@@ -4666,7 +4700,7 @@ size = 15
 evidence = ["frame"]
 name = "ScriptStop"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e122e_13e0"
@@ -4676,7 +4710,7 @@ size = 66
 evidence = ["frame"]
 name = "PopScriptPointer"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e122e_1422"
@@ -4686,7 +4720,7 @@ size = 93
 evidence = ["frame"]
 name = "PushScriptPointer"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e122e_147f"
@@ -4695,7 +4729,7 @@ addr = "122E:147F"
 size = 1580
 evidence = ["frame"]
 name = "EvaluateScriptExpr"
-notes = "blocked: 2026-11-01: the sub-dispatcher the driver reaches for opcode 0xFFEE (handler index 17), a postfix expression evaluator over a word stack (gEvalStack at ds:A95C, index gEvalTop at ds:A9EE). The loop is `while ((op = *script++) != 0xFFEE)` with a switch over 0xFFDA..0xFFFF (jump table at 122E:19EF, 38 entries, default pushes a literal 0..0x7f) and the 0xFFEE epilogue that pops gEvalStack, jumps to gBuf8DCA + word when the value is 0, and returns the distance. Case order is the original body order. Fixed 2026-11-01 from the jump table and the compiler output: (a) the item-type case is 0xFFE7 and the gB894 byte case is 0xFFE9, not 0xFFE8/0xFFEA (jump-table indices 13 and 15); (b) case 0xFFDA reuses `lhs` as the loop counter and `rhs` as the flag (counter in SI, flag in DI) with `(status & 1) == 1`, unlike FFDD/FFDC (counter in memory, flag in SI, byte test); (c) FFEF/FFF0 write the two arms out (`if (cond) gEvalStack[gEvalTop++] = 1; else ... = 0;`) rather than `... = (cond) != 0`, which makes TCC share the store-0 tail. Matches: prologue, frame (0xe), loop head, switch dispatch, the epilogue, the eight comparison/logical cases, FFDA, and byte for byte FFEF/FFF0, FFF7, FFF3, FFF2, FFF1, FFED, FFE0. Remaining, a toolchain question: the unit needs both toolchain behaviours at once. With `-ml -O -Z` TCC's internal assembler cross-jumps a later identical block into an earlier one, merging the FFEF/FFF0 store-0 tails and the FFDD/FFDC `mov si,1`, and TCC's C-level optimizer shares the FFF5/FFF2 ScanListItem tail; the original keeps all of them apart. With `-B` (TCC -S + TASM /jNOSMART) they are kept apart but TCC -S inverts DisarmMemberEffect first `if` (122E:01E1) and MarkMemberItemsOp first `if`, which the original has as one short `jne` (the boundary class of whitepaper 2.1.1). So no flag set matches the whole unit: -c 38 of 42 (147F 0x48 short), -B 36 of 42 (01D9 and 1CAD break). The same open problem as 0ACD:091C and e0d1c f0D1C_0903. Other remaining 147F differences under -B (0x29 short): the FFF5 argument order (the original evaluates the `t2 == -1 ? -1 : t2` condition before pushing the constant count 1), the FFDD/FFDC loop init (`xor ax,ax; mov [bp-0xa],ax; mov si,ax`), and the default case re-reads `script[-1]` into SI instead of using `op`."
+notes = "retry under -v (2026-11-02): the unit now builds with -v, which keeps identical tails apart; the difference below was found under the wrong switches. Earlier: 2026-11-01: the sub-dispatcher the driver reaches for opcode 0xFFEE (handler index 17), a postfix expression evaluator over a word stack (gEvalStack at ds:A95C, index gEvalTop at ds:A9EE). The loop is `while ((op = *script++) != 0xFFEE)` with a switch over 0xFFDA..0xFFFF (jump table at 122E:19EF, 38 entries, default pushes a literal 0..0x7f) and the 0xFFEE epilogue that pops gEvalStack, jumps to gBuf8DCA + word when the value is 0, and returns the distance. Case order is the original body order. Fixed 2026-11-01 from the jump table and the compiler output: (a) the item-type case is 0xFFE7 and the gB894 byte case is 0xFFE9, not 0xFFE8/0xFFEA (jump-table indices 13 and 15); (b) case 0xFFDA reuses `lhs` as the loop counter and `rhs` as the flag (counter in SI, flag in DI) with `(status & 1) == 1`, unlike FFDD/FFDC (counter in memory, flag in SI, byte test); (c) FFEF/FFF0 write the two arms out (`if (cond) gEvalStack[gEvalTop++] = 1; else ... = 0;`) rather than `... = (cond) != 0`, which makes TCC share the store-0 tail. Matches: prologue, frame (0xe), loop head, switch dispatch, the epilogue, the eight comparison/logical cases, FFDA, and byte for byte FFEF/FFF0, FFF7, FFF3, FFF2, FFF1, FFED, FFE0. Remaining, a toolchain question: the unit needs both toolchain behaviours at once. With `-ml -O -Z` TCC's internal assembler cross-jumps a later identical block into an earlier one, merging the FFEF/FFF0 store-0 tails and the FFDD/FFDC `mov si,1`, and TCC's C-level optimizer shares the FFF5/FFF2 ScanListItem tail; the original keeps all of them apart. With `-B` (TCC -S + TASM /jNOSMART) they are kept apart but TCC -S inverts DisarmMemberEffect first `if` (122E:01E1) and MarkMemberItemsOp first `if`, which the original has as one short `jne` (the boundary class of whitepaper 2.1.1). So no flag set matches the whole unit: -c 38 of 42 (147F 0x48 short), -B 36 of 42 (01D9 and 1CAD break). The same open problem as 0ACD:091C and e0d1c f0D1C_0903. Other remaining 147F differences under -B (0x29 short): the FFF5 argument order (the original evaluates the `t2 == -1 ? -1 : t2` condition before pushing the constant count 1), the FFDD/FFDC loop init (`xor ax,ax; mov [bp-0xa],ax; mov si,ax`), and the default case re-reads `script[-1]` into SI instead of using `op`."
 
 [[function]]
 id = "e122e_1aab"
@@ -4705,7 +4739,7 @@ size = 175
 evidence = ["frame"]
 name = "LoadLevelOp"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e122e_1b5a"
@@ -4715,7 +4749,7 @@ size = 64
 evidence = ["frame"]
 name = "AddExperienceOp"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e122e_1b9a"
@@ -4725,7 +4759,7 @@ size = 124
 evidence = ["frame"]
 name = "TakeItemOp"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e122e_1c16"
@@ -4735,7 +4769,7 @@ size = 151
 evidence = ["frame"]
 name = "TurnPageOp"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e122e_1cad"
@@ -4745,7 +4779,7 @@ size = 201
 evidence = ["frame"]
 name = "MarkMemberItemsOp"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e122e_1d76"
@@ -4755,7 +4789,7 @@ size = 50
 evidence = ["frame"]
 name = "CallOverlayOp"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e122e_1da8"
@@ -4765,7 +4799,7 @@ size = 184
 evidence = ["far", "frame"]
 name = "RunMemberScript"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e1414_0000"
@@ -4967,7 +5001,7 @@ size = 113
 evidence = ["near", "segment"]
 name = "FindMaskBit"
 level = "L2"
-match_flags = "-ml -O -Z -B"
+match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
@@ -4978,7 +5012,7 @@ size = 105
 evidence = ["near", "frame"]
 name = "BlinkText"
 level = "L2"
-match_flags = "-ml -O -Z -B"
+match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
@@ -4989,7 +5023,7 @@ size = 38
 evidence = ["near", "frame"]
 name = "IsPointInRect"
 level = "L2"
-match_flags = "-ml -O -Z -B"
+match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
@@ -5000,7 +5034,7 @@ size = 77
 evidence = ["frame"]
 name = "CountMaskBits"
 level = "L2"
-match_flags = "-ml -O -Z -B"
+match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
@@ -5011,7 +5045,7 @@ size = 288
 evidence = ["frame"]
 name = "DrawOptionList"
 level = "L2"
-match_flags = "-ml -O -Z -B"
+match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
@@ -5023,7 +5057,7 @@ evidence = ["frame"]
 notes = "matched 2026-11-01 with `-B` (TCC -S, then TASM with SMART off): the four separate `row = 0` / `row = rows` case tails (14EF:03E6, 03EC, 03D2, 03F2) survive; TCC's internal assembler cross-jumps the later copy into the earlier one and drops 7 bytes (switch table at 14EF:0556 instead of 14EF:055D). Detail in src/E14EF.C."
 name = "UpdateOptionList"
 level = "L2"
-match_flags = "-ml -O -Z -B"
+match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
@@ -6970,6 +7004,7 @@ evidence = ["far", "near", "segment"]
 level = "L2"
 match_flags = "-ml -O -Z -G"
 name = "SetTextWindow"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1de7_00b6"
@@ -6980,6 +7015,7 @@ evidence = ["frame"]
 name = "SetTextWindowAndClear"
 level = "L2"
 match_flags = "-ml -O -Z -G"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1de7_00c9"
@@ -6990,6 +7026,7 @@ evidence = ["frame"]
 name = "DrawTextFrame"
 level = "L2"
 match_flags = "-ml -O -Z -G"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1de7_025e"
@@ -7000,6 +7037,7 @@ evidence = ["far", "frame"]
 name = "DrawTileRun"
 level = "L2"
 match_flags = "-ml -O -Z -G"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1de7_02fe"
@@ -7010,6 +7048,7 @@ evidence = ["frame"]
 name = "SetRegionExtents"
 level = "L2"
 match_flags = "-ml -O -Z -G"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1de7_0344"
@@ -7020,6 +7059,7 @@ evidence = ["far", "frame"]
 name = "ClearTextRegion"
 level = "L2"
 match_flags = "-ml -O -Z -G"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1de7_03b2"
@@ -7030,6 +7070,7 @@ evidence = ["near", "frame"]
 name = "DrawTextLine"
 level = "L2"
 match_flags = "-ml -O -Z -G"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1de7_05df"
@@ -7040,6 +7081,7 @@ evidence = ["frame"]
 name = "PrintIntText"
 level = "L2"
 match_flags = "-ml -O -Z -G"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1de7_060a"
@@ -7050,6 +7092,7 @@ evidence = ["far", "frame"]
 name = "DrawText"
 level = "L2"
 match_flags = "-ml -O -Z -G"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1e8b_0004"
@@ -7059,6 +7102,7 @@ size = 11
 evidence = ["segment"]
 level = "L2"
 notes = "not a function: bytes of the unit outside its functions (a marker or padding), matched with the whole unit"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1e8b_000f"
@@ -7069,6 +7113,7 @@ evidence = ["far"]
 name = "_InitOverlayManager"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1e8b_0134"
@@ -7079,6 +7124,7 @@ evidence = ["far", "frame"]
 name = "_SwapAndReopenOverlayFile"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1e8b_0185"
@@ -7089,6 +7135,7 @@ evidence = ["frame"]
 level = "L2"
 match_flags = "tasm /mx"
 name = "f1E8B_0185"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1e8b_01a7"
@@ -7099,6 +7146,7 @@ evidence = ["near"]
 name = "_OpenNamedOverlayFile"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1e8b_01b3"
@@ -7109,6 +7157,7 @@ evidence = ["near"]
 name = "_OpenOwnOverlayFile"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1e8b_01f3"
@@ -7119,6 +7168,7 @@ evidence = ["near"]
 name = "_OpenOverlayFileViaPath"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1e8b_0250"
@@ -7129,6 +7179,7 @@ evidence = ["near"]
 name = "_CopyNameAndOpenOverlay"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1e8b_0276"
@@ -7139,6 +7190,7 @@ evidence = ["near"]
 name = "_ReadOverlayHeaderBytes"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1e8b_0286"
@@ -7149,6 +7201,7 @@ evidence = ["near"]
 name = "_InitOverlayRecords"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1e8b_02ff"
@@ -7159,6 +7212,7 @@ evidence = ["near"]
 name = "_MapOverlayRecords"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1e8b_03c4"
@@ -7169,6 +7223,7 @@ evidence = ["near"]
 name = "_ReadOverlayImage"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1e8b_03fd"
@@ -7179,6 +7234,7 @@ evidence = ["near"]
 name = "_ApplyOverlayRelocations"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1e8b_0442"
@@ -7189,6 +7245,7 @@ evidence = ["near"]
 name = "_RelocateOverlayPointer"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1e8b_04d0"
@@ -7199,6 +7256,7 @@ evidence = ["frame"]
 name = "_OverlayCallHandler"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1e8b_0536"
@@ -7209,6 +7267,7 @@ evidence = ["near"]
 name = "_AgeOverlayRecords"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1e8b_0580"
@@ -7219,6 +7278,7 @@ evidence = ["near"]
 name = "_LoadOverlayRecord"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1e8b_05fb"
@@ -7229,6 +7289,7 @@ evidence = ["near"]
 level = "L2"
 match_flags = "tasm /mx"
 name = "_ReleaseOverlayRecord"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1e8b_0613"
@@ -7239,6 +7300,7 @@ evidence = ["near"]
 level = "L2"
 match_flags = "tasm /mx"
 name = "_CompactOverlayRecords"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1e8b_064e"
@@ -7249,6 +7311,7 @@ evidence = ["near"]
 name = "_RestoreOverlayVersionTable"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1e8b_066f"
@@ -7259,6 +7322,7 @@ evidence = ["near"]
 name = "_FillOverlayVersionTable"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1e8b_068d"
@@ -7269,6 +7333,7 @@ evidence = ["near"]
 name = "_ClearOverlayVersionTable"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1e8b_06c0"
@@ -7279,6 +7344,7 @@ evidence = ["near"]
 name = "_MoveOverlayRecord"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1e8b_0711"
@@ -7289,6 +7355,7 @@ evidence = ["near"]
 name = "_LinkOverlayRecord"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1e8b_072f"
@@ -7299,6 +7366,7 @@ evidence = ["near"]
 name = "_PatchOverlayEntryVector"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1e8b_073b"
@@ -7309,6 +7377,7 @@ evidence = ["near"]
 name = "_FindOverlaySlot"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1e8b_0761"
@@ -7319,6 +7388,7 @@ evidence = ["near"]
 level = "L2"
 match_flags = "tasm /mx"
 name = "_OverlayParagraphsRemaining"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1e8b_077d"
@@ -7329,6 +7399,7 @@ evidence = ["near"]
 name = "_OverlayCodeParagraphs"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1e8b_0789"
@@ -7339,6 +7410,7 @@ evidence = ["near"]
 name = "_OverlayTotalParagraphs"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1e8b_07d7"
@@ -7349,6 +7421,7 @@ evidence = ["frame"]
 name = "_DropStaleOverlaySlots"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1e8b_086f"
@@ -7359,6 +7432,7 @@ evidence = ["frame"]
 name = "_OverlayManagerEntry"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "eov0_0000"
@@ -7893,7 +7967,7 @@ unit = "eov2"
 addr = "ovl2:078D"
 size = 185
 evidence = ["ovl", "near", "frame"]
-name = "LoadIntroIcons"
+name = "LoadIntroScreen"
 level = "L2"
 match_flags = "-ml -O -Z"
 
@@ -8175,7 +8249,7 @@ size = 102
 evidence = ["ovl", "near", "segment"]
 name = "InitViewSlots"
 level = "L2"
-match_flags = "-ml -O -Z -B"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "eov4_0066"
@@ -8185,7 +8259,7 @@ size = 49
 evidence = ["ovl", "near", "frame"]
 name = "SetRegionRect"
 level = "L2"
-match_flags = "-ml -O -Z -B"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "eov4_0097"
@@ -8195,7 +8269,7 @@ size = 391
 evidence = ["ovl", "near", "frame"]
 name = "ComputeViewSpan"
 level = "L2"
-match_flags = "-ml -O -Z -B"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "eov4_021e"
@@ -8205,7 +8279,7 @@ size = 135
 evidence = ["ovl", "near", "frame"]
 name = "SetRegionColumnExtent"
 level = "L2"
-match_flags = "-ml -O -Z -B"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "eov4_02a5"
@@ -8215,7 +8289,7 @@ size = 197
 evidence = ["ovl", "near", "frame"]
 name = "CopyViewColumn"
 level = "L2"
-match_flags = "-ml -O -Z -B"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "eov4_036a"
@@ -8225,7 +8299,7 @@ size = 194
 evidence = ["ovl", "near", "frame"]
 name = "ToggleViewColumn"
 level = "L2"
-match_flags = "-ml -O -Z -B"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "eov4_042c"
@@ -8235,7 +8309,7 @@ size = 31
 evidence = ["ovl", "near", "frame"]
 name = "IsSlotLive"
 level = "L2"
-match_flags = "-ml -O -Z -B"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "eov4_044b"
@@ -8245,7 +8319,7 @@ size = 1669
 evidence = ["ovl", "near", "frame"]
 name = "Ovl4_044B"
 level = "L2"
-match_flags = "-ml -O -Z -B"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "eov4_0ad0"
@@ -8255,7 +8329,7 @@ size = 587
 evidence = ["ovl", "near", "frame"]
 name = "Ovl4_0AD0"
 level = "L2"
-match_flags = "-ml -O -Z -B"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "eov4_0d1b"
@@ -8263,7 +8337,7 @@ unit = "eov4"
 addr = "ovl4:0D1B"
 size = 886
 evidence = ["ovl", "near", "frame"]
-notes = "blocked: unit-flag class (like 122E). 0D1B wants TCC's inline assembler, CopyViewColumn wants -B. Under the file's -B (TCC -S then TASM) the prologue, frame (sub sp,0x36) and body match through the object scan, but the far-pointer store into the local arr at 0D1B:00A4 is ours 93 xchg bx,ax against the original's two-byte 87 D8 xchg ax,bx; TASM 2.0, 2.01, 1.0 and 1.01 all assemble both spellings as the one-byte 93 (probed 2026-11-01), so no source form gives 87 D8 through TASM. Without -B (TCC's own assembler) the byte is 87 D8 and the first difference moves to +00BD, but then CopyViewColumn's three separate continue tails merge (first difference +0019). Source forms tried for the store: void far *arr, struct Obj28 far *arr, a temp p = obj, *(arr+k), ((void far**)arr)[k], a pointer pa = arr, and an index local; none changes the encoding. The rest of the function (the 5-entry far-pointer list built from the 30 ds:8A82 objects, the blit into ds:DCFC and the four DrawRegion wrappers) is written from the disassembly."
+notes = "retry under -v (2026-11-02): the unit now builds with -v, which keeps identical tails apart; the difference below was found under the wrong switches. Earlier: unit-flag class (like 122E). 0D1B wants TCC's inline assembler, CopyViewColumn wants -B. Under the file's -B (TCC -S then TASM) the prologue, frame (sub sp,0x36) and body match through the object scan, but the far-pointer store into the local arr at 0D1B:00A4 is ours 93 xchg bx,ax against the original's two-byte 87 D8 xchg ax,bx; TASM 2.0, 2.01, 1.0 and 1.01 all assemble both spellings as the one-byte 93 (probed 2026-11-01), so no source form gives 87 D8 through TASM. Without -B (TCC's own assembler) the byte is 87 D8 and the first difference moves to +00BD, but then CopyViewColumn's three separate continue tails merge (first difference +0019). Source forms tried for the store: void far *arr, struct Obj28 far *arr, a temp p = obj, *(arr+k), ((void far**)arr)[k], a pointer pa = arr, and an index local; none changes the encoding. The rest of the function (the 5-entry far-pointer list built from the 30 ds:8A82 objects, the blit into ds:DCFC and the four DrawRegion wrappers) is written from the disassembly."
 
 [[function]]
 id = "eov4_1091"
@@ -8273,7 +8347,7 @@ size = 896
 evidence = ["ovl", "near", "frame"]
 name = "Ovl4_1091"
 level = "L2"
-match_flags = "-ml -O -Z -B"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "eov4_1411"
@@ -8283,7 +8357,7 @@ size = 1459
 evidence = ["ovl", "near", "frame"]
 name = "Ovl4_1411"
 level = "L2"
-match_flags = "-ml -O -Z -B"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "eov4_19c4"
@@ -8291,7 +8365,7 @@ unit = "eov4"
 addr = "ovl4:19C4"
 size = 860
 evidence = ["ovl", "near"]
-notes = "blocked: unit-flag class (like 122E and eov4_0d1b). 19C4 builds a five-entry far-pointer list from the ds:DD2C records and stores into a local array at 19C4:1A6B with 87 D8 xchg ax,bx (two bytes, the original came from TCC's own assembler). Under this file's -B (TCC -S then TASM) that store assembles as the one-byte 93, so the function is one byte short and every later branch displacement differs; TASM 2.0, 2.01, 1.0 and 1.01 all assemble both xchg spellings as 93 (probed 2026-11-01). Without -B the byte is right but CopyViewColumn's three separate continue tails merge. Not lifted yet; left a stub with the block in src/EOV4.C."
+notes = "retry under -v (2026-11-02): the unit now builds with -v, which keeps identical tails apart; the difference below was found under the wrong switches. Earlier: unit-flag class (like 122E and eov4_0d1b). 19C4 builds a five-entry far-pointer list from the ds:DD2C records and stores into a local array at 19C4:1A6B with 87 D8 xchg ax,bx (two bytes, the original came from TCC's own assembler). Under this file's -B (TCC -S then TASM) that store assembles as the one-byte 93, so the function is one byte short and every later branch displacement differs; TASM 2.0, 2.01, 1.0 and 1.01 all assemble both xchg spellings as 93 (probed 2026-11-01). Without -B the byte is right but CopyViewColumn's three separate continue tails merge. Not lifted yet; left a stub with the block in src/EOV4.C."
 
 [[function]]
 id = "eov4_1d20"
@@ -8301,7 +8375,7 @@ size = 248
 evidence = ["ovl", "near", "frame"]
 name = "Ovl4_1D20"
 level = "L2"
-match_flags = "-ml -O -Z -B"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "eov4_1e18"
@@ -8311,7 +8385,7 @@ size = 198
 evidence = ["ovl", "near", "frame"]
 name = "DrawViewSlots"
 level = "L2"
-match_flags = "-ml -O -Z -B"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "eov4_1ede"
@@ -8321,7 +8395,7 @@ size = 115
 evidence = ["ovl", "near", "frame"]
 name = "DrawViewRows"
 level = "L2"
-match_flags = "-ml -O -Z -B"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "eov4_1f51"
@@ -8331,7 +8405,7 @@ size = 232
 evidence = ["ovl", "frame"]
 name = "DrawViewFrame"
 level = "L2"
-match_flags = "-ml -O -Z -B"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "eov4_2039"
@@ -8341,7 +8415,7 @@ size = 10
 evidence = ["ovl", "frame"]
 name = "NoOp2039"
 level = "L2"
-match_flags = "-ml -O -Z -B"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "eov5_0000"
@@ -8351,7 +8425,7 @@ size = 161
 evidence = ["ovl", "near", "segment"]
 name = "DrawSheetCell"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "eov5_00a1"
@@ -8359,7 +8433,10 @@ unit = "eov5"
 addr = "ovl5:00A1"
 size = 379
 evidence = ["ovl", "near", "frame"]
-notes = "blocked: the unit's switches. The body is written from the disassembly and matches byte for byte under -B (TCC -S then TASM, 379 bytes, `make match` with /*@flags -ml -O -Z -B */), but not under the file's -ml -O -Z. The one difference is TCC's internal assembler merging two identical call tails: case 1's else `DrawSheetCell(5, 0x74, 0x68)` at ovl5:0140 and case 2's else `DrawSheetCell(body[gEFC6], 0x74, feet[gEFC6])` at ovl5:019B each end in `push ax; push cs; call DrawSheetCell; add sp,6; jmp 0x208` in the original (separate copies, 0x153 and 0x1C2), while our -c build routes both to the shared tail at 0x200 and is 16 bytes short. That is the -B signature of WHITEPAPER 2.1.1 (kept jump tails). The unit cannot be -B, though: SurrenderPanel (0x10A6) and ChooseChar (0x067B) match only under -ml -O -Z; under -B SurrenderPanel's item test becomes `or ax,ax; jne body; jmp skip` (2 bytes longer) where the original has `or ax,ax; je 0xD4; body`, and every source form tried for that test (assignment in the condition, a separate assignment then if, `if (item)`/`!=0`/`>0`, `if (!item) continue`, goto, an empty then, &&, no braces, do/while(0)) keeps one or the other. So overlay 5 was assembled from at least two modules with different switches, which one file's /*@flags*/ cannot express. A flags-per-function mechanism, or a documented way to split a unit across two src files, would let this match. The three local arrays `char head[6] = {9,8,8,9,9,0x0A}, body[6] = {0x0D,..}, feet[6] = {..}` are the F_SCOPY templates at ds:7B77, ds:7B7D and ds:7B83 (whitepaper 2.1.1); ds:7B89 is defined in the file because the original lays it right after those templates and the matcher compares that literal block by content."
+notes = "matched 2026-11-02 under -v: the game modules were compiled with debug information, which keeps identical code tails apart while TCC sizes the jumps (whitepaper 2.1.1); the earlier -B question is answered"
+name = "DrawCharPortrait"
+level = "L2"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "eov5_021c"
@@ -8369,7 +8446,7 @@ size = 67
 evidence = ["ovl", "near"]
 name = "ClearPanel"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "eov5_025f"
@@ -8379,7 +8456,7 @@ size = 330
 evidence = ["ovl", "near", "frame"]
 name = "MessagePanel"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "eov5_03a9"
@@ -8389,7 +8466,7 @@ size = 70
 evidence = ["ovl", "near"]
 name = "PrintTableString"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "eov5_03ef"
@@ -8399,7 +8476,7 @@ size = 102
 evidence = ["ovl", "near", "frame"]
 name = "DrawMenuRow"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "eov5_0455"
@@ -8408,7 +8485,7 @@ addr = "ovl5:0455"
 size = 550
 evidence = ["ovl", "near", "frame"]
 name = "SelectMenu"
-notes = "blocked: TC registers the row index. The body matches up to ovl5:0036; the draw/mouse/click loops then differ because the original keeps j in memory (`mov word ptr [bp-0xa], 0` at ovl5:048C, `mov ax,[bp-0xa]; shl ax,1; shl ax,1` for names[j], `cmp si,[bp-0xa]` for i==j) and computes first+j once into DI (`mov al,[bp+6]; cwde; add ax,[bp-0xa]; mov di,ax` at ovl5:0493/0497/049A, then `es:[di+0x7b89]`/`es:[di+0x7b94]`), while our build registers j in DI (`xor di,di` at ovl5:0037) and combines first+j as `[bx+di+disp]`; the whole function is 2 bytes short and every offset after shifts. Tried: plain j, `register int i`, `unsigned j`, `j == i` vs `i == j`, a `register int n = first+j` (took SI, pushed i to DI), a function-scope `int k`, block-scope j, `volatile` on every non-i local with `register int i` (j then stays in memory, but the draw loop uses BX as the scratch and recomputes first+j per table where the original computes it once into DI), and -B (no change, TCC -S does the allocation). TC's allocator picks i (SI) and j (DI); a source form that stops it choosing j and lets it compute first+j once into DI would match. Not a tail merge."
+notes = "retry under -v (2026-11-02): the unit now builds with -v, which keeps identical tails apart; the difference below was found under the wrong switches. Earlier: TC registers the row index. The body matches up to ovl5:0036; the draw/mouse/click loops then differ because the original keeps j in memory (`mov word ptr [bp-0xa], 0` at ovl5:048C, `mov ax,[bp-0xa]; shl ax,1; shl ax,1` for names[j], `cmp si,[bp-0xa]` for i==j) and computes first+j once into DI (`mov al,[bp+6]; cwde; add ax,[bp-0xa]; mov di,ax` at ovl5:0493/0497/049A, then `es:[di+0x7b89]`/`es:[di+0x7b94]`), while our build registers j in DI (`xor di,di` at ovl5:0037) and combines first+j as `[bx+di+disp]`; the whole function is 2 bytes short and every offset after shifts. Tried: plain j, `register int i`, `unsigned j`, `j == i` vs `i == j`, a `register int n = first+j` (took SI, pushed i to DI), a function-scope `int k`, block-scope j, `volatile` on every non-i local with `register int i` (j then stays in memory, but the draw loop uses BX as the scratch and recomputes first+j per table where the original computes it once into DI), and -B (no change, TCC -S does the allocation). TC's allocator picks i (SI) and j (DI); a source form that stops it choosing j and lets it compute first+j once into DI would match. Not a tail merge."
 
 [[function]]
 id = "eov5_067b"
@@ -8418,7 +8495,7 @@ size = 147
 evidence = ["ovl", "near"]
 name = "ChooseChar"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "eov5_070e"
@@ -8428,7 +8505,7 @@ size = 282
 evidence = ["ovl", "near", "frame"]
 name = "AddPartyMember"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "eov5_0828"
@@ -8438,7 +8515,7 @@ size = 170
 evidence = ["ovl", "near", "frame"]
 name = "AddCharPanel"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "eov5_08d2"
@@ -8448,7 +8525,7 @@ size = 82
 evidence = ["ovl", "near", "frame"]
 name = "QueueItem"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "eov5_0924"
@@ -8458,7 +8535,7 @@ size = 161
 evidence = ["ovl", "near", "frame"]
 name = "TemplePanel"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "eov5_09c5"
@@ -8468,7 +8545,7 @@ size = 236
 evidence = ["ovl", "near", "frame"]
 name = "GiveItemPanel"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "eov5_0ab1"
@@ -8478,7 +8555,7 @@ size = 101
 evidence = ["ovl", "near", "frame"]
 name = "CheckChar0F7"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "eov5_0b16"
@@ -8488,7 +8565,7 @@ size = 66
 evidence = ["ovl", "near", "frame"]
 name = "CheckRemove6"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "eov5_0b58"
@@ -8498,7 +8575,7 @@ size = 102
 evidence = ["ovl", "near", "frame"]
 name = "Menu1"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "eov5_0bbe"
@@ -8508,7 +8585,7 @@ size = 223
 evidence = ["ovl", "near", "frame"]
 name = "BuildDeathList"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "eov5_0c9d"
@@ -8517,7 +8594,7 @@ addr = "ovl5:0C9D"
 size = 286
 evidence = ["ovl", "near", "frame"]
 name = "HealLoop"
-notes = "blocked: the two hit-point store tails. The body matches up to ovl5:0D7E; the original keeps the two stores separate (`mov [bx-0xa65],al` after `hp = maxhp` at ovl5:0D7E, then `jmp 0xDA9`, and again after `hp += heal` at ovl5:0D9F), each recomputing &gChars[i]; our -ml -O -Z build cross-jumps them into one shared store (the same class as 0ACD:091C, 14EF:0274 and 0D1C:096C: TCC's internal assembler, WHITEPAPER 2.1.1). Through the assembler (-B) the tails stay apart (the function is then one byte off at ovl5:0CB9), but -B breaks SurrenderPanel and ChooseChar, so the unit's one /*@flags*/ cannot express it (see eov5_00a1). Tried if/else and its reverse, braces, a local for the new hp, and -B."
+notes = "retry under -v (2026-11-02): the unit now builds with -v, which keeps identical tails apart; the difference below was found under the wrong switches. Earlier: the two hit-point store tails. The body matches up to ovl5:0D7E; the original keeps the two stores separate (`mov [bx-0xa65],al` after `hp = maxhp` at ovl5:0D7E, then `jmp 0xDA9`, and again after `hp += heal` at ovl5:0D9F), each recomputing &gChars[i]; our -ml -O -Z build cross-jumps them into one shared store (the same class as 0ACD:091C, 14EF:0274 and 0D1C:096C: TCC's internal assembler, WHITEPAPER 2.1.1). Through the assembler (-B) the tails stay apart (the function is then one byte off at ovl5:0CB9), but -B breaks SurrenderPanel and ChooseChar, so the unit's one /*@flags*/ cannot express it (see eov5_00a1). Tried if/else and its reverse, braces, a local for the new hp, and -B."
 
 [[function]]
 id = "eov5_0dbb"
@@ -8527,7 +8604,7 @@ size = 254
 evidence = ["ovl", "near", "frame"]
 name = "ResurrectPicker"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "eov5_0eb9"
@@ -8537,7 +8614,7 @@ size = 190
 evidence = ["ovl", "near", "frame"]
 name = "ResurrectPanel"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "eov5_0f77"
@@ -8547,7 +8624,7 @@ size = 181
 evidence = ["ovl", "near", "frame"]
 name = "AttackPanel"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "eov5_102c"
@@ -8557,7 +8634,7 @@ size = 91
 evidence = ["ovl", "near", "frame"]
 name = "KillHerPanel"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "eov5_1087"
@@ -8567,7 +8644,7 @@ size = 31
 evidence = ["ovl", "near", "frame"]
 name = "QuitPanel"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "eov5_10a6"
@@ -8577,7 +8654,7 @@ size = 248
 evidence = ["ovl", "near", "frame"]
 name = "SurrenderPanel"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "eov5_119e"
@@ -8587,7 +8664,7 @@ size = 102
 evidence = ["ovl", "near", "frame"]
 name = "FreeHimPanel"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "eov5_1204"
@@ -8597,7 +8674,7 @@ size = 1030
 evidence = ["ovl", "near", "frame"]
 name = "TileAnimation"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "eov5_160a"
@@ -8607,7 +8684,7 @@ size = 446
 evidence = ["ovl", "near", "frame"]
 name = "WinnerPanel"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "eov5_17c8"
@@ -8617,7 +8694,7 @@ size = 698
 evidence = ["ovl", "near", "frame"]
 name = "EndingAnimation"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "eov5_1a82"
@@ -8643,7 +8720,7 @@ addr = "ovl5:1E1B"
 size = 387
 evidence = ["ovl", "near", "frame"]
 name = "ShuffleGrid"
-notes = "blocked: TC registers the shuffle index. Declaration order swapped/k/pick/j/saved with `register int i, cy` puts i in SI and cy in DI and leaves pick in memory at [bp-0xe] and swapped at [bp-0xa], matching the original's slots; the body now matches up to ovl5:0064, where the original copies the shuffle index to DI (`mov di, si` at ovl5:0064, then uses `di` for both xs[i] accesses) and our build uses SI directly, 2 bytes short. Tried: plain i (TC puts i in DI, breaking the fill loops), unsigned i, i declared early or late, and `register int cy` alone. TC keeps only the loop counter in SI and does not reuse DI as a scratch copy of it; a source form that makes TC copy the index to DI would match. The earlier failure (pick registered in DI, swapped at [bp-0xe]) is fixed by the declaration order and register hints above."
+notes = "retry under -v (2026-11-02): the unit now builds with -v, which keeps identical tails apart; the difference below was found under the wrong switches. Earlier: TC registers the shuffle index. Declaration order swapped/k/pick/j/saved with `register int i, cy` puts i in SI and cy in DI and leaves pick in memory at [bp-0xe] and swapped at [bp-0xa], matching the original's slots; the body now matches up to ovl5:0064, where the original copies the shuffle index to DI (`mov di, si` at ovl5:0064, then uses `di` for both xs[i] accesses) and our build uses SI directly, 2 bytes short. Tried: plain i (TC puts i in DI, breaking the fill loops), unsigned i, i declared early or late, and `register int cy` alone. TC keeps only the loop counter in SI and does not reuse DI as a scratch copy of it; a source form that makes TC copy the index to DI would match. The earlier failure (pick registered in DI, swapped at [bp-0xe]) is fixed by the declaration order and register hints above."
 
 [[function]]
 id = "eov6_0000"
@@ -8655,6 +8732,7 @@ name = "CampLoop"
 notes = "matched 2026-11-01: whole function, 2018 bytes. Names: f0858 prints Hours rested, f09D2 tests monsters near, f0A92 tests ready to rest, f0B9B draws the warning box, f07E2 finds the most wounded member. The +0008 copy is a local ARRAY initialiser (unsigned char counters[6]), whose type the counters compare shows (mov dl/mov dh,0 zero extends). The five sibling calls are forward same-file calls: TCC emits a far call (9A), the overlay build rewrites it to nop; push cs; call near of the same length."
 level = "L2"
 match_flags = "-ml -O -Z"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "eov6_07e2"
@@ -8665,6 +8743,7 @@ evidence = ["ovl", "near", "frame"]
 name = "f07E2"
 level = "L2"
 match_flags = "-ml -O -Z"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "eov6_0858"
@@ -8675,6 +8754,7 @@ evidence = ["ovl", "near", "frame"]
 name = "f0858"
 level = "L2"
 match_flags = "-ml -O -Z"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "eov6_09d2"
@@ -8685,6 +8765,7 @@ evidence = ["ovl", "near", "frame"]
 name = "f09D2"
 level = "L2"
 match_flags = "-ml -O -Z"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "eov6_0a92"
@@ -8695,6 +8776,7 @@ evidence = ["ovl", "near", "frame"]
 name = "f0A92"
 level = "L2"
 match_flags = "-ml -O -Z"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "eov6_0b9b"
@@ -8705,6 +8787,7 @@ evidence = ["ovl", "near", "frame"]
 name = "f0B9B"
 level = "L2"
 match_flags = "-ml -O -Z"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "i0000_0000"
@@ -9199,6 +9282,9 @@ unit = "i0892"
 addr = "0892:0000"
 size = 577
 evidence = ["far", "segment"]
+name = "Main"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "i0892_0241"
@@ -9206,6 +9292,9 @@ unit = "i0892"
 addr = "0892:0241"
 size = 1524
 evidence = ["far"]
+name = "StartupGame"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "i0892_0835"
@@ -9213,6 +9302,9 @@ unit = "i0892"
 addr = "0892:0835"
 size = 139
 evidence = ["far", "near"]
+name = "ShutdownGame"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "i0892_08c0"
@@ -9220,6 +9312,9 @@ unit = "i0892"
 addr = "0892:08C0"
 size = 8
 evidence = ["frame"]
+name = "ExitHook"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "i0892_08c8"
@@ -9227,6 +9322,9 @@ unit = "i0892"
 addr = "0892:08C8"
 size = 40
 evidence = ["frame"]
+name = "AllocationFailure"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "i0921_0000"
@@ -9244,6 +9342,8 @@ unit = "i0923"
 addr = "0923:0004"
 size = 12
 evidence = ["segment"]
+level = "L2"
+notes = "not a function: bytes of the unit outside its functions (a marker or padding), matched with the whole unit"
 
 [[function]]
 id = "i0923_0010"
@@ -9251,6 +9351,9 @@ unit = "i0923"
 addr = "0923:0010"
 size = 97
 evidence = ["near"]
+name = "CheckMCB"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "i0923_0071"
@@ -9258,6 +9361,9 @@ unit = "i0923"
 addr = "0923:0071"
 size = 194
 evidence = ["far", "frame"]
+name = "CheckMemoryChain"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "i0923_0133"
@@ -9265,6 +9371,9 @@ unit = "i0923"
 addr = "0923:0133"
 size = 330
 evidence = ["far", "frame"]
+name = "ReserveMemoryBelowVideo"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "i0923_027d"
@@ -9272,6 +9381,9 @@ unit = "i0923"
 addr = "0923:027D"
 size = 74
 evidence = ["frame"]
+name = "TrimMemoryToVideo"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "i094f_0007"
@@ -9828,6 +9940,9 @@ unit = "i0aed"
 addr = "0AED:000D"
 size = 56
 evidence = ["far", "segment"]
+name = "LoadFile"
+level = "L2"
+match_flags = "-ml -O -Z -G -P"
 
 [[function]]
 id = "i0aed_0045"
@@ -9835,6 +9950,9 @@ unit = "i0aed"
 addr = "0AED:0045"
 size = 134
 evidence = ["frame"]
+name = "LoadPacked"
+level = "L2"
+match_flags = "-ml -O -Z -G -P"
 
 [[function]]
 id = "i0aed_00cb"
@@ -9842,6 +9960,9 @@ unit = "i0aed"
 addr = "0AED:00CB"
 size = 357
 evidence = ["far", "frame"]
+name = "Unpack"
+level = "L2"
+match_flags = "-ml -O -Z -G -P"
 
 [[function]]
 id = "i0b10_0000"
@@ -9849,6 +9970,9 @@ unit = "i0b10"
 addr = "0B10:0000"
 size = 108
 evidence = ["far", "segment"]
+name = "_Unpack0"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "i0b10_006c"
@@ -9856,6 +9980,9 @@ unit = "i0b10"
 addr = "0B10:006C"
 size = 15
 evidence = ["far", "frame"]
+name = "_NormalizeFarPointer"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "i0b10_007b"
@@ -9863,6 +9990,9 @@ unit = "i0b10"
 addr = "0B10:007B"
 size = 16
 evidence = ["far", "near"]
+name = "_NormFar"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "i0b18_000b"
@@ -10279,6 +10409,8 @@ unit = "i0cda"
 addr = "0CDA:0005"
 size = 51
 evidence = ["segment"]
+level = "L2"
+notes = "not a function: bytes of the unit outside its functions (a marker or padding), matched with the whole unit"
 
 [[function]]
 id = "i0cdd_0008"
@@ -11027,4 +11159,3 @@ evidence = ["ovl", "near", "frame"]
 name = "PlaySound"
 level = "L2"
 match_flags = "-ml -O -Z -G"
-

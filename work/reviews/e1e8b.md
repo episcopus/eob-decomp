@@ -1,5 +1,43 @@
 # Review: e1e8b
 
+# Round 10
+
+Reviewer: rev-haiku
+Commit reviewed: c182ad7 (main and review/e1e8b, the same commit). Round 9 reviewed 4496aa5. Since then the unit's changes are the round 9 fix (22354f8, merged by 86c597a): `git diff 4496aa5 HEAD -- src/E1E8B.ASM` is three hunks, all comment text (the 000F header rewrap, the 04D0 header rewrap with its cites, the 07D7 cite), and `git diff 4496aa5 HEAD -- re/globals.toml` is the gClickX and gClickY why text. re/symbols.toml gained the `i0dd9_*` twin records (`match_flags = "twin e1e8b"`), which copy this unit's names and carry no claim of their own.
+
+Playbook 70, later round. Judged: the three round 9 must-fix items, the round 9 should (the rewrap), and the changed lines above. Nothing else was read again.
+Checked: `make match FILE=src/E1E8B.ASM` 30 of 30, exit 0; `make readability UNIT=e1e8b` 0 findings; no open `- [ ]` item in this file; no dash characters in src/E1E8B.ASM or this file.
+Evidence used: `git diff 4496aa5 HEAD -- src/E1E8B.ASM re/globals.toml`; a grep of src/E1E8B.ASM at HEAD (`iret` at :904, `mov     cx,ds:[0A0h]` at :1503, `cmp     cx,es:[0]` at :1504, `je      short drop_check` at :1423, after `shr si,1` at :1422); src/E1E8B.ASM:1388-1449 (07D7, read for its zero-link wording); src/E082C.C:529-533 (the ClickInRect comment and body, the function at :531); src/E1AAD.ASM:396 and :405 (the writes of gClickX and gClickY); src/E14EF.C:325 (the reader); awk for line widths (the 000F header lines 44 to 50 are 96 to 100 characters, the longest line in the unit is 104).
+
+## Findings
+
+Each finding is a checkbox. `must-fix` blocks `make review-pass` until a decompiler ticks it off
+(with the commit that fixes it); `should` and `note` do not block.
+
+### Round 9 must-fix items at c182ad7
+
+Held. The 04D0 header cites the 086F id test at (:1503-1504), which is `mov cx,ds:[0A0h]` and `cmp cx,es:[0]` at HEAD; it cites the IRET at (:904), which is `iret` at HEAD; and the 07D7 header cites the zero-link exit at (:1423), which is `je short drop_check` at HEAD. Each tick stays. The round 9 should (the rewrap of the 000F and 04D0 paragraphs) is done: the paragraphs run to the unit's width, and the unit's longest line is 104 characters, under the 105 the round 9 note allowed.
+
+### Changed lines since 4496aa5
+
+- src/E1E8B.ASM, the 000F and 04D0 header rewraps: the words are the same as at 4496aa5, only the breaks moved. Sound.
+- src/E1E8B.ASM, the 04D0 and 07D7 cites: correct at HEAD, see above. Sound.
+- re/globals.toml, gClickX (ds:8140) and gClickY (ds:8142): written at src/E1AAD.ASM:396 (`mov [gClickX],ax`) and :405 (`mov [gClickY],ax`); read by ClickInRect at 082C:0A5D (src/E082C.C:531, the body at :533 reads the two globals) and by src/E14EF.C:325 (`IsPointInRect(gClickX, gClickY, ...)`). The cite "src/E082C.C:529-531" covers the comment and the signature line of ClickInRect. Sound, and not a line of this unit.
+
+### Notes
+
+- note: the 07D7 header (:1393-1399) says "a zero link" and "A slot word with the low bit set (SS:[bx] odd) steps one level down". Neither fix touched that text. At :1423 `je short drop_check` is taken after `shr si,1`, and `shr` sets ZF for a word of 0 and for a word of 1, so a link word of 1 ends the walk there and does not step down; the `jb drop_advance` at :1424 is reached only for an odd word above 1. The 073B header already says a link word of 0 or 1 ends the walk. The 07D7 header could say the same. Not a must-fix: the wording was accepted in round 7, and no fix in this round touched it.
+- note: the bare line cites in this header (:904, :1503-1504, :1423) go stale whenever a header above them grows, as round 9's note said. Not a finding.
+
+## Confirmed, no change
+
+- The 04D0 and 000F bodies: the changes since 4496aa5 are comment-only (`git diff` shows only `;` lines), so the code is the code round 9 judged.
+- The 07D7 and 04D0 cites match the code at HEAD (above).
+
+## Summary
+
+Round 10: the round 9 must-fix items are fixed right at c182ad7 (the three cites name the right lines), the round 9 rewrap is done, and the changed lines (the comment hunks in src/E1E8B.ASM and the gClickX and gClickY why text in re/globals.toml) are sound. One note, on 07D7 wording that no fix touched. No must-fix. Nothing is escalated: no matcher, spec or pin question. Verdict: review-passed, 0 must-fix.
+
 # Round 9
 
 Reviewer: rev-haiku
