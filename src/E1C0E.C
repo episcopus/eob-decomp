@@ -55,7 +55,7 @@ extern int gTextAttr1;                   /*@ ds:811D */
 extern int gTextAttr2;                   /*@ ds:811B */
 extern void (far *g8104)(int code, char far *name); /*@ ds:8104: the fatal file error handler */
 extern int (far *g8111)(int mode, char far *name);  /*@ ds:8111: the retry file error handler */
-extern signed char gLastDrive;           /*@ ds:FF00: highest drive _FindLastDrive found */
+extern signed char gLastDrive;           /*@ ds:FF00: highest drive FindLastDrive found */
 extern int gSavedDrive;                  /*@ ds:FEFE: the drive getdisk returned at init */
 extern unsigned char gSearchAllDrives;   /*@ ds:81EA: nonzero: 1C0E:1310 also scans other drives */
 extern long gRecordLength;               /*@ ds:FF02: 1C0E:172E leaves the record's length here */
@@ -83,6 +83,7 @@ extern long gRecordOffset;               /*@ ds:FF06: 1C0E:172E leaves the recor
 int FindFile(char far *name);            /*@ 1C0E:1645: defined later in the file */
 int IsFileInMemory(char far *name);      /*@ 1C0E:1161: defined later in the file */
 int FindLoadedFile(char far *name);      /*@ 1C0E:11D3: defined later in the file */
+int LocateOverlayFile(char far *name);   /*@ 1C0E:1310: defined later in the file */
 int f1C0E_144E(int index);               /*@ 1C0E:144E: defined later in the file */
 
 /* A cached file, a 19-byte record at ds:01FF (index * 19 + ds:01FF). The name is a C string; an
