@@ -4968,6 +4968,7 @@ evidence = ["near", "segment"]
 name = "FindMaskBit"
 level = "L2"
 match_flags = "-ml -O -Z -B"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e14ef_0078"
@@ -4978,6 +4979,7 @@ evidence = ["near", "frame"]
 name = "BlinkText"
 level = "L2"
 match_flags = "-ml -O -Z -B"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e14ef_00e1"
@@ -4988,6 +4990,7 @@ evidence = ["near", "frame"]
 name = "IsPointInRect"
 level = "L2"
 match_flags = "-ml -O -Z -B"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e14ef_0107"
@@ -4998,6 +5001,7 @@ evidence = ["frame"]
 name = "CountMaskBits"
 level = "L2"
 match_flags = "-ml -O -Z -B"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e14ef_0154"
@@ -5008,6 +5012,7 @@ evidence = ["frame"]
 name = "DrawOptionList"
 level = "L2"
 match_flags = "-ml -O -Z -B"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e14ef_0274"
@@ -5019,6 +5024,7 @@ notes = "matched 2026-11-01 with `-B` (TCC -S, then TASM with SMART off): the fo
 name = "UpdateOptionList"
 level = "L2"
 match_flags = "-ml -O -Z -B"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1547_0009"
