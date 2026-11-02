@@ -2736,11 +2736,20 @@ f1551_168B:
         ret
 _DrawListNode ENDP
 
+; ovl1:1691: the 1084-byte routine the map folds into 1551's range. It copies three zero templates
+; into local arrays with F_SCOPY@ (C local-array initialisers), builds a candidate list of party
+; members (f0D1C_0670, FindCarriedSlot), draws g1278 item names and gStrings2003 messages, and
+; switches on the eight-key table at ovl1:1AAD (0x2B, 0x3D, 0x60, 0x61, 0x62, 0x6E, 0x8023, 0x8024).
+; Called by ovl1:1ACD. Stub: the F_SCOPY templates need a data segment an ASM unit does not have yet.
         PUBLIC  _Ovl1_1691               ; @ ovl1:1691 stub
 _Ovl1_1691 PROC FAR
         ret
 _Ovl1_1691 ENDP
 
+; ovl1:1ACD: the character-display / member action loop (2413 bytes, no direct caller in the map; it
+; is reached through the overlay dispatch). It drives the whole party panel: it calls most of this
+; unit's functions (ovl1:0000, 0416, 097A, 1153, 13F7, 1516, 1551, 1691, 243A) and most of the game
+; overlays, and switches on a 0x17-entry key table at ovl1:23DE. Stub: not decompiled yet.
         PUBLIC  _Ovl1_1ACD               ; @ ovl1:1ACD stub
 _Ovl1_1ACD PROC FAR
         ret
