@@ -6283,6 +6283,7 @@ evidence = ["segment"]
 name = "_f1BBE_0001"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1bbe_0002"
@@ -6293,6 +6294,7 @@ evidence = ["far", "near"]
 name = "_HidePointer"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1bbe_00ed"
@@ -6303,6 +6305,7 @@ evidence = ["far", "near", "frame"]
 name = "_ShowPointer"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1bbe_01fe"
@@ -6313,6 +6316,7 @@ evidence = ["far", "frame"]
 name = "_HidePointerZone"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1bbe_02c2"
@@ -6323,6 +6327,7 @@ evidence = ["far", "frame"]
 name = "_ShowPointerZone"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1bbe_0307"
@@ -6333,6 +6338,7 @@ evidence = ["far", "frame"]
 name = "LockHidePointer"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1bbe_0332"
@@ -6343,6 +6349,7 @@ evidence = ["far", "frame"]
 name = "LockShowPointer"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1bf3_000d"
