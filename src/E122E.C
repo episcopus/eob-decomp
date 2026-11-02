@@ -28,6 +28,9 @@ extern void AdjustMemberStatus(int who); /*@ 1414:03B4 */
 extern void Obj1505(int kind, int id, int frame, int orient, int b0, int m07, int type, int timer, int m12, int m14); /*@ 08E6:1505 */
 extern void MarkListItems(void far *head); /*@ 0BD2:040E */
 extern int ClickInRect(int left, int top, int right, int bottom); /*@ 082C:0A5D */
+extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
+extern char gFileNameBuf[]; /*@ ds:FE6E */     /* the text buffer sprintf formats into (src/E082C.C) */
+extern int gForceDoorRoll[]; /*@ ds:59B0 */    /* force-door roll thresholds, indexed by CharRec.m0D (122E:0325) */
 
 /* The 52-byte click-region records at ds:E06B, one chain per object kind (122E:0055 walks `next`).
    `kind` indexes gRectKinds; bit 0 of `flags` mirrors `x` about the 176-pixel screen width. */
@@ -55,7 +58,13 @@ extern struct RectKind far *gRectKinds[]; /*@ ds:EFD4 */
 struct CharRec {                                /* the 243-byte character records at ds:F580 */
     char pad00;
     unsigned char status;                       /* +01: bit 0 is live */
-    char pad02[0x77 - 0x02];
+    char name[0x0B];                            /* +02: the character's name, NUL padded */
+    signed char m0D;                            /* +0D: the class/strength index 122E:0325 picks on */
+    char pad0E;
+    signed char m0F;                            /* +0F: a level or score (src/E0BD2.C) */
+    char pad10[0x1B - 0x10];
+    signed char m1B;                            /* +1B: 122E:0325 skips a character at or below 0 */
+    char pad1C[0x77 - 0x1C];
     int items[0x1b];                            /* +77: 27 item slots */
     char padAD[0xf3 - 0xad];
 };
@@ -236,7 +245,52 @@ void f122E_1DA8(int a, int b);  /* forward: 1DA8 comes after its callers */
     AdjustMemberStatus(who);
     ArmEffectWith(0xc, who, idx, 1);
 }
-/*@ 122E:0325 stub */ void f122E_0325(void) {}
+/* 122E:0325: the force-door action. It only runs when the last click was in the member-slot
+   rectangle or the driver is not in mode 0x40. It picks the strongest live member (highest
+   m0D + m0F, among those with m1B above 0), rolls 1d20 against gForceDoorRoll[its m0D], and on a
+   pass prints "%s forces the door!" and arms the member; on a miss or no candidate it prints the
+   party message. In every case it rewrites the clicked slot's gB894 byte (8 or 0x12) and the
+   opposite slot (slot ^ 2), then arms the member effect. Returns 0 only when the click missed and
+   the driver is in mode 0x40, else 1. */
+/*@ 122E:0325 draft */ int ForceDoorAction(int id, int slot)
+{
+    register int who;
+    register int i;
+
+    if (ClickInRect(0x28, 0x10, 0x88, 0x58) || gEFD2 != 0x40) {
+        who = -1;
+        for (i = 0; i < 6; i++) {
+            if ((gChars[i].status & 1) == 0)
+                continue;
+            if (gChars[i].m1B <= 0)
+                continue;
+            if (who < 0)
+                who = i;
+            else if (gChars[who].m0D + gChars[who].m0F <= gChars[i].m0D + gChars[who].m0F)
+                who = i;
+        }
+        if (who == -1) {
+            sprintf(gFileNameBuf, "Nobody is able to force the door.\r");
+            return 1;
+        }
+        if (RollDice(1, 0x14, 0) > gForceDoorRoll[gChars[who].m0D]) {
+            DrawText("The party tries to force the door and fails.\r");
+            return 1;
+        }
+        DrawText("The party forces the door.\r");
+        sprintf(gFileNameBuf, "%s forces the door!\r", gChars[who].name);
+        if (gB894[id * 9 + slot] == 0x1e) {
+            gB894[id * 9 + slot] = 8;
+            gB894[id * 9 + (slot ^ 2)] = 8;
+        } else {
+            gB894[id * 9 + slot] = 0x12;
+            gB894[id * 9 + (slot ^ 2)] = 0x12;
+        }
+        ArmMemberEffect(id);
+        return 1;
+    }
+    return 0;
+}
 /*@ 122E:04CA stub */ void f122E_04CA(void) {}
 
 /* 122E:05DF: look up the object kind in gB894[id * 9 + slot] and, if HitTestObjectKind accepts it, run the

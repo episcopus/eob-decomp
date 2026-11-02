@@ -3895,6 +3895,8 @@ unit = "e122e"
 addr = "122E:0325"
 size = 421
 evidence = ["frame"]
+name = "ForceDoorAction"
+notes = "draft 2026-11-01: matches every byte except the two `mov si,di` tails at 122E:03C1 (the A<=B branch) and 122E:03C5 (the who<0 branch): the original keeps both plus the `jmp 122E:03C7` between them, our -ml -O -Z build cross-jumps them into one `mov si,di` (4 bytes short, first difference the return-0 target at 122E:0028, ours jmp 0x199 against 0x19f). This is the TCC internal-assembler cross-jump class of 0A16. `-B` does not fix it: TCC -S then emits the far-branch form `or si,si; jge; jmp` where the original has one short `jl 122E:03C5`, and the function is still 4 bytes short. Tried: `if (who<0) who=i; else if (A<=B) who=i;`, the braced forms, `if (who<0) { who=i; continue; } if (A<=B) who=i;`, `if (who>=0 && A>B) continue; who=i;` (one assignment, 6 short), `who=i+0` in either branch, and an extra `else who=who;` (2 short); TCC always merges the two `who=i`. Same unresolved unit-flag question as 0A16. The rest of the function (the click gate, the six-character pick, the 1d20 roll against gForceDoorRoll[m0D], the messages and the gB894 slot rewrite) is written from the disassembly."
 
 [[function]]
 id = "e122e_04ca"
