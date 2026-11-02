@@ -6,9 +6,9 @@
 ; direct caller in the map (it is reached through the overlay dispatch) and calls most of the
 ; others, including ovl1:0000. The 30 counters at ds:FDEC, the byte table ds:FD9A and the 9-byte
 ; lists at ds:FDBA are the spell tables ovl1:00DD builds and ovl1:025D steps. Status: ovl1:0000,
-; 00DD, 025D, 0416, 0881, 13F7 and 1516 are matched (L2); the rest are stubs. Names not proven by an
-; address or a caller come from the code alone and are marked in each function's comment. See
-; whitepaper 2.7 and 4.
+; 00DD, 025D, 0416, 0881, 13F7, 1516 and 243A are matched (L2); ovl1:097A, 1153, 1551 and 1ACD are
+; stubs. Names not proven by an address or a caller come from the code alone and are marked in each
+; function's comment. See whitepaper 2.7 and 4.
 
         .MODEL  LARGE
 
@@ -41,6 +41,8 @@
         EXTRN   _DrawRowList:FAR        ; @ 0D1C:0454 (E0D1C.C)
         EXTRN   _DispatchKeyWait:FAR    ; @ 16A5:005A (E0ACD.C)
         EXTRN   _f1A29_000F:FAR         ; @ 1A29:000F (E082C.C)
+        EXTRN   _FindNode:FAR           ; @ 1658:01A2 (E1658.C)
+        EXTRN   _PointInRect:FAR        ; @ 14EF:00E1 (E14EF.C)
 
         EXTRN   gChars:BYTE             ; @ ds:F580: 6 character records of 0xF3 bytes (E08E6.C)
         EXTRN   gBufDCFC:DWORD          ; @ ds:DCFC: 4096-byte scratch allocation (E07A9.C)
@@ -75,6 +77,8 @@
         EXTRN   gMap62C9:BYTE           ; @ ds:62C9: spell-level to slot map for class B
         EXTRN   gIconDD28:DWORD         ; @ ds:DD28: far pointer to the icon table (EOV2.C)
         EXTRN   gMouseDisabled:WORD     ; @ ds:814A: nonzero while the mouse is off (E07A9.C)
+        EXTRN   gCursorX:WORD           ; @ ds:8138: mouse x in pixels (E14EF.C)
+        EXTRN   gCursorY:WORD           ; @ ds:813A: mouse y in pixels (E14EF.C)
         EXTRN   gA9C0:DWORD             ; @ ds:A9C0: far pointer to the 8x8 font (E07A9.C)
         EXTRN   g1231:BYTE              ; @ ds:1231: class bit mask table (E0BD2.C)
         EXTRN   g629B:BYTE              ; @ ds:629B: last command byte (ovl1:0416)
@@ -1398,9 +1402,262 @@ _Ovl1_1ACD PROC FAR
         ret
 _Ovl1_1ACD ENDP
 
-        PUBLIC  _Ovl1_243A               ; @ ovl1:243A stub
-_Ovl1_243A PROC FAR
+; ovl1:243A: show the gStrings2003 message `message` as a header and a scrollable list of the
+; member inventory slots, letting the player pick one with the keyboard or the mouse. It saves
+; g811F and the current font, clears g8115, selects the 8x8 font gFE5A, builds a far list of the
+; nodes whose key is `cur+0x21` with _Ovl1_1153(5), hides the pointer, draws the message through
+; SkipStrings(gStrings2003, message) and DrawShadowText, then loops: it highlights the current node
+; with _Ovl1_1551 (after _FindNode(index+0x21)), waits with DispatchKeyWait, and switches on the
+; key (table at ovl1:266C, 7 keys): 0x5C/0x66 toggle `di`, 0x2B/0x3D/0x61 remove the node and walk
+; the list to the node under the mouse (gCursorX/gCursorY through PointInRect), 0x8021/0x8022 end
+; the loop with a result flag. On exit it frees the list, restores the font and g811F through
+; _f1A47_0169 and SetTextWindow and returns the flag. Called from ovl1:1ACD and the camp loop
+; (ovl6:0000). Purpose unknown: what the returned flag means and which menu `message` names.
+; Stack frame: [bp+6] `message`; [bp-0xa] saved g811F; [bp-0xe]/[bp-0xc] the saved font far pointer
+; (offset/segment); [bp-4]/[bp-2] the far `list` head (offset/segment); [bp-8]/[bp-6] the far list
+; cursor; [bp-0x12] `looping`; [bp-0x10]/[bp-0x16] the key; [bp-0x14] the result; si `selected`;
+; di `cur`.
+        PUBLIC  _ChooseListEntry        ; @ ovl1:243A
+_ChooseListEntry PROC FAR
+        push    bp
+        mov     bp,sp
+        sub     sp,16h
+        push    si
+        push    di
+        mov     ax,[g811F]
+        mov     [bp-0Ah],ax
+        mov     ax,word ptr [gFont1A47+2]
+        mov     dx,word ptr [gFont1A47]
+        mov     [bp-0Eh],dx
+        mov     [bp-0Ch],ax
+        mov     word ptr [g8115],0
+        push    word ptr [gFE5A+2]
+        push    word ptr [gFE5A]
+        call    far ptr _f1A47_0169
+        pop     cx
+        pop     cx
+        mov     ax,5
+        push    ax
+        call    far ptr _Ovl1_1153
+        pop     cx
+        mov     [bp-4],ax
+        mov     [bp-2],dx
+        call    far ptr _LockHidePointer
+        xor     ax,ax
+        push    ax
+        mov     ax,0Fh
+        push    ax
+        mov     ax,[gTextTop]
+        add     ax,4
+        push    ax
+        mov     ax,[gTextLeft]
+        inc     ax
+        shl     ax,1
+        shl     ax,1
+        shl     ax,1
+        push    ax
+        push    word ptr [bp+6]
+        mov     ax,SEG gStrings2003
+        push    ax
+        mov     ax,OFFSET gStrings2003
+        push    ax
+        call    far ptr _SkipStrings
+        add     sp,6
+        push    dx
+        push    ax
+        call    far ptr _DrawShadowText
+        add     sp,0Ch
+        call    far ptr _LockShowPointer
+        mov     si,0FFFFh
+        xor     di,di
+        mov     word ptr [bp-12h],1
+        jmp     f243A_2638
+f243A_24C6:
+        cmp     di,si
+        je      short f243A_251B
+        cmp     si,-1
+        je      short f243A_24F4
+        mov     ax,1
+        push    ax
+        xor     ax,ax
+        push    ax
+        push    ax
+        mov     ax,si
+        add     ax,21h
+        push    ax
+        push    word ptr [bp-2]
+        push    word ptr [bp-4]
+        call    far ptr _FindNode
+        add     sp,6
+        push    dx
+        push    ax
+        call    far ptr _Ovl1_1551
+        add     sp,0Ah
+f243A_24F4:
+        mov     ax,1
+        push    ax
+        push    ax
+        xor     ax,ax
+        push    ax
+        mov     ax,di
+        add     ax,21h
+        push    ax
+        push    word ptr [bp-2]
+        push    word ptr [bp-4]
+        call    far ptr _FindNode
+        add     sp,6
+        push    dx
+        push    ax
+        call    far ptr _Ovl1_1551
+        add     sp,0Ah
+        mov     si,di
+f243A_251B:
+        push    word ptr [bp-2]
+        push    word ptr [bp-4]
+        call    far ptr _DispatchKeyWait
+        pop     cx
+        pop     cx
+        mov     [bp-10h],ax
+        mov     [bp-16h],ax
+        mov     cx,7
+        mov     bx,266Ch
+f243A_2534:
+        mov     ax,word ptr cs:[bx]
+        cmp     ax,[bp-16h]
+        je      short f243A_2542
+        inc     bx
+        inc     bx
+        loop    f243A_2534
+        jmp     short f243A_2578
+f243A_2542:
+        jmp     word ptr cs:[bx+0Eh]
+f243A_2546:
+        NOSMART                         ; the compiler kept the 16-bit immediate form here
+        xor     di,1
+        SMART
+        jmp     f243A_25E6
+f243A_254D:
+        or      si,si
+        jne     short f243A_2556
+        mov     ax,1
+        jmp     short f243A_2558
+f243A_2556:
+        xor     ax,ax
+f243A_2558:
+        mov     [bp-14h],ax
+        mov     ax,si
+        add     ax,8021h
+        mov     [bp-10h],ax
+        jmp     short f243A_2571
+f243A_2565:
+        mov     word ptr [bp-14h],1
+        jmp     short f243A_2571
+f243A_256C:
+        mov     word ptr [bp-14h],0
+f243A_2571:
+        mov     word ptr [bp-12h],0
+        jmp     short f243A_25E6
+f243A_2578:
+        cmp     word ptr [gMouseDisabled],0
+        jne     short f243A_25E6
+        mov     ax,[bp-2]
+        mov     dx,[bp-4]
+        jmp     short f243A_25D8
+f243A_2587:
+        les     bx,[bp-8]
+        test    word ptr es:[bx+38h],2
+        je      short f243A_25CE
+        mov     ax,es:[bx+20h]
+        add     ax,es:[bx+24h]
+        push    ax
+        mov     ax,es:[bx+1Eh]
+        add     ax,es:[bx+22h]
+        push    ax
+        push    word ptr es:[bx+20h]
+        push    word ptr es:[bx+1Eh]
+        push    word ptr [gCursorY]
+        push    word ptr [gCursorX]
+        call    far ptr _PointInRect
+        add     sp,0Ch
+        or      ax,ax
+        je      short f243A_25CE
+        les     bx,[bp-8]
+        mov     ax,es:[bx+4]
+        sub     ax,21h
+        mov     di,ax
+        jmp     short f243A_25E6
+f243A_25CE:
+        les     bx,[bp-8]
+        mov     ax,es:[bx+2]
+        mov     dx,es:[bx]
+f243A_25D8:
+        mov     [bp-8],dx
+        mov     [bp-6],ax
+        mov     ax,[bp-8]
+        or      ax,[bp-6]
+        jne     short f243A_2587
+f243A_25E6:
+        cmp     word ptr [bp-12h],0
+        jne     short f243A_2638
+        mov     ax,si
+        add     ax,21h
+        push    ax
+        push    word ptr [bp-2]
+        push    word ptr [bp-4]
+        call    far ptr _FindNode
+        add     sp,6
+        mov     [bp-8],ax
+        mov     [bp-6],dx
+        mov     ax,1
+        push    ax
+        push    ax
+        push    ax
+        push    dx
+        push    word ptr [bp-8]
+        call    far ptr _Ovl1_1551
+        add     sp,0Ah
+        mov     ax,5
+        push    ax
+        call    far ptr _WaitFrames
+        pop     cx
+        mov     ax,1
+        push    ax
+        push    ax
+        xor     ax,ax
+        push    ax
+        push    word ptr [bp-6]
+        push    word ptr [bp-8]
+        call    far ptr _Ovl1_1551
+        add     sp,0Ah
+        mov     di,si
+f243A_2638:
+        cmp     word ptr [bp-12h],0
+        je      short f243A_2641
+        jmp     f243A_24C6
+f243A_2641:
+        push    word ptr [bp-2]
+        push    word ptr [bp-4]
+        call    far ptr _FreeFarList
+        pop     cx
+        pop     cx
+        push    word ptr [bp-0Ch]
+        push    word ptr [bp-0Eh]
+        call    far ptr _f1A47_0169
+        pop     cx
+        pop     cx
+        push    word ptr [bp-0Ah]
+        call    far ptr _SetTextWindow
+        pop     cx
+        mov     ax,[bp-14h]
+        pop     di
+        pop     si
+        mov     sp,bp
+        pop     bp
         ret
-_Ovl1_243A ENDP
+f243A_266C:
+        dw      2Bh, 3Dh, 5Ch, 61h, 66h, 8021h, 8022h
+        dw      f243A_254D, f243A_254D, f243A_2546, f243A_254D, f243A_2546
+        dw      f243A_2565, f243A_256C
+_ChooseListEntry ENDP
 
         END
