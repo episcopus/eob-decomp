@@ -16,7 +16,7 @@
         .MODEL  LARGE
 
         EXTRN   _farfree:FAR            ; @ 0000:71EE: free a far block (library)
-        EXTRN   _RotateBlocks:FAR       ; @ 082C:07C5 (E082C.C)
+        EXTRN   _SwapBlocks:FAR       ; @ 082C:07C5 (E082C.C)
         EXTRN   _f0D1C_0670:FAR         ; @ 0D1C:0670 (E0D1C.C)
         EXTRN   _f0D1C_035A:FAR         ; @ 0D1C:035A (E0D1C.C)
         EXTRN   _RedrawMember:FAR       ; @ 1547:0991 (E08E6.C)
@@ -216,7 +216,7 @@ f0000_004B:
         imul    dx
         add     ax,OFFSET gChars
         push    ax
-        call    far ptr _RotateBlocks
+        call    far ptr _SwapBlocks
         add     sp,0Eh
         push    di
         call    far ptr _RedrawMember

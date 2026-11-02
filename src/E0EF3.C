@@ -213,7 +213,7 @@ extern char far *g5763[];               /*@ ds:5763 */ /* far byte tables, one p
 extern int gText5737[];                 /*@ ds:5737 */ /* a word table of animation frames 0EF3:2EBC
                                                         indexes with its frame counter */
 extern void Obj0E48(void);              /*@ 08E6:0E48 */ /* clears the object marks (src/E08E6.C) */
-extern int ClampValue(int value, int low, int high, int invert); /*@ 082C:0AB4 */
+extern int ClampOrWrap(int value, int low, int high, int invert); /*@ 082C:0AB4 */
 extern signed char gAt5717[];          /*@ ds:5717 */ /* a per-member byte: nonzero when the member
                                                      can use melee effects (read by 0EF3:0E1B) */
 extern signed char gTable5733[];        /*@ ds:5733 */ /* four cell deltas walked by 0EF3:17D8 */
@@ -317,7 +317,7 @@ extern int HalveSaveDamageB(char far *type, int value); /*@ 0DE8:0FCA */
 extern int FindClassSlot(int value, int classIndex); /*@ 0A72:007B */
 extern int GetIndexedByte(char index, char limit, char offset); /*@ 0A72:0006 */
 extern int GetArmourClassBase(char classIndex); /*@ 0A72:019D */
-extern void SayAndBeep(char far *text); /*@ 082C:0B8F */
+extern void SayAndPlaySound(char far *text); /*@ 082C:0B8F */
 extern void DrawText(char far *text); /*@ 1DE7:060A */
 extern void PlaySound(int sound); /*@ 177D:0070 */
 extern void WaitTicks(int n); /*@ 082C:0425 */
@@ -673,7 +673,7 @@ extern int gFC72;                /*@ ds:FC72 */ /* the handle gFn8072 returned u
    list (BuildList5). Called by the panel action at 0EF3:2676. */
 /*@ 0EF3:059D */ void ReportActionRefused(void)
 {
-    SayAndBeep(gText57A3);
+    SayAndPlaySound(gText57A3);
     PlaySound(0x4F);
     BuildList5();
 }
@@ -807,7 +807,7 @@ extern int gFC72;                /*@ ds:FC72 */ /* the handle gFn8072 returned u
         gFnEFBA();
         RedrawMember(gCurMember);
     } else {
-        SayAndBeep(gText57C8);
+        SayAndPlaySound(gText57C8);
     }
     if (g8DCE != 0)
         FinishMemberEffect();
@@ -945,7 +945,7 @@ extern int gFC72;                /*@ ds:FC72 */ /* the handle gFn8072 returned u
 
     rec = &gChars[who];
     sprintf(gFileNameBuf, gText57D9, rec->name, gSpells1344[spell].name);
-    SayAndBeep(gFileNameBuf);
+    SayAndPlaySound(gFileNameBuf);
     gA999 = who;
     gSpells1344[spell].remove(rec);
     if (gSpells1344[spell].flags & 7)
@@ -960,7 +960,7 @@ extern int gFC72;                /*@ ds:FC72 */ /* the handle gFn8072 returned u
    otherwise, when RollToHit accepts the object and 0D1C:0BAB does not reject it, roll count d
    sides plus bonus and damage the object. Called by 0EF3:1B43, 0EF3:1EF3 and 0EF3:1FF9.
    DRAFT: the frame and register use match (`register int obj, dmg`, target spilled to [bp-2]),
-   but with the file's -ml -O -Z TCC's internal assembler cross-jumps the two `sprintf`+`SayAndBeep`
+   but with the file's -ml -O -Z TCC's internal assembler cross-jumps the two `sprintf`+`SayAndPlaySound`
    message tails (the obj==-1 branch at 0EF3:0EAB and the outer else at 0EF3:0ED9; their bytes are
    identical from +0x14, verified), so ours is about 0x1D bytes shorter and the outer-else jump is
    off (`make match` differs at +0x15). -B keeps the tails apart (two bytes off at +0x15) but breaks
@@ -984,11 +984,11 @@ extern int gFC72;                /*@ ds:FC72 */ /* the handle gFn8072 returned u
                 DamageObject(&gObjs[obj], dmg);
         } else {
             sprintf(gFileNameBuf, gText57F1, gChars[gPanelMember].name);
-            SayAndBeep(gFileNameBuf);
+            SayAndPlaySound(gFileNameBuf);
         }
     } else {
         sprintf(gFileNameBuf, gText5809, gChars[gPanelMember].name);
-        SayAndBeep(gFileNameBuf);
+        SayAndPlaySound(gFileNameBuf);
     }
 }
 
@@ -1008,7 +1008,7 @@ extern int gFC72;                /*@ ds:FC72 */ /* the handle gFn8072 returned u
         ComputeArmourClass(gCurMember);
     } else {
         sprintf(gFileNameBuf, gText5830, gCurRec->name);
-        SayAndBeep(gFileNameBuf);
+        SayAndPlaySound(gFileNameBuf);
     }
 }
 
@@ -1185,7 +1185,7 @@ extern int gFC72;                /*@ ds:FC72 */ /* the handle gFn8072 returned u
     register int spell;
 
     sprintf(gFileNameBuf, gText5859, gCurRec->name);
-    SayAndBeep(gFileNameBuf);
+    SayAndPlaySound(gFileNameBuf);
     for (i = 0; i < 10; i++) {
         spell = gCurRec->mD5[i];
         if (spell < 0) {
@@ -1503,7 +1503,7 @@ void AnimateConeOfCold(int count, int spread, int step, int cycle, int divisor,
         gFBD2 |= 0x10;
         RedrawCharacters();
     } else {
-        SayAndBeep(gText587A);
+        SayAndPlaySound(gText587A);
     }
 }
 
@@ -1556,7 +1556,7 @@ void AnimateConeOfCold(int count, int spread, int step, int cycle, int divisor,
         }
         ApplyTimedCharEffect(gEFB8, 1, 0x222L, 1, 1);
     } else {
-        SayAndBeep(gText5899);
+        SayAndPlaySound(gText5899);
     }
 }
 /* 0EF3:1C45: undo a bandage-like effect on the record: when its +0xE2 byte is set subtract it
@@ -1694,7 +1694,7 @@ void AnimateConeOfCold(int count, int spread, int step, int cycle, int divisor,
     if (gCurRec->m01 != 0)
         ClearPoisonEffect(gCurMember);
     else
-        SayAndBeep(gText58BB);
+        SayAndPlaySound(gText58BB);
 }
 
 /* 0EF3:1F33: set every member's effect flag bit 0x200, apply a 0x1554-tick effect whose value is
@@ -1766,7 +1766,7 @@ void AnimateConeOfCold(int count, int spread, int step, int cycle, int divisor,
         gCurRec->hp = 1;
         RedrawMember(gCurMember);
     } else {
-        SayAndBeep(gText58C6);
+        SayAndPlaySound(gText58C6);
     }
 }
 
@@ -2051,12 +2051,12 @@ void DrawSpellPanel(void);
     gF3B8 = g1A1B[gFBCC * 4 + index];
     if (spell->flags & 2) {
         if (gChars[gPanelMember].m77[0] != 0 && gChars[gPanelMember].m77[1] != 0) {
-            SayAndBeep(gText5943);
+            SayAndPlaySound(gText5943);
             return;
         }
         if (IsDiscardedItem(gChars[gPanelMember].m77[0]) ||
             IsDiscardedItem(gChars[gPanelMember].m77[1])) {
-            SayAndBeep(gText596E);
+            SayAndPlaySound(gText596E);
             return;
         }
     }
@@ -2134,7 +2134,7 @@ void DrawSpellPanel(void);
         step = (g5E1C & 0x81) ? -1 : 1;
         do {
             gA9C5 += step;
-            gA9C5 = ClampValue(gA9C5, 0, 6, 1);
+            gA9C5 = ClampOrWrap(gA9C5, 0, 6, 1);
             if ((gDD14 + gDDE2 * 6)[gA9C5] > 0)
                 break;
         } while (gA9C5 != 6);
