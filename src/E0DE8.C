@@ -17,7 +17,7 @@ struct CharRec {            /* the 243-byte (0xF3) character records at ds:F580;
     char name[0x0B];        /* +02: the character's name, NUL padded (0DE8:0C82) */
     char pad0D[0x15 - 0x0D];
     signed char m15;        /* +15: one of the five further stat bytes (src/E0A72.C); indexes the
-                               per-stat table g349E for the armour-class base (GetClassWord, 0A72:019D)
+                               per-stat table g349E for the armour-class base (GetArmourClassBase, 0A72:019D)
                                and the per-stat table ds:3474 (GetCharM15Value, 0A72:0181) */
     char pad16;
     signed char m17;        /* +17: an index into g54F6 (0D1C:059B) */
@@ -140,8 +140,8 @@ extern int GetDerivedStatB(int who); /*@ 0A72:0128 */
 extern int GetCharM15Value(int who); /*@ 0A72:0181 */
 extern char GetHitTarget(char who, char classByte); /*@ 0A72:0522 */
 extern char GetClassSlotByte(char row, char slot); /*@ 0A72:0509 */
-extern long GetClassSlotLong(char indexA, char indexB, char level); /*@ 0A72:04B7 */
-extern int GetClassWord(char classIndex); /*@ 0A72:019D */
+extern long GetClassSlotExpThreshold(char indexA, char indexB, char level); /*@ 0A72:04B7 */
+extern int GetArmourClassBase(char classIndex); /*@ 0A72:019D */
 extern int GetIndexedByte(char index, char limit, char offset); /*@ 0A72:0006 */
 extern int RollDamage(char who, char level, char countA, char countB, char countC); /*@ 0A72:01AE */
 extern int f0D1C_0670(int who, int mask); /*@ 0D1C:0670 */
@@ -596,7 +596,7 @@ fail:
 /* 0DE8:0B45: adds `amount` experience to character `who`'s three class slots. It divides `amount`
    by g115F[cls] (the per-class divisor for m20), then for each slot 0..2 that GetClassSlotByte
    accepts, accumulates the share into that slot's m27 total, reads the slot's next-level threshold
-   through GetClassSlotLong(cls, i, m24[i] + 1) and levels the slot up through LevelUpSlot when the
+   through GetClassSlotExpThreshold(cls, i, m24[i] + 1) and levels the slot up through LevelUpSlot when the
    total has passed it. Called by 082C:... and 0DE8:0C2B. */
 /*@ 0DE8:0B45 */ void AddExperience(int who, int amount)
 {
@@ -610,7 +610,7 @@ fail:
         if (GetClassSlotByte(cls, i) == -1)
             continue;
         gChars[who].m27[i] += amount;
-        value = GetClassSlotLong(cls, i, gChars[who].m24[i] + 1);
+        value = GetClassSlotExpThreshold(cls, i, gChars[who].m24[i] + 1);
         if (value != -1 && gChars[who].m27[i] > value)
             LevelUpSlot(who, cls, i);
     }
@@ -662,7 +662,7 @@ fail:
     DrawText(gFileNameBuf);
     PlaySound(0x17);
 }
-/* 0DE8:0D5E: computes the armour class m1D of character `who`. It starts from GetClassWord(m15) + 10,
+/* 0DE8:0D5E: computes the armour class m1D of character `who`. It starts from GetArmourClassBase(m15) + 10,
    then for the four slots named by g553E adds the item type's m04 and subtracts the slot's m0B when
    the item m02 passes the gItemTypes m0E and g1231[m20] tests (slot 2 also needs f0D1C_07DB), and
    when m77[17]'s slot m0B is 0 subtracts the larger m0B of the m77[25]/m77[26] items. It clamps
@@ -681,7 +681,7 @@ fail:
     struct CharRec far *rec;
 
     rec = &gChars[who];
-    base = GetClassWord(rec->m15);
+    base = GetArmourClassBase(rec->m15);
     rec->m1D = base + 10;
     for (i = 0; i < 4; i++) {
         item = rec->m77[g553E[i]];

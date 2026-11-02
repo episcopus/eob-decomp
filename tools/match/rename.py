@@ -229,9 +229,44 @@ def real_names() -> dict[str, str]:
     return {a: next(iter(ns)) for a, ns in seen.items() if len(ns) == 1}
 
 
+def stale_uses(dry: bool = False) -> dict[str, int]:
+    """A file that declares an address under its current name may still use a recorded old name of
+    that address, bound to nothing in the file: a branch wrote a call before main renamed the address
+    (the merge brings main's declaration and the branch's call). Such a use gets the file's name;
+    changes per file."""
+    if not LOG.exists():
+        return {}
+    history = [(r["addr"], [o.strip() for o in r["old"].split(",") if o.strip()])
+               for r in tomllib.loads(LOG.read_text()).get("rename", [])]
+    changed = {}
+    for p in sources():
+        b = bindings(p)
+        asm = p.suffix.upper() == ".ASM"
+        by_addr = {}
+        for n, a in b.items():
+            by_addr.setdefault(a, []).append(n)
+        text, total = p.read_text(), 0
+        for addr, olds in history:
+            if len(by_addr.get(addr, [])) != 1:
+                continue
+            cur = by_addr[addr][0]
+            for o in olds:
+                stale = "_" + o if asm and cur.startswith("_") else o
+                if stale != cur and stale not in b and \
+                        re.search(r"(?<![A-Za-z0-9_])%s(?![A-Za-z0-9_])" % re.escape(stale), text):
+                    text, k = replace_word(text, stale, cur, asm)
+                    total += k
+        if total:
+            changed[p.name] = total
+            if not dry:
+                p.write_text(text)
+    return changed
+
+
 def apply() -> int:
     """Every address gets its recorded name (re/renames.toml); an address that src/ calls by one real
-    name and otherwise by placeholders gets that name everywhere. Two real names for one address
+    name and otherwise by placeholders gets that name everywhere; a leftover use of an old name gets
+    the file's name for its address (stale_uses). Two real names for one address
     stay as they are: `make readability` reports them for a person to settle with `make rename`."""
     n = 0
     names = recorded()
@@ -246,6 +281,9 @@ def apply() -> int:
         for f, k in changed.items():
             print("rename: %s: %s -> %s (%d)" % (f, "/".join(olds), new, k))
             n += 1
+    for f, k in stale_uses().items():
+        print("rename: %s: %d uses of an old name" % (f, k))
+        n += 1
     print("rename: APPLY: %d file changes" % n)
     return 0
 

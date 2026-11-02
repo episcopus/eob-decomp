@@ -203,7 +203,7 @@ extern void ComputeArmourClass(int who); /*@ 0DE8:0D5E */
 extern void ClearCharEffectSlot(int who, int what); /*@ 1414:0C2D */
 extern void RedrawCharacters(void); /*@ 0D1C:0583 */
 extern void Action01E3(char far *text); /*@ 0ACD:01E3 */
-extern void f0EF3_2541(char far *text); /*@ 0EF3:2541 */
+extern void RedrawPartyPanel(char far *text); /*@ 0EF3:2541 */
 extern void fOvl2_09ED(void); /*@ 2106:0039 */  /* overlay 2 entry, ovl2:09ED */
 extern void fOvl3_07A5(char far *name, char far *sheet); /*@ 210C:0052 */  /* overlay 3 entry, ovl3:07A5 */
 extern void FreePtrTable(void); /*@ 210C:0048 */  /* overlay 3 entry, ovl3:0000 */
@@ -1224,7 +1224,7 @@ enum {
     if (gFB44)
         Action01E3(gF542);
     if (gFlag)
-        f0EF3_2541(gF542);
+        RedrawPartyPanel(gF542);
     fOvl4_1F51(1);
     switch (mode) {
     case 8:
@@ -1307,7 +1307,7 @@ enum {
     if (gFB44)
         Action01E3(gF542);
     if (gFlag)
-        f0EF3_2541(gF542);
+        RedrawPartyPanel(gF542);
     handle = FileOpen(gText7F27, 1);
     FileRead(handle, gSegDF4E, 0x7d00L);
     FileClose(handle);

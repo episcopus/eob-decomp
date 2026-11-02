@@ -3,15 +3,16 @@
 ; (1A72:00DA) detects the driver, initialises the mouse state (DGROUP:8138, 813A, 8144,
 ; 8146, 8148, 814A, 814E, 8152 and 8160), installs the event handler at 1A72:017A and
 ; returns 1 when a driver is present (0 otherwise). The handler
-; at 1A72:017A, which sits inside InitMouse, clamps the position, hands the button state to the
-; keyboard glue 1AAD:0B0E and redraws through the far pointers at DGROUP:80AA and DGROUP:80A2 under
+; at 1A72:017A, which sits inside InitMouse, clamps x, hands the button state to the keyboard glue
+; 1AAD:0B0E when it changed since the last event (DGROUP:8130) and redraws through the far pointers
+; at DGROUP:80AA and DGROUP:80A2 under
 ; the busy flag at DGROUP:812E. IsMouseInRect (1A72:02A6) tests the position the pointer was last
 ; drawn at against a rectangle; RemoveMouseHandler (1A72:0285) removes the handler; 1A72:02FA and
 ; 1A72:02FC enable and disable interrupts; 1A72:02FE and 1A72:033A set and read the far pointer at
 ; DGROUP:8172/8174 (1A72:02FE also copies 16 bytes from the old target to the new one). 1A72:0006
 ; is the INT 3Fh handler main installs (07C8:008F): it chains to the INT 3Fh vector saved at
-; DGROUP:FC08 (E07C8.C:125), and when EOB.EXE is not accessible it re-finds and reopens EOB.EXE
-; through 1C0E:1310 with the runtime's _open.
+; DGROUP:FC08 (set at 07C8:0088, E07C8.C:162), and when EOB.EXE is not accessible it re-finds and
+; reopens EOB.EXE through 1C0E:1310 with the runtime's _open.
 ; Placeholder DGROUP names mark the mouse state whose exact role is inferred from this code only.
 
         .MODEL  LARGE
@@ -51,7 +52,7 @@
         ;                                              QUIRK 1A72:01A6: the (BX and 3) or mask
         ;                                              replacement is behaviour a port must keep
         EXTRN   g8134:WORD              ; @ ds:8134: accumulated button changes; the map screen
-        ;                                              clears it (E14EF.C:150, E0ACD.C:886)
+        ;                                              clears it (E14EF.C:169, E0ACD.C:886)
         EXTRN   g8136:WORD              ; @ ds:8136: latched to 1 once any button has been seen;
         ;                                              this unit never clears it, E1AAD.ASM:1356
         ;                                              sets it too and nothing in src/ clears it
@@ -86,47 +87,47 @@
         ;                                              before it installs the handler (1A72:0150);
         ;                                              Main then forces it to 1 when no handler is
         ;                                              installed and otherwise sets it to !mouse
-        ;                                              (E07C8.C:153-156); the overlay loader
-        ;                                              clears it when a handler is installed
-        ;                                              (E1C00.ASM:298); many units test it (E07A9,
-        ;                                              E0ACD, E0BD2, E0D1C, E14EF, E16A5, E1547,
-        ;                                              EOV3, EOV5); HidePointer and ShowPointer do
+        ;                                              (E07C8.C:190-193, inside
+        ;                                              `if (StartupGame() == 1)` and `if (g3092)`);
+        ;                                              the overlay loader clears it when a handler
+        ;                                              is installed (E1C00.ASM:298); many units test
+        ;                                              it (E07A9, E0ACD, E0BD2, E0D1C, E14EF,
+        ;                                              E16A5, E1547, EOV3, EOV5); HidePointer and
+        ;                                              ShowPointer do
         ;                                              nothing when it is set (the tests at
-        ;                                              1BBE:0006 and 1BBE:00F1, E1BBE.ASM:119, :213)
+        ;                                              1BBE:0006 and 1BBE:00F1)
         EXTRN   g814E:WORD              ; @ ds:814E: screen width minus 1, 13Fh; the handler clamps
         ;                                              with the literal 13Fh, not with this variable
         EXTRN   g8152:WORD              ; @ ds:8152: screen height minus 1, 0C7h (set at
         ;                                              1A72:0104); this unit never reads it: the
         ;                                              handler clamps no y at all
         EXTRN   _gDrawnX:WORD              ; @ ds:815C: the position the pointer was last drawn at,
-        ;                                              copied by ShowPointer (1BBE:0111-0114,
-        ;                                              E1BBE.ASM:222-223)
+        ;                                              copied by ShowPointer (1BBE:0111-0114)
         EXTRN   _gDrawnY:WORD              ; @ ds:815E: the position the pointer was last drawn at,
-        ;                                              copied by ShowPointer (1BBE:0121-0124,
-        ;                                              E1BBE.ASM:227-228)
+        ;                                              copied by ShowPointer (1BBE:0121-0124)
         EXTRN   _gPointerState:WORD              ; @ ds:8160: pointer state bits: 8000h the pointer
         ;                                              is hidden over the hide zone, 4000h a redraw
         ;                                              is requested, low byte a counter (E1BBE.ASM)
         EXTRN   _gZoneLeft:WORD              ; @ ds:8162: hide zone, left in pixels, stored reduced
         ;                                              (the argument less the pointer width, the
         ;                                              store at 1BBE:0234 and the reduction at
-        ;                                              1BBE:025B, E1BBE.ASM:341 and :353); the
+        ;                                              1BBE:025B); the
         ;                                              QUIRK at 1A72:0244 skips the check
         EXTRN   _gZoneTop:WORD              ; @ ds:8164: hide zone, top in pixels, stored reduced
         ;                                              (the argument less the pointer height, the
         ;                                              store at 1BBE:0238 and the reduction at
-        ;                                              1BBE:0272, E1BBE.ASM:342 and :360)
+        ;                                              1BBE:0272)
         EXTRN   _gZoneRight:WORD              ; @ ds:8166: hide zone, right in pixels, stored as
-        ;                                              given (1BBE:023C, E1BBE.ASM:343)
+        ;                                              given (1BBE:023C)
         EXTRN   _gZoneBottom:WORD              ; @ ds:8168: hide zone, bottom in pixels, stored as
-        ;                                              given (1BBE:0240, E1BBE.ASM:344)
+        ;                                              given (1BBE:0240)
         EXTRN   g8172:WORD              ; @ ds:8172: far pointer handed to DGROUP:80AA as its
-        ;                                              argument, offset (declared at E1BBE.ASM:68),
+        ;                                              argument, offset (declared at E1BBE.ASM:71),
         ;                                              the far pointer SetFarPointer stores,
         ;                                              GetFarPointer reads; 17A6 points it at its
         ;                                              16-byte save buffer (E17A6.ASM:95, calls at
         ;                                              :283, :356)
-        EXTRN   g8174:WORD              ; @ ds:8174: the same far pointer, segment (E1BBE.ASM:69)
+        EXTRN   g8174:WORD              ; @ ds:8174: the same far pointer, segment (E1BBE.ASM:72)
         EXTRN   g8026:WORD              ; @ ds:8026: scratch copy of gDrawnX made by IsMouseInRect
         EXTRN   g8028:WORD              ; @ ds:8028: scratch copy of gDrawnY made by IsMouseInRect
         EXTRN   gFC08:DWORD             ; @ ds:FC08: previous INT 3Fh vector, chained by 1A72:0006
@@ -252,7 +253,7 @@ _Int3FHandler ENDP
 ; it records that (DGROUP:8144 = 1) and doubles the constant centre 0A0h before setting
 ; the position (function 4). It installs 1A72:017A for moves and the left and right buttons
 ; (function 0Ch, mask 1Fh) and returns 1 in AX; with no driver it returns 0. Called from StartupGame
-; (07C8:0199, E07C8.C:196). The DGROUP defaults are the middle of a 320x200 screen and the screen
+; (07C8:0199, E07C8.C:236). The DGROUP defaults are the middle of a 320x200 screen and the screen
 ; bounds.
         PUBLIC  _InitMouse              ; @ 1A72:00DA
 _InitMouse PROC FAR
@@ -331,6 +332,11 @@ L0174:  pop     es
 ; otherwise it calls DGROUP:80AA, HidePointer, ShowPointer (1BBE:00ED) and DGROUP:80A2 (1A72:025C).
 ; With the busy flag set the event publishes no position and draws nothing, and nothing is kept for
 ; a later event; the button change above it has already gone through.
+; QUIRK 1A72:0229: when x changed the handler jumps over the y reload (`jne 0x235` skips
+; `mov dx,[_gCursorY]` at 1A72:022B), so the zone test at 1A72:0244 reads the event's y. It equals
+; the published _gCursorY unless DGROUP:80EC is 2 (the store at 1A72:021D was skipped), when the
+; zone test uses the event y while the x test uses the published _gCursorX (reloaded at
+; 1A72:0221).
 ; QUIRK 1A72:0248: the `x < gZoneLeft` test jumps into the y test, so the hide zone's left edge is
 ; never enforced (only x > gZoneRight and y outside [top, bottom] leave the zone). The handler calls
 ; no earlier mouse handler (none is saved in this unit).
@@ -391,7 +397,8 @@ L020C:  mov     word ptr [_gPointerBusy],1
         mov     word ptr [_gCursorY],dx
 L0221:  mov     cx,[_gCursorX]
         cmp     [_gDrawnX],cx
-        jne     L0235
+        jne     L0235                   ; QUIRK 1A72:0229: this jump skips the y reload below, so
+                                        ; the zone test reads the event y (see the header)
         mov     dx,[_gCursorY]
         cmp     [_gDrawnY],dx
         je      L0279
@@ -426,8 +433,8 @@ _InitMouse ENDP
 
 ; 1A72:0285: remove the mouse event handler, but only when one was installed (DGROUP:8148 = 1).
 ; INT 33h function 0Ch with mask 0 clears the handler; ES:DX = CS:1A72:017A with mask 0 (INT 33h
-; wants ES:DX set even for a null mask [H]). Called from ShutdownGame (07C8:058A, E07C8.C:318), at
-; E07C8.C:336 under `if (gMouseHandlerInstalled)`.
+; wants ES:DX set even for a null mask [H]). Called from ShutdownGame (07C8:058A, E07C8.C:361), at
+; E07C8.C:382 under `if (gMouseHandlerInstalled)` (E07C8.C:381).
         PUBLIC  _RemoveMouseHandler           ; @ 1A72:0285
 _RemoveMouseHandler PROC FAR
         push    bp
@@ -453,9 +460,9 @@ L02A4:  pop     bp
 _RemoveMouseHandler ENDP
 
 ; 1A72:02A6: 1 when the position the pointer was last drawn at (DGROUP:815C/815E, the copy
-; ShowPointer makes of the mouse position at 1BBE:0111-0114 and 1BBE:0121-0124, E1BBE.ASM:222-223
-; and :227-228, so it is where the pointer sits after a show)
-; lies inside the rectangle [bp+6, bp+0Ah] x [bp+8, bp+0Ch]
+; ShowPointer makes of the mouse position at 1BBE:0111-0114 and 1BBE:0121-0124, so it is where the
+; pointer sits after a show; the caller reads this as "the mouse is over the slot", the name's
+; basis) lies inside the rectangle [bp+6, bp+0Ah] x [bp+8, bp+0Ch]
 ; inclusive, 0 otherwise. It spins at 1A72:02B9 while the busy flag at DGROUP:812E is set, takes the
 ; flag, copies the drawn position through DGROUP:8026/8028, tests it and releases the flag.
 ; Arguments are x1, y1, x2, y2 words; the only caller in src/ is CheckMemberSlotRect

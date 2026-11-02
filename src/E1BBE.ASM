@@ -33,12 +33,12 @@
                                                 ; wait while it is set and then increment it (not atomic;
                                                 ; src/E1BB1.ASM:53 says the same of its acquire; 1BBE:0213,
                                                 ; 02C6, 030A and 0335), while the mouse handler tests it and
-                                                ; drops its event when set (src/E1A72.ASM:344-346), sets it to 1
-                                                ; when free (:355) and clears it to 0 (:386). It does not
+                                                ; drops its event when set (src/E1A72.ASM:376-378), sets it to 1
+                                                ; when free (:387) and clears it to 0 (:418). It does not
                                                 ; increment and does not wait.
         EXTRN   _gCursorX:WORD          ; @ ds:8138: mouse position, x in pixels (written by the handler
-                                        ; at src/E1A72.ASM:358-359, skipped when g80EC is 2 at
-                                        ; :356-357; set to 0A0h by InitMouse at src/E1A72.ASM:236-237;
+                                        ; at src/E1A72.ASM:390-391, skipped when g80EC is 2 at
+                                        ; :388-389; set to 0A0h by InitMouse at src/E1A72.ASM:267-268;
                                         ; and written by src/E1BF3.ASM:35)
         EXTRN   _gCursorY:WORD          ; @ ds:813A: mouse position, y in pixels
         EXTRN   _gHideDepth:WORD        ; @ ds:8146: hide depth, 0 = drawn (1BBE:0002/00ED change it)
@@ -46,15 +46,17 @@
         EXTRN   _gPointerHeight:WORD     ; @ ds:8154: sprite height in pixels (record byte +3, 1BB1)
         EXTRN   _gPointerWidth8:WORD     ; @ ds:8156: sprite width in 8-pixel columns ([H]: the stored
                                         ; value is record byte +2 plus one, src/E1BB1.ASM:21-25)
-        EXTRN   _gPointerHotX:WORD       ; @ ds:8158: hot spot, x in pixels (subtracted from gCursorX)
-        EXTRN   _gPointerHotY:WORD       ; @ ds:815A: hot spot, y in pixels
+        EXTRN   _gPointerHotX:WORD       ; @ ds:8158: hot spot, x in pixels (HidePointer subtracts it
+                                        ; from gDrawnX, 1BBE:0021; ShowPointer from gCursorX, 1BBE:0117)
+        EXTRN   _gPointerHotY:WORD       ; @ ds:815A: hot spot, y in pixels (HidePointer subtracts it
+                                        ; from gDrawnY, 1BBE:002B; ShowPointer from gCursorY, 1BBE:0127)
         EXTRN   _gDrawnX:WORD           ; @ ds:815C: position drawn at last, x in pixels
         EXTRN   _gDrawnY:WORD           ; @ ds:815E: position drawn at last, y in pixels
         EXTRN   _gPointerState:WORD     ; @ ds:8160: bit 8000 a zone hide is in force, bit 4000 a
                                         ; redraw is owed at the show, low byte a repeat count (1BBE:01FE/
-                                        ; 02C2; the handler tests 8000h before the zone test,
-                                        ; src/E1A72.ASM:368, and sets 4000h when it hides in the zone,
-                                        ; src/E1A72.ASM:353)
+                                        ; 02C2; the handler tests 8000h at src/E1A72.ASM:400, before
+                                        ; its zone test at :402, and sets 4000h for a hide in the zone,
+                                        ; on the path that calls _HidePointer at :383, at :385)
         EXTRN   _gZoneLeft:WORD         ; @ ds:8162: hide zone, left in pixels, stored as the argument
                                         ; less the sprite width in pixels (_gPointerWidth8 shifted left
                                         ; three times, 1BBE:0234, 025B); the handler's left test is
@@ -113,8 +115,8 @@ _f1BBE_0001 LABEL BYTE                    ; @ 1BBE:0001
 ; and width used are the ones still in place, the old shape's: 1BB1 calls here (src/E1BB1.ASM:130)
 ; before it stores the new sizes (src/E1BB1.ASM:162-164), which is what keeps the old buffer valid
 ; while the shape is replaced. Called by 1BB1:0002, 1BF3:000E,
-; InitMouse (1A72:00DA) and the mouse handler's two calls (src/E1A72.ASM:351 and :383),
-; and by the wrappers below. Pushes AX only to preserve the caller's.
+; the mouse handler inside _InitMouse (1A72:00DA; the handler entry is 1A72:017A) at
+; src/E1A72.ASM:383 and :415, and by the wrappers below. Pushes AX only to preserve the caller's.
         PUBLIC  _HidePointer            ; @ 1BBE:0002
 _HidePointer PROC FAR
         push    bp
@@ -207,8 +209,9 @@ _HidePointer ENDP
 ; copied to the position being drawn at (gDrawnX/gDrawnY), the rectangle is recomputed and clipped as in
 ; 1BBE:0002, the screen under it is saved through [ds:80AE] (x, y, w, h, _gPointerBackOff/_gPointerBackSeg) and the
 ; shape record _gPointerShapeOff/_gPointerShapeSeg is drawn at the unclipped position gShapeX/gShapeY through [ds:80C2]
-; (mode 0). Called by 1BB1:0002, 1BF3:000E, InitMouse (1A72:00DA) and the mouse handler's
-; two calls (src/E1A72.ASM:351 and :383), and by the wrappers below. Pushes AX to preserve the caller's.
+; (mode 0). Called by 1BB1:0002, 1BF3:000E and the mouse handler inside _InitMouse (1A72:00DA;
+; the handler entry is 1A72:017A) at src/E1A72.ASM:416, and by the wrappers below. Pushes AX to
+; preserve the caller's.
         PUBLIC  _ShowPointer            ; @ 1BBE:00ED
 _ShowPointer PROC FAR
         push    bp
@@ -314,9 +317,11 @@ _ShowPointer ENDP
 ; sprite height; 1BBE:0244..0278), and gPointerState is set to 8000h (a zone hide is in force). If that
 ; rectangle overlaps the zone, bit 4000 (a redraw is owed at the show) is set (1BBE:0299) and the code
 ; falls into the bracket; a disjoint rectangle jumps to 1BBE:02B6, skipping the hide and the bracket and
-; leaving only 8000h. The bracket is [ds:80AA], 1BBE:0002, [ds:80A2] (1BBE:029F); then the busy flag is
-; released. Called by 0EF3, 16A5, 1DE7 and the overlays; the packet lists the same 14 callers for
-; 1BBE:02C2, so the pair is called at the same sites.
+; leaving only 8000h. The bracket is [ds:80AA], 1BBE:0002, [ds:80A2] (1BBE:029F). The push cs before
+; the near call to 1BBE:0002 (1BBE:02AE-02AF) makes that pair a far call: the callee is a FAR proc,
+; so its RETF (1BBE:00EC) pops the CS the push put on the stack; 1BBE:02F8, 0324 and 034F are the same
+; form. Then the busy flag is released. Called by 0EF3, 16A5, 1DE7 and the overlays; the packet lists
+; the same 14 callers for 1BBE:02C2, so the pair is called at the same sites.
         PUBLIC  _HidePointerZone        ; @ 1BBE:01FE
 _HidePointerZone PROC FAR
         push    bp
@@ -378,7 +383,7 @@ L029F:  push    word ptr [g8174]
         push    word ptr [g8172]
         call    dword ptr [g80AA]
         add     sp,4
-        push    cs
+        push    cs                      ; far call: the FAR ret pops this CS (see 1BBE:01FE)
         call    near ptr _HidePointer
         call    dword ptr [g80A2]
 L02B6:  dec     word ptr [_gPointerBusy]
@@ -418,7 +423,7 @@ L02E9:  push    word ptr [g8174]
         push    word ptr [g8172]
         call    dword ptr [g80AA]
         add     sp,4
-        push    cs
+        push    cs                      ; far call: the FAR ret pops this CS (see 1BBE:01FE)
         call    near ptr _ShowPointer
         call    dword ptr [g80A2]
 L0300:  dec     word ptr [_gPointerBusy]
@@ -428,7 +433,7 @@ L0300:  dec     word ptr [_gPointerBusy]
 _ShowPointerZone ENDP
 
 ; 1BBE:0307 LockHidePointer: hide the pointer, taking the busy flag and bracketing the work with
-; [ds:80AA] and [ds:80A2]. "Lock" is the callers' name for the frame bracket (src/E14EF.C:44-45 call
+; [ds:80AA] and [ds:80A2]. "Lock" is the callers' name for the frame bracket (src/E14EF.C:69-70 call
 ; this pair "start a frame" and "end a frame"), not mutual exclusion: the busy flag is a test then an
 ; increment (1BBE:030A), not atomic (src/E1BB1.ASM:53 says the same of its acquire). Like 1BBE:01FE
 ; without the rectangle, the zone and the redraw flag.
@@ -446,7 +451,7 @@ L030A:  cmp     word ptr [_gPointerBusy],0
         push    word ptr [g8172]
         call    dword ptr [g80AA]
         add     sp,4
-        push    cs
+        push    cs                      ; far call: the FAR ret pops this CS (see 1BBE:01FE)
         call    near ptr _HidePointer
         call    dword ptr [g80A2]
         dec     word ptr [_gPointerBusy]
@@ -469,7 +474,7 @@ L0335:  cmp     word ptr [_gPointerBusy],0
         push    word ptr [g8172]
         call    dword ptr [g80AA]
         add     sp,4
-        push    cs
+        push    cs                      ; far call: the FAR ret pops this CS (see 1BBE:01FE)
         call    near ptr _ShowPointer
         call    dword ptr [g80A2]
         dec     word ptr [_gPointerBusy]

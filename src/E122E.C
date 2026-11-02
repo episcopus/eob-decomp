@@ -61,7 +61,7 @@ extern char gFB44; /*@ ds:FB44 */              /* a display-mode byte (src/E0ACD
 extern char gF542[]; /*@ ds:F542 */            /* a message buffer (src/E0ACD.C) */
 extern char gFlag; /*@ ds:F3B9 */              /* a mode byte (src/E0ACD.C) */
 extern int Action01E3(void far *action); /*@ 0ACD:01E3 */
-extern void f0EF3_2541(char far *text); /*@ 0EF3:2541 */
+extern void RedrawPartyPanel(char far *text); /*@ 0EF3:2541 */
 extern void Ovl3_0A7C(int n); /*@ 210C:007A */  /* overlay 3 entry, ovl3:0A7C */
 extern void SaveLevelState(int level); /*@ 210C:002F */  /* overlay 3 entry, ovl3:11AF */
 extern void ResetLevel(void); /*@ 210C:007F */  /* overlay 3 entry, ovl3:19F7 */
@@ -1260,7 +1260,7 @@ done:
     }
     return (long)(script - start);
 }
-/* 122E:1AAB: the load-level opcode. It refreshes the display (Action01E3 and f0EF3_2541 on the
+/* 122E:1AAB: the load-level opcode. It refreshes the display (Action01E3 and RedrawPartyPanel on the
    gF542 buffer when gFB44 and gFlag are set), reads a byte, a word and a byte, stores the word as
    gPartyCell and the byte as gFBCC (unless 0xFF), resets and saves the level, runs ovl3:0A7C,
    loads the INVENT screen (gText5BA1) with the 0:0x2067 page, runs ovl4:2039, sets the sound volume
@@ -1274,7 +1274,7 @@ done:
     if (gFB44 != 0)
         Action01E3(gF542);
     if (gFlag != 0)
-        f0EF3_2541(gF542);
+        RedrawPartyPanel(gF542);
     script++;
     v1 = *script++;
     id = *(int far *)script;

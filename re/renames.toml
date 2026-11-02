@@ -1640,6 +1640,60 @@ why = "0A72:0522 returns the number a d20 to-hit roll must reach before the atta
 date = "2026-11-01"
 
 [[rename]]
+id = "0EF3:2541=RedrawPartyPanel"
+addr = "0EF3:2541"
+old = ""
+new = "RedrawPartyPanel"
+kind = "function"
+why = "0EF3:2541 is the panel redraw after an action, called by E0ACD.C/E122E.C/EOV5.C; it hides the pointer, restores the panel rect, draws the view rows and rebuilds the item list"
+date = "2026-11-01"
+
+[[rename]]
+id = "0EF3:00CD=AnimateEffect"
+addr = "0EF3:00CD"
+old = "AnimateMeleeHit"
+new = "AnimateEffect"
+kind = "function"
+why = "0EF3:00CD plays the view animation of an effect record (a DDRec: E1414.C:127 calls it with f0EF3_00CD(struct DDRec far *)); it is not melee-specific (0EF3:0A3F calls it too)"
+date = "2026-11-01"
+
+[[rename]]
+id = "ovl0:065B=DrawCharPanel"
+addr = "ovl0:065B"
+old = "Ovl0_065B"
+new = "DrawCharPanel"
+kind = "function"
+why = "ovl0:065B draws a character's panel page (sprite, name, race, class, three stat lines and the mode's highlighted icons); called by 0A5E/0DDC/0EE5/135D/23EC"
+date = "2026-11-01"
+
+[[rename]]
+id = "ovl0:1BF2=RollCharacterStats"
+addr = "ovl0:1BF2"
+old = "Ovl0_1BF2"
+new = "RollCharacterStats"
+kind = "function"
+why = "ovl0:1BF2 rolls a fresh character's six ability scores, m24/exp per class, hit points and the class combat tables; called by 0DDC and 23EC"
+date = "2026-11-01"
+
+[[rename]]
+id = "ovl0:23EC=CreateCharacter"
+addr = "ovl0:23EC"
+old = "Ovl0_23EC"
+new = "CreateCharacter"
+kind = "function"
+why = "ovl0:23EC is the character-creation driver: race (PickOption), class (207A), alignment (2238), RollCharacterStats (1BF2), the panel loop (0DDC) and the name field; called by 28F9"
+date = "2026-11-01"
+
+[[rename]]
+id = "ovl0:0A5E=PickPartySlot"
+addr = "ovl0:0A5E"
+old = "Ovl0_0A5E"
+new = "PickPartySlot"
+kind = "function"
+why = "ovl0:0A5E is the party-position screen: it assigns the current member gDCB0 a slot from the 0x2c panel cells, redrawing the four cells and taking left/right/confirm; called by 0DDC and 0EE5"
+date = "2026-11-01"
+
+[[rename]]
 id = "0000:3F77=StartAdlibDriver"
 addr = "0000:3F77"
 old = "f0_3F77"
@@ -1656,6 +1710,24 @@ new = "StopAdlibDriver"
 kind = "function"
 why = "the AdLib driver off (gSoundCard 0 is AdLib, src/E177D.C:178): ShutdownGame's case 0 calls it to restore the saved INT 08h vector, reset the AdLib through ResetVoices (src/E_TEXT.ASM:125-152, :140) and stop PIT channel 0; the old 'PC speaker driver off' label is wrong"
 date = "2026-11-01"
+
+[[rename]]
+id = "0A72:019D=GetArmourClassBase"
+addr = "0A72:019D"
+old = "GetClassWord"
+new = "GetArmourClassBase"
+kind = "function"
+why = "0A72:019D returns g349E[+15 stat byte], the base that 0DE8:0D5E turns into the armour class m1D: base = GetArmourClassBase(rec->m15); rec->m1D = base + 10 (E0DE8.C:684-685), and 0EF3:0F0B compares m1D against GetArmourClassBase(m15) + 6 (E0EF3.C:405); the old name said class word, the result is one component of the armour class"
+date = "2026-11-01"
+
+[[rename]]
+id = "0A72:04B7=GetClassSlotExpThreshold"
+addr = "0A72:04B7"
+old = "GetClassSlotLong"
+new = "GetClassSlotExpThreshold"
+kind = "function"
+why = "0A72:04B7 returns the 32-bit experience threshold for reaching level m24[i]+1: AddExperience adds the share to the slot's experience total m27[i] and levels the slot up when m27[i] passes this value (E0DE8.C:613-615); the old name said long, the result is the experience threshold"
+date = "2026-11-02"
 
 [[rename]]
 id = "0000:03FA=RebaseDriverBlock"

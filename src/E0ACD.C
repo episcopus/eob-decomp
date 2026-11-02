@@ -73,7 +73,7 @@ extern void ComputeArmourClass(int who); /*@ 0DE8:0D5E */
 extern int far RollDice(char count, char sides, char bonus); /*@ 082C:0458 */
 extern void BuildList4(void); /*@ 0CF7:01CC */
 extern void Unpack0(char far *src, void far *dst, long len); /*@ 1BA8:0006 */
-extern void f0EF3_2541(char far *text); /*@ 0EF3:2541 */
+extern void RedrawPartyPanel(char far *text); /*@ 0EF3:2541 */
 
 /* A character record: the name and the hunger byte are the fields this unit touches (src/E0A72.C). */
 struct CharRec {
@@ -140,7 +140,7 @@ extern void f1A47_0169(char far *font); /*@ 1A47:0169 */
 void EnterMapScreen(void);
 void ResetMapScreen(void);
 extern void fOvl3_0A7C(int n); /*@ 210C:007A */   /* overlay 3 entry, ovl3:0A7C */
-extern void fOvl4_1F51(int n); /*@ 2116:005C */   /* overlay 4 entry, ovl4:1F51 */
+extern void DrawViewFrame(int n); /*@ 2116:005C */   /* overlay 4 entry, ovl4:1F51 */
 extern void fOvl4_2039(void); /*@ 2116:0043 */    /* overlay 4 entry, ovl4:2039 */
 extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
 
@@ -293,11 +293,11 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
         return action->result;
     LockHidePointer();
     if (gFlag)
-        f0EF3_2541(gF542);
+        RedrawPartyPanel(gF542);
     if (gFB34 == -1) {
         gFB34 = action->slot;
         if (gFlag)
-            f0EF3_2541(gF542);
+            RedrawPartyPanel(gF542);
         BuildList4();
         RedrawMember(gFB34);
         ArmEffect(0, 1);
@@ -889,7 +889,7 @@ done:
         Action0E6C();
         RunEffects();
         if (gDF4C)
-            fOvl4_1F51(1);
+            DrawViewFrame(1);
         if (gFC5A < g8492) {
             if (gFBC8 > 0 && gFBC8 < 4) {
                 gFC5A = g8492 + (long)(RollDice(1, 10, 3) * 0x12);
@@ -926,7 +926,7 @@ done:
     f1A47_0169(gA9C0);
     g8115 = 0;
     RedrawCharacters();
-    fOvl4_1F51(1);
+    DrawViewFrame(1);
     LockShowPointer();
     SetTextWindow(7);
 }
