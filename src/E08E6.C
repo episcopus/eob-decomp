@@ -119,6 +119,8 @@ extern int f0D1C_0006(int value); /*@ 0D1C:0006 */
 extern int f0D1C_00DA(int value, int page); /*@ 0D1C:00DA */
 extern void fOvl4_1F51(int n); /*@ 2116:005C */   /* overlay 4 entry, ovl4:1F51 */
 extern void PlaySoundVolume(int sound, int volume); /*@ 177D:0106 */
+extern void PlaySoundDefault(int sound); /*@ 177D:00F3 */
+void Obj10F3(struct Obj28 far *obj);   /* forward: 05EA reaches it before its definition */
 
 /* 08E6:000B: reset an object whose type is not 7, 8 or 0xa: clear the type, pick an orientation
    from 17A6:0314(id, gSoundVolume) and set flag bit 3. Called by 0EF3:1702. */
@@ -393,7 +395,56 @@ extern void PlaySoundVolume(int sound, int volume); /*@ 177D:0106 */
     }
     f0D1C_0006(obj->id);
 }
-/*@ 08E6:05EA stub */ int Obj05EA(struct Obj28 far *obj, int v) { return 0; }
+/* 08E6:05EA: check the object against `handle` and turn it. When `handle` is -1 it is recomputed as
+   f0D1C_00DA(obj->id, obj->orient); when it is not the current gSoundVolume the object does nothing
+   and 0 is returned. Otherwise, when Obj103D(obj) is 0 the object takes the frame SetObjectFrameFromId
+   picks and 1 is returned. Else m16 bit 2 toggles, and when it is not now set 1 is returned. Then
+   f0D1C_0006(obj->id) decides: when nonzero the object plays gTable1A3B[b0].m16 only when b0 is 4,
+   runs the 0xfe/0xff m0A sequence with the countdown and the overlay-4 entry, and does not repeat the
+   sound when b0 is not 4; when it is zero the sound plays unconditionally. Either way 10F3 runs and,
+   when the id was found, m0A clears, the toggle flips, gDF4C is set, gFlags849E bit 1 is set and the
+   countdown is 8. Returns 1. Called by 0AB8. */
+/*@ 08E6:05EA */ int Obj05EA(struct Obj28 far *obj, int handle)
+{
+    register int found;
+
+    if (handle == -1)
+        handle = f0D1C_00DA(obj->id, obj->orient);
+    if (handle != gSoundVolume)
+        return 0;
+    if (Obj103D(obj) != 0) {
+        obj->m16 ^= 4;
+        if (obj->m16 & 4) {
+            found = f0D1C_0006(obj->id);
+            if (found != 0) {
+                gFlags849E &= ~2;
+                if (obj->b0 == 4)
+                    PlaySoundDefault(gTable1A3B[obj->b0].m16);
+                obj->m0A = 0xfe;
+                gCount849A = 0;
+                fOvl4_1F51(1);
+                obj->m0A = 0xff;
+                if (obj->b0 != 4)
+                    PlaySoundDefault(gTable1A3B[obj->b0].m16);
+                gCount849A = 8;
+                fOvl4_1F51(1);
+            } else {
+                PlaySoundDefault(gTable1A3B[obj->b0].m16);
+            }
+            Obj10F3(obj);
+            if (found != 0) {
+                obj->m0A = 0;
+                obj->toggle ^= 1;
+                gDF4C = 1;
+                gFlags849E |= 2;
+                gCount849A = 8;
+            }
+        }
+    } else {
+        SetObjectFrameFromId(obj);
+    }
+    return 1;
+}
 /* 08E6:073F: pass an object's id, frame and orientation and a caller value to 0EF3:097B with 0xff.
    Called by 0765 as Obj073F(obj, value). Purpose unknown: what 0EF3:097B does with them is not known. */
 /*@ 08E6:073F */ void Obj073F(struct Obj28 far *obj, int value)
@@ -584,7 +635,7 @@ extern void PlaySoundVolume(int sound, int volume); /*@ 177D:0106 */
 }
 /* 08E6:103D: an object's orientation row byte: 1 when its frame is 4, else the byte at
    ds:323B[orient * 4 + frame]. Called by 05EA. */
-/*@ 08E6:103D */ int Obj103D(struct Obj28 far *obj, int unused)
+/*@ 08E6:103D */ int Obj103D(struct Obj28 far *obj)
 {
     if (obj->frame == 4)
         return 1;
@@ -613,7 +664,7 @@ extern void PlaySoundVolume(int sound, int volume); /*@ 177D:0106 */
     need = SubtractInts(gTable1A3B[index].m01, gChars[who].m1D);
     return roll >= need || roll == 0x14;
 }
-/*@ 08E6:10F3 stub */ void Obj10F3(void) {}
+/*@ 08E6:10F3 stub */ void Obj10F3(struct Obj28 far *obj) {}
 /* 08E6:131D: build object `index` from scratch: clear it, set its b0, kind, frame, orientation,
    m07, type and timer and its record's m19, roll its count from the record's m02 (or 1d4 when m02
    is 0xff), set m12 and m14, and move it to `id`. Does nothing when id is 0. Called by 1505. */
