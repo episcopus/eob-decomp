@@ -4030,8 +4030,9 @@ unit = "e122e"
 addr = "122E:0C4D"
 size = 266
 evidence = ["frame"]
-notes = "draft 2026-11-01: matches every byte except the first use of the copied item, 2 bytes short. After CopyItemToFreeSlot the original keeps its result in AX and reads gTable8DD2[item].m02 with `mov dx,0xe; imul dx; mov bx,ax; mov al,[bx-0x722c]` (122E:0CC2), reloading item from SI only for the later m04 store (122E:0CFA); our -ml -O -Z build reloads `mov ax,si` before the m02 read (first difference 122E:0060, ours jne 0xc0 against 0xbe). Tried: item declared plain and `register` (same), id `register` (breaks the id read, DI against SI), and swapping the g5A40 index to `v2 * 2 + v3` (that fixed an earlier 4-byte difference in the index). The local layout (the far pointer at bp-0xa, the five bytes at bp-5..bp-1) needs the declaration order v1, v2, v3, saved, flag, start. The rest (the opcode/flag read, the byte/word/byte/byte operands, the two-branch AddDDEffect/f0EF3_097B paths and the gF43D save/restore) is written from the disassembly."
 name = "AddEffectOp"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e122e_0d57"

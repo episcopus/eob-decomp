@@ -685,7 +685,7 @@ void RunMemberScript(int who, int mode);  /* forward: 1DA8 comes after its calle
    into a free slot and adds a DD effect with the word as the volume and g5A40[third + second * 2]
    as the kind; a zero result frees the slot again (m04 = -1). When it was 0xDF it clears gF43D
    around a f0EF3_097B call with the same fields. Returns the bytes read. */
-/*@ 122E:0C4D draft */ long AddEffectOp(char far *script)
+/*@ 122E:0C4D */ long AddEffectOp(char far *script)
 {
     char v1;
     char v2;
@@ -706,10 +706,10 @@ void RunMemberScript(int who, int mode);  /* forward: 1DA8 comes after its calle
     v3 = *script++;
     if (!flag) {
         item = CopyItemToFreeSlot(v1);
-        if (item == 0)
-            return (long)(script - start);
-        if (AddDDEffect(-1, item, id, g5A40[v2 * 2 + v3], v2, gTable8DD2[item].m02) == 0)
-            gTable8DD2[item].m04 = -1;
+        if (item != 0) {
+            if (AddDDEffect(-1, item, id, g5A40[v2 * 2 + v3], v2, gTable8DD2[item].m02) == 0)
+                gTable8DD2[item].m04 = -1;
+        }
     } else {
         saved = gF43D;
         gF43D = 0;
