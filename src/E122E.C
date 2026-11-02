@@ -220,22 +220,22 @@ void f122E_1DA8(int a, int b);  /* forward: 1DA8 comes after its callers */
 {
     char far *start = script;
     int id;
-    char val;
+    char value;
     int i;
 
     switch (*script++) {
     case 0xFFF7:
         id = *(int far *)script;
         script += 2;
-        val = *script++;
+        value = *script++;
         for (i = 0; i <= 3; i++)
-            gB894[id * 9 + i] = val;
+            gB894[id * 9 + i] = value;
         break;
     case 0xFFE9:
         id = *(int far *)script;
         script += 2;
-        val = *script++;
-        gB894[id * 9 + val] = *script++;
+        value = *script++;
+        gB894[id * 9 + value] = *script++;
         break;
     case 0xFFED:
         gFBCC = *script++;
