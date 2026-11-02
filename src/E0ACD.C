@@ -46,10 +46,11 @@ extern void ClipRect(int x1, int y1, int x2, int y2, int width, int height, int 
 extern void (far *gFn804A)(int x, int y, int w, int h, void far *buf); /*@ ds:804A */ /* src/EOV2.C */
 
 extern char gIconTable; /*@ ds:FB34 */           /* the index of the party member being moved, -1 when
-                                               none. src/E1414.C:101 names the byte "the character the
-                                               blink highlights"; src/E0EF3.C:227 declares the same
-                                               address as void far *gIconTable[] (far sprite
-                                               pointers). This unit reads the byte as a member index */
+                                               none; src/E1414.C:106 agrees ("the index of the party
+                                               member being moved, -1 when none"). src/E0EF3.C:227
+                                               declares the same address as void far *gIconTable[]
+                                               (far sprite pointers). This unit reads the byte as a
+                                               member index */
 extern int gFBCC; /*@ ds:FBCC */            /* a page number 0..3 (kept modulo 4 by this unit,
                                                src/E0D1C.C) */
 extern int gPartyCell; /*@ ds:FBCA */     /* the sound volume: SetSoundVolume (122E:0001) assigns it
@@ -94,8 +95,8 @@ extern void ComputeArmourClass(int who); /*@ 0DE8:0D5E */
 extern int far RollDice(char count, char sides, char bonus); /*@ 082C:0458 */
 extern void BuildList4(void); /*@ 0CF7:01CC */
 extern void Unpack0(char far *src, void far *dst, long len); /*@ 1BA8:0006 */
-struct ActRec;      /* the action record 0EF3:2541 takes: the same layout as struct Action above
-                       (src/E0EF3.C:288) */
+struct ActRec;      /* the action record 0EF3:2541 takes: the same +4 result word and +0x38 member,
+                       a byte in ActRec (src/E0EF3.C:292) and a word here (:18) */
 extern int RedrawPartyPanel(struct ActRec far *rec); /*@ 0EF3:2541 */
 
 /* A character record: this unit touches the name, the hunger byte m23 and the m97 item sub-table
@@ -106,13 +107,15 @@ struct CharRec {
     char pad0D[0x23 - 0x0D];
     unsigned char m23;      /* +0x23: a hunger/food value clamped to 100 by EatFood (07E0) */
     char pad24[0x97 - 0x24];
-    char m97[0xF3 - 0x97];  /* +0x97: the character's own item sub-table browsed by RemoveListItem
-                               (0BD2:02B9) and InsertListItem (0BD2:01D0) in 0A61 and 0BA6 */
+    char m97[0xF3 - 0x97];  /* +0x97: the character's own item sub-table; RemoveListItem
+                               (0BD2:02B9) takes an item from it and InsertListItem
+                               (0BD2:01D0) puts one back (0ACD:0A61 and 0BA6) */
 };
 extern struct CharRec gChars[]; /*@ ds:F580 */
 
 /* A 14-byte ds:8DD2 record (ITEM.DAT): m02 is the item type, m04 the record's key (-1 when free)
-   and m0B the food value EatFood (07E0) adds to the character's m23 (src/E0D1C.C, src/E08E6.C). */
+   and m0B the amount EatFood (07E0) adds to the character's m23 (the meaning is inferred; the
+   src/E0D1C.C:275 comment says what m02, m0B and m04 mean is not established). */
 struct Entry14 {
     unsigned char flags;    /* +0 */
     signed char icon;       /* +1 */
@@ -120,16 +123,18 @@ struct Entry14 {
     char pad03;
     int m04;                /* +4: the key; -1 when free (set to -1 after eating, 07E0) */
     char pad06[0x0B - 0x06];
-    signed char m0B;        /* +0xB: the food value EatFood adds to m23 (07E0) */
+    signed char m0B;        /* +0xB: the amount EatFood (07E0) adds to m23 (meaning inferred,
+                               src/E0D1C.C:275) */
     char pad0C[0x0E - 0x0C];
 };
 extern struct Entry14 gTable8DD2[]; /*@ ds:8DD2 */
 extern signed char g1A1B[]; /*@ ds:1A1B */  /* per-page sound table (src/E0D1C.C) */
 extern int g36B0[]; /*@ ds:36B0 */          /* a per-slot word (screen row) compared with gHitY */
-extern int gHitY; /*@ ds:5E12 */            /* the y the hit test uses (src/E16A5.C:107) */
+extern int gHitY; /*@ ds:5E12 */            /* the y the hit test uses (the walk is 16A5:00BD, src/E16A5.C) */
 extern unsigned g5E1C; /*@ ds:5E1C */       /* the left-button mode word: Action0415 (0ACD:0415)
                                                takes its low seven bits, 1 selects SwapSelectedItem,
-                                               anything else UseItemSlot (src/E1658.C) */
+                                               anything else UseItemSlot (src/E1658.C); src/E16A5.C:506
+                                               tests g5E1C for the left button, g5E1E for the right */
 extern signed char g36D0[]; /*@ ds:36D0 */  /* a per-row four-byte action table (09EF) */
 extern signed char g373C[]; /*@ ds:373C */  /* a table with two entries per page: 0A61 reads
                                                g373C[gFBCC * 2 + g3744[gA99A]] */
@@ -163,8 +168,10 @@ extern void InsertListItem(void far *head, int key, int item, int sound); /*@ 0B
 extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
 extern void DrawItemRow(int who, int slot, int one); /*@ 0BD2:0917 */
 struct Node;    /* the screen list node 16A5:005A walks (src/E16A5.C) */
-/* 16A5:005A is void in src/E16A5.C:144, but its last statement leaves DispatchNodeEvent's result
-   (the event it consumed, or 0) in AX and this unit consumes it, so it is declared int here. */
+/* 16A5:005A is void in src/E16A5.C, but its last statement leaves DispatchNodeEvent's result in AX
+   and this unit consumes it, so it is declared int here. DispatchNodeEvent (16A5:00BD) returns the
+   key a node took, the key itself when no node takes it (`if (result == 0) result = key;`) or 0 for
+   a mouse-only call (src/E16A5.C:185 to 188 and :523 to 524). */
 extern int DispatchKeyWait(struct Node far *head); /*@ 16A5:005A */
 extern void DrawMemberFood(int who); /*@ 1547:04A0 */
 extern void RunMemberScript(int a, int b); /*@ 122E:1DA8 */
@@ -179,8 +186,8 @@ extern void f1A47_0169(char far *font); /*@ 1A47:0169 */
 void EnterMapScreen(void);
 void ResetMapScreen(void);
 extern void LoadMapScreen(int level); /*@ 210C:007A */   /* overlay 3 entry, ovl3:0A7C (src/EOV3.C:540) */
-extern void DrawViewFrame(int full); /*@ 2116:005C */    /* overlay 4 entry, ovl4:1F51 (src/EOV4.C:1049) */
-extern void NoOp2039(void); /*@ 2116:0043 */    /* overlay 4 entry, ovl4:2039, a no-op (src/EOV4.C:1076) */
+extern void DrawViewFrame(int full); /*@ 2116:005C */    /* overlay 4 entry, ovl4:1F51 (src/EOV4.C) */
+extern void NoOp2039(void); /*@ 2116:0043 */    /* overlay 4 entry, ovl4:2039, a no-op (src/EOV4.C) */
 extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
 
 /* 0ACD:0008: draws "You can't go that way.", plays the bump sound and drops any pending key. The
@@ -782,14 +789,15 @@ call:
    chosen yet) it first clears gF3BA to -1. It picks the page's volume from f0D1C_00DA when
    g374A[gEFB2] is set, and asks RemoveListItem for the first item of that volume's ds:B899 record
    list with the kind g1A1B[gFBCC * 4 + gEFB2]. A fresh item (nonzero and not the one gF3BA already
-   holds) sets the flag and is tested with f0BD2_0AF2 (a check that returns whether the character may
-   wear the item type, 0BD2:0AF2), then is shown: at row 0x10, when the check passes it is inserted
-   into the character's own list with InsertListItem and the member is redrawn, otherwise it is pushed
-   into the volume's list with PushListItem and RunMemberScript; at any other row, when the check
-   passes it goes onto the mouse with SetMouseItem (a second item already held is pushed back into the
-   volume's list first), otherwise it is pushed into the volume's list. It sets gDF4C and stops. A
+   holds) sets the local flag (which ends the page loop) and is tested with f0BD2_0AF2 (a check that
+   returns whether the character may wear the item type, 0BD2:0AF2), then is shown: at row 0x10, when
+   the check passes it is inserted into the character's own list with InsertListItem and the member is
+   redrawn, otherwise it is pushed into the volume's list with PushListItem and RunMemberScript; at
+   any other row, when the check passes it goes onto the mouse with SetMouseItem (a second item
+   already held is pushed back into the volume's list first), otherwise it is pushed into the
+   volume's list. It sets gDF4C and stops. A
    repeated item (nonzero and equal to gF3BA) is inserted back with InsertListItem and a zero item
-   does nothing, both clearing gF3BA. It recomputes the armour class of gA99A (ComputeArmourClass,
+   runs nothing, both clearing gF3BA. It recomputes the armour class of gA99A (ComputeArmourClass,
    0DE8:0D5E) at the end. The success path is a positive `if (item != 0 && item != gF3BA)` with the
    miss path as its `else`: with a `goto miss` the compiler stores the register variable item from DI
    at 0ACD:0C7F, but the original stores it from AX, which the if/else form produces. */
@@ -916,7 +924,8 @@ done:
 }
 
 /* 0ACD:0E6C: waits for one key event and dispatches it to the list head gList (16A5:005A), then
-   passes the event it consumed (or 0) to the key dispatcher Action0D9D. */
+   passes DispatchNodeEvent's result (16A5:00BD: the key a node took, the key itself when no node
+   takes it, or 0 for a mouse-only call) to the key dispatcher Action0D9D. */
 /*@ 0ACD:0E6C */ void Action0E6C(void)
 {
     int key = DispatchKeyWait(gList);
@@ -955,12 +964,12 @@ done:
 }
 
 /* 0ACD:0F72: enters the map screen. When gA998 is clear (a normal entry) it calls ResetMapScreen
-   (0ACD:1033); when it is set (0xfe after a saved game loaded, src/EOV2.C) it shows the mouse item
-   (SetMouseItem(gFBCE), unless the mouse is disabled), loads level gFBC8's map and inventory
-   (LoadMapScreen, ovl3:0A7C) and clears gA998. Then it clears gFlag, resets the character index and
-   the menu phase, rebuilds list 1, loads PLAYFLD and INVENT through LoadScreenImage (into
-   gSheetDECORATE and gSheet2067), selects the font, clears the status flag, redraws the characters,
-   shows the pointer and sets text window 7. */
+   (0ACD:1033); when it is nonzero (0xff while a load runs, 0xfe after a saved game loads, src/EOV2.C)
+   it shows the mouse item (SetMouseItem(gFBCE), unless the mouse is disabled), loads level gFBC8's
+   map and inventory (LoadMapScreen, ovl3:0A7C) and clears gA998. Then it clears gFlag, resets the
+   character index and the menu phase, rebuilds list 1, loads PLAYFLD and INVENT through
+   LoadScreenImage (into gSheetDECORATE and gSheet2067), selects the font, clears the status
+   flag, redraws the characters, shows the pointer and sets text window 7. */
 /*@ 0ACD:0F72 */ void EnterMapScreen(void)
 {
     if (!gA998) {
