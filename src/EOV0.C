@@ -196,8 +196,8 @@ extern char gStr625A[]; /*@ ds:625A */ /* the caption ovl0:2238 draws (Purpose u
 extern char gStr626C[]; /*@ ds:626C */ /* the caption ovl0:23EC draws (Purpose unknown) */
 extern int gDD12; /*@ ds:DD12 */ /* the panel row ovl0:23EC redraws (Purpose unknown) */
 extern int gFC7A; /*@ ds:FC7A */ /* the key UpdateOptionList did not handle (src/E14EF.C) */
-extern int g8140; /*@ ds:8140 */ /* x of the last click (src/E082C.C) */
-extern int g8142; /*@ ds:8142 */ /* y of the last click (src/E082C.C) */
+extern int gClickX; /*@ ds:8140 */ /* x of the last click (src/E082C.C) */
+extern int gClickY; /*@ ds:8142 */ /* y of the last click (src/E082C.C) */
 extern int gMouseDisabled; /*@ ds:814A */ /* nonzero disables the mouse (src/E07A9.C) */
 extern char g5EAC[]; /*@ ds:5EAC */ /* the four slot indices the party members hold */
 extern void Unpack0(char far *src, void far *dst, long len); /*@ 1BA8:0006 */
@@ -1201,7 +1201,7 @@ int PickAlignment(int classIndex); /* ovl0:2238, defined below */
     DrawPanelIcon(5, 0, 0);
     LockShowPointer();
     DrawOptionList(2, g11DD, gTable6081[race] & mask, 0, 0);
-    done = g8140 = g8142 = 0;
+    done = gClickX = gClickY = 0;
     sel = -1;
     while (!done && sel == -1) {
         Ovl0_1224();
@@ -1226,7 +1226,7 @@ int PickAlignment(int classIndex); /* ovl0:2238, defined below */
    the available alignments with CountMaskBits, sizes the shared panel 3 to them, draws the alignment
    names g1240 through the option list and loops with `while (!done && UpdateOptionList(...) == -1)`:
    each pass redraws the panel animation (ovl0:1224) and sets `done` for the keys UpdateOptionList
-   did not handle 0x6e/0x32 or the mouse buttons 0x41/0x42 whose last click (g8140, g8142) lies in
+   did not handle 0x6e/0x32 or the mouse buttons 0x41/0x42 whose last click (gClickX, gClickY) lies in
    the list box; a confirmed entry (UpdateOptionList not -1) ends the loop. Returns
    the chosen alignment index, or 0x6e when the mouse finished (icon 5 flashed). Called by ovl0:23EC
    for the class member. */
@@ -1259,7 +1259,7 @@ int PickAlignment(int classIndex); /* ovl0:2238, defined below */
         if (gFC7A == 0x6e || gFC7A == 0x32)
             done = 1;
         if (gFC7A == 0x41 || gFC7A == 0x42) {
-            if (IsPointInRect(g8140, g8142, 0x109, 0xab, 0x12f, 0xbb))
+            if (IsPointInRect(gClickX, gClickY, 0x109, 0xab, 0x12f, 0xbb))
                 done = 1;
         }
     }

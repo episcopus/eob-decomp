@@ -29,8 +29,8 @@
         EXTRN   _gCursorY:WORD          ; @ ds:813A: mouse y in pixels (E1A72.ASM)
         EXTRN   g813C:WORD              ; @ ds:813C: x of the event just handled (E1A72.ASM)
         EXTRN   g813E:WORD              ; @ ds:813E: y of the event just handled (E1A72.ASM)
-        EXTRN   g8140:WORD              ; @ ds:8140: x of the last mouse click (E14EF.C)
-        EXTRN   g8142:WORD              ; @ ds:8142: y of the last mouse click (E14EF.C)
+        EXTRN   gClickX:WORD              ; @ ds:8140: x of the last mouse click (E14EF.C)
+        EXTRN   gClickY:WORD              ; @ ds:8142: y of the last mouse click (E14EF.C)
         EXTRN   g8488:WORD              ; @ ds:8488: counter that paces the recorded input replay
         .CODE
 
@@ -393,7 +393,7 @@ f048D_04C7:
         mov     [g80F3],ax
         add     di,2
         and     di,0FFh
-        mov     [g8140],ax
+        mov     [gClickX],ax
         mov     ax,word ptr cs:[di+kKeyBuf]
         cmp     byte ptr [g80EC],2
         jne     f048D_04E3
@@ -402,7 +402,7 @@ f048D_04E3:
         mov     [g80F5],ax
         add     di,2
         and     di,0FFh
-        mov     [g8142],ax
+        mov     [gClickY],ax
         pop     ax
         jmp     short f048D_052B
 f048D_04F3:

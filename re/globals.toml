@@ -430,3 +430,11 @@ why = "the graphics choice: Main sets it to argv[1][0] + 1 (src/E07C8.C:226) and
 id = "ds:8115"
 name = "gStatusLine"
 why = "the status-line flag in E082C.C:44, E1C0E.C:589, E16A5.C:511 and in the other declarations."
+[[global]]
+id = "ds:8140"
+name = "gClickX"
+why = "x of the last mouse click, written at src/E1AAD.ASM:396 and read as a point by ClickInRect (src/E1AAD.ASM:516-518)"
+[[global]]
+id = "ds:8142"
+name = "gClickY"
+why = "y of the last mouse click, written at src/E1AAD.ASM:405 and read as a point by ClickInRect (src/E1AAD.ASM:516-518)"

@@ -1702,7 +1702,7 @@ size = 76
 evidence = ["far", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z -B"
-name = "DelaySecondsOrKey"
+name = "DelaySecondsThenKey"
 
 [[function]]
 id = "e082c_0b8f"

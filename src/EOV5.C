@@ -83,8 +83,8 @@ extern int gTextRow; /*@ ds:FE54 */
 extern int gTextTop; /*@ ds:FE66 */
 extern int gCursorX; /*@ ds:8138 */
 extern int gCursorY; /*@ ds:813A */
-extern int g8140; /*@ ds:8140 */
-extern int g8142; /*@ ds:8142 */
+extern int gClickX; /*@ ds:8140 */
+extern int gClickY; /*@ ds:8142 */
 extern int gMouseDisabled; /*@ ds:814A */
 extern int gHideDepth; /*@ ds:8146 */
 extern int gEFC6; /*@ ds:EFC6 */
@@ -374,7 +374,7 @@ char gTable7B89[] = { 0x3B, 0xA6, 0x04, 0x70, 0xDC, 0x04, 0x70, 0xDC, 0x04, 0x70
         switch (key) {
         case 0x41:
         case 0x42:
-            if (!IsPointInsideRect(g8140, g8142, left, top, right, bottom))
+            if (!IsPointInsideRect(gClickX, gClickY, left, top, right, bottom))
                 break;
             /* fall through */
         case 0x2B:
@@ -437,7 +437,7 @@ enum {
    `first` in the ds:7B89/ds:7B94 position tables, labelled with the far strings names[0..count-1].
    Each row is a DrawMenuRow panel; the highlighted row (i) is drawn in colour 9, the others in
    0xf. It redraws only when the highlight moved, then reads a key and also checks the mouse. The
-   mouse-button keys 0x41/0x42 confirm the row under the last click (g8140/g8142); the confirm keys
+   mouse-button keys 0x41/0x42 confirm the row under the last click (gClickX/gClickY); the confirm keys
    0x2b/0x3d/0x61 confirm the highlighted row; 0x5c/0x66 and 0x60/0x62 move the highlight by one
    or three (a three-row column-major grid, wrapping). Returns the confirmed row index, after
    clearing the panel. Called by every menu panel of the overlay (067B, 0828, 0924, 09C5, 0AB1,
@@ -480,7 +480,7 @@ enum {
         case KEY_CLICK:
         case KEY_CLICK2:
             for (j = 0; j < count; j++) {
-                if (IsPointInsideRect(g8140, g8142, gTable7B89[first + j],
+                if (IsPointInsideRect(gClickX, gClickY, gTable7B89[first + j],
                                       ybase + gTable7B94[first + j],
                                       gTable7B89[first + j] + 0x5e,
                                       ybase + gTable7B94[first + j] + 8)) {

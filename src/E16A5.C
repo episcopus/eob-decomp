@@ -99,8 +99,8 @@ extern void f1A29_000F(int mode, void far *src, int x, int y, int region); /*@ 1
 extern int gMouseDisabled;   /*@ ds:814A */
 extern int gCursorX;         /*@ ds:8138 */
 extern int gCursorY;         /*@ ds:813A */
-extern int g8140;            /*@ ds:8140: x of the last click (src/E14EF.C) */
-extern int g8142;            /*@ ds:8142: y of the last click (src/E14EF.C) */
+extern int gClickX;            /*@ ds:8140: x of the last click (src/E14EF.C) */
+extern int gClickY;            /*@ ds:8142: y of the last click (src/E14EF.C) */
 extern int g5E1C;            /*@ ds:5E1C: the left-button mode (src/E1658.C) */
 extern int g5E1E;            /*@ ds:5E1E: the right-button mode (src/E1658.C) */
 extern int gHitX;            /*@ ds:5E10: the x the hit test uses */
@@ -221,8 +221,8 @@ extern int g5DF2[];          /*@ ds:5DF2: words 1..4 the g5E1E redraw masks */
                     g5E1C = buttonMode;
                 else
                     g5E1E = buttonMode;
-                gHitX = g8140;
-                gHitY = g8142;
+                gHitX = gClickX;
+                gHitY = gClickY;
                 mouseEvent = 1;
                 key = 0;
             } else {
@@ -237,8 +237,8 @@ extern int g5DF2[];          /*@ ds:5DF2: words 1..4 the g5E1E redraw masks */
                 g5E1C = buttonMode;
             else
                 g5E1E = buttonMode;
-            gHitX = g8140;
-            gHitY = g8142;
+            gHitX = gClickX;
+            gHitY = gClickY;
             mouseEvent = 1;
             key = 0;
         }

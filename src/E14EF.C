@@ -52,16 +52,16 @@ extern int gTextTop; /*@ ds:FE66 */
 extern int gFC78; /*@ ds:FC78: extra pixels between lines, written by DrawOptionList, read by UpdateOptionList */
 extern int gFC7A; /*@ ds:FC7A: the key UpdateOptionList did not handle; its reader is PickAlignment
                      (src/EOV0.C:1259, :1261), which tests it for 0x6e/0x32 and 0x41/0x42 before
-                     IsPointInRect on the last click g8140/g8142 (:1262) */
+                     IsPointInRect on the last click gClickX/gClickY (:1262) */
 extern int g5D1A; /*@ ds:5D1A: nonzero lets the pointer position pick the entry in UpdateOptionList (:301),
                       and it or gMouseDisabled being nonzero makes DrawOptionList draw the selected row in
                       colorB (:209-210). No writer is found in src/ */
-extern int g8140; /*@ ds:8140: x of the last click; the click event writes it (src/E1AAD.ASM:396) and
+extern int gClickX; /*@ ds:8140: x of the last click; the click event writes it (src/E1AAD.ASM:396) and
                       src/EOV0.C:1204 clears it; tested against a panel rectangle by UpdateOptionList (:325),
                       PickAlignment (src/EOV0.C:1262) and the wrapper src/E082C.C:465, and read into
                       gHitX by src/E16A5.C:224, :240 */
-extern int g8142; /*@ ds:8142: y of the last click; the click event writes it (src/E1AAD.ASM:405) and
-                      src/EOV0.C:1204 clears it; same readers as g8140 (:326, src/E16A5.C:225, :241) */
+extern int gClickY; /*@ ds:8142: y of the last click; the click event writes it (src/E1AAD.ASM:405) and
+                      src/EOV0.C:1204 clears it; same readers as gClickX (:326, src/E16A5.C:225, :241) */
 extern char gFontWidth; /*@ ds:8100: font cell width; src/E1A47.C declares it unsigned char, but
                             unsigned char here fails make match, so this file keeps char */
 extern char gFontHeight; /*@ ds:8101: font cell height; src/E1A47.C declares it unsigned char (same) */
@@ -293,7 +293,7 @@ enum {
     if (IsKeyPending())
         key = WaitKeyEvent() & KEY_CODE_MASK;
     left = (gTextLeft << 3) + panelDef->x * gFontWidth; /* QUIRK 14EF:0336: x and width scaled by gFontWidth; the draws use << 3 */
-    top = gTextTop + panelDef->y - halfspace; /* each row's band starts half the extra line spacing above its text: rows are drawn at ybase + lineheight * k (:344, :347), the pointer row is (cursory - top) / lineheight (:302) and the click row is (g8142 - top) / lineheight (:326) */
+    top = gTextTop + panelDef->y - halfspace; /* each row's band starts half the extra line spacing above its text: rows are drawn at ybase + lineheight * k (:344, :347), the pointer row is (cursory - top) / lineheight (:302) and the click row is (gClickY - top) / lineheight (:326) */
     right = left + panelDef->width * gFontWidth - 1;
     bottom = top + panelDef->height * lineheight - 1;
     if (!gMouseDisabled) {
@@ -322,8 +322,8 @@ enum {
         break;
     case KEY_CLICK:
     case KEY_CLICK2:
-        if (IsPointInRect(g8140, g8142, left, top, right, bottom)) {
-            row = (g8142 - top) / lineheight;
+        if (IsPointInRect(gClickX, gClickY, left, top, right, bottom)) {
+            row = (gClickY - top) / lineheight;
             picked = row;
             break;
         }

@@ -130,7 +130,7 @@
         EXTRN   g64E9:BYTE              ; @ ds:64E9: "PLAYFLD" screen-image name
         EXTRN   g64F1:BYTE              ; @ ds:64F1: "INVENT" screen-image name
         EXTRN   gItems:BYTE             ; @ ds:8DD0: 0xE-byte item records (E0BD2.C)
-        EXTRN   g8142:WORD              ; @ ds:8142: y of the last mouse click (E14EF.C)
+        EXTRN   gClickY:WORD              ; @ ds:8142: y of the last mouse click (E14EF.C)
 
         EXTRN   _F_SCOPY@:FAR           ; @ 0000:78C9: block copy for a C local-array initialiser (library)
         EXTRN   _heapcheck:FAR          ; @ 0000:74B0: far-heap check (E082C.C)
@@ -3122,7 +3122,7 @@ f1691_19A0:
         xor     si,si
         jmp     f1691_1A94
 f1691_19A5:
-        mov     ax,[g8142]
+        mov     ax,[gClickY]
         add     ax,0FFCEh
         mov     bx,9
         cwd
