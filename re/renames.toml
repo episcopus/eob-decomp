@@ -259,7 +259,7 @@ addr = "177D:000A"
 old = "f177D_000A"
 new = "LoadSoundDriver"
 kind = "function"
-why = "loads adlib.dat or pcgamesn.dat into gSoundMap and the code-segment driver block; called by StartupAlloc 07A9:0063"
+why = "loads adlib.dat or pcgamesn.dat into gSoundMap and the code-segment driver block; called by StartupAlloc at 07A9:00D2 (the lcall 0x177d,0xa there; src/E07A9.C:7 and :95 give the same)"
 date = "2026-11-01"
 
 [[rename]]
