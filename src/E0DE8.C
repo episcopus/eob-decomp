@@ -168,7 +168,7 @@ extern void LockShowPointer(void); /*@ 1BBE:0332 */
 extern void SetTextWindow(int n); /*@ 1DE7:0009 */
 extern void DrawText(char far *text); /*@ 1DE7:060A */
 extern void DrawFilledPanel(int x1, int y1, int x2, int y2, int c1, int c2, int c3); /*@ 082C:09D5 */
-extern void DelaySeconds(int n); /*@ 082C:0B43 */
+extern void DelaySecondsOrKey(int n); /*@ 082C:0B43 */
 extern void ShutdownGame(void); /*@ 07C8:058A */
 extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
 
@@ -523,7 +523,7 @@ fail:
     DrawText("All of your party has been defeated.  The minions of evil will be able to carry out "
              "their plans unhindered!\r");
     LockShowPointer();
-    DelaySeconds(1);
+    DelaySecondsOrKey(1);
     ShutdownGame();
 }
 
