@@ -1890,3 +1890,12 @@ new = "QueueSound"
 kind = "function"
 why = "0000:400C appends its argument to the 16-entry ring gQueueRing, which ProcessSoundQueue (402C) drains; PlaySound calls it for AdLib (E177D.C:179)"
 date = "2026-11-02"
+
+[[rename]]
+id = "0EF3:0A3F=DamageTargetCell"
+addr = "0EF3:0A3F"
+old = "f0EF3_0A3F"
+new = "DamageTargetCell"
+kind = "function"
+why = "0EF3:0A3F rolls count d sides + bonus for each object or member at the record's target cell and damages it (callers at 0EF3 pass 1d4+1, 2d4, 1d6, 5d6); returns whether anything was hit"
+date = "2026-11-02"

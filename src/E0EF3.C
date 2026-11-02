@@ -803,7 +803,7 @@ extern void f0EF3_2A53(int a, int b, int c, int d, int e, void far *p); /*@ 0EF3
    negative (or flag 0x10 is set), either walk the six members (flag 2) or pick one from the
    g1A2B table and damage it. Finally, when anything was hit and the record's +0xC has bit 0x40,
    run the animation 0EF3:00CD; a record whose +8 is 5 clears the hit. Returns the hit flag. */
-/*@ 0EF3:0A3F draft */ int f0EF3_0A3F(struct Tgt far *rec, int count, int sides, int bonus, int n)
+/*@ 0EF3:0A3F draft */ int DamageTargetCell(struct Tgt far *rec, int count, int sides, int bonus, int n)
 {
     char dmg;
     char flag01;
@@ -1018,7 +1018,7 @@ extern void f0EF3_2A53(int a, int b, int c, int d, int e, void far *p); /*@ 0EF3
    class-slot 1 value. */
 /*@ 0EF3:10F2 */ void RunMelee1d4(struct Tgt far *rec)
 {
-    f0EF3_0A3F(rec, 1, 4, 1, (GetClassSlot1Value(rec->m0B) - 1) >> 1);
+    DamageTargetCell(rec, 1, 4, 1, (GetClassSlot1Value(rec->m0B) - 1) >> 1);
 }
 
 /* 0EF3:1122: set the panel member's effect flag bit 1, recompute the member's armour class and
@@ -1107,7 +1107,7 @@ extern void f0EF3_2A53(int a, int b, int c, int d, int e, void far *p); /*@ 0EF3
    member's class-slot 1 value. */
 /*@ 0EF3:12E3 */ void RunMelee2d4(struct Tgt far *rec)
 {
-    f0EF3_0A3F(rec, 2, 4, 0, GetClassSlot1Value(rec->m0B) / 3);
+    DamageTargetCell(rec, 2, 4, 0, GetClassSlot1Value(rec->m0B) / 3);
 }
 
 /* 0EF3:1315: an empty function reached through a table; nothing to do. */
@@ -1154,7 +1154,7 @@ extern void f0EF3_2A53(int a, int b, int c, int d, int e, void far *p); /*@ 0EF3
 /* 0EF3:141E: run the record's 1d6 melee effect through 0EF3:0A3F. */
 /*@ 0EF3:141E */ void RunMelee1d6(struct Tgt far *rec)
 {
-    f0EF3_0A3F(rec, 1, 6, 0, GetClassSlot1Value(rec->m0B));
+    DamageTargetCell(rec, 1, 6, 0, GetClassSlot1Value(rec->m0B));
 }
 
 /* 0EF3:144A: add the panel member's effect record of mode 3 through 0EF3:097B. */
@@ -1166,7 +1166,7 @@ extern void f0EF3_2A53(int a, int b, int c, int d, int e, void far *p); /*@ 0EF3
 /* 0EF3:146B: run the record's 5d6 melee effect through 0EF3:0A3F. */
 /*@ 0EF3:146B */ void RunMelee5d6(struct Tgt far *rec)
 {
-    f0EF3_0A3F(rec, 5, 6, 0, GetClassSlot1Value(rec->m0B));
+    DamageTargetCell(rec, 5, 6, 0, GetClassSlot1Value(rec->m0B));
 }
 
 /* 0EF3:1497: mark every living member with effect flag bit 3, set the current member to each in
@@ -1248,7 +1248,7 @@ extern void f0EF3_2A53(int a, int b, int c, int d, int e, void far *p); /*@ 0EF3
 /* 0EF3:162A: run the record's 1d6 melee effect through 0EF3:0A3F. */
 /*@ 0EF3:162A */ void RunMelee1d6B(struct Tgt far *rec)
 {
-    f0EF3_0A3F(rec, 1, 6, 0, GetClassSlot1Value(rec->m0B));
+    DamageTargetCell(rec, 1, 6, 0, GetClassSlot1Value(rec->m0B));
 }
 
 /* 0EF3:1656: give the panel member the item of effect mode 6, like 0EF3:1197 but with the item
@@ -1315,13 +1315,13 @@ extern void f0EF3_2A53(int a, int b, int c, int d, int e, void far *p); /*@ 0EF3
     int i;
     int cell;
 
-    found = f0EF3_0A3F(rec, 1, 6, 0, GetClassSlot1Value(rec->m0B));
+    found = DamageTargetCell(rec, 1, 6, 0, GetClassSlot1Value(rec->m0B));
     if (found) {
         for (i = 0; i < 4; i++) {
             cell = rec->m04;
             rec->m04 += gTable5733[i];
             rec->m04 &= 0x3FF;
-            f0EF3_0A3F(rec, 1, 6, 0, GetClassSlot1Value(rec->m0B));
+            DamageTargetCell(rec, 1, 6, 0, GetClassSlot1Value(rec->m0B));
             rec->m04 = cell;
         }
     }
@@ -1695,7 +1695,7 @@ void f0EF3_2EBC(int a, int b, int c, int d, int e, char far *table);
 /* 0EF3:2032: run the record's 6d8 melee effect through 0EF3:0A3F. */
 /*@ 0EF3:2032 */ void RunMelee6d8(struct Tgt far *rec)
 {
-    f0EF3_0A3F(rec, 6, 8, 0, 0);
+    DamageTargetCell(rec, 6, 8, 0, 0);
 }
 
 /* 0EF3:2050: when the current record is at -10 hit points and its +0x1F byte over two is not
@@ -1715,7 +1715,7 @@ void f0EF3_2EBC(int a, int b, int c, int d, int e, char far *table);
    a two-byte frame for the value; our build folds them away (`make match` differs at the frame). */
 /*@ 0EF3:208A */ void RunMelee0(struct Tgt far *rec)
 {
-    f0EF3_0A3F(rec, 0, 0, 0xC, 1);
+    DamageTargetCell(rec, 0, 0, 0xC, 1);
 }
 
 /* 0EF3:20A8: the "damage one party member" effect: when the record's cell is the party cell, roll

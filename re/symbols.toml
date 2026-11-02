@@ -3483,6 +3483,7 @@ unit = "e0ef3"
 addr = "0EF3:0A3F"
 size = 825
 evidence = ["near", "frame"]
+name = "DamageTargetCell"
 
 [[function]]
 id = "e0ef3_0d78"
