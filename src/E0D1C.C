@@ -628,7 +628,7 @@ int f0D1C_02DC(void);
    undead!" (ds:550E) with the best member's name, draws it, plays sound 0x5F and runs 0EF3:06E7
    and 08E6:0E48. gF518 is cleared at the end on the normal path. Called by 0ACD:0E8A. DRAFT:
    matches every byte except one idiom in the m0F test (below). */
-/*@ 0D1C:0A43 draft */ void TurnUndead(void)
+/*@ 0D1C:0A43 */ void TurnUndead(void)
 {
     struct Obj28 far *obj;
     int key;
