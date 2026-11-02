@@ -6970,6 +6970,7 @@ evidence = ["far", "near", "segment"]
 level = "L2"
 match_flags = "-ml -O -Z -G"
 name = "SetTextWindow"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1de7_00b6"
@@ -6980,6 +6981,7 @@ evidence = ["frame"]
 name = "SetTextWindowAndClear"
 level = "L2"
 match_flags = "-ml -O -Z -G"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1de7_00c9"
@@ -6990,6 +6992,7 @@ evidence = ["frame"]
 name = "DrawTextFrame"
 level = "L2"
 match_flags = "-ml -O -Z -G"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1de7_025e"
@@ -7000,6 +7003,7 @@ evidence = ["far", "frame"]
 name = "DrawTileRun"
 level = "L2"
 match_flags = "-ml -O -Z -G"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1de7_02fe"
@@ -7010,6 +7014,7 @@ evidence = ["frame"]
 name = "SetRegionExtents"
 level = "L2"
 match_flags = "-ml -O -Z -G"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1de7_0344"
@@ -7020,6 +7025,7 @@ evidence = ["far", "frame"]
 name = "ClearTextRegion"
 level = "L2"
 match_flags = "-ml -O -Z -G"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1de7_03b2"
@@ -7030,6 +7036,7 @@ evidence = ["near", "frame"]
 name = "DrawTextLine"
 level = "L2"
 match_flags = "-ml -O -Z -G"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1de7_05df"
@@ -7040,6 +7047,7 @@ evidence = ["frame"]
 name = "PrintIntText"
 level = "L2"
 match_flags = "-ml -O -Z -G"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1de7_060a"
@@ -7050,6 +7058,7 @@ evidence = ["far", "frame"]
 name = "DrawText"
 level = "L2"
 match_flags = "-ml -O -Z -G"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1e8b_0004"
