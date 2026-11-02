@@ -28,6 +28,8 @@ extern void AdjustMemberStatus(int who); /*@ 1414:03B4 */
 extern void Obj1505(int kind, int id, int frame, int orient, int b0, int m07, int type, int timer, int m12, int m14); /*@ 08E6:1505 */
 extern void MarkListItems(void far *head); /*@ 0BD2:040E */
 extern int ScanListItem(void far *head, int target, int type, int count); /*@ 0BD2:0385 */
+extern void DrainListItem(int vol, int type); /*@ 0BD2:04AA */
+extern int f0BD2_0106(int who, int row); /*@ 0BD2:0106 */
 extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
 extern void PushListItem(int who, int item, int value); /*@ 0BD2:0458 */
 extern int AddDDEffect(int who, int item, int volume, int kind, int page, int type); /*@ 0BD2:07DE */
@@ -1017,6 +1019,34 @@ done:
     return (long)(script - start);
 }
 /*@ 122E:147F stub */ void f122E_147F(void) {}
+
+/* 122E:1A3B: the drain-item opcode. It reads a byte: 0xFFFF clears slot -1 of member 0, 0xFFFE
+   drains every item of the list `vol` (read as a word), and any other byte drains the list `vol`
+   of items of that type. Returns the bytes read. */
+/*@ 122E:1A3B */ long DrainItemOp(char far *script)
+{
+    char far *start = script;
+    char op;
+    register int vol;
+
+    op = *script++;
+    switch (op) {
+    case 0xffff:
+        f0BD2_0106(0, -1);
+        break;
+    case 0xfffe:
+        vol = *(int far *)script;
+        script += 2;
+        DrainListItem(vol, -1);
+        break;
+    default:
+        vol = *(int far *)script;
+        script += 2;
+        DrainListItem(vol, op);
+        break;
+    }
+    return (long)(script - start);
+}
 /* 122E:1AAB: the load-level opcode. It refreshes the display (Action01E3 and f0EF3_2541 on the
    gF542 buffer when gFB44 and gFlag are set), reads a byte, a word and a byte, stores the word as
    gPartyCell and the byte as gFBCC (unless 0xFF), resets and saves the level, runs ovl3:0A7C,
