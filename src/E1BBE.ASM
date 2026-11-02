@@ -9,8 +9,9 @@
 ; gHideDepth is decremented and, only at zero, move the drawn position to the mouse position, save
 ; and draw.
 ; 1BBE:01FE HidePointerZone and 1BBE:02C2 ShowPointerZone are the hide/show pair that carry the
-; rectangle the pointer was hidden over (gZoneLeft..gZoneBottom, read by the mouse handler
-; 1A72:0244) and the gPointerState redraw flag; 1BBE:0307 LockHidePointer and 1BBE:0332
+; zone (the caller's rectangle, gZoneLeft..gZoneBottom, read by the mouse handler 1A72:0244) and the
+; gPointerState flag (bit 8000 a zone hide is in force, bit 4000 a redraw is owed at the show);
+; 1BBE:0307 LockHidePointer and 1BBE:0332
 ; LockShowPointer hide and show without that state. Every wrapper that hides or draws takes the pointer
 ; semaphore _gPointerBusy and brackets its work with [ds:80AA] and [ds:80A2] (the no-redraw exit of
 ; ShowPointerZone, zero count and bit 4000h clear, clears the state and releases the semaphore with no
@@ -46,7 +47,11 @@
         EXTRN   _gPointerHotY:WORD       ; @ ds:815A: hot spot, y in pixels
         EXTRN   _gDrawnX:WORD           ; @ ds:815C: position drawn at last, x in pixels
         EXTRN   _gDrawnY:WORD           ; @ ds:815E: position drawn at last, y in pixels
-        EXTRN   _gPointerState:WORD     ; @ ds:8160: bit 8000 hidden, bit 4000 redraw, low byte a count
+        EXTRN   _gPointerState:WORD     ; @ ds:8160: bit 8000 a zone hide is in force, bit 4000 a
+                                        ; redraw is owed at the show, low byte a repeat count (1BBE:01FE/
+                                        ; 02C2; the handler tests 8000h before the zone test,
+                                        ; src/E1A72.ASM:368, and sets 4000h when it hides in the zone,
+                                        ; src/E1A72.ASM:353)
         EXTRN   _gZoneLeft:WORD         ; @ ds:8162: hide zone, left in pixels, stored as the argument
                                         ; less the sprite width in pixels (_gPointerWidth8 shifted left
                                         ; three times, 1BBE:0234, 025B); the handler's left test is
@@ -113,11 +118,11 @@ _HidePointer PROC FAR
         push    ax
         cmp     word ptr [gMouseDisabled],0
         je      enabled
-disabled: jmp     HideDone
+skipHide: jmp    HideDone
 enabled: cmp     word ptr [_gHideDepth],0
         jne     L0075
         cmp     word ptr [_gPointerBackSeg],0
-        je      disabled
+        je      skipHide
         mov     ax,[_gDrawnX]
         sub     ax,[_gPointerHotX]
         mov     [_gRectLeft],ax
@@ -292,19 +297,22 @@ ShowDone: pop    ax
         ret
 _ShowPointer ENDP
 
-; 1BBE:01FE HidePointerZone: hide the pointer over a rectangle (left, top, right, bottom in
-; pixels, at [bp+6]..[bp+0Ch]) and remember it. Takes the semaphore. When the pointer is already
-; hidden (gPointerState bit 8000, 1BBE:021E) the low byte of gPointerState is incremented and
+; 1BBE:01FE HidePointerZone: hide the pointer over the zone (the caller's rectangle, left, top, right,
+; bottom in pixels, at [bp+6]..[bp+0Ch]) and remember it. Takes the semaphore. When a zone hide is
+; already in force (gPointerState bit 8000, 1BBE:021E) the low byte of gPointerState is incremented and
 ; saturates at 0FFh (1BBE:0229 `inc al`, then 1BBE:022D `dec al` undoes it on wrap) and the hide is
-; repeated; otherwise the four arguments are stored in gZoneLeft..gZoneBottom, with right and bottom
-; as given (1BBE:023C, 0240) but left and top reduced by the sprite width and height in pixels
-; (1BBE:025B and 0272; 1A72:0244 reads the zone to test whether the cursor has entered it), the
-; pointer's rectangle is computed in pixels without clipping (left x rounded down to a multiple of 8,
-; right = left + sprite width, top = the drawn y less the hot spot y (no rounding), bottom = top +
-; sprite height; 1BBE:0244..0278),
-; gPointerState is set to 8000h (hidden) and, if that rectangle overlaps the argument rectangle, bit
-; 4000 (redraw) is set. Either way the hide call [ds:80AA], 1BBE:0002, [ds:80A2] runs, then the
-; semaphore is released. Called by 0EF3, 16A5, 1DE7 and the overlays, always paired with 1BBE:02C2.
+; repeated without recomputing the zone or the rectangle, so bit 4000 is decided by the first hide
+; alone (1BBE:0232 jmp short L029F); otherwise the four arguments are stored in gZoneLeft..gZoneBottom,
+; with right and bottom as given (1BBE:023C, 0240) but left and top reduced by the sprite width and
+; height in pixels (1BBE:025B and 0272; 1A72:0244 reads the zone to test whether the cursor has entered
+; it), the pointer's rectangle is computed in pixels without clipping (left x rounded down to a multiple
+; of 8, right = left + sprite width, top = the drawn y less the hot spot y (no rounding), bottom = top +
+; sprite height; 1BBE:0244..0278), and gPointerState is set to 8000h (a zone hide is in force). If that
+; rectangle overlaps the zone, bit 4000 (a redraw is owed at the show) is set (1BBE:0299) and the code
+; falls into the bracket; a disjoint rectangle jumps to 1BBE:02B6, skipping the hide and the bracket and
+; leaving only 8000h. The bracket is [ds:80AA], 1BBE:0002, [ds:80A2] (1BBE:029F); then the semaphore is
+; released. Called by 0EF3, 16A5, 1DE7 and the overlays; the packet lists the same 14 callers for
+; 1BBE:02C2, so the pair is called at the same sites.
         PUBLIC  _HidePointerZone        ; @ 1BBE:01FE
 _HidePointerZone PROC FAR
         push    bp

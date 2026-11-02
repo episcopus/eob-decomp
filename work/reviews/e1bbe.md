@@ -19,40 +19,54 @@ E1BB1.ASM:130 before the size stores at :162-164, E1BF3.ASM:35). The call lists 
 Lock and Zone header claims (the Lock lists differ as the header says; the two Zone lists are identical). Each
 function's header was traced against its code path by path, including the jumps that skip the hide and show calls.
 
-- [ ] must-fix src/E1BBE.ASM:305-307 (HidePointerZone header): "Either way the hide call [ds:80AA], 1BBE:0002,
+- [x] must-fix src/E1BBE.ASM:305-307 (HidePointerZone header): "Either way the hide call [ds:80AA], 1BBE:0002,
   [ds:80A2] runs" is wrong. When the pointer's rectangle misses the argument rectangle, the compares at
   src/E1BBE.ASM:356-363 jump to L02B6 (`jl`, `jg`, `jle`, `jg`), which skips the hide and the bracket at L029F
   (:365-371). Only gPointerState = 8000h is left. The hide runs on the already-hidden path (:332 `jmp short L029F`)
   and when the rectangles overlap (:364 sets 4000h, then falls into L029F). Say that; "either way" must go.
-- [ ] must-fix src/E1BBE.ASM:49, :297 and :305 (and the unit header, :11-13): bit 8000h is called "hidden" (the
+  Fixed (6ddaa61): the header now says a disjoint rectangle jumps to 1BBE:02B6, skipping the hide and the bracket
+  and leaving only 8000h, and that the hide runs on the already-in-force path (1BBE:0232 jmp short L029F) and when
+  the rectangles overlap (1BBE:0299 sets 4000h, then L029F).
+- [x] must-fix src/E1BBE.ASM:49, :297 and :305 (and the unit header, :11-13): bit 8000h is called "hidden" (the
   `_gPointerState` declaration says "bit 8000 hidden"; the HidePointerZone header says "when the pointer is already
   hidden (gPointerState bit 8000)" and "8000h (hidden)"). A disjoint zone hide (see the finding above) sets 8000h and
   hides nothing, so the pointer is not hidden. The handler's own use shows the meaning: src/E1A72.ASM:365 tests 8000h
   before the zone test (:367-372), and the in-zone path at 1A72:01EC then hides the pointer and sets 4000h
   (:350). So 8000h means a zone hide is in force; 4000h means a redraw is owed at the show (set by the first hide
   when the rectangles overlap, and by the handler's in-zone hide). Reword the three places.
-- [ ] should src/E1BBE.ASM:297-298 and :305-306: a repeat hide (the already-hidden path, :021E to :029F) runs the
+  Fixed (6ddaa61): the _gPointerState declaration now says bit 8000 a zone hide is in force and bit 4000 a redraw is
+  owed at the show (with the handler citations); the HidePointerZone header says "a zone hide is already in force"
+  and "8000h (a zone hide is in force)" and "4000 (a redraw is owed at the show)"; the unit header now names both
+  meanings. (Current lines: src/E1A72.ASM:368 tests 8000h, :353 sets 4000h in the in-zone hide.)
+- [x] should src/E1BBE.ASM:297-298 and :305-306: a repeat hide (the already-hidden path, :021E to :029F) runs the
   hide without recomputing the rectangle or the overlap, so bit 4000h is decided by the first hide only. The show
   balances the count first (:394-400), so the code is consistent; the header should say the overlap test is made
   only at the first hide, so the reader does not take 4000h as per-hide.
-- [ ] should src/E1BBE.ASM:116 and :120 (HidePointer): the label `disabled` names the gMouseDisabled exit (:115-116),
+  Fixed (6ddaa61): the header now says the repeat hide runs "without recomputing the zone or the rectangle, so bit
+  4000 is decided by the first hide alone (1BBE:0232 jmp short L029F)".
+- [x] should src/E1BBE.ASM:116 and :120 (HidePointer): the label `disabled` names the gMouseDisabled exit (:115-116),
   but it is also the target of the no-buffer exit (`je disabled`, :120, taken when _gPointerBackSeg is zero).
   Rename the label for both cases (a label rename changes no bytes; the matcher confirms).
-- [ ] should src/E1BBE.ASM:307 (HidePointerZone header, "always paired with 1BBE:02C2"): the packet call lists are
+  Fixed (6ddaa61): renamed `disabled` to `skipHide`, which names both exits; make match still reports 7 of 7, 860 bytes.
+- [x] should src/E1BBE.ASM:307 (HidePointerZone header, "always paired with 1BBE:02C2"): the packet call lists are
   identical (build/packets/e1bbe.md: the same 14 callers for both), which supports "at the same call sites"; the code
   does not show that every hide is followed by its show. "Always" is the overclaim round 2 removed from the Lock
   comments. Soften it the same way.
-- [ ] should src/E1BBE.ASM:11-13 and :295-304 (zone wording): the zone is the caller's rectangle, not "the rectangle
+  Fixed (6ddaa61): the header now says "the packet lists the same 14 callers for 1BBE:02C2, so the pair is called at
+  the same sites" (no "always").
+- [x] should src/E1BBE.ASM:11-13 and :295-304 (zone wording): the zone is the caller's rectangle, not "the rectangle
   the pointer was hidden over". src/E16A5.C:536 passes the node's box grown by the sprite size, and HidePointerZone
   stores it with left and top reduced again by the sprite size (1BBE:0234-0272). Say "the zone (the caller's
   rectangle)" in both headers.
+  Fixed (6ddaa61): the unit header and the HidePointerZone header now say "the zone (the caller's rectangle)".
 - [ ] should src/E1BBE.ASM:41 and :84 (gMouseDisabled, gDraw80C2): the bare spellings are still open from round 1, and
   the other EXTRNs of C-declared globals in this unit carry the underscore (_gHideDepth for gHideDepth, _gSaveRect for
   gSaveRect and _gRestoreRect, _gPointerBusy). The C declarations are src/E07A9.C:200 (gMouseDisabled) and
   src/E1A29.C:57 (gDraw80C2). A bare EXTRN names a different symbol than the underscored one, so if these names are
   linked as written they do not resolve. The matcher (cmatch) strips leading underscores, so it cannot tell. This is
   a convention across E1A72, E1C00, E1BBE and E1BB1, not a matcher or spec question: the human should decide it
-  once; the unit should follow the decision.
+  once; the unit should follow the decision. Left open (6ddaa61): no decision yet; the bare spellings are unchanged
+  and the finding needs the human's convention ruling before this unit can follow it.
 - [ ] note routed to the e1a72 owner: src/E1A72.ASM:85-86 and :292-293 say 8000h is "hidden over the hide zone", the
   same wording as the finding above. Its header comments at :81-83, :88, :92 and :420 still cite E1BBE.ASM lines
   (188, 193, 328-332, 338-339) that no longer hold the cited code; round 3 routed this and it is still open.
