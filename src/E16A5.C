@@ -56,8 +56,8 @@ struct Node {
     unsigned char color2C;      /* +2C: foreground of the fourth pair */
     unsigned char color2D;      /* +2D: background/extra of the fourth pair */
     unsigned state;             /* +2E: the on bit, the previous-on bit, others */
-    int (far *callback30)(struct Node far *node); /* +30: fired when a state op asks; a nonzero return
-                                                   stops the walk, 0 lets it go on */
+    int (far *callback30)(struct Node far *node); /* +30: fired when a case sets `changed`; a nonzero
+                                                   return stops the walk, 0 lets it go on */
     int tile34;                 /* +34: the tile id DrawNode draws in the default kind */
     int tile36;                 /* +36: the tile id DrawNode draws in the switched modes */
 };
@@ -75,16 +75,18 @@ extern void (far *gFC7C)(); /*@ ds:FC7C: the callback 16A5:0D78 installs and 16A
 /* The +2E state word bits, under the names E1658.C gives them: NODE_STATE_ON (the on bit 0073
    toggles and 02F5 sets), NODE_STATE_PREV (the previous-on value, set from the on bit so a redraw
    can tell the node changed), NODE_STATE_2 (set here for a hit, cleared by ClearNode 1658:01E6)
-   and the NODE_STATE_4/NODE_STATE_10 pair ClearNode maps onto each other. The "0x0004 pressed"
-   reading is [H]: E1658.C does not name bit 0x0004; the dispatcher sets it for a press. */
+   and NODE_STATE_4/NODE_STATE_10 (ClearNode sets NODE_STATE_10 and clears NODE_STATE_4,
+   E1658.C:240-244). The "0x0004 pressed" reading is [H]: E1658.C does not name bit 0x0004; the
+   dispatcher sets it for a press. */
 #define NODE_STATE_ON   0x0001
 #define NODE_STATE_2    0x0002
 #define NODE_STATE_4    0x0004
 #define NODE_STATE_PREV 0x0008
 #define NODE_STATE_10   0x0010
 
-/* The +0E flags word, under the names E1658.C gives it. NODE_INACTIVE (0x0008) makes the five
-   state operations do nothing (0154 sets it, 017B clears it). NODE_FLAG_ON (0x0001) and the four
+/* The +0E flags word, under the names E1658.C gives it. NODE_INACTIVE (0x0008) makes ToggleNode
+   (1658:0073), ClearNode (1658:01E6) and SetNode (1658:02F5) do nothing; DisableNode (1658:0154)
+   sets the bit and EnableNode (1658:017B) clears it. NODE_FLAG_ON (0x0001) and the four
    selector bits 0x0100/0x0400 (g5E1C) and 0x1000/0x4000 (g5E1E) pick the button mode E1658.C
    describes. The dispatcher also tests 0x0002, 0x0004, 0x0020, 0x0040, 0x0080, 0x0200, 0x0800,
    0x2000 and 0x8000 as gates; their meanings are not established [H], so they stay values. */
@@ -124,15 +126,16 @@ extern int g5E1E;            /*@ ds:5E1E: the right-button mode (src/E1658.C) */
 extern int gHitX;            /*@ ds:5E10: the x the hit test uses */
 extern int gHitY;            /*@ ds:5E12: the y the hit test uses */
 extern struct Node far *gLastNode;   /*@ ds:5DE0: the list head the last walk drew from */
-extern int g5DEA[];          /*@ ds:5DEA: word 0 the drawn-node flags, words 1..4 the g5E1C redraw masks */
+extern int g5DEA[];          /*@ ds:5DEA: word 0 the drawn-node flags, words 1..4 the release-test masks */
 extern struct Node far *gPressedNode; /*@ ds:5DE4: the node a press selected, 0 when none */
 extern int gListActive;      /*@ ds:5DE8: 0 stops the walk from reacting to the mouse */
 extern char g5E20;           /*@ ds:5E20: nonzero forces the walk to rebuild and redraw the whole
                                 list; the list builders set it (ovl0:042F BuildRowNodeList,
                                 ovl1:1153), not the mouse */
 extern int gFC82;            /*@ ds:FC82: the dispatcher writes which key word matched (1 for +06,
-                                2 for +08, 0 none); 0ACD:0034 and 0ACD:008C read 1 and 2 as an
-                                action mode (src/E0ACD.C) */
+                                2 for +08, 0 none); 0ACD:0034 tests it only against 0, and
+                                0ACD:008C (Action008C) and 0ACD:00EB (Action00EB) read 1 and 2 as
+                                an action mode (src/E0ACD.C) */
 extern int g5DF2[];          /*@ ds:5DF2: words 1..4 the g5E1E redraw masks */
 
 /* 16A5:0009: read one pending key event and dispatch it to the node list `head`. 1AAD:0409 says
@@ -184,26 +187,30 @@ extern int g5DF2[];          /*@ ds:5DF2: words 1..4 the g5E1E redraw masks */
 
 /* 16A5:00BD: the event dispatcher (1798 bytes). `head` is the list to walk and `key` one key
    event (0 when only the mouse did something). It returns the key the walk reached when nothing
-   took it (`if (result == 0) result = key;` at the end): a keyboard key no node takes comes back
-   as itself, and a mouse-only call (key set to 0) returns 0; both callers ignore the value. First
-   it maps the mouse buttons: on every call it sets ds:5E1C and ds:5E1E to 2 or 4 from GetKeyState
-   of the codes 0x41 and 0x42; then the codes 0x41/0x42 and the negative pair 0xC6/0xC7 override
+   took it (`if (result == 0) result = key;` at the end): a DispatchKey event (tagged with 0x8000)
+   has been reduced to its low byte by then, a DispatchKeyWait key comes back as itself, and a
+   mouse-only call (key set to 0) returns 0; both callers ignore the value. First
+   it maps the mouse buttons: while the mouse is enabled (not gMouseDisabled) each call sets
+   ds:5E1C and ds:5E1E to 2 or 4 from GetKeyState of the codes 0x41 and 0x42; then the codes
+   0x41/0x42 and the negative pair 0xC6/0xC7 override
    the matching one with 1 or 3 (3 when the event's bit 0x800 is set) and move the hit point
    ds:5E10/5E12 from gCursorX/gCursorY to the last click ds:8140/8142. Then, when `head` is not the
    node in ds:5DE0 or ds:5E20 forces it, it redraws the list from `head` with DrawNode, ORs each
    node's flags & 0xaa04 into ds:5DEA[0] and fires the node callback ds:FC7C for a node whose state
    bit 0x20 is set, that carries a tile (+34/+36) and has the callback installed. Finally it walks
    the list from `head` (or from the pressed node in ds:5DE4/ds:5DE6 when there is one): a node
-   with flags bit 8 (NODE_INACTIVE) is skipped; else when `key` equals the node's key word +06 or
+   with flags 0x0008 (NODE_INACTIVE) is skipped; else when `key` equals the node's key word +06 or
    +08 it tags ds:FC82, sets ds:5E1C or ds:5E1E to 1 and toggles the node's on bit; and when `key`
    is 0 it hit-tests the node box +1E..+24 against the hit point, and for the mode in ds:5E1C
    (ds:5E1E) selects one of four cases through a jump table (`jmp word ptr cs:[bx+07BBh]` at
-   16A5:03EF for ds:5E1C, `[bx+07B3h]` at 16A5:0521 for ds:5E1E). The four cases set `changed`,
-   the state's NODE_STATE_4 bit, the on bit and `result`; none writes a word of ds:5DEA (that word
-   is written only by the redraw loop above, and its words 1..4 are read as the masks the release
-   test at the end uses). The walk writes the state word +2E and flags +0E back, redraws the node
-   when its bits 1/8 differ or its bits 4/0x10 differ, runs the node callback +30 (a nonzero
-   return stops the walk, 0 lets it go on), and clears the pressed node when it is released.
+   16A5:03EF for ds:5E1C, `[bx+07B3h]` at 16A5:0521 for ds:5E1E). Each case sets or clears the
+   state's NODE_STATE_4 bit (case 3 of either switch does not), may set `changed`, may change or
+   clear the on bit, and sets `result` only when it changes the on bit; none writes a word of
+   ds:5DEA (that word is written only by the redraw loop above, and its words 1..4 are read as the
+   masks the release test at the end uses). The walk writes the state word +2E and flags +0E back,
+   redraws the node when its bits 1/8 differ or its bits 4/0x10 differ, runs the node callback +30
+   (a nonzero return stops the walk, 0 lets it go on), and clears the pressed node when it is
+   released.
    Callers: DispatchKey (16A5:0009) and DispatchKeyWait (16A5:005A). [H] The exact meaning of the
    flag bits and button modes, and of the array at ds:5DEA, is not established. */
 /*@ 16A5:00BD */ int DispatchNodeEvent(struct Node far *head, int key)
@@ -537,9 +544,10 @@ done:
    `modeB` or `modeC` is 2 (DrawBox), or `modeB` is 3 with NODE_STATE_PREV set, or `modeC` is 3
    with NODE_STATE_10 set (gDraw8066), and only in the both-clear branch (NODE_STATE_ON and
    NODE_STATE_4 clear). The pointer is hidden with HidePointerZone over the box grown by the mouse
-   sprite size and shown again at the end; ds:8115 (the status-line flag) is cleared while a node
-   is drawn and ds:FC80 while a kind-1 node is. Callers: ToggleNode (1658:0073), DisableNode
-   (1658:0154), EnableNode (1658:017B), ClearNode (1658:01E6), SetNode (1658:02F5) and the
+   sprite size and shown again at the end; gStatusLine (ds:8115) is cleared around the kind 0, 2, 3
+   and 5 draws (not kinds 1 and 4) and ds:FC80 while a kind-1 node is. Callers: ToggleNode
+   (1658:0073), DisableNode (1658:0154), EnableNode (1658:017B), ClearNode (1658:01E6), SetNode
+   (1658:02F5) and the
    dispatcher (16A5:00BD). [H] The exact meaning of the four colour pairs and of the two mode
    bytes is not established. */
 /*@ 16A5:07C3 */ void DrawNode(struct Node far *node)
