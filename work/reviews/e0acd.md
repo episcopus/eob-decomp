@@ -1,7 +1,7 @@
 # Review: e0acd
 
-Reviewer: rev-haiku (rounds 1 and 2)
-Commit reviewed: 6003a3d (round 2; round 1 reviewed 3648a5c)
+Reviewer: rev-haiku (rounds 1 to 3)
+Commit reviewed: 7ff86a7 (round 3; round 2 reviewed 6003a3d, round 1 reviewed 3648a5c)
 
 Playbook 70. Judge what a matching file can still get wrong: names, types, comments, structure.
 The matcher already proved the bytes; do not re-prove them, read for meaning.
@@ -13,6 +13,19 @@ Each finding is a checkbox. `must-fix` blocks `make review-pass` until a decompi
 
 Line numbers are src/E0ACD.C unless another file is named. Callee addresses are the ones the
 comments should cite.
+
+## Round 3 (at 7ff86a7)
+
+Later round (playbook 70). Judged: each round 2 must-fix (both ticks stay: the ActRec comment and the gIconTable comment are now right in substance, checked against src/E0EF3.C:292, E0ACD.C:18 and src/E1414.C:107; the stale line cite in the gIconTable tick is a should below). The changes since 6003a3d in src/E0ACD.C, re/symbols.toml and re/globals.toml: the DrawMemberLevel to DrawMemberFood rename (1547:04A0; src/E1547.C:323 to 324 describes the food bar, and src/E1414.C:130 and :677 and src/E1547.C:560 already use the name; re/renames.toml:2282 logs it), the EatFood call, the m97, m0B, gHitY, g5E1C, DispatchKeyWait, Action0E6C, EnterMapScreen and PickListItem comments. Claims checked against the code: m97 (RemoveListItem at :758, InsertListItem at :780 and :851), gA998 (src/EOV2.C:418, 425, 427: 0xff, 0, 0xfe), the PickListItem loop (`while (flag == 0 && count < 5)`, zero item only clears gF3BA, a fresh item sets flag). `make match FILE=src/E0ACD.C`: 35 of 35 (4182 bytes), exit 0. `make readability UNIT=e0acd`: 0 findings. No wrong claim in a changed line. Only stale line cites into other files, which are shoulds.
+
+- [ ] should src/E0ACD.C:49 (gIconTable): "src/E1414.C:106 agrees" cites the wrong line now. E1414.C:106 is the g5CAB declaration; the gIconTable declaration is E1414.C:107 (its text agrees). Cite the file without a line, or the reader's address (E1414's comment cites QUIRK 1414:0037 for the save and restore).
+- [ ] should src/E0ACD.C:136 (g5E1C): "src/E16A5.C:506 tests g5E1C for the left button" cites a line that is now `if ((flags & 2) && (state & NODE_STATE_ON))`. The test is src/E16A5.C:513 (`leftFlags != 0 && g5E1C == 3`), with leftFlags set at :343. Cite :513 or the walk address 16A5:00BD.
+- [ ] should src/E0ACD.C:174 (the struct Node comment): "(src/E16A5.C:185 to 188 and :523 to 524)". Lines 185 to 188 are DispatchKeyWait's call and its closing brace, not a mouse-only return. The mouse-only zero is src/E16A5.C:174 to 175 (`key = 0` unless a key is pending), and `if (result == 0) result = key;` is now at :530 to 531 (was :523 to 524). Cite those lines.
+- [ ] note src/E0ACD.C:606 to 607 (EatFood, 0ACD:07E0): "redraws the icon" is loose. The call that changed (line 629, DrawMemberFood) redraws the member's food bar (src/E1547.C:323 to 324), and line 628 clears the mouse item with SetMouseItem(0). Name the food bar and the cleared item. Not a changed line, so a note.
+- [ ] note the PickListItem comment (0ACD:0BA6) has a short line "volume's list. It sets gDF4C and stops. A" that breaks the paragraph raggedly. Reflow when next touched; no content change.
+- [ ] note for the other owners (not this unit's to edit): src/E1547.C:323 cites "EatFood (0ACD:07E0, src/E0ACD.C:577)", and EatFood is at src/E0ACD.C:611 (the address 0ACD:07E0 is right); src/E1414.C:108 cites "src/E0ACD.C:42" for gIconTable, which is at src/E0ACD.C:48. Round 2's note on src/E16A5.C:189 to 192 ("both callers ignore the value") still stands for the E16A5 owner.
+
+Round 3 verdict: review passed. No must-fix is open: both round 2 must-fix items are fixed right, and the changed lines are sound. The shoulds are stale line cites; the unit's comments and names hold.
 
 ## Round 2 (at 6003a3d)
 

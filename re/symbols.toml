@@ -2276,6 +2276,7 @@ evidence = ["near", "segment"]
 name = "MoveBlocked"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0acd_0028"
@@ -2286,6 +2287,7 @@ evidence = ["frame"]
 name = "GetActionResult"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0acd_0034"
@@ -2296,6 +2298,7 @@ evidence = ["frame"]
 name = "Action0034"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0acd_008c"
@@ -2306,6 +2309,7 @@ evidence = ["frame"]
 name = "Action008C"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0acd_00eb"
@@ -2316,6 +2320,7 @@ evidence = ["frame"]
 name = "Action00EB"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0acd_018e"
@@ -2326,6 +2331,7 @@ evidence = ["frame"]
 name = "Action018E"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0acd_01c0"
@@ -2336,6 +2342,7 @@ evidence = ["frame"]
 name = "Action01C0"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0acd_01e3"
@@ -2346,6 +2353,7 @@ evidence = ["far", "frame"]
 name = "Action01E3"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0acd_0264"
@@ -2356,6 +2364,7 @@ evidence = ["frame"]
 name = "Action0264"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0acd_0393"
@@ -2366,6 +2375,7 @@ evidence = ["frame"]
 name = "Action0393"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0acd_03cd"
@@ -2376,6 +2386,7 @@ evidence = ["frame"]
 name = "StepActionRow"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0acd_0415"
@@ -2386,6 +2397,7 @@ evidence = ["frame"]
 name = "Action0415"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0acd_0494"
@@ -2396,6 +2408,7 @@ evidence = ["frame"]
 name = "Action0494"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0acd_04f8"
@@ -2406,6 +2419,7 @@ evidence = ["frame"]
 name = "Action04F8"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0acd_0529"
@@ -2416,6 +2430,7 @@ evidence = ["frame"]
 name = "Action0529"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0acd_056c"
@@ -2426,6 +2441,7 @@ evidence = ["frame"]
 name = "Action056C"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0acd_0593"
@@ -2436,6 +2452,7 @@ evidence = ["frame"]
 name = "Action0593"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0acd_05ba"
@@ -2446,6 +2463,7 @@ evidence = ["frame"]
 name = "Action05BA"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0acd_05ff"
@@ -2456,6 +2474,7 @@ evidence = ["frame"]
 name = "Action05FF"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0acd_0644"
@@ -2467,6 +2486,7 @@ notes = "unblocked 2026-11-01: the two copies are local ARRAY initialisers (char
 name = "Action0644"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0acd_0753"
@@ -2477,6 +2497,7 @@ evidence = ["frame"]
 name = "StepMenuPhase"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0acd_078c"
@@ -2487,6 +2508,7 @@ evidence = ["frame"]
 name = "Action078C"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0acd_07e0"
@@ -2497,6 +2519,7 @@ evidence = ["far", "near", "frame"]
 name = "EatFood"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0acd_08d1"
@@ -2507,6 +2530,7 @@ evidence = ["frame"]
 name = "Action08D1"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0acd_08e7"
@@ -2517,6 +2541,7 @@ evidence = ["near", "frame"]
 name = "Action08E7"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0acd_091c"
@@ -2528,6 +2553,7 @@ notes = "matched 2026-11-01: the two character searches are `do { ... } while (!
 name = "Turn091C"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0acd_09ef"
@@ -2538,6 +2564,7 @@ evidence = ["near"]
 name = "SetActionRow"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0acd_0a34"
@@ -2549,6 +2576,7 @@ name = "Action0A34"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 notes = "matched 2026-11-01: case 0 is `Turn091C(dir); goto done;` and case 1 falls through to `done: return;`, not `break`. With a plain switch/break the compiler cross-jumps the two calls' argument cleanup (`pop cx` after each), one byte shorter than the original."
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0acd_0a61"
@@ -2559,6 +2587,7 @@ evidence = ["near", "frame"]
 name = "MoveListItem"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0acd_0ba6"
@@ -2570,6 +2599,7 @@ notes = "unblocked 2026-11-01: the store at 0ACD:0C7F is `mov [gF3BA], ax` (3-by
 name = "PickListItem"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0acd_0d9d"
@@ -2580,6 +2610,7 @@ evidence = ["near", "frame"]
 name = "Action0D9D"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0acd_0e6c"
@@ -2590,6 +2621,7 @@ evidence = ["near"]
 name = "Action0E6C"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0acd_0e8a"
@@ -2600,6 +2632,7 @@ evidence = ["far", "frame"]
 name = "RunMapLoop"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0acd_0f72"
@@ -2610,6 +2643,7 @@ evidence = ["far", "frame"]
 name = "EnterMapScreen"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0acd_1033"
@@ -2620,6 +2654,7 @@ evidence = ["far", "frame"]
 name = "ResetMapScreen"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0bd2_000e"
