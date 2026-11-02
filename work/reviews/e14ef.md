@@ -20,7 +20,10 @@ src/E082C.C. Each must-fix below is a comment fix; no code change is asked for. 
 Each finding is a checkbox. `must-fix` blocks `make review-pass` until a decompiler ticks it off
 (with the commit that fixes it); `should` and `note` do not block.
 
-- [ ] must-fix src/E14EF.C:10-12 (header, field reads): the reads are on other lines. DrawOptionList
+- [x] must-fix src/E14EF.C:10-12 (header, field reads) [fixed in 93c7755: the header now cites
+  DrawOptionList y :184, x :185, sel :186, height :187, colorA :192 and colorB :194, and
+  UpdateOptionList height :263, sel :264, y :268, x :269, colorA :270, colorB :271 and width :278;
+  every in-file cite was re-grepped after the edits]: the reads are on other lines. DrawOptionList
   reads y at :182, x at :183, sel at :184 and height at :185; the text says :178-:181, which are
   `register int i;`, `register int entry;`, a blank line and `panelDef = &gPanels[panel];`.
   UpdateOptionList reads height at :261, sel at :262, y at :266, x at :267, colorA at :268, colorB at
@@ -28,7 +31,9 @@ Each finding is a checkbox. `must-fix` blocks `make review-pass` until a decompi
   :261-262 (height and sel). DrawOptionList reads colorA at :190 and colorB at :192; the text says :186
   and :188 (LockHidePointer and the FindMaskBit call). (evidence: grep -n of src/E14EF.C for
   `panelDef->`: :182-185, :190, :192, :261-262, :266-269, :276)
-- [ ] must-fix src/E14EF.C:34-35 and :46-47 (struct Panel x, gTextLeft): "the font width in
+- [x] must-fix src/E14EF.C:34-35 and :46-47 (struct Panel x, gTextLeft) [fixed in 93c7755: struct
+  Panel x now says eight-pixel cells in both draw loops (<< 3 at :185 and :269) and that only the
+  hit rectangle uses the font width (:276); gTextLeft says the same once]: "the font width in
   UpdateOptionList" is true only of the hit rectangle. The row and blink drawing in UpdateOptionList
   use eight-pixel cells: xbase = (gTextLeft + panelDef->x) << 3 at :267, the same as DrawOptionList
   (:183). Only the hit rectangle multiplies x by gFontWidth (left at :274, right at :276). The
@@ -36,48 +41,59 @@ Each finding is a checkbox. `must-fix` blocks `make review-pass` until a decompi
   :260 is `panelDef = &gPanels[panel];`; the shifts are at :267 and :274, and DrawOptionList's x is :183.
   Say it once: both functions draw in eight-pixel cells, and the hit rectangle in UpdateOptionList uses
   the font width. (evidence: src/E14EF.C:267, :274, :276, :183; src/E1C0E.C:60 "8-pixel columns")
-- [ ] must-fix src/E14EF.C:54-55 (g5D1A): "(:187-188)" points at the `for` line and the FindMaskBit
+- [x] must-fix src/E14EF.C:54-55 (g5D1A) [fixed in 93c7755: the comment now cites the test and draw
+  at :193-194]: "(:187-188)" points at the `for` line and the FindMaskBit
   call. The test is `if (entry == selEntry && (g5D1A || gMouseDisabled))` at :191 and the colorB draw
   is :192. (evidence: src/E14EF.C:191-192)
-- [ ] must-fix src/E14EF.C:64-65 (g8102): "(:186, :261)" points at `LockHidePointer();` (:186) and
+- [x] must-fix src/E14EF.C:64-65 (g8102) [fixed in 93c7755: the comment now cites the two colour
+  tests at :192 and :270]: "(:186, :261)" points at `LockHidePointer();` (:186) and
   `lastRow = ...` (:261). The two colour tests are :190 (DrawOptionList) and :268 (UpdateOptionList).
   (evidence: src/E14EF.C:190, :268)
-- [ ] must-fix src/E14EF.C:56-60 (g8140, g8142): "tested against a panel rectangle by UpdateOptionList
+- [x] must-fix src/E14EF.C:56-60 (g8140, g8142) [fixed in 93c7755: g8140 cites the rectangle test at
+  :306 and g8142 at :307]: "tested against a panel rectangle by UpdateOptionList
   (:297)" points at a `break;`. The test is `IsPointInRect(g8140, g8142, ...)` at :304, and g8142 is
   read again at :305 (`row = (g8142 - top) / lineheight`). The g8142 comment's "(:298, ...)" points at
   `case KEY_LAST:`. (evidence: src/E14EF.C:297-298, :304-305)
-- [ ] must-fix src/E14EF.C:67-69 (gMouseDisabled): "src/E1A72.ASM:297" is `jne L0123`. The store
+- [x] must-fix src/E14EF.C:67-69 (gMouseDisabled) [fixed in 93c7755: the comment now cites the store
+  at src/E1A72.ASM:315 and the 1A72:0150 address at src/E1A72.ASM:100]: "src/E1A72.ASM:297" is `jne L0123`. The store
   `mov word ptr [gMouseDisabled],1` is src/E1A72.ASM:314, after `mov word ptr
   [gMouseHandlerInstalled],1` at :313. The 1A72:0150 address is the one src/E1A72.ASM:99 gives for
   "before it installs the handler". (evidence: src/E1A72.ASM:297, :313-314, :99)
-- [ ] must-fix src/E14EF.C:70-71 (gCursorX, gCursorY): "(src/E1A72.ASM:60)" points inside the g8134
+- [x] must-fix src/E14EF.C:70-71 (gCursorX, gCursorY) [fixed in 93c7755: gCursorX cites
+  src/E1A72.ASM:65 and the pixel test at :283; gCursorY cites src/E1A72.ASM:73]: "(src/E1A72.ASM:60)" points inside the g8134
   comment block (line 60 is "(E0ACD.C:886, 0ACD:0E8A)"); the gCursorX declaration is at :64 and gCursorY
   at :72. "tested with the pixel rectangle (:272-273)" points at the IsKeyPending and WaitKeyEvent lines;
   the test is `IsPointInRect(gCursorX, cursory, ...)` at :280. (evidence: src/E1A72.ASM:64, :72;
   src/E14EF.C:272-273, :280)
-- [ ] must-fix src/E14EF.C:72-74 (g8134): "(or ax,[g8134]; mov [g8134],ax, src/E1A72.ASM:380-381)"
+- [x] must-fix src/E14EF.C:72-74 (g8134) [fixed in 93c7755: the comment now cites
+  src/E1A72.ASM:400-401 and this file's clear at :199]: "(or ax,[g8134]; mov [g8134],ax, src/E1A72.ASM:380-381)"
   points at `cmp cx,13Fh` and `jbe`; the pair is src/E1A72.ASM:399-400. "this file clears it (:193)"
   points at the closing brace of the DrawOptionList loop; the clear is `g8134 = 0;` at :197.
   (evidence: src/E1A72.ASM:399-400; src/E14EF.C:193, :197)
-- [ ] must-fix src/E14EF.C:206 (KEY_CONFIRM in the enum): "the row is picked (:307)" points at the `break;`
+- [x] must-fix src/E14EF.C:206 (KEY_CONFIRM in the enum) [fixed in 93c7755: the confirm pick is now
+  cited at :316]: "the row is picked (:307)" points at the `break;`
   of the click case; the confirm case's `picked = row;` is :314. (evidence: src/E14EF.C:306-307, :314)
-- [ ] must-fix src/E14EF.C:224-225 and :229 (UpdateOptionList header): "(:299, :307)" points at
+- [x] must-fix src/E14EF.C:224-225 and :229 (UpdateOptionList header) [fixed in 93c7755: the row
+  stores are now cited at :308 and :316, the returned string index at :338, and the mouse test at :280]: "(:299, :307)" points at
   `case KEY_LAST2:` (:299) and the click case's `break;` (:307). The row stores are :306 (click,
   `picked = row;`) and :314 (confirm). "(:329, ...)" points at the closing brace of the row-change block;
   the string index is assigned at :336 (`picked = entry;`). "(!gMouseDisabled, :271)" points at
   `gFC7A = 0;`; the test is `if (!gMouseDisabled)` at :278. (evidence: src/E14EF.C:271, :278, :299,
   :306, :314, :336)
-- [ ] should src/E14EF.C:56-57 (g8140): "written by src/EOV0.C:1204" is partial. The click event writes
+- [x] should src/E14EF.C:56-57 (g8140) [fixed in 93c7755: the g8140 and g8142 comments now name
+  src/E1AAD.ASM:396 and :405 as the writers and src/EOV0.C:1204 as the clear]: "written by src/EOV0.C:1204" is partial. The click event writes
   both (src/E1AAD.ASM:396 and :405, the 1AAD:048D stores); EOV0.C:1204 (`done = g8140 = g8142 = 0`, in
   PickClass) clears them. Name both writers. (evidence: src/E1AAD.ASM:396, :405; src/EOV0.C:1204)
-- [ ] should src/E14EF.C:72-74 (g8134): "RunMapLoop clears it on entry" is not quite right: the clear
+- [x] should src/E14EF.C:72-74 (g8134) [fixed in 93c7755: the comment now says the clear happens
+  after the map screen is entered]: "RunMapLoop clears it on entry" is not quite right: the clear
   at src/E0ACD.C:886 comes after EnterMapScreen and LockShowPointer (src/E0ACD.C:883-885). Say "after the
   map screen is entered". src/E1A72.ASM:57-60 says "on entry" too; route that to the E1A72 owner.
   (evidence: src/E0ACD.C:883-886)
-- [ ] should src/E14EF.C:185 (DrawOptionList, `n`): `n = panelDef->height` holds the row count, and the
+- [x] should src/E14EF.C:185 (DrawOptionList, `n`) [fixed in 93c7755: the local is now `rows`]: `n = panelDef->height` holds the row count, and the
   loop is `i < n`. Name it `rows`, the count, which matches UpdateOptionList's `lastRow` (the index).
   (evidence: src/E14EF.C:185, :187)
-- [ ] should src/E14EF.C:6 (header): "returns the n-th set bit of the mask" conflicts with the
+- [x] should src/E14EF.C:6 (header) [fixed in 93c7755: the header now says "the index, counted from
+  shift, of the n-th selectable entry"]: "returns the n-th set bit of the mask" conflicts with the
   FindMaskBit comment (:86-88): it returns the bit number minus shift, an index counted from shift. Say
   "the index, counted from shift, of the n-th selectable entry". (evidence: src/E14EF.C:86-90)
 - [ ] note src/E14EF.C:262: `panelDef->sel % (lastRow + 1)` divides by zero when height is 0. Whether
