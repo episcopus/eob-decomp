@@ -559,13 +559,15 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
     f0DE8_0D5E(gA99A);
 }
 
-/* 0ACD:091C draft: a switch over a four-entry jump table at 0ACD:09E7, cases 1 and 3 shared.
-   Everything matches except tail merging: with -O our build merges `gF51A = 0; break;` of case 0
-   into the end of case 2, and `gF51A = 1; break;` of case 2 into case 0; the original keeps both
-   (11 bytes longer). Without -O, -Z has no effect and jump chains stay (13 bytes longer); -G uses
-   add sp; -P (C++) still merges. Tried: early break, if/else, for(;;) with inner break, default
-   label, no final break, volatile. Open: another switch, or the compiler's tail-merge rule. */
-/*@ 0ACD:091C draft */ void Turn091C(int how)
+/* 0ACD:091C: the "turn" action, a switch over the four-entry jump table at 0ACD:09E7 (cases 1 and
+   3 shared). Case 0 resets the action row gF51A to 0 when it is already set, otherwise steps the
+   selected character down by 2 (modulo 6) until f0D1C_0670 accepts it and sets gF51A to 1. Case 2
+   is the mirror: it sets gF51A to 1 when it is clear, otherwise steps the character up by 2
+   (modulo 6) until accepted and clears gF51A. Cases 1 and 3 toggle the low bit of the character
+   when accepted. It redraws the old character row and, when the character changed, the new one.
+   how is the direction. The two searches are do/while loops: a `for(;;)` form makes the compiler
+   cross-jump the two gF51A stores (the original keeps them apart). */
+/*@ 0ACD:091C */ void Turn091C(int how)
 {
     int old = gA99A;
 
@@ -573,16 +575,14 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
     case 0:
         if (gF51A)
             gF51A = 0;
-        else
-            for (;;) {
+        else {
+            do {
                 gA99A -= 2;
                 if (gA99A < 0)
                     gA99A += 6;
-                if (f0D1C_0670(gA99A, 1)) {
-                    gF51A = 1;
-                    break;
-                }
-            }
+            } while (!f0D1C_0670(gA99A, 1));
+            gF51A = 1;
+        }
         break;
     case 1:
     case 3:
@@ -592,16 +592,14 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
     case 2:
         if (!gF51A)
             gF51A = 1;
-        else
-            for (;;) {
+        else {
+            do {
                 gA99A += 2;
                 if (gA99A > 5)
                     gA99A -= 6;
-                if (f0D1C_0670(gA99A, 1)) {
-                    gF51A = 0;
-                    break;
-                }
-            }
+            } while (!f0D1C_0670(gA99A, 1));
+            gF51A = 0;
+        }
         break;
     }
     f1547_0991(old);
