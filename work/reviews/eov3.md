@@ -108,7 +108,7 @@ Round 1 (at 01237b0). `make match FILE=src/EOV3.C`: cmatch 23 of 23 functions ma
 - [x] should src/EOV3.C:765-767 (AgeCharTimers header): "a smaller nonzero one is set to 1". The else
   branch (:779-780) also covers a countdown equal to g8492 (not greater, so not reduced, and nonzero), and
   sets it to 1 too. Say "a nonzero countdown not greater than g8492".
-  Fixed in 0bd5b44: the header now says "a nonzero countdown not greater than g8492 is set to 1".
+  Fixed in cd7af2f: the header now says "a nonzero countdown not greater than g8492 is set to 1".
 - [x] should src/EOV3.C:228-229 (FreePtrTable): "resets the counter ds:F538". gF538 is the wall-record
   count that RegisterWallObject advances (:307-324; the declaration at :15 has no description). Say so,
   and that this reset also empties the wall records.
@@ -119,23 +119,23 @@ Round 1 (at 01237b0). `make match FILE=src/EOV3.C`: cmatch 23 of 23 functions ma
   (QUIRK ovl3:0597 at :383); the header says it "does the same at dstB", which hides the quirk. Say it.
   The header also says "copies the two gA99C[dstA].c bytes" (:356-357): c[0] and c[1] are the slot's x and
   y (see the SlotPos point below).
-  Fixed in 0bd5b44: the header now names the "DOOR" screen, states the srcB quirk, and calls c[0]/c[1]
+  Fixed in cd7af2f: the header now names the "DOOR" screen, states the srcB quirk, and calls c[0]/c[1]
   the x and y bytes of gA99C[dstA].
 - [x] should src/EOV3.C:405-407, 421-422, 436-438 (LoadMapIcons6, LoadMapIcons6b, LoadNamedIcons): "No
   direct caller found" is true but misleading. The three are called through the `handlers` table of
   LoadMapScreen (:562, :603, :608) and the ds:6A80 initialiser (:217-220). Say so.
-  Fixed in 0bd5b44: all three headers now say they are called through the `handlers` table LoadMapScreen
+  Fixed in cd7af2f: all three headers now say they are called through the `handlers` table LoadMapScreen
   builds (ds:6A80 initialiser).
 - [x] should src/EOV3.C:3 (unit header): "loads and unpacks a level state from LEVELS.TMP (ovl3:09AA,
   109D, 1147)". ovl3:09AA (LoadObjects) loads an object table, and calls LoadLevelState only when the level
   was saved (:515-516). The level state is read by 1147 and unpacked by 109D. Reword.
-  Fixed in 0bd5b44: the unit header now says LoadObjects loads an object table and, for a saved level,
+  Fixed in cd7af2f: the unit header now says LoadObjects loads an object table and, for a saved level,
   reads its LEVELS.TMP slot (ovl3:1147) and unpacks it (ovl3:109D).
 - [x] should src/EOV3.C:527-539 (LoadMapScreen header): the callers omit 122E:1AAB LoadLevelOp
   (src/E122E.C:1287-1288, through the 210C:007A stub). It also omits: PlaySound(0) (:685), gFB45 = 1
   (:686), the gFlags849E bit 2 set and cleared (:566, :684), and the clearing of the 0x400 item-list heads
   (:670-671). Add them.
-  Fixed in 0bd5b44: the header now names LoadLevelOp (122E:1AAB, through the 210C:007A stub), the
+  Fixed in cd7af2f: the header now names LoadLevelOp (122E:1AAB, through the 210C:007A stub), the
   gFlags849E bit 2 clear and set, the 0x400 item-list head clear, PlaySound(0) and gFB45 = 1.
 - [x] should src/EOV3.C:804-810 (SaveGame header): omits `ResetLevel()` at :819, which runs first. Say that
   the INVENT reload (:846) happens only when every write succeeded (:829). The probe FileOpen/FileClose of
@@ -151,19 +151,19 @@ Round 1 (at 01237b0). `make match FILE=src/EOV3.C`: cmatch 23 of 23 functions ma
 - [x] should src/EOV3.C:610-615, 618-620 (LoadMapScreen, `recIndex`): it is a timer slot index (index*2 into
   g5BCC and g5BDC), not a record index. RegisterWallObject uses `recordIndex` for the wall chain. Rename the
   local (e.g. timerIdx) so one word does not name two things.
-  Fixed in 0bd5b44: the local is now `timerIdx`.
+  Fixed in cd7af2f: the local is now `timerIdx`.
 - [ ] should src/EOV3.C:666-680 (LoadMapScreen, `scriptWord`): it holds the item-table offset (:666-667)
   and then an item word (:678-680). Two meanings, one name. Split the variable.
 - [x] should src/EOV3.C:654-660 (LoadMapScreen, `nObjects`): counted at :660 and never read. Mark it as
   `QUIRK ovl3:0A7C:` (an unused result), or say in the header that it is dead.
-  Fixed in 0bd5b44: the declaration is now `/* QUIRK ovl3:0A7C: counted but never read (dead result) */`.
+  Fixed in cd7af2f: the declaration is now `/* QUIRK ovl3:0A7C: counted but never read (dead result) */`.
 - [x] should src/EOV3.C:172 (struct ItemRecord, `m03`): the comment is "/* +5 */". The field is the sound
   that InsertListItem takes: RebuildItemList passes rec->m03 (:496), and src/E0BD2.C:420 passes
   gItems[saved].m03 as the sound. Give the field that meaning.
-  Fixed in 0bd5b44: the m03 comment now says it is the sound InsertListItem plays (src/E0BD2.C:420).
+  Fixed in cd7af2f: the m03 comment now says it is the sound InsertListItem plays (src/E0BD2.C:420).
 - [x] should src/EOV3.C:222-226 (struct WallDec): idx[0..9] are the cell indices that RegisterWallObject reads
   (:316), and idx[10] is the chain link (see the first must-fix). Say so in the struct comment.
-  Fixed in 0bd5b44: the WallDec comment now says idx[0..9] are the ten cell indices and idx[0xa] the
+  Fixed in cd7af2f: the WallDec comment now says idx[0..9] are the ten cell indices and idx[0xa] the
   chain link.
 - [ ] should src/EOV3.C:138, 140-145, 14, 55, 189 (types): the file declares types that disagree with the
   other units, and the placeholder `Triple6` is now a known record. gA99C is `struct Triple6` (c[2]) here;
@@ -176,7 +176,7 @@ Round 1 (at 01237b0). `make match FILE=src/EOV3.C`: cmatch 23 of 23 functions ma
   `unsigned char` and uses the same expression at :1285. Sign extension changes the code for `<< 5`, so
   both cannot be the same bytes unless the matcher finds otherwise. Test the type with `make match` on
   EOV3 and on EOV5, and record the result in the two units. (Matcher question for the human if both match.)
-  Fixed in 0bd5b44: tested on EOV3. With `signed char` all 23 functions match; with `unsigned char` the
+  Fixed in cd7af2f: tested on EOV3. With `signed char` all 23 functions match; with `unsigned char` the
   matcher drops to 20 of 23 (RegisterWallObject, LoadMapCells, LoadMapScreen differ). So EOV3's
   `signed char` is proven; src/EOV5.C's `unsigned char` for the same table is the suspect one (its
   consuming function eov5:1CDD is a draft), for the EOV5 owner to test.
