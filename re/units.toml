@@ -16,7 +16,7 @@ program = "EOB.EXE"
 segment = "0000"
 start = "0000:020C"
 bytes = 19996
-functions = 34
+functions = 36
 kind = "asm"
 
 [[unit]]
