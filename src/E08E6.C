@@ -67,9 +67,27 @@ extern int g8102; /*@ ds:8102 */
 extern char g1CD3[]; /*@ ds:1CD3 */
 extern char g1CE3[]; /*@ ds:1CE3 */
 extern void (far *gFn80D2)(char far *map); /*@ ds:80D2 */
+extern char g1991[]; /*@ ds:1991 */
+extern char gTable32C3[]; /*@ ds:32C3 */
+extern unsigned long gDeadline; /*@ ds:F512 */   /* a 32-bit deadline at ds:F512:F514 */
+extern unsigned long g8492; /*@ ds:8492 */       /* the 32-bit tick counter (src/E0ACD.C) */
+extern int gF510; /*@ ds:F510 */
+extern char gF51B; /*@ ds:F51B */
+extern int gF540; /*@ ds:F540 */
+extern int gFB32; /*@ ds:FB32 */
 
 extern void UpdateDDEffects(void); /*@ 1414:0D63 */
 extern void f0EF3_097B(char a, int b, int c, int d, int e); /*@ 0EF3:097B */
+extern int f0BD2_089E(int n); /*@ 0BD2:089E */
+extern void f0BD2_01D0(void far *head, int key, int item, int sound); /*@ 0BD2:01D0 */
+extern int f17A6_0F61(int x, int y); /*@ 17A6:0F61 */
+extern int far RollDice(char count, char sides, char bonus); /*@ 082C:0458 */
+extern void AddPartyExperience(int amount); /*@ 0DE8:0C2B */
+extern void f122E_1DA8(int a, int b); /*@ 122E:1DA8 */
+extern void fOvl5_160A(void); /*@ 211E:007F */   /* overlay 5 entry, ovl5:160A */
+extern void ShutdownGame(void); /*@ 07C8:058A */
+
+void Obj0EC3(struct Obj28 far *obj);   /* forward: Obj0E48 reaches it before its definition */
 extern int f17A6_0314(int obj, int volume); /*@ 17A6:0314 */
 extern int f0D1C_0006(int value); /*@ 0D1C:0006 */
 extern int f0D1C_00DA(int value, int page); /*@ 0D1C:00DA */
@@ -107,7 +125,28 @@ extern void fOvl4_1F51(int n); /*@ 2116:005C */   /* overlay 4 entry, ovl4:1F51 
         gFC04 |= 0x8000000L;
 }
 
-/*@ 08E6:00C3 stub */ void Obj00C3(struct Obj28 far *obj) {}
+/* 08E6:00C3: for an object whose type is 0..6 and whose count is positive: run 17A6:0F61(id,
+   gSoundVolume) and 17A6:0314(id, gSoundVolume); when the first is under 4 and the second minus
+   twice the orientation, minus 3, wrapped into 0..7, is over 2 or the first is under 2, clear the
+   type and reset the sound field. Called by 0150 and UpdateObjects. Purpose unknown: what the two
+   17A6 calls compute. */
+/*@ 08E6:00C3 */ void Obj00C3(struct Obj28 far *obj)
+{
+    int first, dir;
+
+    if (obj->type == 7 || obj->type == 8 || obj->type == 9 || obj->type == 0xa || obj->count <= 0)
+        return;
+    first = f17A6_0F61(obj->id, gSoundVolume);
+    if (first >= 4)
+        return;
+    dir = f17A6_0314(obj->id, gSoundVolume) - obj->orient * 2 - 3;
+    if (dir < 0)
+        dir += 8;
+    if (dir <= 2 && first >= 2)
+        return;
+    obj->type = 0;
+    obj->m10 = gSoundVolume;
+}
 
 /* 08E6:0150: run Obj00C3 over every one of the 30 objects in gObjs */
 /*@ 08E6:0150 */ void Obj0150(void)
@@ -328,8 +367,62 @@ extern void fOvl4_1F51(int n); /*@ 2116:005C */   /* overlay 4 entry, ovl4:1F51 
     }
 }
 
-/*@ 08E6:0E48 stub */ void Obj0E48(void) {}
-/*@ 08E6:0EC3 stub */ void Obj0EC3(struct Obj28 far *obj) {}
+/* 08E6:0E48: run the overlay-4 entry with 1, then clear m16 bit 1 of every object that has it; when
+   an object with that bit has no count left, run 0EC3. When any was found set gDF4C and the
+   countdown to 1, else clear gDF4C; finally clear gDD10 and gF518. An uninitialized `any` is a
+   QUIRK 08E6:0E99 of the original: only objects with m16 bit 1 set define its value. Called by
+   0D1C:09CB, 0EF3:0E1B and 0EF3:18D8. */
+/*@ 08E6:0E48 */ void Obj0E48(void)
+{
+    struct Obj28 far *obj = gObjs;
+    int i, any;
+
+    fOvl4_1F51(1);
+    for (i = 0; i < 30; i++, obj++) {
+        if (obj->m16 & 2) {
+            obj->m16 &= ~2;
+            any = 1;
+            if (obj->count <= 0)
+                Obj0EC3(obj);
+        }
+    }
+    if (any) {
+        gDF4C = 1;
+        gCount849A = 1;
+    } else {
+        gDF4C = 0;
+    }
+    gF518 = gDD10 = 0;
+}
+/* 08E6:0EC3: an object's death: pick a hit value (its frame, or a 1d4 when the frame is 4), and for
+   each of m12 and m14 that is set, roll 1d2 and on a 1 resolve it through 0BD2:089E and hand it to
+   0BD2:01D0 with the object's id and hit; give the party the record's m13 experience, move the
+   object to id 0, shut the game down when its b0 is 0x15, and clear the type-8 objects. Called by
+   0E48, 0FBE and 1410. */
+/*@ 08E6:0EC3 */ void Obj0EC3(struct Obj28 far *obj)
+{
+    int roll;
+
+    roll = obj->frame;
+    if (roll == 4)
+        roll = RollDice(1, 4, 0xff);
+    if (obj->m12 != 0 && RollDice(1, 2, 0) == 1) {
+        int hit = f0BD2_089E(obj->m12);
+        f0BD2_01D0(&gB894[obj->id * 9 + 5], obj->id, hit, roll);
+    }
+    if (obj->m14 != 0) {
+        int hit = f0BD2_089E(obj->m14);
+        f0BD2_01D0(&gB894[obj->id * 9 + 5], obj->id, hit, roll);
+    }
+    AddPartyExperience(gTable1A3B[obj->b0].m13);
+    MoveObjectToId(obj, 0, -1);
+    if (obj->b0 == 0x15) {
+        fOvl5_160A();
+        ShutdownGame();
+    }
+    if (obj->type == 8)
+        ClearType8Objects();
+}
 /* 08E6:0FBE: damage an object by `damage`: subtract it from the count, clear m16 bit 3, run 0DCA
    (or mark m16 bit 1 when f0D1C_0006 finds its id and gF518 is set), set m16 bit 0, and when the
    count has run out run 0EC3. Called by 0D1C:09CB and 0DE8. */
@@ -364,13 +457,92 @@ extern void fOvl4_1F51(int n); /*@ 2116:005C */   /* overlay 4 entry, ovl4:1F51 
 /*@ 08E6:106B stub */ void Obj106B(void) {}
 /*@ 08E6:10F3 stub */ void Obj10F3(void) {}
 /*@ 08E6:131D stub */ void Obj131D(int index) {}
-/*@ 08E6:1410 stub */ void Obj1410(void) {}
+/* 08E6:1410: when the effect mode gF51B and its deadline say an effect is due, run the 122E entry
+   with (0, 0x20): when no object of the 30 has a count left, run 0EC3 on the first object (from
+   index 1) whose 17A6:0F61(id, gSoundVolume) is over 3; then advance the deadline by gF510 and
+   clear gF540. Called by 1414:04E7 and overlay 6. */
+/*@ 08E6:1410 */ void Obj1410(void)
+{
+    int i, any;
+
+    if (gF51B == 1) {
+        if (g8492 > gDeadline)
+            goto fire;
+    }
+    if (gF51B == 2) {
+        if (gF540 < gFB32)
+            goto fire;
+    }
+    if (gF51B != 3)
+        return;
+    if (gF540 >= gFB32 || gDeadline >= g8492)
+        goto fire;
+    return;
+fire:
+    f122E_1DA8(0, 0x20);
+    any = 0;
+    for (i = 1; i < 30; i++) {
+        if (gObjs[i].count <= 0)
+            any += 1;
+    }
+    if (any == 0) {
+        for (i = 1; i < 30; i++) {
+            if (f17A6_0F61(gObjs[i].id, gSoundVolume) > 3) {
+                Obj0EC3(&gObjs[i]);
+                break;
+            }
+        }
+    }
+    gDeadline += gF510;
+    gF540 = 0;
+}
 /*@ 08E6:1505 stub */ void Obj1505(void) {}
-/*@ 08E6:155F stub */ void Obj155F(void) {}
+/* 08E6:155F: fill a six-entry list with -1, then set list[frame] = i for every object of the 30
+   whose id equals `key`. The caller passes an eight-word stack array as a far pointer. Called by
+   15B4 and 16D6. */
+/*@ 08E6:155F */ void BuildObjectIdList(int far *list, int key)
+{
+    struct Obj28 far *obj;
+    int i;
+
+    for (i = 0; i < 6; i++)
+        list[i] = -1;
+    for (obj = gObjs, i = 0; i < 30; i++, obj++) {
+        if (obj->id == key)
+            list[obj->frame] = i;
+    }
+}
 /*@ 08E6:15B4 stub */ void Obj15B4(void) {}
 /*@ 08E6:1634 stub */ void Obj1634(void) {}
 /*@ 08E6:16D6 stub */ void Obj16D6(void) {}
-/*@ 08E6:1775 stub */ void Obj1775(void) {}
+/* 08E6:1775: find the object whose id is `key`: when its frame equals `b` return its index;
+   otherwise scan the four bytes of gTable32C3 + a * 16 + b * 4 and remember the first (lowest) slot
+   whose byte equals the object's frame and beats the current best slot. Returns -1 when none. Called
+   by 17FD. Purpose unknown: what the two index arguments select. */
+/*@ 08E6:1775 */ int Obj1775(int key, int b, int a)
+{
+    char far *row;
+    int best, bestSlot;
+    struct Obj28 far *obj;
+    int i, slot;
+
+    best = -1;
+    bestSlot = 5;
+    for (i = 0, obj = gObjs; i < 30; i++, obj++) {
+        row = gTable32C3 + a * 16 + b * 4;
+        if (obj->id == key) {
+            if (obj->frame == b)
+                return i;
+            for (slot = 0; slot < 4; slot++) {
+                if (obj->frame == row[slot] && slot < bestSlot) {
+                    bestSlot = slot;
+                    best = i;
+                }
+            }
+        }
+    }
+    return best;
+}
 /*@ 08E6:17FD stub */ void Obj17FD(void) {}
 /* 08E6:189D: does this object have the given key as its id and either the given field or 4 as its
    frame? Returns 1 when it does, else 0. Called by 0D1C:09CB through E1414 (which passes an object,

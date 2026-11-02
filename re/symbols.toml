@@ -1525,6 +1525,9 @@ unit = "e08e6"
 addr = "08E6:00C3"
 size = 141
 evidence = ["near", "frame"]
+name = "Obj00C3"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e08e6_0150"
@@ -1687,6 +1690,9 @@ unit = "e08e6"
 addr = "08E6:0E48"
 size = 123
 evidence = ["far", "near", "frame"]
+name = "Obj0E48"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e08e6_0ec3"
@@ -1756,6 +1762,9 @@ unit = "e08e6"
 addr = "08E6:155F"
 size = 85
 evidence = ["near", "frame"]
+name = "BuildObjectIdList"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e08e6_15b4"
@@ -1784,6 +1793,9 @@ unit = "e08e6"
 addr = "08E6:1775"
 size = 136
 evidence = ["near", "frame"]
+name = "Obj1775"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e08e6_17fd"
