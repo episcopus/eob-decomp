@@ -1741,6 +1741,9 @@ unit = "e08e6"
 addr = "08E6:131D"
 size = 243
 evidence = ["near", "frame"]
+name = "Obj131D"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e08e6_1410"
@@ -1755,6 +1758,9 @@ unit = "e08e6"
 addr = "08E6:1505"
 size = 90
 evidence = ["far", "frame"]
+name = "Obj1505"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e08e6_155f"

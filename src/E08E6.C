@@ -103,6 +103,7 @@ extern void AddPartyExperience(int amount); /*@ 0DE8:0C2B */
 extern void f122E_1DA8(int a, int b); /*@ 122E:1DA8 */
 extern void fOvl5_160A(void); /*@ 211E:007F */   /* overlay 5 entry, ovl5:160A */
 extern void ShutdownGame(void); /*@ 07C8:058A */
+extern void far *memset(void far *dst, int c, unsigned n); /*@ 0000:6384 */
 
 void Obj0EC3(struct Obj28 far *obj);   /* forward: Obj0E48 reaches it before its definition */
 extern int f17A6_0314(int obj, int volume); /*@ 17A6:0314 */
@@ -415,7 +416,10 @@ extern void fOvl4_1F51(int n); /*@ 2116:005C */   /* overlay 4 entry, ovl4:1F51 
    each of m12 and m14 that is set, roll 1d2 and on a 1 resolve it through 0BD2:089E and hand it to
    0BD2:01D0 with the object's id and hit; give the party the record's m13 experience, move the
    object to id 0, shut the game down when its b0 is 0x15, and clear the type-8 objects. Called by
-   0E48, 0FBE and 1410. */
+   0E48, 0FBE and 1410. DRAFT: the body is written and every byte agrees except the register the
+   pinned compiler picks for `roll`: ours keeps it in SI (0EC3:000E `mov si, ax`) and the original in
+   DI (`mov di, ax`, and the calls then push DI before SI); making `hit` block-local did not change
+   it. */
 /*@ 08E6:0EC3 draft */ void Obj0EC3(struct Obj28 far *obj)
 {
     int roll;
@@ -473,7 +477,10 @@ extern void fOvl4_1F51(int n); /*@ 2116:005C */   /* overlay 4 entry, ovl4:1F51 
 }
 /* 08E6:106B: roll 1d20 for a hit against character `who`; a roll of 20 always hits; otherwise the
    target's mE3 bit 9 costs 2 and gFBD2 bit 5 costs 1. The hit succeeds when the roll reaches
-   SubtractInts(the object's record m01, the character's m1D). Called by 10F3 and 0EF3:0A3F. */
+   SubtractInts(the object's record m01, the character's m1D). Called by 10F3 and 0EF3:0A3F.
+   DRAFT: blocked on the project-wide mE3 `and ax, K; or ax, 0` codegen (the same as 0D1C:0A43 and
+   1547:0009): ours folds `gChars[who].mE3 & 0x200` into `test word ptr [..], 0x200`
+   (106B:0033), the original is `mov ax, es:[..]; and ax, 0x200; or ax, 0; je`. */
 /*@ 08E6:106B draft */ int Obj106B(struct Obj28 far *obj, int who)
 {
     int index;
@@ -492,11 +499,43 @@ extern void fOvl4_1F51(int n); /*@ 2116:005C */   /* overlay 4 entry, ovl4:1F51 
     return roll >= need || roll == 0x14;
 }
 /*@ 08E6:10F3 stub */ void Obj10F3(void) {}
-/*@ 08E6:131D stub */ void Obj131D(int index) {}
+/* 08E6:131D: build object `index` from scratch: clear it, set its b0, kind, frame, orientation,
+   m07, type and timer and its record's m19, roll its count from the record's m02 (or 1d4 when m02
+   is 0xff), set m12 and m14, and move it to `id`. Does nothing when id is 0. Called by 1505. */
+/*@ 08E6:131D */ void Obj131D(int index, int kind, int id, int frame, int orient, int b0, int m07, int type, int timer, int m12, int m14)
+{
+    struct Obj28 far *obj;
+
+    obj = &gObjs[index];
+    memset(obj, 0, 0x1c);
+    if (id == 0)
+        return;
+    kind <<= 1;
+    if (index & 1)
+        kind++;
+    obj->b0 = b0;
+    obj->m19 = gTable1A3B[b0].m18;
+    obj->kind = kind;
+    obj->frame = frame;
+    obj->m07 = m07;
+    obj->type = type;
+    obj->timer = timer;
+    obj->orient = orient;
+    if (gTable1A3B[b0].m02 != -1)
+        obj->hitPoints = obj->count = RollDice(gTable1A3B[b0].m02, 8, 0);
+    else
+        obj->hitPoints = obj->count = RollDice(1, 4, 0);
+    obj->m12 = m12;
+    obj->m14 = m14;
+    MoveObjectToId(obj, id, orient);
+}
 /* 08E6:1410: when the effect mode gF51B and its deadline say an effect is due, run the 122E entry
    with (0, 0x20): when no object of the 30 has a count left, run 0EC3 on the first object (from
    index 1) whose 17A6:0F61(id, gSoundVolume) is over 3; then advance the deadline by gF510 and
-   clear gF540. Called by 1414:04E7 and overlay 6. */
+   clear gF540. Called by 1414:04E7 and overlay 6. DRAFT: the six 32-bit deadline comparisons are
+   written and the mode-1 and mode-2 tests now agree, but the second half of the mode-3 test
+   `gDeadline >= g8492` is laid out the other way round: ours (1410:005A `jb` skip, fall through to
+   fire) where the original has `jae` fire, `jmp` skip. */
 /*@ 08E6:1410 draft */ void Obj1410(void)
 {
     int i, any;
@@ -537,7 +576,22 @@ fire:
     gDeadline += gF510;
     gF540 = 0;
 }
-/*@ 08E6:1505 stub */ void Obj1505(void) {}
+/* 08E6:1505: when the object id `id` has no count in gB894, fill the first free object slot (count
+   <= 0) by calling 131D with the eight new-object fields. Called by 122E:0B89. Purpose unknown:
+   what the fields select. */
+/*@ 08E6:1505 */ void Obj1505(int kind, int id, int frame, int orient, int b0, int m07, int type, int timer, int m12, int m14)
+{
+    int i;
+
+    if (gB894[id * 9 + 4] & 7)
+        return;
+    for (i = 0; i < 30; i++) {
+        if (gObjs[i].count <= 0) {
+            Obj131D(i, kind, id, frame, orient, b0, m07, type, timer, m12, m14);
+            break;
+        }
+    }
+}
 /* 08E6:155F: fill a six-entry list with -1, then set list[frame] = i for every object of the 30
    whose id equals `key`. The caller passes an eight-word stack array as a far pointer. Called by
    15B4 and 16D6. */
@@ -644,7 +698,10 @@ fire:
 }
 /* 08E6:17FD: fill `list` with gObjs indices and end it with -1: when scanAll is set, every object
    whose id is key; otherwise when scanFiltered is set, the single index 1775(key, field, flags)
-   finds; otherwise the first object 189D accepts for (key, field). Called by 0D1C:0A43. */
+   finds; otherwise the first object 189D accepts for (key, field). Called by 0D1C:0A43. DRAFT: the
+   body is written and the first two branches agree; the shared `list++` tail after the scanFiltered
+   and 189D branches is placed 12 bytes nearer in the original (17FD:0059 `jmp` 0x28 to the tail, ours
+   0x34), a -O basic-block layout difference. */
 /*@ 08E6:17FD draft */ void Obj17FD(int far *list, int key, int field, char flags, char scanAll, char scanFiltered)
 {
     struct Obj28 far *obj;
