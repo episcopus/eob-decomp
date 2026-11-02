@@ -9,7 +9,8 @@
 ; gHideDepth is decremented and, only at zero, move the drawn position to the mouse position, save
 ; and draw.
 ; 1BBE:01FE HidePointerZone and 1BBE:02C2 ShowPointerZone are the hide/show pair that carry the
-; zone (the caller's rectangle, gZoneLeft..gZoneBottom, read by the mouse handler 1A72:0244) and the
+; zone (the caller's rectangle, stored in gZoneLeft..gZoneBottom with left and top reduced by the
+; sprite size, read by the mouse handler 1A72:0244) and the
 ; gPointerState flag (bit 8000 a zone hide is in force, bit 4000 a redraw is owed at the show);
 ; 1BBE:0307 LockHidePointer and 1BBE:0332
 ; LockShowPointer hide and show without that state. Every wrapper that hides or draws takes the pointer
@@ -33,15 +34,16 @@
                                                 ; wait while it is set and then increment it (not atomic;
                                                 ; src/E1BB1.ASM:53 says the same of its acquire; 1BBE:0213,
                                                 ; 02C6, 030A and 0335), while the mouse handler tests it and
-                                                ; drops its event when set (src/E1A72.ASM:382-384: the test at
-                                                ; :382, the free path `je L020C` at :383 and the drop at :384
-                                                ; `L01E9: jmp L027F` with no position update), sets it to 1 when
-                                                ; free (:393, label L020C) and clears it to 0 (:425, label
-                                                ; L0279). It does not increment and does not wait.
+                                                ; drops its event when set (src/E1A72.ASM, label L01E2, grep
+                                                ; `_gPointerBusy`: the test, then `je L020C` for the free path,
+                                                ; and the drop at label L01E9, `jmp L027F`, with no position
+                                                ; update), sets it to 1 when free (label L020C) and clears it
+                                                ; to 0 (label L0279). It does not increment and does not wait.
         EXTRN   _gCursorX:WORD          ; @ ds:8138: mouse position, x in pixels (written by the handler
-                                        ; at src/E1A72.ASM:396-397, skipped by `je L0221` at :395 when
-                                        ; `cmp byte ptr [g80EC],2` at :394 is 2; set to 0A0h and 64h by
-                                        ; InitMouse at src/E1A72.ASM:268-269; and written by
+                                        ; at src/E1A72.ASM, label L020C, grep `_gCursorX`: it stores cx,
+                                        ; skipped by `je L0221` when `cmp byte ptr [g80EC],2` is 2, and the
+                                        ; reload is at label L0221; set to 0A0h and 64h by InitMouse, grep
+                                        ; `_gCursorX`, the 0A0h and 64h stores; and written by
                                         ; src/E1BF3.ASM:35)
         EXTRN   _gCursorY:WORD          ; @ ds:813A: mouse position, y in pixels
         EXTRN   _gHideDepth:WORD        ; @ ds:8146: hide depth, 0 = drawn (1BBE:0002/00ED change it)
@@ -57,10 +59,10 @@
         EXTRN   _gDrawnY:WORD           ; @ ds:815E: position drawn at last, y in pixels
         EXTRN   _gPointerState:WORD     ; @ ds:8160: bit 8000 a zone hide is in force, bit 4000 a
                                         ; redraw is owed at the show, low byte a repeat count (1BBE:01FE/
-                                        ; 02C2; the handler tests 8000h at src/E1A72.ASM:407, before
-                                        ; its zone test at :409-417, and sets 4000h at :391 for a hide in
-                                        ; the zone, on the path (label L01EC) that calls _HidePointer at
-                                        ; :389, inside the bracket at :385-390)
+                                        ; 02C2; the handler tests 8000h at src/E1A72.ASM, grep
+                                        ; `_gPointerState`, before its zone test, and sets 4000h for a hide
+                                        ; in the zone on the path labelled L01EC, whose `call far ptr
+                                        ; _HidePointer` sits inside the [ds:80AA]/[ds:80A2] bracket)
         EXTRN   _gZoneLeft:WORD         ; @ ds:8162: hide zone, left in pixels, stored as the argument
                                         ; less the sprite width in pixels (_gPointerWidth8 shifted left
                                         ; three times, 1BBE:0234, 025B); the handler's left test is
@@ -124,7 +126,7 @@ _f1BBE_0001 LABEL BYTE                    ; @ 1BBE:0001
 ; before it stores the new sizes (src/E1BB1.ASM:162-164), which is what keeps the old buffer valid
 ; while the shape is replaced. Called by 1BB1:0002, 1BF3:000E,
 ; the mouse handler inside _InitMouse (1A72:00DA; the handler entry is 1A72:017A) at
-; src/E1A72.ASM:389 (the in-zone hide, label L01EC) and :422 (the hide in the L025C path),
+; src/E1A72.ASM, label L01EC (the in-zone hide) and label L025C (the other path),
 ; and by the wrappers below. Pushes AX only to preserve the caller's.
         PUBLIC  _HidePointer            ; @ 1BBE:0002
 _HidePointer PROC FAR
@@ -219,7 +221,7 @@ _HidePointer ENDP
 ; 1BBE:0002, the screen under it is saved through [ds:80AE] (x, y, w, h, _gPointerBackOff/_gPointerBackSeg) and the
 ; shape record _gPointerShapeOff/_gPointerShapeSeg is drawn at the unclipped position gShapeX/gShapeY through [ds:80C2]
 ; (mode 0). Called by 1BB1:0002, 1BF3:000E and the mouse handler inside _InitMouse (1A72:00DA;
-; the handler entry is 1A72:017A) at src/E1A72.ASM:423 (the L025C path, after the hide at :422),
+; the handler entry is 1A72:017A) at src/E1A72.ASM, label L025C (after its _HidePointer call),
 ; and by the wrappers below. Pushes AX to preserve the caller's.
         PUBLIC  _ShowPointer            ; @ 1BBE:00ED
 _ShowPointer PROC FAR
@@ -442,10 +444,10 @@ L0300:  dec     word ptr [_gPointerBusy]
 _ShowPointerZone ENDP
 
 ; 1BBE:0307 LockHidePointer: hide the pointer, taking the busy flag and bracketing the work with
-; [ds:80AA] and [ds:80A2]. "Lock" is the callers' name for the frame bracket (src/E14EF.C:69-70 call
-; this pair "start a frame" and "end a frame"), not mutual exclusion: the busy flag is a test then an
-; increment (1BBE:030A), not atomic (src/E1BB1.ASM:53 says the same of its acquire). Like 1BBE:01FE
-; without the rectangle, the zone and the redraw flag.
+; [ds:80AA] and [ds:80A2]. "Lock" is the callers' name for the frame bracket (src/E14EF.C:75 calls
+; LockHidePointer "start a frame" and :76 calls LockShowPointer "end a frame"), not mutual exclusion:
+; the busy flag is a test then an increment (1BBE:030A), not atomic (src/E1BB1.ASM:53 says the same
+; of its acquire). Like 1BBE:01FE without the rectangle, the zone and the redraw flag.
 ; Called by many units of the resident code and the overlays, usually paired with 1BBE:0332 (the
 ; call-site lists differ: 0ACD:0E8A, 0ACD:0F72, ovl0:2547 and ovl5:17C8 call only the show, ovl0:28F9
 ; only the hide).
