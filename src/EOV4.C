@@ -56,11 +56,15 @@ extern signed char g6CC6[]; /*@ ds:6CC6 */   /* per slot,i signed {left,right} b
    The pair is cached back into gViewSlots and SetRegionRect fits region `region` to the span.
    Called by Ovl4_1E18 at ovl4:1E23. Purpose unknown: what the records and adjustments mean.
    DRAFT: the register allocation differs. The original has sub sp,6 (bp-2 i, bp-4 pair, bp-6
-   heading) and keeps every local in memory, using SI as the scratch that holds 2*slot (the shared
-   index of the `if`, the two loads and the final stores) and DI for adjust; ours promotes `slot` to
-   DI (so the index is recomputed per use) or the loop counter to SI, giving sub sp,4. Tried all 24
-   declaration orders of {pair,i,heading,adjust} with every `register` subset, `pair` vs inline
-   `2 * slot` in the condition, `slot *= 18` vs `slot = slot * 18`, a `while` loop, and -B. */
+   heading), keeps 2*slot in SI across the `if` (the shared index of the condition, the two loads
+   and the final stores) and adjust in DI; ours promotes `slot` to DI (the index recomputed per use)
+   or the loop counter to SI, giving sub sp,4. A local `j = (slot + i) * 2` is needed so the else's
+   index takes SI; with it every local but `adjust` is in memory. `register int pair` then reproduces
+   the whole if/then and the entry (sub sp,6, pair in SI), but the compiler drops the else's
+   redundant `pair = 2 * slot`, so the end label (and the then tail `jmp`) lands one byte early
+   (+0037); recomputing pair in the else adds 7 bytes instead. Tried all declaration orders of
+   {i,pair,heading,adjust,j} with every `register` subset, `pair` vs inline `2 * slot` in the
+   condition, `slot *= 18` vs `slot = slot * 18`, a `while` loop, -B, -G and -r-; none changes it. */
 /*@ ovl4:0097 draft */ void ComputeViewSpan(int slot, int far *left, int far *right, int region)
 {
     int pair;
@@ -192,10 +196,12 @@ extern unsigned char gViewBufADB0[]; /*@ ds:ADB0 */  /* the view pixel buffer (t
    src[width * row + (width - 1 - col)], skips it when zero and stores it to
    ds:ADB0[(y + row) * 0x16 + x + col] with bit 0x4000 toggled, skipping columns outside 0..0x15.
    Called by Ovl4_044B at ovl4:04B4 and ovl4:04CD. Purpose unknown: what the bit marks.
-   DRAFT: the body matches except the loop registers. The original keeps the outer counter (row) in
-   CX, the inner (col) in DI and the pixel in SI; ours puts row in DI, col in SI and pixel in CX
-   (TCC can use CX for a variable). Tried all 6 declaration orders of {row,col,pixel} with every
-   `register` subset, `unsigned row`, and a nested if/else instead of `continue`. */
+   DRAFT: the body and the pre-loop setup match; only the loop registers differ. The original keeps
+   the outer counter (row) in CX, the inner (col) in DI and the pixel in SI; ours puts row in DI, col
+   in SI and the pixel in AX (so it pushes width*row instead of using CX). Tried all 6 declaration
+   orders of {row,col,pixel} with every `register` subset, int and unsigned types, while/do-while
+   loops, -B, -G and -r-; the allocation does not move. The difference is TCC's choice of which of
+   the three live values takes SI/DI, not a source form found yet. */
 /*@ ovl4:036A draft */ void ToggleViewColumn(char x, char y, char page, int x2, char width, char height)
 {
     unsigned int far *src;
