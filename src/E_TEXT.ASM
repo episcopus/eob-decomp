@@ -78,7 +78,7 @@ _f0_03FA PROC NEAR
         ret
 _f0_03FA ENDP
 
-; 0000:3F77: the PC speaker driver on: installs the INT 08h handler at 3E66, programs the PIT and clears the ring
+; 0000:3F77: the AdLib driver on: installs the INT 08h handler at 3E66, resets the AdLib voices (413B), programs the PIT and clears the ring
         PUBLIC  _f0_3F77              ; @ 0000:3F77
 _f0_3F77 PROC NEAR
         push      ds
@@ -122,7 +122,7 @@ L_3FAE:
         retf
 _f0_3F77 ENDP
 
-; 0000:3FCA: the PC speaker driver off: restores the saved INT 08h vector and stops the PIT (E07C8.C:65)
+; 0000:3FCA: the AdLib driver off: restores the saved INT 08h vector, resets the AdLib voices and stops the PIT (E07C8.C:65)
         PUBLIC  _f0_3FCA              ; @ 0000:3FCA
 _f0_3FCA PROC NEAR
         push      ds
