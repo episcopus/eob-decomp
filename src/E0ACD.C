@@ -695,10 +695,18 @@ call:
    ds:B899 record list with the kind g1A1B[gFBCC * 4 + gEFB2]. When a fresh item is found it marks
    it used (f0BD2_0AF2) and shows it (f0BD2_0458 and f122E_1DA8, or SetMouseItem / f1547_0991 and
    f0BD2_01D0 at row 0x10), sets gDF4C, and stops; an empty or repeated item runs f0BD2_01D0 and
-   clears gF3BA. It redraws gA99A through f0DE8_0D5E at the end. Everything matches except one
-   byte: the original stores the picked item with `mov [gF3BA], ax`, our build with
-   `mov [gF3BA], di` (both hold the item); the same value, a different register the source cannot
-   choose. Open: another form of the gF3BA assignment. */
+   clears gF3BA. It redraws gA99A through f0DE8_0D5E at the end. blocked: matches every byte except
+   the store at 0ACD:0C7F, which the original writes with `mov [gF3BA], ax` (the 3-byte a3 form) and
+   our build with `mov [gF3BA], di` (89 3e, one byte longer, shifting every later jump). Both
+   registers hold the item (di is pushed as the first argument of f0BD2_0AF2, f0BD2_0458 and
+   SetMouseItem later; ax still holds it from the call at 0ACD:0C59). All bytes before the store are
+   identical, so the source form of that one statement decides the register. Tried (all still emit
+   di): inline assignment in the preceding if, `!item`, the store before/after `flag`, a cast,
+   a ternary, `item + 0`, `(item, item)`, `item ^ 0`, `item | 0`, `item * 1`, `item / 1`, `(int)`,
+   `(long)`, pointer and volatile dereferences, `register`, `unsigned`, a moved declaration, and
+   do/while, while/break, for(once) and extra braces/trailing statements around it. No source form
+   tried makes tc100 store the register variable item from ax; the original compiler did. The same
+   compiler-build class as the F_SCOPY order (eov6) and 0ACD:091C. */
 /*@ 0ACD:0BA6 draft */ void PickListItem(void)
 {
     int flag;

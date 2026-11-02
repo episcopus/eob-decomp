@@ -2100,6 +2100,7 @@ unit = "e0acd"
 addr = "0ACD:0644"
 size = 271
 evidence = ["frame"]
+notes = "stub, blocked (src/E0ACD.C): the prologue copies the 4-byte table at ds:36BC and the 16-byte table at ds:36C0 into stack locals with F_SCOPY@ (0000:78C9). The original pushes the destination segment before the destination offset (`push ss; lea ax,[bp-4]; push ax; push ds; mov ax,0x36bc; push ax; mov cx,4; lcall 0,0x78c9`); the pinned tc100/tc101 struct copy pushes the offset first, in every construct and switch tried (whitepaper 2.1.1; escalation eov6, 2026-11-01, all 15 F_SCOPY@ sites in EOB.EXE are segment-first). The sound/spell dispatch behind it (through gB894 and g194B) is not written until the copies are."
 
 [[function]]
 id = "e0acd_0753"
@@ -2157,10 +2158,10 @@ unit = "e0acd"
 addr = "0ACD:091C"
 size = 211
 evidence = ["near", "frame"]
-notes = "draft 2026-10-31 (src/E0ACD.C): everything matches except tail merging. With -O our build merges `gF51A = 0; break;` of case 0 into the end of case 2, and `gF51A = 1; break;` of case 2 into case 0; the original keeps both (11 bytes longer). Without -O, -Z has no effect and jump chains stay (13 bytes longer); -G uses add sp; -P (C++) still merges. Tried: early break, if/else, for(;;) with inner break, default label, no final break, volatile. Open: another switch, or the compiler's tail-merge rule."
 name = "Turn091C"
 level = "L2"
 match_flags = "-ml -O -Z -B"
+notes = "matched 2026-11-01: the two character searches are `do { ... } while (!f0D1C_0670(gA99A, 1)); gF51A = v;` loops, not `for(;;) { ...; if (f0D1C_0670(gA99A, 1)) { gF51A = v; break; } }`. With the for(;;) form the compiler cross-jumps case 0's `gF51A = 0` into case 2's and case 2's `gF51A = 1` into case 0's (11 bytes shorter); with the do/while the two stores stay apart, as the original has them."
 
 [[function]]
 id = "e0acd_09ef"
@@ -2181,6 +2182,7 @@ evidence = ["near", "frame"]
 name = "Action0A34"
 level = "L2"
 match_flags = "-ml -O -Z -B"
+notes = "matched 2026-11-01: case 0 is `Turn091C(dir); goto done;` and case 1 falls through to `done: return;`, not `break`. With a plain switch/break the compiler cross-jumps the two calls' argument cleanup (`pop cx` after each), one byte shorter than the original."
 
 [[function]]
 id = "e0acd_0a61"
@@ -2198,6 +2200,7 @@ unit = "e0acd"
 addr = "0ACD:0BA6"
 size = 503
 evidence = ["near", "frame"]
+notes = "draft 2026-11-01 (src/E0ACD.C): matches every byte except the store at 0ACD:0C7F. The original writes the picked item with `mov [gF3BA], ax` (the 3-byte a3 form); our build writes `mov [gF3BA], di` (89 3e, one byte longer), shifting every later jump by one. The value is the same (di is proven to hold the item: it is pushed as the first argument of f0BD2_0AF2, f0BD2_0458 and SetMouseItem later, and ax still holds it from the call at 0ACD:0C59). All bytes before the store are identical, so the source form of that one statement decides the register. Tried ~30 forms at `flag = 1; if (gF3BA == -1) gF3BA = item;`: the inline assignment in the preceding if, `!item` for `item == 0`, the store before/after `flag`, a cast, a ternary, `item + 0`, `(item, item)`, `item ^ 0`, `item | 0`, `item * 1`, `item / 1`, `(int)`, `(long)`, pointer and volatile dereferences, `register`, `unsigned`, a moved declaration, and do/while, while/break, for(once), extra braces/trailing statements around it. Every one still emits `mov [gF3BA], di` (some add bytes). blocked: no source form tried makes tc100 store the register variable item from ax; the original compiler did. The same class as the tail-merge and F_SCOPY build questions (eov6, 0ACD:091C)."
 
 [[function]]
 id = "e0acd_0d9d"
