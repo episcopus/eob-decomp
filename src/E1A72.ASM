@@ -43,7 +43,7 @@
         ;                                              with a test then a store, so it is not a lock
         EXTRN   g8130:WORD              ; @ ds:8130: mouse buttons seen by the last event
         EXTRN   g8132:WORD              ; @ ds:8132: a mask: when nonzero and the middle bit
-        ;                                              (BX bit 2, value 4) is set, it sets BX to
+        ;                                              (BX bit 2, value 4 [H]) is set, it sets BX to
         ;                                              (BX and 3) or the mask: the old low two bits
         ;                                              are kept, the rest of BX is dropped, and the
         ;                                              mask supplies whatever bits it has. Nothing
@@ -56,9 +56,9 @@
         ;                                              replacement is behaviour a port must keep
         EXTRN   g8134:WORD              ; @ ds:8134: accumulated button changes; DrawOptionList
         ;                                              (14EF:0154) clears it as its last statement
-        ;                                              (14EF:0268, E14EF.C:197), and RunMapLoop
-        ;                                              clears it at its start, after EnterMapScreen
-        ;                                              (0ACD:0E8A, E0ACD.C:886)
+        ;                                              (14EF:0268), and RunMapLoop clears it
+        ;                                              after EnterMapScreen and LockShowPointer
+        ;                                              (0ACD:0EC8, E0ACD.C:886)
         EXTRN   g8136:WORD              ; @ ds:8136: latched to 1 once any button has been seen;
         ;                                              this unit never clears it, E1AAD.ASM:1356
         ;                                              sets it too and nothing in src/ clears it
@@ -164,7 +164,7 @@
 ; vector was saved at DGROUP:FC08 by 07C8:0088) and always leaves through that saved vector, so it
 ; is a hook around the runtime's overlay trap [H] (nothing in this file proves the trap is the
 ; runtime's; what the file shows is that it chains to the saved vector and re-finds EOB.EXE when it
-; fails). It saves the nine registers it uses (:168-176), not the flags, points DS at DGROUP and
+; fails). It saves the nine registers it uses (:178-186), not the flags, points DS at DGROUP and
 ; calls `access("EOB.EXE", 0)`: when that returns zero (the program file is accessible) it goes
 ; straight to the chain. Otherwise it closes the file handle kept at 20B5h:00B8h, probes EOB.EXE
 ; through 1C0E:1310 (which opens it only to find its drive and closes it at once) and reopens it
@@ -348,7 +348,7 @@ L0174:  pop     es
 ; 13Fh (only x is clamped: nothing here bounds y, so the driver's range is the only y bound [H]) and
 ; keeps the event position at DGROUP:813C/813E. The mask at DGROUP:8132 is 0002 in the EOB.EXE
 ; image, so this branch is live: when the middle button bit [H] (BX bit 2, value 4) is set it sets
-; BX to (BX and 3) or the mask (`and bx,3; or bx,ax`, 1A72:01A6), the old low two bits are kept
+; BX to (BX and 3) or the mask (`and bx,3` 1A72:01B3, `or bx,ax` 1A72:01B6), old low bits kept
 ; and every other bit is dropped, so a middle-button event leaves BX as (BX and 3) or 2, forcing
 ; bit 1. The installed mask 1Fh (INT 33h function 0Ch) requests moves and left and
 ; right presses and releases [H]; BX carries the full button state on each event the handler gets,
@@ -357,7 +357,7 @@ L0174:  pop     es
 ; 1AAD:0B0E and folds the change into DGROUP:8134. With the busy flag free it publishes the position
 ; to DGROUP:8138/813A (unless DGROUP:80EC is 2), and when the published position (DGROUP:8138/
 ; 813A) differs from the position last drawn (DGROUP:815C/815E) and redraws are not
-; suppressed (DGROUP:8146 = 0) it redraws through the far pointers: with gPointerState bit 8000h
+; suppressed (DGROUP:8146 = 0) it redraws through the far pointers: with _gPointerState bit 8000h
 ; (a zone hide is in force) set and the position in the zone it calls DGROUP:80AA (with
 ; DGROUP:8172/8174), HidePointer (1BBE:0002) and DGROUP:80A2, then sets 4000h (1A72:0204);
 ; otherwise it calls DGROUP:80AA, HidePointer, ShowPointer (1BBE:00ED) and DGROUP:80A2 (1A72:025C).
@@ -371,9 +371,9 @@ L0174:  pop     es
 ; y, x and button word all survive the call. The y equals the published _gCursorY unless
 ; DGROUP:80EC is 2 (the store at 1A72:021D was skipped), when the zone test uses the event y
 ; while the x test uses the published _gCursorX (reloaded at 1A72:0221).
-; QUIRK 1A72:0248: the `x < gZoneLeft` test jumps into the y test, so the hide zone's left edge is
-; never enforced (only x > gZoneRight and y outside [top, bottom] leave the zone). The handler calls
-; no earlier mouse handler (none is saved in this unit).
+; QUIRK 1A72:0248: the `x < _gZoneLeft` test jumps into the y test, so the hide zone's left
+; edge is never enforced (only x > _gZoneRight and y outside [top, bottom] leave the zone). The
+; handler calls no earlier mouse handler (none is saved in this unit).
 MouseEventHandler:
         push    ds
         push    ax
