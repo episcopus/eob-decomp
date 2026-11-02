@@ -2,8 +2,8 @@
    Turbo C++ 1.00, -ml -Z -O. The 10 bytes before the segment, 07A9:0000 to 07A9:0009
    (mov [0071],ax; mov ax,[88A2]; mov [006F],ax; ret), are also code, but no unit covers them
    (re/units.toml). StartupAlloc (07A9:000A) is this unit's first function; main calls it at
-   src/E07C8.C:157, inside `if (g3092)`, after it sets the palette, the text attributes and the
-   callback (src/E07C8.C:140 to 152). In code order: it makes the start-up far
+   src/E07C8.C:194, inside `if (g3092)` at src/E07C8.C:189, after it sets the palette, the text
+   attributes and the callback (src/E07C8.C:173 to 188). In code order: it makes the start-up far
    allocations through MemAlloc (7500 bytes at ds:8DCA, 6000 at ds:F43E, a 120-byte sound map at
    ds:DCAC (game number to driver number, read from the driver file), 4096 at ds:DCFC, 1600 at
    ds:F534 the ITEMRMP buffer; the sizes are the MemAlloc arguments at 07A9:002F, 0046, 005D,
@@ -12,7 +12,7 @@
    (177D:000A, 07A9:00D2), passes the slot 7 segment (gSegsFC0C[7], the word at ds:FC1A) and size
    0xFC00 to SetUnpackBuffer (1B82:0217, 07A9:00DB/00DF; 0xFC00 is the unpacker's work-buffer
    requirement, see UNPACK_BUFFER_SIZE). Slot 7's own block is 0xCB20 bytes in cases 0 to 3
-   (src/E07C8.C:213, 222, 231, 237) and 0xFC00 only in case 4 (src/E07C8.C:247). It clears ds:810E
+   (src/E07C8.C:256, 265, 274, 280) and 0xFC00 only in case 4 (src/E07C8.C:290). It clears ds:810E
    (07A9:00E6), loads the item tables (LoadItemData, 07A9:00EC), selects the 6x6 font as the
    current font (1A47:0169(gA9C0), 07A9:00F9) and loads the item sheets (LoadDecorateIcons, Ovl2
    entry 8, 07A9:0100), which reads ITEMRMP (FileRead at ovl2:047F, inside LoadItemSheets,
@@ -48,7 +48,7 @@
    entry offsets at 2 * (code - 0x100), the lengths at +0x7E00, described at src/E1D9A.ASM:424-429
    and built at :483, :494 and :499), past the 0xCB20 block of cases 0 to 3, but no pinned file
    uses format 2 [H] (docs/design/WHITEPAPER.md:157). Slot 7's own block is 0xCB20 bytes in cases
-   0 to 3 (src/E07C8.C:213, 222, 231, 237) and 0xFC00 only in case 4 (src/E07C8.C:247) */
+   0 to 3 (src/E07C8.C:256, 265, 274, 280) and 0xFC00 only in case 4 (src/E07C8.C:290) */
 #define UNPACK_BUFFER_SIZE 0xFC00
 /* the gIconsDDE4 index that aliases gDF48, the translated icon image shown as the mouse pointer for
    flagged items (0xDDE4 + 0x59 * 4 = 0xDF48); slots 1..0x58 hold the item icons (src/EOV2.C:290) */
@@ -191,7 +191,7 @@ extern void far *gSegEFC2; /*@ ds:EFC2 */  /* slot 3's far pointer, f19EC_0002(3
                                               saved screen buffer (src/E17A6.ASM:22), read at
                                               src/E17A6.ASM:256-257 when g8102 != 2 [H]. What the
                                               buffer is is Purpose unknown */
-/* the page/buffer segment table (src/E07C8.C:49, src/E19EC.C:15), whose eighth word at ds:FC1A
+/* the page/buffer segment table (src/E07C8.C:74, src/E19EC.C:15), whose eighth word at ds:FC1A
    is slot 7, the segment gSegDCA6 holds (f19EC_0002(7), 07A9:00A3). */
 extern unsigned gSegsFC0C[]; /*@ ds:FC0C */
 /* the net allocation counter: MemAlloc adds one at src/E19BC.C:112 and MemFree subtracts one at
@@ -199,8 +199,8 @@ extern unsigned gSegsFC0C[]; /*@ ds:FC0C */
    calls and can fall below the number of live blocks (src/E19BC.C:17-21). StartupAlloc sets it
    to 0 at 07A9:00E6, after its five allocations, so they are no longer counted: Purpose unknown. */
 extern unsigned gAllocCount; /*@ ds:810E */
-extern void far *gA9C0; /*@ ds:A9C0 */  /* the 6x6 font loaded from FONT6.FNT (src/E07C8.C:48 and
-                                           :252, the call at 07C8:0419, the store at 07C8:0420); the
+extern void far *gA9C0; /*@ ds:A9C0 */  /* the 6x6 font loaded from FONT6.FNT (src/E07C8.C:73 and
+                                           :295, the call at 07C8:0419, the store at 07C8:0420); the
                                            6x6 size is eob/FONT6.FNT bytes 102h and 103h (6 and 6, the
                                            height and width bytes src/E1A47.C:81-85 reads),
                                            docs/design/WHITEPAPER.md:169 [V] */
@@ -212,7 +212,7 @@ extern int gMouseDisabled; /*@ ds:814A */  /* nonzero disables the mouse pointer
                                               07A9:0148 (`cmp [814A],0; je`) runs SetMouseItem's body
                                               when zero. main sets it before StartupAlloc: 1 when
                                               !gMouseHandlerInstalled, else !mouse
-                                              (src/E07C8.C:153-156);
+                                              (src/E07C8.C:190 to 193);
                                               src/E0D1C.C:110 says the same */
 extern int gFBCE; /*@ ds:FBCE */  /* the item index shown by the mouse (src/E0D1C.C:109); SetCurrentItem
                                      stores it (0D1C:0311) */
@@ -224,7 +224,7 @@ extern unsigned char gFBD2; /*@ ds:FBD2 */  /* bit 0, with Entry14.flags bit 0x8
 extern int g8102; /*@ ds:8102 */  /* the mode word SetMouseItem tests at 07A9:016A (the colour row
                                      against the ds:0090 dummy) and passes to TranslateImage (07A9:018F);
                                      the switch at 17A6:199E tests it (cases 0, 2 and 3). src/ reads
-                                     it four ways: "graphics choice" (src/E07C8.C:27), "the video
+                                     it four ways: "graphics choice" (src/E07C8.C:30), "the video
                                      mode ... 3 and 4 select the 6-bit cells" (src/E1DE7.C:46), "the
                                      video mode the game initialised (3 is CGA-compatible)"
                                      (src/E082C.C:41; the bare phrase at src/E1547.C:55), and "nonzero: a colour row
@@ -322,7 +322,7 @@ extern void SetMousePointerShape(int hotX, int hotY, void far *icon); /*@ 1BB1:0
         ;
     gFB45 = 0;
     /* of the five start-up allocations only this block asks for flag 0x20 (the other four pass 0;
-       0x20 also appears in src/E07C8.C:211-247 and in the two Unpack allocations at src/E1B82.C:165
+       0x20 also appears in src/E07C8.C:254 to 290 and in the two Unpack allocations at src/E1B82.C:165
        and :174): the bit is defined at src/E19BC.C:49 (described at :44-46), and src/E19BC.C:62-66
        (code at :81 and :95-98) turns it into an offset-0 block, the block shape E1B82.C:21-25
        describes for the work buffer. Why this block alone gets the flag is Purpose unknown. */
