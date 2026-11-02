@@ -14,6 +14,14 @@ extern void FileRead(int handle, void far *buf, unsigned long len); /*@ 1C0E:040
 extern void FileClose(int handle); /*@ 1C0E:03BB */
 extern void far *gSegDF4E; /*@ ds:DF4E */
 extern void far *gE062; /*@ ds:E062 */
+extern long gFB5E[]; /*@ ds:FB5E */
+
+struct Triple6 {            /* six bytes, the record InitGameTables clears */
+    long v;
+    char c[2];
+};
+
+extern struct Triple6 gA99C[]; /*@ ds:A99C */
 
 struct WallDec {            /* a 52-byte wall set decoration */
     char idx[0xc];
@@ -85,7 +93,24 @@ struct WallDec {            /* a 52-byte wall set decoration */
     return (value & (1 << bit)) ? 1 : 0;
 }
 /*@ ovl3:01C8 stub */ void Ovl3_01C8(void) {}
-/*@ ovl3:031A stub */ void Ovl3_031A(void) {}
+/* ovl3:031A: frees and clears the six far pointers in the tables at ds:FB5E (stride 4) and the six
+   in ds:A99C.v (stride 6). The counterpart of the allocation InitGameTables (ovl2:0496) makes.
+   Called by ovl3:0A7C and overlay 5. */
+/*@ ovl3:031A */ void FreeEffectTables(void)
+{
+    int i;
+
+    for (i = 0; i < 6; i++) {
+        if (gFB5E[i]) {
+            farfree((void far *)gFB5E[i]);
+            gFB5E[i] = 0;
+        }
+        if (gA99C[i].v) {
+            farfree((void far *)gA99C[i].v);
+            gA99C[i].v = 0;
+        }
+    }
+}
 /*@ ovl3:03A2 stub */ void Ovl3_03A2(void) {}
 /*@ ovl3:05D2 stub */ void Ovl3_05D2(void) {}
 /*@ ovl3:0624 stub */ void Ovl3_0624(void) {}
