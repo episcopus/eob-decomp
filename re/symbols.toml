@@ -7236,9 +7236,9 @@ unit = "e1e8b"
 addr = "1E8B:0613"
 size = 59
 evidence = ["near"]
-name = "_DiscardOverlayRecords"
 level = "L2"
 match_flags = "tasm /mx"
+name = "_CompactOverlayRecords"
 
 [[function]]
 id = "e1e8b_064e"
