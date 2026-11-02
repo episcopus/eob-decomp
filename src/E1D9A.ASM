@@ -1,12 +1,15 @@
 ; Unit at EOB.EXE 1D9A:000B (1067 bytes, 8 functions): the four packed-file decoders the loader
-; (E1B82.C Unpack, by the format byte) calls with segment arguments. 1D9A:0013 Unpack4 expands an
-; LZ77-style stream (literal runs, back references, a word-count fill and a word-offset copy) to a
-; fixed length; 1D9A:0113 Unpack3 expands a literal and fill stream to a 32-bit length; 1D9A:018B
-; Unpack1 and 1D9A:02CB Unpack2 expand the two dictionary formats into a work segment, building an
-; offset table as they go. Near helpers: 1D9A:0162 subtracts the emitted count and renormalizes
-; ES:DI for Unpack3, 1D9A:0299 reads the 12-bit codes of format 1, 1D9A:03CC reads the 14-bit codes
-; of format 2 through a four-state machine. The names Unpack1..4 come from their callers (E1B82.C);
-; the rest are from the bytes. All eight entries end in a far return; the near helpers are internal.
+; (E1B82.C Unpack, by the format byte) calls. Unpack1, Unpack2 and Unpack3 take source and
+; destination segments (E1B82.C:69 to :71); 1D9A:0013 Unpack4 takes far pointers and normalizes
+; both with 1BA8:0081 NormFar (E1B82.C:72). Unpack4 expands an LCW stream (format 4: literal runs,
+; back references, a word-count fill and a word-offset copy) to a fixed length; 1D9A:0113 Unpack3
+; [H] expands a literal and fill stream to a 32-bit length; 1D9A:018B Unpack1 (format 1, verified)
+; and 1D9A:02CB Unpack2 [H] expand the two dictionary formats into a work segment, building an
+; offset table as they go. Near helpers: 1D9A:0162 subtracts the count about to be emitted and
+; renormalizes ES:DI for Unpack3, 1D9A:0299 reads the 12-bit codes of format 1, 1D9A:03CC reads the
+; 14-bit codes of format 2 through a four-state machine. The names Unpack1..4 come from their callers
+; (E1B82.C); the rest are from the bytes. All eight entries end in a far return; the near helpers are
+; internal.
 ;
 ; The scratch words the decoders keep in their own code segment are addressed by their absolute
 ; offsets (cs:[0Ch], cs:[10h], cs:[12h] at the unit start, cs:[185h]/[187h]/[189h] in Unpack1's
@@ -14,12 +17,12 @@
 
         .MODEL  LARGE
 
-        EXTRN   _NormFar:FAR            ; @ 1BA8:0081 (NormalizeFar, E1BA8.ASM)
+        EXTRN   _NormFar:FAR            ; @ 1BA8:0081 (NormFar, E1BA8.ASM:92)
 
         .CODE
 
-; 1D9A:000B: eight bytes of scratch, zero at load: the saved packed source segment and bit counter
-; used by Unpack1's code reader, and the output limit used by Unpack1 and Unpack2.
+; 1D9A:000B: eight bytes of scratch, zero at load: the saved packed source segment and code phase
+; counter used by Unpack1's code reader, and the output limit used by Unpack1 and Unpack2.
         PUBLIC  _UnpackScratch
 _UnpackScratch LABEL BYTE               ; @ 1D9A:000B
         dw      0,0,0,0
@@ -28,8 +31,9 @@ _UnpackScratch LABEL BYTE               ; @ 1D9A:000B
 ; the output start and end offsets are kept in cs:[109h]/cs:[10Dh]. Loop: a control byte with bit 7
 ; clear copies ((byte >> 4) + 3) bytes from a 12-bit distance behind the output cursor (the low
 ; nibble of the control byte and the next byte); 80h ends; 81h..0BFh copy (byte & 3Fh) bytes straight
-; from the input; 0C0h..0FDh copy (byte & 3Fh) + 3 bytes from an absolute output offset after a word;
-; 0FEh fills a word count of one byte; 0FFh copies a word count from a word offset. Every count is
+; from the input; 0C0h..0FDh copy (byte & 3Fh) + 3 bytes from an output offset after a word, relative
+; to the output start (cs:[109h]); 0FEh reads a word count, then the one byte it fills with; 0FFh
+; copies a word count from a word offset. Every count is
 ; clamped to the bytes left. Returns the bytes written in AX.
         PUBLIC  _Unpack4                ; @ 1D9A:0013
 _Unpack4 PROC FAR
@@ -153,11 +157,16 @@ u4_exit:
 _Unpack4 ENDP
         dw      0,0,0,0,0               ; 1D9A:0109 output start, +0Bh bytes left, +0Dh end
 
-; 1D9A:0113: expand the segment src ([bp+6]) into the segment dst ([bp+8]). The stream starts with
-; a 32-bit output length and a skipped word. Then each control byte subtracts its own count from the
-; 32-bit remainder and renormalizes ES:DI (1D9A:0162): a positive byte copies that many bytes from
-; the input; 0 reads a big-endian word count and fills that many copies of the next byte; a byte at
-; or above 80h fills (100h - byte) copies of the next byte. Stops when the 32-bit length runs out.
+; 1D9A:0113 [H]: expand the segment src ([bp+6]) into the segment dst ([bp+8]). The stream starts
+; with a 32-bit output length and a header word holding the number of bytes to skip. Then each
+; control byte subtracts its own count from the 32-bit remainder and renormalizes ES:DI (1D9A:0162):
+; a positive byte copies that many bytes from the input; 0 reads a big-endian word count and fills
+; that many copies of the next byte; a byte at or above 80h fills (100h - byte) copies of the next
+; byte. Stops when the 32-bit length runs out. No pinned file uses format 3 (WHITEPAPER.md:155), so
+; the behaviour is read from the bytes only.
+; QUIRK 1D9A:0113: a count is not clamped to the bytes left (Unpack4 clamps, src/E1D9A.ASM:81 to
+; :83 and :99 to :101); a count that runs past the 32-bit length wraps BX:DX in _NormDest and the
+; loop keeps writing. No pinned file uses format 3, so whether any input reaches this is unverified.
         PUBLIC  _Unpack3                ; @ 1D9A:0113
 _Unpack3 PROC FAR
         push    bp
@@ -209,8 +218,8 @@ u3_next:
         jmp     short u3_exit
 _Unpack3 ENDP
 
-; 1D9A:0162: subtract the count just emitted (CX) from the 32-bit output remainder (BX:DX) and
-; renormalize the destination far pointer ES:DI (carry DI's paragraphs into ES, keep DI below 16).
+; 1D9A:0162: subtract the count about to be emitted (CX) from the 32-bit output remainder (BX:DX)
+; and renormalize the destination far pointer ES:DI (carry DI's paragraphs into ES, keep DI below 16).
         PUBLIC  _NormDest               ; @ 1D9A:0162
 _NormDest PROC NEAR
         sub     bx,cx
@@ -243,13 +252,14 @@ u3_exit:
         dw      0,0,0                   ; 1D9A:0185 Unpack1's saved output offset and count
 
 ; 1D9A:018B: expand the dictionary format 1 into the work segment ([bp+0Ah]). The stream starts with
-; a 16-bit output limit and a skipped word; codes are 12 bits (1D9A:0299). A code with a nonzero high
-; byte names an entry of the work segment's table at BP: a 4-byte (offset, length) pair into the
-; output at BP + 4 * (code - 100h). Copy that string to the output and make it the new previous
-; string; a code naming the entry being made copies the previous string and appends its first byte.
-; A zero high byte is a literal (a one byte previous string). Entries are added while the table is
-; below 3C00h. cs:[185h] is the current string length, cs:[187h] its output offset, cs:[189h] the
-; length being stored.
+; a 16-bit output limit and a header word holding the number of bytes to skip; codes are 12 bits
+; (1D9A:0299). A code with a nonzero high byte names an entry of the work segment's table at BP: a
+; 4-byte (offset, length) pair into the output at BP + 4 * (code - 100h). Copy that string to the
+; output and make it the new previous string; a code naming the entry being made copies the previous
+; string and appends its first byte. A zero high byte is a literal (a one byte previous string).
+; Entries are added while the table is below 3C00h. cs:[185h] is the length of the previous string
+; (the last code's); cs:[187h] is the output offset of the string this code emits, cs:[189h] its
+; length.
         PUBLIC  _Unpack1                ; @ 1D9A:018B
 _Unpack1 PROC FAR
         push    bp
@@ -276,7 +286,7 @@ _Unpack1 PROC FAR
         mov     word ptr cs:[10h],ds            ; packed source segment
         mov     ds,bp
         xor     cx,cx
-        mov     byte ptr cs:[12h],ch            ; code counter
+        mov     byte ptr cs:[12h],ch            ; code phase counter
         mov     cl,4
         xor     bp,bp                           ; output table offset
         call    _ReadCode1
@@ -363,9 +373,9 @@ u1_reset:
 _Unpack1 ENDP
 
 ; 1D9A:0299: read the next 12-bit code from the packed stream (whose segment Unpack1 saved in
-; cs:[10h]). A counter in cs:[12h] alternates: the first call returns (byte << 4) | (next >> 4) and
-; advances one byte, the next returns ((byte & 0Fh) << 8) | next and advances two, so two codes
-; share every three bytes.
+; cs:[10h]). The code phase counter in cs:[12h] alternates: the first call returns (byte << 4) |
+; (next >> 4) and advances one byte, the next returns ((byte & 0Fh) << 8) | next and advances two,
+; so two codes share every three bytes.
         PUBLIC  _ReadCode1              ; @ 1D9A:0299
 _ReadCode1 PROC NEAR
         mov     cl,4
@@ -402,11 +412,12 @@ u1_exit:
         retf
         dw      0                       ; 1D9A:02C9 Unpack2's next reader state
 
-; 1D9A:02CB: expand the dictionary format 2 into the work segment ([bp+0Ah]), as Unpack1 but with
-; 14-bit codes (1D9A:03CC) and two word tables in the work segment: the entry offsets at BP and the
-; entry lengths at BP+7E00h, at word index (code - 100h). A code with a nonzero high byte is a
+; 1D9A:02CB [H]: expand the dictionary format 2 into the work segment ([bp+0Ah]), as Unpack1 but
+; with 14-bit codes (1D9A:03CC) and two word tables in the work segment: the entry offsets at BP and
+; the entry lengths at BP+7E00h, at word index (code - 100h). A code with a nonzero high byte is a
 ; dictionary entry, a zero high byte a literal. The tables stop when BP reaches 7E00h; cs:[2C9h]
-; steps the code reader and cs:[185h]/[189h]/[187h] are Unpack1's string state.
+; steps the code reader and cs:[185h]/[189h]/[187h] are Unpack1's string state. No pinned file uses
+; format 2 (WHITEPAPER.md:155), so the behaviour is read from the bytes only.
         PUBLIC  _Unpack2                ; @ 1D9A:02CB
 _Unpack2 PROC FAR
         push    bp
