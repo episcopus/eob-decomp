@@ -39,7 +39,7 @@ struct Panel {                  /* 16-byte records at ds:017F */
     int sel;                    /* +8: the selected row, counted among the selectable entries */
     int colorA;                 /* +a: normal text colour */
     int colorB;                 /* +c: colour of the selected entry */
-    int pad;                    /* +e: not read in this unit */
+    int pad;                    /* +e: the eighth word of the 16-byte record; not read in this unit */
 };
 
 extern struct Panel gPanels[]; /*@ ds:017F */
@@ -53,8 +53,11 @@ extern int gFC7A; /*@ ds:FC7A: the key UpdateOptionList did not handle; its read
                      IsPointInRect on the last click g8140/g8142 (:1262) */
 extern int g5D1A; /*@ ds:5D1A: nonzero lets the pointer position pick the entry in UpdateOptionList and
                       makes DrawOptionList draw the selected row in colorB (:187-188) */
-extern int g8140; /*@ ds:8140: x of the last click, tested by UpdateOptionList */
-extern int g8142; /*@ ds:8142: y of the last click, tested by UpdateOptionList */
+extern int g8140; /*@ ds:8140: x of the last click; written by src/EOV0.C:1204; tested against a panel
+                      rectangle by UpdateOptionList (:297) and PickAlignment (src/EOV0.C:1262), read
+                      into gHitX by src/E16A5.C:224, :240 and by the wrapper at src/E082C.C:465 */
+extern int g8142; /*@ ds:8142: y of the last click; written by src/EOV0.C:1204; same readers as g8140
+                      (:298, src/EOV0.C:1262, src/E16A5.C:225, :241, src/E082C.C:465) */
 extern char gFontWidth; /*@ ds:8100: font cell width; src/E1A47.C declares it unsigned char, but
                             unsigned char here fails make match, so this file keeps char */
 extern char gFontHeight; /*@ ds:8101: font cell height; src/E1A47.C declares it unsigned char (same) */
@@ -68,7 +71,7 @@ extern int gCursorX; /*@ ds:8138: mouse x in pixels (src/E1A72.ASM:60); tested w
 extern int gCursorY; /*@ ds:813A: mouse y in pixels (src/E1A72.ASM:63) */
 extern int g8134; /*@ ds:8134: accumulated button changes; the INT 33h handler folds each change into
                       it (or ax,[g8134]; mov [g8134],ax, src/E1A72.ASM:380-381), this file clears it
-                      (:193) and the map screen clears it (src/E0ACD.C:119) */
+                      (:193) and RunMapLoop clears it on entry (src/E0ACD.C:886) */
 extern void (far *gDrawText)(char far *text, int x, int y, int color, int extra); /*@ ds:80CA */
 
 extern void DrawShadowText(char far *text, int x, int y, int color, int extra); /*@ 082C:0898 */
@@ -130,13 +133,14 @@ extern void WaitFrames(int n); /*@ 1A16:000B */
 }
 
 /* 14EF:0107: the number of set bits of `mask` among bit numbers shift..shift+n-1. Returns n when
-   every bit is set (-1L), the "all selectable" case. The bit test uses the 16-bit `1 << (i + shift)`
-   (`i` is an int, so 1 << 16 is 0 and bits 16 and up are never counted); its src/ callers PickClass
-   (src/EOV0.C:1193) and PickAlignment (src/EOV0.C:1244) pass shift 0 with n 15 and 9 (the overlay
-   disassembly at ovl0:20DD `mov ax,0xf` and ovl0:228E `mov ax,9` is a second witness), so i + shift
-   is at most 14 and the 16-bit form is safe for them. QUIRK 14EF:0107: a call that did reach bit 15
-   would test the int `1 << 15` (-32768, sign-extended to 0xFFFF8000 in the long AND), so that bit
-   would count as "any of bits 15 to 31", not bit 15 alone; a port must keep it. */
+   every bit is set (-1L), the "all selectable" case. The bit test is `mask & (1 << (i + shift))`, an
+   int shift into a long. Its src/ callers PickClass (src/EOV0.C:1193) and PickAlignment
+   (src/EOV0.C:1244) pass shift 0 with n 15 and 9 (the overlay disassembly at ovl0:20DD `mov ax,0xf`
+   and ovl0:228E `mov ax,9` is a second witness), so i + shift is at most 14 and the shift's upper
+   edge is reached by no caller. [H] recall, not proven on our bytes: with the unit's 16-bit int, a
+   call that did shift by 16 would get 0 (bits 16 and up never counted), and the int `1 << 15`
+   (-32768) would sign-extend to 0xFFFF8000 in the long AND, so bit 15 would count as "any of bits 15
+   to 31"; a port that kept the original 16-bit shift semantics must keep both. */
 /*@ 14EF:0107 */ int CountMaskBits(int n, long mask, int shift)
 {
     int i;
@@ -229,22 +233,25 @@ enum {
 /*@ 14EF:0274 */ int UpdateOptionList(int panel, char far * far *names, int counter, int extra,
                                    long mask, int shift)
 {
-    int lastRow;
-    int picked;
-    int key;
-    int ybase;
-    int xbase;
-    int left;
+    int lastRow;                /* the last selectable row index (height - 1) */
+    int picked;                 /* the row picked by a key or click, then the confirmed string index */
+    int key;                    /* the masked key or mouse event, 0 when none */
+    int ybase;                  /* y of the panel's first row, in pixels */
+    int xbase;                  /* x of the panel's first column, in pixels */
+    int left;                   /* hit-rectangle edges, from the panel, the font and ds:FC78 */
     int right;
     int top;
     int bottom;
-    int cursory;
-    int halfspace;
-    char colorA;
-    char colorB;
-    char prev;
-    char row;
-    char entry;
+    int cursory;                /* the mouse y, read once for the pick test */
+    int halfspace;              /* half the extra line spacing (ds:FC78 >> 1) */
+    /* these five are char because the original keeps each in a byte (`mov byte ptr [bp-..]`); making
+       any one an int fails make match (UpdateOptionList +0005 grows the frame, and the byte stores
+       widen to word) */
+    char colorA;                /* normal text colour (1 when ds:8102 is zero) */
+    char colorB;                /* colour of the selected row */
+    char prev;                  /* the row selected before this call */
+    char row;                   /* the row being selected now */
+    char entry;                 /* the string index a row maps to (FindMaskBit) */
     struct Panel *panelDef;
     register int lineheight;
     register int lineY;
