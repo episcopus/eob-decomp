@@ -12,7 +12,7 @@
 #include <dos.h>
 
 extern void farfree(void far *block); /*@ 0000:71EE */
-extern void far *gRectKinds[]; /*@ ds:EFD4 */
+extern struct RectKind far *gRectKinds[]; /*@ ds:EFD4, the per-kind size records (src/E122E.C:91) */
 extern int gF538; /*@ ds:F538 */            /* the wall-record slot count RegisterWallObject advances; Reset by FreePtrTable */
 
 extern void LoadOverlayScreen(char far *name, int a, int b); /*@ 082C:05EC */
@@ -42,7 +42,7 @@ extern void SetMouseItem(int item); /*@ 07A9:010C */
 extern int far RollDice(char count, char sides, char bonus); /*@ 082C:0458 */
 extern void far *gA9C0; /*@ ds:A9C0 */      /* the current 6x6 font (src/E07A9.C) */
 extern char gA998; /*@ ds:A998 */           /* src/E0ACD.C */
-extern signed char g1A1B[]; /*@ ds:1A1B */  /* per-cell sound table (src/E0ACD.C) */
+extern signed char g1A1B[]; /*@ ds:1A1B */  /* per-page sound table (src/E0ACD.C:131) */
 extern int gPartyCell; /*@ ds:FBCA */
 extern int gFBCC; /*@ ds:FBCC */
 extern int gFBCE; /*@ ds:FBCE */
@@ -53,7 +53,7 @@ extern long FileRead(int handle, char far *buf, unsigned long len); /*@ 1C0E:040
 extern void FileClose(int handle); /*@ 1C0E:03BB */
 extern void *memset(void far *s, int c, unsigned n); /*@ 0000:6384 */
 extern void far *gSegDF4E; /*@ ds:DF4E */
-extern void far *gE062; /*@ ds:E062 */
+extern struct Cell8 far *gE062; /*@ ds:E062 */  /* the 8-byte map cell rectangles (struct Cell8 below) */
 extern char gB894[]; /*@ ds:B894 */
 extern int gFBD0; /*@ ds:FBD0 */            /* the saved-level bit mask: bit level-1 is set by SaveLevelState and SaveGame and tested by LoadObjects and LoadMapScreen */
 extern void far *gBufDCFC; /*@ ds:DCFC */
@@ -140,14 +140,14 @@ extern void (far *gDrawText)(char far *text, int a, int b, int c, int d); /*@ ds
 extern char gFileNameBuf[]; /*@ ds:FE6E */
 extern void WaitKeyEvent(void); /*@ 1AAD:05D3 */
 extern void ShutdownGame(void); /*@ 07C8:058A */
-extern long gFB5E[]; /*@ ds:FB5E */
+extern struct SlotSize far *gFB5E[]; /*@ ds:FB5E (the per-column size records, src/E122E.C:106) */
 
-struct Triple6 {            /* six bytes, the record InitGameTables clears */
-    long v;
-    char c[2];
+struct SlotPos {            /* the six-byte slot-position records at ds:A99C (src/E122E.C:112) */
+    struct SlotSize far *rec; /* +0: the far size record */
+    unsigned char x;        /* +4 */
+    unsigned char y;        /* +5 */
 };
-
-extern struct Triple6 gA99C[]; /*@ ds:A99C */
+extern struct SlotPos gA99C[]; /*@ ds:A99C */
 extern void far *gB802[]; /*@ ds:B802 */
 extern int g6930[]; /*@ ds:6930 */
 extern int g69C0[]; /*@ ds:69C0 */
@@ -357,16 +357,16 @@ struct WallDec {            /* the 52-byte wall-set decorations LoadWallSet read
             farfree((void far *)gFB5E[i]);
             gFB5E[i] = 0;
         }
-        if (gA99C[i].v) {
-            farfree((void far *)gA99C[i].v);
-            gA99C[i].v = 0;
+        if (gA99C[i].rec) {
+            farfree((void far *)gA99C[i].rec);
+            gA99C[i].rec = 0;
         }
     }
 }
 /* ovl3:03A2: loads the overlay screen "DOOR" (LoadOverlayScreen) and slices map icon cells out of
    the map sheet (segment 0x1D8, offset from the tile byte table gMapTiles[gFBC8-1] shifted left 5).
    For `srcA` (when not -1) it slices three cells from the 4-byte rectangles at ds:6840 into gFB5E
-   starting at `dstA` and three more from ds:68A0 into gA99C[dstA].v, and copies the x and y bytes of
+   starting at `dstA` and three more from ds:68A0 into gA99C[dstA].rec, and copies the x and y bytes of
    gA99C[dstA] from ds:6900. For `srcB` (when not -1) it slices the three cells at `dstB` the same way,
    but reads its ds:6900 x/y pair with srcA's index (QUIRK ovl3:0597). Clears gStatusLine. Called by
    ovl3:0A7C. */
@@ -379,25 +379,25 @@ struct WallDec {            /* the 52-byte wall-set decorations LoadWallSet read
     if (srcA == -1) goto second;
     for (i = 0; i < 3; i++) {
         j = srcA * 0xc + i * 4;
-        gFB5E[dstA + i] = (long)gGetSpriteCell(g6840[j], g6840[j + 1], g6840[j + 2],
+        gFB5E[dstA + i] = (struct SlotSize far *)gGetSpriteCell(g6840[j], g6840[j + 1], g6840[j + 2],
             g6840[j + 3], MAPSHEET);
-        gA99C[dstA + i].v = (long)gGetSpriteCell(g68A0[j], g68A0[j + 1], g68A0[j + 2],
+        gA99C[dstA + i].rec = (struct SlotSize far *)gGetSpriteCell(g68A0[j], g68A0[j + 1], g68A0[j + 2],
             g68A0[j + 3], MAPSHEET);
         j = srcA * 6 + i * 2;
-        gA99C[dstA + i].c[0] = g6900[j];
-        gA99C[dstA + i].c[1] = g6900[j + 1];
+        gA99C[dstA + i].x = g6900[j];
+        gA99C[dstA + i].y = g6900[j + 1];
     }
 second:
     if (srcB == -1) goto done;
     for (i = 0; i < 3; i++) {
         j = srcB * 0xc + i * 4;
-        gFB5E[dstB + i] = (long)gGetSpriteCell(g6840[j], g6840[j + 1], g6840[j + 2],
+        gFB5E[dstB + i] = (struct SlotSize far *)gGetSpriteCell(g6840[j], g6840[j + 1], g6840[j + 2],
             g6840[j + 3], MAPSHEET);
-        gA99C[dstB + i].v = (long)gGetSpriteCell(g68A0[j], g68A0[j + 1], g68A0[j + 2],
+        gA99C[dstB + i].rec = (struct SlotSize far *)gGetSpriteCell(g68A0[j], g68A0[j + 1], g68A0[j + 2],
             g68A0[j + 3], MAPSHEET);
         j = srcA * 6 + i * 2;   /* QUIRK ovl3:0597: the srcB branch reads srcA's ds:6900 pair too */
-        gA99C[dstB + i].c[0] = g6900[j];
-        gA99C[dstB + i].c[1] = g6900[j + 1];
+        gA99C[dstB + i].x = g6900[j];
+        gA99C[dstB + i].y = g6900[j + 1];
     }
 done:
     gStatusLine = 0;
@@ -830,9 +830,9 @@ done:
    length: the six 243-byte characters ds:F580 (after AgeCharTimers and before AdvanceCharTimers),
    the 0x40-byte header at ds:FBC8, the 500 14-byte items ds:8DD0, the 0x5FA0-byte image
    gSegEFC2, the single bytes ds:80E8, ds:80E6 and ds:F43C, and the 0x60-byte buffer ds:AD20.
-   Returns 1 when every write wrote its full length, else 0. The `if (ok)` at :853 follows `ok = 1`,
-   so the INVENT reload at :870 runs after the writes whether or not they succeeded; the `ok &=`
-   writes at :856-868 only compute the return value. Called by overlay 1 (ovl1:1ACD). */
+   Returns 1 when every write wrote its full length, else 0. The `if (ok)` at :854 follows `ok = 1`,
+   so the INVENT reload at :871 runs after the writes whether or not they succeeded; the `ok &=`
+   writes at :857-869 only compute the return value. Called by overlay 1 (ovl1:1ACD). */
 /*@ ovl3:1368 */ int SaveGame(void)
 {
     int slot;
@@ -882,9 +882,9 @@ done:
    (the Ctrl flag), ds:80E6 (gSoundOn) and ds:F43C, unpacks the 0x60 bytes into ds:AD20, loads
    the CHARGENA screen and, for each character whose m01 is nonzero and whose m22 is >= 0, cuts its
    4 by 32 cell out of gOverlayBuf (through ds:8082), unpacks it into its 0x514-byte sprite buffer
-   and frees it (a character with m01 nonzero and m22 < 0 sets `flag` at :951 instead);
+   and frees it (a character with m01 nonzero and m22 < 0 sets `flag` at :953 instead);
    when any slot is empty or any occupied character has m22 < 0 it then loads the OUTTAKE screen
-   and draws the m22 < 0 characters' sprites into it. Unless ds:A998 is -1 it then rebuilds the
+   and cuts the m22 < 0 characters' 4 by 32 cells out of it the same way. Unless ds:A998 is -1 it then rebuilds the
    map screen (ovl3:0A7C), reloads PLAYFLD and INVENT, hands gA9C0 to f1A47_0169, redraws the
    characters, and either restores the mouse item when the mouse is enabled (gMouseDisabled is 0)
    or, when the mouse is disabled and gFBCE is nonzero, inserts it with a sound from the g1A1B table
