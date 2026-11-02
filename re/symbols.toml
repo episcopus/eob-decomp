@@ -7349,6 +7349,9 @@ unit = "eov3"
 addr = "ovl3:15B9"
 size = 1086
 evidence = ["ovl", "frame"]
+name = "LoadGame"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov3_19f7"
