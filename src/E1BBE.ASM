@@ -65,8 +65,12 @@
                                         ; _HidePointer` sits inside the [ds:80AA]/[ds:80A2] bracket)
         EXTRN   _gZoneLeft:WORD         ; @ ds:8162: hide zone, left in pixels, stored as the argument
                                         ; less the sprite width in pixels (_gPointerWidth8 shifted left
-                                        ; three times, 1BBE:0234, 025B); the handler's left test is
-                                        ; skipped (QUIRK 1A72:0248)
+                                        ; three times, 1BBE:0234, 025B); the handler's left compare
+                                        ; `cmp cx,[_gZoneLeft]; jl L0250` runs, but QUIRK 1A72:0248 sends
+                                        ; a left miss past the right-edge test (`cmp cx,[_gZoneRight];
+                                        ; jg L025C`) to the y tests at L0250, so the left edge is never
+                                        ; enforced: only x past the right edge and y outside top and
+                                        ; bottom leave the zone
         EXTRN   _gZoneTop:WORD          ; @ ds:8164: hide zone, top in pixels, stored as the argument
                                         ; less the sprite height (_gPointerHeight, already in pixels, no
                                         ; shift; 1BBE:0238, 0272)
@@ -95,13 +99,22 @@
         EXTRN   _gNegSpriteWidth:WORD   ; @ ds:8188: minus _gPointerWidth8, the lower x clip bound
         EXTRN   _gRestoreRect:DWORD     ; @ ds:804E: far fn (x, y, w, h, buf): buffer back to screen;
                                         ; x and w are in 8-pixel columns, y and h in pixel rows
-                                        ; (HidePointer shifts the left edge right by three, 1BBE:147-149)
+                                        ; (HidePointer shifts the left edge right by three, the three
+                                        ; `sar ax,1` at 1BBE:004B-0050, after the `mov ax,[_gRectLeft]`
+                                        ; at 1BBE:0048-004A)
         EXTRN   _gSaveRect:DWORD        ; @ ds:80AE: far fn (x, y, w, h, buf): screen into buffer;
                                         ; x and w are in 8-pixel columns, y and h in pixel rows
-                                        ; (ShowPointer shifts the left edge right by three, 1BBE:248-250)
+                                        ; (ShowPointer shifts the left edge right by three, the three
+                                        ; `sar ax,1` at 1BBE:014A-014F, after the `mov ax,[_gRectLeft]`
+                                        ; at 1BBE:0147-0149)
         EXTRN   g80AA:DWORD             ; @ ds:80AA: far fn (g8172/g8174) before the pointer work
         EXTRN   g80A2:DWORD             ; @ ds:80A2: far fn (no arguments) after the pointer work
-        EXTRN   _gDraw80C2:DWORD         ; @ ds:80C2: far fn (mode, void far *src, x, y)
+        EXTRN   _gDraw80C2:DWORD         ; @ ds:80C2: far fn (mode, void far *src, x, y); the `gDraw`
+                                        ; prefix is a family guess (src/E1A29.C:53); the evidence is
+                                        ; ShowPointer below, which calls it at 1BBE:01F4 with mode 0 and
+                                        ; the shape record _gPointerShapeOff/_gPointerShapeSeg at the
+                                        ; unclipped position _gShapeX/_gShapeY (stored at 1BBE:011E and
+                                        ; 012E; src/E1BBE.ASM:305-312 gives the push order)
         .CODE
 
 ; 1BBE:0001: Purpose unknown: the unit's first byte is 00. It is emitted under a public symbol

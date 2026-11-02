@@ -27,7 +27,7 @@ hold: 14 callers for 1BBE:01FE and 1BBE:02C2 (the header's "0EF3, 16A5, 1DE7 and
 (packet lines 25 and 26) show 0ACD:0E8A, 0ACD:0F72, ovl0:2547 and ovl5:17C8 on the show side only and ovl0:28F9 on
 the hide side only. The registry names (re/globals.toml) match every ds: name in the unit, with the underscore aside.
 
-- [ ] must-fix src/E1BBE.ASM:96-101 (_gRestoreRect and _gSaveRect): the shift addresses are wrong. The header says
+- [x] must-fix src/E1BBE.ASM:96-101 (_gRestoreRect and _gSaveRect): the shift addresses are wrong. The header says
   "HidePointer shifts the left edge right by three, 1BBE:147-149" and "ShowPointer ... 1BBE:248-250". Neither is the
   shift. HidePointer's three `sar ax,1` are at 1BBE:004B-0050 (the `mov ax,[_gRectLeft]` before them is 0048-004A).
   1BBE:0147-0149 is ShowPointer's `mov ax,[_gRectLeft]`, and ShowPointer's three `sar` are at 1BBE:014A-014F. 1BBE:0248-0250
@@ -35,17 +35,29 @@ the hide side only. The registry names (re/globals.toml) match every ds: name in
   (Evidence: counted instruction sizes from 1BBE:0002 (the header's 0021, 0055 and 0075 hold) and from 1BBE:00ED (its
   0117, 0127 and 0154 hold). The `sar` lines are at src/E1BBE.ASM:158-160 and :259-261.) Cite 1BBE:004B-0050 for
   HidePointer and 1BBE:014A-014F for ShowPointer, in both declarations, and keep the column and row units as they are.
-- [ ] must-fix src/E1BBE.ASM:66-69 (_gZoneLeft): "the handler's left test is skipped (QUIRK 1A72:0248)" is wrong. The
-  left compare runs: `cmp cx,[_gZoneLeft]` and `jl L0250` (src/E1A72.ASM:421-422). What the quirk does is send a left
+  Fixed: `_gRestoreRect` now cites HidePointer's three `sar ax,1` at 1BBE:004B-0050 (after the
+  `mov ax,[_gRectLeft]` at 1BBE:0048-004A) and `_gSaveRect` cites ShowPointer's at 1BBE:014A-014F (after
+  1BBE:0147-0149); the column and row units are unchanged. Checked against the disassembly at
+  `tools/re/disasm.py eob/EOB.EXE 1BBE`; `make match FILE=src/E1BBE.ASM` still 7 of 7, 860 bytes.
+- [x] must-fix src/E1BBE.ASM:66-69 (_gZoneLeft): "the handler's left test is skipped (QUIRK 1A72:0248)" is wrong. The
+  left compare runs: `cmp cx,[_gZoneLeft]` and `jl L0250` (src/E1A72.ASM:421-422, now :432-433 with labels). What the
+  quirk does is send a left
   miss past the right-edge test (`cmp cx,[_gZoneRight]`, `jg L025C`, :424-425) to the y tests at L0250 (:426). So the
   zone's left edge is never enforced, and only x past the right edge and y outside top and bottom take the pointer
   out of the zone. (Evidence: src/E1A72.ASM:352-353 says it in those words: "the hide zone's left edge is never
   enforced".) Say that, not "skipped".
-- [ ] should src/E1BBE.ASM:104 (_gDraw80C2) and :1-3 (unit header): the `gDraw` prefix is a family guess. src/E1A29.C:53
+  Fixed: `_gZoneLeft` now says the left compare runs but QUIRK 1A72:0248 sends a left miss past the right-edge test
+  to the y tests at L0250, so the left edge is never enforced and only x past the right edge and y outside top and
+  bottom leave the zone. `make match FILE=src/E1BBE.ASM` still 7 of 7, 860 bytes.
+- [x] should src/E1BBE.ASM:104 (_gDraw80C2) and :1-3 (unit header): the `gDraw` prefix is a family guess. src/E1A29.C:53
   says so ("The `gDraw` prefix is a family guess: only ds:80C2 is evidenced as drawing"). This unit's evidence for the
   draw is ShowPointer passing the shape record and the position through it (the push sequence at src/E1BBE.ASM:305-312
   gives mode, src, x, y, and 1BBE:011E and 012E store gShapeX and gShapeY), so the name can stay, but the EXTRN comment
   should give that evidence and say the prefix is a guess, as E1A29.C does. Not a placeholder: the call is evidenced.
+  Fixed: the `_gDraw80C2` EXTRN now says the `gDraw` prefix is a family guess (src/E1A29.C:53) and gives the evidence
+  (ShowPointer's call at 1BBE:01F4 with mode 0 and the shape record at the unclipped gShapeX/gShapeY stored at
+  1BBE:011E and 012E, push order at src/E1BBE.ASM:305-312). The name is kept; `make match FILE=src/E1BBE.ASM` still
+  7 of 7, 860 bytes.
 - [ ] note the bare spellings g8172, g8174, g80AA and g80A2 (EXTRN lines 79-80 and 102-103) are still open for the human's
   convention ruling. Round 8 left the same point open; the unit is consistent within itself, and no matcher or spec
   question is involved, so it is not escalated.
