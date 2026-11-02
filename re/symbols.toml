@@ -9282,6 +9282,9 @@ unit = "i0892"
 addr = "0892:0000"
 size = 577
 evidence = ["far", "segment"]
+name = "Main"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "i0892_0241"
@@ -9289,6 +9292,9 @@ unit = "i0892"
 addr = "0892:0241"
 size = 1524
 evidence = ["far"]
+name = "StartupGame"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "i0892_0835"
@@ -9296,6 +9302,9 @@ unit = "i0892"
 addr = "0892:0835"
 size = 139
 evidence = ["far", "near"]
+name = "ShutdownGame"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "i0892_08c0"
@@ -9303,6 +9312,9 @@ unit = "i0892"
 addr = "0892:08C0"
 size = 8
 evidence = ["frame"]
+name = "ExitHook"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "i0892_08c8"
@@ -9310,6 +9322,9 @@ unit = "i0892"
 addr = "0892:08C8"
 size = 40
 evidence = ["frame"]
+name = "AllocationFailure"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "i0921_0000"
