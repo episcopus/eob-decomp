@@ -152,7 +152,7 @@
         ;                                              (1BBE:029F-02A7). SetFarPointer stores it,
         ;                                              GetFarPointer reads it; the 17A6 unit points
         ;                                              it at its 16-byte save buffer
-        ;                                              (E17A6.ASM:95, calls at :283, :356)
+        ;                                              (17A6:0304; calls in 17A6:0446 and 17A6:04EE)
         EXTRN   g8174:WORD              ; @ ds:8174: the same far pointer, segment (pushed first
         ;                                              at 1BBE:029F)
         EXTRN   g8026:WORD              ; @ ds:8026: scratch copy of gDrawnX made by IsMouseInRect
@@ -564,8 +564,8 @@ _DisableInterrupts ENDP
 ; unconditional `sti` (1A72:0330), so a caller that enters with interrupts off returns with them on.
 ; The 17A6 unit uses it to save and restore the 16 bytes under the pointer that DGROUP:80AA reads.
 ; At 17A6:0446 it reads the pointer through 033A and saves it (gSavedFarOff and gSavedFarSeg,
-; E17A6.ASM:93-94), then calls this with CS:0304 (the 16 byte gSaveBuf, E17A6.ASM:95) at
-; 17A6:0459, which copies the game's bytes into the buffer; at 17A6:050D it calls this with
+; 17A6:0300 and 17A6:0302), then calls this with CS:0304 (the gSaveBuf at 17A6:0304) at
+; 17A6:0459, which copies the game's bytes into the buffer; at 17A6:04EE it calls this with
 ; the saved pointer, which copies them back onto the game's buffer.
         PUBLIC  _SetFarPointer          ; @ 1A72:02FE
 _SetFarPointer PROC FAR
