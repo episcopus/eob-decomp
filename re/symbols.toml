@@ -2178,6 +2178,9 @@ unit = "e0acd"
 addr = "0ACD:0A34"
 size = 45
 evidence = ["near", "frame"]
+name = "Action0A34"
+level = "L2"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e0acd_0a61"

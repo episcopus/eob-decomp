@@ -618,22 +618,23 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
     f0BD2_0917(gF51A, 1, 0);
 }
 
-/* 0ACD:0A34 draft: the row/character turn dispatcher: does nothing in the rest phase
-   (gDCAA == 5), calls Turn091C in mode 0 or SetActionRow in mode 1. Dir is the direction. Our
-   build merges case 0's argument cleanup into case 1's (one byte shorter); the original keeps it
-   apart, the same tail-merge class as 091C (see its note). */
-/*@ 0ACD:0A34 draft */ void Action0A34(int dir)
+/* 0ACD:0A34: the row/character turn dispatcher: does nothing in the rest phase (gDCAA == 5), calls
+   Turn091C in mode 0 or SetActionRow in mode 1 with the direction dir. Case 0 jumps to the shared
+   exit rather than breaking: a plain `break` makes the compiler cross-jump the two calls' argument
+   cleanup, which the original keeps apart. */
+/*@ 0ACD:0A34 */ void Action0A34(int dir)
 {
     if (gDCAA == 5)
         return;
     switch (gFB44) {
     case 0:
         Turn091C(dir);
-        break;
+        goto done;
     case 1:
         SetActionRow(dir);
-        break;
     }
+done:
+    return;
 }
 
 /* 0ACD:0A61: the list move/use handler. In mode 2 (gFB44 == 2) or the rest phase (gDCAA == 5) it
