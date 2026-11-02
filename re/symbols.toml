@@ -3213,6 +3213,7 @@ evidence = ["far", "near", "segment"]
 name = "RollToHit"
 level = "L2"
 match_flags = "-ml -O -Z"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0de8_011a"
@@ -3223,6 +3224,7 @@ evidence = ["near", "frame"]
 name = "RollAttackDamage"
 level = "L2"
 match_flags = "-ml -O -Z"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0de8_01d7"
@@ -3233,6 +3235,7 @@ evidence = ["near", "frame"]
 name = "IsKind2Or3"
 level = "L2"
 match_flags = "-ml -O -Z"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0de8_01ff"
@@ -3243,6 +3246,7 @@ evidence = ["far", "frame"]
 name = "RunRecordAttack"
 level = "L2"
 match_flags = "-ml -O -Z"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0de8_02d4"
@@ -3253,6 +3257,7 @@ evidence = ["far", "frame"]
 name = "TryRecordAttack"
 level = "L2"
 match_flags = "-ml -O -Z"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0de8_0359"
@@ -3263,6 +3268,7 @@ evidence = ["near", "frame"]
 name = "ApplyItemAttack"
 level = "L2"
 match_flags = "-ml -O -Z"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0de8_0474"
@@ -3273,6 +3279,7 @@ evidence = ["near", "frame"]
 name = "MoveCarriedItem"
 level = "L2"
 match_flags = "-ml -O -Z"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0de8_0537"
@@ -3283,6 +3290,7 @@ evidence = ["near", "frame"]
 name = "UseCarriedItem"
 level = "L2"
 match_flags = "-ml -O -Z"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0de8_05bb"
@@ -3293,6 +3301,7 @@ evidence = ["near", "frame"]
 name = "UseItemByKind"
 level = "L2"
 match_flags = "-ml -O -Z"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0de8_0763"
@@ -3303,6 +3312,7 @@ evidence = ["far", "frame"]
 name = "UseItem"
 level = "L2"
 match_flags = "-ml -O -Z"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0de8_093b"
@@ -3313,6 +3323,7 @@ evidence = ["near", "frame"]
 name = "CheckPartyWiped"
 level = "L2"
 match_flags = "-ml -O -Z"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0de8_09b9"
@@ -3323,6 +3334,7 @@ evidence = ["far", "frame"]
 name = "DamageCharacter"
 level = "L2"
 match_flags = "-ml -O -Z"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0de8_0adb"
@@ -3333,6 +3345,7 @@ evidence = ["far", "frame"]
 name = "HealCharacter"
 level = "L2"
 match_flags = "-ml -O -Z"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0de8_0b45"
@@ -3343,6 +3356,7 @@ evidence = ["near", "frame"]
 name = "AddExperience"
 level = "L2"
 match_flags = "-ml -O -Z"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0de8_0c2b"
@@ -3353,6 +3367,7 @@ evidence = ["far", "frame"]
 name = "AddPartyExperience"
 level = "L2"
 match_flags = "-ml -O -Z"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0de8_0c82"
@@ -3363,6 +3378,7 @@ evidence = ["far", "frame"]
 name = "LevelUpSlot"
 level = "L2"
 match_flags = "-ml -O -Z"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0de8_0d5e"
@@ -3373,6 +3389,7 @@ evidence = ["far", "frame"]
 name = "ComputeArmourClass"
 level = "L2"
 match_flags = "-ml -O -Z"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0de8_0f98"
@@ -3383,6 +3400,7 @@ evidence = ["far", "frame"]
 name = "HalveSaveDamageA"
 level = "L2"
 match_flags = "-ml -O -Z"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0de8_0fca"
@@ -3393,6 +3411,7 @@ evidence = ["far", "frame"]
 name = "HalveSaveDamageB"
 level = "L2"
 match_flags = "-ml -O -Z"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0de8_101a"
@@ -3403,6 +3422,7 @@ evidence = ["far", "frame"]
 name = "ApplyStatusEffect"
 level = "L2"
 match_flags = "-ml -O -Z"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0ef3_000e"
