@@ -2277,3 +2277,12 @@ new = "PlayOrbScene"
 kind = "function"
 why = "it loads ORB.CMP and TOWRMAGE.CMP and animates the orb and the four tower-mage frames (ovl0:06E2 +06E9, +072B)"
 date = "2026-11-02"
+
+[[rename]]
+id = "intro/ovl0:0B20=PlayTowerMageScene"
+addr = "intro/ovl0:0B20"
+old = "Ovl0_0B20"
+new = "PlayTowerMageScene"
+kind = "function"
+why = "it loads TOWRMAGE.COL and TOWRMAGE.CMP and slides the tower-mage sprite across the screen (ovl0:0B20 +0B31, +0B46)"
+date = "2026-11-02"

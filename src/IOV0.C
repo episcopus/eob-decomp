@@ -6,10 +6,10 @@
    DAND, WESTWOOD). The whole unit is drawn through the driver pointers the front end fills at
    load time (ds:1EE2 and its neighbours), which this page only partly names.
    The scene functions are named after the .CMP/.COL files they load: PlayWtrdpScene (ovl0:015D,
-   WTRDP1..3) and PlayOrbScene (ovl0:06E2, ORB/TOWRMAGE) are written; 0B20 (TOWRMAGE), 1265,
-   15F9, 1DF3 and 23A3 are still stubs. They are long ClipRect/frame animations; every utility
-   they use (LoadPackedImage, LoadPalette, PlaySound, Dissolve, BlitImage, DrawGrid, GrowFrame,
-   WaitFrameDelay, f19EC_002A) is matched. */
+   WTRDP1..3), PlayOrbScene (ovl0:06E2, ORB/TOWRMAGE) and PlayTowerMageScene (ovl0:0B20,
+   TOWRMAGE) are written; 1265, 15F9, 1DF3 and 23A3 are still stubs. They are long
+   ClipRect/frame animations; every utility they use (LoadPackedImage, LoadPalette, PlaySound,
+   Dissolve, BlitImage, DrawGrid, GrowFrame, WaitFrameDelay, f19EC_002A) is matched. */
 
 /*@flags -ml -O -Z -G */
 
@@ -101,7 +101,7 @@ void PlayIntroSequence(void);
 void PlayWtrdpScene(void);
 void PlayOrbScene(void);
 void BlitImage(int x1, int y1, int x2, int y2, int width, int height, int mode);
-void Ovl0_0B20(void);
+void PlayTowerMageScene(void);
 void ClearBottomBar(void);
 void WaitFrameDelay(void);
 void DelayFrames(unsigned frames);
@@ -165,7 +165,7 @@ void PlayLogoSequence(void);
     f19EC_002A(5, 6, FP_OFF(gOverlayBuf), FP_SEG(gOverlayBuf));
     WaitFrameDelay();
     if (!gAbort)
-        Ovl0_0B20();
+        PlayTowerMageScene();
     if (!gAbort)
         PlayOrbScene();
     if (!gAbort)
@@ -421,7 +421,80 @@ extern void MemFree(void far *block); /*@ 094F:0137 */
         break;
     }
 }
-/*@ ovl0:0B20 stub */ void Ovl0_0B20(void) {}
+/* ovl0:0B20: the TOWRMAGE scene. It draws the grid twice (once on the hidden page), wipes the
+   bottom bar, cuts the tower mage sprite out of gOverlayBuf, then plays three frame
+   animations: a 0x40-step reveal, then two 2-pixel sweeps that slide the mage and its frame
+   across the screen. `center` is the fixed 0x20 column the two sweeps pivot on. The mage
+   image is freed at the end. */
+/*@ ovl0:0B20 */ void PlayTowerMageScene(void)
+{
+    int page;
+    void far *mage;
+    int i;
+    int center;
+
+    center = 0x20;
+    DrawGrid();
+    LoadPalette("TOWRMAGE.COL");
+    LoadPackedImage("TOWRMAGE.CMP", 5, 3);
+    gDrawPage = 2;
+    mage = gMakeImage(0, 0, 0x10, 0x38, gOverlayBuf);
+    f19EC_002A(3, 4, FP_OFF(gOverlayBuf), FP_SEG(gOverlayBuf));
+    gUnknown1EE2();
+    for (i = 0; i < 0xc8; i += 0x40)
+        ClipRect(0x10, 0x68, 0xc, i, 0x10, 0x40, 4, 2);
+    gFillRect(0, 0xb8, 0x13f, 0xc7, 0xc);
+    page = gDrawPage;
+    gDrawPage = 0;
+    DrawGrid();
+    gDrawPage = page;
+    gUnknown1EE2();
+    for (i = 0; i < 0xc8; i += 0x40)
+        ClipRect(0x10, 0x68, 0, i, 0x10, 0x40, 4, 2);
+    gDrawPage = 0;
+    for (i = 0; i < 0x40; i += 2) {
+        gFrameDelay = 2;
+        ClipRect(0, 0x8e - i, 0xc, 0, 0x10, i + 1, 4, 0);
+        ClipRect(0, 0, 0xc, i + 1, 0x10, 0xa7 - i, 2, 0);
+        if (i == 0)
+            ClipRect(0, 0, 0, 0xa8, 0x28, 0x20, 6, 0);
+        WaitFrameDelay();
+    }
+    for (i = 0; i < 0x18; i += 2) {
+        gFrameDelay = 2;
+        ClipRect(0, 0x8f - (i + 0x40), 0xc, 0, 3, i + 0x41, 4, 0);
+        ClipRect(0xd, 0x8f - (i + 0x40), 0x19, 0, 3, i + 0x41, 4, 0);
+        ClipRect(3, 0x6e, 0xf, i + 0x1f, 0xa, 0x22, 4, 0);
+        ClipRect(0x13, 0, 0xf, center, 0xa, i + 1, 4, 0);
+        ClipRect(0, 0, 0xc, i + 0x41, 0x10, 0xa7 - (i + 0x40), 2, 0);
+        WaitFrameDelay();
+    }
+    for (i = 0; i < 0x38; i += 2) {
+        gFrameDelay = 2;
+        ClipRect(0, 0x38, 0xc, i, 3, 0x36, 4, 0);
+        ClipRect(0xd, 0x38, 0x19, i, 3, 0x36, 4, 0);
+        ClipRect(0, 0x6e, 0xc, i + 0x36, 0x10, 0x22, 4, 0);
+        if (i < center) {
+            gDrawPage = 2;
+            gFillRect(0x80, 0, 0xff, i + 1, 0xc);
+            gDrawPage = 0;
+            ClipRect(0x13, 0, 0xf, center, 0xa, i + 0x19, 4, 0);
+        } else {
+            gDrawPage = 2;
+            gFillRect(0x80, 0, 0xff, i + 1, 0xc);
+            gDrawPage = 0;
+            ClipRect(0x13, i + 1, 0xf, center + i + 1, 0xa, 0x17, 4, 0);
+            ClipRect(0x13, 0, 0x13, center, 0xa, i + 1, 4, 2);
+        }
+        f1A29_000F(2, mage, 0x80, i - 0x37, 0);
+        ClipRect(0x10, 0, 0xc, 0, 0x10, i + 1, 2, 0);
+        ClipRect(0, 0, 0xc, i + 0x59, 0x10, 0xa7 - (i + 0x58), 2, 0);
+        WaitFrameDelay();
+    }
+    ClipRect(0, 0x20, 0, 0xa8, 0x28, 0x20, 6, 0);
+    gFrameDelay = 0x41;
+    MemFree(mage);
+}
 /* ovl0:0FAA: clears the bottom bar of the screen, the rectangle from (0,168) to (319,199),
    with colour 12 on the page the caller wants visible (page 0), then puts the driver's
    current page (gDrawPage) back. Called by the scene functions between frames (ovl0:015D at
