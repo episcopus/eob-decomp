@@ -49,11 +49,11 @@ extern int gTextRow;       /*@ ds:FE54 */  /* cursor row, in font heights (row) 
 extern int gTextSaved;     /*@ ds:FEC0 */  /* 0 until the first SetTextWindow, which only sets it to 1; */
                                            /* each later call saves the window it leaves */
 extern int gTextRegion;          /*@ ds:811F */  /* the current text window's record index, stored as gRegions[gTextRegion] by SetTextWindow (1DE7:0009; src/E1A29.C:38, src/E1C0E.C:577) */
-extern int gGraphicsChoice;          /*@ ds:8102 */  /* the graphics choice, written twice at start-up: Main sets it to argv[1][0] + 1 (src/E07C8.C:226), then StartupGame subtracts 0x31 (src/E07C8.C:295), after the 0x36 check at :293, so the stored value is the character code plus one until :295 and the digit 0..4 only after it. src/E07C8.C:39-43 says the digit indexes gOverlayFiles (0 cga, 1 tandy, 2 ega, 3 mcga/VGA, 4 vga); src/E14EF.C:68 reads it as the graphics choice, 1 Tandy and 3 VGA; 3 and 4 select the 6-bit cells (DrawTextFrame at src/E1DE7.C:163-165 and DrawTileRun at :197 use shift 6), 64-byte steps instead of 32 */
+extern int gGraphicsChoice;          /*@ ds:8102 */  /* the graphics choice, written twice at start-up: Main sets it to argv[1][0] + 1 (src/E07C8.C:226), then StartupGame subtracts 0x31 (src/E07C8.C:295), after the 0x36 check at :293, so the stored value is the character code plus one until :295 and the digit 0..4 only after it. src/E07C8.C:39-43 says the digit indexes gOverlayFiles (0 cga, 1 tandy, 2 ega, 3 mcga/VGA, 4 vga); src/E14EF.C:68 reads it as the graphics choice, 1 Tandy and 3 VGA; 3 and 4 select the 6-bit cells (DrawTextFrame at src/E1DE7.C:164-166 and DrawTileRun at :198 use shift 6), 64-byte steps instead of 32 */
 
 /* The tile graphics the frame is drawn from: a cell's byte offset is the tile table's word for
    the cell shifted by 5 (or, for gGraphicsChoice 3 and 4, 6) and added to this far base. Only read
-   in this unit; no other file of src/ declares ds:FE56. */
+   in this unit; no other file of src/ declares ds:FE56, and no writer was found. */
 extern void far *gTileBuf; /*@ ds:FE56 */
 
 /* The font geometry bytes are signed here: the original sign-extends them (cbw), src/E1A47.C
@@ -62,13 +62,13 @@ extern char gFontWidth;  /*@ ds:8100 */  /* font cell width (src/E1A47.C) */
 extern char gFontHeight; /*@ ds:8101 */  /* font cell height (src/E1A47.C) */
 
 /* ds:805A: a far tile routine called with a tile source far pointer and a cell position
-   (tile, x, y). DrawTextFrame draws the four corners through it (1DE7:0130, 0163, 0196, 01CC) and
+   (src, x, y). DrawTextFrame draws the four corners through it (1DE7:0130, 0163, 0196, 01CC) and
    DrawTileRun the frame edges (1DE7:025E); its first argument is a four-byte far pointer `void far *src`,
    not the same signature as ds:805E (gDraw805E, src/E16A5.C:88), which takes an int tile. No
    direct store found; the slot is zero in the image. */
 extern void (far *gDraw805A)(void far *src, int x, int y); /*@ ds:805A */
 /* ds:806A: a far routine called with (x1, y1, x2, y2, pattern) like the line routine at ds:8062
-   (src/E1A1F.C); ClearTextRegion and DrawTextLine fill and clip rectangles through it. The value
+   (src/E1A1F.C); ClearTextRegion and DrawTextLine fill rectangles through it. The value
    passed is a colour (gTextAttr2), but the shared parameter name is `pattern` (src/E082C.C:56). */
 extern void (far *gFillRect)(int x1, int y1, int x2, int y2, int pattern); /*@ ds:806A */
 extern void (far *gDrawText)(char far *text, int x, int y, int color, int extra); /*@ ds:80CA */  /* src/E1AA6.C */
@@ -78,7 +78,7 @@ extern void (far *gDrawText)(char far *text, int x, int y, int color, int extra)
    :1317-1318; EOV5.C:161 declares extern int gScrollHook at ds:8117 and g8119 at :162; the
    words 0xAC and 0x2D0 at EOV5.C:1114-1115 are the offset and segment of the far pointer). */
 extern void (far *gScrollHook)(void);  /*@ ds:8117 */
-extern char gScrollOn;     /*@ ds:8110 */  /* overlay 5 sets it to 1 beside the hook (EOV5.C:1110, :1114-1115) and the hook is gated by it at src/E1DE7.C:269 */
+extern char gScrollOn;     /*@ ds:8110 */  /* overlay 5 sets it to 1 beside the hook (EOV5.C:1110, :1114-1115) and the hook is gated by it at src/E1DE7.C:270 */
 /* ds:8115: the status-line flag, nonzero while a status line is up (src/E082C.C:64); it is set to 2
    by LoadOverlayScreen (E082C.C:327, :330) and saved and cleared around the memory report
    ShowMemoryDiagnostics (E082C.C:427; saved at :431, cleared at :432, restored at :440) and the
@@ -134,7 +134,7 @@ extern char *itoa(int value, char far *string, int radix); /*@ 0000:62AA */
 /* The frame styles: the image shows one style entry, a far pointer to DGROUP:1123 at ds:113B. The
    record holds words 0, 2, 5, 4 (the four corner cells), then 1 FF, 3 FF, 7 FF, 6 FF (four one-tile
    edge patterns, each ended by 0xFF). ds:113F has no fixup and holds 00 02 02 01, which is not a
-   pointer. The array form gives the 4-byte stride the code indexes with (gFrameTable[style], :168)
+   pointer. The array form gives the 4-byte stride the code indexes with (gFrameTable[style], :169)
    and the table length is unknown. Whether there is one far pointer per style is not established. No
    caller of DrawTextFrame was found. */
 extern unsigned far *gFrameTable[]; /*@ ds:113B */
@@ -149,7 +149,7 @@ extern unsigned far *gFrameTable[]; /*@ ds:113B */
    byte scan of eob/EOB.EXE and of the overlay images finds no call to it. It appears unused. QUIRK 1DE7:01FE: the
    second and third edge runs re-read the global gTextLeft (1DE7:01FE and 1DE7:021C) where the
    corners and the first and fourth runs use the local copy taken at 1DE7:00E9. The re-reads come
-   after four gDraw805A calls (:170-176) and the DrawTileRun call at :178; nothing in this unit
+   after four gDraw805A calls (:171-177) and the DrawTileRun call at :179; nothing in this unit
    writes gTextLeft between them, but gDraw805A's far target is not identified, so the two values
    are equal only if that code does not write it: the read is presumably dead, not proven to be. */
 /*@ 1DE7:00C9 */ void DrawTextFrame(int style)
@@ -256,10 +256,10 @@ extern unsigned far *gFrameTable[]; /*@ ds:113B */
    origins (gTextLeft, gTextTop + font height) and (gTextLeft, gTextTop) with height `line`, which
    reads as a scroll up by one line (the copy's far target is not identified), and the bottom line
    is refilled through ds:806A (the gFillRect slot); the text is then drawn on that line.
-   `newline` non-zero advances to the next row at once (gTextRow++ from wherever it was, :283); zero
+   `newline` non-zero advances to the next row at once (gTextRow++ from wherever it was, :284); zero
    instead advances the column by strlen(text), wrapping to the next row only when the text no
    longer fits the window width, and in the scroll branch just above it first puts the row on the
-   bottom drawn line (gTextRow = line / gFontHeight, :285). Called only by DrawText (1DE7:060A),
+   bottom drawn line (gTextRow = line / gFontHeight, :286). Called only by DrawText (1DE7:060A),
    which flushes each completed line through it. */
 /*@ 1DE7:03B2 */ void DrawTextLine(char far *text, int newline)
 {
@@ -309,7 +309,8 @@ extern unsigned far *gFrameTable[]; /*@ ds:113B */
     text[0] = 0;
 }
 /* 1DE7:05DF: print `value` in decimal into the text window. The value is formatted into a local
-   30-byte buffer and handed to DrawText (1DE7:060A). No caller was found in the resident code. */
+   30-byte buffer and handed to DrawText (1DE7:060A). No caller found in the resident code (the
+   packet lists no direct call); the overlay images were not scanned. */
 /*@ 1DE7:05DF */ void PrintIntText(int value)
 {
     char buf[30];
@@ -427,9 +428,9 @@ extern char *strcpy(char far *dest, char far *src); /*@ 0000:67CD */
             col += len;
             len = 0;
         } else {
-            /* QUIRK 1DE7:09A6: the append is written in both arms of this if, so the compiler
-               merges the two identical tails and emits a `jmp` to the join, which is the next
-               instruction (EB 00). */
+            /* QUIRK 1DE7:09A6: the append is written in both arms of this if, and the original has
+               a `jmp` to the next instruction there (EB 00), which the match reproduces. Why the
+               compiler emits it is not established. */
             if (len * gFontWidth >= gTextWidth * 8) {
                 if (line[0])
                     DrawTextLine(line, 1);
