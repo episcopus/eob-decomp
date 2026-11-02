@@ -1737,3 +1737,21 @@ new = "StartCellEffect"
 kind = "function"
 why = "fills the first free 18-byte ds:DD2C record with state 2 and the mode's flags, and copies the spell's +9 far callback into its fn, the callback 1414:0172 runs (called by the effect wrappers 0EF3:10D2..2011); not 0BD2:07DE AddDDEffect"
 date = "2026-11-01"
+
+[[rename]]
+id = "0EF3:21E0=OpenSpellPanel"
+addr = "0EF3:21E0"
+old = ""
+new = "OpenSpellPanel"
+kind = "function"
+why = "opens the member's spell panel for an item of class 5/6: gDD14 = the member's known or memorized spell slots, gNameTable = g1278 or g12E0, scans the first nonzero slot, saves the panel rect and runs the panel body 0EF3:2295 (called by 0BD2:1001, E0BD2.C declares it f0EF3_21E0)"
+date = "2026-11-02"
+
+[[rename]]
+id = "ds:EFCC=gNameTable"
+addr = "ds:EFCC"
+old = ""
+new = "gNameTable"
+kind = "global"
+why = "the far table 0EF3:2295 reads names from; set to g12E0 or g1278 by 0EF3:21E0 (only E0EF3.C references ds:EFCC)"
+date = "2026-11-02"

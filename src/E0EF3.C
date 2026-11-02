@@ -217,18 +217,24 @@ extern char gText57C3[];                /*@ ds:57C3 */ /* drawn by 0EF3:08CF */
 extern char gText57C8[];                /*@ ds:57C8 */ /* said by 0EF3:08CF when no member is set */
 extern char gText57D9[];                /*@ ds:57D9 */ /* "%s's %s spell expires." (0EF3:0D78) */
 extern char gText5859[];                /*@ ds:5859 */ /* "All spells on %s are dispelled." (0EF3:131A) */
+extern char gText5899[];                /*@ ds:5899 */ /* "The aid spell fails!" (0EF3:1BA3) */
 extern signed char gEffectSound[];      /*@ ds:1355 */ /* one record per effect value, stride 0x13;
                                                            the first byte is a sound id (0EF3:08CF) */
 extern void (far *gFnEFBA)(void);       /*@ ds:EFBA */ /* a redraw hook run by 0EF3:08CF */
 extern char gFlag;                      /*@ ds:F3B9 */ /* cleared by 0EF3:2541 (E0ACD.C) */
 extern void far *gSegDF4E;              /*@ ds:DF4E */ /* the slot-5 buffer (E07A9.C) */
 extern void (far *gRestoreRect)(int x, int y, int width, int height, void far *buf); /*@ ds:804E */
+extern void (far *gSaveRect)(int x, int y, int width, int height, void far *buf); /*@ ds:80AE */
 extern void HidePointerZone(int left, int top, int right, int bottom); /*@ 1BBE:01FE */
 extern void ShowPointerZone(void);      /*@ 1BBE:02C2 */
 extern void DrawViewRows(void);         /*@ 2116:0034 */ /* overlay 4 entry, ovl4:1EDE */
 extern char far *gDD14;                 /*@ ds:DD14 */ /* a far byte table 0EF3:25BD scans */
 extern signed char gDDE2;               /*@ ds:DDE2 */ /* the member 0EF3:25BD saves */
 extern signed char gA9C5;               /*@ ds:A9C5 */ /* a counter 0EF3:25BD walks */
+extern char far *gNameTable;            /*@ ds:EFCC */ /* the name table 0EF3:2295 reads, set to
+                                                          g1278 or g12E0 by 0EF3:21E0 */
+extern char far *g1278[];               /*@ ds:1278 */ /* far name pointers (src/E0BD2.C) */
+extern char far *g12E0[];               /*@ ds:12E0 */ /* far name pointers (src/E0BD2.C) */
 
 /* The record 0EF3:08CF, 0EF3:2541 and 0EF3:25BD take: an action context with the member it applies
    to at +0x38 (-1 when none) and a result word at +4 the functions hand back. */
@@ -1206,7 +1212,6 @@ extern void f0EF3_2A53(int a, int b, int c, int d, int e, void far *p); /*@ 0EF3
 }
 
 /*@ 0EF3:1BA3 stub */ void f0EF3_1BA3(void) {}
-
 /* 0EF3:1C45: undo a bandage-like effect on the record: when its +0xE2 byte is set subtract it
    from the hit points and clear it, then clear the record's effect flag bit 0x40. Called by
    0BD2:0D2D and 0EF3:1F0B. */
@@ -1486,7 +1491,37 @@ extern void f0EF3_2A53(int a, int b, int c, int d, int e, void far *p); /*@ 0EF3
     HealCharacter(gCurMember, gChars[gPanelMember].m24[0] * 2);
 }
 
-/*@ 0EF3:21E0 stub */ void f0EF3_21E0(int who, int flag) {}
+void f0EF3_2295(void);
+/* 0EF3:21E0: open the member's spell panel: clear gDDE2, make `who` the panel member, set gF43D
+   when `flag` is 1, point gNameTable at g12E0 (memorized) or g1278 (known), point gDD14 at the
+   member's +0x55 or +0x37 spell slots and gA9C5 at its first nonzero slot. Restore the panel
+   rectangle from gSegDF4E + 0x61a8 when gFlag is clear, then set gFlag, rebuild the item list
+   (BuildList1) and run the panel body 0EF3:2295; returns 1. Called by the item class 5/6 path of
+   0BD2:1001. */
+/*@ 0EF3:21E0 */ int OpenSpellPanel(int who, char flag)
+{
+    gDDE2 = 0;
+    gPanelMember = who;
+    if (gF43D = (flag == 1)) {
+        gNameTable = (char far *)g12E0;
+        gDD14 = gChars[who].memorized;
+    } else {
+        gNameTable = (char far *)g1278;
+        gDD14 = gChars[who].known;
+    }
+    gA9C5 = 0;
+    while (gA9C5 < 6) {
+        if (gDD14[gA9C5] > 0)
+            break;
+        gA9C5++;
+    }
+    if (!gFlag)
+        gSaveRect(8, 0x7A, 0x0E, 0x37, (char far *)gSegDF4E + 0x61A8);
+    gFlag = 1;
+    BuildList1();
+    f0EF3_2295();
+    return 1;
+}
 
 /*@ 0EF3:2295 stub */ void f0EF3_2295(void) {}
 
