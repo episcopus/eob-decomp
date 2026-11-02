@@ -56,3 +56,39 @@ def test_classify_c_and_asm():
     assert map_units.classify(code, 0, len(code), funcs) == "c"
     assert map_units.classify(asm_fn * 2, 0, 2 * len(asm_fn), [{"linear": 0}, {"linear": len(asm_fn)}]) == "asm"
     assert map_units.classify(isr, 0, len(isr), [{"linear": 0}]) == "asm"
+
+
+def test_template_far_pointers_by_name():
+    """An initialiser template (copied by F_SCOPY@) is compared byte by byte; a far pointer in it must
+    name the same function, an overlay function as its stub entry."""
+    import struct as st
+    sys.path.insert(0, os.path.join(ROOT, "tools", "match"))
+    import cmatch
+
+    class B:
+        def __init__(self, dgroup, image, relocs, by_linear):
+            self.dgroup, self.image, self.relocs, self.by_linear = dgroup, image, relocs, by_linear
+
+        def word(self, p):
+            return st.unpack_from("<H", self.image, p)[0]
+
+    img = bytearray(0x2000)
+    st.pack_into("<HH", img, 0x1000, 0x0624, 0x0050)          # ours: far pointer to our function at 0050:0624
+    img[0x1004] = 7                                           # a plain byte
+    a = B(0x100, img, {0x1002}, {0x0050 * 16 + 0x0624: "_Icons"})
+    b = B(0x100, img, {0x1002}, {})
+
+    class O:
+        dgroup = 0x100
+        load_module = bytearray(0x2000)
+        lm_relocs = {0x1802}
+        stub_entry = {(3, 0x624): (0x210C, 0x25)}
+    st.pack_into("<HH", O.load_module, 0x1800, 0x0025, 0x210C)
+    O.load_module[0x1804] = 7
+    funcs, func_of = {"Icons": ("ovl3", 0x624)}, {"_Icons": "Icons"}
+    assert cmatch.compare_template(a, b, O, 0, 0, 0x800, 5, funcs, func_of) is None
+    O.stub_entry = {(3, 0x624): (0x210C, 0x2A)}                # another entry: wrong
+    assert "far pointer to Icons" in cmatch.compare_template(a, b, O, 0, 0, 0x800, 5, funcs, func_of)
+    O.stub_entry = {(3, 0x624): (0x210C, 0x25)}
+    O.load_module[0x1804] = 8                                  # a plain byte differs
+    assert "byte 07, original 08" in cmatch.compare_template(a, b, O, 0, 0, 0x800, 5, funcs, func_of)
