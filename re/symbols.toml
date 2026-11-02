@@ -3502,6 +3502,9 @@ unit = "e0ef3"
 addr = "0EF3:1530"
 size = 160
 evidence = ["frame"]
+name = "UpdateCellObjectsBit1"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0ef3_15d0"
@@ -3640,6 +3643,9 @@ unit = "e0ef3"
 addr = "0EF3:1A30"
 size = 160
 evidence = ["frame"]
+name = "UpdateCellObjectsBit2"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0ef3_1ad0"

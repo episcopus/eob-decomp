@@ -76,15 +76,32 @@ struct Tgt {
     char m0C;               /* +0C: the effect flag bits */
 };
 
-/* The 28-byte object records at ds:8A82 (src/E08E6.C); this unit only needs the stride. */
+/* The 28-byte object records at ds:8A82 (src/E08E6.C); only the fields this unit touches. */
 struct Obj28 {
-    char pad00[0x1C];
+    signed char b0;         /* +00: an index into the gTable1A3B records */
+    signed char kind;       /* +01 */
+    int id;                 /* +02 */
+    char pad04[0x08 - 0x04];
+    signed char type;       /* +08: set to 0x0A by 0EF3:1530 and 0EF3:1A30 */
+    char pad09[0x0B - 0x09];
+    signed char timer;      /* +0B: set to 0x0F by 0EF3:1530 and 0EF3:1A30 */
+    char pad0C[0x1C - 0x0C];
+};
+
+/* The 27-byte records at ds:1A3B (src/E08E6.C names it struct Entry27); only +0x0F here. */
+struct Entry27 {
+    char pad00[2];
+    unsigned char m02;      /* +02: an index into the 0A72:0006 table (0EF3:1702) */
+    char pad03[0x0F - 0x03];
+    long m0F;               /* +0F: tested with 1 by 0EF3:1530 and 2 by 0EF3:1A30 */
+    char pad13[0x1B - 0x13];
 };
 
 extern struct CharRec gChars[];         /*@ ds:F580 */
 extern struct Entry14 gTable8DD2[];     /*@ ds:8DD2 */
 extern struct ItemType gItemTypes[];    /*@ ds:A9F0 */
 extern struct Obj28 gObjs[];            /*@ ds:8A82 */
+extern struct Entry27 gTable1A3B[];     /*@ ds:1A3B */
 
 extern struct CharRec far *gCurRec;     /*@ ds:F51C */ /* the far pointer to the current record */
 extern signed char gCurMember;          /*@ ds:DCFA */ /* the member an effect targets, redrawn last */
@@ -146,6 +163,8 @@ extern int f0D1C_0670(int who, int mask); /*@ 0D1C:0670 */
 extern int f0BD2_0106(int who, int row); /*@ 0BD2:0106 */
 extern int Obj15B4(char who, int value); /*@ 08E6:15B4 */
 extern void DamageObject(struct Obj28 far *obj, int n); /*@ 08E6:0FBE */
+extern void ClearObjectType(struct Obj28 far *obj); /*@ 08E6:000B */
+extern void Obj17FD(int far *list, int key, int field, char flags, char scanAll, char scanFiltered); /*@ 08E6:17FD */
 extern void SetMouseItem(int n); /*@ 07A9:010C */
 extern void f1BF3_00A8(int dx, int dy); /*@ 1BF3:00A8 */
 extern int sprintf(char far *buf, char far *fmt, ...); /*@ 0000:57AE */
@@ -579,7 +598,35 @@ extern void BuildList5(void); /*@ 0CF7:0211 */
     f0EF3_097B(gPanelMember, 4, gPartyCell, gF3B8, gFBCC);
 }
 
-/*@ 0EF3:1530 stub */ void f0EF3_1530(void) {}
+/* 0EF3:1530: list the objects that match the record's cell and field with Obj17FD, then walk the
+   list: for every object 0D1C:0BAB does not reject, remember that one was found and, when the
+   object's character record has bit 0 of +0x0F set, set its type byte to 0x0A and its timer to
+   0x0F. Returns 1 when any object was listed. Called through a table. */
+/*@ 0EF3:1530 */ int UpdateCellObjectsBit1(struct Tgt far *rec)
+{
+    int buffer[5];
+    int far *list;
+    int found;
+    struct Obj28 far *obj;
+
+    found = 0;
+    list = buffer;
+    Obj17FD(list, rec->m04, rec->m06, rec->m07, 1, 1);
+    for (; *list != -1; ) {
+        if (f0D1C_0BAB(*list) == 0) {
+            obj = &gObjs[*list];
+            list++;
+            found = 1;
+            if (gTable1A3B[obj->b0].m0F & 1) {
+                obj->type = 0x0A;
+                obj->timer = 0x0F;
+            }
+        } else {
+            list++;
+        }
+    }
+    return found;
+}
 
 /* 0EF3:15D0: set every member's effect flag bit 2 and redraw the party rows. */
 /*@ 0EF3:15D0 */ void MarkAllMembersFlag4(void)
@@ -630,7 +677,30 @@ extern void BuildList5(void); /*@ 0CF7:0211 */
     DiscardEquippedItems(rec);
 }
 
-/*@ 0EF3:1702 stub */ void f0EF3_1702(void) {}
+/* 0EF3:1702: after 0EF3:06E7, walk the 30 objects and for each whose id is the object the current
+   page faces (0D1C:00DA), whose character record's +0x0F long has bit 0 or 1 and which 0D1C:0BAB
+   does not reject, roll 1d20 and clear the object's type when the roll is under the value
+   0A72:0006 gives for the character record's +2 index. Called by the wand/turn-undead paths.
+   DRAFT: the body is right but the original spills `target` to the frame (0x0A bytes); our build
+   keeps it in a register (`make match` differs at sub sp). */
+/*@ 0EF3:1702 draft */ void ClearObjectsFacingCell(void)
+{
+    struct Entry27 far *rec;
+    struct Obj28 far *obj;
+    int target;
+    int i;
+
+    f0EF3_06E7();
+    target = f0D1C_00DA(gPartyCell, gFBCC);
+    obj = gObjs;
+    for (i = 0; i < 0x1E; i++, obj++) {
+        rec = &gTable1A3B[obj->b0];
+        if (obj->id == target && (rec->m0F & 3) != 0 && f0D1C_0BAB(i) == 0) {
+            if (RollDice(1, 0x14, 0) < GetIndexedByte(0, rec->m02, 4))
+                ClearObjectType(obj);
+        }
+    }
+}
 
 /* 0EF3:17B7: add the panel member's effect record of mode 6 through 0EF3:097B. */
 /*@ 0EF3:17B7 */ void AddEffectRecord6(void)
@@ -696,7 +766,35 @@ extern void BuildList5(void); /*@ 0CF7:0211 */
     f0EF3_097B(gPanelMember, 7, gPartyCell, gF3B8, gFBCC);
 }
 
-/*@ 0EF3:1A30 stub */ void f0EF3_1A30(void) {}
+/* 0EF3:1A30: list the objects that match the record's cell and field with Obj17FD, then walk the
+   list exactly as 0EF3:1530 does, but testing bit 1 of the object's character record +0x0F and
+   setting its type byte to 0x0A and its timer to 0x0F. Returns 1 when any object was listed.
+   Called through a table. */
+/*@ 0EF3:1A30 */ int UpdateCellObjectsBit2(struct Tgt far *rec)
+{
+    int buffer[5];
+    int far *list;
+    int found;
+    struct Obj28 far *obj;
+
+    found = 0;
+    list = buffer;
+    Obj17FD(list, rec->m04, rec->m06, rec->m07, 1, 1);
+    for (; *list != -1; ) {
+        if (f0D1C_0BAB(*list) == 0) {
+            obj = &gObjs[*list];
+            list++;
+            found = 1;
+            if (gTable1A3B[obj->b0].m0F & 2) {
+                obj->type = 0x0A;
+                obj->timer = 0x0F;
+            }
+        } else {
+            list++;
+        }
+    }
+    return found;
+}
 
 /* 0EF3:1AD0: toggle the swap mode: when gFBD2 bit 4 is clear apply a 6-turn effect, set the bit
    and redraw the party rows; otherwise say the message at ds:587A. Called through a table. */
