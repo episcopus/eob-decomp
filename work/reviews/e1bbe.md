@@ -1,7 +1,7 @@
 # Review: e1bbe
 
 Reviewer: rev-haiku
-Commit reviewed: 68d16c2 for round 9 (main; src/E1BBE.ASM last changed at e831c19, the round 8 fixes; src/E1A72.ASM at b00a8c7, and the round 8 label cites still hold against it; the review branch is identical to main). Round 8: 20871bc (main; src/E1BBE.ASM last changed at d1e1a32, src/E1A72.ASM at 2af4699). Round 7: 07c010f (main; src/E1BBE.ASM, src/E1A72.ASM and the other files the cites name are the same in the review branch at 1d5a0ef). Round 6: a53aa55 (main; src/E1BBE.ASM last changed at 887afda, src/E1A72.ASM at e3ea88d; the review branch is identical to main in this worktree). Round 5: d1538ee for round 5 (main; src/E1BBE.ASM last changed at 6ddaa61, src/E1A72.ASM at 65ebeb1; both are identical in this worktree). Round 4: 433dc71 (main; src/E1BBE.ASM is unchanged since 5cfa933). Earlier: 421cd1e7a31c20710200fe18247bdf159a34d76c (round 3, main; src/E1BBE.ASM is identical to the review branch at 8225102, which is on main). Round 2 was reviewed at 089dfd1 and round 1 at 0cfccb1 (see below). E1A72.ASM has moved on main since round 2 (commit e856ab9), which is why round 3 finds stale citations.
+Commit reviewed: 890d7f8 for round 10 (main, the 0385631 fixes merged; src/E1BBE.ASM last changed at 0385631; the review branch is identical to main). Round 9: 68d16c2 (main; src/E1BBE.ASM last changed at e831c19, the round 8 fixes; src/E1A72.ASM at b00a8c7, and the round 8 label cites still hold against it; the review branch is identical to main). Round 8: 20871bc (main; src/E1BBE.ASM last changed at d1e1a32, src/E1A72.ASM at 2af4699). Round 7: 07c010f (main; src/E1BBE.ASM, src/E1A72.ASM and the other files the cites name are the same in the review branch at 1d5a0ef). Round 6: a53aa55 (main; src/E1BBE.ASM last changed at 887afda, src/E1A72.ASM at e3ea88d; the review branch is identical to main in this worktree). Round 5: d1538ee for round 5 (main; src/E1BBE.ASM last changed at 6ddaa61, src/E1A72.ASM at 65ebeb1; both are identical in this worktree). Round 4: 433dc71 (main; src/E1BBE.ASM is unchanged since 5cfa933). Earlier: 421cd1e7a31c20710200fe18247bdf159a34d76c (round 3, main; src/E1BBE.ASM is identical to the review branch at 8225102, which is on main). Round 2 was reviewed at 089dfd1 and round 1 at 0cfccb1 (see below). E1A72.ASM has moved on main since round 2 (commit e856ab9), which is why round 3 finds stale citations.
 
 Playbook 70. Judge what a matching file can still get wrong: names, types, comments, structure.
 The matcher already proved the bytes; do not re-prove them, read for meaning.
@@ -10,6 +10,58 @@ The matcher already proved the bytes; do not re-prove them, read for meaning.
 
 Each finding is a checkbox. `must-fix` blocks `make review-pass` until a decompiler ticks it off
 (with the commit that fixes it); `should` and `note` do not block.
+
+### Round 10 (review of commit 890d7f8, src/E1BBE.ASM last changed at 0385631, the round 9 citation fixes)
+
+Checked: `make match FILE=src/E1BBE.ASM` 7 of 7 (860 bytes), exit 0; `make readability UNIT=e1bbe` 0 findings. The
+addresses were counted again from the instruction sizes, from 1BBE:0002 and 00ED: HidePointer (0015, 0017, 0021, 002B,
+004B to 0050, 0055, 005A, 0075, 008B, 0090, 00E0), the far-return byte at 00EC, ShowPointer (00FD, 00FF, 010A, 010F,
+0117, 011E, 0127, 012E, 014A to 014F, 0154, 0159, 015B, 018B, 0190, 01F4 for the gDraw80C2 call), HidePointerZone (0213,
+021E, 0234, 0238, 023C, 0240, 0255 to 025A, 025B, 0272), the push cs pair at 02AE, ShowPointerZone at 02C6 and LockShowPointer
+at 0335, LockHidePointer at 030A. They hold, except the cite at src/E1BBE.ASM:117 (must-fix below). The cross-unit cites
+hold at 890d7f8: the busy branch in src/E1A72.ASM (:405-416, the L01E9 drop, the L020C set), the zone tests (:430-437),
+the L025C bracket (:441-447) and the L01EC in-zone hide (:405-416, the 4000h at :414); E1BB1.ASM:21-22, :53, :130 and
+:162-164; E1BF3.ASM:35 and :65-66; E14EF.C:75-76; E1A29.C:57 for the gDraw80C2 signature. Names checked against the code
+and the other files of src/: _HidePointer and _ShowPointer (the hide and show halves, the gHideDepth count and the save and
+draw order); _HidePointerZone and _ShowPointerZone (the zone arguments at [bp+6] to [bp+0Ch], the overlap test); the
+gPointerState bits (8000h, 4000h, the low byte as a repeat count that saturates at FFh); _gRestoreRect and _gSaveRect
+(the argument order against the pushes; the same names and signatures in src/E0EF3.C, E0BD2.C and E1C0E.C).
+
+Correction to round 9: round 9 checked "E07A9.C:215 (the gMouseDisabled declaration)". The declaration is at
+src/E07A9.C:221 (`extern int gMouseDisabled; /*@ ds:814A */`). The source gives no line for it, so nothing in
+src/E1BBE.ASM changes; the cite is corrected here.
+
+- [ ] must-fix src/E1BBE.ASM:117 (_gDraw80C2, the EXTRN comment): "src/E1BBE.ASM:305-312 gives the push order" is a
+  wrong cite. The five pushes that give the argument order are at src/E1BBE.ASM:318-323 (_gShapeY, _gShapeX,
+  _gPointerShapeSeg, _gPointerShapeOff, then `mov ax,0` and `push ax`), and the call is at :324. The order itself is
+  right: it gives the callee's (mode, src, x, y) at src/E1A29.C:57. Fix the line range; no other change.
+- [ ] should src/E1BBE.ASM:94-99 (_gSpriteHeight, _gNegSpriteHeight, _gSpriteWidth, _gNegSpriteWidth): the unit is
+  not given. _gSpriteWidth and _gNegSpriteWidth are in 8-pixel columns, like _gPointerWidth8: HidePointer and
+  ShowPointer add the copy to the column left (1BBE:005F and 0161) and clip the columns against 28h (1BBE:0057 and
+  0156). _gSpriteHeight and _gNegSpriteHeight are pixel rows, like _gPointerHeight, clipped against 0C8h. HidePointerZone
+  uses _gPointerWidth8 shifted left three times to get pixels (1BBE:0255 to 025A), so a reader who sees "sprite width"
+  beside that pixel code can take the wrong unit. Say the unit in both comments.
+- [ ] should src/E1BBE.ASM:83-84 (g8172, g8174): "far pointer handed to [ds:80AA]" is accurate but gives no evidence
+  for what the pointer is. src/E1A72.ASM:138-146 and :550-554 say the 17A6 unit saves and restores the 16 bytes under
+  the pointer that DGROUP:80AA reads (SetFarPointer and GetFarPointer, saved in E17A6.ASM:93-95). Add that, so the
+  placeholder has its reason. This is a comment change, not a rename.
+- [ ] note src/E1BBE.ASM:49 (_gHideDepth): "0 = drawn" is right, but InitMouse starts the count at 1 and the state at 0
+  (src/E1A72.ASM:288-289), so the pointer starts hidden until the first show. A next reader may ask why the count starts
+  at 1, so say it here or cite that line.
+- [ ] note src/E1BBE.ASM, the LockHidePointer and LockShowPointer headers (1BBE:0307 and 0332): the word "Lock" suggests
+  mutual exclusion, which the header already denies (the busy flag is a test then an increment). The name is backed by
+  the callers' "start a frame" and "end a frame" (src/E14EF.C:75-76). A rename would touch other units, so it is for
+  the human, not a must-fix here.
+- [ ] note the bare spellings g8172, g8174, g80AA and g80A2 against the underscored names are still open for the human
+  (rounds 1 to 9). Not repeated as a must-fix; no change in this round.
+
+Summary: the unit is understandable from its source alone. The bytes match, and the names agree with the rest of src/
+(the shared globals, the save and restore routines, and the mouse-handler labels it cites). One stale cite is a must-fix
+(src/E1BBE.ASM:117). The two clarity items (the units of the sprite copies; the evidence for g8172 and g8174) are
+shoulds. Placeholders and why: _f1BBE_0001 (the segment start, no code), g80AA and g80A2 (call sites only;
+src/E1A72.ASM:32-33 calls them indirect far functions), g8172 and g8174 (the far pointer; the evidence is now in
+src/E1A72.ASM:550-554). _gDraw80C2 keeps its family-guess prefix (src/E1A29.C:53). No matcher, spec or pin question;
+nothing escalated. Result: review-failed (one must-fix: the stale cite at src/E1BBE.ASM:117).
 
 ### Round 9 (review of commit 68d16c2, src/E1BBE.ASM unchanged since e831c19)
 
