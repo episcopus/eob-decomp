@@ -27,8 +27,10 @@ struct CharRec {
     char pad16[0x0A];
     signed char m20;      /* +20: an index into a class table, read by 0A72:0522 and 0DE8:0B45 */
     char pad21[3];
-    signed char m24[3];   /* +24: three per-class-slot counters (src/E0D1C.C declares the same
-                             array); 0A72:0522 reads element [0] */
+    signed char m24[3];   /* +24: the three class-slot levels: LevelUpSlot increments m24[slot]
+                             when a slot gains a level (E0DE8.C:650), E1547.C:570-571 prints it as
+                             the slot's level-like byte (E1547.C:563-564), and 0A72:0522 reads
+                             element [0] */
     char pad27[0xF3 - 0x27];
 };
 
@@ -80,8 +82,9 @@ char GetClassSlotByte(char row, char slot); /*@ 0A72:0509 */
 }
 
 /* 0A72:007B: the slot 0, 1 or 2 whose g35D4 byte for class `classIndex` equals `slotId`, or -1.
-   `slotId` is the g35D4 slot value searched for (the two src/ callers pass 2 and 4, E0D1C.C:579
-   and :586). Called by 0D1C:0903, 0EF3:0498, 0EF3:04F7 and overlays 1 and 6. */
+   `slotId` is the g35D4 slot value searched for; the src/ callers pass 1, 2 and 4 (E0D1C.C:579,
+   :586; E0EF3.C:614, :634, :637; EOV6.C:144, :209, :440, :441, :447). Called by 0D1C:0903,
+   0EF3:0498, 0EF3:04F7 and overlays 1 and 6. */
 /*@ 0A72:007B */ int FindClassSlot(int slotId, int classIndex)
 {
     if (GetClassSlotByte(classIndex, 0) == slotId)
@@ -148,8 +151,10 @@ char GetClassSlotByte(char row, char slot); /*@ 0A72:0509 */
    the base 0DE8:0D5E builds the armour class m1D from: 0DE8:0D5E does
    `base = GetArmourClassBase(rec->m15);` and then `rec->m1D = base + 10;` (E0DE8.C:684-685),
    before the item modifiers and clamps. Called by 0DE8:0D5E, 0EF3:0F0B (which does
-   `base = GetArmourClassBase(gCurRec->m15)` and compares m1D with base + 6, E0EF3.C:945-946) and
-   overlay 0. */
+   `base = GetArmourClassBase(gCurRec->m15)` and compares m1D with base + 6, E0EF3.C:978-979),
+   ovl0:135D EditStatField (`GetArmourClassBase(amount)` under `if (index == 3)`, EOV0.C:1002) and
+   ovl0:1BF2 RollCharacterStats (`GetArmourClassBase(scores[3])`, where scores[3] is stored as m15
+   at EOV0.C:1103, EOV0.C:1106). */
 /*@ 0A72:019D */ int GetArmourClassBase(char m15)
 {
     return g349E[m15];
@@ -160,7 +165,10 @@ char GetClassSlotByte(char row, char slot); /*@ 0A72:0509 */
    per-stat multiplier g1778[m17 - 1] (capped at 2 while g174B[classIndex] < 10), then adds
    multiplier * count: the first group's term is always added, while the second and third are added
    only when both their count and their sides are nonzero. Finally it divides by 3 when g1769 is
-   nonzero or by 2 when only g175A is nonzero. `m17` is decremented in place and then reused to hold
+   nonzero or by 2 when only g175A is nonzero. The counts are the three class-slot levels m24[0..2],
+   one die per level: RollCharacterStats calls RollHitPoints(m20, m17, m24[0], m24[1], m24[2]) for a
+   new character (EOV0.C:1107-1108), while LevelUpSlot calls it with one die for the single slot
+   that gained a level (E0DE8.C:652-656). `m17` is decremented in place and then reused to hold
    the multiplier (a separate local does not match: the original shows `dec byte ptr [bp + 8]` at
    0A72:01B2); `m17` is the character's +17 byte, an index into g54F6 (the caller 0DE8:0C82 passes
    gChars[who].m17, E0DE8.C:652; E0DE8.C:23), and the evidence does not show it is a character
@@ -244,12 +252,12 @@ char GetClassSlotByte(char row, char slot); /*@ 0A72:0509 */
 /* 0A72:0468: formats a strength score and its exceptional percentile into the static buffer
    gTextBuf and returns it. When `percent` is 0 or less only the score is written, as "%d"; else
    the score and a two-digit percentile are written, as "%d/%02d". QUIRK 0A72:0468: a percentile of
-   100 is written as 0 (the 18/100 form cannot be drawn), which a port must keep. The "%d/%02d" and
-   "%d" formats are the literals at ds:36A4 and ds:36AC. Called by 1547:0991 (drawn on the STRENGTH
-   row of the CHARACTER INFO block, E1547.C:554), ovl0:065B and ovl0:135D (both pass CharRec m0D,
-   m0F). Inferred (not from a source in src/): 100 prints as 0 because %02d would widen the field to
-   three digits, and the screen field is two digits wide; the only src/ caller (E1547.C:554) gives
-   the x position, not the width. */
+   100 is written as 0, which a port must keep (inferred: the 18/100 form cannot be drawn). The
+   "%d/%02d" and "%d" formats are the literals at ds:36A4 and ds:36AC. Called by 1547:0991 (drawn
+   on the STRENGTH row of the CHARACTER INFO block, E1547.C:554), ovl0:065B and ovl0:135D (both
+   pass CharRec m0D, m0F). Inferred (not from a source in src/): 100 prints as 0 because %02d would
+   widen the field to three digits, and the screen field is two digits wide; the only src/ caller
+   (E1547.C:554) gives the x position, not the width. */
 /*@ 0A72:0468 */ char *FormatStrengthPercent(char score, char percent)
 {
     if (percent > 0) {
@@ -285,7 +293,9 @@ char GetClassSlotByte(char row, char slot); /*@ 0A72:0509 */
    the class has no such slot: 0A72:007B scans slots 0, 1 and 2 for a match, 0A72:04B7 uses the
    byte as an index into g35BC and returns -1 when it is -1, and the callers test for -1
    (E1547.C:566, E0DE8.C:610; E0DE8.C:614 tests 0A72:04B7's long result, not this byte)
-   (0D1C:059B compares the result with 4 and 5). Purpose unknown. */
+   (0D1C:059B compares the result with 4 and 5). A non-negative byte indexes g1219, the
+   per-class-slot names, at E1547.C:568 (g1219 is declared at E1547.C:124), as well as g35BC.
+   Purpose unknown. */
 /*@ 0A72:0509 */ char GetClassSlotByte(char row, char slot)
 {
     return g35D4[row * 4 + slot];
@@ -296,7 +306,8 @@ char GetClassSlotByte(char row, char slot); /*@ 0A72:0509 */
    0DE8:0007 computes `ac = GetHitTarget(who, gTable1A3B[b0].m00) - bonus` (E0DE8.C:206) and then
    compares a d20 roll against it (`return roll >= ac;`, E0DE8.C:214). `classByte` is the +0 field
    of the target's ds:1A3B entry (E0DE8.C:57), m20 is the character's class index into ds:116E,
-   and m24[0] is the character's first per-class-slot counter at +24. Build note: `result` is what
+   and m24[0] is the character's first class-slot level at +24, taken as the level less one here
+   and passed as GetIndexedByte's limit at E0D1C.C:433. Build note: `result` is what
    keeps the two lookups in memory; without it -O promotes `cls` (or `num`) to CL and the spills
    differ from the original. */
 /*@ 0A72:0522 */ char GetHitTarget(char who, char classByte)
