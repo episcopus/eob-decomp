@@ -110,6 +110,23 @@ extern char gText7BEE[]; /*@ ds:7BEE */
 extern char gText7BF2[]; /*@ ds:7BF2 */
 extern char gText7BFA[]; /*@ ds:7BFA */
 extern char gFileNameBuf[]; /*@ ds:FE6E */
+extern void far *gFont1A47; /*@ ds:FE4E */
+extern void far *gA9C0; /*@ ds:A9C0 */
+extern char gFB44; /*@ ds:FB44 */
+extern char gFlag; /*@ ds:F3B9 */
+extern char gText7F07[]; /*@ ds:7F07 */
+extern char gText7F0F[]; /*@ ds:7F0F */
+extern char gText7F18[]; /*@ ds:7F18 */
+extern char gText7F20[]; /*@ ds:7F20 */
+extern char gF542[]; /*@ ds:F542 */
+extern int g8117; /*@ ds:8117 */
+extern int g8119; /*@ ds:8119 */
+extern int g139; /*@ ds:0139 */
+extern int gFBC8; /*@ ds:FBC8 */
+extern unsigned char far gSeg1D0[]; /*@ 01D0:0000 */
+extern unsigned char far gSeg1D8[]; /*@ 01D8:0000 */
+extern unsigned char far gSeg1F8[]; /*@ 01F8:0000 */
+extern unsigned char far gSeg1F0[]; /*@ 01F0:0000 */
 
 extern void far * (far *gGetSpriteCell)(int x, int y, int w, int h, void far *sheet); /*@ ds:8086 */
 extern void (far *gFillRect)(int x1, int y1, int x2, int y2, int pattern); /*@ ds:806A */
@@ -143,6 +160,17 @@ extern int f0D1C_0670(int who, int mask); /*@ 0D1C:0670 */
 extern void ComputeArmourClass(int who); /*@ 0DE8:0D5E */
 extern void ClearCharEffectSlot(int who, int what); /*@ 1414:0C2D */
 extern void RedrawCharacters(void); /*@ 0D1C:0583 */
+extern void Action01E3(char far *text); /*@ 0ACD:01E3 */
+extern void f0EF3_2541(char far *text); /*@ 0EF3:2541 */
+extern void fOvl2_09ED(void); /*@ 2106:0039 */  /* overlay 2 entry, ovl2:09ED */
+extern void fOvl3_07A5(int a, int b, void far *buf); /*@ 210C:0052 */  /* overlay 3 entry, ovl3:07A5 */
+extern void fOvl4_1F51(int n); /*@ 2116:005C */  /* overlay 4 entry, ovl4:1F51 */
+extern void LoadOverlayScreen(char far *name, int a, int b); /*@ 082C:05EC */
+extern void LoadScreenImage(char far *name, void far *buf, int a, int b, int c); /*@ 082C:051B */
+extern int FileOpen(char far *name, int mode); /*@ 1C0E:00DB */
+extern void FileRead(int handle, void far *buf, unsigned long len); /*@ 1C0E:0400 */
+extern void FileClose(int handle); /*@ 1C0E:03BB */
+extern void f1A47_0169(void far *font); /*@ 1A47:0169 */
 
 /* siblings not decompiled yet: their real signatures, so callers compile */
 void Ovl5_00A1(int mode);
@@ -212,12 +240,12 @@ void PrintTableString(int index, int flag);
    message panel 025F. The strings are the overlay's own yes/no menu labels. */
 /*@ ovl5:03A9 */ void PrintTableString(int index, int flag)
 {
-    char far *p;
+    char far *offsets;
     int off;
 
-    p = gSegDF4E;
+    offsets = gSegDF4E;
     index--;
-    off = ((int far *)p)[index];
+    off = ((int far *)offsets)[index];
     DrawText(gSegDF4E + off);
     if (flag)
         Ovl5_025F();
@@ -248,6 +276,11 @@ void PrintTableString(int index, int flag);
     InsertListItem(&gB899[gSoundVolume * 9], gSoundVolume, item, sound);
 }
 
+/* ovl5:0924: the temple/NPC panel. Clears the panel, draws message 8 and shows the menu ds:7BB2
+   ("Heal Party"/"Leave") when gFC04 bit 0x2000 is set, otherwise ds:7BA6 ("Tend his wounds"/
+   "Talk"/"Leave"). Choice 0 runs the character panel 0828 and sets bit 0x4000 and returns; choice
+   1 draws message 1, sets bit 0x2000 and repeats; anything else returns. Called from the dispatcher
+   1A82 (mode 0). */
 /*@ ovl5:0924 */ void TemplePanel(void)
 {
     int sel;
@@ -338,7 +371,9 @@ void PrintTableString(int index, int flag);
    resurrect/heal panel 0EB9 may act on: first every character whose flags bit 0 is set and whose
    m22 is 0xf7; then, for every character with flags bit 0 set, each of its 25 item slots whose
    item type's gA9F5[type].m09 bit 0..6 equals 8, as -gTable8DD2[item].m0B. Returns the count.
-   Called by 0EB9. */
+   Called by 0EB9. The only remaining difference is the counter's initialisation: the original
+   zeroes `i` and gCountDDE0 through one AX (`xor ax,ax; mov si,ax; mov [dde0],ax`); every source
+   form tried puts the store of gCountDDE0 first, so this stays a draft until a form is found. */
 /*@ ovl5:0BBE draft */ int BuildDeathList(void)
 {
     struct CharRec far *rec;
@@ -373,7 +408,9 @@ void PrintTableString(int index, int flag);
 /* ovl5:0C9D: heals the party. Rolls 1d3+2 "cures", then for each party member that f0D1C_0670
    accepts (mask 3) clears its flag bits 1..2, clears bit 7 of its effect flags, clears effect slot
    -0x22 and, while it is below its maximum hit points, spends one cure (1d8+9, clamped to the
-   maximum) and heals it again. Called by the resurrect panel 0EB9. */
+   maximum) and heals it again. Called by the resurrect panel 0EB9. The only remaining difference
+   is that the original keeps the two hit-point stores separate while ours merges their tails into
+   one shared store; no source form tried keeps them apart, so this stays a draft. */
 /*@ ovl5:0C9D draft */ void HealLoop(void)
 {
     int i;
@@ -550,6 +587,96 @@ void PrintTableString(int index, int flag);
 /*@ ovl5:1204 stub */ void Ovl5_1204(void) {}
 /*@ ovl5:160A stub */ void Ovl5_160A(void) {}
 /*@ ovl5:17C8 stub */ void Ovl5_17C8(void) {}
-/*@ ovl5:1A82 stub */ void Ovl5_1A82(int mode) {}
+/* ovl5:1A82: the overlay's entry and dispatcher (reached from 122E:1D76 and the overlay's stub
+   entry). It hides the pointer, saves the current font, handles the gFB44/gFlag message redraws
+   and the overlay-4 call, then dispatches `mode`: 8 runs the 1204 animation, 9 the 17C8 one and
+   0xa the "find the word" panel (ovl2:09ED); every other mode draws the item screen (loads the
+   7F07 art, reads 7F0F into gSegDF4E, draws the panel and the 8x8 font) and runs one of the eight
+   menu panels through the jump table at cs:1CCD. Finally it restores the font and the pointer,
+   copies a byte table into overlay 3, loads the two 7F18/7F20 images, redraws the characters and
+   resets the text window to 7. The only remaining difference is the constant-segment far object
+   at 01D0 (and the two 01F8/01F0 screen buffers): the original reaches them with the literal
+   paragraph (mov ax,0x1d0), while our link relocates the object's offset, so this stays a draft. */
+/*@ ovl5:1A82 draft */ void CharOverlay(int mode)
+{
+    void far *font;
+    register int handle;
+
+    font = gFont1A47;
+    gEFC6 = -1;
+    gFE42 = 0;
+    LockHidePointer();
+    if (gFB44)
+        Action01E3(gF542);
+    if (gFlag)
+        f0EF3_2541(gF542);
+    fOvl4_1F51(1);
+    switch (mode) {
+    case 8:
+        Ovl5_1204();
+        break;
+    case 9:
+        Ovl5_17C8();
+        break;
+    case 0xa:
+        fOvl2_09ED();
+        break;
+    default:
+        LoadOverlayScreen(gText7F07, 5, 3);
+        ClipRect(0, 0, 0, 0, 0x16, 0x78, 0, 6);
+        Ovl5_00A1(mode);
+        LockShowPointer();
+        handle = FileOpen(gText7F0F, 1);
+        FileRead(handle, gSegDF4E, 0x7d00L);
+        FileClose(handle);
+        f1A47_0169(gA9C0);
+        HidePointerZone(0, 0x79, 0x13f, 0xc8);
+        DrawFilledPanel(0, 0x79, 0x13f, 0xc8, gFB4C, gF53A, gF57E);
+        ShowPointerZone();
+        gScrollOn = 1;
+        g139 = gF57E;
+        SetTextWindow(9);
+        g8117 = 0xac;
+        g8119 = 0x2d0;
+        switch (mode) {
+        case 0:
+            TemplePanel();
+            break;
+        case 1:
+            Menu1();
+            break;
+        case 2:
+            ResurrectPanel();
+            break;
+        case 3:
+            AttackPanel();
+            break;
+        case 4:
+            KillHerPanel();
+            break;
+        case 5:
+            QuitPanel();
+            break;
+        case 6:
+            SurrenderPanel();
+            break;
+        case 7:
+            FreeHimPanel();
+            break;
+        }
+        f1A47_0169(font);
+        gScrollOn = 0;
+        LockHidePointer();
+        fOvl3_07A5(0, 0, gSeg1D8 + (gSeg1D0[gFBC8 - 1] << 5));
+        LoadScreenImage(gText7F18, gSeg1F8, 5, 3, 0);
+        LoadScreenImage(gText7F20, gSeg1F0, 5, 3, 2);
+        g8115 = 0;
+        RedrawCharacters();
+        fOvl4_1F51(1);
+        break;
+    }
+    SetTextWindow(7);
+    LockShowPointer();
+}
 /*@ ovl5:1CDD stub */ void Ovl5_1CDD(int n) {}
 /*@ ovl5:1E1B stub */ void Ovl5_1E1B(int a, int b, int x, int y, int c, int d) {}
