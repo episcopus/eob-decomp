@@ -7228,7 +7228,7 @@ size = 24
 evidence = ["near"]
 level = "L2"
 match_flags = "tasm /mx"
-name = "ReleaseOverlayRecord"
+name = "_ReleaseOverlayRecord"
 
 [[function]]
 id = "e1e8b_0613"
@@ -7318,7 +7318,7 @@ size = 28
 evidence = ["near"]
 level = "L2"
 match_flags = "tasm /mx"
-name = "OverlayParagraphsRemaining"
+name = "_OverlayParagraphsRemaining"
 
 [[function]]
 id = "e1e8b_077d"
@@ -7346,7 +7346,7 @@ unit = "e1e8b"
 addr = "1E8B:07D7"
 size = 152
 evidence = ["frame"]
-name = "_ReleaseOverlayRecords"
+name = "_DropStaleOverlaySlots"
 level = "L2"
 match_flags = "tasm /mx"
 
