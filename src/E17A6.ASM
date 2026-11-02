@@ -1,16 +1,21 @@
-; Unit at EOB.EXE 17A6:0000 (6694 bytes). EGA/VGA planar graphics support: three 256-byte
-; bit-expansion tables, the direction helper DirectionFromPoints (17A6:0314), the plane-table
-; loader SetPlaneTables (17A6:037E), the tile blitter DrawTile (17A6:03E7), the sprite
-; unpackers BlitSpriteDefault (17A6:0FFA), BlitSpriteCga (17A6:11CD) and BlitSpriteEga
-; (17A6:1715), the distance helper Distance (17A6:0F61), the neighbour search FindNeighbour
-; (17A6:0F9D), the mask builder BuildMask (17A6:18EA) and the icon translator TranslateImage
-; (17A6:197E). The code writes the EGA sequencer (3C4/3C5) and graphics controller (3CE/3CF)
-; and draws into the A400/A600 planar window; the scratch words at CS:0300..03E6 and
-; CS:0FEF..0FF9 hold the saved far pointer, the port shadows and the current source and
-; destination pointers. The overlays call the blitters: overlay 3 (ovl3:0872, 08A8, 08DA,
-; 0934) uses SetPlaneTables, ExpandNibbles and BuildMask, overlay 4 (ovl4:0EEC, 0F08, 0F1D,
-; 1F6A) uses the three sprite unpackers and DrawTile. Names are inferred from the code and
-; the callers; the exact sprite formats are not established.
+; Unit at EOB.EXE 17A6:0000 (6694 bytes). Graphics support for the CGA, Tandy, EGA, MCGA and
+; VGA modes: three 256-byte translation tables, the direction helper DirectionFromPoints
+; (17A6:0314), the plane-table loader SetPlaneTables (17A6:037E), the tile blitter DrawTile
+; (17A6:03E7), the sprite unpackers BlitSpriteDefault (17A6:0FFA), BlitSpriteCga (17A6:11CD)
+; and BlitSpriteEga (17A6:1715), the distance helper Distance (17A6:0F61), the neighbour
+; search FindNeighbour (17A6:0F9D), the mask builder BuildMask (17A6:18EA) and the icon
+; translator TranslateImage (17A6:197E). The code writes the sequencer map mask data port
+; 3C5 and the graphics controller (3CE/3CF); it never writes the sequencer index port 3C4,
+; it relies on the index its caller left. DrawTile stores through ES:DI, where ES is 0A200h
+; in EGA mode (L0419) and the gSegEFC2 far pointer otherwise (just before L041F); the
+; A400/A600 segments hold the source tile planes (L04B8, L0535 and L0576). The scratch words at
+; CS:0300..03E6 and CS:0FEF..0FF9 hold the saved far pointer, the port shadows and the
+; current source and destination pointers. The overlays call the blitters; the call sites
+; below come from the disassembly of build/re/eob-overlays/ovl03.bin and ovl04.bin, where
+; the resident segment reads 00A8: overlay 3 (ovl3:0872, 08A8, 08DA, 0934) uses
+; SetPlaneTables, ExpandNibbles and BuildMask, overlay 4 (ovl4:0EEC, 0F08, 0F1D, 1F6A) uses
+; the three sprite unpackers and DrawTile. Names are inferred from the code and the callers;
+; the exact sprite formats are not established.
 
         .MODEL  LARGE
 
@@ -29,7 +34,8 @@
 
 ; ---- data 0000..0100
 ; 17A6:0000: 256-byte bit-reversal table: gBitRevTable[i] is i with its eight bits reversed
-; (0 -> 00h, 1 -> 80h, 2 -> 40h, ...). Used by the CGA sprite row (17A6:128B, 12EC).
+; (0 -> 00h, 1 -> 80h, 2 -> 40h, ...). No instruction in this unit reads it: the CGA sprite
+; rows (17A6:128B, 12EC) translate through gTable10CD at CS:10CD instead.
 gBitRevTable:
         db      00h, 80h, 40h, 0C0h, 20h, 0A0h, 60h, 0E0h, 10h, 90h, 50h, 0D0h, 30h, 0B0h, 70h, 0F0h
         db      08h, 88h, 48h, 0C8h, 28h, 0A8h, 68h, 0E8h, 18h, 98h, 58h, 0D8h, 38h, 0B8h, 78h, 0F8h
@@ -49,8 +55,10 @@ gBitRevTable:
         db      0Fh, 8Fh, 4Fh, 0CFh, 2Fh, 0AFh, 6Fh, 0EFh, 1Fh, 9Fh, 5Fh, 0DFh, 3Fh, 0BFh, 7Fh, 0FFh
 ; ---- data 0100..0200
 ; 17A6:0100: 256-byte table: the bit reversal of gBitRevTable with each adjacent bit pair
-; swapped (0 -> 00h, 1 -> 40h, 2 -> 80h, 3 -> C0h, 4 -> 10h, ...). Used by the EGA tile
-; path (17A6:0E53, 0EEE) and the EGA sprite row (17A6:179E).
+; swapped (0 -> 00h, 1 -> 40h, 2 -> 80h, 3 -> C0h, 4 -> 10h, ...). Read by the EGA tile
+; path (17A6:0E53, its cs:[bx+0100h] reads) and by the CGA tile path in DrawTile (L06D6 to
+; L07AB, reached from the mode 0 dispatch). 17A6:0EEE reads no table; the EGA sprite row
+; (17A6:179E) reads gTable1615.
 gBitRevPairTable:
         db      00h, 40h, 80h, 0C0h, 10h, 50h, 90h, 0D0h, 20h, 60h, 0A0h, 0E0h, 30h, 70h, 0B0h, 0F0h
         db      04h, 44h, 84h, 0C4h, 14h, 54h, 94h, 0D4h, 24h, 64h, 0A4h, 0E4h, 34h, 74h, 0B4h, 0F4h
@@ -70,8 +78,9 @@ gBitRevPairTable:
         db      0Fh, 4Fh, 8Fh, 0CFh, 1Fh, 5Fh, 9Fh, 0DFh, 2Fh, 6Fh, 0AFh, 0EFh, 3Fh, 7Fh, 0BFh, 0FFh
 ; ---- data 0200..0300
 ; 17A6:0200: 256-byte nibble-swap table: gNibbleSwapTable[i] is i with its two nibbles
-; exchanged (0 -> 00h, 1 -> 10h, 2 -> 20h, ...). Used by the EGA tile path (17A6:0D20,
-; 0E53) and ExpandNibbles (17A6:0F1F).
+; exchanged (0 -> 00h, 1 -> 10h, 2 -> 20h, ...). Read by BlitMaskedByte (17A6:0D20, its
+; cs:[bx+0200h] reads), by the mode 1 path in DrawTile (L08DE to L0A33) and by ExpandNibbles
+; (17A6:0F1F, L0F44). 17A6:0E53 reads the 0100h table instead.
 gNibbleSwapTable:
         db      00h, 10h, 20h, 30h, 40h, 50h, 60h, 70h, 80h, 90h, 0A0h, 0B0h, 0C0h, 0D0h, 0E0h, 0F0h
         db      01h, 11h, 21h, 31h, 41h, 51h, 61h, 71h, 81h, 91h, 0A1h, 0B1h, 0C1h, 0D1h, 0E1h, 0F1h
@@ -92,12 +101,18 @@ gNibbleSwapTable:
 ; ---- data 0300..0314
 gSavedFarOff dw 0                ; 0300: offset saved by 17A6:0446
 gSavedFarSeg dw 0                ; 0302: segment saved by 17A6:0446
-gSaveBuf db 16 dup (0)           ; 0304: 16-byte save buffer for _SetFarPointer
+gSaveBuf db 16 dup (0)           ; 0304: backing store for the far pointer that _SetFarPointer
+                                 ; redirects (the game's 16 bytes are copied in by the L0446 block
+                                 ; and back by L04EE; src/E1A72.ASM, the 1A72:02FE comment). Its
+                                 ; port shadows: bytes 3, 6, 11, 12 and 15 take the EGA register
+                                 ; values written between L0461 and L04EE.
 ; ---- 0314..037E
-; 17A6:0314: return a direction 0..7 (0xFF when none) from two 5-bit coordinates: divide
-; each argument by 32, compare the remainders and quotients, and index the 9-byte table at
-; ds:7FBC. Callers pass (obj->id, gSoundVolume) and use the result as an orientation
-; (08E6:000B) and a direction (08E6:00C3, 08E6:0430, 08E6:0765, 0D1C:09CB).
+; 17A6:0314: return a direction 0..7 (0xFF when none) from two packed map cells (y * 32 + x, a
+; 10-bit value): divide each by 32 into its x remainder and y quotient, compare the remainders
+; and quotients, and index the 16-byte table at ds:7FBC (index 0 to 15; FF is the "no
+; direction" value at indexes 0, 3, 7 and 11 to 15). Callers pass (obj->id, gPartyCell,
+; ds:FBCA) and use the result as an orientation (08E6:000B) and a direction (08E6:00C3,
+; 08E6:0430, 08E6:0765, 0D1C:09CB).
         PUBLIC  _DirectionFromPoints              ; @ 17A6:0314
 _DirectionFromPoints PROC FAR
         push bp
@@ -166,8 +181,9 @@ _DirectionFromPoints ENDP
 
 ; ---- 037E..03AF
 ; 17A6:037E: copy two 16-byte plane tables from the far pointers at [bp+6]/[bp+8] and
-; [bp+0A]/[bp+0C] into CS:03AF and CS:03BF. Called from overlay 3 (ovl3:0872) with the two
-; tables at ds:FB4D and ds:F4D6.
+; [bp+0A]/[bp+0C] into CS:03AF (gPlaneTableA) and CS:03BF (gPlaneTableB). Called from overlay
+; 3 (ovl3:0872, in LoadWallTextures, src/EOV3.C:472) with the first pointer at ds:F4D6 and
+; the second at ds:FB4D.
         PUBLIC  _SetPlaneTables              ; @ 17A6:037E
 _SetPlaneTables PROC FAR
         push bp
@@ -202,20 +218,22 @@ _SetPlaneTables ENDP
 
 ; ---- data 03AF..03BF
 ; 17A6:03AF: 16-byte plane table, filled by SetPlaneTables (17A6:037E) from the first far
-; pointer; the EGA tile path indexes it with a nibble to pick the plane of a pixel.
+; pointer (ds:F4D6); DrawTile's MCGA/VGA branch (L0ADA onward, taken for gGraphicsChoice 3
+; and 4) indexes it with a nibble to pick the plane of a pixel.
 gPlaneTableA:
         db      00h, 01h, 02h, 03h, 04h, 05h, 06h, 07h, 08h, 09h, 0Ah, 0Bh, 0Ch, 0Dh, 0Eh, 0Fh
 ; ---- data 03BF..03CF
 ; 17A6:03BF: 16-byte plane table, filled by SetPlaneTables (17A6:037E) from the second far
-; pointer; the EGA tile path uses it when gFlipPlanes is 0.
+; pointer (ds:FB4D); the same MCGA/VGA branch uses it when gFlipPlanes is 0.
 gPlaneTableB:
         db      00h, 01h, 02h, 03h, 04h, 05h, 06h, 07h, 08h, 09h, 0Ah, 0Bh, 0Ch, 0Dh, 0Eh, 0Fh
 ; ---- data 03CF..03E7
 ; 17A6:03CF: scratch words of DrawTile (17A6:03E7) and its helpers. gPlaneSelect and
 ; gSrcPlaneSelect are 0 or 1 (the plane the source byte belongs to); gTileRows, gTileRows2
-; and gTileCols are the loop counters; gSrcOff/gSrcSeg and gSrcSeg2 hold the source far
-; pointer; gDstSeg is the destination segment; gFlipPlanes and gSecondPlane choose the
-; plane table and the second-plane path.
+; and gTileCols are the loop counters; gSrcOff is the source far pointer's offset and gSrcSeg2
+; its segment (at entry); gSrcSeg is a plane segment (A400 or A600 plus a paragraph, L0535 to
+; L0545), not the source far pointer; gDstSeg is the destination segment; gFlipPlanes and
+; gSecondPlane choose the plane table and the second-plane path.
 gPlaneSelect dw 0
 gSrcPlaneSelect dw 0
 gTileRows dw 0
@@ -230,9 +248,10 @@ gFlipPlanes dw 0
 gSecondPlane dw 0
 ; ---- 03E7..0D20
 ; 17A6:03E7: draw a tile from the far pointer at [bp+6]/[bp+8] into the screen buffer,
-; dispatching on the graphics mode gGraphicsChoice: 2 (EGA) saves the far pointer and programs the
-; sequencer and graphics controller, 0 (CGA), 1 (Tandy) and 3 (MCGA) have their own paths.
-; Called from overlay 4 (ovl4:1F6A).
+; dispatching on the graphics mode gGraphicsChoice: 2 (EGA) saves the far pointer and programs
+; the sequencer and graphics controller, 0 (CGA) and 1 (Tandy) have their own paths, and the
+; last branch takes 3 and 4 (MCGA, VGA) as well as any other value. Called from overlay 4
+; (ovl4:1F6A).
         PUBLIC  _DrawTile              ; @ 17A6:03E7
 _DrawTile PROC FAR
         push bp
@@ -1166,9 +1185,10 @@ _DrawTile ENDP
 
 ; ---- 0D20..0E53
 ; 17A6:0D20: one masked byte of the EGA tile path: read a byte from the destination at
-; CS:03DD/03DB and a byte from the source at CS:03DF/03DB, translate each through the table
-; at CS:0200 when its plane is 1, combine them, and store at ES:DI. Called from DrawTile
-; (17A6:0A9D..0AD1).
+; CS:03DD (gDstSeg) with offset BX and a byte from the source at CS:03DB (gSrcSeg) with the
+; source offset SI (gSrcOff, CS:03DF, is loaded by the caller), translate each through the
+; table at CS:0200 when its plane is 1, combine them, and store at ES:DI. Called from
+; DrawTile (17A6:0A9D..0AD1).
         PUBLIC  _BlitMaskedByte              ; @ 17A6:0D20
 _BlitMaskedByte PROC NEAR
         push dx
@@ -1388,8 +1408,9 @@ _BlitMaskedWord ENDP
 
 ; ---- 0EEE..0F1F
 ; 17A6:0EEE: select plane CL in the sequencer (3C5) and the graphics controller (3CF),
-; then combine the source byte at DS:BX with the mask in AH and the byte at DS:SI and store
-; it at ES:DI. Called from DrawTile (17A6:05D7..05E6).
+; then combine the destination byte at DS:BX (DS is gDstSeg) with the mask in AH and the
+; source byte at DS:SI (DS is gSrcSeg), and store it at ES:DI. Called from
+; DrawTile (17A6:05D7..05E6).
         PUBLIC  _SetPlaneAndWrite              ; @ 17A6:0EEE
 _SetPlaneAndWrite PROC NEAR
         mov dx, 3CFh
@@ -1416,9 +1437,11 @@ _SetPlaneAndWrite PROC NEAR
 _SetPlaneAndWrite ENDP
 
 ; ---- 0F1F..0F61
-; 17A6:0F1F: copy 0x1F40 rows of 4 bytes from the far pointer at [bp+6]/[bp+8] to
-; [bp+0A]/[bp+0C], translating each byte through the table at CS:0200. Called from overlay 3
-; (ovl3:08A8, 08DA).
+; 17A6:0F1F: copy 0x1F40 groups of four source bytes from the far pointer at [bp+6]/[bp+8] to
+; [bp+0A]/[bp+0C], nibble-swapping each byte through the table at CS:0200, one output byte per
+; source byte. A group is read backwards from si + 3, then si advances by 4. The name rests on
+; the caller's comment, "expands the planes into gSegDF4E" (src/EOV3.C:456 to :457). Called
+; from overlay 3 (ovl3:08A8, 08DA).
         PUBLIC  _ExpandNibbles              ; @ 17A6:0F1F
 _ExpandNibbles PROC FAR
         push bp
@@ -1463,10 +1486,10 @@ L0F44:
 _ExpandNibbles ENDP
 
 ; ---- 0F61..0F9D
-; 17A6:0F61: return an approximate distance between two 5-bit coordinates: the larger of
-; the two absolute differences plus half the smaller (the octagonal metric). Callers use it
-; as a sound attenuation (177D:026A) and a proximity test (08E6:00C3, 08E6:0765, 08E6:1410,
-; ovl6:09D2).
+; 17A6:0F61: return an approximate distance between two packed map cells (y * 32 + x, a 10-bit
+; value; the low five bits of each are x, the rest y): the larger of the two absolute
+; differences plus half the smaller (the octagonal metric). Callers use it as a sound
+; attenuation (177D:026A) and a proximity test (08E6:00C3, 08E6:0765, 08E6:1410, ovl6:09D2).
         PUBLIC  _Distance              ; @ 17A6:0F61
 _Distance PROC FAR
         push bp
@@ -1508,9 +1531,14 @@ L0F92:
 _Distance ENDP
 
 ; ---- 0F9D..0FEF
-; 17A6:0F9D: search the 8 neighbour offsets at ds:7FCC and the 2 offsets at ds:7FDC for
-; the one that maps [bp+6] to [bp+8] modulo 0x400; return the matched value or 0xFFFF.
-; Purpose unknown: no caller in this build.
+; 17A6:0F9D: search the 8 neighbour offsets at ds:7FCC and then a pair of the 4 offsets at
+; ds:7FDC for the one that maps [bp+6] to [bp+8] modulo 0x400; return the matched value or
+; 0xFFFF. The third argument [bp+0Ah] picks the pair by the word index 2 * dx into ds:7FDC
+; (dx = 0 gives 7FDC/7FDE, dx = 1 gives 7FE0/7FE2; see the L0FB6 setup and L0FD1).
+; Purpose unknown: no caller in this build. Checked: a byte scan of eob/EOB.EXE and
+; build/re/eob-overlays/*.bin finds no far call 9A 9D 0F A8 00 (the overlays reach resident
+; units with segment 00A8, e.g. ovl3:0872 calls 17A6:037E), and src/ has no caller; a call
+; through a far pointer (src/E1DE7.C:71) cannot be excluded that way.
         PUBLIC  _FindNeighbour              ; @ 17A6:0F9D
 _FindNeighbour PROC FAR
         push bp
@@ -1689,7 +1717,8 @@ _BlitSpriteRowDefault ENDP
 
 ; ---- data 10CD..11CD
 ; 17A6:10CD: 256-byte table used by the CGA sprite rows (17A6:128B, 12EC): entry i is
-; ((i >> 2) & 0FCh) | (i & 3), so each group of four entries repeats the same four values.
+; ((i >> 4) << 2) | (i & 3), so each group of four entries repeats the same four values and
+; the value rises by 4 every 16 entries.
 gTable10CD:
         db      00h, 01h, 02h, 03h, 00h, 01h, 02h, 03h, 00h, 01h, 02h, 03h, 00h, 01h, 02h, 03h
         db      04h, 05h, 06h, 07h, 04h, 05h, 06h, 07h, 04h, 05h, 06h, 07h, 04h, 05h, 06h, 07h
@@ -2205,8 +2234,9 @@ gMaskTableOff dw 0
 gMaskTableOff2 dw 0
 ; ---- 18EA..197E
 ; 17A6:18EA: build a mask from the image at the far pointer [bp+6]/[bp+8] and write it
-; back: for each pair of bytes, translate through the table at ds:80CE/80D0 and set the
-; mask bits. Called from overlay 3 (ovl3:0934).
+; back: for each pair of bytes, translate through one of two 256-byte tables in segment
+; ds:80D0, at ds:80CE + 190h and ds:80CE + 290h (the L1917 setup), chosen by bit 0 of dh
+; (the `xor dh, 1` after L1966), and set the mask bits. Called from overlay 3 (ovl3:0934).
         PUBLIC  _BuildMask              ; @ 17A6:18EA
 _BuildMask PROC FAR
         push bp
@@ -2292,8 +2322,11 @@ _BuildMask ENDP
 ; ---- 197E..1A26
 ; 17A6:197E: copy an image from the far pointer at [bp+6]/[bp+8] to [bp+0A]/[bp+0C]
 ; through the translation table at [bp+0E]/[bp+10], the mode word at [bp+12] choosing the
-; pixel format (0, 2 and 3 have their own paths; anything else is the 4-bit path). Called
-; from SetMouseItem (07A9:018F) to translate the mouse icon.
+; pixel format: mode 0 translates count * 2 bytes (the `shl ax, 1` before L19BA), mode 2
+; copies two words and then a translated stream until a value has the 20h bit (L19EB), mode 3
+; copies 8 words and then count * 2 words (L19FB), and every other mode translates count * 4
+; bytes (the two `shl ax, 1` before L19E0). Called from SetMouseItem (07A9:010C), call at
+; 07A9:018F, to translate the mouse icon; the name comes from that use.
         PUBLIC  _TranslateImage              ; @ 17A6:197E
 _TranslateImage PROC FAR
         push bp
