@@ -5,12 +5,13 @@
    WTRDP1..3, ORB, TOWRMAGE, KING, ADVENTUR, HANDS, TUNNEL, ZOOMTUNL, AVALANCH, SSI, PRESENT,
    DAND, WESTWOOD). The whole unit is drawn through the driver pointers the front end fills at
    load time (ds:1EE2 and its neighbours), which this page only partly names.
-   The scene functions are named after the .CMP/.COL files they load: PlayWtrdpScene (ovl0:015D,
-   WTRDP1..3), PlayOrbScene (ovl0:06E2, ORB/TOWRMAGE), PlayTowerMageScene (ovl0:0B20,
-   TOWRMAGE), PlayKingScene (ovl0:1265, KING/ADVENTUR), PlayHandsScene (ovl0:15F9, HANDS) and
-   PlayTunnelScene (ovl0:1DF3, WTRDP3/ORB/TUNNEL/ZOOMTUNL) are written; 23A3 is still a stub.
-   They are long ClipRect/frame animations; every utility they use (LoadPackedImage, LoadPalette,
-   PlaySound, Dissolve, BlitImage, DrawGrid, GrowFrame, WaitFrameDelay, f19EC_002A) is matched. */
+   The scene functions are named after the .CMP/.COL files they load, all written: PlayWtrdpScene
+   (ovl0:015D, WTRDP1..3), PlayOrbScene (ovl0:06E2, ORB/TOWRMAGE), PlayTowerMageScene
+   (ovl0:0B20, TOWRMAGE), PlayKingScene (ovl0:1265, KING/ADVENTUR), PlayHandsScene (ovl0:15F9,
+   HANDS), PlayTunnelScene (ovl0:1DF3, WTRDP3/ORB/TUNNEL/ZOOMTUNL) and PlayAvalancheScene
+   (ovl0:23A3, AVALANCH/ZOOMTUNL). They are long ClipRect/frame animations; every utility they
+   use (LoadPackedImage, LoadPalette, PlaySound, Dissolve, BlitImage, DrawGrid, GrowFrame,
+   WaitFrameDelay, f19EC_002A) is matched. */
 
 /*@flags -ml -O -Z -G */
 
@@ -111,7 +112,7 @@ int SignOf(int value);
 void PlayKingScene(void);
 void PlayHandsScene(void);
 void PlayTunnelScene(void);
-void Ovl0_23A3(void);
+void PlayAvalancheScene(void);
 void RevealInStrips(void);
 void DrawGrid(void);
 extern void ClipRect(int x1, int y1, int x2, int y2, int width, int height, int extra1, int extra2); /*@ 0986:000E */
@@ -178,7 +179,7 @@ void PlayLogoSequence(void);
     if (!gAbort)
         PlayTunnelScene();
     if (!gAbort)
-        Ovl0_23A3();
+        PlayAvalancheScene();
     if (!gAbort)
         DrawGrid();
 }
@@ -923,7 +924,104 @@ extern int gKingStep[8];                /*@ ds:1CF4 */  /* Purpose unknown: per-
     gFrameDelay = 0x32;
     LoadPalette("ZOOMTUNL.COL");
 }
-/*@ ovl0:23A3 stub */ void Ovl0_23A3(void) {}
+/* The six-entry x/y/width/height tables ovl0:23A3 reads for the ZOOMTUNL rectangles. */
+extern unsigned char gZoomX1[6];        /*@ ds:1D04 */  /* Purpose unknown: x1 of each zoom rect, ovl0:23A3 */
+extern unsigned char gZoomY1[6];        /*@ ds:1D0A */  /* Purpose unknown: y1 of each zoom rect, ovl0:23A3 */
+extern unsigned char gZoomW[6];         /*@ ds:1D10 */  /* Purpose unknown: width of each zoom rect, ovl0:23A3 */
+extern unsigned char gZoomH[6];         /*@ ds:1D16 */  /* Purpose unknown: height of each zoom rect, ovl0:23A3 */
+extern unsigned char gZoomX2[6];        /*@ ds:1D1C */  /* Purpose unknown: x2 of each zoom rect, ovl0:23A3 */
+extern unsigned char gZoomY2[6];        /*@ ds:1D22 */  /* Purpose unknown: y2 of each zoom rect, ovl0:23A3 */
+extern void f1A29_004D(int mode, void far *src, int x, int y, int region); /*@ 0998:0046 */
+
+/* ovl0:23A3: the AVALANCH/ZOOMTUNL scene. It cuts two 0x14 by 0x78 panels out of gOverlayBuf,
+   flashes them three times, then wipes the screen with a growing box and a strip reveal before
+   loading AVALANCH.CMP and ZOOMTUNL.CMP, drawing the six ZOOMTUNL rectangles and closing the
+   bottom bar. Sound 8/9/6 play at the phase boundaries. */
+/*@ ovl0:23A3 */ void PlayAvalancheScene(void)
+{
+    void far *imgA;
+    void far *imgB;
+    register int i;
+    register int j;
+
+    gDrawPage = 4;
+    imgA = gMakeImage(0x14, 0, 0x14, 0x78, gOverlayBuf);
+    imgB = gMakeImage(0, 0, 0x14, 0x78, gOverlayBuf);
+    f1A29_004D(4, imgA, 0xa0, 0, 0);
+    f1A29_004D(4, imgB, 0, 0, 0);
+    WaitFrameDelay();
+    for (i = 0; i < 3; i++) {
+        gFrameDelay = 8;
+        ClipRect(0, 0, 0xa, 0x20, 0x14, 0x78, 4, 0);
+        PlaySound(7);
+        WaitFrameDelay();
+        gFrameDelay = 8;
+        ClipRect(0, 0, 0xa, 0x20, 0x14, 0x78, 2, 0);
+        PlaySound(7);
+        WaitFrameDelay();
+    }
+    ClipRect(0, 0xa0, 0, 0xb8, 0x28, 0x10, 6, 0);
+    DelayFrames(0x12);
+    gFrameDelay = 5;
+    ClipRect(0x14, 0, 0xa, 0x20, 0x14, 0x78, 2, 0);
+    WaitFrameDelay();
+    gFrameDelay = 5;
+    ClipRect(0, 0x7a, 0xa, 0x20, 0x14, 0x3c, 2, 0);
+    ClipRect(0x14, 0x7a, 0xa, 0x5c, 0x14, 0x3c, 2, 0);
+    WaitFrameDelay();
+    gFrameDelay = 5;
+    ClipRect(0x14, 0, 0xa, 0x20, 0x14, 0x78, 4, 0);
+    for (i = 0; i < 6; i++)
+        ClipRect(i * 6, 0xb9, 7, i * 8 + 0x18, 6, 8, 2, 2);
+    MemFree(imgB);
+    MemFree(imgA);
+    WaitFrameDelay();
+    gFrameDelay = 0x28;
+    ClipRect(0, 0, 0xa, 0x20, 0x14, 0x78, 2, 0);
+    LoadPackedImage("AVALANCH.CMP", 5, 3);
+    f19EC_002A(3, 4, FP_OFF(gOverlayBuf), FP_SEG(gOverlayBuf));
+    WaitFrameDelay();
+    gFrameDelay = 0x10;
+    ClipRect(0x21, 0, 0x11, 0x38, 6, 0x30, 4, 0);
+    PlaySound(8);
+    ClipRect(0, 0, 0, 0, 0x28, 0xb8, 0, 2);
+    WaitFrameDelay();
+    PlaySound(4);
+    for (i = 0; i < 0x1e; i++) {
+        WaitFrameDelay();
+        if (i == 0)
+            ClearBottomBar();
+        gFrameDelay = 1;
+        ClipRect(0xa, (RandomByte() & 7) + 0x19, 0xa, 0x18, 0x14, 0x90, 2, 0);
+    }
+    PlaySound(9);
+    for (i = 0; i < 6; i++) {
+        gFrameDelay = 1;
+        ClipRect(gZoomX1[i], gZoomY1[i], gZoomX2[i], gZoomY2[i], gZoomW[i], gZoomH[i], 4, 2);
+        for (j = 0; j < 4; j++) {
+            WaitFrameDelay();
+            gFrameDelay = 1;
+            ClipRect(0xa, (RandomByte() & 7) + 0x19, 0xa, 0x18, 0x14, 0x90, 2, 0);
+        }
+    }
+    ClipRect(0, 0, 0, 0, 0x28, 0xa8, 2, 0);
+    gFrameDelay = 0x28;
+    LoadPackedImage("ZOOMTUNL.CMP", 5, 3);
+    f19EC_002A(3, 4, FP_OFF(gOverlayBuf), FP_SEG(gOverlayBuf));
+    WaitFrameDelay();
+    PlaySound(6);
+    gFrameDelay = 2;
+    ClipRect(0, 0, 0xa, 0x20, 0x14, 0x78, 4, 0);
+    WaitFrameDelay();
+    gFrameDelay = 2;
+    ClipRect(0x14, 0, 0xa, 0x20, 0x14, 0x78, 4, 0);
+    WaitFrameDelay();
+    ClipRect(0, 0x78, 0xa, 0x1e, 0x14, 0x40, 4, 0);
+    ClipRect(0x14, 0x78, 0xa, 0x5e, 0x14, 0x40, 4, 0);
+    gDrawPage = 0;
+    ClipRect(0, 0xb0, 0, 0xb8, 0x28, 0x10, 6, 0);
+    DelayFrames(0x32);
+}
 /* ovl0:2913: reveals the screen in horizontal strips. For each step 0..6 it walks the 25
    eight-line strips top to bottom and clips each strip twice: the whole strip (height
    7 - step, so the bottom part of it) and its single moving line at si*8 + 7 - step; a frame

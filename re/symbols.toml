@@ -11291,6 +11291,9 @@ unit = "iov0"
 addr = "ovl0:23A3"
 size = 1392
 evidence = ["ovl", "near", "frame"]
+name = "PlayAvalancheScene"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "iov0_2913"

@@ -2313,3 +2313,12 @@ new = "PlayTunnelScene"
 kind = "function"
 why = "it loads WTRDP3.CMP, ORB.CMP, TUNNEL.CMP and the ZOOMTUNL.COL palette (ovl0:1DF3 +1deb, +215a, +22f9, +2390)"
 date = "2026-11-02"
+
+[[rename]]
+id = "intro/ovl0:23A3=PlayAvalancheScene"
+addr = "intro/ovl0:23A3"
+old = "Ovl0_23A3"
+new = "PlayAvalancheScene"
+kind = "function"
+why = "it loads AVALANCH.CMP and ZOOMTUNL.CMP and draws the six zoom rectangles (ovl0:23A3 +2635, +27f2)"
+date = "2026-11-02"
