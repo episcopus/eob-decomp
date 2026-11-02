@@ -54,7 +54,8 @@ gMcbSeg       dw 0                      ; 0923:000E: MCB of the one-paragraph bl
 ; DGROUP's frame (0E9F) is 057Ch paragraphs above this segment's (0923): 057C0h + 28C4h = 8084h. The
 ; word has no relocation in the EXE, so the assembler resolved it to a constant. ReserveMemoryBelowVideo
 ; stores the end of DOS memory here (0923:01F0) and TrimMemoryToVideo reads it back (0923:02B3); i0892
-; reads it at 0892:01D8.
+; reads it at 0892:01D8 and itoa's the word into the last execl argument for EOB.EXE (src/I0892.C:234),
+; which stores its own memory top from that number (src/E07C8.C:311).
 gMemTopSeg    equ 8084h
 
 ; 0923:0010: walk the MCB chain from gMcbSeg, merging free blocks; AX = 0 if it ends with a
