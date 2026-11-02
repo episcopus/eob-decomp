@@ -1,12 +1,16 @@
 ; Unit at EOB.EXE 17A6:0000 (6694 bytes). EGA/VGA planar graphics support: three 256-byte
-; bit-expansion tables, the direction helper 17A6:0314, the plane-table loader 17A6:037E,
-; the tile blitters 17A6:03E7 and 17A6:11CD, the sprite packers 17A6:0FFA and 17A6:1715,
-; the distance helper 17A6:0F61, the table search 17A6:0F9D, the mask builder 17A6:18EA and
-; the icon translator 17A6:197E. The code writes the EGA sequencer (3C4/3C5) and graphics
-; controller (3CE/3CF) and draws into the A400/A600 planar window; the scratch words at
-; CS:0300..03E6 and CS:0FEF..0FF9 hold the saved far pointer, the port shadows and the
-; current source/destination pointers. Names are placeholders where the role is inferred
-; from the code only.
+; bit-expansion tables, the direction helper DirectionFromPoints (17A6:0314), the plane-table
+; loader SetPlaneTables (17A6:037E), the tile blitter DrawTile (17A6:03E7), the sprite
+; unpackers BlitSpriteDefault (17A6:0FFA), BlitSpriteCga (17A6:11CD) and BlitSpriteEga
+; (17A6:1715), the distance helper Distance (17A6:0F61), the neighbour search FindNeighbour
+; (17A6:0F9D), the mask builder BuildMask (17A6:18EA) and the icon translator TranslateImage
+; (17A6:197E). The code writes the EGA sequencer (3C4/3C5) and graphics controller (3CE/3CF)
+; and draws into the A400/A600 planar window; the scratch words at CS:0300..03E6 and
+; CS:0FEF..0FF9 hold the saved far pointer, the port shadows and the current source and
+; destination pointers. The overlays call the blitters: overlay 3 (ovl3:0872, 08A8, 08DA,
+; 0934) uses SetPlaneTables, ExpandNibbles and BuildMask, overlay 4 (ovl4:0EEC, 0F08, 0F1D,
+; 1F6A) uses the three sprite unpackers and DrawTile. Names are inferred from the code and
+; the callers; the exact sprite formats are not established.
 
         .MODEL  LARGE
 
@@ -24,6 +28,8 @@
         .CODE
 
 ; ---- data 0000..0100
+; 17A6:0000: 256-byte bit-reversal table: gBitRevTable[i] is i with its eight bits reversed
+; (0 -> 00h, 1 -> 80h, 2 -> 40h, ...). Used by the CGA sprite row (17A6:128B, 12EC).
 gBitRevTable:
         db      00h, 80h, 40h, 0C0h, 20h, 0A0h, 60h, 0E0h, 10h, 90h, 50h, 0D0h, 30h, 0B0h, 70h, 0F0h
         db      08h, 88h, 48h, 0C8h, 28h, 0A8h, 68h, 0E8h, 18h, 98h, 58h, 0D8h, 38h, 0B8h, 78h, 0F8h
@@ -42,6 +48,9 @@ gBitRevTable:
         db      07h, 87h, 47h, 0C7h, 27h, 0A7h, 67h, 0E7h, 17h, 97h, 57h, 0D7h, 37h, 0B7h, 77h, 0F7h
         db      0Fh, 8Fh, 4Fh, 0CFh, 2Fh, 0AFh, 6Fh, 0EFh, 1Fh, 9Fh, 5Fh, 0DFh, 3Fh, 0BFh, 7Fh, 0FFh
 ; ---- data 0100..0200
+; 17A6:0100: 256-byte table: the bit reversal of gBitRevTable with each adjacent bit pair
+; swapped (0 -> 00h, 1 -> 40h, 2 -> 80h, 3 -> C0h, 4 -> 10h, ...). Used by the EGA tile
+; path (17A6:0E53, 0EEE) and the EGA sprite row (17A6:179E).
 gBitRevPairTable:
         db      00h, 40h, 80h, 0C0h, 10h, 50h, 90h, 0D0h, 20h, 60h, 0A0h, 0E0h, 30h, 70h, 0B0h, 0F0h
         db      04h, 44h, 84h, 0C4h, 14h, 54h, 94h, 0D4h, 24h, 64h, 0A4h, 0E4h, 34h, 74h, 0B4h, 0F4h
@@ -60,6 +69,9 @@ gBitRevPairTable:
         db      0Bh, 4Bh, 8Bh, 0CBh, 1Bh, 5Bh, 9Bh, 0DBh, 2Bh, 6Bh, 0ABh, 0EBh, 3Bh, 7Bh, 0BBh, 0FBh
         db      0Fh, 4Fh, 8Fh, 0CFh, 1Fh, 5Fh, 9Fh, 0DFh, 2Fh, 6Fh, 0AFh, 0EFh, 3Fh, 7Fh, 0BFh, 0FFh
 ; ---- data 0200..0300
+; 17A6:0200: 256-byte nibble-swap table: gNibbleSwapTable[i] is i with its two nibbles
+; exchanged (0 -> 00h, 1 -> 10h, 2 -> 20h, ...). Used by the EGA tile path (17A6:0D20,
+; 0E53) and ExpandNibbles (17A6:0F1F).
 gNibbleSwapTable:
         db      00h, 10h, 20h, 30h, 40h, 50h, 60h, 70h, 80h, 90h, 0A0h, 0B0h, 0C0h, 0D0h, 0E0h, 0F0h
         db      01h, 11h, 21h, 31h, 41h, 51h, 61h, 71h, 81h, 91h, 0A1h, 0B1h, 0C1h, 0D1h, 0E1h, 0F1h
@@ -82,8 +94,8 @@ gSavedFarOff dw 0                ; 0300: offset saved by 17A6:0446
 gSavedFarSeg dw 0                ; 0302: segment saved by 17A6:0446
 gSaveBuf db 16 dup (0)           ; 0304: 16-byte save buffer for _SetFarPointer
 ; ---- 0314..037E
-        PUBLIC  _f17A6_0314              ; @ 17A6:0314
-_f17A6_0314 PROC FAR
+        PUBLIC  _DirectionFromPoints              ; @ 17A6:0314
+_DirectionFromPoints PROC FAR
         push bp
         mov bp, sp
         push bx
@@ -146,11 +158,14 @@ L0371:
         pop bx
         pop bp
         retf
-_f17A6_0314 ENDP
+_DirectionFromPoints ENDP
 
 ; ---- 037E..03AF
-        PUBLIC  _f17A6_037E              ; @ 17A6:037E
-_f17A6_037E PROC FAR
+; 17A6:037E: copy two 16-byte plane tables from the far pointers at [bp+6]/[bp+8] and
+; [bp+0A]/[bp+0C] into CS:03AF and CS:03BF. Called from overlay 3 (ovl3:0872) with the two
+; tables at ds:FB4D and ds:F4D6.
+        PUBLIC  _SetPlaneTables              ; @ 17A6:037E
+_SetPlaneTables PROC FAR
         push bp
         mov bp, sp
         push cx
@@ -179,30 +194,43 @@ _f17A6_037E PROC FAR
         pop cx
         pop bp
         retf
-_f17A6_037E ENDP
+_SetPlaneTables ENDP
 
 ; ---- data 03AF..03BF
+; 17A6:03AF: 16-byte plane table, filled by SetPlaneTables (17A6:037E) from the first far
+; pointer; the EGA tile path indexes it with a nibble to pick the plane of a pixel.
 gPlaneTableA:
         db      00h, 01h, 02h, 03h, 04h, 05h, 06h, 07h, 08h, 09h, 0Ah, 0Bh, 0Ch, 0Dh, 0Eh, 0Fh
 ; ---- data 03BF..03CF
+; 17A6:03BF: 16-byte plane table, filled by SetPlaneTables (17A6:037E) from the second far
+; pointer; the EGA tile path uses it when gFlipPlanes is 0.
 gPlaneTableB:
         db      00h, 01h, 02h, 03h, 04h, 05h, 06h, 07h, 08h, 09h, 0Ah, 0Bh, 0Ch, 0Dh, 0Eh, 0Fh
 ; ---- data 03CF..03E7
-gVar3CF dw 0
-gVar3D1 dw 0
-gVar3D3 dw 0
-gVar3D5 dw 0
-gVar3D7 dw 0
-gVar3D9 dw 0
-gVar3DB dw 0
-gVar3DD dw 0
-gVar3DF dw 0
-gVar3E1 dw 0
-gVar3E3 dw 0
-gVar3E5 dw 0
+; 17A6:03CF: scratch words of DrawTile (17A6:03E7) and its helpers. gPlaneSelect and
+; gSrcPlaneSelect are 0 or 1 (the plane the source byte belongs to); gTileRows, gTileRows2
+; and gTileCols are the loop counters; gSrcOff/gSrcSeg and gSrcSeg2 hold the source far
+; pointer; gDstSeg is the destination segment; gFlipPlanes and gSecondPlane choose the
+; plane table and the second-plane path.
+gPlaneSelect dw 0
+gSrcPlaneSelect dw 0
+gTileRows dw 0
+gTileRows2 dw 0
+gTileCols dw 0
+gSrcPlaneOffset dw 0
+gSrcSeg dw 0
+gDstSeg dw 0
+gSrcOff dw 0
+gSrcSeg2 dw 0
+gFlipPlanes dw 0
+gSecondPlane dw 0
 ; ---- 03E7..0D20
-        PUBLIC  _f17A6_03E7              ; @ 17A6:03E7
-_f17A6_03E7 PROC FAR
+; 17A6:03E7: draw a tile from the far pointer at [bp+6]/[bp+8] into the screen buffer,
+; dispatching on the graphics mode g8102: 2 (EGA) saves the far pointer and programs the
+; sequencer and graphics controller, 0 (CGA), 1 (Tandy) and 3 (MCGA) have their own paths.
+; Called from overlay 4 (ovl4:1F6A).
+        PUBLIC  _DrawTile              ; @ 17A6:03E7
+_DrawTile PROC FAR
         push bp
         mov bp, sp
         push bx
@@ -214,8 +242,8 @@ _f17A6_03E7 PROC FAR
         push es
         mov si, word ptr [bp+6]
         mov dx, word ptr [bp+8]
-        mov word ptr cs:[gVar3DF], si
-        mov word ptr cs:[gVar3E1], dx
+        mov word ptr cs:[gSrcOff], si
+        mov word ptr cs:[gSrcSeg2], dx
         mov bx, 0ADB0h
         mov cx, 212Eh
         mov bp, cx
@@ -229,7 +257,7 @@ L0419:
         mov di, 0
 L041F:
         mov es, ax
-        mov word ptr cs:[gVar3D3], 0Fh
+        mov word ptr cs:[gTileRows], 0Fh
         cmp word ptr [g8102], 2
         je L0446
         cmp word ptr [g8102], 0
@@ -259,7 +287,7 @@ L0461:
         sti
         mov cx, 16h
 L0470:
-        mov word ptr cs:[gVar3CF], 0
+        mov word ptr cs:[gPlaneSelect], 0
         mov ds, bp
         mov ax, word ptr [bx]
         cmp ax, 8000h
@@ -268,7 +296,7 @@ L0470:
 L0483:
         test ax, 4000h
         je L0492
-        mov word ptr cs:[gVar3CF], 1
+        mov word ptr cs:[gPlaneSelect], 1
         and ax, 3FFFh
 L0492:
         cmp ax, 0
@@ -276,7 +304,7 @@ L0492:
         mov ax, word ptr [bx+0294h]
         test ax, 4000h
         je L04AA
-        mov word ptr cs:[gVar3CF], 1
+        mov word ptr cs:[gPlaneSelect], 1
         and ax, 3FFFh
 L04AA:
         add bx, 2
@@ -287,7 +315,7 @@ L04AA:
 L04B8:
         shr ax, 1
         add ax, 0A400h
-        cmp word ptr cs:[gVar3CF], 1
+        cmp word ptr cs:[gPlaneSelect], 1
         jne L04C8
         add ax, 600h
 L04C8:
@@ -305,7 +333,7 @@ L04D9:
         add di, 12Ah
         mov ax, 0ADB0h
         mov ds, ax
-        dec word ptr cs:[gVar3D3]
+        dec word ptr cs:[gTileRows]
         je L04EE
         jmp L0461
 L04EE:
@@ -329,7 +357,7 @@ L0518:
         test ax, 4000h
         je L052A
         and ax, 3FFFh
-        mov word ptr cs:[gVar3CF], 1
+        mov word ptr cs:[gPlaneSelect], 1
 L052A:
         mov si, 0
         test ax, 1
@@ -338,18 +366,18 @@ L052A:
 L0535:
         shr ax, 1
         add ax, 0A400h
-        cmp word ptr cs:[gVar3CF], 1
+        cmp word ptr cs:[gPlaneSelect], 1
         jne L0545
         add ax, 600h
 L0545:
-        mov word ptr cs:[gVar3D9], si
-        mov word ptr cs:[gVar3DB], ax
-        mov word ptr cs:[gVar3D1], 0
+        mov word ptr cs:[gSrcPlaneOffset], si
+        mov word ptr cs:[gSrcSeg], ax
+        mov word ptr cs:[gSrcPlaneSelect], 0
         mov ax, word ptr [bx+0294h]
         test ax, 4000h
         je L0568
         sub ax, 4000h
-        mov word ptr cs:[gVar3D1], 1
+        mov word ptr cs:[gSrcPlaneSelect], 1
 L0568:
         add bx, 2
         mov si, 0
@@ -359,23 +387,23 @@ L0568:
 L0576:
         shr ax, 1
         add ax, 0A400h
-        cmp word ptr cs:[gVar3D1], 1
+        cmp word ptr cs:[gSrcPlaneSelect], 1
         jne L0586
         add ax, 600h
 L0586:
-        mov word ptr cs:[gVar3DD], ax
+        mov word ptr cs:[gDstSeg], ax
         push cx
         push bx
         mov bx, si
-        mov si, word ptr cs:[gVar3D9]
-        mov ds, word ptr cs:[gVar3DB]
+        mov si, word ptr cs:[gSrcPlaneOffset]
+        mov ds, word ptr cs:[gSrcSeg]
         mov dx, 3CFh
         mov al, 0FFh
         cli
         mov byte ptr cs:[gSaveBuf+15], al
         out dx, al
         sti
-        mov word ptr cs:[gVar3D7], 8
+        mov word ptr cs:[gTileCols], 8
 L05AB:
         mov dx, 3CEh
         mov ax, 805h
@@ -400,13 +428,13 @@ L05AB:
         out dx, al
         sti
         mov cl, 0
-        call _f17A6_0EEE
+        call _SetPlaneAndWrite
         mov cl, 1
-        call _f17A6_0EEE
+        call _SetPlaneAndWrite
         mov cl, 2
-        call _f17A6_0EEE
+        call _SetPlaneAndWrite
         mov cl, 3
-        call _f17A6_0EEE
+        call _SetPlaneAndWrite
         mov dx, 3CFh
         mov al, 0
         cli
@@ -416,7 +444,7 @@ L05AB:
         add di, 28h
         inc si
         inc bx
-        dec word ptr cs:[gVar3D7]
+        dec word ptr cs:[gTileCols]
         jne L05AB
         sub di, 13Fh
         pop bx
@@ -451,7 +479,7 @@ L05AB:
 L063E:
         mov cx, 16h
 L0641:
-        mov word ptr cs:[gVar3CF], 0
+        mov word ptr cs:[gPlaneSelect], 0
         mov ds, bp
         mov ax, word ptr [bx]
         cmp ah, 80h
@@ -461,7 +489,7 @@ L0641:
 L0657:
         test ah, 40h
         je L0666
-        mov word ptr cs:[gVar3CF], 1
+        mov word ptr cs:[gPlaneSelect], 1
         and ah, 3Fh
 L0666:
         cmp ax, 0
@@ -469,7 +497,7 @@ L0666:
         mov ax, word ptr [bx+0294h]
         test ah, 40h
         je L067E
-        mov word ptr cs:[gVar3CF], 1
+        mov word ptr cs:[gPlaneSelect], 1
         and ah, 3Fh
 L067E:
         add bx, 2
@@ -477,7 +505,7 @@ L067E:
         shl ax, 1
         add ax, dx
         mov ds, ax
-        cmp word ptr cs:[gVar3CF], 1
+        cmp word ptr cs:[gPlaneSelect], 1
         jne L0692
         jmp short L06D6
 L0692:
@@ -608,7 +636,7 @@ L07B1:
         add di, 114h
         mov ax, 212Eh
         mov ds, ax
-        dec word ptr cs:[gVar3D3]
+        dec word ptr cs:[gTileRows]
         je L07C4
         jmp L063E
 L07C4:
@@ -617,42 +645,42 @@ L07C7:
         test ax, 4000h
         je L07D6
         and ax, 3FFFh
-        mov word ptr cs:[gVar3CF], 1
+        mov word ptr cs:[gPlaneSelect], 1
 L07D6:
         shl ax, 1
-        add ax, word ptr cs:[gVar3E1]
-        mov word ptr cs:[gVar3DB], ax
-        mov si, word ptr cs:[gVar3DF]
+        add ax, word ptr cs:[gSrcSeg2]
+        mov word ptr cs:[gSrcSeg], ax
+        mov si, word ptr cs:[gSrcOff]
         push si
-        mov word ptr cs:[gVar3D1], 0
+        mov word ptr cs:[gSrcPlaneSelect], 0
         mov ax, word ptr [bx+0294h]
         test ax, 4000h
         je L0801
         and ax, 3FFFh
-        mov word ptr cs:[gVar3D1], 1
+        mov word ptr cs:[gSrcPlaneSelect], 1
 L0801:
         add bx, 2
         push bx
-        mov bx, word ptr cs:[gVar3DF]
+        mov bx, word ptr cs:[gSrcOff]
         shl ax, 1
-        add ax, word ptr cs:[gVar3E1]
-        mov word ptr cs:[gVar3DD], ax
+        add ax, word ptr cs:[gSrcSeg2]
+        mov word ptr cs:[gDstSeg], ax
         push bp
-        call _f17A6_0E53
+        call _BlitMaskedWord
         add di, 1FFEh
-        call _f17A6_0E53
+        call _BlitMaskedWord
         sub di, 1FB2h
-        call _f17A6_0E53
+        call _BlitMaskedWord
         add di, 1FFEh
-        call _f17A6_0E53
+        call _BlitMaskedWord
         sub di, 1FB2h
-        call _f17A6_0E53
+        call _BlitMaskedWord
         add di, 1FFEh
-        call _f17A6_0E53
+        call _BlitMaskedWord
         sub di, 1FB2h
-        call _f17A6_0E53
+        call _BlitMaskedWord
         add di, 1FFEh
-        call _f17A6_0E53
+        call _BlitMaskedWord
         sub di, 20F0h
         pop bp
         pop bx
@@ -664,7 +692,7 @@ L0856:
 L0859:
         mov ds, bp
         mov ax, word ptr [bx]
-        mov word ptr cs:[gVar3CF], 0
+        mov word ptr cs:[gPlaneSelect], 0
         cmp ax, 8000h
         jb L086F
         sub ax, 8000h
@@ -672,7 +700,7 @@ L0859:
 L086F:
         test ax, 4000h
         je L087E
-        mov word ptr cs:[gVar3CF], 1
+        mov word ptr cs:[gPlaneSelect], 1
         and ax, 3FFFh
 L087E:
         cmp ax, 0
@@ -680,7 +708,7 @@ L087E:
         mov ax, word ptr [bx+0294h]
         test ax, 4000h
         je L0896
-        mov word ptr cs:[gVar3CF], 1
+        mov word ptr cs:[gPlaneSelect], 1
         and ax, 3FFFh
 L0896:
         add bx, 2
@@ -688,7 +716,7 @@ L0896:
         shl ax, 1
         add ax, dx
         mov ds, ax
-        cmp word ptr cs:[gVar3CF], 1
+        cmp word ptr cs:[gPlaneSelect], 1
         jne L08AA
         jmp short L08DE
 L08AA:
@@ -843,7 +871,7 @@ L0A39:
         add di, 0E8h
         mov ax, 212Eh
         mov ds, ax
-        dec word ptr cs:[gVar3D3]
+        dec word ptr cs:[gTileRows]
         je L0A4C
         jmp L0856
 L0A4C:
@@ -852,79 +880,79 @@ L0A4F:
         test ax, 4000h
         je L0A5E
         and ax, 3FFFh
-        mov word ptr cs:[gVar3CF], 1
+        mov word ptr cs:[gPlaneSelect], 1
 L0A5E:
         shl ax, 1
-        add ax, word ptr cs:[gVar3E1]
-        mov word ptr cs:[gVar3DB], ax
-        mov si, word ptr cs:[gVar3DF]
+        add ax, word ptr cs:[gSrcSeg2]
+        mov word ptr cs:[gSrcSeg], ax
+        mov si, word ptr cs:[gSrcOff]
         push si
-        mov word ptr cs:[gVar3D1], 0
+        mov word ptr cs:[gSrcPlaneSelect], 0
         mov ax, word ptr [bx+0294h]
         test ax, 4000h
         je L0A89
         and ax, 3FFFh
-        mov word ptr cs:[gVar3D1], 1
+        mov word ptr cs:[gSrcPlaneSelect], 1
 L0A89:
         add bx, 2
         push bx
-        mov bx, word ptr cs:[gVar3DF]
+        mov bx, word ptr cs:[gSrcOff]
         shl ax, 1
-        add ax, word ptr cs:[gVar3E1]
-        mov word ptr cs:[gVar3DD], ax
-        call _f17A6_0D20
+        add ax, word ptr cs:[gSrcSeg2]
+        mov word ptr cs:[gDstSeg], ax
+        call _BlitMaskedByte
         add di, 1FFCh
-        call _f17A6_0D20
+        call _BlitMaskedByte
         add di, 1FFCh
-        call _f17A6_0D20
+        call _BlitMaskedByte
         add di, 1FFCh
-        call _f17A6_0D20
+        call _BlitMaskedByte
         sub di, 5F64h
-        call _f17A6_0D20
+        call _BlitMaskedByte
         add di, 1FFCh
-        call _f17A6_0D20
+        call _BlitMaskedByte
         add di, 1FFCh
-        call _f17A6_0D20
+        call _BlitMaskedByte
         add di, 1FFCh
-        call _f17A6_0D20
+        call _BlitMaskedByte
         sub di, 60A0h
         pop bx
         pop si
         jmp L0A33
 L0ADA:
-        mov word ptr cs:[gVar3D5], 16h
+        mov word ptr cs:[gTileRows2], 16h
 L0AE1:
-        mov word ptr cs:[gVar3E3], 0
+        mov word ptr cs:[gFlipPlanes], 0
         mov ds, bp
         mov ax, word ptr [bx]
-        mov word ptr cs:[gVar3CF], 0
-        mov word ptr cs:[gVar3E5], 0
+        mov word ptr cs:[gPlaneSelect], 0
+        mov word ptr cs:[gSecondPlane], 0
         cmp ax, 8000h
         jb L0B09
         sub ax, 8000h
-        mov word ptr cs:[gVar3E5], ax
+        mov word ptr cs:[gSecondPlane], ax
         mov ax, 0
 L0B09:
         test ax, 4000h
         je L0B18
-        mov word ptr cs:[gVar3CF], 1
+        mov word ptr cs:[gPlaneSelect], 1
         and ax, 3FFFh
 L0B18:
         cmp ax, 0
         jne L0B37
-        mov word ptr cs:[gVar3E3], 1
+        mov word ptr cs:[gFlipPlanes], 1
         mov ax, word ptr [bx+0294h]
         test ax, 4000h
         je L0B37
-        mov word ptr cs:[gVar3CF], 1
+        mov word ptr cs:[gPlaneSelect], 1
         and ax, 3FFFh
 L0B37:
         add bx, 2
         shl ax, 1
-        add ax, word ptr cs:[gVar3E1]
+        add ax, word ptr cs:[gSrcSeg2]
         mov ds, ax
-        mov si, word ptr cs:[gVar3DF]
-        cmp word ptr cs:[gVar3CF], 1
+        mov si, word ptr cs:[gSrcOff]
+        cmp word ptr cs:[gPlaneSelect], 1
         je L0BAA
         push bx
         xor bx, bx
@@ -943,7 +971,7 @@ L0B59:
         mov ah, bl
         and ah, 0Fh
         mov bl, ah
-        cmp word ptr cs:[gVar3E3], 1
+        cmp word ptr cs:[gFlipPlanes], 1
         jne L0B7E
         mov ah, byte ptr cs:[bx+gPlaneTableA]
         jmp short L0B83
@@ -951,7 +979,7 @@ L0B7E:
         mov ah, byte ptr cs:[bx+gPlaneTableB]
 L0B83:
         mov bl, al
-        cmp word ptr cs:[gVar3E3], 1
+        cmp word ptr cs:[gFlipPlanes], 1
         jne L0B94
         mov al, byte ptr cs:[bx+gPlaneTableA]
         jmp short L0B99
@@ -985,7 +1013,7 @@ L0BB6:
         mov al, bl
         and al, 0Fh
         mov bl, ah
-        cmp word ptr cs:[gVar3E3], 1
+        cmp word ptr cs:[gFlipPlanes], 1
         jne L0BDB
         mov ah, byte ptr cs:[bx+gPlaneTableA]
         jmp short L0BE0
@@ -993,7 +1021,7 @@ L0BDB:
         mov ah, byte ptr cs:[bx+gPlaneTableB]
 L0BE0:
         mov bl, al
-        cmp word ptr cs:[gVar3E3], 1
+        cmp word ptr cs:[gFlipPlanes], 1
         jne L0BF1
         mov al, byte ptr cs:[bx+gPlaneTableA]
         jmp short L0BF6
@@ -1010,34 +1038,34 @@ L0BF6:
         pop bx
         jmp short L0C0A
 L0C0A:
-        cmp word ptr cs:[gVar3E5], 0
+        cmp word ptr cs:[gSecondPlane], 0
         jne L0C32
-        dec word ptr cs:[gVar3D5]
+        dec word ptr cs:[gTileRows2]
         je L0C1C
         jmp L0AE1
 L0C1C:
         add di, 950h
         mov ax, 212Eh
         mov ds, ax
-        dec word ptr cs:[gVar3D3]
+        dec word ptr cs:[gTileRows]
         je L0C2F
         jmp L0ADA
 L0C2F:
         jmp L0D17
 L0C32:
         sub di, 8
-        mov word ptr cs:[gVar3CF], 0
-        mov ax, word ptr cs:[gVar3E5]
+        mov word ptr cs:[gPlaneSelect], 0
+        mov ax, word ptr cs:[gSecondPlane]
         test ax, 4000h
         je L0C4F
         and ax, 3FFFh
-        mov word ptr cs:[gVar3CF], 1
+        mov word ptr cs:[gPlaneSelect], 1
 L0C4F:
         shl ax, 1
-        add ax, word ptr cs:[gVar3E1]
+        add ax, word ptr cs:[gSrcSeg2]
         mov ds, ax
-        mov si, word ptr cs:[gVar3DF]
-        cmp word ptr cs:[gVar3CF], 1
+        mov si, word ptr cs:[gSrcOff]
+        cmp word ptr cs:[gPlaneSelect], 1
         je L0CBB
         push bx
         xor bx, bx
@@ -1076,7 +1104,7 @@ L0CA0:
         jne L0C6B
         sub di, 9F8h
         pop bx
-        mov word ptr cs:[gVar3E5], 0
+        mov word ptr cs:[gSecondPlane], 0
         jmp L0C0A
 L0CBB:
         push bx
@@ -1118,7 +1146,7 @@ L0CF9:
         jne L0CC1
         sub di, 9F8h
         pop bx
-        mov word ptr cs:[gVar3E5], 0
+        mov word ptr cs:[gSecondPlane], 0
         jmp L0C0A
 L0D17:
         pop es
@@ -1130,15 +1158,19 @@ L0D17:
         pop bx
         pop bp
         retf
-_f17A6_03E7 ENDP
+_DrawTile ENDP
 
 ; ---- 0D20..0E53
-        PUBLIC  _f17A6_0D20              ; @ 17A6:0D20
-_f17A6_0D20 PROC NEAR
+; 17A6:0D20: one masked byte of the EGA tile path: read a byte from the destination at
+; CS:03DD/03DB and a byte from the source at CS:03DF/03DB, translate each through the table
+; at CS:0200 when its plane is 1, combine them, and store at ES:DI. Called from DrawTile
+; (17A6:0A9D..0AD1).
+        PUBLIC  _BlitMaskedByte              ; @ 17A6:0D20
+_BlitMaskedByte PROC NEAR
         push dx
         mov dx, bx
-        mov ds, word ptr cs:[gVar3DD]
-        cmp word ptr cs:[gVar3D1], 1
+        mov ds, word ptr cs:[gDstSeg]
+        cmp word ptr cs:[gSrcPlaneSelect], 1
         jne L0D3E
         mov ah, byte ptr [bx+3]
         xor bx, bx
@@ -1149,8 +1181,8 @@ L0D3E:
         mov ah, byte ptr [bx]
         inc dx
 L0D41:
-        mov ds, word ptr cs:[gVar3DB]
-        cmp word ptr cs:[gVar3CF], 1
+        mov ds, word ptr cs:[gSrcSeg]
+        cmp word ptr cs:[gPlaneSelect], 1
         jne L0D5A
         xor bx, bx
         mov bl, byte ptr [si+3]
@@ -1170,8 +1202,8 @@ L0D69:
         or al, ah
         stosb
         mov bx, dx
-        mov ds, word ptr cs:[gVar3DD]
-        cmp word ptr cs:[gVar3D1], 1
+        mov ds, word ptr cs:[gDstSeg]
+        cmp word ptr cs:[gSrcPlaneSelect], 1
         jne L0D89
         mov ah, byte ptr [bx+2]
         xor bx, bx
@@ -1182,8 +1214,8 @@ L0D89:
         mov ah, byte ptr [bx]
         inc dx
 L0D8C:
-        mov ds, word ptr cs:[gVar3DB]
-        cmp word ptr cs:[gVar3CF], 1
+        mov ds, word ptr cs:[gSrcSeg]
+        cmp word ptr cs:[gPlaneSelect], 1
         jne L0DA5
         xor bx, bx
         mov bl, byte ptr [si+2]
@@ -1203,8 +1235,8 @@ L0DB4:
         or al, ah
         stosb
         mov bx, dx
-        mov ds, word ptr cs:[gVar3DD]
-        cmp word ptr cs:[gVar3D1], 1
+        mov ds, word ptr cs:[gDstSeg]
+        cmp word ptr cs:[gSrcPlaneSelect], 1
         jne L0DD4
         mov ah, byte ptr [bx+1]
         xor bx, bx
@@ -1215,8 +1247,8 @@ L0DD4:
         mov ah, byte ptr [bx]
         inc dx
 L0DD7:
-        mov ds, word ptr cs:[gVar3DB]
-        cmp word ptr cs:[gVar3CF], 1
+        mov ds, word ptr cs:[gSrcSeg]
+        cmp word ptr cs:[gPlaneSelect], 1
         jne L0DF0
         xor bx, bx
         mov bl, byte ptr [si+1]
@@ -1236,8 +1268,8 @@ L0DFF:
         or al, ah
         stosb
         mov bx, dx
-        mov ds, word ptr cs:[gVar3DD]
-        cmp word ptr cs:[gVar3D1], 1
+        mov ds, word ptr cs:[gDstSeg]
+        cmp word ptr cs:[gSrcPlaneSelect], 1
         jne L0E21
         mov ah, byte ptr [bx]
         add dx, 4
@@ -1249,8 +1281,8 @@ L0E21:
         mov ah, byte ptr [bx]
         inc dx
 L0E24:
-        mov ds, word ptr cs:[gVar3DB]
-        cmp word ptr cs:[gVar3CF], 1
+        mov ds, word ptr cs:[gSrcSeg]
+        cmp word ptr cs:[gPlaneSelect], 1
         jne L0E3D
         mov bl, byte ptr [si]
         add si, 4
@@ -1272,13 +1304,16 @@ L0E4C:
         mov bx, dx
         pop dx
         ret
-_f17A6_0D20 ENDP
+_BlitMaskedByte ENDP
 
 ; ---- 0E53..0EEE
-        PUBLIC  _f17A6_0E53              ; @ 17A6:0E53
-_f17A6_0E53 PROC NEAR
-        mov ds, word ptr cs:[gVar3DB]
-        cmp word ptr cs:[gVar3CF], 1
+; 17A6:0E53: one masked word of the EGA tile path: read a word from the destination and a
+; word from the source, translate both bytes of each through the table at CS:0100, combine
+; them, and store at ES:DI. Called from DrawTile (17A6:0816..0847).
+        PUBLIC  _BlitMaskedWord              ; @ 17A6:0E53
+_BlitMaskedWord PROC NEAR
+        mov ds, word ptr cs:[gSrcSeg]
+        cmp word ptr cs:[gPlaneSelect], 1
         jne L0E7B
         add si, 2
         lodsw
@@ -1294,8 +1329,8 @@ _f17A6_0E53 PROC NEAR
 L0E7B:
         lodsw
 L0E7C:
-        mov ds, word ptr cs:[gVar3DD]
-        cmp word ptr cs:[gVar3D1], 1
+        mov ds, word ptr cs:[gDstSeg]
+        cmp word ptr cs:[gSrcPlaneSelect], 1
         jne L0E99
         mov ch, byte ptr [bx+2]
         push bx
@@ -1311,7 +1346,7 @@ L0E9E:
         and ah, ch
         or al, ah
         stosb
-        cmp word ptr cs:[gVar3D1], 1
+        cmp word ptr cs:[gSrcPlaneSelect], 1
         jne L0EBD
         mov ch, byte ptr [bx]
         add bx, 4
@@ -1325,8 +1360,8 @@ L0EBD:
         mov ch, byte ptr [bx]
         add bx, 2
 L0EC2:
-        mov ds, word ptr cs:[gVar3DB]
-        cmp word ptr cs:[gVar3CF], 1
+        mov ds, word ptr cs:[gSrcSeg]
+        cmp word ptr cs:[gPlaneSelect], 1
         jne L0EE7
         lodsw
         add si, 2
@@ -1345,11 +1380,14 @@ L0EE8:
         or al, ah
         stosb
         ret
-_f17A6_0E53 ENDP
+_BlitMaskedWord ENDP
 
 ; ---- 0EEE..0F1F
-        PUBLIC  _f17A6_0EEE              ; @ 17A6:0EEE
-_f17A6_0EEE PROC NEAR
+; 17A6:0EEE: select plane CL in the sequencer (3C5) and the graphics controller (3CF),
+; then combine the source byte at DS:BX with the mask in AH and the byte at DS:SI and store
+; it at ES:DI. Called from DrawTile (17A6:05D7..05E6).
+        PUBLIC  _SetPlaneAndWrite              ; @ 17A6:0EEE
+_SetPlaneAndWrite PROC NEAR
         mov dx, 3CFh
         mov al, cl
         cli
@@ -1363,19 +1401,22 @@ _f17A6_0EEE PROC NEAR
         mov byte ptr cs:[gSaveBuf+3], al
         out dx, al
         sti
-        mov ds, word ptr cs:[gVar3DD]
+        mov ds, word ptr cs:[gDstSeg]
         mov al, byte ptr [bx]
-        mov ds, word ptr cs:[gVar3DB]
+        mov ds, word ptr cs:[gSrcSeg]
         and al, ah
         or al, byte ptr [si]
         mov ch, byte ptr es:[di]
         mov byte ptr es:[di], al
         ret
-_f17A6_0EEE ENDP
+_SetPlaneAndWrite ENDP
 
 ; ---- 0F1F..0F61
-        PUBLIC  _f17A6_0F1F              ; @ 17A6:0F1F
-_f17A6_0F1F PROC FAR
+; 17A6:0F1F: copy 0x1F40 rows of 4 bytes from the far pointer at [bp+6]/[bp+8] to
+; [bp+0A]/[bp+0C], translating each byte through the table at CS:0200. Called from overlay 3
+; (ovl3:08A8, 08DA).
+        PUBLIC  _ExpandNibbles              ; @ 17A6:0F1F
+_ExpandNibbles PROC FAR
         push bp
         mov bp, sp
         push bx
@@ -1415,11 +1456,11 @@ L0F44:
         pop bx
         pop bp
         retf
-_f17A6_0F1F ENDP
+_ExpandNibbles ENDP
 
 ; ---- 0F61..0F9D
-        PUBLIC  _f17A6_0F61              ; @ 17A6:0F61
-_f17A6_0F61 PROC FAR
+        PUBLIC  _Distance              ; @ 17A6:0F61
+_Distance PROC FAR
         push bp
         mov bp, sp
         push bx
@@ -1456,11 +1497,14 @@ L0F92:
         pop bx
         pop bp
         retf
-_f17A6_0F61 ENDP
+_Distance ENDP
 
 ; ---- 0F9D..0FEF
-        PUBLIC  _f17A6_0F9D              ; @ 17A6:0F9D
-_f17A6_0F9D PROC FAR
+; 17A6:0F9D: search the 8 neighbour offsets at ds:7FCC and the 2 offsets at ds:7FDC for
+; the one that maps [bp+6] to [bp+8] modulo 0x400; return the matched value or 0xFFFF.
+; Purpose unknown: no caller in this build.
+        PUBLIC  _FindNeighbour              ; @ 17A6:0F9D
+_FindNeighbour PROC FAR
         push bp
         mov bp, sp
         push bx
@@ -1506,18 +1550,23 @@ L0FE6:
         pop bx
         pop bp
         retf
-_f17A6_0F9D ENDP
+_FindNeighbour ENDP
 
 ; ---- data 0FEF..0FFA
-gVar0FEF db 0
-gVar0FF0 dw 0
-gVar0FF2 dw 0
-gVar0FF4 dw 0
-gVar0FF6 dw 0
-gVar0FF8 dw 0
+; 17A6:0FEF: scratch words of the sprite unpackers. gSpriteRows is the row count,
+; gSpriteWidth the pixel width, gSpriteStride the source row stride, gSpriteGroups and
+; gSpriteRemainder the stride divided by 3, and gSpriteMode a copy of g8102.
+gSpriteRows db 0
+gSpriteWidth dw 0
+gSpriteStride dw 0
+gSpriteGroups dw 0
+gSpriteRemainder dw 0
+gSpriteMode dw 0
 ; ---- 0FFA..109A
-        PUBLIC  _f17A6_0FFA              ; @ 17A6:0FFA
-_f17A6_0FFA PROC FAR
+; 17A6:0FFA: unpack a sprite from the far pointer at [bp+6]/[bp+8] to [bp+0A]/[bp+0C]
+; for the Tandy and MCGA modes (g8102 1 and 3). Called from overlay 4 (ovl4:0F1D).
+        PUBLIC  _BlitSpriteDefault              ; @ 17A6:0FFA
+_BlitSpriteDefault PROC FAR
         push bp
         mov bp, sp
         push bx
@@ -1528,7 +1577,7 @@ _f17A6_0FFA PROC FAR
         push ds
         push es
         mov ax, word ptr [g8102]
-        mov word ptr cs:[gVar0FF8], ax
+        mov word ptr cs:[gSpriteMode], ax
         mov si, word ptr [bp+6]
         mov ds, word ptr [bp+8]
         mov di, word ptr [bp+000Ah]
@@ -1537,7 +1586,7 @@ _f17A6_0FFA PROC FAR
         movsb
         lodsb
         inc al
-        mov byte ptr cs:[gVar0FEF], al
+        mov byte ptr cs:[gSpriteRows], al
         shl ax, 1
         xor dx, dx
         mov bx, 3
@@ -1546,10 +1595,10 @@ _f17A6_0FFA PROC FAR
         stosb
         xor ax, ax
         lodsb
-        mov word ptr cs:[gVar0FF0], ax
+        mov word ptr cs:[gSpriteWidth], ax
         shl ax, 1
-        mov word ptr cs:[gVar0FF2], ax
-        shl word ptr cs:[gVar0FF2], 1
+        mov word ptr cs:[gSpriteStride], ax
+        shl word ptr cs:[gSpriteStride], 1
         xor dx, dx
         mov bx, 3
         div bx
@@ -1561,26 +1610,26 @@ L104B:
         mov al, cl
         stosb
         inc si
-        cmp word ptr cs:[gVar0FF8], 1
+        cmp word ptr cs:[gSpriteMode], 1
         je L105D
         mov cx, 10h
         rep movsb
 L105D:
-        mov ax, word ptr cs:[gVar0FF2]
+        mov ax, word ptr cs:[gSpriteStride]
         xor dx, dx
         mov bx, 3
         div bx
-        mov word ptr cs:[gVar0FF4], ax
-        mov word ptr cs:[gVar0FF6], dx
+        mov word ptr cs:[gSpriteGroups], ax
+        mov word ptr cs:[gSpriteRemainder], dx
 L1071:
-        call _f17A6_109A
-        dec byte ptr cs:[gVar0FEF]
+        call _BlitSpriteRowDefault
+        dec byte ptr cs:[gSpriteRows]
         je L1091
-        call _f17A6_109A
-        dec byte ptr cs:[gVar0FEF]
+        call _BlitSpriteRowDefault
+        dec byte ptr cs:[gSpriteRows]
         je L1091
-        add si, word ptr cs:[gVar0FF2]
-        dec byte ptr cs:[gVar0FEF]
+        add si, word ptr cs:[gSpriteStride]
+        dec byte ptr cs:[gSpriteRows]
         jne L1071
 L1091:
         pop es
@@ -1592,12 +1641,14 @@ L1091:
         pop bx
         pop bp
         retf
-_f17A6_0FFA ENDP
+_BlitSpriteDefault ENDP
 
 ; ---- 109A..10CD
-        PUBLIC  _f17A6_109A              ; @ 17A6:109A
-_f17A6_109A PROC NEAR
-        mov bx, word ptr cs:[gVar0FF4]
+; 17A6:109A: one row of BlitSpriteDefault: copy CS:0FF4 groups of a byte plus a
+; shifted word, then the remainder. Called from 17A6:1071..108F.
+        PUBLIC  _BlitSpriteRowDefault              ; @ 17A6:109A
+_BlitSpriteRowDefault PROC NEAR
+        mov bx, word ptr cs:[gSpriteGroups]
         mov cl, 4
 L10A1:
         movsb
@@ -1607,14 +1658,14 @@ L10A1:
         stosb
         dec bx
         jne L10A1
-        cmp word ptr cs:[gVar0FF6], 1
+        cmp word ptr cs:[gSpriteRemainder], 1
         jne L10B8
         movsb
         xor ax, ax
         stosb
         ret
 L10B8:
-        cmp word ptr cs:[gVar0FF6], 2
+        cmp word ptr cs:[gSpriteRemainder], 2
         jne L10CC
         lodsw
         and al, 0F0h
@@ -1626,9 +1677,11 @@ L10B8:
         stosb
 L10CC:
         ret
-_f17A6_109A ENDP
+_BlitSpriteRowDefault ENDP
 
 ; ---- data 10CD..11CD
+; 17A6:10CD: 256-byte table used by the CGA sprite rows (17A6:128B, 12EC): entry i is
+; ((i >> 2) & 0FCh) | (i & 3), so each group of four entries repeats the same four values.
 gTable10CD:
         db      00h, 01h, 02h, 03h, 00h, 01h, 02h, 03h, 00h, 01h, 02h, 03h, 00h, 01h, 02h, 03h
         db      04h, 05h, 06h, 07h, 04h, 05h, 06h, 07h, 04h, 05h, 06h, 07h, 04h, 05h, 06h, 07h
@@ -1647,8 +1700,10 @@ gTable10CD:
         db      38h, 39h, 3Ah, 3Bh, 38h, 39h, 3Ah, 3Bh, 38h, 39h, 3Ah, 3Bh, 38h, 39h, 3Ah, 3Bh
         db      3Ch, 3Dh, 3Eh, 3Fh, 3Ch, 3Dh, 3Eh, 3Fh, 3Ch, 3Dh, 3Eh, 3Fh, 3Ch, 3Dh, 3Eh, 3Fh
 ; ---- 11CD..128B
-        PUBLIC  _f17A6_11CD              ; @ 17A6:11CD
-_f17A6_11CD PROC FAR
+; 17A6:11CD: unpack a sprite from the far pointer at [bp+6]/[bp+8] to [bp+0A]/[bp+0C]
+; for the CGA mode (g8102 0). Called from overlay 4 (ovl4:0F08).
+        PUBLIC  _BlitSpriteCga              ; @ 17A6:11CD
+_BlitSpriteCga PROC FAR
         push bp
         mov bp, sp
         push bx
@@ -1667,7 +1722,7 @@ _f17A6_11CD PROC FAR
         xor ax, ax
         movsb
         lodsb
-        mov byte ptr cs:[gVar0FEF], al
+        mov byte ptr cs:[gSpriteRows], al
         shl ax, 1
         xor dx, dx
         mov bx, 3
@@ -1676,9 +1731,9 @@ _f17A6_11CD PROC FAR
         stosb
         xor ax, ax
         lodsb
-        mov word ptr cs:[gVar0FF0], ax
+        mov word ptr cs:[gSpriteWidth], ax
         shl ax, 1
-        mov word ptr cs:[gVar0FF2], ax
+        mov word ptr cs:[gSpriteStride], ax
         xor dx, dx
         mov bx, 3
         div bx
@@ -1695,37 +1750,37 @@ L1214:
         mov al, cl
         stosb
         inc si
-        mov ax, word ptr cs:[gVar0FF2]
+        mov ax, word ptr cs:[gSpriteStride]
         xor dx, dx
         mov bx, 3
         div bx
-        mov word ptr cs:[gVar0FF4], ax
-        mov word ptr cs:[gVar0FF6], dx
-        mov al, byte ptr cs:[gVar0FEF]
+        mov word ptr cs:[gSpriteGroups], ax
+        mov word ptr cs:[gSpriteRemainder], dx
+        mov al, byte ptr cs:[gSpriteRows]
         push ax
 L123B:
-        call _f17A6_128B
-        dec byte ptr cs:[gVar0FEF]
+        call _BlitSpriteRowCga
+        dec byte ptr cs:[gSpriteRows]
         je L125B
-        call _f17A6_128B
-        dec byte ptr cs:[gVar0FEF]
+        call _BlitSpriteRowCga
+        dec byte ptr cs:[gSpriteRows]
         je L125B
-        add si, word ptr cs:[gVar0FF2]
-        dec byte ptr cs:[gVar0FEF]
+        add si, word ptr cs:[gSpriteStride]
+        dec byte ptr cs:[gSpriteRows]
         jne L123B
 L125B:
         pop ax
-        mov byte ptr cs:[gVar0FEF], al
+        mov byte ptr cs:[gSpriteRows], al
         shl bp, 1
 L1262:
-        call _f17A6_12EC
-        dec byte ptr cs:[gVar0FEF]
+        call _BlitSpriteRowCga2
+        dec byte ptr cs:[gSpriteRows]
         je L1282
-        call _f17A6_12EC
-        dec byte ptr cs:[gVar0FEF]
+        call _BlitSpriteRowCga2
+        dec byte ptr cs:[gSpriteRows]
         je L1282
-        add si, word ptr cs:[gVar0FF2]
-        dec byte ptr cs:[gVar0FEF]
+        add si, word ptr cs:[gSpriteStride]
+        dec byte ptr cs:[gSpriteRows]
         jne L1262
 L1282:
         pop es
@@ -1737,17 +1792,19 @@ L1282:
         pop bx
         pop bp
         retf
-_f17A6_11CD ENDP
+_BlitSpriteCga ENDP
 
 ; ---- 128B..12EC
-        PUBLIC  _f17A6_128B              ; @ 17A6:128B
-_f17A6_128B PROC NEAR
+; 17A6:128B: one row of BlitSpriteCga: copy CS:0FF4 groups through the table at
+; CS:10CD, then the remainder. Called from 17A6:123B..1259.
+        PUBLIC  _BlitSpriteRowCga              ; @ 17A6:128B
+_BlitSpriteRowCga PROC NEAR
         cmp di, bp
         jb L1295
-        add si, word ptr cs:[gVar0FF2]
+        add si, word ptr cs:[gSpriteStride]
         ret
 L1295:
-        mov cx, word ptr cs:[gVar0FF4]
+        mov cx, word ptr cs:[gSpriteGroups]
         mov bx, 10CDh
 L129D:
         lodsb
@@ -1769,7 +1826,7 @@ L129D:
         or al, ah
         stosb
         loop L129D
-        cmp word ptr cs:[gVar0FF6], 1
+        cmp word ptr cs:[gSpriteRemainder], 1
         jne L12D2
         lodsb
         xlatb cs:[bx]
@@ -1780,7 +1837,7 @@ L129D:
         stosb
         ret
 L12D2:
-        cmp word ptr cs:[gVar0FF6], 2
+        cmp word ptr cs:[gSpriteRemainder], 2
         jne L12EB
         lodsb
         xlatb cs:[bx]
@@ -1794,17 +1851,19 @@ L12D2:
         stosw
 L12EB:
         ret
-_f17A6_128B ENDP
+_BlitSpriteRowCga ENDP
 
 ; ---- 12EC..1352
-        PUBLIC  _f17A6_12EC              ; @ 17A6:12EC
-_f17A6_12EC PROC NEAR
+; 17A6:12EC: the second row variant of BlitSpriteCga, with the mask bits set.
+; Called from 17A6:1262..1280.
+        PUBLIC  _BlitSpriteRowCga2              ; @ 17A6:12EC
+_BlitSpriteRowCga2 PROC NEAR
         cmp di, bp
         jb L12F6
-        add si, word ptr cs:[gVar0FF2]
+        add si, word ptr cs:[gSpriteStride]
         ret
 L12F6:
-        mov cx, word ptr cs:[gVar0FF4]
+        mov cx, word ptr cs:[gSpriteGroups]
         mov bx, 10CDh
 L12FE:
         lodsb
@@ -1826,7 +1885,7 @@ L12FE:
         or al, ah
         stosb
         loop L12FE
-        cmp word ptr cs:[gVar0FF6], 1
+        cmp word ptr cs:[gSpriteRemainder], 1
         jne L1335
         lodsb
         xlatb cs:[bx]
@@ -1838,7 +1897,7 @@ L12FE:
         stosb
         ret
 L1335:
-        cmp word ptr cs:[gVar0FF6], 2
+        cmp word ptr cs:[gSpriteRemainder], 2
         jne L1351
         lodsb
         xlatb cs:[bx]
@@ -1853,18 +1912,27 @@ L1335:
         stosw
 L1351:
         ret
-_f17A6_12EC ENDP
+_BlitSpriteRowCga2 ENDP
 
 ; ---- data 1352..15F5
-gVar1352 db 0
-gVar1353 dw 0
-gVar1355 db 16 dup (0)
-gVar1365 db 16 dup (0)
+; 17A6:1352: scratch of BlitSpriteEga (17A6:1715) and its row helper (17A6:179E).
+; gSpriteHeight is the row count, gSpriteDst the destination offset, gSpritePlaneUsed the
+; 16 plane flags and gSpritePlaneIndex the 16 plane indices; the 640 zero bytes are the
+; 16 records of 40 bytes that gSpritePlanePtrs points into.
+gSpriteHeight db 0
+gSpriteDst dw 0
+gSpritePlaneUsed db 16 dup (0)
+gSpritePlaneIndex db 16 dup (0)
         db      640 dup (0)
 ; ---- data 15F5..1615
-gSpritePtrs:
+; 17A6:15F5: 16 near pointers to the 40-byte records in the zero buffer at 17A6:1375..15F4,
+; one per plane; BlitSpriteEga (17A6:1715) and its row helper (17A6:179E) index it by plane.
+gSpritePlanePtrs:
         dw      1375h, 139Dh, 13C5h, 13EDh, 1415h, 143Dh, 1465h, 148Dh, 14B5h, 14DDh, 1505h, 152Dh, 1555h, 157Dh, 15A5h, 15CDh
 ; ---- data 1615..1715
+; 17A6:1615: 256-byte table used by the EGA sprite row (17A6:179E): entry i is
+; (((i >> 3) & 3) << 2) | (i & 3), so each group of four entries repeats twice and the
+; pattern restarts every 32 bytes.
 gTable1615:
         db      00h, 01h, 02h, 03h, 00h, 01h, 02h, 03h, 04h, 05h, 06h, 07h, 04h, 05h, 06h, 07h
         db      08h, 09h, 0Ah, 0Bh, 08h, 09h, 0Ah, 0Bh, 0Ch, 0Dh, 0Eh, 0Fh, 0Ch, 0Dh, 0Eh, 0Fh
@@ -1883,8 +1951,10 @@ gTable1615:
         db      30h, 31h, 32h, 33h, 30h, 31h, 32h, 33h, 34h, 35h, 36h, 37h, 34h, 35h, 36h, 37h
         db      38h, 39h, 3Ah, 3Bh, 38h, 39h, 3Ah, 3Bh, 3Ch, 3Dh, 3Eh, 3Fh, 3Ch, 3Dh, 3Eh, 3Fh
 ; ---- 1715..179E
-        PUBLIC  _f17A6_1715              ; @ 17A6:1715
-_f17A6_1715 PROC FAR
+; 17A6:1715: unpack a sprite from the far pointer at [bp+6]/[bp+8] to [bp+0A]/[bp+0C]
+; for the EGA mode (g8102 2). Called from overlay 4 (ovl4:0EEC).
+        PUBLIC  _BlitSpriteEga              ; @ 17A6:1715
+_BlitSpriteEga PROC FAR
         push bp
         mov bp, sp
         push bx
@@ -1903,7 +1973,7 @@ _f17A6_1715 PROC FAR
         xor ax, ax
         movsb
         lodsb
-        mov byte ptr cs:[gVar0FEF], al
+        mov byte ptr cs:[gSpriteRows], al
         shl ax, 1
         xor dx, dx
         mov bx, 3
@@ -1912,7 +1982,7 @@ _f17A6_1715 PROC FAR
         stosb
         xor ax, ax
         lodsb
-        mov word ptr cs:[gVar0FF0], ax
+        mov word ptr cs:[gSpriteWidth], ax
         shl ax, 1
         xor dx, dx
         div bx
@@ -1921,27 +1991,27 @@ _f17A6_1715 PROC FAR
         inc ax
 L1755:
         stosb
-        mov byte ptr cs:[gVar1352], al
+        mov byte ptr cs:[gSpriteHeight], al
         mov al, cl
         stosb
         inc si
-        mov ax, word ptr cs:[gVar0FF0]
+        mov ax, word ptr cs:[gSpriteWidth]
         xor dx, dx
         div bx
-        mov word ptr cs:[gVar0FF4], ax
-        mov word ptr cs:[gVar0FF6], dx
+        mov word ptr cs:[gSpriteGroups], ax
+        mov word ptr cs:[gSpriteRemainder], dx
 L176F:
-        call _f17A6_179E
-        dec byte ptr cs:[gVar0FEF]
+        call _BlitSpriteRowEga
+        dec byte ptr cs:[gSpriteRows]
         je L1790
-        call _f17A6_179E
-        dec byte ptr cs:[gVar0FEF]
+        call _BlitSpriteRowEga
+        dec byte ptr cs:[gSpriteRows]
         je L1790
 L1783:
         lodsw
         test ah, 40h
         je L1783
-        dec byte ptr cs:[gVar0FEF]
+        dec byte ptr cs:[gSpriteRows]
         jne L176F
 L1790:
         or byte ptr es:[di-1], 20h
@@ -1954,11 +2024,13 @@ L1790:
         pop bx
         pop bp
         retf
-_f17A6_1715 ENDP
+_BlitSpriteEga ENDP
 
 ; ---- 179E..18E6
-        PUBLIC  _f17A6_179E              ; @ 17A6:179E
-_f17A6_179E PROC NEAR
+; 17A6:179E: one row of BlitSpriteEga: build the plane masks in CS:1355/1365 and copy
+; the row through the table at CS:1615. Called from 17A6:176F..178E.
+        PUBLIC  _BlitSpriteRowEga              ; @ 17A6:179E
+_BlitSpriteRowEga PROC NEAR
         mov bp, 1355h
         mov cx, 10h
         xor ax, ax
@@ -1966,7 +2038,7 @@ L17A6:
         mov word ptr cs:[bp], ax
         add bp, 2
         loop L17A6
-        mov word ptr cs:[gVar1353], di
+        mov word ptr cs:[gSpriteDst], di
         xor dx, dx
         mov bx, dx
         mov cx, bx
@@ -1977,25 +2049,25 @@ L17BA:
         mov dl, ah
         and dl, 0Fh
         mov bp, dx
-        cmp byte ptr cs:[bp+gVar1355], 0
+        cmp byte ptr cs:[bp+gSpritePlaneUsed], 0
         jne L17F6
-        inc byte ptr cs:[bp+gVar1355]
+        inc byte ptr cs:[bp+gSpritePlaneUsed]
         shl bp, 1
-        mov di, word ptr cs:[bp+gSpritePtrs]
+        mov di, word ptr cs:[bp+gSpritePlanePtrs]
         mov bp, cx
-        mov byte ptr cs:[bp+gVar1365], dl
-        mov cx, word ptr cs:[gVar0FF0]
+        mov byte ptr cs:[bp+gSpritePlaneIndex], dl
+        mov cx, word ptr cs:[gSpriteWidth]
 L17E6:
         mov byte ptr cs:[di], dh
         inc di
         loop L17E6
-        sub di, word ptr cs:[gVar0FF0]
+        sub di, word ptr cs:[gSpriteWidth]
         mov cx, bp
         inc cx
         jmp short L17FD
 L17F6:
         shl bp, 1
-        mov di, word ptr cs:[bp+gSpritePtrs]
+        mov di, word ptr cs:[bp+gSpritePlanePtrs]
 L17FD:
         mov byte ptr cs:[bx+di], al
 L1800:
@@ -2008,7 +2080,7 @@ L1800:
         xor dx, dx
 L180C:
         mov bp, dx
-        cmp byte ptr cs:[bp+gVar1355], 0
+        cmp byte ptr cs:[bp+gSpritePlaneUsed], 0
         jne L181E
 L1816:
         inc dx
@@ -2017,14 +2089,14 @@ L1816:
         jmp short L1890
 L181E:
         shl bp, 1
-        mov si, word ptr cs:[bp+gSpritePtrs]
+        mov si, word ptr cs:[bp+gSpritePlanePtrs]
         mov di, si
         push ds
         push es
         mov cx, cs
         mov es, cx
         mov ds, cx
-        mov cx, word ptr cs:[gVar0FF4]
+        mov cx, word ptr cs:[gSpriteGroups]
         mov bx, 1615h
 L1837:
         lodsw
@@ -2045,7 +2117,7 @@ L1837:
         or al, ah
         stosb
         loop L1837
-        cmp word ptr cs:[gVar0FF6], 1
+        cmp word ptr cs:[gSpriteRemainder], 1
         jne L1871
         lodsb
         shr al, 1
@@ -2058,7 +2130,7 @@ L1837:
         stosb
         jmp short L188C
 L1871:
-        cmp word ptr cs:[gVar0FF6], 2
+        cmp word ptr cs:[gSpriteRemainder], 2
         jne L188C
         lodsb
         xlatb cs:[bx]
@@ -2076,22 +2148,22 @@ L188C:
         pop ds
         jmp short L1816
 L1890:
-        mov di, word ptr cs:[gVar1353]
+        mov di, word ptr cs:[gSpriteDst]
         xor cx, cx
-        mov cl, byte ptr cs:[gVar1352]
+        mov cl, byte ptr cs:[gSpriteHeight]
         xor bx, bx
 L189E:
         xor dx, dx
 L18A0:
         mov bp, dx
         and bp, 0Fh
-        mov al, byte ptr cs:[bp+gVar1365]
+        mov al, byte ptr cs:[bp+gSpritePlaneIndex]
         or al, al
         je L18D0
         xor ah, ah
         shl ax, 1
         mov bp, ax
-        mov si, word ptr cs:[bp+gSpritePtrs]
+        mov si, word ptr cs:[bp+gSpritePlanePtrs]
         mov ah, al
         mov al, byte ptr cs:[bx+si]
         or al, al
@@ -2117,14 +2189,18 @@ L18D7:
         or byte ptr es:[di-1], 40h
         pop si
         ret
-_f17A6_179E ENDP
+_BlitSpriteRowEga ENDP
 
 ; ---- data 18E6..18EA
-gVar18E6 dw 0
-gVar18E8 dw 0
+; 17A6:18E6: the two table offsets BuildMask (17A6:18EA) computes from ds:80CE and ds:80D0.
+gMaskTableOff dw 0
+gMaskTableOff2 dw 0
 ; ---- 18EA..197E
-        PUBLIC  _f17A6_18EA              ; @ 17A6:18EA
-_f17A6_18EA PROC FAR
+; 17A6:18EA: build a mask from the image at the far pointer [bp+6]/[bp+8] and write it
+; back: for each pair of bytes, translate through the table at ds:80CE/80D0 and set the
+; mask bits. Called from overlay 3 (ovl3:0934).
+        PUBLIC  _BuildMask              ; @ 17A6:18EA
+_BuildMask PROC FAR
         push bp
         mov bp, sp
         push bx
@@ -2140,12 +2216,12 @@ _f17A6_18EA PROC FAR
         xor dx, dx
         mov bx, word ptr [g80CE]
         add bx, 190h
-        mov word ptr cs:[gVar18E6], bx
+        mov word ptr cs:[gMaskTableOff], bx
         inc bh
-        mov word ptr cs:[gVar18E8], bx
+        mov word ptr cs:[gMaskTableOff2], bx
         mov ds, word ptr [g80D0]
 L1917:
-        mov bx, word ptr cs:[gVar18E6]
+        mov bx, word ptr cs:[gMaskTableOff]
 L191C:
         mov dl, 2
 L191E:
@@ -2191,7 +2267,7 @@ L1966:
         je L1975
         xor dh, 1
         je L1917
-        mov bx, word ptr cs:[gVar18E8]
+        mov bx, word ptr cs:[gMaskTableOff2]
         jmp short L191C
 L1975:
         pop es
@@ -2203,11 +2279,11 @@ L1975:
         pop bx
         pop bp
         retf
-_f17A6_18EA ENDP
+_BuildMask ENDP
 
 ; ---- 197E..1A26
-        PUBLIC  _f17A6_197E              ; @ 17A6:197E
-_f17A6_197E PROC FAR
+        PUBLIC  _TranslateImage              ; @ 17A6:197E
+_TranslateImage PROC FAR
         push bp
         mov bp, sp
         push ax
@@ -2320,6 +2396,6 @@ L1A1C:
         pop ax
         pop bp
         retf
-_f17A6_197E ENDP
+_TranslateImage ENDP
 
         END
