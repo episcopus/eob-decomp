@@ -12,7 +12,7 @@
 #include <dos.h>
 
 extern void farfree(void far *block); /*@ 0000:71EE */
-extern void far *gEFD4[]; /*@ ds:EFD4 */
+extern void far *gRectKinds[]; /*@ ds:EFD4 */
 extern int gF538; /*@ ds:F538 */
 
 extern void LoadOverlayScreen(char far *name, int a, int b); /*@ 082C:05EC */
@@ -233,9 +233,9 @@ struct WallDec {            /* a 52-byte wall set decoration */
     int i;
 
     for (i = 0; i < 0xc8; i++) {
-        if (gEFD4[i]) {
-            farfree(gEFD4[i]);
-            gEFD4[i] = 0;
+        if (gRectKinds[i]) {
+            farfree(gRectKinds[i]);
+            gRectKinds[i] = 0;
         }
     }
     gF538 = 0;
@@ -318,10 +318,10 @@ struct WallDec {            /* a 52-byte wall set decoration */
                 cell = gWallRecs[gF538].cells[i];
                 if (cell == 0xff)
                     continue;
-                if (gEFD4[cell])
+                if (gRectKinds[cell])
                     continue;
                 rect = &((struct Cell8 far *)gE062)[cell];
-                gEFD4[cell] = gGetSpriteCell(rect->w0, rect->w1, rect->w2, rect->w3, MAPSHEET);
+                gRectKinds[cell] = gGetSpriteCell(rect->w0, rect->w1, rect->w2, rect->w3, MAPSHEET);
             }
             gF538++;
             recordIndex = gWallRecs[gF538].next;

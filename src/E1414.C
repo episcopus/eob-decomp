@@ -118,7 +118,7 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
 void ArmEffect(int idx, int active);
 extern void DrawText(char *text); /*@ 1DE7:060A */
 extern void DrawMemberLevel(int member); /*@ 1547:04A0 */
-extern void f122E_0896(int member, int a); /*@ 122E:0896 */
+extern void DispatchSlotHandler(int member, int a); /*@ 122E:0896 */
 extern void f122E_1DA8(int member, int a); /*@ 122E:1DA8 */
 extern int f08E6_189D(struct Obj28 far *obj, int a, int b); /*@ 08E6:189D */
 extern int RunRecordAttack(struct DDRec far *rec); /*@ 0DE8:01FF */
@@ -189,7 +189,7 @@ extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
         }
         gEFD2 = 1;
     }
-    f122E_0896(target, rec->m07);
+    DispatchSlotHandler(target, rec->m07);
     return 0;
 }
 /* 1414:0172: the per-record test 0285 and 0D63 use. It returns 0 when the record already has a

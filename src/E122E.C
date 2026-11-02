@@ -27,18 +27,103 @@ extern void ArmEffectWith(int idx, int arg, int sub, int active); /*@ 1414:055B 
 extern void AdjustMemberStatus(int who); /*@ 1414:03B4 */
 extern void Obj1505(int kind, int id, int frame, int orient, int b0, int m07, int type, int timer, int m12, int m14); /*@ 08E6:1505 */
 extern void MarkListItems(void far *head); /*@ 0BD2:040E */
+extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
+extern void PushListItem(int who, int item, int value); /*@ 0BD2:0458 */
+extern int AddDDEffect(int who, int item, int volume, int kind, int page, int type); /*@ 0BD2:07DE */
+extern void f0EF3_097B(char a, int b, int c, int d, int e); /*@ 0EF3:097B */
+extern char gF43D; /*@ ds:F43D */              /* cleared around the f0EF3_097B call (122E:0C4D) */
+extern char g5A40[]; /*@ ds:5A40 */            /* byte table indexed by two script bytes (122E:0C4D) */
+extern void DrawItemRow(int who, int slot, int one); /*@ 0BD2:0917 */
+extern int f0D1C_02DC(void); /*@ 0D1C:02DC */
+extern int gMouseDisabled; /*@ ds:814A */      /* nonzero disables the mouse (src/E07A9.C) */
+extern char gF51A; /*@ ds:F51A */              /* the selected action row 0..2 (src/E0ACD.C) */
+extern signed char gA99A; /*@ ds:A99A */       /* the selected character index (src/E0ACD.C) */
+extern signed char g181F[]; /*@ ds:181F */     /* byte table indexed by an item icon (src/E1414.C) */
+extern int ClickInRect(int left, int top, int right, int bottom); /*@ 082C:0A5D */
+extern void PlaySound(int sound); /*@ 177D:0070 */
+extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
+extern char gFileNameBuf[]; /*@ ds:FE6E */     /* the text buffer sprintf formats into (src/E082C.C) */
+extern int gForceDoorRoll[]; /*@ ds:59B0 */    /* force-door roll thresholds, indexed by CharRec.m0D (122E:0325) */
+extern signed char g1905[]; /*@ ds:1905 */     /* per-object-kind handler selector (src/E0DE8.C) */
+extern char gFB44; /*@ ds:FB44 */              /* a display-mode byte (src/E0ACD.C) */
+extern char gF542[]; /*@ ds:F542 */            /* a message buffer (src/E0ACD.C) */
+extern char gFlag; /*@ ds:F3B9 */              /* a mode byte (src/E0ACD.C) */
+extern int Action01E3(void far *action); /*@ 0ACD:01E3 */
+extern void f0EF3_2541(char far *text); /*@ 0EF3:2541 */
+extern void Ovl3_0A7C(int n); /*@ 210C:007A */  /* overlay 3 entry, ovl3:0A7C */
+extern void SaveLevelState(int level); /*@ 210C:002F */  /* overlay 3 entry, ovl3:11AF */
+extern void ResetLevel(void); /*@ 210C:007F */  /* overlay 3 entry, ovl3:19F7 */
+extern void fOvl4_2039(void); /*@ 2116:0043 */  /* overlay 4 entry */
+extern void LoadScreenImage(char far *name, char far *extra, int srcKind, int dstKind, int mode); /*@ 082C:051B */
+extern char gText5BA1[]; /*@ ds:5BA1 */        /* the "INVENT" screen name (122E:1AAB) */
+extern void LockHidePointer(void); /*@ 1BBE:0307 */
+extern void LockShowPointer(void); /*@ 1BBE:0332 */
+extern int gTextAttr1; /*@ ds:811D */          /* the first text attribute (src/E07C8.C) */
+extern int gTextAttr2; /*@ ds:811B */          /* the second text attribute (src/E07C8.C) */
+
+/* The 52-byte click-region records at ds:E06B, one chain per object kind (122E:0055 walks `next`).
+   `kind` indexes gRectKinds; bit 0 of `flags` mirrors `x` about the 176-pixel screen width. */
+struct SlotRegion {
+    unsigned char kind;                         /* +00: index into gRectKinds */
+    char pad01[8];
+    signed char next;                           /* +09: next record, 0 or negative ends the walk */
+    char flags;                                 /* +0A: bit 0 mirrors x */
+    char pad0B[2];
+    int x;                                      /* +0D: left edge */
+    char pad0F[0x12];
+    int y;                                      /* +21: top edge */
+    char pad23[0x11];
+};
+
+struct RectKind {                               /* the per-kind size record gRectKinds points at */
+    char pad00;
+    signed char height;                         /* +1: base height in pixels */
+    signed char width;                          /* +2: base width in eighths */
+};
+
+extern struct SlotRegion gSlotRegions[]; /*@ ds:E06B */
+extern struct RectKind far *gRectKinds[]; /*@ ds:EFD4 */
+extern char far *gEF9E; /*@ ds:EF9E */         /* a far byte array the clicked member row indexes (122E:04CA) */
+extern signed char gA9C6; /*@ ds:A9C6 */       /* the member row the mouse is over (src/E0ACD.C) */
+extern char g59F8[]; /*@ ds:59F8 */            /* maps a member row (gEF9E[gA9C6]) to a gA99C entry (122E:04CA) */
+extern char g59D8[]; /*@ ds:59D8 */            /* maps a member row to a column offset (122E:04CA) */
+extern int g1E75; /*@ ds:1E75 */               /* the viewport x origin added to a slot's x (122E:04CA) */
+
+/* The six-byte slot-position records at ds:A99C (src/EOV3.C calls them Triple6): a far pointer to
+   a size record, then the slot's x and y. */
+struct SlotSize {                               /* the 3-byte size record a gA99C entry points at */
+    char pad00;
+    signed char height;                         /* +1: base height in pixels */
+    signed char width;                          /* +2: base width in eighths */
+};
+struct SlotPos {
+    struct SlotSize far *rec;                   /* +0: the far size record */
+    unsigned char x;                            /* +4 */
+    unsigned char y;                            /* +5 */
+};
+extern struct SlotPos gA99C[]; /*@ ds:A99C */
 
 struct CharRec {                                /* the 243-byte character records at ds:F580 */
     char pad00;
     unsigned char status;                       /* +01: bit 0 is live */
-    char pad02[0x77 - 0x02];
+    char name[0x0B];                            /* +02: the character's name, NUL padded */
+    signed char m0D;                            /* +0D: the class/strength index 122E:0325 picks on */
+    char pad0E;
+    signed char m0F;                            /* +0F: a level or score (src/E0BD2.C) */
+    char pad10[0x1B - 0x10];
+    signed char m1B;                            /* +1B: 122E:0325 skips a character at or below 0 */
+    char pad1C[0x77 - 0x1C];
     int items[0x1b];                            /* +77: 27 item slots */
     char padAD[0xf3 - 0xad];
 };
 
-struct Item14 {                                 /* the 14-byte item records at ds:8DD2 */
-    unsigned char flags;                        /* +00 */
-    char pad01[0x0e - 0x01];
+struct Item14 {                                 /* the 14-byte item records at ds:8DD2 (src/E0BD2.C) */
+    unsigned char flags;                        /* +00 (ds:8DD2) */
+    signed char icon;                           /* +01 (ds:8DD3): indexes g181F (122E:06D0) */
+    signed char m02;                            /* +02 (ds:8DD4): the item type (src/E0BD2.C) */
+    char pad03;
+    int m04;                                    /* +04 (ds:8DD6): the key, -1 when free (src/E0BD2.C) */
+    char pad06[0x0e - 0x06];
 };
 
 extern struct CharRec gChars[]; /*@ ds:F580 */
@@ -101,7 +186,40 @@ void f122E_1DA8(int a, int b);  /* forward: 1DA8 comes after its callers */
     DrawText(gText5AB5);
     UpdateDDEffects();
 }
-/*@ 122E:0055 stub */ int f122E_0055(int id) { return 0; }
+/* 122E:0055: hit-test the click regions of object kind `kind` against the last click. Only the
+   script-driving mode 0x40 has regions (any other mode returns 1, so every kind is "hit"). It walks
+   the kind's chain from the top: the region record `i - 1`'s x/y (inset by 3) and its gRectKinds
+   size (width in eighths times 8, both plus 6) form the rectangle, mirrored about the screen width
+   when the region's bit 0 is set, and the walk stops at the first hit or a non-positive next index.
+   Returns 1 when any region was hit. */
+/*@ 122E:0055 */ int HitTestObjectKind(int kind)
+{
+    register int i;
+    register int found;
+    int left;
+    int top;
+    int idx;
+    int width;
+    int height;
+
+    i = kind;
+    if (gEFD2 != 0x40)
+        return 1;
+    found = 0;
+    do {
+        i--;
+        left = gSlotRegions[i].x - 3;
+        top = gSlotRegions[i].y - 3;
+        idx = gSlotRegions[i].kind;
+        width = gRectKinds[idx]->width * 8 + 6;
+        height = gRectKinds[idx]->height + 6;
+        if (gSlotRegions[i].flags & 1)
+            left = 0xb0 - left - width;
+        found |= ClickInRect(left, top, left + width, top + height);
+        i = gSlotRegions[i].next;
+    } while (i > 0 && !found);
+    return found;
+}
 
 /* 122E:0137: push bit 0 of the frame-count byte of the gB894 record `id`. Called by 147F for one
    sub-opcode. Purpose unknown: the opcode it implements is not identified. */
@@ -179,31 +297,117 @@ void f122E_1DA8(int a, int b);  /* forward: 1DA8 comes after its callers */
     AdjustMemberStatus(who);
     ArmEffectWith(0xc, who, idx, 1);
 }
-/*@ 122E:0325 stub */ void f122E_0325(void) {}
-/*@ 122E:04CA stub */ void f122E_04CA(void) {}
+/* 122E:0325: the force-door action. It only runs when the last click was in the member-slot
+   rectangle or the driver is not in mode 0x40. It picks the strongest live member (highest
+   m0D + m0F, among those with m1B above 0), rolls 1d20 against gForceDoorRoll[its m0D], and on a
+   pass prints "%s forces the door!" and arms the member; on a miss or no candidate it prints the
+   party message. In every case it rewrites the clicked slot's gB894 byte (8 or 0x12) and the
+   opposite slot (slot ^ 2), then arms the member effect. Returns 0 only when the click missed and
+   the driver is in mode 0x40, else 1. */
+/*@ 122E:0325 draft */ int ForceDoorAction(int id, int slot)
+{
+    register int who;
+    register int i;
 
-/* 122E:05DF: look up the object kind in gB894[id * 9 + slot] and, if f122E_0055 accepts it, run the
+    if (ClickInRect(0x28, 0x10, 0x88, 0x58) || gEFD2 != 0x40) {
+        who = -1;
+        for (i = 0; i < 6; i++) {
+            if ((gChars[i].status & 1) == 0)
+                continue;
+            if (gChars[i].m1B <= 0)
+                continue;
+            if (who < 0)
+                who = i;
+            else if (gChars[who].m0D + gChars[who].m0F <= gChars[i].m0D + gChars[who].m0F)
+                who = i;
+        }
+        if (who == -1) {
+            sprintf(gFileNameBuf, "Nobody is able to force the door.\r");
+            return 1;
+        }
+        if (RollDice(1, 0x14, 0) > gForceDoorRoll[gChars[who].m0D]) {
+            DrawText("The party tries to force the door and fails.\r");
+            return 1;
+        }
+        DrawText("The party forces the door.\r");
+        sprintf(gFileNameBuf, "%s forces the door!\r", gChars[who].name);
+        if (gB894[id * 9 + slot] == 0x1e) {
+            gB894[id * 9 + slot] = 8;
+            gB894[id * 9 + (slot ^ 2)] = 8;
+        } else {
+            gB894[id * 9 + slot] = 0x12;
+            gB894[id * 9 + (slot ^ 2)] = 0x12;
+        }
+        ArmMemberEffect(id);
+        return 1;
+    }
+    return 0;
+}
+/* 122E:04CA: the member-slot click handler. It turns the clicked row (gEF9E[gA9C6]) into a gA99C
+   slot entry (through g59F8), builds the slot's screen rectangle from the entry's x/y and the
+   far size record's width (in eighths) and height, all inset by 4 and offset by g1E75, and for the
+   item actions (gFBC8 4, 5, 6) shifts x by the scroll column (row - g59D8[row]) * 9, or by 4 when
+   the row is at least 0x1e. A hit, or a driver not in mode 0x40, toggles the arm effect and plays
+   sound 6 and returns 1; otherwise it defers to CheckMemberSlotRect and returns its result. */
+/*@ 122E:04CA */ int MemberSlotClickAction(int id, int slot)
+{
+    register int x;
+    register int row;
+    int y;
+    int idx;
+    int width;
+    int height;
+    int top;
+    struct SlotSize far *rec;
+
+    row = gEF9E[gA9C6];
+    idx = g59F8[row];
+    rec = gA99C[idx].rec;
+    top = g1E75;
+    x = gA99C[idx].x + top - 4;
+    y = gA99C[idx].y - 4;
+    width = rec->width * 8 + 8;
+    height = rec->height + 8;
+    switch (gFBC8) {
+    case 4:
+    case 5:
+    case 6:
+        if (gEF9E[gA9C6] < 0x1e)
+            x += (row - g59D8[row]) * 9;
+        else
+            x += 4;
+        break;
+    }
+    if (ClickInRect(x, y, x + width, y + height) || gEFD2 != 0x40) {
+        ToggleArmEffect(id, slot);
+        PlaySound(6);
+        return 1;
+    }
+    return CheckMemberSlotRect(id, slot);
+}
+
+/* 122E:05DF: look up the object kind in gB894[id * 9 + slot] and, if HitTestObjectKind accepts it, run the
    driver for `id` in the current mode gEFD2. Returns 1 when it ran, 0 otherwise. */
 /*@ 122E:05DF */ int PerformItemSlotAction(int id, int slot)
 {
     int kind;
 
     kind = gTable18BF[gB894[id * 9 + slot]];
-    if (f122E_0055(kind)) {
+    if (HitTestObjectKind(kind)) {
         f122E_1DA8(id, gEFD2);
         return 1;
     }
     return 0;
 }
 
-/* 122E:0620: raise the count in gB894[id * 9 + slot] when f122E_0055 accepts the object kind,
+/* 122E:0620: raise the count in gB894[id * 9 + slot] when HitTestObjectKind accepts the object kind,
    mark the action dirty and run the driver. Returns 1 when it ran, 0 otherwise. */
 /*@ 122E:0620 */ int IncreaseItemSlot(int id, int slot)
 {
     int kind;
 
     kind = gTable18BF[gB894[id * 9 + slot]];
-    if (f122E_0055(kind)) {
+    if (HitTestObjectKind(kind)) {
         gB894[id * 9 + slot]++;
         gDF4C = 1;
         f122E_1DA8(id, gEFD2);
@@ -212,14 +416,14 @@ void f122E_1DA8(int a, int b);  /* forward: 1DA8 comes after its callers */
     return 0;
 }
 
-/* 122E:0678: lower the count in gB894[id * 9 + slot] when f122E_0055 accepts the object kind,
+/* 122E:0678: lower the count in gB894[id * 9 + slot] when HitTestObjectKind accepts the object kind,
    mark the action dirty and run the driver. Returns 1 when it ran, 0 otherwise. */
 /*@ 122E:0678 */ int DecreaseItemSlot(int id, int slot)
 {
     int kind;
 
     kind = gTable18BF[gB894[id * 9 + slot]];
-    if (f122E_0055(kind)) {
+    if (HitTestObjectKind(kind)) {
         gB894[id * 9 + slot]--;
         gDF4C = 1;
         f122E_1DA8(id, gEFD2);
@@ -227,7 +431,50 @@ void f122E_1DA8(int a, int b);  /* forward: 1DA8 comes after its callers */
     }
     return 0;
 }
-/*@ 122E:06D0 stub */ void f122E_06D0(void) {}
+/* 122E:06D0: the item-slot action. It resolves the clicked slot's object kind and, when
+   HitTestObjectKind accepts it, acts on the item: with the mouse disabled and row 0x10 selected,
+   it removes the slot's item and either drops it into the selected character's carried list (when
+   the item type is 0x10) or says it cannot go there and pushes it back; otherwise it either takes
+   the item onto the mouse (nothing shown) or, when an item is shown, inserts the shown item back
+   into the slot unless its g181F size says it is too large. Returns 0 when the kind is not
+   clickable, else 1. */
+/*@ 122E:06D0 draft */ int ItemSlotAction(int id, int slot)
+{
+    register int item;
+    int kind;
+
+    kind = gTable18BF[gB894[id * 9 + slot]];
+    if (!HitTestObjectKind(kind))
+        return 0;
+    if (gMouseDisabled != 0 && gF51A == 0x10) {
+        item = RemoveListItem(&gB899[id * 9], 8, -1);
+        if (gTable8DD2[item].m02 == 0x10) {
+            InsertListItem(&gChars[gA99A].items[16], -2, item, 0);
+            DrawItemRow(0x10, 1, 0);
+        } else {
+            DrawText("You can't put that item there.\r");
+            PushListItem(id, item, 8);
+        }
+    } else if (f0D1C_02DC() == 0) {
+        item = RemoveListItem(&gB899[id * 9], 8, -1);
+        if (item != 0) {
+            f122E_1DA8(id, 8);
+            SetMouseItem(item);
+            gDF4C = 1;
+        }
+    } else {
+        item = f0D1C_02DC();
+        if (g181F[gTable8DD2[item].icon] > 0xe) {
+            InsertListItem(&gB899[id * 9], id, f0D1C_02DC(), 8);
+            f122E_1DA8(id, 4);
+            SetMouseItem(0);
+            gDF4C = 1;
+        } else {
+            DrawText("The item is too large to fit.\r");
+        }
+    }
+    return 1;
+}
 
 /* 122E:0847: when the mouse is over the member slot's rectangle and the slot's object has flag 0x20
    in g194B, draw the slot's message. Returns 1 when it drew, 0 otherwise. */
@@ -241,10 +488,39 @@ void f122E_1DA8(int a, int b);  /* forward: 1DA8 comes after its callers */
     }
     return 0;
 }
-/*@ 122E:0896 stub */ int f122E_0896(int a, int b) { return 0; }
+/* 122E:0896: the row handler. It flips bit 1 of the slot, looks the object there up in gB894, and
+   when its g1905 selector is nonzero, the driver mode gEFD2 has the selector's bit set
+   ((gB894[id*9+4] & 0xf8) >> 3 | 0xe0) and the selector minus one is not negative, calls that
+   handler (a local table of far function pointers copied from the compiler template at ds:5A18)
+   with (id, slot). Then it clears the driver mode and marks the action dirty. Returns 0 when a
+   guard fails, else the handler's result. */
+/*@ 122E:0896 draft */ int DispatchSlotHandler(int id, int slot)
+{
+    int (far *handlers[10])(int, int) = {
+        MemberSlotClickAction, PerformItemSlotAction, IncreaseItemSlot, DecreaseItemSlot,
+        ForceDoorAction, CheckMemberSlotRect, 0, 0, 0, ItemSlotAction
+    };
+    int idx;
+    int mask;
+    int result;
+
+    slot ^= 2;
+    idx = gB894[id * 9 + slot];
+    if (g1905[idx] == 0)
+        return 0;
+    mask = ((gB894[id * 9 + 4] & 0xf8) >> 3) | 0xe0;
+    if (!(gEFD2 & mask))
+        return 0;
+    if (g1905[idx] - 1 < 0)
+        return 0;
+    result = handlers[g1905[idx] - 1](id, slot);
+    gEFD2 = 0;
+    gDF4C = 1;
+    return result;
+}
 
 /* 122E:0933: set the driver mode to 0x40, work out the member's row through f0D1C_00DA and run the
-   row handler f122E_0896. QUIRK 122E:0933: the argument is raised by 0x3c and then never read. */
+   row handler DispatchSlotHandler. QUIRK 122E:0933: the argument is raised by 0x3c and then never read. */
 /*@ 122E:0933 */ void RunRowHandler(int entry)
 {
     int x;
@@ -252,7 +528,7 @@ void f122E_1DA8(int a, int b);  /* forward: 1DA8 comes after its callers */
     entry += 0x3c;
     gEFD2 = 0x40;
     x = f0D1C_00DA(gPartyCell, gFBCC);
-    f122E_0896(x, gFBCC);
+    DispatchSlotHandler(x, gFBCC);
 }
 /* 122E:0960: sub-opcode that writes gB894 fields: 0xFFE9 stores a byte into gB894[id * 9 + index],
    0xFFED sets the page gFBCC, and 0xFFF7 fills the first four bytes of gB894[id * 9] with a byte.
@@ -380,10 +656,75 @@ void f122E_1DA8(int a, int b);  /* forward: 1DA8 comes after its callers */
     Obj1505(kind, id, frame, orient, b0, m07, type, timer, m12, m14);
     return (long)(script - start);
 }
-/*@ 122E:0C4D stub */ void f122E_0C4D(void) {}
+/* 122E:0C4D: the 0xDF/other effect-adding opcode. It reads the opcode byte (0xDF sets `flag`), a
+   byte, a word, and two more bytes. When the opcode was not 0xDF it copies the first byte's item
+   into a free slot and adds a DD effect with the word as the volume and g5A40[third + second * 2]
+   as the kind; a zero result frees the slot again (m04 = -1). When it was 0xDF it clears gF43D
+   around a f0EF3_097B call with the same fields. Returns the bytes read. */
+/*@ 122E:0C4D draft */ long AddEffectOp(char far *script)
+{
+    char v1;
+    char v2;
+    char v3;
+    char saved;
+    char flag;
+    char far *start = script;
+    int id;
+    int item;
+
+    flag = (*script == (char)0xdf);
+    script++;
+    v1 = *script;
+    script += 2;
+    id = *(int far *)script;
+    script += 2;
+    v2 = *script++;
+    v3 = *script++;
+    if (!flag) {
+        item = CopyItemToFreeSlot(v1);
+        if (item == 0)
+            return (long)(script - start);
+        if (AddDDEffect(-1, item, id, g5A40[v2 * 2 + v3], v2, gTable8DD2[item].m02) == 0)
+            gTable8DD2[item].m04 = -1;
+    } else {
+        saved = gF43D;
+        gF43D = 0;
+        f0EF3_097B(-1, v1, id, g5A40[v2 * 2 + v3], v2);
+        gF43D = saved;
+    }
+    return (long)(script - start);
+}
 /*@ 122E:0D57 stub */ void f122E_0D57(void) {}
 /*@ 122E:0E9B stub */ void f122E_0E9B(void) {}
-/*@ 122E:0FDC stub */ void f122E_0FDC(void) {}
+/* 122E:0FDC: the show-text opcode. It skips the script to the text's NUL, then reads two bytes
+   into a 5-byte control-code buffer initialised from the compiler template at ds:5A48, hides the
+   pointer, draws the original text, the buffer, the buffer with the two saved text attributes,
+   and a newline, then shows the pointer. Returns the bytes read. */
+/*@ 122E:0FDC draft */ long ShowTextOp(char far *script)
+{
+    char buf[5] = { 6, 0x21, 2, 0x21, 0 };
+    char far *start = script;
+    char far *text = script;
+    int attr1;
+    int attr2;
+
+    while (*script != 0)
+        script++;
+    script++;
+    attr1 = gTextAttr1;
+    attr2 = gTextAttr2;
+    buf[1] = *script++;
+    buf[3] = *script++;
+    LockHidePointer();
+    DrawText(buf);
+    DrawText(text);
+    buf[1] = attr1;
+    buf[3] = attr2;
+    DrawText(buf);
+    DrawText("\r");
+    LockShowPointer();
+    return (long)(script - start);
+}
 /*@ 122E:1097 stub */ void f122E_1097(void) {}
 
 /* 122E:11E8: sub-opcode that clears one bit of a 32-bit action mask: 0xFFEF clears the bit in the
@@ -514,7 +855,38 @@ void f122E_1DA8(int a, int b);  /* forward: 1DA8 comes after its callers */
     return (long)(script - start);
 }
 /*@ 122E:147F stub */ void f122E_147F(void) {}
-/*@ 122E:1AAB stub */ void f122E_1AAB(void) {}
+/* 122E:1AAB: the load-level opcode. It refreshes the display (Action01E3 and f0EF3_2541 on the
+   gF542 buffer when gFB44 and gFlag are set), reads a byte, a word and a byte, stores the word as
+   gPartyCell and the byte as gFBCC (unless 0xFF), resets and saves the level, runs ovl3:0A7C,
+   loads the INVENT screen (gText5BA1) with the 0:0x2067 page, runs ovl4:2039, sets the sound volume
+   and stops the script driver (gA9EC). Returns 0. */
+/*@ 122E:1AAB draft */ long LoadLevelOp(char far *script)
+{
+    char v1;
+    char v2;
+    int id;
+
+    if (gFB44 != 0)
+        Action01E3(gF542);
+    if (gFlag != 0)
+        f0EF3_2541(gF542);
+    script++;
+    v1 = *script++;
+    id = *(int far *)script;
+    script += 2;
+    v2 = *script++;
+    gPartyCell = id;
+    if (v2 != (char)0xff)
+        gFBCC = v2;
+    ResetLevel();
+    SaveLevelState(gFBC8);
+    Ovl3_0A7C(v1);
+    LoadScreenImage(gText5BA1, (char far *)0x2067, 5, 3, 2);
+    fOvl4_2039();
+    SetSoundVolume(id);
+    gA9EC = 1;
+    return 0;
+}
 
 /* 122E:1B5A: sub-opcode 0xE2: when the byte is 0xE2, read a word and add it as party experience.
    Returns the bytes read. */

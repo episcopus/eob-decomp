@@ -68,7 +68,7 @@ extern void ArmEffect(int a, int b); /*@ 1414:05A4 */
 extern void RearmCharEffects(void); /*@ 1414:0B2E */
 extern void SetMouseItem(int n); /*@ 07A9:010C */
 extern void SetSoundVolume(int n); /*@ 122E:0001 */
-extern void f122E_0896(int a, int b); /*@ 122E:0896 */
+extern void DispatchSlotHandler(int a, int b); /*@ 122E:0896 */
 extern void ComputeArmourClass(int who); /*@ 0DE8:0D5E */
 extern int far RollDice(char count, char sides, char bonus); /*@ 082C:0458 */
 extern void BuildList4(void); /*@ 0CF7:01CC */
@@ -589,14 +589,14 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
 }
 
 /* 0ACD:08E7: Purpose unknown: derives a key from gPartyCell and gFBCC (f0D1C_00DA), sets
-   gEFD2 to 0xff, passes the key and the page to f122E_0896 and the selected character gA99A to
+   gEFD2 to 0xff, passes the key and the page to DispatchSlotHandler and the selected character gA99A to
    ComputeArmourClass. */
 /*@ 0ACD:08E7 */ void Action08E7(void)
 {
     int x = f0D1C_00DA(gPartyCell, gFBCC);
 
     gEFD2 = 0xff;
-    f122E_0896(x, gFBCC);
+    DispatchSlotHandler(x, gFBCC);
     ComputeArmourClass(gA99A);
 }
 

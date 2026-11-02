@@ -3848,6 +3848,9 @@ unit = "e122e"
 addr = "122E:0055"
 size = 226
 evidence = ["near", "frame"]
+name = "HitTestObjectKind"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e122e_0137"
@@ -3893,6 +3896,8 @@ unit = "e122e"
 addr = "122E:0325"
 size = 421
 evidence = ["frame"]
+name = "ForceDoorAction"
+notes = "draft 2026-11-01: matches every byte except the two `mov si,di` tails at 122E:03C1 (the A<=B branch) and 122E:03C5 (the who<0 branch): the original keeps both plus the `jmp 122E:03C7` between them, our -ml -O -Z build cross-jumps them into one `mov si,di` (4 bytes short, first difference the return-0 target at 122E:0028, ours jmp 0x199 against 0x19f). This is the TCC internal-assembler cross-jump class of 0A16. `-B` does not fix it: TCC -S then emits the far-branch form `or si,si; jge; jmp` where the original has one short `jl 122E:03C5`, and the function is still 4 bytes short. Tried: `if (who<0) who=i; else if (A<=B) who=i;`, the braced forms, `if (who<0) { who=i; continue; } if (A<=B) who=i;`, `if (who>=0 && A>B) continue; who=i;` (one assignment, 6 short), `who=i+0` in either branch, and an extra `else who=who;` (2 short); TCC always merges the two `who=i`. Same unresolved unit-flag question as 0A16. The rest of the function (the click gate, the six-character pick, the 1d20 roll against gForceDoorRoll[m0D], the messages and the gB894 slot rewrite) is written from the disassembly."
 
 [[function]]
 id = "e122e_04ca"
@@ -3900,6 +3905,9 @@ unit = "e122e"
 addr = "122E:04CA"
 size = 277
 evidence = ["frame"]
+name = "MemberSlotClickAction"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e122e_05df"
@@ -3937,6 +3945,8 @@ unit = "e122e"
 addr = "122E:06D0"
 size = 375
 evidence = ["frame"]
+name = "ItemSlotAction"
+notes = "draft 2026-11-01: matches every byte except the `return 0` at the top: the original shares one `xor ax,ax` at the function end (122E:083F) and its early exit is `or ax,ax; jne 122E:0032; jmp 122E:083F`, while our -ml -O -Z build emits `or ax,ax; jne 122E:0034; xor ax,ax; jmp 122E:00xx` inline (2 bytes longer; first difference 122E:002E). The body layout of the early-return form matches the original exactly. Tried: the early `if (!HitTestObjectKind(kind)) return 0;` (this, 2 bytes long), the same wrapped in `if (HitTestObjectKind(kind)) { ...; return 1; } return 0;` (the body then lays out differently, 17 bytes short: the two 6-byte cleanups merge on the wrong side and the shared `mov ax,1` moves to the end), an explicit `return 1` after the mouse-disabled branch, `goto ret0` with `ret0: return 0;` at the end, and inlining f0D1C_02DC() in the size check. All the rest (the kind gate, the mouse-disabled/row-0x10 branch, the two RemoveListItem paths, the item-type and g181F size checks) is written from the disassembly."
 
 [[function]]
 id = "e122e_0847"
@@ -3954,6 +3964,8 @@ unit = "e122e"
 addr = "122E:0896"
 size = 157
 evidence = ["far", "near", "frame"]
+notes = "draft 2026-11-01: the body is written from the disassembly (the slot ^= 2, the g1905 selector gate, the gEFD2 mask test ((gB894[id*9+4] & 0xf8) >> 3 | 0xe0), the table call and the gEFD2/gDF4C stores). It does not match because of the local table of far function pointers at 122E:08A1-08AE: the original copies a 0x28-byte compiler template from ds:5A18 (F_SCOPY@ 0000:78C9) whose entries are the relocated addresses 122E:04CA, 05DF, 0620, 0678, 0325, 0847, 0000:0000, 0000:0000, 0000:0000, 06D0. The matcher's literal check (cmatch.py:367-369) compares the template bytes with cstr, so it cannot reconcile the relocated function offsets (ours are shifted by the two drafts before this function) or the segment word (ours is our unit's, the original's 0x122E). First difference 122E:0012. A function-pointer template is not a string literal, so the docstring's literal rule does not cover it. This needs a matcher decision (compare a relocated template by its named far pointers) or an accepted alternative source form."
+name = "DispatchSlotHandler"
 
 [[function]]
 id = "e122e_0933"
@@ -4017,6 +4029,8 @@ unit = "e122e"
 addr = "122E:0C4D"
 size = 266
 evidence = ["frame"]
+notes = "draft 2026-11-01: matches every byte except the first use of the copied item, 2 bytes short. After CopyItemToFreeSlot the original keeps its result in AX and reads gTable8DD2[item].m02 with `mov dx,0xe; imul dx; mov bx,ax; mov al,[bx-0x722c]` (122E:0CC2), reloading item from SI only for the later m04 store (122E:0CFA); our -ml -O -Z build reloads `mov ax,si` before the m02 read (first difference 122E:0060, ours jne 0xc0 against 0xbe). Tried: item declared plain and `register` (same), id `register` (breaks the id read, DI against SI), and swapping the g5A40 index to `v2 * 2 + v3` (that fixed an earlier 4-byte difference in the index). The local layout (the far pointer at bp-0xa, the five bytes at bp-5..bp-1) needs the declaration order v1, v2, v3, saved, flag, start. The rest (the opcode/flag read, the byte/word/byte/byte operands, the two-branch AddDDEffect/f0EF3_097B paths and the gF43D save/restore) is written from the disassembly."
+name = "AddEffectOp"
 
 [[function]]
 id = "e122e_0d57"
@@ -4038,6 +4052,8 @@ unit = "e122e"
 addr = "122E:0FDC"
 size = 187
 evidence = ["frame"]
+notes = "draft 2026-11-01: the body is written from the disassembly (the skip to the text NUL, the two attribute saves, the two control bytes read into buf[1] and buf[3], the LockHidePointer/LockShowPointer bracket and the four DrawText calls). It does not match because of the local layout: the original's 5-byte buffer sits at the bottom of the frame (122E:0FE2 `lea ax,[bp-0x12]`, the F_SCOPY destination), with text at bp-0xc, start at bp-8, attr2 at bp-4 and attr1 at bp-2; our -ml -O -Z build puts the buffer at bp-6 (first difference 122E:0009). The buffer must be declared first for the F_SCOPY to stay at the top, but TCC then does not push it to the bottom. Tried only the current order so far."
+name = "ShowTextOp"
 
 [[function]]
 id = "e122e_1097"
@@ -4129,6 +4145,8 @@ unit = "e122e"
 addr = "122E:1AAB"
 size = 175
 evidence = ["frame"]
+notes = "draft 2026-11-01: matches every byte except the LoadScreenImage call's 0:0x2067 page, 1 byte short: the original pushes its segment with `mov ax,0; push ax` (122E:1B2E) where our -ml -O -Z build folds the constant to `xor ax,ax; push ax`. The rest (the gFB44/gFlag guards, the byte/word/byte read, the gSoundVolume/gFBCC stores, the overlay calls and the gA9EC stop) is written from the disassembly. The overlay callees are annotated at their stub entries (210C:007F, 210C:002F, 210C:007A, 2116:0043), not the ovl3/ovl4 offsets the packet shows."
+name = "LoadLevelOp"
 
 [[function]]
 id = "e122e_1b5a"

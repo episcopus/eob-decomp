@@ -143,7 +143,7 @@ extern int gEFCA; /*@ ds:EFCA */
 extern long gB802[]; /*@ ds:B802 */
 extern long gFB5E[]; /*@ ds:FB5E */
 extern struct Triple6 gA99C[]; /*@ ds:A99C */
-extern long gEFD4[]; /*@ ds:EFD4 */
+extern long gRectKinds[]; /*@ ds:EFD4 */
 extern char gBuf1CE7[]; /*@ ds:1CE7 */
 extern char gData65EA[]; /*@ ds:65EA */
 extern char gOverlayBuf[]; /*@ ds:113F */
@@ -313,7 +313,7 @@ extern void FileClose(int handle); /*@ 1C0E:03BB */
         gA99C[i].v = 0;
     }
     for (i = 0; i < 0xc8; i++)
-        gEFD4[i] = 0;
+        gRectKinds[i] = 0;
     for (i = 0; i < 6; i++) {
         gChars[i].index = i;
         gChars[i].buf = MemAlloc(0x514L, 0);

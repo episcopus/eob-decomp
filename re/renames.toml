@@ -1334,6 +1334,51 @@ why = "MCB of our own allocated block, set by CheckMemoryChain at 1990:0088 and 
 date = "2026-11-01"
 
 [[rename]]
+id = "122E:0055=HitTestObjectKind"
+addr = "122E:0055"
+old = "f122E_0055"
+new = "HitTestObjectKind"
+kind = "function"
+why = "122E:0055 hit-tests the last click against the click-region chain of the object kind its argument names: it walks the ds:E06B records via their next field and tests each against ClickInRect (called by PerformItemSlotAction 122E:05DF and the item-slot actions 0620, 0678, 06D0 with a gTable18BF kind)"
+date = "2026-11-01"
+
+[[rename]]
+id = "122E:0896=DispatchSlotHandler"
+addr = "122E:0896"
+old = "f122E_0896"
+new = "DispatchSlotHandler"
+kind = "function"
+why = "122E:0896 dispatches the slot action: it gates on the g1905 selector and the gEFD2 mask, then calls the handler at handlers[g1905[..]-1](id, slot) from the local table copied from ds:5A18 (called by RunRowHandler 122E:0933 and Action08E7 0ACD:08E7)"
+date = "2026-11-01"
+
+[[rename]]
+id = "122E:0C4D=AddEffectOp"
+addr = "122E:0C4D"
+old = "f122E_0C4D"
+new = "AddEffectOp"
+kind = "function"
+why = "122E:0C4D is the opcode that copies a script item into a free slot (CopyItemToFreeSlot) and adds a DD effect (AddDDEffect), or runs f0EF3_097B when the opcode byte is 0xDF"
+date = "2026-11-01"
+
+[[rename]]
+id = "122E:1AAB=LoadLevelOp"
+addr = "122E:1AAB"
+old = "f122E_1AAB"
+new = "LoadLevelOp"
+kind = "function"
+why = "122E:1AAB is the load-level opcode: it reads a byte, a word (gSoundVolume) and a page byte (gFBCC), resets and saves the level through the ovl3 entries, loads the INVENT screen (gText5BA1), runs ovl4:2039, sets the sound volume and stops the script driver (gA9EC)"
+date = "2026-11-01"
+
+[[rename]]
+id = "122E:0FDC=ShowTextOp"
+addr = "122E:0FDC"
+old = "f122E_0FDC"
+new = "ShowTextOp"
+kind = "function"
+why = "122E:0FDC is the show-text opcode: it skips the script to the text's NUL, reads two control bytes into a local 5-byte buffer copied from ds:5A48, hides the pointer, draws the text and the buffer with the two text attributes, then shows the pointer"
+date = "2026-11-01"
+
+[[rename]]
 id = "ds:FBCA=gPartyCell"
 addr = "ds:FBCA"
 old = "gSoundVolume"
