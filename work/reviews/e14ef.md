@@ -27,7 +27,7 @@ src/ (EOV0.C:1259 and :1261), as the header says. The matcher (6 of 6, exit 0) a
 Each finding is a checkbox. `must-fix` blocks `make review-pass` until a decompiler ticks it off
 (with the commit that fixes it); `should` and `note` do not block.
 
-- [ ] must-fix src/E14EF.C:84, :86, :88 (the bracket cites into src/E1BBE.ASM): three cites point at
+- [x] must-fix src/E14EF.C:84, :86, :88 (the bracket cites into src/E1BBE.ASM): three cites point at
   other lines now.
   (a) line 84, "src/E1BBE.ASM:489-502": `_LockHidePointer PROC FAR` is at :493 and its release
   `dec word ptr [_gPointerBusy]` at :506 (the routine ends at :509). Cite 493-506.
@@ -38,19 +38,30 @@ Each finding is a checkbox. `must-fix` blocks `make review-pass` until a decompi
   (evidence: `grep -n "_LockHidePointer PROC\|_LockShowPointer PROC\|dec     word ptr \[_gPointerBusy\]"
   src/E1BBE.ASM` gives :493, :506, :516, :529; `sed -n 130,131p src/E1BBE.ASM` gives the quoted hook
   comments; `git log --oneline b6c4d4e..HEAD -- src/E1BBE.ASM` gives b6f8784, the commit that moved them)
-- [ ] should src/E14EF.C:11-14, :194-204, :273-288 and the struct comments at :35-36, :48: the header
+  [fixed in a8b109f: LockHidePointer now cites src/E1BBE.ASM:493-506, the hook quotes cite :130-131,
+  and LockShowPointer cites :516-529; comments only, no code byte changed]
+- [x] should src/E14EF.C:11-14, :194-204, :273-288 and the struct comments at :35-36, :48: the header
   mixes bare `:NNN` cites, which are lines of src/E14EF.C (`reads height at :273` is the `lastRow`
   line), with `14EF:NNNN` addresses of the disassembly (`14EF:0336`). A reader cannot tell which is
   which from a bare `:273`. Say once in the file header that a bare `:NNN` is a line of this file.
-- [ ] note carried from rounds 6 to 8, still open: the divisions at :274 (`% (lastRow + 1)`), :293 and
+  [fixed in a8b109f: the header now ends "A bare `:NNN` in a comment in this file is a line of this
+  file; `SSSS:NNNN` is a disassembly address". The header was reflowed to the same 21 lines, so no
+  in-file cite shifted]
+- [x] note carried from rounds 6 to 8, still open: the divisions at :274 (`% (lastRow + 1)`), :293 and
   :317 (`/ lineheight`, which is gFontHeight + gFC78) are by values that are zero when the panel height
   or the font height is zero. Whether those can be zero is not established; the header does not say.
+  [fixed in a8b109f: the header now says the modulo at :274 and the two `/ lineheight` divisions
+  (:293, :317) divide by zero if the panel height or gFontHeight + gFC78 is zero, and that whether
+  either can be zero is not established; comments only]
 - [ ] note routed, still stale in other owners' files (not edited here): src/E1C00.ASM:288 cites
   "E14EF.C:227" for the mouse-enabled test (it is :290); re/renames.toml:775 and re/globals.toml:302 cite
   E14EF.C:144 and :227 (:144 is `return 0;` in IsPointInRect). Their owners route them.
-- [ ] note not re-checked this round: the overlay addresses ovl0:20DD and ovl0:228E (the CountMaskBits
+- [x] note not re-checked this round: the overlay addresses ovl0:20DD and ovl0:228E (the CountMaskBits
   header, :150-151) and the 14EF:0336 imul behind the QUIRK at :286. Those need the disassembly, which
   I did not open this round.
+  [re-checked in a8b109f: build/re/eob-overlays/ovl00.bin has `B8 0F 00` at 0x20DD and `B8 09 00` at
+  0x228E (the `mov ax,0xf` / `mov ax,9` before the calls), and disasm 14EF:0336 is `f7ea imul dx`,
+  scaling panelDef->x by `mov al,[0x8100]` (gFontWidth, 14EF:032F); both cites hold]
 
 ## Summary
 
