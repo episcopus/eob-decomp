@@ -256,8 +256,10 @@ void RunMemberScript(int who, int mode);  /* forward: 1DA8 comes after its calle
 
 /* 122E:0154: arm effect 0xC on member `who`. While a member is picked (gDragActive), arming either
    matches the picked member (and turns g5C76 on) or does nothing. Otherwise it picks the member's
-   free flag slot, arms the effect twice around AdjustMemberStatus. */
-/*@ 122E:0154 draft */ void ArmMemberEffect(int who)
+   free flag slot, arms the effect twice around AdjustMemberStatus. The flag test is written
+   `!!(x & 1)`: the original sign-extends the g194B byte before testing bit 0 (`mov al; cwde;
+   test ax,1`), while a plain `x & 1` folds to a memory byte test in our build. */
+/*@ 122E:0154 */ void ArmMemberEffect(int who)
 {
     int idx;
 
@@ -267,7 +269,7 @@ void RunMemberScript(int who, int mode);  /* forward: 1DA8 comes after its calle
         return;
     }
     idx = (g194B[gB894[who * 9]] & 8) ? 0 : 1;
-    if (g194B[gB894[who * 9 + idx]] & 1)
+    if (!!(g194B[gB894[who * 9 + idx]] & 1))
         return;
     ArmEffectWith(0xc, who, 1, 1);
     AdjustMemberStatus(who);
