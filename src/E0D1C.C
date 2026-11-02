@@ -245,12 +245,13 @@ int f0D1C_02DC(void);
 /* 0D1C:0163: Purpose unknown: over the last two of the 27 word slots of gChars[who].m77 (25
    and 26), returns 1 when one of them holds an item (an index into the ds:8DD2 records) whose
    m02 is 0x2F and whose m0B equals `fieldB`, otherwise 0. Slots 25 and 26 are the only two
-   inspected. Called by 122E, 1414 and overlays 1 and 6. DRAFT: matches every byte except one
-   two-byte instruction. The original reloads `item` into AX before the first multiply
-   (0D1C:0194 `mov ax, di`); our build with -ml -O -Z has AX still equal to `item` from the test
-   at 0D1C:0190 and elides the load (2 bytes shorter, every later byte identical). TCC's
-   redundant-load elimination in the -O optimiser. */
-/*@ 0D1C:0163 draft */ int f0D1C_0163(int who, int fieldB)
+   inspected. Called by 122E, 1414 and overlays 1 and 6. The empty-slot test is an early
+   `continue`, not an `if` around the body: that is the source form the original has. The
+   original reloads `item` into AX before the first multiply (0D1C:0194 `mov ax, di`), and the
+   reload survives -O only when the body follows an early `continue` (the same redundant-load
+   quirk the e08E6 note in `re/symbols.toml` records); with `if (item = rec->m77[i]) { ... }`
+   TCC elides the load (2 bytes short). */
+/*@ 0D1C:0163 */ int f0D1C_0163(int who, int fieldB)
 {
     struct CharRec far *rec;
     int item;
@@ -258,10 +259,10 @@ int f0D1C_02DC(void);
 
     rec = &gChars[who];
     for (i = 25; i <= 26; i++) {
-        if (item = rec->m77[i]) {
-            if (gTable8DD2[item].m02 == 0x2F && gTable8DD2[item].m0B == fieldB)
-                return 1;
-        }
+        if (!(item = rec->m77[i]))
+            continue;
+        if (gTable8DD2[item].m02 == 0x2F && gTable8DD2[item].m0B == fieldB)
+            return 1;
     }
     return 0;
 }

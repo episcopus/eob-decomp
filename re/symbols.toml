@@ -2982,6 +2982,10 @@ unit = "e0d1c"
 addr = "0D1C:0163"
 size = 103
 evidence = ["far", "frame"]
+notes = "matched 2026-11-02 under -v: the redundant `mov ax,di` reload before the first multiply (0D1C:0194) is what TCC -O keeps when the loop body follows an early `continue`, not an `if` around it. The source is `for (i = 25; i <= 26; i++) { if (!(item = rec->m77[i])) continue; if (gTable8DD2[item].m02 == 0x2F && gTable8DD2[item].m0B == fieldB) return 1; }`; with `if (item = rec->m77[i]) { ... }` TCC elides the load (101 of 103 bytes). Probes: -O elides with or without -Z/-v/-G/-P; without -O the load stays but the trailing `jmp` is kept too; the same redundant-load-after-early-exit quirk is in the e08E6 note."
+name = "f0D1C_0163"
+level = "L2"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e0d1c_01ca"
