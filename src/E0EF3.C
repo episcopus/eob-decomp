@@ -378,7 +378,30 @@ extern void DrawViewFrame(int full); /*@ 2116:005C */
 extern void DrawViewSlots(int start); /*@ 2116:0025 */
 extern void LockHidePointer(void); /*@ 1BBE:0307 */
 extern void LockShowPointer(void); /*@ 1BBE:0332 */
-extern void f0EF3_2A53(int a, int b, int c, int d, int e, void far *p); /*@ 0EF3:2A53 */
+extern void f0EF3_2A53(int scale, int spread, int count, int divisor, /*@ 0EF3:2A53 */
+                       int falloff, void far *frameTable);
+extern int RandomRange(int low, int high); /*@ 1AAA:0005 */
+extern int IsPointInsideRect(int x, int y, int left, int top, int right, int bottom); /*@ 082C:0613 */
+extern void WaitFrame(void); /*@ 1A16:0027 */
+extern int (far *gFn8072)(int x, int y); /*@ ds:8072 */ /* saves the pixels under (x, y), returns a
+                                                           handle (src/EOV5.C) */
+extern void (far *gFn809E)(int x, int y, int handle); /*@ ds:809E */ /* puts a saved handle back
+                                                                        (src/EOV5.C) */
+extern int g579B[];              /*@ ds:579B */ /* a per-scale word bound 0EF3:2A53 clamps y to */
+extern int gEF;                  /*@ ds:00EF */ /* the view region's left, in eighths (this unit) */
+extern int gF1;                  /*@ ds:00F1 */ /* the view region's top (src/EOV4.C) */
+extern int gF3;                  /*@ ds:00F3 */ /* the view region's width, in eighths (this unit) */
+extern int gF5;                  /*@ ds:00F5 */ /* the view region's height (src/EOV4.C) */
+extern int gFC62;                /*@ ds:FC62 */ /* 0EF3:2A53's and 0EF3:2EBC's loop index */
+extern int gFC64;                /*@ ds:FC64 */ /* 0EF3:2A53's current animation frame's byte */
+extern int gFC66;                /*@ ds:FC66 */ /* 0EF3:2A53's and 0EF3:2EBC's state: 0 ends the
+                                                    loop, 1 redraws, 2 starts it */
+extern int gFC68;                /*@ ds:FC68 */ /* the animation's origin x, saved from ds:DD18 */
+extern int gFC6A;                /*@ ds:FC6A */ /* the animation's origin y, saved from ds:DD1A */
+extern int gFC6C;                /*@ ds:FC6C */ /* a particle's x pixel */
+extern int gFC6E;                /*@ ds:FC6E */ /* a particle's y pixel */
+extern int gFC70;                /*@ ds:FC70 */ /* g8115 saved while the animation runs */
+extern int gFC72;                /*@ ds:FC72 */ /* the handle gSaveFrame returned under the pointer */
 
 /* 0EF3:000E: bubble-sorts each of the ten six-byte rows that start at a character's +0x37 spell
    field, swapping the first two bytes of a row while the row's weight decreases. The weight
@@ -2129,6 +2152,117 @@ void DrawSpellPanel(void);
     return node->m04;
 }
 
-/*@ 0EF3:2A53 stub */ void f0EF3_2A53(int a, int b, int c, int d, int e, void far *p) {}
+/* 0EF3:2A53: Purpose unknown: a screen-space particle animation. It fills seven 150-word rows of
+   the gBufDCFC scratch buffer: row0/row1 are zeroed, row2/row3 a random x offset, row5 a random
+   frame step, row6 the depth `scale << 8`; then it loops while gFC66 is set: the erase pass
+   restores each particle's saved rectangle (gFn809E at its x, y), the draw pass advances row2 by
+   one going back to zero, row3 by 5, row0 by row2 and row1 by row3, wraps row2/row3 when the
+   particle leaves the region, saves the pixels (gFn8072) into row4 and picks the animation byte
+   frameTable[row6 >> 8] (sign-extended); a zero byte retires the particle. `scale` is the depth
+   (also the right-shift of the position and the high byte of row6), `spread` the random amplitude,
+   `count` the particle number (capped at 0x96), `divisor` the frame-step divisor, `falloff` the
+   extra spread shift, `frameTable` the animation template. The two velocity bounces test the
+   crossed coordinate (the x velocity row2 against the y bounds, the y velocity row3 against the x
+   bounds): see the comment on the comparisons. Called by 0EF3:00CD. */
+/*@ 0EF3:2A53 */ void f0EF3_2A53(int scale, int spread, int count, int divisor, int falloff,
+                                  void far *frameTable)
+{
+    int far *row0;
+    int far *row1;
+    int far *row2;
+    int far *row3;
+    int far *row4;
+    int far *row5;
+    int far *row6;
+    int far *base;
+    int left;
+    int right;
+    int bottom;
+    int floorLimit;
+    int minX;
+    int maxX;
+    register int bound;
+    register int top;
+
+    gFlags849E &= ~2;
+    bound = g579B[scale];
+    if (scale)
+        scale--;
+    base = (int far *)gBufDCFC;
+    floorLimit = 0;
+    minX = -100;
+    maxX = 0x114;
+    top = gF1;
+    bottom = top + gF5 - 1;
+    left = gEF << 3;
+    right = left + (gF3 << 3);
+    row0 = base;
+    row1 = base + 0x96;
+    row2 = base + 0x12C;
+    row3 = base + 0x1C2;
+    row4 = base + 0x258;
+    row5 = base + 0x2EE;
+    row6 = base + 0x384;
+    gFC70 = g8115;
+    if (count > 0x96)
+        count = 0x96;
+    gFC68 = gDD18;
+    gFC6A = gDD1A;
+    for (gFC62 = 0; gFC62 < count; gFC62++) {
+        row0[gFC62] = row1[gFC62] = 0;
+        row2[gFC62] = RandomRange(0, spread) - (spread >> 1);
+        row3[gFC62] = RandomRange(0, spread) - (spread >> 1) - (spread >> (8 - falloff));
+        row5[gFC62] = RandomRange(0x400 / divisor, 0x800 / divisor);
+        row6[gFC62] = scale << 8;
+    }
+    gFC66 = 2;
+    while (gFC66 != 0) {
+        if (gFC66 != 2) {
+            for (gFC62 = count - 1; gFC62 >= 0; gFC62--) {
+                gFC6C = (row0[gFC62] >> 6 >> scale) + gFC68;
+                gFC6E = (row1[gFC62] >> 6 >> scale) + gFC6A;
+                if (gFC6E > bound)
+                    gFC6E = bound;
+                if (IsPointInsideRect(gFC6C, gFC6E, left, top, right, bottom))
+                    gFn809E(gFC6C, gFC6E, row4[gFC62]);
+            }
+        }
+        gFC66 = 0;
+        for (gFC62 = 0; gFC62 < count; gFC62++) {
+            if (row2[gFC62] > 0)
+                row2[gFC62]--;
+            else
+                row2[gFC62]++;
+            row0[gFC62] += row2[gFC62];
+            row3[gFC62] += 5;
+            row1[gFC62] += row3[gFC62];
+            row6[gFC62] += row5[gFC62];
+            gFC6C = (row0[gFC62] >> 6 >> scale) + gFC68;
+            gFC6E = (row1[gFC62] >> 6 >> scale) + gFC6A;
+            if (gFC6E >= bound || gFC6E < floorLimit)
+                row3[gFC62] = 0 - (row3[gFC62] >> 1);
+            if (gFC6C >= maxX || gFC6C < minX)
+                row2[gFC62] = 0 - (row2[gFC62] >> 1);
+            if (gFC6E > bound)
+                gFC6E = bound;
+            g8115 = 2;
+            gFC72 = gFn8072(gFC6C, gFC6E);
+            g8115 = 0;
+            row4[gFC62] = gFn8072(gFC6C, gFC6E);
+            gFC64 = ((char far *)frameTable)[row6[gFC62] >> 8];
+            if (gFC64 != 0) {
+                gFC66 = 1;
+                if (gFC72 == 0 && IsPointInsideRect(gFC6C, gFC6E, left, top, right, bottom))
+                    gFn809E(gFC6C, gFC6E, gFC64);
+            } else {
+                row5[gFC62] = 0;
+            }
+        }
+        WaitFrame();
+        WaitFrame();
+    }
+    gFlags849E |= 2;
+    g8115 = gFC70;
+}
 
 /*@ 0EF3:2EBC stub */ void f0EF3_2EBC(int a, int b, int c, int d, int e, char far *table) {}
