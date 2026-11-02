@@ -1,5 +1,36 @@
 # Review: e1de7
 
+# Round 5
+
+Reviewer: rev-haiku
+Commit reviewed: 87ee68e (main; review/e1de7 was at the same commit when I started). src/E1DE7.C is the round 4 fixed file (df76123, ticks in 641baae).
+
+Playbook 70. Judge what a matching file can still get wrong: names, types, comments, structure.
+The matcher already proved the bytes; do not re-prove them, read for meaning.
+
+Checked: `make match FILE=src/E1DE7.C` 9 of 9 functions ok, 2619 bytes; `make readability UNIT=e1de7` 0 findings. Then every line cite in this file against its target (`grep -n` and `sed -n`), the cross-file cites (E07C8.C:39-43, :226, :259-260, :293-295; E082C.C:62, :322, :325, :419, :423, :424, :432; E14EF.C:68; E16A5.C:88, :511; E1C0E.C:577, :589; E1A29.C:38; E1A1F.C:6; EOV5.C:161-162, :1110, :1114-1115, :1254-1255, :1317-1318), and whether any other file of src/ uses ds:FE56 or gTileBuf (none does). Every cite that names a line of this file is one line early: the round 4 fixes were checked against an earlier layout, and the file has one more line above :52 now. The code is unchanged.
+
+## Findings
+
+- [ ] must-fix src/E1DE7.C:52 (gGraphicsChoice): "DrawTextFrame at src/E1DE7.C:163-165 and DrawTileRun at :197" point at other lines. The shift lines are `shift = 5;` at :164, `shift = 6;` at :166, and DrawTileRun's `shift = 5 + ...` at :198. (Evidence: `grep -n "shift = " src/E1DE7.C`.)
+- [ ] must-fix src/E1DE7.C:81 (gScrollOn): "gated by it at src/E1DE7.C:269" should be :270, the `if (gFontHeight * gTextRow > ...` line. (Evidence: `grep -n "gScrollOn && gScrollHook" src/E1DE7.C`.)
+- [ ] must-fix src/E1DE7.C:137 (gFrameTable): "(gFrameTable[style], :168)" should be :169, the `frame = gFrameTable[style];` line. (Evidence: `grep -n "gFrameTable\[style\]" src/E1DE7.C`.)
+- [ ] must-fix src/E1DE7.C:152 (QUIRK 1DE7:01FE): "after four gDraw805A calls (:170-176) and the DrawTileRun call at :178" should be :171-177 (the four calls are at :171, :173, :175, :177) and :179 (the first DrawTileRun call). (Evidence: `grep -n "gDraw805A(tile\|DrawTileRun(frame" src/E1DE7.C`.)
+- [ ] must-fix src/E1DE7.C:259 and :262 (DrawTextLine header): "gTextRow++ ... :283" should be :284, and "gTextRow = line / gFontHeight, :285" should be :286. (Evidence: `grep -n "gTextRow++\|gTextRow = line" src/E1DE7.C`.)
+- [ ] must-fix src/E1DE7.C:71 (ds:806A, gFillRect): "ClearTextRegion and DrawTextLine fill and clip rectangles through it" is wrong for DrawTextLine. Its clip is ClipRect (ds:19F3, :277), not ds:806A; through ds:806A it only refills the bottom line (:278). Say "fill rectangles". (Evidence: src/E1DE7.C:277-278; src/E19F3.C:1-5, which says ClipRect passes its rectangle on to the far routine behind ds:8052.)
+- [ ] should src/E1DE7.C:64-65 (ds:805A): the comment lists the routine's arguments as "(tile, x, y)", but the declaration at :69 names the first one `src`, and :66 says it is a far pointer, not an int tile. Use "(src, x, y)" so the list matches the declaration.
+- [ ] should src/E1DE7.C:312 (PrintIntText): "No caller was found in the resident code" names a narrower scan than DrawTextFrame's comment at :148 ("eob/EOB.EXE and of the overlay images"). Say which scan this claim covers. The packet says only "no direct call found".
+- [ ] should src/E1DE7.C:430-432 (QUIRK 1DE7:09A6): "the compiler merges the two identical tails" is an inference about how Turbo C++ laid out the jump; nothing in the unit shows it. The evidence is the `jmp` (EB 00) at 09A6 and the match. Say the jump is what the bytes show and that the reason is not established.
+- [ ] note src/E1DE7.C:57 (gTileBuf): the name says buffer, but the only evidence is the reads in this unit; no writer was found in src/ or here. The comment says "the tile graphics"; add "writer not found" so the name does not read as a known buffer the unit owns.
+- [ ] note gScrollHook: "scroll" is inferred from the hook's gate, which is the same condition as the scroll branch (:274). The header states the condition, so no change is asked.
+- [ ] note stale cites into this unit from other units (routed to their owners, not edited here): E07A9.C:238 (E1DE7.C:46); E07C8.C:98-99 and :102 (E1DE7.C:241, :270-271, :44 and :42; the fill is at :247, the attribute declarations are at :43 and :45); E14EF.C:47 (E1DE7.C:34); E19F3.C:9-62 (E1DE7.C:228, :244-245, :69); E1A29.C:26-29 (E1DE7.C:38-42, :80-83, :88-95; SetTextWindow is now :94-113). Round 3 and round 4 notes on these still apply.
+- [ ] note the -G claim (src/E1DE7.C:14-17, the `inc sp; inc sp` clean-ups) is still untested, as in rounds 1 to 4. No change asked.
+- [ ] note gDrawText parameter names still differ across src/ (text, x, y, color, extra here at :74; colour, flag at EOV5.C:173; a to d at E1AA6.C:7, E1547.C:91, EOV3.C:134). Routed in rounds 1 to 4; the owners decide on one set.
+
+## Summary
+
+Round 5: the code and the names hold up. Every function matches (9 of 9) and the window model, the frame code, the text-line rules and the cited evidence for the globals are right. What is still wrong is in the comments: six must-fix items, five of them cite drift (every line number this file cites is one line early since df76123) and one claim about gFillRect that DrawTextLine does not do (it clips through ClipRect, not ds:806A). Three shoulds on the ds:805A argument list, the scope of the PrintIntText caller claim, and the QUIRK mechanism claim. No matcher, spec or pin question, so nothing is escalated. Round 5 fails review; no code change is asked.
+
 # Round 4
 
 Reviewer: rev-haiku
