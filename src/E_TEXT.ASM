@@ -16,6 +16,7 @@
 
         .MODEL  LARGE
         .CODE
+        ASSUME  ds:@code
 
 ; 0000:020C: the pitch curve tables (data, 405 bytes). gCurveTablePtrs holds six near pointers, indexed by 2 * a curve number
 ; (mov bx,[bx+20Ch] in the script command that starts a pitch effect; GetDriverTable returns 020Ch for its argument 4);
@@ -75,7 +76,7 @@ _GetScriptFlag ENDP
         PUBLIC  _f0_03AA              ; @ 0000:03AA
 _f0_03AA PROC NEAR
         mov       dx, cs
-        mov       ax, 416h
+        mov       ax, offset _DriverBlock
         retf
 _f0_03AA ENDP
 
@@ -87,7 +88,7 @@ _f0_03B0 PROC NEAR
         push      bx
         mov       bx, word ptr [bp + 6]
         shl       bx, 1
-        mov       bx, word ptr cs:[bx + 416h]
+        mov       bx, word ptr cs:[bx + _DriverBlock]
         add       bx, word ptr [bp + 8]
         mov       ax, word ptr [bp + 0ah]
         mov       byte ptr cs:[bx], al
@@ -104,7 +105,7 @@ _f0_03CA PROC NEAR
         push      bx
         mov       bx, word ptr [bp + 6]
         shl       bx, 1
-        mov       bx, word ptr cs:[bx + 416h]
+        mov       bx, word ptr cs:[bx + _DriverBlock]
         add       bx, word ptr [bp + 8]
         mov       al, byte ptr cs:[bx]
         xor       ah, ah
@@ -122,7 +123,7 @@ _f0_03E3 PROC NEAR
         mov       ax, word ptr [bp + 6]
         mov       bx, ax
         shl       bx, 1
-        add       bx, 416h
+        add       bx, offset _DriverBlock
         mov       ax, word ptr cs:[bx]
         mov       dx, cs
         pop       bx
@@ -142,9 +143,9 @@ _RebaseDriverBlock PROC NEAR
         mov       ax, cs
         mov       ds, ax
         xor       di, di
-        mov       ax, 416h
+        mov       ax, offset _DriverBlock
 L_0409:
-        add       word ptr [di + 416h], ax
+        add       word ptr ds:[di + _DriverBlock], ax
         add       di, 2
         loop    L_0409
         pop       ds
@@ -162,6 +163,7 @@ _RebaseDriverBlock ENDP
 _DriverBlock LABEL BYTE
         dw      066Eh
         db      298 dup (0)
+gPatchTable LABEL WORD
         dw      0671h
         db      300 dup (0)
         db      088h,001h,001h,008h,001h,000h,018h,000h,054h,0F2h,060h,046h
@@ -317,16 +319,16 @@ _AdlibTimerIsr PROC NEAR
         cld
         mov       ax, cs
         mov       ds, ax
-        cmp       byte ptr ds:[3b42h], 0
+        cmp       byte ptr ds:[gEffectMode], 0
         je    L_3EAF
-        dec       byte ptr ds:[3b44h]
+        dec       byte ptr ds:[gEffectCounter]
         jne    L_3EAF
-        mov       bx, 3b93h
+        mov       bx, offset gVoiceRecord0
         mov       al, byte ptr [bx + 28h]
         mov       ah, al
         and       al, 1fh
-        xor       byte ptr ds:[3b49h], 0ffh
-        mov       ah, byte ptr ds:[3b49h]
+        xor       byte ptr ds:[gToggleBit], 0ffh
+        mov       ah, byte ptr ds:[gToggleBit]
         and       ah, 20h
         or        al, ah
         mov       byte ptr [bx + 28h], al
@@ -339,26 +341,26 @@ _AdlibTimerIsr PROC NEAR
         inc       dx
         out       dx, al
         call    _AdlibDelay17
-        mov       al, byte ptr ds:[3b43h]
-        mov       byte ptr ds:[3b44h], al
+        mov       al, byte ptr ds:[gEffectPeriod]
+        mov       byte ptr ds:[gEffectCounter], al
 L_3EAF:
-        cmp       byte ptr ds:[3b36h], 0
+        cmp       byte ptr ds:[gBusyCountdown], 0
         je    L_3EBA
-        dec       byte ptr ds:[3b36h]
+        dec       byte ptr ds:[gBusyCountdown]
 L_3EBA:
-        dec       byte ptr ds:[3b6eh]
+        dec       byte ptr ds:[gTimerPasses12]
         jne    L_3EC8
-        mov       byte ptr ds:[3b6eh], 0ch
+        mov       byte ptr ds:[gTimerPasses12], 0ch
         call    _SoundDriverTick
 L_3EC8:
-        dec       byte ptr ds:[3b6fh]
+        dec       byte ptr ds:[gTimerPasses48]
         jne    L_3EDC
-        mov       byte ptr ds:[3b6fh], 30h
+        mov       byte ptr ds:[gTimerPasses48], 30h
         pop       ds
         pop       dx
         pop       bx
         pop       ax
-        jmp       dword ptr cs:[3b66h]
+        jmp       dword ptr cs:[gSavedTimerOff]
 L_3EDC:
         mov       al, 20h
         out       20h, al
@@ -383,13 +385,13 @@ _SampleTimerIsr PROC NEAR
         push      dx
         push      ds
         push      si
-        cmp       byte ptr cs:[3b7eh], 0
+        cmp       byte ptr cs:[gSampleEnable], 0
         je    L_3F40
-        lds       si, dword ptr cs:[3b78h]
+        lds       si, dword ptr cs:[gSamplePtrOff]
         cld
         lodsb
-        mov       ah, byte ptr cs:[3b75h]
-        test      byte ptr cs:[3b74h], 1
+        mov       ah, byte ptr cs:[gSampleLevel]
+        test      byte ptr cs:[gSampleNibbles], 1
         je    L_3F0E
         shr       al, 1
         shr       al, 1
@@ -408,14 +410,14 @@ L_3F19:
         sub       ah, al
 L_3F1D:
         mov       al, ah
-        mov       byte ptr cs:[3b75h], ah
+        mov       byte ptr cs:[gSampleLevel], ah
         mov       dx, 389h
         out       dx, al
-        dec       byte ptr cs:[3b74h]
-        mov       word ptr cs:[3b78h], si
+        dec       byte ptr cs:[gSampleNibbles]
+        mov       word ptr cs:[gSamplePtrOff], si
         mov       ax, si
-        sub       ax, word ptr cs:[3b7ch]
-        cmp       ax, word ptr cs:[3b76h]
+        sub       ax, word ptr cs:[gSampleStart]
+        cmp       ax, word ptr cs:[gSampleLength]
         jb    L_3F6E
 L_3F40:
         mov       al, 36h
@@ -424,15 +426,15 @@ L_3F40:
         out       40h, al
         mov       al, 5
         out       40h, al
-        mov       word ptr cs:[3b78h], 0
+        mov       word ptr cs:[gSamplePtrOff], 0
         mov       si, 20h
         xor       ax, ax
         mov       ds, ax
-        mov       dx, word ptr cs:[3b6ah]
-        mov       ax, word ptr cs:[3b6ch]
+        mov       dx, word ptr cs:[gSampleSavedOff]
+        mov       ax, word ptr cs:[gSampleSavedSeg]
         mov       word ptr [si], dx
         mov       word ptr [si + 2], ax
-        mov       byte ptr cs:[3b3fh], 0
+        mov       byte ptr cs:[gUpdateEnable], 0
 L_3F6E:
         mov       al, 20h
         out       20h, al
@@ -453,14 +455,14 @@ _StartAdlibDriver PROC NEAR
         mov       ax, cs
         mov       ds, ax
         xor       bx, bx
-        mov       bx, word ptr [bx + 39ch]
-        mov       word ptr ds:[3b64h], bx
+        mov       bx, word ptr [bx + gDriverTablePtrs]
+        mov       word ptr ds:[gSoundTable], bx
         cli
         mov       ax, 3508h
         int       21h
-        mov       word ptr ds:[3b68h], es
-        mov       word ptr ds:[3b66h], bx
-        mov       dx, 3e66h
+        mov       word ptr ds:[gSavedTimerSeg], es
+        mov       word ptr ds:[gSavedTimerOff], bx
+        mov       dx, offset _AdlibTimerIsr
         mov       ax, 2508h
         int       21h
         call    _ResetVoices
@@ -477,8 +479,8 @@ L_3FAE:
         in        al, 61h
         and       al, 0feh
         out       61h, al
-        mov       word ptr ds:[3b81h], 0
-        mov       word ptr ds:[3b7fh], 0
+        mov       word ptr ds:[gQueueRead], 0
+        mov       word ptr ds:[gQueueWrite], 0
         sti
         pop       di
         pop       si
@@ -495,8 +497,8 @@ _StopAdlibDriver PROC NEAR
         mov       ds, ax
         push      ds
         cli
-        mov       dx, word ptr ds:[3b66h]
-        mov       ax, word ptr ds:[3b68h]
+        mov       dx, word ptr ds:[gSavedTimerOff]
+        mov       ax, word ptr ds:[gSavedTimerSeg]
         mov       ds, ax
         mov       ax, 2508h
         int       21h
@@ -545,12 +547,12 @@ _f0_400C PROC NEAR
         push      ds
         mov       bx, cs
         mov       ds, bx
-        mov       bx, word ptr ds:[3b7fh]
+        mov       bx, word ptr ds:[gQueueWrite]
         mov       ax, word ptr [bp + 6]
-        mov       word ptr [bx + 3b83h], ax
+        mov       word ptr [bx + gQueueRing], ax
         inc       bx
         and       bx, 0fh
-        mov       word ptr ds:[3b7fh], bx
+        mov       word ptr ds:[gQueueWrite], bx
         pop       ds
         mov       sp, bp
         pop       bp
@@ -566,26 +568,26 @@ _ProcessSoundQueue PROC NEAR
         mov       bx, cs
         mov       ds, bx
 L_4033:
-        mov       bx, word ptr ds:[3b81h]
-        cmp       bx, word ptr ds:[3b7fh]
+        mov       bx, word ptr ds:[gQueueRead]
+        cmp       bx, word ptr ds:[gQueueWrite]
         jne    L_403F
         jmp short    L_409A
 L_403F:
-        mov       bx, word ptr [bx + 3b83h]
+        mov       bx, word ptr [bx + gQueueRing]
         sub       bh, bh
         shl       bx, 1
-        add       bx, word ptr ds:[3b64h]
+        add       bx, word ptr ds:[gSoundTable]
         mov       si, word ptr [bx]
         mov       bx, word ptr cs:[si]
         cmp       bl, 0
         jne    L_405A
-        mov       byte ptr ds:[3b42h], 0
+        mov       byte ptr ds:[gEffectMode], 0
 L_405A:
         mov       al, bh
         mov       cl, bl
         sub       bh, bh
         shl       bx, 1
-        mov       di, word ptr [bx + 3e31h]
+        mov       di, word ptr [bx + gVoiceRecordPtrs]
         cmp       al, byte ptr [di + 8]
         jl    L_408F
         call    _ClearVoice
@@ -596,13 +598,13 @@ L_405A:
         mov       byte ptr [di + 25h], 0ffh
         mov       byte ptr [di + 26h], 0ffh
         mov       byte ptr [di + 5], 1
-        mov       byte ptr ds:[3b3fh], 1
+        mov       byte ptr ds:[gUpdateEnable], 1
         cmp       bl, 12h
         je    L_408F
         call    _VoiceSilence
 L_408F:
-        inc       word ptr ds:[3b81h]
-        and       word ptr ds:[3b81h], 0fh
+        inc       word ptr ds:[gQueueRead]
+        and       word ptr ds:[gQueueRead], 0fh
         jmp short    L_4033
 L_409A:
         pop       di
@@ -622,13 +624,13 @@ _SetNote PROC NEAR
         mov       ax, word ptr [bp + 6]
         mov       bx, cs
         mov       ds, bx
-        mov       word ptr ds:[3b45h], ax
+        mov       word ptr ds:[gEffectIndex], ax
         and       ax, 7fffh
         mov       bx, ax
-        mov       si, word ptr ds:[3b60h]
+        mov       si, word ptr ds:[gEffectCurveA]
         mov       al, byte ptr [bx + si]
-        mov       byte ptr ds:[3b43h], al
-        mov       si, word ptr ds:[3b62h]
+        mov       byte ptr ds:[gEffectPeriod], al
+        mov       si, word ptr ds:[gEffectCurveB]
         mov       al, byte ptr [bx + si]
         mov       ah, 0a0h
         call    _AdlibWrite
@@ -651,7 +653,7 @@ _SetSamplePlaying PROC NEAR
         mov       ax, word ptr [bp + 6]
         mov       bx, cs
         mov       ds, bx
-        mov       byte ptr ds:[3b7eh], al
+        mov       byte ptr ds:[gSampleEnable], al
         pop       di
         pop       si
         pop       ds
@@ -670,9 +672,9 @@ _SelectDriverTable PROC NEAR
         mov       ds, bx
         mov       bx, word ptr [bp + 6]
         shl       bx, 1
-        mov       bx, word ptr [bx + 39ch]
-        mov       word ptr ds:[3b64h], bx
-        mov       ax, word ptr ds:[3b64h]
+        mov       bx, word ptr [bx + gDriverTablePtrs]
+        mov       word ptr ds:[gSoundTable], bx
+        mov       ax, word ptr ds:[gSoundTable]
         pop       ds
         mov       sp, bp
         pop       bp
@@ -691,20 +693,20 @@ _GetDriverTable PROC NEAR
 L_410F:
         cmp       word ptr [bp + 6], 1
         jne    L_411B
-        mov       ax, word ptr cs:[3b64h]
+        mov       ax, word ptr cs:[gSoundTable]
         jmp short    L_4137
 L_411B:
         cmp       word ptr [bp + 6], 2
         jne    L_4125
-        mov       ax, word ptr cs:[3b64h]
+        mov       ax, word ptr cs:[gSoundTable]
 L_4125:
         cmp       word ptr [bp + 6], 3
         jne    L_412E
-        mov       ax, 542h
+        mov       ax, offset gPatchTable
 L_412E:
         cmp       word ptr [bp + 6], 4
         jne    L_4137
-        mov       ax, 20ch
+        mov       ax, offset gCurveTablePtrs
 L_4137:
         mov       sp, bp
         pop       bp
@@ -714,15 +716,15 @@ _GetDriverTable ENDP
 ; 0000:413B: writes the driver reset registers and clears all ten voice records (calls 4D95)
         PUBLIC  _ResetVoices              ; @ 0000:413B
 _ResetVoices PROC NEAR
-        mov       byte ptr ds:[3b3fh], 0
-        mov       word ptr ds:[3b47h], 1234h
+        mov       byte ptr ds:[gUpdateEnable], 0
+        mov       word ptr ds:[gRandomSeed], 1234h
         mov       ax, 120h
         call    _AdlibWrite
         mov       ax, 800h
         call    _AdlibWrite
         mov       ax, 0bd00h
         call    _AdlibWrite
-        mov       byte ptr ds:[3b42h], 0
+        mov       byte ptr ds:[gEffectMode], 0
         mov       cx, 0ah
         mov       bh, 0
 L_4162:
@@ -730,17 +732,17 @@ L_4162:
         dec       bl
         cmp       bl, 9
         je    L_4183
-        mov       ah, byte ptr [bx + 3e45h]
+        mov       ah, byte ptr [bx + gOperatorOffsets]
         add       ah, 40h
         mov       al, 3fh
         call    _AdlibWrite
-        mov       ah, byte ptr [bx + 3e45h]
+        mov       ah, byte ptr [bx + gOperatorOffsets]
         add       ah, 43h
         mov       al, 3fh
         call    _AdlibWrite
 L_4183:
         shl       bl, 1
-        mov       di, word ptr [bx + 3e31h]
+        mov       di, word ptr [bx + gVoiceRecordPtrs]
         call    _ClearVoice
         loop    L_4162
         ret
@@ -749,28 +751,28 @@ _ResetVoices ENDP
 ; 0000:418F: the per-voice script interpreter: loops voice 9 down to 0 and runs its command through the 4F94 jump table
         PUBLIC  _UpdateVoices              ; @ 0000:418F
 _UpdateVoices PROC NEAR
-        cmp       byte ptr ds:[3b3fh], 0
+        cmp       byte ptr ds:[gUpdateEnable], 0
         jne    L_4197
         ret
 L_4197:
-        mov       byte ptr ds:[3b3eh], 9
+        mov       byte ptr ds:[gVoiceIndex], 9
 L_419C:
-        mov       bl, byte ptr ds:[3b3eh]
+        mov       bl, byte ptr ds:[gVoiceIndex]
         mov       bh, 0
         shl       bl, 1
-        mov       di, word ptr [bx + 3e31h]
+        mov       di, word ptr [bx + gVoiceRecordPtrs]
         mov       al, byte ptr [di + 5]
         or        al, al
         jne    L_41B2
         jmp    L_4267
 L_41B2:
-        mov       bx, 3e45h
-        add       bl, byte ptr ds:[3b3eh]
+        mov       bx, offset gOperatorOffsets
+        add       bl, byte ptr ds:[gVoiceIndex]
         mov       al, byte ptr [bx]
-        mov       byte ptr ds:[3b4bh], al
+        mov       byte ptr ds:[gOperatorOffset], al
         cmp       byte ptr [di + 40h], 0
         je    L_41CA
-        mov       al, byte ptr ds:[3b41h]
+        mov       al, byte ptr ds:[gTempoRate]
         mov       byte ptr [di + 25h], al
 L_41CA:
         mov       al, byte ptr [di + 26h]
@@ -788,7 +790,7 @@ L_41D8:
 L_41E8:
         cmp       al, byte ptr [di + 35h]
         jne    L_41F7
-        cmp       byte ptr ds:[3b3eh], 9
+        cmp       byte ptr ds:[gVoiceIndex], 9
         je    L_41F7
         call    _VoiceKeyOff
 L_41F7:
@@ -815,16 +817,16 @@ L_421A:
         mov       byte ptr [di + 34h], al
         call    _VoiceLevelA0
         mov       dx, 388h
-        mov       ah, byte ptr ds:[3b4bh]
+        mov       ah, byte ptr ds:[gOperatorOffset]
         add       ah, 43h
         call    _AdlibWrite
         call    _VoiceLevelB0
         mov       dx, 388h
-        mov       ah, byte ptr ds:[3b4bh]
+        mov       ah, byte ptr ds:[gOperatorOffset]
         add       ah, 40h
         call    _AdlibWrite
 L_423E:
-        mov       al, byte ptr ds:[3b3bh]
+        mov       al, byte ptr ds:[gNoteDuration]
         or        al, al
         je    L_41FC
         mov       word ptr [di + 3], si
@@ -838,7 +840,7 @@ L_4253:
         mov       bl, al
         sub       bh, bh
         shl       bl, 1
-        mov       bx, word ptr [bx + 4f94h]
+        mov       bx, word ptr ds:[bx + _CommandTable]
         jmp       bx
 L_425F:
         push      di
@@ -846,7 +848,7 @@ L_425F:
         pop       di
         call      word ptr [di + 2bh]
 L_4267:
-        dec       byte ptr ds:[3b3eh]
+        dec       byte ptr ds:[gVoiceIndex]
         js    L_4270
         jmp    L_419C
 L_4270:
@@ -870,14 +872,14 @@ L_427F:
 L_428B:
         sub       bh, bh
         shl       bx, 1
-        add       bx, word ptr ds:[3b64h]
+        add       bx, word ptr ds:[gSoundTable]
         mov       si, word ptr [bx]
         mov       bx, word ptr cs:[si]
         mov       al, bh
         mov       cl, bl
         sub       bh, bh
         shl       bx, 1
-        mov       di, word ptr [bx + 3e31h]
+        mov       di, word ptr [bx + gVoiceRecordPtrs]
         cmp       al, byte ptr [di + 8]
         jl    L_42C8
         call    _ClearVoice
@@ -888,7 +890,7 @@ L_428B:
         mov       byte ptr [di + 25h], 0ffh
         mov       byte ptr [di + 26h], 0ffh
         mov       byte ptr [di + 5], 1
-        mov       byte ptr ds:[3b3fh], 1
+        mov       byte ptr ds:[gUpdateEnable], 1
         call    _VoiceSilence
 L_42C8:
         pop       bx
@@ -933,7 +935,7 @@ L_430B:
 L_4311:
         mov       byte ptr [di + 8], 0
         mov       word ptr [di + 3], 0
-        cmp       byte ptr ds:[3b3eh], 9
+        cmp       byte ptr ds:[gVoiceIndex], 9
         je    L_4324
         call    _VoiceKeyOff
 L_4324:
@@ -941,11 +943,11 @@ L_4324:
 L_4327:
         call    _StartVoiceNote
         mov       word ptr [di + 3], si
-        cmp       byte ptr ds:[3b3eh], 9
+        cmp       byte ptr ds:[gVoiceIndex], 9
         je    L_4337
         call    _VoiceKeyOff
 L_4337:
-        mov       al, byte ptr ds:[3b3bh]
+        mov       al, byte ptr ds:[gNoteDuration]
         or        al, al
         je    L_4341
         jmp    L_425F
@@ -962,7 +964,7 @@ L_434B:
         xchg      ah, al
         call    _StartVoiceNote
         mov       word ptr [di + 3], si
-        mov       al, byte ptr ds:[3b3bh]
+        mov       al, byte ptr ds:[gNoteDuration]
         or        al, al
         je    L_4363
         jmp    L_425F
@@ -981,30 +983,30 @@ L_436C:
         mov       byte ptr [di + 3dh], al
         lodsw
         mov       word ptr [di + 3eh], ax
-        mov       word ptr [di + 2bh], 4ed7h
+        mov       word ptr [di + 2bh], offset L_4ED7
         jmp    L_41FC
 L_4389:
-        mov       al, byte ptr ds:[3b3eh]
+        mov       al, byte ptr ds:[gVoiceIndex]
         push      ax
         push      di
         mov       bl, ah
         mov       bh, 0
         shl       bl, 1
-        mov       di, word ptr [bx + 3e31h]
+        mov       di, word ptr [bx + gVoiceRecordPtrs]
         mov       byte ptr [di + 5], 0
         mov       byte ptr [di + 8], 0
         mov       word ptr [di + 3], 0
         pop       di
         pop       ax
-        mov       byte ptr ds:[3b3eh], al
+        mov       byte ptr ds:[gVoiceIndex], al
         jmp    L_41FC
 L_43AD:
         push      si
-        mov       cl, byte ptr ds:[3b4bh]
+        mov       cl, byte ptr ds:[gOperatorOffset]
         sub       bx, bx
         mov       bl, ah
         shl       bx, 1
-        mov       si, word ptr [bx + 542h]
+        mov       si, word ptr [bx + gPatchTable]
         call    _LoadVoicePatch
         pop       si
         jmp    L_41FC
@@ -1014,12 +1016,12 @@ L_43C3:
         xchg      ah, al
         lodsb
         mov       word ptr [di + 15h], ax
-        mov       word ptr [di + 29h], 4f00h
+        mov       word ptr [di + 29h], offset L_4F00
         mov       byte ptr [di + 14h], 0ffh
         jmp    L_41FC
 L_43D9:
         dec       si
-        mov       word ptr [di + 29h], 4e7dh
+        mov       word ptr [di + 29h], offset L_4E7D
         mov       word ptr [di + 15h], 0
         jmp    L_41FC
 L_43E7:
@@ -1036,32 +1038,32 @@ L_43ED:
         mov       byte ptr [di + 1bh], al
         lodsb
         mov       byte ptr [di + 1ch], al
-        mov       word ptr [di + 29h], 4e7eh
+        mov       word ptr [di + 29h], offset L_4E7E
         jmp    L_41FC
 L_440C:
         mov       byte ptr [di + 8], ah
         jmp    L_41FC
 L_4412:
         shr       ah, 1
-        mov       byte ptr ds:[3b5bh], ah
-        mov       byte ptr ds:[3b5ch], ah
-        mov       byte ptr ds:[3b5dh], 0ffh
+        mov       byte ptr ds:[gTempoReload], ah
+        mov       byte ptr ds:[gTempoCounter], ah
+        mov       byte ptr ds:[gTempoAccum], 0ffh
         mov       ah, 0
-        mov       byte ptr ds:[3b5eh], ah
-        mov       byte ptr ds:[3b5fh], ah
+        mov       byte ptr ds:[gTempoBeat], ah
+        mov       byte ptr ds:[gTempoWait], ah
         jmp    L_41FC
 L_442E:
-        mov       al, byte ptr ds:[3b5fh]
+        mov       al, byte ptr ds:[gTempoWait]
         or        al, al
         jne    L_4441
-        and       ah, byte ptr ds:[3b5eh]
+        and       ah, byte ptr ds:[gTempoBeat]
         jne    L_444F
-        inc       byte ptr ds:[3b5fh]
+        inc       byte ptr ds:[gTempoWait]
         jmp short    L_444F
 L_4441:
-        and       ah, byte ptr ds:[3b5eh]
+        and       ah, byte ptr ds:[gTempoBeat]
         je    L_444F
-        mov       byte ptr ds:[3b5fh], 0
+        mov       byte ptr ds:[gTempoWait], 0
         jmp    L_41FC
 L_444F:
         dec       si
@@ -1077,7 +1079,7 @@ L_445E:
 L_4467:
         call    _StartVoiceNote
         mov       word ptr [di + 3], si
-        mov       al, byte ptr ds:[3b3bh]
+        mov       al, byte ptr ds:[gNoteDuration]
         or        al, al
         je    L_4477
         jmp    L_425F
@@ -1087,7 +1089,7 @@ L_447A:
         call    _StartVoiceNote
         call    _VoiceKeyOn
         mov       word ptr [di + 3], si
-        mov       al, byte ptr ds:[3b3bh]
+        mov       al, byte ptr ds:[gNoteDuration]
         or        al, al
         je    L_448D
         jmp    L_425F
@@ -1098,11 +1100,11 @@ L_4490:
         mov       byte ptr [di + 2dh], ah
         jmp    L_41FC
 L_4499:
-        mov       byte ptr ds:[3b41h], ah
+        mov       byte ptr ds:[gTempoRate], ah
         jmp    L_41FC
 L_44A0:
         dec       si
-        mov       word ptr [di + 2bh], 4e7dh
+        mov       word ptr [di + 2bh], offset L_4E7D
         jmp    L_41FC
 L_44A9:
         mov       byte ptr [di + 25h], ah
@@ -1111,46 +1113,46 @@ L_44AF:
         mov       byte ptr [di + 30h], ah
         jmp    L_41FC
 L_44B5:
-        mov       al, byte ptr ds:[3b3eh]
+        mov       al, byte ptr ds:[gVoiceIndex]
         push      ax
         push      di
         lodsb
-        mov       byte ptr ds:[3b3eh], ah
+        mov       byte ptr ds:[gVoiceIndex], ah
         mov       bl, ah
         mov       bh, 0
         shl       bl, 1
-        mov       di, word ptr [bx + 3e31h]
+        mov       di, word ptr [bx + gVoiceRecordPtrs]
         mov       byte ptr [di], al
         call    _WriteVoiceReg
         pop       di
         pop       ax
-        mov       byte ptr ds:[3b3eh], al
+        mov       byte ptr ds:[gVoiceIndex], al
         jmp    L_41FC
 L_44D6:
-        mov       al, byte ptr ds:[3b3eh]
+        mov       al, byte ptr ds:[gVoiceIndex]
         push      ax
         push      di
-        mov       byte ptr ds:[3b3eh], ah
+        mov       byte ptr ds:[gVoiceIndex], ah
         sub       bx, bx
         mov       bl, ah
         lodsb
         shl       bl, 1
-        mov       di, word ptr [bx + 3e31h]
+        mov       di, word ptr [bx + gVoiceRecordPtrs]
         add       al, byte ptr [di]
         mov       byte ptr [di], al
         call    _WriteVoiceReg
         pop       di
         pop       ax
-        mov       byte ptr ds:[3b3eh], al
+        mov       byte ptr ds:[gVoiceIndex], al
         jmp    L_41FC
 L_44F9:
         and       ah, 1
         mov       cl, 7
         shl       ah, cl
-        mov       bl, byte ptr ds:[3b4ah]
+        mov       bl, byte ptr ds:[gRegBDDepth]
         and       bl, 7fh
         or        bl, ah
-        mov       byte ptr ds:[3b4ah], bl
+        mov       byte ptr ds:[gRegBDDepth], bl
         mov       ah, 0bdh
         mov       al, bl
         call    _AdlibWrite
@@ -1159,10 +1161,10 @@ L_4517:
         and       ah, 1
         mov       cl, 6
         shl       ah, cl
-        mov       bl, byte ptr ds:[3b4ah]
+        mov       bl, byte ptr ds:[gRegBDDepth]
         and       bl, 0bfh
         or        bl, ah
-        mov       byte ptr ds:[3b4ah], bl
+        mov       byte ptr ds:[gRegBDDepth], bl
         mov       ah, 0bdh
         mov       al, bl
         call    _AdlibWrite
@@ -1173,29 +1175,29 @@ L_4535:
         call    _WriteVoiceReg
         jmp    L_41FC
 L_4541:
-        mov       al, byte ptr ds:[3b3eh]
+        mov       al, byte ptr ds:[gVoiceIndex]
         push      ax
         push      di
         cmp       ah, 0
         jne    L_4550
-        mov       byte ptr ds:[3b42h], 0
+        mov       byte ptr ds:[gEffectMode], 0
 L_4550:
-        mov       byte ptr ds:[3b3eh], ah
+        mov       byte ptr ds:[gVoiceIndex], ah
         mov       bl, ah
         mov       bh, 0
         shl       bl, 1
-        mov       di, word ptr [bx + 3e31h]
+        mov       di, word ptr [bx + gVoiceRecordPtrs]
         mov       byte ptr [di + 5], 0
         mov       byte ptr [di + 8], 0
         mov       word ptr [di + 3], 0
         mov       byte ptr [di], 0
-        cmp       byte ptr ds:[3b3eh], 9
+        cmp       byte ptr ds:[gVoiceIndex], 9
         je    L_45A5
         mov       bl, ah
         xor       bh, bh
-        mov       cl, byte ptr [bx + 3e45h]
+        mov       cl, byte ptr [bx + gOperatorOffsets]
         mov       ah, 0c0h
-        add       ah, byte ptr ds:[3b3eh]
+        add       ah, byte ptr ds:[gVoiceIndex]
         mov       al, 0
         call    _AdlibWrite
         mov       ah, 43h
@@ -1207,13 +1209,13 @@ L_4550:
         mov       al, 0ffh
         call    _AdlibWrite
         mov       ah, 0b0h
-        add       ah, byte ptr ds:[3b3eh]
+        add       ah, byte ptr ds:[gVoiceIndex]
         mov       al, 0
         call    _AdlibWrite
 L_45A5:
         pop       di
         pop       ax
-        mov       byte ptr ds:[3b3eh], al
+        mov       byte ptr ds:[gVoiceIndex], al
         jmp    L_41FC
 L_45AD:
         lodsb
@@ -1228,17 +1230,17 @@ L_45AD:
         add       bx, ax
         or        bh, cl
         mov       ah, 0a0h
-        add       ah, byte ptr ds:[3b3eh]
+        add       ah, byte ptr ds:[gVoiceIndex]
         mov       al, bl
         call    _AdlibWrite
         mov       ah, 0b0h
-        add       ah, byte ptr ds:[3b3eh]
+        add       ah, byte ptr ds:[gVoiceIndex]
         mov       al, bh
         call    _AdlibWrite
         jmp    L_41FC
 L_45E0:
         dec       si
-        mov       word ptr [di + 29h], 4e7dh
+        mov       word ptr [di + 29h], offset L_4E7D
         jmp    L_41FC
 L_45E9:
         mov       byte ptr [di + 42h], ah
@@ -1265,7 +1267,7 @@ L_4615:
         mov       bl, al
         mov       bh, 0
         shl       bl, 1
-        mov       ax, word ptr [bx + 3e4eh]
+        mov       ax, word ptr [bx + gFNumbers]
         sub       dx, dx
         mov       dl, byte ptr [di + 24h]
         add       ax, dx
@@ -1283,7 +1285,7 @@ L_4615:
         inc       bl
         shl       bx, 1
         push      si
-        mov       si, word ptr [bx + 395ah]
+        mov       si, word ptr [bx + gLevelCurvePtrs]
         xor       bh, bh
         mov       bl, byte ptr [di + 42h]
         mov       al, byte ptr [bx + si]
@@ -1297,7 +1299,7 @@ L_4658:
         and       bl, 0fh
         shl       bx, 1
         push      si
-        mov       si, word ptr [bx + 395ah]
+        mov       si, word ptr [bx + gLevelCurvePtrs]
         xor       bh, bh
         mov       bl, byte ptr [di + 42h]
         xor       bl, 0ffh
@@ -1315,18 +1317,18 @@ L_467A:
         mov       byte ptr [di + 28h], ch
         mov       byte ptr [di + 27h], cl
         mov       ah, 0a0h
-        add       ah, byte ptr ds:[3b3eh]
+        add       ah, byte ptr ds:[gVoiceIndex]
         mov       al, cl
         call    _AdlibWrite
         mov       ah, 0b0h
-        add       ah, byte ptr ds:[3b3eh]
+        add       ah, byte ptr ds:[gVoiceIndex]
         mov       al, ch
         call    _AdlibWrite
         pop       ax
         jmp    L_41FC
 L_46A3:
         dec       si
-        mov       al, byte ptr ds:[3b41h]
+        mov       al, byte ptr ds:[gTempoRate]
         mov       byte ptr [di + 25h], al
         jmp    L_41FC
 L_46AD:
@@ -1351,28 +1353,28 @@ L_46CE:
         mov       byte ptr [di + 25h], ah
         jmp    L_41FC
 L_46D4:
-        mov       byte ptr ds:[3b42h], ah
+        mov       byte ptr ds:[gEffectMode], ah
         lodsb
         push      si
         sub       bh, bh
         mov       bl, al
         shl       bx, 1
-        mov       bx, word ptr [bx + 20ch]
-        mov       word ptr ds:[3b60h], bx
+        mov       bx, word ptr [bx + gCurveTablePtrs]
+        mov       word ptr ds:[gEffectCurveA], bx
         inc       al
         sub       bh, bh
         mov       bl, al
         shl       bx, 1
-        mov       bx, word ptr [bx + 20ch]
-        mov       word ptr ds:[3b62h], bx
+        mov       bx, word ptr [bx + gCurveTablePtrs]
+        mov       word ptr ds:[gEffectCurveB], bx
         cmp       ah, 2
         jne    L_471C
         mov       bx, 0
-        mov       word ptr ds:[3b45h], bx
-        mov       si, word ptr ds:[3b60h]
+        mov       word ptr ds:[gEffectIndex], bx
+        mov       si, word ptr ds:[gEffectCurveA]
         mov       al, byte ptr [bx + si]
-        mov       byte ptr ds:[3b43h], al
-        mov       si, word ptr ds:[3b62h]
+        mov       byte ptr ds:[gEffectPeriod], al
+        mov       si, word ptr ds:[gEffectCurveB]
         mov       al, byte ptr [bx + si]
         mov       ah, 0a0h
         call    _AdlibWrite
@@ -1383,70 +1385,70 @@ L_471C:
         jmp    L_41FC
 L_4720:
         dec       si
-        mov       byte ptr ds:[3b42h], 0
+        mov       byte ptr ds:[gEffectMode], 0
         jmp    L_41FC
 L_4729:
-        mov       al, byte ptr ds:[3b3eh]
+        mov       al, byte ptr ds:[gVoiceIndex]
         push      ax
-        mov       al, byte ptr ds:[3b4bh]
+        mov       al, byte ptr ds:[gOperatorOffset]
         push      ax
         push      si
-        mov       byte ptr ds:[3b3eh], 6
-        mov       bx, 3e45h
+        mov       byte ptr ds:[gVoiceIndex], 6
+        mov       bx, offset gOperatorOffsets
         add       bl, 6
         mov       al, byte ptr [bx]
-        mov       byte ptr ds:[3b4bh], al
+        mov       byte ptr ds:[gOperatorOffset], al
         mov       dx, 388h
-        mov       cl, byte ptr ds:[3b4bh]
+        mov       cl, byte ptr ds:[gOperatorOffset]
         sub       bx, bx
         mov       bl, ah
         shl       bx, 1
-        mov       si, word ptr [bx + 542h]
+        mov       si, word ptr [bx + gPatchTable]
         mov       al, byte ptr [si + 6]
-        mov       byte ptr ds:[3b4ch], al
+        mov       byte ptr ds:[gRhythmLevelA], al
         call    _LoadVoicePatch
         pop       si
         lodsb
         push      si
-        mov       byte ptr ds:[3b3eh], 7
-        mov       bx, 3e45h
+        mov       byte ptr ds:[gVoiceIndex], 7
+        mov       bx, offset gOperatorOffsets
         add       bl, 7
         mov       ah, byte ptr [bx]
-        mov       byte ptr ds:[3b4bh], ah
+        mov       byte ptr ds:[gOperatorOffset], ah
         mov       dx, 388h
-        mov       cl, byte ptr ds:[3b4bh]
+        mov       cl, byte ptr ds:[gOperatorOffset]
         sub       bx, bx
         mov       bl, al
         shl       bx, 1
-        mov       si, word ptr [bx + 542h]
+        mov       si, word ptr [bx + gPatchTable]
         mov       al, byte ptr [si + 5]
-        mov       byte ptr ds:[3b4eh], al
+        mov       byte ptr ds:[gRhythmLevelA+2], al
         mov       al, byte ptr [si + 6]
-        mov       byte ptr ds:[3b4dh], al
+        mov       byte ptr ds:[gRhythmLevelA+1], al
         call    _LoadVoicePatch
         pop       si
         lodsb
         push      si
-        mov       byte ptr ds:[3b3eh], 8
-        mov       bx, 3e45h
+        mov       byte ptr ds:[gVoiceIndex], 8
+        mov       bx, offset gOperatorOffsets
         add       bl, 8
         mov       ah, byte ptr [bx]
-        mov       byte ptr ds:[3b4bh], ah
+        mov       byte ptr ds:[gOperatorOffset], ah
         mov       dx, 388h
-        mov       cl, byte ptr ds:[3b4bh]
+        mov       cl, byte ptr ds:[gOperatorOffset]
         sub       bx, bx
         mov       bl, al
         shl       bx, 1
-        mov       si, word ptr [bx + 542h]
+        mov       si, word ptr [bx + gPatchTable]
         mov       al, byte ptr [si + 5]
-        mov       byte ptr ds:[3b4fh], al
+        mov       byte ptr ds:[gRhythmLevelA+3], al
         mov       al, byte ptr [si + 6]
-        mov       byte ptr ds:[3b50h], al
+        mov       byte ptr ds:[gRhythmLevelA+4], al
         call    _LoadVoicePatch
         pop       si
         lodsb
         and       al, 2fh
-        mov       byte ptr ds:[3d4dh], al
+        mov       byte ptr ds:[gVoiceRecord6+28h], al
         mov       ah, 0b6h
         call    _AdlibWrite
         lodsb
@@ -1454,7 +1456,7 @@ L_4729:
         call    _AdlibWrite
         lodsb
         and       al, 2fh
-        mov       byte ptr ds:[3d90h], al
+        mov       byte ptr ds:[gVoiceRecord7+28h], al
         mov       ah, 0b7h
         call    _AdlibWrite
         lodsb
@@ -1462,17 +1464,17 @@ L_4729:
         call    _AdlibWrite
         lodsb
         and       al, 2fh
-        mov       byte ptr ds:[3dd3h], al
+        mov       byte ptr ds:[gVoiceRecord8+28h], al
         mov       ah, 0b8h
         call    _AdlibWrite
         lodsb
         mov       ah, 0a8h
         call    _AdlibWrite
-        mov       byte ptr ds:[3b40h], 20h
+        mov       byte ptr ds:[gRhythmKeyBits], 20h
         pop       ax
-        mov       byte ptr ds:[3b4bh], al
+        mov       byte ptr ds:[gOperatorOffset], al
         pop       ax
-        mov       byte ptr ds:[3b3eh], al
+        mov       byte ptr ds:[gVoiceIndex], al
         jmp    L_41FC
 L_4808:
         mov       dx, 388h
@@ -1484,22 +1486,22 @@ L_4808:
         push      ax
         and       al, 1fh
         xor       al, 0ffh
-        and       al, byte ptr ds:[3b40h]
+        and       al, byte ptr ds:[gRhythmKeyBits]
         or        al, 20h
         out       dx, al
         call    _AdlibDelay17
         pop       ax
-        or        al, byte ptr ds:[3b40h]
-        mov       byte ptr ds:[3b40h], al
-        or        al, byte ptr ds:[3b4ah]
+        or        al, byte ptr ds:[gRhythmKeyBits]
+        mov       byte ptr ds:[gRhythmKeyBits], al
+        or        al, byte ptr ds:[gRegBDDepth]
         or        al, 20h
         out       dx, al
         call    _AdlibDelay17
         jmp    L_41FC
 L_4838:
         dec       si
-        mov       al, byte ptr ds:[3b4ah]
-        mov       byte ptr ds:[3b40h], 0
+        mov       al, byte ptr ds:[gRegBDDepth]
+        mov       byte ptr ds:[gRhythmKeyBits], 0
         and       al, 0c0h
         mov       ah, 0bdh
         call    _AdlibWrite
@@ -1509,11 +1511,11 @@ L_484B:
         mov       bx, ax
         test      ah, 1
         je    L_486C
-        mov       byte ptr ds:[3b58h], al
+        mov       byte ptr ds:[gRhythmLevelC+2], al
         xor       ah, ah
-        add       al, byte ptr ds:[3b4eh]
-        add       al, byte ptr ds:[3b53h]
-        add       al, byte ptr ds:[3b58h]
+        add       al, byte ptr ds:[gRhythmLevelA+2]
+        add       al, byte ptr ds:[gRhythmLevelB+2]
+        add       al, byte ptr ds:[gRhythmLevelC+2]
         call    _ClampLevel
         mov       ah, 51h
         call    _AdlibWrite
@@ -1521,11 +1523,11 @@ L_486C:
         mov       ax, bx
         test      ah, 2
         je    L_488C
-        mov       byte ptr ds:[3b5ah], al
+        mov       byte ptr ds:[gRhythmLevelC+4], al
         xor       ah, ah
-        add       al, byte ptr ds:[3b50h]
-        add       al, byte ptr ds:[3b55h]
-        add       al, byte ptr ds:[3b5ah]
+        add       al, byte ptr ds:[gRhythmLevelA+4]
+        add       al, byte ptr ds:[gRhythmLevelB+4]
+        add       al, byte ptr ds:[gRhythmLevelC+4]
         call    _ClampLevel
         mov       ah, 55h
         call    _AdlibWrite
@@ -1533,11 +1535,11 @@ L_488C:
         mov       ax, bx
         test      ah, 4
         je    L_48AC
-        mov       byte ptr ds:[3b59h], al
+        mov       byte ptr ds:[gRhythmLevelC+3], al
         xor       ah, ah
-        add       al, byte ptr ds:[3b4fh]
-        add       al, byte ptr ds:[3b54h]
-        add       al, byte ptr ds:[3b59h]
+        add       al, byte ptr ds:[gRhythmLevelA+3]
+        add       al, byte ptr ds:[gRhythmLevelB+3]
+        add       al, byte ptr ds:[gRhythmLevelC+3]
         call    _ClampLevel
         mov       ah, 52h
         call    _AdlibWrite
@@ -1545,11 +1547,11 @@ L_48AC:
         mov       ax, bx
         test      ah, 8
         je    L_48CC
-        mov       byte ptr ds:[3b57h], al
+        mov       byte ptr ds:[gRhythmLevelC+1], al
         xor       ah, ah
-        add       al, byte ptr ds:[3b4dh]
-        add       al, byte ptr ds:[3b52h]
-        add       al, byte ptr ds:[3b57h]
+        add       al, byte ptr ds:[gRhythmLevelA+1]
+        add       al, byte ptr ds:[gRhythmLevelB+1]
+        add       al, byte ptr ds:[gRhythmLevelC+1]
         call    _ClampLevel
         mov       ah, 54h
         call    _AdlibWrite
@@ -1557,11 +1559,11 @@ L_48CC:
         mov       ax, bx
         test      ah, 10h
         je    L_48EC
-        mov       byte ptr ds:[3b56h], al
+        mov       byte ptr ds:[gRhythmLevelC], al
         xor       ah, ah
-        add       al, byte ptr ds:[3b4ch]
-        add       al, byte ptr ds:[3b51h]
-        add       al, byte ptr ds:[3b56h]
+        add       al, byte ptr ds:[gRhythmLevelA]
+        add       al, byte ptr ds:[gRhythmLevelB]
+        add       al, byte ptr ds:[gRhythmLevelC]
         call    _ClampLevel
         mov       ah, 53h
         call    _AdlibWrite
@@ -1573,11 +1575,11 @@ L_48EF:
         test      ah, 1
         je    L_4910
         xor       ah, ah
-        add       al, byte ptr ds:[3b4eh]
-        add       al, byte ptr ds:[3b53h]
-        add       al, byte ptr ds:[3b58h]
+        add       al, byte ptr ds:[gRhythmLevelA+2]
+        add       al, byte ptr ds:[gRhythmLevelB+2]
+        add       al, byte ptr ds:[gRhythmLevelC+2]
         call    _ClampLevel
-        mov       byte ptr ds:[3b53h], al
+        mov       byte ptr ds:[gRhythmLevelB+2], al
         mov       ah, 51h
         call    _AdlibWrite
 L_4910:
@@ -1585,11 +1587,11 @@ L_4910:
         test      ah, 2
         je    L_4930
         xor       ah, ah
-        add       al, byte ptr ds:[3b50h]
-        add       al, byte ptr ds:[3b55h]
-        add       al, byte ptr ds:[3b5ah]
+        add       al, byte ptr ds:[gRhythmLevelA+4]
+        add       al, byte ptr ds:[gRhythmLevelB+4]
+        add       al, byte ptr ds:[gRhythmLevelC+4]
         call    _ClampLevel
-        mov       byte ptr ds:[3b55h], al
+        mov       byte ptr ds:[gRhythmLevelB+4], al
         mov       ah, 55h
         call    _AdlibWrite
 L_4930:
@@ -1597,11 +1599,11 @@ L_4930:
         test      ah, 4
         je    L_4950
         xor       ah, ah
-        add       al, byte ptr ds:[3b4fh]
-        add       al, byte ptr ds:[3b54h]
-        add       al, byte ptr ds:[3b59h]
+        add       al, byte ptr ds:[gRhythmLevelA+3]
+        add       al, byte ptr ds:[gRhythmLevelB+3]
+        add       al, byte ptr ds:[gRhythmLevelC+3]
         call    _ClampLevel
-        mov       byte ptr ds:[3b54h], al
+        mov       byte ptr ds:[gRhythmLevelB+3], al
         mov       ah, 52h
         call    _AdlibWrite
 L_4950:
@@ -1609,11 +1611,11 @@ L_4950:
         test      ah, 8
         je    L_4970
         xor       ah, ah
-        add       al, byte ptr ds:[3b4dh]
-        add       al, byte ptr ds:[3b52h]
-        add       al, byte ptr ds:[3b57h]
+        add       al, byte ptr ds:[gRhythmLevelA+1]
+        add       al, byte ptr ds:[gRhythmLevelB+1]
+        add       al, byte ptr ds:[gRhythmLevelC+1]
         call    _ClampLevel
-        mov       byte ptr ds:[3b52h], al
+        mov       byte ptr ds:[gRhythmLevelB+1], al
         mov       ah, 54h
         call    _AdlibWrite
 L_4970:
@@ -1621,11 +1623,11 @@ L_4970:
         test      ah, 10h
         je    L_4990
         xor       ah, ah
-        add       al, byte ptr ds:[3b4ch]
-        add       al, byte ptr ds:[3b51h]
-        add       al, byte ptr ds:[3b56h]
+        add       al, byte ptr ds:[gRhythmLevelA]
+        add       al, byte ptr ds:[gRhythmLevelB]
+        add       al, byte ptr ds:[gRhythmLevelC]
         call    _ClampLevel
-        mov       byte ptr ds:[3b51h], al
+        mov       byte ptr ds:[gRhythmLevelB], al
         mov       ah, 53h
         call    _AdlibWrite
 L_4990:
@@ -1635,10 +1637,10 @@ L_4993:
         mov       bx, ax
         test      ah, 1
         je    L_49B0
-        mov       byte ptr ds:[3b53h], al
+        mov       byte ptr ds:[gRhythmLevelB+2], al
         xor       ah, ah
-        add       al, byte ptr ds:[3b4eh]
-        add       al, byte ptr ds:[3b58h]
+        add       al, byte ptr ds:[gRhythmLevelA+2]
+        add       al, byte ptr ds:[gRhythmLevelC+2]
         call    _ClampLevel
         mov       ah, 51h
         call    _AdlibWrite
@@ -1646,10 +1648,10 @@ L_49B0:
         mov       ax, bx
         test      ah, 2
         je    L_49CC
-        mov       byte ptr ds:[3b55h], al
+        mov       byte ptr ds:[gRhythmLevelB+4], al
         xor       ah, ah
-        add       al, byte ptr ds:[3b50h]
-        add       al, byte ptr ds:[3b5ah]
+        add       al, byte ptr ds:[gRhythmLevelA+4]
+        add       al, byte ptr ds:[gRhythmLevelC+4]
         call    _ClampLevel
         mov       ah, 55h
         call    _AdlibWrite
@@ -1657,10 +1659,10 @@ L_49CC:
         mov       ax, bx
         test      ah, 4
         je    L_49E8
-        mov       byte ptr ds:[3b54h], al
+        mov       byte ptr ds:[gRhythmLevelB+3], al
         xor       ah, ah
-        add       al, byte ptr ds:[3b4fh]
-        add       al, byte ptr ds:[3b59h]
+        add       al, byte ptr ds:[gRhythmLevelA+3]
+        add       al, byte ptr ds:[gRhythmLevelC+3]
         call    _ClampLevel
         mov       ah, 52h
         call    _AdlibWrite
@@ -1668,10 +1670,10 @@ L_49E8:
         mov       ax, bx
         test      ah, 8
         je    L_4A04
-        mov       byte ptr ds:[3b52h], al
+        mov       byte ptr ds:[gRhythmLevelB+1], al
         xor       ah, ah
-        add       al, byte ptr ds:[3b4dh]
-        add       al, byte ptr ds:[3b57h]
+        add       al, byte ptr ds:[gRhythmLevelA+1]
+        add       al, byte ptr ds:[gRhythmLevelC+1]
         call    _ClampLevel
         mov       ah, 54h
         call    _AdlibWrite
@@ -1679,17 +1681,17 @@ L_4A04:
         mov       ax, bx
         test      ah, 10h
         je    L_4A20
-        mov       byte ptr ds:[3b51h], al
+        mov       byte ptr ds:[gRhythmLevelB], al
         xor       ah, ah
-        add       al, byte ptr ds:[3b4ch]
-        add       al, byte ptr ds:[3b56h]
+        add       al, byte ptr ds:[gRhythmLevelA]
+        add       al, byte ptr ds:[gRhythmLevelC]
         call    _ClampLevel
         mov       ah, 53h
         call    _AdlibWrite
 L_4A20:
         jmp    L_41FC
 L_4A23:
-        mov       byte ptr ds:[3a0h], ah
+        mov       byte ptr ds:[gScriptFlag], ah
         jmp    L_41FC
 L_4A2A:
         mov       byte ptr [di + 40h], ah
@@ -1727,7 +1729,7 @@ L_4A63:
         mov       bl, al
         mov       bh, 0
         shl       bl, 1
-        mov       ax, word ptr [bx + 3e4eh]
+        mov       ax, word ptr [bx + gFNumbers]
         sub       dx, dx
         mov       dl, byte ptr [di + 24h]
         add       ax, dx
@@ -1746,7 +1748,7 @@ L_4A63:
         inc       bl
         shl       bx, 1
         push      si
-        mov       si, word ptr [bx + 395ah]
+        mov       si, word ptr [bx + gLevelCurvePtrs]
         xor       bh, bh
         mov       bl, byte ptr [di + 42h]
         mov       al, byte ptr [bx + si]
@@ -1760,7 +1762,7 @@ L_4AA8:
         and       bl, 0fh
         shl       bx, 1
         push      si
-        mov       si, word ptr [bx + 395ah]
+        mov       si, word ptr [bx + gLevelCurvePtrs]
         xor       bh, bh
         mov       bl, byte ptr [di + 42h]
         xor       bl, 0ffh
@@ -1777,11 +1779,11 @@ L_4AC8:
         mov       byte ptr [di + 28h], ch
         mov       byte ptr [di + 27h], cl
         mov       ah, 0a0h
-        add       ah, byte ptr ds:[3b3eh]
+        add       ah, byte ptr ds:[gVoiceIndex]
         mov       al, cl
         call    _AdlibWrite
         mov       ah, 0b0h
-        add       ah, byte ptr ds:[3b3eh]
+        add       ah, byte ptr ds:[gVoiceIndex]
         mov       al, ch
         call    _AdlibWrite
         pop       ax
@@ -1793,7 +1795,7 @@ _SetVoicePitch ENDP
 _VoiceKeyOn PROC NEAR
         push      ax
         mov       ah, 0b0h
-        add       ah, byte ptr ds:[3b3eh]
+        add       ah, byte ptr ds:[gVoiceIndex]
         mov       al, byte ptr [di + 28h]
         or        al, 20h
         mov       byte ptr [di + 28h], al
@@ -1816,16 +1818,16 @@ _VoiceKeyOn ENDP
 ; 0000:4B1F: clears the key-on bit of the voice and writes register B0 (skips the first six voices while a sample plays)
         PUBLIC  _VoiceKeyOff              ; @ 0000:4B1F
 _VoiceKeyOff PROC NEAR
-        cmp       byte ptr ds:[3b40h], 0
+        cmp       byte ptr ds:[gRhythmKeyBits], 0
         je    L_4B2E
-        cmp       byte ptr ds:[3b3eh], 6
+        cmp       byte ptr ds:[gVoiceIndex], 6
         jl    L_4B2E
         ret
 L_4B2E:
-        cmp       byte ptr ds:[3b3eh], 9
+        cmp       byte ptr ds:[gVoiceIndex], 9
         je    L_4B46
         mov       ah, 0b0h
-        add       ah, byte ptr ds:[3b3eh]
+        add       ah, byte ptr ds:[gVoiceIndex]
         mov       al, byte ptr [di + 28h]
         and       al, 0dfh
         mov       byte ptr [di + 28h], al
@@ -1837,7 +1839,7 @@ _VoiceKeyOff ENDP
 ; 0000:4B47: starts the note of a voice: records the level byte, uses the random byte and the 2dh shift, sets the delay
         PUBLIC  _StartVoiceNote              ; @ 0000:4B47
 _StartVoiceNote PROC NEAR
-        mov       byte ptr ds:[3b3bh], ah
+        mov       byte ptr ds:[gNoteDuration], ah
         cmp       byte ptr [di + 36h], 0
         mov       bl, ah
         je    L_4B5F
@@ -1923,17 +1925,17 @@ L_4BD8:
         sti
         lds       si, [bp + 6]
         mov       ax, si
-        mov       word ptr cs:[3b78h], ax
-        mov       word ptr cs:[3b7ch], ax
+        mov       word ptr cs:[gSamplePtrOff], ax
+        mov       word ptr cs:[gSampleStart], ax
         mov       ax, ds
-        mov       word ptr cs:[3b7ah], ax
+        mov       word ptr cs:[gSamplePtrSeg], ax
         mov       cx, word ptr [bp + 0ah]
-        mov       word ptr cs:[3b76h], cx
-        mov       byte ptr cs:[3b75h], 8
-        mov       byte ptr cs:[3b74h], 0
+        mov       word ptr cs:[gSampleLength], cx
+        mov       byte ptr cs:[gSampleLevel], 8
+        mov       byte ptr cs:[gSampleNibbles], 0
         mov       ax, cs
         mov       ds, ax
-        mov       byte ptr ds:[3b7eh], 1
+        mov       byte ptr ds:[gSampleEnable], 1
         mov       dx, 388h
         mov       al, 40h
         out       dx, al
@@ -1945,9 +1947,9 @@ L_4BD8:
         cli
         mov       ax, 3508h
         int       21h
-        mov       word ptr ds:[3b6ch], es
-        mov       word ptr ds:[3b6ah], bx
-        mov       dx, 3ee5h
+        mov       word ptr ds:[gSampleSavedSeg], es
+        mov       word ptr ds:[gSampleSavedOff], bx
+        mov       dx, offset _SampleTimerIsr
         mov       ax, 2508h
         int       21h
         mov       al, 36h
@@ -2000,19 +2002,19 @@ _ClampLevel ENDP
 ; 0000:4C8D: advances the tempo counters at 3B5D/3B5C and the step byte 3B5E
         PUBLIC  _TickTempo              ; @ 0000:4C8D
 _TickTempo PROC NEAR
-        mov       al, byte ptr ds:[3b5dh]
-        add       al, byte ptr ds:[3b41h]
-        mov       byte ptr ds:[3b5dh], al
+        mov       al, byte ptr ds:[gTempoAccum]
+        add       al, byte ptr ds:[gTempoRate]
+        mov       byte ptr ds:[gTempoAccum], al
         jb    L_4C9A
         ret
 L_4C9A:
-        dec       byte ptr ds:[3b5ch]
+        dec       byte ptr ds:[gTempoCounter]
         je    L_4CA1
         ret
 L_4CA1:
-        mov       al, byte ptr ds:[3b5bh]
-        mov       byte ptr ds:[3b5ch], al
-        inc       byte ptr ds:[3b5eh]
+        mov       al, byte ptr ds:[gTempoReload]
+        mov       byte ptr ds:[gTempoCounter], al
+        inc       byte ptr ds:[gTempoBeat]
         ret
 _TickTempo ENDP
 
@@ -2020,7 +2022,7 @@ _TickTempo ENDP
 ; the seventh entry of the driver's entry table (3944).
         PUBLIC  _GetSampleOffset              ; @ 0000:4CAC
 _GetSampleOffset PROC NEAR
-        mov       ax, word ptr cs:[3b78h]
+        mov       ax, word ptr cs:[gSamplePtrOff]
         retf
 _GetSampleOffset ENDP
 
@@ -2036,7 +2038,7 @@ _GetVoiceState PROC NEAR
         mov       bx, word ptr [bp + 6]
         sub       bh, bh
         shl       bx, 1
-        mov       di, word ptr [bx + 3e31h]
+        mov       di, word ptr [bx + gVoiceRecordPtrs]
         mov       al, byte ptr [di + 5]
         xor       ah, ah
         pop       di
@@ -2084,8 +2086,8 @@ _AdlibDelay4 ENDP
         PUBLIC  _WriteVoiceReg              ; @ 0000:4CF0
 _WriteVoiceReg PROC NEAR
         call    _VoiceLevelA0
-        mov       bx, 3e45h
-        add       bl, byte ptr ds:[3b3eh]
+        mov       bx, offset gOperatorOffsets
+        add       bl, byte ptr ds:[gVoiceIndex]
         mov       cl, byte ptr [bx]
         mov       ah, cl
         add       ah, 43h
@@ -2093,8 +2095,8 @@ _WriteVoiceReg PROC NEAR
         cmp       byte ptr [di + 31h], 0
         je    L_4D1E
         call    _VoiceLevelB0
-        mov       bx, 3e45h
-        add       bl, byte ptr ds:[3b3eh]
+        mov       bx, offset gOperatorOffsets
+        add       bl, byte ptr ds:[gVoiceIndex]
         mov       cl, byte ptr [bx]
         mov       ah, cl
         add       ah, 40h
@@ -2189,8 +2191,8 @@ _ClearVoice PROC NEAR
         pop       di
         mov       byte ptr [di + 25h], 0ffh
         mov       byte ptr [di + 8], 0
-        mov       word ptr [di + 29h], 4e7dh
-        mov       word ptr [di + 2bh], 4e7dh
+        mov       word ptr [di + 29h], offset L_4E7D
+        mov       word ptr [di + 2bh], offset L_4E7D
         mov       byte ptr [di + 35h], 1
         pop       cx
         pop       ax
@@ -2210,7 +2212,7 @@ _LoadVoicePatch PROC NEAR
         lodsb
         call    _AdlibWrite
         mov       ah, 0c0h
-        add       ah, byte ptr ds:[3b3eh]
+        add       ah, byte ptr ds:[gVoiceIndex]
         lodsb
         call    _AdlibWrite
         and       al, 1
@@ -2257,13 +2259,13 @@ _LoadVoicePatch ENDP
 ; 0000:4E34: silences a voice: writes ffh to its level registers and B0, then zeroes its gate and key-on
         PUBLIC  _VoiceSilence              ; @ 0000:4E34
 _VoiceSilence PROC NEAR
-        cmp       byte ptr ds:[3b40h], 0
+        cmp       byte ptr ds:[gRhythmKeyBits], 0
         je    L_4E41
         cmp       cl, 6
         jl    L_4E41
         ret
 L_4E41:
-        mov       bx, 3e45h
+        mov       bx, offset gOperatorOffsets
         mov       ch, cl
         add       bl, cl
         mov       cl, byte ptr [bx]
@@ -2290,7 +2292,9 @@ L_4E41:
         mov       al, 20h
         call    _AdlibWrite
         ret
+L_4E7D:
         ret
+L_4E7E:
         cmp       byte ptr [di + 1fh], 0
         je    L_4E88
         dec       byte ptr [di + 1fh]
@@ -2320,14 +2324,15 @@ L_4EA9:
         or        al, ah
         mov       byte ptr [di + 28h], al
         mov       ah, 0a0h
-        add       ah, byte ptr ds:[3b3eh]
+        add       ah, byte ptr ds:[gVoiceIndex]
         mov       al, byte ptr [di + 27h]
         call    _AdlibWrite
         mov       ah, 0b0h
-        add       ah, byte ptr ds:[3b3eh]
+        add       ah, byte ptr ds:[gVoiceIndex]
         mov       al, byte ptr [di + 28h]
         call    _AdlibWrite
         ret
+L_4ED7:
         mov       al, byte ptr [di + 3ah]
         add       al, byte ptr [di + 39h]
         mov       byte ptr [di + 3ah], al
@@ -2340,12 +2345,13 @@ L_4EE3:
         mov       byte ptr [di + 3ch], al
 L_4EEE:
         mov       ah, byte ptr [di + 3dh]
-        add       ah, byte ptr ds:[3b4bh]
+        add       ah, byte ptr ds:[gOperatorOffset]
         mov       al, byte ptr [di + 3ch]
         mov       bx, word ptr [di + 3eh]
         xlatb
         call    _AdlibWrite
         ret
+L_4F00:
         mov       cl, byte ptr [di + 14h]
         add       cl, byte ptr [di + 13h]
         mov       byte ptr [di + 14h], cl
@@ -2394,12 +2400,12 @@ L_4F5D:
         and       bx, 3ffh
         mov       cx, dx
         mov       ah, 0a0h
-        add       ah, byte ptr ds:[3b3eh]
+        add       ah, byte ptr ds:[gVoiceIndex]
         mov       al, bl
         call    _AdlibWrite
         mov       byte ptr [di + 27h], al
         mov       ah, 0b0h
-        add       ah, byte ptr ds:[3b3eh]
+        add       ah, byte ptr ds:[gVoiceIndex]
         or        bh, cl
         or        bh, ch
         mov       al, bh
@@ -2411,12 +2417,12 @@ _VoiceSilence ENDP
 ; 0000:4F84: the driver random byte: rotates 3B47 after adding 9248h; the jump table at 4F94 follows it
         PUBLIC  _SoundRandom              ; @ 0000:4F84
 _SoundRandom PROC NEAR
-        mov       ax, word ptr ds:[3b47h]
+        mov       ax, word ptr ds:[gRandomSeed]
         add       ax, 9248h
         ror       ax, 1
         ror       ax, 1
         ror       ax, 1
-        mov       word ptr ds:[3b47h], ax
+        mov       word ptr ds:[gRandomSeed], ax
         ret
 _SoundRandom ENDP
 
