@@ -1485,3 +1485,12 @@ new = "EndingAnimation"
 kind = "function"
 why = "the second ending animation (CharOverlay mode 9): tears down the dungeon, builds the sprite cells from gOverlayBuf, plays the ten-frame and 19-step sequences, shows the winning-party panel and shuts the game down (ovl5:17C8, called from CharOverlay)"
 date = "2026-11-01"
+
+[[rename]]
+id = "ovl5:1204=TileAnimation"
+addr = "ovl5:1204"
+old = "Ovl5_1204"
+new = "TileAnimation"
+kind = "function"
+why = "the mode-8 ending animation: slices the sprite cells from gOverlayBuf, shuffles the 0x18x0x90 tile board and runs the (cell, step) animation script at ds:7C32 (ovl5:1204, called from CharOverlay)"
+date = "2026-11-01"

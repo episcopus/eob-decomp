@@ -119,6 +119,9 @@ extern char gText7EDD[]; /*@ ds:7EDD */
 extern char gText7EEF[]; /*@ ds:7EEF */
 extern char gText7EF7[]; /*@ ds:7EF7 */
 extern char gText7EFF[]; /*@ ds:7EFF */
+extern char gText7E43[]; /*@ ds:7E43 */
+extern char gText7E4B[]; /*@ ds:7E4B */
+extern char gText7C32[]; /*@ ds:7C32 */
 extern char gText7BA6[]; /*@ ds:7BA6 */
 extern char gText7BB2[]; /*@ ds:7BB2 */
 extern char gText7BCA[]; /*@ ds:7BCA */
@@ -219,10 +222,10 @@ void Ovl5_0EB9(void);
 void Ovl5_0F77(void);
 void Ovl5_10A6(void);
 void Ovl5_119E(void);
-void Ovl5_1204(void);
+void TileAnimation(void);
 void EndingAnimation(void);
 void Ovl5_1A82(int mode);
-void Ovl5_1E1B(int a, int b, int x, int y, int c, int d);
+void ShuffleGrid(int x, int y, unsigned cols, unsigned rows, int attr1, int attr2);
 
 void PrintTableString(int index, int flag);
 
@@ -1009,7 +1012,77 @@ enum {
     }
     gFC04 |= 0x4000000L;
 }
-/*@ ovl5:1204 stub */ void Ovl5_1204(void) {}
+/* ovl5:1204: the first ending animation (mode 8). It tears down the dungeon resources, loads
+   ds:7E43 and slices fifteen cells out of gOverlayBuf (three per sprite: a 3x0x4b column, a
+   3x0x4b column offset 0x50, and an 0xf x 0x12 cell) plus one 8 x 0x4d cell, blits ds:7E4B,
+   fills the action field with f19EC_0002(5), clips the panel, draws the four first cells and
+   shuffles the 0x18 x 0x90 grid. It then runs an animation script at ds:7C32 of (cell, step)
+   byte pairs: each pair draws figures[i], barsTop[i] and barsBot[i], steps a 5x5 board cell (or
+   the last cell when the step is 0), and plays the step sounds; the script ends at the first byte
+   that is negative (0xff). Finally it frees the one extra cell and the three sprite arrays.
+   Called from the menu dispatcher 1A82 (mode 8). */
+/*@ ovl5:1204 */ void TileAnimation(void)
+{
+    char far *script;
+    void far *barsTop[5];    /* the 3 x 0x4b strips at y 0 */
+    void far *barsBot[5];    /* the 3 x 0x4b strips at y 0x50 */
+    void far *figures[5];    /* the 0xf x 0x12 cells */
+    void far *extra[11] = { 0 };
+    int i;
+
+    FreeEffectTables();
+    FreeMapIcons(0, 0x24);
+    FreePtrTable();
+    LoadOverlayScreen(gText7E43, 5, 3);
+    for (i = 0; i < 5; i++) {
+        barsTop[i] = gGetSpriteCell(i * 3, 0, 3, 0x4b, gOverlayBuf);
+        barsBot[i] = gGetSpriteCell(i * 3, 0x50, 3, 0x4b, gOverlayBuf);
+        figures[i] = gGetSpriteCell(0xf, i * 0x12, 0xf, 0x12, gOverlayBuf);
+    }
+    extra[0] = gGetSpriteCell(0x1e, 0, 8, 0x4d, gOverlayBuf);
+    LoadScreenImage(gText7E4B, gOverlayBuf, 5, 3, 2);
+    PlaySound(0x21);
+    PlaySound(0x13);
+    g8115 = 2;
+    gFn807E(3, 0, 0x12, 0x68, f19EC_0002(5));
+    ClipRect(3, 0, 3, 0, 0x12, 0x68, 0, 2);
+    f1A29_000F(2, figures[0], 0x1c, 9, 0);
+    f1A29_000F(2, barsTop[0], 0x22, 0x1c, 0);
+    f1A29_000F(2, barsBot[0], 0x78, 0x1c, 0);
+    f1A29_000F(2, extra[0], 0x38, 0x1b, 0);
+    ShuffleGrid(0x18, 0, 0x90, 0x68, 2, 0);
+    gFn804A(3, 0, 0x12, 0x68, f19EC_0002(5));
+    WaitTicks(0x1e);
+    script = gText7C32;
+    while (*script > -1) {
+        i = *script++;
+        f1A29_000F(0, figures[i], 0x1c, 9, 0);
+        f1A29_000F(0, barsTop[i], 0x22, 0x1c, 0);
+        f1A29_000F(0, barsBot[i], 0x78, 0x1c, 0);
+        if (i == 1 && script[-3] == 0) {
+            PlaySound(0x18);
+            PlaySound(0x56);
+        }
+        i = *script++;
+        if (i != 0) {
+            i--;
+            ClipRect((i % 5) * 8, (i / 5) * 0x4d, 7, 0x1b, 8, 0x4d, 2, 0);
+        } else {
+            f1A29_000F(0, extra[0], 0x38, 0x1b, 0);
+        }
+        if (i == 1)
+            PlaySound(0x1f);
+        if (i == 3 && script[-2] == 3)
+            PlaySound(0x5a);
+        WaitTicks(2);
+    }
+    farfree(extra[0]);
+    for (i = 4; i >= 0; i--) {
+        farfree(figures[i]);
+        farfree(barsBot[i]);
+        farfree(barsTop[i]);
+    }
+}
 /* ovl5:160A: the winning-party password screen at the end of the game. It loads ds:7E53 into the
    string base gSegDF4E (the password text), sets up the panel, and when all six party bits of
    gFC04 are set (gFC04 & 0x1FFE == 0x1FFE) draws the winner title ds:7E5C, the first four party
@@ -1150,7 +1223,7 @@ enum {
     fOvl4_1F51(1);
     switch (mode) {
     case 8:
-        Ovl5_1204();
+        TileAnimation();
         break;
     case 9:
         EndingAnimation();

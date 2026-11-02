@@ -7798,6 +7798,9 @@ unit = "eov5"
 addr = "ovl5:1204"
 size = 1030
 evidence = ["ovl", "near", "frame"]
+name = "TileAnimation"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov5_160a"
