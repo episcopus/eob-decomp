@@ -7026,6 +7026,9 @@ unit = "eov1"
 addr = "ovl1:025D"
 size = 441
 evidence = ["near", "frame"]
+name = "_SpendSpellSlot"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "eov1_0416"

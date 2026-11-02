@@ -30,6 +30,8 @@
         EXTRN   _FlushKeyBuffer:FAR     ; @ 1AAD:0480 (E082C.C)
         EXTRN   _WaitFrames:FAR         ; @ 1A16:000B (E14EF.C)
         EXTRN   _sprintf:FAR            ; @ 0000:57AE (library)
+        EXTRN   _memset:FAR             ; @ 0000:6384 (library)
+        EXTRN   _strcpy:FAR             ; @ 0000:67CD (library)
 
         EXTRN   gChars:BYTE             ; @ ds:F580: 6 character records of 0xF3 bytes (E08E6.C)
         EXTRN   gBufDCFC:DWORD          ; @ ds:DCFC: 4096-byte scratch allocation (E07A9.C)
@@ -53,6 +55,9 @@
         EXTRN   gFDEA:BYTE              ; @ ds:FDEA: per-item count, indexed by item*2
         EXTRN   gFileNameBuf:BYTE       ; @ ds:FE6E: text scratch buffer (E082C.C)
         EXTRN   gDrawText:DWORD         ; @ ds:80CA: far text routine (E082C.C)
+        EXTRN   gFDEC:BYTE              ; @ ds:FDEC: 32 two-byte spell counters, built by ovl1:00DD
+        EXTRN   gFD9A:BYTE              ; @ ds:FD9A: 32-byte spell index table, built by ovl1:00DD
+        EXTRN   gFE2C:WORD              ; @ ds:FE2C: set when a known slot is retired (ovl1:025D)
 
         .CODE
 
@@ -173,10 +178,206 @@ _Ovl1_00DD PROC FAR
         ret
 _Ovl1_00DD ENDP
 
-        PUBLIC  _Ovl1_025D               ; @ ovl1:025D stub
-_Ovl1_025D PROC FAR
+; ovl1:025D: spend one step of the spell counters for character `who`. It returns when `who` is
+; negative; otherwise it clears the 30 bytes at rec+0x37 (known slots) or rec+0x55 (memorized
+; slots) when `flag` is set, then walks the 32 counters gFDEC + i*2: it keeps the pair's low byte
+; as the maximum of the two, and when the paired byte reaches 0 it retires a spell (decrementing
+; the counter) and, for every free slot si of the six, writes gFD9A[i] into rec[si] of the known
+; or memorized group (i+1, or its negation when the counter's other byte ran out), setting gFE2C
+; in the latter case. gFD9A and gFDEC are the tables ovl1:00DD fills from the character's spell
+; book. Called by ovl1:097A. Purpose unknown: the exact counter semantics.
+        PUBLIC  _SpendSpellSlot         ; @ ovl1:025D
+_SpendSpellSlot PROC FAR
+        push    bp
+        mov     bp,sp
+        sub     sp,6
+        push    si
+        push    di
+        cmp     word ptr [bp+6],0
+        jge     short f025D_026E
+        jmp     f025D_0410
+f025D_026E:
+        mov     ax,[bp+6]
+        mov     dx,0F3h
+        imul    dx
+        add     ax,OFFSET gChars
+        mov     [bp-6],ax
+        mov     [bp-4],ds
+        cmp     word ptr [bp+8],0
+        je      short f025D_0294
+        mov     ax,1Eh
+        push    ax
+        xor     ax,ax
+        push    ax
+        mov     ax,[bp-6]
+        add     ax,55h
+        jmp     short f025D_02A1
+f025D_0294:
+        mov     ax,1Eh
+        push    ax
+        xor     ax,ax
+        push    ax
+        mov     ax,[bp-6]
+        add     ax,37h
+f025D_02A1:
+        push    word ptr [bp-4]
+        push    ax
+        call    far ptr _memset
+        add     sp,8
+        mov     word ptr [bp-2],0
+        jmp     f025D_0407
+f025D_02B5:
+        mov     bx,[bp-2]
+        shl     bx,1
+        mov     al,[bx+gFDEC]
+        mov     bx,[bp-2]
+        shl     bx,1
+        cmp     al,[bx+gFDEC+1]
+        jge     short f025D_02DB
+        mov     bx,[bp-2]
+        shl     bx,1
+        mov     al,[bx+gFDEC]
+        mov     bx,[bp-2]
+        shl     bx,1
+        mov     [bx+gFDEC+1],al
+f025D_02DB:
+        mov     bx,[bp-2]
+        shl     bx,1
+        cmp     byte ptr [bx+gFDEC+1],0
+        jne     short f025D_02EA
+        jmp     f025D_0370
+f025D_02EA:
+        mov     bx,[bp-2]
+        shl     bx,1
+        dec     byte ptr [bx+gFDEC+1]
+        mov     bx,[bp-2]
+        shl     bx,1
+        dec     byte ptr [bx+gFDEC]
+        mov     bx,[bp-2]
+        mov     al,[bx+gFD9A]
+        cbw
+        dec     ax
+        mov     di,ax
+        xor     si,si
+        jmp     short f025D_0368
+f025D_030B:
+        cmp     word ptr [bp+8],0
+        je      short f025D_033C
+        mov     ax,di
+        mov     dx,6
+        imul    dx
+        les     bx,[bp-6]
+        add     bx,ax
+        cmp     byte ptr es:[bx+si+55h],0
+        jne     short f025D_0367
+        mov     ax,di
+        mov     dx,6
+        imul    dx
+        mov     bx,[bp-6]
+        add     bx,ax
+        mov     al,[bp-2]
+        inc     al
+        mov     es:[bx+si+55h],al
+        jmp     f025D_0401
+f025D_033C:
+        mov     ax,di
+        mov     dx,6
+        imul    dx
+        les     bx,[bp-6]
+        add     bx,ax
+        cmp     byte ptr es:[bx+si+37h],0
+        jne     short f025D_0367
+        mov     ax,di
+        mov     dx,6
+        imul    dx
+        mov     bx,[bp-6]
+        add     bx,ax
+        mov     al,[bp-2]
+        inc     al
+        mov     es:[bx+si+37h],al
+        jmp     f025D_0401
+f025D_0367:
+        inc     si
+f025D_0368:
+        cmp     si,6
+        jl      short f025D_030B
+        jmp     f025D_0401
+f025D_0370:
+        mov     bx,[bp-2]
+        shl     bx,1
+        cmp     byte ptr [bx+gFDEC],0
+        jne     short f025D_037F
+        jmp     f025D_0404
+f025D_037F:
+        mov     bx,[bp-2]
+        shl     bx,1
+        dec     byte ptr [bx+gFDEC]
+        mov     bx,[bp-2]
+        mov     al,[bx+gFD9A]
+        cbw
+        dec     ax
+        mov     di,ax
+        mov     word ptr [gFE2C],1
+        xor     si,si
+        jmp     short f025D_03FC
+f025D_039D:
+        cmp     word ptr [bp+8],0
+        je      short f025D_03CF
+        mov     ax,di
+        mov     dx,6
+        imul    dx
+        les     bx,[bp-6]
+        add     bx,ax
+        cmp     byte ptr es:[bx+si+55h],0
+        jne     short f025D_03FB
+        mov     ax,di
+        mov     dx,6
+        imul    dx
+        mov     bx,[bp-6]
+        add     bx,ax
+        mov     al,[bp-2]
+        inc     al
+        neg     al
+        mov     es:[bx+si+55h],al
+        jmp     short f025D_0401
+f025D_03CF:
+        mov     ax,di
+        mov     dx,6
+        imul    dx
+        les     bx,[bp-6]
+        add     bx,ax
+        cmp     byte ptr es:[bx+si+37h],0
+        jne     short f025D_03FB
+        mov     ax,di
+        mov     dx,6
+        imul    dx
+        mov     bx,[bp-6]
+        add     bx,ax
+        mov     al,[bp-2]
+        inc     al
+        neg     al
+        mov     es:[bx+si+37h],al
+        jmp     short f025D_0401
+f025D_03FB:
+        inc     si
+f025D_03FC:
+        cmp     si,6
+        jl      short f025D_039D
+f025D_0401:
+        dec     word ptr [bp-2]
+f025D_0404:
+        inc     word ptr [bp-2]
+f025D_0407:
+        cmp     word ptr [bp-2],20h
+        jge     short f025D_0410
+        jmp     f025D_02B5
+f025D_0410:
+        pop     di
+        pop     si
+        mov     sp,bp
+        pop     bp
         ret
-_Ovl1_025D ENDP
+_SpendSpellSlot ENDP
 
         PUBLIC  _Ovl1_0416               ; @ ovl1:0416 stub
 _Ovl1_0416 PROC FAR
