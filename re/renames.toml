@@ -1278,3 +1278,12 @@ new = "gMouseHandlerInstalled"
 kind = "global"
 why = "1 when the mouse driver handler is installed: set to 1 at install (E1A72.ASM:214), cleared at uninstall (E1A72.ASM:200); E1A72.ASM:334 reads it to remove the handler only when installed; Main reads it to choose gMouseDisabled (E07C8.C:153); E07C8.C:36 says 'mouse event handler'"
 date = "2026-11-01"
+
+[[rename]]
+id = "ds:5E24=gCurAttenuation"
+addr = "ds:5E24"
+old = "gCurVolume"
+new = "gCurAttenuation"
+kind = "global"
+why = "the attenuation of the recorded sound gCurSound: 0 means no fade, a larger value fades the level further toward full attenuation (177D:01AF), and 10h or more skips the AdLib play (177D:012B); computed from f17A6_0F61(gSoundVolume, volume) at 177D:026E, used only in src/E177D.C"
+date = "2026-11-01"
