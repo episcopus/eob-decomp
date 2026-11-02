@@ -10988,7 +10988,7 @@ unit = "iov0"
 addr = "ovl0:2A99"
 size = 230
 evidence = ["ovl", "near", "frame"]
-name = "Ovl0_2A99"
+name = "PlayLogoSequence"
 level = "L2"
 match_flags = "-ml -O -Z -G"
 
@@ -11008,6 +11008,9 @@ unit = "iov0"
 addr = "ovl0:2C0D"
 size = 321
 evidence = ["ovl", "near", "frame"]
+name = "Dissolve"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "iov0_2d4e"

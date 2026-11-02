@@ -75,6 +75,11 @@ extern char far *gLogoFiles[4];         /*@ ds:1D32 */
    ds:2310 (0x98761234 at load) with a shift and xor sequence and returns a byte; 0FD9 calls
    it and discards the result, the animations use it to pick star positions and colours. */
 extern unsigned char RandomByte(void);  /*@ 0CDA:0006 */
+extern int RandomRange(int low, int high); /*@ 0A15:0009 */
+
+/* the permutation tables Dissolve shuffles (ovl0:2C0D): one word per screen column and row */
+extern int gOrderX[320];                /*@ ds:290C */
+extern int gOrderY[200];                /*@ ds:2B8C */
 
 /* the key code of the escape key, the one key the wait loop reacts to */
 #define KEY_ESC 0x1B
@@ -101,7 +106,7 @@ void DrawGrid(void);
 extern void ClipRect(int x1, int y1, int x2, int y2, int width, int height, int extra1, int extra2); /*@ 0986:000E */
 void LoadPalette(char far *name);
 void LoadPackedImage(char far *name, int srcKind, int dstKind);
-void Dissolve(int x, int y, int width, int height, int fromPage, int toPage);
+void Dissolve(int x, int y, unsigned width, unsigned height, int fromPage, int toPage);
 void PlaySound(int sound);
 
 /* Functions of this file, in address order (forward declarations: a call to one defined
@@ -377,7 +382,60 @@ void PlayLogoSequence(void);
     FileClose(slot);
     Unpack4((char far *)src + 8, dst, 0xFA00);
 }
-/*@ ovl0:2C0D stub */ void Dissolve(int x, int y, int width, int height, int fromPage, int toPage) {}
+/* ovl0:2C0D: copies the rectangle (x, y, width, height) pixel by pixel from the page
+   `fromPage` to the page `toPage`, in a random order: two permutation tables (gOrderX for the
+   columns at ds:290C, gOrderY for the rows at ds:2B8C) are filled 0,1,2,... and then shuffled
+   with RandomRange; the copy walks the columns in order and the shuffled rows cyclically, so
+   the pixels appear to dissolve in. gDrawPage selects the read page for gGetPixel and the
+   write page for gPutPixel and is restored at the end. Called by the logo sequence
+   (ovl0:2A99). `value` is the swap temporary of the two shuffles and the pixel colour of the
+   copy; `pos` is the shuffled table entry and then the x coordinate. */
+/*@ ovl0:2C0D */ void Dissolve(int x, int y, unsigned width, unsigned height, int fromPage, int toPage)
+{
+    int value;
+    int row;
+    int pos;
+    int i;
+    int savedPage;
+    int k;
+    int col;
+
+    for (col = 0; col < width; col++)
+        gOrderX[col] = col;
+    for (col = 0; col < height; col++)
+        gOrderY[col] = col;
+    for (col = 0; col < width; col++) {
+        pos = RandomRange(0, width - 1);
+        i = col;
+        value = gOrderX[pos];
+        gOrderX[pos] = gOrderX[i];
+        gOrderX[i] = value;
+    }
+    for (col = 0; col < height; col++) {
+        pos = RandomRange(0, height - 1);
+        i = col;
+        value = gOrderY[pos];
+        gOrderY[pos] = gOrderY[i];
+        gOrderY[i] = value;
+    }
+    savedPage = gDrawPage;
+    for (row = 0; row < height; row++) {
+        k = row;
+        for (col = 0; col < width; col++) {
+            pos = x + gOrderX[col];
+            i = y + gOrderY[k];
+            k++;
+            if (k >= height)
+                k = 0;
+            gDrawPage = fromPage;
+            value = gGetPixel(pos, i);
+            gDrawPage = toPage;
+            gPutPixel(pos, i, value);
+        }
+    }
+    gDrawPage = savedPage;
+}
+
 /* ovl0:2D4E: plays the game sound numbered `sound` (the argument is an index, not a driver
    number). The driver number comes from gSoundMap (a byte; 0xFF means silence). gSoundCard
    selects the path: 1 (AdLib) queues the driver number and returns, 2 (PC speaker) and 3
