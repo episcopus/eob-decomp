@@ -3191,7 +3191,7 @@ unit = "e0de8"
 addr = "0DE8:01D7"
 size = 40
 evidence = ["near", "frame"]
-name = "IsWeaponKind"
+name = "IsKind2Or3"
 level = "L2"
 match_flags = "-ml -O -Z"
 

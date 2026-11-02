@@ -2180,6 +2180,24 @@ why = "ovl2:078D loads the INTRO screen into gOverlayBuf, draws two option-panel
 date = "2026-11-02"
 
 [[rename]]
+id = "0DE8:01D7=IsKind2Or3"
+addr = "0DE8:01D7"
+old = "IsWeaponKind"
+new = "IsKind2Or3"
+kind = "function"
+why = "0DE8:01D7 returns 1 when the item type's m0E low seven bits are 2 or 3; the old name claimed a weapon, but UseItem sends kind 2 to UseCarriedItem and kind 3 to UseItemByKind (src/E0DE8.C:471-485), so the name now says what the function tests"
+date = "2026-11-02"
+
+[[rename]]
+id = "08E6:15B4=Obj15B4"
+addr = "08E6:15B4"
+old = "f08E6_15B4"
+new = "Obj15B4"
+kind = "function"
+why = "src/E08E6.C:1039 defines Obj15B4(char who, int value); this file's extern and call use the same address 08E6:15B4"
+date = "2026-11-02"
+
+[[rename]]
 id = "ovl3:031A=FreeSlotTables"
 addr = "ovl3:031A"
 old = "FreeEffectTables"
