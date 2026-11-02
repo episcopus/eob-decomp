@@ -195,17 +195,21 @@ Round 1 (at 01237b0). `make match FILE=src/EOV3.C`: cmatch 23 of 23 functions ma
   (:670-671). Add them.
   Fixed in cd7af2f: the header now names LoadLevelOp (122E:1AAB, through the 210C:007A stub), the
   gFlags849E bit 2 clear and set, the 0x400 item-list head clear, PlaySound(0) and gFB45 = 1.
-- [ ] should src/EOV3.C:804-810 (SaveGame header): omits `ResetLevel()` at :819, which runs first. Say that
+- [x] should src/EOV3.C:804-810 (SaveGame header): omits `ResetLevel()` at :819, which runs first. Say that
   the INVENT reload (:846) happens only when every write succeeded (:829). The probe FileOpen/FileClose of
   EOBDATA.SAV before the mode-2 open (:825-826) is not mentioned.
   Fixed in 0bd5b44: the header now names ResetLevel, the EOBDATA.SAV probe, and that the INVENT reload
   runs only when every write succeeded. Reopened in round 2: the reload is not gated on the writes.
-- [ ] should src/EOV3.C:857-858 (LoadGame header): "draws each alive character's 0x514-byte sprite out of
+  Fixed in 89e940a (the reopened point): the header now says the `if (ok)` at :853 follows `ok = 1`, so the
+  reload runs after the writes unconditionally and the return value reports them.
+- [x] should src/EOV3.C:857-858 (LoadGame header): "draws each alive character's 0x514-byte sprite out of
   gOverlayBuf". The code cuts a 4 by 32 cell with gFn8082 (:919), unpacks it into rec->sprite (:920) and
   frees it (:921). It does not draw. "alive" is not evidenced: rec->m01 is "status bits; 0 when the slot is
   empty" (:116), so the test is "occupied". Say "cuts" and "occupied", or give the evidence for alive.
   Fixed in 0bd5b44: the header now says it cuts a 4 by 32 cell, unpacks it into the sprite buffer and
   frees it, for each occupied character (m01 nonzero). Reopened in round 2: the cut also needs m22 >= 0.
+  Fixed in 89e940a (the reopened point): the header now says a character with m01 nonzero and m22 >= 0 is
+  cut, and one with m01 nonzero and m22 < 0 sets `flag` at :951 instead.
 - [x] should src/EOV3.C:610-615, 618-620 (LoadMapScreen, `recIndex`): it is a timer slot index (index*2 into
   g5BCC and g5BDC), not a record index. RegisterWallObject uses `recordIndex` for the wall chain. Rename the
   local (e.g. timerIdx) so one word does not name two things.
