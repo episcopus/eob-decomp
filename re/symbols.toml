@@ -5871,6 +5871,7 @@ evidence = ["segment"]
 name = "_Int3FHandler"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1a72_00da"
@@ -5881,6 +5882,7 @@ evidence = ["far"]
 name = "InitMouse"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1a72_0285"
@@ -5891,6 +5893,7 @@ evidence = ["far", "frame"]
 name = "RemoveMouseHandler"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1a72_02a6"
@@ -5901,6 +5904,7 @@ evidence = ["far", "frame"]
 name = "IsMouseInRect"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1a72_02fa"
@@ -5911,6 +5915,7 @@ evidence = ["far"]
 name = "_EnableInterrupts"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1a72_02fc"
@@ -5921,6 +5926,7 @@ evidence = ["far"]
 name = "_DisableInterrupts"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1a72_02fe"
@@ -5931,6 +5937,7 @@ evidence = ["frame"]
 name = "_SetFarPointer"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1a72_033a"
@@ -5941,6 +5948,7 @@ evidence = ["frame"]
 name = "_GetFarPointer"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1aa6_000f"
