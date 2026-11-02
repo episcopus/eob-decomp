@@ -297,6 +297,22 @@ def compare(fname, a: Build, b: Build, at_a: int, at_b: int, length: int, orig: 
                 return fail(k, "near call to %s, original reaches %05X" % (func_of[pub], got))
             k += 2
             continue
+        if (a.image[pa] == 0x9A and orig.image[po:po + 3] == b"\x90\x0E\xE8" and pa + 3 in a.relocs
+                and orig.overlay is not None):
+            # TLINK's overlay build rewrites a far call to a function of the same overlay segment as
+            # nop; push cs; call near (90 0E E8 rel16, same 5 bytes); the compiler emitted the far
+            # call (a call to a function defined later in the file). Ours is the far call: the same
+            # function by name, the original's near call reaching its address.
+            target = a.word(pa + 3) * 16 + a.word(pa + 1)
+            pub = a.by_linear.get(target)
+            if pub not in func_of:
+                return fail(k, "far call to %05X, not a function of this file (original nop; push cs; call near)" % target)
+            seg, off = funcs[func_of[pub]]
+            got = (po + 5 + struct.unpack_from("<h", orig.image, po + 3)[0]) & 0xFFFF
+            if not isinstance(seg, str) or got != off:
+                return fail(k, "far call to %s, original reaches %04X by nop; push cs; call near" % (func_of[pub], got))
+            k += 5
+            continue
         if pa + 2 in a.relocs and pa not in a.relocs and pa + 1 not in a.relocs:
             # the offset of a far pointer: a function (ours: annotated or library), or data
             target = a.word(pa + 2) * 16 + a.word(pa)

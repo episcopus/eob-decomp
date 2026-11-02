@@ -58,6 +58,7 @@ Examples: `src/E0CF7.C`, `src/E07A9.C` (whole units), `src/E08E6.C` (a jump tabl
 | one `les bx` for two tests that both `continue` | one `if (a || b) continue;` (two `if`s put a label between them and reload) |
 | case bodies of a jump table in some order | the `case` labels in that order in the source |
 | `inc sp; inc sp` or `add sp,4` after calls, `pop cx` nowhere | the unit was compiled with `-G`: `/*@flags -ml -O -Z -G */` |
+| `nop; push cs; call near` (90 0E E8) in overlay code | a call to a function defined later in the same file: the compiler emits a far call and TLINK's overlay build rewrites it in place; write the call normally, `make match` accepts it (eov6, 2026-11-01). A function defined earlier gives `push cs; call near` without the nop |
 | `push ss; lea ax,[bp-n]; push ax; push ds; mov ax,offset; push ax; mov cx,n; call F_SCOPY@` | a local ARRAY initialised from a list, `char a[6] = { 0, ... };` (a struct initialised or assigned gives `lea ax` before `push ss`) |
 | `mov ax,[x]; and ax,K; or ax,0; je` where ours is `test word [x],K` | a bit test of a `long`: declare the field or variable `long` |
 | identical jump tails kept separately (several `case`s ending in the same store, each with its own copy), where our build merges them into one | the unit was compiled through the assembler (`TCC -B`, which inline `asm` forces): `/*@flags -ml -O -Z -B */`; `make match` then runs `TCC -S` and TASM `/ml /jNOSMART /m2` (e14ef, e1414, 2026-11-01) |
