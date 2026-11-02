@@ -1,20 +1,22 @@
-/* Module at EOB.EXE 07A9:000A (487 bytes, the whole code segment): Turbo C++ 1.00, -ml -Z -O.
-   StartupAlloc (07A9:000A) runs first. In code order: it makes the start-up far allocations
-   through MemAlloc (7500 bytes at ds:8DCA, 6000 at ds:F43E, 120 at ds:DCAC the 120-byte sound map
-   (game number to driver number), read from the driver file, 4096 at ds:DCFC, 1600 at ds:F534
-   the ITEMRMP buffer; the sizes are the MemAlloc arguments at 07A9:002F, 0046, 005D, 0074 and
-   008B, and whitepaper 4 names only ds:F534 and ds:DCAC), reads the segments of slots 7, 5 and 3
-   from the 19EC:0002 page/buffer table (ds:FC0C), loads the sound driver (177D:000A, 07A9:00D2),
-   records the shared unpack work buffer as gSegsFC0C[7] with size 0xFC00 (1B82:0217, 07A9:00DF;
-   0xFC00 is the SetUnpackBuffer size argument in every video mode, while slot 7's own block is
-   0xCB20 bytes in cases 0 to 3, src/E07C8.C:213, 222, 231, 237, and 0xFC00 only in case 4,
-   src/E07C8.C:247), clears ds:810E (07A9:00E6), loads the item tables (LoadItemData, 07A9:00EC),
-   selects the 6x6 font as the current font (1A47:0169(gA9C0), 07A9:00F9) and reads ITEMRMP
-   (LoadDecorateIcons, Ovl2 entry 8, 07A9:0100). It ends by running the map loop (RunMapLoop,
-   0ACD:0E8A, 07A9:0105), which runs the game. The second function (07A9:010C SetMouseItem)
-   redraws the item icon for the current slot (the one the mouse shows, ds:FBCE). Overlay
-   entries are reached through the stub at 2106 (entries 2 and 8). Placeholder names remain where
-   no evidence is given. */
+/* Module at EOB.EXE 07A9:000A (487 bytes, the TLINK code segment that starts at 07A9:000A):
+   Turbo C++ 1.00, -ml -Z -O. The 10 bytes before the segment, 07A9:0000 to 07A9:0009
+   (mov [0071],ax; mov ax,[88A2]; mov [006F],ax; ret), are also code, but no unit covers them
+   (re/units.toml). StartupAlloc (07A9:000A) runs first. In code order: it makes the start-up far
+   allocations through MemAlloc (7500 bytes at ds:8DCA, 6000 at ds:F43E, 120 at ds:DCAC the
+   120-byte sound map (game number to driver number), read from the driver file, 4096 at ds:DCFC,
+   1600 at ds:F534 the ITEMRMP buffer; the sizes are the MemAlloc arguments at 07A9:002F, 0046,
+   005D, 0074 and 008B, and whitepaper 4 names only ds:F534 and ds:DCAC), reads the segments of
+   slots 7, 5 and 3 from the 19EC:0002 page/buffer table (ds:FC0C), loads the sound driver
+   (177D:000A, 07A9:00D2), passes the slot 7 segment (gSegsFC0C[7], the word at ds:FC1A) and size
+   0xFC00 to SetUnpackBuffer (1B82:0217, 07A9:00DB/00DF; 0xFC00 is the SetUnpackBuffer size
+   argument in every video mode, while slot 7's own block is 0xCB20 bytes in cases 0 to 3,
+   src/E07C8.C:213, 222, 231, 237, and 0xFC00 only in case 4, src/E07C8.C:247), clears ds:810E
+   (07A9:00E6), loads the item tables (LoadItemData, 07A9:00EC), selects the 6x6 font as the
+   current font (1A47:0169(gA9C0), 07A9:00F9) and reads ITEMRMP (LoadDecorateIcons, Ovl2 entry 8,
+   07A9:0100). It ends by running the map loop (RunMapLoop, 0ACD:0E8A, 07A9:0105), which runs the
+   game. The second function (07A9:010C SetMouseItem) redraws the item icon for the current slot
+   (the one the mouse shows, ds:FBCE). Overlay entries are reached through the stub at 2106
+   (entries 2 and 8). Placeholder names remain where no evidence is given. */
 
 /* Meaningful constants of this unit. */
 /* Entry14.flags bit that gates the icon colour-row load in SetMouseItem (07A9:015C); the same test
@@ -41,7 +43,8 @@ struct Entry14 {            /* 14-byte records at ds:8DD2 (ITEM.DAT records, whi
                                and 0x10 (0DE8:0890); the byte is decremented (0EF3:266E) and stored
                                (122E:1D2B). */
     signed char icon;       /* +1: the item's icon number, an index into gIconsDDE4 (read at
-                               07A9:0141, sign-extended by the cwde at 07A9:0145) */
+                               07A9:0141, sign-extended by the cbw at 07A9:0145; the byte is 98h,
+                               which tools/re/disasm.py mislabels cwde, the 32-bit form) */
     signed char m02;        /* +2: compared by 0D1C:00F1 and 0D1C:01CA (src/E0D1C.C) */
     char pad03;
     int m04;                /* +4: set to -1 by 0D1C:01CA (src/E0D1C.C) */
@@ -61,18 +64,20 @@ extern unsigned char far *gSoundMap; /*@ ds:DCAC */  /* the 120-byte sound map (
 extern void far *gBufDCFC; /*@ ds:DCFC */  /* start-up far allocation, 4096 bytes (07A9:0074) */
 extern char far *gBufF534; /*@ ds:F534 */  /* the 1600-byte ITEMRMP buffer (07A9:008B,
                                               whitepaper 4.4) */
-extern void far *gSegDCA6; /*@ ds:DCA6 */  /* slot 7's buffer segment, f19EC_0002(7) = MK_FP(gSegsFC0C[7], 0)
-                                              (src/E19EC.C:20, 07A9:00A3). One entry of the table at ds:FC0C,
-                                              not the table; it is the same word SetUnpackBuffer gets at
-                                              07A9:00DB (`push word [ds:FC1A]`) */
+extern void far *gSegDCA6; /*@ ds:DCA6 */  /* the far pointer f19EC_0002(7) returns (src/E19EC.C:20,
+                                              07A9:00A3): offset 0, segment gSegsFC0C[7], the word at
+                                              ds:FC1A that SetUnpackBuffer gets at 07A9:00DB */
 extern void far *gSegDF4E; /*@ ds:DF4E */  /* slot 5's buffer segment, f19EC_0002(5) (07A9:00BA); the
                                               action screen's swap buffer: Action01E3 blits it to the
                                               action field through gFn804A (src/E0ACD.C:266), Action0264
                                               copies a 0xF3-byte character record through it (three
                                               Unpack0 copies, src/E0ACD.C:304-306), and FindWordPanel
                                               passes it to gFn807E and gFn804A (src/EOV2.C:482, 522) */
-extern void far *gSegEFC2; /*@ ds:EFC2 */  /* slot 3's buffer segment, f19EC_0002(3) (07A9:00CB); written
-                                              only, no reader found: Purpose unknown */
+extern void far *gSegEFC2; /*@ ds:EFC2 */  /* slot 3's buffer segment, f19EC_0002(3) (07A9:00CB); overlay 3
+                                              reads the far pointer (ds:EFC2 and ds:EFC4): ovl3:0815, 0833,
+                                              0855 (function at ovl3:07A5), ovl3:1186, 119E, 11B6 (ovl3:1147),
+                                              ovl3:1396, 13C0, 14BF (ovl3:1368), ovl3:15C1, 164D (ovl3:15B9, the
+                                              function that calls SetMouseItem). Purpose unknown */
 /* the page/buffer segment table (src/E07C8.C:49, src/E19EC.C:15), whose eighth word at ds:FC1A
    is slot 7, the segment gSegDCA6 holds (f19EC_0002(7), 07A9:00A3). */
 extern unsigned gSegsFC0C[]; /*@ ds:FC0C */
@@ -94,30 +99,37 @@ extern int gFBCE; /*@ ds:FBCE */  /* the item index shown by the mouse (src/E0D1
 extern unsigned char gFBD2; /*@ ds:FBD2 */  /* bit 0 gates the icon colour row in 0D1C:070F
                                                 (src/E0D1C.C:50); read at 07A9:0163 and
                                                 src/E0D1C.C:476 */
-extern int g8102; /*@ ds:8102 */  /* graphics choice, the argument digit after 0199 (src/E07C8.C:27);
-                                     SetMouseItem tests it, and the colour-row reading ("a colour
-                                     row exists") is inferred from that test (07A9:0188) */
-/* a far function pointer called with a pointer to a colour table: a 16-byte row of the 1600-byte
-   ITEMRMP buffer (ds:F534 + n<<4), the one-byte dummy at ds:0090, or the tables at ds:1CD3 and
-   ds:1CE3 that other callers pass (08E6:0DFC `mov ax,0x1ce3` and 08E6:0E02 `mov ax,0x1cd3`,
-   both before `lcall [ds:80D2]` at 08E6:0E06). That the rows are 16 bytes is [H] for ITEMRMP
-   (whitepaper 4.4: 100 rows of 16 colours); the two DGROUP tables are not measured here, so
-   [H] there too. No writer of ds:80D2 in the resident code (a literal-address search). */
-extern void (far *gFn80D2)(void far *map); /*@ ds:80D2 */
+extern int g8102; /*@ ds:8102 */  /* the mode word SetMouseItem tests at 07A9:016A (the colour row
+                                     against the ds:0090 dummy) and passes to f17A6_197E (07A9:018F);
+                                     the switch at 17A6:199E tests it (cases 0, 2 and 3). src/ reads
+                                     it three ways: "graphics choice" (src/E07C8.C:27), "the video
+                                     mode ... 3 and 4 select the 6-bit cells" (src/E1DE7.C:46) and
+                                     "the video mode the game initialised (3 is CGA-compatible)"
+                                     (src/E082C.C:41) */
+/* a far function pointer whose argument is a colour row (an array of colour indices): a 16-byte
+   row of the 1600-byte ITEMRMP buffer (ds:F534 + n<<4), the one-byte dummy at ds:0090, or the
+   colour tables at ds:1CD3 and ds:1CE3 that other callers pass (08E6:0DFC `mov ax,0x1ce3` and
+   08E6:0E02 `mov ax,0x1cd3`, both before `lcall [ds:80D2]` at 08E6:0E06). That the rows are 16
+   bytes is [H] for ITEMRMP (whitepaper 4.4: 100 rows of 16 colours); the two DGROUP tables are
+   not measured here, so [H] there too. No writer of ds:80D2 in EOB.EXE or the overlays (a
+   literal-address search). */
+extern void (far *gFn80D2)(void far *colors); /*@ ds:80D2 */
 extern void far *g80E2; /*@ ds:80E2 */  /* Purpose unknown: only passed as the third argument of
                                            f17A6_197E (07A9:0197) */
 extern void far *gDF48; /*@ ds:DF48 */  /* the 0x12C-byte item description buffer (src/EOV2.C:253, 292):
-                                           LoadItemSheets (src/EOV2.C:255) allocates it with
-                                           MemAlloc(0x12C, 0) and stores it here (ovl2:041D calls
-                                           00C0:0007 with (300, 0), ovl2:0425..0428 stores the returned
-                                           far pointer) */
+                                           LoadItemSheets (src/EOV2.C:255) allocates it there and stores
+                                           it here (ovl2:0425..0428). The allocation is the far call at
+                                           ovl2:041D (size 0x12C and flags 0 pushed at ovl2:0415..041C); its
+                                           segment word 00C0 is an overlay segment fixup, a byte offset into
+                                           TLINK's segment table (index times 8, docs/design/WHITEPAPER.md:98),
+                                           so index 24, paragraph 19BC (build/re/eob.json), the segment that
+                                           holds MemAlloc at offset 7: the callee is MemAlloc [H] */
 /* one far pointer per icon to the image it holds, indexed by icon number; slot 0 holds the
-   pointer shape (src/EOV2.C:209-211). ovl2:0029..0033 writes entry 0 (ds:DDE4 and
+   pointer shape (src/EOV2.C:205-211). ovl2:0029..0033 writes entry 0 (ds:DDE4 and
    ds:DDE6) from a separate call through [ds:8086] with cell (0,0) and the sheet gOverlayBuf
    (ds:113F, src/EOV2.C:149, passed to gGetSpriteCell at src/EOV2.C:209); the loop at ovl2:03D0
    starts with `mov si,1` and fills entries 1..0x58 from the same call with a 16x16 cell position
-   on the 20-per-row ITEMICN sheet (the string at ds:677D). That entry 0 is "none" is a reading;
-   the bytes show only that it comes from a different source. */
+   on the 20-per-row ITEMICN sheet (the string at ds:677D). */
 extern void far *gIconsDDE4[]; /*@ ds:DDE4 */
 
 extern void far *MemAlloc(unsigned long size, int flags); /*@ 19BC:0007 */
@@ -135,10 +147,14 @@ extern void RunMapLoop(void); /*@ 0ACD:0E8A */
 extern void SetCurrentItem(int n); /*@ 0D1C:0304 */
 extern void f0BD2_05B5(int n); /*@ 0BD2:05B5 */
 extern void DrawText(char far *text); /*@ 1DE7:060A */
-/* Purpose unknown: the call (07A9:0193..01B1) passes the icon far pointer first, then gDF48 (the
-   item description buffer), g80E2 and g8102, in that order; what 17A6:197E does with them is not
-   established. */
-extern void f17A6_197E(void far *icon, void far *desc, void far *scratch, int mode); /*@ 17A6:197E */
+/* 17A6:197E copies from the first argument to the second through a translation table: it loads
+   ds:si from the first (17A6:1989-198C; the loop uses movsw and lodsb) and es:di from the second
+   (17A6:198F-1992; stosw and stosb); the third is the xlatb table, its offset and segment in BX
+   and DX (17A6:1995, 1998) with `mov ds,dx` before each xlatb (17A6:19BE, 19E4, 19F2); the mode
+   word (17A6:199B) picks the path (cases 0, 2 and 3 at 17A6:199E to 19C8). The call
+   (07A9:0193..01B1) passes the icon far pointer first, then gDF48 (the item description buffer),
+   g80E2 (Purpose unknown, its only reader is 07A9:0197) and g8102. */
+extern void f17A6_197E(void far *src, void far *dst, void far *xlat, int mode); /*@ 17A6:197E */
 /* 1BB1:0002 stores the hot-spot offset and a pointer shape record; the caller passes the hot spot
    (8,8) when n > 0 and (0,0) otherwise, and the record gIconsDDE4[n] in both cases (see below). */
 extern void SetMousePointerShape(int hotX, int hotY, void far *icon); /*@ 1BB1:0002 */
@@ -151,10 +167,10 @@ extern void SetMousePointerShape(int hotX, int hotY, void far *icon); /*@ 1BB1:0
    ds:F534 the ITEMRMP buffer; the sizes are the MemAlloc arguments at 07A9:002F, 0046, 005D, 0074
    and 008B, and whitepaper 4 names only ds:F534 and ds:DCAC), reads the segments of slots 7, 5 and
    3 from the 19EC:0002 page/buffer table (ds:FC0C), loads the sound driver (177D:000A, 07A9:00D2),
-   records the shared unpack work buffer as gSegsFC0C[7] with size 0xFC00 (1B82:0217, 07A9:00DF;
-   see the header for the size's relation to the video mode), clears ds:810E (07A9:00E6), loads the
-   item tables (LoadItemData, Ovl2 stub entry 2, 07A9:00EC), selects the 6x6 font as the current
-   font (1A47:0169(gA9C0), 07A9:00F9), and reads ITEMRMP (LoadDecorateIcons, Ovl2 stub entry 8,
+   passes the slot 7 segment (gSegsFC0C[7], the word at ds:FC1A) and size 0xFC00 to SetUnpackBuffer
+   (1B82:0217, 07A9:00DB; see the header for the size's relation to the video mode), clears ds:810E
+   (07A9:00E6), loads the item tables (LoadItemData, Ovl2 stub entry 2, 07A9:00EC), selects the 6x6
+   font as the current font (1A47:0169(gA9C0), 07A9:00F9), and reads ITEMRMP (LoadDecorateIcons, Ovl2 stub entry 8,
    07A9:0100). It ends by running the map loop (RunMapLoop, 0ACD:0E8A, 07A9:0105), which runs the
    game. Sets ds:F43C = 1 and ds:FB45 = 0. */
 /*@ 07A9:000A */ void StartupAlloc(int argc, char far * far *argv)
