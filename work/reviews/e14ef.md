@@ -1,6 +1,71 @@
 # Review: e14ef
 
-# Round 11
+# Round 12
+
+Reviewer: rev-haiku
+Commit reviewed: 85f5594 (main and review/e14ef at the same commit; src/E14EF.C last changed in 96ea09b; `make match FILE=src/E14EF.C`: 6 of 6, 1410 bytes, exit 0; `make readability UNIT=e14ef`: 0 findings)
+
+Playbook 70. Judge what a matching file can still get wrong: names, types, comments, structure.
+The matcher already proved the bytes; do not re-prove them, read for meaning.
+
+Round 12. Round 11's fixes hold: the FindMaskBit bound reads "below the number of set bits from shift up" (:103-105),
+the g5D1A test reads "or" (:56-58), the `top` line names the pointer row (:302) and the click row (:326), the
+gMouseDisabled store is cited at src/E1A72.ASM:325, and the BlinkText "confirm" wording is tagged [H]. Re-checked by
+hand this round: the callers of DrawOptionList, UpdateOptionList, CountMaskBits and FindMaskBit (src/EOV0.C:1148-1149,
+:1193-1195, :1203, :1215, :1244-1246, :1253, :1257, :1259-1262; src/EOV2.C:380, :383), the owners of the ring and
+pointer functions (src/E1AAD.ASM:337-338, :350-351, :396, :405, :529-531, :1140-1182; src/E1BBE.ASM:493-506,
+:516-529; src/E1A72.ASM:32-33, :65, :73, :100, :325, :386-387, :410-411), the reader and writers of the globals
+(src/E16A5.C:151-152, :224-225, :240-241; src/E082C.C:465; src/EOV0.C:1204; src/E0ACD.C:886; src/E1C0E.C:60-61;
+src/E1DE7.C:34; src/E1A16.C:11; src/E07C8.C:31-33; docs/design/WHITEPAPER.md:119), and the claims that no src/ file
+writes ds:5D1A and that no src/ file reads the `pad` field. All hold. Four shoulds and two notes below; no must-fix.
+
+## Findings
+
+Each finding is a checkbox. `must-fix` blocks `make review-pass` until a decompiler ticks it off
+(with the commit that fixes it); `should` and `note` do not block.
+
+- [ ] should src/E14EF.C:180 and :296 are over 240 characters (the file's other comment lines wrap near 110). Wrap them
+  like the rest of the file; the words stay as they are. (evidence: awk over the file: :180 246 characters, :296 283;
+  :283 and :295 run about 130)
+- [ ] should src/E14EF.C:59-60 and :63-64 (g8140, g8142): "x of the last click" and "y of the last click" cite only the
+  stores (src/E1AAD.ASM:396 and :405). The x and y names come from the copies on the way: the ring word goes through
+  g80F3 (:391, :393) into g8140 (:396), and g80F5 (:400, :402) into g8142 (:405), and src/E1AAD.ASM:24 and :25 name
+  g80F3 "x of the recorded mouse event" and g80F5 "y of the recorded mouse event". Cite those so the name has its
+  evidence in the comment. (evidence: src/E1AAD.ASM:24-25, :388-396, :397-405)
+- [ ] should src/E14EF.C:251 and :280 (`counter`): "it is bumped once and never read". The increment at :280 runs on every
+  call, so "once" reads as one call or one time ever. Say "bumped on every call and never read (QUIRK 14EF:027C)".
+  (evidence: src/E14EF.C:280; the three callers pass 0L, src/EOV0.C:1149, :1215, :1257, and src/EOV2.C:383)
+- [ ] should src/E14EF.C:86-88 (LockHidePointer): the two hook descriptions are quoted as "far fn (g8172/g8174)" and
+  "far fn (no arguments)", with src/E1BBE.ASM:130-131 and src/E1A72.ASM:32-33 as the cites. The first two quotes are
+  src/E1BBE.ASM:130 and :131 wording; src/E1A72.ASM:32-33 says "indirect far function, no arguments" and "indirect far
+  function, takes one far pointer argument". Quote each cite's own words, or say the meaning in plain words.
+  (evidence: src/E1BBE.ASM:130-131; src/E1A72.ASM:32-34)
+- [ ] note src/E14EF.C:202 (DrawOptionList): `selEntry = FindMaskBit(panelDef->sel, mask, shift)` runs before the `rows`
+  test and without the wrap that UpdateOptionList applies at :283. FindMaskBit's precondition (n below the count of set
+  bits from shift up, :103-105) then depends on the caller. PickClass and PickAlignment set `height` to the count and
+  `sel` to 0 with no test for a zero count (src/EOV0.C:1193-1195, :1244-1246), and with a count of 0 the first call
+  finds no set bit and loops. Whether any race or class gives a count of 0 is not established from the game data. Not a
+  source edit for this unit; a question to settle with the data, and a reason for the next reader to keep the callers'
+  precondition in mind.
+- [ ] note routed, still stale in other owners' files (not edited here): re/renames.toml:775 and re/globals.toml:302 cite
+  "E14EF.C:227" and "E14EF.C:144" for the gMouseDisabled tests; those tests are now :299-301 and :209. tests/match/negative/
+  e14ef-no-assembler.C is a negative fixture and is not edited here. Round 11's routed notes stand.
+
+## Summary
+
+The unit is understandable from its source alone, and the names hold against their evidence: DrawOptionList,
+UpdateOptionList, IsPointInRect, FindMaskBit, CountMaskBits and BlinkText say what their code does, and the shared
+globals and callees agree with the other files of src/ (gPanels and its fields, gTextLeft and gTextTop, gFC7A, gFontWidth,
+g8140 and g8142, g8134, gMouseDisabled, gCursorX and gCursorY, the ring and pointer callees). No must-fix this round.
+The shoulds are wording and evidence: long comment lines, the x and y cites for g8140 and g8142, "bumped once" for
+`counter`, and the quotes for the two hook descriptions. The one note that may matter for behaviour is the DrawOptionList
+call to FindMaskBit with a zero count, which depends on game data. Placeholders are honest and need no change: gFC78,
+g5D1A, g8102 (meaning not established), g8134, g8140, g8142, `counter`, `extra` and `pad`. The matcher (6 of 6, exit 0)
+and the readability check (0 findings) were re-run on 85f5594. No matcher, spec or pin question; nothing escalated.
+
+---
+
+# Round 11 (kept)
 
 Reviewer: rev-haiku
 Commit reviewed: d3d5d75 (main and review/e14ef; `make match FILE=src/E14EF.C`: 6 of 6, 1410 bytes, exit 0;
