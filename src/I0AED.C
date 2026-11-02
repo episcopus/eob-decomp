@@ -1,20 +1,24 @@
-/* Unit at INTRO.EXE 0AED:000D (547 bytes, 3 functions): file loading and unpacking, the same module
-   EOB.EXE links at 1B82:0009 (src/E1B82.C, which this unit is a twin of except that the INTRO map
-   merged SetUnpackBuffer into Unpack's entry). LoadFile reads up to len bytes of a named file into a
-   buffer; LoadPacked takes two slot kinds, srcKind and dstKind, and f19EC_0002 turns each into the far
-   pointer (offset 0) of that slot's segment (MK_FP(gSegsFC0C[kind | 1], 0), a segment read from the
-   page/buffer table, not an allocation), reads a 2-byte length then the packed block and calls Unpack;
-   Unpack dispatches on the block's format byte to one of five unpackers (0B10:0000 for format 0 and
-   0CE9:0009/0109/0181/02C1 for formats 4/3/1/2), allocating a work buffer for formats 1 and 2 when the
-   shared buffer at gBufSeg/gBufSize is too small; SetUnpackBuffer records that shared buffer. Built as
-   C++ (the -P flag), as its twin E1B82 is: only the C++ front end keeps the format byte's sign
-   extension to long in Unpack's switch. WHITEPAPER 4.2 (WHITEPAPER.md:151) has the packed-file header
-   and the formats; WHITEPAPER 2.1.1, line 41, has the -P front end that keeps the sign extension. */
+/* Unit at INTRO.EXE 0AED:000D (547 bytes, 4 functions): file loading and unpacking, the same source
+   as src/E1B82.C, the module EOB.EXE links at 1B82:0009 (547 bytes, 4 functions). The correspondence
+   is a hand comparison, not `make twin`: every differing byte is an address field the two links place
+   differently (a far call target, a DGROUP offset, a segment word), except the five near code offsets
+   of the switch table at 0AED:0211 (1B82:020D), each four higher
+   than its EOB entry (0AED:00EB for 1B82:00E7, and so on), which twin.py does not relocate. The INTRO
+   map also folded SetUnpackBuffer into Unpack's range. LoadFile reads up to len bytes of a named file
+   into a buffer; LoadPacked takes two slot kinds, srcKind and dstKind, and f19EC_0002 turns each into
+   the far pointer (offset 0) of that slot's segment (MK_FP(gSegsFC0C[kind | 1], 0), a segment read
+   from the page/buffer table, not an allocation), reads a 2-byte length then the packed block and
+   calls Unpack; Unpack dispatches on the block's format byte to one of five unpackers (0B10:0000 for
+   format 0 and 0CE9:0009/0109/0181/02C1 for formats 4/3/1/2), allocating a work buffer for formats 1
+   and 2 when the shared buffer at gBufSeg/gBufSize is too small; SetUnpackBuffer records that shared
+   buffer. Built as C++ (the -P flag), as src/E1B82.C is: only the C++ front end keeps the format
+   byte's sign extension to long in Unpack's switch. WHITEPAPER 4.2 has the packed-file header and the
+   formats; WHITEPAPER 2.1.1 has the -P front end that keeps the sign extension. */
 
 /*@flags -ml -O -Z -G -P */
 /* -G (optimise for speed): the calls' arguments are cleaned up with `add sp,n` (0AED:0020, 0037,
    0042, 0065) or the two-byte `inc sp; inc sp` (0AED:0054, 00B0), where the -O -Z units use `pop cx`;
-   WHITEPAPER 2.1.1 (WHITEPAPER.md:39). */
+   WHITEPAPER 2.1.1 (the -G switches note). */
 
 #include <dos.h>
 
@@ -29,21 +33,22 @@ typedef union {
 } WorkBuffer;
 
 /* The format codes Unpack switches on (the unit comment describes each decoder). Format 1 is pinned
-   on the five EGA wall-set files and format 4 on the 131 files the oracle decodes (WHITEPAPER 4.2,
-   WHITEPAPER.md:153, 155); formats 2 and 3 have no pinned file (WHITEPAPER.md:155), so their codec
-   labels come from the bytes of 0CE9:0181 and 0CE9:0109 only. */
+   on the five EGA wall-set files and format 4 on the 131 files the oracle decodes (WHITEPAPER 4.2).
+   Formats 2 and 3 have no pinned file (WHITEPAPER 4.2), so their labels rest on the decoder code:
+   format 2 is 14-bit because 1D9A:03CC ReadCode2 reads its codes 14 bits at a time
+   (src/E1D9A.ASM:542; the file's unit comment at :11 names it); format 3's "literal and fill stream"
+   is this unit's own reading of the bytes, [H] (src/E1D9A.ASM:7). */
 #define FORMAT_STORED      0L  /* stored: Unpack0 copies the data */
 #define FORMAT_LZW_12      1L  /* 12-bit LZW (Unpack1, 3C00h work buffer) */
 #define FORMAT_LZW_14      2L  /* 14-bit LZW (Unpack2, FC00h work buffer) */
-#define FORMAT_LITERAL_FILL 3L /* a literal and fill stream (Unpack3) */
+#define FORMAT_LITERAL_FILL 3L /* [H] a literal and fill stream (Unpack3) */
 #define FORMAT_LCW         4L  /* LCW (Unpack4) */
 
 /* the MemAlloc flag that returns a paragraph-aligned, offset-0 block: the bit is defined at
-   src/E19BC.C:46, and the block shape it gives is at src/E19BC.C:80-83 */
+   src/E19BC.C:49, and the block shape it gives is at src/E19BC.C:94-102 */
 #define MEMALLOC_ALIGNED 0x20
-/* work-buffer sizes of formats 1 and 2 (docs/design/WHITEPAPER.md:151); UNPACK_BUFFER_SIZE in
-   src/E07A9.C:39 is the size of the shared buffer, a different thing that happens to equal format
-   2's */
+/* work-buffer sizes of formats 1 and 2 (WHITEPAPER 4.2); UNPACK_BUFFER_SIZE in src/E07A9.C:39 is the
+   size of the shared buffer, a different thing that happens to equal format 2's */
 #define FORMAT1_BUFFER_SIZE 0x3C00
 #define FORMAT2_BUFFER_SIZE 0xFC00
 
@@ -107,7 +112,7 @@ void Unpack(char far *src, void far *dst);
     src = f19EC_0002(srcKind);
     dst = f19EC_0002(dstKind);
     slot = FileOpen(name, 1);   /* mode 1: read (src/E1C0E.C:166) */
-    /* the packed block's byte length: WHITEPAPER 4.2 (WHITEPAPER.md:151) gives this u16 as the "size
+    /* the packed block's byte length: WHITEPAPER 4.2 gives this u16 as the "size
        of the rest (some files: the file size)"; LoadPacked reads up to that many bytes after the
        word, so for a "file size" file it asks for more bytes than the block holds, and FileRead
        stops at the end of the file (up to len bytes, src/E1C0E.C:270-271) */
@@ -128,12 +133,14 @@ void Unpack(char far *src, void far *dst);
               gBufSize is large enough, otherwise a MemAlloc'd block freed after the call;
      4: Unpack reads the long unpacked size at block offset +2 and passes it on as Unpack4's length
         (the decoder uses only its low word, 0CE9:003B/0043), skips the u16 byte count at block offset
-        +6 (WHITEPAPER 4.2 (WHITEPAPER.md:151) calls it palette bytes [H]; no pinned file shows a
-        non-zero value) and calls Unpack4 with the data at block offset +8+skipLen.
+        +6 (WHITEPAPER 4.2 calls it "bytes of palette that follow"; this unit's own reading is [H],
+        since no pinned file shows a non-zero value) and calls Unpack4 with the data at block offset
+        +8+skipLen.
    Cases 1 to 3 pass only segments (FP_SEG(src), FP_SEG(dst) and the work segment), so they rely on
    the block and the output sitting at offset 0, as LoadPacked's f19EC_0002 pointers do (src/E19EC.C:20);
-   the decoders take segments (src/I0CE9.ASM, if written, :156, :245), so a port of Unpack must keep
-   that rule. The original sign-extends the format byte (cbw; cwd) and switches on the int in AX. The
+   the decoders take segments (src/E1D9A.ASM:163-174, Unpack3's src at [bp+6] and dst at [bp+8];
+   src/E1D9A.ASM:285 mov es,[bp+8] in Unpack1), so a port of Unpack must keep that rule. The original
+   sign-extends the format byte (cbw; cwd) and switches on the int in AX. The
    C++ front end (-P) emits those bytes; the C front end folds the extension away (re/symbols.toml note
    on 1B82:00C7). The case bodies follow the source order 0, 3, 1, 2, 4 (0AED:00EB, 0111, 0122, 017A,
    01D0), and the table at cs:0211 is indexed by format value.
@@ -157,11 +164,12 @@ void Unpack(char far *src, void far *dst);
         break;
     case FORMAT_LZW_12:
         if (gBufSize < FORMAT1_BUFFER_SIZE) {
-            /* QUIRK 0AED:012A: the MemAlloc result is stored and passed on untested. MemAlloc returns
-               NULL only when the failure hook returns 0 (src/E19BC.C:73-77, the rule is described at
-               src/E19BC.C:49-53); the installed hook AllocationFailure ends in ShutdownGame, which
-               does not return (src/E07C8.C:359-366), so the NULL is not reached in practice, but the
-               missing test is what the bytes show */
+            /* QUIRK 0AED:012A: the MemAlloc result is stored and passed on untested. MemAlloc
+               (19BC:0007) returns NULL only when the failure hook returns 0 (the retry at 19BC:0031
+               to 0069, the NULL return at 19BC:0073 to 0077, src/E19BC.C:88-92); the installed hook
+               AllocationFailure (07C8:0625, src/E07C8.C:492) ends in ShutdownGame (07C8:058A,
+               src/E07C8.C:447), which does not return, so the NULL is not reached in practice, but
+               the missing test is what the bytes show */
             work.block = MemAlloc((unsigned long)FORMAT1_BUFFER_SIZE, MEMALLOC_ALIGNED);
             Unpack1(FP_SEG(src), FP_SEG(dst), work.words[1]);
             MemFree(work.block);
@@ -182,8 +190,8 @@ void Unpack(char far *src, void far *dst);
         unpackedSize = *(long far *)src; /* block offset +2: the 32-bit unpacked size */
         src += 4;
         /* block offset +6: a u16 byte count that Unpack skips; 0 in all 131 format-4 entries of
-           the PAK files. WHITEPAPER 4.2 (WHITEPAPER.md:151) calls it palette bytes [H]: no pinned
-           file shows a non-zero value. */
+           the PAK files. WHITEPAPER 4.2 calls it "bytes of palette that follow"; this unit's own
+           reading is [H]: no pinned file shows a non-zero value. */
         skipLen = *(unsigned far *)src;
         src += 2;
         src += skipLen;
@@ -193,10 +201,11 @@ void Unpack(char far *src, void far *dst);
 }
 
 /* 0AED:021B: records the shared work buffer's segment and size, the one formats 1 and 2 in Unpack use
-   when it is large enough. StartupAlloc calls it once (0AED:0221/0229 store ds:1FB6 and ds:1FB8); the
-   INTRO map folded this function into Unpack's entry, so its own entry is not in re/symbols.toml.
-   Both arguments are plain stores tested and discarded (the empty if bodies are what the bytes show,
-   0AED:021B-022C). */
+   when it is large enough. StartupAlloc (07A9:000A) calls it once (src/E07A9.C:348); its stores are at
+   0AED:0221 and 0229. The map folded this function into Unpack's range, so re/units.toml counts three
+   functions for the unit; the e17a6 split gave it its own re/symbols.toml entry (i0aed_021b, 21
+   bytes). Both arguments are plain stores tested and discarded (the empty if bodies are what the
+   bytes show, 0AED:021B-022C). */
 /*@ 0AED:021B */ void SetUnpackBuffer(unsigned seg, unsigned size)
 {
     if (gBufSeg = seg)

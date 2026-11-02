@@ -162,10 +162,10 @@ extern int gScrollHook; /*@ ds:8117 */
 extern int g8119; /*@ ds:8119 */
 extern int g139; /*@ ds:0139 */
 extern int gFBC8; /*@ ds:FBC8 */
-extern unsigned char far gSeg1D0[]; /*@ 01D0:0000 */
-extern unsigned char far gSeg1D8[]; /*@ 01D8:0000 */
-extern unsigned char far gSeg1F8[]; /*@ 01F8:0000 */
-extern unsigned char far gSeg1F0[]; /*@ 01F0:0000 */
+extern signed char far gMapTiles[]; /*@ 1F1D:0000 */  /* the level's tile-index table (src/EOV3.C) */
+extern unsigned char far gMapSheet[]; /*@ 1F1E:0000 */  /* the sheet gMapTiles indexes into (src/EOV3.C's MAPSHEET) */
+extern unsigned char far gSheetDECORATE[]; /*@ 2069:0000 */  /* the PLAYFLD sheet (src/E0ACD.C, src/EOV3.C) */
+extern unsigned char far gSheet2067[]; /*@ 2067:0000 */  /* the INVENT sheet (src/E0ACD.C, src/EOV3.C) */
 
 extern void far * (far *gGetSpriteCell)(int x, int y, int w, int h, void far *sheet); /*@ ds:8086 */
 extern void far * (far *gFn8082)(int x, int y, int w, int h, void far *buf); /*@ ds:8082 */
@@ -209,7 +209,7 @@ extern void fOvl3_07A5(char far *name, char far *sheet); /*@ 210C:0052 */  /* ov
 extern void FreePtrTable(void); /*@ 210C:0048 */  /* overlay 3 entry, ovl3:0000 */
 extern void FreeEffectTables(void); /*@ 210C:003E */  /* overlay 3 entry, ovl3:031A */
 extern void FreeMapIcons(int base, int count); /*@ 210C:0061 */  /* overlay 3 entry, ovl3:05D2 */
-extern void fOvl4_1F51(int n); /*@ 2116:005C */  /* overlay 4 entry, ovl4:1F51 */
+extern void DrawViewFrame(int n); /*@ 2116:005C */  /* overlay 4 entry, ovl4:1F51 */
 extern void LoadOverlayScreen(char far *name, int a, int b); /*@ 082C:05EC */
 extern void LoadScreenImage(char far *name, void far *buf, int a, int b, int c); /*@ 082C:051B */
 extern int FileOpen(char far *name, int mode); /*@ 1C0E:00DB */
@@ -964,7 +964,7 @@ enum {
     gFC04 |= 0x800000L;
 }
 /* ovl5:1087: the "quit" menu entry: draws message 0x15 and sets gFC04 bit 0x1000000. Called from
-   the menu dispatcher 1A82 (mode 5). */
+   the menu dispatcher 1A82 (mode 6). */
 /*@ ovl5:1087 */ void QuitPanel(void)
 {
     PrintTableString(0x15, 1);
@@ -974,7 +974,7 @@ enum {
    ds:7BF2; choice 0 draws message 0x11 and, for every character's first two item slots whose item
    type gTable8DD2[item].m02 is outside 0x33..0x38, clears the slot and queues the item on the
    current page list. Always sets gFC04 bit 0x20000. Called from the menu dispatcher 1A82
-   (mode 6). */
+   (mode 5). */
 /*@ ovl5:10A6 */ void SurrenderPanel(void)
 {
     int sel;
@@ -1213,10 +1213,12 @@ enum {
    7F07 art, reads 7F0F into gSegDF4E, draws the panel and the 8x8 font) and runs one of the eight
    menu panels through the jump table at cs:1CCD. Finally it restores the font and the pointer,
    copies a byte table into overlay 3, loads the two 7F18/7F20 images, redraws the characters and
-   resets the text window to 7. The only remaining difference is the constant-segment far object
-   at 01D0 (and the two 01F8/01F0 screen buffers): the original reaches them with the literal
-   paragraph (mov ax,0x1d0), while our link relocates the object's offset, so this stays a draft. */
-/*@ ovl5:1A82 draft */ void CharOverlay(int mode)
+   resets the text window to 7. The eight panel cases are laid out in the source order
+   0,1,2,3,4,6,5,7 (the original's bodies are 0924, 0B58, 0EB9, 0F77, 102C, 1087, 10A6, 119E, so
+   the jump table maps mode 5 to the 10A6 body and mode 6 to the 1087 body). The far objects are
+   the overlay fixups resolved through TLINK's segment table (the raw words 01D0/01D8/01F8/01F0
+   are the segment-table entry offsets, index*8). */
+/*@ ovl5:1A82 */ void CharOverlay(int mode)
 {
     void far *font;
     register int handle;
@@ -1229,7 +1231,7 @@ enum {
         Action01E3(gF542);
     if (gFlag)
         RedrawPartyPanel(gF542);
-    fOvl4_1F51(1);
+    DrawViewFrame(1);
     switch (mode) {
     case 8:
         TileAnimation();
@@ -1273,10 +1275,10 @@ enum {
         case 4:
             KillHerPanel();
             break;
-        case 5:
+        case 6:
             QuitPanel();
             break;
-        case 6:
+        case 5:
             SurrenderPanel();
             break;
         case 7:
@@ -1286,12 +1288,12 @@ enum {
         f1A47_0169(font);
         gScrollOn = 0;
         LockHidePointer();
-        fOvl3_07A5(0, gSeg1D8 + (gSeg1D0[gFBC8 - 1] << 5));
-        LoadScreenImage(gText7F18, gSeg1F8, 5, 3, 0);
-        LoadScreenImage(gText7F20, gSeg1F0, 5, 3, 2);
+        fOvl3_07A5(0, gMapSheet + (gMapTiles[gFBC8 - 1] << 5));
+        LoadScreenImage(gText7F18, gSheetDECORATE, 5, 3, 0);
+        LoadScreenImage(gText7F20, gSheet2067, 5, 3, 2);
         gStatusLine = 0;
         RedrawCharacters();
-        fOvl4_1F51(1);
+        DrawViewFrame(1);
         break;
     }
     SetTextWindow(7);
@@ -1303,7 +1305,7 @@ enum {
    through PrintTableString. It then restores the screen: frees the wall textures into gOverlayBuf,
    loads the two images ds:7F30 and ds:7F38, redraws the characters and the view frame and resets
    the text window to 7. Called by the item-slot handler 0BD2:1001. */
-/*@ ovl5:1CDD draft */ void UseItemPanel(int msg)
+/*@ ovl5:1CDD */ void UseItemPanel(int msg)
 {
     int handle;
 
@@ -1326,8 +1328,8 @@ enum {
     gScrollOn = 0;
     LockHidePointer();
     fOvl3_07A5(0, gOverlayBuf);
-    LoadScreenImage(gText7F30, gSeg1F8, 5, 3, 0);
-    LoadScreenImage(gText7F38, gSeg1F0, 5, 3, 2);
+    LoadScreenImage(gText7F30, gSheetDECORATE, 5, 3, 0);
+    LoadScreenImage(gText7F38, gSheet2067, 5, 3, 2);
     gStatusLine = 0;
     RedrawCharacters();
     DrawViewFrame(1);
@@ -1339,8 +1341,11 @@ enum {
    Fisher-Yates shuffles each with RandomRange, then for each row k and column i draws the cell
    at (x + xs[i], y + ys[j]) (j wrapping at rows) through the far pointers ds:8072 and ds:809E,
    with gStatusLine set to attr1 for the first call and attr2 for the second. Called by the 1204
-   animation. */
-/*@ ovl5:1E1B draft */ void ShuffleGrid(int x, int y, unsigned cols, unsigned rows, int attr1, int attr2)
+   animation. Each shuffle copies the loop index `i` into the register local `cy` (the original's
+   mov di,si) and indexes with `cy`: a third register variable would spill, and TCC keeps one
+   DI-resident local, so the same register local serves as the shuffle index here and as the
+   y coordinate (y + ys[j]) in the draw loop below. */
+/*@ ovl5:1E1B */ void ShuffleGrid(int x, int y, unsigned cols, unsigned rows, int attr1, int attr2)
 {
     int far *xs;
     int far *ys;
@@ -1360,15 +1365,17 @@ enum {
         ys[i] = i;
     for (i = 0; i < cols; i++) {
         pick = RandomRange(0, cols - 1);
+        cy = i;
         swapped = xs[pick];
-        xs[pick] = xs[i];
-        xs[i] = swapped;
+        xs[pick] = xs[cy];
+        xs[cy] = swapped;
     }
     for (i = 0; i < rows; i++) {
         pick = RandomRange(0, rows - 1);
+        cy = i;
         swapped = ys[pick];
-        ys[pick] = ys[i];
-        ys[i] = swapped;
+        ys[pick] = ys[cy];
+        ys[cy] = swapped;
     }
     saved = gStatusLine;
     for (k = 0; k < rows; k++) {

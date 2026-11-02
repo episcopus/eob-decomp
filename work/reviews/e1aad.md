@@ -1,10 +1,77 @@
 # Review: e1aad
 
 Reviewer: rev-haiku
-Commit reviewed: 3331b69 (round 2; main, with the round 1 fixes merged in 01237b0). Round 1 was 7d0dd48.
+Commit reviewed: 49e4d94 (round 3; main, with the round 2 fixes in 6e64486). Round 2 was 3331b69, round 1 was 7d0dd48.
 
 Playbook 70. Judge what a matching file can still get wrong: names, types, comments, structure.
 The matcher already proved the bytes; do not re-prove them, read for meaning.
+
+## Round 3 (49e4d94)
+
+Judged only what the later-round rule asks: the round 2 must-fix items, and the diff since 3331b69 in
+`src/E1AAD.ASM` (the `re/symbols.toml` change is the review stamps and the map, and the
+`re/globals.toml` change is other units' names; neither touches a name of this unit).
+
+Round 2 must-fix items checked against the code, all fixed right, so their ticks stay:
+- 1AAD:0718 header: the INT 9 handler tests AX=0420h and 0434h (lines 965, 967) and toggles gSoundOn
+  (`xor word ptr [gSoundOn],1` at 0971) and g80E8 (`xor word ptr [g80E8],1` at 0981).
+  Both keys are the game's codes: kUnshiftedCodes index 20h is `s` and 34h is `m` (lines 216-221).
+- 1AAD:0B0E header: 038E tests `ah,8` (line 274) and 053A tests it (506); 0409 and 0588 do not. 0588
+  is what DispatchKey calls after 0409 (E16A5.C, see the stale cite below).
+- 1AAD:0223 header: keypad table 1AAD:0357 (line 228) and Ctrl-function table 1AAD:037A (line 231, 20
+  bytes = 14h); the Ctrl branch subtracts 4Bh and then 0Fh (lines 163, 172), so 5Ah..6Dh index it
+  from 0; 41h..4Ah get +85h (line 199); 6Eh gives ESC (line 128).
+- g80EC and g80EF externs: 038E skips the empty-ring test in state 2 and reads the slot (257-267);
+  0409 likewise (327-337); 048D reads ds:80EF in state 2 (409-411) and stores it in any state (413);
+  053A skips the wait (489); 05D3 skips it too (571).
+- 038E header callers: ReadKey is called from EOV6.C:346, :349, :516, EOV0.C:1209 (PickClass,
+  ovl0:207A, defined at :1180), EOV1.ASM:2559 (ShowMessage, ovl1:13F7 at :2475), E082C.C:600
+  (DelaySecondsThenKey, 082C:0B43) and E082C.C:156. The FlushKeyBuffer cites EOV6.C:353 and :517 are
+  right.
+- kExtendKeys: the 17th extended code (3Eh) is at 1AAD:005C, and `[di+0Fh]` after `repne scasb`
+  reads 5Ch+i, so the map base 1AAD:005C is right and 005D is entry 1.
+
+Four findings, one must-fix (a wrong claim in a line round 2 changed). Nothing is escalated: each is
+a comment, with no matcher, spec or pin question.
+
+### Findings
+
+- [ ] must-fix src/E1AAD.ASM:47-51 (the g8488 extern; the round 2 note at :44-47 that this round
+  reopens): "1AAD:0C17 writes 0 after a recorded write (line 1350) and after a replay read (line
+  1393)". Neither line clears ds:8488. Line 1350 is `mov word ptr cs:[kRecCountD20],ax`, the mouse
+  count load after `mov ax,[g80F5]` at 1349. Line 1393 is `or ax,ax`, the test of a FileRead result.
+  The two clears are at line 1360 (`mov word ptr [g8488],0`, on the path that falls through after
+  the FileWrite calls at 1340 and 1357) and at line 1403 (the 0D0A path, after a successful replay
+  read; a failed read goes to 0D12 and does not clear). Fix both cites to 1360 and 1403. Round 1 had
+  the same wrong lines, so the round 2 fix carried them forward.
+
+- [ ] should src/E1AAD.ASM:314 and :1180 (the 0409 and 0B0E headers): "E16A5.C:127-128" is stale.
+  The round 2 e16a5 fix (3d78486) moved the file: DispatchKey (16A5:0009) now calls ReadKeySpecial at
+  E16A5.C:152 and WaitGameKey2 at :153, and 127-128 no longer hold those calls. Replace both cites with
+  the address, "DispatchKey (16A5:0009)".
+
+- [ ] should src/E1AAD.ASM:116-117 (the 0223 header, "its keys are 5Ah..6Dh, indexed by AL-5Ah"): the
+  Ctrl-function branch is taken for all of 4Bh..6Dh, but for 4Bh..59h the index wraps. `sub bl,4Bh`
+  and `sub bl,0Fh` (163, 172) are byte operations, so AL 4Bh..59h give an index of F1h..FFh, and
+  `mov al,cs:[bx+kCtrlFnCodes]` (173) reads past the 20-byte table. A QUIRK candidate: say so in the
+  header, do not fix it. The table's own range, 5Ah..6Dh, is right.
+
+- [ ] should src/E1AAD.ASM:20-26 (the g80EC extern): the state 2 readers that skip the wait are listed
+  as 038E, 053A and 05D3. 1AAD:0588 (WaitGameKey2) skips it too (lines 536-537: `cmp byte ptr
+  [g80EC],2` and `je f0588_05A9`). Add 0588 to the list.
+
+- [ ] note for other owners (round 1 and 2 notes, still open, not this unit): src/EOV1.ASM:114 and
+  src/EOV3.C:29 still say g80E8 is "toggled by the Ctrl-key handling"; src/E1A72.ASM:35 still says
+  "game state, 0/1/2" for g80EC; src/E07C8.C:93-99 still cites 1AAD:0718 for the install copy of
+  ds:80EA, where the read is in the handler body (1AAD:07C0, E1AAD.ASM:793-794). Their owners should
+  align them.
+
+### Summary
+
+Round 2's must-fix items are all fixed right, and their ticks stay. The round 2 note on g8488 is
+reopened: its clear cites are wrong (lines 1350 and 1393). Three shoulds: the stale E16A5.C cites in the
+0409 and 0B0E headers, the omitted 0588 in the g80EC list, and the 4Bh..59h table wrap in the 0223
+header. The unit is not passed: one must-fix is open.
 
 ## Round 2 (3331b69)
 
@@ -85,7 +152,8 @@ partly fixed). Nothing is escalated: each is a comment, with no matcher, spec or
   Fixed (dec-deepseek-3): the map comment now reads 1AAD:005C and says entry i is at 1AAD:005C+i,
   so entry 0 is the 3Eh above and 005D is entry 1.
 
-- [x] note src/E1AAD.ASM:44-47 (g8488): "tick counter" is right, but the unit also clears the count
+- [ ] note src/E1AAD.ASM:44-47 (g8488; reopened in round 3: the clear cites it added are wrong, see the
+  round 3 must-fix): "tick counter" is right, but the unit also clears the count
   itself: 1AAD:0C17 writes 0 at line 1393, and the replay path at line 1350. Say so, so the counter is
   not read as one that only counts up.
   Fixed (dec-deepseek-3): the g8488 comment now says 1AAD:0C17 writes 0 after a recorded write

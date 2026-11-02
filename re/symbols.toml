@@ -396,7 +396,7 @@ unit = "e_text"
 addr = "0000:4CB1"
 size = 31
 evidence = ["frame"]
-name = "_GetVoiceState"
+name = "GetVoiceDelay"
 level = "L2"
 match_flags = "tasm /mx"
 
@@ -2982,6 +2982,10 @@ unit = "e0d1c"
 addr = "0D1C:0163"
 size = 103
 evidence = ["far", "frame"]
+notes = "matched 2026-11-02 under -v: the redundant `mov ax,di` reload before the first multiply (0D1C:0194) is what TCC -O keeps when the loop body follows an early `continue`, not an `if` around it. The source is `for (i = 25; i <= 26; i++) { if (!(item = rec->m77[i])) continue; if (gTable8DD2[item].m02 == 0x2F && gTable8DD2[item].m0B == fieldB) return 1; }`; with `if (item = rec->m77[i]) { ... }` TCC elides the load (101 of 103 bytes). Probes: -O elides with or without -Z/-v/-G/-P; without -O the load stays but the trailing `jmp` is kept too; the same redundant-load-after-early-exit quirk is in the e08E6 note."
+name = "f0D1C_0163"
+level = "L2"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e0d1c_01ca"
@@ -4470,6 +4474,8 @@ addr = "122E:0325"
 size = 421
 evidence = ["frame"]
 name = "ForceDoorAction"
+level = "L2"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e122e_04ca"
@@ -4518,6 +4524,7 @@ addr = "122E:06D0"
 size = 375
 evidence = ["frame"]
 name = "ItemSlotAction"
+notes = "2026-11-02 retried under the unit's -v: the body matches byte for byte from 122E:06D0 to the first return 1 jump (122E:06FF); the outer if around the body (not an early return 0) is what puts the single `xor ax,ax` at 122E:083F. The one remaining difference: the early `return 1` in the f0D1C_02DC()==0 branch (`if (item == 0) return 1;`) is emitted as a short `jmp` back to the shared return-1 at 122E:0789, where the original emits a near `jmp 122E:083C` to a per-statement stub that then jumps to 0789 (1 byte total). TCC generated that stub in our build too (122E:083B, unreferenced) but chained the test jump to the canonical block, and -v did not keep it apart (same jump-chaining class as 0ACD:091C). Tried under -v: the separate-if form (this), the braced `if (item == 0) { return 1; }`, `if (item != 0) { ... } return 1;` (3 short), `if (item != 0) { ... } else { return 1; } return 1;` (1 long, uses the stub but duplicates the tail), and an `else if` chain with a single shared return (4 short). The -S shows why: TCC emits `jmp short @12@194` for the item==0 return and, after the last `else`, a separate redundant `jmp @12@194` stub (the line-515 return); the original's item==0 return targets that stub instead, so the difference is TCC's return-block assignment, not the assembler."
 
 [[function]]
 id = "e122e_0847"
@@ -4727,6 +4734,7 @@ addr = "122E:147F"
 size = 1580
 evidence = ["frame"]
 name = "EvaluateScriptExpr"
+notes = "2026-11-02 retried under the unit's -v; (b) and (c) then fixed from the compiler's own assembly: (b) the default case is `lhs = script[-1]` (the register scratch, so TCC emits `les bx,[bp+6]; mov al,es:[bx-1]; cwde; mov si,ax; or ax,ax; jl; cmp ax,0x80; jge` at 122E:197A, the original's bytes) not `op`; (c) the FFDD/FFDC init is `lhs = i = 0; for (; i < 6; i++)`, which zeroes AX once and stores it to i then SI as the original does at 122E:16CD, not `lhs = 0;` before a `for (i = 0; ...)`. The function is now 0x26 bytes short (ours' loop test at 122E:1975, the original's at 122E:199B). The FFEF/FFF0 store tails, the eight comparison/logical cases, FFDA, the default case, the FFDD/FFDC loops and the switch dispatch match. Remaining (a), the FFF5 argument order and tail, the bulk of the shortfall: the original evaluates the `t2 == -1 ? -1 : t2` condition before pushing the count 1 (`cmp word ptr [bp-8],-1` at 122E:14F9, then `mov ax,1; push ax` inside each arm at 122E:14FF and 122E:1509) and keeps FFF5's list push and ScanListItem call inline (122E:1510 to 1537); our build pushes the count 1 first and shares FFF5's tail with FFF2's (FFF5 `jmp`s to FFF2's list tail). Forms tried for (a), none matching: the plain ternary (count first), `t1 = cond ? -1 : t2` then a call (condition first but stores t1 to [bp-6]), `if (t2 == -1) t2 = -1;` then a call (stores t2), and the explicit if/else with two ScanListItem calls (one arm jumps to a shared tail, the other is inline). Case labels and structures are otherwise as in the earlier note."
 
 [[function]]
 id = "e122e_1aab"
@@ -8492,6 +8500,10 @@ unit = "eov4"
 addr = "ovl4:0D1B"
 size = 886
 evidence = ["ovl", "near", "frame"]
+notes = "matched 2026-11-02 under -v (the file's actual flag, which also keeps CopyViewColumn's tails apart). Four source forms the bytes pin down: the object byte +0xA compares against (char)0xfe/(char)0xff so it is a byte compare (int constants sign-extend first); the absolute sprite is an explicit if/else (abs() is a library call); the +7 nudge is an if/else assigning the local (a ?: keeps the value in AX and stores once); the ds:1A3B m15 test indexes the table directly (only the m0E test keeps the far-pointer local). The earlier -B store question (87 D8 vs 93) is moot: -v is right."
+name = "Ovl4_0D1B"
+level = "L2"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "eov4_1091"
@@ -8519,6 +8531,10 @@ unit = "eov4"
 addr = "ovl4:19C4"
 size = 860
 evidence = ["ovl", "near"]
+notes = "matched 2026-11-02 under -v. Three source forms the bytes pin down: the ds:194B bit-7 test is written `g1879[tile] == 0 || (g194B[tile] & 0x80)` with an empty then (a plain `g194B[tile] & 0x80` sign-extends the byte first); the frame guard is written `if (frame >= 0) { body }` (an `if (frame < 0) continue;` gives identical bytes but reloads ES before the record check, a TCC -Z register-state difference); and the cell +2 test is a raw `<< 3 >> 3` (a `% 8` compiles to idiv). The earlier xchg/store question is settled: -v is the file's flag."
+name = "Ovl4_19C4"
+level = "L2"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "eov4_1d20"
@@ -8858,7 +8874,9 @@ addr = "ovl5:1A82"
 size = 603
 evidence = ["ovl", "frame"]
 name = "CharOverlay"
-notes = "blocked: the constant-segment far object, with 1CDD. The body matches up to ovl5:1ABD, where our build loads gSeg1D0's relocated frame (`mov ax,0x1a8a` here) and stub offset; the original reaches the screen segment 01D0 with the literal `mov ax,0x1d0`. src/EOV5.C declares gSeg1D0 a far object at 01D0:0000; `(void far *)0x1D00L` gives the documented MK_FP form (`xor ax,ax`, escalation e177d), so no source form was found. The same wall hits the two 01F8/01F0 LoadScreenImage buffers at the end (see eov5_1cdd). Everything else matches: the font save/restore, the gFB44/gFlag/gF542 redraws, the mode 8/9/0xa dispatch (1204, 17C8, ovl2:09ED), the item screen and the eight menu panels, and the 1D8 text copy."
+notes = "matched 2026-11-02. The earlier block is resolved: the far-object annotations 01D0/01D8/01F8/01F0 were the overlay's raw segment-table words (entry index*8), not paragraphs; the resolved segments are 1F1D/1F1E/2069/2067, i.e. gMapTiles/gMapSheet/gSheetDECORATE/gSheet2067, which the other overlay units (src/EOV2.C, src/EOV3.C) already annotate that way. Reading gMapTiles as signed char gives the original's sign-extending cbw (unsigned char gave mov ah,0, a one-byte shift). The eight menu cases are laid out 0,1,2,3,4,6,5,7 in the source, so the cs:1CCD jump table maps mode 5 to the 10A6 body and mode 6 to the 1087 body."
+level = "L2"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "eov5_1cdd"
@@ -8866,7 +8884,10 @@ unit = "eov5"
 addr = "ovl5:1CDD"
 size = 318
 evidence = ["ovl"]
-notes = "blocked: the constant-segment screen buffers, the same wall CharOverlay (1A82) hits. The body matches up to +00E2; the two LoadScreenImage buffers ds:7F30 and ds:7F38 take the far object gSeg1F8 (segment 01F8, offset 0) and gSeg1F0 (segment 01F0), which the original reaches with the literal words `mov ax,0x1f8` then `mov ax,0` (ovl5:1DB9/1DBC and ovl5:1DD9/1DDC). Our build loads the object's relocated frame (0x1a76 here) and its stub offset (0x8300/0x8200), so the pair is not the literal segment:offset the original has. `(void far *)0x1F80L` gives the documented MK_FP form (`xor ax,ax`, escalation e177d), so no source form was found; src/EOV5.C declares gSeg1F8/gSeg1F0 as far objects at 01F8:0000 / 01F0:0000. Everything else in the function (the file read into gSegDF4E, the panel, PrintTableString, fOvl3_07A5(0, gOverlayBuf), the redraw) matches."
+notes = "matched 2026-11-02 with 1A82: the same segment-table fix (gSheetDECORATE/gSheet2067 = 2069/2067, not the raw 01F8/01F0). The last call is the ovl4:1F51 entry; an undeclared DrawViewFrame(1) left it as lcall 0,0, declared as fOvl4_1F51 it matches."
+name = "UseItemPanel"
+level = "L2"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "eov5_1e1b"
@@ -8875,6 +8896,9 @@ addr = "ovl5:1E1B"
 size = 387
 evidence = ["ovl", "near", "frame"]
 name = "ShuffleGrid"
+level = "L2"
+match_flags = "-ml -O -Z -v"
+notes = "matched 2026-11-02: each Fisher-Yates shuffle copies the loop index into the DI-resident register local (the original's mov di,si) and indexes with it; a third register variable spills (the frame grows), so the same register local serves the shuffle index and the draw loop's y coordinate."
 
 [[function]]
 id = "eov6_0000"
@@ -11183,6 +11207,9 @@ unit = "iov0"
 addr = "ovl0:015D"
 size = 1413
 evidence = ["ovl", "near", "frame"]
+name = "PlayWtrdpScene"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "iov0_06e2"
@@ -11190,6 +11217,9 @@ unit = "iov0"
 addr = "ovl0:06E2"
 size = 715
 evidence = ["ovl", "near", "frame"]
+name = "PlayOrbScene"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "iov0_09ad"
@@ -11207,6 +11237,9 @@ unit = "iov0"
 addr = "ovl0:0B20"
 size = 1162
 evidence = ["ovl", "near", "frame"]
+name = "PlayTowerMageScene"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "iov0_0faa"
@@ -11264,6 +11297,9 @@ unit = "iov0"
 addr = "ovl0:1265"
 size = 916
 evidence = ["ovl", "near", "frame"]
+name = "PlayKingScene"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "iov0_15f9"
@@ -11271,6 +11307,9 @@ unit = "iov0"
 addr = "ovl0:15F9"
 size = 2042
 evidence = ["ovl", "near", "frame"]
+name = "PlayHandsScene"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "iov0_1df3"
@@ -11278,6 +11317,9 @@ unit = "iov0"
 addr = "ovl0:1DF3"
 size = 1456
 evidence = ["ovl", "near", "frame"]
+name = "PlayTunnelScene"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "iov0_23a3"
@@ -11285,6 +11327,9 @@ unit = "iov0"
 addr = "ovl0:23A3"
 size = 1392
 evidence = ["ovl", "near", "frame"]
+name = "PlayAvalancheScene"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "iov0_2913"
