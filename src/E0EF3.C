@@ -208,6 +208,9 @@ extern int ClampValue(int value, int low, int high, int invert); /*@ 082C:0AB4 *
 extern signed char gAt5717[];          /*@ ds:5717 */ /* a per-member byte: nonzero when the member
                                                      can use melee effects (read by 0EF3:0E1B) */
 extern signed char gTable5733[];        /*@ ds:5733 */ /* four cell deltas walked by 0EF3:17D8 */
+extern char gB894[];                    /*@ ds:B894 */ /* nine-byte records; +4 (ds:B898) is the
+                                                       object's type byte tested by 0EF3:0A3F */
+extern signed char g1A2B[];             /*@ ds:1A2B */ /* per-page sprite base (src/E0DE8.C) */
 extern signed char gIconIndex571B[];    /*@ ds:571B */ /* a per-member icon index; a negative value
                                                            picks the 004D region drawing (0EF3:0F99) */
 extern int gIconX5721[];                /*@ ds:5721 */ /* the icon's x, per member (0EF3:0F99) */
@@ -284,6 +287,7 @@ extern int far RollDice(char count, char sides, char bonus); /*@ 082C:0458 */
 extern int RollToHit(int who, int obj, int slot, int flag); /*@ 0DE8:0007 */
 extern void DamageCharacter(int who, int amount); /*@ 0DE8:09B9 */
 extern int HalveSaveDamageA(int who, int value); /*@ 0DE8:0F98 */
+extern int HalveSaveDamageB(char far *type, int value); /*@ 0DE8:0FCA */
 extern int FindClassSlot(int value, int classIndex); /*@ 0A72:007B */
 extern int GetIndexedByte(char index, char limit, char offset); /*@ 0A72:0006 */
 extern int GetArmourClassBase(char classIndex); /*@ 0A72:019D */
@@ -301,6 +305,7 @@ extern int Obj15B4(char who, int value); /*@ 08E6:15B4 */
 extern void DamageObject(struct Obj28 far *obj, int n); /*@ 08E6:0FBE */
 extern void ClearObjectType(struct Obj28 far *obj); /*@ 08E6:000B */
 extern void Obj17FD(int far *list, int key, int field, char flags, char scanAll, char scanFiltered); /*@ 08E6:17FD */
+extern int Obj106B(struct Obj28 far *obj, int who); /*@ 08E6:106B */
 extern void SetMouseItem(int n); /*@ 07A9:010C */
 extern void f1BF3_00A8(int dx, int dy); /*@ 1BF3:00A8 */
 extern int sprintf(char far *buf, char far *fmt, ...); /*@ 0000:57AE */
@@ -789,7 +794,90 @@ extern void f0EF3_2A53(int a, int b, int c, int d, int e, void far *p); /*@ 0EF3
     gDF4C = 1;
 }
 
-/*@ 0EF3:0A3F stub */ int f0EF3_0A3F(void far *rec, int a, int b, int c, int n) {}
+/* 0EF3:0A3F: run a melee effect on the record's target. The record's +0xC byte holds five flags:
+   0x10 (the target is not a member), 1, 2, 4 and 8. When the target cell's object type byte
+   (gB894[cell * 9 + 4]) has any of bits 0..2 and the record's +0xB member index is not negative
+   (or flag 0x10 is set), list the objects at the cell with 08E6:17FD and for each one roll
+   `count`d`sides`+`bonus` times `n`, halve it on a successful save (flag 8), and damage the object
+   unless 0D1C:0BAB rejects it. Otherwise, when the cell is the party cell and the member index is
+   negative (or flag 0x10 is set), either walk the six members (flag 2) or pick one from the
+   g1A2B table and damage it. Finally, when anything was hit and the record's +0xC has bit 0x40,
+   run the animation 0EF3:00CD; a record whose +8 is 5 clears the hit. Returns the hit flag. */
+/*@ 0EF3:0A3F draft */ int f0EF3_0A3F(struct Tgt far *rec, int count, int sides, int bonus, int n)
+{
+    char dmg;
+    char flag01;
+    char flag02;
+    char flag04;
+    char flag08;
+    char i;
+    char hit;
+    char flag10;
+    int buffer[5];
+    int far *list;
+    int idx;
+
+    flag10 = rec->m0C & 0x10;
+    flag01 = rec->m0C & 1;
+    flag02 = rec->m0C & 2;
+    flag04 = rec->m0C & 4;
+    flag08 = rec->m0C & 8;
+    hit = 0;
+    if (n <= 0)
+        n = 1;
+    if ((gB894[rec->m04 * 9 + 4] & 7) && (rec->m0B >= 0 || flag10)) {
+        Obj17FD(buffer, rec->m04, rec->m06, rec->m07, flag02, flag01);
+        list = buffer;
+        for (; *list != -1; list++) {
+            dmg = RollDice(count, sides, bonus) * n;
+            if (RollToHit(rec->m0B, *list, 0, 0) || !flag04) {
+                if (flag08)
+                    dmg = HalveSaveDamageB((char far *)&gObjs[*list], dmg);
+                hit = 1;
+                if (!f0D1C_0BAB(*list))
+                    DamageObject(&gObjs[*list], dmg);
+            }
+        }
+    } else if (rec->m04 == gPartyCell && (rec->m0B < 0 || flag10)) {
+        if (flag02) {
+            for (i = 0; i < 6; i++) {
+                if ((gChars[i].m01 & 1) == 0)
+                    continue;
+                if (Obj106B(gObjs, i) || !flag04) {
+                    dmg = RollDice(count, sides, bonus) * n;
+                    if (flag08)
+                        dmg = HalveSaveDamageA(i, dmg);
+                    hit = 1;
+                    DamageCharacter(i, dmg);
+                }
+            }
+        } else {
+            idx = rec->m06 & 3;
+            idx = g1A2B[gFBCC * 4 + idx];
+            if (idx > 2 && (f0D1C_0670(5, 1) || f0D1C_0670(6, 1)) && RollDice(1, 2, -1))
+                i = idx + 2;
+            else
+                i = idx;
+            if (rec->m08 == 0 && (gChars[i].mE3 & 2)) {
+                hit = 1;
+            } else {
+                if ((gChars[i].m01 & 1) && (Obj106B(gObjs, i) || !flag04)) {
+                    dmg = RollDice(count, sides, bonus) * n;
+                    if (flag08)
+                        dmg = HalveSaveDamageA(i, dmg);
+                    hit = 1;
+                    DamageCharacter(i, dmg);
+                }
+            }
+        }
+    }
+    if (hit && (rec->m0C & 0x40)) {
+        AnimateEffect(rec);
+    } else if (rec->m08 == 5) {
+        hit = 0;
+    }
+    return hit;
+}
 
 /* 0EF3:0D78: expire one spell on character `who`: format the message ds:57D9 with the member's
    name and the spell's name, say it, remember `who` in gA999, then run the spell's expire callback
