@@ -155,14 +155,15 @@
 ; vector was saved at DGROUP:FC08 by 07C8:0088) and always leaves through that saved vector, so it
 ; is a hook around the runtime's overlay trap [H] (nothing in this file proves the trap is the
 ; runtime's; what the file shows is that it chains to the saved vector and re-finds EOB.EXE when it
-; fails). It saves everything, points DS at DGROUP and calls `access("EOB.EXE", 0)`: when that
-; returns zero (the program file is accessible) it goes straight to the chain. Otherwise it closes
-; the file handle kept at 20B5h:00B8h, probes EOB.EXE through 1C0E:1310 (which opens it only to
-; find its drive and closes it at once) and reopens it with `open("EOB.EXE", O_RDONLY)`, storing the
-; new handle at 20B5h:00B8h. After each failed probe it asks the retry file error handler at
-; DGROUP:8111 (E1C0E.C:67), whose 0 return gives up the loop; on the two give-up exits (1A72:0080
-; and 1A72:00B8) it reports to the fatal file error handler at DGROUP:8104 (E1C0E.C:66) with code 2
-; and calls 07C8:058A. Which of the two paths is the normal case is not established.
+; fails). It saves the nine registers it uses (:168-176), not the flags, points DS at DGROUP and
+; calls `access("EOB.EXE", 0)`: when that returns zero (the program file is accessible) it goes
+; straight to the chain. Otherwise it closes the file handle kept at 20B5h:00B8h, probes EOB.EXE
+; through 1C0E:1310 (which opens it only to find its drive and closes it at once) and reopens it
+; with `open("EOB.EXE", O_RDONLY)`, storing the new handle at 20B5h:00B8h. After each failed probe
+; it asks the retry file error handler at DGROUP:8111 (E1C0E.C:67), whose 0 return gives up the
+; loop; that give-up exit (1A72:0080) and a failed reopen (1A72:00B8) both report to the fatal
+; file error handler at DGROUP:8104 (E1C0E.C:66) with code 2 and call 07C8:058A. Which of the two
+; paths is the normal case is not established.
         PUBLIC  _Int3FHandler           ; @ 1A72:0006
 _Int3FHandler PROC FAR
         push    ax
@@ -232,7 +233,7 @@ L0080:  or      si,si
         call    dword ptr [g8104]
         add     sp,6
         call    far ptr _ShutdownGame
-L0099:  mov     ax,1                    ; access argument: 1 = O_RDONLY (E1C0E.C:93)
+L0099:  mov     ax,1                    ; open argument (oflag): 1 = O_RDONLY (E1C0E.C:93)
         push    ax
         push    ds
         mov     ax,308Ah
