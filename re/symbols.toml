@@ -7342,6 +7342,9 @@ unit = "eov4"
 addr = "ovl4:1EDE"
 size = 115
 evidence = ["ovl", "near", "frame"]
+name = "DrawViewRows"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov4_1f51"

@@ -59,6 +59,7 @@ struct Region {             /* the 16-byte region records at ds:009F (src/E1DE7.
 
 extern struct Region gRegions[]; /*@ ds:009F */
 extern int gFBC8; /*@ ds:FBC8 */                 /* the current page 0..3 (src/E0ACD.C) */
+extern int gFBCC; /*@ ds:FBCC */                 /* the current page 0..3 (src/E08E6.C) */
 extern signed char g6F4E[]; /*@ ds:6F4E */       /* row value table this unit indexes */
 extern signed char g6F6D[]; /*@ ds:6F6D */       /* per-page index into ds:6F4E */
 extern signed char g6F79[]; /*@ ds:6F79 */       /* per-page index into ds:6F4E */
@@ -183,7 +184,31 @@ extern int gViewColRight; /*@ ds:FE40 */       /* the visible right column (this
     }
 }
 
-/*@ ovl4:1EDE stub */ void Ovl4_1EDE(void) {}
+extern int g7296; /*@ ds:7296 */              /* the page the rows were last drawn for (this unit) */
+extern int g7290[]; /*@ ds:7290 */             /* per-row y (this unit) */
+extern int g728A[]; /*@ ds:728A */             /* per-row x (this unit) */
+extern void far *gFarA92A[]; /*@ ds:A92A */    /* per-page, per-row far image pointers (this unit) */
+extern void f1A29_000F(int mode, void far *src, int x, int y, int region); /*@ 1A29:000F */
+extern void HidePointerZone(int left, int top, int right, int bottom); /*@ 1BBE:01FE */
+extern void ShowPointerZone(void); /*@ 1BBE:02C2 */
+
+/* ovl4:1EDE: redraws the three view rows for the current page. It returns early when ds:7296
+   already holds gFBCC; otherwise it hides the pointer over the view box, draws the three rows
+   through f1A29_000F(0, ds:A92A[gFBCC + 4 * i], ds:728A[i], ds:7290[i], 0), shows the pointer and
+   remembers gFBCC in ds:7296. Called by Ovl4_1F51 at ovl4:202F. Purpose unknown: what the rows
+   are. */
+/*@ ovl4:1EDE */ void DrawViewRows(void)
+{
+    int i;
+
+    if (g7296 == gFBCC)
+        return;
+    HidePointerZone(0x46, 0x79, 0xb0, 0xaf);
+    for (i = 0; i < 3; i++)
+        f1A29_000F(0, gFarA92A[gFBCC + 4 * i], g728A[i], g7290[i], 0);
+    ShowPointerZone();
+    g7296 = gFBCC;
+}
 
 extern int gFBCC; /*@ ds:FBCC */            /* the current page 0..3 (src/E08E6.C) */
 extern int gSoundVolume; /*@ ds:FBCA */     /* the global sound volume (src/E08E6.C) */
@@ -232,7 +257,7 @@ extern void PlaySoundDefault(int sound); /*@ 177D:00F3 */
     }
     PlaySoundDefault(0);
     if (!gFlag)
-        Ovl4_1EDE();
+        DrawViewRows();
     gDF4C = 0;
 }
 /* ovl4:2039: discards its work: si = 0 then si++ and return. Purpose unknown. */
