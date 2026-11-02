@@ -235,8 +235,9 @@ struct WallDec {            /* the 52-byte wall-set decorations LoadWallSet read
 };
 
 /* ovl3:0000: frees every far pointer in the 200-entry table at ds:EFD4 (farfree), clears each slot
-   and resets the wall-record slot count ds:F538, which also empties gWallRecs. Called by ovl3:0A7C
-   and overlay 5. */
+   and resets the wall-record slot count ds:F538. gWallRecs itself is not cleared: it is only read
+   through gF538 (RegisterWallObject, :326-340), so the old records stay in memory until the next
+   RegisterWallObject overwrites them from slot 0. Called by ovl3:0A7C and overlay 5. */
 /*@ ovl3:0000 */ void FreePtrTable(void)
 {
     int i;
@@ -366,7 +367,7 @@ struct WallDec {            /* the 52-byte wall-set decorations LoadWallSet read
    the map sheet (segment 0x1D8, offset from the tile byte table gMapTiles[gFBC8-1] shifted left 5).
    For `srcA` (when not -1) it slices three cells from the 4-byte rectangles at ds:6840 into gFB5E
    starting at `dstA` and three more from ds:68A0 into gA99C[dstA].v, and copies the x and y bytes of
-   gA99C[dstA] from ds:6900. For `srcB` (when not -1) it slices the two cells at `dstB` the same way,
+   gA99C[dstA] from ds:6900. For `srcB` (when not -1) it slices the three cells at `dstB` the same way,
    but reads its ds:6900 x/y pair with srcA's index (QUIRK ovl3:0597). Clears gStatusLine. Called by
    ovl3:0A7C. */
 /*@ ovl3:03A2 */ void LoadMapCells(int srcA, int dstA, int srcB, int dstB)
@@ -557,8 +558,7 @@ done:
    finally the wall textures (LoadWallTextures with the gMapTiles[gFBC8-1] sheet) and the INVENT
    screen. It clears the 0x400 ds:B899 item-list heads, rebuilds the list, sets bit 2 of gFlags849E,
    calls PlaySound(0) and sets gFB45 to 1. Called by EnterMapScreen (0ACD:0F72), ResetMapScreen
-   (0ACD:1033), LoadLevelOp (122E:1AAB, src/E122E.C:1287, through the 210C:007A stub) and ovl3:15B9
-   LoadGame. */
+   (0ACD:1033), LoadLevelOp (122E:1AAB, through the 210C:007A stub) and ovl3:15B9 LoadGame. */
 /*@ ovl3:0A7C */ void LoadMapScreen(int level)
 {
     int scriptWord;
@@ -771,7 +771,7 @@ done:
 /* ovl3:11AF: saves the level state `level` to LEVELS.TMP: normalizes gSegEFC2+0xC800 into a far
    pointer, hands it to ovl3:0FD1, opens LEVELS.TMP for writing (mode 3), seeks to
    (level-1)*0x7F8, writes 0x7F8 bytes from the buffer, closes it and sets bit level-1 of gFBD0.
-   Called by LoadLevelOp (122E:1AAB, src/E122E.C:1268, through the 210C:002F stub). */
+   Called by LoadLevelOp (122E:1AAB, through the 210C:002F stub). */
 /*@ ovl3:11AF */ void SaveLevelState(int level)
 {
     char far *state;
@@ -830,8 +830,9 @@ done:
    length: the six 243-byte characters ds:F580 (after AgeCharTimers and before AdvanceCharTimers),
    the 0x40-byte header at ds:FBC8, the 500 14-byte items ds:8DD0, the 0x5FA0-byte image
    gSegEFC2, the single bytes ds:80E8, ds:80E6 and ds:F43C, and the 0x60-byte buffer ds:AD20.
-   Returns 1 when every write wrote its full length, else 0; only when every write succeeded does
-   it reload the INVENT screen. Called by overlay 1 (ovl1:1ACD). */
+   Returns 1 when every write wrote its full length, else 0. The `if (ok)` at :853 follows `ok = 1`,
+   so the INVENT reload at :870 runs after the writes whether or not they succeeded; the `ok &=`
+   writes at :856-868 only compute the return value. Called by overlay 1 (ovl1:1ACD). */
 /*@ ovl3:1368 */ int SaveGame(void)
 {
     int slot;
@@ -879,14 +880,15 @@ done:
    recreates LEVELS.TMP from block 3 (mode 2 deletes and recreates the file; FileWrite starts at
    offset 0 and carries the whole gBlockSizes[3] image). It stores the three single bytes ds:80E8
    (the Ctrl flag), ds:80E6 (gSoundOn) and ds:F43C, unpacks the 0x60 bytes into ds:AD20, loads
-   the CHARGENA screen and, for each occupied character (m01 nonzero), cuts its 4 by 32 cell out
-   of gOverlayBuf (through ds:8082), unpacks it into its 0x514-byte sprite buffer and frees it;
+   the CHARGENA screen and, for each character whose m01 is nonzero and whose m22 is >= 0, cuts its
+   4 by 32 cell out of gOverlayBuf (through ds:8082), unpacks it into its 0x514-byte sprite buffer
+   and frees it (a character with m01 nonzero and m22 < 0 sets `flag` at :951 instead);
    when any slot is empty or any occupied character has m22 < 0 it then loads the OUTTAKE screen
    and draws the m22 < 0 characters' sprites into it. Unless ds:A998 is -1 it then rebuilds the
    map screen (ovl3:0A7C), reloads PLAYFLD and INVENT, hands gA9C0 to f1A47_0169, redraws the
    characters, and either restores the mouse item when the mouse is enabled (gMouseDisabled is 0)
-   or, when the mouse is disabled and gFBCE is nonzero, inserts it with a RollDice-chosen per-cell
-   sound. Sets ds:A998 to 1 on success, 0 on failure, and returns that flag. Called by overlay 1
+   or, when the mouse is disabled and gFBCE is nonzero, inserts it with a sound from the g1A1B table
+   picked by RollDice(1, 2, -1) (the item is keyed by gPartyCell). Sets ds:A998 to 1 on success, 0 on
    (ovl1:1ACD) and overlay 2 (ovl2:0846). */
 /*@ ovl3:15B9 */ int LoadGame(void)
 {
