@@ -42,6 +42,8 @@ extern signed char gA99A; /*@ ds:A99A */       /* the selected character index (
 extern signed char g181F[]; /*@ ds:181F */     /* byte table indexed by an item icon (src/E1414.C) */
 extern int ClickInRect(int left, int top, int right, int bottom); /*@ 082C:0A5D */
 extern void PlaySound(int sound); /*@ 177D:0070 */
+extern void PlaySoundAtCell(int sound, int volume); /*@ 177D:0106 */
+extern char gFB76; /*@ ds:FB76 */              /* set by opcode 0xFFE4, cleared when the driver starts (122E:1097, 122E:1DA8) */
 extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
 extern char gFileNameBuf[]; /*@ ds:FE6E */     /* the text buffer sprintf formats into (src/E082C.C) */
 extern int gForceDoorRoll[]; /*@ ds:59B0 */    /* force-door roll thresholds, indexed by CharRec.m0D (122E:0325) */
@@ -150,7 +152,11 @@ struct Obj28 {                                  /* the 28-byte object records at
     char pad00[2];
     int id;                                     /* +2 (ds:8A84): the object id */
     char frame;                                 /* +4 (ds:8A86) */
-    char pad05[0x1c - 5];
+    char pad05[0x08 - 5];
+    signed char type;                           /* +8 (ds:8A8A): the object type, cleared by 122E:1097 */
+    char pad09[0x16 - 9];
+    char m16;                                   /* +0x16 (ds:8A98): a bit flags byte set by 122E:1097 */
+    char pad17[0x1c - 0x17];
 };
 extern struct Obj28 gObjs[]; /*@ ds:8A82 */
 extern void MoveObjectToId(struct Obj28 far *obj, int id, int orient); /*@ 08E6:0297 */
@@ -832,7 +838,56 @@ done:
     LockShowPointer();
     return (long)(script - start);
 }
-/*@ 122E:1097 stub */ void f122E_1097(void) {}
+/* 122E:1097: sub-opcode that sets action flags. 0xFFEF sets the bit in the gActionFlags entry of the
+   current action gFBC8, 0xFFF0 sets it in gFC04, 0xFFF3 sets a bit in gObjs[index].m16 and clears
+   gObjs[index].type, and 0xFFE4 sets gFB76. Returns the bytes read. */
+/*@ 122E:1097 */ long SetActionFlagsOp(char far *script)
+{
+    int op;
+    int arg;
+    char far *start = script;
+    register int idx;
+
+    op = *script++;
+    switch (op) {
+    case 0xffef:
+        arg = *script++;
+        gActionFlags[gFBC8] |= 1L << arg;
+        break;
+    case 0xfff0:
+        arg = *script++;
+        gFC04 |= 1L << arg;
+        break;
+    case 0xfff3:
+        idx = *script++;
+        arg = *script++;
+        gObjs[idx].m16 |= 1 << arg;
+        gObjs[idx].type = 0;
+        break;
+    case 0xffe4:
+        gFB76 = 1;
+        break;
+    }
+    return (long)(script - start);
+}
+
+/* 122E:1194: sub-opcode that plays a sound: read a sound byte and a cell word; a nonzero cell plays
+   the sound at that map cell, otherwise as a global sound. Returns the bytes read. */
+/*@ 122E:1194 */ long PlaySoundOp(char far *script)
+{
+    char far *start = script;
+    char sound;
+    int cell;
+
+    sound = *script++;
+    cell = *(int far *)script;
+    script += 2;
+    if (cell != 0)
+        PlaySoundAtCell(sound, cell);
+    else
+        PlaySound(sound);
+    return (long)(script - start);
+}
 
 /* 122E:11E8: sub-opcode that clears one bit of a 32-bit action mask: 0xFFEF clears the bit in the
    gActionFlags entry of the current action gFBC8, 0xFFF0 clears it in gFC04. The byte after the

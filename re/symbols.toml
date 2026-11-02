@@ -4067,6 +4067,9 @@ unit = "e122e"
 addr = "122E:1097"
 size = 337
 evidence = ["frame"]
+name = "SetActionFlagsOp"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e122e_11e8"
