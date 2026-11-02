@@ -73,7 +73,8 @@ struct CharRec {                /* 243-byte character records at ds:F580 (src/E0
     char m1E;
     signed char m1F;            /* +1F: half of it indexes gTable5F35 (src/E0A72.C) */
     signed char m20;            /* +20: indexes g1231 (src/E0DE8.C) */
-    char pad21[0x24 - 0x21];
+    char pad21[0x23 - 0x21];
+    signed char m23;            /* +23: set to 0x64 by ovl0:26C6 (Purpose unknown) */
     signed char m24;            /* +24: read by ovl0:065B (Purpose unknown) */
     signed char m25;            /* +25: read by ovl0:065B (Purpose unknown) */
     signed char m26;            /* +26: read by ovl0:065B (Purpose unknown) */
@@ -81,9 +82,19 @@ struct CharRec {                /* 243-byte character records at ds:F580 (src/E0
     void far *sprite;           /* +33: the character's packed sprite buffer (src/EOV3.C) */
     char pad37[0x73 - 0x37];
     long m7375;                 /* +73: a 32-bit value 280D sets to 0x26c (Purpose unknown) */
-    char pad77[0xf3 - 0x77];
+    int m77[27];                /* +77: 27 carried-item slots (src/E0DE8.C) */
+    char padAD[0xf3 - 0xAD];
 };
 extern struct CharRec gChars[]; /*@ ds:F580 */
+
+struct ItemSlot {               /* 4-byte records at ds:60D5 (ovl0:26C6) */
+    int item;                   /* +0: an item type, or -1 for "no item" */
+    int slot;                   /* +2: the carrying slot it prefers */
+};
+extern struct ItemSlot g60D5[]; /*@ ds:60D5 */ /* the per-class item/slot table ovl0:26C6 walks (Purpose unknown) */
+extern char g6101[]; /*@ ds:6101 */ /* the per-class four-entry item table ovl0:26C6 walks (Purpose unknown) */
+extern int CopyItemToFreeSlot(int n); /*@ 0BD2:089E */
+extern void ComputeArmourClass(int who); /*@ 0DE8:0D5E */
 extern signed char g1231[]; /*@ ds:1231 */ /* byte table indexed by gChars[].m20 (src/E0BD2.C) */
 extern int far RollDice(char count, char sides, char bonus); /*@ 082C:0458 */
 extern void far *gPtrsFC8C[]; /*@ ds:FC8C */ /* the 0x43 overlay buffers 28B0 frees */
@@ -827,7 +838,61 @@ void DrawPanelRow(int index);      /* ovl0:11BA, defined below */
     ClipRect(0x12, 0x40, 0, 0, 0x14, 0x80, 0, 2);
     LockShowPointer();
 }
-/*@ ovl0:26C6 stub */ void Ovl0_26C6(void) {}
+/* ovl0:26C6: gives each of the first four characters its class starting equipment. It copies item
+   0x23 into gChars[0]'s slot 2, then for each character sets m01 = 1, m23 = 0x64, pad00 = i and slot
+   3 = item 0xa; for each of the class's four table entries g6101[m20][j] it looks up g60D5[idx]'s
+   item and slot: an item of -1 is skipped, a negative slot takes the first free of slots 0..2, an
+   occupied slot is skipped, item 5 for m1F >> 1 == 3 becomes 0x24, the item is copied into a free
+   slot (the first free from slot 2) and stored. Finally it rebuilds the character's armour class
+   through ComputeArmourClass. Called by ovl0:28F9. Purpose unknown: the item numbers. */
+/*@ ovl0:26C6 */ void Ovl0_26C6(void)
+{
+    int j;
+    int i;
+    int idx;
+    struct CharRec far *rec;
+    register int item;
+    register int slot;
+
+    item = CopyItemToFreeSlot(0x23);
+    gChars[0].m77[2] = item;
+    for (i = 0; i < 4; i++) {
+        rec = &gChars[i];
+        rec->m01 = 1;
+        rec->m23 = 0x64;
+        rec->pad00 = i;
+        item = CopyItemToFreeSlot(0xa);
+        rec->m77[3] = item;
+        for (j = 0; j < 4; j++) {
+            idx = g6101[rec->m20 * 4 + j];
+            item = g60D5[idx].item;
+            slot = g60D5[idx].slot;
+            if (item == -1)
+                continue;
+            if (slot < 0) {
+                slot = 0;
+                if (rec->m77[slot] != 0)
+                    slot = 1;
+                if (rec->m77[slot] != 0)
+                    slot = 2;
+            }
+            if (slot != 2 && rec->m77[slot] != 0)
+                continue;
+            if (item == 5 && (rec->m1F >> 1) == 3)
+                item = 0x24;
+            item = CopyItemToFreeSlot(item);
+            if (slot != 2) {
+                rec->m77[slot] = item;
+            } else {
+                slot = 2;
+                while (rec->m77[slot] != 0)
+                    slot++;
+                rec->m77[slot] = item;
+            }
+        }
+        ComputeArmourClass(i);
+    }
+}
 /* ovl0:280D: for each of the first four characters whose class byte g1231[gChars[i].m20] has bit 2
    set, sets the 32-bit gChars[i].m7375 to 0x26c. Called by ovl0:28F9. Purpose unknown. */
 /*@ ovl0:280D */ void InitCharSlotValues(void)

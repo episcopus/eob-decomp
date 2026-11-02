@@ -7048,6 +7048,9 @@ unit = "eov0"
 addr = "ovl0:26C6"
 size = 327
 evidence = ["ovl", "near", "frame"]
+name = "Ovl0_26C6"
+level = "L2"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "eov0_280d"
