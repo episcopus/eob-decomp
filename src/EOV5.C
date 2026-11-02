@@ -333,8 +333,8 @@ unsigned char gTable7B89[] = { 0x3B, 0xA6, 0x04, 0x70, 0xDC, 0x04, 0x70, 0xDC, 0
 
 /* the key codes these panels accept; SelectMenu's switch table at ovl5:0657 lists them. The mask,
    the three confirm keys, the two mouse-button keys and up/down are the same game keys as
-   UpdateOptionList's (src/E14EF.C:222); 0x5c and 0x66 are SelectMenu's own left/right (prev/next)
-   keys, and 0x34 is a fourth dismiss key of the message box 025F. */
+   UpdateOptionList's (14EF:0274); 0x5c and 0x66 are SelectMenu's own prev/next keys, and 0x34 is
+   a fourth dismiss key of the message box 025F. */
 enum {
     KEY_CODE_MASK = 0x8FF,      /* the filter both menu loops apply: bits 0-7 and bit 11 of the key word */
     KEY_CONFIRM   = 0x2B,       /* confirm: dismisses the message box and picks the highlighted row */
@@ -601,7 +601,7 @@ enum {
    `yesMsg` is -1, builds and draws "<name> joins the party." (ds:7D0E) for gCharPool[who] and
    shows the modal message 025F; it then removes the carried items of type 0x21 whose m0B is
    `who`+1 (RemoveCarriedItems matches m02 == class and m0B == fieldB; what m0B means is not
-   established, 0D1C:0276) and, when ChooseChar finds a free slot, adds the character through 070E.
+   established, 0D1C:01CA) and, when ChooseChar finds a free slot, adds the character through 070E.
    Choice 1 ("no") draws message `noMsg`. Called by the panels 0924, 09C5, 0DBB and 119E. */
 /*@ ovl5:0828 */ void AddCharPanel(int who, int which, int yesMsg, int noMsg)
 {
@@ -677,7 +677,7 @@ enum {
    bit and shows the two-entry menu ds:7BBA ("Hear proposal"/"Leave"); choice 0 draws message 4,
    choice 1 skips the second menu (showSecond = 0). Otherwise it draws message 0xd. When the second
    menu is shown (showSecond) it runs ds:7BC2 ("Help him"/"Leave"); choice 0 queues six healing
-   items 0x37 and the item 0x3e on the current page, sets gFC04 bit 0x10000, draws message 6 and
+   items 0x37 and the item 0x3e through QueueItem, sets gFC04 bit 0x10000, draws message 6 and
    runs the character panel 0828(7, 7, 0x1d, 0x1e); choice 1 (or a skipped second menu) draws
    message 5 and returns. Called by the panel dispatcher 0B58. */
 /*@ ovl5:09C5 */ void GiveItemPanel(void)
@@ -776,7 +776,7 @@ enum {
    of its 25 item slots whose item type's gA9F5[type].m09 low 7 bits equal 8, stored as
    -gTable8DD2[item].m0B. Returns the count. ResurrectPicker reads a negative entry n back as the
    pool index -(n + 1): that reading is an inference from ResurrectPicker and the
-   RemoveCarriedItems(0x21, who + 1) calls; what m0B itself means is not established (0D1C:0276).
+   RemoveCarriedItems(0x21, who + 1) calls; what m0B itself means is not established (0D1C:01CA).
    Called by 0EB9. */
 /*@ ovl5:0BBE */ int BuildDeathList(void)
 {
@@ -854,9 +854,9 @@ enum {
    row 2) and acts on the chosen entry: a party member is healed to full (hp = maxhp); a pool
    character has its carried items of type 0x21 with m0B == k+1 removed, becomes the selected
    character gEFC6, redraws the portrait and runs the add-character panel with the yes message
-   suppressed (-1). Called by 0EB9. `names[20]` holds gCountDDE0 entries; BuildDeathList can add
-   up to 6 + 6*25 = 156, so the fixed 20 is only safe because that many rarely qualify (the dead
-   members plus a few kind-8 items). */
+   suppressed (-1). Called by 0EB9. `names[20]` holds gCountDDE0 entries: the match fixes the
+   array at 20 entries, nothing in the code caps gCountDDE0 at 20 (BuildDeathList can add up to
+   6 + 6*25 = 156), and whether the original's data can exceed 20 is not established. */
 /*@ ovl5:0DBB */ void ResurrectPicker(void)
 {
     char far *names[20];
@@ -981,8 +981,8 @@ enum {
 /* ovl5:10A6: the "surrender / attack" NPC panel. Draws message 0x10 and shows the 2-entry menu
    ds:7BF2 ("Surrender"/"Attack"); choice 0 draws message 0x11 and, for every character's first two
    item slots whose item type gTable8DD2[item].m02 is outside 0x33..0x38, clears the slot and
-   queues the item on the current page list. Sets gFC04 bit 0x2000000. Called from the menu
-   dispatcher 1A82 (mode 5). */
+   queues the item on the list keyed by gPartyCell, with the sound from gFBCC. Sets gFC04 bit
+   0x2000000. Called from the menu dispatcher 1A82 (mode 5). */
 /*@ ovl5:10A6 */ void SurrenderPanel(void)
 {
     int sel;
@@ -1224,8 +1224,9 @@ enum {
    0xa the "find the word" panel (ovl2:09ED); every other mode draws the item screen (loads OUTTAKE
    ds:7F07, reads TEXT.DAT ds:7F0F into gSegDF4E, draws the panel and the 8x8 font) and runs one of
    the eight menu panels through the jump table at cs:1CCD. Finally it restores the font and the
-   pointer, loads a wall texture set for the current level (fOvl3_07A5, LoadWallTextures; a NULL
-   name reuses the current wall name), loads the PLAYFLD (ds:7F18) and INVENT (ds:7F20) images,
+   pointer, loads a wall texture set (fOvl3_07A5, LoadWallTextures) for the sheet
+   gMapSheet + (gMapTiles[gFBC8 - 1] << 5), with a NULL name so the current wall name is reused,
+   loads the PLAYFLD (ds:7F18) and INVENT (ds:7F20) images,
    redraws the characters and resets the text window to 7. The eight panel cases are laid out in
    the source order 0,1,2,3,4,6,5,7 (the original's bodies are 0924, 0B58, 0EB9, 0F77, 102C, 1087,
    10A6, 119E, so the jump table maps mode 5 to the 10A6 body and mode 6 to the 1087 body). */
@@ -1400,7 +1401,6 @@ enum {
             handle = gFn8072(pick, idx);
             gStatusLine = restoreStatus;
             gFn809E(pick, idx, handle);
-
         }
     }
     gStatusLine = saved;
