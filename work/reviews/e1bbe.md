@@ -1,7 +1,7 @@
 # Review: e1bbe
 
 Reviewer: rev-haiku
-Commit reviewed: fef890a for round 12 (main; src/E1BBE.ASM last changed at 08c8575, the round 11 fixes; src/E1A72.ASM at 7f9b24e, which moved its lines 289-291 and 551-556 by one line, see round 12). Round 10: 890d7f8 (main, the 0385631 fixes merged; src/E1BBE.ASM last changed at 0385631; the review branch is identical to main). Round 9: 68d16c2 (main; src/E1BBE.ASM last changed at e831c19, the round 8 fixes; src/E1A72.ASM at b00a8c7, and the round 8 label cites still hold against it; the review branch is identical to main). Round 8: 20871bc (main; src/E1BBE.ASM last changed at d1e1a32, src/E1A72.ASM at 2af4699). Round 7: 07c010f (main; src/E1BBE.ASM, src/E1A72.ASM and the other files the cites name are the same in the review branch at 1d5a0ef). Round 6: a53aa55 (main; src/E1BBE.ASM last changed at 887afda, src/E1A72.ASM at e3ea88d; the review branch is identical to main in this worktree). Round 5: d1538ee for round 5 (main; src/E1BBE.ASM last changed at 6ddaa61, src/E1A72.ASM at 65ebeb1; both are identical in this worktree). Round 4: 433dc71 (main; src/E1BBE.ASM is unchanged since 5cfa933). Earlier: 421cd1e7a31c20710200fe18247bdf159a34d76c (round 3, main; src/E1BBE.ASM is identical to the review branch at 8225102, which is on main). Round 2 was reviewed at 089dfd1 and round 1 at 0cfccb1 (see below). E1A72.ASM has moved on main since round 2 (commit e856ab9), which is why round 3 finds stale citations.
+Commit reviewed: cb4de6d for round 13 (review/e1bbe; main at 2627286 changes none of the files the cites name). Round 12: fef890a (main; src/E1BBE.ASM last changed at 08c8575, the round 11 fixes; src/E1A72.ASM at 7f9b24e, which moved its lines 289-291 and 551-556 by one line, see round 12). Round 10: 890d7f8 (main, the 0385631 fixes merged; src/E1BBE.ASM last changed at 0385631; the review branch is identical to main). Round 9: 68d16c2 (main; src/E1BBE.ASM last changed at e831c19, the round 8 fixes; src/E1A72.ASM at b00a8c7, and the round 8 label cites still hold against it; the review branch is identical to main). Round 8: 20871bc (main; src/E1BBE.ASM last changed at d1e1a32, src/E1A72.ASM at 2af4699). Round 7: 07c010f (main; src/E1BBE.ASM, src/E1A72.ASM and the other files the cites name are the same in the review branch at 1d5a0ef). Round 6: a53aa55 (main; src/E1BBE.ASM last changed at 887afda, src/E1A72.ASM at e3ea88d; the review branch is identical to main in this worktree). Round 5: d1538ee for round 5 (main; src/E1BBE.ASM last changed at 6ddaa61, src/E1A72.ASM at 65ebeb1; both are identical in this worktree). Round 4: 433dc71 (main; src/E1BBE.ASM is unchanged since 5cfa933). Earlier: 421cd1e7a31c20710200fe18247bdf159a34d76c (round 3, main; src/E1BBE.ASM is identical to the review branch at 8225102, which is on main). Round 2 was reviewed at 089dfd1 and round 1 at 0cfccb1 (see below). E1A72.ASM has moved on main since round 2 (commit e856ab9), which is why round 3 finds stale citations.
 
 Playbook 70. Judge what a matching file can still get wrong: names, types, comments, structure.
 The matcher already proved the bytes; do not re-prove them, read for meaning.
@@ -10,6 +10,75 @@ The matcher already proved the bytes; do not re-prove them, read for meaning.
 
 Each finding is a checkbox. `must-fix` blocks `make review-pass` until a decompiler ticks it off
 (with the commit that fixes it); `should` and `note` do not block.
+
+### Round 13 (review of commit cb4de6d, src/E1BBE.ASM last changed at c6b7301, the round 12 fixes)
+
+Reviewer: rev-haiku. This file keeps the earlier rounds. Round 12's three must-fix items are ticked, but the
+_gDraw80C2 cite was ticked with the wrong lines (it is still three lines early), and a new must-fix shows a quoted
+wording that is gone from src/E14EF.C.
+
+Checked: `make match FILE=src/E1BBE.ASM` 7 of 7 (860 bytes), exit 0; `make readability UNIT=e1bbe` 0 findings. The
+binary addresses in the headers were read from `tools/re/disasm.py eob/EOB.EXE 1BBE` and hold: HidePointer (0015,
+0021, 0048, 004B, 0055, 0075, 00E0, 00EC), ShowPointer (00FD, 00FF, 010F, 0111, 0114, 0117, 011E, 0121, 0124, 012E,
+0147, 014A, 0150, 0154, 0159, 015B, 018B, 0190, 01E0, 01F0, 01F4 `lcall [0x80c2]`), HidePointerZone (01FE, 021E, 0229,
+022D, 0232, 0234, 024B, 025B, 0272, 0285, 0299, 029F, 02AE, 02B6), ShowPointerZone (02C2, 02DE, 02F8, 0300) and the
+Lock pair (0307, 030A, 0324, 0332, 0335, 034F). The handler cites were read against src/E1A72.ASM: L01E2 (:416), L01E9
+(:418), L020C (:427), the g80EC test and `je L0221` (:428-429), the cursor stores (:430-431), L0221 (:432), the 8000h
+test (:441), L0279 (:459), L01EC (:419-426, the 4000h at :425 after the bracket), L025C (:452-458) and the zone compares
+(:443-451); InitMouse stores at :297-300 (the _gHideDepth and _gPointerState stores at :299-300). The other-unit cites
+hold: src/E1BB1.ASM:19-25, :53, :57-59, :94-95, :130, :162-164; src/E1BF3.ASM:35; src/E17A6.ASM:93-95;
+src/E1A72.ASM:561-569 (the _SetFarPointer header, the sentence at :565); src/E1A29.C:53 and :57; src/E07A9.C:221.
+The meaning of each header was read against the code: the hide and show halves (the depth count and its saturation at
+0FFFFh, the rectangle clip, the save and draw order, mode 0 with the unclipped gShapeX/gShapeY), the zone pair (the
+arguments at [bp+6] to [bp+0Ch], the 8000h and 4000h bits, the low-byte repeat count saturating at FFh, the disjoint
+exit to 02B6) and the Lock pair (the busy wait and increment, the bracket). No name or comment is contradicted by the
+code. main (2627286) changes none of the files the cites name, so the findings hold on main as well.
+
+- [ ] must-fix src/E1BBE.ASM:132-133 (_gDraw80C2 EXTRN: "src/E1BBE.ASM:334-339 gives the push order, call at :340"):
+  the pushes are at :337-342 (`push word ptr [_gShapeY]` at :337, `_gShapeX` at :338, `_gPointerShapeSeg` at :339,
+  `_gPointerShapeOff` at :340, `mov ax,0` at :341, `push ax` at :342) and the call, `call dword ptr [_gDraw80C2]`, is
+  at :343. Round 12's fix moved the cite to :334-339 and :340, which is three lines early. (Evidence: `grep -n
+  "_gShapeY\]\|_gDraw80C2\]" src/E1BBE.ASM` gives :337 and :343; the binary agrees: `push [0x8180]` (gShapeY) at
+  1BBE:01E0 and `lcall [0x80c2]` at 1BBE:01F4.) Cite :337-342 and the call at :343.
+- [ ] must-fix src/E1BBE.ASM:480-482 (LockHidePointer header: "the declarations give LockHidePointer 'start a frame' and
+  LockShowPointer 'end a frame', src/E14EF.C:80-81"): neither wording is in src/E14EF.C now. Lines 80-81 are blank and
+  the DrawShadowText declaration. `grep -rn "start a frame\|end a frame" src/` finds only this line. The words were in
+  E14EF.C before e2502f9 (`git log -S"start a frame" -- src/E14EF.C` gives e2502f9 and 0faf326), which removed them, so
+  the header cites evidence that is not in the tree. Fix: drop the quoted wording and the E14EF.C cite, and say what the
+  bracket rests on: the code itself, [ds:80AA] and [ds:80A2] around the hide (1BBE:0307-0332). Keep the note that "Lock"
+  does not mean mutual exclusion. The name Lock stays, since the callers use it (src/E14EF.C:87-88, src/E1C0E.C:39-40,
+  src/E0D1C.C:134-135).
+- [ ] should src/E1BBE.ASM:20-21 (unit header, "the disjoint-rectangle exit of HidePointerZone (QUIRK 1BBE:02B6, which
+  skips the bracket at 1BBE:029F-02B2)"): the bracket runs to the end of its closing `lcall [0x80a2]`, which is at
+  1BBE:02B2 and four bytes long, so it ends at 02B5. Say 1BBE:029F-02B5. (Evidence: `tools/re/disasm.py eob/EOB.EXE 1BBE`
+  shows 02AE `push cs`, 02AF `call` (near), 02B2 `lcall [0x80a2]`, 02B6 `dec word ptr [0x812e]`.)
+- [ ] should src/E1BBE.ASM:58 (_gCursorY EXTRN, "mouse position, y in pixels"): _gCursorX gives its writers and their
+  evidence (the handler's store, the InitMouse stores), _gCursorY gives none. Add the same: written by the handler at
+  src/E1A72.ASM:431 (after label L020C, grep `_gCursorY`), read back at label L0221 (`mov dx,[_gCursorY]` at :436, which
+  the QUIRK jump at :434 can skip), and set to 64h by InitMouse (:298).
+- [ ] note the _gPointerState name (round 12 should, still for the owner and the human): its three bits are zone-hide
+  bookkeeping. The E1A72 declaration now says the same as this unit (src/E1A72.ASM:124-126, "8000h a zone hide is in
+  force"), so only the name question is left; it does not block the pass.
+- [ ] note routed, not changed here (stale cites from other units into this one, for their owners):
+  src/E1A29.C:50, :54 and :73 cite "ShowPointer (1BBE:00ED, src/E1BBE.ASM:252-258)"; ShowPointer's PROC is at :259 and the
+  draw call at :343 (1BBE:01F4). src/E1C00.ASM:41 and :287 cite "E1BBE.ASM:89-90" for the handler's pointer test; those
+  lines are now the end of the _gZoneTop comment and the _gZoneRight EXTRN. src/E19F3.C:85 cites "src/E1BBE.ASM:79"
+  (now the _gZoneLeft comment); the bytes it quotes are the screen bounds this unit names SCREEN_COLUMNS and SCREEN_ROWS
+  (:34-37), so the cite probably meant those constants. src/E14EF.C:88 cites "src/E1BBE.ASM:512-522" for the bracket
+  around LockShowPointer; the bracket is at :518-524 (the g80A2 call at :524).
+- [ ] note carried, not blocking: the bare spellings g8172, g8174, g80AA and g80A2 (the playbook's underscored form), the
+  "Lock" name (callers' term), and the packet's "Globals" list, which takes the first word of each comment as the name.
+  Human decisions, as in earlier rounds.
+
+Summary: the unit is understandable from its source alone. The bytes match, the names agree with the code and with the
+other files of src/, and the addresses in the headers hold against the disassembly. Two must-fix items block a pass, both
+citations or evidence that moved: the _gDraw80C2 push lines (:337-343, not :334-340), and the LockHidePointer header's
+quotation from src/E14EF.C (the words were removed in e2502f9). One should: the bracket range in the unit header and the
+writer evidence for _gCursorY. Placeholders and why: _f1BBE_0001 (the segment start, no code); g80AA and g80A2 (call
+sites only; src/E1A72.ASM:32-33 and src/E1BB1.ASM:94-95 declare them as indirect far functions); g8172 and g8174 (the far
+pointer; evidence in the header); _gDraw80C2 keeps its family-guess prefix (src/E1A29.C:53). No matcher, spec or pin
+question; nothing escalated. Result: review-failed (two must-fix, both evidence; the decompiler fixes them, ticks them
+with the commit and hands off again).
 
 ### Round 12 (review of commit fef890a, src/E1BBE.ASM last changed at 08c8575, the round 11 fixes; src/E1A72.ASM at 7f9b24e)
 
