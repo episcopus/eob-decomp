@@ -429,7 +429,7 @@ why = "the graphics choice: Main sets it to argv[1][0] + 1 (src/E07C8.C:226) and
 [[global]]
 id = "ds:8115"
 name = "gStatusLine"
-why = "the status-line flag in E082C.C:44, E1C0E.C:589, E16A5.C:511 and in the other declarations."
+why = "the status-line flag in E082C.C:44, E1C0E.C:589, DrawNode (16A5:07C3) and in the other declarations."
 
 [[global]]
 id = "ds:8140"

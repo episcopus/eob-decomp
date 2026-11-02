@@ -187,9 +187,10 @@ extern int g5DF2[];          /*@ ds:5DF2: words 1..4 the g5E1E redraw masks */
 
 /* 16A5:00BD: the event dispatcher (1798 bytes). `head` is the list to walk and `key` one key
    event (0 when only the mouse did something). It returns the key the walk reached when nothing
-   took it (`if (result == 0) result = key;` at the end): a DispatchKey event (tagged with 0x8000)
-   has been reduced to its low byte by then, a DispatchKeyWait key comes back as itself, and a
-   mouse-only call (key set to 0) returns 0; both callers ignore the value. First
+   took it (`if (result == 0) result = key;` at the end): a tagged DispatchKey key comes back as
+   its low byte and a DispatchKeyWait key as itself, except that the mouse branch sets the tagged
+   0xC6/0xC7 pair and the untagged 0x41/0x42 pair to 0, so those come back as 0; a mouse-only call
+   (key set to 0) returns 0; both callers ignore the value. First
    it maps the mouse buttons: while the mouse is enabled (not gMouseDisabled) each call sets
    ds:5E1C and ds:5E1E to 2 or 4 from GetKeyState of the codes 0x41 and 0x42; then the codes
    0x41/0x42 and the negative pair 0xC6/0xC7 override
@@ -544,11 +545,11 @@ done:
    `modeB` or `modeC` is 2 (DrawBox), or `modeB` is 3 with NODE_STATE_PREV set, or `modeC` is 3
    with NODE_STATE_10 set (gDraw8066), and only in the both-clear branch (NODE_STATE_ON and
    NODE_STATE_4 clear). The pointer is hidden with HidePointerZone over the box grown by the mouse
-   sprite size and shown again at the end; gStatusLine (ds:8115) is cleared around the kind 0, 2, 3
-   and 5 draws (not kinds 1 and 4) and ds:FC80 while a kind-1 node is. Callers: ToggleNode
-   (1658:0073), DisableNode (1658:0154), EnableNode (1658:017B), ClearNode (1658:01E6), SetNode
-   (1658:02F5) and the
-   dispatcher (16A5:00BD). [H] The exact meaning of the four colour pairs and of the two mode
+   sprite size and shown again at the end; gStatusLine (ds:8115) is cleared around every DrawBox
+   and gDraw8066 call and around the kind 0, 2, 3 and 5 draws; the kind 1 and 4 art calls never
+   clear it, and ds:FC80 is cleared while a kind-1 node is. Callers: ToggleNode (1658:0073),
+   DisableNode (1658:0154), EnableNode (1658:017B), ClearNode (1658:01E6), SetNode (1658:02F5) and
+   the dispatcher (16A5:00BD). [H] The exact meaning of the four colour pairs and of the two mode
    bytes is not established. */
 /*@ 16A5:07C3 */ void DrawNode(struct Node far *node)
 {
