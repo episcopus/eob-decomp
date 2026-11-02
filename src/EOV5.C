@@ -1340,13 +1340,13 @@ enum {
 {
     int far *xs;
     int far *ys;
-    int i;
-    int j;
-    int k;
     int swapped;
+    int k;
     int pick;
+    int j;
     int saved;
-    int cy;
+    register int i;
+    register int cy;
 
     xs = gBufDCFC;
     ys = (int far *)((char far *)xs + 0x280);
