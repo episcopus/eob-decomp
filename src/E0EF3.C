@@ -198,7 +198,9 @@ extern int gFBCC;                       /*@ ds:FBCC */
 extern int gPartyCell;                  /*@ ds:FBCA */
 extern char gDF4C;                      /*@ ds:DF4C */
 extern char gFileNameBuf[];             /*@ ds:FE6E */
-
+extern unsigned g5E1C;                  /*@ ds:5E1C */ /* a button/mode word (src/E0ACD.C) */
+extern char gF542[];                    /*@ ds:F542 */ /* a message buffer passed to RedrawPartyPanel */
+extern int ClampValue(int value, int low, int high, int invert); /*@ 082C:0AB4 */
 extern signed char gAt5717[];          /*@ ds:5717 */ /* a per-member byte: nonzero when the member
                                                      can use melee effects (read by 0EF3:0E1B) */
 extern signed char gTable5733[];        /*@ ds:5733 */ /* four cell deltas walked by 0EF3:17D8 */
@@ -243,6 +245,15 @@ struct ActRec {
     int m04;                /* +04: the result returned to the caller */
     char pad06[0x38 - 0x06];
     signed char m38;        /* +38: the member the action applies to, -1 when none */
+};
+
+/* The list node 0EF3:2929 handles: the same record with the action key at +0x38 read as a word
+   (0EF3:08CF and 0EF3:25BD read it as a byte). */
+struct ActionNode {
+    char pad00[4];
+    int m04;                /* +04: the result 0EF3:2929 returns */
+    char pad06[0x38 - 0x06];
+    int key;                /* +38: the action key */
 };
 
 extern int RedrawPartyPanel(struct ActRec far *rec); /*@ 0EF3:2541 */
@@ -1563,7 +1574,7 @@ void f0EF3_2295(void);
     gDDE2 = rec->m38;
     gA9C5 = 0;
     while (gA9C5 < 6) {
-        if (gDD14[gDDE2 * 6 + gA9C5] > 0)
+        if ((gDD14 + gDDE2 * 6)[gA9C5] > 0)
             break;
         gA9C5++;
     }
@@ -1606,7 +1617,61 @@ void f0EF3_2295(void);
     f0EF3_2676(action, kind);
 }
 
-/*@ 0EF3:2929 stub */ void f0EF3_2929(void) {}
+/* 0EF3:2929: the spell panel's list callback. It reads the action key (the node's +0x38): key 6
+   walks the member's six spell slots once, stepping gA9C5 by -1 or 1 (the g5E1C button bits 0 and
+   7) and clamping it into 0..6 until it lands on a nonzero slot, then runs the panel body
+   0EF3:2295; any other key accepts the slot only when its value is positive or the key is 7,
+   sets gA9C5 to the key when the key is under six and, below six, runs the panel body and casts
+   the slot's spell through 0EF3:2676 (its value plus 0x19 when gF43D is 1), else redraws the
+   party panel. Returns the node's +4 word. QUIRK 0EF3:2969: `found` is read uninitialised when the
+   first loop finds no slot. Reached through the list node's callback30.
+   DRAFT: the body is right but the original loads the far pointer before the second index in
+   `gDD14[gDDE2 * 6 + i]` (`les bx,[gDD14]; add bx,gDDE2*6; add bx,index`), while every form tried
+   (`gDD14[...]`, `(gDD14 + gDDE2*6)[...]`) sums the indexes or reloads the pointer in a different
+   order; the same compiler question as 0EF3:25BD (`make match` differs at the do-while, +0x89). */
+/*@ 0EF3:2929 draft */ int HandleSpellList(struct ActionNode far *node)
+{
+    int key;
+    int found;
+    int step;
+    int i;
+    int value;
+
+    key = node->key;
+    if (key == 6) {
+        for (i = 0; i < 6; i++) {
+            if ((gDD14 + gDDE2 * 6)[i] > 0) {
+                found = 1;
+                break;
+            }
+        }
+        if (found == 0)
+            return node->m04;
+        step = (g5E1C & 0x81) ? -1 : 1;
+        do {
+            gA9C5 += step;
+            gA9C5 = ClampValue(gA9C5, 0, 6, 1);
+            if (gDD14[gDDE2 * 6 + gA9C5] > 0)
+                break;
+        } while (gA9C5 != 6);
+        f0EF3_2295();
+    } else {
+        if (gDD14[gDDE2 * 6 + key] > 0 || key == 7) {
+            if (key < 6)
+                gA9C5 = key;
+            if (gA9C5 < 6) {
+                f0EF3_2295();
+                value = gDD14[gDDE2 * 6 + gA9C5];
+                if (gF43D == 1)
+                    value += 0x19;
+                f0EF3_2676(value, 0);
+            } else {
+                RedrawPartyPanel((struct ActRec far *)gF542);
+            }
+        }
+    }
+    return node->m04;
+}
 
 /*@ 0EF3:2A53 stub */ void f0EF3_2A53(int a, int b, int c, int d, int e, void far *p) {}
 
