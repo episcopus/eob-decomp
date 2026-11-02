@@ -9,9 +9,10 @@
    lines (src/E1A29.C), so the cap of SCREEN_COLUMNS on the width is the 320-pixel screen and
    the cap of SCREEN_LINES on the height its 200 lines; region record 0 is 0,0,40,200, the
    full screen, matching the call at 082C:05DD. That reading is an inference [H] from the caps
-   and record 0; the callers support the columns reading (E1DE7.C:245 to :248 pass gTextLeft,
-   gTextTop and gTextWidth unshifted to ClipRect and the whole-line height `line` derived from
-   gTextHeight at E1DE7.C:244, while EOV6.C:376 and :481 pass gTextHeight itself; the same
+   and record 0; the callers support the columns reading (E1DE7.C:245 passes gTextLeft as x1 and
+   x2 and gTextWidth unshifted to ClipRect, with y2 = gTextTop unshifted and y1 = gTextTop +
+   gFontHeight1A47, one line down, and the height `line` derived from gTextHeight at
+   E1DE7.C:244, while EOV6.C:376 and :481 pass gTextHeight itself; the same
    variables are multiplied by 8 or shifted by 3 for the pixel arguments of gFillRect, gDrawText
    and f0D1C_0C21 there). All the compares are signed. The width and height are capped at
    SCREEN_COLUMNS and SCREEN_LINES when larger, as plain size caps not tied to any origin;
@@ -29,8 +30,10 @@
    test, and (19F3:004B) also passes width = 40 + (-50) = -10, a negative size. The
    negative-origin shifts add the origin to the size (19F3:0036 and 19F3:004B add a negative
    x to the width, 19F3:005C and 19F3:0070 add a negative y to the height) with no size test
-   after the shifts, so ClipRect(-30, 0, 0, 0, 20, 200, 0, 0) passes x2 = 30 and width = -10,
-   whose far edge x2 + width = 20 is inside the screen. QUIRK 19F3:0036/004B/005C/0070: a
+   after the shifts, so ClipRect(-30, 0, 0, 0, 20, 200, 0, 0) passes x2 = 30 and width = -10:
+   the far edge x1 + width = -10, below column 0, and the negative width reaches the far
+   routine unchanged, while the second origin's extent x2 + width = 20 stays inside the screen.
+   QUIRK 19F3:0036/004B/005C/0070: a
    negative size reaches the far routine unchanged; what the far routine does with it is
    unknown.
    y1 and y2 have no upper test and nothing is capped on that side beyond the height.
@@ -39,8 +42,8 @@
    and the width by x1, x2 moves x1 by -x2 and the width by x2, y1 moves y2 by -y1 and the
    height by y1, y2 moves y1 by -y2 and the height by y2. The far edge x1 + width (and
    y1 + height) is unchanged by the shift, the reason the far-edge sentence above holds.
-   The eight ints are then passed on in source order (their push order in the bytes is extra2,
-   extra1, height, width, y2, x2, y1, x1). extra1 and extra2 are passed through untouched;
+   The eight ints are then passed on, pushed last argument first, so the bytes push extra2,
+   extra1, height, width, y2, x2, y1, x1. extra1 and extra2 are passed through untouched;
    nothing in this unit reads them and their roles are unknown, and the callers do not settle
    them either: E1DE7.C:245 passes g8115 for both extras, whose role E1DE7.C:69 says is not
    established. One lead [H]: E082C.C:280 and :285 pass extra1 equal to the value given as
@@ -59,14 +62,18 @@
      082C:038A  (0, 191, [bp+a]-1, [bp+c], [bp+e]+2, 9, 2,0)
    Three src/ calls pass y origins that differ: the one in DrawTextLine, whose entry is
    1DE7:03B2 (E1DE7.C:245), is made at 1DE7:0474 (pushes 1DE7:0450 to 0470) with y1 =
-   gTextTop + one line and y2 = gTextTop, a one-line scroll that clips and refills the last
-   visible line (E1DE7.C:228); 082C:006D (E082C.C:113) has y1 = y and y2 = 0xbf (the pushes at
+   gTextTop + one line and y2 = gTextTop, which E1DE7.C:228 calls a clip and refill of the last
+   visible line (a one-line scroll is the [H] reading of the source and destination pattern,
+   lines 66 to 67); 082C:006D (E082C.C:113) has y1 = y and y2 = 0xbf (the pushes at
    082C:0062 and 082C:005B); 082C:038A (E082C.C:209) has the same pair in the other order,
    y1 = 0xbf and y2 = y (the pushes at 082C:0383 and 082C:0378). The
    1DE7:0474 reading fits x1, y1 as a source and x2, y2 as a destination, a lead [H] to test
    against the far routine, not evidence yet. The x1 = x2, y1 = y2 pattern holds for the
    named-origin calls at EOV6.C:376, :385 and :481, and for the literal-zero calls at
-   EOV2.C:365, 082C:05DD and the two 0EF3 calls.
+   EOV2.C:365, 082C:05DD and the two 0EF3 calls, but the list is partial and not all callers
+   fit: E0ACD.C:272 (0ACD:01E3) has x2 = 0x16 and x1 = 0 in ClipRect(0, 0, 0x16, 0, 0x12, 0xa8,
+   2, 0), and the byte-only 0EF3:2512 (pushes at 0EF3:2505 to 2511) gives origins 9 and 122 each
+   twice.
    The two call sites 082C:006D and 082C:038A disagree on which y origin holds 191 (y2 for
    006D, y1 for 038A), so the 006D rectangle's coverage is not settled by the bytes; the [H]
    reading of y in lines rests on the height cap and region record 0, both below. The
@@ -80,8 +87,10 @@
    (src/E1A29.C, EOB.EXE file offset 0x23B7F), the DGROUP screen bounds g814E = 13Fh (319) and
    g8152 = 0C7h (199), screen width and height minus one, set at src/E1A72.ASM:191-192 and
    declared at src/E1A72.ASM:45-46, and the 40x200 screen the pointer sprite is clipped to
-   (src/E1BBE.ASM:79). The same region record at 0x23B7F (00 00 00 00 28 00 c8 00) lands on
-   the DGROUP base 0x212E used below, which is some support for that [H] base, not proof. */
+   (src/E1BBE.ASM:79). The same region record at 0x23B7F (00 00 00 00 28 00 c8 00) lands at
+   ds:009F under the DGROUP base 0x212E used below (0x23B7F - 0x2800 header - 0x212E0 = 0x9F),
+   and the region table is at ds:009F (src/E1A29.C:1-4); the two agree, but that is the [H]
+   base checked against the table address, not two independent sources, so support, not proof. */
 #define SCREEN_COLUMNS 40
 #define SCREEN_LINES 200
 
@@ -115,7 +124,10 @@ extern void (far *gFar8052)(int x1, int y1, int x2, int y2, int width, int heigh
 {
     if (width > SCREEN_COLUMNS) width = SCREEN_COLUMNS;
     if (height > SCREEN_LINES) height = SCREEN_LINES;
-    /* A negative origin is raised to 0 and its partner origin and the size take its offset. */
+    /* A negative origin is raised to 0 and its partner origin and the size take its offset.
+       QUIRK 19F3:0036/004B/005C/0070: a negative-origin shift adds the origin to its size, so a
+       negative width or height reaches the far routine unchanged; the header has the
+       ClipRect(-30, 0, 0, 0, 20, 200, 0, 0) example. */
     if (x1 < 0) {
         x2 -= x1;
         width += x1;
