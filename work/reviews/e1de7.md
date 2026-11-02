@@ -1,5 +1,35 @@
 # Review: e1de7
 
+# Round 3
+
+Reviewer: rev-haiku
+Commit reviewed: 52e31be (main; review/e1de7 was at the same commit when I started). src/E1DE7.C is the round 2 fixed file (232de89, 4206ba7, merged in 1e12252).
+
+Playbook 70. Judge what a matching file can still get wrong: names, types, comments, structure.
+The matcher already proved the bytes; do not re-prove them, read for meaning.
+
+Checked: `make match FILE=src/E1DE7.C` 9 of 9 functions, 2619 bytes; `make readability UNIT=e1de7` 0 findings. The round 2 fixes are in the code (gGraphicsChoice, gDraw805A, gStatusLine, gFillRect pattern, struct field names, the DrawTileRun prototype, the frame and gTextLeft comments). The findings below are new: they come from checking every line cite in the file against its target (`sed -n` on each cite), the cross-file names of the addresses this unit uses (grep of `/*@ ds:` in src/), and the EXE image bytes at file offset 0x23B7F (`xxd`: 00 00 00 00 28 00 c8 00 0f 00 0c 00 00 00 00 00, the region record 0).
+
+## Findings
+
+- [ ] must-fix src/E1DE7.C:14 and :78-79 (the header and the ds:8115 comment): the cites are stale. `src/E082C.C:44` is now a key-code enum; the ds:8115 declaration is E082C.C:62. `E082C.C:296` is a QUIRK comment; LoadOverlayScreen (E082C.C:322) sets the flag at :325. `E082C.C:383` is DrawBevelBox; the memory report that saves and clears the flag is ShowMemoryDiagnostics (E082C.C:414), saving at :423, clearing at :424, restoring at :432. Cite the current lines. (Evidence: `sed -n` of each cite in src/E082C.C.)
+- [ ] must-fix src/E1DE7.C:77 (ds:8110): "the hook is gated by it at src/E1DE7.C:246" points at the wrong line; the gate is at src/E1DE7.C:254 (`if (gFontHeight * gTextRow > gTextHeight - gFontHeight && gScrollOn && gScrollHook)`). (Evidence: the line itself.)
+- [ ] must-fix src/E1DE7.C:47-48 (gTextSaved): "0 until the first SetTextWindow, which then saves the window switched away from" is wrong for the first call. SetTextWindow only sets gTextSaved to 1 on the first call and saves nothing (src/E1DE7.C:91-98; the function comment at :84-88 says so). Say: 0 until the first SetTextWindow, which only sets it to 1; each later call saves the window it leaves.
+- [ ] must-fix src/E1DE7.C:50 (gGraphicsChoice): "3 and 4 select the 6-bit cells (src/E07C8.C:31)" cites a line that does not say it. E07C8.C:31-35 names the overlay files for the digits and the whitepaper choices and says nothing about cell size. The evidence for the shift is this unit's code: DrawTextFrame (src/E1DE7.C:155-156) and DrawTileRun (src/E1DE7.C:188) use shift 6 when gGraphicsChoice is 3 or 4. Cite those, and say the shift gives 64-byte steps instead of 32. (The same claim in src/E07A9.C:238 cites this file, so it is circular as written.)
+- [ ] should src/E1DE7.C:67-69 (ds:806A): the comment says "called with (x1, y1, x2, y2, colour)", but the declaration on :69 names the last parameter `pattern`, as src/E082C.C:54, E0EF3.C:373 and E1547.C:90 do. Use `pattern` in the comment too. The value passed is gTextAttr2 (:43), a colour; the name is the one the other units share.
+- [ ] should src/E1DE7.C:243-244 (DrawTextLine): "the last visible line is clipped and refilled (ClipRect, ds:806A)". "Clipped" is the name of the owner's routine (src/E19F3.C:1-5 says it adjusts a rectangle and passes it to the far routine behind ds:8052, whose target is not identified), not what this call does. The call passes the origins (left, top + font height) and (left, top) with height `line` (:261), then refills the bottom line through ds:806A (:262-263). Say what the call does, and keep the target unidentified.
+- [ ] should src/E1DE7.C:134 (gFrameTable): the declaration `unsigned far *gFrameTable[]` gives a 4-byte stride and no count, while the comment at :129-133 says the stride and the count are not established. The code does index it (gFrameTable[style], :159), so the stride is in the code. Say that in the comment: the array form is the index the code uses; the table length is unknown.
+- [ ] note EOV1.ASM:100 (not this unit's finding): gColourTable is declared at ds:00A9 as "sixteen 16-byte colour records, indexed by attribute << 4". That is inside the region table: gRegions[0] is ds:009F to ds:00AE (src/E1DE7.C:13; the image bytes at 0x23B7F put 0x0C at ds:00A9, the attr2 of record 0). Both names cannot hold for ds:00A9. The packet's "ds:00A9 records (EOV1.ASM)" is stale as well. This goes to the owner of EOV1.ASM; the human should say whether it needs an escalation.
+- [ ] note the struct Region field names: this unit now says attr1, attr2, column, row (src/E1DE7.C:19-28). E082C.C:26-27, E16A5.C:20-23, EOV2.C:19-22, EOV4.C:124-127 and E1A29.C:31-33 still say saved0 to saved3. The layout is the same, so the owners rename; nothing here is wrong.
+- [ ] note stale cites into this file, for their owners: E07C8.C:91 and :94 cite E1DE7.C:38 and :39 (now gTextTop and gTextWidth; the attribute declarations are at :41 and :43); E07A9.C:238 cites E1DE7.C:46 (now :50); E19F3.C:9 cites E1DE7.C:245 (now :254 to :261); E14EF.C:47 cites E1DE7.C:34 (now :37 and :38).
+- [ ] note gDrawText (ds:80CA) has five parameter spellings: text, x, y, color, extra here (:70); text, x, y, colour, flag at EOV5.C:173; text, x, y, colour, extra at E082C.C:55; a, b, c, d at EOV0.C:166, E1547.C:91 and E1AA6.C:7. A shared set would help; the owners decide.
+- [ ] note the -G claim (src/E1DE7.C:13-14, the `inc sp; inc sp` clean-ups) is still untested, as in rounds 1 and 2. No change asked.
+- [ ] note build/packets/e1de7.md is still stale (round 2): it lists parameter names as globals ("ds:805A src", "ds:806A x1", "ds:80CA text"). Tool owner.
+
+## Summary
+
+Round 3: the unit is understandable from its source, the names of the nine functions match what they do, and the window model reads clearly. What is still wrong is in the comments: three line cites point at other code (the ds:8115 header and WHY, and the ds:8110 gate), one comment says the first SetTextWindow saves a window when it does not (gTextSaved), and one cite does not support its claim (the 6-bit cells, cited to a line that does not mention them). Three shoulds on the callback parameter name, the word "clipped" for the ClipRect call, and the frame table's array form. No matcher, spec or pin question, so nothing is escalated here. The ds:00A9 collision with EOV1.ASM is for that unit's owner. Round 3 failed review on four must-fix items, all comment or cite corrections; no code change is asked.
+
 # Round 2
 
 Reviewer: rev-haiku
