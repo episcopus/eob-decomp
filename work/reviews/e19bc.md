@@ -51,3 +51,30 @@ All three must-fix findings and all seven shoulds are fixed; `make match FILE=sr
 (728 bytes) and `make readability UNIT=e19bc` is 0 findings. The three notes are left for the owners named in
 them. ds:810E is now `gAllocCount` (the review's should), so the placeholder sentence is gone. The MemRealloc
 comment marks `QUIRK 19BC:018A` and no longer claims the caller tests the realloc result.
+
+## Round 2 (rev-haiku, main 819ba10)
+
+Reviewer: rev-haiku. Commit reviewed: 819ba10 (main; src/E19BC.C is identical on review/e19bc and main and has the round 1 fixes of 60990d2). Round 1 is kept above and its items are ticked.
+Checks run: `make match FILE=src/E19BC.C` 5 of 5 (728 bytes); `make readability UNIT=e19bc` 0 findings.
+Checked against the original: `tools/re/disasm.py eob/EOB.EXE 19BC` (0007 to 02E0) and `tools/re/disasm.py eob/EOB.EXE 07A9` (00E0 to 00F8), and the image bytes at ds:810A (B6 02 BC 19, that is 19BC:02B6). Verified: 19BC:0129 (inc of ds:810E), 19BC:0182 (the dec, reached by the NULL jump at 0143), 19BC:0031 to 0037 (EvictFile(0, 0xff)), 19BC:0063 (lcall [810A]), the runtime targets, the `add sp,n` sites in the header, 07A9:00E6 (mov [810E],0), and the callers' flags (src/ passes only 0 and 0x20, so MEMALLOC_ZERO_FILL has no caller, as the comment says). ShutdownGame ends in exit(0) (src/E07C8.C:345).
+
+## Findings
+
+- [ ] must-fix src/E19BC.C:143-146 (MemRealloc QUIRK): the caller cite `src/E1C00.ASM:221-225` is wrong; those lines are the size and CX setup. The caller's `call far ptr _MemRealloc` is src/E1C00.ASM:237, its `or ax,dx` / `je short fail` is :244-245, and the `call dword ptr ds:[818Eh]` that calls 0001:AX is :263 (the comment for it is :239-243). Cite those.
+- [ ] must-fix src/E19BC.C:146-148 (MemRealloc QUIRK): "lands near 0000:000F after the offset wraps" gives the wrong mechanism. 19BC:01F2 loads bx = blk offset 0, 19BC:01F5 adds the pad (`add bx,ax`, ax = 0x10), so bx = 0x10, and 19BC:01FF stores to `es:[bx-1]`; the -1 is a displacement. The store lands at exactly 0000:000F, nothing wraps, and the byte written is 0x0F | flagBits. Say that; keep [H] only for the oracle check.
+- [ ] must-fix src/E19BC.C:17-21 (gAllocCount): `src/E07A9.C:108` (declaration) and `:242` (clear) are stale. On main they are src/E07A9.C:131 and :266. The 07A9:00E6 address is right (verified above).
+- [ ] must-fix src/E19BC.C:44-46 (MEMALLOC_ALIGNED): `src/E07A9.C:35` and `:232` are stale. The define is src/E07A9.C:36 and the use is src/E07A9.C:256 (`gBuf8DCA = MemAlloc(7500L, MEMALLOC_ALIGNED)`). The src/E1B82.C:43, :165 and :174 cites are correct.
+- [ ] must-fix src/E19BC.C:56 (MEMALLOC_FILL_CHUNK): "19BC:00E3" is not the step. 19BC:00EE is `sub word ptr [bp-0Eh],0FA00h` and 19BC:00FA is `add ax,0FA0h` (the segment step). 00E3 is the push of the memset argument. Cite 00EE and 00FA.
+- [ ] should src/E19BC.C:115-120 (MemFree): the NULL decrement looks like a bug and must be kept, so it is a QUIRK that READABILITY.md says to mark. Add `QUIRK 19BC:0182:` here (19BC:0143 jumps over the farfree straight to the dec at 19BC:0182).
+- [ ] should src/E19BC.C:137-139 (MemRealloc): "the mask drops the low nibble, which no caller in src/ sets" is unclear and partly misleading. MemAlloc writes the low nibble into an aligned block's header (`(pad - 1) | flags`, 19BC:00A9), and MemRealloc reads it as hdrLow. Say that: the low nibble of an aligned header is the alignment pad; no caller passes low-nibble flags, so a non-aligned header's low nibble is zero.
+- [ ] should src/E19BC.C:69 (MemAlloc): "the nested loop the original compiles to" claims a source form nobody has seen. The bytes show only that this loop matches (19BC:0031 to 0069). Say that, or drop the claim about the original.
+- [ ] should src/E19BC.C:204-206 (OutOfMemory): "It restores the command line's video mode" holds only when argv[5] is nonzero. f1DDD_002D calls the BIOS only when g84A2[7] (ds:84B0, 0 in the image, src/E1DDD.C:16-18) differs from ds:84A0 (src/E1DDD.C:49). Say "when argv[5] (ds:84A0) is nonzero".
+- [ ] should src/E19BC.C:178-181 (LargestFreeBlock comment): the paragraph wraps badly ("The" is left at the end of a line, and "(src/E082C.C:65 still says unsigned long)" sits mid-sentence). Rewrap it.
+- [ ] note Stale cross-references in other files, for their owners: src/E1BB1.ASM:168 cites "E19BC.C:142" for the `max -= 0x10` (now E19BC.C:193); src/E1BB1.ASM:179 cites "E19BC.C:29-32" for the flag bits (now :49-50); src/E1C00.ASM:240-247 cites "E19BC.C:142 to 145" for the 0x20 return (now :163-165); src/E07A9.C:33-35 cites E19BC.C:42-46 and :49-57 (define now :49-50), and :127-128 cites :97 and :120 (now :111 and :134; the e07a9 review already has this).
+- [ ] note src/E07C8.C:56 and src/EOV2.C:185 declare WaitGameKey void. Its routine returns the key in AX (src/E1AAD.ASM:481-482: call _ProcessKeyEvent, retf), and src/E1C0E.C:46 and src/E082C.C:78 declare int. This unit's cite at E19BC.C:39-41 could be :481-482 (line 483 is the ENDP).
+- [ ] note f1BA8_0072: its body is `push cs; call near ptr _NormFar` (src/E1BA8.ASM:87), so `NormFar` is a known callee. The placeholder is fine for an extern; the E1BA8 owner may take the name.
+- [ ] note carried from round 1: f1DDD_002D's parameter is `mode` here and `i` in src/E1DDD.C:43; MemAlloc's `int flags` is a bit mask (unsigned fits the value better); LargestFreeBlock is `unsigned long` in src/E082C.C:65.
+
+## Summary
+
+The meaning holds up. The names MemAlloc, MemFree, MemRealloc, LargestFreeBlock and OutOfMemory, the hook (ds:810A) and the counter (ds:810E) all have evidence (callers, the message string, the header bits, the ALLOC.H calls, and the disassembly), and they agree with src/ (E1C00.ASM, E1C0E.C, E07C8.C, E07A9.C, E1B82.C). The round 1 fixes are in place. The five must-fix items are all in comments: four cites point at the wrong lines, and one mechanism claim (the MemRealloc NULL store "wraps") is wrong. None changes a name or a type. Review result: review-failed, 5 must-fix. No matcher or spec question, so no escalation.
