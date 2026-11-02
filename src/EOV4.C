@@ -903,6 +903,12 @@ extern signed char g71A2[]; /*@ ds:71A2 */   /* per index nudge f (this unit) */
     }
     SetRegionRect(5, gViewColLeft, 0, gViewColRight, 0xf);
 }
+/* ovl4:19C4: not lifted yet. It builds a five-entry far-pointer list from the ds:DD2C records whose
+   +4 matches the slot heading, then draws each entry through the ds:F2F8 or ds:EC9A sprite tables
+   and DrawRegion000F/004D. Blocked like Ovl4_0D1B: it has the far-pointer store into a local array
+   at 19C4:1A6B (87 D8 xchg ax,bx), which the file's -B (TASM) assembles as the one-byte 93 while
+   the original (TCC's own assembler) keeps two bytes, so this function cannot match under the -B
+   that CopyViewColumn needs. See re/symbols.toml (eov4_19c4). */
 /*@ ovl4:19C4 stub */ void Ovl4_19C4(int slot) {}
 
 extern signed char g7272[]; /*@ ds:7272 */   /* per-column x base correction (this unit) */
