@@ -1,7 +1,7 @@
 # Review: e1bbe
 
 Reviewer: rev-haiku
-Commit reviewed: d1538ee for round 5 (main; src/E1BBE.ASM last changed at 6ddaa61, src/E1A72.ASM at 65ebeb1; both are identical in this worktree). Round 4: 433dc71 (main; src/E1BBE.ASM is unchanged since 5cfa933). Earlier: 421cd1e7a31c20710200fe18247bdf159a34d76c (round 3, main; src/E1BBE.ASM is identical to the review branch at 8225102, which is on main). Round 2 was reviewed at 089dfd1 and round 1 at 0cfccb1 (see below). E1A72.ASM has moved on main since round 2 (commit e856ab9), which is why round 3 finds stale citations.
+Commit reviewed: a53aa55 for round 6 (main; src/E1BBE.ASM last changed at 887afda, src/E1A72.ASM at e3ea88d; the review branch is identical to main in this worktree). Round 5: d1538ee for round 5 (main; src/E1BBE.ASM last changed at 6ddaa61, src/E1A72.ASM at 65ebeb1; both are identical in this worktree). Round 4: 433dc71 (main; src/E1BBE.ASM is unchanged since 5cfa933). Earlier: 421cd1e7a31c20710200fe18247bdf159a34d76c (round 3, main; src/E1BBE.ASM is identical to the review branch at 8225102, which is on main). Round 2 was reviewed at 089dfd1 and round 1 at 0cfccb1 (see below). E1A72.ASM has moved on main since round 2 (commit e856ab9), which is why round 3 finds stale citations.
 
 Playbook 70. Judge what a matching file can still get wrong: names, types, comments, structure.
 The matcher already proved the bytes; do not re-prove them, read for meaning.
@@ -10,6 +10,60 @@ The matcher already proved the bytes; do not re-prove them, read for meaning.
 
 Each finding is a checkbox. `must-fix` blocks `make review-pass` until a decompiler ticks it off
 (with the commit that fixes it); `should` and `note` do not block.
+
+### Round 6 (review of commit a53aa55, src/E1BBE.ASM unchanged since 887afda)
+
+Checked: `make match FILE=src/E1BBE.ASM` 7 of 7 (860 bytes), exit 0; `make readability UNIT=e1bbe` 0 findings. The
+round 5 wording fixes ("busy flag", the handler's set and clear, the underscored EXTRNs, the named callers) are in the
+code. Every citation into another unit was re-grepped against current main. The E1A72.ASM cites have gone stale again:
+that file moved on main (65ebeb1, 1578a9b, e3ea88d) after the round 5 fixes were made, and E14EF.C moved too. The names
+and the comment meanings hold against the code; the problems are the cites and one caller count.
+
+- [ ] must-fix src/E1BBE.ASM:36-38 (_gPointerBusy): the handler cites are stale. In src/E1A72.ASM the busy test is at
+  :376-377 (`cmp word ptr [_gPointerBusy],0`, `je L020C`), the drop is at :378 (`L01E9: jmp L027F`), the set to 1 is at
+  :387 (label `L020C`) and the clear to 0 is at :418 (label `L0279`). The cites :344-346, :355 and :386 no longer hold
+  these. (Evidence: `grep -n _gPointerBusy src/E1A72.ASM` gives :376, :387 and :418.) Cite :376-378, :387 and :418.
+- [ ] must-fix src/E1BBE.ASM:40-42 (_gCursorX): the cites are stale. The handler writes the cursor at
+  src/E1A72.ASM:390-391, skipped when g80EC is 2 (`cmp byte ptr [g80EC],2` at :388, `je L0221` at :389). InitMouse sets
+  0A0h at :267 and 64h at :268. The cites :358-359, :356-357 and :236-237 no longer hold these. src/E1BF3.ASM:35 is still
+  right (`mov ds:[8138h],cx`). (Evidence: `grep -n _gCursorX src/E1A72.ASM` gives :58, :267, :390 and :392.)
+- [ ] must-fix src/E1BBE.ASM:56-57 (_gPointerState): the cites are stale. The handler tests 8000h at src/E1A72.ASM:400,
+  before its zone test at :402, and sets 4000h for an in-zone hide at :385, on the path that calls _HidePointer at :383.
+  The cites :368 and :353 no longer hold these. (Evidence: `grep -n _gPointerState src/E1A72.ASM` gives :107, :270,
+  :385 and :400.)
+- [ ] must-fix src/E1BBE.ASM:115-116 and :210-211 (HidePointer and ShowPointer headers): "the mouse handler's two calls
+  (src/E1A72.ASM:351 and :383)" is wrong. :351 is no longer a call. The INT 33h handler (1A72:017A) calls _HidePointer
+  at src/E1A72.ASM:383 and :415 and _ShowPointer at :416, so ShowPointer has one handler call, not two. The handler is
+  also inside _InitMouse's proc (src/E1A72.ASM:258-425; the handler label is at :337), so "InitMouse (1A72:00DA)" and
+  "the handler" name the same proc. InitMouse's own setup code (:258-336) calls neither function. (Evidence:
+  `grep -n "_HidePointer\|_ShowPointer" src/E1A72.ASM` gives :27-28, :383, :415 and :416.) Name the calls by line:
+  HidePointer at :383 and :415, ShowPointer at :416.
+- [ ] must-fix src/E1BBE.ASM:431 (LockHidePointer comment): "src/E14EF.C:44-45" is stale. The pair is declared at
+  src/E14EF.C:59-60 with the comments "start a frame" (:59) and "end a frame" (:60). E14EF.C:44-45 are now the gFC7A and
+  g5D1A externs. Cite :59-60; the quoted words still hold. (Evidence: `grep -n "start a frame" src/*.C` gives
+  src/E14EF.C:59 only.)
+- [ ] should src/E1BBE.ASM:49 (_gPointerHotX): "hot spot, x in pixels (subtracted from gCursorX)" is right for
+  ShowPointer (1BBE:00ED subtracts it from gCursorX, :228), but HidePointer subtracts it from gDrawnX (1BBE:0002,
+  :131). Say both.
+- [ ] should src/E1BBE.ASM:381-382, :421-422, :449-450 and :472-473 (`push cs` then `call near ptr _HidePointer` or
+  `_ShowPointer`): this is a far call to the FAR procs in this segment. Both procs are `PROC FAR` (:119, :213), so their
+  `ret` is RETF and pops the CS that `push cs` put on the stack. A reader will take the pair for a near call. Say so once,
+  in the HidePointerZone header, and point the other sites to it. (Evidence: the `ret` at :198 and :301.)
+- [ ] note routed to the e1a72 owner: src/E1A72.ASM:107-108 (the _gPointerState declaration) says 8000h is "the pointer is
+  hidden over the hide zone". This unit reads 8000h as "a zone hide is in force" (round 4). The handler's own test
+  (src/E1A72.ASM:400-402) fits this unit's reading, so the two declarations should agree.
+- [ ] note resolved, no action here: the item routed in rounds 1 to 4 (src/E07C8.C:37 "0 disables") is gone. src/E07C8.C:50
+  now says nonzero disables the mouse handler, as this unit's _gMouseDisabled declaration does.
+- [ ] note names checked and supported this round: the registry names in re/globals.toml for ds:8154 to ds:8188, ds:812E,
+  ds:8138, ds:813A, ds:8146, ds:814A, ds:804E and ds:80AE match this file's EXTRN names (the underscore aside);
+  gSaveRect and gRestoreRect match src/E0BD2.C:112 and src/E1C0E.C:49-50; gDraw80C2 matches src/E1A29.C:57; the far
+  argument order (x, y, w, h, buf) and (mode, src, x, y) match the pushes at :278-297; HidePointerZone and ShowPointerZone
+  match src/E16A5.C:91-92 and their calls at :536 and :676; the E1BB1 citations (:21-25, :53, :57-59, :130, :162-164)
+  and src/E1BF3.ASM:35 hold; the c_like reading (tools/re/map_units.py:42-46) holds.
+- [ ] note the Lock caller lists hold: the show-only callers (0ACD:0E8A, 0ACD:0F72, ovl0:2547, ovl5:17C8) and the
+  hide-only caller (ovl0:28F9) are as the comment says in build/packets/e1bbe.md. The packet cuts its lines at 2000
+  characters; the visible part of the show list has no ovl0:28F9 between ovl0:2547 and ovl1:0000.
+- [ ] note _f1BBE_0001, g80AA and g80A2 stay placeholders on the evidence the header gives.
 
 ### Round 5 (review of commit d1538ee, src/E1BBE.ASM unchanged since 6ddaa61)
 
@@ -255,6 +309,17 @@ ShowPointerZone, LockHidePointer, LockShowPointer), and the prototypes in src/ w
 - [ ] note g80AA, g80A2 are names with no evidence beyond the call sites (the header says so). They are placeholders and fine as they are; g8172 and g8174 are the far pointer argument pair (src/E1A72.ASM:69-70).
 
 ## Summary
+
+Round 6 (a53aa55). The unit's bytes and readability gates are clean, the round 5 wording fixes are in the code, and the
+names and comment meanings hold against the code. Five must-fix items block a pass, all of them citations or a caller
+count: the E1A72.ASM lines for the busy flag, the cursor writes and the state bits, the handler's calls (one of them
+is two calls where ShowPointer has one), and the E14EF.C cite for the Lock pair. The E1A72.ASM cites went stale because
+that file moved on main (e3ea88d) after the round 5 fixes, so they are wrong again, not the round 5 fixes themselves.
+The decompiler should re-grep each cited line at fix time, and a reviewer should check cites against the current main,
+not against the commit the last round used. Shoulds: the hot-spot comment, and the `push cs` / near call form, which a
+reader will take for a near call. Nothing escalated: every item is a citation, a count or a comment, not a matcher or
+spec question. Result: review-failed. The decompiler fixes the five must-fix items, ticks them with the commit, and
+hands off again.
 
 Round 5 (d1538ee). The unit's bytes and readability gates are clean, and the addresses in the headers agree with the
 code. Three statements still block a pass. (1) The _gCursorX citations into E1A72.ASM point at the wrong lines, because
