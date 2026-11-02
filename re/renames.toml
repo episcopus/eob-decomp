@@ -664,7 +664,7 @@ addr = "ds:812A"
 old = ""
 new = "gBufSeg"
 kind = "global"
-why = "the shared unpack work buffer's segment, stored by SetUnpackBuffer (1B82:0217) and read by Unpack (1B82:00C7) for formats 1 and 2 when it is large enough (src/E1B82.C; WHITEPAPER 147)"
+why = "the shared unpack work buffer's segment, stored by SetUnpackBuffer (1B82:0217) and read by Unpack (1B82:00C7) for formats 1 and 2 when it is large enough (src/E1B82.C; WHITEPAPER 4.2 (WHITEPAPER.md:151))"
 date = "2026-11-01"
 
 [[rename]]
@@ -673,7 +673,7 @@ addr = "ds:812C"
 old = ""
 new = "gBufSize"
 kind = "global"
-why = "the shared unpack work buffer's size in bytes, stored by SetUnpackBuffer (1B82:0217) and compared by Unpack (1B82:00C7) with 0x3C00/0xFC00 to decide whether to allocate (src/E1B82.C; WHITEPAPER 147)"
+why = "the shared unpack work buffer's size in bytes, stored by SetUnpackBuffer (1B82:0217) and compared by Unpack (1B82:00C7) with 0x3C00/0xFC00 to decide whether to allocate (src/E1B82.C; WHITEPAPER 4.2 (WHITEPAPER.md:151))"
 date = "2026-11-01"
 
 [[rename]]
