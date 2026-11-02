@@ -6,7 +6,7 @@
    computed in ticks, 0x222 per turn), and redraw through 1547:0991 / 0D1C:0583. Names are
    placeholders until the evidence names the game concept. */
 
-/*@flags -ml -O -Z */
+/*@flags -ml -O -Z -v */
 
 /* A 243-byte character record at ds:F580; only the fields this unit reads or writes (src/E0A72.C,
    src/E0BD2.C, src/EOV6.C name overlapping views). */
@@ -959,15 +959,10 @@ extern int gFC72;                /*@ ds:FC72 */ /* the handle gFn8072 returned u
    current page faces (0D1C:00DA and 08E6:15B4). A member with no object gets the string ds:57F1;
    otherwise, when RollToHit accepts the object and 0D1C:0BAB does not reject it, roll count d
    sides plus bonus and damage the object. Called by 0EF3:1B43, 0EF3:1EF3 and 0EF3:1FF9.
-   DRAFT: the frame and register use match (`register int obj, dmg`, target spilled to [bp-2]),
-   but with the file's -ml -O -Z TCC's internal assembler cross-jumps the two `sprintf`+`SayAndPlaySound`
-   message tails (the obj==-1 branch at 0EF3:0EAB and the outer else at 0EF3:0ED9; their bytes are
-   identical from +0x14, verified), so ours is about 0x1D bytes shorter and the outer-else jump is
-   off (`make match` differs at +0x15). -B keeps the tails apart (two bytes off at +0x15) but breaks
-   three other functions of the unit (DrawMemberIcons 0F99:0083, DispelMagic 131A:00AC,
-   DamageTargetCell 0A3F:014B), so the file's one flags annotation cannot express it. The same class as
-   0ACD:091C, 14EF:0274 and 0D1C:096C (WHITEPAPER 2.1.1). */
-/*@ 0EF3:0E1B draft */ void CastMeleeEffect(int count, int sides, int bonus)
+   The two `sprintf`+`SayAndPlaySound` message tails (the obj==-1 branch at 0EF3:0EAB and the outer
+   else at 0EF3:0ED9) are identical from +0x14; the file's -v (debug information) keeps them apart
+   as the original does, where a build without it cross-jumps them (WHITEPAPER 2.1.1). */
+/*@ 0EF3:0E1B */ void CastMeleeEffect(int count, int sides, int bonus)
 {
     int target;
     register int obj;
@@ -1878,13 +1873,11 @@ void DrawSpellPanel(void);
    (row 6, the abort row, gets ds:592B, or ds:5937 when it is the highlighted row gA9C5). Finally
    it clears gStatusLine, hides the pointer, clips a 9 by 0x35 box, draws the panel's inner line with
    gDrawLine and shows the pointer. Called by 0EF3:21E0, 0EF3:25BD and 0EF3:2929.
-   DRAFT: the panel, cells, labels and row list match through the third loop, but with the file's
-   -ml -O -Z TCC's internal assembler cross-jumps the not-selected row-6 "ABORT SPELL" call
-   (0EF3:1F4) into the shared `push ax; lcall gDrawText; add sp,0xc` tail that the original keeps
-   separate for that branch (first difference 0EF3:2295+0183, ours `jmp 0x230` against 0x238).
-   -B keeps it apart but TCC -S then emits the `gA9C5 == i` test inverted (`jne 0x201`, the
-   WHITEPAPER 2.1.1 boundary class) and breaks three other functions of the unit
-   (DrawMemberIcons 0F99:0083, DispelMagic 131A:00AC, DamageTargetCell 0A3F:014B). The cell
+   DRAFT: the panel, cells, labels and row list match. The file's -v (since 2026-11-02) keeps the
+   not-selected row-6 "ABORT SPELL" call (0EF3:1F4) apart from the shared `push ax; lcall
+   gDrawText; add sp,0xc` tail, as the original does; the first difference is now 0EF3:2295+01A1,
+   the `gA9C5 == i` test (ours `jne 0x201`, the original `je 0x201`), a question of the condition's
+   source form. The cell
    rectangles are unsigned bytes (the original zero-extends with `mov ah,0`). */
 /*@ 0EF3:2295 draft */ void DrawSpellPanel(void)
 {
