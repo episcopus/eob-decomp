@@ -1570,9 +1570,9 @@ unit = "e082c"
 addr = "082C:07C5"
 size = 85
 evidence = ["frame"]
-name = "RotateBlocks"
 level = "L2"
 match_flags = "-ml -O -Z -B"
+name = "SwapBlocks"
 
 [[function]]
 id = "e082c_081a"
@@ -1670,9 +1670,9 @@ unit = "e082c"
 addr = "082C:0AB4"
 size = 52
 evidence = ["far", "frame"]
-name = "ClampValue"
 level = "L2"
 match_flags = "-ml -O -Z -B"
+name = "ClampOrWrap"
 
 [[function]]
 id = "e082c_0ae8"
@@ -1710,9 +1710,9 @@ unit = "e082c"
 addr = "082C:0B8F"
 size = 28
 evidence = ["far", "frame"]
-name = "SayAndBeep"
 level = "L2"
 match_flags = "-ml -O -Z -B"
+name = "SayAndPlaySound"
 
 [[function]]
 id = "e08e6_000b"

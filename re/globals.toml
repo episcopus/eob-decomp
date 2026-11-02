@@ -407,3 +407,7 @@ why = "the far routine DrawTextLine calls when the cursor is on the last line of
 id = "ds:811F"
 name = "gTextRegion"
 why = "the record index of the current text window: SetTextWindow stores it as gRegions[g811F] (1DE7:0009; src/E1A29.C:38, src/E1C0E.C:577 keeps it in saved811F); E07A9.C, E1C0E.C, EOV1.ASM, EOV2.C and EOV6.C read it"
+[[global]]
+id = "ds:8102"
+name = "gGraphicsMode"
+why = "src/E07C8.C:31-34 lists 0 cga, 1 tandy, 2 ega, 3 mcga/VGA, 4 vga; src/E17A6.ASM:233 names 0 CGA, 1 Tandy, 2 EGA, 3 MCGA; whitepaper 2.6: 1 Tandy, 3 VGA"
