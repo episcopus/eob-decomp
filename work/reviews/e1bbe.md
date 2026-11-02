@@ -1,7 +1,7 @@
 # Review: e1bbe
 
 Reviewer: rev-haiku
-Commit reviewed: cb4de6d for round 13 (review/e1bbe; main at 2627286 changes none of the files the cites name). Round 12: fef890a (main; src/E1BBE.ASM last changed at 08c8575, the round 11 fixes; src/E1A72.ASM at 7f9b24e, which moved its lines 289-291 and 551-556 by one line, see round 12). Round 10: 890d7f8 (main, the 0385631 fixes merged; src/E1BBE.ASM last changed at 0385631; the review branch is identical to main). Round 9: 68d16c2 (main; src/E1BBE.ASM last changed at e831c19, the round 8 fixes; src/E1A72.ASM at b00a8c7, and the round 8 label cites still hold against it; the review branch is identical to main). Round 8: 20871bc (main; src/E1BBE.ASM last changed at d1e1a32, src/E1A72.ASM at 2af4699). Round 7: 07c010f (main; src/E1BBE.ASM, src/E1A72.ASM and the other files the cites name are the same in the review branch at 1d5a0ef). Round 6: a53aa55 (main; src/E1BBE.ASM last changed at 887afda, src/E1A72.ASM at e3ea88d; the review branch is identical to main in this worktree). Round 5: d1538ee for round 5 (main; src/E1BBE.ASM last changed at 6ddaa61, src/E1A72.ASM at 65ebeb1; both are identical in this worktree). Round 4: 433dc71 (main; src/E1BBE.ASM is unchanged since 5cfa933). Earlier: 421cd1e7a31c20710200fe18247bdf159a34d76c (round 3, main; src/E1BBE.ASM is identical to the review branch at 8225102, which is on main). Round 2 was reviewed at 089dfd1 and round 1 at 0cfccb1 (see below). E1A72.ASM has moved on main since round 2 (commit e856ab9), which is why round 3 finds stale citations.
+Commit reviewed: 9a32867 for round 14 (review/e1bbe; src/E1BBE.ASM last changed at b6f8784, the round 13 fixes). Round 13: cb4de6d (review/e1bbe; main at 2627286 changes none of the files the cites name). Round 12: fef890a (main; src/E1BBE.ASM last changed at 08c8575, the round 11 fixes; src/E1A72.ASM at 7f9b24e, which moved its lines 289-291 and 551-556 by one line, see round 12). Round 10: 890d7f8 (main, the 0385631 fixes merged; src/E1BBE.ASM last changed at 0385631; the review branch is identical to main). Round 9: 68d16c2 (main; src/E1BBE.ASM last changed at e831c19, the round 8 fixes; src/E1A72.ASM at b00a8c7, and the round 8 label cites still hold against it; the review branch is identical to main). Round 8: 20871bc (main; src/E1BBE.ASM last changed at d1e1a32, src/E1A72.ASM at 2af4699). Round 7: 07c010f (main; src/E1BBE.ASM, src/E1A72.ASM and the other files the cites name are the same in the review branch at 1d5a0ef). Round 6: a53aa55 (main; src/E1BBE.ASM last changed at 887afda, src/E1A72.ASM at e3ea88d; the review branch is identical to main in this worktree). Round 5: d1538ee for round 5 (main; src/E1BBE.ASM last changed at 6ddaa61, src/E1A72.ASM at 65ebeb1; both are identical in this worktree). Round 4: 433dc71 (main; src/E1BBE.ASM is unchanged since 5cfa933). Earlier: 421cd1e7a31c20710200fe18247bdf159a34d76c (round 3, main; src/E1BBE.ASM is identical to the review branch at 8225102, which is on main). Round 2 was reviewed at 089dfd1 and round 1 at 0cfccb1 (see below). E1A72.ASM has moved on main since round 2 (commit e856ab9), which is why round 3 finds stale citations.
 
 Playbook 70. Judge what a matching file can still get wrong: names, types, comments, structure.
 The matcher already proved the bytes; do not re-prove them, read for meaning.
@@ -10,6 +10,66 @@ The matcher already proved the bytes; do not re-prove them, read for meaning.
 
 Each finding is a checkbox. `must-fix` blocks `make review-pass` until a decompiler ticks it off
 (with the commit that fixes it); `should` and `note` do not block.
+
+### Round 14 (review of commit 9a32867, src/E1BBE.ASM last changed at b6f8784, the round 13 fixes)
+
+Reviewer: rev-haiku. This file keeps the earlier rounds. Round 13's must-fix and should items are ticked and hold when
+re-read against the code, so this round has no must-fix. It finds three shoulds and the notes below.
+
+Checked: `make match FILE=src/E1BBE.ASM` 7 of 7 (860 bytes), exit 0; `make readability UNIT=e1bbe` 0 findings. The
+registry (re/globals.toml, read with tomllib) gives every address this unit declares the same name as the unit, with the
+underscore aside, except the bare spellings g8172, g8174, g80AA and g80A2 and the ds:80C2 draw hook, which the registry
+leaves unnamed (the human's convention, carried). The hot-spot readers were read from `tools/re/disasm.py eob/EOB.EXE
+1BBE`: `sub ax,[0x8158]` at 1BBE:0021, 0117 and 0247, and `sub ax,[0x815a]` at 002B, 0127 and 0267. The Lock call sites
+in build/packets/e1bbe.md: 51 callers of LockHidePointer and 54 of LockShowPointer, 50 in both lists, so the header's
+"usually paired" holds; the "frame bracket" wording the header attributes to the callers is in src/E14EF.C:84-85. The
+HidePointerZone header was read against the code: the arguments at [bp+6] to [bp+0Ch] (:384-387), the stored zone
+reduced by the sprite size (:411, :418), the rectangle (:403-420), the overlap compares (:422-429), the 8000h and 4000h
+bits, the low-byte count (:393-397) and the exits to L029F and L02B6. The ShowPointerZone and Lock headers match
+:460-528. `_f1BBE_0001`'s comment (1BB1:0001, 1BA8:0005 and 1BF3:000D are the same kind of marker) holds: src/E1BB1.ASM:101,
+src/E1BA8.ASM:11-12, src/E1BF3.ASM:19-20. main (26fa5a6) has the same E1BBE, E1A72, E14EF, E1BB1 and E1BF3 files, so the
+findings hold there too.
+
+- [ ] should src/E1BBE.ASM:71-74 (_gPointerHotX and _gPointerHotY): the comments name HidePointer and ShowPointer as the
+  readers of the hot spot. HidePointerZone reads both as well: `sub ax,[_gPointerHotX]` at :404 and
+  `sub ax,[_gPointerHotY]` at :415, which the disassembly shows at 1BBE:0247 and 1BBE:0267. Add it to both comments.
+  (Evidence: `grep -n "_gPointerHot" src/E1BBE.ASM` and the four `sub ax,[0x8158]`/`[0x815a]` readers above.)
+- [ ] should src/E1BBE.ASM:391, :421, :430 and :469 (the 8000h and 4000h bits of _gPointerState): the bits are literals in
+  the code. The other values in this unit that mean something (the screen bounds and the column mask) became named
+  constants in round 11 (READABILITY.md rule 4), and these two should too, for example `ZONE_HIDE EQU 8000h` and
+  `REDRAW_OWED EQU 4000h` beside SCREEN_COLUMNS, with the meaning already in the EXTRN comment (:77-82). The bytes do
+  not change. src/E1A72.ASM tests the same bits with literals; whether the constants are shared is for the e1a72 owner.
+- [ ] should src/E1BBE.ASM:365 (HidePointerZone header, "If that rectangle overlaps the zone"): in this sentence the zone
+  is the caller's rectangle, not the stored gZoneLeft and gZoneTop. The compares at :422-429 use cx and dx, which hold the
+  caller's left and top (loaded from [bp+6] and [bp+8] at :384-385 and not changed), while the stored values were
+  reduced by the sprite size at :411 and :418. Say "the caller's rectangle (cx and dx, unreduced)" in the sentence, so a
+  reader who sees the stored, reduced zone does not take it for the one tested. (Evidence: the lines above.)
+- [ ] note the registry rows for ds:8158 and ds:815A (re/globals.toml) name HidePointer and ShowPointer as the readers of
+  the hot spot; add HidePointerZone (1BBE:0247, 0267). The registry is not changed here (it is the tools owner's file).
+- [ ] note _gPointerState (src/E1BBE.ASM:77, and in every unit that names it): carried from round 12, not blocking. Its
+  three bits are zone-hide bookkeeping, which the header and the EXTRN comment now say, and the registry calls it "the
+  pointer state word" (ds:8160). The name is true but does not say what it holds; a name such as `_gZoneHideState` would.
+  The rename touches src/E1A72.ASM, so it goes to the human or the e1a72 owner.
+- [ ] note the name "Lock" (LockHidePointer, LockShowPointer): carried. The header's basis holds (the callers' "frame
+  bracket" in src/E14EF.C:84-85, and the pairing above). Only the name question is left, for the human.
+- [ ] note routed, stale cites into this unit, for the e14ef owner. Correction to round 13: its routed note gave the show
+  bracket here as :518-524 with the `[ds:80A2]` call at :524. In the current file the bracket is :522-528 (push g8174 at
+  :522, `call dword ptr [g80AA]` at :524, `call dword ptr [g80A2]` at :528). So src/E14EF.C:88 ("src/E1BBE.ASM:512-522")
+  is stale, and so is src/E14EF.C:84 ("src/E1BBE.ASM:489-499"): the LockHidePointer bracket is at :499-505 (push g8174
+  at :499, `call dword ptr [g80A2]` at :505).
+- [ ] note carried from rounds 9 to 13, not re-checked this round, routed to their owners: the stale cites in
+  src/E1A29.C:50-54 (ShowPointer), src/E1C00.ASM:41 and :287, src/E19F3.C:85 and src/E1BB1.ASM:89-91.
+- [ ] note carried, not blocking: the bare spellings g8172, g8174, g80AA and g80A2, and the packet's "Globals src/ already
+  names" list, whose first word per comment is a tool issue (rounds 7 to 13). Human decisions.
+
+Summary: the unit is understandable from its source alone. The bytes match; the names agree with the registry, the other
+files of src/ and the callers; and the addresses in the headers hold against the disassembly. No must-fix this round.
+The three shoulds are the hot-spot readers (HidePointerZone is missing), the unnamed 8000h and 4000h state bits, and
+which zone the overlap test in HidePointerZone compares with. Placeholders and why: _f1BBE_0001 (the segment start
+marker, no code), g80AA and g80A2 (call sites only; src/E1A72.ASM:32-33 and src/E1BB1.ASM:94-95 call them indirect far
+functions), g8172 and g8174 (the far pointer; its evidence is in the header), and _gDraw80C2 keeps its family-guess
+prefix (src/E1A29.C:53). No matcher, spec or pin question; nothing escalated. Result: review-passed (no open must-fix;
+the shoulds and notes do not block).
 
 ### Round 13 (review of commit cb4de6d, src/E1BBE.ASM last changed at c6b7301, the round 12 fixes)
 
