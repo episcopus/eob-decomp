@@ -170,8 +170,8 @@ extern void DelaySeconds(int n); /*@ 082C:0B43 */
 extern void ShutdownGame(void); /*@ 07C8:058A */
 extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
 
-void f0DE8_09B9(int who, int what);  /* forward: 01FF reaches it with a far call */
-void f0DE8_0C82(int who, int attr, int slot);  /* forward: 0B45 reaches it with a far call */
+void DamageCharacter(int who, int what);  /* forward: 01FF reaches it with a far call */
+void LevelUpSlot(int who, int attr, int slot);  /* forward: 0B45 reaches it with a far call */
 
 /* 0DE8:0007: the to-hit roll of character `who` against object `obj`. It derives an attack bonus
    from the item `slot` (the m02 kind selects the m0B weapon value when it is 1..3), adds either
@@ -179,7 +179,7 @@ void f0DE8_0C82(int who, int attr, int slot);  /* forward: 0B45 reaches it with 
    hit, and compares a d20 roll (raised by gFBD2 bits 4 and 5 and by gChars[who].mE3 bit 6, clamped
    to 1..20) against GetScaledValue(who, gTable1A3B[gObjs[obj].b0].m00) minus the bonus. Returns 1
    when the roll reaches that armour class. Called by 0DE8:02D4 and 0DE8:0359. */
-/*@ 0DE8:0007 */ int f0DE8_0007(int who, int obj, int slot, int flag)
+/*@ 0DE8:0007 */ int RollToHit(int who, int obj, int slot, int flag)
 {
     int b0;
     int ac;
@@ -217,7 +217,7 @@ void f0DE8_0C82(int who, int attr, int slot);  /* forward: 0B45 reaches it with 
    m07/m08 with the m09 bonus, the choice depending on whether `obj`'s gTable1A3B entry has m0E
    bit 0 set) plus the item slot's m0B, or the bare RollDice(1, 2, 0) when `slot` is 0, and clamps
    at 0. Called by 0DE8:01FF, 0DE8:02D4 and 0DE8:0359. */
-/*@ 0DE8:011A */ int f0DE8_011A(int who, int obj, int slot, int itemType, char flag)
+/*@ 0DE8:011A */ int RollAttackDamage(int who, int obj, int slot, int itemType, char flag)
 {
     struct ItemType far *item;
     int total;
@@ -242,7 +242,7 @@ void f0DE8_0C82(int who, int attr, int slot);  /* forward: 0B45 reaches it with 
 /* 0DE8:01D7: returns 1 when the item type `index` has a nonzero weapon kind whose low seven bits
    are 2 or 3, otherwise 0. The kind is the word at item+0x0E. Called by 0DE8:01FF and 0DE8:02D4
    to decide whether an item attacks. */
-/*@ 0DE8:01D7 */ int f0DE8_01D7(int index)
+/*@ 0DE8:01D7 */ int IsWeaponKind(int index)
 {
     int kind;
 
@@ -250,7 +250,12 @@ void f0DE8_0C82(int who, int attr, int slot);  /* forward: 0B45 reaches it with 
     return kind == 2 || kind == 3;
 }
 
-/*@ 0DE8:01FF */ int f0DE8_01FF(struct DDRec far *rec)
+/* 0DE8:01FF: runs the attack of a ds:DD2C record against the object it names. It takes the
+   record's m08 slot and m0A item type, reads g1A2B[gFBCC * 4 + (gTable8DD2[slot].m03 & 3)] as
+   the base, rolls 011A damage (or 1 when the type does not attack) and doubles the base at
+   random when f0D1C_0670(5, 1) or f0D1C_0670(6, 1) holds, then applies DamageCharacter and
+   returns 1, else 0. Called by 1414:0172 via TestDDEffect. */
+/*@ 0DE8:01FF */ int RunRecordAttack(struct DDRec far *rec)
 {
     int slot;
     int itemType;
@@ -262,8 +267,8 @@ void f0DE8_0C82(int who, int attr, int slot);  /* forward: 0B45 reaches it with 
     itemType = rec->m0A;
     roll = gTable8DD2[slot].m03 & 3;
     roll = g1A2B[gFBCC * 4 + roll];
-    if (f0DE8_01D7(itemType))
-        damage = f0DE8_011A(-1, -1, slot, itemType, 0);
+    if (IsWeaponKind(itemType))
+        damage = RollAttackDamage(-1, -1, slot, itemType, 0);
     else
         damage = 1;
     if ((f0D1C_0670(5, 1) || f0D1C_0670(6, 1)) && RollDice(1, 2, -1))
@@ -271,7 +276,7 @@ void f0DE8_0C82(int who, int attr, int slot);  /* forward: 0B45 reaches it with 
     else
         result = roll;
     if (f0D1C_0670(result, 1)) {
-        f0DE8_09B9(result, damage);
+        DamageCharacter(result, damage);
         return 1;
     }
     return 0;
@@ -281,7 +286,7 @@ void f0DE8_0C82(int who, int attr, int slot);  /* forward: 0B45 reaches it with 
    0007 to-hit roll, then rolls 011A damage for the item type (or 1 when the type does not attack)
    and hands the object to f08E6_0FBE. Returns 0 when the to-hit fails, else 1. Called by
    1414:0172 via TestDDEffect. */
-/*@ 0DE8:02D4 */ int f0DE8_02D4(struct DDRec far *rec, int idx)
+/*@ 0DE8:02D4 */ int TryRecordAttack(struct DDRec far *rec, int idx)
 {
     int slot;
     int itemType;
@@ -291,10 +296,10 @@ void f0DE8_0C82(int who, int attr, int slot);  /* forward: 0B45 reaches it with 
     slot = rec->m08;
     itemType = rec->m0A;
     who = rec->m0B;
-    if (who != -1 && !f0DE8_0007(who, idx, slot, 0))
+    if (who != -1 && !RollToHit(who, idx, slot, 0))
         return 0;
-    if (f0DE8_01D7(itemType))
-        damage = f0DE8_011A(who, idx, slot, itemType, 0);
+    if (IsWeaponKind(itemType))
+        damage = RollAttackDamage(who, idx, slot, itemType, 0);
     else
         damage = 1;
     f08E6_0FBE(&gObjs[idx], damage);
@@ -307,7 +312,7 @@ void f0DE8_0C82(int who, int attr, int slot);  /* forward: 0B45 reaches it with 
    and when the slot's m02 is 0x34..0x38 f0D1C_0BAB can also fail it; the surviving hit is rolled
    through 011A and halved when f0D1C_0BEB says so. Called by 0DE8:0763. The gDCA4 byte records
    the target for the effect dispatcher. */
-/*@ 0DE8:0359 */ int f0DE8_0359(int who, int slot)
+/*@ 0DE8:0359 */ int ApplyItemAttack(int who, int slot)
 {
     int target;
     int m02;
@@ -327,13 +332,13 @@ void f0DE8_0C82(int who, int attr, int slot);  /* forward: 0B45 reaches it with 
         }
         return -1;
     }
-    if (f0DE8_0007(who, target, slot, 1) == 0)
+    if (RollToHit(who, target, slot, 1) == 0)
         goto fail;
     m02 = gTable8DD2[slot].m02;
     if (m02 > 0x33 && m02 < 0x39 && f0D1C_0BAB(target))
         return -1;
     gDCA4 = target;
-    damage = f0DE8_011A(who, target, slot, gTable8DD2[slot].m02, 1);
+    damage = RollAttackDamage(who, target, slot, gTable8DD2[slot].m02, 1);
     if (f0D1C_0BEB(target, m02))
         damage >>= 1;
     return damage;
@@ -347,7 +352,7 @@ fail:
    `type` is -1) and moves that item to `slot`, clearing the source. Called by 0DE8:0537.
    DRAFT: matches except one reload of `item` before the m02 expression (ours mov ax,[bp-2],
    original keeps the array load in AX). */
-/*@ 0DE8:0474 draft */ void f0DE8_0474(int who, int slot, int type, int flag)
+/*@ 0DE8:0474 draft */ void MoveCarriedItem(int who, int slot, int type, int flag)
 {
     int i;
     int item;
@@ -370,8 +375,8 @@ fail:
 /* 0DE8:0537: tries to use the item in the carried slot `slot` of character `who` against the
    item type `field`. It dispatches through f0BD2_07DE (the item's m02, gFBCC, the g1A1B page
    byte, gSoundVolume); on success it plays sound 0x0B, clears gChars[who].m77[slot] and refills
-   it through f0DE8_0474(who, slot, -1, 0), setting gDF4C. Returns 0. Called by 0DE8:0763. */
-/*@ 0DE8:0537 */ int f0DE8_0537(int who, int slot, int field)
+   it through MoveCarriedItem(who, slot, -1, 0), setting gDF4C. Returns 0. Called by 0DE8:0763. */
+/*@ 0DE8:0537 */ int UseCarriedItem(int who, int slot, int field)
 {
     int idx;
 
@@ -382,7 +387,7 @@ fail:
                    gTable8DD2[field].m02)) {
         PlaySound(0xb);
         gChars[who].m77[slot] = 0;
-        f0DE8_0474(who, slot, -1, 0);
+        MoveCarriedItem(who, slot, -1, 0);
         gDF4C = 1;
     }
     return 0;
@@ -396,7 +401,7 @@ fail:
    0x0B, setting gDF4C), returning 0, or -4 when no item was found. Called by 0DE8:0763.
    DRAFT: the kind 0x10 slot-clearing branch lays its blocks out differently (original tests
    `m02 == 0x10` with je clear, ours with jne item0). */
-/*@ 0DE8:05BB draft */ int f0DE8_05BB(int who, int slot)
+/*@ 0DE8:05BB draft */ int UseItemByKind(int who, int slot)
 {
     int m02;
     int kind;
@@ -460,7 +465,7 @@ fail:
    item and hands gObjs[gDCA4] to f08E6_0FBE. It toggles m1E bit `slot`, stores the result in
    mE8[slot], redraws and arms ApplyCharEffect(who, 0x12, slot or slot + 2, 1). Called by
    0BD2:1001. */
-/*@ 0DE8:0763 */ void f0DE8_0763(int who, int slot, int field)
+/*@ 0DE8:0763 */ void UseItem(int who, int slot, int field)
 {
     int m02;
     int result;
@@ -474,16 +479,16 @@ fail:
         f0EF3_12A1(&gChars[who]);
     switch (gItemTypes[m02].m0E & 0x7f) {
     case 1:
-        result = f0DE8_0359(who, field);
+        result = ApplyItemAttack(who, field);
         if (result == 0)
             result = -1;
         PlaySound(0x20);
         break;
     case 2:
-        result = f0DE8_0537(who, slot, field);
+        result = UseCarriedItem(who, slot, field);
         break;
     case 3:
-        result = f0DE8_05BB(who, field);
+        result = UseItemByKind(who, field);
         f1547_0991(who);
         break;
     }
@@ -511,7 +516,7 @@ fail:
    f0D1C_0670(n, 5) test (creatures with hit points); when none does it hides the pointer, fills
    the panel (0, 0x79)-(0x13F, 0xC8), writes "All of your party has been defeated. ..." in text
    window 9 and shuts the game down. Called by 0DE8:09B9. */
-/*@ 0DE8:093B */ void f0DE8_093B(void)
+/*@ 0DE8:093B */ void CheckPartyWiped(void)
 {
     int n;
     int alive;
@@ -541,7 +546,7 @@ fail:
    DRAFT: the mE2 clamp differs. The original tests the record offset, not the byte: it emits
    `mov ax,[bp-4]; add ax,0xdf; or ax,ax; jae` (rec + mDF, always nonzero) before the mE2 store,
    where ours emits `cmp byte es:[bp-4+0xe2],0; jge`. */
-/*@ 0DE8:09B9 draft */ void f0DE8_09B9(int who, int amount)
+/*@ 0DE8:09B9 draft */ void DamageCharacter(int who, int amount)
 {
     struct CharRec far *rec;
 
@@ -576,13 +581,13 @@ fail:
     else
         f1547_0544(who);
     if (rec->hp <= -10)
-        f0DE8_093B();
+        CheckPartyWiped();
     ApplyCharEffect(who, 0x12, 6, 1);
 }
 /* 0DE8:0ADB: heals character `who` by `amount` hit points when the f0D1C_0670(who, 3) condition
    holds, clamping at the record's m1C maximum, then redraws the character through f1547_033F and
    f1547_0991. Called by 0BD2, 0EF3 and 122E. */
-/*@ 0DE8:0ADB */ void f0DE8_0ADB(int who, int amount)
+/*@ 0DE8:0ADB */ void HealCharacter(int who, int amount)
 {
     struct CharRec far *rec;
 
@@ -600,9 +605,9 @@ fail:
 /* 0DE8:0B45: adds `amount` experience to character `who`'s three class slots. It divides `amount`
    by g115F[cls] (the per-class divisor for m20), then for each slot 0..2 that GetClassSlotByte
    accepts, accumulates the share into that slot's m27 total, reads the slot's next-level threshold
-   through GetClassSlotLong(cls, i, m24[i] + 1) and levels the slot up through f0DE8_0C82 when the
+   through GetClassSlotLong(cls, i, m24[i] + 1) and levels the slot up through LevelUpSlot when the
    total has passed it. Called by 082C:... and 0DE8:0C2B. */
-/*@ 0DE8:0B45 */ void f0DE8_0B45(int who, int amount)
+/*@ 0DE8:0B45 */ void AddExperience(int who, int amount)
 {
     int i;
     int cls;
@@ -616,13 +621,13 @@ fail:
         gChars[who].m27[i] += amount;
         value = GetClassSlotLong(cls, i, gChars[who].m24[i] + 1);
         if (value != -1 && gChars[who].m27[i] > value)
-            f0DE8_0C82(who, cls, i);
+            LevelUpSlot(who, cls, i);
     }
 }
 /* 0DE8:0C2B: gives `amount` experience to the whole party. It counts the members that pass
-   f0D1C_0670(n, 3), divides `amount` by that count and calls f0DE8_0B45(n, amount) for each of
+   f0D1C_0670(n, 3), divides `amount` by that count and calls AddExperience(n, amount) for each of
    them. Called by 08E6:0EC3 and 122E:1B5A. */
-/*@ 0DE8:0C2B */ void f0DE8_0C2B(int amount)
+/*@ 0DE8:0C2B */ void AddPartyExperience(int amount)
 {
     int n;
     int count;
@@ -638,7 +643,7 @@ fail:
     amount /= count;
     for (n = 0; n < 6; n++) {
         if (f0D1C_0670(n, 3))
-            f0DE8_0B45(n, amount);
+            AddExperience(n, amount);
     }
 }
 
@@ -647,7 +652,7 @@ fail:
    adding the result to both hp and m1C, then formats "%s has gained a level of experience." into
    gFileNameBuf for the character's name, redraws through f1547_0991, draws the text and plays
    sound 0x17. Called by 0DE8:0B45. */
-/*@ 0DE8:0C82 */ void f0DE8_0C82(int who, int attr, int slot)
+/*@ 0DE8:0C82 */ void LevelUpSlot(int who, int attr, int slot)
 {
     int damage;
 
@@ -672,12 +677,12 @@ fail:
    when m77[17]'s slot m0B is 0 subtracts the larger m0B of the m77[25]/m77[26] items. It clamps
    against base + 6 while mDF holds, caps at 4 when mE3 bit 1 is set and at 5 + (f0EF3_04F7 - 5) / 3
    when mE3 bit 8 is set. Called by 0ACD, 0BD2, 0EF3 and overlays 0 and 5. */
-/*@ 0DE8:0D5E */ void f0DE8_0D5E(int who)
+/*@ 0DE8:0D5E */ void ComputeArmourClass(int who)
 {
     int itemType;
     int limit;
     int max;
-    int b;
+    int second;
     int value;
     int base;
     int i;
@@ -705,14 +710,14 @@ fail:
     item = rec->m77[17];
     if (gTable8DD2[item].m0B == 0) {
         max = 0;
-        b = 0;
+        second = 0;
         item = rec->m77[25];
         if (item != 0 && (gItemTypes[gTable8DD2[item].m02].m0E & 0x7f) == 0)
             max = gTable8DD2[item].m0B;
         item = rec->m77[26];
         if (item != 0 && (gItemTypes[gTable8DD2[item].m02].m0E & 0x7f) == 0)
-            b = gTable8DD2[item].m0B;
-        max = max > b ? max : b;
+            second = gTable8DD2[item].m0B;
+        max = max > second ? max : second;
         rec->m1D -= max;
     }
     if (rec->mDF > 0) {
@@ -734,7 +739,7 @@ fail:
 /* 0DE8:0F98: a saving-throw style keeper: halves `value` when the f0D1C_059B test for character
    `who` succeeds (a d20 roll at or above the character's class value). Called by 0EF3:0A3F,
    0EF3:20A8 and 0DE8:101A. */
-/*@ 0DE8:0F98 */ int f0DE8_0F98(int who, int value)
+/*@ 0DE8:0F98 */ int HalveSaveDamageA(int who, int value)
 {
     int chance;
 
@@ -747,7 +752,7 @@ fail:
 /* 0DE8:0FCA: the same half-on-success keeper for the type byte at `type`: it derives a class
    value through the byte at gTable1A3B[*type].m02 and GetIndexedByte, then halves `value` on a
    d20 roll at or above it. Called by 0EF3:0A3F. */
-/*@ 0DE8:0FCA */ int f0DE8_0FCA(char far *type, int value)
+/*@ 0DE8:0FCA */ int HalveSaveDamageB(char far *type, int value)
 {
     int chance;
     int classByte;
@@ -764,7 +769,7 @@ fail:
    check succeeds, otherwise ORs `mask` into m01, arms ApplyCharEffect(who, count * 0x222, value, 1)
    and formats "%s is %s!" with the character's name and `text`. Called by 08E6:0765, 08E6:10F3
    and 0BD2:0D2D. */
-/*@ 0DE8:101A */ void f0DE8_101A(int who, int mask, char far *text, int attack, int count,
+/*@ 0DE8:101A */ void ApplyStatusEffect(int who, int mask, char far *text, int attack, int count,
                                  int value, int flag)
 {
     if ((gChars[who].m01 & mask) != 0 && flag != 0)

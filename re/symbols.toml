@@ -2624,6 +2624,9 @@ unit = "e0de8"
 addr = "0DE8:0007"
 size = 275
 evidence = ["far", "near", "segment"]
+name = "RollToHit"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0de8_011a"
@@ -2631,6 +2634,9 @@ unit = "e0de8"
 addr = "0DE8:011A"
 size = 189
 evidence = ["near", "frame"]
+name = "RollAttackDamage"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0de8_01d7"
@@ -2638,6 +2644,9 @@ unit = "e0de8"
 addr = "0DE8:01D7"
 size = 40
 evidence = ["near", "frame"]
+name = "IsWeaponKind"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0de8_01ff"
@@ -2645,6 +2654,9 @@ unit = "e0de8"
 addr = "0DE8:01FF"
 size = 213
 evidence = ["far", "frame"]
+name = "RunRecordAttack"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0de8_02d4"
@@ -2652,6 +2664,9 @@ unit = "e0de8"
 addr = "0DE8:02D4"
 size = 133
 evidence = ["far", "frame"]
+name = "TryRecordAttack"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0de8_0359"
@@ -2659,6 +2674,9 @@ unit = "e0de8"
 addr = "0DE8:0359"
 size = 283
 evidence = ["near", "frame"]
+name = "ApplyItemAttack"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0de8_0474"
@@ -2666,6 +2684,7 @@ unit = "e0de8"
 addr = "0DE8:0474"
 size = 195
 evidence = ["near", "frame"]
+name = "MoveCarriedItem"
 
 [[function]]
 id = "e0de8_0537"
@@ -2673,6 +2692,9 @@ unit = "e0de8"
 addr = "0DE8:0537"
 size = 132
 evidence = ["near", "frame"]
+name = "UseCarriedItem"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0de8_05bb"
@@ -2680,6 +2702,7 @@ unit = "e0de8"
 addr = "0DE8:05BB"
 size = 424
 evidence = ["near", "frame"]
+name = "UseItemByKind"
 
 [[function]]
 id = "e0de8_0763"
@@ -2687,6 +2710,9 @@ unit = "e0de8"
 addr = "0DE8:0763"
 size = 472
 evidence = ["far", "frame"]
+name = "UseItem"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0de8_093b"
@@ -2694,6 +2720,9 @@ unit = "e0de8"
 addr = "0DE8:093B"
 size = 126
 evidence = ["near", "frame"]
+name = "CheckPartyWiped"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0de8_09b9"
@@ -2701,6 +2730,7 @@ unit = "e0de8"
 addr = "0DE8:09B9"
 size = 290
 evidence = ["far", "frame"]
+name = "DamageCharacter"
 
 [[function]]
 id = "e0de8_0adb"
@@ -2708,6 +2738,9 @@ unit = "e0de8"
 addr = "0DE8:0ADB"
 size = 106
 evidence = ["far", "frame"]
+name = "HealCharacter"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0de8_0b45"
@@ -2715,6 +2748,9 @@ unit = "e0de8"
 addr = "0DE8:0B45"
 size = 230
 evidence = ["near", "frame"]
+name = "AddExperience"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0de8_0c2b"
@@ -2722,6 +2758,9 @@ unit = "e0de8"
 addr = "0DE8:0C2B"
 size = 87
 evidence = ["far", "frame"]
+name = "AddPartyExperience"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0de8_0c82"
@@ -2729,6 +2768,9 @@ unit = "e0de8"
 addr = "0DE8:0C82"
 size = 220
 evidence = ["far", "frame"]
+name = "LevelUpSlot"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0de8_0d5e"
@@ -2736,6 +2778,9 @@ unit = "e0de8"
 addr = "0DE8:0D5E"
 size = 570
 evidence = ["far", "frame"]
+name = "ComputeArmourClass"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0de8_0f98"
@@ -2743,6 +2788,9 @@ unit = "e0de8"
 addr = "0DE8:0F98"
 size = 50
 evidence = ["far", "frame"]
+name = "HalveSaveDamageA"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0de8_0fca"
@@ -2750,6 +2798,9 @@ unit = "e0de8"
 addr = "0DE8:0FCA"
 size = 80
 evidence = ["far", "frame"]
+name = "HalveSaveDamageB"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0de8_101a"
@@ -2757,6 +2808,9 @@ unit = "e0de8"
 addr = "0DE8:101A"
 size = 164
 evidence = ["far", "frame"]
+name = "ApplyStatusEffect"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0ef3_000e"
