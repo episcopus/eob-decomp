@@ -2385,3 +2385,21 @@ new = "GetVoiceDelay"
 kind = "function"
 why = "returns the voice record byte at +5, the note delay counter StartVoiceNote sets and UpdateVoices counts down (4CB1, 41D8); the sixth entry of the driver entry table at 3944 (review of e_text)"
 date = "2026-11-02"
+
+[[rename]]
+id = "ds:1879=gTable1879"
+addr = "ds:1879"
+old = "g1879"
+new = "gTable1879"
+kind = "global"
+why = "the four parallel per-kind tables at ds:1879..0x1990, indexed per kind (src/EOV3.C:60); g1879 was this unit's placeholder"
+date = "2026-11-02"
+
+[[rename]]
+id = "ds:A92A=gIconTableA92A"
+addr = "ds:A92A"
+old = "gFarA92A"
+new = "gIconTableA92A"
+kind = "global"
+why = "per-page, per-row far image pointers (src/EOV2.C:122); gFarA92A was this unit's placeholder"
+date = "2026-11-02"

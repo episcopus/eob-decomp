@@ -485,3 +485,13 @@ why = "the fatal file error handler, a far pointer at ds:8104; the image holds 1
 id = "ds:8111"
 name = "gRetryHandler"
 why = "the retry file error handler, a far pointer at ds:8111; the image holds 1C0E:0ADD (DisplayFileError) there (EOB.EXE file offset 2BBF1) and RetryFile (1C0E:0046) calls it (E1A72.ASM:40)"
+
+[[global]]
+id = "ds:1879"
+name = "gTable1879"
+why = "the four parallel per-kind tables at ds:1879..0x1990, indexed per kind (src/EOV3.C:60); g1879 was this unit's placeholder"
+
+[[global]]
+id = "ds:A92A"
+name = "gIconTableA92A"
+why = "per-page, per-row far image pointers (src/EOV2.C:122); gFarA92A was this unit's placeholder"
