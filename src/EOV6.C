@@ -15,37 +15,45 @@ struct CharRec {
     char name[11];             /* +02: the character's name, NUL padded */
     char pad0D[0x1B - 0x0D];
     signed char hp;            /* +1B: current hit points (ovl6:07E2 picks the lowest) */
-    signed char maxhp;         /* +1C: maximum hit points (healing clamps to it) */
+    signed char maxhp;         /* +1C: maximum hit points; healing clamps to it as 0DE8:09B9 does
+                                  with m1C, "a copy of the max hit points" (src/E0DE8.C:26, :588) */
     char pad1D[0x20 - 0x1D];
     signed char classIndex;    /* +20: an index into a class table (0A72:007B's classIndex) */
     char pad21[0x23 - 0x21];
-    unsigned char level;       /* +23: the character's level (0: not in the party) */
+    unsigned char level;       /* +23: the character's level [H], inferred from ovl6:0000's tests
+                                  (0 stops the spell scan and the regain; 5 or less drops to 0);
+                                  src/E0A72.C:21 leaves +23 as padding */
     char pad24[0x37 - 0x24];
     signed char known[30];     /* +37: spell slots, negative: a spell to be memorised */
     signed char memorized[30]; /* +55: spell slots, negative: a spell ready to cast */
     char pad73[0xF3 - 0x55 - 30];
 };
 
-/* a 19-byte spell record: a far pointer to its name, then spell data this unit does not use */
+/* a 19-byte spell record at ds:1344 and ds:151F: a far pointer to its name, then spell data this
+   unit does not read (src/E0EF3.C:155-161 names flags +04, apply +05 and ddFn +09) */
 struct Spell {
     char *name;                /* +00: a far pointer to the spell's name */
     char rest[0x13 - 4];
 };
 
-/* an opaque 28-byte record whose first word ovl6:09D2 reads (the monster-near test) */
-struct Entry28 {
-    int value;                 /* +00 */
-    char rest[0x1C - 2];
+/* the 28-byte map-object records at ds:8A82 (struct Obj28 in src/E08E6.C); ovl6:09D2 reads each
+   record's id at +2 for its Distance test */
+struct Obj28 {
+    char b0;                   /* +00: an index into the ds:1A3B table (src/E08E6.C) */
+    signed char kind;          /* +01 */
+    int id;                    /* +02: the object's map cell, Distance-tested */
+    char rest[0x1C - 4];
 };
 
 extern struct CharRec gChars[]; /*@ ds:F580 */  /* the 243-byte character records */
 extern struct Spell gSpells1344[]; /*@ ds:1344 */ /* far name pointers, indexed by a spell id */
 extern struct Spell gSpells151F[]; /*@ ds:151F */
-extern struct Entry28 gTable8A84[]; /*@ ds:8A84 */ /* 28-byte records, 30 of them */
+extern struct Obj28 gObjs[]; /*@ ds:8A82 */       /* the 28-byte map-object records, 30 of them */
 extern char far gStrings2003; /*@ 2003:0000 */    /* the message string table */
 extern int gTextRegion; /*@ ds:811F */
 extern int gStatusLine; /*@ ds:8115 */
-extern int g159; /*@ ds:0159 */                 /* holds gF57E while ovl6:0B9B is on screen */
+extern int g159; /*@ ds:0159 */                 /* written from gF57E by ovl6:0B9B and ovl1:13F7
+                                                   (ShowMessage); no reader found in src/ */
 extern int gTextHeight; /*@ ds:FE60 */
 extern int gTextWidth; /*@ ds:FE62 */
 extern int gTextLeft; /*@ ds:FE64 */
@@ -55,8 +63,9 @@ extern void *gFont1A47; /*@ ds:FE4E */          /* the current font (1A47:0169 r
 extern void *gFE5A; /*@ ds:FE5A */              /* the 8x8 font loaded from Font8.fnt */
 extern void *gA9C0; /*@ ds:A9C0 */              /* the 6x6 font loaded from FONT6.FNT */
 extern int gPartyCell; /*@ ds:FBCA */
-extern signed char gF57E; /*@ ds:F57E */        /* the colour 082C:0898 draws with (ovl6:0858) */
-extern signed char gF442; /*@ ds:F442 */        /* 1 while ovl6:09D2 updates the objects */
+extern signed char gF57E; /*@ ds:F57E */        /* the extra argument ovl6:0858 passes; 082C:0898
+                                                   forwards it to its first shadow draw only */
+extern char gF442; /*@ ds:F442 */               /* 1 while ovl6:09D2 updates the objects */
 extern unsigned long g8492; /*@ ds:8492 */      /* the 32-bit counter the 1Ch handler bumps */
 
 extern void LockHidePointer(void); /*@ 1BBE:0307 */
@@ -68,22 +77,22 @@ extern void DrawText(char *text); /*@ 1DE7:060A */
 extern void f1A47_0169(void *font); /*@ 1A47:0169 */
 extern void WaitFrames(int n); /*@ 1A16:000B */
 extern int f0D1C_0670(int member, int what); /*@ 0D1C:0670 */
-extern int FindCarriedSlot(int member, int what, int which); /*@ 0D1C:00F1 */
+extern int FindCarriedSlot(int who, int field2, int fieldB); /*@ 0D1C:00F1 */
 extern int f0D1C_0163(int member, int what); /*@ 0D1C:0163 */
 extern void f0D1C_0C21(int x, int y, int width, int height, int c, int d); /*@ 0D1C:0C21 */
 extern char *SkipStrings(char *s, int n); /*@ 0D1C:07A7 */
-extern void DrawShadowText(char *text, int x, int y, int colour, int flag); /*@ 082C:0898 */
+extern void DrawShadowText(char *text, int x, int y, int color, int extra); /*@ 082C:0898 */
 extern void WaitTicks(int n); /*@ 082C:0425 */
 extern int far RollDice(char count, char sides, char bonus); /*@ 082C:0458 */
 extern int Distance(int x, int y); /*@ 17A6:0F61 */
 extern void RedrawMember(int member); /*@ 1547:0991 */
-extern void DamageCharacter(int member, int what); /*@ 0DE8:09B9 */
+extern void DamageCharacter(int who, int amount); /*@ 0DE8:09B9 */
 extern void UpdateObjects(int kind); /*@ 08E6:0CC8 */
 extern void ClipRect(int x1, int y1, int x2, int y2, int width, int height, int extra1, int extra2); /*@ 19F3:000E */
 extern int ReadKey(void); /*@ 1AAD:038E */
 extern void FlushKeyBuffer(void); /*@ 1AAD:0480 */
 extern int fOvl1_243A(int what); /*@ 2102:0039 */
-extern int FindClassSlot(int value, int classIndex); /*@ 0A72:007B */
+extern int FindClassSlot(int slotId, int classIndex); /*@ 0A72:007B */
 extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
 extern void *memchr(void *s, int c, unsigned n); /*@ 0000:6319 */
 
@@ -93,14 +102,25 @@ int f09D2(void);
 int f0A92(void);
 void f0B9B(int message);
 
-/* ovl6:0000: the rest/camp loop, the overlay's entry. In six sub-steps (ds:tick) per hour it
-   increments each member's spell group counters, memorises a spell when one of the 30 memorized
-   slots at +0x55 or known slots at +0x37 is negative ("%s gained %s." / "%s memorized %s."),
-   spends a healer's memorized slots ("%s casts healing on %s.") to top up the most wounded member
-   and, every eight hours, grants the class-2 spell, levels members up or down and updates the
-   object list. Each hour it prints "Hours rested: %-4d" (f0858), every read of a key or the end
-   of the rest shows the warning box (f0B9B). Returns 1 or 0 when the camp could not start, or the
-   09D2 result otherwise. Called from ovl1:1ED2 through the overlay's stub entry 212A:0039.
+/* ovl6:0000: the rest/camp loop, the overlay's entry. In six sub-steps per hour (the local tick)
+   it increments each member's spell group counters, memorises a spell when one of the 30 memorized
+   slots at +0x55 or known slots at +0x37 is negative ("%s gained %s." / "%s memorized %s."), and
+   spends a healer's memorized slots ("%s casts healing on %s.") to top up the most wounded member.
+   Each hour it prints "Hours rested: %-4d" (f0858) and damages by 10 hit points every member with
+   flag 1 and without flag 0x10 (DamageCharacter(member, 10)). Every eight hours it grants the
+   class-2 spell 0x18, regains one hit point of a member below his maximum, and drops the level of a
+   member whose 0D1C:0163(member, 2) is negative (by 5, or to 0 when at 5 or less); every 24 hours
+   it damages a member at level 0 above 0xf6 hit points. It never updates the object list: only
+   f09D2 does (UpdateObjects), at the start and on each key test. On the done path, when the last
+   f09D2 result was 0 and no member is wounded, it shows the warning box f0B9B(0x2b), "All
+   characters are fully rested." (gStrings2003 message 0x2b). It returns 1 when the opening f09D2
+   found an object near and 0 when the "Poisoned party members will die!" picker answers 0; every
+   other exit returns `result`, which is assigned only by the f09D2 call in the key test, so the
+   two gotos and the ReadKey branch return whatever the frame held (the caller tests AX,
+   src/EOV1.ASM:3692-3694).
+   QUIRK ovl6:07D9: `return result` reads the local before any assignment on the paths that reach
+   the done label without going through the key test (ovl6:0718, ovl6:0765 and the ReadKey exits).
+   Called from ovl1:1ED2 through the overlay's stub entry 212A:0039.
 
    The six zero bytes at +0008 are a local array initialiser, `unsigned char counters[6]`,
    which the original copies from its compiler template at ds:7F40 (F_SCOPY@ 0000:78C9). The
@@ -109,15 +129,15 @@ void f0B9B(int message);
    length. */
 /*@ ovl6:0000 */ int CampLoop(void)
 {
-    int healerFound;
+    int flag2;                 /* fOvl1_243A(0x28), the healer picker's answer (meaning unknown) */
     int flag4;
-    int result;
+    int result;                /* the last f09D2 answer; unassigned on the goto paths (QUIRK 07D9) */
     int flag8;
-    int gained;
+    int changed;               /* set when a member drops to level 0 or takes the 24-hour damage */
     char *slots;
-    unsigned char counters[6] = { 0, 0, 0, 0, 0, 0 };
+    unsigned char counters[6] = { 0, 0, 0, 0, 0, 0 };  /* the spell level reached this rest, as '0'+n */
     int healAmount;
-    int foundWounded;
+    int foundWounded;          /* 1-based most wounded member (f07E2); reused 0-based as the target */
     int hours;
     int tick;
     int member;
@@ -137,7 +157,7 @@ void f0B9B(int message);
             return 0;
     }
     flag4 = 0;
-    healerFound = 0;
+    flag2 = 0;
     foundWounded = f07E2();
     if (foundWounded > 0) {
         for (member = 0; member < 6; member++) {
@@ -149,7 +169,7 @@ void f0B9B(int message);
                 continue;
             if (gChars[member].level <= 0)
                 continue;
-            healerFound = fOvl1_243A(0x28);
+            flag2 = fOvl1_243A(0x28);
             break;
         }
     }
@@ -204,7 +224,7 @@ void f0B9B(int message);
                 slots++;
             }
         }
-        if (healerFound && foundWounded) {
+        if (flag2 && foundWounded) {
             for (i = 0; i < 6; i++) {
                 if (FindClassSlot(2, gChars[i].classIndex) != -1) {
                     if (counters[i] >= '0'
@@ -267,7 +287,7 @@ void f0B9B(int message);
                 WaitTicks(5);
             }
             if (hours % 8 == 0) {
-                gained = 0;
+                changed = 0;
                 for (member = 0; member < 6; member++) {
                     if (gChars[member].classIndex == 2) {
                         if ((slots = memchr(&gChars[member].memorized[0], 0xffe8, 6)) != 0)
@@ -286,19 +306,19 @@ void f0B9B(int message);
                         if (f0D1C_0163(member, 2) < 0) {
                             if (gChars[member].level <= 5) {
                                 gChars[member].level = 0;
-                                gained = 1;
+                                changed = 1;
                             } else {
                                 gChars[member].level -= 5;
                             }
                         }
                     } else if (hours % 0x18 == 0 && gChars[member].hp > (signed char)0xf6) {
                         DamageCharacter(member, 1);
-                        gained = 1;
+                        changed = 1;
                         f1A47_0169(gA9C0);
                         RedrawMember(member);
                     }
                 }
-                if (gained) {
+                if (changed) {
                     if (fOvl1_243A(0x2f) == 0) {
                         f0858(hours, 1);
                         flag4 = 0;
@@ -318,7 +338,7 @@ void f0B9B(int message);
         }
         if (!ReadKey()) {
             result = f09D2();
-            if ((f0A92() || ((flag4 || healerFound) && foundWounded))
+            if ((f0A92() || ((flag4 || flag2) && foundWounded))
                 && !ReadKey() && result == 0)
                 continue;
         }
@@ -332,9 +352,10 @@ done:
     }
 }
 
-/* ovl6:07E2: the 0-based index plus one of the party member with the lowest current hit points and
-   hit points below his maximum (at most 0x384), or zero when no member needs healing. Called by
-   the camp loop. */
+/* ovl6:07E2: the 0-based index plus one of the party member with the lowest current hit points,
+   among members with flag 3 whose hit points are below their maximum and below 0x384 (the start
+   value of the running minimum; hp is a signed char), or zero when no member needs healing. Called
+   by the camp loop. */
 /*@ ovl6:07E2 */ int f07E2(void)
 {
     int found;
@@ -357,8 +378,9 @@ done:
    region 0xa, and when `draw` is nonzero clears gStatusLine, hides the pointer, fills the panel
    rectangle (f0D1C_0C21) inside its clip (ClipRect), draws the title through DrawShadowText and shows
    the pointer again. Then it formats "Hours rested: %-4d" with gFileNameBuf and, with gStatusLine set to 2,
-   draws the line in the colour gF57E inside a second clip. Finally it waits ten frames and
-   restores the font and the region. Called by the camp loop. */
+   draws the line in color 0xf with gF57E as the first shadow draw's extra argument inside a second
+   clip (src/E082C.C:403-408). Finally it waits ten frames and restores the font and the region.
+   Called by the camp loop. */
 /*@ ovl6:0858 */ void f0858(int hours, int draw)
 {
     void *savedFont;
@@ -388,17 +410,17 @@ done:
     f1A47_0169(savedFont);
     SetTextWindow(region);
 }
-/* ovl6:09D2: the "monsters are near" test. It selects the 6x6 font, marks the object update
-   (gF442) and updates objects 0 and 1, then scans the 30 28-byte records at ds:8A84: when
-   Distance(gPartyCell, record.value) is below two a monster is close, so it switches back to
-   the previous region (saved in gTextRegion), draws "\rYou can't rest here, monsters are near." and
+/* ovl6:09D2: the "objects are near" test. It selects the 6x6 font, marks the object update
+   (gF442) and updates objects 0 and 1, then scans the 30 28-byte map-object records gObjs
+   (ds:8A82): when Distance(gPartyCell, obj.id) is below two an object is close, so it switches to
+   region 7 (saving the previous region), draws "\rYou can't rest here, monsters are near." and
    returns 1. Restores the caller's font and returns 0 when nothing is close. Called at the start
-   of the camp loop. */
+   of the camp loop and on each key test. */
 /*@ ovl6:09D2 */ int f09D2(void)
 {
     void *savedFont;
     register int i;
-    register int member;
+    register int savedRegion;
 
     savedFont = gFont1A47;
     f1A47_0169(gA9C0);
@@ -407,14 +429,14 @@ done:
     UpdateObjects(1);
     gF442 = 0;
     for (i = 0; i < 0x1e; i++) {
-        if (Distance(gPartyCell, gTable8A84[i].value) < 2) {
-            member = gTextRegion;
+        if (Distance(gPartyCell, gObjs[i].id) < 2) {
+            savedRegion = gTextRegion;
             SetTextWindow(7);
             gStatusLine = 0;
             LockHidePointer();
             DrawText("\rYou can't rest here, monsters are near.");
             LockShowPointer();
-            SetTextWindow(member);
+            SetTextWindow(savedRegion);
             f1A47_0169(savedFont);
             return 1;
         }
@@ -422,10 +444,11 @@ done:
     f1A47_0169(savedFont);
     return 0;
 }
-/* ovl6:0A92: one when some party member (with hit points and a level) still holds a negative
-   (not yet memorised) spell: the "memorized" slots for a class whose slots 2 or 4 apply, or the
-   "known" slots for a class whose slot 1 applies and 0D1C:00F1(member, 0x1d, -1) does not return
-   -1. Returns zero when the party can rest. Called by the camp loop. */
+/* ovl6:0A92: one when some party member (with hit points and a level) still has a spell to spend:
+   a negative "memorized" slot (a spell ready to cast) for a class whose slots 2 or 4 apply, or a
+   negative "known" slot (a spell still to be memorised) for a class whose slot 1 applies and
+   0D1C:00F1(member, 0x1d, -1) does not return -1. Returns zero when the party can rest. Called
+   by the camp loop. */
 /*@ ovl6:0A92 */ int f0A92(void)
 {
     register int member;
@@ -455,12 +478,13 @@ done:
     }
     return 0;
 }
-/* ovl6:0B9B: shows the modal warning box for message number `message` in the far string table at
-   2003:0000. It saves the region (gTextRegion), gStatusLine and the font, selects the 8x8 font and region 2,
-   stores gF57E in ds:0159, fills the panel (f0D1C_0C21) and draws the message string through
-   DrawShadowText inside a clip (ClipRect). Then it waits up to 0x78 frames for a key (1AAD:038E),
-   clears the pending key (1AAD:0480) and restores the font, region and gStatusLine. Called by the camp
-   loop for "You can't rest here, monsters are near." */
+/* ovl6:0B9B: the copy in overlay 6 of ShowMessage (ovl1:13F7): shows the modal warning box for
+   message number `message` in the far string table at 2003:0000. It saves gStatusLine, the
+   current font and gTextRegion, selects the 8x8 font and text region 0xb, stores gF57E in ds:0159
+   (the value here, gStatusLine = 2 at ds:8115), fills the panel (f0D1C_0C21) and draws the message
+   string through DrawShadowText in color 0xf inside a clip (ClipRect). Then it waits up to 0x78
+   frames for a key (1AAD:038E), clears the pending key (1AAD:0480) and restores the font, region
+   and gStatusLine. Its only caller's message is 0x2b, "All characters are fully rested." */
 /*@ ovl6:0B9B */ void f0B9B(int message)
 {
     register int i;
