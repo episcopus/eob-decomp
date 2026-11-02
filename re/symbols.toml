@@ -51,6 +51,28 @@ size = 449
 evidence = ["near"]
 
 [[function]]
+id = "e0000_020c"
+unit = "e_text"
+addr = "0000:020C"
+size = 405
+evidence = ["data"]
+notes = "data, not code: the pitch curve tables (020Ch to 039Fh) and the script flag byte (03A0h). Inside the function e0000_01e9 of unit e_c0, whose size (449) reaches 03AAh; the map put the start-up routine and these tables in one function."
+name = "_CurveTables"
+level = "L2"
+match_flags = "tasm /mx"
+
+[[function]]
+id = "e0000_03a1"
+unit = "e_text"
+addr = "0000:03A1"
+size = 9
+evidence = ["near"]
+notes = "not found by the map: a far routine no call in the EXE names (returns dx = cs, ax = the byte at 03A0h)."
+name = "_GetScriptFlag"
+level = "L2"
+match_flags = "tasm /mx"
+
+[[function]]
 id = "e0000_03aa"
 unit = "e_text"
 addr = "0000:03AA"
@@ -96,17 +118,64 @@ unit = "e_text"
 addr = "0000:03FA"
 size = 28
 evidence = ["far"]
+name = "_RebaseDriverBlock"
 level = "L2"
 match_flags = "tasm /mx"
-name = "RebaseDriverBlock"
 
 [[function]]
 id = "e0000_0416"
 unit = "e_text"
 addr = "0000:0416"
-size = 14928
+size = 13614
 evidence = ["data"]
-notes = "not a function the map found: the driver's data between the rebase function and the first INT 08h handler (the 32c8h block LoadSoundDriver loads at run time, tables, variables, voice records), 0416h to 3E65h. The map listed 03FAh to 3F76h as one function."
+notes = "data, not code: the driver block (32C8h bytes LoadSoundDriver reads over 0416h to 36DDh at run time, here the EXE image of it) and 614 spare zero bytes (36DEh to 3943h). The map listed 03FAh to 3F76h as one function; the data, tables, variables, voice records and the two INT 08h handlers are listed here one by one."
+name = "_DriverBlock"
+level = "L2"
+match_flags = "tasm /mx"
+
+[[function]]
+id = "e0000_3944"
+unit = "e_text"
+addr = "0000:3944"
+size = 498
+evidence = ["data"]
+notes = "data, not code: the driver tables, the entry table (3944h), the level curve pointers (395Ah) and the fourteen level curves (3976h)."
+name = "_DriverTables"
+level = "L2"
+match_flags = "tasm /mx"
+
+[[function]]
+id = "e0000_3b36"
+unit = "e_text"
+addr = "0000:3B36"
+size = 93
+evidence = ["data"]
+notes = "data, not code: the driver variables (3B36h to 3B92h), initial values of the EXE image."
+name = "_DriverVariables"
+level = "L2"
+match_flags = "tasm /mx"
+
+[[function]]
+id = "e0000_3b93"
+unit = "e_text"
+addr = "0000:3B93"
+size = 670
+evidence = ["data"]
+notes = "data, not code: the ten voice records of 43h bytes (3B93h to 3E30h)."
+name = "_VoiceRecords"
+level = "L2"
+match_flags = "tasm /mx"
+
+[[function]]
+id = "e0000_3e31"
+unit = "e_text"
+addr = "0000:3E31"
+size = 53
+evidence = ["data"]
+notes = "data, not code: the voice record pointers (3E31h), the operator offsets (3E45h) and the F-number table (3E4Eh)."
+name = "_VoiceTables"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e0000_3e66"
@@ -314,9 +383,20 @@ match_flags = "tasm /mx"
 id = "e0000_4c8d"
 unit = "e_text"
 addr = "0000:4C8D"
-size = 36
+size = 31
 evidence = ["near"]
 name = "_TickTempo"
+level = "L2"
+match_flags = "tasm /mx"
+
+[[function]]
+id = "e0000_4cac"
+unit = "e_text"
+addr = "0000:4CAC"
+size = 5
+evidence = ["near"]
+notes = "not found by the map: the tail of the function at 4C8Dh the map took as one; a far routine listed in the entry table at 3944h (returns cs:[3B78h])."
+name = "_GetSampleOffset"
 level = "L2"
 match_flags = "tasm /mx"
 
@@ -414,9 +494,20 @@ match_flags = "tasm /mx"
 id = "e0000_4f84"
 unit = "e_text"
 addr = "0000:4F84"
-size = 217
+size = 16
 evidence = ["near"]
 name = "_SoundRandom"
+level = "L2"
+match_flags = "tasm /mx"
+
+[[function]]
+id = "e0000_4f94"
+unit = "e_text"
+addr = "0000:4F94"
+size = 148
+evidence = ["data"]
+notes = "data, not code: the script command jump table (74 entries, 4F94h to 5027h). The map put it in SoundRandom (size 217), which also reached the first 53 bytes of the runtime library."
+name = "_CommandTable"
 level = "L2"
 match_flags = "tasm /mx"
 
