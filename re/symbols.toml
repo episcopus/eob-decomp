@@ -4175,6 +4175,9 @@ addr = "1547:0991"
 size = 1922
 evidence = ["far", "frame"]
 notes = "unblocked 2026-11-01: the `or ax,0` tests are bit tests of a LONG (mE3 long, verified with tc100); the function is still to be written; (was blocked) the unit's 1922-byte main dispatcher (redraw one member's block) is still a stub. It carries the same TCC `or ax,0` idiom at 1547:0CA2 (`mov ax,es:[bx+0xE3]; and ax,0x80; or ax,0; je`, the POISON (SLOW) status test), so it cannot reach L2 until that project-wide idiom is resolved (re/symbols.toml e0d1c_0a43)."
+name = "RedrawMember"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e1658_0003"

@@ -1260,3 +1260,12 @@ new = "ReportLostItem"
 kind = "function"
 why = "0BD2:000E prints the 'has lost her/his <item>' message and clears the slot"
 date = "2026-11-01"
+
+[[rename]]
+id = "1547:0991=RedrawMember"
+addr = "1547:0991"
+old = "f1547_0991"
+new = "RedrawMember"
+kind = "function"
+why = "1547:0991 redraws one member's block of the character screen; its callers call it 'redraws it / that member's row' (src/E0ACD.C:299, src/E1414.C:145)"
+date = "2026-11-01"
