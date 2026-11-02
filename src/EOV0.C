@@ -366,9 +366,10 @@ extern void far *g5E64[0x11]; /*@ ds:5E64 */ /* the 17 sliced icon pointers this
    g11DD[m20] centred over the page and six labels g115D[8..13] down the left column. It formats
    three stat lines into gFileNameBuf (the ratio of m0D against m0F with m11, m13, m15, m17, m19, the
    m1D/m1C pair and the m24/m25/m26 triple, the third picking one of three gStr61xx formats from
-   m25 and m26) and draws each; the mode selects which panel icons are highlighted. Called by
-   ovl0:0A5E, 0DDC, 0EE5, 135D and 23EC. Purpose unknown: the mode-specific icons. */
-/*@ ovl0:065B draft */ void Ovl0_065B(int index, char mode)
+   m25 and m26) and draws each; the mode selects which panel icons are highlighted: 1 highlights 4,
+   7, 8 and 6, 2 highlights 0x10 and 9, 3 highlights 0xa, 0xb and 9 (each in its plain form, mode 2).
+   Called by ovl0:0A5E, 0DDC, 0EE5, 135D and 23EC. */
+/*@ ovl0:065B */ void DrawCharPanel(int index, char mode)
 {
     char far *text;
     int i;
@@ -409,6 +410,7 @@ extern void far *g5E64[0x11]; /*@ ds:5E64 */ /* the 17 sliced icon pointers this
         break;
     case 2:
         DrawPanelIcon(0x10, 0, 2);
+        DrawPanelIcon(9, 0, 2);
         break;
     case 3:
         DrawPanelIcon(0xa, 0, 2);
@@ -478,7 +480,7 @@ void DrawPanelRow(int index);      /* ovl0:11BA, defined below */
     register int key;
 
     Ovl0_0A5E();
-    Ovl0_065B(gDCB0, 1);
+    DrawCharPanel(gDCB0, 1);
     list = BuildRowNodeList(0x1b, 4);
     FlushKeyBuffer();
     for (;;) {
@@ -511,7 +513,7 @@ void DrawPanelRow(int index);      /* ovl0:11BA, defined below */
             break;
         }
         if (key < 0) {
-            Ovl0_065B(gDCB0, 1);
+            DrawCharPanel(gDCB0, 1);
             list = BuildRowNodeList(0x1b, 4);
             key = 0;
         }
@@ -542,7 +544,7 @@ void DrawPanelRow(int index);      /* ovl0:11BA, defined below */
     DrawRowList(-1);
     result = 0;
     flag = 0;
-    Ovl0_065B(gDCB0, 2);
+    DrawCharPanel(gDCB0, 2);
     while (gChars[gDCB0].name[0] != 0 && !flag) {
         DrawRowList(gDCB0 + 6);
         key = WaitKeyOrPause(list);
@@ -592,7 +594,7 @@ void DrawPanelRow(int index);      /* ovl0:11BA, defined below */
             gDCB0 = pos;
             DrawRowList(-1);
             if (!flag)
-                Ovl0_065B(gDCB0, 2);
+                DrawCharPanel(gDCB0, 2);
         }
     }
     return result;
@@ -710,7 +712,7 @@ void DrawPanelRow(int index);      /* ovl0:11BA, defined below */
 
     i = 0;
     FlushKeyBuffer();
-    Ovl0_065B(gDCB0, 3);
+    DrawCharPanel(gDCB0, 3);
     while (i >= 0 && i <= 6) {
         switch (i) {
         case 0:
@@ -735,14 +737,14 @@ void DrawPanelRow(int index);      /* ovl0:11BA, defined below */
             i = Ovl0_135D(i, &gChars[gDCB0].m1B, (char far *)0);
             break;
         }
-        Ovl0_065B(gDCB0, 3);
+        DrawCharPanel(gDCB0, 3);
         if (i == -2)
             break;
         if (i < 0)
             i = 6;
         i %= 7;
     }
-    Ovl0_065B(gDCB0, 1);
+    DrawCharPanel(gDCB0, 1);
 }
 /*@ ovl0:1BF2 stub */ void Ovl0_1BF2(int who) {}
 /* ovl0:1EA9: builds two six-word combat tables for the current character gDCB0. For each of the

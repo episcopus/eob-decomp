@@ -7186,6 +7186,9 @@ addr = "ovl0:065B"
 size = 1012
 evidence = ["ovl", "near", "frame"]
 notes = "draft: the function matches except one jump target in the mode switch (ours jmp 0xA10, original jmp 0x9FE at ovl0:065B+0386). The case bodies and the two identical call tails are all in place; the compiler threaded both case 1's last call (icon 6) and case 2's call (icon 0x10) to the 9-icon tail, while the original sent case 2 to the 0xb-icon tail (ovl0:065B+0386). Tried: switch case order 1,2,3 and 1,3,2 (the comparison chain follows source order, so 1,2,3 is right), if/else-if (the dispatch becomes byte compares, so it must be a switch), an explicit default, braces and an if(1) around case 2 (no change), and -B (the same difference, and it breaks three earlier functions). Everything else in the function is byte-identical."
+name = "DrawCharPanel"
+level = "L2"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "eov0_0a4f"

@@ -1611,3 +1611,12 @@ new = "GetHitTarget"
 kind = "function"
 why = "0A72:0522 returns the number a d20 to-hit roll must reach before the attacker bonus; its only caller 0DE8:0007 computes ac = GetHitTarget(who, gTable1A3B[b0].m00) - bonus and compares a d20 roll against it"
 date = "2026-11-01"
+
+[[rename]]
+id = "ovl0:065B=DrawCharPanel"
+addr = "ovl0:065B"
+old = "Ovl0_065B"
+new = "DrawCharPanel"
+kind = "function"
+why = "ovl0:065B draws a character's panel page (sprite, name, race, class, three stat lines and the mode's highlighted icons); called by 0A5E/0DDC/0EE5/135D/23EC"
+date = "2026-11-01"
