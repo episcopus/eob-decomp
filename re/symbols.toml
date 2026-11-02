@@ -1769,7 +1769,8 @@ addr = "08E6:00C3"
 size = 141
 evidence = ["near", "frame"]
 name = "Obj00C3"
-notes = "retry under -v (2026-11-02): the unit now builds with -v, which keeps identical tails apart; the difference below was found under the wrong switches. Earlier: a TCC -S codegen question, one 3-byte instruction. The original reloads les bx,[bp+6] at 08E6:00F2 before the Distance argument obj->id (08E6:00EE push [ds:FBCA]; 08E6:00F2 les bx,[bp+6]; 08E6:00F5 push es:[bx+2]); ours reuses the bx the five-test && chain already holds, so ours is 3 bytes short (ours je 0x86, original je 0x89). The unit is -B (0765, 0B94, 17FD and 1410 need it); under -B the body matches byte for byte except that load. The reload is what TCC emits when it has not proved the far pointer still lives in ES:BX; it appears in the original exactly where a body is a jump target (the else branch at 03FE:041F, the statement after a || chain, and the if(cond) ; else { body } layout, probed 2026-11-01), but here the body is fall-through after the jle. -O (jump optimisation) is what suppresses the redundant load (WHITEPAPER 2.1.1). Forms tried, each either keeping the cached bx as ours does or laying the first test as jne @@; jmp instead of je: the && chain, one-line, parenthesised and negated conditions, nested ifs (with and without braces), switch, goto, empty-body if, do/while(0), for(;;), while, a nested block, a declaration initialiser, register and separate locals, a bare obj;, an assignment inside the condition, casts, the if(cond) ; else { body } layout, and the || early-return form (which reloads but its first test is jne @@; jmp under /jNOSMART; it matches only without -B and then 0765, 0B94 and 17FD do not match). Flags probed on the whole unit 2026-11-01: -ml -O -Z -B 35 of 36, -ml -O -Z 32, -ml -O -Z -G -B 10, -ml -Z -B 2; -B is the only set that reaches 35 and the one missing function is this one. C++ -P, -1 and -k make no difference. src/E08E6.C carries the same evidence."
+level = "L2"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e08e6_0150"
@@ -2981,7 +2982,6 @@ unit = "e0d1c"
 addr = "0D1C:0163"
 size = 103
 evidence = ["far", "frame"]
-notes = "retry under -v (2026-11-02): the unit now builds with -v, which keeps identical tails apart; the difference below was found under the wrong switches. Earlier: compiler codegen. With `if (item = rec->m77[i])` the draft matches every byte except one 2-byte instruction: the original reloads `item` into AX before the first multiply (0D1C:0194 `mov ax,di`; both multiplies use `mov ax,di`), while our `-ml -O -Z` build still has AX equal to `item` from the `or ax,ax; je` at 0D1C:0190 and elides the first load (every later byte identical, 101 against 103 bytes). TCC `-O` redundant-register-load elimination. TCC -c probes on the same shape (far 14-byte struct, `if (item = a[i]) { if (tab[item]..) }`) elided it for every form tried: separate assignment then `if (item)`, `!= 0`, the multiply read as a second variable, `register`/`long`/`unsigned`/`volatile` item, nested ifs, `||`, a label or an empty block before the use, and an extra local; only dropping `-O` keeps the load, and `-ml -Z` matches only 6 of 26 functions. No source form found."
 
 [[function]]
 id = "e0d1c_01ca"
@@ -4469,7 +4469,6 @@ unit = "e122e"
 addr = "122E:0325"
 size = 421
 evidence = ["frame"]
-notes = "retry under -v (2026-11-02): the unit now builds with -v, which keeps identical tails apart; the difference below was found under the wrong switches. Earlier: 2026-11-02: matches every byte except the two `mov si,di` tails at 122E:03C1 (the A<=B branch) and 122E:03C5 (the who<0 branch): the original keeps both plus the `jmp 122E:03C7` between them, our -ml -O -Z build cross-jumps them into one `mov si,di` (4 bytes short; first difference 122E:0028, ours jmp 0x199 against 0x19f). TCC -S for our build already emits the far-branch pair `or si,si` / `jge short @7@194` / `jmp short @7@218` (the then-branch placed after the else), where the original has one short `jl 122E:03C5`: the same jump-optimizer choice that leaves 0A16 and 06D0 one step short, not a source-order question. `-B` does not fix it (same pair, plus it breaks 01D9 and 1CAD). Tried 2026-11-02, all six give byte-identical output: `if (who<0) who=i; else if (A<=B) who=i;`, the braced form, `if (who<0) { who=i; continue; } if (A<=B) who=i;`, `if (who>=0) { if (A<=B) who=i; } else who=i;`, `else if (...) { who=i; }`, and `if (!(A<=B)) ; else who=i;`. Also tried (2026-11-01) `if (who>=0 && A>B) continue; who=i;` (one assignment, 6 short), `who=i+0` in either branch, and an extra `else who=who;` (2 short). TCC always merges the two `who=i` and picks the inverted pair. The rest of the function (the click gate, the six-character pick, the 1d20 roll against gForceDoorRoll[m0D], the messages and the gB894 slot rewrite) is written from the disassembly."
 name = "ForceDoorAction"
 level = "L2"
 match_flags = "-ml -O -Z -v"
@@ -5098,7 +5097,7 @@ unit = "e1547"
 addr = "1547:04A0"
 size = 164
 evidence = ["far", "near", "frame"]
-name = "DrawMemberLevel"
+name = "DrawMemberFood"
 level = "L2"
 match_flags = "-ml -O -Z"
 
@@ -5382,21 +5381,21 @@ notes = "not a function: bytes of the unit outside its functions (a marker or pa
 id = "e17a6_0314"
 unit = "e17a6"
 addr = "17A6:0314"
-size = 3149
+size = 106
 evidence = ["far"]
 level = "L2"
 match_flags = "tasm /mx"
-name = "DirectionFromPoints"
+name = "_DirectionFromPoints"
 
 [[function]]
 id = "e17a6_0f61"
 unit = "e17a6"
 addr = "17A6:0F61"
-size = 2589
+size = 60
 evidence = ["far"]
 level = "L2"
 match_flags = "tasm /mx"
-name = "Distance"
+name = "_Distance"
 
 [[function]]
 id = "e17a6_197e"
@@ -5406,7 +5405,157 @@ size = 168
 evidence = ["far"]
 level = "L2"
 match_flags = "tasm /mx"
-name = "TranslateImage"
+name = "_TranslateImage"
+
+[[function]]
+id = "e17a6_037e"
+unit = "e17a6"
+addr = "17A6:037E"
+size = 105
+name = "_SetPlaneTables"
+level = "L2"
+match_flags = "tasm /mx"
+notes = "not listed by the map: a function of the source, its bounds proven by the whole-unit match"
+
+[[function]]
+id = "e17a6_03e7"
+unit = "e17a6"
+addr = "17A6:03E7"
+size = 2361
+name = "_DrawTile"
+level = "L2"
+match_flags = "tasm /mx"
+notes = "not listed by the map: a function of the source, its bounds proven by the whole-unit match"
+
+[[function]]
+id = "e17a6_0d20"
+unit = "e17a6"
+addr = "17A6:0D20"
+size = 307
+name = "_BlitMaskedByte"
+level = "L2"
+match_flags = "tasm /mx"
+notes = "not listed by the map: a function of the source, its bounds proven by the whole-unit match"
+
+[[function]]
+id = "e17a6_0e53"
+unit = "e17a6"
+addr = "17A6:0E53"
+size = 155
+name = "_BlitMaskedWord"
+level = "L2"
+match_flags = "tasm /mx"
+notes = "not listed by the map: a function of the source, its bounds proven by the whole-unit match"
+
+[[function]]
+id = "e17a6_0eee"
+unit = "e17a6"
+addr = "17A6:0EEE"
+size = 49
+name = "_SetPlaneAndWrite"
+level = "L2"
+match_flags = "tasm /mx"
+notes = "not listed by the map: a function of the source, its bounds proven by the whole-unit match"
+
+[[function]]
+id = "e17a6_0f1f"
+unit = "e17a6"
+addr = "17A6:0F1F"
+size = 66
+name = "_ExpandNibbles"
+level = "L2"
+match_flags = "tasm /mx"
+notes = "not listed by the map: a function of the source, its bounds proven by the whole-unit match"
+
+[[function]]
+id = "e17a6_0f9d"
+unit = "e17a6"
+addr = "17A6:0F9D"
+size = 93
+name = "_FindNeighbour"
+level = "L2"
+match_flags = "tasm /mx"
+notes = "not listed by the map: a function of the source, its bounds proven by the whole-unit match"
+
+[[function]]
+id = "e17a6_0ffa"
+unit = "e17a6"
+addr = "17A6:0FFA"
+size = 160
+name = "_BlitSpriteDefault"
+level = "L2"
+match_flags = "tasm /mx"
+notes = "not listed by the map: a function of the source, its bounds proven by the whole-unit match"
+
+[[function]]
+id = "e17a6_109a"
+unit = "e17a6"
+addr = "17A6:109A"
+size = 307
+name = "_BlitSpriteRowDefault"
+level = "L2"
+match_flags = "tasm /mx"
+notes = "not listed by the map: a function of the source, its bounds proven by the whole-unit match"
+
+[[function]]
+id = "e17a6_11cd"
+unit = "e17a6"
+addr = "17A6:11CD"
+size = 190
+name = "_BlitSpriteCga"
+level = "L2"
+match_flags = "tasm /mx"
+notes = "not listed by the map: a function of the source, its bounds proven by the whole-unit match"
+
+[[function]]
+id = "e17a6_128b"
+unit = "e17a6"
+addr = "17A6:128B"
+size = 97
+name = "_BlitSpriteRowCga"
+level = "L2"
+match_flags = "tasm /mx"
+notes = "not listed by the map: a function of the source, its bounds proven by the whole-unit match"
+
+[[function]]
+id = "e17a6_12ec"
+unit = "e17a6"
+addr = "17A6:12EC"
+size = 1065
+name = "_BlitSpriteRowCga2"
+level = "L2"
+match_flags = "tasm /mx"
+notes = "not listed by the map: a function of the source, its bounds proven by the whole-unit match"
+
+[[function]]
+id = "e17a6_1715"
+unit = "e17a6"
+addr = "17A6:1715"
+size = 137
+name = "_BlitSpriteEga"
+level = "L2"
+match_flags = "tasm /mx"
+notes = "not listed by the map: a function of the source, its bounds proven by the whole-unit match"
+
+[[function]]
+id = "e17a6_179e"
+unit = "e17a6"
+addr = "17A6:179E"
+size = 332
+name = "_BlitSpriteRowEga"
+level = "L2"
+match_flags = "tasm /mx"
+notes = "not listed by the map: a function of the source, its bounds proven by the whole-unit match"
+
+[[function]]
+id = "e17a6_18ea"
+unit = "e17a6"
+addr = "17A6:18EA"
+size = 148
+name = "_BuildMask"
+level = "L2"
+match_flags = "tasm /mx"
+notes = "not listed by the map: a function of the source, its bounds proven by the whole-unit match"
 
 [[function]]
 id = "e1948_0006"
@@ -8339,7 +8488,6 @@ unit = "eov4"
 addr = "ovl4:0D1B"
 size = 886
 evidence = ["ovl", "near", "frame"]
-notes = "retry under -v (2026-11-02): the unit now builds with -v, which keeps identical tails apart; the difference below was found under the wrong switches. Earlier: unit-flag class (like 122E). 0D1B wants TCC's inline assembler, CopyViewColumn wants -B. Under the file's -B (TCC -S then TASM) the prologue, frame (sub sp,0x36) and body match through the object scan, but the far-pointer store into the local arr at 0D1B:00A4 is ours 93 xchg bx,ax against the original's two-byte 87 D8 xchg ax,bx; TASM 2.0, 2.01, 1.0 and 1.01 all assemble both spellings as the one-byte 93 (probed 2026-11-01), so no source form gives 87 D8 through TASM. Without -B (TCC's own assembler) the byte is 87 D8 and the first difference moves to +00BD, but then CopyViewColumn's three separate continue tails merge (first difference +0019). Source forms tried for the store: void far *arr, struct Obj28 far *arr, a temp p = obj, *(arr+k), ((void far**)arr)[k], a pointer pa = arr, and an index local; none changes the encoding. The rest of the function (the 5-entry far-pointer list built from the 30 ds:8A82 objects, the blit into ds:DCFC and the four DrawRegion wrappers) is written from the disassembly."
 
 [[function]]
 id = "eov4_1091"
@@ -8367,7 +8515,6 @@ unit = "eov4"
 addr = "ovl4:19C4"
 size = 860
 evidence = ["ovl", "near"]
-notes = "retry under -v (2026-11-02): the unit now builds with -v, which keeps identical tails apart; the difference below was found under the wrong switches. Earlier: unit-flag class (like 122E and eov4_0d1b). 19C4 builds a five-entry far-pointer list from the ds:DD2C records and stores into a local array at 19C4:1A6B with 87 D8 xchg ax,bx (two bytes, the original came from TCC's own assembler). Under this file's -B (TCC -S then TASM) that store assembles as the one-byte 93, so the function is one byte short and every later branch displacement differs; TASM 2.0, 2.01, 1.0 and 1.01 all assemble both xchg spellings as 93 (probed 2026-11-01). Without -B the byte is right but CopyViewColumn's three separate continue tails merge. Not lifted yet; left a stub with the block in src/EOV4.C."
 
 [[function]]
 id = "eov4_1d20"
@@ -8487,7 +8634,6 @@ addr = "ovl5:0455"
 size = 550
 evidence = ["ovl", "near", "frame"]
 name = "SelectMenu"
-notes = "retry under -v (2026-11-02): the unit now builds with -v, which keeps identical tails apart; the difference below was found under the wrong switches. Earlier: TC registers the row index. The body matches up to ovl5:0036; the draw/mouse/click loops then differ because the original keeps j in memory (`mov word ptr [bp-0xa], 0` at ovl5:048C, `mov ax,[bp-0xa]; shl ax,1; shl ax,1` for names[j], `cmp si,[bp-0xa]` for i==j) and computes first+j once into DI (`mov al,[bp+6]; cwde; add ax,[bp-0xa]; mov di,ax` at ovl5:0493/0497/049A, then `es:[di+0x7b89]`/`es:[di+0x7b94]`), while our build registers j in DI (`xor di,di` at ovl5:0037) and combines first+j as `[bx+di+disp]`; the whole function is 2 bytes short and every offset after shifts. Tried: plain j, `register int i`, `unsigned j`, `j == i` vs `i == j`, a `register int n = first+j` (took SI, pushed i to DI), a function-scope `int k`, block-scope j, `volatile` on every non-i local with `register int i` (j then stays in memory, but the draw loop uses BX as the scratch and recomputes first+j per table where the original computes it once into DI), and -B (no change, TCC -S does the allocation). TC's allocator picks i (SI) and j (DI); a source form that stops it choosing j and lets it compute first+j once into DI would match. Not a tail merge."
 
 [[function]]
 id = "eov5_067b"
@@ -8596,7 +8742,6 @@ addr = "ovl5:0C9D"
 size = 286
 evidence = ["ovl", "near", "frame"]
 name = "HealLoop"
-notes = "retry under -v (2026-11-02): the unit now builds with -v, which keeps identical tails apart; the difference below was found under the wrong switches. Earlier: the two hit-point store tails. The body matches up to ovl5:0D7E; the original keeps the two stores separate (`mov [bx-0xa65],al` after `hp = maxhp` at ovl5:0D7E, then `jmp 0xDA9`, and again after `hp += heal` at ovl5:0D9F), each recomputing &gChars[i]; our -ml -O -Z build cross-jumps them into one shared store (the same class as 0ACD:091C, 14EF:0274 and 0D1C:096C: TCC's internal assembler, WHITEPAPER 2.1.1). Through the assembler (-B) the tails stay apart (the function is then one byte off at ovl5:0CB9), but -B breaks SurrenderPanel and ChooseChar, so the unit's one /*@flags*/ cannot express it (see eov5_00a1). Tried if/else and its reverse, braces, a local for the new hp, and -B."
 
 [[function]]
 id = "eov5_0dbb"
@@ -8722,7 +8867,6 @@ addr = "ovl5:1E1B"
 size = 387
 evidence = ["ovl", "near", "frame"]
 name = "ShuffleGrid"
-notes = "retry under -v (2026-11-02): the unit now builds with -v, which keeps identical tails apart; the difference below was found under the wrong switches. Earlier: TC registers the shuffle index. Declaration order swapped/k/pick/j/saved with `register int i, cy` puts i in SI and cy in DI and leaves pick in memory at [bp-0xe] and swapped at [bp-0xa], matching the original's slots; the body now matches up to ovl5:0064, where the original copies the shuffle index to DI (`mov di, si` at ovl5:0064, then uses `di` for both xs[i] accesses) and our build uses SI directly, 2 bytes short. Tried: plain i (TC puts i in DI, breaking the fill loops), unsigned i, i declared early or late, and `register int cy` alone. TC keeps only the loop counter in SI and does not reuse DI as a scratch copy of it; a source form that makes TC copy the index to DI would match. The earlier failure (pick registered in DI, swapped at [bp-0xe]) is fixed by the declaration order and register hints above."
 
 [[function]]
 id = "eov6_0000"
@@ -8839,6 +8983,9 @@ unit = "i_text"
 addr = "0000:03AA"
 size = 6
 evidence = ["far"]
+name = "_GetDriverBlock"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "i0000_03b0"
@@ -8846,6 +8993,9 @@ unit = "i_text"
 addr = "0000:03B0"
 size = 26
 evidence = ["frame"]
+name = "_SetSoundByte"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "i0000_03ca"
@@ -8853,6 +9003,9 @@ unit = "i_text"
 addr = "0000:03CA"
 size = 25
 evidence = ["frame"]
+name = "_GetSoundByte"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "i0000_03e3"
@@ -8860,6 +9013,9 @@ unit = "i_text"
 addr = "0000:03E3"
 size = 23
 evidence = ["frame"]
+name = "_GetSoundData"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "i0000_03fa"
@@ -8867,6 +9023,9 @@ unit = "i_text"
 addr = "0000:03FA"
 size = 16216
 evidence = ["far"]
+name = "_RebaseDriverBlock"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "i0000_4352"
@@ -8874,6 +9033,9 @@ unit = "i_text"
 addr = "0000:4352"
 size = 83
 evidence = ["far"]
+name = "_StartAdlibDriver"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "i0000_43a5"
@@ -8881,6 +9043,9 @@ unit = "i_text"
 addr = "0000:43A5"
 size = 4240
 evidence = ["far"]
+name = "_StopAdlibDriver"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "i0000_5435"
@@ -9284,6 +9449,9 @@ unit = "i0892"
 addr = "0892:0000"
 size = 577
 evidence = ["far", "segment"]
+name = "Main"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "i0892_0241"
@@ -9291,6 +9459,9 @@ unit = "i0892"
 addr = "0892:0241"
 size = 1524
 evidence = ["far"]
+name = "StartupGame"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "i0892_0835"
@@ -9298,6 +9469,9 @@ unit = "i0892"
 addr = "0892:0835"
 size = 139
 evidence = ["far", "near"]
+name = "ShutdownGame"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "i0892_08c0"
@@ -9305,6 +9479,9 @@ unit = "i0892"
 addr = "0892:08C0"
 size = 8
 evidence = ["frame"]
+name = "ExitHook"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "i0892_08c8"
@@ -9312,6 +9489,9 @@ unit = "i0892"
 addr = "0892:08C8"
 size = 40
 evidence = ["frame"]
+name = "AllocationFailure"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "i0921_0000"
@@ -9322,6 +9502,7 @@ evidence = ["segment"]
 name = "_SetVgaPalette"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "i0923_0004"
@@ -9945,11 +10126,21 @@ match_flags = "-ml -O -Z -G -P"
 id = "i0aed_00cb"
 unit = "i0aed"
 addr = "0AED:00CB"
-size = 357
+size = 336
 evidence = ["far", "frame"]
 name = "Unpack"
 level = "L2"
 match_flags = "-ml -O -Z -G -P"
+
+[[function]]
+id = "i0aed_021b"
+unit = "i0aed"
+addr = "0AED:021B"
+size = 21
+name = "SetUnpackBuffer"
+level = "L2"
+match_flags = "-ml -O -Z -G -P"
+notes = "not listed by the map: a function of the source, its bounds proven by the whole-unit match"
 
 [[function]]
 id = "i0b10_0000"
@@ -10394,10 +10585,20 @@ evidence = ["far", "frame"]
 id = "i0cda_0005"
 unit = "i0cda"
 addr = "0CDA:0005"
-size = 51
+size = 1
 evidence = ["segment"]
 level = "L2"
 notes = "not a function: bytes of the unit outside its functions (a marker or padding), matched with the whole unit"
+
+[[function]]
+id = "i0cda_0006"
+unit = "i0cda"
+addr = "0CDA:0006"
+size = 50
+name = "_f0CDA_0006"
+level = "L2"
+match_flags = "tasm /mx"
+notes = "not listed by the map: a function of the source, its bounds proven by the whole-unit match"
 
 [[function]]
 id = "i0cdd_0008"

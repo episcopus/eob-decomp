@@ -1,10 +1,90 @@
 # Review: e1aad
 
 Reviewer: rev-haiku
-Commit reviewed: 7d0dd48 (main when I started; branch review/e1aad)
+Commit reviewed: 3331b69 (round 2; main, with the round 1 fixes merged in 01237b0). Round 1 was 7d0dd48.
 
 Playbook 70. Judge what a matching file can still get wrong: names, types, comments, structure.
 The matcher already proved the bytes; do not re-prove them, read for meaning.
+
+## Round 2 (3331b69)
+
+Judged only what the playbook's later-round rule asks: the round 1 must-fix items, and the diff since
+7d0dd48 in `src/E1AAD.ASM` (the `re/symbols.toml` changes are the map and other units' stamps, not
+this unit's names). Each round 1 must-fix was checked against the code it cites and is fixed right, so
+those ticks stay. Checked against the code: the kModifierState writes (lines 603, 826); kKeyFlag204 has
+one writer (install, 741); the install's 40:17 mapping (730-741); the INT 9 paths (E0 846-850, E1
+834-844, break 938-941, sound keys 957-961); INT 23h (784-786, 1034); the 0409 peek (316-358); 038E
+(243-298); 0471 and 0D26 (361-373, 1407-1434); 053A and 0588 (470-555); the 05F1 and 0693 wrapper
+(589-708); the 0B0E release sites (1206-1229; 0B56 and 0B88); the 0D04 latch (1391); the g8136 latch at
+1A72:01DC (E1A72.ASM:413-415); the tick counter at 1D8F:0055 (E1D8F.ASM:76-90). The caller lists in
+the comments match `make packet UNIT=e1aad` (build/packets/e1aad.md).
+
+Four must-fix items are new (three wrong claims in changed lines, and the round 1 g80E8 item only
+partly fixed). Nothing is escalated: each is a comment, with no matcher, spec or pin question.
+
+### Findings
+
+- [ ] must-fix src/E1AAD.ASM:716 (the 1AAD:0718 header; round 1 should at :18, reopened): "toggles
+  gSoundOn/g80E8 on the Ctrl/Alt sound keys". Round 1 named this line and asked for the keys, not
+  Ctrl or Alt. The code tests AX=0420h (gSoundOn) and AX=0434h (g80E8) at lines 957-961, and no Ctrl
+  or Alt bit. The g80E8 comment at :18-21 was fixed; this header was not. Fix: "toggles gSoundOn on key
+  0420h (S) and g80E8 on key 0434h (M)".
+
+- [ ] must-fix src/E1AAD.ASM:1170-1171 (the 1AAD:0B0E header): "so a release never reaches the game" is
+  wrong. 1AAD:038E (266-267) and 1AAD:053A (498-499) do test and discard the release bit, but
+  1AAD:0409 (326-337) and 1AAD:0588 (540-546) do not, and 0588 is what DispatchKey calls after 0409
+  (E16A5.C:127-128) before it dispatches the key to the node list. So a release (41h or 42h with the
+  bit set) reaches the game through DispatchKey. Say which readers discard it (038E, 053A) and which
+  do not (0409, 0588). The same wording "AH bit 8" is also at src/E1AAD.ASM:230 and :465. AH has no
+  bit 8; the code tests and sets the value 08h (`test ah,8`, `or ah,8`). Write "the 08h bit of AH".
+
+- [ ] must-fix src/E1AAD.ASM:104-106 (the 1AAD:0223 header): two wrong claims in a changed line.
+  (a) "a game code above 80h otherwise": the keypad table 1AAD:0357 (kKeypadCodes, lines 222-224) holds
+  the ASCII codes 2Fh, 2Ah, 2Dh, 2Bh and 0Dh, and the Ctrl-function table 1AAD:037A (kCtrlFnCodes,
+  225-226) holds the ASCII digits 30h..39h and symbols. (b) "41h..4Ah (the Ctrl-function keys)": the
+  Ctrl-function table is indexed by AL-5Ah (`sub bl,0Fh` at line 166, after `sub bl,4Bh`), so its keys
+  are 5Ah..6Dh. 41h..4Ah are not in it. 41h and 42h are the mouse-button codes that 1AAD:0B0E queues
+  (lines 1195, 1216), and TranslateKey maps the range 41h..4Ah to 0C6h..0CFh (lines 191-194). Fix the
+  clause: "41h..4Ah (the mouse codes 41h and 42h among them) come back as 0C6h..0CFh; 5Ah..6Dh take the
+  Ctrl-function table; the keypad and that table hold some ASCII codes; otherwise game codes above 80h".
+
+- [ ] must-fix src/E1AAD.ASM:20-30 (the g80EC and g80EF externs): both describe the state 2 readers
+  wrongly. (a) g80EF (lines 27-30): "in state 2 the readers use ds:80EF instead of the ring
+  (1AAD:038E/0409/048D)". Only 1AAD:048D does (lines 401-403, `mov ax,[g80EF]`). 1AAD:038E (254-259)
+  and 0409 (324-329) read the ring slot in state 2, and 1AAD:0D26 fills that slot with ds:80EF
+  before they read it (1423-1430). (b) g80EC (line 25): "the readers skip the ring when it is 2
+  (1AAD:038E/053A/05D3)". 038E still reads the ring slot in state 2 (line 255); what 038E, 053A (481)
+  and 05D3 (563) skip is the wait for a ring event. Fix both: the state 2 readers take the value
+  from the ring slot that 0D26 filled (038E, 0409), except 048D, which reads ds:80EF directly.
+
+- [ ] should src/E1AAD.ASM:235 (the 1AAD:038E header): "(EOV6.C:339, :342, :508)" is stale. EOV6.C now
+  calls ReadKey at lines 346, 349 and 516. Cite the callers by address instead (the packet lists
+  ovl6:0000 CampLoop, ovl6:0B9B, 082C:000B, 082C:0B43, ovl0:207A, ovl1:13F7). "Do not consume the key
+  here" is true of the ReadKey call, but the callers flush the ring after the call (FlushKeyBuffer at
+  EOV6.C:353 and :517). Say so, so the header is not read as "callers never consume".
+
+- [ ] should src/E1AAD.ASM:64 (kExtendKeys map): "1AAD:005D: the map it reads at [di+0Fh]". The
+  read is at 1AAD:005C+i (di after `repne scasb` is 4Ch+i+1, plus 0Fh), so entry 0 of the map is
+  1AAD:005C, the last byte of kExtendKeys, and 005D is entry 1. Write the map base as 1AAD:005C.
+
+- [ ] note src/E1AAD.ASM:44-47 (g8488): "tick counter" is right, but the unit also clears the count
+  itself: 1AAD:0C17 writes 0 at line 1393, and the replay path at line 1350. Say so, so the counter is
+  not read as one that only counts up.
+
+- [ ] note src/E1AAD.ASM:306 (the 0409 header): "(E16A5.C:60-61, :127-128)". Lines 60-61 of E16A5.C
+  are the extern declarations of ReadKeySpecial and WaitGameKey2, not calls. The calls are at :127-128.
+
+- [ ] note for other owners (not this unit, round 1 notes still open): src/E07C8.C:93-99 (the
+  InstallKeyboard copy cite, round 1); src/E1A72.ASM:35 still says "game state, 0/1/2" for g80EC;
+  src/EOV1.ASM:114 and src/EOV3.C:28 still say g80E8 is "toggled by the Ctrl-key handling" (the same
+  wording round 1 :18 removed here). Their owners should align them.
+
+### Summary
+
+Round 1's nine must-fix items are fixed right; their ticks stay. Round 1's should at :18 (the 0718
+header) is only partly fixed and is reopened. Four must-fix items are open in this round: the 0718
+header, the 0B0E release claim, the 0223 header, and the g80EC and g80EF readers. The rest are shoulds
+and notes. Nothing is escalated.
 
 ## Round 1 (7d0dd48)
 
@@ -66,7 +146,7 @@ unless another file is named). Addresses are `1AAD:xxxx` unless marked otherwise
   callers test the return (src/E14EF.C UpdateOptionList, src/E16A5.C:150 DispatchKeyWait). Say what it
   returns in state 0 and 1 (the xor) and in state 2 (the key or 0).
 
-- [x] should src/E1AAD.ASM:18: g80E8 is "toggled by Ctrl-key handling, role unknown", and the 1AAD:0718
+- [ ] should src/E1AAD.ASM:18 (reopened in round 2 as the must-fix above, :716): g80E8 is "toggled by Ctrl-key handling, role unknown", and the 1AAD:0718
   header (line 688) says the handler "toggles gSoundOn/g80E8 on the Ctrl/Alt sound keys". The handler
   tests AX=0420h (gSoundOn) and AX=0434h (g80E8) at lines 925-928. Key code 20h is S and 34h is M
   (kUnshiftedCodes at 1AAD:02DB, index 20h and 34h), both with AH=04. Name the keys and do not call

@@ -62,7 +62,7 @@
         EXTRN   g159:WORD               ; @ ds:0159 (EOV6.C)
         EXTRN   gF57E:BYTE              ; @ ds:F57E (E0BD2.C)
         EXTRN   gFont1A47:DWORD         ; @ ds:FE4E: the current far font pointer (E1547.C)
-        EXTRN   gFE5A:DWORD             ; @ ds:FE5A: the 8x8 font far pointer (E07C8.C)
+        EXTRN   gFont8x8:DWORD             ; @ ds:FE5A: the 8x8 font far pointer (E07C8.C)
         EXTRN   gTextHeight:WORD        ; @ ds:FE60 (E1C0E.C)
         EXTRN   gTextWidth:WORD         ; @ ds:FE62 (E1C0E.C)
         EXTRN   gTextLeft:WORD          ; @ ds:FE64 (E14EF.C)
@@ -1004,8 +1004,8 @@ f0416_06F6:
         jne     short f0416_06EE
         jmp     short f0416_076E
 f0416_06FE:
-        push    word ptr [gFE5A+2]
-        push    word ptr [gFE5A]
+        push    word ptr [gFont8x8+2]
+        push    word ptr [gFont8x8]
         call    far ptr _f1A47_0169
         pop     cx
         pop     cx
@@ -1066,8 +1066,8 @@ f0416_0777:
         call    far ptr _RedrawMember
         pop     cx
 f0416_078C:
-        push    word ptr [gFE5A+2]
-        push    word ptr [gFE5A]
+        push    word ptr [gFont8x8+2]
+        push    word ptr [gFont8x8]
         call    far ptr _f1A47_0169
         pop     cx
         pop     cx
@@ -2067,8 +2067,8 @@ f097A_103E:
         push    word ptr [bp+6]
         call    far ptr _RedrawMember
         pop     cx
-        push    word ptr [gFE5A+2]
-        push    word ptr [gFE5A]
+        push    word ptr [gFont8x8+2]
+        push    word ptr [gFont8x8]
         call    far ptr _f1A47_0169
         pop     cx
         pop     cx
@@ -2464,7 +2464,7 @@ f1153_13AA:
 _Ovl1_1153 ENDP
 
 ; ovl1:13F7: show the message whose key is `message` for up to 0x78 frames. It saves gStatusLine, the
-; current font and gTextRegion, loads the 8x8 font (gFE5A), hides the pointer, copies gF57E into g159,
+; current font and gTextRegion, loads the 8x8 font (gFont8x8), hides the pointer, copies gF57E into g159,
 ; clears text window 0xB, sets gStatusLine = 2, fills the region through f0D1C_0C21, draws the
 ; `message`-th string of the far table gStrings2003 (seg 2003:0000) at the text origin +5 through
 ; DrawShadowText, clips the text rectangle through ClipRect, shows the pointer and then polls
@@ -2485,8 +2485,8 @@ _ShowMessage PROC FAR
         mov     [bp-4],ax
         mov     ax,[gTextRegion]
         mov     [bp-2],ax
-        push    word ptr [gFE5A+2]
-        push    word ptr [gFE5A]
+        push    word ptr [gFont8x8+2]
+        push    word ptr [gFont8x8]
         call    far ptr _f1A47_0169
         pop     cx
         pop     cx
@@ -3326,8 +3326,8 @@ f1ACD_1B5A:
         call    far ptr _LockHidePointer
         call    far ptr _SaveOptionField
         call    far ptr _LockShowPointer
-        push    word ptr [gFE5A+2]
-        push    word ptr [gFE5A]
+        push    word ptr [gFont8x8+2]
+        push    word ptr [gFont8x8]
         call    far ptr _f1A47_0169
         pop     cx
         pop     cx
@@ -3680,8 +3680,8 @@ f1ACD_1E30:
         pop     cx
         pop     cx
         call    far ptr _RedrawCharacters
-        push    word ptr [gFE5A+2]
-        push    word ptr [gFE5A]
+        push    word ptr [gFont8x8+2]
+        push    word ptr [gFont8x8]
         call    far ptr _f1A47_0169
         pop     cx
         pop     cx
@@ -3798,8 +3798,8 @@ f1ACD_1F98:
         call    far ptr _LoadGame
         or      ax,ax
         jne     short f1ACD_2014
-        push    word ptr [gFE5A+2]
-        push    word ptr [gFE5A]
+        push    word ptr [gFont8x8+2]
+        push    word ptr [gFont8x8]
         call    far ptr _f1A47_0169
         pop     cx
         pop     cx
@@ -3830,8 +3830,8 @@ f1ACD_2014:
         mov     word ptr [bp-8],0
 f1ACD_201D:
         call    far ptr _LockShowPointer
-        push    word ptr [gFE5A+2]
-        push    word ptr [gFE5A]
+        push    word ptr [gFont8x8+2]
+        push    word ptr [gFont8x8]
         call    far ptr _f1A47_0169
         pop     cx
         pop     cx
@@ -4231,7 +4231,7 @@ _Ovl1_1ACD ENDP
 
 ; ovl1:243A: show the gStrings2003 message `message` as a header and a scrollable list of the
 ; member inventory slots, letting the player pick one with the keyboard or the mouse. It saves
-; gTextRegion and the current font, clears gStatusLine, selects the 8x8 font gFE5A, builds a far list of the
+; gTextRegion and the current font, clears gStatusLine, selects the 8x8 font gFont8x8, builds a far list of the
 ; nodes whose key is `cur+0x21` with _Ovl1_1153(5), hides the pointer, draws the message through
 ; SkipStrings(gStrings2003, message) and DrawShadowText, then loops: it highlights the current node
 ; with _DrawListNode (after _FindNode(index+0x21)), waits with DispatchKeyWait, and switches on the
@@ -4258,8 +4258,8 @@ _ChooseListEntry PROC FAR
         mov     [bp-0Eh],dx
         mov     [bp-0Ch],ax
         mov     word ptr [gStatusLine],0
-        push    word ptr [gFE5A+2]
-        push    word ptr [gFE5A]
+        push    word ptr [gFont8x8+2]
+        push    word ptr [gFont8x8]
         call    far ptr _f1A47_0169
         pop     cx
         pop     cx

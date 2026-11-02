@@ -1,0 +1,23 @@
+# Review: i0cda
+
+Reviewer: rev-haiku
+Commit reviewed: aa139872dfa3474f683144e3ec4f289840e9c58d
+
+Playbook 70. Judge what a matching file can still get wrong: names, types, comments, structure.
+The matcher already proved the bytes; do not re-prove them, read for meaning.
+
+## Findings
+
+Each finding is a checkbox. `must-fix` blocks `make review-pass` until a decompiler ticks it off
+(with the commit that fixes it); `should` and `note` do not block.
+
+- [ ] must-fix src/I0CDA.ASM:19: "no near or far call reaches either copy" is false for the EOB copy. EOB.EXE holds two far calls to 1D8C:0000 (`9a 00 00 8c 1d`) at 0EF3:2FA2 and 0EF3:305F (file offsets 0x146D2 and 0x1478F, unit e0ef3, kind c in re/units.toml), which src/E1D8C.ASM:15-17 records and work/reviews/e1d8c.md confirms. The INTRO copy has no caller (no `9a 06 00 da 0c` in INTRO.EXE). Say that: the INTRO copy has no caller, and the EOB copy is called twice from e0ef3, so the placeholder's question is the same as E1D8C's.
+- [ ] must-fix src/I0CDA.ASM:27-28: "which spells the same value 212Eh" is wrong. INTRO's word is 0E9F (bytes `9f 0e` at 0CDA:000C; the file image holds the seed `34 12 76` at 0E9F:2310, so 0E9F is DGROUP in this image). src/E1D8C.ASM spells 212Eh, which is DGROUP's paragraph in EOB.EXE: the same group, a different value. The relocation claim is right: an MZ relocation entry covers 0CDA:000C, as one covers the immediate of every `mov ax,DGROUP` in both EXEs (19 in INTRO, 22 in EOB). Fix: "the same DGROUP as src/E1D8C.ASM, which spells 212Eh in EOB.EXE".
+- [ ] should src/I0CDA.ASM:15-17: "It shifts the byte at DGROUP:2310 right twice" describes a copy: the shifts act on AL (`mov al,es:[si]` and `shr al,1` twice, src/I0CDA.ASM:32-34), and DGROUP:2310 is only read there until the `rcr` writes it. "rotates DGROUP:2310 right through the low bit of its own shifted value" is unclear: the carry is bit 0 of AL after `sbb al,es:[si]` and the following `shr al,1`, where AL is (old DGROUP:2310 >> 2) - old DGROUP:2310 - !bit 7 of old DGROUP:2311. The `cmc` before the `sbb` (which gives that complement) is not mentioned at all. Reword so a reader can check each step against the instructions.
+- [ ] note src/I0CDA.ASM:5, :10-12: the lone byte checks out. 0CDA:0005 is `00` after the `retf` (`cb`) at 0CDA:0004, and 0CDA:0006 starts `55 8b ec` (push bp; mov bp,sp), the same as the EOB copy's start at 1D8C:0000. 51 bytes, 1 function, kind asm agree with the packet.
+- [ ] note src/I0CDA.ASM:14: "2310h appears nowhere else" holds: the two bytes `10 23` occur once in INTRO.EXE, as the operand of `mov si,2310h` at 0CDA:0010. The seed `34 12 76` at 0E9F:2310 is in the file image. Every step in the list (shr/shr, rcl x2, cmc, sbb, shr, rcr, the final xor, AH 0) matches its instruction.
+- [ ] note The name `_f0CDA_0006` is a placeholder. The Purpose unknown comment is right. The two copies run the same generator on different state (INTRO DGROUP:2310, EOB DGROUP:8484), so the EOB caller evidence does not name the INTRO copy's state; no finding.
+
+## Summary
+
+The unit is one 50-byte far function plus a lone padding byte, and it is understandable from its source: the step list describes the instructions, and the seed, the `2310h` access and the DGROUP relocation are all true. Two comments are wrong: the sentence on callers ("no near or far call reaches either copy" is false for the EOB copy, which has two far callers in e0ef3) and "the same value 212Eh" (INTRO's word is 0E9F). The step description also needs rewording (AL is shifted, not the memory byte, and the `cmc` is missing). The name stays a placeholder, which is fine: its only evidence is the EOB callers, which use the result as `& 3` and `& 1` (src/E1D8C.ASM:15-17). Two must-fix items are open.

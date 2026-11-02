@@ -2020,10 +2020,10 @@ date = "2026-11-02"
 [[rename]]
 id = "ds:8102=gGraphicsChoice"
 addr = "ds:8102"
-old = "g8102"
+old = ""
 new = "gGraphicsChoice"
 kind = "global"
-why = "the graphics choice: its only writer is src/E07C8.C:218, g8102 = argv[1][0] + 1; src/E07C8.C:31 says the digit 0..4 indexes gOverlayFiles (0 cga, 1 tandy, 2 ega, 3 mcga/VGA, 4 vga); src/E14EF.C:68 reads it as the graphics choice, 1 Tandy and 3 VGA; 3 and 4 select the 6-bit cells (src/E07C8.C:31)"
+why = "the graphics choice: Main sets it to argv[1][0] + 1 (src/E07C8.C:226) and StartupGame subtracts 0x31 (src/E07C8.C:295), after the 0x36 check at :293, so the digit 0..4 exists only after :295; the digit indexes gOverlayFiles (0 cga, 1 tandy, 2 ega, 3 mcga/VGA, 4 vga; src/E07C8.C:39-43); src/E17A6.ASM:233 names 0 CGA, 1 Tandy, 2 EGA, 3 MCGA; src/E14EF.C:68 reads it as the graphics choice, 1 Tandy and 3 VGA; 3 and 4 select the 6-bit cells (src/E1DE7.C:163-165, :197); whitepaper 2.6: 1 Tandy, 3 VGA"
 date = "2026-11-02"
 
 [[rename]]
@@ -2041,7 +2041,7 @@ addr = "ds:811F"
 old = "g811F"
 new = "gTextRegion"
 kind = "global"
-why = "the record index of the current text window: SetTextWindow stores it as gRegions[g811F] (1DE7:0009; src/E1A29.C:38, src/E1C0E.C:577 keeps it in saved811F); E07A9.C, E1C0E.C, EOV1.ASM, EOV2.C and EOV6.C read it"
+why = "the record index of the current text window: SetTextWindow stores it as gRegions[g811F] (1DE7:0009; src/E1A29.C:38, 1C0E:0ADD keeps it in savedTextRegion); E07A9.C, E1C0E.C, EOV1.ASM, EOV2.C and EOV6.C read it"
 date = "2026-11-02"
 
 [[rename]]
@@ -2177,4 +2177,49 @@ old = "LoadIntroIcons"
 new = "LoadIntroScreen"
 kind = "function"
 why = "ovl2:078D loads the INTRO screen into gOverlayBuf, draws two option-panel frames and clips the region; it slices no sprite cells. The icon slicer is LoadDecorateIcons at ovl2:0577"
+date = "2026-11-02"
+
+[[rename]]
+id = "ds:80C6=gSaveRectSize"
+addr = "ds:80C6"
+old = "g80C6"
+new = "gSaveRectSize"
+kind = "global"
+why = "an indirect far function that returns the save-under buffer size in bytes for a (width, height) request; DisplayFileError (1C0E:0ADD) calls it before MemAlloc and E1BB1.ASM:92 holds it at ds:80C6"
+date = "2026-11-02"
+
+[[rename]]
+id = "ds:FE5A=gFont8x8"
+addr = "ds:FE5A"
+old = "gFE5A"
+new = "gFont8x8"
+kind = "global"
+why = "the 8x8 font loaded from Font8.fnt; E07C8.C:118 loads it and 1C0E:0ADD (DisplayFileError) switches the text font to it through 1A47:0169 (EOV1.ASM:65 and EOV2.C:124 declare the same address)"
+date = "2026-11-02"
+
+[[rename]]
+id = "ds:8104=gFatalHandler"
+addr = "ds:8104"
+old = "g8104"
+new = "gFatalHandler"
+kind = "global"
+why = "the fatal file error handler, a far pointer at ds:8104; the image holds 1C0E:0D9B (ShowMessage) there (EOB.EXE file offset 2BBE4) and FatalError (1C0E:00AA) calls it (E1A72.ASM:38)"
+date = "2026-11-02"
+
+[[rename]]
+id = "ds:8111=gRetryHandler"
+addr = "ds:8111"
+old = "g8111"
+new = "gRetryHandler"
+kind = "global"
+why = "the retry file error handler, a far pointer at ds:8111; the image holds 1C0E:0ADD (DisplayFileError) there (EOB.EXE file offset 2BBF1) and RetryFile (1C0E:0046) calls it (E1A72.ASM:40)"
+date = "2026-11-02"
+
+[[rename]]
+id = "1547:04A0=DrawMemberFood"
+addr = "1547:04A0"
+old = "DrawMemberLevel"
+new = "DrawMemberFood"
+kind = "function"
+why = "m23 is a food/hunger value: EatFood (0ACD:07E0, src/E0ACD.C:571-577) adds the food item's m0B to m23 clamped to 100 and then calls this to redraw the bar, and DecayMemberState (1414:0C82, src/E1414.C:656-657) subtracts one from m23 each tick for a living member and calls it. The bar is 0..100, so it is the food/hunger bar, not a level."
 date = "2026-11-02"

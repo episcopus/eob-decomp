@@ -35,9 +35,9 @@
         EXTRN   g80EC:BYTE              ; @ ds:80EC: game state, 0/1/2 (E1AAD.ASM:20); the handler
         ;                                              compares it with 2 and skips the position
         ;                                              update when it is 2 (1A72:0212)
-        EXTRN   g8104:DWORD             ; @ ds:8104: the fatal file error handler (E1C0E.C:66),
+        EXTRN   gFatalHandler:DWORD             ; @ ds:8104: the fatal file error handler (E1C0E.C:66),
         ;                                              called as (2, name) on the two give-up exits
-        EXTRN   g8111:DWORD             ; @ ds:8111: the retry file error handler (E1C0E.C:67),
+        EXTRN   gRetryHandler:DWORD             ; @ ds:8111: the retry file error handler (E1C0E.C:67),
         ;                                              called as (2, name) after a failed probe
         EXTRN   _gPointerBusy:WORD              ; @ ds:812E: busy flag, 0 = free; the game takes it
         ;                                              with a test then a store, so it is not a lock
@@ -218,7 +218,7 @@ L0054:  push    ds
         push    ax
         mov     ax,2
         push    ax
-        call    dword ptr [g8111]
+        call    dword ptr [gRetryHandler]
         add     sp,6
         or      ax,ax
         je      L0080
@@ -239,7 +239,7 @@ L0080:  or      si,si
         push    ax
         mov     ax,2
         push    ax
-        call    dword ptr [g8104]
+        call    dword ptr [gFatalHandler]
         add     sp,6
         call    far ptr _ShutdownGame
 L0099:  mov     ax,1                    ; open argument (oflag): 1 = O_RDONLY (E1C0E.C:93)
@@ -259,7 +259,7 @@ L0099:  mov     ax,1                    ; open argument (oflag): 1 = O_RDONLY (E
         push    ax
         mov     ax,2
         push    ax
-        call    dword ptr [g8104]
+        call    dword ptr [gFatalHandler]
         add     sp,6
         call    far ptr _ShutdownGame
 L00CD:  pop     bp
