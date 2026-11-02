@@ -56,6 +56,9 @@ unit = "e_text"
 addr = "0000:03AA"
 size = 6
 evidence = ["far"]
+name = "_f0_03AA"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e0000_03b0"
@@ -63,6 +66,9 @@ unit = "e_text"
 addr = "0000:03B0"
 size = 26
 evidence = ["far", "frame"]
+name = "_f0_03B0"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e0000_03ca"
@@ -70,6 +76,9 @@ unit = "e_text"
 addr = "0000:03CA"
 size = 25
 evidence = ["far", "frame"]
+name = "_f0_03CA"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e0000_03e3"
@@ -77,6 +86,9 @@ unit = "e_text"
 addr = "0000:03E3"
 size = 23
 evidence = ["far", "frame"]
+name = "_f0_03E3"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e0000_03fa"
@@ -84,6 +96,7 @@ unit = "e_text"
 addr = "0000:03FA"
 size = 15229
 evidence = ["far"]
+notes = "stub: the range is the 32c8h driver block LoadSoundDriver loads at run time, the two INT 08h handlers at 3E66h and 3EE5h and their tables, none of which the map listed as functions. Only the first 28 bytes (03FAh to 0415h, the 300-word rebase) are code the source would write; a stub keeps the run-time block out of src/. See src/E_TEXT.ASM."
 
 [[function]]
 id = "e0000_3f77"
@@ -91,6 +104,9 @@ unit = "e_text"
 addr = "0000:3F77"
 size = 83
 evidence = ["far"]
+name = "_f0_3F77"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e0000_3fca"
@@ -98,6 +114,9 @@ unit = "e_text"
 addr = "0000:3FCA"
 size = 42
 evidence = ["far"]
+name = "_f0_3FCA"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e0000_3ff4"
@@ -105,6 +124,9 @@ unit = "e_text"
 addr = "0000:3FF4"
 size = 24
 evidence = ["near"]
+name = "_SoundDriverTick"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e0000_400c"
@@ -112,6 +134,9 @@ unit = "e_text"
 addr = "0000:400C"
 size = 32
 evidence = ["far", "frame"]
+name = "_f0_400C"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e0000_402c"
@@ -119,6 +144,9 @@ unit = "e_text"
 addr = "0000:402C"
 size = 114
 evidence = ["near"]
+name = "_ProcessSoundQueue"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e0000_409e"
@@ -126,6 +154,9 @@ unit = "e_text"
 addr = "0000:409E"
 size = 48
 evidence = ["frame"]
+name = "_SetNote"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e0000_40ce"
@@ -133,6 +164,9 @@ unit = "e_text"
 addr = "0000:40CE"
 size = 23
 evidence = ["frame"]
+name = "_SetSamplePlaying"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e0000_40e5"
@@ -140,6 +174,9 @@ unit = "e_text"
 addr = "0000:40E5"
 size = 29
 evidence = ["frame"]
+name = "_SelectDriverTable"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e0000_4102"
@@ -147,6 +184,9 @@ unit = "e_text"
 addr = "0000:4102"
 size = 57
 evidence = ["frame"]
+name = "_GetDriverTable"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e0000_413b"
@@ -154,6 +194,9 @@ unit = "e_text"
 addr = "0000:413B"
 size = 84
 evidence = ["near"]
+name = "_ResetVoices"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e0000_418f"
@@ -161,6 +204,9 @@ unit = "e_text"
 addr = "0000:418F"
 size = 2219
 evidence = ["near"]
+name = "_UpdateVoices"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e0000_4a3a"
@@ -168,6 +214,9 @@ unit = "e_text"
 addr = "0000:4A3A"
 size = 181
 evidence = ["near"]
+name = "_SetVoicePitch"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e0000_4aef"
@@ -175,6 +224,9 @@ unit = "e_text"
 addr = "0000:4AEF"
 size = 48
 evidence = ["near"]
+name = "_VoiceKeyOn"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e0000_4b1f"
@@ -182,6 +234,9 @@ unit = "e_text"
 addr = "0000:4B1F"
 size = 40
 evidence = ["near"]
+name = "_VoiceKeyOff"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e0000_4b47"
@@ -189,6 +244,9 @@ unit = "e_text"
 addr = "0000:4B47"
 size = 56
 evidence = ["near"]
+name = "_StartVoiceNote"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e0000_4b7f"
@@ -196,6 +254,9 @@ unit = "e_text"
 addr = "0000:4B7F"
 size = 236
 evidence = ["frame"]
+name = "_StartSample"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e0000_4c6b"
@@ -203,6 +264,9 @@ unit = "e_text"
 addr = "0000:4C6B"
 size = 17
 evidence = ["near"]
+name = "_AdlibWrite"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e0000_4c7c"
@@ -210,6 +274,9 @@ unit = "e_text"
 addr = "0000:4C7C"
 size = 17
 evidence = ["near"]
+name = "_ClampLevel"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e0000_4c8d"
@@ -217,6 +284,9 @@ unit = "e_text"
 addr = "0000:4C8D"
 size = 36
 evidence = ["near"]
+name = "_TickTempo"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e0000_4cb1"
@@ -224,6 +294,9 @@ unit = "e_text"
 addr = "0000:4CB1"
 size = 31
 evidence = ["frame"]
+name = "_GetVoiceState"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e0000_4cd0"
@@ -231,6 +304,9 @@ unit = "e_text"
 addr = "0000:4CD0"
 size = 16
 evidence = ["near"]
+name = "_AdlibDelay17"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e0000_4ce0"
@@ -238,6 +314,9 @@ unit = "e_text"
 addr = "0000:4CE0"
 size = 16
 evidence = ["near"]
+name = "_AdlibDelay4"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e0000_4cf0"
@@ -245,6 +324,9 @@ unit = "e_text"
 addr = "0000:4CF0"
 size = 47
 evidence = ["near"]
+name = "_WriteVoiceReg"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e0000_4d1f"
@@ -252,6 +334,9 @@ unit = "e_text"
 addr = "0000:4D1F"
 size = 56
 evidence = ["near"]
+name = "_VoiceLevelA0"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e0000_4d57"
@@ -259,6 +344,9 @@ unit = "e_text"
 addr = "0000:4D57"
 size = 62
 evidence = ["near"]
+name = "_VoiceLevelB0"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e0000_4d95"
@@ -266,6 +354,9 @@ unit = "e_text"
 addr = "0000:4D95"
 size = 51
 evidence = ["near"]
+name = "_ClearVoice"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e0000_4dc8"
@@ -273,6 +364,9 @@ unit = "e_text"
 addr = "0000:4DC8"
 size = 108
 evidence = ["near"]
+name = "_LoadVoicePatch"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e0000_4e34"
@@ -280,6 +374,9 @@ unit = "e_text"
 addr = "0000:4E34"
 size = 336
 evidence = ["near"]
+name = "_VoiceSilence"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e0000_4f84"
@@ -287,6 +384,9 @@ unit = "e_text"
 addr = "0000:4F84"
 size = 217
 evidence = ["near"]
+name = "_SoundRandom"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "e0000_505d"
