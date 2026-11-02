@@ -5768,6 +5768,9 @@ unit = "e1c0e"
 addr = "1C0E:0400"
 size = 376
 evidence = ["far", "frame"]
+name = "FileRead"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "e1c0e_0578"
@@ -5775,6 +5778,9 @@ unit = "e1c0e"
 addr = "1C0E:0578"
 size = 365
 evidence = ["far", "frame"]
+name = "FileWrite"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "e1c0e_06e5"
@@ -5782,6 +5788,9 @@ unit = "e1c0e"
 addr = "1C0E:06E5"
 size = 566
 evidence = ["frame"]
+name = "SeekFile"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "e1c0e_091b"
@@ -5819,6 +5828,9 @@ unit = "e1c0e"
 addr = "1C0E:0ADD"
 size = 702
 evidence = ["near", "frame"]
+name = "DisplayFileError"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "e1c0e_0d9b"
@@ -5866,6 +5878,9 @@ unit = "e1c0e"
 addr = "1C0E:0F6E"
 size = 499
 evidence = ["near", "frame"]
+name = "BuildFileCache"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "e1c0e_1161"
@@ -5953,6 +5968,9 @@ unit = "e1c0e"
 addr = "1C0E:144E"
 size = 503
 evidence = ["far", "frame"]
+name = "LoadFileSlot"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "e1c0e_1645"
