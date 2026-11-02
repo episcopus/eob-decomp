@@ -2,13 +2,13 @@
    that play a game sound through it. LoadSoundDriver (177D:000A) opens adlib.dat or pcgamesn.dat
    by gSoundCard (ds:B892), reads the 120-byte game-number to driver-number map into gSoundMap
    (ds:DCAC, a far pointer to the 120-byte map StartupAlloc allocates, src/E07A9.C:216) and the
-   driver's 32C8h data block into segment 0000 (_TEXT) at offset 0416 (f0_03AA, 0000:03AA, returns
-   cs:0416; f0_03FA, 0000:03FA, adds the 0416 base to the block's 300-word table). PlaySound
+   driver's 32C8h data block into segment 0000 (_TEXT) at offset 0416 (GetDriverBlock, 0000:03AA, returns
+   cs:0416; RebaseDriverBlock, 0000:03FA, adds the 0416 base to the block's 300-word table). PlaySound
    (177D:0070) plays the driver sound a game number maps to; PlaySoundAtCell (177D:0106) on AdLib
    retunes and restarts the sound recorded by the previous call, at the attenuation that call
    recorded, and records the new sound and cell only for a later call; PlaySoundDefault (177D:00F3)
    passes the party's map cell gPartyCell (ds:FBCA) as the sound's cell. A call's attenuation is the
-   distance between gPartyCell and that cell, Distance(gPartyCell, cell) (177D:0261 to 0279). gDrvReg
+   distance between gPartyCell and that cell, Distance(gPartyCell, cell) (177D:0261 to 0279). gBusyCountdown
    (0000:3B36) is the driver's busy countdown: set to 0Bh after a start and counted down by the
    driver's timer; the AdLib path waits for it to reach 0 before it writes registers. Whitepaper
    2.7 (AdLib) and 4.4 (ADLIB.DAT / PCGAMESN.DAT). Compiled -ml -O -Z. */
@@ -34,9 +34,9 @@
 /* Purpose unknown: 177D:01DA writes driver register 1 with the value 20h - gCurAttenuation; what
    that value means is not known */
 #define DRIVER_REG1_BASE 0x20
-/* Purpose unknown: the value stored in the busy byte gDrvReg after a start (177D:0201). The INT 08h
+/* Purpose unknown: the value stored in the busy byte gBusyCountdown after a start (177D:0201). The INT 08h
    routine at 0000:3E66 (installed by 0000:3F77: mov dx,3E66h; int 21h 2508h at 0000:3F97 to 3F9D)
-   counts gDrvReg down (0000:3EAF to 3EB6: cmp [3B36], 0; je; dec byte [3B36]), so 0Bh is a number of
+   counts gBusyCountdown down (0000:3EAF to 3EB6: cmp [3B36], 0; je; dec byte [3B36]), so 0Bh is a number of
    timer passes the program waits out */
 #define DRIVER_BUSY 0x0b
 
@@ -98,7 +98,7 @@ extern int gPartyCell; /*@ ds:FBCA */  /* the party's map cell: PlaySoundDefault
                                           src/EOV6.C:410) and it indexes the nine-byte cell records
                                           (src/E0D1C.C:352, :358) */
 
-extern unsigned char far gDrvReg; /*@ 0000:3B36 */  /* the driver's busy countdown: set to DRIVER_BUSY
+extern unsigned char far gBusyCountdown; /*@ 0000:3B36 */  /* the driver's busy countdown: set to DRIVER_BUSY
                                                        after a start and counted down by the driver's
                                                        timer; the AdLib path waits for it to reach 0
                                                        before it writes registers. Not volatile: the
@@ -111,22 +111,22 @@ extern long FileRead(int index, char far *buf, unsigned long len); /*@ 1C0E:0400
                                                                                        byte count is
                                                                                        not used here */
 extern void FileClose(int index); /*@ 1C0E:03BB */
-extern void far *f0_03AA(void); /*@ 0000:03AA */ /* returns the block's address, dx:ax = cs:0416
+extern void far *GetDriverBlock(void); /*@ 0000:03AA */ /* returns the block's address, dx:ax = cs:0416
                                                     (0000:03AA to 03AF) */
 /* writes the byte `value` at driver register `reg` of driver sound `idx`: `idx` indexes the
    block's 300-word table at 0000:0416 and `reg` offsets it (0000:03B7 to 03C4) */
-extern void f0_03B0(int idx, int reg, int value); /*@ 0000:03B0 */
+extern void SetSoundByte(int idx, int reg, int value); /*@ 0000:03B0 */
 /* reads that byte back from the same place, zero-extended (0000:03CA to 03E2) */
-extern int f0_03CA(int idx, int reg); /*@ 0000:03CA */
+extern int GetSoundByte(int idx, int reg); /*@ 0000:03CA */
 /* returns the driver routine pointer for sound `idx`, the far pointer cs:[0416 + 2*idx]
    (0000:03E3 to 03F8) */
-extern void far *f0_03E3(int idx); /*@ 0000:03E3 */
+extern void far *GetSoundData(int idx); /*@ 0000:03E3 */
 /* makes the block's 300-word table absolute: adds 0416 to each of the words at 0000:0416
    (cx = 12Ch, 0000:03FD to 0410) */
-extern void f0_03FA(void); /*@ 0000:03FA */
+extern void RebaseDriverBlock(void); /*@ 0000:03FA */
 /* queues `sound` for the driver: appends it to a 16-entry ring (head at 0000:3B7F, index masked
    with 0Fh, 0000:400C to 4023) */
-extern void f0_400C(int sound); /*@ 0000:400C */
+extern void QueueSound(int sound); /*@ 0000:400C */
 extern void StartSound(void far *routine); /*@ 1948:0418 */
 extern void SoundDriverResume(void); /*@ 1948:0458 */
 extern int Distance(int x, int y); /*@ 17A6:0F61 */
@@ -136,8 +136,8 @@ void PlaySoundAtCell(int sound, int cell);
 
 /* 177D:000A: opens the driver file chosen by gSoundCard (adlib.dat when 0, pcgamesn.dat
    otherwise), reads its 120-byte sound map into gSoundMap and its 32C8h data block into segment
-   0000 (_TEXT) at offset 0416 (f0_03AA returns cs:0416), closes the file and fixes the block's
-   300-word table through f0_03FA. Called by StartupAlloc at 07A9:00D2. The slot from FileOpen
+   0000 (_TEXT) at offset 0416 (GetDriverBlock returns cs:0416), closes the file and fixes the block's
+   300-word table through RebaseDriverBlock. Called by StartupAlloc at 07A9:00D2. The slot from FileOpen
    is not checked: the data file is assumed to exist. */
 /*@ 177D:000A */ void LoadSoundDriver(void)
 {
@@ -149,9 +149,9 @@ void PlaySoundAtCell(int sound, int cell);
     else
         slot = FileOpen("pcgamesn.dat", 1);
     FileRead(slot, gSoundMap, SOUND_MAP_SIZE);
-    FileRead(slot, f0_03AA(), DRIVER_BLOCK_SIZE);
+    FileRead(slot, GetDriverBlock(), DRIVER_BLOCK_SIZE);
     FileClose(slot);
-    f0_03FA();
+    RebaseDriverBlock();
 }
 
 /* 177D:0070: plays the game sound numbered `sound`: its driver number comes from gSoundMap
@@ -176,7 +176,7 @@ void PlaySoundAtCell(int sound, int cell);
     driverSound = gSoundMap[sound];
     if (driverSound < SOUND_MAP_IGNORED) {
         if (gSoundCard == 0) {
-            f0_400C(driverSound);
+            QueueSound(driverSound);
             return;
         }
         if (gSpeakerMode == 1) {
@@ -190,7 +190,7 @@ void PlaySoundAtCell(int sound, int cell);
             }
         }
         driverSound &= SPEAKER_ROUTINE_MASK;
-        routine = f0_03E3(driverSound);
+        routine = GetSoundData(driverSound);
         StartSound(routine);
     }
 }
@@ -217,12 +217,12 @@ void PlaySoundAtCell(int sound, int cell);
    new `sound` and `cell` are read only at the end (the map byte for `sound` is read at 177D:0283,
    zero-extended at 0286 and stored into gCurSound at 177D:0288); the first call after load
    (gCurSound 0) plays nothing. On AdLib (gSoundCard 0) and only when the recorded attenuation
-   gCurAttenuation is below 10h (177D:012B): it waits for the busy byte gDrvReg to clear, restores
+   gCurAttenuation is below 10h (177D:012B): it waits for the busy byte gBusyCountdown to clear, restores
    the loaded sound's registers (gPrevSound, gSoundLevel, gSoundReg1) through 0000:03B0, reloads them
    from the recorded sound through 0000:03CA, and, when gCurAttenuation is above zero, fades the
    level towards full attenuation and writes the driver register-1 value 20h - gCurAttenuation
    (0000:03B0, 177D:01DA; whether that value is an amplitude is not known); then starts the recorded
-   sound through 0000:400C and sets gDrvReg to 0Bh. On the other cards (1 PC speaker, 2 Tandy
+   sound through 0000:400C and sets gBusyCountdown to 0Bh. On the other cards (1 PC speaker, 2 Tandy
    speaker) there is no attenuation test and no restore: the recorded sound starts on every call
    through 0000:03E3 and 1948:0418, and when gSpeakerMode is 1 (the Tandy path) the recorded sound sets
    gTandyOn to 1 and resumes the driver through 1948:0458, but only when gTandyOn is currently 0
@@ -246,26 +246,26 @@ void PlaySoundAtCell(int sound, int cell);
     if (gCurSound > 0) {
         if (gSoundCard == 0) {
             if (gCurAttenuation < ATTENUATION_ADLIB_LIMIT) {
-                while (gDrvReg)      /* wait for the driver's busy byte to clear (177D:0135) */
+                while (gBusyCountdown)      /* wait for the driver's busy byte to clear (177D:0135) */
                     ;
-                f0_03B0(gPrevSound, 3, gSoundLevel);
-                f0_03B0(gPrevSound, 1, gSoundReg1);
+                SetSoundByte(gPrevSound, 3, gSoundLevel);
+                SetSoundByte(gPrevSound, 1, gSoundReg1);
                 gPrevSound = gCurSound;
-                gSoundLevel = f0_03CA(gCurSound, 3);
-                gSoundReg1 = f0_03CA(gCurSound, 1);
+                gSoundLevel = GetSoundByte(gCurSound, 3);
+                gSoundReg1 = GetSoundByte(gCurSound, 1);
                 /* QUIRK 177D:0194: register 3 is read a second time here (177D:0170 and 177D:0194);
                    it is what the original does, not a slip. The store to `level` is dead on every
                    path: it is reassigned at 177D:01C7 before its only read (177D:01C9) */
-                level = gSoundLevel = f0_03CA(gCurSound, 3);
+                level = gSoundLevel = GetSoundByte(gCurSound, 3);
                 if (gCurAttenuation > 0) {
                     /* the level moves (gCurAttenuation - 1) / 16 of the way from gSoundLevel to
                        LEVEL_FULL_ATTENUATION (177D:01AF to 01C7) */
                     level = gSoundLevel + ((LEVEL_FULL_ATTENUATION - gSoundLevel) * (gCurAttenuation - 1) >> 4);
-                    f0_03B0(gCurSound, 3, level);
-                    f0_03B0(gCurSound, 1, DRIVER_REG1_BASE - gCurAttenuation);
+                    SetSoundByte(gCurSound, 3, level);
+                    SetSoundByte(gCurSound, 1, DRIVER_REG1_BASE - gCurAttenuation);
                 }
-                f0_400C(gCurSound);
-                gDrvReg = DRIVER_BUSY;
+                QueueSound(gCurSound);
+                gBusyCountdown = DRIVER_BUSY;
             }
         } else {
             if (gSpeakerMode == 1) {
@@ -281,7 +281,7 @@ void PlaySoundAtCell(int sound, int cell);
             /* masks gCurSound in place (177D:0240) before the play; the store at 177D:0288
                overwrites it with gSoundMap[sound] afterwards */
             gCurSound &= SPEAKER_ROUTINE_MASK;
-            routine = f0_03E3(gCurSound);
+            routine = GetSoundData(gCurSound);
             StartSound(routine);
         }
     }
