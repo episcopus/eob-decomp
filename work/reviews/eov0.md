@@ -1,7 +1,7 @@
 # Review: eov0
 
 Reviewer: rev-haiku
-Commit reviewed: 2ba0b7c (main, when I started); src/EOV0.C is unchanged from be85fef to 2ba0b7c
+Commit reviewed: round 2 at 96459a0 (main); round 1 at 2ba0b7c (main, when I started); src/EOV0.C is unchanged from be85fef to 2ba0b7c
 
 Playbook 70. Judge what a matching file can still get wrong: names, types, comments, structure.
 The matcher already proved the bytes; do not re-prove them, read for meaning.
@@ -10,6 +10,63 @@ The matcher already proved the bytes; do not re-prove them, read for meaning.
 
 Each finding is a checkbox. `must-fix` blocks `make review-pass` until a decompiler ticks it off
 (with the commit that fixes it); `should` and `note` do not block.
+
+Round 2 (96459a0, main, after round 1 fixes 4ac62b0 and ada5f3d). Reviewer rev-haiku. Playbook 70, later round: the
+round 1 must-fix items and the changes since 2ba0b7c (`git diff 2ba0b7c main -- src/EOV0.C re/symbols.toml
+re/globals.toml`; the EOV0.C part is comments, names and types only, no function body moved).
+
+Round 1 must-fix items, checked against the code at each place they cite: the g5E20, gDCA4 and gDD10 meanings
+(BuildRowNodeList sets g5E20 at EOV0.C:368; MaxHitPoints/MinHitPoints are the calls at EOV0.C:902-905 and E0A72.C:206,
+:231), FlashPanelIcon rowBases (EOV0.C:325, 328), PickPartySlot's mouse test and caller (EOV0.C:570, 576, 640, 661),
+Ovl0_0DDC's key outcomes (EOV0.C:664-680), Ovl0_0EE5's confirm keys (EOV0.C:722-730), EditStatField's clamp order
+and the index 3/4/6 branches (EOV0.C:956-1008), InitPanelScreens' tuple and both blits (EOV0.C:1346-1352),
+InitCharSlotValues' value 2 (EOV0.C:1419), ShiftCharFields' eight copies (EOV0.C:1434-1441), the RunCharacterPanel
+toggles and confirm keys (EOV0.C:1485-1505), the Ovl0_1ADD and PickAlignment callers, and the prototypes
+(E0A72.C:180, :206, :231, :263; E082C.C:65). All fixed right in substance: the ticks stay. The round 1 items that
+were only about citations are covered by the round 2 should items below.
+
+- [ ] must-fix src/EOV0.C:1083-1084 (RollCharacterStats): "when the strength roll is exactly 18 the low byte gets a
+  percentile roll (1d100) ORed into its high half". The code is `scores[0] |= RollDice(1, 0x64, 0) << 8`
+  (src/EOV0.C:1102-1103): the roll goes into the high byte of the word, and the low byte (the strength, m0D) stays
+  0x12. The high byte is the percentile m0F (src/EOV0.C:1107-1108). Say the high byte gets the 1d100 roll (ORed in)
+  and the low byte stays 18. This line was changed in 4ac62b0 and still names the wrong byte.
+- [ ] should src/EOV0.C:103-104: the cites `src/EOV0.C:896` and `src/EOV0.C:898` are stale; the MaxHitPoints and
+  MinHitPoints calls are now at EOV0.C:902 and 904 (and 992, 994). `src/E08E6.C:784, :823` are stale: the 0/1 flag
+  uses are E08E6.C:766 (`gF518 = gDD10 = 0`) and :805 (`gDD10 = 1`). The claims hold. Replace the line numbers
+  with addresses (ovl0:135D for the writes, 08E6:xxxx for the flag uses, as the owner of E08E6.C gives them).
+- [ ] should src/EOV0.C:175: the cite `src/E16A5.C:130` is stale; the declaration with the same meaning is now
+  src/E16A5.C:132 (its writers are at :283 and :300). The meaning holds. Use the address of the list walk instead
+  of the line.
+- [ ] should src/EOV0.C:57: the cite `(src/EOV0.C:1368)` for `index00` is stale; `rec->index00 = i` is now at
+  src/EOV0.C:1379 (ovl0:26C6).
+- [ ] should src/EOV0.C:118: `(src/EOV0.C:1329-1330)` for the 0x2c cells is stale; the loop is at src/EOV0.C:1340-1341.
+- [ ] should src/EOV0.C:119: `(src/EOV0.C:1476-1490)` for the gDCB0 toggles is stale; the toggles are at
+  src/EOV0.C:1485-1491 (RunCharacterPanel starts at 1466).
+- [ ] should src/EOV0.C:634: `CreateCharacter (src/EOV0.C:1305)` is stale; the `Ovl0_0DDC()` call is at
+  src/EOV0.C:1315 (1305 is the PickClass step). The caller claim holds.
+- [ ] should src/EOV0.C:862-863 (EditStatField): `(src/EOV0.C:893)` for the read of `*percent` is stale (the read,
+  `count = *percent;`, is at EOV0.C:899; 893 is LockHidePointer). `(src/EOV0.C:1045-1060)` for the callers is stale;
+  they are at EOV0.C:1049-1067. The "read on every call, used only for index 0" claim is right.
+- [ ] should src/EOV0.C:870-872 (EditStatField): the index-6 description says only that it copies the value to m1C.
+  The code also recomputes gDCA4 and gDD10 on entry for index 6 (src/EOV0.C:901-906), which the comment does not
+  mention. Add it.
+- [ ] should src/EOV0.C:1032-1038 (Ovl0_1ADD): line 1035 ends in "m0F;" and the next line starts a new
+  sentence, and line 1032 runs past 110 columns. Reflow the paragraph like the rest of the file.
+- [ ] should src/EOV0.C:1241 (PickAlignment "Called by ovl0:23EC for the class member."): the same unclear wording
+  round 1 asked to fix for PickClass ("the race member"). CreateCharacter calls PickAlignment for step 2, the new
+  member's alignment pick (src/EOV0.C:1307). Say so.
+- [ ] note src/EOV0.C:491-492 (PickPartySlot): "FindSlot from slot 0x1a when the last option key was odd". gFC8A is
+  the parity of the PickOption choice (src/EOV0.C:1160), not of the last key. This header line was not changed by
+  round 1; it is a note.
+- [ ] note src/EOV1.ASM:97 says g5E20 is "nonzero when the mouse moved (E16A5.C)", the same wrong meaning round 1
+  removed from src/EOV0.C:175. The EOV1 file is another unit's: route it to that owner.
+- [ ] note src/E0BD2.C:102 declares g1231 and cites "(src/E0DE8.C)", and src/E0DE8.C:119 calls it "a byte table
+  used by 0D5E". This unit cites E0BD2.C as the owner (round 1 item 51, with the packet). Not decidable from this
+  file; the E0BD2 and E0DE8 owners should agree on it.
+
+Round 2 verdict: one must-fix (the RollCharacterStats byte, a wrong claim in a changed line). Nothing escalated: no
+matcher, spec or pin question. `make match FILE=src/EOV0.C` 35 of 35 (10873 bytes, the "not complete" line is the
+round 1 note); `make readability UNIT=eov0` 0 findings.
 
 Round 1 (2ba0b7c). Evidence is the code in src/EOV0.C at the line given, plus the cross-file lines named.
 Fixed by commit 4ac62b0 (comment and name changes only; `make match FILE=src/EOV0.C` 35 of 35, `make readability UNIT=eov0` 0 findings).
