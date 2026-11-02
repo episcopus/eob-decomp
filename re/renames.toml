@@ -1593,3 +1593,21 @@ new = "SoundDriverSilenceToOneVoice"
 kind = "function"
 why = "1948:046B silences the three voices (_SetThreeVoices 1948:034A) then drops to one-voice output (_SetOneVoice 1948:0367); only called on the way out (ShutdownGame, src/E07C8.C:328); it does not pause the song (gPlaying and the timer keep running)"
 date = "2026-11-01"
+
+[[rename]]
+id = "0A72:0468=FormatStrengthPercent"
+addr = "0A72:0468"
+old = "FormatRatioText"
+new = "FormatStrengthPercent"
+kind = "function"
+why = "0A72:0468 formats the +0D strength score and its +0F exceptional percentile as %d or %d/%02d (100 written as 0); E1547.C:554 draws it on the STRENGTH row (ds:1195[0]) and E0BD2.C:0D2D sets +0D=0x16/+0F=0 for a strength item"
+date = "2026-11-01"
+
+[[rename]]
+id = "0A72:0522=GetHitTarget"
+addr = "0A72:0522"
+old = "GetScaledValue"
+new = "GetHitTarget"
+kind = "function"
+why = "0A72:0522 returns the number a d20 to-hit roll must reach before the attacker bonus; its only caller 0DE8:0007 computes ac = GetHitTarget(who, gTable1A3B[b0].m00) - bonus and compares a d20 roll against it"
+date = "2026-11-01"

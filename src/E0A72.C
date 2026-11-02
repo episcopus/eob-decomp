@@ -3,25 +3,32 @@
    (struct CharRec below; the callers compute `index * 0xF3 + 0xF580`, 0D1C:059B); this unit reads
    its fields and derives stats through the far-pointer and byte tables at ds:3406, ds:341E,
    ds:3424, ds:342A, ds:3430, ds:3435, ds:3439, ds:3453, ds:3458, ds:345C, ds:3474, ds:349E,
-   ds:35BC, ds:35D4, ds:3610, ds:3614, ds:3618 and ds:116E. Called from the party, combat and
-   inventory modules (0DE8, 0D1C, 0EF3, 08E6) and from overlays 0, 1 and 6. The meaning of each
-   field and table is not established, so most function names say what a function computes rather
-   than what the game calls it. */
+   ds:35BC, ds:35D4, ds:3610, ds:3614, ds:3618 and ds:116E. Called from the party, combat,
+   inventory and character-screen modules (0DE8, 0D1C, 0EF3, 08E6, 1547) and from overlays 0, 1
+   and 6. The meaning of each field and table is not established, so most function names say what a
+   function computes rather than what the game calls it. */
 
 /* A character record: the 243-byte records at ds:F580 (6 of them in EOBDATA.SAV). Only the fields
    this unit touches are named; everything else is padding. */
 struct CharRec {
     char pad00[0x0D];
-    signed char m0D;      /* +0D: an index into a class table, read by 0A72:00CF */
+    signed char m0D;      /* +0D: the strength score, the base g3439/m0D and g345C/m0D of 0A72:00CF
+                             and 0A72:0128; E122E.C:363 indexes gForceDoorRoll by it and
+                             E0BD2.C:0D2D sets it to 0x16 for a strength item */
     char pad0E;
-    signed char m0F;      /* +0F: a level or score tested by 0A72:00CF */
+    signed char m0F;      /* +0F: the exceptional strength percentile: 0A72:00CF and 0A72:0128
+                             compare it with {1, 51, 76, 91, 100}, and 100 prints as "00"
+                             (FormatStrengthPercent) */
     char pad10[5];
-    signed char m15;      /* +15: an index into a stats table, read by 0A72:0181 */
+    signed char m15;      /* +15: one of the five further stat bytes drawn after the strength
+                             score (EOV0.C:390 formats m11, m13, m15, m17, m19); it indexes the
+                             per-stat tables ds:3474 (0A72:0181) and ds:349E (0A72:019D) */
     char pad16[0x0A];
     signed char m20;      /* +20: an index into a class table, read by 0A72:0522 and 0DE8:0B45 */
     char pad21[3];
-    signed char m24;      /* +24: a counter, read by 0A72:0522 */
-    char pad25[0xF3 - 0x25];
+    signed char m24[3];   /* +24: three per-class-slot counters (src/E0D1C.C declares the same
+                             array); 0A72:0522 reads element [0] */
+    char pad25[0xF3 - 0x27];
 };
 
 extern struct CharRec gChars[]; /*@ ds:F580 */ /* the 243-byte character records */
@@ -29,24 +36,24 @@ extern char far *g3406[]; /*@ ds:3406 */       /* per-index far buffers, read by
 extern signed char g341E[]; /*@ ds:341E */     /* per-index clamp, read by 0A72:0006 */
 extern signed char g3424[]; /*@ ds:3424 */     /* per-index divisor, read by 0A72:0006 */
 extern signed char g342A[]; /*@ ds:342A */     /* per-index multiplier, read by 0A72:0006 */
-extern signed char g3430[]; /*@ ds:3430 */     /* five class thresholds used by 0A72:00CF */
+extern signed char g3430[]; /*@ ds:3430 */     /* five strength-percentile thresholds {1,51,76,91,100}, used by 0A72:00CF */
 extern signed char g3435[]; /*@ ds:3435 */     /* five values paired with g3430 */
-extern signed char g3439[]; /*@ ds:3439 */     /* base value per class, used by 0A72:00CF */
-extern signed char g3453[]; /*@ ds:3453 */     /* five class thresholds used by 0A72:0128 */
+extern signed char g3439[]; /*@ ds:3439 */     /* base value per strength score, used by 0A72:00CF */
+extern signed char g3453[]; /*@ ds:3453 */     /* five strength-percentile thresholds, used by 0A72:0128 */
 extern signed char g3458[]; /*@ ds:3458 */     /* five values paired with g3453 */
-extern signed char g345C[]; /*@ ds:345C */     /* base value per class, used by 0A72:0128 */
-extern int g3474[]; /*@ ds:3474 */             /* a word table indexed by a stat class */
-extern int g349E[]; /*@ ds:349E */             /* a word table indexed by a class byte */
+extern signed char g345C[]; /*@ ds:345C */     /* base value per strength score, used by 0A72:0128 */
+extern int g3474[]; /*@ ds:3474 */             /* a word table indexed by the +15 stat byte (0A72:0181) */
+extern int g349E[]; /*@ ds:349E */             /* a word table indexed by the +15 stat byte (0A72:019D) */
 extern long far *g35BC[]; /*@ ds:35BC */       /* per-index far tables of 32-bit values, read by 0A72:04B7 */
 extern char g35D4[]; /*@ ds:35D4 */            /* a per-index byte table, indexed [row*4 + slot] */
 extern signed char g3610[]; /*@ ds:3610 */     /* per-class multiplier, read by 0A72:0522 */
 extern signed char g3614[]; /*@ ds:3614 */     /* per-class divisor, read by 0A72:0522 */
-extern signed char g3618[]; /*@ ds:3618 */     /* a 2D byte table, 0x0E bytes per row */
+extern signed char g3618[]; /*@ ds:3618 */     /* a 2D byte table, ten 0x0E-byte rows (0A72:0597) */
 extern signed char g116E[]; /*@ ds:116E */     /* per-class byte, read by 0A72:0522 */
 extern signed char g174B[]; /*@ ds:174B */     /* per-character value A, damage dice sides (0A72:01AE) */
 extern signed char g175A[]; /*@ ds:175A */     /* per-character value B, damage dice sides (0A72:01AE) */
 extern signed char g1769[]; /*@ ds:1769 */     /* per-character value C, damage dice sides (0A72:01AE) */
-extern signed char g1778[]; /*@ ds:1778 */     /* per-level multiplier, indexed by level (0A72:01AE) */
+extern signed char g1778[]; /*@ ds:1778 */     /* per-level multiplier, indexed by level - 1 (0A72:01AE) */
 extern char gTextBuf[]; /*@ ds:FC4E */         /* static buffer the formatting helpers write into */
 
 extern int far RollDice(char count, char sides, char bonus); /*@ 082C:0458 */
@@ -55,8 +62,9 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
 char GetClassSlotByte(char row, char slot); /*@ 0A72:0509 */
 
 /* 0A72:0006: a byte from the per-index far buffer g3406[index], at position
-   min(limit, g341E[index]) / g3424[index] + g342A[index] * offset. Purpose unknown: called by
-   08E6:1634, 0D1C:059B, 0DE8:0FCA and 0EF3:1702. */
+   min(limit, g341E[index]) / g3424[index] + g342A[index] * offset. The four parallel tables are
+   g3406 (the buffers), g341E (the per-index clamps), g3424 (the divisors) and g342A (the
+   multipliers). Purpose unknown: called by 08E6:1634, 0D1C:059B, 0DE8:0FCA and 0EF3:1702. */
 /*@ 0A72:0006 */ int GetIndexedByte(char index, char limit, char offset)
 {
     char far *base;
@@ -82,9 +90,13 @@ char GetClassSlotByte(char row, char slot); /*@ 0A72:0509 */
     return -1;
 }
 
-/* 0A72:00CF: a derived per-character value: the base g3439[+0D] raised to g3435[i] for every i with
-   +0F >= g3430[i] (the last match wins). Purpose unknown: called by 0DE8:0007 (added to a class
-   value for an attack). */
+/* 0A72:00CF: a derived per-character value. It starts from the base g3439[strength] (+0D is the
+   strength score) and, only when the +0F percentile is nonzero, replaces it with g3435[i] for
+   every i with +0F >= g3430[i] (so the last threshold that matches wins, and nothing is added or
+   raised); when +0F is 0 the base is returned untouched. The evidence that +0D/+0F are strength:
+   g3430 is {1, 51, 76, 91, 100} and g3435 is {1, 2, 2, 2, 3}, the AD&D exceptional-strength
+   brackets, and g3439 is the per-strength base {3, -5, -3, ...}. Purpose unknown: called by
+   0DE8:0007 (added to a class value for an attack). */
 /*@ 0A72:00CF */ int GetDerivedStatA(int who)
 {
     int value;
@@ -100,8 +112,10 @@ char GetClassSlotByte(char row, char slot); /*@ 0A72:0509 */
     return value;
 }
 
-/* 0A72:0128: the same shape as 0A72:00CF with the second set of class tables: base g345C[+0D],
-   raised to g3458[i] for every i with +0F >= g3453[i]. Called by 0DE8:011A. */
+/* 0A72:0128: the same shape as 0A72:00CF with the second set of tables: the base
+   g345C[strength +0D] is replaced by g3458[i] for every i with the +0F percentile >= g3453[i]
+   (the last match wins), and only when +0F is nonzero are the thresholds read; g3453 is again
+   {1, 51, 76, 91, 100}. Called by 0DE8:011A. */
 /*@ 0A72:0128 */ int GetDerivedStatB(int who)
 {
     int value;
@@ -117,27 +131,28 @@ char GetClassSlotByte(char row, char slot); /*@ 0A72:0509 */
     return value;
 }
 
-/* 0A72:0181: the word ds:3474[+15 byte] for character `who`. Purpose unknown: the +15 byte indexes
-   a small class table; the only caller (0DE8:0007) adds this to a class value when it builds an
-   attack value. */
+/* 0A72:0181: the word ds:3474[+15 stat byte] for character `who`. Purpose unknown: the +15 byte is
+   one of the five further stat bytes (see the struct field); the only caller (0DE8:0007) adds this
+   to a class value when it builds an attack value. */
 /*@ 0A72:0181 */ int GetCharM15Value(int who)
 {
     return g3474[gChars[who].m15];
 }
 
-/* 0A72:019D: the word ds:349E[class] for a class byte. Purpose unknown: called by 0DE8:0D5E,
-   0EF3:0F0B and overlay 0 (0A72 is the character-record unit; the argument comes from a class
-   table). */
-/*@ 0A72:019D */ int GetClassWord(char classIndex)
+/* 0A72:019D: the word ds:349E[+15 stat byte] for the `m15` argument of a character record. It is
+   the armour-class base 0DE8:0D5E starts from (base = GetClassWord(rec->m15) + 10, E0DE8.C:682).
+   Purpose unknown: called by 0DE8:0D5E, 0EF3:0F0B and overlay 0. */
+/*@ 0A72:019D */ int GetClassWord(char m15)
 {
-    return g349E[classIndex];
+    return g349E[m15];
 }
 
 /* 0A72:01AE: a random damage-like total for character `who`. It rolls the three damage groups
    (RollDice(count, sides) for sides g174B, g175A and g1769 of `who`), scales by the level
-   multiplier g1778[level - 1] (capped at 2 while g174B[who] < 10), adds multiplier * count for
-   each nonzero group, then divides by 3 or by 2 as the later groups are present. Purpose unknown:
-   called by 0DE8:0C82 and overlay 0 at 1BF2. */
+   multiplier g1778[level - 1] (capped at 2 while g174B[who] < 10), then adds multiplier * count:
+   the first group's term is always added, while the second and third are added only when both
+   their count and their sides are nonzero. Finally it divides by 3 when g1769 is nonzero or by 2
+   when only g175A is nonzero. Purpose unknown: called by 0DE8:0C82 and overlay 0 at 1BF2. */
 /*@ 0A72:01AE */ int RollDamage(char who, char level, char countA, char countB, char countC)
 {
     int total;
@@ -210,58 +225,68 @@ char GetClassSlotByte(char row, char slot); /*@ 0A72:0509 */
     return total;
 }
 
-/* 0A72:0468: format `value` into the static buffer gTextBuf as "%d" when `percent` <= 0, else as
-   "%d/%02d" with 100 written as 0, and return the buffer. Called by 1547:0991, overlay 0 at 065B
-   and overlay 0 at 135D. The "%d/%02d" and "%d" formats are the literals at ds:36A4 and ds:36AC. */
-/*@ 0A72:0468 */ char *FormatRatioText(char value, char percent)
+/* 0A72:0468: formats a strength score and its exceptional percentile into the static buffer
+   gTextBuf and returns it. When `percent` is 0 or less only the score is written, as "%d"; else
+   the score and a two-digit percentile are written, as "%d/%02d", and a percentile of 100 is
+   written as 0 because the field is two digits wide (so 18/100 prints "18/00"). The "%d/%02d" and
+   "%d" formats are the literals at ds:36A4 and ds:36AC. Called by 1547:0991 (drawn on the STRENGTH
+   row of the CHARACTER INFO block, E1547.C:554), ovl0:065B and ovl0:135D (both pass CharRec m0D,
+   m0F). */
+/*@ 0A72:0468 */ char *FormatStrengthPercent(char score, char percent)
 {
     if (percent > 0) {
         if (percent == 100)
             percent = 0;
-        sprintf(gTextBuf, "%d/%02d", value, percent);
+        sprintf(gTextBuf, "%d/%02d", score, percent);
     } else {
-        sprintf(gTextBuf, "%d", value);
+        sprintf(gTextBuf, "%d", score);
     }
     return gTextBuf;
 }
 
-/* 0A72:04B7: the 32-bit value at index countC - 1 of the table g35BC[g35D4[indexA][indexB]], or -1
-   when that index is -1. Purpose unknown: called by 0DE8:0B45 while it accumulates character
-   values. */
-/*@ 0A72:04B7 */ long GetClassSlotLong(char indexA, char indexB, char countC)
+/* 0A72:04B7: the 32-bit value at index `level` - 1 of the table g35BC[g35D4[indexA][indexB]], or
+   -1 when that slot index (the g35D4 byte) is -1. `level` is the class-slot level whose next-level
+   threshold is wanted: the caller 0DE8:0B45 passes gChars[who].m24[i] + 1 (E0DE8.C:611), so the
+   entry for level 1 is at index 0. Purpose unknown: called by 0DE8:0B45 while it accumulates
+   character values. */
+/*@ 0A72:04B7 */ long GetClassSlotLong(char indexA, char indexB, char level)
 {
     long far *table;
 
     indexA = GetClassSlotByte(indexA, indexB);
     if (indexA != -1) {
         table = g35BC[indexA];
-        return *(table + countC - 1);
+        return *(table + level - 1);
     }
     return -1;
 }
 
-/* 0A72:0509: the byte ds:35D4[row][slot] for a 4-wide table. Purpose unknown: 0A72:007B scans
-   the four slots looking for a match and 0A72:04B7 uses the result as a row index (in 0D1C:059B
-   the result is compared with 4 and 5). */
+/* 0A72:0509: the byte ds:35D4[row * 4 + slot] for a 4-wide table. A slot's byte is -1 (0xFF) when
+   the class has no such slot: 0A72:007B scans slots 0, 1 and 2 for a match, 0A72:04B7 uses the
+   byte as an index into g35BC, and callers E1547.C:564, E0DE8.C:608 and E0DE8.C:612 treat -1 as
+   "no such slot" (0D1C:059B compares the result with 4 and 5). Purpose unknown. */
 /*@ 0A72:0509 */ char GetClassSlotByte(char row, char slot)
 {
     return g35D4[row * 4 + slot];
 }
 
-/* 0A72:0522: 20 - (m24 - 1) / g3614[g116E[m20]] * g3610[g116E[m20]] - x, computed in bytes.
-   Purpose unknown: called by 0DE8:0007 with x a class byte from ds:1A3B to build an attack value;
-   m20 indexes ds:116E and m24 is the character's counter at +24. `result` is what keeps the two
-   lookups in memory: without it -O promotes `cls` (or `num`) to CL and the spills differ. */
-/*@ 0A72:0522 */ char GetScaledValue(char who, char x)
+/* 0A72:0522: 20 - (m24[0] - 1) / g3614[g116E[m20]] * g3610[g116E[m20]] - classByte, computed in
+   bytes. It is the d20 number a to-hit roll must reach before the attacker bonus: its only caller
+   0DE8:0007 computes `ac = GetHitTarget(who, gTable1A3B[b0].m00) - bonus` and compares a d20 roll
+   against it (E0DE8.C:204). `classByte` is the +0 field of the target's ds:1A3B entry (E0DE8.C:55),
+   m20 is the character's class index into ds:116E, and m24[0] is the character's first
+   per-class-slot counter at +24. Build note: `result` is what keeps the two lookups in memory;
+   without it -O promotes `cls` (or `num`) to CL and the spills differ from the original. */
+/*@ 0A72:0522 */ char GetHitTarget(char who, char classByte)
 {
     char num;
     char cls;
     char result;
 
-    num = gChars[who].m24 - 1;
+    num = gChars[who].m24[0] - 1;
     cls = g116E[gChars[who].m20];
     result = 20 - num / g3614[cls] * g3610[cls];
-    result -= x;
+    result -= classByte;
     return result;
 }
 
@@ -272,8 +297,12 @@ char GetClassSlotByte(char row, char slot); /*@ 0A72:0509 */
     return minuend - subtrahend;
 }
 
-/* 0A72:0597: the byte ds:3618[row * 0x0E + col] with col clamped to 0x0E. Purpose unknown: called
-   by 0D1C:09CB with a class byte from ds:1A54 as the row. */
+/* 0A72:0597: the byte ds:3618[row * 0x0E + col] with col clamped to 0x0E. The table is ten
+   0x0E-byte rows and ends at ds:36A4, where the "%d/%02d" literal begins, so a row holds columns
+   0x00..0x0D and 0x0E is one past the row. QUIRK 0A72:0597: the clamp admits col 0x0E, which
+   reads ds:3618[row * 0x0E + 0x0E], the first byte of the next row (and, for the last row, the
+   '%' byte at ds:36A4); a port must keep this aliasing. Purpose unknown: called by 0D1C:09CB with
+   the +19 field of the object's ds:1A3B entry as the row. */
 /*@ 0A72:0597 */ int GetClampedTableByte(int col, int row)
 {
     if (col > 0x0E)
