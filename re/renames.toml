@@ -2088,3 +2088,12 @@ new = "SayAndPlaySound"
 kind = "function"
 why = "src/E082C.C:0B8F writes text to the message line and plays sound 0x4F; nothing in src/ names sound 0x4F, so the Beep in the old name is not evidenced (src/E0EF3.C:672-677 plays the same code)"
 date = "2026-11-02"
+
+[[rename]]
+id = "ds:009E=g009E"
+addr = "ds:009E"
+old = "gSpeakerMode"
+new = "g009E"
+kind = "global"
+why = "placeholder: the only writer sets 1 on the Tandy path (src/E07C8.C:433); src/E177D.C:182 tests it as the gate of the Tandy toggle, but nothing shows a PC speaker mode, so the inherited name gSpeakerMode is not evidence"
+date = "2026-11-02"

@@ -108,8 +108,8 @@ why = "the sound choice from argv[2] minus '1' (whitepaper 2.6): 0 opens adlib.d
 
 [[global]]
 id = "ds:009E"
-name = "gSpeakerMode"
-why = "Purpose unknown: 1 only on the Tandy path (src/E07C8.C:307), where the speaker path of PlaySound/PlaySoundAtCell drives ds:8A67; the sign test that would clear gSpeakerOn (ds:8A67) is dead (gSoundMap is unsigned char)"
+name = "g009E"
+why = "placeholder: the only writer sets 1 on the Tandy path (src/E07C8.C:433); src/E177D.C:182 tests it as the gate of the Tandy toggle, but nothing shows a PC speaker mode, so the inherited name gSpeakerMode is not evidence"
 
 [[global]]
 id = "ds:8A67"
