@@ -607,24 +607,24 @@ extern void f0EF3_2A53(int a, int b, int c, int d, int e, void far *p); /*@ 0EF3
    current page faces (0D1C:00DA and 08E6:15B4). A member with no object gets the string ds:57F1;
    otherwise, when RollToHit accepts the object and 0D1C:0BAB does not reject it, roll count d
    sides plus bonus and damage the object. Called by 0EF3:1B43, 0EF3:1EF3 and 0EF3:1FF9.
-   DRAFT: the body is right but the original spills the 0D1C:00DA result to [bp-2] and keeps the
-   08E6:15B4 result in SI and the damage in DI; our build puts the 00DA result in DI instead
-   (`make match` differs at the branch after the call). */
+   DRAFT: the frame and register use match (`register int obj, dmg`, target spilled to [bp-2]),
+   but the original lays the RollToHit test out as `jne body; jmp done` where our build emits the
+   inverted `je skip; body` (`make match` differs at that jmp, +0x15). */
 /*@ 0EF3:0E1B draft */ void CastMeleeEffect(int count, int sides, int bonus)
 {
     int target;
-    int obj;
-    int dmg;
+    register int obj;
+    register int dmg;
 
     if (gAt5717[gPanelMember] != 0) {
         target = f0D1C_00DA(gPartyCell, gFBCC);
         obj = Obj15B4(gPanelMember, target);
         if (obj != -1) {
-            if (RollToHit(gPanelMember, obj, 0, 1)) {
-                dmg = RollDice(count, sides, bonus);
-                if (!f0D1C_0BAB(obj))
-                    DamageObject(&gObjs[obj], dmg);
-            }
+            if (!RollToHit(gPanelMember, obj, 0, 1))
+                return;
+            dmg = RollDice(count, sides, bonus);
+            if (!f0D1C_0BAB(obj))
+                DamageObject(&gObjs[obj], dmg);
         } else {
             sprintf(gFileNameBuf, gText57F1, gChars[gPanelMember].name);
             SayAndBeep(gFileNameBuf);
