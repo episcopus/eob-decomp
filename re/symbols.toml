@@ -8655,6 +8655,7 @@ name = "CampLoop"
 notes = "matched 2026-11-01: whole function, 2018 bytes. Names: f0858 prints Hours rested, f09D2 tests monsters near, f0A92 tests ready to rest, f0B9B draws the warning box, f07E2 finds the most wounded member. The +0008 copy is a local ARRAY initialiser (unsigned char counters[6]), whose type the counters compare shows (mov dl/mov dh,0 zero extends). The five sibling calls are forward same-file calls: TCC emits a far call (9A), the overlay build rewrites it to nop; push cs; call near of the same length."
 level = "L2"
 match_flags = "-ml -O -Z"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "eov6_07e2"
@@ -8665,6 +8666,7 @@ evidence = ["ovl", "near", "frame"]
 name = "f07E2"
 level = "L2"
 match_flags = "-ml -O -Z"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "eov6_0858"
@@ -8675,6 +8677,7 @@ evidence = ["ovl", "near", "frame"]
 name = "f0858"
 level = "L2"
 match_flags = "-ml -O -Z"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "eov6_09d2"
@@ -8685,6 +8688,7 @@ evidence = ["ovl", "near", "frame"]
 name = "f09D2"
 level = "L2"
 match_flags = "-ml -O -Z"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "eov6_0a92"
@@ -8695,6 +8699,7 @@ evidence = ["ovl", "near", "frame"]
 name = "f0A92"
 level = "L2"
 match_flags = "-ml -O -Z"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "eov6_0b9b"
@@ -8705,6 +8710,7 @@ evidence = ["ovl", "near", "frame"]
 name = "f0B9B"
 level = "L2"
 match_flags = "-ml -O -Z"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "i0000_0000"

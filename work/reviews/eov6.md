@@ -1,7 +1,7 @@
 # Review: eov6
 
 Reviewer: rev-haiku
-Commit reviewed: b71e380 (main, round 3; round 2 reviewed dbf4ce2, round 1 reviewed 4afb5a6, when I started; this branch was at 1e58aea; review/eov6 is at 0d46c17, whose src/EOV6.C and re/globals.toml are the same as main's)
+Commit reviewed: eb60bf7 (main, round 4; round 3 reviewed b71e380, round 2 dbf4ce2, round 1 4afb5a6)
 
 Playbook 70. Judge what a matching file can still get wrong: names, types, comments, structure.
 The matcher already proved the bytes; do not re-prove them, read for meaning.
@@ -10,6 +10,51 @@ The matcher already proved the bytes; do not re-prove them, read for meaning.
 
 Each finding is a checkbox. `must-fix` blocks `make review-pass` until a decompiler ticks it off
 (with the commit that fixes it); `should` and `note` do not block.
+
+### Round 4 (rev-haiku, at eb60bf7)
+
+Playbook 70, later round. Judged: the round 3 must-fix and should (fix commit d344f84, merged in eb60bf7)
+and the changes since b71e380 (`git diff b71e380 eb60bf7 -- src/EOV6.C re/symbols.toml re/globals.toml`:
+four lines of the CampLoop header in src/EOV6.C; re/symbols.toml only for other units (i0b10, i0cda, eov2),
+none for ovl6; re/globals.toml unchanged). Checked: `make match FILE=src/EOV6.C` 6 of 6 (3258 of 3258
+bytes), exit 0; `make readability UNIT=eov6` 0 findings. Checked against the code: the 24-hour damage
+(src/EOV6.C:321, `hours % 0x18 == 0 && gChars[member].hp > (signed char)0xf6`) sits in the `else` of
+`if (gChars[member].level != 0)` (:307), after the flag-3 gate (:305-306), so "a member with flag 3 at
+level 0" is right; hp is a `signed char` (:17) and (signed char)0xf6 is -10, so "above -10 hit points" is
+right; the regain (:308-312) and the level drop (:313-320) sit under the level test, so "for a member with
+flag 3 above level 0" is right; the class-2 grant (:298-304) and the eight-hour and 24-hour tests (:296,
+:321) match the sentences around them. The EOV1.ASM cite in the QUIRK paragraph (src/EOV1.ASM:3692-3694:
+the label at 3692, `call far ptr _fOvl6_0000` at 3693, `or ax,ax` at 3694) holds.
+
+- [x] must-fix src/EOV6.C:116 (round 3): fixed right. The 24-hour sentence reads "above -10 hit points
+  (hp > (signed char)0xf6; hp is a signed char)". Tick stays.
+- [x] should src/EOV6.C:113-115 (round 3): fixed right. The header says "for a member with flag 3 above
+  level 0". Tick stays.
+- [ ] should src/E082C.C:465 (round 3, owner e082c): still open, and still stale. src/EOV6.C:399 is now
+  `SetTextWindow(0xa);` (`if (draw) {` is :400), and the two DrawShadowText calls of f0858 are at :406
+  and :412 (they were :405 and :411 at b71e380, before the header gained a line). Not changed here: the
+  cite is in src/E082C.C, owned by e082c. Cite the address (f0858, ovl6:0858) instead of lines.
+- [ ] should, for the owners of the cites (not this unit): the d344f84 header line moved every line of
+  src/EOV6.C after :116 by one, and some line cites into this file were already off on b71e380. The ones
+  in src/ with the current lines:
+  - src/E177D.C:98 (and re/globals.toml:147, re/renames.toml:1387) cite EOV6.C:410 for the Distance call.
+    Line 410 is `gStatusLine = 2;`. The call is `if (Distance(gPartyCell, gObjs[i].id) < 2)` at :439, in
+    f09D2 (ovl6:09D2).
+  - src/E0A72.C:87 cites the FindClassSlot callers at EOV6.C:144, :209, :440, :441, :447. The calls are at
+    :171 and :236 (slot 2), :471 and :472 (slots 2 and 4 in f0A92) and :478 (slot 1).
+  - src/E19F3.C:12 cites EOV6.C:376 and :481 for the ClipRect calls that pass gTextHeight. The calls are
+    at :405 and :513.
+  Each owner should cite the address (ovl6:09D2, ovl6:0A92, ovl6:0858, ovl6:0B9B) or the current lines.
+  Not changed here (other files).
+- [ ] note make match still prints "unit eov6 not complete: ours 3258 bytes, the unit 3258" (rounds 1 to 3).
+  The matcher question for the human. review-pass does not depend on it: unit_complete checks L2
+  (tools/agent/review.py:29, tools/agent/common.py:190).
+- [ ] note src/EOV6.C:117-118 (the CampLoop header, touched by d344f84): "It never" ends one line and
+  "updates the object list" starts the next, so the wrap is ragged (117 is short). Cosmetic; reflow the
+  paragraph when the header is next touched.
+
+Round 4 verdict: passed. No must-fix is open: the round 3 must-fix is fixed right, the changed lines are
+sound, and the new stale cites are in other units' files, which playbook 70 makes shoulds.
 
 ### Round 3 (rev-haiku, at b71e380)
 
