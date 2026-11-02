@@ -1,10 +1,11 @@
 /* Overlay 3 of EOB.EXE (6961 bytes, 23 functions, the map and level overlay). It loads a wall set
    .DAT (ovl3:004F), slices map icon cells (ovl3:03A2, 0624, 069E, 0718), builds the ds:B899 item
-   list (ovl3:0951), loads and unpacks a level state from LEVELS.TMP (ovl3:09AA, 109D, 1147) and
-   packs and saves it (ovl3:0FD1, 11AF), ages and advances the character timers (ovl3:123D, 12F1)
-   and resets the level (ovl3:19F7). The entry at 210C:0039 (ovl3:15B9) loads a saved game, and
-   ovl3:0A7C mounts a level's map screen. All 23 functions are decompiled to L2.
-   Placeholder names where no evidence. */
+   list (ovl3:0951) and mounts a level's map screen (ovl3:0A7C), which loads an object table
+   (ovl3:09AA) and, for a level that was saved, reads its level-state slot from LEVELS.TMP
+   (ovl3:1147) and unpacks it (ovl3:109D); it packs the level state (ovl3:0FD1) and saves it to
+   LEVELS.TMP (ovl3:11AF), ages and advances the character timers (ovl3:123D, 12F1) and resets the
+   level (ovl3:19F7). The entry at 210C:0039 (ovl3:15B9) loads a saved game. All 23 functions are
+   decompiled to L2. Placeholder names where no evidence. */
 
 /*@flags -ml -O -Z */
 
@@ -173,7 +174,7 @@ struct ItemRecord {         /* the 14-byte records at ds:8DD0 (src/E0BD2.C) */
     unsigned char flags;    /* +2 */
     signed char icon;       /* +3 */
     signed char m02;        /* +4 */
-    signed char m03;        /* +5 */
+    signed char m03;        /* +5: the sound InsertListItem plays for the item (src/E0BD2.C:420) */
     int m04;                /* +6: the key, -1 when free */
     int m06;                /* +8 */
     int m08;                /* +0xa */
@@ -226,10 +227,11 @@ extern struct T16 g5BDC[]; /*@ ds:5BDC */
    ovl3:0A7C copies into the array through F_SCOPY (0000:78C9). Its far pointers are overlay stub
    entries, which `make match` compares by the function they name. */
 
-struct WallDec {            /* a 52-byte wall set decoration */
-    char idx[0xc];
-    int field0c[10];
-    int field20[10];
+struct WallDec {            /* the 52-byte wall-set decorations LoadWallSet reads into
+                               gSegDF4E+0x3E80; RegisterWallObject copies one into a gWallRec slot */
+    char idx[0xc];          /* +0x00: idx[0..9] are the ten cell indices, idx[0xa] the chain link */
+    int field0c[10];        /* +0x0C: ten words the self-assignment loop passes through */
+    int field20[10];        /* +0x20: ten words the self-assignment loop passes through */
 };
 
 /* ovl3:0000: frees every far pointer in the 200-entry table at ds:EFD4 (farfree), clears each slot
@@ -360,11 +362,12 @@ struct WallDec {            /* a 52-byte wall set decoration */
         }
     }
 }
-/* ovl3:03A2: loads the overlay screen at ds:6A98 and slices map icon cells out of the map sheet
-   (segment 0x1D8, offset from the tile byte table gMapTiles[gFBC8-1] shifted left 5). For `srcA`
-   (when not -1) it slices three cells from the 4-byte rectangles at ds:6840 into gFB5E starting at
-   `dstA` and three more from ds:68A0 into gA99C[dstA].v, and copies the two gA99C[dstA].c bytes
-   from ds:6900. For `srcB` (when not -1) it does the same at `dstB`. Clears gStatusLine. Called by
+/* ovl3:03A2: loads the overlay screen "DOOR" (LoadOverlayScreen) and slices map icon cells out of
+   the map sheet (segment 0x1D8, offset from the tile byte table gMapTiles[gFBC8-1] shifted left 5).
+   For `srcA` (when not -1) it slices three cells from the 4-byte rectangles at ds:6840 into gFB5E
+   starting at `dstA` and three more from ds:68A0 into gA99C[dstA].v, and copies the x and y bytes of
+   gA99C[dstA] from ds:6900. For `srcB` (when not -1) it slices the two cells at `dstB` the same way,
+   but reads its ds:6900 x/y pair with srcA's index (QUIRK ovl3:0597). Clears gStatusLine. Called by
    ovl3:0A7C. */
 /*@ ovl3:03A2 */ void LoadMapCells(int srcA, int dstA, int srcB, int dstB)
 {
@@ -415,7 +418,8 @@ done:
 }
 /* ovl3:0624: loads the overlay screen `screen` and slices six map icon cells out of gOverlayBuf
    (ds:113F), one per 4-word rectangle in the table at ds:6930, into gB802 starting at index
-   `dest`. Clears gStatusLine. No direct caller found. */
+   `dest`. Clears gStatusLine. Called through the `handlers` table LoadMapScreen builds (ovl3:0A7C,
+   ds:6A80 initialiser). */
 /*@ ovl3:0624 */ void LoadMapIcons6(char far *screen, int dest)
 {
     int n;
@@ -430,7 +434,8 @@ done:
     gStatusLine = 0;
 }
 /* ovl3:069E: the same as ovl3:0624 but slices the six cells from the 4-word rectangle table at
-   ds:69C0 instead of ds:6930. No direct caller found. */
+   ds:69C0 instead of ds:6930. Called through the `handlers` table LoadMapScreen builds (ds:6A80
+   initialiser). */
 /*@ ovl3:069E */ void LoadMapIcons6b(char far *screen, int dest)
 {
     int n;
@@ -446,7 +451,8 @@ done:
 }
 /* ovl3:0718: builds the screen name `name` + "1" through sprintf("%s1"), loads it through
    LoadOverlayScreen and slices six map icon cells out of gOverlayBuf using the 4-word rectangle
-   table at ds:6A50 into gB802 starting at index `dest`. Clears gStatusLine. No direct caller found. */
+   table at ds:6A50 into gB802 starting at index `dest`. Clears gStatusLine. Called through the
+   `handlers` table LoadMapScreen builds (ds:6A80 initialiser). */
 /*@ ovl3:0718 */ void LoadNamedIcons(char far *name, int dest)
 {
     char buf[0x28];
@@ -536,11 +542,11 @@ done:
         }
     }
 }
-/* ovl3:0A7C: loads the map screen for level `level`. It reads the level's packed script
-   "LEVEL<n>.INF" (FormatName, FileOpen, FileRead into gSegDF4E, Unpack into gBuf8DCA), names its
-   two object/screen files through LoadObjects and a "%s.%s" sprite name, loads the sprite file
-   into gBufF43E and, in VGA mode, the "%s.PAL" palette, then frees the slot, map-icon and pointer
-   tables (FreeSlotTables, FreeMapIcons and FreePtrTable).
+/* ovl3:0A7C: mounts the map screen for level `level`. It clears bit 2 of gFlags849E, reads the
+   level's packed script "LEVEL<n>.INF" (FormatName, FileOpen, FileRead into gSegDF4E, Unpack into
+   gBuf8DCA), names its two object/screen files through LoadObjects and a "%s.%s" sprite name, loads
+   the sprite file into gBufF43E and, in VGA mode, the "%s.PAL" palette, then frees the slot,
+   map-icon and pointer tables (FreeSlotTables, FreeMapIcons and FreePtrTable).
    The rest of the script: four LoadMapCells arguments, the header bytes gF51B/gF510/gFB32 and the
    gDeadline/gF540 timers, two far function-pointer records (the local `handlers` list of the icon
    loaders, called with 0 and 0x12), a run of (index, value) timer pairs stored into the 16-byte
@@ -549,7 +555,10 @@ done:
    unpacked), the wall/object records (0xEC introduces a 0x18-byte wall set through LoadWallSet,
    otherwise a five-byte RegisterWallObject record), the item records keyed against gB894, and
    finally the wall textures (LoadWallTextures with the gMapTiles[gFBC8-1] sheet) and the INVENT
-   screen. Called by EnterMapScreen (0ACD:0F72) and ResetMapScreen (0ACD:1033), and by ovl3:15B9. */
+   screen. It clears the 0x400 ds:B899 item-list heads, rebuilds the list, sets bit 2 of gFlags849E,
+   calls PlaySound(0) and sets gFB45 to 1. Called by EnterMapScreen (0ACD:0F72), ResetMapScreen
+   (0ACD:1033), LoadLevelOp (122E:1AAB, src/E122E.C:1287, through the 210C:007A stub) and ovl3:15B9
+   LoadGame. */
 /*@ ovl3:0A7C */ void LoadMapScreen(int level)
 {
     int scriptWord;
@@ -560,7 +569,7 @@ done:
     int objTimer;
     int objM12;
     int objM14;
-    int recIndex;
+    int timerIdx;
     int objIndex;
     int objId;
     int objFrame;
@@ -570,7 +579,7 @@ done:
     int objKind;
     int scriptCount;
     int payloadLen;
-    int nObjects;
+    int nObjects;             /* QUIRK ovl3:0A7C: counted but never read (dead result) */
     char far *script;
     void (far *handlers[3])(char far *, int) = { LoadMapIcons6, LoadMapIcons6b, LoadNamedIcons };
     int i;
@@ -620,10 +629,10 @@ done:
     if (handlerIdx != -1)
         handlers[handlerIdx](script, 0x12);
     script += 12;
-    while ((recIndex = *script++) != -1) {
-        recIndex <<= 1;
-        g5BCC[recIndex].f0 = (unsigned long)script[0];
-        g5BDC[recIndex].f0 = (unsigned long)script[0];
+    while ((timerIdx = *script++) != -1) {
+        timerIdx <<= 1;
+        g5BCC[timerIdx].f0 = (unsigned long)script[0];
+        g5BDC[timerIdx].f0 = (unsigned long)script[0];
         script++;
     }
     for (i = 0; i < 4; i++) {
@@ -776,8 +785,8 @@ done:
     FileClose(handle);
     gFBD0 |= 1 << (level - 1);
 }/* ovl3:123D: ages the ten 32-bit countdowns at gChars+0xAD for every character that passes
-   f0D1C_0670(i, 1): a countdown greater than the tick counter g8492 loses g8492, and a smaller
-   nonzero one is set to 1. Called by ovl3:1368. */
+   f0D1C_0670(i, 1): a countdown greater than the tick counter g8492 loses g8492, and a nonzero
+   countdown not greater than g8492 is set to 1. Called by ovl3:1368. */
 /*@ ovl3:123D */ void AgeCharTimers(void)
 {
     struct CharRec far *rec;
