@@ -41,8 +41,8 @@ struct Node {
     int region;                 /* +1C: index into the region table ds:009F */
     int x;                      /* +1E: box left, in the region's pixel space */
     int y;                      /* +20: box top, in lines */
-    int width;                  /* +22: box width */
-    int height;                 /* +24: box height */
+    unsigned width;             /* +22: box width */
+    unsigned height;            /* +24: box height */
     unsigned char color26;      /* +26: text foreground, the default pair */
     unsigned char color27;      /* +27: text background/extra, the default pair */
     unsigned char color28;      /* +28: foreground of the "on" pair */
@@ -52,9 +52,9 @@ struct Node {
     unsigned char color2C;      /* +2C: foreground of the fourth pair */
     unsigned char color2D;      /* +2D: background/extra of the fourth pair */
     unsigned state;             /* +2E: the on bit, the previous-on bit, others */
-    void (far *callback30)(struct Node far *node); /* +30: fired when a state op asks */
-    unsigned tile34;            /* +34: the tile id DrawNode draws in the default kind */
-    unsigned tile36;            /* +36: the tile id DrawNode draws in the switched modes */
+    int (far *callback30)(struct Node far *node); /* +30: fired when a state op asks, 0 stops the walk */
+    int tile34;                 /* +34: the tile id DrawNode draws in the default kind */
+    int tile36;                 /* +36: the tile id DrawNode draws in the switched modes */
 };
 
 extern int ReadKeySpecial(void);   /*@ 1AAD:0409: nonzero when a key is ready to read (E1AAD.ASM) */
@@ -63,7 +63,7 @@ extern int IsKeyPending(void);   /*@ 1AAD:0471: nonzero when a key is waiting; s
 extern int WaitKeyEvent(void);   /*@ 1AAD:05D3: read a key; same as E14EF.C */
 extern int GetKeyState(int key); /*@ 1AAD:05F1 */
 
-void DispatchNodeEvent(struct Node far *head, int key);
+int DispatchNodeEvent(struct Node far *head, int key);
 
 extern void (far *gFC7C)(); /*@ ds:FC7C: the callback 16A5:0D78 installs and 16A5:00BD fires */
 
@@ -73,6 +73,11 @@ extern void (far *gFC7C)(); /*@ ds:FC7C: the callback 16A5:0D78 installs and 16A
 #define NODE_STATE_4    0x0004
 #define NODE_STATE_8    0x0008
 #define NODE_STATE_10   0x0010
+
+/* The +0E flags word's inactive bit, the same as E1658.C's NODE_INACTIVE. */
+#define NODE_INACTIVE   0x0008
+
+void DrawNode(struct Node far *node);
 
 extern int gPointerHeight;   /*@ ds:8154: sprite height in pixels (E1BBE.ASM) */
 extern int gPointerWidth8;   /*@ ds:8156: sprite width in 8-pixel columns (E1BBE.ASM) */
@@ -87,6 +92,26 @@ extern void HidePointerZone(int left, int top, int right, int bottom); /*@ 1BBE:
 extern void ShowPointerZone(void); /*@ 1BBE:02C2 */
 extern void DrawBox(int x1, int y1, int x2, int y2, int colour); /*@ 1A1F:000C */
 extern void f1A29_000F(int mode, void far *src, int x, int y, int region); /*@ 1A29:000F */
+
+/* The dispatcher's working state in DGROUP. The hit point comes from the mouse (gCursorX/gCursorY)
+   or, when a button is down, from the last click (ds:8140/8142). gLastNode and gPressedNode are
+   far pointers; ds:5E1C and ds:5E1E carry the per-button mode (1,2,3 or 4) E1658.C also reads. */
+extern int gMouseDisabled;   /*@ ds:814A */
+extern int gCursorX;         /*@ ds:8138 */
+extern int gCursorY;         /*@ ds:813A */
+extern int g8140;            /*@ ds:8140: x of the last click (src/E14EF.C) */
+extern int g8142;            /*@ ds:8142: y of the last click (src/E14EF.C) */
+extern int g5E1C;            /*@ ds:5E1C: the left-button mode (src/E1658.C) */
+extern int g5E1E;            /*@ ds:5E1E: the right-button mode (src/E1658.C) */
+extern int gHitX;            /*@ ds:5E10: the x the hit test uses */
+extern int gHitY;            /*@ ds:5E12: the y the hit test uses */
+extern struct Node far *gLastNode;   /*@ ds:5DE0: the list head the last walk drew from */
+extern int g5DEA[];          /*@ ds:5DEA: word 0 the drawn-node flags, words 1..4 the g5E1C redraw masks */
+extern struct Node far *gPressedNode; /*@ ds:5DE4: the node a press selected, 0 when none */
+extern int gListActive;      /*@ ds:5DE8: 0 stops the walk from reacting to the mouse */
+extern char g5E20;           /*@ ds:5E20: nonzero when the mouse moved since the last call */
+extern int gFC82;            /*@ ds:FC82: which key word matched, 1 or 2, 0 none */
+extern int g5DF2[];          /*@ ds:5DF2: words 1..4 the g5E1E redraw masks */
 
 /* 16A5:0009: read one pending key event and dispatch it to the node list `head`. 1AAD:0409 says
    a key is ready and 1AAD:0588 reads it; the event gets the 0x8000 tag. A letter 'A' to 'Z' is
@@ -135,22 +160,344 @@ extern void f1A29_000F(int mode, void far *src, int x, int y, int region); /*@ 1
     DispatchNodeEvent(head, key);
 }
 
-/* 16A5:00BD: the event dispatcher (1798 bytes). Walks the list from `head` through the far next
-   pointers and decides, per node, whether the event hits its rectangle (+1E..+24) and what to do
-   to its state word (+2E). Working data in DGROUP: ds:5E10/5E12 keep a far node pointer saved
-   across calls (the first call clears it), ds:5DE0/5DE2 the node visited last, ds:5DEA the draw
-   flags, ds:5DE4/5DE6 the pressed node, ds:5DE8 a "the list is active" flag; ds:5E20 is a mouse
-   moved flag. The node's type word +04 carries a 0x8000 bit the dispatcher reads; +06 and +08 are
-   two key words; flags +0E has bits 1 and 2; the mouse position is gCursorX/gCursorY (ds:8138/
-   813A) and the pointer size ds:8154/8156 (gPointerHeight/gPointerWidth8) is added to the hit
-   rectangle. Key event codes 0x41/0x42 and 0xC6/0xC7 are the mouse buttons; key events go through
-   GetKeyState. Two jump tables at 16A5:07B3 (g5E1E, four cases) and 16A5:07BB (g5E1C, four cases)
-   select the state change. The pointer is hidden with HidePointerZone and shown again with
-   ShowPointerZone around the drawing; DrawNode (16A5:07C3) redraws a node and the callback at
-   ds:FC7C is fired for the node under the pointer. Long (about 150 lines of C); not yet written.
-   Callers: DispatchKey (16A5:0009) and DispatchKeyWait (16A5:005A). [H] The exact per-type
-   semantics of the type word's 0x8000 bit and of the key words are not established. */
-/*@ 16A5:00BD stub */ void DispatchNodeEvent(struct Node far *head, int key) {}
+/* 16A5:00BD: the event dispatcher (1798 bytes). `head` is the list to walk and `key` one key
+   event (0 when only the mouse did something); it returns the event it consumed, or 0. First it
+   maps the mouse buttons: the codes 0x41/0x42 and the negative pair 0xC6/0xC7 set ds:5E1C and
+   ds:5E1E to a button mode (1 or 3 when bit 0x800 is set, else 2 or 4 by GetKeyState) and move the
+   hit point ds:5E10/5E12 from gCursorX/gCursorY to the last click ds:8140/8142. Then it redraws
+   the list from `head` with DrawNode unless `head` is still the node in ds:5DE0 and the mouse has
+   not moved (ds:5E20), ORing the flags each node reports into ds:5DEA and firing the node callback
+   ds:FC7C for a node whose state bit 0x20 is set, that carries a tile (+34/+36) and has the
+   callback installed. Finally it walks the list from `head` (or from the pressed node in
+   ds:5DE4/ds:5DE6 when there is one): a node with flags bit 8 (NODE_INACTIVE) is skipped; else
+   when `key` equals the node's key word +06 or +08 it tags ds:FC82, sets ds:5E1C or ds:5E1E to 1
+   and toggles the node's on bit; and when `key` is 0 it hit-tests the node box +1E..+24 against
+   the hit point, and for the mode in ds:5E1C (ds:5E1E) selects one of four cases through the jump
+   table at 16A5:07BB (16A5:07B3) that ORs the node's flags +0E mask into ds:5DEA and adjusts the
+   state's 4 bit, pressed bit and result. It writes the state word +2E and flags +0E back, redraws
+   the node when its bits 1/8 differ or its bits 4/0x10 differ, runs the node callback +30 whose
+   0/nonzero decides whether the walk goes on, and clears the pressed node when it is released.
+   The pointer is hidden and shown around the redraw. Callers: DispatchKey (16A5:0009) and
+   DispatchKeyWait (16A5:005A). [H] The exact meaning of the flags bits and button modes, and of
+   the array at ds:5DEA, is not established. */
+/*@ 16A5:00BD */ int DispatchNodeEvent(struct Node far *head, int key)
+{
+    int more;
+    int result;
+    int changed;
+    int justPressed;
+    int mouseEvent;
+    int pressedFlag;
+    int flagsLow;
+    int flagsHigh;
+    int buttonMode;
+    int keyCode;
+    int mask;
+    unsigned char code;
+    register int state;
+    register int flags;
+
+    mouseEvent = 0;
+    gFC82 = 0;
+    if (!gMouseDisabled) {
+        gHitX = gCursorX;
+        gHitY = gCursorY;
+        if (GetKeyState(0x41))
+            g5E1C = 2;
+        else
+            g5E1C = 4;
+        if (GetKeyState(0x42))
+            g5E1E = 2;
+        else
+            g5E1E = 4;
+        code = key & 0xff;
+        if (key < 0) {
+            if (code >= 0xc6 && code <= 0xc7) {
+                if (key & 0x800)
+                    buttonMode = 3;
+                else
+                    buttonMode = 1;
+                if (code == 0xc6)
+                    g5E1C = buttonMode;
+                else
+                    g5E1E = buttonMode;
+                gHitX = g8140;
+                gHitY = g8142;
+                mouseEvent = 1;
+                key = 0;
+            } else {
+                key &= 0xff;
+            }
+        } else if (code >= 0x41 && code <= 0x42) {
+            if (key & 0x800)
+                buttonMode = 3;
+            else
+                buttonMode = 1;
+            if (code == 0x41)
+                g5E1C = buttonMode;
+            else
+                g5E1E = buttonMode;
+            gHitX = g8140;
+            gHitY = g8142;
+            mouseEvent = 1;
+            key = 0;
+        }
+    }
+    result = 0;
+    more = 1;
+    if (head == 0)
+        return key;
+    if (head != gLastNode || g5E20 != 0) {
+        gLastNode = head;
+        g5DEA[0] = 0;
+        do {
+            DrawNode(head);
+            g5DEA[0] |= head->flags & 0xaa04;
+            if (head->state & 0x20)
+                if (head->tile34 | head->tile36)
+                    if (gFC7C)
+                        gFC7C(head);
+            if (head->next == 0)
+                more = 0;
+            if (more)
+                head = head->next;
+        } while (more);
+        gPressedNode = 0;
+        gListActive = 1;
+        g5E20 = 0;
+    }
+    justPressed = 0;
+    if (gPressedNode)
+        head = gPressedNode;
+    for (;;) {
+        if (head->flags & NODE_INACTIVE) {
+            more = (head = head->next) != 0;
+            goto checkMore;
+        }
+        changed = 0;
+        pressedFlag = 0;
+        keyCode = head->key | 0x8000;
+        state = head->state;
+        flags = head->flags;
+        if (state & NODE_STATE_ON)
+            state |= NODE_STATE_8;
+        else
+            state &= ~NODE_STATE_8;
+        if (state & NODE_STATE_4)
+            state |= NODE_STATE_10;
+        else
+            state &= ~NODE_STATE_10;
+        if (key != 0) {
+            if (head->key06 == key) {
+                gFC82 = 1;
+                g5E1C = 1;
+                state ^= NODE_STATE_ON;
+                result = keyCode;
+                changed = 1;
+            } else if (head->key08 == key) {
+                gFC82 = 2;
+                g5E1E = 1;
+                state ^= NODE_STATE_ON;
+                result = keyCode;
+                changed = 1;
+            }
+            goto update;
+        }
+        if (gMouseDisabled)
+            goto update;
+        if (g5DEA[0] == 0 && mouseEvent == 0)
+            goto update;
+        flagsLow = flags & 0xf00;
+        flagsHigh = flags & 0xf000;
+        if (gListActive == 0)
+            goto update;
+        if (head->x <= gHitX && head->x + head->width > gHitX &&
+            head->y <= gHitY && head->y + head->height > gHitY) {
+            state |= 2;
+            if (flagsLow != 0) {
+                switch (g5E1C) {
+                case 4:
+                    if (!(flags & 4) && head->modeC != 0) {
+                        state |= 4;
+                    } else {
+                        state &= ~4;
+                    }
+                    if (flags & 0x800) {
+                        changed = 1;
+                    } else if (flags & 2) {
+                        if (state & NODE_STATE_ON)
+                            state &= ~NODE_STATE_ON;
+                    }
+                    break;
+                case 2:
+                    if ((flags & 4) && head->modeC != 0) {
+                        state |= 4;
+                        pressedFlag = 1;
+                    } else {
+                        state &= ~4;
+                    }
+                    if (flags & 0x200) {
+                        changed = 1;
+                        if (!(flags & 1)) {
+                            state |= NODE_STATE_ON;
+                            result = keyCode;
+                        }
+                    }
+                    break;
+                case 1:
+                    if ((flags & 4) && head->modeC != 0) {
+                        state |= 4;
+                        pressedFlag = 1;
+                    } else {
+                        state &= ~4;
+                    }
+                    if (flags & 0x100) {
+                        changed = 1;
+                        if (!(flags & 1)) {
+                            state ^= NODE_STATE_ON;
+                            result = keyCode;
+                        }
+                        if (flags & 0x40) {
+                            gPressedNode = head;
+                            justPressed = 1;
+                        }
+                    }
+                    break;
+                case 3:
+                    if (flags & 0x400) {
+                        changed = 1;
+                        if (flags & 1) {
+                            state ^= NODE_STATE_ON;
+                            result = keyCode;
+                        }
+                    }
+                    if (flags & 2) {
+                        if (state & NODE_STATE_ON)
+                            state &= ~NODE_STATE_ON;
+                    }
+                    break;
+                }
+            }
+            if (flagsHigh == 0)
+                goto update;
+            if (changed)
+                goto update;
+            if (pressedFlag)
+                goto update;
+            switch (g5E1E) {
+            case 4:
+                if (!(flags & 4) && head->modeC != 0)
+                    state |= 4;
+                else
+                    state &= ~4;
+                if (flags & 0x8000) {
+                    changed = 1;
+                } else if (flags & 2) {
+                    if (state & NODE_STATE_ON)
+                        state &= ~NODE_STATE_ON;
+                }
+                break;
+            case 2:
+                if ((flags & 4) && head->modeC != 0)
+                    state |= 4;
+                else
+                    state &= ~4;
+                if (flags & 0x2000) {
+                    changed = 1;
+                    if (!(flags & 1)) {
+                        state |= NODE_STATE_ON;
+                        result = keyCode;
+                    }
+                }
+                break;
+            case 1:
+                if ((flags & 4) && head->modeC != 0)
+                    state |= 4;
+                else
+                    state &= ~4;
+                if (flags & 0x1000) {
+                    changed = 1;
+                    if (!(flags & 1)) {
+                        state ^= NODE_STATE_ON;
+                        result = keyCode;
+                    }
+                    if (flags & 0x40) {
+                        gPressedNode = head;
+                        justPressed = 1;
+                    }
+                }
+                break;
+            case 3:
+                if (flags & 0x4000) {
+                    changed = 1;
+                    if (flags & 1) {
+                        state ^= NODE_STATE_ON;
+                        result = keyCode;
+                    }
+                }
+                if (flags & 2) {
+                    if (state & NODE_STATE_ON)
+                        state &= ~NODE_STATE_ON;
+                }
+                break;
+            }
+            goto update;
+        }
+        state &= ~6;
+        if ((flags & 0x40) && gPressedNode && justPressed == 0) {
+            if (flags & 0x80) {
+                gListActive = 0;
+            } else {
+                if (flagsLow != 0) {
+                    mask = g5DEA[g5E1C];
+                    if (flags & mask)
+                        changed = 1;
+                }
+                if (flagsHigh != 0 && changed == 0) {
+                    mask = g5DF2[g5E1E];
+                    if (flags & mask)
+                        changed = 1;
+                }
+                if (changed == 0) {
+                    gPressedNode = 0;
+                    gListActive = 1;
+                }
+            }
+        }
+        if ((flags & 2) && (state & NODE_STATE_ON))
+            state &= ~NODE_STATE_ON;
+    update:
+        head->state = state;
+        head->flags = flags;
+        if (!(state & NODE_STATE_8) != !(state & NODE_STATE_ON) ||
+            !(state & NODE_STATE_10) != !(state & NODE_STATE_4))
+            DrawNode(head);
+        if (changed && head->callback30)
+            more = !head->callback30(head);
+        if ((state & 2) && (flags & 0x20))
+            more = 0;
+        if (gPressedNode) {
+            if ((flagsLow != 0 && g5E1C == 3) || (flagsHigh != 0 && g5E1E == 3)) {
+                gPressedNode = 0;
+                gListActive = 1;
+            }
+        }
+        if (gPressedNode && justPressed == 0)
+            goto done;
+        if (more) {
+            if ((head = head->next) == 0)
+                goto done;
+        }
+    checkMore:
+        if (more)
+            continue;
+        break;
+    }
+done:
+    if (result == 0)
+        result = key;
+    return result;
+}
 
 /* 16A5:07C3: draw one node (1461 bytes). The node's box is at +1E (x), +20 (y), +22 (width) and
    +24 (height); x and y are made absolute through the region table record +1C (the region's

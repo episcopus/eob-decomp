@@ -4162,6 +4162,9 @@ unit = "e16a5"
 addr = "16A5:00BD"
 size = 1798
 evidence = ["far", "frame"]
+name = "DispatchNodeEvent"
+level = "L2"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e16a5_07c3"
