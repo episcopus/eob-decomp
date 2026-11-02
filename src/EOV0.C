@@ -511,7 +511,7 @@ void DrawPanelRow(int index);      /* ovl0:11BA, defined below */
         return 0;
     }
 }
-/* ovl0:0EE5: the character-editor loop. It builds a seven-row list, draws the character page through
+/* ovl0:0EE5: Purpose unknown: the character-editor loop. It builds a seven-row list, draws the page
    ovl0:065B(mode 2), then until the current character has a name and no exit was asked for it waits
    for a key: the four 0x8001..0x8004 keys pick the character (key & 0xff) - 1, 0x8005 returns 1
    (leaving the editor), 0x8006 and the enter/left/right keys flash icon 9 and clear the result,
