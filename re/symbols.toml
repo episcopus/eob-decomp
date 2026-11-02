@@ -10279,6 +10279,8 @@ unit = "i0cda"
 addr = "0CDA:0005"
 size = 51
 evidence = ["segment"]
+level = "L2"
+notes = "not a function: bytes of the unit outside its functions (a marker or padding), matched with the whole unit"
 
 [[function]]
 id = "i0cdd_0008"
