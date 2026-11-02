@@ -7273,6 +7273,9 @@ unit = "eov4"
 addr = "ovl4:042C"
 size = 31
 evidence = ["ovl", "near", "frame"]
+name = "IsSlotLive"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov4_044b"
@@ -7346,6 +7349,9 @@ unit = "eov4"
 addr = "ovl4:1F51"
 size = 232
 evidence = ["ovl", "frame"]
+name = "DrawViewFrame"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov4_2039"

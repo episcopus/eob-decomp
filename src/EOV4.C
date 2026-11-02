@@ -133,10 +133,10 @@ extern signed char g194B[]; /*@ ds:194B */  /* per-slot byte flags (src/E08E6.C)
    our build folds it to a byte test. Tried `&&`, `!`, a cast to int and a ternary. */
 /*@ ovl4:042C draft */ int IsSlotLive(int slot)
 {
-    return slot != 0 && (g194B[slot] & 8) == 0;
+    return slot != 0 && !(g194B[slot] & 8);
 }
 
-/*@ ovl4:044B stub */ void Ovl4_044B(void) {}
+/*@ ovl4:044B stub */ void Ovl4_044B(int arg0, int arg1) {}
 /*@ ovl4:0AD0 stub */ void Ovl4_0AD0(int slot, int field) {}
 /*@ ovl4:0D1B stub */ void Ovl4_0D1B(int slot) {}
 /*@ ovl4:1091 stub */ void Ovl4_1091(int slot) {}
@@ -184,7 +184,57 @@ extern int gViewColRight; /*@ ds:FE40 */       /* the visible right column (this
 }
 
 /*@ ovl4:1EDE stub */ void Ovl4_1EDE(void) {}
-/*@ ovl4:1F51 stub */ void Ovl4_1F51(void) {}
+
+extern int gFBCC; /*@ ds:FBCC */            /* the current page 0..3 (src/E08E6.C) */
+extern int gSoundVolume; /*@ ds:FBCA */     /* the global sound volume (src/E08E6.C) */
+extern char gFB45; /*@ ds:FB45 */           /* request flag, cleared here (src/E07A9.C) */
+extern int g8102; /*@ ds:8102 */            /* the video mode/format (src/E07A9.C) */
+extern char gF442; /*@ ds:F442 */           /* gate checked here (src/E08E6.C) */
+extern char gFlag; /*@ ds:F3B9 */           /* selects a table set (src/E0ACD.C) */
+extern char gDF4C; /*@ ds:DF4C */           /* a notify flag, cleared here (src/E08E6.C) */
+extern unsigned long gCount849A; /*@ ds:849A */  /* the frame/effect busy counter (src/E08E6.C) */
+extern void far *gSegDCA6; /*@ ds:DCA6 */   /* the far pointer DrawTile draws (src/E07A9.C) */
+extern unsigned char far *gFE68; /*@ ds:FE68 */  /* the loaded palette buffer (src/E07C8.C) */
+extern void (far *gFn80BA)(void far *table); /*@ ds:80BA */  /* palette setter (src/E07C8.C) */
+extern void (far *gFillRect)(int x1, int y1, int x2, int y2, int pattern); /*@ ds:806A */
+extern void HidePointerZone(int left, int top, int right, int bottom); /*@ 1BBE:01FE */
+extern void ShowPointerZone(void); /*@ 1BBE:02C2 */
+extern void ClipRect(int x1, int y1, int x2, int y2, int width, int height, int extra1, int extra2); /*@ 19F3:000E */
+extern void DrawTile(void far *src); /*@ 17A6:03E7 */
+extern void PlaySoundDefault(int sound); /*@ 177D:00F3 */
+
+/* ovl4:1F51: draws one frame of the view: Ovl4_044B draws the objects into the page buffer (with
+   gSoundVolume and gFBCC), DrawTile blits it from gSegDCA6, DrawViewSlots(0) draws the slots, and
+   when gFB45 and video mode 3 are set the palette gFE68 is loaded and gFB45 cleared. Then it waits
+   for gCount849A to reach zero, and, when `full` is set and gF442 is clear, blanks the view box and
+   clips a rectangle. It always plays sound 0 and, when gFlag is zero, runs Ovl4_1EDE; finally it
+   clears gDF4C. Called from the game loop. */
+/*@ ovl4:1F51 */ void DrawViewFrame(int full)
+{
+    Ovl4_044B(gSoundVolume, gFBCC);
+    DrawTile(gSegDCA6);
+    DrawViewSlots(0);
+    if (gFB45 && g8102 == 3) {
+        if (full) {
+            HidePointerZone(0, 0, 0xb0, 0x78);
+            gFillRect(0, 0, 0xb0, 0x78, 0xc);
+            ShowPointerZone();
+        }
+        gFn80BA(gFE68);
+        gFB45 = 0;
+    }
+    while (gCount849A != 0)
+        ;
+    if (full && !gF442) {
+        HidePointerZone(0, 0, 0xb0, 0x78);
+        ClipRect(0, 0, 0, 0, 0x16, 0x78, 2, 0);
+        ShowPointerZone();
+    }
+    PlaySoundDefault(0);
+    if (!gFlag)
+        Ovl4_1EDE();
+    gDF4C = 0;
+}
 /* ovl4:2039: discards its work: si = 0 then si++ and return. Purpose unknown. */
 /*@ ovl4:2039 */ void NoOp2039(void)
 {
