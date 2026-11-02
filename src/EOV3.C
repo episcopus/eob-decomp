@@ -34,7 +34,7 @@ extern void far *gSegDCA6; /*@ ds:DCA6 */   /* the far pointer f19EC_0002(7) ret
 extern int g8102; /*@ ds:8102 */            /* the video mode the game initialised (src/E082C.C) */
 extern char gWallNameBuf[]; /*@ ds:FE2E */  /* the wall texture name kept between LoadWallTextures calls (ovl3:07A5) */
 extern void far *(far *gFn8082)(int x, int y, int w, int h, void far *buf); /*@ ds:8082 */
-extern void fOvl4_1EDE(void); /*@ 2116:0034 */  /* overlay 4 entry, ovl4:1EDE */
+extern void DrawViewRows(void); /*@ 2116:0034 */  /* overlay 4 entry, ovl4:1EDE */
 extern void f1A47_0169(char far *font); /*@ 1A47:0169 */
 extern void RedrawCharacters(void); /*@ 0D1C:0583 */
 extern void SetMouseItem(int item); /*@ 07A9:010C */
@@ -937,7 +937,7 @@ done:
         if (gA998 != (char)0xff) {
             LoadMapScreen(gFBC8);
             LoadScreenImage("PLAYFLD", (char far *)gSheetDECORATE, 5, 3, 0);
-            fOvl4_1EDE();
+            DrawViewRows();
             LoadScreenImage("INVENT", (char far *)gSheet2067, 5, 3, 2);
             f1A47_0169((char far *)gA9C0);
             RedrawCharacters();

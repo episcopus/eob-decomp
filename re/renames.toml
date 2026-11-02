@@ -1640,6 +1640,24 @@ why = "0A72:0522 returns the number a d20 to-hit roll must reach before the atta
 date = "2026-11-01"
 
 [[rename]]
+id = "0EF3:2541=RedrawPartyPanel"
+addr = "0EF3:2541"
+old = ""
+new = "RedrawPartyPanel"
+kind = "function"
+why = "0EF3:2541 is the panel redraw after an action, called by E0ACD.C/E122E.C/EOV5.C; it hides the pointer, restores the panel rect, draws the view rows and rebuilds the item list"
+date = "2026-11-01"
+
+[[rename]]
+id = "0EF3:00CD=AnimateEffect"
+addr = "0EF3:00CD"
+old = "AnimateMeleeHit"
+new = "AnimateEffect"
+kind = "function"
+why = "0EF3:00CD plays the view animation of an effect record (a DDRec: E1414.C:127 calls it with f0EF3_00CD(struct DDRec far *)); it is not melee-specific (0EF3:0A3F calls it too)"
+date = "2026-11-01"
+
+[[rename]]
 id = "ovl0:065B=DrawCharPanel"
 addr = "ovl0:065B"
 old = "Ovl0_065B"

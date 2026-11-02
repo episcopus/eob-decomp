@@ -3210,6 +3210,9 @@ unit = "e0ef3"
 addr = "0EF3:000E"
 size = 191
 evidence = ["segment"]
+name = "SortSpellSlots"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0ef3_00cd"
@@ -3217,6 +3220,9 @@ unit = "e0ef3"
 addr = "0EF3:00CD"
 size = 418
 evidence = ["far", "near", "frame"]
+name = "AnimateEffect"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0ef3_026f"
@@ -3244,6 +3250,9 @@ unit = "e0ef3"
 addr = "0EF3:035A"
 size = 126
 evidence = ["near", "frame"]
+name = "CreateItemType"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0ef3_03d8"
@@ -3315,6 +3324,9 @@ unit = "e0ef3"
 addr = "0EF3:0665"
 size = 130
 evidence = ["far", "near", "frame"]
+name = "FlashPartyMembers"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0ef3_06e7"
@@ -3364,6 +3376,9 @@ unit = "e0ef3"
 addr = "0EF3:0F0B"
 size = 123
 evidence = ["frame"]
+name = "FixArmourClass"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0ef3_0f86"
@@ -4101,6 +4116,9 @@ unit = "e0ef3"
 addr = "0EF3:2541"
 size = 124
 evidence = ["far", "near", "frame"]
+name = "RedrawPartyPanel"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0ef3_25bd"

@@ -124,7 +124,7 @@ extern int f08E6_189D(struct Obj28 far *obj, int a, int b); /*@ 08E6:189D */
 extern int RunRecordAttack(struct DDRec far *rec); /*@ 0DE8:01FF */
 extern int TryRecordAttack(struct DDRec far *rec, int idx); /*@ 0DE8:02D4 */
 extern void DamageCharacter(int who, int what); /*@ 0DE8:09B9 */
-extern void f0EF3_00CD(struct DDRec far *rec); /*@ 0EF3:00CD */
+extern void AnimateEffect(struct DDRec far *rec); /*@ 0EF3:00CD */
 extern void f0EF3_0D78(int a, int b); /*@ 0EF3:0D78 */
 extern void InsertListItem(void far *head, int key, int item, int sound); /*@ 0BD2:01D0 */
 extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
@@ -293,7 +293,7 @@ extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
             } else {
                 if (rec->m0C & 0x20) {
                     if (!TestDDEffect(rec, rec->m04, rec->m06))
-                        f0EF3_00CD(rec);
+                        AnimateEffect(rec);
                 }
                 clearIt = 1;
             }

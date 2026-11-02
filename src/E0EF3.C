@@ -59,19 +59,47 @@ struct Entry14 {
 
 /* A 16-byte item-type record at ds:A9F0 (src/E0BD2.C names the same table). */
 struct ItemType {
-    char pad00[4];
-    signed char m04;        /* +4: set to 0xE2 when a freed item's type is freed too */
-    char pad05[0x10 - 0x05];
+    int m00;                /* +00: a word 0EF3:035A writes from its first argument */
+    int m02;                /* +02: a word 0EF3:035A writes from its second argument */
+    unsigned char m04;      /* +04: set to 0xE2 when the type is free (FreeItemRecord, 0EF3:035A) */
+    signed char m05;        /* +05 */
+    signed char m06;        /* +06: cleared by 0EF3:035A */
+    signed char m07;        /* +07 */
+    signed char m08;        /* +08 */
+    signed char m09;        /* +09 */
+    signed char m0A;        /* +0A */
+    signed char m0B;        /* +0B */
+    signed char m0C;        /* +0C */
+    char pad0D;
+    int m0E;                /* +0E */
+};
+
+/* A 14-byte item record at ds:8DD0 (src/E0BD2.C's struct ItemRecord; src/E0D1C.C views the same
+   table two bytes in at ds:8DD2 as Entry14). */
+struct ItemRecord {
+    signed char m00;        /* +00 */
+    signed char m01;        /* +01 */
+    unsigned char flags;    /* +02: bit 0x20 gates E0BD2.C's branch */
+    signed char icon;       /* +03: the icon number */
+    signed char m02;        /* +04: the item type */
+    signed char m03;        /* +05 */
+    int m04;                /* +06: the key; -2 when the record is free (0EF3:0418) */
+    int m06;                /* +08: one link of the circular list */
+    int m08;                /* +0A: the other link */
+    signed char m0A;        /* +0C */
+    signed char m0B;        /* +0D: the value 0BD2:01D0 returns */
 };
 
 /* The record 0EF3:0A3F and its callers read: an effect target with a member index at +0xB and a
    bit mask at +0xC. Only the fields this unit touches are named. */
 struct Tgt {
-    char pad00[4];
+    signed char m00;        /* +00: set to 0 then 2 by 0EF3:00CD */
+    char pad01[3];
     int m04;                /* +04: the target cell, compared with gPartyCell */
     char m06;               /* +06 */
     char m07;               /* +07 */
-    char pad08[0x0B - 0x08];
+    int m08;                /* +08: an index into ds:55E6 (0EF3:0A3F compares it with 5) */
+    char pad0A;
     signed char m0B;        /* +0B: a member index */
     char m0C;               /* +0C: the effect flag bits */
 };
@@ -99,7 +127,11 @@ struct Entry27 {
 
 extern struct CharRec gChars[];         /*@ ds:F580 */
 extern struct Entry14 gTable8DD2[];     /*@ ds:8DD2 */
+extern struct ItemRecord gItems[];      /*@ ds:8DD0 */
 extern struct ItemType gItemTypes[];    /*@ ds:A9F0 */
+/* The six item-type slots 0x33..0x38 the game creates at runtime live at ds:AD20, the same 96
+   bytes src/EOV3.C names gAD20 (its saved-game buffer). */
+extern struct ItemType gAD20[];         /*@ ds:AD20 */
 extern struct Obj28 gObjs[];            /*@ ds:8A82 */
 extern struct Entry27 gTable1A3B[];     /*@ ds:1A3B */
 
@@ -137,6 +169,31 @@ extern char gText58BB[];                /*@ ds:58BB */
 extern char gText58C6[];                /*@ ds:58C6 */
 extern char gText58D1[];                /*@ ds:58D1 */
 extern char gText58ED[];                /*@ ds:58ED */
+extern char gText57C3[];                /*@ ds:57C3 */ /* drawn by 0EF3:08CF */
+extern char gText57C8[];                /*@ ds:57C8 */ /* said by 0EF3:08CF when no member is set */
+extern unsigned char gEffectSound[];    /*@ ds:1355 */ /* one record per effect value, stride 0x13;
+                                                           the first byte is a sound id (0EF3:08CF) */
+extern void (far *gFnEFBA)(void);       /*@ ds:EFBA */ /* a redraw hook run by 0EF3:08CF */
+extern char gFlag;                      /*@ ds:F3B9 */ /* cleared by 0EF3:2541 (E0ACD.C) */
+extern void far *gSegDF4E;              /*@ ds:DF4E */ /* the slot-5 buffer (E07A9.C) */
+extern void (far *gRestoreRect)(int x, int y, int width, int height, void far *buf); /*@ ds:804E */
+extern void HidePointerZone(int left, int top, int right, int bottom); /*@ 1BBE:01FE */
+extern void ShowPointerZone(void);      /*@ 1BBE:02C2 */
+extern void DrawViewRows(void);         /*@ 2116:0034 */ /* overlay 4 entry, ovl4:1EDE */
+extern char far *gDD14;                 /*@ ds:DD14 */ /* a far byte table 0EF3:25BD scans */
+extern signed char gDDE2;               /*@ ds:DDE2 */ /* the member 0EF3:25BD saves */
+extern signed char gA9C5;               /*@ ds:A9C5 */ /* a counter 0EF3:25BD walks */
+
+/* The record 0EF3:08CF, 0EF3:2541 and 0EF3:25BD take: an action context with the member it applies
+   to at +0x38 (-1 when none) and a result word at +4 the functions hand back. */
+struct ActRec {
+    char pad00[4];
+    int m04;                /* +04: the result returned to the caller */
+    char pad06[0x38 - 0x06];
+    signed char m38;        /* +38: the member the action applies to, -1 when none */
+};
+
+extern int RedrawPartyPanel(struct ActRec far *rec); /*@ 0EF3:2541 */
 
 extern void SwapChars(char far *pa, char far *pb); /*@ 082C:07A4 */
 extern void RedrawMember(int dir); /*@ 1547:0991 */
@@ -173,29 +230,60 @@ extern void BuildList2(void); /*@ 0CF7:00B4 */
 extern void BuildList3(void); /*@ 0CF7:0140 */
 extern void BuildList5(void); /*@ 0CF7:0211 */
 
-#define SPELL_WEIGHT(c) ((c) == 0 ? 0x50 : (c) < 0 ? 0x28 - (c) : (c))
+extern signed char g55E6[];      /*@ ds:55E6 */ /* an animation index per Tgt.m08 */
+extern void far *gAnimTable[];   /*@ ds:5615 */ /* far-pointer animation templates, indexed by
+                                                   0EF3:00CD and passed to 0EF3:2A53 */
+extern int gAngleA9C8[];         /*@ ds:A9C8 */ /* 18 words searched for the target cell by 0EF3:00CD
+                                                   (the heading table of EOV4.C) */
+extern signed char g55EF[];      /*@ ds:55EF */ /* DrawViewSlots start slot per object index */
+extern signed char g1A09[];      /*@ ds:1A09 */ /* per-slot object index (EOV4.C) */
+extern int g1D61[];              /*@ ds:1D61 */ /* per-slot, per-part x table (EOV4.C) */
+extern int g8115;                /*@ ds:8115 */ /* nonzero while a status line is up (E082C.C) */
+extern int gDD18;                /*@ ds:DD18 */ /* the animation's origin x, written here and read by
+                                                   0EF3:2A53 */
+extern int gDD1A;                /*@ ds:DD1A */ /* the animation's origin y */
+extern void (far *gFillRect)(int x1, int y1, int x2, int y2, int pattern); /*@ ds:806A */
+extern void ComputeViewSpan(int slot, int far *left, int far *right, int region); /*@ 2116:0052 */
+extern void DrawViewFrame(int full); /*@ 2116:005C */
+extern void DrawViewSlots(int start); /*@ 2116:0025 */
+extern void LockHidePointer(void); /*@ 1BBE:0307 */
+extern void LockShowPointer(void); /*@ 1BBE:0332 */
+extern void f0EF3_2A53(int a, int b, int c, int d, int e, void far *p); /*@ 0EF3:2A53 */
 
 /* 0EF3:000E: bubble-sorts each of the ten six-byte rows that start at a character's +0x37 spell
    field, swapping the first two bytes of a row while the row's weight decreases. The weight
    pushes an empty byte (0) to the end (0x50) and a negative byte after the positive ones
-   (0x28 plus its magnitude); a row's first two bytes are its sort key. Called from overlay 1
-   (ovl1:1ACD); the argument is a party-member index. DRAFT: the loop is right but the original
-   has a 0x0E-byte frame (row and a far-pointer temporary on the stack, i and j and swapped in
-   memory), where our build keeps i, j and swapped in registers (`make match` differs at sub sp). */
-/*@ 0EF3:000E draft */ void SortSpellSlots(int who)
+   (0x28 plus its magnitude); a row's first two bytes are its sort key. The row pointer is far
+   (the caller ovl1:1ACD reaches this unit's DGROUP through a far pointer); `who` is a
+   party-member index. Called from overlay 1 (ovl1:1ACD). */
+/*@ 0EF3:000E */ void SortSpellSlots(int who)
 {
-    signed char *row;
     int i;
-    int j;
     int swapped;
+    int j;
+    signed char far *pair;
+    signed char far *row;
+    register int wa;
+    register int wb;
 
     row = gChars[who].known;
     for (i = 0; i < 10; i++) {
         do {
             swapped = 0;
             for (j = 0; j < 5; j++) {
-                if (SPELL_WEIGHT(row[j]) > SPELL_WEIGHT(row[j + 1])) {
-                    SwapChars(&row[j], &row[j + 1]);
+                pair = &row[j];
+                wa = *pair;
+                wb = pair[1];
+                if (wa == 0)
+                    wa = 0x50;
+                else if (wa < 0)
+                    wa = -wa + 0x28;
+                if (wb == 0)
+                    wb = 0x50;
+                else if (wb < 0)
+                    wb = -wb + 0x28;
+                if (wa > wb) {
+                    SwapChars(pair, pair + 1);
                     swapped = 1;
                 }
             }
@@ -204,7 +292,67 @@ extern void BuildList5(void); /*@ 0CF7:0211 */
     }
 }
 
-/*@ 0EF3:00CD stub */ void f0EF3_00CD(void far *rec) {}
+/* 0EF3:00CD: play the melee hit animation on the view slot the target's cell points at. It maps
+   the record's cell (+4) to a word index in the 18-word heading table ds:A9C8, rejects the last
+   entry and entry 0x0F, then computes the slot's view span. It clears the record's +0 byte,
+   redraws a full view frame, sets the status line flag, blanks the view box through the gFillRect
+   hook, draws the view slots from g55EF, computes the span again, hides the pointer, sets the
+   animation origin (ds:DD18 from g1D61, ds:DD1A = 0x30), plays sound 0x23 and runs the effect
+   animation 0EF3:2A53 with the template gAnimTable[g55E6[m08]] chosen per object index. Called by
+   the melee attacker 0EF3:0A3F on a hit with the record's flag bit 0x40, and by 1414:0285. */
+/*@ 0EF3:00CD */ void AnimateEffect(struct Tgt far *rec)
+{
+    void far *anim;
+    int left;
+    int right;
+    int cell;
+    int index;
+    register int slot;
+    register int objIndex;
+
+    cell = rec->m04;
+    index = g55E6[rec->m08];
+    anim = gAnimTable[index];
+    for (slot = 0; slot < 0x12; slot++) {
+        if (gAngleA9C8[slot] == cell)
+            break;
+    }
+    if (slot > 0x11)
+        return;
+    if (slot == 0xF)
+        return;
+    objIndex = g1A09[slot];
+    ComputeViewSpan(slot, &left, &right, 5);
+    if (right < left)
+        return;
+    rec->m00 = 0;
+    DrawViewFrame(1);
+    rec->m00 = 2;
+    g8115 = 2;
+    gFillRect(0, 0, 0xB0, 0x78, 0);
+    DrawViewSlots(g55EF[objIndex]);
+    g8115 = 0;
+    ComputeViewSpan(slot, &left, &right, 5);
+    LockHidePointer();
+    gDD18 = g1D61[(slot * 5 + 4) * 2] + 0x58;
+    gDD1A = 0x30;
+    PlaySound(0x23);
+    switch (objIndex) {
+    case 0:
+        f0EF3_2A53(3, 0x93, 0x23, 0x14, 7, anim);
+        break;
+    case 1:
+        f0EF3_2A53(2, 0x93, 0x23, 0x14, 7, anim);
+        break;
+    case 2:
+        f0EF3_2A53(1, 0x93, 0x23, 0x14, 7, anim);
+        break;
+    case 3:
+        f0EF3_2A53(0, 0x1CC, 0x32, 0x14, 4, anim);
+        break;
+    }
+    LockShowPointer();
+}
 
 /* 0EF3:026F: ends one condition slot on the panel member. It clears a bit at index g8DCE in the
    member's +0x1E condition byte, applies a 0x12-tick char effect whose value is the slot number
@@ -244,7 +392,37 @@ extern void BuildList5(void); /*@ 0CF7:0211 */
     ApplyCharEffect(gCurMember, interval, -value, flag);
 }
 
-/*@ 0EF3:035A stub */ int f0EF3_035A(int a, int b, char c, char d, char e, char f, char g, int h) {}
+/* 0EF3:035A: allocate the first free item-type record: walk the 16-byte records at ds:A9F0 from
+   index 0x33 to 0x38 and stop at the first whose +4 type byte is 0xE2 (freed). It then fills the
+   record from its arguments (the two words at +0 and +2, the type at +4, the bytes at +5, +7/+0A,
+   +8/+0B and +9/+0C, and the word at +0xE) and zeroes +6, returning the record's index. Called by
+   the item creators 0EF3:1197, 0EF3:1656 and 0EF3:1D38 to make a new item type. */
+/*@ 0EF3:035A */ int CreateItemType(unsigned char word00, unsigned char word02, signed char type,
+                                    signed char m05, signed char m0A, signed char m0B,
+                                    signed char m0C, int word0E)
+{
+    struct ItemType far *rec;
+    register int index;
+
+    rec = gAD20;
+    for (index = 0x33; index < 0x39; index++, rec++) {
+        if (rec->m04 == 0xE2)
+            break;
+    }
+    rec->m00 = word00;
+    rec->m06 = 0;
+    rec->m02 = word02;
+    rec->m04 = type;
+    rec->m05 = m05;
+    rec->m0A = m0A;
+    rec->m07 = m0A;
+    rec->m0B = m0B;
+    rec->m08 = m0B;
+    rec->m0C = m0C;
+    rec->m09 = m0C;
+    rec->m0E = word0E;
+    return index;
+}
 
 /* 0EF3:03D8: free item record `n`: clear its key to -2, its +0xA byte to -1 and free its type's
    +4 byte (0xE2). Called by 0EF3:1233. */
@@ -255,7 +433,39 @@ extern void BuildList5(void); /*@ 0CF7:0211 */
     gItemTypes[gTable8DD2[n].m02].m04 = 0xE2;
 }
 
-/*@ 0EF3:0418 stub */ int f0EF3_0418(char a, char b, char c, char d) {}
+/* 0EF3:0418: allocate a free item record: walk the 14-byte records at ds:8DD0 from index 0x0B to
+   0x10 and stop at the first whose +6 key is -2 (freed). It fills the record's flags (+2, from
+   arg1 plus 0x20), icon (+3), type (+4) and +0xD byte, clears the global ds:8DD5 and the record's
+   +0, +1, +6, +8 and +0xA fields, and returns the record's index (the item id). Called by the item
+   creators 0EF3:1197, 0EF3:1656 and 0EF3:1D38. DRAFT: the original keeps the zero it stores in
+   AL (`mov al,0; mov [ds:8DD5],al; cwde; ...`), a single char temporary reused for every store;
+   our build either stores the immediates directly or keeps the temporary in DL (`make match`
+   differs at the first zero store, +0x49). */
+/*@ 0EF3:0418 draft */ int CreateItemRecord(unsigned char flags, unsigned char icon, signed char m0B,
+                                              signed char type)
+{
+    signed char zero;
+    struct ItemRecord far *rec;
+    int index;
+
+    rec = &gItems[0xB];
+    for (index = 0xB; index < 0x11; index++, rec++) {
+        if (rec->m04 == -2)
+            break;
+    }
+    rec->flags = flags + 0x20;
+    rec->icon = icon;
+    rec->m02 = type;
+    rec->m0B = m0B;
+    zero = 0;
+    g8DD5 = zero;
+    rec->m04 = zero;
+    rec->m01 = zero;
+    rec->m00 = zero;
+    rec->m08 = zero;
+    rec->m06 = zero;
+    return index;
+}
 
 /* 0EF3:0482: returns 1 when the record's carried-item slot 1 is empty, else 0; used to pick the
    slot a created item goes into (callers 0EF3:1197, 0EF3:1656, 0EF3:1D38). */
@@ -323,17 +533,15 @@ extern void BuildList5(void); /*@ 0CF7:0211 */
 /*@ 0EF3:05BD stub */ void f0EF3_05BD(int a, int b) {}
 
 /* 0EF3:0665: run the "flash" animation for one member or the whole party: eight passes over the
-   living members (m01 bit 0, and either no panel is open or `who` is the panel member), each
-   drawing through 0EF3:05BD and waiting two ticks, then redraw each member. `who` is a member
-   index, or -1 for the whole party. Called by 0EF3:08CF and the item effect at 0BD2:0D2D.
-   DRAFT: the original loads `who` into SI and compares SI; our build compares the parameter in
-   memory (`make match` differs at the first compare, `register int who` makes it worse). */
-/*@ 0EF3:0665 draft */ void FlashPartyMembers(int who)
+   living members (m01 bit 0, and either no panel is open or the member is the selected one gA99A),
+   each drawing one frame through 0EF3:05BD and waiting two ticks, then redraw each member. `who`
+   is a member index, or -1 for the whole party; the function reuses the parameter as the walk
+   index. Called by 0EF3:08CF and the item effect at 0BD2:0D2D. */
+/*@ 0EF3:0665 */ void FlashPartyMembers(int who)
 {
     int first;
     int last;
     int pass;
-    int i;
 
     if (who == -1) {
         first = 0;
@@ -342,19 +550,51 @@ extern void BuildList5(void); /*@ 0CF7:0211 */
         first = last = who;
     }
     for (pass = 0; pass < 8; pass++) {
-        for (i = first; i <= last; i++) {
-            if ((gChars[i].m01 & 1) && (gFB44 == 0 || i == gA99A))
-                f0EF3_05BD(i, pass);
+        for (who = first; who <= last; who++) {
+            if ((gChars[who].m01 & 1) && (gFB44 == 0 || who == gA99A))
+                f0EF3_05BD(who, pass);
         }
         WaitTicks(2);
     }
-    for (i = first; i <= last; i++)
-        RedrawMember(i);
+    for (who = first; who <= last; who++)
+        RedrawMember(who);
 }
 
 /*@ 0EF3:06E7 stub */ void f0EF3_06E7(void) {}
 
-/*@ 0EF3:08CF stub */ int f0EF3_08CF(void far *rec) {}
+/* 0EF3:08CF: apply one action record to the member it names (+0x38). It makes that member current
+   and, while the member is alive (m01 bit 0), draws its name and the message ds:57C3, plays the
+   effect's sound (the first byte of the ds:1355 record for gEFB8), flashes the member, runs the
+   redraw hook ds:EFBA and redraws it; a dead member just returns the record's +4 word. When the
+   record names no member (-1) it says ds:57C8. It then finishes the open condition slot through
+   0EF3:026F when g8DCE is set, else redraws the panel through 0EF3:2541. Reached through a
+   pointer; returns the record's +4 word. DRAFT: the body is right but the original lays the
+   alive test out as `test byte es:[bx+1],1; jne alive; jmp done` where our build emits the
+   shorter inverted `je done` (`make match` differs at the branch, +0x10). */
+/*@ 0EF3:08CF draft */ int ApplyMemberEffect(struct ActRec far *rec)
+{
+    gCurMember = rec->m38;
+    if (gCurMember != -1) {
+        gCurRec = &gChars[gCurMember];
+        if (gCurRec->m01 & 1) {
+            DrawText(gCurRec->name);
+            DrawText(gText57C3);
+            PlaySound(gEffectSound[gEFB8 * 0x13]);
+            FlashPartyMembers(gCurMember);
+            gFnEFBA();
+            RedrawMember(gCurMember);
+        } else {
+            return rec->m04;
+        }
+    } else {
+        SayAndBeep(gText57C8);
+    }
+    if (g8DCE != 0)
+        FinishMemberEffect();
+    else
+        RedrawPartyPanel(rec);
+    return rec->m04;
+}
 
 /*@ 0EF3:097B stub */ void f0EF3_097B(char a, int b, int c, int d, int e) {}
 
@@ -367,24 +607,24 @@ extern void BuildList5(void); /*@ 0CF7:0211 */
    current page faces (0D1C:00DA and 08E6:15B4). A member with no object gets the string ds:57F1;
    otherwise, when RollToHit accepts the object and 0D1C:0BAB does not reject it, roll count d
    sides plus bonus and damage the object. Called by 0EF3:1B43, 0EF3:1EF3 and 0EF3:1FF9.
-   DRAFT: the body is right but the original spills the 0D1C:00DA result to [bp-2] and keeps the
-   08E6:15B4 result in SI and the damage in DI; our build puts the 00DA result in DI instead
-   (`make match` differs at the branch after the call). */
+   DRAFT: the frame and register use match (`register int obj, dmg`, target spilled to [bp-2]),
+   but the original lays the RollToHit test out as `jne body; jmp done` where our build emits the
+   inverted `je skip; body` (`make match` differs at that jmp, +0x15). */
 /*@ 0EF3:0E1B draft */ void CastMeleeEffect(int count, int sides, int bonus)
 {
     int target;
-    int obj;
-    int dmg;
+    register int obj;
+    register int dmg;
 
     if (gAt5717[gPanelMember] != 0) {
         target = f0D1C_00DA(gPartyCell, gFBCC);
         obj = Obj15B4(gPanelMember, target);
         if (obj != -1) {
-            if (RollToHit(gPanelMember, obj, 0, 1)) {
-                dmg = RollDice(count, sides, bonus);
-                if (!f0D1C_0BAB(obj))
-                    DamageObject(&gObjs[obj], dmg);
-            }
+            if (!RollToHit(gPanelMember, obj, 0, 1))
+                return;
+            dmg = RollDice(count, sides, bonus);
+            if (!f0D1C_0BAB(obj))
+                DamageObject(&gObjs[obj], dmg);
         } else {
             sprintf(gFileNameBuf, gText57F1, gChars[gPanelMember].name);
             SayAndBeep(gFileNameBuf);
@@ -395,15 +635,19 @@ extern void BuildList5(void); /*@ 0CF7:0211 */
     }
 }
 
-/* 0EF3:0F0B: when the current record's armour class is more than six above the class word of
-   its +0x15 index, raise its +0xDF penalty byte to eight over the member's class-slot 1 value
-   and recompute the armour class; otherwise say the string ds:5830 with the record's name. Called
-   through a table. DRAFT: the body is right but the original keeps the 0A72:019D result in SI and
-   a two-byte frame for the value; our build folds them away (`make match` differs at the frame). */
-/*@ 0EF3:0F0B draft */ void FixArmourClass(void)
+/* 0EF3:0F0B: when the current record's armour class (+0x1D) is more than six above the class word
+   of its +0x15 index (0A72:019D), raise its +0xDF penalty byte to eight over the member's
+   class-slot 1 value and recompute the armour class; otherwise say the string ds:5830 with the
+   record's name. Called through a table. */
+/*@ 0EF3:0F0B */ void FixArmourClass(void)
 {
-    if (gCurRec->m1D > GetClassWord(gCurRec->m15) + 6) {
-        gCurRec->mDF = GetClassSlot1Value(gPanelMember) + 8;
+    char penalty;
+    register int base;
+
+    base = GetClassWord(gCurRec->m15);
+    if (gCurRec->m1D > base + 6) {
+        penalty = GetClassSlot1Value(gPanelMember) + 8;
+        gCurRec->mDF = penalty;
         ComputeArmourClass(gCurMember);
     } else {
         sprintf(gFileNameBuf, gText5830, gCurRec->name);
@@ -480,11 +724,11 @@ extern void BuildList5(void); /*@ 0CF7:0211 */
    and `register` form tried spills one local (`make match` shows the difference at the prologue). */
 /*@ 0EF3:1197 draft */ void CreateItemForEffect0(void)
 {
-    register int index, slot;
+    register int slot, index;
 
     index = ItemSlot1Empty(gCurRec);
-    slot = f0EF3_035A(0, 0, 0, 0xF, 1, 8, GetClassSlot1Value(gPanelMember), 1);
-    gCurRec->m77[index] = f0EF3_0418(0x10, 0x52, 0, slot);
+    slot = CreateItemType(0, 0, 0, 0xF, 1, 8, GetClassSlot1Value(gPanelMember), 1);
+    gCurRec->m77[index] = CreateItemRecord(0x10, 0x52, 0, slot);
     RedrawMember(gPanelMember);
     ApplyTimedCharEffect(gEFB8, 0, 0x222L, 1, 1);
 }
@@ -662,8 +906,8 @@ extern void BuildList5(void); /*@ 0CF7:0211 */
     register int index;
 
     index = ItemSlot1Empty(gCurRec);
-    slot = f0EF3_035A(0, 0, 0, 0xF, GetClassSlot1Value(gPanelMember) / 2, 6, 0, 1);
-    gCurRec->m77[index] = f0EF3_0418(0x18, 0x53, 0, slot);
+    slot = CreateItemType(0, 0, 0, 0xF, GetClassSlot1Value(gPanelMember) / 2, 6, 0, 1);
+    gCurRec->m77[index] = CreateItemRecord(0x18, 0x53, 0, slot);
     RedrawMember(gPanelMember);
     ApplyTimedCharEffect(gEFB8, 0, 0x222L, 1, 1);
 }
@@ -892,8 +1136,8 @@ extern void BuildList5(void); /*@ 0CF7:0211 */
     register int index;
 
     index = ItemSlot1Empty(gCurRec);
-    slot = f0EF3_035A(0, 0, 0, 0xF, 1, 4, 4, 1);
-    gCurRec->m77[index] = f0EF3_0418(0, 0x54, 0, slot);
+    slot = CreateItemType(0, 0, 0, 0xF, 1, 4, 4, 1);
+    gCurRec->m77[index] = CreateItemRecord(0, 0x54, 0, slot);
     RedrawMember(gPanelMember);
     ApplyTimedCharEffect(gEFB8, 4, 0x222L, GetClassSlot24Value(gPanelMember) / 2, 1);
 }
@@ -1125,9 +1369,51 @@ extern void BuildList5(void); /*@ 0CF7:0211 */
 
 /*@ 0EF3:2295 stub */ void f0EF3_2295(void) {}
 
-/*@ 0EF3:2541 stub */ void f0EF3_2541(char far *text) {}
+/* 0EF3:2541: redraw the party panel after an action: clear the key-flag gFlag, hide the pointer
+   and restore the panel rectangle (8, 0x7a, 0x0e by 0x37) from the slot-5 buffer gSegDF4E plus
+   0x61a8, show the pointer, draw the view rows, and rebuild the active item list (BuildList1 to 3
+   by gFB44). Returns the action record's +4 word. */
+/*@ 0EF3:2541 */ int RedrawPartyPanel(struct ActRec far *rec)
+{
+    gFlag = 0;
+    HidePointerZone(0x40, 0x78, 0xB0, 0xB1);
+    gRestoreRect(8, 0x7A, 0x0E, 0x37, (char far *)gSegDF4E + 0x61A8);
+    ShowPointerZone();
+    DrawViewRows();
+    switch (gFB44) {
+    case 0:
+        BuildList1();
+        break;
+    case 1:
+        BuildList2();
+        break;
+    case 2:
+        BuildList3();
+        break;
+    }
+    return rec->m04;
+}
 
-/*@ 0EF3:25BD stub */ void f0EF3_25BD(void) {}
+/* 0EF3:25BD: Purpose unknown: save the action record's member (+0x38) in ds:DDE2, then hunt along
+   that member's row (six bytes) of the far table ds:DD14 (row base gDDE2 * 6) for the first byte
+   over zero, breaking at six. It then runs 0EF3:2295 (the item panel) and returns the record's +4
+   word. Its caller and what the row holds are not established.
+   DRAFT: the original hoists the row base into ES:BX once (`les bx,[ds:DD14]; add bx,gDDE2*6`)
+   and adds gA9C5 each pass; our build sums the index first and reloads the far pointer
+   (`make match` differs after the multiply, +0x13). A declared far pointer adds a frame the
+   original does not have. */
+/*@ 0EF3:25BD draft */ int f0EF3_25BD(struct ActRec far *rec)
+{
+    gDDE2 = rec->m38;
+    gA9C5 = 0;
+    while (gA9C5 < 6) {
+        if (gDD14[gDDE2 * 6 + gA9C5] > 0)
+            break;
+        gA9C5++;
+    }
+    f0EF3_2295();
+    return rec->m04;
+}
 
 /* 0EF3:2604: use the item in one of a member's rows. When the item's type is 0x22 or 0x23, or
    its type is 0x30 and its flags low six bits are exactly 1, run 0BD2:0106(who, slot); for a
@@ -1166,6 +1452,6 @@ extern void BuildList5(void); /*@ 0CF7:0211 */
 
 /*@ 0EF3:2929 stub */ void f0EF3_2929(void) {}
 
-/*@ 0EF3:2A53 stub */ void f0EF3_2A53(void) {}
+/*@ 0EF3:2A53 stub */ void f0EF3_2A53(int a, int b, int c, int d, int e, void far *p) {}
 
 /*@ 0EF3:2EBC stub */ void f0EF3_2EBC(void) {}

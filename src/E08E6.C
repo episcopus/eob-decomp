@@ -137,7 +137,7 @@ void Obj0EC3(struct Obj28 far *obj);   /* forward: Obj0E48 reaches it before its
 extern int DirectionFromPoints(int obj, int volume); /*@ 17A6:0314 */
 extern int f0D1C_0006(int value); /*@ 0D1C:0006 */
 extern int f0D1C_00DA(int value, int page); /*@ 0D1C:00DA */
-extern void fOvl4_1F51(int n); /*@ 2116:005C */   /* overlay 4 entry, ovl4:1F51 */
+extern void DrawViewFrame(int n); /*@ 2116:005C */   /* overlay 4 entry, ovl4:1F51 */
 extern void PlaySoundAtCell(int sound, int volume); /*@ 177D:0106 */
 extern void PlaySoundDefault(int sound); /*@ 177D:00F3 */
 extern int f0D1C_0670(int who, int mask); /*@ 0D1C:0670 */
@@ -476,12 +476,12 @@ void Obj10F3(struct Obj28 far *obj);   /* forward: 05EA reaches it before its de
                     PlaySoundDefault(gTable1A3B[obj->b0].m16);
                 obj->m0A = 0xfe;
                 gCount849A = 0;
-                fOvl4_1F51(1);
+                DrawViewFrame(1);
                 obj->m0A = 0xff;
                 if (obj->b0 != 4)
                     PlaySoundDefault(gTable1A3B[obj->b0].m16);
                 gCount849A = 8;
-                fOvl4_1F51(1);
+                DrawViewFrame(1);
             } else {
                 PlaySoundDefault(gTable1A3B[obj->b0].m16);
             }
@@ -601,7 +601,7 @@ void Obj10F3(struct Obj28 far *obj);   /* forward: 05EA reaches it before its de
         PlaySoundAtCell(0x55, obj->id);
         break;
     }
-    fOvl4_1F51(1);
+    DrawViewFrame(1);
     gDF4C = 0;
     if (obj->m19 != -1)
         obj->m19--;
@@ -745,7 +745,7 @@ second:
         else
             gFn80D2(g1CD3);
         gCount849A = 0;
-        fOvl4_1F51(1);
+        DrawViewFrame(1);
         obj->m16 &= ~2;
         gCount849A = 1;
         gFlags849E |= 2;
@@ -763,7 +763,7 @@ second:
     struct Obj28 far *obj = gObjs;
     int i, any;
 
-    fOvl4_1F51(1);
+    DrawViewFrame(1);
     for (i = 0; i < 30; i++, obj++) {
         if (obj->m16 & 2) {
             obj->m16 &= ~2;

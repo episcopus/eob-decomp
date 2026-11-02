@@ -136,7 +136,7 @@
         EXTRN   _heapcheck:FAR          ; @ 0000:74B0: far-heap check (E082C.C)
         EXTRN   _LoadScreenImage:FAR    ; @ 082C:051B (E082C.C)
         EXTRN   _Action01E3:FAR         ; @ 0ACD:01E3 (E0ACD.C)
-        EXTRN   _f0EF3_2541:FAR         ; @ 0EF3:2541 (E0ACD.C)
+        EXTRN   _RedrawPartyPanel:FAR         ; @ 0EF3:2541 (E0ACD.C)
         EXTRN   _SortSpellSlots:FAR     ; @ 0EF3:000E (E0EF3.C)
         EXTRN   _ShutdownGame:FAR       ; @ 07C8:058A (E07C8.C)
         EXTRN   _FileOpen:FAR           ; @ 1C0E:00DB (E082C.C)
@@ -144,7 +144,7 @@
         EXTRN   _WaitGameKey:FAR        ; @ 1AAD:053A (E1AAD.ASM)
         EXTRN   _LoadSavedGame:FAR         ; @ 210C:0039: overlay 3 entry, ovl3:15B9 (LoadGame, EOV3.C)
         EXTRN   _fOvl3_1368:FAR         ; @ 210C:0089: overlay 3 entry, ovl3:1368 (SaveGame, EOV3.C)
-        EXTRN   _fOvl4_1F51:FAR         ; @ 2116:005C: overlay 4 entry, ovl4:1F51 (DrawViewFrame, EOV4.C)
+        EXTRN   _DrawViewFrame:FAR         ; @ 2116:005C: overlay 4 entry, ovl4:1F51 (DrawViewFrame, EOV4.C)
         EXTRN   _fOvl6_0000:FAR         ; @ 212A:0039: overlay 6 entry, ovl6:0000 (CampLoop, EOV6.C)
         EXTRN   _IsMouseInRect:FAR      ; @ 1A72:02A6 (E1A72.ASM)
 
@@ -3276,7 +3276,7 @@ f1ACD_1AE8:
         push    ds
         mov     ax,OFFSET gF542
         push    ax
-        call    far ptr _f0EF3_2541
+        call    far ptr _RedrawPartyPanel
         pop     cx
         pop     cx
 f1ACD_1AFB:
@@ -3793,7 +3793,7 @@ f1ACD_1F98:
         pop     cx
         mov     ax,1
         push    ax
-        call    far ptr _fOvl4_1F51
+        call    far ptr _DrawViewFrame
         pop     cx
         call    far ptr _LoadSavedGame
         or      ax,ax
@@ -4167,7 +4167,7 @@ f1ACD_2323:
         pop     cx
         xor     ax,ax
         push    ax
-        call    far ptr _fOvl4_1F51
+        call    far ptr _DrawViewFrame
         pop     cx
         mov     word ptr [g8115],0
         call    far ptr _LockHidePointer
