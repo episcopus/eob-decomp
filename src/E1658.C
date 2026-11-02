@@ -2,8 +2,9 @@
    1658:0000 to 0002 belong to unit e1547, which ends where this one starts): the operations of a
    singly linked list of screen items (nodes), 12 functions. A node is a struct with a far `next`
    pointer, an unsigned sort key, a flags word at +0E, a state word at +2E and a far callback at
-   +30; the box coordinates the drawing routine uses sit at +1E..+24. DrawNode (16A5:07C3) first
-   reads the state word +2E. The on bit 0x0001 and the 0x0004 bit are two separate tests: the
+   +30; the box coordinates the drawing routine uses sit at +1E..+24. DrawNode (16A5:07C3) reads
+   the pointer size and the box, kind and mode fields first, then the state word +2E at
+   E16A5.C:541. The on bit 0x0001 and the 0x0004 bit are two separate tests: the
    st1 block (E16A5.C:555) runs when 0x0001 is set and picks its path by modeB +0B, and the
    st4 block (E16A5.C:597) runs when 0x0004 is set and picks its path by modeC +0C, so both run
    when both bits are set. Only when both are clear does it draw by the kind +0A: the region
@@ -23,13 +24,15 @@ struct Node {
     unsigned key;                                /* +04: sort key, compared unsigned */
     unsigned char pad06[8];                      /* +06..+0D: key06 (+06), key08 (+08), kind (+0A),
                                                     modeB (+0B) and modeC (+0C) as E16A5.C names
-                                                    them; only +0E is touched here */
+                                                    them; none of these bytes is touched here;
+                                                    the flags word +0E is the next field */
     unsigned flags;                              /* +0E: the inactive bit 0x0008 and the button-mode
                                                     selectors (see the flags comment below) */
     unsigned char pad10[0x1E];                   /* +10..+2D: the art pointers, region, box and
                                                     colour fields E16A5.C names (+10 src10, +14
                                                     src14, +18 src18, then the box and colours);
-                                                    only +2E is read and written here */
+                                                    none of these bytes is touched here; the
+                                                    state word +2E is the next field */
     unsigned state;                              /* +2E: the on bit, the previous-on bit, others */
     int (far *callback30)(struct Node far *node); /* +30: optional callback, fired when asked; the
                                                     dispatcher is the only caller that uses its
@@ -103,7 +106,7 @@ extern unsigned g5E1E; /*@ ds:5E1E */
 extern void DrawNode(struct Node far *node); /*@ 16A5:07C3 */
 
 /* 1658:0003: stores the far pointer `next` in the node's own +00 field, so `node` is placed in
-   front of `next`, and returns `node`. InsertNode (1658:03D6, call at E1658.C:316) is the only
+   front of `next`, and returns `node`. InsertNode (1658:03D6, call at E1658.C:319) is the only
    caller in src/. */
 /*@ 1658:0003 */ struct Node far *LinkNode(struct Node far *next, struct Node far *node)
 {
@@ -199,7 +202,7 @@ extern void DrawNode(struct Node far *node); /*@ 16A5:07C3 */
    :3988, :4049, :4317, :4334, :4434; the EXTRN is at :47).
    QUIRK 1658:01A2: when the walk starts on the last node of a list (its `next` is null) and that
    node's key does not match, which includes every one-node list, `head = head->next`
-   (E1658.C:213) makes `head` a null far pointer; the loop test `while (head->next)` (E1658.C:214)
+   (E1658.C:216) makes `head` a null far pointer; the loop test `while (head->next)` (E1658.C:217)
    then reads the whole far pointer at 0000:0000 (both words; it is nonzero if either word is). If
    that pointer is nonzero the body runs again first and compares the key at 0000:0004; a match
    there returns the null pointer, the same as "not found", and otherwise the walk continues from
