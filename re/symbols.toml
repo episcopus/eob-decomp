@@ -6844,6 +6844,9 @@ unit = "eov0"
 addr = "ovl0:05BA"
 size = 161
 evidence = ["ovl", "near", "frame"]
+name = "DrawCharName"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov0_065b"

@@ -53,6 +53,14 @@ struct CharRec {                /* 243-byte character records at ds:F580 (src/E0
     char pad0d[0xf3 - 0x0d];
 };
 extern struct CharRec gChars[]; /*@ ds:F580 */
+extern void (far *gDrawText)(char far *text, int a, int b, int c, int d); /*@ ds:80CA */
+extern char far *gFont1A47; /*@ ds:FE4E */ /* the current font (src/E1547.C) */
+extern void far *gA9C0; /*@ ds:A9C0 */ /* the 6x6 font loaded from FONT6.FNT (src/E07A9.C) */
+extern void f1A47_0169(char far *font); /*@ 1A47:0169 */
+extern char gFontWidth1A47; /*@ ds:8100 */ /* the current font's character width (src/E14EF.C) */
+extern int gNamePosX[]; /*@ ds:5E44 */ /* the x of each panel name slot (Purpose unknown) */
+extern int gNamePosY[]; /*@ ds:5E4C */ /* the y of each panel name slot (Purpose unknown) */
+extern char gStr618C[]; /*@ ds:618C */ /* a fixed panel label (Purpose unknown) */
 extern struct Node far *ListAdd(struct Node far *head, struct Node far *item); /*@ 1658:001E */
 extern char g5E20; /*@ ds:5E20 */ /* nonzero when the mouse moved (src/E16A5.C) */
 
@@ -241,7 +249,25 @@ extern void far *g5E64[0x11]; /*@ ds:5E64 */ /* the 17 sliced icon pointers this
     } else
         DrawPanelIcon(0xe, 0, 0);
 }
-/*@ ovl0:05BA stub */ void Ovl0_05BA(void) {}
+/* ovl0:05BA: draws one panel name slot: switches the current font to the 6x6 gA9C0, computes the
+   centred x offset (0x3c - width * gFontWidth1A47) / 2 for a name `len` characters wide, hides the
+   pointer, draws the fixed label gStr618C at gNamePosX[index]/gNamePosY[index] and the character's
+   name gChars[index].name centred on it in `color`, shows the pointer and restores the font.
+   Called by ovl0:0EE5 and 23EC. */
+/*@ ovl0:05BA */ void DrawCharName(int index, int len, int color)
+{
+    char far *savedFont;
+    int x;
+
+    savedFont = gFont1A47;
+    f1A47_0169(gA9C0);
+    x = (0x3c - gFontWidth1A47 * len) >> 1;
+    LockHidePointer();
+    gDrawText(gStr618C, gNamePosX[index], gNamePosY[index], 0xc, 0xc);
+    gDrawText(gChars[index].name, gNamePosX[index] + x, gNamePosY[index], color, 0);
+    LockShowPointer();
+    f1A47_0169(savedFont);
+}
 /*@ ovl0:065B stub */ void Ovl0_065B(void) {}
 /*@ ovl0:0A4F stub */ void Ovl0_0A4F(void) {}
 /*@ ovl0:0A5E stub */ void Ovl0_0A5E(void) {}
