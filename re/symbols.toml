@@ -7522,6 +7522,7 @@ id = "eov1_1acd"
 unit = "eov1"
 addr = "ovl1:1ACD"
 size = 2413
+notes = "blocked: one far-array read, the `test word ptr es:[bx-2],2` at ovl1:2206, is 26 F7 87 FE FF 02 00 in the original. TCC 1.00 uses a 16-bit displacement for a far array index; the pinned TASM 2.0 emits the 8-bit form 26 F7 47 FE 02 00 (probed 2026-11-01: `es:[bx-2]`, `es:[bx+0FFFEh]` and a forward EQU all give the 8-bit form, the forward EQU with a trailing NOP). Its extra byte shifts the tail by one, so cmatch first reports +0320 (the jmp at ovl1:1DEC); every other byte of the 2413-byte function matches. This is the same compiler question as ovl1:1153 (registry note above): eov1 is a C unit, but re/units.toml says kind asm. One listing credit of the body is written; a C rewrite under kind c should match."
 evidence = ["ovl"]
 
 [[function]]
