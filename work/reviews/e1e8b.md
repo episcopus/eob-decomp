@@ -1,5 +1,45 @@
 # Review: e1e8b
 
+# Round 8
+
+Reviewer: rev-haiku
+Commit reviewed: 7df54ca (review/e1e8b). Round 7 reviewed 1c684cb. main is at 5131050; src/E1E8B.ASM, re/symbols.toml, re/globals.toml, re/renames.toml and this file are identical on both.
+
+Playbook 70, later round. Judged: the round 7 must-fix items, and the changed lines in `git diff 1c684cb HEAD -- src/E1E8B.ASM re/symbols.toml re/globals.toml`. Nothing else was read again.
+Checked: `make match FILE=src/E1E8B.ASM` 30 of 30, exit 0; `make readability UNIT=e1e8b` 0 findings. No source change this round.
+Evidence used: src/E1E8B.ASM at :145-174 (000F), :614-629 (02FF's entry call), :820-904 (04D0), :966-1015 (0580), :1087-1105 (064E), :1116-1131 (066F), :1144-1160 (068D), :1416-1427 (07D7), :256-267 (0185), :706-716 (03FD), :1496-1577 (086F and 08C9); re/renames.toml; a grep of the repo for ShutdownOverlayManager, disc_walk and disc_unlink (no hits left outside the renamed symbol and this review file).
+
+Round 7 must-fix items, both held:
+- 04D0 IRET cite: the `iret` is at :903, as the header now says.
+- 07D7 zero-link cite: `je short drop_check` is at :1422, directly after `shr si,1` at :1421, in the first pass (drop_scan at :1417).
+
+Changed lines checked and sound: 000F (`mov ds:[0B0h],ax` at :165, after `[bp+0Ch]+1` is built at :162-164); 02FF (`mov ax,0FFFFh; mov bx,ax` at :625-626, then the call through 20B5:0016 at :628); 0185 (`push cs; call word ptr` pairs at :262-265, so each callee must consume one pushed CS and the caller's `pop ds; pop bp; retf` depends on that); 064E (the ES:000C test at :1095, the 0EAh test at :1099, and the fill that writes 0EAh at 066F, reached from the 0580 call at :993, before the IRET at :903); 08C9 (`inc dx` at :1564 gives [bp+0Ch] = seg+1 and `add bx,dx` at :1565 gives [bp+0Ah] = M+seg+1, with M from `inc bx` at :1551 and the 16*M allocation at :1554; the block runs from seg to seg+M, and the top is one paragraph past it); 0613 (no `disc_` label left); 0711 ("running top", as the other headers say); 0442 (the DS:0020 claim is marked [H], and 03FD runs with ES = the code base, :716); the rename of 0185 to `f1E8B_0185` (follows the placeholder form READABILITY documents, `f1DDD_0006`; symbols.toml and renames.toml agree).
+
+## Findings
+
+Each finding is a checkbox. `must-fix` blocks `make review-pass` until a decompiler ticks it off
+(with the commit that fixes it); `should` and `note` do not block.
+
+### 04D0 OverlayCallHandler (changed header text)
+
+- [ ] must-fix src/E1E8B.ASM:831-832 (04D0 header): "the record word ES:0000, which 086F tests against 3FCDh, the CD 3F stub". 086F does not test against 3FCDh. Its code is `mov cx,ds:[0A0h]` and `cmp cx,es:[0]` (:1502-1503): it compares ES:0000 with the overlay id word 20B5:00A0. Nothing in this unit writes 00A0 (the 000F header says so), and 3FCDh is the value the records need in that word, not a constant the code compares. Say: "the record word ES:0000, which 086F tests against the overlay id word 20B5:00A0 (:1502-1503); the records need that word to be 3FCDh, the CD 3F stub". Evidence: :1502-1503 and the 000F header note.
+
+### Notes
+
+- [ ] note src/E1E8B.ASM:46 (000F header): the same loose wording, "which 086F compares a record's ES:0000 against", is unchanged text, so it is a note; fix it with the must-fix above, since both say what 086F compares with.
+- [ ] note src/E1E8B.ASM:836-837 (04D0 header): "nothing in this unit writes that word" is a reading of the unit, not a proof. The literal accesses to ES:0000 are reads (the compares at :1371, :1456 and :1503); the fixup stores of 03FD and 0442 write through ES:BX at a variable offset. The sentence already ends with [H], which is the right mark.
+- [ ] note src/E1E8B.ASM:833 (04D0 header): "a non-zero result is an entry in the ES:0020 version table" depends on the INT running in the record segment, so that ES:0020 is in the same segment. The round 7 check of the EXE stub bytes supports that (segment 2102: CD 3F at +0, and at +20 and +25, the 5-byte entries). If the header should carry that evidence, cite it there; it is not a blocker.
+
+## Confirmed, no change
+
+- 0185 header: the handle test, the far call to 0134 and the two `push cs; call word ptr` pairs match :256-267; "Purpose unknown" with the known teardown is the placeholder form.
+- 086F/08C9 header: the arguments (`push dx`, `push bx`, two zero words, :1566-1570) and the block (seg to seg+M) match the arithmetic at :1549-1565.
+- 0442 header: the frame and ES wording matches 03FD (:713-716) and 066F/068D.
+
+## Summary
+
+Round 8: the round 7 must-fix items are fixed right, and the changed lines are sound except one. The 04D0 header says 086F tests ES:0000 against 3FCDh; 086F tests it against the id word 20B5:00A0, whose required value is 3FCDh. One must-fix, a comment wording, no code change. The notes are for the same paragraph. Nothing is escalated: no matcher, spec or pin question. Verdict: review-failed, 1 must-fix.
+
 # Round 7
 
 Reviewer: rev-haiku
