@@ -1,5 +1,49 @@
 # Review: e1e8b
 
+# Round 9
+
+Reviewer: rev-haiku
+Commit reviewed: 4496aa5 (review/e1e8b). The unit's last change on the branch is 2731409 (the round 8 fix); `git diff 7df54ca HEAD -- src/E1E8B.ASM re/symbols.toml re/globals.toml` is that commit's two hunks. main's src/E1E8B.ASM and re/symbols.toml equal HEAD's; main's re/globals.toml differs only in the ds:8140 and ds:8142 (gClickX, gClickY) entries, which this unit does not reference (a grep of src/E1E8B.ASM finds no 8140, 8142, gClickX or gClickY).
+
+Playbook 70, later round. Judged: the round 8 must-fix item, the round 7 must-fix items (the 04D0 IRET cite and the 07D7 zero-link cite) as they stand at HEAD, and the changed lines of 2731409. Nothing else was read again.
+Checked: `make match FILE=src/E1E8B.ASM` 30 of 30, exit 0; `make readability UNIT=e1e8b` 0 findings. No source change this round.
+Evidence used: src/E1E8B.ASM at :829-840 (the 04D0 header), :905 (iret), :1395 (the 07D7 cite), :1419-1425 (drop_scan), :1502-1506 (086F's test); `git show 7df54ca:src/E1E8B.ASM` for the same lines before the fix (iret at :903, the 086F test at :1502-1503, `je short drop_check` at :1422); grep of the bare `:NNN` cites in the file (three hits: :830, :832, :1395).
+
+## Findings
+
+Each finding is a checkbox. `must-fix` blocks `make review-pass` until a decompiler ticks it off
+(with the commit that fixes it); `should` and `note` do not block.
+
+### 04D0 OverlayCallHandler (cites broken by the round 8 fix)
+
+The round 8 fix added two lines to the 04D0 header, so every line cite below it moved by +2. The fix's own cites were written with the old numbers, and the round 7 cite at :830 was right at 7df54ca and is wrong now.
+
+- [ ] must-fix src/E1E8B.ASM:832 (04D0 header): "(:1502-1503)" is the wrong code. The test is `mov cx,ds:[0A0h]` at :1504 and `cmp cx,es:[0]` at :1505. :1502 is `mov ds,word ptr cs:[4]` and :1503 is `mov es,[bp+8]`. Write ":1504-1505". The round 8 must-fix (the 3FCDh wording) is right in meaning, so its tick stays, but it is not fixed right until the cite is. Evidence: grep at HEAD (`cmp     cx,es:\[0\]` at 1505) against 7df54ca (1503).
+- [ ] must-fix src/E1E8B.ASM:830 (04D0 header): "IRET (:903) resumes there". The `iret` is at :905 (:903 is `pop ax`). It was at :903 at 7df54ca, so this is the round 7 must-fix (the 04D0 IRET cite) that held at 7df54ca and that the round 8 fix broke. Write ":905". Evidence: grep for `iret` at HEAD (905) and at 7df54ca (903).
+
+### 07D7 DropStaleOverlaySlots (round 7 must-fix, broken by the same fix)
+
+- [ ] must-fix src/E1E8B.ASM:1395 (07D7 header): "when the first pass stopped on a zero link (:1422)". At HEAD :1422 is `mov si,ss:[bx]`. The zero-link exit, `je short drop_check`, is at :1424, after `shr si,1` at :1423. It was :1422 at 7df54ca, and the two lines added above moved it. Write ":1424". Evidence: `sed -n 1419,1425p` at HEAD; grep for `drop_check` (1424) and `shr     si,1` (1423) at HEAD, against 1422 and 1421 at 7df54ca.
+
+### 000F InitOverlayManager and 04D0 (the changed wording and the rewrap)
+
+- [ ] should src/E1E8B.ASM:48 and :833, :836, :840 (rewrap): the wording of the 000F and 04D0 paragraphs is sound (see Confirmed). The rewrap left line 48 at 110 characters, where the unit's lines run to about 100. Lines 833 (77 characters), 836 (72) and 840 (38) are short, and 837 is 103, so the paragraphs are ragged. Rewrap both paragraphs to the unit's width.
+
+### Notes
+
+- note: three bare line cites remain in the file (:830, :832 and :1395, all in headers). Each goes stale whenever a header above it grows, as this one did. Where the reader needs the place, the routine's name or its address is stable ("the IRET at the end of 04D0", or 1E8B:04D0 plus the offset). Not a finding on its own.
+- note: round 8 ticked the round 7 IRET and 07D7 cites as held at 7df54ca. They were held there. They are not held at HEAD, because the round 8 fix moved the lines. This round is not a new reading of the code: it is the same two cites, checked at the current commit.
+- note: the EXE stub bytes at segment 2102 (CD 3F at +0, the 5-byte entries at +20 and +25) that 04D0 cites at :835 were checked by round 7 and were not re-read this round.
+
+## Confirmed, no change
+
+- 000F header (:46-48): the records need the id word 20B5:00A0 to be 3FCDh, because 086F compares a record's ES:0000 with that word (`mov cx,ds:[0A0h]`, `cmp cx,es:[0]`, :1504-1505). The "no code in this unit writes 00A0" reading is round 7's, not re-read this round.
+- 04D0 body (:873-876): `les bx,[bp+2]` and `push word ptr es:[bx]` read the request word at the INT's return IP; `sub word ptr [bp+2],2` lowers that IP by 2, so IRET resumes at the 2-byte INT itself, and the zero result (`jne handler_multi` falls through) is the single entry at record offset 0. The header's description matches this.
+
+## Summary
+
+Round 9: the round 8 fix says the right thing about the 3FCDh test (086F compares ES:0000 with the id word 20B5:00A0, which the records need to hold 3FCDh), but its new cite and two round 7 cites are now wrong. The fix added two lines to the 04D0 header, and the line numbers after it were not moved. Three must-fix items, all line citations (:832, :830, :1395), no code change. The rewrap in the same header is a should. Nothing is escalated: no matcher, spec or pin question. Verdict: review-failed, 3 must-fix.
+
 # Round 8
 
 Reviewer: rev-haiku
