@@ -55,7 +55,8 @@ enum {
     KeyRight = 0xb3
 };
 
-/* DrawFilledPanel's "draw no interior" value; its callers pass -1 for it (src/EOV2.C:502, :503). */
+/* DrawFilledPanel's "draw no interior" value; its callers pass -1 for it, for example
+   src/EOV2.C:502, :503, src/E0D1C.C:720 and :725, src/E1547.C:226 and src/EOV2.C:364. */
 #define NO_FILL (-1)
 
 extern struct Region gRegions[]; /*@ ds:009F */
@@ -459,9 +460,10 @@ done:
    the fifth argument of the first shadow draw only, the argument of the draw hook gDrawText
    (ds:80CA) that is a colour in the hook's direct calls (gTextAttr2 at src/E1DE7.C:280 and :296,
    hiColour and fill at src/E0EF3.C:1937/1946), so `colour2` is a second colour; what the hook does
-   with it is unknown (Purpose unknown). Called by the character panel (src/E1547.C:521-545), the
-   name list (src/E14EF.C:208), the word-find editor (src/EOV2.C:500) and src/EOV6.C:399, among
-   others (the packet also lists EditTextField, DrawOptionList and the ovl0 and ovl1 panels). */
+   with it is unknown (Purpose unknown). Called by EditTextField in this unit (src/E082C.C:147, :152,
+   :244, :249), the character panel (src/E1547.C:521-545), the name list (src/E14EF.C:208,
+   DrawOptionList at 14EF:0154), the word-find editor (src/EOV2.C:500), src/EOV6.C:399, the ovl0
+   panel (src/EOV0.C:387) and the ovl1 panels (src/EOV1.ASM:1259, :1672). */
 /*@ 082C:0898 */ void DrawShadowText(char far *text, int x, int y, int colour, int colour2)
 {
     gDrawText(text, x - 1, y, 0xc, colour2);
@@ -584,9 +586,10 @@ done:
     ShowMemoryDiagnostics(x, y + 8, 1);
 }
 
-/* 082C:0B43: wait `seconds` seconds (about 18.2 BIOS ticks a second, so `seconds * 18` is the
-   target) and then wait for a key: busy-wait on the tick counter, clear the pending key
-   (1AAD:0480), block until 1AAD:038E reports one, and clear it again. */
+/* 082C:0B43: wait `seconds` seconds and then wait for a key: busy-wait on the tick counter, clear
+   the pending key (1AAD:0480), block until 1AAD:038E reports one, and clear it again. The counter
+   runs at about 18.2 BIOS ticks a second, and the target uses 18, a whole-tick approximation of
+   18.2, so the wait ends about 1% early. */
 /*@ 082C:0B43 */ void DelaySecondsThenKey(int seconds)
 {
     unsigned long target;

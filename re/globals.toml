@@ -433,8 +433,8 @@ why = "the status-line flag in E082C.C:44, E1C0E.C:589, E16A5.C:511 and in the o
 [[global]]
 id = "ds:8140"
 name = "gClickX"
-why = "x of the last mouse click, written at src/E1AAD.ASM:396 and read as a point by ClickInRect (src/E1AAD.ASM:516-518)"
+why = "x of the last mouse click, written at src/E1AAD.ASM:396 and read as a point by ClickInRect at 082C:0A5D (src/E082C.C:529-531) and by src/E14EF.C:325"
 [[global]]
 id = "ds:8142"
 name = "gClickY"
-why = "y of the last mouse click, written at src/E1AAD.ASM:405 and read as a point by ClickInRect (src/E1AAD.ASM:516-518)"
+why = "y of the last mouse click, written at src/E1AAD.ASM:405 and read as a point by ClickInRect at 082C:0A5D (src/E082C.C:529-531) and by src/E14EF.C:325"
