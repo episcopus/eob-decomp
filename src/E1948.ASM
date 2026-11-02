@@ -51,7 +51,17 @@ gVoiceMute       db      4 dup (?)       ; @ ds:8A40: offset 1A0h, byte per voic
 gVoiceReadNext   db      4 dup (?)       ; @ ds:8A44: offset 1A4h, byte per voice, 1 = read the next note or command
                                          ; this tick (set at 1948:007C and 0273); 0 = a note is sounding and
                                          ; its duration counts down (set at 1948:0151; endCommand leaves 0 too)
-gVoiceSilent     db      4 dup (?)       ; @ ds:8A48: offset 1A8h, byte per voice, 1 while the voice is muted
+gVoiceSilent     db      4 dup (?)       ; @ ds:8A48: offset 1A8h, byte per voice, 1 when the driver has
+                                         ; turned this voice off. Two writers: muteVoice (1948:027F) sets
+                                         ; one voice, and _SetThreeVoices (1948:034A) sets all four, so after
+                                         ; _SoundDriverResume, _SoundDriverInstall or _SoundDriverUninstall
+                                         ; the flags are set with no mute by the song. Two readers:
+                                         ; checkRestart (1948:0258) skips the re-arm for a flagged voice
+                                         ; (1948:025F to 0264), and the end-of-song count clears gPlaying once
+                                         ; every voice is flagged (1948:029D to 02BB). So a resume during a
+                                         ; song flags every voice, no voice is re-armed and the song stops at
+                                         ; the end of that tick. A voice muted by a CEh or D2h overflow keeps
+                                         ; this flag while it sounds, so the same test never re-arms it
 gVoiceDuration   dw      4 dup (?)       ; @ ds:8A4C: offset 1ACh, word per voice, note countdown, not
                                          ; "ticks left": readLoop stores (duration byte + 1) times
                                          ; gVoiceLengthMul, less 1 (1948:0142 to 0148). checkRestart
@@ -66,9 +76,14 @@ gVoiceLengthMul  db      4 dup (?)       ; @ ds:8A58: offset 1B8h, byte per voic
                                          ; not a volume: it scales the duration (1948:0144)
 gVoiceRepeat1    db      4 dup (?)       ; @ ds:8A5C: offset 1BCh, byte per voice, loop counter for CEh.
                                          ; CDh sets it to the following byte, or 1 when that byte is 0
-                                         ; (1948:0189); CEh counts it down and loops while nonzero (1948:015D)
+                                         ; (1948:0189); CEh counts it down and loops while nonzero (1948:015D).
+                                         ; Nothing clears it at song start (startVoice, 1948:007C to 00A3)
+                                         ; or in the install, so a CEh before its CDh counts down whatever
+                                         ; the previous song or the install left: the counters start unset
 gVoiceRepeat2    db      4 dup (?)       ; @ ds:8A60: offset 1C0h, byte per voice, loop counter for D2h.
-                                         ; D1h sets it the same way (1948:01C6); D2h counts it down (1948:0198)
+                                         ; D1h sets it the same way (1948:01C6); D2h counts it down (1948:0198).
+                                         ; Like gVoiceRepeat1 it starts unset, so a D2h before its D1h
+                                         ; counts down whatever the previous song or the install left
 gVoiceDelay1     db      ?               ; @ ds:8A64: offset 1C4h, countdown before the voice at index 1 plays
 gVoiceDelay2     db      ?               ; @ ds:8A65: offset 1C5h, countdown before the voice at index 2 plays
 gRunning         db      ?               ; @ ds:8A66: offset 1C6h, 1 while the driver has an active song;
@@ -90,7 +105,9 @@ SND     ENDS
 ; BIOS INT 8 vector (offset, segment) that the install routine writes and the handler chains to;
 ; the vector is read through CS, the counters through DS. Every tick it calls _SoundTick; once
 ; every sixteenth it does not acknowledge the PIC but jumps to the old BIOS handler instead, so
-; the BIOS clock still ticks at its own rate.
+; the BIOS clock still ticks at its own rate: the PIT clock (1193180 Hz [H]) divided by the install
+; divisor 1000h gives about 291.3 Hz, and chaining on every sixteenth tick divides that by sixteen
+; for 1193180 / 65536, about 18.2 Hz, the BIOS INT 8 rate.
         PUBLIC  _SoundTimerIsr          ; @ 1948:0006
 _SoundTimerIsr PROC FAR
 oldInt8Off      dw      0               ; 1948:0006: saved BIOS INT 8 handler offset
@@ -141,10 +158,13 @@ _SoundTimerIsr ENDP
 ; good: it jumps to muteVoice (1948:027F) without consuming the byte, so the position and
 ; gVoiceReadNext stay and it reads the same byte again on every later tick (1948:010B). Commands 80h
 ; and up set the repeat counters (CDh, D1h), loop back (CEh, D2h: the
-; command's position plus 1 minus the following offset word; a signed overflow of that position
-; mutes the voice instead, 1948:0174 and 01B0), play a note at an explicit frequency (E6h), set the
-; length multiplier (E2h), subtract from or add to it (E8h, E9h) or end the voice. When all voices
-; end silent, the song stops. Called by the handler.
+; command's position plus 1 minus the following offset word; a signed overflow of that position mutes
+; the voice for that tick only, 1948:0176 and 01B2, unlike 60h to 7Fh which stay silent for good),
+; play a note at an explicit frequency (E6h), set the length multiplier (E2h), subtract from or add to
+; it (E8h, E9h) or end the voice. An overflow mute does not set gVoiceReadNext back to 0, so the next
+; tick reads again from the wrapped position saved at 1948:028C and a note there can sound; that voice
+; keeps gVoiceSilent at 1, and checkRestart never re-arms a flagged voice (1948:025F to 0264), so the
+; note it reads never ends. When all voices end silent, the song stops. Called by the handler.
         PUBLIC  _SoundTick              ; @ 1948:0050
 _SoundTick PROC NEAR
         cmp     byte ptr [gStartRequest], 0
@@ -532,6 +552,8 @@ _SetVoicePitch ENDP
 ; there; whether they switch on the Tandy chip is open [H] and a question for the oracle). The fourth
 ; silence (voice index 3) writes the SN76489 noise channel, because
 ; the latch's channel bits 6-5 are 3 [H]; no path sets gVoiceCount to 4, so voice 3 is never played.
+; It also sets gVoiceSilent for all four voices in the loop (1948:0352), so a call during a song
+; flags every voice and stops the song at the end of that tick (see gVoiceSilent).
 ; Called by the install routine on Tandy (1948:0377), _SoundDriverResume (1948:0458),
 ; _SoundDriverUninstall (1948:03DA) and _SoundDriverSilenceToOneVoice (1948:046B).
         PUBLIC  _SetThreeVoices         ; @ 1948:034A
@@ -609,7 +631,9 @@ _SoundDriverInstall PROC FAR
         pop     ds
         in      al, 61h
         mov     [gPort61Save], al
-        out     61h, al
+        out     61h, al              ; the value just read is written back unchanged, not a gate change:
+                                     ; it keeps the port as the BIOS left it until _SetOneVoice or
+                                     ; _SetThreeVoices adjusts the bits
         cmp     byte ptr [gTandyOn], 1
         je      installTandy
         call    _SetOneVoice
