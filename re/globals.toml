@@ -113,8 +113,8 @@ why = "Purpose unknown: 1 only on the Tandy path (src/E07C8.C:307), where the sp
 
 [[global]]
 id = "ds:8A67"
-name = "gSpeakerOn"
-why = "the PC speaker / Tandy driver select applied by 1948:0458 (E1948.ASM: 1 is Tandy, 0 is PC speaker); PlaySound (177D:0070) and PlaySoundAtCell (177D:0106) set it to 1, and their 0 stores (177D:00B3, 177D:021E) are dead (inside the `driverSound < 0` / `gCurSound < 0` blocks); the live 0 writer is ShutdownGame (src/E07C8.C:329)"
+name = "gTandyOn"
+why = "1 is Tandy, 0 the PC speaker: every test in src/E1948.ASM takes 1 as the Tandy path (SN76489 tone and volume writes, the Tandy note table) and 0 as the port 61h speaker (1948:0119, 01D6, 01E8, 02C7, 02F1, 0316, 03C5, 0588); StartupGame sets it to 1 only on the Tandy path (src/E07C8.C:305-307)"
 
 [[global]]
 id = "ds:5E22"

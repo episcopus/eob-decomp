@@ -1431,3 +1431,12 @@ new = "gAllocCount"
 kind = "global"
 why = "net allocation counter: MemAlloc adds one per successful allocation (src/E19BC.C:97) and MemFree subtracts one on every call (src/E19BC.C:120), and StartupAlloc clears it (src/E07A9.C:242); what reads the count is unknown, so the name says what it holds"
 date = "2026-11-01"
+
+[[rename]]
+id = "ds:8A67=gTandyOn"
+addr = "ds:8A67"
+old = "gSpeakerOn"
+new = "gTandyOn"
+kind = "global"
+why = "1 is Tandy, 0 the PC speaker: every test in src/E1948.ASM takes 1 as the Tandy path (SN76489 tone and volume writes, the Tandy note table) and 0 as the port 61h speaker (1948:0119, 01D6, 01E8, 02C7, 02F1, 0316, 03C5, 0588); StartupGame sets it to 1 only on the Tandy path (src/E07C8.C:305-307)"
+date = "2026-11-01"
