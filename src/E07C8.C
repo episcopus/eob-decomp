@@ -27,7 +27,7 @@ enum { DEFAULT_TEXT_ATTR1 = 0x0F, DEFAULT_TEXT_ATTR2 = 0x0C, INT3F_VECTOR = 0x3F
        VGA_SEG_AC00 = 0xAC00 };
 struct Unk8894 {            /* the object the pointer at ds:8894 (g8894) points at. The object's
                                own address is unknown: nothing in src/ or docs/ writes the pointer
-                               at ds:8894 (src/E1990.ASM:23-26). E1990.ASM calls it g8894 (src/E1990.ASM:23, :388); g8894 is this unit's placeholder name */
+                               at ds:8894 (src/E1990.ASM:23-26). E1990.ASM calls it gEnvPtr (src/E1990.ASM:23, :388); g8894 is this unit's placeholder name */
     char unknown[0x18];     /* +0x00 to +0x17: not read in src/; contents unknown */
     char far *number;       /* +0x18: a far pointer to a numeric string */
 };
@@ -115,7 +115,7 @@ extern unsigned char far *gFE68;      /*@ ds:FE68: the palette buffer StartupGam
                                          bytes have no reader in src/. Case labels 2 and 3 (:392) get 0x300
                                          bytes; main loads eobpal.col over it for choices 3 and 4 (:257), and the VGA choice (gGraphicsChoice == 3) has src/EOV3.C:584 load `<script>.PAL` over it and src/EOV4.C:1054-1061 send it to the setter when the request flag gFB45 is set (set at src/EOV3.C:686) and clear gFB45 */
 extern unsigned char g3057[];  /*@ ds:3057: the table passed to the palette setter for graphics choices 1 and 2 (no eobpal.col). Its length is unknown: no source or doc gives it, and the 16 bytes written at :385-387 belong to the gFE68 buffer, not this. Whether it is a palette is [H] (src/EOV4.C:1035) */
-extern void far *gFont8x8;               /*@ ds:FE5A: the 8x8 font loaded from Font8.fnt (whitepaper
+extern void far *gFont8x8;            /*@ ds:FE5A: the 8x8 font loaded from Font8.fnt (whitepaper
                                          4.4, docs/design/WHITEPAPER.md:171: FONT8.FNT is 8 x 8,
                                          checked by 1A47:0005; the file is 0x104 + 128 x 8 bytes) */
 extern void far *gA9C0;               /*@ ds:A9C0: the 6x6 font loaded from FONT6.FNT (whitepaper
@@ -129,7 +129,7 @@ extern unsigned far gMemTopSeg;       /*@ 1990:0002: the segment where program m
 extern struct Unk8894 far *g8894;   /*@ ds:8894: the pointer StartupGame dereferences as
                                          g8894->number (:311). The object's address is unknown:
                                          nothing in src/ or docs/ writes the pointer at ds:8894
-                                         (src/E1990.ASM:23-26). E1990.ASM calls it g8894 (src/E1990.ASM:23, :388); g8894 is this unit's placeholder name */
+                                         (src/E1990.ASM:23-26). E1990.ASM calls it gEnvPtr (src/E1990.ASM:23, :388); g8894 is this unit's placeholder name */
 extern char far *gOverlayFiles[];     /*@ ds:3074: the five overlay name pointers (cga/tga/ega/
                                          mcga/vga), indexed by the graphics choice; the order is
                                          the EOB.EXE name order and whitepaper 2.6 (1 Tandy,
@@ -377,7 +377,7 @@ int AllocationFailure(void);
     gA9C0 = f1A47_0005("FONT6.FNT");
     if (!gFont8x8 || !gA9C0)
         goto font_error;
-    f1A47_0169(gFont8x8);          /* makes the 8x8 font current after both fonts load; why it is set
+    f1A47_0169(gFont8x8);       /* makes the 8x8 font current after both fonts load; why it is set
                                    here, after the loads, is not in the file */
     switch (gGraphicsChoice - 1) {
     case 0:
