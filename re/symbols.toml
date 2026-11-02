@@ -2685,6 +2685,8 @@ addr = "0DE8:0474"
 size = 195
 evidence = ["near", "frame"]
 name = "MoveCarriedItem"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0de8_0537"
@@ -2703,6 +2705,8 @@ addr = "0DE8:05BB"
 size = 424
 evidence = ["near", "frame"]
 name = "UseItemByKind"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0de8_0763"
@@ -2731,6 +2735,8 @@ addr = "0DE8:09B9"
 size = 290
 evidence = ["far", "frame"]
 name = "DamageCharacter"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0de8_0adb"

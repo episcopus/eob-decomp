@@ -349,10 +349,8 @@ fail:
 /* 0DE8:0474: moves a carried item into gChars[who].m77[slot]. With `flag` set and the special
    slot m77[16] occupied, it takes that slot's item through f0BD2_02B9 (key 0, item -1). Otherwise
    it scans slots 24 down to 22 for the first occupied item whose gTable8DD2 m02 is not `type` (or
-   `type` is -1) and moves that item to `slot`, clearing the source. Called by 0DE8:0537.
-   DRAFT: matches except one reload of `item` before the m02 expression (ours mov ax,[bp-2],
-   original keeps the array load in AX). */
-/*@ 0DE8:0474 draft */ void MoveCarriedItem(int who, int slot, int type, int flag)
+   `type` is -1) and moves that item to `slot`, clearing the source. Called by 0DE8:0537. */
+/*@ 0DE8:0474 */ void MoveCarriedItem(int who, int slot, int type, int flag)
 {
     int i;
     int item;
@@ -362,13 +360,11 @@ fail:
     } else {
         for (i = 0x18; i >= 0x16; i--) {
             item = gChars[who].m77[i];
-            if (item == 0)
-                continue;
-            if (gTable8DD2[item].m02 == type && type != -1)
-                continue;
-            gChars[who].m77[slot] = item;
-            gChars[who].m77[i] = 0;
-            break;
+            if (item != 0 && (gTable8DD2[item].m02 != type || type == -1)) {
+                gChars[who].m77[slot] = item;
+                gChars[who].m77[i] = 0;
+                break;
+            }
         }
     }
 }
@@ -398,38 +394,30 @@ fail:
    0x10 (clearing the slot, pulling m77[16] through f0BD2_02B9), otherwise it scans all 27 slots
    for the first whose item m02 equals `kind` (clearing it and redrawing with f1547_0991 when the
    slot is below 2). A found item is dispatched through f0BD2_07DE (sound 0x1A when m02 is 7, else
-   0x0B, setting gDF4C), returning 0, or -4 when no item was found. Called by 0DE8:0763.
-   DRAFT: the kind 0x10 slot-clearing branch lays its blocks out differently (original tests
-   `m02 == 0x10` with je clear, ours with jne item0). */
-/*@ 0DE8:05BB draft */ int UseItemByKind(int who, int slot)
+   0x0B, setting gDF4C), returning 0, or -4 when no item was found. Called by 0DE8:0763. */
+/*@ 0DE8:05BB */ int UseItemByKind(int who, int slot)
 {
     int m02;
     int kind;
     int item;
-    int i;
     int idx;
+    int i;
 
     m02 = gTable8DD2[slot].m02;
     kind = g552F[m02];
     item = 0;
     if (kind == 0x10) {
         item = gChars[who].m77[0];
-        if (item == 0) {
+        if (item == 0 || gTable8DD2[item].m02 != 0x10)
             item = 0;
-        } else if (gTable8DD2[item].m02 == 0x10) {
+        else
             gChars[who].m77[0] = 0;
-        } else {
-            item = 0;
-        }
         if (item == 0) {
             item = gChars[who].m77[1];
-            if (item == 0) {
+            if (item == 0 || gTable8DD2[item].m02 != 0x10)
                 item = 0;
-            } else if (gTable8DD2[item].m02 == 0x10) {
+            else
                 gChars[who].m77[1] = 0;
-            } else {
-                item = 0;
-            }
         }
         if (item == 0 && gChars[who].m77[16] != 0)
             item = f0BD2_02B9(&gChars[who].m77[16], 0, -1);
@@ -444,19 +432,20 @@ fail:
             }
         }
     }
-    if (item == 0)
-        return -4;
-    idx = who;
-    if (idx > 3)
-        idx -= 2;
-    if (f0BD2_07DE(who, item, gSoundVolume, g1A1B[gFBCC * 4 + idx], gFBCC, m02)) {
-        if (m02 == 7)
-            PlaySound(0x1a);
-        else
-            PlaySound(0xb);
-        gDF4C = 1;
+    if (item != 0) {
+        idx = who;
+        if (idx > 3)
+            idx -= 2;
+        if (f0BD2_07DE(who, item, gSoundVolume, g1A1B[idx + gFBCC * 4], gFBCC, m02)) {
+            if (m02 == 7)
+                PlaySound(0x1a);
+            else
+                PlaySound(0xb);
+            gDF4C = 1;
+        }
+        return 0;
     }
-    return 0;
+    return -4;
 }
 /* 0DE8:0763: runs the action `field` for character `who` and slot `slot`. It derives the item's
    m02, calls f0EF3_12A1 when mE3 bit 2 is set, dispatches on the gItemTypes m0E kind (1 rolls
@@ -543,10 +532,10 @@ fail:
    out, redraws through f1547_0991 (or DrawMemberPortrait when gFB44 is set), triggers the party-wipe
    ending when hp is at or below -10 and arms ApplyCharEffect(who, 0x12, 6, 1). Called by 0EF3,
    0E08E6, 122E, 1414 and overlay 6.
-   DRAFT: the mE2 clamp differs. The original tests the record offset, not the byte: it emits
-   `mov ax,[bp-4]; add ax,0xdf; or ax,ax; jae` (rec + mDF, always nonzero) before the mE2 store,
-   where ours emits `cmp byte es:[bp-4+0xe2],0; jge`. */
-/*@ 0DE8:09B9 draft */ void DamageCharacter(int who, int amount)
+   QUIRK 0DE8:09FD: the mE2 clamp reads `if (&rec->mDF < 0)`, a far-pointer comparison that is
+   always false, so the compiler emits `mov ax,[bp-4]; add ax,0xdf; or ax,ax; jae` and the
+   following `rec->mE2 = 0` never runs. Kept as written. */
+/*@ 0DE8:09B9 */ void DamageCharacter(int who, int amount)
 {
     struct CharRec far *rec;
 
@@ -555,7 +544,7 @@ fail:
     rec = &gChars[who];
     if (rec->mE2 != 0) {
         rec->mE2 -= amount;
-        if (rec->mE2 < 0)
+        if (&rec->mDF < 0)  /* QUIRK 0DE8:09FD: always false (see the comment above) */
             rec->mE2 = 0;
     }
     rec->hp -= amount;
@@ -573,7 +562,7 @@ fail:
         rec->mDF -= amount;
         if (rec->mDF <= 0) {
             rec->mDF = 0;
-            f0EF3_0F86(rec);
+            f0EF3_0F86(&gChars[who]);
         }
     }
     if (gFB44 == 0)
