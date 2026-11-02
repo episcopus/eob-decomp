@@ -4142,6 +4142,8 @@ unit = "e122e"
 addr = "122E:1AAB"
 size = 175
 evidence = ["frame"]
+notes = "draft 2026-11-01: matches every byte except the LoadScreenImage call's 0:0x2067 page, 1 byte short: the original pushes its segment with `mov ax,0; push ax` (122E:1B2E) where our -ml -O -Z build folds the constant to `xor ax,ax; push ax`. The rest (the gFB44/gFlag guards, the byte/word/byte read, the gSoundVolume/gFBCC stores, the overlay calls and the gA9EC stop) is written from the disassembly. The overlay callees are annotated at their stub entries (210C:007F, 210C:002F, 210C:007A, 2116:0043), not the ovl3/ovl4 offsets the packet shows."
+name = "LoadLevelOp"
 
 [[function]]
 id = "e122e_1b5a"

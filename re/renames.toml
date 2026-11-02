@@ -1359,3 +1359,12 @@ new = "AddEffectOp"
 kind = "function"
 why = "122E:0C4D is the opcode that copies a script item into a free slot (CopyItemToFreeSlot) and adds a DD effect (AddDDEffect), or runs f0EF3_097B when the opcode byte is 0xDF"
 date = "2026-11-01"
+
+[[rename]]
+id = "122E:1AAB=LoadLevelOp"
+addr = "122E:1AAB"
+old = "f122E_1AAB"
+new = "LoadLevelOp"
+kind = "function"
+why = "122E:1AAB is the load-level opcode: it reads a byte, a word (gSoundVolume) and a page byte (gFBCC), resets and saves the level through the ovl3 entries, loads the INVENT screen (gText5BA1), runs ovl4:2039, sets the sound volume and stops the script driver (gA9EC)"
+date = "2026-11-01"

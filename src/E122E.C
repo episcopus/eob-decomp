@@ -45,6 +45,17 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
 extern char gFileNameBuf[]; /*@ ds:FE6E */     /* the text buffer sprintf formats into (src/E082C.C) */
 extern int gForceDoorRoll[]; /*@ ds:59B0 */    /* force-door roll thresholds, indexed by CharRec.m0D (122E:0325) */
 extern signed char g1905[]; /*@ ds:1905 */     /* per-object-kind handler selector (src/E0DE8.C) */
+extern char gFB44; /*@ ds:FB44 */              /* a display-mode byte (src/E0ACD.C) */
+extern char gF542[]; /*@ ds:F542 */            /* a message buffer (src/E0ACD.C) */
+extern char gFlag; /*@ ds:F3B9 */              /* a mode byte (src/E0ACD.C) */
+extern int Action01E3(void far *action); /*@ 0ACD:01E3 */
+extern void f0EF3_2541(char far *text); /*@ 0EF3:2541 */
+extern void Ovl3_0A7C(int n); /*@ 210C:007A */  /* overlay 3 entry, ovl3:0A7C */
+extern void SaveLevelState(int level); /*@ 210C:002F */  /* overlay 3 entry, ovl3:11AF */
+extern void ResetLevel(void); /*@ 210C:007F */  /* overlay 3 entry, ovl3:19F7 */
+extern void fOvl4_2039(void); /*@ 2116:0043 */  /* overlay 4 entry */
+extern void LoadScreenImage(char far *name, char far *extra, int srcKind, int dstKind, int mode); /*@ 082C:051B */
+extern char gText5BA1[]; /*@ ds:5BA1 */        /* the "INVENT" screen name (122E:1AAB) */
 
 /* The 52-byte click-region records at ds:E06B, one chain per object kind (122E:0055 walks `next`).
    `kind` indexes gRectKinds; bit 0 of `flags` mirrors `x` about the 176-pixel screen width. */
@@ -812,7 +823,38 @@ void f122E_1DA8(int a, int b);  /* forward: 1DA8 comes after its callers */
     return (long)(script - start);
 }
 /*@ 122E:147F stub */ void f122E_147F(void) {}
-/*@ 122E:1AAB stub */ void f122E_1AAB(void) {}
+/* 122E:1AAB: the load-level opcode. It refreshes the display (Action01E3 and f0EF3_2541 on the
+   gF542 buffer when gFB44 and gFlag are set), reads a byte, a word and a byte, stores the word as
+   gSoundVolume and the byte as gFBCC (unless 0xFF), resets and saves the level, runs ovl3:0A7C,
+   loads the INVENT screen (gText5BA1) with the 0:0x2067 page, runs ovl4:2039, sets the sound volume
+   and stops the script driver (gA9EC). Returns 0. */
+/*@ 122E:1AAB draft */ long LoadLevelOp(char far *script)
+{
+    char v1;
+    char v2;
+    int id;
+
+    if (gFB44 != 0)
+        Action01E3(gF542);
+    if (gFlag != 0)
+        f0EF3_2541(gF542);
+    script++;
+    v1 = *script++;
+    id = *(int far *)script;
+    script += 2;
+    v2 = *script++;
+    gSoundVolume = id;
+    if (v2 != (char)0xff)
+        gFBCC = v2;
+    ResetLevel();
+    SaveLevelState(gFBC8);
+    Ovl3_0A7C(v1);
+    LoadScreenImage(gText5BA1, (char far *)0x2067, 5, 3, 2);
+    fOvl4_2039();
+    SetSoundVolume(id);
+    gA9EC = 1;
+    return 0;
+}
 
 /* 122E:1B5A: sub-opcode 0xE2: when the byte is 0xE2, read a word and add it as party experience.
    Returns the bytes read. */
