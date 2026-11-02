@@ -73,7 +73,7 @@ extern void SoundDriverResume(void);    /*@ 084A:0457 */
 extern unsigned char far *gPaletteBuf;     /*@ ds:2D42 */
 extern unsigned char gOverlayBuf[];     /*@ ds:1C0A */
 extern unsigned char gCopyBuf[];        /*@ ds:1BEA */
-extern unsigned char gEgaPalette[16];   /*@ ds:19E7 */
+extern unsigned char gBuiltinPalette[16];   /*@ ds:19E7 */
 extern int gDriverState;                /*@ ds:1F76 */  /* Purpose unknown: a driver flag; ovl0:003A sets bit 0 only */
 
 /* the delay of the Westwood logo card, in timer ticks: 50, read by PlayLogoSequence (ds:1D28) */
@@ -136,7 +136,7 @@ void PlayLogoSequence(void);
     gAbort = 0;
     if (gGraphicsChoice == 1 || gGraphicsChoice == 2) {
         gUnknown1EE2();
-        gSetPalette(gEgaPalette);
+        gSetPalette(gBuiltinPalette);
     }
     PlayLogoSequence();
     if (!gAbort)

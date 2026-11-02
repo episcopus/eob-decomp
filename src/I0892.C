@@ -40,10 +40,13 @@
 /* the sound map size (120 bytes) and the driver data block size (:06C1 to :0811) */
 #define SOUND_MAP_SIZE 0x78L
 #define DRIVER_BLOCK_SIZE 0x36B0L
-/* The palette entry both start-up paths set: entry 15 is white. The EGA/Tandy path writes a
-   one-byte colour number per entry into the 16-byte table (:05D3 to :05DB), so entry 15 (0xf) is
-   EGA colour 15. The VGA path writes three DAC bytes per entry into the 0x300-byte table, so
-   entry 15 starts at 0x2d and its three bytes take the 6-bit VGA maximum 0x3f (:0612 to :0625). */
+/* The palette entry the start-up paths set: entry 15 is white. StartupGame's palette switch
+   (:0596) allocates the 16-byte buffer in every case but writes entries only for the EGA and VGA
+   cases: case 0 (Tandy, :05B2) writes no entry; case 1 (EGA, :05D3 to :05DB) writes two bytes of
+   the 16-byte table, entry 0 = 0 and entry 15 = 0xf (EGA_WHITE), then passes the built-in table
+   gBuiltinPalette to the setter; the VGA cases (:0612 to :0625) write three DAC bytes per entry
+   into the 0x300-byte table, so entry 15 starts at 0x2d and its three bytes take the 6-bit VGA
+   maximum 0x3f. */
 #define PALETTE_ENTRY15 0xf
 #define EGA_WHITE 0xf
 #define PALETTE_ENTRY_BYTES 3
@@ -112,8 +115,11 @@ extern void far *gSoundMap;              /*@ ds:28A0: the 120-byte (SOUND_MAP_SI
                                              sound.dat or pcsound.dat (:06D1 to :0711); EOB keeps
                                              the same map as gSoundMap (ds:DCAC, src/E07A9.C:122,
                                              src/E177D.C:3-4) */
-extern unsigned char gEgaPalette[];            /*@ ds:19E7: the built-in palette table main passes to the
-                                             setter for graphics choices 0 and 1 (:010F) */
+extern unsigned char gBuiltinPalette[];            /*@ ds:19E7: the 16-byte built-in palette table,
+                                             passed to the setter on the Tandy and EGA choices:
+                                             graphics choices 1 (Tandy) and 2 (EGA) in Main (:010F,
+                                             :0116, the switch cases 0 and 1), and StartupGame's
+                                             EGA case (:05E0) */
 extern unsigned char g19F7[];            /*@ ds:19F7: 16 zero bytes, the table main passes to the
                                              setter for the Tandy choice when the memory top is set (:01AE) */
 
@@ -171,7 +177,8 @@ extern int CloseFileHandle(int handle);          /*@ 0000:549D */
 
 /* 0E6C:00B8: not DGROUP, a data segment of the library. Its first word is the INTRO.EXE file
    handle the INT 3Fh handler (09E1:0000) keeps and reopens to read the overlay (it stores the
-   _open result at 09E1:00A9; the name it opens is "INTRO.EXE" at ds:1A2A); EOB's twin does the
+   _open result at 09E1:00A9; the name pointer it pushes before the _open is ds:1A2A, the string
+   "INTRO.EXE", at 09E1:0063, :007F and :0098); EOB's twin does the
    same at src/E1A72.ASM:169-171 and :252-254. Main closes it through CloseFileHandle (0000:549D)
    before the hand-off (:018E). What the bytes after the handle hold is not known. */
 extern unsigned far g0E6C_00B8;                  /*@ 0E6C:00B8 */
@@ -236,10 +243,10 @@ int AllocationFailure(void);
     if (StartupGame() == 1) {
         switch (gGraphicsChoice - 1) {
         case 0:
-            gSetPalette(gEgaPalette);
+            gSetPalette(gBuiltinPalette);
             break;
         case 1:
-            gSetPalette(gEgaPalette);
+            gSetPalette(gBuiltinPalette);
             break;
         case 2:
         case 3:
@@ -367,7 +374,7 @@ int AllocationFailure(void);
         gPaletteBuf = MemAlloc(PALETTE_BUFFER_SIZE, 0);
         gPaletteBuf[0] = 0;
         gPaletteBuf[PALETTE_ENTRY15] = EGA_WHITE;
-        gSetPalette(gEgaPalette);
+        gSetPalette(gBuiltinPalette);
         break;
     case 2:
     case 3:
@@ -437,9 +444,9 @@ done:
    ("Memory Corrupt!!!" when heapcheck reports -1) and puts the saved INT 3Fh vector back.
    Callers: main (:0184) and AllocationFailure (:08E9) in this unit, and the library's error
    exits through far calls, Int3FHandler (09E1:0000) at 09E1:008E and 09E1:00C2, OutOfMemory
-   (094F:02B6, the default allocation-failure hook) at 094F:02CF, FatalError (0B5D:00A0) at
-   0B5D:00C8, FileOpen (0B5D:00D1, the illegal-mode case) at 0B5D:01D3 and DisplayFileError
-   (0B5D:0AD3, the ESC key) at 0B5D:0D07, so it is also the exit path of the library's fatal file
+   (094F:02B6, the default allocation-failure hook) at 094F:02D6, FatalError (0B5D:00A0) at
+   0B5D:00CA, FileOpen (0B5D:00D1, the illegal-mode case) at 0B5D:01D5 and DisplayFileError
+   (0B5D:0AD3, the ESC key) at 0B5D:0D09, so it is also the exit path of the library's fatal file
    and memory errors. */
 /*@ 0892:0835 */ void ShutdownGame(void)
 {
