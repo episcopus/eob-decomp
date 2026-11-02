@@ -180,7 +180,7 @@ extern void RedrawCharacters(void); /*@ 0D1C:0583 */
 extern void Action01E3(char far *text); /*@ 0ACD:01E3 */
 extern void f0EF3_2541(char far *text); /*@ 0EF3:2541 */
 extern void fOvl2_09ED(void); /*@ 2106:0039 */  /* overlay 2 entry, ovl2:09ED */
-extern void fOvl3_07A5(int a, int b, void far *buf); /*@ 210C:0052 */  /* overlay 3 entry, ovl3:07A5 */
+extern void fOvl3_07A5(char far *name, char far *sheet); /*@ 210C:0052 */  /* overlay 3 entry, ovl3:07A5 */
 extern void fOvl4_1F51(int n); /*@ 2116:005C */  /* overlay 4 entry, ovl4:1F51 */
 extern void LoadOverlayScreen(char far *name, int a, int b); /*@ 082C:05EC */
 extern void LoadScreenImage(char far *name, void far *buf, int a, int b, int c); /*@ 082C:051B */
@@ -203,7 +203,6 @@ void Ovl5_119E(void);
 void Ovl5_1204(void);
 void Ovl5_17C8(void);
 void Ovl5_1A82(int mode);
-void Ovl5_1CDD(int n);
 void Ovl5_1E1B(int a, int b, int x, int y, int c, int d);
 
 void PrintTableString(int index, int flag);
@@ -865,7 +864,7 @@ char gTable7B89[] = { 0x3B, 0xA6, 0x04, 0x70, 0xDC, 0x04, 0x70, 0xDC, 0x04, 0x70
         f1A47_0169(font);
         gScrollOn = 0;
         LockHidePointer();
-        fOvl3_07A5(0, 0, gSeg1D8 + (gSeg1D0[gFBC8 - 1] << 5));
+        fOvl3_07A5(0, gSeg1D8 + (gSeg1D0[gFBC8 - 1] << 5));
         LoadScreenImage(gText7F18, gSeg1F8, 5, 3, 0);
         LoadScreenImage(gText7F20, gSeg1F0, 5, 3, 2);
         g8115 = 0;
@@ -876,7 +875,43 @@ char gTable7B89[] = { 0x3B, 0xA6, 0x04, 0x70, 0xDC, 0x04, 0x70, 0xDC, 0x04, 0x70
     SetTextWindow(7);
     LockShowPointer();
 }
-/*@ ovl5:1CDD stub */ void Ovl5_1CDD(int n) {}
+/* ovl5:1CDD: the "use item" result panel. It hides the mouse cursor, runs the pending
+   gFB44/gFlag messages, opens ds:7F27 (1: read) and reads it into the string base gSegDF4E, sets
+   the text window and the panel colours, draws the panel (0,0)-(0xaf,0xae) and shows message `msg`
+   through PrintTableString. It then restores the screen: frees the wall textures into gOverlayBuf,
+   loads the two images ds:7F30 and ds:7F38, redraws the characters and the view frame and resets
+   the text window to 7. Called by the item-slot handler 0BD2:1001. */
+/*@ ovl5:1CDD draft */ void UseItemPanel(int msg)
+{
+    int handle;
+
+    gFE42 = 1;
+    if (gFB44)
+        Action01E3(gF542);
+    if (gFlag)
+        f0EF3_2541(gF542);
+    handle = FileOpen(gText7F27, 1);
+    FileRead(handle, gSegDF4E, 0x7d00L);
+    FileClose(handle);
+    gScrollOn = 1;
+    g169 = gF57E;
+    SetTextWindow(0xc);
+    g8117 = 0xac;
+    g8119 = 0x2d0;
+    DrawFilledPanel(0, 0, 0xaf, 0xae, gFB4C, gF53A, gF57E);
+    LockShowPointer();
+    PrintTableString(msg, 1);
+    gScrollOn = 0;
+    LockHidePointer();
+    fOvl3_07A5(0, gOverlayBuf);
+    LoadScreenImage(gText7F30, gSeg1F8, 5, 3, 0);
+    LoadScreenImage(gText7F38, gSeg1F0, 5, 3, 2);
+    g8115 = 0;
+    RedrawCharacters();
+    DrawViewFrame(1);
+    SetTextWindow(7);
+    LockShowPointer();
+}
 /* ovl5:1E1B: shuffles an (cols x rows) grid and draws it. It fills two index arrays in the
    gBufDCFC buffer (the x indices and, at +0x280, the y indices) with 0..cols-1 and 0..rows-1,
    Fisher-Yates shuffles each with RandomRange, then for each row k and column i draws the cell

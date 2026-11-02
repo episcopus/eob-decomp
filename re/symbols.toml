@@ -7783,6 +7783,7 @@ unit = "eov5"
 addr = "ovl5:1CDD"
 size = 318
 evidence = ["ovl"]
+notes = "blocked: the constant-segment screen buffers, the same wall CharOverlay (1A82) hits. The body matches up to +00E2; the two LoadScreenImage buffers ds:7F30 and ds:7F38 take the far object gSeg1F8 (segment 01F8, offset 0) and gSeg1F0 (segment 01F0), which the original reaches with the literal words `mov ax,0x1f8` then `mov ax,0` (ovl5:1DB9/1DBC and ovl5:1DD9/1DDC). Our build loads the object's relocated frame (0x1a76 here) and its stub offset (0x8300/0x8200), so the pair is not the literal segment:offset the original has. `(void far *)0x1F80L` gives the documented MK_FP form (`xor ax,ax`, escalation e177d), so no source form was found; src/EOV5.C declares gSeg1F8/gSeg1F0 as far objects at 01F8:0000 / 01F0:0000. Everything else in the function (the file read into gSegDF4E, the panel, PrintTableString, fOvl3_07A5(0, gOverlayBuf), the redraw) matches."
 
 [[function]]
 id = "eov5_1e1b"
