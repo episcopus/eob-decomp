@@ -149,6 +149,7 @@ extern int f0D1C_0BEB(int obj, int flag); /*@ 0D1C:0BEB */
 extern int f0D1C_059B(int who, int attack); /*@ 0D1C:059B */
 extern int f0D1C_07DB(int who, int flag); /*@ 0D1C:07DB */
 extern int f0BD2_02B9(void far *head, int key, int item); /*@ 0BD2:02B9 */
+extern int f0BD2_07DE(int who, int field, int volume, int tableByte, int page, int m02); /*@ 0BD2:07DE */
 extern int f0BD2_07DE(int who, int slot, int a, int b, int c, int d); /*@ 0BD2:07DE */
 extern int f08E6_15B4(char a, int b); /*@ 08E6:15B4 */
 extern int f0EF3_04F7(int who); /*@ 0EF3:04F7 */
@@ -365,7 +366,27 @@ fail:
         }
     }
 }
-/*@ 0DE8:0537 stub */ void f0DE8_0537(void) {}
+/* 0DE8:0537: tries to use the item in the carried slot `slot` of character `who` against the
+   item type `field`. It dispatches through f0BD2_07DE (the item's m02, gFBCC, the g1A1B page
+   byte, gSoundVolume); on success it plays sound 0x0B, clears gChars[who].m77[slot] and refills
+   it through f0DE8_0474(who, slot, -1, 0), setting gDF4C. Returns 0. Called by 0DE8:0763. */
+/*@ 0DE8:0537 */ int f0DE8_0537(int who, int slot, int field)
+{
+    int idx;
+
+    idx = who;
+    if (idx > 3)
+        idx -= 2;
+    if (f0BD2_07DE(who, field, gSoundVolume, g1A1B[gFBCC * 4 + idx], gFBCC,
+                   gTable8DD2[field].m02)) {
+        PlaySound(0xb);
+        gChars[who].m77[slot] = 0;
+        f0DE8_0474(who, slot, -1, 0);
+        gDF4C = 1;
+    }
+    return 0;
+}
+
 /*@ 0DE8:05BB stub */ void f0DE8_05BB(void) {}
 /*@ 0DE8:0763 stub */ void f0DE8_0763(void) {}
 /*@ 0DE8:093B stub */ void f0DE8_093B(void) {}
