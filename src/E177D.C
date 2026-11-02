@@ -4,11 +4,11 @@
    (ds:DCAC, a far pointer to the 120-byte map StartupAlloc allocates, src/E07A9.C:216) and the
    driver's 32C8h data block into segment 0000 (_TEXT) at offset 0416 (f0_03AA, 0000:03AA, returns
    cs:0416; f0_03FA, 0000:03FA, adds the 0416 base to the block's 300-word table). PlaySound
-   (177D:0070) plays the driver sound a game number maps to; PlaySoundAtCell (177D:0106) retunes
-   and restarts the sound recorded by the previous call, at the attenuation that call recorded, and
-   records the new sound and cell only for a later call; PlaySoundDefault (177D:00F3) passes the
-   party's map cell gPartyCell (ds:FBCA) as the sound's cell. A call's attenuation is the distance
-   between gPartyCell and that cell, Distance(gPartyCell, cell) (177D:0261 to 0279). gDrvReg
+   (177D:0070) plays the driver sound a game number maps to; PlaySoundAtCell (177D:0106) on AdLib
+   retunes and restarts the sound recorded by the previous call, at the attenuation that call
+   recorded, and records the new sound and cell only for a later call; PlaySoundDefault (177D:00F3)
+   passes the party's map cell gPartyCell (ds:FBCA) as the sound's cell. A call's attenuation is the
+   distance between gPartyCell and that cell, Distance(gPartyCell, cell) (177D:0261 to 0279). gDrvReg
    (0000:3B36) is the driver's busy flag: the program waits for it to clear before it writes the
    sound registers and sets it to 0Bh after a start. Whitepaper 2.7 (AdLib) and 4.4 (ADLIB.DAT /
    PCGAMESN.DAT). Compiled -ml -O -Z. */
@@ -41,7 +41,8 @@ extern unsigned char far *gSoundMap; /*@ ds:DCAC */  /* a far pointer to the 120
                                                         allocates (gSoundMap = MemAlloc(120L, 0),
                                                         src/E07A9.C:216); read by LoadSoundDriver
                                                         (177D:000A) and indexed by PlaySound
-                                                        (177D:0070); whitepaper 4.4 */
+                                                        (177D:0070) and PlaySoundAtCell
+                                                        (177D:0283); whitepaper 4.4 */
 extern int gSoundOn; /*@ ds:80E6 */  /* the sound-on flag from argv[2] (whitepaper 2.6); PlaySound and
                                         PlaySoundAtCell return at once when it is zero */
 extern unsigned char gSoundCard; /*@ ds:B892 */  /* the sound choice from argv[2] minus '1' (whitepaper
@@ -88,7 +89,7 @@ extern int gPartyCell; /*@ ds:FBCA */  /* the party's map cell: PlaySoundDefault
                                           that cell to Distance (17A6:0F61; 177D:026A pushes it,
                                           177D:026E is the call). ResetMapScreen sets it to 0x1EA
                                           (src/E0ACD.C:939); objects and monsters are measured from
-                                          and compared with it (src/E08E6.C:216, :331, :462, :535;
+                                          and compared with it (src/E08E6.C:221, :336, :467, :540;
                                           src/EOV6.C:410) and it indexes the nine-byte cell records
                                           (src/E0D1C.C:352, :358) */
 
