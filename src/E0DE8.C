@@ -453,7 +453,30 @@ fail:
     return 0;
 }
 /*@ 0DE8:0763 stub */ void f0DE8_0763(void) {}
-/*@ 0DE8:093B stub */ void f0DE8_093B(void) {}
+/* 0DE8:093B: the party-wipe ending. It counts how many of the six characters survive the
+   f0D1C_0670(n, 5) test (creatures with hit points); when none does it hides the pointer, fills
+   the panel (0, 0x79)-(0x13F, 0xC8), writes "All of your party has been defeated. ..." in text
+   window 9 and shuts the game down. Called by 0DE8:09B9. */
+/*@ 0DE8:093B */ void f0DE8_093B(void)
+{
+    int n;
+    int alive;
+
+    alive = n = 0;
+    for (; n < 6; n++)
+        alive += f0D1C_0670(n, 5);
+    if (alive != 0)
+        return;
+    LockHidePointer();
+    DrawFilledPanel(0, 0x79, 0x13f, 0xc8, gFB4C, gF53A, gF57E);
+    SetTextWindow(9);
+    DrawText("All of your party has been defeated.  The minions of evil will be able to carry out "
+             "their plans unhindered!\r");
+    LockShowPointer();
+    DelaySeconds(1);
+    ShutdownGame();
+}
+
 /*@ 0DE8:09B9 stub */ int f0DE8_09B9(int who, int what) { return 0; }
 /*@ 0DE8:0ADB stub */ void f0DE8_0ADB(void) {}
 /*@ 0DE8:0B45 stub */ void f0DE8_0B45(void) {}
