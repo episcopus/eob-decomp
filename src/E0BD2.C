@@ -10,7 +10,8 @@
 /* A 14-byte item record. src/E0D1C.C declares the same layout with its base at ds:8DD2 (Entry14);
    the code here computes the base at ds:8DD0 and uses the fields below. */
 struct ItemRecord {
-    char pad00[2];
+    signed char m00;        /* +0 (ds:8DD0): indexes the item-name table at segment 0x1F28 */
+    signed char m01;        /* +1 (ds:8DD1): the second name index */
     unsigned char flags;    /* +2 (ds:8DD2): bit 0x20 gates 0BD2:0AF2/0C8E, 0x40 is set by
                                0BD2:040E and tested by 0BD2:05B5; src/E07A9.C calls it flags */
     signed char icon;       /* +3 (ds:8DD3): the icon number (src/E07A9.C Entry14.icon) */
@@ -128,6 +129,11 @@ extern void HealCharacter(int who, int amount); /*@ 0DE8:0ADB */
 extern void ApplyStatusEffect(int who, int mask, char far *text, int attack, int count, int value, int flag); /*@ 0DE8:101A */
 extern char far *SkipStrings(char far *text, int count); /*@ 0D1C:07A7 */
 extern char g3893[]; /*@ ds:3893 */        /* the "feels ..." string table (0BD2:0D2D) */
+extern char far *g1278[]; /*@ ds:1278 */   /* far item-name pointers indexed by m0B (0BD2:05B5) */
+extern char far *g12E0[]; /*@ ds:12E0 */   /* far item-name pointers indexed by m0B (0BD2:05B5) */
+extern char g37B4[]; /*@ ds:37B4 */        /* a string table SkipStrings walks (0BD2:05B5) */
+extern char g37E1[]; /*@ ds:37E1 */        /* a string table SkipStrings walks (0BD2:05B5) */
+extern char g3837[]; /*@ ds:3837 */        /* a string table SkipStrings walks (0BD2:05B5) */
 
 extern int f0D1C_00DA(int value, int page); /*@ 0D1C:00DA */
 extern int f0D1C_02DC(void); /*@ 0D1C:02DC */
@@ -145,6 +151,8 @@ extern void ComputeArmourClass(int who); /*@ 0DE8:0D5E */
 extern void PlaySound(int sound); /*@ 177D:0070 */
 extern void Unpack0(char far *src, void far *dst, long len); /*@ 1BA8:0006 */
 extern int sprintf(char far *buf, char far *fmt, ...); /*@ 0000:57AE */
+extern unsigned strlen(char far *s); /*@ 0000:67F6 */
+extern char *strcpy(char far *dest, char far *src); /*@ 0000:67CD */
 extern int far RollDice(char count, char sides, char bonus); /*@ 082C:0458 */
 
 /* functions of this unit, forward (address order) */
@@ -155,7 +163,7 @@ int f0BD2_0AF2(int item, int who, int row);
 void UseSelectedItem(int slot);
 void SwapSelectedItem(int who, int row);
 int ItemClassAllowed(int who, int item);
-void f0BD2_05B5(int item);
+void DrawItemName(int item);
 
 /* functions of this unit, in address order (stubs not yet written) */
 /* 0BD2:000E: the "lost item" message. Rolls 1d27 for a starting slot, then scans the 27 item slots
@@ -179,7 +187,7 @@ void f0BD2_05B5(int item);
                 else
                     sprintf(gFileNameBuf, "%s has lost his ", gChars[who].name);
                 DrawText(gFileNameBuf);
-                f0BD2_05B5(item);
+                DrawItemName(item);
                 DrawText(".\r");
                 break;
             }
@@ -405,7 +413,81 @@ next:
     }
 }
 
-/*@ 0BD2:05B5 stub */ void f0BD2_05B5(int item) {}
+/* 0BD2:05B5: draws item `item`'s name into the text buffer. The record's first two bytes index two
+   name tables at segment 0x1F28, 0x23 bytes apart. When the record's flags have 0x40 and the second
+   name is empty, the item type's m0E low 7 bits select the name: the plain types use the first name
+   with "%s +%d" or "Cursed %s %d", and types 9, 10, 16, 14 and 18 use "Mage Scroll", "Cleric
+   Scroll", "Ring", "Potion" or "Wand" joined with " of " to a per-m0B far pointer (ds:1278,
+   ds:12E0) or a SkipStrings walk (ds:37B4, ds:37E1, ds:3837). Otherwise the second (or the first)
+   name is copied whole. The buffer is drawn with DrawText. Called by 0BD2:000E.
+   DRAFT: every field, literal and branch matches in shape; the remaining bytes are TCC's internal
+   assembler merging identical tails that the original keeps, as in 0BD2:1001: the `strcpy(buf, firstName)`
+   of case 0..3 (0BD2:06AC), the two sprintf forms (0BD2:066C, 068C) and the trailing strcpy
+   (0BD2:0748) are each inline in the original but cross-jumped in ours (0x22 bytes short). */
+/*@ 0BD2:05B5 draft */ void DrawItemName(int item)
+{
+    signed char m0B;
+    char cls;
+    struct ItemRecord *rec;
+    char far *firstName;
+    char far *secondName;
+    char far *str1;
+    char far *str2;
+    char buf[0x3C];
+
+    rec = &gItems[item];
+    firstName = (char far *)0x1F280000L + rec->m00 * 0x23;
+    secondName = (char far *)0x1F280000L + rec->m01 * 0x23;
+    cls = gItemTypes[rec->m02].m0E.byte & 0x7F;
+    m0B = rec->m0B;
+    str1 = 0;
+    str2 = 0;
+    if ((rec->flags & 0x40) && strlen(secondName) == 0) {
+        switch (cls & 0x7F) {
+        case 0:
+        case 1:
+        case 2:
+        case 3:
+            if (m0B == 0)
+                strcpy(buf, firstName);
+            else if (m0B < 0)
+                sprintf(buf, "Cursed %s %d", firstName, m0B);
+            else
+                sprintf(buf, "%s +%d", firstName, m0B);
+            break;
+        case 9:
+            str1 = "Mage Scroll";
+            str2 = g1278[m0B];
+            break;
+        case 10:
+            str1 = "Cleric Scroll";
+            str2 = g12E0[m0B];
+            break;
+        case 16:
+            str1 = "Ring";
+            str2 = SkipStrings(g37B4, m0B);
+            break;
+        case 14:
+            str1 = "Potion";
+            str2 = SkipStrings(g37E1, m0B);
+            break;
+        case 18:
+            str1 = "Wand";
+            str2 = SkipStrings(g3837, m0B);
+            break;
+        default:
+            strcpy(buf, firstName);
+            break;
+        }
+        if (str2 != 0)
+            sprintf(buf, "%s of %s", str1, str2);
+    } else if (rec->flags & 0x40) {
+        strcpy(buf, secondName);
+    } else {
+        strcpy(buf, firstName);
+    }
+    DrawText(buf);
+}
 
 /* 0BD2:07DE: reserves one of the ten effect records at ds:DD2C (returning 0 when all are live),
    queues `item` through 0BD2:01D0 with sound `kind | 4`, fills the record from the arguments and
