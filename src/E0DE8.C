@@ -192,7 +192,32 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
     return roll >= ac;
 }
 
-/*@ 0DE8:011A stub */ void f0DE8_011A(void) {}
+/* 0DE8:011A: the damage a hit deals. It starts from GetDerivedStatB(who) when `flag` is set and
+   `who` is valid, then adds a damage roll from the item type `itemType` (dice at m0A/m0B or
+   m07/m08 with the m09 bonus, the choice depending on whether `obj`'s gTable1A3B entry has m0E
+   bit 0 set) plus the item slot's m0B, or the bare RollDice(1, 2, 0) when `slot` is 0, and clamps
+   at 0. Called by 0DE8:01FF, 0DE8:02D4 and 0DE8:0359. */
+/*@ 0DE8:011A */ int f0DE8_011A(int who, int obj, int slot, int itemType, char flag)
+{
+    struct ItemType far *item;
+    int total;
+
+    if (flag != 0 && who != -1)
+        total = GetDerivedStatB(who);
+    else
+        total = 0;
+    if (slot != 0) {
+        item = &gItemTypes[itemType];
+        if (obj != -1 && (gTable1A3B[gObjs[obj].b0].m0E & 1))
+            total += RollDice(item->m0A, item->m0B, item->m09);
+        else
+            total += RollDice(item->m07, item->m08, item->m09);
+        total += gTable8DD2[slot].m0B;
+    } else {
+        total += RollDice(1, 2, 0);
+    }
+    return total < 0 ? 0 : total;
+}
 
 /* 0DE8:01D7: returns 1 when the item type `index` has a nonzero weapon kind whose low seven bits
    are 2 or 3, otherwise 0. The kind is the word at item+0x0E. Called by 0DE8:01FF and 0DE8:02D4
