@@ -6970,6 +6970,9 @@ unit = "eov0"
 addr = "ovl0:1EA9"
 size = 189
 evidence = ["ovl", "near", "frame"]
+name = "BuildCombatTables"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov0_1f66"

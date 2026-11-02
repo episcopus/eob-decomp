@@ -67,7 +67,9 @@ struct CharRec {                /* 243-byte character records at ds:F580 (src/E0
     char m1A;
     char m1B;
     char m1C;                   /* +1C: the destination of 284A's byte copy */
-    char pad1D[0x20 - 0x1d];
+    char m1D;
+    char m1E;
+    signed char m1F;            /* +1F: half of it indexes gTable5F35 (src/E0A72.C) */
     signed char m20;            /* +20: indexes g1231 (src/E0DE8.C) */
     char pad21[0x33 - 0x21];
     void far *sprite;           /* +33: the character's packed sprite buffer (src/EOV3.C) */
@@ -84,6 +86,12 @@ extern int gPanelX5E54[]; /*@ ds:5E54 */ /* per-character x read by ovl0:11BA (P
 extern int gPanelY5E5C[]; /*@ ds:5E5C */ /* per-character y read by ovl0:11BA (Purpose unknown) */
 extern char gStr61CB[]; /*@ ds:61CB */ /* a fixed report label (Purpose unknown) */
 extern char gStr6207[]; /*@ ds:6207 */ /* a fixed report label (Purpose unknown) */
+extern int gTable5FC5[][6]; /*@ ds:5FC5 */ /* per-class rows read by ovl0:1EA9 (Purpose unknown) */
+extern int gTable5F35[][6]; /*@ ds:5F35 */ /* per-class rows read by ovl0:1EA9 (Purpose unknown) */
+extern int gTable5F7D[][6]; /*@ ds:5F7D */ /* per-class rows read by ovl0:1EA9 (Purpose unknown) */
+extern int gOutDD04[6]; /*@ ds:DD04 */ /* six words ovl0:1EA9 writes (Purpose unknown) */
+extern int gOutDC98[6]; /*@ ds:DC98 */ /* six words ovl0:1EA9 writes (Purpose unknown) */
+extern signed char g116E[]; /*@ ds:116E */ /* per-class byte (src/E0A72.C) */
 extern void (far *gDrawText)(char far *text, int a, int b, int c, int d); /*@ ds:80CA */
 extern char far *gFont1A47; /*@ ds:FE4E */ /* the current font (src/E1547.C) */
 extern void far *gA9C0; /*@ ds:A9C0 */ /* the 6x6 font loaded from FONT6.FNT (src/E07A9.C) */
@@ -419,8 +427,28 @@ extern void far *g5E64[0x11]; /*@ ds:5E64 */ /* the 17 sliced icon pointers this
 /*@ ovl0:135D stub */ void Ovl0_135D(void) {}
 /*@ ovl0:1ADD stub */ void Ovl0_1ADD(void) {}
 /*@ ovl0:1BF2 stub */ void Ovl0_1BF2(void) {}
-/*@ ovl0:1EA9 stub */ void Ovl0_1EA9(void) {}
-/*@ ovl0:1F66 stub */ void Ovl0_1F66(void) {}
+/* ovl0:1EA9: builds two six-word combat tables for the current character gDCB0. For each of the
+   six slots it takes the larger of gTable5FC5[m20][i] and gTable5F35[m1F>>1][i] into gOutDD04[i],
+   copies gTable5F7D[m1F>>1][i] into gOutDC98[i], and when the class byte g116E[m20] is nonzero
+   forces gOutDC98[0] to 0x12. Called by ovl0:1BF2. Purpose unknown. */
+/*@ ovl0:1EA9 */ void BuildCombatTables(void)
+{
+    int cls;
+    int row;
+    int i;
+
+    cls = gChars[gDCB0].m1F >> 1;
+    row = gChars[gDCB0].m20;
+    for (i = 0; i < 6; i++) {
+        if (gTable5FC5[row][i] > gTable5F35[cls][i])
+            gOutDD04[i] = gTable5FC5[row][i];
+        else
+            gOutDD04[i] = gTable5F35[cls][i];
+        gOutDC98[i] = gTable5F7D[cls][i];
+        if (g116E[row])
+            gOutDC98[0] = 0x12;
+    }
+}/*@ ovl0:1F66 stub */ void Ovl0_1F66(void) {}
 /* ovl0:2051: returns the index (0-based) of the `n`th set bit of `mask`, scanning up to `count`
    bits; when fewer than `n` bits are set it returns `count`. No direct caller found. */
 /*@ ovl0:2051 */ int FindNthSetBit(int mask, int n, int count)
