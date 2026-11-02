@@ -11,17 +11,17 @@ Checked: `make match FILE=src/E1DE7.C` 9 of 9 functions ok, 2619 bytes; `make re
 
 ## Findings
 
-- [ ] must-fix src/E1DE7.C:52 (gGraphicsChoice, a changed line): "DrawTextFrame at src/E1DE7.C:164-166 and DrawTileRun at :198" points at other lines now. The shifts are `shift = 5;` at :168 and `shift = 6;` at :170 (DrawTextFrame), and DrawTileRun's `shift = 5 + ...` at :202. Round 7 checked these cites at 5131050, where they were right; the four lines added above moved them. Cite :168-170 and :202. (Evidence: `grep -n "shift = " src/E1DE7.C`.)
-- [ ] should src/E1DE7.C:52 (src/E07C8.C:44): "src/E07C8.C:44 says the digit indexes gOverlayFiles (0 cga, 1 tandy, 2 ega, 3 mcga/VGA, 4 vga)". Line 44 names gOverlayFiles and the digit 0..4; the list of names is on :45 (`order: 0 cga, 1 tandy, 2 ega, 3 mcga/VGA, 4 vga;`). Cite :44-45. (Evidence: `sed -n 42,46p src/E07C8.C`.)
-- [ ] should src/E1DE7.C:15 and :86 (ds:8115): "src/E082C.C:71" is one line early; the gStatusLine declaration is at src/E082C.C:72. The addresses 082C:05EC (LoadOverlayScreen, `gStatusLine = 2` at E082C.C:339) and 082C:081A (ShowMemoryDiagnostics, saves at :446, restores at :455) are right and do not move, so they can stay. Cite :72. (Evidence: `grep -n "gStatusLine" src/E082C.C`.)
-- [ ] should src/E1DE7.C:76 (ds:806A, a changed line): "the parameter is named `colour` (src/E082C.C:63)" cites ds:8062 (gDrawLine, E082C.C:63). The ds:806A declaration is src/E082C.C:64, where the parameter is `colour`, so the claim holds at :64. (Evidence: `sed -n 63,64p src/E082C.C`.)
-- [ ] should self-cites that the four added lines moved, in text this round did not change. Each is a cite into this file whose target is four lines later now:
-  - :85 (gScrollOn): "gated by it at src/E1DE7.C:270" should be :274, the `if (gFontHeight * gTextRow > ...` line.
-  - :141 (gFrameTable): "(gFrameTable[style], :169)" should be :173.
-  - :156 (QUIRK 1DE7:01FE): "(:171-177)" should be :175-181 (the four gDraw805A calls, :175, :177, :179, :181), and "the DrawTileRun call at :179" should be :183.
-  - :263 and :266 (DrawTextLine header): "gTextRow++ ... :284" should be :288, and "gTextRow = bottomLine / gFontHeight, :286" should be :290.
+- [x] must-fix src/E1DE7.C:52 (gGraphicsChoice, a changed line): "DrawTextFrame at src/E1DE7.C:164-166 and DrawTileRun at :198" points at other lines now. The shifts are `shift = 5;` at :168 and `shift = 6;` at :170 (DrawTextFrame), and DrawTileRun's `shift = 5 + ...` at :202. Round 7 checked these cites at 5131050, where they were right; the four lines added above moved them. Cite :168-170 and :202. (Evidence: `grep -n "shift = " src/E1DE7.C`.) FIXED: cites are now :168-170 and :202.
+- [x] should src/E1DE7.C:52 (src/E07C8.C:44): "src/E07C8.C:44 says the digit indexes gOverlayFiles (0 cga, 1 tandy, 2 ega, 3 mcga/VGA, 4 vga)". Line 44 names gOverlayFiles and the digit 0..4; the list of names is on :45 (`order: 0 cga, 1 tandy, 2 ega, 3 mcga/VGA, 4 vga;`). Cite :44-45. (Evidence: `sed -n 42,46p src/E07C8.C`.) FIXED: the comment now cites src/E07C8.C:44-45 and says "names the digit and gOverlayFiles".
+- [x] should src/E1DE7.C:15 and :86 (ds:8115): "src/E082C.C:71" is one line early; the gStatusLine declaration is at src/E082C.C:72. The addresses 082C:05EC (LoadOverlayScreen, `gStatusLine = 2` at E082C.C:339) and 082C:081A (ShowMemoryDiagnostics, saves at :446, restores at :455) are right and do not move, so they can stay. Cite :72. (Evidence: `grep -n "gStatusLine" src/E082C.C`.) FIXED: both cites are now src/E082C.C:72.
+- [x] should src/E1DE7.C:76 (ds:806A, a changed line): "the parameter is named `colour` (src/E082C.C:63)" cites ds:8062 (gDrawLine, E082C.C:63). The ds:806A declaration is src/E082C.C:64, where the parameter is `colour`, so the claim holds at :64. (Evidence: `sed -n 63,64p src/E082C.C`.) FIXED: the cite is now src/E082C.C:64.
+- [x] should self-cites that the four added lines moved, in text this round did not change. Each is a cite into this file whose target is four lines later now:
+  - :85 (gScrollOn): "gated by it at src/E1DE7.C:270" should be :274, the `if (gFontHeight * gTextRow > ...` line. FIXED: cite is now :274.
+  - :141 (gFrameTable): "(gFrameTable[style], :169)" should be :173. FIXED: cite is now :173.
+  - :156 (QUIRK 1DE7:01FE): "(:171-177)" should be :175-181 (the four gDraw805A calls, :175, :177, :179, :181), and "the DrawTileRun call at :179" should be :183. FIXED: cites are now :175-181 and :183.
+  - :263 and :266 (DrawTextLine header): "gTextRow++ ... :284" should be :288, and "gTextRow = bottomLine / gFontHeight, :286" should be :290. FIXED: cites are now :288 and :290.
   Replace each with the current line. (Evidence: `grep -n "shift = \|gScrollOn && \|gFrameTable\[style\]\|gDraw805A(tile\|DrawTileRun(frame\|gTextRow++\|gTextRow = bottomLine" src/E1DE7.C`.)
-- [ ] note the ds:8115 comment (:86 to :90) breaks a sentence at "the" / "message box"; reflow it when the cites are fixed.
+- [x] note the ds:8115 comment (:86 to :90) breaks a sentence at "the" / "message box"; reflow it when the cites are fixed. FIXED: reflowed within the same five lines; the sentence no longer breaks at "the".
 - [ ] note the ds:806A parameter name (`colour` here and in src/E082C.C:64; `pattern` in other units; `a` to `e` in EOV2.C) and the -G claim (src/E1DE7.C:16-17) are as in rounds 1 to 7. No change asked.
 
 ## Summary
