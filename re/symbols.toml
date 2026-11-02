@@ -2396,6 +2396,8 @@ addr = "0BD2:02B9"
 size = 204
 evidence = ["far", "near", "frame"]
 name = "RemoveListItem"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0bd2_0385"

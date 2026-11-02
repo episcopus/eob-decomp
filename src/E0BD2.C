@@ -250,13 +250,19 @@ void DrawItemName(int item);
         rec->m08 = item;
         rec->m03 = sound;
         rec->m04 = key;
-        rec->m0A = key >= 0 ? gFBC8 : -1;
+        if (key >= 0)
+            rec->m0A = gFBC8;
+        else
+            rec->m0A = -1;
     } else {
         cur = &gItems[*(int far *)head];
         next = &gItems[cur->m06];
         rec->m04 = key;
         rec->m03 = sound;
-        rec->m0A = key >= 0 ? gFBC8 : -1;
+        if (key >= 0)
+            rec->m0A = gFBC8;
+        else
+            rec->m0A = -1;
         rec->m08 = next->m08;
         rec->m06 = cur->m06;
         next->m08 = item;
@@ -273,9 +279,9 @@ void DrawItemName(int item);
 {
     int start;
     int item;
-    int i;
     int link;
     int next;
+    int i;
     struct ItemRecord *rec;
 
     item = *(int far *)head;
@@ -300,11 +306,10 @@ found:
         rec->m06 = 0;
         rec->m04 = 0;
         rec->m0A = 0;
-        if (*(int far *)head == item) {
+        if (*(int far *)head == item)
             *(int far *)head = next;
-            if (*(int far *)head == item)
-                *(int far *)head = 0;
-        }
+        if (*(int far *)head == item)
+            *(int far *)head = 0;
         return item;
 next:
         i++;
