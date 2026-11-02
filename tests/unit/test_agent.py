@@ -42,9 +42,13 @@ def test_safety_rules():
 def test_queue_is_game_code_smallest_first():
     c = nxt.candidates()
     ids = [u["id"] for u in c]
-    assert "e_lib" not in ids and "e_c0" not in ids and not any(i.startswith("i") for i in ids)
-    assert [u["bytes"] for u in c] == sorted(u["bytes"] for u in c)
+    assert not {"e_lib", "e_c0", "i_lib", "i_c0"} & set(ids)
+    eob = [u for u in c if u["program"] == "EOB.EXE"]
+    assert c[:len(eob)] == eob                                  # EOB.EXE first, then INTRO.EXE
+    for part in (eob, c[len(eob):]):
+        assert [u["bytes"] for u in part] == sorted(u["bytes"] for u in part)
     assert "e0cf7" in ids and "eov2" in ids
+    assert not any(u.get("twin") for u in c) and "i0892" in ids  # a twin is proven, not decompiled again
 
 
 def test_skeleton_has_a_stub_per_function():
