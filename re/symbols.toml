@@ -8500,6 +8500,10 @@ unit = "eov4"
 addr = "ovl4:0D1B"
 size = 886
 evidence = ["ovl", "near", "frame"]
+notes = "matched 2026-11-02 under -v (the file's actual flag, which also keeps CopyViewColumn's tails apart). Four source forms the bytes pin down: the object byte +0xA compares against (char)0xfe/(char)0xff so it is a byte compare (int constants sign-extend first); the absolute sprite is an explicit if/else (abs() is a library call); the +7 nudge is an if/else assigning the local (a ?: keeps the value in AX and stores once); the ds:1A3B m15 test indexes the table directly (only the m0E test keeps the far-pointer local). The earlier -B store question (87 D8 vs 93) is moot: -v is right."
+name = "Ovl4_0D1B"
+level = "L2"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "eov4_1091"
@@ -8527,6 +8531,10 @@ unit = "eov4"
 addr = "ovl4:19C4"
 size = 860
 evidence = ["ovl", "near"]
+notes = "matched 2026-11-02 under -v. Three source forms the bytes pin down: the ds:194B bit-7 test is written `g1879[tile] == 0 || (g194B[tile] & 0x80)` with an empty then (a plain `g194B[tile] & 0x80` sign-extends the byte first); the frame guard is written `if (frame >= 0) { body }` (an `if (frame < 0) continue;` gives identical bytes but reloads ES before the record check, a TCC -Z register-state difference); and the cell +2 test is a raw `<< 3 >> 3` (a `% 8` compiles to idiv). The earlier xchg/store question is settled: -v is the file's flag."
+name = "Ovl4_19C4"
+level = "L2"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "eov4_1d20"
