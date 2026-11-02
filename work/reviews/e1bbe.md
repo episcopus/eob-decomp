@@ -19,7 +19,7 @@ tools/re/map_units.py:42-46 hold, and so do the caller lists in build/packets/e1
 headers: the hide and show gates, the rectangle arithmetic and clip bounds, the zone stores, the four push cs far
 calls and the difference between the Lock pair. The two must-fix items are stale citations, not wrong meanings.
 
-- [ ] must-fix src/E1BBE.ASM:36-39 (_gPointerBusy), :42-44 (_gCursorX), :60-62 (_gPointerState) and :127-128 and
+- [x] must-fix src/E1BBE.ASM:36-39 (_gPointerBusy), :42-44 (_gCursorX), :60-62 (_gPointerState) and :127-128 and
   :222-223 (the HidePointer and ShowPointer callers): the src/E1A72.ASM line numbers are stale again (the file is
   at 2af4699). Current lines: the busy test `cmp word ptr [_gPointerBusy],0` at :386 (label L01E2), the free path
   `je L020C` at :387, the drop `L01E9: jmp L027F` at :388, the set to 1 at :397 (label L020C) and the clear to 0 at
@@ -33,13 +33,24 @@ calls and the difference between the Lock pair. The two must-fix items are stale
   :389, :391, :422, :423) were right for an earlier E1A72.ASM. The behaviour they describe is unchanged. Fix: cite
   the handler by label, with its grep string beside it (L01E2, L020C, L01E9, L01EC, L0221, L0235, L025C, L0279), or
   pin the commit (`E1A72.ASM@2af4699:386`). Re-grep at fix time.
-- [ ] must-fix src/E1BBE.ASM:445 (LockHidePointer comment): "src/E14EF.C:69-70 call this pair 'start a frame' and
+  Fixed (e831c19): every cite into src/E1A72.ASM now names the handler's label with its grep string, so it stops
+  drifting. _gPointerBusy cites label L01E2 (grep `_gPointerBusy`) for the test, `je L020C` for the free path, the
+  drop at label L01E9, the set at label L020C and the clear at label L0279; _gCursorX cites label L020C (grep
+  `_gCursorX`) for the store skipped by `je L0221`, label L0221 for the reload, and InitMouse by grep `_gCursorX`;
+  _gPointerState cites grep `_gPointerState` for the 8000h test and label L01EC for the 4000h set on the hide path;
+  HidePointer and ShowPointer name labels L01EC and L025C. No line number into E1A72.ASM remains. The behaviour is
+  unchanged; make match FILE=src/E1BBE.ASM still reports 7 of 7, 860 bytes.
+- [x] must-fix src/E1BBE.ASM:445 (LockHidePointer comment): "src/E14EF.C:69-70 call this pair 'start a frame' and
   'end a frame'" is a stale cite. The two wordings are at src/E14EF.C:75 (`LockHidePointer ... start a frame`) and
   :76 (`LockShowPointer ... end a frame`). (Evidence: `grep -n "start a frame\|end a frame" src/E14EF.C`.)
-- [ ] should src/E1BBE.ASM:11-13 (unit header, the zone pair): "the caller's rectangle, gZoneLeft..gZoneBottom" reads as
+  Fixed (e831c19): the comment now cites src/E14EF.C:75 (LockHidePointer "start a frame") and :76 (LockShowPointer
+  "end a frame"). Re-grepped at fix time; the two lines hold.
+- [x] should src/E1BBE.ASM:11-13 (unit header, the zone pair): "the caller's rectangle, gZoneLeft..gZoneBottom" reads as
   if the stored zone is the caller's rectangle. HidePointerZone stores left and top less the sprite width and height
   (1BBE:0234/025B and 0238/0272; the EXTRN comments at :64-70 say so) and right and bottom as given. Say the zone is
   the caller's rectangle with left and top reduced by the sprite size when stored.
+  Fixed (e831c19): the unit header now says the zone is "the caller's rectangle, stored in gZoneLeft..gZoneBottom
+  with left and top reduced by the sprite size", matching the EXTRN comments.
 - [ ] should src/E1BBE.ASM:77-78 (g8172, g8174) and :100-101 (g80AA, g80A2): still bare, while the C-declared names in
   this file carry the underscore (`_gMouseDisabled` at :48, `_gDraw80C2` at :102). The round 7 item on gMouseDisabled
   and gDraw80C2 is resolved in this file. The four bare names are bare in src/E1BB1.ASM:88-95 too, and src/E1A72.ASM
