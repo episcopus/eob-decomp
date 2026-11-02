@@ -17,7 +17,7 @@ extern struct Obj28 gObjs[]; /*@ ds:8A82 */
 extern signed char gArg3237[]; /*@ ds:3237 */
 extern signed char gArg3234[]; /*@ ds:3234 */
 
-extern void f1414_0D63(void); /*@ 1414:0D63 */
+extern void UpdateDDEffects(void); /*@ 1414:0D63 */
 
 /*@ 08E6:00C3 stub */ void Obj00C3(struct Obj28 far *o) {}
 /*@ 08E6:03FE stub */ void Obj03FE(struct Obj28 far *o) {}
@@ -59,5 +59,5 @@ extern void f1414_0D63(void); /*@ 1414:0D63 */
         if (o->type != 4 && o->type != 7)
             o->toggle ^= 1;
     }
-    f1414_0D63();
+    UpdateDDEffects();
 }

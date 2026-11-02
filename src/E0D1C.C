@@ -129,7 +129,7 @@ extern int f0BD2_02B9(void far *head, int key, int item); /*@ 0BD2:02B9 */
 extern int f0BD2_11FD(int who, int slot); /*@ 0BD2:11FD */
 extern void f07A9_010C(int n); /*@ 07A9:010C */
 extern int far RollDice(char count, char sides, char bonus); /*@ 082C:0458 */
-extern void f1414_0B2E(void); /*@ 1414:0B2E */
+extern void RearmCharEffects(void); /*@ 1414:0B2E */
 extern void LockHidePointer(void); /*@ 1BBE:0307 */
 extern void LockShowPointer(void); /*@ 1BBE:0332 */
 extern void DrawBox(int x1, int y1, int x2, int y2, int colour); /*@ 1A1F:000C */
@@ -332,7 +332,7 @@ int f0D1C_02DC(void);
    through f0BD2_01D0 at the head gSoundVolume * 9 + 5 (the nine-byte records at ds:B894) with a
    random sound g1A1B[gFBCC * 4 + RollDice(1, 2, -1)]. Then it drains the slot-16 list through
    f0BD2_02B9 and queues each returned item the same way. Finally, when `who` is the selected
-   character, gA99A is cleared to 0, and f1414_0B2E runs. Called by overlays 1 and 5. */
+   character, gA99A is cleared to 0, and RearmCharEffects runs. Called by overlays 1 and 5. */
 /*@ 0D1C:035A */ void f0D1C_035A(int who)
 {
     struct CharRec far *rec;
@@ -356,7 +356,7 @@ int f0D1C_02DC(void);
     }
     if (gA99A == who)
         gA99A = 0;
-    f1414_0B2E();
+    RearmCharEffects();
 }
 /* 0D1C:0454: draws the animated row list at ds:5482. When `index` differs from the stored g54F2
    it hides the pointer, erases the old row (DrawBox over gRows5482[g54F2] in colour 0xC), shows
