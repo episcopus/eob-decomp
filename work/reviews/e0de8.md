@@ -25,33 +25,47 @@ callers 0A3F and 20A8 at E0EF3.C:905, :921 and :1794). These are sound except th
 
 ## Findings
 
-- [ ] must-fix src/E0DE8.C:765 and :779: "B takes a pointer to an item type's class byte" is a wrong
+- [x] must-fix src/E0DE8.C:765 and :779: "B takes a pointer to an item type's class byte" is a wrong
   claim, in both headers (the sentence is in the 0F98 header and the 0FCA header). The only caller of
   HalveSaveDamageB, src/E0EF3.C:891, passes `(char far *)&gObjs[*list]`: a 28-byte object record
   (struct Obj28, :49). The byte it reads is that record's +0 `b0`, "an index into the ds:1A3B table"
   (:50), and the body does `gTable1A3B[*type].m02` (:786). Say that: B takes a pointer to an object
   record and reads its b0 as the gTable1A3B index. A takes a character index (unchanged, correct).
-- [ ] should src/E0DE8.C:193 (RollToHit header) and its local `kind` (`kind = gTable8DD2[slot].m02`):
+  Fixed: both headers now say B takes a pointer to a 28-byte object record and reads its b0 as the
+  gTable1A3B index. HalveSaveDamageB's parameter is typed `struct Obj28 far *objRec` and the body
+  reads `gTable1A3B[objRec->b0].m02`; make match still 20 of 20.
+- [x] should src/E0DE8.C:193 (RollToHit header) and its local `kind` (`kind = gTable8DD2[slot].m02`):
   "its m02 kind selects the m0B weapon value when it is 1..3". m02 is the item type index (the Entry14
   comment, :75), and the code tests the value 1..3 on it. `kind` is the m0E meaning (:112). Say the
   item type index, and rename the local (for example `itemType`).
-- [ ] should src/E0DE8.C:421 (UseItemByKind header): "Returns 0 when an item was found and dispatched".
+  Fixed: the header says "its m02 item type index selects the m0B weapon value"; the local is now
+  `itemType`.
+- [x] should src/E0DE8.C:421 (UseItemByKind header): "Returns 0 when an item was found and dispatched".
   The code returns 0 once an item is found (:471), whether or not AddDDEffect took it; the sound and
   gDF4C are inside the `if` at :464. Say "returns 0 once an item was found, whether or not AddDDEffect
   took it".
-- [ ] should src/E0DE8.C:275 (RunRecordAttack header): "(or 1 when the type does not attack)" repeats
+  Fixed: the header now says "Returns 0 once an item was found, whether or not AddDDEffect took it".
+- [x] should src/E0DE8.C:275 (RunRecordAttack header): "(or 1 when the type does not attack)" repeats
   the claim round 1 removed from IsKind2Or3. Say "(or 1 when IsKind2Or3 is false)".
-- [ ] should src/E0DE8.C:143-144 (gA9C6, gDF4C): "src/E0ACD.C:56" and "src/E0ACD.C:53" are stale. The
+  Fixed: the RunRecordAttack and TryRecordAttack headers now say "(or 1 when IsKind2Or3 is false)".
+- [x] should src/E0DE8.C:143-144 (gA9C6, gDF4C): "src/E0ACD.C:56" and "src/E0ACD.C:53" are stale. The
   declarations are now E0ACD.C:77 (gA9C6) and :74 (gDF4C); the wording agrees with both. Replace the
   lines with the addresses of the routines that set or read them, or the current lines.
-- [ ] should src/E0DE8.C:149 (gB894): "the +4 byte is read at src/E0D1C.C:36". Line 36 is the gB894
+  Fixed: the stale file line cites are gone. gA9C6 now cites 0ACD:0644 (its reader in E0ACD.C) and gDF4C
+  cites the three routines in this file that set it (0DE8:0359, 0DE8:0537, 0DE8:05BB).
+- [x] should src/E0DE8.C:149 (gB894): "the +4 byte is read at src/E0D1C.C:36". Line 36 is the gB894
   declaration; the comment there says 0D1C:0080 tests the byte. Cite 0D1C:0080 by address.
-- [ ] note src/E0DE8.C:29 (struct CharRec): `char maxhp` against src/EOV5.C:32, `signed char maxhp`.
+  Fixed: the comment now cites 0D1C:0080.
+- [x] note src/E0DE8.C:29 (struct CharRec): `char maxhp` against src/EOV5.C:32, `signed char maxhp`.
   Same bytes under Turbo C++'s signed char default; the two units should spell one type.
-- [ ] note src/E0DE8.C:7 (file header): "It walks the" is on its own line; reflow the paragraph.
-- [ ] note src/E0DE8.C:306 (TryRecordAttack header, unchanged text): "(or 1 when the type does not
+  Fixed: the field is now `signed char maxhp`, matching src/EOV5.C:32.
+- [x] note src/E0DE8.C:7 (file header): "It walks the" is on its own line; reflow the paragraph.
+  Fixed: the file header paragraph is reflowed.
+- [x] note src/E0DE8.C:306 (TryRecordAttack header, unchanged text): "(or 1 when the type does not
   attack)" is the same claim as :275; reword with the :275 fix. src/E0DE8.C:794 (ApplyStatusEffect
   header) runs past 100 columns.
+  Fixed: TryRecordAttack is reworded with the :275 fix (above); the ApplyStatusEffect header is reflowed
+  under 100 columns.
 - [ ] note for other owners: src/E0EF3.C:313 declares RollToHit with `int flag` (this file names the
   fourth parameter `useStrength`, :201). src/E0A72.C:276-281 cites E0DE8.C:612-615 and :613 for the
   AddExperience call; it is now :640-643 (the threshold call is :640, LevelUpSlot :642). The owner of
