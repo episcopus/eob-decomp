@@ -1,7 +1,7 @@
 # Review: e1bbe
 
 Reviewer: rev-haiku
-Commit reviewed: 089dfd1b7632a454fb314db7218dec4e1ca100ea (round 2; src/E1BBE.ASM is identical on main 2dcebd7, and E1A72.ASM, E1BB1.ASM, E1BF3.ASM and E07C8.C are unchanged there). Round 1 was reviewed at 0cfccb1 (see Round 1 below).
+Commit reviewed: 421cd1e7a31c20710200fe18247bdf159a34d76c (round 3, main; src/E1BBE.ASM is identical to the review branch at 8225102, which is on main). Round 2 was reviewed at 089dfd1 and round 1 at 0cfccb1 (see below). E1A72.ASM has moved on main since round 2 (commit e856ab9), which is why round 3 finds stale citations.
 
 Playbook 70. Judge what a matching file can still get wrong: names, types, comments, structure.
 The matcher already proved the bytes; do not re-prove them, read for meaning.
@@ -10,6 +10,62 @@ The matcher already proved the bytes; do not re-prove them, read for meaning.
 
 Each finding is a checkbox. `must-fix` blocks `make review-pass` until a decompiler ticks it off
 (with the commit that fixes it); `should` and `note` do not block.
+
+### Round 3 (review of commit 421cd1e, src/E1BBE.ASM at 8225102)
+
+Checked: `make match FILE=src/E1BBE.ASM` 7 of 7 (860 bytes) and `make readability UNIT=e1bbe` 0 findings. Every
+function's behaviour in its header was re-read against the code (HidePointer, ShowPointer, HidePointerZone,
+ShowPointerZone, LockHidePointer, LockShowPointer), and the prototypes in src/ were checked (see the notes).
+
+- [ ] must-fix src/E1BBE.ASM:35-37 (_gCursorX): the cited writers are wrong. src/E1A72.ASM:338-339 is the
+  button-state store (`mov [g8134],ax`, `mov [g8130],bx`), not a cursor write. src/E1A72.ASM:218-219 no longer
+  holds InitMouse; it has moved to :233-234 (`mov word ptr [_gCursorX],0A0h`, `[_gCursorY],64h`). The handler
+  writes the cursor at src/E1A72.ASM:355-356 (`mov [_gCursorX],cx`, `[_gCursorY],dx`), skipped when g80EC is 2
+  (:353-354). src/E1BF3.ASM:35 is right. Cite :233-234, :355-356 and E1BF3.ASM:35. This reopens the round 2
+  item: its fix took the lines from an E1A72.ASM that main has since changed (e856ab9).
+- [ ] must-fix src/E1BBE.ASM:102-104 (HidePointer header): "The height and width used are the ones 1BB1 stored
+  before it calls here" is backwards. 1BB1 calls _HidePointer (src/E1BB1.ASM:130) before it stores the new hot
+  spot, height and width (src/E1BB1.ASM:133-164: `mov [_gPointerHeight],ax` at :162, `[_gPointerWidth8],dx`
+  at :164). HidePointer therefore reads the sizes still in place, the old shape's. src/E1BB1.ASM:42-44 says
+  the same ("1BBE:0002 hides the pointer first, while the old buffer and sizes are still in place"). Say that.
+- [ ] must-fix src/E1BBE.ASM:299-300 (HidePointerZone header): "top as drawn" is wrong. The rectangle top is the
+  drawn y less the hot spot y, not rounded (src/E1BBE.ASM:344-346: `mov ax,[_gDrawnY]`, `sub ax,[_gPointerHotY]`,
+  `mov [_gRectTop],ax`). The left is formed the same way (:333-336, then `and ax,0FFF8h`). Say "top is the
+  drawn y less the hot spot y (no rounding)".
+- [ ] should src/E1BBE.ASM:414-416 (LockHidePointer, LockShowPointer): the name "Lock" is the callers' name
+  (src/E14EF.C:44-45 describe them as "start a frame" and "end a frame"), but the comment never says what is
+  locked. The busy flag is a test then an increment, not a lock (src/E1BB1.ASM:53 says "not a lock"; this
+  unit's own _gPointerBusy comment says it too). Say that Lock means the frame bracket (the busy flag and the
+  [ds:80AA]/[ds:80A2] calls), not mutual exclusion. Keep the name, src/ uses it.
+- [ ] should src/E1BBE.ASM:136-147 (HidePointer header, "1BBE:0055, 005A, 008B and 0090 jump to the increment at
+  1BBE:00E0"): the x tests (`jle L0075`, `jge L0075`, :136-139) reach 1BBE:00E0 through the `jmp short L00E0`
+  at L0075 (:147), not directly. The y tests (:153, :155) jump straight to L00E0. Say "reach".
+- [ ] should src/E1BBE.ASM:379-383 (ShowPointerZone header): "the pointer is shown only when bit 4000 (redraw)
+  was set" applies to the zero-count path only. A non-zero count shows the pointer regardless of bit 4000
+  (src/E1BBE.ASM:393-397 `dec word ptr [_gPointerState]`, then `jmp short L02E9`). Put "at zero" into that
+  sentence so the reader does not take it for both.
+- [ ] should src/E1BBE.ASM:22-24, :40, :64 (underscore spelling): the header lists "gPointerHeight, gPointerWidth8,
+  gMouseDisabled" without the underscore, the EXTRNs for the same names use _gPointerHeight, _gPointerWidth8, and
+  gMouseDisabled is bare at :40 while _gCursorX has the underscore. src/E1A72.ASM does the same mix (`_gCursorX`
+  at :49, bare `gMouseDisabled` at :66), as does src/E1C00.ASM:40. Still undecided from rounds 1 and 2; it is a
+  convention for the three units, not this unit alone. Keep the header in the spelling the EXTRNs use.
+- [ ] note stale citations into this unit from other owners (routed, not changed here): src/E1A72.ASM:81, :83
+  and :420 cite E1BBE.ASM:188 and :193 (the ShowPointer copies of gCursorX/gCursorY are now at :215 and :220);
+  src/E1A72.ASM:88 cites :328-332 and :92 cites :338-339 (the zone shifts are now at :337-341 and :347-348);
+  src/E1A29.C:50, :54 and :73 cite E1BBE.ASM:252-258 (the draw call is now at :279-285); src/E1C00.ASM:41 and :287
+  cite E1BBE.ASM:89-90 and :178 (the disabled tests are now at :111-112 and :205-206). Owners: e1a72, e1a29, e1c00.
+- [ ] note src/E07C8.C:37 still says "0 disables the mouse handler body" (round 2 note, another owner). Route to the
+  E07C8 owner; not this unit.
+- [ ] note build/packets/e1bbe.md lists ds:8182 and ds:8184 as _gPointerHeight and ds:8186 and ds:8188 as
+  _gPointerWidth8. This file declares them _gSpriteHeight, _gNegSpriteHeight, _gSpriteWidth and
+  _gNegSpriteWidth (src/E1BBE.ASM:73-78). The packet tool takes the first name in each comment; the source is right.
+- [ ] note names checked and supported this round: _HidePointer and _ShowPointer (src/E1BB1.ASM:130, :198;
+  src/E1A72.ASM:26-27; src/E1BF3.ASM:14-15); HidePointerZone and ShowPointerZone match the prototypes in
+  src/E16A5.C:91-92 (left, top, right, bottom); gDraw80C2 matches src/E1A29.C:57 (mode, src, x, y), and the
+  pushes at E1BBE.ASM:279-285 give that order; gSaveRect (src/E0BD2.C:112) and gRestoreRect (src/E1C0E.C:49) match
+  the argument order (x, y, w, h, buf) of the pushes at :166-177 and :266-277; the overlap test in HidePointerZone
+  (:352-360) is the one the header describes; the call-site lists quoted for the Lock wrappers match
+  build/packets/e1bbe.md; _f1BBE_0001 stays a placeholder (its evidence is the segment start).
 
 ### Round 2 (review of commit 089dfd1)
 
@@ -48,6 +104,16 @@ Each finding is a checkbox. `must-fix` blocks `make review-pass` until a decompi
 - [ ] note g80AA, g80A2 are names with no evidence beyond the call sites (the header says so). They are placeholders and fine as they are; g8172 and g8174 are the far pointer argument pair (src/E1A72.ASM:69-70).
 
 ## Summary
+
+Round 3 (421cd1e). The unit is understandable from its source: the names are supported by their callers and their
+evidence, the prototypes in src/ agree, and the bytes and readability gates are clean. Three statements are still
+wrong and must be fixed before a pass: the _gCursorX writers (the round 2 citations no longer point at the cursor
+code, because E1A72.ASM moved on main), the HidePointer header's claim that it uses the sizes 1BB1 stores before the
+call (1BB1 hides first and stores after, so it uses the sizes still in place), and "top as drawn" in the
+HidePointerZone header (the top is the drawn y less the hot spot). Two shoulds (the Lock name and the underscore
+spelling) and one ShowPointerZone clarity point are open. Other owners have stale citations into this unit (e1a72,
+e1a29, e1c00), listed as notes. Result: review-failed. The decompiler fixes the three must-fix lines, and the
+shoulds if it can, then hands off again.
 
 Round 2 (089dfd1). The names hold against the evidence, and the round 1 fixes are in the code, but this round found three wrong statements, one of them introduced by the round 1 fix: the cursor writers cited for gCursorX (lines 324-325 are not writes), the 0159 exit in ShowPointer's header (a fall-through, not a jump to ShowDone), and HidePointer's claim that a hide with no buffer does nothing (it nests while hidden). I counted the instruction sizes from the labels, and the other addresses in the header, HidePointer, ShowPointer, HidePointerZone and ShowPointerZone hold (for example 1BBE:0015, 0055, 005A, 008B, 0090, 00FD, 010F, 021E, 0229, 022D, 0234, 025B, 0272). The far-call argument order matches the pushes. Still open from round 1: the underscore spelling of the bare EXTRN names (gMouseDisabled, gDraw80C2, g80AA, g80A2, g8172, g8174), which is an unchecked should to decide across units, and the note on src/E07C8.C:37. Placeholders kept on purpose: _f1BBE_0001 (its evidence is the segment start) and the far pointers g80AA, g80A2, g8172 and g8174 (their evidence is the call sites). Result: review-failed. The decompiler fixes the three must-fix lines and the shoulds, then hands off again.
 
