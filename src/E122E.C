@@ -1054,9 +1054,9 @@ done:
    far the script moved (jumping to gBuf8DCA + word when the popped value is 0). A sub-opcode byte
    in 0..0x7f is pushed as a literal; a negative one not in the table is a no-op. Case order follows
    the original's body layout, and the case labels are read from the jump table at 122E:19EF (the
-   item-type case is 0xFFE7 and the gB894 byte case is 0xFFE9, not 0xFFE8/0xFFEA). Draft: it does not
-   match yet; the remaining differences are the tail-merge class and the register allocation of the
-   three member-scan loops (see its note in re/symbols.toml). */
+   item-type case is 0xFFE7 and the gB894 byte case is 0xFFE9, not 0xFFE8/0xFFEA). Draft: it is 0x26
+   bytes short; the default case and the FFDD/FFDC loops match, and the one remaining difference is
+   the FFF5 argument order and tail (see its note in re/symbols.toml). */
 /*@ 122E:147F draft */ long EvaluateScriptExpr(char far *script)
 {
     int op;
@@ -1141,8 +1141,11 @@ done:
             break;
         case 0xFFDD:
             t1 = *script++;
-            lhs = 0;
-            for (i = 0; i < 6; i++) {
+            /* `lhs = i = 0` makes TCC zero AX once and store it to i and then to SI (the register
+               scratch lhs), as the original does at 122E:16CD; `lhs = 0; for (i = 0; ...)` instead
+               emits `xor si,si; mov word ptr [bp-10],0`. */
+            lhs = i = 0;
+            for (; i < 6; i++) {
                 if ((gChars[i].status & 1) && (gChars[i].m21 >> 1) == t1) {
                     lhs = 1;
                     break;
@@ -1152,8 +1155,8 @@ done:
             break;
         case 0xFFDC:
             t1 = *script++;
-            lhs = 0;
-            for (i = 0; i < 6; i++) {
+            lhs = i = 0;
+            for (; i < 6; i++) {
                 if ((gChars[i].status & 1) && (g1231[gChars[i].m20] & t1)) {
                     lhs = 1;
                     break;
@@ -1222,8 +1225,11 @@ done:
             gEvalStack[gEvalTop++] = !rhs;
             break;
         default:
-            if (op >= 0 && op < 0x80)
-                gEvalStack[gEvalTop++] = op;
+            /* the original reloads script[-1] (the byte the loop test consumed) into the register
+               scratch lhs, not op: `les bx,[bp+6]; mov al,es:[bx-1]; cwde; mov si,ax` at 122E:197A. */
+            lhs = script[-1];
+            if (lhs >= 0 && lhs < 0x80)
+                gEvalStack[gEvalTop++] = lhs;
             break;
         }
     }
