@@ -40,6 +40,19 @@ extern void f1A29_000F(int mode, void far *src, int x, int y, int region); /*@ 1
 extern void HidePointerZone(int left, int top, int right, int bottom); /*@ 1BBE:01FE */
 extern void ShowPointerZone(void); /*@ 1BBE:02C2 */
 extern void movmem(void far *src, void far *dst, unsigned n); /*@ 0000:63A3 */
+extern void DrawShadowText(char far *text, int x, int y, int color, int extra); /*@ 082C:0898 */
+extern void LockHidePointer(void); /*@ 1BBE:0307 */
+extern void LockShowPointer(void); /*@ 1BBE:0332 */
+extern int g8115; /*@ ds:8115 */ /* nonzero while a status line is up (src/E082C.C) */
+extern char gStr613D[]; /*@ ds:613D */ /* the string the party-status report draws (Purpose unknown) */
+
+struct CharRec {                /* 243-byte character records at ds:F580 (src/E08E6.C) */
+    char pad00;
+    unsigned char m01;          /* +01: status bits */
+    char name[0x0b];            /* +02: the character's name, NUL padded */
+    char pad0d[0xf3 - 0x0d];
+};
+extern struct CharRec gChars[]; /*@ ds:F580 */
 extern struct Node far *ListAdd(struct Node far *head, struct Node far *item); /*@ 1658:001E */
 extern char g5E20; /*@ ds:5E20 */ /* nonzero when the mouse moved (src/E16A5.C) */
 
@@ -203,7 +216,31 @@ extern void far *g5E64[0x11]; /*@ ds:5E64 */ /* the 17 sliced icon pointers this
     g5E20 = 1;
     return list;
 }
-/*@ ovl0:0504 stub */ void Ovl0_0504(void) {}
+/* ovl0:0504: draws the party-status panel when all four front party slots hold a named character
+   (a nonzero first name byte at gChars[i]+2). It counts them, and when there are four it shows the
+   gStr613D report over the status line (DrawShadowText, g8115 = 2), hides the pointer, clips the
+   report box and draws panel icon 0xf; otherwise it draws icon 0xe. Called by ovl0:1071. */
+/*@ ovl0:0504 */ void DrawPartyStatus(void)
+{
+    char i;
+    char count;
+
+    count = 0;
+    for (i = 0; i < 4; i++)
+        if (gChars[i].name[0])
+            count++;
+    count = (count == 4);
+    if (count == 1) {
+        g8115 = 2;
+        DrawShadowText(gStr613D, 0xa8, 0x3d, 0xf, 0);
+        g8115 = 0;
+        LockHidePointer();
+        ClipRect(0x15, 0x3d, 0x13, 0x7d, 0x11, 0x28, 2, 0);
+        LockShowPointer();
+        DrawPanelIcon(0xf, 0, 0);
+    } else
+        DrawPanelIcon(0xe, 0, 0);
+}
 /*@ ovl0:05BA stub */ void Ovl0_05BA(void) {}
 /*@ ovl0:065B stub */ void Ovl0_065B(void) {}
 /*@ ovl0:0A4F stub */ void Ovl0_0A4F(void) {}

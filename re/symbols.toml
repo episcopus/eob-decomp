@@ -6834,6 +6834,9 @@ unit = "eov0"
 addr = "ovl0:0504"
 size = 182
 evidence = ["ovl", "near", "frame"]
+name = "DrawPartyStatus"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov0_05ba"
