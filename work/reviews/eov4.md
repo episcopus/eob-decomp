@@ -24,39 +24,46 @@ and `gFarA92A` are gone from `src/EOV4.C`. The `gTable1879` and `gIconTableA92A`
 
 Must-fix (new, in changed lines; the Ovl4_1091, Ovl4_1411, Ovl4_0AD0 and DrawViewFrame headers):
 
-- [ ] must-fix src/EOV4.C, Ovl4_1091 header: "drawn first (ovl4:0693)" and "drawn second (ovl4:0715)" are not addresses in
+- [x] must-fix src/EOV4.C, Ovl4_1091 header: "drawn first (ovl4:0693)" and "drawn second (ovl4:0715)" are not addresses in
   Ovl4_1091. ovl4:0693 and ovl4:0715 are in Ovl4_044B (the `les bx,[ef6e]` record read and the `call 0x42c` IsSlotLive
   test at 0697/0711; the round 1 line numbers :693 and :715 were turned into addresses). The face at slot*2+1 (`sideB`,
   first in the C) starts at ovl4:10AD (`mov ax,[bx+0x7018]`); the face at slot*2 (`sideA`) starts at ovl4:11FD (`10B7`
   jumps there when sideB is empty, and `11F8` falls into it after the sideB loop). Fix: "drawn first (ovl4:10AD)" and
   "drawn second (ovl4:11FD)".
-- [ ] must-fix src/EOV4.C, Ovl4_1411 header: "fit region 5 once (ovl4:0852)". ovl4:0852 is in the Ovl4_044B range (it is a
+  (fixed: the Ovl4_1091 header now cites ovl4:10AD and ovl4:11FD. Both checked against build/re/eob-overlays/ovl04.bin: 10AD is `mov ax, word [bx+0x7018]`, the sideB face test, and 11FD is the sideA entry the `jmp 0x11fd` at 10B7 reaches.)
+- [x] must-fix src/EOV4.C, Ovl4_1411 header: "fit region 5 once (ovl4:0852)". ovl4:0852 is in the Ovl4_044B range (it is a
   `push ax` in an object-draw sequence), not in Ovl4_1411 (which starts at 1411). The region-5 fit for actions 4..6 is
   the `lcall 0x1b8,0x2fe` at ovl4:1614 (SetRegionRect's entry at ovl4:008D makes the same call, so 02FE is
   SetRegionExtents). The DrawRegion000F and DrawRegion004D calls at ovl4:1688 and 16B5 follow it, in the order of the
   code at :862-870. Fix: "fit region 5 once (ovl4:1614)".
-- [ ] must-fix src/EOV4.C, Ovl4_1411 header, actions 4..6: "with a y shift from ds:7196 below 0x1e and ds:719A at or
+  (fixed: the Ovl4_1411 header now says "fit region 5 once (ovl4:1614)"; ovl04.bin shows the `lcall 0x1b8,0x2fe` at 1614.)
+- [x] must-fix src/EOV4.C, Ovl4_1411 header, actions 4..6: "with a y shift from ds:7196 below 0x1e and ds:719A at or
   above". The shift is an x shift: `shift = -((heading - g714E[heading]) * g7196[idx])` (:864), then
   `DrawRegion000F(2, rec, x + shift, y, 5)` and `DrawRegion004D(2, rec, x - shift, y, 5)` (:868-870). Fix: "with an x
   shift from ds:7196 below 0x1e and ds:719A at or above".
-- [ ] must-fix src/EOV4.C, Ovl4_0AD0 header: "recomputes the span of the object's ds:6F86 span slot". The code
+  (fixed: the header now reads "with an x shift from ds:7196 below 0x1e and ds:719A at or above"; the shift is added to x at :868 and subtracted from x at :870.)
+- [x] must-fix src/EOV4.C, Ovl4_0AD0 header: "recomputes the span of the object's ds:6F86 span slot". The code
   indexes it by the view slot: `spanSlot = g6F86[slotReg]` (:458), and `g6F86` is declared a per-slot byte (:380). Fix:
   "recomputes the span of ds:6F86[slot] (the view slot's span slot)".
-- [ ] must-fix src/EOV4.C, DrawViewFrame header: "when gFB45 and video mode 3 are set, and `full` is set, it blanks the
+  (fixed: the header now says "recomputes the span of ds:6F86[slot] (the view slot's span slot)", matching `spanSlot = g6F86[slotReg]` at :458.)
+- [x] must-fix src/EOV4.C, DrawViewFrame header: "when gFB45 and video mode 3 are set, and `full` is set, it blanks the
   view box (gFillRect with pattern 0xc) and loads the palette gFE68, then clears gFB45". Only the blank is under
   `full`. The code (:1182-1189) loads the palette (`gFn80BA(gFE68)`) and clears gFB45 whenever gFB45 and
   gGraphicsChoice == 3 are set, and only the blank (:1183-1186) needs `full`. Fix: "when gFB45 and video mode 3 are set it
   loads the palette gFE68 and clears gFB45; when `full` is also set, it first blanks the view box (gFillRect with
   pattern 0xc)".
-- [ ] must-fix src/EOV4.C:766 (gFB5E): "(src/E0EF3.C:031A; ...)". src/E0EF3.C has no gFB5E and no 031A, so the cite is
+  (fixed: the DrawViewFrame header now reads "when gFB45 and video mode 3 are set it loads the palette gFE68 and clears gFB45; when `full` is also set, it first blanks the view box (gFillRect with pattern 0xc)", matching the blank under `if (full)` at :1183-1186 and the palette load and clear outside it at :1188-1189.)
+- [x] must-fix src/EOV4.C:766 (gFB5E): "(src/E0EF3.C:031A; ...)". src/E0EF3.C has no gFB5E and no 031A, so the cite is
   wrong. The code that frees and clears the ds:FB5E entries is ovl3:031A (src/EOV3.C:356-358 `if (gFB5E[i]) farfree`),
   as re/renames.toml:2206 records. Fix: cite ovl3:031A (the EOV2.C:155 and EOV3.C:143 `long` declarations are right; the
   E0EF3 cite is the one to replace).
+  (fixed: the gFB5E comment now cites ovl3:031A and src/EOV3.C:356-358; src/E0EF3.C no longer appears. grep finds no gFB5E in src/E0EF3.C.)
 
 Should:
 
-- [ ] should src/EOV4.C, IsSlotLive header: "src/EOV3.C:1010" for the bit 3 read with other meanings. EOV3.C:1010 is
+- [x] should src/EOV4.C, IsSlotLive header: "src/EOV3.C:1010" for the bit 3 read with other meanings. EOV3.C:1010 is
   `who = gDragMember;`; the `& 8` read is at src/EOV3.C:1012. Cite :1012 (stale by two lines).
+  (fixed: the IsSlotLive header now cites src/EOV3.C:1012, where `slot = (g194B[gB894[who * 9]] & 8) ? 0 : 1;` reads bit 3.)
 
 Notes (no change needed):
 

@@ -229,7 +229,7 @@ extern unsigned char gViewBufADB0[]; /*@ ds:ADB0 */  /* the view pixel buffer (t
 
 /* ovl4:042C: returns 1 when `slot` is nonzero and bit 3 of its ds:194B flag byte is clear, else 0.
    The callers use it to choose between the slot's own ds:EF6A record and a second record; bit 3
-   itself is read with other meanings in src/E1414.C:321 and src/EOV3.C:1010. Called by Ovl4_044B
+   itself is read with other meanings in src/E1414.C:321 and src/EOV3.C:1012. Called by Ovl4_044B
    at ovl4:0563 and ovl4:05D8. */
 /*@ ovl4:042C */ int IsSlotLive(int slot)
 {
@@ -400,10 +400,10 @@ extern void DrawRegion000F(int mode, void far *src, int x, int y, int region); /
    the rest are skipped. The tile's ds:194B flags (forced to 0x80 when slot is 0x10) and its ds:1879
    count gate the slot: it returns when the count is nonzero and bit 7 of the flags is clear, so it
    proceeds when the count is zero or bit 7 is set. Bit 3 of the flags, when sprite < 2 and frame is
-   nonzero, also recomputes the span of the object's ds:6F86 span slot and pulls the object up 4
-   pixels. After each item, when that span slot was set, the slot's own span is recomputed (the
-   second call is inside the loop). Called by DrawViewSlots when the tile record's word +5 is
-   nonzero. Purpose unknown: what the tables and the object are.
+   nonzero, also recomputes the span of ds:6F86[slot] (the view slot's span slot) and pulls the
+   object up 4 pixels. After each item, when that span slot was set, the slot's own span is
+   recomputed (the second call is inside the loop). Called by DrawViewSlots when the tile record's
+   word +5 is nonzero. Purpose unknown: what the tables and the object are.
    QUIRK ovl4:0AD0: `spanSlot` is set only inside the drawn-item branch; a first item that is
    skipped leaves the check after the item reading this slot's indeterminate stack value, and a
    later skipped item reads the previous item's value. The original reads the same stack slot. */
@@ -671,7 +671,7 @@ extern struct RectKind far *gRectKinds[]; /*@ ds:EFD4 */  /* per-cell far size r
 extern struct ViewWallRec gViewWalls[]; /*@ ds:E06A */
 
 /* ovl4:1091: draws the wall faces of one view slot. The slot's two faces are ds:7018[slot*2+1],
-   drawn first (ovl4:0693), and ds:7018[slot*2], drawn second (ovl4:0715); each face, when its far
+   drawn first (ovl4:10AD), and ds:7018[slot*2], drawn second (ovl4:11FD); each face, when its far
    pointer is set, starts a chain of 0x34-byte wall records at ds:E06A. The chain head is
    gTable18BF of the byte the face's first byte selects in the slot's ds:EF6A tile record, and
    `next` (which is read after the index is decremented) walks it. The face's signed offset
@@ -763,7 +763,7 @@ struct SlotPos {
     unsigned char x;            /* +4 */
     unsigned char y;            /* +5 */
 };
-extern struct SlotSize far *gFB5E[]; /*@ ds:FB5E */  /* per column, a far size record (src/E0EF3.C:031A; src/EOV2.C:155 and src/EOV3.C:143 declare it long, but the ->width use here needs a far pointer) */
+extern struct SlotSize far *gFB5E[]; /*@ ds:FB5E */  /* per column, a far size record (ovl3:031A frees and clears the entries, src/EOV3.C:356-358; src/EOV2.C:155 and src/EOV3.C:143 declare it long, but the ->width use here needs a far pointer) */
 extern struct SlotPos gA99C[]; /*@ ds:A99C */
 extern int gF1; /*@ ds:00F1 */               /* the view region's top (src/E0EF3.C:395) */
 extern int gF5; /*@ ds:00F5 */               /* the view region's height (src/E0EF3.C:397) */
@@ -792,8 +792,8 @@ extern signed char g71A2[]; /*@ ds:71A2 */   /* per index nudge f (this unit) */
    (SetRegionColumnExtent). Actions 1..3 and 12 draw the record once, at a y base from ds:70F0 (12:
    ds:7102), nudged below heading 0x1e by (heading - ds:714E[heading]) * ds:718E and at or above it by
    ds:7192 with no heading term. Actions 4..6 draw the record twice (region 000F and 004D, mirrored)
-   at y base ds:70F4, with a y shift from ds:7196 below 0x1e and ds:719A at or above, and fit region 5
-   once (ovl4:0852) to ds:7106/ds:7108 shifted right 3 and clamped to gViewColLeft/gViewColRight,
+   at y base ds:70F4, with an x shift from ds:7196 below 0x1e and ds:719A at or above, and fit region
+   5 once (ovl4:1614) to ds:7106/ds:7108 shifted right 3 and clamped to gViewColLeft/gViewColRight,
    with gF1/gF5. Actions 7..9 draw gFB5E[col+3] first, then fit the column extent and draw the record
    at y base ds:70F8, with the same nudge pair as 1..3. Actions 10..11 draw gFB5E[col] and
    gFB5E[col+3] at y bases ds:70FC/ds:70FF with a nudge from ds:719E/ds:71A2. Every case, when
@@ -1169,10 +1169,10 @@ extern void PlaySoundDefault(int sound); /*@ 177D:00F3 */
 
 /* ovl4:1F51: draws one frame of the view: Ovl4_044B draws the objects into the page buffer (with
    gPartyCell and gFBCC), DrawTile blits it from gSegDCA6, DrawViewSlots(0) draws the slots, and
-   when gFB45 and video mode 3 are set, and `full` is set, it blanks the view box (gFillRect with
-   pattern 0xc) and loads the palette gFE68, then clears gFB45. Then it waits for gCount849A to
-   reach zero, and, when `full` is set and gF442 is clear, clips a rectangle. It always plays sound
-   0 and, when gFlag is zero, runs DrawViewRows; finally it clears gDF4C. Called from the game
+   when gFB45 and video mode 3 are set it loads the palette gFE68 and clears gFB45; when `full` is
+   also set, it first blanks the view box (gFillRect with pattern 0xc). Then it waits for gCount849A
+   to reach zero, and, when `full` is set and gF442 is clear, clips a rectangle. It always plays
+   sound 0 and, when gFlag is zero, runs DrawViewRows; finally it clears gDF4C. Called from the game
    loop. */
 /*@ ovl4:1F51 */ void DrawViewFrame(int full)
 {
