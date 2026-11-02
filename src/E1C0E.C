@@ -94,25 +94,21 @@ struct FileEntry {
     char far *data;             /* +0x08: the in-memory copy when the slot is loaded */
     int link;                   /* +0x0C: < 0: LINK_INDEX is the index of the entry this aliases */
     long pos;                   /* +0x0E: the read/write position in the file */
-    unsigned char flags;        /* +0x12: FLAG_KEEP and the low FLAG_BITS */
+    signed char flags;          /* +0x12: FLAG_KEEP and the low FLAG_BITS */
 };
 
 extern struct FileEntry gFiles[];        /*@ ds:01FF */
 extern int gFileHandles[];               /*@ ds:FEEA: DOS handle or SLOT_FREE per slot */
 
 /* 1C0E:000C: resize the file in slot `index` to `size` bytes and return 1 when that succeeded, 0
-   when the slot is loaded in memory (nothing to resize) or chsize failed. DRAFT: every byte matches
-   but the layout of the two `return 0` tails (the original keeps them apart, TCC -O folds the first
-   into `je`), no source form found yet. */
-/*@ 1C0E:000C draft */ int SetFileSize(int index, long size)
+   when the slot is loaded in memory (nothing to resize) or chsize failed. */
+/*@ 1C0E:000C */ int SetFileSize(int index, long size)
 {
     int handle = gFileHandles[index];
 
-    if (handle & FILE_IN_MEMORY)
-        return 0;
-    if (chsize(handle & HANDLE_MASK, size) == -1)
-        return 0;
-    return 1;
+    if (!(handle & FILE_IN_MEMORY))
+        return chsize(handle & HANDLE_MASK, size) != -1;
+    return 0;
 }
 
 /* 1C0E:0046: upper case from the last backslash of `name` on (so the file name part, leaving a
@@ -165,9 +161,8 @@ extern int gFileHandles[];               /*@ ds:FEEA: DOS handle or SLOT_FREE pe
    the drives (1C0E:1310), open it and, for a positively linked record (link > 0), check its length
    against the record (a zero length in the record is always accepted); a wrong length reports code
    0xE, a missing file (open failed) reports 0xF. Returns 1 when the file is present and its length
-   is right. DRAFT: the logic and nearly every byte match, TCC -O lays the `if (index == -1)` exit
-   out as `je` where the original keeps a two-jump form; no source form found yet. */
-/*@ 1C0E:091B draft */ int CheckFile(char far *name)
+   is right. */
+/*@ 1C0E:091B */ int CheckFile(char far *name)
 {
     int index = -1;
     int fd;
@@ -181,7 +176,11 @@ extern int gFileHandles[];               /*@ ds:FEEA: DOS handle or SLOT_FREE pe
     fd = open(name, O_RDONLY | O_BINARY);
     if (fd == -1)
         FatalError(0xf, name);
-    if (index != -1 && gFiles[index].link > 0) {
+    if (index == -1) {
+        close(fd);
+        return 1;
+    }
+    if (gFiles[index].link > 0) {
         if (filelength(fd) != gFiles[index].size && gFiles[index].size != 0) {
             close(fd);
             FatalError(0xe, name);
@@ -234,10 +233,8 @@ extern int gFileHandles[];               /*@ ds:FEEA: DOS handle or SLOT_FREE pe
 
 /* 1C0E:0DC3: return the index of the loaded slot to evict for a `minSize` byte request: the one
    whose data is in memory, whose size is at least `minSize`, whose flags are at most `maxFlags`
-   and whose flags are the smallest of those candidates; -1 when there is none. DRAFT: the loops and
-   values are right, TCC -O lays the signed size compare (1C0E:0DC3+46) out with the branches in the
-   other order; no source form found yet. */
-/*@ 1C0E:0DC3 draft */ int FindEvictableFile(int minSize, unsigned char maxFlags)
+   and whose flags are the smallest of those candidates; -1 when there is none. */
+/*@ 1C0E:0DC3 */ int FindEvictableFile(int minSize, unsigned char maxFlags)
 {
     int count;
     int slot = -1;
@@ -249,22 +246,22 @@ extern int gFileHandles[];               /*@ ds:FEEA: DOS handle or SLOT_FREE pe
     for (i = 0; i < count; i++) {
         if (gFiles[i].data == 0)
             continue;
-        if (gFiles[i].size < minSize)
-            continue;
-        if (gFiles[i].flags > maxFlags)
-            continue;
-        if (slot == -1 || gFiles[i].flags < gFiles[slot].flags)
-            slot = i;
+        if (gFiles[i].size >= minSize) {
+            if (gFiles[i].flags <= maxFlags) {
+                if (slot == -1)
+                    slot = i;
+                else if (gFiles[i].flags < gFiles[slot].flags)
+                    slot = i;
+            }
+        }
     }
     return slot;
 }
 
 /* 1C0E:0E5B: first retry before the out-of-memory hook (src/E19BC.C): drop the in-memory copy of
    the least important slot that can hold a `size` byte request (1C0E:0DC3) and return 1; return 0
-   when no slot qualifies or any slot's handle happens to equal its own index. DRAFT: the code is
-   right but the three `return 0` tails that the original keeps apart and shares are folded into
-   inline zeros by TCC -O; no source form found yet. */
-/*@ 1C0E:0E5B draft */ int EvictFile(unsigned size, unsigned char flags)
+   when no slot qualifies or any slot's handle happens to equal its own index. */
+/*@ 1C0E:0E5B */ int EvictFile(unsigned size, unsigned char flags)
 {
     int i = 0;
     int slot;
@@ -279,13 +276,12 @@ extern int gFileHandles[];               /*@ ds:FEEA: DOS handle or SLOT_FREE pe
             blocked = 1;
             i = 10;
         }
-    if (blocked)
-        return 0;
-    if (i != 10)
-        return 0;
-    MemFree(gFiles[slot].data);
-    gFiles[slot].data = 0;
-    return 1;
+    if (!blocked && i == 10) {
+        MemFree(gFiles[slot].data);
+        gFiles[slot].data = 0;
+        return 1;
+    }
+    return 0;
 }
 
 /* 1C0E:0EE7: free every slot's in-memory copy and, for every slot still open, run the retry
@@ -412,19 +408,18 @@ extern int gFileHandles[];               /*@ ds:FEEA: DOS handle or SLOT_FREE pe
 }
 
 /* 1C0E:1411: look `name` up; when the slot exists and its flags have 0x40 set, drop the slot
-   through 1C0E:144E and return 1, otherwise 0. DRAFT: the values are right, TCC -O folds the two
-   `return 0` tails into inline zeros where the original keeps one and falls through the other; no
-   source form found yet. */
-/*@ 1C0E:1411 draft */ int DropFile(char far *name)
+   through 1C0E:144E and return 1, otherwise 0. */
+/*@ 1C0E:1411 */ int DropFile(char far *name)
 {
     int index = FindFile(name);
 
     if (index == -1)
         return 0;
-    if (!(gFiles[index].flags & 0x40))
-        return 0;
-    f1C0E_144E(index);
-    return 1;
+    if (gFiles[index].flags & 0x40) {
+        f1C0E_144E(index);
+        return 1;
+    }
+    return 0;
 }
 
 /*@ 1C0E:144E stub */ int f1C0E_144E(int index) { }
