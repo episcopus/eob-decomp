@@ -7205,9 +7205,9 @@ unit = "e1e8b"
 addr = "1E8B:05FB"
 size = 24
 evidence = ["near"]
-name = "_ReleaseOverlayFpuState"
 level = "L2"
 match_flags = "tasm /mx"
+name = "ReleaseOverlayRecord"
 
 [[function]]
 id = "e1e8b_0613"
@@ -7295,9 +7295,9 @@ unit = "e1e8b"
 addr = "1E8B:0761"
 size = 28
 evidence = ["near"]
-name = "_OverlayBytesRemaining"
 level = "L2"
 match_flags = "tasm /mx"
+name = "OverlayParagraphsRemaining"
 
 [[function]]
 id = "e1e8b_077d"

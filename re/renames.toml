@@ -1971,3 +1971,30 @@ new = "AnimateConeOfCold"
 kind = "function"
 why = "called only by CastConeOfCold (0EF3:18D8), the cone-of-cold spell; draws its particle cone"
 date = "2026-11-02"
+
+[[rename]]
+id = "20C1:0000=gTlinkSegmentTable"
+addr = "20C1:0000"
+old = "gOverlayIndex"
+new = "gTlinkSegmentTable"
+kind = "function"
+why = "03FD:0635 reads the frame paragraph at index times 8 from the table at 20C1:0000 for every overlay relocation; WHITEPAPER 2.2/2.3 (line 76) place TLINK's segment table at load module offset 20C10h = 20C1:0000, 99 entries of 8 bytes (frame paragraph, end offset, kind, flags), so it is TLINK's segment table, not an overlay index"
+date = "2026-11-02"
+
+[[rename]]
+id = "1E8B:05FB=ReleaseOverlayRecord"
+addr = "1E8B:05FB"
+old = "ReleaseOverlayFpuState"
+new = "ReleaseOverlayRecord"
+kind = "function"
+why = "05FB:0893 clears the record's version table (068D), calls the release hook at 20B5:0010 when the record's routine word ES:0018 is the 4A2h sentinel (set in 0286:0453), then clears the record's base segment ES:0010; called from age (0536:0807) when the record's use counter ES:001B reaches zero. No FPU evidence: WHITEPAPER line 49 says no game code uses floating point, and no emulator interrupt (INT 34h to 3Dh) exists"
+date = "2026-11-02"
+
+[[rename]]
+id = "1E8B:0761=OverlayParagraphsRemaining"
+addr = "1E8B:0761"
+old = "OverlayBytesRemaining"
+new = "OverlayParagraphsRemaining"
+kind = "function"
+why = "0761:1134 loads the segment ES:0010 and 20B5:00B0 (both paragraph values) and subtracts, so AX is a paragraph count, not bytes (its caller 0536 compares it against the 0789 paragraph total); the fallback uses 20B5:00B6, the free area's top, not a file size"
+date = "2026-11-02"
