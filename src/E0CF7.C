@@ -19,7 +19,7 @@ struct Node {
     unsigned char kind;         /* +0A: the drawing kind 0..5 DrawNode switches on */
     unsigned char modeB;        /* +0B: the "on" drawing mode DrawNode switches on */
     unsigned char modeC;        /* +0C: the second drawing mode DrawNode switches on */
-    unsigned char pad0D;        /* +0D: alignment pad */
+    unsigned char pad0D;        /* +0D: unknown field, E16A5.C leaves it unnamed */
     unsigned flags;             /* +0E: the inactive bit and the layout bits E1658.C names */
     void far *src10;            /* +10: the default art pointer DrawNode draws */
     void far *src14;            /* +14: the "on" art/callback pointer DrawNode draws */
@@ -48,8 +48,10 @@ extern char gFlag; /*@ ds:F3B9 */ /* selects the "a" table set when nonzero (the
                                      0EF3:2281 in the function at 0EF3:21E0, just before it calls
                                      BuildList1 at 0EF3:2286; 0 at 0EF3:2544 in the function at
                                      0EF3:2541 that calls BuildList1 to BuildList3; and 0 at
-                                     0ACD:0FA9, just before its BuildList1 call. Readers: BuildList1
-                                     to BuildList3 test it here; at 0EF3:2257 the function at
+                                     0ACD:0FA9 in EnterMapScreen (0ACD:0F72), where two more
+                                     stores (ds:A99A and ds:DCAA) come before its BuildList1 call
+                                     at 0ACD:0FB8. Readers: BuildList1 to BuildList3 test it
+                                     here; at 0EF3:2257 the function at
                                      0EF3:21E0 tests it first and, when it is zero, calls through the
                                      far pointer at ds:80AE (0EF3:2269..227A) before the 1 store, so
                                      that path writes 1 too. Purpose unknown. */
@@ -60,7 +62,8 @@ extern struct Node far *gList; /*@ ds:FB48 */ /* head of the screen node list wa
 /* Table base addresses and record counts. The first entry of tables 1a, 1b, 2a, 2b, 3a and 3b is
    the same record, ds:4836, so the a and b sets differ only after their first node; tables 4 and 5
    start with the records at ds:3E9A and ds:4B7E. One count constant per table ties each loop to
-   its table. */
+   its table. The 1a/1b/2a/2b/3a/3b suffixes are placeholders that follow BuildList1 to BuildList3,
+   not evidence of meaning (name them by address if the numbering is dropped). */
 #define TABLE1A_COUNT 52
 #define TABLE1B_COUNT 38
 #define TABLE2A_COUNT 59
@@ -100,6 +103,8 @@ extern struct Node far *ListAdd(struct Node far *head, struct Node far *item); /
     if (gFlag) {
         ListInit(gTable1a[0]);
         for (i = 1; i < TABLE1A_COUNT; i++)
+            /* QUIRK 0CF7:0028: ListAdd returns its first argument, so this leaves gList at the
+               head the loop started with, not the node just appended; see its note. */
             gList = ListAdd(gList, gTable1a[i]);
     } else {
         ListInit(gTable1b[0]);
@@ -143,7 +148,8 @@ extern struct Node far *ListAdd(struct Node far *head, struct Node far *item); /
 }
 
 /* 0CF7:01CC: links gTable4's 7 records into a list; no flag, so one fixed table. Same shape as
-   BuildList1 without the branch. Its only caller is 0ACD:0264. */
+   BuildList1 without the branch. Its only caller is the function at 0ACD:0264 (call at
+   0ACD:02BE). */
 /*@ 0CF7:01CC */ void BuildList4(void)
 {
     int i;
@@ -154,7 +160,7 @@ extern struct Node far *ListAdd(struct Node far *head, struct Node far *item); /
 }
 
 /* 0CF7:0211: links gTable5's 7 records into a list; no flag, one fixed table. Same shape as
-   BuildList4. Its only caller is 0EF3:059D. */
+   BuildList4. The function at 0EF3:059D calls it at 0EF3:05B6. */
 /*@ 0CF7:0211 */ void BuildList5(void)
 {
     int i;
