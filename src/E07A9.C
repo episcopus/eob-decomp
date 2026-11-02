@@ -41,11 +41,14 @@
 /* the size SetUnpackBuffer is given for the shared unpack work buffer, 0xFC00 in every video
    mode (07A9:00D7). It is the unpacker's own work-buffer requirement, not the size of slot 7's
    block: the work segment holds the LZW dictionary the format 1 and format 2 decoders build
-   (format 1's 3C00h work buffer, docs/design/WHITEPAPER.md:157; the decoders are called with it,
-   src/E1B82.C:166 Unpack1 and :175 Unpack2), while the unpacked output goes to the destination
-   segment. Format 1's dictionary stops below its 0x3C00 (cmp bp,0x3C00 at 1D9A:0214 and 1D9A:026A,
-   src/E1D9A.ASM:336 and :369), inside slot 7's block; format 2's two tables run to 0xFC00 (the
-   entry offsets at 2 * (code - 0x100), the lengths at +0x7E00, described at src/E1D9A.ASM:424-429
+   (format 1's 3C00h work buffer, docs/design/WHITEPAPER.md:157). The decoders get it when it is
+   large enough: src/E1B82.C:169 Unpack1 and :178 Unpack2 are called with the shared segment
+   gBufSeg, and StartupAlloc's 0xFC00 is not below either format's size, so the MemAlloc fallbacks
+   (src/E1B82.C:159 and :172, which pass work.words[1]) are not reached from here. The unpacked
+   output goes to the destination segment. Format 1's dictionary stops below its 0x3C00 (cmp
+   bp,0x3C00 at 1D9A:0214 and 1D9A:026A, src/E1D9A.ASM:336 and :369), inside slot 7's block; format
+   2's two tables run to 0xFC00 (the entry offsets at 2 * (code - 0x100), the lengths at +0x7E00,
+   described at src/E1D9A.ASM:424-429
    and built at :483, :494 and :499), past the 0xCB20 block of cases 0 to 3, but no pinned file
    uses format 2 [H] (docs/design/WHITEPAPER.md:157). Slot 7's own block is 0xCB20 bytes in cases
    0 to 3 (src/E07C8.C:256, 265, 274, 280) and 0xFC00 only in case 4 (src/E07C8.C:290) */
@@ -99,7 +102,8 @@ extern void far *gBuf8DCA; /*@ ds:8DCA */  /* start-up far allocation, 7500 byte
                                               jumps to the base with the word offset at src/E122E.C:1232,
                                               and RunMemberScript (122E:1DA8, src/E122E.C:1414) starts its
                                               script walk at it (src/E122E.C:1438). Overlay
-                                              3 uses it too: LoadMapScreen unpacks LEVEL<n>.INF into it
+                                              3 uses it too: LoadMapScreen unpacks LEVEL<n>.INF
+                                              (read into gSegDF4E at src/EOV3.C:571) into it
                                               (src/EOV3.C:573-574, "the 7500-byte unpacked level
                                               script", src/EOV3.C:200), reads the item records through
                                               it (the script word and item loop, src/EOV3.C:666-681) and
@@ -156,7 +160,9 @@ extern void far *gSegDF4E; /*@ ds:DF4E */  /* slot 5's far pointer, f19EC_0002(5
                                               RedrawRowArea (0BD2:0ABE, src/E0BD2.C:622) passes it to
                                               gSaveRect with the same 0x12 by 0xA8 field that
                                               Action01E3 blits (src/E0ACD.C:269).
-                                              Overlay 3 uses it too: LoadObjects (ovl3:09AA,
+                                              Overlay 3 uses it too: LoadMapScreen reads LEVEL<n>.INF
+                                              into it before unpacking that into gBuf8DCA (src/EOV3.C:571,
+                                              the Unpack at :573), LoadObjects (ovl3:09AA,
                                               src/EOV3.C:503) reads 0x1000 bytes into it (FileRead at
                                               src/EOV3.C:513) and copies it back (src/EOV3.C:518-525),
                                               LoadWallSet (ovl3:004F, src/EOV3.C:250) puts its
@@ -361,7 +367,11 @@ extern void SetMousePointerShape(int hotX, int hotY, void far *icon); /*@ 1BB1:0
    fails the branch is skipped (07A9:0161 and 0168, je 0x1bc) and the plain item icon becomes the
    pointer (gIconsDDE4[item] at 07A9:01BC onward); on that path the (0,0) call is when item is 0
    (the item is cleared) or its icon number is 0 or below (07A9:01BC `or si,si`, `jle 0x1d4` at
-   07A9:01BE). Why g811F == 7 gets the " taken." message is Purpose unknown. */
+   07A9:01BE). QUIRK 07A9:01D4: that path indexes gIconsDDE4[item] with the sign-extended icon
+   number and no test, so a negative number reads four bytes before the table for each step below
+   zero (the table at ds:DDE4, entries of 4 bytes). No record in the pinned ITEM.DAT has a negative
+   icon (432 records, icon numbers 1 to 97), so the game's data does not reach the read. Why
+   g811F == 7 gets the " taken." message is Purpose unknown. */
 /*@ 07A9:010C */ void SetMouseItem(int item)
 {
     SetCurrentItem(item);
