@@ -152,10 +152,10 @@ extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
 extern int AddDDEffect(int who, int field, int volume, int tableByte, int page, int m02); /*@ 0BD2:07DE */
 extern int AddDDEffect(int who, int slot, int a, int b, int c, int d); /*@ 0BD2:07DE */
 extern int f08E6_15B4(char a, int b); /*@ 08E6:15B4 */
-extern int f0EF3_04F7(int who); /*@ 0EF3:04F7 */
+extern int GetClassSlot24Value(int who); /*@ 0EF3:04F7 */
 extern void DamageObject(struct Obj28 far *obj, int n); /*@ 08E6:0FBE */
-extern void f0EF3_12A1(void far *arg); /*@ 0EF3:12A1 */
-extern void f0EF3_0F86(void far *arg); /*@ 0EF3:0F86 */
+extern void ClearEffectFlag4(void far *arg); /*@ 0EF3:12A1 */
+extern void RecomputeArmourClass(void far *arg); /*@ 0EF3:0F86 */
 extern void ApplyCharEffect(char who, long interval, char value, char firstEmpty); /*@ 1414:05ED */
 extern void RedrawMember(int dir); /*@ 1547:0991 */
 extern void DrawMemberHp(int who); /*@ 1547:033F */
@@ -448,7 +448,7 @@ fail:
     return -4;
 }
 /* 0DE8:0763: runs the action `field` for character `who` and slot `slot`. It derives the item's
-   m02, calls f0EF3_12A1 when mE3 bit 2 is set, dispatches on the gItemTypes m0E kind (1 rolls
+   m02, calls ClearEffectFlag4 when mE3 bit 2 is set, dispatches on the gItemTypes m0E kind (1 rolls
    0359 and forces a miss from 0 to -1 with sound 0x20, 2 runs 0537, 3 runs 05BB and redraws),
    then, on a hit, raises hp (capped at 0x7F) for a flag-8 item, clears m77[slot] for a flag-16
    item and hands gObjs[gDCA4] to DamageObject. It toggles m1E bit `slot`, stores the result in
@@ -465,7 +465,7 @@ fail:
         m02 = 0;
     result = 0;
     if (gChars[who].mE3 & 4)
-        f0EF3_12A1(&gChars[who]);
+        ClearEffectFlag4(&gChars[who]);
     switch (gItemTypes[m02].m0E & 0x7f) {
     case 1:
         result = ApplyItemAttack(who, field);
@@ -528,7 +528,7 @@ fail:
 /* 0DE8:09B9: applies `amount` points of damage to character `who`. When f0D1C_0670(who, 3) holds
    it derates mE2 (clamped at 0), subtracts from hp, stores the amount in mE7, and at or below -10
    sets hp to -10, clears mE2, clears mE3 bit 2 and keeps only bit 0 of m01; it plays sound 0x16
-   for the death and 0x15 otherwise, runs the mDF descending effect through f0EF3_0F86 when it runs
+   for the death and 0x15 otherwise, runs the mDF descending effect through RecomputeArmourClass when it runs
    out, redraws through RedrawMember (or DrawMemberPortrait when gFB44 is set), triggers the party-wipe
    ending when hp is at or below -10 and arms ApplyCharEffect(who, 0x12, 6, 1). Called by 0EF3,
    0E08E6, 122E, 1414 and overlay 6.
@@ -562,7 +562,7 @@ fail:
         rec->mDF -= amount;
         if (rec->mDF <= 0) {
             rec->mDF = 0;
-            f0EF3_0F86(&gChars[who]);
+            RecomputeArmourClass(&gChars[who]);
         }
     }
     if (gFB44 == 0)
@@ -664,7 +664,7 @@ fail:
    then for the four slots named by g553E adds the item type's m04 and subtracts the slot's m0B when
    the item m02 passes the gItemTypes m0E and g1231[m20] tests (slot 2 also needs f0D1C_07DB), and
    when m77[17]'s slot m0B is 0 subtracts the larger m0B of the m77[25]/m77[26] items. It clamps
-   against base + 6 while mDF holds, caps at 4 when mE3 bit 1 is set and at 5 + (f0EF3_04F7 - 5) / 3
+   against base + 6 while mDF holds, caps at 4 when mE3 bit 1 is set and at 5 + (GetClassSlot24Value - 5) / 3
    when mE3 bit 8 is set. Called by 0ACD, 0BD2, 0EF3 and overlays 0 and 5. */
 /*@ 0DE8:0D5E */ void ComputeArmourClass(int who)
 {
@@ -719,8 +719,8 @@ fail:
         rec->m1D = 4;
     if ((rec->mE3 & 0x100) != 0) {
         limit = 5;
-        if (f0EF3_04F7(who) > 5)
-            limit += (f0EF3_04F7(who) - 5) / 3;
+        if (GetClassSlot24Value(who) > 5)
+            limit += (GetClassSlot24Value(who) - 5) / 3;
         if (rec->m1D > limit)
             rec->m1D = limit;
     }

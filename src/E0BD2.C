@@ -119,10 +119,10 @@ extern unsigned char g1804[]; /*@ ds:1804 */ /* a per-character byte (the item r
 extern signed char g3875[]; /*@ ds:3875 */  /* a per-character byte (0, 1 or 2) */
 extern signed char g3890[]; /*@ ds:3890 */  /* a three-byte table read by 0BD2:0917 */
 extern signed char g38FA[]; /*@ ds:38FA */  /* a byte table indexed by an item's m0B in 0BD2:0EE8 */
-extern void f0EF3_28ED(int a, int b, int c); /*@ 0EF3:28ED */
+extern void StartPanelAction(int a, int b, int c); /*@ 0EF3:28ED */
 extern void f0EF3_06E7(void); /*@ 0EF3:06E7 */
-extern void f0EF3_0665(int who); /*@ 0EF3:0665 */
-extern void f0EF3_1CE8(int who); /*@ 0EF3:1CE8 */
+extern void FlashPartyMembers(int who); /*@ 0EF3:0665 */
+extern void ClearPoisonEffect(int who); /*@ 0EF3:1CE8 */
 extern void MoveObjectToId(struct Obj28 far *obj, int a, int b); /*@ 08E6:0297 */
 extern void ApplyCharEffect(char who, long interval, char value, char firstEmpty); /*@ 1414:05ED */
 extern void HealCharacter(int who, int amount); /*@ 0DE8:0ADB */
@@ -723,17 +723,17 @@ next:
     PlaySound(0xA);
     switch (kind) {
     case 1:
-        f0EF3_0665(who);
+        FlashPartyMembers(who);
         rec->m0D = 0x16;
         rec->m0F = 0;
         ApplyCharEffect(who, (RollDice(1, 4, 0) + 4) * 0x222, 7, 1);
         break;
     case 2:
-        f0EF3_0665(who);
+        FlashPartyMembers(who);
         HealCharacter(who, RollDice(2, 4, 2));
         break;
     case 3:
-        f0EF3_0665(who);
+        FlashPartyMembers(who);
         HealCharacter(who, RollDice(3, 8, 3));
         break;
     case 4:
@@ -741,22 +741,22 @@ next:
         rec->mE3 &= ~0x80;
         break;
     case 5:
-        f0EF3_0665(who);
+        FlashPartyMembers(who);
         rec->m23 = 0x64;
         if (gFB44 != 0)
             RedrawMember(who);
         break;
     case 6:
-        f0EF3_0665(who);
+        FlashPartyMembers(who);
         break;
     case 7:
-        f0EF3_0665(who);
+        FlashPartyMembers(who);
         rec->mE3 |= 4;
         RedrawMember(who);
         break;
     case 8:
-        f0EF3_0665(who);
-        f0EF3_1CE8(who);
+        FlashPartyMembers(who);
+        ClearPoisonEffect(who);
         break;
     }
     if (kind - 1 != 3 || (rec->m01 & 2) == 0) {
@@ -786,7 +786,7 @@ next:
     }
     if (type != 5) {
         effect = g38FA[type];
-        f0EF3_28ED(who, effect, slot);
+        StartPanelAction(who, effect, slot);
         return;
     }
     page = gFBCC;
@@ -878,13 +878,13 @@ next:
     case 9:
         if (gFB44 == 0) {
             value = gItems[item].m0B;
-            f0EF3_28ED(who, value, firstTwo);
+            StartPanelAction(who, value, firstTwo);
         }
         break;
     case 10:
         if (gFB44 == 0) {
             value = gItems[item].m0B + 0x19;
-            f0EF3_28ED(who, value, firstTwo);
+            StartPanelAction(who, value, firstTwo);
         }
         break;
     case 11:

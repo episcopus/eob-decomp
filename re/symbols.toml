@@ -3224,6 +3224,9 @@ unit = "e0ef3"
 addr = "0EF3:026F"
 size = 147
 evidence = ["near"]
+name = "FinishMemberEffect"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0ef3_0302"
@@ -3231,6 +3234,9 @@ unit = "e0ef3"
 addr = "0EF3:0302"
 size = 88
 evidence = ["near", "frame"]
+name = "ApplyTimedCharEffect"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0ef3_035a"
@@ -3245,6 +3251,9 @@ unit = "e0ef3"
 addr = "0EF3:03D8"
 size = 64
 evidence = ["near", "frame"]
+name = "FreeItemRecord"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0ef3_0418"
@@ -3259,6 +3268,9 @@ unit = "e0ef3"
 addr = "0EF3:0482"
 size = 22
 evidence = ["near", "frame"]
+name = "ItemSlot1Empty"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0ef3_0498"
@@ -3266,6 +3278,9 @@ unit = "e0ef3"
 addr = "0EF3:0498"
 size = 95
 evidence = ["near", "frame"]
+name = "GetClassSlot1Value"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0ef3_04f7"
@@ -3273,6 +3288,9 @@ unit = "e0ef3"
 addr = "0EF3:04F7"
 size = 166
 evidence = ["far", "near", "frame"]
+name = "GetClassSlot24Value"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0ef3_059d"
@@ -3280,6 +3298,9 @@ unit = "e0ef3"
 addr = "0EF3:059D"
 size = 32
 evidence = ["near", "frame"]
+name = "ReportActionRefused"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0ef3_05bd"
@@ -3350,6 +3371,9 @@ unit = "e0ef3"
 addr = "0EF3:0F86"
 size = 19
 evidence = ["far", "near", "frame"]
+name = "RecomputeArmourClass"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0ef3_0f99"
@@ -3364,6 +3388,9 @@ unit = "e0ef3"
 addr = "0EF3:1069"
 size = 69
 evidence = ["frame"]
+name = "EnterSwapMode"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0ef3_10ae"
@@ -3371,6 +3398,9 @@ unit = "e0ef3"
 addr = "0EF3:10AE"
 size = 36
 evidence = ["frame"]
+name = "LeaveSwapMode"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0ef3_10d2"
@@ -3378,6 +3408,9 @@ unit = "e0ef3"
 addr = "0EF3:10D2"
 size = 32
 evidence = ["frame"]
+name = "AddEffectRecord0"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0ef3_10f2"
@@ -3385,6 +3418,9 @@ unit = "e0ef3"
 addr = "0EF3:10F2"
 size = 48
 evidence = ["frame"]
+name = "RunMelee1d4"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0ef3_1122"
@@ -3392,6 +3428,9 @@ unit = "e0ef3"
 addr = "0EF3:1122"
 size = 84
 evidence = ["frame"]
+name = "SetAttackEffect"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0ef3_1176"
@@ -3399,6 +3438,9 @@ unit = "e0ef3"
 addr = "0EF3:1176"
 size = 33
 evidence = ["frame"]
+name = "ClearAttackEffect"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0ef3_1197"
@@ -3413,6 +3455,9 @@ unit = "e0ef3"
 addr = "0EF3:121B"
 size = 24
 evidence = ["near", "frame"]
+name = "IsDiscardedItem"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0ef3_1233"
@@ -3420,6 +3465,9 @@ unit = "e0ef3"
 addr = "0EF3:1233"
 size = 76
 evidence = ["near", "frame"]
+name = "DiscardEquippedItems"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0ef3_127f"
@@ -3427,6 +3475,9 @@ unit = "e0ef3"
 addr = "0EF3:127F"
 size = 34
 evidence = ["frame"]
+name = "SetEffectFlag4"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0ef3_12a1"
@@ -3434,6 +3485,9 @@ unit = "e0ef3"
 addr = "0EF3:12A1"
 size = 33
 evidence = ["far", "near", "frame"]
+name = "ClearEffectFlag4"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0ef3_12c2"
@@ -3441,6 +3495,9 @@ unit = "e0ef3"
 addr = "0EF3:12C2"
 size = 33
 evidence = ["frame"]
+name = "AddEffectRecord1"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0ef3_12e3"
@@ -3448,6 +3505,9 @@ unit = "e0ef3"
 addr = "0EF3:12E3"
 size = 50
 evidence = ["frame"]
+name = "RunMelee2d4"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0ef3_1315"
@@ -3455,6 +3515,9 @@ unit = "e0ef3"
 addr = "0EF3:1315"
 size = 5
 evidence = ["frame"]
+name = "EmptyFunction1315"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0ef3_131a"
@@ -3469,6 +3532,9 @@ unit = "e0ef3"
 addr = "0EF3:13FD"
 size = 33
 evidence = ["frame"]
+name = "AddEffectRecord2"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0ef3_141e"
@@ -3476,6 +3542,9 @@ unit = "e0ef3"
 addr = "0EF3:141E"
 size = 44
 evidence = ["frame"]
+name = "RunMelee1d6"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0ef3_144a"
@@ -3483,6 +3552,9 @@ unit = "e0ef3"
 addr = "0EF3:144A"
 size = 33
 evidence = ["frame"]
+name = "AddEffectRecord3"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0ef3_146b"
@@ -3490,6 +3562,9 @@ unit = "e0ef3"
 addr = "0EF3:146B"
 size = 44
 evidence = ["frame"]
+name = "RunMelee5d6"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0ef3_1497"
@@ -3497,6 +3572,9 @@ unit = "e0ef3"
 addr = "0EF3:1497"
 size = 98
 evidence = ["frame"]
+name = "MarkLivingMembers"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0ef3_14f9"
@@ -3504,6 +3582,9 @@ unit = "e0ef3"
 addr = "0EF3:14F9"
 size = 22
 evidence = ["frame"]
+name = "ClearEffectFlag8"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0ef3_150f"
@@ -3511,6 +3592,9 @@ unit = "e0ef3"
 addr = "0EF3:150F"
 size = 33
 evidence = ["frame"]
+name = "AddEffectRecord4"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0ef3_1530"
@@ -3518,6 +3602,9 @@ unit = "e0ef3"
 addr = "0EF3:1530"
 size = 160
 evidence = ["frame"]
+name = "UpdateCellObjectsBit1"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0ef3_15d0"
@@ -3525,6 +3612,9 @@ unit = "e0ef3"
 addr = "0EF3:15D0"
 size = 57
 evidence = ["frame"]
+name = "MarkAllMembersFlag4"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0ef3_1609"
@@ -3532,6 +3622,9 @@ unit = "e0ef3"
 addr = "0EF3:1609"
 size = 33
 evidence = ["frame"]
+name = "AddEffectRecord5"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0ef3_162a"
@@ -3539,6 +3632,9 @@ unit = "e0ef3"
 addr = "0EF3:162A"
 size = 44
 evidence = ["frame"]
+name = "RunMelee1d6B"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0ef3_1656"
@@ -3553,6 +3649,9 @@ unit = "e0ef3"
 addr = "0EF3:16DC"
 size = 38
 evidence = ["frame"]
+name = "ClampHitPoints"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0ef3_1702"
@@ -3567,6 +3666,9 @@ unit = "e0ef3"
 addr = "0EF3:17B7"
 size = 33
 evidence = ["frame"]
+name = "AddEffectRecord6"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0ef3_17d8"
@@ -3574,6 +3676,9 @@ unit = "e0ef3"
 addr = "0EF3:17D8"
 size = 141
 evidence = ["frame"]
+name = "RunMeleeAroundCell"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0ef3_1865"
@@ -3581,6 +3686,9 @@ unit = "e0ef3"
 addr = "0EF3:1865"
 size = 47
 evidence = ["frame"]
+name = "SetBandageCountdown"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0ef3_1894"
@@ -3588,6 +3696,9 @@ unit = "e0ef3"
 addr = "0EF3:1894"
 size = 14
 evidence = ["near", "frame"]
+name = "ClearBandageCountdown"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0ef3_18a2"
@@ -3595,6 +3706,9 @@ unit = "e0ef3"
 addr = "0EF3:18A2"
 size = 49
 evidence = ["far", "frame"]
+name = "TickBandageCountdown"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0ef3_18d3"
@@ -3602,6 +3716,9 @@ unit = "e0ef3"
 addr = "0EF3:18D3"
 size = 5
 evidence = ["frame"]
+name = "EmptyFunction18D3"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0ef3_18d8"
@@ -3616,6 +3733,9 @@ unit = "e0ef3"
 addr = "0EF3:1A0F"
 size = 33
 evidence = ["frame"]
+name = "AddEffectRecord7"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0ef3_1a30"
@@ -3623,6 +3743,9 @@ unit = "e0ef3"
 addr = "0EF3:1A30"
 size = 160
 evidence = ["frame"]
+name = "UpdateCellObjectsBit2"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0ef3_1ad0"
@@ -3630,6 +3753,9 @@ unit = "e0ef3"
 addr = "0EF3:1AD0"
 size = 67
 evidence = ["frame"]
+name = "ToggleSwapFlag"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0ef3_1b13"
@@ -3637,6 +3763,9 @@ unit = "e0ef3"
 addr = "0EF3:1B13"
 size = 13
 evidence = ["frame"]
+name = "ClearSwapFlag"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0ef3_1b20"
@@ -3644,6 +3773,9 @@ unit = "e0ef3"
 addr = "0EF3:1B20"
 size = 35
 evidence = ["frame"]
+name = "HealCurrent1d8"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0ef3_1b43"
@@ -3651,6 +3783,9 @@ unit = "e0ef3"
 addr = "0EF3:1B43"
 size = 23
 evidence = ["frame"]
+name = "CastMelee1d8"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0ef3_1b5a"
@@ -3658,6 +3793,9 @@ unit = "e0ef3"
 addr = "0EF3:1B5A"
 size = 51
 evidence = ["frame"]
+name = "SetEffectFlag200"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0ef3_1b8d"
@@ -3665,6 +3803,9 @@ unit = "e0ef3"
 addr = "0EF3:1B8D"
 size = 22
 evidence = ["frame"]
+name = "ClearEffectFlag200"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0ef3_1ba3"
@@ -3679,6 +3820,9 @@ unit = "e0ef3"
 addr = "0EF3:1C45"
 size = 48
 evidence = ["frame"]
+name = "UndoBandage"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0ef3_1c75"
@@ -3686,6 +3830,9 @@ unit = "e0ef3"
 addr = "0EF3:1C75"
 size = 93
 evidence = ["frame"]
+name = "ApplyConditionEffect"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0ef3_1cd2"
@@ -3693,6 +3840,9 @@ unit = "e0ef3"
 addr = "0EF3:1CD2"
 size = 22
 evidence = ["frame"]
+name = "ClearEffectFlag80"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0ef3_1ce8"
@@ -3700,6 +3850,9 @@ unit = "e0ef3"
 addr = "0EF3:1CE8"
 size = 80
 evidence = ["far", "near", "frame"]
+name = "ClearPoisonEffect"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0ef3_1d38"
@@ -3714,6 +3867,9 @@ unit = "e0ef3"
 addr = "0EF3:1DC0"
 size = 31
 evidence = ["frame"]
+name = "SetMemberLevels"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0ef3_1ddf"
@@ -3721,6 +3877,9 @@ unit = "e0ef3"
 addr = "0EF3:1DDF"
 size = 62
 evidence = ["frame"]
+name = "SetEffectFlag100"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0ef3_1e1d"
@@ -3728,6 +3887,9 @@ unit = "e0ef3"
 addr = "0EF3:1E1D"
 size = 33
 evidence = ["frame"]
+name = "ClearEffectFlag100"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0ef3_1e3e"
@@ -3735,6 +3897,9 @@ unit = "e0ef3"
 addr = "0EF3:1E3E"
 size = 46
 evidence = ["frame"]
+name = "SetSwapFlag20"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0ef3_1e6c"
@@ -3742,6 +3907,9 @@ unit = "e0ef3"
 addr = "0EF3:1E6C"
 size = 18
 evidence = ["frame"]
+name = "ClearSwapFlag20"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0ef3_1e7e"
@@ -3749,6 +3917,9 @@ unit = "e0ef3"
 addr = "0EF3:1E7E"
 size = 78
 evidence = ["frame"]
+name = "ClearParalysisFromFour"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0ef3_1ecc"
@@ -3756,6 +3927,9 @@ unit = "e0ef3"
 addr = "0EF3:1ECC"
 size = 39
 evidence = ["frame"]
+name = "HealCurrent2d8"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0ef3_1ef3"
@@ -3763,6 +3937,9 @@ unit = "e0ef3"
 addr = "0EF3:1EF3"
 size = 24
 evidence = ["frame"]
+name = "CastMelee2d8"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0ef3_1f0b"
@@ -3770,6 +3947,9 @@ unit = "e0ef3"
 addr = "0EF3:1F0B"
 size = 40
 evidence = ["frame"]
+name = "CureOrReportPoison"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0ef3_1f33"
@@ -3777,6 +3957,9 @@ unit = "e0ef3"
 addr = "0EF3:1F33"
 size = 92
 evidence = ["frame"]
+name = "MarkAllFlag200"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0ef3_1f8f"
@@ -3784,6 +3967,9 @@ unit = "e0ef3"
 addr = "0EF3:1F8F"
 size = 57
 evidence = ["frame"]
+name = "ClearAllFlag200"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0ef3_1fc8"
@@ -3791,6 +3977,9 @@ unit = "e0ef3"
 addr = "0EF3:1FC8"
 size = 5
 evidence = ["frame"]
+name = "EmptyFunction1FC8"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0ef3_1fcd"
@@ -3798,6 +3987,9 @@ unit = "e0ef3"
 addr = "0EF3:1FCD"
 size = 5
 evidence = ["frame"]
+name = "EmptyFunction1FCD"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0ef3_1fd2"
@@ -3805,6 +3997,9 @@ unit = "e0ef3"
 addr = "0EF3:1FD2"
 size = 39
 evidence = ["frame"]
+name = "HealCurrent3d8"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0ef3_1ff9"
@@ -3812,6 +4007,9 @@ unit = "e0ef3"
 addr = "0EF3:1FF9"
 size = 24
 evidence = ["frame"]
+name = "CastMelee3d8"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0ef3_2011"
@@ -3819,6 +4017,9 @@ unit = "e0ef3"
 addr = "0EF3:2011"
 size = 33
 evidence = ["frame"]
+name = "AddEffectRecord8"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0ef3_2032"
@@ -3826,6 +4027,9 @@ unit = "e0ef3"
 addr = "0EF3:2032"
 size = 30
 evidence = ["frame"]
+name = "RunMelee6d8"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0ef3_2050"
@@ -3833,6 +4037,9 @@ unit = "e0ef3"
 addr = "0EF3:2050"
 size = 58
 evidence = ["frame"]
+name = "ReviveAtMinusTen"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0ef3_208a"
@@ -3840,6 +4047,9 @@ unit = "e0ef3"
 addr = "0EF3:208A"
 size = 30
 evidence = ["frame"]
+name = "RunMelee0"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0ef3_20a8"
@@ -3847,6 +4057,9 @@ unit = "e0ef3"
 addr = "0EF3:20A8"
 size = 157
 evidence = ["frame"]
+name = "DamageOneMember"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0ef3_2145"
@@ -3854,6 +4067,9 @@ unit = "e0ef3"
 addr = "0EF3:2145"
 size = 119
 evidence = ["frame"]
+name = "DamageParty"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0ef3_21bc"
@@ -3861,6 +4077,9 @@ unit = "e0ef3"
 addr = "0EF3:21BC"
 size = 36
 evidence = ["frame"]
+name = "HealFromClassSlot"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0ef3_21e0"
@@ -3910,6 +4129,9 @@ unit = "e0ef3"
 addr = "0EF3:28ED"
 size = 60
 evidence = ["far", "frame"]
+name = "StartPanelAction"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0ef3_2929"

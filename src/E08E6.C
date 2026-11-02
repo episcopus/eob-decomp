@@ -152,7 +152,7 @@ extern signed char g3220[]; /*@ ds:3220 */
 extern signed char g3223[]; /*@ ds:3223 */
 extern signed char g3226[]; /*@ ds:3226 */
 extern signed char g322F[]; /*@ ds:322F */
-extern int f0EF3_18A2(struct CharRec far *who); /*@ 0EF3:18A2 */
+extern int TickBandageCountdown(struct CharRec far *who); /*@ 0EF3:18A2 */
 extern void ReportLostItem(int who); /*@ 0BD2:000E */
 void Obj10F3(struct Obj28 far *obj);   /* forward: 05EA reaches it before its definition */
 
@@ -911,7 +911,7 @@ second:
         total += RollDice(gTable1A3B[index].m04[i][0],
                           gTable1A3B[index].m04[i][1],
                           gTable1A3B[index].m04[i][2]);
-        if (f0EF3_18A2(member) != 0)
+        if (TickBandageCountdown(member) != 0)
             total = 0;
     }
     if (total <= 0)
