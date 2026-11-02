@@ -73,13 +73,28 @@ struct CharRec {                /* 243-byte character records at ds:F580 (src/E0
     char m1E;
     signed char m1F;            /* +1F: half of it indexes gTable5F35 (src/E0A72.C) */
     signed char m20;            /* +20: indexes g1231 (src/E0DE8.C) */
-    char pad21[0x33 - 0x21];
+    char pad21[0x23 - 0x21];
+    signed char m23;            /* +23: set to 0x64 by ovl0:26C6 (Purpose unknown) */
+    signed char m24;            /* +24: read by ovl0:065B (Purpose unknown) */
+    signed char m25;            /* +25: read by ovl0:065B (Purpose unknown) */
+    signed char m26;            /* +26: read by ovl0:065B (Purpose unknown) */
+    char pad27[0x33 - 0x27];
     void far *sprite;           /* +33: the character's packed sprite buffer (src/EOV3.C) */
     char pad37[0x73 - 0x37];
     long m7375;                 /* +73: a 32-bit value 280D sets to 0x26c (Purpose unknown) */
-    char pad77[0xf3 - 0x77];
+    int m77[27];                /* +77: 27 carried-item slots (src/E0DE8.C) */
+    char padAD[0xf3 - 0xAD];
 };
 extern struct CharRec gChars[]; /*@ ds:F580 */
+
+struct ItemSlot {               /* 4-byte records at ds:60D5 (ovl0:26C6) */
+    int item;                   /* +0: an item type, or -1 for "no item" */
+    int slot;                   /* +2: the carrying slot it prefers */
+};
+extern struct ItemSlot g60D5[]; /*@ ds:60D5 */ /* the per-class item/slot table ovl0:26C6 walks (Purpose unknown) */
+extern char g6101[]; /*@ ds:6101 */ /* the per-class four-entry item table ovl0:26C6 walks (Purpose unknown) */
+extern int CopyItemToFreeSlot(int n); /*@ 0BD2:089E */
+extern void ComputeArmourClass(int who); /*@ 0DE8:0D5E */
 extern signed char g1231[]; /*@ ds:1231 */ /* byte table indexed by gChars[].m20 (src/E0BD2.C) */
 extern int far RollDice(char count, char sides, char bonus); /*@ 082C:0458 */
 extern void far *gPtrsFC8C[]; /*@ ds:FC8C */ /* the 0x43 overlay buffers 28B0 frees */
@@ -109,8 +124,25 @@ extern void FlushKeyBuffer(void); /*@ 1AAD:0480 */
 extern void DrawOptionList(int panel, char far * far *names, long mask, int shift, int spacing); /*@ 14EF:0154 */
 extern int UpdateOptionList(int panel, char far * far *names, long counter, long mask, int shift); /*@ 14EF:0274 */
 extern char far *g11AD[]; /*@ ds:11AD */ /* the race names (src/E1547.C) */
+extern char far *g11DD[]; /*@ ds:11DD */ /* the class names (src/E1547.C) */
+extern char gFileNameBuf[]; /*@ ds:FE6E */ /* the buffer sprintf formats into (src/E082C.C) */
+extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
+extern int strlen(char far *s); /*@ 0000:67F6 */
+extern char *FormatRatioText(char value, char percent); /*@ 0A72:0468 */
+extern char gStr6197[]; /*@ ds:6197 */ /* a fixed panel label (Purpose unknown) */
+extern char gStr61A1[]; /*@ ds:61A1 */ /* a format string ovl0:065B uses (Purpose unknown) */
+extern char gStr61B3[]; /*@ ds:61B3 */ /* a format string ovl0:065B uses (Purpose unknown) */
+extern char gStr61B9[]; /*@ ds:61B9 */ /* a format string ovl0:065B selects (Purpose unknown) */
+extern char gStr61BC[]; /*@ ds:61BC */ /* a format string ovl0:065B selects (Purpose unknown) */
+extern char gStr61C2[]; /*@ ds:61C2 */ /* a format string ovl0:065B selects (Purpose unknown) */
+extern char far *g115D[]; /*@ ds:115D */ /* six far string pointers ovl0:065B draws in a column (Purpose unknown) */
 extern int g197; /*@ ds:0197 */ /* a panel field cleared by ovl0:1F66 (Purpose unknown) */
 extern int gFC8A; /*@ ds:FC8A */ /* the parity of the key ovl0:1F66 last handled (Purpose unknown) */
+extern unsigned long gTicks; /*@ ds:848A */ /* the 32-bit tick counter (src/E082C.C) */
+extern signed char g5EB0; /*@ ds:5EB0 */ /* the character ovl0:1224 last drew (Purpose unknown) */
+extern signed char gFC84; /*@ ds:FC84 */ /* the character panel's animation frame 0..9 (Purpose unknown) */
+extern signed char gFC85; /*@ ds:FC85 */ /* the frame ovl0:1224 last drew (Purpose unknown) */
+extern unsigned long gFC86; /*@ ds:FC86 */ /* the tick ovl0:1224 next advances the frame at (Purpose unknown) */
 extern unsigned char g6079[]; /*@ ds:6079 */ /* per-character x read by ovl0:1F66 (Purpose unknown) */
 extern unsigned char g607D[]; /*@ ds:607D */ /* per-character y read by ovl0:1F66 (Purpose unknown) */
 extern char gStr623F[]; /*@ ds:623F */ /* a fixed panel label (Purpose unknown) */
@@ -329,7 +361,65 @@ extern void far *g5E64[0x11]; /*@ ds:5E64 */ /* the 17 sliced icon pointers this
     LockShowPointer();
     f1A47_0169(savedFont);
 }
-/*@ ovl0:065B stub */ void Ovl0_065B(void) {}
+/* ovl0:065B: draws the current character's panel page for gChars[index]. It clips the page and,
+   unless `mode` is 4, draws the character's sprite, then the name, race g11AD[m1F] and class
+   g11DD[m20] centred over the page and six labels g115D[8..13] down the left column. It formats
+   three stat lines into gFileNameBuf (the ratio of m0D against m0F with m11, m13, m15, m17, m19, the
+   m1D/m1C pair and the m24/m25/m26 triple, the third picking one of three gStr61xx formats from
+   m25 and m26) and draws each; the mode selects which panel icons are highlighted. Called by
+   ovl0:0A5E, 0DDC, 0EE5, 135D and 23EC. Purpose unknown: the mode-specific icons. */
+/*@ ovl0:065B draft */ void Ovl0_065B(int index, char mode)
+{
+    char far *text;
+    int i;
+
+    LockHidePointer();
+    ClipRect(0, 0, 0x14, 0, 0x14, 0x80, 2, 2);
+    g8115 = 2;
+    if (mode != 4)
+        f1A29_000F(2, gChars[index].sprite, 0xe0, 2, 0);
+    text = gChars[index].name;
+    DrawShadowText(text, 0xa0 + (0x14 - strlen(text)) * 4, 0x23, 0xf, 0);
+    text = g11AD[gChars[index].m1F];
+    DrawShadowText(text, 0xa0 + (0x14 - strlen(text)) * 4, 0x2d, 0xf, 0);
+    text = g11DD[gChars[index].m20];
+    DrawShadowText(text, 0xa0 + (0x14 - strlen(text)) * 4, 0x36, 0xf, 0);
+    for (i = 8; i < 0xe; i++)
+        DrawShadowText(g115D[i], 0xa3, i * 8, 0xf, 0);
+    DrawShadowText(gStr6197, 0xf8, 0x40, 0xf, 0);
+    sprintf(gFileNameBuf, gStr61A1, FormatRatioText(gChars[index].m0D, gChars[index].m0F),
+        gChars[index].m11, gChars[index].m13, gChars[index].m15, gChars[index].m17,
+        gChars[index].m19);
+    DrawShadowText(gFileNameBuf, 0xc0, 0x40, 0xf, 0);
+    sprintf(gFileNameBuf, gStr61B3, gChars[index].m1D, gChars[index].m1C);
+    DrawShadowText(gFileNameBuf, 0x118, 0x40, 0xf, 0);
+    text = gStr61B9;
+    if (gChars[index].m25 > 0)
+        text = gStr61BC;
+    if (gChars[index].m26 > 0)
+        text = gStr61C2;
+    sprintf(gFileNameBuf, text, gChars[index].m24, gChars[index].m25, gChars[index].m26);
+    DrawShadowText(gFileNameBuf, 0x118, 0x50, 0xf, 0);
+    switch (mode) {
+    case 1:
+        DrawPanelIcon(4, 0, 2);
+        DrawPanelIcon(7, 0, 2);
+        DrawPanelIcon(8, 0, 2);
+        DrawPanelIcon(6, 0, 2);
+        break;
+    case 2:
+        DrawPanelIcon(0x10, 0, 2);
+        break;
+    case 3:
+        DrawPanelIcon(0xa, 0, 2);
+        DrawPanelIcon(0xb, 0, 2);
+        DrawPanelIcon(9, 0, 2);
+        break;
+    }
+    ClipRect(0x14, 0, 0x12, 0x40, 0x14, 0x80, 2, 0);
+    LockShowPointer();
+    g8115 = 0;
+}
 /* ovl0:0A4F: draws the row list index 0xa. No direct caller found (reached through an overlay entry
    or jump table). */
 /*@ ovl0:0A4F */ void DrawRowList10(void)
@@ -372,8 +462,141 @@ extern void far *g5E64[0x11]; /*@ ds:5E64 */ /* the 17 sliced icon pointers this
     } while (found);
     return slot;
 }
-/*@ ovl0:0DDC stub */ void Ovl0_0DDC(void) {}
-/*@ ovl0:0EE5 stub */ int Ovl0_0EE5(void) {}
+void Ovl0_1224(void);              /* ovl0:1224, defined below */
+void Ovl0_1ADD(void);              /* ovl0:1ADD, defined below */
+void Ovl0_1BF2(int who);           /* ovl0:1BF2, defined below */
+void DrawPanelRow(int index);      /* ovl0:11BA, defined below */
+/* ovl0:0DDC: the character panel's function-key loop. It opens the panel page, builds the 0x1b-based
+   four-row list, then until a key ends it redraws the animation and waits: the enter key (0x61) and
+   key 0x8004 flash icon 6 and keep looping, keys 0x8001/0x8002/0x8003 flash icons 4/7/8 and run the
+   combat tables (ovl0:1BF2), the race picker (Ovl0_1ADD) or the item list (ovl0:0A5E), each redrawing
+   the page and list, and any other key exits after drawing the current row list. Called by no direct
+   caller found (reached through an overlay entry). Purpose unknown: the 0x8001..0x8004 key codes. */
+/*@ ovl0:0DDC */ int Ovl0_0DDC(void)
+{
+    struct Node far *list;
+    register int key;
+
+    Ovl0_0A5E();
+    Ovl0_065B(gDCB0, 1);
+    list = BuildRowNodeList(0x1b, 4);
+    FlushKeyBuffer();
+    for (;;) {
+        Ovl0_1224();
+        key = WaitKeyOrPause(list);
+        switch (key) {
+        case 0x8001:
+            FlashPanelIcon(4);
+            Ovl0_1224();
+            Ovl0_1BF2(gDCB0);
+            key = -1;
+            break;
+        case 0x8002:
+            FlashPanelIcon(7);
+            Ovl0_1ADD();
+            key = -1;
+            break;
+        case 0x8003:
+            FlashPanelIcon(8);
+            Ovl0_0A5E();
+            key = -1;
+            break;
+        case 0x61:
+        case 0x8004:
+            FlashPanelIcon(6);
+            key = 1;
+            break;
+        default:
+            key = 0;
+            break;
+        }
+        if (key < 0) {
+            Ovl0_065B(gDCB0, 1);
+            list = BuildRowNodeList(0x1b, 4);
+            key = 0;
+        }
+        if (key == 0)
+            continue;
+        DrawRowList(gDCB0 + 6);
+        DrawRowList(-1);
+        return 0;
+    }
+}
+/* ovl0:0EE5: Purpose unknown: the character-editor loop. It builds a seven-row list, draws the page
+   ovl0:065B(mode 2), then until the current character has a name and no exit was asked for it waits
+   for a key: the four 0x8001..0x8004 keys pick the character (key & 0xff) - 1, 0x8005 returns 1
+   (leaving the editor), 0x8006 and the enter/left/right keys flash icon 9 and clear the result,
+   0x8007 erases the current character's name (icon 0x10, DrawCharName, DrawPanelRow), and 0x5c/0x66
+   and 0x60/0x62 flip the character index's bit 0 and bit 1. Every pass redraws the row list and, when
+   the selection moved to a named character, the page. Returns the result. Called by ovl0:28F9. */
+/*@ ovl0:0EE5 */ int Ovl0_0EE5(void)
+{
+    int key;
+    int result;
+    struct Node far *list;
+    register int pos;
+    register int flag;
+
+    list = BuildRowNodeList(0, 7);
+    FlushKeyBuffer();
+    DrawRowList(-1);
+    result = 0;
+    flag = 0;
+    Ovl0_065B(gDCB0, 2);
+    while (gChars[gDCB0].name[0] != 0 && !flag) {
+        DrawRowList(gDCB0 + 6);
+        key = WaitKeyOrPause(list);
+        pos = gDCB0;
+        switch (key) {
+        case 0x8001:
+        case 0x8002:
+        case 0x8003:
+        case 0x8004:
+            pos = (key & 0xff) - 1;
+            break;
+        case 0x8005:
+            result = 1;
+            flag = 1;
+            break;
+        case 0x2b:
+        case 0x3d:
+        case 0x61:
+        case 0x6e:
+        case 0x8006:
+            FlashPanelIcon(9);
+            result = 0;
+            flag = 1;
+            break;
+        case 0x8007:
+            if (gChars[gDCB0].name) {
+                FlashPanelIcon(0x10);
+                gChars[gDCB0].name[0] = 0;
+                DrawCharName(gDCB0, 1, 0xc);
+                DrawPanelRow(gDCB0 + 0x32);
+            }
+            break;
+        case 0x5c:
+        case 0x66:
+            pos ^= 1;
+            break;
+        case 0x60:
+        case 0x62:
+            pos ^= 2;
+            break;
+        }
+        if (flag)
+            DrawRowList(-1);
+        if (gChars[pos].name[0] == 0)
+            flag = 1;
+        if (pos != gDCB0) {
+            gDCB0 = pos;
+            DrawRowList(-1);
+            if (!flag)
+                Ovl0_065B(gDCB0, 2);
+        }
+    }
+    return result;
+}
 /* ovl0:1071: draws the panel report line gStr61CB at (0xa8, 0x10) over a fresh region (g8115 = 2
    while it draws), restores g8115, redraws the report box and then calls DrawPartyStatus. Called
    by ovl0:28F9. Purpose unknown. */
@@ -445,10 +668,83 @@ extern void far *g5E64[0x11]; /*@ ds:5E64 */ /* the 17 sliced icon pointers this
         f1A29_000F(0, gChars[gDCB0].sprite, gPanelX5E54[gDCB0], gPanelY5E5C[gDCB0] + 1, 0);
     LockShowPointer();
 }
-/*@ ovl0:1224 stub */ void Ovl0_1224(void) {}
-/*@ ovl0:135D stub */ void Ovl0_135D(void) {}
-/*@ ovl0:1ADD stub */ void Ovl0_1ADD(void) {}
-/*@ ovl0:1BF2 stub */ void Ovl0_1BF2(void) {}
+/* ovl0:1224: advances and draws the current character's animation frame. When the selected character
+   changed it resets the frame timer gFC86; when gFC86 is behind gTicks it steps gFC84 through 0..9
+   and sets gFC86 two ticks ahead. If the frame did not change it returns, else it clips the character
+   cell, blits cell gPtrsFD54[gFC84] at (0x120, 0x80) through f1A29_000F, hides the pointer over the
+   character's panel box, clips it and shows the pointer. Called by ovl0:0A5E, 0DDC, 135D, 1F66,
+   207A and 2238. Purpose unknown: which animation the ten cells are. */
+/*@ ovl0:1224 */ void Ovl0_1224(void)
+{
+    if (g5EB0 != gDCB0) {
+        gFC86 = 0;
+        g5EB0 = gDCB0;
+    }
+    if (gFC86 < gTicks) {
+        gFC84++;
+        if (gFC84 > 9)
+            gFC84 = 0;
+        gFC86 = gTicks + 2;
+    }
+    if (gFC85 == gFC84)
+        return;
+    ClipRect(gDCB0 * 4, 0x80, 0x24, 0x80, 4, 0x20, 2, 2);
+    f1A29_000F(2, gPtrsFD54[gFC84], 0x120, 0x80, 0);
+    HidePointerZone(gPanelX5E54[gDCB0], gPanelY5E5C[gDCB0] + 1,
+        gPanelX5E54[gDCB0] + 0x20, gPanelY5E5C[gDCB0] + 0x20);
+    ClipRect(0x24, 0x80, gPanelX5E54[gDCB0] >> 3, gPanelY5E5C[gDCB0] + 1,
+        4, 0x20, 2, 0);
+    ShowPointerZone();
+    gFC85 = gFC84;
+}
+/*@ ovl0:135D stub */ int Ovl0_135D(int i, char far *field, char far *other) { return 0; }
+/* ovl0:1ADD: Purpose unknown: edits one of the seven ability/stat fields of the current character. It draws the page
+   through ovl0:065B(mode 3) and loops over the field index i (0..6); for each it opens the field with
+   Ovl0_135D(i, &gChars[gDCB0].m? , second) and redraws the page. Field 0 passes both m0D and m0F;
+   fields 1..6 pass m11, m13, m15, m17, m19 and m1B with no second field. A return of -2 leaves, a
+   negative return wraps i to 6, then i is taken modulo 7. Finally it redraws the page through
+   ovl0:065B(mode 1). Called by ovl0:0DDC and ovl0:0EE5. */
+/*@ ovl0:1ADD */ void Ovl0_1ADD(void)
+{
+    int i;
+
+    i = 0;
+    FlushKeyBuffer();
+    Ovl0_065B(gDCB0, 3);
+    while (i >= 0 && i <= 6) {
+        switch (i) {
+        case 0:
+            i = Ovl0_135D(i, &gChars[gDCB0].m0D, &gChars[gDCB0].m0F);
+            break;
+        case 1:
+            i = Ovl0_135D(i, &gChars[gDCB0].m11, (char far *)0);
+            break;
+        case 2:
+            i = Ovl0_135D(i, &gChars[gDCB0].m13, (char far *)0);
+            break;
+        case 3:
+            i = Ovl0_135D(i, &gChars[gDCB0].m15, (char far *)0);
+            break;
+        case 4:
+            i = Ovl0_135D(i, &gChars[gDCB0].m17, (char far *)0);
+            break;
+        case 5:
+            i = Ovl0_135D(i, &gChars[gDCB0].m19, (char far *)0);
+            break;
+        case 6:
+            i = Ovl0_135D(i, &gChars[gDCB0].m1B, (char far *)0);
+            break;
+        }
+        Ovl0_065B(gDCB0, 3);
+        if (i == -2)
+            break;
+        if (i < 0)
+            i = 6;
+        i %= 7;
+    }
+    Ovl0_065B(gDCB0, 1);
+}
+/*@ ovl0:1BF2 stub */ void Ovl0_1BF2(int who) {}
 /* ovl0:1EA9: builds two six-word combat tables for the current character gDCB0. For each of the
    six slots it takes the larger of gTable5FC5[m20][i] and gTable5F35[m1F>>1][i] into gOutDD04[i],
    copies gTable5F7D[m1F>>1][i] into gOutDC98[i], and when the class byte g116E[m20] is nonzero
@@ -542,7 +838,61 @@ extern void far *g5E64[0x11]; /*@ ds:5E64 */ /* the 17 sliced icon pointers this
     ClipRect(0x12, 0x40, 0, 0, 0x14, 0x80, 0, 2);
     LockShowPointer();
 }
-/*@ ovl0:26C6 stub */ void Ovl0_26C6(void) {}
+/* ovl0:26C6: gives each of the first four characters its class starting equipment. It copies item
+   0x23 into gChars[0]'s slot 2, then for each character sets m01 = 1, m23 = 0x64, pad00 = i and slot
+   3 = item 0xa; for each of the class's four table entries g6101[m20][j] it looks up g60D5[idx]'s
+   item and slot: an item of -1 is skipped, a negative slot takes the first free of slots 0..2, an
+   occupied slot is skipped, item 5 for m1F >> 1 == 3 becomes 0x24, the item is copied into a free
+   slot (the first free from slot 2) and stored. Finally it rebuilds the character's armour class
+   through ComputeArmourClass. Called by ovl0:28F9. Purpose unknown: the item numbers. */
+/*@ ovl0:26C6 */ void Ovl0_26C6(void)
+{
+    int j;
+    int i;
+    int idx;
+    struct CharRec far *rec;
+    register int item;
+    register int slot;
+
+    item = CopyItemToFreeSlot(0x23);
+    gChars[0].m77[2] = item;
+    for (i = 0; i < 4; i++) {
+        rec = &gChars[i];
+        rec->m01 = 1;
+        rec->m23 = 0x64;
+        rec->pad00 = i;
+        item = CopyItemToFreeSlot(0xa);
+        rec->m77[3] = item;
+        for (j = 0; j < 4; j++) {
+            idx = g6101[rec->m20 * 4 + j];
+            item = g60D5[idx].item;
+            slot = g60D5[idx].slot;
+            if (item == -1)
+                continue;
+            if (slot < 0) {
+                slot = 0;
+                if (rec->m77[slot] != 0)
+                    slot = 1;
+                if (rec->m77[slot] != 0)
+                    slot = 2;
+            }
+            if (slot != 2 && rec->m77[slot] != 0)
+                continue;
+            if (item == 5 && (rec->m1F >> 1) == 3)
+                item = 0x24;
+            item = CopyItemToFreeSlot(item);
+            if (slot != 2) {
+                rec->m77[slot] = item;
+            } else {
+                slot = 2;
+                while (rec->m77[slot] != 0)
+                    slot++;
+                rec->m77[slot] = item;
+            }
+        }
+        ComputeArmourClass(i);
+    }
+}
 /* ovl0:280D: for each of the first four characters whose class byte g1231[gChars[i].m20] has bit 2
    set, sets the 32-bit gChars[i].m7375 to 0x26c. Called by ovl0:28F9. Purpose unknown. */
 /*@ ovl0:280D */ void InitCharSlotValues(void)

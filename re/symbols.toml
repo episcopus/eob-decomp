@@ -6861,6 +6861,7 @@ unit = "eov0"
 addr = "ovl0:065B"
 size = 1012
 evidence = ["ovl", "near", "frame"]
+notes = "draft: the function matches except one jump target in the mode switch (ours jmp 0xA10, original jmp 0x9FE at ovl0:065B+0386). The case bodies and the two identical call tails are all in place; the compiler threaded both case 1's last call (icon 6) and case 2's call (icon 0x10) to the 9-icon tail, while the original sent case 2 to the 0xb-icon tail (ovl0:065B+0386). Tried: switch case order 1,2,3 and 1,3,2 (the comparison chain follows source order, so 1,2,3 is right), if/else-if (the dispatch becomes byte compares, so it must be a switch), an explicit default, braces and an if(1) around case 2 (no change), and -B (the same difference, and it breaks three earlier functions). Everything else in the function is byte-identical."
 
 [[function]]
 id = "eov0_0a4f"
@@ -6895,6 +6896,9 @@ unit = "eov0"
 addr = "ovl0:0DDC"
 size = 265
 evidence = ["ovl", "near", "frame"]
+name = "Ovl0_0DDC"
+level = "L2"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "eov0_0ee5"
@@ -6902,6 +6906,9 @@ unit = "eov0"
 addr = "ovl0:0EE5"
 size = 396
 evidence = ["ovl", "near"]
+name = "Ovl0_0EE5"
+level = "L2"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "eov0_1071"
@@ -6949,6 +6956,9 @@ unit = "eov0"
 addr = "ovl0:1224"
 size = 313
 evidence = ["ovl", "near", "frame"]
+name = "Ovl0_1224"
+level = "L2"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "eov0_135d"
@@ -6963,6 +6973,9 @@ unit = "eov0"
 addr = "ovl0:1ADD"
 size = 277
 evidence = ["ovl", "near"]
+name = "Ovl0_1ADD"
+level = "L2"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "eov0_1bf2"
@@ -7038,6 +7051,9 @@ unit = "eov0"
 addr = "ovl0:26C6"
 size = 327
 evidence = ["ovl", "near", "frame"]
+name = "Ovl0_26C6"
+level = "L2"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "eov0_280d"
