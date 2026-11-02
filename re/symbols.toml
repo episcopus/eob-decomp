@@ -6814,6 +6814,9 @@ unit = "eov0"
 addr = "ovl0:03B2"
 size = 125
 evidence = ["ovl", "near", "frame"]
+name = "InitRowNode"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov0_042f"
@@ -6821,6 +6824,9 @@ unit = "eov0"
 addr = "ovl0:042F"
 size = 213
 evidence = ["ovl", "near", "frame"]
+name = "BuildRowNodeList"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov0_0504"

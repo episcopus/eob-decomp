@@ -39,6 +39,42 @@ extern void ClipRect(int x1, int y1, int x2, int y2, int width, int height, int 
 extern void f1A29_000F(int mode, void far *src, int x, int y, int region); /*@ 1A29:000F */
 extern void HidePointerZone(int left, int top, int right, int bottom); /*@ 1BBE:01FE */
 extern void ShowPointerZone(void); /*@ 1BBE:02C2 */
+extern void movmem(void far *src, void far *dst, unsigned n); /*@ 0000:63A3 */
+extern struct Node far *ListAdd(struct Node far *head, struct Node far *item); /*@ 1658:001E */
+extern char g5E20; /*@ ds:5E20 */ /* nonzero when the mouse moved (src/E16A5.C) */
+
+struct Node {                   /* the 60-byte panel row records (src/E0CF7.C) */
+    struct Node far *next;      /* +00: next node, or null at the tail */
+    unsigned key;               /* +04: the sort key ListAdd compares */
+    unsigned key06;             /* +06: the first key word the dispatcher matches */
+    unsigned key08;             /* +08: the second key word the dispatcher matches */
+    unsigned char kind;         /* +0A: the drawing kind */
+    unsigned char modeB;        /* +0B: the "on" drawing mode */
+    unsigned char modeC;        /* +0C: the second drawing mode */
+    unsigned char pad0D;        /* +0D: unknown (src/E0CF7.C leaves it unnamed) */
+    unsigned flags;             /* +0E: the inactive bit and the layout bits */
+    void far *src10;            /* +10: the default art pointer */
+    void far *src14;            /* +14: the "on" art pointer */
+    void far *src18;            /* +18: the second art pointer */
+    int region;                 /* +1C: index into the region table ds:009F */
+    int x;                      /* +1E: box left */
+    int y;                      /* +20: box top */
+    unsigned width;             /* +22: box width */
+    unsigned height;            /* +24: box height */
+    char pad26[0x3c - 0x26];
+};
+extern struct Node far *gNodePtrs[]; /*@ ds:FB7C */ /* the panel row nodes this unit lists and draws */
+extern struct Node gNodeTemplate; /*@ ds:3A62 */ /* the template InitRowNode copies into each node */
+
+struct RowDef8 {                /* 8-byte row definitions at 206B (41 of them) */
+    unsigned char m00;
+    unsigned char m01;
+    unsigned char m02;
+    unsigned char m03;
+    unsigned char m04;
+    char pad05[3];
+};
+extern struct RowDef8 far gRowDefs206B[]; /*@ 206B:0000 */
 
 extern void far *g5E64[0x11]; /*@ ds:5E64 */ /* the 17 sliced icon pointers this unit builds and draws */
 
@@ -126,8 +162,47 @@ extern void far *g5E64[0x11]; /*@ ds:5E64 */ /* the 17 sliced icon pointers this
     WaitFrames(5);
     DrawPanelIcon(index, 0, 0);
 }
-/*@ ovl0:03B2 stub */ void Ovl0_03B2(void) {}
-/*@ ovl0:042F stub */ void Ovl0_042F(void) {}
+/* ovl0:03B2: initialises one panel row node. It takes the far pointer gNodePtrs[index], copies the
+   0x3c-byte template gNodeTemplate over it, then stores the node's key (index + 1), its two word
+   keys `key`/`key` + 0x100, the box x (x << 3), y, width, height and the flags 0x1100. Returns the
+   node. Called by ovl0:042F. */
+/*@ ovl0:03B2 */ struct Node far *InitRowNode(int index, int x, int y, int width, int height, int key)
+{
+    struct Node far *node;
+
+    node = gNodePtrs[index];
+    movmem(&gNodeTemplate, node, 0x3c);
+    node->key = index + 1;
+    node->key06 = key;
+    node->key08 = key + 0x100;
+    node->x = x << 3;
+    node->y = y;
+    node->width = width;
+    node->height = height;
+    node->flags = 0x1100;
+    return node;
+}
+/* ovl0:042F: builds the panel's linked row list. For i in 0..count-1 it initialises node i from the
+   row definition gRowDefs206B[base + i] (the definition's five bytes are the node's x, y, width,
+   height and key), then links nodes 1..count-1 onto node 0 with ListAdd and sets g5E20. Returns
+   the list head (node 0). Called by ovl0:0A5E, 0DDC, 0EE5, 135D and 28F9. */
+/*@ ovl0:042F */ struct Node far *BuildRowNodeList(int base, int count)
+{
+    struct Node far *list;
+    int i;
+    int idx;
+
+    list = gNodePtrs[0];
+    for (i = 0; i < count; i++) {
+        idx = base + i;
+        InitRowNode(i, gRowDefs206B[idx].m00, gRowDefs206B[idx].m01, gRowDefs206B[idx].m02,
+            gRowDefs206B[idx].m03, gRowDefs206B[idx].m04);
+    }
+    for (i = 1; i < count; i++)
+        list = ListAdd(list, gNodePtrs[i]);
+    g5E20 = 1;
+    return list;
+}
 /*@ ovl0:0504 stub */ void Ovl0_0504(void) {}
 /*@ ovl0:05BA stub */ void Ovl0_05BA(void) {}
 /*@ ovl0:065B stub */ void Ovl0_065B(void) {}
