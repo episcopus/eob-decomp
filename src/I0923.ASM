@@ -14,10 +14,11 @@
         .CODE
 
 gVideoTopSeg  dw 0                      ; 0923:0004: the base of the memory reserved below the
-                                        ;   probed segment (the caller at 0892:02A6 uses
-                                        ;   ReserveMemoryBelowVideo's result as it). "Video top" is a
-                                        ;   hypothesis [H]: ReserveMemoryBelowVideo probes the
-                                        ;   segment whose B800:0000 marker aliases (or A000,
+                                        ;   probed segment (the caller at 0892:02A6 takes
+                                        ;   ReserveMemoryBelowVideo's result into DI at 0892:02AD
+                                        ;   and uses it as memtop, src/I0892.C:268 and :297).
+                                        ;   "Video top" is a hypothesis [H]: ReserveMemoryBelowVideo
+                                        ;   probes the segment whose B800:0000 marker aliases (or A000,
                                         ;   0923:0139 to 0150) and subtracts (n-1) x 32 KB
                                         ;   (0923:01A8 to 01B6), but nothing in src/ or docs/ says
                                         ;   that segment is where video memory ends. It is then
@@ -53,7 +54,8 @@ gMcbSeg       dw 0                      ; 0923:000E: MCB of the one-paragraph bl
 ; DGROUP's frame (0E9F) is 057Ch paragraphs above this segment's (0923): 057C0h + 28C4h = 8084h. The
 ; word has no relocation in the EXE, so the assembler resolved it to a constant. ReserveMemoryBelowVideo
 ; stores the end of DOS memory here (0923:01F0) and TrimMemoryToVideo reads it back (0923:02B3); i0892
-; reads it at 0892:01D8.
+; reads it at 0892:01D8 and itoa's the word into the last execl argument for EOB.EXE (src/I0892.C:234),
+; which stores its own memory top from that number (src/E07C8.C:311).
 gMemTopSeg    equ 8084h
 
 ; 0923:0010: walk the MCB chain from gMcbSeg, merging free blocks; AX = 0 if it ends with a
@@ -112,7 +114,8 @@ CheckMCB ENDP
 ; block to free), the walk finds a block type that is neither 'M' nor 'Z' (0923:00B1), and the
 ; environment copy's allocation fails (0923:00DB, jb); the last two reach 0923:011C, which frees the
 ; one-paragraph block first. The caller at 0892:0241 tests the result at 0892:0271 and, on 1, prints
-; a message (0D2B:0033) and exits instead of reserving memory; 0892:026C is the call itself.
+; a message (PrintString, 097D:0000; f1DDD_002D(7) at 0D2B:0033 runs first) and exits instead of
+; reserving memory; 0892:026C is the call itself.
         PUBLIC  CheckMemoryChain        ; @ 0923:0071
 CheckMemoryChain PROC FAR
         push    bp
@@ -381,9 +384,9 @@ ReserveMemoryBelowVideo ENDP
 ; block (0923:02BD to 02C0, INT 21h AH=49h). gMemTopSeg is written by ReserveMemoryBelowVideo
 ; (0923:01F0) and read at 0923:02B3 and 0892:01D8; nothing else in INTRO.EXE writes it, and no call
 ; or far pointer to this function exists, so it is dead code here. With gMemTopSeg at its loaded
-; value, 0 (the EXE image has 0 at 0923:0004 to 000F), the last block's size is set to 0 less its
-; data segment (0923:02B0 to 02B9), a wrapped 16 bit value, and the walk
-; (0923:0299 to 02AC) only looks for a 'Z' type, so it does not stop at a broken chain. The name's
+; value, 0 (its DGROUP word 0E9F:28C4 is 00 00 in eob/INTRO.EXE, image offset 112B4h), the last
+; block's size is set to 0 less its data segment (0923:02B0 to 02B9), a wrapped 16 bit value, and
+; the walk (0923:0299 to 02AC) only looks for a 'Z' type, so it does not stop at a broken chain. The name's
 ; claim that this value is the video top is a hypothesis [H]: the bytes show only that the last
 ; block is set to end at gMemTopSeg (0923:02B0 to 02B9). ReserveMemoryBelowVideo stored the end of
 ; DOS memory there (0923:01F0). Like ReserveMemoryBelowVideo, it allocates the one-paragraph block (INT 21h
