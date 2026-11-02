@@ -485,3 +485,18 @@ why = "the fatal file error handler, a far pointer at ds:8104; the image holds 1
 id = "ds:8111"
 name = "gRetryHandler"
 why = "the retry file error handler, a far pointer at ds:8111; the image holds 1C0E:0ADD (DisplayFileError) there (EOB.EXE file offset 2BBF1) and RetryFile (1C0E:0046) calls it (E1A72.ASM:40)"
+
+[[global]]
+id = "intro/ds:19E7"
+name = "gBuiltinPalette"
+why = "the 16-byte palette table at ds:19E7 passed to the palette setter on the Tandy and EGA choices (Main 0892:010F, 0892:0116; StartupGame 0892:05E5); its bytes 00 05 03 02 0A 0E 0C 06 04 0B 09 01 00 08 07 0F are the built-in palette table, not a 6-bit EGA palette, and the Tandy choice uses it too so gEgaPalette has no evidence"
+
+[[global]]
+id = "intro/ds:1F46"
+name = "gSetPalette"
+why = "the far palette-setter pointer at ds:1F46 the front end installs; Main passes it the built-in table ds:19E7, the loaded palette.col buffer gPaletteBuf and the zero table ds:19F7 (0892:013E, 01AE), StartupGame passes it the built-in table and gPaletteBuf (0892:0635), IOV0.C calls it the same (ovl0:0000, ovl0:2A4E)"
+
+[[global]]
+id = "intro/ds:289B"
+name = "gTandyOn"
+why = "the PC speaker / Tandy driver select at ds:289B: StartupGame sets it to 1 only on the Tandy sound path (0892:0807) and ShutdownGame clears it (0892:087F); IOV0.C tests the same word in PlaySound (ovl0:2D4E). The same concept as EOB's ds:8A67 (re/renames.toml:1436); make rename declines the name because EOB's ds:8A67 already uses it in another program"
