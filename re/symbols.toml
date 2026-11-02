@@ -7086,9 +7086,9 @@ unit = "e1e8b"
 addr = "1E8B:0185"
 size = 34
 evidence = ["frame"]
-name = "_ShutdownOverlayManager"
 level = "L2"
 match_flags = "tasm /mx"
+name = "f1E8B_0185"
 
 [[function]]
 id = "e1e8b_01a7"
