@@ -18,7 +18,7 @@
    allocation (19BC:0129) and MemFree subtracts one on every call, including a NULL pointer
    (19BC:0182), so it is the number of successful MemAlloc calls minus the number of MemFree
    calls and can fall below the number of live blocks. What reads the count is unknown;
-   src/E07A9.C:108 declares it and its StartupAlloc clears it at src/E07A9.C:242 (07A9:00E6). */
+   src/E07A9.C:148 declares it and its StartupAlloc clears it at src/E07A9.C:286 (07A9:00E6). */
 extern unsigned gAllocCount; /*@ ds:810E */
 /* The image stores 19BC:02B6 (OutOfMemory) at ds:810A, so before main that is what the hook
    points at. main (07C8:0001) overwrites it with AllocationFailure (07C8:0625) before any
@@ -42,7 +42,7 @@ extern int WaitGameKey(void); /*@ 1AAD:053A: returns the value _ProcessKeyEvent 
 extern void ShutdownGame(void); /*@ 07C8:058A */
 
 /* The two flag bits MemAlloc stores in a block's header. MEMALLOC_ALIGNED (0x20) returns a
-   paragraph aligned block; src/E07A9.C:35 defines this bit and uses it at src/E07A9.C:232, and
+   paragraph aligned block; src/E07A9.C:37 defines this bit and uses it at src/E07A9.C:276, and
    src/E1B82.C:43 defines it and uses it at src/E1B82.C:165 and :174.
    MEMALLOC_ZERO_FILL (0x10) zero fills the block; no caller in src/ passes it (the 0x10L at
    src/E07C8.C:259 is a size, not a flag), so its meaning is read from this unit's code alone. */
@@ -53,9 +53,10 @@ extern void ShutdownGame(void); /*@ 07C8:058A */
    qualifies. The other caller passes the slot's own flags instead (src/E1C0E.C:875). */
 #define EVICT_ANY 0xff
 /* the zero-fill chunk: MemAlloc fills a MEMALLOC_ZERO_FILL block in chunks this size and steps the
-   segment by the same count in paragraphs (0xFA00 / 16 = 0xFA0, 19BC:00E3). memset's size_t count
-   is 16-bit in this large model build (build/toolchain/tc100/INCLUDE/MEM.H:32, :53), so a block
-   over 64K must be split; why the original stops at 0xFA00 rather than 0xFFFF is not evidenced. */
+   segment by the same count in paragraphs (0xFA00 / 16 = 0xFA0, the sub at 19BC:00EE and the
+   segment step at 19BC:00FA). memset's size_t count is 16-bit in this large model build
+   (build/toolchain/tc100/INCLUDE/MEM.H:32, :53), so a block over 64K must be split; why the
+   original stops at 0xFA00 rather than 0xFFFF is not evidenced. */
 #define MEMALLOC_FILL_CHUNK 0xFA00L
 
 /* 19BC:0007: allocate a far block of `size` bytes. It asks farmalloc for one extra byte (or 16
@@ -65,8 +66,8 @@ extern void ShutdownGame(void); /*@ 07C8:058A */
    MEMALLOC_ALIGNED the block starts at offset 0 of a paragraph and its header sits at offset 15
    of the paragraph before it (see MemFree); otherwise the header is the byte just before the
    block. For MEMALLOC_ZERO_FILL it zero fills the whole block in MEMALLOC_FILL_CHUNK byte chunks.
-   ds:810E is incremented (the net allocation counter described at its declaration). The two
-   stage retry is the nested loop the original compiles to: the inner loop retries farmalloc while
+   ds:810E is incremented (the net allocation counter described at its declaration). The bytes at
+   19BC:0031 to 0069 match a two stage retry: the inner loop retries farmalloc while
    EvictFile(0, EVICT_ANY) succeeds, and the outer loop runs the failure hook when the inner retry
    gives up. */
 /*@ 19BC:0007 */ void far *MemAlloc(unsigned long size, int flags)
@@ -116,8 +117,10 @@ extern void ShutdownGame(void); /*@ 07C8:058A */
    15) holds the flags MemAlloc stored. A block whose flags have MEMALLOC_ALIGNED set was placed
    at offset 0 of a paragraph with its header in the paragraph before, so it is freed at
    MK_FP(that segment, 15 minus the header's low nibble); every other block is freed at its own
-   address minus one. The net allocation counter ds:810E falls either way, even when the pointer
-   is NULL. */
+   address minus one. QUIRK 19BC:0182: the counter decrement sits outside the NULL test, so a NULL
+   pointer still decrements: 19BC:0143 jumps over the farfree straight to the `dec [0x810e]` at
+   19BC:0182. The net allocation counter ds:810E therefore falls on every call, even MemFree(NULL),
+   and can fall below the number of live blocks. */
 /*@ 19BC:0137 */ void MemFree(void far *block)
 {
     unsigned char far *hdr;
@@ -135,19 +138,24 @@ extern void ShutdownGame(void); /*@ 07C8:058A */
 }
 
 /* 19BC:018A: resize a block from MemAlloc, the counterpart of MemFree. It reads the header byte
-   (at segment minus one, offset plus 15): `flagBits` is the masked flags byte (flags & 0xf0; the
-   mask drops the low nibble, which no caller in src/ sets) and `hdrLow` is the low nibble. For a
-   MEMALLOC_ALIGNED block it reallocs at the block recovered from hdrLow, then reuses hdrLow for
-   the new alignment byte, stores a fresh header just before the new block and returns it at
-   offset 0 of the next segment; otherwise it reallocs at the header address, restores the flags
-   byte and returns the block one byte in. QUIRK 19BC:018A: the realloc result is not tested here
-   or at its only caller in src/ (1C00:0055, src/E1C00.ASM:221-225). The caller's `or ax,dx; je`
-   does not catch a failed aligned realloc: the 0x20 path returns MK_FP(FP_SEG(blk) + 1, 0), so a
-   NULL realloc comes back as 0001:0000 and the caller calls 0001:AX. On that path the header
-   store `(blk - 1)[hdrLow]` also runs through the NULL result first and lands near 0000:000F
-   after the offset wraps [H], to be confirmed in the oracle. The non-aligned path (`*blk =
-   flagBits`) dereferences the NULL at once; no caller in src/ uses it (MemRealloc's only caller
-   is 1C00:0055, an aligned block). */
+   (at segment minus one, offset plus 15): `flagBits` is the masked flags byte (flags & 0xf0) and
+   `hdrLow` is the low nibble, which in an aligned header is the alignment pad MemAlloc wrote
+   ((pad - 1) | flags, 19BC:00A9) and is zero in a non-aligned header because no caller in src/
+   passes low-nibble flags. For a MEMALLOC_ALIGNED block it reallocs at the block recovered from
+   hdrLow, then reuses hdrLow for the new alignment byte, stores a fresh header just before the new
+   block and returns it at offset 0 of the next segment; otherwise it reallocs at the header
+   address, restores the flags byte and returns the block one byte in. QUIRK 19BC:018A: the realloc
+   result is not tested here or at its only caller in src/ (1C00:0055: `call far ptr _MemRealloc`
+   at src/E1C00.ASM:243, the `or ax,dx; je short fail` at :250-251 that would catch a null DX:AX,
+   and the `call dword ptr ds:[818Eh]` at :269 that runs the pointer the entry returned, comment
+   :245-249). The test does not catch a failed aligned realloc: the 0x20 path returns
+   MK_FP(FP_SEG(blk) + 1, 0), so a NULL realloc comes back as 0001:0000, non-zero, and the caller
+   calls 0001:AX. On that path the header store `(blk - 1)[hdrLow]` also runs through the NULL
+   result: 19BC:01F2 loads BX with the block's offset (0), 19BC:01F5 adds hdrLow (0x10), and
+   19BC:01FF stores to ES:[BX-1], a displacement, so the byte lands at exactly 0000:000F and its
+   value is 0x0F | flagBits (nothing wraps) [H, to be confirmed in the oracle]. The non-aligned
+   path (`*blk = flagBits`) dereferences the NULL at once; no caller in src/ uses it (MemRealloc's
+   only caller is 1C00:0055, an aligned block). */
 /*@ 19BC:018A */ void far *MemRealloc(void far *ptr, unsigned size)
 {
     unsigned char far *blk;
@@ -176,9 +184,8 @@ extern void ShutdownGame(void); /*@ 07C8:058A */
    which is 2, while a block is reported, build/toolchain/tc100/INCLUDE/ALLOC.H:13) keeping the
    largest block not in use, subtracts one 16 byte paragraph and clamps a non positive result to
    0. The result is `long`, the type src/E07C8.C:69 and src/E1C0E.C:34 declare (src/E082C.C:65
-   still says unsigned long). The
-   callers (for example 1BB1:0002, which adds the 16 back, src/E1BB1.ASM:34 and 168) compare the
-   result with the size they need plus 16. */
+   still says unsigned long). The callers (for example 1BB1:0002, which adds the 16 back,
+   src/E1BB1.ASM:34 and 168) compare the result with the size they need plus 16. */
 /*@ 19BC:023D */ long LargestFreeBlock(void)
 {
     long max;
@@ -199,14 +206,17 @@ extern void ShutdownGame(void); /*@ 07C8:058A */
 /* 19BC:02B6: the default allocation failure hook. It is the far pointer the image stores at
    ds:810A (re/globals.toml:12: the `lcall [0x810a]` at 19BC:0063 and the pointer stored at DGROUP
    810A); MemAlloc lcalls it only after farmalloc fails and the EvictFile(0, EVICT_ANY) retry
-   returns 0 (E19BC.C:68-74, the test at :73). main (07C8:0001) replaces it with AllocationFailure
-   (07C8:0625) before any allocation (src/E07C8.C:132), so this function only runs if something
-   allocates before main installs the hook. It restores the command line's video
-   mode: f1DDD_002D(7) takes the index 7 branch, which loads ds:84A0 (the mode from argv[5],
-   src/E07C8.C:124), not the literal 7 (src/E1DDD.C:45-48). It then prints "Memory Allocation
-   Error! Press any key to exit to DOS.", waits for a key (WaitGameKey, which does no cleanup) and
-   runs the shut-down path ShutdownGame (07C8:058A), which ends in exit(0). The `return 0` only
-   meets the hook's int type; it is never reached. */
+   returns 0 (the retry loop at 19BC:0031 to 0069, the `lcall [0x810a]` at 19BC:0063). main
+   (07C8:0001) replaces it with AllocationFailure (07C8:0625) before any allocation
+   (src/E07C8.C:132), so this function only runs if something allocates before main installs the
+   hook. It restores the command line's video mode only when
+   argv[5] (ds:84A0) is nonzero: f1DDD_002D(7) takes the index 7 branch, which loads ds:84A0 (the
+   mode from argv[5], src/E07C8.C:124), not the literal 7 (src/E1DDD.C:45-48), and f1DDD_002D
+   calls the BIOS only when g84A2[7] (ds:84B0, 0 in the image, src/E1DDD.C:16-18) differs from
+   ds:84A0 (src/E1DDD.C:49). It then prints "Memory Allocation Error! Press any key to exit to
+   DOS.", waits for a key (WaitGameKey, which does no cleanup) and runs the shut-down path
+   ShutdownGame (07C8:058A), which ends in exit(0). The `return 0` only meets the hook's int type;
+   it is never reached. */
 /*@ 19BC:02B6 */ int OutOfMemory(void)
 {
     f1DDD_002D(7);
