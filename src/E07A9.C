@@ -145,11 +145,13 @@ extern void far *gSegDCA6; /*@ ds:DCA6 */  /* the far pointer f19EC_0002(7) retu
                                               declared "the far pointer DrawTile draws",
                                               src/EOV4.C:1033) */
 extern void far *gSegDF4E; /*@ ds:DF4E */  /* slot 5's far pointer, f19EC_0002(5) (07A9:00BA); the
-                                              action screen's swap buffer: Action01E3 (src/E0ACD.C:263)
-                                              blits it to the action field through gFn804A
-                                              (src/E0ACD.C:269), Action0264 (src/E0ACD.C:287) copies a
-                                              0xF3-byte character record through it (three Unpack0
-                                              copies, src/E0ACD.C:307-309), and FindWordPanel
+                                              action screen's swap buffer: Action0264 (src/E0ACD.C:287)
+                                              swaps the moving member's 243-byte record with the slot's
+                                              through it (the record at gChars + gFB34 out to it, the
+                                              slot's record into gChars + gFB34, and it back to the
+                                              slot; three Unpack0 copies, src/E0ACD.C:307-309).
+                                              Action01E3 (src/E0ACD.C:263) blits it to the action field
+                                              through gFn804A (src/E0ACD.C:269), and FindWordPanel
                                               passes it to gFn807E and gFn804A (src/EOV2.C:482, 522);
                                               RedrawRowArea (0BD2:0ABE, src/E0BD2.C:622) passes it to
                                               gSaveRect with the same 0x12 by 0xA8 field that
@@ -176,10 +178,12 @@ extern void far *gSegEFC2; /*@ ds:EFC2 */  /* slot 3's far pointer, f19EC_0002(3
                                               LoadWallTextures (ovl3:07A5, src/EOV3.C:460) unpacks
                                               the 16-byte planes from gSegEFC2+2 and +0x12
                                               (src/EOV3.C:469-470) and the 0xCB20-byte block from
-                                              gSegEFC2+0x22 (src/EOV3.C:471). The LEVELS.TMP screen
-                                              block: SaveGame (ovl3:1368, src/EOV3.C:811) reads
-                                              0x5FA0 bytes into it (src/EOV3.C:821) and writes them
-                                              back (src/EOV3.C:839). The EOBDATA.SAV blocks: LoadGame
+                                              gSegEFC2+0x22 (src/EOV3.C:471). The saved-game screen
+                                              block: SaveGame (ovl3:1368, src/EOV3.C:811) reads the
+                                              0x5FA0-byte screen block from LEVELS.TMP into it
+                                              (src/EOV3.C:821) and writes it to EOBDATA.SAV (opened
+                                              for writing at src/EOV3.C:827, the write at :839). The
+                                              EOBDATA.SAV blocks: LoadGame
                                               (ovl3:15B9, src/EOV3.C:863) uses it as its buffer
                                               (src/EOV3.C:876 and :888) for the six sized block reads.
                                               Overlay 3 reads the far pointer again (ds:EFC2 and
@@ -203,7 +207,7 @@ extern void far *gA9C0; /*@ ds:A9C0 */  /* the 6x6 font loaded from FONT6.FNT (s
                                            :295, the call at 07C8:0419, the store at 07C8:0420); the
                                            6x6 size is eob/FONT6.FNT bytes 102h and 103h (6 and 6, the
                                            height and width bytes src/E1A47.C:81-85 reads),
-                                           docs/design/WHITEPAPER.md:169 [V] */
+                                           docs/design/WHITEPAPER.md:171 [V] */
 extern int g811F; /*@ ds:811F */  /* this unit tests it as 7 to gate the " taken." message
                                      (07A9:011E, 0123); FindWordPanel saves it (src/EOV2.C:476) and
                                      indexes gRegions[g811F] with it (src/EOV2.C:489-492, 517-520) */
@@ -212,8 +216,8 @@ extern int gMouseDisabled; /*@ ds:814A */  /* nonzero disables the mouse pointer
                                               07A9:0148 (`cmp [814A],0; je`) runs SetMouseItem's body
                                               when zero. main sets it before StartupAlloc: 1 when
                                               !gMouseHandlerInstalled, else !mouse
-                                              (src/E07C8.C:190 to 193);
-                                              src/E0D1C.C:110 says the same */
+                                              (src/E07C8.C:190 to 193); src/E0D1C.C:110 gives the
+                                              meaning (nonzero disables the mouse) */
 extern int gFBCE; /*@ ds:FBCE */  /* the item index shown by the mouse (src/E0D1C.C:109); SetCurrentItem
                                      stores it (0D1C:0311) */
 extern unsigned char gFBD2; /*@ ds:FBD2 */  /* bit 0, with Entry14.flags bit 0x80, gates the flagged
