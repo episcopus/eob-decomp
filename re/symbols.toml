@@ -7651,6 +7651,8 @@ unit = "eov5"
 addr = "ovl5:0455"
 size = 550
 evidence = ["ovl", "near", "frame"]
+name = "SelectMenu"
+notes = "blocked: TC registers the row index. The body matches up to ovl5:0047; the draw/mouse/click loops then differ because the original keeps j in memory (`mov word ptr [bp-0xa], 0` at ovl5:048C, `mov ax,[bp-0xa]; shl ax,1; shl ax,1` for names[j], `cmp si,[bp-0xa]` for i==j) and computes first+j into DI (`mov al,[bp+6]; cwde; add ax,[bp-0xa]; mov di,ax` at ovl5:0493/0497/049A, then `es:[di+0x7b89]`/`es:[di+0x7b94]`), while our build registers j in DI (`xor di,di` at ovl5:0037) and combines first+j as `[bx+di+disp]`; the whole function is 2 bytes short and every offset after shifts. Tried: plain j, `register int i`, `unsigned j`, `j == i` vs `i == j`, a `register int n = first+j` (took SI, pushed i to DI), a function-scope `int k`, block-scope j, and -B (no change, TCC -S does the allocation). TC's allocator picks i (SI) and j (DI); a source form that stops it choosing j would match. Not a tail merge."
 
 [[function]]
 id = "eov5_067b"
@@ -7748,6 +7750,9 @@ unit = "eov5"
 addr = "ovl5:0BBE"
 size = 223
 evidence = ["ovl", "near", "frame"]
+name = "BuildDeathList"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov5_0c9d"
@@ -7755,6 +7760,8 @@ unit = "eov5"
 addr = "ovl5:0C9D"
 size = 286
 evidence = ["ovl", "near", "frame"]
+name = "HealLoop"
+notes = "blocked: the two hit-point store tails. The body matches up to ovl5:0D7E; the original keeps the two stores separate (`mov [bx-0xa65],al` after `hp = maxhp` at ovl5:0D7E, then `jmp 0xDA9`, and again after `hp += heal` at ovl5:0D9F), each recomputing &gChars[i]; our -ml -O -Z build cross-jumps them into one shared store (the same class as 0ACD:091C, 14EF:0274 and 0D1C:096C: TCC's internal assembler, WHITEPAPER 2.1.1). Through the assembler (-B) the tails stay apart (the function is then one byte off at ovl5:0CB9), but -B breaks SurrenderPanel and ChooseChar, so the unit's one /*@flags*/ cannot express it (see eov5_00a1). Tried if/else and its reverse, braces, a local for the new hp, and -B."
 
 [[function]]
 id = "eov5_0dbb"
@@ -7762,6 +7769,7 @@ unit = "eov5"
 addr = "ovl5:0DBB"
 size = 254
 evidence = ["ovl", "near", "frame"]
+name = "ResurrectPicker"
 
 [[function]]
 id = "eov5_0eb9"
@@ -7829,6 +7837,9 @@ unit = "eov5"
 addr = "ovl5:1204"
 size = 1030
 evidence = ["ovl", "near", "frame"]
+name = "TileAnimation"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov5_160a"
@@ -7836,6 +7847,9 @@ unit = "eov5"
 addr = "ovl5:160A"
 size = 446
 evidence = ["ovl", "near", "frame"]
+name = "WinnerPanel"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov5_17c8"
@@ -7843,6 +7857,9 @@ unit = "eov5"
 addr = "ovl5:17C8"
 size = 698
 evidence = ["ovl", "near", "frame"]
+name = "EndingAnimation"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov5_1a82"
@@ -7850,6 +7867,8 @@ unit = "eov5"
 addr = "ovl5:1A82"
 size = 603
 evidence = ["ovl", "frame"]
+name = "CharOverlay"
+notes = "blocked: the constant-segment far object, with 1CDD. The body matches up to ovl5:1ABD, where our build loads gSeg1D0's relocated frame (`mov ax,0x1a8a` here) and stub offset; the original reaches the screen segment 01D0 with the literal `mov ax,0x1d0`. src/EOV5.C declares gSeg1D0 a far object at 01D0:0000; `(void far *)0x1D00L` gives the documented MK_FP form (`xor ax,ax`, escalation e177d), so no source form was found. The same wall hits the two 01F8/01F0 LoadScreenImage buffers at the end (see eov5_1cdd). Everything else matches: the font save/restore, the gFB44/gFlag/gF542 redraws, the mode 8/9/0xa dispatch (1204, 17C8, ovl2:09ED), the item screen and the eight menu panels, and the 1D8 text copy."
 
 [[function]]
 id = "eov5_1cdd"
@@ -7865,6 +7884,8 @@ unit = "eov5"
 addr = "ovl5:1E1B"
 size = 387
 evidence = ["ovl", "near", "frame"]
+name = "ShuffleGrid"
+notes = "blocked: TC registers the shuffle index. The body matches up to ovl5:005A; the original keeps pick in [bp-0xe] (`mov [bp-0xe],ax` at ovl5:0061) and swapped in [bp-0xa], and copies i to DI (`mov di,si` at ovl5:0064, then `es:[di*2+base]`), so it registers only i (SI); our build registers pick in DI (`mov di,ax` at ovl5:0061) and puts swapped at [bp-0xe], 2 bytes short. Tried: declaration order swaps (pick/swapped, and the original's swapped/k/pick/j/saved slot order), `register int cy`, and unsigned pick; TC keeps choosing a second variable (pick, or cy when it is register). A source form that leaves TC registering only i would match."
 
 [[function]]
 id = "eov6_0000"

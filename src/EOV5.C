@@ -8,6 +8,9 @@
 
 /*@flags -ml -O -Z */
 
+#include <stdlib.h>     /* abs, the inline __abs__ the select lists use */
+#include <dos.h>        /* FP_OFF/FP_SEG, the blit calls split a far pointer */
+
 struct Cell4 {              /* a four-byte sprite-cell definition, x, y, w, h (src/EOV2.C) */
     unsigned char x;
     unsigned char y;
@@ -108,6 +111,17 @@ extern char gText7CB7[]; /*@ ds:7CB7 */
 extern char gText7CBC[]; /*@ ds:7CBC */
 extern char gText7D0E[]; /*@ ds:7D0E */
 extern char gText7D77[]; /*@ ds:7D77 */
+extern char gText7D9E[]; /*@ ds:7D9E */
+extern char gText7E53[]; /*@ ds:7E53 */
+extern char gText7E5C[]; /*@ ds:7E5C */
+extern char gText7EDB[]; /*@ ds:7EDB */
+extern char gText7EDD[]; /*@ ds:7EDD */
+extern char gText7EEF[]; /*@ ds:7EEF */
+extern char gText7EF7[]; /*@ ds:7EF7 */
+extern char gText7EFF[]; /*@ ds:7EFF */
+extern char gText7E43[]; /*@ ds:7E43 */
+extern char gText7E4B[]; /*@ ds:7E4B */
+extern char gText7C32[]; /*@ ds:7C32 */
 extern char gText7BA6[]; /*@ ds:7BA6 */
 extern char gText7BB2[]; /*@ ds:7BB2 */
 extern char gText7BCA[]; /*@ ds:7BCA */
@@ -183,6 +197,9 @@ extern void Action01E3(char far *text); /*@ 0ACD:01E3 */
 extern void f0EF3_2541(char far *text); /*@ 0EF3:2541 */
 extern void fOvl2_09ED(void); /*@ 2106:0039 */  /* overlay 2 entry, ovl2:09ED */
 extern void fOvl3_07A5(char far *name, char far *sheet); /*@ 210C:0052 */  /* overlay 3 entry, ovl3:07A5 */
+extern void FreePtrTable(void); /*@ 210C:0048 */  /* overlay 3 entry, ovl3:0000 */
+extern void FreeEffectTables(void); /*@ 210C:003E */  /* overlay 3 entry, ovl3:031A */
+extern void FreeMapIcons(int base, int count); /*@ 210C:0061 */  /* overlay 3 entry, ovl3:05D2 */
 extern void fOvl4_1F51(int n); /*@ 2116:005C */  /* overlay 4 entry, ovl4:1F51 */
 extern void LoadOverlayScreen(char far *name, int a, int b); /*@ 082C:05EC */
 extern void LoadScreenImage(char far *name, void far *buf, int a, int b, int c); /*@ 082C:051B */
@@ -190,21 +207,25 @@ extern int FileOpen(char far *name, int mode); /*@ 1C0E:00DB */
 extern void FileRead(int handle, void far *buf, unsigned long len); /*@ 1C0E:0400 */
 extern void FileClose(int handle); /*@ 1C0E:03BB */
 extern void f1A47_0169(void far *font); /*@ 1A47:0169 */
+extern void ShutdownGame(void); /*@ 07C8:058A */
+extern void far *f19EC_0002(int kind); /*@ 19EC:0002 */
+extern void f19EC_002A(int a, int b, int c, int d); /*@ 19EC:002A */
+extern int gF1; /*@ ds:00F1 */
 
 /* siblings not decompiled yet: their real signatures, so callers compile */
-int Ovl5_0455(char offset, char count, void far *names);
+int SelectMenu(char first, char count, char far **names);
 void Ovl5_0924(void);
 void Ovl5_0BBE(void);
 void Ovl5_0C9D(void);
-void Ovl5_0DBB(void);
+void ResurrectPicker(void);
 void Ovl5_0EB9(void);
 void Ovl5_0F77(void);
 void Ovl5_10A6(void);
 void Ovl5_119E(void);
-void Ovl5_1204(void);
-void Ovl5_17C8(void);
+void TileAnimation(void);
+void EndingAnimation(void);
 void Ovl5_1A82(int mode);
-void Ovl5_1E1B(int a, int b, int x, int y, int c, int d);
+void ShuffleGrid(int x, int y, unsigned cols, unsigned rows, int attr1, int attr2);
 
 void PrintTableString(int index, int flag);
 
@@ -388,12 +409,114 @@ char gTable7B89[] = { 0x3B, 0xA6, 0x04, 0x70, 0xDC, 0x04, 0x70, 0xDC, 0x04, 0x70
     gDrawText(text, x + 0x30 - strlen(text) * 3, y + 2, colour, 0);
 }
 
-/*@ ovl5:0455 stub */ int Ovl5_0455(char offset, char count, void far *names) {}
+/* the key codes this menu accepts; the switch table at ovl5:0657 lists them. The three confirm
+   keys, the two mouse-button keys and up/down are the same game keys as src/E14EF.C's
+   UpdateOptionList; 0x5c and 0x66 are this menu's own left/right (or prev/next) keys. */
+enum {
+    KEY_CONFIRM  = 0x2B,
+    KEY_CONFIRM2 = 0x3D,
+    KEY_CONFIRM3 = 0x61,
+    KEY_CLICK    = 0x41,
+    KEY_CLICK2   = 0x42,
+    KEY_PREV     = 0x5C,
+    KEY_UP       = 0x60,
+    KEY_DOWN     = 0x62,
+    KEY_NEXT     = 0x66
+};
+
+/* ovl5:0455: draws and runs one of the overlay's menus: the `count` rows starting at position
+   `first` in the ds:7B89/ds:7B94 position tables, labelled with the far strings names[0..count-1].
+   Each row is a DrawMenuRow panel; the highlighted row (i) is drawn in colour 9, the others in
+   0xf. It redraws only when the highlight moved, then reads a key and also checks the mouse. The
+   mouse-button keys 0x41/0x42 confirm the row under the last click (g8140/g8142); the confirm keys
+   0x2b/0x3d/0x61 confirm the highlighted row; 0x5c/0x66 and 0x60/0x62 move the highlight by one
+   or three (a three-row column-major grid, wrapping). Returns the confirmed row index, after
+   clearing the panel. Called by every menu panel of the overlay (067B, 0828, 0924, 09C5, 0AB1,
+   0B16, 0EB9, 0F77, 102C, 1087, 10A6, 119E). */
+/*@ ovl5:0455 draft */ int SelectMenu(char first, char count, char far **names)
+{
+    int ybase;
+    int sel;
+    int key;
+    int drawn;
+    int j;
+    int keycode;
+    int i;
+
+    ybase = gTextTop + (gTextRow + 1) * gFontHeight1A47 + 4;
+    drawn = sel = -1;
+    i = 0;
+    do {
+        LockHidePointer();
+        if (drawn != i) {
+            for (j = 0; j < count; j++) {
+                DrawMenuRow(gTable7B89[first + j], ybase + gTable7B94[first + j],
+                            i == j ? 9 : 0xf, names[j]);
+            }
+            drawn = i;
+        }
+        LockShowPointer();
+        key = WaitKeyEvent() & 0x8ff;
+        for (j = 0; j < count; j++) {
+            if (IsPointInsideRect(gCursorX, gCursorY, gTable7B89[first + j],
+                                  ybase + gTable7B94[first + j],
+                                  gTable7B89[first + j] + 0x5e,
+                                  ybase + gTable7B94[first + j] + 8)) {
+                i = j;
+                break;
+            }
+        }
+        keycode = key;
+        switch (keycode) {
+        case KEY_CLICK:
+        case KEY_CLICK2:
+            for (j = 0; j < count; j++) {
+                if (IsPointInsideRect(g8140, g8142, gTable7B89[first + j],
+                                      ybase + gTable7B94[first + j],
+                                      gTable7B89[first + j] + 0x5e,
+                                      ybase + gTable7B94[first + j] + 8)) {
+                    sel = j;
+                    break;
+                }
+            }
+            break;
+        case KEY_PREV:
+            i--;
+            if (i < 0)
+                i = count - 1 <= 2 ? count - 1 : 2;
+            break;
+        case KEY_NEXT:
+            i++;
+            if (i > 2 || count - 1 < i)
+                i = 0;
+            break;
+        case KEY_DOWN:
+            if (i + 3 < count)
+                i += 3;
+            else if (i > 3)
+                i -= 3;
+            /* falls through (the original has no break here) */
+        case KEY_UP:
+            if (i > 3)
+                i -= 3;
+            else if (i + 3 < count)
+                i += 3;
+            break;
+        case KEY_CONFIRM:
+        case KEY_CONFIRM2:
+        case KEY_CONFIRM3:
+            sel = i;
+            break;
+        }
+    } while (sel == -1);
+    ClearPanel();
+    return sel;
+}
 /* ovl5:067B: the "which character?" selector of the 0828 panel. It fills the far-pointer array
    names[] with the six party members' names (gChars[i].name, ds + i*0xF3 + 2) and appends the
    "CANCEL" string ds:7B9F, at the same time counting how many members are present (flags bit 0).
    When every slot is taken it clears the panel, draws the title ds:7CBC and shows the seven-entry
-   menu table through Ovl5_0455; choosing CANCEL (index 6) returns 0, any other choice is applied
+   menu table through SelectMenu; choosing CANCEL (index 6) returns 0, any other choice is applied
    through f0D1C_035A. A free slot returns 1 at once. Called by 0828. */
 /*@ ovl5:067B */ int ChooseChar(void)
 {
@@ -411,7 +534,7 @@ char gTable7B89[] = { 0x3B, 0xA6, 0x04, 0x70, 0xDC, 0x04, 0x70, 0xDC, 0x04, 0x70
     if (count > 5) {
         ClearPanel();
         DrawText(gText7CBC);
-        sel = Ovl5_0455(2, 7, names);
+        sel = SelectMenu(2, 7, names);
         if (sel == 6)
             return 0;
         f0D1C_035A(sel);
@@ -465,7 +588,7 @@ char gTable7B89[] = { 0x3B, 0xA6, 0x04, 0x70, 0xDC, 0x04, 0x70, 0xDC, 0x04, 0x70
 
     ClearPanel();
     PrintTableString(which, 0);
-    sel = Ovl5_0455(0, 2, (void far *)gText7B23);
+    sel = SelectMenu(0, 2, (void far *)gText7B23);
     switch (sel) {
     case 0:
         if (head != -1) {
@@ -509,11 +632,11 @@ char gTable7B89[] = { 0x3B, 0xA6, 0x04, 0x70, 0xDC, 0x04, 0x70, 0xDC, 0x04, 0x70
         ClearPanel();
         PrintTableString(8, 0);
         if (gFC04 & 0x2000L) {
-            sel = Ovl5_0455(0, 2, (void far *)gText7BB2);
+            sel = SelectMenu(0, 2, (void far *)gText7BB2);
             if (sel == 1)
                 sel = 2;
         } else {
-            sel = Ovl5_0455(2, 3, (void far *)gText7BA6);
+            sel = SelectMenu(2, 3, (void far *)gText7BA6);
         }
         switch (sel) {
         case 0:
@@ -546,7 +669,7 @@ char gTable7B89[] = { 0x3B, 0xA6, 0x04, 0x70, 0xDC, 0x04, 0x70, 0xDC, 0x04, 0x70
     if (!(gFC04 & 0x8000L)) {
         gFC04 |= 0x8000L;
         PrintTableString(3, 0);
-        sel = Ovl5_0455(0, 2, (void far *)gText7BBA);
+        sel = SelectMenu(0, 2, (void far *)gText7BBA);
         if (sel == 0)
             PrintTableString(4, 0);
         else if (sel == 1)
@@ -555,7 +678,7 @@ char gTable7B89[] = { 0x3B, 0xA6, 0x04, 0x70, 0xDC, 0x04, 0x70, 0xDC, 0x04, 0x70
         PrintTableString(0xd, 0);
     }
     if (whole)
-        sel = Ovl5_0455(0, 2, (void far *)gText7BC2);
+        sel = SelectMenu(0, 2, (void far *)gText7BC2);
     else
         sel = 1;
     if (sel == 0) {
@@ -628,38 +751,42 @@ char gTable7B89[] = { 0x3B, 0xA6, 0x04, 0x70, 0xDC, 0x04, 0x70, 0xDC, 0x04, 0x70
 
 /* ovl5:0BBE: builds the list at ds:F4E6 (count in gCountDDE0) of the characters and items the
    resurrect/heal panel 0EB9 may act on: first every character whose flags bit 0 is set and whose
-   m22 is 0xf7; then, for every character with flags bit 0 set, each of its 25 item slots whose
-   item type's gA9F5[type].m09 bit 0..6 equals 8, as -gTable8DD2[item].m0B. Returns the count.
-   Called by 0EB9. The only remaining difference is the counter's initialisation: the original
-   zeroes `i` and gCountDDE0 through one AX (`xor ax,ax; mov si,ax; mov [dde0],ax`); every source
-   form tried puts the store of gCountDDE0 first, so this stays a draft until a form is found. */
-/*@ ovl5:0BBE draft */ int BuildDeathList(void)
+   hit points are -10 (0xf6, a dead member); then, for every character with flags bit 0 set, each
+   of its 25 item slots whose item type's gA9F5[type].m09 bit 0..6 equals 8, as
+   -gTable8DD2[item].m0B. Returns the count. Called by 0EB9. The counters are zeroed through one
+   AX (`gCountDDE0 = i = 0`), the two flags tests are a `continue` pair (which makes the build
+   reload the far pointer, ovl5:0BE9), and the three locals are declared type, kind, item (TC lays
+   the frame out in declaration order, ovl5:0C4D/0C5E/0C37), all as the original has them. */
+/*@ ovl5:0BBE */ int BuildDeathList(void)
 {
     struct CharRec far *rec;
-    int item;
     int type;
     int kind;
+    int item;
     int i;
     int j;
 
-    i = gCountDDE0 = 0;
+    gCountDDE0 = i = 0;
     for (; i < 6; i++) {
         rec = &gChars[i];
-        if ((rec->flags & 1) && rec->m22 == 0xf7)
-            gTableF4E6[gCountDDE0++] = i;
+        if ((rec->flags & 1) == 0)
+            continue;
+        if (rec->hp != -10)
+            continue;
+        gTableF4E6[gCountDDE0++] = i;
     }
     for (i = 0; i < 6; i++) {
         rec = &gChars[i];
-        if (!(rec->flags & 1))
-            continue;
-        for (j = 0; j < 0x19; j++) {
-            item = rec->m77[j];
-            if (!item)
-                continue;
-            type = gTable8DD2[item].m02;
-            kind = gA9F5[type].m09 & 0x7f;
-            if (kind == 8)
-                gTableF4E6[gCountDDE0++] = -gTable8DD2[item].m0B;
+        if (rec->flags & 1) {
+            for (j = 0; j < 0x19; j++) {
+                item = rec->m77[j];
+                if (!item)
+                    continue;
+                type = gTable8DD2[item].m02;
+                kind = gA9F5[type].m09 & 0x7f;
+                if (kind == 8)
+                    gTableF4E6[gCountDDE0++] = -gTable8DD2[item].m0B;
+            }
         }
     }
     return gCountDDE0;
@@ -698,7 +825,49 @@ char gTable7B89[] = { 0x3B, 0xA6, 0x04, 0x70, 0xDC, 0x04, 0x70, 0xDC, 0x04, 0x70
         i++;
     }
 }
-/*@ ovl5:0DBB stub */ void Ovl5_0DBB(void) {}
+/* ovl5:0DBB: the resurrect panel's "which one?" picker. It clears the panel, draws the title
+   ds:7D9E, builds the far string list of the entries BuildDeathList left in gTableF4E6
+   (gCountDDE0 of them): a non-negative entry is a party member (gChars[entry].name), a negative
+   entry -k-1 is the pre-made character gCharPool[k].name. It then runs the 0455 menu (first row
+   2) and acts on the chosen entry: a party member is healed to full (hp = maxhp); a pool character
+   has its item class 0x21 removed, becomes the selected character gEFC6, redraws the portrait and
+   runs the add-character panel with the head message suppressed (-1). Called by 0EB9.
+   blocked: the pool-name address. The body matches except ovl5:0DFD, where the original folds
+   gCharPool[-1].name to the literal `add ax, 0x71A7` (gCharPool is ds:7298, its name field +2, one
+   record 0xF3 back). Every source form tried (gCharPool[-k-1].name, gCharPool[-k].name - 0xF3,
+   a separate index local) folds to that same negative displacement, and our build relocates it to
+   the symbol `gCharPool`, but cmatch's DGROUP heuristic (tools/match/cmatch.py compare, the
+   `off <= va` symbol pick) cannot symbolize a DGROUP offset that lies before the nearest symbol:
+   it resolves our relocated word to gCellDef7B2B+15 (ds:7B3A) instead of ds:71A7. A matcher gap
+   for a reference before a DGROUP symbol (the far-object branch at cmatch.py:387 handles negative
+   displacements, the DGROUP branch at :373 does not). */
+/*@ ovl5:0DBB draft */ void ResurrectPicker(void)
+{
+    char far *names[20];
+    int sel;
+    int i;
+    int n;
+
+    ClearPanel();
+    DrawText(gText7D9E);
+    for (i = 0; i < gCountDDE0; i++) {
+        if (gTableF4E6[i] < 0)
+            names[i] = gCharPool[-gTableF4E6[i] - 1].name;
+        else
+            names[i] = gChars[gTableF4E6[i]].name;
+    }
+    sel = SelectMenu(2, gCountDDE0, names);
+    n = gTableF4E6[sel];
+    if (n >= 0) {
+        gChars[n].hp = gChars[n].maxhp;
+    } else {
+        n = abs(n) - 1;
+        RemoveCarriedItems(0x21, n + 1);
+        gEFC6 = n;
+        DrawCharPortrait(2);
+        AddCharPanel(n, n * 2 + 0x20, -1, n * 2 + 0x21);
+    }
+}
 /* ovl5:0EB9: the resurrect/heal NPC panel. When gFC04 bit 0x10000 is clear it draws message
    0x18; when bit 0x20000 is set it draws message 0xb; otherwise it draws message 9 and shows the
    menu ds:7BD2 (3 entries) when BuildDeathList found something, or ds:7BCA (2 entries) otherwise.
@@ -714,9 +883,9 @@ char gTable7B89[] = { 0x3B, 0xA6, 0x04, 0x70, 0xDC, 0x04, 0x70, 0xDC, 0x04, 0x70
         } else {
             PrintTableString(9, 0);
             if (BuildDeathList()) {
-                sel = Ovl5_0455(2, 3, (void far *)gText7BD2);
+                sel = SelectMenu(2, 3, (void far *)gText7BD2);
             } else {
-                sel = Ovl5_0455(0, 2, (void far *)gText7BCA);
+                sel = SelectMenu(0, 2, (void far *)gText7BCA);
                 if (sel == 1)
                     sel = 2;
             }
@@ -726,7 +895,7 @@ char gTable7B89[] = { 0x3B, 0xA6, 0x04, 0x70, 0xDC, 0x04, 0x70, 0xDC, 0x04, 0x70
                 gFC04 |= 0x20000L;
                 break;
             case 1:
-                Ovl5_0DBB();
+                ResurrectPicker();
                 gFC04 |= 0x20000L;
                 break;
             }
@@ -746,7 +915,7 @@ char gTable7B89[] = { 0x3B, 0xA6, 0x04, 0x70, 0xDC, 0x04, 0x70, 0xDC, 0x04, 0x70
     int i;
 
     PrintTableString(0x12, 0);
-    sel = Ovl5_0455(0, 2, (void far *)gText7BDE);
+    sel = SelectMenu(0, 2, (void far *)gText7BDE);
     switch (sel) {
     case 0:
         gFC04 |= 0x8000000L;
@@ -774,7 +943,7 @@ char gTable7B89[] = { 0x3B, 0xA6, 0x04, 0x70, 0xDC, 0x04, 0x70, 0xDC, 0x04, 0x70
     int sel;
 
     PrintTableString(0xe, 0);
-    sel = Ovl5_0455(2, 3, (void far *)gText7BE6);
+    sel = SelectMenu(2, 3, (void far *)gText7BE6);
     switch (sel) {
     case 0:
         gFC04 |= 0x200000L;
@@ -805,7 +974,7 @@ char gTable7B89[] = { 0x3B, 0xA6, 0x04, 0x70, 0xDC, 0x04, 0x70, 0xDC, 0x04, 0x70
     int j;
 
     PrintTableString(0x10, 0);
-    sel = Ovl5_0455(0, 2, (void far *)gText7BF2);
+    sel = SelectMenu(0, 2, (void far *)gText7BF2);
     if (sel == 0) {
         PrintTableString(0x11, 1);
         for (i = 0; i < 6; i++) {
@@ -830,7 +999,7 @@ char gTable7B89[] = { 0x3B, 0xA6, 0x04, 0x70, 0xDC, 0x04, 0x70, 0xDC, 0x04, 0x70
     int sel;
 
     PrintTableString(0x16, 0);
-    sel = Ovl5_0455(2, 3, (void far *)gText7BFA);
+    sel = SelectMenu(2, 3, (void far *)gText7BFA);
     switch (sel) {
     case 0:
         AddCharPanel(8, 0x1b, 0x2c, 0x2d);
@@ -843,9 +1012,191 @@ char gTable7B89[] = { 0x3B, 0xA6, 0x04, 0x70, 0xDC, 0x04, 0x70, 0xDC, 0x04, 0x70
     }
     gFC04 |= 0x4000000L;
 }
-/*@ ovl5:1204 stub */ void Ovl5_1204(void) {}
-/*@ ovl5:160A stub */ void Ovl5_160A(void) {}
-/*@ ovl5:17C8 stub */ void Ovl5_17C8(void) {}
+/* ovl5:1204: the first ending animation (mode 8). It tears down the dungeon resources, loads
+   ds:7E43 and slices fifteen cells out of gOverlayBuf (three per sprite: a 3x0x4b column, a
+   3x0x4b column offset 0x50, and an 0xf x 0x12 cell) plus one 8 x 0x4d cell, blits ds:7E4B,
+   fills the action field with f19EC_0002(5), clips the panel, draws the four first cells and
+   shuffles the 0x18 x 0x90 grid. It then runs an animation script at ds:7C32 of (cell, step)
+   byte pairs: each pair draws figures[i], barsTop[i] and barsBot[i], steps a 5x5 board cell (or
+   the last cell when the step is 0), and plays the step sounds; the script ends at the first byte
+   that is negative (0xff). Finally it frees the one extra cell and the three sprite arrays.
+   Called from the menu dispatcher 1A82 (mode 8). */
+/*@ ovl5:1204 */ void TileAnimation(void)
+{
+    char far *script;
+    void far *barsTop[5];    /* the 3 x 0x4b strips at y 0 */
+    void far *barsBot[5];    /* the 3 x 0x4b strips at y 0x50 */
+    void far *figures[5];    /* the 0xf x 0x12 cells */
+    void far *extra[11] = { 0 };
+    int i;
+
+    FreeEffectTables();
+    FreeMapIcons(0, 0x24);
+    FreePtrTable();
+    LoadOverlayScreen(gText7E43, 5, 3);
+    for (i = 0; i < 5; i++) {
+        barsTop[i] = gGetSpriteCell(i * 3, 0, 3, 0x4b, gOverlayBuf);
+        barsBot[i] = gGetSpriteCell(i * 3, 0x50, 3, 0x4b, gOverlayBuf);
+        figures[i] = gGetSpriteCell(0xf, i * 0x12, 0xf, 0x12, gOverlayBuf);
+    }
+    extra[0] = gGetSpriteCell(0x1e, 0, 8, 0x4d, gOverlayBuf);
+    LoadScreenImage(gText7E4B, gOverlayBuf, 5, 3, 2);
+    PlaySound(0x21);
+    PlaySound(0x13);
+    g8115 = 2;
+    gFn807E(3, 0, 0x12, 0x68, f19EC_0002(5));
+    ClipRect(3, 0, 3, 0, 0x12, 0x68, 0, 2);
+    f1A29_000F(2, figures[0], 0x1c, 9, 0);
+    f1A29_000F(2, barsTop[0], 0x22, 0x1c, 0);
+    f1A29_000F(2, barsBot[0], 0x78, 0x1c, 0);
+    f1A29_000F(2, extra[0], 0x38, 0x1b, 0);
+    ShuffleGrid(0x18, 0, 0x90, 0x68, 2, 0);
+    gFn804A(3, 0, 0x12, 0x68, f19EC_0002(5));
+    WaitTicks(0x1e);
+    script = gText7C32;
+    while (*script > -1) {
+        i = *script++;
+        f1A29_000F(0, figures[i], 0x1c, 9, 0);
+        f1A29_000F(0, barsTop[i], 0x22, 0x1c, 0);
+        f1A29_000F(0, barsBot[i], 0x78, 0x1c, 0);
+        if (i == 1 && script[-3] == 0) {
+            PlaySound(0x18);
+            PlaySound(0x56);
+        }
+        i = *script++;
+        if (i != 0) {
+            i--;
+            ClipRect((i % 5) * 8, (i / 5) * 0x4d, 7, 0x1b, 8, 0x4d, 2, 0);
+        } else {
+            f1A29_000F(0, extra[0], 0x38, 0x1b, 0);
+        }
+        if (i == 1)
+            PlaySound(0x1f);
+        if (i == 3 && script[-2] == 3)
+            PlaySound(0x5a);
+        WaitTicks(2);
+    }
+    farfree(extra[0]);
+    for (i = 4; i >= 0; i--) {
+        farfree(figures[i]);
+        farfree(barsBot[i]);
+        farfree(barsTop[i]);
+    }
+}
+/* ovl5:160A: the winning-party password screen at the end of the game. It loads ds:7E53 into the
+   string base gSegDF4E (the password text), sets up the panel, and when all six party bits of
+   gFC04 are set (gFC04 & 0x1FFE == 0x1FFE) draws the winner title ds:7E5C, the first four party
+   members' names (with a separator ds:7EDB) and then a checksum of every party member's name:
+   the sum, over the name's characters, of the signed long square of each character (F_LXMUL@,
+   0000:7737), formatted into gFileNameBuf through ds:7EDD. It then waits for a key and clears
+   gScrollOn. Called from the menu dispatcher 1A82 (mode 0xb). */
+/*@ ovl5:160A */ void WinnerPanel(void)
+{
+    int handle;
+    long sum;
+    int i;
+    int j;
+
+    handle = FileOpen(gText7E53, 1);
+    FileRead(handle, gSegDF4E, 0x7d00L);
+    FileClose(handle);
+    PlaySound(0x14);
+    g8115 = 0;
+    gScrollOn = 1;
+    gFE42 = 1;
+    g169 = gF57E;
+    SetTextWindow(0xc);
+    g8117 = 0xac;
+    g8119 = 0x2d0;
+    LockHidePointer();
+    DrawFilledPanel(0, 0, 0xaf, 0xae, gFB4C, gF53A, gF57E);
+    LockShowPointer();
+    PrintTableString(0x33, 1);
+    if ((gFC04 & 0x1ffe) == 0x1ffe) {
+        DrawText(gText7E5C);
+        for (i = 0; i < 4; i++) {
+            DrawText(gText7EDB);
+            if (gChars[i].flags & 1)
+                DrawText(gChars[i].name);
+        }
+        sum = 0;
+        for (i = 0; i < 6; i++) {
+            if (gChars[i].flags & 1) {
+                for (j = 0; j < strlen(gChars[i].name); j++)
+                    sum += (long)gChars[i].name[j] * gChars[i].name[j];
+            }
+        }
+        sprintf(gFileNameBuf, gText7EDD, sum);
+        DrawText(gFileNameBuf);
+        WaitTicks(0xa);
+        FlushKeyBuffer();
+        WaitKeyEvent();
+    }
+    gScrollOn = 0;
+}
+/* ovl5:17C8: the second ending animation (mode 9). It tears down the dungeon resources
+   (FreeEffectTables, FreeMapIcons(0,0x24), FreePtrTable), loads ds:7EEF and builds the four
+   sprite cells from gOverlayBuf (a 2x2 grid of 0xE x 0x58 cells), loads ds:7EF7 and slices one
+   0x10 x 0x5f cell, blits ds:7EFF, then plays ten frames: six clipped cells (with the sounds
+   0x48, 0x36, 0x36, 0x22) and four from the sliced cell (sound 0x2a). It then clears g8115,
+   fills the action field with f19EC_0002(5) (gFn807E), sets gF1 to 8 and runs the 19-step
+   explosion: each step plays 0x77, blits the page (gFn804A), draws the sliced cell moving from
+   y=-0x5a in steps of 5, clips the portrait region and waits 2 ticks. It finally plays sound 5,
+   clears gF1, waits 0x3c ticks, shows the pointer, runs the winning-party panel (160A), frees the
+   five cells and shuts the game down. Called from the menu dispatcher 1A82 (mode 9). */
+/*@ ovl5:17C8 */ void EndingAnimation(void)
+{
+    void far *sprites[4];
+    void far *cell;
+    int i;
+
+    FreeEffectTables();
+    FreeMapIcons(0, 0x24);
+    FreePtrTable();
+    LoadOverlayScreen(gText7EEF, 5, 3);
+    for (i = 0; i < 4; i++)
+        sprites[i] = gFn8082((i % 2) * 0xe, (i / 2) * 0x58, 0xe, 0x58, gOverlayBuf);
+    LoadOverlayScreen(gText7EF7, 5, 3);
+    cell = gFn8082(0x16, 0, 0x10, 0x5f, gOverlayBuf);
+    LoadScreenImage(gText7EFF, gOverlayBuf, 5, 3, -1);
+    f19EC_002A(3, 2, FP_OFF(gOverlayBuf), FP_SEG(gOverlayBuf));
+    for (i = 0; i < 0xa; i++) {
+        if (i == 2)
+            PlaySound(0x48);
+        if (i == 4)
+            PlaySound(0x36);
+        if (i == 6)
+            PlaySound(0x36);
+        PlaySound(0x22);
+        if (i < 6) {
+            ClipRect((i % 3) * 0xd, (i / 3) * 0x58, 4, 0xa, 0xd, 0x58, 2, 0);
+        } else {
+            PlaySound(0x2a);
+            f1A29_000F(0, sprites[i - 6], 0x20, 0xa, 0);
+        }
+        WaitTicks(4);
+    }
+    g8115 = 0;
+    gFn807E(0, 0, 0x16, 0x78, f19EC_0002(5));
+    gF1 = 8;
+    for (i = 0; i < 0x13; i++) {
+        PlaySound(0x77);
+        g8115 = 2;
+        gFn804A(0, 0, 0x16, 0x78, f19EC_0002(5));
+        f1A29_000F(2, cell, 0x18, i * 5 + 0xffa6, 5);
+        ClipRect(0, 0, 0, 0, 0x16, 0x78, 2, 0);
+        WaitTicks(2);
+    }
+    PlaySound(5);
+    gF1 = 0;
+    WaitTicks(0x3c);
+    LockShowPointer();
+    WinnerPanel();
+    for (i = 0; i < 4; i++)
+        farfree(sprites[i]);
+    farfree(cell);
+    ShutdownGame();
+}
 /* ovl5:1A82: the overlay's entry and dispatcher (reached from 122E:1D76 and the overlay's stub
    entry). It hides the pointer, saves the current font, handles the gFB44/gFlag message redraws
    and the overlay-4 call, then dispatches `mode`: 8 runs the 1204 animation, 9 the 17C8 one and
@@ -872,10 +1223,10 @@ char gTable7B89[] = { 0x3B, 0xA6, 0x04, 0x70, 0xDC, 0x04, 0x70, 0xDC, 0x04, 0x70
     fOvl4_1F51(1);
     switch (mode) {
     case 8:
-        Ovl5_1204();
+        TileAnimation();
         break;
     case 9:
-        Ovl5_17C8();
+        EndingAnimation();
         break;
     case 0xa:
         fOvl2_09ED();

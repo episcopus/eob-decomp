@@ -1469,6 +1469,51 @@ why = "a function name is a verb phrase (docs/process/READABILITY.md); it remove
 date = "2026-11-01"
 
 [[rename]]
+id = "ovl5:0455=SelectMenu"
+addr = "ovl5:0455"
+old = "Ovl5_0455"
+new = "SelectMenu"
+kind = "function"
+why = "draws and runs an overlay menu of count rows from the position tables and returns the chosen row (ovl5:0455; callers pass gText7B23/gText7BBA/... menus)"
+date = "2026-11-01"
+
+[[rename]]
+id = "ovl5:0DBB=ResurrectPicker"
+addr = "ovl5:0DBB"
+old = "Ovl5_0DBB"
+new = "ResurrectPicker"
+kind = "function"
+why = "the resurrect panel's which-one picker: builds the far string list of BuildDeathList's gTableF4E6 entries (gChars/gCharPool names), runs SelectMenu and heals or resurrects the chosen entry (ovl5:0DBB, called by ResurrectPanel)"
+date = "2026-11-01"
+
+[[rename]]
+id = "ovl5:160A=WinnerPanel"
+addr = "ovl5:160A"
+old = "Ovl5_160A"
+new = "WinnerPanel"
+kind = "function"
+why = "the winning-party password screen: draws the four winners' names and a checksum password from gChars, then waits (ovl5:160A, called from CharOverlay mode 0xb)"
+date = "2026-11-01"
+
+[[rename]]
+id = "ovl5:17C8=EndingAnimation"
+addr = "ovl5:17C8"
+old = "Ovl5_17C8"
+new = "EndingAnimation"
+kind = "function"
+why = "the second ending animation (CharOverlay mode 9): tears down the dungeon, builds the sprite cells from gOverlayBuf, plays the ten-frame and 19-step sequences, shows the winning-party panel and shuts the game down (ovl5:17C8, called from CharOverlay)"
+date = "2026-11-01"
+
+[[rename]]
+id = "ovl5:1204=TileAnimation"
+addr = "ovl5:1204"
+old = "Ovl5_1204"
+new = "TileAnimation"
+kind = "function"
+why = "the mode-8 ending animation: slices the sprite cells from gOverlayBuf, shuffles the 0x18x0x90 tile board and runs the (cell, step) animation script at ds:7C32 (ovl5:1204, called from CharOverlay)"
+date = "2026-11-01"
+
+[[rename]]
 id = "1658:01E6=ClearNode"
 addr = "1658:01E6"
 old = "ResetNode"
