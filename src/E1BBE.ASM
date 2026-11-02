@@ -6,17 +6,19 @@
 ; _gPointerBackOff/_gPointerBackSeg, and to erase it the saved
 ; background is written back through [ds:804E] (gRestoreRect). 1BBE:0002 HidePointer is the hide
 ; half: restore the background, then gHideDepth++. 1BBE:00ED ShowPointer is the show half:
-; gHideDepth is decremented and, only at zero, move the drawn position to the mouse position, save
-; and draw.
+; gHideDepth is decremented and, only at zero with a save-under buffer (1BBE:010F), the drawn
+; position is moved to the mouse position (this move happens even when the rectangle is off screen,
+; QUIRK 1BBE:0111), then the screen under it is saved and the pointer drawn.
 ; 1BBE:01FE HidePointerZone and 1BBE:02C2 ShowPointerZone are the hide/show pair that carry the
 ; zone (the caller's rectangle, stored in gZoneLeft..gZoneBottom with left and top reduced by the
 ; sprite size, read by the mouse handler 1A72:0244) and the
 ; gPointerState flag (bit 8000 a zone hide is in force, bit 4000 a redraw is owed at the show);
 ; 1BBE:0307 LockHidePointer and 1BBE:0332
 ; LockShowPointer hide and show without that state. Every wrapper that hides or draws takes the pointer
-; busy flag _gPointerBusy and brackets its work with [ds:80AA] and [ds:80A2] (the no-redraw exit of
-; ShowPointerZone, zero count and bit 4000h clear, clears the state and releases the busy flag with no
-; bracket, 1BBE:02DE/0300). The unit is hand-written assembly
+; busy flag _gPointerBusy and brackets its work with [ds:80AA] and [ds:80A2], but two exits skip the
+; bracket: the no-redraw exit of ShowPointerZone (zero count and bit 4000h clear, clears the state
+; and releases the busy flag, 1BBE:02DE/0300) and the disjoint-rectangle exit of HidePointerZone
+; (QUIRK 1BBE:02B6, which skips the bracket at 1BBE:029F-02B2). The unit is hand-written assembly
 ; ([H]: the map's c_like test, tools/re/map_units.py:42-46, looks only at the instructions after the
 ; frame and finds no C-like frame here, the same reading src/E1BB1.ASM:57-59 records; AX is saved with
 ; push/pop ax and the far call goes through a DGROUP pointer, the style of E1BB1 and E1BF3).
@@ -55,8 +57,9 @@
                                         ; src/E1BF3.ASM:35)
         EXTRN   _gCursorY:WORD          ; @ ds:813A: mouse position, y in pixels
         EXTRN   _gHideDepth:WORD        ; @ ds:8146: hide depth, 0 = drawn (1BBE:0002/00ED change it);
-                                        ; InitMouse starts it at 1 and the state at 0 (src/E1A72.ASM:289-290),
-                                        ; so the pointer starts hidden until the first show
+                                        ; InitMouse starts it at 1 and the state at 0 (src/E1A72.ASM:299-300,
+                                        ; InitMouse, grep `_gHideDepth` and `_gPointerState`), so the pointer
+                                        ; starts hidden until the first show
         EXTRN   _gMouseDisabled:WORD              ; @ ds:814A: non-zero disables the pointer (E07A9 tests it too)
         EXTRN   _gPointerHeight:WORD     ; @ ds:8154: sprite height in pixels (record byte +3, 1BB1)
         EXTRN   _gPointerWidth8:WORD     ; @ ds:8156: sprite width in 8-pixel columns ([H]: the stored
@@ -91,9 +94,9 @@
         EXTRN   _gPointerShapeOff:WORD   ; @ ds:816E: pointer shape record, far offset (1BB1 stores it)
         EXTRN   _gPointerShapeSeg:WORD   ; @ ds:8170: pointer shape record, far segment
         EXTRN   g8172:WORD              ; @ ds:8172: far pointer handed to [ds:80AA], offset; the 17A6
-                                        ; unit saves and restores the 16 bytes under it (SetFarPointer
-                                        ; and GetFarPointer, src/E1A72.ASM:551-556; the sentence is at
-                                        ; :555; the saved copy is E17A6.ASM:93-95)
+                                        ; unit saves and restores the 16 bytes under it (src/E1A72.ASM:561-569
+                                        ; is the _SetFarPointer header, grep `_SetFarPointer`; the sentence
+                                        ; is at :565; the saved copy is E17A6.ASM:93-95)
         EXTRN   g8174:WORD              ; @ ds:8174: the same far pointer, segment (pushed first)
         EXTRN   _gRectLeft:WORD         ; @ ds:8176: pointer rectangle, left; in 8-pixel columns and
                                         ; clipped in HidePointer/ShowPointer, in pixels and unclipped
@@ -127,7 +130,7 @@
                                         ; ShowPointer below, which calls it at 1BBE:01F4 with mode 0 and
                                         ; the shape record _gPointerShapeOff/_gPointerShapeSeg at the
                                         ; unclipped position _gShapeX/_gShapeY (stored at 1BBE:011E and
-                                        ; 012E; src/E1BBE.ASM:323-328 gives the push order, call at :329)
+                                        ; 012E; src/E1BBE.ASM:334-339 gives the push order, call at :340)
         .CODE
 
 ; 1BBE:0001: Purpose unknown: the unit's first byte is 00. It is emitted under a public symbol

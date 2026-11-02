@@ -28,35 +28,55 @@ src/E1A29.C:53; src/E14EF.C:80-81; src/E07A9.C (tests gMouseDisabled); the E1A72
 L01EC, L025C, L0279 and their 8000h and 4000h tests; `_GetFarPointer` at 1A72:033A. The handler addresses 1A72:00DA
 (InitMouse), 017A (handler entry), 0244 and 0248 (zone compare and its jump) match the disassembly.
 
-- [ ] must-fix src/E1BBE.ASM:58 (_gHideDepth: "InitMouse starts it at 1 and the state at 0 (src/E1A72.ASM:289-290)"):
+- [x] must-fix src/E1BBE.ASM:58 (_gHideDepth: "InitMouse starts it at 1 and the state at 0 (src/E1A72.ASM:289-290)"):
   the two stores are now at src/E1A72.ASM:290 (`mov word ptr [_gHideDepth],1`) and :291 (`mov word ptr
   [_gPointerState],0`). :289 is the `_gCursorY` store (64h). src/E1A72.ASM gained a line above this point at 7f9b24e
   (the round 15 e1a72 fixes); the round 11 cite was right at 2798cb1. Cite :290-291. (Evidence: `grep -n
   "_gHideDepth\],1\|_gPointerState\],0" src/E1A72.ASM` gives :290 and :291; `sed -n 289,291p` shows the cursor store
   first.)
-- [ ] must-fix src/E1BBE.ASM:95-96 (g8172 EXTRN: "src/E1A72.ASM:551-556; the sentence is at :555"): the sentence "The
+  Fixed: the _gHideDepth comment now cites src/E1A72.ASM:299-300 and names InitMouse with its grep strings. The
+  review's :290-291 held at 7f9b24e, but the e1a72 round 16 merge (b8081b4, in this branch) moved the pair down nine
+  lines. Re-grepped at fix time: `grep -n "_gHideDepth\],1\|_gPointerState\],0" src/E1A72.ASM` gives :299 and :300,
+  while :297 is the `_gCursorY` store. Naming InitMouse and the two grep strings keeps the cite from drifting again.
+  `make match FILE=src/E1BBE.ASM` still 7 of 7, 860 bytes.
+- [x] must-fix src/E1BBE.ASM:95-96 (g8172 EXTRN: "src/E1A72.ASM:551-556; the sentence is at :555"): the sentence "The
   17A6 unit uses it to save and restore the 16 bytes under the pointer that DGROUP:80AA reads" is at src/E1A72.ASM:556.
   :555 is the `unconditional sti` line of the 1A72:02FE header, and :551 is blank; the header runs :552 to :556. Cite
   :552-556 and put the sentence at :556. (Evidence: `sed -n 551,556p src/E1A72.ASM`; `grep -n "The 17A6 unit uses"` gives
   :556.)
-- [ ] must-fix src/E1BBE.ASM:129-130 (_gDraw80C2 EXTRN: "src/E1BBE.ASM:323-328 gives the push order, call at :329"): lines
+  Fixed: the g8172 comment now cites src/E1A72.ASM:561-569 (the _SetFarPointer header, named with its grep string) and
+  puts the sentence at :565. The review's :552-556 and :556 held at 7f9b24e, but the e1a72 round 16 merge (b8081b4)
+  moved the header to :561-569. Re-grepped at fix time: `grep -n "The 17A6 unit uses" src/E1A72.ASM` gives :565, the
+  header starts at :561 (`; 1A72:02FE:`) and `PUBLIC _SetFarPointer` is at :570. `make match FILE=src/E1BBE.ASM` still
+  7 of 7, 860 bytes.
+- [x] must-fix src/E1BBE.ASM:129-130 (_gDraw80C2 EXTRN: "src/E1BBE.ASM:323-328 gives the push order, call at :329"): lines
   323 to 328 are the `_gSaveRect` argument pushes and the `add sp,0Ch`, not the draw call. In the current file the pushes of
   the `_gDraw80C2` call are at :334-339 (`_gShapeY`, `_gShapeX`, `_gPointerShapeSeg`, `_gPointerShapeOff`, `mov ax,0`,
   `push ax`) and `call dword ptr [_gDraw80C2]` is at :340. Cite :334-340. The round 11 constants block (lines 32-38) moved
   everything below it by 11 lines. (Evidence: `sed -n 320,341p src/E1BBE.ASM`; `disasm.py` gives the same order at
   1BBE:01E0 to 01F4.)
-- [ ] should src/E1BBE.ASM:16-19 and :8-10 (unit header, the busy bracket and the ShowPointer summary): the header says
+  Fixed: the _gDraw80C2 comment now cites the push order at src/E1BBE.ASM:334-339 and the call at :340. Checked
+  against `sed -n 333,341p src/E1BBE.ASM` (the pushes at :334-339, the call at :340) and `tools/re/disasm.py eob/EOB.EXE
+  1BBE` (the same order at 1BBE:01E0 to 01F4). `make match FILE=src/E1BBE.ASM` still 7 of 7, 860 bytes.
+- [x] should src/E1BBE.ASM:16-19 and :8-10 (unit header, the busy bracket and the ShowPointer summary): the header says
   every wrapper that hides or draws brackets its work with [ds:80AA] and [ds:80A2], and that the only exit with no
   bracket is ShowPointerZone's zero-count exit (1BBE:02DE/0300). HidePointerZone has a second one: a rectangle that
   misses the zone jumps from 1BBE:0285-0297 to 1BBE:02B6 (QUIRK 1BBE:02B6), which skips the bracket at 1BBE:029F-02B2.
   Its own header says so; the unit header should too. The ShowPointer summary "only at zero, move the drawn position to
   the mouse position, save and draw" leaves out that the move depends on a save-under buffer (1BBE:010F) and happens even
   when the rectangle is off screen (QUIRK 1BBE:0111). Say both in one sentence each.
+  Fixed: the unit header now lists both bracket-skipping exits (ShowPointerZone's zero-count exit at 1BBE:02DE/0300 and
+  HidePointerZone's disjoint-rectangle exit at QUIRK 1BBE:02B6, which skips 1BBE:029F-02B2) and its ShowPointer summary
+  now says the zero-depth move needs a save-under buffer (1BBE:010F) and happens even off screen (QUIRK 1BBE:0111).
+  `make match FILE=src/E1BBE.ASM` still 7 of 7, 860 bytes.
 - [ ] should src/E1BBE.ASM:70-75 (_gPointerState): the name says the word "state" and not what it holds. Its three
   fields are all zone-hide bookkeeping: 8000h a zone hide is in force (set at 1BBE:027B, tested at 021E), 4000h a redraw
   is owed at the show (1BBE:0299), and the low byte the count of extra zone hides (1BBE:0229 and 02D8). A name such as
   `_gZoneHideState` would say that. The rename touches src/E1A72.ASM (declared at :124) and this unit, so it goes through
   `make rename` with that evidence; the decompiler and the owner decide, and it does not block the pass.
+  Not done: the rename would touch src/E1A72.ASM, which the e1a72 owner has just settled (its round 16 merge b8081b4
+  rewrites the _gPointerState comments there), so a rename now would reopen that unit's file for a non-blocking
+  improvement. Left for the owner/human to decide; the name _gPointerState stands.
 - [ ] note names checked and supported this round: _HidePointer and _ShowPointer (the disabled and hidden tests, the
   gHideDepth count with its wrap, the save-under and draw order); _HidePointerZone and _ShowPointerZone (the arguments at
   [bp+6] to [bp+0Ch], the zone reduced by the sprite size at 1BBE:025B and 0272, the rounding of the left edge at 024B,
