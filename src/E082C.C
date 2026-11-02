@@ -14,10 +14,10 @@
    routine pointer gDrawText at ds:80CA (src/E14EF.C), the line routine pointer gDrawLine at
    ds:8062 (src/E1A1F.C) and reads the game's
    32-bit tick counter at ds:848A (incremented by the INT 1Ch handler, src/E1D8F.ASM). The graphics
-   mode gGraphicsChoice and the video modes are whitepaper 2.6; the -B build through the assembler
-   (playbook 30) is whitepaper 2.1.1. Placeholder names until the callers name them. */
+   mode gGraphicsChoice and the video modes are whitepaper 2.6; the -v build (debug information,
+   which keeps identical code tails apart) is whitepaper 2.1.1. Placeholder names until the callers name them. */
 
-/*@flags -ml -O -Z -B */
+/*@flags -ml -O -Z -v */
 
 #include <dos.h>
 
@@ -121,11 +121,10 @@ void DrawShadowText(char far *text, int x, int y, int colour, int colour2);
    call (DrawShadowText's `colour2`, below) and `cursorAttr` is the cursor colour: ovl0 passes 0xf, 0
    and 8 (src/EOV0.C:1312), ovl2 passes gTextAttr1, gTextAttr2 and 8 (src/EOV2.C:504).
    Reached from FindWordPanel (ovl2:09ED) and ovl0:23EC. The unit is compiled
-   through the assembler (the flags line records -B), which keeps the insert path's
-   `text[maxlen] = 0` and the append path's `text[cur] = 0` as two separate stores; TCC's own
-   assembler merges them into one shared store. Evidence: with -B removed, make match reports
-   "DIFFER EditTextField +0182: ours jmp 0x278, original jmp 0x282" (27 of 28); with -B, 28 of 28
-   (2026-11-02; playbook 30, the -B row; src/E14EF.C:25-29). */
+   with -v (debug information; the flags line), which keeps the insert path's `text[maxlen] = 0`
+   and the append path's `text[cur] = 0` as two separate stores; without it TCC merges them into
+   one shared store. Evidence: without -v, make match reports "DIFFER EditTextField +0182: ours
+   jmp 0x278, original jmp 0x282" (27 of 28); with -v, 28 of 28 (2026-11-02; whitepaper 2.1.1). */
 /*@ 082C:000B */ int EditTextField(char far *text, char x, char y, char maxlen, char colour,
                                     char attr, char cursorAttr)
 {

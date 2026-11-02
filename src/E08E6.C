@@ -2,11 +2,12 @@
    per-type behaviour routines of the game's map objects: UpdateObjects walks the 30 28-byte object
    records at ds:8A82 (struct Obj28, indexed by the 27-byte character records at ds:1A3B, struct
    Entry27) and dispatches each live object by its type to the 000B/00C3/03FE/0AB8/0B34/0B94/0CA6
-   behaviours. 35 functions are at L2 and one is a draft (00C3). The unit is compiled with -B:
-   that is what keeps the identical jump tails of 0765, 0B94, 17FD and 1410 that a -O build merges.
+   behaviours. 35 functions are at L2 and one is a draft (00C3). The unit is compiled with -v
+   (debug information): that is what keeps the identical jump tails of 0765, 0B94, 17FD and 1410
+   that a -O build without it merges (whitepaper 2.1.1).
    Whitespace and empty-body stubs keep the siblings in address order. */
 
-/*@flags -ml -O -Z -B */
+/*@flags -ml -O -Z -v */
 
 struct Obj28 {              /* 28-byte records, 30 of them at ds:8A82 */
     char b0;                /* +0: index into the ds:1A3B table (the character record) */
@@ -193,7 +194,7 @@ void Obj10F3(struct Obj28 far *obj);   /* forward: 05EA reaches it before its de
    second minus twice the orientation, minus 3, wrapped into 0..7, is over 2 or the first is under 2,
    clear the type and reset the sound field. Called by 0150 and UpdateObjects. Purpose unknown: what
    the two 17A6 calls compute. DRAFT. blocked: a TCC -S codegen question, one 3-byte instruction.
-   Under -B this body matches byte for byte except that the original reloads `les bx,[bp+6]` at
+   Under -B (and under -v, the unit's switch since 2026-11-02) this body matches byte for byte except that the original reloads `les bx,[bp+6]` at
    08E6:00F2 before the Distance argument obj->id (08E6:00EE `push [ds:FBCA]`; 08E6:00F2
    `les bx,[bp+6]`; 08E6:00F5 `push es:[bx+2]`), while ours reuses the bx the five-test `&&` chain
    already holds, so ours is 3 bytes short (ours je 0x86 against the original je 0x89). The reload
@@ -209,8 +210,10 @@ void Obj10F3(struct Obj28 far *obj);   /* forward: 05EA reaches it before its de
    layout, and the `||` early-return form (which reloads but lays the first test as `jne @@; jmp`
    under /jNOSMART; it matches only without -B, where TCC's own assembler shortens the jump, and then
    0765, 0B94 and 17FD do not match). Flags probed on the whole unit 2026-11-01: -ml -O -Z -B 35 of
-   36, -ml -O -Z 32, -ml -O -Z -G -B 10, -ml -Z -B 2; -B is the only set that reaches 35 and the one
-   missing function is this. C++ -P, -1 and -k make no difference. Evidence in re/symbols.toml
+   36, -ml -O -Z 32, -ml -O -Z -G -B 10, -ml -Z -B 2; -B was the only set that reached 35 and the one
+   missing function is this. 2026-11-02: -v also reaches 35, keeping the tails as -B did while TCC
+   sizes the jumps itself, so the `||` early-return form above (which matched only without -B) is
+   worth a retry. C++ -P, -1 and -k make no difference. Evidence in re/symbols.toml
    e08e6_00c3 (notes). */
 /*@ 08E6:00C3 draft */ void Obj00C3(struct Obj28 far *obj)
 {
@@ -517,7 +520,7 @@ void Obj10F3(struct Obj28 far *obj);   /* forward: 05EA reaches it before its de
    mind blast and paralyzes every affected member; 21 rolls 1d4 and, under 3, turns through Obj073F
    and plays g3223[roll] after g3220[roll], else announces the wounds spell and hits every affected
    member. Every action then runs the overlay-4 entry, clears gDF4C, decrements m19 unless it is 0xff
-   and sets m18 to 5, returning 1. Called by 0AB8. The unit's -B flag is what keeps case 21's
+   and sets m18 to 5, returning 1. Called by 0AB8. The unit's -v flag is what keeps case 21's
    PlaySoundAtCell(0x6c, id) at 08E6:0907 inline instead of tail-merging it into the shared block at
    08E6:0A5E. */
 /*@ 08E6:0765 */ int Obj0765(struct Obj28 far *obj)
@@ -645,7 +648,7 @@ void Obj10F3(struct Obj28 far *obj);   /* forward: 05EA reaches it before its de
    turns through TurnObject(obj, -1, dir), sets the state to -1 and returns. The second half looks up
    handle = f0D1C_00DA(id, orient): when TurnObject(obj, handle, -1) fails it turns the other way,
    TurnObject(obj, -1, (orient - arg) & 3), and clears the state, else it sets the state to 1.
-   Called by UpdateObjects. Purpose unknown: what g1991 and the state values select. The unit's -B
+   Called by UpdateObjects. Purpose unknown: what g1991 and the state values select. The unit's -v
    flag is what keeps the two separate `obj->state = -1` stores at 0B94:0083 and 0B94:00A4 that a -O
    build cross-jumps. */
 /*@ 08E6:0B94 */ void Obj0B94(struct Obj28 far *obj, int arg)
@@ -961,7 +964,7 @@ second:
    either holds; any other mode does nothing. Firing runs the 122E entry with (0, 0x20), then, when
    no object of the 30 (from index 1) has a count left, runs 0EC3 on the first object whose
    17A6:0F61(id, gPartyCell) is over 3. Either way it resets the deadline to g8492 + gF510 and
-   clears gF540. Called by 1414:04E7 and overlay 6. The unit's -B flag is what keeps the mode-3
+   clears gF540. Called by 1414:04E7 and overlay 6. The unit's -v flag is what keeps the mode-3
    low-word branch at 1410:005A the right way round that a -O build inverts. */
 /*@ 08E6:1410 */ void Obj1410(void)
 {
@@ -1125,7 +1128,7 @@ fire:
 /* 08E6:17FD: fill `list` with gObjs indices and end it with -1: when scanAll is set, every object
    whose id is key; otherwise when scanFiltered is set, the single index 1775(key, field, flags)
    finds; otherwise the first object 189D accepts for (key, field). Called by 0D1C:0A43. The unit's
-   -B flag is what keeps the two identical `*list++` tails at 17FD:0058 and 17FD:0082 apart that a -O
+   -v flag is what keeps the two identical `*list++` tails at 17FD:0058 and 17FD:0082 apart that a -O
    build cross-jumps. */
 /*@ 08E6:17FD */ void Obj17FD(int far *list, int key, int field, char flags, char scanAll, char scanFiltered)
 {

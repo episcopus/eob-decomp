@@ -4,7 +4,7 @@
    messages ("You can't go that way."), turn undead, eat, browse the item list, and set the sound
    volume and page globals. Names that are not established say what a function does. */
 
-/*@flags -ml -O -Z -B */
+/*@flags -ml -O -Z -v */
 
 /* A 60-byte action record reached through a far pointer. Only the two fields the handlers touch
    are named; everything else is padding. */
