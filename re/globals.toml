@@ -59,7 +59,7 @@ why = "the pointer sprite's height in pixels: filled from shape record byte +3 (
 [[global]]
 id = "ds:8156"
 name = "gPointerWidth8"
-why = "the pointer sprite's width in 8-pixel units: filled from shape record byte +2 plus 1 (1BB1:003A); 1BBE:0002 copies it to gSpriteWidth (ds:8186) and negates it into gNegSpriteWidth (ds:8188), and 1BBE:005F adds that copy to the pointer's left edge before clipping the right edge to 40"
+why = "the pointer sprite's width in 8-pixel units: filled from shape record byte +2 plus 1 (1BB1:003A); 1BBE:0002 copies it to gSpriteWidth (ds:8186) and negates it into gNegSpriteWidth (ds:8188), and 1BBE:005F adds that copy to the pointer's left edge before clipping the right edge to 40. The unit is proven in 1BBE: x is shifted right three times (1BBE:0048..004F sar ax,1), the column is stored (1BBE:005C) and the right edge is clipped to 0x28 = 40 columns (1BBE:0077..007E)"
 
 [[global]]
 id = "ds:8158"
@@ -340,6 +340,7 @@ why = "the flag 1C0E:1310 tests before scanning every logical drive for the over
 id = "ds:8148"
 name = "gMouseHandlerInstalled"
 why = "1 when the mouse driver handler is installed: set to 1 at install (E1A72.ASM:214), cleared at uninstall (E1A72.ASM:200); E1A72.ASM:334 reads it to remove the handler only when installed; Main reads it to choose gMouseDisabled (E07C8.C:153); E07C8.C:36 says 'mouse event handler'"
+
 [[global]]
 id = "ds:8052"
 name = "gFn8052"
