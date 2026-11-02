@@ -9,6 +9,8 @@
    g8492 that the 1Ch handler bumps (src/EOV6.C); most meanings are not established, so names say
    what a function does rather than what the game calls it. */
 
+/*@flags -ml -O -Z -B */
+
 /* The 16 timed-effect entries at ds:5BA8, 16 bytes each (ds:5CA8 holds the count, 16). */
 struct Effect {
     void (far *fn)(int);      /* +00: the far handler, called with `arg` as its argument */
@@ -250,22 +252,16 @@ extern int f0BD2_02B9(void far *head, int key, int item); /*@ 0BD2:02B9 */
    cleared through ClearDDEffect when clearIt holds (initially m0D == 0) and gDF4C is set. QUIRK
    1414:028D: the argument is incremented by value, so the increment has no effect.
 
-   blocked: matches every byte except the success-path `clearIt = 1` store. The original keeps two
-   separate `mov word ptr [bp - 2], 1` stores (1414:034B and 1414:0382); our `-ml -O -Z` build sinks
-   the first into the second (1414:034C `je 0xfd` and 1414:034E `jmp 0xf8`, 5 bytes short). TCC -S
-   emits the two stores apart but TCC's internal assembler cross-jumps them (WHITEPAPER 2.1.1, the
-   same class as 0ACD:091C and 0D1C:0903), and TASM (TCC -B) does not: with `-B` this function
-   matches exactly (303 bytes, checked). TASM must be allowed more than one pass so that a forward
-   short jump stays two bytes: with `-B` and TASM `/m2` the whole unit matches (19 of 19, 3511
-   bytes). The matcher's TASM options (`/ml /jNOSMART`) lack `/m2`, so under -B TestDDEffect gains a
-   forward-jump pad (1414:0015 `EB 7F` plus a `90` NOP at 1414:0017, original `EB 7E` with no NOP)
-   and ApplyCharEffect shifts one byte, while under -c this function and 07CA stay drafts. Forms tried
-   while keeping the original frame (clearIt at [bp - 2],
-   value in DI): plain if/else, `goto` from either or both branches, a label after the store, an empty
-   statement after the store, braced blocks, `else ;`, `if/else if`, `clearIt = 1 + 0`, a duplicated
-   clear tail, and `volatile` and `unsigned` declarations; every one cross-jumps. Same assembly class
-   as 0ACD:091C. */
-/*@ 1414:0285 draft */ void MoveDDEffects(int unused)
+   The unit is assembled through TASM (`-B`), not by TCC's internal assembler: the original keeps
+   the success path's and the failure path's `mov word ptr [bp - 2], 1` stores apart (1414:034B and
+   1414:0382), while the internal assembler cross-jumps them (WHITEPAPER 2.1.1, the same class as
+   0ACD:091C and 0D1C:0903). Forms tried while keeping the original frame (clearIt at [bp - 2],
+   value in DI): plain if/else, `goto` from either or both branches, a label after the store, an
+   empty statement after the store, braced blocks, `else ;`, `if/else if`, `clearIt = 1 + 0`, a
+   duplicated clear tail, and `volatile` and `unsigned` declarations; every one cross-jumps. TASM
+   needs more than one pass so a forward short jump stays two bytes (`/m2`): with `-B` this function
+   matches exactly (303 bytes). */
+/*@ 1414:0285 */ void MoveDDEffects(int unused)
 {
     int value;
     register int sel;
@@ -483,21 +479,16 @@ extern int f0BD2_02B9(void far *head, int key, int item); /*@ 0BD2:02B9 */
    else -1 and it disarms effect who + 6) in gEffects[who + 6].period. Called from the table (and
    0DE8, 0EF3, 0BD2).
 
-   blocked: the dispatcher and every case are understood, and two divergences are now fixed in the
-   source. (1) The bit tests read `mov ax, [bx + N]; and ax, M; or ax, 0; je` (1414:08AD, 1414:09A1)
-   because mE3 is a `long`, not an `int`: TCC emits the and/or form only for a long bit test (the
-   `or ax, 0` distinct from `or ax, ax`, WHITEPAPER 2.1.1). (2) The expiry test is written
-   `if (tl <= g8492) { body }` (1414:0814 `jbe L1; jmp cont; L1: jne body`), not
-   `if (tl > g8492) continue;`.
-
-   The one remaining difference is the assembler, not the source: the original keeps case 6's and
-   case 9's identical tails apart (`push who; call 1547:0991; pop cx` at 1414:0169 and 1414:0281),
-   while TCC's internal assembler cross-jumps them into one and TASM does not. Built through the
-   assembler with TASM `/m2` (multiple passes, so a forward short jump stays two bytes) the whole
-   unit matches (19 of 19, 3511 bytes); the matcher's TASM options (`/ml /jNOSMART`) lack `/m2`, so
-   under -B TestDDEffect and ApplyCharEffect each gain a one-byte forward-jump NOP. Same assembly
-   class as 0ACD:091C. See the e1414_07ca note in re/symbols.toml. */
-/*@ 1414:07CA draft */ void RunCharEffects(int who)
+   The unit is assembled through TASM (`-B`), not by TCC's internal assembler: the original keeps
+   case 6's and case 9's identical tails apart (`push who; call 1547:0991; pop cx` at 1414:0169 and
+   1414:0281), while the internal assembler cross-jumps them into one (WHITEPAPER 2.1.1, the same
+   class as 0ACD:091C). Two further divergences are handled in the source: (1) the bit tests read
+   `mov ax, [bx + N]; and ax, M; or ax, 0; je` (1414:08AD, 1414:09A1) because mE3 is a `long`, not
+   an `int`: TCC emits the and/or form only for a long bit test (the `or ax, 0` distinct from
+   `or ax, ax`); (2) the expiry test is written `if (tl <= g8492) { body }` (1414:0814 `jbe L1; jmp
+   cont; L1: jne body`), not `if (tl > g8492) continue;`. TASM needs more than one pass so a forward
+   short jump stays two bytes (`/m2`). */
+/*@ 1414:07CA */ void RunCharEffects(int who)
 {
     unsigned long min;
     unsigned long tl;
