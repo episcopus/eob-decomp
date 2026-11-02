@@ -2520,3 +2520,12 @@ new = "AskYesNo"
 kind = "function"
 why = "ovl1:243A builds menu 5 whose buttons are the gStrings2003 messages 0x26 'Yes' and 0x27 'No', shows the question message (0x37 'Are you sure you wish to LOAD a saved game?', 0x36 SAVE, 0x2E exit the game; EOV6.C asks 0x28/0x29/0x3B the same way) and returns 1 for Yes, 0 for No"
 date = "2026-11-02"
+
+[[rename]]
+id = "ovl1:1691=ScribeScrolls"
+addr = "ovl1:1691"
+old = "Ovl1_1691"
+new = "ScribeScrolls"
+kind = "function"
+why = "ovl1:1691 is the Scribe Scrolls button of the camp menu (RunCampMenu case 0x8004): it asks SelectPartyMember(0x31) 'Select a Mage from your party who would like to scribe spells', shows messages 0x32 and 0x33 when no scroll can be scribed, and moves the chosen scroll's spell into the mage's spell book at record +0x73 while freeing the item"
+date = "2026-11-02"

@@ -120,7 +120,9 @@ struct CharRec {                /* the 243-byte character records at ds:F580 (sr
     signed char known[30];      /* +37: the mage's spell slots: a spell number, negative while it is
                                    still to be memorised (src/EOV6.C) */
     signed char memorized[30];  /* +55: the cleric's spell slots, the same way */
-    char pad73[0xE7 - 0x73];
+    long spellBook;             /* +73: the mage's spell book, bit i set when spell i + 1 is known */
+    int items[27];              /* +77: the 27 carried-item slots (src/E0DE8.C) */
+    char padAD[0xE7 - 0xAD];
     unsigned char lastDamage;   /* +E7: the last damage amount (src/E0DE8.C) */
     unsigned char lastAction[2]; /* +E8: the last action results (src/E0DE8.C) */
     char padEA[0xF3 - 0xEA];
@@ -177,6 +179,14 @@ extern unsigned char g62F2[]; /*@ ds:62F2 */
 extern unsigned char g62F8[]; /*@ ds:62F8 */
 extern signed char g1231[]; /*@ ds:1231 */
 extern void far *gIconDD28; /*@ ds:DD28 */
+struct Entry14 {                /* the 14-byte item records at ds:8DD2 (src/E0D1C.C) */
+    char pad00[4];
+    int m04;                    /* +4: set to -1 when the record is freed (0D1C:01CA) */
+    char pad06[0x0E - 0x06];
+};
+extern struct Entry14 gTable8DD2[]; /*@ ds:8DD2 */
+extern int gClickY; /*@ ds:8142 */
+extern int IsMouseInRect(int left, int top, int right, int bottom); /*@ 1A72:02A6 */
 extern int g159; /*@ ds:0159 */ /* a copy of gF57E that ShowMessage and ovl6:0B9B store; no reader found */
 extern int gNeedsRest; /*@ ds:FE2C */
 extern int gTunesOn; /*@ ds:80E8 */
@@ -795,7 +805,142 @@ int AskYesNo(int message);
     }
     LockShowPointer();
 }
-/*@ ovl1:1691 stub */ void Ovl1_1691(void) {}
+/* ovl1:1691: the "Scribe Scrolls" screen of the camp menu: a mage copies the spells of scrolls the
+   party carries into his spell book. It searches every party member's carried items for scrolls
+   (FindCarriedSlot kind 0x22, one search per spell number 1 to 32): scroll[i] is the carrying slot
+   plus 1 (0 when no member has a scroll of spell i + 1) and owner[i] the member. Without a scroll it
+   shows message 0x32 ("You don't have any scrolls to be scribed.") and returns. SelectPartyMember(0x31)
+   then picks the mage (-1 returns). The candidates are the scrolls whose spell the mage's spell book
+   (rec->spellBook) lacks, at most six; with none message 0x33 ("You don't have any scrolls that
+   this Mage needs.") is shown. The screen lists the spell names (gMageSpellNames) at x 8, y 0x32 + 9 *
+   row on menu 6 and keeps one highlighted (colour 6 through gDrawText): 0x60 and 0x62 move it up and
+   down (wrapping), the mouse over the list moves it too, 0x2B, 0x3D, 0x61 or a click on the list (0x8024;
+   a click below the last row keeps the old row and goes on) scribe the highlighted scroll: the spell's
+   bit goes into the mage's spell book, the scroll's slot in the owner's record is cleared, the item
+   record is freed (its m04 set to -1), the owner's portrait redrawn and the list rebuilt without it.
+   0x6E (Esc) and the Exit button 0x8023 leave. The loop also ends when no scroll is left. Called by
+   RunCampMenu. Local arrays: scroll and owner (32 words each, copied from zero templates at ds:63CB
+   and ds:640B) and rows, the spell numbers of the visible rows (6 words from ds:644B). */
+/*@ ovl1:1691 */ void ScribeScrolls(void)
+{
+    struct Node far *list;
+    int member;
+    int i;
+    int count = 0;
+    int selected;
+    int key;
+    int rebuild;
+    int item;
+    int scroll[32] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+    int owner[32] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+    int rows[6] = { 0, 0, 0, 0, 0, 0 };
+    int n;
+    int cur;
+
+    count = 0;
+    for (i = 0; i < 0x20; i++) {
+        for (member = 0; member < 6; member++) {
+            if ((scroll[i] = FindCarriedSlot(member, 0x22, i + 1) + 1) > 0) {
+                owner[i] = member;
+                count++;
+                break;
+            }
+        }
+    }
+    if (count == 0) {
+        ShowMessage(0x32);
+        return;
+    }
+    member = SelectPartyMember(0x31);
+    if (member == -1)
+        return;
+    n = 0;
+    for (i = 0; i < 0x20; i++) {
+        if (scroll[i] != 0) {
+            if (gChars[member].spellBook & (1L << i))
+                scroll[i] = 0;
+            else
+                rows[n++] = i + 1;
+        }
+        if (n >= 6)
+            break;
+    }
+    if (n == 0) {
+        ShowMessage(0x33);
+        return;
+    }
+    list = 0;
+    rebuild = 1;
+    while (n) {
+        if (rebuild) {
+            n = 0;
+            for (i = 0; i < 0x20; i++) {
+                if (scroll[i] != 0)
+                    rows[n++] = i + 1;
+                if (n >= 6)
+                    break;
+            }
+            if (n == 0)
+                break;
+            FreeFarList(list);
+            list = BuildMenuButtons(6);
+            LockHidePointer();
+            for (i = 0; i < n; i++)
+                DrawShadowText(gMageSpellNames[rows[i]], 8, i * 9 + 0x32, 0xf, 0);
+            LockShowPointer();
+            selected = -1;
+            cur = 0;
+            rebuild = 0;
+        }
+        if (selected != cur) {
+            LockHidePointer();
+            if (selected >= 0)
+                gDrawText(gMageSpellNames[rows[selected]], 8, selected * 9 + 0x32, 0xf, 0);
+            selected = cur;
+            gDrawText(gMageSpellNames[rows[selected]], 8, selected * 9 + 0x32, 6, 0);
+            LockShowPointer();
+        }
+        key = DispatchKeyWait(list);
+        if (key == 0) {
+            if (IsMouseInRect(8, 0x32, 0xb0, n * 9 + 0x31))
+                cur = (gCursorY - 0x32) / 9;
+        }
+        switch (key) {
+        case 0x6e:
+        case 0x8023:
+            n = 0;
+            break;
+        case 0x8024:
+            cur = (gClickY - 0x32) / 9;
+            if (cur >= n) {
+                cur = selected;
+                break;
+            }
+        case 0x2b:
+        case 0x3d:
+        case 0x61:
+            i = rows[cur] - 1;
+            item = gChars[owner[i]].items[scroll[i] - 1];
+            gChars[member].spellBook |= 1L << i;
+            gChars[owner[i]].items[scroll[i] - 1] = 0;
+            scroll[i] = 0;
+            gTable8DD2[item].m04 = -1;
+            rebuild = 1;
+            RedrawMember(owner[i]);
+            n--;
+            break;
+        case 0x60:
+            cur = (cur + n - 1) % n;
+            break;
+        case 0x62:
+            cur = (cur + 1) % n;
+            break;
+        }
+    }
+    FreeFarList(list);
+}
 /* ovl1:1ACD: the camp menu, entered from the camp button on the game screen: it is the callback30 of
    the screen node at ds:3B8E (the far pointer 2102:0020 sits at ds:3BBE; the argument is that
    node, which the function overwrites and uses as a local). It saves the font and text window, shows
@@ -913,7 +1058,7 @@ int AskYesNo(int message);
         }
         switch (key) {
         case BTN_SCRIBE:
-            Ovl1_1691();
+            ScribeScrolls();
             nextMenu = MENU_CAMP;
             break;
         case BTN_DROP: {
