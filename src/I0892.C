@@ -27,7 +27,7 @@
 /* the page/buffer sizes and video segments StartupGame's table uses (:0368 to :0540) */
 #define PAGE_64000 0xFA00L
 #define PAGE_32576 0x7F40L
-#define PAGE_65024 0xFFDCL
+#define PAGE_65500 0xFFDCL
 #define PAGE_64512 0xFC00L
 #define PALETTE_BUFFER_SIZE 0x10
 #define TEXT_SCREEN_SEG 0xB800
@@ -295,7 +295,7 @@ int AllocationFailure(void);
         gSegs28CC[0] = TEXT_SCREEN_SEG;
         gSegs28CC[1] = FP_SEG(MemAlloc(PAGE_32576, MEMALLOC_ALIGNED));
         gSegs28CC[2] = gSegs28CC[3] = memtop;
-        gSegs28CC[4] = gSegs28CC[5] = FP_SEG(MemAlloc(PAGE_65024, MEMALLOC_ALIGNED));
+        gSegs28CC[4] = gSegs28CC[5] = FP_SEG(MemAlloc(PAGE_65500, MEMALLOC_ALIGNED));
         gSegs28CC[6] = gSegs28CC[7] = FP_SEG(MemAlloc(PAGE_64512, MEMALLOC_ALIGNED));
         break;
     case 2:
