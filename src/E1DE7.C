@@ -12,8 +12,8 @@
    ClearTextRegion and of the redrawn scroll line, default 0x0C at E07C8.C:260, DEFAULT_TEXT_ATTR2);
    the initial region record gRegions[0] at ds:009F (file offset 0x23B7F) holds attr1 = 0x0F and
    attr2 = 0x0C (ds:00A7 and ds:00A9). ds:8115 is the status-line flag
-   (src/E082C.C:64; set to 2 by LoadOverlayScreen at :330, saved and cleared around
-   the memory report at :431 and :432). Compiled with -G (the two-byte argument clean-ups are
+   (src/E082C.C:65; set to 2 by LoadOverlayScreen at :332, saved and cleared around
+   the memory report at :433 and :434). Compiled with -G (the two-byte argument clean-ups are
    `inc sp; inc sp`). */
 
 /*@flags -ml -O -Z -G */
@@ -67,10 +67,10 @@ extern char gFontHeight; /*@ ds:8101 */  /* font cell height (src/E1A47.C) */
    not the same signature as ds:805E (gDraw805E, src/E16A5.C:88), which takes an int tile. No
    direct store found; the slot is zero in the image. */
 extern void (far *gDraw805A)(void far *src, int x, int y); /*@ ds:805A */
-/* ds:806A: a far routine called with (x1, y1, x2, y2, pattern) like the line routine at ds:8062
+/* ds:806A: a far routine called with (x1, y1, x2, y2, colour) like the line routine at ds:8062
    (src/E1A1F.C); ClearTextRegion and DrawTextLine fill rectangles through it. The value
-   passed is a colour (gTextAttr2), but the shared parameter name is `pattern` (src/E082C.C:56). */
-extern void (far *gFillRect)(int x1, int y1, int x2, int y2, int pattern); /*@ ds:806A */
+   passed is a colour (gTextAttr2); the parameter is named `colour` (src/E082C.C:57). */
+extern void (far *gFillRect)(int x1, int y1, int x2, int y2, int colour); /*@ ds:806A */
 extern void (far *gDrawText)(char far *text, int x, int y, int color, int extra); /*@ ds:80CA */  /* src/E1AA6.C */
 /* ds:8117: a far routine DrawTextLine calls when the cursor row starts below the last full line
    (the same condition as the clip branch of DrawTextLine); gScrollOn (ds:8110) gates it. Overlay 5
@@ -79,9 +79,9 @@ extern void (far *gDrawText)(char far *text, int x, int y, int color, int extra)
    words 0xAC and 0x2D0 at EOV5.C:1114-1115 are the offset and segment of the far pointer). */
 extern void (far *gScrollHook)(void);  /*@ ds:8117 */
 extern char gScrollOn;     /*@ ds:8110 */  /* overlay 5 sets it to 1 beside the hook (EOV5.C:1110, :1114-1115) and the hook is gated by it at src/E1DE7.C:270 */
-/* ds:8115: the status-line flag, nonzero while a status line is up (src/E082C.C:64); it is set to 2
-   by LoadOverlayScreen (E082C.C:327, :330) and saved and cleared around the memory report
-   ShowMemoryDiagnostics (E082C.C:427; saved at :431, cleared at :432, restored at :440) and the
+/* ds:8115: the status-line flag, nonzero while a status line is up (src/E082C.C:65); it is set to 2
+   by LoadOverlayScreen (E082C.C:329, :332) and saved and cleared around the memory report
+   ShowMemoryDiagnostics (E082C.C:429; saved at :433, cleared at :434, restored at :442) and the
    message box (src/E1C0E.C:589), and cleared while a node is drawn (src/E16A5.C:511). Passed twice
    as the two extra arguments of ClipRect here. */
 extern int gStatusLine;          /*@ ds:8115 */

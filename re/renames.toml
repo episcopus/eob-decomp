@@ -2115,3 +2115,21 @@ new = "CompactOverlayRecords"
 kind = "function"
 why = "0613 moves every record's image to the free top (06C0) and keeps the whole 20B5:00BC chain in its original order (the tail-first pops re-prepend each record); the routine discards no record, so the old name DiscardOverlayRecords is wrong"
 date = "2026-11-02"
+
+[[rename]]
+id = "082C:0B0E=DrawTextAndMemoryReport"
+addr = "082C:0B0E"
+old = "ShowStatus"
+new = "DrawTextAndMemoryReport"
+kind = "function"
+why = "the body draws one text line at (x,y) then the memory report below it and waits for a key; no caller in src/, only an [H] debug-status reading (082C:0B0E)"
+date = "2026-11-02"
+
+[[rename]]
+id = "082C:0B43=DelaySecondsOrKey"
+addr = "082C:0B43"
+old = "DelaySeconds"
+new = "DelaySecondsOrKey"
+kind = "function"
+why = "besides waiting seconds*18 ticks it flushes the key buffer, blocks on ReadKey and flushes again; its one caller uses it as a pause before ShutdownGame (src/E0DE8.C:526; 082C:0B43)"
+date = "2026-11-02"

@@ -1690,9 +1690,9 @@ unit = "e082c"
 addr = "082C:0B0E"
 size = 53
 evidence = ["frame"]
-name = "ShowStatus"
 level = "L2"
 match_flags = "-ml -O -Z -B"
+name = "DrawTextAndMemoryReport"
 
 [[function]]
 id = "e082c_0b43"
@@ -1700,9 +1700,9 @@ unit = "e082c"
 addr = "082C:0B43"
 size = 76
 evidence = ["far", "frame"]
-name = "DelaySeconds"
 level = "L2"
 match_flags = "-ml -O -Z -B"
+name = "DelaySecondsOrKey"
 
 [[function]]
 id = "e082c_0b8f"
