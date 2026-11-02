@@ -124,10 +124,10 @@ void PlaySound(int sound);
 void PlayIntroSequence(void);
 void PlayLogoSequence(void);
 
-/* ovl0:0000: the introduction overlay's entry point. Clears the abort flag, for the CGA and
-   EGA modes (gGraphicsMode 1 and 2) starts the driver through ds:1EE2 and applies the fixed
-   palette at ds:19E7, plays the logo sequence (ovl0:2A99), then the scenes (ovl0:003A)
-   unless a key aborted the intro. */
+/* ovl0:0000: the introduction overlay's entry point. Clears the abort flag, for the two
+   non-VGA modes (gGraphicsMode 1 and 2) starts the driver through ds:1EE2 and applies the
+   fixed palette at ds:19E7, plays the logo sequence (ovl0:2A99), then the scenes
+   (ovl0:003A) unless a key aborted the intro. */
 /*@ ovl0:0000 */ void RunIntro(void)
 {
     gAbort = 0;
@@ -260,7 +260,8 @@ void PlayLogoSequence(void);
 /*@ ovl0:0B20 stub */ void Ovl0_0B20(void) {}
 /* ovl0:0FAA: clears the bottom bar of the screen, the rectangle from (0,168) to (319,199),
    with colour 12 on the page the caller wants visible (page 0), then puts the driver's
-   current page (gDrawPage) back. Called around the title cards to wipe their text. */
+   current page (gDrawPage) back. Called by the scene functions between frames (ovl0:015D at
+   0217 and 04CF, and ovl0:15F9, ovl0:1DF3 and ovl0:23A3) to wipe the text on the bar. */
 /*@ ovl0:0FAA */ void ClearBottomBar(void)
 {
     int page;
@@ -303,11 +304,10 @@ void PlayLogoSequence(void);
 
 /* ovl0:1041: grows and moves a framed rectangle, one frame at a time, with the clip rectangle
    passed to the driver each frame. The frame starts at (left, top) and walks towards
-   (dstLeft, dstTop) a pixel at a time (SignOf), while its size (w, h) grows by 2 up to
+   (dstLeft, dstTop) a pixel at a time (SignOf), while its size (growW, growH) grows by 2 up to
    (width, height) and the inner rect (curWidth, curHeight) grows to the destination; the
-   edges (right, bottom) shrink until the frame reaches them, then the loop ends. Called by
-   the KING, ADVENTUR, HANDS and TUNNEL scenes, which pass the four edges and the clip origin
-   (ovl0:15F9, ovl0:1DF3, ovl0:23A3). */
+   edges (right, bottom) shrink until the frame reaches them, then the loop ends. Called twice
+   by the ovl0:15F9 scene (16E6, 18DF) and twice by ovl0:1DF3 (1B1E, 1CCA). */
 /*@ ovl0:1041 */ void GrowFrame(int left, int top, int dstLeft, int dstTop, int x, int y, int width, int height,
                                int curWidth, int curHeight, int addW, int addH)
 {
@@ -395,10 +395,11 @@ void PlayLogoSequence(void);
     ClipRect(0, 0, 0, 0, 40, 200, 2, 0);
 }
 
-/* ovl0:29C9: draws a grid over the whole screen in colour 12: for two passes it draws the
-   vertical lines at x = 1, 9, ... (the odd-numbered lines) and the horizontal lines at
-   y = 0, 8, ... (the even ones), each pass offset by one pixel. Called before the card scenes
-   (ovl0:0B20) and by the TOWRMAGE scene (ovl0:0B20 twice more). */
+/* ovl0:29C9: draws a grid over the whole screen in colour 12. In each of two passes, the odd
+   lines of the eight-line band are vertical lines every 8 pixels starting at x = line + pass,
+   the even ones horizontal lines starting at y = line + pass; the second pass fills the pixels
+   the first left out. Called by the title scene (ovl0:015D), the TOWRMAGE scene (ovl0:0B20,
+   twice) and ovl0:23A3. */
 /*@ ovl0:29C9 */ void DrawGrid(void)
 {
     int line;
@@ -439,8 +440,8 @@ void PlayLogoSequence(void);
    starts the driver, applies the WESTWOOD.COL palette, copies the buffers through
    f19EC_002A, makes sound 1 and shows the card for gWestwoodDelay ticks. Then, unless a key
    aborted, it shows the four SSI logo cards in turn (each from gLogoFiles into slots 5/3,
-   held for its gLogoDelays entry, with the dissolve effect from page 4 to page 0 and sound
-   again), and leaves a 50-tick delay set. */
+   held for its gLogoDelays entry and dissolved from page 4 to page 0), and leaves a 50-tick
+   delay set. */
 /*@ ovl0:2A99 */ void PlayLogoSequence(void)
 {
     int i;
