@@ -7026,6 +7026,9 @@ unit = "eov3"
 addr = "ovl3:004F"
 size = 347
 evidence = ["ovl", "near", "frame"]
+name = "LoadWallSet"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov3_01aa"
