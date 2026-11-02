@@ -74,14 +74,14 @@ extern char g28A4[];                     /*@ ds:28A4: itoa's buffer for g232C (:
 extern char g28B4[];                     /*@ ds:28B4: itoa's buffer for g28C4 (:01CF) */
 extern unsigned char far *gPaletteBuf;   /*@ ds:2D42: the palette buffer StartupGame allocates
                                              (:05B2, :05CC, :05F7) and main loads palette.col into (:0121) */
-extern void (far *gFn1F46)(void far *table); /*@ ds:1F46: the palette setter (:013E, :01AE, :0635),
+extern void (far *gSetPalette)(void far *table); /*@ ds:1F46: the palette setter (:013E, :01AE, :0635),
                                              called with the built-in table ds:19E7 or gPaletteBuf */
 extern void (far *gFn1EE2)(void);        /*@ ds:1EE2: called by StartupGame after the page table (:0544) */
 extern int gMouseHandlerInstalled;       /*@ ds:1FD4: nonzero once the mouse handler is installed;
                                              ShutdownGame removes it then (:0845) */
 extern unsigned char g19E6;              /*@ ds:19E6: set to 1 by StartupGame after InitOverlayCache
                                              (:0641); ShutdownGame shuts the cache down then (:0851) */
-extern unsigned char g289B;              /*@ ds:289B: set to 1 on the Tandy sound path (:0807) and
+extern unsigned char gTandyOn;              /*@ ds:289B: set to 1 on the Tandy sound path (:0807) and
                                              cleared by ShutdownGame (:087F) */
 extern struct OverlayRequest gOverlayRequest; /*@ ds:1FAD: the request RunOverlayRequest runs (:02FE) */
 extern char far *gOverlayFiles[];        /*@ ds:1A14: the graphics overlay name pointers, indexed by
@@ -90,7 +90,7 @@ extern unsigned gSegs28CC[];             /*@ ds:28CC: the page/buffer segment ta
                                              per graphics choice (:036B to :0540) */
 extern void far *gFont8;                 /*@ ds:2D34: the 8x8 font f1A47_0005 loads (:0560) */
 extern void far *gSoundBuf;              /*@ ds:28A0: the sound driver data buffer (:06D1, :07AC) */
-extern unsigned char g19E7[];            /*@ ds:19E7: the built-in palette table main passes to the
+extern unsigned char gEgaPalette[];            /*@ ds:19E7: the built-in palette table main passes to the
                                              setter for graphics choices 0 and 1 (:010F) */
 extern unsigned char g19F7[];            /*@ ds:19F7: 16 zero bytes, the table main passes to the
                                              setter for the Tandy choice when the memory top is set (:01AE) */
@@ -208,15 +208,15 @@ int AllocationFailure(void);
     if (StartupGame() == 1) {
         switch (gGraphicsChoice - 1) {
         case 0:
-            gFn1F46(g19E7);
+            gSetPalette(gEgaPalette);
             break;
         case 1:
-            gFn1F46(g19E7);
+            gSetPalette(gEgaPalette);
             break;
         case 2:
         case 3:
             LoadFile("palette.col", gPaletteBuf, PALETTE_SIZE);
-            gFn1F46(gPaletteBuf);
+            gSetPalette(gPaletteBuf);
             break;
         }
         g1FA9 = 0xF;
@@ -229,7 +229,7 @@ int AllocationFailure(void);
     ShutdownGame();
     CloseFileHandle(g0E6C_00B8);
     if (g0923_0006 && gGraphicsChoice == 1)
-        gFn1F46(g19F7);
+        gSetPalette(g19F7);
     itoa(g232C, g28A4, 10);
     itoa(g28C4, g28B4, 10);
     setdisk(gOverlayDrive);
@@ -339,14 +339,14 @@ int AllocationFailure(void);
         gPaletteBuf = MemAlloc(PALETTE_BUFFER_SIZE, 0);
         gPaletteBuf[0] = 0;
         gPaletteBuf[0xf] = 0xf;
-        gFn1F46(g19E7);
+        gSetPalette(gEgaPalette);
         break;
     case 2:
     case 3:
         gPaletteBuf = MemAlloc(PALETTE_SIZE, 0);
         memset(gPaletteBuf, 0, PALETTE_SIZE);
         memset(gPaletteBuf + 0x2d, 0x3f, 3);
-        gFn1F46(gPaletteBuf);
+        gSetPalette(gPaletteBuf);
         break;
     }
     InitOverlayCache();
@@ -390,7 +390,7 @@ sound:
         FileClose(slot);
         RebaseDriverBlock();
         SoundDriverInstall();
-        g289B = 1;
+        gTandyOn = 1;
         SoundDriverResume();
         break;
     }
@@ -424,7 +424,7 @@ done:
         break;
     case 3:
         SoundDriverSilenceToOneVoice();
-        g289B = 0;
+        gTandyOn = 0;
         SoundDriverUninstall();
         break;
     }

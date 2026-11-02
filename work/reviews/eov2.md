@@ -25,18 +25,26 @@ f6815 bytes (below), and the cited lines in src/E082C.C, src/E19EC.C, src/E0EF3.
 src/EOV0.C, src/EOV3.C, src/EOV4.C, src/EOV5.C, src/E122E.C, src/E1414.C, src/E1547.C, src/E1BB1.ASM,
 src/E07A9.C, src/E07C8.C, src/E1C0E.C, src/E0D1C.C and re/symbols.toml.
 
-- [ ] must-fix src/EOV2.C:386-387 (LoadGamePanel comment, entry 1): "selects the 6x6 font (f1A47_0169
+- [x] must-fix src/EOV2.C:386-387 (LoadGamePanel comment, entry 1): "selects the 6x6 font (f1A47_0169
   with gFE5A) ... then restores the 8x8 font". The code selects gFE5A (:418) and restores gA9C0 (:420),
   and the two fonts are the other way round: gFE5A is the 8x8 font (src/E07C8.C:376 loads Font8.fnt
   into it; src/E1C0E.C:53 "the 8x8 font"), and gA9C0 is the 6x6 font (src/E07C8.C:377 loads FONT6.FNT;
   src/EOV0.C:168, src/EOV3.C:42). Say that entry 1 selects the 8x8 font gFE5A, runs the character
   panel and restores the 6x6 font gA9C0.
-- [ ] must-fix src/EOV2.C:9-10 (header): "gOverlayBuf ... is the DGROUP image buffer the same load hands
+  Fixed: the comment now says entry 1 selects the 8x8 font gFE5A (Font8.fnt, src/E07C8.C:376,
+  src/E1C0E.C:53) and restores the 6x6 font gA9C0 (FONT6.FNT, src/E07C8.C:377, src/EOV0.C:168,
+  src/EOV3.C:42) (src/EOV2.C:395-399).
+- [x] must-fix src/EOV2.C:9-10 (header): "gOverlayBuf ... is the DGROUP image buffer the same load hands
   to 19EC:002A as its `extra` pointer". LoadOverlayScreen (src/E082C.C:338) passes mode -1, and
   LoadScreenImage returns before any f19EC_002A call when mode is -1 (src/E082C.C:314-315; its comment
   at :330-331 says the same). The buffer reaches 19EC:002A only from loads with another mode, such as the
   INTRO load at src/EOV2.C:371 (mode 2). Fix the sentence so it does not say the art loads reach 19EC.
-- [ ] must-fix src/EOV2.C:108 (gFlashFrames; reopens the round 1 item): "that reader uses only the three
+  Fixed: the header now says gOverlayBuf is the DGROUP buffer the art loads land in, that
+  LoadOverlayScreen passes mode -1 so LoadScreenImage returns before the 19EC:002A blit
+  (src/E082C.C:314-315, :338), and that only a load with another mode, such as the INTRO load below
+  (ovl2:078D, mode 2), hands the buffer to 19EC:002A as its `extra` pointer (src/E082C.C:330-331,
+  src/E19EC.C:29-35) (src/EOV2.C:9-13).
+- [x] must-fix src/EOV2.C:108 (gFlashFrames; reopens the round 1 item): "that reader uses only the three
   entries at DD1C, DD20 and DD24 (the mask and shift give frames 1 to 3)". No mask, shift or frame value
   is cited, and src/ does not show it. The first reader's tables are gFlashFrameMask (ds:5629) and
   gFlashFrameShift (ds:562D) (src/E0EF3.C:350-351), with gFlashPassMask (ds:5621, :349). A second reader
@@ -45,24 +53,41 @@ src/E07A9.C, src/E07C8.C, src/E1C0E.C, src/E0D1C.C and re/symbols.toml.
   names only one of them. Either give the table values and the frame range each reader can produce
   (the bytes at ds:5621, 5629, 562D, and the long tables at 564B, 5677 and 56B7), or mark the frame range
   [H] and drop the three-entry claim. The claim decides whether DD28 (gIconDD28) is a separate variable.
-- [ ] must-fix src/EOV2.C:104-105 (g65C0 and g65C3): "the three per-column cell heights" and "the three
+  Fixed: the comment now gives the table values and both readers. I decoded eob/EOB.EXE DGROUP (para
+  0x212E plus the 0x2800 header): gFlashPassMask at ds:5621 is 40 90 e4 b9 6e 1b 06 01, gFlashFrameMask
+  at ds:5629 is c0 30 0c 03, gFlashFrameShift at ds:562D is 06 04 02 00, so DrawFlashFrame's
+  (pass & frameMask[i]) >> frameShift[i] gives 0 to 3 only (max index 2); FlashViewDamage's
+  gFlashPass2 (ds:564B), gFlashFrame2 (ds:5677, c0000000 30000000 ... 0000000c 00000003) and
+  gFlashShift2 (ds:56B7, 1e 1c ... 02 00) also give 0 to 3. So the array holds the three entries
+  DD1C, DD20, DD24 and DD28 is the separate gIconDD28 (src/EOV2.C:108).
+- [x] must-fix src/EOV2.C:104-105 (g65C0 and g65C3): "the three per-column cell heights" and "the three
   per-column cell y origins". The loop at src/EOV2.C:355-357 indexes both by i, the row:
   gIconTableA92A[i * 4 + j], with x = j * 3 by column j. They are per row, not per column.
-- [ ] must-fix src/EOV2.C:142 (gIconTable): "src/E1414.C:101 ... read it as the party member being moved
+  Fixed: both comments now say per-row, indexed by the row i (0..2) (src/EOV2.C:104-105).
+- [x] must-fix src/EOV2.C:142 (gIconTable): "src/E1414.C:101 ... read it as the party member being moved
   (-1 when none)". src/E1414.C:101 says "the character the blink highlights", and E1414.C:133 says "the
   highlighted member"; neither says "being moved" or -1. Only src/E0ACD.C:42 and src/E1547.C:107 say that.
   Cite E1414 for what it says; the cross-unit note below stays.
-- [ ] should src/EOV2.C:50-51 (struct SlotPos): `void far *rec` with "the far slot-size record". The same six
+  Fixed: the comment now says this unit, src/E0ACD.C:42 and src/E1547.C:107 read it as the party member
+  being moved (-1 when none), and src/E1414.C:101 as the character the blink highlights (:133 the
+  highlighted member) (src/EOV2.C:142).
+- [x] should src/EOV2.C:50-51 (struct SlotPos): `void far *rec` with "the far slot-size record". The same six
   bytes are declared `struct SlotSize far *rec` in src/E122E.C:113 (the record type is at :107-111).
   Use that type (define struct SlotSize, or say in the comment why this unit keeps void far *).
-- [ ] should src/EOV2.C:365 (LoadIntroScreen comment): "clips the region (0, 0)-(0x28, 0xc8)". The call is
+  Fixed: struct SlotSize is defined as in src/E122E.C:107-111 and gA99C's rec is
+  `struct SlotSize far *` (src/EOV2.C:50-59); make match still 11 of 11.
+- [x] should src/EOV2.C:365 (LoadIntroScreen comment): "clips the region (0, 0)-(0x28, 0xc8)". The call is
   ClipRect(0, 0, 0, 0, 0x28, 0xc8, 2, 0): x1 to y2 are 0, and 0x28 and 0xc8 are the width and height
   (src/E082C.C:318 makes the same 40 by 200 rectangle). Say "a 40 by 200 region at (0, 0)".
-- note verified, no change asked: the f6815 declaration (src/EOV2.C:198-199, "0000:6822-682C lowercases
+  Fixed: the comment now says it clips a 40 by 200 region at (0, 0), 0x28 and 0xc8 being the width and
+  height (src/E082C.C:318) (src/EOV2.C:374-375).
+- [x] note verified, no change asked: the f6815 declaration (src/EOV2.C:198-199, "0000:6822-682C lowercases
   'A' to 'Z'") is right. I decoded eob/EOB.EXE at 0000:6815 (file offset 0x2800 + 0x6815): push bp, mov bp,sp,
   push si, cld, push ds, lds si,[bp+6], then the loop at 6822 (sub al,0x41; cmp al,0x19; ja; add al,0x61;
   mov [si-1],al) with lodsb and jnz back to 6822, then mov dx,ds, pop ds, pop si, pop bp, retf with the
   pointer in dx:ax. The comment could cite those bytes instead of [H].
+  Fixed: the [H] is gone; the comment now cites the byte decode and that the pointer is returned in
+  dx:ax (src/EOV2.C:198-201).
 
 Round 2 result: five must-fix items open (four new wrong or unevidenced claims in changed lines, one
 reopened round 1 item). Nothing else needs a decompiler's decision; nothing escalated: no matcher,

@@ -107,7 +107,7 @@ extern int gTableF4E6[]; /*@ ds:F4E6 */
 extern char gOverlayBuf[]; /*@ ds:113F */
 extern char far *gSegDF4E; /*@ ds:DF4E */
 extern unsigned char gCellDef7B2B[]; /*@ ds:7B2B */
-extern char gTable7B89[]; /*@ ds:7B89 */
+extern unsigned char gTable7B89[]; /*@ ds:7B89 */
 extern char gTable7B94[]; /*@ ds:7B94 */
 extern char gTable7B77[]; /*@ ds:7B77 */
 extern char gTable7B7D[]; /*@ ds:7B7D */
@@ -318,7 +318,7 @@ void PrintTableString(int index, int flag);
 
 /* The menu x-position table ds:7B89, defined here because the original lays it out right after
    00A1's three array initialisers (the matcher compares that block by content); 0455 reads it. */
-char gTable7B89[] = { 0x3B, 0xA6, 0x04, 0x70, 0xDC, 0x04, 0x70, 0xDC, 0x04, 0x70, 0xDC }; /*@ ds:7B89 */
+unsigned char gTable7B89[] = { 0x3B, 0xA6, 0x04, 0x70, 0xDC, 0x04, 0x70, 0xDC, 0x04, 0x70, 0xDC }; /*@ ds:7B89 */
 
 /* ovl5:021C: clears the character panel (1, 0x7a)-(0x13e, 0xc7): hides the pointer, clears the
    text region, fills the rectangle with gF57E and shows the pointer again. Called before every
@@ -441,15 +441,17 @@ enum {
    0x2b/0x3d/0x61 confirm the highlighted row; 0x5c/0x66 and 0x60/0x62 move the highlight by one
    or three (a three-row column-major grid, wrapping). Returns the confirmed row index, after
    clearing the panel. Called by every menu panel of the overlay (067B, 0828, 0924, 09C5, 0AB1,
-   0B16, 0EB9, 0F77, 102C, 1087, 10A6, 119E). */
-/*@ ovl5:0455 draft */ int SelectMenu(char first, char count, char far **names)
+   0B16, 0EB9, 0F77, 102C, 1087, 10A6, 119E). Row `n`'s x column is the unsigned byte ds:7B89[n] and its y offset the signed byte
+   ds:7B94[n] (the code zero-extends one and sign-extends the other); `row` holds first+j so the
+   two lookups can share it. */
+/*@ ovl5:0455 */ int SelectMenu(char first, char count, char far **names)
 {
     int ybase;
     int sel;
     int key;
     int drawn;
     int j;
-    int keycode;
+    int row;
     int i;
 
     ybase = gTextTop + (gTextRow + 1) * gFontHeight + 4;
@@ -459,7 +461,8 @@ enum {
         LockHidePointer();
         if (drawn != i) {
             for (j = 0; j < count; j++) {
-                DrawMenuRow(gTable7B89[first + j], ybase + gTable7B94[first + j],
+                row = first + j;
+                DrawMenuRow(gTable7B89[row], ybase + gTable7B94[row],
                             i == j ? 9 : 0xf, names[j]);
             }
             drawn = i;
@@ -467,23 +470,24 @@ enum {
         LockShowPointer();
         key = WaitKeyEvent() & 0x8ff;
         for (j = 0; j < count; j++) {
-            if (IsPointInsideRect(gCursorX, gCursorY, gTable7B89[first + j],
-                                  ybase + gTable7B94[first + j],
-                                  gTable7B89[first + j] + 0x5e,
-                                  ybase + gTable7B94[first + j] + 8)) {
+            row = first + j;
+            if (IsPointInsideRect(gCursorX, gCursorY, gTable7B89[row],
+                                  gTable7B94[row] + ybase,
+                                  gTable7B89[row] + 0x5e,
+                                  gTable7B94[row] + ybase + 8)) {
                 i = j;
                 break;
             }
         }
-        keycode = key;
-        switch (keycode) {
+        switch (key) {
         case KEY_CLICK:
         case KEY_CLICK2:
             for (j = 0; j < count; j++) {
-                if (IsPointInsideRect(gClickX, gClickY, gTable7B89[first + j],
-                                      ybase + gTable7B94[first + j],
-                                      gTable7B89[first + j] + 0x5e,
-                                      ybase + gTable7B94[first + j] + 8)) {
+                row = first + j;
+                if (IsPointInsideRect(gClickX, gClickY, gTable7B89[row],
+                                      gTable7B94[row] + ybase,
+                                      gTable7B89[row] + 0x5e,
+                                      gTable7B94[row] + ybase + 8)) {
                     sel = j;
                     break;
                 }
@@ -492,7 +496,7 @@ enum {
         case KEY_PREV:
             i--;
             if (i < 0)
-                i = count - 1 <= 2 ? count - 1 : 2;
+                i = count - 1 > 2 ? 2 : count - 1;
             break;
         case KEY_NEXT:
             i++;
@@ -502,11 +506,11 @@ enum {
         case KEY_DOWN:
             if (i + 3 < count)
                 i += 3;
-            else if (i > 3)
+            else if (i - 3 > 0)
                 i -= 3;
             /* falls through (the original has no break here) */
         case KEY_UP:
-            if (i > 3)
+            if (i - 3 > 0)
                 i -= 3;
             else if (i + 3 < count)
                 i += 3;
@@ -803,10 +807,10 @@ enum {
 /* ovl5:0C9D: heals the party. Rolls 1d3+2 "cures", then for each party member that f0D1C_0670
    accepts (mask 3) clears its flag bits 1..2, clears bit 7 of its effect flags, clears effect slot
    -0x22 and, while it is below its maximum hit points, spends one cure (1d8+9, clamped to the
-   maximum) and heals it again. Called by the resurrect panel 0EB9. The only remaining difference
-   is that the original keeps the two hit-point stores separate while ours merges their tails into
-   one shared store; no source form tried keeps them apart, so this stays a draft. */
-/*@ ovl5:0C9D draft */ void HealLoop(void)
+   maximum) and heals it again. A member that is already at full hit points and one the effect
+   cannot be applied to are both skipped with i++, written as two separate branches so the two
+   increment tails stay apart (the original emits both). Called by the resurrect panel 0EB9. */
+/*@ ovl5:0C9D */ void HealLoop(void)
 {
     int i;
     int cures;
@@ -815,23 +819,23 @@ enum {
     i = 0;
     cures = RollDice(1, 3, 2);
     while (cures && i < 6) {
-        if (!f0D1C_0670(i, 3)) {
+        if (f0D1C_0670(i, 3)) {
+            gChars[i].flags &= 0xf9;
+            gChars[i].mE3 &= ~0x80L;
+            ClearCharEffectSlot(i, -0x22);
+            if (gChars[i].hp < gChars[i].maxhp) {
+                cures--;
+                heal = RollDice(1, 8, 9);
+                if (gChars[i].hp + heal > gChars[i].maxhp)
+                    gChars[i].hp = gChars[i].maxhp;
+                else
+                    gChars[i].hp += heal;
+            } else {
+                i++;
+            }
+        } else {
             i++;
-            continue;
         }
-        gChars[i].flags &= 0xf9;
-        gChars[i].mE3 &= ~0x80L;
-        ClearCharEffectSlot(i, -0x22);
-        if (gChars[i].hp < gChars[i].maxhp) {
-            cures--;
-            heal = RollDice(1, 8, 9);
-            if (gChars[i].hp + heal > gChars[i].maxhp)
-                gChars[i].hp = gChars[i].maxhp;
-            else
-                gChars[i].hp += heal;
-            continue;
-        }
-        i++;
     }
 }
 /* ovl5:0DBB: the resurrect panel's "which one?" picker. It clears the panel, draws the title

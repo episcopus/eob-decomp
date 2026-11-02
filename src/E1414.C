@@ -10,7 +10,7 @@
    most meanings are not established, so names say what a function does rather than what the game
    calls it. */
 
-/*@flags -ml -O -Z -B */
+/*@flags -ml -O -Z -v */
 
 /* The 16 timed-effect entries at ds:5BA8, 16 bytes each; the count word at ds:5CA8 is 0x0010. */
 struct Effect {
@@ -126,7 +126,7 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
 
 void ArmEffect(int idx, int active);
 extern void DrawText(char *text); /*@ 1DE7:060A */
-extern void DrawMemberLevel(int member); /*@ 1547:04A0 */
+extern void DrawMemberFood(int member); /*@ 1547:04A0 */
 extern void DispatchSlotHandler(int member, int a); /*@ 122E:0896 */
 extern void RunMemberScript(int member, int a); /*@ 122E:1DA8 */
 extern int Obj189D(struct Obj28 far *obj, int a, int b); /*@ 08E6:189D */
@@ -266,15 +266,14 @@ extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
    not tested). QUIRK 1414:028D: the argument is incremented by value, so the increment has no
    effect.
 
-   The unit is assembled through TASM (`-B`), not by TCC's internal assembler: the original keeps
-   the success path's and the failure path's `mov word ptr [bp - 2], 1` stores apart (1414:034B and
-   1414:0382), while the internal assembler cross-jumps them (WHITEPAPER 2.1.1, the same class as
-   0ACD:091C and 0D1C:0903). Forms tried while keeping the original frame (clearIt at [bp - 2],
+   The unit is compiled with debug information (`-v`): the original keeps the success path's and
+   the failure path's `mov word ptr [bp - 2], 1` stores apart (1414:034B and 1414:0382), while a
+   build without it cross-jumps them (WHITEPAPER 2.1.1, the same class as 0ACD:091C and 0D1C:0903). Forms tried while keeping the original frame (clearIt at [bp - 2],
    value in DI): plain if/else, `goto` from either or both branches, a label after the store, an
    empty statement after the store, braced blocks, `else ;`, `if/else if`, `clearIt = 1 + 0`, a
-   duplicated clear tail, and `volatile` and `unsigned` declarations; every one cross-jumps. TASM
-   needs more than one pass so a forward short jump stays two bytes (`/m2`): with `-B` this function
-   matches exactly (303 bytes). */
+   duplicated clear tail, and `volatile` and `unsigned` declarations; every one cross-jumps. With `-v`
+   this function matches exactly (303 bytes); it also did through TASM (`-B`, two passes `/m2`)
+   until 2026-11-02. */
 /*@ 1414:0285 */ void MoveDDEffects(int unused)
 {
     int value;
@@ -501,15 +500,13 @@ extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
    else -1 and it disarms effect who + 6) in gEffects[who + 6].period. Called from the table (and
    0DE8, 0EF3, 0BD2).
 
-   The unit is assembled through TASM (`-B`), not by TCC's internal assembler: the original keeps
-   case 6's and case 9's identical tails apart (`push who; call 1547:0991; pop cx` at 1414:0169 and
-   1414:0281), while the internal assembler cross-jumps them into one (WHITEPAPER 2.1.1, the same
-   class as 0ACD:091C). Two further divergences are handled in the source: (1) the bit tests read
+   The unit's `-v` (debug information) keeps case 6's and case 9's identical tails apart (`push who;
+   call 1547:0991; pop cx` at 1414:0169 and 1414:0281), which a build without it cross-jumps into
+   one (WHITEPAPER 2.1.1, the same class as 0ACD:091C). Two further divergences are handled in the source: (1) the bit tests read
    `mov ax, [bx + N]; and ax, M; or ax, 0; je` (1414:08AD, 1414:09A1) because mE3 is a `long`, not
    an `int`: TCC emits the and/or form only for a long bit test (the `or ax, 0` distinct from
    `or ax, ax`); (2) the expiry test is written `if (tl <= g8492) { body }` (1414:0814 `jbe L1; jmp
-   cont; L1: jne body`), not `if (tl > g8492) continue;`. TASM needs more than one pass so a forward
-   short jump stays two bytes (`/m2`). */
+   cont; L1: jne body`), not `if (tl > g8492) continue;`. */
 /*@ 1414:07CA */ void RunCharEffects(int who)
 {
     unsigned long min;
@@ -676,7 +673,7 @@ extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
         if (gChars[who].hp <= -10)
             continue;
         gChars[who].level--;
-        DrawMemberLevel(who);
+        DrawMemberFood(who);
     }
 }
 /* 1414:0CE7: effect 15 of the table. For every one of the 30 objects at ds:8A82 that wins a

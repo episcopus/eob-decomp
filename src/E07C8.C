@@ -115,7 +115,7 @@ extern unsigned char far *gFE68;      /*@ ds:FE68: the palette buffer StartupGam
                                          bytes have no reader in src/. Case labels 2 and 3 (:392) get 0x300
                                          bytes; main loads eobpal.col over it for choices 3 and 4 (:257), and the VGA choice (gGraphicsChoice == 3) has src/EOV3.C:584 load `<script>.PAL` over it and src/EOV4.C:1054-1061 send it to the setter when the request flag gFB45 is set (set at src/EOV3.C:686) and clear gFB45 */
 extern unsigned char g3057[];  /*@ ds:3057: the table passed to the palette setter for graphics choices 1 and 2 (no eobpal.col). Its length is unknown: no source or doc gives it, and the 16 bytes written at :385-387 belong to the gFE68 buffer, not this. Whether it is a palette is [H] (src/EOV4.C:1035) */
-extern void far *gFE5A;               /*@ ds:FE5A: the 8x8 font loaded from Font8.fnt (whitepaper
+extern void far *gFont8x8;               /*@ ds:FE5A: the 8x8 font loaded from Font8.fnt (whitepaper
                                          4.4, docs/design/WHITEPAPER.md:171: FONT8.FNT is 8 x 8,
                                          checked by 1A47:0005; the file is 0x104 + 128 x 8 bytes) */
 extern void far *gA9C0;               /*@ ds:A9C0: the 6x6 font loaded from FONT6.FNT (whitepaper
@@ -373,11 +373,11 @@ int AllocationFailure(void);
         break;
     }
     gFn8056();
-    gFE5A = f1A47_0005("Font8.fnt");
+    gFont8x8 = f1A47_0005("Font8.fnt");
     gA9C0 = f1A47_0005("FONT6.FNT");
-    if (!gFE5A || !gA9C0)
+    if (!gFont8x8 || !gA9C0)
         goto font_error;
-    f1A47_0169(gFE5A);          /* makes the 8x8 font current after both fonts load; why it is set
+    f1A47_0169(gFont8x8);          /* makes the 8x8 font current after both fonts load; why it is set
                                    here, after the loads, is not in the file */
     switch (gGraphicsChoice - 1) {
     case 0:
