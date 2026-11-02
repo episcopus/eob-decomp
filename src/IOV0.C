@@ -306,8 +306,8 @@ void PlayLogoSequence(void);
 /*@ ovl0:1041 */ void GrowFrame(int left, int top, int dstLeft, int dstTop, int x, int y, int width, int height,
                                int curWidth, int curHeight, int addW, int addH)
 {
-    int w;
-    int h;
+    int growW;
+    int growH;
     int done;
     int right;
     int bottom;
@@ -316,11 +316,11 @@ void PlayLogoSequence(void);
     bottom = curHeight + addH;
     if (bottom >= 0x15)
         bottom = 0x15;
-    w = h = 1;
+    growW = growH = 1;
     done = 0;
     while (!done) {
         gFrameDelay = 1;
-        ClipRect(x, y * 8, left, top * 8, w, h * 8, 2, 0);
+        ClipRect(x, y * 8, left, top * 8, growW, growH * 8, 2, 0);
         if (curWidth < left)
             ClipRect(0x27, 0, curWidth, 0, 1, 0xB0, 0, 0);
         if (curHeight < top)
@@ -329,20 +329,20 @@ void PlayLogoSequence(void);
             ClipRect(0x27, 0, right, 0, 1, 0xB0, 0, 0);
         if (dstTop + height <= bottom)
             ClipRect(0, 0xC0, 0, bottom * 8, 0x28, 8, 0, 0);
-        if (left == dstLeft && top == dstTop && w == width && h == height &&
+        if (left == dstLeft && top == dstTop && growW == width && growH == height &&
             curWidth >= dstLeft && curHeight >= dstTop &&
             dstLeft + width >= right && dstTop + height >= bottom)
             done = 1;
         left += SignOf(dstLeft - left);
         top += SignOf(dstTop - top);
-        if (w != width)
-            w += 2;
-        if (w > width)
-            w = width;
-        if (h != height)
-            h += 2;
-        if (h > height)
-            h = height;
+        if (growW != width)
+            growW += 2;
+        if (growW > width)
+            growW = width;
+        if (growH != height)
+            growH += 2;
+        if (growH > height)
+            growH = height;
         if (++curWidth > dstLeft)
             curWidth = dstLeft;
         if (++curHeight > dstTop)
