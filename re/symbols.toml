@@ -7142,6 +7142,7 @@ unit = "eov1"
 addr = "ovl1:1153"
 size = 676
 evidence = ["ovl", "near"]
+notes = "blocked: unit kind. The body is written from the disassembly and matches every byte except its seven `es:[bx+disp]` reads (disp = 1, 2, 3, 4 and twice 5 and 7): the original encodes them with a 16-bit displacement (ovl1:1277 26 8B 87 05 00), which the pinned TASM 2.0 cannot produce for a constant, a STRUC field, a forward EQU or a forward STRUC field (probed 2026-11-01: /mx, /mx /m2, NOSMART, /jNOSMART all give the 8-bit form 47 05, or 47 05 90 with a forward reference). The disp16 form is exactly TCC 1.00's built-in assembler (TCC -c, no -B) output for a far *indexed array* access: a TCC -c probe of `int f(int i){ return garr[i].e; }` (garr a far struct array) gives 26 8B 87 04 00, while `p->e` through a far struct pointer gives 26 8B 47 04 (8-bit). The same disp16 pattern fills overlay 0 and overlay 4, both kind c. The rest of ovl1 uses the 8-bit form for far *pointer* field reads (ovl1:1551 26 8B 47 36, ovl1:258A 26 F7 47 38 02), so ovl1 is TCC output and should be matched as a C unit, not TASM. See the unit's hand-off note: eov1 is misclassified as kind asm (re/units.toml), but it is a C unit (like eov0, eov3, eov4, eov5, eov6 at the same segment range)."
 
 [[function]]
 id = "eov1_13f7"
@@ -7169,6 +7170,9 @@ unit = "eov1"
 addr = "ovl1:1551"
 size = 1404
 evidence = ["ovl", "near"]
+name = "_DrawListNode"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "eov1_1acd"
