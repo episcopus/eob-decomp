@@ -1,10 +1,12 @@
 /* Unit at INTRO.EXE 0892:0000 (2288 bytes, 5 functions): INTRO.EXE's own start-up and its
-   hand-off to EOB.EXE. Main (0892:0000) reads the launcher's arguments (the graphics, sound and
-   mouse digits, the "homie" marker and the video mode to restore), installs the INT 3Fh handler and
-   the exit and allocation-failure hooks, checks free memory, locates the EOB.EXE file (asking for
-   the disk when it is missing) and runs StartupGame (0892:0241), the start-up that sets the video
-   mode, loads the graphics overlay and the fonts and starts the sound card, then loads the palette
-   and hands off to EOB.EXE with _execl. ShutdownGame (0892:0835) stops the sound card, calls the
+   hand-off to EOB.EXE. Main (0892:0000) reads argv[1] (the graphics digit), argv[2] (the sound
+   digit) and argv[4] (the "homie" marker) and passes argv[3] (the mouse digit) on to EOB.EXE
+   unread; it installs the INT 3Fh handler and the exit and allocation-failure hooks, checks free
+   memory, locates the EOB.EXE file (asking for the disk when it is missing) and runs StartupGame
+   (0892:0241), the start-up that sets the video mode, loads the graphics overlay and the fonts and
+   starts the sound card, then loads the palette and hands off to EOB.EXE with _execl. The video
+   mode to restore is not a launcher argument: StartupGame queries it (f1DDD_0006, INT 10h AH=0Fh)
+   and main hands it to EOB.EXE as argv[5]. ShutdownGame (0892:0835) stops the sound card, calls the
    exit hook, removes the mouse handler and the keyboard, shuts the overlay cache down and restores
    the saved INT 3Fh vector. 0892:08C0 is the exit hook (returns 1) and 0892:08C8 the
    allocation-failure hook. WHITEPAPER 2.6; compiled -ml -O -Z -G. */
@@ -35,9 +37,18 @@
 #define VGA_SEG_A400 0xA400
 #define VGA_SEG_A800 0xA800
 #define VGA_SEG_AC00 0xAC00
-/* the sound path's buffer size and the driver data block size (:06C1 to :0811) */
+/* the sound map size (120 bytes) and the driver data block size (:06C1 to :0811) */
 #define SOUND_MAP_SIZE 0x78L
 #define DRIVER_BLOCK_SIZE 0x36B0L
+/* The palette entry both start-up paths set: entry 15 is white. The EGA/Tandy path writes a
+   one-byte colour number per entry into the 16-byte table (:05D3 to :05DB), so entry 15 (0xf) is
+   EGA colour 15. The VGA path writes three DAC bytes per entry into the 0x300-byte table, so
+   entry 15 starts at 0x2d and its three bytes take the 6-bit VGA maximum 0x3f (:0612 to :0625). */
+#define PALETTE_ENTRY15 0xf
+#define EGA_WHITE 0xf
+#define PALETTE_ENTRY_BYTES 3
+#define PALETTE_ENTRY15_OFFSET (PALETTE_ENTRY15 * PALETTE_ENTRY_BYTES)  /* 0x2d */
+#define VGA_WHITE 0x3f
 
 /* the request RunOverlayRequest (0B4E:005B) runs: a far name pointer (offset then segment) at +0;
    this unit writes only `name`. Same layout as src/E07C8.C:35. */
@@ -66,12 +77,19 @@ extern int g1FA9;                        /*@ ds:1FA9: set to 0xF by main after t
 extern int g1FA7;                        /*@ ds:1FA7: set to 0xC by main after the palette (:014B) */
 extern unsigned char g1A34;              /*@ ds:1A34: set to 1 by StartupGame when it succeeds
                                              (:0817); main runs the overlay when it is set (:0151) */
-extern int g232C;                        /*@ ds:232C: the value f1DDD_0006 returns (:024B), itoa'd
-                                             into g28A4 for the hand-off (:01BA) */
-extern int g28C4;                        /*@ ds:28C4: itoa'd into g28B4 for the hand-off (:01CF).
-                                             Purpose unknown: nothing in this unit writes it */
+extern int g232C;                        /*@ ds:232C: the video mode in force before StartupGame
+                                             changes it, f1DDD_0006's result (:024B; INT 10h AH=0Fh,
+                                             src/E1DDD.C:36-41), itoa'd into g28A4 (:01BA) and handed
+                                             to EOB.EXE as argv[5], which restores it on exit
+                                             (src/E07C8.C:67-69) */
+extern int gMemTopSeg;                   /*@ ds:28C4: the segment where DOS memory ends, stored by
+                                             ReserveMemoryBelowVideo (0923:01F0, src/I0923.ASM:322)
+                                             and read back by TrimMemoryToVideo (0923:02B3); nothing
+                                             in this unit writes it, main reads it at :01D8, itoa's
+                                             it into g28B4 (:01CF) and hands it to EOB.EXE as
+                                             argv[6] */
 extern char g28A4[];                     /*@ ds:28A4: itoa's buffer for g232C (:01BA) */
-extern char g28B4[];                     /*@ ds:28B4: itoa's buffer for g28C4 (:01CF) */
+extern char g28B4[];                     /*@ ds:28B4: itoa's buffer for gMemTopSeg (:01CF) */
 extern unsigned char far *gPaletteBuf;   /*@ ds:2D42: the palette buffer StartupGame allocates
                                              (:05B2, :05CC, :05F7) and main loads palette.col into (:0121) */
 extern void (far *gSetPalette)(void far *table); /*@ ds:1F46: the palette setter (:013E, :01AE, :0635),
@@ -89,7 +107,11 @@ extern char far *gOverlayFiles[];        /*@ ds:1A14: the graphics overlay name 
 extern unsigned gSegs28CC[];             /*@ ds:28CC: the page/buffer segment table StartupGame fills
                                              per graphics choice (:036B to :0540) */
 extern void far *gFont8;                 /*@ ds:2D34: the 8x8 font f1A47_0005 loads (:0560) */
-extern void far *gSoundBuf;              /*@ ds:28A0: the sound driver data buffer (:06D1, :07AC) */
+extern void far *gSoundMap;              /*@ ds:28A0: the 120-byte (SOUND_MAP_SIZE) game-number to
+                                             driver-number sound map StartupGame reads from
+                                             sound.dat or pcsound.dat (:06D1 to :0711); EOB keeps
+                                             the same map as gSoundMap (ds:DCAC, src/E07A9.C:122,
+                                             src/E177D.C:3-4) */
 extern unsigned char gEgaPalette[];            /*@ ds:19E7: the built-in palette table main passes to the
                                              setter for graphics choices 0 and 1 (:010F) */
 extern unsigned char g19F7[];            /*@ ds:19F7: 16 zero bytes, the table main passes to the
@@ -147,13 +169,17 @@ extern int execl(char far *path, char far *arg0, ...); /*@ 0000:5717 */
    main calls it with the word at 0E6C:00B8 (:018E). */
 extern int CloseFileHandle(int handle);          /*@ 0000:549D */
 
-/* 16-byte far object at 0E6C:00B8, the file handle main closes (:018E). The segment is a data
-   segment of the library, not DGROUP. */
+/* 0E6C:00B8: not DGROUP, a data segment of the library. Its first word is the INTRO.EXE file
+   handle the INT 3Fh handler (09E1:0000) keeps and reopens to read the overlay (it stores the
+   _open result at 09E1:00A9; the name it opens is "INTRO.EXE" at ds:1A2A); EOB's twin does the
+   same at src/E1A72.ASM:169-171 and :252-254. Main closes it through CloseFileHandle (0000:549D)
+   before the hand-off (:018E). What the bytes after the handle hold is not known. */
 extern unsigned far g0E6C_00B8;                  /*@ 0E6C:00B8 */
 
-/* 0923:0006: the word main tests before it sets the Tandy palette (:019A); i0923 is E1990 in another
-   version, where this word is gMemTopSeg (src/E07C8.C:125). Purpose unknown beyond that. */
-extern unsigned far g0923_0006;                  /*@ 0923:0006 */
+/* 0923:0006: gMovedSeg, the data segment DOS gave the relocated copy of the environment block
+   (src/I0923.ASM:29, stored at :164); main tests it at :019F before it sets the Tandy palette.
+   gMemTopSeg is a different word, the DGROUP word ds:28C4 (src/I0923.ASM:3, :57). */
+extern unsigned far gMovedSeg;                  /*@ 0923:0006 */
 
 /* INTRO.EXE's overlay 0 (the intro playback); main runs it when g1A34 is set (:0158). Reached
    through its stub entry 0E96:0070 (ovl0:0000 is entry 16 of the stub at 0E96, entries at +20h,
@@ -162,7 +188,8 @@ extern int Ovl0Main(int argc, char far * far *argv); /*@ 0E96:0070 */
 
 /* The far object Int3FHandler (09E1:0000) main installs as the INT 3Fh handler (:0074). Declared as
    an object, not a function: the matcher cannot map a far function pointer taken from another unit
-   passed as an argument, but an object at 09E1:0000 gives the same segment:offset (src/E07C8.C:200). */
+   passed as an argument, but an object at 09E1:0000 gives the same segment:offset. EOB's
+   Int3FHandler is at 1A72:0006 (src/E07C8.C declares it the same way). */
 extern unsigned char far Int3FHandler;           /*@ 09E1:0000 */
 
 int Main(int argc, char far * far *argv);
@@ -175,9 +202,10 @@ int AllocationFailure(void);
    the INT 3Fh handler (keeping the old vector in ds:28C8) and the exit and allocation-failure hooks,
    checks free memory, locates EOB.EXE (asking for DISK2 while it is missing) and runs StartupGame
    (:0241). When it succeeds it loads the palette and, when the start-up flag is set, runs the intro
-   overlay (ovl0:0000). It then probes EOB.EXE, shuts the intro's systems down, closes the overlay
-   file handle, itoa's the two hand-off numbers, restores the drive and hands off to EOB.EXE with
-   _execl. Returns 0 on the early paths and never returns from the hand-off. WHITEPAPER 2.6. */
+   overlay (ovl0:0000). It then probes EOB.EXE, shuts the intro's systems down, closes the
+   INTRO.EXE file handle the INT 3Fh handler keeps (0E6C:00B8), itoa's the two hand-off numbers,
+   restores the drive and hands off to EOB.EXE with _execl. Returns 0 on the early paths and never
+   returns from the hand-off. WHITEPAPER 2.6. */
 /*@ 0892:0000 */ int Main(int argc, char far * far *argv)
 {
     int handle;
@@ -228,10 +256,10 @@ int AllocationFailure(void);
     FileClose(handle);
     ShutdownGame();
     CloseFileHandle(g0E6C_00B8);
-    if (g0923_0006 && gGraphicsChoice == 1)
+    if (gMovedSeg && gGraphicsChoice == 1)
         gSetPalette(g19F7);
     itoa(g232C, g28A4, 10);
-    itoa(g28C4, g28B4, 10);
+    itoa(gMemTopSeg, g28B4, 10);
     setdisk(gOverlayDrive);
     execl("EOB.EXE", "EOB.EXE", argv[1], argv[2], argv[3], argv[4], g28A4, g28B4, (char far *)0);
     return 0;
@@ -249,7 +277,7 @@ int AllocationFailure(void);
    error paths and for the gGraphicsChoice 0x36 fail path (argv[1][0] '5', which main made 0x36). */
 /*@ 0892:0241 */ int StartupGame(void)
 {
-    int memtop;
+    unsigned memtop;
     int slot;
 
     g232C = f1DDD_0006();
@@ -338,14 +366,14 @@ int AllocationFailure(void);
     case 1:
         gPaletteBuf = MemAlloc(PALETTE_BUFFER_SIZE, 0);
         gPaletteBuf[0] = 0;
-        gPaletteBuf[0xf] = 0xf;
+        gPaletteBuf[PALETTE_ENTRY15] = EGA_WHITE;
         gSetPalette(gEgaPalette);
         break;
     case 2:
     case 3:
         gPaletteBuf = MemAlloc(PALETTE_SIZE, 0);
         memset(gPaletteBuf, 0, PALETTE_SIZE);
-        memset(gPaletteBuf + 0x2d, 0x3f, 3);
+        memset(gPaletteBuf + PALETTE_ENTRY15_OFFSET, VGA_WHITE, PALETTE_ENTRY_BYTES);
         gSetPalette(gPaletteBuf);
         break;
     }
@@ -365,27 +393,27 @@ font_error:
 sound:
     switch (gSoundChoice) {
     case 1:
-        gSoundBuf = MemAlloc(SOUND_MAP_SIZE, 0);
+        gSoundMap = MemAlloc(SOUND_MAP_SIZE, 0);
         slot = FileOpen("sound.dat", 1);
-        FileRead(slot, gSoundBuf, SOUND_MAP_SIZE);
+        FileRead(slot, gSoundMap, SOUND_MAP_SIZE);
         FileRead(slot, GetDriverBlock(), DRIVER_BLOCK_SIZE);
         FileClose(slot);
         RebaseDriverBlock();
         StartAdlibDriver();
         break;
     case 2:
-        gSoundBuf = MemAlloc(SOUND_MAP_SIZE, 0);
+        gSoundMap = MemAlloc(SOUND_MAP_SIZE, 0);
         slot = FileOpen("pcsound.dat", 1);
-        FileRead(slot, gSoundBuf, SOUND_MAP_SIZE);
+        FileRead(slot, gSoundMap, SOUND_MAP_SIZE);
         FileRead(slot, GetDriverBlock(), DRIVER_BLOCK_SIZE);
         FileClose(slot);
         RebaseDriverBlock();
         SoundDriverInstall();
         break;
     case 3:
-        gSoundBuf = MemAlloc(SOUND_MAP_SIZE, 0);
+        gSoundMap = MemAlloc(SOUND_MAP_SIZE, 0);
         slot = FileOpen("pcsound.dat", 1);
-        FileRead(slot, gSoundBuf, SOUND_MAP_SIZE);
+        FileRead(slot, gSoundMap, SOUND_MAP_SIZE);
         FileRead(slot, GetDriverBlock(), DRIVER_BLOCK_SIZE);
         FileClose(slot);
         RebaseDriverBlock();
@@ -406,7 +434,13 @@ done:
    driver was installed) and the keyboard, shuts the overlay cache down (when StartupGame started
    it), stops the sound card the way the chosen one needs (the i_text AdLib driver off, or the PC
    speaker/Tandy driver uninstalled, with the Tandy voices silenced first), then checks the heap
-   ("Memory Corrupt!!!" when heapcheck reports -1) and puts the saved INT 3Fh vector back. */
+   ("Memory Corrupt!!!" when heapcheck reports -1) and puts the saved INT 3Fh vector back.
+   Callers: main (:0184) and AllocationFailure (:08E9) in this unit, and the library's error
+   exits through far calls, Int3FHandler (09E1:0000) at 09E1:008E and 09E1:00C2, OutOfMemory
+   (094F:02B6, the default allocation-failure hook) at 094F:02CF, FatalError (0B5D:00A0) at
+   0B5D:00C8, FileOpen (0B5D:00D1, the illegal-mode case) at 0B5D:01D3 and DisplayFileError
+   (0B5D:0AD3, the ESC key) at 0B5D:0D07, so it is also the exit path of the library's fatal file
+   and memory errors. */
 /*@ 0892:0835 */ void ShutdownGame(void)
 {
     if (gExitHook)
