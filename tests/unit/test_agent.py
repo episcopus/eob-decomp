@@ -32,6 +32,11 @@ def test_safety_rules():
     assert not safety.findings(["src/E0CF7.C", "re/symbols.toml"], [], "unit/e0cf7")
     assert safety.findings([], [("work/x.md", "a — b")], "main")
     assert not safety.findings([], [("work/x.md", "a, b; c (d)")], "main")
+    bad = {"re/symbols.toml": 'notes = "form \\`and ax,1\\`"\n'}            # the e122e note of 2026-11-02
+    assert "not valid TOML" in safety.findings(["re/symbols.toml"], [], "unit/e122e", bad.get)[0]
+    good = {"re/symbols.toml": 'notes = "form `and ax,1`, a \\\\ b"\n'}
+    assert not safety.findings(["re/symbols.toml"], [], "unit/e122e", good.get)
+    assert not safety.findings(["re/old.toml"], [], "unit/e122e", {}.get)      # deleted
 
 
 def test_queue_is_game_code_smallest_first():

@@ -263,7 +263,10 @@ def record_attempt(uid: str, tier: int, progressed: bool) -> None:
 
 def l2_count(root: Path, uid: str) -> int:
     """Functions of the unit at L2 or L3 in the registry of the checkout `root`."""
-    fs = tomllib.loads((root / "re/symbols.toml").read_text())["function"]
+    try:
+        fs = tomllib.loads((root / "re/symbols.toml").read_text())["function"]
+    except tomllib.TOMLDecodeError:
+        return 0  # a broken registry proves nothing; integration rejects it with the reason
     return sum(1 for f in fs if f["unit"] == uid and f.get("level") in ("L2", "L3"))
 
 
