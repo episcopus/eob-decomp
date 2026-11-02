@@ -232,9 +232,11 @@ void DrawItemName(int item);
 }
 
 /* 0BD2:01D0: inserts the item `item` at the head of the circular list `head`, stamping it with the
-   key `key` and the sound `sound` (m0A becomes gFBC8 or -1 by the key's sign). DRAFT: our build
-   preloads key into DI (`mov di,[bp+0xa]`) where the original loads item into SI first; the rest of
-   the body follows, so it is a register-allocation difference, not a source one. */
+   key `key` and the sound `sound` (m0A becomes gFBC8 or -1 by the key's sign). BLOCKED: compiler
+   register allocation. Every byte matches except the prologue, where our build promotes `key` to
+   the DI register variable (0BD2:01D8 `mov di,[bp+0xa]`); the original leaves it in memory and
+   reloads it from AX in each branch (`mov ax,[bp+0xa]; mov es:[bx+6],ax; or ax,ax`). Many source
+   forms tried (see the notes in re/symbols.toml) still preload it into DI. */
 /*@ 0BD2:01D0 draft */ void InsertListItem(void far *head, int key, int item, int sound)
 {
     struct ItemRecord *rec;

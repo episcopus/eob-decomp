@@ -2388,6 +2388,7 @@ addr = "0BD2:01D0"
 size = 233
 evidence = ["far", "near", "frame"]
 name = "InsertListItem"
+notes = "blocked: compiler register allocation. Every byte matches except the prologue: our -ml -O -Z -v build promotes the `key` parameter to the DI register variable and loads it once at entry (0BD2:01D8 `mov di, word ptr [bp + 0xa]`), so each store the original makes from AX (0BD2:0212 and 0BD2:0268 `mov ax, word ptr [bp + 0xa]; mov word ptr es:[bx + 6], ax; or ax, ax`) is made from DI and every later branch shifts 3 bytes; the original leaves `key` in memory and reloads it in each branch. `item` is the SI register variable in both. Tried: the `key >= 0 ? gFBC8 : -1` ternary and the inverted `if (key < 0)`, computing the m0A value into a local before the branch, the two branch bodies swapped with the condition inverted, `if (item == 0) return;` as an if-block, braces, `volatile int key`, `register` on the pointer locals, all six declaration orders of rec/next/cur, and the same body under -O, -Z-, -v, -r-, -G and -B; all still preload key into DI. No source form found."
 
 [[function]]
 id = "e0bd2_02b9"
