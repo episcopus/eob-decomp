@@ -5686,6 +5686,9 @@ unit = "e1c0e"
 addr = "1C0E:00DB"
 size = 736
 evidence = ["far", "frame"]
+name = "FileOpen"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "e1c0e_03bb"

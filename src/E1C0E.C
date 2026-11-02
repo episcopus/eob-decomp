@@ -85,6 +85,7 @@ int IsFileInMemory(char far *name);      /*@ 1C0E:1161: defined later in the fil
 int FindLoadedFile(char far *name);      /*@ 1C0E:11D3: defined later in the file */
 int LocateOverlayFile(char far *name);   /*@ 1C0E:1310: defined later in the file */
 int f1C0E_144E(int index);               /*@ 1C0E:144E: defined later in the file */
+long LookupFileEntry(int handle, char far *name); /*@ 1C0E:172E: defined later in the file */
 
 /* A cached file, a 19-byte record at ds:01FF (index * 19 + ds:01FF). The name is a C string; an
    empty name ends the table. */
@@ -99,6 +100,8 @@ struct FileEntry {
 
 extern struct FileEntry gFiles[];        /*@ ds:01FF */
 extern int gFileHandles[];               /*@ ds:FEEA: DOS handle or SLOT_FREE per slot */
+extern long gSlotOffsets[];              /*@ ds:FEC2: the record's start offset per slot */
+extern long gSlotLengths[];              /*@ ds:FF0C: the record's length per slot */
 
 /* 1C0E:000C: resize the file in slot `index` to `size` bytes and return 1 when that succeeded, 0
    when the slot is loaded in memory (nothing to resize) or chsize failed. */
@@ -138,7 +141,96 @@ extern int gFileHandles[];               /*@ ds:FEEA: DOS handle or SLOT_FREE pe
     ShutdownGame();
 }
 
-/*@ 1C0E:00DB stub */ int FileOpen(char far *name, int mode) { }
+/* 1C0E:00DB: open the file `name` in one of three modes and give it a cache slot. Mode 1 (0x8001,
+   read) reuses an in-memory copy or checks and loads the file from disk; mode 2 (0x8002, write) and
+   mode 3 (0x8004, read/write) delete and recreate the file, retrying on failure; any other mode
+   reports code 1 then a fatal code 0xC. An existing in-memory copy is dropped unless mode is 1, the
+   file is located (following the alias link when its record points at another entry), opened with
+   retry, and its directory entry recorded for a linked file (LookupFileEntry). Finally the first
+   free slot takes the handle (FILE_IN_MEMORY | index for a loaded file, else the DOS handle with
+   FILE_LINKED set) with the record's offset and length, and its index is returned. */
+/*@ 1C0E:00DB */ int FileOpen(char far *name, int mode)
+{
+    int fd;
+    int access;
+    int slot;
+    int found;
+    int i;
+
+    switch (mode) {
+    case 1:
+        if (!IsFileInMemory(name)) {
+            while (!CheckFile(name))
+                if (!RetryFile(2, name))
+                    return -1;
+            DropFile(name);
+        }
+        access = FILE_IN_MEMORY | O_RDONLY;
+        break;
+    case 2:
+        access = FILE_IN_MEMORY | O_WRONLY;
+        DeleteFile(name);
+        ResetFile(name);
+        /* fall through */
+    case 3:
+        if (!CheckFile(name))
+            while (!ResetFile(name))
+                if (!RetryFile(0, name))
+                    return -1;
+        if (mode == 3)
+            access = FILE_IN_MEMORY | O_RDWR;
+        break;
+    default:
+        RetryFile(1, name);
+        FatalError(0xc, name);
+        ShutdownGame();
+        break;
+    }
+
+    if (IsFileInMemory(name) && mode != 1) {
+        slot = FindLoadedFile(name);
+        MemFree(gFiles[slot].data);
+        gFiles[slot].data = 0;
+    }
+
+    if (!IsFileInMemory(name)) {
+        found = FindFile(name);
+        if (found != -1) {
+            if (gFiles[found].link < 0)
+                name = gFiles[gFiles[found].link & LINK_INDEX].name;
+            else
+                found = -1;
+        }
+        fd = open(name, access, S_IREAD | S_IWRITE);
+        while (fd == -1) {
+            fd = open(name, access, S_IREAD | S_IWRITE);
+            if (fd == -1)
+                if (!RetryFile(2, name))
+                    return -1;
+        }
+        if (found != -1) {
+            LookupFileEntry(fd, gFiles[found].name);
+            fd |= FILE_LINKED;
+        }
+    } else {
+        fd = FindLoadedFile(name);
+        gFiles[fd].pos = 0;
+        fd |= FILE_IN_MEMORY;
+    }
+
+    slot = MAX_FILES;
+    for (i = 0; i < MAX_FILES; i++)
+        if (gFileHandles[i] == SLOT_FREE) {
+            slot = i;
+            break;
+        }
+    if (slot == MAX_FILES)
+        FatalError(3, name);
+    gFileHandles[slot] = fd;
+    gSlotOffsets[slot] = gRecordOffset;
+    gSlotLengths[slot] = gRecordLength;
+    return slot;
+}
 
 /* 1C0E:03BB: close the file in slot `index`: report code 4 when the slot is already free, close
    the DOS handle unless the slot is loaded in memory, then mark the slot free. */
