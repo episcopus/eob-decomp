@@ -35,8 +35,7 @@ struct CharRec {            /* the 243-byte (0xF3) character records at ds:F580;
     signed char mDF;        /* +DF */
     char padE0[0xE2 - 0xE0];
     signed char mE2;        /* +E2 */
-    int mE3;                /* +E3: flags tested by 09B9 */
-    char padE5[0xE7 - 0xE5];
+    long mE3;               /* +E3: effect flags (a 32-bit mask; high word folded at 09B9) */
     unsigned char mE7;      /* +E7 */
     unsigned char mE8[0xF3 - 0xE8];
 };
@@ -154,7 +153,45 @@ extern void DelaySeconds(int n); /*@ 082C:0B43 */
 extern void ShutdownGame(void); /*@ 07C8:058A */
 extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
 
-/*@ 0DE8:0007 stub */ void f0DE8_0007(void) {}
+/* 0DE8:0007: the to-hit roll of character `who` against object `obj`. It derives an attack bonus
+   from the item `slot` (the m02 kind selects the m0B weapon value when it is 1..3), adds either
+   the derived stat A or the m15 char value depending on `flag`, marks gObjs[obj].m16 bit 0 as
+   hit, and compares a d20 roll (raised by gFBD2 bits 4 and 5 and by gChars[who].mE3 bit 6, clamped
+   to 1..20) against GetScaledValue(who, gTable1A3B[gObjs[obj].b0].m00) minus the bonus. Returns 1
+   when the roll reaches that armour class. Called by 0DE8:02D4 and 0DE8:0359. */
+/*@ 0DE8:0007 */ int f0DE8_0007(int who, int obj, int slot, int flag)
+{
+    int b0;
+    int ac;
+    int kind;
+    int bonus;
+    int roll;
+
+    if (slot != 0)
+        kind = gTable8DD2[slot].m02;
+    else
+        kind = 0;
+    if (kind >= 1 && kind <= 3)
+        bonus = gTable8DD2[slot].m0B;
+    else
+        bonus = 0;
+    if (flag != 0)
+        bonus += GetDerivedStatA(who);
+    else
+        bonus += GetCharM15Value(who);
+    b0 = gObjs[obj].b0;
+    gObjs[obj].m16 |= 1;
+    ac = GetScaledValue(who, gTable1A3B[b0].m00) - bonus;
+    roll = RollDice(1, 20, 0);
+    if (gFBD2 & 0x30)
+        roll++;
+    if ((gChars[who].mE3 & 0x40) != 0)
+        roll++;
+    roll = roll < 20 ? roll : 20;
+    roll = roll > 1 ? roll : 1;
+    return roll >= ac;
+}
+
 /*@ 0DE8:011A stub */ void f0DE8_011A(void) {}
 
 /* 0DE8:01D7: returns 1 when the item type `index` has a nonzero weapon kind whose low seven bits
