@@ -193,7 +193,7 @@ extern unsigned char gViewBufADB0[]; /*@ ds:ADB0 */  /* the view pixel buffer (t
    Called by Ovl4_044B at ovl4:04B4 and ovl4:04CD. Purpose unknown: what the bit marks.
    DRAFT: the body matches except the outer loop counter: the original holds it in CX, ours in DI/SI
    (tried declaration orders and `register`). */
-/*@ ovl4:036A draft */ void ToggleViewColumn(char x, char y, char page, int x2, char height, char width)
+/*@ ovl4:036A draft */ void ToggleViewColumn(char x, char y, char page, int x2, char width, char height)
 {
     unsigned int far *src;
     int row;
