@@ -29,22 +29,25 @@ import common  # noqa: E402
 from mzutil import read_mz  # noqa: E402
 
 MD = Cs(CS_ARCH_X86, CS_MODE_16)
-DGROUP = 0x212E
 ANNOT = re.compile(r"(?:/\*|;)\s*@\s*(ds:[0-9A-Fa-f]{1,4}|ovl\d+:[0-9A-Fa-f]{1,4}|[0-9A-Fa-f]{4}:[0-9A-Fa-f]{4})")
 
 
 class Program:
-    """EOB.EXE's code: resident functions by seg:off, overlay functions by ovlN:off."""
+    """A program's code (EOB.EXE, INTRO.EXE): resident functions by seg:off, overlay functions by
+    ovlN:off. Only its own units' functions (the two programs spell overlay addresses alike)."""
 
-    def __init__(self):
+    def __init__(self, name: str = "EOB.EXE"):
         root = common.main_checkout()
-        self.image = read_mz((common.ROOT / "eob/EOB.EXE").read_bytes())["image"]
-        man = json.loads((root / "build/re/eob.json").read_text())
+        stem = name.split(".")[0].lower()
+        self.image = read_mz((common.ROOT / "eob" / name).read_bytes())["image"]
+        man = json.loads((root / "build/re" / ("%s.json" % stem)).read_text())
         self.segments = man["segments"]
         self.stubs = {o["stub_para"]: o for o in man["overlays"]}
-        self.ovl = {o["overlay"]: ((root / "build/re/eob-overlays" / ("ovl%02d.bin" % o["overlay"])).read_bytes(),
+        self.ovl = {o["overlay"]: ((root / "build/re" / ("%s-overlays" % stem) / ("ovl%02d.bin" % o["overlay"])).read_bytes(),
                                    set(o["fixups"])) for o in man["overlays"]}
-        self.funcs = common.functions()
+        units = {u["id"]: u for u in common.units() if u["program"] == name}
+        self.game = {k for k, u in units.items() if u["kind"] not in ("library", "startup")}
+        self.funcs = [f for f in common.functions() if f["unit"] in units]
         self.by_addr = {f["addr"].upper(): f for f in self.funcs}     # keys upper case: OVL2:09CC
 
     def code(self, f: dict) -> tuple[bytes, int, str]:
@@ -79,7 +82,7 @@ class Program:
     def calls(self) -> dict[str, set[str]]:
         out = defaultdict(set)
         for f in self.funcs:
-            if not f["unit"].startswith("e") or f["unit"] in ("e_lib", "e_c0"):
+            if f["unit"] not in self.game:
                 continue
             data, base, _ = self.code(f)
             for i in MD.disasm(data, base):
@@ -89,10 +92,15 @@ class Program:
         return out
 
 
-def known_names() -> tuple[dict[int, str], dict[str, str]]:
-    """Globals (ds offset) and functions (address) that some file of src/ names, with the file."""
+def known_names(program: str = "EOB.EXE") -> tuple[dict[int, str], dict[str, str]]:
+    """Globals (ds offset) and functions (address) that some file of src/ of the program names, with
+    the file."""
+    sys.path.insert(0, str(common.ROOT / "tools" / "match"))
+    import rename
     data, funcs = {}, {}
     for p in sorted((common.ROOT / "src").glob("*")):
+        if rename.program_of(p) != program:
+            continue
         for line in p.read_text().splitlines():
             m = ANNOT.search(line)
             if not m:
@@ -124,14 +132,14 @@ def label(addr: str, prog: Program, fnames: dict[str, str]) -> str:
 
 def write(uid: str) -> Path:
     u = common.unit(uid)
-    prog = Program()
+    prog = Program(u["program"])
     fs = [f for f in prog.funcs if f["unit"] == uid]
     graph = prog.calls()
     callers = defaultdict(set)
     for a, ts in graph.items():
         for t in ts:
             callers[t].add(a)
-    dnames, fnames = known_names()
+    dnames, fnames = known_names(u["program"])
     src = common.source_of(uid)
     lines = ["# Packet: unit %s" % uid, "",
              "| | |", "|---|---|"]

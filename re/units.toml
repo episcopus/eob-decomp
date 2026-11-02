@@ -602,6 +602,7 @@ bytes = 1147
 functions = 13
 kind = "asm"
 same_as = "e1948"
+twin = "e1948"
 
 [[unit]]
 id = "i0892"
@@ -639,6 +640,7 @@ bytes = 728
 functions = 5
 kind = "c"
 same_as = "e19bc"
+twin = "e19bc"
 
 [[unit]]
 id = "i097d"
@@ -649,6 +651,7 @@ bytes = 34
 functions = 1
 kind = "asm"
 same_as = "e19ea"
+twin = "e19ea"
 
 [[unit]]
 id = "i097f"
@@ -659,6 +662,7 @@ bytes = 124
 functions = 3
 kind = "c"
 same_as = "e19ec"
+twin = "e19ec"
 
 [[unit]]
 id = "i0986"
@@ -669,6 +673,7 @@ bytes = 137
 functions = 1
 kind = "unknown"
 same_as = "e19f3"
+twin = "e19f3"
 
 [[unit]]
 id = "i098f"
@@ -679,6 +684,7 @@ bytes = 43
 functions = 2
 kind = "asm"
 same_as = "e1a16"
+twin = "e1a16"
 
 [[unit]]
 id = "i0992"
@@ -689,6 +695,7 @@ bytes = 102
 functions = 2
 kind = "asm"
 same_as = "e1a19"
+twin = "e1a19"
 
 [[unit]]
 id = "i0998"
@@ -699,6 +706,7 @@ bytes = 470
 functions = 7
 kind = "c"
 same_as = "e1a29"
+twin = "e1a29"
 
 [[unit]]
 id = "i09b5"
@@ -709,6 +717,7 @@ bytes = 447
 functions = 3
 kind = "c"
 same_as = "e1a47"
+twin = "e1a47"
 
 [[unit]]
 id = "i09d1"
@@ -719,6 +728,7 @@ bytes = 42
 functions = 2
 kind = "asm"
 same_as = "e1a63"
+twin = "e1a63"
 
 [[unit]]
 id = "i09d4"
@@ -729,6 +739,7 @@ bytes = 200
 functions = 1
 kind = "unknown"
 same_as = "e1a65"
+twin = "e1a65"
 
 [[unit]]
 id = "i09e1"
@@ -739,6 +750,7 @@ bytes = 841
 functions = 8
 kind = "asm"
 same_as = "e1a72"
+twin = "e1a72"
 
 [[unit]]
 id = "i0a15"
@@ -749,6 +761,7 @@ bytes = 55
 functions = 1
 kind = "unknown"
 same_as = "e1aaa"
+twin = "e1aaa"
 
 [[unit]]
 id = "i0a19"
@@ -758,6 +771,7 @@ start = "0A19:0000"
 bytes = 3405
 functions = 14
 kind = "asm"
+twin = "e1aad"
 
 [[unit]]
 id = "i0aed"
@@ -786,6 +800,7 @@ bytes = 860
 functions = 7
 kind = "asm"
 same_as = "e1bbe"
+twin = "e1bbe"
 
 [[unit]]
 id = "i0b4e"
@@ -796,6 +811,7 @@ bytes = 235
 functions = 3
 kind = "asm"
 same_as = "e1c00"
+twin = "e1c00"
 
 [[unit]]
 id = "i0b5d"
@@ -806,6 +822,7 @@ bytes = 6099
 functions = 31
 kind = "c"
 same_as = "e1c0e"
+twin = "e1c0e"
 
 [[unit]]
 id = "i0cda"
@@ -825,6 +842,7 @@ bytes = 185
 functions = 3
 kind = "asm"
 same_as = "e1d8f"
+twin = "e1d8f"
 
 [[unit]]
 id = "i0ce9"
@@ -835,6 +853,7 @@ bytes = 1067
 functions = 8
 kind = "asm"
 same_as = "e1d9a"
+twin = "e1d9a"
 
 [[unit]]
 id = "i0d2b"
@@ -845,6 +864,7 @@ bytes = 106
 functions = 2
 kind = "asm"
 same_as = "e1ddd"
+twin = "e1ddd"
 
 [[unit]]
 id = "i0d32"
@@ -855,6 +875,7 @@ bytes = 57
 functions = 2
 kind = "asm"
 same_as = "e1de4"
+twin = "e1de4"
 
 [[unit]]
 id = "i0d35"
@@ -865,6 +886,7 @@ bytes = 2619
 functions = 9
 kind = "c"
 same_as = "e1de7"
+twin = "e1de7"
 
 [[unit]]
 id = "i0dd9"
@@ -874,6 +896,7 @@ start = "0DD9:000A"
 bytes = 2329
 functions = 31
 kind = "asm"
+twin = "e1e8b"
 
 [[unit]]
 id = "iov0"

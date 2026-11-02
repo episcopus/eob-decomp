@@ -41,7 +41,8 @@ You are working on a **matching decompilation of Westwood's Eye of the Beholder 
 | `make tc-install` / `make tc-check` | Install the Turbo C++ and TASM releases from `build/toolchain/dist/`; verify them |
 | `make rtl-compare` | Which Turbo C++ release's runtime is in `EOB.EXE` (several minutes) |
 | `make map` | Enumerate functions; write `re/units.toml` and `re/symbols.toml` (playbook 10) |
-| `make match [FILE=src/X.C] [WRITE=1]` | Prove C and assembly units against `EOB.EXE`; `WRITE=1` records L2 (playbook 30) |
+| `make match [FILE=src/X.C] [WRITE=1]` | Prove C and assembly units against their program (`EOB.EXE`, `INTRO.EXE`); `WRITE=1` records L2 (playbook 30) |
+| `make twin [UNIT=] [WRITE=1] [FIND=1]` | Prove an `INTRO.EXE` unit by its `EOB.EXE` twin, the same module linked elsewhere (playbook 30) |
 | `make data` | Decode every data file: the PAKs, the fonts, the test save (whitepaper 4) |
 | `make oracle-run [INSNS=] [ARGS=] [SCRIPT=]` | Run the original `EOB.EXE` (or `--program INTRO.EXE`) in the emulator (playbook 25) |
 | `make golden [NAME=] [CHECK=1]` | Record or verify the golden sessions in `tests/sessions/` |

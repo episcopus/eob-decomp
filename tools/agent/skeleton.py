@@ -29,7 +29,7 @@ def stub_name(f: dict) -> str:
 def text(uid: str) -> tuple[str, str]:
     u = common.unit(uid)
     fs = sorted(common.unit_functions(uid), key=lambda f: int(f["addr"].split(":")[1], 16))
-    where = "overlay %d of EOB.EXE" % u["overlay"] if "overlay" in u else "EOB.EXE %s" % u["start"]
+    where = "overlay %d of %s" % (u["overlay"], u["program"]) if "overlay" in u else "%s %s" % (u["program"], u["start"])
     if u["kind"] == "asm":
         lines = ["; Unit at %s (%d bytes, %d functions), kind asm [H] by the map. Skeleton by `make skeleton`:" % (
                      where, u["bytes"], len(fs)),
