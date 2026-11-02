@@ -113,6 +113,7 @@ extern signed char gTable5733[];        /*@ ds:5733 */ /* four cell deltas walke
 extern char gText57A3[];                /*@ ds:57A3 */
 extern char gText57F1[];                /*@ ds:57F1 */
 extern char gText5809[];                /*@ ds:5809 */
+extern char gText5830[];                /*@ ds:5830 */
 extern char gText587A[];                /*@ ds:587A */
 extern char gText58AF[];                /*@ ds:58AF */
 extern char gText58BB[];                /*@ ds:58BB */
@@ -375,7 +376,21 @@ extern void BuildList5(void); /*@ 0CF7:0211 */
     }
 }
 
-/*@ 0EF3:0F0B stub */ void f0EF3_0F0B(void) {}
+/* 0EF3:0F0B: when the current record's armour class is more than six above the class word of
+   its +0x15 index, raise its +0xDF penalty byte to eight over the member's class-slot 1 value
+   and recompute the armour class; otherwise say the string ds:5830 with the record's name. Called
+   through a table. DRAFT: the body is right but the original keeps the 0A72:019D result in SI and
+   a two-byte frame for the value; our build folds them away (`make match` differs at the frame). */
+/*@ 0EF3:0F0B draft */ void FixArmourClass(void)
+{
+    if (gCurRec->m1D > GetClassWord(gCurRec->m15) + 6) {
+        gCurRec->mDF = GetClassSlot1Value(gPanelMember) + 8;
+        ComputeArmourClass(gCurMember);
+    } else {
+        sprintf(gFileNameBuf, gText5830, gCurRec->name);
+        SayAndBeep(gFileNameBuf);
+    }
+}
 
 /* 0EF3:0F86: recompute the armour class of the record's member (its +0 byte). Called by 0DE8:09B9
    and 0EF3:131A. */
@@ -942,7 +957,8 @@ extern void BuildList5(void); /*@ 0CF7:0211 */
 }
 
 /* 0EF3:208A: run the record's melee effect through 0EF3:0A3F with 0d0 and a bonus of 0xC. Called
-   through a table. */
+   through a table. DRAFT: the body is right but the original keeps the 0A72:019D result in SI and
+   a two-byte frame for the value; our build folds them away (`make match` differs at the frame). */
 /*@ 0EF3:208A */ void RunMelee0(struct Tgt far *rec)
 {
     f0EF3_0A3F(rec, 0, 0, 0xC, 1);
