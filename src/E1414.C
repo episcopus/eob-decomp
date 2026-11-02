@@ -125,7 +125,7 @@ extern int RunRecordAttack(struct DDRec far *rec); /*@ 0DE8:01FF */
 extern int TryRecordAttack(struct DDRec far *rec, int idx); /*@ 0DE8:02D4 */
 extern void DamageCharacter(int who, int what); /*@ 0DE8:09B9 */
 extern void AnimateEffect(struct DDRec far *rec); /*@ 0EF3:00CD */
-extern void f0EF3_0D78(int a, int b); /*@ 0EF3:0D78 */
+extern void ExpireSpellEffect(int a, int b); /*@ 0EF3:0D78 */
 extern void InsertListItem(void far *head, int key, int item, int sound); /*@ 0BD2:01D0 */
 extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
 
@@ -506,7 +506,7 @@ extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
             rec->mAD[i] = 0;
             type = rec->mD5[i];
             if (type < 0) {
-                f0EF3_0D78(-type, who);
+                ExpireSpellEffect(-type, who);
                 continue;
             }
             switch (rec->mD5[i]) {

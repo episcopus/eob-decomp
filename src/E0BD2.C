@@ -141,7 +141,7 @@ extern int f0D1C_0670(int who, int mask); /*@ 0D1C:0670 */
 extern int f0D1C_07DB(int who, int flag); /*@ 0D1C:07DB */
 extern void UseItem(int who, int slot, int field); /*@ 0DE8:0763 */
 extern void EatFood(int index); /*@ 0ACD:07E0 */
-extern void f0EF3_21E0(int who, int flag); /*@ 0EF3:21E0 */
+extern void OpenSpellPanel(int who, int flag); /*@ 0EF3:21E0 */
 extern void fOvl5_1CDD(int x); /*@ 211E:0093 */  /* overlay 5 entry, ovl5:1CDD */
 extern void SetMouseItem(int n); /*@ 07A9:010C */
 extern void RedrawMember(int who); /*@ 1547:0991 */
@@ -863,7 +863,7 @@ next:
     case 5:
     case 6:
         if (gFB44 == 0)
-            f0EF3_21E0(who, cls == 6);
+            OpenSpellPanel(who, cls == 6);
         break;
     case 7:
         if (gMouseDisabled != 0)

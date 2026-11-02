@@ -40,8 +40,8 @@ extern int f0BD2_0106(int who, int row); /*@ 0BD2:0106 */
 extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
 extern void PushListItem(int who, int item, int value); /*@ 0BD2:0458 */
 extern int AddDDEffect(int who, int item, int volume, int kind, int page, int type); /*@ 0BD2:07DE */
-extern void f0EF3_097B(char a, int b, int c, int d, int e); /*@ 0EF3:097B */
-extern char gF43D; /*@ ds:F43D */              /* cleared around the f0EF3_097B call (122E:0C4D) */
+extern void StartCellEffect(char a, int b, int c, int d, int e); /*@ 0EF3:097B */
+extern char gF43D; /*@ ds:F43D */              /* cleared around the StartCellEffect call (122E:0C4D) */
 extern char g5A40[]; /*@ ds:5A40 */            /* byte table indexed by two script bytes (122E:0C4D) */
 extern void DrawItemRow(int who, int slot, int one); /*@ 0BD2:0917 */
 extern int f0D1C_02DC(void); /*@ 0D1C:02DC */
@@ -703,7 +703,7 @@ void RunMemberScript(int who, int mode);  /* forward: 1DA8 comes after its calle
    byte, a word, and two more bytes. When the opcode was not 0xDF it copies the first byte's item
    into a free slot and adds a DD effect with the word as the volume and g5A40[third + second * 2]
    as the kind; a zero result frees the slot again (m04 = -1). When it was 0xDF it clears gF43D
-   around a f0EF3_097B call with the same fields. Returns the bytes read. */
+   around a StartCellEffect call with the same fields. Returns the bytes read. */
 /*@ 122E:0C4D */ long AddEffectOp(char far *script)
 {
     char v1;
@@ -732,7 +732,7 @@ void RunMemberScript(int who, int mode);  /* forward: 1DA8 comes after its calle
     } else {
         saved = gF43D;
         gF43D = 0;
-        f0EF3_097B(-1, v1, id, g5A40[v2 * 2 + v3], v2);
+        StartCellEffect(-1, v1, id, g5A40[v2 * 2 + v3], v2);
         gF43D = saved;
     }
     return (long)(script - start);

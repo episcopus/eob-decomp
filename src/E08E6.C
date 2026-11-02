@@ -119,7 +119,7 @@ extern int gF540; /*@ ds:F540 */
 extern int gFB32; /*@ ds:FB32 */
 
 extern void UpdateDDEffects(void); /*@ 1414:0D63 */
-extern void f0EF3_097B(char a, int b, int c, int d, int e); /*@ 0EF3:097B */
+extern void StartCellEffect(char a, int b, int c, int d, int e); /*@ 0EF3:097B */
 extern int CopyItemToFreeSlot(int n); /*@ 0BD2:089E */
 extern void InsertListItem(void far *head, int key, int item, int sound); /*@ 0BD2:01D0 */
 extern int Distance(int x, int y); /*@ 17A6:0F61 */
@@ -503,7 +503,7 @@ void Obj10F3(struct Obj28 far *obj);   /* forward: 05EA reaches it before its de
    Called by 0765 as Obj073F(obj, value). Purpose unknown: what 0EF3:097B does with them is not known. */
 /*@ 08E6:073F */ void Obj073F(struct Obj28 far *obj, int value)
 {
-    f0EF3_097B(0xff, value, obj->id, obj->frame, obj->orient);
+    StartCellEffect(0xff, value, obj->id, obj->frame, obj->orient);
 }
 /* 08E6:0765: the object's action for UpdateObjects. It returns 0 unless the object's 1A3B record
    has m0E bit 6, the object has m19 left and m18 is zero (otherwise m18 is decremented and 0 is
@@ -597,7 +597,7 @@ void Obj10F3(struct Obj28 far *obj);   /* forward: 05EA reaches it before its de
         }
         break;
     case 16:
-        f0EF3_097B(0xff, 0, obj->id, obj->frame, obj->orient);
+        StartCellEffect(0xff, 0, obj->id, obj->frame, obj->orient);
         PlaySoundAtCell(0x55, obj->id);
         break;
     }

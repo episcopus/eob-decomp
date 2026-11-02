@@ -1712,6 +1712,69 @@ why = "the AdLib driver off (gSoundCard 0 is AdLib, src/E177D.C:178): ShutdownGa
 date = "2026-11-01"
 
 [[rename]]
+id = "0EF3:0D78=ExpireSpellEffect"
+addr = "0EF3:0D78"
+old = ""
+new = "ExpireSpellEffect"
+kind = "function"
+why = "prints \"%s's %s spell expires.\", runs the spell's +0xD callback on the member and redraws it or the party (called by 1414:07CA with (spell, who))"
+date = "2026-11-01"
+
+[[rename]]
+id = "0EF3:131A=DispelMagic"
+addr = "0EF3:131A"
+old = ""
+new = "DispelMagic"
+kind = "function"
+why = "spell record 12's +5 apply callback: says \"All spells on %s are dispelled.\" and runs every active spell slot's +0xD callback on the current record (0EF3:131A, reached through gSpells1344)"
+date = "2026-11-01"
+
+[[rename]]
+id = "0EF3:097B=StartCellEffect"
+addr = "0EF3:097B"
+old = "AddDDEffect"
+new = "StartCellEffect"
+kind = "function"
+why = "fills the first free 18-byte ds:DD2C record with state 2 and the mode's flags, and copies the spell's +9 far callback into its fn, the callback 1414:0172 runs (called by the effect wrappers 0EF3:10D2..2011); not 0BD2:07DE AddDDEffect"
+date = "2026-11-01"
+
+[[rename]]
+id = "0EF3:21E0=OpenSpellPanel"
+addr = "0EF3:21E0"
+old = ""
+new = "OpenSpellPanel"
+kind = "function"
+why = "opens the member's spell panel for an item of class 5/6: gDD14 = the member's known or memorized spell slots, gNameTable = g1278 or g12E0, scans the first nonzero slot, saves the panel rect and runs the panel body 0EF3:2295 (called by 0BD2:1001, E0BD2.C declares it f0EF3_21E0)"
+date = "2026-11-02"
+
+[[rename]]
+id = "ds:EFCC=gNameTable"
+addr = "ds:EFCC"
+old = ""
+new = "gNameTable"
+kind = "global"
+why = "the far table 0EF3:2295 reads names from; set to g12E0 or g1278 by 0EF3:21E0 (only E0EF3.C references ds:EFCC)"
+date = "2026-11-02"
+
+[[rename]]
+id = "0EF3:18D8=CastConeOfCold"
+addr = "0EF3:18D8"
+old = ""
+new = "CastConeOfCold"
+kind = "function"
+why = "gSpells1344 record 24 (\"cone of cold\") apply callback: blanks the view, runs the cone drawing 0EF3:2EBC and damages every object in the seven rows of g5763[gFBCC] (0EF3:18D8, no direct caller)"
+date = "2026-11-02"
+
+[[rename]]
+id = "0EF3:05BD=DrawFlashFrame"
+addr = "0EF3:05BD"
+old = ""
+new = "DrawFlashFrame"
+kind = "function"
+why = "draws one flash frame for a member at a pass: redraws the member, then draws up to four gFlashFrames images at the member's flash base plus a gFlashDelta offset (called by 0EF3:0665 FlashPartyMembers)"
+date = "2026-11-02"
+
+[[rename]]
 id = "0A72:019D=GetArmourClassBase"
 addr = "0A72:019D"
 old = "GetClassWord"

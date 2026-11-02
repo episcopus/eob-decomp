@@ -101,7 +101,7 @@ extern unsigned char g65C0[]; /*@ ds:65C0 */
 extern unsigned char g65C3[]; /*@ ds:65C3 */
 extern struct Cell4 gCellDef65C6[]; /*@ ds:65C6 */
 extern void far *gIntroCells[]; /*@ ds:F4BE */
-extern void far *gIconDD1C; /*@ ds:DD1C */
+extern void far *gFlashFrames; /*@ ds:DD1C */
 extern void far *gIconDD20; /*@ ds:DD20 */
 extern void far *gIconDD24; /*@ ds:DD24 */
 extern void far *gIconDD28; /*@ ds:DD28 */
@@ -335,7 +335,7 @@ extern void FileClose(int handle); /*@ 1C0E:03BB */
     for (i = 0; i < 6; i++)
         gIntroCells[i] = gGetSpriteCell(gCellDef65C6[i].x, gCellDef65C6[i].y,
             gCellDef65C6[i].w, gCellDef65C6[i].h, gOverlayBuf);
-    gIconDD1C = gGetSpriteCell(0x1d, 0, 2, 0x10, gSheetDECORATE);
+    gFlashFrames = gGetSpriteCell(0x1d, 0, 2, 0x10, gSheetDECORATE);
     gIconDD20 = gGetSpriteCell(0x1f, 0, 2, 0x10, gSheetDECORATE);
     gIconDD24 = gGetSpriteCell(0x21, 0, 2, 0x10, gSheetDECORATE);
     gIconF2F4 = gGetSpriteCell(0, 0x58, 4, 0x20, gSheetDECORATE);

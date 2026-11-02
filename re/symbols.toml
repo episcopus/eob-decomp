@@ -3333,6 +3333,9 @@ unit = "e0ef3"
 addr = "0EF3:05BD"
 size = 168
 evidence = ["near", "frame"]
+name = "DrawFlashFrame"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0ef3_0665"
@@ -3357,6 +3360,9 @@ unit = "e0ef3"
 addr = "0EF3:08CF"
 size = 172
 evidence = ["frame"]
+name = "ApplyMemberEffect"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0ef3_097b"
@@ -3364,6 +3370,9 @@ unit = "e0ef3"
 addr = "0EF3:097B"
 size = 196
 evidence = ["far", "near", "frame"]
+name = "StartCellEffect"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0ef3_0a3f"
@@ -3378,6 +3387,9 @@ unit = "e0ef3"
 addr = "0EF3:0D78"
 size = 163
 evidence = ["far", "frame"]
+name = "ExpireSpellEffect"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0ef3_0e1b"
@@ -3556,6 +3568,9 @@ unit = "e0ef3"
 addr = "0EF3:131A"
 size = 227
 evidence = ["frame"]
+name = "DispelMagic"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0ef3_13fd"
@@ -3757,6 +3772,9 @@ unit = "e0ef3"
 addr = "0EF3:18D8"
 size = 311
 evidence = ["frame"]
+name = "CastConeOfCold"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0ef3_1a0f"
@@ -4118,6 +4136,9 @@ unit = "e0ef3"
 addr = "0EF3:21E0"
 size = 181
 evidence = ["far", "frame"]
+name = "OpenSpellPanel"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0ef3_2295"
@@ -4142,6 +4163,9 @@ unit = "e0ef3"
 addr = "0EF3:25BD"
 size = 71
 evidence = ["frame"]
+name = "f0EF3_25BD"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0ef3_2604"
