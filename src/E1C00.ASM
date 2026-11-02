@@ -10,9 +10,10 @@
 ; the first function at the even offset 0002 [H data]. 1C00:0002 allocates an 0FA00h byte block
 ; (MemAlloc, flags 20h), loads an overlay image into it with DOS INT 21h/4B03 and reports BX = 0
 ; on success, 0FFFFh on failure; and 1C00:0055 takes a far pointer to an overlay request (word 0 =
-; the DGROUP offset of the request name, word +2 = the name's segment, words +4 and +6 = the two
-; arguments of the pointer the entry returns), loads the overlay, then calls the entry at the
-; overlay segment:0000 with 27h, 1A16h and that segment (1C00:0088 to 0091), resizes the block
+; the offset of the request name in the request's segment, which is DGROUP if the caller's DS is
+; [H]; word +2 = the name's segment; words +4 and +6 = the two arguments of the pointer the entry
+; returns), loads the overlay, then calls the entry at the overlay segment:0000 with 27h, 1A16h
+; and that segment (1C00:0088 to 0091), resizes the block
 ; 1C00:0002 loaded the overlay into, to the overlay's size (MemRealloc, 1C00:00A8), and calls the
 ; pointer the entry returned (offset at 818Eh, segment at 8190h), whose target is read through the
 ; caller's DS (DGROUP only if the caller's DS is [H]), with the request's two words (1C00:00C0).
@@ -47,18 +48,14 @@
 ; `mov es:[bx],ax` after it stores. This 0FA00h is the block the loader reserves for the overlay;
 ; 1C00:0055 later shrinks it to the overlay's real size with MemRealloc (the reason for this size is
 ; not established [H]: 0FA00h is 64000 bytes, one 320 by 200 screen, but nothing in the bytes says
-; that is why). Which segment each access uses is spelled out once in the 1C00:0055 comment: the
-; store at 1C00:002F goes through the caller's ES, the SP and SS save at 1C00:0032 and 0036 through
-; the caller's DS, and the SP and SS restore at 1C00:0044 and 0048 and the reads and stores from
-; 1C00:007C to 00B4 through DGROUP. The header's DGROUP:818Ah to 8194h is right only if the
-; caller's DS is DGROUP, which 07C8:0254 `push ds` passes [H].
+; that is why). Which segment each access uses is spelled out once in the 1C00:0055 comment; the
+; header's DGROUP:818Ah to 8194h is right only if the caller's DS is DGROUP, which 07C8:0254
+; `push ds` passes [H].
 ; Save SP and SS across the call (the reason is not established [H]), then load the overlay named by
-; DS:DX through the INT 21h/4B03 parameter block at ES:BX = request_seg:818Ah, where ES is the
-; request segment the caller passed (1C00:0062 `mov ds,[bp+8]`, 1C00:0071 `mov es,ax`); it is
-; DGROUP only if the caller's DS is [H]. Word 0 is the load segment (the word at 818Ah through that
-; segment) and word 1 is the relocation factor (818Ch through that segment, which no file in src/
-; writes, so check it in the oracle before a port relies on it). Return BX = 0 on success or
-; 0FFFFh on failure. The caller reaches it with `push cs; call`
+; DS:DX through the INT 21h/4B03 parameter block at ES:BX = request_seg:818Ah. Word 0 is the load
+; segment (the word at 818Ah through that segment) and word 1 is the relocation factor (818Ch
+; through that segment, which no file in src/ writes, so check it in the oracle before a port relies
+; on it). Return BX = 0 on success or 0FFFFh on failure. The caller reaches it with `push cs; call`
 ; (1C00:0073 to 0074), which is a near call: it pushes CS as an extra word below the return address,
 ; and the function's retf pops that word as well as the return address. Only 1C00:0055 calls it,
 ; passing BX = 818Ah, ES = the request segment and DS:DX from the request.
@@ -133,9 +130,10 @@ _LoadOverlayImage ENDP
 ; [818Eh] (the 0 is the call target offset): the entry's first argument is 27h and its third is the
 ; overlay segment. 1A16h is the segment of src/E1A16.C (WaitFrames); that the overlay is handed a
 ; resident segment is evidence, what it does with it is not established, so both arguments stay
-; placeholders. The entry returns AX = its function offset, which this function stores at 818Eh
+; placeholders. The entry returns AX = its function offset [H], which this function stores at 818Eh
 ; (1C00:0098), and BX = its size in paragraphs [H] (read from how the bytes use the two results: AX
-; is stored at 818Eh, BX is multiplied by 16 at 1C00:009B to 00A1, not from the overlay's own code);
+; is stored at 818Eh and is the call offset of the second `lcall [818Eh]` at 1C00:00C0, BX is
+; multiplied by 16 at 1C00:009B to 00A1, not from the overlay's own code);
 ; four `shl bx,1` make that size in bytes. The three `pop cx` that drop the entry's arguments leave
 ; CX = the overlay segment pushed at 1C00:0088, and that CX is the pointer's segment in the
 ; MemRealloc call: MemRealloc (19BC:018A, E19BC.C) takes (void far *ptr, unsigned size), so the call
@@ -146,11 +144,11 @@ _LoadOverlayImage ENDP
 ; the pointer the entry returned, whose offset is the entry's AX (818Eh) and whose segment is
 ; MemRealloc's result (8190h); its target is read through the caller's DS (see above), and the
 ; segment can differ from the overlay segment the entry was called with if the heap moved the block
-; [H]. It calls that pointer with the request's two words: `pop si` restores SI = request + 4,
-; `lodsw` reads word +4 into BX and
-; `lodsw` reads word +6 into AX, then `push ax; push bx` precedes `lcall [818Eh]` (1C00:00B8 to
-; 00C0), so word +4 is the pointer's first argument and word +6 its second. On success (the
-; `jb short failsub` at 1C00:00C6), when the mouse handler is installed (g8148) the loader clears
+; [H]. It calls that pointer with the request's two words: `pop si` restores SI = request + 4, then
+; `lodsw` reads word +4 into AX, `mov bx,ax` copies it to BX, and the second `lodsw` reads word +6
+; into AX, and `push ax; push bx` precedes `lcall [818Eh]` (1C00:00B8 to 00C0), so word +4 is the
+; pointer's first argument and word +6 its second. On success (the
+; `jb short ptrfail` at 1C00:00C6), when the mouse handler is installed (g8148) the loader clears
 ; gMouseDisabled (1C00:00CD to 00D4). g8148 is 1 when the mouse driver handler is installed
 ; (E1A72.ASM:43, set at :214, cleared at :200). gMouseDisabled is set to 1 at install
 ; (E1A72.ASM:215), and a non-zero value disables the handler: the INT 33h handler body skips all
@@ -237,23 +235,24 @@ _RunOverlayRequest PROC FAR
         call    dword ptr ds:[818Eh]
         pop     cx
         pop     cx
-        jb      short failsub
+        jb      short ptrfail
         mov     ax,212Eh
         mov     ds,ax
         cmp     word ptr [g8148],0
         je      short done
         mov     word ptr [gMouseDisabled],0
 done:   xor     ax,ax
-        jmp     short exit1
+        jmp     short returnpath
 ; The failure path pops ds then si (1C00:00DE, 00DF), the reverse of the success path above: `pop
 ; ds` takes the word pushed as si (1C00:006B) and `pop si` takes the word pushed as ds (1C00:006A),
 ; so ds and si swap values. It is harmless, because the epilogue pops at 1C00:00E3 to 00E6 restore
 ; si and ds from the entry pushes; both words pushed before the load call are discarded.
 fail:   pop     ds
         pop     si
-failsub:
+ptrfail:                        ; the second entry call failed (1C00:00C6): return 0FFFFh
         mov     ax,0FFFFh
-exit1:  pop     si
+returnpath:                     ; the shared return before the epilogue pops (1C00:00E3)
+        pop     si
         pop     es
         pop     dx
         pop     ds
