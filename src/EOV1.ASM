@@ -29,6 +29,7 @@
         EXTRN   _ReadKey:FAR            ; @ 1AAD:038E (E082C.C)
         EXTRN   _FlushKeyBuffer:FAR     ; @ 1AAD:0480 (E082C.C)
         EXTRN   _WaitFrames:FAR         ; @ 1A16:000B (E14EF.C)
+        EXTRN   _sprintf:FAR            ; @ 0000:57AE (library)
 
         EXTRN   gChars:BYTE             ; @ ds:F580: 6 character records of 0xF3 bytes (E08E6.C)
         EXTRN   gBufDCFC:DWORD          ; @ ds:DCFC: 4096-byte scratch allocation (E07A9.C)
@@ -45,6 +46,13 @@
         EXTRN   gTextLeft:WORD          ; @ ds:FE64 (E14EF.C)
         EXTRN   gTextTop:WORD           ; @ ds:FE66 (E14EF.C)
         EXTRN   gStrings2003:BYTE       ; @ 2003:0000: the message string table (EOV6.C)
+        EXTRN   g8102:WORD              ; @ ds:8102: colour-row mode (E07A9.C)
+        EXTRN   g1278:WORD              ; @ ds:1278: far item-name pointer table (E0BD2.C)
+        EXTRN   g12E0:WORD              ; @ ds:12E0: far item-name pointer table (E0BD2.C)
+        EXTRN   gFmt645B:BYTE           ; @ ds:645B: the "%-18s %1d" format string
+        EXTRN   gFDEA:BYTE              ; @ ds:FDEA: per-item count, indexed by item*2
+        EXTRN   gFileNameBuf:BYTE       ; @ ds:FE6E: text scratch buffer (E082C.C)
+        EXTRN   gDrawText:DWORD         ; @ ds:80CA: far text routine (E082C.C)
 
         .CODE
 
@@ -175,10 +183,139 @@ _Ovl1_0416 PROC FAR
         ret
 _Ovl1_0416 ENDP
 
-        PUBLIC  _Ovl1_0881               ; @ ovl1:0881 stub
-_Ovl1_0881 PROC FAR
+; ovl1:0881: draw the name of item `item` on row `row` in the character display. It picks a base x
+; or colour (1, or 0xF when g8102 is nonzero), returns when `row` is negative, computes y =
+; row * 9 + 0x32, hides the pointer and, for a nonzero `item`, formats
+; sprintf(gFileNameBuf, "%-18s %1d", nameTable[item], count[item]) where nameTable is g12E0 when
+; `mode` is set and g1278 otherwise, and count is the byte at gFDEA + item*2. `style` 0 draws it
+; through DrawShadowText with the colour from gF57E (or 6 when `hi` is set), nonzero draws it
+; through gDrawText in colour `base` (or 6 when `hi` is set); a zero `item` with `style` 0 instead
+; fills the row's background through gFillRect in gF57E. The pointer is shown again. Called from
+; ovl1:097A. Purpose unknown: the exact meaning of `mode`, `style` and `hi`.
+        PUBLIC  _ShowItemName          ; @ ovl1:0881
+_ShowItemName PROC FAR
+        push    bp
+        mov     bp,sp
+        push    si
+        push    di
+        cmp     word ptr [g8102],0
+        jne     short f0881_0892
+        mov     ax,1
+        jmp     short f0881_0895
+f0881_0892:
+        mov     ax,0Fh
+f0881_0895:
+        mov     di,ax
+        cmp     word ptr [bp+8],0
+        jge     short f0881_08A0
+        jmp     f0881_0976
+f0881_08A0:
+        mov     ax,[bp+8]
+        mov     dx,9
+        imul    dx
+        add     ax,32h
+        mov     si,ax
+        call    far ptr _LockHidePointer
+        cmp     word ptr [bp+6],0
+        jne     short f0881_08BB
+        jmp     f0881_0950
+f0881_08BB:
+        mov     bx,[bp+6]
+        shl     bx,1
+        mov     al,[bx+gFDEA]
+        cbw
+        push    ax
+        cmp     word ptr [bp+0Ah],0
+        je      short f0881_08DD
+        mov     bx,[bp+6]
+        shl     bx,1
+        shl     bx,1
+        mov     dx,word ptr [bx+g12E0+2]
+        mov     ax,word ptr [bx+g12E0]
+        jmp     short f0881_08EC
+f0881_08DD:
+        mov     bx,[bp+6]
+        shl     bx,1
+        shl     bx,1
+        mov     dx,word ptr [bx+g1278+2]
+        mov     ax,word ptr [bx+g1278]
+f0881_08EC:
+        push    dx
+        push    ax
+        push    ds
+        mov     ax,OFFSET gFmt645B
+        push    ax
+        push    ds
+        mov     ax,OFFSET gFileNameBuf
+        push    ax
+        call    far ptr _sprintf
+        add     sp,0Eh
+        cmp     word ptr [bp+0Ch],0
+        je      short f0881_0929
+        xor     ax,ax
+        push    ax
+        cmp     word ptr [bp+0Eh],ax
+        je      short f0881_0913
+        mov     ax,6
+        jmp     short f0881_0915
+f0881_0913:
+        mov     ax,di
+f0881_0915:
+        push    ax
+        push    si
+        mov     ax,8
+        push    ax
+        push    ds
+        mov     ax,OFFSET gFileNameBuf
+        push    ax
+        call    dword ptr [gDrawText]
+        add     sp,0Ch
+        jmp     short f0881_0971
+f0881_0929:
+        mov     al,[gF57E]
+        cbw
+        push    ax
+        cmp     word ptr [bp+0Eh],0
+        je      short f0881_0939
+        mov     ax,6
+        jmp     short f0881_093B
+f0881_0939:
+        mov     ax,di
+f0881_093B:
+        push    ax
+        push    si
+        mov     ax,8
+        push    ax
+        push    ds
+        mov     ax,OFFSET gFileNameBuf
+        push    ax
+        call    far ptr _DrawShadowText
+        add     sp,0Ch
+        jmp     short f0881_0971
+f0881_0950:
+        cmp     word ptr [bp+0Ch],0
+        jne     short f0881_0971
+        mov     al,[gF57E]
+        cbw
+        push    ax
+        mov     ax,si
+        add     ax,8
+        push    ax
+        mov     ax,0A8h
+        push    ax
+        push    si
+        mov     ax,6
+        push    ax
+        call    dword ptr [gFillRect]
+        add     sp,0Ah
+f0881_0971:
+        call    far ptr _LockShowPointer
+f0881_0976:
+        pop     di
+        pop     si
+        pop     bp
         ret
-_Ovl1_0881 ENDP
+_ShowItemName ENDP
 
         PUBLIC  _Ovl1_097A               ; @ ovl1:097A stub
 _Ovl1_097A PROC FAR

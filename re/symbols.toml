@@ -7040,6 +7040,9 @@ unit = "eov1"
 addr = "ovl1:0881"
 size = 249
 evidence = ["near"]
+name = "_ShowItemName"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "eov1_097a"
