@@ -6,10 +6,11 @@
    DAND, WESTWOOD). The whole unit is drawn through the driver pointers the front end fills at
    load time (ds:1EE2 and its neighbours), which this page only partly names.
    The scene functions are named after the .CMP/.COL files they load: PlayWtrdpScene (ovl0:015D,
-   WTRDP1..3), PlayOrbScene (ovl0:06E2, ORB/TOWRMAGE) and PlayTowerMageScene (ovl0:0B20,
-   TOWRMAGE) are written; 1265, 15F9, 1DF3 and 23A3 are still stubs. They are long
-   ClipRect/frame animations; every utility they use (LoadPackedImage, LoadPalette, PlaySound,
-   Dissolve, BlitImage, DrawGrid, GrowFrame, WaitFrameDelay, f19EC_002A) is matched. */
+   WTRDP1..3), PlayOrbScene (ovl0:06E2, ORB/TOWRMAGE), PlayTowerMageScene (ovl0:0B20,
+   TOWRMAGE) and PlayKingScene (ovl0:1265, KING/ADVENTUR) are written; 15F9, 1DF3 and 23A3 are
+   still stubs. They are long ClipRect/frame animations; every utility they use (LoadPackedImage,
+   LoadPalette, PlaySound, Dissolve, BlitImage, DrawGrid, GrowFrame, WaitFrameDelay,
+   f19EC_002A) is matched. */
 
 /*@flags -ml -O -Z -G */
 
@@ -107,7 +108,7 @@ void WaitFrameDelay(void);
 void DelayFrames(unsigned frames);
 void GrowFrame(int left, int top, int dstLeft, int dstTop, int x, int y, int width, int height, int curWidth, int curHeight, int addW, int addH);
 int SignOf(int value);
-void Ovl0_1265(void);
+void PlayKingScene(void);
 void Ovl0_15F9(void);
 void Ovl0_1DF3(void);
 void Ovl0_23A3(void);
@@ -171,7 +172,7 @@ void PlayLogoSequence(void);
     if (!gAbort)
         PlayWtrdpScene();
     if (!gAbort)
-        Ovl0_1265();
+        PlayKingScene();
     if (!gAbort)
         Ovl0_15F9();
     if (!gAbort)
@@ -607,7 +608,90 @@ extern void MemFree(void far *block); /*@ 094F:0137 */
         return 1;
     return 0;
 }
-/*@ ovl0:1265 stub */ void Ovl0_1265(void) {}
+/* The KING/ADVENTUR scene tables ovl0:1265 reads: the x and width of each of the four king
+   sprites, and the per-frame step of the adventurer's descent. */
+extern int gKingX[4];                   /*@ ds:1CE4 */  /* Purpose unknown: x of each king sprite, ovl0:1265 */
+extern int gKingW[4];                   /*@ ds:1CEC */  /* Purpose unknown: width of each king sprite, ovl0:1265 */
+extern int gKingStep[8];                /*@ ds:1CF4 */  /* Purpose unknown: per-frame descent step, ovl0:1265 */
+
+/* ovl0:1265: the KING/ADVENTUR scene. It loads KING.CMP and steps a framed rectangle open over
+   ten frames, then loads ADVENTUR.CMP, cuts four king sprites out of gOverlayBuf at gKingX/
+   gKingW and gives each a random start height y and animation phase. In a loop it walks each
+   sprite down by gKingStep[phase] (clamped to 0x52..0xB6), drawing it and its frame, until all
+   four have fallen past the bottom; sound 7 plays on some frames. It clears the box and frees
+   the four sprites. */
+/*@ ovl0:1265 */ void PlayKingScene(void)
+{
+    int inset;
+    int width;
+    int height;
+    int y[4];
+    int done;
+    int anim[4];
+    void far *imgs[4];
+    register int i;
+    register int edge;
+
+    LoadPackedImage("KING.CMP", 5, 3);
+    f19EC_002A(3, 4, FP_OFF(gOverlayBuf), FP_SEG(gOverlayBuf));
+    inset = 0xf;
+    edge = 0xe;
+    width = height = 1;
+    for (i = 0; i < 0xa; i++) {
+        gFrameDelay = 1;
+        ClipRect(inset, edge * 8, inset, edge * 8, width, height * 8, 4, 0);
+        if (inset > 6)
+            inset--;
+        if (edge > 0)
+            edge -= 2;
+        width += 3;
+        if (width + inset > 0x22)
+            width = 0x22 - inset;
+        height += 3;
+        if (edge + height > 0x17)
+            height = 0x17 - edge;
+        WaitFrameDelay();
+    }
+    gFrameDelay = 0x19;
+    LoadPackedImage("ADVENTUR.CMP", 5, 3);
+    gDrawPage = 2;
+    for (i = 0; i < 4; i++) {
+        imgs[i] = gMakeImage(gKingX[i], 0, gKingW[i], 0x62, gOverlayBuf);
+        y[i] = (RandomByte() & 3) * 8 + 0xb4;
+        anim[i] = (i * 5) & 3;
+    }
+    gDrawPage = 0;
+    WaitFrameDelay();
+    ClipRect(0, 0, 0, 0, 0x28, 0xc8, 0, 4);
+    done = 0;
+    while (done == 0) {
+        done = 1;
+        gFrameDelay = 2;
+        for (i = 0; i < 4; i++) {
+            if (y[i] <= 0x52)
+                continue;
+            anim[i] = ++anim[i] & 7;
+            y[i] += gKingStep[anim[i]];
+            if (y[i] < 0x52)
+                y[i] = 0x52;
+            if (y[i] >= 0xb4) {
+                done = 0;
+                continue;
+            }
+            ClipRect(gKingX[i] + 8, y[i] - 2, 0, y[i] - 2, gKingW[i], 0xb6 - y[i], 4, 4);
+            f1A29_000F(4, imgs[i], 0, y[i], 0);
+            ClipRect(0, y[i] - 2, gKingX[i] + 8, y[i] - 2, gKingW[i], 0xb6 - y[i], 4, 0);
+            done = 0;
+        }
+        if (!(RandomByte() & 3))
+            PlaySound(7);
+        WaitFrameDelay();
+    }
+    ClipRect(0, 0x60, 0, 0xa0, 0x28, 0x20, 6, 0);
+    gFrameDelay = 0x46;
+    for (i = 0; i < 4; i++)
+        MemFree(imgs[i]);
+}
 /*@ ovl0:15F9 stub */ void Ovl0_15F9(void) {}
 /*@ ovl0:1DF3 stub */ void Ovl0_1DF3(void) {}
 /*@ ovl0:23A3 stub */ void Ovl0_23A3(void) {}

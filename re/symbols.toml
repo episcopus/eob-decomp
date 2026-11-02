@@ -11261,6 +11261,9 @@ unit = "iov0"
 addr = "ovl0:1265"
 size = 916
 evidence = ["ovl", "near", "frame"]
+name = "PlayKingScene"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "iov0_15f9"

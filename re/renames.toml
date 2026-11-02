@@ -2286,3 +2286,12 @@ new = "PlayTowerMageScene"
 kind = "function"
 why = "it loads TOWRMAGE.COL and TOWRMAGE.CMP and slides the tower-mage sprite across the screen (ovl0:0B20 +0B31, +0B46)"
 date = "2026-11-02"
+
+[[rename]]
+id = "intro/ovl0:1265=PlayKingScene"
+addr = "intro/ovl0:1265"
+old = "Ovl0_1265"
+new = "PlayKingScene"
+kind = "function"
+why = "it loads KING.CMP and ADVENTUR.CMP and walks four king sprites down over the adventurer (ovl0:1265 +1276, +134c)"
+date = "2026-11-02"
