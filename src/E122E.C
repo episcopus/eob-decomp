@@ -15,6 +15,12 @@ extern void far *gBuf8DCA; /*@ ds:8DCA */      /* start-up far allocation (src/E
 extern int gFBC8; /*@ ds:FBC8 */               /* the current action (src/E0ACD.C) */
 extern unsigned long gActionFlags[]; /*@ ds:FBD4 */ /* per-action 32-bit masks, indexed by gFBC8 */
 extern unsigned long gFC04; /*@ ds:FC04 */     /* effect flags (src/E08E6.C) */
+extern char gB899[]; /*@ ds:B899 */            /* the nine-byte record list head (src/E0ACD.C) */
+extern int gFBCE; /*@ ds:FBCE */               /* the item index shown by the mouse (src/E07A9.C) */
+
+extern int CopyItemToFreeSlot(int n); /*@ 0BD2:089E */
+extern void SetMouseItem(int n); /*@ 07A9:010C */
+extern void InsertListItem(void far *head, int key, int item, int sound); /*@ 0BD2:01D0 */
 
 extern void AddPartyExperience(int amount); /*@ 0DE8:0C2B */
 extern void HealCharacter(int who, int amount); /*@ 0DE8:0ADB */
@@ -226,7 +232,31 @@ extern void fOvl5_1A82(int x); /*@ 211E:0057 */   /* overlay 5 entry, ovl5:1A82 
     return (long)(script - start);
 }
 
-/*@ 122E:1B9A stub */ void f122E_1B9A(void) {}
+/* 122E:1B9A: sub-opcode that copies an item into a free slot and either shows it on the mouse (when
+   the destination is -1 and nothing is shown yet) or inserts it into that member's list with the
+   trailing sound byte. Returns the bytes read. */
+/*@ 122E:1B9A */ long TakeItemOp(char far *script)
+{
+    char far *start = script;
+    int item;
+    int dest;
+
+    item = *(int far *)script;
+    script += 2;
+    dest = *(int far *)script;
+    script += 2;
+    item = CopyItemToFreeSlot(item);
+    if (item != 0) {
+        if (dest == -1 && gFBCE == 0) {
+            SetMouseItem(item);
+        } else {
+            InsertListItem(&gB899[dest * 9], dest, item, *script);
+        }
+    }
+    script++;
+    return (long)(script - start);
+}
+
 /*@ 122E:1C16 stub */ void f122E_1C16(void) {}
 /*@ 122E:1CAD stub */ void f122E_1CAD(void) {}
 
