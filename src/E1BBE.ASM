@@ -11,8 +11,10 @@
 ; 1BBE:01FE HidePointerZone and 1BBE:02C2 ShowPointerZone are the hide/show pair that carry the
 ; rectangle the pointer was hidden over (gZoneLeft..gZoneBottom, read by the mouse handler
 ; 1A72:0244) and the gPointerState redraw flag; 1BBE:0307 LockHidePointer and 1BBE:0332
-; LockShowPointer hide and show without that state. Every wrapper takes the pointer semaphore
-; _gPointerBusy and brackets its work with [ds:80AA] and [ds:80A2]. The unit is hand-written assembly
+; LockShowPointer hide and show without that state. Every wrapper that hides or draws takes the pointer
+; semaphore _gPointerBusy and brackets its work with [ds:80AA] and [ds:80A2] (the no-redraw exit of
+; ShowPointerZone, zero count and bit 4000h clear, clears the state and releases the semaphore with no
+; bracket, 1BBE:02DE/0300). The unit is hand-written assembly
 ; ([H]: the map's c_like test, tools/re/map_units.py:42-46, looks only at the instructions after the
 ; frame and finds no C-like frame here, the same reading src/E1BB1.ASM:57-59 records; AX is saved with
 ; push/pop ax and the far call goes through a DGROUP pointer, the style of E1BB1 and E1BF3).
@@ -30,8 +32,9 @@
                                                 ; then increments, not atomic (src/E1BB1.ASM:53 says the
                                                 ; same of its acquire; the wrappers below do the same at
                                                 ; 1BBE:0213, 02C6, 030A and 0335)
-        EXTRN   _gCursorX:WORD          ; @ ds:8138: mouse position, x in pixels (written at
-                                        ; src/E1A72.ASM:324-325 and src/E1BF3.ASM:35)
+        EXTRN   _gCursorX:WORD          ; @ ds:8138: mouse position, x in pixels (written by the handler
+                                        ; at src/E1A72.ASM:338-339, set to 0A0h by InitMouse at
+                                        ; src/E1A72.ASM:218-219, and written by src/E1BF3.ASM:35)
         EXTRN   _gCursorY:WORD          ; @ ds:813A: mouse position, y in pixels
         EXTRN   _gHideDepth:WORD        ; @ ds:8146: hide depth, 0 = drawn (1BBE:0002/00ED change it)
         EXTRN   gMouseDisabled:WORD              ; @ ds:814A: non-zero disables the pointer (E07A9 tests it too)
@@ -44,10 +47,12 @@
         EXTRN   _gDrawnY:WORD           ; @ ds:815E: position drawn at last, y in pixels
         EXTRN   _gPointerState:WORD     ; @ ds:8160: bit 8000 hidden, bit 4000 redraw, low byte a count
         EXTRN   _gZoneLeft:WORD         ; @ ds:8162: hide zone, left in pixels, stored as the argument
-                                        ; less the sprite width (1BBE:0234, 025B); the handler's left
-                                        ; test is skipped (QUIRK 1A72:0248)
+                                        ; less the sprite width in pixels (_gPointerWidth8 shifted left
+                                        ; three times, 1BBE:0234, 025B); the handler's left test is
+                                        ; skipped (QUIRK 1A72:0248)
         EXTRN   _gZoneTop:WORD          ; @ ds:8164: hide zone, top in pixels, stored as the argument
-                                        ; less the sprite height (1BBE:0238, 0272)
+                                        ; less the sprite height (_gPointerHeight, already in pixels, no
+                                        ; shift; 1BBE:0238, 0272)
         EXTRN   _gZoneRight:WORD        ; @ ds:8166: hide zone, right in pixels as given (1BBE:023C)
         EXTRN   _gZoneBottom:WORD       ; @ ds:8168: hide zone, bottom in pixels as given (1BBE:0240)
         EXTRN   _gPointerBackOff:WORD    ; @ ds:816A: save-under buffer, far offset (1BB1 allocates)
@@ -85,11 +90,12 @@
 _f1BBE_0001 LABEL BYTE                    ; @ 1BBE:0001
         db      0
 
-; 1BBE:0002 HidePointer: hide the pointer. Does nothing when the pointer is disabled (gMouseDisabled) or
-; when no save-under buffer exists (_gPointerBackSeg zero). A hide while already hidden (gHideDepth
-; non-zero, 1BBE:0015) only increments gHideDepth instead of restoring the background, so a nested hide
-; is counted. Otherwise the rectangle the pointer covers is recomputed from the position it was last
-; drawn at (gDrawnX/gDrawnY) less the hot spot (_gPointerHotX/_gPointerHotY) and the sprite size
+; 1BBE:0002 HidePointer: hide the pointer. Does nothing when the pointer is disabled (gMouseDisabled).
+; A hide while already hidden (gHideDepth non-zero, 1BBE:0015) only increments gHideDepth instead of
+; restoring the background, so a nested hide is counted even when no save-under buffer exists; the
+; buffer test is reached only when not hidden. When not hidden and no save-under buffer exists
+; (_gPointerBackSeg zero) nothing happens. Otherwise the rectangle the pointer covers is recomputed
+; from the position it was last drawn at (gDrawnX/gDrawnY) less the hot spot (_gPointerHotX/_gPointerHotY) and the sprite size
 ; (_gPointerHeight/_gPointerWidth8; the x in 8-pixel columns, the y in rows, each clipped to the 40x200
 ; screen), the saved background is written back to the screen through [ds:804E] (x, y, w, h,
 ; _gPointerBackOff/_gPointerBackSeg) and gHideDepth is incremented. When the rectangle is off screen the
@@ -170,6 +176,8 @@ L00B9:  push    word ptr [_gPointerBackSeg]
         push    word ptr [_gRectLeft]
         call    dword ptr [_gRestoreRect]
         add     sp,0Ch
+; gHideDepth saturates at 0FFFFh: on the wrap to zero the increment is undone, because a zero depth
+; would make a hidden pointer look shown.
 L00E0:  inc     word ptr [_gHideDepth]
         jne     HideDone
         dec     word ptr [_gHideDepth]
@@ -181,7 +189,8 @@ _HidePointer ENDP
 ; 1BBE:00ED ShowPointer: show the pointer. Does nothing when it is disabled (gMouseDisabled) or when it
 ; is not hidden (gHideDepth zero, 1BBE:00FD). Otherwise gHideDepth is decremented first (1BBE:00FF), so
 ; the count still changes even when no save-under buffer exists (_gPointerBackSeg, 1BBE:010F) or the
-; rectangle is off screen (1BBE:0154, 0159, 018B and 0190 jump to ShowDone after the decrement); only
+; rectangle is off screen (1BBE:0154, 018B and 0190 reach ShowDone after the decrement, and the
+; off-screen fall-through at 1BBE:0159 reaches the jmp ShowDone at 1BBE:015B); only
 ; at zero, with a buffer and an on-screen rectangle, the current mouse position (gCursorX/gCursorY) is
 ; copied to the position being drawn at (gDrawnX/gDrawnY), the rectangle is recomputed and clipped as in
 ; 1BBE:0002, the screen under it is saved through [ds:80AE] (x, y, w, h, _gPointerBackOff/_gPointerBackSeg) and the
