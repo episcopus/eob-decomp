@@ -3,7 +3,7 @@
    the object records at ds:8A82 and the 9-byte tile records at ds:B894, clipped through the
    drawing wrappers in src/E082C.C. The unit is still being lifted. */
 
-/*@flags -ml -O -Z */
+/*@flags -ml -O -Z -B */
 
 extern signed char gHead199D[]; /*@ ds:199D */  /* rows of 18 signed heading offsets */
 extern unsigned char gB894[]; /*@ ds:B894 */    /* 9-byte tile records (src/E08E6.C) */
@@ -15,23 +15,21 @@ extern int gAngleA9C8[]; /*@ ds:A9C8 */         /* 18 heading words, the masked 
 extern int gViewSlots[]; /*@ ds:DCB2 */         /* 18 {left,right} view-slot pairs (this unit) */
 
 /* ovl4:0000: for each of the 18 view slots, compute a heading word from `base` plus the slot's
-   signed offset in the 18-byte row `row` of ds:199D, masked to 10 bits, store it in the heading
-   table at ds:A9C8, point the slot's ds:EF6A entry at the 9-byte tile record for that heading in
-   ds:B894, and reset the slot to -1 in both halves of the view-slot array at ds:DCB2. Called by
-   Ovl4_044B at ovl4:04D3. Purpose unknown: the meaning of `row` and of the 18 slots. DRAFT: the
-   shape matches but the register allocator puts `off` in DI where the original uses CX (tried
-   `off = row * 18` inline, `off = row; off *= 18`, `register`, and declaration orders). */
-/*@ ovl4:0000 draft */ void InitViewSlots(int base, int row)
+   signed offset in the 18-byte row `row` of ds:199D (row is scaled by 18 first), masked to 10 bits,
+   store it in the heading table at ds:A9C8, point the slot's ds:EF6A entry at the 9-byte tile
+   record for that heading in ds:B894, and reset the slot to -1 in both halves of the view-slot
+   array at ds:DCB2. Called by Ovl4_044B at ovl4:04D3. Purpose unknown: the meaning of `row` and of
+   the 18 slots. */
+/*@ ovl4:0000 */ void InitViewSlots(int base, int row)
 {
     int heading;
-    int si;
-    int off = row * 18;
+    int i;
 
-    for (si = 0; si < 18; si++) {
-        gAngleA9C8[si] = heading = (base + gHead199D[si + off]) & 0x3FF;
-        gEF6A[si] = (signed char far *)&gB894[heading * 9];
-        gViewSlots[si + 18] = -1;
-        gViewSlots[si] = -1;
+    row *= 18;
+    for (i = 0; i < 18; i++) {
+        heading = gAngleA9C8[i] = (base + gHead199D[row + i]) & 0x3FF;
+        gEF6A[i] = (signed char far *)&gB894[heading * 9];
+        gViewSlots[i] = gViewSlots[i + 18] = -1;
     }
 }
 
@@ -57,9 +55,16 @@ extern signed char g6CC6[]; /*@ ds:6CC6 */   /* per slot,i signed {left,right} b
    set contributes its ds:6CC6 {left,right} bounds; the walk stops when *right falls below *left.
    The pair is cached back into gViewSlots and SetRegionRect fits region `region` to the span.
    Called by Ovl4_1E18 at ovl4:1E23. Purpose unknown: what the records and adjustments mean.
-   DRAFT: the body matches but the original keeps `2 * slot` in SI for the first test and spills a
-   copy to a third local, where our build keeps the loop counter in SI; tried `register` and
-   declaration orders. */
+   DRAFT: the register allocation differs. The original has sub sp,6 (bp-2 i, bp-4 pair, bp-6
+   heading), keeps 2*slot in SI across the `if` (the shared index of the condition, the two loads
+   and the final stores) and adjust in DI; ours promotes `slot` to DI (the index recomputed per use)
+   or the loop counter to SI, giving sub sp,4. A local `j = (slot + i) * 2` is needed so the else's
+   index takes SI; with it every local but `adjust` is in memory. `register int pair` then reproduces
+   the whole if/then and the entry (sub sp,6, pair in SI), but the compiler drops the else's
+   redundant `pair = 2 * slot`, so the end label (and the then tail `jmp`) lands one byte early
+   (+0037); recomputing pair in the else adds 7 bytes instead. Tried all declaration orders of
+   {i,pair,heading,adjust,j} with every `register` subset, `pair` vs inline `2 * slot` in the
+   condition, `slot *= 18` vs `slot = slot * 18`, a `while` loop, -B, -G and -r-; none changes it. */
 /*@ ovl4:0097 draft */ void ComputeViewSpan(int slot, int far *left, int far *right, int region)
 {
     int pair;
@@ -152,9 +157,9 @@ extern unsigned char gViewBufADB0[]; /*@ ds:ADB0 */  /* the view pixel buffer (t
    ds:F43E; each row walks `width` words and each of the `height` rows advances the destination by
    a 0x16-word row. Words outside columns 0..0x15 are skipped, and only nonzero source words are
    stored. Called by Ovl4_044B at ovl4:04B4 and ovl4:04CD. Purpose unknown: what the buffers hold.
-   DRAFT: the body matches but our build merges the two `continue` increment blocks into one where
-   the original keeps three duplicated tails; tried `if/else`, `continue` order and pointer order. */
-/*@ ovl4:02A5 draft */ void CopyViewColumn(char x, char y, char page, int x2, char width, char height)
+   The three duplicated increment tails are kept apart only through the assembler (-B), as the
+   original shows (TCC -S then TASM; without it our build merges the continue tails). */
+/*@ ovl4:02A5 */ void CopyViewColumn(char x, char y, char page, int x2, char width, char height)
 {
     unsigned int far *dst;
     unsigned int far *src;
@@ -168,19 +173,19 @@ extern unsigned char gViewBufADB0[]; /*@ ds:ADB0 */  /* the view pixel buffer (t
     for (row = 0; row < height; row++) {
         dst = (unsigned int far *)(gViewBufADB0 + ((y + row) * 0x16 + x) * 2);
         for (col = 0; col < width; col++) {
-            if (x + col < 0 || x + col >= 0x16) {
+            if (x + col >= 0 && x + col < 0x16) {
+                if (*src != 0) {
+                    *dst = *src;
+                    src++;
+                    dst++;
+                } else {
+                    dst++;
+                    src++;
+                }
+            } else {
                 dst++;
                 src++;
-                continue;
             }
-            if (*src == 0) {
-                src++;
-                dst++;
-                continue;
-            }
-            *dst = *src;
-            src++;
-            dst++;
         }
     }
 }
@@ -191,8 +196,12 @@ extern unsigned char gViewBufADB0[]; /*@ ds:ADB0 */  /* the view pixel buffer (t
    src[width * row + (width - 1 - col)], skips it when zero and stores it to
    ds:ADB0[(y + row) * 0x16 + x + col] with bit 0x4000 toggled, skipping columns outside 0..0x15.
    Called by Ovl4_044B at ovl4:04B4 and ovl4:04CD. Purpose unknown: what the bit marks.
-   DRAFT: the body matches except the outer loop counter: the original holds it in CX, ours in DI/SI
-   (tried declaration orders and `register`). */
+   DRAFT: the body and the pre-loop setup match; only the loop registers differ. The original keeps
+   the outer counter (row) in CX, the inner (col) in DI and the pixel in SI; ours puts row in DI, col
+   in SI and the pixel in AX (so it pushes width*row instead of using CX). Tried all 6 declaration
+   orders of {row,col,pixel} with every `register` subset, int and unsigned types, while/do-while
+   loops, -B, -G and -r-; the allocation does not move. The difference is TCC's choice of which of
+   the three live values takes SI/DI, not a source form found yet. */
 /*@ ovl4:036A draft */ void ToggleViewColumn(char x, char y, char page, int x2, char width, char height)
 {
     unsigned int far *src;
@@ -235,7 +244,59 @@ extern signed char g194B[]; /*@ ds:194B */  /* per-slot byte flags (src/E08E6.C)
 /*@ ovl4:1091 stub */ void Ovl4_1091(int slot) {}
 /*@ ovl4:1411 stub */ void Ovl4_1411(int slot) {}
 /*@ ovl4:19C4 stub */ void Ovl4_19C4(int slot) {}
-/*@ ovl4:1D20 stub */ void Ovl4_1D20(int slot) {}
+
+extern signed char g7272[]; /*@ ds:7272 */   /* per-column x base correction (this unit) */
+extern signed char g7275[]; /*@ ds:7275 */   /* per-column y base (this unit) */
+extern int g19E5[]; /*@ ds:19E5 */          /* per-slot x base (this unit) */
+extern void far *gIntroCells[]; /*@ ds:F4BE */  /* sprite cell table (src/EOV2.C) */
+extern int gFB78; /*@ ds:FB78 */            /* toggled by 1414:04B0 (src/E1414.C) */
+extern void DrawRegion000F(int mode, void far *src, int x, int y, int region); /*@ 082C:063B */
+extern signed char far gCellBytes[]; /*@ 20AB:0000 */  /* the cell bytes drawn here */
+
+#define CELL_ROW_BYTES 0x1a   /* one sprite row: CELL_COLS cells of two bytes (x then y) */
+#define CELL_COLS 13
+
+/* ovl4:1D20: draws the "0x34" object the view shows for one view slot: two columns of 13 sprite
+   cells through DrawRegion000F(mode 2, cell, x, y, region 5). The column pair is ds:1A09[slot]
+   counted back from 2 (a slot with a larger ds:1A09 draws fewer). Each column i uses the far
+   sprite cell ds:F4BE[(col * 2 + i) ^ ds:FB78] and reads its cells from the far bytes at
+   20AB:0000, row (col*2+i) * CELL_ROW_BYTES, two bytes a cell: byte 0 shifts x and byte 1 shifts y,
+   on top of the per-column base ds:19E5[slot] - ds:7272[col] (x) and ds:7275[col] (y). Column 0 is
+   nudged by -4 on both axes. Called by Ovl4_1E18 at ovl4:1E2A when the slot's heading is 0x34.
+   Purpose unknown: what the object is and what the 20AB:0000 bytes mean. */
+/*@ ovl4:1D20 */ void Ovl4_1D20(int slot)
+{
+    int col;
+    int j;
+    int xbase;
+    int ybase;
+    int xoff;
+    int yoff;
+    int i;
+    int idx;
+    void far *cells;
+
+    col = 2 - g1A09[slot];
+    if (col < 0)
+        return;
+    xbase = g19E5[slot] - g7272[col];
+    ybase = g7275[col];
+    for (i = 0; i < 2; i++) {
+        idx = col * 2 + i;
+        xoff = yoff = 0;
+        if (idx == 0) {
+            xoff = -4;
+            yoff = -4;
+        }
+        cells = gIntroCells[idx ^ gFB78];
+        for (j = 0; j < CELL_COLS; j++) {
+            DrawRegion000F(2, cells,
+                           xoff + xbase + gCellBytes[idx * CELL_ROW_BYTES + j * 2],
+                           yoff + ybase + gCellBytes[idx * CELL_ROW_BYTES + j * 2 + 1],
+                           5);
+        }
+    }
+}
 
 extern signed char g7278[]; /*@ ds:7278 */     /* per-view-slot byte (this unit) */
 extern signed char gA9C6; /*@ ds:A9C6 */       /* offset into the gEF6A target (src/E0ACD.C) */

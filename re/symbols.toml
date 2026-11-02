@@ -7398,6 +7398,9 @@ unit = "eov4"
 addr = "ovl4:0000"
 size = 102
 evidence = ["ovl", "near", "segment"]
+name = "InitViewSlots"
+level = "L2"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "eov4_0066"
@@ -7407,7 +7410,7 @@ size = 49
 evidence = ["ovl", "near", "frame"]
 name = "SetRegionRect"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "eov4_0097"
@@ -7424,7 +7427,7 @@ size = 135
 evidence = ["ovl", "near", "frame"]
 name = "SetRegionColumnExtent"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "eov4_02a5"
@@ -7432,6 +7435,9 @@ unit = "eov4"
 addr = "ovl4:02A5"
 size = 197
 evidence = ["ovl", "near", "frame"]
+name = "CopyViewColumn"
+level = "L2"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "eov4_036a"
@@ -7448,7 +7454,7 @@ size = 31
 evidence = ["ovl", "near", "frame"]
 name = "IsSlotLive"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "eov4_044b"
@@ -7498,6 +7504,9 @@ unit = "eov4"
 addr = "ovl4:1D20"
 size = 248
 evidence = ["ovl", "near", "frame"]
+name = "Ovl4_1D20"
+level = "L2"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "eov4_1e18"
@@ -7507,7 +7516,7 @@ size = 198
 evidence = ["ovl", "near", "frame"]
 name = "DrawViewSlots"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "eov4_1ede"
@@ -7517,7 +7526,7 @@ size = 115
 evidence = ["ovl", "near", "frame"]
 name = "DrawViewRows"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "eov4_1f51"
@@ -7527,7 +7536,7 @@ size = 232
 evidence = ["ovl", "frame"]
 name = "DrawViewFrame"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "eov4_2039"
@@ -7537,7 +7546,7 @@ size = 10
 evidence = ["ovl", "frame"]
 name = "NoOp2039"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "eov5_0000"
