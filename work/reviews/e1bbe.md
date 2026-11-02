@@ -21,35 +21,47 @@ HidePointer, ShowPointer, HidePointerZone, ShowPointerZone and the two Lock wrap
 :193-200), E1BF3.ASM:35, E14EF.C:44-45, E16A5.C:91-92, E1A29.C:57, E1C0E.C:49-50 and E0BD2.C:112 hold. The
 citations to E1A72.ASM at :353 and :368 hold; those at :355-356 and :233-234 do not (see the first must-fix).
 
-- [ ] must-fix src/E1BBE.ASM:36-38 (_gCursorX): the citations are stale. E1A72.ASM has moved since round 3: the
+- [x] must-fix src/E1BBE.ASM:36-38 (_gCursorX): the citations are stale. E1A72.ASM has moved since round 3: the
   handler's writes are at :358-359 (`mov [_gCursorX],cx`, `mov [_gCursorY],dx`), the g80EC test is at :356-357
   (`cmp byte ptr [g80EC],2`, `je`), and :355-356 is now `mov [_gPointerBusy],1` and that compare. InitMouse's
   `mov [_gCursorX],0A0h` is at :236-237, not :233-234. (Evidence: grep `_gCursorX` in src/E1A72.ASM gives :49, :236,
   :358 and :360. src/E1BF3.ASM:35 is still right.) Cite :358-359, :356-357 and :236-237. The e1a72 review routed the
   same stale citations to this unit (work/reviews/e1a72.md, the note on src/E1BBE.ASM:36-37), and this is the
   third round the cites have drifted; re-grep each E1A72 line before citing it.
-- [ ] must-fix src/E1BBE.ASM:16, :17, :32, :301, :313, :395 and :426 (the word "semaphore" for _gPointerBusy): a
+  Fixed (887afda): the _gCursorX comment now cites src/E1A72.ASM:358-359 (handler writes), :356-357 (g80EC test)
+  and src/E1A72.ASM:236-237 (InitMouse); src/E1BF3.ASM:35 is unchanged. Re-grepped at fix time.
+- [x] must-fix src/E1BBE.ASM:16, :17, :32, :301, :313, :395 and :426 (the word "semaphore" for _gPointerBusy): a
   semaphore promises mutual exclusion, and this unit says it does not (:427-429: "not mutual exclusion", "not
   atomic"). The e1a72 review already ruled the same word wrong for this flag (work/reviews/e1a72.md, must-fix at
   :19, and the note at :141: "The E1BBE owner should use the same term"). re/globals.toml:297 and src/E1BB1.ASM:53
   and :73 say "busy flag". Use "busy flag" in all seven places ("takes the busy flag", "releases the busy flag");
   keep the name `_gPointerBusy`.
-- [ ] must-fix src/E1BBE.ASM:32-35 (_gPointerBusy): "each taker tests then increments" is false for the mouse
+  Fixed (887afda): "semaphore" is now "busy flag" in all seven places (and in the two additional places at :391
+  and :453); the name `_gPointerBusy` is kept.
+- [x] must-fix src/E1BBE.ASM:32-35 (_gPointerBusy): "each taker tests then increments" is false for the mouse
   handler, which is also a taker of this flag. The handler tests it and drops its event when it is set (src/E1A72.ASM
   :344-346, `jmp L027F` at :346 with no position update), sets it to 1 when free (:355) and clears it to 0 at :386.
   It does not increment and it does not wait. A porter needs both behaviours: the wrappers in this unit wait while
   the flag is set (1BBE:0213, 02C6, 030A, 0335) and then increment it, and the handler drops its event. Say so, with
   the citations to :344-346, :355 and :386.
-- [ ] should src/E1BBE.ASM:42 and :89 (gMouseDisabled, gDraw80C2): the bare spellings are still open (rounds 1 to 4).
+  Fixed (887afda): the _gPointerBusy comment now says the wrappers wait while it is set and then increment it
+  (1BBE:0213, 02C6, 030A, 0335), while the mouse handler tests it and drops its event when set
+  (src/E1A72.ASM:344-346), sets it to 1 when free (:355) and clears it to 0 (:386); it does not increment and does
+  not wait.
+- [x] should src/E1BBE.ASM:42 and :89 (gMouseDisabled, gDraw80C2): the bare spellings are still open (rounds 1 to 4).
   The playbook gives the form for a C-declared object: docs/process/playbooks/30-lift-module.md:27, `EXTRN _gDrvReg:BYTE
   ; @ 0000:3B36`. Both names are C declarations (src/E07A9.C:203 `extern int gMouseDisabled`, src/E1A29.C:57
   `extern void (far *gDraw80C2)`), and this unit already uses the underscored form for every other C-declared name.
   Applying the playbook gives `_gMouseDisabled` and `_gDraw80C2`. The same bare form is in E1A72.ASM:67, E1C00.ASM:40
   and EOV1.ASM:84, so the fix crosses units. Not escalated: it is a naming convention, and the matcher does not see
   the spelling. The human should confirm the rule once, then the units follow it.
-- [ ] should src/E1BBE.ASM:112-113 and :206-207 (HidePointer and ShowPointer headers, "Called by 1BB1:0002, 1BF3:000E and
+  Fixed (887afda): this unit now uses _gMouseDisabled and _gDraw80C2 in the EXTRNs and everywhere they are
+  referenced; the cross-unit spelling is left for the human's rule.
+- [x] should src/E1BBE.ASM:112-113 and :206-207 (HidePointer and ShowPointer headers, "Called by 1BB1:0002, 1BF3:000E and
   1A72"): "1A72" names no function. The packet lists the callers: InitMouse (1A72:00DA) and the mouse handler's two
   calls (src/E1A72.ASM:351 and :383). Name them, so the list can be checked against the packet.
+  Fixed (887afda): both headers now name InitMouse (1A72:00DA) and the mouse handler's two calls
+  (src/E1A72.ASM:351 and :383).
 - [ ] note names checked and supported this round: the far pointers g8172 and g8174 and the far functions g80AA and
   g80A2 are declared in src/E1BB1.ASM:88-95 with the same meanings, and their pushes and calls (src/E1BB1.ASM:193-200,
   src/E1A72.ASM:347-352 and :379-381) match this unit's; gSaveRect and gRestoreRect (src/E1C0E.C:49-50,
