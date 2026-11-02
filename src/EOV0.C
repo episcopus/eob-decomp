@@ -96,7 +96,7 @@ struct ItemSlot {               /* 4-byte records at ds:60D5 (ovl0:26C6) */
 };
 extern struct ItemSlot g60D5[]; /*@ ds:60D5 */ /* the per-class item/slot table ovl0:26C6 walks (Purpose unknown) */
 extern char g6101[]; /*@ ds:6101 */ /* the per-class four-entry item table ovl0:26C6 walks (Purpose unknown) */
-extern int GetClassWord(char m15); /*@ 0A72:019D */
+extern int GetArmourClassBase(char m15); /*@ 0A72:019D */
 extern int RollDamage(char who, char level, char countA, char countB, char countC); /*@ 0A72:01AE */
 extern int MaxDamage(char who, char level, char countA, char countB, char countC); /*@ 0A72:02B3 */
 extern int MinDamage(char who, char level, char countA, char countB, char countC); /*@ 0A72:03A4 */
@@ -863,7 +863,7 @@ int PickAlignment(int classIndex); /* ovl0:2238, defined below */
    blink icon 0xa and raise it, 0x60/0x62 step the returned field index (mod 7), and 0x61/0x6e/0x800a
    confirm (icon 9). A changed value is clamped (index 0 to gOutDC98[0] & 0xff and its percentile
    reset, later indexes to gOutDD04/gOutDC98), stored, and index 4/3/6 refresh the derived hit
-   points (m1B/m1C from gDCA4/gDD10) or m1D (GetClassWord + 10). A key that changed nothing but set
+   points (m1B/m1C from gDCA4/gDD10) or m1D (GetArmourClassBase + 10). A key that changed nothing but set
    the done flag redraws the value and ends. Returns the field index to move to (-2 for the confirm
    key). Called by ovl0:1ADD. Purpose unknown: the per-index special cases and formats. */
 /*@ ovl0:135D */ int EditStatField(register int index, char far *value, char far *percent)
@@ -999,7 +999,7 @@ int PickAlignment(int classIndex); /* ovl0:2238, defined below */
             }
             if (index == 3) {
                 old = gChars[gDCB0].m1D;
-                gChars[gDCB0].m1D = GetClassWord(amount) + 0xa;
+                gChars[gDCB0].m1D = GetArmourClassBase(amount) + 0xa;
                 if (gChars[gDCB0].m1D != old) {
                     sprintf(gFileNameBuf, gStr6236, gChars[gDCB0].m1D);
                     ClipRect(0xf, 0x40, 0x21, 0x80, 5, 8, 2, 0);
@@ -1075,7 +1075,7 @@ int PickAlignment(int classIndex); /* ovl0:2238, defined below */
    rolls the six abilities: each is RollAbilityScore plus the per-race-pair bonus gTable5EB1, clamped
    up to gOutDD04 and down to gOutDC98, and when the strength roll is exactly 18 the low byte gets a
    percentile roll (1d100) in its high half. The six values are stored into the record's stat pairs
-   (m0D/m0E, m0F/m10 and m11/m12..m19/m1A), m1D becomes GetClassWord(m15) + 10, and the hit points
+   (m0D/m0E, m0F/m10 and m11/m12..m19/m1A), m1D becomes GetArmourClassBase(m15) + 10, and the hit points
    m1B/m1C become RollDamage(class, m17, the three m24 slots). Called by ovl0:0DDC and ovl0:23EC. */
 /*@ ovl0:1BF2 */ void RollCharacterStats(int who)
 {
@@ -1103,7 +1103,7 @@ int PickAlignment(int classIndex); /* ovl0:2238, defined below */
     gChars[who].m15 = gChars[who].m16 = scores[3];
     gChars[who].m17 = gChars[who].m18 = scores[4];
     gChars[who].m19 = gChars[who].m1A = scores[5];
-    gChars[who].m1D = GetClassWord(scores[3]) + 0xa;
+    gChars[who].m1D = GetArmourClassBase(scores[3]) + 0xa;
     gChars[who].m1B = gChars[who].m1C = RollDamage(gChars[who].m20, gChars[who].m17,
         gChars[who].m24[0], gChars[who].m24[1], gChars[who].m24[2]);
 }

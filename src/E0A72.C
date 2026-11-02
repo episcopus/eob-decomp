@@ -3,7 +3,8 @@
    (struct CharRec below; the callers compute `index * 0xF3 + 0xF580`, 0D1C:059B); this unit reads
    its fields and derives stats through the far-pointer and byte tables at ds:3406, ds:341E,
    ds:3424, ds:342A, ds:3430, ds:3435, ds:3439, ds:3453, ds:3458, ds:345C, ds:3474, ds:349E,
-   ds:35BC, ds:35D4, ds:3610, ds:3614, ds:3618 and ds:116E. Called from the party, combat,
+   ds:35BC, ds:35D4, ds:3610, ds:3614, ds:3618, ds:116E and the per-class damage tables ds:174B,
+   ds:175A, ds:1769 and the per-level multiplier ds:1778. Called from the party, combat,
    inventory and character-screen modules (0DE8, 0D1C, 0EF3, 08E6, 1547) and from overlays 0, 1
    and 6. The meaning of each field and table is not established, so most function names say what a
    function computes rather than what the game calls it. */
@@ -13,7 +14,7 @@
 struct CharRec {
     char pad00[0x0D];
     signed char m0D;      /* +0D: the strength score, the base g3439/m0D and g345C/m0D of 0A72:00CF
-                             and 0A72:0128; E122E.C:363 indexes gForceDoorRoll by it and
+                             and 0A72:0128; E122E.C:364 indexes gForceDoorRoll by it and
                              E0BD2.C:0D2D sets it to 0x16 for a strength item */
     char pad0E;
     signed char m0F;      /* +0F: the exceptional strength percentile: 0A72:00CF and 0A72:0128
@@ -50,9 +51,9 @@ extern signed char g3610[]; /*@ ds:3610 */     /* per-class multiplier, read by 
 extern signed char g3614[]; /*@ ds:3614 */     /* per-class divisor, read by 0A72:0522 */
 extern signed char g3618[]; /*@ ds:3618 */     /* a 2D byte table, ten 0x0E-byte rows (0A72:0597) */
 extern signed char g116E[]; /*@ ds:116E */     /* per-class byte, read by 0A72:0522 */
-extern signed char g174B[]; /*@ ds:174B */     /* per-character value A, damage dice sides (0A72:01AE) */
-extern signed char g175A[]; /*@ ds:175A */     /* per-character value B, damage dice sides (0A72:01AE) */
-extern signed char g1769[]; /*@ ds:1769 */     /* per-character value C, damage dice sides (0A72:01AE) */
+extern signed char g174B[]; /*@ ds:174B */     /* damage dice sides for group A, per class index (0A72:01AE) */
+extern signed char g175A[]; /*@ ds:175A */     /* damage dice sides for group B, per class index (0A72:01AE) */
+extern signed char g1769[]; /*@ ds:1769 */     /* damage dice sides for group C, per class index (0A72:01AE) */
 extern signed char g1778[]; /*@ ds:1778 */     /* per-level multiplier, indexed by level - 1 (0A72:01AE) */
 extern char gTextBuf[]; /*@ ds:FC4E */         /* static buffer the formatting helpers write into */
 
@@ -90,13 +91,13 @@ char GetClassSlotByte(char row, char slot); /*@ 0A72:0509 */
     return -1;
 }
 
-/* 0A72:00CF: a derived per-character value. It starts from the base g3439[strength] (+0D is the
-   strength score) and, only when the +0F percentile is nonzero, replaces it with g3435[i] for
-   every i with +0F >= g3430[i] (so the last threshold that matches wins, and nothing is added or
-   raised); when +0F is 0 the base is returned untouched. The evidence that +0D/+0F are strength:
-   g3430 is {1, 51, 76, 91, 100} and g3435 is {1, 2, 2, 2, 3}, the AD&D exceptional-strength
-   brackets, and g3439 is the per-strength base {3, -5, -3, ...}. Purpose unknown: called by
-   0DE8:0007 (added to a class value for an attack). */
+/* 0A72:00CF: a derived value for a character's strength. It starts from the base g3439[m0D] (+0D
+   is the strength score) and, only when the +0F percentile is nonzero, replaces it with g3435[i]
+   for every i with +0F >= g3430[i] (so the last threshold that matches wins, and nothing is added
+   or raised); when +0F is 0 the base is returned untouched. The evidence that +0D/+0F are a score
+   and its percentile: g3430 holds five bytes {1, 51, 76, 91, 100} and g3435 holds {1, 2, 2, 2, 3}
+   (ds:3430 and ds:3435), g3439 is the per-score base {3, -5, -3, ...}, and the caller 0DE8:0007
+   adds the result to the attack bonus (E0DE8.C:200-203). Purpose unknown: called by 0DE8:0007. */
 /*@ 0A72:00CF */ int GetDerivedStatA(int who)
 {
     int value;
@@ -115,7 +116,8 @@ char GetClassSlotByte(char row, char slot); /*@ 0A72:0509 */
 /* 0A72:0128: the same shape as 0A72:00CF with the second set of tables: the base
    g345C[strength +0D] is replaced by g3458[i] for every i with the +0F percentile >= g3453[i]
    (the last match wins), and only when +0F is nonzero are the thresholds read; g3453 is again
-   {1, 51, 76, 91, 100}. Called by 0DE8:011A. */
+   {1, 51, 76, 91, 100}. Called by 0DE8:011A, which uses the result as the base of the damage
+   total (E0DE8.C:228). */
 /*@ 0A72:0128 */ int GetDerivedStatB(int who)
 {
     int value;
@@ -133,92 +135,100 @@ char GetClassSlotByte(char row, char slot); /*@ 0A72:0509 */
 
 /* 0A72:0181: the word ds:3474[+15 stat byte] for character `who`. Purpose unknown: the +15 byte is
    one of the five further stat bytes (see the struct field); the only caller (0DE8:0007) adds this
-   to a class value when it builds an attack value. */
+   to the attack bonus (E0DE8.C:203). */
 /*@ 0A72:0181 */ int GetCharM15Value(int who)
 {
     return g3474[gChars[who].m15];
 }
 
 /* 0A72:019D: the word ds:349E[+15 stat byte] for the `m15` argument of a character record. It is
-   the armour-class base 0DE8:0D5E starts from (base = GetClassWord(rec->m15) + 10, E0DE8.C:682).
-   Purpose unknown: called by 0DE8:0D5E, 0EF3:0F0B and overlay 0. */
-/*@ 0A72:019D */ int GetClassWord(char m15)
+   the base 0DE8:0D5E builds the armour class m1D from: it reads `base = GetArmourClassBase(rec->m15);`
+   and then stores `rec->m1D = base + 10;` (E0DE8.C:684-685), before the item modifiers and clamps.
+   Called by 0DE8:0D5E, 0EF3:0F0B (which compares m1D with the result + 6, E0EF3.C:405) and overlay 0. */
+/*@ 0A72:019D */ int GetArmourClassBase(char m15)
 {
     return g349E[m15];
 }
 
-/* 0A72:01AE: a random damage-like total for character `who`. It rolls the three damage groups
-   (RollDice(count, sides) for sides g174B, g175A and g1769 of `who`), scales by the level
-   multiplier g1778[level - 1] (capped at 2 while g174B[who] < 10), then adds multiplier * count:
-   the first group's term is always added, while the second and third are added only when both
-   their count and their sides are nonzero. Finally it divides by 3 when g1769 is nonzero or by 2
-   when only g175A is nonzero. Purpose unknown: called by 0DE8:0C82 and overlay 0 at 1BF2. */
-/*@ 0A72:01AE */ int RollDamage(char who, char level, char countA, char countB, char countC)
+/* 0A72:01AE: a random damage-like total for class `classIndex`. It rolls the three damage groups
+   (RollDice(count, sides) for the class's dice sides g174B, g175A and g1769), scales by the level
+   multiplier g1778[level - 1] (capped at 2 while g174B[classIndex] < 10), then adds multiplier *
+   count: the first group's term is always added, while the second and third are added only when
+   both their count and their sides are nonzero. Finally it divides by 3 when g1769 is nonzero or
+   by 2 when only g175A is nonzero. `level` is decremented in place and then reused to hold the
+   multiplier (a separate local does not match: the original shows `dec byte ptr [bp + 8]` at
+   0A72:01B2). `classIndex` is a character's class index m20 (the caller 0DE8:0C82 passes
+   LevelUpSlot's `attr`, which AddExperience sets to gChars[who].m20, E0DE8.C:652 and :607, and
+   overlay 0 pushes +20 at 1BF2:1E78); `level` is the m17 byte, an index into g54F6 (E0DE8.C:652,
+   :23). Purpose unknown: called by 0DE8:0C82 and overlay 0 at 1BF2. */
+/*@ 0A72:01AE */ int RollDamage(char classIndex, char level, char countA, char countB, char countC)
 {
     int total;
 
     level--;
-    total = RollDice(countA, g174B[who], 0) + RollDice(countB, g175A[who], 0)
-          + RollDice(countC, g1769[who], 0);
+    total = RollDice(countA, g174B[classIndex], 0) + RollDice(countB, g175A[classIndex], 0)
+          + RollDice(countC, g1769[classIndex], 0);
     level = g1778[level];
-    if (level > 2 && g174B[who] < 10)
+    if (level > 2 && g174B[classIndex] < 10)
         level = 2;
     total += level * countA;
-    if (countB != 0 && g175A[who] != 0)
+    if (countB != 0 && g175A[classIndex] != 0)
         total += level * countB;
-    if (countC != 0 && g1769[who] != 0)
+    if (countC != 0 && g1769[classIndex] != 0)
         total += level * countC;
-    if (g1769[who] != 0)
+    if (g1769[classIndex] != 0)
         total /= 3;
-    else if (g175A[who] != 0)
+    else if (g175A[classIndex] != 0)
         total /= 2;
     return total;
 }
 
-/* 0A72:02B3: the maximum of the same three damage groups: countA * g174B[who] + countB * g175A[who]
-   + countC * g1769[who], plus the level multiplier term. The same divide-by-3-or-2 as 0A72:01AE.
-   Called by overlay 0 at 135D. */
-/*@ 0A72:02B3 */ int MaxDamage(char who, char level, char countA, char countB, char countC)
+/* 0A72:02B3: the maximum of the same three damage groups for class `classIndex`: countA *
+   g174B[classIndex] + countB * g175A[classIndex] + countC * g1769[classIndex], plus the level
+   multiplier term. The same divide-by-3-or-2 as 0A72:01AE. Called by overlay 0 at 135D, which
+   pushes gChars[gDCB0].m20 as `classIndex` (135D:14BE) and gChars[gDCB0].m17 as `level`. */
+/*@ 0A72:02B3 */ int MaxDamage(char classIndex, char level, char countA, char countB, char countC)
 {
     int total;
 
     level--;
-    total = countA * g174B[who] + countB * g175A[who] + countC * g1769[who];
+    total = countA * g174B[classIndex] + countB * g175A[classIndex] + countC * g1769[classIndex];
     level = g1778[level];
-    if (level > 2 && g174B[who] < 10)
+    if (level > 2 && g174B[classIndex] < 10)
         level = 2;
     total += level * countA;
-    if (countB != 0 && g175A[who] != 0)
+    if (countB != 0 && g175A[classIndex] != 0)
         total += level * countB;
-    if (countC != 0 && g1769[who] != 0)
+    if (countC != 0 && g1769[classIndex] != 0)
         total += level * countC;
-    if (g1769[who] != 0)
+    if (g1769[classIndex] != 0)
         total /= 3;
-    else if (g175A[who] != 0)
+    else if (g175A[classIndex] != 0)
         total /= 2;
     return total;
 }
 
-/* 0A72:03A4: the minimum of the same three damage groups: countA + countB + countC (one per die),
-   plus the level multiplier term, the same divide-by-3-or-2, and finally clamped to at least 1.
-   Called by overlay 0 at 135D. */
-/*@ 0A72:03A4 */ int MinDamage(char who, char level, char countA, char countB, char countC)
+/* 0A72:03A4: the minimum of the same three damage groups for class `classIndex`: countA + countB +
+   countC (one per die), plus the level multiplier term, the same divide-by-3-or-2, and finally
+   clamped to at least 1. Called by overlay 0 at 135D, which pushes gChars[gDCB0].m20 as
+   `classIndex` (135D:1514) and gChars[gDCB0].m17 as `level`. */
+/*@ 0A72:03A4 */ int MinDamage(char classIndex, char level, char countA, char countB, char countC)
 {
     int total;
 
     level--;
     total = countA + countB + countC;
     level = g1778[level];
-    if (level > 2 && g174B[who] < 10)
+    if (level > 2 && g174B[classIndex] < 10)
         level = 2;
     total += level * countA;
-    if (countB != 0 && g175A[who] != 0)
+    if (countB != 0 && g175A[classIndex] != 0)
         total += level * countB;
-    if (countC != 0 && g1769[who] != 0)
+    if (countC != 0 && g1769[classIndex] != 0)
         total += level * countC;
-    if (g1769[who] != 0)
+    if (g1769[classIndex] != 0)
         total /= 3;
-    else if (g175A[who] != 0)
+    else if (g175A[classIndex] != 0)
         total /= 2;
     if (total < 1)
         total = 1;
@@ -228,10 +238,11 @@ char GetClassSlotByte(char row, char slot); /*@ 0A72:0509 */
 /* 0A72:0468: formats a strength score and its exceptional percentile into the static buffer
    gTextBuf and returns it. When `percent` is 0 or less only the score is written, as "%d"; else
    the score and a two-digit percentile are written, as "%d/%02d", and a percentile of 100 is
-   written as 0 because the field is two digits wide (so 18/100 prints "18/00"). The "%d/%02d" and
-   "%d" formats are the literals at ds:36A4 and ds:36AC. Called by 1547:0991 (drawn on the STRENGTH
-   row of the CHARACTER INFO block, E1547.C:554), ovl0:065B and ovl0:135D (both pass CharRec m0D,
-   m0F). */
+   written as 0. The "%d/%02d" and "%d" formats are the literals at ds:36A4 and ds:36AC. Called by
+   1547:0991 (drawn on the STRENGTH row of the CHARACTER INFO block, E1547.C:554), ovl0:065B and
+   ovl0:135D (both pass CharRec m0D, m0F). Inferred (not from a source in src/): 100 prints as 0
+   because %02d would widen the field to three digits, and the screen field is two digits wide; the
+   only src/ caller (E1547.C:554) gives the x position, not the width. */
 /*@ 0A72:0468 */ char *FormatStrengthPercent(char score, char percent)
 {
     if (percent > 0) {
@@ -244,18 +255,19 @@ char GetClassSlotByte(char row, char slot); /*@ 0A72:0509 */
     return gTextBuf;
 }
 
-/* 0A72:04B7: the 32-bit value at index `level` - 1 of the table g35BC[g35D4[indexA][indexB]], or
-   -1 when that slot index (the g35D4 byte) is -1. `level` is the class-slot level whose next-level
-   threshold is wanted: the caller 0DE8:0B45 passes gChars[who].m24[i] + 1 (E0DE8.C:611), so the
-   entry for level 1 is at index 0. Purpose unknown: called by 0DE8:0B45 while it accumulates
-   character values. */
-/*@ 0A72:04B7 */ long GetClassSlotLong(char indexA, char indexB, char level)
+/* 0A72:04B7: the 32-bit value at index `level` - 1 of the table g35BC[index], where index is the
+   g35D4 byte at row `row`, slot `slot` (the class's slot index), or -1 when that byte is -1 (the
+   class has no such slot); the byte replaces `row` in place, the original uses one local for both.
+   `level` is the class-slot level whose next-level threshold is wanted: the caller 0DE8:0B45 passes
+   gChars[who].m24[i] + 1 (E0DE8.C:613), so the entry for level 1 is at index 0. Purpose unknown:
+   called by 0DE8:0B45 while it accumulates character values. */
+/*@ 0A72:04B7 */ long GetClassSlotLong(char row, char slot, char level)
 {
     long far *table;
 
-    indexA = GetClassSlotByte(indexA, indexB);
-    if (indexA != -1) {
-        table = g35BC[indexA];
+    row = GetClassSlotByte(row, slot);
+    if (row != -1) {
+        table = g35BC[row];
         return *(table + level - 1);
     }
     return -1;
@@ -263,7 +275,7 @@ char GetClassSlotByte(char row, char slot); /*@ 0A72:0509 */
 
 /* 0A72:0509: the byte ds:35D4[row * 4 + slot] for a 4-wide table. A slot's byte is -1 (0xFF) when
    the class has no such slot: 0A72:007B scans slots 0, 1 and 2 for a match, 0A72:04B7 uses the
-   byte as an index into g35BC, and callers E1547.C:564, E0DE8.C:608 and E0DE8.C:612 treat -1 as
+   byte as an index into g35BC, and callers E1547.C:564, E0DE8.C:610 and E0DE8.C:614 treat -1 as
    "no such slot" (0D1C:059B compares the result with 4 and 5). Purpose unknown. */
 /*@ 0A72:0509 */ char GetClassSlotByte(char row, char slot)
 {
@@ -273,7 +285,7 @@ char GetClassSlotByte(char row, char slot); /*@ 0A72:0509 */
 /* 0A72:0522: 20 - (m24[0] - 1) / g3614[g116E[m20]] * g3610[g116E[m20]] - classByte, computed in
    bytes. It is the d20 number a to-hit roll must reach before the attacker bonus: its only caller
    0DE8:0007 computes `ac = GetHitTarget(who, gTable1A3B[b0].m00) - bonus` and compares a d20 roll
-   against it (E0DE8.C:204). `classByte` is the +0 field of the target's ds:1A3B entry (E0DE8.C:55),
+   against it (E0DE8.C:206). `classByte` is the +0 field of the target's ds:1A3B entry (E0DE8.C:57),
    m20 is the character's class index into ds:116E, and m24[0] is the character's first
    per-class-slot counter at +24. Build note: `result` is what keeps the two lookups in memory;
    without it -O promotes `cls` (or `num`) to CL and the spills differ from the original. */
@@ -290,8 +302,9 @@ char GetClassSlotByte(char row, char slot); /*@ 0A72:0509 */
     return result;
 }
 
-/* 0A72:058C: the difference of two ints. Purpose unknown: its only caller 08E6:106B uses it as a
-   comparison helper. */
+/* 0A72:058C: the difference of two ints. Purpose unknown: its only caller 08E6:106B takes
+   `need = SubtractInts(gTable1A3B[index].m01, gChars[who].m1D)` and hits when a d20 roll reaches
+   `need` (E08E6.C:861-862). */
 /*@ 0A72:058C */ int SubtractInts(int minuend, int subtrahend)
 {
     return minuend - subtrahend;

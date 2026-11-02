@@ -207,7 +207,7 @@ extern void DamageCharacter(int who, int amount); /*@ 0DE8:09B9 */
 extern int HalveSaveDamageA(int who, int value); /*@ 0DE8:0F98 */
 extern int FindClassSlot(int value, int classIndex); /*@ 0A72:007B */
 extern int GetIndexedByte(char index, char limit, char offset); /*@ 0A72:0006 */
-extern int GetClassWord(char classIndex); /*@ 0A72:019D */
+extern int GetArmourClassBase(char classIndex); /*@ 0A72:019D */
 extern void SayAndBeep(char far *text); /*@ 082C:0B8F */
 extern void DrawText(char far *text); /*@ 1DE7:060A */
 extern void PlaySound(int sound); /*@ 177D:0070 */
@@ -644,7 +644,7 @@ extern void f0EF3_2A53(int a, int b, int c, int d, int e, void far *p); /*@ 0EF3
     char penalty;
     register int base;
 
-    base = GetClassWord(gCurRec->m15);
+    base = GetArmourClassBase(gCurRec->m15);
     if (gCurRec->m1D > base + 6) {
         penalty = GetClassSlot1Value(gPanelMember) + 8;
         gCurRec->mDF = penalty;
