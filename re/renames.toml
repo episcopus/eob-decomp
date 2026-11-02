@@ -1620,3 +1620,12 @@ new = "DrawCharPanel"
 kind = "function"
 why = "ovl0:065B draws a character's panel page (sprite, name, race, class, three stat lines and the mode's highlighted icons); called by 0A5E/0DDC/0EE5/135D/23EC"
 date = "2026-11-01"
+
+[[rename]]
+id = "ovl0:1BF2=RollCharacterStats"
+addr = "ovl0:1BF2"
+old = "Ovl0_1BF2"
+new = "RollCharacterStats"
+kind = "function"
+why = "ovl0:1BF2 rolls a fresh character's six ability scores, m24/exp per class, hit points and the class combat tables; called by 0DDC and 23EC"
+date = "2026-11-01"

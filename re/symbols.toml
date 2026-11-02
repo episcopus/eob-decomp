@@ -7310,6 +7310,9 @@ unit = "eov0"
 addr = "ovl0:1BF2"
 size = 695
 evidence = ["ovl", "near"]
+name = "RollCharacterStats"
+level = "L2"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "eov0_1ea9"

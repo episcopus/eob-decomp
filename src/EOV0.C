@@ -92,6 +92,8 @@ struct ItemSlot {               /* 4-byte records at ds:60D5 (ovl0:26C6) */
 };
 extern struct ItemSlot g60D5[]; /*@ ds:60D5 */ /* the per-class item/slot table ovl0:26C6 walks (Purpose unknown) */
 extern char g6101[]; /*@ ds:6101 */ /* the per-class four-entry item table ovl0:26C6 walks (Purpose unknown) */
+extern int GetClassWord(char m15); /*@ 0A72:019D */
+extern int RollDamage(char who, char level, char countA, char countB, char countC); /*@ 0A72:01AE */
 extern int CopyItemToFreeSlot(int n); /*@ 0BD2:089E */
 extern void ComputeArmourClass(int who); /*@ 0DE8:0D5E */
 extern signed char g1231[]; /*@ ds:1231 */ /* byte table indexed by gChars[].m20 (src/E0BD2.C) */
@@ -169,7 +171,7 @@ extern struct Panel gPanels[]; /*@ ds:017F */ /* the shared option-list panels (
 extern char far *g1240[]; /*@ ds:1240 */ /* the alignment names (src/E1547.C) */
 extern long gTable6081[]; /*@ ds:6081 */ /* the class-availability mask per race pair ovl0:207A picks */
 extern long gTable6099[]; /*@ ds:6099 */ /* the alignment-availability mask per class ovl0:2238 picks */
-extern int gTable5EB1[]; /*@ ds:5EB1 */ /* the six ability bonuses per race pair ovl0:1BF2 adds */
+extern int gTable5EB1[][6]; /*@ ds:5EB1 */ /* the six ability bonuses per race pair ovl0:1BF2 adds */
 extern unsigned char gTable5EF9[]; /*@ ds:5EF9 */ /* the four bytes per class ovl0:1BF2 copies to m24 */
 extern unsigned char gTable5EFC[]; /*@ ds:5EFC */ /* the divisor per class ovl0:1BF2 divides 5000 by */
 extern char gStr624C[]; /*@ ds:624C */ /* the caption ovl0:207A draws (Purpose unknown) */
@@ -495,7 +497,7 @@ extern void far *g5E64[0x11]; /*@ ds:5E64 */ /* the 17 sliced icon pointers this
 }
 void Ovl0_1224(void);              /* ovl0:1224, defined below */
 void Ovl0_1ADD(void);              /* ovl0:1ADD, defined below */
-void Ovl0_1BF2(int who);           /* ovl0:1BF2, defined below */
+void RollCharacterStats(int who);           /* ovl0:1BF2, defined below */
 void DrawPanelRow(int index);      /* ovl0:11BA, defined below */
 void BuildCombatTables(void);      /* ovl0:1EA9, defined below */
 int PickClass(int race);           /* ovl0:207A, defined below */
@@ -522,7 +524,7 @@ int PickAlignment(int classIndex); /* ovl0:2238, defined below */
         case 0x8001:
             FlashPanelIcon(4);
             Ovl0_1224();
-            Ovl0_1BF2(gDCB0);
+            RollCharacterStats(gDCB0);
             key = -1;
             break;
         case 0x8002:
@@ -778,7 +780,44 @@ int PickAlignment(int classIndex); /* ovl0:2238, defined below */
     }
     DrawCharPanel(gDCB0, 1);
 }
-/*@ ovl0:1BF2 stub */ void Ovl0_1BF2(int who) {}
+/* ovl0:1BF2: rolls a fresh set of stats for character `who` of the party being created. For the
+   three class slots it copies gTable5EF9[class * 4 + slot] into the record's m24 and the 32-bit
+   5000 / gTable5EFC[class * 4] into its exp; it then builds the class combat tables (ovl0:1EA9) and
+   rolls the six abilities: each is RollAbilityScore plus the per-race-pair bonus gTable5EB1, clamped
+   up to gOutDD04 and down to gOutDC98, and when the strength roll is exactly 18 the low byte gets a
+   percentile roll (1d100) in its high half. The six values are stored into the record's stat pairs
+   (m0D/m0E, m0F/m10 and m11/m12..m19/m1A), m1D becomes GetClassWord(m15) + 10, and the hit points
+   m1B/m1C become RollDamage(class, m17, the three m24 slots). Called by ovl0:0DDC and ovl0:23EC. */
+/*@ ovl0:1BF2 */ void RollCharacterStats(int who)
+{
+    int scores[6];
+    int i;
+
+    for (i = 0; i < 3; i++) {
+        gChars[who].m24[i] = gTable5EF9[gChars[who].m20 * 4 + i];
+        gChars[who].exp[i] = 0x1388 / gTable5EFC[gChars[who].m20 * 4];
+    }
+    BuildCombatTables();
+    for (i = 0; i < 6; i++) {
+        scores[i] = RollAbilityScore() + gTable5EB1[gChars[who].m1F >> 1][i];
+        if (scores[i] < gOutDD04[i])
+            scores[i] = gOutDD04[i];
+        if (i == 0 && scores[0] == 0x12)
+            scores[0] |= RollDice(1, 0x64, 0) << 8;
+        if (scores[i] > gOutDC98[i])
+            scores[i] = gOutDC98[i];
+    }
+    gChars[who].m0D = gChars[who].m0E = scores[0] & 0xff;
+    gChars[who].m0F = gChars[who].m10 = (scores[0] & 0xff00) >> 8;
+    gChars[who].m11 = gChars[who].m12 = scores[1];
+    gChars[who].m13 = gChars[who].m14 = scores[2];
+    gChars[who].m15 = gChars[who].m16 = scores[3];
+    gChars[who].m17 = gChars[who].m18 = scores[4];
+    gChars[who].m19 = gChars[who].m1A = scores[5];
+    gChars[who].m1D = GetClassWord(scores[3]) + 0xa;
+    gChars[who].m1B = gChars[who].m1C = RollDamage(gChars[who].m20, gChars[who].m17,
+        gChars[who].m24[0], gChars[who].m24[1], gChars[who].m24[2]);
+}
 /* ovl0:1EA9: builds two six-word combat tables for the current character gDCB0. For each of the
    six slots it takes the larger of gTable5FC5[m20][i] and gTable5F35[m1F>>1][i] into gOutDD04[i],
    copies gTable5F7D[m1F>>1][i] into gOutDC98[i], and when the class byte g116E[m20] is nonzero
