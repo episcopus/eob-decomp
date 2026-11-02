@@ -7128,6 +7128,9 @@ unit = "eov3"
 addr = "ovl3:09AA"
 size = 210
 evidence = ["ovl", "near", "frame"]
+name = "LoadObjects"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov3_0a7c"

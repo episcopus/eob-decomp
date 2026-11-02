@@ -14,8 +14,12 @@ extern void LoadOverlayScreen(char far *name, int a, int b); /*@ 082C:05EC */
 extern int FileOpen(char far *name, int mode); /*@ 1C0E:00DB */
 extern void FileRead(int handle, void far *buf, unsigned long len); /*@ 1C0E:0400 */
 extern void FileClose(int handle); /*@ 1C0E:03BB */
+extern void *memset(void far *s, int c, unsigned n); /*@ 0000:6384 */
 extern void far *gSegDF4E; /*@ ds:DF4E */
 extern void far *gE062; /*@ ds:E062 */
+extern char gB894[]; /*@ ds:B894 */
+extern int gFBD0; /*@ ds:FBD0 */
+extern void f1147(int action); /*@ ovl3:1147 */
 extern long gFB5E[]; /*@ ds:FB5E */
 
 struct Triple6 {            /* six bytes, the record InitGameTables clears */
@@ -59,6 +63,11 @@ struct ItemRecord {         /* the 14-byte records at ds:8DD0 (src/E0BD2.C) */
 };
 
 extern struct ItemRecord gItems[]; /*@ ds:8DD0 */
+
+struct ObjRec {             /* nine-byte object records at ds:B894 (src/E0D1C.C) */
+    void far *ptr;          /* +0: the far pointer ovl3:09AA fills */
+    char rest[5];           /* +4 */
+};
 extern unsigned char g6840[]; /*@ ds:6840 */
 extern unsigned char g68A0[]; /*@ ds:68A0 */
 extern unsigned char g6900[]; /*@ ds:6900 */
@@ -271,11 +280,38 @@ done:
             InsertListItem((void far *)(gB899 + rec->m04 * 9), rec->m04, i, rec->m03);
     }
 }
-/*@ ovl3:09AA stub */ void Ovl3_09AA(void) {}
+/* ovl3:09AA: loads an object table. It clears the 0x2400 bytes at gB894, opens `name`, reads 6
+   bytes into gB894 and 0x1000 bytes into gSegDF4E and closes it. When bit gFBC8-1 of gFBD0 is set
+   it hands gFBC8 to the sibling ovl3:1147; otherwise it copies the 0x400 far pointers of gSegDF4E
+   into the +0 field of the gB894 records. Called by ovl3:0A7C. */
+/*@ ovl3:09AA */ void LoadObjects(char far *name)
+{
+    int handle;
+    char far *src;
+    struct ObjRec far *dst;
+    int i;
+
+    memset(gB894, 0, 0x2400);
+    handle = FileOpen(name, 1);
+    FileRead(handle, (void far *)gB894, 6L);
+    FileRead(handle, gSegDF4E, 0x1000L);
+    FileClose(handle);
+    if (gFBD0 & (1 << (gFBC8 - 1))) {
+        f1147(gFBC8);
+    } else {
+        src = (char far *)gSegDF4E;
+        dst = (struct ObjRec far *)gB894;
+        for (i = 0; i < 0x400; i++) {
+            dst->ptr = *(void far * far *)src;
+            src += 4;
+            dst = (struct ObjRec far *)((unsigned long)dst + 9);
+        }
+    }
+}
 /*@ ovl3:0A7C stub */ void Ovl3_0A7C(void) {}
 /*@ ovl3:0FD1 stub */ void Ovl3_0FD1(void) {}
 /*@ ovl3:109D stub */ void Ovl3_109D(void) {}
-/*@ ovl3:1147 stub */ void Ovl3_1147(void) {}
+/*@ ovl3:1147 stub */ void f1147(int action) {}
 /*@ ovl3:11AF stub */ void Ovl3_11AF(void) {}
 /*@ ovl3:123D stub */ void Ovl3_123D(void) {}
 /*@ ovl3:12F1 stub */ void Ovl3_12F1(void) {}
