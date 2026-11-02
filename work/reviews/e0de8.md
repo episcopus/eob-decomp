@@ -16,57 +16,57 @@ headers.
 
 ## Findings
 
-- [ ] must-fix src/E0DE8.C:255-285: RunRecordAttack's header says the base is "doubled at random", but
+- [x] must-fix src/E0DE8.C:255-285: RunRecordAttack's header says the base is "doubled at random", but
   the code (line 277) is `result = roll + 2`. `roll` (265, 270-271) and `result` (266, 277-281) both
   hold a character index: `f0D1C_0670(result, 1)` and `DamageCharacter(result, damage)` (line 281;
   DamageCharacter's first parameter is `who`, line 540). Fix the header to say +2, and rename the two
   locals to what they hold (the member index read from g1A2B, and the member that is hit).
-- [ ] must-fix src/E0DE8.C:180-181 and :205 (and the struct comment at :52): RollToHit says it "marks
+- [x] must-fix src/E0DE8.C:180-181 and :205 (and the struct comment at :52): RollToHit says it "marks
   gObjs[obj].m16 bit 0 as hit". Line 205 sets the bit before the roll (line 207), whatever the outcome,
   so a miss sets it too. DamageObject (08E6:0FBE, src/E08E6.C:830) sets the same bit. Say it is set on
   every call (the object was attacked), not that it was hit.
-- [ ] must-fix src/E0DE8.C:178-183, :187, :206, :214: RollToHit's local `ac` is documented as "that
+- [x] must-fix src/E0DE8.C:178-183, :187, :206, :214: RollToHit's local `ac` is documented as "that
   armour class". GetHitTarget returns "the d20 number a to-hit roll must reach" (0A72:0522,
   src/E0A72.C:306-309), a to-hit target, not an armour class. Rename `ac` (for example `toHit`) and
   fix the last sentence of the header.
-- [ ] must-fix src/E0DE8.C:125: gPartyCell is documented as "the global sound volume (src/E177D.C)".
+- [x] must-fix src/E0DE8.C:125: gPartyCell is documented as "the global sound volume (src/E177D.C)".
   src/E177D.C:92 says it is "the party's map cell" and passes it as the sound's cell; src/EOV6.C:438
   uses Distance(gPartyCell, gObjs[i].id); src/E0D1C.C:336 indexes the nine-byte cell records at
   ds:B894 with gPartyCell * 9. Write "the party's map cell (src/E177D.C:92)". The same wrong wording is
   in other units (see Notes).
-- [ ] must-fix src/E0DE8.C:132: gDCA4 is documented as "the object acting this step, set by 0359". 0359
+- [x] must-fix src/E0DE8.C:132: gDCA4 is documented as "the object acting this step, set by 0359". 0359
   records the target (its header, :315, and `gDCA4 = target;` at :342), and UseItem damages
   `gObjs[gDCA4]` (:496). It is the target object, not the actor.
-- [ ] must-fix src/E0DE8.C:131: gDF4C is documented as "set to 1 when a hit lands". It is also set on
+- [x] must-fix src/E0DE8.C:131: gDF4C is documented as "set to 1 when a hit lands". It is also set on
   a successful UseCarriedItem (:389) and UseItemByKind (:446), and on the -1 bump in ApplyItemAttack
   (:332), where no hit lands. The owner's wording (src/E0ACD.C:53) is "set to 1 when an action took
   effect"; use that.
-- [ ] must-fix src/E0DE8.C:120: g552F is documented as "a byte table indexed by a class, used by 05BB".
+- [x] must-fix src/E0DE8.C:120: g552F is documented as "a byte table indexed by a class, used by 05BB".
   UseItemByKind indexes it by the item's m02 (`kind = g552F[m02]`, :409), and the function's own header
   says so (:394-395, "The item's m02 indexes g552F to a `kind`"). It is indexed by item type, not by class.
-- [ ] must-fix src/E0DE8.C:117: g1A3D is documented as "a class-byte table (0x1B per row) used by 0FCA".
+- [x] must-fix src/E0DE8.C:117: g1A3D is documented as "a class-byte table (0x1B per row) used by 0FCA".
   This file never reads it (the only mention is this declaration), and 0FCA (HalveSaveDamageB, :751)
   reads gTable1A3B[*type].m02. src/E08E6.C:39 gives ds:1A3D as the +2 byte of the 27-byte entries at
   ds:1A3B, that is gTable1A3B[0].m02. Remove the declaration, or keep it only as that alias.
-- [ ] must-fix src/E0DE8.C:156 and :327: f08E6_15B4 is the function src/E08E6.C:1039 defines as
+- [x] must-fix src/E0DE8.C:156 and :327: f08E6_15B4 is the function src/E08E6.C:1039 defines as
   `Obj15B4(char who, int value)`, with the same parameters, and the packet's callee list names it
   Obj15B4. Rename it with `make rename OLD=f08E6_15B4 NEW=Obj15B4 WHY="src/E08E6.C:1039"`, or the
   name that is final for 08E6:15B4 at the merge.
-- [ ] must-fix src/E0DE8.C:146: RollHitPoints's parameters are named `who` and `level`. The owner
+- [x] must-fix src/E0DE8.C:146: RollHitPoints's parameters are named `who` and `level`. The owner
   (src/E0A72.C:164-179, and the definition at :180) names them `classIndex` and `m17`, says the first is
   the class index m20, and says the evidence does not show m17 is a level. LevelUpSlot passes
   gChars[who].m17 as the second argument (:652-656). Rename them to `classIndex` and `m17`.
-- [ ] must-fix src/E0DE8.C:374: UseCarriedItem's header says it acts "against the item type `field`".
+- [x] must-fix src/E0DE8.C:374: UseCarriedItem's header says it acts "against the item type `field`".
   The code indexes gTable8DD2 with `field` (:385, `gTable8DD2[field].m02`) and passes that record's m02,
   the item type, to AddDDEffect. `field` is the 14-byte item record, not the item type.
-- [ ] must-fix src/E0DE8.C:394-396 (the tests at :413, :419, :425): UseItemByKind's header says kind 0x10
+- [x] must-fix src/E0DE8.C:394-396 (the tests at :413, :419, :425): UseItemByKind's header says kind 0x10
   takes "the first m77[0], m77[1] or the special m77[16] slot whose own m02 is 0x10". The m02 == 0x10
   test is on m77[0] and m77[1] only. The m77[16] branch (:424-425) pulls the item through RemoveListItem
   with no m02 test. Fix the sentence.
-- [ ] must-fix src/E0DE8.C:600: AddExperience's header says "Called by 082C:... and 0DE8:0C2B". The
+- [x] must-fix src/E0DE8.C:600: AddExperience's header says "Called by 082C:... and 0DE8:0C2B". The
   packet's caller list for 0DE8:0B45 has one entry, 0DE8:0C2B (AddPartyExperience). Remove "082C:..."
   (a placeholder, not a caller).
-- [ ] must-fix src/E0DE8.C:730-732, :737-738, :768: HalveSaveDamageA's header says it halves "when the
+- [x] must-fix src/E0DE8.C:730-732, :737-738, :768: HalveSaveDamageA's header says it halves "when the
   f0D1C_059B test for character who succeeds". The code does not test that result. It takes 0D1C:059B's
   return value as `chance` (:737) and halves when a fresh RollDice(1, 20, 0) is at least `chance`
   (:738). src/E0D1C.C:416-443 says 059B returns 1 when a d20 roll is at least its value, so its return
@@ -75,110 +75,110 @@ headers.
   bytes do. (ApplyStatusEffect at :768 uses 059B as a boolean, which fits E0D1C.C:416-443.) The header's
   "Called by ... 0DE8:101A" is also wrong: ApplyStatusEffect does not call HalveSaveDamageA (its only
   call to 059B is at :768), and the packet lists HalveSaveDamageA's callers as 0EF3:0A3F and 0EF3:20A8.
-- [ ] must-fix src/E0DE8.C:244-253: IsWeaponKind's name and header say that item types whose m0E kind is
+- [x] must-fix src/E0DE8.C:244-253: IsWeaponKind's name and header say that item types whose m0E kind is
   2 or 3 are weapons that attack. The dispatch in UseItem (:471-485) sends kind 1 to ApplyItemAttack,
   which its header calls an "item/effect attack" (:310), kind 2 to UseCarriedItem and kind 3 to
   UseItemByKind. Nothing in this file says kinds 2 or 3 attack. Either cite the evidence (which DD
   records or item types use 2 or 3 as attacks, from 1414:0172), or rename it to what it tests (m0E low
   seven bits equal 2 or 3) and drop "attacks" from the header.
-- [ ] must-fix src/E0DE8.C:530-531, against :537-539 and :549: DamageCharacter's header says "it derates
+- [x] must-fix src/E0DE8.C:530-531, against :537-539 and :549: DamageCharacter's header says "it derates
   mE2 (clamped at 0)", and the QUIRK on the next lines (and the test at :549) says the clamp never runs.
   The first claim is wrong as stated. Write that the derate happens and the clamp to 0 is dead
   (QUIRK 0DE8:09FD).
-- [ ] must-fix src/E0DE8.C:162: RedrawMember's parameter is named `dir`. The owner, src/E1547.C:456,
+- [x] must-fix src/E0DE8.C:162: RedrawMember's parameter is named `dir`. The owner, src/E1547.C:456,
   defines `RedrawMember(int who)`, and every call in this file passes a member index (:432, :483, :492,
   :500, :571, :593). Rename it `who`. Other files use `dir` too (see Notes).
-- [ ] must-fix src/E0DE8.C:154-155: AddDDEffect is declared twice with different parameter names. The
+- [x] must-fix src/E0DE8.C:154-155: AddDDEffect is declared twice with different parameter names. The
   second line (:155, `slot, a, b, c, d`) is stale. The first (:154) names its fourth argument
   `tableByte`, but the owner (src/E0BD2.C:506, with its comment just above) is
   `(who, item, volume, kind, page, type)` and says the fourth is a sound `kind | 4`. The calls at :384
   and :441 pass the g1A1B sound ids (src/E0D1C.C:337). Delete :155 and name the parameters as E0BD2.C:506.
-- [ ] should src/E0DE8.C:1-4: the file header lists combat, damage, experience and armour class, but not
+- [x] should src/E0DE8.C:1-4: the file header lists combat, damage, experience and armour class, but not
   item use (0359 ApplyItemAttack, 0474 MoveCarriedItem, 0537 UseCarriedItem, 05BB UseItemByKind,
   0763 UseItem), which is about half the unit.
-- [ ] should src/E0DE8.C:183: RollToHit's "Called by" lists 0DE8:02D4 and 0DE8:0359 only. The packet also
+- [x] should src/E0DE8.C:183: RollToHit's "Called by" lists 0DE8:02D4 and 0DE8:0359 only. The packet also
   lists 0EF3:0A3F DamageTargetCell and 0EF3:0E1B CastMeleeEffect as callers of 0DE8:0007.
-- [ ] should src/E0DE8.C:536: "0E08E6" is not an address; it means 08E6. The same caller list omits
+- [x] should src/E0DE8.C:536: "0E08E6" is not an address; it means 08E6. The same caller list omits
   0DE8:01FF RunRecordAttack, which is in this unit.
-- [ ] should src/E0DE8.C:180: "the derived stat A" is the old name for GetStrengthToHitBonus (0A72:00CF,
+- [x] should src/E0DE8.C:180: "the derived stat A" is the old name for GetStrengthToHitBonus (0A72:00CF,
   src/E0A72.C:100-107: the attacker's strength to-hit bonus). Say that, with the address.
-- [ ] should src/E0DE8.C:184, :222, :763-764, :766: the `flag` parameters are named for nothing they select:
+- [x] should src/E0DE8.C:184, :222, :763-764, :766: the `flag` parameters are named for nothing they select:
   RollToHit (strength bonus or m15 value, :200-203), RollAttackDamage (strength damage bonus, :227),
   ApplyStatusEffect (skip when the bit is already set, :766). Rename them for the effect, for example
   `useStrength` and `skipIfSet`.
-- [ ] should src/E0DE8.C:186, :204: the local `b0` is the Obj28 field copied out, an index into gTable1A3B.
+- [x] should src/E0DE8.C:186, :204: the local `b0` is the Obj28 field copied out, an index into gTable1A3B.
   Name it for that, for example `entry`.
-- [ ] should src/E0DE8.C:310-321: in ApplyItemAttack, `value` is the row from f0D1C_00DA, used as `value * 9`
+- [x] should src/E0DE8.C:310-321: in ApplyItemAttack, `value` is the row from f0D1C_00DA, used as `value * 9`
   into gB894 (:329-331). Name it `row`. The header (:312-313) also omits that the -1 bump sets gDF4C (:332).
-- [ ] should src/E0DE8.C:310-316, :450, :501-504: ApplyItemAttack's return codes -1, -2 and -3, UseItemByKind's
+- [x] should src/E0DE8.C:310-316, :450, :501-504: ApplyItemAttack's return codes -1, -2 and -3, UseItemByKind's
   -4 (:450), and UseItem's `result < -2` (:501) are magic numbers with meaning. Name them, or say in the
   headers what each value means. UseItem's header (:457) gives the slot choice only as "slot or slot + 2";
   say it is `slot` when result is below -2 and `slot + 2` otherwise.
-- [ ] should src/E0DE8.C:398-399: UseItemByKind's header says a found item is "dispatched through
+- [x] should src/E0DE8.C:398-399: UseItemByKind's header says a found item is "dispatched through
   AddDDEffect (sound 0x1A when m02 is 7, else 0x0B, setting gDF4C), returning 0". The sound and gDF4C
   (:441-446) happen only when AddDDEffect returns nonzero. Say so.
-- [ ] should src/E0DE8.C:373-376, :384, :459, :351, :377: `slot` means two things here: an entry of
+- [x] should src/E0DE8.C:373-376, :384, :459, :351, :377: `slot` means two things here: an entry of
   gTable8DD2 (RollToHit :178, RollAttackDamage :222, ApplyItemAttack :317, UseItemByKind :400), and a
   carried-item index m77[slot] (MoveCarriedItem :351, UseCarriedItem :377, UseItem :459, where it is also
   the m1E bit and the mE8 index). `field` (UseCarriedItem, UseItem) is the gTable8DD2 index too. Name the
   gTable8DD2 index `itemRec` (or `itemSlot`) and the carried index `carriedSlot`, or say in each header
   which one it is.
-- [ ] should src/E0DE8.C:703-704, :711: `max` and `second` are the two bonuses from m77[25] and m77[26].
+- [x] should src/E0DE8.C:703-704, :711: `max` and `second` are the two bonuses from m77[25] and m77[26].
   Name them for that (for example `bonus25` and `bonus26`). The header (:665-670) should say they count
   only items whose m0E kind is 0 (:706, :709).
-- [ ] should src/E0DE8.C:665-670, :696-697, :717-718: ComputeArmourClass's header omits three rules the code
+- [x] should src/E0DE8.C:665-670, :696-697, :717-718: ComputeArmourClass's header omits three rules the code
   applies: (a) for slots 1 and 2 only item type 0x1B counts (:696-697); (b) when m1D is not above
   base + 6 the mDF branch clears mDF (the else at :717-718), a side effect; (c) the m0E kind test on
   m77[25] and m77[26] (:706, :709).
-- [ ] should src/E0DE8.C:597: "accepts" is wrong for GetClassSlotByte: the code skips a slot whose byte is
+- [x] should src/E0DE8.C:597: "accepts" is wrong for GetClassSlotByte: the code skips a slot whose byte is
   -1 (:610-611), so write "whose byte is not -1 (the class has that slot)". The `value != -1` test on the
   threshold (:614) is undocumented: the level-up happens only when the threshold is not -1 and the total is past it.
-- [ ] should src/E0DE8.C:605: `unsigned long value` receives GetClassSlotExpThreshold's `long` result, which is
+- [x] should src/E0DE8.C:605: `unsigned long value` receives GetClassSlotExpThreshold's `long` result, which is
   -1 for "no threshold" (src/E0A72.C:282-292). Type it `long`.
-- [ ] should src/E0DE8.C:730 and :743: HalveSaveDamageA and HalveSaveDamageB differ only by an "A" or "B"
+- [x] should src/E0DE8.C:730 and :743: HalveSaveDamageA and HalveSaveDamageB differ only by an "A" or "B"
   suffix, which claims nothing. Name them for what their test uses (the first takes a character, the second
   an item record's class byte), or say in the headers why there are two.
-- [ ] should src/E0DE8.C:646, :659-660: LevelUpSlot's `attr` is the class index (src/E0A72.C:177, and
+- [x] should src/E0DE8.C:646, :659-660: LevelUpSlot's `attr` is the class index (src/E0A72.C:177, and
   AddExperience passes its `cls` at :615). Name it `cls`. The header quotes the sprintf format without its
   control bytes (\x06\x01 and \x06\x0f at :659); say what they are.
-- [ ] should src/E0DE8.C:159-160: ClearEffectFlag4 and RecomputeArmourClass take `void far *arg`, but the
+- [x] should src/E0DE8.C:159-160: ClearEffectFlag4 and RecomputeArmourClass take `void far *arg`, but the
   owners (src/E0EF3.C:1017 and :1153) take `struct CharRec far *rec`, and every call here passes
   &gChars[who]. Use that type (same bytes).
-- [ ] should src/E0DE8.C:158: DamageObject's `int n` should be `damage`, the owner's name (src/E08E6.C:816).
-- [ ] should src/E0DE8.C:143-144: GetClassSlotExpThreshold's parameters are `indexA, indexB`; the owner
+- [x] should src/E0DE8.C:158: DamageObject's `int n` should be `damage`, the owner's name (src/E08E6.C:816).
+- [x] should src/E0DE8.C:143-144: GetClassSlotExpThreshold's parameters are `indexA, indexB`; the owner
   (src/E0A72.C:282) has `row, slot, level`. GetArmourClassBase's `classIndex` should be `m15` (src/E0A72.C:159).
-- [ ] should src/E0DE8.C:26: the field at +1C is `m1C` here, but src/EOV5.C:32 calls it `maxhp` ("maximum hit
+- [x] should src/E0DE8.C:26: the field at +1C is `m1C` here, but src/EOV5.C:32 calls it `maxhp` ("maximum hit
   points") and EOV5.C:825-829 uses it that way. Rename the field in this file's struct (a field, so no
   `make rename` is needed).
-- [ ] should src/E0DE8.C:28, :32, :40, :37-42: struct comments that do not say what the code shows. m1E (:28)
+- [x] should src/E0DE8.C:28, :32, :40, :37-42: struct comments that do not say what the code shows. m1E (:28)
   "a bit set/cleared by the per-slot helper": UseItem toggles it itself (:498). m24 (:32) "three per-class-slot
   counters": they are levels (AddExperience passes m24[i] + 1 as the level reached, :613; src/E0A72.C:276-281).
   mE3 (:40) "high word folded at 09B9": 09B9 clears bit 2 only (:557). mDF, mE2, mE7, mE8 (:37-42) have no
   comment, although DamageCharacter uses mDF (:563-569) and mE7 (:553).
-- [ ] should src/E0DE8.C:69-75 and :88, :107: Entry14 flags (:69) bits 8 and 0x10 are read by UseItem (:487,
+- [x] should src/E0DE8.C:69-75 and :88, :107: Entry14 flags (:69) bits 8 and 0x10 are read by UseItem (:487,
   :494); m02 (:71) is the item type index into gItemTypes (:471, :409); m0B (:75) is the weapon or slot bonus
   used by RollToHit and RollAttackDamage (:197, :237) and ComputeArmourClass (:699). DDRec m0B (:88) is the
   attacker (TryRecordAttack :300 says so). ItemType m0E (:107) is also UseItem's dispatch kind (:471) and
   ComputeArmourClass's test (:694), not only 01D7's.
-- [ ] should src/E0DE8.C:123: gFBD2 says "bit 0 gates the icon colour row". RollToHit reads bits 4 and 5
+- [x] should src/E0DE8.C:123: gFBD2 says "bit 0 gates the icon colour row". RollToHit reads bits 4 and 5
   (:208). Add that use (the owner's comment, src/E0D1C.C:50, names bit 0 only).
-- [ ] should src/E0DE8.C:129: gFB44 is "a mode byte (src/E0D1C.C)". The owner says 0 and 1 gate 0D1C:01CA's
+- [x] should src/E0DE8.C:129: gFB44 is "a mode byte (src/E0D1C.C)". The owner says 0 and 1 gate 0D1C:01CA's
   redraws (src/E0D1C.C:108); here DamageCharacter redraws the member when it is 0 and the portrait otherwise
   (:570-573). Say so.
-- [ ] should src/E0DE8.C:130: gA9C6 is "an offset added into gEF6A's targets". In this file it is an offset within
+- [x] should src/E0DE8.C:130: gA9C6 is "an offset added into gEF6A's targets". In this file it is an offset within
   a nine-byte gB894 record (:312, :329-331), which src/E0ACD.C:56 also says.
-- [ ] should src/E0DE8.C:134: gB894's comment ("+0x19C bytes read via B894 (0359)") says nothing checkable.
+- [x] should src/E0DE8.C:134: gB894's comment ("+0x19C bytes read via B894 (0359)") says nothing checkable.
   Say what 0359 uses: the nine-byte records at ds:B894 indexed by row * 9 (:329-331). The +4 byte is read
   elsewhere (src/E0D1C.C:36).
-- [ ] should src/E0DE8.C:119, :121: g1231 is "a byte table used by 0D5E", but it is indexed by the class m20
+- [x] should src/E0DE8.C:119, :121: g1231 is "a byte table used by 0D5E", but it is indexed by the class m20
   (:693; src/E0BD2.C:102 says so). g553E is "a byte table used by 0D5E", but it holds the four m77 slot
   indexes that ComputeArmourClass walks (:687). Say what each indexes.
-- [ ] should src/E0DE8.C:122: g54F6 is declared but not used in this file (grep). Its use is in
+- [x] should src/E0DE8.C:122: g54F6 is declared but not used in this file (grep). Its use is in
   src/E0D1C.C:437 and :441. Remove the declaration or keep it with that note.
-- [ ] should src/E0DE8.C:506-528: CheckPartyWiped's header omits the LockShowPointer and DelaySecondsThenKey(1)
+- [x] should src/E0DE8.C:506-528: CheckPartyWiped's header omits the LockShowPointer and DelaySecondsThenKey(1)
   calls (:525-526). "creatures with hit points" is f0D1C_0670(n, 5), which src/E0D1C.C:445-448 defines as
   m01 bit 0 and m1B > 0. Say that.
-- [ ] should src/E0DE8.C:153: RemoveListItem's third parameter is `item`; the owner (src/E0BD2.C:282) has
+- [x] should src/E0DE8.C:153: RemoveListItem's third parameter is `item`; the owner (src/E0BD2.C:282) has
   `target`. Use the owner's name.
 - [ ] note the same mistakes in other units, for their owners: the "global sound volume" wording for gPartyCell
   at src/E0D1C.C:39, src/E1414.C:94 and src/E0ACD.C:46 (E0ACD.C:478 says "volume is the global gPartyCell");
@@ -205,3 +205,62 @@ decompiler must check against the callee. The names IsWeaponKind, `ac`, RunRecor
 RollHitPoints's parameters claim more than the evidence shows. The placeholder names that remain
 (f0D1C_0670's `who, mask`, and the A/B halving helpers) are acceptable only where their headers say so.
 Nothing escalated: no matcher, spec or pin question.
+
+## Decompiler response (dec-deepseek, round 1)
+
+All 18 must-fix and all 30 should items are fixed in src/E0DE8.C (comments, names and types only; no
+code byte changed). `make match FILE=src/E0DE8.C` reports 20 of 20 functions and 4279 of 4279 bytes;
+`make readability UNIT=e0de8` reports 0 findings. The two renames were applied with `make rename`
+(they are logged in re/renames.toml and follow in re/symbols.toml).
+
+- RunRecordAttack (:255-285): header now says the base member gets +2, and `roll`/`result` are
+  `baseMember`/`hitMember`, both character indexes (`f0D1C_0670` and `DamageCharacter` take a member
+  index).
+- RollToHit m16 (:180-181, :205, struct :52): now "bit 0 set on every 0007 call (the object was
+  attacked)", whatever the outcome; DamageObject (08E6:0FBE) sets the same bit.
+- RollToHit `ac` (:178-183, :187, :206, :214): renamed `toHit`, the d20 number GetHitTarget (0A72:0522)
+  returns; the header says "to-hit target", not armour class.
+- gPartyCell (:125): now "the party's map cell (src/E177D.C:92)".
+- gDCA4 (:132): now "the target object 0359 records (:361); UseItem damages gObjs[gDCA4] (:520)".
+- gDF4C (:131): now "set to 1 when an action took effect (src/E0ACD.C:53)".
+- g552F (:120): now "indexed by the item's m02 (UseItemByKind :432)".
+- g1A3D (:117): the declaration is removed (this file never reads it; it is gTable1A3B[0].m02).
+- f08E6_15B4 (:156, :327): renamed Obj15B4 (make rename; the owner src/E08E6.C:1039).
+- RollHitPoints (:146): parameters are now `classIndex, m17` per src/E0A72.C:164-179.
+- UseCarriedItem (:374): `field` is now the item record (a gTable8DD2 index), not the item type.
+- UseItemByKind (:394-396): the m02 == 0x10 test is on m77[0] and m77[1] only; m77[16] is pulled
+  through RemoveListItem with no m02 test.
+- AddExperience (:600): the "082C:..." placeholder caller is gone; the packet lists only 0DE8:0C2B.
+- HalveSaveDamageA (:730-738): 0D1C:059B returns 0/1 (src/E0D1C.C:416-443), so the `RollDice(1, 20, 0)
+  >= chance` test holds on every roll and the function always halves. The header now says so and marks
+  QUIRK 0DE8:0F98; the "0DE8:101A" caller was wrong (ApplyStatusEffect only calls 059B) and is removed.
+- IsWeaponKind (:244-253): renamed IsKind2Or3 (make rename); the header drops "attacks" and says it
+  tests m0E low seven bits 2 or 3.
+- DamageCharacter (:530-531, :537-539, :549): the header now says the derate happens and the clamp to 0
+  is dead (QUIRK 0DE8:09FD).
+- RedrawMember (:162): parameter renamed `who` (owner src/E1547.C:456).
+- AddDDEffect (:154-155): the stale second prototype is deleted; parameters are
+  `(who, item, volume, kind, page, type)` per src/E0BD2.C:506.
+
+Should items: the file header now lists item use; RollToHit's caller list adds 0EF3:0A3F and 0EF3:0E1B;
+"0E08E6" is 08E6 and 0DE8:01FF is added; "derived stat A" is GetStrengthToHitBonus (0A72:00CF); the
+`flag` parameters are `useStrength`/`skipIfSet`; `b0` is `entry`; ApplyItemAttack's `value` is `row`;
+the -1/-2/-3/-4 codes are spelled out in the headers and UseItem says slot below -2, slot + 2 otherwise;
+UseItemByKind says the sound and gDF4C happen only when AddDDEffect returns nonzero; the two `slot`
+meanings are named in each header (gTable8DD2 index vs carried index); `max`/`second` are
+`bonus25`/`bonus26` and the header says they count only m0E kind 0; ComputeArmourClass's header adds the
+0x1B, mDF-clear and m0E-kind rules; GetClassSlotByte says "whose byte is not -1" and documents the -1
+threshold; `value` is `long`; the A/B headers say what each takes; LevelUpSlot's `attr` is `cls` and the
+sprintf control bytes are named; ClearEffectFlag4/RecomputeArmourClass take `struct CharRec far *`;
+DamageObject's `n` is `damage`; GetClassSlotExpThreshold is `(row, slot, level)` and
+GetArmourClassBase is `m15`; the struct field `m1C` is `maxhp` and the m1E/m24/mE3/mDF/mE2/mE7/mE8 and
+Entry14/DDRec/ItemType comments say what the code shows; gFBD2/gFB44/gA9C6/gB894/g1231/g553E/g54F6 are
+documented; CheckPartyWiped names LockShowPointer and DelaySecondsThenKey(1) and the f0D1C_0670(n, 5)
+meaning; RemoveListItem's third parameter is `target`.
+
+Left unticked: the four `note` items, which are for the owners of the other units named there (gPartyCell
+wording in E0D1C.C/E1414.C/E0ACD.C, `dir` in E0ACD.C/E0D1C.C/E0EF3.C/E08E6.C, RollHitPoints in EOV0.C,
+AddDDEffect's `volume` in E122E.C/E0ACD.C/E08E6.C) or informational (the 0DE8:09FD QUIRK shape, the
+CharRec m17 note). A unit branch must not edit another unit's file; `make integrate` applies the logged
+renames there. The question about 0D1C:059B's return value is settled by src/E0D1C.C:416-443 (it returns
+0/1) and is recorded in the HalveSaveDamageA header.
