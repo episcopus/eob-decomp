@@ -42,6 +42,13 @@ struct CharRec {            /* 243-byte (0xF3) character records at ds:F580 (src
     char padE7[0xF3 - 0xE7];
 };
 
+struct PoolNameRec {        /* a view of one 243-byte pre-made character record from its name field:
+                               the base gCharPool[-n-1].name folds to (gCharPool + 2 - 0xF3 = ds:71A7) */
+    char name[0x0B];        /* +0: the name bytes that gCharPool's name field (+2) holds; as an array,
+                               `.name` is its address (a char far pointer), as in struct CharRec */
+    char rest[0xE8];        /* +0x0B: the rest of the record, not read here */
+};
+
 struct Entry14 {            /* the 14-byte item records at ds:8DD2 (src/E0D1C.C) */
     char pad00;
     signed char icon;       /* +1 */
@@ -90,6 +97,8 @@ extern signed char g1A1B[]; /*@ ds:1A1B */
 extern char gB899[]; /*@ ds:B899 */
 extern struct CharRec gChars[]; /*@ ds:F580 */
 extern struct CharRec gCharPool[]; /*@ ds:7298 */  /* the pre-made character records 070E copies into gChars */
+extern struct PoolNameRec gPoolNameBase[]; /*@ ds:71A7 */  /* ds:71A7 = gCharPool + 2 - 0xF3, the base of the
+                                                              folded gCharPool[-n-1].name access */
 extern struct Entry14 gTable8DD2[]; /*@ ds:8DD2 */
 extern struct ItemInfo gA9F5[]; /*@ ds:A9F5 */
 extern struct Obj28 gObjs[]; /*@ ds:8A82 */
@@ -832,16 +841,12 @@ enum {
    2) and acts on the chosen entry: a party member is healed to full (hp = maxhp); a pool character
    has its item class 0x21 removed, becomes the selected character gEFC6, redraws the portrait and
    runs the add-character panel with the head message suppressed (-1). Called by 0EB9.
-   blocked: the pool-name address. The body matches except ovl5:0DFD, where the original folds
-   gCharPool[-1].name to the literal `add ax, 0x71A7` (gCharPool is ds:7298, its name field +2, one
-   record 0xF3 back). Every source form tried (gCharPool[-k-1].name, gCharPool[-k].name - 0xF3,
-   a separate index local) folds to that same negative displacement, and our build relocates it to
-   the symbol `gCharPool`, but cmatch's DGROUP heuristic (tools/match/cmatch.py compare, the
-   `off <= va` symbol pick) cannot symbolize a DGROUP offset that lies before the nearest symbol:
-   it resolves our relocated word to gCellDef7B2B+15 (ds:7B3A) instead of ds:71A7. A matcher gap
-   for a reference before a DGROUP symbol (the far-object branch at cmatch.py:387 handles negative
-   displacements, the DGROUP branch at :373 does not). */
-/*@ ovl5:0DBB draft */ void ResurrectPicker(void)
+   The pool-name branch reads through gPoolNameBase at ds:71A7, the base gCharPool[-k-1].name folds
+   to (gCharPool ds:7298, its name field +2, one 0xF3 record back); the alias lets cmatch symbolize
+   that folded offset, which lies before gCharPool and so misses the DGROUP heuristic's `off <= va`
+   symbol pick. The original tests n < 0 first (jge to the positive branch), so the negative body
+   comes first, and `(n < 0 ? -n : n) - 1` gives the original's branch-form abs (not abs()'s cdq). */
+/*@ ovl5:0DBB */ void ResurrectPicker(void)
 {
     char far *names[20];
     int sel;
@@ -852,20 +857,20 @@ enum {
     DrawText(gText7D9E);
     for (i = 0; i < gCountDDE0; i++) {
         if (gTableF4E6[i] < 0)
-            names[i] = gCharPool[-gTableF4E6[i] - 1].name;
+            names[i] = gPoolNameBase[-gTableF4E6[i]].name;
         else
             names[i] = gChars[gTableF4E6[i]].name;
     }
     sel = SelectMenu(2, gCountDDE0, names);
     n = gTableF4E6[sel];
-    if (n >= 0) {
-        gChars[n].hp = gChars[n].maxhp;
-    } else {
-        n = abs(n) - 1;
+    if (n < 0) {
+        n = (n < 0 ? -n : n) - 1;
         RemoveCarriedItems(0x21, n + 1);
         gEFC6 = n;
         DrawCharPortrait(2);
         AddCharPanel(n, n * 2 + 0x20, -1, n * 2 + 0x21);
+    } else {
+        gChars[n].hp = gChars[n].maxhp;
     }
 }
 /* ovl5:0EB9: the resurrect/heal NPC panel. When gFC04 bit 0x10000 is clear it draws message

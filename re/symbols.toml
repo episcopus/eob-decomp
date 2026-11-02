@@ -7770,6 +7770,8 @@ addr = "ovl5:0DBB"
 size = 254
 evidence = ["ovl", "near", "frame"]
 name = "ResurrectPicker"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov5_0eb9"
