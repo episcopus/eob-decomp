@@ -41,7 +41,26 @@ struct CharRec {            /* 243-byte (0xF3) character records at ds:F580 (src
 struct Entry14 {            /* the 14-byte item records at ds:8DD2 (src/E0D1C.C) */
     char pad00;
     signed char icon;       /* +1 */
-    char pad02[0xE - 2];
+    signed char m02;        /* +2: the item type */
+    char pad03;
+    int m04;                /* +4 */
+    char pad06[0x0B - 0x06];
+    signed char m0B;        /* +0xB */
+    char pad0C[0x0E - 0x0C];
+};
+
+struct ItemInfo {           /* 16-byte records at ds:A9F5 (src/E0D1C.C) */
+    signed char m00;
+    signed char m01;
+    char pad02[0x09 - 0x02];
+    int m09;                /* +9 */
+    char pad0B[0x10 - 0x0B];
+};
+
+struct Obj28 {              /* 28-byte object records at ds:8A82 (src/E08E6.C) */
+    char pad00[8];
+    signed char type;       /* +8 */
+    char pad09[0x1C - 0x09];
 };
 
 extern int g8115; /*@ ds:8115 */
@@ -66,6 +85,10 @@ extern signed char g1A1B[]; /*@ ds:1A1B */
 extern char gB899[]; /*@ ds:B899 */
 extern struct CharRec gChars[]; /*@ ds:F580 */
 extern struct Entry14 gTable8DD2[]; /*@ ds:8DD2 */
+extern struct ItemInfo gA9F5[]; /*@ ds:A9F5 */
+extern struct Obj28 gObjs[]; /*@ ds:8A82 */
+extern int gCountDDE0; /*@ ds:DDE0 */
+extern int gTableF4E6[]; /*@ ds:F4E6 */
 extern char gOverlayBuf[]; /*@ ds:113F */
 extern char far *gSegDF4E; /*@ ds:DF4E */
 extern unsigned char gCellDef7B2B[]; /*@ ds:7B2B */
@@ -77,6 +100,15 @@ extern char gTable7B83[]; /*@ ds:7B83 */
 extern char gText7B23[]; /*@ ds:7B23 */
 extern char gText7B9F[]; /*@ ds:7B9F */
 extern char gText7D77[]; /*@ ds:7D77 */
+extern char gText7BA6[]; /*@ ds:7BA6 */
+extern char gText7BB2[]; /*@ ds:7BB2 */
+extern char gText7BCA[]; /*@ ds:7BCA */
+extern char gText7BD2[]; /*@ ds:7BD2 */
+extern char gText7BDE[]; /*@ ds:7BDE */
+extern char gText7BE6[]; /*@ ds:7BE6 */
+extern char gText7BEE[]; /*@ ds:7BEE */
+extern char gText7BF2[]; /*@ ds:7BF2 */
+extern char gText7BFA[]; /*@ ds:7BFA */
 extern char gFileNameBuf[]; /*@ ds:FE6E */
 
 extern void far * (far *gGetSpriteCell)(int x, int y, int w, int h, void far *sheet); /*@ ds:8086 */
@@ -115,7 +147,7 @@ extern void RedrawCharacters(void); /*@ 0D1C:0583 */
 /* siblings not decompiled yet: their real signatures, so callers compile */
 void Ovl5_00A1(int mode);
 void Ovl5_025F(void);
-void Ovl5_0455(int offset, int count, void far *names);
+int Ovl5_0455(char offset, char count, void far *names);
 void Ovl5_067B(void);
 void Ovl5_070E(int who);
 void Ovl5_0828(int who, int which, int head, int other);
@@ -200,7 +232,7 @@ void PrintTableString(int index, int flag);
     gDrawText(text, x + 0x30 - strlen(text) * 3, y + 2, colour, 0);
 }
 
-/*@ ovl5:0455 stub */ void Ovl5_0455(int offset, int count, void far *names) {}
+/*@ ovl5:0455 stub */ int Ovl5_0455(char offset, char count, void far *names) {}
 /*@ ovl5:067B stub */ void Ovl5_067B(void) {}
 /*@ ovl5:070E stub */ void Ovl5_070E(int who) {}
 /*@ ovl5:0828 stub */ void Ovl5_0828(int who, int which, int head, int other) {}
@@ -216,7 +248,32 @@ void PrintTableString(int index, int flag);
     InsertListItem(&gB899[gSoundVolume * 9], gSoundVolume, item, sound);
 }
 
-/*@ ovl5:0924 stub */ void Ovl5_0924(void) {}
+/*@ ovl5:0924 */ void TemplePanel(void)
+{
+    int sel;
+
+    for (;;) {
+        ClearPanel();
+        PrintTableString(8, 0);
+        if (gFC04 & 0x2000L) {
+            sel = Ovl5_0455(0, 2, (void far *)gText7BB2);
+            if (sel == 1)
+                sel = 2;
+        } else {
+            sel = Ovl5_0455(2, 3, (void far *)gText7BA6);
+        }
+        if (sel == 0) {
+            Ovl5_0828(6, 0xc, 0x17, 2);
+            gFC04 |= 0x4000L;
+            break;
+        } else if (sel == 1) {
+            PrintTableString(1, 1);
+            gFC04 |= 0x2000L;
+            continue;
+        }
+        break;
+    }
+}
 /*@ ovl5:09C5 stub */ void Ovl5_09C5(void) {}
 /* ovl5:0AB1: returns 1 when some party member (flags bit 0) has m22 == 0xf7, after drawing menu
    strings 0x19 and 0x1a and setting the 0x80000 bit of gFC04; otherwise 0. Called by the panel
@@ -275,15 +332,215 @@ void PrintTableString(int index, int flag);
     }
 }
 
-/*@ ovl5:0BBE stub */ void Ovl5_0BBE(void) {}
-/*@ ovl5:0C9D stub */ void Ovl5_0C9D(void) {}
+/* ovl5:0BBE: builds the list at ds:F4E6 (count in gCountDDE0) of the characters and items the
+   resurrect/heal panel 0EB9 may act on: first every character whose flags bit 0 is set and whose
+   m22 is 0xf7; then, for every character with flags bit 0 set, each of its 25 item slots whose
+   item type's gA9F5[type].m09 bit 0..6 equals 8, as -gTable8DD2[item].m0B. Returns the count.
+   Called by 0EB9. */
+/*@ ovl5:0BBE */ int BuildDeathList(void)
+{
+    int i;
+    int j;
+    int item;
+    int type;
+
+    gCountDDE0 = 0;
+    for (i = 0; i < 6; i++) {
+        if ((gChars[i].flags & 1) && gChars[i].m22 == 0xf7)
+            gTableF4E6[gCountDDE0++] = i;
+    }
+    for (i = 0; i < 6; i++) {
+        if (!(gChars[i].flags & 1))
+            continue;
+        for (j = 0; j < 0x19; j++) {
+            item = gChars[i].m77[j];
+            if (!item)
+                continue;
+            type = gTable8DD2[item].m02;
+            if ((gA9F5[type].m09 & 0x7f) == 8)
+                gTableF4E6[gCountDDE0++] = -gTable8DD2[item].m0B;
+        }
+    }
+    return gCountDDE0;
+}
+/* ovl5:0C9D: heals the party. Rolls 1d3+2 "cures", then for each party member that f0D1C_0670
+   accepts (mask 3) clears its flag bits 1..2, clears bit 7 of its effect flags, clears effect slot
+   -0x22 and, while it is below its maximum hit points, spends one cure (1d8+9, clamped to the
+   maximum) and heals it again. Called by the resurrect panel 0EB9. */
+/*@ ovl5:0C9D */ void HealLoop(void)
+{
+    int i;
+    int cures;
+    int heal;
+
+    cures = RollDice(1, 3, 2);
+    i = 0;
+    while (cures && i < 6) {
+        if (!f0D1C_0670(i, 3)) {
+            i++;
+            continue;
+        }
+        gChars[i].flags &= 0xf9;
+        gChars[i].mE3 &= ~0x80L;
+        ClearCharEffectSlot(i, -0x22);
+        if (gChars[i].hp < gChars[i].maxhp) {
+            cures--;
+            heal = RollDice(1, 8, 9);
+            if (gChars[i].hp + heal <= gChars[i].maxhp)
+                gChars[i].hp += heal;
+            else
+                gChars[i].hp = gChars[i].maxhp;
+            continue;
+        }
+        i++;
+    }
+}
 /*@ ovl5:0DBB stub */ void Ovl5_0DBB(void) {}
-/*@ ovl5:0EB9 stub */ void Ovl5_0EB9(void) {}
-/*@ ovl5:0F77 stub */ void Ovl5_0F77(void) {}
-/*@ ovl5:102C stub */ void Ovl5_102C(void) {}
-/*@ ovl5:1087 stub */ void Ovl5_1087(void) {}
-/*@ ovl5:10A6 stub */ void Ovl5_10A6(void) {}
-/*@ ovl5:119E stub */ void Ovl5_119E(void) {}
+/* ovl5:0EB9: the resurrect/heal NPC panel. When gFC04 bit 0x10000 is clear it draws message
+   0x18; when bit 0x20000 is set it draws message 0xb; otherwise it draws message 9 and shows the
+   menu ds:7BD2 (3 entries) when BuildDeathList found something, or ds:7BCA (2 entries) otherwise.
+   Choice 0 runs 0C9D and choice 1 runs 0DBB, both setting gFC04 bit 0x20000. Called from the menu
+   dispatcher 1A82 (mode 2). */
+/*@ ovl5:0EB9 */ void ResurrectPanel(void)
+{
+    int sel;
+
+    if (gFC04 & 0x10000L) {
+        if (gFC04 & 0x20000L) {
+            PrintTableString(0xb, 1);
+        } else {
+            PrintTableString(9, 0);
+            if (BuildDeathList()) {
+                sel = Ovl5_0455(2, 3, (void far *)gText7BD2);
+            } else {
+                sel = Ovl5_0455(0, 2, (void far *)gText7BCA);
+                if (sel == 1)
+                    sel = 2;
+            }
+            switch (sel) {
+            case 0:
+                Ovl5_0C9D();
+                gFC04 |= 0x20000L;
+                break;
+            case 1:
+                Ovl5_0DBB();
+                gFC04 |= 0x20000L;
+                break;
+            }
+        }
+    } else {
+        PrintTableString(0x18, 1);
+    }
+}
+/* ovl5:0F77: the "attack / bribe / ..." NPC panel. Draws message 0x12 and shows the 2-entry menu
+   ds:7BDE; choice 0 sets gFC04 bits 0x8000000 and 0x400000 and clears the type-8 objects to 5;
+   choice 1 removes the item class from RemoveCarriedItems(0x31, -1) and draws message 0x14 and
+   sets 0x400000 when something was removed, otherwise message 0x13. Called from the menu
+   dispatcher 1A82 (mode 3). */
+/*@ ovl5:0F77 */ void AttackPanel(void)
+{
+    int sel;
+    int i;
+
+    PrintTableString(0x12, 0);
+    sel = Ovl5_0455(0, 2, (void far *)gText7BDE);
+    switch (sel) {
+    case 0:
+        gFC04 |= 0x8000000L;
+        gFC04 |= 0x400000L;
+        for (i = 0; i < 0x1e; i++) {
+            if (gObjs[i].type == 8)
+                gObjs[i].type = 5;
+        }
+        break;
+    case 1:
+        if (RemoveCarriedItems(0x31, -1)) {
+            PrintTableString(0x14, 1);
+            gFC04 |= 0x400000L;
+        } else {
+            PrintTableString(0x13, 1);
+        }
+        break;
+    }
+}
+/* ovl5:102C: the "kill her / hear her out / let her go" NPC panel. Draws message 0xe, shows the
+   3-entry menu ds:7BE6; choice 0 sets gFC04 bit 0x200000, choice 1 draws message 0xf. Always sets
+   bit 0x800000. Called from the menu dispatcher 1A82 (mode 4). */
+/*@ ovl5:102C */ void KillHerPanel(void)
+{
+    int sel;
+
+    PrintTableString(0xe, 0);
+    sel = Ovl5_0455(2, 3, (void far *)gText7BE6);
+    switch (sel) {
+    case 0:
+        gFC04 |= 0x200000L;
+        break;
+    case 1:
+        PrintTableString(0xf, 1);
+        break;
+    }
+    gFC04 |= 0x800000L;
+}
+/* ovl5:1087: the "quit" menu entry: draws message 0x15 and sets gFC04 bit 0x1000000. Called from
+   the menu dispatcher 1A82 (mode 5). */
+/*@ ovl5:1087 */ void QuitPanel(void)
+{
+    PrintTableString(0x15, 1);
+    gFC04 |= 0x1000000L;
+}
+/* ovl5:10A6: the "surrender / attack" NPC panel. Draws message 0x10 and shows the 2-entry menu
+   ds:7BF2; choice 0 draws message 0x11 and, for every character's first two item slots whose item
+   type gTable8DD2[item].m02 is outside 0x33..0x38, clears the slot and queues the item on the
+   current page list. Always sets gFC04 bit 0x20000. Called from the menu dispatcher 1A82
+   (mode 6). */
+/*@ ovl5:10A6 */ void SurrenderPanel(void)
+{
+    int sel;
+    int item;
+    int i;
+    int j;
+
+    PrintTableString(0x10, 0);
+    sel = Ovl5_0455(0, 2, (void far *)gText7BF2);
+    if (sel == 0) {
+        PrintTableString(0x11, 1);
+        for (i = 0; i < 6; i++) {
+            for (j = 0; j < 2; j++) {
+                item = gChars[i].m77[j];
+                if (!item)
+                    continue;
+                if (gTable8DD2[item].m02 < 0x33 || gTable8DD2[item].m02 > 0x38) {
+                    gChars[i].m77[j] = 0;
+                    InsertListItem(&gB899[gSoundVolume * 9], gSoundVolume, item,
+                                   g1A1B[gFBCC * 4 + RollDice(1, 2, -1)]);
+                }
+            }
+        }
+    }
+    gFC04 |= 0x2000000L;
+}
+/* ovl5:119E: the "free him / kill him / leave" NPC panel. Draws message 0x16, shows the 3-entry
+   menu ds:7BFA; choice 0 calls 0828(8, 0x1b, 0x2c, 0x2d) and choice 1 draws message 0x1f. Always
+   sets gFC04 bit 0x40000. Called from the menu dispatcher 1A82 (mode 7). */
+/*@ ovl5:119E */ void FreeHimPanel(void)
+{
+    int sel;
+
+    PrintTableString(0x16, 0);
+    sel = Ovl5_0455(2, 3, (void far *)gText7BFA);
+    switch (sel) {
+    case 0:
+        Ovl5_0828(8, 0x1b, 0x2c, 0x2d);
+        break;
+    case 1:
+        PrintTableString(0x1f, 1);
+        break;
+    default:
+        return;
+    }
+    gFC04 |= 0x4000000L;
+}
 /*@ ovl5:1204 stub */ void Ovl5_1204(void) {}
 /*@ ovl5:160A stub */ void Ovl5_160A(void) {}
 /*@ ovl5:17C8 stub */ void Ovl5_17C8(void) {}

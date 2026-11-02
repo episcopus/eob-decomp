@@ -7496,6 +7496,9 @@ unit = "eov5"
 addr = "ovl5:0F77"
 size = 181
 evidence = ["ovl", "near", "frame"]
+name = "AttackPanel"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov5_102c"
@@ -7503,6 +7506,9 @@ unit = "eov5"
 addr = "ovl5:102C"
 size = 91
 evidence = ["ovl", "near", "frame"]
+name = "KillHerPanel"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov5_1087"
@@ -7510,6 +7516,9 @@ unit = "eov5"
 addr = "ovl5:1087"
 size = 31
 evidence = ["ovl", "near", "frame"]
+name = "QuitPanel"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov5_10a6"
@@ -7524,6 +7533,9 @@ unit = "eov5"
 addr = "ovl5:119E"
 size = 102
 evidence = ["ovl", "near", "frame"]
+name = "FreeHimPanel"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov5_1204"
