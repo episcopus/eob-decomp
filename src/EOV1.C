@@ -71,7 +71,7 @@ struct Node {
 /* the 9-byte button definitions at 208E:0000: a label message, a box, a key word and flag bits
    (ovl1:1153 builds one node from each; ovl1:1551 draws it) */
 struct ButtonDef {
-    unsigned char message;      /* +0: the button's label, a gStrings2003 string index */
+    signed char message;        /* +0: the button's label, a gStrings2003 string index, 0 for none */
     unsigned char x;            /* +1: box left, in 8-pixel columns */
     unsigned char y;            /* +2: box top */
     unsigned char w;            /* +3: box width, in 8-pixel columns */
@@ -177,6 +177,7 @@ extern void LockShowPointer(void); /*@ 1BBE:0332 */
 extern void ClipRect(int x1, int y1, int x2, int y2, int width, int height, int extra1, int extra2); /*@ 19F3:000E */
 extern void FlushKeyBuffer(void); /*@ 1AAD:0480 */
 extern void farfree(void far *block); /*@ 0000:71EE */
+extern int strlen(char far *s); /*@ 0000:67F6 */
 extern void (far *gFn804A)(int x, int y, int w, int h, void far *buf); /*@ ds:804A */
 extern int WaitGameKey(void); /*@ 1AAD:053A */
 extern int ReadKey(void); /*@ 1AAD:038E */
@@ -203,7 +204,7 @@ extern int SaveGame(void); /*@ 210C:0089 */
 extern int LoadGame(void); /*@ 210C:0039 */
 extern void DrawViewFrame(int full); /*@ 2116:005C */
 
-void DrawListNode(struct Node far *node, int mode1, int mode2, int mode3);
+void DrawListNode(struct Node far *node, int panelFirst, int highlight, int panelSecond);
 int ChooseListEntry(int message);
 
 /* ovl1:0000: drops party member `who` (0 to 5) from the party: the "Drop Character" button of the camp
@@ -377,7 +378,48 @@ int ChooseListEntry(int message);
         list = next;
     }
 }
-/*@ ovl1:1551 stub */ void DrawListNode(struct Node far *node, int mode1, int mode2, int mode3) {}
+/* ovl1:1551: draws the list node `node` (one button of a camp menu, built by BuildMenuButtons) in
+   the text window; a null node draws nothing. With the node's definition `def` (node->def): when
+   def->flags bit 0 is set the node's box is filled with the bevelled panel 0D1C:0C21 (panelFirst and
+   panelSecond are its two mode arguments); then, when def->message is nonzero, the label
+   gStrings2003[def->message] is drawn at the box origin plus (4, 3), or centred in the box when def
+   flags bit 2 is set (x = (width - 8 * length) / 2 + 1, y = (height - 7) / 2). The label's colour is
+   6 when `highlight` is nonzero, else 1 (0xF when gGraphicsChoice is nonzero). It goes through the
+   text routine gDrawText when panelFirst or panelSecond is set (the panel already holds a
+   background), else through DrawShadowText. The pointer is hidden while it draws. Called by
+   BuildMenuButtons, MemberCommand, RunCampMenu and ChooseListEntry: (node, 0, 0, 1) un-highlights,
+   (node, 0, 1, 1) highlights and (node, 1, 1, 1) draws the pressed button. */
+/*@ ovl1:1551 */ void DrawListNode(struct Node far *node, int panelFirst, int highlight, int panelSecond)
+{
+    struct ButtonDef far *def;
+    char far *text;
+    int colour;
+    int x;
+    int y;
+
+    if (node == 0)
+        return;
+    colour = gGraphicsChoice == 0 ? 1 : 0xf;
+    def = node->def;
+    LockHidePointer();
+    if (def->flags & 1)
+        f0D1C_0C21(node->x, node->y, node->width, node->height, panelFirst, panelSecond);
+    if (def->message != 0) {
+        text = SkipStrings(&gStrings2003, def->message);
+        if (def->flags & 4) {
+            x = (node->width - strlen(text) * 8) / 2 + 1;
+            y = (node->height - 7) / 2;
+        } else {
+            x = 4;
+            y = 3;
+        }
+        if (panelSecond || panelFirst)
+            gDrawText(text, node->x + x, node->y + y, highlight ? 6 : colour, 0);
+        else
+            DrawShadowText(text, node->x + x, node->y + y, highlight ? 6 : colour, 0);
+    }
+    LockShowPointer();
+}
 /*@ ovl1:1691 stub */ void Ovl1_1691(void) {}
 /* ovl1:1ACD: the camp menu, entered from the camp button on the game screen: it is the callback30 of
    the screen node at ds:3B8E (the far pointer 2102:0020 sits at ds:3BBE; the argument is that

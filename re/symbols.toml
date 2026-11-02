@@ -8084,9 +8084,9 @@ unit = "eov1"
 addr = "ovl1:1551"
 size = 1404
 evidence = ["ovl", "near"]
-name = "_DrawListNode"
+name = "DrawListNode"
 level = "L2"
-match_flags = "tasm /mx"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "eov1_1acd"
