@@ -8204,7 +8204,7 @@ unit = "eov3"
 addr = "ovl3:031A"
 size = 136
 evidence = ["ovl", "near", "frame"]
-name = "FreeEffectTables"
+name = "FreeSlotTables"
 level = "L2"
 match_flags = "-ml -O -Z"
 

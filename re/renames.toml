@@ -2180,6 +2180,15 @@ why = "ovl2:078D loads the INTRO screen into gOverlayBuf, draws two option-panel
 date = "2026-11-02"
 
 [[rename]]
+id = "ovl3:031A=FreeSlotTables"
+addr = "ovl3:031A"
+old = "FreeEffectTables"
+new = "FreeSlotTables"
+kind = "function"
+why = "ovl3:031A frees and clears the six far pointers in the per-slot size-record table ds:FB5E (struct SlotSize far *, src/EOV4.C:756) and the six size-record pointers in the SlotPos records at ds:A99C (src/E122E.C:107-117); 'effect' has no evidence"
+date = "2026-11-02"
+
+[[rename]]
 id = "intro/ds:28A0=gSoundBuf"
 addr = "intro/ds:28A0"
 old = "gSoundMap"
