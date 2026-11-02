@@ -1368,3 +1368,12 @@ new = "InitMouse"
 kind = "function"
 why = "a function name is a verb phrase (docs/process/READABILITY.md); it detects the driver and installs the handler (1A72:00DA); review of e1a72"
 date = "2026-11-01"
+
+[[rename]]
+id = "ds:810E=gAllocCount"
+addr = "ds:810E"
+old = "g810E"
+new = "gAllocCount"
+kind = "global"
+why = "net allocation counter: MemAlloc adds one per successful allocation (src/E19BC.C:97) and MemFree subtracts one on every call (src/E19BC.C:120), and StartupAlloc clears it (src/E07A9.C:242); what reads the count is unknown, so the name says what it holds"
+date = "2026-11-01"

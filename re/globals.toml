@@ -345,3 +345,7 @@ why = "1 when the mouse driver handler is installed: set to 1 at install (E1A72.
 id = "ds:8052"
 name = "gFn8052"
 why = "one pattern for unknown-purpose far function pointers (gFn8072, gFn8056, gFn80BA, gFn80D2, gFn804A); review of e19f3"
+[[global]]
+id = "ds:810E"
+name = "gAllocCount"
+why = "net allocation counter: MemAlloc adds one per successful allocation (src/E19BC.C:97) and MemFree subtracts one on every call (src/E19BC.C:120), and StartupAlloc clears it (src/E07A9.C:242); what reads the count is unknown, so the name says what it holds"
