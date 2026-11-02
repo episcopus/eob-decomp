@@ -5,7 +5,7 @@
    pass over the 10 moving/effect records at ds:DD2C (0285), object-list updates (05DF), the
    per-character status messages ("%s no longer has giant strength.", "%s feels the effects of
    poison!", "%s is no longer paralyzed!", 07CA), the member status-byte adjustment (03B4), the
-   18-entry far table at ds:EF6A (04B0), the per-member level decay (0C82) and the object m17
+   18-entry far table at ds:EF6A (04B0), the per-member food decay (0C82) and the object m17
    re-roll (0CE7). The game timer is the 32-bit counter g8492 that the 1Ch handler bumps (src/EOV6.C);
    most meanings are not established, so names say what a function does rather than what the game
    calls it. */
@@ -38,8 +38,8 @@ struct CharRec {
     char pad1C[0x1E - 0x1C];
     unsigned char m1E;        /* +1E: a bit set/cleared by the per-slot helper 0770 */
     char pad1F[0x23 - 0x1F];
-    unsigned char level;      /* +23: the character's level [H] (src/EOV6.C:23); 0C82 tests and
-                                 decrements it */
+    unsigned char food;       /* +23: the hunger/food value EatFood (0ACD:07E0) adds to and 0C82
+                                 decrements (src/E0ACD.C:107, :616-619) */
     char pad24[0xAD - 0x24];
     unsigned long mAD[10];    /* +AD: 10 32-bit effect times (07CA, 0B2E, 0C2D, 05ED) */
     signed char mD5[10];      /* +D5: 10 effect type bytes, one per mAD slot */
@@ -269,12 +269,12 @@ extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
 
    The unit is compiled with debug information (`-v`): the original keeps the success path's and
    the failure path's `mov word ptr [bp - 2], 1` stores apart (1414:034B and 1414:0382), while a
-   build without it cross-jumps them (WHITEPAPER 2.1.1, the same class as 0ACD:091C and 0D1C:0903). Forms tried while keeping the original frame (clearIt at [bp - 2],
-   value in DI): plain if/else, `goto` from either or both branches, a label after the store, an
-   empty statement after the store, braced blocks, `else ;`, `if/else if`, `clearIt = 1 + 0`, a
-   duplicated clear tail, and `volatile` and `unsigned` declarations; every one cross-jumps. With `-v`
-   this function matches exactly (303 bytes); it also did through TASM (`-B`, two passes `/m2`)
-   until 2026-11-02. */
+   build without it cross-jumps them (WHITEPAPER 2.1.1, the same class as 0ACD:091C and 0D1C:0903).
+   Forms tried while keeping the original frame (clearIt at [bp - 2], value in DI): plain if/else,
+   `goto` from either or both branches, a label after the store, an empty statement after the
+   store, braced blocks, `else ;`, `if/else if`, `clearIt = 1 + 0`, a duplicated clear tail, and
+   `volatile` and `unsigned` declarations; every one cross-jumps. With `-v` this function matches
+   exactly (303 bytes); it also did through TASM (`-B`, two passes `/m2`) until 2026-11-02. */
 /*@ 1414:0285 */ void MoveDDEffects(int unused)
 {
     int value;
@@ -503,11 +503,11 @@ extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
 
    The unit's `-v` (debug information) keeps case 6's and case 9's identical tails apart (`push who;
    call 1547:0991; pop cx` at 1414:0169 and 1414:0281), which a build without it cross-jumps into
-   one (WHITEPAPER 2.1.1, the same class as 0ACD:091C). Two further divergences are handled in the source: (1) the bit tests read
-   `mov ax, [bx + N]; and ax, M; or ax, 0; je` (1414:08AD, 1414:09A1) because mE3 is a `long`, not
-   an `int`: TCC emits the and/or form only for a long bit test (the `or ax, 0` distinct from
-   `or ax, ax`); (2) the expiry test is written `if (tl <= g8492) { body }` (1414:0814 `jbe L1; jmp
-   cont; L1: jne body`), not `if (tl > g8492) continue;`. */
+   one (WHITEPAPER 2.1.1, the same class as 0ACD:091C). Two further divergences are handled in the
+   source: (1) the bit tests read `mov ax, [bx + N]; and ax, M; or ax, 0; je` (1414:08AD, 1414:09A1)
+   because mE3 is a `long`, not an `int`: TCC emits the and/or form only for a long bit test (the
+   `or ax, 0` distinct from `or ax, ax`); (2) the expiry test is written `if (tl <= g8492) { body }`
+   (1414:0814 `jbe L1; jmp cont; L1: jne body`), not `if (tl > g8492) continue;`. */
 /*@ 1414:07CA */ void RunCharEffects(int who)
 {
     unsigned long min;
@@ -658,8 +658,8 @@ extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
     RearmCharEffects();
 }
 /* 1414:0C82: effect 14 of the table. For every party member whose f0D1C_0163(who, 2) test
-   passes, whose m01 bit 0 is set (the 0D1C:0670 mask-1 test), with a nonzero level and hit
-   points above -10, it decrements the level and runs 1547:04A0 for that member. */
+   passes, whose m01 bit 0 is set (the 0D1C:0670 mask-1 test), with a nonzero food value and hit
+   points above -10, it decrements the food value and runs 1547:04A0 for that member. */
 /*@ 1414:0C82 */ void DecayMemberState(void)
 {
     int who;
@@ -667,13 +667,13 @@ extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
     for (who = 0; who < 6; who++) {
         if (f0D1C_0163(who, 2) < 0)
             continue;
-        if (gChars[who].level == 0)
+        if (gChars[who].food == 0)
             continue;
         if ((gChars[who].m01 & 1) == 0)
             continue;
         if (gChars[who].hp <= -10)
             continue;
-        gChars[who].level--;
+        gChars[who].food--;
         DrawMemberFood(who);
     }
 }
