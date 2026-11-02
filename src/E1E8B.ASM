@@ -45,14 +45,14 @@
 ; overlay id is set yet; which of the two is not established; no code in this unit writes 20B5:00A0,
 ; the writer is outside this unit, and the records need that word to be 3FCDh, the stub's CD 3F;
 ; 086F compares a record's ES:0000 against the overlay id word 20B5:00A0). Otherwise it opens the
-; program's own file (01B3, or the name in the far pointer argument at [bp+6] through 01A7, or the PATH search
-; 01F3; when the caller passes none, 000F substitutes 20C1:0318, the "eob.exe" string just past the
-; 99-entry segment table), reads and checks the MZ header and walks the file's FBOV records (the
-; "FB"/"OV" signature and the record offset and length from the 10h-byte header at [bp-14h]). On the
-; FBOV header it stores the offset of the FBOV data (the file position just past the 16-byte header)
-; at 20B5:00A4/00A6 and the FBOV size field (the u32 at header +4, WHITEPAPER 2.3) at
-; DGROUP:84B2/84B4. It then closes the program file (INT 21h/3Eh) and clears the handle word
-; 20B5:00B8, then swaps the overlay file open again (_SwapAndReopenOverlayFile): that opens
+; program's own file (01B3, or the name in the far pointer argument at [bp+6] through 01A7, or the
+; PATH search 01F3; when the caller passes none, 000F substitutes 20C1:0318, the "eob.exe" string
+; just past the 99-entry segment table), reads and checks the MZ header and walks the file's FBOV
+; records (the "FB"/"OV" signature and the record offset and length from the 10h-byte header at
+; [bp-14h]). On the FBOV header it stores the offset of the FBOV data (the file position just past
+; the 16-byte header) at 20B5:00A4/00A6 and the FBOV size field (the u32 at header +4, WHITEPAPER
+; 2.3) at DGROUP:84B2/84B4. It then closes the program file (INT 21h/3Eh) and clears the handle
+; word 20B5:00B8, then swaps the overlay file open again (_SwapAndReopenOverlayFile): that opens
 ; 20B5:001C (the name copied by 01B3, 01A7 or 01F3) and stores the new handle at 20B5:00B8. It sets
 ; the free-area base 20B5:00B4 to [bp+0Ch]+1, and also the running top 20B5:00B0 to that same base
 ; (`mov ds:[0B0h],ax`), and the free-area top 20B5:00B6 to [bp+0Ah]; it then builds the records
@@ -827,30 +827,29 @@ _RelocateOverlayPointer ENDP
 ; [bp+6] = FLAGS. Otherwise it saves the registers, switches to the manager's data segment 20B5, and
 ; `les bx,[bp+2]` loads BX = that IP (the word after the stub's CD 3F) and ES = CS, so
 ; `push word ptr es:[bx]` pushes the stub's request word. `sub word ptr [bp+2],2` lowers the saved IP
-; by 2 and IRET (:903) resumes there. The decremented [bp+2] is the offset the stub was reached at,
+; by 2 and IRET (:904) resumes there. The decremented [bp+2] is the offset the stub was reached at,
 ; not a stack argument. A zero result is the single entry at the record's own offset 0 (the record
-; word ES:0000, which 086F tests against the overlay id word 20B5:00A0 (:1502-1503); the records need
-; that word to be 3FCDh, the CD 3F stub): an INT 3F at record offset 0 leaves
-; the saved IP at 2, and the decrement makes it 0. A non-zero result is an entry in the ES:0020 version
-; table (EOB.EXE stub 2102 has CD 3F at +0 and the 5-byte entries at +20 and +25): for such an entry
-; 0580's load runs 064E, which rewrites the entry to 0EAh (the far jump)
-; before the IRET when the record has version records (ES:000C non-zero), so the IRET lands on the live
-; far jump. For the single entry at record offset 0, nothing in this unit writes that word (066F
-; starts at ES:0020 and the ES:0000 accesses are reads), so what stops the INT running again is not
-; shown [H]. It then loads the overlay
-; (_LoadOverlayRecord) and reads bit 3 (the value 8) of ES:001A into AX, clearing that bit in the same
-; step (`and byte ptr es:[1Ah],0F7h`), and calls the overlay's routine through 20B5:0016, passing
-; AX = the bit (cbw) and BX = the request word (`pop bx` takes back the word pushed at ES:[BX]). Ends
-; with IRET. QUIRK 1E8B:04D0: on the multi path it does `add bp,6` and calls _LoadOverlayRecord with
-; BP still moved (BP is not restored before the call, and this handler has no other `bp,6`), and it
-; swaps the saved BP word (the handler's own `push bp`, now at [bp-6]) with the interrupt frame's
-; FLAGS word (now [bp], old [bp+6]) around the call and back after it, so the net stack effect is nil
-; but during the call BP is not the handler frame; what the swap is for is not established.
-; _FindOverlaySlot (073B), reached from _LoadOverlayRecord through 06C0 and 072F, starts its walk at
-; BP, so its first slot differs from the single path, where BP is the handler frame. Evidence: the
-; SP-parity guard, the __OverlayHalt jump, the [bp+2] IP read and decrement, the ES:001A bit 3
-; (value 8) read and clear, the BX request word and the 20B5:0016 far pointer (the same one 02FF
-; uses).
+; word ES:0000, which 086F tests against the overlay id word 20B5:00A0 (:1503-1504); the records need
+; that word to be 3FCDh, the CD 3F stub): an INT 3F at record offset 0 leaves the saved IP at 2, and
+; the decrement makes it 0. A non-zero result is an entry in the ES:0020 version table (EOB.EXE stub
+; 2102 has CD 3F at +0 and the 5-byte entries at +20 and +25): for such an entry 0580's load runs
+; 064E, which rewrites the entry to 0EAh (the far jump) before the IRET when the record has version
+; records (ES:000C non-zero), so the IRET lands on the live far jump. For the single entry at record
+; offset 0, nothing in this unit writes that word (066F starts at ES:0020 and the ES:0000 accesses
+; are reads), so what stops the INT running again is not shown [H]. It then loads the overlay
+; (_LoadOverlayRecord) and reads bit 3 (the value 8) of ES:001A into AX, clearing that bit in the
+; same step (`and byte ptr es:[1Ah],0F7h`), and calls the overlay's routine through 20B5:0016,
+; passing AX = the bit (cbw) and BX = the request word (`pop bx` takes back the word pushed at
+; ES:[BX]). Ends with IRET. QUIRK 1E8B:04D0: on the multi path it does `add bp,6` and calls
+; _LoadOverlayRecord with BP still moved (BP is not restored before the call, and this handler has
+; no other `bp,6`), and it swaps the saved BP word (the handler's own `push bp`, now at [bp-6])
+; with the interrupt frame's FLAGS word (now [bp], old [bp+6]) around the call and back after it,
+; so the net stack effect is nil but during the call BP is not the handler frame; what the swap is
+; for is not established. _FindOverlaySlot (073B), reached from _LoadOverlayRecord through 06C0 and
+; 072F, starts its walk at BP, so its first slot differs from the single path, where BP is the
+; handler frame. Evidence: the SP-parity guard, the __OverlayHalt jump, the [bp+2] IP read and
+; decrement, the ES:001A bit 3 (value 8) read and clear, the BX request word and the 20B5:0016 far
+; pointer (the same one 02FF uses).
         PUBLIC  _OverlayCallHandler      ; @ 1E8B:04D0
 _OverlayCallHandler PROC FAR
         push    bp
@@ -1392,7 +1391,7 @@ _OverlayTotalParagraphs ENDP
 ; is below the base 20B5:00B4, whose offset SS:[bx+2] is zero, and whose record's word ES:0000
 ; equals the current overlay id 20B5:00A0; it sets the found byte [bp-2] and clears that record's
 ; ES:0002. QUIRK 1E8B:07D7: when a record was marked, a second pass starts at BX where the first
-; pass stopped (BX is not reset to SS:BP): when the first pass stopped on a zero link (:1422) it
+; pass stopped (BX is not reset to SS:BP): when the first pass stopped on a zero link (:1423) it
 ; reads that same link and leaves at once, and when it stopped at the table end it reads past CX,
 ; since the `cmp bx,cx` end test is only in the first pass. In that second pass, for a slot below
 ; 00B4 with a non-zero SS:[bx+2] whose record id matches and whose ES:0002 is still zero, it moves
