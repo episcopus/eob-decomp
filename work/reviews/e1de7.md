@@ -1,5 +1,22 @@
 # Review: e1de7
 
+# Round 9
+
+Reviewer: rev-haiku
+Commit reviewed: 5648364 (main); review/e1de7 is at the same commit. The round 8 fixes are in d14c5b0 (merged in df4f7a6). Changed since round 8's commit bcac8e4: `git diff bcac8e4 main -- src/E1DE7.C re/symbols.toml re/globals.toml`. src/E1DE7.C changed in comments only (the gGraphicsChoice cites, the ds:806A and ds:8115 cites, the self-cites at :173, :175-181, :183, :274, :288 and :290, and the reflowed ds:8115 note). re/globals.toml did not change. re/symbols.toml changed only in other units: the e1de7 entries keep their names and levels, and the `twin e1de7` flags are on INTRO units.
+
+Playbook 70, later round. Judge the round 8 must-fix and the changed lines only.
+
+Checked: `make match FILE=src/E1DE7.C` 9 of 9 functions ok, 2619 bytes, exit 0; `make readability UNIT=e1de7` 0 findings. Round 8 must-fix (gGraphicsChoice cites): fixed right. `grep -n "shift = "` puts the shifts at src/E1DE7.C:168 (`shift = 5;`) and :170 (`shift = 6;`), and DrawTileRun's `shift = 5 + ...` at :202. Round 8 shoulds: src/E07C8.C:44-45 names gOverlayFiles and the digit list (`sed -n 44,45p`); src/E082C.C:72 is the gStatusLine declaration and :64 the gFillRect declaration with `colour`; the in-file cites :274 (the gScrollOn gate), :173 (gFrameTable[style]), :175-181 and :183 (the gDraw805A and DrawTileRun calls in the QUIRK), :288 (gTextRow++ in the newline branch) and :290 (gTextRow = bottomLine / gFontHeight in the else branch) are right. The reflowed ds:8115 note keeps its content: E1C0E.C:589 is the ShowMessage header (it clears and restores ds:8115, :593 to :597), E16A5.C:511 is where ds:8115 is cleared while a node is drawn, and E082C.C:339 sets gStatusLine = 2 with the save and restore at :446 and :455.
+
+## Findings
+
+- [ ] note the -G claim (src/E1DE7.C:16-17, the `inc sp; inc sp` clean-ups) and the ds:806A parameter name (`colour` here and in src/E082C.C:64; `pattern` in other units) are as in rounds 1 to 8. No change asked.
+
+## Summary
+
+Round 9: the code is unchanged in bytes and names (9 of 9, 2619 bytes, readability 0 findings). The round 8 must-fix (the gGraphicsChoice shift cites) and the round 8 shoulds are fixed right, and every changed cite points at its target. The reflowed ds:8115 note keeps its content and its cross-file cites hold. No matcher, spec or pin question, so nothing is escalated. Round 9 passes: no must-fix is open, and no code change is asked.
+
 # Round 8
 
 Reviewer: rev-haiku
