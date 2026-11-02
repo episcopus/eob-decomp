@@ -1260,3 +1260,12 @@ new = "ReportLostItem"
 kind = "function"
 why = "0BD2:000E prints the 'has lost her/his <item>' message and clears the slot"
 date = "2026-11-01"
+
+[[rename]]
+id = "ds:8148=gMouseHandlerInstalled"
+addr = "ds:8148"
+old = "g8148"
+new = "gMouseHandlerInstalled"
+kind = "global"
+why = "1 when the mouse driver handler is installed: set to 1 at install (E1A72.ASM:214), cleared at uninstall (E1A72.ASM:200); E1A72.ASM:334 reads it to remove the handler only when installed; Main reads it to choose gMouseDisabled (E07C8.C:153); E07C8.C:36 says 'mouse event handler'"
+date = "2026-11-01"
