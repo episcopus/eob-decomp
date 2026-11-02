@@ -3964,8 +3964,9 @@ unit = "e122e"
 addr = "122E:0896"
 size = 157
 evidence = ["far", "near", "frame"]
-notes = "draft 2026-11-01: the body is written from the disassembly (the slot ^= 2, the g1905 selector gate, the gEFD2 mask test ((gB894[id*9+4] & 0xf8) >> 3 | 0xe0), the table call and the gEFD2/gDF4C stores). It does not match because of the local table of far function pointers at 122E:08A1-08AE: the original copies a 0x28-byte compiler template from ds:5A18 (F_SCOPY@ 0000:78C9) whose entries are the relocated addresses 122E:04CA, 05DF, 0620, 0678, 0325, 0847, 0000:0000, 0000:0000, 0000:0000, 06D0. The matcher's literal check (cmatch.py:367-369) compares the template bytes with cstr, so it cannot reconcile the relocated function offsets (ours are shifted by the two drafts before this function) or the segment word (ours is our unit's, the original's 0x122E). First difference 122E:0012. A function-pointer template is not a string literal, so the docstring's literal rule does not cover it. This needs a matcher decision (compare a relocated template by its named far pointers) or an accepted alternative source form."
 name = "DispatchSlotHandler"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e122e_0933"
@@ -4038,6 +4039,9 @@ unit = "e122e"
 addr = "122E:0D57"
 size = 324
 evidence = ["frame"]
+name = "ReassignObjectsOp"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e122e_0e9b"
@@ -4045,6 +4049,9 @@ unit = "e122e"
 addr = "122E:0E9B"
 size = 321
 evidence = ["frame"]
+name = "MoveCarriedItemOp"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e122e_0fdc"
@@ -4061,6 +4068,9 @@ unit = "e122e"
 addr = "122E:1097"
 size = 337
 evidence = ["frame"]
+name = "SetActionFlagsOp"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e122e_11e8"
@@ -4145,8 +4155,9 @@ unit = "e122e"
 addr = "122E:1AAB"
 size = 175
 evidence = ["frame"]
-notes = "draft 2026-11-01: matches every byte except the LoadScreenImage call's 0:0x2067 page, 1 byte short: the original pushes its segment with `mov ax,0; push ax` (122E:1B2E) where our -ml -O -Z build folds the constant to `xor ax,ax; push ax`. The rest (the gFB44/gFlag guards, the byte/word/byte read, the gSoundVolume/gFBCC stores, the overlay calls and the gA9EC stop) is written from the disassembly. The overlay callees are annotated at their stub entries (210C:007F, 210C:002F, 210C:007A, 2116:0043), not the ovl3/ovl4 offsets the packet shows."
 name = "LoadLevelOp"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e122e_1b5a"
@@ -4184,7 +4195,9 @@ unit = "e122e"
 addr = "122E:1CAD"
 size = 201
 evidence = ["frame"]
-notes = "draft 2026-11-01: first difference is the local layout (122E:001C: ours stores the read word at [bp-6], the original at [bp-8]). The original frame is 0xc bytes: start at -0xc..-9, the read word at -8..-7, the CharRec far pointer at -6..-3; the two loop counters and the item are registers (SI and DI). Our -ml -O -Z build keeps the far pointer at -4..-1 and leaves -8..-7 unused. Tried declaration orders rec/id/start and id/rec/start, and `register int i; register int j;`; the pointer keeps the top slot. The body (the gSoundVolume gate, the six 243-byte CharRec walk with gB894-like items at +0x77, the 0x40 flag on gTable8DD2[item], MarkListItems(rec + 0x97) and the final MarkListItems(&gB899[id*9])) is written from the disassembly."
+name = "MarkMemberItemsOp"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e122e_1d76"
@@ -4202,6 +4215,9 @@ unit = "e122e"
 addr = "122E:1DA8"
 size = 184
 evidence = ["far", "frame"]
+name = "RunMemberScript"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e1414_0000"

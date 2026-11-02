@@ -119,7 +119,7 @@ void ArmEffect(int idx, int active);
 extern void DrawText(char *text); /*@ 1DE7:060A */
 extern void DrawMemberLevel(int member); /*@ 1547:04A0 */
 extern void DispatchSlotHandler(int member, int a); /*@ 122E:0896 */
-extern void f122E_1DA8(int member, int a); /*@ 122E:1DA8 */
+extern void RunMemberScript(int member, int a); /*@ 122E:1DA8 */
 extern int f08E6_189D(struct Obj28 far *obj, int a, int b); /*@ 08E6:189D */
 extern int RunRecordAttack(struct DDRec far *rec); /*@ 0DE8:01FF */
 extern int TryRecordAttack(struct DDRec far *rec, int idx); /*@ 0DE8:02D4 */
@@ -232,7 +232,7 @@ extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
 {
     if (rec->active == 1) {
         gTable8DD2[rec->m08].m03 &= 3;
-        f122E_1DA8(rec->m04, 4);
+        RunMemberScript(rec->m04, 4);
         PlaySoundDefault(0x12);
     }
     rec->active = 0;
@@ -287,7 +287,7 @@ extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
             }
             if (StepDDEffect(rec, value, sel)) {
                 if (high)
-                    f122E_1DA8(value, 0x10);
+                    RunMemberScript(value, 0x10);
                 if (TestDDEffect(rec, value, sel))
                     clearIt = 1;
             } else {

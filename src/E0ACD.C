@@ -128,7 +128,7 @@ extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
 extern void DrawItemRow(int who, int slot, int one); /*@ 0BD2:0917 */
 extern int DispatchKeyWait(void far *list); /*@ 16A5:005A */
 extern void DrawMemberLevel(int who); /*@ 1547:04A0 */
-extern void f122E_1DA8(int a, int b); /*@ 122E:1DA8 */
+extern void RunMemberScript(int a, int b); /*@ 122E:1DA8 */
 extern void RunEffects(void); /*@ 1414:04E7 */
 extern void TurnUndead(void); /*@ 0D1C:0A43 */
 extern void RedrawCharacters(void); /*@ 0D1C:0583 */
@@ -478,7 +478,7 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
    volume is the global gPartyCell; for a higher slot it is gPartyCell plus the per-page
    pageVolume[] adjustment and the action only proceeds when the object there (gB894/g194B) is
    flagged (bits 0..3 of g194B). The per-page, per-slot kind is slotKind[]; a nonzero current item
-   is queued for use through InsertListItem (and the sound f122E_1DA8), otherwise the first matching
+   is queued for use through InsertListItem (and the sound RunMemberScript), otherwise the first matching
    entry of the volume's list is removed through RemoveListItem and shown with SetMouseItem. Any
    effect sets gDF4C. Returns 1. The two tables are local arrays initialised from constant lists, as
    the original copies them with F_SCOPY (0000:78C9) in the segment-first order that form produces
@@ -509,13 +509,13 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
     if (f0D1C_02DC() == 0) {
         removed = RemoveListItem((void far *)(gB899 + vol * 9), slot, -1);
         if (removed) {
-            f122E_1DA8(vol, 8);
+            RunMemberScript(vol, 8);
             SetMouseItem(removed);
             gDF4C = 1;
         }
     } else {
         InsertListItem((void far *)(gB899 + vol * 9), vol, f0D1C_02DC(), slot);
-        f122E_1DA8(vol, 4);
+        RunMemberScript(vol, 4);
         SetMouseItem(0);
         gDF4C = 1;
     }
@@ -683,7 +683,7 @@ done:
    RemoveListItem over the character's +0x97 sub-table at row 0x10) and gives up without redrawing
    when the item's flags have bit 0x20 or the item is 0. It then computes the per-page value
    g373C[gFBCC * 2 + g3744[gA99A]]: `used` zero runs InsertListItem over the volume's ds:B899 record
-   list and f122E_1DA8, otherwise AddDDEffect returns whether the use took effect. On success it
+   list and RunMemberScript, otherwise AddDDEffect returns whether the use took effect. On success it
    redraws (SetMouseItem, or RedrawMember at row 0x10) and sets gDF4C and gEFB2; on no effect at row
    0x10 it runs InsertListItem over the character's +0x97 table. Always redraws gA99A at the end. */
 /*@ 0ACD:0A61 */ void MoveListItem(int used)
@@ -710,7 +710,7 @@ done:
     value = g373C[gFBCC * 2 + value];
     if (used == 0) {
         InsertListItem((void far *)(gB899 + gPartyCell * 9), gPartyCell, item, value);
-        f122E_1DA8(gPartyCell, 4);
+        RunMemberScript(gPartyCell, 4);
     } else {
         flag = AddDDEffect(gA99A, item, gPartyCell, value, gFBCC, gTable8DD2[item].m02);
     }
@@ -735,7 +735,7 @@ call:
    page's volume from f0D1C_00DA when g374A[gEFB2] is set, and asks RemoveListItem for the first
    item of that volume's ds:B899 record list with the kind g1A1B[gFBCC * 4 + gEFB2]. A fresh item
    (nonzero and not the one gF3BA already holds) marks itself used (f0BD2_0AF2) and is shown
-   (PushListItem and f122E_1DA8, or SetMouseItem, or RedrawMember with InsertListItem at row 0x10),
+   (PushListItem and RunMemberScript, or SetMouseItem, or RedrawMember with InsertListItem at row 0x10),
    sets gDF4C, and stops; an empty or repeated item runs InsertListItem and clears gF3BA. It redraws
    gA99A through ComputeArmourClass at the end. The success path is a positive `if (item != 0 &&
    item != gF3BA)` with the miss path as its `else`: with a `goto miss` the compiler stores the
@@ -779,12 +779,12 @@ call:
                 if (f0BD2_0AF2(item, gA99A, gF51A)) {
                     if (cur != 0) {
                         PushListItem(vol, cur, value);
-                        f122E_1DA8(vol, 4);
+                        RunMemberScript(vol, 4);
                     }
                     SetMouseItem(item);
                 } else {
                     PushListItem(vol, item, value);
-                    f122E_1DA8(vol, 4);
+                    RunMemberScript(vol, 4);
                 }
             } else {
                 if (f0BD2_0AF2(item, gA99A, gF51A)) {
@@ -792,14 +792,14 @@ call:
                     RedrawMember(gA99A);
                 } else {
                     PushListItem(vol, item, value);
-                    f122E_1DA8(vol, 4);
+                    RunMemberScript(vol, 4);
                 }
             }
             gDF4C = 1;
         } else {
             if (item != 0) {
                 InsertListItem((void far *)(gB899 + vol * 9), vol, item, value);
-                f122E_1DA8(vol, 4);
+                RunMemberScript(vol, 4);
             }
             gF3BA = -1;
         }

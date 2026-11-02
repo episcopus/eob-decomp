@@ -1,9 +1,13 @@
-/* Unit at EOB.EXE 122E:0001 (7775 bytes, 40 functions). The game's action script interpreter: the
-   driver at 122E:1DA8 walks a member's compiled script with a table of 26 far handler pointers and
-   dispatches each opcode byte to one of the handlers below. The handlers take the current script
-   pointer (a far char pointer) and return how many bytes the opcode consumed, or jump the pointer;
-   the driver stops when a handler sets gA9EC. 147F is the big dispatcher with its own in-segment jump
-   table. Names are placeholders until evidence names them. */
+/* Unit at EOB.EXE 122E:0001 (7775 bytes, 40 functions of the map). The game's action script
+   interpreter: the driver at 122E:1DA8 (RunMemberScript) walks a member's compiled script with a
+   table of 26 far handler pointers and dispatches each opcode byte to one of the handlers below.
+   The handlers take the current script pointer (a far char pointer) and return how many bytes the
+   opcode consumed, or jump the pointer; the driver stops when a handler sets gA9EC. 147F is the big
+   sub-dispatcher with its own in-segment jump table; the map folded the 122E:1194 play-sound handler
+   into 1097 and the 122E:1A3B drain-item handler into 147F, and both are separate functions here.
+   Below L2: the writer 147F (stub) and nine drafts (ArmMemberEffect 0154, ForceDoorAction 0325,
+   ItemSlotAction 06D0, WriteObjectFieldOp 0960, WriteObjectRunOp 0A16, AddEffectOp 0C4D, ShowTextOp
+   0FDC and MarkMemberItemsOp 1CAD), each with its difference in re/symbols.toml. */
 
 /*@flags -ml -O -Z */
 
@@ -20,6 +24,7 @@ extern unsigned long gFC04; /*@ ds:FC04 */     /* effect flags (src/E08E6.C) */
 extern char gB899[]; /*@ ds:B899 */            /* the nine-byte record list head (src/E0ACD.C) */
 extern int gFBCE; /*@ ds:FBCE */               /* the item index shown by the mouse (src/E07A9.C) */
 extern int gB800; /*@ ds:B800 */               /* the member whose script is running (122E:1DA8) */
+extern int gFB36; /*@ ds:FB36 */               /* the driver mode the script is running in (122E:1DA8) */
 extern char gDragActive; /*@ ds:5C77 */        /* nonzero while a member is picked for arming (122E:0154) */
 extern int gDragMember; /*@ ds:5C74 */         /* the member picked for arming (122E:0154) */
 extern signed char g5C76; /*@ ds:5C76 */       /* the mode byte 03B4 reads (src/E1414.C) */
@@ -27,6 +32,9 @@ extern void ArmEffectWith(int idx, int arg, int sub, int active); /*@ 1414:055B 
 extern void AdjustMemberStatus(int who); /*@ 1414:03B4 */
 extern void Obj1505(int kind, int id, int frame, int orient, int b0, int m07, int type, int timer, int m12, int m14); /*@ 08E6:1505 */
 extern void MarkListItems(void far *head); /*@ 0BD2:040E */
+extern int ScanListItem(void far *head, int target, int type, int count); /*@ 0BD2:0385 */
+extern void DrainListItem(int vol, int type); /*@ 0BD2:04AA */
+extern int f0BD2_0106(int who, int row); /*@ 0BD2:0106 */
 extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
 extern void PushListItem(int who, int item, int value); /*@ 0BD2:0458 */
 extern int AddDDEffect(int who, int item, int volume, int kind, int page, int type); /*@ 0BD2:07DE */
@@ -41,6 +49,8 @@ extern signed char gA99A; /*@ ds:A99A */       /* the selected character index (
 extern signed char g181F[]; /*@ ds:181F */     /* byte table indexed by an item icon (src/E1414.C) */
 extern int ClickInRect(int left, int top, int right, int bottom); /*@ 082C:0A5D */
 extern void PlaySound(int sound); /*@ 177D:0070 */
+extern void PlaySoundAtCell(int sound, int volume); /*@ 177D:0106 */
+extern char gFB76; /*@ ds:FB76 */              /* set by opcode 0xFFE4, cleared when the driver starts (122E:1097, 122E:1DA8) */
 extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
 extern char gFileNameBuf[]; /*@ ds:FE6E */     /* the text buffer sprintf formats into (src/E082C.C) */
 extern int gForceDoorRoll[]; /*@ ds:59B0 */    /* force-door roll thresholds, indexed by CharRec.m0D (122E:0325) */
@@ -56,6 +66,7 @@ extern void ResetLevel(void); /*@ 210C:007F */  /* overlay 3 entry, ovl3:19F7 */
 extern void fOvl4_2039(void); /*@ 2116:0043 */  /* overlay 4 entry */
 extern void LoadScreenImage(char far *name, char far *extra, int srcKind, int dstKind, int mode); /*@ 082C:051B */
 extern char gText5BA1[]; /*@ ds:5BA1 */        /* the "INVENT" screen name (122E:1AAB) */
+extern unsigned char far gSheet2067[]; /*@ 2067:0000 */ /* the sheet at segment 2067 (src/E0ACD.C) */
 extern void LockHidePointer(void); /*@ 1BBE:0307 */
 extern void LockShowPointer(void); /*@ 1BBE:0332 */
 extern int gTextAttr1; /*@ ds:811D */          /* the first text attribute (src/E07C8.C) */
@@ -121,7 +132,7 @@ struct Item14 {                                 /* the 14-byte item records at d
     unsigned char flags;                        /* +00 (ds:8DD2) */
     signed char icon;                           /* +01 (ds:8DD3): indexes g181F (122E:06D0) */
     signed char m02;                            /* +02 (ds:8DD4): the item type (src/E0BD2.C) */
-    char pad03;
+    signed char m03;                            /* +03 (ds:8DD5): the key (src/E0BD2.C) */
     int m04;                                    /* +04 (ds:8DD6): the key, -1 when free (src/E0BD2.C) */
     char pad06[0x0e - 0x06];
 };
@@ -145,6 +156,19 @@ struct DDRec {
 
 extern struct DDRec gDD2C[]; /*@ ds:DD2C */    /* 10 records, 18 bytes each */
 
+struct Obj28 {                                  /* the 28-byte object records at ds:8A82 (src/E08E6.C) */
+    char pad00[2];
+    int id;                                     /* +2 (ds:8A84): the object id */
+    char frame;                                 /* +4 (ds:8A86) */
+    char pad05[0x08 - 5];
+    signed char type;                           /* +8 (ds:8A8A): the object type, cleared by 122E:1097 */
+    char pad09[0x16 - 9];
+    char m16;                                   /* +0x16 (ds:8A98): a bit flags byte set by 122E:1097 */
+    char pad17[0x1c - 0x17];
+};
+extern struct Obj28 gObjs[]; /*@ ds:8A82 */
+extern void MoveObjectToId(struct Obj28 far *obj, int id, int orient); /*@ 08E6:0297 */
+
 extern int CopyItemToFreeSlot(int n); /*@ 0BD2:089E */
 extern void SetMouseItem(int n); /*@ 07A9:010C */
 extern void InsertListItem(void far *head, int key, int item, int sound); /*@ 0BD2:01D0 */
@@ -165,7 +189,7 @@ extern int gF540; /*@ ds:F540 */               /* counts sound-volume changes (s
 extern char g194B[]; /*@ ds:194B */             /* per-object bit flags (src/E08E6.C) */
 extern char gText5AB5[]; /*@ ds:5AB5 */        /* message drawn when the sound volume changes (122E:0001) */
 extern char gText5B78[]; /*@ ds:5B78 */        /* message drawn for a highlighted member slot (122E:0847) */
-void f122E_1DA8(int a, int b);  /* forward: 1DA8 comes after its callers */
+void RunMemberScript(int who, int mode);  /* forward: 1DA8 comes after its callers */
 
 /* 122E:0001: switch the sound volume to `volume`: run Obj0150 around the change, hand the old and
    the new value to the driver (codes 2 and 1), mark the sound page and action dirty, draw the
@@ -177,8 +201,8 @@ void f122E_1DA8(int a, int b);  /* forward: 1DA8 comes after its callers */
     Obj0150();
     old = gPartyCell;
     gPartyCell = volume;
-    f122E_1DA8(old, 2);
-    f122E_1DA8(volume, 1);
+    RunMemberScript(old, 2);
+    RunMemberScript(volume, 1);
     Obj0150();
     gF540++;
     gEFB2 = (char)0xff;
@@ -394,7 +418,7 @@ void f122E_1DA8(int a, int b);  /* forward: 1DA8 comes after its callers */
 
     kind = gTable18BF[gB894[id * 9 + slot]];
     if (HitTestObjectKind(kind)) {
-        f122E_1DA8(id, gEFD2);
+        RunMemberScript(id, gEFD2);
         return 1;
     }
     return 0;
@@ -410,7 +434,7 @@ void f122E_1DA8(int a, int b);  /* forward: 1DA8 comes after its callers */
     if (HitTestObjectKind(kind)) {
         gB894[id * 9 + slot]++;
         gDF4C = 1;
-        f122E_1DA8(id, gEFD2);
+        RunMemberScript(id, gEFD2);
         return 1;
     }
     return 0;
@@ -426,7 +450,7 @@ void f122E_1DA8(int a, int b);  /* forward: 1DA8 comes after its callers */
     if (HitTestObjectKind(kind)) {
         gB894[id * 9 + slot]--;
         gDF4C = 1;
-        f122E_1DA8(id, gEFD2);
+        RunMemberScript(id, gEFD2);
         return 1;
     }
     return 0;
@@ -458,7 +482,7 @@ void f122E_1DA8(int a, int b);  /* forward: 1DA8 comes after its callers */
     } else if (f0D1C_02DC() == 0) {
         item = RemoveListItem(&gB899[id * 9], 8, -1);
         if (item != 0) {
-            f122E_1DA8(id, 8);
+            RunMemberScript(id, 8);
             SetMouseItem(item);
             gDF4C = 1;
         }
@@ -466,7 +490,7 @@ void f122E_1DA8(int a, int b);  /* forward: 1DA8 comes after its callers */
         item = f0D1C_02DC();
         if (g181F[gTable8DD2[item].icon] > 0xe) {
             InsertListItem(&gB899[id * 9], id, f0D1C_02DC(), 8);
-            f122E_1DA8(id, 4);
+            RunMemberScript(id, 4);
             SetMouseItem(0);
             gDF4C = 1;
         } else {
@@ -494,7 +518,7 @@ void f122E_1DA8(int a, int b);  /* forward: 1DA8 comes after its callers */
    handler (a local table of far function pointers copied from the compiler template at ds:5A18)
    with (id, slot). Then it clears the driver mode and marks the action dirty. Returns 0 when a
    guard fails, else the handler's result. */
-/*@ 122E:0896 draft */ int DispatchSlotHandler(int id, int slot)
+/*@ 122E:0896 */ int DispatchSlotHandler(int id, int slot)
 {
     int (far *handlers[10])(int, int) = {
         MemberSlotClickAction, PerformItemSlotAction, IncreaseItemSlot, DecreaseItemSlot,
@@ -506,9 +530,9 @@ void f122E_1DA8(int a, int b);  /* forward: 1DA8 comes after its callers */
 
     slot ^= 2;
     idx = gB894[id * 9 + slot];
-    if (g1905[idx] == 0)
+    if (!g1905[idx])
         return 0;
-    mask = ((gB894[id * 9 + 4] & 0xf8) >> 3) | 0xe0;
+    mask = (((unsigned char)gB894[id * 9 + 4] & 0xf8) >> 3) | 0xe0;
     if (!(gEFD2 & mask))
         return 0;
     if (g1905[idx] - 1 < 0)
@@ -694,8 +718,105 @@ void f122E_1DA8(int a, int b);  /* forward: 1DA8 comes after its callers */
     }
     return (long)(script - start);
 }
-/*@ 122E:0D57 stub */ void f122E_0D57(void) {}
-/*@ 122E:0E9B stub */ void f122E_0E9B(void) {}
+/* 122E:0D57: reassign objects, items and effects from one id to another. It reads an opcode (a byte),
+   for 0xFFE8 sets the sound volume, for 0xFFF3 moves every gObjs record whose id matches `v` to
+   `id`, and for 0xFFF5 moves every item of the gB899 list of `v` to the list of `id` (keeping each
+   item's m03 key) and retargets every live gDD2C effect from `v` to `id`. Sets gDF4C. Returns the
+   bytes read. */
+/*@ 122E:0D57 */ long ReassignObjectsOp(char far *script)
+{
+    struct Obj28 far *obj;
+    struct DDRec far *rec;
+    int saved;
+    int op;
+    int srcId;
+    int item;
+    char far *start = script;
+    register int id;
+    register int i;
+
+    if ((op = *script++) != 0xfff1) {
+        srcId = *(int far *)script;
+        script += 2;
+    }
+    id = *(int far *)script;
+    script += 2;
+    switch (op) {
+    case 0xffe8:
+        SetSoundVolume(id);
+        break;
+    case 0xfff3:
+        obj = gObjs;
+        for (i = 0; i < 0x1e; i++) {
+            if (obj->id == srcId)
+                MoveObjectToId(obj, id, obj->frame);
+            obj++;
+        }
+        break;
+    case 0xfff5:
+        while ((item = ScanListItem(&gB899[srcId * 9], -1, -1, 0)) != 0) {
+            saved = gTable8DD2[item].m03;
+            RemoveListItem(&gB899[srcId * 9], 0, item);
+            InsertListItem(&gB899[id * 9], id, item, saved);
+        }
+        rec = gDD2C;
+        for (i = 0; i < 0xa; i++) {
+            if (rec->active == 1 && rec->m04 == srcId)
+                rec->m04 = id;
+            rec++;
+        }
+        break;
+    }
+    gDF4C = 1;
+    return (long)(script - start);
+}
+/* 122E:0E9B: move one item out of a party member's carried list. It reads a member index `who` (a
+   random live member when -1), a destination list `id` and a trailing byte, finds a carried item
+   whose g181F icon size is at least 0xf by scanning the member's 27 slots from a random start
+   (skipping the first two and slot 0x10 unless the member is the one on screen), clears its slot and
+   inserts it into the gB899 list of `id`. Returns the bytes read. */
+/*@ 122E:0E9B */ long MoveCarriedItemOp(char far *script)
+{
+    int id;
+    int item;
+    int count;
+    int third;
+    char far *start = script;
+    register int who;
+    register int idx;
+
+    who = *script++;
+    id = *(int far *)script;
+    script += 2;
+    third = *script++;
+    if (who == -1)
+        who = RollDice(1, 6, -1);
+    while (!gChars[who].status) {
+        who++;
+        if (who > 5)
+            who = 0;
+    }
+    if (gFB44 != 0 && gA99A == who)
+        goto done;
+    item = 0;
+    idx = RollDice(1, 0x1b, 0);
+    for (count = 0; count < 0x1b; count++) {
+        if ((gFB44 != 0 || idx > 1) && idx != 0x10) {
+            item = gChars[who].items[idx];
+            if (item != 0 && g181F[gTable8DD2[item].icon] >= 0xf)
+                break;
+        }
+        idx++;
+        if (idx >= 0x1b)
+            idx = 0;
+    }
+    if (count < 0x1b && item != 0) {
+        gChars[who].items[idx] = 0;
+        InsertListItem(&gB899[id * 9], id, item, third);
+    }
+done:
+    return (long)(script - start);
+}
 /* 122E:0FDC: the show-text opcode. It skips the script to the text's NUL, then reads two bytes
    into a 5-byte control-code buffer initialised from the compiler template at ds:5A48, hides the
    pointer, draws the original text, the buffer, the buffer with the two saved text attributes,
@@ -725,7 +846,56 @@ void f122E_1DA8(int a, int b);  /* forward: 1DA8 comes after its callers */
     LockShowPointer();
     return (long)(script - start);
 }
-/*@ 122E:1097 stub */ void f122E_1097(void) {}
+/* 122E:1097: sub-opcode that sets action flags. 0xFFEF sets the bit in the gActionFlags entry of the
+   current action gFBC8, 0xFFF0 sets it in gFC04, 0xFFF3 sets a bit in gObjs[index].m16 and clears
+   gObjs[index].type, and 0xFFE4 sets gFB76. Returns the bytes read. */
+/*@ 122E:1097 */ long SetActionFlagsOp(char far *script)
+{
+    int op;
+    int arg;
+    char far *start = script;
+    register int idx;
+
+    op = *script++;
+    switch (op) {
+    case 0xffef:
+        arg = *script++;
+        gActionFlags[gFBC8] |= 1L << arg;
+        break;
+    case 0xfff0:
+        arg = *script++;
+        gFC04 |= 1L << arg;
+        break;
+    case 0xfff3:
+        idx = *script++;
+        arg = *script++;
+        gObjs[idx].m16 |= 1 << arg;
+        gObjs[idx].type = 0;
+        break;
+    case 0xffe4:
+        gFB76 = 1;
+        break;
+    }
+    return (long)(script - start);
+}
+
+/* 122E:1194: sub-opcode that plays a sound: read a sound byte and a cell word; a nonzero cell plays
+   the sound at that map cell, otherwise as a global sound. Returns the bytes read. */
+/*@ 122E:1194 */ long PlaySoundOp(char far *script)
+{
+    char far *start = script;
+    char sound;
+    int cell;
+
+    sound = *script++;
+    cell = *(int far *)script;
+    script += 2;
+    if (cell != 0)
+        PlaySoundAtCell(sound, cell);
+    else
+        PlaySound(sound);
+    return (long)(script - start);
+}
 
 /* 122E:11E8: sub-opcode that clears one bit of a 32-bit action mask: 0xFFEF clears the bit in the
    gActionFlags entry of the current action gFBC8, 0xFFF0 clears it in gFC04. The byte after the
@@ -854,13 +1024,41 @@ void f122E_1DA8(int a, int b);  /* forward: 1DA8 comes after its callers */
     }
     return (long)(script - start);
 }
-/*@ 122E:147F stub */ void f122E_147F(void) {}
+/*@ 122E:147F stub */ long f122E_147F(char far *script) { return 0; }
+
+/* 122E:1A3B: the drain-item opcode. It reads a byte: 0xFFFF clears slot -1 of member 0, 0xFFFE
+   drains every item of the list `vol` (read as a word), and any other byte drains the list `vol`
+   of items of that type. Returns the bytes read. */
+/*@ 122E:1A3B */ long DrainItemOp(char far *script)
+{
+    char far *start = script;
+    char op;
+    register int vol;
+
+    op = *script++;
+    switch (op) {
+    case 0xffff:
+        f0BD2_0106(0, -1);
+        break;
+    case 0xfffe:
+        vol = *(int far *)script;
+        script += 2;
+        DrainListItem(vol, -1);
+        break;
+    default:
+        vol = *(int far *)script;
+        script += 2;
+        DrainListItem(vol, op);
+        break;
+    }
+    return (long)(script - start);
+}
 /* 122E:1AAB: the load-level opcode. It refreshes the display (Action01E3 and f0EF3_2541 on the
    gF542 buffer when gFB44 and gFlag are set), reads a byte, a word and a byte, stores the word as
    gPartyCell and the byte as gFBCC (unless 0xFF), resets and saves the level, runs ovl3:0A7C,
    loads the INVENT screen (gText5BA1) with the 0:0x2067 page, runs ovl4:2039, sets the sound volume
    and stops the script driver (gA9EC). Returns 0. */
-/*@ 122E:1AAB draft */ long LoadLevelOp(char far *script)
+/*@ 122E:1AAB */ int LoadLevelOp(char far *script)
 {
     char v1;
     char v2;
@@ -881,7 +1079,7 @@ void f122E_1DA8(int a, int b);  /* forward: 1DA8 comes after its callers */
     ResetLevel();
     SaveLevelState(gFBC8);
     Ovl3_0A7C(v1);
-    LoadScreenImage(gText5BA1, (char far *)0x2067, 5, 3, 2);
+    LoadScreenImage(gText5BA1, (char far *)gSheet2067, 5, 3, 2);
     fOvl4_2039();
     SetSoundVolume(id);
     gA9EC = 1;
@@ -962,20 +1160,20 @@ void f122E_1DA8(int a, int b);  /* forward: 1DA8 comes after its callers */
    matches the sound volume (the running character), set flag 0x40 on every item in the first-item
    list of each of that character's six 243-byte records that has bit 0 of its status set, and mark
    each record's list (rec + 0x97). Always marks the gB899 list of the index. Returns the bytes read. */
-/*@ 122E:1CAD draft */ long MarkMemberItemsOp(char far *script)
+/*@ 122E:1CAD */ long MarkMemberItemsOp(char far *script)
 {
+    int item;
     struct CharRec far *rec;
     int id;
     register int i;
     register int j;
-    int item;
     char far *start = script;
 
     id = *(int far *)script;
     script += 2;
     if (id == gPartyCell) {
         rec = gChars;
-        for (i = 0; i < 6; i++) {
+        for (i = 0; i < 6; i++, rec++) {
             rec = &gChars[i];
             if (rec->status & 1) {
                 for (j = 0; j < 0x1b; j++) {
@@ -1000,4 +1198,40 @@ void f122E_1DA8(int a, int b);  /* forward: 1DA8 comes after its callers */
     return (long)(script - start);
 }
 
-/*@ 122E:1DA8 stub */ void f122E_1DA8(int a, int b) {}
+/* 122E:1DA8: the script driver. Given a member `who` and a driver mode, it takes the member's
+   script offset from gB894[who * 9 + 7], checks the mode against the member's ((gB894[who*9+4] &
+   0xf8) >> 3) | 0xe0 mask, then walks the far script at gBuf8DCA + offset, dispatching each negative
+   opcode (0xFFE6..0xFFFF) through the 26-entry far handler table to a handler that returns how many
+   bytes it consumed, until a handler sets gA9EC. Records gB800 (member), gFB36 (mode) and clears
+   gFB76. */
+/*@ 122E:1DA8 */ void RunMemberScript(int who, int mode)
+{
+    long (far *handlers[26])(char far *) = {
+        WriteObjectFieldOp, WriteObjectRunOp, ArmMember, DisarmMember, SpawnObjectOp,
+        ReassignObjectsOp, MoveCarriedItemOp, ShowTextOp, SetActionFlagsOp, PlaySoundOp,
+        ClearActionBit, HealPartyMember, DamagePartyMember, JumpToScriptOffset, ScriptStop,
+        PopScriptPointer, PushScriptPointer, f122E_147F, DrainItemOp, LoadLevelOp,
+        AddExperienceOp, TakeItemOp, AddEffectOp, TurnPageOp, MarkMemberItemsOp, CallOverlayOp
+    };
+    char far *script;
+    unsigned char mask;
+    register int offset;
+    register int op;
+
+    offset = *(int *)(gB894 + who * 9 + 7);
+    if (offset == 0)
+        return;
+    mask = (((unsigned char)gB894[who * 9 + 4] & 0xf8) >> 3) | 0xe0;
+    if (!(mode & mask))
+        return;
+    gFB76 = 0;
+    gB800 = who;
+    gFB36 = mode;
+    gA9EC = 0;
+    script = (char far *)gBuf8DCA + offset;
+    do {
+        op = *script++;
+        if (op < 0 && op > -0x1b)
+            script += (int)handlers[-(op + 1)](script);
+    } while (!gA9EC);
+}

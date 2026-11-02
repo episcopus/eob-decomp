@@ -128,7 +128,7 @@ extern int GetIndexedByte(char index, char limit, char offset); /*@ 0A72:0006 */
 extern int SubtractInts(int minuend, int subtrahend); /*@ 0A72:058C */
 extern int far RollDice(char count, char sides, char bonus); /*@ 082C:0458 */
 extern void AddPartyExperience(int amount); /*@ 0DE8:0C2B */
-extern void f122E_1DA8(int a, int b); /*@ 122E:1DA8 */
+extern void RunMemberScript(int a, int b); /*@ 122E:1DA8 */
 extern void fOvl5_160A(void); /*@ 211E:007F */   /* overlay 5 entry, ovl5:160A */
 extern void ShutdownGame(void); /*@ 07C8:058A */
 extern void far *memset(void far *dst, int c, unsigned n); /*@ 0000:6384 */
@@ -986,7 +986,7 @@ second:
     }
     return;
 fire:
-    f122E_1DA8(0, 0x20);
+    RunMemberScript(0, 0x20);
     any = 0;
     for (i = 1; i < 30; i++) {
         any += gObjs[i].count <= 0;

@@ -1433,6 +1433,15 @@ why = "net allocation counter: MemAlloc adds one per successful allocation (src/
 date = "2026-11-01"
 
 [[rename]]
+id = "122E:1DA8=RunMemberScript"
+addr = "122E:1DA8"
+old = "f122E_1DA8"
+new = "RunMemberScript"
+kind = "function"
+why = "122E:1DA8 walks a member's compiled action script (the 26-entry far handler table) until a handler stops it; called by E0ACD with a member index and a mode"
+date = "2026-11-01"
+
+[[rename]]
 id = "ds:5E2A=gSoundReg1"
 addr = "ds:5E2A"
 old = "gSoundAmp"
