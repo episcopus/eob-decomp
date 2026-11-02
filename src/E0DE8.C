@@ -154,7 +154,7 @@ extern int f0BD2_07DE(int who, int slot, int a, int b, int c, int d); /*@ 0BD2:0
 extern int f08E6_15B4(char a, int b); /*@ 08E6:15B4 */
 extern int f0EF3_04F7(int who); /*@ 0EF3:04F7 */
 extern void f08E6_0FBE(struct Obj28 far *obj, int n); /*@ 08E6:0FBE */
-extern void f0EF3_12A1(void far *arg, int n); /*@ 0EF3:12A1 */
+extern void f0EF3_12A1(void far *arg); /*@ 0EF3:12A1 */
 extern void f0EF3_0F86(void far *arg); /*@ 0EF3:0F86 */
 extern void ApplyCharEffect(char who, long interval, char value, char firstEmpty); /*@ 1414:05ED */
 extern void f1547_0991(int dir); /*@ 1547:0991 */
@@ -453,7 +453,60 @@ fail:
     }
     return 0;
 }
-/*@ 0DE8:0763 stub */ void f0DE8_0763(void) {}
+/* 0DE8:0763: runs the action `field` for character `who` and slot `slot`. It derives the item's
+   m02, calls f0EF3_12A1 when mE3 bit 2 is set, dispatches on the gItemTypes m0E kind (1 rolls
+   0359 and forces a miss from 0 to -1 with sound 0x20, 2 runs 0537, 3 runs 05BB and redraws),
+   then, on a hit, raises hp (capped at 0x7F) for a flag-8 item, clears m77[slot] for a flag-16
+   item and hands gObjs[gDCA4] to f08E6_0FBE. It toggles m1E bit `slot`, stores the result in
+   mE8[slot], redraws and arms ApplyCharEffect(who, 0x12, slot or slot + 2, 1). Called by
+   0BD2:1001. */
+/*@ 0DE8:0763 */ void f0DE8_0763(int who, int slot, int field)
+{
+    int m02;
+    int result;
+
+    if (field != 0)
+        m02 = gTable8DD2[field].m02;
+    else
+        m02 = 0;
+    result = 0;
+    if (gChars[who].mE3 & 4)
+        f0EF3_12A1(&gChars[who]);
+    switch (gItemTypes[m02].m0E & 0x7f) {
+    case 1:
+        result = f0DE8_0359(who, field);
+        if (result == 0)
+            result = -1;
+        PlaySound(0x20);
+        break;
+    case 2:
+        result = f0DE8_0537(who, slot, field);
+        break;
+    case 3:
+        result = f0DE8_05BB(who, field);
+        f1547_0991(who);
+        break;
+    }
+    if (result > 0) {
+        if (gTable8DD2[field].flags & 8) {
+            if (gChars[who].hp + result >= 0x80)
+                gChars[who].hp = 0x7f;
+            else
+                gChars[who].hp += result;
+            f1547_0991(who);
+        }
+        if (gTable8DD2[field].flags & 0x10)
+            gChars[who].m77[slot] = 0;
+        f08E6_0FBE(&gObjs[gDCA4], result);
+    }
+    gChars[who].m1E ^= 1 << slot;
+    gChars[who].mE8[slot] = result;
+    f1547_0991(who);
+    if (result < -2)
+        ApplyCharEffect(who, 0x12, slot, 1);
+    else
+        ApplyCharEffect(who, 0x12, slot + 2, 1);
+}
 /* 0DE8:093B: the party-wipe ending. It counts how many of the six characters survive the
    f0D1C_0670(n, 5) test (creatures with hit points); when none does it hides the pointer, fills
    the panel (0, 0x79)-(0x13F, 0xC8), writes "All of your party has been defeated. ..." in text
