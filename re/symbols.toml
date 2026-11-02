@@ -8484,8 +8484,10 @@ unit = "eov5"
 addr = "ovl5:0455"
 size = 550
 evidence = ["ovl", "near", "frame"]
-name = "SelectMenu"
 notes = "retry under -v (2026-11-02): the unit now builds with -v, which keeps identical tails apart; the difference below was found under the wrong switches. Earlier: TC registers the row index. The body matches up to ovl5:0036; the draw/mouse/click loops then differ because the original keeps j in memory (`mov word ptr [bp-0xa], 0` at ovl5:048C, `mov ax,[bp-0xa]; shl ax,1; shl ax,1` for names[j], `cmp si,[bp-0xa]` for i==j) and computes first+j once into DI (`mov al,[bp+6]; cwde; add ax,[bp-0xa]; mov di,ax` at ovl5:0493/0497/049A, then `es:[di+0x7b89]`/`es:[di+0x7b94]`), while our build registers j in DI (`xor di,di` at ovl5:0037) and combines first+j as `[bx+di+disp]`; the whole function is 2 bytes short and every offset after shifts. Tried: plain j, `register int i`, `unsigned j`, `j == i` vs `i == j`, a `register int n = first+j` (took SI, pushed i to DI), a function-scope `int k`, block-scope j, `volatile` on every non-i local with `register int i` (j then stays in memory, but the draw loop uses BX as the scratch and recomputes first+j per table where the original computes it once into DI), and -B (no change, TCC -S does the allocation). TC's allocator picks i (SI) and j (DI); a source form that stops it choosing j and lets it compute first+j once into DI would match. Not a tail merge."
+name = "SelectMenu"
+level = "L2"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "eov5_067b"
