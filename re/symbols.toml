@@ -7063,6 +7063,7 @@ unit = "eov3"
 addr = "ovl3:03A2"
 size = 560
 evidence = ["ovl", "near", "frame"]
+notes = "blocked: the far object at 1F1D:0000 is indexed [gFBC8-1]; the compiler folds the -1 into a disp16 0xFFFF, so our build's displacement is FAR_BASE-1 (0x7FFF) and cmatch.py:370 only explains a displacement >= FAR_BASE. The honest source form is kept in src/EOV3.C."
 
 [[function]]
 id = "eov3_05d2"

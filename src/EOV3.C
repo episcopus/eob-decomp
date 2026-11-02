@@ -1,8 +1,10 @@
 /* Overlay 3 of EOB.EXE (6961 bytes, 23 functions). Purpose unknown at this point: the unit owns the
-   wall set loader (ovl3:004F), the free list at ds:EFD4 and the 0x34-byte character/object records
-   at ds:E06A. Placeholder names. */
+   wall set loader (ovl3:004F), the free list at ds:EFD4, the map/level screen setup and the table of
+   0x34-byte records at ds:E06A. Placeholder names. */
 
 /*@flags -ml -O -Z */
+
+#include <dos.h>
 
 extern void farfree(void far *block); /*@ 0000:71EE */
 extern void far *gEFD4[]; /*@ ds:EFD4 */
@@ -38,6 +40,13 @@ struct Rect {               /* a four-word cell rectangle (x, y, w, h) */
 
 extern void far * (far *gGetSpriteCell)(int x, int y, int w, int h, void far *sheet); /*@ ds:8086 */
 extern int sprintf(char far *buf, char far *fmt, ...); /*@ 0000:57AE */
+extern int gFBC8; /*@ ds:FBC8 */
+extern unsigned char g6840[]; /*@ ds:6840 */
+extern unsigned char g68A0[]; /*@ ds:68A0 */
+extern unsigned char g6900[]; /*@ ds:6900 */
+extern signed char far gMapTiles[]; /*@ 1F1D:0000 */
+
+#define MAPSHEET ((void far *)((char far *)MK_FP(0x1d8, 0) + (gMapTiles[gFBC8 - 1] << 5)))
 
 struct WallDec {            /* a 52-byte wall set decoration */
     char idx[0xc];
@@ -127,7 +136,47 @@ struct WallDec {            /* a 52-byte wall set decoration */
         }
     }
 }
-/*@ ovl3:03A2 stub */ void Ovl3_03A2(void) {}
+/* ovl3:03A2: loads the overlay screen at ds:6A98 and slices map icon cells out of the map sheet
+   (segment 0x1D8, offset from the tile byte table gMapTiles[gFBC8-1] shifted left 5). For `srcA`
+   (when not -1) it slices three cells from the 4-byte rectangles at ds:6840 into gFB5E starting at
+   `dstA` and three more from ds:68A0 into gA99C[dstA].v, and copies the two gA99C[dstA].c bytes
+   from ds:6900. For `srcB` (when not -1) it does the same at `dstB`. Clears g8115. Called by
+   ovl3:0A7C. blocked: cmatch cannot explain the far object's offset: the table at 1F1D:0000 is
+   indexed [gFBC8-1], which the compiler folds to `es:[bx-1]` (disp16 FFFF), so our build's
+   displacement is FAR_BASE-1 (7FFF) and cmatch only explains a displacement >= FAR_BASE
+   (cmatch.py:370). The honest annotation (1F1D:0000) and index are kept. */
+/*@ ovl3:03A2 draft */ void LoadMapCells(int srcA, int dstA, int srcB, int dstB)
+{
+    int i;
+    int j;
+
+    LoadOverlayScreen("DOOR", 5, 3);
+    if (srcA == -1) goto second;
+    for (i = 0; i < 3; i++) {
+        j = srcA * 0xc + i * 4;
+        gFB5E[dstA + i] = (long)gGetSpriteCell(g6840[j], g6840[j + 1], g6840[j + 2],
+            g6840[j + 3], MAPSHEET);
+        gA99C[dstA + i].v = (long)gGetSpriteCell(g68A0[j], g68A0[j + 1], g68A0[j + 2],
+            g68A0[j + 3], MAPSHEET);
+        j = srcA * 6 + i * 2;
+        gA99C[dstA + i].c[0] = g6900[j];
+        gA99C[dstA + i].c[1] = g6900[j + 1];
+    }
+second:
+    if (srcB == -1) goto done;
+    for (i = 0; i < 3; i++) {
+        j = srcB * 0xc + i * 4;
+        gFB5E[dstB + i] = (long)gGetSpriteCell(g6840[j], g6840[j + 1], g6840[j + 2],
+            g6840[j + 3], MAPSHEET);
+        gA99C[dstB + i].v = (long)gGetSpriteCell(g68A0[j], g68A0[j + 1], g68A0[j + 2],
+            g68A0[j + 3], MAPSHEET);
+        j = srcA * 6 + i * 2;
+        gA99C[dstB + i].c[0] = g6900[j];
+        gA99C[dstB + i].c[1] = g6900[j + 1];
+    }
+done:
+    g8115 = 0;
+}
 /*@ ovl3:05D2 stub */ void Ovl3_05D2(void) {}
 /* ovl3:0624: loads the overlay screen `screen` and slices six map icon cells out of gOverlayBuf
    (ds:113F), one per 4-word rectangle in the table at ds:6930, into gB802 starting at index
