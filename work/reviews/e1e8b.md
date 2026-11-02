@@ -1,5 +1,60 @@
 # Review: e1e8b
 
+# Round 3
+
+Reviewer: rev-haiku
+Commit reviewed: 6e0c980 (main; review/e1e8b was at the same commit when I started)
+
+Playbook 70. Judge what a matching file can still get wrong: names, types, comments, structure.
+The matcher already proved the bytes; do not re-prove them, read for meaning.
+
+Checked: `make match FILE=src/E1E8B.ASM` 30 of 30 functions, exit 0; `make readability UNIT=e1e8b` 0 findings. The round 2 fixes hold: I checked the 086F, 064E, 068D, 073B, 07A1 and 0761 headers against their code. This round read every function's header against its code and checked the record fields against the layout in the whitepaper.
+Evidence used: src/E1E8B.ASM (all of it), docs/design/WHITEPAPER.md (2.2, 2.3 and the stub layout, the fixup note at line 100), build/packets/e1e8b.md (callers per function). 03B7 and 07A1 are not map entries and no src/ file calls them.
+
+## Findings
+
+Each finding is a checkbox. `must-fix` blocks `make review-pass` until a decompiler ticks it off
+(with the commit that fixes it); `should` and `note` do not block.
+
+### Record fields ES:0008 to ES:000C
+
+- [ ] must-fix src/E1E8B.ASM:1235-1237 (0789): "the data paragraphs (ES:000A plus 0Fh, shifted right by 4)" names ES:000A as data. The overlay record is "code, u16 fixup offsets" (WHITEPAPER 2.3, the +10 row). The stub layout there is code bytes, fixup bytes, entry count, and this unit reads those at ES:0008 (code size, 077D and 0789), ES:000A and ES:000C (entry count, 064E, 066F, 068D). So ES:000A is the byte size of the fixup table. 04A2 loads it with the code (it reads ES:0008+ES:000A bytes, :752-754), and 03FD walks it (`shr cx,1`, :668). Write "the fixup table" for ES:000A and "code plus fixup table" for the total. The 0286 comparison of totals is unchanged.
+- [ ] must-fix src/E1E8B.ASM:644-646 (03FD): "ES:000A is the count" and "walks the CX words" are wrong about the unit. ES:000A is a byte size: 02FF passes it as CX (:570), and 03FD halves it (`shr cx,1`, :668) before the loop, so CX is the number of fixup words, ES:000A/2. Say so.
+
+### The chain: 0536, 0580, 05FB
+
+- [ ] must-fix src/E1E8B.ASM:835-836 (0536): "when 0761 signals its fallback (no current overlay), discards the whole chain (0613) first" gives the wrong trigger. The carry from 0761 is set on two paths: no head (20B5:00BC zero) and a borrow when the head's base is below 20B5:00B0 (`sub ax,ds:[0B0h]` then `jae`, :1212-1217; the 0761 header, :1198-1204, says the borrow is the case for a linked record). 0536 tests that carry (`popf`, `jae age_replace`, :848-851), so the discard runs on both paths. Write both.
+- [ ] should src/E1E8B.ASM:945-946 (05FB): "Called from 0536 when the record's use counter ES:001B reaches zero." 0536 calls 05FB when ES:001B is already zero (`cmp byte ptr es:[1Bh],0`, `jne age_dec`, then the call, :856-858); the counter is decremented only on the other branch (:862). Write "when ES:001B is zero".
+- [ ] should src/E1E8B.ASM:882-883 (0580): "while 0761 reports paragraphs remaining below the 20B5:00A8 limit". The compared value is not 0761's result alone: it is 0761's value plus the code paragraphs already added in this loop (`add ax,cx`, :932; `cmp ax,ds:[0A8h]`, :918). Say "the running paragraph count, starting from 0761's value".
+- [ ] note src/E1E8B.ASM:899-903 (0580): the store of the record segment at word 0Eh of the header paragraph below the new base (`dec ax; mov ds,ax; mov ds:[0Eh],es`) is not in the header. 07A1 reads that back link (:1264-1266). Add one clause.
+
+### 02FF, 000F: wording and the free area
+
+- [ ] should src/E1E8B.ASM:508 (02FF): "(20B5:001C, named in older text here, is the file-name buffer of 01A7, ...)" refers to the comment's history. Say "20B5:001C is the file-name buffer of 01A7, not part of this walk" and drop "named in older text here".
+- [ ] should src/E1E8B.ASM:49-50 (000F): "sizes the free area from the arguments at [bp+0Ah]/[bp+0Ch] (_InitOverlayRecords)" credits _InitOverlayRecords with the free area. 000F sets the free-area base 20B5:00B4 to [bp+0Ch]+1 and the top 20B5:00B6 to [bp+0Ah] (:148-153). _InitOverlayRecords sets 20B5:00AA (:499). The header also omits the check that follows (:155-164): when the free paragraphs are below 00AA the init closes the file with the dead 0FFFBh, and 20B5:00A8 is set to a quarter of the free paragraphs, the limit 0580 uses. Add both.
+
+### 03FD and the fixup flag
+
+- [ ] must-fix src/E1E8B.ASM:649 (03FD): "when the index's low bit is set" names the wrong bit. The index is the fixup word with its low three bits cleared (`and di,0FFF8h`, :678), so the index has no low bit of its own. The test is bit 0 of the fixup word itself (`mov ax,di` before the mask, :677; `test ax,1`, :681). Say that, and mark what bit 0 means as not established (the whitepaper does not say).
+- [ ] should src/E1E8B.ASM:439-448 (0286): the header paragraph is ragged ("...while ES", "is set to the 20BF list head)", "(1E8B:04A2), adds the"). Rewrap it to the unit's width.
+
+### Other headers
+
+- [ ] should src/E1E8B.ASM:773-774 (04D0): "either the single entry at [bp+2] or the two-word form at [bp+6]/[bp+2]" does not say which test picks the path. It is `sub word ptr [bp+2],2` then `jne handler_multi` (:800-801): the single path is the one where the decremented [bp+2] is zero. Say that, and mark what the two-word form means as not shown in this unit.
+- [ ] should src/E1E8B.ASM:1018 (066F) and :1046 (068D): "fill the CX overlay-version records" and "rewrites the CX version records" read CX as an input. Both routines load the count from ES:000C (:1027, :1059) and overwrite CX; the caller's CX is not used. Name ES:000C (the entry count, WHITEPAPER 2.3 stub layout) in both.
+- [ ] should src/E1E8B.ASM:1168 (073B): "a slot whose link word has its low bit set steps one level down" does not say what happens. The walk follows the link word of every entry (`shl cx,1; mov bp,cx`, :1177-1179); a set low bit only skips the match test (:1184). Say that.
+- [ ] note src/E1E8B.ASM:227-231 (0185): `push cs` before each of the two indirect calls (:242-245) is not explained: the callee sees CS on the stack. Say what the pushed CS is for, or that its use is not established.
+
+### Confirmed, no change
+
+- 0442: DS:0020 is the record's own version table. The frame paragraph from the 20C1 table is the resident stub segment of the record (WHITEPAPER 2.3 and the fixup note at line 100), and the +2 compare matches the stub form that 068D writes.
+- 086F and 08C9: the load condition (:1390-1393) and the bootstrap's argument pushes (:1451-1456) match their headers.
+- 03B7 and 07A1 have no caller in src/ and no packet entry; "uncalled" is right.
+
+## Summary
+
+Round 3: the unit reads as the overlay manager it is, and the round 2 fixes hold. Four must-fix items are about meaning: the record's ES:000A is the fixup table's byte size, not data (0789), and 03FD's "count" is the same byte size; the trigger for the whole-chain discard in 0536 is the carry from 0761, which is also set on a borrow; and 03FD's flag is bit 0 of the fixup word, not the index's low bit. The rest are clarity fixes (a history reference in 02FF, the free-area sentence in 000F, a running count in 0580, the CX inputs in 066F and 068D). No placeholder names are left that need evidence. No matcher, spec or pin question, so nothing is escalated. Verdict: review-failed, 4 must-fix items, all comment corrections (no code change is asked for).
+
 # Round 2
 
 Reviewer: rev-haiku
