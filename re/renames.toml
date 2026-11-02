@@ -1467,3 +1467,12 @@ new = "ResurrectPicker"
 kind = "function"
 why = "the resurrect panel's which-one picker: builds the far string list of BuildDeathList's gTableF4E6 entries (gChars/gCharPool names), runs SelectMenu and heals or resurrects the chosen entry (ovl5:0DBB, called by ResurrectPanel)"
 date = "2026-11-01"
+
+[[rename]]
+id = "ovl5:160A=WinnerPanel"
+addr = "ovl5:160A"
+old = "Ovl5_160A"
+new = "WinnerPanel"
+kind = "function"
+why = "the winning-party password screen: draws the four winners' names and a checksum password from gChars, then waits (ovl5:160A, called from CharOverlay mode 0xb)"
+date = "2026-11-01"

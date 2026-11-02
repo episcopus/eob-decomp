@@ -111,6 +111,10 @@ extern char gText7CBC[]; /*@ ds:7CBC */
 extern char gText7D0E[]; /*@ ds:7D0E */
 extern char gText7D77[]; /*@ ds:7D77 */
 extern char gText7D9E[]; /*@ ds:7D9E */
+extern char gText7E53[]; /*@ ds:7E53 */
+extern char gText7E5C[]; /*@ ds:7E5C */
+extern char gText7EDB[]; /*@ ds:7EDB */
+extern char gText7EDD[]; /*@ ds:7EDD */
 extern char gText7BA6[]; /*@ ds:7BA6 */
 extern char gText7BB2[]; /*@ ds:7BB2 */
 extern char gText7BCA[]; /*@ ds:7BCA */
@@ -995,7 +999,57 @@ enum {
     gFC04 |= 0x4000000L;
 }
 /*@ ovl5:1204 stub */ void Ovl5_1204(void) {}
-/*@ ovl5:160A stub */ void Ovl5_160A(void) {}
+/* ovl5:160A: the winning-party password screen at the end of the game. It loads ds:7E53 into the
+   string base gSegDF4E (the password text), sets up the panel, and when all six party bits of
+   gFC04 are set (gFC04 & 0x1FFE == 0x1FFE) draws the winner title ds:7E5C, the first four party
+   members' names (with a separator ds:7EDB) and then a checksum of every party member's name:
+   the sum, over the name's characters, of the signed long square of each character (F_LXMUL@,
+   0000:7737), formatted into gFileNameBuf through ds:7EDD. It then waits for a key and clears
+   gScrollOn. Called from the menu dispatcher 1A82 (mode 0xb). */
+/*@ ovl5:160A */ void WinnerPanel(void)
+{
+    int handle;
+    long sum;
+    int i;
+    int j;
+
+    handle = FileOpen(gText7E53, 1);
+    FileRead(handle, gSegDF4E, 0x7d00L);
+    FileClose(handle);
+    PlaySound(0x14);
+    g8115 = 0;
+    gScrollOn = 1;
+    gFE42 = 1;
+    g169 = gF57E;
+    SetTextWindow(0xc);
+    g8117 = 0xac;
+    g8119 = 0x2d0;
+    LockHidePointer();
+    DrawFilledPanel(0, 0, 0xaf, 0xae, gFB4C, gF53A, gF57E);
+    LockShowPointer();
+    PrintTableString(0x33, 1);
+    if ((gFC04 & 0x1ffe) == 0x1ffe) {
+        DrawText(gText7E5C);
+        for (i = 0; i < 4; i++) {
+            DrawText(gText7EDB);
+            if (gChars[i].flags & 1)
+                DrawText(gChars[i].name);
+        }
+        sum = 0;
+        for (i = 0; i < 6; i++) {
+            if (gChars[i].flags & 1) {
+                for (j = 0; j < strlen(gChars[i].name); j++)
+                    sum += (long)gChars[i].name[j] * gChars[i].name[j];
+            }
+        }
+        sprintf(gFileNameBuf, gText7EDD, sum);
+        DrawText(gFileNameBuf);
+        WaitTicks(0xa);
+        FlushKeyBuffer();
+        WaitKeyEvent();
+    }
+    gScrollOn = 0;
+}
 /*@ ovl5:17C8 stub */ void Ovl5_17C8(void) {}
 /* ovl5:1A82: the overlay's entry and dispatcher (reached from 122E:1D76 and the overlay's stub
    entry). It hides the pointer, saves the current font, handles the gFB44/gFlag message redraws

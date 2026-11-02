@@ -7805,6 +7805,9 @@ unit = "eov5"
 addr = "ovl5:160A"
 size = 446
 evidence = ["ovl", "near", "frame"]
+name = "WinnerPanel"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov5_17c8"
