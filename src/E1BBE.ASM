@@ -12,57 +12,70 @@
 ; rectangle the pointer was hidden over (gZoneLeft..gZoneBottom, read by the mouse handler
 ; 1A72:0244) and the gPointerState redraw flag; 1BBE:0307 LockHidePointer and 1BBE:0332
 ; LockShowPointer hide and show without that state. Every wrapper takes the pointer semaphore
-; _gPointerBusy and brackets its work with [ds:80AA] and [ds:80A2]. The unit is hand-written assembly (AX
-; is saved with push/pop ax, which the compiler's C functions never do; the far call through a
-; DGROUP pointer and the busy-wait on _gPointerBusy are the style of E1BB1 and E1BF3).
+; _gPointerBusy and brackets its work with [ds:80AA] and [ds:80A2]. The unit is hand-written assembly
+; ([H]: the map's c_like test, tools/re/map_units.py:42-46, looks only at the instructions after the
+; frame and finds no C-like frame here, the same reading src/E1BB1.ASM:57-59 records; AX is saved with
+; push/pop ax and the far call goes through a DGROUP pointer, the style of E1BB1 and E1BF3).
 ;
 ; Globals src/ already names keep those names: _gPointerBusy, gMouseDisabled, gPointerHeight, gPointerWidth8,
 ; gPointerHotX, gPointerHotY, gPointerBackOff, gPointerBackSeg, gPointerShapeOff, gPointerShapeSeg,
-; g8172, g8174, g80AA, g80A2 and g80C6 from src/E1BB1.ASM (and gMouseDisabled from
+; g8172, g8174, g80AA and g80A2 from src/E1BB1.ASM (and gMouseDisabled from
 ; src/E07A9.C, gDraw80C2 from src/E1A29.C). The byte at 1BBE:0001 is the unit's segment start, as
 ; in 1BB1:0001 and 1BF3:000D.
 
         .MODEL  LARGE
 
         .DATA
-        EXTRN   _gPointerBusy:WORD              ; @ ds:812E: pointer semaphore, 0 = free (busy-wait acquire)
-        EXTRN   _gCursorX:WORD          ; @ ds:8138: mouse position, x in pixels (1BF3/1A72 own it)
+        EXTRN   _gPointerBusy:WORD              ; @ ds:812E: pointer semaphore, 0 = free; each taker tests
+                                                ; then increments, not atomic (src/E1BB1.ASM:53 says the
+                                                ; same of its acquire; the wrappers below do the same at
+                                                ; 1BBE:0213, 02C6, 030A and 0335)
+        EXTRN   _gCursorX:WORD          ; @ ds:8138: mouse position, x in pixels (written at
+                                        ; src/E1A72.ASM:324-325 and src/E1BF3.ASM:35)
         EXTRN   _gCursorY:WORD          ; @ ds:813A: mouse position, y in pixels
         EXTRN   _gHideDepth:WORD        ; @ ds:8146: hide depth, 0 = drawn (1BBE:0002/00ED change it)
         EXTRN   gMouseDisabled:WORD              ; @ ds:814A: non-zero disables the pointer (E07A9 tests it too)
         EXTRN   _gPointerHeight:WORD     ; @ ds:8154: sprite height in pixels (record byte +3, 1BB1)
-        EXTRN   _gPointerWidth8:WORD     ; @ ds:8156: sprite width in 8-pixel columns (byte +2 + 1)
+        EXTRN   _gPointerWidth8:WORD     ; @ ds:8156: sprite width in 8-pixel columns ([H]: the stored
+                                        ; value is record byte +2 plus one, src/E1BB1.ASM:21-25)
         EXTRN   _gPointerHotX:WORD       ; @ ds:8158: hot spot, x in pixels (subtracted from gCursorX)
         EXTRN   _gPointerHotY:WORD       ; @ ds:815A: hot spot, y in pixels
         EXTRN   _gDrawnX:WORD           ; @ ds:815C: position drawn at last, x in pixels
         EXTRN   _gDrawnY:WORD           ; @ ds:815E: position drawn at last, y in pixels
         EXTRN   _gPointerState:WORD     ; @ ds:8160: bit 8000 hidden, bit 4000 redraw, low byte a count
-        EXTRN   _gZoneLeft:WORD         ; @ ds:8162: hide zone, left in pixels (1A72:0244 tests it)
-        EXTRN   _gZoneTop:WORD          ; @ ds:8164: hide zone, top in pixels
-        EXTRN   _gZoneRight:WORD        ; @ ds:8166: hide zone, right in pixels
-        EXTRN   _gZoneBottom:WORD       ; @ ds:8168: hide zone, bottom in pixels
+        EXTRN   _gZoneLeft:WORD         ; @ ds:8162: hide zone, left in pixels, stored as the argument
+                                        ; less the sprite width (1BBE:0234, 025B); the handler's left
+                                        ; test is skipped (QUIRK 1A72:0248)
+        EXTRN   _gZoneTop:WORD          ; @ ds:8164: hide zone, top in pixels, stored as the argument
+                                        ; less the sprite height (1BBE:0238, 0272)
+        EXTRN   _gZoneRight:WORD        ; @ ds:8166: hide zone, right in pixels as given (1BBE:023C)
+        EXTRN   _gZoneBottom:WORD       ; @ ds:8168: hide zone, bottom in pixels as given (1BBE:0240)
         EXTRN   _gPointerBackOff:WORD    ; @ ds:816A: save-under buffer, far offset (1BB1 allocates)
         EXTRN   _gPointerBackSeg:WORD    ; @ ds:816C: save-under buffer, far segment, 0 = none
         EXTRN   _gPointerShapeOff:WORD   ; @ ds:816E: pointer shape record, far offset (1BB1 stores it)
         EXTRN   _gPointerShapeSeg:WORD   ; @ ds:8170: pointer shape record, far segment
         EXTRN   g8172:WORD              ; @ ds:8172: far pointer handed to [ds:80AA], offset
         EXTRN   g8174:WORD              ; @ ds:8174: far pointer handed to [ds:80AA], segment
-        EXTRN   _gRectLeft:WORD         ; @ ds:8176: clipped rectangle, left in 8-pixel columns
-        EXTRN   _gRectTop:WORD          ; @ ds:8178: clipped rectangle, top in pixel rows
-        EXTRN   _gRectRight:WORD        ; @ ds:817A: clipped rectangle, right in 8-pixel columns
-        EXTRN   _gRectBottom:WORD       ; @ ds:817C: clipped rectangle, bottom in pixel rows
+        EXTRN   _gRectLeft:WORD         ; @ ds:8176: pointer rectangle, left; in 8-pixel columns and
+                                        ; clipped in HidePointer/ShowPointer, in pixels and unclipped
+                                        ; in HidePointerZone, which compares it with the zone
+        EXTRN   _gRectTop:WORD          ; @ ds:8178: pointer rectangle, top; pixel rows clipped in
+                                        ; HidePointer/ShowPointer, pixels unclipped in HidePointerZone
+        EXTRN   _gRectRight:WORD        ; @ ds:817A: pointer rectangle, right; as _gRectLeft
+        EXTRN   _gRectBottom:WORD       ; @ ds:817C: pointer rectangle, bottom; as _gRectTop
         EXTRN   _gShapeX:WORD           ; @ ds:817E: shape drawn at, x in pixels, unclipped
         EXTRN   _gShapeY:WORD           ; @ ds:8180: shape drawn at, y in pixels, unclipped
-        EXTRN   _gSpriteHeight:WORD     ; @ ds:8182: copy of _gPointerHeight, the upper y clip bound
+        EXTRN   _gSpriteHeight:WORD     ; @ ds:8182: copy of _gPointerHeight, the sprite height; added to
+                                        ; the top to get the bottom (the clip bounds are 0 and 0C8h)
         EXTRN   _gNegSpriteHeight:WORD  ; @ ds:8184: minus _gPointerHeight, the lower y clip bound
-        EXTRN   _gSpriteWidth:WORD      ; @ ds:8186: copy of _gPointerWidth8, the upper x clip bound
+        EXTRN   _gSpriteWidth:WORD      ; @ ds:8186: copy of _gPointerWidth8, the sprite width; added to
+                                        ; the left to get the right (the clip bounds are 0 and 28h)
         EXTRN   _gNegSpriteWidth:WORD   ; @ ds:8188: minus _gPointerWidth8, the lower x clip bound
         EXTRN   _gRestoreRect:DWORD     ; @ ds:804E: far fn (x, y, w, h, buf): buffer back to screen
         EXTRN   _gSaveRect:DWORD        ; @ ds:80AE: far fn (x, y, w, h, buf): screen into buffer
         EXTRN   g80AA:DWORD             ; @ ds:80AA: far fn (g8172/g8174) before the pointer work
         EXTRN   g80A2:DWORD             ; @ ds:80A2: far fn (no arguments) after the pointer work
         EXTRN   gDraw80C2:DWORD         ; @ ds:80C2: far fn (mode, void far *src, x, y)
-        EXTRN   g80C6:DWORD             ; @ ds:80C6: far fn (w, h): the sprite size query (1BB1:0094)
         .CODE
 
 ; 1BBE:0001: Purpose unknown: the unit's first byte is 00. It is emitted under a public symbol
@@ -72,14 +85,17 @@
 _f1BBE_0001 LABEL BYTE                    ; @ 1BBE:0001
         db      0
 
-; 1BBE:0002 HidePointer: hide the pointer. Nothing happens when the pointer is disabled (gMouseDisabled),
-; when it is already hidden (gHideDepth non-zero) or when no save-under buffer exists (_gPointerBackSeg zero).
-; Otherwise the rectangle the pointer covers is recomputed from the position it was last drawn at
-; (gDrawnX/gDrawnY) less the hot spot (_gPointerHotX/_gPointerHotY) and the sprite size (_gPointerHeight/_gPointerWidth8; the x in
-; 8-pixel columns, the y in rows, each clipped to the 40x200 screen), the saved background is
-; written back to the screen through [ds:804E] (x, y, w, h, _gPointerBackOff/_gPointerBackSeg) and gHideDepth is
-; incremented. The height and width used are the ones 1BB1 stored before it calls here, which is
-; what keeps the buffer valid while the shape is replaced. Called by 1BB1:0002, 1BF3:000E and
+; 1BBE:0002 HidePointer: hide the pointer. Does nothing when the pointer is disabled (gMouseDisabled) or
+; when no save-under buffer exists (_gPointerBackSeg zero). A hide while already hidden (gHideDepth
+; non-zero, 1BBE:0015) only increments gHideDepth instead of restoring the background, so a nested hide
+; is counted. Otherwise the rectangle the pointer covers is recomputed from the position it was last
+; drawn at (gDrawnX/gDrawnY) less the hot spot (_gPointerHotX/_gPointerHotY) and the sprite size
+; (_gPointerHeight/_gPointerWidth8; the x in 8-pixel columns, the y in rows, each clipped to the 40x200
+; screen), the saved background is written back to the screen through [ds:804E] (x, y, w, h,
+; _gPointerBackOff/_gPointerBackSeg) and gHideDepth is incremented. When the rectangle is off screen the
+; restore is skipped but gHideDepth is still incremented (1BBE:0055, 005A, 008B and 0090 jump to the
+; increment at 1BBE:00E0). The height and width used are the ones 1BB1 stored before it calls here,
+; which is what keeps the buffer valid while the shape is replaced. Called by 1BB1:0002, 1BF3:000E and
 ; 1A72, and by the wrappers below. Pushes AX only to preserve the caller's.
         PUBLIC  _HidePointer            ; @ 1BBE:0002
 _HidePointer PROC FAR
@@ -162,11 +178,13 @@ HideDone: pop    ax
         ret
 _HidePointer ENDP
 
-; 1BBE:00ED ShowPointer: show the pointer. Nothing happens when it is disabled (gMouseDisabled), when it is
-; not hidden (gHideDepth zero) or when no save-under buffer exists (_gPointerBackSeg). Otherwise gHideDepth
-; is decremented and, only at zero, the current mouse position (gCursorX/gCursorY) is copied to
-; the position being drawn at (gDrawnX/gDrawnY), the rectangle is recomputed and clipped exactly
-; as in 1BBE:0002, the screen under it is saved through [ds:80AE] (x, y, w, h, _gPointerBackOff/_gPointerBackSeg) and the
+; 1BBE:00ED ShowPointer: show the pointer. Does nothing when it is disabled (gMouseDisabled) or when it
+; is not hidden (gHideDepth zero, 1BBE:00FD). Otherwise gHideDepth is decremented first (1BBE:00FF), so
+; the count still changes even when no save-under buffer exists (_gPointerBackSeg, 1BBE:010F) or the
+; rectangle is off screen (1BBE:0154, 0159, 018B and 0190 jump to ShowDone after the decrement); only
+; at zero, with a buffer and an on-screen rectangle, the current mouse position (gCursorX/gCursorY) is
+; copied to the position being drawn at (gDrawnX/gDrawnY), the rectangle is recomputed and clipped as in
+; 1BBE:0002, the screen under it is saved through [ds:80AE] (x, y, w, h, _gPointerBackOff/_gPointerBackSeg) and the
 ; shape record _gPointerShapeOff/_gPointerShapeSeg is drawn at the unclipped position gShapeX/gShapeY through [ds:80C2]
 ; (mode 0). Called by 1BB1:0002, 1BF3:000E and 1A72, and by the wrappers below. Pushes AX to
 ; preserve the caller's.
@@ -264,14 +282,16 @@ _ShowPointer ENDP
 
 ; 1BBE:01FE HidePointerZone: hide the pointer over a rectangle (left, top, right, bottom in
 ; pixels, at [bp+6]..[bp+0Ch]) and remember it. Takes the semaphore. When the pointer is already
-; hidden (gPointerState bit 8000) the low byte of gPointerState is advanced (not past zero) and the
-; hide is repeated; otherwise the four arguments are stored in gZoneLeft..gZoneBottom (1A72:0244
-; reads them to test whether the cursor has entered the zone), the pointer's rectangle is
-; recomputed exactly as in 1BBE:0002 but with x rounded down to a multiple of 8 and the left and
-; top reduced by the sprite size, gPointerState is set to 8000h (hidden) and, if that rectangle
-; overlaps the argument rectangle, bit 4000 (redraw) is set. Either way the hide call [ds:80AA],
-; 1BBE:0002, [ds:80A2] runs, then the semaphore is released. Called by 0EF3, 16A5, 1DE7 and the
-; overlays, always paired with 1BBE:02C2.
+; hidden (gPointerState bit 8000, 1BBE:021E) the low byte of gPointerState is incremented and
+; saturates at 0FFh (1BBE:0229 `inc al`, then 1BBE:022D `dec al` undoes it on wrap) and the hide is
+; repeated; otherwise the four arguments are stored in gZoneLeft..gZoneBottom, with right and bottom
+; as given (1BBE:023C, 0240) but left and top reduced by the sprite width and height in pixels
+; (1BBE:025B and 0272; 1A72:0244 reads the zone to test whether the cursor has entered it), the
+; pointer's rectangle is computed in pixels without clipping (left x rounded down to a multiple of 8,
+; right = left + sprite width, top as drawn, bottom = top + sprite height; 1BBE:0244..0278),
+; gPointerState is set to 8000h (hidden) and, if that rectangle overlaps the argument rectangle, bit
+; 4000 (redraw) is set. Either way the hide call [ds:80AA], 1BBE:0002, [ds:80A2] runs, then the
+; semaphore is released. Called by 0EF3, 16A5, 1DE7 and the overlays, always paired with 1BBE:02C2.
         PUBLIC  _HidePointerZone        ; @ 1BBE:01FE
 _HidePointerZone PROC FAR
         push    bp
@@ -349,9 +369,10 @@ _HidePointerZone ENDP
 
 ; 1BBE:02C2 ShowPointerZone: show the pointer again after 1BBE:01FE. Takes the semaphore. When the
 ; low byte of gPointerState is non-zero it is decremented and the pointer is shown; at zero
-; gPointerState is cleared and the pointer is shown only when bit 4000 (redraw) was set, otherwise
-; the call does nothing. The show call is [ds:80AA], 1BBE:00ED, [ds:80A2], then the semaphore is
-; released. Called by the same sites as 1BBE:01FE.
+; gPointerState is cleared (1BBE:02DE) and the semaphore is released (1BBE:0300); the pointer is shown
+; only when bit 4000 (redraw) was set, otherwise it clears the state and draws nothing. The show call
+; is [ds:80AA], 1BBE:00ED, [ds:80A2], then the semaphore is released. Called by the same sites as
+; 1BBE:01FE.
         PUBLIC  _ShowPointerZone        ; @ 1BBE:02C2
 _ShowPointerZone PROC FAR
         push    bp
@@ -383,7 +404,9 @@ _ShowPointerZone ENDP
 
 ; 1BBE:0307 LockHidePointer: hide the pointer, taking the semaphore and bracketing the work with
 ; [ds:80AA] and [ds:80A2]. Like 1BBE:01FE without the rectangle, the zone and the redraw flag.
-; Called by many units of the resident code and the overlays, always paired with 1BBE:0332.
+; Called by many units of the resident code and the overlays, usually paired with 1BBE:0332 (the
+; call-site lists differ: 0ACD:0E8A, 0ACD:0F72, ovl0:2547 and ovl5:17C8 call only the show, ovl0:28F9
+; only the hide).
         PUBLIC  _LockHidePointer        ; @ 1BBE:0307
 _LockHidePointer PROC FAR
         push    bp
@@ -405,7 +428,7 @@ _LockHidePointer ENDP
 
 ; 1BBE:0332 LockShowPointer: show the pointer, taking the semaphore and bracketing the work with
 ; [ds:80AA] and [ds:80A2]. Like 1BBE:02C2 without the state and redraw tests. Called by many units
-; of the resident code and the overlays, always paired with 1BBE:0307.
+; of the resident code and the overlays, usually paired with 1BBE:0307 (see the note on 1BBE:0307).
         PUBLIC  _LockShowPointer        ; @ 1BBE:0332
 _LockShowPointer PROC FAR
         push    bp
