@@ -1751,6 +1751,7 @@ evidence = ["far", "segment"]
 name = "ClearObjectType"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e08e6_0055"
@@ -1761,6 +1762,7 @@ evidence = ["near", "frame"]
 name = "ClearType8Objects"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e08e6_00c3"
@@ -1771,6 +1773,7 @@ evidence = ["near", "frame"]
 name = "Obj00C3"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e08e6_0150"
@@ -1781,6 +1784,7 @@ evidence = ["far", "frame"]
 name = "Obj0150"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e08e6_017e"
@@ -1791,6 +1795,7 @@ evidence = ["near", "frame"]
 name = "BuildObjectFrameMask"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e08e6_0218"
@@ -1801,6 +1806,7 @@ evidence = ["near", "frame"]
 name = "FindObjectFrameBit"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e08e6_0297"
@@ -1811,6 +1817,7 @@ evidence = ["far", "near", "frame"]
 name = "MoveObjectToId"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e08e6_0309"
@@ -1821,6 +1828,7 @@ evidence = ["near", "frame"]
 name = "TurnObject"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e08e6_03fe"
@@ -1831,6 +1839,7 @@ evidence = ["near", "frame"]
 name = "Obj03FE"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e08e6_0430"
@@ -1841,6 +1850,7 @@ evidence = ["near", "frame"]
 name = "Obj0430"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e08e6_058a"
@@ -1851,6 +1861,7 @@ evidence = ["near", "frame"]
 name = "SetObjectFrameFromId"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e08e6_05ea"
@@ -1861,6 +1872,7 @@ evidence = ["near", "frame"]
 name = "Obj05EA"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e08e6_073f"
@@ -1871,6 +1883,7 @@ evidence = ["near", "frame"]
 name = "Obj073F"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e08e6_0765"
@@ -1881,6 +1894,7 @@ evidence = ["near", "frame"]
 name = "Obj0765"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e08e6_0ab8"
@@ -1891,6 +1905,7 @@ evidence = ["near"]
 name = "Obj0AB8"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e08e6_0b34"
@@ -1901,6 +1916,7 @@ evidence = ["near", "frame"]
 name = "StepObjectOrient"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e08e6_0b94"
@@ -1911,6 +1927,7 @@ evidence = ["near", "frame"]
 name = "Obj0B94"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e08e6_0ca6"
@@ -1921,6 +1938,7 @@ evidence = ["near", "frame"]
 name = "Obj0CA6"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e08e6_0cc8"
@@ -1931,6 +1949,7 @@ evidence = ["far", "frame"]
 name = "UpdateObjects"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e08e6_0dca"
@@ -1941,6 +1960,7 @@ evidence = ["near"]
 name = "RestoreObjectFlags"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e08e6_0e48"
@@ -1951,6 +1971,7 @@ evidence = ["far", "near", "frame"]
 name = "Obj0E48"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e08e6_0ec3"
@@ -1961,6 +1982,7 @@ evidence = ["far", "near", "frame"]
 name = "Obj0EC3"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e08e6_0fbe"
@@ -1971,6 +1993,7 @@ evidence = ["far", "near", "frame"]
 name = "DamageObject"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e08e6_103d"
@@ -1981,6 +2004,7 @@ evidence = ["far", "frame"]
 name = "Obj103D"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e08e6_106b"
@@ -1991,6 +2015,7 @@ evidence = ["far", "near", "frame"]
 name = "Obj106B"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e08e6_10f3"
@@ -2001,6 +2026,7 @@ evidence = ["far", "frame"]
 name = "Obj10F3"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e08e6_131d"
@@ -2011,6 +2037,7 @@ evidence = ["near", "frame"]
 name = "Obj131D"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e08e6_1410"
@@ -2021,6 +2048,7 @@ evidence = ["far", "frame"]
 name = "Obj1410"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e08e6_1505"
@@ -2031,6 +2059,7 @@ evidence = ["far", "frame"]
 name = "Obj1505"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e08e6_155f"
@@ -2041,6 +2070,7 @@ evidence = ["near", "frame"]
 name = "BuildObjectIdList"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e08e6_15b4"
@@ -2051,6 +2081,7 @@ evidence = ["far", "frame"]
 name = "Obj15B4"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e08e6_1634"
@@ -2061,6 +2092,7 @@ evidence = ["near", "frame"]
 name = "Obj1634"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e08e6_16d6"
@@ -2071,6 +2103,7 @@ evidence = ["far", "frame"]
 name = "Obj16D6"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e08e6_1775"
@@ -2081,6 +2114,7 @@ evidence = ["near", "frame"]
 name = "Obj1775"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e08e6_17fd"
@@ -2091,6 +2125,7 @@ evidence = ["far", "frame"]
 name = "Obj17FD"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e08e6_189d"
@@ -2101,6 +2136,7 @@ evidence = ["far", "frame"]
 name = "Obj189D"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0a72_0006"
