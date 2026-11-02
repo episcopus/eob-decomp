@@ -477,7 +477,7 @@ extern void far *g5E64[0x11]; /*@ ds:5E64 */ /* the 17 sliced icon pointers this
    ovl0:23EC. */
 /*@ ovl0:1F66 */ int PickOption(void)
 {
-    int v;
+    int choice;
 
     g8115 = 0;
     LockHidePointer();
@@ -488,10 +488,10 @@ extern void far *g5E64[0x11]; /*@ ds:5E64 */ /* the 17 sliced icon pointers this
     FlushKeyBuffer();
     g197 = 0;
     DrawOptionList(1, g11AD, 0xffffffffL, 0, 0);
-    while ((v = UpdateOptionList(1, g11AD, 0L, 0xffffffffL, 0)) == -1)
+    while ((choice = UpdateOptionList(1, g11AD, 0L, 0xffffffffL, 0)) == -1)
         Ovl0_1224();
-    gFC8A = v % 2;
-    return v;
+    gFC8A = choice % 2;
+    return choice;
 }
 /* ovl0:2051: returns the index (0-based) of the `n`th set bit of `mask`, scanning up to `count`
    bits; when fewer than `n` bits are set it returns `count`. No direct caller found. */
