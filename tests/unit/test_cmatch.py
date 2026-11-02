@@ -116,3 +116,20 @@ def test_twin_proof_rejects_what_relinking_cannot_explain():
     assert "map to" in twin.check("e1", "i1", E, P(b"\0" * 16 + onto), units, funcs)[0]
     opcode = bytes.fromhex("a11400" "a31400" "8b0e1600" "c3")       # mov cx instead of mov bx
     assert "not an address" in twin.check("e1", "i1", E, P(b"\0" * 16 + opcode), units, funcs)[0]
+
+
+def test_whole_unit_match_adds_the_functions_the_map_missed():
+    """e17a6, 2026-11-02: the map listed one entry where the source has three functions; a whole-unit
+    match proves their bounds, so they get entries and the covering entry ends where the next starts."""
+    sys.path.insert(0, os.path.join(ROOT, "tools", "match"))
+    import cmatch
+    blocks = ["# head\n\n",
+              'id = "u1_0000"\nunit = "u1"\naddr = "17A6:0000"\nsize = 300\nlevel = "L2"\n\n',
+              'id = "x_0000"\nunit = "x"\naddr = "1800:0000"\nsize = 4\n\n']
+    names = {(0x17A6, 0): "_A", (0x17A6, 100): "_B", (0x17A6, 250): "_C"}
+    sizes = {(0x17A6, 0): 100, (0x17A6, 100): 150, (0x17A6, 250): 50}
+    assert cmatch.split_entries(blocks, "u1", names, sizes, "tasm /mx") == 2
+    text = "[[function]]\n".join(blocks)
+    assert 'addr = "17A6:0000"\nsize = 100' in text
+    assert 'addr = "17A6:0064"\nsize = 150\nname = "_B"' in text and 'addr = "17A6:00FA"\nsize = 50' in text
+    assert 'addr = "1800:0000"\nsize = 4' in text                 # another unit is left alone
