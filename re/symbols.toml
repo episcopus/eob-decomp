@@ -2019,9 +2019,9 @@ unit = "e08e6"
 addr = "08E6:15B4"
 size = 128
 evidence = ["far", "frame"]
-name = "Obj15B4"
 level = "L2"
 match_flags = "-ml -O -Z -B"
+name = "Obj15B4"
 
 [[function]]
 id = "e08e6_1634"
@@ -3160,9 +3160,9 @@ unit = "e0de8"
 addr = "0DE8:01D7"
 size = 40
 evidence = ["near", "frame"]
-name = "IsWeaponKind"
 level = "L2"
 match_flags = "-ml -O -Z"
+name = "IsKind2Or3"
 
 [[function]]
 id = "e0de8_01ff"
