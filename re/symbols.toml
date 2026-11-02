@@ -7113,6 +7113,9 @@ unit = "eov1"
 addr = "ovl1:0416"
 size = 1131
 evidence = ["frame"]
+name = "_MemberCommand"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "eov1_0881"
@@ -7178,6 +7181,9 @@ unit = "eov1"
 addr = "ovl1:243A"
 size = 590
 evidence = ["ovl"]
+name = "_ChooseListEntry"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "eov2_0000"
