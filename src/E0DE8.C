@@ -67,11 +67,26 @@ struct Entry14 {            /* the 14-byte records at ds:8DD2; see src/E0D1C.C *
     unsigned char flags;    /* +0 */
     signed char icon;       /* +1 */
     signed char m02;        /* +2 */
-    unsigned char m03;      /* +3: low two bits read by 01FF */
+    signed char m03;        /* +3: low two bits read by 01FF */
     int m04;                /* +4 */
     char pad06[0x0B - 0x06];
     signed char m0B;        /* +0B */
     char pad0C[0x0E - 0x0C];
+};
+
+struct DDRec {              /* the records at ds:DD2C that 1414:0172 walks; see src/E1414.C */
+    char active;            /* +0 */
+    char pad01;
+    int m02;                /* +2 */
+    int m04;                /* +4 */
+    char m06;               /* +6 */
+    signed char m07;        /* +7 */
+    int m08;                /* +8: an item slot, indexed into gTable8DD2 (01FF, 02D4) */
+    char m0A;               /* +0A: an item type, indexed into gItemTypes (01FF, 02D4) */
+    char m0B;               /* +0B */
+    char m0C;               /* +0C */
+    unsigned char m0D;      /* +0D */
+    int (far *fn)(struct DDRec far *rec); /* +0E */
 };
 
 struct ItemType {           /* the 16-byte item types at ds:A9F0; see src/EOV2.C */
@@ -153,6 +168,8 @@ extern void DelaySeconds(int n); /*@ 082C:0B43 */
 extern void ShutdownGame(void); /*@ 07C8:058A */
 extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
 
+int f0DE8_09B9(int who, int what);  /* forward: 01FF reaches it with a far call */
+
 /* 0DE8:0007: the to-hit roll of character `who` against object `obj`. It derives an attack bonus
    from the item `slot` (the m02 kind selects the m0B weapon value when it is 1..3), adds either
    the derived stat A or the m15 char value depending on `flag`, marks gObjs[obj].m16 bit 0 as
@@ -230,7 +247,32 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
     return kind == 2 || kind == 3;
 }
 
-/*@ 0DE8:01FF stub */ void f0DE8_01FF(void) {}
+/*@ 0DE8:01FF */ int f0DE8_01FF(struct DDRec far *rec)
+{
+    int slot;
+    int itemType;
+    int damage;
+    int roll;
+    int result;
+
+    slot = rec->m08;
+    itemType = rec->m0A;
+    roll = gTable8DD2[slot].m03 & 3;
+    roll = g1A2B[gFBCC * 4 + roll];
+    if (f0DE8_01D7(itemType))
+        damage = f0DE8_011A(-1, -1, slot, itemType, 0);
+    else
+        damage = 1;
+    if ((f0D1C_0670(5, 1) || f0D1C_0670(6, 1)) && RollDice(1, 2, -1))
+        result = roll + 2;
+    else
+        result = roll;
+    if (f0D1C_0670(result, 1)) {
+        f0DE8_09B9(result, damage);
+        return 1;
+    }
+    return 0;
+}
 /*@ 0DE8:02D4 stub */ void f0DE8_02D4(void) {}
 /*@ 0DE8:0359 stub */ void f0DE8_0359(void) {}
 /*@ 0DE8:0474 stub */ void f0DE8_0474(void) {}
@@ -238,7 +280,7 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
 /*@ 0DE8:05BB stub */ void f0DE8_05BB(void) {}
 /*@ 0DE8:0763 stub */ void f0DE8_0763(void) {}
 /*@ 0DE8:093B stub */ void f0DE8_093B(void) {}
-/*@ 0DE8:09B9 stub */ void f0DE8_09B9(void) {}
+/*@ 0DE8:09B9 stub */ int f0DE8_09B9(int who, int what) { return 0; }
 /*@ 0DE8:0ADB stub */ void f0DE8_0ADB(void) {}
 /*@ 0DE8:0B45 stub */ void f0DE8_0B45(void) {}
 /*@ 0DE8:0C2B stub */ void f0DE8_0C2B(void) {}
