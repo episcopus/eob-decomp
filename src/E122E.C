@@ -1160,20 +1160,20 @@ done:
    matches the sound volume (the running character), set flag 0x40 on every item in the first-item
    list of each of that character's six 243-byte records that has bit 0 of its status set, and mark
    each record's list (rec + 0x97). Always marks the gB899 list of the index. Returns the bytes read. */
-/*@ 122E:1CAD draft */ long MarkMemberItemsOp(char far *script)
+/*@ 122E:1CAD */ long MarkMemberItemsOp(char far *script)
 {
+    int item;
     struct CharRec far *rec;
     int id;
     register int i;
     register int j;
-    int item;
     char far *start = script;
 
     id = *(int far *)script;
     script += 2;
     if (id == gPartyCell) {
         rec = gChars;
-        for (i = 0; i < 6; i++) {
+        for (i = 0; i < 6; i++, rec++) {
             rec = &gChars[i];
             if (rec->status & 1) {
                 for (j = 0; j < 0x1b; j++) {

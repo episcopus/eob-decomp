@@ -4198,6 +4198,9 @@ addr = "122E:1CAD"
 size = 201
 evidence = ["frame"]
 notes = "draft 2026-11-01: first difference is the local layout (122E:001C: ours stores the read word at [bp-6], the original at [bp-8]). The original frame is 0xc bytes: start at -0xc..-9, the read word at -8..-7, the CharRec far pointer at -6..-3; the two loop counters and the item are registers (SI and DI). Our -ml -O -Z build keeps the far pointer at -4..-1 and leaves -8..-7 unused. Tried declaration orders rec/id/start and id/rec/start, and `register int i; register int j;`; the pointer keeps the top slot. The body (the gSoundVolume gate, the six 243-byte CharRec walk with gB894-like items at +0x77, the 0x40 flag on gTable8DD2[item], MarkListItems(rec + 0x97) and the final MarkListItems(&gB899[id*9])) is written from the disassembly."
+name = "MarkMemberItemsOp"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e122e_1d76"
