@@ -133,9 +133,40 @@ int f0BD2_0AF2(int item, int who, int row);
 void UseSelectedItem(int slot);
 void SwapSelectedItem(int who, int row);
 int ItemClassAllowed(int who, int item);
+void f0BD2_05B5(int item);
 
 /* functions of this unit, in address order (stubs not yet written) */
-/*@ 0BD2:000E stub */ void f0BD2_000E(void) {}
+/* 0BD2:000E: the "lost item" message. Rolls 1d27 for a starting slot, then scans the 27 item slots
+   of character `who` from there, wrapping, for the first item whose type flags have 0x80. It clears
+   the slot, prints "<name> has lost her/his " (the possessive by m1F bit 0), draws the item's name
+   through 0BD2:05B5 and ".\r", and redraws the character's row. */
+/*@ 0BD2:000E */ void f0BD2_000E(int who)
+{
+    int i;
+    int item;
+    int roll;
+
+    roll = RollDice(1, 0x1b, -1);
+    for (i = 0; i < 0x1b; i++) {
+        item = gChars[who].m77[roll];
+        if (item != 0) {
+            if (gItemTypes[gItems[item].m02].m0E.word & 0x80) {
+                gChars[who].m77[roll] = 0;
+                if (gChars[who].m1F & 1)
+                    sprintf(gFileNameBuf, "%s has lost her ", gChars[who].name);
+                else
+                    sprintf(gFileNameBuf, "%s has lost his ", gChars[who].name);
+                DrawText(gFileNameBuf);
+                f0BD2_05B5(item);
+                DrawText(".\r");
+                break;
+            }
+        }
+        if (++roll >= 0x1b)
+            roll = 0;
+    }
+    f1547_0991(who);
+}
 
 /* 0BD2:0106: Purpose unknown: clears item slot `row` of character `who` (or the mouse's slot when
    `row` is -1), marks the item free (m04 = -1), redraws, and returns the item's m0B. */
@@ -358,7 +389,7 @@ next:
     }
 }
 
-/*@ 0BD2:05B5 stub */ void f0BD2_05B5(void) {}
+/*@ 0BD2:05B5 stub */ void f0BD2_05B5(int item) {}
 
 /* 0BD2:07DE: reserves one of the ten effect records at ds:DD2C (returning 0 when all are live),
    queues `item` through 0BD2:01D0 with sound `kind | 4`, fills the record from the arguments and
