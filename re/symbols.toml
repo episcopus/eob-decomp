@@ -4469,8 +4469,10 @@ unit = "e122e"
 addr = "122E:0325"
 size = 421
 evidence = ["frame"]
-name = "ForceDoorAction"
 notes = "retry under -v (2026-11-02): the unit now builds with -v, which keeps identical tails apart; the difference below was found under the wrong switches. Earlier: 2026-11-02: matches every byte except the two `mov si,di` tails at 122E:03C1 (the A<=B branch) and 122E:03C5 (the who<0 branch): the original keeps both plus the `jmp 122E:03C7` between them, our -ml -O -Z build cross-jumps them into one `mov si,di` (4 bytes short; first difference 122E:0028, ours jmp 0x199 against 0x19f). TCC -S for our build already emits the far-branch pair `or si,si` / `jge short @7@194` / `jmp short @7@218` (the then-branch placed after the else), where the original has one short `jl 122E:03C5`: the same jump-optimizer choice that leaves 0A16 and 06D0 one step short, not a source-order question. `-B` does not fix it (same pair, plus it breaks 01D9 and 1CAD). Tried 2026-11-02, all six give byte-identical output: `if (who<0) who=i; else if (A<=B) who=i;`, the braced form, `if (who<0) { who=i; continue; } if (A<=B) who=i;`, `if (who>=0) { if (A<=B) who=i; } else who=i;`, `else if (...) { who=i; }`, and `if (!(A<=B)) ; else who=i;`. Also tried (2026-11-01) `if (who>=0 && A>B) continue; who=i;` (one assignment, 6 short), `who=i+0` in either branch, and an extra `else who=who;` (2 short). TCC always merges the two `who=i` and picks the inverted pair. The rest of the function (the click gate, the six-character pick, the 1d20 roll against gForceDoorRoll[m0D], the messages and the gB894 slot rewrite) is written from the disassembly."
+name = "ForceDoorAction"
+level = "L2"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e122e_04ca"
