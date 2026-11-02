@@ -1709,6 +1709,9 @@ unit = "e08e6"
 addr = "08E6:0EC3"
 size = 251
 evidence = ["far", "near", "frame"]
+name = "Obj0EC3"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e08e6_0fbe"

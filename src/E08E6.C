@@ -2,7 +2,7 @@
    per-type behaviour routines of the game's map objects: UpdateObjects walks the 30 28-byte object
    records at ds:8A82 (struct Obj28, indexed by the 27-byte character records at ds:1A3B, struct
    Entry27) and dispatches each live object by its type to the 000B/00C3/03FE/0AB8/0B34/0B94/0CA6
-   behaviours. 31 functions are at L2 and five are drafts (0EC3, 0765, 0B94, 1410, 17FD).
+   behaviours. 32 functions are at L2 and four are drafts (0765, 0B94, 1410, 17FD).
    Whitespace and empty-body stubs keep the siblings in address order. */
 
 struct Obj28 {              /* 28-byte records, 30 of them at ds:8A82 */
@@ -767,23 +767,21 @@ second:
    each of m12 and m14 that is set, roll 1d2 and on a 1 resolve it through 0BD2:089E and hand it to
    0BD2:01D0 with the object's id and hit; give the party the record's m13 experience, move the
    object to id 0, shut the game down when its b0 is 0x15, and clear the type-8 objects. Called by
-   0E48, 0FBE and 1410. DRAFT: the body is written and every byte agrees except the register the
-   pinned compiler picks for `roll`: ours keeps it in SI (0EC3:000E `mov si, ax`) and the original in
-   DI (`mov di, ax`, and the calls then push DI before SI); making `hit` block-local did not change
-   it. */
-/*@ 08E6:0EC3 draft */ void Obj0EC3(struct Obj28 far *obj)
+   0E48, 0FBE and 1410. `hit` is declared register so it takes SI and `roll` DI, as the original. */
+/*@ 08E6:0EC3 */ void Obj0EC3(struct Obj28 far *obj)
 {
     int roll;
+    register int hit;
 
     roll = obj->frame;
     if (roll == 4)
         roll = RollDice(1, 4, 0xff);
     if (obj->m12 != 0 && RollDice(1, 2, 0) == 1) {
-        int hit = CopyItemToFreeSlot(obj->m12);
+        hit = CopyItemToFreeSlot(obj->m12);
         InsertListItem(&gB894[obj->id * 9 + 5], obj->id, hit, roll);
     }
     if (obj->m14 != 0) {
-        int hit = CopyItemToFreeSlot(obj->m14);
+        hit = CopyItemToFreeSlot(obj->m14);
         InsertListItem(&gB894[obj->id * 9 + 5], obj->id, hit, roll);
     }
     AddPartyExperience(gTable1A3B[obj->b0].m13);
