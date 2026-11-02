@@ -1,10 +1,12 @@
-/* Unit at overlay 1 of EOB.EXE (segment 2102, 9864 bytes, 16 functions): the party display and
-   inventory overlay (src/EOV1.ASM's header says what it does). The unit is C, compiled by TCC
-   1.00 (escalation eov1, 2026-11-02): every function has TCC's frame, and ovl1:1153 reads a far
-   array with the 16-bit displacement only TCC's own assembler writes (26 8B 87 05 00 at
-   ovl1:1277), which TASM cannot. src/EOV1.ASM was written first, as assembly transcribed from
-   the disassembly; it stays until this file has each function in C (playbook 30). Every
-   function here is a stub until it is written in C. */
+/* Unit at overlay 1 of EOB.EXE (segment 2102, 9864 bytes, 16 functions): the camp menu and the
+   screens it opens. RunCampMenu (ovl1:1ACD) is the camp menu itself; it calls the member picker
+   (SelectPartyMember), the spell screens (SpellSlotScreen with its list builders BuildSpellSlots,
+   SpendSpellSlot and DrawSpellRow), ScribeScrolls, DropCharacter and the yes/no and message boxes
+   (AskYesNo, ShowMessage), all built on the button lists BuildMenuButtons and DrawListNode make. It
+   reads and rewrites the party's records at ds:F580 (gChars, six records of 0xF3 bytes).
+   The unit is C, compiled by TCC 1.00 (escalation eov1, 2026-11-02): every function has TCC's
+   frame, and ovl1:1153 reads a far array with the 16-bit displacement only TCC's own assembler
+   writes (26 8B 87 05 00 at ovl1:1277), which TASM cannot. Every function is matched. */
 
 /*@flags -ml -O -Z -v */
 
@@ -109,7 +111,9 @@ struct ActRec;
 struct CharRec {                /* the 243-byte character records at ds:F580 (src/E0A72.C) */
     char pad00;
     unsigned char status;       /* +01: bit 0 set while the slot holds a character (0D1C:0670) */
-    char pad02[0x1B - 0x02];
+    char pad02[0x13 - 0x02];
+    signed char wisdom;         /* +13: the score ovl1:097A turns into a bonus-spell row (g6330) */
+    char pad14[0x1B - 0x14];
     signed char hp;             /* +1B: current hit points */
     char pad1C[0x20 - 0x1C];
     signed char classIndex;     /* +20: an index into the per-class tables (g1231, 0A72:007B) */
@@ -186,6 +190,11 @@ struct Entry14 {                /* the 14-byte item records at ds:8DD2 (src/E0D1
 };
 extern struct Entry14 gTable8DD2[]; /*@ ds:8DD2 */
 extern int gClickY; /*@ ds:8142 */
+extern unsigned char g62FE[]; /*@ ds:62FE */ /* a cleric's spells per level (5 bytes) by class level 1 to 10 */
+extern char g6330[]; /*@ ds:6330 */ /* a cleric's bonus spells per level (5 bytes) by wisdom - 12 */
+extern unsigned char g6358[]; /*@ ds:6358 */ /* a paladin's spells per level (5 bytes) by class level */
+extern unsigned char g6394[]; /*@ ds:6394 */ /* a mage's spells per level (5 bytes) by class level 1 to 11 */
+extern int f0D1C_0163(int who, int fieldB); /*@ 0D1C:0163 */
 extern int IsMouseInRect(int left, int top, int right, int bottom); /*@ 1A72:02A6 */
 extern int g159; /*@ ds:0159 */ /* a copy of gF57E that ShowMessage and ovl6:0B9B store; no reader found */
 extern int gNeedsRest; /*@ ds:FE2C */
@@ -632,7 +641,243 @@ int AskYesNo(int message);
         gFillRect(6, y, 0xa8, y + 8, gF57E);
     LockShowPointer();
 }
-/*@ ovl1:097A stub */ void SpellSlotScreen(int member, int flag) {}
+/* ovl1:097A: the spell screen of the camp menu for party member `who` (-1 does nothing): Memorize
+   Spells (`pray` 0, a mage) or Pray for Spells (`pray` 1, a cleric or a paladin). The member's class
+   slot (FindClassSlot kind 2 cleric, 4 paladin, 1 mage) gives the allowance[5], the spells the
+   member may take at each of the five spell levels: a cleric's from g62FE by class level plus the
+   bonus g6330 by wisdom - 12 (for each level that has any), a paladin's from g6358, a mage's from
+   g6394, with levels 4 and 5 doubled while 0D1C:0163 finds its item (type 0x2F, kind 1) in one of
+   the last two item slots [H: a ring of wizardry]. `mask` (bit i set = spell i + 1) is what may be
+   offered: 0x007BFFFF for a cleric, 0x00800FF2 for a paladin, the mage's spell book.
+   BuildSpellSlots then fills the lists and menu 4 ("Spells Available:": Clear, Exit, the level
+   tabs 1 to 5 as nodes 0x801B to 0x801F, and the list area 0x8020) is shown. The loop keeps the
+   level tab `tab` (wantTab is the tab asked for), the highlighted spell row selRow (wantRow the row
+   asked for) and the line "%d of %d Remaining.  " (spells left at this level of the allowance).
+   Keys: 0x5B, 0x5D, 0x60 and 0x62 move the row (first, last, up, down), 0x5C and 0x66 the tab
+   (previous, next; turned into a tab click), 0x6E is Exit; the mouse over the list picks the row;
+   0x0D, 0x2B, 0x3D, 0x61, 0x6A and a click on the list take one more copy of the row's spell
+   (while the level has allowance left) and 0x0C, 0x42 and 0x69 give one back; Clear (0x8019)
+   returns every copy taken at this level; Exit (0x801A) redraws the party and leaves. On leaving
+   the lists are freed, the fonts restored, the member redrawn and SpendSpellSlot(who, cleric)
+   writes the choices into the member's spell slots. Called by RunCampMenu. */
+/*@ ovl1:097A */ void SpellSlotScreen(int who, int pray)
+{
+    char allowance[5];
+    int slot;
+    int levelRow;
+    int wisdom;
+    long mask;
+    int cleric;
+    int tab;
+    int i;
+
+    if (who == -1)
+        return;
+    wisdom = gChars[who].wisdom - 12;
+    wisdom = wisdom < 0 ? 0 : wisdom;
+    if (pray) {
+        slot = FindClassSlot(2, gChars[who].classIndex);
+        if (slot != -1) {
+            levelRow = gChars[who].classLevel[slot] - 1;
+            for (i = 0; i < 5; i++) {
+                if (allowance[i] = g62FE[levelRow * 5 + i])
+                    allowance[i] += g6330[wisdom * 5 + i];
+            }
+            mask = 0x7bffffL;
+        } else {
+            slot = FindClassSlot(4, gChars[who].classIndex);
+            if (slot != -1) {
+                levelRow = gChars[who].classLevel[slot];
+                levelRow = levelRow < 0 ? 0 : levelRow;
+                for (i = 0; i < 5; i++)
+                    allowance[i] = g6358[levelRow * 5 + i];
+                mask = 0x800ff2L;
+            }
+        }
+        cleric = 1;
+    } else {
+        slot = FindClassSlot(1, gChars[who].classIndex);
+        if (slot != -1) {
+            levelRow = gChars[who].classLevel[slot] - 1;
+            for (i = 0; i < 5; i++)
+                allowance[i] = g6394[levelRow * 5 + i];
+            mask = gChars[who].spellBook;
+        }
+        if (f0D1C_0163(who, 1)) {
+            allowance[3] <<= 1;
+            allowance[4] <<= 1;
+        }
+        cleric = 0;
+    }
+    BuildSpellSlots(who, allowance, mask, cleric);
+    {   /* the screen proper: its locals sit below the switch temporary, as in the original frame */
+        struct Node far *list;
+        struct Node far *node;
+        int wantTab;
+        int selRow;
+        int wantRow;
+        int key;
+        int looping;
+        int redrawLine;
+        int redrawRows;
+
+        list = 0;
+        redrawLine = 1;
+        tab = selRow = -1;
+        wantTab = wantRow = 0;
+        list = BuildMenuButtons(4);
+        looping = 1;
+        while (looping) {
+            DrawRowList(who);
+            if (wantTab < 0)
+                wantTab = 4;
+            if (wantTab > 4)
+                wantTab = 0;
+            if (tab != wantTab) {
+                if (tab >= 0) {
+                    node = FindNode(list, tab + 0x1b);
+                    DrawListNode(node, 0, 0, 1);
+                }
+                node = FindNode(list, wantTab + 0x1b);
+                DrawListNode(node, 0, 1, 1);
+                wantRow = 0;
+                selRow = -1;
+                tab = wantTab;
+                redrawLine = 1;
+                redrawRows = 1;
+            }
+            if (redrawRows) {
+                redrawRows = 0;
+                gStatusLine = 2;
+                for (i = 1; i < 9; i++)
+                    DrawSpellRow(gFDBA[tab * 9 + i], i - 1, cleric, 0, 0);
+                gStatusLine = 0;
+                LockHidePointer();
+                ClipRect(0, 0x32, 0, 0x32, 0x16, 0x48, 2, 0);
+                LockShowPointer();
+                selRow = -1;
+            }
+            if (redrawLine) {
+                redrawLine = 0;
+                sprintf(gFileNameBuf, "%d of %d Remaining.  ", allowance[tab] - gFDE7[tab],
+                    allowance[tab]);
+                LockHidePointer();
+                DrawShadowText(gFileNameBuf, 8, 0x26, 9, gF57E);
+                LockShowPointer();
+            }
+            if (wantRow < 0)
+                wantRow = gFDBA[tab * 9] - 1;
+            if (gFDBA[tab * 9] <= wantRow)
+                wantRow = 0;
+            if (wantRow != selRow) {
+                DrawSpellRow(gFDBA[tab * 9 + selRow + 1], selRow, cleric, 1, 0);
+                DrawSpellRow(gFDBA[tab * 9 + wantRow + 1], wantRow, cleric, 1, 1);
+                selRow = wantRow;
+            }
+            key = DispatchKeyWait(list);
+            switch (key) {
+            case 0x6e:
+                key = 0x801a;
+                break;
+            case 0x66:
+                key = (tab + 1) % 5 + 0x801b;
+                break;
+            case 0x5c:
+                if (tab == 0)
+                    key = 0x801f;
+                else
+                    key = tab + 0x801a;
+                break;
+            default:
+                if (!gMouseDisabled) {
+                    if (IsPointInRect(gCursorX, gCursorY, 8, 0x32, 0xa8, 0x7a)) {
+                        wantRow = (gCursorY - 0x32) / 9;
+                        if (gFDBA[tab * 9] - 1 < wantRow)
+                            wantRow = gFDBA[tab * 9] - 1;
+                    }
+                }
+            }
+            if (key & 0x8000) {
+                node = FindNode(list, key & 0x7fff);
+                DrawListNode(node, 1, 1, 1);
+                WaitFrames(5);
+                DrawListNode(node, 0, 0, 1);
+            }
+            switch (key) {
+            case 0x801b:
+            case 0x801c:
+            case 0x801d:
+            case 0x801e:
+            case 0x801f:
+                wantTab = key - 0x801b;
+                if (wantTab == tab) {
+                    node = FindNode(list, key & 0x7fff);
+                    DrawListNode(node, 0, 1, 1);
+                }
+                break;
+            case 0x8019:
+                if (gFDE7[tab]) {
+                    for (i = 1; i <= gFDBA[tab * 9]; i++) {
+                        gFDE7[tab] -= gFDEA[gFDBA[tab * 9 + i] * 2];
+                        gFDEA[gFDBA[tab * 9 + i] * 2] = 0;
+                    }
+                    redrawLine = 1;
+                    redrawRows = 1;
+                }
+                break;
+            case 0x801a:
+                RedrawCharacters();
+                looping = 0;
+                break;
+            case 0x62:
+                wantRow = selRow + 1;
+                break;
+            case 0x5b:
+                wantRow = 0;
+                break;
+            case 0x60:
+                wantRow = selRow - 1;
+                break;
+            case 0x5d:
+                wantRow = gFDBA[tab * 9] - 1;
+                break;
+            case 0x0d:
+            case 0x2b:
+            case 0x3d:
+            case 0x61:
+            case 0x6a:
+            case 0x8020:
+                if (allowance[tab] - gFDE7[tab] > 0) {
+                    if (selRow > -1) {
+                        gFDEA[gFDBA[tab * 9 + selRow + 1] * 2]++;
+                        gFDE7[tab]++;
+                        DrawSpellRow(gFDBA[wantTab * 9 + selRow + 1], selRow, cleric, 0, 1);
+                        redrawLine = 1;
+                    }
+                }
+                break;
+            case 0x0c:
+            case 0x42:
+            case 0x69:
+                if (allowance[tab]) {
+                    if (gFDEA[gFDBA[tab * 9 + selRow + 1] * 2]) {
+                        gFDEA[gFDBA[tab * 9 + selRow + 1] * 2]--;
+                        gFDE7[tab]--;
+                        DrawSpellRow(gFDBA[wantTab * 9 + selRow + 1], selRow, cleric, 0, 1);
+                        redrawLine = 1;
+                    }
+                }
+                break;
+            }
+        }
+        FreeFarList(list);
+        DrawRowList(-1);
+        f1A47_0169(gA9C0);
+        RedrawMember(who);
+        f1A47_0169(gFont8x8);
+        SpendSpellSlot(who, cleric);
+    }
+}
 /* ovl1:10DE: returns the word that labels an option state: gStrings2003 message 0x15 "ON" when `on`
    is nonzero, else 0x16 "OFF". RunCampMenu formats it into its "Tunes are %-3s" style labels. */
 /*@ ovl1:10DE */ char far *BoolString(int on)
