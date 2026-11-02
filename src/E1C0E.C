@@ -43,7 +43,15 @@ extern void ClearTextRegion(void);                 /*@ 1DE7:0344 */
 extern void DrawText(char far *text);              /*@ 1DE7:060A */
 extern void f1A47_0169(void far *font);            /*@ 1A47:0169 */
 extern void FlushKeyBuffer(void);                  /*@ 1AAD:0480 */
-extern void WaitGameKey(void);                     /*@ 1AAD:053A */
+extern int WaitGameKey(void);                      /*@ 1AAD:053A */
+
+/* The screen routines and font the error dialog uses. */
+extern void (far *gRestoreRect)(int x, int y, int w, int h, void far *buf); /*@ ds:804E: buffer back to the screen (E1BBE.ASM) */
+extern void (far *gSaveRect)(int x, int y, int w, int h, void far *buf);    /*@ ds:80AE: screen into the buffer (E1BBE.ASM) */
+extern void (far *gDrawLine)(int x1, int y1, int x2, int y2, int colour);   /*@ ds:8062: line routine (E1547.C) */
+extern int (far *g80C6)(int width, int height);    /*@ ds:80C6: the save-under buffer size in bytes (E1BB1.ASM) */
+extern void far *gFE5A;                            /*@ ds:FE5A: the 8x8 font loaded from Font8.fnt (E07C8.C) */
+extern void far *gFont1A47;                        /*@ ds:FE4E: the current font (E1A47.C) */
 
 /* DGROUP globals and indirect far functions. */
 extern int g8115;                        /*@ ds:8115: nonzero while a status line is up (E082C.C) */
@@ -62,6 +70,10 @@ extern int gSavedDrive;                  /*@ ds:FEFE: the drive getdisk returned
 extern unsigned char gSearchAllDrives;   /*@ ds:81EA: nonzero: 1C0E:1310 also scans other drives */
 extern long gRecordLength;               /*@ ds:FF02: 1C0E:172E leaves the record's length here */
 extern long gRecordOffset;               /*@ ds:FF06: 1C0E:172E leaves the record's offset here */
+extern char far *gErrorText[];           /*@ ds:8196: the file error messages, indexed by FatalError code */
+extern void far *gMsgBuf;                /*@ ds:81E6: the saved screen rectangle of the error dialog */
+extern int gMsgLink;                     /*@ ds:FF0A: ResolveFileLink's result for the file in the dialog */
+extern int g80FE;                        /*@ ds:80FE: the text region the error dialog switches to; 1 in the image */
 
 #define MAX_FILES      10
 #define SLOT_FREE      0x3fff   /* gFileHandles[i]: the slot holds no file */
@@ -89,6 +101,8 @@ int LocateOverlayFile(char far *name);   /*@ 1C0E:1310: defined later in the fil
 int LoadFileSlot(int index);               /*@ 1C0E:144E: defined later in the file */
 long ReadFromMemory(int index, void far *dst, long len); /*@ 1C0E:1240: defined later in the file */
 long LookupFileEntry(int handle, char far *name); /*@ 1C0E:172E: defined later in the file */
+void ExpandTextWindow(int cells);         /*@ 1C0E:13BB: defined later in the file */
+int ResolveFileLink(char far *name);      /*@ 1C0E:168E: defined later in the file */
 
 /* A cached file, a 19-byte record at ds:01FF (index * 19 + ds:01FF). The name is a C string; an
    empty name ends the table. */
@@ -464,7 +478,108 @@ extern long gSlotLengths[];              /*@ ds:FF0C: the record's length per sl
     close(fd);
     return 1;
 }
-/*@ 1C0E:0ADD stub */ int f1C0E_0ADD(int index, char far *name) { }
+/* 1C0E:0ADD: the file error dialog. It hides the mouse pointer, saves the status-line flag, the
+   window region and the current font, switches to the 8x8 font gFE5A and the region g80FE, and
+   frames the window with four 0xf lines through gDrawLine. It shows the message gErrorText[code]
+   (the array of FatalError texts at ds:8196); when `code` is 2 ("Could not find") it also shows the
+   file `name`, wrapped in gErrorText[18] ("\r "), the "Insert disk " and "into any drive." literals
+   and, when ResolveFileLink(name) is not -1, its value as a disk digit (0x31 + the link). It waits
+   for a key; ESC clears the box, shows gErrorText[12] ("A fatal disk error has occurred. Now
+   returning to DOS.") and shuts the game down. Afterwards the saved attributes, region, font and
+   status flag are restored, the saved screen rectangle is written back (gRestoreRect) and the
+   buffer is freed. Returns 1. `code` is a FatalError code (1C0E:00AA) or a RetryFile mode
+   (1C0E:0046): the handlers at ds:8104 and ds:8111 are initialised to 0D9B and to this function. */
+/*@ 1C0E:0ADD */ int DisplayFileError(int code, char far *name)
+{
+    int saved811F;
+    int savedAttr1;
+    int savedAttr2;
+    int key;
+    int width;
+    int height;
+    int right;
+    int bottom;
+    unsigned bufSize;
+    char far *title;
+    char far *savedFont;
+    char text[3];
+    int saved8115;
+    int x, y;
+
+    bufSize = 0;
+    LockHidePointer();
+    saved8115 = g8115;
+    g8115 = 0;
+    title = gErrorText[code];
+    saved811F = g811F;
+    savedFont = gFont1A47;
+    f1A47_0169(gFE5A);
+    SetTextWindow(g80FE);
+    x = gTextLeft * 8;
+    y = gTextTop;
+    width = gTextWidth * 8;
+    height = gTextHeight;
+    right = x + width - 1;
+    bottom = y + height - 1;
+    if (gMsgBuf == 0) {
+        bufSize = g80C6(gTextWidth, height);
+        gMsgBuf = MemAlloc(bufSize, 0);
+    }
+    gSaveRect(gTextLeft, gTextTop, gTextWidth, height, gMsgBuf);
+    ClearTextRegion();
+    gDrawLine(x, y, right, y, 0xf);
+    gDrawLine(x, bottom, right, bottom, 0xf);
+    gDrawLine(x, y, x, bottom, 0xf);
+    gDrawLine(right, y, right, bottom, 0xf);
+    ExpandTextWindow(-1);
+    gMsgLink = ResolveFileLink(name);
+    if (code == 2) {
+        savedAttr1 = gTextAttr1;
+        savedAttr2 = gTextAttr2;
+        gTextAttr1 = 0xf;
+        gTextAttr2 = 0xc;
+        DrawText(title);
+        DrawText(gErrorText[18]);
+        DrawText(name);
+        DrawText(gErrorText[18]);
+        DrawText("Insert disk ");
+        if (gMsgLink != -1) {
+            text[0] = (char)gMsgLink + 0x31;
+            text[1] = ' ';
+            text[2] = 0;
+            DrawText(text);
+        }
+        DrawText("into any drive.");
+    } else {
+        savedAttr1 = gTextAttr1;
+        savedAttr2 = gTextAttr2;
+        gTextAttr1 = 0xf;
+        gTextAttr2 = 0xc;
+        DrawText(title);
+    }
+    FlushKeyBuffer();
+    key = WaitGameKey();
+    if (key == 0x1b) {
+        ClearTextRegion();
+        DrawText(gErrorText[12]);
+        WaitGameKey();
+        ShutdownGame();
+    }
+    gTextAttr1 = savedAttr1;
+    gTextAttr2 = savedAttr2;
+    ExpandTextWindow(1);
+    gRestoreRect(gTextLeft, gTextTop, gTextWidth, height, gMsgBuf);
+    SetTextWindow(saved811F);
+    f1A47_0169(savedFont);
+    if (bufSize != 0) {
+        MemFree(gMsgBuf);
+        gMsgBuf = 0;
+    }
+    g8115 = saved8115;
+    LockShowPointer();
+    return 1;
+}
+
 
 /* 1C0E:0D9B: clear the status-line flag ds:8115 while 1C0E:0ADD draws its message box, then put
    the old value back and return 1. */
@@ -473,7 +588,7 @@ extern long gSlotLengths[];              /*@ ds:FF0C: the record's length per sl
     int saved = g8115;
 
     g8115 = 0;
-    f1C0E_0ADD(index, name);
+    DisplayFileError(index, name);
     g8115 = saved;
     return 1;
 }
