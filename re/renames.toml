@@ -2133,3 +2133,12 @@ new = "DelaySecondsOrKey"
 kind = "function"
 why = "besides waiting seconds*18 ticks it flushes the key buffer, blocks on ReadKey and flushes again; its one caller uses it as a pause before ShutdownGame (src/E0DE8.C:526; 082C:0B43)"
 date = "2026-11-02"
+
+[[rename]]
+id = "1E8B:0185=f1E8B_0185"
+addr = "1E8B:0185"
+old = "ShutdownOverlayManager"
+new = "f1E8B_0185"
+kind = "function"
+why = "review of e1e8b round 7: no caller is found (packet) and the only evidence is the handle close and the vector restore, so the descriptive name is a claim beyond it; keep a placeholder with Purpose unknown until the caller is found"
+date = "2026-11-02"
