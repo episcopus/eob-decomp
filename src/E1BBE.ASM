@@ -18,7 +18,7 @@
 ; busy flag _gPointerBusy and brackets its work with [ds:80AA] and [ds:80A2], but two exits skip the
 ; bracket: the no-redraw exit of ShowPointerZone (zero count and bit 4000h clear, clears the state
 ; and releases the busy flag, 1BBE:02DE/0300) and the disjoint-rectangle exit of HidePointerZone
-; (QUIRK 1BBE:02B6, which skips the bracket at 1BBE:029F-02B2). The unit is hand-written assembly
+; (QUIRK 1BBE:02B6, which skips the bracket at 1BBE:029F-02B5). The unit is hand-written assembly
 ; ([H]: the map's c_like test, tools/re/map_units.py:42-46, looks only at the instructions after the
 ; frame and finds no C-like frame here, the same reading src/E1BB1.ASM:57-59 records; AX is saved with
 ; push/pop ax and the far call goes through a DGROUP pointer, the style of E1BB1 and E1BF3).
@@ -55,7 +55,11 @@
                                         ; reload is at label L0221; set to 0A0h and 64h by InitMouse, grep
                                         ; `_gCursorX`, the 0A0h and 64h stores; and written by
                                         ; src/E1BF3.ASM:35)
-        EXTRN   _gCursorY:WORD          ; @ ds:813A: mouse position, y in pixels
+        EXTRN   _gCursorY:WORD          ; @ ds:813A: mouse position, y in pixels (written by the handler
+                                        ; at src/E1A72.ASM, label L020C, grep `_gCursorY`: it stores dx
+                                        ; right after the `_gCursorX` store, and the reload is at label
+                                        ; L0221, which the QUIRK 1A72:0229 jump can skip; set to 64h by
+                                        ; InitMouse, grep `_gCursorY`, the 64h store)
         EXTRN   _gHideDepth:WORD        ; @ ds:8146: hide depth, 0 = drawn (1BBE:0002/00ED change it);
                                         ; InitMouse starts it at 1 and the state at 0 (src/E1A72.ASM:299-300,
                                         ; InitMouse, grep `_gHideDepth` and `_gPointerState`), so the pointer
@@ -130,7 +134,7 @@
                                         ; ShowPointer below, which calls it at 1BBE:01F4 with mode 0 and
                                         ; the shape record _gPointerShapeOff/_gPointerShapeSeg at the
                                         ; unclipped position _gShapeX/_gShapeY (stored at 1BBE:011E and
-                                        ; 012E; src/E1BBE.ASM:334-339 gives the push order, call at :340)
+                                        ; 012E; src/E1BBE.ASM:337-342 gives the push order, call at :343)
         .CODE
 
 ; 1BBE:0001: Purpose unknown: the unit's first byte is 00. It is emitted under a public symbol
@@ -478,10 +482,10 @@ L0300:  dec     word ptr [_gPointerBusy]
 _ShowPointerZone ENDP
 
 ; 1BBE:0307 LockHidePointer: hide the pointer, taking the busy flag and bracketing the work with
-; [ds:80AA] and [ds:80A2]. "Lock" is the callers' name for the frame bracket (the declarations give
-; LockHidePointer "start a frame" and LockShowPointer "end a frame", src/E14EF.C:80-81), not mutual
-; exclusion: the busy flag is a test then an increment (1BBE:030A), not atomic (src/E1BB1.ASM:53 says
-; the same of its acquire). Like 1BBE:01FE without the rectangle, the zone and the redraw flag.
+; [ds:80AA] and [ds:80A2]. "Lock" is the callers' name for the frame bracket, not mutual exclusion:
+; the bracket rests on the code itself, [ds:80AA] and [ds:80A2] around the hide (1BBE:0307-0332), and
+; the busy flag is a test then an increment (1BBE:030A), not atomic (src/E1BB1.ASM:53 says the same
+; of its acquire). Like 1BBE:01FE without the rectangle, the zone and the redraw flag.
 ; Called by many units of the resident code and the overlays, usually paired with 1BBE:0332 (the
 ; call-site lists differ: 0ACD:0E8A, 0ACD:0F72, ovl0:2547 and ovl5:17C8 call only the show, ovl0:28F9
 ; only the hide).
