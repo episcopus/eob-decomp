@@ -3972,6 +3972,9 @@ unit = "e122e"
 addr = "122E:0B89"
 size = 196
 evidence = ["frame"]
+name = "SpawnObjectOp"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e122e_0c4d"

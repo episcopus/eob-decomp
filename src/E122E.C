@@ -25,6 +25,7 @@ extern int gDragMember; /*@ ds:5C74 */         /* the member picked for arming (
 extern signed char g5C76; /*@ ds:5C76 */       /* the mode byte 03B4 reads (src/E1414.C) */
 extern void ArmEffectWith(int idx, int arg, int sub, int active); /*@ 1414:055B */
 extern void AdjustMemberStatus(int who); /*@ 1414:03B4 */
+extern void Obj1505(int kind, int id, int frame, int orient, int b0, int m07, int type, int timer, int m12, int m14); /*@ 08E6:1505 */
 extern int gFBCC; /*@ ds:FBCC */               /* a page number 0..3 (src/E08E6.C) */
 extern char gEFB2; /*@ ds:EFB2 */              /* set when the sound page changes (src/E0ACD.C) */
 extern char gDF4C; /*@ ds:DF4C */              /* set to 1 when an action took effect (src/E08E6.C) */
@@ -239,7 +240,41 @@ void f122E_1DA8(int a, int b);  /* forward: 1DA8 comes after its callers */
     DisarmMemberEffect(who);
     return (long)(script - start);
 }
-/*@ 122E:0B89 stub */ void f122E_0B89(void) {}
+/* 122E:0B89: sub-opcode that spawns an object: read an unused byte, then the ten Obj1505 arguments
+   (eight bytes/words from the script and the two trailing words) and hand them on. Returns the bytes
+   read. */
+/*@ 122E:0B89 */ long SpawnObjectOp(char far *script)
+{
+    int kind;
+    int id;
+    int frame;
+    int orient;
+    int b0;
+    int m07;
+    int type;
+    int timer;
+    int m12;
+    int m14;
+    char far *start;
+
+    start = script;
+    script++;
+    kind = *script++;
+    id = *(int far *)script;
+    script += 2;
+    frame = *script++;
+    orient = *script++;
+    b0 = *script++;
+    m07 = *script++;
+    type = *script++;
+    timer = *script++;
+    m12 = *(int far *)script;
+    script += 2;
+    m14 = *(int far *)script;
+    script += 2;
+    Obj1505(kind, id, frame, orient, b0, m07, type, timer, m12, m14);
+    return (long)(script - start);
+}
 /*@ 122E:0C4D stub */ void f122E_0C4D(void) {}
 /*@ 122E:0D57 stub */ void f122E_0D57(void) {}
 /*@ 122E:0E9B stub */ void f122E_0E9B(void) {}
