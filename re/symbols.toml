@@ -3862,6 +3862,9 @@ unit = "e0ef3"
 addr = "0EF3:1BA3"
 size = 162
 evidence = ["frame"]
+name = "ApplyAidEffect"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0ef3_1c45"

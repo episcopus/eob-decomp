@@ -873,7 +873,8 @@ extern void f0EF3_2A53(int a, int b, int c, int d, int e, void far *p); /*@ 0EF3
    and `register` form tried spills one local (`make match` shows the difference at the prologue). */
 /*@ 0EF3:1197 draft */ void CreateItemForEffect0(void)
 {
-    register int slot, index;
+    int slot;
+    int index;
 
     index = ItemSlot1Empty(gCurRec);
     slot = CreateItemType(0, 0, 0, 0xF, 1, 8, GetClassSlot1Value(gPanelMember), 1);
@@ -1303,7 +1304,27 @@ void f0EF3_2EBC(int a, int b, int c, int d, int e, char far *table);
     rec->mE3 &= ~0x200L;
 }
 
-/*@ 0EF3:1BA3 stub */ void f0EF3_1BA3(void) {}
+/* 0EF3:1BA3: the "aid" spell. When the current member is not protected (0D1C:0670 with mask 3) it
+   adds one 1d8 roll to the record's hit points, remembers the same amount in its +0xE2 byte and sets
+   effect flag bit 0x40 (the amount 0EF3:1C45 takes back); otherwise it says "The aid spell fails!"
+   (ds:5899). Either way it applies a 1-turn effect. Reached through the spell table (gSpells1344
+   "aid", its apply callback). */
+/*@ 0EF3:1BA3 */ void ApplyAidEffect(void)
+{
+    int amount;
+
+    if (f0D1C_0670(gCurMember, 3)) {
+        gCurRec->mE3 |= 0x40;
+        amount = RollDice(1, 8, 0);
+        if (gCurRec->hp < (signed char)(gCurRec->hp + amount)) {
+            gCurRec->mE2 += amount;
+            gCurRec->hp += amount;
+        }
+        ApplyTimedCharEffect(gEFB8, 1, 0x222L, 1, 1);
+    } else {
+        SayAndBeep(gText5899);
+    }
+}
 /* 0EF3:1C45: undo a bandage-like effect on the record: when its +0xE2 byte is set subtract it
    from the hit points and clear it, then clear the record's effect flag bit 0x40. Called by
    0BD2:0D2D and 0EF3:1F0B. */
