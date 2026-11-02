@@ -451,7 +451,65 @@ extern void far *g5E64[0x11]; /*@ ds:5E64 */ /* the 17 sliced icon pointers this
     } while (found);
     return slot;
 }
-/*@ ovl0:0DDC stub */ void Ovl0_0DDC(void) {}
+void Ovl0_1224(void);              /* ovl0:1224, defined below */
+void Ovl0_1ADD(void);              /* ovl0:1ADD, defined below */
+void Ovl0_1BF2(int who);           /* ovl0:1BF2, defined below */
+/* ovl0:0DDC: the character panel's function-key loop. It opens the panel page, builds the 0x1b-based
+   four-row list, then until a key ends it redraws the animation and waits: the enter key (0x61) and
+   key 0x8004 flash icon 6 and keep looping, keys 0x8001/0x8002/0x8003 flash icons 4/7/8 and run the
+   combat tables (ovl0:1BF2), the race picker (Ovl0_1ADD) or the item list (ovl0:0A5E), each redrawing
+   the page and list, and any other key exits after drawing the current row list. Called by no direct
+   caller found (reached through an overlay entry). Purpose unknown: the 0x8001..0x8004 key codes. */
+/*@ ovl0:0DDC */ int Ovl0_0DDC(void)
+{
+    struct Node far *list;
+    register int key;
+
+    Ovl0_0A5E();
+    Ovl0_065B(gDCB0, 1);
+    list = BuildRowNodeList(0x1b, 4);
+    FlushKeyBuffer();
+    for (;;) {
+        Ovl0_1224();
+        key = WaitKeyOrPause(list);
+        switch (key) {
+        case 0x8001:
+            FlashPanelIcon(4);
+            Ovl0_1224();
+            Ovl0_1BF2(gDCB0);
+            key = -1;
+            break;
+        case 0x8002:
+            FlashPanelIcon(7);
+            Ovl0_1ADD();
+            key = -1;
+            break;
+        case 0x8003:
+            FlashPanelIcon(8);
+            Ovl0_0A5E();
+            key = -1;
+            break;
+        case 0x61:
+        case 0x8004:
+            FlashPanelIcon(6);
+            key = 1;
+            break;
+        default:
+            key = 0;
+            break;
+        }
+        if (key < 0) {
+            Ovl0_065B(gDCB0, 1);
+            list = BuildRowNodeList(0x1b, 4);
+            key = 0;
+        }
+        if (key == 0)
+            continue;
+        DrawRowList(gDCB0 + 6);
+        DrawRowList(-1);
+        return 0;
+    }
+}
 /*@ ovl0:0EE5 stub */ int Ovl0_0EE5(void) {}
 /* ovl0:1071: draws the panel report line gStr61CB at (0xa8, 0x10) over a fresh region (g8115 = 2
    while it draws), restores g8115, redraws the report box and then calls DrawPartyStatus. Called
@@ -555,7 +613,7 @@ extern void far *g5E64[0x11]; /*@ ds:5E64 */ /* the 17 sliced icon pointers this
 }
 /*@ ovl0:135D stub */ void Ovl0_135D(void) {}
 /*@ ovl0:1ADD stub */ void Ovl0_1ADD(void) {}
-/*@ ovl0:1BF2 stub */ void Ovl0_1BF2(void) {}
+/*@ ovl0:1BF2 stub */ void Ovl0_1BF2(int who) {}
 /* ovl0:1EA9: builds two six-word combat tables for the current character gDCB0. For each of the
    six slots it takes the larger of gTable5FC5[m20][i] and gTable5F35[m1F>>1][i] into gOutDD04[i],
    copies gTable5F7D[m1F>>1][i] into gOutDC98[i], and when the class byte g116E[m20] is nonzero
