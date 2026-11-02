@@ -7059,6 +7059,7 @@ size = 11
 evidence = ["segment"]
 level = "L2"
 notes = "not a function: bytes of the unit outside its functions (a marker or padding), matched with the whole unit"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1e8b_000f"
@@ -7069,6 +7070,7 @@ evidence = ["far"]
 name = "_InitOverlayManager"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1e8b_0134"
@@ -7079,6 +7081,7 @@ evidence = ["far", "frame"]
 name = "_SwapAndReopenOverlayFile"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1e8b_0185"
@@ -7089,6 +7092,7 @@ evidence = ["frame"]
 level = "L2"
 match_flags = "tasm /mx"
 name = "f1E8B_0185"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1e8b_01a7"
@@ -7099,6 +7103,7 @@ evidence = ["near"]
 name = "_OpenNamedOverlayFile"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1e8b_01b3"
@@ -7109,6 +7114,7 @@ evidence = ["near"]
 name = "_OpenOwnOverlayFile"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1e8b_01f3"
@@ -7119,6 +7125,7 @@ evidence = ["near"]
 name = "_OpenOverlayFileViaPath"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1e8b_0250"
@@ -7129,6 +7136,7 @@ evidence = ["near"]
 name = "_CopyNameAndOpenOverlay"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1e8b_0276"
@@ -7139,6 +7147,7 @@ evidence = ["near"]
 name = "_ReadOverlayHeaderBytes"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1e8b_0286"
@@ -7149,6 +7158,7 @@ evidence = ["near"]
 name = "_InitOverlayRecords"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1e8b_02ff"
@@ -7159,6 +7169,7 @@ evidence = ["near"]
 name = "_MapOverlayRecords"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1e8b_03c4"
@@ -7169,6 +7180,7 @@ evidence = ["near"]
 name = "_ReadOverlayImage"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1e8b_03fd"
@@ -7179,6 +7191,7 @@ evidence = ["near"]
 name = "_ApplyOverlayRelocations"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1e8b_0442"
@@ -7189,6 +7202,7 @@ evidence = ["near"]
 name = "_RelocateOverlayPointer"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1e8b_04d0"
@@ -7199,6 +7213,7 @@ evidence = ["frame"]
 name = "_OverlayCallHandler"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1e8b_0536"
@@ -7209,6 +7224,7 @@ evidence = ["near"]
 name = "_AgeOverlayRecords"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1e8b_0580"
@@ -7219,6 +7235,7 @@ evidence = ["near"]
 name = "_LoadOverlayRecord"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1e8b_05fb"
@@ -7229,6 +7246,7 @@ evidence = ["near"]
 level = "L2"
 match_flags = "tasm /mx"
 name = "_ReleaseOverlayRecord"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1e8b_0613"
@@ -7239,6 +7257,7 @@ evidence = ["near"]
 level = "L2"
 match_flags = "tasm /mx"
 name = "_CompactOverlayRecords"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1e8b_064e"
@@ -7249,6 +7268,7 @@ evidence = ["near"]
 name = "_RestoreOverlayVersionTable"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1e8b_066f"
@@ -7259,6 +7279,7 @@ evidence = ["near"]
 name = "_FillOverlayVersionTable"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1e8b_068d"
@@ -7269,6 +7290,7 @@ evidence = ["near"]
 name = "_ClearOverlayVersionTable"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1e8b_06c0"
@@ -7279,6 +7301,7 @@ evidence = ["near"]
 name = "_MoveOverlayRecord"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1e8b_0711"
@@ -7289,6 +7312,7 @@ evidence = ["near"]
 name = "_LinkOverlayRecord"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1e8b_072f"
@@ -7299,6 +7323,7 @@ evidence = ["near"]
 name = "_PatchOverlayEntryVector"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1e8b_073b"
@@ -7309,6 +7334,7 @@ evidence = ["near"]
 name = "_FindOverlaySlot"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1e8b_0761"
@@ -7319,6 +7345,7 @@ evidence = ["near"]
 level = "L2"
 match_flags = "tasm /mx"
 name = "_OverlayParagraphsRemaining"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1e8b_077d"
@@ -7329,6 +7356,7 @@ evidence = ["near"]
 name = "_OverlayCodeParagraphs"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1e8b_0789"
@@ -7339,6 +7367,7 @@ evidence = ["near"]
 name = "_OverlayTotalParagraphs"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1e8b_07d7"
@@ -7349,6 +7378,7 @@ evidence = ["frame"]
 name = "_DropStaleOverlaySlots"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1e8b_086f"
@@ -7359,6 +7389,7 @@ evidence = ["frame"]
 name = "_OverlayManagerEntry"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "eov0_0000"
