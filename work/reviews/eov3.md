@@ -23,24 +23,31 @@ two must-fix items below. Round 2 should items: the :560/:774 cites and the per-
 
 #### Round 3 must-fix
 
-- [ ] must-fix src/EOV3.C:833-835 (SaveGame header, changed in 89e940a): the three line cites are off by one.
+- [x] must-fix src/EOV3.C:833-835 (SaveGame header, changed in 89e940a): the three line cites are off by one.
   `ok = 1` is at :853 and `if (ok)` at :854 (not :853); the INVENT reload is the call at :871 (not :870, which
   is FileClose); the `ok &=` writes are at :857-869 (not :856-868). Cite `if (ok)` at :854, the reload at :871
   and the writes at :857-869. The claim itself is right.
-- [ ] must-fix src/EOV3.C:885 (LoadGame header, changed in 89e940a): "sets `flag` at :951 instead" is wrong.
+  Fixed in 8db5863: the header now cites `if (ok)` at :854, the INVENT reload at :871 and the `ok &=` writes
+  at :857-869 (checked against src/EOV3.C:854, :871, :857).
+- [x] must-fix src/EOV3.C:885 (LoadGame header, changed in 89e940a): "sets `flag` at :951 instead" is wrong.
   `flag = 1` is at :953 (the `else` at :952). Line :951 is the `farfree(cell)` of the first pass. Say :953.
   The condition ("m01 nonzero and m22 < 0") is right.
+  Fixed in 8db5863: the header now says the m22 < 0 character sets `flag` at :953 (src/EOV3.C:953, after the
+  `else` at :952).
 
 #### Round 3 should
 
-- [ ] should src/EOV3.C:886-887 (LoadGame header; the sentence is unchanged since round 1): "loads the OUTTAKE
+- [x] should src/EOV3.C:886-887 (LoadGame header; the sentence is unchanged since round 1): "loads the OUTTAKE
   screen and draws the m22 < 0 characters' sprites into it". The OUTTAKE pass (:958-965) cuts each m22 < 0
   character's 4 by 32 cell out of gOverlayBuf (the OUTTAKE screen loaded at :956), unpacks it into rec->sprite
   and frees it; no draw call is in that loop. Say "cuts", as the first pass does. This wording is my error:
   round 1 asked for "draws", and the fix wrote it.
-- [ ] should src/EOV3.C:45 (declaration of g1A1B, "per-cell sound table (src/E0ACD.C)"): the table is indexed
+  Fixed in 8db5863: the header now says the OUTTAKE path cuts the m22 < 0 characters' 4 by 32 cells out of it
+  the same way (src/EOV3.C:958-965 cuts, unpacks and frees; no draw).
+- [x] should src/EOV3.C:45 (declaration of g1A1B, "per-cell sound table (src/E0ACD.C)"): the table is indexed
   `gFBCC * 4 + roll` (:977), so it is per page, not per cell. src/E0ACD.C:131 and src/E0DE8.C:121 both declare
   it as the per-page sound table. Say per-page and cite src/E0ACD.C:131.
+  Fixed in 8db5863: the declaration now reads "per-page sound table (src/E0ACD.C:131)".
 - [ ] should, cross-unit (not this file, carried from round 2): src/EOV5.C:210, :1042 and :1162 still call
   FreeEffectTables, and :1147 names it in a comment. The EOV5 owner or the integrator should use FreeSlotTables.
   Not blocking, and the match is unaffected.
@@ -256,6 +263,10 @@ Round 1 (at 01237b0). `make match FILE=src/EOV3.C`: cmatch 23 of 23 functions ma
   Fixed in cd7af2f: the local is now `timerIdx`.
 - [ ] should src/EOV3.C:666-680 (LoadMapScreen, `scriptWord`): it holds the item-table offset (:666-667)
   and then an item word (:678-680). Two meanings, one name. Split the variable.
+  Not split (8db5863): splitting `scriptWord` into two locals (e.g. itemTableOffset and itemWord) gives
+  LoadMapScreen an extra frame slot and the matcher drops to 22 of 23 (LoadMapScreen differs); the original
+  reuses one slot, so the single variable stays. Kept as one local; the two uses are the level-script item
+  table offset at src/EOV3.C:688-689 and the item word at :700-702.
 - [x] should src/EOV3.C:654-660 (LoadMapScreen, `nObjects`): counted at :660 and never read. Mark it as
   `QUIRK ovl3:0A7C:` (an unused result), or say in the header that it is dead.
   Fixed in cd7af2f: the declaration is now `/* QUIRK ovl3:0A7C: counted but never read (dead result) */`.
@@ -267,13 +278,18 @@ Round 1 (at 01237b0). `make match FILE=src/EOV3.C`: cmatch 23 of 23 functions ma
   (:316), and idx[10] is the chain link (see the first must-fix). Say so in the struct comment.
   Fixed in cd7af2f: the WallDec comment now says idx[0..9] are the ten cell indices and idx[0xa] the
   chain link.
-- [ ] should src/EOV3.C:138, 140-145, 14, 55, 189 (types): the file declares types that disagree with the
+- [x] should src/EOV3.C:138, 140-145, 14, 55, 189 (types): the file declares types that disagree with the
   other units, and the placeholder `Triple6` is now a known record. gA99C is `struct Triple6` (c[2]) here;
   src/E122E.C:110-117 names it SlotPos {rec, x, y} and says "src/EOV3.C calls them Triple6". Use SlotPos, so
   c[0] and c[1] become x and y. gFB5E is `long` here but `struct SlotSize far *` in src/EOV4.C:756 and
   src/E122E.C. gRectKinds is `void far *` here but `struct RectKind far *` in src/E122E.C:98 and
   src/EOV4.C:661. gE062 is `void far *` here but is read as a Cell8 array (:321). Make each match the
   declaring unit (the matcher checks the bytes).
+  Fixed in 8db5863: gA99C is now `struct SlotPos` with `rec`/`x`/`y` (usages at src/EOV3.C:360-362, 384-388,
+  396-400; the header at :369 names .rec); gFB5E is `struct SlotSize far *` (:143, :382, :394); gRectKinds is
+  `struct RectKind far *` (:15); gE062 is `struct Cell8 far *` (:56). SlotSize and RectKind are used only
+  through pointers here, so they are referenced by tag and defined in their declaring units (src/E122E.C);
+  Cell8 is defined in this file (:63). All four keep the bytes: `make match FILE=src/EOV3.C` 23 of 23, exit 0.
 - [x] should src/EOV3.C:189 (gMapTiles type): `signed char` here, but src/EOV5.C:165 declares the same table
   `unsigned char` and uses the same expression at :1285. Sign extension changes the code for `<< 5`, so
   both cannot be the same bytes unless the matcher finds otherwise. Test the type with `make match` on
