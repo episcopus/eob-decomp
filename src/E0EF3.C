@@ -208,6 +208,9 @@ extern int ClampValue(int value, int low, int high, int invert); /*@ 082C:0AB4 *
 extern signed char gAt5717[];          /*@ ds:5717 */ /* a per-member byte: nonzero when the member
                                                      can use melee effects (read by 0EF3:0E1B) */
 extern signed char gTable5733[];        /*@ ds:5733 */ /* four cell deltas walked by 0EF3:17D8 */
+extern char gB894[];                    /*@ ds:B894 */ /* nine-byte records; +4 (ds:B898) is the
+                                                       object's type byte tested by 0EF3:0A3F */
+extern signed char g1A2B[];             /*@ ds:1A2B */ /* per-page sprite base (src/E0DE8.C) */
 extern signed char gIconIndex571B[];    /*@ ds:571B */ /* a per-member icon index; a negative value
                                                            picks the 004D region drawing (0EF3:0F99) */
 extern int gIconX5721[];                /*@ ds:5721 */ /* the icon's x, per member (0EF3:0F99) */
@@ -284,6 +287,7 @@ extern int far RollDice(char count, char sides, char bonus); /*@ 082C:0458 */
 extern int RollToHit(int who, int obj, int slot, int flag); /*@ 0DE8:0007 */
 extern void DamageCharacter(int who, int amount); /*@ 0DE8:09B9 */
 extern int HalveSaveDamageA(int who, int value); /*@ 0DE8:0F98 */
+extern int HalveSaveDamageB(char far *type, int value); /*@ 0DE8:0FCA */
 extern int FindClassSlot(int value, int classIndex); /*@ 0A72:007B */
 extern int GetIndexedByte(char index, char limit, char offset); /*@ 0A72:0006 */
 extern int GetArmourClassBase(char classIndex); /*@ 0A72:019D */
@@ -301,6 +305,7 @@ extern int Obj15B4(char who, int value); /*@ 08E6:15B4 */
 extern void DamageObject(struct Obj28 far *obj, int n); /*@ 08E6:0FBE */
 extern void ClearObjectType(struct Obj28 far *obj); /*@ 08E6:000B */
 extern void Obj17FD(int far *list, int key, int field, char flags, char scanAll, char scanFiltered); /*@ 08E6:17FD */
+extern int Obj106B(struct Obj28 far *obj, int who); /*@ 08E6:106B */
 extern void SetMouseItem(int n); /*@ 07A9:010C */
 extern void f1BF3_00A8(int dx, int dy); /*@ 1BF3:00A8 */
 extern int sprintf(char far *buf, char far *fmt, ...); /*@ 0000:57AE */
@@ -534,15 +539,13 @@ extern void f0EF3_2A53(int a, int b, int c, int d, int e, void far *p); /*@ 0EF3
    0x10 and stop at the first whose +6 key is -2 (freed). It fills the record's flags (+2, from
    arg1 plus 0x20), icon (+3), type (+4) and +0xD byte, clears the global ds:8DD5 and the record's
    +0, +1, +6, +8 and +0xA fields, and returns the record's index (the item id). Called by the item
-   creators 0EF3:1197, 0EF3:1656 and 0EF3:1D38. DRAFT: the original keeps the zero it stores in
-   AL (`mov al,0; mov [ds:8DD5],al; cwde; ...`), a single char temporary reused for every store;
-   our build either stores the immediates directly or keeps the temporary in DL (`make match`
-   differs at the first zero store, +0x49). */
-/*@ 0EF3:0418 draft */ int CreateItemRecord(unsigned char flags, unsigned char icon, signed char m0B,
-                                              signed char type)
+   creators 0EF3:1197, 0EF3:1656 and 0EF3:1D38. The six clears are one chained assignment
+   (`rec->m06 = rec->m08 = rec->m00 = rec->m01 = rec->m04 = g8DD5 = 0;`): the original keeps the
+   value in AL, stores the char fields from AL and sign-extends it once per word field
+   (`mov al,0; mov [ds:8DD5],al; cwde; ...`), which only the chained form produces. */
+/*@ 0EF3:0418 */ int CreateItemRecord(int flags, int icon, int m0B, int type)
 {
     struct ItemRecord far *rec;
-    signed char zero;
     int index;
 
     rec = &gItems[0xB];
@@ -554,13 +557,7 @@ extern void f0EF3_2A53(int a, int b, int c, int d, int e, void far *p); /*@ 0EF3
     rec->icon = icon;
     rec->m02 = type;
     rec->m0B = m0B;
-    zero = 0;
-    g8DD5 = zero;
-    rec->m04 = zero;
-    rec->m01 = zero;
-    rec->m00 = zero;
-    rec->m08 = zero;
-    rec->m06 = zero;
+    rec->m06 = rec->m08 = rec->m00 = rec->m01 = rec->m04 = g8DD5 = 0;
     return index;
 }
 
@@ -797,7 +794,90 @@ extern void f0EF3_2A53(int a, int b, int c, int d, int e, void far *p); /*@ 0EF3
     gDF4C = 1;
 }
 
-/*@ 0EF3:0A3F stub */ int f0EF3_0A3F(void far *rec, int a, int b, int c, int n) {}
+/* 0EF3:0A3F: run a melee effect on the record's target. The record's +0xC byte holds five flags:
+   0x10 (the target is not a member), 1, 2, 4 and 8. When the target cell's object type byte
+   (gB894[cell * 9 + 4]) has any of bits 0..2 and the record's +0xB member index is not negative
+   (or flag 0x10 is set), list the objects at the cell with 08E6:17FD and for each one roll
+   `count`d`sides`+`bonus` times `n`, halve it on a successful save (flag 8), and damage the object
+   unless 0D1C:0BAB rejects it. Otherwise, when the cell is the party cell and the member index is
+   negative (or flag 0x10 is set), either walk the six members (flag 2) or pick one from the
+   g1A2B table and damage it. Finally, when anything was hit and the record's +0xC has bit 0x40,
+   run the animation 0EF3:00CD; a record whose +8 is 5 clears the hit. Returns the hit flag. */
+/*@ 0EF3:0A3F draft */ int DamageTargetCell(struct Tgt far *rec, int count, int sides, int bonus, int n)
+{
+    char dmg;
+    char flag01;
+    char flag02;
+    char flag04;
+    char flag08;
+    char i;
+    char hit;
+    char flag10;
+    int buffer[5];
+    int far *list;
+    int idx;
+
+    flag10 = rec->m0C & 0x10;
+    flag01 = rec->m0C & 1;
+    flag02 = rec->m0C & 2;
+    flag04 = rec->m0C & 4;
+    flag08 = rec->m0C & 8;
+    hit = 0;
+    if (n <= 0)
+        n = 1;
+    if ((gB894[rec->m04 * 9 + 4] & 7) && (rec->m0B >= 0 || flag10)) {
+        Obj17FD(buffer, rec->m04, rec->m06, rec->m07, flag02, flag01);
+        list = buffer;
+        for (; *list != -1; list++) {
+            dmg = RollDice(count, sides, bonus) * n;
+            if (RollToHit(rec->m0B, *list, 0, 0) || !flag04) {
+                if (flag08)
+                    dmg = HalveSaveDamageB((char far *)&gObjs[*list], dmg);
+                hit = 1;
+                if (!f0D1C_0BAB(*list))
+                    DamageObject(&gObjs[*list], dmg);
+            }
+        }
+    } else if (rec->m04 == gPartyCell && (rec->m0B < 0 || flag10)) {
+        if (flag02) {
+            for (i = 0; i < 6; i++) {
+                if ((gChars[i].m01 & 1) == 0)
+                    continue;
+                if (Obj106B(gObjs, i) || !flag04) {
+                    dmg = RollDice(count, sides, bonus) * n;
+                    if (flag08)
+                        dmg = HalveSaveDamageA(i, dmg);
+                    hit = 1;
+                    DamageCharacter(i, dmg);
+                }
+            }
+        } else {
+            idx = rec->m06 & 3;
+            idx = g1A2B[gFBCC * 4 + idx];
+            if (idx > 2 && (f0D1C_0670(5, 1) || f0D1C_0670(6, 1)) && RollDice(1, 2, -1))
+                i = idx + 2;
+            else
+                i = idx;
+            if (rec->m08 == 0 && (gChars[i].mE3 & 2)) {
+                hit = 1;
+            } else {
+                if ((gChars[i].m01 & 1) && (Obj106B(gObjs, i) || !flag04)) {
+                    dmg = RollDice(count, sides, bonus) * n;
+                    if (flag08)
+                        dmg = HalveSaveDamageA(i, dmg);
+                    hit = 1;
+                    DamageCharacter(i, dmg);
+                }
+            }
+        }
+    }
+    if (hit && (rec->m0C & 0x40)) {
+        AnimateEffect(rec);
+    } else if (rec->m08 == 5) {
+        hit = 0;
+    }
+    return hit;
+}
 
 /* 0EF3:0D78: expire one spell on character `who`: format the message ds:57D9 with the member's
    name and the spell's name, say it, remember `who` in gA999, then run the spell's expire callback
@@ -938,7 +1018,7 @@ extern void f0EF3_2A53(int a, int b, int c, int d, int e, void far *p); /*@ 0EF3
    class-slot 1 value. */
 /*@ 0EF3:10F2 */ void RunMelee1d4(struct Tgt far *rec)
 {
-    f0EF3_0A3F(rec, 1, 4, 1, (GetClassSlot1Value(rec->m0B) - 1) >> 1);
+    DamageTargetCell(rec, 1, 4, 1, (GetClassSlot1Value(rec->m0B) - 1) >> 1);
 }
 
 /* 0EF3:1122: set the panel member's effect flag bit 1, recompute the member's armour class and
@@ -963,12 +1043,12 @@ extern void f0EF3_2A53(int a, int b, int c, int d, int e, void far *p); /*@ 0EF3
 
 /* 0EF3:1197: give the panel member the item of effect mode 0: 0EF3:035A creates the drawing node,
    0EF3:0418 the item record, and the node's slot is the one 0EF3:0482 picks; then redraw and
-   apply a 1-turn effect. Called through a table. DRAFT: the body is right but the original keeps
-   the 0482 result in DI and the 035A result in SI with no stack frame; every declaration order
-   and `register` form tried spills one local (`make match` shows the difference at the prologue). */
-/*@ 0EF3:1197 draft */ void CreateItemForEffect0(void)
+   apply a 1-turn effect. Called through a table. The 0482 result is `index` and the 035A result
+   `slot`, declared in that order: the allocator then keeps index in DI and slot in SI with no
+   stack frame (the reverse order spills slot). */
+/*@ 0EF3:1197 */ void CreateItemForEffect0(void)
 {
-    register int slot, index;
+    int index, slot;
 
     index = ItemSlot1Empty(gCurRec);
     slot = CreateItemType(0, 0, 0, 0xF, 1, 8, GetClassSlot1Value(gPanelMember), 1);
@@ -1027,7 +1107,7 @@ extern void f0EF3_2A53(int a, int b, int c, int d, int e, void far *p); /*@ 0EF3
    member's class-slot 1 value. */
 /*@ 0EF3:12E3 */ void RunMelee2d4(struct Tgt far *rec)
 {
-    f0EF3_0A3F(rec, 2, 4, 0, GetClassSlot1Value(rec->m0B) / 3);
+    DamageTargetCell(rec, 2, 4, 0, GetClassSlot1Value(rec->m0B) / 3);
 }
 
 /* 0EF3:1315: an empty function reached through a table; nothing to do. */
@@ -1074,7 +1154,7 @@ extern void f0EF3_2A53(int a, int b, int c, int d, int e, void far *p); /*@ 0EF3
 /* 0EF3:141E: run the record's 1d6 melee effect through 0EF3:0A3F. */
 /*@ 0EF3:141E */ void RunMelee1d6(struct Tgt far *rec)
 {
-    f0EF3_0A3F(rec, 1, 6, 0, GetClassSlot1Value(rec->m0B));
+    DamageTargetCell(rec, 1, 6, 0, GetClassSlot1Value(rec->m0B));
 }
 
 /* 0EF3:144A: add the panel member's effect record of mode 3 through 0EF3:097B. */
@@ -1086,7 +1166,7 @@ extern void f0EF3_2A53(int a, int b, int c, int d, int e, void far *p); /*@ 0EF3
 /* 0EF3:146B: run the record's 5d6 melee effect through 0EF3:0A3F. */
 /*@ 0EF3:146B */ void RunMelee5d6(struct Tgt far *rec)
 {
-    f0EF3_0A3F(rec, 5, 6, 0, GetClassSlot1Value(rec->m0B));
+    DamageTargetCell(rec, 5, 6, 0, GetClassSlot1Value(rec->m0B));
 }
 
 /* 0EF3:1497: mark every living member with effect flag bit 3, set the current member to each in
@@ -1168,19 +1248,18 @@ extern void f0EF3_2A53(int a, int b, int c, int d, int e, void far *p); /*@ 0EF3
 /* 0EF3:162A: run the record's 1d6 melee effect through 0EF3:0A3F. */
 /*@ 0EF3:162A */ void RunMelee1d6B(struct Tgt far *rec)
 {
-    f0EF3_0A3F(rec, 1, 6, 0, GetClassSlot1Value(rec->m0B));
+    DamageTargetCell(rec, 1, 6, 0, GetClassSlot1Value(rec->m0B));
 }
 
 /* 0EF3:1656: give the panel member the item of effect mode 6, like 0EF3:1197 but with the item
-   record at a different row. Called through a table. DRAFT: same register-allocation difference
-   as 0EF3:1197 at the prologue. */
-/*@ 0EF3:1656 draft */ void CreateItemForEffect6(void)
+   record at a different row and the class-slot value halved with `>> 1` (the original shifts,
+   `sar ax,1`, where `/ 2` would call the divide routine). Called through a table. */
+/*@ 0EF3:1656 */ void CreateItemForEffect6(void)
 {
-    register int slot;
-    register int index;
+    int index, slot;
 
     index = ItemSlot1Empty(gCurRec);
-    slot = CreateItemType(0, 0, 0, 0xF, GetClassSlot1Value(gPanelMember) / 2, 6, 0, 1);
+    slot = CreateItemType(0, 0, 0, 0xF, GetClassSlot1Value(gPanelMember) >> 1, 6, 0, 1);
     gCurRec->m77[index] = CreateItemRecord(0x18, 0x53, 0, slot);
     RedrawMember(gPanelMember);
     ApplyTimedCharEffect(gEFB8, 0, 0x222L, 1, 1);
@@ -1236,13 +1315,13 @@ extern void f0EF3_2A53(int a, int b, int c, int d, int e, void far *p); /*@ 0EF3
     int i;
     int cell;
 
-    found = f0EF3_0A3F(rec, 1, 6, 0, GetClassSlot1Value(rec->m0B));
+    found = DamageTargetCell(rec, 1, 6, 0, GetClassSlot1Value(rec->m0B));
     if (found) {
         for (i = 0; i < 4; i++) {
             cell = rec->m04;
             rec->m04 += gTable5733[i];
             rec->m04 &= 0x3FF;
-            f0EF3_0A3F(rec, 1, 6, 0, GetClassSlot1Value(rec->m0B));
+            DamageTargetCell(rec, 1, 6, 0, GetClassSlot1Value(rec->m0B));
             rec->m04 = cell;
         }
     }
@@ -1462,18 +1541,17 @@ void f0EF3_2EBC(int a, int b, int c, int d, int e, char far *table);
 }
 
 /* 0EF3:1D38: give the panel member the item of effect mode 4, like 0EF3:1197 but with the item
-   record at a different row. Called through a table. DRAFT: same register-allocation difference
-   as 0EF3:1197 at the prologue. */
-/*@ 0EF3:1D38 draft */ void CreateItemForEffect4(void)
+   record at a different row and the class-slot value halved with `>> 1` (the original shifts,
+   `sar ax,1`). Called through a table. */
+/*@ 0EF3:1D38 */ void CreateItemForEffect4(void)
 {
-    register int slot;
-    register int index;
+    int index, slot;
 
     index = ItemSlot1Empty(gCurRec);
     slot = CreateItemType(0, 0, 0, 0xF, 1, 4, 4, 1);
     gCurRec->m77[index] = CreateItemRecord(0, 0x54, 0, slot);
     RedrawMember(gPanelMember);
-    ApplyTimedCharEffect(gEFB8, 4, 0x222L, GetClassSlot24Value(gPanelMember) / 2, 1);
+    ApplyTimedCharEffect(gEFB8, 4, 0x222L, GetClassSlot24Value(gPanelMember) >> 1, 1);
 }
 
 /* 0EF3:1DC0: set every member's +0x23 level byte to 100. */
@@ -1617,7 +1695,7 @@ void f0EF3_2EBC(int a, int b, int c, int d, int e, char far *table);
 /* 0EF3:2032: run the record's 6d8 melee effect through 0EF3:0A3F. */
 /*@ 0EF3:2032 */ void RunMelee6d8(struct Tgt far *rec)
 {
-    f0EF3_0A3F(rec, 6, 8, 0, 0);
+    DamageTargetCell(rec, 6, 8, 0, 0);
 }
 
 /* 0EF3:2050: when the current record is at -10 hit points and its +0x1F byte over two is not
@@ -1637,7 +1715,7 @@ void f0EF3_2EBC(int a, int b, int c, int d, int e, char far *table);
    a two-byte frame for the value; our build folds them away (`make match` differs at the frame). */
 /*@ 0EF3:208A */ void RunMelee0(struct Tgt far *rec)
 {
-    f0EF3_0A3F(rec, 0, 0, 0xC, 1);
+    DamageTargetCell(rec, 0, 0, 0xC, 1);
 }
 
 /* 0EF3:20A8: the "damage one party member" effect: when the record's cell is the party cell, roll
@@ -1777,13 +1855,13 @@ void f0EF3_2295(void);
 
 /* 0EF3:2604: use the item in one of a member's rows. It switches on the item's type: type 0x22 or
    0x23, or a type 0x30 item whose flags low six bits are exactly 1, runs 0BD2:0106(who, slot); any
-   other type 0x30 item just decrements its flags. Called through a table.
-   DRAFT: the switch matches (the original loads the type byte, sign-extends it and compares 0x22,
-   0x23 and 0x30 in turn), but the original computes who*0xF3 before reading slot; our build caches
-   slot in DI first (`make match` differs at the first instruction). */
-/*@ 0EF3:2604 draft */ void UseItemRow(int who, int slot)
+   other type 0x30 item just decrements its flags. Called through a table. The type 0x30 test is
+   `left = flags & 0x3F; if (--left == 0)`: the temporary takes DI, which is why the original reloads
+   slot from the frame in the case bodies instead of caching it (a direct `== 1` test caches slot
+   in DI and compares with `cmp ax,1`). */
+/*@ 0EF3:2604 */ void UseItemRow(int who, int slot)
 {
-    int item;
+    int item, left;
 
     item = gChars[who].m77[slot];
     switch (gTable8DD2[item].m02) {
@@ -1792,7 +1870,8 @@ void f0EF3_2295(void);
         f0BD2_0106(who, slot);
         break;
     case 0x30:
-        if ((gTable8DD2[item].flags & 0x3F) == 1)
+        left = gTable8DD2[item].flags & 0x3F;
+        if (--left == 0)
             f0BD2_0106(who, slot);
         else
             gTable8DD2[item].flags--;
