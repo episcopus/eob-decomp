@@ -75,6 +75,11 @@ extern void far *gMsgBuf;                /*@ ds:81E6: the saved screen rectangle
 extern int gMsgLink;                     /*@ ds:FF0A: ResolveFileLink's result for the file in the dialog */
 extern int g80FE;                        /*@ ds:80FE: the text region the error dialog switches to; 1 in the image */
 
+#define KEY_ESC        0x1b     /* the key the error dialog treats as "abort" */
+#define MSG_NOT_FOUND  2        /* gErrorText[2]: "Could not find" (0ADD appends the name) */
+#define MSG_DISK_ERROR 12       /* gErrorText[12]: "A fatal disk error has occurred..." */
+#define MSG_LINE_BREAK 18       /* gErrorText[18]: "\r " */
+
 #define MAX_FILES      10
 #define SLOT_FREE      0x3fff   /* gFileHandles[i]: the slot holds no file */
 #define HANDLE_MASK    0x3fff   /* the low bits of a gFileHandles entry are the DOS handle */
@@ -533,18 +538,18 @@ extern long gSlotLengths[];              /*@ ds:FF0C: the record's length per sl
     gDrawLine(right, y, right, bottom, 0xf);
     ExpandTextWindow(-1);
     gMsgLink = ResolveFileLink(name);
-    if (code == 2) {
+    if (code == MSG_NOT_FOUND) {
         savedAttr1 = gTextAttr1;
         savedAttr2 = gTextAttr2;
         gTextAttr1 = 0xf;
         gTextAttr2 = 0xc;
         DrawText(title);
-        DrawText(gErrorText[18]);
+        DrawText(gErrorText[MSG_LINE_BREAK]);
         DrawText(name);
-        DrawText(gErrorText[18]);
+        DrawText(gErrorText[MSG_LINE_BREAK]);
         DrawText("Insert disk ");
         if (gMsgLink != -1) {
-            text[0] = (char)gMsgLink + 0x31;
+            text[0] = (char)gMsgLink + '1';
             text[1] = ' ';
             text[2] = 0;
             DrawText(text);
@@ -559,9 +564,9 @@ extern long gSlotLengths[];              /*@ ds:FF0C: the record's length per sl
     }
     FlushKeyBuffer();
     key = WaitGameKey();
-    if (key == 0x1b) {
+    if (key == KEY_ESC) {
         ClearTextRegion();
-        DrawText(gErrorText[12]);
+        DrawText(gErrorText[MSG_DISK_ERROR]);
         WaitGameKey();
         ShutdownGame();
     }
