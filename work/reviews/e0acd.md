@@ -1,7 +1,7 @@
 # Review: e0acd
 
-Reviewer: rev-haiku
-Commit reviewed: 3648a5c (main when I started)
+Reviewer: rev-haiku (rounds 1 and 2)
+Commit reviewed: 6003a3d (round 2; round 1 reviewed 3648a5c)
 
 Playbook 70. Judge what a matching file can still get wrong: names, types, comments, structure.
 The matcher already proved the bytes; do not re-prove them, read for meaning.
@@ -13,6 +13,31 @@ Each finding is a checkbox. `must-fix` blocks `make review-pass` until a decompi
 
 Line numbers are src/E0ACD.C unless another file is named. Callee addresses are the ones the
 comments should cite.
+
+## Round 2 (at 6003a3d)
+
+Later round (playbook 70). Judged: each round 1 must-fix (all ticked; each fix re-read against the code, and all are fixed right in substance, so the ticks stay); the changes since 3648a5c in src/E0ACD.C (the e6c03df comment, type and name edits, and the build flag line `-B` to `-v`). `make match FILE=src/E0ACD.C`: 35 of 35 (4182 bytes), exit 0. `make readability UNIT=e0acd`: 0 findings.
+
+- [ ] must-fix src/E0ACD.C:97 (the `struct ActRec;` comment): "the same layout as struct Action above" is wrong. The two records agree at the +4 result word, but the +0x38 member is a signed char in ActRec (src/E0EF3.C:292, `signed char m38`) and an int in struct Action (src/E0ACD.C:18, `int slot`). Say that instead, for example "the same +4 result word and +0x38 member, a byte in ActRec (src/E0EF3.C:292) and a word here (:18)".
+- [ ] must-fix src/E0ACD.C:49 (gIconTable): "src/E1414.C:101 names the byte 'the character the blink highlights'" is no longer true. E1414.C:101 is now the `gFB78` declaration. The gIconTable declaration is at src/E1414.C:106 and reads "the index of the party member being moved, -1 ...", which is what this unit says (the e1414 round fixed it). Cite E1414.C:106 as agreeing, and keep only the disagreement with src/E0EF3.C:227 (`void far *gIconTable[]`, still at that line).
+
+- [ ] should src/E0ACD.C:129, :166, :182 and :183: stale line citations into other files. E16A5.C:107 is now `gDraw8066`; gHitY is at src/E16A5.C:125 (the same "the y the hit test uses"). E16A5.C:144 is now part of DispatchKey; DispatchKeyWait is at src/E16A5.C:166. EOV4.C:1049 and :1076 are now DrawViewFrame at src/EOV4.C:1047 and NoOp2039 at :1074. Cite the addresses instead (ds:5E12, 16A5:005A, ovl4:1F51, ovl4:2039), which do not move.
+- [ ] should src/E0ACD.C:167 and :919 (DispatchKeyWait, Action0E6C): "the event it consumed, or 0" leaves out a case. DispatchNodeEvent returns the key a node took (`result = keyCode`), or when no node takes it the key itself (`if (result == 0) result = key;`, src/E16A5.C:523 to 524), or 0 for a mouse-only call (src/E16A5.C:186 to 188). Name the cases or cite that comment.
+- [ ] should src/E0ACD.C:109 (CharRec m97): "browsed by RemoveListItem (0BD2:02B9) and InsertListItem (0BD2:01D0)". Those two calls remove an item from and insert an item into the sub-table (0A61 and 0BA6). Neither browses it. Say what they do.
+- [ ] should src/E0ACD.C:115 and :123 (Entry14 m0B): "the food value" is what EatFood (07E0) does with it: it adds m0B to m23 only when m02 is 0x1F or 0x31 (src/E0ACD.C:615). src/E0D1C.C:275 says "What m02, m0B and m04 mean is not established." Say "the amount EatFood adds to m23" and cite that line, so the reader sees the meaning is inferred. The m02 "item type" is supported by the 0x1F and 0x31 test and can stay.
+- [ ] should src/E0ACD.C:785 (PickListItem): "sets the flag" is ambiguous. The local `flag` is what ends the page loop (line 826); gF3BA is set only when it is -1 (lines 827 to 828). Name which one.
+- [ ] should src/E0ACD.C:792 (PickListItem): "a zero item does nothing, both clearing gF3BA" reads as if a zero item does nothing at all. The code (lines 851 to 856) runs nothing for a zero item and sets gF3BA = -1 for both zero and repeated items. Say "a zero item runs nothing but clears gF3BA".
+- [ ] should src/E0ACD.C:958 (EnterMapScreen): "when it is set (0xfe after a saved game loaded, src/EOV2.C)". The test is `!gA998`, so 0xff (a load running, src/EOV2.C:383) takes the same branch. Say "nonzero (0xff while a load runs, 0xfe after a saved game loads)".
+
+- [ ] note src/E0ACD.C:132 (g5E1C): "the left-button mode word" is supported by src/E16A5.C:336 to 343 and :506 (leftFlags tested with g5E1C, rightFlags with g5E1E), not by src/E1658.C, which the comment cites. Cite E16A5.C:506 as well.
+- [ ] note src/E16A5.C:186 to 188 says "both callers ignore the value" (DispatchKey and DispatchKeyWait). This unit reads that value in 0ACD:0E6C. The E16A5 owner should reconcile it; not a fix for this unit.
+- [ ] note src/EOV2.C:139 cites "src/E0ACD.C:911" for EnterMapScreen, which is now 0ACD:0F72. For the EOV2 owner.
+- [ ] note the PickListItem first sentence (not changed by round 1) says it takes "the item list for the current volume (or, when that list is empty, for the key from f0D1C_00DA)". The code (lines 805 to 809) only tests both lists for emptiness. Not a must-fix: the sentence was accepted in round 1.
+- [ ] note the build flag line `/*@flags -ml -O -Z -v */` (was `-B`) is what the matcher now checks against (35 of 35 at `-v`); nothing to fix.
+
+Round 2 verdict: review failed. Two must-fix are open: the ActRec "same layout" claim (new in round 1) and the gIconTable claim about E1414.C (true at round 1, false now). The round 1 fixes hold in substance. Nothing escalated: no matcher, spec or pin question.
+
+## Round 1 (at 3648a5c)
 
 - [x] must-fix src/E0ACD.C:4: the header says the handlers "turn undead". No handler in this unit turns undead. The only call to TurnUndead (0D1C:0A43, src/E0D1C.C:631) is in RunMapLoop (0ACD:0E8A, line 900). Turn091C (0ACD:091C, lines 603 to 649) is the "turn" action: it moves the selected character (gA99A) and the action row.
   Fixed: the header now lists the member/item/sound actions and says RunMapLoop (0ACD:0E8A) is the unit's only caller of TurnUndead.
@@ -103,7 +128,7 @@ comments should cite.
 - [x] note the functions the review checked against their code and found sound (name, comment, parameters): MoveBlocked, Action0034, Action008C, Action00EB, Action018E, Action01E3, Action0393, Action056C, Action0593, Action05BA, Action05FF, Action078C, Action08E7, SetActionRow, Action0A34, StepMenuPhase, Action0415 and GetActionResult.
   Checked: they are unchanged apart from the volume wording in 05BA and 05FF.
 
-## Summary
+## Round 1 summary
 
 The unit matches (35 of 35, 4182 bytes) and most of its names are placeholders with a description
 of what the function does, which is the right state for them. The comments are not yet trustworthy:
