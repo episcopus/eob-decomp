@@ -5,7 +5,7 @@
    status effect, and is reached from the action handlers of 0ACD and the object/effect units.
    Placeholder names remain where the evidence names the behaviour but not the game concept. */
 
-/*@flags -ml -O -Z */
+/*@flags -ml -O -Z -v */
 
 /* A 14-byte item record. src/E0D1C.C declares the same layout with its base at ds:8DD2 (Entry14);
    the code here computes the base at ds:8DD0 and uses the fields below. */
@@ -705,15 +705,10 @@ next:
    dispatches on m0B: 1 restores a class index and heals, 2 and 3 heal by a dice roll, 4 poisons
    through 0DE8:101A, 5 sets m23 to 100, 6 and 8 run the 0EF3 helpers, 7 sets effect flag 4. After
    the switch it announces "%s feels <effect>!\r" with the effect name from the ds:3893 table,
-   except for effect 4 when m01 bit 1 is set. Called by 0BD2:1001.
-   DRAFT: every byte matches but one TCC tail merge. `case 5` and `case 7` both end in
-   `RedrawMember(who)`; the original keeps case 7's `push [bp+6]; lcall RedrawMember` inline
-   (0BD2:0E6E, sharing only its `pop cx` with case 8 at 0BD2:0E89), while our build cross-jumps
-   case 7's pair back into case 5's at 0BD2:0112 and merges case 5's `pop cx` into the shared one
-   (0BD2:0153), 9 bytes short. Tried `if (gFB44 != 0)`, `if (gFB44 == 0) break;`, an `else break;`,
-   braces with the break inside, `default: break;` and `kind != 4` against `kind - 1 != 3`; the
-   cross-jump stays. */
-/*@ 0BD2:0D2D draft */ void ApplyItemEffect(int who, int slot)
+   except for effect 4 when m01 bit 1 is set. Called by 0BD2:1001. This unit is compiled with
+   `-v` (source-level debugging), which keeps `case 5` and `case 7`'s `RedrawMember(who)` calls
+   apart where `-Z` alone cross-jumps them. */
+/*@ 0BD2:0D2D */ void ApplyItemEffect(int who, int slot)
 {
     struct CharRec *rec;
     int kind;
@@ -738,7 +733,7 @@ next:
         break;
     case 4:
         ApplyStatusEffect(who, 2, "poisoned", 0, 1, 8, 1);
-        rec->mE3 &= 0xFF7F;
+        rec->mE3 &= ~0x80;
         break;
     case 5:
         f0EF3_0665(who);
@@ -815,13 +810,10 @@ next:
    switches on the item type's m0E low 7 bits and either draws a message, eats, uses the item
    through 0DE8:0763, arms 0EF3:21E0, dispatches through 0EF3:28ED or the overlay 5 entry, applies
    the item effect (0BD2:0D2D) or uses it as a wand (0BD2:0EE8). Called by 0ACD:0415 and 0ACD:0D9D.
-   DRAFT: the code and the switch table match in shape, but TCC's internal assembler merges tails
-   that the original keeps: the `pop cx; pop cx` after `DrawText(" can not use this item.\r")`
-   (0BD2:10A9) and after the 0EF3:21E0 call (0BD2:112C) are each kept inline by the original but
-   hoisted into one shared block by our build, and case 9's tail cross-jumps into case 10's store
-   (`mov word ptr [bp - 8], ax`, 0BD2:1161). 0x1F bytes short. Tried `-ml -O` (no -Z) and `-B`;
-   -B breaks ReportLostItem, so the unit stays -Z. */
-/*@ 0BD2:1001 draft */ void UseItemSlot(int who, int slot)
+   The `case` bodies are in the source order the jump table shows (0/16, 1/2/3, 5/6, 7,
+   4/8/12/13/15, 9, 10, 11, 14, 18); compiling the unit through the `-v` source-level-debug
+   switch keeps the per-case `pop cx; pop cx` call cleanups apart the way the original does. */
+/*@ 0BD2:1001 */ void UseItemSlot(int who, int slot)
 {
     int item;
     int type;
@@ -862,13 +854,6 @@ next:
             break;
         UseItem(who, slot, item);
         break;
-    case 4:
-    case 8:
-    case 12:
-    case 13:
-    case 15:
-        DrawText("This item is not used in this way.\r");
-        break;
     case 5:
     case 6:
         if (gFB44 == 0)
@@ -877,6 +862,13 @@ next:
     case 7:
         if (gMouseDisabled != 0)
             EatFood(who);
+        break;
+    case 4:
+    case 8:
+    case 12:
+    case 13:
+    case 15:
+        DrawText("This item is not used in this way.\r");
         break;
     case 9:
         if (gFB44 == 0) {
