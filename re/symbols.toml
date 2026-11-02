@@ -3966,6 +3966,8 @@ size = 157
 evidence = ["far", "near", "frame"]
 notes = "draft 2026-11-01: the body is written from the disassembly (the slot ^= 2, the g1905 selector gate, the gEFD2 mask test ((gB894[id*9+4] & 0xf8) >> 3 | 0xe0), the table call and the gEFD2/gDF4C stores). It does not match because of the local table of far function pointers at 122E:08A1-08AE: the original copies a 0x28-byte compiler template from ds:5A18 (F_SCOPY@ 0000:78C9) whose entries are the relocated addresses 122E:04CA, 05DF, 0620, 0678, 0325, 0847, 0000:0000, 0000:0000, 0000:0000, 06D0. The matcher's literal check (cmatch.py:367-369) compares the template bytes with cstr, so it cannot reconcile the relocated function offsets (ours are shifted by the two drafts before this function) or the segment word (ours is our unit's, the original's 0x122E). First difference 122E:0012. A function-pointer template is not a string literal, so the docstring's literal rule does not cover it. This needs a matcher decision (compare a relocated template by its named far pointers) or an accepted alternative source form."
 name = "DispatchSlotHandler"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e122e_0933"

@@ -510,7 +510,7 @@ void f122E_1DA8(int a, int b);  /* forward: 1DA8 comes after its callers */
    handler (a local table of far function pointers copied from the compiler template at ds:5A18)
    with (id, slot). Then it clears the driver mode and marks the action dirty. Returns 0 when a
    guard fails, else the handler's result. */
-/*@ 122E:0896 draft */ int DispatchSlotHandler(int id, int slot)
+/*@ 122E:0896 */ int DispatchSlotHandler(int id, int slot)
 {
     int (far *handlers[10])(int, int) = {
         MemberSlotClickAction, PerformItemSlotAction, IncreaseItemSlot, DecreaseItemSlot,
@@ -522,9 +522,9 @@ void f122E_1DA8(int a, int b);  /* forward: 1DA8 comes after its callers */
 
     slot ^= 2;
     idx = gB894[id * 9 + slot];
-    if (g1905[idx] == 0)
+    if (!g1905[idx])
         return 0;
-    mask = ((gB894[id * 9 + 4] & 0xf8) >> 3) | 0xe0;
+    mask = (((unsigned char)gB894[id * 9 + 4] & 0xf8) >> 3) | 0xe0;
     if (!(gEFD2 & mask))
         return 0;
     if (g1905[idx] - 1 < 0)
