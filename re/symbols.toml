@@ -7713,6 +7713,7 @@ evidence = ["near", "segment"]
 name = "BuildIconTable"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "eov0_00af"
@@ -7723,6 +7724,7 @@ evidence = ["near", "frame"]
 name = "FreeIconTable"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "eov0_00f7"
@@ -7733,6 +7735,7 @@ evidence = ["near", "frame"]
 name = "WaitKeyOrPause"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "eov0_0128"
@@ -7743,6 +7746,7 @@ evidence = ["near", "frame"]
 name = "DrawPanelIcon"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "eov0_037a"
@@ -7753,6 +7757,7 @@ evidence = ["near", "frame"]
 name = "FlashPanelIcon"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "eov0_03b2"
@@ -7763,6 +7768,7 @@ evidence = ["ovl", "near", "frame"]
 name = "InitRowNode"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "eov0_042f"
@@ -7773,6 +7779,7 @@ evidence = ["ovl", "near", "frame"]
 name = "BuildRowNodeList"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "eov0_0504"
@@ -7783,6 +7790,7 @@ evidence = ["ovl", "near", "frame"]
 name = "DrawPartyStatus"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "eov0_05ba"
@@ -7793,6 +7801,7 @@ evidence = ["ovl", "near", "frame"]
 name = "DrawCharName"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "eov0_065b"
@@ -7804,6 +7813,7 @@ notes = "draft: the function matches except one jump target in the mode switch (
 name = "DrawCharPanel"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "eov0_0a4f"
@@ -7814,6 +7824,7 @@ evidence = ["ovl", "frame"]
 name = "DrawRowList10"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "eov0_0a5e"
@@ -7824,6 +7835,7 @@ evidence = ["ovl", "near", "frame"]
 name = "PickPartySlot"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "eov0_0d5b"
@@ -7834,6 +7846,7 @@ evidence = ["ovl", "near"]
 name = "FindSlot"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "eov0_0ddc"
@@ -7844,6 +7857,7 @@ evidence = ["ovl", "near", "frame"]
 name = "Ovl0_0DDC"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "eov0_0ee5"
@@ -7854,6 +7868,7 @@ evidence = ["ovl", "near"]
 name = "Ovl0_0EE5"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "eov0_1071"
@@ -7864,6 +7879,7 @@ evidence = ["ovl", "near"]
 name = "ShowReportLine1"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "eov0_10f6"
@@ -7874,6 +7890,7 @@ evidence = ["ovl", "near", "frame"]
 name = "ShowReportLine2"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "eov0_1177"
@@ -7884,6 +7901,7 @@ evidence = ["ovl", "near", "frame"]
 name = "RollAbilityScore"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "eov0_11ba"
@@ -7894,6 +7912,7 @@ evidence = ["ovl", "near", "frame"]
 name = "DrawPanelRow"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "eov0_1224"
@@ -7904,6 +7923,7 @@ evidence = ["ovl", "near", "frame"]
 name = "Ovl0_1224"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "eov0_135d"
@@ -7914,6 +7934,7 @@ evidence = ["ovl", "near", "frame"]
 name = "EditStatField"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "eov0_1add"
@@ -7924,6 +7945,7 @@ evidence = ["ovl", "near"]
 name = "Ovl0_1ADD"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "eov0_1bf2"
@@ -7934,6 +7956,7 @@ evidence = ["ovl", "near"]
 name = "RollCharacterStats"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "eov0_1ea9"
@@ -7944,6 +7967,7 @@ evidence = ["ovl", "near", "frame"]
 name = "BuildCombatTables"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "eov0_1f66"
@@ -7954,6 +7978,7 @@ evidence = ["ovl", "near", "frame"]
 name = "PickOption"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "eov0_2051"
@@ -7964,6 +7989,7 @@ evidence = ["ovl", "frame"]
 name = "FindNthSetBit"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "eov0_207a"
@@ -7974,6 +8000,7 @@ evidence = ["ovl", "near", "frame"]
 name = "PickClass"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "eov0_2238"
@@ -7984,6 +8011,7 @@ evidence = ["ovl", "near", "frame"]
 name = "PickAlignment"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "eov0_23ec"
@@ -7994,6 +8022,7 @@ evidence = ["ovl", "near", "frame"]
 name = "CreateCharacter"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "eov0_2547"
@@ -8004,6 +8033,7 @@ evidence = ["ovl", "near", "frame"]
 name = "InitPanelScreens"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "eov0_26c6"
@@ -8014,6 +8044,7 @@ evidence = ["ovl", "near", "frame"]
 name = "Ovl0_26C6"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "eov0_280d"
@@ -8024,6 +8055,7 @@ evidence = ["ovl", "near", "frame"]
 name = "InitCharSlotValues"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "eov0_284a"
@@ -8034,6 +8066,7 @@ evidence = ["ovl", "near", "frame"]
 name = "ShiftCharFields"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "eov0_28b0"
@@ -8044,6 +8077,7 @@ evidence = ["ovl", "near", "frame"]
 name = "FreePanelBuffers"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "eov0_28f9"
@@ -8054,6 +8088,7 @@ evidence = ["ovl", "frame"]
 name = "RunCharacterPanel"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "eov1_0000"

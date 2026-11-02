@@ -1,7 +1,7 @@
 # Review: eov0
 
 Reviewer: rev-haiku
-Commit reviewed: round 2 at 96459a0 (main); round 1 at 2ba0b7c (main, when I started); src/EOV0.C is unchanged from be85fef to 2ba0b7c
+Commit reviewed: round 3 at 25debaf (main); src/EOV0.C last changed at cd1070f (round 2 fixes) and is identical on main and on review/eov0; round 2 at 96459a0 (main); round 1 at 2ba0b7c (main, when I started); src/EOV0.C is unchanged from be85fef to 2ba0b7c
 
 Playbook 70. Judge what a matching file can still get wrong: names, types, comments, structure.
 The matcher already proved the bytes; do not re-prove them, read for meaning.
@@ -10,6 +10,42 @@ The matcher already proved the bytes; do not re-prove them, read for meaning.
 
 Each finding is a checkbox. `must-fix` blocks `make review-pass` until a decompiler ticks it off
 (with the commit that fixes it); `should` and `note` do not block.
+
+Round 3 (25debaf, main; the round 2 fixes are cd1070f). Reviewer rev-haiku. Playbook 70, later round: the round 2
+must-fix item and the changes since 96459a0 (`git diff 96459a0 HEAD -- src/EOV0.C re/symbols.toml re/globals.toml`;
+the EOV0.C part is 147 lines, comments, names, cites and prototypes only, no function body moved; the symbols and
+globals entries that changed are other units').
+
+- [x] must-fix (round 2 item, judged) src/EOV0.C:1084-1085 and 1104: fixed right. The 1d100 roll goes into the high
+  byte (`scores[0] |= RollDice(1, 0x64, 0) << 8`, src/EOV0.C:1104), which is m0F (src/EOV0.C:1107-1108), and the low
+  byte stays 18. Tick stays.
+- [x] round 2 shoulds, checked: the address cites now hold. gDCA4 and gDD10 cite 0A72:02B3 and 0A72:03A4 (the
+  MaxHitPoints and MinHitPoints headers at src/E0A72.C:202-231); 08E6:0E48 clears gDD10 (src/E08E6.C:787, inside Obj0E48
+  at :767) and 08E6:0FBE sets it to 1 (src/E08E6.C:829, inside DamageObject at :825). g5E20 is read by 16A5:00BD
+  (src/E16A5.C:284, inside DispatchNodeEvent at :217) and set by BuildRowNodeList at src/EOV0.C:368 (ovl0:042F).
+  index00 is written in Ovl0_26C6 (src/EOV0.C:1379, ovl0:26C6). gPtrsFC8C's InitPanelScreens is ovl0:2547, gDCB0's
+  RunCharacterPanel is ovl0:28F9, and CreateCharacter is ovl0:23EC (src/EOV0.C:1291). The EditStatField index-6
+  recompute of gDCA4/gDD10 is on entry (src/EOV0.C:901-906, before the loop), and the new wording says so. The
+  Ovl0_1ADD paragraph is reflowed and its field list (m0D/m0F for field 0; m11, m13, m15, m17, m19, m1B for 1..6)
+  matches the calls at src/EOV0.C:1044-1063. The PickAlignment caller (CreateCharacter, the new member's alignment pick,
+  src/EOV0.C:1309) is right.
+- [x] round 2 gFC8A note, checked: PickOption (src/EOV0.C:1146) stores `gFC8A = choice % 2` (:1161) and returns choice,
+  and CreateCharacter stores that return in m1F (src/EOV0.C:1303), so "the parity of the race index PickOption
+  returned" is right.
+- [ ] should src/EOV0.C:103 (gDCA4): `(src/E0DE8.C:132)` is a stale line cite; the char declaration of DCA4 is now at
+  src/E0DE8.C:146, and the writer `gDCA4 = target` is at E0DE8.C:362, inside the function at 0DE8:0359 (ApplyItemAttack,
+  src/E0DE8.C:6). The claim (E0DE8.C gives the same byte a char meaning) holds. Replace the line cite with the address
+  (0DE8:0359 writes it, and E0DE8.C declares it char).
+- [ ] note routed to the EOV1 owner (not edited here, still open): src/EOV1.ASM:99 (the line moved from :97) says g5E20 is
+  "nonzero when the mouse moved (E16A5.C)". The writer at EOV1.ASM:2456 sets it, and E16A5.C:132 gives the list-rebuild
+  meaning. Same wrong meaning as round 1.
+- [ ] note routed to the E0BD2 and E0DE8 owners (still open, not decided here): src/E0BD2.C:102 declares g1231 and cites
+  "(src/E0DE8.C)", and src/E0DE8.C:124 now declares it as "a byte table indexed by the class m20 (:725". The line
+  that said "used by 0D5E" has moved. The two owners should agree on which unit owns the declaration.
+
+Round 3 verdict: no must-fix open. One should (the stale E0DE8.C:132 cite in the gDCA4 comment, which is not a wrong
+claim). Nothing escalated: no matcher, spec or pin question. `make match FILE=src/EOV0.C` 35 of 35 (10873 bytes,
+exit 0); `make readability UNIT=eov0` 0 findings.
 
 Round 2 (96459a0, main, after round 1 fixes 4ac62b0 and ada5f3d). Reviewer rev-haiku. Playbook 70, later round: the
 round 1 must-fix items and the changes since 2ba0b7c (`git diff 2ba0b7c main -- src/EOV0.C re/symbols.toml
