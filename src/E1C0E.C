@@ -846,10 +846,10 @@ extern long gSlotLengths[];              /*@ ds:FF0C: the record's length per sl
    free block is too small), the file is opened (through the aliased entry when the slot's link is
    negative, recording the looked-up record length), its length is checked for a linked record, and
    the bytes are read into the copy; the slot's data pointer is set and 1 is returned. A failed
-   allocation, open or read frees the copy and returns 0. DRAFT: every byte matches except the last
-   read's success/failure blocks, where the original reloads no far pointer and jumps over the
-   failure to a shared `mov ax,1` (1C0E:1603), one byte longer; no source form found yet. */
-/*@ 1C0E:144E draft */ int LoadFileSlot(int index)
+   allocation, open or read frees the copy and returns 0. The evict and final read are written as
+   success-if/else-failure blocks so that the original's branch polarity and the tail `mov ax,1`
+   after the failure block (1C0E:1603) come out. */
+/*@ 1C0E:144E */ int LoadFileSlot(int index)
 {
     void far *data;
     struct FileEntry far *entry;
@@ -867,9 +867,10 @@ extern long gSlotLengths[];              /*@ ds:FF0C: the record's length per sl
     else
         data = 0;
     if (data == 0) {
-        if (!EvictFile(entry->size, entry->flags))
+        if (EvictFile(entry->size, entry->flags))
+            data = MemAlloc(entry->size, 0);
+        else
             return 0;
-        data = MemAlloc(entry->size, 0);
     }
     if (entry->link > 0) {
         fd = open(entry->name, 0x8001, 0x180);
@@ -888,12 +889,13 @@ extern long gSlotLengths[];              /*@ ds:FF0C: the record's length per sl
             return 0;
         }
     }
-    if (read(fd, data, entry->size) != entry->size) {
+    if (read(fd, data, entry->size) == entry->size) {
+        entry->data = data;
+        close(fd);
+    } else {
         MemFree(data);
         return 0;
     }
-    entry->data = data;
-    close(fd);
     return 1;
 }
 

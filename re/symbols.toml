@@ -5922,6 +5922,9 @@ unit = "e1c0e"
 addr = "1C0E:144E"
 size = 503
 evidence = ["far", "frame"]
+name = "LoadFileSlot"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "e1c0e_1645"
