@@ -1,5 +1,98 @@
 # Review: e1e8b
 
+# Round 2
+
+Reviewer: rev-haiku
+Commit reviewed: b922a421366e324e4af07368ca9c20afdda3b82a (main). src/E1E8B.ASM is the round 1 fixed file (acac24d); review/e1e8b was at the same commit when I started.
+
+Playbook 70. Judge what a matching file can still get wrong: names, types, comments, structure.
+The matcher already proved the bytes; do not re-prove them, read for meaning.
+
+Checked: `make match FILE=src/E1E8B.ASM` 30 of 30 functions, exit 0; `make readability UNIT=e1e8b` 0 findings. Round 1's fixes are in the file. The findings below were not raised in round 1: they come from reading the call paths (0580 calls ES:0018, 086F, 0536 and 0613 walks, the 06C0 patch loop) against each comment.
+Evidence used: src/E1E8B.ASM (all of it), re/symbols.toml (:7210, :7300), re/renames.toml (:1985-1998), docs/design/WHITEPAPER.md (2.3, the FBOV header and the stub layout).
+
+## Findings
+
+Each finding is a checkbox. `must-fix` blocks `make review-pass` until a decompiler ticks it off
+(with the commit that fixes it); `should` and `note` do not block.
+
+### Registry and names
+
+- [ ] must-fix re/symbols.toml:7210 and :7300, re/renames.toml:1986-1998: the names of 1E8B:05FB and 1E8B:0761 are recorded without the leading underscore (`ReleaseOverlayRecord`, `OverlayParagraphsRemaining`), but src/E1E8B.ASM:932 and :1180 use `_ReleaseOverlayRecord` and `_OverlayParagraphsRemaining`, and every other function of the unit is recorded with `_` (for example `_InitOverlayManager`, symbols :7048). The registry and the file disagree, so `make rename APPLY=1` would rename the file to a different name. Record the underscore form the file uses (`make rename` again, or edit the two entries). `make readability` does not flag it; check the convention by hand.
+- [ ] should src/E1E8B.ASM:1254, :1262-1263 and :931-932: `_ReleaseOverlayRecords` (07D7, uncalled in this unit) and `_ReleaseOverlayRecord` (05FB) differ by one letter and do different jobs: 05FB clears one record's version table and base (:933-939); 07D7 drops slot references that point below 20B5:00B4 (the SS:BP walk, :1280-1297, :1322-1323). Give 07D7 a name that says what it drops. The comment should also say that CX on entry is the table end (`cmp bx,cx`, :1280), since the caller supplies it.
+
+### 01A7 to 01F3: the open path
+
+- [ ] must-fix src/E1E8B.ASM:266-267: "copies the program path after it to 20B5:001C up to the last backslash (the leaf name)" is wrong. own_copy (:296-304) copies the whole path into 20B5:001C; the last backslash only sets BX (:303), the offset after the leaf. The open at :400 uses the full path in 001C when the caller's argument is null. A non-null argument is copied at BX by 0250 (:307, :385-399), so the caller's name replaces the leaf; nothing is kept as "the leaf name". Say that.
+- [ ] must-fix src/E1E8B.ASM:264-265 and :314: "DGROUP:0075 gives the PSP segment" (and "the PSP segment" in 01F3) names the wrong thing. The code loads DS from DGROUP:0075 (:281, :324) and reads strings from offset 0 of it: the double-NUL scan (:284-290), the "PATH=" compare (:327-333) and the count word after the block (:291). That is the environment block, not the PSP (the PSP holds the command tail and the INT 20h bytes, not these strings). Name the word for the environment segment. [H] Borland's startup keeps an `_envseg`-style word; check the startup code before choosing a name.
+
+### 0134 and 0185: swap and shutdown
+
+- [ ] must-fix src/E1E8B.ASM:183-185: "then closes the file handle at 20B5:00B8 and reopens the file" describes two paths. The code (:208-219) either closes the handle at 20B5:00B8 and clears it, with no reopen (:210-214), or, when none is open, opens the file named at 20B5:001C and stores the new handle (:215-219). Say so. 0185 relies on the close path (:236-238); 000F (:146-147) relies on the open path.
+- [ ] must-fix src/E1E8B.ASM:227-228: "the two cleanup callbacks kept at 20B5:0014 and 20B5:0012" gives a role the unit does not show. The only reads are the two calls (:241, :243). Nothing in this unit stores 20B5:0012 or 20B5:0014 (the word-0012 store at :464 is to 20BF:0012, and :515 reads a record's word). Write "Purpose unknown: two near pointers the shutdown calls; writer not in this unit" unless a writer is found in src/ or in the overlay stubs.
+
+### 02FF MapOverlayRecords
+
+- [ ] must-fix src/E1E8B.ASM:496-497: "walks the overlay's own file records (the ES:0012 chain)" and "linking them through 20B5:001C" name the wrong segment and the wrong address. The walk reads DS:0012 of the current record (`mov cx,ds:[12h]`, :514-515; ES is the next record, :517). The link is each record's own word +1Ch (:530, and the terminating 0 at :535), and the chain head is 20B5:00BC (:508). 20B5:001C is the name buffer (see 01A7).
+
+### 0286 InitOverlayRecords and 4A2h
+
+- [ ] must-fix src/E1E8B.ASM:687 and :736: the tail at 1E8B:04A2 is called "an uncalled sibling". It is reached indirectly: 0286 stores 4A2h in each record's ES:0018 (:473) and 0580 calls ES:0018 when the record is not loaded (`call word ptr es:[18h]`, :887), testing the carry it returns (`jb load_halt`, :888). So 1E8B:04A2 is the loader of those records (it reads ES:0004:0006 and ES:0008+000A bytes, :737-751). Drop "uncalled" here and in the 0442 header (:687-688).
+- [ ] should src/E1E8B.ASM:436, :925, :930: 4A2h is called a "marker" (436) and a "sentinel" (925, 930). It is the offset of the loader routine 1E8B:04A2, which the record's ES:0018 holds. Say "the loader offset 04A2 (1E8B:04A2)", and in 05FB say what the test of that offset decides.
+- [ ] note src/E1E8B.ASM:434-435, :464: the store `mov es:[12h],ax` (:464) goes to 20BF:0012, the list head, while 02FF walks each record's own word 0012 (:515). The comment is right that this unit does not read 20BF:0012, but a reader will ask what the head word is for. Say "Purpose unknown" or name the reader if one is found.
+
+### 03FD and 0442: relocation
+
+- [ ] should src/E1E8B.ASM:636-637: "fixes the word up through 0442" does not say what is written. The target word is replaced by the frame paragraph from the 20C1 table (`mov es:[bx],dx`, :667), and when the odd flag is set 0442 then rewrites the far pointer's offset. Say the word becomes the frame paragraph.
+- [ ] should src/E1E8B.ASM:682 and :685-686: "the target word at ES:BX" and "one whose +2 offset equals the target word" use the same name for two different words. The segment word is at ES:BX (the `mov ax,<seg>` operand; the B8 and 50 bytes around it are checked at :695-718). The word searched and replaced is the offset at ES:BX+4 (:721, :729). Name both.
+
+### 04D0 OverlayCallHandler
+
+- [ ] should src/E1E8B.ASM:755-756: "An odd BP means the call came from outside the overlay manager" is not shown. `push bp; mov bp,sp` makes BP equal SP, so the test (:766) is the parity of the stack pointer. Nothing in this unit says what an odd SP means. Say that the test is on SP parity, and mark the reason [H] or Purpose unknown.
+- [ ] should src/E1E8B.ASM:759 and :798-800: "with the ES:001A bit 8 value in AX" leaves out that the bit is cleared in the same step (`and byte ptr es:[1Ah],0F7h`, :800). 086F clears it too (:1373). Say so.
+
+### 05FB ReleaseOverlayRecord
+
+- [ ] should src/E1E8B.ASM:925-926: "calls the release hook at 20B5:0010" reads as a far call through that address. The call at :936 is `call word ptr ds:[10h]`: a near call in this unit's code segment to the offset stored at 20B5:0010. Say so. "Release hook" is a guess; the evidence is the clear of ES:0010 at :938. Keep the name, and say which part is evidence.
+
+### 064E and 068D: the version table
+
+- [ ] must-fix src/E1E8B.ASM:981-982: "it first strips the record's entry from the patch table (072F)" has the effect backwards. With CX = ES:0002 (:993), 072F exchanges that saved offset into the matching slot (`xchg ss:[bx+2],cx`, :1138), so 064E restores the saved offset into the slot. Say restores.
+- [ ] should src/E1E8B.ASM:981: "the version chain ES:0002" is one saved offset (written by 068D at :1039, read by 064E at :993), not a chain. Name it the saved slot offset.
+- [ ] must-fix src/E1E8B.ASM:1026: "clears ES:0002" is wrong. 072F returns the slot's old offset in CX, and `mov es:[2],cx` (:1039) stores it in ES:0002. ES:0002 is zero only when no slot matched. Write "saves the slot's previous offset in ES:0002 (zero when no slot matched)".
+- [ ] must-fix src/E1E8B.ASM:1027 and :1045: "the word DGROUP:00A0" is 20B5:00A0. The code reads `ds:[0A0h]` with DS = 20B5: the manager keeps DS on 20B5 (000F loads it from cs:[4], 0580 and 0613 restore it, 086F reads the same word as 20B5:00A0 at :1355). Write 20B5:00A0. The word's value 3FCDh is the bytes CD 3F of the stub form (WHITEPAPER 2.3), so say that, or write Purpose unknown for the word itself. The round 1 wording "DGROUP:00A0" came from this comment and was not corrected.
+
+### 06C0 MoveOverlayRecord
+
+- [ ] must-fix src/E1E8B.ASM:1058: "updates ES:000E" is wrong. The write at :1088 goes through DS = base-1 (`dec ax; mov ds,ax; mov ds:[0Eh],es`, :1085-1088), so it stores the record segment at word 0Eh of the header paragraph just below the new base. 07A1 reads that same back link (:1237). Say so.
+- [ ] must-fix src/E1E8B.ASM:1058-1059: "strips the record from the patch table (073B)" and "clears the CX version records at ES:0023" are both wrong. 073B is called with AX = the new base and DX = the old base (:1063-1064, :1093), so it retargets the slots whose segment is the old base to the new one. The loop (:1095-1100) stores AX, the new base (not zero), in the segment word of each version record (ES:0023, then +5 each), so the far jumps of 066F's layout point at the new base. The evidence line (:1059) also says "DGROUP:00B0"; the word is 20B5:00B0 (`mov ax,ds:[0B0h]`, :1063).
+
+### 073B FindOverlaySlot
+
+- [ ] must-fix src/E1E8B.ASM:1143-1144: "walk the overlay table at SS:BP backward" and "BX = the first matching slot whose far offset at SS:[BP+2] is zero (the free one)" are wrong. The walk follows the link word at each slot (`mov bp,cx` at :1155 from `[bp]`, :1157; again at :1167), and it never tests SS:[BP+2]: BX is the first slot whose segment equals DX (:1161-1166). Every matching slot gets AX (:1163), not only the first. 072F's header (:1126-1132) says this correctly; this header does not.
+
+### 07A1 (in the 0789 range)
+
+- [ ] must-fix src/E1E8B.ASM:1212-1213: "returns its base segment in AX" is wrong. At :1237 ES becomes the record (from the back link), and at :1242 the code compares AX (the base) with the record's ES:0010; on a match `mov ax,es` (:1243) returns the record segment. Say: "returns the record segment (ES) of the loaded entry whose base is AX, or AX = 0 with carry set; the id test is at :1239-1241".
+
+### 0761 OverlayParagraphsRemaining
+
+- [ ] should src/E1E8B.ASM:1174-1175: "how many paragraphs ... remain before the top of the allocated area at 20B5:00B0" does not describe `ES:0010 minus 00B0` (:1185-1186). That is the record's base minus the running top. The subtraction borrows (CF set, the fallback) whenever the base is below 00B0, which is the case for a record already linked (0711 adds its size to 00B0, :1112). Say what the value measures: the paragraphs from 00B0 up to the current base, or the free paragraphs on the fallback (00B6 minus 00B0, :1189-1190).
+
+### 086F OverlayManagerEntry
+
+- [ ] must-fix src/E1E8B.ASM:1336-1337: the load condition is inverted. The code loads when ES:0010 is zero (:1358-1359) or when ES:0020 is CDh (:1360-1361: `jne entry_call` skips the load when the marker is not CDh). With ES:0010 set and ES:0020 not CDh it returns ES:0010 without loading or calling. Say that. The call through 20B5:0016 (:1376) is on the load path only.
+
+### Notes
+
+- [ ] note src/E1E8B.ASM:581: "converts DX:AX bytes to a segment value" in the 03B7 tail. It returns a paragraph count (the 02FF header, :501, says so). Make the two agree.
+
+## Summary
+
+Round 2: the unit reads as the overlay manager it is, and its names mostly follow from the code. The problems are in the comments on the paths that round 1 did not walk: the record load condition in 086F is inverted; 064E, 068D and 06C0 say the reverse of what their patch and copy loops do ("strips", "clears", and a wrong segment word); 073B's header describes a backward walk and a free-slot test that are not in the code; 07A1 returns the record segment, not the base; 01B3 and 0134 describe more or less than their code does; the 4A2h loader is called uncalled. The registry and the file disagree on the underscore of two names (05FB, 0761). Placeholder names left: 07D7 needs a name that says what it drops; 20B5:0012/0014 have no writer in the unit (Purpose unknown until one is found). Nothing is blocked; there is no matcher, spec or pin question, so nothing is escalated. Verdict: review-failed, 15 must-fix items, all comment, register or naming corrections (no code change is asked for).
+
+# Round 1 (kept)
+
 Reviewer: rev-haiku
 Commit reviewed: ae2deb94e5d9bc7e3485367fb47f84bb56b375d7
 
