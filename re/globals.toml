@@ -443,8 +443,13 @@ why = "y of the last mouse click, written at src/E1AAD.ASM:405 and read as a poi
 
 [[global]]
 id = "intro/ds:28A0"
-name = "gSoundBuf"
-why = "I0892.C (already merged) declares intro/ds:28A0 as gSoundBuf, the 120-byte buffer StartupGame allocates and FileRead fills (SOUND_MAP_SIZE 0x78); IOV0.C called it gSoundMap, so one address keeps one name across src/"
+name = "gSoundMap"
+why = "the 120-byte game-number to driver-number sound map StartupGame allocates and reads from sound.dat or pcsound.dat (SOUND_MAP_SIZE 0x78); EOB keeps the same map as gSoundMap at ds:DCAC (src/E07A9.C:122, src/E177D.C:3-4), so the same kind of block keeps one name across src/. make rename declines this name because EOB's ds:DCAC already uses it in another program"
+
+[[global]]
+id = "intro/ds:28C4"
+name = "gMemTopSeg"
+why = "the memory top ReserveMemoryBelowVideo (0923:0133) stores (src/I0923.ASM:3, :57, :322) and TrimMemoryToVideo reads back (0923:02B3); i0892 reads it at 0892:01D8 and hands it to EOB.EXE as argv[6]. make rename declines this name because EOB's word at 1990:0002 (src/E07C8.C:125) already uses it in another program"
 
 [[global]]
 id = "intro/ds:28C6"

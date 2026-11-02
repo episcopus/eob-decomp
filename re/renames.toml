@@ -2288,6 +2288,33 @@ why = "m23 is a food/hunger value: EatFood (0ACD:07E0, src/E0ACD.C:571-577) adds
 date = "2026-11-02"
 
 [[rename]]
+id = "intro/0923:0006=gMovedSeg"
+addr = "intro/0923:0006"
+old = "g0923_0006"
+new = "gMovedSeg"
+kind = "function"
+why = "I0923.ASM:29 names 0923:0006 the data segment DOS gave the relocated copy of the environment block (stored at I0923.ASM:164); gMemTopSeg is the DGROUP word ds:28C4 (I0923.ASM:3, :57)"
+date = "2026-11-02"
+
+[[rename]]
+id = "intro/ds:28C4=gMemTopSeg"
+addr = "intro/ds:28C4"
+old = "g28C4"
+new = "gMemTopSeg"
+kind = "global"
+why = "I0923.ASM:3, :52-57 and :322 name ds:28C4 gMemTopSeg, the memory top ReserveMemoryBelowVideo (0923:0133) stores; i0892 reads it at 0892:01D8 and hands it to EOB.EXE as argv[6]. make rename declines this name because EOB.EXE's word at 1990:0002 (src/E07C8.C:125) already uses it in another program"
+date = "2026-11-02"
+
+[[rename]]
+id = "intro/ds:28A0=gSoundMap"
+addr = "intro/ds:28A0"
+old = "gSoundBuf"
+new = "gSoundMap"
+kind = "global"
+why = "the 120-byte game-number to driver-number sound map StartupGame allocates and reads from sound.dat or pcsound.dat (SOUND_MAP_SIZE 0x78); EOB keeps the same map as gSoundMap at ds:DCAC (src/E07A9.C:122, src/E177D.C:3-4), so the same kind of block keeps one name across src/. make rename declines this name because EOB's ds:DCAC already uses it in another program"
+date = "2026-11-02"
+
+[[rename]]
 id = "intro/ovl0:015D=PlayWtrdpScene"
 addr = "intro/ovl0:015D"
 old = "Ovl0_015D"

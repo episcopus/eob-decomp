@@ -55,9 +55,9 @@ extern void FileClose(int index); /*@ 0B5D:03B1 */
 extern void Unpack4(char far *src, void far *dst, int len); /*@ 0CE9:0009 */
 
 /* The sound driver. The INTRO addresses differ from EOB's (0000:400C -> 0000:43E7, 1948:0418
-   -> 084A:0417). The routine names follow EOB's 177D:0070 and 1948:0418; gSoundBuf and
+   -> 084A:0417). The routine names follow EOB's 177D:0070 and 1948:0418; gSoundMap and
    gSoundChoice are the names the front end gives them (0892:06D1, 0892:06A9). */
-extern unsigned char far *gSoundBuf;    /*@ ds:28A0 */  /* the game-number to driver-number map */
+extern unsigned char far *gSoundMap;    /*@ ds:28A0 */  /* the game-number to driver-number map */
 extern int gSoundChoice;                  /*@ ds:28C6 */  /* 1 AdLib, 2 PC speaker, 3 Tandy */
 extern unsigned char gTandyOn;          /*@ ds:289B */  /* the PC speaker / Tandy driver select */
 extern void QueueSound(int sound);      /*@ 0000:43E7 */
@@ -1191,7 +1191,7 @@ extern void f1A29_004D(int mode, void far *src, int x, int y, int region); /*@ 0
 }
 
 /* ovl0:2D4E: plays the game sound numbered `sound` (the argument is an index, not a driver
-   number). The driver number comes from gSoundBuf (a byte; 0xFF means silence). gSoundChoice
+   number). The driver number comes from gSoundMap (a byte; 0xFF means silence). gSoundChoice
    selects the path: 1 (AdLib) queues the driver number and returns, 2 (PC speaker) and 3
    (Tandy) start the speaker routine the low seven bits select through GetSoundData; an
    unknown card does nothing. On the Tandy path a nonzero driver number resumes the driver
@@ -1208,7 +1208,7 @@ extern void f1A29_004D(int mode, void far *src, int x, int y, int region); /*@ 0
     void far *routine;
 
     driverSound = sound;
-    mapByte = gSoundBuf[driverSound];
+    mapByte = gSoundMap[driverSound];
     if (mapByte == 0xFF)
         mapByte = 0;
     driverSound = mapByte;
