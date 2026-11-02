@@ -1710,3 +1710,48 @@ new = "AdlibWaitAfterIndex"
 kind = "function"
 why = "0000:4CE0 reads status port 388h 4 times; AdlibWrite 4C6B calls it right after the index write (out 388h, 4C70), the ISRs 3E9F and 4C31 likewise"
 date = "2026-11-02"
+
+[[rename]]
+id = "0000:03AA=GetDriverBlock"
+addr = "0000:03AA"
+old = "f0_03AA"
+new = "GetDriverBlock"
+kind = "function"
+why = "0000:03AA returns dx:ax = cs:0416h (mov dx,cs; mov ax,416h; retf), the address LoadSoundDriver reads the 32C8h block into (E177D.C:152)"
+date = "2026-11-02"
+
+[[rename]]
+id = "0000:03B0=SetSoundByte"
+addr = "0000:03B0"
+old = "f0_03B0"
+new = "SetSoundByte"
+kind = "function"
+why = "0000:03B0 stores the byte argument at cs:[cs:[416h + 2*idx] + reg] (03B7 to 03C4): PlaySoundAtCell (E177D.C:251 to 265) writes the level (reg 3) and register 1 byte of a sound record with it"
+date = "2026-11-02"
+
+[[rename]]
+id = "0000:03CA=GetSoundByte"
+addr = "0000:03CA"
+old = "f0_03CA"
+new = "GetSoundByte"
+kind = "function"
+why = "0000:03CA returns the byte at cs:[cs:[416h + 2*idx] + reg] zero-extended: PlaySoundAtCell reads back reg 3 and reg 1 of a sound record (E177D.C)"
+date = "2026-11-02"
+
+[[rename]]
+id = "0000:03E3=GetSoundData"
+addr = "0000:03E3"
+old = "f0_03E3"
+new = "GetSoundData"
+kind = "function"
+why = "0000:03E3 returns cs:[416h + 2*idx] as dx:ax, the pointer to the sound's data: ProcessSoundQueue (403F to 404B) reads the same table (gSoundTable is 0416h) for its data pointer and PlaySound hands the pointer to StartSound for the speaker cards (E177D.C:193)"
+date = "2026-11-02"
+
+[[rename]]
+id = "0000:400C=QueueSound"
+addr = "0000:400C"
+old = "f0_400C"
+new = "QueueSound"
+kind = "function"
+why = "0000:400C appends its argument to the 16-entry ring gQueueRing, which ProcessSoundQueue (402C) drains; PlaySound calls it for AdLib (E177D.C:179)"
+date = "2026-11-02"

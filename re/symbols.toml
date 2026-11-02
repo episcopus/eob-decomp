@@ -78,7 +78,7 @@ unit = "e_text"
 addr = "0000:03AA"
 size = 6
 evidence = ["far"]
-name = "_f0_03AA"
+name = "_GetDriverBlock"
 level = "L2"
 match_flags = "tasm /mx"
 
@@ -88,7 +88,7 @@ unit = "e_text"
 addr = "0000:03B0"
 size = 26
 evidence = ["far", "frame"]
-name = "_f0_03B0"
+name = "_SetSoundByte"
 level = "L2"
 match_flags = "tasm /mx"
 
@@ -98,7 +98,7 @@ unit = "e_text"
 addr = "0000:03CA"
 size = 25
 evidence = ["far", "frame"]
-name = "_f0_03CA"
+name = "_GetSoundByte"
 level = "L2"
 match_flags = "tasm /mx"
 
@@ -108,7 +108,7 @@ unit = "e_text"
 addr = "0000:03E3"
 size = 23
 evidence = ["far", "frame"]
-name = "_f0_03E3"
+name = "_GetSoundData"
 level = "L2"
 match_flags = "tasm /mx"
 
@@ -224,7 +224,7 @@ unit = "e_text"
 addr = "0000:400C"
 size = 32
 evidence = ["far", "frame"]
-name = "_f0_400C"
+name = "_QueueSound"
 level = "L2"
 match_flags = "tasm /mx"
 

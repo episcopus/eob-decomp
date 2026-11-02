@@ -73,16 +73,16 @@ _GetScriptFlag PROC NEAR
 _GetScriptFlag ENDP
 
 ; 0000:03AA: returns the driver block pointer dx:ax = cs:0416 (loaded by LoadSoundDriver)
-        PUBLIC  _f0_03AA              ; @ 0000:03AA
-_f0_03AA PROC NEAR
+        PUBLIC  _GetDriverBlock              ; @ 0000:03AA
+_GetDriverBlock PROC NEAR
         mov       dx, cs
         mov       ax, offset _DriverBlock
         retf
-_f0_03AA ENDP
+_GetDriverBlock ENDP
 
 ; 0000:03B0: writes one byte of the driver block: idx selects the 300-word table at 0416, reg offsets into it (E177D.C)
-        PUBLIC  _f0_03B0              ; @ 0000:03B0
-_f0_03B0 PROC NEAR
+        PUBLIC  _SetSoundByte              ; @ 0000:03B0
+_SetSoundByte PROC NEAR
         push      bp
         mov       bp, sp
         push      bx
@@ -95,11 +95,11 @@ _f0_03B0 PROC NEAR
         pop       bx
         pop       bp
         retf
-_f0_03B0 ENDP
+_SetSoundByte ENDP
 
 ; 0000:03CA: reads one byte of the driver block, zero-extended (E177D.C)
-        PUBLIC  _f0_03CA              ; @ 0000:03CA
-_f0_03CA PROC NEAR
+        PUBLIC  _GetSoundByte              ; @ 0000:03CA
+_GetSoundByte PROC NEAR
         push      bp
         mov       bp, sp
         push      bx
@@ -112,11 +112,11 @@ _f0_03CA PROC NEAR
         pop       bx
         pop       bp
         retf
-_f0_03CA ENDP
+_GetSoundByte ENDP
 
 ; 0000:03E3: returns the far driver routine pointer cs:[0416 + 2*idx] (E177D.C)
-        PUBLIC  _f0_03E3              ; @ 0000:03E3
-_f0_03E3 PROC NEAR
+        PUBLIC  _GetSoundData              ; @ 0000:03E3
+_GetSoundData PROC NEAR
         push      bp
         mov       bp, sp
         push      bx
@@ -129,7 +129,7 @@ _f0_03E3 PROC NEAR
         pop       bx
         pop       bp
         retf
-_f0_03E3 ENDP
+_GetSoundData ENDP
 
 ; 0000:03FA: makes the driver block's offset table absolute: adds 0416h to each of the 300 words at cs:0416h (cx = 12Ch, 03FD to 0410),
 ; so the block's file offsets become near pointers into cs. Called once by LoadSoundDriver (E177D.C) after it reads the 32C8h
@@ -179,7 +179,7 @@ gBlockSpare LABEL BYTE
         PUBLIC  _DriverTables              ; @ 0000:3944
 _DriverTables LABEL BYTE
 gEntryTable LABEL WORD
-        dw      _StartAdlibDriver, _StopAdlibDriver, _SoundDriverTick, _f0_400C, _StartSample, _GetVoiceState
+        dw      _StartAdlibDriver, _StopAdlibDriver, _SoundDriverTick, _QueueSound, _StartSample, _GetVoiceState
         dw      _GetSampleOffset, _GetDriverTable, _SetNote, _SetSamplePlaying, _SelectDriverTable
 gLevelCurvePtrs LABEL WORD
         dw      gLevelCurve0, gLevelCurve1, gLevelCurve2, gLevelCurve3, gLevelCurve4, gLevelCurve5, gLevelCurve6, gLevelCurve7, gLevelCurve8, gLevelCurve9, gLevelCurve10, gLevelCurve11, gLevelCurve12, gLevelCurve13
@@ -271,7 +271,7 @@ gSamplePtrOff   dw      0               ; 3B78: the sample's read pointer, offse
 gSamplePtrSeg   dw      0               ; 3B7A: and segment
 gSampleStart    dw      0               ; 3B7C: the sample's first offset
 gSampleEnable   db      0               ; 3B7E: nonzero while a sample plays (SetSamplePlaying, StartSample)
-gQueueWrite     dw      0               ; 3B7F: the sound queue's write index, 0 to 0Fh (_f0_400C)
+gQueueWrite     dw      0               ; 3B7F: the sound queue's write index, 0 to 0Fh (_QueueSound)
 gQueueRead      dw      0               ; 3B81: its read index (ProcessSoundQueue)
 gQueueRing      db      16 dup (0)      ; 3B83: the queued driver sound numbers, one byte each (a word is stored at each index)
 
@@ -304,13 +304,13 @@ gFNumbers LABEL WORD
 
 ; 0000:3E66: the AdLib driver's INT 08h handler, installed by StartAdlibDriver (3F77: mov dx,3E66h; int 21h 2508h, 3F97 to 3F9D).
 ; The PIT runs at divisor 0555h there (3FA2 to 3FB0), 874 Hz if its clock is the usual 1193182 Hz [H], and this handler divides it down:
-;   - while byte 3B42 is nonzero, counts 3B44 down; at zero it toggles the key-on bit (20h) of voice 0's register B0h image (the
-;     byte at +28h of the voice record 3B93, VoiceKeyOn sets the same bit), writes the register to the card, and reloads 3B44
-;     from 3B43;
-;   - counts the byte 3B36 down to zero (nothing else in this file reads or writes it: Purpose unknown);
-;   - every 0Ch passes (72.8 Hz) calls SoundDriverTick (3FF4);
-;   - every 30h passes (18.2 Hz) chains to the saved BIOS handler, the vector StartAdlibDriver stored at 3B66 (offset) and 3B68
-;     (segment); that handler sends the end of interrupt, so this path does not; on every other pass it sends EOI itself.
+;   - while gEffectMode is nonzero, counts gEffectCounter down; at zero it toggles the key-on bit (20h) of voice 0's register B0h image
+;     (the byte at +28h of gVoiceRecord0, which VoiceKeyOn also sets), writes the register to the card, and reloads gEffectCounter from
+;     gEffectPeriod;
+;   - counts gBusyCountdown down to zero (PlaySoundAtCell sets it to 0Bh and waits for it, E177D.C:249 and :268);
+;   - every 0Ch passes (72.8 Hz) calls SoundDriverTick (3FF4), counted by gTimerPasses12;
+;   - every 30h passes (18.2 Hz, gTimerPasses48) chains to the BIOS handler StartAdlibDriver saved in gSavedTimerOff and gSavedTimerSeg;
+;     that handler sends the end of interrupt, so this path does not; on every other pass it sends EOI itself.
 ; Saves and restores ax, bx, dx and ds; DS is set to CS, where the driver keeps its variables.
         PUBLIC  _AdlibTimerIsr              ; @ 0000:3E66
 _AdlibTimerIsr PROC NEAR
@@ -374,12 +374,13 @@ L_3EDC:
 _AdlibTimerIsr ENDP
 
 ; 0000:3EE5: the INT 08h handler that plays a sample, installed by StartSample (4B7F: mov dx,3EE5h; int 21h 2508h, 4C49 to 4C4F)
-; in place of 3E66, with the PIT at divisor 004Bh (4C51 to 4C61), about 15.9 kHz on the same clock [H]. Each pass reads one 4-bit delta from the sample at the far
-; pointer cs:3B78/3B7A (low nibble of a byte first, then the high one, 3B74 counts the passes), adds it to the level byte at
-; 3B75 when bit 3 is clear and subtracts (value and 7) when it is set, and writes the level to the AdLib data port 389h (the
-; register StartSample selected last, 40h, at 4C2B to 4C37). The sample ends after 3B76 bytes from the start 3B7C, or at once when 3B7E (set by
-; StartSample, SetSamplePlaying) is zero: then it puts the PIT back to 0555h, clears 3B78, restores the INT 08h vector StartSample
-; saved at 3B6A/3B6C (the vector 3E66 was installed as) and clears the voice enable 3B3F (UpdateVoices runs only while it is nonzero).
+; in place of 3E66, with the PIT at divisor 004Bh (4C51 to 4C61), about 15.9 kHz on the same clock [H]. Each pass reads one 4-bit
+; delta from the sample at the far pointer gSamplePtrOff/gSamplePtrSeg (the low nibble of a byte first, then the high one; the count
+; gSampleNibbles selects), adds it to gSampleLevel when bit 3 is clear and subtracts (value and 7) when it is set, and writes the
+; level to the AdLib data port 389h (the register StartSample selected last, 40h, at 4C2B to 4C37). The sample ends when the pointer
+; is gSampleLength bytes past gSampleStart, or at once when gSampleEnable (set by StartSample and SetSamplePlaying) is zero: then it puts
+; the PIT back to 0555h, clears gSamplePtrOff, restores the INT 08h vector StartSample saved in gSampleSavedOff/Seg (the vector 3E66
+; was installed as) and clears gUpdateEnable (UpdateVoices runs only while it is nonzero).
 ; QUIRK 3EE5: it always sends EOI itself and never chains to the BIOS handler, so the BIOS clock loses the ticks of a sample.
         PUBLIC  _SampleTimerIsr              ; @ 0000:3EE5
 _SampleTimerIsr PROC NEAR
@@ -541,9 +542,11 @@ _SoundDriverTick PROC NEAR
         ret
 _SoundDriverTick ENDP
 
-; 0000:400C: queues a driver sound in the 16-entry ring (head 3B7F, masked 0fh); E177D.C calls it with the AdLib number
-        PUBLIC  _f0_400C              ; @ 0000:400C
-_f0_400C PROC NEAR
+; 0000:400C: queues a driver sound number in the 16-entry ring gQueueRing at the write index gQueueWrite, then advances the index
+; (masked with 0Fh); E177D.C calls it with the AdLib number. Far routine, one argument (stored as a word, so its high byte lands in the next
+; ring byte)
+        PUBLIC  _QueueSound              ; @ 0000:400C
+_QueueSound PROC NEAR
         push      bp
         mov       bp, sp
         push      ds
@@ -559,9 +562,12 @@ _f0_400C PROC NEAR
         mov       sp, bp
         pop       bp
         retf
-_f0_400C ENDP
+_QueueSound ENDP
 
-; 0000:402C: drains the 16-entry ring (head 3B81, tail 3B7F): loads each queued sound into a voice and starts it
+; 0000:402C: drains the 16-entry ring gQueueRing from the read index gQueueRead up to the write index gQueueWrite: for each queued sound
+; takes its data pointer from gSoundTable; the first word of the data is the voice number (low byte) and the priority (high byte), and
+; when the priority is not below that of the voice's current sound (record byte 8) it clears the voice, loads the script that follows and
+; starts it. A sound for voice 0 also clears gEffectMode
         PUBLIC  _ProcessSoundQueue              ; @ 0000:402C
 _ProcessSoundQueue PROC NEAR
         push      ds
@@ -615,7 +621,8 @@ L_409A:
         ret
 _ProcessSoundQueue ENDP
 
-; 0000:409E: stores the note argument and reads the two block pointers now at 3B60/3B62, then writes register A0
+; 0000:409E: stores the note argument in gEffectIndex, then writes register A0 with the byte of the effect curve gEffectCurveB at that
+; index (gEffectCurveA's byte becomes the period gEffectPeriod). Far routine, one argument; the ninth entry of the entry table (3944)
         PUBLIC  _SetNote              ; @ 0000:409E
 _SetNote PROC NEAR
         push      bp
@@ -644,7 +651,7 @@ _SetNote PROC NEAR
         retf
 _SetNote ENDP
 
-; 0000:40CE: sets the byte at 3B7E, the AdLib sample ISR enable read by 3EE5
+; 0000:40CE: sets gSampleEnable, the flag _SampleTimerIsr tests, to the argument (a byte). Far routine, one argument
         PUBLIC  _SetSamplePlaying              ; @ 0000:40CE
 _SetSamplePlaying PROC NEAR
         push      bp
@@ -664,7 +671,8 @@ _SetSamplePlaying PROC NEAR
         retf
 _SetSamplePlaying ENDP
 
-; 0000:40E5: stores the block pointer table[bx+39ch] at 3B64 and returns it
+; 0000:40E5: selects the sound-number table: gSoundTable = gDriverTablePtrs[argument] (both entries are 0416h), and returns it. Far routine,
+; one argument
         PUBLIC  _SelectDriverTable              ; @ 0000:40E5
 _SelectDriverTable PROC NEAR
         push      bp
