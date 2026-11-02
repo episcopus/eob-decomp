@@ -21,30 +21,46 @@ and the handler's calls are at other lines now. The handler's behaviour still ma
 each new line below was read from the current file. The review worktree is at 1d5a0ef, behind main at 07c010f, but
 the files cited are identical on both.
 
-- [ ] must-fix src/E1BBE.ASM:36-37 (_gPointerBusy): the handler cites are stale. In src/E1A72.ASM the busy test is at
+- [x] must-fix src/E1BBE.ASM:36-37 (_gPointerBusy): the handler cites are stale. In src/E1A72.ASM the busy test is at
   :382 (`cmp word ptr [_gPointerBusy],0`), the free path `je L020C` is at :383, the drop `L01E9: jmp L027F` is at :384
   (no position update), the set to 1 is at :393 (label `L020C`) and the clear to 0 is at :425 (label `L0279`). Cite
   :382-384, :393 and :425. (Evidence: `grep -n _gPointerBusy src/E1A72.ASM` gives :41 (EXTRN), :382, :393 and :425 for
   the handler, and :483, :485 and :501 in _IsMouseInRect, E1A72.ASM:472-508.)
-- [ ] must-fix src/E1BBE.ASM:40-41 (_gCursorX): the handler's cursor writes are at src/E1A72.ASM:396-397 (`mov
+  Fixed (d1e1a32): the _gPointerBusy comment now cites src/E1A72.ASM:382-384 (the test at :382, the free path
+  `je L020C` at :383 and the drop `L01E9: jmp L027F` at :384), :393 (the set to 1, label L020C) and :425 (the clear
+  to 0, label L0279), with the labels named so the cite survives a move. Re-grepped at fix time.
+- [x] must-fix src/E1BBE.ASM:40-41 (_gCursorX): the handler's cursor writes are at src/E1A72.ASM:396-397 (`mov
   [_gCursorX],cx`, `mov [_gCursorY],dx`), skipped by `je L0221` at :395 when `cmp byte ptr [g80EC],2` at :394 is 2.
   InitMouse sets 0A0h and 64h at :268-269, not :267-268. (Evidence: `grep -n _gCursorX src/E1A72.ASM` gives :59 (EXTRN),
   :268, :396 and :398 (the reload `mov cx,[_gCursorX]`).)
-- [ ] must-fix src/E1BBE.ASM:57-59 (_gPointerState): the handler lines are stale. The 8000h test is at
+  Fixed (d1e1a32): the _gCursorX comment now cites src/E1A72.ASM:396-397 (the writes), the g80EC test at :394 with
+  `je L0221` at :395, and InitMouse at :268-269 (0A0h and 64h); src/E1BF3.ASM:35 is unchanged. Re-grepped at fix time.
+- [x] must-fix src/E1BBE.ASM:57-59 (_gPointerState): the handler lines are stale. The 8000h test is at
   src/E1A72.ASM:407, before its zone test at :409-417. The 4000h set is at :391, after the in-zone hide (`call far ptr
   _HidePointer` at :389, inside the bracket of :385-390, which starts at label `L01EC`). Cite :389, :391, :407 and
   :409-417. (The header says :383, :385 and :400.)
-- [ ] must-fix src/E1BBE.ASM:118-119 and :212-213 (HidePointer and ShowPointer headers): the handler's calls are
+  Fixed (d1e1a32): the _gPointerState comment now cites src/E1A72.ASM:407 (the 8000h test) before its zone test at
+  :409-417, and the 4000h set at :391 on the in-zone path (label L01EC) that calls _HidePointer at :389, inside the
+  bracket at :385-390. Re-grepped at fix time.
+- [x] must-fix src/E1BBE.ASM:118-119 and :212-213 (HidePointer and ShowPointer headers): the handler's calls are
   stale. The handler calls _HidePointer at src/E1A72.ASM:389 (the in-zone hide) and :422 (the hide in the L025C path),
   and _ShowPointer at :423. The headers name :383 and :415 for HidePointer and :416 for ShowPointer. (Evidence:
   `grep -n "_HidePointer\|_ShowPointer" src/E1A72.ASM` gives :28-29 (EXTRN), :389, :422 and :423.)
-- [ ] should src/E1BBE.ASM:90-91 (_gRestoreRect, _gSaveRect, "far fn (x, y, w, h, buf)"): the declarations do not
+  Fixed (d1e1a32): the HidePointer header now names src/E1A72.ASM:389 (the in-zone hide, label L01EC) and :422 (the
+  hide in the L025C path); the ShowPointer header names :423 (the L025C path, after the hide at :422). Re-grepped at
+  fix time.
+- [x] should src/E1BBE.ASM:90-91 (_gRestoreRect, _gSaveRect, "far fn (x, y, w, h, buf)"): the declarations do not
   give the units the code passes. x and w are in 8-pixel columns and y and h are in pixel rows: HidePointer shifts the
   left edge right by three (src/E1BBE.ASM:147-149) before its restore call (:190-191), and ShowPointer does the same
   (:248-250) before its save call (:291-292). Say so in both declarations.
-- [ ] should src/E1BBE.ASM:36-41, :57-59 and :118-119, :212-213 (every cite into src/E1A72.ASM): cite the handler's
+  Fixed (d1e1a32): both declarations now say x and w are in 8-pixel columns and y and h in pixel rows, and name the
+  shift (HidePointer 1BBE:147-149, ShowPointer 1BBE:248-250) that produces the column value.
+- [x] should src/E1BBE.ASM:36-41, :57-59 and :118-119, :212-213 (every cite into src/E1A72.ASM): cite the handler's
   label as well as the line (`L020C`, `L0279`, `L01EC`, `L025C`), so the cite still points at the code when the file
   moves. Rounds 3, 5, 6 and 7 each found E1A72.ASM cites in this unit pointing at other code.
+  Fixed (d1e1a32): every cite into the handler now carries its label: L020C and L0279 in the _gPointerBusy comment,
+  L0221 in the _gCursorX comment, L01EC in the _gPointerState comment, L01EC and L025C in the HidePointer and
+  ShowPointer headers.
 - [ ] note still open, routed to the e1a72 owner: src/E1A72.ASM:108-109 (the _gPointerState declaration) says 8000h is
   "the pointer is hidden over the hide zone". This unit reads it as "a zone hide is in force" (round 4), and the
   handler's test at src/E1A72.ASM:407 fits this unit's reading.
