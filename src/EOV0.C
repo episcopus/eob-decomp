@@ -277,7 +277,41 @@ extern void far *g5E64[0x11]; /*@ ds:5E64 */ /* the 17 sliced icon pointers this
     DrawRowList(10);
 }
 /*@ ovl0:0A5E stub */ void Ovl0_0A5E(void) {}
-/*@ ovl0:0D5B stub */ void Ovl0_0D5B(void) {}
+/* ovl0:0D5B: walks the panel slot indices modulo 0x2c (44) to find one that is free. Starting from
+   `start` (a negative start is folded to 0x2b), it loops: a slot is rejected when one of the four
+   named characters gChars[0..3] has `taken[di]` equal to it, when `flag` is nonzero and the slot is
+   below 0x1a, or when `flag` is zero and the slot is above 0x1c; a rejected slot advances by
+   `delta` (folded and wrapped) and the search repeats. Returns the free slot. Called by ovl0:0A5E. */
+/*@ ovl0:0D5B */ int FindSlot(int start, int flag, int delta, char far *taken)
+{
+    int slot;
+    int found;
+    int di;
+
+    slot = start;
+    if (slot < 0)
+        slot = 0x2b;
+    slot %= 0x2c;
+    do {
+        found = 0;
+        di = 0;
+        for (; di < 4; di++) {
+            if (gChars[di].name[0] && taken[di] == slot)
+                found = 1;
+        }
+        if (flag != 0 && slot < 0x1a)
+            found = 1;
+        if (flag == 0 && slot > 0x1c)
+            found = 1;
+        if (found) {
+            slot += delta;
+            if (slot < 0)
+                slot = 0x2b;
+            slot %= 0x2c;
+        }
+    } while (found);
+    return slot;
+}
 /*@ ovl0:0DDC stub */ void Ovl0_0DDC(void) {}
 /*@ ovl0:0EE5 stub */ void Ovl0_0EE5(void) {}
 /*@ ovl0:1071 stub */ void Ovl0_1071(void) {}

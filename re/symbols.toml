@@ -6878,6 +6878,9 @@ unit = "eov0"
 addr = "ovl0:0D5B"
 size = 129
 evidence = ["ovl", "near"]
+name = "FindSlot"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov0_0ddc"
