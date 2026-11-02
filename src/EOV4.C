@@ -5,6 +5,8 @@
 
 /*@flags -ml -O -Z -B */
 
+
+
 extern signed char gHead199D[]; /*@ ds:199D */  /* rows of 18 signed heading offsets */
 extern unsigned char gB894[]; /*@ ds:B894 */    /* 9-byte tile records (src/E08E6.C) */
 extern signed char far *gEF6A[]; /*@ ds:EF6A */ /* 18 far pointers into gB894 (src/E1414.C) */
@@ -233,7 +235,59 @@ extern signed char g194B[]; /*@ ds:194B */  /* per-slot byte flags (src/E08E6.C)
 /*@ ovl4:1091 stub */ void Ovl4_1091(int slot) {}
 /*@ ovl4:1411 stub */ void Ovl4_1411(int slot) {}
 /*@ ovl4:19C4 stub */ void Ovl4_19C4(int slot) {}
-/*@ ovl4:1D20 stub */ void Ovl4_1D20(int slot) {}
+
+extern signed char g7272[]; /*@ ds:7272 */   /* per-column x base correction (this unit) */
+extern signed char g7275[]; /*@ ds:7275 */   /* per-column y base (this unit) */
+extern int g19E5[]; /*@ ds:19E5 */          /* per-slot x base (this unit) */
+extern void far *gIntroCells[]; /*@ ds:F4BE */  /* sprite cell table (src/EOV2.C) */
+extern int gFB78; /*@ ds:FB78 */            /* toggled by 1414:04B0 (src/E1414.C) */
+extern void DrawRegion000F(int mode, void far *src, int x, int y, int region); /*@ 082C:063B */
+extern signed char far gCellBytes[]; /*@ 20AB:0000 */  /* the cell bytes drawn here */
+
+#define CELL_ROW_BYTES 0x1a   /* one sprite row: CELL_COLS cells of two bytes (x then y) */
+#define CELL_COLS 13
+
+/* ovl4:1D20: draws the "0x34" object the view shows for one view slot: two columns of 13 sprite
+   cells through DrawRegion000F(mode 2, cell, x, y, region 5). The column pair is ds:1A09[slot]
+   counted back from 2 (a slot with a larger ds:1A09 draws fewer). Each column i uses the far
+   sprite cell ds:F4BE[(col * 2 + i) ^ ds:FB78] and reads its cells from the far bytes at
+   20AB:0000, row (col*2+i) * CELL_ROW_BYTES, two bytes a cell: byte 0 shifts x and byte 1 shifts y,
+   on top of the per-column base ds:19E5[slot] - ds:7272[col] (x) and ds:7275[col] (y). Column 0 is
+   nudged by -4 on both axes. Called by Ovl4_1E18 at ovl4:1E2A when the slot's heading is 0x34.
+   Purpose unknown: what the object is and what the 20AB:0000 bytes mean. */
+/*@ ovl4:1D20 */ void Ovl4_1D20(int slot)
+{
+    int col;
+    int j;
+    int xbase;
+    int ybase;
+    int xoff;
+    int yoff;
+    int i;
+    int idx;
+    void far *cells;
+
+    col = 2 - g1A09[slot];
+    if (col < 0)
+        return;
+    xbase = g19E5[slot] - g7272[col];
+    ybase = g7275[col];
+    for (i = 0; i < 2; i++) {
+        idx = col * 2 + i;
+        xoff = yoff = 0;
+        if (idx == 0) {
+            xoff = -4;
+            yoff = -4;
+        }
+        cells = gIntroCells[idx ^ gFB78];
+        for (j = 0; j < CELL_COLS; j++) {
+            DrawRegion000F(2, cells,
+                           xoff + xbase + gCellBytes[idx * CELL_ROW_BYTES + j * 2],
+                           yoff + ybase + gCellBytes[idx * CELL_ROW_BYTES + j * 2 + 1],
+                           5);
+        }
+    }
+}
 
 extern signed char g7278[]; /*@ ds:7278 */     /* per-view-slot byte (this unit) */
 extern signed char gA9C6; /*@ ds:A9C6 */       /* offset into the gEF6A target (src/E0ACD.C) */
