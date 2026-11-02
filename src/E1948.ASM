@@ -12,7 +12,9 @@
 ; 29B8h itself (the value the install and every entry set), and DGROUP is 212Eh (whitepaper 2.2), so
 ; 29B8h is DGROUP + 88Ah and the driver's offset 1C7h is gTandyOn at DGROUP:8A67. The offsets below
 ; are the driver-segment ones; the driver data segment holds the note tables (at 1Ah for the PC
-; speaker, DAh for Tandy) and the song data, while the code of this unit lives in this code segment.
+; speaker, DAh for Tandy) and the data the driver plays, read as a song [H] (the whitepaper calls
+; the same block "sound drivers data", docs/design/WHITEPAPER.md:147), while the code of this unit
+; lives in this code segment.
 
         .MODEL  LARGE
 
@@ -37,7 +39,12 @@ gPort61Save      db      ?               ; @ ds:8A3A: offset 19Ah, port 61h valu
 gVoiceCount      dw      ?               ; @ ds:8A3B: offset 19Bh, active voices, 3 Tandy or 1 PC speaker
 gPlaying         db      ?               ; @ ds:8A3D: offset 19Dh, 1 while a song is playing
 gStartRequest    db      ?               ; @ ds:8A3E: offset 19Eh, 1 = (re)load the song at gSongPtr
-gStopRequest     db      ?               ; @ ds:8A3F: offset 19Fh, 1 = mute every voice
+gStopRequest     db      ?               ; @ ds:8A3F: offset 19Fh, 1 = stop requested. checkRestart
+                                         ; (1948:0258) is its only reader, and it runs only for a voice
+                                         ; whose gVoiceReadNext is 0 (1948:00F0 to 00F7), so a sounding
+                                         ; voice is muted at its next check; a voice that reads its next
+                                         ; note or command on the stop tick plays it first (readFirst,
+                                         ; 1948:00FA) and is muted on the following tick
 gVoiceMute       db      4 dup (?)       ; @ ds:8A40: offset 1A0h, byte per voice, nonzero silences the voice
                                          ; this tick (1948:0278 falls through to muteVoice); only 0 is written
                                          ; here (1948:0081 and 027F), the writer of nonzero is unknown
@@ -67,7 +74,7 @@ gVoiceDelay2     db      ?               ; @ ds:8A65: offset 1C5h, countdown bef
 gRunning         db      ?               ; @ ds:8A66: offset 1C6h, 1 while the driver has an active song;
                                          ; duplicates gPlaying (both are written at the same three points,
                                          ; 1948:0057, 02BB and 0439), read nowhere in src/ (grep)
-gTandyOn         db      ?               ; @ ds:8A67: 1 Tandy, 0 PC speaker
+gTandyOn         db      ?               ; @ ds:8A67: offset 1C7h, 1 Tandy, 0 PC speaker
 gTickCount       dw      ?               ; @ ds:8A68: offset 1C8h, handler tick counter, 0 to 123h (292 ticks, about
                                          ; one second at 291 Hz [H]); when it passes 123h it wraps to 0 and
                                          ; gTickSeconds is incremented
@@ -126,11 +133,14 @@ ackPIC:
 _SoundTimerIsr ENDP
 
 ; 1948:0050: advance the song by one tick. A start request (gStartRequest) reloads the song
-; pointer, restarts the voices (delay counters 23h and 46h) and clears the stop request; then,
+; pointer, restarts the voices (the delay counters 23h and 46h hold back only the voices at index 1
+; and 2, so voice 0 starts at once) and clears the stop request; then,
 ; for each active voice up to gVoiceCount, it reads note and command bytes from the song data at
 ; gSongBase+gVoicePos[voice] and issues the tone and the voice on/off. Note bytes 00h to 5Fh index
-; the 96-entry note table; 60h to 7Fh are neither notes nor commands and silence the voice
-; (1948:010B). Commands 80h and up set the repeat counters (CDh, D1h), loop back (CEh, D2h: the
+; the 96-entry note table; 60h to 7Fh are neither notes nor commands and leave the voice silent for
+; good: it jumps to muteVoice (1948:027F) without consuming the byte, so the position and
+; gVoiceReadNext stay and it reads the same byte again on every later tick (1948:010B). Commands 80h
+; and up set the repeat counters (CDh, D1h), loop back (CEh, D2h: the
 ; command's position plus 1 minus the following offset word; a signed overflow of that position
 ; mutes the voice instead, 1948:0174 and 01B0), play a note at an explicit frequency (E6h), set the
 ; length multiplier (E2h), subtract from or add to it (E8h, E9h) or end the voice. When all voices
@@ -202,7 +212,8 @@ readFirst:
         mov     es, [gSongBaseSeg]
         mov     bx, [gSongBase]
         add     bx, bp
-; 00h to 5Fh: a note table index; 60h to 7Fh: neither a note nor a command, it silences the voice
+; 00h to 5Fh: a note table index; 60h to 7Fh: neither a note nor a command, it jumps to muteVoice
+; without consuming the byte, so the voice stays silent for the rest of the song
 readLoop:
         mov     al, es:[bx]
         or      al, al
@@ -517,7 +528,9 @@ _SetVoicePitch ENDP
 
 ; 1948:034A: three-voice output. Sets gVoiceCount = 3, silences the four voices through _VoiceOff
 ; (so the Tandy chip is quiet) and sets the port 61h bits 5 and 6 (their meaning is unknown; the
-; code only sets them). The fourth silence (voice index 3) writes the SN76489 noise channel, because
+; code only sets them, and on the PC these are read-only status bits [H], so the writes do nothing
+; there; whether they switch on the Tandy chip is open [H] and a question for the oracle). The fourth
+; silence (voice index 3) writes the SN76489 noise channel, because
 ; the latch's channel bits 6-5 are 3 [H]; no path sets gVoiceCount to 4, so voice 3 is never played.
 ; Called by the install routine on Tandy (1948:0377), _SoundDriverResume (1948:0458),
 ; _SoundDriverUninstall (1948:03DA) and _SoundDriverSilenceToOneVoice (1948:046B).
@@ -682,9 +695,11 @@ _StartSound PROC FAR
         ret
 _StartSound ENDP
 
-; 1948:0443: ask the driver to stop. Sets gStopRequest, which makes the next tick mute every voice
-; and, once all are silent, clear the play flags. Purpose unknown: the packet finds no direct
-; caller, so who asks for a stop is unknown.
+; 1948:0443: ask the driver to stop. Sets gStopRequest; on the next tick checkRestart (1948:0258)
+; mutes each sounding voice, and once all voices are silent the play flags are cleared (1948:02B1
+; to 02BB). A voice that reads its next note or command on the stop tick plays it first and is muted
+; on the following tick. Purpose unknown: the packet finds no direct caller, so who asks for a stop
+; is unknown.
         PUBLIC  _StopSound              ; @ 1948:0443
 _StopSound PROC FAR
         push    bp
