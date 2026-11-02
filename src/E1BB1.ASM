@@ -12,23 +12,28 @@
 ; pointer position gDrawnX/gDrawnY (ds:815C/815E) (1BBE:001E..002F), and the show 1BBE:00ED sets
 ; that drawn position to the mouse position gCursorX/gCursorY (ds:8138/813A) and subtracts the hot
 ; spot from it (1BBE:0111..012E); the shape record gPointerShapeOff/gPointerShapeSeg
-; (ds:816E/8170) is what 1BBE:00ED draws through [ds:80C2]. The save-under buffer
-; gPointerBackOff/gPointerBackSeg (ds:816A/816C) is the screen behind the pointer: 1BBE:0002
-; restores it through [ds:804E] and 1BBE:00ED saves the background into it through [ds:80AE].
+; (ds:816E/8170) is what 1BBE:00ED draws through [ds:80C2] (no registry name). The save-under
+; buffer gPointerBackOff/gPointerBackSeg (ds:816A/816C) is the screen behind the pointer:
+; 1BBE:0002 restores it through gRestoreRect ([ds:804E]) and 1BBE:00ED saves the background into
+; it through gSaveRect ([ds:80AE]).
 ;
 ; The size comes from the shape record: byte SHAPE_HEIGHT_BYTE (+3) is the height in pixels, read
-; at 1BB1:0034 and stored unchanged at gPointerHeight (ds:8154, 1BB1:0066). 1BBE:0002 uses it:
-; 1BBE:0095 adds it to the top edge gRectTop (ds:8178) to make the bottom edge gRectBottom
+; at 1BB1:0034 and stored unchanged at gPointerHeight (ds:8154, 1BB1:0066). 1BBE:0002 copies it
+; to gSpriteHeight (ds:8182, 1BBE:0032..0035) and negates that into gNegSpriteHeight (ds:8184):
+; 1BBE:0095 adds the copy to the top edge gRectTop (ds:8178) to make the bottom edge gRectBottom
 ; (ds:817C), and the bottom edge is clipped to 200 at 1BBE:00AB..00B3. Byte SHAPE_WIDTH_BYTE (+2)
 ; is read at 1BB1:003A and, plus 1 (1BB1:003E `inc dx`), stored at gPointerWidth8 (ds:8156,
 ; 1BB1:006A); the code shows only that the stored width is the byte plus one, so the byte's own
-; meaning (a count one less than the width in 8-pixel units) is a reading [H]. 1BBE:0002 uses the
-; stored width: 1BBE:005F adds it to the left edge gRectLeft (ds:8176, the x divided by 8) to make
-; the right edge gRectRight (ds:817A), the left edge is skipped when it is at or below the negated
-; width gNegSpriteWidth (ds:8188, 1BBE:0051..0055) or 40 or more (1BBE:0057..005A), and the right
-; edge is clipped to 40 at 1BBE:0077..007E. The width and a region record share the 8-pixel column
-; unit (the region's left edge at E1A29.C:21 and its width at E1A29.C:23). The stored width of 0
-; means 1 column; a stored height of 0 is 0 pixels. The buffer path depends on the buffer and the
+; meaning (a count one less than the width in 8-pixel units) is a reading [H]. 1BBE:0002 copies it
+; to gSpriteWidth (ds:8186, 1BBE:003D..0040): 1BBE:005F adds the copy to the left edge gRectLeft
+; (ds:8176) to make the right edge gRectRight (ds:817A), the left edge is skipped when it is at
+; or below the negated width gNegSpriteWidth (ds:8188, 1BBE:0051..0055) or 40 or more
+; (1BBE:0057..005A), and the right edge is clipped to 40 at 1BBE:0077..007E. gRectLeft holds the
+; pixel value from 1BBE:0025 until the divide by 8 (1BBE:004B..004D `sar`) stores the column at
+; 1BBE:005C, so gRectLeft is "the x divided by 8" only on the drawn path (an off-screen hide
+; leaves it in pixels). The width and a region record share the 8-pixel column unit (the region's
+; left edge at E1A29.C:21 and its width at E1A29.C:23). The stored width of 0 means 1 column; a
+; stored height of 0 is 0 pixels. The buffer path depends on the buffer and the
 ; size: with no buffer yet (gPointerBackSeg ds:816C == 0) the free is skipped (1BB1:0044 `je 0066`)
 ; and the size query and MemAlloc run; with a buffer and a changed size (height or width differ,
 ; 1BB1:004A/0050) the old buffer is freed (1BB1:0058..005C) before the query and MemAlloc; with a
@@ -47,11 +52,20 @@
 ; and 1BBE:00ED shows the pointer again and draws the new shape. 1BBE:0002 does nothing when
 ; gMouseDisabled (ds:814A) is set; when the hide count gHideDepth (ds:8146) is nonzero it only
 ; increments it (a nested hide); when the count is 0 and gPointerBackSeg (ds:816C, no buffer) is 0
-; it does nothing; otherwise it restores the background and increments gHideDepth. 1BBE:00ED does
-; nothing when gMouseDisabled is set (1BBE:00F1), when the count is 0 on entry (1BBE:00F8), when
-; the count is still nonzero after the decrement (1BBE:0103), or when gPointerBackSeg is 0
-; (1BBE:010A); the decrement (1BBE:00FF) comes before the buffer test, so a show with no buffer
-; still decrements. Otherwise it copies the position, saves the background and draws. The pair
+; it does nothing; otherwise it restores the background and increments gHideDepth, but the restore
+; is skipped when the pointer rectangle is off screen: the left edge at or below gNegSpriteWidth
+; (1BBE:0051..0055 `jle 0075`) or 40 or more (1BBE:0057..005A `jge 0075`) and the top edge at or
+; below gNegSpriteHeight (1BBE:008B `jle 00E0`) or 200 or more (1BBE:0090 `jge 00E0`) jump to
+; 1BBE:00E0, which increments gHideDepth and returns without the restore (1BBE:0075 is `jmp 00E0`).
+; 1BBE:00ED does nothing when gMouseDisabled is set (1BBE:00F1), when the count is 0 on entry
+; (1BBE:00F8), when the count is still nonzero after the decrement (1BBE:0103), or when
+; gPointerBackSeg is 0 (1BBE:010A); the decrement (1BBE:00FF) comes before the buffer test, so a
+; show with no buffer still decrements. When the count reaches 0 with a buffer, it copies the
+; position, saves the background and draws only when the rectangle is on screen: the left edge at
+; or below gNegSpriteWidth (1BBE:0154 `jle 015B`) or 40 or more (1BBE:0159 `jl 015E`, which falls
+; through to 015B) and the top edge at or below gNegSpriteHeight (1BBE:018B `jle 015B`) or 200 or
+; more (1BBE:0190 `jge 015B`) all reach 1BBE:015B (`jmp 01FB`, the return), skipping the save and
+; the draw. The pair
 ; [ds:80AA] on the far pointer ds:8172/8174 and [ds:80A2] brackets only the show call at
 ; 1BB1:00B8 (1BB1:00B1 and 1BB1:00BD); this unit and E1BF3 only read ds:8172/8174, which
 ; _SetFarPointer (1A72:02FE, src/E1A72.ASM:442-443) writes and _GetFarPointer (1A72:033A) reads.
@@ -99,8 +113,10 @@
         _TEXT   SEGMENT WORD PUBLIC 'CODE'
         ASSUME  CS:_TEXT, DS:DGROUP
         db      0                       ; 1BB1:0001: the unit's start marker byte (segment evidence)
-        EXTRN   _HidePointer:FAR        ; @ 1BBE:0002: hide the pointer (restore background, ++gHideDepth)
-        EXTRN   _ShowPointer:FAR        ; @ 1BBE:00ED: show the pointer (--gHideDepth, save, draw)
+        EXTRN   _HidePointer:FAR        ; @ 1BBE:0002: hide the pointer (restore background unless off
+                                        ; screen, ++gHideDepth)
+        EXTRN   _ShowPointer:FAR        ; @ 1BBE:00ED: show the pointer (--gHideDepth; save and draw only
+                                        ; at zero, with a buffer, when on screen)
         EXTRN   _MemAlloc:FAR           ; @ 19BC:0007
         EXTRN   _MemFree:FAR            ; @ 19BC:0137
         EXTRN   _LargestFreeBlock:FAR         ; @ 19BC:023D: returns the largest free block (DX:AX)
@@ -161,7 +177,8 @@ setsize:
         push    dx
         call    dword ptr [g80C6]
         add     sp,4
-        add     ax,HEAP_BLOCK           ; the margin LargestFreeBlock takes off (1BB1:0076)
+        add     ax,HEAP_BLOCK           ; add back the 16 that LargestFreeBlock takes off
+                                        ; (E19BC.C:142); 1BB1:0076
         mov     si,ax
         ASSUME  CS:NOTHING
         call    far ptr _LargestFreeBlock
