@@ -1,7 +1,7 @@
 # Review: eov6
 
 Reviewer: rev-haiku
-Commit reviewed: 4afb5a6 (main, when I started; this branch was at 1e58aea)
+Commit reviewed: dbf4ce2 (main, round 2; round 1 reviewed 4afb5a6, when I started; this branch was at 1e58aea)
 
 Playbook 70. Judge what a matching file can still get wrong: names, types, comments, structure.
 The matcher already proved the bytes; do not re-prove them, read for meaning.
@@ -10,6 +10,56 @@ The matcher already proved the bytes; do not re-prove them, read for meaning.
 
 Each finding is a checkbox. `must-fix` blocks `make review-pass` until a decompiler ticks it off
 (with the commit that fixes it); `should` and `note` do not block.
+
+### Round 2 (rev-haiku, at dbf4ce2)
+
+Playbook 70, later round. Judged: the round 1 must-fix items and the changes since 4afb5a6
+(`git diff 4afb5a6 main -- src/EOV6.C re/symbols.toml re/globals.toml`: the round 1 fix commit 2315c8f
+and renames from other units). Checked: `make match FILE=src/EOV6.C` 6 of 6 functions, exit 0;
+`make readability UNIT=eov6` 0 findings. Checked against the bytes: the QUIRK addresses, by
+disassembling build/re/eob-overlays/ovl06.bin (ovl6:0718 and 0765 are the two gotos to done at 07A5,
+0x76E is the ReadKey exit, 07D9 is `mov ax,[bp-6]`); the far string table, counted from 2003:0000 in
+eob/EOB.EXE (index 0x2B is " All characters are fully rested.", index 0x3B is "Poisoned party members
+will die! Rest anyway?"). The other round 1 items I re-checked against the code hold.
+
+- [ ] must-fix src/EOV6.C:447-451 (the f0A92 header) and src/EOV6.C:28 (the struct comment on
+  `memorized`): both say a negative memorized slot is "a spell ready to cast". Round 1 item 27 was
+  ticked, but its fix states the opposite of the code, so it is reopened. The sign runs the other
+  way: a positive memorized slot is ready to cast; a negative one is spent or not yet regained.
+  Evidence: the regain step turns a negative memorized slot positive and prints "gained"
+  (src/EOV6.C:194-198); the healer's switch matches only positive 2, 0xf and 0x14 and negates the slot
+  it casts (src/EOV6.C:238-251); f0A92 returns 1 while a negative memorized slot exists
+  (src/EOV6.C:465-468), so the camp goes on until it is regained; ovl1:025D writes a slot as the
+  negation of the spell index when the spell is not ready (src/EOV1.ASM:453-459); CastSpell negates the
+  memorized slot it spends (src/E0EF3.C:2031). Fix both places to say: a negative memorized slot is
+  spent or not yet regained (CampLoop turns it positive as "gained"); a positive one is ready to cast.
+  The known-slot wording (negative: to be memorised) is right.
+- [ ] should src/EOV6.C:381-382 (the f0858 header): "src/E082C.C:403-408" is stale; those lines are
+  now gDrawLine. The claim holds: DrawShadowText forwards its fifth argument to its first shadow draw
+  only (src/E082C.C:465-471, address 082C:0898). Cite the address.
+- [ ] should src/EOV6.C:84: the declaration names the parameters `color` and `extra`. The owner now
+  names them `colour` and `colour2` (src/E082C.C:465, after the e082c round 4 rename). Align with the
+  owner's names.
+- [ ] should src/EOV6.C:111-113 (the CampLoop header): the eight-hour regain, level drop and class-2
+  spell, and the 24-hour damage, apply only to members with flag 3 (src/EOV6.C:298-299,
+  `if (!f0D1C_0670(member, 3)) continue;`). The header says "a member" throughout. Say "a member
+  with flag 3".
+- [ ] should src/EOV6.C:114-122 (the CampLoop header and QUIRK): the warning box test
+  `if (!foundWounded && !result)` (src/EOV6.C:349) also reads `result` on the goto paths
+  (ovl6:07C9, `cmp word ptr [bp-6],0`, the same slot as 07D9). The QUIRK names only `return result`,
+  and the box sentence says "the last f09D2 result was 0", which is unset on those paths. Name both reads.
+- [ ] should src/EOV6.C:25: "src/E0A72.C:21 leaves +23 as padding" is a stale line cite. The padding is
+  `char pad21[3]` in struct CharRec at src/E0A72.C:29 (+21 to +23). The claim holds; cite :29.
+- [ ] note src/EOV6.C:463-464: the f0A92 second test is `FindClassSlot(4, ...) != 0` (the first is
+  `!= -1`). The header's "slots 2 or 4 apply" does not show that; a reader may take it for a typo.
+- [ ] note make match: still prints "unit eov6 not complete: ours 3258 bytes, the unit 3258" (round 1
+  note, unchanged). A matcher question for the human.
+
+Round 2 verdict: not passed. One must-fix (round 1 item 27, reopened, with its second place in the
+struct). The sign convention is read from the code and the other units, not from the matcher, so there
+is no escalation.
+
+### Round 1 (rev-haiku, at 4afb5a6)
 
 - [x] must-fix src/EOV6.C:97: "In six sub-steps (ds:tick) per hour" puts the hour counter in ds, but `tick` is an automatic local (line 122, `int tick;`). Say "six sub-steps per hour (the local tick)". Fixed: the CampLoop header now says "In six sub-steps per hour (the local tick)".
 - [x] must-fix src/EOV6.C:100-101: "every eight hours ... updates the object list" is wrong. CampLoop never calls UpdateObjects; only f09D2 does (lines 406-407), and f09D2 runs at the start (line 127) and on each key test (line 320). Evidence: the only UpdateObjects calls in EOV6.C are in f09D2. Fixed: the CampLoop header now says only f09D2 updates the object list, at the start and on each key test.
@@ -24,7 +74,7 @@ Each finding is a checkbox. `must-fix` blocks `make review-pass` until a decompi
 - [x] must-fix src/EOV6.C:116, 289 and 296: `gained` is set to 1 when a member drops to level 0 (line 289) or takes one point of damage at level 0 (line 296). Nothing is gained on either path. Rename (a placeholder such as `changed`), or describe what the two paths share. Fixed: renamed `gained` to `changed` with the comment "set when a member drops to level 0 or takes the 24-hour damage"; all four uses updated. (The string literal "%s gained %s." is unchanged.)
 - [x] must-fix src/EOV6.C:459: the f0B9B header says it "selects the 8x8 font and region 2". The code selects region 0xb (line 477, `SetTextWindowAndClear(0xb)`); region 2 is not used. g8115 = 2 (line 478) is the value the header meant. Evidence: src/EOV1.ASM:2473-2475, the same routine (ovl1:13F7) clears window 0xB. Fixed: the header now says it selects text region 0xb and stores gStatusLine = 2 at ds:8115.
 - [x] must-fix src/EOV6.C:463: the f0B9B header says it is called "for 'You can't rest here, monsters are near.'". The only caller (line 330) runs when `result == 0`, that is when f09D2 found no object near (line 415 prints that message only on the path that returns 1). The message at key 0x2b is some other string. Say which message, or Purpose unknown. Fixed: the header now says the only caller's message is 0x2b; reading the far table at 2003:0000 (SkipStrings order) gives 0x2b = "All characters are fully rested.".
-- [x] must-fix src/EOV6.C:426-427 (f0A92 header): it says the memorized slots hold "a negative (not yet memorised) spell". The struct comment (line 25) says a negative memorized slot is "a spell ready to cast", and the healer casts negative memorized slots (lines 211-213, 218-225). The known slots are the ones memorised (lines 193-203). The code supports "ready to cast" for memorized; fix the f0A92 header. Fixed: the header now says a negative "memorized" slot is a spell ready to cast and a negative "known" slot is a spell still to be memorised.
+- [x] must-fix src/EOV6.C:426-427 (f0A92 header): it says the memorized slots hold "a negative (not yet memorised) spell". The struct comment (line 25) says a negative memorized slot is "a spell ready to cast", and the healer casts negative memorized slots (lines 211-213, 218-225). The known slots are the ones memorised (lines 193-203). The code supports "ready to cast" for memorized; fix the f0A92 header. Fixed: the header now says a negative "memorized" slot is a spell ready to cast and a negative "known" slot is a spell still to be memorised. Reopened in round 2 (wrong sign: a negative memorized slot is spent or not yet regained; see Round 2).
 - [x] should src/EOV6.C:75: the fifth parameter of DrawShadowText is named `flag` here. src/E082C.C:403 and src/E14EF.C:83 name it `extra`, and the caller passes gF57E or 0, not a flag. Rename it `extra`, and use "color" to match src/E14EF.C:83 (this file says "colour"). Fixed: the declaration is now `DrawShadowText(char *text, int x, int y, int color, int extra)`; the two "colour"s in f0858's header are now "color".
 - [x] should src/EOV6.C:86: `FindClassSlot(int value, int classIndex)`. The definition is `FindClassSlot(int slotId, int classIndex)` (src/E0A72.C:89). Use `slotId`. Fixed: renamed the first parameter to `slotId`.
 - [x] should src/EOV6.C:71 and 80: `FindCarriedSlot(int member, int what, int which)` and `DamageCharacter(int member, int what)`. The definitions are `FindCarriedSlot(int who, int field2, int fieldB)` (src/E0D1C.C:229) and `DamageCharacter(int who, int amount)` (src/E0DE8.C:540). Align with the owners, or keep placeholders; `amount` is evidenced by the caller's use, `what` is not. Fixed: the declarations are now `FindCarriedSlot(int who, int field2, int fieldB)` and `DamageCharacter(int who, int amount)`.
