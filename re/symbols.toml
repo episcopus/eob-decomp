@@ -104,9 +104,9 @@ unit = "e_text"
 addr = "0000:3F77"
 size = 83
 evidence = ["far"]
-name = "_f0_3F77"
 level = "L2"
 match_flags = "tasm /mx"
+name = "_StartAdlibDriver"
 
 [[function]]
 id = "e0000_3fca"
@@ -114,9 +114,9 @@ unit = "e_text"
 addr = "0000:3FCA"
 size = 42
 evidence = ["far"]
-name = "_f0_3FCA"
 level = "L2"
 match_flags = "tasm /mx"
+name = "_StopAdlibDriver"
 
 [[function]]
 id = "e0000_3ff4"
