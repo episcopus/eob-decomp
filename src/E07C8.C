@@ -1,12 +1,12 @@
 /* Unit at EOB.EXE 07C8:0001 (1610 bytes, 5 functions): the program's main, its start-up, and its
    shut-down. main (07C8:0001) reads the command line (graphics, sound, mouse, the "homie" marker,
    the video mode to restore), installs the INT 3Fh handler and the two allocation/exit hooks, then
-   runs 07C8:0199, which sets the video mode, sizes memory to the probed segment (the video-top
-   reading is [H], src/E1990.ASM:386-397), allocates the page/buffer table at ds:FC0C, loads the
-   overlays and the two fonts and turns sound on; on the way out 07C8:058A stops sound, removes the
-   mouse handler, restores the old INT 3Fh vector and exits.
-   07C8:061D returns 1 (the default exit hook at ds:80FA) and 07C8:0625 is the allocation failure
-   hook at ds:810A. WHITEPAPER 2.6 and 4.4. Compiled -ml -O -Z. */
+   runs 07C8:0199: it sets the video mode, reserves 2 x 32 KB below the probed video segment
+   (ReserveMemoryBelowVideo(3); its return memtop is the Tandy buffer base at :334; the video-top
+   reading is [H], src/E1990.ASM:386-397) and stores atol(g8894->number) in gMemTopSeg (:300); it
+   allocates the page/buffer table at ds:FC0C, loads the overlays and the two fonts and turns sound
+   on. On the way out 07C8:058A stops sound, removes the mouse handler, shuts the overlay cache down, restores the INT 1Ch and old INT 3Fh vectors, removes the keyboard, restores the video mode and exits.
+   07C8:061D returns 1 (the default exit hook at ds:80FA) and 07C8:0625 is the allocation failure hook at ds:810A. WHITEPAPER 2.6 and 4.4. Compiled -ml -O -Z. */
 
 #include <dos.h>
 
@@ -53,9 +53,9 @@ extern unsigned char gTandyOn;        /*@ ds:8A67: the driver select: 1 is Tandy
                                          (src/E1948.ASM:7, tested at :279, :379, :500, :527 and
                                          :553). StartupGame sets it to 1 on the Tandy path (:424),
                                          ShutdownGame clears it (:451) */
-extern unsigned gRestoreMode;         /*@ ds:84A0: the video mode restored on exit: set from
-                                         argv[5] (:224) and put back through f1DDD_002D(7) (:463,
-                                         :483; src/E1DDD.C:12-21) */
+extern unsigned gRestoreMode;         /*@ ds:84A0: the video mode restored on exit: set from argv[5]
+                                         (:224), put back through f1DDD_002D(7) on exit (:463, :483)
+                                         and on the error paths (:291, :310, :408; src/E1DDD.C:12-21) */
 extern void interrupt (far *gFC08)();  /*@ ds:FC08: the previous INT 3Fh vector: main saves the
                                          installed one here (:225) and ShutdownGame puts it back
                                          (:464). src/E1A72.ASM:160 calls it the previous INT 3Fh
@@ -87,23 +87,23 @@ extern int g80EA;                     /*@ ds:80EA: start-up flag set to 1 by mai
                                          seeds the keyboard modifier state (1AAD:0180, the value
                                          0110h at load); Purpose unknown beyond that */
 extern int gTextAttr2;                /*@ ds:811B: the second text attribute, the frame and fill
-                                         colour, default 0x0C (src/E122E.C:75, src/E1DE7.C:39,
-                                         src/EOV2.C:500) */
+                                         colour, set by main to 0xC (:252) and read as default 0x0C
+                                         (src/E122E.C:75, src/E1DE7.C:39, src/EOV2.C:500) */
 extern int gTextAttr1;                /*@ ds:811D: the first text attribute, the foreground colour,
-                                         default 0x0F (src/E122E.C:74, src/E1DE7.C:38,
-                                         src/EOV2.C:500) */
+                                         set by main to 0xF (:251) and read as default 0x0F
+                                         (src/E122E.C:74, src/E1DE7.C:38, src/EOV2.C:500) */
 extern void (far *gFn80BA)(void far *table); /*@ ds:80BA: the palette setter (src/EOV4.C:1035, :1060), called with the palette buffers (:242, :247, :377, :387); Purpose unknown beyond the palette: nothing in src/ assigns ds:80BA */
 extern void (far *gFn8056)(void);     /*@ ds:8056: far function called before the fonts load
                                          (:364). Purpose unknown: nothing in src/ assigns ds:8056
                                          (re/renames.toml:1297 has the name as inherited) */
 extern unsigned char far *gFE68;      /*@ ds:FE68: the palette buffer StartupGame allocates. The
-                                         g8102 - 1 case labels 0 and 1 (graphics choices 1 and 2,
-                                         :374) get 16 bytes, of which only byte 0 (:375, 0) and byte
-                                         0xf (:376, 0xf) are written, the other 14 keeping what
-                                         MemAlloc returned; case labels 2 and 3 (choices 3 and 4,
-                                         :381) get 0x300 bytes. Main loads eobpal.col over it for
-                                         choices 3 and 4 (:246) */
-extern unsigned char gPalette3057[];  /*@ ds:3057: the 16-byte colour table used when no palette loads */
+                                         g8102 - 1 case labels 0 and 1 (graphics choices 1 and 2, :374)
+                                         get 16 bytes, of which only byte 0 (:375, 0) and byte 0xf
+                                         (:376, 0xf) are written, the other 14 keeping what MemAlloc
+                                         returned; the setter is given g3057 (:377), not this, so those 16
+                                         bytes have no reader in src/. Case labels 2 and 3 (:381) get 0x300
+                                         bytes; main loads eobpal.col over it for choices 3 and 4 (:246), and the VGA choice (g8102 == 3) has src/EOV3.C:584 load `<script>.PAL` over it and src/EOV4.C:1054-1060 send it to the setter each frame */
+extern unsigned char g3057[];  /*@ ds:3057: the 16-byte table passed to the palette setter for graphics choices 1 and 2 (no eobpal.col); whether it is a palette is [H] (src/EOV4.C:1035) */
 extern void far *gFE5A;               /*@ ds:FE5A: the 8x8 font loaded from Font8.fnt (whitepaper
                                          4.4, docs/design/WHITEPAPER.md:171: FONT8.FNT is 8 x 8,
                                          checked by 1A47:0005; the file is 0x104 + 128 x 8 bytes) */
@@ -239,7 +239,7 @@ int AllocationFailure(void);
         switch (g8102 - 1) {
         case 0:
         case 1:
-            gFn80BA(gPalette3057);
+            gFn80BA(g3057);
             break;
         case 2:
         case 3:
@@ -366,15 +366,15 @@ int AllocationFailure(void);
     gA9C0 = f1A47_0005("FONT6.FNT");
     if (!gFE5A || !gA9C0)
         goto font_error;
-    f1A47_0169(gFE5A);          /* makes the 8x8 font current; the reason it goes before the 6x6
-                                   font loads is not in the file */
+    f1A47_0169(gFE5A);          /* makes the 8x8 font current after both fonts load; why it is set
+                                   here, after the loads, is not in the file */
     switch (g8102 - 1) {
     case 0:
     case 1:
         gFE68 = MemAlloc(0x10L, 0);
         gFE68[0] = 0;
         gFE68[0xf] = 0xf;
-        gFn80BA(gPalette3057);
+        gFn80BA(g3057);
         break;
     case 2:
     case 3:
@@ -407,7 +407,7 @@ int AllocationFailure(void);
 font_error:
     f1DDD_002D(7);              /* index 7 restores gRestoreMode (the argv[5] mode) */
     PrintString("\r\nUnable to load font ");
-    PrintString("Font8.fnt");
+    PrintString("Font8.fnt");   /* the message is a fixed string: it names Font8.fnt even when the 6x6 font was the one that failed */
     PrintString(". Reinstall program.\r\n");
     WaitGameKey();
     return 0;
@@ -431,8 +431,8 @@ done:
 /* 07C8:058A: the shut-down path, called by main. Stops sound the way the chosen card needs (AdLib
    driver off for gSoundCard 0, Tandy driver silenced to one voice and uninstalled for 2, only
    uninstalled for 1), calls the exit hook at ds:80FA, removes the mouse handler, stops the overlay
-   manager, restores the mode (argv[5]; :463) and the old INT 3Fh vector, then shrinks the last block
-   to gMemTopSeg (the atol value; whether that is the video top is [H]; src/E1990.ASM:386-391; also on the failed memory path); exit(). */
+   manager, restores the mode (argv[5]; :463) and the old INT 3Fh vector, then, for the Tandy graphics
+   choice only (g8102 == 1, :465; also on the failed memory path), shrinks the last block to gMemTopSeg (the atol value; whether that is the video top is [H]; src/E1990.ASM:386-391); exit(). */
 /*@ 07C8:058A */ void ShutdownGame(void)
 {
     switch (gSoundCard) {
