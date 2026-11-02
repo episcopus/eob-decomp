@@ -28,7 +28,8 @@ struct CharRec {            /* the 243-byte (0xF3) character records at ds:F580;
     signed char m20;        /* +20: an index into a class table */
     char pad21[3];
     signed char m24[3];     /* +24: three per-class-slot counters */
-    char pad27[0x77 - 0x27];
+    unsigned long m27[3];   /* +27: three per-class-slot experience totals (0DE8:0B45) */
+    char pad33[0x77 - 0x33];
     int m77[27];            /* +77: 27 carried-item slots (0D1C:00F1) */
     char padAD[0xDF - 0xAD];
     signed char mDF;        /* +DF */
@@ -170,6 +171,7 @@ extern void ShutdownGame(void); /*@ 07C8:058A */
 extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
 
 void f0DE8_09B9(int who, int what);  /* forward: 01FF reaches it with a far call */
+void f0DE8_0C82(int who, int attr, int slot);  /* forward: 0B45 reaches it with a far call */
 
 /* 0DE8:0007: the to-hit roll of character `who` against object `obj`. It derives an attack bonus
    from the item `slot` (the m02 kind selects the m0B weapon value when it is 1..3), adds either
@@ -542,7 +544,28 @@ fail:
     f1547_0991(who);
 }
 
-/*@ 0DE8:0B45 stub */ void f0DE8_0B45(int who, int amount) {}
+/* 0DE8:0B45: adds `amount` experience to character `who`'s three class slots. It divides `amount`
+   by g115F[cls] (the per-class divisor for m20), then for each slot 0..2 that GetClassSlotByte
+   accepts, accumulates the share into that slot's m27 total, reads the slot's next-level threshold
+   through GetClassSlotLong(cls, i, m24[i] + 1) and levels the slot up through f0DE8_0C82 when the
+   total has passed it. Called by 082C:... and 0DE8:0C2B. */
+/*@ 0DE8:0B45 */ void f0DE8_0B45(int who, int amount)
+{
+    int i;
+    int cls;
+    unsigned long value;
+
+    cls = gChars[who].m20;
+    amount /= g115F[cls];
+    for (i = 0; i < 3; i++) {
+        if (GetClassSlotByte(cls, i) == -1)
+            continue;
+        gChars[who].m27[i] += amount;
+        value = GetClassSlotLong(cls, i, gChars[who].m24[i] + 1);
+        if (value != -1 && gChars[who].m27[i] > value)
+            f0DE8_0C82(who, cls, i);
+    }
+}
 /* 0DE8:0C2B: gives `amount` experience to the whole party. It counts the members that pass
    f0D1C_0670(n, 3), divides `amount` by that count and calls f0DE8_0B45(n, amount) for each of
    them. Called by 08E6:0EC3 and 122E:1B5A. */
