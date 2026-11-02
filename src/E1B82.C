@@ -46,8 +46,10 @@ void Unpack(char far *src, void far *dst);
 
 /* 1B82:0009: reads len bytes of the file called name into buf: FileOpen in mode 1, FileRead, FileClose.
    QUIRK 1B82:0009: the FileOpen result is not checked. The handle is kept in SI (1B82:001F) and goes
-   straight to FileRead with no test. FileOpen returns 0xFFFF (-1) on failure (for example the path
-   at 1C0E:0121), so a failed open would read through that invalid handle. */
+   straight to FileRead with no test. One return path of FileOpen (1C0E:0121, reached in mode 1 through
+   1C0E:0127 and 1C0E:010C) sets ax to 0xFFFF (-1). The other return paths of 1C0E:00DB are not traced
+   here, and the result is not tested before FileRead, so a failed open would read through the handle
+   it returned. */
 /*@ 1B82:0009 */ void LoadFile(char far *name, void far *buf, unsigned len)
 {
     int handle;
@@ -127,7 +129,9 @@ void Unpack(char far *src, void far *dst);
         src += 2;                   /* block offset +2: skip the format byte and the pad byte */
         size = *(long far *)src;    /* block offset +2: the 32-bit unpacked size */
         src += 4;
-        skipLen = *(unsigned far *)src;  /* block offset +6: the u16 palette byte count, WHITEPAPER 4.2 (WHITEPAPER.md:151), 0 in all 131 format-4 entries of the PAK files */
+        /* block offset +6: the u16 palette byte count, WHITEPAPER 4.2 (WHITEPAPER.md:151), 0 in all
+           131 format-4 entries of the PAK files */
+        skipLen = *(unsigned far *)src;
         src += 2;
         src += skipLen;
         Unpack4(src, dst, (int)size); /* Unpack4 uses size's low word (1D9A:003B) */
