@@ -9244,6 +9244,8 @@ unit = "i0923"
 addr = "0923:0004"
 size = 12
 evidence = ["segment"]
+level = "L2"
+notes = "not a function: bytes of the unit outside its functions (a marker or padding), matched with the whole unit"
 
 [[function]]
 id = "i0923_0010"
@@ -9251,6 +9253,9 @@ unit = "i0923"
 addr = "0923:0010"
 size = 97
 evidence = ["near"]
+name = "CheckMCB"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "i0923_0071"
@@ -9258,6 +9263,9 @@ unit = "i0923"
 addr = "0923:0071"
 size = 194
 evidence = ["far", "frame"]
+name = "CheckMemoryChain"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "i0923_0133"
@@ -9265,6 +9273,9 @@ unit = "i0923"
 addr = "0923:0133"
 size = 330
 evidence = ["far", "frame"]
+name = "ReserveMemoryBelowVideo"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "i0923_027d"
@@ -9272,6 +9283,9 @@ unit = "i0923"
 addr = "0923:027D"
 size = 74
 evidence = ["frame"]
+name = "TrimMemoryToVideo"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "i094f_0007"
