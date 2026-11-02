@@ -685,7 +685,7 @@ Checks: `make match FILE=src/E1BB1.ASM` 1 of 1 (208 bytes, _SetMousePointerShape
 
 ### Findings
 
-- [ ] must-fix src/E1BB1.ASM:7-10 and re/renames.toml:181 (the caller text): both quote `gIconsDDE4[n]` and "when its n is above 0", but SetMouseItem's parameter is `item` (src/E07A9.C:239, renamed in the e07a9 round four) and its two calls read `SetMousePointerShape(MOUSE_HOTSPOT, MOUSE_HOTSPOT, gIconsDDE4[item])` (src/E07A9.C:268) and `SetMousePointerShape(0, 0, gIconsDDE4[item])` (src/E07A9.C:270). The test is also on the icon number, not the parameter: `item = gTable8DD2[item].icon` (src/E07A9.C:247) or `item = ICON_SLOT_TRANSLATED` (:265), then `if (item > 0)` (:267). The quoted call text is the evidence this header gives for the caller (playbook 70 and the ninth to tenth rounds), so it must be verbatim. Fix: write "when its icon number item is above 0" in the header and the registry, and `gIconsDDE4[item]` in both quoted calls. Evidence: `sed -n 239,271p src/E07A9.C`; `grep -n "gIconsDDE4\[n\]" src/E1BB1.ASM re/renames.toml` (the header lines 8, 9 and 10 and renames.toml:181).
+- [x] must-fix src/E1BB1.ASM:7-10 and re/renames.toml:181 (the caller text): both quote `gIconsDDE4[n]` and "when its n is above 0", but SetMouseItem's parameter is `item` (src/E07A9.C:239, renamed in the e07a9 round four) and its two calls read `SetMousePointerShape(MOUSE_HOTSPOT, MOUSE_HOTSPOT, gIconsDDE4[item])` (src/E07A9.C:268) and `SetMousePointerShape(0, 0, gIconsDDE4[item])` (src/E07A9.C:270). The test is also on the icon number, not the parameter: `item = gTable8DD2[item].icon` (src/E07A9.C:247) or `item = ICON_SLOT_TRANSLATED` (:265), then `if (item > 0)` (:267). The quoted call text is the evidence this header gives for the caller (playbook 70 and the ninth to tenth rounds), so it must be verbatim. Fix: write "when its icon number item is above 0" in the header and the registry, and `gIconsDDE4[item]` in both quoted calls. Evidence: `sed -n 239,271p src/E07A9.C`; `grep -n "gIconsDDE4\[n\]" src/E1BB1.ASM re/renames.toml` (the header lines 8, 9 and 10 and renames.toml:181). Fixed in 34aeb26: the header (now lines 7-10) says SetMouseItem (07A9:010C) passes the hot spot (8,8) "when its icon number item is above 0" and (0,0) otherwise, and quotes the two calls verbatim as `SetMousePointerShape(MOUSE_HOTSPOT, MOUSE_HOTSPOT, gIconsDDE4[item])` and `SetMousePointerShape(0, 0, gIconsDDE4[item])`; re/renames.toml:181 reads "when its icon number item is above 0 ... and the record gIconsDDE4[item] in both cases". Confirmed against src/E07A9.C:239 (`void SetMouseItem(int item)`), :247 (`item = gTable8DD2[item].icon`), :265 (`item = ICON_SLOT_TRANSLATED`), :267 (`if (item > 0)`) and :268/:270 (the two calls).
 - [ ] note src/E1BB1.ASM:101 (`db 0` at 1BB1:0001, the start marker): this is a data byte before the function, not code (the disassembly shows 1BB1:0002 `push bp`), and src/E1BA8.ASM:13 uses the same idiom. It is not a must-fix on this reading. AGENTS.md rule 2 bans `db` bytes that force a match, though, so the human should say whether this marker is allowed or whether the segment start needs another form. Flagged in the handoff note as a question; not an escalation by itself.
 - [ ] note for the owner of src/E07A9.C (not this unit): line 178 says "1BB1:0002 stores the hot-spot offset"; the function stores two words, the hot spot x and y (1BB1:0018..0021). The same registry text at re/renames.toml:1063 says "passes the item's icon gIconsDDE4[n]" for SetMouseItem, and the `SetMouseItem(int n)` declarations in src/E0BD2.C:118, src/E0ACD.C:69 and src/E0D1C.C:131 still say n while src/E07A9.C:239 says item. These are the e07a9 and other owners' files; this branch does not touch them.
 - [ ] note the open notes for other owners, still true at 1ad5e0d, and this branch does not touch them: src/E1BBE.ASM:65 cites "1BB1:0094" for the size query (the call is at 1BB1:006F); src/E1BBE.ASM:76 says "already hidden" (1BBE:0015 `jne 0075` increments the count); "semaphore" for ds:812E in src/E1A72.ASM:7 and :32 and src/E1BBE.ASM:28 (this unit says busy flag); and whether SetMouseItem can run before gIconsDDE4[0] is written (src/EOV2.C:209).
@@ -693,4 +693,28 @@ Checks: `make match FILE=src/E1BB1.ASM` 1 of 1 (208 bytes, _SetMousePointerShape
 ### Summary (eleventh review)
 
 The unit is understandable from its source alone. The bytes hold (1 of 1, 208 bytes), and the names have their evidence: SetMousePointerShape with its two callers, the busy flag gPointerBusy, gHideDepth, HidePointer and ShowPointer, the shape and buffer globals, and HEAP_BLOCK. The hide gates and the buffer test that QUIRK 2 relies on hold in the disassembly (1BBE:0015/0017/000D). What is wrong is the caller text: the header and the registry quote `gIconsDDE4[n]` and "its n", a name that SetMouseItem no longer uses since the e07a9 rename, so the quoted calls are not in src/E07A9.C. That is the one must-fix. The placeholders stay on purpose: g80AA, g80A2 and g80C6 (their callees are not lifted; the evidence is the call sites and the E1BBE.ASM and E1BF3.ASM comments), and g8172 and g8174 (the writer and reader are named, the argument's meaning is not known). Verdict: review-failed.
+
+## Decompiler response (eleventh review, 34aeb26)
+
+The one must-fix is addressed in commit 34aeb26 (src/E1BB1.ASM, re/renames.toml); it is ticked
+above with what changed. The header (now lines 7-10) says SetMouseItem (07A9:010C) passes the hot
+spot (8,8) "when its icon number item is above 0" and (0,0) otherwise, and the record
+`gIconsDDE4[item]` in both cases, quoting the two calls verbatim as
+`SetMousePointerShape(MOUSE_HOTSPOT, MOUSE_HOTSPOT, gIconsDDE4[item])` and
+`SetMousePointerShape(0, 0, gIconsDDE4[item])`; re/renames.toml:181 reads the same. Confirmed
+against src/E07A9.C:239 (`void SetMouseItem(int item)`), :247 (`item = gTable8DD2[item].icon`),
+:265 (`item = ICON_SLOT_TRANSLATED`), :267 (`if (item > 0)`) and :268/:270 (the two calls, both
+`gIconsDDE4[item]`).
+
+Verified: `make match FILE=src/E1BB1.ASM` 1 of 1 (208 of 208 bytes, _SetMousePointerShape 207
+bytes), `make readability UNIT=e1bb1` 0 findings, and re/globals.toml and re/renames.toml parse.
+Comments and registry text only; the bytes are unchanged (only the quoted call text changed).
+
+The remaining `note` items are for other owners or informational: the `db 0` start marker at
+1BB1:0001 (src/E1BB1.ASM:101, the same idiom as src/E1BA8.ASM:13) is raised with the human in the
+handoff note, since it is a data byte before the function and AGENTS rule 2 bans `db` bytes that
+force a match; src/E07A9.C:178 and re/renames.toml:1063, the `SetMouseItem(int n)` declarations in
+src/E0BD2.C:118, src/E0ACD.C:69 and src/E0D1C.C:131, and the open notes in src/E1BBE.ASM,
+src/E1A72.ASM and src/E07A9.C name other units' files. This unit's branch does not change other
+units' files, so they stay open for their owners.
 

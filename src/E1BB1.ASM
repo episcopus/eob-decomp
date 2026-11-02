@@ -5,9 +5,9 @@
 ; line 130: "The game draws its own pointer").
 ;
 ; 1BB1:0002 sets the mouse pointer's shape. Two callers. SetMouseItem (07A9:010C) passes the hot spot
-; (8,8) when its n is above 0 and (0,0) otherwise, and the record gIconsDDE4[n] in both cases (the
-; calls SetMousePointerShape(MOUSE_HOTSPOT, MOUSE_HOTSPOT, gIconsDDE4[n]) and
-; SetMousePointerShape(0, 0, gIconsDDE4[n]) in src/E07A9.C; the table holds item icon images, the
+; (8,8) when its icon number item is above 0 and (0,0) otherwise, and the record gIconsDDE4[item] in
+; both cases (the calls SetMousePointerShape(MOUSE_HOTSPOT, MOUSE_HOTSPOT, gIconsDDE4[item]) and
+; SetMousePointerShape(0, 0, gIconsDDE4[item]) in src/E07A9.C; the table holds item icon images, the
 ; comment just above gIconsDDE4). SetPointerShape (ovl2:0000, src/EOV2.C:206-211) passes (0,0) and
 ; gPtrDD00, which it has just set to gIconsDDE4[0] (EOV2.C:210-211); LoadItemData calls
 ; SetPointerShape at start-up (EOV2.C:451). The globals this function fills are the pointer's hot
