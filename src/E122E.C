@@ -5,9 +5,8 @@
    opcode consumed, or jump the pointer; the driver stops when a handler sets gA9EC. 147F is the big
    sub-dispatcher with its own in-segment jump table; the map folded the 122E:1194 play-sound handler
    into 1097 and the 122E:1A3B drain-item handler into 147F, and both are separate functions here.
-   Below L2: the writer 147F (stub) and five drafts (ArmMemberEffect 0154, ForceDoorAction 0325,
-   ItemSlotAction 06D0, WriteObjectFieldOp 0960, WriteObjectRunOp 0A16), each with its difference in
-   re/symbols.toml. */
+   Below L2: the writer 147F (stub) and four drafts (ForceDoorAction 0325, ItemSlotAction 06D0,
+   WriteObjectFieldOp 0960, WriteObjectRunOp 0A16), each with its difference in re/symbols.toml. */
 
 /*@flags -ml -O -Z */
 
