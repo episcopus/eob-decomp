@@ -1,7 +1,7 @@
 # Review: e_text
 
 Reviewer: rev-haiku
-Commit reviewed: round 1 at 2ba0b7c; round 2 at c003ada (see Findings, Round 2)
+Commit reviewed: round 1 at 2ba0b7c; round 2 at c003ada; round 3 at 3165a9c (see Findings, Round 3)
 
 Playbook 70. Judge what a matching file can still get wrong: names, types, comments, structure.
 The matcher already proved the bytes; do not re-prove them, read for meaning.
@@ -23,6 +23,31 @@ Not checked: the claim that the block's first word in ADLIB.DAT is 0258h (the fi
 
 Each finding is a checkbox. `must-fix` blocks `make review-pass` until a decompiler ticks it off
 (with the commit that fixes it); `should` and `note` do not block.
+
+### Round 3: must-fix items
+
+Reviewer: rev-haiku, round 3 at 3165a9c (playbook 70, later round). Scope: the round 2 must-fix and should items, and the changed lines since c003ada (`git diff c003ada 3165a9c -- src/E_TEXT.ASM re/symbols.toml re/globals.toml`; the fix commit is 03bd49c). re/symbols.toml and re/globals.toml have no e_text entry in that diff. Checked against the code: src/E_TEXT.ASM 157 to 181 (the byte count), 826 to 936 (UpdateVoices), 1059 to 1134 and 1180 to 1194 (the +29h and +2Bh setters), 1198 to 1217 (ACh, ADh), 1473 to 1529 (C1h and the gPatchTable readers), 1960 to 2019 (StartSample), 2196 to 2305 (the level routines, ClearVoice), 2370 to 2429 (VoiceSilence, L_4E7E). `make match FILE=src/E_TEXT.ASM` 44 of 44 (19996 of 19996 bytes), exit 0; `make readability UNIT=e_text` 0 findings. The matcher was not asked to re-prove the bytes.
+
+Round 2 must-fix items M1 to M10 are fixed right, and their ticks stay. Checked: M1 (14 non-zero bytes: two in dw 066Eh, two in dw 0671h, and ten of the twelve bytes at 0670h, 088h 001h 001h 008h 001h 018h 054h 0F2h 060h 046h); M2 (the final 20h to B0h at 4E79 leaves key-on set and B0h bits 0 and 1 zero, and VoiceSilence writes no A0h); M3 (419C jumps to 4267, past L_425F; the carry decrements +05h at 41D8; the script starts at L_41F9); M4 (43AD and 4729 load `mov si,[bx+gPatchTable]`, and LoadVoicePatch reads with lodsb); M5 (VoiceCarrierLevel adds [di] always, 2217; VoiceModulatorLevel adds it only under the +31h test, 2250 to 2253); M6 (L_4E94 negates the delta when `dec [di+1Ah]` gives zero, 2424 to 2428); M7 (41D8, then L_41F9); M8 (+29h is set by 91h at 1102, 92h at 1107, 95h at 1124, B6h at 1326 and ClearVoice at 2301; +2Bh by 8Dh at 1069, A7h at 1190 and ClearVoice at 2302); M9 (421A does lodsb and stores +34h when +32h or +33h is nonzero, 890 to 898); M10 (ClearVoice zeroes 40h bytes from +03h, 2290 to 2297; +00h to +02h are untouched).
+
+Round 2 should items S1 to S3 are fixed right, and their ticks stay: S1 names the eight registers the setup writes (1977 to 1996) and the post-poll B0h 20h and A0h 00h (2015 to 2018); S2 is the semicolon; S3 cites 41E8 (the `cmp al,[di+35h]` at 872).
+
+- [ ] must-fix M11 (changed by the round 2 fix; src/E_TEXT.ASM:313 and :318): "UpdateVoices adds +25h each tick" (313) and "UpdateVoices calls it every tick (425F)" (318) are wrong for a voice whose note delay is zero at the tick's start. At 419C the zero case jumps to 4267, past L_425F and the +25h add at 41CA, so the voice gets neither. The UpdateVoices header (829 to 832) says so. Fix: line 313 "UpdateVoices adds +25h each tick the voice is not skipped (419C)"; line 318 "UpdateVoices calls it each tick the voice is not skipped (419C, L_425F)". Line 319 (+2Bh) has the same "every tick" wording and round 2 did not touch it; fix it in the same edit (see the note below).
+
+### Round 3: should items
+
+None.
+
+### Round 3: notes
+
+- src/E_TEXT.ASM:319 (+2Bh, unchanged by round 2): the "every tick" wording of M11, the same fix. Left as a note because no round 2 fix touched that line.
+- src/E_TEXT.ASM:311 (+25h, unchanged): "UpdateVoices copies gTempoRate into it while +40h is set (41CA)". The copy (856 to 857) is before L_41CA (858), so the cite is the label after the copy. Cite the copy's own address, or say "before 41CA". Not a must-fix: the line did not change.
+- src/E_TEXT.ASM:1960 to 1964 (StartSample): the header lists the registers the setup writes, which is accurate as a set. The routine also sets PIT channel 0 to mode 36h and divisor 0000h before its poll (1972 to 1976), and writes B0h 00h, A0h 00h, A0h 8Fh and B0h 2Eh before the poll (1989 to 1996). A reader would want that in the header. Not a must-fix.
+- The round 2 notes stand; they were not re-read.
+
+### Round 3: summary
+
+One must-fix (M11, two wording lines in the record table, changed by the round 2 fix). Round 2 must-fix items M1 to M10 and should items S1 to S3 are fixed right, and their ticks stay. No matcher, spec or pin question. Nothing escalated.
 
 ### Round 2: must-fix items
 
