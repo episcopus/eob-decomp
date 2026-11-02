@@ -2601,3 +2601,21 @@ new = "DrawItemIcon"
 kind = "function"
 why = "draws the item icon of the ds:8DD2 record n at (x, y) from gIconsDDE4 (ds:DDE4); callers 0BD2:0917 (three sites, E0BD2.C:610) and 1547:07E7 (E1547.C:471) (review of e0d1c)"
 date = "2026-11-02"
+
+[[rename]]
+id = "0EF3:1DC0=FillPartyFood"
+addr = "0EF3:1DC0"
+old = "SetMemberLevels"
+new = "FillPartyFood"
+kind = "function"
+why = "0EF3:1DC0 sets every member's +0x23 to 100, the hunger/food value EatFood clamps at 100 (src/E0ACD.C:108, :623); 0BD2 case 5 does the same write (src/E0BD2.C:746)"
+date = "2026-11-02"
+
+[[rename]]
+id = "ds:5737=g5737"
+addr = "ds:5737"
+old = "gText5737"
+new = "g5737"
+kind = "global"
+why = "ds:5737 is a word table of animation frames (0EF3:2EBC reads it as frameTable[row6 >> 8], :2415), not a string; the gText prefix is this file's prefix for strings. No other src/ file names ds:5737"
+date = "2026-11-02"
