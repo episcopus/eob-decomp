@@ -158,11 +158,11 @@ void f122E_1DA8(int a, int b);  /* forward: 1DA8 comes after its callers */
 
 /* 122E:0933: set the driver mode to 0x40, work out the member's row through f0D1C_00DA and run the
    row handler f122E_0896. QUIRK 122E:0933: the argument is raised by 0x3c and then never read. */
-/*@ 122E:0933 */ void RunRowHandler(int a)
+/*@ 122E:0933 */ void RunRowHandler(int entry)
 {
     int x;
 
-    a += 0x3c;
+    entry += 0x3c;
     gEFD2 = 0x40;
     x = f0D1C_00DA(gSoundVolume, gFBCC);
     f122E_0896(x, gFBCC);
