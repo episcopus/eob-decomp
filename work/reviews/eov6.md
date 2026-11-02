@@ -1,7 +1,7 @@
 # Review: eov6
 
 Reviewer: rev-haiku
-Commit reviewed: dbf4ce2 (main, round 2; round 1 reviewed 4afb5a6, when I started; this branch was at 1e58aea)
+Commit reviewed: b71e380 (main, round 3; round 2 reviewed dbf4ce2, round 1 reviewed 4afb5a6, when I started; this branch was at 1e58aea; review/eov6 is at 0d46c17, whose src/EOV6.C and re/globals.toml are the same as main's)
 
 Playbook 70. Judge what a matching file can still get wrong: names, types, comments, structure.
 The matcher already proved the bytes; do not re-prove them, read for meaning.
@@ -10,6 +10,48 @@ The matcher already proved the bytes; do not re-prove them, read for meaning.
 
 Each finding is a checkbox. `must-fix` blocks `make review-pass` until a decompiler ticks it off
 (with the commit that fixes it); `should` and `note` do not block.
+
+### Round 3 (rev-haiku, at b71e380)
+
+Playbook 70, later round. Judged: the round 2 must-fix and shoulds (fix commit d105793, merged in 6ca33d3)
+and the changes since dbf4ce2 on main (`git diff dbf4ce2 main -- src/EOV6.C re/symbols.toml re/globals.toml`:
+the d105793 comment and name edits in src/EOV6.C, and the gClickX and gClickY `why` text in
+re/globals.toml from ca7be3d; re/symbols.toml changed only for other units, the e1948 twin entries, and
+none for ovl6). Checked: `make match FILE=src/EOV6.C` 6 of 6 (3258 of 3258 bytes), exit 0; `make
+readability UNIT=eov6` 0 findings. Checked against the code and the bytes: the sign of the memorized
+slots (the regain at src/EOV6.C:196-202 turns a negative slot positive and prints "gained"; the healer's
+cases 2, 0xf and 0x14 at :244-256 match positive values and negate them; the class-2 grant at :298-302
+finds 0xffe8, the byte -0x18, and writes 0x18; f0A92 returns 1 on a negative memorized slot at :470-475);
+the QUIRK reads in build/re/eob-overlays/ovl06.bin (07C9 is `83 7e fa 00`, cmp word ptr [bp-6],0; 07D9 is
+`8b 46 fa`, mov ax,[bp-6]; 0765 is `74 3e`, a je to 07A5); src/E0A72.C:29 (`char pad21[3]`); the ClickInRect
+cite (src/E082C.C:529-531) and src/E14EF.C:325 (IsPointInRect reads the click point); DrawShadowText's
+colour2 forwarding (src/E082C.C:467-472).
+
+Round 2 must-fix (item 27, reopened): fixed right. The f0A92 header and the struct comment on `memorized`
+now state the sign the code shows (positive: ready to cast; negative: spent or not yet regained). Tick
+stays. The round 2 shoulds hold: the f0858 cite, the DrawShadowText declaration, the level cite, the
+QUIRK and the FindClassSlot note. The flag 3 gate is in, with one gap (the should below).
+
+- [ ] must-fix src/EOV6.C:116 (the CampLoop header, the 24-hour sentence): "every 24 hours it damages a
+  member with flag 3 at level 0 above 0xf6 hit points" is wrong. `hp` is a `signed char` (src/EOV6.C:17),
+  and the test at :320 is `hp > (signed char)0xf6`, that is hp > -10. No member has 246 hit points as a
+  signed char, so the sentence names a threshold no member can reach. Say "above -10 hit points
+  (hp > (signed char)0xf6; hp is a signed char)". The sentence was rewritten by d105793 (the flag 3 gate),
+  so it is a changed line.
+- [ ] should src/EOV6.C:113-115: the regain and the level drop (:306-319) apply only to a member above level
+  0 (`if (gChars[member].level != 0)`), and the 24-hour damage to a member at level 0 (:320). The header
+  gives the level 0 condition for the damage only. Say "for a member with flag 3 above level 0".
+- [ ] should src/E082C.C:465 (owner e082c, the DrawShadowText header): "src/EOV6.C:399" is a stale line cite
+  into this unit. src/EOV6.C:399 is `if (draw) {`; the two DrawShadowText calls of f0858 are at
+  src/EOV6.C:405 and :411. The owner should cite the address (f0858, ovl6:0858) or those two lines. This
+  unit's file does not change for it.
+- [ ] note make match still prints "unit eov6 not complete: ours 3258 bytes, the unit 3258" (rounds 1 and 2).
+  The print is the cmatch `ovl is None` test (tools/match/cmatch.py:605). review-pass does not depend on it:
+  tools/agent/review.py:29 checks unit_complete (every function at L2, tools/agent/common.py:190). A cosmetic
+  matcher question for the human, not a review blocker.
+
+Round 3 verdict: not passed. One must-fix (new: the 24-hour threshold, a changed line). The round 2
+must-fix is fixed right and stays ticked.
 
 ### Round 2 (rev-haiku, at dbf4ce2)
 
