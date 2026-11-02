@@ -469,7 +469,7 @@ why = "I0892.C (already merged) declares intro/ds:1F8E as gGraphicsChoice (argv[
 [[global]]
 id = "ds:80C6"
 name = "gSaveRectSize"
-why = "an indirect far function that returns the save-under buffer size in bytes for a (width, height) request; DisplayFileError (1C0E:0ADD) calls it before MemAlloc (src/E1C0E.C:554), and E1BB1.ASM:33 describes the query"
+why = "an indirect far function that returns the save-under buffer size in bytes for a (width, height) request; DisplayFileError (1C0E:0ADD) calls it before MemAlloc (src/E1C0E.C:553), and E1BB1.ASM:33 describes the query"
 
 [[global]]
 id = "ds:FE5A"
@@ -479,12 +479,12 @@ why = "the 8x8 font loaded from Font8.fnt; E07C8.C:376 loads it (gFont8x8 = f1A4
 [[global]]
 id = "ds:8104"
 name = "gFatalHandler"
-why = "the fatal file error handler, a far pointer at ds:8104; the image holds 1C0E:0D9B (ShowMessage) there (EOB.EXE file offset 2BBE4) and FatalError (1C0E:00AA) calls it (src/E1C0E.C:177, :178)"
+why = "the fatal file error handler, a far pointer at ds:8104; the image holds 1C0E:0D9B (ShowMessage) there (EOB.EXE file offset 2BBE4) and FatalError (1C0E:00AA) calls it (src/E1C0E.C:176, :177)"
 
 [[global]]
 id = "ds:8111"
 name = "gRetryHandler"
-why = "the retry file error handler, a far pointer at ds:8111; the image holds 1C0E:0ADD (DisplayFileError) there (EOB.EXE file offset 2BBF1) and RetryFile (1C0E:0046) calls it (src/E1C0E.C:166)"
+why = "the retry file error handler, a far pointer at ds:8111; the image holds 1C0E:0ADD (DisplayFileError) there (EOB.EXE file offset 2BBF1) and RetryFile (1C0E:0046) calls it (src/E1C0E.C:165)"
 
 [[global]]
 id = "intro/ds:1EE2"

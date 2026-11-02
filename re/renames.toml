@@ -2248,7 +2248,7 @@ addr = "ds:80C6"
 old = "g80C6"
 new = "gSaveRectSize"
 kind = "global"
-why = "an indirect far function that returns the save-under buffer size in bytes for a (width, height) request; DisplayFileError (1C0E:0ADD) calls it before MemAlloc (src/E1C0E.C:554), and E1BB1.ASM:33 describes the query"
+why = "an indirect far function that returns the save-under buffer size in bytes for a (width, height) request; DisplayFileError (1C0E:0ADD) calls it before MemAlloc (src/E1C0E.C:553), and E1BB1.ASM:33 describes the query"
 date = "2026-11-02"
 
 [[rename]]
@@ -2266,7 +2266,7 @@ addr = "ds:8104"
 old = "g8104"
 new = "gFatalHandler"
 kind = "global"
-why = "the fatal file error handler, a far pointer at ds:8104; the image holds 1C0E:0D9B (ShowMessage) there (EOB.EXE file offset 2BBE4) and FatalError (1C0E:00AA) calls it (src/E1C0E.C:177, :178)"
+why = "the fatal file error handler, a far pointer at ds:8104; the image holds 1C0E:0D9B (ShowMessage) there (EOB.EXE file offset 2BBE4) and FatalError (1C0E:00AA) calls it (src/E1C0E.C:176, :177)"
 date = "2026-11-02"
 
 [[rename]]
@@ -2275,7 +2275,7 @@ addr = "ds:8111"
 old = "g8111"
 new = "gRetryHandler"
 kind = "global"
-why = "the retry file error handler, a far pointer at ds:8111; the image holds 1C0E:0ADD (DisplayFileError) there (EOB.EXE file offset 2BBF1) and RetryFile (1C0E:0046) calls it (src/E1C0E.C:166)"
+why = "the retry file error handler, a far pointer at ds:8111; the image holds 1C0E:0ADD (DisplayFileError) there (EOB.EXE file offset 2BBF1) and RetryFile (1C0E:0046) calls it (src/E1C0E.C:165)"
 date = "2026-11-02"
 
 [[rename]]
