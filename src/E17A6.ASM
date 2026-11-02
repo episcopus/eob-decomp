@@ -105,14 +105,15 @@ gSaveBuf db 16 dup (0)           ; 0304: backing store for the far pointer that 
                                  ; redirects (the game's 16 bytes are copied in by the L0446 block
                                  ; and back by L04EE; src/E1A72.ASM, the 1A72:02FE comment). Its
                                  ; port shadows: bytes 3, 6, 11, 12 and 15 take the EGA register
-                                 ; values written between L0461 and L04EE.
+                                 ; values written by DrawTile's EGA tile paths (the L0461, L04EE
+                                 ; and L0586/L05AB blocks) and by SetPlaneAndWrite (17A6:0EEE).
 ; ---- 0314..037E
 ; 17A6:0314: return a direction 0..7 (0xFF when none) from two packed map cells (y * 32 + x, a
 ; 10-bit value): divide each by 32 into its x remainder and y quotient, compare the remainders
 ; and quotients, and index the 16-byte table at ds:7FBC (index 0 to 15; FF is the "no
-; direction" value at indexes 0, 3, 7 and 11 to 15). Callers pass (obj->id, gPartyCell,
-; ds:FBCA) and use the result as an orientation (08E6:000B) and a direction (08E6:00C3,
-; 08E6:0430, 08E6:0765, 0D1C:09CB).
+; direction" value at indexes 0, 3, 7 and 11 to 15). Callers pass (obj->id, gPartyCell),
+; gPartyCell at ds:FBCA, and use the result as an orientation (08E6:000B) and a direction
+; (08E6:00C3, 08E6:0430, 08E6:0765, 0D1C:09CB).
         PUBLIC  _DirectionFromPoints              ; @ 17A6:0314
 _DirectionFromPoints PROC FAR
         push bp
@@ -218,8 +219,8 @@ _SetPlaneTables ENDP
 
 ; ---- data 03AF..03BF
 ; 17A6:03AF: 16-byte plane table, filled by SetPlaneTables (17A6:037E) from the first far
-; pointer (ds:F4D6); DrawTile's MCGA/VGA branch (L0ADA onward, taken for gGraphicsChoice 3
-; and 4) indexes it with a nibble to pick the plane of a pixel.
+; pointer (ds:F4D6); DrawTile's MCGA/VGA branch (L0ADA onward, taken for gGraphicsChoice 3,
+; 4 and any other value) indexes it with a nibble to pick the plane of a pixel.
 gPlaneTableA:
         db      00h, 01h, 02h, 03h, 04h, 05h, 06h, 07h, 08h, 09h, 0Ah, 0Bh, 0Ch, 0Dh, 0Eh, 0Fh
 ; ---- data 03BF..03CF
