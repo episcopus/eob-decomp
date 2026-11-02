@@ -7,7 +7,9 @@
 
 /*@flags -ml -O -Z */
 
-extern unsigned char gB894[]; /*@ ds:B894 */   /* nine-byte per-object records (src/E08E6.C) */
+extern signed char gB894[]; /*@ ds:B894 */     /* nine-byte per-object records (src/E08E6.C) */
+extern signed char gTable18BF[]; /*@ ds:18BF */ /* per-object-kind table (Purpose unknown) */
+extern int gEFD2; /*@ ds:EFD2 */               /* the mode the driver runs a script in (src/E0ACD.C) */
 extern char gA9EC; /*@ ds:A9EC */              /* set by a handler to stop the driver's script walk */
 extern int gF50E; /*@ ds:F50E */               /* the depth of the far pointer stack the driver pushes to */
 extern void far *gScriptStack[]; /*@ ds:F444 */ /* the ten-deep far pointer stack the driver pushes to */
@@ -45,9 +47,10 @@ extern void DamageCharacter(int who, int amount); /*@ 0DE8:09B9 */
 extern int far RollDice(char count, char sides, char bonus); /*@ 082C:0458 */
 extern int f0D1C_0163(int who, int fieldB); /*@ 0D1C:0163 */
 extern void fOvl5_1A82(int x); /*@ 211E:0057 */   /* overlay 5 entry, ovl5:1A82 */
+void f122E_1DA8(int a, int b);  /* forward: 1DA8 comes after its callers */
 
 /*@ 122E:0001 stub */ void f122E_0001(void) {}
-/*@ 122E:0055 stub */ void f122E_0055(void) {}
+/*@ 122E:0055 stub */ int f122E_0055(int id) { return 0; }
 
 /* 122E:0137: push bit 0 of the frame-count byte of the gB894 record `id`. Called by 147F for one
    sub-opcode. Purpose unknown: the opcode it implements is not identified. */
@@ -63,9 +66,52 @@ extern void fOvl5_1A82(int x); /*@ 211E:0057 */   /* overlay 5 entry, ovl5:1A82 
 /*@ 122E:0271 stub */ void f122E_0271(void) {}
 /*@ 122E:0325 stub */ void f122E_0325(void) {}
 /*@ 122E:04CA stub */ void f122E_04CA(void) {}
-/*@ 122E:05DF stub */ void f122E_05DF(void) {}
-/*@ 122E:0620 stub */ void f122E_0620(void) {}
-/*@ 122E:0678 stub */ void f122E_0678(void) {}
+
+/* 122E:05DF: look up the object kind in gB894[id * 9 + slot] and, if f122E_0055 accepts it, run the
+   driver for `id` in the current mode gEFD2. Returns 1 when it ran, 0 otherwise. */
+/*@ 122E:05DF */ int PerformItemSlotAction(int id, int slot)
+{
+    int kind;
+
+    kind = gTable18BF[gB894[id * 9 + slot]];
+    if (f122E_0055(kind)) {
+        f122E_1DA8(id, gEFD2);
+        return 1;
+    }
+    return 0;
+}
+
+/* 122E:0620: raise the count in gB894[id * 9 + slot] when f122E_0055 accepts the object kind,
+   mark the action dirty and run the driver. Returns 1 when it ran, 0 otherwise. */
+/*@ 122E:0620 */ int IncreaseItemSlot(int id, int slot)
+{
+    int kind;
+
+    kind = gTable18BF[gB894[id * 9 + slot]];
+    if (f122E_0055(kind)) {
+        gB894[id * 9 + slot]++;
+        gDF4C = 1;
+        f122E_1DA8(id, gEFD2);
+        return 1;
+    }
+    return 0;
+}
+
+/* 122E:0678: lower the count in gB894[id * 9 + slot] when f122E_0055 accepts the object kind,
+   mark the action dirty and run the driver. Returns 1 when it ran, 0 otherwise. */
+/*@ 122E:0678 */ int DecreaseItemSlot(int id, int slot)
+{
+    int kind;
+
+    kind = gTable18BF[gB894[id * 9 + slot]];
+    if (f122E_0055(kind)) {
+        gB894[id * 9 + slot]--;
+        gDF4C = 1;
+        f122E_1DA8(id, gEFD2);
+        return 1;
+    }
+    return 0;
+}
 /*@ 122E:06D0 stub */ void f122E_06D0(void) {}
 /*@ 122E:0847 stub */ void f122E_0847(void) {}
 /*@ 122E:0896 stub */ void f122E_0896(void) {}
@@ -280,16 +326,16 @@ extern void fOvl5_1A82(int x); /*@ 211E:0057 */   /* overlay 5 entry, ovl5:1A82 
 /*@ 122E:1C16 */ long TurnPageOp(char far *script)
 {
     int op;
-    int val;
+    int delta;
     struct DDRec far *rec;
     char far *start = script;
     int i;
 
     op = *script++;
-    val = *script++;
+    delta = *script++;
     switch (op) {
     case 0xFFF1:
-        gFBCC = (gFBCC + val) & 3;
+        gFBCC = (gFBCC + delta) & 3;
         gEFB2 = (char)0xff;
         gDF4C = 1;
         break;
@@ -297,7 +343,7 @@ extern void fOvl5_1A82(int x); /*@ 211E:0057 */   /* overlay 5 entry, ovl5:1A82 
         rec = gDD2C;
         for (i = 0; i < 10; i++) {
             if (rec->active != 0 && rec->m04 == gB800)
-                rec->m07 = (rec->m07 + val) & 3;
+                rec->m07 = (rec->m07 + delta) & 3;
             rec++;
         }
         break;
@@ -315,4 +361,4 @@ extern void fOvl5_1A82(int x); /*@ 211E:0057 */   /* overlay 5 entry, ovl5:1A82 
     return (long)(script - start);
 }
 
-/*@ 122E:1DA8 stub */ void f122E_1DA8(void) {}
+/*@ 122E:1DA8 stub */ void f122E_1DA8(int a, int b) {}

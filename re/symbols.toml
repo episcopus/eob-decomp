@@ -3867,6 +3867,9 @@ unit = "e122e"
 addr = "122E:05DF"
 size = 65
 evidence = ["frame"]
+name = "PerformItemSlotAction"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e122e_0620"
@@ -3874,6 +3877,9 @@ unit = "e122e"
 addr = "122E:0620"
 size = 88
 evidence = ["frame"]
+name = "IncreaseItemSlot"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e122e_0678"
@@ -3881,6 +3887,9 @@ unit = "e122e"
 addr = "122E:0678"
 size = 88
 evidence = ["frame"]
+name = "DecreaseItemSlot"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e122e_06d0"
