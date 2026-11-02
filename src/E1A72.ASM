@@ -54,8 +54,9 @@
         ;                                              conditions as x
         EXTRN   g813C:WORD              ; @ ds:813C: x of the event just handled
         EXTRN   g813E:WORD              ; @ ds:813E: y of the event just handled
-        EXTRN   g8144:WORD              ; @ ds:8144: 1 when the driver's reset x is not 0A0h, which
-        ;                                              InitMouse reads as a 640 wide mode [H]
+        EXTRN   g8144:WORD              ; @ ds:8144: 1 when the x that function 3 reads after the
+        ;                                              reset is not 0A0h, which InitMouse reads as a
+        ;                                              640 wide mode [H]
         EXTRN   _gHideDepth:WORD              ; @ ds:8146: nonzero suppresses the pointer redraw;
         ;                                              InitMouse sets it to 1, so the pointer starts
         ;                                              hidden until ShowPointer runs
@@ -78,18 +79,20 @@
         ;                                              1A72:0104); this unit never reads it: the
         ;                                              handler clamps no y at all
         EXTRN   _gDrawnX:WORD              ; @ ds:815C: the position the pointer was last drawn at,
-        ;                                              copied there by ShowPointer (E1BBE.ASM:188, :193)
+        ;                                              copied there by ShowPointer (E1BBE.ASM:214-215)
         EXTRN   _gDrawnY:WORD              ; @ ds:815E: the position the pointer was last drawn at,
-        ;                                              copied there by ShowPointer (E1BBE.ASM:188, :193)
+        ;                                              copied there by ShowPointer (E1BBE.ASM:219-220)
         EXTRN   _gPointerState:WORD              ; @ ds:8160: pointer state bits: 8000h the pointer is
         ;                                              hidden over the hide zone, 4000h a redraw is
         ;                                              requested, low byte a counter (E1BBE.ASM)
         EXTRN   _gZoneLeft:WORD              ; @ ds:8162: hide zone, left in pixels, stored reduced
-        ;                                              (the argument less the pointer width, E1BBE.ASM:328-332);
+        ;                                              (the argument less the pointer width, E1BBE.ASM:341,
+        ;                                              store at :329-330);
         ;                                              1A72:0244 compares it, but the QUIRK there
         ;                                              skips the check
         EXTRN   _gZoneTop:WORD              ; @ ds:8164: hide zone, top in pixels, stored reduced
-        ;                                              (the argument less the pointer height, E1BBE.ASM:338-339)
+        ;                                              (the argument less the pointer height, E1BBE.ASM:348,
+        ;                                              store at :329-330)
         EXTRN   _gZoneRight:WORD              ; @ ds:8166: hide zone, right in pixels
         EXTRN   _gZoneBottom:WORD              ; @ ds:8168: hide zone, bottom in pixels
         EXTRN   g8172:WORD              ; @ ds:8172: far pointer argument, offset
@@ -417,7 +420,7 @@ L02A4:  pop     bp
 _RemoveMouseHandler ENDP
 
 ; 1A72:02A6: 1 when the position the pointer was last drawn at (DGROUP:815C/815E, the copy ShowPointer
-; makes of the mouse position at E1BBE.ASM:188, :193, so it is where the pointer sits after a show)
+; makes of the mouse position at E1BBE.ASM:214-215, :219-220, so it is where the pointer sits after a show)
 ; lies inside the rectangle [bp+6, bp+0Ah] x [bp+8, bp+0Ch]
 ; inclusive, 0 otherwise. It spins at 1A72:02B9 while the busy flag at DGROUP:812E is set, takes the
 ; flag, copies the drawn position through DGROUP:8026/8028, tests it and releases the flag.
