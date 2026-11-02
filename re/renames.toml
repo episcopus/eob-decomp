@@ -1640,6 +1640,42 @@ why = "0A72:0522 returns the number a d20 to-hit roll must reach before the atta
 date = "2026-11-01"
 
 [[rename]]
+id = "ovl0:065B=DrawCharPanel"
+addr = "ovl0:065B"
+old = "Ovl0_065B"
+new = "DrawCharPanel"
+kind = "function"
+why = "ovl0:065B draws a character's panel page (sprite, name, race, class, three stat lines and the mode's highlighted icons); called by 0A5E/0DDC/0EE5/135D/23EC"
+date = "2026-11-01"
+
+[[rename]]
+id = "ovl0:1BF2=RollCharacterStats"
+addr = "ovl0:1BF2"
+old = "Ovl0_1BF2"
+new = "RollCharacterStats"
+kind = "function"
+why = "ovl0:1BF2 rolls a fresh character's six ability scores, m24/exp per class, hit points and the class combat tables; called by 0DDC and 23EC"
+date = "2026-11-01"
+
+[[rename]]
+id = "ovl0:23EC=CreateCharacter"
+addr = "ovl0:23EC"
+old = "Ovl0_23EC"
+new = "CreateCharacter"
+kind = "function"
+why = "ovl0:23EC is the character-creation driver: race (PickOption), class (207A), alignment (2238), RollCharacterStats (1BF2), the panel loop (0DDC) and the name field; called by 28F9"
+date = "2026-11-01"
+
+[[rename]]
+id = "ovl0:0A5E=PickPartySlot"
+addr = "ovl0:0A5E"
+old = "Ovl0_0A5E"
+new = "PickPartySlot"
+kind = "function"
+why = "ovl0:0A5E is the party-position screen: it assigns the current member gDCB0 a slot from the 0x2c panel cells, redrawing the four cells and taking left/right/confirm; called by 0DDC and 0EE5"
+date = "2026-11-01"
+
+[[rename]]
 id = "0000:3F77=StartAdlibDriver"
 addr = "0000:3F77"
 old = "f0_3F77"
