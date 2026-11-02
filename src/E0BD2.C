@@ -94,7 +94,7 @@ extern char gF51A; /*@ ds:F51A */           /* the selected row (src/E0D1C.C) */
 extern char gFB44; /*@ ds:FB44 */           /* a display-mode byte (src/E0D1C.C) */
 extern int gFBC8; /*@ ds:FBC8 */            /* the current action (src/E0D1C.C) */
 extern int gFBCC; /*@ ds:FBCC */            /* a page number 0..3 (src/E0D1C.C) */
-extern int gSoundVolume; /*@ ds:FBCA */     /* the global sound volume (src/E177D.C) */
+extern int gPartyCell; /*@ ds:FBCA */     /* the global sound volume (src/E177D.C) */
 extern int gMouseDisabled; /*@ ds:814A */   /* nonzero disables the mouse (src/E07A9.C) */
 extern int g8115; /*@ ds:8115 */            /* nonzero while a status line is up (src/E082C.C) */
 extern int g8102; /*@ ds:8102 */            /* nonzero: a colour row exists (src/E07A9.C) */
@@ -790,7 +790,7 @@ next:
         return;
     }
     page = gFBCC;
-    x = f0D1C_00DA(gSoundVolume, page);
+    x = f0D1C_00DA(gPartyCell, page);
     y = f0D1C_00DA(x, page);
     PlaySound(0x62);
     f0EF3_06E7();

@@ -43,7 +43,7 @@ extern char gFB34; /*@ ds:FB34 */           /* the index of the party member bei
                                                none (src/EOV2.C) */
 extern int gFBCC; /*@ ds:FBCC */            /* a page number 0..3 (kept modulo 4 by this unit,
                                                src/E0D1C.C) */
-extern int gSoundVolume; /*@ ds:FBCA */     /* the global sound volume (src/E0D1C.C) */
+extern int gPartyCell; /*@ ds:FBCA */     /* the global sound volume (src/E0D1C.C) */
 extern char gEFB2; /*@ ds:EFB2 */           /* set to 0xff when the sound page changes */
 extern char gDCAA; /*@ ds:DCAA */           /* a 1..2 step counter (0753) */
 extern int gEFD2; /*@ ds:EFD2 */            /* set to 0xff by 08E7 */
@@ -133,7 +133,7 @@ extern void RunEffects(void); /*@ 1414:04E7 */
 extern void TurnUndead(void); /*@ 0D1C:0A43 */
 extern void RedrawCharacters(void); /*@ 0D1C:0583 */
 extern void PlaySoundDefault(int sound); /*@ 177D:00F3 */
-extern void PlaySoundVolume(int sound, int volume); /*@ 177D:0106 */
+extern void PlaySoundAtCell(int sound, int volume); /*@ 177D:0106 */
 extern void SetTextWindow(int n); /*@ 1DE7:0009 */
 extern void LoadScreenImage(char far *name, char far *extra, int srcKind, int dstKind, int mode); /*@ 082C:051B */
 extern void f1A47_0169(char far *font); /*@ 1A47:0169 */
@@ -382,7 +382,7 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
     int item = f0D1C_02DC();
 
     if (item) {
-        if (AddDDEffect(gA99A, item, gSoundVolume, g1A1B[action->slot + gFBCC * 4], gFBCC,
+        if (AddDDEffect(gA99A, item, gPartyCell, g1A1B[action->slot + gFBCC * 4], gFBCC,
                        gTable8DD2[item].m02)) {
             SetMouseItem(0);
             gDF4C = 1;
@@ -391,12 +391,12 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
     return action->result;
 }
 
-/* 0ACD:04F8: plays the sound for the current page: f0D1C_0080 maps gSoundVolume and gFBCC to a
+/* 0ACD:04F8: plays the sound for the current page: f0D1C_0080 maps gPartyCell and gFBCC to a
    sound, played through SetSoundVolume, and the "You can't go that way." fallback runs when it is -1.
    Returns the record's +4. */
 /*@ 0ACD:04F8 */ int Action04F8(struct Action far *action)
 {
-    int x = f0D1C_0080(gSoundVolume, gFBCC);
+    int x = f0D1C_0080(gPartyCell, gFBCC);
 
     if (x != -1)
         SetSoundVolume(x);
@@ -409,7 +409,7 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
 /*@ 0ACD:0529 */ int Action0529(struct Action far *action)
 {
     int page = (gFBCC + 2) % 4;
-    int x = f0D1C_0080(gSoundVolume, page);
+    int x = f0D1C_0080(gPartyCell, page);
 
     if (x != -1)
         SetSoundVolume(x);
@@ -450,7 +450,7 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
 
     if (page < 0)
         page = 3;
-    x = f0D1C_0080(gSoundVolume, page);
+    x = f0D1C_0080(gPartyCell, page);
     if (x != -1)
         SetSoundVolume(x);
     else
@@ -465,7 +465,7 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
     int x;
 
     page %= 4;
-    x = f0D1C_0080(gSoundVolume, page);
+    x = f0D1C_0080(gPartyCell, page);
 
     if (x != -1)
         SetSoundVolume(x);
@@ -475,7 +475,7 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
 }
 
 /* 0ACD:0644: uses the item in the slot at `action` on the selected character. For slot 0 or 1 the
-   volume is the global gSoundVolume; for a higher slot it is gSoundVolume plus the per-page
+   volume is the global gPartyCell; for a higher slot it is gPartyCell plus the per-page
    pageVolume[] adjustment and the action only proceeds when the object there (gB894/g194B) is
    flagged (bits 0..3 of g194B). The per-page, per-slot kind is slotKind[]; a nonzero current item
    is queued for use through InsertListItem (and the sound f122E_1DA8), otherwise the first matching
@@ -498,9 +498,9 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
 
     slot = action->slot;
     if (slot < 2) {
-        vol = gSoundVolume;
+        vol = gPartyCell;
     } else {
-        vol = gSoundVolume + pageVolume[gFBCC];
+        vol = gPartyCell + pageVolume[gFBCC];
         if (!(g194B[gB894[vol * 9 + gA9C6]] & 0xB))
             return 1;
     }
@@ -588,12 +588,12 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
     return action->result;
 }
 
-/* 0ACD:08E7: Purpose unknown: derives a key from gSoundVolume and gFBCC (f0D1C_00DA), sets
+/* 0ACD:08E7: Purpose unknown: derives a key from gPartyCell and gFBCC (f0D1C_00DA), sets
    gEFD2 to 0xff, passes the key and the page to f122E_0896 and the selected character gA99A to
    ComputeArmourClass. */
 /*@ 0ACD:08E7 */ void Action08E7(void)
 {
-    int x = f0D1C_00DA(gSoundVolume, gFBCC);
+    int x = f0D1C_00DA(gPartyCell, gFBCC);
 
     gEFD2 = 0xff;
     f122E_0896(x, gFBCC);
@@ -709,10 +709,10 @@ done:
     value = g3744[gA99A];
     value = g373C[gFBCC * 2 + value];
     if (used == 0) {
-        InsertListItem((void far *)(gB899 + gSoundVolume * 9), gSoundVolume, item, value);
-        f122E_1DA8(gSoundVolume, 4);
+        InsertListItem((void far *)(gB899 + gPartyCell * 9), gPartyCell, item, value);
+        f122E_1DA8(gPartyCell, 4);
     } else {
-        flag = AddDDEffect(gA99A, item, gSoundVolume, value, gFBCC, gTable8DD2[item].m02);
+        flag = AddDDEffect(gA99A, item, gPartyCell, value, gFBCC, gTable8DD2[item].m02);
     }
     if (flag != 0) {
         if (gMouseDisabled == 0 || gF51A != 0x10)
@@ -750,7 +750,7 @@ call:
     int vol;
     int item;
 
-    vol = gSoundVolume;
+    vol = gPartyCell;
     if (*(int *)(gB899 + vol * 9) == 0) {
         if (*(int *)(gB899 + f0D1C_00DA(vol, gFBCC) * 9) == 0)
             goto done;
@@ -765,9 +765,9 @@ call:
             count++;
         }
         if (g374A[gEFB2] != 0)
-            vol = f0D1C_00DA(gSoundVolume, gFBCC);
+            vol = f0D1C_00DA(gPartyCell, gFBCC);
         else
-            vol = gSoundVolume;
+            vol = gPartyCell;
         value = g1A1B[gFBCC * 4 + gEFB2];
         item = RemoveListItem((void far *)(gB899 + vol * 9), value, -1);
         if (item != 0 && item != gF3BA) {
@@ -882,10 +882,10 @@ done:
     gFC5A = g8492 + (long)(RollDice(1, 10, 3) * 0x12);
     EnterMapScreen();
     LockShowPointer();
-    gFC58 = gSoundVolume;
+    gFC58 = gPartyCell;
     g8134 = 0;
     for (;;) {
-        gFC58 = gSoundVolume;
+        gFC58 = gPartyCell;
         Action0E6C();
         RunEffects();
         if (gDF4C)
@@ -893,7 +893,7 @@ done:
         if (gFC5A < g8492) {
             if (gFBC8 > 0 && gFBC8 < 4) {
                 gFC5A = g8492 + (long)(RollDice(1, 10, 3) * 0x12);
-                PlaySoundVolume(0x1E, gSoundVolume + RollDice(1, 12, -1));
+                PlaySoundAtCell(0x1E, gPartyCell + RollDice(1, 12, -1));
             }
         }
         PlaySoundDefault(0);
@@ -936,7 +936,7 @@ done:
 /*@ 0ACD:1033 */ void ResetMapScreen(void)
 {
     fOvl3_0A7C(1);
-    gSoundVolume = 0x1EA;
+    gPartyCell = 0x1EA;
     gFBCC = 0;
     if (!gMouseDisabled)
         SetMouseItem(0);

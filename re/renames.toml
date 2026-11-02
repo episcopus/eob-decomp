@@ -277,7 +277,7 @@ addr = "177D:00F3"
 old = ""
 new = "PlaySoundDefault"
 kind = "function"
-why = "calls PlaySoundVolume with the global volume ds:FBCA; the wrapper the game uses when it gives no volume"
+why = "calls PlaySoundAtCell with the party's map cell ds:FBCA as the sound's cell; the wrapper the game uses when it gives no cell"
 date = "2026-11-01"
 
 [[rename]]
@@ -304,7 +304,7 @@ addr = "ds:80E6"
 old = ""
 new = "gSoundOn"
 kind = "global"
-why = "the sound-on flag from argv[2] (whitepaper 2.6): PlaySound and PlaySoundVolume return at once when it is zero"
+why = "the sound-on flag from argv[2] (whitepaper 2.6): PlaySound and PlaySoundAtCell return at once when it is zero"
 date = "2026-11-01"
 
 [[rename]]
@@ -322,7 +322,7 @@ addr = "ds:009E"
 old = ""
 new = "gSpeakerMode"
 kind = "global"
-why = "Purpose unknown: when 1 the PC-speaker path of PlaySound/PlaySoundVolume gates the speaker on the sign of the sound number through ds:8A67"
+why = "Purpose unknown: 1 only on the Tandy path (src/E07C8.C:307), where the speaker path of PlaySound/PlaySoundAtCell drives ds:8A67; the sign test that would clear it is dead (gSoundMap is unsigned char)"
 date = "2026-11-01"
 
 [[rename]]
@@ -331,7 +331,7 @@ addr = "ds:8A67"
 old = ""
 new = "gSpeakerOn"
 kind = "global"
-why = "the PC-speaker gate bit toggled by the sign of the sound number when gSpeakerMode is 1, then applied by 1948:0458"
+why = "the PC speaker / Tandy driver select applied by 1948:0458 (E1948.ASM: 1 is Tandy, 0 is PC speaker); PlaySound (177D:0070) and PlaySoundAtCell (177D:0106) set it to 1, and their 0 stores (177D:00B3, 177D:021E) are dead (inside the `driverSound < 0` / `gCurSound < 0` blocks); the live 0 writer is ShutdownGame (src/E07C8.C:329)"
 date = "2026-11-01"
 
 [[rename]]
@@ -340,7 +340,7 @@ addr = "ds:5E22"
 old = ""
 new = "gCurSound"
 kind = "global"
-why = "the driver sound number PlaySoundVolume is playing; it guards the retune and becomes gSoundMap[sound] at the end"
+why = "the driver sound number PlaySoundAtCell is playing; it guards the retune and becomes gSoundMap[sound] at the end"
 date = "2026-11-01"
 
 [[rename]]
@@ -385,7 +385,7 @@ addr = "ds:FBCA"
 old = ""
 new = "gSoundVolume"
 kind = "global"
-why = "the default sound volume PlaySoundDefault (177D:00F3) passes and PlaySoundVolume uses to derive the level"
+why = "the party's map cell PlaySoundDefault (177D:00F3) passes; renamed gPartyCell when the callers showed it is a cell, not a volume (see the ds:FBCA=gPartyCell entry below)"
 date = "2026-11-01"
 
 [[rename]]
@@ -1285,7 +1285,7 @@ addr = "ds:5E24"
 old = "gCurVolume"
 new = "gCurAttenuation"
 kind = "global"
-why = "the attenuation of the recorded sound gCurSound: 0 means no fade, a larger value fades the level further toward full attenuation (177D:01AF), and 10h or more skips the AdLib play (177D:012B); computed from f17A6_0F61(gSoundVolume, volume) at 177D:026E, used only in src/E177D.C"
+why = "the attenuation of the recorded sound gCurSound: 0 means no fade, a larger value fades the level further toward full attenuation (177D:01AF), and 10h or more skips the AdLib play (177D:012B); computed from Distance(gPartyCell, cell) at 177D:026E, used only in src/E177D.C"
 date = "2026-11-01"
 
 [[rename]]
@@ -1331,6 +1331,24 @@ old = "mcbseg"
 new = "gMcbSeg"
 kind = "global"
 why = "MCB of our own allocated block, set by CheckMemoryChain at 1990:0088 and read by CheckMCB and CheckMemoryChain; READABILITY.md asks for the g prefix (no other file declares the address; it is code segment data annotated with a plain `;` comment, so rename.py could not bind it and the label was renamed in place)"
+date = "2026-11-01"
+
+[[rename]]
+id = "ds:FBCA=gPartyCell"
+addr = "ds:FBCA"
+old = "gSoundVolume"
+new = "gPartyCell"
+kind = "global"
+why = "the party's map cell: ResetMapScreen sets it to 0x1EA (src/E0ACD.C:939), monsters are measured from it (Distance(party cell, monster cell) < 2, src/EOV6.C:410), PlaySoundAtCell's callers pass an object's cell as the sound source (src/E08E6.C:346 and :553 to :596) and it is passed with that cell to Distance (17A6:0F61, 177D:026A), which reads each argument as a packed 5-bit coordinate pair (src/E17A6.ASM:1466); objects are compared with it (src/E08E6.C:331, :462) and it indexes the nine-byte cell records (src/E0D1C.C:352)"
+date = "2026-11-01"
+
+[[rename]]
+id = "177D:0106=PlaySoundAtCell"
+addr = "177D:0106"
+old = "PlaySoundVolume"
+new = "PlaySoundAtCell"
+kind = "function"
+why = "plays the game sound recorded by the previous call at the map cell its second argument names: the attenuation is Distance(party cell, cell) at 177D:0261 to 0279, and the callers pass an object's cell as the sound source (src/E08E6.C:346, :553 to :596; src/E0ACD.C:896), so the second argument is a cell, not a loudness"
 date = "2026-11-01"
 
 [[rename]]

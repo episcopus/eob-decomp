@@ -91,7 +91,7 @@ extern char gB894[]; /*@ ds:B894 */             /* nine-byte records (src/E0D1C.
 extern signed char g194B[]; /*@ ds:194B */      /* byte table indexed by a gB894 byte (src/E0D1C.C) */
 extern signed char g181F[]; /*@ ds:181F */      /* byte table indexed by a ds:8DD2 icon in 003E */
 extern int gEFD2; /*@ ds:EFD2 */                /* an error code set by 003E */
-extern int gSoundVolume; /*@ ds:FBCA */         /* the global sound volume (src/E177D.C) */
+extern int gPartyCell; /*@ ds:FBCA */         /* the global sound volume (src/E177D.C) */
 extern unsigned char far *gEF6A[]; /*@ ds:EF6A */ /* 18 far pointers, walked by 04B0 */
 extern signed char gA9C6; /*@ ds:A9C6 */      /* an offset added into gEF6A's targets */
 extern int gFB78; /*@ ds:FB78 */              /* a flag toggled by 04B0 */
@@ -218,7 +218,7 @@ extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
         }
         return 0;
     } else {
-        if (index == gSoundVolume)
+        if (index == gPartyCell)
             return RunRecordAttack(rec);
         return 0;
     }

@@ -80,7 +80,7 @@ extern int gFE42; /*@ ds:FE42 */
 extern char gScrollOn; /*@ ds:8110 */
 extern unsigned long gFC04; /*@ ds:FC04 */
 extern int gFBCC; /*@ ds:FBCC */
-extern int gSoundVolume; /*@ ds:FBCA */
+extern int gPartyCell; /*@ ds:FBCA */
 extern signed char g1A1B[]; /*@ ds:1A1B */
 extern char gB899[]; /*@ ds:B899 */
 extern struct CharRec gChars[]; /*@ ds:F580 */
@@ -273,7 +273,7 @@ void PrintTableString(int index, int flag);
 /*@ ovl5:070E stub */ void Ovl5_070E(int who) {}
 /*@ ovl5:0828 stub */ void Ovl5_0828(int who, int which, int head, int other) {}
 /* ovl5:08D2: turns item `n` into a carried item (CopyItemToFreeSlot) and queues it on the list
-   head gB899 for the current sound page (gSoundVolume) with a random page sound. Called by the
+   head gB899 for the current sound page (gPartyCell) with a random page sound. Called by the
    panels that add an item to a character. */
 /*@ ovl5:08D2 */ void QueueItem(int item)
 {
@@ -281,7 +281,7 @@ void PrintTableString(int index, int flag);
 
     item = CopyItemToFreeSlot(item);
     sound = g1A1B[gFBCC * 4 + RollDice(1, 2, -1)];
-    InsertListItem(&gB899[gSoundVolume * 9], gSoundVolume, item, sound);
+    InsertListItem(&gB899[gPartyCell * 9], gPartyCell, item, sound);
 }
 
 /* ovl5:0924: the temple/NPC panel. Clears the panel, draws message 8 and shows the menu ds:7BB2
@@ -562,7 +562,7 @@ void PrintTableString(int index, int flag);
                 if (item = gChars[i].m77[j]) {
                     if (gTable8DD2[item].m02 < 0x33 || gTable8DD2[item].m02 > 0x38) {
                         gChars[i].m77[j] = 0;
-                        InsertListItem(&gB899[gSoundVolume * 9], gSoundVolume, item,
+                        InsertListItem(&gB899[gPartyCell * 9], gPartyCell, item,
                                        g1A1B[gFBCC * 4 + RollDice(1, 2, -1)]);
                     }
                 }

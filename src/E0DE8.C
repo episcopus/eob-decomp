@@ -120,7 +120,7 @@ extern signed char g553E[]; /*@ ds:553E */   /* a byte table used by 0D5E */
 extern signed char g54F6[]; /*@ ds:54F6 */   /* byte table indexed by m17 (src/E0D1C.C) */
 extern unsigned char gFBD2; /*@ ds:FBD2 */   /* bit 0 gates the icon colour row (src/E07A9.C) */
 extern int gFBCC; /*@ ds:FBCC */             /* a page number 0..3 (src/E0D1C.C) */
-extern int gSoundVolume; /*@ ds:FBCA */      /* the global sound volume (src/E177D.C) */
+extern int gPartyCell; /*@ ds:FBCA */      /* the global sound volume (src/E177D.C) */
 extern signed char gF57E; /*@ ds:F57E */     /* a colour read by 0D1C:0C21 */
 extern signed char gFB4C; /*@ ds:FB4C */     /* a colour read by 0D1C:0C21 */
 extern signed char gF53A; /*@ ds:F53A */     /* a colour read by 0D1C:0C21 */
@@ -306,7 +306,7 @@ void LevelUpSlot(int who, int attr, int slot);  /* forward: 0B45 reaches it with
     return 1;
 }
 /* 0DE8:0359: one item/effect attack by character `who` on the item slot `slot`. It rejects a
-   `who` above 1 with -3, then looks the action up through f0D1C_00DA(gSoundVolume, gFBCC) and
+   `who` above 1 with -3, then looks the action up through f0D1C_00DA(gPartyCell, gFBCC) and
    f08E6_15B4. A -1 target with g1905[gB894[value * 9 + gA9C6]] at 0xFF bumps two gB894 cells and
    returns -2, otherwise -1. A real target demands the 0007 to-hit roll (returns -1 on a miss),
    and when the slot's m02 is 0x34..0x38 f0D1C_0BAB can also fail it; the surviving hit is rolled
@@ -321,7 +321,7 @@ void LevelUpSlot(int who, int attr, int slot);  /* forward: 0B45 reaches it with
 
     if (who > 1)
         return -3;
-    value = f0D1C_00DA(gSoundVolume, gFBCC);
+    value = f0D1C_00DA(gPartyCell, gFBCC);
     target = f08E6_15B4(who, value);
     if (target == -1) {
         if (g1905[gB894[value * 9 + gA9C6]] == 0xff) {
@@ -370,7 +370,7 @@ fail:
 }
 /* 0DE8:0537: tries to use the item in the carried slot `slot` of character `who` against the
    item type `field`. It dispatches through AddDDEffect (the item's m02, gFBCC, the g1A1B page
-   byte, gSoundVolume); on success it plays sound 0x0B, clears gChars[who].m77[slot] and refills
+   byte, gPartyCell); on success it plays sound 0x0B, clears gChars[who].m77[slot] and refills
    it through MoveCarriedItem(who, slot, -1, 0), setting gDF4C. Returns 0. Called by 0DE8:0763. */
 /*@ 0DE8:0537 */ int UseCarriedItem(int who, int slot, int field)
 {
@@ -379,7 +379,7 @@ fail:
     idx = who;
     if (idx > 3)
         idx -= 2;
-    if (AddDDEffect(who, field, gSoundVolume, g1A1B[gFBCC * 4 + idx], gFBCC,
+    if (AddDDEffect(who, field, gPartyCell, g1A1B[gFBCC * 4 + idx], gFBCC,
                    gTable8DD2[field].m02)) {
         PlaySound(0xb);
         gChars[who].m77[slot] = 0;
@@ -436,7 +436,7 @@ fail:
         idx = who;
         if (idx > 3)
             idx -= 2;
-        if (AddDDEffect(who, item, gSoundVolume, g1A1B[idx + gFBCC * 4], gFBCC, m02)) {
+        if (AddDDEffect(who, item, gPartyCell, g1A1B[idx + gFBCC * 4], gFBCC, m02)) {
             if (m02 == 7)
                 PlaySound(0x1a);
             else
