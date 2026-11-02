@@ -2981,7 +2981,10 @@ unit = "e0d1c"
 addr = "0D1C:0163"
 size = 103
 evidence = ["far", "frame"]
-notes = "retry under -v (2026-11-02): the unit now builds with -v, which keeps identical tails apart; the difference below was found under the wrong switches. Earlier: compiler codegen. With `if (item = rec->m77[i])` the draft matches every byte except one 2-byte instruction: the original reloads `item` into AX before the first multiply (0D1C:0194 `mov ax,di`; both multiplies use `mov ax,di`), while our `-ml -O -Z` build still has AX equal to `item` from the `or ax,ax; je` at 0D1C:0190 and elides the first load (every later byte identical, 101 against 103 bytes). TCC `-O` redundant-register-load elimination. TCC -c probes on the same shape (far 14-byte struct, `if (item = a[i]) { if (tab[item]..) }`) elided it for every form tried: separate assignment then `if (item)`, `!= 0`, the multiply read as a second variable, `register`/`long`/`unsigned`/`volatile` item, nested ifs, `||`, a label or an empty block before the use, and an extra local; only dropping `-O` keeps the load, and `-ml -Z` matches only 6 of 26 functions. No source form found."
+notes = "matched 2026-11-02 under -v: the redundant `mov ax,di` reload before the first multiply (0D1C:0194) is what TCC -O keeps when the loop body follows an early `continue`, not an `if` around it. The source is `for (i = 25; i <= 26; i++) { if (!(item = rec->m77[i])) continue; if (gTable8DD2[item].m02 == 0x2F && gTable8DD2[item].m0B == fieldB) return 1; }`; with `if (item = rec->m77[i]) { ... }` TCC elides the load (101 of 103 bytes). Probes: -O elides with or without -Z/-v/-G/-P; without -O the load stays but the trailing `jmp` is kept too; the same redundant-load-after-early-exit quirk is in the e08E6 note."
+name = "f0D1C_0163"
+level = "L2"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e0d1c_01ca"
