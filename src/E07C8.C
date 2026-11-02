@@ -60,7 +60,7 @@ extern void TrimMemoryToVideo(void);              /*@ 1990:027D */
 extern void RemoveMouseHandler(void);                   /*@ 1A72:0285 */
 extern void ShutdownOverlayCache(void);                     /*@ 1C0E:13FD */
 extern void f1D8F_0038(void);                     /*@ 1D8F:0038 */
-extern void SoundDriverPause(void);               /*@ 1948:046B */
+extern void SoundDriverSilenceToOneVoice(void);               /*@ 1948:046B */
 extern void SoundDriverUninstall(void);           /*@ 1948:03DA */
 extern void f0_3FCA(void);                        /*@ 0000:3FCA: e_text, the PC speaker driver off */
 extern void exit(int status);                     /*@ 0000:50F3 */
@@ -325,7 +325,7 @@ done:
         SoundDriverUninstall();
         break;
     case 2:
-        SoundDriverPause();
+        SoundDriverSilenceToOneVoice();
         gTandyOn = 0;
         SoundDriverUninstall();
         break;

@@ -1584,3 +1584,12 @@ new = "gTickSeconds"
 kind = "global"
 why = "counts [H] seconds up to 60, not a phase: incremented once per 292-tick period (E1948.ASM 1948:001A) and wrapped at 3Bh (1948:0023 to 0025); nothing outside this unit reads it"
 date = "2026-11-01"
+
+[[rename]]
+id = "1948:046B=SoundDriverSilenceToOneVoice"
+addr = "1948:046B"
+old = "SoundDriverPause"
+new = "SoundDriverSilenceToOneVoice"
+kind = "function"
+why = "1948:046B silences the three voices (_SetThreeVoices 1948:034A) then drops to one-voice output (_SetOneVoice 1948:0367); only called on the way out (ShutdownGame, src/E07C8.C:328); it does not pause the song (gPlaying and the timer keep running)"
+date = "2026-11-01"
