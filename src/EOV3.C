@@ -22,6 +22,22 @@ struct Triple6 {            /* six bytes, the record InitGameTables clears */
 };
 
 extern struct Triple6 gA99C[]; /*@ ds:A99C */
+extern void far *gB802[]; /*@ ds:B802 */
+extern int g6930[]; /*@ ds:6930 */
+extern int g69C0[]; /*@ ds:69C0 */
+extern int g6A50[]; /*@ ds:6A50 */
+extern int g8115; /*@ ds:8115 */
+extern char gOverlayBuf[]; /*@ ds:113F */
+
+struct Rect {               /* a four-word cell rectangle (x, y, w, h) */
+    int x;
+    int y;
+    int w;
+    int h;
+};
+
+extern void far * (far *gGetSpriteCell)(int x, int y, int w, int h, void far *sheet); /*@ ds:8086 */
+extern int sprintf(char far *buf, char far *fmt, ...); /*@ 0000:57AE */
 
 struct WallDec {            /* a 52-byte wall set decoration */
     char idx[0xc];
@@ -113,9 +129,53 @@ struct WallDec {            /* a 52-byte wall set decoration */
 }
 /*@ ovl3:03A2 stub */ void Ovl3_03A2(void) {}
 /*@ ovl3:05D2 stub */ void Ovl3_05D2(void) {}
-/*@ ovl3:0624 stub */ void Ovl3_0624(void) {}
-/*@ ovl3:069E stub */ void Ovl3_069E(void) {}
-/*@ ovl3:0718 stub */ void Ovl3_0718(void) {}
+/* ovl3:0624: loads the overlay screen `screen` and slices six map icon cells out of gOverlayBuf
+   (ds:113F), one per 4-word rectangle in the table at ds:6930, into gB802 starting at index
+   `dest`. Clears g8115. No direct caller found. */
+/*@ ovl3:0624 */ void LoadMapIcons6(char far *screen, int dest)
+{
+    int n;
+    int i;
+    int si;
+
+    LoadOverlayScreen(screen, 5, 3);
+    n = 6;
+    for (i = 0, si = 0; i < n; si += 4, i++)
+        gB802[dest + i] = gGetSpriteCell(g6930[si], g6930[si + 1], g6930[si + 2],
+            g6930[si + 3], gOverlayBuf);
+    g8115 = 0;
+}
+/* ovl3:069E: the same as ovl3:0624 but slices the six cells from the 4-word rectangle table at
+   ds:69C0 instead of ds:6930. No direct caller found. */
+/*@ ovl3:069E */ void LoadMapIcons6b(char far *screen, int dest)
+{
+    int n;
+    int i;
+    int si;
+
+    LoadOverlayScreen(screen, 5, 3);
+    n = 6;
+    for (i = 0, si = 0; i < n; si += 4, i++)
+        gB802[dest + i] = gGetSpriteCell(g69C0[si], g69C0[si + 1], g69C0[si + 2],
+            g69C0[si + 3], gOverlayBuf);
+    g8115 = 0;
+}
+/* ovl3:0718: builds the screen name `name` + "1" through sprintf("%s1"), loads it through
+   LoadOverlayScreen and slices six map icon cells out of gOverlayBuf using the 4-word rectangle
+   table at ds:6A50 into gB802 starting at index `dest`. Clears g8115. No direct caller found. */
+/*@ ovl3:0718 */ void LoadNamedIcons(char far *name, int dest)
+{
+    char buf[0x28];
+    int i;
+    int si;
+
+    sprintf(buf, "%s1", name);
+    LoadOverlayScreen(buf, 5, 3);
+    for (i = 0, si = 0; i < 6; si += 4, i++)
+        gB802[dest + i] = gGetSpriteCell(g6A50[si], g6A50[si + 1], g6A50[si + 2],
+            g6A50[si + 3], gOverlayBuf);
+    g8115 = 0;
+}
 /*@ ovl3:07A5 stub */ void Ovl3_07A5(void) {}
 /*@ ovl3:0951 stub */ void Ovl3_0951(void) {}
 /*@ ovl3:09AA stub */ void Ovl3_09AA(void) {}

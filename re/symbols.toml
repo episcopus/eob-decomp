@@ -7077,6 +7077,9 @@ unit = "eov3"
 addr = "ovl3:0624"
 size = 122
 evidence = ["ovl", "frame"]
+name = "LoadMapIcons6"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov3_069e"
@@ -7084,6 +7087,9 @@ unit = "eov3"
 addr = "ovl3:069E"
 size = 122
 evidence = ["ovl", "frame"]
+name = "LoadMapIcons6b"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov3_0718"
@@ -7091,6 +7097,9 @@ unit = "eov3"
 addr = "ovl3:0718"
 size = 141
 evidence = ["ovl", "frame"]
+name = "LoadNamedIcons"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov3_07a5"
