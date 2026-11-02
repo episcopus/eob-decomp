@@ -2950,6 +2950,7 @@ evidence = ["far", "segment"]
 name = "f0D1C_0006"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0d1c_003f"
@@ -2960,6 +2961,7 @@ evidence = ["far", "frame"]
 name = "SelectCharacter"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0d1c_006d"
@@ -2970,6 +2972,7 @@ evidence = ["far", "frame"]
 name = "f0D1C_006D"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0d1c_0078"
@@ -2980,6 +2983,7 @@ evidence = ["far", "frame"]
 name = "f0D1C_0078"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0d1c_0080"
@@ -2990,6 +2994,7 @@ evidence = ["far", "frame"]
 name = "f0D1C_0080"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0d1c_00da"
@@ -3000,6 +3005,7 @@ evidence = ["far", "near", "frame"]
 name = "f0D1C_00DA"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0d1c_00f1"
@@ -3010,6 +3016,7 @@ evidence = ["near", "frame"]
 name = "FindCarriedSlot"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0d1c_0163"
@@ -3021,6 +3028,7 @@ notes = "matched 2026-11-02 under -v: the redundant `mov ax,di` reload before th
 name = "f0D1C_0163"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0d1c_01ca"
@@ -3031,6 +3039,7 @@ evidence = ["frame"]
 name = "RemoveCarriedItems"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0d1c_02dc"
@@ -3041,6 +3050,7 @@ evidence = ["far", "frame"]
 name = "GetCurrentItem"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0d1c_0304"
@@ -3051,6 +3061,7 @@ evidence = ["far", "frame"]
 name = "SetCurrentItem"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0d1c_035a"
@@ -3061,6 +3072,7 @@ evidence = ["frame"]
 name = "f0D1C_035A"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0d1c_0454"
@@ -3071,6 +3083,7 @@ evidence = ["frame"]
 name = "DrawRowList"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0d1c_0583"
@@ -3081,6 +3094,7 @@ evidence = ["far", "frame"]
 name = "RedrawCharacters"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0d1c_059b"
@@ -3091,6 +3105,7 @@ evidence = ["far", "frame"]
 name = "f0D1C_059B"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0d1c_0670"
@@ -3101,6 +3116,7 @@ evidence = ["far", "near", "frame"]
 name = "f0D1C_0670"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0d1c_070f"
@@ -3111,6 +3127,7 @@ evidence = ["far", "frame"]
 name = "DrawItemIcon"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0d1c_07a7"
@@ -3121,6 +3138,7 @@ evidence = ["far", "frame"]
 name = "SkipStrings"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0d1c_07db"
@@ -3131,6 +3149,7 @@ evidence = ["far", "frame"]
 name = "f0D1C_07DB"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0d1c_08b1"
@@ -3141,6 +3160,7 @@ evidence = ["near", "frame"]
 name = "f0D1C_08B1"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0d1c_0903"
@@ -3152,6 +3172,7 @@ notes = "matched 2026-11-02 under -v: the game modules were compiled with debug 
 name = "f0D1C_0903"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0d1c_09cb"
@@ -3162,6 +3183,7 @@ evidence = ["near", "frame"]
 name = "f0D1C_09CB"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0d1c_0a43"
@@ -3173,6 +3195,7 @@ notes = "matched 2026-11-01: the m0F test at 0D1C:0B17 is `mov ax,word [bx+0x1a4
 name = "TurnUndead"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0d1c_0bab"
@@ -3183,6 +3206,7 @@ evidence = ["far", "frame"]
 name = "f0D1C_0BAB"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0d1c_0beb"
@@ -3193,6 +3217,7 @@ evidence = ["far", "frame"]
 name = "f0D1C_0BEB"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0d1c_0c21"
@@ -3203,6 +3228,7 @@ evidence = ["frame"]
 name = "f0D1C_0C21"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0de8_0007"

@@ -1,7 +1,8 @@
 # Review: e0d1c
 
 Reviewer: rev-haiku
-Commit reviewed: afdb33a (main; src/E0D1C.C and re/symbols.toml are identical on review/e0d1c at 7d4b343)
+Commit reviewed: afdb33a (round 1, main; src/E0D1C.C and re/symbols.toml are identical on review/e0d1c at 7d4b343)
+Round 2 at b45d745 (main, after round 1 was merged as 5529429): diff since afdb33a of src/E0D1C.C, re/symbols.toml and re/globals.toml
 
 Playbook 70. Judge what a matching file can still get wrong: names, types, comments, structure.
 The matcher already proved the bytes; do not re-prove them, read for meaning.
@@ -10,6 +11,49 @@ The matcher already proved the bytes; do not re-prove them, read for meaning.
 
 Each finding is a checkbox. `must-fix` blocks `make review-pass` until a decompiler ticks it off
 (with the commit that fixes it); `should` and `note` do not block.
+
+### Round 2 (rev-haiku, b45d745)
+
+Later round (playbook 70): the round 1 must-fix items are judged, and the changed lines since afdb33a
+are read. `make match FILE=src/E0D1C.C` 26 of 26 (3265 bytes), exit 0; `make readability UNIT=e0d1c`
+0 findings. The round 1 must-fix ticks stay: each is fixed right.
+
+- gPartyCell (ds:FBCA, src/E0D1C.C:43): "the party's map cell" with 0D1C:035A, 0D1C:09CB and the
+  E177D.C and EOV4.C declarations; the reading is this unit's own use, as round 1 asked.
+- GetCurrentItem (0D1C:02DC, :319): the mouse test is the right way round (`!gMouseDisabled` returns gFBCE).
+- f0D1C_07DB (0D1C:07DB, :535): flag 0 returns `slot0 == 0 || result0 != 0`, as the comment says.
+- ItemInfo m00 and 0D1C:0BEB (:702): bit 2 (`& 4`) in both comments and code.
+- TurnUndead (0D1C:0A43): the object list is the ds:8A82 records (see the should on the field name).
+- DRAFT notes: none left in src/E0D1C.C; 0903 and 0A43 are matched in re/symbols.toml.
+- RedrawMember(int who), DirectionFromPoints(fromCell, toCell), SelectCharacter(int who),
+  FindClassSlot(slotId, ...), ItemClassAllowed(who, item), Obj28 id/orient, Row8 x1..y2, DrawItemIcon
+  (0D1C:070F, reads icon at :488): each matches its code.
+
+No must-fix open. The changed lines are sound in what they claim; the items below are citations,
+names and wording.
+
+- [ ] should src/E0D1C.C:634: TurnUndead's comment says the object record's "m02", but Obj28 +2 is now
+  `id` (struct Obj28, line 77), and the comment next to it (09CB, :609) uses obj->id. The round 1
+  follow-up for id/orient did not reach this comment. Say "id (+2)".
+- [ ] should src/E0D1C.C:125 (extern), :634 and :665: the callee at 08E6:17FD is named `Obj17FD` in
+  re/symbols.toml (e08e6_17fd, name = "Obj17FD"), its definition src/E08E6.C:1144 and its declaration
+  src/E0EF3.C:333. This unit still says f08E6_17FD. Use `make rename` to Obj17FD (the shared name).
+- [ ] should src/E0D1C.C:43-47 (gPartyCell) and its comment: the citations are line numbers into other
+  files, which READABILITY (line 36) says to replace with addresses. E177D.C:92, EOV4.C:524 and
+  E0ACD.C:55 have moved (the E0ACD declaration is now :56). The sound-volume readers are at
+  0ACD:04F8 (src/E0ACD.C:443) and SetSoundVolume (122E:0001) assigns the word. The comment also names
+  only E0ACD as the disagreeing reader; src/E122E.C:196 ("the global sound volume") and src/E0BD2.C:97
+  say the same, and E122E.C:212 and :1294 write it. Name them by address or file, not by line. Drop
+  "work/reviews/e0d1c.md" from the source comment: a review file is not code.
+- [ ] should re/globals.toml, the ds:FBCA `why`: "it indexes the nine-byte cell records (src/E0D1C.C:352)"
+  cites a declaration (`struct CharRec far *rec;`, line 352 of src/E0D1C.C). The index is 0D1C:035A
+  (the gB894 + gPartyCell * 9 reads at :362 and :368). Cite the address.
+- [ ] should src/E0D1C.C:706 (the 0C21 comment): "(gF57E, gF57E when `first`, else gFB4C and gF53A)"
+  lists gF57E twice. The code (:723 to :729) sets both colours to gF57E when `first`, else gFB4C
+  and gF53A. Say "(gF57E for both when `first`, else gFB4C and gF53A)".
+- [ ] note src/E0D1C.C:431-432 (059B): the wrap breaks inside "3" and "and 5". Cosmetic; reflow.
+
+### Round 1 (afdb33a)
 
 - [x] must-fix src/E0D1C.C:39: gPartyCell is described as "the global sound volume (src/E177D.C)". E177D.C:92 and EOV4.C:524 say it is the party's map cell, and this unit uses it as a cell: 0D1C:035A indexes the nine-byte cell records (`gB894 + gPartyCell * 9 + 5`) and passes it as the InsertListItem key, and 0D1C:09CB passes it as the second point of DirectionFromPoints (17A6:0314 takes packed map cells). Say "the party's map cell" with those addresses. (Cross-unit conflict: see the note on E0ACD.C:55.)
 - [x] must-fix src/E0D1C.C:311: f0D1C_02DC's comment inverts the test. The code returns gFBCE when the mouse is enabled (`if (!gMouseDisabled) return gFBCE;`, line 315) and the slot otherwise. The comment says "gFBCE when the mouse is disabled". SetCurrentItem (0304, lines 319-321) states it the right way round, so the two comments now disagree.
