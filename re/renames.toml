@@ -875,6 +875,186 @@ why = "the scratch text buffer EOV2 LoadItemSheets formats ITEMRMP.%s into for F
 date = "2026-11-01"
 
 [[rename]]
+id = "0DE8:0007=RollToHit"
+addr = "0DE8:0007"
+old = "f0DE8_0007"
+new = "RollToHit"
+kind = "function"
+why = "0DE8:0007 rolls a d20 against the target's scaled armour class and returns whether it hits"
+date = "2026-11-01"
+
+[[rename]]
+id = "0DE8:011A=RollAttackDamage"
+addr = "0DE8:011A"
+old = "f0DE8_011A"
+new = "RollAttackDamage"
+kind = "function"
+why = "0DE8:011A rolls an item's damage dice plus the slot bonus against a creature"
+date = "2026-11-01"
+
+[[rename]]
+id = "0DE8:01D7=IsWeaponKind"
+addr = "0DE8:01D7"
+old = "f0DE8_01D7"
+new = "IsWeaponKind"
+kind = "function"
+why = "0DE8:01D7 returns whether an item type's m0E kind is 2 or 3"
+date = "2026-11-01"
+
+[[rename]]
+id = "0DE8:01FF=RunRecordAttack"
+addr = "0DE8:01FF"
+old = "f0DE8_01FF"
+new = "RunRecordAttack"
+kind = "function"
+why = "0DE8:01FF runs the attack of a ds:DD2C record: item damage, a possible double and 0DE8:09B9"
+date = "2026-11-01"
+
+[[rename]]
+id = "0DE8:02D4=TryRecordAttack"
+addr = "0DE8:02D4"
+old = "f0DE8_02D4"
+new = "TryRecordAttack"
+kind = "function"
+why = "0DE8:02D4 tests a ds:DD2C record's to-hit and applies its item damage to an object"
+date = "2026-11-01"
+
+[[rename]]
+id = "0DE8:0359=ApplyItemAttack"
+addr = "0DE8:0359"
+old = "f0DE8_0359"
+new = "ApplyItemAttack"
+kind = "function"
+why = "0DE8:0359 looks the record's action up and applies one item attack on character `who`"
+date = "2026-11-01"
+
+[[rename]]
+id = "0DE8:0474=MoveCarriedItem"
+addr = "0DE8:0474"
+old = "f0DE8_0474"
+new = "MoveCarriedItem"
+kind = "function"
+why = "0DE8:0474 moves a carried item from the special or the 22..24 slots into a slot"
+date = "2026-11-01"
+
+[[rename]]
+id = "0DE8:0537=UseCarriedItem"
+addr = "0DE8:0537"
+old = "f0DE8_0537"
+new = "UseCarriedItem"
+kind = "function"
+why = "0DE8:0537 dispatches the carried slot item through 0BD2:07DE and clears it on success"
+date = "2026-11-01"
+
+[[rename]]
+id = "0DE8:05BB=UseItemByKind"
+addr = "0DE8:05BB"
+old = "f0DE8_05BB"
+new = "UseItemByKind"
+kind = "function"
+why = "0DE8:05BB picks the item matching the slot's g552F kind and dispatches it"
+date = "2026-11-01"
+
+[[rename]]
+id = "0DE8:0763=UseItem"
+addr = "0DE8:0763"
+old = "f0DE8_0763"
+new = "UseItem"
+kind = "function"
+why = "0DE8:0763 runs the item action of a slot and updates the character's hit points and effects"
+date = "2026-11-01"
+
+[[rename]]
+id = "0DE8:093B=CheckPartyWiped"
+addr = "0DE8:093B"
+old = "f0DE8_093B"
+new = "CheckPartyWiped"
+kind = "function"
+why = "0DE8:093B shows the party-wipe message and shuts the game down when no member survives"
+date = "2026-11-01"
+
+[[rename]]
+id = "0DE8:09B9=DamageCharacter"
+addr = "0DE8:09B9"
+old = "f0DE8_09B9"
+new = "DamageCharacter"
+kind = "function"
+why = "0DE8:09B9 applies damage to a character, handles the death state and arms the effects"
+date = "2026-11-01"
+
+[[rename]]
+id = "0DE8:0ADB=HealCharacter"
+addr = "0DE8:0ADB"
+old = "f0DE8_0ADB"
+new = "HealCharacter"
+kind = "function"
+why = "0DE8:0ADB heals a character up to its maximum and redraws it"
+date = "2026-11-01"
+
+[[rename]]
+id = "0DE8:0B45=AddExperience"
+addr = "0DE8:0B45"
+old = "f0DE8_0B45"
+new = "AddExperience"
+kind = "function"
+why = "0DE8:0B45 adds experience to a character's three class slots and levels each up"
+date = "2026-11-01"
+
+[[rename]]
+id = "0DE8:0C2B=AddPartyExperience"
+addr = "0DE8:0C2B"
+old = "f0DE8_0C2B"
+new = "AddPartyExperience"
+kind = "function"
+why = "0DE8:0C2B divides experience among the surviving members and awards each"
+date = "2026-11-01"
+
+[[rename]]
+id = "0DE8:0C82=LevelUpSlot"
+addr = "0DE8:0C82"
+old = "f0DE8_0C82"
+new = "LevelUpSlot"
+kind = "function"
+why = "0DE8:0C82 levels one class slot up, rolls its hit points and prints the message"
+date = "2026-11-01"
+
+[[rename]]
+id = "0DE8:0D5E=ComputeArmourClass"
+addr = "0DE8:0D5E"
+old = "f0DE8_0D5E"
+new = "ComputeArmourClass"
+kind = "function"
+why = "0DE8:0D5E computes a character's armour class from its equipment and effects"
+date = "2026-11-01"
+
+[[rename]]
+id = "0DE8:0F98=HalveSaveDamageA"
+addr = "0DE8:0F98"
+old = "f0DE8_0F98"
+new = "HalveSaveDamageA"
+kind = "function"
+why = "0DE8:0F98 halves a value when the character's 0D1C:059B save succeeds"
+date = "2026-11-01"
+
+[[rename]]
+id = "0DE8:0FCA=HalveSaveDamageB"
+addr = "0DE8:0FCA"
+old = "f0DE8_0FCA"
+new = "HalveSaveDamageB"
+kind = "function"
+why = "0DE8:0FCA halves a value on a d20 roll against a class byte from gTable1A3B"
+date = "2026-11-01"
+
+[[rename]]
+id = "0DE8:101A=ApplyStatusEffect"
+addr = "0DE8:101A"
+old = "f0DE8_101A"
+new = "ApplyStatusEffect"
+kind = "function"
+why = "0DE8:101A sets a status bit, arms its effect and prints the \"%s is %s!\" message"
+date = "2026-11-01"
+
+[[rename]]
 id = "07A9:010C=SetMouseItem"
 addr = "07A9:010C"
 old = "f07A9_010C"
