@@ -11,6 +11,50 @@ The matcher already proved the bytes; do not re-prove them, read for meaning.
 Each finding is a checkbox. `must-fix` blocks `make review-pass` until a decompiler ticks it off
 (with the commit that fixes it); `should` and `note` do not block.
 
+Round 4 (at 6118e25, rev-haiku, a later round: round 3 must-fix items and the diff since a2c0a9e only).
+The diff since a2c0a9e is 8db5863 and the merges after it. src/EOV3.C changes are comments and declaration types
+only (the type changes keep the bytes: `make match` is 23 of 23). re/symbols.toml changes are other units' review
+stamps and renames, with no eov3 entry changed. re/globals.toml adds the gTable1879 "why" text, which cites
+src/EOV3.C:60 (that declaration, correct). `make match FILE=src/EOV3.C`: cmatch 23 of 23 functions match.
+`make readability UNIT=eov3`: 0 findings.
+Round 3 must-fix: both fixed right, ticks stay. The SaveGame header now cites `if (ok)` at :854, the INVENT
+reload at :871 and the `ok &=` writes at :857-869, and the LoadGame header says the m22 < 0 character sets `flag`
+at :953 (after the `else` at :952); checked against the code. The round 3 shoulds are fixed right too: the
+OUTTAKE sentence says "cuts", and g1A1B is declared per-page with src/E0ACD.C:131 (that line is the g1A1B
+declaration with the per-page comment). The round 3 cross-unit should is still open (below).
+
+#### Round 4 must-fix
+
+None open.
+
+#### Round 4 should (changed lines since a2c0a9e; none blocks)
+
+- [ ] should src/EOV3.C:143 (gFB5E declaration, changed in 8db5863): "the per-column size records" cites
+  src/E122E.C:106, which is the 3-byte SlotSize layout, not a column index. The column evidence is the use in
+  src/EOV4.C:790 (`gFB5E[col]`, col from the heading) and the EOV4 declaration at :766 ("per column"). This
+  file also says "per-slot" for the same table (the FreeSlotTables header at :345, and re/renames.toml:2206).
+  Cite the column use (by address of the EOV4 draw code, not by line) and use one word here and in the header.
+- [ ] should src/EOV3.C:15 (gRectKinds declaration, changed in 8db5863): "the per-kind size records
+  (src/E122E.C:91)". Line 91 is the `pad00` field of struct RectKind; its header is E122E.C:90. In this unit the
+  array is indexed by a wall `cell` (RegisterWallObject :333-336, FreePtrTable :246-248), in E122E.C:79 by `kind`,
+  and EOV4.C:670 calls its entries per-cell. Say which index this unit uses and cite the kind reading by
+  address (the ds:EFD4 declaration is E122E.C:97). Not a must-fix: the per-kind claim is E122E's own.
+- [ ] should src/EOV3.C:56 and :63: gE062 is "the 8-byte map cell rectangles" in the declaration and "the 8-byte
+  sprite rectangles" in the struct Cell8 comment. The code (:336) passes its four words to gGetSpriteCell with
+  MAPSHEET, so "sprite rectangles in the map sheet" is the evidence. Use one phrase in both places.
+- [ ] should, cross-unit (not this file, carried from round 3): src/EOV5.C:207 declares FreeEffectTables, :1053
+  and :1174 call it, and :1158 names it in a comment. The round 3 lines (:210, :1042, :1162) have moved. The EOV5
+  owner should use FreeSlotTables; the match is unaffected.
+
+#### Round 4 note
+
+- The round 1 and 2 shoulds that are still open (the scriptWord split, decided in 8db5863 with the evidence that
+  two locals make LoadMapScreen drop to 22 of 23) and the round 2 and 3 notes are not re-judged. They do not block.
+
+Summary of round 4: no must-fix open. Round 3's two must-fix cites are fixed right and ticked; the changed lines
+are sound in what they claim, with three wording and cite shoulds (gFB5E, gRectKinds, gE062) and one cross-unit
+should. The unit passes.
+
 Round 3 (at a2c0a9e, rev-haiku, a later round: round 2 must-fix items and the diff since cc4ce8b only).
 The diff since cc4ce8b is 89e940a, comments in src/EOV3.C only; no code byte, no re/symbols.toml entry for
 this unit. The re/globals.toml changes touch gPartyCell (the key the LoadGame header names), not this text.
