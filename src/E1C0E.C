@@ -11,7 +11,7 @@
 /*@flags -ml -O -Z -G */
 
 /* Runtime library (Turbo C++ 1.00, large model). */
-extern int open(char far *path, int access);       /*@ 0000:6443: runtime OPEN */
+extern int open(char far *path, int access, ...);   /*@ 0000:6443: runtime OPEN */
 extern int close(int fd);                          /*@ 0000:50C5: runtime CLOSE */
 extern int read(int fd, void far *buf, unsigned len); /*@ 0000:65E1: runtime READ, text mode */
 extern int write(int fd, void far *buf, unsigned len); /*@ 0000:5BFE: runtime WRITE, text mode */
@@ -68,6 +68,19 @@ extern unsigned char gSearchAllDrives;   /*@ ds:81EA: nonzero: 1C0E:1310 also sc
 #define FLAG_BITS      0x3f
 #define LINK_INDEX     0x7fff
 
+/* open() flags and create mode (fcntl.h), used by 1C0E:0A9D. */
+#define O_RDWR         0x0002
+#define O_CREAT        0x0100
+#define O_BINARY       0x8000
+#define S_IREAD        0x0100
+#define S_IWRITE       0x0080
+
+/* Functions defined later in the file but called earlier. */
+int FindFile(char far *name);            /*@ 1C0E:1645: defined later in the file */
+int IsFileInMemory(char far *name);      /*@ 1C0E:1161: defined later in the file */
+int FindLoadedFile(char far *name);      /*@ 1C0E:11D3: defined later in the file */
+int f1C0E_144E(int index);               /*@ 1C0E:144E: defined later in the file */
+
 /* A cached file, a 19-byte record at ds:01FF (index * 19 + ds:01FF). The name is a C string; an
    empty name ends the table. */
 struct FileEntry {
@@ -81,8 +94,6 @@ struct FileEntry {
 
 extern struct FileEntry gFiles[];        /*@ ds:01FF */
 extern int gFileHandles[];               /*@ ds:FEEA: DOS handle or SLOT_FREE per slot */
-
-int FindFile(char far *name);            /*@ 1C0E:1645: defined later in the file */
 
 /* 1C0E:000C: resize the file in slot `index` to `size` bytes and return 1 when that succeeded, 0
    when the slot is loaded in memory (nothing to resize) or chsize failed. DRAFT: every byte matches
@@ -145,8 +156,33 @@ int FindFile(char far *name);            /*@ 1C0E:1645: defined later in the fil
 /*@ 1C0E:0578 stub */ void FileWrite(int index, void far *buf, unsigned long len) { }
 /*@ 1C0E:06E5 stub */ void SeekFile(int index, long offset, int whence) { }
 /*@ 1C0E:091B stub */ int f1C0E_091B(char far *name) { }
-/*@ 1C0E:0A35 stub */ int f1C0E_0A35(char far *name) { }
-/*@ 1C0E:0A9D stub */ int f1C0E_0A9D(char far *name) { }
+/* 1C0E:0A35: delete the file `name`: drop any in-memory copy from its slot first, then remove it
+   from disk. Returns 1 when the file was removed (remove returned 0). Called by 1C0E:00DB and by
+   1C0E:0A9D before recreating the file. */
+/*@ 1C0E:0A35 */ int DeleteFile(char far *name)
+{
+    if (IsFileInMemory(name)) {
+        int index = FindLoadedFile(name);
+
+        MemFree(gFiles[index].data);
+        gFiles[index].data = 0;
+    }
+    return !remove(name);
+}
+
+/* 1C0E:0A9D: empty the file `name`: delete it (1C0E:0A35) then recreate it with open(), and close
+   the new handle. Returns 1 when the file could be recreated. */
+/*@ 1C0E:0A9D */ int ResetFile(char far *name)
+{
+    int fd;
+
+    DeleteFile(name);
+    fd = open(name, O_CREAT | O_RDWR | O_BINARY, S_IREAD | S_IWRITE);
+    if (fd == -1)
+        return 0;
+    close(fd);
+    return 1;
+}
 /*@ 1C0E:0ADD stub */ int f1C0E_0ADD(int index, char far *name) { }
 
 /* 1C0E:0D9B: clear the status-line flag ds:8115 while 1C0E:0ADD draws its message box, then put
@@ -266,7 +302,20 @@ int FindFile(char far *name);            /*@ 1C0E:1645: defined later in the fil
     return 0;
 }
 
-/*@ 1C0E:1240 stub */ long f1C0E_1240(int index, void far *buf, unsigned long len) { }
+/* 1C0E:1240: copy up to `len` bytes from the in-memory copy of slot `index` (at its position) into
+   `dst` through Unpack0's raw copy, clamp `len` to what is left in the file, advance the position
+   and return the number of bytes copied. The source pointer is normalized through 1BA8:0072 first. */
+/*@ 1C0E:1240 */ long ReadFromMemory(int index, void far *dst, long len)
+{
+    char far *src;
+
+    if (gFiles[index].pos + len > gFiles[index].size)
+        len = gFiles[index].size - gFiles[index].pos;
+    src = f1BA8_0072(gFiles[index].data + gFiles[index].pos);
+    Unpack0(src, dst, len);
+    gFiles[index].pos += len;
+    return len;
+}
 
 /* 1C0E:1310: locate the file `name` (upper cased in place) on disk. Try the current drive first,
    then (only when ds:81EA asks for it) the drives from ds:FF00 down to A; return the drive number

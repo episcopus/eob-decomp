@@ -5462,6 +5462,9 @@ unit = "e1c0e"
 addr = "1C0E:0A35"
 size = 104
 evidence = ["far", "near", "frame"]
+name = "DeleteFile"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "e1c0e_0a9d"
@@ -5469,6 +5472,9 @@ unit = "e1c0e"
 addr = "1C0E:0A9D"
 size = 64
 evidence = ["far", "frame"]
+name = "ResetFile"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "e1c0e_0add"
@@ -5544,6 +5550,9 @@ unit = "e1c0e"
 addr = "1C0E:1240"
 size = 208
 evidence = ["far", "frame"]
+name = "ReadFromMemory"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "e1c0e_1310"
