@@ -2,9 +2,11 @@
 ; start-up (i_c0) and the Borland runtime library (i_lib): Westwood's AdLib sound driver, code and data in one
 ; segment, running with DS = CS. LoadSoundDriver (E177D.C) reads the 32C8h-byte block of adlib.dat or pcgamesn.dat
 ; into cs:0416h; the AdLib driver (sound card 0, E177D.C:147-149) plays the sounds in it, the PC speaker and Tandy
-; driver is E1948.ASM. This is the INTRO.EXE build of EOB.EXE's e_text (src/E_TEXT.ASM): the same driver, with the
-; gBusyCountdown wait and the `cld` of the AdLib INT 08h handler removed, the data laid out 1000 bytes further on,
-; and the code otherwise instruction for instruction the EOB version (only the addresses move). In address order:
+; driver is E1948.ASM. This is the INTRO.EXE build of EOB.EXE's e_text (src/E_TEXT.ASM): the same driver, 984 bytes
+; larger, with the data laid out 1000 bytes further on (tables 3944 to 3D2C, variables 3B36 to 3F1E) and three
+; instructions dropped from the code (the `cld` of the AdLib INT 08h handler, its gBusyCountdown wait and the
+; push di/pop di of the command dispatch); the rest of the code is instruction for instruction the EOB version,
+; only the addresses move. In address order:
 ;   020C  the pitch curve tables the script commands read (data), then GetScriptFlag (03A1)
 ;   03AA  the five far routines LoadSoundDriver, PlaySound and PlaySoundAtCell call to reach the block (E177D.C)
 ;   0416  the driver block (data: the EXE's image of it), then the driver's tables (3D2C), variables (3F1E),
