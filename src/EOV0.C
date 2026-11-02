@@ -73,7 +73,11 @@ struct CharRec {                /* 243-byte character records at ds:F580 (src/E0
     char m1E;
     signed char m1F;            /* +1F: half of it indexes gTable5F35 (src/E0A72.C) */
     signed char m20;            /* +20: indexes g1231 (src/E0DE8.C) */
-    char pad21[0x33 - 0x21];
+    char pad21[0x24 - 0x21];
+    signed char m24;            /* +24: read by ovl0:065B (Purpose unknown) */
+    signed char m25;            /* +25: read by ovl0:065B (Purpose unknown) */
+    signed char m26;            /* +26: read by ovl0:065B (Purpose unknown) */
+    char pad27[0x33 - 0x27];
     void far *sprite;           /* +33: the character's packed sprite buffer (src/EOV3.C) */
     char pad37[0x73 - 0x37];
     long m7375;                 /* +73: a 32-bit value 280D sets to 0x26c (Purpose unknown) */
@@ -109,8 +113,25 @@ extern void FlushKeyBuffer(void); /*@ 1AAD:0480 */
 extern void DrawOptionList(int panel, char far * far *names, long mask, int shift, int spacing); /*@ 14EF:0154 */
 extern int UpdateOptionList(int panel, char far * far *names, long counter, long mask, int shift); /*@ 14EF:0274 */
 extern char far *g11AD[]; /*@ ds:11AD */ /* the race names (src/E1547.C) */
+extern char far *g11DD[]; /*@ ds:11DD */ /* the class names (src/E1547.C) */
+extern char gFileNameBuf[]; /*@ ds:FE6E */ /* the buffer sprintf formats into (src/E082C.C) */
+extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
+extern int strlen(char far *s); /*@ 0000:67F6 */
+extern char *FormatRatioText(char value, char percent); /*@ 0A72:0468 */
+extern char gStr6197[]; /*@ ds:6197 */ /* a fixed panel label (Purpose unknown) */
+extern char gStr61A1[]; /*@ ds:61A1 */ /* a format string ovl0:065B uses (Purpose unknown) */
+extern char gStr61B3[]; /*@ ds:61B3 */ /* a format string ovl0:065B uses (Purpose unknown) */
+extern char gStr61B9[]; /*@ ds:61B9 */ /* a format string ovl0:065B selects (Purpose unknown) */
+extern char gStr61BC[]; /*@ ds:61BC */ /* a format string ovl0:065B selects (Purpose unknown) */
+extern char gStr61C2[]; /*@ ds:61C2 */ /* a format string ovl0:065B selects (Purpose unknown) */
+extern char far *g115D[]; /*@ ds:115D */ /* six far string pointers ovl0:065B draws in a column (Purpose unknown) */
 extern int g197; /*@ ds:0197 */ /* a panel field cleared by ovl0:1F66 (Purpose unknown) */
 extern int gFC8A; /*@ ds:FC8A */ /* the parity of the key ovl0:1F66 last handled (Purpose unknown) */
+extern unsigned long gTicks; /*@ ds:848A */ /* the 32-bit tick counter (src/E082C.C) */
+extern signed char g5EB0; /*@ ds:5EB0 */ /* the character ovl0:1224 last drew (Purpose unknown) */
+extern signed char gFC84; /*@ ds:FC84 */ /* the character panel's animation frame 0..9 (Purpose unknown) */
+extern signed char gFC85; /*@ ds:FC85 */ /* the frame ovl0:1224 last drew (Purpose unknown) */
+extern unsigned long gFC86; /*@ ds:FC86 */ /* the tick ovl0:1224 next advances the frame at (Purpose unknown) */
 extern unsigned char g6079[]; /*@ ds:6079 */ /* per-character x read by ovl0:1F66 (Purpose unknown) */
 extern unsigned char g607D[]; /*@ ds:607D */ /* per-character y read by ovl0:1F66 (Purpose unknown) */
 extern char gStr623F[]; /*@ ds:623F */ /* a fixed panel label (Purpose unknown) */
@@ -329,7 +350,65 @@ extern void far *g5E64[0x11]; /*@ ds:5E64 */ /* the 17 sliced icon pointers this
     LockShowPointer();
     f1A47_0169(savedFont);
 }
-/*@ ovl0:065B stub */ void Ovl0_065B(void) {}
+/* ovl0:065B: draws the current character's panel page for gChars[index]. It clips the page and,
+   unless `mode` is 4, draws the character's sprite, then the name, race g11AD[m1F] and class
+   g11DD[m20] centred over the page and six labels g115D[8..13] down the left column. It formats
+   three stat lines into gFileNameBuf (the ratio of m0D against m0F with m11, m13, m15, m17, m19, the
+   m1D/m1C pair and the m24/m25/m26 triple, the third picking one of three gStr61xx formats from
+   m25 and m26) and draws each; the mode selects which panel icons are highlighted. Called by
+   ovl0:0A5E, 0DDC, 0EE5, 135D and 23EC. Purpose unknown: the mode-specific icons. */
+/*@ ovl0:065B draft */ void Ovl0_065B(int index, char mode)
+{
+    char far *text;
+    int i;
+
+    LockHidePointer();
+    ClipRect(0, 0, 0x14, 0, 0x14, 0x80, 2, 2);
+    g8115 = 2;
+    if (mode != 4)
+        f1A29_000F(2, gChars[index].sprite, 0xe0, 2, 0);
+    text = gChars[index].name;
+    DrawShadowText(text, 0xa0 + (0x14 - strlen(text)) * 4, 0x23, 0xf, 0);
+    text = g11AD[gChars[index].m1F];
+    DrawShadowText(text, 0xa0 + (0x14 - strlen(text)) * 4, 0x2d, 0xf, 0);
+    text = g11DD[gChars[index].m20];
+    DrawShadowText(text, 0xa0 + (0x14 - strlen(text)) * 4, 0x36, 0xf, 0);
+    for (i = 8; i < 0xe; i++)
+        DrawShadowText(g115D[i], 0xa3, i * 8, 0xf, 0);
+    DrawShadowText(gStr6197, 0xf8, 0x40, 0xf, 0);
+    sprintf(gFileNameBuf, gStr61A1, FormatRatioText(gChars[index].m0D, gChars[index].m0F),
+        gChars[index].m11, gChars[index].m13, gChars[index].m15, gChars[index].m17,
+        gChars[index].m19);
+    DrawShadowText(gFileNameBuf, 0xc0, 0x40, 0xf, 0);
+    sprintf(gFileNameBuf, gStr61B3, gChars[index].m1D, gChars[index].m1C);
+    DrawShadowText(gFileNameBuf, 0x118, 0x40, 0xf, 0);
+    text = gStr61B9;
+    if (gChars[index].m25 > 0)
+        text = gStr61BC;
+    if (gChars[index].m26 > 0)
+        text = gStr61C2;
+    sprintf(gFileNameBuf, text, gChars[index].m24, gChars[index].m25, gChars[index].m26);
+    DrawShadowText(gFileNameBuf, 0x118, 0x50, 0xf, 0);
+    switch (mode) {
+    case 1:
+        DrawPanelIcon(4, 0, 2);
+        DrawPanelIcon(7, 0, 2);
+        DrawPanelIcon(8, 0, 2);
+        DrawPanelIcon(6, 0, 2);
+        break;
+    case 2:
+        DrawPanelIcon(0x10, 0, 2);
+        break;
+    case 3:
+        DrawPanelIcon(0xa, 0, 2);
+        DrawPanelIcon(0xb, 0, 2);
+        DrawPanelIcon(9, 0, 2);
+        break;
+    }
+    ClipRect(0x14, 0, 0x12, 0x40, 0x14, 0x80, 2, 0);
+    LockShowPointer();
+    g8115 = 0;
+}
 /* ovl0:0A4F: draws the row list index 0xa. No direct caller found (reached through an overlay entry
    or jump table). */
 /*@ ovl0:0A4F */ void DrawRowList10(void)
@@ -445,7 +524,35 @@ extern void far *g5E64[0x11]; /*@ ds:5E64 */ /* the 17 sliced icon pointers this
         f1A29_000F(0, gChars[gDCB0].sprite, gPanelX5E54[gDCB0], gPanelY5E5C[gDCB0] + 1, 0);
     LockShowPointer();
 }
-/*@ ovl0:1224 stub */ void Ovl0_1224(void) {}
+/* ovl0:1224: advances and draws the current character's animation frame. When the selected character
+   changed it resets the frame timer gFC86; when gFC86 is behind gTicks it steps gFC84 through 0..9
+   and sets gFC86 two ticks ahead. If the frame did not change it returns, else it clips the character
+   cell, blits cell gPtrsFD54[gFC84] at (0x120, 0x80) through f1A29_000F, hides the pointer over the
+   character's panel box, clips it and shows the pointer. Called by ovl0:0A5E, 0DDC, 135D, 1F66,
+   207A and 2238. Purpose unknown: which animation the ten cells are. */
+/*@ ovl0:1224 */ void Ovl0_1224(void)
+{
+    if (g5EB0 != gDCB0) {
+        gFC86 = 0;
+        g5EB0 = gDCB0;
+    }
+    if (gFC86 < gTicks) {
+        gFC84++;
+        if (gFC84 > 9)
+            gFC84 = 0;
+        gFC86 = gTicks + 2;
+    }
+    if (gFC85 == gFC84)
+        return;
+    ClipRect(gDCB0 * 4, 0x80, 0x24, 0x80, 4, 0x20, 2, 2);
+    f1A29_000F(2, gPtrsFD54[gFC84], 0x120, 0x80, 0);
+    HidePointerZone(gPanelX5E54[gDCB0], gPanelY5E5C[gDCB0] + 1,
+        gPanelX5E54[gDCB0] + 0x20, gPanelY5E5C[gDCB0] + 0x20);
+    ClipRect(0x24, 0x80, gPanelX5E54[gDCB0] >> 3, gPanelY5E5C[gDCB0] + 1,
+        4, 0x20, 2, 0);
+    ShowPointerZone();
+    gFC85 = gFC84;
+}
 /*@ ovl0:135D stub */ void Ovl0_135D(void) {}
 /*@ ovl0:1ADD stub */ void Ovl0_1ADD(void) {}
 /*@ ovl0:1BF2 stub */ void Ovl0_1BF2(void) {}
