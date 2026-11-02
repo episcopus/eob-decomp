@@ -6,9 +6,10 @@
 ; direct caller in the map (it is reached through the overlay dispatch) and calls most of the
 ; others, including ovl1:0000. The 30 counters at ds:FDEC, the byte table ds:FD9A and the 9-byte
 ; lists at ds:FDBA are the spell tables ovl1:00DD builds and ovl1:025D steps. Status: ovl1:0000,
-; 00DD, 025D, 0416, 0881, 13F7, 1516 and 243A are matched (L2); ovl1:097A, 1153, 1551 and 1ACD are
-; stubs. Names not proven by an address or a caller come from the code alone and are marked in each
-; function's comment. See whitepaper 2.7 and 4.
+; 00DD, 025D, 0416, 0881, 13F7, 1516, 1551 (DrawListNode) and 243A are matched (L2); ovl1:1153 is a
+; draft (its far-array reads need TCC's internal assembler, see its registry note: this unit is C);
+; ovl1:097A and 1ACD are stubs. Names not proven by an address or a caller come from the code alone
+; and are marked in each function's comment. See whitepaper 2.7 and 4.
 
         .MODEL  LARGE
 
@@ -46,6 +47,7 @@
         EXTRN   _MemAlloc:FAR           ; @ 19BC:0007 (E19BC.C)
         EXTRN   _ListAdd:FAR            ; @ 1658:001E (E0CF7.C)
         EXTRN   _movmem:FAR             ; @ 0000:63A3: move n bytes (library)
+        EXTRN   _strlen:FAR             ; @ 0000:67F6: string length (library)
 
         EXTRN   gChars:BYTE             ; @ ds:F580: 6 character records of 0xF3 bytes (E08E6.C)
         EXTRN   gBufDCFC:DWORD          ; @ ds:DCFC: 4096-byte scratch allocation (E07A9.C)
@@ -611,7 +613,7 @@ _SpendSpellSlot ENDP
 ; `sel` = -2 and enters the wait loop: DispatchKeyWait on the list, DrawRowList, then a switch on
 ; the key (key table at ovl1:0839, 18 keys and their case offsets) that moves `cur` to the previous
 ; or next non-empty slot (0x8013..0x8018 pick a slot directly, 0x43/0x97 accept `cur`, 0x110/0x8012
-; call _Ovl1_1551 twice), continuing while `sel` == -2. On exit it frees the list and, for a chosen
+; call _DrawListNode twice), continuing while `sel` == -2. On exit it frees the list and, for a chosen
 ; member and a command other than 0x35, checks the class slot (kind 4) when `mode` is 4 and the
 ; carried slot (FindCarriedSlot, kind 0x1D) when `mode` is 2, showing message 0x18 or 0x19 and
 ; returning -1 when the check fails. Called from ovl1:097A and ovl1:1551 with a command byte.
@@ -963,7 +965,7 @@ f0416_06FE:
         push    word ptr [bp-4]
         nop
         push    cs
-        call    near ptr _Ovl1_1551
+        call    near ptr _DrawListNode
         add     sp,0Ah
         mov     ax,5
         push    ax
@@ -978,7 +980,7 @@ f0416_06FE:
         push    word ptr [bp-4]
         nop
         push    cs
-        call    near ptr _Ovl1_1551
+        call    near ptr _DrawListNode
         add     sp,0Ah
         mov     word ptr [bp-8],0FFFFh
         jmp     f0416_0664
@@ -1242,7 +1244,7 @@ _Ovl1_097A ENDP
 ; DrawShadowText). For i in 0..count-1 it allocates a 0x3c-byte node, copies gNodeTemplate over it
 ; and fills it from gSpellInfo9[first + i]: key index+1, key06 = rec+5, key08 = rec+5+0x100, x =
 ; rec+1<<3, y = rec+2, width = rec+3<<3, height = rec+4, flags 0x1100, the far record pointer at
-; +0x34/+0x36 and rec+7 at +0x38; the node is drawn once through _Ovl1_1551 and chained with
+; +0x34/+0x36 and rec+7 at +0x38; the node is drawn once through _DrawListNode and chained with
 ; ListAdd. At the end it clips the text window, sets g5E20, flushes the key buffer and clears g8115.
 ; Called by ovl1:0416, 097A, 1551, 1ACD and 243A with a member index and returns the list head.
 ; Purpose unknown: the exact meaning of the menu fields and of the 9-byte record bytes.
@@ -1471,7 +1473,7 @@ f1153_121F:
         push    bx
         nop
         push    cs
-        call    near ptr _Ovl1_1551
+        call    near ptr _DrawListNode
         add     sp,0Ah
         mov     ax,[bp-6]
         or      ax,[bp-4]
@@ -1689,10 +1691,163 @@ f1516_1545:
         ret
 _FreeFarList ENDP
 
-        PUBLIC  _Ovl1_1551               ; @ ovl1:1551 stub
-_Ovl1_1551 PROC FAR
+; ovl1:1551: draw the list node `node` (a far pointer to a 60-byte panel record, src/EOV0.C's
+; struct Node) in the text window. It returns at once when `node` is null. `colour` is 1, or 0xF
+; when g8102 is nonzero. It reads the node's far record pointer (node+0x34/+0x36), hides the
+; pointer and, when the record's word +7 has bit 0, fills the node's box (node+0x1E..+0x24) through
+; f0D1C_0C21 with the caller's arguments 2 and 3. It then draws the record's string:
+; SkipStrings(gStrings2003, rec[0]) returns it and, when the record's word +7 has bit 2, it is
+; centred in the box (di = (node+0x22 - 8*strlen)/2 + 1, si = (node+0x24 - 7)/2), otherwise at
+; (4, 3). The draw colour is 6 when argument 4 is nonzero, else `colour`; the text goes through the
+; text routine gDrawText when arguments 4 and 5 are both nonzero, else through DrawShadowText. The
+; pointer is shown again. Called from ovl1:0416, 097A, 1153, 1ACD and 243A. Purpose unknown: the
+; meaning of the three mode arguments and of the record flag bits.
+        PUBLIC  _DrawListNode           ; @ ovl1:1551
+_DrawListNode PROC FAR
+        push    bp
+        mov     bp,sp
+        sub     sp,0Ah
+        push    si
+        push    di
+        mov     ax,[bp+6]
+        or      ax,[bp+8]
+        jne     short f1551_1564
+        jmp     f1551_168B
+f1551_1564:
+        cmp     word ptr [g8102],0
+        jne     short f1551_1570
+        mov     ax,1
+        jmp     short f1551_1573
+f1551_1570:
+        mov     ax,0Fh
+f1551_1573:
+        mov     [bp-0Ah],ax
+        les     bx,[bp+6]
+        mov     ax,word ptr es:[bx+36h]
+        mov     dx,word ptr es:[bx+34h]
+        mov     [bp-4],dx
+        mov     [bp-2],ax
+        call    far ptr _LockHidePointer
+        les     bx,[bp-4]
+        test    word ptr es:[bx+7],1
+        je      short f1551_15B8
+        push    word ptr [bp+0Eh]
+        push    word ptr [bp+0Ah]
+        les     bx,[bp+6]
+        push    word ptr es:[bx+24h]
+        push    word ptr es:[bx+22h]
+        push    word ptr es:[bx+20h]
+        push    word ptr es:[bx+1Eh]
+        call    far ptr _f0D1C_0C21
+        add     sp,0Ch
+f1551_15B8:
+        les     bx,[bp-4]
+        cmp     byte ptr es:[bx],0
+        jne     short f1551_15C4
+        jmp     f1551_1686
+f1551_15C4:
+        mov     al,byte ptr es:[bx]
+        cbw
+        push    ax
+        mov     ax,SEG gStrings2003
+        push    ax
+        mov     ax,OFFSET gStrings2003
+        push    ax
+        call    far ptr _SkipStrings
+        add     sp,6
+        mov     [bp-8],ax
+        mov     [bp-6],dx
+        les     bx,[bp-4]
+        test    word ptr es:[bx+7],4
+        je      short f1551_1616
+        push    dx
+        push    word ptr [bp-8]
+        call    far ptr _strlen
+        pop     cx
+        pop     cx
+        shl     ax,1
+        shl     ax,1
+        shl     ax,1
+        les     bx,[bp+6]
+        mov     dx,word ptr es:[bx+22h]
+        sub     dx,ax
+        shr     dx,1
+        inc     dx
+        mov     di,dx
+        mov     ax,word ptr es:[bx+24h]
+        NOSMART
+        sub     ax,7
+        SMART
+        shr     ax,1
+        mov     si,ax
+        jmp     short f1551_161C
+f1551_1616:
+        mov     di,4
+        mov     si,3
+f1551_161C:
+        cmp     word ptr [bp+0Eh],0
+        jne     short f1551_1628
+        cmp     word ptr [bp+0Ah],0
+        je      short f1551_1656
+f1551_1628:
+        xor     ax,ax
+        push    ax
+        cmp     word ptr [bp+0Ch],ax
+        je      short f1551_1635
+        mov     ax,6
+        jmp     short f1551_1638
+f1551_1635:
+        mov     ax,[bp-0Ah]
+f1551_1638:
+        push    ax
+        les     bx,[bp+6]
+        mov     ax,word ptr es:[bx+20h]
+        add     ax,si
+        push    ax
+        mov     ax,word ptr es:[bx+1Eh]
+        add     ax,di
+        push    ax
+        push    word ptr [bp-6]
+        push    word ptr [bp-8]
+        call    dword ptr [gDrawText]
+        jmp     short f1551_1683
+f1551_1656:
+        xor     ax,ax
+        push    ax
+        cmp     word ptr [bp+0Ch],ax
+        je      short f1551_1663
+        mov     ax,6
+        jmp     short f1551_1666
+f1551_1663:
+        mov     ax,[bp-0Ah]
+f1551_1666:
+        push    ax
+        les     bx,[bp+6]
+        mov     ax,word ptr es:[bx+20h]
+        add     ax,si
+        push    ax
+        mov     ax,word ptr es:[bx+1Eh]
+        add     ax,di
+        push    ax
+        push    word ptr [bp-6]
+        push    word ptr [bp-8]
+        call    far ptr _DrawShadowText
+f1551_1683:
+        add     sp,0Ch
+f1551_1686:
+        call    far ptr _LockShowPointer
+f1551_168B:
+        pop     di
+        pop     si
+        mov     sp,bp
+        pop     bp
         ret
-_Ovl1_1551 ENDP
+_DrawListNode ENDP
+
+        PUBLIC  _Ovl1_1691               ; @ ovl1:1691 stub
+_Ovl1_1691 PROC FAR
+        ret
+_Ovl1_1691 ENDP
 
         PUBLIC  _Ovl1_1ACD               ; @ ovl1:1ACD stub
 _Ovl1_1ACD PROC FAR
@@ -1704,7 +1859,7 @@ _Ovl1_1ACD ENDP
 ; g811F and the current font, clears g8115, selects the 8x8 font gFE5A, builds a far list of the
 ; nodes whose key is `cur+0x21` with _Ovl1_1153(5), hides the pointer, draws the message through
 ; SkipStrings(gStrings2003, message) and DrawShadowText, then loops: it highlights the current node
-; with _Ovl1_1551 (after _FindNode(index+0x21)), waits with DispatchKeyWait, and switches on the
+; with _DrawListNode (after _FindNode(index+0x21)), waits with DispatchKeyWait, and switches on the
 ; key (table at ovl1:266C, 7 keys): 0x5C/0x66 toggle `di`, 0x2B/0x3D/0x61 remove the node and walk
 ; the list to the node under the mouse (gCursorX/gCursorY through PointInRect), 0x8021/0x8022 end
 ; the loop with a result flag. On exit it frees the list, restores the font and g811F through
@@ -1788,7 +1943,7 @@ f243A_24C6:
         add     sp,6
         push    dx
         push    ax
-        call    far ptr _Ovl1_1551
+        call    far ptr _DrawListNode
         add     sp,0Ah
 f243A_24F4:
         mov     ax,1
@@ -1805,7 +1960,7 @@ f243A_24F4:
         add     sp,6
         push    dx
         push    ax
-        call    far ptr _Ovl1_1551
+        call    far ptr _DrawListNode
         add     sp,0Ah
         mov     si,di
 f243A_251B:
@@ -1911,7 +2066,7 @@ f243A_25E6:
         push    ax
         push    dx
         push    word ptr [bp-8]
-        call    far ptr _Ovl1_1551
+        call    far ptr _DrawListNode
         add     sp,0Ah
         mov     ax,5
         push    ax
@@ -1924,7 +2079,7 @@ f243A_25E6:
         push    ax
         push    word ptr [bp-6]
         push    word ptr [bp-8]
-        call    far ptr _Ovl1_1551
+        call    far ptr _DrawListNode
         add     sp,0Ah
         mov     di,si
 f243A_2638:
