@@ -529,6 +529,11 @@ def main() -> int:
         if err and n in DRAFTS:
             print("draft   " + err)
             continue
+        if not err and n in DRAFTS:
+            # matches, but the source still says draft: never recorded L2 (make match-gate does not
+            # count drafts), so the registry and src/ cannot disagree
+            print("draft   %s (%d bytes) matches: remove `draft` from its annotation to record it" % (n, length))
+            continue
         print("ok      %s (%d bytes)" % (n, length) if not err else "DIFFER  " + err)
         bad += bool(err)
         if not err:
