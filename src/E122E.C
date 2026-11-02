@@ -474,7 +474,9 @@ void RunMemberScript(int who, int mode);  /* forward: 1DA8 comes after its calle
    the item onto the mouse (nothing shown) or, when an item is shown, inserts the shown item back
    into the slot unless its g181F size says it is too large. Returns 0 when the kind is not
    clickable, else 1. The outer `if` around the body (rather than an early `return 0`) is what puts
-   the single `xor ax,ax` at 122E:083F; the three inner branches each return 1. */
+   the single `xor ax,ax` at 122E:083F; the inner branches return 1 or fall through to that shared
+   return. Draft: the item==0 `return 1` chains to the shared return instead of the original's
+   per-statement stub (see its note in re/symbols.toml). */
 /*@ 122E:06D0 draft */ int ItemSlotAction(int id, int slot)
 {
     register int item;
