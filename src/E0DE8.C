@@ -387,7 +387,71 @@ fail:
     return 0;
 }
 
-/*@ 0DE8:05BB stub */ void f0DE8_05BB(void) {}
+/* 0DE8:05BB: picks the item for the action `slot` and runs it. The item's m02 indexes g552F to a
+   `kind`; kind 0x10 takes the first m77[0], m77[1] or the special m77[16] slot whose own m02 is
+   0x10 (clearing the slot, pulling m77[16] through f0BD2_02B9), otherwise it scans all 27 slots
+   for the first whose item m02 equals `kind` (clearing it and redrawing with f1547_0991 when the
+   slot is below 2). A found item is dispatched through f0BD2_07DE (sound 0x1A when m02 is 7, else
+   0x0B, setting gDF4C), returning 0, or -4 when no item was found. Called by 0DE8:0763.
+   DRAFT: the kind 0x10 slot-clearing branch lays its blocks out differently (original tests
+   `m02 == 0x10` with je clear, ours with jne item0). */
+/*@ 0DE8:05BB draft */ int f0DE8_05BB(int who, int slot)
+{
+    int m02;
+    int kind;
+    int item;
+    int i;
+    int idx;
+
+    m02 = gTable8DD2[slot].m02;
+    kind = g552F[m02];
+    item = 0;
+    if (kind == 0x10) {
+        item = gChars[who].m77[0];
+        if (item == 0) {
+            item = 0;
+        } else if (gTable8DD2[item].m02 == 0x10) {
+            gChars[who].m77[0] = 0;
+        } else {
+            item = 0;
+        }
+        if (item == 0) {
+            item = gChars[who].m77[1];
+            if (item == 0) {
+                item = 0;
+            } else if (gTable8DD2[item].m02 == 0x10) {
+                gChars[who].m77[1] = 0;
+            } else {
+                item = 0;
+            }
+        }
+        if (item == 0 && gChars[who].m77[16] != 0)
+            item = f0BD2_02B9(&gChars[who].m77[16], 0, -1);
+    } else {
+        for (i = 0; i < 0x1b; i++) {
+            if (gTable8DD2[gChars[who].m77[i]].m02 == kind) {
+                item = gChars[who].m77[i];
+                gChars[who].m77[i] = 0;
+                if (i < 2)
+                    f1547_0991(who);
+                break;
+            }
+        }
+    }
+    if (item == 0)
+        return -4;
+    idx = who;
+    if (idx > 3)
+        idx -= 2;
+    if (f0BD2_07DE(who, item, gSoundVolume, g1A1B[gFBCC * 4 + idx], gFBCC, m02)) {
+        if (m02 == 7)
+            PlaySound(0x1a);
+        else
+            PlaySound(0xb);
+        gDF4C = 1;
+    }
+    return 0;
+}
 /*@ 0DE8:0763 stub */ void f0DE8_0763(void) {}
 /*@ 0DE8:093B stub */ void f0DE8_093B(void) {}
 /*@ 0DE8:09B9 stub */ int f0DE8_09B9(int who, int what) { return 0; }
