@@ -44,7 +44,8 @@ extern signed char g3435[]; /*@ ds:3435 */     /* five values that 0A72:00CF put
                                                   base for the matching g3430 threshold */
 extern signed char g3439[]; /*@ ds:3439 */     /* base value per strength score, used by 0A72:00CF */
 extern signed char g3453[]; /*@ ds:3453 */     /* five strength-percentile thresholds, used by 0A72:0128 */
-extern signed char g3458[]; /*@ ds:3458 */     /* five values paired with g3453 */
+extern signed char g3458[]; /*@ ds:3458 */     /* the five values 0A72:0128 puts in place of the
+                                                  base g345C for the matching g3453 threshold */
 extern signed char g345C[]; /*@ ds:345C */     /* base value per strength score, used by 0A72:0128 */
 extern int g3474[]; /*@ ds:3474 */             /* a word table indexed by the +15 stat byte (0A72:0181) */
 extern int g349E[]; /*@ ds:349E */             /* a word table indexed by the +15 stat byte (0A72:019D) */
@@ -83,7 +84,7 @@ char GetClassSlotByte(char row, char slot); /*@ 0A72:0509 */
 
 /* 0A72:007B: the slot 0, 1 or 2 whose g35D4 byte for class `classIndex` equals `slotId`, or -1.
    `slotId` is the g35D4 slot value searched for; the src/ callers pass 1, 2 and 4 (E0D1C.C:579,
-   :586; E0EF3.C:614, :634, :637; EOV6.C:144, :209, :440, :441, :447). Called by 0D1C:0903,
+   :586; E0EF3.C:640, :660, :663; EOV6.C:144, :209, :440, :441, :447). Called by 0D1C:0903,
    0EF3:0498, 0EF3:04F7 and overlays 1 and 6. */
 /*@ 0A72:007B */ int FindClassSlot(int slotId, int classIndex)
 {
@@ -151,7 +152,7 @@ char GetClassSlotByte(char row, char slot); /*@ 0A72:0509 */
    the base 0DE8:0D5E builds the armour class m1D from: 0DE8:0D5E does
    `base = GetArmourClassBase(rec->m15);` and then `rec->m1D = base + 10;` (E0DE8.C:684-685),
    before the item modifiers and clamps. Called by 0DE8:0D5E, 0EF3:0F0B (which does
-   `base = GetArmourClassBase(gCurRec->m15)` and compares m1D with base + 6, E0EF3.C:978-979),
+   `base = GetArmourClassBase(gCurRec->m15)` and compares m1D with base + 6, E0EF3.C:1004-1005),
    ovl0:135D EditStatField (`GetArmourClassBase(amount)` under `if (index == 3)`, EOV0.C:1002) and
    ovl0:1BF2 RollCharacterStats (`GetArmourClassBase(scores[3])`, where scores[3] is stored as m15
    at EOV0.C:1103, EOV0.C:1106). */
