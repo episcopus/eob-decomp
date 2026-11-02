@@ -532,10 +532,10 @@ fail:
    out, redraws through f1547_0991 (or f1547_0544 when gFB44 is set), triggers the party-wipe
    ending when hp is at or below -10 and arms ApplyCharEffect(who, 0x12, 6, 1). Called by 0EF3,
    0E08E6, 122E, 1414 and overlay 6.
-   DRAFT: the mE2 clamp differs. The original tests the record offset, not the byte: it emits
-   `mov ax,[bp-4]; add ax,0xdf; or ax,ax; jae` (rec + mDF, always nonzero) before the mE2 store,
-   where ours emits `cmp byte es:[bp-4+0xe2],0; jge`. */
-/*@ 0DE8:09B9 draft */ void DamageCharacter(int who, int amount)
+   QUIRK 0DE8:09FD: the mE2 clamp reads `if (&rec->mDF < 0)`, a far-pointer comparison that is
+   always false, so the compiler emits `mov ax,[bp-4]; add ax,0xdf; or ax,ax; jae` and the
+   following `rec->mE2 = 0` never runs. Kept as written. */
+/*@ 0DE8:09B9 */ void DamageCharacter(int who, int amount)
 {
     struct CharRec far *rec;
 
@@ -544,7 +544,7 @@ fail:
     rec = &gChars[who];
     if (rec->mE2 != 0) {
         rec->mE2 -= amount;
-        if (rec->mE2 < 0)
+        if (&rec->mDF < 0)  /* QUIRK 0DE8:09FD: always false (see the comment above) */
             rec->mE2 = 0;
     }
     rec->hp -= amount;
@@ -562,7 +562,7 @@ fail:
         rec->mDF -= amount;
         if (rec->mDF <= 0) {
             rec->mDF = 0;
-            f0EF3_0F86(rec);
+            f0EF3_0F86(&gChars[who]);
         }
     }
     if (gFB44 == 0)
