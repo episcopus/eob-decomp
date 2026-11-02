@@ -102,6 +102,13 @@ extern char gB899[]; /*@ ds:B899 */         /* the nine-byte record list head (s
 extern char gB894[]; /*@ ds:B894 */         /* the nine-byte records (src/E0D1C.C) */
 extern void (far *gSaveRect)(int x, int y, int w, int h, void far *buf); /*@ ds:80AE */ /* E1BBE.ASM */
 extern void (far *gFillRect)(int x1, int y1, int x2, int y2, int pattern); /*@ ds:806A */ /* src/E082C.C */
+extern void DrawFilledPanel(int x1, int y1, int x2, int y2, int c1, int c2, int c3); /*@ 082C:09D5 */
+extern void DrawRect(int x1, int y1, int x2, int y2, int colour); /*@ 082C:04C4 */
+extern void PrintInt(int value, int a, int b, int c, int d); /*@ 1AA6:000F */
+extern int g17CE[]; /*@ ds:17CE */          /* a per-character word (the item row's x) */
+extern unsigned char g1804[]; /*@ ds:1804 */ /* a per-character byte (the item row's y) */
+extern signed char g3875[]; /*@ ds:3875 */  /* a per-character byte (0, 1 or 2) */
+extern signed char g3890[]; /*@ ds:3890 */  /* a three-byte table read by 0BD2:0917 */
 
 extern int f0D1C_02DC(void); /*@ 0D1C:02DC */
 extern void SetMouseItem(int n); /*@ 07A9:010C */
@@ -117,7 +124,7 @@ extern int far RollDice(char count, char sides, char bonus); /*@ 082C:0458 */
 /* functions of this unit, forward (address order) */
 void f0BD2_01D0(void far *head, int key, int item, int sound);
 int f0BD2_02B9(void far *head, int key, int target);
-void f0BD2_0917(int row, int slot, int one);
+void f0BD2_0917(int who, int slot, int one);
 int f0BD2_0AF2(int item, int who, int row);
 void f0BD2_0BA0(int slot);
 void f0BD2_0C8E(int who, int row);
@@ -414,7 +421,54 @@ next:
     return slot;
 }
 
-/*@ 0BD2:0917 stub */ void f0BD2_0917(int row, int slot, int one) {}
+/* 0BD2:0917: draws the item row of character `who`: a filled panel and rectangle at x g17CE[who]
+   and y g1804[who] sized by g3890[g3875[who]], and, when `slot` is nonzero and the row is the
+   party's, the item icon. `one` selects the input mode and is stored in g8115 for the duration.
+   Called by 0D1C and 0ACD. Purpose unknown. */
+/*@ 0BD2:0917 */ void f0BD2_0917(int who, int slot, int one)
+{
+    int y;
+    int item;
+    int count;
+    int saved;
+    int x;
+    int kind;
+
+    kind = slot;
+    saved = g8115;
+    g8115 = one;
+    x = g17CE[who];
+    y = g1804[who];
+    item = gChars[gA99A].m77[who];
+    if (kind != 0) {
+        kind = g3875[who];
+        if (g8102 == 0)
+            DrawFilledPanel(x - 1, y - 1, x + g3890[kind], y + g3890[kind], 3, 1,
+                    kind != 1 ? gF57E : -1);
+        else
+            DrawFilledPanel(x - 1, y - 1, x + g3890[kind], y + g3890[kind], gFB4C, gF53A,
+                    kind != 1 ? gF57E : -1);
+        if (kind == 1) {
+            gFillRect(0xE3, 0x41, 0xEE, 0x45, 0xC);
+            count = f0BD2_0385(&gChars[gA99A].m77[who], -1, -1, 1);
+            if (count < 10)
+                x = 0xE9;
+            else
+                x = 0xE3;
+            PrintInt(count, x, 0x41, 0xF, 0);
+            x = g17CE[who];
+        }
+        if (gMouseDisabled && gF51A == who)
+            DrawRect(x - 1, y - 1, x + g3890[kind], y + g3890[kind], 0xF);
+    }
+    if (item != 0 && g3875[who] != 1) {
+        if (g3875[who] != 2)
+            f0D1C_070F(one, item, x, y);
+        else
+            f0D1C_070F(one, item, x - 4, y - 4);
+    }
+    g8115 = saved;
+}
 
 /* 0BD2:0ABE: when `one` is set, saves the 18x168 item sheet rectangle through the save-rect hook,
    then redraws the selected character's row. */
