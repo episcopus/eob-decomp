@@ -9213,6 +9213,9 @@ unit = "i0892"
 addr = "0892:0835"
 size = 139
 evidence = ["far", "near"]
+name = "ShutdownGame"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "i0892_08c0"
@@ -9220,6 +9223,9 @@ unit = "i0892"
 addr = "0892:08C0"
 size = 8
 evidence = ["frame"]
+name = "ExitHook"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "i0892_08c8"
@@ -9227,6 +9233,9 @@ unit = "i0892"
 addr = "0892:08C8"
 size = 40
 evidence = ["frame"]
+name = "AllocationFailure"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "i0921_0000"
