@@ -125,6 +125,14 @@ struct Entry27 {
     char pad13[0x1B - 0x13];
 };
 
+/* One of the five spell cells 0EF3:2295 fills, at ds:5773 (four bytes: two corners). */
+struct CellRect {
+    unsigned char x1;
+    unsigned char y1;
+    unsigned char x2;
+    unsigned char y2;
+};
+
 /* The 18-byte effect records at ds:DD2C, ten of them (src/E1414.C and src/E122E.C name the same
    records and the callback at +0x0E). */
 struct DDRec {
@@ -256,6 +264,17 @@ extern char far *gNameTable;            /*@ ds:EFCC */ /* the name table 0EF3:22
                                                           g1278 or g12E0 by 0EF3:21E0 */
 extern char far *g1278[];               /*@ ds:1278 */ /* far name pointers (src/E0BD2.C) */
 extern char far *g12E0[];               /*@ ds:12E0 */ /* far name pointers (src/E0BD2.C) */
+extern struct CellRect gSpellCells[];   /*@ ds:5773 */ /* five spell cells 0EF3:2295 fills */
+extern char far *gSpellLabels[];        /*@ ds:5787 */ /* the "1ST".."5TH" row labels 0EF3:2295 draws */
+extern char gText592B[];                /*@ ds:592B */ /* "ABORT SPELL" (0EF3:2295) */
+extern char gText5937[];                /*@ ds:5937 */ /* "ABORT SPELL" (0EF3:2295) */
+extern signed char gF57E;               /*@ ds:F57E */ /* a colour (src/E0BD2.C) */
+extern signed char gF53A;               /*@ ds:F53A */ /* a colour (src/E0BD2.C) */
+extern signed char gFB4C;               /*@ ds:FB4C */ /* a colour (src/E0BD2.C) */
+extern signed char gA9C4;               /*@ ds:A9C4 */ /* a colour (src/EOV2.C) */
+extern signed char gA928;               /*@ ds:A928 */ /* a colour (src/EOV2.C) */
+extern signed char gFB7B;               /*@ ds:FB7B */ /* a colour (src/E1547.C) */
+extern int g8102;                       /*@ ds:8102 */ /* the video mode (src/E07A9.C) */
 
 /* The record 0EF3:08CF, 0EF3:2541 and 0EF3:25BD take: an action context with the member it applies
    to at +0x38 (-1 when none) and a result word at +4 the functions hand back. */
@@ -345,6 +364,9 @@ extern int gDD18;                /*@ ds:DD18 */ /* the animation's origin x, wri
                                                    0EF3:2A53 */
 extern int gDD1A;                /*@ ds:DD1A */ /* the animation's origin y */
 extern void (far *gFillRect)(int x1, int y1, int x2, int y2, int pattern); /*@ ds:806A */
+extern void (far *gDrawLine)(int x1, int y1, int x2, int y2, int colour); /*@ ds:8062 */
+extern void (far *gDrawText)(char far *text, int x, int y, int colour, int extra); /*@ ds:80CA */
+extern void DrawFilledPanel(int x1, int y1, int x2, int y2, int colourA, int colourB, int fill); /*@ 082C:09D5 */
 extern void ComputeViewSpan(int slot, int far *left, int far *right, int region); /*@ 2116:0052 */
 extern void DrawViewFrame(int full); /*@ 2116:005C */
 extern void DrawViewSlots(int start); /*@ 2116:0025 */
@@ -906,10 +928,13 @@ extern void f0EF3_2A53(int a, int b, int c, int d, int e, void far *p); /*@ 0EF3
    otherwise, when RollToHit accepts the object and 0D1C:0BAB does not reject it, roll count d
    sides plus bonus and damage the object. Called by 0EF3:1B43, 0EF3:1EF3 and 0EF3:1FF9.
    DRAFT: the frame and register use match (`register int obj, dmg`, target spilled to [bp-2]),
-   but our build merges the two `sprintf`+`SayAndBeep` message tails (the obj==-1 branch and the
-   outer else), making the function about 0x1D bytes shorter; that pulls the function end within
-   short-branch range, so the RollToHit test emits `je skip; body` where the original, with its
-   separate tails, emits `jne body; jmp done` (`make match` differs at that jmp, +0x15). */
+   but with the file's -ml -O -Z TCC's internal assembler cross-jumps the two `sprintf`+`SayAndBeep`
+   message tails (the obj==-1 branch at 0EF3:0EAB and the outer else at 0EF3:0ED9; their bytes are
+   identical from +0x14, verified), so ours is about 0x1D bytes shorter and the outer-else jump is
+   off (`make match` differs at +0x15). -B keeps the tails apart (two bytes off at +0x15) but breaks
+   three other functions of the unit (DrawMemberIcons 0F99:0083, DispelMagic 131A:00AC,
+   DamageTargetCell 0A3F:014B), so the file's one flags annotation cannot express it. The same class as
+   0ACD:091C, 14EF:0274 and 0D1C:096C (WHITEPAPER 2.1.1). */
 /*@ 0EF3:0E1B draft */ void CastMeleeEffect(int count, int sides, int bonus)
 {
     int target;
@@ -1779,7 +1804,7 @@ void f0EF3_2EBC(int a, int b, int c, int d, int e, char far *table);
     HealCharacter(gCurMember, gChars[gPanelMember].m24[0] * 2);
 }
 
-void f0EF3_2295(void);
+void DrawSpellPanel(void);
 /* 0EF3:21E0: open the member's spell panel: clear gDDE2, make `who` the panel member, set gF43D
    when `flag` is 1, point gNameTable at g12E0 (memorized) or g1278 (known), point gDD14 at the
    member's +0x55 or +0x37 spell slots and gA9C5 at its first nonzero slot. Restore the panel
@@ -1807,11 +1832,93 @@ void f0EF3_2295(void);
         gSaveRect(8, 0x7A, 0x0E, 0x37, (char far *)gSegDF4E + 0x61A8);
     gFlag = 1;
     BuildList1();
-    f0EF3_2295();
+    DrawSpellPanel();
     return 1;
 }
 
-/*@ 0EF3:2295 stub */ void f0EF3_2295(void) {}
+/* 0EF3:2295: draw the spell panel body. It sets g8115, fills the panel's outer rectangle with
+   gFillRect, then draws the five spell cells: for each cell (the gSpellCells rectangle) it picks
+   three colours, gFB4C/gF53A/gF57E for the member's own row (i == gDDE2) and 3/1/-1 style
+   (gA9C4/gA928/gFB7B) for the others when g8102 is nonzero, or 1/2/3 and 0/1/2 when it is zero.
+   It then draws the "1ST".."5TH" labels (gSpellLabels) and the name list box, and for each of the
+   seven rows of the member's slot row (gDD14 + gDDE2*6) draws the spell's name from gNameTable
+   (row 6, the abort row, gets ds:592B, or ds:5937 when it is the highlighted row gA9C5). Finally
+   it clears g8115, hides the pointer, clips a 9 by 0x35 box, draws the panel's inner line with
+   gDrawLine and shows the pointer. Called by 0EF3:21E0, 0EF3:25BD and 0EF3:2929.
+   DRAFT: the panel, cells, labels and row list match through the third loop, but with the file's
+   -ml -O -Z TCC's internal assembler cross-jumps the not-selected row-6 "ABORT SPELL" call
+   (0EF3:1F4) into the shared `push ax; lcall gDrawText; add sp,0xc` tail that the original keeps
+   separate for that branch (first difference 0EF3:2295+0183, ours `jmp 0x230` against 0x238).
+   -B keeps it apart but TCC -S then emits the `gA9C5 == i` test inverted (`jne 0x201`, the
+   WHITEPAPER 2.1.1 boundary class) and breaks three other functions of the unit
+   (DrawMemberIcons 0F99:0083, DispelMagic 131A:00AC, DamageTargetCell 0A3F:014B). The cell
+   rectangles are unsigned bytes (the original zero-extends with `mov ah,0`). */
+/*@ 0EF3:2295 draft */ void DrawSpellPanel(void)
+{
+    register int i;
+    register int cell;
+    int slot;
+    int colourA;
+    int colourB;
+    int fill;
+    int hiColour;
+    int textColour;
+
+    g8115 = 2;
+    gFillRect(0x46, 0x7a, 0xaf, 0xaf, gF57E);
+    for (i = 0; i < 5; i++) {
+        cell = i * 4;
+        if (g8102 == 0) {
+            colourA = gDDE2 == i ? 1 : 0;
+            colourB = gDDE2 == i ? 2 : 1;
+            fill = gDDE2 == i ? 3 : 2;
+            hiColour = 1;
+            textColour = 0;
+        } else {
+            colourA = gDDE2 == i ? gFB4C : gA9C4;
+            colourB = gDDE2 == i ? gF53A : gA928;
+            fill = gDDE2 == i ? gF57E : gFB7B;
+            hiColour = 6;
+            textColour = 0xc;
+        }
+        DrawFilledPanel(((unsigned char near *)gSpellCells)[cell], ((unsigned char near *)gSpellCells)[cell + 1],
+                        ((unsigned char near *)gSpellCells)[cell + 2], ((unsigned char near *)gSpellCells)[cell + 3],
+                        colourA, colourB, fill);
+    }
+    if (g8102 == 0) {
+        fill = 2;
+        hiColour = 0xc;
+        textColour = 3;
+    } else {
+        fill = gF57E;
+        hiColour = 0xb;
+        textColour = 0xf;
+    }
+    for (i = 0; i < 5; i++)
+        gDrawText(gSpellLabels[i], i * 0x15 + 0x49, 0x7c, 0xc, 0);
+    DrawFilledPanel(0x47, 0x83, 0xaf, 0xae, gFB4C, gF53A, gF57E);
+    for (i = 0; i < 7; i++) {
+        slot = (gDD14 + gDDE2 * 6)[i];
+        if (gA9C5 == i) {
+            if (slot >= 0 && i < 6)
+                gDrawText(((char far **)gNameTable)[slot], 0x49, i * 6 + 0x84, textColour,
+                          hiColour);
+            else if (i == 6)
+                gDrawText(gText5937, 0x49, i * 6 + 0x84, textColour, hiColour);
+        } else {
+            if (slot >= 0 && i < 6)
+                gDrawText(((char far **)gNameTable)[slot], 0x49, i * 6 + 0x84, textColour,
+                          fill);
+            else if (i == 6)
+                gDrawText(gText592B, 0x49, i * 6 + 0x84, textColour, fill);
+        }
+    }
+    g8115 = 0;
+    HidePointerZone(0x48, 0x78, 0xb0, 0xaf);
+    ClipRect(9, 0x7a, 9, 0x7a, 0xd, 0x35, 2, 0);
+    gDrawLine(0x47, 0x7a, 0x47, 0xae, gF53A);
+    ShowPointerZone();
+}
 
 /* 0EF3:2541: redraw the party panel after an action: clear the key-flag gFlag, hide the pointer
    and restore the panel rectangle (8, 0x7a, 0x0e by 0x37) from the slot-5 buffer gSegDF4E plus
@@ -1851,7 +1958,7 @@ void f0EF3_2295(void);
             break;
         gA9C5++;
     }
-    f0EF3_2295();
+    DrawSpellPanel();
     return rec->m04;
 }
 
@@ -1930,13 +2037,13 @@ void f0EF3_2295(void);
             if ((gDD14 + gDDE2 * 6)[gA9C5] > 0)
                 break;
         } while (gA9C5 != 6);
-        f0EF3_2295();
+        DrawSpellPanel();
     } else {
         if ((gDD14 + gDDE2 * 6)[key] > 0 || key == 7) {
             if (key < 6)
                 gA9C5 = key;
             if (gA9C5 < 6) {
-                f0EF3_2295();
+                DrawSpellPanel();
                 value = (gDD14 + gDDE2 * 6)[gA9C5];
                 value += (gF43D == 1 ? 0x19 : 0);
                 f0EF3_2676(value, 0);

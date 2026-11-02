@@ -3505,6 +3505,7 @@ unit = "e0ef3"
 addr = "0EF3:0E1B"
 size = 240
 evidence = ["near", "frame"]
+notes = "blocked: unit-flag class (WHITEPAPER 2.1.1). Body written and matching up to +0x15. With the file's -ml -O -Z TCC's internal assembler cross-jumps the two `sprintf`+`SayAndBeep` message tails (obj==-1 at 0EF3:0EAB, outer else at 0EF3:0ED9; their bytes are identical from +0x14) into one shared suffix, so ours is ~0x1D bytes short and the outer-else `jmp` target is off (ours jmp 0xa1, original 0xbe). With -B (TCC -S then TASM /jNOSMART /m2) the tails stay apart but TCC -S then emits the whole outer-else jump 2 bytes long (ours jmp 0xc0, original 0xbe), and -B breaks three other functions of the unit: DrawMemberIcons (0F99, +0x83 `jge 0x87; jmp` against the original `jl 0xb`), DispelMagic (131A, +0xAC the same), DamageTargetCell (0A3F, +0x14B `jmp 0x308` against 0x306). Neither flag set matches the unit (with -c 99 of 100 non-stub functions match, with -B 96). No source form found: the two tails are byte-identical from the format push, so the internal assembler always merges them. Same open problem as 0ACD:091C and 0D1C:096C."
 
 [[function]]
 id = "e0ef3_0f0b"
@@ -4272,6 +4273,8 @@ unit = "e0ef3"
 addr = "0EF3:2295"
 size = 684
 evidence = ["far", "near", "frame"]
+name = "DrawSpellPanel"
+notes = "blocked: unit-flag class (WHITEPAPER 2.1.1), same as e0ef3_0e1b. The whole panel body is written and matches through the third loop (prologue/frame 0xc, the five cells with unsigned-byte rectangles that zero-extend with `mov ah,0`, the 1ST..5TH labels, the name box, the row-6 ABORT text, the pointer zone, ClipRect and the gDrawLine), first difference 0EF3:2295+0183 (ours `jmp 0x230` against 0x238). With the file's -ml -O -Z TCC's internal assembler cross-jumps the not-selected row-6 `gDrawText(gText592B, ...)` tail at 0EF3:1F4 into the shared `push ax; lcall gDrawText; add sp,0xc` tail that the original keeps separate for that branch. With -B the tail stays apart but TCC -S emits the `gA9C5 == i` test inverted (`jne 0x201` against the original `je 0x201`) and -B breaks DrawMemberIcons (0F99:0083), DispelMagic (131A:00AC) and DamageTargetCell (0A3F:014B). The cell rectangles at ds:5773 are four unsigned bytes each (x1,y1,x2,y2); the row labels at ds:5787 are five far pointers to \"1ST\"..\"5TH\"."
 
 [[function]]
 id = "e0ef3_2541"
