@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """safety.py: what a branch may not change (AGENTS.md ground rules; the pre-commit hook and `make handoff`).
 
-Everywhere: no change under eob/ (the pinned originals) or build/, no en or em dash in an added line.
+Everywhere: no change under eob/ (the pinned originals) or build/, no en or em dash in an added line,
+no TOML file that does not parse (a registry every tool reads; e122e, 2026-11-02, escaped a backtick in a note).
 On unit/ and review/ branches also: not the spec (docs/spec/), re/inputs.toml, the toolchain pin
 (tools/re/tc_toolchain.toml), the matcher (tools/match/) or its negative fixtures (tests/match/negative/),
 the agent tools (tools/agent/): those change on a task branch the human asked for, so a decompiler
@@ -14,6 +15,7 @@ from __future__ import annotations
 
 import argparse
 import sys
+import tomllib
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -25,7 +27,8 @@ WORKER_BRANCH = ("docs/spec/", "re/inputs.toml", "tools/re/tc_toolchain.toml", "
 DASHES = ("–", "—")
 
 
-def findings(paths: list[str], added: list[tuple[str, str]], branch: str) -> list[str]:
+def findings(paths: list[str], added: list[tuple[str, str]], branch: str, read=None) -> list[str]:
+    """`read(path)`: the file as committed or staged (None: deleted), to check that TOML parses."""
     out = []
     worker = branch.startswith(("unit/", "review/"))
     for p in paths:
@@ -36,6 +39,14 @@ def findings(paths: list[str], added: list[tuple[str, str]], branch: str) -> lis
     for path, line in added:
         if any(d in line for d in DASHES):
             out.append("%s: an en or em dash in an added line: %s" % (path, line.strip()[:80]))
+    for p in paths:
+        text = read(p) if read and p.endswith(".toml") else None
+        if text is not None:
+            try:
+                tomllib.loads(text)
+            except tomllib.TOMLDecodeError as e:
+                out.append("%s: not valid TOML: %s (in a basic string, a backslash starts an escape: "
+                           "write a backtick as it is, a backslash as \\\\)" % (p, e))
     return out
 
 
@@ -54,13 +65,17 @@ def branch_findings(branch: str, cwd: Path | None = None, rev: str | None = None
     rev = rev or branch
     base = common.git("merge-base", "main", rev, cwd=cwd)
     paths = common.git("diff", "--name-only", base, rev, cwd=cwd).splitlines()
-    return findings(paths, diff_added([base, rev], cwd), branch)
+    def read(p):
+        return common.git("show", "%s:%s" % (rev, p), cwd=cwd, check=False) or None
+    return findings(paths, diff_added([base, rev], cwd), branch, read)
 
 
 def staged_findings() -> list[str]:
     paths = common.git("diff", "--cached", "--name-only").splitlines()
     branch = common.git("branch", "--show-current", check=False)
-    return findings(paths, diff_added(["--cached"]), branch)
+    def read(p):
+        return common.git("show", ":" + p, check=False) or None
+    return findings(paths, diff_added(["--cached"]), branch, read)
 
 
 def main(argv=None) -> int:
