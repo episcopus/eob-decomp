@@ -55,7 +55,7 @@ extern void PlaySoundAtCell(int sound, int volume); /*@ 177D:0106 */
 extern char gFB76; /*@ ds:FB76 */              /* set by opcode 0xFFE4, cleared when the driver starts (122E:1097, 122E:1DA8) */
 extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
 extern char gFileNameBuf[]; /*@ ds:FE6E */     /* the text buffer sprintf formats into (src/E082C.C) */
-extern int gForceDoorRoll[]; /*@ ds:59B0 */    /* force-door roll thresholds, indexed by CharRec.m0D (122E:0325) */
+extern int gForceDoorRoll[]; /*@ ds:59B0 */    /* force-door roll thresholds, indexed by the strength score CharRec.m0D (122E:0325) */
 extern signed char g1905[]; /*@ ds:1905 */     /* per-object-kind handler selector (src/E0DE8.C) */
 extern char gFB44; /*@ ds:FB44 */              /* a display-mode byte (src/E0ACD.C) */
 extern char gF542[]; /*@ ds:F542 */            /* a message buffer (src/E0ACD.C) */
@@ -120,9 +120,10 @@ struct CharRec {                                /* the 243-byte character record
     char pad00;
     unsigned char status;                       /* +01: bit 0 is live */
     char name[0x0B];                            /* +02: the character's name, NUL padded */
-    signed char m0D;                            /* +0D: the class/strength index 122E:0325 picks on */
+    signed char m0D;                            /* +0D: the strength score, the index 122E:0325
+                                                   picks gForceDoorRoll by (src/E0A72.C) */
     char pad0E;
-    signed char m0F;                            /* +0F: a level or score (src/E0BD2.C) */
+    signed char m0F;                            /* +0F: the exceptional strength percentile (src/E0A72.C) */
     char pad10[0x1B - 0x10];
     signed char m1B;                            /* +1B: 122E:0325 skips a character at or below 0 */
     char pad1C[0x20 - 0x1C];

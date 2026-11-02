@@ -79,7 +79,7 @@ char GetClassSlotByte(char row, char slot); /*@ 0A72:0509 */
 
 /* 0A72:007B: the slot 0, 1 or 2 whose g35D4 byte for class `classIndex` equals `value`, or -1.
    Called by 0D1C:0903, 0EF3:0498, 0EF3:04F7 and overlays 1 and 6. */
-/*@ 0A72:007B */ int FindClassSlot(int value, char classIndex)
+/*@ 0A72:007B */ int FindClassSlot(int value, int classIndex)
 {
     if (GetClassSlotByte(classIndex, 0) == value)
         return 0;

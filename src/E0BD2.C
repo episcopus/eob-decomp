@@ -45,9 +45,9 @@ struct CharRec {
     char pad00;
     unsigned char m01;      /* +01: status bits, tested by 0BD2:0D2D */
     char name[0x0B];        /* +02: the character's name, NUL padded */
-    signed char m0D;        /* +0D: a class index, written by 0BD2:0D2D */
+    signed char m0D;        /* +0D: the strength score, set to 0x16 by 0BD2:0D2D (src/E0A72.C) */
     char pad0E;
-    signed char m0F;        /* +0F: a level or score, written by 0BD2:0D2D */
+    signed char m0F;        /* +0F: the exceptional strength percentile, set to 0 by 0BD2:0D2D */
     char pad10[0x1E - 0x10];
     signed char m1E;        /* +1E */
     signed char m1F;        /* +1F */
@@ -707,11 +707,12 @@ next:
 
 /* 0BD2:0D2D: applies the effect of the item just taken from slot `slot` of character `who`. It
    clears the slot through 0BD2:0106 (the item's m0B selects the effect), plays sound 0x0A and
-   dispatches on m0B: 1 restores a class index and heals, 2 and 3 heal by a dice roll, 4 poisons
-   through 0DE8:101A, 5 sets m23 to 100, 6 and 8 run the 0EF3 helpers, 7 sets effect flag 4. After
-   the switch it announces "%s feels <effect>!\r" with the effect name from the ds:3893 table,
-   except for effect 4 when m01 bit 1 is set. Called by 0BD2:1001. This unit is compiled with
-   `-v` (source-level debugging), which keeps `case 5` and `case 7`'s `RedrawMember(who)` calls
+   dispatches on m0B: 1 restores the strength score to 22 and heals, 2 and 3 heal by a dice roll,
+   4 poisons through 0DE8:101A, 5 sets m23 to 100, 6 and 8 run the 0EF3 helpers, 7 sets effect
+   flag 4. After the switch it announces "%s feels <effect>!\r" with the effect name from the
+   ds:3893 table, except for effect 4 when m01 bit 1 is set. Called by 0BD2:1001. This unit is
+   compiled with `-v` (source-level debugging), which keeps `case 5` and `case 7`'s
+   `RedrawMember(who)` calls
    apart where `-Z` alone cross-jumps them. */
 /*@ 0BD2:0D2D */ void ApplyItemEffect(int who, int slot)
 {
