@@ -39,36 +39,52 @@ segment 212E).
 
 ## Findings
 
-- [ ] must-fix src/E0CF7.C:5-7 (`The records the tables point at are 60 bytes each in DGROUP`): the 0x3C grid is
+- [x] must-fix src/E0CF7.C:5-7 (`The records the tables point at are 60 bytes each in DGROUP`): the 0x3C grid is
   proven, the record size is not. Every table entry is 6 mod 60, and the closest two distinct records are 60 bytes
   apart, so the records sit on a 60-byte grid. Nothing in the bytes shows each record is 60 bytes long. The node
   layout in src/E1658.C:9-18 reaches +0x33 (52 bytes), so the real size is somewhere from 52 to 60. Say "spaced on a
-  60-byte grid", or give the size and its evidence.
-- [ ] should src/E0CF7.C:8 (`struct Node`): src/E1658.C:9 defines another `struct Node` for the same list nodes
+  60-byte grid", or give the size and its evidence. [FIXED (HEAD): the `Node` comment now says the records are
+  "spaced on a 60-byte grid (every table entry is 6 mod 0x3C)" and gives the size as 52 to 60, E1658.C's +0x33
+  layout being the lower bound. Re-read the eight tables from DGROUP (DGROUP = 0x212E): all 261 entries are 6 mod 60,
+  the closest distinct records 60 apart. `make match FILE=src/E0CF7.C` still 6 of 6, 591 bytes.]
+- [x] should src/E0CF7.C:8 (`struct Node`): src/E1658.C:9 defines another `struct Node` for the same list nodes
   (far `next` at +00, `key` at +04, `flags` at +0E, `state` at +2E, `callback` at +30). Two units with one tag and
   different members will collide once a shared header exists. Use the E1658 definition (its first member is the same
-  far `next`) or give this one another tag.
-- [ ] should src/E0CF7.C:12 (`gList`): cite the consumer. src/E16A5.C:56-60 says `DispatchKeyWait` dispatches a key to
+  far `next`) or give this one another tag. [FIXED (HEAD): E0CF7.C now declares the same `struct Node` as E1658.C
+  (`next` at +00, `key` at +04, `pad06[8]`, `flags` at +0E, `pad10[0x1E]`, `state` at +2E, `callback` at +30); the
+  two functions touch only `next`. `make match FILE=src/E0CF7.C` 6 of 6.]
+- [x] should src/E0CF7.C:12 (`gList`): cite the consumer. src/E16A5.C:56-60 says `DispatchKeyWait` dispatches a key to
   "the node list `head`", and that overlays 0 and 1 and 0ACD:0E6C each pass the list head at ds:FB48. That is the
   strongest evidence in the file for what gList is: the screen node list the key dispatcher walks, not only "the list
-  built last". The name can stay; the comment should carry the evidence.
-- [ ] should src/E0CF7.C:1-2 (`Go/no-go spike for the toolchain (SPEC 4.2)`): project history, not what the code does,
-  and it will go stale. Move it to the work notes or drop it.
-- [ ] should src/E0CF7.C:3 (`Names are placeholders until the callers and the tables are understood`): the packet
+  built last". The name can stay; the comment should carry the evidence. [FIXED (HEAD): the `gList` comment now calls
+  it the head of the screen node list walked by DispatchKeyWait (E16A5.C:56-60, 16A5:005A), and notes that 0ACD:0E6C
+  and overlays 0 and 1 pass it at ds:FB48.]
+- [x] should src/E0CF7.C:1-2 (`Go/no-go spike for the toolchain (SPEC 4.2)`): project history, not what the code does,
+  and it will go stale. Move it to the work notes or drop it. [FIXED (HEAD): the Go/no-go line is dropped from the
+  header, which now states what the unit does.]
+- [x] should src/E0CF7.C:3 (`Names are placeholders until the callers and the tables are understood`): the packet
   lists every caller and the tables are decoded, so the line says less than the file knows. Say what is still
   unknown instead: the meaning of gFlag (and so of the a and b sets), and the numbering of BuildList1 to BuildList5.
-- [ ] should src/E0CF7.C:10-11 (`gFlag`): name the writer context. 0EF3:2541 is the function that stores 0 and calls
+  [FIXED (HEAD): the header now says what is still unknown: the meaning of gFlag (and so of the a and b sets), and
+  what BuildList1 to BuildList5 number.]
+- [x] should src/E0CF7.C:10-11 (`gFlag`): name the writer context. 0EF3:2541 is the function that stores 0 and calls
   BuildList1 to 3; 0EF3:2281 stores 1 and calls BuildList1 at 0EF3:2286. Those two callers are where a reader would
-  look first, and the comment gives only the store addresses.
-- [ ] note the tables: the first entry of tables 1a, 1b, 2a, 2b, 3a and 3b is the same record, ds:4836 (tables 4 and 5
+  look first, and the comment gives only the store addresses. [FIXED (HEAD): the `gFlag` comment now names both
+  contexts: the 1 store at 0EF3:2281 is just before that function calls BuildList1 at 0EF3:2286, and the 0 store at
+  0EF3:2544 is in the function at 0EF3:2541 that calls BuildList1 to BuildList3.]
+- [x] note the tables: the first entry of tables 1a, 1b, 2a, 2b, 3a and 3b is the same record, ds:4836 (tables 4 and 5
   start at 0x3E9A and 0x4B7E). So the a and b sets differ only after their first node, and every BuildList1 to 3 call
   runs ListInit on ds:4836. A reader who expects the a and b heads to differ will be misled; the comment at the
-  tables could say so.
-- [ ] note src/E1658.C:6-7 says ListAdd is at "0CF7:001E". That address is inside ListInit (0CF7:0007); ListAdd is at
-  1658:001E, as src/E1658.C:51 says. Not in this unit; the E1658 owner should fix it.
-- [ ] note BuildList1 to BuildList5 are named by their table number, not by what the tables are. That is acceptable
+  tables could say so. [FIXED (HEAD): the new table block above the declarations records this, with the counts per
+  table; read back from DGROUP (DGROUP = 0x212E), confirmed: the six a/b first entries are ds:4836 and tables 4 and
+  5 start at ds:3E9A and ds:4B7E.]
+- [x] note src/E1658.C:6-7 says ListAdd is at "0CF7:001E". That address is inside ListInit (0CF7:0007); ListAdd is at
+  1658:001E, as src/E1658.C:51 says. Not in this unit; the E1658 owner should fix it. [ACKNOWLEDGED, no change:
+  E1658.C is another unit's file, so per this note its owner fixes it; E0CF7's own declaration is right
+  (1658:001E).]
+- [x] note BuildList1 to BuildList5 are named by their table number, not by what the tables are. That is acceptable
   for now (the bodies say what they do) and the numbers follow the tables, so leave them until the a and b meaning
-  is known.
+  is known. [ACKNOWLEDGED, no change.]
 
 ## Summary
 

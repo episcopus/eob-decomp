@@ -1,23 +1,44 @@
 /* Module at EOB.EXE 0CF7:0007 (591 bytes, the whole code segment): links static records into
-   singly linked lists. Go/no-go spike for the toolchain (SPEC 4.2): Turbo C++ 1.00, -ml -Z -O.
-   Names are placeholders until the callers and the tables are understood. */
+   singly linked lists. Each BuildList* seeds a list with the first record of a table and appends
+   the rest with ListAdd. Still unknown: the meaning of gFlag (and so of the a and b table sets),
+   and what BuildList1 to BuildList5 number. */
 
-/* A list node: offset 0 is a far pointer to the next node, or null at the tail. The records the
-   tables point at are 60 bytes each in DGROUP (stride 0x3C), but only this link is touched here.
-   ListInit zeroes it, which is a null far pointer, the two word stores the bytes show. */
-struct Node { struct Node far *next; };
+/* A list node: offset 0 is a far pointer to the next node, or null at the tail. The tables point
+   at records in DGROUP spaced on a 60-byte grid (every table entry is 6 mod 0x3C); the record's
+   real size is not proven, E1658.C lays one out through +0x33 (52 bytes), so it is 52 to 60. Only
+   this link is touched here: ListInit zeroes it, the two word stores the bytes show, a null far
+   pointer. Same tag and layout as E1658.C, which shares these nodes, so the two agree once a
+   header exists. */
+struct Node {
+    struct Node far *next;                       /* +00: next node, or a null pointer at the tail */
+    unsigned key;                                /* +04: sort key, compared unsigned */
+    unsigned char pad06[8];                      /* +06: unknown fields */
+    unsigned flags;                              /* +0E: the inactive bit and the layout bits */
+    unsigned char pad10[0x1E];                   /* +10: unknown fields */
+    unsigned state;                              /* +2E: the on bit, the previous-on bit, others */
+    void (far *callback)(struct Node far *node); /* +30: optional callback, fired when asked */
+};
 
-extern char gFlag; /*@ ds:F3B9 */ /* picks the "a" table set when nonzero; written 1 at 0EF3:2281
-                                     and 0 at 0EF3:2544 and 0ACD:0FA9. Meaning unknown. */
-extern struct Node far *gList; /*@ ds:FB48 */ /* head of the list built last (see the ListAdd note) */
-extern struct Node far *gTable1a[]; /*@ ds:5102 */
-extern struct Node far *gTable1b[]; /*@ ds:506A */
-extern struct Node far *gTable2a[]; /*@ ds:52DA */
-extern struct Node far *gTable2b[]; /*@ ds:51D2 */
-extern struct Node far *gTable3a[]; /*@ ds:528E */
-extern struct Node far *gTable3b[]; /*@ ds:53C6 */
-extern struct Node far *gTable4[]; /*@ ds:5446 */
-extern struct Node far *gTable5[]; /*@ ds:5462 */
+extern char gFlag; /*@ ds:F3B9 */ /* picks the "a" table set when nonzero (the longer lists for
+                                     tables 1 and 2, the shorter for table 3). Written 1 at 0EF3:2281,
+                                     just before that function calls BuildList1 at 0EF3:2286; written
+                                     0 at 0EF3:2544 in the function at 0EF3:2541 that calls BuildList1
+                                     to BuildList3, and at 0ACD:0FA9. Meaning unknown. */
+extern struct Node far *gList; /*@ ds:FB48 */ /* head of the screen node list walked by the key
+                                                 dispatcher DispatchKeyWait (E16A5.C:56-60, 16A5:005A);
+                                                 0ACD:0E6C and overlays 0 and 1 pass it at ds:FB48
+                                                 too. See the ListAdd note below. */
+/* Table base addresses and record counts. The first entry of tables 1a, 1b, 2a, 2b, 3a and 3b is
+   the same record, ds:4836, so the a and b sets differ only after their first node; tables 4 and 5
+   start with the records at ds:3E9A and ds:4B7E. */
+extern struct Node far *gTable1a[]; /*@ ds:5102 */ /* 52 records */
+extern struct Node far *gTable1b[]; /*@ ds:506A */ /* 38 records */
+extern struct Node far *gTable2a[]; /*@ ds:52DA */ /* 59 records */
+extern struct Node far *gTable2b[]; /*@ ds:51D2 */ /* 47 records */
+extern struct Node far *gTable3a[]; /*@ ds:528E */ /* 19 records */
+extern struct Node far *gTable3b[]; /*@ ds:53C6 */ /* 32 records */
+extern struct Node far *gTable4[]; /*@ ds:5446 */ /* 7 records */
+extern struct Node far *gTable5[]; /*@ ds:5462 */ /* 7 records */
 
 /* Walks head to its tail (the first node whose link is null), stores item there, clears item's
    own link, and returns head. The return is always its first argument. */
