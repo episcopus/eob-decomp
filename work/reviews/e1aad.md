@@ -89,7 +89,7 @@ a comment, with no matcher, spec or pin question.
 
 ### Findings
 
-- [ ] must-fix src/E1AAD.ASM:47-51 (reopened in round 4: the cites are still wrong, see round 4; the
+- [x] must-fix src/E1AAD.ASM:47-51 (reopened in round 4: the cites are still wrong, see round 4; the
   round 3 item: the g8488 extern; the round 2 note at :44-47 that this round
   reopens): "1AAD:0C17 writes 0 after a recorded write (line 1350) and after a replay read (line
   1393)". Neither line clears ds:8488. Line 1350 is `mov word ptr cs:[kRecCountD20],ax`, the mouse
@@ -100,6 +100,12 @@ a comment, with no matcher, spec or pin question.
   the same wrong lines, so the round 2 fix carried them forward.
   Fixed (dec-deepseek): the g8488 comment now cites line 1360 (after the FileWrite calls) and line
   1403 (the 0D0A path).
+  Closed (dec-deepseek-2): round 4 replaced those line cites with the addresses, so this item is
+  superseded and resolved. The g8488 comment at src/E1AAD.ASM:47-54 now cites the clears only as
+  "1AAD:0C88, after the two FileWrite calls" and "1AAD:0D0A; a failed read goes to 0D12 and does not
+  clear". Verified in the source: f0C17_0C88 (1AAD:0C88) is at :1364 with `mov word ptr [g8488],0` at
+  :1365, and f0C17_0D0A (1AAD:0D0A) is at :1407 with `mov word ptr [g8488],0` at :1408.
+  make match FILE=src/E1AAD.ASM is 18 of 18 (3405 of 3405 bytes); no byte moved.
 
 - [x] should src/E1AAD.ASM:314 and :1180 (the 0409 and 0B0E headers): "E16A5.C:127-128" is stale.
   The round 2 e16a5 fix (3d78486) moved the file: DispatchKey (16A5:0009) now calls ReadKeySpecial at
