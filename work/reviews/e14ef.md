@@ -1,6 +1,121 @@
 # Review: e14ef
 
 Reviewer: rev-haiku
+Commit reviewed: 731aeba (review/e14ef; src/E14EF.C last changed in 8bbeafe; `make match FILE=src/E14EF.C`: 6 of 6, 1410 bytes, exit 0; `make readability UNIT=e14ef`: 0 findings)
+
+Playbook 70. Judge what a matching file can still get wrong: names, types, comments, structure.
+The matcher already proved the bytes; do not re-prove them, read for meaning.
+
+Round 6. Round 5's items are ticked and hold (the callers, the gFC7A reader, the ds:8102 and ds:814A
+meanings, the CountMaskBits tags). The names still hold. What fails this round is the same class as
+rounds 2 to 5: the line cites in the comments. About fourteen cites point at other lines; none of
+them was rechecked after the comments around them changed. I checked every cite in the file with `grep -n` against the current text and
+every cite into src/EOV0.C, src/EOV2.C, src/E1A72.ASM, src/E1AAD.ASM, src/E0ACD.C, src/E16A5.C and
+src/E082C.C. Each must-fix below is a comment fix; no code change is asked for. The overlay witnesses
+(build/re/eob-overlays/ovl00.bin: B8 0F 00 at 0x20DD, B8 09 00 at 0x228E) and the caller masks
+(src/EOV0.C:1190, :1193, :1204, :1242, :1244) are right.
+
+## Findings
+
+Each finding is a checkbox. `must-fix` blocks `make review-pass` until a decompiler ticks it off
+(with the commit that fixes it); `should` and `note` do not block.
+
+- [ ] must-fix src/E14EF.C:10-12 (header, field reads): the reads are on other lines. DrawOptionList
+  reads y at :182, x at :183, sel at :184 and height at :185; the text says :178-:181, which are
+  `register int i;`, `register int entry;`, a blank line and `panelDef = &gPanels[panel];`.
+  UpdateOptionList reads height at :261, sel at :262, y at :266, x at :267, colorA at :268, colorB at
+  :269 and width at :276; the text says width at :269 (that line is colorB) and colorA/colorB at
+  :261-262 (height and sel). DrawOptionList reads colorA at :190 and colorB at :192; the text says :186
+  and :188 (LockHidePointer and the FindMaskBit call). (evidence: grep -n of src/E14EF.C for
+  `panelDef->`: :182-185, :190, :192, :261-262, :266-269, :276)
+- [ ] must-fix src/E14EF.C:34-35 and :46-47 (struct Panel x, gTextLeft): "the font width in
+  UpdateOptionList" is true only of the hit rectangle. The row and blink drawing in UpdateOptionList
+  use eight-pixel cells: xbase = (gTextLeft + panelDef->x) << 3 at :267, the same as DrawOptionList
+  (:183). Only the hit rectangle multiplies x by gFontWidth (left at :274, right at :276). The
+  gTextLeft comment cites "<< 3 at :260 and :267" and "(:179)" and ":267" for the font-width units:
+  :260 is `panelDef = &gPanels[panel];`; the shifts are at :267 and :274, and DrawOptionList's x is :183.
+  Say it once: both functions draw in eight-pixel cells, and the hit rectangle in UpdateOptionList uses
+  the font width. (evidence: src/E14EF.C:267, :274, :276, :183; src/E1C0E.C:60 "8-pixel columns")
+- [ ] must-fix src/E14EF.C:54-55 (g5D1A): "(:187-188)" points at the `for` line and the FindMaskBit
+  call. The test is `if (entry == selEntry && (g5D1A || gMouseDisabled))` at :191 and the colorB draw
+  is :192. (evidence: src/E14EF.C:191-192)
+- [ ] must-fix src/E14EF.C:64-65 (g8102): "(:186, :261)" points at `LockHidePointer();` (:186) and
+  `lastRow = ...` (:261). The two colour tests are :190 (DrawOptionList) and :268 (UpdateOptionList).
+  (evidence: src/E14EF.C:190, :268)
+- [ ] must-fix src/E14EF.C:56-60 (g8140, g8142): "tested against a panel rectangle by UpdateOptionList
+  (:297)" points at a `break;`. The test is `IsPointInRect(g8140, g8142, ...)` at :304, and g8142 is
+  read again at :305 (`row = (g8142 - top) / lineheight`). The g8142 comment's "(:298, ...)" points at
+  `case KEY_LAST:`. (evidence: src/E14EF.C:297-298, :304-305)
+- [ ] must-fix src/E14EF.C:67-69 (gMouseDisabled): "src/E1A72.ASM:297" is `jne L0123`. The store
+  `mov word ptr [gMouseDisabled],1` is src/E1A72.ASM:314, after `mov word ptr
+  [gMouseHandlerInstalled],1` at :313. The 1A72:0150 address is the one src/E1A72.ASM:99 gives for
+  "before it installs the handler". (evidence: src/E1A72.ASM:297, :313-314, :99)
+- [ ] must-fix src/E14EF.C:70-71 (gCursorX, gCursorY): "(src/E1A72.ASM:60)" points inside the g8134
+  comment block (line 60 is "(E0ACD.C:886, 0ACD:0E8A)"); the gCursorX declaration is at :64 and gCursorY
+  at :72. "tested with the pixel rectangle (:272-273)" points at the IsKeyPending and WaitKeyEvent lines;
+  the test is `IsPointInRect(gCursorX, cursory, ...)` at :280. (evidence: src/E1A72.ASM:64, :72;
+  src/E14EF.C:272-273, :280)
+- [ ] must-fix src/E14EF.C:72-74 (g8134): "(or ax,[g8134]; mov [g8134],ax, src/E1A72.ASM:380-381)"
+  points at `cmp cx,13Fh` and `jbe`; the pair is src/E1A72.ASM:399-400. "this file clears it (:193)"
+  points at the closing brace of the DrawOptionList loop; the clear is `g8134 = 0;` at :197.
+  (evidence: src/E1A72.ASM:399-400; src/E14EF.C:193, :197)
+- [ ] must-fix src/E14EF.C:206 (KEY_CONFIRM in the enum): "the row is picked (:307)" points at the `break;`
+  of the click case; the confirm case's `picked = row;` is :314. (evidence: src/E14EF.C:306-307, :314)
+- [ ] must-fix src/E14EF.C:224-225 and :229 (UpdateOptionList header): "(:299, :307)" points at
+  `case KEY_LAST2:` (:299) and the click case's `break;` (:307). The row stores are :306 (click,
+  `picked = row;`) and :314 (confirm). "(:329, ...)" points at the closing brace of the row-change block;
+  the string index is assigned at :336 (`picked = entry;`). "(!gMouseDisabled, :271)" points at
+  `gFC7A = 0;`; the test is `if (!gMouseDisabled)` at :278. (evidence: src/E14EF.C:271, :278, :299,
+  :306, :314, :336)
+- [ ] should src/E14EF.C:56-57 (g8140): "written by src/EOV0.C:1204" is partial. The click event writes
+  both (src/E1AAD.ASM:396 and :405, the 1AAD:048D stores); EOV0.C:1204 (`done = g8140 = g8142 = 0`, in
+  PickClass) clears them. Name both writers. (evidence: src/E1AAD.ASM:396, :405; src/EOV0.C:1204)
+- [ ] should src/E14EF.C:72-74 (g8134): "RunMapLoop clears it on entry" is not quite right: the clear
+  at src/E0ACD.C:886 comes after EnterMapScreen and LockShowPointer (src/E0ACD.C:883-885). Say "after the
+  map screen is entered". src/E1A72.ASM:57-60 says "on entry" too; route that to the E1A72 owner.
+  (evidence: src/E0ACD.C:883-886)
+- [ ] should src/E14EF.C:185 (DrawOptionList, `n`): `n = panelDef->height` holds the row count, and the
+  loop is `i < n`. Name it `rows`, the count, which matches UpdateOptionList's `lastRow` (the index).
+  (evidence: src/E14EF.C:185, :187)
+- [ ] should src/E14EF.C:6 (header): "returns the n-th set bit of the mask" conflicts with the
+  FindMaskBit comment (:86-88): it returns the bit number minus shift, an index counted from shift. Say
+  "the index, counted from shift, of the n-th selectable entry". (evidence: src/E14EF.C:86-90)
+- [ ] note src/E14EF.C:262: `panelDef->sel % (lastRow + 1)` divides by zero when height is 0. Whether
+  height can be 0 is not established: PickClass and PickAlignment set gPanels[2].height and
+  gPanels[3].height from CountMaskBits (src/EOV0.C:1194, :1245). Say so, or guard it in a port.
+- [ ] note the parameter types of gDrawText differ at the same address 80CA: `char far *text` here
+  (:75), `void far *text` in src/E16A5.C:87, `char far *text, int a, int b, int c, int d` in
+  src/E082C.C:40 and `int colour, int flag` in src/EOV5.C:173. Harmonisation is for phase 6; routed,
+  not edited here.
+- [ ] note make readability still does not check line citations: this round's stale cites passed with 0
+  findings (round 4's note, still open). A cite check on the citing line would catch them; a tool
+  question for the human, not a decompiler edit.
+- [ ] note the routed notes of rounds 1 to 5 still stand and are not edited here: src/EOV5.C:373 and
+  :468 write the literals 0x8FF and 0x8ff, not KEY_CODE_MASK; src/EOV0.C:143 declares UpdateOptionList
+  with `long counter` and no `extra`, and :204 declares CountMaskBits with `char shift`; src/EOV0.C:177-186
+  declares a second struct Panel; src/E082C.C:300 says "Same test as PointInRect". Cites into this file
+  from other units (src/E1A72.ASM:57-60, src/E1C00.ASM:288 "E14EF.C:227", which is now :278, src/E1BBE.ASM)
+  need their owners; src/E1BBE.ASM was not re-checked this round.
+
+## Summary
+
+The unit is understandable from its source alone, and the names hold: DrawOptionList, UpdateOptionList,
+IsPointInRect, FindMaskBit, CountMaskBits and BlinkText say what the code does. The shared globals agree
+with the other files of src/ (gTextLeft and gTextTop, gPanels, gFC7A, gFontWidth, g8134, g8140 and g8142,
+gMouseDisabled, gCursorX and gCursorY). What fails is the evidence in the comments: about fourteen line cites
+point at other lines (the header's field reads, the g5D1A, g8102, g8140, g8142, gMouseDisabled, gCursorX,
+g8134 and KEY_CONFIRM cites, and the UpdateOptionList header's picked and mouse-test cites). One claim is
+wrong as a unit: the struct Panel and gTextLeft comments say x is in font-width units in UpdateOptionList,
+but its drawing uses eight-pixel cells (:267); only the hit rectangle uses the font width. Ten must-fix
+items, all comments, with no code change. The placeholders are honest and need no change: gFC78, g5D1A,
+g8102 (meaning not established), g8134, g8140, g8142, `counter`, `extra` and `pad`. The matcher (6 of 6) and
+the readability check (0 findings) were re-run on 731aeba. No matcher, spec or pin question; nothing escalated.
+
+---
+
+# Round 5 (kept)
+
+Reviewer: rev-haiku
 Commit reviewed: 6358509 (main; review/e14ef at the same commit; src/E14EF.C last changed in f8ab4f5; `make match FILE=src/E14EF.C`: 6 of 6, 1410 bytes, exit 0; `make readability UNIT=e14ef`: 0 findings)
 
 Playbook 70. Judge what a matching file can still get wrong: names, types, comments, structure.
