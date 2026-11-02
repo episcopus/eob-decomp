@@ -2,12 +2,14 @@
    1658:0000 to 0002 belong to unit e1547, which ends where this one starts): the operations of a
    singly linked list of screen items (nodes), 12 functions. A node is a struct with a far `next`
    pointer, an unsigned sort key, a flags word at +0E, a state word at +2E and a far callback at
-   +30; the box coordinates the drawing routine uses sit at +1E..+24. 16A5:07C3 draws a node by
-   its kind +0A (art through 1A29:000F for kind 1, text through gDrawText ds:80CA for kind 2, a
-   tile through gDraw805E ds:805E for kind 3, a box through DrawBox 1A1F:000C or gDraw8066 ds:8066
-   for kinds 5 and 0); the five state operations here (0073, 0154, 017B, 01E6, 02F5) and the
-   dispatcher 16A5:00BD call it. 0CF7:001E's ListAdd, shared with this unit, and InsertNode here
-   build the list in key order. Names and the unknown bit meanings are placeholders until the
+   +30; the box coordinates the drawing routine uses sit at +1E..+24. DrawNode (16A5:07C3) first
+   reads the state word +2E: with the on bit 0x0001 set, modeB +0B picks the path; with 0x0004
+   set, modeC +0C does; only when both are clear does it draw by the kind +0A (art through
+   1A29:000F for kind 1, text through gDrawText ds:80CA for kind 2, a tile through gDraw805E
+   ds:805E for kind 3, a box through DrawBox 1A1F:000C or gDraw8066 ds:8066 for kinds 5 and 0).
+   The five state operations here (0073, 0154, 017B, 01E6, 02F5) and the dispatcher 16A5:00BD
+   call it. ListAdd (1658:001E), shared with this unit, appends to a list; InsertNode (1658:03D6)
+   here inserts in key order. Names and the unknown bit meanings are placeholders until the
    callers name them. */
 
 struct Node {
@@ -34,6 +36,17 @@ struct Node {
    picks g5E1C and 0x1000 picks g5E1E, and the value is 1 or 0x81. The 0x80 of 0x81/0x83 then makes
    the whole block a no-op on the next call. */
 #define NODE_INACTIVE   0x0008
+#define NODE_FLAG_ON    0x0001  /* picks the on pair (value 3) over the off pair (value 1) */
+#define NODE_FLAG_ON_5E1C  0x0400 /* with NODE_FLAG_ON set: g5E1C gets 3 or 0x83 */
+#define NODE_FLAG_ON_5E1E  0x4000 /* with NODE_FLAG_ON set: g5E1E gets 3 or 0x83 */
+#define NODE_FLAG_OFF_5E1C 0x0100 /* with NODE_FLAG_ON clear: g5E1C gets 1 or 0x81 */
+#define NODE_FLAG_OFF_5E1E 0x1000 /* with NODE_FLAG_ON clear: g5E1E gets 1 or 0x81 */
+
+/* The g5E1C/g5E1E button modes: 1 and 3 are the plain modes DispatchNodeEvent leaves, and this
+   unit writes them with the 0x80 latch bit set so the block is a no-op on the next call. */
+#define BUTTON_MODE_1       1
+#define BUTTON_MODE_3       3
+#define BUTTON_MODE_LATCH   0x80
 
 /* The +2E state word. Bit 0x0001 is the value 0073 toggles and 02F5 sets; 01E6 clears bits 0x0001
    and 0x0002. Bit 0x0008 is set to the OLD value of bit 0x0001 just before bit 0x0001 is changed,
@@ -41,12 +54,15 @@ struct Node {
    bits 0x0001/0x0008 differ (E16A5.C:178), which is the "previous on" reading below. The remaining
    bits (0x0004, 0x0010) are used only by 01E6 in this unit; E16A5.C sets and tests them too. */
 #define NODE_STATE_ON   0x0001
+#define NODE_STATE_4    0x0004
 #define NODE_STATE_PREV 0x0008
+#define NODE_STATE_10   0x0010
 
 /* The two words at ds:5E1C and ds:5E1E, set here to 0x81 or 0x83 and compared with 1 or 3; bit
-   0x80 of either makes the whole block a no-op. DispatchNodeEvent (16A5:00BD) writes them from its
-   key checks (2 or 4, then 1 or 3), so they carry a per-key state, but what drives them here is
-   unknown. Declared `unsigned` here and in E0ACD.C:104; E16A5.C:104-105 still calls them `int`. */
+   0x80 of either makes the whole block a no-op. DispatchNodeEvent (16A5:00BD) sets them from the
+   button key codes (0x41/0x42 and 0xC6/0xC7) to the mouse button mode (1 to 4) (E16A5.C:165-166,
+   206-212, 221-239), but what drives them here is unknown. Declared `unsigned` here and in
+   E0ACD.C:104; E16A5.C:104-105 still calls them `int`. */
 extern unsigned g5E1C; /*@ ds:5E1C */
 extern unsigned g5E1E; /*@ ds:5E1E */
 
@@ -66,8 +82,9 @@ extern void DrawNode(struct Node far *node); /*@ 16A5:07C3 */
 }
 
 /* 1658:001E: walks `head` to its tail, links `item` after it, clears item's own link and returns
-   the original head. Shared with E0CF7.C: its BuildList1 to BuildList5 link every list with it
-   (E0ACD.C calls BuildList1 to BuildList4). */
+   the original head. Shared with the BuildList functions (BuildList1 to BuildList5 in E0CF7.C,
+   BuildList1 to BuildList4 in E0ACD.C), BuildRowNodeList (ovl0:042F, EOV0.C:284) and _Ovl1_1153
+   (ovl1:1153, EOV1.ASM), and called by InsertNode below. */
 /*@ 1658:001E */ struct Node far *ListAdd(struct Node far *head, struct Node far *item)
 {
     struct Node far *first;
@@ -82,8 +99,8 @@ extern void DrawNode(struct Node far *node); /*@ 16A5:07C3 */
 
 /* 1658:0073: if the node is not inactive, save its on bit into the previous-on bit, toggle the on
    bit, redraw the node, and run the ds:5E1C / ds:5E1E update. When `notify` is set and the node
-   has a callback, fire it. Returns the node. The 5E1C/5E1E update is identical in 01E6 and
-   02F5. */
+   has a callback, fire it. Returns the node. The 5E1C/5E1E update is the same as ClearNode's and
+   SetNode's. */
 /*@ 1658:0073 */ struct Node far *ToggleNode(struct Node far *node, int notify)
 {
     if (!(node->flags & NODE_INACTIVE)) {
@@ -93,22 +110,22 @@ extern void DrawNode(struct Node far *node); /*@ 16A5:07C3 */
             node->state &= ~NODE_STATE_PREV;
         node->state ^= NODE_STATE_ON;
         DrawNode(node);
-        if (!(g5E1C & 0x80) && !(g5E1E & 0x80)) {
-            if (node->flags & 1) {
-                if (node->flags & 0x400) {
-                    if (g5E1C != 3)
-                        g5E1C = 0x83;
-                } else if (node->flags & 0x4000) {
-                    if (g5E1E != 3)
-                        g5E1E = 0x83;
+        if (!(g5E1C & BUTTON_MODE_LATCH) && !(g5E1E & BUTTON_MODE_LATCH)) {
+            if (node->flags & NODE_FLAG_ON) {
+                if (node->flags & NODE_FLAG_ON_5E1C) {
+                    if (g5E1C != BUTTON_MODE_3)
+                        g5E1C = BUTTON_MODE_3 | BUTTON_MODE_LATCH;
+                } else if (node->flags & NODE_FLAG_ON_5E1E) {
+                    if (g5E1E != BUTTON_MODE_3)
+                        g5E1E = BUTTON_MODE_3 | BUTTON_MODE_LATCH;
                 }
             } else {
-                if (node->flags & 0x100) {
-                    if (g5E1C != 1)
-                        g5E1C = 0x81;
-                } else if (node->flags & 0x1000) {
-                    if (g5E1E != 1)
-                        g5E1E = 0x81;
+                if (node->flags & NODE_FLAG_OFF_5E1C) {
+                    if (g5E1C != BUTTON_MODE_1)
+                        g5E1C = BUTTON_MODE_1 | BUTTON_MODE_LATCH;
+                } else if (node->flags & NODE_FLAG_OFF_5E1E) {
+                    if (g5E1E != BUTTON_MODE_1)
+                        g5E1E = BUTTON_MODE_1 | BUTTON_MODE_LATCH;
                 }
             }
         }
@@ -176,28 +193,28 @@ extern void DrawNode(struct Node far *node); /*@ 16A5:07C3 */
             node->state &= ~NODE_STATE_PREV;
         node->state &= ~NODE_STATE_ON;
         node->state &= ~2;
-        if ((node->state |= 4) != 0)
-            node->state |= 0x10;
+        if ((node->state |= NODE_STATE_4) != 0)
+            node->state |= NODE_STATE_10;
         else
-            node->state &= ~0x10;
-        node->state &= ~4;
+            node->state &= ~NODE_STATE_10;
+        node->state &= ~NODE_STATE_4;
         DrawNode(node);
-        if (!(g5E1C & 0x80) && !(g5E1E & 0x80)) {
-            if (node->flags & 1) {
-                if (node->flags & 0x400) {
-                    if (g5E1C != 3)
-                        g5E1C = 0x83;
-                } else if (node->flags & 0x4000) {
-                    if (g5E1E != 3)
-                        g5E1E = 0x83;
+        if (!(g5E1C & BUTTON_MODE_LATCH) && !(g5E1E & BUTTON_MODE_LATCH)) {
+            if (node->flags & NODE_FLAG_ON) {
+                if (node->flags & NODE_FLAG_ON_5E1C) {
+                    if (g5E1C != BUTTON_MODE_3)
+                        g5E1C = BUTTON_MODE_3 | BUTTON_MODE_LATCH;
+                } else if (node->flags & NODE_FLAG_ON_5E1E) {
+                    if (g5E1E != BUTTON_MODE_3)
+                        g5E1E = BUTTON_MODE_3 | BUTTON_MODE_LATCH;
                 }
             } else {
-                if (node->flags & 0x100) {
-                    if (g5E1C != 1)
-                        g5E1C = 0x81;
-                } else if (node->flags & 0x1000) {
-                    if (g5E1E != 1)
-                        g5E1E = 0x81;
+                if (node->flags & NODE_FLAG_OFF_5E1C) {
+                    if (g5E1C != BUTTON_MODE_1)
+                        g5E1C = BUTTON_MODE_1 | BUTTON_MODE_LATCH;
+                } else if (node->flags & NODE_FLAG_OFF_5E1E) {
+                    if (g5E1E != BUTTON_MODE_1)
+                        g5E1E = BUTTON_MODE_1 | BUTTON_MODE_LATCH;
                 }
             }
         }
@@ -219,22 +236,22 @@ extern void DrawNode(struct Node far *node); /*@ 16A5:07C3 */
             node->state &= ~NODE_STATE_PREV;
         node->state |= NODE_STATE_ON;
         DrawNode(node);
-        if (!(g5E1C & 0x80) && !(g5E1E & 0x80)) {
-            if (node->flags & 1) {
-                if (node->flags & 0x400) {
-                    if (g5E1C != 3)
-                        g5E1C = 0x83;
-                } else if (node->flags & 0x4000) {
-                    if (g5E1E != 3)
-                        g5E1E = 0x83;
+        if (!(g5E1C & BUTTON_MODE_LATCH) && !(g5E1E & BUTTON_MODE_LATCH)) {
+            if (node->flags & NODE_FLAG_ON) {
+                if (node->flags & NODE_FLAG_ON_5E1C) {
+                    if (g5E1C != BUTTON_MODE_3)
+                        g5E1C = BUTTON_MODE_3 | BUTTON_MODE_LATCH;
+                } else if (node->flags & NODE_FLAG_ON_5E1E) {
+                    if (g5E1E != BUTTON_MODE_3)
+                        g5E1E = BUTTON_MODE_3 | BUTTON_MODE_LATCH;
                 }
             } else {
-                if (node->flags & 0x100) {
-                    if (g5E1C != 1)
-                        g5E1C = 0x81;
-                } else if (node->flags & 0x1000) {
-                    if (g5E1E != 1)
-                        g5E1E = 0x81;
+                if (node->flags & NODE_FLAG_OFF_5E1C) {
+                    if (g5E1C != BUTTON_MODE_1)
+                        g5E1C = BUTTON_MODE_1 | BUTTON_MODE_LATCH;
+                } else if (node->flags & NODE_FLAG_OFF_5E1E) {
+                    if (g5E1E != BUTTON_MODE_1)
+                        g5E1E = BUTTON_MODE_1 | BUTTON_MODE_LATCH;
                 }
             }
         }
