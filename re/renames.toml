@@ -403,7 +403,7 @@ addr = "1948:0458"
 old = "f1948_0458"
 new = "SoundDriverResume"
 kind = "function"
-why = "restarts the driver's output: it calls SetThreeVoices (1948:034A); E177D.C calls it whenever the PC-speaker gate bit changes and main once after the Tandy install (1948:0458, src/E1948.ASM)"
+why = "restarts the driver's output: it calls SetThreeVoices (1948:034A); E177D.C calls it when the driver select gTandyOn changes (src/E177D.C:185 and 189 in PlaySound, 274 and 278 in PlaySoundAtCell) and StartupGame once after the Tandy install (1948:0458, src/E1948.ASM)"
 date = "2026-11-01"
 
 [[rename]]
@@ -1438,7 +1438,7 @@ addr = "ds:8A67"
 old = "gSpeakerOn"
 new = "gTandyOn"
 kind = "global"
-why = "1 is Tandy, 0 the PC speaker: every test in src/E1948.ASM takes 1 as the Tandy path (SN76489 tone and volume writes, the Tandy note table) and 0 as the port 61h speaker (1948:0119, 01D6, 01E8, 02C7, 02F1, 0316, 03C5, 0588); StartupGame sets it to 1 only on the Tandy path (src/E07C8.C:305-307)"
+why = "1 is Tandy, 0 the PC speaker: every test in src/E1948.ASM takes 1 as the Tandy path (SN76489 tone and volume writes, the Tandy note table) and 0 as the port 61h speaker (1948:0119, 01D6, 02C7, 02F1, 0316, 03C5 and 0406); StartupGame sets it to 1 only on the Tandy path (src/E07C8.C:305-307)"
 date = "2026-11-01"
 
 [[rename]]
@@ -1529,4 +1529,58 @@ old = "GetNodeState0"
 new = "IsNodeOn"
 kind = "function"
 why = "04BB reads the state word and returns the on bit (NODE_STATE_ON, 0x0001), the bit 0073 toggles and 02F5 sets; 'State0' named the bit index, not what it tests (review of e1658)"
+date = "2026-11-01"
+
+[[rename]]
+id = "ds:88AA=gSongBase"
+addr = "ds:88AA"
+old = "gSongPos"
+new = "gSongBase"
+kind = "global"
+why = "the song base, not a current position: copied once from gSongPtr at song start (E1948.ASM 1948:006E and 0074) and read as the base of every voice (1948:00FA and 00FE); the value that moves is gVoicePos"
+date = "2026-11-01"
+
+[[rename]]
+id = "ds:88AC=gSongBaseSeg"
+addr = "ds:88AC"
+old = "gSongPosSeg"
+new = "gSongBaseSeg"
+kind = "global"
+why = "the song base segment, not a current position: copied once from gSongPtrSeg at song start (E1948.ASM 1948:0074) and read as the segment of every voice's song base (1948:00FE)"
+date = "2026-11-01"
+
+[[rename]]
+id = "ds:8A58=gVoiceLengthMul"
+addr = "ds:8A58"
+old = "gVoiceAmp"
+new = "gVoiceLengthMul"
+kind = "global"
+why = "scales the note length, not an amplitude: its only read is mul on the note duration (E1948.ASM 1948:0144); set by E2h (1948:020F), changed by E8h and E9h (1948:0222, 022A, 023E, 0244) and set to 1 at song start (1948:008B); the Tandy volume is gVoiceTandyVol"
+date = "2026-11-01"
+
+[[rename]]
+id = "ds:8A40=gVoiceMute"
+addr = "ds:8A40"
+old = "gVoiceRestart"
+new = "gVoiceMute"
+kind = "global"
+why = "nonzero mutes the voice this tick, it does not restart it: E1948.ASM 1948:0278 falls through to muteVoice; only 0 is written in this unit (1948:0081 and 027F), the writer of 1 is unknown"
+date = "2026-11-01"
+
+[[rename]]
+id = "ds:8A44=gVoiceReadNext"
+addr = "ds:8A44"
+old = "gVoiceActive"
+new = "gVoiceReadNext"
+kind = "global"
+why = "1 means the voice reads its next note or command this tick (set at E1948.ASM 1948:007C and 0273), not that a note sounds; 0 means a note is sounding and its duration counts down (set at 1948:0151; endCommand at 1948:0184 also leaves 0)"
+date = "2026-11-01"
+
+[[rename]]
+id = "ds:8A6A=gTickSeconds"
+addr = "ds:8A6A"
+old = "gTickPhase"
+new = "gTickSeconds"
+kind = "global"
+why = "counts [H] seconds up to 60, not a phase: incremented once per 292-tick period (E1948.ASM 1948:001A) and wrapped at 3Bh (1948:0023 to 0025); nothing outside this unit reads it"
 date = "2026-11-01"
