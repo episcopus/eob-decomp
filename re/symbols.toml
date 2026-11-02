@@ -3822,6 +3822,9 @@ unit = "e122e"
 addr = "122E:0137"
 size = 29
 evidence = ["near", "frame"]
+name = "ObjectCountIsOdd"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e122e_0154"
@@ -3990,6 +3993,9 @@ unit = "e122e"
 addr = "122E:126E"
 size = 96
 evidence = ["frame"]
+name = "HealPartyMember"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e122e_12ce"
@@ -4011,6 +4017,9 @@ unit = "e122e"
 addr = "122E:13D1"
 size = 15
 evidence = ["frame"]
+name = "ScriptStop"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e122e_13e0"
@@ -4046,6 +4055,9 @@ unit = "e122e"
 addr = "122E:1B5A"
 size = 64
 evidence = ["frame"]
+name = "AddExperienceOp"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e122e_1b9a"
@@ -4074,6 +4086,9 @@ unit = "e122e"
 addr = "122E:1D76"
 size = 50
 evidence = ["frame"]
+name = "CallOverlayOp"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e122e_1da8"
