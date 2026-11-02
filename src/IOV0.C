@@ -64,11 +64,11 @@ extern unsigned char far *gPalette;     /*@ ds:2D42 */
 extern unsigned char gOverlayBuf[];     /*@ ds:1C0A */
 extern unsigned char gEgaPalette[16];   /*@ ds:19E7 */
 
-/* the delay of the Westwood logo card, in timer ticks: 50, read by Ovl0_2A99 (ds:1D28) */
+/* the delay of the Westwood logo card, in timer ticks: 50, read by PlayLogoSequence (ds:1D28) */
 extern int gWestwoodDelay;              /*@ ds:1D28 */
-/* the delays of the four SSI logo cards (100, 50, 140, 140), read by Ovl0_2A99 (ds:1D2A) */
+/* the delays of the four SSI logo cards (100, 50, 140, 140), read by PlayLogoSequence (ds:1D2A) */
 extern int gLogoDelays[4];              /*@ ds:1D2A */
-/* the CMP images of the four SSI logo cards (AND, SSI, PRESENT, DAND), read by Ovl0_2A99 */
+/* the CMP images of the four SSI logo cards (AND, SSI, PRESENT, DAND), read by PlayLogoSequence */
 extern char far *gLogoFiles[4];         /*@ ds:1D32 */
 
 /* 0CDA:0006: the pseudo-random byte generator of i0cda. It advances the 32-bit seed at
@@ -108,9 +108,9 @@ void PlaySound(int sound);
    later compiles through the overlay's far call, which TLINK rewrites to nop; push cs; call
    near, the form the original shows as 90 0E E8). */
 void PlayIntroSequence(void);
-void Ovl0_2A99(void);
+void PlayLogoSequence(void);
 
-/* 0E96:0000: the introduction overlay's entry point. Clears the abort flag, for the CGA and
+/* ovl0:0000: the introduction overlay's entry point. Clears the abort flag, for the CGA and
    EGA modes (gGraphicsMode 1 and 2) starts the driver through ds:1EE2 and applies the fixed
    palette at ds:19E7, plays the logo sequence (ovl0:2A99), then the scenes (ovl0:003A)
    unless a key aborted the intro. */
@@ -121,7 +121,7 @@ void Ovl0_2A99(void);
         gUnknown1EE2();
         gSetPalette(gEgaPalette);
     }
-    Ovl0_2A99();
+    PlayLogoSequence();
     if (!gAbort)
         PlayIntroSequence();
 }
@@ -129,7 +129,7 @@ void Ovl0_2A99(void);
 /*@ ovl0:003A stub */ void PlayIntroSequence(void) {}
 /*@ ovl0:015D stub */ void Ovl0_015D(void) {}
 /*@ ovl0:06E2 stub */ void Ovl0_06E2(void) {}
-/* 0E96:09AD: copies an image between two rectangles of the same video buffer (slot 3, the
+/* ovl0:09AD: copies an image between two rectangles of the same video buffer (slot 3, the
    segment f19EC_0002(3) returns), from the rectangle at (x1,y1) to the one at (x2,y2), each
    row `width` bytes wide and `height` lines high. `mode` selects the byte interleave:
      0: nothing;
@@ -205,7 +205,7 @@ void Ovl0_2A99(void);
     }
 }
 /*@ ovl0:0B20 stub */ void Ovl0_0B20(void) {}
-/* 0E96:0FAA: clears the bottom bar of the screen, the rectangle from (0,168) to (319,199),
+/* ovl0:0FAA: clears the bottom bar of the screen, the rectangle from (0,168) to (319,199),
    with colour 12 on the page the caller wants visible (page 0), then puts the driver's
    current page (gDrawPage) back. Called around the title cards to wipe their text. */
 /*@ ovl0:0FAA */ void ClearBottomBar(void)
@@ -218,7 +218,7 @@ void Ovl0_2A99(void);
     gDrawPage = page;
 }
 
-/* 0E96:0FD9: waits out gFrameDelay, one pass per timer tick, polling the keyboard. A pending
+/* ovl0:0FD9: waits out gFrameDelay, one pass per timer tick, polling the keyboard. A pending
    key is taken: the rest of the key ring is drained (esc sets the abort flag gAbort, so the
    caller skips the rest of the intro) and the delay is cleared, so any key skips the wait.
    RandomByte is called once per pass even when a key was drained; it advances the seed at
@@ -238,7 +238,7 @@ void Ovl0_2A99(void);
         }
 }
 
-/* 0E96:1025: waits `frames` timer ticks by setting gFrameDelay and calling WaitFrameDelay
+/* ovl0:1025: waits `frames` timer ticks by setting gFrameDelay and calling WaitFrameDelay
    (unless a key already aborted the intro). The high word is cleared, so `frames` is zero
    extended: it cannot be made negative. */
 /*@ ovl0:1025 */ void DelayFrames(unsigned frames)
@@ -250,7 +250,7 @@ void Ovl0_2A99(void);
 
 /*@ ovl0:1041 stub */ void Ovl0_1041(void) {}
 
-/* 0E96:1248: the sign of `value` as -1, 0 or 1. Used by the animations to turn a direction
+/* ovl0:1248: the sign of `value` as -1, 0 or 1. Used by the animations to turn a direction
    delta into a step. */
 /*@ ovl0:1248 */ int SignOf(int value)
 {
@@ -264,7 +264,7 @@ void Ovl0_2A99(void);
 /*@ ovl0:15F9 stub */ void Ovl0_15F9(void) {}
 /*@ ovl0:1DF3 stub */ void Ovl0_1DF3(void) {}
 /*@ ovl0:23A3 stub */ void Ovl0_23A3(void) {}
-/* 0E96:2913: reveals the screen in horizontal strips. For each step 0..6 it walks the 25
+/* ovl0:2913: reveals the screen in horizontal strips. For each step 0..6 it walks the 25
    eight-line strips top to bottom and clips each strip twice: the whole strip (height
    7 - step, so the bottom part of it) and its single moving line at si*8 + 7 - step; a frame
    is waited after each step, and the screen is finally unclipped (the whole 40 by 200 region
@@ -285,7 +285,7 @@ void Ovl0_2A99(void);
     ClipRect(0, 0, 0, 0, 40, 200, 2, 0);
 }
 
-/* 0E96:29C9: draws a grid over the whole screen in colour 12: for two passes it draws the
+/* ovl0:29C9: draws a grid over the whole screen in colour 12: for two passes it draws the
    vertical lines at x = 1, 9, ... (the odd-numbered lines) and the horizontal lines at
    y = 0, 8, ... (the even ones), each pass offset by one pixel. Called before the card scenes
    (ovl0:0B20) and by the TOWRMAGE scene (ovl0:0B20 twice more). */
@@ -313,7 +313,7 @@ void Ovl0_2A99(void);
             }
         }
 }
-/* 0E96:2A4E: reads a 768-byte .COL palette file into gPalette and applies it, only on the VGA
+/* ovl0:2A4E: reads a 768-byte .COL palette file into gPalette and applies it, only on the VGA
    mode (gGraphicsMode 3). The first colour (black) is cleared and one frame is waited before
    the driver is given the palette, so the screen blanks first. */
 /*@ ovl0:2A4E */ void LoadPalette(char far *name)
@@ -325,13 +325,13 @@ void Ovl0_2A99(void);
         gSetPalette(gPalette);
     }
 }
-/* 0E96:2A99: plays the Westwood logo card: loads WESTWOOD.CMP into the buffer slots 5/3,
+/* ovl0:2A99: plays the Westwood logo card: loads WESTWOOD.CMP into the buffer slots 5/3,
    starts the driver, applies the WESTWOOD.COL palette, copies the buffers through
    f19EC_002A, makes sound 1 and shows the card for gWestwoodDelay ticks. Then, unless a key
    aborted, it shows the four SSI logo cards in turn (each from gLogoFiles into slots 5/3,
    held for its gLogoDelays entry, with the dissolve effect from page 4 to page 0 and sound
    again), and leaves a 50-tick delay set. */
-/*@ ovl0:2A99 */ void Ovl0_2A99(void)
+/*@ ovl0:2A99 */ void PlayLogoSequence(void)
 {
     int i;
 
@@ -355,7 +355,7 @@ void Ovl0_2A99(void);
     }
     gFrameDelay = 0x32;
 }
-/* 0E96:2B7F: loads a packed .CMP image into the buffer slot `dstKind`: slot `srcKind` is the
+/* ovl0:2B7F: loads a packed .CMP image into the buffer slot `dstKind`: slot `srcKind` is the
    read buffer, the file's first word is the packed length, and the rest is unpacked by the LCW
    decoder Unpack4 (0CE9:0009) into dstKind. The unpacked size is fixed at 0xFA00 (64000, the
    largest screen image) and the block's 8-byte header is skipped. The EOB twin is LoadPacked
@@ -378,7 +378,7 @@ void Ovl0_2A99(void);
     Unpack4((char far *)src + 8, dst, 0xFA00);
 }
 /*@ ovl0:2C0D stub */ void Dissolve(int x, int y, int width, int height, int fromPage, int toPage) {}
-/* 0E96:2D4E: plays the game sound numbered `sound` (the argument is an index, not a driver
+/* ovl0:2D4E: plays the game sound numbered `sound` (the argument is an index, not a driver
    number). The driver number comes from gSoundMap (a byte; 0xFF means silence). gSoundCard
    selects the path: 1 (AdLib) queues the driver number and returns, 2 (PC speaker) and 3
    (Tandy) start the speaker routine the low seven bits select through GetSoundData; an
