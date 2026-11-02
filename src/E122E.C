@@ -17,6 +17,23 @@ extern unsigned long gActionFlags[]; /*@ ds:FBD4 */ /* per-action 32-bit masks, 
 extern unsigned long gFC04; /*@ ds:FC04 */     /* effect flags (src/E08E6.C) */
 extern char gB899[]; /*@ ds:B899 */            /* the nine-byte record list head (src/E0ACD.C) */
 extern int gFBCE; /*@ ds:FBCE */               /* the item index shown by the mouse (src/E07A9.C) */
+extern int gB800; /*@ ds:B800 */               /* the member whose script is running (122E:1DA8) */
+extern int gFBCC; /*@ ds:FBCC */               /* a page number 0..3 (src/E08E6.C) */
+extern char gEFB2; /*@ ds:EFB2 */              /* set when the sound page changes (src/E0ACD.C) */
+extern char gDF4C; /*@ ds:DF4C */              /* set to 1 when an action took effect (src/E08E6.C) */
+
+/* The 18-byte effect records at ds:DD2C, 10 of them (src/E1414.C). */
+struct DDRec {
+    char active;                                /* +00: 1 when the record is live */
+    char pad01;
+    int m02;                                    /* +02 */
+    int m04;                                    /* +04: a character or object index */
+    char m06;                                   /* +06 */
+    signed char m07;                            /* +07 */
+    char pad08[0x12 - 0x08];
+};
+
+extern struct DDRec gDD2C[]; /*@ ds:DD2C */    /* 10 records, 18 bytes each */
 
 extern int CopyItemToFreeSlot(int n); /*@ 0BD2:089E */
 extern void SetMouseItem(int n); /*@ 07A9:010C */
@@ -257,7 +274,36 @@ extern void fOvl5_1A82(int x); /*@ 211E:0057 */   /* overlay 5 entry, ovl5:1A82 
     return (long)(script - start);
 }
 
-/*@ 122E:1C16 stub */ void f122E_1C16(void) {}
+/* 122E:1C16: sub-opcode that turns a page: 0xFFF1 rotates gFBCC by the byte argument (modulo 4) and
+   marks the sound page and action dirty; 0xFFF5 rotates the orientation (m07) of every live effect
+   record that names the running member. Returns the bytes read. */
+/*@ 122E:1C16 */ long TurnPageOp(char far *script)
+{
+    int op;
+    int val;
+    struct DDRec far *rec;
+    char far *start = script;
+    int i;
+
+    op = *script++;
+    val = *script++;
+    switch (op) {
+    case 0xFFF1:
+        gFBCC = (gFBCC + val) & 3;
+        gEFB2 = (char)0xff;
+        gDF4C = 1;
+        break;
+    case 0xFFF5:
+        rec = gDD2C;
+        for (i = 0; i < 10; i++) {
+            if (rec->active != 0 && rec->m04 == gB800)
+                rec->m07 = (rec->m07 + val) & 3;
+            rec++;
+        }
+        break;
+    }
+    return (long)(script - start);
+}
 /*@ 122E:1CAD stub */ void f122E_1CAD(void) {}
 
 /* 122E:1D76: sub-opcode that passes its byte argument to overlay 5 (ovl5:1A82). Returns the bytes
