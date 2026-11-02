@@ -4,12 +4,12 @@
    levels a character up (0B45, 0C2B, 0C82), computes a character's armour class (0D5E), saves
    against an effect (0F98, 0FCA, 101A), runs the party-wipe ending (093B) and uses carried items
    (0359 ApplyItemAttack, 0474 MoveCarriedItem, 0537 UseCarriedItem, 05BB UseItemByKind, 0763
-   UseItem). It walks the
-   243-byte character records at ds:F580 (struct CharRec, src/E0A72.C), the 28-byte object records
-   at ds:8A82 (struct Obj28, src/E08E6.C), the 14-byte records at ds:8DD2 (struct Entry14,
-   src/E0D1C.C), the 27-byte records at ds:1A3B (struct Entry27, src/E0D1C.C) and the 16-byte item
-   types at ds:A9F0 (struct ItemType, src/EOV2.C). Most meanings are not established, so most
-   function names say what a function does rather than what the game calls it. */
+   UseItem). It walks the 243-byte character records at ds:F580 (struct CharRec, src/E0A72.C), the
+   28-byte object records at ds:8A82 (struct Obj28, src/E08E6.C), the 14-byte records at ds:8DD2
+   (struct Entry14, src/E0D1C.C), the 27-byte records at ds:1A3B (struct Entry27, src/E0D1C.C) and
+   the 16-byte item types at ds:A9F0 (struct ItemType, src/EOV2.C). Most meanings are not
+   established, so most function names say what a function does rather than what the game calls
+   it. */
 
 /*@flags -ml -O -Z */
 
@@ -26,7 +26,7 @@ struct CharRec {            /* the 243-byte (0xF3) character records at ds:F580;
                                RollHitPoints (0A72:01AE), which LevelUpSlot passes there */
     char pad18[0x1B - 0x18];
     signed char hp;         /* +1B: current hit points */
-    char maxhp;             /* +1C: the maximum hit points (src/EOV5.C:32) */
+    signed char maxhp;      /* +1C: the maximum hit points (src/EOV5.C:32) */
     signed char m1D;        /* +1D: the armour-class byte 0D5E builds */
     signed char m1E;        /* +1E: a per-slot bit UseItem toggles itself (:522) */
     signed char m1F;        /* +1F */
@@ -140,13 +140,14 @@ extern char gFB44; /*@ ds:FB44 */            /* a mode byte: 0 and 1 gate 0D1C:0
                                                 (src/E0D1C.C:108); DamageCharacter redraws the member
                                                 when it is 0 and the portrait otherwise (:596-599) */
 extern signed char gA9C6; /*@ ds:A9C6 */     /* an offset within a nine-byte gB894 record (:348-350;
-                                                src/E0ACD.C:56) */
-extern char gDF4C; /*@ ds:DF4C */            /* set to 1 when an action took effect (src/E0ACD.C:53) */
+                                                0ACD:0644) */
+extern char gDF4C; /*@ ds:DF4C */            /* set to 1 when an action took effect (0DE8:0359,
+                                                0DE8:0537, 0DE8:05BB) */
 extern char gDCA4; /*@ ds:DCA4 */            /* the target object 0359 records (:361); UseItem damages
                                                 gObjs[gDCA4] (:520) */
 extern unsigned char g1905[]; /*@ ds:1905 */   /* a 256-byte table gB894 indexes into (0359) */
 extern char gB894[]; /*@ ds:B894 */          /* the nine-byte records at ds:B894 indexed by row * 9
-                                                (:348-350); the +4 byte is read at src/E0D1C.C:36 */
+                                                (:348-350); the +4 byte is read at 0D1C:0080 */
 extern char gFileNameBuf[]; /*@ ds:FE6E */   /* the text buffer sprintf formats into (src/EOV2.C) */
 
 extern int far RollDice(char count, char sides, char bonus); /*@ 082C:0458 */
@@ -190,27 +191,27 @@ void DamageCharacter(int who, int what);  /* forward: 01FF reaches it with a far
 void LevelUpSlot(int who, int cls, int slot);  /* forward: 0B45 reaches it with a far call */
 
 /* 0DE8:0007: the to-hit roll of character `who` against object `obj`. It derives an attack bonus
-   from the item record `slot` (an index into gTable8DD2; its m02 kind selects the m0B weapon value
-   when it is 1..3), adds either the attacker's strength to-hit bonus (GetStrengthToHitBonus,
-   0A72:00CF) or the m15 char value depending on `useStrength`, sets gObjs[obj].m16 bit 0 on every
-   call (the object was attacked), whatever the outcome, and compares a d20 roll (raised by gFBD2
-   bits 4 and 5 and by gChars[who].mE3 bit 6, clamped to 1..20) against
-   GetHitTarget(who, gTable1A3B[gObjs[obj].b0].m00) minus the bonus. Returns 1 when the roll reaches
-   that to-hit target. Called by 0DE8:02D4, 0DE8:0359, 0EF3:0A3F DamageTargetCell and 0EF3:0E1B
-   CastMeleeEffect. */
+   from the item record `slot` (an index into gTable8DD2; its m02 item type index selects the m0B
+   weapon value when it is 1..3), adds either the attacker's strength to-hit bonus
+   (GetStrengthToHitBonus, 0A72:00CF) or the m15 char value depending on `useStrength`, sets
+   gObjs[obj].m16 bit 0 on every call (the object was attacked), whatever the outcome, and compares
+   a d20 roll (raised by gFBD2 bits 4 and 5 and by gChars[who].mE3 bit 6, clamped to 1..20) against
+   GetHitTarget(who, gTable1A3B[gObjs[obj].b0].m00) minus the bonus. Returns 1 when the roll
+   reaches that to-hit target. Called by 0DE8:02D4, 0DE8:0359, 0EF3:0A3F DamageTargetCell and
+   0EF3:0E1B CastMeleeEffect. */
 /*@ 0DE8:0007 */ int RollToHit(int who, int obj, int slot, int useStrength)
 {
     int entry;
     int toHit;
-    int kind;
+    int itemType;
     int bonus;
     int roll;
 
     if (slot != 0)
-        kind = gTable8DD2[slot].m02;
+        itemType = gTable8DD2[slot].m02;
     else
-        kind = 0;
-    if (kind >= 1 && kind <= 3)
+        itemType = 0;
+    if (itemType >= 1 && itemType <= 3)
         bonus = gTable8DD2[slot].m0B;
     else
         bonus = 0;
@@ -272,7 +273,7 @@ void LevelUpSlot(int who, int cls, int slot);  /* forward: 0B45 reaches it with 
 /* 0DE8:01FF: runs the attack of a ds:DD2C record against the object it names. It takes the
    record's m08 slot (an index into gTable8DD2) and m0A item type, reads
    g1A2B[gFBCC * 4 + (gTable8DD2[slot].m03 & 3)] as the base member, rolls 011A damage (or 1 when
-   the type does not attack) and adds 2 to the base when f0D1C_0670(5, 1) or f0D1C_0670(6, 1)
+   IsKind2Or3 is false) and adds 2 to the base when f0D1C_0670(5, 1) or f0D1C_0670(6, 1)
    holds and RollDice(1, 2, -1) is nonzero, then applies DamageCharacter to that member and
    returns 1, else 0. Called by 1414:0172 via TestDDEffect. */
 /*@ 0DE8:01FF */ int RunRecordAttack(struct DDRec far *rec)
@@ -303,7 +304,7 @@ void LevelUpSlot(int who, int cls, int slot);  /* forward: 0B45 reaches it with 
 }
 /* 0DE8:02D4: tests and runs the attack of a ds:DD2C record against object `idx`. It takes the
    record's m08 slot, m0A item type and m0B attacker; when m0B is valid it first demands the
-   0007 to-hit roll, then rolls 011A damage for the item type (or 1 when the type does not attack)
+   0007 to-hit roll, then rolls 011A damage for the item type (or 1 when IsKind2Or3 is false)
    and hands the object to DamageObject. Returns 0 when the to-hit fails, else 1. Called by
    1414:0172 via TestDDEffect. */
 /*@ 0DE8:02D4 */ int TryRecordAttack(struct DDRec far *rec, int idx)
@@ -418,8 +419,8 @@ fail:
    with no m02 test); otherwise it scans all 27 slots for the first whose item m02 equals `kind`
    (clearing it and redrawing with RedrawMember when the slot is below 2). A found item is
    dispatched through AddDDEffect; when that returns nonzero it plays sound 0x1A when m02 is 7
-   (else 0x0B) and sets gDF4C. Returns 0 when an item was found and dispatched, -4 when none was
-   found. Called by 0DE8:0763. */
+   (else 0x0B) and sets gDF4C. Returns 0 once an item was found, whether or not AddDDEffect took
+   it, -4 when none was found. Called by 0DE8:0763. */
 /*@ 0DE8:05BB */ int UseItemByKind(int who, int slot)
 {
     int m02;
@@ -762,8 +763,8 @@ fail:
 /* 0DE8:0F98: a saving-throw style keeper: it takes 0D1C:059B's 0/1 result as the threshold
    `chance` and halves `value` when a fresh RollDice(1, 20, 0) is at least it. As 059B returns 0 or
    1 and the roll is 1..20, the test holds on every roll, so it always halves (QUIRK 0DE8:0F98).
-   A takes a character index; B takes a pointer to an item type's class byte. Called by
-   0EF3:0A3F and 0EF3:20A8. */
+   A takes a character index; B takes a pointer to a 28-byte object record (struct Obj28) and reads
+   that record's b0 as the gTable1A3B index. Called by 0EF3:0A3F and 0EF3:20A8. */
 /*@ 0DE8:0F98 */ int HalveSaveDamageA(int who, int value)
 {
     int chance;
@@ -774,16 +775,16 @@ fail:
     return value;
 }
 
-/* 0DE8:0FCA: the same half-on-success keeper for the type byte at `type`: it derives a class
-   value through the byte at gTable1A3B[*type].m02 and GetIndexedByte, then halves `value` on a
-   d20 roll at or above it. B takes a pointer to an item type's class byte (A takes a character
-   index), and its chance is a real threshold. Called by 0EF3:0A3F. */
-/*@ 0DE8:0FCA */ int HalveSaveDamageB(char far *type, int value)
+/* 0DE8:0FCA: the same half-on-success keeper for the object record `objRec`: it reads that
+   record's b0 as the gTable1A3B index, derives a class value through gTable1A3B[b0].m02 and
+   GetIndexedByte, then halves `value` on a d20 roll at or above it. Its chance is a real
+   threshold (A, by contrast, always halves). A takes a character index. Called by 0EF3:0A3F. */
+/*@ 0DE8:0FCA */ int HalveSaveDamageB(struct Obj28 far *objRec, int value)
 {
     int chance;
     int classByte;
 
-    classByte = gTable1A3B[*type].m02;
+    classByte = gTable1A3B[objRec->b0].m02;
     chance = GetIndexedByte(0, classByte, 4);
     if (RollDice(1, 20, 0) >= chance)
         value >>= 1;
@@ -791,10 +792,10 @@ fail:
 }
 
 /* 0DE8:101A: applies the status effect `mask` to character `who` and announces it. It returns
-   early when the m01 bit is already set and `skipIfSet` is nonzero, or when the f0D1C_059B(who, attack)
-   check succeeds, otherwise ORs `mask` into m01, arms ApplyCharEffect(who, count * 0x222, value, 1)
-   and formats "%s is %s!" with the character's name and `text`. Called by 08E6:0765, 08E6:10F3
-   and 0BD2:0D2D. */
+   early when the m01 bit is already set and `skipIfSet` is nonzero, or when the
+   f0D1C_059B(who, attack) check succeeds, otherwise ORs `mask` into m01, arms
+   ApplyCharEffect(who, count * 0x222, value, 1) and formats "%s is %s!" with the character's
+   name and `text`. Called by 08E6:0765, 08E6:10F3 and 0BD2:0D2D. */
 /*@ 0DE8:101A */ void ApplyStatusEffect(int who, int mask, char far *text, int attack, int count,
                                  int value, int skipIfSet)
 {
