@@ -4,7 +4,7 @@
    editor (ovl0:23EC) and the status/rest screens, and loads the overlay's screens (ovl0:2547,
    28F9). Placeholder names where no evidence. */
 
-/*@flags -ml -O -Z */
+/*@flags -ml -O -Z -v */
 
 #include <dos.h>
 
@@ -103,6 +103,7 @@ extern void far *gPtrsFD54[]; /*@ ds:FD54 */ /* the ten overlay buffers ovl0:254
 extern char gStr6272[]; /*@ ds:6272 */ /* a screen name (Purpose unknown) */
 extern char gStr627B[]; /*@ ds:627B */ /* a screen name (Purpose unknown) */
 extern char gStr6283[]; /*@ ds:6283 */ /* a screen name (Purpose unknown) */
+extern void SetTextWindow(int n); /*@ 1DE7:0009 */
 extern void (far *gDrawText)(char far *text, int a, int b, int c, int d); /*@ ds:80CA */
 extern char far *gFont1A47; /*@ ds:FE4E */ /* the current font (src/E1547.C) */
 extern void far *gA9C0; /*@ ds:A9C0 */ /* the 6x6 font loaded from FONT6.FNT (src/E07A9.C) */
@@ -177,16 +178,16 @@ extern void far *g5E64[0x11]; /*@ ds:5E64 */ /* the 17 sliced icon pointers this
         }
     }
 }
-/* ovl0:00F7: waits for a key through 16A5:005A with the caller's list. When the resident flag
-   g3A0 (0000:03A0) is 1, it clears the flag and plays sound 0x14 first. Called by ovl0:0A5E, 0DDC,
-   0EE5, 135D and 28F9. */
-/*@ ovl0:00F7 */ void WaitKeyOrPause(void far *list)
+/* ovl0:00F7: waits for a key through 16A5:005A with the caller's list and returns its code. When the
+   resident flag g3A0 (0000:03A0) is 1, it clears the flag and plays sound 0x14 first. Called by
+   ovl0:0A5E, 0DDC, 0EE5, 135D and 28F9. */
+/*@ ovl0:00F7 */ int WaitKeyOrPause(void far *list)
 {
     if (g3A0 == 1) {
         g3A0 = 0;
         PlaySound(0x14);
     }
-    DispatchKeyWait(list);
+    return DispatchKeyWait(list);
 }
 /* ovl0:0128: draws one character-panel icon. It maps slot `index` (0..0x10) to the cell row
    gIcons2084[index].m06 + `row`, clips the panel rectangle gIcons2080[row], draws the icon cell
@@ -362,7 +363,7 @@ extern void far *g5E64[0x11]; /*@ ds:5E64 */ /* the 17 sliced icon pointers this
     return slot;
 }
 /*@ ovl0:0DDC stub */ void Ovl0_0DDC(void) {}
-/*@ ovl0:0EE5 stub */ void Ovl0_0EE5(void) {}
+/*@ ovl0:0EE5 stub */ int Ovl0_0EE5(void) {}
 /* ovl0:1071: draws the panel report line gStr61CB at (0xa8, 0x10) over a fresh region (g8115 = 2
    while it draws), restores g8115, redraws the report box and then calls DrawPartyStatus. Called
    by ovl0:28F9. Purpose unknown. */
@@ -508,7 +509,8 @@ extern void far *g5E64[0x11]; /*@ ds:5E64 */ /* the 17 sliced icon pointers this
     g8115 = 0;
     ClipRect(0x12, 0x40, 0, 0, 0x14, 0x80, 0, 2);
     LockShowPointer();
-}/*@ ovl0:26C6 stub */ void Ovl0_26C6(void) {}
+}
+/*@ ovl0:26C6 stub */ void Ovl0_26C6(void) {}
 /* ovl0:280D: for each of the first four characters whose class byte g1231[gChars[i].m20] has bit 2
    set, sets the 32-bit gChars[i].m7375 to 0x26c. Called by ovl0:28F9. Purpose unknown. */
 /*@ ovl0:280D */ void InitCharSlotValues(void)
@@ -520,8 +522,6 @@ extern void far *g5E64[0x11]; /*@ ds:5E64 */ /* the 17 sliced icon pointers this
             gChars[i].m7375 = 0x26c;
     }
 }
-
-/*@ ovl0:284A stub */ void Ovl0_284A(void) {}
 
 /* ovl0:284A: for each of the first four character records, copies the nine bytes at +0x0D, +0x0F,
    +0x11, +0x13, +0x15, +0x17, +0x19 and +0x1B one byte up (to +0x0E, +0x10, ..., +0x1C) through a
@@ -557,4 +557,77 @@ extern void far *g5E64[0x11]; /*@ ds:5E64 */ /* the 17 sliced icon pointers this
     for (i = 0; i < 0x13; i++)
         farfree(gNodePtrs[i]);
 }
-/*@ ovl0:28F9 stub */ void Ovl0_28F9(void) {}
+/* ovl0:28F9: the character panel's main loop. It loads the screens, sets text window 2, shows a
+   report line and the five-row list, then until a finished flag `flag` is set it draws the current
+   character's row list, waits for a key through ovl0:00F7, applies the key: the two function-key
+   toggles (gDCB0 ^= 1, ^= 2) on the 0x5c..0x66 range, the negative-key character switch
+   ((key & 0xf) - 1; 4 sets `flag`), and the enter/left/right keys (0x61, 0x2b, 0x3d) which open the
+   character editor ovl0:0EE5/23EC. When `flag` is set it flashes icon 0xf, shows report line 2,
+   runs Ovl0_26C6, refreshes the character fields (ovl0:280D, 284A), frees the panel buffers and
+   hides the pointer. Called by LoadGamePanel (ovl2:0846). */
+/*@ ovl0:28F9 */ void RunCharacterPanel(void)
+{
+    int i;
+    int save;
+    struct Node far *list;
+    register int flag;
+    register int key;
+
+    InitPanelScreens();
+    flag = 0;
+    SetTextWindow(2);
+    ShowReportLine1();
+    list = BuildRowNodeList(0, 5);
+    PlaySound(0x14);
+    do {
+        DrawRowList(gDCB0 + 6);
+        key = WaitKeyOrPause(list);
+        if (key != 0) {
+            switch (key) {
+            case 0x5c:
+            case 0x66:
+                gDCB0 ^= 1;
+                break;
+            case 0x60:
+            case 0x62:
+                gDCB0 ^= 2;
+                break;
+            }
+            DrawRowList(-1);
+        }
+        if (key < 0) {
+            key = (key & 0xf) - 1;
+            if (key == 4)
+                flag = 1;
+            else {
+                gDCB0 = key;
+                key = 0x2b;
+            }
+        }
+        if (key == 0x61 || key == 0x2b || key == 0x3d) {
+            DrawRowList(-1);
+            if (gChars[gDCB0].name[0]) {
+                save = gDCB0;
+                if (Ovl0_0EE5())
+                    flag = 1;
+                if (gChars[gDCB0].name[0] == 0 && save != gDCB0)
+                    Ovl0_23EC();
+            } else
+                Ovl0_23EC();
+            list = BuildRowNodeList(0, 5);
+            ShowReportLine1();
+        }
+        if (flag) {
+            for (i = 0; i < 4; i++)
+                if (gChars[i].name[0] == 0)
+                    flag = 0;
+        }
+    } while (flag == 0);
+    FlashPanelIcon(0xf);
+    ShowReportLine2();
+    Ovl0_26C6();
+    InitCharSlotValues();
+    ShiftCharFields();
+    FreePanelBuffers();
+    LockHidePointer();
+}

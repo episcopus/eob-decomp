@@ -6766,7 +6766,7 @@ size = 175
 evidence = ["near", "segment"]
 name = "BuildIconTable"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "eov0_00af"
@@ -6776,7 +6776,7 @@ size = 72
 evidence = ["near", "frame"]
 name = "FreeIconTable"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "eov0_00f7"
@@ -6786,7 +6786,7 @@ size = 49
 evidence = ["near", "frame"]
 name = "WaitKeyOrPause"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "eov0_0128"
@@ -6796,7 +6796,7 @@ size = 594
 evidence = ["near", "frame"]
 name = "DrawPanelIcon"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "eov0_037a"
@@ -6806,7 +6806,7 @@ size = 56
 evidence = ["near", "frame"]
 name = "FlashPanelIcon"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "eov0_03b2"
@@ -6816,7 +6816,7 @@ size = 125
 evidence = ["ovl", "near", "frame"]
 name = "InitRowNode"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "eov0_042f"
@@ -6826,7 +6826,7 @@ size = 213
 evidence = ["ovl", "near", "frame"]
 name = "BuildRowNodeList"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "eov0_0504"
@@ -6836,7 +6836,7 @@ size = 182
 evidence = ["ovl", "near", "frame"]
 name = "DrawPartyStatus"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "eov0_05ba"
@@ -6846,7 +6846,7 @@ size = 161
 evidence = ["ovl", "near", "frame"]
 name = "DrawCharName"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "eov0_065b"
@@ -6863,7 +6863,7 @@ size = 15
 evidence = ["ovl", "frame"]
 name = "DrawRowList10"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "eov0_0a5e"
@@ -6880,7 +6880,7 @@ size = 129
 evidence = ["ovl", "near"]
 name = "FindSlot"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "eov0_0ddc"
@@ -6904,7 +6904,7 @@ size = 133
 evidence = ["ovl", "near"]
 name = "ShowReportLine1"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "eov0_10f6"
@@ -6914,7 +6914,7 @@ size = 129
 evidence = ["ovl", "near", "frame"]
 name = "ShowReportLine2"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "eov0_1177"
@@ -6924,7 +6924,7 @@ size = 67
 evidence = ["ovl", "near", "frame"]
 name = "RollAbilityScore"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "eov0_11ba"
@@ -6934,7 +6934,7 @@ size = 106
 evidence = ["ovl", "near", "frame"]
 name = "DrawPanelRow"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "eov0_1224"
@@ -6972,7 +6972,7 @@ size = 189
 evidence = ["ovl", "near", "frame"]
 name = "BuildCombatTables"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "eov0_1f66"
@@ -6989,7 +6989,7 @@ size = 41
 evidence = ["ovl", "frame"]
 name = "FindNthSetBit"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "eov0_207a"
@@ -7020,7 +7020,7 @@ size = 383
 evidence = ["ovl", "near", "frame"]
 name = "InitPanelScreens"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "eov0_26c6"
@@ -7037,7 +7037,7 @@ size = 61
 evidence = ["ovl", "near", "frame"]
 name = "InitCharSlotValues"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "eov0_284a"
@@ -7047,7 +7047,7 @@ size = 102
 evidence = ["ovl", "near", "frame"]
 name = "ShiftCharFields"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "eov0_28b0"
@@ -7057,7 +7057,7 @@ size = 73
 evidence = ["ovl", "near", "frame"]
 name = "FreePanelBuffers"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "eov0_28f9"
@@ -7065,6 +7065,9 @@ unit = "eov0"
 addr = "ovl0:28F9"
 size = 384
 evidence = ["ovl", "frame"]
+name = "RunCharacterPanel"
+level = "L2"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "eov1_0000"
