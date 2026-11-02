@@ -95,7 +95,7 @@ void Ovl0_0B20(void);
 void ClearBottomBar(void);
 void WaitFrameDelay(void);
 void DelayFrames(unsigned frames);
-void Ovl0_1041(void);
+void GrowFrame(int left, int top, int dstLeft, int dstTop, int x, int y, int width, int height, int curWidth, int curHeight, int addW, int addH);
 int SignOf(int value);
 void Ovl0_1265(void);
 void Ovl0_15F9(void);
@@ -253,7 +253,64 @@ void PlayLogoSequence(void);
         WaitFrameDelay();
 }
 
-/*@ ovl0:1041 stub */ void Ovl0_1041(void) {}
+/* ovl0:1041: grows and moves a framed rectangle, one frame at a time, with the clip rectangle
+   passed to the driver each frame. The frame starts at (left, top) and walks towards
+   (dstLeft, dstTop) a pixel at a time (SignOf), while its size (w, h) grows by 2 up to
+   (width, height) and the inner rect (curWidth, curHeight) grows to the destination; the
+   edges (right, bottom) shrink until the frame reaches them, then the loop ends. Called by
+   the KING, ADVENTUR, HANDS and TUNNEL scenes, which pass the four edges and the clip origin
+   (ovl0:15F9, ovl0:1DF3, ovl0:23A3). */
+/*@ ovl0:1041 */ void GrowFrame(int left, int top, int dstLeft, int dstTop, int x, int y, int width, int height,
+                               int curWidth, int curHeight, int addW, int addH)
+{
+    int w;
+    int h;
+    int done;
+    int right;
+    int bottom;
+
+    right = curWidth + addW;
+    bottom = curHeight + addH;
+    if (bottom >= 0x15)
+        bottom = 0x15;
+    w = h = 1;
+    done = 0;
+    while (!done) {
+        gFrameDelay = 1;
+        ClipRect(x, y * 8, left, top * 8, w, h * 8, 2, 0);
+        if (curWidth < left)
+            ClipRect(0x27, 0, curWidth, 0, 1, 0xB0, 0, 0);
+        if (curHeight < top)
+            ClipRect(0, 0xC0, 0, curHeight * 8, 0x28, 8, 0, 0);
+        if (dstLeft + width <= right)
+            ClipRect(0x27, 0, right, 0, 1, 0xB0, 0, 0);
+        if (dstTop + height <= bottom)
+            ClipRect(0, 0xC0, 0, bottom * 8, 0x28, 8, 0, 0);
+        if (left == dstLeft && top == dstTop && w == width && h == height &&
+            curWidth >= dstLeft && curHeight >= dstTop &&
+            dstLeft + width >= right && dstTop + height >= bottom)
+            done = 1;
+        left += SignOf(dstLeft - left);
+        top += SignOf(dstTop - top);
+        if (w != width)
+            w += 2;
+        if (w > width)
+            w = width;
+        if (h != height)
+            h += 2;
+        if (h > height)
+            h = height;
+        if (++curWidth > dstLeft)
+            curWidth = dstLeft;
+        if (++curHeight > dstTop)
+            curHeight = dstTop;
+        if (dstLeft + width < right)
+            right--;
+        if (dstTop + height < bottom)
+            bottom--;
+        WaitFrameDelay();
+    }
+}
 
 /* ovl0:1248: the sign of `value` as -1, 0 or 1. Used by the animations to turn a direction
    delta into a step. */

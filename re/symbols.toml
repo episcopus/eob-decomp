@@ -10913,6 +10913,9 @@ unit = "iov0"
 addr = "ovl0:1041"
 size = 519
 evidence = ["ovl", "near", "frame"]
+name = "GrowFrame"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "iov0_1248"
