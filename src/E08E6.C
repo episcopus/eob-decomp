@@ -2,8 +2,8 @@
    per-type behaviour routines of the game's map objects: UpdateObjects walks the 30 28-byte object
    records at ds:8A82 (struct Obj28, indexed by the 27-byte character records at ds:1A3B, struct
    Entry27) and dispatches each live object by its type to the 000B/00C3/03FE/0AB8/0B34/0B94/0CA6
-   behaviours. 29 functions are at L2, six are drafts (0EC3, 0765, 0B94, 106B, 1410, 17FD) and one is
-   a stub (10F3). Whitespace and empty-body stubs keep the siblings in address order. */
+   behaviours. 31 functions are at L2 and five are drafts (0EC3, 0765, 0B94, 1410, 17FD).
+   Whitespace and empty-body stubs keep the siblings in address order. */
 
 struct Obj28 {              /* 28-byte records, 30 of them at ds:8A82 */
     char b0;                /* +0: index into the ds:1A3B table (the character record) */
@@ -34,11 +34,9 @@ struct Entry27 {            /* 27-byte records at ds:1A3B, indexed by Obj28.b0 (
     char pad00;
     char m01;               /* +1 (ds:1A3C) */
     char m02;               /* +2 (ds:1A3D) */
-    char m03;               /* +3 (ds:1A3E) */
-    char pad04;
-    char m05;               /* +5 (ds:1A40) */
-    char m06;               /* +6 (ds:1A41) */
-    char pad07[0x0E - 0x07];
+    char m03;               /* +3 (ds:1A3E): number of attack routines */
+    char m04[3][3];         /* +4 (ds:1A3F): {count, sides, bonus} per routine */
+    char pad0D;
     char m0E;               /* +0xE (ds:1A49) */
     char pad0F[0x13 - 0x0F];
     int m13;                /* +0x13 (ds:1A4E) */
@@ -50,12 +48,15 @@ struct Entry27 {            /* 27-byte records at ds:1A3B, indexed by Obj28.b0 (
 };
 
 struct CharRec {            /* 243-byte character records at ds:F580; the fields this unit reads */
-    char pad00[2];
+    char pad00;
+    unsigned char m01;      /* +01: status bits (src/E0DE8.C) */
     char name[0x0B];        /* +02: the character's name, NUL padded (src/E0DE8.C) */
-    char pad0D[0x1D - 0x0D];
-    signed char m1D;        /* +0x1D */
+    char pad0D[0x1B - 0x0D];
+    signed char hp;         /* +1B: current hit points (src/E0DE8.C) */
+    char pad1C;
+    signed char m1D;        /* +1D: the armour-class byte (src/E0DE8.C) */
     char pad1E[0xE3 - 0x1E];
-    unsigned long mE3;      /* +0xE3: status flags; a bit test compiles as and/or (long) */
+    unsigned long mE3;      /* +E3: effect flags, a 32-bit mask (src/E0DE8.C) */
     char padE7[0xF3 - 0xE7];
 };
 
@@ -102,6 +103,9 @@ extern char g1991[]; /*@ ds:1991 */
 extern char gTable32C3[]; /*@ ds:32C3 */
 extern char gTable329B[]; /*@ ds:329B */
 extern char gTable32BB[]; /*@ ds:32BB */
+extern signed char gTable324B[]; /*@ ds:324B */   /* (page, orientation) to a 12-slot group */
+extern signed char gTable325B[]; /*@ ds:325B */   /* 4 groups of 12 slot to party-member bytes */
+extern signed char gTable328B[]; /*@ ds:328B */   /* (orientation, frame) to the group's half */
 extern int gFBCC; /*@ ds:FBCC */
 extern unsigned char gFBD2; /*@ ds:FBD2 */
 extern unsigned long gDeadline; /*@ ds:F512 */   /* a 32-bit deadline at ds:F512:F514 */
@@ -145,6 +149,8 @@ extern signed char g3220[]; /*@ ds:3220 */
 extern signed char g3223[]; /*@ ds:3223 */
 extern signed char g3226[]; /*@ ds:3226 */
 extern signed char g322F[]; /*@ ds:322F */
+extern int f0EF3_18A2(struct CharRec far *who); /*@ 0EF3:18A2 */
+extern void ReportLostItem(int who); /*@ 0BD2:000E */
 void Obj10F3(struct Obj28 far *obj);   /* forward: 05EA reaches it before its definition */
 
 /* 08E6:000B: reset an object whose type is not 7, 8 or 0xa: clear the type, pick an orientation
@@ -840,7 +846,71 @@ second:
     need = SubtractInts(gTable1A3B[index].m01, gChars[who].m1D);
     return roll >= need || roll == 0x14;
 }
-/*@ 08E6:10F3 stub */ void Obj10F3(struct Obj28 far *obj) {}
+/* 08E6:10F3: resolve a type-0 object's attack on the party. It takes the current page and the
+   object's orientation to select one of the four 12-slot groups of gTable325B, then picks the
+   group's first or second half with gTable328B[orientation * 4 + frame] (frame 4 rolls 1d2 - 1 to
+   choose). It scans the six slots of that half for the first party member whose gChars m01 bit 0
+   is set, whose m1D is above -10, and who passes a 1d20 < 5 save when its mE3 has bit 2, and
+   remembers that member. It then rolls the object record's m03 attack routines through Obj106B,
+   adding RollDice(m04[i][0], m04[i][1], m04[i][2]) damage per hit, until 0EF3:18A2 on the member
+   negates the total. When the total is positive it reports a loss (m0E bit 7), damages the member,
+   applies "poisoned" (m0E bit 4, clearing mE3 bit 7) and "paralyzed" (m0E bit 5). Called by 05EA. */
+/*@ 08E6:10F3 */ void Obj10F3(struct Obj28 far *obj)
+{
+    int index;
+    int total;
+    int group;
+    int roll;
+    int end;
+    int attacks;
+    register int i;
+    register int who;
+    struct CharRec far *member;
+
+    index = obj->b0;
+    group = gTable324B[gFBCC * 4 + obj->orient];
+    who = group * 12;
+    if (obj->frame != 4)
+        roll = gTable328B[obj->orient * 4 + obj->frame];
+    else
+        roll = RollDice(1, 2, 0xff);
+    if (roll != 0)
+        who += 6;
+    end = who + 6;
+    for (i = who; i < end; i++) {
+        member = &gChars[gTable325B[i]];
+        if ((member->m01 & 1) && member->hp > -10) {
+            if ((member->mE3 & 4) == 0 || RollDice(1, 0x14, 0) < 5) {
+                who = gTable325B[i];
+                break;
+            }
+        }
+    }
+    if (i == end)
+        return;
+    total = 0;
+    attacks = gTable1A3B[index].m03;
+    for (i = 0; i < attacks; i++) {
+        if (!Obj106B(obj, who))
+            continue;
+        total += RollDice(gTable1A3B[index].m04[i][0],
+                          gTable1A3B[index].m04[i][1],
+                          gTable1A3B[index].m04[i][2]);
+        if (f0EF3_18A2(member) != 0)
+            total = 0;
+    }
+    if (total <= 0)
+        return;
+    if (gTable1A3B[index].m0E & 0x80)
+        ReportLostItem(who);
+    DamageCharacter(who, total);
+    if (gTable1A3B[index].m0E & 0x10) {
+        ApplyStatusEffect(who, 2, "poisoned", 0, 1, 8, 1);
+        gChars[who].mE3 &= ~0x80L;
+    }
+    if (gTable1A3B[index].m0E & 0x20)
+        ApplyStatusEffect(who, 4, "paralyzed", 2, 5, 9, 1);
+}
 /* 08E6:131D: build object `index` from scratch: clear it, set its b0, kind, frame, orientation,
    m07, type and timer and its record's m19, roll its count from the record's m02 (or 1d4 when m02
    is 0xff), set m12 and m14, and move it to `id`. Does nothing when id is 0. Called by 1505. */
