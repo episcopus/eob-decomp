@@ -11,6 +11,46 @@ The matcher already proved the bytes; do not re-prove them, read for meaning.
 Each finding is a checkbox. `must-fix` blocks `make review-pass` until a decompiler ticks it off
 (with the commit that fixes it); `should` and `note` do not block.
 
+Round 3 (at a2c0a9e, rev-haiku, a later round: round 2 must-fix items and the diff since cc4ce8b only).
+The diff since cc4ce8b is 89e940a, comments in src/EOV3.C only; no code byte, no re/symbols.toml entry for
+this unit. The re/globals.toml changes touch gPartyCell (the key the LoadGame header names), not this text.
+`make match FILE=src/EOV3.C`: 23 of 23, exit 0. `make readability UNIT=eov3`: 0 findings.
+Round 2 must-fix: all four are fixed right in substance (the INVENT reload runs after the writes whether or
+not they succeeded; the cut needs m22 >= 0; srcB slices three cells at dstB; gWallRecs is not cleared and its
+records stay until RegisterWallObject overwrites from slot 0). Their ticks stay. The round 2 header edit added
+a line to the SaveGame comment, so the line cites in the new text are one or two lines off; those are the
+two must-fix items below. Round 2 should items: the :560/:774 cites and the per-cell sound wording are fixed.
+
+#### Round 3 must-fix
+
+- [ ] must-fix src/EOV3.C:833-835 (SaveGame header, changed in 89e940a): the three line cites are off by one.
+  `ok = 1` is at :853 and `if (ok)` at :854 (not :853); the INVENT reload is the call at :871 (not :870, which
+  is FileClose); the `ok &=` writes are at :857-869 (not :856-868). Cite `if (ok)` at :854, the reload at :871
+  and the writes at :857-869. The claim itself is right.
+- [ ] must-fix src/EOV3.C:885 (LoadGame header, changed in 89e940a): "sets `flag` at :951 instead" is wrong.
+  `flag = 1` is at :953 (the `else` at :952). Line :951 is the `farfree(cell)` of the first pass. Say :953.
+  The condition ("m01 nonzero and m22 < 0") is right.
+
+#### Round 3 should
+
+- [ ] should src/EOV3.C:886-887 (LoadGame header; the sentence is unchanged since round 1): "loads the OUTTAKE
+  screen and draws the m22 < 0 characters' sprites into it". The OUTTAKE pass (:958-965) cuts each m22 < 0
+  character's 4 by 32 cell out of gOverlayBuf (the OUTTAKE screen loaded at :956), unpacks it into rec->sprite
+  and frees it; no draw call is in that loop. Say "cuts", as the first pass does. This wording is my error:
+  round 1 asked for "draws", and the fix wrote it.
+- [ ] should src/EOV3.C:45 (declaration of g1A1B, "per-cell sound table (src/E0ACD.C)"): the table is indexed
+  `gFBCC * 4 + roll` (:977), so it is per page, not per cell. src/E0ACD.C:131 and src/E0DE8.C:121 both declare
+  it as the per-page sound table. Say per-page and cite src/E0ACD.C:131.
+- [ ] should, cross-unit (not this file, carried from round 2): src/EOV5.C:210, :1042 and :1162 still call
+  FreeEffectTables, and :1147 names it in a comment. The EOV5 owner or the integrator should use FreeSlotTables.
+  Not blocking, and the match is unaffected.
+
+#### Round 3 note
+
+- The round 1 shoulds still open (scriptWord split at LoadMapScreen; the type shoulds for Triple6, gFB5E,
+  gRectKinds and gE062) and the round 2 note are not re-judged. They do not block.
+- Once the two must-fix cites are fixed and ticked, the unit passes: the should items do not block.
+
 Round 2 (at cc4ce8b, rev-haiku, a later round: round 1 must-fix items and the diff since 01237b0 only).
 `make match FILE=src/EOV3.C`: cmatch 23 of 23 functions match. `make readability UNIT=eov3`: 0 findings.
 Round 1 must-fix items: all fixed right in their text, except the two round 1 should items reopened
