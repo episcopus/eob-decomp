@@ -4153,6 +4153,8 @@ unit = "e122e"
 addr = "122E:147F"
 size = 1580
 evidence = ["frame"]
+name = "EvaluateScriptExpr"
+notes = "draft: 2026-11-01: the sub-dispatcher of script opcode 0xFFE8, a postfix expression evaluator over a word stack (gEvalStack at ds:A95C, index gEvalTop at ds:A9EE). Written from the disassembly: the loop is `while ((op = *script++) != 0xFFEE)`, so the test sits at the bottom (the original's `jmp 122E:199B` at the top), with a switch over 0xFFDA..0xFFFF (jump table at 122E:19EF, 38 entries, default pushes a literal 0..0x7f) and the 0xFFEE epilogue that pops gEvalStack, jumps to gBuf8DCA + word when the value is 0, and returns the distance. Case order is the original's body order: FFE0, FFED, FFF7, FFF5, FFF3, FFF2, FFF1, FFF0, FFEF, FFE8, FFEA, FFDD, FFDC, FFDB, FFFF, FFFE, FFFD, FFFC, FFFB, FFFA, FFF9, FFF8, FFDA. Matches: prologue, frame (0xe), loop head, switch dispatch, the jump table, the epilogue, the eight comparison/logical cases (operands pop into DI and SI, `cmp si,di`), and the three member-scan loops keep their counter memory-resident (bp-0xa) with the flag in SI, done by letting lhs/rhs be the only register variables and reusing lhs as the loop flag. Remaining: (1) the first byte difference is at 122E:14F9 (case FFF5): the original evaluates the `t2 == -1 ? -1 : t2` conditional before pushing the constant count 1 (`cmp [bp-8],-1; jne; mov ax,1; push ax; ...`), while our -ml -O -Z build pushes 1 first (`mov ax,1; push ax; cmp [bp-8],-1`); a named temp makes the order right but stores it to a slot the original does not use. (2) About 0x57 bytes short overall, so the loop-back target differs (ours 122E:14C5 vs 122E:151C). -B does not help (still short)."
 
 [[function]]
 id = "e122e_1aab"
