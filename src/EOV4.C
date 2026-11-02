@@ -6,7 +6,7 @@
 /*@flags -ml -O -Z -v */
 
 extern signed char gHead199D[]; /*@ ds:199D */  /* rows of 18 signed heading offsets */
-extern unsigned char gB894[]; /*@ ds:B894 */    /* 9-byte tile records (src/E08E6.C) */
+extern signed char gB894[]; /*@ ds:B894 */    /* 9-byte tile records (src/E08E6.C) */
 extern signed char far *gEF6A[]; /*@ ds:EF6A */ /* 18 far pointers into gB894 (src/E1414.C) */
 extern signed char gA9C6; /*@ ds:A9C6 */        /* offset into the gEF6A target (src/E0ACD.C) */
 extern signed char g194B[]; /*@ ds:194B */      /* per-slot byte flags (src/E08E6.C) */
@@ -906,12 +906,127 @@ extern signed char g71A2[]; /*@ ds:71A2 */   /* per index nudge f (this unit) */
     }
     SetRegionRect(5, gViewColLeft, 0, gViewColRight, 0xf);
 }
-/* ovl4:19C4: not lifted yet. It builds a five-entry far-pointer list from the ds:DD2C records whose
-   +4 matches the slot heading, then draws each entry through the ds:F2F8 or ds:EC9A sprite tables
-   and DrawRegion000F/004D. Its far-pointer store into a local array at 19C4:1A6B (87 D8 xchg
-   ax,bx) is TCC's own assembler's form, which the file's -v build (since 2026-11-02) gives; under
-   the earlier -B it could not match. See re/symbols.toml (eov4_19c4). */
-/*@ ovl4:19C4 stub */ void Ovl4_19C4(int slot) {}
+/* The 18-byte records at ds:DD2C (src/E1414.C declares the same layout). */
+struct DDRec {
+    char active;              /* +00: the record state, 1 selects the ds:F2F8 path here */
+    char pad01;
+    int m02;                  /* +02 */
+    int m04;                  /* +04: the slot heading the record belongs to */
+    char m06;                 /* +06: low two bits index ds:7246 and ds:7262 */
+    signed char m07;          /* +07: the page the record is seen from */
+    int m08;                  /* +08: indexes the ds:8DD0 item records */
+    char m0A;                 /* +0A: row in the ds:F2F8 cell table */
+    char m0B;                 /* +0B */
+    char m0C;                 /* +0C: bit 6 gates a position recompute */
+    unsigned char m0D;        /* +0D */
+    int (far *fn)(struct DDRec far *rec); /* +0E */
+};
+extern struct DDRec gDD2C[]; /*@ ds:DD2C */
+extern signed char g7246[]; /*@ ds:7246 */   /* per page and low-2-bit index, the list slot (this unit) */
+extern unsigned char g71A6[]; /*@ ds:71A6 */ /* per slot, per sprite, the x base (this unit) */
+extern signed char g71EE[]; /*@ ds:71EE */   /* per g1A09 slot, per sprite, the y base (this unit) */
+extern signed char g71FE[]; /*@ ds:71FE */   /* per slot, per sprite, the frame (this unit) */
+extern signed char g725A[]; /*@ ds:725A */   /* per frame, the cell +2 value a nudge needs (this unit) */
+extern signed char g725E[]; /*@ ds:725E */   /* per frame, the x nudge added on that match (this unit) */
+extern signed char g7262[]; /*@ ds:7262 */   /* per record +7, per record +6, the draw wrapper (this unit) */
+extern signed char g1D07[]; /*@ ds:1D07 */   /* per kind plus 0x2d side, a ds:F2F8 row or -1 (this unit) */
+extern void far *gF2F8[][4]; /*@ ds:F2F8 */  /* far sprite cells, four per icon row (this unit) */
+
+#define DD_SIDE_STRIDE 0x2d
+#define NO_DD_ROW -1
+
+/* ovl4:19C4: draws the map objects whose ds:DD2C record is seen from the current page. Only when
+   g1879[tile] is nonzero and g194B[tile] bit 7 is clear does it run (tile is the slot's gEF6A
+   record byte, as in Ovl4_0D1B). It scans the ten 0x12-byte ds:DD2C records and, for each whose
+   byte +0 is set and word +4 equals the slot's heading (gAngleA9C8[slot]), puts its far pointer in
+   the list slot g7246[gFBCC * 5 + (record +6 & 3)]. Each non-empty slot picks a cell from the
+   ds:F2F8 or ds:EC9A far sprite tables and a draw wrapper from ds:7262, at an x from ds:71A6 and a
+   y from ds:71EE selected by the sprite base ds:1A2B[gFBCC * 4 + (+6 & 3)] and the frame ds:71FE:
+   a record whose byte +0 is 1 picks the ds:F2F8 row ds:1D07[kind + side * 0x2d] (kind is the
+   ds:8DD0 item icon through ds:181F, side -1 when the record +7 matches neither the page nor the
+   page xor 2) and shifts x by ds:725E[frame] when the cell +2 modulo 8 matches ds:725A[frame];
+   any other record uses the row byte +0xA directly and, when its +0xC has bit 6, recomputes x from
+   ds:1D61 and y from the cell. A wrapper of 0 draws with DrawRegion000F, any other with
+   DrawRegion004D. Called by DrawViewSlots for every slot. Purpose unknown: what the records, the
+   sides and the wrappers mean. Three source forms TCC pins down: the ds:194B bit 7 test is written
+   `g1879[tile] == 0 || (g194B[tile] & 0x80)` with an empty then, the only form that tests the byte
+   without sign-extending it; the frame guard is `if (frame >= 0) { body }` (an `if (frame < 0)
+   continue;` gives the same bytes but reloads ES before the record check, a -Z difference); and the
+   cell +2 test is a raw `<< 3 >> 3` (a `% 8` compiles to idiv). */
+/*@ ovl4:19C4 */ void Ovl4_19C4(int slot)
+{
+    int tile;
+    int page;
+    int kind;
+    int side;
+    int spriteBase;
+    int x;
+    int y;
+    int heading;
+    int wrapper;
+    struct DDRec far *rec;
+    char far *cell;
+    struct DDRec far *arr[5];
+    int i;
+    int frame;
+
+    heading = gAngleA9C8[slot];
+    tile = gB894[heading * 9 + gA9C6];
+    if (g1879[tile] == 0 || (g194B[tile] & 0x80))
+        ;
+    else
+        return;
+    page = gFBCC * 5;
+    for (i = 0; i < 5; i++)
+        arr[i] = 0;
+    rec = gDD2C;
+    for (i = 0; i < 0xa; i++, rec++) {
+        if (rec->active != 0 && rec->m04 == heading)
+            arr[g7246[page + (rec->m06 & 3)]] = rec;
+    }
+    for (page = 0; page < 5; page++) {
+        if (arr[page] == 0)
+            continue;
+        rec = arr[page];
+        spriteBase = g1A2B[gFBCC * 4 + (rec->m06 & 3)];
+        x = g71A6[slot * 4 + spriteBase];
+        y = g71EE[g1A09[slot] * 4 + spriteBase];
+        frame = g71FE[slot * 4 + spriteBase];
+        wrapper = 0;
+        if (frame >= 0) {
+            if (rec->active == 1) {
+                kind = g181F[gItems[rec->m08].icon];
+                if (rec->m07 == gFBCC)
+                    side = 0;
+                else if (rec->m07 == (gFBCC ^ 2))
+                    side = 1;
+                else
+                    side = -1;
+                if (side != -1 && g1D07[kind + side * DD_SIDE_STRIDE] != NO_DD_ROW) {
+                    cell = (char far *)gF2F8[g1D07[side * DD_SIDE_STRIDE + kind]][frame];
+                    wrapper = g7262[rec->m07 * 4 + rec->m06];
+                } else {
+                    cell = (char far *)gItemL1Icons[kind][frame];
+                    wrapper = (rec->m07 == ((gFBCC + 1) & 3)) ? 1 : 0;
+                }
+                if ((((signed char far *)cell)[2] << 3 >> 3) == g725A[frame])
+                    x += g725E[frame];
+            } else {
+                cell = (char far *)gF2F8[rec->m0A][frame];
+                wrapper = g7262[rec->m07 * 4 + rec->m06];
+                if (rec->m0C & 0x40) {
+                    x = g1D61[(slot * 5 + 4) * 2] + 0x58;
+                    x -= (((signed char far *)cell)[2] << 3) >> 1;
+                    y = 0x2c - (((signed char far *)cell)[1] >> 1);
+                }
+            }
+            if (wrapper == 0)
+                DrawRegion000F(2, cell, x, y, 5);
+            else
+                DrawRegion004D(2, cell, x, y, 5);
+        }
+    }
+}
 
 extern signed char g7272[]; /*@ ds:7272 */   /* per-column x base correction (this unit) */
 extern signed char g7275[]; /*@ ds:7275 */   /* per-column y base (this unit) */

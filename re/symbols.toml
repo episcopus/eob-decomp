@@ -8518,7 +8518,10 @@ unit = "eov4"
 addr = "ovl4:19C4"
 size = 860
 evidence = ["ovl", "near"]
-notes = "retry under -v (2026-11-02): the unit now builds with -v, which keeps identical tails apart; the difference below was found under the wrong switches. Earlier: unit-flag class (like 122E and eov4_0d1b). 19C4 builds a five-entry far-pointer list from the ds:DD2C records and stores into a local array at 19C4:1A6B with 87 D8 xchg ax,bx (two bytes, the original came from TCC's own assembler). Under this file's -B (TCC -S then TASM) that store assembles as the one-byte 93, so the function is one byte short and every later branch displacement differs; TASM 2.0, 2.01, 1.0 and 1.01 all assemble both xchg spellings as 93 (probed 2026-11-01). Without -B the byte is right but CopyViewColumn's three separate continue tails merge. Not lifted yet; left a stub with the block in src/EOV4.C."
+notes = "matched 2026-11-02 under -v. Three source forms the bytes pin down: the ds:194B bit-7 test is written `g1879[tile] == 0 || (g194B[tile] & 0x80)` with an empty then (a plain `g194B[tile] & 0x80` sign-extends the byte first); the frame guard is written `if (frame >= 0) { body }` (an `if (frame < 0) continue;` gives identical bytes but reloads ES before the record check, a TCC -Z register-state difference); and the cell +2 test is a raw `<< 3 >> 3` (a `% 8` compiles to idiv). The earlier xchg/store question is settled: -v is the file's flag."
+name = "Ovl4_19C4"
+level = "L2"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "eov4_1d20"
