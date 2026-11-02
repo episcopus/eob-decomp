@@ -3753,6 +3753,9 @@ unit = "e0ef3"
 addr = "0EF3:18D8"
 size = 311
 evidence = ["frame"]
+level = "L2"
+match_flags = "-ml -O -Z"
+name = "CastConeOfCold"
 
 [[function]]
 id = "e0ef3_1a0f"

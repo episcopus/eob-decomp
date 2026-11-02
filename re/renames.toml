@@ -1755,3 +1755,12 @@ new = "gNameTable"
 kind = "global"
 why = "the far table 0EF3:2295 reads names from; set to g12E0 or g1278 by 0EF3:21E0 (only E0EF3.C references ds:EFCC)"
 date = "2026-11-02"
+
+[[rename]]
+id = "0EF3:18D8=CastConeOfCold"
+addr = "0EF3:18D8"
+old = ""
+new = "CastConeOfCold"
+kind = "function"
+why = "gSpells1344 record 24 (\"cone of cold\") apply callback: blanks the view, runs the cone drawing 0EF3:2EBC and damages every object in the seven rows of g5763[gFBCC] (0EF3:18D8, no direct caller)"
+date = "2026-11-02"

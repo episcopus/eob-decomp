@@ -191,6 +191,7 @@ extern signed char gA99A;               /*@ ds:A99A */ /* the selected character
 extern int gFC74;                       /*@ ds:FC74 */ /* saved with gFC76 by 0EF3:026F and restored */
 extern int gFC76;                       /*@ ds:FC76 */
 extern char gF43D;                      /*@ ds:F43D */
+extern int gF518;                       /*@ ds:F518 */ /* set while 08E6:0E48 has not run */
 extern unsigned char gFBD2;             /*@ ds:FBD2 */
 extern char gFB44;                      /*@ ds:FB44 */
 extern int gFBC8;                       /*@ ds:FBC8 */
@@ -200,6 +201,9 @@ extern char gDF4C;                      /*@ ds:DF4C */
 extern char gFileNameBuf[];             /*@ ds:FE6E */
 extern unsigned g5E1C;                  /*@ ds:5E1C */ /* a button/mode word (src/E0ACD.C) */
 extern char gF542[];                    /*@ ds:F542 */ /* a message buffer passed to RedrawPartyPanel */
+extern char far *g5763[];               /*@ ds:5763 */ /* far byte tables, one per page gFBCC */
+extern char gText5737[];                /*@ ds:5737 */ /* a byte table 0EF3:2EBC reads */
+extern void Obj0E48(void);              /*@ 08E6:0E48 */ /* clears the object marks (src/E08E6.C) */
 extern int ClampValue(int value, int low, int high, int invert); /*@ 082C:0AB4 */
 extern signed char gAt5717[];          /*@ ds:5717 */ /* a per-member byte: nonzero when the member
                                                      can use melee effects (read by 0EF3:0E1B) */
@@ -1140,7 +1144,47 @@ extern void f0EF3_2A53(int a, int b, int c, int d, int e, void far *p); /*@ 0EF3
 /* 0EF3:18D3: an empty function reached through a table; nothing to do. */
 /*@ 0EF3:18D3 */ void EmptyFunction18D3(void) {}
 
-/*@ 0EF3:18D8 stub */ void f0EF3_18D8(void) {}
+void f0EF3_2EBC(int a, int b, int c, int d, int e, char far *table);
+/* 0EF3:18D8: the cone of cold. It reads the panel member's class-slot 1 value, blanks the view
+   (g8115 = 2, gFillRect, DrawViewSlots(7), g8115 = 0), hides the pointer, runs the cone drawing
+   0EF3:2EBC(0x96, 0x32, 0xa, 1, 0x64, ds:5737) and shows it again. It sets gF518 and, for each of
+   the seven rows of the per-page table g5763[gFBCC], lists the objects whose cell is the party cell
+   plus the row's delta (masked to 0x3FF) with Obj17FD and damages each that 0D1C:0BAB does not
+   reject by RollDice(classSlot, 4, classSlot) through 08E6:0FBE, then runs 08E6:0E48. Reached
+   through the spell table (gSpells1344 record 24, "cone of cold", its apply callback). */
+/*@ 0EF3:18D8 */ void CastConeOfCold(void)
+{
+    int buffer[5];
+    int far *list;
+    int classSlot;
+    int cell;
+    char far *table;
+    int row;
+    int dmg;
+
+    classSlot = GetClassSlot1Value(gPanelMember);
+    g8115 = 2;
+    gFillRect(0, 0, 0xB0, 0x78, 0);
+    DrawViewSlots(7);
+    g8115 = 0;
+    HidePointerZone(0, 0, 0xB0, 0x78);
+    f0EF3_2EBC(0x96, 0x32, 0x0A, 1, 0x64, gText5737);
+    ShowPointerZone();
+    table = g5763[gFBCC];
+    gF518 = 1;
+    for (row = 0; row < 7; row++, table++) {
+        cell = (gPartyCell + *table) & 0x3FF;
+        Obj17FD((int far *)buffer, cell, 4, gFBCC, 1, 1);
+        list = buffer;
+        while (*list != -1) {
+            dmg = RollDice(classSlot, 4, classSlot);
+            if (f0D1C_0BAB(*list) == 0)
+                DamageObject(&gObjs[*list], dmg);
+            list++;
+        }
+    }
+    Obj0E48();
+}
 
 /* 0EF3:1A0F: add the panel member's effect record of mode 7 through 0EF3:097B. */
 /*@ 0EF3:1A0F */ void AddEffectRecord7(void)
@@ -1675,4 +1719,4 @@ void f0EF3_2295(void);
 
 /*@ 0EF3:2A53 stub */ void f0EF3_2A53(int a, int b, int c, int d, int e, void far *p) {}
 
-/*@ 0EF3:2EBC stub */ void f0EF3_2EBC(void) {}
+/*@ 0EF3:2EBC stub */ void f0EF3_2EBC(int a, int b, int c, int d, int e, char far *table) {}
