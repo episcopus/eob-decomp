@@ -2178,3 +2178,12 @@ new = "LoadIntroScreen"
 kind = "function"
 why = "ovl2:078D loads the INTRO screen into gOverlayBuf, draws two option-panel frames and clips the region; it slices no sprite cells. The icon slicer is LoadDecorateIcons at ovl2:0577"
 date = "2026-11-02"
+
+[[rename]]
+id = "1547:04A0=DrawMemberFood"
+addr = "1547:04A0"
+old = "DrawMemberLevel"
+new = "DrawMemberFood"
+kind = "function"
+why = "m23 is a food/hunger value: EatFood (0ACD:07E0, src/E0ACD.C:571-577) adds the food item's m0B to m23 clamped to 100 and then calls this to redraw the bar, and DecayMemberState (1414:0C82, src/E1414.C:656-657) subtracts one from m23 each tick for a living member and calls it. The bar is 0..100, so it is the food/hunger bar, not a level."
+date = "2026-11-02"

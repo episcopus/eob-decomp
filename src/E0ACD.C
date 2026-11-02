@@ -166,7 +166,7 @@ struct Node;    /* the screen list node 16A5:005A walks (src/E16A5.C) */
 /* 16A5:005A is void in src/E16A5.C:144, but its last statement leaves DispatchNodeEvent's result
    (the event it consumed, or 0) in AX and this unit consumes it, so it is declared int here. */
 extern int DispatchKeyWait(struct Node far *head); /*@ 16A5:005A */
-extern void DrawMemberLevel(int who); /*@ 1547:04A0 */
+extern void DrawMemberFood(int who); /*@ 1547:04A0 */
 extern void RunMemberScript(int a, int b); /*@ 122E:1DA8 */
 extern void RunEffects(void); /*@ 1414:04E7 */
 extern void TurnUndead(void); /*@ 0D1C:0A43 */
@@ -619,7 +619,7 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
             rec->m23 += gTable8DD2[item].m0B;
         gTable8DD2[item].m04 = -1;
         SetMouseItem(0);
-        DrawMemberLevel(index);
+        DrawMemberFood(index);
         PlaySound(9);
     } else if (item != 0) {
         DrawText("You may only eat food!\r");

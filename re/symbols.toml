@@ -5096,7 +5096,7 @@ unit = "e1547"
 addr = "1547:04A0"
 size = 164
 evidence = ["far", "near", "frame"]
-name = "DrawMemberLevel"
+name = "DrawMemberFood"
 level = "L2"
 match_flags = "-ml -O -Z"
 
