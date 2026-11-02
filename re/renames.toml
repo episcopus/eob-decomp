@@ -2430,3 +2430,39 @@ new = "gButtonDefs"
 kind = "function"
 why = "9-byte records ovl1:1153 turns into list nodes (label message at +0 read by ovl1:1551 through SkipStrings(gStrings2003), box x y w h at +1..+4, key word at +5)"
 date = "2026-11-02"
+
+[[rename]]
+id = "ovl1:1ACD=RunCampMenu"
+addr = "ovl1:1ACD"
+old = "Ovl1_1ACD"
+new = "RunCampMenu"
+kind = "function"
+why = "ovl1:1ACD shows the camp menu: it writes gStrings2003 messages 0x38 'Camp:', 0x39 'Preferences:' and 0x3A 'Game Options:' into gMenus, builds their button lists and acts on the buttons Rest Party (calls CampLoop ovl6:0000), Memorize Spells, Pray for Spells, Scribe Scrolls, Preferences, Game Options, Exit, Load Game, Save Game, Drop Character, Quit Game; the far pointer 2102:0020 sits at ds:3BBE (callback30 of the screen node at ds:3B8E)"
+date = "2026-11-02"
+
+[[rename]]
+id = "ds:80E8=gTunesOn"
+addr = "ds:80E8"
+old = "g80E8"
+new = "gTunesOn"
+kind = "global"
+why = "ovl1:1ACD formats the 'Tunes are %-3s' button label (gStrings2003 message 0x11) from BoolString(ds:80E8) and the Tunes button 0x800D toggles it"
+date = "2026-11-02"
+
+[[rename]]
+id = "ds:F43C=gBarGraphsOn"
+addr = "ds:F43C"
+old = "gF43C"
+new = "gBarGraphsOn"
+kind = "global"
+why = "ovl1:1ACD formats the 'Bar Graphs are %-3s' button label (gStrings2003 message 0x13) from BoolString(ds:F43C) and the Bar Graphs button 0x800F toggles it"
+date = "2026-11-02"
+
+[[rename]]
+id = "ds:FE2C=gNeedsRest"
+addr = "ds:FE2C"
+old = "gFE2C"
+new = "gNeedsRest"
+kind = "global"
+why = "ovl1:025D sets it when a spell slot is retired; ovl1:1ACD shows message 0x2C 'Your party needs to rest to gain spells.' when Exit is pressed with it set, and clears it when CampLoop (Rest Party) returns 0"
+date = "2026-11-02"

@@ -8094,7 +8094,9 @@ unit = "eov1"
 addr = "ovl1:1ACD"
 size = 2413
 evidence = ["ovl"]
-notes = "write in C in src/EOV1.C (2026-11-02: eov1 is a C unit, escalation eov1): a far array of structs indexed by a variable, `garr[i].field`, gives the 16-bit displacement form (26 8B 87 disp16) that TASM cannot write; a far pointer `p->field` gives the 8-bit one. The assembly draft in src/EOV1.ASM is the reference. Earlier: one far-array read, the `test word ptr es:[bx-2],2` at ovl1:2206, is 26 F7 87 FE FF 02 00 in the original. TCC 1.00 uses a 16-bit displacement for a far array index; the pinned TASM 2.0 emits the 8-bit form 26 F7 47 FE 02 00 (probed 2026-11-01: `es:[bx-2]`, `es:[bx+0FFFEh]` and a forward EQU all give the 8-bit form, the forward EQU with a trailing NOP). The original's extra byte makes our tail one byte early, so cmatch first reports +0320 (the displacement of the jmp at ovl1:1DEC). Every other byte matches: substituting a 7-byte placeholder for that one read moves the first difference to +073C, the read itself. This is the same compiler question as ovl1:1153 (registry note above): eov1 is a C unit, but re/units.toml says kind asm. The body is written; a C rewrite under kind c should match. Re-probed 2026-11-01: TASM does emit the disp16 form for a relocatable absolute (`EXTRN D:ABS` then `es:[bx+D]`), so the gap is the matcher's stub (no absolute constant) or the unit kind."
+name = "RunCampMenu"
+level = "L2"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "eov1_243a"
