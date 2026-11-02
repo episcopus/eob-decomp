@@ -7019,6 +7019,9 @@ unit = "eov1"
 addr = "ovl1:00DD"
 size = 384
 evidence = ["near", "frame"]
+name = "_BuildSpellSlots"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "eov1_025d"

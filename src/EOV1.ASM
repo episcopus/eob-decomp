@@ -32,6 +32,7 @@
         EXTRN   _sprintf:FAR            ; @ 0000:57AE (library)
         EXTRN   _memset:FAR             ; @ 0000:6384 (library)
         EXTRN   _strcpy:FAR             ; @ 0000:67CD (library)
+        EXTRN   _F_LXLSH@:FAR           ; @ 0000:77FF: long left shift helper (library)
 
         EXTRN   gChars:BYTE             ; @ ds:F580: 6 character records of 0xF3 bytes (E08E6.C)
         EXTRN   gBufDCFC:DWORD          ; @ ds:DCFC: 4096-byte scratch allocation (E07A9.C)
@@ -58,6 +59,12 @@
         EXTRN   gFDEC:BYTE              ; @ ds:FDEC: 32 two-byte spell counters, built by ovl1:00DD
         EXTRN   gFD9A:BYTE              ; @ ds:FD9A: 32-byte spell index table, built by ovl1:00DD
         EXTRN   gFE2C:WORD              ; @ ds:FE2C: set when a known slot is retired (ovl1:025D)
+        EXTRN   gFDBA:BYTE              ; @ ds:FDBA: 9-byte spell-slot list heads, built by ovl1:00DD
+        EXTRN   gFDE7:BYTE              ; @ ds:FDE7: 10-byte table cleared by ovl1:00DD
+        EXTRN   gFDEB:BYTE              ; @ ds:FDEB: 32 two-byte spell counters, built by ovl1:00DD
+        EXTRN   gFDE6:BYTE              ; @ ds:FDE6: 32-byte spell counter, built by ovl1:00DD
+        EXTRN   gMap62AF:BYTE           ; @ ds:62AF: spell-level to slot map for class A
+        EXTRN   gMap62C9:BYTE           ; @ ds:62C9: spell-level to slot map for class B
 
         .CODE
 
@@ -173,10 +180,192 @@ f0000_00D9:
         ret
 _RotateOutMember ENDP
 
-        PUBLIC  _Ovl1_00DD               ; @ ovl1:00DD stub
-_Ovl1_00DD PROC FAR
+; ovl1:00DD: build the spell tables for character `who` from its spell book. It returns when
+; `who` is negative; otherwise it clears gFDBA (0x2D), gFDE7 (0x0A), gFDEC (0x40) and gFD9A
+; (0x20), copies the class spell-level map (gMap62C9 when `flag`, gMap62AF otherwise) into gFD9A
+; with strcpy, and sets the spell-list pointer p to rec+0x55 (memorized) when `flag`, rec+0x37
+; (known) otherwise. First it walks up to 0x1E signed bytes of p (positive ones counted in
+; gFDEB + 2*c, negatives in gFDEC + 2*(-c) after decrementing) and counts gFD9A[c] in gFDE6 + c.
+; Then, for each bit i of `mask` (a long, 1L << i through F_LXLSH@), it takes slot di = gFD9A[i]-1
+; and, when the source far array `spells` has a nonzero entry there (or `flag` is clear), appends
+; i+1 to the gFDBA record of di (its first byte is the count, then the indices). Called by
+; ovl1:097A. Purpose unknown: the counter semantics and why the two maps differ.
+        PUBLIC  _BuildSpellSlots        ; @ ovl1:00DD
+_BuildSpellSlots PROC FAR
+        push    bp
+        mov     bp,sp
+        sub     sp,0Ah
+        push    si
+        push    di
+        cmp     word ptr [bp+6],0
+        jge     short f00DD_00EE
+        jmp     f00DD_0257
+f00DD_00EE:
+        mov     ax,[bp+6]
+        mov     dx,0F3h
+        imul    dx
+        add     ax,OFFSET gChars
+        mov     [bp-6],ax
+        mov     [bp-4],ds
+        mov     ax,2Dh
+        push    ax
+        xor     ax,ax
+        push    ax
+        push    ds
+        mov     ax,OFFSET gFDBA
+        push    ax
+        call    far ptr _memset
+        add     sp,8
+        mov     ax,0Ah
+        push    ax
+        xor     ax,ax
+        push    ax
+        push    ds
+        mov     ax,OFFSET gFDE7
+        push    ax
+        call    far ptr _memset
+        add     sp,8
+        mov     ax,40h
+        push    ax
+        xor     ax,ax
+        push    ax
+        push    ds
+        mov     ax,OFFSET gFDEC
+        push    ax
+        call    far ptr _memset
+        add     sp,8
+        mov     ax,20h
+        push    ax
+        xor     ax,ax
+        push    ax
+        push    ds
+        mov     ax,OFFSET gFD9A
+        push    ax
+        call    far ptr _memset
+        add     sp,8
+        cmp     word ptr [bp+10h],0
+        je      short f00DD_015B
+        push    ds
+        mov     ax,OFFSET gMap62C9
+        jmp     short f00DD_015F
+f00DD_015B:
+        push    ds
+        mov     ax,OFFSET gMap62AF
+f00DD_015F:
+        push    ax
+        push    ds
+        mov     ax,OFFSET gFD9A
+        push    ax
+        call    far ptr _strcpy
+        add     sp,8
+        mov     ax,[bp-4]
+        mov     dx,[bp-6]
+        add     dx,37h
+        mov     [bp-0Ah],dx
+        mov     [bp-8],ax
+        cmp     word ptr [bp+10h],0
+        je      short f00DD_0191
+        mov     ax,[bp-4]
+        mov     dx,[bp-6]
+        add     dx,55h
+        mov     [bp-0Ah],dx
+        mov     [bp-8],ax
+f00DD_0191:
+        mov     word ptr [bp-2],0
+        jmp     short f00DD_01D3
+f00DD_0198:
+        les     bx,[bp-0Ah]
+        mov     al,es:[bx]
+        cbw
+        mov     si,ax
+        inc     word ptr [bp-0Ah]
+        or      ax,ax
+        je      short f00DD_01D0
+        or      ax,ax
+        jle     short f00DD_01B6
+        mov     bx,si
+        shl     bx,1
+        inc     byte ptr [bx+gFDEB]
+        jmp     short f00DD_01BC
+f00DD_01B6:
+        mov     ax,si
+        neg     ax
+        mov     si,ax
+f00DD_01BC:
+        dec     si
+        mov     bx,si
+        shl     bx,1
+        inc     byte ptr [bx+gFDEC]
+        mov     al,[si+gFD9A]
+        cbw
+        mov     bx,ax
+        inc     byte ptr [bx+gFDE6]
+f00DD_01D0:
+        inc     word ptr [bp-2]
+f00DD_01D3:
+        cmp     word ptr [bp-2],1Eh
+        jl      short f00DD_0198
+        mov     word ptr [bp-2],0
+        jmp     short f00DD_0251
+f00DD_01E0:
+        xor     dx,dx
+        mov     ax,1
+        mov     cl,[bp-2]
+        call    far ptr _F_LXLSH@
+        mov     bx,[bp+0Eh]
+        mov     cx,[bp+0Ch]
+        and     cx,ax
+        and     bx,dx
+        or      cx,bx
+        je      short f00DD_024E
+        mov     bx,[bp-2]
+        mov     al,[bx+gFD9A]
+        cbw
+        dec     ax
+        mov     di,ax
+        cmp     word ptr [bp+10h],0
+        je      short f00DD_0215
+        les     bx,[bp+8]
+        cmp     byte ptr es:[bx+di],0
+        jne     short f00DD_021B
+f00DD_0215:
+        cmp     word ptr [bp+10h],0
+        jne     short f00DD_024E
+f00DD_021B:
+        or      di,di
+        jl      short f00DD_024E
+        mov     ax,di
+        mov     dx,9
+        imul    dx
+        mov     bx,ax
+        inc     byte ptr [bx+gFDBA]
+        mov     ax,di
+        mov     dx,9
+        imul    dx
+        push    ax
+        mov     ax,di
+        mov     dx,9
+        imul    dx
+        mov     bx,ax
+        mov     al,[bx+gFDBA]
+        cbw
+        pop     bx
+        add     bx,ax
+        mov     al,[bp-2]
+        inc     al
+        mov     [bx+gFDBA],al
+f00DD_024E:
+        inc     word ptr [bp-2]
+f00DD_0251:
+        cmp     word ptr [bp-2],20h
+        jl      short f00DD_01E0
+f00DD_0257:
+        pop     di
+        pop     si
+        mov     sp,bp
+        pop     bp
         ret
-_Ovl1_00DD ENDP
+_BuildSpellSlots ENDP
 
 ; ovl1:025D: spend one step of the spell counters for character `who`. It returns when `who` is
 ; negative; otherwise it clears the 30 bytes at rec+0x37 (known slots) or rec+0x55 (memorized
