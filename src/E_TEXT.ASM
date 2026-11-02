@@ -169,7 +169,7 @@ _DriverBlock LABEL BYTE
 gBlockSpare LABEL BYTE
         db      614 dup (0)
 
-; 0000:3944: the driver's tables (data, 498 bytes). gEntryTable (3944) lists the eleven near entry points of the driver in the
+; 0000:3944: the driver's tables and variables (data, 591 bytes). The tables, 498 bytes: gEntryTable (3944) lists the eleven near entry points of the driver in the
 ; order the original links them: no reader in this file (Purpose unknown; the block's code may use it [H]). gLevelCurvePtrs
 ; (395A) points to the fourteen 32-byte level curves from 3976: monotone maps of a level 0 to 1Fh to a larger one (UpdateVoices
 ; reads them with mov si,[bx+395Ah], 4709 and others). QUIRK 3A86: curve 8 has 1Ah, 19h where its neighbours rise (17h,1Ah,
@@ -224,10 +224,8 @@ gLevelCurve13 LABEL BYTE
         db      00h,02h,04h,06h,08h,0Bh,0Dh,11h,12h,13h,15h,17h,1Ah,1Dh,20h,23h
         db      24h,25h,27h,29h,2Ch,2Fh,32h,35h,36h,37h,39h,3Bh,3Eh,41h,44h,47h
 
-; 0000:3B36: the driver's variables (data, 93 bytes), DS = CS. The values are the EXE image's initial ones. Names from the code
-; that uses them (the UpdateVoices commands, the INT 08h handlers, E177D.C); the ones with no use in this file are spare.
-        PUBLIC  _DriverVariables              ; @ 0000:3B36
-_DriverVariables LABEL BYTE
+; The variables from 3B36, 93 bytes, DS = CS, with the EXE image's initial values. Names come from the code that uses them (the
+; UpdateVoices commands, the INT 08h handlers, E177D.C); the ones with no use in this file are spare.
 gBusyCountdown  db      0               ; 3B36: set to 0Bh by PlaySoundAtCell (E177D.C:268) and counted down by _AdlibTimerIsr
         db      4 dup (0)               ; 3B37 to 3B3A: spare
 gNoteDuration   db      0               ; 3B3B: StartVoiceNote stores the note's duration byte; zero lets the voice's script go on

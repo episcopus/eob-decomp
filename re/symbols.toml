@@ -137,21 +137,10 @@ match_flags = "tasm /mx"
 id = "e0000_3944"
 unit = "e_text"
 addr = "0000:3944"
-size = 498
+size = 591
 evidence = ["data"]
-notes = "data, not code: the driver tables, the entry table (3944h), the level curve pointers (395Ah) and the fourteen level curves (3976h)."
+notes = "data, not code: the driver tables, the entry table (3944h), the level curve pointers (395Ah) and the fourteen level curves (3976h), then the driver variables (3B36h to 3B92h, the EXE image's initial values)."
 name = "_DriverTables"
-level = "L2"
-match_flags = "tasm /mx"
-
-[[function]]
-id = "e0000_3b36"
-unit = "e_text"
-addr = "0000:3B36"
-size = 93
-evidence = ["data"]
-notes = "data, not code: the driver variables (3B36h to 3B92h), initial values of the EXE image."
-name = "_DriverVariables"
 level = "L2"
 match_flags = "tasm /mx"
 

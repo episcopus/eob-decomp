@@ -1665,3 +1665,12 @@ new = "RebaseDriverBlock"
 kind = "function"
 why = "0000:03FA adds 0416h to each of the 300 words at cs:0416h (cx = 12Ch, 03FD to 0410), the block's offset table; LoadSoundDriver (E177D.C:154) calls it right after FileRead of the 32C8h block into cs:0416h"
 date = "2026-11-01"
+
+[[rename]]
+id = "0000:3B36=gBusyCountdown"
+addr = "0000:3B36"
+old = ""
+new = "gBusyCountdown"
+kind = "function"
+why = "0000:3B36 is set to 0Bh by PlaySoundAtCell (E177D.C:268), waited out at E177D.C:249 and counted down to zero by the AdLib INT 08h handler (E_TEXT.ASM _AdlibTimerIsr, 3EAF to 3EB6)"
+date = "2026-11-01"
