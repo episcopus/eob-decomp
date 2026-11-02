@@ -46,7 +46,9 @@
                                         ; `_gCursorX`, the 0A0h and 64h stores; and written by
                                         ; src/E1BF3.ASM:35)
         EXTRN   _gCursorY:WORD          ; @ ds:813A: mouse position, y in pixels
-        EXTRN   _gHideDepth:WORD        ; @ ds:8146: hide depth, 0 = drawn (1BBE:0002/00ED change it)
+        EXTRN   _gHideDepth:WORD        ; @ ds:8146: hide depth, 0 = drawn (1BBE:0002/00ED change it);
+                                        ; InitMouse starts it at 1 and the state at 0 (src/E1A72.ASM:288-289),
+                                        ; so the pointer starts hidden until the first show
         EXTRN   _gMouseDisabled:WORD              ; @ ds:814A: non-zero disables the pointer (E07A9 tests it too)
         EXTRN   _gPointerHeight:WORD     ; @ ds:8154: sprite height in pixels (record byte +3, 1BB1)
         EXTRN   _gPointerWidth8:WORD     ; @ ds:8156: sprite width in 8-pixel columns ([H]: the stored
@@ -80,8 +82,11 @@
         EXTRN   _gPointerBackSeg:WORD    ; @ ds:816C: save-under buffer, far segment, 0 = none
         EXTRN   _gPointerShapeOff:WORD   ; @ ds:816E: pointer shape record, far offset (1BB1 stores it)
         EXTRN   _gPointerShapeSeg:WORD   ; @ ds:8170: pointer shape record, far segment
-        EXTRN   g8172:WORD              ; @ ds:8172: far pointer handed to [ds:80AA], offset
-        EXTRN   g8174:WORD              ; @ ds:8174: far pointer handed to [ds:80AA], segment
+        EXTRN   g8172:WORD              ; @ ds:8172: far pointer handed to [ds:80AA], offset; the 17A6
+                                        ; unit saves and restores the 16 bytes under it (SetFarPointer
+                                        ; and GetFarPointer, src/E1A72.ASM:138-146 and :550-554; the
+                                        ; saved copy is E17A6.ASM:93-95)
+        EXTRN   g8174:WORD              ; @ ds:8174: the same far pointer, segment (pushed first)
         EXTRN   _gRectLeft:WORD         ; @ ds:8176: pointer rectangle, left; in 8-pixel columns and
                                         ; clipped in HidePointer/ShowPointer, in pixels and unclipped
                                         ; in HidePointerZone, which compares it with the zone
@@ -91,12 +96,12 @@
         EXTRN   _gRectBottom:WORD       ; @ ds:817C: pointer rectangle, bottom; as _gRectTop
         EXTRN   _gShapeX:WORD           ; @ ds:817E: shape drawn at, x in pixels, unclipped
         EXTRN   _gShapeY:WORD           ; @ ds:8180: shape drawn at, y in pixels, unclipped
-        EXTRN   _gSpriteHeight:WORD     ; @ ds:8182: copy of _gPointerHeight, the sprite height; added to
-                                        ; the top to get the bottom (the clip bounds are 0 and 0C8h)
-        EXTRN   _gNegSpriteHeight:WORD  ; @ ds:8184: minus _gPointerHeight, the lower y clip bound
-        EXTRN   _gSpriteWidth:WORD      ; @ ds:8186: copy of _gPointerWidth8, the sprite width; added to
-                                        ; the left to get the right (the clip bounds are 0 and 28h)
-        EXTRN   _gNegSpriteWidth:WORD   ; @ ds:8188: minus _gPointerWidth8, the lower x clip bound
+        EXTRN   _gSpriteHeight:WORD     ; @ ds:8182: copy of _gPointerHeight, the sprite height in pixel
+                                        ; rows; added to the top to get the bottom (clip bounds 0 and 0C8h)
+        EXTRN   _gNegSpriteHeight:WORD  ; @ ds:8184: minus _gPointerHeight, the lower y clip bound in rows
+        EXTRN   _gSpriteWidth:WORD      ; @ ds:8186: copy of _gPointerWidth8, the sprite width in 8-pixel
+                                        ; columns; added to the left to get the right (bounds 0 and 28h)
+        EXTRN   _gNegSpriteWidth:WORD   ; @ ds:8188: minus _gPointerWidth8, the lower x clip bound in columns
         EXTRN   _gRestoreRect:DWORD     ; @ ds:804E: far fn (x, y, w, h, buf): buffer back to screen;
                                         ; x and w are in 8-pixel columns, y and h in pixel rows
                                         ; (HidePointer shifts the left edge right by three, the three
@@ -114,7 +119,7 @@
                                         ; ShowPointer below, which calls it at 1BBE:01F4 with mode 0 and
                                         ; the shape record _gPointerShapeOff/_gPointerShapeSeg at the
                                         ; unclipped position _gShapeX/_gShapeY (stored at 1BBE:011E and
-                                        ; 012E; src/E1BBE.ASM:305-312 gives the push order)
+                                        ; 012E; src/E1BBE.ASM:323-328 gives the push order, call at :329)
         .CODE
 
 ; 1BBE:0001: Purpose unknown: the unit's first byte is 00. It is emitted under a public symbol

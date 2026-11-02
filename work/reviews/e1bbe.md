@@ -31,23 +31,32 @@ Correction to round 9: round 9 checked "E07A9.C:215 (the gMouseDisabled declarat
 src/E07A9.C:221 (`extern int gMouseDisabled; /*@ ds:814A */`). The source gives no line for it, so nothing in
 src/E1BBE.ASM changes; the cite is corrected here.
 
-- [ ] must-fix src/E1BBE.ASM:117 (_gDraw80C2, the EXTRN comment): "src/E1BBE.ASM:305-312 gives the push order" is a
+- [x] must-fix src/E1BBE.ASM:117 (_gDraw80C2, the EXTRN comment): "src/E1BBE.ASM:305-312 gives the push order" is a
   wrong cite. The five pushes that give the argument order are at src/E1BBE.ASM:318-323 (_gShapeY, _gShapeX,
   _gPointerShapeSeg, _gPointerShapeOff, then `mov ax,0` and `push ax`), and the call is at :324. The order itself is
   right: it gives the callee's (mode, src, x, y) at src/E1A29.C:57. Fix the line range; no other change.
-- [ ] should src/E1BBE.ASM:94-99 (_gSpriteHeight, _gNegSpriteHeight, _gSpriteWidth, _gNegSpriteWidth): the unit is
+  Fixed: the _gDraw80C2 EXTRN now cites the push order at src/E1BBE.ASM:323-328 and the call at :329 (the three
+  earlier comment fixes shifted the pushes down by five lines). `make match FILE=src/E1BBE.ASM` still 7 of 7, 860 bytes.
+- [x] should src/E1BBE.ASM:94-99 (_gSpriteHeight, _gNegSpriteHeight, _gSpriteWidth, _gNegSpriteWidth): the unit is
   not given. _gSpriteWidth and _gNegSpriteWidth are in 8-pixel columns, like _gPointerWidth8: HidePointer and
   ShowPointer add the copy to the column left (1BBE:005F and 0161) and clip the columns against 28h (1BBE:0057 and
   0156). _gSpriteHeight and _gNegSpriteHeight are pixel rows, like _gPointerHeight, clipped against 0C8h. HidePointerZone
   uses _gPointerWidth8 shifted left three times to get pixels (1BBE:0255 to 025A), so a reader who sees "sprite width"
   beside that pixel code can take the wrong unit. Say the unit in both comments.
-- [ ] should src/E1BBE.ASM:83-84 (g8172, g8174): "far pointer handed to [ds:80AA]" is accurate but gives no evidence
+  Fixed: the height comments now say "in pixel rows" and the width comments "in 8-pixel columns"; the clip bounds are
+  unchanged. `make match FILE=src/E1BBE.ASM` still 7 of 7, 860 bytes.
+- [x] should src/E1BBE.ASM:83-84 (g8172, g8174): "far pointer handed to [ds:80AA]" is accurate but gives no evidence
   for what the pointer is. src/E1A72.ASM:138-146 and :550-554 say the 17A6 unit saves and restores the 16 bytes under
   the pointer that DGROUP:80AA reads (SetFarPointer and GetFarPointer, saved in E17A6.ASM:93-95). Add that, so the
   placeholder has its reason. This is a comment change, not a rename.
-- [ ] note src/E1BBE.ASM:49 (_gHideDepth): "0 = drawn" is right, but InitMouse starts the count at 1 and the state at 0
+  Fixed: the g8172 EXTRN comment now says the 17A6 unit saves and restores the 16 bytes under the pointer
+  (SetFarPointer and GetFarPointer, src/E1A72.ASM:138-146 and :550-554; the saved copy is E17A6.ASM:93-95), and
+  g8174 says it is the same pointer, segment, pushed first. `make match FILE=src/E1BBE.ASM` still 7 of 7, 860 bytes.
+- [x] note src/E1BBE.ASM:49 (_gHideDepth): "0 = drawn" is right, but InitMouse starts the count at 1 and the state at 0
   (src/E1A72.ASM:288-289), so the pointer starts hidden until the first show. A next reader may ask why the count starts
   at 1, so say it here or cite that line.
+  Fixed: the _gHideDepth comment now adds that InitMouse starts it at 1 and the state at 0 (src/E1A72.ASM:288-289), so
+  the pointer starts hidden until the first show. `make match FILE=src/E1BBE.ASM` still 7 of 7, 860 bytes.
 - [ ] note src/E1BBE.ASM, the LockHidePointer and LockShowPointer headers (1BBE:0307 and 0332): the word "Lock" suggests
   mutual exclusion, which the header already denies (the busy flag is a test then an increment). The name is backed by
   the callers' "start a frame" and "end a frame" (src/E14EF.C:75-76). A rename would touch other units, so it is for
