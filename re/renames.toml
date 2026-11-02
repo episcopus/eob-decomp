@@ -1431,3 +1431,12 @@ new = "gAllocCount"
 kind = "global"
 why = "net allocation counter: MemAlloc adds one per successful allocation (src/E19BC.C:97) and MemFree subtracts one on every call (src/E19BC.C:120), and StartupAlloc clears it (src/E07A9.C:242); what reads the count is unknown, so the name says what it holds"
 date = "2026-11-01"
+
+[[rename]]
+id = "122E:1DA8=RunMemberScript"
+addr = "122E:1DA8"
+old = "f122E_1DA8"
+new = "RunMemberScript"
+kind = "function"
+why = "122E:1DA8 walks a member's compiled action script (the 26-entry far handler table) until a handler stops it; called by E0ACD with a member index and a mode"
+date = "2026-11-01"

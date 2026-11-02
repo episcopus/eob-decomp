@@ -4213,6 +4213,9 @@ unit = "e122e"
 addr = "122E:1DA8"
 size = 184
 evidence = ["far", "frame"]
+level = "L2"
+match_flags = "-ml -O -Z"
+name = "RunMemberScript"
 
 [[function]]
 id = "e1414_0000"
