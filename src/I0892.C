@@ -35,8 +35,7 @@
 #define VGA_SEG_A400 0xA400
 #define VGA_SEG_A800 0xA800
 #define VGA_SEG_AC00 0xAC00
-/* the two hand-off strings and the sound data files are literals in DGROUP; the sizes the sound
-   path reads (:06C1 to :0811) */
+/* the sound path's buffer size and the driver data block size (:06C1 to :0811) */
 #define SOUND_MAP_SIZE 0x78L
 #define DRIVER_BLOCK_SIZE 0x36B0L
 
@@ -50,10 +49,10 @@ struct OverlayRequest {
 extern int gGraphicsChoice;              /*@ ds:1F8E: argv[1][0] + 1 (:0010), reduced by 0x31 in
                                              StartupGame (:0258) to the graphics choice (whitepaper 2.6) */
 extern int gSoundChoice;                 /*@ ds:28C6: atol(argv[2]) (:0026); StartupGame switches on
-                                             it (1 AdLib, 2 PC speaker, 3 Tandy) at :06A9, ShutdownGame
-                                             at :0860, and the sound set-up reads its low word */
+                                             it (1 AdLib, 2 PC speaker, 3 Tandy) at :06A9 and ShutdownGame
+                                             at :0860 */
 extern int gSavedDisk;                   /*@ ds:1A35: the drive getdisk returned before the overlay
-                                             file is located (:004D), passed to setdisk (:0567, :01E4) */
+                                             file is located (:004D), restored with setdisk (:034A, :0567) */
 extern int gOverlayDrive;                /*@ ds:1A37: 1 before the search (:0050), then the drive
                                              LocateOverlayFile returned (:00E9), one less after (:00F0);
                                              setdisk restores it before the hand-off (:01E4) */
@@ -69,11 +68,12 @@ extern unsigned char g1A34;              /*@ ds:1A34: set to 1 by StartupGame wh
                                              (:0817); main runs the overlay when it is set (:0151) */
 extern int g232C;                        /*@ ds:232C: the value f1DDD_0006 returns (:024B), itoa'd
                                              into g28A4 for the hand-off (:01BA) */
-extern int g28C4;                        /*@ ds:28C4: itoa'd into g28B4 for the hand-off (:01CF) */
+extern int g28C4;                        /*@ ds:28C4: itoa'd into g28B4 for the hand-off (:01CF).
+                                             Purpose unknown: nothing in this unit writes it */
 extern char g28A4[];                     /*@ ds:28A4: itoa's buffer for g232C (:01BA) */
 extern char g28B4[];                     /*@ ds:28B4: itoa's buffer for g28C4 (:01CF) */
-extern unsigned char far *gPaletteBuf;   /*@ ds:2D42: the palette buffer main allocates (:03A0) and
-                                             loads palette.col into (:0121, :0202) */
+extern unsigned char far *gPaletteBuf;   /*@ ds:2D42: the palette buffer StartupGame allocates
+                                             (:05B2, :05CC, :05F7) and main loads palette.col into (:0121) */
 extern void (far *gFn1F46)(void far *table); /*@ ds:1F46: the palette setter (:013E, :01AE, :0635),
                                              called with the built-in table ds:19E7 or gPaletteBuf */
 extern void (far *gFn1EE2)(void);        /*@ ds:1EE2: called by StartupGame after the page table (:0544) */
