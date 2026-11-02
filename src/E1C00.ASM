@@ -7,7 +7,7 @@
 ; WHITEPAPER 2.5 says vga.ovl is not in the copy and the VGA mode loads MCGA.OVL. It is not the
 ; INT 3Fh VROOMM trap: VROOMM is the Borland runtime's overlay manager, which loads the FBOV
 ; segments appended to EOB.EXE (WHITEPAPER 2.3), and the game's hook around it is the handler at
-; 1A72:0006, installed at 07C8:008F (src/E1A72.ASM:61 to 69); this unit never touches INT 3Fh.
+; 1A72:0006, installed at 07C8:008F (src/E1A72.ASM:76 to 87); this unit never touches INT 3Fh.
 ; The unit starts at 1C00:0001, the lone 0 byte before the first function at the even offset 0002
 ; [H data]; the byte before the unit, 1C00:0000, is a lone retf (cb), outside the 235 bytes.
 ; 1C00:0002 allocates an 0FA00h byte block (MemAlloc, flags 20h), loads an overlay image into it
@@ -24,7 +24,7 @@
 ; access uses the segment the code leaves in DS or ES, not one segment for all; the comment inside
 ; 1C00:0055 lists them.
 ; DGROUP is paragraph 212Eh of the load image (the value the fixups hold; the loader adds the load
-; segment), as in E1A72.ASM (lines 81, 252, 435, 470) and E1D8F.ASM (line 78).
+; segment), as in E1A72.ASM (1A72:0010, 0180, 0308 and 033E) and E1D8F.ASM (line 78).
 ;
 ; Far calls to another unit (9A off seg) are declared at module level, after .MODEL LARGE and before
 ; .CODE, outside any segment, and written `call far ptr _Name` (playbook 30): a plain `call _Name`
@@ -38,7 +38,7 @@
         EXTRN   gMouseHandlerInstalled:WORD ; @ ds:8148: 1 when the mouse driver handler is
                                         ;   installed (E1A72.ASM)
         EXTRN   gMouseDisabled:WORD     ; @ ds:814A: non-zero disables the mouse handler body and
-                                        ;   the pointer (E1A72.ASM:254-255, E1BBE.ASM:89-90);
+                                        ;   the pointer (handler test 1A72:0185, E1BBE.ASM:89-90);
                                         ;   after start-up returns 1, Main stores 1 when the handler
                                         ;   is not installed, and `!mouse` (the command-line digit,
                                         ;   E07C8.C:121) when it is (E07C8.C:152-156, the strongest
@@ -57,8 +57,9 @@
 ; `mov es:[bx],ax` after it stores. This 0FA00h is the block the loader reserves for the overlay;
 ; 1C00:0055 later shrinks it to the overlay's real size with MemRealloc (the reason for this size is
 ; not established [H]: 0FA00h is 64000 bytes, one 320 by 200 screen, but nothing in the bytes says
-; that is why; the four overlays in eob/ are 10082 to 12759 bytes, so it is enough for any of them,
-; and vga.ovl is not in the copy). Which segment each access uses, and why the header's
+; that is why; the four overlay images in eob/ are 10082 to 12759 bytes (each file size minus its
+; 512-byte MZ header), so it is enough for any of them, and vga.ovl is not in the copy). Which
+; segment each access uses, and why the header's
 ; DGROUP:818Ah to 8194h holds (the caller StartupGame's DS is DGROUP, which 07C8:0254 `push ds`
 ; passes), is spelled out once in the 1C00:0055 comment.
 ; Save SP and SS across the call (the reason is not established [H]), then load the overlay named by
@@ -108,6 +109,8 @@ loaded: pop     dx
 ; must keep it; a later port should load SS first. [H] on the hazard: it is not observed.
         mov     sp,ds:[8192h]
         mov     ss,ds:[8194h]
+; The `jb` below tests the carry flag INT 21h 4B03h (1C00:003D) left: DOS sets carry on error (the
+; DOS convention for function 4Bh [H]). The `mov bx,0FFFFh` just before the `jb` changes no flag.
         mov     bx,0FFFFh
         jb      short loadexit
         xor     bx,bx
@@ -134,7 +137,9 @@ _LoadOverlayImage ENDP
 ; tools/re/disasm.py),
 ; so the DS it passes is the DS it got on entry. The start code sets that DS to DGROUP: image offset
 ; 0000h is `mov dx,212Eh` (BA 2E 21, the relocated word) and image offset 0014h is `mov ds,dx`
-; (8E DA), at file offsets 2800h and 2814h (the c0 start-up order is [H]). The request segment, the
+; (8E DA), at file offsets 2800h and 2814h. These two instructions are Turbo C's C0 start-up
+; (STARTUP/C0.ASM in the release, docs/setup/SETUP-tc.md:24; E07C8.C:113 says "C0 startup"), the
+; basis for DS = DGROUP at run time [H]. The request segment, the
 ; name's segment and StartupGame's DS are therefore all DGROUP at run time: the MZ fixup list has a
 ; load-time fixup at each of the five segment words of gOverlayFiles (ds:3076h, 307Ah, 307Eh, 3082h
 ; and 3086h), each holding 212Eh, the paragraph of the load image (the loader adds the load segment
@@ -145,7 +150,8 @@ _LoadOverlayImage ENDP
 ; [8121h] as a far pointer to PrintString at 07C8:027B to 0283. The five name offsets gOverlayFiles
 ; holds are 30C1h, 30C9h, 30D1h, 30D9h and 30E2h (DGROUP offsets), the file offsets 26BA1h, 26BA9h,
 ; 26BB1h, 26BB9h and 26BC2h (cga.ovl, tga.ovl, ega.ovl, mcga.ovl and vga.ovl) minus 23AE0h
-; (DGROUP's file offset).
+; (DGROUP's file offset: the image starts at file offset 2800h, the start code above, so DGROUP is
+; 2800h + 212E0h = 23AE0h).
         PUBLIC  _RunOverlayRequest      ; @ 1C00:0055
 _RunOverlayRequest PROC FAR
         push    bp
@@ -273,9 +279,11 @@ _RunOverlayRequest PROC FAR
         jb      short failret
 ; On success (the `jb short failret` at 1C00:00C6 not taken), when the mouse handler is installed
 ; (gMouseHandlerInstalled) the loader clears gMouseDisabled (1C00:00CD to 00D4).
-; gMouseHandlerInstalled is 1 when the mouse driver handler is installed (E1A72.ASM:43, set at :214,
-; cleared at :200). gMouseDisabled is set to 1 at install (E1A72.ASM:215), and a non-zero value
-; disables the handler: the INT 33h handler body skips all work on non-zero (E1A72.ASM:254-255) and
+; gMouseHandlerInstalled is 1 when the mouse driver handler is installed (declared at E1A72.ASM:52,
+; ds:8148): set to 1 at the install (1A72:014A) and cleared when no mouse driver is found
+; (1A72:011B, the no-driver path of InitMouse). gMouseDisabled is set to 1 at install (1A72:0150),
+; and a non-zero value disables the handler: the INT 33h handler body skips all work on non-zero
+; (its `cmp [gMouseDisabled],0; jne` at 1A72:0185) and
 ; HidePointer and ShowPointer do nothing on non-zero (E1BBE.ASM:89-90, 178), while SetMouseItem
 ; (07A9:010C, its `if (!gMouseDisabled)` test at 07A9:0148: `cmp [814A],0; je`) and E14EF.C:227
 ; run their pointer work only when it is zero. Clearing it after a driver overlay has loaded and the

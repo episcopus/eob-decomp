@@ -1276,7 +1276,7 @@ addr = "ds:8148"
 old = "g8148"
 new = "gMouseHandlerInstalled"
 kind = "global"
-why = "1 when the mouse driver handler is installed: set to 1 at install (E1A72.ASM:214), cleared at uninstall (E1A72.ASM:200); E1A72.ASM:334 reads it to remove the handler only when installed; Main reads it to choose gMouseDisabled (E07C8.C:153); E07C8.C:36 says 'mouse event handler'"
+why = "1 when the mouse driver handler is installed: set to 1 at install (1A72:014A, E1A72.ASM:233), cleared when no mouse driver is found (1A72:011B, the no-driver path of InitMouse, E1A72.ASM:219); MouseDisable tests it at 1A72:0288 (E1A72.ASM:368) to remove the handler only when installed; Main reads it to choose gMouseDisabled (E07C8.C:153); E07C8.C:36 says 'mouse event handler'"
 date = "2026-11-01"
 
 [[rename]]
