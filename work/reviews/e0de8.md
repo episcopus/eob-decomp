@@ -1,10 +1,57 @@
 # Review: e0de8
 
 Reviewer: rev-haiku
-Commit reviewed: 64798e7 (round 2; round 1 reviewed a3d753d)
+Commit reviewed: 5529429 (round 3: src/E0DE8.C at e7f5f0c; round 2 reviewed 64798e7; round 1 reviewed a3d753d)
 
 Playbook 70. Judge what a matching file can still get wrong: names, types, comments, structure.
 The matcher already proved the bytes; do not re-prove them, read for meaning.
+
+## Round 3 (5529429)
+
+Judged: the round 2 must-fix (the HalveSaveDamageA and HalveSaveDamageB headers and HalveSaveDamageB's
+parameter and body), the round 2 shoulds at their changed lines, and the diff since 64798e7 in
+src/E0DE8.C (the round 2 fix, commit e7f5f0c). src/E0DE8.C is the same on HEAD (c619e8f) and on main
+(5529429). On main, re/symbols.toml differs from HEAD only by two E0D1C renames (0D1C:02DC to
+GetCurrentItem, 0D1C:070F to DrawItemIcon); this unit calls neither. Matcher on this tree: `make match
+FILE=src/E0DE8.C` 20 of 20, exit 0; `make readability UNIT=e0de8` 0 findings (not re-judged).
+
+Round 2 must-fix: fixed right, tick stays. HalveSaveDamageB is `struct Obj28 far *objRec` (:782), its
+header (:775-781) says it reads the record's b0 as the gTable1A3B index, and the body (:788) reads
+`gTable1A3B[objRec->b0].m02`. struct Obj28's b0 is at +0 (:50).
+
+Round 2 shoulds, checked at their changed lines: RollToHit's `itemType` (:188-200; the bonus is m0B
+when itemType is 1..3); UseItemByKind returns 0 once an item is found (:421-423; the code at :470-474
+has gDF4C inside the `if`, return 0 after it, -4 when nothing is found); RunRecordAttack (:275-276, code
+:291-294) and TryRecordAttack (:307, code :322-325) say 1 when IsKind2Or3 is false, which is what the
+code does; gA9C6's cite 0ACD:0644 (Action0644 reads gA9C6 at E0ACD.C:555); the gB894 +4 cite 0D1C:0080
+(E0D1C.C:36 names it). All sound except the items below.
+
+## Findings
+
+- [ ] should src/E0DE8.C:779-781 (HalveSaveDamageB's header): "Its chance is a real threshold". The
+  chance is `GetIndexedByte(0, classByte, 4)` (:788), which returns a byte from the far buffer
+  g3406[0] (0A72:0006, src/E0A72.C:69-81). Nothing in this unit or in docs/, re/ or work/ shows what
+  those bytes hold: src/E0A72.C:38-41 only declares the four tables. The sentence contrasts B with A,
+  whose chance is the 0/1 result of 059B (E0D1C.C:416-443), so A always halves. The contrast is
+  shown; "real threshold" is not. Say what B's chance is (the byte 0A72:0006 returns from g3406), and
+  either cite the buffer contents or say their range is not established here. I could not show the
+  sentence wrong, so this is a should, not a must-fix.
+- [ ] should src/E0DE8.C:142-145 (gDF4C): "set to 1 when an action took effect (0DE8:0359, 0DE8:0537,
+  0DE8:05BB)" reads as the full list of setters. Those are the three routines in this file that set it
+  (:352, :411, :470), but the owner's file sets it too: src/E0ACD.C:437, :479, :490, :565 and :571
+  (and E1414.C:352 says the routine there sets it). Add "in this file", or name the others.
+- [ ] should, for the owner of src/E0EF3.C: :316 still declares `HalveSaveDamageB(char far *type, int
+  value)`, and the call at :891 casts `(char far *)&gObjs[*list]`. The definition is now
+  `struct Obj28 far *objRec` (E0DE8.C:782). The bytes match (both are far pointers), but the owner's
+  declaration names a different type and parameter from the definition. Not this unit's to change.
+
+## Summary
+
+No must-fix open. The round 2 must-fix is fixed right, and the changed lines are sound (the header
+claims about RunRecordAttack, TryRecordAttack, UseItemByKind, gA9C6 and gB894 match the code and the
+callees). The three shoulds are one unevidenced sentence in the 0FCA header, a gDF4C list that reads as
+complete, and a declaration in the E0EF3.C owner's file. The round 1 and round 2 notes for other owners
+stay open and are not re-judged. Nothing escalated: no matcher, spec or pin question.
 
 ## Round 2 (64798e7)
 
