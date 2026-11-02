@@ -15,7 +15,7 @@
 
         .DATA
         EXTRN   gSoundOn:BYTE           ; @ ds:80E6: sound on unless argv[2] was '4' (E07C8.C)
-        EXTRN   g80E8:WORD              ; @ ds:80E8: a toggled option flag, saved next to gSoundOn
+        EXTRN   gTunesOn:WORD              ; @ ds:80E8: a toggled option flag, saved next to gSoundOn
                                         ; (EOV3.C:808-840) and toggled by the options code
                                         ; (EOV1.ASM:3724-3731); the INT 9 handler also toggles it on
                                         ; key 0434h (M), as it toggles gSoundOn on 0420h (S)
@@ -727,7 +727,7 @@ f05F1_0712:
 ; kInt23SavedOff/kInt23SavedSeg). The handler body at 1AAD:07C0 (inside this region) reads the
 ; scancode from port 60h, tracks E0/E1 prefixes, translates the scancode through 1AAD:0186, updates
 ; the held-key bitmap 1AAD:01FF and the modifier byte kModifierOut, toggles gSoundOn on key 0420h
-; (S) and g80E8 on key 0434h (M), and appends the event to the ring (or chains to the old INT 9
+; (S) and gTunesOn on key 0434h (M), and appends the event to the ring (or chains to the old INT 9
 ; vector when it does not consume the key). The iret and the three data bytes at 1AAD:09F2
 ; (kKeyMode9F2, one byte, and kScanCode9F3, a word) finish the region. Called from main at
 ; 07C8:008F. Purpose unknown: several of the port/handler paths.
@@ -986,7 +986,7 @@ f0718_0981:
         push    ax
         mov     ax,212Eh
         mov     ds,ax
-        xor     word ptr [g80E8],1
+        xor     word ptr [gTunesOn],1
         pop     ax
         pop     ds
 f0718_098F:

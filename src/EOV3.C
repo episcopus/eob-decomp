@@ -26,9 +26,9 @@ extern char gF4D6[16]; /*@ ds:F4D6 */       /* a 16-byte plane table (src/E17A6.
 extern char gFB4D[16]; /*@ ds:FB4D */       /* a 16-byte plane table (src/E17A6.ASM) */
 extern unsigned char far gSheet2067[]; /*@ 2067:0000 */  /* the INVENT sheet (src/E0ACD.C) */
 extern unsigned char far gSheetDECORATE[]; /*@ 2069:0000 */  /* the PLAYFLD sheet (src/E0ACD.C) */
-extern int g80E8; /*@ ds:80E8 */            /* toggled by Ctrl-key handling (src/E1AAD.ASM) */
+extern int gTunesOn; /*@ ds:80E8 */            /* toggled by Ctrl-key handling (src/E1AAD.ASM) */
 extern int gSoundOn; /*@ ds:80E6 */
-extern char gF43C; /*@ ds:F43C */
+extern char gBarGraphsOn; /*@ ds:F43C */
 extern char gAD20[]; /*@ ds:AD20 */         /* a 96-byte saved-game buffer (Purpose unknown) */
 extern char *strcpy(char far *dest, char far *src); /*@ 0000:67CD */
 extern void far *gSegDCA6; /*@ ds:DCA6 */   /* the far pointer f19EC_0002(7) returns (src/E07A9.C) */
@@ -862,9 +862,9 @@ done:
         ok &= (FileWrite(handle, (char far *)gItems, len) == len);
         len = 0x5fa0;
         ok &= (FileWrite(handle, gSegEFC2, len) == len);
-        ok &= (FileWrite(handle, (char far *)&g80E8, 1L) == 1L);
+        ok &= (FileWrite(handle, (char far *)&gTunesOn, 1L) == 1L);
         ok &= (FileWrite(handle, (char far *)&gSoundOn, 1L) == 1L);
-        ok &= (FileWrite(handle, (char far *)&gF43C, 1L) == 1L);
+        ok &= (FileWrite(handle, (char far *)&gBarGraphsOn, 1L) == 1L);
         len = 0x60;
         ok &= (FileWrite(handle, (char far *)gAD20, len) == len);
         FileClose(handle);
@@ -933,11 +933,11 @@ done:
         FileWrite(handle, buf, gBlockSizes[3]);
         FileClose(handle);
         buf += gBlockSizes[3];
-        g80E8 = buf[0];
+        gTunesOn = buf[0];
         buf++;
         gSoundOn = buf[0];
         buf++;
-        gF43C = buf[0];
+        gBarGraphsOn = buf[0];
         buf++;
         Unpack0(buf, (char far *)gAD20, gBlockSizes[5]);
         buf += gBlockSizes[5];

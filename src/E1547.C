@@ -86,7 +86,7 @@ extern signed char gA99A; /*@ ds:A99A */     /* the selected member (src/E0ACD.C
 extern signed char gF57E; /*@ ds:F57E */     /* a colour (src/EOV2.C) */
 extern char gFB7A; /*@ ds:FB7A */            /* a colour: the empty part of DrawRatioBar (:279), set
                                                 by SetUiPalette (src/EOV2.C:134) */
-extern char gF43C; /*@ ds:F43C */            /* nonzero after the startup allocations (src/E07A9.C);
+extern char gBarGraphsOn; /*@ ds:F43C */            /* nonzero after the startup allocations (src/E07A9.C);
                                                 picks how DrawMemberHp shows a member: set draws the
                                                 "HP" label and the ratio bar, clear prints
                                                 "%3d of %-3d" (:269-286) */
@@ -260,10 +260,10 @@ extern void DrawItemRow(int who, int slot, int one); /*@ 0BD2:0917 */
 /* 1547:033F: draws one member's HP line. It returns unless the member passes f0D1C_0670(member,
    1) and, while gFB44 is nonzero, is also the selected member gA99A. The line is at (g5D24[member &
    1], g5D26[member >> 1]), shifted right by 0xB0 while no status line is up, or fixed at (0xfa, 0x10)
-   while gFB44 is nonzero. When gF43C is set it draws the "HP" label (only while gFB44 is 0) and a
+   while gFB44 is nonzero. When gBarGraphsOn is set it draws the "HP" label (only while gFB44 is 0) and a
    ratio bar (DrawRatioBar) of hp + 10 against hpMax + 10 (the +10 keeps the bar visible at negative
    hit points), the colour picked by a wound state: 1 when (hpMax + 10) / 3 exceeds hp + 10, 2 when
-   hp + 10 is 10 or less (hp at or below 0), else 0; when gF43C is 0 it prints "%3d of %-3d" (hp,
+   hp + 10 is 10 or less (hp at or below 0), else 0; when gBarGraphsOn is 0 it prints "%3d of %-3d" (hp,
    hpMax) instead. Called by RedrawMember (0991) and HealCharacter (0DE8:0ADB, src/E0DE8.C:592). */
 /*@ 1547:033F */ void DrawMemberHp(int member)
 {
@@ -295,7 +295,7 @@ extern void DrawItemRow(int who, int slot, int one); /*@ 0BD2:0917 */
         width = 0x33;
         height = 5;
     }
-    if (gF43C) {
+    if (gBarGraphsOn) {
         value = rec->hp + 10;
         max = rec->hpMax + 10;
         state = 0;

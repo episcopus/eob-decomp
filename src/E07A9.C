@@ -78,7 +78,7 @@ struct Entry14 {            /* 14-byte records at ds:8DD2 (ITEM.DAT records, whi
     char pad0C[0x0E - 0x0C];
 };
 
-extern char gF43C; /*@ ds:F43C */  /* written by StartupAlloc (07A9:000D, set to 1); read by
+extern char gBarGraphsOn; /*@ ds:F43C */  /* written by StartupAlloc (07A9:000D, set to 1); read by
                                       DrawMemberHp, which draws the "HP" label instead of
                                       "%3d of %-3d" when it is set (src/E1547.C:269, the comment at
                                       src/E1547.C:235-238). Purpose unknown */
@@ -323,7 +323,7 @@ extern void SetMousePointerShape(int hotX, int hotY, void far *icon); /*@ 1BB1:0
    0ACD:0E8A, 07A9:0105), which runs the game. Sets ds:F43C = 1 and ds:FB45 = 0. */
 /*@ 07A9:000A */ void StartupAlloc(int argc, char far * far *argv)
 {
-    gF43C = 1;
+    gBarGraphsOn = 1;
     /* QUIRK 07A9:0012: the condition's result is unused, so the body is empty (07A9:0012..0024):
        with argc == 0 the bytes still read argv[1] (les bx,[bp+8]; les bx,es:[bx+4], 07A9:0018 and
        001B) and its byte 1 (cmp byte es:[bx+1],0, 07A9:001F); only the result is dropped, both

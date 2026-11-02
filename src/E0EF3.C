@@ -262,9 +262,9 @@ extern char far *gDD14;                 /*@ ds:DD14 */ /* a far byte table 0EF3:
 extern signed char gDDE2;               /*@ ds:DDE2 */ /* the member 0EF3:25BD saves */
 extern signed char gA9C5;               /*@ ds:A9C5 */ /* a counter 0EF3:25BD walks */
 extern char far *gNameTable;            /*@ ds:EFCC */ /* the name table 0EF3:2295 reads, set to
-                                                          g1278 or g12E0 by 0EF3:21E0 */
-extern char far *g1278[];               /*@ ds:1278 */ /* far name pointers (src/E0BD2.C) */
-extern char far *g12E0[];               /*@ ds:12E0 */ /* far name pointers (src/E0BD2.C) */
+                                                          gMageSpellNames or gClericSpellNames by 0EF3:21E0 */
+extern char far *gMageSpellNames[];               /*@ ds:1278 */ /* far name pointers (src/E0BD2.C) */
+extern char far *gClericSpellNames[];               /*@ ds:12E0 */ /* far name pointers (src/E0BD2.C) */
 extern struct CellRect gSpellCells[];   /*@ ds:5773 */ /* five spell cells 0EF3:2295 fills */
 extern char far *gSpellLabels[];        /*@ ds:5787 */ /* the "1ST".."5TH" row labels 0EF3:2295 draws */
 extern char gText592B[];                /*@ ds:592B */ /* "ABORT SPELL" (0EF3:2295) */
@@ -1834,7 +1834,7 @@ void AnimateConeOfCold(int count, int spread, int step, int cycle, int divisor,
 
 void DrawSpellPanel(void);
 /* 0EF3:21E0: open the member's spell panel: clear gDDE2, make `who` the panel member, set gF43D
-   when `flag` is 1, point gNameTable at g12E0 (memorized) or g1278 (known), point gDD14 at the
+   when `flag` is 1, point gNameTable at gClericSpellNames (memorized) or gMageSpellNames (known), point gDD14 at the
    member's +0x55 or +0x37 spell slots and gA9C5 at its first nonzero slot. Restore the panel
    rectangle from gSegDF4E + 0x61a8 when gFlag is clear, then set gFlag, rebuild the item list
    (BuildList1) and run the panel body 0EF3:2295; returns 1. Called by the item class 5/6 path of
@@ -1844,10 +1844,10 @@ void DrawSpellPanel(void);
     gDDE2 = 0;
     gPanelMember = who;
     if (gF43D = (flag == 1)) {
-        gNameTable = (char far *)g12E0;
+        gNameTable = (char far *)gClericSpellNames;
         gDD14 = gChars[who].memorized;
     } else {
-        gNameTable = (char far *)g1278;
+        gNameTable = (char far *)gMageSpellNames;
         gDD14 = gChars[who].known;
     }
     gA9C5 = 0;

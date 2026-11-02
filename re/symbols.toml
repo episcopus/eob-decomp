@@ -8115,9 +8115,9 @@ unit = "eov1"
 addr = "ovl1:0000"
 size = 221
 evidence = ["segment"]
-name = "_RotateOutMember"
+name = "DropCharacter"
 level = "L2"
-match_flags = "tasm /mx"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "eov1_00dd"
@@ -8125,9 +8125,9 @@ unit = "eov1"
 addr = "ovl1:00DD"
 size = 384
 evidence = ["near", "frame"]
-name = "_BuildSpellSlots"
+name = "BuildSpellSlots"
 level = "L2"
-match_flags = "tasm /mx"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "eov1_025d"
@@ -8135,9 +8135,9 @@ unit = "eov1"
 addr = "ovl1:025D"
 size = 441
 evidence = ["near", "frame"]
-name = "_SpendSpellSlot"
+name = "SpendSpellSlot"
 level = "L2"
-match_flags = "tasm /mx"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "eov1_0416"
@@ -8145,9 +8145,9 @@ unit = "eov1"
 addr = "ovl1:0416"
 size = 1131
 evidence = ["frame"]
-name = "_MemberCommand"
+name = "SelectPartyMember"
 level = "L2"
-match_flags = "tasm /mx"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "eov1_0881"
@@ -8155,9 +8155,9 @@ unit = "eov1"
 addr = "ovl1:0881"
 size = 249
 evidence = ["near"]
-name = "_ShowItemName"
+name = "DrawSpellRow"
 level = "L2"
-match_flags = "tasm /mx"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "eov1_097a"
@@ -8165,9 +8165,9 @@ unit = "eov1"
 addr = "ovl1:097A"
 size = 2009
 evidence = ["frame"]
-name = "_SpellSlotScreen"
+name = "SpellSlotScreen"
 level = "L2"
-match_flags = "tasm /mx"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "eov1_1153"
@@ -8175,7 +8175,9 @@ unit = "eov1"
 addr = "ovl1:1153"
 size = 676
 evidence = ["ovl", "near"]
-notes = "write in C in src/EOV1.C (2026-11-02: eov1 is a C unit, escalation eov1): a far array of structs indexed by a variable, `garr[i].field`, gives the 16-bit displacement form (26 8B 87 disp16) that TASM cannot write; a far pointer `p->field` gives the 8-bit one. The assembly draft in src/EOV1.ASM is the reference. Earlier: unit kind. The body is written from the disassembly and matches every byte except its seven `es:[bx+disp]` reads (disp = 1, 2, 3, 4 and twice 5 and 7): the original encodes them with a 16-bit displacement (ovl1:1277 26 8B 87 05 00), which the pinned TASM 2.0 cannot produce for a constant, a STRUC field, a forward EQU or a forward STRUC field (probed 2026-11-01: /mx, /mx /m2, NOSMART, /jNOSMART all give the 8-bit form 47 05, or 47 05 90 with a forward reference). The disp16 form is exactly TCC 1.00's built-in assembler (TCC -c, no -B) output for a far *indexed array* access: a TCC -c probe of `int f(int i){ return garr[i].e; }` (garr a far struct array) gives 26 8B 87 04 00, while `p->e` through a far struct pointer gives 26 8B 47 04 (8-bit). The same disp16 pattern fills overlay 0 and overlay 4, both kind c. The rest of ovl1 uses the 8-bit form for far *pointer* field reads (ovl1:1551 26 8B 47 36, ovl1:258A 26 F7 47 38 02), so ovl1 is TCC output and should be matched as a C unit, not TASM. See the unit's hand-off note: eov1 is misclassified as kind asm (re/units.toml), but it is a C unit (like eov0, eov3, eov4, eov5, eov6 at the same segment range). Re-probed 2026-11-01: TASM 2.0 does emit the disp16 form when the displacement is a relocatable absolute (`EXTRN D:ABS` then `mov ax,es:[bx+D]` gives 26 8B 87 00 00 with a fixup), so the missing piece is a way for the matcher's generated stub to define such an absolute constant (a matcher question), or a unit kind of c."
+name = "BuildMenuButtons"
+level = "L2"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "eov1_13f7"
@@ -8183,9 +8185,9 @@ unit = "eov1"
 addr = "ovl1:13F7"
 size = 287
 evidence = ["ovl", "near"]
-name = "_ShowMessage"
+name = "ShowMessage"
 level = "L2"
-match_flags = "tasm /mx"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "eov1_1516"
@@ -8193,9 +8195,9 @@ unit = "eov1"
 addr = "ovl1:1516"
 size = 59
 evidence = ["ovl", "near"]
-name = "_FreeFarList"
+name = "FreeFarList"
 level = "L2"
-match_flags = "tasm /mx"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "eov1_1551"
@@ -8203,9 +8205,9 @@ unit = "eov1"
 addr = "ovl1:1551"
 size = 1404
 evidence = ["ovl", "near"]
-name = "_DrawListNode"
+name = "DrawListNode"
 level = "L2"
-match_flags = "tasm /mx"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "eov1_1acd"
@@ -8213,7 +8215,9 @@ unit = "eov1"
 addr = "ovl1:1ACD"
 size = 2413
 evidence = ["ovl"]
-notes = "write in C in src/EOV1.C (2026-11-02: eov1 is a C unit, escalation eov1): a far array of structs indexed by a variable, `garr[i].field`, gives the 16-bit displacement form (26 8B 87 disp16) that TASM cannot write; a far pointer `p->field` gives the 8-bit one. The assembly draft in src/EOV1.ASM is the reference. Earlier: one far-array read, the `test word ptr es:[bx-2],2` at ovl1:2206, is 26 F7 87 FE FF 02 00 in the original. TCC 1.00 uses a 16-bit displacement for a far array index; the pinned TASM 2.0 emits the 8-bit form 26 F7 47 FE 02 00 (probed 2026-11-01: `es:[bx-2]`, `es:[bx+0FFFEh]` and a forward EQU all give the 8-bit form, the forward EQU with a trailing NOP). The original's extra byte makes our tail one byte early, so cmatch first reports +0320 (the displacement of the jmp at ovl1:1DEC). Every other byte matches: substituting a 7-byte placeholder for that one read moves the first difference to +073C, the read itself. This is the same compiler question as ovl1:1153 (registry note above): eov1 is a C unit, but re/units.toml says kind asm. The body is written; a C rewrite under kind c should match. Re-probed 2026-11-01: TASM does emit the disp16 form for a relocatable absolute (`EXTRN D:ABS` then `es:[bx+D]`), so the gap is the matcher's stub (no absolute constant) or the unit kind."
+name = "RunCampMenu"
+level = "L2"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "eov1_243a"
@@ -8221,9 +8225,9 @@ unit = "eov1"
 addr = "ovl1:243A"
 size = 590
 evidence = ["ovl"]
-name = "_ChooseListEntry"
+name = "AskYesNo"
 level = "L2"
-match_flags = "tasm /mx"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "eov2_0000"

@@ -129,8 +129,8 @@ extern void HealCharacter(int who, int amount); /*@ 0DE8:0ADB */
 extern void ApplyStatusEffect(int who, int mask, char far *text, int attack, int count, int value, int flag); /*@ 0DE8:101A */
 extern char far *SkipStrings(char far *text, int count); /*@ 0D1C:07A7 */
 extern char g3893[]; /*@ ds:3893 */        /* the "feels ..." string table (0BD2:0D2D) */
-extern char far *g1278[]; /*@ ds:1278 */   /* far item-name pointers indexed by m0B (0BD2:05B5) */
-extern char far *g12E0[]; /*@ ds:12E0 */   /* far item-name pointers indexed by m0B (0BD2:05B5) */
+extern char far *gMageSpellNames[]; /*@ ds:1278 */   /* far item-name pointers indexed by m0B (0BD2:05B5) */
+extern char far *gClericSpellNames[]; /*@ ds:12E0 */   /* far item-name pointers indexed by m0B (0BD2:05B5) */
 extern char g37B4[]; /*@ ds:37B4 */        /* a string table SkipStrings walks (0BD2:05B5) */
 extern char g37E1[]; /*@ ds:37E1 */        /* a string table SkipStrings walks (0BD2:05B5) */
 extern char g3837[]; /*@ ds:3837 */        /* a string table SkipStrings walks (0BD2:05B5) */
@@ -468,11 +468,11 @@ next:
             break;
         case 9:
             str1 = "Mage Scroll";
-            str2 = g1278[m0B];
+            str2 = gMageSpellNames[m0B];
             break;
         case 10:
             str1 = "Cleric Scroll";
-            str2 = g12E0[m0B];
+            str2 = gClericSpellNames[m0B];
             break;
         case 16:
             str1 = "Ring";

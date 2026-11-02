@@ -2601,3 +2601,129 @@ new = "DrawItemIcon"
 kind = "function"
 why = "draws the item icon of the ds:8DD2 record n at (x, y) from gIconsDDE4 (ds:DDE4); callers 0BD2:0917 (three sites, E0BD2.C:610) and 1547:07E7 (E1547.C:471) (review of e0d1c)"
 date = "2026-11-02"
+
+[[rename]]
+id = "ovl1:1153=BuildMenuButtons"
+addr = "ovl1:1153"
+old = "Ovl1_1153"
+new = "BuildMenuButtons"
+kind = "function"
+why = "ovl1:1153 builds one 60-byte list node per button definition of a menu (key words, box, label via ovl1:1551) and returns the list head; its callers (ovl1:0416, 097A, 1ACD, 243A) hand it to DispatchKeyWait"
+date = "2026-11-02"
+
+[[rename]]
+id = "ds:628C=gMenus"
+addr = "ds:628C"
+old = "gMemberMenu"
+new = "gMenus"
+kind = "global"
+why = "seven 5-byte records (message, text window, first button definition, count, colour) indexed by the menu number ovl1:1153 takes (1 to 6 in its callers); ovl1:1ACD edits their message bytes in place"
+date = "2026-11-02"
+
+[[rename]]
+id = "208E:0000=gButtonDefs"
+addr = "208E:0000"
+old = "gSpellInfo9"
+new = "gButtonDefs"
+kind = "function"
+why = "9-byte records ovl1:1153 turns into list nodes (label message at +0 read by ovl1:1551 through SkipStrings(gStrings2003), box x y w h at +1..+4, key word at +5)"
+date = "2026-11-02"
+
+[[rename]]
+id = "ovl1:1ACD=RunCampMenu"
+addr = "ovl1:1ACD"
+old = "Ovl1_1ACD"
+new = "RunCampMenu"
+kind = "function"
+why = "ovl1:1ACD shows the camp menu: it writes gStrings2003 messages 0x38 'Camp:', 0x39 'Preferences:' and 0x3A 'Game Options:' into gMenus, builds their button lists and acts on the buttons Rest Party (calls CampLoop ovl6:0000), Memorize Spells, Pray for Spells, Scribe Scrolls, Preferences, Game Options, Exit, Load Game, Save Game, Drop Character, Quit Game; the far pointer 2102:0020 sits at ds:3BBE (callback30 of the screen node at ds:3B8E)"
+date = "2026-11-02"
+
+[[rename]]
+id = "ds:80E8=gTunesOn"
+addr = "ds:80E8"
+old = "g80E8"
+new = "gTunesOn"
+kind = "global"
+why = "ovl1:1ACD formats the 'Tunes are %-3s' button label (gStrings2003 message 0x11) from BoolString(ds:80E8) and the Tunes button 0x800D toggles it"
+date = "2026-11-02"
+
+[[rename]]
+id = "ds:F43C=gBarGraphsOn"
+addr = "ds:F43C"
+old = "gF43C"
+new = "gBarGraphsOn"
+kind = "global"
+why = "ovl1:1ACD formats the 'Bar Graphs are %-3s' button label (gStrings2003 message 0x13) from BoolString(ds:F43C) and the Bar Graphs button 0x800F toggles it"
+date = "2026-11-02"
+
+[[rename]]
+id = "ds:FE2C=gNeedsRest"
+addr = "ds:FE2C"
+old = "gFE2C"
+new = "gNeedsRest"
+kind = "global"
+why = "ovl1:025D sets it when a spell slot is retired; ovl1:1ACD shows message 0x2C 'Your party needs to rest to gain spells.' when Exit is pressed with it set, and clears it when CampLoop (Rest Party) returns 0"
+date = "2026-11-02"
+
+[[rename]]
+id = "ovl1:0000=DropCharacter"
+addr = "ovl1:0000"
+old = "RotateOutMember"
+new = "DropCharacter"
+kind = "function"
+why = "ovl1:0000 is the Drop Character button of the camp menu (ovl1:1ACD passes MemberCommand(0x35), message 0x35 'Select the character you wish to drop.'); 0D1C:035A puts the member's items on the floor of the party cell and clears the member's status bits"
+date = "2026-11-02"
+
+[[rename]]
+id = "ds:1278=gMageSpellNames"
+addr = "ds:1278"
+old = "g1278"
+new = "gMageSpellNames"
+kind = "global"
+why = "ds:1278 is a table of far name pointers whose strings, decoded from the EXE, are the 25 mage spell names (Armor, Burning Hands, Detect Magic, Magic Missile ... Hold Monster); ovl1:0881 draws spell rows from it and 0BD2:05B5 builds scroll names from it"
+date = "2026-11-02"
+
+[[rename]]
+id = "ds:12E0=gClericSpellNames"
+addr = "ds:12E0"
+old = "g12E0"
+new = "gClericSpellNames"
+kind = "global"
+why = "ds:12E0 is a table of far name pointers whose strings, decoded from the EXE, are the 24 cleric spell names (Bless, Cure Light Wnds ... Lay on Hands); ovl1:0881 draws spell rows from it (cleric flag) and 0BD2:05B5 builds scroll names from it"
+date = "2026-11-02"
+
+[[rename]]
+id = "ovl1:0881=DrawSpellRow"
+addr = "ovl1:0881"
+old = "ShowItemName"
+new = "DrawSpellRow"
+kind = "function"
+why = "ovl1:0881 formats '%-18s %1d' from gMageSpellNames/gClericSpellNames (ds:1278/ds:12E0, decoded: mage and cleric spell names) and gFDEA[spell*2] and draws it at row*9+0x32; its only caller is the spell-slot screen ovl1:097A"
+date = "2026-11-02"
+
+[[rename]]
+id = "ovl1:0416=SelectPartyMember"
+addr = "ovl1:0416"
+old = "MemberCommand"
+new = "SelectPartyMember"
+kind = "function"
+why = "ovl1:0416 shows the prompts 'Select a character from your party who would like to learn spells' (0x17), 'pray for spells' (0x1A), 'scribe spells' (0x31) and 'Select the character you wish to drop.' (0x35) as the header of menu 3 and returns the chosen member slot or -1"
+date = "2026-11-02"
+
+[[rename]]
+id = "ovl1:243A=AskYesNo"
+addr = "ovl1:243A"
+old = "ChooseListEntry"
+new = "AskYesNo"
+kind = "function"
+why = "ovl1:243A builds menu 5 whose buttons are the gStrings2003 messages 0x26 'Yes' and 0x27 'No', shows the question message (0x37 'Are you sure you wish to LOAD a saved game?', 0x36 SAVE, 0x2E exit the game; EOV6.C asks 0x28/0x29/0x3B the same way) and returns 1 for Yes, 0 for No"
+date = "2026-11-02"
+
+[[rename]]
+id = "ovl1:1691=ScribeScrolls"
+addr = "ovl1:1691"
+old = "Ovl1_1691"
+new = "ScribeScrolls"
+kind = "function"
+why = "ovl1:1691 is the Scribe Scrolls button of the camp menu (RunCampMenu case 0x8004): it asks SelectPartyMember(0x31) 'Select a Mage from your party who would like to scribe spells', shows messages 0x32 and 0x33 when no scroll can be scribed, and moves the chosen scroll's spell into the mage's spell book at record +0x73 while freeing the item"
+date = "2026-11-02"
