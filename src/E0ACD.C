@@ -699,8 +699,9 @@ call:
    except the store at 0ACD:0C7F, which the original writes with `mov [gF3BA], ax` (the 3-byte a3 form)
    and our build with `mov [gF3BA], di` (89 3e, one byte longer, shifting every later jump). Both
    registers hold the item (di is pushed as the first argument of f0BD2_0AF2, PushListItem and
-   SetMouseItem later; ax still holds it from the call at 0ACD:0C59). All bytes before the store are
-   identical, so the source form of that one statement decides the register. Tried (all still emit
+   SetMouseItem later; ax still holds it from the call at 0ACD:0C59, and TCC's own assembly for this
+   unit compares with `cmp ax, word ptr DGROUP:_gF3BA` yet stores the di register variable). All bytes
+   before the store are identical, so the source form of that one statement decides the register. Tried (all still emit
    di): inline assignment in the preceding if, `!item`, the store before/after `flag`, a cast,
    a ternary, `item + 0`, `(item, item)`, `item ^ 0`, `item | 0`, `item * 1`, `item / 1`, `(int)`,
    `(long)`, pointer and volatile dereferences, `register`, `unsigned`, a moved declaration, and
