@@ -19,11 +19,32 @@
         EXTRN   _SelectCharacter:FAR    ; @ 0D1C:003F (E0ACD.C)
         EXTRN   _BuildList1:FAR         ; @ 0CF7:0028 (E0CF7.C)
         EXTRN   _RearmCharEffects:FAR   ; @ 1414:0B2E (E1414.C)
+        EXTRN   _f1A47_0169:FAR         ; @ 1A47:0169: select a font (E07A9.C)
+        EXTRN   _SetTextWindowAndClear:FAR ; @ 1DE7:00B6 (E1DE7.C)
+        EXTRN   _SetTextWindow:FAR      ; @ 1DE7:0009 (E07C8.C)
+        EXTRN   _f0D1C_0C21:FAR         ; @ 0D1C:0C21 (E0D1C.C)
+        EXTRN   _SkipStrings:FAR        ; @ 0D1C:07A7 (E0BD2.C)
+        EXTRN   _DrawShadowText:FAR     ; @ 082C:0898 (E082C.C)
+        EXTRN   _ClipRect:FAR           ; @ 19F3:000E (E082C.C)
+        EXTRN   _ReadKey:FAR            ; @ 1AAD:038E (E082C.C)
+        EXTRN   _FlushKeyBuffer:FAR     ; @ 1AAD:0480 (E082C.C)
+        EXTRN   _WaitFrames:FAR         ; @ 1A16:000B (E14EF.C)
 
         EXTRN   gChars:BYTE             ; @ ds:F580: 6 character records of 0xF3 bytes (E08E6.C)
         EXTRN   gBufDCFC:DWORD          ; @ ds:DCFC: 4096-byte scratch allocation (E07A9.C)
         EXTRN   gFillRect:DWORD         ; @ ds:806A: far fill-rect routine (E082C.C)
         EXTRN   gMemberBoxes:WORD       ; @ ds:62E2: two 8-byte (x1,y1,x2,y2) member-list boxes
+        EXTRN   g8115:WORD              ; @ ds:8115: nonzero while a status line is up (E082C.C)
+        EXTRN   g811F:WORD              ; @ ds:811F (E07A9.C)
+        EXTRN   g159:WORD               ; @ ds:0159 (EOV6.C)
+        EXTRN   gF57E:BYTE              ; @ ds:F57E (E0BD2.C)
+        EXTRN   gFont1A47:DWORD         ; @ ds:FE4E: the current far font pointer (E1547.C)
+        EXTRN   gFE5A:DWORD             ; @ ds:FE5A: the 8x8 font far pointer (E07C8.C)
+        EXTRN   gTextHeight:WORD        ; @ ds:FE60 (E1C0E.C)
+        EXTRN   gTextWidth:WORD         ; @ ds:FE62 (E1C0E.C)
+        EXTRN   gTextLeft:WORD          ; @ ds:FE64 (E14EF.C)
+        EXTRN   gTextTop:WORD           ; @ ds:FE66 (E14EF.C)
+        EXTRN   gStrings2003:BYTE       ; @ 2003:0000: the message string table (EOV6.C)
 
         .CODE
 
@@ -169,10 +190,130 @@ _Ovl1_1153 PROC FAR
         ret
 _Ovl1_1153 ENDP
 
-        PUBLIC  _Ovl1_13F7               ; @ ovl1:13F7 stub
-_Ovl1_13F7 PROC FAR
+; ovl1:13F7: show the message whose key is `message` for up to 0x78 frames. It saves g8115, the
+; current font and g811F, loads the 8x8 font (gFE5A), hides the pointer, copies gF57E into g159,
+; clears text window 0xB, sets g8115 = 2, fills the region through f0D1C_0C21, draws the
+; `message`-th string of the far table gStrings2003 (seg 2003:0000) at the text origin +5 through
+; DrawShadowText, clips the text rectangle through ClipRect, shows the pointer and then polls
+; ReadKey for up to 0x78 frames, flushing the key buffer and stopping on any key (WaitFrames(1) per
+; frame otherwise). It restores the font, text window and g8115 and flushes the buffer. Called from
+; ovl1:0416, ovl1:1551 and ovl1:1ACD with a message key.
+        PUBLIC  _ShowMessage            ; @ ovl1:13F7
+_ShowMessage PROC FAR
+        push    bp
+        mov     bp,sp
+        sub     sp,6
+        push    si
+        push    di
+        mov     di,[g8115]
+        mov     ax,word ptr [gFont1A47+2]
+        mov     dx,word ptr [gFont1A47]
+        mov     [bp-6],dx
+        mov     [bp-4],ax
+        mov     ax,[g811F]
+        mov     [bp-2],ax
+        push    word ptr [gFE5A+2]
+        push    word ptr [gFE5A]
+        call    far ptr _f1A47_0169
+        pop     cx
+        pop     cx
+        call    far ptr _LockHidePointer
+        mov     al,[gF57E]
+        cbw
+        mov     [g159],ax
+        mov     ax,0Bh
+        push    ax
+        call    far ptr _SetTextWindowAndClear
+        pop     cx
+        mov     [g8115],2
+        xor     ax,ax
+        push    ax
+        push    ax
+        push    word ptr [gTextHeight]
+        mov     ax,[gTextWidth]
+        shl     ax,1
+        shl     ax,1
+        shl     ax,1
+        push    ax
+        push    word ptr [gTextTop]
+        mov     ax,[gTextLeft]
+        shl     ax,1
+        shl     ax,1
+        shl     ax,1
+        push    ax
+        call    far ptr _f0D1C_0C21
+        add     sp,0Ch
+        xor     ax,ax
+        push    ax
+        mov     ax,0Fh
+        push    ax
+        mov     ax,[gTextTop]
+        add     ax,5
+        push    ax
+        mov     ax,[gTextLeft]
+        shl     ax,1
+        shl     ax,1
+        shl     ax,1
+        add     ax,5
+        push    ax
+        push    word ptr [bp+6]
+        mov     ax,SEG gStrings2003
+        push    ax
+        mov     ax,OFFSET gStrings2003
+        push    ax
+        call    far ptr _SkipStrings
+        add     sp,6
+        push    dx
+        push    ax
+        call    far ptr _DrawShadowText
+        add     sp,0Ch
+        xor     ax,ax
+        push    ax
+        mov     ax,2
+        push    ax
+        push    word ptr [gTextHeight]
+        push    word ptr [gTextWidth]
+        push    word ptr [gTextTop]
+        push    word ptr [gTextLeft]
+        push    word ptr [gTextTop]
+        push    word ptr [gTextLeft]
+        call    far ptr _ClipRect
+        add     sp,10h
+        call    far ptr _LockShowPointer
+        xor     si,si
+        jmp     short f13F7_14EC
+f13F7_14D1:
+        call    far ptr _ReadKey
+        or      ax,ax
+        je      short f13F7_14E1
+        call    far ptr _FlushKeyBuffer
+        jmp     short f13F7_14F1
+f13F7_14E1:
+        mov     ax,1
+        push    ax
+        call    far ptr _WaitFrames
+        pop     cx
+        inc     si
+f13F7_14EC:
+        cmp     si,78h
+        jl      short f13F7_14D1
+f13F7_14F1:
+        mov     [g8115],di
+        push    word ptr [bp-4]
+        push    word ptr [bp-6]
+        call    far ptr _f1A47_0169
+        pop     cx
+        pop     cx
+        push    word ptr [bp-2]
+        call    far ptr _SetTextWindow
+        pop     cx
+        call    far ptr _FlushKeyBuffer
+        pop     di
+        pop     si
+        mov     sp,bp
+        pop     bp
         ret
-_Ovl1_13F7 ENDP
+_ShowMessage ENDP
 
 ; ovl1:1516: free every block of a NULL-terminated far linked list. `first` is a far pointer
 ; whose next link is the far pointer held in its first 4 bytes (offset at +0, segment at +2); each
