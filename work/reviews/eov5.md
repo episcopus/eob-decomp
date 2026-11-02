@@ -1,7 +1,7 @@
 # Review: eov5
 
 Reviewer: rev-haiku
-Commit reviewed: 5767eb38ee1512e5c9994792c9e8fc61ed181448
+Commit reviewed: 5767eb38ee1512e5c9994792c9e8fc61ed181448 (round 1), 5fadbc39b1563e907468dc17cae60b2c3d78d625 (round 2, main)
 
 Playbook 70. Judge what a matching file can still get wrong: names, types, comments, structure.
 The matcher already proved the bytes; do not re-prove them, read for meaning.
@@ -18,7 +18,52 @@ Evidence used: the code in `src/EOV5.C` (line numbers below); the call lists in
 (file-offset differences equal ds-address differences, within one byte, e.g. ds:7B9F "CANCEL" to
 ds:7D9E "Which should be resurrected?").
 
-### Wrong claims (must-fix)
+### Round 2 (2026-11-02, reviewed at 5fadbc3: the round 1 fixes of 3eefda8 are on main)
+
+Judged as playbook 70 "Later rounds" asks: each round 1 must-fix, checked again against the current code, comments and the EXE, and every changed line of `src/EOV5.C`, the `eov5` entries of `re/symbols.toml` and the changed lines of `re/globals.toml` since 5767eb3 (`git diff 5767eb38 main`). The round 1 items are not read again in full.
+
+Round 1 must-fix: all 20 are fixed right (ticks stay). Evidence: the eight dispatcher panels and the include (:2-3, :11); DrawCharPortrait's mode table and tables (:281-317); SelectMenu's callers, each of which calls it (:557, :612, :656, :660, :693, :702, :875, :903, :905, :935, :963, :994, :1020), while 0AB1, 0B16 and 1087 do not; the gFn8082 call (:594); the QueueItem list keyed by gPartyCell with gFBCC for the sound (:639-640); ItemPanelDispatch (:450, :762); the ResurrectPanel remap (:906-907); bits 0x2000000 (:1009) and 0x4000000 (:1031, default return :1029); the ShuffleGrid save and restore (:1400, :1402); fOvl3_07A5 (:1302, :1342) against src/EOV3.C:469-477; TileAnimation's origin (:624); EndingAnimation's draws (:1195-1196); the WinnerPanel callers (:1215; src/E08E6.C:814). Menu labels: the far-pointer tables in `eob/EOB.EXE`, read by following the pointers (ds:7B23 yes/no; ds:7BA6, 7BB2, 7BBA, 7BC2, 7BCA, 7BD2, 7BDE, 7BE6, 7BF2, 7BFA). The file names ds:7E43 to ds:7F38 match the EXE strings. The password text: ds:7EDB is "\r", ds:7EDD is "\r\rPassword: %04x\r".
+
+#### Wrong claims (must-fix)
+
+- [ ] must-fix src/EOV5.C:603-604 and :779 (AddCharPanel, BuildDeathList): "what m0B means is not established, 0D1C:0276". 0D1C:0276 is inside RemoveCarriedItems (0D1C:01CA, 274 bytes, `re/symbols.toml`), not at the statement. The statement is RemoveCarriedItems's header, src/E0D1C.C:285 ("What m02, m0B and m04 mean is not established"), which is at 0D1C:01CA. The round 1 line cite src/E0D1C.C:276 is now a `return 0;` of f0D1C_0163 (0D1C:0163). Cite 0D1C:01CA.
+
+- [ ] must-fix src/EOV5.C:857-859 (ResurrectPicker): "so the fixed 20 is only safe because that many rarely qualify (the dead members plus a few kind-8 items)". Nothing in src/ or the EXE says how often the count is large, so this safety argument has no evidence. The bound is right (6 + 6*25 = 156, :797 and :802-809). Say what is established: the match fixes names at 20 entries; nothing in the code caps the count at 20; whether the original's data can exceed 20 is not established.
+
+- [ ] must-fix src/EOV5.C:680 (GiveItemPanel) and :984 (SurrenderPanel): "queues ... on the current page" and "queues the item on the current page list". The list is keyed by gPartyCell (`InsertListItem(&gB899[gPartyCell * 9], gPartyCell, ...)`, :640 and :1002-1003); the current page gFBCC only picks the sound (:639, :1003). This is the wording round 1 removed from QueueItem (:632-633). Say the gPartyCell list with a sound from gFBCC (GiveItemPanel can say "through QueueItem").
+
+#### Clarity and names (should)
+
+- [ ] should src/EOV5.C:336-337 (the key-code comment before the enum): "UpdateOptionList's (src/E14EF.C:222)" is a line cite into another file, and line 222 is the `enum {` of E14EF's key table. Cite the address: UpdateOptionList is 14EF:0274 (src/E14EF.C:8). "0x5c and 0x66 are SelectMenu's own left/right (prev/next) keys": "left/right" is not evidenced. The code names them KEY_PREV (:503) and KEY_NEXT (:508), and src/E14EF.C:218-236 gives 0x5B, 0x5D, 0x65 and 0x67 as first and last keys without naming 0x5C or 0x66. Say prev and next.
+
+- [ ] should src/EOV5.C:1403: a stray blank line before the closing brace of ShuffleGrid's inner loop (added with the round 1 fix). Delete it; no code changes.
+
+- [ ] should re/globals.toml, ds:FBCA (gPartyCell; changed since 5767eb3): "(src/E17A6.ASM:1466)" is a line in the middle of another function (`add si, 3`). Distance is at 17A6:0F61 (src/E17A6.ASM:1489-1532). The claim is right: E17A6.ASM:1490-1491 says each argument is a packed y * 32 + x cell with x in the low five bits. Cite 17A6:0F61 by address. This is another unit's file; the owner of E17A6 and `re/globals.toml` takes it.
+
+#### Notes for the next reader
+
+- [ ] note src/EOV5.C:1227 (CharOverlay header): "loads a wall texture set for the current level". The call (:1302) passes a NULL name and the sheet gMapSheet + (gMapTiles[gFBC8 - 1] << 5). "Current level" is inferred from the gMapTiles comment (:162); src/EOV3.C:469-477 says only that a NULL name reuses gWallNameBuf. Keep it if the comment says what the sheet offset selects.
+
+- [ ] note the other units' names in `re/globals.toml` changed in this range (gSoundMap, gMemTopSeg, gSaveRectSize, gFatalHandler, gRetryHandler, gFont8x8, gTable1879, gIconTableA92A, gStatusLine) are other units' claims. I read the gPartyCell line (above) and gGraphicsChoice (ds:8102: its dispatch is in DrawTile, 17A6:03E7, E17A6.ASM:251-255, which holds). The rest are left to their owners.
+
+- [ ] note the round 1 note on gPartyCell (src/E122E.C:197) is still open; it is outside this unit.
+
+#### Verified (no finding)
+
+- MessagePanel: the two rectangles and the gFE42 mapping (:369-379; callers :1126, :1239, :1324); the dismiss keys (:392-403); the MORE prompt ds:7CB7 in the EXE.
+- DrawCharPortrait: each mode's cells (:281-315) against its header.
+- ResurrectPicker: a negative entry -(k+1) and RemoveCarriedItems(0x21, k+1) (:877-880) against its header.
+- BuildDeathList: m09 low 7 bits (:807) and the stored -m0B (:809).
+- CallOverlayOp (src/E122E.C:1412) calls fOvl5_1A82 (stub 211E:0057, src/E122E.C:190), as the header's first line says.
+- KEY_CODE_MASK 0x8FF is bits 0 to 7 and bit 11 (:339).
+- The thirteen gFileName* renames in `re/globals.toml` (ds:7E43 to ds:7F38).
+- `re/symbols.toml`: the eov5 names match the code (ItemPanelDispatch at ovl5:0B58).
+
+#### Summary (round 2)
+
+All 20 round 1 must-fix items are fixed right. The changed lines hold three must-fix items: a wrong address (0D1C:0276), an unsupported safety claim in ResurrectPicker, and the "current page" wording repeated in two changed functions. Fix those and the should items, then the unit can pass on the next round. Not escalated: no matcher, spec or pin question.
+
+### Round 1: wrong claims (must-fix)
 
 - [x] must-fix src/EOV5.C:2-3: the unit comment says 1A82 dispatches modes 0..7 "to the seven panels", then lists eight addresses (0924, 0B58, 0EB9, 0F77, 102C, 1087, 10A6, 119E). Eight modes, eight panels (CharOverlay cases, lines 1262-1287). [fixed 3eefda8: seven -> eight panels, named the caller CallOverlayOp (122E:1D76), dropped the inventory key]
 - [x] must-fix src/EOV5.C:11: the include comment says `abs` is "the inline __abs__ the select lists use". No select list calls `abs` (no `abs(` call in this file; the only mention is the comment at line 852). Either the include is needed for a stated matching reason, which the comment gives, or it goes. [fixed 3eefda8: removed the stdlib.h include; nothing calls abs and the match holds without it]
@@ -40,7 +85,7 @@ ds:7D9E "Which should be resurrected?").
 - [x] must-fix src/EOV5.C:1028 (TileAnimation): "shuffles the 0x18 x 0x90 grid". The call at line 1062 is `ShuffleGrid(0x18, 0, 0x90, 0x68, 2, 0)`: origin (0x18, 0), 0x90 columns, 0x68 rows. [fixed 3eefda8: ShuffleGrid origin (0x18,0), 0x90 columns, 0x68 rows]
 - [x] must-fix src/EOV5.C:1150 (EndingAnimation): "four from the sliced cell (sound 0x2a)". The four draws at lines 1182-1184 are `sprites[i - 6]`, the 2x2 grid of 0xE x 0x58 cells made at line 1167. The sliced cell is `cell` (line 1169), drawn by the explosion loop at line 1195. [fixed 3eefda8: the last four frames draw sprites[i-6], the 2x2 grid; the sliced cell draws in the explosion loop]
 - [x] must-fix src/EOV5.C:1101 (WinnerPanel): "Called from the menu dispatcher 1A82 (mode 0xb)". CharOverlay has no case 0xb (lines 1235-1245, 1262-1287). The callers are EndingAnimation (line 1203) and 08E6:0EC3 Obj0EC3 (packet). [fixed 3eefda8: callers are EndingAnimation (17C8) and 08E6:0EC3 Obj0EC3]
-### Clarity and names (should)
+### Round 1: clarity and names (should)
 
 - [x] should src/EOV5.C:2: "the character/item overlay the map loop opens on the 'inventory' key": the key is not shown in this unit. The only "inventory" in `src/` is src/E0ACD.C:969 ("map and inventory (LoadMapScreen, ovl3:0A7C)"). Name the caller (122E:1D76, CallOverlayOp) and the key, or drop the key. [fixed 3eefda8: named CallOverlayOp (122E:1D76) and dropped the key]
 - [x] should src/EOV5.C:5: "draws the item grid through 0455": 0455 draws labelled rows of a menu (`names[]`, DrawMenuRow). Call it a menu. [fixed 3eefda8: called a menu]
@@ -72,19 +117,19 @@ ds:7D9E "Which should be resurrected?").
 - [x] should src/EOV5.C:1347-1392 (ShuffleGrid): `swapped` holds the handle `gFn8072` returns (line 1390) and is also the Fisher-Yates temp (lines 1369-1371); give the handle its own name (for example `handle`). `cy` is the shuffle index and the y coordinate in the draw loop; name it for one role. `attr1` and `attr2` are the gStatusLine values; name them for that. Renaming may change register allocation: `make match` decides whether it is possible. [fixed 3eefda8: handle/idx/saveStatus/restoreStatus; a second local breaks the frame, so one reused slot stays with a comment]
 - [x] should src/EOV5.C:112-114: the externs `gTable7B77`, `gTable7B7D` and `gTable7B83` are shadowed by DrawCharPortrait's locals and unused. Remove them or say why they stay. [fixed 3eefda8: removed the unused externs]
 
-### Notes for the next reader
+### Round 1: notes for the next reader
 
 - [ ] note src/E122E.C:197 calls gPartyCell "the global sound volume" (and writes it at line 213), while src/E08E6.C:94, src/E1414.C:99 and src/EOV4.C:524 call it the party's map cell. The files disagree. This unit follows E08E6 (its uses compare object ids with it). This is outside this unit; the human should decide the name.
 - [ ] note `make readability UNIT=eov5` reports 0 findings. Its checks are mechanical; the findings above are not.
 - [ ] note the names `gFillRect`, `gFn804A`, `gFn807E`, `gFn8072`, `gFn809E`, `gFn8082` and `gGetSpriteCell` agree with the other files that declare the same addresses (src/E082C.C:64, src/E0ACD.C:46, src/E0EF3.C:373, 389-391, src/EOV0.C:16, src/EOV2.C:175). The packet lists `x`/`x1` for some of them: those are placeholder names in other files, and the names here are the better ones.
 
-### Verified (no finding)
+### Round 1: verified (no finding)
 
 - The three menu labels "kill her / hear her out / let her go" (ds:7BE6), "free him / kill him / leave" (ds:7BFA) and "surrender / attack" (ds:7BF2) are in EOB.EXE in the order the code uses.
 - ds:7B9F "CANCEL", ds:7D0E "%s joins the party.", ds:7CBC (the ChooseChar title) and ds:7D9E "Which should be resurrected?" are at the EOB.EXE file offsets that their ds addresses predict, and are used as the comments say. The WinnerPanel strings ("Password: %04x" and the winner title) are in EOB.EXE; their ds addresses are not checked.
 - ClipRect's parameters (width, height at positions 5 and 6) match src/E1DE7.C:281 and src/EOV6.C:405, and every call here passes them in that order.
 - CharOverlay's eight cases in source order 0,1,2,3,4,6,5,7 are as the comment says, and the cs:1CCD mapping note is consistent with the case order.
 
-## Summary
+## Summary (round 1)
 
 The unit is understandable from its source: the panel and menu names mostly follow the menu labels in EOB.EXE, the struct fields that matter are named, and the code is clear. But twenty comments state wrong bit values, callers, labels, table meanings or call targets (the must-fix items above: the bit values in SurrenderPanel and FreeHimPanel, the GiveItemPanel clear, the EndingAnimation sprite source, the LoadWallTextures calls, the ShuffleGrid save/restore, the SelectMenu caller list). Those are comment and naming errors, not code errors, and each has a fix that does not move a byte. Placeholder names that stay until evidence names them: `Menu1`, the `head`, `body` and `feet` locals, `barsTop`, `barsBot`, `figures`, `whole`, `swapped`, `cy`, and the `gText7xxx` file-name globals (renamed in the should items). The unit passes after the must-fix items are ticked and the changed lines are reread; this is round 1.
