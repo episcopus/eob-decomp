@@ -94,6 +94,10 @@ gSavedFarOff dw 0                ; 0300: offset saved by 17A6:0446
 gSavedFarSeg dw 0                ; 0302: segment saved by 17A6:0446
 gSaveBuf db 16 dup (0)           ; 0304: 16-byte save buffer for _SetFarPointer
 ; ---- 0314..037E
+; 17A6:0314: return a direction 0..7 (0xFF when none) from two 5-bit coordinates: divide
+; each argument by 32, compare the remainders and quotients, and index the 9-byte table at
+; ds:7FBC. Callers pass (obj->id, gSoundVolume) and use the result as an orientation
+; (08E6:000B) and a direction (08E6:00C3, 08E6:0430, 08E6:0765, 0D1C:09CB).
         PUBLIC  _DirectionFromPoints              ; @ 17A6:0314
 _DirectionFromPoints PROC FAR
         push bp
@@ -1459,6 +1463,10 @@ L0F44:
 _ExpandNibbles ENDP
 
 ; ---- 0F61..0F9D
+; 17A6:0F61: return an approximate distance between two 5-bit coordinates: the larger of
+; the two absolute differences plus half the smaller (the octagonal metric). Callers use it
+; as a sound attenuation (177D:026A) and a proximity test (08E6:00C3, 08E6:0765, 08E6:1410,
+; ovl6:09D2).
         PUBLIC  _Distance              ; @ 17A6:0F61
 _Distance PROC FAR
         push bp
@@ -2282,6 +2290,10 @@ L1975:
 _BuildMask ENDP
 
 ; ---- 197E..1A26
+; 17A6:197E: copy an image from the far pointer at [bp+6]/[bp+8] to [bp+0A]/[bp+0C]
+; through the translation table at [bp+0E]/[bp+10], the mode word at [bp+12] choosing the
+; pixel format (0, 2 and 3 have their own paths; anything else is the 4-bit path). Called
+; from SetMouseItem (07A9:018F) to translate the mouse icon.
         PUBLIC  _TranslateImage              ; @ 17A6:197E
 _TranslateImage PROC FAR
         push bp
