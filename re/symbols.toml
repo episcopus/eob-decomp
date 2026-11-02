@@ -10127,6 +10127,7 @@ evidence = ["far", "segment"]
 name = "LoadFile"
 level = "L2"
 match_flags = "-ml -O -Z -G -P"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "i0aed_0045"
@@ -10137,6 +10138,7 @@ evidence = ["frame"]
 name = "LoadPacked"
 level = "L2"
 match_flags = "-ml -O -Z -G -P"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "i0aed_00cb"
@@ -10147,6 +10149,7 @@ evidence = ["far", "frame"]
 name = "Unpack"
 level = "L2"
 match_flags = "-ml -O -Z -G -P"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "i0aed_021b"
@@ -10157,6 +10160,7 @@ name = "SetUnpackBuffer"
 level = "L2"
 match_flags = "-ml -O -Z -G -P"
 notes = "not listed by the map: a function of the source, its bounds proven by the whole-unit match"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "i0b10_0000"
