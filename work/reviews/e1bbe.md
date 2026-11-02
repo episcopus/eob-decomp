@@ -1,7 +1,7 @@
 # Review: e1bbe
 
 Reviewer: rev-haiku
-Commit reviewed: 20871bc for round 8 (main; src/E1BBE.ASM last changed at d1e1a32, src/E1A72.ASM at 2af4699). Round 7: 07c010f (main; src/E1BBE.ASM, src/E1A72.ASM and the other files the cites name are the same in the review branch at 1d5a0ef). Round 6: a53aa55 (main; src/E1BBE.ASM last changed at 887afda, src/E1A72.ASM at e3ea88d; the review branch is identical to main in this worktree). Round 5: d1538ee for round 5 (main; src/E1BBE.ASM last changed at 6ddaa61, src/E1A72.ASM at 65ebeb1; both are identical in this worktree). Round 4: 433dc71 (main; src/E1BBE.ASM is unchanged since 5cfa933). Earlier: 421cd1e7a31c20710200fe18247bdf159a34d76c (round 3, main; src/E1BBE.ASM is identical to the review branch at 8225102, which is on main). Round 2 was reviewed at 089dfd1 and round 1 at 0cfccb1 (see below). E1A72.ASM has moved on main since round 2 (commit e856ab9), which is why round 3 finds stale citations.
+Commit reviewed: 68d16c2 for round 9 (main; src/E1BBE.ASM last changed at e831c19, the round 8 fixes; src/E1A72.ASM at b00a8c7, and the round 8 label cites still hold against it; the review branch is identical to main). Round 8: 20871bc (main; src/E1BBE.ASM last changed at d1e1a32, src/E1A72.ASM at 2af4699). Round 7: 07c010f (main; src/E1BBE.ASM, src/E1A72.ASM and the other files the cites name are the same in the review branch at 1d5a0ef). Round 6: a53aa55 (main; src/E1BBE.ASM last changed at 887afda, src/E1A72.ASM at e3ea88d; the review branch is identical to main in this worktree). Round 5: d1538ee for round 5 (main; src/E1BBE.ASM last changed at 6ddaa61, src/E1A72.ASM at 65ebeb1; both are identical in this worktree). Round 4: 433dc71 (main; src/E1BBE.ASM is unchanged since 5cfa933). Earlier: 421cd1e7a31c20710200fe18247bdf159a34d76c (round 3, main; src/E1BBE.ASM is identical to the review branch at 8225102, which is on main). Round 2 was reviewed at 089dfd1 and round 1 at 0cfccb1 (see below). E1A72.ASM has moved on main since round 2 (commit e856ab9), which is why round 3 finds stale citations.
 
 Playbook 70. Judge what a matching file can still get wrong: names, types, comments, structure.
 The matcher already proved the bytes; do not re-prove them, read for meaning.
@@ -10,6 +10,52 @@ The matcher already proved the bytes; do not re-prove them, read for meaning.
 
 Each finding is a checkbox. `must-fix` blocks `make review-pass` until a decompiler ticks it off
 (with the commit that fixes it); `should` and `note` do not block.
+
+### Round 9 (review of commit 68d16c2, src/E1BBE.ASM unchanged since e831c19)
+
+Checked: `make match FILE=src/E1BBE.ASM` 7 of 7 (860 bytes), exit 0; `make readability UNIT=e1bbe` 0 findings. The
+addresses inside the unit were counted again from the instruction sizes, from 1BBE:0002, 1BBE:00ED, 1BBE:01FE and
+1BBE:02C2 onward, and the header addresses hold: 0015, 0021, 002B, 0055, 005A, 0075, 008B, 0090, 00FD, 00FF, 010F,
+0117, 0127, 0154, 0159, 015B, 021E, 0229, 022D, 0232, 0234, 0238, 023C, 0240, 0244, 025B, 0272, 0299, 029F, 02AE,
+02B6, 02DE, 0300, 0307, 030A, 0332, 0335, and the push cs sites 02AE, 02F8, 0324, 034F. The cites into E1A72.ASM by label hold at
+b00a8c7: L01E2 test and `je L020C` (:394-395), the drop at L01E9 (:396), the set at L020C (:405), the g80EC test and
+`je L0221` (:406-407), the stores (:408-409), L0221 (:410), the 8000h test (:419) before the zone test, L01EC (:397-403,
+the 4000h at :403 after the bracket), L025C (:430-435) and L0279 (:437). The cross-unit cites hold: E1BB1.ASM:21-25,
+:53, :130, :162-164, :198; E1BF3.ASM:35 (`mov ds:[8138h], cx`) and :65-66; E14EF.C:75-76; E16A5.C:91-92, :536 and
+:676; E1A29.C:57; E1C0E.C:49-50; E0BD2.C:112; E07A9.C:215 (the gMouseDisabled declaration). The packet caller lists
+hold: 14 callers for 1BBE:01FE and 1BBE:02C2 (the header's "0EF3, 16A5, 1DE7 and the overlays"), and the Lock lists
+(packet lines 25 and 26) show 0ACD:0E8A, 0ACD:0F72, ovl0:2547 and ovl5:17C8 on the show side only and ovl0:28F9 on
+the hide side only. The registry names (re/globals.toml) match every ds: name in the unit, with the underscore aside.
+
+- [ ] must-fix src/E1BBE.ASM:96-101 (_gRestoreRect and _gSaveRect): the shift addresses are wrong. The header says
+  "HidePointer shifts the left edge right by three, 1BBE:147-149" and "ShowPointer ... 1BBE:248-250". Neither is the
+  shift. HidePointer's three `sar ax,1` are at 1BBE:004B-0050 (the `mov ax,[_gRectLeft]` before them is 0048-004A).
+  1BBE:0147-0149 is ShowPointer's `mov ax,[_gRectLeft]`, and ShowPointer's three `sar` are at 1BBE:014A-014F. 1BBE:0248-0250
+  is inside HidePointerZone (`sub ax,[_gPointerHotX]`, `and ax,0FFF8h`, `mov [_gRectLeft],ax`) and holds no shift.
+  (Evidence: counted instruction sizes from 1BBE:0002 (the header's 0021, 0055 and 0075 hold) and from 1BBE:00ED (its
+  0117, 0127 and 0154 hold). The `sar` lines are at src/E1BBE.ASM:158-160 and :259-261.) Cite 1BBE:004B-0050 for
+  HidePointer and 1BBE:014A-014F for ShowPointer, in both declarations, and keep the column and row units as they are.
+- [ ] must-fix src/E1BBE.ASM:66-69 (_gZoneLeft): "the handler's left test is skipped (QUIRK 1A72:0248)" is wrong. The
+  left compare runs: `cmp cx,[_gZoneLeft]` and `jl L0250` (src/E1A72.ASM:421-422). What the quirk does is send a left
+  miss past the right-edge test (`cmp cx,[_gZoneRight]`, `jg L025C`, :424-425) to the y tests at L0250 (:426). So the
+  zone's left edge is never enforced, and only x past the right edge and y outside top and bottom take the pointer
+  out of the zone. (Evidence: src/E1A72.ASM:352-353 says it in those words: "the hide zone's left edge is never
+  enforced".) Say that, not "skipped".
+- [ ] should src/E1BBE.ASM:104 (_gDraw80C2) and :1-3 (unit header): the `gDraw` prefix is a family guess. src/E1A29.C:53
+  says so ("The `gDraw` prefix is a family guess: only ds:80C2 is evidenced as drawing"). This unit's evidence for the
+  draw is ShowPointer passing the shape record and the position through it (the push sequence at src/E1BBE.ASM:305-312
+  gives mode, src, x, y, and 1BBE:011E and 012E store gShapeX and gShapeY), so the name can stay, but the EXTRN comment
+  should give that evidence and say the prefix is a guess, as E1A29.C does. Not a placeholder: the call is evidenced.
+- [ ] note the bare spellings g8172, g8174, g80AA and g80A2 (EXTRN lines 79-80 and 102-103) are still open for the human's
+  convention ruling. Round 8 left the same point open; the unit is consistent within itself, and no matcher or spec
+  question is involved, so it is not escalated.
+- [ ] note routed to the e1a29 owner: src/E1A29.C:50-52 cites "ShowPointer (1BBE:00ED, src/E1BBE.ASM:252-258)" and
+  "1BBE:01F4 (`mov ax, 0` at 1BBE:01F0)". Those addresses are consistent with HidePointerZone at 1BBE:01FE (the
+  header's address): counted back, `mov ax,0` at 01F0, `push ax` at 01F3, the call at 01F4, `add sp,0Ah`, the pops
+  and the `ret` ending at 01FD. The source range :252-258 is stale; the draw call is at src/E1BBE.ASM:305-312 now.
+- [ ] note still open, routed to the e1a72 owner: src/E1A72.ASM:339 (the header of the mouse handler) says 8000h is
+  "(hidden over the hide zone)", the wording rounds 4 and 7 routed. This unit reads 8000h as "a zone hide is in force".
+- [ ] note _f1BBE_0001, g80AA and g80A2 stay placeholders on the evidence the headers give.
 
 ### Round 8 (review of commit 20871bc, src/E1BBE.ASM unchanged since d1e1a32, src/E1A72.ASM at 2af4699)
 
@@ -455,6 +501,15 @@ ShowPointerZone, LockHidePointer, LockShowPointer), and the prototypes in src/ w
 - [ ] note g80AA, g80A2 are names with no evidence beyond the call sites (the header says so). They are placeholders and fine as they are; g8172 and g8174 are the far pointer argument pair (src/E1A72.ASM:69-70).
 
 ## Summary
+
+Round 9 (68d16c2). The unit's bytes and readability gates are clean, and the names are supported by their callers
+and the registry. Two must-fix items block a pass, both wording errors in the comments on the EXTRNs, not in the
+headers: the shift addresses cited for the rectangle units in the _gRestoreRect and _gSaveRect declarations (they are
+1BBE:004B-0050 and 1BBE:014A-014F, not 147-149 and 248-250), and "the handler's left test is skipped" for the zone
+(the left compare runs; the quirk is that a left miss skips the right-edge test, so the left edge is never enforced).
+One should on the gDraw prefix, which E1A29.C calls a family guess. The E1A72 label cites from round 8 still hold at
+b00a8c7. Nothing escalated: no matcher, spec or pin question. Result: review-failed. The decompiler fixes the two
+must-fix items, ticks them with the commit, and hands off again.
 
 Round 8 (20871bc). The unit's bytes and readability gates are clean, and the names and comment meanings hold against
 the code. Two must-fix items block a pass, both stale citations: the src/E1A72.ASM line numbers in the busy flag,
