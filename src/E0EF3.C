@@ -208,6 +208,16 @@ extern int ClampValue(int value, int low, int high, int invert); /*@ 082C:0AB4 *
 extern signed char gAt5717[];          /*@ ds:5717 */ /* a per-member byte: nonzero when the member
                                                      can use melee effects (read by 0EF3:0E1B) */
 extern signed char gTable5733[];        /*@ ds:5733 */ /* four cell deltas walked by 0EF3:17D8 */
+extern signed char gIconIndex571B[];    /*@ ds:571B */ /* a per-member icon index; a negative value
+                                                           picks the 004D region drawing (0EF3:0F99) */
+extern int gIconX5721[];                /*@ ds:5721 */ /* the icon's x, per member (0EF3:0F99) */
+extern signed char gIconY572D[];        /*@ ds:572D */ /* the icon's y, per member (0EF3:0F99) */
+extern void far *gIconTable[];          /*@ ds:FB34 */ /* far sprite pointers indexed by an icon
+                                                           magnitude; entry 1 is ds:FB38 (src/EOV2.C
+                                                           names the entries gThrownIcon0..2 singly) */
+extern void DrawRegion000F(int mode, void far *src, int x, int y, int region); /*@ 082C:063B */
+extern void DrawRegion004D(int mode, void far *src, int x, int y, int region); /*@ 082C:0681 */
+extern void Obj16D6(int key, char count, char sides, char bonus, char flag); /*@ 08E6:16D6 */
 
 extern char gText57A3[];                /*@ ds:57A3 */
 extern char gText57F1[];                /*@ ds:57F1 */
@@ -811,7 +821,33 @@ extern void f0EF3_2A53(int a, int b, int c, int d, int e, void far *p); /*@ 0EF3
     ComputeArmourClass(rec->m00);
 }
 
-/*@ 0EF3:0F99 stub */ void f0EF3_0F99(void) {}
+/* 0EF3:0F99: draw one icon per party member in its panel cell, then strike the object the current
+   page faces. For each of the six members it draws the far sprite gThrownIcon0[abs(icon) - 1] at
+   (gIconX5721[i], gIconY572D[i]) with region 0: a positive icon (gIconIndex571B) goes through
+   082C:063B, a negative one (through its magnitude) through 082C:0681. It then waits two ticks,
+   takes the panel member's class-slot 1 value, finds the object the party cell faces (0D1C:00DA)
+   and runs 08E6:16D6 on it for 1d3 plus twice that value, and sets ds:DF4C. Reached through the
+   spell table (an apply callback). Purpose unknown: what the icon index means and what chooses the
+   two region drawings. */
+/*@ 0EF3:0F99 */ void DrawMemberIcons(void)
+{
+    int value;
+    int i;
+    int target;
+
+    for (i = 0; i < 6; i++) {
+        if (gIconIndex571B[i] < 0)
+            DrawRegion004D(0, gIconTable[gIconIndex571B[i] < 0 ? -gIconIndex571B[i] : gIconIndex571B[i]],
+                           gIconX5721[i], gIconY572D[i], 0);
+        else
+            DrawRegion000F(0, gIconTable[gIconIndex571B[i]], gIconX5721[i], gIconY572D[i], 0);
+    }
+    WaitTicks(2);
+    value = GetClassSlot1Value(gPanelMember);
+    target = f0D1C_00DA(gPartyCell, gFBCC);
+    Obj16D6(target, 1, 3, value << 1, 1);
+    gDF4C = 1;
+}
 
 /* 0EF3:1069: enter the item-swap mode: set gFBD2 bit 0, take the mouse item, move the pointer, and
    apply a 2-turn effect. Called through a table. */

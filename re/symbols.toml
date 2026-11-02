@@ -3424,6 +3424,9 @@ unit = "e0ef3"
 addr = "0EF3:0F99"
 size = 208
 evidence = ["frame"]
+name = "DrawMemberIcons"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0ef3_1069"
