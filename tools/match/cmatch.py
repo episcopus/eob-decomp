@@ -75,7 +75,9 @@ FARDATA: set = set()   # externs annotated seg:off that are data, not functions:
 FAR_BASE = 0x8000
 # -B: units compiled through the assembler. Their bytes come from TASM without SMART encoding: with
 # SMART, TASM 2.0 shortens `or bx,1` to 83 and changes other forms the original has (e14ef, e19ec)
-TASM_OPTS = ["/ml", "/jNOSMART"]      # their offsets in our stub start here, apart from anything in DGROUP
+TASM_OPTS = (__import__("os").environ.get("TASM_OPTS") or "/ml /jNOSMART").split()
+# experiments: another installed assembler release for -B and the stubs (tools/re/tc_toolchain.toml)
+ASM_RELEASE = __import__("os").environ.get("ASM_RELEASE") or None      # their offsets in our stub start here, apart from anything in DGROUP
 
 
 def parse_annotations(src: str, asm: bool = False) -> tuple[dict, dict, set, set]:
@@ -193,17 +195,17 @@ class Build:
 
 def link(w: Path, release: str, flags: list, src_name: str, funcs, data, defined, asm: bool) -> tuple[Build, Build]:
     if asm:
-        r = tc.run(tc.manifest()["pinned_asm"], "TASM", ["/mx", src_name], cwd=w)
+        r = tc.run((ASM_RELEASE or tc.manifest()["pinned_asm"]), "TASM", ["/mx", src_name], cwd=w)
     else:
         if "-B" in flags:
             # compiled through the assembler, as TCC -B does (inline asm forces it): TCC writes U.ASM
             # (-S) and TASM assembles it; TCC cannot start TASM itself under emu2. TCC's own assembler
             # merges identical jump tails that the original keeps (e14ef: four case tails)
-            r = tc.run(release, "TCC", ["-S", "-ID:\\INCLUDE"] + [f for f in flags if f != "-B"] + [src_name], cwd=w)
+            r = tc.run(release, tc.manifest()["release"][release].get("compiler", "TCC"), ["-S", "-ID:\\INCLUDE"] + [f for f in flags if f != "-B"] + [src_name], cwd=w)
             if (w / "U.ASM").exists():
-                r = tc.run(tc.manifest()["pinned_asm"], "TASM", TASM_OPTS + ["U.ASM"], cwd=w)
+                r = tc.run((ASM_RELEASE or tc.manifest()["pinned_asm"]), "TASM", TASM_OPTS + ["U.ASM"], cwd=w)
         else:
-            r = tc.run(release, "TCC", ["-c", "-ID:\\INCLUDE"] + flags + [src_name], cwd=w)
+            r = tc.run(release, tc.manifest()["release"][release].get("compiler", "TCC"), ["-c", "-ID:\\INCLUDE"] + flags + [src_name], cwd=w)
     out = r.stdout.decode("latin-1")
     failed = re.search(r"\*\*Error\*\*", out) if (asm or "-B" in flags) else re.search(r"^Error ", out, re.M)
     if not (w / "U.OBJ").exists() or failed:
@@ -211,7 +213,7 @@ def link(w: Path, release: str, flags: list, src_name: str, funcs, data, defined
     builds = []
     for v, pad in (("A", False), ("B", True)):
         (w / ("STUB%s.ASM" % v)).write_text(stub_source(funcs, data, defined, pad, cname=not asm))
-        r = tc.run(tc.manifest()["pinned_asm"], "TASM", ["/mx", "STUB%s.ASM" % v], cwd=w)
+        r = tc.run((ASM_RELEASE or tc.manifest()["pinned_asm"]), "TASM", ["/mx", "STUB%s.ASM" % v], cwd=w)
         if not (w / ("STUB%s.OBJ" % v)).exists():
             raise SystemExit(r.stdout.decode("latin-1"))
         r = tc.run(release, "TLINK", ["/c", "/m", "/s", "D:\\LIB\\C0L+STUB%s+U,P%s,P%s,D:\\LIB\\CL" % (v, v, v)], cwd=w)

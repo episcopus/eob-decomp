@@ -69,3 +69,39 @@ zips = { "TASM.ZIP" = "BIN" }
 [release.tasm201.files]
 "BIN/TASM.EXE" = "48dd9b48dd83a0041ea4b820379146b10de5f44b3e2633778a35d062f2e1814c"
 "BIN/TLINK.EXE" = "85b3e87c76c754f5333a8651aa8049b3c398f4285de3b18e5af1fa8f6cdc86ce"
+
+# Candidates added 2026-11-01 for the struct-copy question (escalation eov6: F_SCOPY@ pushes the
+# segment first in EOB.EXE, the offset first with tc100 and tc101) and the assembler encoding of the
+# units compiled through TASM (-B). Source: WinWorld, placed by the human 2026-11-01. Not pinned.
+
+[release.tc20]
+label = "Turbo C 2.0 (1988)"
+archive = "Borland Turbo C 2.0 (1988) (3.5-720k).7z"
+archive_sha256 = "d302bc5166e4307bfc216bdd284cabf063b8db2cb1c49db7bf722f8617d0ee08"
+plain = true
+
+[release.tc201]
+label = "Turbo C 2.01 (1989)"
+archive = "Borland Turbo C 2.01 (1989) (3.5-720k).7z"
+archive_sha256 = "48afef06560eb4a7ba88830fa0172209fd9f1638925b933dfd6fbf38f1d8cd48"
+plain = true
+
+[release.bc20]
+label = "Borland C++ 2.0 (1991), with its TASM"
+archive = "Borland CPP 2.0 (1991) (3.5-720k).7z"
+archive_sha256 = "2a201029735897be79b3ac7fcc55c96edf049de2b5052151c59ae173c82594b5"
+zips = { "BCC.ZIP" = "BIN", "BIN.ZIP" = "BIN", "TASM.ZIP" = "BIN", "INCLUDE.ZIP" = "INCLUDE", "STARTUP.ZIP" = "STARTUP", "LLIB.ZIP" = "LIB" }
+split_zips = { "BIN" = ["CMDLINE.CA1", "CMDLINE.CA2"] }
+compiler = "BCC"
+
+[release.tasm10]
+label = "Turbo Assembler 1.0 (with Turbo Debugger)"
+archive = "Borland Turbo Assembler 1.0 with Turbo Debugger (5.25-360k).7z"
+archive_sha256 = "811eee31c9cc0032439d3549bbcb3f47061271ea078d9e50317768dc5f87fc83"
+plain = true
+
+[release.tasm101]
+label = "Turbo Assembler 1.01"
+archive = "Borland Turbo Assembler 1.01 (5.25-360k).7z"
+archive_sha256 = "5b9b8c4f2d378a687206efa545d13710f3bd75391359547dfb301513f0044db6"
+plain = true
