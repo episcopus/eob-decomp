@@ -5289,9 +5289,9 @@ unit = "e1a72"
 addr = "1A72:00DA"
 size = 427
 evidence = ["far"]
-name = "_MouseInit"
 level = "L2"
 match_flags = "tasm /mx"
+name = "InitMouse"
 
 [[function]]
 id = "e1a72_0285"
@@ -5309,9 +5309,9 @@ unit = "e1a72"
 addr = "1A72:02A6"
 size = 84
 evidence = ["far", "frame"]
-name = "_MouseInRect"
 level = "L2"
 match_flags = "tasm /mx"
+name = "IsMouseInRect"
 
 [[function]]
 id = "e1a72_02fa"

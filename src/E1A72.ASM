@@ -1,27 +1,29 @@
 ; Unit at EOB.EXE 1A72:0006 (841 bytes, 8 functions), kind asm [H] by the map. Low level support
-; code: the game's INT 33h mouse driver glue plus a few interrupt and far pointer helpers. MouseInit
+; code: the game's INT 33h mouse driver glue plus a few interrupt and far pointer helpers. InitMouse
 ; (1A72:00DA) detects the driver, initialises the mouse variables in DGROUP (8130h..8174h), installs
 ; the event handler at 1A72:017A and returns 1 when a driver is present (0 otherwise). The handler
-; at 1A72:017A, which sits inside MouseInit, clamps the position, hands the button state to the
+; at 1A72:017A, which sits inside InitMouse, clamps the position, hands the button state to the
 ; keyboard glue 1AAD:0B0E and redraws through the far pointers at DGROUP:80AA and DGROUP:80A2 under
-; the semaphore at DGROUP:812E. MouseInRect (1A72:02A6) tests the current position against a
+; the busy flag at DGROUP:812E. IsMouseInRect (1A72:02A6) tests the current position against a
 ; rectangle; MouseDisable (1A72:0285) removes the handler; 1A72:02FA and 1A72:02FC enable and
 ; disable interrupts; 1A72:02FE and 1A72:033A set and read the far pointer at DGROUP:8172/8174
 ; (1A72:02FE also copies 16 bytes from the old target to the new one). 1A72:0006 is the INT 3Fh
-; handler main installs (07C8:008F), it chains through DGROUP:FC08 (the previous vector) and
-; (re)opens EOB.EXE through 1C0E:1310. Placeholder DGROUP names mark the mouse state whose exact
-; role is inferred from this code only.
+; handler main installs (07C8:008F), it chains through DGROUP:FC08 (the previous vector), probes
+; EOB.EXE through 1C0E:1310 to find the drive it is on and reopens it with the runtime's _open.
+; Placeholder DGROUP names mark the mouse state whose exact role is inferred from this code only.
 
         .MODEL  LARGE
 
         EXTRN   _access:FAR             ; @ 0000:505D (runtime ACCESS module)
-        EXTRN   _open:FAR               ; @ 0000:6443 (runtime OPEN module, E1A47.C)
-        EXTRN   _close:FAR              ; @ 0000:50C5 (runtime, E1A47.C)
-        EXTRN   _LocateOverlayFile:FAR         ; @ 1C0E:1310 (locates and opens the overlay file)
-        EXTRN   _ShutdownGame:FAR         ; @ 07C8:058A (cleanup and exit, E19BC.C)
+        EXTRN   _open:FAR               ; @ 0000:6443 (runtime OPEN module, declared in E1A47.C)
+        EXTRN   _close:FAR              ; @ 0000:50C5 (runtime, declared in E1A47.C)
+        EXTRN   _LocateOverlayFile:FAR         ; @ 1C0E:1310 (1C0E.C: probes `name` by opening it,
+        ;                                              closes at once and returns drive plus one, or 0;
+        ;                                              it leaves no handle for the caller)
+        EXTRN   _ShutdownGame:FAR         ; @ 07C8:058A (cleanup and exit, E07C8.C)
         EXTRN   _HandleMouseButtons:FAR         ; @ 1AAD:0B0E (keyboard glue, takes the button state)
-        EXTRN   _HidePointer:FAR         ; @ 1BBE:0002 (E1BB1.ASM)
-        EXTRN   _ShowPointer:FAR         ; @ 1BBE:00ED (E1BB1.ASM)
+        EXTRN   _HidePointer:FAR         ; @ 1BBE:0002 (E1BBE.ASM)
+        EXTRN   _ShowPointer:FAR         ; @ 1BBE:00ED (E1BBE.ASM)
 
         .DATA
         EXTRN   g80A2:DWORD             ; @ ds:80A2: indirect far function, no arguments
@@ -29,43 +31,59 @@
         EXTRN   g80EC:BYTE              ; @ ds:80EC: compared with 2 before the position update
         EXTRN   g8104:DWORD             ; @ ds:8104: indirect far function, (far string, 2)
         EXTRN   g8111:DWORD             ; @ ds:8111: indirect far function, (far string, 2)
-        EXTRN   _gPointerBusy:WORD              ; @ ds:812E: semaphore, 0 = free (busy-wait acquire)
+        EXTRN   _gPointerBusy:WORD              ; @ ds:812E: busy flag, 0 = free; the game takes it with
+        ;                                              a test then a store, so it is not a lock
         EXTRN   g8130:WORD              ; @ ds:8130: mouse buttons seen by the last event
-        EXTRN   g8132:WORD              ; @ ds:8132: button bits or-ed into every event
+        EXTRN   g8132:WORD              ; @ ds:8132: a mask the handler folds into the buttons when
+        ;                                              it is nonzero and the middle bit (BX bit 2,
+        ;                                              value 4) is set, replacing the low two bits
         EXTRN   g8134:WORD              ; @ ds:8134: accumulated button changes
-        EXTRN   g8136:WORD              ; @ ds:8136: set to 1 while a button is held
+        EXTRN   g8136:WORD              ; @ ds:8136: latched to 1 once any button has been seen;
+        ;                                              this unit never clears it
         EXTRN   _gCursorX:WORD              ; @ ds:8138: working mouse x (set to the middle on init)
         EXTRN   _gCursorY:WORD              ; @ ds:813A: working mouse y (set to the middle on init)
         EXTRN   g813C:WORD              ; @ ds:813C: x of the event just handled
         EXTRN   g813E:WORD              ; @ ds:813E: y of the event just handled
-        EXTRN   g8144:WORD              ; @ ds:8144: 1 when the driver reports a 640 wide range
-        EXTRN   _gHideDepth:WORD              ; @ ds:8146: nonzero suppresses the redraw
+        EXTRN   g8144:WORD              ; @ ds:8144: 1 when the driver's reset x is not 0A0h, the
+        ;                                              640 wide mode test (InitMouse)
+        EXTRN   _gHideDepth:WORD              ; @ ds:8146: nonzero suppresses the pointer redraw;
+        ;                                              InitMouse sets it to 1, so the pointer starts
+        ;                                              hidden until ShowPointer runs
         EXTRN   gMouseHandlerInstalled:WORD              ; @ ds:8148: 1 when the mouse driver handler is installed
-        EXTRN   gMouseDisabled:WORD              ; @ ds:814A: 0 disables the handler body (E07A9.C)
-        EXTRN   g814E:WORD              ; @ ds:814E: screen width minus 1, 13Fh
+        EXTRN   gMouseDisabled:WORD              ; @ ds:814A: nonzero disables the mouse: the handler
+        ;                                              returns at once and the pointer hide/show do
+        ;                                              nothing (E07A9.C tests it too)
+        EXTRN   g814E:WORD              ; @ ds:814E: screen width minus 1, 13Fh; the handler clamps
+        ;                                              with the literal 13Fh, not with this variable
         EXTRN   g8152:WORD              ; @ ds:8152: screen height minus 1, 0C7h
         EXTRN   _gDrawnX:WORD              ; @ ds:815C: last position handed to the game
         EXTRN   _gDrawnY:WORD              ; @ ds:815E: last position handed to the game
-        EXTRN   _gPointerState:WORD              ; @ ds:8160: status bits, 4000h and 8000h (see the handler)
-        EXTRN   _gZoneLeft:WORD              ; @ ds:8162: tracking rectangle, left
-        EXTRN   _gZoneTop:WORD              ; @ ds:8164: tracking rectangle, top
-        EXTRN   _gZoneRight:WORD              ; @ ds:8166: tracking rectangle, right
-        EXTRN   _gZoneBottom:WORD              ; @ ds:8168: tracking rectangle, bottom
+        EXTRN   _gPointerState:WORD              ; @ ds:8160: pointer state bits: 8000h the pointer is
+        ;                                              hidden over the hide zone, 4000h a redraw is
+        ;                                              requested, low byte a counter (E1BBE.ASM)
+        EXTRN   _gZoneLeft:WORD              ; @ ds:8162: hide zone, left in pixels (1BBE hides the
+        ;                                              pointer over this rectangle; 1A72:0244 tests it)
+        EXTRN   _gZoneTop:WORD              ; @ ds:8164: hide zone, top in pixels
+        EXTRN   _gZoneRight:WORD              ; @ ds:8166: hide zone, right in pixels
+        EXTRN   _gZoneBottom:WORD              ; @ ds:8168: hide zone, bottom in pixels
         EXTRN   g8172:WORD              ; @ ds:8172: far pointer argument, offset
         EXTRN   g8174:WORD              ; @ ds:8174: far pointer argument, segment
-        EXTRN   g8026:WORD              ; @ ds:8026: scratch copy of the reported x (MouseInRect)
-        EXTRN   g8028:WORD              ; @ ds:8028: scratch copy of the reported y (MouseInRect)
+        EXTRN   g8026:WORD              ; @ ds:8026: scratch copy of the reported x (IsMouseInRect)
+        EXTRN   g8028:WORD              ; @ ds:8028: scratch copy of the reported y (IsMouseInRect)
         EXTRN   gFC08:DWORD             ; @ ds:FC08: previous INT 3Fh vector, chained by 1A72:0006
         .CODE
 
 ; 1A72:0006: the INT 3Fh handler main installs (07C8:008F, `setvect(0x3F, 1A72:0006)`; the old
 ; vector was saved at DGROUP:FC08 by 07C8:0088) and always leaves through that saved vector, so it
-; is a hook around the runtime's overlay trap. It saves everything, points DS at DGROUP and calls
-; `access("EOB.EXE", 0)`: when that returns zero (the program file is accessible) it goes straight
-; to the chain. Otherwise it closes the file handle kept at 20B5h:00B8h, retries opening EOB.EXE
-; through 1C0E:1310 (with the indirect helpers at DGROUP:8111 and DGROUP:8104 in between) and
-; reopens it with `open("EOB.EXE", O_RDONLY)`, storing the new handle at 20B5h:00B8h; every
-; failing path calls 07C8:058A. Which of the two paths is the normal case is not established.
+; is a hook around the runtime's overlay trap [H] (nothing in this file proves the trap is the
+; runtime's; what the file shows is that it chains to the saved vector and re-finds EOB.EXE when it
+; fails). It saves everything, points DS at DGROUP and calls `access("EOB.EXE", 0)`: when that
+; returns zero (the program file is accessible) it goes straight to the chain. Otherwise it closes
+; the file handle kept at 20B5h:00B8h, probes EOB.EXE through 1C0E:1310 (which opens it only to
+; find its drive and closes it at once; the indirect helpers at DGROUP:8111 and DGROUP:8104 run in
+; between) and reopens it with `open("EOB.EXE", O_RDONLY)`, storing the new handle at
+; 20B5h:00B8h; every failing path calls 07C8:058A. Which of the two paths is the normal case is not
+; established.
         PUBLIC  _Int3FHandler           ; @ 1A72:0006
 _Int3FHandler PROC FAR
         push    ax
@@ -169,13 +187,14 @@ _Int3FHandler ENDP
 
 ; 1A72:00DA: initialise the mouse driver through INT 33h and install the event handler. It reads
 ; the INT 33h vector (INT 21h/35h) and treats a null vector or one whose first byte is CFh (an
-; IRET, no driver) as absent. It resets the driver (function 0, expects FFFFh), reads the position
-; (function 3) and, when the driver reports x = 0A0h, records 640 wide mode (DGROUP:8144 = 1) and
-; doubles x before setting the position (function 4). It installs 1A72:017A for moves and both
-; buttons (function 0Ch, mask 1Fh) and returns 1 in AX; with no driver it returns 0. Called from
-; main at 07C8:0199. The DGROUP defaults are the middle of a 320x200 screen and the screen bounds.
-        PUBLIC  _MouseInit              ; @ 1A72:00DA
-_MouseInit PROC FAR
+; IRET, no driver) as absent. It resets the driver (function 0, expects FFFFh) and reads the
+; position (function 3): when that x is NOT 0A0h the driver is not in the usual 320 wide mode, so
+; it records 640 wide mode (DGROUP:8144 = 1) and doubles the constant centre 0A0h before setting
+; the position (function 4). It installs 1A72:017A for moves and both buttons (function 0Ch, mask
+; 1Fh) and returns 1 in AX; with no driver it returns 0. Called from StartupGame (07C8:0199,
+; E07C8.C:196). The DGROUP defaults are the middle of a 320x200 screen and the screen bounds.
+        PUBLIC  _InitMouse              ; @ 1A72:00DA
+_InitMouse PROC FAR
         push    bp
         mov     bp,sp
         push    bx
@@ -232,16 +251,23 @@ L0174:  pop     es
         pop     bp
         ret
 
-; 1A72:017A: the INT 33h event handler installed above (entry point inside _MouseInit, not a
-; separate function). CX = x, DX = y, BX = buttons. With DGROUP:814A zero it does nothing. In 640
-; wide mode it halves x, clamps x to 13Fh and keeps the event position at DGROUP:813C/813E. It
-; or-s in the mask at DGROUP:8132, and when the buttons changed calls the keyboard glue 1AAD:0B0E
-; and folds the change into DGROUP:8134. With the semaphore free it publishes the position to
+; 1A72:017A: the INT 33h event handler installed above (entry point inside _InitMouse, not a
+; separate function). CX = x, DX = y, BX = buttons. With DGROUP:814A nonzero it does nothing (a
+; nonzero word disables the handler). In 640 wide mode it halves x, clamps x to 13Fh and keeps the
+; event position at DGROUP:813C/813E. When the mask at DGROUP:8132 is nonzero and the middle button
+; bit (BX bit 2, value 4) is set, it replaces the low two button bits with the mask (`and bx,3;
+; or bx,ax`, 1A72:01A6). The installed mask 1Fh (INT 33h function 0Ch) asks for moves and the left
+; and right buttons only [H], so the middle bit is seen only on a move event. When the buttons
+; changed it calls the keyboard glue 1AAD:0B0E and folds
+; the change into DGROUP:8134. With the busy flag free it publishes the position to
 ; DGROUP:8138/813A (unless DGROUP:80EC is 2), and when the position moved and redraws are not
-; suppressed (DGROUP:8146 = 0) either redraws the tracking rectangle (DGROUP:8160 bit 8000h set
-; and the position inside DGROUP:8162..8168, which or-s 4000h instead) or asks the far pointers at
-; DGROUP:80AA (with DGROUP:8172/8174) and DGROUP:80A2 to redraw. It chains to nothing: the vector
-; belongs to the game.
+; suppressed (DGROUP:8146 = 0) it redraws through the far pointers: with gPointerState bit 8000h
+; (hidden over the hide zone) set and the position in the zone it calls DGROUP:80AA (with
+; DGROUP:8172/8174), HidePointer (1BBE:0002) and DGROUP:80A2, then sets 4000h (1A72:01EC);
+; otherwise it calls DGROUP:80AA, HidePointer, ShowPointer (1BBE:00ED) and DGROUP:80A2 (1A72:025C).
+; QUIRK 1A72:0248: the `x < gZoneLeft` test jumps into the y test, so the hide zone's left edge is
+; never enforced (only x > gZoneRight and y outside [top, bottom] leave the zone). It chains to
+; nothing: the vector belongs to the game.
 MouseEventHandler:
         push    ds
         push    ax
@@ -308,7 +334,8 @@ L0235:  cmp     word ptr [_gHideDepth],0
         test    word ptr [_gPointerState],8000h
         je      L025C
         cmp     cx,[_gZoneLeft]
-        jl      L0250
+        jl      L0250                   ; QUIRK 1A72:0248: jumping to the y test skips the left
+                                        ; edge check, so the zone has no left bound
         cmp     cx,[_gZoneRight]
         jg      L025C
 L0250:  cmp     dx,[_gZoneTop]
@@ -329,7 +356,7 @@ L027F:  popf
         pop     ax
         pop     ds
         ret
-_MouseInit ENDP
+_InitMouse ENDP
 
 ; 1A72:0285: remove the mouse event handler, but only when one was installed (DGROUP:8148 = 1).
 ; INT 33h function 0Ch with mask 0 clears the handler; ES:DX is set to CS:1A72:017A as INT 33h
@@ -359,11 +386,11 @@ L02A4:  pop     bp
 _MouseDisable ENDP
 
 ; 1A72:02A6: 1 when the last position handed to the game (DGROUP:815C/815E, copied through
-; DGROUP:8026/8028 under the semaphore) lies inside the rectangle [bp+6, bp+0Ah] x [bp+8, bp+0Ch]
+; DGROUP:8026/8028 under the busy flag) lies inside the rectangle [bp+6, bp+0Ah] x [bp+8, bp+0Ch]
 ; inclusive, 0 otherwise. Arguments are x1, y1, x2, y2 words; called from UI code (122E:0847,
 ; overlay 0 at 207A, overlay 1 at 1551).
-        PUBLIC  _MouseInRect            ; @ 1A72:02A6
-_MouseInRect PROC FAR
+        PUBLIC  _IsMouseInRect            ; @ 1A72:02A6
+_IsMouseInRect PROC FAR
         push    bp
         mov     bp,sp
         push    cx
@@ -399,7 +426,7 @@ L02F0:  dec     word ptr [_gPointerBusy]
         pop     cx
         pop     bp
         ret
-_MouseInRect ENDP
+_IsMouseInRect ENDP
 
 ; 1A72:02FA: enable interrupts and return (the `sti` wrapper used around the retrace calibration
 ; at 1A65:000E).
