@@ -4103,6 +4103,9 @@ addr = "1547:0009"
 size = 643
 evidence = ["near", "segment"]
 notes = "unblocked 2026-11-01: `and ax,K; or ax,0` is TCC's bit test of a LONG: declare mE3 long (verified with tc100; e1414 found the same); (was blocked) the TCC `or ax,0` codegen idiom (see e0d1c_0a43). Matches every byte except the mE3 flag tests at 1547:0065 and 1547:008F: the original emits `mov ax,es:[bx+0xE3]; and ax,K; or ax,0` while our -ml -O -Z folds it to `test word es:[bx+0xE3],K`. An `(unsigned)` cast on the AND reaches the mov/and/or form but TCC still writes `or ax,ax` where the original has `or ax,0`; the and/or form needs an OR with a runtime zero (e.g. (x&K)|(x&0)), no natural source form found."
+name = "DrawMemberBar"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e1547_028c"
@@ -4141,6 +4144,9 @@ addr = "1547:0544"
 size = 254
 evidence = ["far", "near", "frame"]
 notes = "unblocked 2026-11-01: `and ax,K; or ax,0` is TCC's bit test of a LONG: declare mE3 long (verified with tc100); (was blocked) same TCC `or ax,0` idiom at 1547:05D6 (the original emits `mov ax,es:[bx+0xE3]; and ax,4; or ax,0; je`, our -ml -O -Z folds it to `test word es:[bx+0xE3],4; je`). Every other byte matches; the 4-byte shift is the only difference."
+name = "DrawMemberPortrait"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e1547_0642"

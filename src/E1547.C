@@ -3,9 +3,9 @@
    (0544), the carried item slots (07E7), the action label (0642) and the title and stat lines
    (0991, which dispatches to the rest). It reads the 243-byte character records at ds:F580 (struct
    CharRec, src/E0A72.C), the stat/class/race/alignment name tables at ds:1195, ds:11AD, ds:11DD
-   and ds:1240, and the per-member row layout byte tables at ds:5D1C..ds:5D4E. 5 of the 8
-   functions are at L2; 0009 and 0544 are drafts blocked on the TCC `or ax,0` idiom
-   (re/symbols.toml e0d1c_0a43), and 0991 is a stub for the same reason. */
+   and ds:1240, and the per-member row layout byte tables at ds:5D1C..ds:5D4E. 7 of the 8
+   functions are at L2; 0991 (the 1922-byte dispatcher that calls them all) is still a stub. The
+   record's mE3 field is a long, so its bit tests take the `and ax,K; or ax,0` form (e0d1c_0a43). */
 
 /*@flags -ml -O -Z */
 
@@ -45,8 +45,8 @@ struct CharRec {            /* the 243-byte (0xF3) records at ds:F580 (src/E0A72
     signed char mDF;        /* +0DF: a status byte read by 0009 */
     signed char mE0;        /* +0E0: a status byte read by 0009 */
     char padE1[0xE3 - 0xE1];
-    int mE3;                /* +0E3: flags tested by 0009, 0544 and 0991 (src/E1414.C) */
-    char padE5[0xE7 - 0xE5];
+    long mE3;               /* +0E3: status/effect flags: a long, so the bit tests compile to the
+                               `mov ax,..; and ax,K; or ax,0` form (src/E1414.C, e0d1c_0a43) */
     unsigned char mE7;      /* +0E7: a counter (src/E1414.C) */
     signed char mE8[0xF3 - 0xE8]; /* +0E8: per-slot bytes: an action label (src/E1414.C) */
 };
@@ -105,12 +105,9 @@ extern int f0D1C_07DB(int who, int flag); /*@ 0D1C:07DB */
    when exactly one holds it is a DrawRect in `colour` (6 or 3 by video mode) for the "in play"
    one, or colour 5 otherwise; when both hold the interior is hatched, each row drawn in `colour`
    for the first condition and 5 for the second. Purpose unknown: what mE3's bits, mDF and mE0
-   mean is not established. Called by 0991 only. DRAFT: matches every byte except the flag tests,
-   which the original emits as `mov ax,es:[bx+0xE3]; and ax,K; or ax,0` (1547:0065 and 1547:008F)
-   while `-ml -O -Z` folds them to `test word [bx+..],K` (the blocked TCC `or ax,0` idiom,
-   re/symbols.toml e0d1c_0a43). An `(unsigned)` cast on the AND reaches the mov/and/or form but the
-   compiler still writes `or ax,ax` where the original has `or ax,0`. */
-/*@ 1547:0009 draft */ void DrawMemberBar(int who)
+   mean is not established. Called by 0991 only. The flag tests read mE3 as a long, so they take
+   the `mov ax,es:[bx+0xE3]; and ax,K; or ax,0` form (re/symbols.toml e0d1c_0a43). */
+/*@ 1547:0009 */ void DrawMemberBar(int who)
 {
     int colour;
     struct CharRec far *rec;
@@ -137,7 +134,7 @@ extern int f0D1C_07DB(int who, int flag); /*@ 0D1C:07DB */
     } else {
         if (frame && !lit) {
             DrawRect(x, y, x + 0x3f, y + 0x31, colour);
-        } else if (!frame && lit) {
+        } else if (lit && !frame) {
             DrawRect(x, y, x + 0x3f, y + 0x31, 5);
         } else {
             base = x;
@@ -286,10 +283,9 @@ extern int f0D1C_07DB(int who, int flag); /*@ 0D1C:07DB */
    only for the selected member gA99A). At hp == -10 it draws the dead portrait gIconF2F4 and
    returns; when mE3 bit 2 is set and gFB44 is 0 it fills the portrait in colour 0xC and returns;
    otherwise it draws the member's own portrait pointer (rec + 0x33) and, at hp below 1, the
-   wounded overlay gIconDC94. Called by f1547_0991 only. DRAFT: matches every byte except the mE3
-   bit test at 1547:05D6, where the original emits `and ax,4; or ax,0` and ours `test word
-   [bx+..],4` (the blocked TCC `or ax,0` idiom, re/symbols.toml e0d1c_0a43). */
-/*@ 1547:0544 draft */ void DrawMemberPortrait(int who)
+   wounded overlay gIconDC94. Called by f1547_0991 only. The mE3 bit test reads it as a long, so
+   it takes the `and ax,4; or ax,0` form (re/symbols.toml e0d1c_0a43). */
+/*@ 1547:0544 */ void DrawMemberPortrait(int who)
 {
     struct CharRec far *rec;
     int x;
