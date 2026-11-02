@@ -635,15 +635,19 @@ extern void f0EF3_2A53(int a, int b, int c, int d, int e, void far *p); /*@ 0EF3
     }
 }
 
-/* 0EF3:0F0B: when the current record's armour class is more than six above the class word of
-   its +0x15 index, raise its +0xDF penalty byte to eight over the member's class-slot 1 value
-   and recompute the armour class; otherwise say the string ds:5830 with the record's name. Called
-   through a table. DRAFT: the body is right but the original keeps the 0A72:019D result in SI and
-   a two-byte frame for the value; our build folds them away (`make match` differs at the frame). */
-/*@ 0EF3:0F0B draft */ void FixArmourClass(void)
+/* 0EF3:0F0B: when the current record's armour class (+0x1D) is more than six above the class word
+   of its +0x15 index (0A72:019D), raise its +0xDF penalty byte to eight over the member's
+   class-slot 1 value and recompute the armour class; otherwise say the string ds:5830 with the
+   record's name. Called through a table. */
+/*@ 0EF3:0F0B */ void FixArmourClass(void)
 {
-    if (gCurRec->m1D > GetClassWord(gCurRec->m15) + 6) {
-        gCurRec->mDF = GetClassSlot1Value(gPanelMember) + 8;
+    char penalty;
+    register int base;
+
+    base = GetClassWord(gCurRec->m15);
+    if (gCurRec->m1D > base + 6) {
+        penalty = GetClassSlot1Value(gPanelMember) + 8;
+        gCurRec->mDF = penalty;
         ComputeArmourClass(gCurMember);
     } else {
         sprintf(gFileNameBuf, gText5830, gCurRec->name);
