@@ -23,53 +23,83 @@ The rest are shoulds and notes.
 Each finding is a checkbox. `must-fix` blocks `make review-pass` until a decompiler ticks it off
 (with the commit that fixes it); `should` and `note` do not block.
 
-- [ ] must-fix src/E14EF.C:91-92 and :217 (the WaitKeyEvent comment, and the KEY_CODE_MASK comment): "the
+- [x] must-fix src/E14EF.C:91-92 and :217 (the WaitKeyEvent comment, and the KEY_CODE_MASK comment): "the
   callers mask with KEY_CODE_MASK" and "the callers' filter" are wrong. Only UpdateOptionList (:285) and
   src/EOV5.C:373 and :468 (`& 0x8ff`) mask the result. src/E16A5.C:151-152 takes it unmasked and tests bit 8
   (`key & 0x100`), which the mask clears (0x8ff keeps bits 0-7 and bit 11); src/EOV0.C:1211 and
   src/EOV3.C:710 discard it. Say which callers mask, and that src/E16A5.C reads bit 8 raw.
   (evidence: `grep -rn "WaitKeyEvent" src/`; `sed -n 151,152p src/E16A5.C`)
-- [ ] should src/E14EF.C:56-57 (g5D1A): "makes DrawOptionList draw the selected row in colorB" is one of two
+  [fixed in e9f3c0f: the WaitKeyEvent comment (now :93-96) names UpdateOptionList (:294) and src/EOV5.C:373,
+  :468 as the maskers and says src/E16A5.C:151 takes the key raw and tests bit 8, which the mask clears,
+  with src/EOV0.C:1211 and src/EOV3.C:710 discarding it; the KEY_CODE_MASK comment (:223-225) now says
+  UpdateOptionList applies the filter (:294) and src/EOV5.C:373, :468 write the same literal while
+  src/E16A5.C:151 reads the key raw; comments only, no code byte changed]
+- [x] should src/E14EF.C:56-57 (g5D1A): "makes DrawOptionList draw the selected row in colorB" is one of two
   tests. :203 is `if (entry == selEntry && (g5D1A || gMouseDisabled))`, as the DrawOptionList header (:178-179)
   says. Say it here too. Nothing in src/, re/ or the whitepaper writes ds:5D1A (grep); say "no writer found in
   src/" so the next reader knows its source is not known.
-- [ ] should src/E14EF.C:67-69 (g8102): "what it means is not established" is stronger than the evidence
+  [fixed in e9f3c0f: the g5D1A comment (:56-58) now names the UpdateOptionList pointer pick (:301) and says
+  that g5D1A together with gMouseDisabled makes DrawOptionList draw the selected row in colorB (:209-210),
+  and ends "No writer is found in src/"; comments only]
+- [x] should src/E14EF.C:67-69 (g8102): "what it means is not established" is stronger than the evidence
   allows. docs/design/WHITEPAPER.md:119 (section 2.6, Start-up and command line) records ds:8102 as the graphics
   choice from argv[1][0]: 1 Tandy, 3 VGA. src/EOV0.C:134 calls it the video mode the game initialised. Cite
   WHITEPAPER 2.6, and narrow "not established" to what a zero means (the value the unit tests, at :202 and :280).
-- [ ] should src/E14EF.C:242-246 (UpdateOptionList's callers): src/EOV0.C:143 and src/EOV2.C:181 declare
+  [fixed in e9f3c0f: the g8102 comment (:68-71) now gives it as the graphics choice from argv[1][0], 1 Tandy
+  and 3 VGA (WHITEPAPER 2.6, docs/design/WHITEPAPER.md:119), keeps src/EOV0.C:134 as the video mode, and
+  narrows "not established" to what a zero means for the graphics choice (the two tests are now :208 and
+  :289); comments only]
+- [x] should src/E14EF.C:242-246 (UpdateOptionList's callers): src/EOV0.C:143 and src/EOV2.C:181 declare
   `UpdateOptionList(int panel, char far * far *names, long counter, long mask, int shift)`, five parameters;
   this unit defines six (`int counter, int extra, long mask, int shift`). The bytes agree, and the header
   covers the callers' 0L. Add that the callers declare one `long counter` and no `extra`, so `extra` is this
   unit's split of that long. (The declarations in EOV0.C and EOV2.C belong to their owners; not edited here.)
-- [ ] should src/E14EF.C:34-44 (struct Panel, `int pad` at +e): the name claims padding, and the comment says
+  [fixed in e9f3c0f: the UpdateOptionList header (:251-253) now says the callers declare one `long counter`
+  and no `extra` (src/EOV0.C:143, src/EOV2.C:181) and pass a long zero, which fills the same four bytes as
+  this int pair; comments only]
+- [x] should src/E14EF.C:34-44 (struct Panel, `int pad` at +e): the name claims padding, and the comment says
   only "not read in this unit". grep of src/ finds no reader of the +0x0E word (the one other mention is the
   declaration at src/EOV0.C:185, also named pad). Either keep the name and write `Purpose unknown: never read
   in src/` (the evidence), or use a neutral placeholder. A name that says an unused word is padding is a claim
   without evidence.
-- [ ] should src/E14EF.C:271 (`counter++`): "bumped once and never read" (:242-243) describes dead code, which
+  [fixed in e9f3c0f: the field comment (:43) now reads "Purpose unknown: never read in src/", the reviewer's
+  first option; the name `pad` and the struct offset are unchanged; comment only]
+- [x] should src/E14EF.C:271 (`counter++`): "bumped once and never read" (:242-243) describes dead code, which
   READABILITY.md marks `QUIRK <address>:`. The line has no tag. Add the tag with the address of the increment
   (that needs the disassembly; not looked up this round).
-- [ ] should src/E14EF.C:95-99 (FindMaskBit): the header does not state a precondition. The second loop
+  [fixed in e9f3c0f: disasm 14EF:027C is `inc word ptr [bp+0xc]` (the increment of the counter parameter), so
+  the line (:280) now carries `/* QUIRK 14EF:027C: bumped once and never read */` and the header (:251) cites
+  the same address; comment only]
+- [x] should src/E14EF.C:95-99 (FindMaskBit): the header does not state a precondition. The second loop
   (:112-113) has no bound: if `mask` has n or fewer set bits from `shift` up, `1L << (i + shift)` reaches bit 32
   and above, where the test is never true, so the loop runs past the top of the mask. The callers keep n below
   the count: `height = CountMaskBits(...)` (src/EOV0.C:1193-1194, :1244-1245) and DrawOptionList draws only
   i < height. DrawOptionList reads the panel's `sel` unwrapped (:196); the callers set it to 0 before the draw
   (src/EOV0.C:1147, :1195, :1246), but LoadGamePanel (src/EOV2.C:380) does not, so its bound depends on the
   value an earlier call left. Say the precondition in the header.
-- [ ] should src/E14EF.C:287 (the hit rectangle's top): `top` subtracts `halfspace` (ds:FC78 >> 1), and no comment
+  [fixed in e9f3c0f: the FindMaskBit header (:103-105) now states the precondition, that the callers keep n at
+  or below the number of set bits from shift up, and that the unbounded second loop runs past the top of the
+  mask when fewer remain; comments only]
+- [x] should src/E14EF.C:287 (the hit rectangle's top): `top` subtracts `halfspace` (ds:FC78 >> 1), and no comment
   says why; the :286 comment covers only the gFontWidth scale. The reason is that each row's band starts half
   the extra spacing above its text: the rows are drawn at ybase + lineheight * k (:335, :338) and the click
   row is (cursory - top) / lineheight (:293). Say it at :287.
+  [fixed in e9f3c0f: the `top` line (:296) now carries the reason, "each row's band starts half the extra line
+  spacing above its text", with the row draws (:344, :347) and the click-row division (:302) re-cited after the
+  renumber; comment only]
 - [ ] note src/E14EF.C:34-44 and :211-215: the other fields and the key block are read against their evidence
   and hold; nothing else to tick.
-- [ ] note `spacing` is 0 at all four callers (src/EOV0.C:1148, :1203, :1253; src/EOV2.C:380), and `extra` in
+- [x] note `spacing` is 0 at all four callers (src/EOV0.C:1148, :1203, :1253; src/EOV2.C:380), and `extra` in
   BlinkText is 0 at its one caller (:346). The line-spacing terms (`i * spacing`, :201; `gFC78 >> 1`, :277) and
   BlinkText's `extra` therefore never change a value in play. The header describes them correctly; the next
   reader should know they are inert in the shipped callers.
-- [ ] note src/E14EF.C:147-155 (CountMaskBits's [H] paragraph): no caller reaches the shift edge (the comment
+  [done in e9f3c0f: the DrawOptionList header (:180) now says every caller passes 0, so ds:FC78 and the
+  line-spacing terms (`i * spacing` :207, `gFC78 >> 1` :286) are inert in the shipped callers; comment only]
+- [x] note src/E14EF.C:147-155 (CountMaskBits's [H] paragraph): no caller reaches the shift edge (the comment
   says so), so the 16-bit shift and `1 << 15` sign-extension claims describe a porting question, not game
   behaviour. Keep the [H] tag until they are shown on our bytes.
+  [re-checked in e9f3c0f: the [H] paragraph (:158-161) and its tags are unchanged; the paragraph shifted to
+  :153-161 in the renumbered file, no edit]
 - [ ] note routed, still stale in other owners' files (not edited here): re/renames.toml:775 and
   re/globals.toml:302 cite "E14EF.C:227" and "E14EF.C:144" for the gMouseDisabled tests; they are now :290 and
   :203 (:144 is `return 0;` in IsPointInRect). Their owners route them (open since round 9).
@@ -89,6 +119,14 @@ shoulds are true claims that are incomplete or unbounded: the g5D1A and g8102 co
 disagreement with EOV0.C and EOV2.C, the unbounded FindMaskBit scan, the hit-rectangle top, the dead counter
 increment and the padding name. One must-fix, a comment only; no code byte changes. No matcher, spec or pin
 question; nothing escalated.
+
+Fixed in e9f3c0f (comments only, no code byte changed; make match FILE=src/E14EF.C 6 of 6, 1410 bytes,
+exit 0; make readability UNIT=e14ef 0 findings): the must-fix and all seven shoulds are ticked above. The
+inert-spacing note is addressed; the CountMaskBits [H] note is re-checked and unchanged. The two routed notes
+stand (re/renames.toml:775, re/globals.toml:302, src/EOV0.C:204, src/EOV3.C:136), and the fields/key-block
+note needs no edit. The edits inserted comment lines, so the file's bare `:NNN` cites were renumbered; the
+numbers in the round 10 findings above are the pre-edit ones. No matcher, spec or pin question; nothing
+escalated.
 
 ---
 
