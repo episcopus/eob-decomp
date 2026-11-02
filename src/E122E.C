@@ -5,8 +5,7 @@
    opcode consumed, or jump the pointer; the driver stops when a handler sets gA9EC. 147F is the big
    sub-dispatcher with its own in-segment jump table; the map folded the 122E:1194 play-sound handler
    into 1097 and the 122E:1A3B drain-item handler into 147F, and both are separate functions here.
-   Below L2: two drafts (ItemSlotAction 06D0, EvaluateScriptExpr 147F), each with its difference
-   in re/symbols.toml. */
+   Below L2: one draft (ItemSlotAction 06D0), with its difference in re/symbols.toml. */
 
 /*@flags -ml -O -Z -v */
 
@@ -126,10 +125,10 @@ struct CharRec {                                /* the 243-byte character record
     signed char m0F;                            /* +0F: the exceptional strength percentile (src/E0A72.C) */
     char pad10[0x1B - 0x10];
     signed char m1B;                            /* +1B: 122E:0325 skips a character at or below 0 */
-    char pad1C[0x20 - 0x1C];
+    char pad1C[0x1F - 0x1C];
+    signed char m1F;                            /* +1F: the race index, halved and matched by 122E:147F (src/EOV0.C) */
     signed char m20;                            /* +20: indexes g1231 (122E:147F) */
-    signed char m21;                            /* +21: halved and matched by 122E:147F */
-    char pad22[0x77 - 0x22];
+    char pad21[0x77 - 0x21];
     int items[0x1b];                            /* +77: 27 item slots */
     char padAD[0xE3 - 0xAD];
     long lE3;                                   /* +E3: bit 2 tested by 122E:147F */
@@ -1054,10 +1053,11 @@ done:
    far the script moved (jumping to gBuf8DCA + word when the popped value is 0). A sub-opcode byte
    in 0..0x7f is pushed as a literal; a negative one not in the table is a no-op. Case order follows
    the original's body layout, and the case labels are read from the jump table at 122E:19EF (the
-   item-type case is 0xFFE7 and the gB894 byte case is 0xFFE9, not 0xFFE8/0xFFEA). Draft: it is 0x26
-   bytes short; the default case and the FFDD/FFDC loops match, and the one remaining difference is
-   the FFF5 argument order and tail (see its note in re/symbols.toml). */
-/*@ 122E:147F draft */ long EvaluateScriptExpr(char far *script)
+   item-type case is 0xFFE7 and the gB894 byte case is 0xFFE9, not 0xFFE8/0xFFEA). The opcodes are
+   not in numerical order: 0xFFF8 is the logical or, 0xFFF9 the logical and, and the relational pair
+   near the end is 0xFFFF `==`, 0xFFFE `!=`, 0xFFFD `<`, 0xFFFC `<=`, 0xFFFB `>` and 0xFFFA `>=`
+   (from the bodies, each of which stores its result through the shared store-0/store-1 tails). */
+/*@ 122E:147F */ long EvaluateScriptExpr(char far *script)
 {
     int op;
     int value;
@@ -1086,8 +1086,11 @@ done:
             t2 = *script++;
             value = *(int far *)script;
             script += 2;
-            gEvalStack[gEvalTop++] = ScanListItem(&gB899[value * 9], -1,
-                                                  t2 == -1 ? -1 : t2, 1);
+            if (t2 == -1)
+                value = ScanListItem(&gB899[value * 9], -1, -1, 1);
+            else
+                value = ScanListItem(&gB899[value * 9], -1, t2, 1);
+            gEvalStack[gEvalTop++] = value;
             break;
         case 0xFFF3:
             value = *(int far *)script;
@@ -1110,15 +1113,15 @@ done:
             /* The original writes the two arms out (each its own store) rather than `... = (cond)
                != 0`: the `!= 0` form makes TCC share the store-0 tail, where the original inlines
                store 0 in each case and shares store 1. */
-            t2 = *script++;
-            if (gFC04 & (1L << t2))
+            value = *script++;
+            if (gFC04 & (1L << value))
                 gEvalStack[gEvalTop++] = 1;
             else
                 gEvalStack[gEvalTop++] = 0;
             break;
         case 0xFFEF:
-            t2 = *script++;
-            if (gActionFlags[gFBC8] & (1L << t2))
+            value = *script++;
+            if (gActionFlags[gFBC8] & (1L << value))
                 gEvalStack[gEvalTop++] = 1;
             else
                 gEvalStack[gEvalTop++] = 0;
@@ -1146,7 +1149,7 @@ done:
                emits `xor si,si; mov word ptr [bp-10],0`. */
             lhs = i = 0;
             for (; i < 6; i++) {
-                if ((gChars[i].status & 1) && (gChars[i].m21 >> 1) == t1) {
+                if ((gChars[i].status & 1) && (gChars[i].m1F >> 1) == t1) {
                     lhs = 1;
                     break;
                 }
@@ -1183,22 +1186,22 @@ done:
         case 0xFFFD:
             rhs = gEvalStack[--gEvalTop];
             lhs = gEvalStack[--gEvalTop];
-            gEvalStack[gEvalTop++] = (lhs >= rhs);
+            gEvalStack[gEvalTop++] = (lhs < rhs);
             break;
         case 0xFFFC:
             rhs = gEvalStack[--gEvalTop];
             lhs = gEvalStack[--gEvalTop];
-            gEvalStack[gEvalTop++] = (lhs > rhs);
+            gEvalStack[gEvalTop++] = (lhs <= rhs);
             break;
         case 0xFFFB:
             rhs = gEvalStack[--gEvalTop];
             lhs = gEvalStack[--gEvalTop];
-            gEvalStack[gEvalTop++] = (lhs <= rhs);
+            gEvalStack[gEvalTop++] = (lhs > rhs);
             break;
         case 0xFFFA:
             rhs = gEvalStack[--gEvalTop];
             lhs = gEvalStack[--gEvalTop];
-            gEvalStack[gEvalTop++] = (lhs < rhs);
+            gEvalStack[gEvalTop++] = (lhs >= rhs);
             break;
         case 0xFFF9:
             rhs = gEvalStack[--gEvalTop];
