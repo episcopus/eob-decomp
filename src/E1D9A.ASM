@@ -9,9 +9,9 @@
 ; offset table as they go. Near helpers: 1D9A:0162 subtracts the count about to be emitted and
 ; renormalizes ES:DI for Unpack3, 1D9A:0299 reads the 12-bit codes of format 1, 1D9A:03CC reads the
 ; 14-bit codes of format 2 through a four-state machine. The names Unpack1..4 come from their callers
-; (E1B82.C); the rest are from the bytes. All eight entries end in a far return; the near helpers are
-; internal.
-;
+; (E1B82.C); the rest are from the bytes. Unpack1 to Unpack4 end in a far return; the near helpers
+; _NormDest, _ReadCode1 and _ReadCode2 end in a near ret; _UnpackScratch is data (the map folds the
+; decoders' exits into the range of the helper before them).
 ; The scratch words the decoders keep in their own code segment are addressed by their absolute
 ; offsets: cs:[0Ch], cs:[10h], cs:[12h] at the unit start; cs:[109h]/cs:[10Bh]/cs:[10Dh] (Unpack4's
 ; output start, bytes left and output end, set at :63, :74 and :65) in the dw at 1D9A:0109;
@@ -426,9 +426,9 @@ u1_exit:
 ; offset 2 * (code - 100h) and the entry lengths at that offset + 7E00h (:483, :499). BP is the
 ; bytes filled so far, so the tables start at offset 0 (:460) and grow with BP (:496 stores at BP).
 ; A code with a nonzero high byte is a dictionary entry, a zero high byte a literal. The tables stop
-; when BP reaches 7E00h; cs:[2C9h] steps the code reader and cs:[185h]/[189h] hold Unpack1's
-; previous and current string lengths (Unpack2 never touches cs:[187h]). No pinned file uses
-; format 2 (WHITEPAPER.md:155), so the behaviour is read from the bytes only.
+; when BP reaches 7E00h; cs:[2C9h] steps the code reader; cs:[185h]/[189h] are the same two words,
+; with the same meaning, that Unpack1 uses for the previous and current string lengths (Unpack2
+; never touches cs:[187h]). No pinned file uses format 2 (WHITEPAPER.md:155); read from the bytes only.
         PUBLIC  _Unpack2                ; @ 1D9A:02CB
 _Unpack2 PROC FAR
         push    bp
