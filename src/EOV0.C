@@ -69,7 +69,9 @@ struct CharRec {                /* 243-byte character records at ds:F580 (src/E0
     char m1C;                   /* +1C: the destination of 284A's byte copy */
     char pad1D[0x20 - 0x1d];
     signed char m20;            /* +20: indexes g1231 (src/E0DE8.C) */
-    char pad21[0x73 - 0x21];
+    char pad21[0x33 - 0x21];
+    void far *sprite;           /* +33: the character's packed sprite buffer (src/EOV3.C) */
+    char pad37[0x73 - 0x37];
     long m7375;                 /* +73: a 32-bit value 280D sets to 0x26c (Purpose unknown) */
     char pad77[0xf3 - 0x77];
 };
@@ -77,6 +79,11 @@ extern struct CharRec gChars[]; /*@ ds:F580 */
 extern signed char g1231[]; /*@ ds:1231 */ /* byte table indexed by gChars[].m20 (src/E0BD2.C) */
 extern int far RollDice(char count, char sides, char bonus); /*@ 082C:0458 */
 extern void far *gPtrsFC8C[]; /*@ ds:FC8C */ /* the 0x43 overlay buffers 28B0 frees */
+extern int gDCB0; /*@ ds:DCB0 */ /* a character index read by ovl0:11BA (Purpose unknown) */
+extern int gPanelX5E54[]; /*@ ds:5E54 */ /* per-character x read by ovl0:11BA (Purpose unknown) */
+extern int gPanelY5E5C[]; /*@ ds:5E5C */ /* per-character y read by ovl0:11BA (Purpose unknown) */
+extern char gStr61CB[]; /*@ ds:61CB */ /* a fixed report label (Purpose unknown) */
+extern char gStr6207[]; /*@ ds:6207 */ /* a fixed report label (Purpose unknown) */
 extern void (far *gDrawText)(char far *text, int a, int b, int c, int d); /*@ ds:80CA */
 extern char far *gFont1A47; /*@ ds:FE4E */ /* the current font (src/E1547.C) */
 extern void far *gA9C0; /*@ ds:A9C0 */ /* the 6x6 font loaded from FONT6.FNT (src/E07A9.C) */
@@ -337,8 +344,39 @@ extern void far *g5E64[0x11]; /*@ ds:5E64 */ /* the 17 sliced icon pointers this
 }
 /*@ ovl0:0DDC stub */ void Ovl0_0DDC(void) {}
 /*@ ovl0:0EE5 stub */ void Ovl0_0EE5(void) {}
-/*@ ovl0:1071 stub */ void Ovl0_1071(void) {}
-/*@ ovl0:10F6 stub */ void Ovl0_10F6(void) {}
+/* ovl0:1071: draws the panel report line gStr61CB at (0xa8, 0x10) over a fresh region (g8115 = 2
+   while it draws), restores g8115, redraws the report box and then calls DrawPartyStatus. Called
+   by ovl0:28F9. Purpose unknown. */
+/*@ ovl0:1071 */ void ShowReportLine1(void)
+{
+    int saved;
+
+    ClipRect(0, 0, 0x14, 0, 0x14, 0x80, 2, 2);
+    saved = g8115;
+    g8115 = 2;
+    DrawShadowText(gStr61CB, 0xa8, 0x10, 0xf, 0);
+    g8115 = saved;
+    LockHidePointer();
+    ClipRect(0x14, 0, 0x12, 0x40, 0x14, 0x80, 2, 0);
+    LockShowPointer();
+    DrawPartyStatus();
+}
+
+/* ovl0:10F6: the same as ovl0:1071 but draws gStr6207 at (0xa8, 0x20) and does not call
+   DrawPartyStatus. Called by ovl0:28F9. Purpose unknown. */
+/*@ ovl0:10F6 */ void ShowReportLine2(void)
+{
+    int saved;
+
+    ClipRect(0, 0, 0x14, 0, 0x14, 0x80, 2, 2);
+    saved = g8115;
+    g8115 = 2;
+    DrawShadowText(gStr6207, 0xa8, 0x20, 0xf, 0);
+    g8115 = saved;
+    LockHidePointer();
+    ClipRect(0x14, 0, 0x12, 0x40, 0x14, 0x80, 2, 0);
+    LockShowPointer();
+}
 /* ovl0:1177: rolls an ability score: four 1d6 rolls summed with the lowest dropped. Returns the
    sum as a byte. Called by ovl0:1BF2. */
 /*@ ovl0:1177 */ char RollAbilityScore(void)
@@ -359,7 +397,24 @@ extern void far *g5E64[0x11]; /*@ ds:5E64 */ /* the 17 sliced icon pointers this
     sum -= min;
     return sum;
 }
-/*@ ovl0:11BA stub */ void Ovl0_11BA(void) {}
+/* ovl0:11BA: draws the panel row the icon index `index` maps to. It clears the row list (-1), hides
+   the pointer, then either draws panel icon index - 0x32 when `index` is above 0x30, or slices the
+   current character gDCB0's sprite over the row through f1A29_000F (mode 0) at gPanelX5E54/gDCB0,
+   gPanelY5E5C/gDCB0 + 1. Shows the pointer afterwards. Called by ovl0:0EE5 and 23EC. */
+/*@ ovl0:11BA */ void DrawPanelRow(int index)
+{
+    int row;
+
+    row = index;
+    DrawRowList(-1);
+    LockHidePointer();
+    if (row > 0x30) {
+        row -= 0x32;
+        DrawPanelIcon(row, 0, 0);
+    } else
+        f1A29_000F(0, gChars[gDCB0].sprite, gPanelX5E54[gDCB0], gPanelY5E5C[gDCB0] + 1, 0);
+    LockShowPointer();
+}
 /*@ ovl0:1224 stub */ void Ovl0_1224(void) {}
 /*@ ovl0:135D stub */ void Ovl0_135D(void) {}
 /*@ ovl0:1ADD stub */ void Ovl0_1ADD(void) {}

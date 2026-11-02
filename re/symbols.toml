@@ -6902,6 +6902,9 @@ unit = "eov0"
 addr = "ovl0:1071"
 size = 133
 evidence = ["ovl", "near"]
+name = "ShowReportLine1"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov0_10f6"
@@ -6909,6 +6912,9 @@ unit = "eov0"
 addr = "ovl0:10F6"
 size = 129
 evidence = ["ovl", "near", "frame"]
+name = "ShowReportLine2"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov0_1177"
@@ -6926,6 +6932,9 @@ unit = "eov0"
 addr = "ovl0:11BA"
 size = 106
 evidence = ["ovl", "near", "frame"]
+name = "DrawPanelRow"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov0_1224"
