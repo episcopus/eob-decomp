@@ -31,8 +31,8 @@ extern int f0D1C_0670(int who, int mask); /*@ 0D1C:0670 */
 extern void f1547_0991(int dir); /*@ 1547:0991 */
 extern void LockHidePointer(void); /*@ 1BBE:0307 */
 extern void LockShowPointer(void); /*@ 1BBE:0332 */
-extern void f0BD2_0ABE(int one); /*@ 0BD2:0ABE */
-extern void f0BD2_0BA0(int slot); /*@ 0BD2:0BA0 */
+extern void RedrawRowArea(int one); /*@ 0BD2:0ABE */
+extern void UseSelectedItem(int slot); /*@ 0BD2:0BA0 */
 extern void BuildList1(void); /*@ 0CF7:0028 */
 extern void BuildList2(void); /*@ 0CF7:00B4 */
 extern void BuildList3(void); /*@ 0CF7:0140 */
@@ -58,15 +58,15 @@ extern int f0D1C_02DC(void); /*@ 0D1C:02DC */
 extern void SelectCharacter(int value); /*@ 0D1C:003F */
 extern void f0D1C_006D(int first, int second); /*@ 0D1C:006D */
 extern void f0D1C_0078(int value); /*@ 0D1C:0078 */
-extern void f0BD2_0C8E(int slot, int flag); /*@ 0BD2:0C8E */
+extern void SwapSelectedItem(int slot, int flag); /*@ 0BD2:0C8E */
 extern void f0BD2_1001(int slot, int flag); /*@ 0BD2:1001 */
-extern int f0BD2_07DE(int who, int item, int volume, int kind, int page, int type); /*@ 0BD2:07DE */
+extern int AddDDEffect(int who, int item, int volume, int kind, int page, int type); /*@ 0BD2:07DE */
 extern void ArmEffect(int a, int b); /*@ 1414:05A4 */
 extern void RearmCharEffects(void); /*@ 1414:0B2E */
 extern void SetMouseItem(int n); /*@ 07A9:010C */
 extern void f122E_0001(int n); /*@ 122E:0001 */
 extern void f122E_0896(int a, int b); /*@ 122E:0896 */
-extern void f0DE8_0D5E(int who); /*@ 0DE8:0D5E */
+extern void ComputeArmourClass(int who); /*@ 0DE8:0D5E */
 extern int far RollDice(char count, char sides, char bonus); /*@ 082C:0458 */
 extern void BuildList4(void); /*@ 0CF7:01CC */
 extern void Unpack0(char far *src, void far *dst, long len); /*@ 1BA8:0006 */
@@ -119,12 +119,12 @@ extern unsigned char far gSheetDECORATE[]; /*@ 2069:0000 */  /* the DECORATE she
 extern unsigned char far gSheet2067[]; /*@ 2067:0000 */      /* the sheet at segment 2067 (0F72) */
 
 extern int f0BD2_0AF2(int a, int b, int c); /*@ 0BD2:0AF2 */
-extern void f0BD2_0458(int a, int b, int c); /*@ 0BD2:0458 */
-extern void f0BD2_01D0(void far *head, int key, int item, int sound); /*@ 0BD2:01D0 */
-extern int f0BD2_02B9(void far *head, int key, int item); /*@ 0BD2:02B9 */
-extern void f0BD2_0917(int who, int slot, int one); /*@ 0BD2:0917 */
+extern void PushListItem(int a, int b, int c); /*@ 0BD2:0458 */
+extern void InsertListItem(void far *head, int key, int item, int sound); /*@ 0BD2:01D0 */
+extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
+extern void DrawItemRow(int who, int slot, int one); /*@ 0BD2:0917 */
 extern int DispatchKeyWait(void far *list); /*@ 16A5:005A */
-extern void f1547_04A0(int who); /*@ 1547:04A0 */
+extern void DrawMemberLevel(int who); /*@ 1547:04A0 */
 extern void f122E_1DA8(int a, int b); /*@ 122E:1DA8 */
 extern void RunEffects(void); /*@ 1414:04E7 */
 extern void TurnUndead(void); /*@ 0D1C:0A43 */
@@ -159,7 +159,7 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
 
 /* 0ACD:0034: Purpose unknown: when the action mode gFC82 is nonzero or f0D1C_0670 accepts the
    record's slot, it hides the pointer, sets the mode byte to 1, selects the slot (mode 0 only),
-   asks f0BD2_0ABE(1) and rebuilds list 2. Returns the record's +4. */
+   asks RedrawRowArea(1) and rebuilds list 2. Returns the record's +4. */
 /*@ 0ACD:0034 */ int Action0034(struct Action far *action)
 {
     if (gFC82 != 0 || f0D1C_0670(action->slot, 1)) {
@@ -167,7 +167,7 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
         gFB44 = 1;
         if (gFC82 == 0)
             gA99A = action->slot;
-        f0BD2_0ABE(1);
+        RedrawRowArea(1);
         BuildList2();
         LockShowPointer();
     }
@@ -176,7 +176,7 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
 
 /* 0ACD:008C: when the action mode is 1 or 2 the selected character index is forced to 0 or 1;
    otherwise it steps the index down (wrapping 0 to 5) until f0D1C_0670 accepts it. Then hides the
-   pointer, asks f0BD2_0ABE(0) and shows the pointer again. Returns the record's +4. */
+   pointer, asks RedrawRowArea(0) and shows the pointer again. Returns the record's +4. */
 /*@ 0ACD:008C */ int Action008C(struct Action far *action)
 {
     if (gFC82 == 1)
@@ -190,14 +190,14 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
                 gA99A = 5;
         } while (!f0D1C_0670(gA99A, 1));
     LockHidePointer();
-    f0BD2_0ABE(0);
+    RedrawRowArea(0);
     LockShowPointer();
     return action->result;
 }
 
 /* 0ACD:00EB: steps the selected character index up, or sets it from the record's slot (2 gives a
    base of 2, anything else 0) when the action mode is 1 (base + 2) or 2 (base + 3), wrapping 5 to
-   0. When the new index is accepted it hides the pointer, asks f0BD2_0ABE(0), shows the pointer
+   0. When the new index is accepted it hides the pointer, asks RedrawRowArea(0), shows the pointer
    and returns the record's +4; when it is not, the old index is restored and it returns 1. */
 /*@ 0ACD:00EB */ int Action00EB(struct Action far *action)
 {
@@ -223,13 +223,13 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
         return 1;
     }
     LockHidePointer();
-    f0BD2_0ABE(0);
+    RedrawRowArea(0);
     LockShowPointer();
     return action->result;
 }
 
 /* 0ACD:018E: toggles the list mode byte gFB44 between 1 (rebuilds list 3) and 2, asks
-   f0BD2_0ABE(0) and returns the record's +4. */
+   RedrawRowArea(0) and returns the record's +4. */
 /*@ 0ACD:018E */ int Action018E(struct Action far *action)
 {
     if (gFB44 == 1) {
@@ -239,16 +239,16 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
         BuildList2();
         gFB44 = 1;
     }
-    f0BD2_0ABE(0);
+    RedrawRowArea(0);
     return action->result;
 }
 
-/* 0ACD:01C0: passes the record's slot to f0BD2_0BA0 with the pointer hidden. Returns the
+/* 0ACD:01C0: passes the record's slot to UseSelectedItem with the pointer hidden. Returns the
    record's +4. */
 /*@ 0ACD:01C0 */ int Action01C0(struct Action far *action)
 {
     LockHidePointer();
-    f0BD2_0BA0(action->slot);
+    UseSelectedItem(action->slot);
     LockShowPointer();
     return action->result;
 }
@@ -349,7 +349,7 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
 }
 
 /* 0ACD:0415: Purpose unknown: when f0D1C_0670 accepts the record's slot it hides the pointer, sets
-   a flag from g36B0[slot] against gHitY and dispatches to f0BD2_0C8E or f0BD2_1001 (by the low
+   a flag from g36B0[slot] against gHitY and dispatches to SwapSelectedItem or f0BD2_1001 (by the low
    bits of g5E1C), then shows the pointer. Returns 1. */
 /*@ 0ACD:0415 */ int Action0415(struct Action far *action)
 {
@@ -364,7 +364,7 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
     else
         flag = 0;
     if ((g5E1C & 0x7F) == 1)
-        f0BD2_0C8E(slot, flag);
+        SwapSelectedItem(slot, flag);
     else
         f0BD2_1001(slot, flag);
     LockShowPointer();
@@ -372,14 +372,14 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
 }
 /* 0ACD:0494: the "use item on the selected character" action. It takes the current item from
    f0D1C_02DC and passes it, the selected character gA99A, the volume, the per-page kind
-   g1A1B[slot + gFBCC * 4], the page gFBCC and the item type to f0BD2_07DE; a nonzero result
+   g1A1B[slot + gFBCC * 4], the page gFBCC and the item type to AddDDEffect; a nonzero result
    redraws the icon and sets gDF4C. Returns the record's +4. */
 /*@ 0ACD:0494 */ int Action0494(struct Action far *action)
 {
     int item = f0D1C_02DC();
 
     if (item) {
-        if (f0BD2_07DE(gA99A, item, gSoundVolume, g1A1B[action->slot + gFBCC * 4], gFBCC,
+        if (AddDDEffect(gA99A, item, gSoundVolume, g1A1B[action->slot + gFBCC * 4], gFBCC,
                        gTable8DD2[item].m02)) {
             SetMouseItem(0);
             gDF4C = 1;
@@ -533,7 +533,7 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
             rec->m23 += gTable8DD2[item].m0B;
         gTable8DD2[item].m04 = -1;
         SetMouseItem(0);
-        f1547_04A0(index);
+        DrawMemberLevel(index);
         PlaySound(9);
     } else if (item != 0) {
         DrawText("You may only eat food!\r");
@@ -549,14 +549,14 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
 
 /* 0ACD:08E7: Purpose unknown: derives a key from gSoundVolume and gFBCC (f0D1C_00DA), sets
    gEFD2 to 0xff, passes the key and the page to f122E_0896 and the selected character gA99A to
-   f0DE8_0D5E. */
+   ComputeArmourClass. */
 /*@ 0ACD:08E7 */ void Action08E7(void)
 {
     int x = f0D1C_00DA(gSoundVolume, gFBCC);
 
     gEFD2 = 0xff;
     f122E_0896(x, gFBCC);
-    f0DE8_0D5E(gA99A);
+    ComputeArmourClass(gA99A);
 }
 
 /* 0ACD:091C: the "turn" action, a switch over the four-entry jump table at 0ACD:09E7 (cases 1 and
@@ -608,14 +608,14 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
 }
 
 /* 0ACD:09EF: sets the selected action row gF51A from the four-byte table g36D0[old * 4 + dir] and
-   redraws the old and new rows through f0BD2_0917. dir is the direction. */
+   redraws the old and new rows through DrawItemRow. dir is the direction. */
 /*@ 0ACD:09EF */ void SetActionRow(int dir)
 {
     int old = gF51A;
 
     gF51A = g36D0[gF51A * 4 + dir];
-    f0BD2_0917(old, 1, 0);
-    f0BD2_0917(gF51A, 1, 0);
+    DrawItemRow(old, 1, 0);
+    DrawItemRow(gF51A, 1, 0);
 }
 
 /* 0ACD:0A34: the row/character turn dispatcher: does nothing in the rest phase (gDCAA == 5), calls
@@ -638,13 +638,13 @@ done:
 }
 
 /* 0ACD:0A61: the list move/use handler. In mode 2 (gFB44 == 2) or the rest phase (gDCAA == 5) it
-   only redraws gA99A through f0DE8_0D5E. Otherwise it takes the current item (f0D1C_02DC, or
-   f0BD2_02B9 over the character's +0x97 sub-table at row 0x10) and gives up without redrawing
+   only redraws gA99A through ComputeArmourClass. Otherwise it takes the current item (f0D1C_02DC, or
+   RemoveListItem over the character's +0x97 sub-table at row 0x10) and gives up without redrawing
    when the item's flags have bit 0x20 or the item is 0. It then computes the per-page value
-   g373C[gFBCC * 2 + g3744[gA99A]]: `used` zero runs f0BD2_01D0 over the volume's ds:B899 record
-   list and f122E_1DA8, otherwise f0BD2_07DE returns whether the use took effect. On success it
+   g373C[gFBCC * 2 + g3744[gA99A]]: `used` zero runs InsertListItem over the volume's ds:B899 record
+   list and f122E_1DA8, otherwise AddDDEffect returns whether the use took effect. On success it
    redraws (SetMouseItem, or f1547_0991 at row 0x10) and sets gDF4C and gEFB2; on no effect at row
-   0x10 it runs f0BD2_01D0 over the character's +0x97 table. Always redraws gA99A at the end. */
+   0x10 it runs InsertListItem over the character's +0x97 table. Always redraws gA99A at the end. */
 /*@ 0ACD:0A61 */ void MoveListItem(int used)
 {
     int item;
@@ -660,7 +660,7 @@ done:
         if (gTable8DD2[item].flags & 0x20)
             return;
     } else {
-        item = f0BD2_02B9((void far *)gChars[gA99A].m97, 0, -1);
+        item = RemoveListItem((void far *)gChars[gA99A].m97, 0, -1);
     }
     if (item == 0)
         return;
@@ -668,10 +668,10 @@ done:
     value = g3744[gA99A];
     value = g373C[gFBCC * 2 + value];
     if (used == 0) {
-        f0BD2_01D0((void far *)(gB899 + gSoundVolume * 9), gSoundVolume, item, value);
+        InsertListItem((void far *)(gB899 + gSoundVolume * 9), gSoundVolume, item, value);
         f122E_1DA8(gSoundVolume, 4);
     } else {
-        flag = f0BD2_07DE(gA99A, item, gSoundVolume, value, gFBCC, gTable8DD2[item].m02);
+        flag = AddDDEffect(gA99A, item, gSoundVolume, value, gFBCC, gTable8DD2[item].m02);
     }
     if (flag != 0) {
         if (gMouseDisabled == 0 || gF51A != 0x10)
@@ -682,23 +682,23 @@ done:
         gEFB2 = 0xff;
     } else {
         if (gF51A == 0x10)
-            f0BD2_01D0((void far *)gChars[gA99A].m97, 0xFFFE, item, 0);
+            InsertListItem((void far *)gChars[gA99A].m97, 0xFFFE, item, 0);
     }
 call:
-    f0DE8_0D5E(gA99A);
+    ComputeArmourClass(gA99A);
 }
 
 /* 0ACD:0BA6 draft: the list pick handler. It takes the item list for the current volume (or, when
    that list is empty, for the key from f0D1C_00DA) and scans up to five pages: it steps the page
    byte gEFB2 (wrapping to 0..3, arming gF3BA when the page changed), picks the page's volume from
-   f0D1C_00DA when g374A[gEFB2] is set, and asks f0BD2_02B9 for the first item of that volume's
+   f0D1C_00DA when g374A[gEFB2] is set, and asks RemoveListItem for the first item of that volume's
    ds:B899 record list with the kind g1A1B[gFBCC * 4 + gEFB2]. When a fresh item is found it marks
-   it used (f0BD2_0AF2) and shows it (f0BD2_0458 and f122E_1DA8, or SetMouseItem / f1547_0991 and
-   f0BD2_01D0 at row 0x10), sets gDF4C, and stops; an empty or repeated item runs f0BD2_01D0 and
-   clears gF3BA. It redraws gA99A through f0DE8_0D5E at the end. blocked: matches every byte except
-   the store at 0ACD:0C7F, which the original writes with `mov [gF3BA], ax` (the 3-byte a3 form) and
-   our build with `mov [gF3BA], di` (89 3e, one byte longer, shifting every later jump). Both
-   registers hold the item (di is pushed as the first argument of f0BD2_0AF2, f0BD2_0458 and
+   it used (f0BD2_0AF2) and shows it (PushListItem and f122E_1DA8, or SetMouseItem / f1547_0991 and
+   InsertListItem at row 0x10), sets gDF4C, and stops; an empty or repeated item runs InsertListItem and
+   clears gF3BA. It redraws gA99A through ComputeArmourClass at the end. blocked: matches every byte
+   except the store at 0ACD:0C7F, which the original writes with `mov [gF3BA], ax` (the 3-byte a3 form)
+   and our build with `mov [gF3BA], di` (89 3e, one byte longer, shifting every later jump). Both
+   registers hold the item (di is pushed as the first argument of f0BD2_0AF2, PushListItem and
    SetMouseItem later; ax still holds it from the call at 0ACD:0C59). All bytes before the store are
    identical, so the source form of that one statement decides the register. Tried (all still emit
    di): inline assignment in the preceding if, `!item`, the store before/after `flag`, a cast,
@@ -735,7 +735,7 @@ call:
         else
             vol = gSoundVolume;
         value = g1A1B[gFBCC * 4 + gEFB2];
-        item = f0BD2_02B9((void far *)(gB899 + vol * 9), value, -1);
+        item = RemoveListItem((void far *)(gB899 + vol * 9), value, -1);
         if (item == 0 || item == gF3BA)
             goto miss;
         flag = 1;
@@ -745,20 +745,20 @@ call:
             cur = f0D1C_02DC();
             if (f0BD2_0AF2(item, gA99A, gF51A)) {
                 if (cur != 0) {
-                    f0BD2_0458(vol, cur, value);
+                    PushListItem(vol, cur, value);
                     f122E_1DA8(vol, 4);
                 }
                 SetMouseItem(item);
             } else {
-                f0BD2_0458(vol, item, value);
+                PushListItem(vol, item, value);
                 f122E_1DA8(vol, 4);
             }
         } else {
             if (f0BD2_0AF2(item, gA99A, gF51A)) {
-                f0BD2_01D0((void far *)gChars[gA99A].m97, 0xFFFE, item, 0);
+                InsertListItem((void far *)gChars[gA99A].m97, 0xFFFE, item, 0);
                 f1547_0991(gA99A);
             } else {
-                f0BD2_0458(vol, item, value);
+                PushListItem(vol, item, value);
                 f122E_1DA8(vol, 4);
             }
         }
@@ -766,7 +766,7 @@ call:
         goto next;
     miss:
         if (item != 0) {
-            f0BD2_01D0((void far *)(gB899 + vol * 9), vol, item, value);
+            InsertListItem((void far *)(gB899 + vol * 9), vol, item, value);
             f122E_1DA8(vol, 4);
         }
         gF3BA = -1;
@@ -774,7 +774,7 @@ call:
         ;
     } while (flag == 0 && count < 5);
 done:
-    f0DE8_0D5E(gA99A);
+    ComputeArmourClass(gA99A);
 }
 
 /* 0ACD:0D9D: the key dispatcher for the map screen. It acts only while the mouse is disabled and

@@ -178,7 +178,7 @@ addr = "1BB1:0002"
 old = "f1BB1_0002"
 new = "SetMousePointerShape"
 kind = "function"
-why = "1BB1:0002 stores the hot spot x and y (ds:8158/815A) and a pointer shape record (ds:816E/8170), resizes the save-under buffer ds:816A/816C from the record's height (byte +3) and width in 8-pixel units (byte +2 + 1), and hides/shows the pointer through 1BBE:0002 and 1BBE:00ED around the change; f07A9_010C (07A9:010C) calls it with the hot spot (8,8) when its n is above 0 and (0,0) otherwise, and the record gIconsDDE4[n] in both cases (E07A9.C:164 and :166), and SetPointerShape (ovl2:0000, src/EOV2.C:206-211) calls it with (0,0) and gPtrDD00 = gIconsDDE4[0] (EOV2.C:210-211). The (8,8) is the centre of a 16 by 16 cell if the record is 16 wide by 16 tall, which is not proven here [H] (review of e07a9)"
+why = "1BB1:0002 stores the hot spot x and y (ds:8158/815A) and a pointer shape record (ds:816E/8170), resizes the save-under buffer ds:816A/816C from the record's height (byte +3) and width in 8-pixel units (byte +2 + 1), and hides/shows the pointer through 1BBE:0002 and 1BBE:00ED around the change; f07A9_010C (07A9:010C) calls it with the hot spot (8,8) when its n is above 0 and (0,0) otherwise, and the record gIconsDDE4[n] in both cases (E07A9.C:204 and :206), and SetPointerShape (ovl2:0000, src/EOV2.C:206-211) calls it with (0,0) and gPtrDD00 = gIconsDDE4[0] (EOV2.C:210-211). The (8,8) is the centre of a 16 by 16 cell if the record is 16 wide by 16 tall, which is not proven here [H] (review of e07a9)"
 date = "2026-11-01"
 
 [[rename]]
@@ -205,7 +205,7 @@ addr = "ds:8158"
 old = "g8158"
 new = "gPointerHotX"
 kind = "global"
-why = "the hot-spot x subtracted from the last drawn pointer position ds:815C before drawing: set from argument 1 at 1BB1:001B and used at 1BBE:0021 and 1BBE:0117 (the caller passes 8 or 0, E07A9.C:164 and :166)"
+why = "the hot-spot x subtracted from the last drawn pointer position ds:815C before drawing: set from argument 1 at 1BB1:001B and used at 1BBE:0021 and 1BBE:0117 (the caller passes 8 or 0, E07A9.C:204 and :206)"
 date = "2026-11-01"
 
 [[rename]]
@@ -214,7 +214,7 @@ addr = "ds:815A"
 old = "g815A"
 new = "gPointerHotY"
 kind = "global"
-why = "the hot-spot y subtracted from the last drawn pointer position ds:815E before drawing: set from argument 2 at 1BB1:0021 and used at 1BBE:002B and 1BBE:0127 (the caller passes 8 or 0, E07A9.C:164 and :166)"
+why = "the hot-spot y subtracted from the last drawn pointer position ds:815E before drawing: set from argument 2 at 1BB1:0021 and used at 1BBE:002B and 1BBE:0127 (the caller passes 8 or 0, E07A9.C:204 and :206)"
 date = "2026-11-01"
 
 [[rename]]
@@ -875,10 +875,343 @@ why = "the scratch text buffer EOV2 LoadItemSheets formats ITEMRMP.%s into for F
 date = "2026-11-01"
 
 [[rename]]
+id = "0DE8:0007=RollToHit"
+addr = "0DE8:0007"
+old = "f0DE8_0007"
+new = "RollToHit"
+kind = "function"
+why = "0DE8:0007 rolls a d20 against the target's scaled armour class and returns whether it hits"
+date = "2026-11-01"
+
+[[rename]]
+id = "0DE8:011A=RollAttackDamage"
+addr = "0DE8:011A"
+old = "f0DE8_011A"
+new = "RollAttackDamage"
+kind = "function"
+why = "0DE8:011A rolls an item's damage dice plus the slot bonus against a creature"
+date = "2026-11-01"
+
+[[rename]]
+id = "0DE8:01D7=IsWeaponKind"
+addr = "0DE8:01D7"
+old = "f0DE8_01D7"
+new = "IsWeaponKind"
+kind = "function"
+why = "0DE8:01D7 returns whether an item type's m0E kind is 2 or 3"
+date = "2026-11-01"
+
+[[rename]]
+id = "0DE8:01FF=RunRecordAttack"
+addr = "0DE8:01FF"
+old = "f0DE8_01FF"
+new = "RunRecordAttack"
+kind = "function"
+why = "0DE8:01FF runs the attack of a ds:DD2C record: item damage, a possible double and 0DE8:09B9"
+date = "2026-11-01"
+
+[[rename]]
+id = "0DE8:02D4=TryRecordAttack"
+addr = "0DE8:02D4"
+old = "f0DE8_02D4"
+new = "TryRecordAttack"
+kind = "function"
+why = "0DE8:02D4 tests a ds:DD2C record's to-hit and applies its item damage to an object"
+date = "2026-11-01"
+
+[[rename]]
+id = "0DE8:0359=ApplyItemAttack"
+addr = "0DE8:0359"
+old = "f0DE8_0359"
+new = "ApplyItemAttack"
+kind = "function"
+why = "0DE8:0359 looks the record's action up and applies one item attack on character `who`"
+date = "2026-11-01"
+
+[[rename]]
+id = "0DE8:0474=MoveCarriedItem"
+addr = "0DE8:0474"
+old = "f0DE8_0474"
+new = "MoveCarriedItem"
+kind = "function"
+why = "0DE8:0474 moves a carried item from the special or the 22..24 slots into a slot"
+date = "2026-11-01"
+
+[[rename]]
+id = "0DE8:0537=UseCarriedItem"
+addr = "0DE8:0537"
+old = "f0DE8_0537"
+new = "UseCarriedItem"
+kind = "function"
+why = "0DE8:0537 dispatches the carried slot item through 0BD2:07DE and clears it on success"
+date = "2026-11-01"
+
+[[rename]]
+id = "0DE8:05BB=UseItemByKind"
+addr = "0DE8:05BB"
+old = "f0DE8_05BB"
+new = "UseItemByKind"
+kind = "function"
+why = "0DE8:05BB picks the item matching the slot's g552F kind and dispatches it"
+date = "2026-11-01"
+
+[[rename]]
+id = "0DE8:0763=UseItem"
+addr = "0DE8:0763"
+old = "f0DE8_0763"
+new = "UseItem"
+kind = "function"
+why = "0DE8:0763 runs the item action of a slot and updates the character's hit points and effects"
+date = "2026-11-01"
+
+[[rename]]
+id = "0DE8:093B=CheckPartyWiped"
+addr = "0DE8:093B"
+old = "f0DE8_093B"
+new = "CheckPartyWiped"
+kind = "function"
+why = "0DE8:093B shows the party-wipe message and shuts the game down when no member survives"
+date = "2026-11-01"
+
+[[rename]]
+id = "0DE8:09B9=DamageCharacter"
+addr = "0DE8:09B9"
+old = "f0DE8_09B9"
+new = "DamageCharacter"
+kind = "function"
+why = "0DE8:09B9 applies damage to a character, handles the death state and arms the effects"
+date = "2026-11-01"
+
+[[rename]]
+id = "0DE8:0ADB=HealCharacter"
+addr = "0DE8:0ADB"
+old = "f0DE8_0ADB"
+new = "HealCharacter"
+kind = "function"
+why = "0DE8:0ADB heals a character up to its maximum and redraws it"
+date = "2026-11-01"
+
+[[rename]]
+id = "0DE8:0B45=AddExperience"
+addr = "0DE8:0B45"
+old = "f0DE8_0B45"
+new = "AddExperience"
+kind = "function"
+why = "0DE8:0B45 adds experience to a character's three class slots and levels each up"
+date = "2026-11-01"
+
+[[rename]]
+id = "0DE8:0C2B=AddPartyExperience"
+addr = "0DE8:0C2B"
+old = "f0DE8_0C2B"
+new = "AddPartyExperience"
+kind = "function"
+why = "0DE8:0C2B divides experience among the surviving members and awards each"
+date = "2026-11-01"
+
+[[rename]]
+id = "0DE8:0C82=LevelUpSlot"
+addr = "0DE8:0C82"
+old = "f0DE8_0C82"
+new = "LevelUpSlot"
+kind = "function"
+why = "0DE8:0C82 levels one class slot up, rolls its hit points and prints the message"
+date = "2026-11-01"
+
+[[rename]]
+id = "0DE8:0D5E=ComputeArmourClass"
+addr = "0DE8:0D5E"
+old = "f0DE8_0D5E"
+new = "ComputeArmourClass"
+kind = "function"
+why = "0DE8:0D5E computes a character's armour class from its equipment and effects"
+date = "2026-11-01"
+
+[[rename]]
+id = "0DE8:0F98=HalveSaveDamageA"
+addr = "0DE8:0F98"
+old = "f0DE8_0F98"
+new = "HalveSaveDamageA"
+kind = "function"
+why = "0DE8:0F98 halves a value when the character's 0D1C:059B save succeeds"
+date = "2026-11-01"
+
+[[rename]]
+id = "0DE8:0FCA=HalveSaveDamageB"
+addr = "0DE8:0FCA"
+old = "f0DE8_0FCA"
+new = "HalveSaveDamageB"
+kind = "function"
+why = "0DE8:0FCA halves a value on a d20 roll against a class byte from gTable1A3B"
+date = "2026-11-01"
+
+[[rename]]
+id = "0DE8:101A=ApplyStatusEffect"
+addr = "0DE8:101A"
+old = "f0DE8_101A"
+new = "ApplyStatusEffect"
+kind = "function"
+why = "0DE8:101A sets a status bit, arms its effect and prints the \"%s is %s!\" message"
+date = "2026-11-01"
+
+[[rename]]
 id = "07A9:010C=SetMouseItem"
 addr = "07A9:010C"
 old = "f07A9_010C"
 new = "SetMouseItem"
 kind = "function"
 why = "it sets the mouse item: SetCurrentItem stores n in ds:FBCE (the item index shown by the mouse, src/E0D1C.C:108) unless gMouseDisabled, shows \" taken.\" for the current window record, and passes the item's icon gIconsDDE4[n] to the pointer shape setter; src/E0D1C.C:270 and :298 say an item is cleared and redrawn through it (review of e07a9)"
+date = "2026-11-01"
+
+[[rename]]
+id = "0BD2:019F=RedrawSelectedRow"
+addr = "0BD2:019F"
+old = "f0BD2_019F"
+new = "RedrawSelectedRow"
+kind = "function"
+why = "0BD2:019F dispatches on gFB44 to redraw the selected row through 0BD2:0BA0 or 0BD2:0C8E"
+date = "2026-11-01"
+
+[[rename]]
+id = "0BD2:01D0=InsertListItem"
+addr = "0BD2:01D0"
+old = "f0BD2_01D0"
+new = "InsertListItem"
+kind = "function"
+why = "0BD2:01D0 inserts item at the head of the circular list head through gItems m06/m08"
+date = "2026-11-01"
+
+[[rename]]
+id = "0BD2:02B9=RemoveListItem"
+addr = "0BD2:02B9"
+old = "f0BD2_02B9"
+new = "RemoveListItem"
+kind = "function"
+why = "0BD2:02B9 unlinks and returns the item whose m03 equals key or that equals target"
+date = "2026-11-01"
+
+[[rename]]
+id = "0BD2:0385=ScanListItem"
+addr = "0BD2:0385"
+old = "f0BD2_0385"
+new = "ScanListItem"
+kind = "function"
+why = "0BD2:0385 walks the circular list and returns the first match or a count"
+date = "2026-11-01"
+
+[[rename]]
+id = "0BD2:040E=MarkListItems"
+addr = "0BD2:040E"
+old = "f0BD2_040E"
+new = "MarkListItems"
+kind = "function"
+why = "0BD2:040E sets flags bit 0x40 of every item in the circular list"
+date = "2026-11-01"
+
+[[rename]]
+id = "0BD2:0458=PushListItem"
+addr = "0BD2:0458"
+old = "f0BD2_0458"
+new = "PushListItem"
+kind = "function"
+why = "0BD2:0458 queues an item at gB899 + vol*9 through 0BD2:01D0"
+date = "2026-11-01"
+
+[[rename]]
+id = "0BD2:04AA=DrainListItem"
+addr = "0BD2:04AA"
+old = "f0BD2_04AA"
+new = "DrainListItem"
+kind = "function"
+why = "0BD2:04AA drains the gB899 list, freeing or re-queueing each item"
+date = "2026-11-01"
+
+[[rename]]
+id = "0BD2:07DE=AddDDEffect"
+addr = "0BD2:07DE"
+old = "f0BD2_07DE"
+new = "AddDDEffect"
+kind = "function"
+why = "0BD2:07DE reserves a ds:DD2C effect record and queues the item"
+date = "2026-11-01"
+
+[[rename]]
+id = "0BD2:089E=CopyItemToFreeSlot"
+addr = "0BD2:089E"
+old = "f0BD2_089E"
+new = "CopyItemToFreeSlot"
+kind = "function"
+why = "0BD2:089E copies an item record into the first free slot from index 1"
+date = "2026-11-01"
+
+[[rename]]
+id = "0BD2:0917=DrawItemRow"
+addr = "0BD2:0917"
+old = "f0BD2_0917"
+new = "DrawItemRow"
+kind = "function"
+why = "0BD2:0917 draws a character's item row panel, count and icon"
+date = "2026-11-01"
+
+[[rename]]
+id = "0BD2:0ABE=RedrawRowArea"
+addr = "0BD2:0ABE"
+old = "f0BD2_0ABE"
+new = "RedrawRowArea"
+kind = "function"
+why = "0BD2:0ABE saves the item sheet rectangle and redraws the selected row"
+date = "2026-11-01"
+
+[[rename]]
+id = "0BD2:0BA0=UseSelectedItem"
+addr = "0BD2:0BA0"
+old = "f0BD2_0BA0"
+new = "UseSelectedItem"
+kind = "function"
+why = "0BD2:0BA0 uses the item in slot of the selected character through 0BD2:0AF2"
+date = "2026-11-01"
+
+[[rename]]
+id = "0BD2:0C8E=SwapSelectedItem"
+addr = "0BD2:0C8E"
+old = "f0BD2_0C8E"
+new = "SwapSelectedItem"
+kind = "function"
+why = "0BD2:0C8E swaps the item in a slot with the mouse's item"
+date = "2026-11-01"
+
+[[rename]]
+id = "0BD2:0EE8=UseWandItem"
+addr = "0BD2:0EE8"
+old = "f0BD2_0EE8"
+new = "UseWandItem"
+kind = "function"
+why = "0BD2:0EE8 uses the wand-like item in a slot"
+date = "2026-11-01"
+
+[[rename]]
+id = "0BD2:11FD=ItemClassAllowed"
+addr = "0BD2:11FD"
+old = "f0BD2_11FD"
+new = "ItemClassAllowed"
+kind = "function"
+why = "0BD2:11FD tests an item type's class mask against the character"
+date = "2026-11-01"
+
+[[rename]]
+id = "0BD2:1244=FirstTwoSlots"
+addr = "0BD2:1244"
+old = "f0BD2_1244"
+new = "FirstTwoSlots"
+kind = "function"
+why = "0BD2:1244 returns slot when 0 or 1, else -1"
+date = "2026-11-01"
+
+[[rename]]
+id = "0BD2:000E=ReportLostItem"
+addr = "0BD2:000E"
+old = "f0BD2_000E"
+new = "ReportLostItem"
+kind = "function"
+why = "0BD2:000E prints the 'has lost her/his <item>' message and clears the slot"
 date = "2026-11-01"

@@ -116,17 +116,17 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
 
 void ArmEffect(int idx, int active);
 extern void DrawText(char *text); /*@ 1DE7:060A */
-extern void f1547_04A0(int member); /*@ 1547:04A0 */
+extern void DrawMemberLevel(int member); /*@ 1547:04A0 */
 extern void f122E_0896(int member, int a); /*@ 122E:0896 */
 extern void f122E_1DA8(int member, int a); /*@ 122E:1DA8 */
 extern int f08E6_189D(struct Obj28 far *obj, int a, int b); /*@ 08E6:189D */
-extern int f0DE8_01FF(struct DDRec far *rec); /*@ 0DE8:01FF */
-extern int f0DE8_02D4(struct DDRec far *rec, int idx); /*@ 0DE8:02D4 */
-extern void f0DE8_09B9(int who, int what); /*@ 0DE8:09B9 */
+extern int RunRecordAttack(struct DDRec far *rec); /*@ 0DE8:01FF */
+extern int TryRecordAttack(struct DDRec far *rec, int idx); /*@ 0DE8:02D4 */
+extern void DamageCharacter(int who, int what); /*@ 0DE8:09B9 */
 extern void f0EF3_00CD(struct DDRec far *rec); /*@ 0EF3:00CD */
 extern void f0EF3_0D78(int a, int b); /*@ 0EF3:0D78 */
-extern void f0BD2_01D0(void far *head, int key, int item, int sound); /*@ 0BD2:01D0 */
-extern int f0BD2_02B9(void far *head, int key, int item); /*@ 0BD2:02B9 */
+extern void InsertListItem(void far *head, int key, int item, int sound); /*@ 0BD2:01D0 */
+extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
 
 /* 1414:0000: the selected-character blink effect, entry 0 of the table (16-tick period 9). It
    flips the phase g5CAA; when the phase turns on it saves gFB34 (the highlighted member),
@@ -150,7 +150,7 @@ extern int f0BD2_02B9(void far *head, int key, int item); /*@ 0BD2:02B9 */
 /* 1414:003E: the per-record step 0285 runs for every live ds:DD2C record. It reads a status byte
    db = gB894[a * 9 + (rec->m07 ^ 2)] and bits = g194B[db]. A record in state 1 whose bits say so
    (bits bit 0, a nonzero m02, or bits bit 1 together with a ds:8DD2 icon of 15 or more) is moved
-   onto character `a`: the old head f0BD2_02B9 is drained into f0BD2_01D0 at gB894[a * 9 + 5],
+   onto character `a`: the old head RemoveListItem is drained into InsertListItem at gB894[a * 9 + 5],
    m04 and m06 are set to `a` and `b | 4`, m0D is decremented and it returns 1; otherwise gEFD2 is
    0x10. Any other record is moved when bits bit 0 is set or when m04 already equals `a` (m0D is
    decremented unless it is -1) and returns 1; otherwise gEFD2 is 1. The two failure paths report
@@ -170,8 +170,8 @@ extern int f0BD2_02B9(void far *head, int key, int item); /*@ 0BD2:02B9 */
         flag = g181F[gTable8DD2[m08].icon] >= 0xF;
         hit = (bits & 1) || rec->m02 != 0 || ((bits & 2) && flag);
         if (hit) {
-            f0BD2_02B9((int far *)(gB894 + rec->m04 * 9 + 5), 0, m08);
-            f0BD2_01D0((int far *)(gB894 + target * 9 + 5), target, m08, sel | 4);
+            RemoveListItem((int far *)(gB894 + rec->m04 * 9 + 5), 0, m08);
+            InsertListItem((int far *)(gB894 + target * 9 + 5), target, m08, sel | 4);
             rec->m04 = target;
             rec->m06 = sel;
             rec->m0D--;
@@ -193,8 +193,8 @@ extern int f0BD2_02B9(void far *head, int key, int item); /*@ 0BD2:02B9 */
 }
 /* 1414:0172: the per-record test 0285 and 0D63 use. It returns 0 when the record already has a
    nonzero m02. A record in state 2 runs its cell callback rec->fn(rec) and returns that res. Otherwise it looks up gB894[a * 9 + 4]: when that byte has bits 0..2 set it scans the 30 objects
-   at ds:8A82 for one that f08E6_189D accepts and that f0DE8_02D4 then also accepts, returning 1
-   on the first; when the bits are clear it runs f0DE8_01FF(rec) only when `a` is the current
+   at ds:8A82 for one that f08E6_189D accepts and that TryRecordAttack then also accepts, returning 1
+   on the first; when the bits are clear it runs RunRecordAttack(rec) only when `a` is the current
    sound volume and returns that. Called by 0285 and 0D63. */
 /*@ 1414:0172 */ int TestDDEffect(struct DDRec far *rec, int index, int sel)
 {
@@ -211,14 +211,14 @@ extern int f0BD2_02B9(void far *head, int key, int item); /*@ 0BD2:02B9 */
         obj = gObjs;
         for (; i < 30; i++, obj++) {
             if (f08E6_189D(obj, index, sel)) {
-                if (f0DE8_02D4(rec, i))
+                if (TryRecordAttack(rec, i))
                     return 1;
             }
         }
         return 0;
     } else {
         if (index == gSoundVolume)
-            return f0DE8_01FF(rec);
+            return RunRecordAttack(rec);
         return 0;
     }
 }
@@ -554,7 +554,7 @@ extern int f0BD2_02B9(void far *head, int key, int item); /*@ 0BD2:02B9 */
         case 8:
             if (rec->m01 & 2) {
                 if ((rec->mE3 & 0x80) == 0) {
-                    f0DE8_09B9(who, 5);
+                    DamageCharacter(who, 5);
                     sprintf(gFileNameBuf, "%s feels the effects of poison!\r", rec->name);
                     DrawText(gFileNameBuf);
                 }
@@ -656,7 +656,7 @@ extern int f0BD2_02B9(void far *head, int key, int item); /*@ 0BD2:02B9 */
         if (gChars[who].hp <= -10)
             continue;
         gChars[who].m23--;
-        f1547_04A0(who);
+        DrawMemberLevel(who);
     }
 }
 /* 1414:0CE7: effect 15 of the table. For every one of the 30 objects at ds:8A82 that wins a
