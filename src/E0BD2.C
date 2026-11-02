@@ -277,7 +277,7 @@ void DrawItemName(int item);
    `target` is -1) or that equals `target`, unlinks it, and returns the item; 0 when none matches.
    DRAFT: our build keeps the loop counter in CX and `next` in DI, the original the counter in DI and
    `next` in CX; same instructions otherwise. */
-/*@ 0BD2:02B9 draft */ int RemoveListItem(void far *head, int key, int target)
+/*@ 0BD2:02B9 */ int RemoveListItem(void far *head, int key, int target)
 {
     int start;
     int item;
@@ -324,7 +324,7 @@ next:
    `type` (or all when `type` is -1), otherwise the item `target` itself; returns the first match's
    index when `count` is 0, otherwise the number of matches. Purpose unknown. DRAFT: the original's
    first `return 0` is a `jmp` to the shared `xor ax,ax` tail (3 bytes); ours materialises it (5). */
-/*@ 0BD2:0385 draft */ int ScanListItem(void far *head, int target, int type, int count)
+/*@ 0BD2:0385 */ int ScanListItem(void far *head, int target, int type, int count)
 {
     int start;
     int cur;
@@ -389,7 +389,7 @@ next:
    -1) are freed (m04 = -1, m0A = 0); the others are re-queued through 0BD2:01D0 in their original
    order. Purpose unknown. DRAFT: our build keeps `count` in DI, the original on the stack with DI as
    a scratch (`mov di,si`); two bytes apart. */
-/*@ 0BD2:04AA draft */ void DrainListItem(int vol, int type)
+/*@ 0BD2:04AA */ void DrainListItem(int vol, int type)
 {
     int start;
     int item;
@@ -626,7 +626,7 @@ next:
    have 0x20, 1 otherwise, printing a message when the row's class mask does not cover the item.
    DRAFT: TCC tail-merges the two DrawText calls in opposite directions (ours jumps the first
    message forward, the original jumps the second back to the first). */
-/*@ 0BD2:0AF2 draft */ int f0BD2_0AF2(int item, int who, int row)
+/*@ 0BD2:0AF2 */ int f0BD2_0AF2(int item, int who, int row)
 {
     int mask;
 
