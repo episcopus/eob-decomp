@@ -45,18 +45,28 @@ gVoiceReadNext   db      4 dup (?)       ; @ ds:8A44: offset 1A4h, byte per voic
                                          ; this tick (set at 1948:007C and 0273); 0 = a note is sounding and
                                          ; its duration counts down (set at 1948:0151; endCommand leaves 0 too)
 gVoiceSilent     db      4 dup (?)       ; @ ds:8A48: offset 1A8h, byte per voice, 1 while the voice is muted
-gVoiceDuration   dw      4 dup (?)       ; @ ds:8A4C: offset 1ACh, word per voice, ticks left of the note
+gVoiceDuration   dw      4 dup (?)       ; @ ds:8A4C: offset 1ACh, word per voice, note countdown, not
+                                         ; "ticks left": readLoop stores (duration byte + 1) times
+                                         ; gVoiceLengthMul, less 1 (1948:0142 to 0148). checkRestart
+                                         ; decrements it (1948:0266) and keeps the note sounding while the
+                                         ; result is 0 or -1 (jns at 1948:026A, the -1 test at 1948:026C);
+                                         ; only a result below -1 re-arms the voice (1948:0273), so a
+                                         ; stored 0 still sounds one more tick
 gVoiceTandyVol   db      4 dup (?)       ; @ ds:8A54: offset 1B4h, byte per voice, Tandy volume 0 silent to 15
                                          ; loudest [H]; the writer is outside this unit, its only read is _VoiceOn
                                          ; (1948:02D7), which sends the inverse to the chip
 gVoiceLengthMul  db      4 dup (?)       ; @ ds:8A58: offset 1B8h, byte per voice, multiplier of the note length,
                                          ; not a volume: it scales the duration (1948:0144)
-gVoiceRepeat1    db      4 dup (?)       ; @ ds:8A5C: offset 1BCh, byte per voice, counter for command CEh
-gVoiceRepeat2    db      4 dup (?)       ; @ ds:8A60: offset 1C0h, byte per voice, counter for command D2h
+gVoiceRepeat1    db      4 dup (?)       ; @ ds:8A5C: offset 1BCh, byte per voice, loop counter for CEh.
+                                         ; CDh sets it to the following byte, or 1 when that byte is 0
+                                         ; (1948:0189); CEh counts it down and loops while nonzero (1948:015D)
+gVoiceRepeat2    db      4 dup (?)       ; @ ds:8A60: offset 1C0h, byte per voice, loop counter for D2h.
+                                         ; D1h sets it the same way (1948:01C6); D2h counts it down (1948:0198)
 gVoiceDelay1     db      ?               ; @ ds:8A64: offset 1C4h, countdown before the voice at index 1 plays
 gVoiceDelay2     db      ?               ; @ ds:8A65: offset 1C5h, countdown before the voice at index 2 plays
-gRunning         db      ?               ; @ ds:8A66: offset 1C6h, 1 while the driver has an active song; written
-                                         ; here (1948:0057, 02BB and 0439), read nowhere in this unit
+gRunning         db      ?               ; @ ds:8A66: offset 1C6h, 1 while the driver has an active song;
+                                         ; duplicates gPlaying (both are written at the same three points,
+                                         ; 1948:0057, 02BB and 0439), read nowhere in src/ (grep)
 gTandyOn         db      ?               ; @ ds:8A67: 1 Tandy, 0 PC speaker
 gTickCount       dw      ?               ; @ ds:8A68: offset 1C8h, handler tick counter, 0 to 123h (292 ticks, about
                                          ; one second at 291 Hz [H]); when it passes 123h it wraps to 0 and
@@ -341,9 +351,12 @@ cmdE8:
         mov     al, es:[bx]
         sub     byte ptr [si+gVoiceLengthMul], al
         jno     cmdE8Ok
-        jne     cmdE8Ok         ; QUIRK 1948:0228: on the overflow path this always jumps, because a
-                                ; zero result cannot overflow and sub sets ZF only for a zero
-                                ; result, so a zero multiplier is kept (the clamp to 1 at 022A is dead)
+        jne     cmdE8Ok         ; QUIRK 1948:0228: E8h never clamps to 1: sub sets OF only on signed
+                                ; overflow, so an underflow that stays in the signed range wraps (5 minus
+                                ; 10 gives 251) and the jno at 1948:0226 takes the normal path. The clamp
+                                ; at 1948:022A is reached only on signed overflow, and there this jne
+                                ; always jumps (a zero result cannot overflow), so even it is dead; a
+                                ; zero multiplier is one instance of the missing clamp
         mov     byte ptr [si+gVoiceLengthMul], 1
 cmdE8Ok:
         inc     bx
@@ -507,7 +520,7 @@ _SetVoicePitch ENDP
 ; code only sets them). The fourth silence (voice index 3) writes the SN76489 noise channel, because
 ; the latch's channel bits 6-5 are 3 [H]; no path sets gVoiceCount to 4, so voice 3 is never played.
 ; Called by the install routine on Tandy (1948:0377), _SoundDriverResume (1948:0458),
-; _SoundDriverUninstall (1948:03DA) and _SoundDriverPause (1948:046B).
+; _SoundDriverUninstall (1948:03DA) and _SoundDriverSilenceToOneVoice (1948:046B).
         PUBLIC  _SetThreeVoices         ; @ 1948:034A
 _SetThreeVoices PROC NEAR
         mov     word ptr [gVoiceCount], 3
@@ -526,7 +539,7 @@ _SetThreeVoices ENDP
 
 ; 1948:0367: one-voice output. Sets gVoiceCount = 1 and restores port 61h from the value saved at
 ; install (gPort61Save), clearing the gate and data bits. Called by the install routine on the PC
-; speaker (1948:0377), the uninstall routine (1948:03DA) and _SoundDriverPause (1948:046B).
+; speaker (1948:0377), the uninstall routine (1948:03DA) and _SoundDriverSilenceToOneVoice (1948:046B).
 ; QUIRK 1948:036D: the port 61h read is thrown away, the stored value is written instead.
         PUBLIC  _SetOneVoice            ; @ 1948:0367
 _SetOneVoice PROC NEAR
@@ -543,8 +556,12 @@ _SetOneVoice ENDP
 ; handler passes one tick in sixteen to the BIOS and points INT 8 at cs:000Ah. It programs PIT
 ; channel 0 to mode 3 with divisor 1000h (about 291 Hz [H]) and then puts channel 2 in mode 3
 ; without loading its count (_SetVoicePitch loads it, 1948:0316), remembers port 61h in
-; gPort61Save and sets the output up for Tandy (_SetThreeVoices) or the PC speaker (_SetOneVoice).
-; Called by StartupGame after the sound card choice (src/E07C8.C:302 and 305).
+; gPort61Save and sets the output up for Tandy (_SetThreeVoices, 1948:03D2) or the PC speaker
+; (_SetOneVoice, 1948:03CC) by gTandyOn (1948:03C5). Called by StartupGame after the sound card
+; choice (src/E07C8.C:302 and 305). At both call sites gTandyOn is still 0 while the install runs
+; (the Tandy case sets it to 1 only afterwards, src/E07C8.C:305-306), so from StartupGame the install
+; takes its one-voice branch and the three voices come from _SoundDriverResume (src/E07C8.C:308); the
+; Tandy branch is reached only if a PlaySound call set gTandyOn to 1 first (src/E177D.C:188).
         PUBLIC  _SoundDriverInstall     ; @ 1948:0377
 _SoundDriverInstall PROC FAR
         push    bp
@@ -710,8 +727,8 @@ _SoundDriverResume ENDP
 ; next _VoiceOn would sound again. Only used on the way out: ShutdownGame's Tandy case calls it just
 ; before gTandyOn = 0 and _SoundDriverUninstall (src/E07C8.C:328-330), and nothing resumes the output
 ; afterwards. Because gTandyOn is then 0, _SoundDriverUninstall skips its Tandy step (1948:0406).
-        PUBLIC  _SoundDriverPause       ; @ 1948:046B
-_SoundDriverPause PROC FAR
+        PUBLIC  _SoundDriverSilenceToOneVoice       ; @ 1948:046B
+_SoundDriverSilenceToOneVoice PROC FAR
         push    bp
         mov     bp, sp
         push    di
@@ -726,6 +743,6 @@ _SoundDriverPause PROC FAR
         pop     di
         pop     bp
         ret
-_SoundDriverPause ENDP
+_SoundDriverSilenceToOneVoice ENDP
 
         END

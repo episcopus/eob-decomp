@@ -4939,9 +4939,9 @@ unit = "e1948"
 addr = "1948:046B"
 size = 22
 evidence = ["far", "frame"]
-name = "_SoundDriverPause"
 level = "L2"
 match_flags = "tasm /mx"
+name = "SoundDriverSilenceToOneVoice"
 
 [[function]]
 id = "e1990_0001"
