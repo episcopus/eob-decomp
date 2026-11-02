@@ -65,13 +65,13 @@ extern char gFontHeight; /*@ ds:8101 */  /* font cell height (src/E1A47.C) */
    (src, x, y). DrawTextFrame draws the four corners through it (1DE7:0130, 0163, 0196, 01CC) and
    DrawTileRun the frame edges (1DE7:025E); its first argument is a four-byte far pointer `void far *src`,
    not the same signature as ds:805E (gDraw805E, src/E16A5.C:88), which takes an int tile. No
-   direct store found; the slot is zero in the image. */
+   direct store found: a byte search of eob/EOB.EXE and the overlay bins for its disp16 finds none. */
 extern void (far *gDraw805A)(void far *src, int x, int y); /*@ ds:805A */
 /* ds:806A: a far routine called with (x1, y1, x2, y2, colour) like the line routine at ds:8062
    (src/E1A1F.C); ClearTextRegion and DrawTextLine fill rectangles through it. The value
    passed is a colour (gTextAttr2); the parameter is named `colour` (src/E082C.C:57). */
 extern void (far *gFillRect)(int x1, int y1, int x2, int y2, int colour); /*@ ds:806A */
-extern void (far *gDrawText)(char far *text, int x, int y, int color, int extra); /*@ ds:80CA */  /* src/E1AA6.C */
+extern void (far *gDrawText)(char far *text, int x, int y, int color, int extra); /*@ ds:80CA */  /* called by src/E1AA6.C:14 (PrintInt passes it five arguments); the routine is not identified */
 /* ds:8117: a far routine DrawTextLine calls when the cursor row starts below the last full line
    (the same condition as the clip branch of DrawTextLine); gScrollOn (ds:8110) gates it. Overlay 5
    sets the ds:8117/ds:8119 pair when it opens windows 0xC and 9 (src/EOV5.C:1114-1115, :1254-1255,
@@ -145,8 +145,8 @@ extern unsigned far *gFrameTable[]; /*@ ds:113B */
    top-1 and top+height), so the frame surrounds it; the top and bottom edges run left to right
    between the corners over the window's width, the left and right edges run top to bottom over its
    height. Each cell's source is
-   gTileBuf + (number << shift) with shift 5, or 6 when gGraphicsChoice is 3 or 4. No caller was found: a
-   byte scan of eob/EOB.EXE and of the overlay images finds no call to it. It appears unused. QUIRK 1DE7:01FE: the
+   gTileBuf + (number << shift) with shift 5, or 6 when gGraphicsChoice is 3 or 4. No caller was found:
+   the packet's call graph over the resident and overlay functions lists no direct call to it (packet.py calls()). It appears unused. QUIRK 1DE7:01FE: the
    second and third edge runs re-read the global gTextLeft (1DE7:01FE and 1DE7:021C) where the
    corners and the first and fourth runs use the local copy taken at 1DE7:00E9. The re-reads come
    after four gDraw805A calls (:171-177) and the DrawTileRun call at :179; nothing in this unit
@@ -253,19 +253,19 @@ extern unsigned far *gFrameTable[]; /*@ ds:113B */
    left edge. When that row has no room for a full line left, the scroll hook ds:8117 is called
    (gated by ds:8110), then the visible lines are copied from one font height lower to the top:
    ClipRect (19F3:000E, a front end whose far target is not identified, src/E19F3.C) is passed the
-   origins (gTextLeft, gTextTop + font height) and (gTextLeft, gTextTop) with height `line`, which
+   origins (gTextLeft, gTextTop + font height) and (gTextLeft, gTextTop) with width gTextWidth and height `bottomLine`, which
    reads as a scroll up by one line (the copy's far target is not identified), and the bottom line
    is refilled through ds:806A (the gFillRect slot); the text is then drawn on that line.
    `newline` non-zero advances to the next row at once (gTextRow++ from wherever it was, :284); zero
    instead advances the column by strlen(text), wrapping to the next row only when the text no
    longer fits the window width, and in the scroll branch just above it first puts the row on the
-   bottom drawn line (gTextRow = line / gFontHeight, :286). Called only by DrawText (1DE7:060A),
+   bottom drawn line (gTextRow = bottomLine / gFontHeight, :286). Called only by DrawText (1DE7:060A),
    which flushes each completed line through it. */
 /*@ 1DE7:03B2 */ void DrawTextLine(char far *text, int newline)
 {
     int y;
     int x;
-    int line;
+    int bottomLine;         /* y offset of the bottom drawn line inside the window */
 
     if (gFontHeight * gTextRow > gTextHeight - gFontHeight && gScrollOn && gScrollHook)
         gScrollHook();
@@ -273,17 +273,17 @@ extern unsigned far *gFrameTable[]; /*@ ds:113B */
     x = gFontWidth * gTextCol;
     if (gTextHeight - gFontHeight < y) {
         HidePointerZone(gTextLeft * 8, gTextTop, (gTextLeft + gTextWidth) * 8, gTextTop + gTextHeight);
-        line = (gTextHeight / gFontHeight - 1) * gFontHeight;
-        ClipRect(gTextLeft, gTextTop + gFontHeight, gTextLeft, gTextTop, gTextWidth, line, gStatusLine, gStatusLine);
-        gFillRect(gTextLeft * 8, gTextTop + line, (gTextLeft + gTextWidth) * 8 - 1,
-                  gTextTop + line + gFontHeight - 1, gTextAttr2);
-        gDrawText(text, gTextLeft * 8, gTextTop + line, gTextAttr1, gTextAttr2);
+        bottomLine = (gTextHeight / gFontHeight - 1) * gFontHeight;
+        ClipRect(gTextLeft, gTextTop + gFontHeight, gTextLeft, gTextTop, gTextWidth, bottomLine, gStatusLine, gStatusLine);
+        gFillRect(gTextLeft * 8, gTextTop + bottomLine, (gTextLeft + gTextWidth) * 8 - 1,
+                  gTextTop + bottomLine + gFontHeight - 1, gTextAttr2);
+        gDrawText(text, gTextLeft * 8, gTextTop + bottomLine, gTextAttr1, gTextAttr2);
         ShowPointerZone();
         if (newline) {
             gTextCol = 0;
             gTextRow++;
         } else {
-            gTextRow = line / gFontHeight;
+            gTextRow = bottomLine / gFontHeight;
             gTextCol += strlen(text);
             if (gTextWidth * 8 - gFontWidth < gFontWidth * gTextCol) {
                 gTextCol = 0;
@@ -309,8 +309,8 @@ extern unsigned far *gFrameTable[]; /*@ ds:113B */
     text[0] = 0;
 }
 /* 1DE7:05DF: print `value` in decimal into the text window. The value is formatted into a local
-   30-byte buffer and handed to DrawText (1DE7:060A). No caller found in the resident code (the
-   packet lists no direct call); the overlay images were not scanned. */
+   30-byte buffer and handed to DrawText (1DE7:060A). No caller was found: the packet's call graph
+   over the resident and overlay functions (make packet UNIT=e1de7) lists no direct call to it. */
 /*@ 1DE7:05DF */ void PrintIntText(int value)
 {
     char buf[30];
