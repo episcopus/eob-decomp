@@ -6,7 +6,7 @@
 ; (1AAD:0C17, 1AAD:0D26) records and replays the input stream through the file handle at ds:80ED.
 ; The code segment also holds the unit's variables and tables (1AAD:000C..0222, 1AAD:02DB..038D).
 ; Whitepaper 2.7 (Keyboard). Placeholder names mark state whose exact role is inferred from this
-; code only.
+; code only, and the `k` names are this unit's private variables and tables.
 
         .MODEL  LARGE
 
@@ -15,23 +15,36 @@
 
         .DATA
         EXTRN   gSoundOn:BYTE           ; @ ds:80E6: sound on unless argv[2] was '4' (E07C8.C)
-        EXTRN   g80E8:WORD              ; @ ds:80E8: toggled by Ctrl-key handling, role unknown
+        EXTRN   g80E8:WORD              ; @ ds:80E8: a toggled option flag, saved next to gSoundOn
+                                        ; (EOV3.C:808-840) and toggled by the options code
+                                        ; (EOV1.ASM:3724-3731); the INT 9 handler also toggles it on
+                                        ; key 0434h (M), as it toggles gSoundOn on 0420h (S)
         EXTRN   g80EA:WORD              ; @ ds:80EA: start-up flag copied into the unit's 1AAD:0180
-        EXTRN   g80EC:BYTE              ; @ ds:80EC: game state, 0/1/2, read all over this unit
+        EXTRN   g80EC:BYTE              ; @ ds:80EC: input mode, 0/1/2: 1 writes the recorded input
+                                        ; stream (1AAD:0C17), 2 replays it (1AAD:0C17/0D26), and the
+                                        ; readers skip the ring when it is 2 (1AAD:038E/053A/05D3)
         EXTRN   g80ED:WORD              ; @ ds:80ED: file handle for the recorded input stream
-        EXTRN   g80EF:WORD              ; @ ds:80EF: key of the recorded event last decoded
+        EXTRN   g80EF:WORD              ; @ ds:80EF: key of the recorded event last decoded. 1AAD:048D
+                                        ; copies every event taken from the ring to ds:80EF in any
+                                        ; state; in state 2 the readers use ds:80EF instead of the
+                                        ; ring (1AAD:038E/0409/048D)
         EXTRN   g80F1:WORD              ; @ ds:80F1: count that goes with that recorded event
         EXTRN   g80F3:WORD              ; @ ds:80F3: x of the recorded mouse event
         EXTRN   g80F5:WORD              ; @ ds:80F5: y of the recorded mouse event
         EXTRN   g80F7:WORD              ; @ ds:80F7: 1 when reading the recorded stream failed
-        EXTRN   g8136:WORD              ; @ ds:8136: 1 while a mouse button is held (E1A72.ASM)
+        EXTRN   g8136:WORD              ; @ ds:8136: latched to 1 once any button has been seen
+                                        ; (1A72:01DC); nothing in src/ clears it, and the recorded
+                                        ; replay sets it too (1AAD:0D04)
         EXTRN   _gCursorX:WORD          ; @ ds:8138: mouse x in pixels (E1A72.ASM)
         EXTRN   _gCursorY:WORD          ; @ ds:813A: mouse y in pixels (E1A72.ASM)
         EXTRN   g813C:WORD              ; @ ds:813C: x of the event just handled (E1A72.ASM)
         EXTRN   g813E:WORD              ; @ ds:813E: y of the event just handled (E1A72.ASM)
         EXTRN   gClickX:WORD              ; @ ds:8140: x of the last mouse click (E14EF.C)
         EXTRN   gClickY:WORD              ; @ ds:8142: y of the last mouse click (E14EF.C)
-        EXTRN   g8488:WORD              ; @ ds:8488: counter that paces the recorded input replay
+        EXTRN   g8488:WORD              ; @ ds:8488: tick counter, 18.2 per second: the INT 1Ch
+                                        ; handler increments it (1D8F:0055, E1D8F.ASM); 1AAD:0C17
+                                        ; stores its value with each recorded event and 1AAD:0D26
+                                        ; waits for it to reach the stored count (ds:80F1)
         .CODE
 
 ; The unit's data and hand-written tables, in the code segment (the map took 1AAD:000C..0222 for
@@ -44,17 +57,20 @@ kKeyBitMasks    db 01h,02h,04h,08h,10h,20h,40h,80h   ; 1AAD:000C: 8 bytes, bit f
         db      10h,00h,10h,00h,10h,00h,20h,00h
         db      20h,00h,40h,00h,40h,00h,80h,00h
         db      80h,00h,00h,01h
-kChainFarPtr    dd 00000000h    ; 1AAD:0048: far pointer called when AL is 6Eh (1AAD:099B)
-kExtendKeys     db 38h,1Dh,52h,53h,4Bh,47h,4Fh,48h,50h,49h,51h,4Dh   ; 1AAD:004C: 17 bytes, extended-key codes for 1AAD:0718
-        db      35h,1Ch,37h,46h,3Eh
-        db      40h,4Bh,4Ch,4Fh,50h,51h,53h,54h      ; 1AAD:005D
-        db      55h,56h,59h,5Fh,6Ch,7Ch,00h,3Ch
+kChainFarPtr    dd 00000000h    ; 1AAD:0048: far pointer called when AL is 6Eh (1AAD:099B);
+                                ; zero here and no writer found in src/, so the call never runs
+kExtendKeys     db 38h,1Dh,52h,53h,4Bh,47h,4Fh,48h,50h,49h,51h,4Dh   ; 1AAD:004C: 17 extended-key
+        db      35h,1Ch,37h,46h,3Eh                  ; codes; 1AAD:07C0 searches them with
+        db      40h,4Bh,4Ch,4Fh,50h,51h,53h,54h      ; 1AAD:005D: the map it reads at [di+0Fh]
+        db      55h,56h,59h,5Fh,6Ch,7Ch,00h,3Ch      ; (1AAD:005C+i for the match index i)
         db      3Ah,63h,68h,5Ch,5Bh,5Dh,60h,62h
         db      65h,67h,66h,37h,2Bh,7Ch,00h
 kKeyBuf         db 256 dup(0)   ; 1AAD:007C: 256-byte event ring (word events, or 3 words
 kKeyBufRead    dw      0000h           ; 1AAD:017C: ring read index, 0 .. 0FFh
 kKeyBufWrite   dw      0000h           ; 1AAD:017E: ring write index, 0 .. 0FFh
-kModifierState dw      0110h           ; 1AAD:0180: copied from ds:80EA at handler install
+kModifierState dw      0110h           ; 1AAD:0180: copied from ds:80EA by the INT 9 handler
+                                        ; body (1AAD:07C0) and by GetKeyState (1AAD:05F1); 0110h
+                                        ; is the load-time value before any copy
 kShiftFlags    dw      0000h           ; 1AAD:0182: shift/control/alt state, built by 1AAD:0718
 kShiftFlagsCopy dw      0000h          ; 1AAD:0184: kShiftFlags as of the last consumed event
 kScanToKey      db 7Fh,6Eh,02h,03h,04h,05h,06h,07h,08h,09h,0Ah,0Bh   ; 1AAD:0186: scancode -> key code (1AAD:0718)
@@ -65,12 +81,15 @@ kScanToKey      db 7Fh,6Eh,02h,03h,04h,05h,06h,07h,08h,09h,0Ah,0Bh   ; 1AAD:0186
         db      71h,72h,73h,74h,75h,76h,77h,78h,79h,5Ah,7Dh,5Bh
         db      60h,65h,69h,5Ch,61h,66h,6Ah,5Dh,62h,67h,63h,68h
         db      7Fh,7Fh,7Fh,7Ah,7Bh
-kKeyBitTable1   db 00h,00h,0FEh,87h,0FFh,0C0h,1Fh,00h   ; 1AAD:01DF: 8 bytes of key bits tested with bit 0
-        db      00h,00h,00h,00h,00h,00h,00h,00h      ; 1AAD:01E7
-kKeyBitTable2   db 00h,00h,00h,00h,00h,00h,00h,00h   ; 1AAD:01EF: 8 bytes of key bits tested with bit 1
-        db      00h,00h,00h,38h,0EFh,01h,00h,00h      ; 1AAD:01F7
+kKeyBitTable1   db 00h,00h,0FEh,87h,0FFh,0C0h,1Fh,00h   ; 1AAD:01DF: letter keys: shift bit 0
+        db      00h,00h,00h,00h,00h,00h,00h,00h      ; (Caps Lock) inverts the shift result for
+                                                     ; the key codes with a bit here
+kKeyBitTable2   db 00h,00h,00h,00h,00h,00h,00h,00h   ; 1AAD:01EF: Purpose unknown: tested with
+        db      00h,00h,00h,38h,0EFh,01h,00h,00h      ; shift bit 1 (Num Lock, 40:17 bit 5), but
+                                                     ; the codes with a bit here are not keypad codes
 kKeyDownBits    db 00h,00h,00h,00h,00h   ; 1AAD:01FF: bitmap of keys held down
-kKeyFlag204     db 00h,00h   ; 1AAD:0204: copy of 40:96 bit 4 (a shift modifier)
+kKeyFlag204     db 00h,00h   ; 1AAD:0204: set once at install (1AAD:0718) when 40:17 bit 1
+                             ; (left Shift) is set; never cleared afterwards
 kKeyFlag206     db 00h   ; 1AAD:0206: packed modifiers from 40:17/18/96
 kKeyFlag207     db 00h,00h,00h,00h,00h,00h,00h,00h   ; 1AAD:0207: copy of 40:96 bit 2
 kKeyFlag20F     db 00h   ; 1AAD:020F: 1 while an E0-prefixed scancode is expected
@@ -82,14 +101,16 @@ kInt23SavedSeg dw      0000h           ; 1AAD:0217: saved INT 23h vector segment
 kSpecialKeys    db 1Eh,2Ch,39h,3Ah,3Ch,3Eh,40h,5Ah,80h   ; 1AAD:0219: 9 key codes the far readers treat specially
 kModifierOut    db 00h   ; 1AAD:0222: modifier bits published to 1AAD:0B0E
 
-; 1AAD:0223: map a key code in AL with modifier bits in AH to an ASCII code in AL. Key codes below
-; 3Eh index one of two 3Eh-entry tables by AL & 3Fh and by the shift bit AH & 1; the control bit
-; AH & 2 masks the result to the low 5 bits when the key is in the bit table at 1AAD:01DF. Key
-; codes 4Bh..6Dh (the numeric keypad) take the table at 1AAD:0357 unless kShiftFlagsCopy bit 2 is
-; set and kModifierState bit 200h is clear, when they take 1AAD:037Ah with a different index base.
-; Key codes 70h..79h subtract a base (0C5h, or 98h/A2h/ACh by the control bits) and return the
-; difference. Other codes come back with bit 80h set, or as ESC (1Bh) for 6Eh. Purpose unknown:
-; the meaning of each table entry is not established.
+; 1AAD:0223: map a key code in AL with modifier bits in AH to a key value in AL: ASCII for the
+; main letter/digit table, a game code above 80h otherwise (key codes 41h..4Ah, the Ctrl-function
+; keys, come back as 0C6h..0CFh, +85h). Key codes below 3Eh index one of two 3Eh-entry tables by
+; AL & 3Fh and by the shift bit AH & 1; the control bit AH & 2 masks the result to the low 5 bits
+; when the key is in the bit table at 1AAD:01DF. Key codes 4Bh..6Dh (the numeric keypad) take the
+; table at 1AAD:0357 unless kShiftFlagsCopy bit 2 is set and kModifierState bit 200h is clear, when
+; they take 1AAD:037Ah with a different index base. Key codes 70h..79h subtract a base (0C5h, or
+; 98h/A2h/ACh by the control bits) and return the difference. Key codes 3Eh..40h and 7Ah and above
+; come back with bit 80h set, and 6Eh returns ESC (1Bh). Purpose unknown: the meaning of each
+; table entry is not established.
         PUBLIC  _TranslateKey            ; @ 1AAD:0223
 _TranslateKey PROC NEAR
         push    bx
@@ -207,9 +228,11 @@ kCtrlFnCodes    db 00h,37h,34h,31h,00h,2Fh,38h,35h,32h,30h,2Ah,39h   ; 1AAD:037A
 ; 1AAD:038E: non-blocking read of one game key from the event ring. It calls 1AAD:0D26 first,
 ; then, unless the game is in state 2 (ds:80EC = 2) and the ring is empty, reads the word at the
 ; read index; it discards an event that is in the special list 1AAD:0219 or whose AH has bit 8 or
-; whose AL is 7Ah or more, advancing the read index (by 4 when AL is 41h..44h, a mouse event), and
-; loops until it can return a key. It copies kShiftFlags to kShiftFlagsCopy, passes a nonzero key
-; through 1AAD:0223 and clears AH. Callers: the camp loop (EOV6.C) and several overlays. Purpose
+; whose AL is 7Ah or more, advancing the read index by 2 (6 for a mouse event, AL 41h..44h, whose
+; extra pointer words are skipped too), and loops until it can return a key. The returned key
+; stays in the ring: like 1AAD:0409 the return path does not store kKeyBufRead. It copies
+; kShiftFlags to kShiftFlagsCopy, translates a nonzero key through 1AAD:0223 and clears AH.
+; Callers test the return and do not consume the key here (EOV6.C:339, :342, :508). Purpose
 ; unknown: why this filter differs from 1AAD:0409's.
         PUBLIC  _ReadKey                 ; @ 1AAD:038E
 _ReadKey PROC FAR
@@ -275,11 +298,12 @@ f038E_0403:
         retf
 _ReadKey ENDP
 
-; 1AAD:0409: non-blocking read of one key from the event ring that is in the special list
-; 1AAD:0219 and below 7Ah; events that are not are consumed and the read index advances, so it
-; returns 0 when the ring holds no such key. Like 1AAD:038E it calls 1AAD:0D26 first, copies
-; kShiftFlags to kShiftFlagsCopy and translates the key through 1AAD:0223. Called by the text
-; input helper 16A5:0009. Purpose unknown: the exact filter and its difference from 1AAD:038E.
+; 1AAD:0409: non-blocking peek of the first key in the ring that 1AAD:0588 would take: not in the
+; special list 1AAD:0219 (a key that is in the list is consumed) and below 7Ah. It returns that key
+; without consuming it: the return path does not store kKeyBufRead, so the key stays in the ring.
+; Like 1AAD:038E it calls 1AAD:0D26 first, copies kShiftFlags to kShiftFlagsCopy, and translates a
+; nonzero key through 1AAD:0223. Called by DispatchKey (16A5:0009, E16A5.C), the node-list
+; dispatcher, to test before taking the key with 1AAD:0588 (E16A5.C:60-61, :127-128).
         PUBLIC  _ReadKeySpecial          ; @ 1AAD:0409
 _ReadKeySpecial PROC FAR
         call    _InjectRecordedKey
@@ -334,8 +358,9 @@ f0409_046C:
         retf
 _ReadKeySpecial ENDP
 
-; 1AAD:0471: 1 (nonzero, actually the xor of the ring read and write indices) when at least one
-; event waits in the ring, 0 when it is empty. It calls 1AAD:0D26 for its side effect. Called by
+; 1AAD:0471: nonzero when at least one event waits in the ring. In state 0 or 1 it returns the xor
+; of the ring read and write indices (0 when the ring is empty). It then calls 1AAD:0D26, which in
+; state 2 overwrites AX with the injected key (ds:80EF) or 0, so there the xor is lost. Called by
 ; 16A5:005A and UpdateOptionList (14EF:0274) to test before reading.
         PUBLIC  _IsKeyPending           ; @ 1AAD:0471
 _IsKeyPending PROC FAR
@@ -438,8 +463,10 @@ _DequeueKeyEvent ENDP
 
 ; 1AAD:053A: block until the ring holds a game key that is not in the special list 1AAD:0219,
 ; whose AH bit 8 is clear and whose AL is below 7Ah, take it with 1AAD:048D, translate it with
-; 1AAD:0223 and process it with 1AAD:0C17. Called by StartupGame, LoadGamePanel and the camp path
-; (EOV6.C). Purpose unknown: the exact meaning of the filter.
+; 1AAD:0223 and process it with 1AAD:0C17. Callers: StartupGame (07C8:0199), AllocationFailure
+; (07C8:0625), EditTextField (082C:000B), ShowMemoryDiagnostics (082C:081A), OutOfMemory
+; (19BC:02B6), DisplayFileError (1C0E:0ADD), ovl1:1ACD and LoadGamePanel (ovl2:0846). Purpose
+; unknown: the exact meaning of the filter.
         PUBLIC  _WaitGameKey            ; @ 1AAD:053A
 _WaitGameKey PROC FAR
         push    bx
@@ -484,7 +511,8 @@ _WaitGameKey ENDP
 
 ; 1AAD:0588: 1AAD:053A without the AH bit-8 test; also points DS at the unit's segment. Blocks
 ; until the ring holds a key that is not in the special list and below 7Ah, takes and translates
-; it and processes it with 1AAD:0C17. Called by the text input helper 16A5:0009.
+; it and processes it with 1AAD:0C17. Called by DispatchKey (16A5:0009, E16A5.C), the node-list
+; dispatcher, after 1AAD:0409 has tested that such a key waits.
         PUBLIC  _WaitGameKey2           ; @ 1AAD:0588
 _WaitGameKey2 PROC FAR
         push    bx
@@ -552,11 +580,12 @@ _WaitKeyEvent ENDP
 ; 1AAD:0685 and reads that mode's bits out of the held-key bitmap 1AAD:01FF into 1AAD:066E. Then
 ; it recomputes the bit for the key's own low byte (bit 1AAD:066F + index>>3) and returns
 ; AL = held-key bitmap bits OR 1AAD:066E. Called far from 16A5:00EA/0106 with the key pushed. The
-; block at 1AAD:0693 (inside this region) wraps it: it keeps the key in BX, calls 1AAD:05F1 and
-; returns AL = 0FFh when the folded modifier byte AH equals the key's high byte BH, and 0 otherwise,
-; after folding in the Ctrl/Alt/Shift bits from kKeyFlag204/kKeyFlag206/kKeyFlag207 and kShiftFlags
-; through the bit tables at 1AAD:01DF/01EF. Purpose unknown: how the 1AAD:0693 wrapper is entered
-; (the map takes it for part of 1AAD:05F1), and why its near call reads the key from [bp+6].
+; block at 1AAD:0693 (inside this region) wraps it: it keeps the key in BX, makes a FAR call to
+; 1AAD:05F1 and returns AL = 0FFh when the folded modifier byte AH equals the key's high byte BH,
+; and 0 otherwise, after folding in the Ctrl/Alt/Shift bits from kKeyFlag204/kKeyFlag206/
+; kKeyFlag207 and kShiftFlags through the bit tables at 1AAD:01DF/01EF. Candidate QUIRK 1AAD:0693:
+; the key the wrapper means to pass is never read, because 1AAD:05F1 takes it from [bp+6], which
+; after the FAR call is the DI the wrapper pushed; confirm with the oracle before relying on it.
         PUBLIC  _GetKeyState            ; @ 1AAD:05F1
 _GetKeyState PROC FAR
         push    bp
@@ -686,8 +715,9 @@ f05F1_0712:
 ; scancode from port 60h, tracks E0/E1 prefixes, translates the scancode through 1AAD:0186, updates
 ; the held-key bitmap 1AAD:01FF and the modifier byte kModifierOut, toggles gSoundOn/g80E8 on the
 ; Ctrl/Alt sound keys, and appends the event to the ring (or chains to the old INT 9 vector when it
-; does not consume the key). The iret and the two data bytes at 1AAD:09F2 finish the region. Called
-; from main at 07C8:008F. Purpose unknown: several of the port/handler paths.
+; does not consume the key). The iret and the three data bytes at 1AAD:09F2 (kKeyMode9F2, one byte,
+; and kScanCode9F3, a word) finish the region. Called from main at 07C8:008F. Purpose unknown:
+; several of the port/handler paths.
         PUBLIC  _InstallKeyboard          ; @ 1AAD:0718
 _InstallKeyboard PROC FAR
         push    ax
@@ -764,10 +794,12 @@ _InstallKeyboard ENDP
 
 ; 1AAD:07C0: the INT 9 handler installed above (inside the install function's region, not a
 ; separate map function). It clears kShiftFlags bits 0/1, ORs in the live BIOS shift state, copies
-; ds:80EA into kModifierState, reads a scancode from port 60h and either swallows it (E1/E0
-; prefix, break code) or translates and buffers it. kKeyMode9F2/kScanCode9F3 hold the state of the
-; prefix path. It ends by chaining to the saved INT 9 vector (1AAD:09BD) or acknowledging the PIC
-; itself (1AAD:09CA). Purpose unknown: the exact scan-code paths.
+; ds:80EA into kModifierState and reads a scancode from port 60h. An E0 prefix and a break code
+; (high bit set) both chain to the old INT 9 vector through 1AAD:09BD, as does a key the handler
+; does not consume; only E1-prefixed bytes are swallowed, acknowledged at 1AAD:09CA unless
+; kModifierState bit 80h diverts them to 1AAD:09BD. Otherwise the scancode is translated and
+; buffered. kKeyMode9F2/kScanCode9F3 hold the state of the prefix path. Purpose unknown: the
+; exact scan-code paths.
 f0718_07C0:
         push    ax
         push    bx
@@ -999,7 +1031,8 @@ f0718_09CA:
         iret
 kKeyMode9F2     db 00h          ; 1AAD:09F2: 1 while the previous event was an extended key
 kScanCode9F3    dw 0000h        ; 1AAD:09F3: scancode of the event being handled
-        iret                    ; 1AAD:09F5: the INT 23h handler installed at 1AAD:07B2
+        iret                    ; 1AAD:09F5: the INT 23h handler, a bare IRET; the install at
+                                ; 1AAD:0718 points INT 23h here and saves the old one
 
 ; 1AAD:09F6: remove the keyboard driver. It restores INT 23h from kInt23SavedOff/kInt23SavedSeg
 ; and INT 9 from kInt9SavedOff/kInt9SavedSeg through INT 21h 25h. Called from the exit path at
@@ -1133,8 +1166,10 @@ _QueueInputEvent ENDP
 ; 1AAD:0B0E: the mouse-button glue called from the INT 33h handler (1A72:017A) with the new button
 ; state at [bp+6]. It xors that with the last state (kMouseButtons) and, for each changed button,
 ; builds the key code 41h/42h, folds in kModifierOut and the shift-bit-0 test through
-; kShiftFlags, sets the held bit with 1AAD:0BF1 and queues the event with 1AAD:0B9C. It stores the
-; new state back to kMouseButtons. Purpose unknown: the exact key-code convention.
+; kShiftFlags, sets the held bit with 1AAD:0BF1 and queues the event with 1AAD:0B9C. A button
+; release (BL = 0) also sets AH bit 8, at 1AAD:0B56 and 1AAD:0B88; the readers 1AAD:038E/053A
+; discard bit 8, so a release never reaches the game. It stores the new state back to
+; kMouseButtons. Purpose unknown: the exact key-code convention.
         PUBLIC  _HandleMouseButtons     ; @ 1AAD:0B0E
 _HandleMouseButtons PROC FAR
         push    bp
@@ -1372,7 +1407,8 @@ kRecYD24        dw 0000h        ; 1AAD:0D24: mouse y read from the recording
 ; 1AAD:0D26: inject the recorded key at the ring read index, called first by every reader
 ; (1AAD:038E/0409/0471). In state 0 or 1 it returns at once; otherwise, unless ds:80F7 is set
 ; (the recording ended), it writes ds:80EF at kKeyBuf+kKeyBufRead when the pacing count ds:8488
-; has reached ds:80F1, and 0 otherwise. Purpose unknown: how the injected value is consumed.
+; has reached ds:80F1, and 0 otherwise, overwriting the slot at the read index either way.
+; Purpose unknown: how the injected value is consumed.
         PUBLIC  _InjectRecordedKey      ; @ 1AAD:0D26
 _InjectRecordedKey PROC NEAR
         cmp     byte ptr [g80EC],0
