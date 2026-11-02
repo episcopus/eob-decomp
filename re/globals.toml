@@ -386,3 +386,11 @@ why = "font cell height; the source is src/E1A47.C and src/E1DE7.C:54-55 calls i
 id = "ds:EFCC"
 name = "gNameTable"
 why = "the far table 0EF3:2295 reads names from; set to g12E0 or g1278 by 0EF3:21E0 (only E0EF3.C references ds:EFCC)"
+[[global]]
+id = "ds:84A0"
+name = "gRestoreMode"
+why = "ds:84A0 is set from argv[5] (E07C8.C:193) and put back through f1DDD_002D(7) at exit (:368, :422); E1DDD.C:43-49 uses it as the restore mode, work/reviews/e1ddd.md:18 suggests gRestoreMode"
+[[global]]
+id = "ds:8894"
+name = "gEnvPtr"
+why = "ds:8894 is the far pointer StartupGame dereferences as gEnvPtr->number (E07C8.C:263, 07C8:0212); src/E1990.ASM:22-26 already calls it gEnvPtr, and nothing in src/ or docs/ writes the pointer, so the object's address is unknown"
