@@ -2061,3 +2061,57 @@ new = "DropStaleOverlaySlots"
 kind = "function"
 why = "07D7:1245 walks the caller's slot table at SS:BP and, for slots whose segment SS:[bx+4] is below the base 20B5:00B4, drops the slot references (clears the record's saved offset ES:0002 and clears the slot offset); the name says it drops stale slots, not that it releases records"
 date = "2026-11-02"
+
+[[rename]]
+id = "ds:8117=gScrollHook"
+addr = "ds:8117"
+old = ""
+new = "gScrollHook"
+kind = "global"
+why = "the far routine DrawTextLine calls when the cursor row starts below the last full line (the same condition as the clip branch of DrawTextLine), gated by gScrollOn (ds:8110); overlay 5 sets the pair at ds:8117/ds:8119 when it opens windows 0xC and 9 (src/EOV5.C:1114-1115, :1254-1255, :1317-1318; EOV5.C:161 declares extern int gScrollHook; /*@ ds:8117 */ and g8119 at :162; the words 0xAC and 0x2D0 at EOV5.C:1114-1115 are the offset and segment of the far pointer)"
+date = "2026-11-02"
+
+[[rename]]
+id = "ds:8102=gGraphicsChoice"
+addr = "ds:8102"
+old = "g8102"
+new = "gGraphicsChoice"
+kind = "global"
+why = "the graphics choice: its only writer is src/E07C8.C:218, g8102 = argv[1][0] + 1; src/E07C8.C:31 says the digit 0..4 indexes gOverlayFiles (0 cga, 1 tandy, 2 ega, 3 mcga/VGA, 4 vga); src/E14EF.C:68 reads it as the graphics choice, 1 Tandy and 3 VGA; 3 and 4 select the 6-bit cells (src/E07C8.C:31)"
+date = "2026-11-02"
+
+[[rename]]
+id = "ds:8115=gStatusLine"
+addr = "ds:8115"
+old = "g8115"
+new = "gStatusLine"
+kind = "global"
+why = "the status-line flag in E082C.C:44, E1C0E.C:589, E16A5.C:511 and in the other declarations."
+date = "2026-11-02"
+
+[[rename]]
+id = "ds:811D=gTextAttr1"
+addr = "ds:811D"
+old = ""
+new = "gTextAttr1"
+kind = "global"
+why = "the first text attribute (foreground colour) passed to the draw-text hook ds:80CA (1DE7:03B2, 1DE7:060A) and set by DrawText control code 0x06; default 0x0F at E07C8.C:251; the initial region record gRegions[0] at ds:009F (file offset 0x23B7F) holds saved0 = 0x0F (ds:00A7)"
+date = "2026-11-02"
+
+[[rename]]
+id = "ds:811B=gTextAttr2"
+addr = "ds:811B"
+old = ""
+new = "gTextAttr2"
+kind = "global"
+why = "the second text attribute (the fill colour of ClearTextRegion and of the redrawn scroll line) passed to the rectangle hook ds:806A and to the draw-text hook (1DE7:0344, 1DE7:03B2) and set by DrawText control code 0x02; default 0x0C at E07C8.C:252; the initial region record gRegions[0] at ds:009F (file offset 0x23B7F) holds saved1 = 0x0C (ds:00A9)"
+date = "2026-11-02"
+
+[[rename]]
+id = "ds:806A=gFillRect"
+addr = "ds:806A"
+old = ""
+new = "gFillRect"
+kind = "global"
+why = "a far rectangle-fill routine called with (x1, y1, x2, y2, pattern): E082C.C:442 fills the bevel interior, E1DE7.C:221/246 fill and redraw text-window rectangles; so gFillRect, not the address-suffix placeholder gRect806A"
+date = "2026-11-02"

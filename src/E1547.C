@@ -52,8 +52,8 @@ struct CharRec {            /* the 243-byte (0xF3) records at ds:F580 (src/E0A72
     signed char mE8[0xF3 - 0xE8]; /* +0E8: per-slot bytes: an action label (src/E1414.C) */
 };
 
-extern int g8102; /*@ ds:8102 */         /* the video mode the game initialised (src/E082C.C) */
-extern int g8115; /*@ ds:8115 */         /* nonzero while a status line is up (src/E082C.C) */
+extern int gGraphicsChoice; /*@ ds:8102 */         /* the video mode the game initialised (src/E082C.C) */
+extern int gStatusLine; /*@ ds:8115 */         /* nonzero while a status line is up (src/E082C.C) */
 extern unsigned char gFBD2; /*@ ds:FBD2 */ /* bit 0 gates the icon colour row (src/E0D1C.C) */
 extern signed char gFB4C; /*@ ds:FB4C */ /* a colour (src/E0D1C.C) */
 extern signed char gF53A; /*@ ds:F53A */ /* a colour (src/E0D1C.C) */
@@ -153,10 +153,10 @@ extern void DrawItemRow(int who, int slot, int one); /*@ 0BD2:0917 */
     int x;
     int y;
 
-    colour = g8102 == 0 ? 3 : 6;
+    colour = gGraphicsChoice == 0 ? 3 : 6;
     x = g5D1F[who & 1];
     y = g5D21[who >> 1];
-    if (!g8115)
+    if (!gStatusLine)
         x += 0xb0;
     rec = &gChars[who];
     frame = (rec->mE3 & 0x302) || rec->mDF || rec->mE0;
@@ -258,7 +258,7 @@ extern void DrawItemRow(int who, int slot, int one); /*@ 0BD2:0917 */
         y = g5D26[member >> 1];
         width = 0x26;
         height = 3;
-        if (!g8115)
+        if (!gStatusLine)
             x += 0xb0;
     } else {
         x = 0xfa;
@@ -332,7 +332,7 @@ extern void DrawItemRow(int who, int slot, int one); /*@ 0BD2:0917 */
     if (gFB44 == 0) {
         x = g5D2C[who & 1];
         y = g5D2E[who >> 1];
-        if (!g8115)
+        if (!gStatusLine)
             x += 0xb0;
     } else {
         if (gA99A != who)
@@ -341,7 +341,7 @@ extern void DrawItemRow(int who, int slot, int one); /*@ 0BD2:0917 */
         y = 3;
     }
     if (rec->hp == -10) {
-        f1A29_000F(g8115, gIconF2F4, x, y, 0);
+        f1A29_000F(gStatusLine, gIconF2F4, x, y, 0);
         return;
     }
     if (rec->mE3 & 4) {
@@ -350,12 +350,12 @@ extern void DrawItemRow(int who, int slot, int one); /*@ 0BD2:0917 */
             return;
         }
     }
-    f1A29_000F(g8115, rec->portrait, x, y, 0);
+    f1A29_000F(gStatusLine, rec->portrait, x, y, 0);
     if (rec->hp < 1)
-        f1A29_000F(g8115, gIconDC94, x, y, 0);
+        f1A29_000F(gStatusLine, gIconDC94, x, y, 0);
 }
 /* 1547:0642: draws the label of an item action at (x, y). It clears the second line buffer, sets
-   the colour (0xF, or 2 while the video mode g8102 is 0), and then either draws the thrown-item
+   the colour (0xF, or 2 while the video mode gGraphicsChoice is 0), and then either draws the thrown-item
    icon gThrownIcon4 at (x - 1, y) through f1A29_000F when `action` is above -3, or fills a panel
    (x, y)-(x + 0x1E, y + 0xF) in colours gA95A/g8A6C/g8A7D. The switch on `action` fills `name`
    (6 bytes) and the optional `suffix` (6 bytes, empty for the default): -1 "MISS" (and y + 1), -2
@@ -371,10 +371,10 @@ extern void DrawItemRow(int who, int slot, int one); /*@ 0BD2:0917 */
 
     suffix[0] = 0;
     colour = 0xf;
-    if (g8102 == 0)
+    if (gGraphicsChoice == 0)
         colour = 2;
     if (action > -3) {
-        f1A29_000F(g8115, gThrownIcon4, x - 1, y, 0);
+        f1A29_000F(gStatusLine, gThrownIcon4, x - 1, y, 0);
     } else {
         DrawFilledPanel(x, y, x + 0x1e, y + 0xf, gA95A, g8A6C, g8A7D);
     }
@@ -424,7 +424,7 @@ extern void DrawItemRow(int who, int slot, int one); /*@ 0BD2:0917 */
 
     x = g5D31[who & 1];
     y = g5D33[(who & 6) + slot];
-    if (!g8115)
+    if (!gStatusLine)
         x += 0xb0;
     item = gChars[who].m77[slot];
     LockHidePointer();
@@ -435,12 +435,12 @@ extern void DrawItemRow(int who, int slot, int one); /*@ 0BD2:0917 */
         DrawActionLabel(x, y, gChars[who].mE8[slot]);
     } else {
         if (item != 0)
-            f0D1C_070F(g8115, item, x + 8, y);
+            f0D1C_070F(gStatusLine, item, x + 8, y);
         else
-            f1A29_000F(g8115, gEmptySlotIcons[slot], x + 8, y, 0);
+            f1A29_000F(gStatusLine, gEmptySlotIcons[slot], x + 8, y, 0);
         if ((gChars[who].m1E & (1 << slot)) || f0D1C_07DB(who, slot) == 0
                 || gChars[who].hp <= 0 || (gChars[who].m01 & 4))
-            f1A29_000F(g8115, gIcon8A7E, x, y, 0);
+            f1A29_000F(gStatusLine, gIcon8A7E, x, y, 0);
     }
     LockShowPointer();
 }
@@ -487,8 +487,8 @@ extern void DrawItemRow(int who, int slot, int one); /*@ 0BD2:0917 */
         y = g5D4F[who >> 1];
         ClipRect(0x16, 0xa8, x, y, 8, 0x18, 2, 2);
         ClipRect(0x1e, 0xa8, x, y + 0x18, 8, 0x1a, 2, 2);
-        savedStatusLine = g8115;
-        g8115 = 2;
+        savedStatusLine = gStatusLine;
+        gStatusLine = 2;
         x <<= 3;    /* the layout tables hold 8-pixel columns; the text routines take pixels */
         if (gIconTable == who)
             gDrawText("Swapping", x + 2, y + 2, 8, gF57E);
@@ -503,10 +503,10 @@ extern void DrawItemRow(int who, int slot, int one); /*@ 0BD2:0917 */
             itoa(rec->mE7, buf, 10);
             f1A29_000F(2, gThrownIcon3, x + 0xd, y + 0x1e, 0);
             gDrawText(buf, x + 0x22 - strlen(buf) * 3, y + 0x2a,
-                    g8102 == 0 ? 0xc : 0xf, 0);
+                    gGraphicsChoice == 0 ? 0xc : 0xf, 0);
         }
-        g8115 = savedStatusLine;
-        if (!g8115)
+        gStatusLine = savedStatusLine;
+        if (!gStatusLine)
             ClipRect(x >> 3, y, g5D4D[who & 1], y, 8, 0x32, 2, 0);
         f1A47_0169(savedFont);
         LockShowPointer();
@@ -516,7 +516,7 @@ extern void DrawItemRow(int who, int slot, int one); /*@ 0BD2:0917 */
         if (gA99A != who)
             return;
         ClipRect(0x16, 0, 0, 0, 0x12, 0xa8, 2, 2);
-        g8115 = 2;
+        gStatusLine = 2;
         DrawMemberPortrait(who);
         DrawShadowText(rec->name, 0xdb, 6, textAttr, gF57E);
         DrawMemberHp(who);
@@ -574,7 +574,7 @@ extern void DrawItemRow(int who, int slot, int one); /*@ 0BD2:0917 */
                         0xf, gFB7B);
             }
         }
-        g8115 = 0;
+        gStatusLine = 0;
         LockHidePointer();
         ClipRect(0x16, 0, 0x16, 0, 0x12, 0xa8, 2, 0);
         LockShowPointer();

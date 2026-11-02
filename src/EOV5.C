@@ -74,7 +74,7 @@ struct Obj28 {              /* 28-byte object records at ds:8A82 (src/E08E6.C) *
     char pad09[0x1C - 0x09];
 };
 
-extern int g8115; /*@ ds:8115 */
+extern int gStatusLine; /*@ ds:8115 */
 extern signed char gF57E; /*@ ds:F57E */
 extern signed char gF53A; /*@ ds:F53A */
 extern signed char gFB4C; /*@ ds:FB4C */
@@ -240,7 +240,7 @@ void PrintTableString(int index, int flag);
 
 /* ovl5:0000: draws sprite cell `index` of the ds:7B2B table out of the overlay buffer gOverlayBuf
    at (x, y), moved left by the returned cell's byte +2 (times four) and up by its byte +1, into
-   region 5. Sets g8115 for the draw and frees the sliced cell. Called by the avatar panel 00A1. */
+   region 5. Sets gStatusLine for the draw and frees the sliced cell. Called by the avatar panel 00A1. */
 /*@ ovl5:0000 */ void DrawSheetCell(int index, int x, int y)
 {
     void far *cell;
@@ -250,14 +250,14 @@ void PrintTableString(int index, int flag);
     int c4;
     int i;
 
-    g8115 = 2;
+    gStatusLine = 2;
     i = index * 4;
     c1 = gCellDef7B2B[i];
     c2 = gCellDef7B2B[i + 1];
     c3 = gCellDef7B2B[i + 2];
     c4 = gCellDef7B2B[i + 3];
     cell = gGetSpriteCell(c1, c2, c3, c4, gOverlayBuf);
-    g8115 = 0;
+    gStatusLine = 0;
     y -= ((struct Cell far *)cell)->b1;
     x -= (((struct Cell far *)cell)->b2 << 3) >> 1;
     f1A29_000F(0, cell, x, y, 5);
@@ -579,11 +579,11 @@ enum {
         if (rec->m77[i])
             rec->m77[i] = CopyItemToFreeSlot(rec->m77[i]);
     }
-    g8115 = 2;
+    gStatusLine = 2;
     saved = gFn8082(which * 4, 0xA0, 4, 0x20, gOverlayBuf);
     movmem(saved, rec->m33, 0x514);
     farfree(saved);
-    g8115 = 0;
+    gStatusLine = 0;
 }
 /* ovl5:0828: the character add panel. It clears the panel, draws message `which`, then shows the
    two-entry menu ds:7B23. Choice 0 ("join") either draws message `head` or, when `head` is -1,
@@ -1048,7 +1048,7 @@ enum {
     LoadScreenImage(gText7E4B, gOverlayBuf, 5, 3, 2);
     PlaySound(0x21);
     PlaySound(0x13);
-    g8115 = 2;
+    gStatusLine = 2;
     gFn807E(3, 0, 0x12, 0x68, f19EC_0002(5));
     ClipRect(3, 0, 3, 0, 0x12, 0x68, 0, 2);
     f1A29_000F(2, figures[0], 0x1c, 9, 0);
@@ -1106,7 +1106,7 @@ enum {
     FileRead(handle, gSegDF4E, 0x7d00L);
     FileClose(handle);
     PlaySound(0x14);
-    g8115 = 0;
+    gStatusLine = 0;
     gScrollOn = 1;
     gFE42 = 1;
     g169 = gF57E;
@@ -1143,7 +1143,7 @@ enum {
    (FreeEffectTables, FreeMapIcons(0,0x24), FreePtrTable), loads ds:7EEF and builds the four
    sprite cells from gOverlayBuf (a 2x2 grid of 0xE x 0x58 cells), loads ds:7EF7 and slices one
    0x10 x 0x5f cell, blits ds:7EFF, then plays ten frames: six clipped cells (with the sounds
-   0x48, 0x36, 0x36, 0x22) and four from the sliced cell (sound 0x2a). It then clears g8115,
+   0x48, 0x36, 0x36, 0x22) and four from the sliced cell (sound 0x2a). It then clears gStatusLine,
    fills the action field with f19EC_0002(5) (gFn807E), sets gF1 to 8 and runs the 19-step
    explosion: each step plays 0x77, blits the page (gFn804A), draws the sliced cell moving from
    y=-0x5a in steps of 5, clips the portrait region and waits 2 ticks. It finally plays sound 5,
@@ -1181,12 +1181,12 @@ enum {
         }
         WaitTicks(4);
     }
-    g8115 = 0;
+    gStatusLine = 0;
     gFn807E(0, 0, 0x16, 0x78, f19EC_0002(5));
     gF1 = 8;
     for (i = 0; i < 0x13; i++) {
         PlaySound(0x77);
-        g8115 = 2;
+        gStatusLine = 2;
         gFn804A(0, 0, 0x16, 0x78, f19EC_0002(5));
         f1A29_000F(2, cell, 0x18, i * 5 + 0xffa6, 5);
         ClipRect(0, 0, 0, 0, 0x16, 0x78, 2, 0);
@@ -1285,7 +1285,7 @@ enum {
         fOvl3_07A5(0, gSeg1D8 + (gSeg1D0[gFBC8 - 1] << 5));
         LoadScreenImage(gText7F18, gSeg1F8, 5, 3, 0);
         LoadScreenImage(gText7F20, gSeg1F0, 5, 3, 2);
-        g8115 = 0;
+        gStatusLine = 0;
         RedrawCharacters();
         fOvl4_1F51(1);
         break;
@@ -1324,7 +1324,7 @@ enum {
     fOvl3_07A5(0, gOverlayBuf);
     LoadScreenImage(gText7F30, gSeg1F8, 5, 3, 0);
     LoadScreenImage(gText7F38, gSeg1F0, 5, 3, 2);
-    g8115 = 0;
+    gStatusLine = 0;
     RedrawCharacters();
     DrawViewFrame(1);
     SetTextWindow(7);
@@ -1334,7 +1334,7 @@ enum {
    gBufDCFC buffer (the x indices and, at +0x280, the y indices) with 0..cols-1 and 0..rows-1,
    Fisher-Yates shuffles each with RandomRange, then for each row k and column i draws the cell
    at (x + xs[i], y + ys[j]) (j wrapping at rows) through the far pointers ds:8072 and ds:809E,
-   with g8115 set to attr1 for the first call and attr2 for the second. Called by the 1204
+   with gStatusLine set to attr1 for the first call and attr2 for the second. Called by the 1204
    animation. */
 /*@ ovl5:1E1B draft */ void ShuffleGrid(int x, int y, unsigned cols, unsigned rows, int attr1, int attr2)
 {
@@ -1366,7 +1366,7 @@ enum {
         ys[pick] = ys[i];
         ys[i] = swapped;
     }
-    saved = g8115;
+    saved = gStatusLine;
     for (k = 0; k < rows; k++) {
         j = k;
         for (i = 0; i < cols; i++) {
@@ -1375,11 +1375,11 @@ enum {
             j++;
             if (j >= rows)
                 j = 0;
-            g8115 = attr1;
+            gStatusLine = attr1;
             swapped = gFn8072(pick, cy);
-            g8115 = attr2;
+            gStatusLine = attr2;
             gFn809E(pick, cy, swapped);
         }
     }
-    g8115 = saved;
+    gStatusLine = saved;
 }

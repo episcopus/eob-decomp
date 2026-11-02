@@ -28,7 +28,7 @@ Proven by matching two whole modules, `e0cf7` (6 functions, 591 bytes) and `e07a
 | Switch | Evidence |
 |---|---|
 | `-ml` large model | far calls and far data pointers; the large-model runtime |
-| `-O` jump optimisation | needed: with `-Z` alone `ListInit` keeps a second `les bx`; `-O` also merges the common tails of `if (g8102) f(a); else f(b);` in `SetMouseItem` |
+| `-O` jump optimisation | needed: with `-Z` alone `ListInit` keeps a second `les bx`; `-O` also merges the common tails of `if (gGraphicsChoice) f(a); else f(b);` in `SetMouseItem` |
 | `-Z` register load suppression | needed: neither module matches without it; `xor ax,ax; push ax` is reused for the next zero argument |
 | `-r` register variables (default) | `-r-` breaks both modules (SI holds the loop counter) |
 | no `-G` (optimise for size, default) | `-G` breaks both modules |

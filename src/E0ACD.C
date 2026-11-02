@@ -21,7 +21,7 @@ extern char gFB44; /*@ ds:FB44 */           /* a mode byte: 0, 1 and 2 gate the 
                                                (src/E0D1C.C) */
 extern int gFC82; /*@ ds:FC82 */            /* an action mode: 0, 1 and 2 pick the branches of the
                                                0034, 008C and 00EB handlers */
-extern int g8115; /*@ ds:8115 */            /* nonzero while a status line is up (src/E082C.C) */
+extern int gStatusLine; /*@ ds:8115 */            /* nonzero while a status line is up (src/E082C.C) */
 extern void far *gSegDF4E; /*@ ds:DF4E */   /* the 19EC:0002(slot 5) far buffer (src/E07A9.C) */
 
 extern void DrawText(char far *text); /*@ 1DE7:060A */
@@ -265,13 +265,13 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
     int i;
 
     LockHidePointer();
-    g8115 = 2;
+    gStatusLine = 2;
     gFn804A(0, 0, 0x12, 0xa8, gSegDF4E);
     gF51A = 0;
     gFB44 = 0;
     for (i = 0; i < 6; i++)
         RedrawMember(i);
-    g8115 = 0;
+    gStatusLine = 0;
     ClipRect(0, 0, 0x16, 0, 0x12, 0xa8, 2, 0);
     BuildList1();
     LockShowPointer();
@@ -924,7 +924,7 @@ done:
     LoadScreenImage("PLAYFLD", (char far *)gSheetDECORATE, 5, 3, 0);
     LoadScreenImage("INVENT", (char far *)gSheet2067, 5, 3, 2);
     f1A47_0169(gA9C0);
-    g8115 = 0;
+    gStatusLine = 0;
     RedrawCharacters();
     DrawViewFrame(1);
     LockShowPointer();

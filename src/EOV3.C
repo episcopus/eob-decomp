@@ -31,7 +31,7 @@ extern char gF43C; /*@ ds:F43C */
 extern char gAD20[]; /*@ ds:AD20 */         /* a 96-byte saved-game buffer (Purpose unknown) */
 extern char *strcpy(char far *dest, char far *src); /*@ 0000:67CD */
 extern void far *gSegDCA6; /*@ ds:DCA6 */   /* the far pointer f19EC_0002(7) returns (src/E07A9.C) */
-extern int g8102; /*@ ds:8102 */            /* the video mode the game initialised (src/E082C.C) */
+extern int gGraphicsChoice; /*@ ds:8102 */            /* the video mode the game initialised (src/E082C.C) */
 extern char gWallNameBuf[]; /*@ ds:FE2E */  /* the wall texture name kept between LoadWallTextures calls (ovl3:07A5) */
 extern void far *(far *gFn8082)(int x, int y, int w, int h, void far *buf); /*@ ds:8082 */
 extern void DrawViewRows(void); /*@ 2116:0034 */  /* overlay 4 entry, ovl4:1EDE */
@@ -147,7 +147,7 @@ extern void far *gB802[]; /*@ ds:B802 */
 extern int g6930[]; /*@ ds:6930 */
 extern int g69C0[]; /*@ ds:69C0 */
 extern int g6A50[]; /*@ ds:6A50 */
-extern int g8115; /*@ ds:8115 */
+extern int gStatusLine; /*@ ds:8115 */
 extern char gOverlayBuf[]; /*@ ds:113F */
 
 struct Rect {               /* a four-word cell rectangle (x, y, w, h) */
@@ -353,7 +353,7 @@ struct WallDec {            /* a 52-byte wall set decoration */
    (segment 0x1D8, offset from the tile byte table gMapTiles[gFBC8-1] shifted left 5). For `srcA`
    (when not -1) it slices three cells from the 4-byte rectangles at ds:6840 into gFB5E starting at
    `dstA` and three more from ds:68A0 into gA99C[dstA].v, and copies the two gA99C[dstA].c bytes
-   from ds:6900. For `srcB` (when not -1) it does the same at `dstB`. Clears g8115. Called by
+   from ds:6900. For `srcB` (when not -1) it does the same at `dstB`. Clears gStatusLine. Called by
    ovl3:0A7C. */
 /*@ ovl3:03A2 */ void LoadMapCells(int srcA, int dstA, int srcB, int dstB)
 {
@@ -385,7 +385,7 @@ second:
         gA99C[dstB + i].c[1] = g6900[j + 1];
     }
 done:
-    g8115 = 0;
+    gStatusLine = 0;
 }
 /* ovl3:05D2: frees and clears the `count` map icon pointers in gB802 starting at index `base`.
    Called by ovl3:0A7C and overlay 5. */
@@ -404,7 +404,7 @@ done:
 }
 /* ovl3:0624: loads the overlay screen `screen` and slices six map icon cells out of gOverlayBuf
    (ds:113F), one per 4-word rectangle in the table at ds:6930, into gB802 starting at index
-   `dest`. Clears g8115. No direct caller found. */
+   `dest`. Clears gStatusLine. No direct caller found. */
 /*@ ovl3:0624 */ void LoadMapIcons6(char far *screen, int dest)
 {
     int n;
@@ -416,7 +416,7 @@ done:
     for (i = 0, si = 0; i < n; si += 4, i++)
         gB802[dest + i] = gGetSpriteCell(g6930[si], g6930[si + 1], g6930[si + 2],
             g6930[si + 3], gOverlayBuf);
-    g8115 = 0;
+    gStatusLine = 0;
 }
 /* ovl3:069E: the same as ovl3:0624 but slices the six cells from the 4-word rectangle table at
    ds:69C0 instead of ds:6930. No direct caller found. */
@@ -431,11 +431,11 @@ done:
     for (i = 0, si = 0; i < n; si += 4, i++)
         gB802[dest + i] = gGetSpriteCell(g69C0[si], g69C0[si + 1], g69C0[si + 2],
             g69C0[si + 3], gOverlayBuf);
-    g8115 = 0;
+    gStatusLine = 0;
 }
 /* ovl3:0718: builds the screen name `name` + "1" through sprintf("%s1"), loads it through
    LoadOverlayScreen and slices six map icon cells out of gOverlayBuf using the 4-word rectangle
-   table at ds:6A50 into gB802 starting at index `dest`. Clears g8115. No direct caller found. */
+   table at ds:6A50 into gB802 starting at index `dest`. Clears gStatusLine. No direct caller found. */
 /*@ ovl3:0718 */ void LoadNamedIcons(char far *name, int dest)
 {
     char buf[0x28];
@@ -447,7 +447,7 @@ done:
     for (i = 0, si = 0; i < 6; si += 4, i++)
         gB802[dest + i] = gGetSpriteCell(g6A50[si], g6A50[si + 1], g6A50[si + 2],
             g6A50[si + 3], gOverlayBuf);
-    g8115 = 0;
+    gStatusLine = 0;
 }
 /* ovl3:07A5: loads a wall texture set for `name`. It builds the file name "<name>.VCN" (VGA mode
    3) or "<name>.ECN" (otherwise), or an empty name when `name` is NULL, into gFileNameBuf, loads
@@ -462,7 +462,7 @@ done:
     void far *cell;
 
     if (name)
-        sprintf(gFileNameBuf, "%s.%s", name, g8102 == 3 ? "VCN" : "ECN");
+        sprintf(gFileNameBuf, "%s.%s", name, gGraphicsChoice == 3 ? "VCN" : "ECN");
     else
         strcpy(gFileNameBuf, gWallNameBuf);
     LoadPacked(gFileNameBuf, 7, 3);
@@ -470,13 +470,13 @@ done:
     Unpack0((char far *)gSegEFC2 + 0x12, (void far *)gFB4D, 0x10L);
     Unpack0((char far *)gSegEFC2 + 0x22, gSegDCA6, 0xcb20L);
     SetPlaneTables((void far *)gF4D6, (void far *)gFB4D);
-    if (g8102 == 2) {
+    if (gGraphicsChoice == 2) {
         gFn808E(gSegDCA6, 0xa400, 0xfa00);
         ExpandNibbles(gSegDCA6, gSegDF4E);
         gFn808E(gSegDF4E, 0xaa00, 0x7d00);
         ExpandNibbles((char far *)gSegDCA6 + 0x7d00, gSegDF4E);
         gFn808E(gSegDF4E, 0xabf4, 0x7d00);
-    } else if (g8102 == 0) {
+    } else if (gGraphicsChoice == 0) {
         cell = gGetSpriteCell(0, 0, 1, 8, sheet);
         farfree(cell);
         BuildMask(gSegDCA6);
@@ -574,12 +574,12 @@ done:
     script = gBuf8DCA + 2;
     LoadObjects(script);
     script += 12;
-    sprintf(gFileNameBuf, "%s.%s", script, g8102 == 3 ? "VMP" : "EMP");
+    sprintf(gFileNameBuf, "%s.%s", script, gGraphicsChoice == 3 ? "VMP" : "EMP");
     handle = FileOpen(gFileNameBuf, 1);
     FileRead(handle, gBufF43E, 2L);
     FileRead(handle, gBufF43E, 0x1770L);
     FileClose(handle);
-    if (g8102 == 3) {
+    if (gGraphicsChoice == 3) {
         sprintf(gFileNameBuf, "%s.PAL", script);
         LoadFile(gFileNameBuf, gFE68, 0x300);
     }
@@ -662,7 +662,7 @@ done:
             script += 5;
         }
     }
-    g8115 = 0;
+    gStatusLine = 0;
     scriptWord = *(int far *)gBuf8DCA;
     script = gBuf8DCA + scriptWord;
     itemCount = *(int far *)script;
@@ -704,7 +704,7 @@ done:
             *src++ = gB894[i * 9 + j];
     len = CompressLcw((char far *)gBufDCFC, (char far *)buf, 0x1000);
     if (len > 0x4b0) {
-        g8115 = 0;
+        gStatusLine = 0;
         sprintf(gFileNameBuf, "Map compression failure: size of map = %d", len);
         gDrawText(gFileNameBuf, 0, 0, 0xf, 0);
         WaitKeyEvent();

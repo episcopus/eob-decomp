@@ -73,8 +73,8 @@ struct WordCell {           /* the 4-byte "find the word" records at ds:65F0, 30
     char word;              /* +3: the "Enter word" number */
 };
 
-extern int g8102; /*@ ds:8102 */
-extern int g8115; /*@ ds:8115 */
+extern int gGraphicsChoice; /*@ ds:8102 */
+extern int gStatusLine; /*@ ds:8115 */
 extern int gTextAttr2; /*@ ds:811B */
 extern int gTextAttr1; /*@ ds:811D */
 extern int gTextRegion; /*@ ds:811F */
@@ -209,7 +209,7 @@ extern void FileClose(int handle); /*@ 1C0E:03BB */
     gIconsDDE4[0] = gGetSpriteCell(0, 0, 2, 0x10, gOverlayBuf);
     gPtrDD00 = gIconsDDE4[0];
     SetMousePointerShape(0, 0, gPtrDD00);
-    g8115 = 0;
+    gStatusLine = 0;
 }
 
 /* ovl2:005E: reads ITEM.DAT (whitepaper 4): a u16 item count (432), one 14-byte item record per
@@ -250,7 +250,7 @@ extern void FileClose(int handle); /*@ 1C0E:03BB */
 /* ovl2:0171: loads the four item icon sheets (ITEML1, ITEMS1, THROWN, ITEMICN), slices every cell
    out of them through gGetSpriteCell into the icon tables (gItemL1Icons, gItemS1Icons,
    gThrownIcons, gIconsDDE4) and the five single THROWN cells, allocates the 0x12C-byte item
-   description buffer (gDF48), then reads ITEMRMP.VGA (g8102 == 3) or ITEMRMP.EGA into gBufF534.
+   description buffer (gDF48), then reads ITEMRMP.VGA (gGraphicsChoice == 3) or ITEMRMP.EGA into gBufF534.
    Called by LoadDecorateIcons right before it loads DECORATE. */
 /*@ ovl2:0171 */ void LoadItemSheets(void)
 {
@@ -290,8 +290,8 @@ extern void FileClose(int handle); /*@ 1C0E:03BB */
         gIconsDDE4[i] = gGetSpriteCell((i % 20) * 2, (i / 20) * 16, 2, 0x10, gSheetITEMICN);
 
     gDF48 = MemAlloc(0x12cL, 0);
-    g8115 = 0;
-    sprintf(gFileNameBuf, "ITEMRMP.%s", g8102 == 3 ? "VGA" : "EGA");
+    gStatusLine = 0;
+    sprintf(gFileNameBuf, "ITEMRMP.%s", gGraphicsChoice == 3 ? "VGA" : "EGA");
     handle = FileOpen(gFileNameBuf, 1);
     FileRead(handle, gBufF534, 0x640L);
     FileClose(handle);
@@ -345,7 +345,7 @@ extern void FileClose(int handle); /*@ 1C0E:03BB */
     for (i = 0; i < 3; i++)
         for (j = 0; j < 4; j++)
             gIconTableA92A[i * 4 + j] = gGetSpriteCell(j * 3, g65C3[i], 3, g65C0[i], gSheetDECORATE);
-    g8115 = 0;
+    gStatusLine = 0;
 }
 
 /* ovl2:078D: Purpose unknown. Loads the INTRO sheet into gOverlayBuf and fills the DROW/creature
@@ -357,13 +357,13 @@ extern void FileClose(int handle); /*@ 1C0E:03BB */
     int handle;
 
     LoadScreenImage("INTRO", gOverlayBuf, 5, 3, 2);
-    g8115 = 2;
+    gStatusLine = 2;
     handle = gFn8072(0, 0);
     gFillRect(0, 0x9f, 0x13f, 0xc7, handle);
     DrawFilledPanel(0x4d, 0xa5, 0xf9, 0xc1, 0xd, 0xe, 0xc);
     DrawFilledPanel(0x4c, 0xa4, 0xfa, 0xc2, 0xd, 0xe, -1);
     ClipRect(0, 0, 0, 0, 0x28, 0xc8, 2, 0);
-    g8115 = 0;
+    gStatusLine = 0;
 }
 
 /* ovl2:0846: the "load a saved game" option panel. Draws the panel (DrawOptionList), then loops
@@ -413,11 +413,11 @@ extern void FileClose(int handle); /*@ 1C0E:03BB */
 }
 
 /* ovl2:0937: sets the UI palette entries (ds:F57E, FB4C, F53A, FB7B, FB7A, A9C4, A928, A95A,
-   8A6C, 8A7D) for the VGA/Tandy modes (g8102 4 or 3) or the other modes, and on the other modes
+   8A6C, 8A7D) for the VGA/Tandy modes (gGraphicsChoice 4 or 3) or the other modes, and on the other modes
    copies the 1CE7 table from ds:65EA. Called by LoadItemData. */
 /*@ ovl2:0937 */ void SetUiPalette(void)
 {
-    if (g8102 == 4 || g8102 == 3) {
+    if (gGraphicsChoice == 4 || gGraphicsChoice == 3) {
         gF57E = 0x84;
         gFB4C = 0x82;
         gF53A = 0x87;
@@ -477,7 +477,7 @@ extern void FileClose(int handle); /*@ 1C0E:03BB */
     font = gFont1A47;
     f1A47_0169(gFE5A);
     gColour179 = gF57E;
-    g8115 = 0;
+    gStatusLine = 0;
     SetTextWindow(0xd);
     gFn807E(gTextLeft, gTextTop, gTextWidth, gTextHeight, gSegDF4E);
     tries = 0;

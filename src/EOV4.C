@@ -520,7 +520,7 @@ extern signed char g6FE1[]; /*@ ds:6FE1 */   /* sprite table B (this unit) */
 extern signed char g7015[]; /*@ ds:7015 */   /* per-row y nudge (this unit) */
 extern void far *gB7FE[]; /*@ ds:B7FE */     /* far sprite cells indexed by sprite plus nudge (this unit) */
 extern void far *gBufDCFC; /*@ ds:DCFC */    /* start-up far allocation, 4096 bytes (src/E07A9.C) */
-extern int g8102; /*@ ds:8102 */             /* the video mode/format (src/E07A9.C) */
+extern int gGraphicsChoice; /*@ ds:8102 */             /* the video mode/format (src/E07A9.C) */
 extern int gPartyCell; /*@ ds:FBCA */        /* the current map cell id (src/E08E6.C) */
 extern void (far *gFn80D2)(char far *map); /*@ ds:80D2 */  /* the far colour-table callback (src/E07A9.C) */
 extern char g1CD3[]; /*@ ds:1CD3 */
@@ -602,9 +602,9 @@ extern void DrawRegion00C9(int mode, void far *src, int x, int y, int region); /
         nudge = obj->m07 ? 0x12 : 0;
         cell = gB7FE[spriteAbs + nudge];
         for (n = tileRow; n != 0; n--) {
-            if (g8102 == 2)
+            if (gGraphicsChoice == 2)
                 BlitSpriteEga(cell, gBufDCFC);
-            else if (g8102 == 0)
+            else if (gGraphicsChoice == 0)
                 BlitSpriteCga(cell, gBufDCFC);
             else
                 BlitSpriteDefault(cell, gBufDCFC);
@@ -625,7 +625,7 @@ extern void DrawRegion00C9(int mode, void far *src, int x, int y, int region); /
         x += (obj->m17 & 0xf0) >> 4;
         y += obj->m17 & 0xf;
         if (obj->m16 & 2) {
-            if (g8102 == 0)
+            if (gGraphicsChoice == 0)
                 gFn80D2(g1CE3);
             else
                 gFn80D2(g1CD3);
@@ -1051,7 +1051,7 @@ extern void PlaySoundDefault(int sound); /*@ 177D:00F3 */
     Ovl4_044B(gPartyCell, gFBCC);
     DrawTile(gSegDCA6);
     DrawViewSlots(0);
-    if (gFB45 && g8102 == 3) {
+    if (gFB45 && gGraphicsChoice == 3) {
         if (full) {
             HidePointerZone(0, 0, 0xb0, 0x78);
             gFillRect(0, 0, 0xb0, 0x78, 0xc);

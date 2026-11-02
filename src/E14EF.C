@@ -65,7 +65,7 @@ extern int g8142; /*@ ds:8142: y of the last click; the click event writes it (s
 extern char gFontWidth; /*@ ds:8100: font cell width; src/E1A47.C declares it unsigned char, but
                             unsigned char here fails make match, so this file keeps char */
 extern char gFontHeight; /*@ ds:8101: font cell height; src/E1A47.C declares it unsigned char (same) */
-extern int g8102; /*@ ds:8102: the graphics choice from argv[1][0], 1 Tandy and 3 VGA (WHITEPAPER 2.6,
+extern int gGraphicsChoice; /*@ ds:8102: the graphics choice from argv[1][0], 1 Tandy and 3 VGA (WHITEPAPER 2.6,
                       docs/design/WHITEPAPER.md:119; src/EOV0.C:134 calls it the video mode the game
                       initialised). A zero here makes the normal text colour 1 (:208, :289); what a
                       zero means for the graphics choice is not established */
@@ -205,7 +205,7 @@ extern void WaitFrames(int n); /*@ 1A16:000B */
     for (i = 0; i < rows; i++) {
         entry = FindMaskBit(i, mask, shift);
         dy = y + gFontHeight * i + i * spacing;
-        DrawShadowText(names[entry], x, dy, !g8102 ? 1 : panelDef->colorA, 0);
+        DrawShadowText(names[entry], x, dy, !gGraphicsChoice ? 1 : panelDef->colorA, 0);
         if (entry == selEntry && (g5D1A || gMouseDisabled))
             gDrawText(names[entry], x, dy, panelDef->colorB, 0);
     }
@@ -286,7 +286,7 @@ enum {
     halfspace = gFC78 >> 1;
     ybase = gTextTop + panelDef->y;
     xbase = (gTextLeft + panelDef->x) << 3;
-    colorA = !g8102 ? 1 : panelDef->colorA;
+    colorA = !gGraphicsChoice ? 1 : panelDef->colorA;
     colorB = panelDef->colorB;
     key = 0;
     gFC7A = 0;

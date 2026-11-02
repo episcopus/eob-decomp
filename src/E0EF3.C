@@ -281,7 +281,7 @@ extern signed char gFB4C;               /*@ ds:FB4C */ /* a colour (src/E0BD2.C)
 extern signed char gA9C4;               /*@ ds:A9C4 */ /* a colour (src/EOV2.C) */
 extern signed char gA928;               /*@ ds:A928 */ /* a colour (src/EOV2.C) */
 extern signed char gFB7B;               /*@ ds:FB7B */ /* a colour (src/E1547.C) */
-extern int g8102;                       /*@ ds:8102 */ /* the video mode (src/E07A9.C) */
+extern int gGraphicsChoice;                       /*@ ds:8102 */ /* the video mode (src/E07A9.C) */
 
 /* The record 0EF3:08CF, 0EF3:2541 and 0EF3:25BD take: an action context with the member it applies
    to at +0x38 (-1 when none) and a result word at +4 the functions hand back. */
@@ -366,7 +366,7 @@ extern unsigned char gFlashX2[];    /*@ ds:56C7 */ /* per-frame x in pixels for 
 extern unsigned char gFlashY2[];    /*@ ds:56D7 */ /* per-frame y in pixels for 0EF3:06E7 */
 extern signed char g1A09[];      /*@ ds:1A09 */ /* per-slot object index (EOV4.C) */
 extern int g1D61[];              /*@ ds:1D61 */ /* per-slot, per-part x table (EOV4.C) */
-extern int g8115;                /*@ ds:8115 */ /* nonzero while a status line is up (E082C.C) */
+extern int gStatusLine;                /*@ ds:8115 */ /* nonzero while a status line is up (E082C.C) */
 extern int gDD18;                /*@ ds:DD18 */ /* the animation's origin x, written here and read by
                                                    0EF3:2A53 */
 extern int gDD1A;                /*@ ds:DD1A */ /* the animation's origin y */
@@ -403,7 +403,7 @@ extern int gFC68;                /*@ ds:FC68 */ /* the animation's origin x, sav
 extern int gFC6A;                /*@ ds:FC6A */ /* the animation's origin y, saved from ds:DD1A */
 extern int gFC6C;                /*@ ds:FC6C */ /* a particle's x pixel */
 extern int gFC6E;                /*@ ds:FC6E */ /* a particle's y pixel */
-extern int gFC70;                /*@ ds:FC70 */ /* g8115 saved while the animation runs */
+extern int gFC70;                /*@ ds:FC70 */ /* gStatusLine saved while the animation runs */
 extern int gFC72;                /*@ ds:FC72 */ /* the handle gFn8072 returned under the pointer */
 
 /* 0EF3:000E: bubble-sorts each of the ten six-byte rows that start at a character's +0x37 spell
@@ -484,10 +484,10 @@ extern int gFC72;                /*@ ds:FC72 */ /* the handle gFn8072 returned u
     rec->m00 = 0;
     DrawViewFrame(1);
     rec->m00 = 2;
-    g8115 = 2;
+    gStatusLine = 2;
     gFillRect(0, 0, 0xB0, 0x78, 0);
     DrawViewSlots(g55EF[objIndex]);
-    g8115 = 0;
+    gStatusLine = 0;
     ComputeViewSpan(slot, &left, &right, 5);
     LockHidePointer();
     gDD18 = g1D61[(slot * 5 + 4) * 2] + 0x58;
@@ -758,7 +758,7 @@ extern int gFC72;                /*@ ds:FC72 */ /* the handle gFn8072 returned u
     for (i = 0; i < 0x10; i++)
         gSaveRect(gFlashX2[i] >> 3, gFlashY2[i], 2, 0x10, gBufDCFC + (i << 8));
     for (pass = 0; pass < 0xB; pass++) {
-        g8115 = 2;
+        gStatusLine = 2;
         for (i = 0; i < 0x10; i++) {
             x = gFlashX2[i];
             y = gFlashY2[i];
@@ -772,7 +772,7 @@ extern int gFC72;                /*@ ds:FC72 */ /* the handle gFn8072 returned u
                 continue;
             f1A29_000F(2, gFlashFrames[frame], x, y, 0);
         }
-        g8115 = 0;
+        gStatusLine = 0;
         HidePointerZone(0, 0, 0xB0, 0x78);
         ClipRect(0, 0, 0, 0, 0x16, 0x78, 2, 0);
         ShowPointerZone();
@@ -1418,7 +1418,7 @@ extern int gFC72;                /*@ ds:FC72 */ /* the handle gFn8072 returned u
 void AnimateConeOfCold(int count, int spread, int step, int cycle, int divisor,
                        int far *frameTable);
 /* 0EF3:18D8: the cone of cold. It reads the panel member's class-slot 1 value, blanks the view
-   (g8115 = 2, gFillRect, DrawViewSlots(7), g8115 = 0), hides the pointer, runs the cone drawing
+   (gStatusLine = 2, gFillRect, DrawViewSlots(7), gStatusLine = 0), hides the pointer, runs the cone drawing
    0EF3:2EBC(0x96, 0x32, 0xa, 1, 0x64, ds:5737) and shows it again. It sets gF518 and, for each of
    the seven rows of the per-page table g5763[gFBCC], lists the objects whose cell is the party cell
    plus the row's delta (masked to 0x3FF) with Obj17FD and damages each that 0D1C:0BAB does not
@@ -1435,10 +1435,10 @@ void AnimateConeOfCold(int count, int spread, int step, int cycle, int divisor,
     int dmg;
 
     classSlot = GetClassSlot1Value(gPanelMember);
-    g8115 = 2;
+    gStatusLine = 2;
     gFillRect(0, 0, 0xB0, 0x78, 0);
     DrawViewSlots(7);
-    g8115 = 0;
+    gStatusLine = 0;
     HidePointerZone(0, 0, 0xB0, 0x78);
     AnimateConeOfCold(0x96, 0x32, 0x0A, 1, 0x64, gText5737);
     ShowPointerZone();
@@ -1869,14 +1869,14 @@ void DrawSpellPanel(void);
     return 1;
 }
 
-/* 0EF3:2295: draw the spell panel body. It sets g8115, fills the panel's outer rectangle with
+/* 0EF3:2295: draw the spell panel body. It sets gStatusLine, fills the panel's outer rectangle with
    gFillRect, then draws the five spell cells: for each cell (the gSpellCells rectangle) it picks
    three colours, gFB4C/gF53A/gF57E for the member's own row (i == gDDE2) and 3/1/-1 style
-   (gA9C4/gA928/gFB7B) for the others when g8102 is nonzero, or 1/2/3 and 0/1/2 when it is zero.
+   (gA9C4/gA928/gFB7B) for the others when gGraphicsChoice is nonzero, or 1/2/3 and 0/1/2 when it is zero.
    It then draws the "1ST".."5TH" labels (gSpellLabels) and the name list box, and for each of the
    seven rows of the member's slot row (gDD14 + gDDE2*6) draws the spell's name from gNameTable
    (row 6, the abort row, gets ds:592B, or ds:5937 when it is the highlighted row gA9C5). Finally
-   it clears g8115, hides the pointer, clips a 9 by 0x35 box, draws the panel's inner line with
+   it clears gStatusLine, hides the pointer, clips a 9 by 0x35 box, draws the panel's inner line with
    gDrawLine and shows the pointer. Called by 0EF3:21E0, 0EF3:25BD and 0EF3:2929.
    DRAFT: the panel, cells, labels and row list match through the third loop, but with the file's
    -ml -O -Z TCC's internal assembler cross-jumps the not-selected row-6 "ABORT SPELL" call
@@ -1897,11 +1897,11 @@ void DrawSpellPanel(void);
     int hiColour;
     int textColour;
 
-    g8115 = 2;
+    gStatusLine = 2;
     gFillRect(0x46, 0x7a, 0xaf, 0xaf, gF57E);
     for (i = 0; i < 5; i++) {
         cell = i * 4;
-        if (g8102 == 0) {
+        if (gGraphicsChoice == 0) {
             colourA = gDDE2 == i ? 1 : 0;
             colourB = gDDE2 == i ? 2 : 1;
             fill = gDDE2 == i ? 3 : 2;
@@ -1918,7 +1918,7 @@ void DrawSpellPanel(void);
                         ((unsigned char near *)gSpellCells)[cell + 2], ((unsigned char near *)gSpellCells)[cell + 3],
                         colourA, colourB, fill);
     }
-    if (g8102 == 0) {
+    if (gGraphicsChoice == 0) {
         fill = 2;
         hiColour = 0xc;
         textColour = 3;
@@ -1946,7 +1946,7 @@ void DrawSpellPanel(void);
                 gDrawText(gText592B, 0x49, i * 6 + 0x84, textColour, fill);
         }
     }
-    g8115 = 0;
+    gStatusLine = 0;
     HidePointerZone(0x48, 0x78, 0xb0, 0xaf);
     ClipRect(9, 0x7a, 9, 0x7a, 0xd, 0x35, 2, 0);
     gDrawLine(0x47, 0x7a, 0x47, 0xae, gF53A);
@@ -2207,7 +2207,7 @@ void DrawSpellPanel(void);
     row4 = base + 0x258;
     row5 = base + 0x2EE;
     row6 = base + 0x384;
-    gFC70 = g8115;
+    gFC70 = gStatusLine;
     if (count > 0x96)
         count = 0x96;
     gFC68 = gDD18;
@@ -2249,9 +2249,9 @@ void DrawSpellPanel(void);
                 row2[gFC62] = 0 - (row2[gFC62] >> 1);
             if (gFC6E > bound)
                 gFC6E = bound;
-            g8115 = 2;
+            gStatusLine = 2;
             gFC72 = gFn8072(gFC6C, gFC6E);
-            g8115 = 0;
+            gStatusLine = 0;
             row4[gFC62] = gFn8072(gFC6C, gFC6E);
             gFC64 = ((char far *)frameTable)[row6[gFC62] >> 8];
             if (gFC64 != 0) {
@@ -2266,7 +2266,7 @@ void DrawSpellPanel(void);
         WaitFrame();
     }
     gFlags849E |= 2;
-    g8115 = gFC70;
+    gStatusLine = gFC70;
 }
 
 /* 0EF3:2EBC: the cone-of-cold animation. It fills eight 150-word rows of the
@@ -2281,7 +2281,7 @@ void DrawSpellPanel(void);
    counter row6 by row5, saves the pixels (gFn8072 into row4, and into `handle` once divisor>>2
    passes have elapsed) and looks up the frame table row6>>8; a zero entry retires the particle
    (row5 = 0) and a live one with no held particle under the pointer draws it (gFn809E). It runs
-   until no particle is live, restores g8115, increments `cycle`, and clears bit 1 of ds:849E.
+   until no particle is live, restores gStatusLine, increments `cycle`, and clears bit 1 of ds:849E.
    `count` is capped at 0x96, `divisor` scales the frame range, `frameTable` is the frame word
    table. `cycle` is only incremented (its value never used here). Called by 0EF3:18D8 with
    (0x96, 0x32, 0x0A, 1, 0x64, gText5737). */
@@ -2323,7 +2323,7 @@ void DrawSpellPanel(void);
     row7 = base + 0x41A;
     spread <<= 6;
     gFlags849E &= ~2;
-    savedAttr = g8115;
+    savedAttr = gStatusLine;
     if (count > 0x96)
         count = 0x96;
     originX = 0x58;
@@ -2416,9 +2416,9 @@ void DrawSpellPanel(void);
             if (divisor >> 2 > frameCount) {
                 handle = 0;
             } else {
-                g8115 = 2;
+                gStatusLine = 2;
                 handle = gFn8072(x, y);
-                g8115 = 0;
+                gStatusLine = 0;
             }
             row4[i] = gFn8072(x, y);
             current = frameTable[row6[i] >> 8];
@@ -2433,7 +2433,7 @@ void DrawSpellPanel(void);
         WaitFrame();
         frameCount++;
     }
-    g8115 = savedAttr;
+    gStatusLine = savedAttr;
     cycle++;
     gFlags849E |= 2;
 }

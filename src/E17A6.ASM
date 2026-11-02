@@ -18,7 +18,7 @@
         EXTRN   _SetFarPointer:FAR      ; @ 1A72:02FE (E1A72.ASM)
 
         .DATA
-        EXTRN   g8102:WORD              ; @ ds:8102: graphics mode word
+        EXTRN   gGraphicsChoice:WORD              ; @ ds:8102: graphics mode word
         EXTRN   gSegEFC2:DWORD          ; @ ds:EFC2: far pointer to the saved screen buffer
         EXTRN   gTable7FBC:BYTE         ; @ ds:7FBC: direction table (17A6:0373)
         EXTRN   gTable7FCC:WORD         ; @ ds:7FCC: neighbour offsets (17A6:0FB8)
@@ -230,7 +230,7 @@ gFlipPlanes dw 0
 gSecondPlane dw 0
 ; ---- 03E7..0D20
 ; 17A6:03E7: draw a tile from the far pointer at [bp+6]/[bp+8] into the screen buffer,
-; dispatching on the graphics mode g8102: 2 (EGA) saves the far pointer and programs the
+; dispatching on the graphics mode gGraphicsChoice: 2 (EGA) saves the far pointer and programs the
 ; sequencer and graphics controller, 0 (CGA), 1 (Tandy) and 3 (MCGA) have their own paths.
 ; Called from overlay 4 (ovl4:1F6A).
         PUBLIC  _DrawTile              ; @ 17A6:03E7
@@ -251,7 +251,7 @@ _DrawTile PROC FAR
         mov bx, 0ADB0h
         mov cx, 212Eh
         mov bp, cx
-        cmp word ptr [g8102], 2
+        cmp word ptr [gGraphicsChoice], 2
         je L0419
         mov di, word ptr [gSegEFC2]
         mov ax, word ptr [gSegEFC2+2]
@@ -262,11 +262,11 @@ L0419:
 L041F:
         mov es, ax
         mov word ptr cs:[gTileRows], 0Fh
-        cmp word ptr [g8102], 2
+        cmp word ptr [gGraphicsChoice], 2
         je L0446
-        cmp word ptr [g8102], 0
+        cmp word ptr [gGraphicsChoice], 0
         je L0443
-        cmp word ptr [g8102], 1
+        cmp word ptr [gGraphicsChoice], 1
         je L0440
         jmp L0ADA
 L0440:
@@ -1563,7 +1563,7 @@ _FindNeighbour ENDP
 ; ---- data 0FEF..0FFA
 ; 17A6:0FEF: scratch words of the sprite unpackers. gSpriteRows is the row count,
 ; gSpriteWidth the pixel width, gSpriteStride the source row stride, gSpriteGroups and
-; gSpriteRemainder the stride divided by 3, and gSpriteMode a copy of g8102.
+; gSpriteRemainder the stride divided by 3, and gSpriteMode a copy of gGraphicsChoice.
 gSpriteRows db 0
 gSpriteWidth dw 0
 gSpriteStride dw 0
@@ -1572,7 +1572,7 @@ gSpriteRemainder dw 0
 gSpriteMode dw 0
 ; ---- 0FFA..109A
 ; 17A6:0FFA: unpack a sprite from the far pointer at [bp+6]/[bp+8] to [bp+0A]/[bp+0C]
-; for the Tandy and MCGA modes (g8102 1 and 3). Called from overlay 4 (ovl4:0F1D).
+; for the Tandy and MCGA modes (gGraphicsChoice 1 and 3). Called from overlay 4 (ovl4:0F1D).
         PUBLIC  _BlitSpriteDefault              ; @ 17A6:0FFA
 _BlitSpriteDefault PROC FAR
         push bp
@@ -1584,7 +1584,7 @@ _BlitSpriteDefault PROC FAR
         push si
         push ds
         push es
-        mov ax, word ptr [g8102]
+        mov ax, word ptr [gGraphicsChoice]
         mov word ptr cs:[gSpriteMode], ax
         mov si, word ptr [bp+6]
         mov ds, word ptr [bp+8]
@@ -1709,7 +1709,7 @@ gTable10CD:
         db      3Ch, 3Dh, 3Eh, 3Fh, 3Ch, 3Dh, 3Eh, 3Fh, 3Ch, 3Dh, 3Eh, 3Fh, 3Ch, 3Dh, 3Eh, 3Fh
 ; ---- 11CD..128B
 ; 17A6:11CD: unpack a sprite from the far pointer at [bp+6]/[bp+8] to [bp+0A]/[bp+0C]
-; for the CGA mode (g8102 0). Called from overlay 4 (ovl4:0F08).
+; for the CGA mode (gGraphicsChoice 0). Called from overlay 4 (ovl4:0F08).
         PUBLIC  _BlitSpriteCga              ; @ 17A6:11CD
 _BlitSpriteCga PROC FAR
         push bp
@@ -1960,7 +1960,7 @@ gTable1615:
         db      38h, 39h, 3Ah, 3Bh, 38h, 39h, 3Ah, 3Bh, 3Ch, 3Dh, 3Eh, 3Fh, 3Ch, 3Dh, 3Eh, 3Fh
 ; ---- 1715..179E
 ; 17A6:1715: unpack a sprite from the far pointer at [bp+6]/[bp+8] to [bp+0A]/[bp+0C]
-; for the EGA mode (g8102 2). Called from overlay 4 (ovl4:0EEC).
+; for the EGA mode (gGraphicsChoice 2). Called from overlay 4 (ovl4:0EEC).
         PUBLIC  _BlitSpriteEga              ; @ 17A6:1715
 _BlitSpriteEga PROC FAR
         push bp

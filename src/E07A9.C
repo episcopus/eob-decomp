@@ -199,7 +199,7 @@ extern void far *gSegEFC2; /*@ ds:EFC2 */  /* slot 3's far pointer, f19EC_0002(3
                                               ovl3:15C1, 164D (ovl3:15B9, the function that calls
                                               SetMouseItem). The resident E17A6 reader calls it the
                                               saved screen buffer (src/E17A6.ASM:22), read at
-                                              src/E17A6.ASM:256-257 when g8102 != 2 [H]. What the
+                                              src/E17A6.ASM:256-257 when gGraphicsChoice != 2 [H]. What the
                                               buffer is is Purpose unknown */
 /* the page/buffer segment table (src/E07C8.C:74, src/E19EC.C:15), whose eighth word at ds:FC1A
    is slot 7, the segment gSegDCA6 holds (f19EC_0002(7), 07A9:00A3). */
@@ -231,7 +231,7 @@ extern unsigned char gFBD2; /*@ ds:FBD2 */  /* bit 0, with Entry14.flags bit 0x8
                                                  bit gates the icon colour row in 0D1C:070F
                                                  (src/E0D1C.C:50); read at 07A9:0163 and
                                                  src/E0D1C.C:478 */
-extern int g8102; /*@ ds:8102 */  /* the mode word SetMouseItem tests at 07A9:016A (the colour row
+extern int gGraphicsChoice; /*@ ds:8102 */  /* the mode word SetMouseItem tests at 07A9:016A (the colour row
                                      against the ds:0090 dummy) and passes to TranslateImage (07A9:018F);
                                      the switch at 17A6:199E tests it (cases 0, 2 and 3). src/ reads
                                      it four ways: "graphics choice" (src/E07C8.C:30), "the video
@@ -300,7 +300,7 @@ extern void DrawText(char far *text); /*@ 1DE7:060A */
    and DX (17A6:1995, 1998) with `mov ds,dx` before each xlatb (17A6:19BE, 19E4, 19F2); the mode
    word (17A6:199B) picks the path (cases 0, 2 and 3 at 17A6:199E to 19C8). The call
    (07A9:0193..01B1) passes the icon far pointer first, then gDF48 (the translated icon image),
-   g80E2 (Purpose unknown, its only reader is 07A9:0197) and g8102. */
+   g80E2 (Purpose unknown, its only reader is 07A9:0197) and gGraphicsChoice. */
 extern void TranslateImage(void far *src, void far *dst, void far *xlat, int mode); /*@ 17A6:197E */
 /* 1BB1:0002 stores the hot-spot offset and a pointer shape record; the caller passes the hot spot
    (8,8) when item > 0 and (0,0) otherwise, and the far pointer gIconsDDE4[item] in both cases (see below). */
@@ -361,7 +361,7 @@ extern void SetMousePointerShape(int hotX, int hotY, void far *icon); /*@ 1BB1:0
    record gTable8DD2[item].icon then supplies the icon number. When the current record
    gTable8DD2[gFBCE] has flag 0x80 and gFBD2 bit 0 is set, the flagged branch runs (07A9:015C to
    01B1): the icon's 16-byte colour row (gBufF534 + (item << 4), item now the icon number, or the
-   dummy byte at ds:0090 when g8102 == 0) is passed to ds:80D2, the icon is translated into gDF48
+   dummy byte at ds:0090 when gGraphicsChoice == 0) is passed to ds:80D2, the icon is translated into gDF48
    by 17A6:197E, and the translated image becomes the mouse pointer (item set to ICON_SLOT_TRANSLATED, 0x59, so item > 0 at
    07A9:01BC, and gIconsDDE4[ICON_SLOT_TRANSLATED] passed to 1BB1:0002 at (8,8)). When either gate
    fails the branch is skipped (07A9:0161 and 0168, je 0x1bc) and the plain item icon becomes the
@@ -386,16 +386,16 @@ extern void SetMousePointerShape(int hotX, int hotY, void far *icon); /*@ 1BB1:0
         /* the record of the index SetCurrentItem stored (gFBCE), not item, which is the icon
            number by now */
         if ((gTable8DD2[gFBCE].flags & ITEM_FLAG_COLOUR_ICON) && (gFBD2 & 1)) {
-            if (g8102)
+            if (gGraphicsChoice)
                 gFn80D2(gBufF534 + (item << 4));   /* the icon's 16-byte colour row */
             else
-                /* QUIRK 07A9:0184: when g8102 == 0 the argument is the one-byte literal at
-                   ds:0090, a dummy. g8102 only chooses the ITEMRMP name, "VGA" (ds:6790) when
+                /* QUIRK 07A9:0184: when gGraphicsChoice == 0 the argument is the one-byte literal at
+                   ds:0090, a dummy. gGraphicsChoice only chooses the ITEMRMP name, "VGA" (ds:6790) when
                    it is 3 and "EGA" (ds:6794) otherwise (ovl2:0432..0446); the ITEMRMP read
-                   itself (ovl2:047F) has no branch on g8102. Why g8102 == 0 gets the dummy is
+                   itself (ovl2:047F) has no branch on gGraphicsChoice. Why gGraphicsChoice == 0 gets the dummy is
                    Purpose unknown. */
                 gFn80D2("");
-            TranslateImage(gIconsDDE4[item], gDF48, g80E2, g8102);
+            TranslateImage(gIconsDDE4[item], gDF48, g80E2, gGraphicsChoice);
             /* gIconsDDE4[0x59] is gDF48 (0xDDE4 + 0x59 * 4 = 0xDF48), the same pointer just passed
                as the second argument: the translated icon image shown by 1BB1:0002 as the mouse
                pointer for a record whose flag has 0x80 set. gDF48's writer is in the overlay

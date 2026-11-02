@@ -28,7 +28,7 @@ struct OverlayRequest {     /* the request 1C00:0055 runs, ds:8121 */
                                src/ says who writes ds:8125/ds:8127; this unit reads only `name` */
 };
 
-extern int g8102;                     /*@ ds:8102: graphics choice: argv[1][0] + 1 at :218, less
+extern int gGraphicsChoice;                     /*@ ds:8102: graphics choice: argv[1][0] + 1 at :218, less
                                          0x31 in 0199 (:287), so the digit 0..4 indexes
                                          gOverlayFiles (ds:3074, the five name pointers in EOB.EXE
                                          order: 0 cga, 1 tandy, 2 ega, 3 mcga/VGA, 4 vga;
@@ -97,12 +97,12 @@ extern void (far *gFn8056)(void);     /*@ ds:8056: far function called before th
                                          (:364). Purpose unknown: nothing in src/ assigns ds:8056
                                          (re/renames.toml:1297 has the name as inherited) */
 extern unsigned char far *gFE68;      /*@ ds:FE68: the palette buffer StartupGame allocates. The
-                                         g8102 - 1 case labels 0 and 1 (graphics choices 1 and 2, :374)
+                                         gGraphicsChoice - 1 case labels 0 and 1 (graphics choices 1 and 2, :374)
                                          get 16 bytes, of which only byte 0 (:375, 0) and byte 0xf
                                          (:376, 0xf) are written, the other 14 keeping what MemAlloc
                                          returned; the setter is given g3057 (:377), not this, so those 16
                                          bytes have no reader in src/. Case labels 2 and 3 (:381) get 0x300
-                                         bytes; main loads eobpal.col over it for choices 3 and 4 (:246), and the VGA choice (g8102 == 3) has src/EOV3.C:584 load `<script>.PAL` over it and src/EOV4.C:1054-1060 send it to the setter each frame */
+                                         bytes; main loads eobpal.col over it for choices 3 and 4 (:246), and the VGA choice (gGraphicsChoice == 3) has src/EOV3.C:584 load `<script>.PAL` over it and src/EOV4.C:1054-1060 send it to the setter each frame */
 extern unsigned char g3057[];  /*@ ds:3057: the 16-byte table passed to the palette setter for graphics choices 1 and 2 (no eobpal.col); whether it is a palette is [H] (src/EOV4.C:1035) */
 extern void far *gFE5A;               /*@ ds:FE5A: the 8x8 font loaded from Font8.fnt (whitepaper
                                          4.4, docs/design/WHITEPAPER.md:171: FONT8.FNT is 8 x 8,
@@ -202,7 +202,7 @@ int AllocationFailure(void);
    calls InstallKeyboard (:235), InstallHardErr (:236) and the INT 1Ch tick handler install
    f1D8F_0010 (:237), then runs the start-up 07C8:0199. The launcher is INTRO.EXE, which START1.EXE
    starts and which passes the arguments on (whitepaper 2.6).
-   When start-up succeeds it switches on the graphics choice reduced by 1 (g8102 - 1): choices 1
+   When start-up succeeds it switches on the graphics choice reduced by 1 (gGraphicsChoice - 1): choices 1
    and 2 take the built-in 16-byte colour table at ds:3057, choices 3 and 4 load eobpal.col into
    ds:FE68, both through the far function at ds:80BA; a graphics choice of 0 (CGA) matches neither
    case and sets no palette. It then calls 16A5:0D78, and, when g3092 is set, sets the mouse disabled
@@ -215,7 +215,7 @@ int AllocationFailure(void);
     int mouseChoice;                        /* argv[3][0] - '0': 1 turns the mouse on at :258, 0
                                                leaves it disabled */
 
-    g8102 = argv[1][0] + 1;
+    gGraphicsChoice = argv[1][0] + 1;
     gSoundCard = argv[2][0] + 0xcf;
     gSoundOn = argv[2][0] != '4';
     mouseChoice = argv[3][0] + 0xffd0;
@@ -236,7 +236,7 @@ int AllocationFailure(void);
     InstallHardErr();
     f1D8F_0010();
     if (StartupGame() == 1) {
-        switch (g8102 - 1) {
+        switch (gGraphicsChoice - 1) {
         case 0:
         case 1:
             gFn80BA(g3057);
@@ -262,7 +262,7 @@ int AllocationFailure(void);
     ShutdownGame();
     return 0;
 }
-/* 07C8:0199: the start-up. First it reduces g8102 to the graphics choice itself: main stored
+/* 07C8:0199: the start-up. First it reduces gGraphicsChoice to the graphics choice itself: main stored
    argv[1][0] + 1 (:218) and this subtracts 0x31 (:287), so the result is digit - '0', the
    graphics choice (1 Tandy, 3 VGA; whitepaper 2.6). For the Tandy graphics choice it checks the
    memory chain (CheckMemoryChain) and calls ReserveMemoryBelowVideo, which stores the end of DOS
@@ -271,21 +271,21 @@ int AllocationFailure(void);
    (:334); this function then overwrites gMemTopSeg with atol(g8894->number) (:300; whether that
    number is the video top is [H], src/E1990.ASM:386-397). For the VGA graphics choice it clears
    A000:0000 with memset. Then it sets the video mode, resets the mouse, loads the graphics overlay
-   named by g8102 through the table at ds:3074 (cga/tga/ega/mcga/vga.ovl), builds the page/buffer
+   named by gGraphicsChoice through the table at ds:3074 (cga/tga/ega/mcga/vga.ovl), builds the page/buffer
    segment table at ds:FC0C for the graphics choice, loads the two fonts, sets up the palette buffer,
    starts the overlay manager, seeds rand from the clock and turns the chosen sound card on. Returns
    1 when it got that far, 0 on the errors it prints, and 0 on the `fail` path, taken before the
-   reduce when g8102 is 0x36 (main added 1 to argv[1][0] at :218, so argv[1][0] is '5'), without
+   reduce when gGraphicsChoice is 0x36 (main added 1 to argv[1][0] at :218, so argv[1][0] is '5'), without
    printing. The three `goto`s into the sound cases (:400, :402, :404) keep the three sound bodies
    behind `fail`, which is the order the original has. */
 /*@ 07C8:0199 */ int StartupGame(void)
 {
     int memtop;
 
-    if (g8102 == 0x36)
+    if (gGraphicsChoice == 0x36)
         goto fail;
-    g8102 -= 0x31;
-    switch (g8102) {
+    gGraphicsChoice -= 0x31;
+    switch (gGraphicsChoice) {
     case 1:
         if (CheckMemoryChain()) {
             f1DDD_002D(7);
@@ -293,7 +293,7 @@ int AllocationFailure(void);
             WaitGameKey();
             return 0;
         }
-        f1DDD_002D(g8102);
+        f1DDD_002D(gGraphicsChoice);
         memtop = ReserveMemoryBelowVideo(3);   /* 3 steps reserves 2 x 32 KB = 64 KB below the probe */
         /* the segment where program memory must end: the numeric string at g8894+0x18 parsed as a
            number (its writer is Purpose unknown, src/E1990.ASM:23-26) */
@@ -303,9 +303,9 @@ int AllocationFailure(void);
         memset(MK_FP(0xa000, 0), 0, 0xfa00);
         break;
     }
-    f1DDD_002D(g8102);
+    f1DDD_002D(gGraphicsChoice);
     InitMouse();
-    gOverlayRequest.name = gOverlayFiles[g8102];
+    gOverlayRequest.name = gOverlayFiles[gGraphicsChoice];
     if (RunOverlayRequest(&gOverlayRequest) == -1) {
         f1DDD_002D(7);
         PrintString("\r\nCould not load overlay \"");
@@ -319,7 +319,7 @@ int AllocationFailure(void);
        0xCB20 (52000); choice 1 uses 0x7F40 (32576) for slots 4 and 5 (:335) with no 0xFA00;
        choice 3 uses 0xFDE8 (65000) for slots 2 and 3 (:349); choice 4 uses 0xFA00 (slots 1, 3 and 5)
        and 0xFC00 (slot 7). */
-    switch (g8102) {
+    switch (gGraphicsChoice) {
     case 0:
         gSegsFC0C[0] = gSegsFC0C[1] = 0xb800;
         gSegsFC0C[2] = gSegsFC0C[3] = FP_SEG(MemAlloc(0xfa00L, 0x20));
@@ -368,7 +368,7 @@ int AllocationFailure(void);
         goto font_error;
     f1A47_0169(gFE5A);          /* makes the 8x8 font current after both fonts load; why it is set
                                    here, after the loads, is not in the file */
-    switch (g8102 - 1) {
+    switch (gGraphicsChoice - 1) {
     case 0:
     case 1:
         gFE68 = MemAlloc(0x10L, 0);
@@ -432,7 +432,7 @@ done:
    driver off for gSoundCard 0, Tandy driver silenced to one voice and uninstalled for 2, only
    uninstalled for 1), calls the exit hook at ds:80FA, removes the mouse handler, stops the overlay
    manager, restores the mode (argv[5]; :463) and the old INT 3Fh vector, then, for the Tandy graphics
-   choice only (g8102 == 1, :465; also on the failed memory path), shrinks the last block to gMemTopSeg (the atol value; whether that is the video top is [H]; src/E1990.ASM:386-391); exit(). */
+   choice only (gGraphicsChoice == 1, :465; also on the failed memory path), shrinks the last block to gMemTopSeg (the atol value; whether that is the video top is [H]; src/E1990.ASM:386-391); exit(). */
 /*@ 07C8:058A */ void ShutdownGame(void)
 {
     switch (gSoundCard) {
@@ -462,7 +462,7 @@ done:
     RemoveKeyboard();
     f1DDD_002D(7);              /* index 7 restores gRestoreMode (the argv[5] mode) */
     setvect(0x3f, gFC08);
-    if (g8102 == 1)
+    if (gGraphicsChoice == 1)
         TrimMemoryToVideo();
     exit(0);
 }
