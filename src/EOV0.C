@@ -45,6 +45,7 @@ extern void LockHidePointer(void); /*@ 1BBE:0307 */
 extern void LockShowPointer(void); /*@ 1BBE:0332 */
 extern int g8115; /*@ ds:8115 */ /* nonzero while a status line is up (src/E082C.C) */
 extern char gStr613D[]; /*@ ds:613D */ /* the string the party-status report draws (Purpose unknown) */
+extern void DrawRowList(int index); /*@ 0D1C:0454 */
 
 struct CharRec {                /* 243-byte character records at ds:F580 (src/E08E6.C) */
     char pad00;
@@ -269,7 +270,12 @@ extern void far *g5E64[0x11]; /*@ ds:5E64 */ /* the 17 sliced icon pointers this
     f1A47_0169(savedFont);
 }
 /*@ ovl0:065B stub */ void Ovl0_065B(void) {}
-/*@ ovl0:0A4F stub */ void Ovl0_0A4F(void) {}
+/* ovl0:0A4F: draws the row list index 0xa. No direct caller found (reached through an overlay entry
+   or jump table). */
+/*@ ovl0:0A4F */ void DrawRowList10(void)
+{
+    DrawRowList(10);
+}
 /*@ ovl0:0A5E stub */ void Ovl0_0A5E(void) {}
 /*@ ovl0:0D5B stub */ void Ovl0_0D5B(void) {}
 /*@ ovl0:0DDC stub */ void Ovl0_0DDC(void) {}
