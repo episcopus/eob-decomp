@@ -85,6 +85,7 @@ int IsFileInMemory(char far *name);      /*@ 1C0E:1161: defined later in the fil
 int FindLoadedFile(char far *name);      /*@ 1C0E:11D3: defined later in the file */
 int LocateOverlayFile(char far *name);   /*@ 1C0E:1310: defined later in the file */
 int f1C0E_144E(int index);               /*@ 1C0E:144E: defined later in the file */
+long ReadFromMemory(int index, void far *dst, long len); /*@ 1C0E:1240: defined later in the file */
 long LookupFileEntry(int handle, char far *name); /*@ 1C0E:172E: defined later in the file */
 
 /* A cached file, a 19-byte record at ds:01FF (index * 19 + ds:01FF). The name is a C string; an
@@ -245,9 +246,164 @@ extern long gSlotLengths[];              /*@ ds:FF0C: the record's length per sl
     gFileHandles[index] = SLOT_FREE;
 }
 
-/*@ 1C0E:0400 stub */ void FileRead(int index, void far *buf, unsigned long len) { }
-/*@ 1C0E:0578 stub */ void FileWrite(int index, void far *buf, unsigned long len) { }
-/*@ 1C0E:06E5 stub */ void SeekFile(int index, long offset, int whence) { }
+/* 1C0E:0400: read up to `len` bytes from the file in cache slot `index` into `buf` and return the
+   number of bytes read (0 when a read failed). A file loaded in memory is copied through
+   1C0E:1240; a linked record (FILE_LINKED) is clamped to what is left of the record from the
+   current position. The bytes are read in 0xFA00 byte chunks, each buffer normalised through
+   1BA8:0072. DRAFT: everything matches except the codegen of the loop's `buf += n`; the original
+   adds `n` to the far offset in registers (1C0E:0519), TCC -O here folds it into an integer add to
+   the low word, no source form found yet. */
+/*@ 1C0E:0400 draft */ long FileRead(int index, char far *buf, unsigned long len)
+{
+    int handle;
+    unsigned long total;
+    long remaining;
+    long pos;
+    int n;
+
+    handle = gFileHandles[index];
+    if (handle == SLOT_FREE)
+        FatalError(5, 0);
+    if (handle & FILE_IN_MEMORY)
+        return ReadFromMemory(handle & HANDLE_MASK, buf, len);
+    if (handle & FILE_LINKED) {
+        pos = lseek(handle & HANDLE_MASK, 0, 1);
+        pos -= gSlotOffsets[index];
+        remaining = gSlotLengths[index] - pos;
+        if (len > remaining)
+            len = remaining;
+    }
+    handle &= HANDLE_MASK;
+    total = 0;
+    while (len > 0xfa00) {
+        buf = f1BA8_0072(buf);
+        n = read(handle, buf, 0xfa00);
+        len -= 0xfa00;
+        if (n == -1)
+            return 0;
+        total = total + n;
+        buf += n;
+    }
+    buf = f1BA8_0072(buf);
+    n = read(handle, buf, len);
+    if (n == -1)
+        return 0;
+    return total + n;
+}
+/* 1C0E:0578: write up to `len` bytes from `buf` to the file in cache slot `index` and return the
+   number of bytes written (0 on a short write). A file loaded in memory cannot be written (code 9);
+   a linked record (FILE_LINKED) is clamped to what is left of the record from the current position.
+   The bytes are written in 0xFA00 byte chunks, each buffer normalised through 1BA8:0072. DRAFT:
+   everything matches except the codegen of the loop's `buf` advance; the original adds the constant
+   to the far offset in AX (1C0E:067D), TCC -O here loads the segment into AX and the offset into DX,
+   so the add is one byte longer; no source form found yet. */
+/*@ 1C0E:0578 draft */ long FileWrite(int index, char far *buf, unsigned long len)
+{
+    int handle;
+    unsigned long total;
+    long pos;
+    long remaining;
+    unsigned n;
+
+    handle = gFileHandles[index];
+    if (handle == SLOT_FREE)
+        FatalError(6, 0);
+    if (handle & FILE_IN_MEMORY)
+        FatalError(9, 0);
+    if (handle & FILE_LINKED) {
+        pos = lseek(handle & HANDLE_MASK, 0, 1);
+        pos -= gSlotOffsets[index];
+        remaining = gSlotLengths[index] - pos;
+        if (len > remaining)
+            len = remaining;
+    }
+    handle &= HANDLE_MASK;
+    total = 0;
+    while (len > 0xfa00) {
+        buf = f1BA8_0072(buf);
+        n = write(handle, buf, 0xfa00);
+        if (n != 0xfa00)
+            return 0;
+        len -= 0xfa00;
+        total += 0xfa00;
+        buf = &buf[0xfa00];
+    }
+    buf = f1BA8_0072(buf);
+    n = write(handle, buf, len);
+    if (n != len)
+        return 0;
+    return total + len;
+}
+/* 1C0E:06E5: move the read/write position of the file in cache slot `index`. A file loaded in
+   memory has its slot position set (SEEK_SET clamps to the size, SEEK_CUR and SEEK_END add `offset`
+   and clamp to [0, size]) and the new position is returned; an open file lseeks, shifting `offset`
+   by the record's start and length for a linked record, and returns the result. `whence` 0, 1 and 2
+   are the runtime's SEEK_SET, SEEK_CUR and SEEK_END; any other reports code 8. DRAFT: the in-memory
+   SEEK_SET clamp and the non-memory branch lay the long comparisons out with the branches in the
+   other order; the values and control flow are right, no source form found yet. */
+/*@ 1C0E:06E5 draft */ long SeekFile(int index, long offset, int whence)
+{
+    register int handle;
+    int record;
+    long pos;
+    long result;
+
+    handle = gFileHandles[index];
+    if (handle == SLOT_FREE)
+        FatalError(7, 0);
+    if (handle & FILE_IN_MEMORY) {
+        record = handle & HANDLE_MASK;
+        pos = gFiles[record].pos;
+        switch (whence) {
+        case 0:
+            if (gFiles[record].size <= offset)
+                pos = gFiles[record].size;
+            else
+                pos = offset;
+            break;
+        case 1:
+            pos += offset;
+            if (pos > gFiles[record].size)
+                pos = gFiles[record].size;
+            if (pos < 0)
+                pos = 0;
+            break;
+        case 2:
+            pos = gFiles[record].size + offset;
+            if (pos > gFiles[record].size)
+                pos = gFiles[record].size;
+            if (pos < 0)
+                pos = 0;
+            break;
+        default:
+            FatalError(8, 0);
+            break;
+        }
+        gFiles[record].pos = pos;
+        return pos;
+    }
+    switch (whence) {
+    case 0:
+        if (handle & FILE_LINKED)
+            offset += gSlotOffsets[index];
+        result = lseek(handle & HANDLE_MASK, offset, 0);
+        break;
+    case 1:
+        result = lseek(handle & HANDLE_MASK, offset, 1);
+        break;
+    case 2:
+        if (handle & FILE_LINKED) {
+            offset -= gSlotOffsets[index];
+            offset += gSlotLengths[index];
+        }
+        result = lseek(handle & HANDLE_MASK, offset, 2);
+        break;
+    default:
+        FatalError(8, 0);
+        break;
+    }
+    return result;
+}
 /* 1C0E:091B: locate and verify the file `name` (upper cased in place) without caching it: follow a
    negative link in the slot's record to the name of the entry it aliases, find the file on one of
    the drives (1C0E:1310), open it and, for a positively linked record (link > 0), check its length
