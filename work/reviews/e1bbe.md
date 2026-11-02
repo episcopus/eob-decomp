@@ -30,41 +30,69 @@ save and draw order); _HidePointerZone and _ShowPointerZone (the arguments at [b
 _gRestoreRect and _gSaveRect (the argument order against the pushes, with the declarations at src/E0EF3.C:243 and
 src/E0BD2.C:112); _gDraw80C2 (src/E1A29.C:57).
 
-- [ ] must-fix src/E1BBE.ASM:236-238 (ShowPointer header): "only at zero, with a buffer and an on-screen rectangle, the
+- [x] must-fix src/E1BBE.ASM:236-238 (ShowPointer header): "only at zero, with a buffer and an on-screen rectangle, the
   current mouse position (gCursorX/gCursorY) is copied to the position being drawn at (gDrawnX/gDrawnY)" is wrong. The
   copy runs before the on-screen test: `mov ax,[_gCursorX]` and `mov [_gDrawnX],ax` at :258-259, and the same for Y at
   :263-264. The off-screen compares are at :276-283 (`cmp ax,[_gNegSpriteWidth]`, `jle L015B`, `cmp ax,28h`, `jl L015E`).
   So at zero with a buffer the mouse position is copied to gDrawnX/gDrawnY always; the on-screen test gates only the
   rectangle, the save and the draw. (Evidence: the lines above; the EXTRN comment at :60 says the same of gDrawnX.) Say
   that, with the cites.
-- [ ] must-fix src/E1BBE.ASM:50 (_gHideDepth, "InitMouse starts it at 1 and the state at 0 (src/E1A72.ASM:288-289)"):
+  Fixed: the header now says at zero with a buffer the mouse position is copied to gDrawnX/gDrawnY before the on-screen
+  test (1BBE:0111-0114 and 0121-0124), so an off-screen show still moves the drawn position (marked `QUIRK 1BBE:0111`),
+  and the on-screen test (1BBE:0150-0159) gates only the rectangle, the save and the draw. The addresses were read from
+  `tools/re/disasm.py eob/EOB.EXE 1BBE`: the copy at 0111/0114 and 0121/0124, the compares at 0150/0154 and 0156/0159,
+  the ShowDone jump at 015B. `make match FILE=src/E1BBE.ASM` still 7 of 7, 860 bytes.
+- [x] must-fix src/E1BBE.ASM:50 (_gHideDepth, "InitMouse starts it at 1 and the state at 0 (src/E1A72.ASM:288-289)"):
   the two stores are at src/E1A72.ASM:289 (`mov word ptr [_gHideDepth],1`) and :290 (`mov word ptr [_gPointerState],0`).
   :288 is the `mov word ptr [_gCursorY],64h` store. Cite :289-290. (Evidence: sed of E1A72.ASM:284-292.) The round 10
   note took the wrong range.
-- [ ] must-fix src/E1BBE.ASM:466 (LockHidePointer header): "src/E14EF.C:75 calls LockHidePointer 'start a frame' and :76
+  Fixed: the _gHideDepth comment now cites src/E1A72.ASM:289-290. Re-grepped at fix time: `:289` is
+  `mov word ptr [_gHideDepth],1` and `:290` is `mov word ptr [_gPointerState],0`, while `:288` is the cursor y store.
+  `make match FILE=src/E1BBE.ASM` still 7 of 7, 860 bytes.
+- [x] must-fix src/E1BBE.ASM:466 (LockHidePointer header): "src/E14EF.C:75 calls LockHidePointer 'start a frame' and :76
   calls LockShowPointer 'end a frame'" has the wrong lines and the wrong verb. The two words are in the declarations'
   comments at src/E14EF.C:78 (`extern void LockHidePointer(void); /*@ 1BBE:0307: start a frame ...`) and :79 (`LockShowPointer`,
   "end a frame"); `grep -n "start a frame\|end a frame" src/E14EF.C` gives :78 and :79 only. The :75-76 cite is from before the
   e14ef merge, and the round 10 note carried it. Cite :78-79 and say "the declarations give", since E14EF.C does not call them
   at those lines. (Evidence: the grep above.)
-- [ ] should src/E1BBE.ASM:341-343 (HidePointerZone header): "1A72:0244 reads the zone to test whether the cursor has
+  Fixed: the LockHidePointer comment now says the declarations give the words and cites src/E14EF.C:80-81. The review's
+  :78-79 held at 2798cb1 (`git show 2798cb1:src/E14EF.C` gives :78 and :79), but the e14ef merge (3565e5b, in this branch)
+  shifted the pair down two lines. Re-grepped at fix time: `grep -n "start a frame\|end a frame" src/E14EF.C` gives :80
+  (`extern void LockHidePointer(void); ... start a frame`) and :81 (`LockShowPointer ... end a frame`). No cite into
+  E14EF.C remains that is not current. `make match FILE=src/E1BBE.ASM` still 7 of 7, 860 bytes.
+- [x] should src/E1BBE.ASM:341-343 (HidePointerZone header): "1A72:0244 reads the zone to test whether the cursor has
   entered it". The handler tests, at every event, whether the cursor is inside the zone (E1A72.ASM:431-441): inside, it
   hides and sets 4000h (:413-415, the path at L01EC); outside, it hides and shows (:442-448, L025C). Say "whether the
   cursor is inside it". "Entered" suggests an edge test, and the code is a level test.
-- [ ] should src/E1BBE.ASM:83-88 (g8172): the cite "src/E1A72.ASM:138-146 and :550-554" misses the sentence it paraphrases.
+  Fixed: the header now says 1A72:0244 reads the zone to test whether the cursor is inside it. `make match
+  FILE=src/E1BBE.ASM` still 7 of 7, 860 bytes.
+- [x] should src/E1BBE.ASM:83-88 (g8172): the cite "src/E1A72.ASM:138-146 and :550-554" misses the sentence it paraphrases.
   "The 17A6 unit uses it to save and restore the 16 bytes under the pointer that DGROUP:80AA reads" is at
   src/E1A72.ASM:555, and :550 is blank; :551-556 is the 1A72:02FE header through "At 17A6:0446". Cite :551-556, or
   :555-556 for the sentence. The :138-146 range is right (SetFarPointer at :143-144).
-- [ ] should QUIRK marks (READABILITY.md rule 6: a behaviour a port must keep although it looks wrong is marked `QUIRK
+  Fixed: the g8172 EXTRN now cites src/E1A72.ASM:551-556 (the 1A72:02FE header, _SetFarPointer) and points at :555 for
+  the sentence; re-grepped at fix time (`:551` is the header start, `:555` is the sentence, `:560` is `PUBLIC
+  _SetFarPointer`). `make match FILE=src/E1BBE.ASM` still 7 of 7, 860 bytes.
+- [x] should QUIRK marks (READABILITY.md rule 6: a behaviour a port must keep although it looks wrong is marked `QUIRK
   <address>:`). Two candidates are not marked. (a) The disjoint zone hide: the compares at src/E1BBE.ASM:402-409 jump to
   L02B6 (:418) with 8000h set and nothing hidden, so a port that does not set 8000h changes the handler's later result;
   mark it `QUIRK 1BBE:02B6`. (b) The off-screen show: ShowPointer copies the mouse position into gDrawnX/gDrawnY (:258-264)
   before the rectangle test, so an off-screen show still moves the drawn position; mark it `QUIRK 1BBE:0111`. The
   headers already describe both; the marks make them findable.
-- [ ] should src/E1BBE.ASM:181-309 and :385 (clip bounds): the literals 28h (40 columns, 320 / 8), 0C8h (200 rows; the
+  Fixed: the HidePointerZone header now carries `QUIRK 1BBE:02B6` (a disjoint hide hides nothing but still sets 8000h,
+  which the handler reads, so a port that omits it changes the handler's later behaviour) and the ShowPointer header
+  `QUIRK 1BBE:0111` (an off-screen show still moves the drawn position). Both addresses were checked against the
+  disassembly (`jl 0x2b6` at 1BBE:0285, 028B, 0291, 0297; the copy at 1BBE:0111 and 0121). `make match
+  FILE=src/E1BBE.ASM` still 7 of 7, 860 bytes.
+- [x] should src/E1BBE.ASM:181-309 and :385 (clip bounds): the literals 28h (40 columns, 320 / 8), 0C8h (200 rows; the
   compares at :197, :206, :298, :307) and 0FFF8h (rounding to 8 pixels, :385) carry the meaning only in the comments. Rule 4 of READABILITY.md asks for named
   constants where a literal means something. An `EQU` at the top of the unit (for example `SCREEN_COLUMNS EQU 28h` and
   `SCREEN_ROWS EQU 0C8h`) changes no bytes and gives one place for the bound. Optional for this pass; the matcher confirms.
+  Done: the unit now defines `SCREEN_COLUMNS EQU 28h`, `SCREEN_ROWS EQU 0C8h` and `COLUMN_MASK EQU 0FFF8h` after
+  `.MODEL LARGE` (with the meaning in the comment) and every literal site uses them (HidePointer: src/E1BBE.ASM:189,
+  199, 201, 205, 214, 216; ShowPointer: :293, 303, 305, 309, 318, 320; HidePointerZone: :398). The two EXTRN comments
+  that named `0C8h` and `28h` now name the constants. Bytes unchanged; `make match FILE=src/E1BBE.ASM` still 7 of 7,
+  860 bytes.
 - [ ] note routed to the e1a72 owner (still open from round 4): src/E1A72.ASM:124-125 (the _gPointerState declaration) says
   8000h is "the pointer is hidden over the hide zone". This unit reads 8000h as "a zone hide is in force", which is what
   the handler's own test at src/E1A72.ASM:431 shows (it tests 8000h before the zone test). The two declarations should agree.
