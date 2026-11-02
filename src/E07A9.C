@@ -10,8 +10,9 @@
    005D, 0074 and 008B, and whitepaper 4 names only ds:F534 and ds:DCAC), reads the segments of
    slots 7, 5 and 3 from the 19EC:0002 page/buffer table (ds:FC0C), loads the sound driver
    (177D:000A, 07A9:00D2), passes the slot 7 segment (gSegsFC0C[7], the word at ds:FC1A) and size
-   0xFC00 to SetUnpackBuffer (1B82:0217, 07A9:00DB/00DF; 0xFC00 is the SetUnpackBuffer size
-   argument in every video mode, while slot 7's own block is 0xCB20 bytes in cases 0 to 3,
+   0xFC00 to SetUnpackBuffer (1B82:0217, 07A9:00DB/00DF; 0xFC00 is the unpacker's work-buffer
+   requirement, not slot 7's block size, see UNPACK_BUFFER_SIZE; slot 7's own block is 0xCB20
+   bytes in cases 0 to 3,
    src/E07C8.C:213, 222, 231, 237, and 0xFC00 only in case 4, src/E07C8.C:247), clears ds:810E
    (07A9:00E6), loads the item tables (LoadItemData, 07A9:00EC), selects the 6x6 font as the
    current font (1A47:0169(gA9C0), 07A9:00F9) and loads the item sheets (LoadDecorateIcons, Ovl2
@@ -36,8 +37,14 @@
    src/E19BC.C:80 and :94-97 */
 #define MEMALLOC_ALIGNED 0x20
 /* the size SetUnpackBuffer is given for the shared unpack work buffer, 0xFC00 in every video
-   mode (07A9:00D7); slot 7's own block is 0xCB20 bytes in cases 0 to 3 (src/E07C8.C:213, 222,
-   231, 237) and 0xFC00 only in case 4 (src/E07C8.C:247) */
+   mode (07A9:00D7). It is the unpacker's own work-buffer requirement, not the size of slot 7's
+   block: the work segment holds the LZW dictionary the format 1 and format 2 decoders build
+   (src/E1B82.C:159, :172), while the unpacked output goes to the destination segment. Format 1's
+   dictionary stops below its 0x3C00 (1D9A:0327, 0360), inside slot 7's block; format 2's two
+   tables run to 0xFC00 (the offsets stop at 0x7E00, the lengths follow, src/E1D9A.ASM:415-419),
+   past the 0xCB20 block of cases 0 to 3, but no pinned file uses format 2 [H]
+   (src/E1D9A.ASM:419-420). Slot 7's own block is 0xCB20 bytes in cases 0 to 3 (src/E07C8.C:213,
+   222, 231, 237) and 0xFC00 only in case 4 (src/E07C8.C:247) */
 #define UNPACK_BUFFER_SIZE 0xFC00
 /* the gIconsDDE4 index that aliases gDF48, the translated icon image shown as the mouse pointer for
    flagged items (0xDDE4 + 0x59 * 4 = 0xDF48); slots 1..0x58 hold the item icons (src/EOV2.C:290) */
@@ -55,8 +62,7 @@ struct Entry14 {            /* 14-byte records at ds:8DD2 (ITEM.DAT records, whi
                                and 0x10 (0DE8:0890); the byte is decremented (0EF3:266E) and stored
                                (122E:1D2B). */
     signed char icon;       /* +1: the item's icon number, an index into gIconsDDE4 (read at
-                               07A9:0141, sign-extended by the cbw at 07A9:0145; the byte is 98h,
-                               which tools/re/disasm.py mislabels cwde, the 32-bit form) */
+                               07A9:0141 and sign-extended by the cbw, byte 98h, at 07A9:0145) */
     signed char m02;        /* +2: compared by 0D1C:00F1 and 0D1C:01CA (src/E0D1C.C) */
     char pad03;
     int m04;                /* +4: set to -1 by 0D1C:01CA (src/E0D1C.C) */
@@ -70,26 +76,28 @@ extern char gF43C; /*@ ds:F43C */  /* written by StartupAlloc (07A9:000D, set to
                                       "%3d of %-3d" when it is set (src/E1547.C:269, the comment at
                                       src/E1547.C:235-238). Purpose unknown */
 extern char gFB45; /*@ ds:FB45 */  /* written by StartupAlloc (07A9:0024, set to 0); the overlay 3
-                                      LoadMapScreen sets it to 1 (src/EOV3.C:702), and the overlay 4
+                                      LoadMapScreen sets it to 1 (src/EOV3.C:686), and the overlay 4
                                       DrawViewFrame tests it with video mode 3 (src/EOV4.C:395) and
                                       clears it (src/EOV4.C:402; declared "request flag, cleared here",
                                       src/EOV4.C:368). What the request is is Purpose unknown */
 extern void far *gBuf8DCA; /*@ ds:8DCA */  /* start-up far allocation, 7500 bytes (07A9:002F); the base
-                                              of the 122E action-script driver's script: JumpToScriptOffset
-                                              (122E:139D, src/E122E.C:16) adds the script's word
-                                              offset to it (src/E122E.C:473, the comment at :467-468), and
-                                              PushScriptPointer (122E:1422) does the same
-                                              (src/E122E.C:512, the comment at :500). Overlay 3 uses
-                                              it too: LoadMapScreen unpacks LEVEL<n>.INF into it
-                                              (src/EOV3.C:585-586, "the 7500-byte unpacked level
-                                              script", src/EOV3.C:201), reads the item records through
-                                              it (src/EOV3.C:682-683) and passes gBuf8DCA + 0x1a to
-                                              LoadWallTextures (src/EOV3.C:698). Why the start-up
-                                              block holds the script is Purpose unknown */
+                                              of the 122E action-script driver's script (declared
+                                              src/E122E.C:20): JumpToScriptOffset (122E:139D,
+                                              src/E122E.C:980) adds the script's word offset to it
+                                              (src/E122E.C:984, the comment at :978-979), and
+                                              PushScriptPointer (122E:1422, src/E122E.C:1013) does the
+                                              same (src/E122E.C:1023, the comment at :1010-1011). Overlay
+                                              3 uses it too: LoadMapScreen unpacks LEVEL<n>.INF into it
+                                              (src/EOV3.C:573-574, "the 7500-byte unpacked level
+                                              script", src/EOV3.C:200), reads the item records through
+                                              it (the script word and item loop, src/EOV3.C:666-681) and
+                                              passes gBuf8DCA + 0x1a to LoadWallTextures
+                                              (src/EOV3.C:682). Why the start-up block holds the script
+                                              is Purpose unknown */
 extern void far *gBufF43E; /*@ ds:F43E */  /* start-up far allocation, 6000 bytes (07A9:0046); the
                                               overlay 3 LoadMapScreen fills it from the level graphics
-                                              file (src/EOV3.C:591-592, "the 6000-byte level
-                                              graphics file", src/EOV3.C:202 [H]), and the overlay 4
+                                              file (src/EOV3.C:579-580, "the 6000-byte level
+                                              graphics file", src/EOV3.C:201 [H]), and the overlay 4
                                               page-buffer readers CopyViewColumn (src/EOV4.C:171) and
                                               ToggleViewColumn (src/EOV4.C:214) read it as the page
                                               buffer (src/EOV4.C:155-156). Purpose unknown */
@@ -98,13 +106,15 @@ extern unsigned char far *gSoundMap; /*@ ds:DCAC */  /* the 120-byte sound map (
                                                          (adlib.dat or pcgamesn.dat, src/E177D.C:2-3) */
 extern void far *gBufDCFC; /*@ ds:DCFC */  /* start-up far allocation, 4096 bytes (07A9:0074); the
                                               overlay 3 level-state work buffer: PackLevelState
-                                              (ovl3:0FD1, src/EOV3.C:708) fills it with the gB894
-                                              bytes (src/EOV3.C:717-720) and compresses it
-                                              (CompressLcw, src/EOV3.C:721); UnpackLevelState
-                                              (ovl3:109D, src/EOV3.C:735) unpack4s into it
-                                              (src/EOV3.C:744) and reads it back (src/EOV3.C:745-747).
-                                              E19FC.ASM:40 describes the caller that fills the block
-                                              before compression (through ds:DCFC and ds:DCFE) */
+                                              (ovl3:0FD1, src/EOV3.C:692) fills it with the gB894
+                                              bytes (src/EOV3.C:701-704) and compresses it
+                                              (CompressLcw, src/EOV3.C:705; the "Map compression
+                                              failure" message at :708); UnpackLevelState
+                                              (ovl3:109D, src/EOV3.C:719) unpack4s into it
+                                              (src/EOV3.C:728) and reads it back into gB894
+                                              (src/EOV3.C:729-731). E19FC.ASM:40 describes the caller
+                                              that fills the block before compression (through
+                                              ds:DCFC and ds:DCFE) */
 extern char far *gBufF534; /*@ ds:F534 */  /* the 1600-byte ITEMRMP buffer (07A9:008B,
                                               whitepaper 4.4). Its readers: the ITEMRMP read
                                               (FileRead of 0x640 bytes into it, src/EOV2.C:296, in
@@ -114,9 +124,9 @@ extern void far *gSegDCA6; /*@ ds:DCA6 */  /* the far pointer f19EC_0002(7) retu
                                               07A9:00A3): offset 0, segment gSegsFC0C[7], the word at
                                               ds:FC1A that SetUnpackBuffer gets at 07A9:00DB. Overlay 3
                                               and 4 use it too: LoadWallTextures writes the
-                                              0xCB20-byte texture block through it (src/EOV3.C:476),
-                                              expands and masks it (src/EOV3.C:479-487; the comment
-                                              above LoadWallTextures, src/EOV3.C:457-464), and
+                                              0xCB20-byte texture block through it (src/EOV3.C:471),
+                                              expands and masks it (src/EOV3.C:474-478 and :482; the
+                                              comment above LoadWallTextures, src/EOV3.C:454-459), and
                                               DrawViewFrame draws from it (DrawTile, src/EOV4.C:393;
                                               declared "the far pointer DrawTile draws",
                                               src/EOV4.C:374) */
@@ -131,32 +141,35 @@ extern void far *gSegDF4E; /*@ ds:DF4E */  /* slot 5's far pointer, f19EC_0002(5
                                               gSaveRect with the same 0x12 by 0xA8 field that
                                               Action01E3 blits (src/E0ACD.C:269).
                                               Overlay 3 uses it too: LoadObjects (ovl3:09AA,
-                                              src/EOV3.C:508) reads 0x1000 bytes into it (FileRead at
-                                              src/EOV3.C:518) and reads it back (src/EOV3.C:523-528),
-                                              LoadWallSet (ovl3:004F, src/EOV3.C:251) puts its
-                                              decorations at gSegDF4E + 0x3E80 (src/EOV3.C:266-267,
-                                              275), and LoadWallTextures (ovl3:07A5, src/EOV3.C:465)
+                                              src/EOV3.C:503) reads 0x1000 bytes into it (FileRead at
+                                              src/EOV3.C:513) and copies it back (src/EOV3.C:518-525),
+                                              LoadWallSet (ovl3:004F, src/EOV3.C:250) puts its
+                                              decorations at gSegDF4E + 0x3E80 (src/EOV3.C:265-266,
+                                              274), and LoadWallTextures (ovl3:07A5, src/EOV3.C:460)
                                               expands the texture plane tables into it in EGA mode 2
-                                              (src/EOV3.C:480-483) */
+                                              (src/EOV3.C:474-478) */
 extern void far *gSegEFC2; /*@ ds:EFC2 */  /* slot 3's far pointer, f19EC_0002(3) (07A9:00CB); a
-                                              shared overlay 3 buffer (src/EOV3.C:131 declares it
+                                              shared overlay 3 buffer (src/EOV3.C:130 declares it
                                               with no comment), used four ways. Level state:
-                                              LoadLevelState (ovl3:1147, src/EOV3.C:755) reads 0x7F8
+                                              LoadLevelState (ovl3:1147, src/EOV3.C:739) reads 0x7F8
                                               bytes of LEVELS.TMP into it (FileRead at
-                                              src/EOV3.C:761) and unpacks them (UnpackLevelState,
-                                              ovl3:109D, src/EOV3.C:735, called at src/EOV3.C:763);
-                                              SaveLevelState (ovl3:11AF, src/EOV3.C:769) packs
-                                              gSegEFC2 + 0xC800 back to LEVELS.TMP (PackLevelState
-                                              at src/EOV3.C:775). Wall texture plane tables:
-                                              LoadWallTextures (ovl3:07A5, src/EOV3.C:465) unpacks
-                                              three 16-byte planes from gSegEFC2+2, +0x12 and +0x22
-                                              (src/EOV3.C:474-476). The LEVELS.TMP screen block:
-                                              SaveGame (ovl3:1368) reads 0x5FA0 bytes into it
-                                              (src/EOV3.C:837) and writes them back
-                                              (src/EOV3.C:855). The EOBDATA.SAV blocks: LoadGame
-                                              (ovl3:15B9) reads the six sized blocks into it
-                                              (src/EOV3.C:892-898). Overlay 3 reads the far
-                                              pointer again (ds:EFC2 and ds:EFC4): ovl3:1186, 119E,
+                                              src/EOV3.C:745) and unpacks them (UnpackLevelState,
+                                              ovl3:109D, src/EOV3.C:719, called at src/EOV3.C:747);
+                                              SaveLevelState (ovl3:11AF, src/EOV3.C:753) packs
+                                              gSegEFC2 + 0xC800 back to LEVELS.TMP (the +0xC800
+                                              normalisation at src/EOV3.C:758, PackLevelState at
+                                              :759). Wall texture plane tables:
+                                              LoadWallTextures (ovl3:07A5, src/EOV3.C:460) unpacks
+                                              the 16-byte planes from gSegEFC2+2 and +0x12
+                                              (src/EOV3.C:469-470) and the 0xCB20-byte block from
+                                              gSegEFC2+0x22 (src/EOV3.C:471). The LEVELS.TMP screen
+                                              block: SaveGame (ovl3:1368, src/EOV3.C:811) reads
+                                              0x5FA0 bytes into it (src/EOV3.C:821) and writes them
+                                              back (src/EOV3.C:839). The EOBDATA.SAV blocks: LoadGame
+                                              (ovl3:15B9, src/EOV3.C:863) uses it as its buffer
+                                              (src/EOV3.C:876 and :888) for the six sized block reads.
+                                              Overlay 3 reads the far pointer again (ds:EFC2 and
+                                              ds:EFC4): ovl3:1186, 119E,
                                               11B6 (ovl3:1147, the loader above), ovl3:0815, 0833,
                                               0855 (ovl3:07A5), ovl3:1396, 13C0, 14BF (ovl3:1368),
                                               ovl3:15C1, 164D (ovl3:15B9, the function that calls
@@ -167,8 +180,8 @@ extern void far *gSegEFC2; /*@ ds:EFC2 */  /* slot 3's far pointer, f19EC_0002(3
 /* the page/buffer segment table (src/E07C8.C:49, src/E19EC.C:15), whose eighth word at ds:FC1A
    is slot 7, the segment gSegDCA6 holds (f19EC_0002(7), 07A9:00A3). */
 extern unsigned gSegsFC0C[]; /*@ ds:FC0C */
-/* the net allocation counter: MemAlloc adds one at src/E19BC.C:111 and MemFree subtracts one at
-   src/E19BC.C:134, so it is the number of successful MemAlloc calls minus the number of MemFree
+/* the net allocation counter: MemAlloc adds one at src/E19BC.C:112 and MemFree subtracts one at
+   src/E19BC.C:137, so it is the number of successful MemAlloc calls minus the number of MemFree
    calls and can fall below the number of live blocks (src/E19BC.C:17-21). StartupAlloc sets it
    to 0 at 07A9:00E6, after its five allocations, so they are no longer counted: Purpose unknown. */
 extern unsigned gAllocCount; /*@ ds:810E */
@@ -342,6 +355,8 @@ extern void SetMousePointerShape(int hotX, int hotY, void far *icon); /*@ 1BB1:0
         item = gTable8DD2[item].icon;   /* the item index becomes the icon number */
     }
     if (!gMouseDisabled) {
+        /* the record of the index SetCurrentItem stored (gFBCE), not item, which is the icon
+           number by now */
         if ((gTable8DD2[gFBCE].flags & ITEM_FLAG_ICON) && (gFBD2 & 1)) {
             if (g8102)
                 gFn80D2(gBufF534 + (item << 4));   /* the icon's 16-byte colour row */
