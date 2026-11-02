@@ -56,17 +56,18 @@ struct Node {
 #define NODE_FLAG_OFF_5E1E 0x1000 /* with NODE_FLAG_ON clear: g5E1E gets 0x81 unless it is already 1 */
 
 /* The g5E1C/g5E1E button modes. With the mouse enabled DispatchNodeEvent sets them to 2 or 4 from
-   GetKeyState on every call (E16A5.C:202-212), and writes 1 or 3 only on a button click
-   (E16A5.C:217-223, 232-239) or a key match (E16A5.C:293, 299). The dispatcher then gives each
-   mode a behaviour: BUTTON_MODE_NODE_OFF toggles the node's on bit on its 0x0100 flag when the
-   node's 0x0001 flag is clear (E16A5.C:347-365), and BUTTON_MODE_NODE_ON toggles it on its 0x0400
-   flag when the 0x0001 flag is set, with the 0x0002 flag clearing it (E16A5.C:366-378). This
-   unit writes 3 or 1 with the 0x80 latch bit set (0x83, 0x81) so the block is a no-op for the
-   next state operation. While the mouse is enabled, DispatchNodeEvent sets the mode on every
-   call (E16A5.C:205-212, inside the gMouseDisabled gate at E16A5.C:202-245); while it is
-   disabled only a key match writes the mode (E16A5.C:293, 299), which clears the latch.
-   E0ACD.C:369 reads the mode back as (g5E1C & 0x7F) == 1, so 0x80 is a flag beside the mode
-   value, not part of it. */
+   GetKeyState on every call (E16A5.C:202-212), writes 1 or 3 on a button click (E16A5.C:217-223,
+   232-239; 3 when the key's 0x800 bit is set) and 1 on a key match (E16A5.C:293, 299). The
+   dispatcher then gives each mode a behaviour: BUTTON_MODE_NODE_OFF toggles the node's on bit on
+   its 0x0100 flag when the node's 0x0001 flag is clear (E16A5.C:347-365), and BUTTON_MODE_NODE_ON
+   toggles it on its 0x0400 flag when the 0x0001 flag is set, with the 0x0002 flag clearing it
+   (E16A5.C:366-378). This unit writes 3 or 1 with the 0x80 latch bit set (0x83, 0x81) so the
+   block is a no-op for the next state operation. While the mouse is enabled, DispatchNodeEvent
+   sets the mode on every call (E16A5.C:205-212, inside the gMouseDisabled gate at
+   E16A5.C:202-245); while it is disabled only a key match writes the mode (E16A5.C:293, 299),
+   which clears the latch. E0ACD.C:369 reads the same value 1 in g5E1C as a slot choice
+   (Action0415, 0ACD:0415): (g5E1C & 0x7F) == 1 swaps the selected item, anything else uses it,
+   so 0x80 is a flag beside the mode value and 1 is not only this dispatcher's mode. */
 #define BUTTON_MODE_NODE_OFF 1
 #define BUTTON_MODE_NODE_ON  3
 #define BUTTON_MODE_LATCH    0x80
@@ -89,8 +90,8 @@ struct Node {
    0x80 of either makes the whole block a no-op. DispatchNodeEvent (16A5:00BD) sets them to the
    mouse button mode (1 to 4) from two sources: 2 or 4 from GetKeyState on every call
    (E16A5.C:205-212), and 1 or 3 on a button click (the key codes 0x41/0x42 and 0xC6/0xC7,
-   E16A5.C:215-223, 231-239) or a key match (E16A5.C:293, 299). What drives them here is unknown.
-   Declared `unsigned` here and in E0ACD.C:104; E16A5.C:104-105 still calls them `int`. */
+   E16A5.C:215-223, 231-239), and 1 on a key match (E16A5.C:293, 299). What drives them here is
+   unknown. Declared `unsigned` here and in E0ACD.C:104; E16A5.C:104-105 still calls them `int`. */
 extern unsigned g5E1C; /*@ ds:5E1C */
 extern unsigned g5E1E; /*@ ds:5E1E */
 
@@ -102,7 +103,7 @@ extern unsigned g5E1E; /*@ ds:5E1E */
 extern void DrawNode(struct Node far *node); /*@ 16A5:07C3 */
 
 /* 1658:0003: stores the far pointer `next` in the node's own +00 field, so `node` is placed in
-   front of `next`, and returns `node`. InsertNode (1658:03D6, call at E1658.C:315) is the only
+   front of `next`, and returns `node`. InsertNode (1658:03D6, call at E1658.C:316) is the only
    caller in src/. */
 /*@ 1658:0003 */ struct Node far *LinkNode(struct Node far *next, struct Node far *node)
 {
@@ -198,7 +199,7 @@ extern void DrawNode(struct Node far *node); /*@ 16A5:07C3 */
    :3988, :4049, :4317, :4334, :4434; the EXTRN is at :47).
    QUIRK 1658:01A2: when the walk starts on the last node of a list (its `next` is null) and that
    node's key does not match, which includes every one-node list, `head = head->next`
-   (E1658.C:212) makes `head` a null far pointer; the loop test `while (head->next)` (E1658.C:213)
+   (E1658.C:213) makes `head` a null far pointer; the loop test `while (head->next)` (E1658.C:214)
    then reads the whole far pointer at 0000:0000 (both words; it is nonzero if either word is). If
    that pointer is nonzero the body runs again first and compares the key at 0000:0004; a match
    there returns the null pointer, the same as "not found", and otherwise the walk continues from
@@ -328,7 +329,8 @@ extern void DrawNode(struct Node far *node); /*@ 16A5:07C3 */
     return first;
 }
 
-/* 1658:04A7: returns 1 when the node is not inactive (flags bit 0x0008 clear), else 0. */
+/* 1658:04A7: returns 1 when the node is not inactive (flags bit 0x0008 clear), else 0. No direct
+   caller was found in the resident code or the overlays. */
 /*@ 1658:04A7 */ int IsNodeEnabled(struct Node far *node)
 {
     return !(node->flags & NODE_INACTIVE);
