@@ -4632,6 +4632,8 @@ unit = "e17a6"
 addr = "17A6:0000"
 size = 788
 evidence = ["segment"]
+level = "L2"
+notes = "not a function: bytes of the unit outside its functions (a marker or padding), matched with the whole unit"
 
 [[function]]
 id = "e17a6_0314"
@@ -4639,6 +4641,9 @@ unit = "e17a6"
 addr = "17A6:0314"
 size = 3149
 evidence = ["far"]
+level = "L2"
+match_flags = "tasm /mx"
+name = "DirectionFromPoints"
 
 [[function]]
 id = "e17a6_0f61"
@@ -4646,6 +4651,9 @@ unit = "e17a6"
 addr = "17A6:0F61"
 size = 2589
 evidence = ["far"]
+level = "L2"
+match_flags = "tasm /mx"
+name = "Distance"
 
 [[function]]
 id = "e17a6_197e"
@@ -4653,6 +4661,9 @@ unit = "e17a6"
 addr = "17A6:197E"
 size = 168
 evidence = ["far"]
+level = "L2"
+match_flags = "tasm /mx"
+name = "TranslateImage"
 
 [[function]]
 id = "e1948_0006"

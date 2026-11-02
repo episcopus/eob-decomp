@@ -1296,3 +1296,30 @@ new = "gFn8052"
 kind = "global"
 why = "one pattern for unknown-purpose far function pointers (gFn8072, gFn8056, gFn80BA, gFn80D2, gFn804A); review of e19f3"
 date = "2026-11-01"
+
+[[rename]]
+id = "17A6:0314=DirectionFromPoints"
+addr = "17A6:0314"
+old = "f17A6_0314"
+new = "DirectionFromPoints"
+kind = "function"
+why = "returns a direction 0..7 (0xFF when none) from two 5-bit coordinates: divides each argument by 32, compares the remainders and quotients, and indexes the 9-byte table at ds:7FBC; callers use the result as an orientation (08E6:000B) and a direction (08E6:00C3)"
+date = "2026-11-01"
+
+[[rename]]
+id = "17A6:0F61=Distance"
+addr = "17A6:0F61"
+old = "f17A6_0F61"
+new = "Distance"
+kind = "function"
+why = "returns an approximate distance between two 5-bit coordinates: the larger absolute difference plus half the smaller (the octagonal metric); callers use it as a sound attenuation (177D:026A) and a proximity test (08E6:00C3, ovl6:09D2)"
+date = "2026-11-01"
+
+[[rename]]
+id = "17A6:197E=TranslateImage"
+addr = "17A6:197E"
+old = "f17A6_197E"
+new = "TranslateImage"
+kind = "function"
+why = "copies an image from src to dst through the translation table xlat, the mode word choosing the pixel format (0, 2, 3; anything else is the 4-bit path); called from SetMouseItem (07A9:018F) to translate the mouse icon"
+date = "2026-11-01"

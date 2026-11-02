@@ -115,7 +115,7 @@ extern unsigned char gFBD2; /*@ ds:FBD2 */  /* bit 0, with Entry14.flags bit 0x8
                                                  (src/E0D1C.C:50); read at 07A9:0163 and
                                                  src/E0D1C.C:478 */
 extern int g8102; /*@ ds:8102 */  /* the mode word SetMouseItem tests at 07A9:016A (the colour row
-                                     against the ds:0090 dummy) and passes to f17A6_197E (07A9:018F);
+                                     against the ds:0090 dummy) and passes to TranslateImage (07A9:018F);
                                      the switch at 17A6:199E tests it (cases 0, 2 and 3). src/ reads
                                      it three ways: "graphics choice" (src/E07C8.C:27), "the video
                                      mode ... 3 and 4 select the 6-bit cells" (src/E1DE7.C:46) and
@@ -129,14 +129,14 @@ extern int g8102; /*@ ds:8102 */  /* the mode word SetMouseItem tests at 07A9:01
    not measured here, so [H] there too. No writer of ds:80D2 in EOB.EXE or the overlays (a
    literal-address search). */
 extern void (far *gFn80D2)(void far *colors); /*@ ds:80D2 */
-extern void far *g80E2; /*@ ds:80E2 */  /* passed as the third argument of f17A6_197E (07A9:0197),
+extern void far *g80E2; /*@ ds:80E2 */  /* passed as the third argument of TranslateImage (07A9:0197),
                                            which reads it as the xlatb table (BX and DX from [bp+0xe]
                                            and [bp+0x10], 17A6:1995 and 1998; xlatb at 17A6:19BE).
                                            Purpose unknown: what writes ds:80E2 is not checked here */
 extern void far *gDF48; /*@ ds:DF48 */  /* the 0x12C-byte buffer LoadItemSheets allocates and stores
                                            here (the far call at ovl2:041D; the result is stored at
                                            ovl2:0425 and 0428). This unit
-                                           shows it as the translated icon image: f17A6_197E's
+                                           shows it as the translated icon image: TranslateImage's
                                            destination (pushed at 07A9:019B and 019F), installed as the
                                            mouse pointer through gIconsDDE4[0x59] (07A9:01B9, 01C6 to
                                            01CE). The allocation's segment word 00C0 is an overlay
@@ -177,7 +177,7 @@ extern void DrawText(char far *text); /*@ 1DE7:060A */
    word (17A6:199B) picks the path (cases 0, 2 and 3 at 17A6:199E to 19C8). The call
    (07A9:0193..01B1) passes the icon far pointer first, then gDF48 (the translated icon image),
    g80E2 (Purpose unknown, its only reader is 07A9:0197) and g8102. */
-extern void f17A6_197E(void far *src, void far *dst, void far *xlat, int mode); /*@ 17A6:197E */
+extern void TranslateImage(void far *src, void far *dst, void far *xlat, int mode); /*@ 17A6:197E */
 /* 1BB1:0002 stores the hot-spot offset and a pointer shape record; the caller passes the hot spot
    (8,8) when item > 0 and (0,0) otherwise, and the record gIconsDDE4[item] in both cases (see below). */
 extern void SetMousePointerShape(int hotX, int hotY, void far *icon); /*@ 1BB1:0002 */
@@ -262,7 +262,7 @@ extern void SetMousePointerShape(int hotX, int hotY, void far *icon); /*@ 1BB1:0
                    itself (ovl2:0478) has no branch on g8102. Why g8102 == 0 gets the dummy is
                    Purpose unknown. */
                 gFn80D2("");
-            f17A6_197E(gIconsDDE4[item], gDF48, g80E2, g8102);
+            TranslateImage(gIconsDDE4[item], gDF48, g80E2, g8102);
             /* gIconsDDE4[0x59] is gDF48 (0xDDE4 + 0x59 * 4 = 0xDF48), the same pointer just passed
                as the second argument: the translated icon image shown by 1BB1:0002 as the mouse
                pointer for a record whose flag has 0x80 set. gDF48's writer is in the overlay
