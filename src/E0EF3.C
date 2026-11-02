@@ -173,29 +173,40 @@ extern void BuildList2(void); /*@ 0CF7:00B4 */
 extern void BuildList3(void); /*@ 0CF7:0140 */
 extern void BuildList5(void); /*@ 0CF7:0211 */
 
-#define SPELL_WEIGHT(c) ((c) == 0 ? 0x50 : (c) < 0 ? 0x28 - (c) : (c))
-
 /* 0EF3:000E: bubble-sorts each of the ten six-byte rows that start at a character's +0x37 spell
    field, swapping the first two bytes of a row while the row's weight decreases. The weight
    pushes an empty byte (0) to the end (0x50) and a negative byte after the positive ones
-   (0x28 plus its magnitude); a row's first two bytes are its sort key. Called from overlay 1
-   (ovl1:1ACD); the argument is a party-member index. DRAFT: the loop is right but the original
-   has a 0x0E-byte frame (row and a far-pointer temporary on the stack, i and j and swapped in
-   memory), where our build keeps i, j and swapped in registers (`make match` differs at sub sp). */
-/*@ 0EF3:000E draft */ void SortSpellSlots(int who)
+   (0x28 plus its magnitude); a row's first two bytes are its sort key. The row pointer is far
+   (the caller ovl1:1ACD reaches this unit's DGROUP through a far pointer); `who` is a
+   party-member index. Called from overlay 1 (ovl1:1ACD). */
+/*@ 0EF3:000E */ void SortSpellSlots(int who)
 {
-    signed char *row;
     int i;
-    int j;
     int swapped;
+    int j;
+    signed char far *pair;
+    signed char far *row;
+    register int wa;
+    register int wb;
 
     row = gChars[who].known;
     for (i = 0; i < 10; i++) {
         do {
             swapped = 0;
             for (j = 0; j < 5; j++) {
-                if (SPELL_WEIGHT(row[j]) > SPELL_WEIGHT(row[j + 1])) {
-                    SwapChars(&row[j], &row[j + 1]);
+                pair = &row[j];
+                wa = *pair;
+                wb = pair[1];
+                if (wa == 0)
+                    wa = 0x50;
+                else if (wa < 0)
+                    wa = -wa + 0x28;
+                if (wb == 0)
+                    wb = 0x50;
+                else if (wb < 0)
+                    wb = -wb + 0x28;
+                if (wa > wb) {
+                    SwapChars(pair, pair + 1);
                     swapped = 1;
                 }
             }
@@ -480,7 +491,7 @@ extern void BuildList5(void); /*@ 0CF7:0211 */
    and `register` form tried spills one local (`make match` shows the difference at the prologue). */
 /*@ 0EF3:1197 draft */ void CreateItemForEffect0(void)
 {
-    register int index, slot;
+    register int slot, index;
 
     index = ItemSlot1Empty(gCurRec);
     slot = f0EF3_035A(0, 0, 0, 0xF, 1, 8, GetClassSlot1Value(gPanelMember), 1);
