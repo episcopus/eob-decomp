@@ -1,7 +1,7 @@
 # Review: eov2
 
 Reviewer: rev-haiku
-Commit reviewed: e8be50a (main; round 2 reviewed e8be50a, round 1 reviewed 4649fc4)
+Commit reviewed: c2b1de9 (main; round 3 reviewed c2b1de9, round 2 e8be50a, round 1 4649fc4)
 
 Playbook 70. Judge what a matching file can still get wrong: names, types, comments, structure.
 The matcher already proved the bytes; do not re-prove them, read for meaning.
@@ -10,6 +10,60 @@ The matcher already proved the bytes; do not re-prove them, read for meaning.
 
 Each finding is a checkbox. `must-fix` blocks `make review-pass` until a decompiler ticks it off
 (with the commit that fixes it); `should` and `note` do not block.
+
+### Round 3 (rev-haiku, at c2b1de9)
+
+Playbook 70, later round. Judged: the round 2 must-fix items (fix commit 067dd64, merged in 52b8ce6)
+and the changes since e8be50a on main (`git diff e8be50a main -- src/EOV2.C re/symbols.toml
+re/globals.toml`: src/EOV2.C, comments and declarations only; re/globals.toml names ds:FE5A gFont8x8;
+re/symbols.toml has no eov2 entry). `make match FILE=src/EOV2.C` exits 0, 11 of 11 (3332 bytes);
+`make readability UNIT=eov2` 0 findings. Checked against the code: the flash tables (ds:5621, 5629,
+562D from eob/EOB.EXE DGROUP; gFlashFrame2 and gFlashShift2: all 16 entries give (mask >> shift) at
+most 3) and the two readers (E0EF3.C:696, :771); the routine at 0000:6815 (disassembled with
+tools/re/disasm.py: the far pointer is returned in dx:ax); struct SlotSize against src/E122E.C:107-111;
+the LoadScreenImage and LoadOverlayScreen mode tests; the INTRO call (src/EOV2.C:383, mode 2);
+g65C0 and g65C3 (the loop at src/EOV2.C:366-368 indexes both by i); the font loads (src/E07C8.C:376-377,
+src/EOV0.C:168, src/EOV3.C:42); the FindWordPanel font call. Fixed right, ticks stay: the LoadGamePanel
+font wording (its line citation is a should below), the header's mode -1 claim, the per-row g65C0 and
+g65C3 comments, the SlotSize struct and gA99C type, the LoadIntroScreen region, and the f6815 comment.
+Two round 2 items are not fixed right, because a changed line states a wrong claim: gFlashFrames and
+gIconTable (both below, must-fix again).
+
+- [ ] must-fix src/EOV2.C:117 (gFlashFrames comment; reopens the round 2 gFlashFrames item): "Both
+  readers only produce frames 1 to 3". The same comment says "both only ever give 0 to 3", and the
+  code gives 0 to 3: DrawFlashFrame (src/E0EF3.C:696) and FlashViewDamage (src/E0EF3.C:771) both
+  run `if (frame-- == 0) continue;`, so frame 0 is skipped and frames 1 to 3 index gFlashFrames[0..2].
+  Say that: the masks give 0 to 3, 0 means no frame and is skipped, so the array holds the three
+  entries DD1C, DD20 and DD24. The table values and the range are right.
+- [ ] must-fix src/EOV2.C:151 (gIconTable comment; reopens the round 2 gIconTable item): "src/E1414.C:101
+  ... the character the blink highlights (src/E1414.C:133 names it the highlighted member)". Neither
+  line says that now. E1414.C:106 declares gIconTable as "the index of the party member being moved,
+  -1 when none", and the BlinkSelected comment (1414:0000, src/E1414.C:141-145) saves gIconTable (the
+  member being moved), replaces it with 0xFF and restores it. The blink-highlight wording exists only
+  as a quote in src/E0ACD.C:50. Cite E1414 as it reads now: it reads the byte as the member being moved,
+  like this unit, src/E0ACD.C and src/E1547.C. The cross-unit conflict with src/E0EF3.C:227 (an array of
+  far sprite pointers) stays as it is.
+- [ ] should src/EOV2.C:9-13 (header): the cites into src/E082C.C are one or two lines off. The mode -1
+  test is at src/E082C.C:313-314 (not :314-315), the LoadScreenImage call in LoadOverlayScreen at :337
+  (not :338), and the "With mode -1" comment at :329-330 (not :330-331). The facts cited are right.
+- [ ] should src/EOV2.C:113-114 (g65C0 and g65C3): "(src/EOV2.C:357)" is this file's own line, which is
+  now the loop at src/EOV2.C:366-368. Cite 366-368.
+- [ ] should src/EOV2.C:376-377 (LoadIntroScreen comment) and src/EOV2.C:177 (gFillRect): the 40 by 200
+  ClipRect is at src/E082C.C:317 (not :318), and the gFillRect colour parameter at src/E082C.C:64 (not :63).
+- [ ] should src/EOV2.C:399 (LoadGamePanel entry 1): "src/E1C0E.C:53" is the gRestoreRect line. The
+  declaration "the 8x8 font loaded from Font8.fnt" is src/E1C0E.C:57. Cite :57.
+- [ ] should src/EOV2.C:151 (gIconTable): src/E0ACD.C:42 is now the declaration at src/E0ACD.C:48, and
+  src/E1547.C:107 is now the declaration at src/E1547.C:128. The readings they state are right.
+- [ ] should re/globals.toml, ds:FE5A (changed in this range): "EOV2.C:124 declare the same address" is
+  now src/EOV2.C:133. A log file, so the owner of the globals log corrects it.
+- [ ] note the f6815 comment summarises the decode as "... the loop, mov dx,ds, retf". The routine
+  ends with `xchg dx,ax` at 0000:6832 before `mov dx,ds` at 0000:6833, which puts the offset in ax.
+  The dx:ax return is right; the summary could cite 0000:6832-6838.
+- [ ] note the round 2 notes (the item table base at src/EOV2.C:29 and :83, and the gIconTable type against
+  src/E0EF3.C:227) are not re-judged here and stay open as notes.
+
+Round 3 result: two must-fix items open, both round 2 items whose changed lines state a wrong claim.
+Shoulds are stale line cites (the facts are right). Nothing escalated: no matcher, spec or pin question.
 
 ### Round 2 (rev-haiku, at e8be50a)
 
