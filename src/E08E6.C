@@ -2,9 +2,9 @@
    per-type behaviour routines of the game's map objects: UpdateObjects walks the 30 28-byte object
    records at ds:8A82 (struct Obj28, indexed by the 27-byte character records at ds:1A3B, struct
    Entry27) and dispatches each live object by its type to the 000B/00C3/03FE/0AB8/0B34/0B94/0CA6
-   behaviours. 35 functions are at L2 and one is a draft (00C3). The unit is compiled with -v
-   (debug information): that is what keeps the identical jump tails of 0765, 0B94, 17FD and 1410
-   that a -O build without it merges (whitepaper 2.1.1).
+   behaviours. All 36 functions are at L2. The unit is compiled with -v (debug information): that is
+   what keeps the identical jump tails of 0765, 0B94, 17FD and 1410 that a -O build without it merges
+   (whitepaper 2.1.1).
    Whitespace and empty-body stubs keep the siblings in address order. */
 
 /*@flags -ml -O -Z -v */
@@ -193,45 +193,27 @@ void Obj10F3(struct Obj28 far *obj);   /* forward: 05EA reaches it before its de
    17A6:0F61(id, gPartyCell) and 17A6:0314(id, gPartyCell); when the first is under 4 and the
    second minus twice the orientation, minus 3, wrapped into 0..7, is over 2 or the first is under 2,
    clear the type and reset the sound field. Called by 0150 and UpdateObjects. Purpose unknown: what
-   the two 17A6 calls compute. DRAFT. blocked: a TCC -S codegen question, one 3-byte instruction.
-   Under -B (and under -v, the unit's switch since 2026-11-02) this body matches byte for byte except that the original reloads `les bx,[bp+6]` at
-   08E6:00F2 before the Distance argument obj->id (08E6:00EE `push [ds:FBCA]`; 08E6:00F2
-   `les bx,[bp+6]`; 08E6:00F5 `push es:[bx+2]`), while ours reuses the bx the five-test `&&` chain
-   already holds, so ours is 3 bytes short (ours je 0x86 against the original je 0x89). The reload
-   is what TCC emits when it has not proved the far pointer still lives in ES:BX; it shows up in the
-   original exactly where a body is a jump target (the else branch at 03FE:041F, the statement after
-   a `||` chain, and the `if (cond) ; else { body }` layout, probed 2026-11-01), but here the body
-   is fall-through after the `jle`, and -O (jump optimisation) is what suppresses the redundant load
-   (WHITEPAPER 2.1.1). Every source form tried either keeps the cached bx as ours does or lays the
-   first test out as `jne @@; jmp` instead of `je`: the `&&` chain, one-line, parenthesised and
-   negated conditions, nested ifs (with and without braces), a `switch`, `goto`, an empty-body `if`,
-   do/while(0), for(;;), while, a nested block, a declaration initialiser, `register` and separate
-   locals, a bare `obj;`, an assignment inside the condition, casts, the `if (cond) ; else { body }`
-   layout, and the `||` early-return form (which reloads but lays the first test as `jne @@; jmp`
-   under /jNOSMART; it matches only without -B, where TCC's own assembler shortens the jump, and then
-   0765, 0B94 and 17FD do not match). Flags probed on the whole unit 2026-11-01: -ml -O -Z -B 35 of
-   36, -ml -O -Z 32, -ml -O -Z -G -B 10, -ml -Z -B 2; -B was the only set that reached 35 and the one
-   missing function is this. 2026-11-02: -v also reaches 35, keeping the tails as -B did while TCC
-   sizes the jumps itself, so the `||` early-return form above (which matched only without -B) is
-   worth a retry. C++ -P, -1 and -k make no difference. Evidence in re/symbols.toml
-   e08e6_00c3 (notes). */
-/*@ 08E6:00C3 draft */ void Obj00C3(struct Obj28 far *obj)
+   the two 17A6 calls compute. The limit tests are an early-return `||` chain, not an `&&` chain:
+   that is what makes TCC reload `les bx,[bp+6]` at 08E6:00F2 for the Distance argument (a statement
+   after a `||` chain is a reload point), matching the original; the `&&` form reuses the bx the five
+   tests already hold and comes out 3 bytes short. */
+/*@ 08E6:00C3 */ void Obj00C3(struct Obj28 far *obj)
 {
     int first, dir;
 
-    if (obj->type != 7 && obj->type != 8 && obj->type != 9 && obj->type != 0xa
-            && obj->count > 0) {
-        first = Distance(obj->id, gPartyCell);
-        if (first >= 4)
-            return;
-        dir = DirectionFromPoints(obj->id, gPartyCell) - obj->orient * 2 - 3;
-        if (dir < 0)
-            dir += 8;
-        if (dir <= 2 && first >= 2)
-            return;
-        obj->type = 0;
-        obj->m10 = gPartyCell;
-    }
+    if (obj->type == 7 || obj->type == 8 || obj->type == 9 || obj->type == 0xa
+            || obj->count <= 0)
+        return;
+    first = Distance(obj->id, gPartyCell);
+    if (first >= 4)
+        return;
+    dir = DirectionFromPoints(obj->id, gPartyCell) - obj->orient * 2 - 3;
+    if (dir < 0)
+        dir += 8;
+    if (dir <= 2 && first >= 2)
+        return;
+    obj->type = 0;
+    obj->m10 = gPartyCell;
 }
 
 /* 08E6:0150: run Obj00C3 over every one of the 30 objects in gObjs */
