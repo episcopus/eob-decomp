@@ -67,6 +67,10 @@ extern signed char g323B[]; /*@ ds:323B */
 extern unsigned char gB894[]; /*@ ds:B894 */
 extern struct Entry27 gTable1A3B[]; /*@ ds:1A3B */
 extern signed char g194B[]; /*@ ds:194B */
+extern signed char g1790[]; /*@ ds:1790 */
+extern int g321E; /*@ ds:321E */
+extern int g31FE[]; /*@ ds:31FE */
+extern int g320E[]; /*@ ds:320E */
 extern char g31F2[]; /*@ ds:31F2 */
 extern char g31F6[]; /*@ ds:31F6 */
 extern int gSoundVolume; /*@ ds:FBCA */
@@ -305,7 +309,73 @@ extern void PlaySoundVolume(int sound, int volume); /*@ 177D:0106 */
         }
     }
 }
-/*@ 08E6:0430 stub */ void Obj0430(struct Obj28 far *obj, int value) {}
+/* 08E6:0430: turn an object toward the direction f17A6_0314(id, value) reports. When the object's
+   state is over 6 it resets it to 0 and toggles g321E, which selects the direction table g31FE or
+   g320E. The target -1 leaves the object alone; bit 3 of m16 XORs 4 into it. When the target is even
+   and id + g1790[target >> 1] equals gSoundVolume, the object takes one step through TurnObject with
+   -1 (orientation + 1 when the difference from 2*orient is under 5, else - 1). Otherwise the
+   difference picks a direction and the loop walks the eight orientations from 7 down to 0, adding
+   the table byte, skipping odd directions, and turning through TurnObject(obj, f0D1C_00DA(id,
+   dir >> 1), dir >> 1); the first turn that succeeds returns. Called by 0AB8. */
+/*@ 08E6:0430 */ void Obj0430(struct Obj28 far *obj, int value)
+{
+    int target;
+    int handle;
+    int i;
+    int id;
+    register int diff;
+    register int dir;
+    int far *table;
+
+    if (obj->state > 6) {
+        obj->state = 0;
+        g321E ^= 1;
+    }
+    table = g31FE;
+    if (g321E != 0)
+        table = g320E;
+    dir = obj->orient * 2;
+    id = obj->id;
+    target = f17A6_0314(id, value);
+    if (target == -1)
+        return;
+    if (obj->m16 & 8)
+        target ^= 4;
+    diff = (target - dir) & 7;
+    if (!(target & 1) && id + g1790[target >> 1] == gSoundVolume) {
+        if (diff != 0 && diff < 5)
+            dir = obj->orient + 1;
+        else if (diff != 0)
+            dir = obj->orient - 1;
+        dir &= 3;
+        TurnObject(obj, -1, dir);
+        return;
+    }
+    if (diff != 0) {
+        if (target & 1) {
+            if (diff < 5)
+                dir++;
+            else
+                dir--;
+        } else {
+            if (diff < 5)
+                dir += 2;
+            else
+                dir -= 2;
+        }
+        dir &= 7;
+    }
+    for (i = 7; i > -1; i--) {
+        dir = (dir + table[i]) & 7;
+        if (dir & 1) {
+            handle = 0;
+        } else {
+            handle = f0D1C_00DA(id, dir >> 1);
+        }
+        if (handle != 0 && TurnObject(obj, handle, dir >> 1) != 0)
+            return;
+    }
+}
 /* 08E6:058A: give an object the frame the first free id frame bit picks; when its gB894 count is 1
    its frame is 4 instead. Called by 05EA. */
 /*@ 08E6:058A */ void SetObjectFrameFromId(struct Obj28 far *obj)
