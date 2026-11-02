@@ -1873,13 +1873,11 @@ void DrawSpellPanel(void);
    (row 6, the abort row, gets ds:592B, or ds:5937 when it is the highlighted row gA9C5). Finally
    it clears gStatusLine, hides the pointer, clips a 9 by 0x35 box, draws the panel's inner line with
    gDrawLine and shows the pointer. Called by 0EF3:21E0, 0EF3:25BD and 0EF3:2929.
-   DRAFT: the panel, cells, labels and row list match. The file's -v (since 2026-11-02) keeps the
-   not-selected row-6 "ABORT SPELL" call (0EF3:1F4) apart from the shared `push ax; lcall
-   gDrawText; add sp,0xc` tail, as the original does; the first difference is now 0EF3:2295+01A1,
-   the `gA9C5 == i` test (ours `jne 0x201`, the original `je 0x201`), a question of the condition's
-   source form. The cell
-   rectangles are unsigned bytes (the original zero-extends with `mov ah,0`). */
-/*@ 0EF3:2295 draft */ void DrawSpellPanel(void)
+   The row 6 loop writes its condition `gA9C5 != i` with the plain row first: the original keeps
+   the fill-coloured row as the fallthrough and jumps to the highlighted row (and the -v build
+   keeps the not-selected row-6 "ABORT SPELL" call at 0EF3:1F4 apart from the highlighted one).
+   The cell rectangles are unsigned bytes (the original zero-extends with `mov ah,0`). */
+/*@ 0EF3:2295 */ void DrawSpellPanel(void)
 {
     register int i;
     register int cell;
@@ -1925,18 +1923,18 @@ void DrawSpellPanel(void);
     DrawFilledPanel(0x47, 0x83, 0xaf, 0xae, gFB4C, gF53A, gF57E);
     for (i = 0; i < 7; i++) {
         slot = (gDD14 + gDDE2 * 6)[i];
-        if (gA9C5 == i) {
-            if (slot >= 0 && i < 6)
-                gDrawText(((char far **)gNameTable)[slot], 0x49, i * 6 + 0x84, textColour,
-                          hiColour);
-            else if (i == 6)
-                gDrawText(gText5937, 0x49, i * 6 + 0x84, textColour, hiColour);
-        } else {
+        if (gA9C5 != i) {
             if (slot >= 0 && i < 6)
                 gDrawText(((char far **)gNameTable)[slot], 0x49, i * 6 + 0x84, textColour,
                           fill);
             else if (i == 6)
                 gDrawText(gText592B, 0x49, i * 6 + 0x84, textColour, fill);
+        } else {
+            if (slot >= 0 && i < 6)
+                gDrawText(((char far **)gNameTable)[slot], 0x49, i * 6 + 0x84, textColour,
+                          hiColour);
+            else if (i == 6)
+                gDrawText(gText5937, 0x49, i * 6 + 0x84, textColour, hiColour);
         }
     }
     gStatusLine = 0;
