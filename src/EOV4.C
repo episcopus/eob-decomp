@@ -153,9 +153,9 @@ extern unsigned char gViewBufADB0[]; /*@ ds:ADB0 */  /* the view pixel buffer (t
    ds:F43E; each row walks `width` words and each of the `height` rows advances the destination by
    a 0x16-word row. Words outside columns 0..0x15 are skipped, and only nonzero source words are
    stored. Called by Ovl4_044B at ovl4:04B4 and ovl4:04CD. Purpose unknown: what the buffers hold.
-   DRAFT: the body matches but our build merges the two `continue` increment blocks into one where
-   the original keeps three duplicated tails; tried `if/else`, `continue` order and pointer order. */
-/*@ ovl4:02A5 draft */ void CopyViewColumn(char x, char y, char page, int x2, char width, char height)
+   The three duplicated increment tails are kept apart only through the assembler (-B), as the
+   original shows (TCC -S then TASM; without it our build merges the continue tails). */
+/*@ ovl4:02A5 */ void CopyViewColumn(char x, char y, char page, int x2, char width, char height)
 {
     unsigned int far *dst;
     unsigned int far *src;
