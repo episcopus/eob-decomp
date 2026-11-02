@@ -1,0 +1,56 @@
+# Review: eov6
+
+Reviewer: rev-haiku
+Commit reviewed: 4afb5a6 (main, when I started; this branch was at 1e58aea)
+
+Playbook 70. Judge what a matching file can still get wrong: names, types, comments, structure.
+The matcher already proved the bytes; do not re-prove them, read for meaning.
+
+## Findings
+
+Each finding is a checkbox. `must-fix` blocks `make review-pass` until a decompiler ticks it off
+(with the commit that fixes it); `should` and `note` do not block.
+
+- [ ] must-fix src/EOV6.C:97: "In six sub-steps (ds:tick) per hour" puts the hour counter in ds, but `tick` is an automatic local (line 122, `int tick;`). Say "six sub-steps per hour (the local tick)".
+- [ ] must-fix src/EOV6.C:100-101: "every eight hours ... updates the object list" is wrong. CampLoop never calls UpdateObjects; only f09D2 does (lines 406-407), and f09D2 runs at the start (line 127) and on each key test (line 320). Evidence: the only UpdateObjects calls in EOV6.C are in f09D2.
+- [ ] must-fix src/EOV6.C:100: "levels members up or down" is wrong; the code only lowers levels (lines 286-292: a level of 5 or less becomes 0, else 5 is taken off). Say "drops levels; a member at 0 leaves the party [H]", or "drops levels".
+- [ ] must-fix src/EOV6.C:101-102: "every read of a key ... shows the warning box (f0B9B)" is wrong. The box is shown only on the done path, when `!foundWounded && !result` (lines 329-330). The key tests in the loop (lines 319-323) do not show it.
+- [ ] must-fix src/EOV6.C:102-103: "Returns 1 or 0 ... or the 09D2 result otherwise" is wrong on three paths. `result` is assigned only at line 320, so the gotos at lines 306 and 317 and the ReadKey branch at line 319 reach `return result` (line 331) with an unset local. The caller tests AX after the call (src/EOV1.ASM:3692-3694, `call _fOvl6_0000`, `or ax,ax`), so the value does reach a branch. Say so in the comment. See the note below.
+- [ ] must-fix src/EOV6.C:58: the gF57E comment ("the colour 082C:0898 draws with (ovl6:0858)") is wrong. f0858 (line 383) passes 0xf as the text colour and gF57E as the fifth argument, which DrawShadowText forwards only to its first shadow draw (src/E082C.C:403-408: "`extra` is forwarded as the fifth argument of the first shadow draw"). Evidence: src/E082C.C:403-408, src/EOV6.C:383.
+- [ ] must-fix src/EOV6.C:359-360: the f0858 header says the line is drawn "in the colour gF57E", which repeats the error above. Say the text is drawn in 0xf with gF57E as the shadow's extra argument (src/E082C.C:403-408).
+- [ ] must-fix src/EOV6.C:392 (and the struct at lines 35-39 and the extern at line 44): f09D2 says the records are "at ds:8A84", and the name gTable8A84 and `Entry28.value` treat that as a separate table. The object table is `struct Obj28 gObjs[]` at ds:8A82, 28 bytes each, with `int id` at +2 (src/E08E6.C:11-13 and 80). ds:8A84 is the id field of record 0, and `Distance(obj->id, gPartyCell)` (src/E08E6.C:221) is the same test as line 410 here. Use the object table's name and struct, or say the offset explicitly. Evidence: 8A82 + 28i + 2 = 8A84 + 28i for each i.
+- [ ] must-fix src/EOV6.C:85: `fOvl1_243A` is given the stub address `2102:0039`, which is the stub for overlay 1 entry 0, i.e. ovl1:1ACD. build/re/eob.json, overlays[1].entries: index 0 is code_offset 6861 (0x1ACD), index 5 is code_offset 9274 (0x243A). ovl1:243A is entry 5. The stub for entry 5 is [H] 2102:0052 (entries are 5 bytes, docs/design/WHITEPAPER.md:93); verify with `make overlays` before writing it down.
+- [ ] must-fix src/EOV6.C:112 and 152: `healerFound` says a healer was found, but its value is the return of fOvl1_243A(0x28), the list picker, which src/EOV1.ASM:4232-4240 documents as returning a flag whose meaning is "Purpose unknown". Rename it to what it holds (a placeholder such as `flag2`) or say that the picker's answer is unknown.
+- [ ] must-fix src/EOV6.C:116, 289 and 296: `gained` is set to 1 when a member drops to level 0 (line 289) or takes one point of damage at level 0 (line 296). Nothing is gained on either path. Rename (a placeholder such as `changed`), or describe what the two paths share.
+- [ ] must-fix src/EOV6.C:459: the f0B9B header says it "selects the 8x8 font and region 2". The code selects region 0xb (line 477, `SetTextWindowAndClear(0xb)`); region 2 is not used. g8115 = 2 (line 478) is the value the header meant. Evidence: src/EOV1.ASM:2473-2475, the same routine (ovl1:13F7) clears window 0xB.
+- [ ] must-fix src/EOV6.C:463: the f0B9B header says it is called "for 'You can't rest here, monsters are near.'". The only caller (line 330) runs when `result == 0`, that is when f09D2 found no object near (line 415 prints that message only on the path that returns 1). The message at key 0x2b is some other string. Say which message, or Purpose unknown.
+- [ ] must-fix src/EOV6.C:426-427 (f0A92 header): it says the memorized slots hold "a negative (not yet memorised) spell". The struct comment (line 25) says a negative memorized slot is "a spell ready to cast", and the healer casts negative memorized slots (lines 211-213, 218-225). The known slots are the ones memorised (lines 193-203). The code supports "ready to cast" for memorized; fix the f0A92 header.
+- [ ] should src/EOV6.C:75: the fifth parameter of DrawShadowText is named `flag` here. src/E082C.C:403 and src/E14EF.C:83 name it `extra`, and the caller passes gF57E or 0, not a flag. Rename it `extra`, and use "color" to match src/E14EF.C:83 (this file says "colour").
+- [ ] should src/EOV6.C:86: `FindClassSlot(int value, int classIndex)`. The definition is `FindClassSlot(int slotId, int classIndex)` (src/E0A72.C:89). Use `slotId`.
+- [ ] should src/EOV6.C:71 and 80: `FindCarriedSlot(int member, int what, int which)` and `DamageCharacter(int member, int what)`. The definitions are `FindCarriedSlot(int who, int field2, int fieldB)` (src/E0D1C.C:229) and `DamageCharacter(int who, int amount)` (src/E0DE8.C:540). Align with the owners, or keep placeholders; `amount` is evidenced by the caller's use, `what` is not.
+- [ ] should src/EOV6.C:42-44: gSpells1344 is declared here with a unit-local 19-byte struct that has only `name`. src/E0EF3.C:157-161 declares the same table with `name` (+00), `flags` (+04), `apply` (+05) and `ddFn` (+09). Use the full struct, or say the other fields are not read here.
+- [ ] should src/EOV6.C:59: gF442 is `signed char` here; src/E08E6.C:94 and src/EOV4.C:1029 use `char`. The same byte, but align the type with the other units.
+- [ ] should src/EOV6.C:46-48: the g159 comment says it "holds gF57E while ovl6:0B9B is on screen". Its writers are src/EOV6.C:476 and src/EOV1.ASM:2496 (ShowMessage). No reader was found in src/ (grep for ds:0159 finds only these and the EXTRN in src/EOV1.ASM:62). Say "written from gF57E by ovl6:0B9B and ovl1:13F7; no reader found in src/".
+- [ ] should src/EOV6.C:464: f0B9B has the same body as ovl1:13F7 `_ShowMessage` (src/EOV1.ASM:2467-2500: the 8x8 font, gF57E into g159, window 0xB, g8115 = 2, the message from gStrings2003, a 0x78-frame key wait). The name `f0B9B` is a placeholder; either cite the twin in the header or name it after the evidence (ShowMessage, in a copy in overlay 6).
+- [ ] should src/EOV6.C:18: `maxhp` at +1C. src/E0DE8.C:26 names +1C `m1C` ("a copy of the max hit points"), and E0DE8.C:588-589 clamps to it the same way as lines 242-245 here. The meaning agrees; cite E0DE8.C:26 in the comment and consider the same name.
+- [ ] should src/EOV6.C:22: `level` at +23, "(0: not in the party)". This is an inference from lines 166, 280 and 287-288. Mark it [H] and say what it rests on; src/E0A72.C:21 leaves +23 as padding.
+- [ ] should src/EOV6.C:336: the f07E2 header says hit points "below his maximum (at most 0x384)". 0x384 is the start value of the running minimum (line 345), not a cap on hit points. Say "any hit points below 0x384", and note that hp is a signed char.
+- [ ] should src/EOV6.C:391-396 (f09D2): the header says the routine "switches back to the previous region (saved in gTextRegion)". The local `member` holds the saved region (lines 401, 411, 417), and the message is drawn in region 7 (line 412). Rename the local `savedRegion`, and say the message draws in region 7. Also "a monster is close": the records are the Obj28 map objects (src/E08E6.C:11), not only monsters; say "an object".
+- [ ] should src/EOV6.C:96-103: the header leaves out the hourly DamageCharacter(member, 10) on members with flag 1 and without flag 0x10 (lines 261-268) and the eight-hour regain of one hit point (lines 281-285). Say what they do, or Purpose unknown.
+- [ ] should src/EOV6.C:141-155 and 235-248: `foundWounded` holds the 1-based most wounded member (f07E2, lines 141 and 157). It is then reused as a 0-based healing target (lines 235-237) and as a zero test (lines 248 and 252). The name fits only the first use; a note, or a second name for the healing target, would help.
+- [ ] should src/EOV6.C:118: `counters` has no comment. It is compared with `'0' + member / 6` (lines 172 and 191) and reset to '0' (lines 176 and 195), so it appears to be the spell level reached in this rest. Say so, or Purpose unknown.
+- [ ] note src/EOV6.C:318-331 (the uninitialised `result`): on the three paths in the must-fix above, the caller branches on whatever is in that stack slot. The bytes match, so this is the original's behaviour, not a transcription error. A human should decide whether to record it as a quirk. It is not a matcher problem.
+- [ ] note make match: `make match FILE=src/EOV6.C` exits 0 with 6 of 6 functions matching, and prints "unit eov6 not complete: ours 3258 bytes, the unit 3258". tools/match/cmatch.py:605 requires `ovl is None` before it can say "complete", so an overlay unit can never print complete. That is a matcher question for the human, not a unit problem; `make review-pass` may depend on the same flag.
+
+## Summary
+
+The unit is readable as a whole: the six functions are matched (6 of 6, exit 0), `make readability UNIT=eov6`
+reports 0 findings, and the placeholder names (CampLoop, f07E2, f0858, f09D2, f0A92, f0B9B) carry their
+addresses and a purpose from the code. The shared globals and callees mostly agree with src/ (gChars at ds:F580,
+gTextRegion at ds:811F, gFE5A, gA9C0, gPartyCell, gFileNameBuf, g8115, g8492, UpdateObjects, RollDice,
+DamageCharacter, ClipRect). The problems are the comments and four names. Fourteen header and name claims are
+wrong against the code or the other units (the object table at ds:8A82 is not at ds:8A84; the stub 2102:0039 is
+entry 0 (ovl1:1ACD), not ovl1:243A; the warning box is not shown on every key; `gained` and `healerFound` name
+events the code does not show; f0B9B's region is 0xb, not 2; memorized negative slots are "ready to cast"). The
+source is understandable from itself once those are fixed. Placeholders that stay (f0858, f09D2, f0A92, f0B9B,
+flag4, flag8) are fine; no name here claims evidence it lacks except those listed above.
