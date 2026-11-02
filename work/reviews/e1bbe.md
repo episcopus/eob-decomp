@@ -19,36 +19,54 @@ code. Every citation into another unit was re-grepped against current main. The 
 that file moved on main (65ebeb1, 1578a9b, e3ea88d) after the round 5 fixes were made, and E14EF.C moved too. The names
 and the comment meanings hold against the code; the problems are the cites and one caller count.
 
-- [ ] must-fix src/E1BBE.ASM:36-38 (_gPointerBusy): the handler cites are stale. In src/E1A72.ASM the busy test is at
+- [x] must-fix src/E1BBE.ASM:36-38 (_gPointerBusy): the handler cites are stale. In src/E1A72.ASM the busy test is at
   :376-377 (`cmp word ptr [_gPointerBusy],0`, `je L020C`), the drop is at :378 (`L01E9: jmp L027F`), the set to 1 is at
   :387 (label `L020C`) and the clear to 0 is at :418 (label `L0279`). The cites :344-346, :355 and :386 no longer hold
   these. (Evidence: `grep -n _gPointerBusy src/E1A72.ASM` gives :376, :387 and :418.) Cite :376-378, :387 and :418.
-- [ ] must-fix src/E1BBE.ASM:40-42 (_gCursorX): the cites are stale. The handler writes the cursor at
+  Fixed (41c6802): the _gPointerBusy comment now cites src/E1A72.ASM:376-378 (the test, the drop at :378 and the
+  free path at :387) and :418 (the clear to 0); re-grepped at fix time.
+- [x] must-fix src/E1BBE.ASM:40-42 (_gCursorX): the cites are stale. The handler writes the cursor at
   src/E1A72.ASM:390-391, skipped when g80EC is 2 (`cmp byte ptr [g80EC],2` at :388, `je L0221` at :389). InitMouse sets
   0A0h at :267 and 64h at :268. The cites :358-359, :356-357 and :236-237 no longer hold these. src/E1BF3.ASM:35 is still
   right (`mov ds:[8138h],cx`). (Evidence: `grep -n _gCursorX src/E1A72.ASM` gives :58, :267, :390 and :392.)
-- [ ] must-fix src/E1BBE.ASM:56-57 (_gPointerState): the cites are stale. The handler tests 8000h at src/E1A72.ASM:400,
+  Fixed (41c6802): the _gCursorX comment now cites src/E1A72.ASM:390-391 (the handler writes), :388-389 (the g80EC
+  test) and :267-268 (InitMouse); src/E1BF3.ASM:35 is unchanged. Re-grepped at fix time.
+- [x] must-fix src/E1BBE.ASM:56-57 (_gPointerState): the cites are stale. The handler tests 8000h at src/E1A72.ASM:400,
   before its zone test at :402, and sets 4000h for an in-zone hide at :385, on the path that calls _HidePointer at :383.
   The cites :368 and :353 no longer hold these. (Evidence: `grep -n _gPointerState src/E1A72.ASM` gives :107, :270,
   :385 and :400.)
-- [ ] must-fix src/E1BBE.ASM:115-116 and :210-211 (HidePointer and ShowPointer headers): "the mouse handler's two calls
+  Fixed (41c6802): the _gPointerState comment now cites src/E1A72.ASM:400 (the 8000h test) before its zone test at
+  :402, and :385 (4000h set for a hide in the zone) on the path that calls _HidePointer at :383.
+- [x] must-fix src/E1BBE.ASM:115-116 and :210-211 (HidePointer and ShowPointer headers): "the mouse handler's two calls
   (src/E1A72.ASM:351 and :383)" is wrong. :351 is no longer a call. The INT 33h handler (1A72:017A) calls _HidePointer
   at src/E1A72.ASM:383 and :415 and _ShowPointer at :416, so ShowPointer has one handler call, not two. The handler is
   also inside _InitMouse's proc (src/E1A72.ASM:258-425; the handler label is at :337), so "InitMouse (1A72:00DA)" and
   "the handler" name the same proc. InitMouse's own setup code (:258-336) calls neither function. (Evidence:
   `grep -n "_HidePointer\|_ShowPointer" src/E1A72.ASM` gives :27-28, :383, :415 and :416.) Name the calls by line:
   HidePointer at :383 and :415, ShowPointer at :416.
-- [ ] must-fix src/E1BBE.ASM:431 (LockHidePointer comment): "src/E14EF.C:44-45" is stale. The pair is declared at
+  Fixed (41c6802): both headers now name the mouse handler inside _InitMouse (1A72:00DA; the handler entry is
+  1A72:017A): HidePointer at src/E1A72.ASM:383 and :415, ShowPointer at :416. The separate "InitMouse" caller is
+  dropped because the handler is inside that proc and its setup calls neither function.
+- [x] must-fix src/E1BBE.ASM:431 (LockHidePointer comment): "src/E14EF.C:44-45" is stale. The pair is declared at
   src/E14EF.C:59-60 with the comments "start a frame" (:59) and "end a frame" (:60). E14EF.C:44-45 are now the gFC7A and
   g5D1A externs. Cite :59-60; the quoted words still hold. (Evidence: `grep -n "start a frame" src/*.C` gives
   src/E14EF.C:59 only.)
-- [ ] should src/E1BBE.ASM:49 (_gPointerHotX): "hot spot, x in pixels (subtracted from gCursorX)" is right for
+  Fixed (41c6802): re-grepped at fix time: E14EF.C moved again when the e14ef unit merged (b708ffb), so the pair now
+  sits at src/E14EF.C:69-70, not :59-60. The quoted "start a frame" (:69) and "end a frame" (:70) hold and the
+  comment cites :69-70.
+- [x] should src/E1BBE.ASM:49 (_gPointerHotX): "hot spot, x in pixels (subtracted from gCursorX)" is right for
   ShowPointer (1BBE:00ED subtracts it from gCursorX, :228), but HidePointer subtracts it from gDrawnX (1BBE:0002,
   :131). Say both.
-- [ ] should src/E1BBE.ASM:381-382, :421-422, :449-450 and :472-473 (`push cs` then `call near ptr _HidePointer` or
+  Fixed (41c6802): _gPointerHotX now says HidePointer subtracts it from gDrawnX (1BBE:0021) and ShowPointer from
+  gCursorX (1BBE:0117); _gPointerHotY says the same for gDrawnY (1BBE:002B) and gCursorY (1BBE:0127).
+- [x] should src/E1BBE.ASM:381-382, :421-422, :449-450 and :472-473 (`push cs` then `call near ptr _HidePointer` or
   `_ShowPointer`): this is a far call to the FAR procs in this segment. Both procs are `PROC FAR` (:119, :213), so their
   `ret` is RETF and pops the CS that `push cs` put on the stack. A reader will take the pair for a near call. Say so once,
   in the HidePointerZone header, and point the other sites to it. (Evidence: the `ret` at :198 and :301.)
+  Fixed (41c6802): the HidePointerZone header now explains that the push cs before the near call to 1BBE:0002
+  (1BBE:02AE-02AF) makes it a far call: that proc is FAR, so its RETF (1BBE:00EC) pops the pushed CS, and it names
+  the other three sites (1BBE:02F8, 0324 and 034F). Each push cs in the file carries the note "far call: the FAR ret
+  pops this CS (see 1BBE:01FE)".
 - [ ] note routed to the e1a72 owner: src/E1A72.ASM:107-108 (the _gPointerState declaration) says 8000h is "the pointer is
   hidden over the hide zone". This unit reads 8000h as "a zone hide is in force" (round 4). The handler's own test
   (src/E1A72.ASM:400-402) fits this unit's reading, so the two declarations should agree.
