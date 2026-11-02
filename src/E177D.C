@@ -14,7 +14,8 @@
 #include <dos.h>
 
 /* Meaningful constants of this unit. */
-/* the driver data block's size, the FileRead length at 177D:004C (whitepaper 4.4) */
+/* the length read for the driver block (at most this many bytes, whitepaper 4.4); the FileRead
+   length at 177D:004C */
 #define DRIVER_BLOCK_SIZE 0x32C8L
 /* a game-sound map value from here up is ignored (whitepaper 4.4, 177D:008C) */
 #define SOUND_MAP_IGNORED 0x96
@@ -27,9 +28,10 @@
 /* Purpose unknown: the base the AdLib amplitude write subtracts gCurAttenuation from (177D:01DA);
    20h is the OPL register block 20h (waveform and multiplier), so this may not be an amplitude */
 #define AMP_BASE 0x20
-/* Purpose unknown: the value stored in the busy byte gDrvReg after a start (177D:0201). The driver's
-   own timer counts gDrvReg down (0000:3EAF to 3EB6: cmp [3B36], 0; je; dec byte [3B36]), so 0Bh is a
-   number of timer passes the program waits out */
+/* Purpose unknown: the value stored in the busy byte gDrvReg after a start (177D:0201). The INT 08h
+   routine at 0000:3E66 (installed by 0000:3F77: mov dx,3E66h; int 21h 2508h at 0000:3F97 to 3F9D)
+   counts gDrvReg down (0000:3EAF to 3EB6: cmp [3B36], 0; je; dec byte [3B36]), so 0Bh is a number of
+   timer passes the program waits out */
 #define DRIVER_BUSY 0x0b
 
 extern unsigned char far *gSoundMap; /*@ ds:DCAC */  /* the 120-byte u8 game-number to driver-number
@@ -66,10 +68,14 @@ extern int gCurAttenuation; /*@ ds:5E24 */  /* the attenuation of gCurSound: a l
                                           177D:026E, not bounded here; used only in this file */
 extern int gPrevSound; /*@ ds:5E26 */  /* the sound whose driver registers gSoundLevel and gSoundAmp hold,
                                           restored through 0000:03B0 before the next sound */
-extern int gSoundLevel; /*@ ds:5E28 */  /* the driver level written to register 3 of the current sound
-                                           (0000:03B0/0000:03CA) */
-extern int gSoundAmp; /*@ ds:5E2A */  /* the driver value written to register 1 of the current sound
-                                         (0000:03B0/0000:03CA); Purpose unknown: the AdLib write is
+extern int gSoundLevel; /*@ ds:5E28 */  /* the value read from register 3 of the recorded sound
+                                           gCurSound (177D:0170 to 017F, again at 0194 to 01A3);
+                                           written back to register 3 of gPrevSound on the next call
+                                           (177D:0142 to 014E through 0000:03B0) */
+extern int gSoundAmp; /*@ ds:5E2A */  /* the value read from register 1 of the recorded sound
+                                         gCurSound (177D:0182 to 0191), written back to register 1
+                                         of gPrevSound on the next call (177D:0156 to 0167 through
+                                         0000:03B0); Purpose unknown: the AdLib write is
                                          20h - gCurAttenuation (177D:01DA), and 20h is the OPL register
                                          block 20h (waveform and multiplier), not clearly an amplitude */
 extern int gSoundVolume; /*@ ds:FBCA */  /* the sound setting PlaySoundDefault (177D:00F3) passes;
@@ -77,16 +83,19 @@ extern int gSoundVolume; /*@ ds:FBCA */  /* the sound setting PlaySoundDefault (
                                            f17A6_0F61 together with its `volume` to get gCurAttenuation
                                            (177D:026A pushes it, 177D:026E is the call). Also read by
                                            src/E0D1C.C:352 and :358, compared with an index by
-                                           src/E1414.C:221 and passed to f17A6_0F61 in src/EOV6.C:413 */
+                                           src/E1414.C:221 and passed to f17A6_0F61 in src/EOV6.C:410 */
 
 extern unsigned char far gDrvReg; /*@ 0000:3B36 */  /* the driver's busy flag: the program waits for
                                                        it to clear before it writes the sound
                                                        registers, and the driver's timer decrements
                                                        it (0000:3EB6) */
 
+/* FileOpen returns the cache slot index (not a DOS handle), 1C0E:00DB */
 extern int FileOpen(char far *name, int mode); /*@ 1C0E:00DB */
-extern void FileRead(int handle, void far *buf, unsigned long len); /*@ 1C0E:0400 */
-extern void FileClose(int handle); /*@ 1C0E:03BB */
+extern long FileRead(int index, void far *buf, unsigned long len); /*@ 1C0E:0400 */  /* the returned
+                                                                                       byte count is
+                                                                                       not used here */
+extern void FileClose(int index); /*@ 1C0E:03BB */
 extern void far *f0_03AA(void); /*@ 0000:03AA */ /* returns the block's address, dx:ax = cs:0416
                                                     (0000:03AA to 03AF) */
 /* writes the byte `value` at driver register `reg` of driver sound `idx`: `idx` indexes the
@@ -113,19 +122,19 @@ void PlaySoundVolume(int sound, int volume);
 /* 177D:000A: opens the driver file chosen by gSoundCard (adlib.dat when 0, pcgamesn.dat
    otherwise), reads its 120-byte sound map into gSoundMap and its 32C8h data block into segment
    0000 (_TEXT) at offset 0416 (f0_03AA returns cs:0416), closes the file and fixes the block's
-   12Ch word table through f0_03FA. Called by StartupAlloc at 07A9:00D2. The handle from FileOpen
+   12Ch word table through f0_03FA. Called by StartupAlloc at 07A9:00D2. The slot from FileOpen
    is not checked: the data file is assumed to exist. */
 /*@ 177D:000A */ void LoadSoundDriver(void)
 {
-    int handle;
+    int slot;
 
     if (gSoundCard == 0)
-        handle = FileOpen("adlib.dat", 1);
+        slot = FileOpen("adlib.dat", 1);
     else
-        handle = FileOpen("pcgamesn.dat", 1);
-    FileRead(handle, gSoundMap, 120L);
-    FileRead(handle, f0_03AA(), DRIVER_BLOCK_SIZE);
-    FileClose(handle);
+        slot = FileOpen("pcgamesn.dat", 1);
+    FileRead(slot, gSoundMap, 120L);
+    FileRead(slot, f0_03AA(), DRIVER_BLOCK_SIZE);
+    FileClose(slot);
     f0_03FA();
 }
 
@@ -137,9 +146,10 @@ void PlaySoundVolume(int sound, int volume);
    resumes the driver through 1948:0458, but only when gSpeakerOn is currently 0 (177D:00C1 to 00CD;
    1 is Tandy, 0 the PC speaker, E1948.ASM:7). QUIRK
    177D:00A8: the `driverSound < 0` test (the `gSpeakerOn = 0` block) is dead: the map byte is
-   zero-extended into driverSound (`mov ah, 0` at 177D:0088), so driverSound is 0..0FFh and nothing
-   here ever clears gSpeakerOn. Does
-   nothing when sound is off (gSoundOn). Called by many game routines to make a sound effect. */
+   zero-extended into driverSound (`mov ah, 0` at 177D:0088), so driverSound is 0..0FFh; nothing here
+   ever clears gSpeakerOn, and the only 0 store in this unit (177D:00B3, in PlaySound) is dead, inside
+   that block. Does nothing when sound is off (gSoundOn). Called by many game routines to make a sound
+   effect. */
 /*@ 177D:0070 */ void PlaySound(int sound)
 {
     int driverSound;
@@ -243,6 +253,8 @@ void PlaySoundVolume(int sound, int volume);
                     SoundDriverResume();
                 }
             }
+            /* masks gCurSound in place (177D:0240) before the play; the store at 177D:0288
+               overwrites it with gSoundMap[sound] afterwards */
             gCurSound &= SPEAKER_ROUTINE_MASK;
             routine = f0_03E3(gCurSound);
             StartSound(routine);

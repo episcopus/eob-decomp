@@ -134,17 +134,17 @@ why = "the sound whose driver registers gSoundLevel and gSoundAmp hold, restored
 [[global]]
 id = "ds:5E28"
 name = "gSoundLevel"
-why = "the driver level written to register 3 of the current sound (0000:03B0/0000:03CA)"
+why = "the value read from register 3 of the recorded sound gCurSound (177D:0170 to 017F, again at 0194 to 01A3); written back to register 3 of gPrevSound on the next call (177D:0142 to 014E through 0000:03B0)"
 
 [[global]]
 id = "ds:5E2A"
 name = "gSoundAmp"
-why = "Purpose unknown: the driver value written to register 1 of the current sound (0000:03B0/0000:03CA); the AdLib write is 20h - gCurAttenuation (177D:01DA), and 20h is the OPL register block 20h (waveform and multiplier), not clearly an amplitude"
+why = "the value read from register 1 of the recorded sound gCurSound (177D:0182 to 0191), written back to register 1 of gPrevSound on the next call (177D:0156 to 0167 through 0000:03B0); Purpose unknown: the AdLib write is 20h - gCurAttenuation (177D:01DA), and 20h is the OPL register block 20h (waveform and multiplier), not clearly an amplitude"
 
 [[global]]
 id = "ds:FBCA"
 name = "gSoundVolume"
-why = "the sound setting PlaySoundDefault (177D:00F3) passes; PlaySoundVolume passes it as the first argument of f17A6_0F61 together with its volume argument to get gCurAttenuation; also indexes the nine-byte records at ds:B894 in src/E0D1C.C:352 and :358, is compared with an index in src/E1414.C:221, and is passed to f17A6_0F61 in src/EOV6.C:413"
+why = "the sound setting PlaySoundDefault (177D:00F3) passes; PlaySoundVolume passes it as the first argument of f17A6_0F61 together with its volume argument to get gCurAttenuation; also indexes the nine-byte records at ds:B894 in src/E0D1C.C:352 and :358, is compared with an index in src/E1414.C:221, and is passed to f17A6_0F61 in src/EOV6.C:410"
 
 [[global]]
 id = "ds:DDE4"
