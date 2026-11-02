@@ -47,9 +47,37 @@ extern void DamageCharacter(int who, int amount); /*@ 0DE8:09B9 */
 extern int far RollDice(char count, char sides, char bonus); /*@ 082C:0458 */
 extern int f0D1C_0163(int who, int fieldB); /*@ 0D1C:0163 */
 extern void fOvl5_1A82(int x); /*@ 211E:0057 */   /* overlay 5 entry, ovl5:1A82 */
+extern void Obj0150(void); /*@ 08E6:0150 */
+extern void UpdateDDEffects(void); /*@ 1414:0D63 */
+extern void DrawText(char far *text); /*@ 1DE7:060A */
+extern int MouseInRect(int left, int top, int right, int bottom); /*@ 1A72:02A6 */
+extern int f0D1C_00DA(int value, int page); /*@ 0D1C:00DA */
+extern int gSoundVolume; /*@ ds:FBCA */        /* the global sound volume (src/E08E6.C) */
+extern int gF540; /*@ ds:F540 */               /* counts sound-volume changes (src/E08E6.C) */
+extern signed char g194B[]; /*@ ds:194B */     /* per-object bit flags (src/E08E6.C) */
+extern char gText5AB5[]; /*@ ds:5AB5 */        /* message drawn when the sound volume changes (122E:0001) */
+extern char gText5B78[]; /*@ ds:5B78 */        /* message drawn for a highlighted member slot (122E:0847) */
 void f122E_1DA8(int a, int b);  /* forward: 1DA8 comes after its callers */
 
-/*@ 122E:0001 stub */ void f122E_0001(void) {}
+/* 122E:0001: switch the sound volume to `volume`: run Obj0150 around the change, hand the old and
+   the new value to the driver (codes 2 and 1), mark the sound page and action dirty, draw the
+   volume message and refresh the effects. */
+/*@ 122E:0001 */ void SetSoundVolume(int volume)
+{
+    int old;
+
+    Obj0150();
+    old = gSoundVolume;
+    gSoundVolume = volume;
+    f122E_1DA8(old, 2);
+    f122E_1DA8(volume, 1);
+    Obj0150();
+    gF540++;
+    gEFB2 = (char)0xff;
+    gDF4C = 1;
+    DrawText(gText5AB5);
+    UpdateDDEffects();
+}
 /*@ 122E:0055 stub */ int f122E_0055(int id) { return 0; }
 
 /* 122E:0137: push bit 0 of the frame-count byte of the gB894 record `id`. Called by 147F for one
@@ -113,9 +141,32 @@ void f122E_1DA8(int a, int b);  /* forward: 1DA8 comes after its callers */
     return 0;
 }
 /*@ 122E:06D0 stub */ void f122E_06D0(void) {}
-/*@ 122E:0847 stub */ void f122E_0847(void) {}
-/*@ 122E:0896 stub */ void f122E_0896(void) {}
-/*@ 122E:0933 stub */ void f122E_0933(void) {}
+
+/* 122E:0847: when the mouse is over the member slot's rectangle and the slot's object has flag 0x20
+   in g194B, draw the slot's message. Returns 1 when it drew, 0 otherwise. */
+/*@ 122E:0847 */ int CheckMemberSlotRect(int id, int slot)
+{
+    if (MouseInRect(0x28, 0x10, 0x88, 0x58)) {
+        if (g194B[gB894[id * 9 + slot]] & 0x20) {
+            DrawText(gText5B78);
+            return 1;
+        }
+    }
+    return 0;
+}
+/*@ 122E:0896 stub */ int f122E_0896(int a, int b) { return 0; }
+
+/* 122E:0933: set the driver mode to 0x40, work out the member's row through f0D1C_00DA and run the
+   row handler f122E_0896. QUIRK 122E:0933: the argument is raised by 0x3c and then never read. */
+/*@ 122E:0933 */ void RunRowHandler(int a)
+{
+    int x;
+
+    a += 0x3c;
+    gEFD2 = 0x40;
+    x = f0D1C_00DA(gSoundVolume, gFBCC);
+    f122E_0896(x, gFBCC);
+}
 /*@ 122E:0960 stub */ void f122E_0960(void) {}
 /*@ 122E:0A16 stub */ void f122E_0A16(void) {}
 /* 122E:0B23: sub-opcode that arms member effects: read a member index and hand it to f122E_0154.

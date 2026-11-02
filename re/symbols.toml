@@ -3808,6 +3808,9 @@ unit = "e122e"
 addr = "122E:0001"
 size = 84
 evidence = ["far", "near", "segment"]
+name = "SetSoundVolume"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e122e_0055"
@@ -3904,6 +3907,9 @@ unit = "e122e"
 addr = "122E:0847"
 size = 79
 evidence = ["far", "frame"]
+name = "CheckMemberSlotRect"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e122e_0896"
@@ -3918,6 +3924,9 @@ unit = "e122e"
 addr = "122E:0933"
 size = 45
 evidence = ["frame"]
+name = "RunRowHandler"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e122e_0960"
