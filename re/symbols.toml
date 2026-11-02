@@ -4877,6 +4877,7 @@ evidence = ["far", "segment"]
 name = "ClipRect"
 level = "L2"
 match_flags = "-ml -O -Z"
+review = "passed 2026-11-01 rev-haiku"
 
 [[function]]
 id = "e19fc_0007"
