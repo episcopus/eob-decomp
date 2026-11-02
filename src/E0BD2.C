@@ -39,18 +39,25 @@ struct ItemType {
 };
 extern struct ItemType gItemTypes[]; /*@ ds:A9F0 */
 
-/* A 243-byte character record at ds:F580; only the fields this unit uses (src/E0A72.C). */
+/* A 243-byte character record at ds:F580; only the fields this unit uses (src/E0A72.C, src/E0DE8.C). */
 struct CharRec {
-    char pad00[2];
-    char name[0x0B];        /* +2: the character's name, NUL padded */
-    char pad0D[0x1E - 0x0D];
+    char pad00;
+    unsigned char m01;      /* +01: status bits, tested by 0BD2:0D2D */
+    char name[0x0B];        /* +02: the character's name, NUL padded */
+    signed char m0D;        /* +0D: a class index, written by 0BD2:0D2D */
+    char pad0E;
+    signed char m0F;        /* +0F: a level or score, written by 0BD2:0D2D */
+    char pad10[0x1E - 0x10];
     signed char m1E;        /* +1E */
     signed char m1F;        /* +1F */
     signed char m20;        /* +20: indexes g1231 in 0BD2:11FD */
-    char pad21[0x77 - 0x21];
+    char pad21[0x23 - 0x21];
+    signed char m23;        /* +23: set to 100 by 0BD2:0D2D */
+    char pad24[0x77 - 0x24];
     int m77[27];            /* +77: 27 carried-item slots; slot 16 (+97) is also a list head */
-    char padAD[0x97 - 0xAD];
-    char m97[0xF3 - 0x97];  /* +97: the sub-table slot 16 heads */
+    char padAD[0xE3 - 0xAD];
+    long mE3;               /* +E3: effect flags, changed by 0BD2:0D2D */
+    char padE7[0xF3 - 0xE7];
 };
 extern struct CharRec gChars[]; /*@ ds:F580 */
 
@@ -113,7 +120,14 @@ extern signed char g3890[]; /*@ ds:3890 */  /* a three-byte table read by 0BD2:0
 extern signed char g38FA[]; /*@ ds:38FA */  /* a byte table indexed by an item's m0B in 0BD2:0EE8 */
 extern void f0EF3_28ED(int a, int b, int c); /*@ 0EF3:28ED */
 extern void f0EF3_06E7(void); /*@ 0EF3:06E7 */
+extern void f0EF3_0665(int who); /*@ 0EF3:0665 */
+extern void f0EF3_1CE8(int who); /*@ 0EF3:1CE8 */
 extern void MoveObjectToId(struct Obj28 far *obj, int a, int b); /*@ 08E6:0297 */
+extern void ApplyCharEffect(char who, long interval, char value, char firstEmpty); /*@ 1414:05ED */
+extern void HealCharacter(int who, int amount); /*@ 0DE8:0ADB */
+extern void ApplyStatusEffect(int who, int mask, char far *text, int attack, int count, int value, int flag); /*@ 0DE8:101A */
+extern char far *SkipStrings(char far *text, int count); /*@ 0D1C:07A7 */
+extern char g3893[]; /*@ ds:3893 */        /* the "feels ..." string table (0BD2:0D2D) */
 
 extern int f0D1C_00DA(int value, int page); /*@ 0D1C:00DA */
 extern int f0D1C_02DC(void); /*@ 0D1C:02DC */
@@ -305,14 +319,8 @@ next:
     start = cur;
     while (cur != start || first) {
         rec = &gItems[cur];
-        if (target == -1) {
-            if (type == -1 || rec->m02 == type) {
-                if (count)
-                    n++;
-                else
-                    return cur;
-            }
-        } else if (type == -1 && cur == target) {
+        if ((target == -1 && type == -1) || (target == -1 && rec->m02 == type)
+                || (type == -1 && cur == target)) {
             if (count)
                 n++;
             else
@@ -561,11 +569,11 @@ next:
         DrawItemRow(slot, 1, 0);
         ComputeArmourClass(gA99A);
     } else if (item == 0) {
-        saved = RemoveListItem(&gChars[gA99A].m97[0], 0, -1);
+        saved = RemoveListItem(&gChars[gA99A].m77[16], 0, -1);
         DrawItemRow(slot, 1, 0);
         SetMouseItem(saved);
     } else {
-        InsertListItem((void far *)&gChars[gA99A].m97[0], 0xFFFE, item, 0);
+        InsertListItem((void far *)&gChars[gA99A].m77[16], 0xFFFE, item, 0);
         DrawItemRow(slot, 1, 0);
         SetMouseItem(0);
     }
@@ -597,7 +605,70 @@ next:
     ComputeArmourClass(who);
 }
 
-/*@ 0BD2:0D2D stub */ void f0BD2_0D2D(void) {}
+/* 0BD2:0D2D: applies the effect of the item just taken from slot `slot` of character `who`. It
+   clears the slot through 0BD2:0106 (the item's m0B selects the effect), plays sound 0x0A and
+   dispatches on m0B: 1 restores a class index and heals, 2 and 3 heal by a dice roll, 4 poisons
+   through 0DE8:101A, 5 sets m23 to 100, 6 and 8 run the 0EF3 helpers, 7 sets effect flag 4. After
+   the switch it announces "%s feels <effect>!\r" with the effect name from the ds:3893 table,
+   except for effect 4 when m01 bit 1 is set. Called by 0BD2:1001.
+   DRAFT: every byte matches but one TCC tail merge. `case 5` and `case 7` both end in
+   `RedrawMember(who)`; the original keeps case 7's `push [bp+6]; lcall RedrawMember` inline
+   (0BD2:0E6E, sharing only its `pop cx` with case 8 at 0BD2:0E89), while our build cross-jumps
+   case 7's pair back into case 5's at 0BD2:0112 and merges case 5's `pop cx` into the shared one
+   (0BD2:0153), 9 bytes short. Tried `if (gFB44 != 0)`, `if (gFB44 == 0) break;`, an `else break;`,
+   braces with the break inside, `default: break;` and `kind != 4` against `kind - 1 != 3`; the
+   cross-jump stays. */
+/*@ 0BD2:0D2D draft */ void ApplyItemEffect(int who, int slot)
+{
+    struct CharRec *rec;
+    int kind;
+
+    rec = &gChars[who];
+    kind = f0BD2_0106(who, slot);
+    PlaySound(0xA);
+    switch (kind) {
+    case 1:
+        f0EF3_0665(who);
+        rec->m0D = 0x16;
+        rec->m0F = 0;
+        ApplyCharEffect(who, (RollDice(1, 4, 0) + 4) * 0x222, 7, 1);
+        break;
+    case 2:
+        f0EF3_0665(who);
+        HealCharacter(who, RollDice(2, 4, 2));
+        break;
+    case 3:
+        f0EF3_0665(who);
+        HealCharacter(who, RollDice(3, 8, 3));
+        break;
+    case 4:
+        ApplyStatusEffect(who, 2, "poisoned", 0, 1, 8, 1);
+        rec->mE3 &= 0xFF7F;
+        break;
+    case 5:
+        f0EF3_0665(who);
+        rec->m23 = 0x64;
+        if (gFB44 != 0)
+            RedrawMember(who);
+        break;
+    case 6:
+        f0EF3_0665(who);
+        break;
+    case 7:
+        f0EF3_0665(who);
+        rec->mE3 |= 4;
+        RedrawMember(who);
+        break;
+    case 8:
+        f0EF3_0665(who);
+        f0EF3_1CE8(who);
+        break;
+    }
+    if (kind - 1 != 3 || (rec->m01 & 2) == 0) {
+        sprintf(gFileNameBuf, "%s feels %s!\r", rec->name, SkipStrings(g3893, kind));
+        DrawText(gFileNameBuf);
+    }
+}
 
 /* 0BD2:0EE8: uses the wand in slot `slot` of character `who`. When the item's m0B is 0 it reports
    no effect; when it is not 5 it dispatches through 0EF3:28ED with g38FA[m0B]; for 5 it plays the
