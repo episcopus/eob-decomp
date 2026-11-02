@@ -56,6 +56,22 @@ extern void far *gE062; /*@ ds:E062 */
 extern char gB894[]; /*@ ds:B894 */
 extern int gFBD0; /*@ ds:FBD0 */
 extern void far *gBufDCFC; /*@ ds:DCFC */
+extern unsigned char gTable1879[]; /*@ ds:1879 */  /* the four parallel per-kind tables at ds:1879..0x1990 */
+extern void movmem(void far *src, void far *dst, unsigned n); /*@ 0000:63A3 */
+
+struct Cell8 {              /* the 8-byte sprite rectangles gE062 points at (ovl3:01C8, 03A2) */
+    int w0;
+    int w1;
+    int w2;
+    int w3;
+};
+
+struct WallRec {            /* the 0x34-byte wall records at ds:E040 (ovl3:01C8) */
+    signed char next;       /* +0: the next record index, set to index+1 once visited */
+    char pad01[0x29];
+    unsigned char cells[0xa]; /* +0x2a: ten map cell indices, 0xFF = none */
+};
+extern struct WallRec gWallRecs[]; /*@ ds:E040 */
 extern void Unpack0(char far *src, void far *dst, long len); /*@ 1BA8:0006 */
 extern void Unpack4(char far *src, void far *dst, int len); /*@ 1D9A:0013 */
 
@@ -73,6 +89,8 @@ extern unsigned long g8492; /*@ ds:8492 */
 extern int f0D1C_0670(int who, int mask); /*@ 0D1C:0670 */
 extern void RearmCharEffects(void); /*@ 1414:0B2E */
 extern signed char g194B[]; /*@ ds:194B */
+extern signed char gTable18BF[]; /*@ ds:18BF */  /* per-object-kind table (src/E122E.C) */
+extern unsigned char g1905[]; /*@ ds:1905 */     /* a 256-byte table gB894 indexes into (src/E0DE8.C) */
 extern int gDragMember; /*@ ds:5C74 */
 extern signed char g5C76; /*@ ds:5C76 */
 extern char gDragActive; /*@ ds:5C77 */
@@ -241,7 +259,50 @@ struct WallDec {            /* a 52-byte wall set decoration */
 {
     return (value & (1 << bit)) ? 1 : 0;
 }
-/*@ ovl3:01C8 stub */ void Ovl3_01C8(void) {}
+/* ovl3:01C8: registers a placed wall object `kind` (the first byte of a five-byte level record,
+   the rest `a`, `next`, `c`, `d`). It stores the four per-kind tables at ds:1879 (a into the
+   first, gF538+1 into ds:18BF, c into ds:1905 and d^4 into ds:194B), then, unless `next` is -1
+   (clearing ds:18BF[kind]), walks the chain of 0x34-byte wall records starting at `next`: it
+   copies the decoration from gSegDF4E+0x3E80+next*0x34 into gWallRecs[gF538] and, for each of its
+   ten cell indices that has no sprite yet in ds:EFD4, slices the cell's 8-byte rectangle out of
+   gE062 through ds:8086 with the map sheet (gMapTiles[gFBC8-1] cells). gF538 (the record count) is
+   bumped and the chain link is rewired; the loop ends when the link is 0 (-1). Called by
+   ovl3:0A7C. blocked: the gMapTiles[gFBC8-1] access (cmatch cannot explain an object indexed with
+   a folded -1, see ovl3:03A2), so it stays a draft. */
+/*@ ovl3:01C8 draft */ void RegisterWallObject(int kind, signed char field1879, int recordIndex, signed char field1905, signed char objectFlags)
+{
+    int i;
+    int cell;
+    struct Cell8 far *rect;
+
+    gTable1879[kind] = field1879;
+    gTable18BF[kind] = gF538 + 1;
+    g1905[kind] = field1905;
+    g194B[kind] = objectFlags;
+    g194B[kind] ^= 4;
+    if (recordIndex != -1) {
+        while (recordIndex != -1) {
+            movmem((void far *)((char far *)gSegDF4E + recordIndex * 0x34 + 0x3e80),
+                   (void far *)gWallRecs[gF538].cells, 0x34);
+            for (i = 0; i < 0xa; i++) {
+                cell = gWallRecs[gF538].cells[i];
+                if (cell == 0xff)
+                    continue;
+                if (gEFD4[cell])
+                    continue;
+                rect = &((struct Cell8 far *)gE062)[cell];
+                gEFD4[cell] = gGetSpriteCell(rect->w0, rect->w1, rect->w2, rect->w3, MAPSHEET);
+            }
+            gF538++;
+            recordIndex = gWallRecs[gF538].next;
+            if (recordIndex)
+                gWallRecs[gF538].next = gF538 + 1;
+            else
+                recordIndex = -1;
+        }
+    } else
+        gTable18BF[kind] = 0;
+}
 /* ovl3:031A: frees and clears the six far pointers in the tables at ds:FB5E (stride 4) and the six
    in ds:A99C.v (stride 6). The counterpart of the allocation InitGameTables (ovl2:0496) makes.
    Called by ovl3:0A7C and overlay 5. */
