@@ -3711,6 +3711,9 @@ unit = "e0ef3"
 addr = "0EF3:1702"
 size = 181
 evidence = ["frame"]
+name = "ClearObjectsFacingCell"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0ef3_17b7"

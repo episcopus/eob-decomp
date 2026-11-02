@@ -541,8 +541,8 @@ extern void f0EF3_2A53(int a, int b, int c, int d, int e, void far *p); /*@ 0EF3
 /*@ 0EF3:0418 draft */ int CreateItemRecord(unsigned char flags, unsigned char icon, signed char m0B,
                                               signed char type)
 {
-    signed char zero;
     struct ItemRecord far *rec;
+    signed char zero;
     int index;
 
     rec = &gItems[0xB];
@@ -966,8 +966,7 @@ extern void f0EF3_2A53(int a, int b, int c, int d, int e, void far *p); /*@ 0EF3
    and `register` form tried spills one local (`make match` shows the difference at the prologue). */
 /*@ 0EF3:1197 draft */ void CreateItemForEffect0(void)
 {
-    int slot;
-    int index;
+    register int slot, index;
 
     index = ItemSlot1Empty(gCurRec);
     slot = CreateItemType(0, 0, 0, 0xF, 1, 8, GetClassSlot1Value(gPanelMember), 1);
@@ -1194,27 +1193,28 @@ extern void f0EF3_2A53(int a, int b, int c, int d, int e, void far *p); /*@ 0EF3
     DiscardEquippedItems(rec);
 }
 
-/* 0EF3:1702: after 0EF3:06E7, walk the 30 objects and for each whose id is the object the current
-   page faces (0D1C:00DA), whose character record's +0x0F long has bit 0 or 1 and which 0D1C:0BAB
-   does not reject, roll 1d20 and clear the object's type when the roll is under the value
-   0A72:0006 gives for the character record's +2 index. Called by the wand/turn-undead paths.
-   DRAFT: the body is right but the original spills `target` to the frame (0x0A bytes); our build
-   keeps it in a register (`make match` differs at sub sp). */
-/*@ 0EF3:1702 draft */ void ClearObjectsFacingCell(void)
+/* 0EF3:1702: after FlashViewDamage, walk the 30 objects and for each whose id is the object the
+   current page faces (0D1C:00DA), whose character record's +0x0F long has bit 0 or 1 and which
+   0D1C:0BAB does not reject, roll 1d20 and clear the object's type when the roll is under the value
+   0A72:0006 gives for the character record's +2 index. Called by the wand/turn-undead paths. The
+   threshold is a local and the clear uses &gObjs[i], not the walking pointer. */
+/*@ 0EF3:1702 */ void ClearObjectsFacingCell(void)
 {
     struct Entry27 far *rec;
     struct Obj28 far *obj;
     int target;
+    int limit;
     int i;
 
-    f0EF3_06E7();
+    FlashViewDamage();
     target = f0D1C_00DA(gPartyCell, gFBCC);
     obj = gObjs;
     for (i = 0; i < 0x1E; i++, obj++) {
         rec = &gTable1A3B[obj->b0];
         if (obj->id == target && (rec->m0F & 3) != 0 && f0D1C_0BAB(i) == 0) {
-            if (RollDice(1, 0x14, 0) < GetIndexedByte(0, rec->m02, 4))
-                ClearObjectType(obj);
+            limit = GetIndexedByte(0, rec->m02, 4);
+            if (RollDice(1, 0x14, 0) < limit)
+                ClearObjectType(&gObjs[i]);
         }
     }
 }
@@ -1773,23 +1773,28 @@ void f0EF3_2295(void);
     return rec->m04;
 }
 
-/* 0EF3:2604: use the item in one of a member's rows. When the item's type is 0x22 or 0x23, or
-   its type is 0x30 and its flags low six bits are exactly 1, run 0BD2:0106(who, slot); for a
-   type 0x30 item with any other flag count, just decrement its flags. Called through a table.
-   DRAFT: the body is right but the original computes who*0xF3 before reading slot and keeps the
-   item in SI; our build caches slot in DI first (`make match` differs at the first instruction). */
+/* 0EF3:2604: use the item in one of a member's rows. It switches on the item's type: type 0x22 or
+   0x23, or a type 0x30 item whose flags low six bits are exactly 1, runs 0BD2:0106(who, slot); any
+   other type 0x30 item just decrements its flags. Called through a table.
+   DRAFT: the switch matches (the original loads the type byte, sign-extends it and compares 0x22,
+   0x23 and 0x30 in turn), but the original computes who*0xF3 before reading slot; our build caches
+   slot in DI first (`make match` differs at the first instruction). */
 /*@ 0EF3:2604 draft */ void UseItemRow(int who, int slot)
 {
     int item;
 
     item = gChars[who].m77[slot];
-    if (gTable8DD2[item].m02 == 0x22 || gTable8DD2[item].m02 == 0x23) {
+    switch (gTable8DD2[item].m02) {
+    case 0x22:
+    case 0x23:
         f0BD2_0106(who, slot);
-    } else if (gTable8DD2[item].m02 == 0x30) {
+        break;
+    case 0x30:
         if ((gTable8DD2[item].flags & 0x3F) == 1)
             f0BD2_0106(who, slot);
         else
             gTable8DD2[item].flags--;
+        break;
     }
 }
 
