@@ -5380,21 +5380,21 @@ notes = "not a function: bytes of the unit outside its functions (a marker or pa
 id = "e17a6_0314"
 unit = "e17a6"
 addr = "17A6:0314"
-size = 3149
+size = 106
 evidence = ["far"]
 level = "L2"
 match_flags = "tasm /mx"
-name = "DirectionFromPoints"
+name = "_DirectionFromPoints"
 
 [[function]]
 id = "e17a6_0f61"
 unit = "e17a6"
 addr = "17A6:0F61"
-size = 2589
+size = 60
 evidence = ["far"]
 level = "L2"
 match_flags = "tasm /mx"
-name = "Distance"
+name = "_Distance"
 
 [[function]]
 id = "e17a6_197e"
@@ -5404,7 +5404,157 @@ size = 168
 evidence = ["far"]
 level = "L2"
 match_flags = "tasm /mx"
-name = "TranslateImage"
+name = "_TranslateImage"
+
+[[function]]
+id = "e17a6_037e"
+unit = "e17a6"
+addr = "17A6:037E"
+size = 105
+name = "_SetPlaneTables"
+level = "L2"
+match_flags = "tasm /mx"
+notes = "not listed by the map: a function of the source, its bounds proven by the whole-unit match"
+
+[[function]]
+id = "e17a6_03e7"
+unit = "e17a6"
+addr = "17A6:03E7"
+size = 2361
+name = "_DrawTile"
+level = "L2"
+match_flags = "tasm /mx"
+notes = "not listed by the map: a function of the source, its bounds proven by the whole-unit match"
+
+[[function]]
+id = "e17a6_0d20"
+unit = "e17a6"
+addr = "17A6:0D20"
+size = 307
+name = "_BlitMaskedByte"
+level = "L2"
+match_flags = "tasm /mx"
+notes = "not listed by the map: a function of the source, its bounds proven by the whole-unit match"
+
+[[function]]
+id = "e17a6_0e53"
+unit = "e17a6"
+addr = "17A6:0E53"
+size = 155
+name = "_BlitMaskedWord"
+level = "L2"
+match_flags = "tasm /mx"
+notes = "not listed by the map: a function of the source, its bounds proven by the whole-unit match"
+
+[[function]]
+id = "e17a6_0eee"
+unit = "e17a6"
+addr = "17A6:0EEE"
+size = 49
+name = "_SetPlaneAndWrite"
+level = "L2"
+match_flags = "tasm /mx"
+notes = "not listed by the map: a function of the source, its bounds proven by the whole-unit match"
+
+[[function]]
+id = "e17a6_0f1f"
+unit = "e17a6"
+addr = "17A6:0F1F"
+size = 66
+name = "_ExpandNibbles"
+level = "L2"
+match_flags = "tasm /mx"
+notes = "not listed by the map: a function of the source, its bounds proven by the whole-unit match"
+
+[[function]]
+id = "e17a6_0f9d"
+unit = "e17a6"
+addr = "17A6:0F9D"
+size = 93
+name = "_FindNeighbour"
+level = "L2"
+match_flags = "tasm /mx"
+notes = "not listed by the map: a function of the source, its bounds proven by the whole-unit match"
+
+[[function]]
+id = "e17a6_0ffa"
+unit = "e17a6"
+addr = "17A6:0FFA"
+size = 160
+name = "_BlitSpriteDefault"
+level = "L2"
+match_flags = "tasm /mx"
+notes = "not listed by the map: a function of the source, its bounds proven by the whole-unit match"
+
+[[function]]
+id = "e17a6_109a"
+unit = "e17a6"
+addr = "17A6:109A"
+size = 307
+name = "_BlitSpriteRowDefault"
+level = "L2"
+match_flags = "tasm /mx"
+notes = "not listed by the map: a function of the source, its bounds proven by the whole-unit match"
+
+[[function]]
+id = "e17a6_11cd"
+unit = "e17a6"
+addr = "17A6:11CD"
+size = 190
+name = "_BlitSpriteCga"
+level = "L2"
+match_flags = "tasm /mx"
+notes = "not listed by the map: a function of the source, its bounds proven by the whole-unit match"
+
+[[function]]
+id = "e17a6_128b"
+unit = "e17a6"
+addr = "17A6:128B"
+size = 97
+name = "_BlitSpriteRowCga"
+level = "L2"
+match_flags = "tasm /mx"
+notes = "not listed by the map: a function of the source, its bounds proven by the whole-unit match"
+
+[[function]]
+id = "e17a6_12ec"
+unit = "e17a6"
+addr = "17A6:12EC"
+size = 1065
+name = "_BlitSpriteRowCga2"
+level = "L2"
+match_flags = "tasm /mx"
+notes = "not listed by the map: a function of the source, its bounds proven by the whole-unit match"
+
+[[function]]
+id = "e17a6_1715"
+unit = "e17a6"
+addr = "17A6:1715"
+size = 137
+name = "_BlitSpriteEga"
+level = "L2"
+match_flags = "tasm /mx"
+notes = "not listed by the map: a function of the source, its bounds proven by the whole-unit match"
+
+[[function]]
+id = "e17a6_179e"
+unit = "e17a6"
+addr = "17A6:179E"
+size = 332
+name = "_BlitSpriteRowEga"
+level = "L2"
+match_flags = "tasm /mx"
+notes = "not listed by the map: a function of the source, its bounds proven by the whole-unit match"
+
+[[function]]
+id = "e17a6_18ea"
+unit = "e17a6"
+addr = "17A6:18EA"
+size = 148
+name = "_BuildMask"
+level = "L2"
+match_flags = "tasm /mx"
+notes = "not listed by the map: a function of the source, its bounds proven by the whole-unit match"
 
 [[function]]
 id = "e1948_0006"
@@ -9958,11 +10108,21 @@ match_flags = "-ml -O -Z -G -P"
 id = "i0aed_00cb"
 unit = "i0aed"
 addr = "0AED:00CB"
-size = 357
+size = 336
 evidence = ["far", "frame"]
 name = "Unpack"
 level = "L2"
 match_flags = "-ml -O -Z -G -P"
+
+[[function]]
+id = "i0aed_021b"
+unit = "i0aed"
+addr = "0AED:021B"
+size = 21
+name = "SetUnpackBuffer"
+level = "L2"
+match_flags = "-ml -O -Z -G -P"
+notes = "not listed by the map: a function of the source, its bounds proven by the whole-unit match"
 
 [[function]]
 id = "i0b10_0000"
@@ -10407,10 +10567,20 @@ evidence = ["far", "frame"]
 id = "i0cda_0005"
 unit = "i0cda"
 addr = "0CDA:0005"
-size = 51
+size = 1
 evidence = ["segment"]
 level = "L2"
 notes = "not a function: bytes of the unit outside its functions (a marker or padding), matched with the whole unit"
+
+[[function]]
+id = "i0cda_0006"
+unit = "i0cda"
+addr = "0CDA:0006"
+size = 50
+name = "_f0CDA_0006"
+level = "L2"
+match_flags = "tasm /mx"
+notes = "not listed by the map: a function of the source, its bounds proven by the whole-unit match"
 
 [[function]]
 id = "i0cdd_0008"
