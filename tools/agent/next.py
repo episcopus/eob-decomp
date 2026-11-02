@@ -5,12 +5,13 @@
                             complete (or has open must-fix review findings), not locked, has no
                             hand-off waiting, and that its tier has not given up on (common.attempts)
   make next REVIEW=1        the next complete unit nobody has reviewed
-  make queue [WRITE=1]      the queue made from re/units.toml: the units of EOB.EXE that are game
+  make queue [WRITE=1]      the queue made from re/units.toml: the units of EOB.EXE (then INTRO.EXE) that are game
                             code (C, assembly, not classified), smallest first; WRITE=1 writes
                             work/queue.toml, which the human may reorder
 
-Units of INTRO.EXE wait until the matcher handles that program; the runtime library (`e_lib`) and
-the start-up code (`e_c0`) are library, never decompiled (AGENTS.md).
+Units of INTRO.EXE come after EOB.EXE's; those with an EOB twin (re/units.toml `twin`) are proven by
+`make twin`, not decompiled again. The runtime library (`e_lib`, `i_lib`) and the start-up code
+(`e_c0`, `i_c0`) are library, never decompiled (AGENTS.md).
 """
 from __future__ import annotations
 
@@ -26,8 +27,10 @@ GAME_KINDS = ("c", "asm", "unknown")
 
 
 def candidates() -> list[dict]:
-    return sorted((u for u in common.units() if u["program"] == "EOB.EXE" and u["kind"] in GAME_KINDS
-                   and u.get("functions", 0) > 0), key=lambda u: (u["bytes"], u["id"]))
+    # INTRO.EXE units with an EOB twin are proven by tools/match/twin.py, not decompiled again
+    return sorted((u for u in common.units() if u["program"] in ("EOB.EXE", "INTRO.EXE") and u["kind"] in GAME_KINDS
+                   and u.get("functions", 0) > 0 and not u.get("twin")),
+                  key=lambda u: (u["program"] != "EOB.EXE", u["bytes"], u["id"]))
 
 
 def busy(key: str) -> bool:
@@ -77,7 +80,8 @@ def next_review() -> str | None:
 
 def queue_text() -> str:
     lines = ["# The order in which units are claimed (make claim, make next). Made by `make queue WRITE=1`",
-             "# from re/units.toml: the game units of EOB.EXE, smallest first. The human may reorder it.", ""]
+             "# from re/units.toml: the game units of EOB.EXE, then those of INTRO.EXE without an EOB twin, smallest\n"
+             "# first. The human may reorder it.", ""]
     for u in candidates():
         lines += ["[[unit]]", 'id = "%s"' % u["id"], "# %s %s, %d bytes, %d functions" % (
             u["kind"], u["start"], u["bytes"], u["functions"]), ""]

@@ -351,3 +351,20 @@ def test_apply_renames_stale_uses(tmp_path, monkeypatch):
     rename.apply()
     assert "_PointInRect" not in (src / "EOV1.ASM").read_text()
     assert "int PointInRect;" in (src / "E0002.C").read_text()
+
+
+def test_names_are_per_program(tmp_path, monkeypatch):
+    """EOB.EXE's ds:8A40 and INTRO.EXE's are different variables: a rename or the integration's name
+    pass never carries a name from one program to the other."""
+    src = tmp_path / "src"
+    src.mkdir()
+    (src / "E1948.C").write_text("extern char gPlaying; /*@ ds:8A40 */\n")
+    (src / "I0921.C").write_text("extern char g8A40; /*@ ds:8A40 */\nvoid f(void) { g8A40 = 1; }\n")
+    monkeypatch.setattr(rename, "SRC", src)
+    monkeypatch.setattr(rename, "LOG", tmp_path / "renames.toml")
+    assert rename.bindings(src / "I0921.C") == {"g8A40": "intro/ds:8A40"}
+    assert rename.bindings(src / "E1948.C") == {"gPlaying": "ds:8A40"}
+    rename.apply()
+    assert "g8A40 = 1" in (src / "I0921.C").read_text()
+    assert rename.norm("INTRO/ovl0:3a") == "intro/ovl0:003A"
+

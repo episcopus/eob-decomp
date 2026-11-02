@@ -7,7 +7,9 @@ Three things must hold, or the gate fails:
      differs);
   2. every function that re/symbols.toml records at L2 is still proven: some file of src/ defines it
      (not as a stub or a draft) and cmatch printed `ok` for it in this run, or it is an entry of a unit
-     that matched whole (cmatch: `unit <id> complete`, the bytes between functions included);
+     that matched whole (cmatch: `unit <id> complete`, the bytes between functions included), or it
+     is a function of an INTRO.EXE unit that twin.py proves again in this run to be its EOB twin, at
+     the offset of a twin function proven in this run;
   3. every negative fixture in tests/match/negative/ is rejected: cmatch reports a difference (a
      DIFFER line). A fixture that does not build, or that matches, fails the gate, because then it
      tests nothing. A fixture is a unit of src/ with one deliberate defect; its file name starts
@@ -29,6 +31,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import cmatch  # noqa: E402
+import twin  # noqa: E402
 
 NEGATIVE = ROOT / "tests" / "match" / "negative"
 
@@ -68,17 +71,32 @@ def main(argv=None) -> int:
         drafts = set(cmatch.DRAFTS)
         ok = set(re.findall(r"^ok\s+(\S+)", out, re.M))
         whole.update(re.findall(r"^unit (\w+) complete:", out, re.M))
+        u = cmatch.unit_of(f)
         for n in defined - stubs - drafts:
             if n in ok:
-                proven.add(address(*funcs[n]))
+                proven.add(((u or {}).get("program", "EOB.EXE"), address(*funcs[n])))
         if a.verbose:
             print("%-22s %s" % (rel(f), "ok" if not code else "FAILS"))
     registry = tomllib.loads((ROOT / "re/symbols.toml").read_text())["function"]
-    l2 = {f["addr"] for f in registry if f.get("level") == "L2"}
+    units = {u["id"]: u for u in tomllib.loads((ROOT / "re/units.toml").read_text())["unit"]}
+    prog = lambda f: units.get(f["unit"], {}).get("program", "EOB.EXE")
+    l2 = {(prog(f), f["addr"]) for f in registry if f.get("level") == "L2"}
     # a unit that matched whole (its functions and the bytes between them) proves every entry of it,
     # the marker or padding entries the map took for functions included
-    proven |= {f["addr"] for f in registry if f["unit"] in whole}
-    lost = sorted(l2 - proven)
+    proven |= {(prog(f), f["addr"]) for f in registry if f["unit"] in whole}
+    # an INTRO.EXE unit proven to be its EOB twin proves the entries at its twin's proven functions
+    for i_id, u in sorted(units.items()):
+        if not u.get("twin"):
+            continue
+        e_id = u["twin"]
+        why, _ = twin.check(e_id, i_id)
+        if why:
+            problems.append("%s is not its twin %s: %s" % (i_id, e_id, why))
+            continue
+        e0, i0 = twin.linear(units[e_id]["start"]), twin.linear(u["start"])
+        ok_at = {twin.linear(f["addr"]) - e0 for f in registry if f["unit"] == e_id and ("EOB.EXE", f["addr"]) in proven}
+        proven |= {("INTRO.EXE", f["addr"]) for f in registry if f["unit"] == i_id and twin.linear(f["addr"]) - i0 in ok_at}
+    lost = sorted("%s%s" % ("" if p == "EOB.EXE" else "INTRO.EXE ", ad) for p, ad in l2 - proven)
     if lost:
         problems.append("recorded at L2 in re/symbols.toml but not proven by src/ in this run: %s" % ", ".join(lost))
     fixtures = sources(NEGATIVE) if NEGATIVE.is_dir() else []

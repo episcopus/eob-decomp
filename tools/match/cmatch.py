@@ -45,7 +45,7 @@ changes whatever the segment alignment). Over each function, byte by byte:
     segment word in the original's load module) must name the same function, an overlay function
     as its stub entry (the overlay manifest of `make overlays`).
 
-  cmatch.py FILE [--program eob/EOB.EXE] [--flags="-ml -O -Z"] [--write] [--show NAME] [--unit ID]
+  cmatch.py FILE [--program eob/EOB.EXE (default: the program of the file's unit)] [--flags="-ml -O -Z"] [--write] [--show NAME] [--unit ID]
 --write records level L2 and the name of every matched function in re/symbols.toml.
 Exit code 0 when every annotated function defined in the file matches.
 """
@@ -64,7 +64,18 @@ import tc_toolchain as tc  # noqa: E402
 MD = Cs(CS_ARCH_X86, CS_MODE_16)
 ANNOT = re.compile(r"(?:/\*|;)\s*@\s*(ds:[0-9A-Fa-f]{1,4}|ovl\d+:[0-9A-Fa-f]{1,4}|[0-9A-Fa-f]{4}:[0-9A-Fa-f]{4})(\s+stub|\s+draft)?\s*(?:\*/)?")
 FLAGS = re.compile(r"/\*@flags\s+([^*]+?)\s*\*/")
-DGROUP = {"EOB.EXE": 0x212E}
+DGROUP = {"EOB.EXE": 0x212E}   # used when build/re/<program>.json (make overlays) is missing
+
+
+def dgroup_of(program: Path) -> int:
+    """DGROUP's paragraph: the last data segment before the stack in TLINK's segment table (EOB.EXE
+    212E before the stack at 312D; INTRO.EXE 0E9F before 1196)."""
+    man = ROOT / "build" / "re" / ("%s.json" % program.stem.lower())
+    if not man.exists():
+        return DGROUP.get(program.name.upper(), 0x212E)
+    d = json.loads(man.read_text())
+    stack = int(d["stack"].split(":")[0], 16)
+    return max(s["para"] for s in d["segments"] if s["kind_name"] == "data" and s["para"] < stack and s["size"])
 KEYWORDS = {"void", "char", "int", "long", "short", "unsigned", "signed", "far", "near", "huge",
             "extern", "static", "struct", "union", "const", "volatile", "interrupt", "cdecl", "pascal"}
 ASM_WORDS = {"public", "extrn", "proc", "far", "near", "endp", "label", "byte", "word", "dword", "db", "dw", "dd"}
@@ -506,17 +517,20 @@ def gaps_match(A, B, orig, covered: list, u: dict) -> bool:
     return True
 
 
-def write_levels(names_by_addr: dict, flags: str, whole_unit: str | None = None) -> int:
+def write_levels(names_by_addr: dict, flags: str, whole_unit: str | None = None, program: str = "EOB.EXE") -> int:
     """Set name, level = "L2" and match_flags on the registry entries of matched functions. When the
     whole unit matched (every function, and the bytes between them), its entries that are not
     functions of the source (a start marker, padding the map took for a function) get L2 too, with
-    a note."""
+    a note. Only entries of units of `program` (EOB.EXE and INTRO.EXE spell overlay addresses alike)."""
     p = ROOT / "re" / "symbols.toml"
     blocks = p.read_text().split("[[function]]\n")
+    units_toml = ROOT / "re" / "units.toml"
+    mine = {u["id"] for u in tomllib.loads(units_toml.read_text()).get("unit", []) if u["program"] == program}
     n = 0
     for i, b in enumerate(blocks):
         m = re.search(r'^addr = "(\w+):([0-9A-F]{4})"$', b, re.M)
-        if not m or not re.search(r'^unit = "e', b, re.M):
+        um = re.search(r'^unit = "([^"]+)"$', b, re.M)
+        if not m or not um or um.group(1) not in mine:
             continue
         s = m.group(1)
         key = (s.lower() if s.lower().startswith("ovl") else int(s, 16), int(m.group(2), 16))
@@ -538,7 +552,7 @@ def write_levels(names_by_addr: dict, flags: str, whole_unit: str | None = None)
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("file")
-    ap.add_argument("--program", default=str(ROOT / "eob" / "EOB.EXE"))
+    ap.add_argument("--program", default=None, help="default: the program of the file's unit (re/units.toml)")
     ap.add_argument("--flags", default=None)
     ap.add_argument("--release", default=None)
     ap.add_argument("--write", action="store_true")
@@ -558,16 +572,16 @@ def main() -> int:
     src_name = "U.ASM" if asm else "U.C"
     (w / src_name).write_text(src.replace("\r\n", "\n").replace("\n", "\r\n"))
     A, B = link(w, release, flags, src_name, funcs, data, defined, asm)
-    program = Path(a.program)
     if a.write and a.unit:
         print("cmatch: --write records levels from src/ only, not from a file named with --unit")
         return 2
     u = unit_of(path, a.unit)
+    program = Path(a.program) if a.program else ROOT / "eob" / (u["program"] if u else "EOB.EXE")
     ovl = u.get("overlay") if u else None
     if ovl is None:
         o = next((funcs[n][0] for n in defined if isinstance(funcs[n][0], str)), None)
         ovl = int(o[3:]) if o else None
-    orig = Original(program, DGROUP.get(program.name.upper(), 0x212E), ovl)
+    orig = Original(program, dgroup_of(program), ovl)
     unit_frame, unit_base = (None, 0)
     if u and ovl is None:
         unit_frame, unit_base = (int(x, 16) for x in u["start"].split(":"))
@@ -609,9 +623,9 @@ def main() -> int:
     print("cmatch: %d of %d functions match%s%s" % (
         len(defined - stubs) - bad - drafts, len(defined - stubs),
         ", %d drafts" % drafts if drafts else "", ", %d stubs" % len(stubs) if stubs else ""))
-    if a.write and program.name.upper() == "EOB.EXE":
+    if a.write and program.name.upper() in ("EOB.EXE", "INTRO.EXE"):
         n = write_levels({funcs[k]: k for k in matched}, "tasm /mx" if asm else " ".join(flags),
-                         u["id"] if whole else None)
+                         u["id"] if whole else None, program.name.upper())
         print("cmatch: recorded L2 for %d functions in re/symbols.toml" % n)
     return 1 if bad else 0
 

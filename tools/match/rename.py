@@ -15,6 +15,11 @@ files get `_NEW`). The registry follows: a function's `name` in re/symbols.toml,
 re/globals.toml. The whitepaper's mentions of the old names follow too. Every rename is logged in
 re/renames.toml (address, old names, new, evidence, date).
 
+An address belongs to one program: a file of src/ is its unit's (re/units.toml), and an address of
+INTRO.EXE is written `intro/ds:1234`, `intro/0921:0000` here, in re/renames.toml and in
+re/globals.toml, so that EOB.EXE's ds:1234 and INTRO.EXE's are never taken for one variable (the
+plain spelling stays EOB.EXE's).
+
 On a unit branch (a worker's claim) only the unit's own file changes; the other files that declare
 the address get the name when the branch merges (`make integrate` applies the log), so branches never
 edit each other's units. A rename never changes the code: `make match` proves every renamed file
@@ -39,7 +44,8 @@ SYMBOLS = ROOT / "re/symbols.toml"
 GLOBALS = ROOT / "re/globals.toml"
 LOG = ROOT / "re/renames.toml"
 WHITEPAPER = ROOT / "docs/design/WHITEPAPER.md"
-ADDRESS = re.compile(r"^(ds:[0-9A-Fa-f]{1,4}|ovl\d+:[0-9A-Fa-f]{1,4}|[0-9A-Fa-f]{4}:[0-9A-Fa-f]{4})$")
+ADDRESS = re.compile(r"^((?:intro|start1)/)?(ds:[0-9A-Fa-f]{1,4}|ovl\d+:[0-9A-Fa-f]{1,4}|[0-9A-Fa-f]{4}:[0-9A-Fa-f]{4})$", re.I)
+PREFIX = {"EOB.EXE": "", "INTRO.EXE": "intro/", "START1.EXE": "start1/"}
 IDENT = re.compile(r"^[A-Za-z_][A-Za-z0-9_]{0,30}$")
 C_RESERVED = set("""auto break case char const continue default do double else enum extern float for goto if
 int long register return short signed sizeof static struct switch typedef union unsigned void volatile while
@@ -50,8 +56,12 @@ ASM_LITERALS = re.compile(r"'[^'\n]*'|\"[^\"\n]*\"")
 
 
 def norm(addr: str) -> str:
-    """The registry's spelling: ds:FC0C, 19EC:0016, ovl2:0110."""
+    """The registry's spelling: ds:FC0C, 19EC:0016, ovl2:0110, intro/ds:1234."""
+    prefix, _, addr = addr.rpartition("/")
+    prefix = prefix.lower() + "/" if prefix else ""
     seg, off = addr.split(":")
+    if prefix:
+        return prefix + norm(addr)
     if seg.lower() == "ds":
         return "ds:%04X" % int(off, 16)
     if seg.lower().startswith("ovl"):
@@ -59,13 +69,20 @@ def norm(addr: str) -> str:
     return "%04X:%04X" % (int(seg, 16), int(off, 16))
 
 
+def program_of(path: Path) -> str:
+    """The program the file's unit belongs to (EOB.EXE when re/units.toml does not say)."""
+    u = cmatch.unit_of(path)
+    return u["program"] if u else "EOB.EXE"
+
+
 def bindings(path: Path) -> dict[str, str]:
-    """Local name -> address of everything the file annotates."""
+    """Local name -> address of everything the file annotates, qualified by the file's program."""
     asm = path.suffix.upper() == ".ASM"
     funcs, data, _, _ = cmatch.parse_annotations(path.read_text(), asm)
-    out = {n: "ds:%04X" % off for n, off in data.items()}
+    pre = PREFIX.get(program_of(path), "")
+    out = {n: pre + "ds:%04X" % off for n, off in data.items()}
     for n, (seg, off) in funcs.items():
-        out[n] = norm("%s:%X" % (seg if isinstance(seg, str) else "%04X" % seg, off))
+        out[n] = pre + norm("%s:%X" % (seg if isinstance(seg, str) else "%04X" % seg, off))
     return out
 
 
@@ -148,7 +165,7 @@ def rename_address(addr: str, new: str, dry: bool = False, only: str | None = No
 
 def set_registry(addr: str, new: str, why: str) -> str:
     """The function's name in re/symbols.toml, or the global's entry in re/globals.toml; the kind."""
-    if addr.startswith("ds:"):
+    if addr.rpartition("/")[2].startswith("ds:"):
         text = GLOBALS.read_text() if GLOBALS.exists() else GLOBALS_HEADER
         blocks = text.split("[[global]]\n")
         entry = 'id = "%s"\nname = "%s"\nwhy = %s\n' % (addr, new, toml_str(why))
@@ -160,9 +177,13 @@ def set_registry(addr: str, new: str, why: str) -> str:
             blocks.append(entry + "\n")
         GLOBALS.write_text("[[global]]\n".join(blocks).rstrip("\n") + "\n")
         return "global"
+    prefix, _, bare = addr.rpartition("/")
+    program = next((p for p, x in PREFIX.items() if x == (prefix + "/" if prefix else "")), "EOB.EXE")
+    units = {u["id"] for u in tomllib.loads((ROOT / "re/units.toml").read_text())["unit"] if u["program"] == program}
     blocks = SYMBOLS.read_text().split("[[function]]\n")
     for i, b in enumerate(blocks):
-        if re.search(r'^addr = "%s"$' % re.escape(addr), b, re.M | re.I):
+        um = re.search(r'^unit = "([^"]+)"$', b, re.M)
+        if um and um.group(1) in units and re.search(r'^addr = "%s"$' % re.escape(bare), b, re.M | re.I):
             b = re.sub(r'^name = .*\n', "", b, flags=re.M)
             blocks[i] = b.rstrip("\n") + '\nname = "%s"\n\n' % new
             SYMBOLS.write_text("[[function]]\n".join(blocks))

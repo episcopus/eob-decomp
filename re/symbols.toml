@@ -9068,6 +9068,9 @@ id = "i084a_0005"
 unit = "i084a"
 addr = "084A:0005"
 size = 74
+name = "_SoundTimerIsr"
+level = "L2"
+match_flags = "twin e1948"
 evidence = ["segment"]
 
 [[function]]
@@ -9075,6 +9078,9 @@ id = "i084a_004f"
 unit = "i084a"
 addr = "084A:004F"
 size = 631
+name = "_SoundTick"
+level = "L2"
+match_flags = "twin e1948"
 evidence = ["near"]
 
 [[function]]
@@ -9082,6 +9088,9 @@ id = "i084a_02c6"
 unit = "i084a"
 addr = "084A:02C6"
 size = 42
+name = "_VoiceOn"
+level = "L2"
+match_flags = "twin e1948"
 evidence = ["near"]
 
 [[function]]
@@ -9089,6 +9098,9 @@ id = "i084a_02f0"
 unit = "i084a"
 addr = "084A:02F0"
 size = 37
+name = "_VoiceOff"
+level = "L2"
+match_flags = "twin e1948"
 evidence = ["near"]
 
 [[function]]
@@ -9096,6 +9108,9 @@ id = "i084a_0315"
 unit = "i084a"
 addr = "084A:0315"
 size = 52
+name = "_SetVoicePitch"
+level = "L2"
+match_flags = "twin e1948"
 evidence = ["near"]
 
 [[function]]
@@ -9103,6 +9118,9 @@ id = "i084a_0349"
 unit = "i084a"
 addr = "084A:0349"
 size = 29
+name = "_SetThreeVoices"
+level = "L2"
+match_flags = "twin e1948"
 evidence = ["near"]
 
 [[function]]
@@ -9110,6 +9128,9 @@ id = "i084a_0366"
 unit = "i084a"
 addr = "084A:0366"
 size = 16
+name = "_SetOneVoice"
+level = "L2"
+match_flags = "twin e1948"
 evidence = ["near"]
 
 [[function]]
@@ -9117,6 +9138,9 @@ id = "i084a_0376"
 unit = "i084a"
 addr = "084A:0376"
 size = 99
+name = "_SoundDriverInstall"
+level = "L2"
+match_flags = "twin e1948"
 evidence = ["far", "frame"]
 
 [[function]]
@@ -9124,6 +9148,9 @@ id = "i084a_03d9"
 unit = "i084a"
 addr = "084A:03D9"
 size = 62
+name = "_SoundDriverUninstall"
+level = "L2"
+match_flags = "twin e1948"
 evidence = ["far", "frame"]
 
 [[function]]
@@ -9131,6 +9158,9 @@ id = "i084a_0417"
 unit = "i084a"
 addr = "084A:0417"
 size = 43
+name = "_StartSound"
+level = "L2"
+match_flags = "twin e1948"
 evidence = ["frame"]
 
 [[function]]
@@ -9138,6 +9168,9 @@ id = "i084a_0442"
 unit = "i084a"
 addr = "084A:0442"
 size = 21
+name = "_StopSound"
+level = "L2"
+match_flags = "twin e1948"
 evidence = ["frame"]
 
 [[function]]
@@ -9145,6 +9178,9 @@ id = "i084a_0457"
 unit = "i084a"
 addr = "084A:0457"
 size = 19
+name = "_SoundDriverResume"
+level = "L2"
+match_flags = "twin e1948"
 evidence = ["far", "frame"]
 
 [[function]]
@@ -9152,6 +9188,9 @@ id = "i084a_046a"
 unit = "i084a"
 addr = "084A:046A"
 size = 22
+name = "_SoundDriverSilenceToOneVoice"
+level = "L2"
+match_flags = "twin e1948"
 evidence = ["far", "frame"]
 
 [[function]]
@@ -9195,6 +9234,9 @@ unit = "i0921"
 addr = "0921:0000"
 size = 36
 evidence = ["segment"]
+name = "_SetVgaPalette"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "i0923_0004"
@@ -9236,6 +9278,9 @@ id = "i094f_0007"
 unit = "i094f"
 addr = "094F:0007"
 size = 304
+name = "MemAlloc"
+level = "L2"
+match_flags = "twin e19bc"
 evidence = ["far", "segment"]
 
 [[function]]
@@ -9243,6 +9288,9 @@ id = "i094f_0137"
 unit = "i094f"
 addr = "094F:0137"
 size = 83
+name = "MemFree"
+level = "L2"
+match_flags = "twin e19bc"
 evidence = ["far", "frame"]
 
 [[function]]
@@ -9250,6 +9298,9 @@ id = "i094f_018a"
 unit = "i094f"
 addr = "094F:018A"
 size = 179
+name = "MemRealloc"
+level = "L2"
+match_flags = "twin e19bc"
 evidence = ["far", "frame"]
 
 [[function]]
@@ -9257,6 +9308,9 @@ id = "i094f_023d"
 unit = "i094f"
 addr = "094F:023D"
 size = 121
+name = "LargestFreeBlock"
+level = "L2"
+match_flags = "twin e19bc"
 evidence = ["far", "frame"]
 
 [[function]]
@@ -9264,6 +9318,9 @@ id = "i094f_02b6"
 unit = "i094f"
 addr = "094F:02B6"
 size = 41
+name = "OutOfMemory"
+level = "L2"
+match_flags = "twin e19bc"
 evidence = ["frame"]
 
 [[function]]
@@ -9271,6 +9328,9 @@ id = "i097d_0000"
 unit = "i097d"
 addr = "097D:0000"
 size = 34
+name = "_PrintString"
+level = "L2"
+match_flags = "twin e19ea"
 evidence = ["far", "segment"]
 
 [[function]]
@@ -9278,6 +9338,9 @@ id = "i097f_0002"
 unit = "i097f"
 addr = "097F:0002"
 size = 20
+name = "f19EC_0002"
+level = "L2"
+match_flags = "twin e19ec"
 evidence = ["far", "segment"]
 
 [[function]]
@@ -9285,6 +9348,9 @@ id = "i097f_0016"
 unit = "i097f"
 addr = "097F:0016"
 size = 20
+name = "f19EC_0016"
+level = "L2"
+match_flags = "twin e19ec"
 evidence = ["frame"]
 
 [[function]]
@@ -9292,6 +9358,9 @@ id = "i097f_002a"
 unit = "i097f"
 addr = "097F:002A"
 size = 84
+name = "f19EC_002A"
+level = "L2"
+match_flags = "twin e19ec"
 evidence = ["frame"]
 
 [[function]]
@@ -9299,6 +9368,9 @@ id = "i0986_000e"
 unit = "i0986"
 addr = "0986:000E"
 size = 137
+name = "ClipRect"
+level = "L2"
+match_flags = "twin e19f3"
 evidence = ["far", "segment"]
 
 [[function]]
@@ -9306,6 +9378,9 @@ id = "i098f_0007"
 unit = "i098f"
 addr = "098F:0007"
 size = 28
+name = "WaitFrames"
+level = "L2"
+match_flags = "twin e1a16"
 evidence = ["near", "segment"]
 
 [[function]]
@@ -9313,6 +9388,9 @@ id = "i098f_0023"
 unit = "i098f"
 addr = "098F:0023"
 size = 15
+name = "WaitFrame"
+level = "L2"
+match_flags = "twin e1a16"
 evidence = ["frame"]
 
 [[function]]
@@ -9320,6 +9398,9 @@ id = "i0992_0002"
 unit = "i0992"
 addr = "0992:0002"
 size = 53
+name = "_FindLastDrive"
+level = "L2"
+match_flags = "twin e1a19"
 evidence = ["far", "segment"]
 
 [[function]]
@@ -9327,6 +9408,9 @@ id = "i0992_0037"
 unit = "i0992"
 addr = "0992:0037"
 size = 49
+name = "_IsLastLogicalDrive"
+level = "L2"
+match_flags = "twin e1a19"
 evidence = ["far", "frame"]
 
 [[function]]
@@ -9334,6 +9418,9 @@ id = "i0998_0008"
 unit = "i0998"
 addr = "0998:0008"
 size = 62
+name = "f1A29_000F"
+level = "L2"
+match_flags = "twin e1a29"
 evidence = ["segment"]
 
 [[function]]
@@ -9341,6 +9428,9 @@ id = "i0998_0046"
 unit = "i0998"
 addr = "0998:0046"
 size = 62
+name = "f1A29_004D"
+level = "L2"
+match_flags = "twin e1a29"
 evidence = ["frame"]
 
 [[function]]
@@ -9348,6 +9438,9 @@ id = "i0998_0084"
 unit = "i0998"
 addr = "0998:0084"
 size = 62
+name = "f1A29_008B"
+level = "L2"
+match_flags = "twin e1a29"
 evidence = ["frame"]
 
 [[function]]
@@ -9355,6 +9448,9 @@ id = "i0998_00c2"
 unit = "i0998"
 addr = "0998:00C2"
 size = 62
+name = "f1A29_00C9"
+level = "L2"
+match_flags = "twin e1a29"
 evidence = ["frame"]
 
 [[function]]
@@ -9362,6 +9458,9 @@ id = "i0998_0100"
 unit = "i0998"
 addr = "0998:0100"
 size = 65
+name = "f1A29_0107"
+level = "L2"
+match_flags = "twin e1a29"
 evidence = ["frame"]
 
 [[function]]
@@ -9369,6 +9468,9 @@ id = "i0998_0141"
 unit = "i0998"
 addr = "0998:0141"
 size = 65
+name = "f1A29_0148"
+level = "L2"
+match_flags = "twin e1a29"
 evidence = ["frame"]
 
 [[function]]
@@ -9376,6 +9478,9 @@ id = "i0998_0182"
 unit = "i0998"
 addr = "0998:0182"
 size = 92
+name = "SelectRegion"
+level = "L2"
+match_flags = "twin e1a29"
 evidence = ["far", "frame"]
 
 [[function]]
@@ -9383,6 +9488,9 @@ id = "i09b5_000e"
 unit = "i09b5"
 addr = "09B5:000E"
 size = 356
+name = "f1A47_0005"
+level = "L2"
+match_flags = "twin e1a47"
 evidence = ["far", "segment"]
 
 [[function]]
@@ -9390,6 +9498,9 @@ id = "i09b5_0172"
 unit = "i09b5"
 addr = "09B5:0172"
 size = 37
+name = "f1A47_0169"
+level = "L2"
+match_flags = "twin e1a47"
 evidence = ["far", "frame"]
 
 [[function]]
@@ -9397,6 +9508,9 @@ id = "i09b5_0197"
 unit = "i09b5"
 addr = "09B5:0197"
 size = 54
+name = "f1A47_018E"
+level = "L2"
+match_flags = "twin e1a47"
 evidence = ["frame"]
 
 [[function]]
@@ -9404,6 +9518,9 @@ id = "i09d1_000d"
 unit = "i09d1"
 addr = "09D1:000D"
 size = 21
+name = "HardErrHandler"
+level = "L2"
+match_flags = "twin e1a63"
 evidence = ["segment"]
 
 [[function]]
@@ -9411,6 +9528,9 @@ id = "i09d1_0022"
 unit = "i09d1"
 addr = "09D1:0022"
 size = 21
+name = "InstallHardErr"
+level = "L2"
+match_flags = "twin e1a63"
 evidence = ["far", "frame"]
 
 [[function]]
@@ -9418,6 +9538,9 @@ id = "i09d4_0007"
 unit = "i09d4"
 addr = "09D4:0007"
 size = 200
+name = "CalibrateRetrace"
+level = "L2"
+match_flags = "twin e1a65"
 evidence = ["far", "segment"]
 
 [[function]]
@@ -9425,6 +9548,9 @@ id = "i09e1_0000"
 unit = "i09e1"
 addr = "09E1:0000"
 size = 212
+name = "_Int3FHandler"
+level = "L2"
+match_flags = "twin e1a72"
 evidence = ["segment"]
 
 [[function]]
@@ -9432,6 +9558,9 @@ id = "i09e1_00d4"
 unit = "i09e1"
 addr = "09E1:00D4"
 size = 427
+name = "InitMouse"
+level = "L2"
+match_flags = "twin e1a72"
 evidence = ["far"]
 
 [[function]]
@@ -9439,6 +9568,9 @@ id = "i09e1_027f"
 unit = "i09e1"
 addr = "09E1:027F"
 size = 33
+name = "RemoveMouseHandler"
+level = "L2"
+match_flags = "twin e1a72"
 evidence = ["far", "frame"]
 
 [[function]]
@@ -9446,6 +9578,9 @@ id = "i09e1_02a0"
 unit = "i09e1"
 addr = "09E1:02A0"
 size = 84
+name = "IsMouseInRect"
+level = "L2"
+match_flags = "twin e1a72"
 evidence = ["frame"]
 
 [[function]]
@@ -9453,6 +9588,9 @@ id = "i09e1_02f4"
 unit = "i09e1"
 addr = "09E1:02F4"
 size = 2
+name = "_EnableInterrupts"
+level = "L2"
+match_flags = "twin e1a72"
 evidence = ["far"]
 
 [[function]]
@@ -9460,6 +9598,9 @@ id = "i09e1_02f6"
 unit = "i09e1"
 addr = "09E1:02F6"
 size = 2
+name = "_DisableInterrupts"
+level = "L2"
+match_flags = "twin e1a72"
 evidence = ["far"]
 
 [[function]]
@@ -9467,6 +9608,9 @@ id = "i09e1_02f8"
 unit = "i09e1"
 addr = "09E1:02F8"
 size = 60
+name = "_SetFarPointer"
+level = "L2"
+match_flags = "twin e1a72"
 evidence = ["frame"]
 
 [[function]]
@@ -9474,6 +9618,9 @@ id = "i09e1_0334"
 unit = "i09e1"
 addr = "09E1:0334"
 size = 21
+name = "_GetFarPointer"
+level = "L2"
+match_flags = "twin e1a72"
 evidence = ["frame"]
 
 [[function]]
@@ -9481,6 +9628,9 @@ id = "i0a15_0009"
 unit = "i0a15"
 addr = "0A15:0009"
 size = 55
+name = "RandomRange"
+level = "L2"
+match_flags = "twin e1aaa"
 evidence = ["segment"]
 
 [[function]]
@@ -9488,98 +9638,189 @@ id = "i0a19_0000"
 unit = "i0a19"
 addr = "0A19:0000"
 size = 535
-evidence = ["segment"]
+level = "L2"
+match_flags = "twin e1aad"
+notes = "not a function: bytes of the unit outside its functions, proven with its twin e1aad"
 
 [[function]]
 id = "i0a19_0217"
 unit = "i0a19"
 addr = "0A19:0217"
-size = 605
-evidence = ["near"]
+size = 363
+name = "_TranslateKey"
+level = "L2"
+match_flags = "twin e1aad"
+notes = "split as its twin e1aad (the INTRO map split this unit differently)"
+
+[[function]]
+id = "i0a19_0382"
+unit = "i0a19"
+addr = "0A19:0382"
+size = 123
+name = "_ReadKey"
+level = "L2"
+match_flags = "twin e1aad"
+notes = "split as its twin e1aad (the INTRO map split this unit differently)"
+
+[[function]]
+id = "i0a19_03fd"
+unit = "i0a19"
+addr = "0A19:03FD"
+size = 104
+name = "_ReadKeySpecial"
+level = "L2"
+match_flags = "twin e1aad"
+notes = "split as its twin e1aad (the INTRO map split this unit differently)"
+
+[[function]]
+id = "i0a19_0465"
+unit = "i0a19"
+addr = "0A19:0465"
+size = 15
+name = "_IsKeyPending"
+level = "L2"
+match_flags = "twin e1aad"
+notes = "split as its twin e1aad (the INTRO map split this unit differently)"
 
 [[function]]
 id = "i0a19_0474"
 unit = "i0a19"
 addr = "0A19:0474"
 size = 13
-evidence = ["far"]
+name = "_FlushKeyBuffer"
+level = "L2"
+match_flags = "twin e1aad"
+notes = "split as its twin e1aad (the INTRO map split this unit differently)"
 
 [[function]]
 id = "i0a19_0481"
 unit = "i0a19"
 addr = "0A19:0481"
 size = 173
-evidence = ["near"]
+name = "_DequeueKeyEvent"
+level = "L2"
+match_flags = "twin e1aad"
+notes = "split as its twin e1aad (the INTRO map split this unit differently)"
 
 [[function]]
 id = "i0a19_052e"
 unit = "i0a19"
 addr = "0A19:052E"
-size = 183
-evidence = ["far"]
+size = 78
+name = "_WaitGameKey"
+level = "L2"
+match_flags = "twin e1aad"
+notes = "split as its twin e1aad (the INTRO map split this unit differently)"
+
+[[function]]
+id = "i0a19_057c"
+unit = "i0a19"
+addr = "0A19:057C"
+size = 75
+name = "_WaitGameKey2"
+level = "L2"
+match_flags = "twin e1aad"
+notes = "split as its twin e1aad (the INTRO map split this unit differently)"
+
+[[function]]
+id = "i0a19_05c7"
+unit = "i0a19"
+addr = "0A19:05C7"
+size = 30
+name = "_WaitKeyEvent"
+level = "L2"
+match_flags = "twin e1aad"
+notes = "split as its twin e1aad (the INTRO map split this unit differently)"
 
 [[function]]
 id = "i0a19_05e5"
 unit = "i0a19"
 addr = "0A19:05E5"
 size = 295
-evidence = ["near", "frame"]
+name = "_GetKeyState"
+level = "L2"
+match_flags = "twin e1aad"
+notes = "split as its twin e1aad (the INTRO map split this unit differently)"
 
 [[function]]
 id = "i0a19_070c"
 unit = "i0a19"
 addr = "0A19:070C"
 size = 734
-evidence = ["far"]
+name = "_InstallKeyboard"
+level = "L2"
+match_flags = "twin e1aad"
+notes = "split as its twin e1aad (the INTRO map split this unit differently)"
 
 [[function]]
 id = "i0a19_09ea"
 unit = "i0a19"
 addr = "0A19:09EA"
 size = 41
-evidence = ["far"]
+name = "_RemoveKeyboard"
+level = "L2"
+match_flags = "twin e1aad"
+notes = "split as its twin e1aad (the INTRO map split this unit differently)"
 
 [[function]]
 id = "i0a19_0a13"
 unit = "i0a19"
 addr = "0A19:0A13"
 size = 239
-evidence = ["frame"]
+name = "_QueueInputEvent"
+level = "L2"
+match_flags = "twin e1aad"
+notes = "split as its twin e1aad (the INTRO map split this unit differently)"
 
 [[function]]
 id = "i0a19_0b02"
 unit = "i0a19"
 addr = "0A19:0B02"
 size = 142
-evidence = ["far", "frame"]
+name = "_HandleMouseButtons"
+level = "L2"
+match_flags = "twin e1aad"
+notes = "split as its twin e1aad (the INTRO map split this unit differently)"
 
 [[function]]
 id = "i0a19_0b90"
 unit = "i0a19"
 addr = "0A19:0B90"
 size = 85
-evidence = ["near"]
+name = "_QueueMouseEvent"
+level = "L2"
+match_flags = "twin e1aad"
+notes = "split as its twin e1aad (the INTRO map split this unit differently)"
 
 [[function]]
 id = "i0a19_0be5"
 unit = "i0a19"
 addr = "0A19:0BE5"
 size = 38
-evidence = ["near"]
+name = "_SetKeyDownBit"
+level = "L2"
+match_flags = "twin e1aad"
+notes = "split as its twin e1aad (the INTRO map split this unit differently)"
 
 [[function]]
 id = "i0a19_0c0b"
 unit = "i0a19"
 addr = "0A19:0C0B"
 size = 271
-evidence = ["near"]
+name = "_ProcessKeyEvent"
+level = "L2"
+match_flags = "twin e1aad"
+notes = "split as its twin e1aad (the INTRO map split this unit differently)"
 
 [[function]]
 id = "i0a19_0d1a"
 unit = "i0a19"
 addr = "0A19:0D1A"
 size = 51
-evidence = ["near"]
+name = "_InjectRecordedKey"
+level = "L2"
+match_flags = "twin e1aad"
+notes = "split as its twin e1aad (the INTRO map split this unit differently)"
 
 [[function]]
 id = "i0aed_000d"
@@ -9628,6 +9869,9 @@ id = "i0b18_000b"
 unit = "i0b18"
 addr = "0B18:000B"
 size = 1
+name = "_f1BBE_0001"
+level = "L2"
+match_flags = "twin e1bbe"
 evidence = ["segment"]
 
 [[function]]
@@ -9635,6 +9879,9 @@ id = "i0b18_000c"
 unit = "i0b18"
 addr = "0B18:000C"
 size = 235
+name = "_HidePointer"
+level = "L2"
+match_flags = "twin e1bbe"
 evidence = ["far", "near"]
 
 [[function]]
@@ -9642,6 +9889,9 @@ id = "i0b18_00f7"
 unit = "i0b18"
 addr = "0B18:00F7"
 size = 273
+name = "_ShowPointer"
+level = "L2"
+match_flags = "twin e1bbe"
 evidence = ["far", "near", "frame"]
 
 [[function]]
@@ -9649,6 +9899,9 @@ id = "i0b18_0208"
 unit = "i0b18"
 addr = "0B18:0208"
 size = 196
+name = "_HidePointerZone"
+level = "L2"
+match_flags = "twin e1bbe"
 evidence = ["far", "frame"]
 
 [[function]]
@@ -9656,6 +9909,9 @@ id = "i0b18_02cc"
 unit = "i0b18"
 addr = "0B18:02CC"
 size = 69
+name = "_ShowPointerZone"
+level = "L2"
+match_flags = "twin e1bbe"
 evidence = ["far", "frame"]
 
 [[function]]
@@ -9663,6 +9919,9 @@ id = "i0b18_0311"
 unit = "i0b18"
 addr = "0B18:0311"
 size = 43
+name = "LockHidePointer"
+level = "L2"
+match_flags = "twin e1bbe"
 evidence = ["far", "frame"]
 
 [[function]]
@@ -9670,6 +9929,9 @@ id = "i0b18_033c"
 unit = "i0b18"
 addr = "0B18:033C"
 size = 43
+name = "LockShowPointer"
+level = "L2"
+match_flags = "twin e1bbe"
 evidence = ["far", "frame"]
 
 [[function]]
@@ -9677,6 +9939,8 @@ id = "i0b4e_0007"
 unit = "i0b4e"
 addr = "0B4E:0007"
 size = 1
+level = "L2"
+match_flags = "twin e1c00"
 evidence = ["segment"]
 
 [[function]]
@@ -9684,6 +9948,9 @@ id = "i0b4e_0008"
 unit = "i0b4e"
 addr = "0B4E:0008"
 size = 83
+name = "_LoadOverlayImage"
+level = "L2"
+match_flags = "twin e1c00"
 evidence = ["near"]
 
 [[function]]
@@ -9691,6 +9958,9 @@ id = "i0b4e_005b"
 unit = "i0b4e"
 addr = "0B4E:005B"
 size = 151
+name = "_RunOverlayRequest"
+level = "L2"
+match_flags = "twin e1c00"
 evidence = ["far", "frame"]
 
 [[function]]
@@ -9698,6 +9968,9 @@ id = "i0b5d_0002"
 unit = "i0b5d"
 addr = "0B5D:0002"
 size = 58
+name = "SetFileSize"
+level = "L2"
+match_flags = "twin e1c0e"
 evidence = ["segment"]
 
 [[function]]
@@ -9705,6 +9978,9 @@ id = "i0b5d_003c"
 unit = "i0b5d"
 addr = "0B5D:003C"
 size = 100
+name = "RetryFile"
+level = "L2"
+match_flags = "twin e1c0e"
 evidence = ["near", "frame"]
 
 [[function]]
@@ -9712,6 +9988,9 @@ id = "i0b5d_00a0"
 unit = "i0b5d"
 addr = "0B5D:00A0"
 size = 49
+name = "FatalError"
+level = "L2"
+match_flags = "twin e1c0e"
 evidence = ["near", "frame"]
 
 [[function]]
@@ -9719,6 +9998,9 @@ id = "i0b5d_00d1"
 unit = "i0b5d"
 addr = "0B5D:00D1"
 size = 736
+name = "FileOpen"
+level = "L2"
+match_flags = "twin e1c0e"
 evidence = ["far", "frame"]
 
 [[function]]
@@ -9726,6 +10008,9 @@ id = "i0b5d_03b1"
 unit = "i0b5d"
 addr = "0B5D:03B1"
 size = 69
+name = "FileClose"
+level = "L2"
+match_flags = "twin e1c0e"
 evidence = ["far", "frame"]
 
 [[function]]
@@ -9733,6 +10018,9 @@ id = "i0b5d_03f6"
 unit = "i0b5d"
 addr = "0B5D:03F6"
 size = 376
+name = "FileRead"
+level = "L2"
+match_flags = "twin e1c0e"
 evidence = ["far", "frame"]
 
 [[function]]
@@ -9740,6 +10028,9 @@ id = "i0b5d_056e"
 unit = "i0b5d"
 addr = "0B5D:056E"
 size = 365
+name = "FileWrite"
+level = "L2"
+match_flags = "twin e1c0e"
 evidence = ["far", "frame"]
 
 [[function]]
@@ -9747,6 +10038,9 @@ id = "i0b5d_06db"
 unit = "i0b5d"
 addr = "0B5D:06DB"
 size = 566
+name = "SeekFile"
+level = "L2"
+match_flags = "twin e1c0e"
 evidence = ["frame"]
 
 [[function]]
@@ -9754,6 +10048,9 @@ id = "i0b5d_0911"
 unit = "i0b5d"
 addr = "0B5D:0911"
 size = 282
+name = "CheckFile"
+level = "L2"
+match_flags = "twin e1c0e"
 evidence = ["far", "frame"]
 
 [[function]]
@@ -9761,6 +10058,9 @@ id = "i0b5d_0a2b"
 unit = "i0b5d"
 addr = "0B5D:0A2B"
 size = 104
+name = "DeleteFile"
+level = "L2"
+match_flags = "twin e1c0e"
 evidence = ["far", "near", "frame"]
 
 [[function]]
@@ -9768,6 +10068,9 @@ id = "i0b5d_0a93"
 unit = "i0b5d"
 addr = "0B5D:0A93"
 size = 64
+name = "ResetFile"
+level = "L2"
+match_flags = "twin e1c0e"
 evidence = ["far", "frame"]
 
 [[function]]
@@ -9775,6 +10078,9 @@ id = "i0b5d_0ad3"
 unit = "i0b5d"
 addr = "0B5D:0AD3"
 size = 702
+name = "DisplayFileError"
+level = "L2"
+match_flags = "twin e1c0e"
 evidence = ["near", "frame"]
 
 [[function]]
@@ -9782,6 +10088,9 @@ id = "i0b5d_0d91"
 unit = "i0b5d"
 addr = "0B5D:0D91"
 size = 40
+name = "ShowMessage"
+level = "L2"
+match_flags = "twin e1c0e"
 evidence = ["frame"]
 
 [[function]]
@@ -9789,6 +10098,9 @@ id = "i0b5d_0db9"
 unit = "i0b5d"
 addr = "0B5D:0DB9"
 size = 152
+name = "FindEvictableFile"
+level = "L2"
+match_flags = "twin e1c0e"
 evidence = ["near", "frame"]
 
 [[function]]
@@ -9796,6 +10108,9 @@ id = "i0b5d_0e51"
 unit = "i0b5d"
 addr = "0B5D:0E51"
 size = 140
+name = "EvictFile"
+level = "L2"
+match_flags = "twin e1c0e"
 evidence = ["far", "near", "frame"]
 
 [[function]]
@@ -9803,6 +10118,9 @@ id = "i0b5d_0edd"
 unit = "i0b5d"
 addr = "0B5D:0EDD"
 size = 135
+name = "FreeAllCachedFiles"
+level = "L2"
+match_flags = "twin e1c0e"
 evidence = ["near", "frame"]
 
 [[function]]
@@ -9810,6 +10128,9 @@ id = "i0b5d_0f64"
 unit = "i0b5d"
 addr = "0B5D:0F64"
 size = 499
+name = "BuildFileCache"
+level = "L2"
+match_flags = "twin e1c0e"
 evidence = ["near", "frame"]
 
 [[function]]
@@ -9817,6 +10138,9 @@ id = "i0b5d_1157"
 unit = "i0b5d"
 addr = "0B5D:1157"
 size = 114
+name = "IsFileInMemory"
+level = "L2"
+match_flags = "twin e1c0e"
 evidence = ["far", "frame"]
 
 [[function]]
@@ -9824,6 +10148,9 @@ id = "i0b5d_11c9"
 unit = "i0b5d"
 addr = "0B5D:11C9"
 size = 109
+name = "FindLoadedFile"
+level = "L2"
+match_flags = "twin e1c0e"
 evidence = ["far", "frame"]
 
 [[function]]
@@ -9831,6 +10158,9 @@ id = "i0b5d_1236"
 unit = "i0b5d"
 addr = "0B5D:1236"
 size = 208
+name = "ReadFromMemory"
+level = "L2"
+match_flags = "twin e1c0e"
 evidence = ["far", "frame"]
 
 [[function]]
@@ -9838,6 +10168,9 @@ id = "i0b5d_1306"
 unit = "i0b5d"
 addr = "0B5D:1306"
 size = 171
+name = "LocateOverlayFile"
+level = "L2"
+match_flags = "twin e1c0e"
 evidence = ["far", "frame"]
 
 [[function]]
@@ -9845,6 +10178,9 @@ id = "i0b5d_13b1"
 unit = "i0b5d"
 addr = "0B5D:13B1"
 size = 44
+name = "ExpandTextWindow"
+level = "L2"
+match_flags = "twin e1c0e"
 evidence = ["far", "frame"]
 
 [[function]]
@@ -9852,6 +10188,9 @@ id = "i0b5d_13dd"
 unit = "i0b5d"
 addr = "0B5D:13DD"
 size = 22
+name = "InitOverlayCache"
+level = "L2"
+match_flags = "twin e1c0e"
 evidence = ["far", "frame"]
 
 [[function]]
@@ -9859,6 +10198,9 @@ id = "i0b5d_13f3"
 unit = "i0b5d"
 addr = "0B5D:13F3"
 size = 20
+name = "ShutdownOverlayCache"
+level = "L2"
+match_flags = "twin e1c0e"
 evidence = ["far", "frame"]
 
 [[function]]
@@ -9866,6 +10208,9 @@ id = "i0b5d_1407"
 unit = "i0b5d"
 addr = "0B5D:1407"
 size = 61
+name = "DropFile"
+level = "L2"
+match_flags = "twin e1c0e"
 evidence = ["far", "frame"]
 
 [[function]]
@@ -9873,6 +10218,9 @@ id = "i0b5d_1444"
 unit = "i0b5d"
 addr = "0B5D:1444"
 size = 503
+name = "LoadFileSlot"
+level = "L2"
+match_flags = "twin e1c0e"
 evidence = ["far", "frame"]
 
 [[function]]
@@ -9880,6 +10228,9 @@ id = "i0b5d_163b"
 unit = "i0b5d"
 addr = "0B5D:163B"
 size = 73
+name = "FindFile"
+level = "L2"
+match_flags = "twin e1c0e"
 evidence = ["far", "frame"]
 
 [[function]]
@@ -9887,6 +10238,9 @@ id = "i0b5d_1684"
 unit = "i0b5d"
 addr = "0B5D:1684"
 size = 140
+name = "ResolveFileLink"
+level = "L2"
+match_flags = "twin e1c0e"
 evidence = ["far", "frame"]
 
 [[function]]
@@ -9894,6 +10248,9 @@ id = "i0b5d_1710"
 unit = "i0b5d"
 addr = "0B5D:1710"
 size = 10
+name = "ClearSearchAllDrives"
+level = "L2"
+match_flags = "twin e1c0e"
 evidence = ["frame"]
 
 [[function]]
@@ -9901,6 +10258,9 @@ id = "i0b5d_171a"
 unit = "i0b5d"
 addr = "0B5D:171A"
 size = 10
+name = "SetSearchAllDrives"
+level = "L2"
+match_flags = "twin e1c0e"
 evidence = ["frame"]
 
 [[function]]
@@ -9908,6 +10268,9 @@ id = "i0b5d_1724"
 unit = "i0b5d"
 addr = "0B5D:1724"
 size = 177
+name = "LookupFileEntry"
+level = "L2"
+match_flags = "twin e1c0e"
 evidence = ["far", "frame"]
 
 [[function]]
@@ -9922,6 +10285,9 @@ id = "i0cdd_0008"
 unit = "i0cdd"
 addr = "0CDD:0008"
 size = 14
+name = "_f1D8F_0002"
+level = "L2"
+match_flags = "twin e1d8f"
 evidence = ["segment"]
 
 [[function]]
@@ -9929,6 +10295,9 @@ id = "i0cdd_0016"
 unit = "i0cdd"
 addr = "0CDD:0016"
 size = 40
+name = "_f1D8F_0010"
+level = "L2"
+match_flags = "twin e1d8f"
 evidence = ["far", "frame"]
 
 [[function]]
@@ -9936,6 +10305,9 @@ id = "i0cdd_003e"
 unit = "i0cdd"
 addr = "0CDD:003E"
 size = 131
+name = "_f1D8F_0038"
+level = "L2"
+match_flags = "twin e1d8f"
 evidence = ["far", "frame"]
 
 [[function]]
@@ -9943,6 +10315,9 @@ id = "i0ce9_0001"
 unit = "i0ce9"
 addr = "0CE9:0001"
 size = 8
+name = "_UnpackScratch"
+level = "L2"
+match_flags = "twin e1d9a"
 evidence = ["segment"]
 
 [[function]]
@@ -9950,6 +10325,9 @@ id = "i0ce9_0009"
 unit = "i0ce9"
 addr = "0CE9:0009"
 size = 256
+name = "_Unpack4"
+level = "L2"
+match_flags = "twin e1d9a"
 evidence = ["far"]
 
 [[function]]
@@ -9957,6 +10335,9 @@ id = "i0ce9_0109"
 unit = "i0ce9"
 addr = "0CE9:0109"
 size = 79
+name = "_Unpack3"
+level = "L2"
+match_flags = "twin e1d9a"
 evidence = ["far"]
 
 [[function]]
@@ -9964,6 +10345,9 @@ id = "i0ce9_0158"
 unit = "i0ce9"
 addr = "0CE9:0158"
 size = 41
+name = "_NormDest"
+level = "L2"
+match_flags = "twin e1d9a"
 evidence = ["near"]
 
 [[function]]
@@ -9971,6 +10355,9 @@ id = "i0ce9_0181"
 unit = "i0ce9"
 addr = "0CE9:0181"
 size = 270
+name = "_Unpack1"
+level = "L2"
+match_flags = "twin e1d9a"
 evidence = ["far"]
 
 [[function]]
@@ -9978,6 +10365,9 @@ id = "i0ce9_028f"
 unit = "i0ce9"
 addr = "0CE9:028F"
 size = 50
+name = "_ReadCode1"
+level = "L2"
+match_flags = "twin e1d9a"
 evidence = ["near"]
 
 [[function]]
@@ -9985,6 +10375,9 @@ id = "i0ce9_02c1"
 unit = "i0ce9"
 addr = "0CE9:02C1"
 size = 257
+name = "_Unpack2"
+level = "L2"
+match_flags = "twin e1d9a"
 evidence = ["far"]
 
 [[function]]
@@ -9992,6 +10385,9 @@ id = "i0ce9_03c2"
 unit = "i0ce9"
 addr = "0CE9:03C2"
 size = 106
+name = "_ReadCode2"
+level = "L2"
+match_flags = "twin e1d9a"
 evidence = ["near"]
 
 [[function]]
@@ -9999,6 +10395,9 @@ id = "i0d2b_000c"
 unit = "i0d2b"
 addr = "0D2B:000C"
 size = 39
+name = "f1DDD_0006"
+level = "L2"
+match_flags = "twin e1ddd"
 evidence = ["far", "segment"]
 
 [[function]]
@@ -10006,6 +10405,9 @@ id = "i0d2b_0033"
 unit = "i0d2b"
 addr = "0D2B:0033"
 size = 67
+name = "f1DDD_002D"
+level = "L2"
+match_flags = "twin e1ddd"
 evidence = ["far", "frame"]
 
 [[function]]
@@ -10013,6 +10415,9 @@ id = "i0d32_0006"
 unit = "i0d32"
 addr = "0D32:0006"
 size = 13
+name = "_f1DE4_0000"
+level = "L2"
+match_flags = "twin e1de4"
 evidence = ["far", "segment"]
 
 [[function]]
@@ -10020,6 +10425,9 @@ id = "i0d32_0013"
 unit = "i0d32"
 addr = "0D32:0013"
 size = 44
+name = "_f1DE4_000D"
+level = "L2"
+match_flags = "twin e1de4"
 evidence = ["far", "frame"]
 
 [[function]]
@@ -10027,6 +10435,9 @@ id = "i0d35_000f"
 unit = "i0d35"
 addr = "0D35:000F"
 size = 173
+name = "SetTextWindow"
+level = "L2"
+match_flags = "twin e1de7"
 evidence = ["far", "near", "segment"]
 
 [[function]]
@@ -10034,6 +10445,9 @@ id = "i0d35_00bc"
 unit = "i0d35"
 addr = "0D35:00BC"
 size = 19
+name = "SetTextWindowAndClear"
+level = "L2"
+match_flags = "twin e1de7"
 evidence = ["frame"]
 
 [[function]]
@@ -10041,6 +10455,9 @@ id = "i0d35_00cf"
 unit = "i0d35"
 addr = "0D35:00CF"
 size = 405
+name = "DrawTextFrame"
+level = "L2"
+match_flags = "twin e1de7"
 evidence = ["frame"]
 
 [[function]]
@@ -10048,6 +10465,9 @@ id = "i0d35_0264"
 unit = "i0d35"
 addr = "0D35:0264"
 size = 160
+name = "DrawTileRun"
+level = "L2"
+match_flags = "twin e1de7"
 evidence = ["far", "frame"]
 
 [[function]]
@@ -10055,6 +10475,9 @@ id = "i0d35_0304"
 unit = "i0d35"
 addr = "0D35:0304"
 size = 70
+name = "SetRegionExtents"
+level = "L2"
+match_flags = "twin e1de7"
 evidence = ["frame"]
 
 [[function]]
@@ -10062,6 +10485,9 @@ id = "i0d35_034a"
 unit = "i0d35"
 addr = "0D35:034A"
 size = 110
+name = "ClearTextRegion"
+level = "L2"
+match_flags = "twin e1de7"
 evidence = ["far", "frame"]
 
 [[function]]
@@ -10069,6 +10495,9 @@ id = "i0d35_03b8"
 unit = "i0d35"
 addr = "0D35:03B8"
 size = 557
+name = "DrawTextLine"
+level = "L2"
+match_flags = "twin e1de7"
 evidence = ["near", "frame"]
 
 [[function]]
@@ -10076,6 +10505,9 @@ id = "i0d35_05e5"
 unit = "i0d35"
 addr = "0D35:05E5"
 size = 43
+name = "PrintIntText"
+level = "L2"
+match_flags = "twin e1de7"
 evidence = ["frame"]
 
 [[function]]
@@ -10083,6 +10515,9 @@ id = "i0d35_0610"
 unit = "i0d35"
 addr = "0D35:0610"
 size = 1082
+name = "DrawText"
+level = "L2"
+match_flags = "twin e1de7"
 evidence = ["far", "frame"]
 
 [[function]]
@@ -10090,6 +10525,8 @@ id = "i0dd9_000a"
 unit = "i0dd9"
 addr = "0DD9:000A"
 size = 11
+level = "L2"
+match_flags = "twin e1e8b"
 evidence = ["segment"]
 
 [[function]]
@@ -10097,6 +10534,9 @@ id = "i0dd9_0015"
 unit = "i0dd9"
 addr = "0DD9:0015"
 size = 293
+name = "_InitOverlayManager"
+level = "L2"
+match_flags = "twin e1e8b"
 evidence = ["far"]
 
 [[function]]
@@ -10104,6 +10544,9 @@ id = "i0dd9_013a"
 unit = "i0dd9"
 addr = "0DD9:013A"
 size = 81
+name = "_SwapAndReopenOverlayFile"
+level = "L2"
+match_flags = "twin e1e8b"
 evidence = ["far", "frame"]
 
 [[function]]
@@ -10111,6 +10554,9 @@ id = "i0dd9_018b"
 unit = "i0dd9"
 addr = "0DD9:018B"
 size = 34
+name = "f1E8B_0185"
+level = "L2"
+match_flags = "twin e1e8b"
 evidence = ["frame"]
 
 [[function]]
@@ -10118,6 +10564,9 @@ id = "i0dd9_01ad"
 unit = "i0dd9"
 addr = "0DD9:01AD"
 size = 12
+name = "_OpenNamedOverlayFile"
+level = "L2"
+match_flags = "twin e1e8b"
 evidence = ["near"]
 
 [[function]]
@@ -10125,6 +10574,9 @@ id = "i0dd9_01b9"
 unit = "i0dd9"
 addr = "0DD9:01B9"
 size = 64
+name = "_OpenOwnOverlayFile"
+level = "L2"
+match_flags = "twin e1e8b"
 evidence = ["near"]
 
 [[function]]
@@ -10132,6 +10584,9 @@ id = "i0dd9_01f9"
 unit = "i0dd9"
 addr = "0DD9:01F9"
 size = 93
+name = "_OpenOverlayFileViaPath"
+level = "L2"
+match_flags = "twin e1e8b"
 evidence = ["near"]
 
 [[function]]
@@ -10139,6 +10594,9 @@ id = "i0dd9_0256"
 unit = "i0dd9"
 addr = "0DD9:0256"
 size = 38
+name = "_CopyNameAndOpenOverlay"
+level = "L2"
+match_flags = "twin e1e8b"
 evidence = ["near"]
 
 [[function]]
@@ -10146,6 +10604,9 @@ id = "i0dd9_027c"
 unit = "i0dd9"
 addr = "0DD9:027C"
 size = 16
+name = "_ReadOverlayHeaderBytes"
+level = "L2"
+match_flags = "twin e1e8b"
 evidence = ["near"]
 
 [[function]]
@@ -10153,6 +10614,9 @@ id = "i0dd9_028c"
 unit = "i0dd9"
 addr = "0DD9:028C"
 size = 121
+name = "_InitOverlayRecords"
+level = "L2"
+match_flags = "twin e1e8b"
 evidence = ["near"]
 
 [[function]]
@@ -10160,6 +10624,9 @@ id = "i0dd9_0305"
 unit = "i0dd9"
 addr = "0DD9:0305"
 size = 197
+name = "_MapOverlayRecords"
+level = "L2"
+match_flags = "twin e1e8b"
 evidence = ["near"]
 
 [[function]]
@@ -10167,6 +10634,9 @@ id = "i0dd9_03ca"
 unit = "i0dd9"
 addr = "0DD9:03CA"
 size = 57
+name = "_ReadOverlayImage"
+level = "L2"
+match_flags = "twin e1e8b"
 evidence = ["near"]
 
 [[function]]
@@ -10174,6 +10644,9 @@ id = "i0dd9_0403"
 unit = "i0dd9"
 addr = "0DD9:0403"
 size = 69
+name = "_ApplyOverlayRelocations"
+level = "L2"
+match_flags = "twin e1e8b"
 evidence = ["near"]
 
 [[function]]
@@ -10181,6 +10654,9 @@ id = "i0dd9_0448"
 unit = "i0dd9"
 addr = "0DD9:0448"
 size = 142
+name = "_RelocateOverlayPointer"
+level = "L2"
+match_flags = "twin e1e8b"
 evidence = ["near"]
 
 [[function]]
@@ -10188,6 +10664,9 @@ id = "i0dd9_04d6"
 unit = "i0dd9"
 addr = "0DD9:04D6"
 size = 102
+name = "_OverlayCallHandler"
+level = "L2"
+match_flags = "twin e1e8b"
 evidence = ["frame"]
 
 [[function]]
@@ -10195,6 +10674,9 @@ id = "i0dd9_053c"
 unit = "i0dd9"
 addr = "0DD9:053C"
 size = 74
+name = "_AgeOverlayRecords"
+level = "L2"
+match_flags = "twin e1e8b"
 evidence = ["near"]
 
 [[function]]
@@ -10202,6 +10684,9 @@ id = "i0dd9_0586"
 unit = "i0dd9"
 addr = "0DD9:0586"
 size = 123
+name = "_LoadOverlayRecord"
+level = "L2"
+match_flags = "twin e1e8b"
 evidence = ["near"]
 
 [[function]]
@@ -10209,6 +10694,9 @@ id = "i0dd9_0601"
 unit = "i0dd9"
 addr = "0DD9:0601"
 size = 24
+name = "_ReleaseOverlayRecord"
+level = "L2"
+match_flags = "twin e1e8b"
 evidence = ["near"]
 
 [[function]]
@@ -10216,6 +10704,9 @@ id = "i0dd9_0619"
 unit = "i0dd9"
 addr = "0DD9:0619"
 size = 59
+name = "_CompactOverlayRecords"
+level = "L2"
+match_flags = "twin e1e8b"
 evidence = ["near"]
 
 [[function]]
@@ -10223,6 +10714,9 @@ id = "i0dd9_0654"
 unit = "i0dd9"
 addr = "0DD9:0654"
 size = 33
+name = "_RestoreOverlayVersionTable"
+level = "L2"
+match_flags = "twin e1e8b"
 evidence = ["near"]
 
 [[function]]
@@ -10230,6 +10724,9 @@ id = "i0dd9_0675"
 unit = "i0dd9"
 addr = "0DD9:0675"
 size = 30
+name = "_FillOverlayVersionTable"
+level = "L2"
+match_flags = "twin e1e8b"
 evidence = ["near"]
 
 [[function]]
@@ -10237,6 +10734,9 @@ id = "i0dd9_0693"
 unit = "i0dd9"
 addr = "0DD9:0693"
 size = 51
+name = "_ClearOverlayVersionTable"
+level = "L2"
+match_flags = "twin e1e8b"
 evidence = ["near"]
 
 [[function]]
@@ -10244,6 +10744,9 @@ id = "i0dd9_06c6"
 unit = "i0dd9"
 addr = "0DD9:06C6"
 size = 81
+name = "_MoveOverlayRecord"
+level = "L2"
+match_flags = "twin e1e8b"
 evidence = ["near"]
 
 [[function]]
@@ -10251,6 +10754,9 @@ id = "i0dd9_0717"
 unit = "i0dd9"
 addr = "0DD9:0717"
 size = 30
+name = "_LinkOverlayRecord"
+level = "L2"
+match_flags = "twin e1e8b"
 evidence = ["near"]
 
 [[function]]
@@ -10258,6 +10764,9 @@ id = "i0dd9_0735"
 unit = "i0dd9"
 addr = "0DD9:0735"
 size = 12
+name = "_PatchOverlayEntryVector"
+level = "L2"
+match_flags = "twin e1e8b"
 evidence = ["near"]
 
 [[function]]
@@ -10265,6 +10774,9 @@ id = "i0dd9_0741"
 unit = "i0dd9"
 addr = "0DD9:0741"
 size = 38
+name = "_FindOverlaySlot"
+level = "L2"
+match_flags = "twin e1e8b"
 evidence = ["near"]
 
 [[function]]
@@ -10272,6 +10784,9 @@ id = "i0dd9_0767"
 unit = "i0dd9"
 addr = "0DD9:0767"
 size = 28
+name = "_OverlayParagraphsRemaining"
+level = "L2"
+match_flags = "twin e1e8b"
 evidence = ["near"]
 
 [[function]]
@@ -10279,6 +10794,9 @@ id = "i0dd9_0783"
 unit = "i0dd9"
 addr = "0DD9:0783"
 size = 12
+name = "_OverlayCodeParagraphs"
+level = "L2"
+match_flags = "twin e1e8b"
 evidence = ["near"]
 
 [[function]]
@@ -10286,6 +10804,9 @@ id = "i0dd9_078f"
 unit = "i0dd9"
 addr = "0DD9:078F"
 size = 78
+name = "_OverlayTotalParagraphs"
+level = "L2"
+match_flags = "twin e1e8b"
 evidence = ["near"]
 
 [[function]]
@@ -10293,6 +10814,9 @@ id = "i0dd9_07dd"
 unit = "i0dd9"
 addr = "0DD9:07DD"
 size = 152
+name = "_DropStaleOverlaySlots"
+level = "L2"
+match_flags = "twin e1e8b"
 evidence = ["frame"]
 
 [[function]]
@@ -10300,6 +10824,9 @@ id = "i0dd9_0875"
 unit = "i0dd9"
 addr = "0DD9:0875"
 size = 174
+name = "_OverlayManagerEntry"
+level = "L2"
+match_flags = "twin e1e8b"
 evidence = ["frame"]
 
 [[function]]

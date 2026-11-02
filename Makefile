@@ -59,9 +59,12 @@ map: overlays     ## enumerate functions, write re/units.toml and re/symbols.tom
 	$(PY) tools/re/functions.py eob/INTRO.EXE build/re/intro.json -o build/re/intro-functions.json
 	$(PY) tools/re/map_units.py --write
 
-match:            ## prove C and assembly units against EOB.EXE (FILE=src/X.C, default every src/*.C and *.ASM; WRITE=1 records L2)
+match:            ## prove C and assembly units against their program (FILE=src/X.C, default every src/*.C and *.ASM; WRITE=1 records L2)
 	@rc=0; for f in $(or $(FILE),$(wildcard src/*.C src/*.ASM)); do echo "== $$f"; \
 	  $(PY) tools/match/cmatch.py $$f $(if $(WRITE),--write) || rc=1; done; exit $$rc
+
+twin:             ## prove INTRO.EXE units by their EOB.EXE twin, the same module linked elsewhere (UNIT=, WRITE=1 records L2; FIND=1 looks for twins)
+	$(PY) tools/match/twin.py $(if $(FIND),--find) $(if $(UNIT),--unit $(UNIT)) $(if $(WRITE),--write)
 
 oracle-run:       ## run the original EOB.EXE in the oracle (build/oracle/run: summary.json, shots/)
 	$(PY) tools/oracle/run.py --max-insns $(or $(INSNS),30000000) $(if $(ARGS),--args "$(ARGS)") $(if $(SCRIPT),--script $(SCRIPT))

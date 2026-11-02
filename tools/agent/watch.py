@@ -226,7 +226,8 @@ def screen(width: int) -> str:
     out.append(c(BOLD, head) + c(DIM, "   %s" % time.strftime("%H:%M:%S")))
 
     fs = common.functions()
-    game = {u["id"] for u in common.units() if u["program"] == "EOB.EXE" and u["kind"] not in ("library", "startup")}
+    game = {u["id"] for u in common.units() if u["program"] in ("EOB.EXE", "INTRO.EXE")
+            and u["kind"] not in ("library", "startup")}
     gf = [f for f in fs if f["unit"] in game]
     done = [f for f in gf if f.get("level") in ("L2", "L3")]
     q = common.queue()

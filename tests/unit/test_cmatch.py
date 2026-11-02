@@ -92,3 +92,27 @@ def test_template_far_pointers_by_name():
     O.stub_entry = {(3, 0x624): (0x210C, 0x25)}
     O.load_module[0x1804] = 8                                  # a plain byte differs
     assert "byte 07, original 08" in cmatch.compare_template(a, b, O, 0, 0, 0x800, 5, funcs, func_of)
+
+
+def test_twin_proof_rejects_what_relinking_cannot_explain():
+    """A twin is the same code with addresses relabelled one to one: another opcode, one address
+    mapping two ways, or two addresses mapping to one are rejected."""
+    sys.path.insert(0, os.path.join(ROOT, "tools", "match"))
+    import twin
+
+    class P:
+        def __init__(self, image):
+            self.image, self.relocs = bytearray(image), set()
+    # mov ax,[0010]; mov [0010],ax; mov bx,[0012]; ret
+    code = bytes.fromhex("a11000" "a31000" "8b1e1200" "c3")
+    units = {"e1": {"start": "0001:0000", "bytes": len(code)}, "i1": {"start": "0001:0000", "bytes": len(code)}}
+    funcs = [{"id": "e1_0000", "unit": "e1", "addr": "0001:0000", "size": len(code)}]
+    E = P(b"\0" * 16 + code)
+    moved = bytes.fromhex("a11400" "a31400" "8b1e1600" "c3")        # the data block 4 bytes later
+    assert twin.check("e1", "i1", E, P(b"\0" * 16 + moved), units, funcs)[0] is None
+    two_ways = bytes.fromhex("a11400" "a31800" "8b1e1600" "c3")     # [0010] once 14, once 18
+    assert "two values" in twin.check("e1", "i1", E, P(b"\0" * 16 + two_ways), units, funcs)[0]
+    onto = bytes.fromhex("a11400" "a31400" "8b1e1400" "c3")         # [0010] and [0012] both 14
+    assert "map to" in twin.check("e1", "i1", E, P(b"\0" * 16 + onto), units, funcs)[0]
+    opcode = bytes.fromhex("a11400" "a31400" "8b0e1600" "c3")       # mov cx instead of mov bx
+    assert "not an address" in twin.check("e1", "i1", E, P(b"\0" * 16 + opcode), units, funcs)[0]
