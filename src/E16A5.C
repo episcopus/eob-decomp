@@ -187,10 +187,12 @@ extern int g5DF2[];          /*@ ds:5DF2: words 1..4 the g5E1E redraw masks */
 
 /* 16A5:00BD: the event dispatcher (1798 bytes). `head` is the list to walk and `key` one key
    event (0 when only the mouse did something). It returns the key the walk reached when nothing
-   took it (`if (result == 0) result = key;` at the end): a tagged DispatchKey key comes back as
-   its low byte and a DispatchKeyWait key as itself, except that the mouse branch sets the tagged
-   0xC6/0xC7 pair and the untagged 0x41/0x42 pair to 0, so those come back as 0; a mouse-only call
-   (key set to 0) returns 0; both callers ignore the value. First
+   took it (`if (result == 0) result = key;` at the end). While the mouse is enabled (not
+   gMouseDisabled) a tagged DispatchKey key comes back as its low byte and a DispatchKeyWait key as
+   itself, except that the mouse branch sets the tagged 0xC6/0xC7 pair and the untagged 0x41/0x42
+   pair to 0, so those come back as 0; with the mouse disabled both come back as passed (a
+   DispatchKey key still tagged: key &= 0xff and the mouse zeroing sit inside !gMouseDisabled). A
+   mouse-only call that no node takes returns 0; both callers ignore the value. First
    it maps the mouse buttons: while the mouse is enabled (not gMouseDisabled) each call sets
    ds:5E1C and ds:5E1E to 2 or 4 from GetKeyState of the codes 0x41 and 0x42; then the codes
    0x41/0x42 and the negative pair 0xC6/0xC7 override
