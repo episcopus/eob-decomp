@@ -14,11 +14,8 @@
 struct CharRec {            /* the 243-byte (0xF3) character records at ds:F580; see src/E0A72.C */
     char pad00;
     unsigned char m01;      /* +01: status bits (0D1C:0670, 0DE8:09B9) */
-    char pad02[0x0D - 0x02];
-    signed char m0D;        /* +0D */
-    char pad0E;
-    signed char m0F;        /* +0F */
-    char pad10[0x15 - 0x10];
+    char name[0x0B];        /* +02: the character's name, NUL padded (0DE8:0C82) */
+    char pad0D[0x15 - 0x0D];
     signed char m15;        /* +15: an index into a class table (0A72:0181) */
     char pad16;
     signed char m17;        /* +17: an index into g54F6 (0D1C:059B) */
@@ -545,9 +542,54 @@ fail:
     f1547_0991(who);
 }
 
-/*@ 0DE8:0B45 stub */ void f0DE8_0B45(void) {}
-/*@ 0DE8:0C2B stub */ void f0DE8_0C2B(void) {}
-/*@ 0DE8:0C82 stub */ void f0DE8_0C82(void) {}
+/*@ 0DE8:0B45 stub */ void f0DE8_0B45(int who, int amount) {}
+/* 0DE8:0C2B: gives `amount` experience to the whole party. It counts the members that pass
+   f0D1C_0670(n, 3), divides `amount` by that count and calls f0DE8_0B45(n, amount) for each of
+   them. Called by 08E6:0EC3 and 122E:1B5A. */
+/*@ 0DE8:0C2B */ void f0DE8_0C2B(int amount)
+{
+    int n;
+    int count;
+
+    count = 0;
+    n = 0;
+    for (; n < 6; n++) {
+        if (f0D1C_0670(n, 3))
+            count++;
+    }
+    if (count <= 0)
+        return;
+    amount /= count;
+    for (n = 0; n < 6; n++) {
+        if (f0D1C_0670(n, 3))
+            f0DE8_0B45(n, amount);
+    }
+}
+
+/* 0DE8:0C82: levels character `who` up in class slot `slot`. It bumps that m24 slot and, for the
+   three slots 0/1/2, rolls one die of the matching damage group through RollDamage(attr, m17),
+   adding the result to both hp and m1C, then formats "%s has gained a level of experience." into
+   gFileNameBuf for the character's name, redraws through f1547_0991, draws the text and plays
+   sound 0x17. Called by 0DE8:0B45. */
+/*@ 0DE8:0C82 */ void f0DE8_0C82(int who, int attr, int slot)
+{
+    int damage;
+
+    gChars[who].m24[slot]++;
+    if (slot == 0)
+        damage = RollDamage(attr, gChars[who].m17, 1, 0, 0);
+    else if (slot == 1)
+        damage = RollDamage(attr, gChars[who].m17, 0, 1, 0);
+    else if (slot == 2)
+        damage = RollDamage(attr, gChars[who].m17, 0, 0, 1);
+    gChars[who].hp += damage;
+    gChars[who].m1C += damage;
+    sprintf(gFileNameBuf, "\x06\x01%s has gained a level of experience.\x06\x0f\r",
+            gChars[who].name);
+    f1547_0991(who);
+    DrawText(gFileNameBuf);
+    PlaySound(0x17);
+}
 /*@ 0DE8:0D5E stub */ void f0DE8_0D5E(void) {}
 /* 0DE8:0F98: a saving-throw style keeper: halves `value` when the f0D1C_059B test for character
    `who` succeeds (a d20 roll at or above the character's class value). Called by 0EF3:0A3F,
