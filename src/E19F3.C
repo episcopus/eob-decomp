@@ -4,12 +4,9 @@
    untouched. The width is read as the extent from x1 to the far edge [H]: when an origin is
    raised to 0, the width moves by that origin's amount (19F3:0036 for x1, 19F3:004B for x2),
    so x1 + width, the far edge, stays where it was; the height moves the same way with
-   whichever y origin is raised (19F3:005C, 19F3:0070). No code states that reading. The units
-   are the region table's [H]: x in 8-pixel columns, y in
-   lines (src/E1A29.C), so the cap of SCREEN_COLUMNS on the width is the 320-pixel screen and
-   the cap of SCREEN_LINES on the height its 200 lines; region record 0 is 0,0,40,200, the
-   full screen, matching the call at 082C:05DD. That reading is an inference [H] from the caps
-   and record 0; the callers support the columns reading (E1DE7.C:245 passes gTextLeft as x1 and
+   whichever y origin is raised (19F3:005C, 19F3:0070). No code states that reading; it is an
+   inference [H] from the caps and region record 0, whose units the screen-limits block below
+   argues. The callers support x in columns (E1DE7.C:245 passes gTextLeft as x1 and
    x2 and gTextWidth unshifted to ClipRect, with y2 = gTextTop unshifted and y1 = gTextTop +
    gFontHeight1A47, one line down, and the height `line` derived from gTextHeight at
    E1DE7.C:244, while EOV6.C:376 and :481 pass gTextHeight itself; the same
@@ -75,11 +72,9 @@
    2, 0), and the byte-only 0EF3:2512 (pushes at 0EF3:2505 to 2511) gives origins 9 and 122 each
    twice.
    The two call sites 082C:006D and 082C:038A disagree on which y origin holds 191 (y2 for
-   006D, y1 for 038A), so the 006D rectangle's coverage is not settled by the bytes; the [H]
-   reading of y in lines rests on the height cap and region record 0, both below. The
+   006D, y1 for 038A), so the 006D rectangle's coverage is not settled by the bytes. The
    whitepaper has no section on the
-   region table, the 8-pixel columns, the screen bounds or ds:8052 yet. What the far routine
-   does is still unknown. */
+   region table, the 8-pixel columns, the screen bounds or ds:8052 yet. */
 
 /* Screen limits. The region table's units are 8-pixel columns and lines (src/E1A29.C: x in
    8-pixel columns, gRegionLeftPx = left * 8), so SCREEN_COLUMNS columns span the 320-pixel
@@ -99,21 +94,24 @@
    disassembler's default, a [H] until the startup code that sets DS is cited) puts ds:8052 at
    file offset 0x2BB32 (the 0x2800 MZ header + 0x212E0 + 0x8052), inside the 0x31350-byte load
    image that starts at the 0x2800-byte header, and the 8 bytes there are zero: the 4-byte
-   pointer at ds:8052 to ds:8055 and the 4 unused bytes after it at ds:8056 to ds:8059. A
+   pointer at ds:8052 to ds:8055 and the four bytes after the pointer at ds:8056 to ds:8059,
+   zero in the file, whose use is not traced. A
    zero pointer makes the lcall at 19F3:008C call
    0000:0000, the interrupt vector table, not a defined routine [H]; it must be set before
    19F3:008C calls through it (an inference from the zero image; no direct write to ds:8052 in
-   EOB.EXE or the overlay binaries, a byte scan, indirect writes not searched). ds:8052 may
+   EOB.EXE or the overlay binaries: a scan of eob/ and build/re/*-overlays/ (15 files) for
+   direct stores with a disp16 of 0x8052 (encodings C7 06, C6 06, A3, 89 06, 89 16, 89 1E,
+   88 06) found none; indirect writes not searched). ds:8052 may
    be one slot of the screen driver's pointer table, filled outside the resident code [H]: it
    sits on the same 2 mod 4 offset grid as the driver pointers named in src/ (ds:8062
    gDrawLine, ds:8096, ds:809A, ds:80A6, ds:80C2, ds:80D6, ds:80DA, ds:80AE, ds:80B6), which
    fits a table of far pointers but does not prove one. The setter and the target routine are
    not traced. */
-extern void (far *gFar8052)(int x1, int y1, int x2, int y2, int width, int height, int extra1, int extra2); /*@ ds:8052 */
+extern void (far *gFn8052)(int x1, int y1, int x2, int y2, int width, int height, int extra1, int extra2); /*@ ds:8052 */
 
 /* 19F3:000E: clips a rectangle request, then hands it to the far routine ds:8052. Takes the
-   two origins (x1, y1 and x2, y2), a width and a height in the region table's units (x in
-   8-pixel columns, y in lines; src/E1A29.C), and extra1 and extra2, which it forwards
+   two origins (x1, y1 and x2, y2), a width and a height in the region table's units (the
+   screen-limits block above), and extra1 and extra2, which it forwards
    untouched. It caps the width at SCREEN_COLUMNS columns and the height at SCREEN_LINES
    lines, moves a negative origin to 0 together with its partner origin and the size, and
    returns early, without the call, when an x origin has reached SCREEN_COLUMNS columns. It
@@ -153,5 +151,5 @@ extern void (far *gFar8052)(int x1, int y1, int x2, int y2, int width, int heigh
         height += y2;
         y2 = 0;
     }
-    gFar8052(x1, y1, x2, y2, width, height, extra1, extra2);
+    gFn8052(x1, y1, x2, y2, width, height, extra1, extra2);
 }

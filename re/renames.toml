@@ -1278,3 +1278,12 @@ new = "gMouseHandlerInstalled"
 kind = "global"
 why = "1 when the mouse driver handler is installed: set to 1 at install (E1A72.ASM:214), cleared at uninstall (E1A72.ASM:200); E1A72.ASM:334 reads it to remove the handler only when installed; Main reads it to choose gMouseDisabled (E07C8.C:153); E07C8.C:36 says 'mouse event handler'"
 date = "2026-11-01"
+
+[[rename]]
+id = "ds:8052=gFn8052"
+addr = "ds:8052"
+old = "gFar8052"
+new = "gFn8052"
+kind = "global"
+why = "one pattern for unknown-purpose far function pointers (gFn8072, gFn8056, gFn80BA, gFn80D2, gFn804A); review of e19f3"
+date = "2026-11-01"
