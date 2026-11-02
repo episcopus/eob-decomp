@@ -14,8 +14,10 @@
 ; arguments of the pointer the entry returns), loads the overlay, then calls the entry at the
 ; overlay segment:0000 with 27h, 1A16h and that segment (1C00:0088 to 0091), resizes the block
 ; 1C00:0002 loaded the overlay into, to the overlay's size (MemRealloc, 1C00:00A8), and calls the
-; pointer the entry returned (818Eh, 8190h) through the reallocated block, with the request's two
-; words (1C00:00C0).
+; pointer the entry returned (offset at 818Eh, segment at 8190h), whose target is read through the
+; caller's DS (DGROUP only if the caller's DS is [H]), with the request's two words (1C00:00C0).
+; Each access uses the segment the code leaves in DS or ES, not one segment for all; the 1C00:0055
+; comment lists them.
 ; DGROUP is 212Eh, as in E1A72.ASM (lines 81, 252, 435, 470) and E1D8F.ASM (line 78).
 ;
 ; Far calls to another unit (9A off seg) are declared at module level, after .MODEL LARGE and before
@@ -45,21 +47,21 @@
 ; `mov es:[bx],ax` after it stores. This 0FA00h is the block the loader reserves for the overlay;
 ; 1C00:0055 later shrinks it to the overlay's real size with MemRealloc (the reason for this size is
 ; not established [H]: 0FA00h is 64000 bytes, one 320 by 200 screen, but nothing in the bytes says
-; that is why). The state words here go through the segment the caller passed, not through DGROUP:
-; the MemAlloc call is bracketed by pushes and `pop es`/`pop ds` (1C00:0021 to 0022) restore the
-; caller's registers, so the store at 1C00:002F (`es:[bx] = AX`, BX = 818Ah), the SP and SS save
-; at 1C00:0032 and 0036 (8192h, 8194h) and the stores from 1C00:0081 to 00B4 all use the caller's
-; DS (and ES); only the explicit `mov ax,212Eh; mov ds,ax` reloads name DGROUP (1C00:000C, 0042
-; and 00C8), and the SP/SS restore at 1C00:0044 to 0048 goes through the DGROUP reload. The header's
-; DGROUP:818Ah to 8194h is right if the caller's DS is DGROUP, which 07C8:0254 `push ds` passes [H].
+; that is why). Which segment each access uses is spelled out once in the 1C00:0055 comment: the
+; store at 1C00:002F goes through the caller's ES, the SP and SS save at 1C00:0032 and 0036 through
+; the caller's DS, and the SP and SS restore at 1C00:0044 and 0048 and the reads and stores from
+; 1C00:007C to 00B4 through DGROUP. The header's DGROUP:818Ah to 8194h is right only if the
+; caller's DS is DGROUP, which 07C8:0254 `push ds` passes [H].
 ; Save SP and SS across the call (the reason is not established [H]), then load the overlay named by
-; DS:DX through the INT 21h/4B03 parameter block at ES:BX = DGROUP:818Ah: word 0 is the load
-; segment (the word at DGROUP:818Ah) and word 1 is the relocation factor (DGROUP:818Ch, which no
-; file in src/ writes, so check it in the oracle before a port relies on it). Return BX = 0 on
-; success or 0FFFFh on failure. The caller reaches it with `push cs; call`
+; DS:DX through the INT 21h/4B03 parameter block at ES:BX = request_seg:818Ah, where ES is the
+; request segment the caller passed (1C00:0062 `mov ds,[bp+8]`, 1C00:0071 `mov es,ax`); it is
+; DGROUP only if the caller's DS is [H]. Word 0 is the load segment (the word at 818Ah through that
+; segment) and word 1 is the relocation factor (818Ch through that segment, which no file in src/
+; writes, so check it in the oracle before a port relies on it). Return BX = 0 on success or
+; 0FFFFh on failure. The caller reaches it with `push cs; call`
 ; (1C00:0073 to 0074), which is a near call: it pushes CS as an extra word below the return address,
 ; and the function's retf pops that word as well as the return address. Only 1C00:0055 calls it,
-; passing BX = 818Ah, ES = DGROUP and DS:DX from the request.
+; passing BX = 818Ah, ES = the request segment and DS:DX from the request.
         PUBLIC  _LoadOverlayImage       ; @ 1C00:0002
 _LoadOverlayImage PROC NEAR
         push    bp
@@ -115,6 +117,16 @@ _LoadOverlayImage ENDP
 ; stores it at 07C8:0251, and on failure reads it back, pushing [8123h] and [8121h] as a far
 ; pointer to PrintString at 07C8:027B to 0283. Word +2 is the caller's copy for that print, not an
 ; input to the load.
+; The segment each access uses, not one segment for all (bytes 1C00:0002 to 00C0): 1C00:002F
+; (`es:[bx] = AX`, BX = 818Ah) uses the caller's ES, and 1C00:0032 and 0036 (the SP and SS save)
+; use the caller's DS, which `pop es`/`pop ds` (1C00:0021 to 0022) restore after the MemAlloc call.
+; 1C00:0044 and 0048 (the SP and SS restore) and 1C00:007C, 0081, 0085, 0098 and 00B4 use DGROUP:
+; the 1C00:0042 reload `mov ax,212Eh; mov ds,ax` is on the success path of 1C00:0002, and its
+; `retf` (1C00:0054) does not restore DS, so 1C00:0002 returns with DS = 212Eh and the caller sees
+; DS = 212Eh at 1C00:0077. 1C00:00C0 (the second `lcall [818Eh]`) reads its target through the
+; caller's DS, which `pop ds` (1C00:00B9) restores from the word pushed at 1C00:006A (the request
+; segment): it calls the pointer stored at DGROUP:818Eh only if the caller's DS is DGROUP [H], and
+; reads request_seg:818Eh otherwise.
 ; Load the overlay image with 1C00:0002. On success this function stores 0 at 818Eh (the offset) and
 ; the overlay segment (the word at DGROUP:818Ah, loaded into AX at 1C00:007C) at 8190h (1C00:0081
 ; and 0085), then pushes that segment, 1A16h and 27h and calls the entry at segment:0000 through
@@ -131,10 +143,11 @@ _LoadOverlayImage ENDP
 ; (0, seg, size)), and it resizes the overlay's own block at segment:0000 to that size and keeps
 ; its contents. MemRealloc's DX (the reallocated block's segment, FP_SEG(blk) + 1 on the 0x20 path,
 ; E19BC.C:117) is stored at 8190h at 1C00:00B4, so the second `lcall [818Eh]` (1C00:00C0) calls
-; the pointer the entry returned through the reallocated block: its offset is the entry's AX
-; (818Eh) and its segment is MemRealloc's result (8190h), which can differ from the overlay segment
-; the entry was called with if the heap moved the block [H]. It calls that pointer with the
-; request's two words: `pop si` restores SI = request + 4, `lodsw` reads word +4 into BX and
+; the pointer the entry returned, whose offset is the entry's AX (818Eh) and whose segment is
+; MemRealloc's result (8190h); its target is read through the caller's DS (see above), and the
+; segment can differ from the overlay segment the entry was called with if the heap moved the block
+; [H]. It calls that pointer with the request's two words: `pop si` restores SI = request + 4,
+; `lodsw` reads word +4 into BX and
 ; `lodsw` reads word +6 into AX, then `push ax; push bx` precedes `lcall [818Eh]` (1C00:00B8 to
 ; 00C0), so word +4 is the pointer's first argument and word +6 its second. On success (the
 ; `jb short failsub` at 1C00:00C6), when the mouse handler is installed (g8148) the loader clears
