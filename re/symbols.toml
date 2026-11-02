@@ -5066,6 +5066,7 @@ evidence = ["near", "segment"]
 name = "DrawMemberBar"
 level = "L2"
 match_flags = "-ml -O -Z"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1547_028c"
@@ -5076,6 +5077,7 @@ evidence = ["near", "frame"]
 name = "DrawRatioBar"
 level = "L2"
 match_flags = "-ml -O -Z"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1547_033f"
@@ -5086,6 +5088,7 @@ evidence = ["far", "near", "frame"]
 name = "DrawMemberHp"
 level = "L2"
 match_flags = "-ml -O -Z"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1547_04a0"
@@ -5096,6 +5099,7 @@ evidence = ["far", "near", "frame"]
 name = "DrawMemberFood"
 level = "L2"
 match_flags = "-ml -O -Z"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1547_0544"
@@ -5106,6 +5110,7 @@ evidence = ["far", "near", "frame"]
 name = "DrawMemberPortrait"
 level = "L2"
 match_flags = "-ml -O -Z"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1547_0642"
@@ -5116,6 +5121,7 @@ evidence = ["near", "frame"]
 name = "DrawActionLabel"
 level = "L2"
 match_flags = "-ml -O -Z"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1547_07e7"
@@ -5126,6 +5132,7 @@ evidence = ["far", "near"]
 name = "DrawMemberSlot"
 level = "L2"
 match_flags = "-ml -O -Z"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1547_0991"
@@ -5136,6 +5143,7 @@ evidence = ["far", "frame"]
 name = "RedrawMember"
 level = "L2"
 match_flags = "-ml -O -Z"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1658_0003"
