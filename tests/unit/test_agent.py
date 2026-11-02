@@ -372,3 +372,17 @@ def test_names_are_per_program(tmp_path, monkeypatch):
     assert "g8A40 = 1" in (src / "I0921.C").read_text()
     assert rename.norm("INTRO/ovl0:3a") == "intro/ovl0:003A"
 
+
+
+def test_rename_cache_sees_a_changed_file(tmp_path, monkeypatch):
+    """bindings() parses a file once per version of it: an edit, by the pass or anyone, is seen."""
+    src = tmp_path / "src"
+    src.mkdir()
+    f = src / "E1948.C"
+    f.write_text("extern char gPlaying; /*@ ds:8A40 */\n")
+    monkeypatch.setattr(rename, "SRC", src)
+    assert rename.bindings(f) == {"gPlaying": "ds:8A40"}
+    f.write_text("extern char gPlayingNow; /*@ ds:8A40 */\n")
+    assert rename.bindings(f) == {"gPlayingNow": "ds:8A40"}
+    rename.forget(f)
+    assert rename.bindings(f) == {"gPlayingNow": "ds:8A40"}

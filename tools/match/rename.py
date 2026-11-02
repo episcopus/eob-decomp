@@ -69,21 +69,48 @@ def norm(addr: str) -> str:
     return "%04X:%04X" % (int(seg, 16), int(off, 16))
 
 
+# A pass over src/ asks every file for every address (make rename APPLY=1 checks about a thousand
+# addresses against about seventy files at each merge): each file is parsed once and again only
+# when it changes (its size or modification time), and re/units.toml is read once while it stays.
+_BINDINGS: dict = {}
+_PROGRAMS: dict = {}
+
+
+def _stamp(path: Path) -> tuple:
+    st = path.stat()
+    return st.st_mtime_ns, st.st_size
+
+
 def program_of(path: Path) -> str:
     """The program the file's unit belongs to (EOB.EXE when re/units.toml does not say)."""
-    u = cmatch.unit_of(path)
-    return u["program"] if u else "EOB.EXE"
+    units = ROOT / "re" / "units.toml"
+    key = (units, _stamp(units)) if units.exists() else (units, None)
+    if _PROGRAMS.get("key") != key:
+        found = tomllib.loads(units.read_text()).get("unit", []) if units.exists() else []
+        _PROGRAMS.clear()
+        _PROGRAMS.update({"key": key, "by_id": {u["id"]: u["program"] for u in found}})
+    return _PROGRAMS["by_id"].get(path.stem.lower(), "EOB.EXE")
 
 
 def bindings(path: Path) -> dict[str, str]:
     """Local name -> address of everything the file annotates, qualified by the file's program."""
+    key = (path.resolve(), _stamp(path), program_of(path))
+    hit = _BINDINGS.get(key[0])
+    if hit and hit[0] == key:
+        return dict(hit[1])
     asm = path.suffix.upper() == ".ASM"
     funcs, data, _, _ = cmatch.parse_annotations(path.read_text(), asm)
-    pre = PREFIX.get(program_of(path), "")
+    pre = PREFIX.get(key[2], "")
     out = {n: pre + "ds:%04X" % off for n, off in data.items()}
     for n, (seg, off) in funcs.items():
         out[n] = pre + norm("%s:%X" % (seg if isinstance(seg, str) else "%04X" % seg, off))
-    return out
+    _BINDINGS[key[0]] = (key, out)
+    return dict(out)
+
+
+def forget(path: Path) -> None:
+    """A file this pass rewrote is parsed again (whatever the clock's resolution)."""
+    _BINDINGS.pop(path.resolve(), None)
 
 
 def sources() -> list[Path]:
@@ -160,6 +187,7 @@ def rename_address(addr: str, new: str, dry: bool = False, only: str | None = No
             changed[p.name] = total
             if not dry:
                 p.write_text(text)
+                forget(p)
     return sorted(olds), changed
 
 
@@ -281,6 +309,7 @@ def stale_uses(dry: bool = False) -> dict[str, int]:
             changed[p.name] = total
             if not dry:
                 p.write_text(text)
+                forget(p)
     return changed
 
 
