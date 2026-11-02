@@ -4444,9 +4444,9 @@ unit = "e14ef"
 addr = "14EF:00E1"
 size = 38
 evidence = ["near", "frame"]
-name = "PointInRect"
 level = "L2"
 match_flags = "-ml -O -Z -B"
+name = "IsPointInRect"
 
 [[function]]
 id = "e14ef_0107"

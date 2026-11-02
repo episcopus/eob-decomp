@@ -1593,3 +1593,30 @@ new = "SoundDriverSilenceToOneVoice"
 kind = "function"
 why = "1948:046B silences the three voices (_SetThreeVoices 1948:034A) then drops to one-voice output (_SetOneVoice 1948:0367); only called on the way out (ShutdownGame, src/E07C8.C:328); it does not pause the song (gPlaying and the timer keep running)"
 date = "2026-11-01"
+
+[[rename]]
+id = "14EF:00E1=IsPointInRect"
+addr = "14EF:00E1"
+old = "PointInRect"
+new = "IsPointInRect"
+kind = "function"
+why = "A test reads as a question (READABILITY.md); src/E082C.C:300 calls the same test IsPointInsideRect"
+date = "2026-11-01"
+
+[[rename]]
+id = "ds:8100=gFontWidth"
+addr = "ds:8100"
+old = "gFontWidth1A47"
+new = "gFontWidth"
+kind = "global"
+why = "font cell width; the source is src/E1A47.C and src/E1DE7.C:54-55 calls it the font cell width"
+date = "2026-11-01"
+
+[[rename]]
+id = "ds:8101=gFontHeight"
+addr = "ds:8101"
+old = "gFontHeight1A47"
+new = "gFontHeight"
+kind = "global"
+why = "font cell height; the source is src/E1A47.C and src/E1DE7.C:54-55 calls it the font cell height"
+date = "2026-11-01"
