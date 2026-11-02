@@ -13,6 +13,44 @@ addressed. Comment and name changes only, no code change. `make match FILE=src/E
 (8259 bytes), `make readability UNIT=eov4` 0 findings. Names changed with `make rename`:
 ds:1879 -> gTable1879, ds:A92A -> gIconTableA92A (re/globals.toml, re/renames.toml).
 
+## Round 3 (rev-haiku, main at ea7fcbe)
+
+Judged: the round 2 must-fix items, and the changes since ac24cbe in `src/EOV4.C`, `re/globals.toml` and `re/symbols.toml`. Method: the cited addresses were disassembled from `build/re/eob-overlays/ovl04.bin` (ovl4) and `ovl03.bin` (ovl3) with capstone, 16-bit; the cited source lines were read with sed. `make match FILE=src/EOV4.C` 18 of 18 (8259 bytes), `make readability UNIT=eov4` 0 findings.
+
+Round 2 must-fix items (all seven fixed right; ticks stay):
+
+- Ovl4_1091 `ovl4:10AD` and `ovl4:11FD`: right. 10AD is `mov ax, word [bx+0x7018]` (the slot*2+1 face test, drawn first); 11FD is `mov al, [bp-3]` (slot*2, drawn second), which `jmp 0x11fd` at 10B7 reaches and 11F8 falls into.
+- Ovl4_1411 region-5 fit `ovl4:1614`: right (`lcall 0x1b8,0x2fe` at 1614, the same call as the `SetRegionExtents` at :862).
+- Ovl4_1411 actions 4..6 "x shift": right (:863-870 add the shift to x at :868 and subtract it at :870).
+- Ovl4_0AD0 `ds:6F86[slot]`: right (:458 `spanSlot = g6F86[slotReg]`). A should below adds the `-1` gate.
+- gFB5E `ovl3:031A`: right. The ovl3 loop at 031E-0320 walks the entries; 034D and 0353 clear both words of the far pointer, and `farfree` is pushed at 0338-033C; EOV3.C:356-358 is the same loop.
+- DrawViewFrame palette and blank: right on the claim the round 2 fix made. The palette load (:1188) and the gFB45 clear (:1189) are outside `full`, and only the blank (:1183-1186) is under it. The phrase "video mode 3" in the same header is a new must-fix below; round 2 suggested that wording and it is wrong.
+- IsSlotLive `src/EOV3.C:1012`: right (`slot = (g194B[gB894[who * 9]] & 8) ? 0 : 1;`).
+
+Changed since ac24cbe, besides the above:
+
+- `re/globals.toml` ds:FBCA (gPartyCell): checked each cite. E0ACD.C:1004 is `gPartyCell = 0x1EA;`, EOV6.C:439 is the `Distance(gPartyCell, ...)` test, E08E6.C:334 and :469 are the compares, E08E6.C:349, :561 and :604 are `PlaySoundAtCell` calls, E0D1C.C:44 indexes gB894 by it. All right.
+- `re/globals.toml` ds:8102 (gGraphicsChoice): E07C8.C:229 (`gGraphicsChoice = argv[1][0] + 1`), :296 (the 0x36 check), :298 (`-= 0x31`). Right.
+- `re/globals.toml` ds:80C6, ds:8104, ds:8111 (src/E1C0E.C lines): off by one, see the should below. These are another unit's lines.
+- `re/symbols.toml`: 173 added or changed entries, all `review = "passed 2026-11-02 rev-haiku"` stamps on other units (e0d1c, e0de8, e1414, e17a6, eov0, eov3, eov5). No `eov4` entry changed.
+
+Must-fix:
+
+- [ ] must-fix src/EOV4.C:1172 (DrawViewFrame header): "when gFB45 and video mode 3 are set". The code tests `gGraphicsChoice == 3` (:1182), which is the graphics choice, not a video mode. Two pieces of evidence: whitepaper 2.6 gives argv[1] as the graphics choice and shows the oracle run (`3 4 0 homie 3`) with choice 3 loading `MCGA.OVL` and setting mode 13h; the `3` that is a video mode is argv[5] (ds:84A0, `gRestoreMode`, "the video mode restored on exit"). `re/globals.toml` ds:8102 also names choice 3 as MCGA/VGA. Fix: "when gFB45 is set and gGraphicsChoice is 3 (MCGA/VGA, re/globals.toml ds:8102)".
+
+Should:
+
+- [ ] should src/EOV4.C:529 (the gGraphicsChoice declaration): "the video mode/format (src/E07A9.C)" has the same conflation. Say the graphics choice (0 CGA, 1 Tandy, 2 EGA, 3 MCGA/VGA, 4 VGA) and cite re/globals.toml ds:8102.
+- [ ] should src/EOV4.C:403-404 (Ovl4_0AD0 header): "also recomputes the span of ds:6F86[slot]" reads as unconditional. The `ComputeViewSpan` call is only made when that byte is not -1 (:459-460). Add "when that byte is not -1".
+- [ ] should re/globals.toml, the ds:80C6, ds:8104 and ds:8111 whys (owner: the E1C0E unit; the same three items are the open round 4 must-fix in `work/reviews/e1c0e.md` on main, not this unit's): ds:80C6 cites src/E1C0E.C:554, which is `MemAlloc` (the `gSaveRectSize` call is :553); ds:8104 cites :177 and :178 (the `gFatalHandler` calls are :176 and :177; :178 is `ShutdownGame`); ds:8111 cites :166, the closing brace (the `RetryFile` call is :165). Line cites into another file are a should, not a must-fix, under playbook 70.
+- [ ] should src/E07A9.C:87 (owner: E07A9, not this unit): the gFB45 comment repeats "video mode 3" for the same test and cites src/EOV4.C:1049, :1054, :1060 and :1061. Those lines are stale: DrawViewFrame is at :1177, the test at :1182, the palette load at :1188 and the clear at :1189. Replace with the ovl4 addresses or the current lines, and use the same word as the fix above.
+
+Notes (for the next reader; they do not block):
+
+- The round 2 notes stand unchanged (gEF6A signedness, gFn80D2 and the Region struct, :584 `page5`, the `0x12` nudge at :603-605, the 0x34 object, the EOV2 cites, NoOp2039). They were not re-read this round.
+
+Summary: one must-fix open, the "video mode 3" wording in the DrawViewFrame header (src/EOV4.C:1172), which the fix at :529 should match. Everything else in the round 2 fixes and the changed lines is right. The registry and cross-file items are the owners' to fix. `make match FILE=src/EOV4.C` 18 of 18 and `make readability UNIT=eov4` 0 findings. Nothing escalated: no matcher, spec or pin question.
+
 ## Round 2 (rev-haiku, main at ac24cbe)
 
 Judged: the round 1 must-fix items (checked against the diff; the ticks below stay, since each fix is right
