@@ -2387,6 +2387,15 @@ why = "returns the voice record byte at +5, the note delay counter StartVoiceNot
 date = "2026-11-02"
 
 [[rename]]
+id = "intro/0000:50C8=WriteVoiceLevels"
+addr = "intro/0000:50C8"
+old = "WriteVoiceReg"
+new = "WriteVoiceLevels"
+kind = "function"
+why = "it writes the voice's carrier total level register 43h and, for an additive voice, the modulator total level register 40h (50C8 to 5116); WriteVoiceReg was vague (review of i_text)"
+date = "2026-11-02"
+
+[[rename]]
 id = "intro/ds:1EE2=gFn1EE2"
 addr = "intro/ds:1EE2"
 old = "gUnknown1EE2"
