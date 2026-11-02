@@ -11199,6 +11199,9 @@ unit = "iov0"
 addr = "ovl0:015D"
 size = 1413
 evidence = ["ovl", "near", "frame"]
+name = "PlayWtrdpScene"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "iov0_06e2"
@@ -11206,6 +11209,9 @@ unit = "iov0"
 addr = "ovl0:06E2"
 size = 715
 evidence = ["ovl", "near", "frame"]
+name = "PlayOrbScene"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "iov0_09ad"
@@ -11223,6 +11229,9 @@ unit = "iov0"
 addr = "ovl0:0B20"
 size = 1162
 evidence = ["ovl", "near", "frame"]
+name = "PlayTowerMageScene"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "iov0_0faa"
@@ -11280,6 +11289,9 @@ unit = "iov0"
 addr = "ovl0:1265"
 size = 916
 evidence = ["ovl", "near", "frame"]
+name = "PlayKingScene"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "iov0_15f9"
@@ -11287,6 +11299,9 @@ unit = "iov0"
 addr = "ovl0:15F9"
 size = 2042
 evidence = ["ovl", "near", "frame"]
+name = "PlayHandsScene"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "iov0_1df3"
@@ -11294,6 +11309,9 @@ unit = "iov0"
 addr = "ovl0:1DF3"
 size = 1456
 evidence = ["ovl", "near", "frame"]
+name = "PlayTunnelScene"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "iov0_23a3"
@@ -11301,6 +11319,9 @@ unit = "iov0"
 addr = "ovl0:23A3"
 size = 1392
 evidence = ["ovl", "near", "frame"]
+name = "PlayAvalancheScene"
+level = "L2"
+match_flags = "-ml -O -Z -G"
 
 [[function]]
 id = "iov0_2913"

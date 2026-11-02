@@ -2288,6 +2288,69 @@ why = "m23 is a food/hunger value: EatFood (0ACD:07E0, src/E0ACD.C:571-577) adds
 date = "2026-11-02"
 
 [[rename]]
+id = "intro/ovl0:015D=PlayWtrdpScene"
+addr = "intro/ovl0:015D"
+old = "Ovl0_015D"
+new = "PlayWtrdpScene"
+kind = "function"
+why = "it loads WTRDP1/2/3.CMP and the WTRDP2.COL palette (ovl0:015D +0167, +0182, +02da, +032e), the tutorial scene"
+date = "2026-11-02"
+
+[[rename]]
+id = "intro/ovl0:06E2=PlayOrbScene"
+addr = "intro/ovl0:06E2"
+old = "Ovl0_06E2"
+new = "PlayOrbScene"
+kind = "function"
+why = "it loads ORB.CMP and TOWRMAGE.CMP and animates the orb and the four tower-mage frames (ovl0:06E2 +06E9, +072B)"
+date = "2026-11-02"
+
+[[rename]]
+id = "intro/ovl0:0B20=PlayTowerMageScene"
+addr = "intro/ovl0:0B20"
+old = "Ovl0_0B20"
+new = "PlayTowerMageScene"
+kind = "function"
+why = "it loads TOWRMAGE.COL and TOWRMAGE.CMP and slides the tower-mage sprite across the screen (ovl0:0B20 +0B31, +0B46)"
+date = "2026-11-02"
+
+[[rename]]
+id = "intro/ovl0:1265=PlayKingScene"
+addr = "intro/ovl0:1265"
+old = "Ovl0_1265"
+new = "PlayKingScene"
+kind = "function"
+why = "it loads KING.CMP and ADVENTUR.CMP and walks four king sprites down over the adventurer (ovl0:1265 +1276, +134c)"
+date = "2026-11-02"
+
+[[rename]]
+id = "intro/ovl0:15F9=PlayHandsScene"
+addr = "intro/ovl0:15F9"
+old = "Ovl0_15F9"
+new = "PlayHandsScene"
+kind = "function"
+why = "it loads HANDS.CMP and animates the three hand sprites in three GrowFrame/ClipRect phases (ovl0:15F9 +1653)"
+date = "2026-11-02"
+
+[[rename]]
+id = "intro/ovl0:1DF3=PlayTunnelScene"
+addr = "intro/ovl0:1DF3"
+old = "Ovl0_1DF3"
+new = "PlayTunnelScene"
+kind = "function"
+why = "it loads WTRDP3.CMP, ORB.CMP, TUNNEL.CMP and the ZOOMTUNL.COL palette (ovl0:1DF3 +1deb, +215a, +22f9, +2390)"
+date = "2026-11-02"
+
+[[rename]]
+id = "intro/ovl0:23A3=PlayAvalancheScene"
+addr = "intro/ovl0:23A3"
+old = "Ovl0_23A3"
+new = "PlayAvalancheScene"
+kind = "function"
+why = "it loads AVALANCH.CMP and ZOOMTUNL.CMP and draws the six zoom rectangles (ovl0:23A3 +2635, +27f2)"
+date = "2026-11-02"
+
+[[rename]]
 id = "0000:4CB1=GetVoiceDelay"
 addr = "0000:4CB1"
 old = "GetVoiceState"
