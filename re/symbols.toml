@@ -405,7 +405,7 @@ unit = "e_text"
 addr = "0000:4CD0"
 size = 16
 evidence = ["near"]
-name = "_AdlibDelay17"
+name = "_AdlibWaitAfterData"
 level = "L2"
 match_flags = "tasm /mx"
 
@@ -415,7 +415,7 @@ unit = "e_text"
 addr = "0000:4CE0"
 size = 16
 evidence = ["near"]
-name = "_AdlibDelay4"
+name = "_AdlibWaitAfterIndex"
 level = "L2"
 match_flags = "tasm /mx"
 
@@ -435,7 +435,7 @@ unit = "e_text"
 addr = "0000:4D1F"
 size = 56
 evidence = ["near"]
-name = "_VoiceLevelA0"
+name = "_VoiceCarrierLevel"
 level = "L2"
 match_flags = "tasm /mx"
 
@@ -445,7 +445,7 @@ unit = "e_text"
 addr = "0000:4D57"
 size = 62
 evidence = ["near"]
-name = "_VoiceLevelB0"
+name = "_VoiceModulatorLevel"
 level = "L2"
 match_flags = "tasm /mx"
 

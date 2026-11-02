@@ -1674,3 +1674,39 @@ new = "gBusyCountdown"
 kind = "function"
 why = "0000:3B36 is set to 0Bh by PlaySoundAtCell (E177D.C:268), waited out at E177D.C:249 and counted down to zero by the AdLib INT 08h handler (E_TEXT.ASM _AdlibTimerIsr, 3EAF to 3EB6)"
 date = "2026-11-01"
+
+[[rename]]
+id = "0000:4D1F=VoiceCarrierLevel"
+addr = "0000:4D1F"
+old = "VoiceLevelA0"
+new = "VoiceCarrierLevel"
+kind = "function"
+why = "0000:4D1F's result is written to register 43h plus the operator offset (WriteVoiceReg 4CF0 to 4D01, UpdateVoices 421E to 422B): the total level register of the carrier operator, level bits 3Fh clamped (4D40 to 4D4E) and the C0h key scale bits kept (4D4E to 4D55); it is not register A0"
+date = "2026-11-02"
+
+[[rename]]
+id = "0000:4D57=VoiceModulatorLevel"
+addr = "0000:4D57"
+old = "VoiceLevelB0"
+new = "VoiceModulatorLevel"
+kind = "function"
+why = "0000:4D57's result is written to register 40h plus the operator offset (WriteVoiceReg 4D0A to 4D1B, UpdateVoices 422E to 423B): the total level register of the modulator operator, clamped to 3Fh with the C0h key scale bits kept (4D7E to 4D92); it is not register B0"
+date = "2026-11-02"
+
+[[rename]]
+id = "0000:4CD0=AdlibWaitAfterData"
+addr = "0000:4CD0"
+old = "AdlibDelay17"
+new = "AdlibWaitAfterData"
+kind = "function"
+why = "0000:4CD0 reads status port 388h 17h (23) times; AdlibWrite 4C6B calls it after the data write (out 389h, 4C77) and 4CE0 after the index write (4C70)"
+date = "2026-11-02"
+
+[[rename]]
+id = "0000:4CE0=AdlibWaitAfterIndex"
+addr = "0000:4CE0"
+old = "AdlibDelay4"
+new = "AdlibWaitAfterIndex"
+kind = "function"
+why = "0000:4CE0 reads status port 388h 4 times; AdlibWrite 4C6B calls it right after the index write (out 388h, 4C70), the ISRs 3E9F and 4C31 likewise"
+date = "2026-11-02"

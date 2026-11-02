@@ -174,7 +174,7 @@ gBlockSpare LABEL BYTE
 ; 0000:3944: the driver's tables and variables (data, 591 bytes). The tables, 498 bytes: gEntryTable (3944) lists the eleven near entry points of the driver in the
 ; order the original links them: no reader in this file (Purpose unknown; the block's code may use it [H]). gLevelCurvePtrs
 ; (395A) points to the fourteen 32-byte level curves from 3976: monotone maps of a level 0 to 1Fh to a larger one (UpdateVoices
-; reads them with mov si,[bx+395Ah], 4709 and others). QUIRK 3A86: curve 8 has 1Ah, 19h where its neighbours rise (17h,1Ah,
+; reads them with mov si,[bx+395Ah] at 4646 and 4663, SetVoicePitch at 4A96 and 4AB3). QUIRK 3A86: curve 8 has 1Ah, 19h where its neighbours rise (17h,1Ah,
 ; 19h,1Ah,1Ch); QUIRK 3B14: curve 12 has 34h between 3Bh and 41h (the pattern wants about 3Eh); the EXE's bytes are kept.
         PUBLIC  _DriverTables              ; @ 0000:3944
 _DriverTables LABEL BYTE
@@ -236,22 +236,24 @@ gVoiceIndex     db      0               ; 3B3E: the voice UpdateVoices is servin
 gUpdateEnable   db      0               ; 3B3F: UpdateVoices runs only while nonzero (set when a sound starts, cleared by reset)
 gRhythmKeyBits  db      0               ; 3B40: the key bits last written to register BDh (bit 5 is the rhythm mode)
 gTempoRate      db      0               ; 3B41: the script's speed byte: added to gTempoAccum each tick, the followers' voice speed
-gEffectMode     db      0               ; 3B42: the pitch effect in force, 0 none (_AdlibTimerIsr acts while it is nonzero)
+gEffectMode     db      0               ; 3B42: the pitch effect in force, 0 none: L_46D4 sets it; ProcessSoundQueue, ResetVoices, the
+                                        ;   command at 454B and L_4720 clear it (_AdlibTimerIsr acts while it is nonzero)
 gEffectPeriod   db      1               ; 3B43: the reload of gEffectCounter
 gEffectCounter  db      1               ; 3B44: counted down by _AdlibTimerIsr
-gEffectIndex    dw      0FFFFh          ; 3B45: the position in the effect's curve
+gEffectIndex    dw      0FFFFh          ; 3B45: the index into the effect's two curves (SetNote stores its argument here, L_46D4 clears it)
 gRandomSeed     dw      1234h           ; 3B47: SoundRandom's state, 1234h from ResetVoices on
 gToggleBit      db      0               ; 3B49: _AdlibTimerIsr inverts it; its bit 5 becomes the key-on bit of voice 0
 gRegBDDepth     db      0               ; 3B4A: bits 7 and 6 of register BDh (amplitude and vibrato depth)
 gOperatorOffset db      0               ; 3B4B: the operator register offset of the voice being served (gOperatorOffsets)
-gRhythmLevelA   db      5 dup (0)       ; 3B4C: three five-byte sets of rhythm operator level terms; the commands at 486Eh to 48EAh
-gRhythmLevelB   db      5 dup (0)       ; 3B51:   add one byte of each to the operand and write the sum to registers 51h to 55h
-gRhythmLevelC   db      5 dup (0)       ; 3B56
-gTempoReload    db      0               ; 3B5B: half the tempo operand (the command at 4416h)
+gRhythmLevelA   db      5 dup (0)       ; 3B4C: three five-byte sets of rhythm operator level terms, one byte per operator in the order of
+gRhythmLevelB   db      5 dup (0)       ; 3B51:   the level registers 53h, 54h, 51h, 52h, 55h. A is the level byte of the patch L_4729 loads
+gRhythmLevelC   db      5 dup (0)       ; 3B56:   for the rhythm voices, B is stored by L_48EF and C by L_484B; both commands write the
+                                        ;   clamped sum of the operand and the three terms to the operator's level register
+gTempoReload    db      0               ; 3B5B: half the tempo operand (the command at L_4412)
 gTempoCounter   db      0               ; 3B5C: counted down from gTempoReload each time gTempoAccum carries
 gTempoAccum     db      0FFh            ; 3B5D: TickTempo adds gTempoRate; a carry steps the counter
 gTempoBeat      db      0               ; 3B5E: the beat count: TickTempo adds one each time gTempoCounter reaches zero
-gTempoWait      db      0               ; 3B5F: the wait-for-beat command's phase flag (4430h)
+gTempoWait      db      0               ; 3B5F: the wait-for-beat command's phase flag (L_442E)
 gEffectCurveA   dw      0               ; 3B60: the near pointers the effect command picks from gCurveTablePtrs
 gEffectCurveB   dw      0               ; 3B62
 gSoundTable     dw      0               ; 3B64: the sound-number table ProcessSoundQueue indexes (SelectDriverTable, StartAdlibDriver)
@@ -336,11 +338,11 @@ _AdlibTimerIsr PROC NEAR
         mov       dx, 388h
         mov       al, 0b0h
         out       dx, al
-        call    _AdlibDelay4
+        call    _AdlibWaitAfterIndex
         mov       al, bl
         inc       dx
         out       dx, al
-        call    _AdlibDelay17
+        call    _AdlibWaitAfterData
         mov       al, byte ptr ds:[gEffectPeriod]
         mov       byte ptr ds:[gEffectCounter], al
 L_3EAF:
@@ -815,12 +817,12 @@ L_4214:
 L_421A:
         lodsb
         mov       byte ptr [di + 34h], al
-        call    _VoiceLevelA0
+        call    _VoiceCarrierLevel
         mov       dx, 388h
         mov       ah, byte ptr ds:[gOperatorOffset]
         add       ah, 43h
         call    _AdlibWrite
-        call    _VoiceLevelB0
+        call    _VoiceModulatorLevel
         mov       dx, 388h
         mov       ah, byte ptr ds:[gOperatorOffset]
         add       ah, 40h
@@ -1480,7 +1482,7 @@ L_4808:
         mov       dx, 388h
         mov       al, 0bdh
         out       dx, al
-        call    _AdlibDelay4
+        call    _AdlibWaitAfterIndex
         inc       dx
         xchg      ah, al
         push      ax
@@ -1489,14 +1491,14 @@ L_4808:
         and       al, byte ptr ds:[gRhythmKeyBits]
         or        al, 20h
         out       dx, al
-        call    _AdlibDelay17
+        call    _AdlibWaitAfterData
         pop       ax
         or        al, byte ptr ds:[gRhythmKeyBits]
         mov       byte ptr ds:[gRhythmKeyBits], al
         or        al, byte ptr ds:[gRegBDDepth]
         or        al, 20h
         out       dx, al
-        call    _AdlibDelay17
+        call    _AdlibWaitAfterData
         jmp    L_41FC
 L_4838:
         dec       si
@@ -1939,11 +1941,11 @@ L_4BD8:
         mov       dx, 388h
         mov       al, 40h
         out       dx, al
-        call    _AdlibDelay4
+        call    _AdlibWaitAfterIndex
         mov       al, 0
         inc       dx
         out       dx, al
-        call    _AdlibDelay17
+        call    _AdlibWaitAfterData
         cli
         mov       ax, 3508h
         int       21h
@@ -1954,10 +1956,10 @@ L_4BD8:
         int       21h
         mov       al, 36h
         out       43h, al
-        call    _AdlibDelay4
+        call    _AdlibWaitAfterIndex
         mov       al, 4bh
         out       40h, al
-        call    _AdlibDelay4
+        call    _AdlibWaitAfterIndex
         mov       al, 0
         out       40h, al
         sti
@@ -1969,21 +1971,22 @@ L_4BD8:
         retf
 _StartSample ENDP
 
-; 0000:4C6B: writes the AdLib register AL and then AH (ports 388h and 389h), with the short delay
+; 0000:4C6B: writes the value AL to the AdLib register AH: the register number to port 388h, a short wait, the value to port 389h, a
+; long wait (AdlibWaitAfterIndex, AdlibWaitAfterData). Clobbers dx; keeps ax. Every register write of the driver goes through here.
         PUBLIC  _AdlibWrite              ; @ 0000:4C6B
 _AdlibWrite PROC NEAR
         mov       dx, 388h
         xchg      al, ah
         out       dx, al
-        call    _AdlibDelay4
+        call    _AdlibWaitAfterIndex
         inc       dx
         xchg      al, ah
         out       dx, al
-        call    _AdlibDelay17
+        call    _AdlibWaitAfterData
         ret
 _AdlibWrite ENDP
 
-; 0000:4C7C: clamps the level in AL to 0 to 3fh, returning 0 or 3fh at the ends
+; 0000:4C7C: clamps the signed level in AX to 0 to 3Fh, the range of an AdLib level register's total level bits; the result is in AL
         PUBLIC  _ClampLevel              ; @ 0000:4C7C
 _ClampLevel PROC NEAR
         cmp       ax, 0
@@ -2026,7 +2029,9 @@ _GetSampleOffset PROC NEAR
         retf
 _GetSampleOffset ENDP
 
-; 0000:4CB1: returns the byte at [di+5] of the voice record selected by the argument
+; 0000:4CB1: returns the byte at +5 of the voice record of the voice given as the argument (0 to 9), the voice's note delay counter
+; (StartVoiceNote sets it, UpdateVoices counts it down): nonzero while the voice is sounding. Far routine, one argument; the sixth entry of
+; the entry table (3944)
         PUBLIC  _GetVoiceState              ; @ 0000:4CB1
 _GetVoiceState PROC NEAR
         push      bp
@@ -2048,9 +2053,9 @@ _GetVoiceState PROC NEAR
         retf
 _GetVoiceState ENDP
 
-; 0000:4CD0: reads the AdLib status port 388h 17 times
-        PUBLIC  _AdlibDelay17              ; @ 0000:4CD0
-_AdlibDelay17 PROC NEAR
+; 0000:4CD0: the wait after an AdLib data write: reads the status port 388h 17h (23) times; keeps ax, cx and dx
+        PUBLIC  _AdlibWaitAfterData              ; @ 0000:4CD0
+_AdlibWaitAfterData PROC NEAR
         push      ax
         push      cx
         push      dx
@@ -2063,11 +2068,11 @@ L_4CD9:
         pop       cx
         pop       ax
         ret
-_AdlibDelay17 ENDP
+_AdlibWaitAfterData ENDP
 
-; 0000:4CE0: reads the AdLib status port 388h 4 times
-        PUBLIC  _AdlibDelay4              ; @ 0000:4CE0
-_AdlibDelay4 PROC NEAR
+; 0000:4CE0: the wait after an AdLib register number write: reads the status port 388h 4 times; keeps ax, cx and dx
+        PUBLIC  _AdlibWaitAfterIndex              ; @ 0000:4CE0
+_AdlibWaitAfterIndex PROC NEAR
         push      ax
         push      cx
         push      dx
@@ -2080,12 +2085,12 @@ L_4CE9:
         pop       cx
         pop       ax
         ret
-_AdlibDelay4 ENDP
+_AdlibWaitAfterIndex ENDP
 
 ; 0000:4CF0: writes the voice 3E45-table register 43h and, when the voice is two-operator, register 40h
         PUBLIC  _WriteVoiceReg              ; @ 0000:4CF0
 _WriteVoiceReg PROC NEAR
-        call    _VoiceLevelA0
+        call    _VoiceCarrierLevel
         mov       bx, offset gOperatorOffsets
         add       bl, byte ptr ds:[gVoiceIndex]
         mov       cl, byte ptr [bx]
@@ -2094,7 +2099,7 @@ _WriteVoiceReg PROC NEAR
         call    _AdlibWrite
         cmp       byte ptr [di + 31h], 0
         je    L_4D1E
-        call    _VoiceLevelB0
+        call    _VoiceModulatorLevel
         mov       bx, offset gOperatorOffsets
         add       bl, byte ptr ds:[gVoiceIndex]
         mov       cl, byte ptr [bx]
@@ -2105,9 +2110,12 @@ L_4D1E:
         ret
 _WriteVoiceReg ENDP
 
-; 0000:4D1F: computes the voice register A0 value: level, added offsets and the shift at 33h/34h
-        PUBLIC  _VoiceLevelA0              ; @ 0000:4D1F
-_VoiceLevelA0 PROC NEAR
+; 0000:4D1F: computes the value of the carrier operator's level register (43h plus the operator offset) for the voice record at di:
+; the level bits (3Fh) of record byte 2Fh (the patch's carrier byte, set by LoadVoicePatch) plus the bytes at 20h, 00h and 30h, less the high
+; byte of byte 34h shifted left by byte 33h + 1 when byte 33h is nonzero, clamped to 0 to 3Fh; the top two bits (key scale) of byte 2Fh are
+; kept. Result in AL
+        PUBLIC  _VoiceCarrierLevel              ; @ 0000:4D1F
+_VoiceCarrierLevel PROC NEAR
         mov       al, byte ptr [di + 2fh]
         and       al, 3fh
         add       al, byte ptr [di + 20h]
@@ -2135,11 +2143,13 @@ L_4D4E:
         and       bl, 0c0h
         or        al, bl
         ret
-_VoiceLevelA0 ENDP
+_VoiceCarrierLevel ENDP
 
-; 0000:4D57: computes the voice register B0 value: level, added offsets and the shift at 32h/34h
-        PUBLIC  _VoiceLevelB0              ; @ 0000:4D57
-_VoiceLevelB0 PROC NEAR
+; 0000:4D57: the same for the modulator operator's level register (40h plus the operator offset), from record byte 2Eh: the bytes at 20h,
+; 00h and 30h are added only when byte 31h (the patch's connection bit, additive: both operators sound) is set, and the shift is by byte
+; 32h + 1. Result in AL
+        PUBLIC  _VoiceModulatorLevel              ; @ 0000:4D57
+_VoiceModulatorLevel PROC NEAR
         mov       al, byte ptr [di + 2eh]
         and       al, 3fh
         cmp       byte ptr [di + 31h], 0
@@ -2170,7 +2180,7 @@ L_4D8C:
         and       bl, 0c0h
         or        al, bl
         ret
-_VoiceLevelB0 ENDP
+_VoiceModulatorLevel ENDP
 
 ; 0000:4D95: zeroes the 40h-byte voice record from offset 3 and resets its delay and script pointers
         PUBLIC  _ClearVoice              ; @ 0000:4D95
@@ -2200,7 +2210,11 @@ _ClearVoice PROC NEAR
         ret
 _ClearVoice ENDP
 
-; 0000:4DC8: writes a voice patch: the ten AdLib registers built from the 3e45 table offset CL
+; 0000:4DC8: writes a voice's patch (instrument), the 11 bytes at si, to the AdLib: registers 20h, 23h (tremolo, vibrato, sustain hold, key scale rate
+; and multiplier of the two operators), C0h plus the voice (feedback and connection, whose bit 0 it keeps in record byte 31h), E0h, E3h
+; (waveforms), 40h (modulator level, through VoiceModulatorLevel, base byte kept at +2Eh), 43h (carrier level, base byte at +2Fh), 60h, 63h,
+; 80h, 83h (attack, decay, sustain, release). cl = the operator offset of the voice (gOperatorOffsets), di = its record. What each
+; register does is the OPL2's [H]; the oracle shows 40h to 55h taking 3Fh as full attenuation (WHITEPAPER 2.7, E177D.C:31)
         PUBLIC  _LoadVoicePatch              ; @ 0000:4DC8
 _LoadVoicePatch PROC NEAR
         mov       ah, 20h
@@ -2229,13 +2243,13 @@ _LoadVoicePatch PROC NEAR
         add       ah, cl
         lodsb
         mov       byte ptr [di + 2eh], al
-        call    _VoiceLevelB0
+        call    _VoiceModulatorLevel
         call    _AdlibWrite
         mov       ah, 43h
         add       ah, cl
         lodsb
         mov       byte ptr [di + 2fh], al
-        call    _VoiceLevelA0
+        call    _VoiceCarrierLevel
         call    _AdlibWrite
         mov       ah, 60h
         add       ah, cl
