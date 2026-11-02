@@ -824,8 +824,10 @@ extern void f0EF3_2A53(int a, int b, int c, int d, int e, void far *p); /*@ 0EF3
    otherwise, when RollToHit accepts the object and 0D1C:0BAB does not reject it, roll count d
    sides plus bonus and damage the object. Called by 0EF3:1B43, 0EF3:1EF3 and 0EF3:1FF9.
    DRAFT: the frame and register use match (`register int obj, dmg`, target spilled to [bp-2]),
-   but the original lays the RollToHit test out as `jne body; jmp done` where our build emits the
-   inverted `je skip; body` (`make match` differs at that jmp, +0x15). */
+   but our build merges the two `sprintf`+`SayAndBeep` message tails (the obj==-1 branch and the
+   outer else), making the function about 0x1D bytes shorter; that pulls the function end within
+   short-branch range, so the RollToHit test emits `je skip; body` where the original, with its
+   separate tails, emits `jne body; jmp done` (`make match` differs at that jmp, +0x15). */
 /*@ 0EF3:0E1B draft */ void CastMeleeEffect(int count, int sides, int bonus)
 {
     int target;
