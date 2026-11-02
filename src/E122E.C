@@ -5,8 +5,8 @@
    opcode consumed, or jump the pointer; the driver stops when a handler sets gA9EC. 147F is the big
    sub-dispatcher with its own in-segment jump table; the map folded the 122E:1194 play-sound handler
    into 1097 and the 122E:1A3B drain-item handler into 147F, and both are separate functions here.
-   Below L2: four drafts (ForceDoorAction 0325, ItemSlotAction 06D0, WriteObjectRunOp 0A16,
-   EvaluateScriptExpr 147F), each with its difference in re/symbols.toml. */
+   Below L2: two drafts (ItemSlotAction 06D0, EvaluateScriptExpr 147F), each with its difference
+   in re/symbols.toml. */
 
 /*@flags -ml -O -Z -v */
 
@@ -335,12 +335,13 @@ void RunMemberScript(int who, int mode);  /* forward: 1DA8 comes after its calle
 }
 /* 122E:0325: the force-door action. It only runs when the last click was in the member-slot
    rectangle or the driver is not in mode 0x40. It picks the strongest live member (highest
-   m0D + m0F, among those with m1B above 0), rolls 1d20 against gForceDoorRoll[its m0D], and on a
-   pass prints "%s forces the door!" and arms the member; on a miss or no candidate it prints the
-   party message. In every case it rewrites the clicked slot's gB894 byte (8 or 0x12) and the
-   opposite slot (slot ^ 2), then arms the member effect. Returns 0 only when the click missed and
-   the driver is in mode 0x40, else 1. */
-/*@ 122E:0325 draft */ int ForceDoorAction(int id, int slot)
+   m0D + m0F, among those with m1B above 0); with no candidate it prints "Nobody is able to force
+   the door." Otherwise it rolls 1d20: on a pass (roll <= gForceDoorRoll[its m0D]) it prints "The
+   party forces the door." and "%s forces the door!", rewrites the clicked slot's gB894 byte and
+   the opposite slot (slot ^ 2) to 8 when the byte was 0x1e else to 0x12, and arms the member; on a
+   miss it prints "The party tries to force the door and fails." All three outcomes share one
+   return 1. Returns 0 only when the click missed and the driver is in mode 0x40. */
+/*@ 122E:0325 */ int ForceDoorAction(int id, int slot)
 {
     register int who;
     register int i;
@@ -352,29 +353,28 @@ void RunMemberScript(int who, int mode);  /* forward: 1DA8 comes after its calle
                 continue;
             if (gChars[i].m1B <= 0)
                 continue;
-            if (who < 0)
-                who = i;
-            else if (gChars[who].m0D + gChars[who].m0F <= gChars[i].m0D + gChars[who].m0F)
+            if (who >= 0) {
+                if (gChars[who].m0D + gChars[who].m0F <= gChars[i].m0D + gChars[who].m0F)
+                    who = i;
+            } else
                 who = i;
         }
         if (who == -1) {
             sprintf(gFileNameBuf, "Nobody is able to force the door.\r");
-            return 1;
-        }
-        if (RollDice(1, 0x14, 0) > gForceDoorRoll[gChars[who].m0D]) {
-            DrawText("The party tries to force the door and fails.\r");
-            return 1;
-        }
-        DrawText("The party forces the door.\r");
-        sprintf(gFileNameBuf, "%s forces the door!\r", gChars[who].name);
-        if (gB894[id * 9 + slot] == 0x1e) {
-            gB894[id * 9 + slot] = 8;
-            gB894[id * 9 + (slot ^ 2)] = 8;
+        } else if (RollDice(1, 0x14, 0) <= gForceDoorRoll[gChars[who].m0D]) {
+            DrawText("The party forces the door.\r");
+            sprintf(gFileNameBuf, "%s forces the door!\r", gChars[who].name);
+            if (gB894[id * 9 + slot] == 0x1e) {
+                gB894[id * 9 + slot] = 8;
+                gB894[id * 9 + (slot ^ 2)] = 8;
+            } else {
+                gB894[id * 9 + slot] = 0x12;
+                gB894[id * 9 + (slot ^ 2)] = 0x12;
+            }
+            ArmMemberEffect(id);
         } else {
-            gB894[id * 9 + slot] = 0x12;
-            gB894[id * 9 + (slot ^ 2)] = 0x12;
+            DrawText("The party tries to force the door and fails.\r");
         }
-        ArmMemberEffect(id);
         return 1;
     }
     return 0;
@@ -474,7 +474,9 @@ void RunMemberScript(int who, int mode);  /* forward: 1DA8 comes after its calle
    the item onto the mouse (nothing shown) or, when an item is shown, inserts the shown item back
    into the slot unless its g181F size says it is too large. Returns 0 when the kind is not
    clickable, else 1. The outer `if` around the body (rather than an early `return 0`) is what puts
-   the single `xor ax,ax` at 122E:083F; the three inner branches each return 1. */
+   the single `xor ax,ax` at 122E:083F; the inner branches return 1 or fall through to that shared
+   return. Draft: the item==0 `return 1` chains to the shared return instead of the original's
+   per-statement stub (see its note in re/symbols.toml). */
 /*@ 122E:06D0 draft */ int ItemSlotAction(int id, int slot)
 {
     register int item;
@@ -1052,9 +1054,9 @@ done:
    far the script moved (jumping to gBuf8DCA + word when the popped value is 0). A sub-opcode byte
    in 0..0x7f is pushed as a literal; a negative one not in the table is a no-op. Case order follows
    the original's body layout, and the case labels are read from the jump table at 122E:19EF (the
-   item-type case is 0xFFE7 and the gB894 byte case is 0xFFE9, not 0xFFE8/0xFFEA). Draft: it does not
-   match yet; the remaining differences are the tail-merge class and the register allocation of the
-   three member-scan loops (see its note in re/symbols.toml). */
+   item-type case is 0xFFE7 and the gB894 byte case is 0xFFE9, not 0xFFE8/0xFFEA). Draft: it is 0x26
+   bytes short; the default case and the FFDD/FFDC loops match, and the one remaining difference is
+   the FFF5 argument order and tail (see its note in re/symbols.toml). */
 /*@ 122E:147F draft */ long EvaluateScriptExpr(char far *script)
 {
     int op;
@@ -1139,8 +1141,11 @@ done:
             break;
         case 0xFFDD:
             t1 = *script++;
-            lhs = 0;
-            for (i = 0; i < 6; i++) {
+            /* `lhs = i = 0` makes TCC zero AX once and store it to i and then to SI (the register
+               scratch lhs), as the original does at 122E:16CD; `lhs = 0; for (i = 0; ...)` instead
+               emits `xor si,si; mov word ptr [bp-10],0`. */
+            lhs = i = 0;
+            for (; i < 6; i++) {
                 if ((gChars[i].status & 1) && (gChars[i].m21 >> 1) == t1) {
                     lhs = 1;
                     break;
@@ -1150,8 +1155,8 @@ done:
             break;
         case 0xFFDC:
             t1 = *script++;
-            lhs = 0;
-            for (i = 0; i < 6; i++) {
+            lhs = i = 0;
+            for (; i < 6; i++) {
                 if ((gChars[i].status & 1) && (g1231[gChars[i].m20] & t1)) {
                     lhs = 1;
                     break;
@@ -1220,8 +1225,11 @@ done:
             gEvalStack[gEvalTop++] = !rhs;
             break;
         default:
-            if (op >= 0 && op < 0x80)
-                gEvalStack[gEvalTop++] = op;
+            /* the original reloads script[-1] (the byte the loop test consumed) into the register
+               scratch lhs, not op: `les bx,[bp+6]; mov al,es:[bx-1]; cwde; mov si,ax` at 122E:197A. */
+            lhs = script[-1];
+            if (lhs >= 0 && lhs < 0x80)
+                gEvalStack[gEvalTop++] = lhs;
             break;
         }
     }
