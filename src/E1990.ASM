@@ -1,10 +1,11 @@
 ; Unit at EOB.EXE 1990:0001 (710 bytes): DOS memory control blocks. Fifteen bytes of data (the
-; segment of our own MCB at +0E and five scratch words), then four functions. CheckMCB merges free
+; segment of our own MCB at +0E and five state words), then four functions. CheckMCB merges free
 ; blocks in the chain; CheckMemoryChain walks the chain, relocates the environment block and frees
-; the probe block; ReserveMemoryBelowVideo and TrimMemoryToVideo size the program's memory below
-; the video buffer. The last two run only for the Tandy graphics mode: StartupGame (07C8:0199)
-; calls CheckMemoryChain (07C8:01BB) and ReserveMemoryBelowVideo (07C8:01F2) for graphics choice 1,
-; and ShutdownGame (07C8:060D) calls TrimMemoryToVideo when ds:8102 is 1 (src/E07C8.C:343-344).
+; the one-paragraph block it allocated; ReserveMemoryBelowVideo and TrimMemoryToVideo size the
+; program's memory below the video buffer. The last two run only for the Tandy graphics mode:
+; StartupGame (07C8:0199) calls CheckMemoryChain (07C8:01BB) and ReserveMemoryBelowVideo (07C8:01F2)
+; for graphics choice 1, and ShutdownGame (07C8:060D) calls TrimMemoryToVideo when ds:8102 is 1
+; (src/E07C8.C:343-344).
 ; WHITEPAPER 2.6 reads argv digit 1 as Tandy and 3 as VGA, and START1's menu order is CGA, Tandy,
 ; EGA, VGA (WHITEPAPER line 105); the B800/A000 probe is in the code at 1990:0139 to 0150. The
 ; names are supported by the code and the callers, never placeholders.
@@ -24,8 +25,11 @@ gMemTopSeg    dw 0                      ; 1990:0002: segment where the program's
 gVideoTopSeg  dw 0                      ; 1990:0004: top of video memory. ReserveMemoryBelowVideo
                                         ;   probes the segment where the B800 marker aliases (or
                                         ;   A000, 1990:0139 to 0150), subtracts (n-1) x 32 KB
-                                        ;   (1990:01A8 to 1990:01B6), and raises it to memtop plus
-                                        ;   the moved footprint when that fits (1990:0202 to 0207).
+                                        ;   (1990:01A8 to 01B6), then lowers it to memtop plus the
+                                        ;   moved footprint when memtop is at or below that value
+                                        ;   less the footprint (1990:01FE to 0207: the add is
+                                        ;   skipped when memtop is above). It is lowered or left
+                                        ;   as it was, never raised.
 gMovedSeg     dw 0                      ; 1990:0006: data segment DOS gave the relocated copy of the
                                         ;   environment block (1990:00E0). ReserveMemoryBelowVideo
                                         ;   copies that copy to its final place and frees it
@@ -34,12 +38,16 @@ gMovedParas   dw 0                      ; 1990:0008: the environment block's siz
                                         ;   paragraph (its footprint): CheckMemoryChain loads
                                         ;   es:[3], adds 1 and stores it (1990:00D1); the
                                         ;   allocation then requests the size without the +1
-                                        ;   (1990:00D6). ReserveMemoryBelowVideo uses the footprint
-                                        ;   (1990:01F9, 1990:0243).
+                                        ;   (1990:00D6). ReserveMemoryBelowVideo reads it at
+                                        ;   1990:01F9, 1990:0202 and 1990:0212; its copy count is
+                                        ;   the copy's own MCB size plus one (1990:023F to 0243),
+                                        ;   which equals the footprint.
         db      0,0                     ; 1990:000A: unused (no reader in the unit)
 gNewMemTopSeg dw 0                      ; 1990:000C: new top of memory stored into PSP:0002
                                         ;   (1990:0264), when a block was moved
-gMcbSeg dw      0                       ; 1990:000E: MCB of our block, set by 1990:0071
+gMcbSeg dw      0                       ; 1990:000E: MCB of the one-paragraph block that
+                                        ;   CheckMemoryChain allocates (1990:0079 to 007E) and
+                                        ;   frees (1990:0120 to 0129); set at 1990:0088
 
 ; 1990:0010: walk the MCB chain from gMcbSeg, merging free blocks; AX = 0 if it ends with a
 ; proper 'Z' block, 1 if the chain is broken
@@ -83,9 +91,11 @@ CheckMCB ENDP
 
 ; 1990:0071: allocate a one-paragraph block to reach the MCB chain, walk it, and when the current
 ; block is the environment block (the MCB of the segment at PSP:002C) move it. The copy is
-; requested with the same size (1990:00D6 to 1990:00D9), DOS chooses the block it comes from (first
-; fit), PSP:002C is pointed at the copy (1990:00DD), the bytes are copied (1990:00EC to 1990:00FD)
-; and the old block is marked free by zeroing its owner (1990:0101). Then the probe block is freed.
+; requested with the same size (1990:00D6 to 1990:00D9) and DOS chooses where the copy goes (its
+; default allocation strategy, which this unit leaves unchanged: there is no INT 21h AH=58h),
+; PSP:002C is pointed at the copy (1990:00DD), the bytes are copied (1990:00EC to 1990:00FD)
+; and the old block is marked free by zeroing its owner (1990:0101). Then the one-paragraph block is
+; freed.
 ; The last step calls CheckMCB (1990:0110), which merges the free blocks as a side effect, so AX is
 ; CheckMCB's result: 0 when the chain ends in a proper 'Z' block, 1 when a block type is wrong or
 ; an allocation fails. The caller StartupGame tests it at 07C8:01C0 (src/E07C8.C:181) and prints
@@ -190,9 +200,12 @@ CheckMemoryChain ENDP
 ; 11 paragraphs (1990:01A8 to 1990:01B4), so it reserves (n-1) x 32 KB below the probed top. The
 ; only caller passes 3 (src/E07C8.C:188, lcall at 07C8:01F2), a 64 KB reserve. Then it shrinks the
 ; last block of the chain, the one whose type is 'Z' (1990:01DE to 1990:01E4, store at
-; 1990:021D; the owner is not checked), points PSP:002C at the moved block's MCB (1990:025B),
-; moves any block CheckMemoryChain had relocated and frees it, and stores the new top into
-; PSP:0002 (1990:0264). Result is the top segment found (globals gVideoTopSeg, gMemTopSeg).
+; 1990:021D; the owner is not checked), points PSP:002C at the moved block's data segment (its MCB
+; plus one, 1990:0256 to 025B), moves any block CheckMemoryChain had relocated and frees it, calls
+; CheckMCB (1990:0271) to merge the freed block into the chain, and stores the new top into
+; PSP:0002 (1990:0264). The result is gVideoTopSeg after the step at 1990:0202 to 0207 (loaded at
+; 1990:0274), not gMemTopSeg; the caller uses it as memtop (src/E07C8.C:188, slots 2 and 3 at
+; E07C8.C:220). The CheckMCB result is overwritten at 1990:0274.
         PUBLIC  ReserveMemoryBelowVideo ; @ 1990:0133
 ReserveMemoryBelowVideo PROC FAR
         push    bp
@@ -255,10 +268,11 @@ probeEnd:
         mov     es,ax
         cmp     byte ptr es:[0],4Dh
         je      chainHead
-; QUIRK 1990:01CE: when the probe block's type is not 'M' the jump to retTop leaves the probe
-;   segment pushed, so the exit pops one word out (the far return takes the wrong words) and the
-;   probe block is not freed; reached only when the probe block is the last block of the chain,
-;   which is not checked here.
+; QUIRK 1990:01CE: the jump to retTop is taken when the one-paragraph block's MCB type is not 'M'
+;   (1990:01C6 to 01CC); it leaves that block's segment pushed, so the exit pops one word out (the
+;   far return takes the wrong words) and the block is not freed. In a valid chain a block that is
+;   not 'M' is the 'Z' block, so the path is taken when the one-paragraph block is the last one; the
+;   code does not test for a corrupt chain.
         jmp     retTop
 chainHead:
         push    ax
@@ -334,8 +348,8 @@ retTop:
         ret
 ReserveMemoryBelowVideo ENDP
 
-; 1990:027D: shrink the last MCB of the chain down to gMemTopSeg, then free the probe block. The
-; value is not the video top: ReserveMemoryBelowVideo stored the end of DOS memory there
+; 1990:027D: shrink the last MCB of the chain down to gMemTopSeg, then free the one-paragraph
+; block. The value is not the video top: ReserveMemoryBelowVideo stored the end of DOS memory there
 ; (1990:01F0), and StartupGame overwrote it with atol(gEnvPtr->number) (07C8:0212) before the exit
 ; path calls this function, so Trim uses the stored number, not a value Reserve left. Called from
 ; ShutdownGame at exit for the Tandy mode, when ds:8102 is 1 (07C8:060D, src/E07C8.C:343-344).
@@ -354,10 +368,11 @@ TrimMemoryToVideo PROC FAR
         mov     es,ax
         cmp     byte ptr es:[0],4Dh
         je      trimLast
-; QUIRK 1990:0296: when the probe block's type is not 'M' the jump to trimDone leaves the probe
-;   segment pushed, so the exit pops one word out (the far return takes the wrong words) and the
-;   probe block is not freed; reached only when the probe block is the last block of the chain,
-;   which is not checked here.
+; QUIRK 1990:0296: the jump to trimDone is taken when the one-paragraph block's MCB type is not 'M'
+;   (1990:0294 to 0296); it leaves that block's segment pushed, so the exit pops one word out (the
+;   far return takes the wrong words) and the block is not freed. In a valid chain a block that is
+;   not 'M' is the 'Z' block, so the path is taken when the one-paragraph block is the last one; the
+;   code does not test for a corrupt chain.
         jmp     trimDone
 trimLast:
         push    ax
