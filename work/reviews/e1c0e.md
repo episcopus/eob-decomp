@@ -38,6 +38,26 @@ Round 2 items judged fixed right, ticks stay: the RetryFile lead (`hand name (up
 - [x] should src/E1C0E.C:949 (LoadFileSlot, the 0xE path): the comment says only a failed open or read frees the copy, but the size-mismatch path (`FatalError(0xe, ...)` then `return 0`) returns without freeing. That is consistent only if FatalError does not return (1C0E:00AA shuts down through ShutdownGame at 1C0E:00D1 onward). Check that ShutdownGame does not return and say so in the comment, or name the path. FIXED (dec-deepseek-2): the comment now names the size-mismatch path (FatalError(0xe), 1C0E:15E2) and says it returns 0 without freeing, consistent because FatalError never returns: it shuts the game down through ShutdownGame, whose body ends in exit(0) (src/E07C8.C:478).
 Notes (other units' entries in the same diff, not judged here): re/globals.toml gGraphicsChoice (ds:8102) now cites the dispatch at 17A6:03E7; E17A6.ASM:253 to 254 name only 0 (CGA) and 1 (Tandy) and the last branch for 3 and 4, so the "2 EGA" in that why comes from elsewhere and its owner should check it. gStatusLine's DrawNode (16A5:07C3) is E16A5.C:554, which is right. gPartyCell's new text and the intro/ entries belong to their units' reviews. gClickX and gClickY only gained a blank line.
 
+### Round 3 resolution (dec-deepseek-2, src/E1C0E.C commit 2f8ddde)
+
+Comments and registry whys only, no code byte changed: `make match FILE=src/E1C0E.C` 31 of 31 (6099
+bytes), `make readability UNIT=e1c0e` 0 findings. All 31 functions were already at L2.
+
+- Must-fix 1 (RetryFile mode list, src/E1C0E.C:147 to :151): the list now cites the callers by
+  address, FileOpen (1C0E:00DB) for modes 0, 1 and 2 (its ResetFile loop, its bad-mode branch, its
+  CheckFile loop and its open retry loop), FindLoadedFile (1C0E:11D3) for mode 0xA and
+  FreeAllCachedFiles (1C0E:0EE7) for 0xB; BuildFileCache (1C0E:0F6E) stays the note that it calls no
+  RetryFile. The stale src/E1C0E.C line numbers are gone.
+- Must-fix 2 (FreeAllCachedFiles QUIRK, src/E1C0E.C:689 to :691): now "strupr writes back only the
+  bytes that are lowercase letters (the store at 0000:687F, reached only for a to z)", with the
+  backslash claim kept.
+- Should (registry cites): re/globals.toml and re/renames.toml gSaveRectSize, gFatalHandler and
+  gRetryHandler whys now cite src/E1C0E.C:554, :177/:178 and :166.
+- Should (LoadFileSlot 0xE path, src/E1C0E.C:901 to :903): the comment names the size-mismatch path
+  (FatalError(0xe), 1C0E:15E2) and says it returns 0 without freeing, consistent because FatalError
+  never returns: it shuts the game down through ShutdownGame, whose body ends in exit(0)
+  (src/E07C8.C:478).
+
 ### Round 2: six must-fix (four reopened from round 1), one should, notes
 
 Round 2 judges the round 1 must-fix items against their fixed text, and the changed lines of the diff above. Checked: `make match FILE=src/E1C0E.C` 31 of 31 (6099 bytes); `make readability UNIT=e1c0e` 0 findings; the bytes at 1C0E:0060 to 0088 (the RetryFile loop), 1041, 1044, 1049, 1508, 1520 and 1525, and 1629 to 163D (`tools/re/disasm.py eob/EOB.EXE 1C0E`); the RetryFile call sites (src/E1C0E.C:205, :219, :225, :249, :702, :793). The round 1 fixes that hold and keep their ticks: the header table (203 records, ten handle slots), FileOpen's mode 3 and mode 1 text and O_BINARY flags, CheckFile's 0xF, BuildFileCache's addresses 1041, 1044 and 1049, ExpandTextWindow's units (src/E1C0E.C:853 to 856), SeekFile's three whence cases (src/E1C0E.C:423 to 440), DisplayFileError's bufSize rule, and the FindLoadedFile record-0 quirk. No escalation: the matcher and the spec are not in question.
