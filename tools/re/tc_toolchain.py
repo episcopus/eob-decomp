@@ -39,7 +39,7 @@ def disk_files(archive: Path) -> dict[str, bytes]:
     with tempfile.TemporaryDirectory() as tmp:
         with py7zr.SevenZipFile(archive) as z:
             z.extractall(tmp)
-        for img in sorted(Path(tmp).rglob("*.img")):
+        for img in sorted(p for p in Path(tmp).rglob("*") if p.suffix.lower() == ".img"):
             for f in Fat12(img.read_bytes()).files():
                 out[f["path"].upper()] = f["data"]
     return out
@@ -80,7 +80,24 @@ def install(force: bool) -> int:
             continue
         shutil.rmtree(target, ignore_errors=True)
         files = disk_files(archive)
-        for zipname, sub in r["zips"].items():
+        if r.get("plain"):
+            # files stored as they are on the disks (Turbo C 2, TASM 1): sorted by kind
+            for name, data in files.items():
+                ext = name.rsplit(".", 1)[-1] if "." in name else ""
+                sub = {"EXE": "BIN", "COM": "BIN", "LIB": "LIB", "OBJ": "LIB", "H": "INCLUDE"}.get(ext)
+                if sub:
+                    dest = target / sub / name
+                    dest.parent.mkdir(parents=True, exist_ok=True)
+                    dest.write_bytes(data)
+        for sub, parts in r.get("split_zips", {}).items():
+            # a zip split across disks (Borland C++ 2.0: CMDLINE.CA1 + CMDLINE.CA2 hold BCC.EXE); each
+            # part starts with a 4-byte header of Borland's installer (the part number)
+            if all(p in files for p in parts):
+                unzip_all(b"".join(files[p][4:] for p in parts), target / sub)
+            else:
+                print("MISSING %s: %s on the disks" % (rel, "+".join(parts)))
+                bad += 1
+        for zipname, sub in r.get("zips", {}).items():
             if zipname not in files:
                 print("MISSING %s: %s on the disks" % (rel, zipname))
                 bad += 1
