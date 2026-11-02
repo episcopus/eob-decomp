@@ -34,6 +34,13 @@ extern struct Obj28 gObjs[]; /*@ ds:8A82 */
 extern void LoadLevelState(int action); /*@ ovl3:1147 */
 extern long SeekFile(int index, long offset, int whence); /*@ 1C0E:06E5 */
 extern void far *gSegEFC2; /*@ ds:EFC2 */
+extern void far *f1BA8_0072(void far *p); /*@ 1BA8:0072 */
+extern long FileWrite(int index, char far *buf, unsigned long len); /*@ 1C0E:0578 */
+extern int CompressLcw(char far *src, char far *dst, unsigned len); /*@ 19FC:0008 */
+extern void (far *gDrawText)(char far *text, int a, int b, int c, int d); /*@ ds:80CA */
+extern char gFileNameBuf[]; /*@ ds:FE6E */
+extern void WaitKeyEvent(void); /*@ 1AAD:05D3 */
+extern void ShutdownGame(void); /*@ 07C8:058A */
 extern long gFB5E[]; /*@ ds:FB5E */
 
 struct Triple6 {            /* six bytes, the record InitGameTables clears */
@@ -323,7 +330,33 @@ done:
     }
 }
 /*@ ovl3:0A7C stub */ void Ovl3_0A7C(void) {}
-/*@ ovl3:0FD1 stub */ void Ovl3_0FD1(void) {}
+/* ovl3:0FD1: packs the level state into `buf`. It copies the four gB894 bytes of each of the 0x400
+   records into gBufDCFC, compresses gBufDCFC (0x1000 bytes) into `buf` with CompressLcw and, when
+   the stream is longer than 0x4B0, prints "Map compression failure: size of map = %d" and shuts the
+   game down. It finishes by Unpack0ing gObjs into `buf`+0x4B0. Called by ovl3:11AF. */
+/*@ ovl3:0FD1 */ void PackLevelState(void far *buf)
+{
+    char far *dst;
+    char far *src;
+    int i;
+    int j;
+    int len;
+
+    dst = (char far *)buf + 0x4b0;
+    src = (char far *)gBufDCFC;
+    for (i = 0; i < 0x400; i++)
+        for (j = 0; j < 4; j++)
+            *src++ = gB894[i * 9 + j];
+    len = CompressLcw((char far *)gBufDCFC, (char far *)buf, 0x1000);
+    if (len > 0x4b0) {
+        g8115 = 0;
+        sprintf(gFileNameBuf, "Map compression failure: size of map = %d", len);
+        gDrawText(gFileNameBuf, 0, 0, 0xf, 0);
+        WaitKeyEvent();
+        ShutdownGame();
+    }
+    Unpack0(gObjs, dst, 0x348L);
+}
 /* ovl3:109D: unpacks a level state. `buf` is the 0x7F8-byte level state ovl3:1147 read. It
    Unpack4s 0x1000 bytes of `buf` into gBufDCFC and Unpack0s the 0x348 bytes at `buf`+0x4B0 into
    gObjs, copies the four gBufDCFC bytes of each of the 0x400 gB894 records into its +0 field, then
@@ -358,8 +391,23 @@ done:
     FileClose(handle);
     UnpackLevelState(gSegEFC2);
 }
-/*@ ovl3:11AF stub */ void Ovl3_11AF(void) {}
-/*@ ovl3:123D stub */ void Ovl3_123D(void) {}
+/* ovl3:11AF: saves the level state `level` to LEVELS.TMP: normalizes gSegEFC2+0xC800 into a far
+   pointer, hands it to ovl3:0FD1, opens LEVELS.TMP for writing (mode 3), seeks to
+   (level-1)*0x7F8, writes 0x7F8 bytes from the buffer, closes it and sets bit level-1 of gFBD0.
+   Called by overlay 0 (122E:1AAB). */
+/*@ ovl3:11AF */ void SaveLevelState(int level)
+{
+    char far *state;
+    int handle;
+
+    state = (char far *)f1BA8_0072((char far *)gSegEFC2 + 0xc800);
+    PackLevelState((void far *)state);
+    handle = FileOpen("LEVELS.TMP", 3);
+    SeekFile(handle, (long)(level - 1) * 0x7f8, 0);
+    FileWrite(handle, state, 0x7f8L);
+    FileClose(handle);
+    gFBD0 |= 1 << (level - 1);
+}/*@ ovl3:123D stub */ void Ovl3_123D(void) {}
 /*@ ovl3:12F1 stub */ void Ovl3_12F1(void) {}
 /*@ ovl3:1368 stub */ void Ovl3_1368(void) {}
 /*@ ovl3:15B9 stub */ void Ovl3_15B9(void) {}
