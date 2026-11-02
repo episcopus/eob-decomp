@@ -1,8 +1,12 @@
-/* Unit at overlay 0 of EOB.EXE (10873 bytes, 35 functions): the game's character panel and its
-   drawing helpers. It builds the 17-cell icon table (ovl0:0000), draws a character's panel and
-   equipment (ovl0:065B, 135D), the two option-list screens (ovl0:207A, 2238), the item/text field
-   editor (ovl0:23EC) and the status/rest screens, and loads the overlay's screens (ovl0:2547,
-   28F9). Placeholder names where no evidence. */
+/* Unit at overlay 0 of EOB.EXE (10873 bytes, 35 functions): the character panel and its drawing
+   helpers. It builds and frees the 17-cell icon table (ovl0:0000, 00AF), draws panel icons, rows and
+   characters (ovl0:0128, 037A, 0504, 05BA, 065B, 11BA, 1224), builds the panel row lists (ovl0:03B2,
+   042F), shows the two report lines (ovl0:1071, 10F6) and the status/rest screens, and runs the
+   character panel loop RunCharacterPanel (ovl0:28F9). Character creation lives here too: PickOption
+   (ovl0:1F66) picks the race, PickClass (ovl0:207A) the class, PickAlignment (ovl0:2238) the
+   alignment, RollCharacterStats (ovl0:1BF2) rolls the abilities and hit points, EditStatField
+   (ovl0:135D) edits one, PickPartySlot (ovl0:0A5E) places the member, and CreateCharacter
+   (ovl0:23EC) drives the sequence. Placeholder names where no evidence. */
 
 /*@flags -ml -O -Z -v */
 
@@ -94,6 +98,19 @@ extern struct ItemSlot g60D5[]; /*@ ds:60D5 */ /* the per-class item/slot table 
 extern char g6101[]; /*@ ds:6101 */ /* the per-class four-entry item table ovl0:26C6 walks (Purpose unknown) */
 extern int GetClassWord(char m15); /*@ 0A72:019D */
 extern int RollDamage(char who, char level, char countA, char countB, char countC); /*@ 0A72:01AE */
+extern int MaxDamage(char who, char level, char countA, char countB, char countC); /*@ 0A72:02B3 */
+extern int MinDamage(char who, char level, char countA, char countB, char countC); /*@ 0A72:03A4 */
+extern int gDCA4; /*@ ds:DCA4 */ /* the max damage ovl0:135D recomputes (src/E0DE8.C) */
+extern int gDD10; /*@ ds:DD10 */ /* the min damage ovl0:135D recomputes (src/E08E6.C) */
+extern struct Node far *FindNode(struct Node far *head, unsigned key); /*@ 1658:01A2 */
+extern char gStr6227[]; /*@ ds:6227 */ /* a value format ovl0:135D uses (Purpose unknown) */
+extern char gStr622A[]; /*@ ds:622A */ /* a value format ovl0:135D uses (Purpose unknown) */
+extern char gStr622D[]; /*@ ds:622D */ /* a value format ovl0:135D uses (Purpose unknown) */
+extern char gStr6230[]; /*@ ds:6230 */ /* a value format ovl0:135D uses (Purpose unknown) */
+extern char gStr6233[]; /*@ ds:6233 */ /* a value format ovl0:135D uses (Purpose unknown) */
+extern char gStr6236[]; /*@ ds:6236 */ /* a value format ovl0:135D uses (Purpose unknown) */
+extern char gStr6239[]; /*@ ds:6239 */ /* a value format ovl0:135D uses (Purpose unknown) */
+extern char gStr623C[]; /*@ ds:623C */ /* a value format ovl0:135D uses (Purpose unknown) */
 extern int CopyItemToFreeSlot(int n); /*@ 0BD2:089E */
 extern void ComputeArmourClass(int who); /*@ 0DE8:0D5E */
 extern signed char g1231[]; /*@ ds:1231 */ /* byte table indexed by gChars[].m20 (src/E0BD2.C) */
@@ -838,10 +855,177 @@ int PickAlignment(int classIndex); /* ovl0:2238, defined below */
     ShowPointerZone();
     gFC85 = gFC84;
 }
-/*@ ovl0:135D stub */ int Ovl0_135D(int i, char far *field, char far *other) { return 0; }
+/* ovl0:135D: the field editor of the character editor. `index` is the field (0..6), `value` its
+   byte and `percent` the strength percentile (only read for index 0). It draws the panel page
+   (ovl0:065B mode 3), finds the list node index+1 and its box, writes the field into gFileNameBuf
+   and draws it, then loops: each pass reads a key (ovl0:1224 animates first). The decrement keys
+   0xc/0x5c/0x69/0x8009 blink icon 0xb and lower the value, the increment keys 0xd/0x66/0x6a/0x8008
+   blink icon 0xa and raise it, 0x60/0x62 step the returned field index (mod 7), and 0x61/0x6e/0x800a
+   confirm (icon 9). A changed value is clamped (index 0 to gOutDC98[0] & 0xff and its percentile
+   reset, later indexes to gOutDD04/gOutDC98), stored, and index 4/3/6 refresh the derived hit
+   points (m1B/m1C from gDCA4/gDD10) or m1D (GetClassWord + 10). A key that changed nothing but set
+   the done flag redraws the value and ends. Returns the field index to move to (-2 for the confirm
+   key). Called by ovl0:1ADD. Purpose unknown: the per-index special cases and formats. */
+/*@ ovl0:135D */ int EditStatField(register int index, char far *value, char far *percent)
+{
+    int key;
+    int amount;
+    int count;
+    int flag;
+    struct Node far *list;
+    struct Node far *node;
+    register int move;
+
+    list = BuildRowNodeList(0x1f, 0xa);
+    node = FindNode(list, index + 1);
+    DrawCharPanel(gDCB0, 3);
+    FlushKeyBuffer();
+    if (index == 0)
+        sprintf(gFileNameBuf, gStr6227, FormatStrengthPercent(*value, *percent));
+    else
+        sprintf(gFileNameBuf, gStr622A, *value);
+    LockHidePointer();
+    ClipRect(((node->x + 0x20) >> 3) - 0x12, node->y - 0x40, (node->x + 0x20) >> 3, node->y,
+        5, node->height, 2, 0);
+    DrawShadowText(gFileNameBuf, node->x + 0x20, node->y, 6, 0);
+    LockShowPointer();
+    flag = 0;
+    count = *percent;
+    move = index;
+    if (index == 6) {
+        gDCA4 = MaxDamage(gChars[gDCB0].m20, gChars[gDCB0].m17, gChars[gDCB0].m24[0],
+            gChars[gDCB0].m24[1], gChars[gDCB0].m24[2]);
+        gDD10 = MinDamage(gChars[gDCB0].m20, gChars[gDCB0].m17, gChars[gDCB0].m24[0],
+            gChars[gDCB0].m24[1], gChars[gDCB0].m24[2]);
+    }
+    while (!flag) {
+        amount = *value;
+        Ovl0_1224();
+        key = WaitKeyOrPause(list);
+        switch (key) {
+        case 0x60:
+            move--;
+            move %= 7;
+            flag = 1;
+            break;
+        case 0x62:
+            move++;
+            move %= 7;
+            flag = 1;
+            break;
+        case 0xd:
+        case 0x66:
+        case 0x6a:
+        case 0x8008:
+            FlashPanelIcon(0xa);
+            amount++;
+            break;
+        case 0xc:
+        case 0x5c:
+        case 0x69:
+        case 0x8009:
+            FlashPanelIcon(0xb);
+            amount--;
+            break;
+        case 0x61:
+        case 0x6e:
+        case 0x800a:
+            FlashPanelIcon(9);
+            flag = 1;
+            key = -1;
+            break;
+        default:
+            if (key < 0) {
+                key &= 0xff;
+                key--;
+                if (key != index) {
+                    move = key;
+                    flag = 1;
+                }
+            }
+            break;
+        }
+        if (amount != *value) {
+            int old;
+            if (index == 0) {
+                while (amount > 0x12) {
+                    amount--;
+                    count++;
+                }
+                while (count > 0 && amount < 0x12) {
+                    amount++;
+                    count--;
+                }
+            }
+            if (index == 0) {
+                amount = gOutDD04[index] < amount ? amount : gOutDD04[index];
+                amount = (gOutDC98[index] & 0xff) > amount ? amount : gOutDC98[index] & 0xff;
+                *value = amount;
+                if (amount < 0x12 || gOutDC98[index] < 0x13)
+                    count = 0;
+                if (count > 0x64)
+                    count = 0x64;
+                *percent = count;
+            } else {
+                amount = gOutDD04[index] < amount ? amount : gOutDD04[index];
+                amount = gOutDC98[index] > amount ? amount : gOutDC98[index];
+                *value = amount;
+            }
+            if (index == 6)
+                gChars[gDCB0].m1C = amount;
+            if (index == 0)
+                sprintf(gFileNameBuf, gStr622D, FormatStrengthPercent(*value, *percent));
+            else
+                sprintf(gFileNameBuf, gStr6230, *value);
+            LockHidePointer();
+            ClipRect(((node->x + 0x20) >> 3) - 0x12, node->y - 0x40, (node->x + 0x20) >> 3,
+                node->y, 5, node->height, 2, 0);
+            DrawShadowText(gFileNameBuf, node->x + 0x20, node->y, 6, 0);
+            if (index == 4) {
+                old = gChars[gDCB0].m1B;
+                gDCA4 = MaxDamage(gChars[gDCB0].m20, gChars[gDCB0].m17, gChars[gDCB0].m24[0],
+                    gChars[gDCB0].m24[1], gChars[gDCB0].m24[2]);
+                gDD10 = MinDamage(gChars[gDCB0].m20, gChars[gDCB0].m17, gChars[gDCB0].m24[0],
+                    gChars[gDCB0].m24[1], gChars[gDCB0].m24[2]);
+                gChars[gDCB0].m1B = gChars[gDCB0].m1C
+                    = gChars[gDCB0].m1B < gDD10 ? gDD10 : gChars[gDCB0].m1B;
+                gChars[gDCB0].m1B = gChars[gDCB0].m1C
+                    = gChars[gDCB0].m1B > gDCA4 ? gDCA4 : gChars[gDCB0].m1B;
+                if (gChars[gDCB0].m1B != old) {
+                    sprintf(gFileNameBuf, gStr6233, gChars[gDCB0].m1B);
+                    ClipRect(0xf, 0x48, 0x21, 0x88, 5, 8, 2, 0);
+                    DrawShadowText(gFileNameBuf, 0x108, 0x88, 0xf, 0);
+                }
+            }
+            if (index == 3) {
+                old = gChars[gDCB0].m1D;
+                gChars[gDCB0].m1D = GetClassWord(amount) + 0xa;
+                if (gChars[gDCB0].m1D != old) {
+                    sprintf(gFileNameBuf, gStr6236, gChars[gDCB0].m1D);
+                    ClipRect(0xf, 0x40, 0x21, 0x80, 5, 8, 2, 0);
+                    DrawShadowText(gFileNameBuf, 0x108, 0x80, 0xf, 0);
+                }
+            }
+            LockShowPointer();
+            flag = 0;
+        } else if (flag) {
+            if (key == -1)
+                move = 0xfffe;
+            if (index == 0)
+                sprintf(gFileNameBuf, gStr6239, FormatStrengthPercent(*value, *percent));
+            else
+                sprintf(gFileNameBuf, gStr623C, *value);
+            g8115 = 0;
+            LockHidePointer();
+            gDrawText(gFileNameBuf, (node->x + 0x20) << 3, node->y, 0xf, 0);
+            LockShowPointer();
+        }
+    }
+    return move;
+}
 /* ovl0:1ADD: Purpose unknown: edits one of the seven ability/stat fields of the current character. It draws the page
    through ovl0:065B(mode 3) and loops over the field index i (0..6); for each it opens the field with
-   Ovl0_135D(i, &gChars[gDCB0].m? , second) and redraws the page. Field 0 passes both m0D and m0F;
+   EditStatField(i, &gChars[gDCB0].m? , second) and redraws the page. Field 0 passes both m0D and m0F;
    fields 1..6 pass m11, m13, m15, m17, m19 and m1B with no second field. A return of -2 leaves, a
    negative return wraps i to 6, then i is taken modulo 7. Finally it redraws the page through
    ovl0:065B(mode 1). Called by ovl0:0DDC and ovl0:0EE5. */
@@ -855,25 +1039,25 @@ int PickAlignment(int classIndex); /* ovl0:2238, defined below */
     while (i >= 0 && i <= 6) {
         switch (i) {
         case 0:
-            i = Ovl0_135D(i, &gChars[gDCB0].m0D, &gChars[gDCB0].m0F);
+            i = EditStatField(i, &gChars[gDCB0].m0D, &gChars[gDCB0].m0F);
             break;
         case 1:
-            i = Ovl0_135D(i, &gChars[gDCB0].m11, (char far *)0);
+            i = EditStatField(i, &gChars[gDCB0].m11, (char far *)0);
             break;
         case 2:
-            i = Ovl0_135D(i, &gChars[gDCB0].m13, (char far *)0);
+            i = EditStatField(i, &gChars[gDCB0].m13, (char far *)0);
             break;
         case 3:
-            i = Ovl0_135D(i, &gChars[gDCB0].m15, (char far *)0);
+            i = EditStatField(i, &gChars[gDCB0].m15, (char far *)0);
             break;
         case 4:
-            i = Ovl0_135D(i, &gChars[gDCB0].m17, (char far *)0);
+            i = EditStatField(i, &gChars[gDCB0].m17, (char far *)0);
             break;
         case 5:
-            i = Ovl0_135D(i, &gChars[gDCB0].m19, (char far *)0);
+            i = EditStatField(i, &gChars[gDCB0].m19, (char far *)0);
             break;
         case 6:
-            i = Ovl0_135D(i, &gChars[gDCB0].m1B, (char far *)0);
+            i = EditStatField(i, &gChars[gDCB0].m1B, (char far *)0);
             break;
         }
         DrawCharPanel(gDCB0, 3);

@@ -7296,6 +7296,9 @@ unit = "eov0"
 addr = "ovl0:135D"
 size = 1920
 evidence = ["ovl", "near", "frame"]
+name = "EditStatField"
+level = "L2"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "eov0_1add"
