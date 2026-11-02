@@ -181,10 +181,11 @@ _InitOverlayManager ENDP
 
 ; 1E8B:0134: swap and (re)open the overlay file. It saves the current INT [20B5:00A1] vector,
 ; installs the previously saved vector whose offset is at 20B5:0002 and segment at 20B5:0004, stashes
-; the one just read for the next swap, then closes the file handle at 20B5:00B8 and reopens the file
-; named in the 20B5:001C buffer (or opens it when no handle is open). This is the pair to the shutdown
-; path of 0185. Evidence: INT 21h/35h and /25h, the 20B5:00A1 interrupt number, the [0002]/[0004]
-; vector store and the 3Eh/3Dh file calls.
+; the one just read for the next swap, then handles the file handle at 20B5:00B8 on one of two paths:
+; when a handle is open it closes it and clears the word at 20B5:00B8 (no reopen on this path); when
+; none is open it opens the file named in the 20B5:001C buffer and stores the new handle at 20B5:00B8.
+; This is the pair to the shutdown path of 0185. Evidence: INT 21h/35h and /25h, the 20B5:00A1
+; interrupt number, the [0002]/[0004] vector store and the 3Eh/3Dh file calls.
         PUBLIC  _SwapAndReopenOverlayFile              ; @ 1E8B:0134
 _SwapAndReopenOverlayFile PROC FAR
         push    bp
@@ -224,9 +225,10 @@ swap_out:
 _SwapAndReopenOverlayFile ENDP
 
 ; 1E8B:0185: shut the overlay manager down. If the overlay file handle at 20B5:00B8 is open, close it
-; and restore the swapped interrupt vector through 0134, then run the two cleanup callbacks kept at
-; 20B5:0014 and 20B5:0012 in the manager's own data segment. Evidence: the [0xB8] handle test, the
-; far call to 0134 and the two `push cs; call [..]` pointers.
+; and restore the swapped interrupt vector through 0134, then call the two near pointers at 20B5:0014
+; and 20B5:0012 in the manager's own data segment. Purpose unknown: what those two pointers do; no
+; function in this unit writes 20B5:0012 or 20B5:0014 (the writer is not in this unit). Evidence: the
+; [0xB8] handle test, the far call to 0134 and the two `push cs; call [..]` pointers.
         PUBLIC  _ShutdownOverlayManager  ; @ 1E8B:0185
 _ShutdownOverlayManager PROC FAR
         push    bp
@@ -261,14 +263,17 @@ _OpenNamedOverlayFile PROC NEAR
         ret
 _OpenNamedOverlayFile ENDP
 
-; 1E8B:01B3: recover the program's own file name and open it. It walks the environment in the PSP
-; (DGROUP:0075 gives the PSP segment), skips to the end of the environment, reads and discards the
-; 16-bit count that follows the environment block (DOS 3 layout), and copies the program path after it
-; to 20B5:001C up to the last backslash (the leaf name), then calls 0250. 0250 still copies from the
-; caller's argument [bp+6] when that is not null, so this own-file name is used only when the caller
-; passes null (the boot path does: 086F pushes 0,0). Returns carry set on a DOS below 3 or a failed
-; open. Evidence: INT 21h/30h and the DGROUP:0075 PSP load, the two-NUL scan, the discarded count word
-; and the 0250 call.
+; 1E8B:01B3: recover the program's own file name and open it. It walks the environment block (the word
+; DGROUP:0075 holds the environment segment, `_envseg` in C0.ASM; build/re/rtl/tc100/l/r.map has
+; __envseg at DGROUP:0075), skips to the end of the environment, reads and discards the 16-bit count
+; that follows the environment block (DOS 3 layout), and copies the whole program path after it into
+; the 20B5:001C buffer. A backslash only sets BX to the offset just past the last one; nothing is
+; trimmed, the whole path is copied. It then calls 0250 with DI = that offset: when the caller's
+; argument [bp+6] is null (the boot path does: 086F pushes 0,0) 0250 opens the whole path in 20B5:001C,
+; and when the argument is non-null 0250 copies the caller's name over the leaf at that offset, so the
+; caller's name replaces the leaf and the full path is opened. Returns carry set on a DOS below 3 or a
+; failed open. Evidence: INT 21h/30h and the DGROUP:0075 environment-segment load, the two-NUL scan,
+; the discarded count word and the 0250 call.
         PUBLIC  _OpenOwnOverlayFile      ; @ 1E8B:01B3
 _OpenOwnOverlayFile PROC NEAR
         mov     ah,30h
@@ -311,7 +316,8 @@ own_out:
 _OpenOwnOverlayFile ENDP
 
 ; 1E8B:01F3: find the overlay file through the PATH environment variable. It scans the environment
-; (via DGROUP:0075, the PSP segment) for the entry whose first five bytes equal the "PATH=" literal
+; block (the word DGROUP:0075 holds the environment segment, `_envseg`) for the entry whose first five
+; bytes equal the "PATH=" literal
 ; at cs:0008, then tries each ';' separated directory by copying it into 20B5:001C, appending a
 ; backslash when needed (unless the entry ends in ':' or '\') and calling 0250 to open the file.
 ; Returns carry set when the file is not found. Evidence: the cs:0008 compare, the ';' 3Bh, ':' 3Ah
@@ -427,13 +433,16 @@ hdr_out:
         ret
 _ReadOverlayHeaderBytes ENDP
 
-; 1E8B:0286: build the overlay record list and size it. It reads the DGROUP word 0079, adds 10h and
-; stores the result at cs:000D (nothing in this unit reads cs:000D, and what DGROUP:0079 holds is not
-; established). It then walks the 99-entry record table at 20B5:00C0 (DS:00C0; DS is 20B5, while ES
+; 1E8B:0286: build the overlay record list and size it. It reads the DGROUP word 0079 (`_psp`, the PSP
+; segment: C0.ASM; build/re/rtl/tc100/l/r.map has __psp at DGROUP:0079), adds 10h and stores the result
+; at cs:000D (nothing in this unit reads cs:000D). It then walks the 99-entry record table at
+; 20B5:00C0 (DS:00C0; DS is 20B5, while ES
 ; is set to the 20BF list head) in 8-byte steps: for each entry whose word +4 has bit 1 set and whose
 ; word +2 is non-zero, it stores the entry's segment (word 0) into the list head's word 20BF:0012
-; (the store runs while ES is still the head; this unit does not read 20BF:0012), switches ES to that
-; record, and, when the record's byte ES:001A is not FF, sets ES:0018 to the 4A2h marker, adds the
+; (the store runs while ES is still the head; no function in this unit reads 20BF:0012, so its purpose
+; is unknown), switches ES to that
+; record, and, when the record's byte ES:001A is not FF, sets ES:0018 to the loader offset 04A2
+; (1E8B:04A2), adds the
 ; 32-bit FBOV data base at 20B5:00A4/00A6 to the record's file offset ES:0004:0006, and keeps the
 ; largest total (through 0789). It ends by storing the largest size + 2 at 20B5:00AA. Evidence: the
 ; 20B5:00C0 table, the 4A2h store, the 00A4/00A6 base and the 0789 call.
@@ -493,8 +502,11 @@ _InitOverlayRecords ENDP
         SMART
 
 ; 1E8B:02FF: load an overlay into memory. It takes the free segment 20B5:00B2 (read here, set
-; outside this unit) as the start, walks the overlay's own file records (the ES:0012 chain), fitting
-; each in the free space up to 20B5:00B6 and linking them through 20B5:001C. It then reloads the
+; outside this unit) as the start and walks the overlay's record chain: it reads the next record from
+; the current record's own word 0012 (DS:0012, DS being that record), keeps the chain head in
+; 20B5:00BC, and links each record to its successor through its own word +1Ch (written 0 at the end),
+; fitting each in the free space up to 20B5:00B6. (20B5:001C, named in older text here, is the
+; file-name buffer of 01A7, not part of this walk.) It then reloads the
 ; overlay file: it computes the image's byte count as SI:DI (the paragraph count times 16, no
 ; rounding), reads the image with 03C4, applies the relocations (03FD) and fills the version table
 ; (066F), then calls the overlay's entry through 20B5:0016 repeatedly until the successor chain at
@@ -578,7 +590,7 @@ chain_out:
         clc
 chain_ret:
         ret
-; 1E8B:03B7: uncalled sibling in this range: DX:AX bytes to a segment value.
+; 1E8B:03B7: uncalled sibling in this range: DX:AX bytes to a paragraph count.
         mov     cl,4
         shr     ax,cl
         ror     dx,cl
@@ -632,11 +644,12 @@ _ReadOverlayImage ENDP
 ; 1E8B:03FD: apply the CX relocations stored at the overlay's image base. It walks the CX words at
 ; the record's ES:0008/ES:000A (ES:0008 is the byte offset of the relocation list from the image base,
 ; ES:000A is the count; the caller 02FF loads ES:000A into CX). The list sits at the base ES:0010 plus
-; that byte offset (the paragraph part in DS, the low four bits in SI). It reads each target word
-; through TLINK's segment table at 20C1 (index times 8, the frame paragraph) and, when the low bit is
-; set, fixes the word up through 0442 (the far-pointer relocation). ES:0010 is the segment the overlay
-; was loaded at. Evidence: the ES:0008/000A fields, the 20C1 table segment (relocated) and the 0442
-; call on the odd flag.
+; that byte offset (the paragraph part in DS, the low four bits in SI). It reads the word at each
+; relocation's ES:BX through TLINK's segment table at 20C1 (index times 8) and replaces it with the
+; frame paragraph from the table; when the index's low bit is set, it then fixes the far pointer up
+; through 0442, which rewrites the offset word at ES:BX+4. ES:0010 is the segment the overlay was
+; loaded at. Evidence: the ES:0008/000A fields, the 20C1 table segment (relocated) and the 0442 call
+; on the odd flag.
         PUBLIC  _ApplyOverlayRelocations              ; @ 1E8B:03FD
 _ApplyOverlayRelocations PROC NEAR
         push    ds
@@ -679,15 +692,16 @@ _ApplyOverlayRelocations ENDP
 ; 1E8B:0442: relocate one far pointer in the overlay image. DX is the frame paragraph read from the
 ; 20C1 segment table in 03FD, and `mov ds,dx` makes it DS, so the version table searched below is at
 ; DS:0020, the record's own version table (the 5-byte entries that 066F and 068D write there); 20B5
-; is not involved. Given the target word at ES:BX, it first checks the overlay-call fixup form around
-; it: the bytes at ES:BX-1 and ES:BX+3, masked with 0F807h (keeping the top five and low three bits),
-; must both be 0B8h (`mov ax,<seg>`), and those at ES:BX+2 and ES:BX+6 must both be the same masked
-; 50h (`push ax`). When they match, it searches the DS:0020 version slots (5 bytes each, DS:000C of
-; them) for one whose +2 offset equals the target word, and replaces ES:BX+4 with that slot's offset,
-; so the call reaches the version entry. The tail at 04A2 is an uncalled sibling that loads a fresh
-; overlay copy: it seeks ES:0004:0006, reads ES:0008+ES:000A bytes with 03C4 and applies the
-; relocations with 03FD. Evidence: the 0F807h masks and b8/50 byte tests; the 03C4/03FD calls in the
-; 04A2 tail.
+; is not involved. The segment word of the far pointer is at ES:BX (03FD has just replaced it with the
+; frame paragraph); 0442 first checks the overlay-call fixup form around it: the bytes at ES:BX-1 and
+; ES:BX+3, masked with 0F807h (keeping the top five and low three bits), must both be 0B8h
+; (`mov ax,<seg>`), and those at ES:BX+2 and ES:BX+6 must both be the same masked 50h (`push ax`).
+; When they match, it searches the DS:0020 version slots (5 bytes each, DS:000C of them) for one whose
+; +2 offset equals the offset word at ES:BX+4, and replaces that offset word with the slot's offset,
+; so the call reaches the version entry. The tail at 04A2 is the record loader: 0286 stores its offset
+; 04A2 at each record's ES:0018 and 0580 calls ES:0018 when the record is not loaded, and it seeks
+; ES:0004:0006, reads ES:0008+ES:000A bytes with 03C4 and applies the relocations with 03FD. Evidence:
+; the 0F807h masks and b8/50 byte tests; the 03C4/03FD calls in the 04A2 loader.
         PUBLIC  _RelocateOverlayPointer              ; @ 1E8B:0442
 _RelocateOverlayPointer PROC NEAR
         push    cx
@@ -733,7 +747,8 @@ rel_out:
 rel_out2:                               ; 1E8B:049E: the not-found exit, a second pop cx; ret
         pop     cx
         ret
-; 1E8B:04A2: uncalled sibling in this range: reload an overlay image.
+; 1E8B:04A2: the record loader whose offset 0286 stores at each record's ES:0018 (0580 calls it
+; through ES:0018 when the record is not loaded): reload an overlay image.
         mov     si,es:[8]
         xor     di,di
         add     si,es:[0Ah]
@@ -752,13 +767,15 @@ reload_out:
         ret
 _RelocateOverlayPointer ENDP
 
-; 1E8B:04D0: the overlay call interrupt handler. An odd BP means the call came from outside the
-; overlay manager, so it aborts through __OverlayHalt; otherwise it saves the registers, switches to
-; the manager's data segment 20B5, pushes the request word at ES:[BX] and loads the overlay
-; (_LoadOverlayRecord), either the single entry at [bp+2] or the two-word form at [bp+6]/[bp+2],
-; then calls the overlay's routine through 20B5:0016 with the ES:001A bit 8 value in AX. Ends with
-; IRET. Evidence: the BP parity guard, the __OverlayHalt jump, the ES:001A bit 8 and the 20B5:0016
-; far pointer (the same one 02FF uses).
+; 1E8B:04D0: the overlay call interrupt handler. `push bp; mov bp,sp` makes BP equal SP, so the test
+; is the parity of the stack pointer: an odd SP at the test aborts through __OverlayHalt. What an odd
+; SP means is not shown in this unit [H]. Otherwise it saves the registers, switches to the manager's
+; data segment 20B5, pushes the request word at ES:[BX] and loads the overlay (_LoadOverlayRecord),
+; either the single entry at [bp+2] or the two-word form at [bp+6]/[bp+2], then reads bit 3 (the value
+; 8) of ES:001A into AX and clears that bit in the same step (`and byte ptr es:[1Ah],0F7h`) before
+; calling the overlay's routine through 20B5:0016. Ends with IRET. Evidence: the SP-parity guard, the
+; __OverlayHalt jump, the ES:001A bit 8 read and clear and the 20B5:0016 far pointer (the same one
+; 02FF uses).
         PUBLIC  _OverlayCallHandler      ; @ 1E8B:04D0
 _OverlayCallHandler PROC FAR
         push    bp
@@ -922,12 +939,13 @@ load_halt:
 _LoadOverlayRecord ENDP
 
 ; 1E8B:05FB: release an overlay record's loaded copy. It clears the record's version table (068D)
-; and, when the record's routine word ES:0018 is the 4A2h sentinel (set by 0286 when the record is
-; built), calls the release hook at 20B5:0010; it then clears the record's base segment ES:0010 so the
-; record reads as not loaded. Called from 0536 when the record's use counter ES:001B reaches zero.
-; There is no FPU evidence: WHITEPAPER line 49 says no game code uses floating point and no emulator
-; interrupt (INT 34h to 3Dh) exists in any code segment. Evidence: the 4A2h test, the DS:0010 call and
-; the clearing store (the 4A2h sentinel is stored at 0286, not in 02FF).
+; and, when the record's routine word ES:0018 is the loader offset 04A2 (1E8B:04A2, set by 0286 when
+; the record is built), makes a near call through the offset stored at 20B5:0010 (`call word ptr
+; ds:[10h]`: a near call in this unit's code segment, not a far call through that address); it then
+; clears the record's base segment ES:0010 so the record reads as not loaded. Called from 0536 when
+; the record's use counter ES:001B reaches zero. "Release hook" is a guess: the evidence is only that
+; 20B5:0010 is called here and that ES:0010 is then cleared. Evidence: the 04A2 loader-offset test,
+; the 20B5:0010 near call and the clearing store (the 04A2h store is at 0286, not in 02FF).
         PUBLIC  _ReleaseOverlayRecord   ; @ 1E8B:05FB
 _ReleaseOverlayRecord PROC NEAR
         call    _ClearOverlayVersionTable
@@ -978,10 +996,10 @@ _DiscardOverlayRecords ENDP
 
 ; 1E8B:064E: restore an overlay record's version table. With no version records (ES:000C zero) it does
 ; nothing. When the record's marker ES:0020 is 0EAh (already a live far entry) it skips the fill and
-; returns. Otherwise it fills the version table (066F): when the version chain ES:0002 is zero it
-; jumps straight to the fill, and when it is not zero it first strips the record's entry from the patch
-; table (072F) and then falls through into the fill. Evidence: the ES:000C test, the 0EAh marker and
-; the 072F call.
+; returns. Otherwise it fills the version table (066F): when the saved slot offset ES:0002 is zero it
+; jumps straight to the fill, and when it is not zero it first calls 072F, which restores that saved
+; offset into the matching slot (072F exchanges the slot's current offset with CX = ES:0002), and then
+; falls through into the fill. Evidence: the ES:000C test, the 0EAh marker and the 072F call.
         PUBLIC  _RestoreOverlayVersionTable ; @ 1E8B:064E
 _RestoreOverlayVersionTable PROC NEAR
         cmp     word ptr es:[0Ch],0
@@ -1023,11 +1041,12 @@ ver_ret:
 _FillOverlayVersionTable ENDP
 
 ; 1E8B:068D: clear the overlay's own saved state. Unless the record's marker ES:0020 is already CDh,
-; it first removes the overlay's entry from the patch table through 072F and clears ES:0002, then
-; rewrites the CX version records at ES:0020 into the 5-byte stub form: the word DGROUP:00A0, whose
-; bytes are 0CDh, 3Fh (the Turbo Pascal overlay stub of WHITEPAPER 2.3), then the old entry's offset
-; read from +1, then a zero byte. This is the reverse of 066F. Evidence: the CDh test, the 072F call
-; and the DI = 0020 loop.
+; it first calls 072F (AX = ES, DX = ES:0010), which retargets the matching slot and returns the
+; slot's previous offset in CX; it saves that offset in ES:0002 (zero when no slot matched), then
+; rewrites the CX version records at ES:0020 into the 5-byte stub form: the word at 20B5:00A0, whose
+; bytes are 0CDh, 3Fh (the Turbo Pascal overlay stub of WHITEPAPER 2.3), then the live entry's offset
+; read from +1, then a zero byte. This is the reverse of 066F. Evidence: the CDh test, the 072F call,
+; the ES:0002 store and the DI = 0020 loop.
         PUBLIC  _ClearOverlayVersionTable ; @ 1E8B:068D
 _ClearOverlayVersionTable PROC NEAR
         cmp     byte ptr es:[20h],0CDh
@@ -1055,8 +1074,11 @@ _ClearOverlayVersionTable ENDP
 
 ; 1E8B:06C0: move the overlay record ES: in memory. It moves ES:0008 bytes (in words) from the old
 ; base ES:0010 to the new base 20B5:00B0, forward or backward (STD) depending on the direction, then
-; updates ES:000E and, unless ES:0020 is CDh, strips the record from the patch table (073B) and
-; clears the CX version records at ES:0023. Evidence: the ES:0008 length, the ES:0010/DGROUP:00B0
+; writes the record's segment ES at word 0Eh of the header paragraph just below the new base (DS =
+; new base - 1; 07A1 reads that back link). Unless ES:0020 is CDh it then calls 073B with AX = the new
+; base and DX = the old base, which retargets the slots whose segment is the old base to the new one,
+; and stores the new base (AX) in the segment word of each version record (ES:0023, then +5 each), so
+; the far jumps 066F wrote point at the new base. Evidence: the ES:0008 length, the ES:0010/20B5:00B0
 ; bases, the rep movsw direction choice and the 073B call.
         PUBLIC  _MoveOverlayRecord       ; @ 1E8B:06C0
 _MoveOverlayRecord PROC NEAR
@@ -1140,10 +1162,12 @@ patch_out:
         ret
 _PatchOverlayEntryVector ENDP
 
-; 1E8B:073B: walk the overlay table at SS:BP backward for the slot whose far segment at SS:[BP+4]
-; equals DX; BX = the first matching slot whose far offset at SS:[BP+2] is zero (the free one), and
-; its SS:[BP+4] is set to AX. Entries whose low bit is set (SS:[BP] odd) are skipped one level down.
-; Evidence: the shr word,1 / jb pair, the DX compare and the AX store.
+; 1E8B:073B: walk the overlay slot table (the caller's SS:BP) and, for every slot whose far segment
+; at SS:[BP+4] equals DX, store AX into that SS:[BP+4] (every matching slot, not only the first); BX
+; is the first matching slot, or zero when none matched. The walk follows the link word at each slot
+; (`mov bp,cx` from [bp]); a slot whose link word has its low bit set steps one level down. It never
+; tests SS:[BP+2]. Evidence: the shr word,1 / jb pair, the DX compare against SS:[BP+4] and the AX
+; store; BX is set once, from the first match.
         PUBLIC  _FindOverlaySlot          ; @ 1E8B:073B
 _FindOverlaySlot PROC NEAR
         xor     bx,bx
@@ -1171,11 +1195,13 @@ slot_out:
         ret
 _FindOverlaySlot ENDP
 
-; 1E8B:0761: return in AX how many paragraphs of the current overlay segment (ES:0010) remain before
-; the top of the allocated area at 20B5:00B0, and carry set when the result is instead the fallback
-; computed from 20B5:00B6 (the free area's top). Both ES:0010 and 00B0 are segment (paragraph) values,
-; so AX counts paragraphs. Evidence: the [00BC] selector, the two subtractions from [00B0] and the STC
-; on the fallback path.
+; 1E8B:0761: with the chain head 20B5:00BC non-zero, return in AX the current record's base (its
+; ES:0010) minus the running top 20B5:00B0: the paragraphs from 00B0 up to that base. When the
+; subtraction borrows, because the base is below 00B0 (the case for a record already linked, since
+; 0711 adds its size to 00B0), it returns the free paragraphs 20B5:00B6 minus 20B5:00B0 with carry
+; set. With no current record (00BC zero) it goes straight to the fallback. Both operands are segment
+; (paragraph) values, so AX counts paragraphs. Evidence: the [00BC] selector, the two subtractions
+; from [00B0] and the STC on the fallback path.
         PUBLIC  _OverlayParagraphsRemaining   ; @ 1E8B:0761
 _OverlayParagraphsRemaining PROC NEAR
         mov     ax,ds:[0BCh]
@@ -1209,10 +1235,13 @@ _OverlayCodeParagraphs ENDP
 ; 1E8B:0789: size an overlay record ES in paragraphs. AX gets the code paragraphs (ES:0008 plus 11h,
 ; shifted right by 4, the same as 077D) and DX gets the total: that plus the data paragraphs (ES:000A
 ; plus 0Fh, shifted right by 4). Callers use DX (0286 keeps the largest total). The trailing code from
-; 07A1 is a second, uncalled routine that checks whether AX is a loaded overlay segment in 20B5:00B4 to
-; 00B6 and returns its base segment in AX (ES is popped before the RETF), or AX = 0 with carry set; it
-; shares this function's range. Evidence: the two shifts and the ES:0008/000A loads; the 07A1 range
-; check against [00B4]/[00B6].
+; 07A1 is a second, uncalled in this unit, routine that checks whether AX is a loaded overlay segment
+; in 20B5:00B4 to 00B6: it finds the record through the header back link at word 0Eh, tests the
+; current overlay id 20B5:00A0 against the record's ES:0000 and AX against the record's ES:0010, and
+; returns the record segment in AX (`mov ax,es`) on a match, or AX = 0 with carry set otherwise (ES is
+; popped before the RETF); it shares this function's range. Evidence: the two shifts and the
+; ES:0008/000A loads; the 07A1 range check against [00B4]/[00B6] and the back-link/ES:0000/ES:0010
+; tests.
         PUBLIC  _OverlayTotalParagraphs  ; @ 1E8B:0789
 _OverlayTotalParagraphs PROC NEAR
         mov     cl,4
@@ -1251,16 +1280,17 @@ rec_loaded:
         retf
 _OverlayTotalParagraphs ENDP
 
-; 1E8B:07D7: release overlay records. Uncalled in this unit (no direct caller in the packet). It walks
-; the slot table at SS:BP (the caller's frame) for a slot whose segment SS:[bx+4] is below the base
-; 20B5:00B4, whose offset SS:[bx+2] is zero, and whose record's word ES:0000 equals the current overlay
-; id 20B5:00A0; it sets the found byte [bp-2] and clears that record's ES:0002. When a record was
-; marked, it walks the table again and, for a slot below 00B4 with a non-zero SS:[bx+2] whose record id
-; matches and whose ES:0002 is still zero, it moves the SS:[bx+2] value into ES:0002 and clears the
-; slot. A slot word with the low bit set (SS:[bx] odd) steps one level down. Evidence: the SS:BP table,
-; the [00A0] id / [00B4] base comparisons, the [bp-2] found byte and the ES:[0]/ES:[2] patch.
-        PUBLIC  _ReleaseOverlayRecords   ; @ 1E8B:07D7
-_ReleaseOverlayRecords PROC FAR
+; 1E8B:07D7: drop stale overlay slots. Uncalled in this unit (no direct caller in the packet). It
+; walks the caller's slot table at SS:BP (CX on entry is the table end; the caller supplies it, `cmp
+; bx,cx`) for a slot whose segment SS:[bx+4] is below the base 20B5:00B4, whose offset SS:[bx+2] is
+; zero, and whose record's word ES:0000 equals the current overlay id 20B5:00A0; it sets the found
+; byte [bp-2] and clears that record's ES:0002. When a record was marked, it walks the table again
+; and, for a slot below 00B4 with a non-zero SS:[bx+2] whose record id matches and whose ES:0002 is
+; still zero, it moves the SS:[bx+2] value into ES:0002 and clears the slot. A slot word with the low
+; bit set (SS:[bx] odd) steps one level down. Evidence: the SS:BP table, the [00A0] id / [00B4] base
+; comparisons, the [bp-2] found byte and the ES:[0]/ES:[2] patch.
+        PUBLIC  _DropStaleOverlaySlots   ; @ 1E8B:07D7
+_DropStaleOverlaySlots PROC FAR
         push    bp
         mov     bp,sp
         sub     sp,2
@@ -1329,14 +1359,16 @@ drop_out:
         mov     sp,bp
         pop     bp
         retf
-_ReleaseOverlayRecords ENDP
+_DropStaleOverlaySlots ENDP
 
 ; 1E8B:086F: the overlay manager entry, reached from the overlay stubs rather than from this unit (the
 ; packet finds no direct caller). Given a record whose segment is in [bp+8] with id ES:0000 equal to
-; the current overlay id 20B5:00A0, it loads the record (_LoadOverlayRecord) when it has no loaded copy
-; (ES:0010 zero) or its version marker ES:0020 is not CDh, calls the record's routine through the
-; 20B5:0016 far pointer, and returns ES:0010 in [bp+8]. The two one-byte returns after entry_out are
-; unused tails. 08C9 is a second entry of this same PROC, the program's overlay-memory bootstrap: it
+; the current overlay id 20B5:00A0, it loads the record (_LoadOverlayRecord) when the record has no
+; loaded copy (ES:0010 zero) or its version marker ES:0020 is CDh, and on that load path calls the
+; record's routine through the 20B5:0016 far pointer. When ES:0010 is set and ES:0020 is not CDh it
+; returns ES:0010 without loading or calling: the call through 20B5:0016 is on the load path only. On
+; the reached exits it stores ES:0010 in [bp+8]. The two one-byte returns after entry_out are unused
+; tails. 08C9 is a second entry of this same PROC, the program's overlay-memory bootstrap: it
 ; runs _InitOverlayRecords, forms a paragraph count as (20B5:00AA doubled when 00AA is at least
 ; DGROUP:3088, otherwise DGROUP:3088) plus one, allocates it with _farmalloc, and calls
 ; _InitOverlayManager over the block. That call pushes DX, BX and then two zero words, so

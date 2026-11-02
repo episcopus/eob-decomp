@@ -2052,3 +2052,12 @@ new = "g8894"
 kind = "global"
 why = "ds:8894 is the far pointer StartupGame dereferences as g8894->number (E07C8.C:263); nothing in src/ or docs/ shows it is the DOS environment pointer (that block is the one E1990 relocates from PSP:002C, src/E1990.ASM:3, :44), and nothing in src/ or docs/ writes the pointer, so the object and its address are unknown; a placeholder name fits"
 date = "2026-11-02"
+
+[[rename]]
+id = "1E8B:07D7=DropStaleOverlaySlots"
+addr = "1E8B:07D7"
+old = "ReleaseOverlayRecords"
+new = "DropStaleOverlaySlots"
+kind = "function"
+why = "07D7:1245 walks the caller's slot table at SS:BP and, for slots whose segment SS:[bx+4] is below the base 20B5:00B4, drops the slot references (clears the record's saved offset ES:0002 and clears the slot offset); the name says it drops stale slots, not that it releases records"
+date = "2026-11-02"
