@@ -487,6 +487,11 @@ name = "gRetryHandler"
 why = "the retry file error handler, a far pointer at ds:8111; the image holds 1C0E:0ADD (DisplayFileError) there (EOB.EXE file offset 2BBF1) and RetryFile (1C0E:0046) calls it (src/E1C0E.C:164)"
 
 [[global]]
+id = "intro/ds:1EE2"
+name = "gFn1EE2"
+why = "the driver routine the front end starts; src/I0892.C:97 calls it gFn1EE2 (StartupGame after the page table, :0544)"
+
+[[global]]
 id = "intro/ds:19E7"
 name = "gBuiltinPalette"
 why = "the 16-byte palette table at ds:19E7 passed to the palette setter on the Tandy and EGA choices (Main 0892:010F, 0892:0116; StartupGame 0892:05E5); its bytes 00 05 03 02 0A 0E 0C 06 04 0B 09 01 00 08 07 0F are the built-in palette table, not a 6-bit EGA palette, and the Tandy choice uses it too so gEgaPalette has no evidence"
