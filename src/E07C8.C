@@ -5,8 +5,8 @@
    overlays and the two fonts and turns sound on. For the Tandy graphics choice (gGraphicsChoice 1)
    only it checks the memory chain, reserves 2 x 32 KB below the probed video segment and stores
    atol(g8894->number) in gMemTopSeg (:311; ReserveMemoryBelowVideo(3) returns the Tandy buffer
-   base, which is written at :345; whether the stored value is the video top is [H], src/E1990.ASM:386-397). For the
-   VGA choice it clears A000:0000. On the way out 07C8:058A stops sound, calls the exit hook, removes the mouse handler, shuts the overlay cache down, restores the INT 1Ch vector, removes the keyboard, restores the video mode, puts back the old INT 3Fh vector, shrinks memory for the Tandy graphics choice only (TrimMemoryToVideo, :476-477), and exits. 07C8:061D returns 1 (the exit hook at ds:80FA) and 07C8:0625 is the allocation failure hook at ds:810A. WHITEPAPER 2.6 and 4.4. Compiled -ml -O -Z. */
+   base, written at :345; whether that value is the video top is [H], src/E1990.ASM:386-397).
+   For the VGA choice it clears A000:0000. On the way out 07C8:058A stops sound, calls the exit hook, removes the mouse handler, shuts the overlay cache down, restores the INT 1Ch vector, removes the keyboard, restores the video mode, puts back the old INT 3Fh vector, shrinks memory for the Tandy graphics choice only (TrimMemoryToVideo, :476-477), and exits. 07C8:061D returns 1 (the exit hook at ds:80FA) and 07C8:0625 is the allocation failure hook at ds:810A. WHITEPAPER 2.6 and 4.4. Compiled -ml -O -Z. */
 
 #include <dos.h>
 
@@ -27,7 +27,7 @@ enum { DEFAULT_TEXT_ATTR1 = 0x0F, DEFAULT_TEXT_ATTR2 = 0x0C, INT3F_VECTOR = 0x3F
        VGA_SEG_AC00 = 0xAC00 };
 struct Unk8894 {            /* the object the pointer at ds:8894 (g8894) points at. The object's
                                own address is unknown: nothing in src/ or docs/ writes the pointer
-                               at ds:8894 (src/E1990.ASM:23-26). E1990.ASM calls it g8894 (src/E1990.ASM:23, :388); g8894 is this unit's placeholder name */
+                               at ds:8894 (src/E1990.ASM:23-26). E1990.ASM calls it gEnvPtr (src/E1990.ASM:23, :388); g8894 is this unit's placeholder name */
     char unknown[0x18];     /* +0x00 to +0x17: not read in src/; contents unknown */
     char far *number;       /* +0x18: a far pointer to a numeric string */
 };
@@ -129,7 +129,7 @@ extern unsigned far gMemTopSeg;       /*@ 1990:0002: the segment where program m
 extern struct Unk8894 far *g8894;   /*@ ds:8894: the pointer StartupGame dereferences as
                                          g8894->number (:311). The object's address is unknown:
                                          nothing in src/ or docs/ writes the pointer at ds:8894
-                                         (src/E1990.ASM:23-26). E1990.ASM calls it g8894 (src/E1990.ASM:23, :388); g8894 is this unit's placeholder name */
+                                         (src/E1990.ASM:23-26). E1990.ASM calls it gEnvPtr (src/E1990.ASM:23, :388); g8894 is this unit's placeholder name */
 extern char far *gOverlayFiles[];     /*@ ds:3074: the five overlay name pointers (cga/tga/ega/
                                          mcga/vga), indexed by the graphics choice; the order is
                                          the EOB.EXE name order and whitepaper 2.6 (1 Tandy,
