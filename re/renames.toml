@@ -1971,3 +1971,21 @@ new = "AnimateConeOfCold"
 kind = "function"
 why = "called only by CastConeOfCold (0EF3:18D8), the cone-of-cold spell; draws its particle cone"
 date = "2026-11-02"
+
+[[rename]]
+id = "ds:84A0=gRestoreMode"
+addr = "ds:84A0"
+old = "g84A0"
+new = "gRestoreMode"
+kind = "global"
+why = "ds:84A0 is set from argv[5] (E07C8.C:193) and put back through f1DDD_002D(7) at exit (:368, :422); E1DDD.C:43-49 uses it as the restore mode, work/reviews/e1ddd.md:18 suggests gRestoreMode"
+date = "2026-11-02"
+
+[[rename]]
+id = "ds:8894=gEnvPtr"
+addr = "ds:8894"
+old = "g8894"
+new = "gEnvPtr"
+kind = "global"
+why = "ds:8894 is the far pointer StartupGame dereferences as gEnvPtr->number (E07C8.C:263, 07C8:0212); src/E1990.ASM:22-26 already calls it gEnvPtr, and nothing in src/ or docs/ writes the pointer, so the object's address is unknown"
+date = "2026-11-02"

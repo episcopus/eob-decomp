@@ -13,7 +13,7 @@
    so 5D63 is atoi-like with an int result, not atol [H]; the video mode restored on exit).
    It puts the mode in the in union and calls int86 only when g84A2[i] differs from ds:84A0.
    The 8 far call sites in the image push either 7 (07C8:01C4, 0265, 0524, 05E8, 0628 and
-   19BC:02B9), the restore case: i = 7 takes the else branch (gFF46 = g84A0) and the
+   19BC:02B9), the restore case: i = 7 takes the else branch (gFF46 = gRestoreMode) and the
    comparison reads one word past the 7 entry table, g84A2[7] = ds:84B0, which is 0 in the
    image, so the call happens only when ds:84A0 is nonzero; or the word ds:8102 (07C8:01E4
    and 022E, the graphics mode from argv[1][0] minus '1', 0..6 [H]), the table case: i < 7,
@@ -26,7 +26,7 @@
 /*@flags -ml -O -Z */
 
 extern void f60BD(int intno, void far *inregs, void far *outregs); /*@ 0000:60BD */
-extern unsigned g84A0; /*@ ds:84A0 */
+extern unsigned gRestoreMode; /*@ ds:84A0 */
 extern unsigned g84A2[]; /*@ ds:84A2 */
 extern unsigned gFF46; /*@ ds:FF46 */
 extern unsigned gFF36; /*@ ds:FF36 */
@@ -45,7 +45,7 @@ extern unsigned gFF36; /*@ ds:FF36 */
     if (i < 7)
         gFF46 = g84A2[i];
     else
-        gFF46 = g84A0;
-    if (g84A2[i] != g84A0)
+        gFF46 = gRestoreMode;
+    if (g84A2[i] != gRestoreMode)
         f60BD(0x10, &gFF46, &gFF36);
 }
