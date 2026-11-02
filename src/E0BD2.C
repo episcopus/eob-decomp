@@ -10,7 +10,8 @@
 /* A 14-byte item record. src/E0D1C.C declares the same layout with its base at ds:8DD2 (Entry14);
    the code here computes the base at ds:8DD0 and uses the fields below. */
 struct ItemRecord {
-    char pad00[2];
+    signed char m00;        /* +0 (ds:8DD0): indexes the item-name table at segment 0x1F28 */
+    signed char m01;        /* +1 (ds:8DD1): the second name index */
     unsigned char flags;    /* +2 (ds:8DD2): bit 0x20 gates 0BD2:0AF2/0C8E, 0x40 is set by
                                0BD2:040E and tested by 0BD2:05B5; src/E07A9.C calls it flags */
     signed char icon;       /* +3 (ds:8DD3): the icon number (src/E07A9.C Entry14.icon) */
@@ -39,18 +40,25 @@ struct ItemType {
 };
 extern struct ItemType gItemTypes[]; /*@ ds:A9F0 */
 
-/* A 243-byte character record at ds:F580; only the fields this unit uses (src/E0A72.C). */
+/* A 243-byte character record at ds:F580; only the fields this unit uses (src/E0A72.C, src/E0DE8.C). */
 struct CharRec {
-    char pad00[2];
-    char name[0x0B];        /* +2: the character's name, NUL padded */
-    char pad0D[0x1E - 0x0D];
+    char pad00;
+    unsigned char m01;      /* +01: status bits, tested by 0BD2:0D2D */
+    char name[0x0B];        /* +02: the character's name, NUL padded */
+    signed char m0D;        /* +0D: a class index, written by 0BD2:0D2D */
+    char pad0E;
+    signed char m0F;        /* +0F: a level or score, written by 0BD2:0D2D */
+    char pad10[0x1E - 0x10];
     signed char m1E;        /* +1E */
     signed char m1F;        /* +1F */
     signed char m20;        /* +20: indexes g1231 in 0BD2:11FD */
-    char pad21[0x77 - 0x21];
+    char pad21[0x23 - 0x21];
+    signed char m23;        /* +23: set to 100 by 0BD2:0D2D */
+    char pad24[0x77 - 0x24];
     int m77[27];            /* +77: 27 carried-item slots; slot 16 (+97) is also a list head */
-    char padAD[0x97 - 0xAD];
-    char m97[0xF3 - 0x97];  /* +97: the sub-table slot 16 heads */
+    char padAD[0xE3 - 0xAD];
+    long mE3;               /* +E3: effect flags, changed by 0BD2:0D2D */
+    char padE7[0xF3 - 0xE7];
 };
 extern struct CharRec gChars[]; /*@ ds:F580 */
 
@@ -77,6 +85,7 @@ struct Obj28 {
     int m02;                /* +2 */
     char pad04[0x16 - 0x04];
     char m16;               /* +0x16 */
+    char pad17[0x1C - 0x17];
 };
 extern struct Obj28 gObjs[]; /*@ ds:8A82 */
 
@@ -112,9 +121,28 @@ extern signed char g3890[]; /*@ ds:3890 */  /* a three-byte table read by 0BD2:0
 extern signed char g38FA[]; /*@ ds:38FA */  /* a byte table indexed by an item's m0B in 0BD2:0EE8 */
 extern void f0EF3_28ED(int a, int b, int c); /*@ 0EF3:28ED */
 extern void f0EF3_06E7(void); /*@ 0EF3:06E7 */
+extern void f0EF3_0665(int who); /*@ 0EF3:0665 */
+extern void f0EF3_1CE8(int who); /*@ 0EF3:1CE8 */
 extern void MoveObjectToId(struct Obj28 far *obj, int a, int b); /*@ 08E6:0297 */
+extern void ApplyCharEffect(char who, long interval, char value, char firstEmpty); /*@ 1414:05ED */
+extern void HealCharacter(int who, int amount); /*@ 0DE8:0ADB */
+extern void ApplyStatusEffect(int who, int mask, char far *text, int attack, int count, int value, int flag); /*@ 0DE8:101A */
+extern char far *SkipStrings(char far *text, int count); /*@ 0D1C:07A7 */
+extern char g3893[]; /*@ ds:3893 */        /* the "feels ..." string table (0BD2:0D2D) */
+extern char far *g1278[]; /*@ ds:1278 */   /* far item-name pointers indexed by m0B (0BD2:05B5) */
+extern char far *g12E0[]; /*@ ds:12E0 */   /* far item-name pointers indexed by m0B (0BD2:05B5) */
+extern char g37B4[]; /*@ ds:37B4 */        /* a string table SkipStrings walks (0BD2:05B5) */
+extern char g37E1[]; /*@ ds:37E1 */        /* a string table SkipStrings walks (0BD2:05B5) */
+extern char g3837[]; /*@ ds:3837 */        /* a string table SkipStrings walks (0BD2:05B5) */
 
+extern int f0D1C_00DA(int value, int page); /*@ 0D1C:00DA */
 extern int f0D1C_02DC(void); /*@ 0D1C:02DC */
+extern int f0D1C_0670(int who, int mask); /*@ 0D1C:0670 */
+extern int f0D1C_07DB(int who, int flag); /*@ 0D1C:07DB */
+extern void UseItem(int who, int slot, int field); /*@ 0DE8:0763 */
+extern void EatFood(int index); /*@ 0ACD:07E0 */
+extern void f0EF3_21E0(int who, int flag); /*@ 0EF3:21E0 */
+extern void fOvl5_1CDD(int x); /*@ 211E:0093 */  /* overlay 5 entry, ovl5:1CDD */
 extern void SetMouseItem(int n); /*@ 07A9:010C */
 extern void RedrawMember(int who); /*@ 1547:0991 */
 extern void f0D1C_070F(int mode, int n, int x, int y); /*@ 0D1C:070F */
@@ -123,6 +151,8 @@ extern void ComputeArmourClass(int who); /*@ 0DE8:0D5E */
 extern void PlaySound(int sound); /*@ 177D:0070 */
 extern void Unpack0(char far *src, void far *dst, long len); /*@ 1BA8:0006 */
 extern int sprintf(char far *buf, char far *fmt, ...); /*@ 0000:57AE */
+extern unsigned strlen(char far *s); /*@ 0000:67F6 */
+extern char *strcpy(char far *dest, char far *src); /*@ 0000:67CD */
 extern int far RollDice(char count, char sides, char bonus); /*@ 082C:0458 */
 
 /* functions of this unit, forward (address order) */
@@ -133,7 +163,7 @@ int f0BD2_0AF2(int item, int who, int row);
 void UseSelectedItem(int slot);
 void SwapSelectedItem(int who, int row);
 int ItemClassAllowed(int who, int item);
-void f0BD2_05B5(int item);
+void DrawItemName(int item);
 
 /* functions of this unit, in address order (stubs not yet written) */
 /* 0BD2:000E: the "lost item" message. Rolls 1d27 for a starting slot, then scans the 27 item slots
@@ -157,7 +187,7 @@ void f0BD2_05B5(int item);
                 else
                     sprintf(gFileNameBuf, "%s has lost his ", gChars[who].name);
                 DrawText(gFileNameBuf);
-                f0BD2_05B5(item);
+                DrawItemName(item);
                 DrawText(".\r");
                 break;
             }
@@ -303,14 +333,8 @@ next:
     start = cur;
     while (cur != start || first) {
         rec = &gItems[cur];
-        if (target == -1) {
-            if (type == -1 || rec->m02 == type) {
-                if (count)
-                    n++;
-                else
-                    return cur;
-            }
-        } else if (type == -1 && cur == target) {
+        if ((target == -1 && type == -1) || (target == -1 && rec->m02 == type)
+                || (type == -1 && cur == target)) {
             if (count)
                 n++;
             else
@@ -389,7 +413,81 @@ next:
     }
 }
 
-/*@ 0BD2:05B5 stub */ void f0BD2_05B5(int item) {}
+/* 0BD2:05B5: draws item `item`'s name into the text buffer. The record's first two bytes index two
+   name tables at segment 0x1F28, 0x23 bytes apart. When the record's flags have 0x40 and the second
+   name is empty, the item type's m0E low 7 bits select the name: the plain types use the first name
+   with "%s +%d" or "Cursed %s %d", and types 9, 10, 16, 14 and 18 use "Mage Scroll", "Cleric
+   Scroll", "Ring", "Potion" or "Wand" joined with " of " to a per-m0B far pointer (ds:1278,
+   ds:12E0) or a SkipStrings walk (ds:37B4, ds:37E1, ds:3837). Otherwise the second (or the first)
+   name is copied whole. The buffer is drawn with DrawText. Called by 0BD2:000E.
+   DRAFT: every field, literal and branch matches in shape; the remaining bytes are TCC's internal
+   assembler merging identical tails that the original keeps, as in 0BD2:1001: the `strcpy(buf, firstName)`
+   of case 0..3 (0BD2:06AC), the two sprintf forms (0BD2:066C, 068C) and the trailing strcpy
+   (0BD2:0748) are each inline in the original but cross-jumped in ours (0x22 bytes short). */
+/*@ 0BD2:05B5 draft */ void DrawItemName(int item)
+{
+    signed char m0B;
+    char cls;
+    struct ItemRecord *rec;
+    char far *firstName;
+    char far *secondName;
+    char far *str1;
+    char far *str2;
+    char buf[0x3C];
+
+    rec = &gItems[item];
+    firstName = (char far *)0x1F280000L + rec->m00 * 0x23;
+    secondName = (char far *)0x1F280000L + rec->m01 * 0x23;
+    cls = gItemTypes[rec->m02].m0E.byte & 0x7F;
+    m0B = rec->m0B;
+    str1 = 0;
+    str2 = 0;
+    if ((rec->flags & 0x40) && strlen(secondName) == 0) {
+        switch (cls & 0x7F) {
+        case 0:
+        case 1:
+        case 2:
+        case 3:
+            if (m0B == 0)
+                strcpy(buf, firstName);
+            else if (m0B < 0)
+                sprintf(buf, "Cursed %s %d", firstName, m0B);
+            else
+                sprintf(buf, "%s +%d", firstName, m0B);
+            break;
+        case 9:
+            str1 = "Mage Scroll";
+            str2 = g1278[m0B];
+            break;
+        case 10:
+            str1 = "Cleric Scroll";
+            str2 = g12E0[m0B];
+            break;
+        case 16:
+            str1 = "Ring";
+            str2 = SkipStrings(g37B4, m0B);
+            break;
+        case 14:
+            str1 = "Potion";
+            str2 = SkipStrings(g37E1, m0B);
+            break;
+        case 18:
+            str1 = "Wand";
+            str2 = SkipStrings(g3837, m0B);
+            break;
+        default:
+            strcpy(buf, firstName);
+            break;
+        }
+        if (str2 != 0)
+            sprintf(buf, "%s of %s", str1, str2);
+    } else if (rec->flags & 0x40) {
+        strcpy(buf, secondName);
+    } else {
+        strcpy(buf, firstName);
+    }
+    DrawText(buf);
+}
 
 /* 0BD2:07DE: reserves one of the ten effect records at ds:DD2C (returning 0 when all are live),
    queues `item` through 0BD2:01D0 with sound `kind | 4`, fills the record from the arguments and
@@ -559,11 +657,11 @@ next:
         DrawItemRow(slot, 1, 0);
         ComputeArmourClass(gA99A);
     } else if (item == 0) {
-        saved = RemoveListItem(&gChars[gA99A].m97[0], 0, -1);
+        saved = RemoveListItem(&gChars[gA99A].m77[16], 0, -1);
         DrawItemRow(slot, 1, 0);
         SetMouseItem(saved);
     } else {
-        InsertListItem((void far *)&gChars[gA99A].m97[0], 0xFFFE, item, 0);
+        InsertListItem((void far *)&gChars[gA99A].m77[16], 0xFFFE, item, 0);
         DrawItemRow(slot, 1, 0);
         SetMouseItem(0);
     }
@@ -595,15 +693,76 @@ next:
     ComputeArmourClass(who);
 }
 
-/*@ 0BD2:0D2D stub */ void f0BD2_0D2D(void) {}
+/* 0BD2:0D2D: applies the effect of the item just taken from slot `slot` of character `who`. It
+   clears the slot through 0BD2:0106 (the item's m0B selects the effect), plays sound 0x0A and
+   dispatches on m0B: 1 restores a class index and heals, 2 and 3 heal by a dice roll, 4 poisons
+   through 0DE8:101A, 5 sets m23 to 100, 6 and 8 run the 0EF3 helpers, 7 sets effect flag 4. After
+   the switch it announces "%s feels <effect>!\r" with the effect name from the ds:3893 table,
+   except for effect 4 when m01 bit 1 is set. Called by 0BD2:1001.
+   DRAFT: every byte matches but one TCC tail merge. `case 5` and `case 7` both end in
+   `RedrawMember(who)`; the original keeps case 7's `push [bp+6]; lcall RedrawMember` inline
+   (0BD2:0E6E, sharing only its `pop cx` with case 8 at 0BD2:0E89), while our build cross-jumps
+   case 7's pair back into case 5's at 0BD2:0112 and merges case 5's `pop cx` into the shared one
+   (0BD2:0153), 9 bytes short. Tried `if (gFB44 != 0)`, `if (gFB44 == 0) break;`, an `else break;`,
+   braces with the break inside, `default: break;` and `kind != 4` against `kind - 1 != 3`; the
+   cross-jump stays. */
+/*@ 0BD2:0D2D draft */ void ApplyItemEffect(int who, int slot)
+{
+    struct CharRec *rec;
+    int kind;
+
+    rec = &gChars[who];
+    kind = f0BD2_0106(who, slot);
+    PlaySound(0xA);
+    switch (kind) {
+    case 1:
+        f0EF3_0665(who);
+        rec->m0D = 0x16;
+        rec->m0F = 0;
+        ApplyCharEffect(who, (RollDice(1, 4, 0) + 4) * 0x222, 7, 1);
+        break;
+    case 2:
+        f0EF3_0665(who);
+        HealCharacter(who, RollDice(2, 4, 2));
+        break;
+    case 3:
+        f0EF3_0665(who);
+        HealCharacter(who, RollDice(3, 8, 3));
+        break;
+    case 4:
+        ApplyStatusEffect(who, 2, "poisoned", 0, 1, 8, 1);
+        rec->mE3 &= 0xFF7F;
+        break;
+    case 5:
+        f0EF3_0665(who);
+        rec->m23 = 0x64;
+        if (gFB44 != 0)
+            RedrawMember(who);
+        break;
+    case 6:
+        f0EF3_0665(who);
+        break;
+    case 7:
+        f0EF3_0665(who);
+        rec->mE3 |= 4;
+        RedrawMember(who);
+        break;
+    case 8:
+        f0EF3_0665(who);
+        f0EF3_1CE8(who);
+        break;
+    }
+    if (kind - 1 != 3 || (rec->m01 & 2) == 0) {
+        sprintf(gFileNameBuf, "%s feels %s!\r", rec->name, SkipStrings(g3893, kind));
+        DrawText(gFileNameBuf);
+    }
+}
 
 /* 0BD2:0EE8: uses the wand in slot `slot` of character `who`. When the item's m0B is 0 it reports
    no effect; when it is not 5 it dispatches through 0EF3:28ED with g38FA[m0B]; for 5 it plays the
    wand sound, and when the surroundings pass the g194B/gB894 tests, activates every gObjs record
-   whose m02 matches the page index, otherwise reports no effect. DRAFT: our build keeps the loop
-   counter in a register (0xa-byte frame), the original on the stack (0xc), and uses the same
-   instruction sequence otherwise. */
-/*@ 0BD2:0EE8 draft */ void UseWandItem(int who, int slot)
+   whose m02 matches the page index, otherwise reports no effect. */
+/*@ 0BD2:0EE8 */ void UseWandItem(int who, int slot)
 {
     int effect;
     int x;
@@ -611,6 +770,7 @@ next:
     int i;
     struct Obj28 *obj;
     int type;
+    int page;
 
     type = gItems[gChars[who].m77[slot]].m0B;
     if (type == 0) {
@@ -622,12 +782,13 @@ next:
         f0EF3_28ED(who, effect, slot);
         return;
     }
-    x = f0D1C_00DA(gSoundVolume, gFBCC);
-    y = f0D1C_00DA(x, gFBCC);
+    page = gFBCC;
+    x = f0D1C_00DA(gSoundVolume, page);
+    y = f0D1C_00DA(x, page);
     PlaySound(0x62);
     f0EF3_06E7();
-    if ((g194B[gB894[y * 9 + (gFBCC ^ 2)]] & 4) && !(gB894[y * 9 + 4] & 7)
-            && (gB894[x * 9 + 4] & 7)) {
+    if ((g194B[gB894[y * 9 + (page ^ 2)]] & 4) && (gB894[y * 9 + 4] & 7) == 0
+            && (gB894[x * 9 + 4] & 7) != 0) {
         obj = gObjs;
         for (i = 0; i < 30; i++, obj++) {
             if (obj->m02 == x) {
@@ -640,7 +801,100 @@ next:
     }
 }
 
-/*@ 0BD2:1001 stub */ void f0BD2_1001(void) {}
+/* 0BD2:1001: the "use the item in slot `slot`" action for character `who`. It returns early when
+   f0D1C_0670(who, 0x0D) refuses, and, when the slot maps to one of the first two carried slots
+   (0BD2:1244), when f0D1C_07DB refuses or the slot's m1E bit is set in mode 0. When the item type
+   may not be worn it draws the character's name and " can not use this item.\r". Otherwise it
+   switches on the item type's m0E low 7 bits and either draws a message, eats, uses the item
+   through 0DE8:0763, arms 0EF3:21E0, dispatches through 0EF3:28ED or the overlay 5 entry, applies
+   the item effect (0BD2:0D2D) or uses it as a wand (0BD2:0EE8). Called by 0ACD:0415 and 0ACD:0D9D.
+   DRAFT: the code and the switch table match in shape, but TCC's internal assembler merges tails
+   that the original keeps: the `pop cx; pop cx` after `DrawText(" can not use this item.\r")`
+   (0BD2:10A9) and after the 0EF3:21E0 call (0BD2:112C) are each kept inline by the original but
+   hoisted into one shared block by our build, and case 9's tail cross-jumps into case 10's store
+   (`mov word ptr [bp - 8], ax`, 0BD2:1161). 0x1F bytes short. Tried `-ml -O` (no -Z) and `-B`;
+   -B breaks ReportLostItem, so the unit stays -Z. */
+/*@ 0BD2:1001 draft */ void UseItemSlot(int who, int slot)
+{
+    int item;
+    int type;
+    int firstTwo;
+    int cls;
+    int value;
+    struct CharRec *rec;
+
+    rec = &gChars[who];
+    if (!f0D1C_0670(who, 0x0D))
+        return;
+    item = rec->m77[slot];
+    firstTwo = FirstTwoSlots(slot);
+    if (firstTwo != -1) {
+        if (!f0D1C_07DB(who, firstTwo))
+            return;
+        if (gFB44 == 0 && (gChars[who].m1E & (1 << slot)))
+            return;
+    }
+    if (!ItemClassAllowed(who, item)) {
+        DrawText(rec->name);
+        DrawText(" can not use this item.\r");
+        return;
+    }
+    if (item == 0 && firstTwo == -1)
+        return;
+    type = gItems[item].m02;
+    cls = gItemTypes[type].m0E.word & 0x7F;
+    switch (cls) {
+    case 0:
+    case 16:
+        DrawText("This item automatically used when worn.\r");
+        break;
+    case 1:
+    case 2:
+    case 3:
+        if (gFB44 != 0)
+            break;
+        UseItem(who, slot, item);
+        break;
+    case 4:
+    case 8:
+    case 12:
+    case 13:
+    case 15:
+        DrawText("This item is not used in this way.\r");
+        break;
+    case 5:
+    case 6:
+        if (gFB44 == 0)
+            f0EF3_21E0(who, cls == 6);
+        break;
+    case 7:
+        if (gMouseDisabled != 0)
+            EatFood(who);
+        break;
+    case 9:
+        if (gFB44 == 0) {
+            value = gItems[item].m0B;
+            f0EF3_28ED(who, value, firstTwo);
+        }
+        break;
+    case 10:
+        if (gFB44 == 0) {
+            value = gItems[item].m0B + 0x19;
+            f0EF3_28ED(who, value, firstTwo);
+        }
+        break;
+    case 11:
+        fOvl5_1CDD(gItems[item].m0B);
+        break;
+    case 14:
+        ApplyItemEffect(who, slot);
+        break;
+    case 18:
+        if (gFB44 == 0)
+            UseWandItem(who, slot);
+        break;
+    }
+}
 
 /* 0BD2:11FD: returns 1 when `item` is empty, otherwise the item-type byte gItemTypes[m02].m05 ANDed
    with g1231[gChars[who].m20]. Purpose unknown. */

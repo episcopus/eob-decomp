@@ -165,7 +165,7 @@ extern void RunMapLoop(void); /*@ 0ACD:0E8A */
 extern void SetCurrentItem(int n); /*@ 0D1C:0304 */
 /* 0BD2:05B5 tests the item flag bit 0x40 (src/E0BD2.C:15-16). Called at 07A9:0126 with the item
    index, just before the " taken.\r" message (07A9:012D), when g811F == 7. Purpose unknown. */
-extern void f0BD2_05B5(int n); /*@ 0BD2:05B5 */
+extern void DrawItemName(int n); /*@ 0BD2:05B5 */
 extern void DrawText(char far *text); /*@ 1DE7:060A */
 /* 17A6:197E copies from the first argument to the second through a translation table: it loads
    ds:si from the first (17A6:1989-198C; the loop uses movsw and lodsb) and es:di from the second
@@ -241,7 +241,7 @@ extern void SetMousePointerShape(int hotX, int hotY, void far *icon); /*@ 1BB1:0
     SetCurrentItem(item);
     if (item) {
         if (g811F == 7) {
-            f0BD2_05B5(item);
+            DrawItemName(item);
             DrawText(" taken.\r");
         }
         item = gTable8DD2[item].icon;   /* the item index becomes the icon number */

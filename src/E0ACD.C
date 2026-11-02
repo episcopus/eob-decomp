@@ -62,7 +62,7 @@ extern void SelectCharacter(int value); /*@ 0D1C:003F */
 extern void f0D1C_006D(int first, int second); /*@ 0D1C:006D */
 extern void f0D1C_0078(int value); /*@ 0D1C:0078 */
 extern void SwapSelectedItem(int slot, int flag); /*@ 0BD2:0C8E */
-extern void f0BD2_1001(int slot, int flag); /*@ 0BD2:1001 */
+extern void UseItemSlot(int slot, int flag); /*@ 0BD2:1001 */
 extern int AddDDEffect(int who, int item, int volume, int kind, int page, int type); /*@ 0BD2:07DE */
 extern void ArmEffect(int a, int b); /*@ 1414:05A4 */
 extern void RearmCharEffects(void); /*@ 1414:0B2E */
@@ -352,7 +352,7 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
 }
 
 /* 0ACD:0415: Purpose unknown: when f0D1C_0670 accepts the record's slot it hides the pointer, sets
-   a flag from g36B0[slot] against gHitY and dispatches to SwapSelectedItem or f0BD2_1001 (by the low
+   a flag from g36B0[slot] against gHitY and dispatches to SwapSelectedItem or UseItemSlot (by the low
    bits of g5E1C), then shows the pointer. Returns 1. */
 /*@ 0ACD:0415 */ int Action0415(struct Action far *action)
 {
@@ -369,7 +369,7 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
     if ((g5E1C & 0x7F) == 1)
         SwapSelectedItem(slot, flag);
     else
-        f0BD2_1001(slot, flag);
+        UseItemSlot(slot, flag);
     LockShowPointer();
     return 1;
 }
@@ -811,7 +811,7 @@ done:
 /* 0ACD:0D9D: the key dispatcher for the map screen. It acts only while the mouse is disabled and
    outside the rest phase (gDCAA != 5). It searches the nine-entry (key, handler) table at
    cs:0E48; key 0x12/0x20/0x2e/0x1f set the direction dir 0/1/2/3, key 0x34 runs Action08E7, key
-   0x17 calls f0BD2_1001(gA99A, gF51A), keys 0x21 and 0x15 call MoveListItem(0) and MoveListItem(1)
+   0x17 calls UseItemSlot(gA99A, gF51A), keys 0x21 and 0x15 call MoveListItem(0) and MoveListItem(1)
    and key 0x23 calls Action0BA6. The four action cases are skipped in mode 2 (gFB44 == 2), and a
    direction set is passed to Action0A34 unless the mode is 2. */
 /*@ 0ACD:0D9D */ void Action0D9D(int key)
@@ -829,7 +829,7 @@ done:
         break;
     case 0x17:
         if (gFB44 != 2)
-            f0BD2_1001(gA99A, gF51A);
+            UseItemSlot(gA99A, gF51A);
         break;
     case 0x21:
         if (gFB44 != 2)

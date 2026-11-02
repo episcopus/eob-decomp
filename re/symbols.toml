@@ -2358,6 +2358,8 @@ addr = "0BD2:000E"
 size = 248
 evidence = ["far", "segment"]
 name = "ReportLostItem"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0bd2_0106"
@@ -2365,6 +2367,9 @@ unit = "e0bd2"
 addr = "0BD2:0106"
 size = 153
 evidence = ["far", "near", "frame"]
+name = "f0BD2_0106"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0bd2_019f"
@@ -2373,6 +2378,8 @@ addr = "0BD2:019F"
 size = 49
 evidence = ["frame"]
 name = "RedrawSelectedRow"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0bd2_01d0"
@@ -2405,6 +2412,8 @@ addr = "0BD2:040E"
 size = 74
 evidence = ["far", "frame"]
 name = "MarkListItems"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0bd2_0458"
@@ -2413,6 +2422,8 @@ addr = "0BD2:0458"
 size = 82
 evidence = ["far", "frame"]
 name = "PushListItem"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0bd2_04aa"
@@ -2436,6 +2447,8 @@ addr = "0BD2:07DE"
 size = 192
 evidence = ["far"]
 name = "AddDDEffect"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0bd2_089e"
@@ -2444,6 +2457,8 @@ addr = "0BD2:089E"
 size = 121
 evidence = ["far", "frame"]
 name = "CopyItemToFreeSlot"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0bd2_0917"
@@ -2452,6 +2467,8 @@ addr = "0BD2:0917"
 size = 423
 evidence = ["far", "near", "frame"]
 name = "DrawItemRow"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0bd2_0abe"
@@ -2460,6 +2477,8 @@ addr = "0BD2:0ABE"
 size = 52
 evidence = ["far", "frame"]
 name = "RedrawRowArea"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0bd2_0af2"
@@ -2475,6 +2494,8 @@ addr = "0BD2:0BA0"
 size = 238
 evidence = ["far", "frame"]
 name = "UseSelectedItem"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0bd2_0c8e"
@@ -2483,6 +2504,8 @@ addr = "0BD2:0C8E"
 size = 159
 evidence = ["far", "frame"]
 name = "SwapSelectedItem"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0bd2_0d2d"
@@ -2498,6 +2521,8 @@ addr = "0BD2:0EE8"
 size = 281
 evidence = ["near"]
 name = "UseWandItem"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0bd2_1001"
@@ -2513,6 +2538,8 @@ addr = "0BD2:11FD"
 size = 71
 evidence = ["far"]
 name = "ItemClassAllowed"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0bd2_1244"
@@ -2521,6 +2548,8 @@ addr = "0BD2:1244"
 size = 19
 evidence = ["far", "frame"]
 name = "FirstTwoSlots"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0cf7_0007"
