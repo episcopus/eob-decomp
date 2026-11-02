@@ -7534,6 +7534,7 @@ unit = "eov5"
 addr = "ovl5:00A1"
 size = 379
 evidence = ["ovl", "near", "frame"]
+notes = "blocked: the unit's switches. The body is written from the disassembly and matches byte for byte under -B (TCC -S then TASM, 379 bytes, `make match` with /*@flags -ml -O -Z -B */), but not under the file's -ml -O -Z. The one difference is TCC's internal assembler merging two identical call tails: case 1's else `DrawSheetCell(5, 0x74, 0x68)` at ovl5:0140 and case 2's else `DrawSheetCell(body[gEFC6], 0x74, feet[gEFC6])` at ovl5:019B each end in `push ax; push cs; call DrawSheetCell; add sp,6; jmp 0x208` in the original (separate copies, 0x153 and 0x1C2), while our -c build routes both to the shared tail at 0x200 and is 16 bytes short. That is the -B signature of WHITEPAPER 2.1.1 (kept jump tails). The unit cannot be -B, though: SurrenderPanel (0x10A6) and ChooseChar (0x067B) match only under -ml -O -Z; under -B SurrenderPanel's item test becomes `or ax,ax; jne body; jmp skip` (2 bytes longer) where the original has `or ax,ax; je 0xD4; body`, and every source form tried for that test (assignment in the condition, a separate assignment then if, `if (item)`/`!=0`/`>0`, `if (!item) continue`, goto, an empty then, &&, no braces, do/while(0)) keeps one or the other. So overlay 5 was assembled from at least two modules with different switches, which one file's /*@flags*/ cannot express. A flags-per-function mechanism, or a documented way to split a unit across two src files, would let this match. The three local arrays `char head[6] = {9,8,8,9,9,0x0A}, body[6] = {0x0D,..}, feet[6] = {..}` are the F_SCOPY templates at ds:7B77, ds:7B7D and ds:7B83 (whitepaper 2.1.1); ds:7B89 is defined in the file because the original lays it right after those templates and the matcher compares that literal block by content."
 
 [[function]]
 id = "eov5_021c"
@@ -7551,6 +7552,9 @@ unit = "eov5"
 addr = "ovl5:025F"
 size = 330
 evidence = ["ovl", "near", "frame"]
+name = "MessagePanel"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov5_03a9"
@@ -7585,6 +7589,9 @@ unit = "eov5"
 addr = "ovl5:067B"
 size = 147
 evidence = ["ovl", "near"]
+name = "ChooseChar"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov5_070e"
@@ -7592,6 +7599,9 @@ unit = "eov5"
 addr = "ovl5:070E"
 size = 282
 evidence = ["ovl", "near", "frame"]
+name = "AddPartyMember"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov5_0828"
@@ -7599,6 +7609,9 @@ unit = "eov5"
 addr = "ovl5:0828"
 size = 170
 evidence = ["ovl", "near", "frame"]
+name = "AddCharPanel"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov5_08d2"
@@ -7626,6 +7639,9 @@ unit = "eov5"
 addr = "ovl5:09C5"
 size = 236
 evidence = ["ovl", "near", "frame"]
+name = "GiveItemPanel"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov5_0ab1"
@@ -7772,6 +7788,7 @@ unit = "eov5"
 addr = "ovl5:1CDD"
 size = 318
 evidence = ["ovl"]
+notes = "blocked: the constant-segment screen buffers, the same wall CharOverlay (1A82) hits. The body matches up to +00E2; the two LoadScreenImage buffers ds:7F30 and ds:7F38 take the far object gSeg1F8 (segment 01F8, offset 0) and gSeg1F0 (segment 01F0), which the original reaches with the literal words `mov ax,0x1f8` then `mov ax,0` (ovl5:1DB9/1DBC and ovl5:1DD9/1DDC). Our build loads the object's relocated frame (0x1a76 here) and its stub offset (0x8300/0x8200), so the pair is not the literal segment:offset the original has. `(void far *)0x1F80L` gives the documented MK_FP form (`xor ax,ax`, escalation e177d), so no source form was found; src/EOV5.C declares gSeg1F8/gSeg1F0 as far objects at 01F8:0000 / 01F0:0000. Everything else in the function (the file read into gSegDF4E, the panel, PrintTableString, fOvl3_07A5(0, gOverlayBuf), the redraw) matches."
 
 [[function]]
 id = "eov5_1e1b"

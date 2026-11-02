@@ -23,14 +23,15 @@ struct Cell {               /* the header gGetSpriteCell returns; bytes +1 and +
 
 struct CharRec {            /* 243-byte (0xF3) character records at ds:F580 (src/EOV6.C) */
     char index;             /* +00 */
-    char flags;             /* +01: status bits (only bit 0 is read here) */    char name[0x0B];        /* +02: the character's name, NUL padded */
+    unsigned char flags;    /* +01: status bits (only bit 0 is read here) */    char name[0x0B];        /* +02: the character's name, NUL padded */
     char pad0D[0x1B - 0x0D];
     signed char hp;         /* +1B: current hit points */
     signed char maxhp;      /* +1C: maximum hit points */
     char pad1D[0x22 - 0x1D];
     unsigned char m22;      /* +22: compared with 0xf7 by 0AB1 (src/E0D1C.C:0415 uses it too) */
     char pad23[0x33 - 0x23];
-    long m33;               /* +33: a value the record swap at 070E preserves */
+    void far *m33;          /* +33: a far pointer to the character's picture buffer, preserved by
+                                   the record swap at 070E (the movmem destination there) */
     char pad37[0x77 - 0x37];
     int m77[25];            /* +77: 25 item-slot words (the carried and equipped items) */
     char padA9[0xE3 - 0xA9];
@@ -75,6 +76,7 @@ extern int gCursorY; /*@ ds:813A */
 extern int g8140; /*@ ds:8140 */
 extern int g8142; /*@ ds:8142 */
 extern int gMouseDisabled; /*@ ds:814A */
+extern int gHideDepth; /*@ ds:8146 */
 extern int gEFC6; /*@ ds:EFC6 */
 extern int gFE42; /*@ ds:FE42 */
 extern char gScrollOn; /*@ ds:8110 */
@@ -84,6 +86,7 @@ extern int gPartyCell; /*@ ds:FBCA */
 extern signed char g1A1B[]; /*@ ds:1A1B */
 extern char gB899[]; /*@ ds:B899 */
 extern struct CharRec gChars[]; /*@ ds:F580 */
+extern struct CharRec gCharPool[]; /*@ ds:7298 */  /* the pre-made character records 070E copies into gChars */
 extern struct Entry14 gTable8DD2[]; /*@ ds:8DD2 */
 extern struct ItemInfo gA9F5[]; /*@ ds:A9F5 */
 extern struct Obj28 gObjs[]; /*@ ds:8A82 */
@@ -99,6 +102,11 @@ extern char gTable7B7D[]; /*@ ds:7B7D */
 extern char gTable7B83[]; /*@ ds:7B83 */
 extern char gText7B23[]; /*@ ds:7B23 */
 extern char gText7B9F[]; /*@ ds:7B9F */
+extern char gText7BBA[]; /*@ ds:7BBA */
+extern char gText7BC2[]; /*@ ds:7BC2 */
+extern char gText7CB7[]; /*@ ds:7CB7 */
+extern char gText7CBC[]; /*@ ds:7CBC */
+extern char gText7D0E[]; /*@ ds:7D0E */
 extern char gText7D77[]; /*@ ds:7D77 */
 extern char gText7BA6[]; /*@ ds:7BA6 */
 extern char gText7BB2[]; /*@ ds:7BB2 */
@@ -137,6 +145,7 @@ extern unsigned char far gSeg1F8[]; /*@ 01F8:0000 */
 extern unsigned char far gSeg1F0[]; /*@ 01F0:0000 */
 
 extern void far * (far *gGetSpriteCell)(int x, int y, int w, int h, void far *sheet); /*@ ds:8086 */
+extern void far * (far *gFn8082)(int x, int y, int w, int h, void far *buf); /*@ ds:8082 */
 extern void (far *gFillRect)(int x1, int y1, int x2, int y2, int pattern); /*@ ds:806A */
 extern void (far *gDrawText)(char far *text, int x, int y, int colour, int flag); /*@ ds:80CA */
 extern void (far *gFn804A)(int x, int y, int w, int h, void far *buf); /*@ ds:804A */
@@ -151,6 +160,7 @@ extern void ClearTextRegion(void); /*@ 1DE7:0344 */
 extern void SetTextWindow(int n); /*@ 1DE7:0009 */
 extern void DrawText(char far *text); /*@ 1DE7:060A */
 extern void DrawFilledPanel(int x1, int y1, int x2, int y2, int c1, int c2, int c3); /*@ 082C:09D5 */
+extern void ClipRect(int x1, int y1, int x2, int y2, int width, int height, int extra1, int extra2); /*@ 19F3:000E */
 extern int IsPointInsideRect(int x, int y, int left, int top, int right, int bottom); /*@ 082C:0613 */
 extern int far RollDice(char count, char sides, char bonus); /*@ 082C:0458 */
 extern void WaitTicks(int n); /*@ 082C:0425 */
@@ -160,6 +170,7 @@ extern void PlaySound(int sound); /*@ 177D:0070 */
 extern int sprintf(char far *buf, char far *fmt, ...); /*@ 0000:57AE */
 extern unsigned strlen(char far *s); /*@ 0000:67F6 */
 extern void farfree(void far *p); /*@ 0000:71EE */
+extern void movmem(void far *src, void far *dst, unsigned n); /*@ 0000:63A3 */
 extern int CopyItemToFreeSlot(int n); /*@ 0BD2:089E */
 extern void InsertListItem(void far *head, int key, int item, int sound); /*@ 0BD2:01D0 */
 extern int RemoveCarriedItems(int field2, int fieldB); /*@ 0D1C:01CA */
@@ -171,7 +182,7 @@ extern void RedrawCharacters(void); /*@ 0D1C:0583 */
 extern void Action01E3(char far *text); /*@ 0ACD:01E3 */
 extern void f0EF3_2541(char far *text); /*@ 0EF3:2541 */
 extern void fOvl2_09ED(void); /*@ 2106:0039 */  /* overlay 2 entry, ovl2:09ED */
-extern void fOvl3_07A5(int a, int b, void far *buf); /*@ 210C:0052 */  /* overlay 3 entry, ovl3:07A5 */
+extern void fOvl3_07A5(char far *name, char far *sheet); /*@ 210C:0052 */  /* overlay 3 entry, ovl3:07A5 */
 extern void fOvl4_1F51(int n); /*@ 2116:005C */  /* overlay 4 entry, ovl4:1F51 */
 extern void LoadOverlayScreen(char far *name, int a, int b); /*@ 082C:05EC */
 extern void LoadScreenImage(char far *name, void far *buf, int a, int b, int c); /*@ 082C:051B */
@@ -181,14 +192,8 @@ extern void FileClose(int handle); /*@ 1C0E:03BB */
 extern void f1A47_0169(void far *font); /*@ 1A47:0169 */
 
 /* siblings not decompiled yet: their real signatures, so callers compile */
-void Ovl5_00A1(int mode);
-void Ovl5_025F(void);
 int Ovl5_0455(char offset, char count, void far *names);
-void Ovl5_067B(void);
-void Ovl5_070E(int who);
-void Ovl5_0828(int who, int which, int head, int other);
 void Ovl5_0924(void);
-void Ovl5_09C5(void);
 void Ovl5_0BBE(void);
 void Ovl5_0C9D(void);
 void Ovl5_0DBB(void);
@@ -199,7 +204,6 @@ void Ovl5_119E(void);
 void Ovl5_1204(void);
 void Ovl5_17C8(void);
 void Ovl5_1A82(int mode);
-void Ovl5_1CDD(int n);
 void Ovl5_1E1B(int a, int b, int x, int y, int c, int d);
 
 void PrintTableString(int index, int flag);
@@ -230,7 +234,62 @@ void PrintTableString(int index, int flag);
     farfree(cell);
 }
 
-/*@ ovl5:00A1 stub */ void Ovl5_00A1(int mode) {}
+/* ovl5:00A1: draws the character portrait for the current panel. It clips the portrait region
+   (0,0)-(0x16,0x78) and copies the three per-character cell-index tables ds:7B77, ds:7B7D and
+   ds:7B83 (one six-entry row per party member) into locals, then draws the cells the `mode`
+   selects through DrawSheetCell: the fixed cells 2, 7, 6, 0x12, 0x11 and 4, or, for modes 1 and
+   2, the current character's own cells, indexed by the selected member gEFC6. Called by the
+   overlay dispatcher 1A82 for modes 0..7 and by the resurrect list 0DBB with mode 2. */
+/*@ ovl5:00A1 draft */ void DrawCharPortrait(int mode)
+{
+    char head[6] = { 9, 8, 8, 9, 9, 0x0A };         /* ds:7B77 */
+    char body[6] = { 0x0D, 0x0B, 0x0C, 0x0E, 0x0F, 0x10 };  /* ds:7B7D */
+    char feet[6] = { 0x34, 0x31, 0x31, 0x34, 0x34, 0x45 };  /* ds:7B83 */
+
+    ClipRect(0, 0, 0, 0, 0x16, 0x78, 6, 0);
+    switch (mode) {
+    case 0:
+        DrawSheetCell(2, 0x58, 0x68);
+        break;
+    case 1:
+        if (gEFC6 == -1) {
+            DrawSheetCell(0, 0x58, 0x68);
+        } else {
+            DrawSheetCell(0, 0x3C, 0x68);
+            DrawSheetCell(5, 0x74, 0x68);
+        }
+        break;
+    case 2:
+        if (gEFC6 == -1) {
+            DrawSheetCell(3, 0x58, 0x68);
+        } else {
+            DrawSheetCell(3, 0x3C, 0x68);
+            DrawSheetCell(head[gEFC6], 0x74, 0x68);
+            DrawSheetCell(body[gEFC6], 0x74, feet[gEFC6]);
+        }
+        break;
+    case 3:
+        DrawSheetCell(7, 0x58, 0x68);
+        break;
+    case 4:
+        DrawSheetCell(6, 0x58, 0x68);
+        break;
+    case 5:
+        DrawSheetCell(0x12, 0x58, 0x58);
+        break;
+    case 6:
+        DrawSheetCell(0x11, 0x58, 0x68);
+        break;
+    case 7:
+        DrawSheetCell(4, 0x58, 0x68);
+        break;
+    }
+}
+
+/* The menu x-position table ds:7B89, defined here because the original lays it out right after
+   00A1's three array initialisers (the matcher compares that block by content); 0455 reads it. */
+char gTable7B89[] = { 0x3B, 0xA6, 0x04, 0x70, 0xDC, 0x04, 0x70, 0xDC, 0x04, 0x70, 0xDC }; /*@ ds:7B89 */
+
 /* ovl5:021C: clears the character panel (1, 0x7a)-(0x13e, 0xc7): hides the pointer, clears the
    text region, fills the rectangle with gF57E and shows the pointer again. Called before every
    panel of the overlay draws itself. */
@@ -242,7 +301,68 @@ void PrintTableString(int index, int flag);
     ShowPointerZone();
 }
 
-/*@ ovl5:025F stub */ void Ovl5_025F(void) {}
+/* ovl5:025F: the modal message box. It picks one of two rectangles from gFE42 (the two player
+   windows), hides the pointer, fills the panel in the three colours, draws ds:7CB7 in colour 0xf
+   and shows the pointer. It then waits for a key or a click: a click anywhere in the box, or one of
+   the keys 0x2b, 0x34, 0x3d, dismisses it, as do the keys 0x41 and 0x42 only when the click lies
+   inside the box. In the end it restores the pointer lock, refills the rectangle and clears the
+   text region. Called by PrintTableString (03A9) after its message. */
+/*@ ovl5:025F */ void MessagePanel(void)
+{
+    int done;
+    int redraws;
+    int key;
+    int right;
+    int bottom;
+    int left;
+    int top;
+
+    if (gFE42) {
+        left = 0x8B;
+        top = 0xA2;
+        right = 0xA9;
+        bottom = 0xAA;
+    } else {
+        left = 0x11D;
+        top = 0xBD;
+        right = 0x13B;
+        bottom = 0xC5;
+    }
+    HidePointerZone(left, top, right, bottom);
+    DrawFilledPanel(left, top, right, bottom, gFB4C, gF53A, gF57E);
+    gDrawText(gText7CB7, left + 4, top + 2, 0xF, 0);
+    ShowPointerZone();
+    FlushKeyBuffer();
+    redraws = gHideDepth;
+    if (!gMouseDisabled) {
+        while (gHideDepth)
+            LockShowPointer();
+    }
+    done = 1;
+    do {
+        key = WaitKeyEvent() & 0x8FF;
+        switch (key) {
+        case 0x41:
+        case 0x42:
+            if (!IsPointInsideRect(g8140, g8142, left, top, right, bottom))
+                break;
+            /* fall through */
+        case 0x2B:
+        case 0x34:
+        case 0x3D:
+            done = 0;
+            break;
+        }
+    } while (done);
+    if (!gMouseDisabled) {
+        while (redraws--)
+            LockHidePointer();
+    }
+    LockHidePointer();
+    gFillRect(left, top, right, bottom, gF57E);
+    ClearTextRegion();
+    LockShowPointer();
+}
 /* ovl5:03A9: draws string `index` (1-based) of the string-offset table pointed at by gSegDF4E
    (the word at index-1 is an offset from that base), then, when `flag` is nonzero, the modal
    message panel 025F. The strings are the overlay's own yes/no menu labels. */
@@ -256,7 +376,7 @@ void PrintTableString(int index, int flag);
     off = ((int far *)offsets)[index];
     DrawText(gSegDF4E + off);
     if (flag)
-        Ovl5_025F();
+        MessagePanel();
 }
 
 /* ovl5:03EF: one row of the overlay's menu: fills a bevelled panel (x, y)-(x+0x5e, y+8) in the
@@ -269,9 +389,101 @@ void PrintTableString(int index, int flag);
 }
 
 /*@ ovl5:0455 stub */ int Ovl5_0455(char offset, char count, void far *names) {}
-/*@ ovl5:067B stub */ void Ovl5_067B(void) {}
-/*@ ovl5:070E stub */ void Ovl5_070E(int who) {}
-/*@ ovl5:0828 stub */ void Ovl5_0828(int who, int which, int head, int other) {}
+/* ovl5:067B: the "which character?" selector of the 0828 panel. It fills the far-pointer array
+   names[] with the six party members' names (gChars[i].name, ds + i*0xF3 + 2) and appends the
+   "CANCEL" string ds:7B9F, at the same time counting how many members are present (flags bit 0).
+   When every slot is taken it clears the panel, draws the title ds:7CBC and shows the seven-entry
+   menu table through Ovl5_0455; choosing CANCEL (index 6) returns 0, any other choice is applied
+   through f0D1C_035A. A free slot returns 1 at once. Called by 0828. */
+/*@ ovl5:067B */ int ChooseChar(void)
+{
+    char far *names[7];
+    int count;
+    int i;
+    int sel;
+
+    count = i = 0;
+    for (; i < 6; i++) {
+        count += gChars[i].flags & 1;
+        names[i] = gChars[i].name;
+    }
+    names[6] = gText7B9F;
+    if (count > 5) {
+        ClearPanel();
+        DrawText(gText7CBC);
+        sel = Ovl5_0455(2, 7, names);
+        if (sel == 6)
+            return 0;
+        f0D1C_035A(sel);
+    }
+    return 1;
+}
+/* ovl5:070E: adds the character `which` of the pool ds:7298 to the party. It finds the first slot
+   of gChars whose flags bit 0 is clear, saves that slot's picture pointer m33, copies the pool
+   record over it through movmem, restores m33, recomputes the armour class, requeues every carried
+   item through CopyItemToFreeSlot, then slices the character's sprite cell
+   (gGetSpriteCell(which*4, 0xa0, 4, 0x20, gOverlayBuf)) into the picture buffer m33 and frees the
+   slice. Called by AddCharPanel. */
+/*@ ovl5:070E */ void AddPartyMember(int which)
+{
+    struct CharRec far *rec;
+    void far *saved;   /* the slot's picture pointer, then the sliced sprite cell */
+    int slot;
+    int i;
+
+    slot = i = 0;
+    for (; i < 6; i++) {
+        if ((gChars[i].flags & 1) == 0) {
+            slot = i;
+            break;
+        }
+    }
+    rec = &gChars[slot];
+    saved = rec->m33;
+    movmem((void far *)&gCharPool[which], (void far *)rec, 0xF3);
+    rec->m33 = saved;
+    ComputeArmourClass(slot);
+    for (i = 0; i < 0x19; i++) {
+        if (rec->m77[i])
+            rec->m77[i] = CopyItemToFreeSlot(rec->m77[i]);
+    }
+    g8115 = 2;
+    saved = gFn8082(which * 4, 0xA0, 4, 0x20, gOverlayBuf);
+    movmem(saved, rec->m33, 0x514);
+    farfree(saved);
+    g8115 = 0;
+}
+/* ovl5:0828: the character add panel. It clears the panel, draws message `which`, then shows the
+   two-entry menu ds:7B23. Choice 0 ("join") either draws message `head` or, when `head` is -1,
+   builds and draws "<name> joins the party." (ds:7D0E) for gCharPool[who] and shows the modal
+   message 025F; it then removes the item class 0x21 from character `who`+1 and, when ChooseChar
+   finds a free slot, adds the character through 070E. Choice 1 draws message `other`. Called by
+   the panels 0924, 09C5, 0DBB and 119E. */
+/*@ ovl5:0828 */ void AddCharPanel(int who, int which, int head, int other)
+{
+    int sel;
+
+    ClearPanel();
+    PrintTableString(which, 0);
+    sel = Ovl5_0455(0, 2, (void far *)gText7B23);
+    switch (sel) {
+    case 0:
+        if (head != -1) {
+            PrintTableString(head, 1);
+        } else {
+            sprintf(gFileNameBuf, gText7D0E, gCharPool[who].name);
+            DrawText(gFileNameBuf);
+            MessagePanel();
+        }
+        RemoveCarriedItems(0x21, who + 1);
+        if (ChooseChar())
+            AddPartyMember(who);
+        break;
+    case 1:
+        PrintTableString(other, 1);
+        break;
+    }
+}
 /* ovl5:08D2: turns item `n` into a carried item (CopyItemToFreeSlot) and queues it on the list
    head gB899 for the current sound page (gPartyCell) with a random page sound. Called by the
    panels that add an item to a character. */
@@ -305,7 +517,7 @@ void PrintTableString(int index, int flag);
         }
         switch (sel) {
         case 0:
-            Ovl5_0828(6, 0xc, 0x17, 2);
+            AddCharPanel(6, 0xc, 0x17, 2);
             gFC04 |= 0x4000L;
             break;
         case 1:
@@ -317,7 +529,46 @@ void PrintTableString(int index, int flag);
     }
 }
 
-/*@ ovl5:09C5 stub */ void Ovl5_09C5(void) {}
+/* ovl5:09C5: the "give / take an item" panel. On the first pass (gFC04 bit 0x8000 clear) it sets
+   that bit and shows the two-entry menu ds:7BBA; choice 0 draws message 4, choice 1 records that
+   the whole party is to be used (the local flag cleared) and the panel is left. Otherwise it draws
+   message 0xd. When the flag is still set it shows the menu ds:7BC2; choice 0 queues the six
+   healing items 0x37 and the item 0x3e on the current page, clears gFC04 bit 0x8000, sets gFC04
+   bit 0x10000 and runs the character panel 0828(7, 7, 0x1d, 0x1e); choice 1 (or a free-party
+   choice) draws message 5. Called by the panel dispatcher 0B58. */
+/*@ ovl5:09C5 */ void GiveItemPanel(void)
+{
+    int whole;
+    int sel;
+    int i;
+
+    whole = 1;
+    if (!(gFC04 & 0x8000L)) {
+        gFC04 |= 0x8000L;
+        PrintTableString(3, 0);
+        sel = Ovl5_0455(0, 2, (void far *)gText7BBA);
+        if (sel == 0)
+            PrintTableString(4, 0);
+        else if (sel == 1)
+            whole = 0;
+    } else {
+        PrintTableString(0xd, 0);
+    }
+    if (whole)
+        sel = Ovl5_0455(0, 2, (void far *)gText7BC2);
+    else
+        sel = 1;
+    if (sel == 0) {
+        for (i = 0; i < 6; i++)
+            QueueItem(0x37);
+        QueueItem(0x3e);
+        gFC04 |= 0x10000L;
+        PrintTableString(6, 1);
+        AddCharPanel(7, 7, 0x1d, 0x1e);
+    } else {
+        PrintTableString(5, 1);
+    }
+}
 /* ovl5:0AB1: returns 1 when some party member (flags bit 0) has m22 == 0xf7, after drawing menu
    strings 0x19 and 0x1a and setting the 0x80000 bit of gFC04; otherwise 0. Called by the panel
    dispatcher 0B58. */
@@ -362,7 +613,7 @@ void PrintTableString(int index, int flag);
 
     done = 0;
     if (!(gFC04 & 0x10000L)) {
-        Ovl5_09C5();
+        GiveItemPanel();
         done = 1;
     }
     if (!(gFC04 & 0x80000L))
@@ -371,7 +622,7 @@ void PrintTableString(int index, int flag);
         done |= CheckRemove6();
     if (!done) {
         DrawText(gText7D77);
-        Ovl5_025F();
+        MessagePanel();
     }
 }
 
@@ -582,7 +833,7 @@ void PrintTableString(int index, int flag);
     sel = Ovl5_0455(2, 3, (void far *)gText7BFA);
     switch (sel) {
     case 0:
-        Ovl5_0828(8, 0x1b, 0x2c, 0x2d);
+        AddCharPanel(8, 0x1b, 0x2c, 0x2d);
         break;
     case 1:
         PrintTableString(0x1f, 1);
@@ -632,7 +883,7 @@ void PrintTableString(int index, int flag);
     default:
         LoadOverlayScreen(gText7F07, 5, 3);
         ClipRect(0, 0, 0, 0, 0x16, 0x78, 0, 6);
-        Ovl5_00A1(mode);
+        DrawCharPortrait(mode);
         LockShowPointer();
         handle = FileOpen(gText7F0F, 1);
         FileRead(handle, gSegDF4E, 0x7d00L);
@@ -675,7 +926,7 @@ void PrintTableString(int index, int flag);
         f1A47_0169(font);
         gScrollOn = 0;
         LockHidePointer();
-        fOvl3_07A5(0, 0, gSeg1D8 + (gSeg1D0[gFBC8 - 1] << 5));
+        fOvl3_07A5(0, gSeg1D8 + (gSeg1D0[gFBC8 - 1] << 5));
         LoadScreenImage(gText7F18, gSeg1F8, 5, 3, 0);
         LoadScreenImage(gText7F20, gSeg1F0, 5, 3, 2);
         g8115 = 0;
@@ -686,7 +937,43 @@ void PrintTableString(int index, int flag);
     SetTextWindow(7);
     LockShowPointer();
 }
-/*@ ovl5:1CDD stub */ void Ovl5_1CDD(int n) {}
+/* ovl5:1CDD: the "use item" result panel. It hides the mouse cursor, runs the pending
+   gFB44/gFlag messages, opens ds:7F27 (1: read) and reads it into the string base gSegDF4E, sets
+   the text window and the panel colours, draws the panel (0,0)-(0xaf,0xae) and shows message `msg`
+   through PrintTableString. It then restores the screen: frees the wall textures into gOverlayBuf,
+   loads the two images ds:7F30 and ds:7F38, redraws the characters and the view frame and resets
+   the text window to 7. Called by the item-slot handler 0BD2:1001. */
+/*@ ovl5:1CDD draft */ void UseItemPanel(int msg)
+{
+    int handle;
+
+    gFE42 = 1;
+    if (gFB44)
+        Action01E3(gF542);
+    if (gFlag)
+        f0EF3_2541(gF542);
+    handle = FileOpen(gText7F27, 1);
+    FileRead(handle, gSegDF4E, 0x7d00L);
+    FileClose(handle);
+    gScrollOn = 1;
+    g169 = gF57E;
+    SetTextWindow(0xc);
+    g8117 = 0xac;
+    g8119 = 0x2d0;
+    DrawFilledPanel(0, 0, 0xaf, 0xae, gFB4C, gF53A, gF57E);
+    LockShowPointer();
+    PrintTableString(msg, 1);
+    gScrollOn = 0;
+    LockHidePointer();
+    fOvl3_07A5(0, gOverlayBuf);
+    LoadScreenImage(gText7F30, gSeg1F8, 5, 3, 0);
+    LoadScreenImage(gText7F38, gSeg1F0, 5, 3, 2);
+    g8115 = 0;
+    RedrawCharacters();
+    DrawViewFrame(1);
+    SetTextWindow(7);
+    LockShowPointer();
+}
 /* ovl5:1E1B: shuffles an (cols x rows) grid and draws it. It fills two index arrays in the
    gBufDCFC buffer (the x indices and, at +0x280, the y indices) with 0..cols-1 and 0..rows-1,
    Fisher-Yates shuffles each with RandomRange, then for each row k and column i draws the cell
