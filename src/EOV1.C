@@ -105,10 +105,14 @@ extern struct Region gRegions[]; /*@ ds:009F */
 extern struct Menu gMenus[]; /*@ ds:628C */
 extern struct ButtonDef far gButtonDefs[]; /*@ 208E:0000 */
 struct ActRec;
-struct CharRec {
-    char pad00[0xE7];
-    unsigned char lastDamage;
-    unsigned char lastAction[2];
+struct CharRec {                /* the 243-byte character records at ds:F580 (src/E0A72.C) */
+    char pad00[0x37];
+    signed char known[30];      /* +37: the mage's spell slots: a spell number, negative while it is
+                                   still to be memorised (src/EOV6.C) */
+    signed char memorized[30];  /* +55: the cleric's spell slots, the same way */
+    char pad73[0xE7 - 0x73];
+    unsigned char lastDamage;   /* +E7: the last damage amount (src/E0DE8.C) */
+    unsigned char lastAction[2]; /* +E8: the last action results (src/E0DE8.C) */
     char padEA[0xF3 - 0xEA];
 };
 extern struct CharRec gChars[]; /*@ ds:F580 */
@@ -145,6 +149,20 @@ extern char far *gMageSpellNames[]; /*@ ds:1278 */
 extern char far *gClericSpellNames[]; /*@ ds:12E0 */
 extern char gFDEA[]; /*@ ds:FDEA */
 extern char gFileNameBuf[]; /*@ ds:FE6E */
+extern char gFDBA[]; /*@ ds:FDBA */   /* nine 9-byte lists, one per spell level: the first byte counts the
+                                          spell numbers that follow (BuildSpellSlots) */
+extern char gFDE7[]; /*@ ds:FDE7 */   /* ten bytes: the spells taken at each level, index level - 1 (the
+                                          screen shows allowance - this) */
+extern char gFDEC[]; /*@ ds:FDEC */   /* 32 pairs of counters per spell number - 1: the copies held in all and
+                                          the copies ready (SpendSpellSlot) */
+extern char gFDEB[]; /*@ ds:FDEB */   /* the odd bytes of the pairs in gFDEC, indexed by 2 * spell number */
+extern char gFDE6[]; /*@ ds:FDE6 */   /* copies held per spell level, index level (1 based) */
+extern char gFD9A[]; /*@ ds:FD9A */   /* the level (1 to 5) of spell number i + 1, copied from gMap62AF or gMap62C9 */
+extern char gMap62AF[]; /*@ ds:62AF */ /* the spell level of each mage spell, 0 terminated */
+extern char gMap62C9[]; /*@ ds:62C9 */ /* the spell level of each cleric spell, 0 terminated */
+extern void far *memset(void far *dst, int c, unsigned n); /*@ 0000:6384 */
+extern char *strcpy(char far *dest, char far *src); /*@ 0000:67CD */
+extern int gNeedsRest; /*@ ds:FE2C */
 extern int g159; /*@ ds:0159 */ /* a copy of gF57E that ShowMessage and ovl6:0B9B store; no reader found */
 extern int gNeedsRest; /*@ ds:FE2C */
 extern int gTunesOn; /*@ ds:80E8 */
@@ -247,8 +265,131 @@ int ChooseListEntry(int message);
     BuildList1();
     RearmCharEffects();
 }
-/*@ ovl1:00DD stub */ void BuildSpellSlots(void) {}
-/*@ ovl1:025D stub */ void SpendSpellSlot(void) {}
+/* ovl1:00DD: builds the spell tables of the spell-slot screen for character `who` (nothing happens
+   for a negative `who`). `cleric` is 1 for the cleric and paladin screen (SpellSlotScreen's flag),
+   0 for the mage screen; `counts` is the screen's five per-level spell allowances, `mask` the set of
+   spells that may be shown (bit i is spell i + 1). It clears gFDBA (the nine 9-byte level lists), gFDE7
+   (spells already taken per level), gFDEC (32 pairs of counters) and gFD9A, copies the spell-to-level
+   map into gFD9A (gMap62C9 for clerics, gMap62AF for mages) and walks the 30 signed bytes of the
+   character's spell slots (rec + 0x55 for a cleric, rec + 0x37 for a mage): a nonzero entry c names
+   spell |c|; a positive one bumps its second counter gFDEB[2 * c] and each bumps its first,
+   gFDEC[2 * (|c| - 1)], and the per-level total gFDE6[level]. Then each spell i of `mask` is appended
+   to its level's list gFDBA[(level - 1) * 9] (the first byte counts the entries, the entry is i + 1),
+   for a cleric only when the level has a nonzero allowance. Called by SpellSlotScreen. */
+/*@ ovl1:00DD */ void BuildSpellSlots(int who, char far *counts, long mask, int cleric)
+{
+    int i;
+    struct CharRec far *rec;
+    char far *slots;
+    int entry;
+    int slot;
+
+    if (who < 0)
+        return;
+    rec = &gChars[who];
+    memset(gFDBA, 0, 0x2d);
+    memset(gFDE7, 0, 0xa);
+    memset(gFDEC, 0, 0x40);
+    memset(gFD9A, 0, 0x20);
+    if (cleric)
+        strcpy(gFD9A, gMap62C9);
+    else
+        strcpy(gFD9A, gMap62AF);
+    slots = rec->known;
+    if (cleric)
+        slots = rec->memorized;
+    for (i = 0; i < 0x1e; i++) {
+        entry = *slots++;
+        if (entry) {
+            if (entry > 0)
+                gFDEB[entry * 2]++;
+            else
+                entry = -entry;
+            entry--;
+            gFDEC[entry * 2]++;
+            gFDE6[gFD9A[entry]]++;
+        }
+    }
+    for (i = 0; i < 0x20; i++) {
+        if (mask & (1L << i)) {
+            slot = gFD9A[i] - 1;
+            if ((cleric && counts[slot]) || !cleric) {
+                if (slot >= 0) {
+                    gFDBA[slot * 9]++;
+                    gFDBA[slot * 9 + gFDBA[slot * 9]] = i + 1;
+                }
+            }
+        }
+    }
+}
+/* ovl1:025D: writes the spells chosen on the spell-slot screen back into character `who`'s spell
+   slots (nothing happens for a negative `who`); `cleric` picks the 30 signed bytes at rec + 0x55
+   (cleric), else rec + 0x37 (mage). The slots are cleared first. gFDEC holds, for each of the 32
+   spells i, a pair of counters: the first is how many copies the character holds in all, the second
+   how many of them are ready (positive). The second counter is cut down to the first when it is the
+   larger. While it is nonzero the spell is stored as i + 1 in the first free one of the six slots of
+   its level (gFD9A[i] - 1, six slots per level) and both counters drop; the spell is then looked
+   at again (the loop index steps back), so every copy gets a slot. A spell with only the first
+   counter left is stored as -(i + 1) instead, a copy that is spent until the party rests, and
+   gNeedsRest is set. Called by SpellSlotScreen when the screen is left. QUIRK ovl1:0401: the index
+   steps back after every copy, also when the level has no free slot, so such a spell is visited again
+   until its counters run out. Purpose unknown: the exact meaning of the counters. */
+/*@ ovl1:025D */ void SpendSpellSlot(int who, int cleric)
+{
+    int i;
+    struct CharRec far *rec;
+    int slot;
+    int k;
+
+    if (who < 0)
+        return;
+    rec = &gChars[who];
+    if (cleric)
+        memset(rec->memorized, 0, 0x1e);
+    else
+        memset(rec->known, 0, 0x1e);
+    for (i = 0; i < 0x20; i++) {
+        if (gFDEC[i * 2] < gFDEC[i * 2 + 1])
+            gFDEC[i * 2 + 1] = gFDEC[i * 2];
+        if (gFDEC[i * 2 + 1] != 0) {
+            gFDEC[i * 2 + 1]--;
+            gFDEC[i * 2]--;
+            slot = gFD9A[i] - 1;
+            for (k = 0; k < 6; k++) {
+                if (cleric) {
+                    if (rec->memorized[slot * 6 + k] == 0) {
+                        rec->memorized[slot * 6 + k] = i + 1;
+                        break;
+                    }
+                } else {
+                    if (rec->known[slot * 6 + k] == 0) {
+                        rec->known[slot * 6 + k] = i + 1;
+                        break;
+                    }
+                }
+            }
+            i--;
+        } else if (gFDEC[i * 2] != 0) {
+            gFDEC[i * 2]--;
+            slot = gFD9A[i] - 1;
+            gNeedsRest = 1;
+            for (k = 0; k < 6; k++) {
+                if (cleric) {
+                    if (rec->memorized[slot * 6 + k] == 0) {
+                        rec->memorized[slot * 6 + k] = -(i + 1);
+                        break;
+                    }
+                } else {
+                    if (rec->known[slot * 6 + k] == 0) {
+                        rec->known[slot * 6 + k] = -(i + 1);
+                        break;
+                    }
+                }
+            }
+            i--;
+        }
+    }
+}
 /*@ ovl1:0416 stub */ int MemberCommand(int key) { return 0; }
 /* ovl1:0881: draws one row of the spell-slot screen: the name and the count of spell `spell` on row
    `row` (a negative row draws nothing). The row sits at y = row * 9 + 0x32, x = 8. For a nonzero
