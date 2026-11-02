@@ -223,10 +223,8 @@ extern unsigned char gViewBufADB0[]; /*@ ds:ADB0 */  /* the view pixel buffer (t
 extern signed char g194B[]; /*@ ds:194B */  /* per-slot byte flags (src/E08E6.C) */
 
 /* ovl4:042C: returns 1 when `slot` is nonzero and the bit 3 of its ds:194B flag byte is clear
-   (the slot is a live map object), else 0. Called by Ovl4_044B at ovl4:0563 and ovl4:05D8.
-   DRAFT: the original loads the ds:194B byte and sign-extends it (cwde) before the bit-3 test;
-   our build folds it to a byte test. Tried `&&`, `!`, a cast to int and a ternary. */
-/*@ ovl4:042C draft */ int IsSlotLive(int slot)
+   (the slot is a live map object), else 0. Called by Ovl4_044B at ovl4:0563 and ovl4:05D8. */
+/*@ ovl4:042C */ int IsSlotLive(int slot)
 {
     return slot != 0 && !(g194B[slot] & 8);
 }
