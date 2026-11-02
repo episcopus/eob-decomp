@@ -26,7 +26,7 @@ FindMaskBit precondition is on the wrong side of the boundary. Shoulds and notes
 Each finding is a checkbox. `must-fix` blocks `make review-pass` until a decompiler ticks it off
 (with the commit that fixes it); `should` and `note` do not block.
 
-- [ ] must-fix src/E14EF.C:103 (FindMaskBit header, "the callers keep n at or below the number of set bits from
+- [x] must-fix src/E14EF.C:103 (FindMaskBit header, "the callers keep n at or below the number of set bits from
   shift up"): the bound is wrong by one. n is zero-based, so the callers need n below the count, and at n equal
   to the count the second loop finds no set bit and runs past the top of the mask. Trace with shift 0 and mask
   bits 0 and 2 set (count 2): n = 1 gives the first loop one consumed bit (bit 0), then the second loop stops at
@@ -36,23 +36,36 @@ Each finding is a checkbox. `must-fix` blocks `make review-pass` until a decompi
   9 (src/EOV0.C:1244-1245, :1253). The round 10 finding said "n or fewer set bits", which is this condition; the
   e9f3c0f wording turned it into "at or below". Fix the bound to "below the number of set bits from shift up" and
   the failing case to "when n is at least that number". (evidence: the two loops at :113-119; the callers above)
-- [ ] should src/E14EF.C:56-58 (g5D1A): "nonzero lets ... and, together with gMouseDisabled, makes DrawOptionList
+  [fixed in 96ea09b: the FindMaskBit header (:103-105) now reads "the callers keep n below the number of set
+  bits from shift up" and "when n is at least that number it consumes every set bit, finds no set bit above the
+  n-th, and runs past the top of the mask"; the header stayed three lines, so no in-file cite shifted; comment
+  only, no code byte changed]
+- [x] should src/E14EF.C:56-58 (g5D1A): "nonzero lets ... and, together with gMouseDisabled, makes DrawOptionList
   draw the selected row in colorB" reads as a conjunction. The test at :209 is `g5D1A || gMouseDisabled`: either
   one is enough, as the DrawOptionList header (:184-185) says. Say "or gMouseDisabled is nonzero".
   (evidence: src/E14EF.C:209)
-- [ ] should src/E14EF.C:296 (the `top` line): "the click row is (cursory - top) / lineheight (:302)" names
+  [fixed in 96ea09b: the g5D1A comment (:56-58) now reads "it or gMouseDisabled being nonzero makes DrawOptionList
+  draw the selected row in colorB (:209-210)"; comment only, no code byte changed]
+- [x] should src/E14EF.C:296 (the `top` line): "the click row is (cursory - top) / lineheight (:302)" names
   the pointer pick: `cursory` is gCursorY (:300) and :302 is the pointer row. The mouse click row is
   `(g8142 - top) / lineheight` at :326, from the click at g8142. Say "the pointer row (:302)" and name the click
   row at :326. (evidence: src/E14EF.C:300-302, :325-326)
-- [ ] should src/E14EF.C:74 (gMouseDisabled): "InitMouse sets it to 1 before it installs the handler
+  [fixed in 96ea09b: the `top` comment (:296) now says "the pointer row is (cursory - top) / lineheight (:302)
+  and the click row is (g8142 - top) / lineheight (:326)"; comment only, no code byte changed]
+- [x] should src/E14EF.C:74 (gMouseDisabled): "InitMouse sets it to 1 before it installs the handler
   (1A72:0150, src/E1A72.ASM:100; the store is src/E1A72.ASM:325 ...)". Line 100 of src/E1A72.ASM is the
   comment block of the extern, not code; the store the claim rests on is :325 (the line after the
   gMouseHandlerInstalled store at :324). Cite :325 as the store and keep :100 only as the
   source's own description. (evidence: `sed -n 97,101p src/E1A72.ASM`, `sed -n 322,326p src/E1A72.ASM`)
-- [ ] should src/E14EF.C:128-129 (BlinkText, "so this is the 'confirm' flash"): nothing in src/ names the
+  [fixed in 96ea09b: the gMouseDisabled comment (:72-75) now cites src/E1A72.ASM:325 as the store (the line
+  after the gMouseHandlerInstalled store at :324) and gives src/E1A72.ASM:100 only as the source's own
+  description of the order; comment only, no code byte changed]
+- [x] should src/E14EF.C:128-129 (BlinkText, "so this is the 'confirm' flash"): nothing in src/ names the
   flash; the one caller calls BlinkText whenever picked != -1 (src/E14EF.C:351-355), which is a confirm key
   (:335) or a click inside the rectangle (:327). Say the flash runs on any pick, or mark "confirm" as an inference
   ([H]) and cite the path. Or drop the word.
+  [fixed in 96ea09b: the BlinkText comment (:128-129) now says "Called on any pick, by a confirm key (:335) or a
+  click inside the rectangle (:327); reading it as a 'confirm' flash is [H]"; comment only, no code byte changed]
 - [ ] note src/E14EF.C:161 (the CountMaskBits [H] paragraph): unchanged, and still correct to keep [H]; no caller
   reaches the shift edge (EOV0.C:1193 and :1244 pass shift 0).
 - [ ] note src/E14EF.C:144-151 and src/E082C.C:302 (IsPointInRect and IsPointInsideRect): the two are separate
