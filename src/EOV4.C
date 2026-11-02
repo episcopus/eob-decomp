@@ -8,14 +8,16 @@
 extern signed char gHead199D[]; /*@ ds:199D */  /* rows of 18 signed heading offsets */
 extern unsigned char gB894[]; /*@ ds:B894 */    /* 9-byte tile records (src/E08E6.C) */
 extern signed char far *gEF6A[]; /*@ ds:EF6A */ /* 18 far pointers into gB894 (src/E1414.C) */
+extern signed char gA9C6; /*@ ds:A9C6 */        /* offset into the gEF6A target (src/E0ACD.C) */
+extern signed char g194B[]; /*@ ds:194B */      /* per-slot byte flags (src/E08E6.C) */
+extern signed char g1879[]; /*@ ds:1879 */      /* per-object count-1 (this unit) */
 extern int gAngleA9C8[]; /*@ ds:A9C8 */         /* 18 heading words, the masked sum (this unit) */
-extern int gViewDCD6[]; /*@ ds:DCD6 */          /* 18 view slots, reset to -1 (this unit) */
-extern int gViewDCB2[]; /*@ ds:DCB2 */          /* 18 view slots, reset to -1 (this unit) */
+extern int gViewSlots[]; /*@ ds:DCB2 */         /* 18 {left,right} view-slot pairs (this unit) */
 
 /* ovl4:0000: for each of the 18 view slots, compute a heading word from `base` plus the slot's
    signed offset in the 18-byte row `row` of ds:199D, masked to 10 bits, store it in the heading
    table at ds:A9C8, point the slot's ds:EF6A entry at the 9-byte tile record for that heading in
-   ds:B894, and reset the slot to -1 in the two view-slot arrays at ds:DCD6 and ds:DCB2. Called by
+   ds:B894, and reset the slot to -1 in both halves of the view-slot array at ds:DCB2. Called by
    Ovl4_044B at ovl4:04D3. Purpose unknown: the meaning of `row` and of the 18 slots. DRAFT: the
    shape matches but the register allocator puts `off` in DI where the original uses CX (tried
    `off = row * 18` inline, `off = row; off *= 18`, `register`, and declaration orders). */
@@ -28,8 +30,8 @@ extern int gViewDCB2[]; /*@ ds:DCB2 */          /* 18 view slots, reset to -1 (t
     for (si = 0; si < 18; si++) {
         gAngleA9C8[si] = heading = (base + gHead199D[si + off]) & 0x3FF;
         gEF6A[si] = (signed char far *)&gB894[heading * 9];
-        gViewDCD6[si] = -1;
-        gViewDCB2[si] = -1;
+        gViewSlots[si + 18] = -1;
+        gViewSlots[si] = -1;
     }
 }
 
@@ -44,7 +46,66 @@ extern void SetRegionExtents(int region, int left, int top, int width, int heigh
     SetRegionExtents(region, left, top * 8, right - left, (bottom - top) * 8);
 }
 
-/*@ ovl4:0097 stub */ void Ovl4_0097(int slot, int far *left, int far *right, int region) {}
+extern signed char g6B82[]; /*@ ds:6B82 */   /* per slot,i signed column adjustment (this unit) */
+extern signed char g6CC6[]; /*@ ds:6CC6 */   /* per slot,i signed {left,right} bounds (this unit) */
+
+/* ovl4:0097: computes the visible left and right columns of one view slot. When the slot's pair in
+   gViewSlots (at ds:DCB2) is not -1 it just returns that pair. Otherwise it starts from 0..0x16 and
+   walks the 18 tile records (gEF6A[i][gA9C6]): a record whose ds:194B flag has bit 3 clear
+   contributes its ds:6B82 column adjustment (a positive value pulls *right left, a negative one
+   pulls *left right, and -40 is skipped while -41 forces an empty left), a record whose bit 3 is
+   set contributes its ds:6CC6 {left,right} bounds; the walk stops when *right falls below *left.
+   The pair is cached back into gViewSlots and SetRegionRect fits region `region` to the span.
+   Called by Ovl4_1E18 at ovl4:1E23. Purpose unknown: what the records and adjustments mean.
+   DRAFT: the body matches but the original keeps `2 * slot` in SI for the first test and spills a
+   copy to a third local, where our build keeps the loop counter in SI; tried `register` and
+   declaration orders. */
+/*@ ovl4:0097 draft */ void ComputeViewSpan(int slot, int far *left, int far *right, int region)
+{
+    int pair;
+    int i;
+    int heading;
+    int adjust;
+
+    pair = 2 * slot;
+    if (gViewSlots[pair] != -1) {
+        *left = gViewSlots[pair];
+        *right = gViewSlots[pair + 1];
+    } else {
+        *left = 0;
+        *right = 0x16;
+        slot = slot * 18;
+        for (i = 0; i < 18; i++) {
+            heading = gEF6A[i][gA9C6];
+            if ((g194B[heading] & 8) == 0) {
+                adjust = g6B82[slot + i];
+                if (g1879[heading] == 0)
+                    continue;
+                if (adjust == -40)
+                    continue;
+                if (adjust == -41) {
+                    *left = 0x16;
+                    *right = 0;
+                    break;
+                }
+                if (adjust > 0 && *right > adjust)
+                    *right = adjust;
+                if (adjust < 0 && -adjust > *left)
+                    *left = -adjust;
+            } else {
+                if (g6CC6[(slot + i) * 2] > *left)
+                    *left = g6CC6[(slot + i) * 2];
+                if (g6CC6[(slot + i) * 2 + 1] < *right)
+                    *right = g6CC6[(slot + i) * 2 + 1];
+            }
+            if (*right < *left)
+                break;
+        }
+        gViewSlots[pair] = *left;
+        gViewSlots[pair + 1] = *right;
+    }
+    SetRegionRect(region, *left, 0, *right, 0xf);
+}
 
 struct Region {             /* the 16-byte region records at ds:009F (src/E1DE7.C) */
     int left;               /* +0 */
@@ -124,7 +185,40 @@ extern unsigned char gViewBufADB0[]; /*@ ds:ADB0 */  /* the view pixel buffer (t
     }
 }
 
-/*@ ovl4:036A stub */ void Ovl4_036A(void) {}
+/* ovl4:036A: flips bit 0x4000 of a rectangle of word pixels in the view buffer at ds:ADB0, reading
+   from the page buffer at ds:F43E. `src` starts at (g1879[page] - 1) * 0x35E + x2 * 2 + 0x294;
+   for each of the `height` rows and `width` columns it reads the word at
+   src[width * row + (width - 1 - col)], skips it when zero and stores it to
+   ds:ADB0[(y + row) * 0x16 + x + col] with bit 0x4000 toggled, skipping columns outside 0..0x15.
+   Called by Ovl4_044B at ovl4:04B4 and ovl4:04CD. Purpose unknown: what the bit marks.
+   DRAFT: the body matches except the outer loop counter: the original holds it in CX, ours in DI/SI
+   (tried declaration orders and `register`). */
+/*@ ovl4:036A draft */ void ToggleViewColumn(char x, char y, char page, int x2, char height, char width)
+{
+    unsigned int far *src;
+    int row;
+    int col;
+    int pixel;
+
+    if (g1879[page] == 0)
+        return;
+    src = (unsigned int far *)(gBufF43E + (g1879[page] - 1) * 0x35E + x2 * 2);
+    src += 0x14A;
+    for (row = 0; row < height; row++) {
+        for (col = 0; col < width; col++) {
+            if (x + col < 0 || x + col >= 0x16)
+                continue;
+            pixel = src[width * row + (width - 1 - col)];
+            if (pixel == 0)
+                continue;
+            if (pixel & 0x4000)
+                pixel -= 0x4000;
+            else
+                pixel |= 0x4000;
+            gViewBufADB0[(y + row) * 0x16 + x + col] = pixel;
+        }
+    }
+}
 
 extern signed char g194B[]; /*@ ds:194B */  /* per-slot byte flags (src/E08E6.C) */
 
@@ -165,7 +259,7 @@ extern int gViewColRight; /*@ ds:FE40 */       /* the visible right column (this
 
     for (i = start; i < 18; i++) {
         slot = g7278[i];
-        Ovl4_0097(slot, &gViewColLeft, &gViewColRight, 5);
+        ComputeViewSpan(slot, &gViewColLeft, &gViewColRight, 5);
         if (gViewColRight < gViewColLeft)
             continue;
         Ovl4_1091(slot);
