@@ -47,13 +47,17 @@
         ;                                              (BX and 3) or the mask: the old low two bits
         ;                                              are kept, the rest of BX is dropped, and the
         ;                                              mask supplies whatever bits it has. Nothing
-        ;                                              in src/ writes it, so the branch at 1A72:01A6
-        ;                                              runs only if the program's initial data sets
-        ;                                              it; a port must check that data.
+        ;                                              in src/ writes it; the word is 0002 in the
+        ;                                              EOB.EXE image (file offset 2BC12h), so the
+        ;                                              branch at 1A72:01A6 is live from program
+        ;                                              start: with the middle bit set BX becomes
+        ;                                              (BX and 3) or 2, forcing bit 1.
         ;                                              QUIRK 1A72:01A6: the (BX and 3) or mask
         ;                                              replacement is behaviour a port must keep
-        EXTRN   g8134:WORD              ; @ ds:8134: accumulated button changes; the map screen
-        ;                                              clears it (E14EF.C:184, E0ACD.C:886)
+        EXTRN   g8134:WORD              ; @ ds:8134: accumulated button changes; DrawOptionList
+        ;                                              (14EF:0154) clears it as its last statement
+        ;                                              (E14EF.C:193), and RunMapLoop clears it on
+        ;                                              entry (E0ACD.C:886, 0ACD:0E8A)
         EXTRN   g8136:WORD              ; @ ds:8136: latched to 1 once any button has been seen;
         ;                                              this unit never clears it, E1AAD.ASM:1356
         ;                                              sets it too and nothing in src/ clears it
@@ -123,12 +127,14 @@
         EXTRN   _gZoneBottom:WORD              ; @ ds:8168: hide zone, bottom in pixels, stored as
         ;                                              given (1BBE:0240)
         EXTRN   g8172:WORD              ; @ ds:8172: far pointer handed to DGROUP:80AA as its
-        ;                                              argument, offset (declared at E1BBE.ASM:71),
-        ;                                              the far pointer SetFarPointer stores,
-        ;                                              GetFarPointer reads; 17A6 points it at its
-        ;                                              16-byte save buffer (E17A6.ASM:95, calls at
-        ;                                              :283, :356)
-        EXTRN   g8174:WORD              ; @ ds:8174: the same far pointer, segment (E1BBE.ASM:72)
+        ;                                              argument, offset. E1BBE pushes the segment
+        ;                                              then this offset before the call
+        ;                                              (1BBE:029F-02A7). SetFarPointer stores it,
+        ;                                              GetFarPointer reads it; the 17A6 unit points
+        ;                                              it at its 16-byte save buffer
+        ;                                              (E17A6.ASM:95, calls at :283, :356)
+        EXTRN   g8174:WORD              ; @ ds:8174: the same far pointer, segment (pushed first
+        ;                                              at 1BBE:029F)
         EXTRN   g8026:WORD              ; @ ds:8026: scratch copy of gDrawnX made by IsMouseInRect
         EXTRN   g8028:WORD              ; @ ds:8028: scratch copy of gDrawnY made by IsMouseInRect
         EXTRN   gFC08:DWORD             ; @ ds:FC08: previous INT 3Fh vector, chained by 1A72:0006
@@ -318,10 +324,11 @@ L0174:  pop     es
 ; separate function). CX = x, DX = y, BX = buttons. With DGROUP:814A nonzero it does nothing (a
 ; nonzero word disables the handler). In 640 wide mode it halves x; in every mode it clamps x to
 ; 13Fh (only x is clamped: nothing here bounds y, so the driver's range is the only y bound [H]) and
-; keeps the event position at DGROUP:813C/813E. When the mask at DGROUP:8132 is nonzero
-; and the middle button bit [H] (BX bit 2, value 4) is set, it sets BX to (BX and 3) or the mask
-; (`and bx,3; or bx,ax`, 1A72:01A6): the old low two bits are kept and the middle bit and every
-; other bit are dropped. The installed mask 1Fh (INT 33h function 0Ch) requests moves and left and
+; keeps the event position at DGROUP:813C/813E. The mask at DGROUP:8132 is 0002 in the EOB.EXE
+; image, so this branch is live: when the middle button bit [H] (BX bit 2, value 4) is set it sets
+; BX to (BX and 3) or the mask (`and bx,3; or bx,ax`, 1A72:01A6), the old low two bits are kept
+; and every other bit is dropped, so a middle-button event leaves BX as (BX and 3) or 2, forcing
+; bit 1. The installed mask 1Fh (INT 33h function 0Ch) requests moves and left and
 ; right presses and releases [H]; BX carries the full button state on each event the handler gets,
 ; so the middle bit (4) reaches it on each event while the middle button is held, though a middle
 ; press or release alone never calls it. When the buttons changed it calls the keyboard glue
@@ -337,10 +344,11 @@ L0174:  pop     es
 ; gone through.
 ; QUIRK 1A72:0229: when x changed the handler jumps over the y reload (`jne 0x235` skips
 ; `mov dx,[_gCursorY]` at 1A72:022B), so the zone test at 1A72:0244 reads the event's y.
-; HandleMouseButtons preserves DX (`push dx` at 1AAD:0B13 and `pop dx` at 1AAD:0B97), so that y
-; survives the call. It equals the published _gCursorY unless DGROUP:80EC is 2 (the store at
-; 1A72:021D was skipped), when the zone test uses the event y while the x test uses the published
-; _gCursorX (reloaded at 1A72:0221).
+; HandleMouseButtons preserves DX, CX and BX (`push bx` at 1AAD:0B11, `push cx` at :0B12,
+; `push dx` at :0B13; `pop dx` at :0B97, `pop cx` at :0B98, `pop bx` at :0B99), so the event
+; y, x and button word all survive the call. The y equals the published _gCursorY unless
+; DGROUP:80EC is 2 (the store at 1A72:021D was skipped), when the zone test uses the event y
+; while the x test uses the published _gCursorX (reloaded at 1A72:0221).
 ; QUIRK 1A72:0248: the `x < gZoneLeft` test jumps into the y test, so the hide zone's left edge is
 ; never enforced (only x > gZoneRight and y outside [top, bottom] leave the zone). The handler calls
 ; no earlier mouse handler (none is saved in this unit).
