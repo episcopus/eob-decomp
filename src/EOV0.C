@@ -9,6 +9,9 @@
 extern char gOverlayBuf[]; /*@ ds:113F */ /* the overlay screen buffer the cell slicer reads */
 extern void far * (far *gFn8082)(int x, int y, int w, int h, void far *buf); /*@ ds:8082 */
 extern void farfree(void far *block); /*@ 0000:71EE */
+extern void PlaySound(int sound); /*@ 177D:0070 */
+extern int DispatchKeyWait(void far *list); /*@ 16A5:005A */
+extern unsigned char far g3A0; /*@ 0000:03A0 */ /* a flag in the resident segment (Purpose unknown) */
 
 struct IconDef9 {               /* the 17 9-byte icon definitions at 2084 (17 * 9 = 153 bytes) */
     unsigned char x;            /* +0: the cell's left edge */
@@ -53,7 +56,17 @@ extern void far *g5E64[0x11]; /*@ ds:5E64 */ /* the 17 sliced icon pointers this
         }
     }
 }
-/*@ ovl0:00F7 stub */ void Ovl0_00F7(void) {}
+/* ovl0:00F7: waits for a key through 16A5:005A with the caller's list. When the resident flag
+   g3A0 (0000:03A0) is 1, it clears the flag and plays sound 0x14 first. Called by ovl0:0A5E, 0DDC,
+   0EE5, 135D and 28F9. */
+/*@ ovl0:00F7 */ void WaitKeyOrPause(void far *list)
+{
+    if (g3A0 == 1) {
+        g3A0 = 0;
+        PlaySound(0x14);
+    }
+    DispatchKeyWait(list);
+}
 /*@ ovl0:0128 stub */ void Ovl0_0128(void) {}
 /*@ ovl0:037A stub */ void Ovl0_037A(void) {}
 /*@ ovl0:03B2 stub */ void Ovl0_03B2(void) {}

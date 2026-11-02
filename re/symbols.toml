@@ -6784,6 +6784,9 @@ unit = "eov0"
 addr = "ovl0:00F7"
 size = 49
 evidence = ["near", "frame"]
+name = "WaitKeyOrPause"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov0_0128"
