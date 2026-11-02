@@ -1,5 +1,70 @@
 # Review: e14ef
 
+# Round 9
+
+Reviewer: rev-haiku
+Commit reviewed: f41d915 (main; src/E14EF.C last changed in b6c4d4e; `make match FILE=src/E14EF.C`: 6 of 6, 1410 bytes, exit 0; `make readability UNIT=e14ef`: 0 findings)
+
+Playbook 70. Judge what a matching file can still get wrong: names, types, comments, structure.
+The matcher already proved the bytes; do not re-prove them, read for meaning.
+
+Round 9. Round 8's items are ticked, and the E1A72.ASM cites, the UpdateOptionList gating claim and the
+callers hold on f41d915. One thing has gone stale: the three E1BBE.ASM cites that round 8 corrected
+(b6c4d4e) no longer name the lines they give, because src/E1BBE.ASM moved in b6f8784 after that fix.
+One must-fix, comments only.
+
+Checked this round with grep -n and sed against the current text: the E1BBE.ASM bracket (PROC lines, the
+release lines and the hook EXTRNs); the E1A72.ASM cites (:65, :73, :100, :325, :386-387, :410-411); the
+EOV0.C callers (:1148, :1149, :1189-1190, :1193, :1203, :1204, :1215, :1241-1242, :1244, :1253, :1257,
+:1259, :1261, :1262); src/EOV2.C (:380, :383); src/E1AAD.ASM (:337-338, :350-351, :396, :405);
+src/E1C0E.C (:59-61); src/E1DE7.C (:34); src/E16A5.C (:62, :224, :225, :240, :241); src/E082C.C (:465);
+src/E07C8.C (:30); src/E1A47.C (:84); src/E0ACD.C (:883-886); src/EOV5.C (:173). gFC7A has one reader in
+src/ (EOV0.C:1259 and :1261), as the header says. The matcher (6 of 6, exit 0) and the readability check
+(0 findings) were re-run on f41d915.
+
+## Findings
+
+Each finding is a checkbox. `must-fix` blocks `make review-pass` until a decompiler ticks it off
+(with the commit that fixes it); `should` and `note` do not block.
+
+- [ ] must-fix src/E14EF.C:84, :86, :88 (the bracket cites into src/E1BBE.ASM): three cites point at
+  other lines now.
+  (a) line 84, "src/E1BBE.ASM:489-502": `_LockHidePointer PROC FAR` is at :493 and its release
+  `dec word ptr [_gPointerBusy]` at :506 (the routine ends at :509). Cite 493-506.
+  (b) line 86, "src/E1BBE.ASM:126-127": the quoted words "far fn (g8172/g8174)" and "far fn (no
+  arguments)" are on :130 and :131 (the `g80AA` and `g80A2` EXTRNs). Cite 130-131.
+  (c) line 88, "src/E1BBE.ASM:512-525": `_LockShowPointer PROC FAR` is at :516 and its release at :529.
+  Cite 516-529.
+  (evidence: `grep -n "_LockHidePointer PROC\|_LockShowPointer PROC\|dec     word ptr \[_gPointerBusy\]"
+  src/E1BBE.ASM` gives :493, :506, :516, :529; `sed -n 130,131p src/E1BBE.ASM` gives the quoted hook
+  comments; `git log --oneline b6c4d4e..HEAD -- src/E1BBE.ASM` gives b6f8784, the commit that moved them)
+- [ ] should src/E14EF.C:11-14, :194-204, :273-288 and the struct comments at :35-36, :48: the header
+  mixes bare `:NNN` cites, which are lines of src/E14EF.C (`reads height at :273` is the `lastRow`
+  line), with `14EF:NNNN` addresses of the disassembly (`14EF:0336`). A reader cannot tell which is
+  which from a bare `:273`. Say once in the file header that a bare `:NNN` is a line of this file.
+- [ ] note carried from rounds 6 to 8, still open: the divisions at :274 (`% (lastRow + 1)`), :293 and
+  :317 (`/ lineheight`, which is gFontHeight + gFC78) are by values that are zero when the panel height
+  or the font height is zero. Whether those can be zero is not established; the header does not say.
+- [ ] note routed, still stale in other owners' files (not edited here): src/E1C00.ASM:288 cites
+  "E14EF.C:227" for the mouse-enabled test (it is :290); re/renames.toml:775 and re/globals.toml:302 cite
+  E14EF.C:144 and :227 (:144 is `return 0;` in IsPointInRect). Their owners route them.
+- [ ] note not re-checked this round: the overlay addresses ovl0:20DD and ovl0:228E (the CountMaskBits
+  header, :150-151) and the 14EF:0336 imul behind the QUIRK at :286. Those need the disassembly, which
+  I did not open this round.
+
+## Summary
+
+The unit is understandable from its source alone, and the names still hold: DrawOptionList,
+UpdateOptionList, IsPointInRect, FindMaskBit, CountMaskBits and BlinkText say what the code does. The
+caller masks, the gFC7A reader, the key codes and the shared globals agree with the other files of src/.
+What fails is one set of evidence cites: the three cites into src/E1BBE.ASM in the LockHidePointer and
+LockShowPointer comments were right when round 8 wrote them and no longer are. One must-fix, comments
+only, no code change; one should and two notes. No matcher, spec or pin question; nothing escalated.
+
+---
+
+# Round 8 (kept)
+
 Reviewer: rev-haiku
 Commit reviewed: a2839a6 (main; src/E14EF.C last changed in e2502f9; `make match FILE=src/E14EF.C`: 6 of 6, 1410 bytes, exit 0; `make readability UNIT=e14ef`: 0 findings)
 
