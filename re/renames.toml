@@ -1962,3 +1962,12 @@ new = "GetStrengthDamageBonus"
 kind = "function"
 why = "0A72:0128 derives a value from the +0D strength score and +0F percentile through the g3453/g3458/g345C tables; RollAttackDamage uses it as the base of the damage total when its flag is set (E0DE8.C:227-228); the old name was a placeholder"
 date = "2026-11-02"
+
+[[rename]]
+id = "0EF3:2EBC=AnimateConeOfCold"
+addr = "0EF3:2EBC"
+old = "f0EF3_2EBC"
+new = "AnimateConeOfCold"
+kind = "function"
+why = "called only by CastConeOfCold (0EF3:18D8), the cone-of-cold spell; draws its particle cone"
+date = "2026-11-02"
