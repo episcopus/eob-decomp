@@ -128,7 +128,7 @@ extern unsigned gSegsFC0C[]; /*@ ds:FC0C */
    src/E19BC.C:120, so it is the number of successful MemAlloc calls minus the number of MemFree
    calls and can fall below the number of live blocks (src/E19BC.C:17-21). StartupAlloc sets it
    to 0 at 07A9:00E6, after its five allocations, so they are no longer counted: Purpose unknown. */
-extern unsigned g810E; /*@ ds:810E */
+extern unsigned gAllocCount; /*@ ds:810E */
 extern void far *gA9C0; /*@ ds:A9C0 */  /* the 6x6 font loaded from FONT6.FNT (src/E07C8.C:48 and
                                            :252, the call at 07C8:0419, the store at 07C8:0420) */
 extern int g811F; /*@ ds:811F */  /* this unit tests it as 7 to gate the " taken." message
@@ -263,7 +263,7 @@ extern void SetMousePointerShape(int hotX, int hotY, void far *icon); /*@ 1BB1:0
     gSegEFC2 = f19EC_0002(3);
     LoadSoundDriver();
     SetUnpackBuffer(gSegsFC0C[7], UNPACK_BUFFER_SIZE);
-    g810E = 0;
+    gAllocCount = 0;
     LoadItemData();
     f1A47_0169(gA9C0);
     LoadDecorateIcons();
