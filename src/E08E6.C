@@ -2,8 +2,11 @@
    per-type behaviour routines of the game's map objects: UpdateObjects walks the 30 28-byte object
    records at ds:8A82 (struct Obj28, indexed by the 27-byte character records at ds:1A3B, struct
    Entry27) and dispatches each live object by its type to the 000B/00C3/03FE/0AB8/0B34/0B94/0CA6
-   behaviours. 32 functions are at L2 and four are drafts (0765, 0B94, 1410, 17FD).
+   behaviours. 35 functions are at L2 and one is a draft (00C3). The unit is compiled with -B:
+   that is what keeps the identical jump tails of 0765, 0B94, 17FD and 1410 that a -O build merges.
    Whitespace and empty-body stubs keep the siblings in address order. */
+
+/*@flags -ml -O -Z -B */
 
 struct Obj28 {              /* 28-byte records, 30 of them at ds:8A82 */
     char b0;                /* +0: index into the ds:1A3B table (the character record) */
@@ -185,27 +188,37 @@ void Obj10F3(struct Obj28 far *obj);   /* forward: 05EA reaches it before its de
         gFC04 |= 0x8000000L;
 }
 
-/* 08E6:00C3: for an object whose type is 0..6 and whose count is positive: run 17A6:0F61(id,
-   gSoundVolume) and 17A6:0314(id, gSoundVolume); when the first is under 4 and the second minus
-   twice the orientation, minus 3, wrapped into 0..7, is over 2 or the first is under 2, clear the
-   type and reset the sound field. Called by 0150 and UpdateObjects. Purpose unknown: what the two
-   17A6 calls compute. */
-/*@ 08E6:00C3 */ void Obj00C3(struct Obj28 far *obj)
+/* 08E6:00C3: for an object whose type is not 7, 8, 9 or 0xa and whose count is positive: run
+   17A6:0F61(id, gSoundVolume) and 17A6:0314(id, gSoundVolume); when the first is under 4 and the
+   second minus twice the orientation, minus 3, wrapped into 0..7, is over 2 or the first is under 2,
+   clear the type and reset the sound field. Called by 0150 and UpdateObjects. Purpose unknown: what
+   the two 17A6 calls compute. DRAFT, blocked: a TCC -B codegen question. The unit is -B (that is
+   what makes 0765, 0B94, 17FD and 1410 match); under -B this body matches byte for byte except one
+   3-byte instruction: the original reloads `les bx,[bp+6]` at 08E6:00F2 before pushing obj->id
+   (08E6:00EE `push [ds:FBCA]`; 08E6:00F2 `les bx,[bp+6]`; 08E6:00F5 `push es:[bx+2]`), while ours
+   reuses the bx the `&&` chain already holds and so is 3 bytes short (ours je 0x86 against the
+   original je 0x89). TCC keeps a far pointer in ES:BX and drops it at a block boundary; every form
+   tried (the `&&` chain, separate `if` returns, a switch, nested ifs, `goto`, do/while(0), for(;;),
+   while, block-scoped locals, register locals, an explicit `else`) either keeps the cached bx as
+   ours does or lays the first test out as `jne skip; jmp` instead of `je` (the `||` early-return
+   form matches under `-ml -O -Z` but then 0765, 0B94 and 17FD do not). */
+/*@ 08E6:00C3 draft */ void Obj00C3(struct Obj28 far *obj)
 {
     int first, dir;
 
-    if (obj->type == 7 || obj->type == 8 || obj->type == 9 || obj->type == 0xa || obj->count <= 0)
-        return;
-    first = f17A6_0F61(obj->id, gSoundVolume);
-    if (first >= 4)
-        return;
-    dir = f17A6_0314(obj->id, gSoundVolume) - obj->orient * 2 - 3;
-    if (dir < 0)
-        dir += 8;
-    if (dir <= 2 && first >= 2)
-        return;
-    obj->type = 0;
-    obj->m10 = gSoundVolume;
+    if (obj->type != 7 && obj->type != 8 && obj->type != 9 && obj->type != 0xa
+            && obj->count > 0) {
+        first = f17A6_0F61(obj->id, gSoundVolume);
+        if (first >= 4)
+            return;
+        dir = f17A6_0314(obj->id, gSoundVolume) - obj->orient * 2 - 3;
+        if (dir < 0)
+            dir += 8;
+        if (dir <= 2 && first >= 2)
+            return;
+        obj->type = 0;
+        obj->m10 = gSoundVolume;
+    }
 }
 
 /* 08E6:0150: run Obj00C3 over every one of the 30 objects in gObjs */
@@ -494,13 +507,10 @@ void Obj10F3(struct Obj28 far *obj);   /* forward: 05EA reaches it before its de
    mind blast and paralyzes every affected member; 21 rolls 1d4 and, under 3, turns through Obj073F
    and plays g3223[roll] after g3220[roll], else announces the wounds spell and hits every affected
    member. Every action then runs the overlay-4 entry, clears gDF4C, decrements m19 unless it is 0xff
-   and sets m18 to 5, returning 1. Called by 0AB8. DRAFT, blocked: a -O cross-jump question: every
-   case matches except the last PlaySoundVolume(0x6c, id) of case 21, which ours tail-merges into the
-   shared `push ax; call; pop; pop` block that case 4, case 16 and the roll<3 path jump to (0A5E);
-   the original keeps that call inline (0765:01A2 `mov ax, 0x6c; push ax; lcall 177D:0106`) and jumps
-   to the tail, a 5-byte basic-block layout difference. The same statement as a separate
-   `if (roll >= 3)`, a `goto` label, a nested block and `break` do not change it. */
-/*@ 08E6:0765 draft */ int Obj0765(struct Obj28 far *obj)
+   and sets m18 to 5, returning 1. Called by 0AB8. The unit's -B flag is what keeps case 21's
+   PlaySoundVolume(0x6c, id) at 08E6:0907 inline instead of tail-merging it into the shared block at
+   08E6:0A5E. */
+/*@ 08E6:0765 */ int Obj0765(struct Obj28 far *obj)
 {
     struct Entry27 far *rec;
     int value;
@@ -583,7 +593,7 @@ void Obj10F3(struct Obj28 far *obj);   /* forward: 05EA reaches it before its de
     }
     fOvl4_1F51(1);
     gDF4C = 0;
-    if (obj->m19 != 0xff)
+    if (obj->m19 != -1)
         obj->m19--;
     obj->m18 = 5;
     return 1;
@@ -625,14 +635,10 @@ void Obj10F3(struct Obj28 far *obj);   /* forward: 05EA reaches it before its de
    turns through TurnObject(obj, -1, dir), sets the state to -1 and returns. The second half looks up
    handle = f0D1C_00DA(id, orient): when TurnObject(obj, handle, -1) fails it turns the other way,
    TurnObject(obj, -1, (orient - arg) & 3), and clears the state, else it sets the state to 1.
-   Called by UpdateObjects. Purpose unknown: what g1991 and the state values select. DRAFT,
-   blocked: a -O cross-jump question. The body matches up to the state==0 store, but ours cross-jumps
-   the two `obj->state = -1` tails (0B94:0083 and 0B94:00A4 in the original stay apart; ours merges
-   them and adds a `les bx` reload at 0x83, a 6-byte difference). A -B build of the unit makes this
-   function match exactly, but -B gives every `||` chain its first test as `jne` over `jmp` and no
-   source form (a unit test, an explicit `if`, a `switch`, separate `if`s) removes that, so -B breaks
-   Obj00C3 (08E6:00C3), which matches -ml -O -Z; hence the flags stay. */
-/*@ 08E6:0B94 draft */ void Obj0B94(struct Obj28 far *obj, int arg)
+   Called by UpdateObjects. Purpose unknown: what g1991 and the state values select. The unit's -B
+   flag is what keeps the two separate `obj->state = -1` stores at 0B94:0083 and 0B94:00A4 that a -O
+   build cross-jumps. */
+/*@ 08E6:0B94 */ void Obj0B94(struct Obj28 far *obj, int arg)
 {
     int handle;
     int cur;
@@ -940,17 +946,14 @@ second:
     obj->m14 = m14;
     MoveObjectToId(obj, id, orient);
 }
-/* 08E6:1410: when the effect mode gF51B and its deadline say an effect is due, run the 122E entry
-   with (0, 0x20): when no object of the 30 has a count left, run 0EC3 on the first object (from
-   index 1) whose 17A6:0F61(id, gSoundVolume) is over 3; then advance the deadline by gF510 and
-   clear gF540. Called by 1414:04E7 and overlay 6. DRAFT, blocked: a -O branch-layout question. The
-   mode-1, mode-2 and the mode-3 first test agree; only the second half of the mode-3 test
-   `gDeadline >= g8492` is laid out the other way round: ours (1410:005A `jb` skip, fall through to
-   `fire` at 1410:005C) where the original has `jae` fire (1410:006A) then `jmp` skip (1410:006C).
-   Writing the test as `g8492 <= gDeadline`, `!(gDeadline < g8492)`, an empty `if`/`else`, or with the
-   inner `return` removed all give ours; the compiler inverts the low-word branch because `fire` is
-   the next block. */
-/*@ 08E6:1410 draft */ void Obj1410(void)
+/* 08E6:1410: the periodic effect tick. Mode 1 (gF51B == 1) fires when the deadline gDeadline is
+   behind g8492 (gDeadline < g8492); mode 2 fires when gF540 has reached gFB32; mode 3 fires when
+   either holds; any other mode does nothing. Firing runs the 122E entry with (0, 0x20), then, when
+   no object of the 30 (from index 1) has a count left, runs 0EC3 on the first object whose
+   17A6:0F61(id, gSoundVolume) is over 3. Either way it resets the deadline to g8492 + gF510 and
+   clears gF540. Called by 1414:04E7 and overlay 6. The unit's -B flag is what keeps the mode-3
+   low-word branch at 1410:005A the right way round that a -O build inverts. */
+/*@ 08E6:1410 */ void Obj1410(void)
 {
     int i, any;
 
@@ -976,8 +979,7 @@ fire:
     f122E_1DA8(0, 0x20);
     any = 0;
     for (i = 1; i < 30; i++) {
-        if (gObjs[i].count <= 0)
-            any += 1;
+        any += gObjs[i].count <= 0;
     }
     if (any == 0) {
         for (i = 1; i < 30; i++) {
@@ -987,7 +989,7 @@ fire:
             }
         }
     }
-    gDeadline += gF510;
+    gDeadline = g8492 + gF510;
     gF540 = 0;
 }
 /* 08E6:1505: when the object id `id` has no count in gB894, fill the first free object slot (count
@@ -1112,14 +1114,10 @@ fire:
 }
 /* 08E6:17FD: fill `list` with gObjs indices and end it with -1: when scanAll is set, every object
    whose id is key; otherwise when scanFiltered is set, the single index 1775(key, field, flags)
-   finds; otherwise the first object 189D accepts for (key, field). Called by 0D1C:0A43. DRAFT,
-   blocked: a -O cross-jump direction question. The two `*list++` tails (scanFiltered and the 189D
-   found branch) are identical; ours keeps the scanFiltered copy (17FD:0058 `add word [bp + 6], 2`)
-   and the found branch jumps back to it (17FD:0086), so the scanFiltered test reaches the loop at
-   17FD:005E and ours differs at +0x41; the original keeps the found copy at 17FD:0082 and the
-   scanFiltered path jumps forward to it (17FD:0058 `jmp` +0x28). Writing `list++` inside each branch
-   or once after the `if`/`else` does not move the copy the compiler keeps. */
-/*@ 08E6:17FD draft */ void Obj17FD(int far *list, int key, int field, char flags, char scanAll, char scanFiltered)
+   finds; otherwise the first object 189D accepts for (key, field). Called by 0D1C:0A43. The unit's
+   -B flag is what keeps the two identical `*list++` tails at 17FD:0058 and 17FD:0082 apart that a -O
+   build cross-jumps. */
+/*@ 08E6:17FD */ void Obj17FD(int far *list, int key, int field, char flags, char scanAll, char scanFiltered)
 {
     struct Obj28 far *obj;
     int i;

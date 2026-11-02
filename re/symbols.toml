@@ -1507,7 +1507,7 @@ size = 74
 evidence = ["far", "segment"]
 name = "ClearObjectType"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e08e6_0055"
@@ -1517,7 +1517,7 @@ size = 110
 evidence = ["near", "frame"]
 name = "ClearType8Objects"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e08e6_00c3"
@@ -1526,8 +1526,6 @@ addr = "08E6:00C3"
 size = 141
 evidence = ["near", "frame"]
 name = "Obj00C3"
-level = "L2"
-match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e08e6_0150"
@@ -1537,7 +1535,7 @@ size = 46
 evidence = ["far", "frame"]
 name = "Obj0150"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e08e6_017e"
@@ -1547,7 +1545,7 @@ size = 154
 evidence = ["near", "frame"]
 name = "BuildObjectFrameMask"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e08e6_0218"
@@ -1557,7 +1555,7 @@ size = 127
 evidence = ["near", "frame"]
 name = "FindObjectFrameBit"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e08e6_0297"
@@ -1567,7 +1565,7 @@ size = 114
 evidence = ["far", "near", "frame"]
 name = "MoveObjectToId"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e08e6_0309"
@@ -1577,7 +1575,7 @@ size = 245
 evidence = ["near", "frame"]
 name = "TurnObject"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e08e6_03fe"
@@ -1587,7 +1585,7 @@ size = 50
 evidence = ["near", "frame"]
 name = "Obj03FE"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e08e6_0430"
@@ -1597,7 +1595,7 @@ size = 346
 evidence = ["near", "frame"]
 name = "Obj0430"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e08e6_058a"
@@ -1607,7 +1605,7 @@ size = 96
 evidence = ["near", "frame"]
 name = "SetObjectFrameFromId"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e08e6_05ea"
@@ -1617,7 +1615,7 @@ size = 341
 evidence = ["near", "frame"]
 name = "Obj05EA"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e08e6_073f"
@@ -1627,7 +1625,7 @@ size = 38
 evidence = ["near", "frame"]
 name = "Obj073F"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e08e6_0765"
@@ -1635,6 +1633,9 @@ unit = "e08e6"
 addr = "08E6:0765"
 size = 851
 evidence = ["near", "frame"]
+name = "Obj0765"
+level = "L2"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e08e6_0ab8"
@@ -1644,7 +1645,7 @@ size = 124
 evidence = ["near"]
 name = "Obj0AB8"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e08e6_0b34"
@@ -1654,7 +1655,7 @@ size = 96
 evidence = ["near", "frame"]
 name = "StepObjectOrient"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e08e6_0b94"
@@ -1662,6 +1663,9 @@ unit = "e08e6"
 addr = "08E6:0B94"
 size = 274
 evidence = ["near", "frame"]
+name = "Obj0B94"
+level = "L2"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e08e6_0ca6"
@@ -1671,7 +1675,7 @@ size = 34
 evidence = ["near", "frame"]
 name = "Obj0CA6"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e08e6_0cc8"
@@ -1681,7 +1685,7 @@ size = 258
 evidence = ["far", "frame"]
 name = "UpdateObjects"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e08e6_0dca"
@@ -1691,7 +1695,7 @@ size = 126
 evidence = ["near"]
 name = "RestoreObjectFlags"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e08e6_0e48"
@@ -1701,7 +1705,7 @@ size = 123
 evidence = ["far", "near", "frame"]
 name = "Obj0E48"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e08e6_0ec3"
@@ -1711,7 +1715,7 @@ size = 251
 evidence = ["far", "near", "frame"]
 name = "Obj0EC3"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e08e6_0fbe"
@@ -1721,7 +1725,7 @@ size = 127
 evidence = ["far", "near", "frame"]
 name = "DamageObject"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e08e6_103d"
@@ -1731,7 +1735,7 @@ size = 46
 evidence = ["far", "frame"]
 name = "Obj103D"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e08e6_106b"
@@ -1741,7 +1745,7 @@ size = 136
 evidence = ["far", "near", "frame"]
 name = "Obj106B"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e08e6_10f3"
@@ -1751,7 +1755,7 @@ size = 554
 evidence = ["far", "frame"]
 name = "Obj10F3"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e08e6_131d"
@@ -1761,7 +1765,7 @@ size = 243
 evidence = ["near", "frame"]
 name = "Obj131D"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e08e6_1410"
@@ -1769,6 +1773,9 @@ unit = "e08e6"
 addr = "08E6:1410"
 size = 245
 evidence = ["far", "frame"]
+name = "Obj1410"
+level = "L2"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e08e6_1505"
@@ -1778,7 +1785,7 @@ size = 90
 evidence = ["far", "frame"]
 name = "Obj1505"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e08e6_155f"
@@ -1788,7 +1795,7 @@ size = 85
 evidence = ["near", "frame"]
 name = "BuildObjectIdList"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e08e6_15b4"
@@ -1798,7 +1805,7 @@ size = 128
 evidence = ["far", "frame"]
 name = "Obj15B4"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e08e6_1634"
@@ -1808,7 +1815,7 @@ size = 162
 evidence = ["near", "frame"]
 name = "Obj1634"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e08e6_16d6"
@@ -1818,7 +1825,7 @@ size = 159
 evidence = ["far", "frame"]
 name = "Obj16D6"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e08e6_1775"
@@ -1828,7 +1835,7 @@ size = 136
 evidence = ["near", "frame"]
 name = "Obj1775"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e08e6_17fd"
@@ -1836,6 +1843,9 @@ unit = "e08e6"
 addr = "08E6:17FD"
 size = 160
 evidence = ["far", "frame"]
+name = "Obj17FD"
+level = "L2"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e08e6_189d"
@@ -1845,7 +1855,7 @@ size = 41
 evidence = ["far", "frame"]
 name = "Obj189D"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e0a72_0006"
