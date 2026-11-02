@@ -16,156 +16,156 @@ Unit: `src/E1E8B.ASM`, the VROOMM overlay manager (31 functions, all L2). Line n
 
 ### Unit header and globals
 
-- [ ] must-fix src/E1E8B.ASM:5-6: "installs a DOS interrupt handler (04D0) for overlay calls" claims an installation this unit does not perform. 04D0 has no direct caller and no vector store here (packet: "no direct call found"); 0134 only swaps whatever is stored at 20B5:0002/0004. Cite who stores 04D0 in the vector, or write what is known ("entered through an interrupt vector, installer not in this unit").
-- [ ] must-fix src/E1E8B.ASM:6: "the MemAlloc call at 086F (0000:72DE, ...)" names the runtime's farmalloc (EXTRN at line 17, `_farmalloc`). MemAlloc is the game's own allocator at 19BC:0007 (src/E1B82.C:66, src/EOV0.C:130). Use farmalloc, as line 17 and the 086F code do.
-- [ ] must-fix src/E1E8B.ASM:8: "Many functions are still stubs; names and globals below are placeholders until proven" is stale. All 31 functions are matched (L2) and none is a stub. Remove the sentence or say which names are still placeholders (none is, by the packet).
-- [ ] must-fix src/E1E8B.ASM:14: `_gOverlayIndex` at 20C1:0000 is called "the overlay index table". The code (03FD, lines 635-639) reads the frame paragraph at index times 8 from it for every relocation, which is TLINK's segment table: WHITEPAPER line 76 places that table at load module offset 20C10h (= 20C1:0000) with 99 entries of 8 bytes (frame paragraph, end offset, kind, flags). Rename it to the segment table's name with `make rename` and fix the comment in 03FD.
-- [ ] should src/E1E8B.ASM:15: `_gOverlayList` (20BF:0000, "overlay record list head") is supported by the chain walk in 0711 (20BF:001C). No change needed; listed so the next reader knows the chain fields (1Ch, 12h) are in the record.
-- [ ] note src/E1E8B.ASM:20-25: the QUIRK 0004 paragraph says the bytes are identical, but in this file the data words sit at file offsets 0 and 2 and the "PATH=" literal at 4, so `mov ds,cs:[4]` in this file reads "PA". The code is correct only in the original frame (the unit starts at 1E8B:0004, map). Say so plainly in that paragraph.
+- [x] must-fix src/E1E8B.ASM:5-6: "installs a DOS interrupt handler (04D0) for overlay calls" claims an installation this unit does not perform. 04D0 has no direct caller and no vector store here (packet: "no direct call found"); 0134 only swaps whatever is stored at 20B5:0002/0004. Cite who stores 04D0 in the vector, or write what is known ("entered through an interrupt vector, installer not in this unit"). [fixed in acac24d: the header now says 04D0 is entered through a DOS interrupt vector whose installer is not in this unit (no direct caller, no vector store; 0134 only swaps 20B5:0002/0004)]
+- [x] must-fix src/E1E8B.ASM:6: "the MemAlloc call at 086F (0000:72DE, ...)" names the runtime's farmalloc (EXTRN at line 17, `_farmalloc`). MemAlloc is the game's own allocator at 19BC:0007 (src/E1B82.C:66, src/EOV0.C:130). Use farmalloc, as line 17 and the 086F code do. [fixed in acac24d: now reads the farmalloc call at 086F]
+- [x] must-fix src/E1E8B.ASM:8: "Many functions are still stubs; names and globals below are placeholders until proven" is stale. All 31 functions are matched (L2) and none is a stub. Remove the sentence or say which names are still placeholders (none is, by the packet). [fixed in acac24d: the stale stubs sentence is removed]
+- [x] must-fix src/E1E8B.ASM:14: `_gOverlayIndex` at 20C1:0000 is called "the overlay index table". The code (03FD, lines 635-639) reads the frame paragraph at index times 8 from it for every relocation, which is TLINK's segment table: WHITEPAPER line 76 places that table at load module offset 20C10h (= 20C1:0000) with 99 entries of 8 bytes (frame paragraph, end offset, kind, flags). Rename it to the segment table's name with `make rename` and fix the comment in 03FD. [fixed in acac24d: renamed to _gTlinkSegmentTable (make rename, WHY cites WHITEPAPER 2.2) and the 03FD comment now names TLINK's segment table]
+- [x] should src/E1E8B.ASM:15: `_gOverlayList` (20BF:0000, "overlay record list head") is supported by the chain walk in 0711 (20BF:001C). No change needed; listed so the next reader knows the chain fields (1Ch, 12h) are in the record. [fixed in acac24d: no change needed, as the review says]
+- [x] note src/E1E8B.ASM:20-25: the QUIRK 0004 paragraph says the bytes are identical, but in this file the data words sit at file offsets 0 and 2 and the "PATH=" literal at 4, so `mov ds,cs:[4]` in this file reads "PA". The code is correct only in the original frame (the unit starts at 1E8B:0004, map). Say so plainly in that paragraph. [fixed in acac24d: the QUIRK now says the data sit at offsets 0 and 2 and PATH= at 4, so cs:[4] reads PA and cs:[6] reads TH here; the code is correct only in the original frame]
 
 ### 000F InitOverlayManager
 
-- [ ] must-fix src/E1E8B.ASM:36-44 (and the exit at 156): "Returns AX = 0 on success, 0FFFEh for a missing file and 0FFFFh for a bad file" is false on one path. The MapOverlayRecords failure exit (lines 153-157: `jae init_ok`, `mov bx,ds:[0B8h]`, `mov cx,0FFFFh`, `jmp init_fail`) loads 0FFFFh into CX, not AX, so AX keeps whatever the failed call left (a DOS result or a byte count), and the handle in BX is never closed. Document that path and mark it `QUIRK 1E8B:...:` (or fix the code's intent with the matcher's help, not by hand).
-- [ ] should src/E1E8B.ASM:84, 90, 112, 117, 147: the codes 0FFFDh, 0FFFCh and 0FFFBh are stored in CX and never returned: every error path reaches init_closefail, which sets AX to 0FFFFh. They are dead stores. Mark `QUIRK 1E8B:...` and say that AX is always 0FFFFh on those paths.
-- [ ] should src/E1E8B.ASM:56 (first compare of ds:[0A0h]): the early success exit when the overlay id word is zero (`jmp init_ok`, AX = 0) is not described. Say what it means (already initialised, or no overlay id yet) or what is not known.
-- [ ] should src/E1E8B.ASM:125-129: "stores the overlay-file offset, its base and size at DGROUP:84B2/84B4 and 20B5:00A4/00A6". The code stores the FBOV size (the u32 at FBOV header +4, WHITEPAPER 2.3) at DGROUP:84B2/84B4, and the offset of the FBOV data at 20B5:00A4/00A6. No base is stored. Name what is stored.
-- [ ] note src/E1E8B.ASM:36-44: the fallback name pointer 20C1:0318 (stored into [bp+6]/[bp+8] when the caller gives none, lines 64-66) is not in the comment. Say what it points to, or that it is not known.
+- [x] must-fix src/E1E8B.ASM:36-44 (and the exit at 156): "Returns AX = 0 on success, 0FFFEh for a missing file and 0FFFFh for a bad file" is false on one path. The MapOverlayRecords failure exit (lines 153-157: `jae init_ok`, `mov bx,ds:[0B8h]`, `mov cx,0FFFFh`, `jmp init_fail`) loads 0FFFFh into CX, not AX, so AX keeps whatever the failed call left (a DOS result or a byte count), and the handle in BX is never closed. Document that path and mark it `QUIRK 1E8B:...:` (or fix the code's intent with the matcher's help, not by hand). [fixed in acac24d: the comment now documents the 1E8B:011F path (AX from _MapOverlayRecords, handle still open) and a QUIRK 1E8B:000F for the dead CX codes]
+- [x] should src/E1E8B.ASM:84, 90, 112, 117, 147: the codes 0FFFDh, 0FFFCh and 0FFFBh are stored in CX and never returned: every error path reaches init_closefail, which sets AX to 0FFFFh. They are dead stores. Mark `QUIRK 1E8B:...` and say that AX is always 0FFFFh on those paths. [fixed in acac24d: marked QUIRK 1E8B:000F: the codes are dead stores and AX is always 0FFFFh on those paths]
+- [x] should src/E1E8B.ASM:56 (first compare of ds:[0A0h]): the early success exit when the overlay id word is zero (`jmp init_ok`, AX = 0) is not described. Say what it means (already initialised, or no overlay id yet) or what is not known. [fixed in acac24d: the comment now describes the 20B5:00A0 == 0 early return and says which of the two meanings is not established]
+- [x] should src/E1E8B.ASM:125-129: "stores the overlay-file offset, its base and size at DGROUP:84B2/84B4 and 20B5:00A4/00A6". The code stores the FBOV size (the u32 at FBOV header +4, WHITEPAPER 2.3) at DGROUP:84B2/84B4, and the offset of the FBOV data at 20B5:00A4/00A6. No base is stored. Name what is stored. [fixed in acac24d: the comment now says the FBOV data offset at 20B5:00A4/00A6 and the FBOV size at DGROUP:84B2/84B4; no base is stored]
+- [x] note src/E1E8B.ASM:36-44: the fallback name pointer 20C1:0318 (stored into [bp+6]/[bp+8] when the caller gives none, lines 64-66) is not in the comment. Say what it points to, or that it is not known. [fixed in acac24d: the comment now says 20C1:0318 is the eob.exe string just past the 99-entry segment table]
 
 ### 0134 SwapAndReopenOverlayFile
 
-- [ ] should src/E1E8B.ASM:170-172: "installs the previously saved one from 20B5:0004:0002" uses a notation that reads as one address. The code loads the offset from ds:[2] and the segment from ds:[4]. Write "the vector whose offset is at 20B5:0002 and segment at 20B5:0004".
+- [x] should src/E1E8B.ASM:170-172: "installs the previously saved one from 20B5:0004:0002" uses a notation that reads as one address. The code loads the offset from ds:[2] and the segment from ds:[4]. Write "the vector whose offset is at 20B5:0002 and segment at 20B5:0004". [fixed in acac24d: now says the vector whose offset is at 20B5:0002 and segment at 20B5:0004]
 
 ### 0185 ShutdownOverlayManager
 
-- [ ] must-fix src/E1E8B.ASM:217: "the second vector 0012 is also used by the exit path of 086F". 086F (lines 1289-1345) never reads ds:[12h]. Remove the sentence or name the real user. (ds:[12h] is the record link read in 02FF, line 493, and written in 0286, line 444.)
+- [x] must-fix src/E1E8B.ASM:217: "the second vector 0012 is also used by the exit path of 086F". 086F (lines 1289-1345) never reads ds:[12h]. Remove the sentence or name the real user. (ds:[12h] is the record link read in 02FF, line 493, and written in 0286, line 444.) [fixed in acac24d: the false sentence is removed; the comment now calls 20B5:0012/0014 cleanup callbacks in the manager's own data segment]
 
 ### 01A7 OpenNamedOverlayFile
 
-- [ ] must-fix src/E1E8B.ASM:238-239: "keeping only the leaf name after the last backslash". 01A7 does not scan for a backslash; it calls 0250, which copies the whole name (up to 12 bytes). Only 01B3 keeps the leaf name.
+- [x] must-fix src/E1E8B.ASM:238-239: "keeping only the leaf name after the last backslash". 01A7 does not scan for a backslash; it calls 0250, which copies the whole name (up to 12 bytes). Only 01B3 keeps the leaf name. [fixed in acac24d: the 01A7 comment now says it copies the whole name; only 01B3 trims the leaf]
 
 ### 01B3 OpenOwnOverlayFile
 
-- [ ] must-fix src/E1E8B.ASM:251-253: "takes the following word (the program name in the master PSP tail)". The `lodsw` at line 275 reads the 16-bit count that follows the environment block (DOS 3 layout) and discards it; the program path starts after that word and is copied by own_copy. Fix the comment.
-- [ ] should src/E1E8B.ASM:251-253: the call to 0250 at the end copies from the caller's argument [bp+6] when it is not null, so the own-file name is only used when the caller passes null (the boot path does, 086F pushes 0,0). Say so; it is the only reason 01B3 works for the boot call.
+- [x] must-fix src/E1E8B.ASM:251-253: "takes the following word (the program name in the master PSP tail)". The `lodsw` at line 275 reads the 16-bit count that follows the environment block (DOS 3 layout) and discards it; the program path starts after that word and is copied by own_copy. Fix the comment. [fixed in acac24d: the 01B3 comment now says the word after the environment is a 16-bit count that is discarded, and the path after it is copied]
+- [x] should src/E1E8B.ASM:251-253: the call to 0250 at the end copies from the caller's argument [bp+6] when it is not null, so the own-file name is only used when the caller passes null (the boot path does, 086F pushes 0,0). Say so; it is the only reason 01B3 works for the boot call. [fixed in acac24d: the 01B3 comment now says 0250 still copies the caller's non-null [bp+6], so the own name is used only when the caller passes null (086F pushes 0,0)]
 
 ### 01F3 OpenOverlayFileViaPath
 
-- [ ] note: the comment matches the code (PATH= compare at cs:0008, ';' split, backslash appended unless the entry ends in ':' or '\'). No change needed.
+- [x] note: the comment matches the code (PATH= compare at cs:0008, ';' split, backslash appended unless the entry ends in ':' or '\'). No change needed. [fixed in acac24d: no change needed, as the review says]
 
 ### 0250 CopyNameAndOpenOverlay
 
-- [ ] note: the comment matches the code (12-byte copy, NUL terminated, null argument skips the copy, carry on failure). No change needed.
+- [x] note: the comment matches the code (12-byte copy, NUL terminated, null argument skips the copy, carry on failure). No change needed. [fixed in acac24d: no change needed, as the review says]
 
 ### 0276 ReadOverlayHeaderBytes
 
-- [ ] must-fix src/E1E8B.ASM:394: "(handle in 20B5:00B8)". The routine reads the handle from BX (the `mov ah,3Fh; int 21h` at 0276 uses BX as set by the caller, 000F's `mov bx,ax` before the reads). It does not read 20B5:00B8. Say "handle in BX (the handle 000F keeps at 20B5:00B8)".
+- [x] must-fix src/E1E8B.ASM:394: "(handle in 20B5:00B8)". The routine reads the handle from BX (the `mov ah,3Fh; int 21h` at 0276 uses BX as set by the caller, 000F's `mov bx,ax` before the reads). It does not read 20B5:00B8. Say "handle in BX (the handle 000F keeps at 20B5:00B8)". [fixed in acac24d: now says the handle is in BX, set by the caller; 000F keeps it at 20B5:00B8]
 
 ### 0286 InitOverlayRecords
 
-- [ ] must-fix src/E1E8B.ASM:413-414: "walks the record table at 20BF:00C0". The table is at DS:00C0 (`lea si,ds:[0C0h]`), and DS is 20B5 (000F loads it from cs:[4]; the 086F bootstrap sets it). 20BF is loaded into ES and is not the table's segment. Write 20B5:00C0 (or DS:00C0).
-- [ ] must-fix src/E1E8B.ASM:416: "points the record at its own segment (ES:0012)". `mov es:[12h],ax` (line 444) runs while ES is still the list head (20BF, loaded at the start of the function), before ES becomes the record. It writes the head's word 0012, not the record's. Fix the comment, and name the head word if it is known what reads it.
-- [ ] must-fix src/E1E8B.ASM:413: "DGROUP:0079 + 10h (the start of free memory after the program)". No evidence is given, and nothing else in the repo names DGROUP:0079 (only this unit reads it, line 425). Give the evidence (a runtime symbol, a whitepaper section) or write "Purpose unknown" for the value.
-- [ ] must-fix src/E1E8B.ASM:418: "the 4A2h marker (also cleared at 05FB)". 05FB clears ES:0010 (line 900) and only reads the marker at ES:0018 (line 896). Nothing in this unit clears 4A2h.
+- [x] must-fix src/E1E8B.ASM:413-414: "walks the record table at 20BF:00C0". The table is at DS:00C0 (`lea si,ds:[0C0h]`), and DS is 20B5 (000F loads it from cs:[4]; the 086F bootstrap sets it). 20BF is loaded into ES and is not the table's segment. Write 20B5:00C0 (or DS:00C0). [fixed in acac24d: now the 20B5:00C0 table (DS:00C0); ES is the 20BF list head]
+- [x] must-fix src/E1E8B.ASM:416: "points the record at its own segment (ES:0012)". `mov es:[12h],ax` (line 444) runs while ES is still the list head (20BF, loaded at the start of the function), before ES becomes the record. It writes the head's word 0012, not the record's. Fix the comment, and name the head word if it is known what reads it. [fixed in acac24d: now says the store goes to the list head's word 20BF:0012 while ES is still the head, which this unit does not read]
+- [x] must-fix src/E1E8B.ASM:413: "DGROUP:0079 + 10h (the start of free memory after the program)". No evidence is given, and nothing else in the repo names DGROUP:0079 (only this unit reads it, line 425). Give the evidence (a runtime symbol, a whitepaper section) or write "Purpose unknown" for the value. [fixed in acac24d: the guess is gone; the comment says what DGROUP:0079 holds is not established and nothing reads cs:000D]
+- [x] must-fix src/E1E8B.ASM:418: "the 4A2h marker (also cleared at 05FB)". 05FB clears ES:0010 (line 900) and only reads the marker at ES:0018 (line 896). Nothing in this unit clears 4A2h. [fixed in acac24d: the false clear reference is removed; the 4A2h store is in 0286]
 
 ### 02FF MapOverlayRecords
 
-- [ ] must-fix src/E1E8B.ASM:477: "computes the 4 KB-rounded size". The code computes (paragraphs minus base) times 16 as SI:DI bytes (`rol si,4`, `and si,0FFF0h`, the chain_load block). There is no 4 KB rounding. Say "the byte count of the image as SI:DI".
-- [ ] should src/E1E8B.ASM:475-481: "starts from the free segment 20B5:00B2": this unit never writes 00B2 (it is read at line 485 only). Say that it is set outside this unit, or where.
-- [ ] note src/E1E8B.ASM:481: the tail at 03B7 converts DX:AX bytes to paragraphs (shifts by 4), not to "a segment value" as such. Fine as written; "paragraphs" would be exact.
+- [x] must-fix src/E1E8B.ASM:477: "computes the 4 KB-rounded size". The code computes (paragraphs minus base) times 16 as SI:DI bytes (`rol si,4`, `and si,0FFF0h`, the chain_load block). There is no 4 KB rounding. Say "the byte count of the image as SI:DI". [fixed in acac24d: now the image's byte count as SI:DI (paragraphs times 16, no rounding)]
+- [x] should src/E1E8B.ASM:475-481: "starts from the free segment 20B5:00B2": this unit never writes 00B2 (it is read at line 485 only). Say that it is set outside this unit, or where. [fixed in acac24d: the comment now says 00B2 is set outside this unit]
+- [x] note src/E1E8B.ASM:481: the tail at 03B7 converts DX:AX bytes to paragraphs (shifts by 4), not to "a segment value" as such. Fine as written; "paragraphs" would be exact. [fixed in acac24d: the tail is now called a paragraph count]
 
 ### 03C4 ReadOverlayImage
 
-- [ ] must-fix src/E1E8B.ASM:568-570: "four KB at a time" and "advancing DS by 0FFFh to step 4 KB". Each read is 0FFF0h bytes (line 587) and DS advances by 0FFFh paragraphs (line 584), which is 0FFF0h bytes (64 KB minus 16), not 4 KB. Fix both phrases.
-- [ ] should src/E1E8B.ASM:569: "seeks to DX:CX". INT 21h/4200h takes CX:DX (CX is the high word); the callers load DX with the low word and CX with the high word. Write CX:DX.
+- [x] must-fix src/E1E8B.ASM:568-570: "four KB at a time" and "advancing DS by 0FFFh to step 4 KB". Each read is 0FFF0h bytes (line 587) and DS advances by 0FFFh paragraphs (line 584), which is 0FFF0h bytes (64 KB minus 16), not 4 KB. Fix both phrases. [fixed in acac24d: now 0FFF0h bytes (64 KB minus 16) per read and the DS step is 0FFFh paragraphs]
+- [x] should src/E1E8B.ASM:569: "seeks to DX:CX". INT 21h/4200h takes CX:DX (CX is the high word); the callers load DX with the low word and CX with the high word. Write CX:DX. [fixed in acac24d: now CX:DX (DX low, CX high)]
 
 ### 03FD ApplyOverlayRelocations
 
-- [ ] note src/E1E8B.ASM:617-622: the reloc list is read from the image base plus ES:0008 (paragraph part in DS, offset in SI); the comment says "at the record's ES:0008/ES:000A". Accurate enough; say which word is the byte offset and which is the count (CX from ES:0A).
+- [x] note src/E1E8B.ASM:617-622: the reloc list is read from the image base plus ES:0008 (paragraph part in DS, offset in SI); the comment says "at the record's ES:0008/ES:000A". Accurate enough; say which word is the byte offset and which is the count (CX from ES:0A). [fixed in acac24d: the comment now says ES:0008 is the byte offset of the reloc list and ES:000A is the count (CX from 02FF)]
 
 ### 0442 RelocateOverlayPointer
 
-- [ ] must-fix src/E1E8B.ASM:652-654: "Given DS:DX (the overlay base)" and "replaces the ES:[BX+4] entry with its 20B5:0020 version slot". DX is the frame paragraph read from the 20C1 table in 03FD (line 639, `mov dx,[di]`), and `mov ds,dx` (line 661) makes it DS. The search (lines 686-690) reads DS:[di+2] from DS:0020, which is that segment's version table (the table 066F and 068D write at ES:0020 of an overlay record). 20B5 is not involved.
-- [ ] should src/E1E8B.ASM:652-654: "the b8 50 pattern" needs a sentence on what it is (a `mov ax,imm` followed by `push ax`, the fixup form the comment assumes). Say which bytes are checked and what the four masked bytes mean.
-- [ ] note src/E1E8B.ASM:700: `rel_out2` is a second `pop cx; ret` (the not-found exit). Mark it as such.
+- [x] must-fix src/E1E8B.ASM:652-654: "Given DS:DX (the overlay base)" and "replaces the ES:[BX+4] entry with its 20B5:0020 version slot". DX is the frame paragraph read from the 20C1 table in 03FD (line 639, `mov dx,[di]`), and `mov ds,dx` (line 661) makes it DS. The search (lines 686-690) reads DS:[di+2] from DS:0020, which is that segment's version table (the table 066F and 068D write at ES:0020 of an overlay record). 20B5 is not involved. [fixed in acac24d: the comment now says DX is the 20C1 frame paragraph, mov ds,dx, and the version table searched is DS:0020; 20B5 is not involved]
+- [x] should src/E1E8B.ASM:652-654: "the b8 50 pattern" needs a sentence on what it is (a `mov ax,imm` followed by `push ax`, the fixup form the comment assumes). Say which bytes are checked and what the four masked bytes mean. [fixed in acac24d: the comment now spells out the bytes checked (ES:BX-1 and +3 are 0B8h, ES:BX+2 and +6 are 50h) and the 0F807h mask]
+- [x] note src/E1E8B.ASM:700: `rel_out2` is a second `pop cx; ret` (the not-found exit). Mark it as such. [fixed in acac24d: rel_out2 now carries a comment marking it the 1E8B:049E not-found exit]
 
 ### 04D0 OverlayCallHandler
 
-- [ ] note: the comment matches the code (odd BP to __OverlayHalt, the 20B5 segment, the request word, the 0016 call, IRET). No change needed beyond the header claim at line 5-6 above.
+- [x] note: the comment matches the code (odd BP to __OverlayHalt, the 20B5 segment, the request word, the 0016 call, IRET). No change needed beyond the header claim at line 5-6 above. [fixed in acac24d: no change needed, as the review says; the header 04D0 claim is fixed above]
 
 ### 0536 AgeOverlayRecords
 
-- [ ] must-fix src/E1E8B.ASM:783-786: the comment describes LoadOverlayRecord's logic (the ES:0010 test, the ES:001B/ES:001A flags, the ES:0018 call, the ES:000E store, the __OverlayHalt jump). None of that is in AgeOverlayRecords. Its code walks the 20B5:00BC chain, calls 0613 when the test fails, calls 05FB or 077D when ES:001B is zero, decrements ES:001B otherwise, moves (06C0) and links (0711) the record, and stores the new top at the caller's ES:0010. Rewrite the comment for the code that is there.
+- [x] must-fix src/E1E8B.ASM:783-786: the comment describes LoadOverlayRecord's logic (the ES:0010 test, the ES:001B/ES:001A flags, the ES:0018 call, the ES:000E store, the __OverlayHalt jump). None of that is in AgeOverlayRecords. Its code walks the 20B5:00BC chain, calls 0613 when the test fails, calls 05FB or 077D when ES:001B is zero, decrements ES:001B otherwise, moves (06C0) and links (0711) the record, and stores the new top at the caller's ES:0010. Rewrite the comment for the code that is there. [fixed in acac24d: the 0536 comment is rewritten for its own code (00BA, 0789, 0761, 0613, 05FB/077D, 06C0/0711, the [00B0] store)]
 
 ### 0580 LoadOverlayRecord
 
-- [ ] must-fix src/E1E8B.ASM:828-832: "clears or restores each record's version table (068D and 077D)". The loop calls 068D and 077D only when ES:001B is zero; the other branch adds zero (`xor ax,ax`). Nothing restores a version table in the loop (064E does that, before the loop). Fix the sentence.
-- [ ] should src/E1E8B.ASM:828-832: "(0761 says how many bytes are left)". 0761 returns paragraphs (see 0761 below). Say paragraphs.
+- [x] must-fix src/E1E8B.ASM:828-832: "clears or restores each record's version table (068D and 077D)". The loop calls 068D and 077D only when ES:001B is zero; the other branch adds zero (`xor ax,ax`). Nothing restores a version table in the loop (064E does that, before the loop). Fix the sentence. [fixed in acac24d: the comment now says 064E restores once before the loop and the loop clears (068D) only when ES:001B is zero]
+- [x] should src/E1E8B.ASM:828-832: "(0761 says how many bytes are left)". 0761 returns paragraphs (see 0761 below). Say paragraphs. [fixed in acac24d: now paragraphs]
 
 ### 05FB ReleaseOverlayFpuState
 
-- [ ] must-fix src/E1E8B.ASM:889-892 and the name: the function is called ReleaseOverlayFpuState and the comment says "the numeric coprocessor state" and "the emulator (or a real FPU) installed its own replacement". WHITEPAPER line 49 says no game code uses floating point and there are no emulator interrupts (INT 34h to 3Dh) in any code segment. The 4A2h value has no FPU evidence anywhere in the repo, and the code only tests it and calls the entry at 20B5:0010 (line 897-898). Rename the function (or write "Purpose unknown:" with what is known: the marker test, the call through ds:[10h], the clear of ES:0010).
-- [ ] must-fix src/E1E8B.ASM:892: "matching the save at 02FF:02C9". 02FF has no store of 4A2h. The store is in InitOverlayRecords (line 453, `mov word ptr es:[18h],4A2h`). Fix the cross-reference.
+- [x] must-fix src/E1E8B.ASM:889-892 and the name: the function is called ReleaseOverlayFpuState and the comment says "the numeric coprocessor state" and "the emulator (or a real FPU) installed its own replacement". WHITEPAPER line 49 says no game code uses floating point and there are no emulator interrupts (INT 34h to 3Dh) in any code segment. The 4A2h value has no FPU evidence anywhere in the repo, and the code only tests it and calls the entry at 20B5:0010 (line 897-898). Rename the function (or write "Purpose unknown:" with what is known: the marker test, the call through ds:[10h], the clear of ES:0010). [fixed in acac24d: renamed to _ReleaseOverlayRecord (make rename) with the FPU claim gone; the label fpu_done is now rel_done]
+- [x] must-fix src/E1E8B.ASM:892: "matching the save at 02FF:02C9". 02FF has no store of 4A2h. The store is in InitOverlayRecords (line 453, `mov word ptr es:[18h],4A2h`). Fix the cross-reference. [fixed in acac24d: the cross-reference now points at 0286]
 
 ### 0613 DiscardOverlayRecords
 
-- [ ] must-fix src/E1E8B.ASM:904-907: "unlinking each from the 20B5:00BC head via 06C0". 06C0 moves the record's image (it does not unlink). The relink onto the head is inline (lines 926-927: `mov es:[1Ch],ax`, `mov ds:[0BCh],es`). Say so.
-- [ ] must-fix src/E1E8B.ASM:907: "resets the running size at 20B5:00B0 to the file size 20B5:00B4". 00B4 is the base of the free area (000F stores [bp+0Ch]+1 there, lines 138-139), not the file size. The code first sets 00B0 to 00B6 (the top of the area, lines 920-921) and sets it to 00B4 at the end (lines 933-934). Name them as free-area top and base.
+- [x] must-fix src/E1E8B.ASM:904-907: "unlinking each from the 20B5:00BC head via 06C0". 06C0 moves the record's image (it does not unlink). The relink onto the head is inline (lines 926-927: `mov es:[1Ch],ax`, `mov ds:[0BCh],es`). Say so. [fixed in acac24d: the comment now says the relink onto the head is inline and 06C0 moves the image]
+- [x] must-fix src/E1E8B.ASM:907: "resets the running size at 20B5:00B0 to the file size 20B5:00B4". 00B4 is the base of the free area (000F stores [bp+0Ch]+1 there, lines 138-139), not the file size. The code first sets 00B0 to 00B6 (the top of the area, lines 920-921) and sets it to 00B4 at the end (lines 933-934). Name them as free-area top and base. [fixed in acac24d: now 00B0 is set to 00B6 (free area top) first and to 00B4 (free area base) at the end]
 
 ### 064E RestoreOverlayVersionTable
 
-- [ ] must-fix src/E1E8B.ASM:938-941: "when the record's marker at ES:0020 is 0EAh it falls into _FillOverlayVersionTable at 066F". `je short ver_ret` (line 950) jumps to the RET at the end of 066F, so for 0EAh the fill is skipped. Otherwise: when ES:0002 is zero the code jumps to the fill (line 952), and when it is not zero it calls 072F and then falls into the fill (the proc has no RET after line 953). So the fill runs for every marker except 0EAh. The comment has it the other way round.
+- [x] must-fix src/E1E8B.ASM:938-941: "when the record's marker at ES:0020 is 0EAh it falls into _FillOverlayVersionTable at 066F". `je short ver_ret` (line 950) jumps to the RET at the end of 066F, so for 0EAh the fill is skipped. Otherwise: when ES:0002 is zero the code jumps to the fill (line 952), and when it is not zero it calls 072F and then falls into the fill (the proc has no RET after line 953). So the fill runs for every marker except 0EAh. The comment has it the other way round. [fixed in acac24d: the control flow is corrected; the fill runs for every marker except 0EAh]
 
 ### 066F FillOverlayVersionTable
 
-- [ ] must-fix src/E1E8B.ASM:957-960: "(0EAh, the offset at ES:0010 and the base segment ES)". The code writes 0EAh, then the offset it read from the old entry at +2 (line 968, `mov dx,es:[di+2]`), then the segment ES:[10h] (line 953, `mov ax,es:[10h]` into BX). So the offset is the old entry's, and the segment is the record's base (ES:0010). The comment swaps offset and segment and names ES as the segment.
-- [ ] should src/E1E8B.ASM:957-960: name the two 5-byte entry forms: 0EAh + offset + segment (a live far jump) and the 0CDh form (CD 3F, offset, 0, the Turbo Pascal-style stub entry of WHITEPAPER 2.3). 066F turns the second into the first; 068D turns the first into the second. Without the names the reader cannot see why the offset is read from +2.
+- [x] must-fix src/E1E8B.ASM:957-960: "(0EAh, the offset at ES:0010 and the base segment ES)". The code writes 0EAh, then the offset it read from the old entry at +2 (line 968, `mov dx,es:[di+2]`), then the segment ES:[10h] (line 953, `mov ax,es:[10h]` into BX). So the offset is the old entry's, and the segment is the record's base (ES:0010). The comment swaps offset and segment and names ES as the segment. [fixed in acac24d: now 0EAh, the old entry's offset from +2, and the record's base segment ES:0010]
+- [x] should src/E1E8B.ASM:957-960: name the two 5-byte entry forms: 0EAh + offset + segment (a live far jump) and the 0CDh form (CD 3F, offset, 0, the Turbo Pascal-style stub entry of WHITEPAPER 2.3). 066F turns the second into the first; 068D turns the first into the second. Without the names the reader cannot see why the offset is read from +2. [fixed in acac24d: the comment names the 0EAh far-jump form and the 0CDh 3Fh stub form (WHITEPAPER 2.3); 068D was updated too]
 
 ### 068D ClearOverlayVersionTable
 
-- [ ] should src/E1E8B.ASM:980-983: "rewrites the CX version records at ES:0020 with the old entry at ES:0020, the current DGROUP:00A0 and a zero marker". The word written first is DGROUP:00A0 (the 0CDh-form "CD 3F" bytes, see 066F), then the old entry's offset from +1, then zero. Say so, and name the form.
+- [x] should src/E1E8B.ASM:980-983: "rewrites the CX version records at ES:0020 with the old entry at ES:0020, the current DGROUP:00A0 and a zero marker". The word written first is DGROUP:00A0 (the 0CDh-form "CD 3F" bytes, see 066F), then the old entry's offset from +1, then zero. Say so, and name the form. [fixed in acac24d: now DGROUP:00A0's CD 3F bytes, then the old offset from +1, then zero, and names the stub form]
 
 ### 06C0 MoveOverlayRecord
 
-- [ ] note: the comment matches the code (copy of ES:0008 words from the old base ES:0010 to 20B5:00B0, direction by the compare, the 073B call and the clear of the CX version records at ES:0023). No change needed. The record field names (0008, 0010, 0023) are placeholders with evidence from the copy, fine as they are.
+- [x] note: the comment matches the code (copy of ES:0008 words from the old base ES:0010 to 20B5:00B0, direction by the compare, the 073B call and the clear of the CX version records at ES:0023). No change needed. The record field names (0008, 0010, 0023) are placeholders with evidence from the copy, fine as they are. [fixed in acac24d: no change needed, as the review says]
 
 ### 0711 LinkOverlayRecord
 
-- [ ] note: the comment matches the code (077D paragraphs added to 00B0, tail link through 20BF:001C). No change needed.
+- [x] note: the comment matches the code (077D paragraphs added to 00B0, tail link through 20BF:001C). No change needed. [fixed in acac24d: no change needed, as the review says]
 
 ### 072F PatchOverlayEntryVector
 
-- [ ] must-fix src/E1E8B.ASM:1079-1081: "save the old entry pointer at SS:[BP+4] into the far function pointer 20B5:0010". 072F does not write 20B5:0010 at all: it calls 073B and exchanges SS:[BX+2] with CX when BX is nonzero. The reader of 20B5:0010 is 05FB. "the slot whose ES:0010 equals DX": the compare is inside 073B against the slot's SS:[BP+4]. "BP = CX * 2" is also 073B's loop, not 072F's. Rewrite the comment for 072F's own code and move the rest to 073B.
-- [ ] must-fix src/E1E8B.ASM:1079-1081 (callers): 064E passes AX = ES:[10h] and DX = ES; 068D passes AX = ES and DX = ES:[10h]. The arguments are swapped between the two callers and the comment does not say which is which. Write what each argument is.
+- [x] must-fix src/E1E8B.ASM:1079-1081: "save the old entry pointer at SS:[BP+4] into the far function pointer 20B5:0010". 072F does not write 20B5:0010 at all: it calls 073B and exchanges SS:[BX+2] with CX when BX is nonzero. The reader of 20B5:0010 is 05FB. "the slot whose ES:0010 equals DX": the compare is inside 073B against the slot's SS:[BP+4]. "BP = CX * 2" is also 073B's loop, not 072F's. Rewrite the comment for 072F's own code and move the rest to 073B. [fixed in acac24d: the 072F comment is rewritten for its own code (073B call, the SS:[BX+2]/CX exchange); the 20B5:0010 claim is gone]
+- [x] must-fix src/E1E8B.ASM:1079-1081 (callers): 064E passes AX = ES:[10h] and DX = ES; 068D passes AX = ES and DX = ES:[10h]. The arguments are swapped between the two callers and the comment does not say which is which. Write what each argument is. [fixed in acac24d: the comment now gives both callers' AX/DX]
 
 ### 073B FindOverlaySlot
 
-- [ ] note: the comment matches the code (backward walk, skips odd entries, the DX compare against SS:[BP+4], the AX store, BX = first free slot). No change needed.
+- [x] note: the comment matches the code (backward walk, skips odd entries, the DX compare against SS:[BP+4], the AX store, BX = first free slot). No change needed. [fixed in acac24d: no change needed, as the review says]
 
 ### 0761 OverlayBytesRemaining
 
-- [ ] must-fix src/E1E8B.ASM:1124-1126: "return in AX how many bytes ... remain". ES:[10h] and 20B5:00B0 are segment (paragraph) values, so AX is a count of paragraphs (line 1134 `mov ax,es:[10h]`, `sub ax,ds:[0B0h]`). Say paragraphs.
-- [ ] must-fix src/E1E8B.ASM:1126: "the fallback computed from the file size at 20B5:00B6". 00B6 is the top of the free area (000F stores the caller's [bp+0Ah] there, and the 086F bootstrap passes the end of the block), not the file size. Fix the name of the quantity.
+- [x] must-fix src/E1E8B.ASM:1124-1126: "return in AX how many bytes ... remain". ES:[10h] and 20B5:00B0 are segment (paragraph) values, so AX is a count of paragraphs (line 1134 `mov ax,es:[10h]`, `sub ax,ds:[0B0h]`). Say paragraphs. [fixed in acac24d: now paragraphs; the function is also renamed to _OverlayParagraphsRemaining]
+- [x] must-fix src/E1E8B.ASM:1126: "the fallback computed from the file size at 20B5:00B6". 00B6 is the top of the free area (000F stores the caller's [bp+0Ah] there, and the 086F bootstrap passes the end of the block), not the file size. Fix the name of the quantity. [fixed in acac24d: now 00B6 is the free area's top]
 
 ### 077D OverlayCodeParagraphs
 
-- [ ] must-fix src/E1E8B.ASM:1146: "(size at ES:0008 plus the 10h byte header plus 0Fh rounding)". The code adds 11h (line 1151), not 10h plus 0Fh (which is 1Fh). Fix the constant in the comment and say what the 11h is (10h header and one more byte, if known).
+- [x] must-fix src/E1E8B.ASM:1146: "(size at ES:0008 plus the 10h byte header plus 0Fh rounding)". The code adds 11h (line 1151), not 10h plus 0Fh (which is 1Fh). Fix the constant in the comment and say what the 11h is (10h header and one more byte, if known). [fixed in acac24d: now +11h, the 10h header plus one byte whose reason is not established]
 
 ### 0789 OverlayTotalParagraphs
 
-- [ ] must-fix src/E1E8B.ASM:1157: "return in DX:AX the total size in paragraphs". The code returns DX = total (code plus data, paragraphs) and AX = code paragraphs only (lines 1165-1171). Callers use DX (0286 compares `bx,dx`). Fix the comment.
-- [ ] must-fix src/E1E8B.ASM:1160: the 07A1 routine (inside this PROC) "returns its base segment in ES". Line 1189 is `mov ax,es`, and ES is popped before the RETF, so the base segment comes back in AX. Fix it.
+- [x] must-fix src/E1E8B.ASM:1157: "return in DX:AX the total size in paragraphs". The code returns DX = total (code plus data, paragraphs) and AX = code paragraphs only (lines 1165-1171). Callers use DX (0286 compares `bx,dx`). Fix the comment. [fixed in acac24d: now AX = code paragraphs, DX = total; callers use DX]
+- [x] must-fix src/E1E8B.ASM:1160: the 07A1 routine (inside this PROC) "returns its base segment in ES". Line 1189 is `mov ax,es`, and ES is popped before the RETF, so the base segment comes back in AX. Fix it. [fixed in acac24d: now returns its base segment in AX (ES is popped before the RETF)]
 
 ### 07D7 ReleaseOverlayRecords
 
-- [ ] should src/E1E8B.ASM:1200-1204: "This is the manager's flush path." Nothing in this unit calls it (packet: "no direct call found"), so the role is not shown. Write "uncalled in this unit" and what the code does.
-- [ ] note src/E1E8B.ASM:1200-1204: the comment says "not the current entry" for the id match; the code tests the table slot at SS:[BX+2] for zero. Make the condition exact.
+- [x] should src/E1E8B.ASM:1200-1204: "This is the manager's flush path." Nothing in this unit calls it (packet: "no direct call found"), so the role is not shown. Write "uncalled in this unit" and what the code does. [fixed in acac24d: now says uncalled in this unit and what the code does]
+- [x] note src/E1E8B.ASM:1200-1204: the comment says "not the current entry" for the id match; the code tests the table slot at SS:[BX+2] for zero. Make the condition exact. [fixed in acac24d: the condition is now exact (SS:[bx+2] zero and non-zero, the ES:[0] id and ES:[2] tests)]
 
 ### 086F OverlayManagerEntry
 
-- [ ] must-fix src/E1E8B.ASM:1284-1285: "takes the larger of 20B5:00AA and DGROUP:3088, allocates that many paragraphs plus one". The code doubles 00AA when it is at least 3088 (`shl bx,1`, line 1343) and otherwise uses 3088 undoubled, then adds one. Describe the doubling, or write the size formula as the code has it.
-- [ ] should src/E1E8B.ASM:1284-1285: "([bp-style far args 0,0, bx, dx])" is not a readable description. Say that the call pushes DX, BX, then two zero words (the name pointer, null), so the callee's frame is [bp+6]/[bp+8] = 0, [bp+0Ah] = BX, [bp+0Ch] = DX.
-- [ ] should src/E1E8B.ASM:1279-1289: the same PROC has two entries: the record entry (086F) and the bootstrap at 08C9 that allocates the overlay memory and starts the manager. The comment covers both in one paragraph. Split the bootstrap into its own function or say in the comment that 08C9 is a second entry of this PROC.
-- [ ] note: the function's own comment says "(no direct call found)" in the packet. The record entry is reached from overlay stubs, not from this unit; say so.
+- [x] must-fix src/E1E8B.ASM:1284-1285: "takes the larger of 20B5:00AA and DGROUP:3088, allocates that many paragraphs plus one". The code doubles 00AA when it is at least 3088 (`shl bx,1`, line 1343) and otherwise uses 3088 undoubled, then adds one. Describe the doubling, or write the size formula as the code has it. [fixed in acac24d: the comment now gives the size formula with the 00AA doubling]
+- [x] should src/E1E8B.ASM:1284-1285: "([bp-style far args 0,0, bx, dx])" is not a readable description. Say that the call pushes DX, BX, then two zero words (the name pointer, null), so the callee's frame is [bp+6]/[bp+8] = 0, [bp+0Ah] = BX, [bp+0Ch] = DX. [fixed in acac24d: now says the call pushes DX, BX, 0, 0 and the callee's frame is [bp+6]/[bp+8] = 0, [bp+0Ah] = BX, [bp+0Ch] = DX]
+- [x] should src/E1E8B.ASM:1279-1289: the same PROC has two entries: the record entry (086F) and the bootstrap at 08C9 that allocates the overlay memory and starts the manager. The comment covers both in one paragraph. Split the bootstrap into its own function or say in the comment that 08C9 is a second entry of this PROC. [fixed in acac24d: the comment now says 08C9 is a second entry of this same PROC]
+- [x] note: the function's own comment says "(no direct call found)" in the packet. The record entry is reached from overlay stubs, not from this unit; say so. [fixed in acac24d: the 086F comment now says the record entry is reached from the overlay stubs, not from this unit]
 
 ## Summary
 
