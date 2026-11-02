@@ -4352,6 +4352,9 @@ unit = "e0ef3"
 addr = "0EF3:2EBC"
 size = 1269
 evidence = ["far", "frame"]
+name = "AnimateConeOfCold"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e122e_0001"

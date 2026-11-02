@@ -210,7 +210,8 @@ extern char gFileNameBuf[];             /*@ ds:FE6E */
 extern unsigned g5E1C;                  /*@ ds:5E1C */ /* a button/mode word (src/E0ACD.C) */
 extern char gF542[];                    /*@ ds:F542 */ /* a message buffer passed to RedrawPartyPanel */
 extern char far *g5763[];               /*@ ds:5763 */ /* far byte tables, one per page gFBCC */
-extern char gText5737[];                /*@ ds:5737 */ /* a byte table 0EF3:2EBC reads */
+extern int gText5737[];                 /*@ ds:5737 */ /* a word table of animation frames 0EF3:2EBC
+                                                        indexes with its frame counter */
 extern void Obj0E48(void);              /*@ 08E6:0E48 */ /* clears the object marks (src/E08E6.C) */
 extern int ClampValue(int value, int low, int high, int invert); /*@ 082C:0AB4 */
 extern signed char gAt5717[];          /*@ ds:5717 */ /* a per-member byte: nonzero when the member
@@ -380,6 +381,7 @@ extern void LockHidePointer(void); /*@ 1BBE:0307 */
 extern void LockShowPointer(void); /*@ 1BBE:0332 */
 extern void f0EF3_2A53(int scale, int spread, int count, int divisor, /*@ 0EF3:2A53 */
                        int falloff, void far *frameTable);
+extern unsigned char f1D8C_0000(void); /*@ 1D8C:0000 */ /* a 2-bit pseudo-random byte (E1D8C.ASM) */
 extern int RandomRange(int low, int high); /*@ 1AAA:0005 */
 extern int IsPointInsideRect(int x, int y, int left, int top, int right, int bottom); /*@ 082C:0613 */
 extern void WaitFrame(void); /*@ 1A16:0027 */
@@ -1412,7 +1414,7 @@ extern int gFC72;                /*@ ds:FC72 */ /* the handle gSaveFrame returne
 /* 0EF3:18D3: an empty function reached through a table; nothing to do. */
 /*@ 0EF3:18D3 */ void EmptyFunction18D3(void) {}
 
-void f0EF3_2EBC(int a, int b, int c, int d, int e, char far *table);
+void AnimateConeOfCold(int count, int spread, int step, int cycle, int divisor, int far *frameTable);
 /* 0EF3:18D8: the cone of cold. It reads the panel member's class-slot 1 value, blanks the view
    (g8115 = 2, gFillRect, DrawViewSlots(7), g8115 = 0), hides the pointer, runs the cone drawing
    0EF3:2EBC(0x96, 0x32, 0xa, 1, 0x64, ds:5737) and shows it again. It sets gF518 and, for each of
@@ -1436,7 +1438,7 @@ void f0EF3_2EBC(int a, int b, int c, int d, int e, char far *table);
     DrawViewSlots(7);
     g8115 = 0;
     HidePointerZone(0, 0, 0xB0, 0x78);
-    f0EF3_2EBC(0x96, 0x32, 0x0A, 1, 0x64, gText5737);
+    AnimateConeOfCold(0x96, 0x32, 0x0A, 1, 0x64, gText5737);
     ShowPointerZone();
     table = g5763[gFBCC];
     gF518 = 1;
@@ -2153,17 +2155,17 @@ void DrawSpellPanel(void);
 }
 
 /* 0EF3:2A53: Purpose unknown: a screen-space particle animation. It fills seven 150-word rows of
-   the gBufDCFC scratch buffer: row0/row1 are zeroed, row2/row3 a random x offset, row5 a random
-   frame step, row6 the depth `scale << 8`; then it loops while gFC66 is set: the erase pass
-   restores each particle's saved rectangle (gFn809E at its x, y), the draw pass advances row2 by
-   one going back to zero, row3 by 5, row0 by row2 and row1 by row3, wraps row2/row3 when the
-   particle leaves the region, saves the pixels (gFn8072) into row4 and picks the animation byte
-   frameTable[row6 >> 8] (sign-extended); a zero byte retires the particle. `scale` is the depth
-   (also the right-shift of the position and the high byte of row6), `spread` the random amplitude,
-   `count` the particle number (capped at 0x96), `divisor` the frame-step divisor, `falloff` the
-   extra spread shift, `frameTable` the animation template. The two velocity bounces test the
-   crossed coordinate (the x velocity row2 against the y bounds, the y velocity row3 against the x
-   bounds): see the comment on the comparisons. Called by 0EF3:00CD. */
+   the gBufDCFC scratch buffer: row0/row1 (the x and y positions) are zeroed, row2/row3 the x and
+   y velocities take a random value, row5 a random frame step, row6 the frame counter starts at the
+   depth `scale << 8`. It then loops while gFC66 is set: the erase pass restores each particle's
+   saved rectangle (gFn809E at its x, y), the draw pass moves row2 one toward zero, advances row3 by
+   5, adds row2 to row0 and row3 to row1, and when the particle leaves the region negates half of
+   the matching velocity (row2 for the x bounds, row3 for the y bounds), saves the pixels (gFn8072)
+   into row4 and picks the animation byte frameTable[row6 >> 8] (sign-extended); a zero byte
+   retires the particle (its step row5 is zeroed). `scale` is the depth (also the right-shift of the
+   position and the high byte of row6), `spread` the random amplitude, `count` the particle number
+   (capped at 0x96), `divisor` the frame-step divisor, `falloff` the extra spread shift,
+   `frameTable` the animation template. Called by 0EF3:00CD. */
 /*@ 0EF3:2A53 */ void f0EF3_2A53(int scale, int spread, int count, int divisor, int falloff,
                                   void far *frameTable)
 {
@@ -2265,4 +2267,171 @@ void DrawSpellPanel(void);
     g8115 = gFC70;
 }
 
-/*@ 0EF3:2EBC stub */ void f0EF3_2EBC(int a, int b, int c, int d, int e, char far *table) {}
+/* 0EF3:2EBC: the cone-of-cold animation. It fills eight 150-word rows of the
+   gBufDCFC scratch buffer with a set of particles: for each of `count` particles it picks a random
+   `radius` (between spread>>2 and spread, with spread shifted left 6), accumulates a quadratic
+   `total` by adding `speed` (growing by `step` each pass) until it reaches the radius, then places
+   the particle on one of four edges chosen by the low two bits of f1D8C_0000 (the animation value
+   word follows it), mirroring both velocities when the next bit is set. It stores a random frame
+   step row5 and a random hold row7. The main loop erases each particle (gFn809E) except on the
+   first pass, integrates row0/row1 by row2/row3 (accelerating or decelerating by `step` or
+   `sum` = 7/8 of `step` depending on the sign of the position and velocity), advances the frame
+   counter row6 by row5, saves the pixels (gFn8072 into row4, and into `handle` once divisor>>2
+   passes have elapsed) and looks up the frame table row6>>8; a zero entry retires the particle
+   (row5 = 0) and a live one with no held particle under the pointer draws it (gFn809E). It runs
+   until no particle is live, restores g8115, increments `cycle`, and clears bit 1 of ds:849E.
+   `count` is capped at 0x96, `divisor` scales the frame range, `frameTable` is the frame word
+   table. `cycle` is only incremented (its value never used here). Called by 0EF3:18D8 with
+   (0x96, 0x32, 0x0A, 1, 0x64, gText5737). */
+/*@ 0EF3:2EBC */ void AnimateConeOfCold(int count, int spread, int step, int cycle, int divisor,
+                                  int far *frameTable)
+{
+    int current;
+    int state;
+    int originX;
+    int originY;
+    int x;
+    int y;
+    int savedAttr;
+    int handle;
+    int frameCount;
+    int far *row0;
+    int far *row1;
+    int far *row2;
+    int far *row3;
+    int far *row4;
+    int far *row5;
+    int far *row6;
+    int far *row7;
+    int far *base;
+    int radius;
+    int speed;
+    int sum;
+    register int i;
+    register int total;
+
+    base = (int far *)gBufDCFC;
+    row0 = base;
+    row1 = base + 0x96;
+    row2 = base + 0x12C;
+    row3 = base + 0x1C2;
+    row4 = base + 0x258;
+    row5 = base + 0x2EE;
+    row6 = base + 0x384;
+    row7 = base + 0x41A;
+    spread <<= 6;
+    gFlags849E &= ~2;
+    savedAttr = g8115;
+    if (count > 0x96)
+        count = 0x96;
+    originX = 0x58;
+    originY = 0x30;
+    for (i = 0; i < count; i++) {
+        radius = RandomRange(spread >> 2, spread);
+        speed = total = 0;
+        while (total < radius) {
+            speed += step;
+            total += speed;
+        }
+        switch (f1D8C_0000() & 3) {
+        case 0:
+            row0[i] = 0x20;
+            row1[i] = total;
+            row2[i] = speed;
+            row3[i] = 0;
+            break;
+        case 1:
+            row0[i] = total;
+            row1[i] = 0x20;
+            row2[i] = 0;
+            row3[i] = speed;
+            break;
+        case 2:
+            row0[i] = 0x20;
+            row1[i] = -total;
+            row2[i] = speed;
+            row3[i] = 0;
+            break;
+        case 3:
+            row0[i] = -total;
+            row1[i] = 0x20;
+            row2[i] = 0;
+            row3[i] = speed;
+            break;
+        }
+        if (f1D8C_0000() & 1) {
+            row2[i] *= -1;
+            row3[i] *= -1;
+        }
+        row5[i] = RandomRange(0x400 / divisor, 0x800 / divisor);
+        row6[i] = 0;
+        row7[i] = RandomRange(0, divisor >> 2);
+    }
+    state = 2;
+    frameCount = 0;
+    while (state != 0) {
+        if (state != 2) {
+            for (i = count - 1; i >= 0; i--) {
+                x = (row0[i] >> 6) + originX;
+                y = (row1[i] >> 6) + originY;
+                gFn809E(x, y, row4[i]);
+            }
+        }
+        state = 0;
+        sum = (step >> 1) + (step >> 2) + (step >> 3);
+        for (i = 0; i < count; i++) {
+            if (row7[i] != 0) {
+                row7[i]--;
+            } else {
+                if (row0[i] > 0) {
+                    if (row2[i] > 0)
+                        row2[i] -= step;
+                    else
+                        row2[i] -= sum;
+                } else {
+                    if (row2[i] < 0)
+                        row2[i] += step;
+                    else
+                        row2[i] += sum;
+                }
+                if (row1[i] > 0) {
+                    if (row3[i] > 0)
+                        row3[i] -= step;
+                    else
+                        row3[i] -= sum;
+                } else {
+                    if (row3[i] < 0)
+                        row3[i] += step;
+                    else
+                        row3[i] += sum;
+                }
+                row0[i] += row2[i];
+                row1[i] += row3[i];
+                row6[i] += row5[i];
+            }
+            x = (row0[i] >> 6) + originX;
+            y = (row1[i] >> 6) + originY;
+            if (divisor >> 2 > frameCount) {
+                handle = 0;
+            } else {
+                g8115 = 2;
+                handle = gFn8072(x, y);
+                g8115 = 0;
+            }
+            row4[i] = gFn8072(x, y);
+            current = frameTable[row6[i] >> 8];
+            if (current != 0) {
+                state = 1;
+                if (handle == 0 && row7[i] == 0)
+                    gFn809E(x, y, current);
+            } else {
+                row5[i] = 0;
+            }
+        }
+        WaitFrame();
+        frameCount++;
+    }
+    g8115 = savedAttr;
+    cycle++;
+    gFlags849E |= 2;
+}
