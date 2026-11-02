@@ -374,3 +374,11 @@ why = "1 means the voice reads its next note or command this tick (set at E1948.
 id = "ds:8A6A"
 name = "gTickSeconds"
 why = "counts [H] seconds up to 60, not a phase: incremented once per 292-tick period (E1948.ASM 1948:001A) and wrapped at 3Bh (1948:0023 to 0025); nothing outside this unit reads it"
+[[global]]
+id = "ds:8100"
+name = "gFontWidth"
+why = "font cell width; the source is src/E1A47.C and src/E1DE7.C:54-55 calls it the font cell width"
+[[global]]
+id = "ds:8101"
+name = "gFontHeight"
+why = "font cell height; the source is src/E1A47.C and src/E1DE7.C:54-55 calls it the font cell height"

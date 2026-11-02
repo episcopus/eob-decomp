@@ -10,8 +10,8 @@
 #include <fcntl.h>
 
 extern void far *gFont1A47; /*@ ds:FE4E */
-extern unsigned char gFontWidth1A47; /*@ ds:8100 */
-extern unsigned char gFontHeight1A47; /*@ ds:8101 */
+extern unsigned char gFontWidth; /*@ ds:8100 */
+extern unsigned char gFontHeight; /*@ ds:8101 */
 
 extern int open(char far *path, int access); /*@ 0000:6443 */
 extern int read(int fd, void far *buf, unsigned len); /*@ 0000:65E1 */
@@ -81,8 +81,8 @@ done:
 /*@ 1A47:0169 */ void f1A47_0169(char far *font)
 {
     gFont1A47 = font;
-    gFontWidth1A47 = font[0x103];
-    gFontHeight1A47 = font[0x102];
+    gFontWidth = font[0x103];
+    gFontHeight = font[0x102];
 }
 
 /*@ 1A47:018E */ int f1A47_018E(char far *s)

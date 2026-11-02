@@ -78,7 +78,7 @@ extern int g8115; /*@ ds:8115 */
 extern signed char gF57E; /*@ ds:F57E */
 extern signed char gF53A; /*@ ds:F53A */
 extern signed char gFB4C; /*@ ds:FB4C */
-extern char gFontHeight1A47; /*@ ds:8101 */
+extern char gFontHeight; /*@ ds:8101 */
 extern int gTextRow; /*@ ds:FE54 */
 extern int gTextTop; /*@ ds:FE66 */
 extern int gCursorX; /*@ ds:8138 */
@@ -452,7 +452,7 @@ enum {
     int keycode;
     int i;
 
-    ybase = gTextTop + (gTextRow + 1) * gFontHeight1A47 + 4;
+    ybase = gTextTop + (gTextRow + 1) * gFontHeight + 4;
     drawn = sel = -1;
     i = 0;
     do {

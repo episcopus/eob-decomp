@@ -4768,7 +4768,7 @@ unit = "e14ef"
 addr = "14EF:00E1"
 size = 38
 evidence = ["near", "frame"]
-name = "PointInRect"
+name = "IsPointInRect"
 level = "L2"
 match_flags = "-ml -O -Z -B"
 

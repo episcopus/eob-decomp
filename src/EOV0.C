@@ -150,7 +150,7 @@ extern void (far *gDrawText)(char far *text, int a, int b, int c, int d); /*@ ds
 extern char far *gFont1A47; /*@ ds:FE4E */ /* the current font (src/E1547.C) */
 extern void far *gA9C0; /*@ ds:A9C0 */ /* the 6x6 font loaded from FONT6.FNT (src/E07A9.C) */
 extern void f1A47_0169(char far *font); /*@ 1A47:0169 */
-extern char gFontWidth1A47; /*@ ds:8100 */ /* the current font's character width (src/E14EF.C) */
+extern char gFontWidth; /*@ ds:8100 */ /* the current font's character width (src/E14EF.C) */
 extern int gNamePosX[]; /*@ ds:5E44 */ /* the x of each panel name slot (Purpose unknown) */
 extern int gNamePosY[]; /*@ ds:5E4C */ /* the y of each panel name slot (Purpose unknown) */
 extern char gStr618C[]; /*@ ds:618C */ /* a fixed panel label (Purpose unknown) */
@@ -343,7 +343,7 @@ extern void far *g5E64[0x11]; /*@ ds:5E64 */ /* the 17 sliced icon pointers this
         DrawPanelIcon(0xe, 0, 0);
 }
 /* ovl0:05BA: draws one panel name slot: switches the current font to the 6x6 gA9C0, computes the
-   centred x offset (0x3c - width * gFontWidth1A47) / 2 for a name `len` characters wide, hides the
+   centred x offset (0x3c - width * gFontWidth) / 2 for a name `len` characters wide, hides the
    pointer, draws the fixed label gStr618C at gNamePosX[index]/gNamePosY[index] and the character's
    name gChars[index].name centred on it in `color`, shows the pointer and restores the font.
    Called by ovl0:0EE5 and 23EC. */
@@ -354,7 +354,7 @@ extern void far *g5E64[0x11]; /*@ ds:5E64 */ /* the 17 sliced icon pointers this
 
     savedFont = gFont1A47;
     f1A47_0169(gA9C0);
-    x = (0x3c - gFontWidth1A47 * len) >> 1;
+    x = (0x3c - gFontWidth * len) >> 1;
     LockHidePointer();
     gDrawText(gStr618C, gNamePosX[index], gNamePosY[index], 0xc, 0xc);
     gDrawText(gChars[index].name, gNamePosX[index] + x, gNamePosY[index], color, 0);
