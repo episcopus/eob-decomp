@@ -460,8 +460,8 @@ done:
    the fifth argument of the first shadow draw only, the argument of the draw hook gDrawText
    (ds:80CA) that is a colour in the hook's direct calls (gTextAttr2 at src/E1DE7.C:280 and :296,
    hiColour and fill at src/E0EF3.C:1937/1946), so `colour2` is a second colour; what the hook does
-   with it is unknown (Purpose unknown). Called by EditTextField in this unit (src/E082C.C:147, :152,
-   :244, :249), the character panel (src/E1547.C:521-545), the name list (src/E14EF.C:208,
+   with it is unknown (Purpose unknown). Called by EditTextField in this unit (082C:000B,
+   src/E082C.C:129), the character panel (src/E1547.C:521-545), the name list (src/E14EF.C:208,
    DrawOptionList at 14EF:0154), the word-find editor (src/EOV2.C:500), src/EOV6.C:399, the ovl0
    panel (src/EOV0.C:387) and the ovl1 panels (src/EOV1.ASM:1259, :1672). */
 /*@ 082C:0898 */ void DrawShadowText(char far *text, int x, int y, int colour, int colour2)
