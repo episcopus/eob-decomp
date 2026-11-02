@@ -128,6 +128,7 @@ extern char gFB44; /*@ ds:FB44 */            /* a mode byte (src/E0D1C.C) */
 extern signed char gA9C6; /*@ ds:A9C6 */     /* an offset added into gEF6A's targets (src/E1414.C) */
 extern char gDF4C; /*@ ds:DF4C */            /* set to 1 when a hit lands (src/E0D1C.C) */
 extern char gDCA4; /*@ ds:DCA4 */            /* the object acting this step, set by 0359 */
+extern unsigned char g1905[]; /*@ ds:1905 */   /* a 256-byte table gB894 indexes into (0359) */
 extern char gB894[]; /*@ ds:B894 */          /* nine-byte records; +0x19C bytes read via B894 (0359) */
 extern char gFileNameBuf[]; /*@ ds:FE6E */   /* the text buffer sprintf formats into (src/EOV2.C) */
 
@@ -149,7 +150,7 @@ extern int f0D1C_059B(int who, int attack); /*@ 0D1C:059B */
 extern int f0D1C_07DB(int who, int flag); /*@ 0D1C:07DB */
 extern int f0BD2_02B9(void far *head, int key, int item); /*@ 0BD2:02B9 */
 extern int f0BD2_07DE(int who, int slot, int a, int b, int c, int d); /*@ 0BD2:07DE */
-extern int f08E6_15B4(int a, int b); /*@ 08E6:15B4 */
+extern int f08E6_15B4(char a, int b); /*@ 08E6:15B4 */
 extern int f0EF3_04F7(int who); /*@ 0EF3:04F7 */
 extern void f08E6_0FBE(struct Obj28 far *obj, int n); /*@ 08E6:0FBE */
 extern void f0EF3_12A1(void far *arg, int n); /*@ 0EF3:12A1 */
@@ -297,7 +298,47 @@ int f0DE8_09B9(int who, int what);  /* forward: 01FF reaches it with a far call 
     f08E6_0FBE(&gObjs[idx], damage);
     return 1;
 }
-/*@ 0DE8:0359 stub */ void f0DE8_0359(void) {}
+/* 0DE8:0359: one item/effect attack by character `who` on the item slot `slot`. It rejects a
+   `who` above 1 with -3, then looks the action up through f0D1C_00DA(gSoundVolume, gFBCC) and
+   f08E6_15B4. A -1 target with g1905[gB894[value * 9 + gA9C6]] at 0xFF bumps two gB894 cells and
+   returns -2, otherwise -1. A real target demands the 0007 to-hit roll (returns -1 on a miss),
+   and when the slot's m02 is 0x34..0x38 f0D1C_0BAB can also fail it; the surviving hit is rolled
+   through 011A and halved when f0D1C_0BEB says so. Called by 0DE8:0763. The gDCA4 byte records
+   the target for the effect dispatcher. */
+/*@ 0DE8:0359 */ int f0DE8_0359(int who, int slot)
+{
+    int target;
+    int m02;
+    int value;
+    int damage;
+
+    if (who > 1)
+        return -3;
+    value = f0D1C_00DA(gSoundVolume, gFBCC);
+    target = f08E6_15B4(who, value);
+    if (target == -1) {
+        if (g1905[gB894[value * 9 + gA9C6]] == 0xff) {
+            gB894[value * 9 + gA9C6]++;
+            gB894[value * 9 + (gA9C6 ^ 2)]++;
+            gDF4C = 1;
+            return -2;
+        }
+        return -1;
+    }
+    if (f0DE8_0007(who, target, slot, 1) == 0)
+        goto fail;
+    m02 = gTable8DD2[slot].m02;
+    if (m02 > 0x33 && m02 < 0x39 && f0D1C_0BAB(target))
+        return -1;
+    gDCA4 = target;
+    damage = f0DE8_011A(who, target, slot, gTable8DD2[slot].m02, 1);
+    if (f0D1C_0BEB(target, m02))
+        damage >>= 1;
+    return damage;
+fail:
+    return -1;
+}
+
 /*@ 0DE8:0474 stub */ void f0DE8_0474(void) {}
 /*@ 0DE8:0537 stub */ void f0DE8_0537(void) {}
 /*@ 0DE8:05BB stub */ void f0DE8_05BB(void) {}
