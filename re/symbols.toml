@@ -7753,7 +7753,7 @@ addr = "ovl5:0455"
 size = 550
 evidence = ["ovl", "near", "frame"]
 name = "SelectMenu"
-notes = "blocked: TC registers the row index. The body matches up to ovl5:0047; the draw/mouse/click loops then differ because the original keeps j in memory (`mov word ptr [bp-0xa], 0` at ovl5:048C, `mov ax,[bp-0xa]; shl ax,1; shl ax,1` for names[j], `cmp si,[bp-0xa]` for i==j) and computes first+j into DI (`mov al,[bp+6]; cwde; add ax,[bp-0xa]; mov di,ax` at ovl5:0493/0497/049A, then `es:[di+0x7b89]`/`es:[di+0x7b94]`), while our build registers j in DI (`xor di,di` at ovl5:0037) and combines first+j as `[bx+di+disp]`; the whole function is 2 bytes short and every offset after shifts. Tried: plain j, `register int i`, `unsigned j`, `j == i` vs `i == j`, a `register int n = first+j` (took SI, pushed i to DI), a function-scope `int k`, block-scope j, and -B (no change, TCC -S does the allocation). TC's allocator picks i (SI) and j (DI); a source form that stops it choosing j would match. Not a tail merge."
+notes = "blocked: TC registers the row index. The body matches up to ovl5:0036; the draw/mouse/click loops then differ because the original keeps j in memory (`mov word ptr [bp-0xa], 0` at ovl5:048C, `mov ax,[bp-0xa]; shl ax,1; shl ax,1` for names[j], `cmp si,[bp-0xa]` for i==j) and computes first+j once into DI (`mov al,[bp+6]; cwde; add ax,[bp-0xa]; mov di,ax` at ovl5:0493/0497/049A, then `es:[di+0x7b89]`/`es:[di+0x7b94]`), while our build registers j in DI (`xor di,di` at ovl5:0037) and combines first+j as `[bx+di+disp]`; the whole function is 2 bytes short and every offset after shifts. Tried: plain j, `register int i`, `unsigned j`, `j == i` vs `i == j`, a `register int n = first+j` (took SI, pushed i to DI), a function-scope `int k`, block-scope j, `volatile` on every non-i local with `register int i` (j then stays in memory, but the draw loop uses BX as the scratch and recomputes first+j per table where the original computes it once into DI), and -B (no change, TCC -S does the allocation). TC's allocator picks i (SI) and j (DI); a source form that stops it choosing j and lets it compute first+j once into DI would match. Not a tail merge."
 
 [[function]]
 id = "eov5_067b"
@@ -7871,6 +7871,8 @@ addr = "ovl5:0DBB"
 size = 254
 evidence = ["ovl", "near", "frame"]
 name = "ResurrectPicker"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov5_0eb9"
@@ -7986,7 +7988,7 @@ addr = "ovl5:1E1B"
 size = 387
 evidence = ["ovl", "near", "frame"]
 name = "ShuffleGrid"
-notes = "blocked: TC registers the shuffle index. The body matches up to ovl5:005A; the original keeps pick in [bp-0xe] (`mov [bp-0xe],ax` at ovl5:0061) and swapped in [bp-0xa], and copies i to DI (`mov di,si` at ovl5:0064, then `es:[di*2+base]`), so it registers only i (SI); our build registers pick in DI (`mov di,ax` at ovl5:0061) and puts swapped at [bp-0xe], 2 bytes short. Tried: declaration order swaps (pick/swapped, and the original's swapped/k/pick/j/saved slot order), `register int cy`, and unsigned pick; TC keeps choosing a second variable (pick, or cy when it is register). A source form that leaves TC registering only i would match."
+notes = "blocked: TC registers the shuffle index. Declaration order swapped/k/pick/j/saved with `register int i, cy` puts i in SI and cy in DI and leaves pick in memory at [bp-0xe] and swapped at [bp-0xa], matching the original's slots; the body now matches up to ovl5:0064, where the original copies the shuffle index to DI (`mov di, si` at ovl5:0064, then uses `di` for both xs[i] accesses) and our build uses SI directly, 2 bytes short. Tried: plain i (TC puts i in DI, breaking the fill loops), unsigned i, i declared early or late, and `register int cy` alone. TC keeps only the loop counter in SI and does not reuse DI as a scratch copy of it; a source form that makes TC copy the index to DI would match. The earlier failure (pick registered in DI, swapped at [bp-0xe]) is fixed by the declaration order and register hints above."
 
 [[function]]
 id = "eov6_0000"
