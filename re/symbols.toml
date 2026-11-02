@@ -3849,6 +3849,9 @@ unit = "e1414"
 addr = "1414:0000"
 size = 62
 evidence = ["segment"]
+name = "BlinkSelected"
+level = "L2"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e1414_003e"
@@ -3856,6 +3859,9 @@ unit = "e1414"
 addr = "1414:003E"
 size = 308
 evidence = ["near", "frame"]
+name = "StepDDEffect"
+level = "L2"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e1414_0172"
@@ -3863,6 +3869,9 @@ unit = "e1414"
 addr = "1414:0172"
 size = 157
 evidence = ["near", "frame"]
+name = "TestDDEffect"
+level = "L2"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e1414_020f"
@@ -3870,6 +3879,9 @@ unit = "e1414"
 addr = "1414:020F"
 size = 118
 evidence = ["near", "frame"]
+name = "ClearDDEffect"
+level = "L2"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e1414_0285"
@@ -3877,7 +3889,10 @@ unit = "e1414"
 addr = "1414:0285"
 size = 303
 evidence = ["frame"]
-notes = "unblocked 2026-11-01: the unit matches whole through the assembler, /*@flags -ml -O -Z -B */ (TASM /m2 since 2026-11-01), escalation e1414; (was blocked) compiler codegen, TCC's internal assembler cross-jump. Matches every byte except the success-path `clearIt = 1` store: the original keeps two separate `mov word ptr [bp - 2], 1` stores (1414:034B, 1414:0382), our `-ml -O -Z` build sinks the first into the second (1414:034C `je 0xfd`, 1414:034E `jmp 0xf8`, 5 bytes short). Same class as 0ACD:091C and 0D1C:0903 (WHITEPAPER 2.1.1): TCC -S emits the two stores apart but TCC's internal assembler merges them, TASM (TCC -B) does not, and with -B this function matches exactly (303 bytes). The unit is not -B: under -B TestDDEffect gains TASM's forward-jump pad (1414:0015 `EB 7F` plus `90` at 1414:0017 against the original `EB 7E`) and ApplyCharEffect shifts one byte, while the other 17 functions match with -c. Tried while keeping the original frame: plain if/else, goto from either or both branches, a label or empty statement after the store, braced blocks, else with empty body, if/else if, `clearIt = 1 + 0`, duplicated clear tail, volatile and unsigned declarations; all cross-jump."
+notes = "unblocked 2026-11-01: the unit matches whole through the assembler, /*@flags -ml -O -Z -B */ (TASM /m2 since 2026-11-01), escalation e1414; (was blocked) compiler codegen, TCC's internal assembler cross-jump. Matches every byte except the success-path `clearIt = 1` store: the original keeps two separate `mov word ptr [bp - 2], 1` stores (1414:034B, 1414:0382), our `-ml -O -Z` build sinks the first into the second (1414:034C `je 0xfd`, 1414:034E `jmp 0xf8`, 5 bytes short). Same class as 0ACD:091C and 0D1C:0903 (WHITEPAPER 2.1.1): TCC -S emits the two stores apart but TCC's internal assembler merges them, TASM (TCC -B) does not, and with -B this function matches exactly (303 bytes). The unit is not -B: under -B TestDDEffect gains TASM's forward-jump pad (1414:0015 `EB 7F` plus `90` at 1414:0017 against the original `EB 7E`) and ApplyCharEffect shifts one byte, while the other 17 functions match with -c. Tried while keeping the original frame: plain if/else, goto from either or both branches, a label or empty statement after the store, braced blocks, else with empty body, if/else if, `clearIt = 1 + 0`, duplicated clear tail, volatile and unsigned declarations; all cross-jump.; the unit is assembled through TASM (`-B`): the original keeps the success path's and the failure path's `mov word ptr [bp - 2], 1` stores apart (1414:034B and 1414:0382), while TCC's internal assembler cross-jumps them (same class as 0ACD:091C). TASM needs `/m2` (two passes) so a forward short jump stays two bytes. With `-B` the whole unit matches 19 of 19 (3511 bytes)."
+name = "MoveDDEffects"
+level = "L2"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e1414_03b4"
@@ -3885,6 +3900,9 @@ unit = "e1414"
 addr = "1414:03B4"
 size = 252
 evidence = ["far", "frame"]
+name = "AdjustMemberStatus"
+level = "L2"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e1414_04b0"
@@ -3892,6 +3910,9 @@ unit = "e1414"
 addr = "1414:04B0"
 size = 55
 evidence = ["frame"]
+name = "CheckFarTable"
+level = "L2"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e1414_04e7"
@@ -3899,6 +3920,9 @@ unit = "e1414"
 addr = "1414:04E7"
 size = 116
 evidence = ["far", "frame"]
+name = "RunEffects"
+level = "L2"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e1414_055b"
@@ -3906,6 +3930,9 @@ unit = "e1414"
 addr = "1414:055B"
 size = 73
 evidence = ["far", "frame"]
+name = "ArmEffectWith"
+level = "L2"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e1414_05a4"
@@ -3913,6 +3940,9 @@ unit = "e1414"
 addr = "1414:05A4"
 size = 59
 evidence = ["far", "near", "frame"]
+name = "ArmEffect"
+level = "L2"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e1414_05df"
@@ -3920,6 +3950,9 @@ unit = "e1414"
 addr = "1414:05DF"
 size = 14
 evidence = ["frame"]
+name = "UpdateEffectObjects"
+level = "L2"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e1414_05ed"
@@ -3927,6 +3960,9 @@ unit = "e1414"
 addr = "1414:05ED"
 size = 387
 evidence = ["far", "near", "frame"]
+name = "ApplyCharEffect"
+level = "L2"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e1414_0770"
@@ -3934,6 +3970,9 @@ unit = "e1414"
 addr = "1414:0770"
 size = 90
 evidence = ["near", "frame"]
+name = "SetCharEffectSlot"
+level = "L2"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e1414_07ca"
@@ -3941,7 +3980,10 @@ unit = "e1414"
 addr = "1414:07CA"
 size = 868
 evidence = ["frame"]
-notes = "unblocked 2026-11-01: the bit tests are LONG bit tests (mE3 long), and the unit matches whole through the assembler with /*@flags -ml -O -Z -B */ (TASM /m2), escalation e1414; (was blocked) compiler codegen. The dispatcher and every case are written and understood but the bytes diverge. (1) The bit tests compile here to `test word ptr [bx + N], M; je` where the original has `mov ax, [bx + N]; and ax, M; or ax, 0; je` (the `or ax, 0` at 1414:08AD and 1414:09A1, mE3 and m01 tests); tried `!= 0`, `== 0`, `== M`, `| 0`, `!!`, ternary, `else value >>= 0`, braces, none emits it; same idiom blocked on 0D1C:0B17. (2) The unsigned-long `tl > g8492` test (1414:0814..0825) lays out as `jbe L1; jmp cont; L1: jne body` in the original while ours emits `jb body; jbe L1; jmp cont`. The switch jump table and some case tails also differ (calls to 1547:0991 at 1414:0936 and 1414:09D4 among them)."
+notes = "unblocked 2026-11-01: the bit tests are LONG bit tests (mE3 long), and the unit matches whole through the assembler with /*@flags -ml -O -Z -B */ (TASM /m2), escalation e1414; (was blocked) compiler codegen. The dispatcher and every case are written and understood but the bytes diverge. (1) The bit tests compile here to `test word ptr [bx + N], M; je` where the original has `mov ax, [bx + N]; and ax, M; or ax, 0; je` (the `or ax, 0` at 1414:08AD and 1414:09A1, mE3 and m01 tests); tried `!= 0`, `== 0`, `== M`, `| 0`, `!!`, ternary, `else value >>= 0`, braces, none emits it; same idiom blocked on 0D1C:0B17. (2) The unsigned-long `tl > g8492` test (1414:0814..0825) lays out as `jbe L1; jmp cont; L1: jne body` in the original while ours emits `jb body; jbe L1; jmp cont`. The switch jump table and some case tails also differ (calls to 1547:0991 at 1414:0936 and 1414:09D4 among them).; the unit is assembled through TASM (`-B`): the original keeps case 6's and case 9's identical tails apart (`push who; call 1547:0991; pop cx` at 1414:0169 and 1414:0281), while TCC's internal assembler cross-jumps them (same class as 0ACD:091C). Two further divergences are handled in the source: mE3 is a `long`, so the bit tests read `mov ax, [bx + N]; and ax, M; or ax, 0; je` (1414:08AD, 1414:09A1; TCC emits the and/or form only for a long bit test), and the expiry test is `if (tl <= g8492) { body }` (1414:0814 `jbe L1; jmp cont; L1: jne body`). TASM needs `/m2`. With `-B` the whole unit matches 19 of 19 (3511 bytes)."
+name = "RunCharEffects"
+level = "L2"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e1414_0b2e"
@@ -3949,6 +3991,9 @@ unit = "e1414"
 addr = "1414:0B2E"
 size = 255
 evidence = ["far", "near"]
+name = "RearmCharEffects"
+level = "L2"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e1414_0c2d"
@@ -3956,6 +4001,9 @@ unit = "e1414"
 addr = "1414:0C2D"
 size = 85
 evidence = ["far", "frame"]
+name = "ClearCharEffectSlot"
+level = "L2"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e1414_0c82"
@@ -3963,6 +4011,9 @@ unit = "e1414"
 addr = "1414:0C82"
 size = 101
 evidence = ["frame"]
+name = "DecayMemberState"
+level = "L2"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e1414_0ce7"
@@ -3970,6 +4021,9 @@ unit = "e1414"
 addr = "1414:0CE7"
 size = 124
 evidence = ["frame"]
+name = "RandomiseObjectState"
+level = "L2"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e1414_0d63"
@@ -3977,6 +4031,9 @@ unit = "e1414"
 addr = "1414:0D63"
 size = 84
 evidence = ["far", "frame"]
+name = "UpdateDDEffects"
+level = "L2"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e14ef_0007"

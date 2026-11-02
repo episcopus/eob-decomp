@@ -9,6 +9,8 @@
    g8492 that the 1Ch handler bumps (src/EOV6.C); most meanings are not established, so names say
    what a function does rather than what the game calls it. */
 
+/*@flags -ml -O -Z -B */
+
 /* The 16 timed-effect entries at ds:5BA8, 16 bytes each (ds:5CA8 holds the count, 16). */
 struct Effect {
     void (far *fn)(int);      /* +00: the far handler, called with `arg` as its argument */
@@ -39,8 +41,7 @@ struct CharRec {
     unsigned long mAD[10];    /* +AD: 10 32-bit effect times (07CA, 0B2E, 0C2D, 05ED) */
     signed char mD5[10];      /* +D5: 10 effect type bytes, one per mAD slot */
     char padDF[0xE3 - 0xDF];
-    int mE3;                  /* +E3: flags tested by 05ED and 07CA */
-    char padE5[0xE7 - 0xE5];
+    long mE3;                 /* +E3: flags tested by 07CA (a long: the tests are and/or, 1414:08AD) */
     unsigned char mE7;        /* +E7: a counter cleared by 07CA */
     unsigned char mE8[0xF3 - 0xE8]; /* +E8: a byte table cleared at +E8 + slot by 0770 */
 };
@@ -251,19 +252,16 @@ extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
    cleared through ClearDDEffect when clearIt holds (initially m0D == 0) and gDF4C is set. QUIRK
    1414:028D: the argument is incremented by value, so the increment has no effect.
 
-   blocked: matches every byte except the success-path `clearIt = 1` store. The original keeps two
-   separate `mov word ptr [bp - 2], 1` stores (1414:034B and 1414:0382); our `-ml -O -Z` build sinks
-   the first into the second (1414:034C `je 0xfd` and 1414:034E `jmp 0xf8`, 5 bytes short). TCC -S
-   emits the two stores apart but TCC's internal assembler cross-jumps them (WHITEPAPER 2.1.1, the
-   same class as 0ACD:091C and 0D1C:0903), and TASM (TCC -B) does not: with `-B` this function
-   matches exactly (303 bytes, checked). The unit is not `-B` though: under -B TestDDEffect gains
-   TASM's forward-jump pad (1414:0015 `EB 7F` plus a `90` NOP at 1414:0017, original `EB 7E` with no
-   NOP) and ApplyCharEffect shifts one byte, while the rest of the unit only matches with -c. Forms
-   tried while keeping the original frame (clearIt at [bp - 2], value in DI): plain if/else, `goto`
-   from either or both branches, a label after the store, an empty statement after the store, braced
-   blocks, `else ;`, `if/else if`, `clearIt = 1 + 0`, a duplicated clear tail, and `volatile` and
-   `unsigned` declarations; every one cross-jumps. A compiler/assembler question. */
-/*@ 1414:0285 draft */ void MoveDDEffects(int unused)
+   The unit is assembled through TASM (`-B`), not by TCC's internal assembler: the original keeps
+   the success path's and the failure path's `mov word ptr [bp - 2], 1` stores apart (1414:034B and
+   1414:0382), while the internal assembler cross-jumps them (WHITEPAPER 2.1.1, the same class as
+   0ACD:091C and 0D1C:0903). Forms tried while keeping the original frame (clearIt at [bp - 2],
+   value in DI): plain if/else, `goto` from either or both branches, a label after the store, an
+   empty statement after the store, braced blocks, `else ;`, `if/else if`, `clearIt = 1 + 0`, a
+   duplicated clear tail, and `volatile` and `unsigned` declarations; every one cross-jumps. TASM
+   needs more than one pass so a forward short jump stays two bytes (`/m2`): with `-B` this function
+   matches exactly (303 bytes). */
+/*@ 1414:0285 */ void MoveDDEffects(int unused)
 {
     int value;
     register int sel;
@@ -481,16 +479,16 @@ extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
    else -1 and it disarms effect who + 6) in gEffects[who + 6].period. Called from the table (and
    0DE8, 0EF3, 0BD2).
 
-   blocked: the dispatcher and every case are written and understood, but the bytes diverge in at
-   least two compiler-codegen classes. (1) The bit tests compile here to `test word ptr [bx + N],
-   M; je` where the original has `mov ax, [bx + N]; and ax, M; or ax, 0; je` (the `or ax, 0` at
-   1414:08AD and 1414:09A1; mE3 and m01 tests). Forms tried: `!= 0`, `== 0`, `== M`, `| 0`, `!!`,
-   ternary, `else value >>= 0`, braces; none emits `and`/`or ax, 0`. This is the idiom blocked on
-   0D1C:0B17 (`or ax, 0` is distinct from `or ax, ax`, WHITEPAPER 2.1.1). (2) The unsigned-long
-   `tl > g8492` test (1414:0814..0825) lays out as `jbe L1; jmp cont; L1: jne body` in the original
-   while ours emits `jb body; jbe L1; jmp cont`. The switch jump table and some case tails also
-   differ (calls to 1547:0991 at 1414:0936 and 1414:09D4 among them). No single source form found. */
-/*@ 1414:07CA draft */ void RunCharEffects(int who)
+   The unit is assembled through TASM (`-B`), not by TCC's internal assembler: the original keeps
+   case 6's and case 9's identical tails apart (`push who; call 1547:0991; pop cx` at 1414:0169 and
+   1414:0281), while the internal assembler cross-jumps them into one (WHITEPAPER 2.1.1, the same
+   class as 0ACD:091C). Two further divergences are handled in the source: (1) the bit tests read
+   `mov ax, [bx + N]; and ax, M; or ax, 0; je` (1414:08AD, 1414:09A1) because mE3 is a `long`, not
+   an `int`: TCC emits the and/or form only for a long bit test (the `or ax, 0` distinct from
+   `or ax, ax`); (2) the expiry test is written `if (tl <= g8492) { body }` (1414:0814 `jbe L1; jmp
+   cont; L1: jne body`), not `if (tl > g8492) continue;`. TASM needs more than one pass so a forward
+   short jump stays two bytes (`/m2`). */
+/*@ 1414:07CA */ void RunCharEffects(int who)
 {
     unsigned long min;
     unsigned long tl;
@@ -504,74 +502,74 @@ extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
         tl = rec->mAD[i];
         if (tl == 0)
             continue;
-        if (tl > g8492)
-            continue;
-        rec->mAD[i] = 0;
-        type = rec->mD5[i];
-        if (type < 0) {
-            f0EF3_0D78(-type, who);
-            continue;
-        }
-        switch (rec->mD5[i]) {
-        case 0:
-            SetCharEffectSlot(who, 0, 0);
-            break;
-        case 1:
-            SetCharEffectSlot(who, 0, 1);
-            break;
-        case 2:
-            SetCharEffectSlot(who, 1, 0);
-            value = 0x24;
-            if (rec->mE3 & 8)
-                value >>= 1;
-            ApplyCharEffect(who, value, 4, 1);
-            break;
-        case 3:
-            SetCharEffectSlot(who, 1, 1);
-            value = 0x24;
-            if (rec->mE3 & 8)
-                value >>= 1;
-            ApplyCharEffect(who, value, 5, 1);
-            break;
-        case 4:
-            SetCharEffectSlot(who, 2, 0);
-            break;
-        case 5:
-            SetCharEffectSlot(who, 2, 1);
-            break;
-        case 6:
-            rec->mE7 = 0;
-            f1547_0991(who);
-            break;
-        case 7:
-            sprintf(gFileNameBuf, "%s no longer has giant strength.\r", rec->name);
-            DrawText(gFileNameBuf);
-            rec->m0D = rec->m0E;
-            rec->m0F = rec->m10;
-            if (gFB44 == 2)
-                f1547_0991(who);
-            break;
-        case 8:
-            if (rec->m01 & 2) {
-                if ((rec->mE3 & 0x80) == 0) {
-                    DamageCharacter(who, 5);
-                    sprintf(gFileNameBuf, "%s feels the effects of poison!\r", rec->name);
-                    DrawText(gFileNameBuf);
-                }
-                ApplyCharEffect(who, 0x222L, 8, 1);
-            } else {
-                rec->m01 &= ~2;
-                f1547_0991(who);
+        if (tl <= g8492) {
+            rec->mAD[i] = 0;
+            type = rec->mD5[i];
+            if (type < 0) {
+                f0EF3_0D78(-type, who);
+                continue;
             }
-            break;
-        case 9:
-            if (rec->m01 & 4) {
-                sprintf(gFileNameBuf, "%s is no longer paralyzed!\r", rec->name);
+            switch (rec->mD5[i]) {
+            case 0:
+                SetCharEffectSlot(who, 0, 0);
+                break;
+            case 1:
+                SetCharEffectSlot(who, 0, 1);
+                break;
+            case 2:
+                SetCharEffectSlot(who, 1, 0);
+                value = 0x24;
+                if (rec->mE3 & 8)
+                    value >>= 1;
+                ApplyCharEffect(who, value, 4, 1);
+                break;
+            case 3:
+                SetCharEffectSlot(who, 1, 1);
+                value = 0x24;
+                if (rec->mE3 & 8)
+                    value >>= 1;
+                ApplyCharEffect(who, value, 5, 1);
+                break;
+            case 4:
+                SetCharEffectSlot(who, 2, 0);
+                break;
+            case 5:
+                SetCharEffectSlot(who, 2, 1);
+                break;
+            case 6:
+                rec->mE7 = 0;
+                f1547_0991(who);
+                break;
+            case 7:
+                sprintf(gFileNameBuf, "%s no longer has giant strength.\r", rec->name);
                 DrawText(gFileNameBuf);
-                rec->m01 &= ~4;
-                f1547_0991(who);
+                rec->m0D = rec->m0E;
+                rec->m0F = rec->m10;
+                if (gFB44 == 2)
+                    f1547_0991(who);
+                break;
+            case 8:
+                if (rec->m01 & 2) {
+                    if ((rec->mE3 & 0x80) == 0) {
+                        DamageCharacter(who, 5);
+                        sprintf(gFileNameBuf, "%s feels the effects of poison!\r", rec->name);
+                        DrawText(gFileNameBuf);
+                    }
+                    ApplyCharEffect(who, 0x222L, 8, 1);
+                } else {
+                    rec->m01 &= ~2;
+                    f1547_0991(who);
+                }
+                break;
+            case 9:
+                if (rec->m01 & 4) {
+                    sprintf(gFileNameBuf, "%s is no longer paralyzed!\r", rec->name);
+                    DrawText(gFileNameBuf);
+                    rec->m01 &= ~4;
+                    f1547_0991(who);
+                }
+                break;
             }
-            break;
         }
     }
     min = -1;
