@@ -56,9 +56,15 @@ gStopRequest     db      ?               ; @ ds:8A3F: offset 19Fh, 1 = stop requ
                                          ; voice is muted at its next check; a voice that reads its next
                                          ; note or command on the stop tick plays it first (readFirst,
                                          ; 1948:00FA) and is muted on the following tick
-gVoiceMute       db      4 dup (?)       ; @ ds:8A40: offset 1A0h, byte per voice, nonzero silences the voice
-                                         ; this tick (1948:0278 falls through to muteVoice); only 0 is written
-                                         ; here (1948:0081 and 027F), the writer of nonzero is unknown
+gVoiceMute       db      4 dup (?)       ; @ ds:8A40: offset 1A0h, byte per voice, nonzero silences the
+                                         ; voice. checkRestart (1948:0258) is its only reader: the test at
+                                         ; 1948:0278 falls through to muteVoice (1948:027F), and like
+                                         ; gStopRequest checkRestart runs only for a voice whose
+                                         ; gVoiceReadNext is 0 (1948:00F0 to 00F7), so a sounding voice is
+                                         ; muted at its next check; a voice that reads its next note or
+                                         ; command on this tick plays it first (readFirst, 1948:00FA) and is
+                                         ; muted on the following tick. Only 0 is written here (1948:0081
+                                         ; and 027F), the writer of nonzero is unknown
 gVoiceReadNext   db      4 dup (?)       ; @ ds:8A44: offset 1A4h, byte per voice, 1 = read the next note or command
                                          ; this tick (set at 1948:007C and 0273); 0 = a note is sounding and
                                          ; its duration counts down (set at 1948:0151; endCommand leaves 0 too).
@@ -801,11 +807,14 @@ _SoundDriverResume ENDP
 ; 1948:046B: silence the three voices (_SetThreeVoices) and then fall back to one-voice output
 ; (_SetOneVoice). The flags _SetThreeVoices sets (1948:0352) end the song at the next tick:
 ; _SetOneVoice leaves gVoiceCount at 1 (1948:0367), the end-of-song count (1948:029A to 02BB) counts
-; that one voice as flagged and clears gPlaying (1948:02B6). Only used on the way out: ShutdownGame's
-; Tandy case calls it just before gTandyOn = 0 and _SoundDriverUninstall (src/E07C8.C:374-376), and
-; nothing resumes the output afterwards. The uninstall follows at once and removes the handler, but a
-; tick can still run before it. Because gTandyOn is then 0, _SoundDriverUninstall skips its Tandy
-; step (1948:0406).
+; that one voice as flagged and clears gPlaying (1948:02B6). The song ends, but a voice whose
+; gVoiceReadNext is 1 on that tick sounds one more note first: readFirst (1948:00FA) never looks at
+; gVoiceSilent, so it plays its next note after the silence, and the count then clears gPlaying with
+; that tone still on. Nothing silences it again, because the uninstall that follows skips its Tandy
+; step when gTandyOn is 0 (1948:0406). Only used on the way out: ShutdownGame's Tandy case calls it
+; just before gTandyOn = 0 and _SoundDriverUninstall (src/E07C8.C:374-376), and nothing resumes the
+; output afterwards. The uninstall follows at once and removes the handler, but a tick can still run
+; before it.
         PUBLIC  _SoundDriverSilenceToOneVoice       ; @ 1948:046B
 _SoundDriverSilenceToOneVoice PROC FAR
         push    bp
