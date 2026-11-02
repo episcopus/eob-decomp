@@ -2,10 +2,12 @@
 ; segment of our own MCB at +0E and five state words), then four functions. CheckMCB merges free
 ; blocks in the chain; CheckMemoryChain walks the chain, relocates the environment block and frees
 ; the one-paragraph block it allocated; ReserveMemoryBelowVideo and TrimMemoryToVideo size the
-; program's memory below the video buffer. The last two run only for the Tandy graphics mode:
+; program's memory below the probed segment (the "video top" reading is a hypothesis [H], see
+; gVideoTopSeg). The last two run only for the Tandy graphics mode:
 ; StartupGame (07C8:0199) calls CheckMemoryChain (07C8:01BB) and ReserveMemoryBelowVideo (07C8:01F2)
 ; for graphics choice 1, and ShutdownGame (07C8:060D) calls TrimMemoryToVideo when ds:8102 is 1
-; (src/E07C8.C:343-344).
+; (src/E07C8.C:343-344), including after a failed CheckMemoryChain: StartupGame returns 0 before it
+; stores gMemTopSeg, so Trim then runs with gMemTopSeg at its loaded 0 (the EXE image has 0 there).
 ; WHITEPAPER 2.6 reads argv digit 1 as Tandy and 3 as VGA, and START1's menu order is CGA, Tandy,
 ; EGA, VGA (WHITEPAPER line 105); the B800/A000 probe is in the code at 1990:0139 to 0150. The
 ; names are supported by the code and the callers, never placeholders.
@@ -22,14 +24,22 @@ gMemTopSeg    dw 0                      ; 1990:0002: segment where the program's
                                         ;   over it (07C8:0212, src/E07C8.C:189). What that numeric
                                         ;   string holds is Purpose unknown: nothing in src/ or
                                         ;   docs/ writes ds:8894. TrimMemoryToVideo reads it back.
-gVideoTopSeg  dw 0                      ; 1990:0004: top of video memory. ReserveMemoryBelowVideo
-                                        ;   probes the segment where the B800 marker aliases (or
-                                        ;   A000, 1990:0139 to 0150), subtracts (n-1) x 32 KB
-                                        ;   (1990:01A8 to 01B6), then lowers it to memtop plus the
+gVideoTopSeg  dw 0                      ; 1990:0004: the base of the memory reserved below the
+                                        ;   probed segment (the caller uses it as the base of the
+                                        ;   64000 byte Tandy buffer, src/E07C8.C:206 to 207 and
+                                        ;   220). "Video top" is a
+                                        ;   hypothesis [H]: ReserveMemoryBelowVideo probes the
+                                        ;   segment whose B800:0000 marker aliases (or A000,
+                                        ;   1990:0139 to 0150) and subtracts (n-1) x 32 KB
+                                        ;   (1990:01A8 to 01B6), but nothing in src/ or docs/ says
+                                        ;   that segment is where video memory ends. The reading
+                                        ;   would be confirmed by a docs source for where video
+                                        ;   memory ends, or a source showing the buffer lies in
+                                        ;   that memory. It is then lowered to memtop plus the
                                         ;   moved footprint when memtop is at or below that value
                                         ;   less the footprint (1990:01FE to 0207: the add is
-                                        ;   skipped when memtop is above). It never ends above the
-                                        ;   value the subtraction left it at (1990:01B6).
+                                        ;   skipped when memtop is above), so it never ends above
+                                        ;   the value the subtraction left it at (1990:01B6).
 gMovedSeg     dw 0                      ; 1990:0006: data segment DOS gave the relocated copy of the
                                         ;   environment block (1990:00E0). ReserveMemoryBelowVideo
                                         ;   copies that copy to its final place and frees it
@@ -43,8 +53,11 @@ gMovedParas   dw 0                      ; 1990:0008: the environment block's siz
                                         ;   the copy's own MCB size plus one (1990:023F to 0243),
                                         ;   which equals the footprint.
         db      0,0                     ; 1990:000A: unused (no reader in the unit)
-gNewMemTopSeg dw 0                      ; 1990:000C: new top of memory stored into PSP:0002
-                                        ;   (1990:0264), when a block was moved
+gNewMemTopSeg dw 0                      ; 1990:000C: the program's new top of memory, stored into
+                                        ;   PSP:0002 (1990:0264) when a block was moved. The moved
+                                        ;   copy's MCB lies exactly here (es at 1990:0236; bx set at
+                                        ;   1990:0221 to 0225), so the copy starts at this top and
+                                        ;   its gMovedParas paragraphs reach up to gVideoTopSeg.
 gMcbSeg dw      0                       ; 1990:000E: MCB of the one-paragraph block that
                                         ;   CheckMemoryChain allocates (1990:0079 to 007E) and
                                         ;   frees (1990:0120 to 0129); set at 1990:0088
@@ -99,10 +112,13 @@ CheckMCB ENDP
 ; PSP:002C is pointed at the copy (1990:00DD), the bytes are copied (1990:00EC to 1990:00FD)
 ; and the old block is marked free by zeroing its owner (1990:0101). Then the one-paragraph block is
 ; freed.
-; The last step calls CheckMCB (1990:0110), which merges the free blocks as a side effect, so AX is
-; CheckMCB's result: 0 when the chain ends in a proper 'Z' block, 1 when a block type is wrong or
-; an allocation fails. The caller StartupGame tests it at 07C8:01C0 (src/E07C8.C:181) and prints
-; "Memory chain corrupt!" on 1; 07C8:01BB is the call itself.
+; On the normal path the last step calls CheckMCB (1990:0110), which merges the free blocks as a side
+; effect, so AX is CheckMCB's result there. Three error exits set AX = 1 directly, without CheckMCB:
+; the one-paragraph allocation fails (1990:0082, jumping past the free to 1990:0116: there is no
+; block to free), the walk finds a block type that is neither 'M' nor 'Z' (1990:00B1), and the
+; environment copy's allocation fails (1990:00DB, jb); the last two reach 1990:011C, which frees the
+; one-paragraph block first. The caller StartupGame tests the result at 07C8:01C0
+; (src/E07C8.C:181) and prints "Memory chain corrupt!" on 1; 07C8:01BB is the call itself.
         PUBLIC  CheckMemoryChain        ; @ 1990:0071
 CheckMemoryChain PROC FAR
         push    bp
@@ -197,10 +213,12 @@ chainDone:
         ret
 CheckMemoryChain ENDP
 
-; 1990:0133: find the top of video memory by writing a marker at B800:0000 and scanning down in
-; 16 KB steps: the first test is A000 minus 16 KB (0x400 paragraphs, 1990:0155 to 015D), the scan
-; goes down while the segment is above 3C00h (1990:015A to 015D), and A000 is used when nothing
-; matches (the probeDone path, 1990:0197 to 01A1). Then reserve room below the top. The argument n
+; 1990:0133: find the segment whose byte at offset 0 aliases B800:0000: write the marker there
+; (1990:014A) and scan down in 16 KB steps. The first test is A000 minus 16 KB (0x400 paragraphs,
+; 1990:0155 to 015D), the scan goes down while the segment is above 3C00h (1990:015A to 015D), and
+; A000 is used when nothing matches (the probeDone path, 1990:0197 to 01A1). That segment is read
+; as the top of video memory only as a hypothesis [H] (see gVideoTopSeg), and it is not what is
+; stored: the stored value is that segment less (n-1) x 32 KB, then lowered. The argument n
 ; is the first word argument of the far call, at bp+6; it is a count of 32 KB steps, not the
 ; graphics mode: the code computes (n-1) shifted by 11 paragraphs (1990:01A8 to 1990:01B4), so it
 ; reserves (n-1) x 32 KB below the probed top. The only caller passes 3 (src/E07C8.C:188, lcall at
@@ -212,8 +230,11 @@ CheckMemoryChain ENDP
 ; type is 'Z' (1990:01DE to 1990:01E4, store at 1990:021D; the owner is not checked), and frees the
 ; one-paragraph block it allocated (1990:0226 to 0229, INT 21h AH=49h). Only when a block was moved
 ; (1990:0231) it points PSP:002C at that moved block's data segment (its MCB plus one, 1990:0256 to
-; 025B), moves the relocated copy and frees it, calls CheckMCB (1990:0271) to merge the freed block
-; into the chain, and stores the new top into PSP:0002 (1990:0264). The result is gVideoTopSeg after
+; 025B), moves the relocated copy to gNewMemTopSeg and frees the old copy: the copy's MCB sits
+; exactly at gNewMemTopSeg (es set at 1990:0236 from bx, set at 1990:0221 to 0225), so the copy
+; starts at the program's new top and its gMovedParas paragraphs reach up to gVideoTopSeg. Then it
+; calls CheckMCB (1990:0271) to merge the freed block into the chain and stores that new top into
+; PSP:0002 (1990:0264). The result is gVideoTopSeg after
 ; the step at 1990:0202 to 0207 (loaded at 1990:0274), not gMemTopSeg; the caller uses it as memtop
 ; (src/E07C8.C:188, slots 2 and 3 at E07C8.C:220). The CheckMCB result is overwritten at 1990:0274.
         PUBLIC  ReserveMemoryBelowVideo ; @ 1990:0133
@@ -279,8 +300,9 @@ probeEnd:
         cmp     byte ptr es:[0],4Dh
         je      chainHead
 ; QUIRK 1990:01CE: the jump to retTop is taken when the byte at the block's MCB is not 'M' (test to
-;   branch at 1990:01C6 to 01CC); it leaves that segment pushed, so the exit pops one word out (the
-;   far return takes the wrong words) and the block is not freed. Two ways in: in a valid chain a
+;   branch at 1990:01C6 to 01CC); it leaves the allocated data segment (its MCB plus one, pushed at
+;   1990:01C2) on the stack, so the exit pops one word out (the far return takes the wrong words)
+;   and the block is not freed. Two ways in: in a valid chain a
 ;   block that is not 'M' is the 'Z' block, so the path is taken when the one-paragraph block is the
 ;   last one, and the code does not test for a corrupt chain; and the allocation that finds the block
 ;   does not test its own result (1990:01C0, no carry check, unlike CheckMemoryChain's jae at
@@ -362,17 +384,23 @@ retTop:
 ReserveMemoryBelowVideo ENDP
 
 ; 1990:027D: shrink the last MCB of the chain down to gMemTopSeg, then free the one-paragraph
-; block (1990:02BD to 02C0, INT 21h AH=49h). The name's claim that this value is the video top is a
-; hypothesis [H]: the bytes show only that the last block is set to end at gMemTopSeg (1990:02B0 to
-; 02B9). ReserveMemoryBelowVideo stored the end of DOS memory there (1990:01F0), and StartupGame
-; overwrote it with atol(gEnvPtr->number) (07C8:0212) before this exit path, and nothing in src/ or
-; docs/ shows that string holds a video-buffer segment (its writer is Purpose unknown). It would be
-; confirmed by a writer of ds:8894 whose +0x18 numeric string is a video-buffer top (the value
-; ReserveMemoryBelowVideo computes), or by a docs source. Like ReserveMemoryBelowVideo, it allocates
-; the one-paragraph block (INT 21h AH=48h at 1990:0288) without testing the carry flag: on failure
-; AX is DOS's error code (7 or 8), the MCB type is read at segment 6 or 7 (1990:028B to 028E), and
-; the one-word-out exit marked below is taken when that byte is not 'M'. Called from ShutdownGame at
-; exit for the Tandy mode, when ds:8102 is 1 (07C8:060D, src/E07C8.C:343-344).
+; block (1990:02BD to 02C0, INT 21h AH=49h). gMemTopSeg has one of two inputs here. On the path
+; through StartupGame it is atol(gEnvPtr->number) (07C8:0212). On the path where CheckMemoryChain
+; failed, StartupGame returns 0 (src/E07C8.C:181-185) before that store, and g8102 is already 1
+; (src/E07C8.C:178), so ShutdownGame still calls this (src/E07C8.C:343-344) with gMemTopSeg at its
+; loaded value, 0 (the EXE image has 0 at 1990:0001 to 000F). With gMemTopSeg 0 the last block's
+; size is set to 0 less its data segment (1990:02B0 to 02B9), a wrapped 16 bit value, and the walk
+; (1990:0299 to 02AC) only looks for a 'Z' type, so it does not stop at a broken chain. The name's
+; claim that this value is the video top is a hypothesis [H]: the bytes show only that the last
+; block is set to end at gMemTopSeg (1990:02B0 to 02B9). ReserveMemoryBelowVideo stored the end of
+; DOS memory there (1990:01F0), and nothing in src/ or docs/ shows that the atol string holds a
+; video-buffer segment (its writer is Purpose unknown). It would be confirmed by a writer of ds:8894
+; whose +0x18 numeric string is a video-buffer top (the value ReserveMemoryBelowVideo computes), or
+; by a docs source. Like ReserveMemoryBelowVideo, it allocates the one-paragraph block (INT 21h
+; AH=48h at 1990:0288) without testing the carry flag: on failure AX is DOS's error code (7 or 8),
+; the MCB type is read at segment 6 or 7 (1990:028B to 028E), and the one-word-out exit marked
+; below is taken when that byte is not 'M'. Called from ShutdownGame at exit for the Tandy mode,
+; when ds:8102 is 1 (07C8:060D, src/E07C8.C:343-344).
         PUBLIC  TrimMemoryToVideo       ; @ 1990:027D
 TrimMemoryToVideo PROC FAR
         push    bp
@@ -389,8 +417,9 @@ TrimMemoryToVideo PROC FAR
         cmp     byte ptr es:[0],4Dh
         je      trimLast
 ; QUIRK 1990:0296: the jump to trimDone is taken when the byte at the block's MCB is not 'M' (test to
-;   branch at 1990:028E to 0296); it leaves that segment pushed, so the exit pops one word out (the
-;   far return takes the wrong words) and the block is not freed. Two ways in: in a valid chain a
+;   branch at 1990:028E to 0296); it leaves the allocated data segment (its MCB plus one, pushed at
+;   1990:028A) on the stack, so the exit pops one word out (the far return takes the wrong words)
+;   and the block is not freed. Two ways in: in a valid chain a
 ;   block that is not 'M' is the 'Z' block, so the path is taken when the one-paragraph block is the
 ;   last one, and the code does not test for a corrupt chain; and the allocation that finds the block
 ;   does not test its own result (1990:0288, no carry check, unlike CheckMemoryChain's jae at
