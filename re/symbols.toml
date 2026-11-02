@@ -7498,6 +7498,9 @@ unit = "eov4"
 addr = "ovl4:036A"
 size = 194
 evidence = ["ovl", "near", "frame"]
+name = "ToggleViewColumn"
+level = "L2"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "eov4_042c"

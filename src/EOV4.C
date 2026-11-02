@@ -191,18 +191,12 @@ extern unsigned char gViewBufADB0[]; /*@ ds:ADB0 */  /* the view pixel buffer (t
 }
 
 /* ovl4:036A: flips bit 0x4000 of a rectangle of word pixels in the view buffer at ds:ADB0, reading
-   from the page buffer at ds:F43E. `src` starts at (g1879[page] - 1) * 0x35E + x2 * 2 + 0x294;
-   for each of the `height` rows and `width` columns it reads the word at
-   src[width * row + (width - 1 - col)], skips it when zero and stores it to
+   from the page buffer at ds:F43E. The far pointer `src` starts at
+   (g1879[page] - 1) * 0x35E + x2 * 2 + 0x294; for each of the `height` rows and `width` columns it
+   reads the word at (src + width * row)[width - 1 - col], skips it when zero and stores it to
    ds:ADB0[(y + row) * 0x16 + x + col] with bit 0x4000 toggled, skipping columns outside 0..0x15.
-   Called by Ovl4_044B at ovl4:04B4 and ovl4:04CD. Purpose unknown: what the bit marks.
-   DRAFT: the body and the pre-loop setup match; only the loop registers differ. The original keeps
-   the outer counter (row) in CX, the inner (col) in DI and the pixel in SI; ours puts row in DI, col
-   in SI and the pixel in AX (so it pushes width*row instead of using CX). Tried all 6 declaration
-   orders of {row,col,pixel} with every `register` subset, int and unsigned types, while/do-while
-   loops, -B, -G and -r-; the allocation does not move. The difference is TCC's choice of which of
-   the three live values takes SI/DI, not a source form found yet. */
-/*@ ovl4:036A draft */ void ToggleViewColumn(char x, char y, char page, int x2, char width, char height)
+   Called by Ovl4_044B at ovl4:04B4 and ovl4:04CD. Purpose unknown: what the bit marks. */
+/*@ ovl4:036A */ void ToggleViewColumn(char x, char y, char page, int x2, char width, char height)
 {
     unsigned int far *src;
     int row;
@@ -217,14 +211,14 @@ extern unsigned char gViewBufADB0[]; /*@ ds:ADB0 */  /* the view pixel buffer (t
         for (col = 0; col < width; col++) {
             if (x + col < 0 || x + col >= 0x16)
                 continue;
-            pixel = src[width * row + (width - 1 - col)];
+            pixel = (src + width * row)[width - 1 - col];
             if (pixel == 0)
                 continue;
             if (pixel & 0x4000)
                 pixel -= 0x4000;
             else
                 pixel |= 0x4000;
-            gViewBufADB0[(y + row) * 0x16 + x + col] = pixel;
+            ((unsigned int *)gViewBufADB0)[(y + row) * 0x16 + x + col] = pixel;
         }
     }
 }
