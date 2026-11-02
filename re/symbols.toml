@@ -5334,6 +5334,7 @@ evidence = ["segment"]
 name = "_SoundTimerIsr"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1948_0050"
@@ -5344,6 +5345,7 @@ evidence = ["near"]
 name = "_SoundTick"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1948_02c7"
@@ -5354,6 +5356,7 @@ evidence = ["near"]
 name = "_VoiceOn"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1948_02f1"
@@ -5364,6 +5367,7 @@ evidence = ["near"]
 name = "_VoiceOff"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1948_0316"
@@ -5374,6 +5378,7 @@ evidence = ["near"]
 name = "_SetVoicePitch"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1948_034a"
@@ -5384,6 +5389,7 @@ evidence = ["near"]
 name = "_SetThreeVoices"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1948_0367"
@@ -5394,6 +5400,7 @@ evidence = ["near"]
 name = "_SetOneVoice"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1948_0377"
@@ -5404,6 +5411,7 @@ evidence = ["far", "frame"]
 name = "_SoundDriverInstall"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1948_03da"
@@ -5414,6 +5422,7 @@ evidence = ["far", "frame"]
 name = "_SoundDriverUninstall"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1948_0418"
@@ -5424,6 +5433,7 @@ evidence = ["far", "frame"]
 name = "_StartSound"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1948_0443"
@@ -5434,6 +5444,7 @@ evidence = ["frame"]
 name = "_StopSound"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1948_0458"
@@ -5444,6 +5455,7 @@ evidence = ["far", "frame"]
 name = "_SoundDriverResume"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1948_046b"
@@ -5454,6 +5466,7 @@ evidence = ["far", "frame"]
 name = "_SoundDriverSilenceToOneVoice"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1990_0001"
