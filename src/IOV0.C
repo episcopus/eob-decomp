@@ -7,10 +7,10 @@
    load time (ds:1EE2 and its neighbours), which this page only partly names.
    The scene functions are named after the .CMP/.COL files they load: PlayWtrdpScene (ovl0:015D,
    WTRDP1..3), PlayOrbScene (ovl0:06E2, ORB/TOWRMAGE), PlayTowerMageScene (ovl0:0B20,
-   TOWRMAGE), PlayKingScene (ovl0:1265, KING/ADVENTUR) and PlayHandsScene (ovl0:15F9, HANDS) are
-   written; 1DF3 and 23A3 are still stubs. They are long ClipRect/frame animations; every utility
-   they use (LoadPackedImage, LoadPalette, PlaySound, Dissolve, BlitImage, DrawGrid, GrowFrame,
-   WaitFrameDelay, f19EC_002A) is matched. */
+   TOWRMAGE), PlayKingScene (ovl0:1265, KING/ADVENTUR), PlayHandsScene (ovl0:15F9, HANDS) and
+   PlayTunnelScene (ovl0:1DF3, WTRDP3/ORB/TUNNEL/ZOOMTUNL) are written; 23A3 is still a stub.
+   They are long ClipRect/frame animations; every utility they use (LoadPackedImage, LoadPalette,
+   PlaySound, Dissolve, BlitImage, DrawGrid, GrowFrame, WaitFrameDelay, f19EC_002A) is matched. */
 
 /*@flags -ml -O -Z -G */
 
@@ -110,7 +110,7 @@ void GrowFrame(int left, int top, int dstLeft, int dstTop, int x, int y, int wid
 int SignOf(int value);
 void PlayKingScene(void);
 void PlayHandsScene(void);
-void Ovl0_1DF3(void);
+void PlayTunnelScene(void);
 void Ovl0_23A3(void);
 void RevealInStrips(void);
 void DrawGrid(void);
@@ -176,7 +176,7 @@ void PlayLogoSequence(void);
     if (!gAbort)
         PlayHandsScene();
     if (!gAbort)
-        Ovl0_1DF3();
+        PlayTunnelScene();
     if (!gAbort)
         Ovl0_23A3();
     if (!gAbort)
@@ -811,7 +811,118 @@ extern int gKingStep[8];                /*@ ds:1CF4 */  /* Purpose unknown: per-
     MemFree(sprites[0]);
     gFrameDelay = 0x30;
 }
-/*@ ovl0:1DF3 stub */ void Ovl0_1DF3(void) {}
+/* ovl0:1DF3: the WTRDP3/ORB/TUNNEL/ZOOMTUNL scene. It cuts the 31 star tiles and three frames
+   out of WTRDP3.CMP and slides a window (x from 0x8C up, y from 0x80 down) with the same star
+   drop as ovl0:015D. Then it shows ORB.CMP through two GridFrame wipes, TUNNEL.CMP through a
+   shrinking box and a reveal, and ends on the ZOOMTUNL.COL palette. */
+/*@ ovl0:1DF3 */ void PlayTunnelScene(void)
+{
+    void far *img;
+    int k;
+    int x;
+    int y;
+    int left;
+    int top;
+    void far *stars[31];
+    void far *frames[3];
+    register int i;
+    register int frame;
+
+    gDrawPage = 2;
+    LoadPackedImage("WTRDP3.CMP", 5, 3);
+    for (i = 0; i < 31; i++)
+        stars[i] = gMakeImage(gTileX[i], gTileY[i] * 8 + 0x88, gTileScale[i], gTileScale[i] * 8, gOverlayBuf);
+    for (i = 0; i < 3; i++)
+        frames[i] = gMakeImage(i * 5 + 0xf, 0x98, 5, 0x20, gOverlayBuf);
+    img = gMakeImage(0x1f, 0x88, 5, 0x20, gOverlayBuf);
+    f19EC_002A(3, 4, FP_OFF(gOverlayBuf), FP_SEG(gOverlayBuf));
+    ClipRect(0, 0, 0, 0x88, 6, 0x24, 4, 4);
+    WaitFrameDelay();
+    ClearBottomBar();
+    ClipRect(0x14, 0, 0xa, 0x18, 0x14, 0x88, 4, 0);
+    x = 0x8c;
+    y = 0x80;
+    WaitFrameDelay();
+    for (i = 0; i <= 0x46; i++) {
+        gFrameDelay = 3;
+        left = (x - 2) >> 3;
+        if (left < 0x14)
+            left = 0x14;
+        top = y - 2;
+        if (top > 0x62)
+            top = 0x62;
+        ClipRect(left, top, 0, 0, 6, 0x24, 4, 4);
+        frame = i & 3;
+        if (frame == 3)
+            frame = 1;
+        f1A29_000F(4, frames[frame], x, y, 0);
+        f1A29_000F(4, img, 0xa0, 0x68, 0);
+        ClipRect(left, top, left - 0xa, top + 0x18, 6, 0x24, 4, 0);
+        ClipRect(0, 0, left, top, 6, 0x24, 4, 4);
+        x++;
+        y--;
+        for (k = 0; k < 5; k++) {
+            frame = RandomByte() % 31;
+            f1A29_000F(0, stars[frame], gStarX[frame] - 0x50, gStarY[frame] + 0x18, 0);
+        }
+        if (!(RandomByte() & 7))
+            PlaySound((RandomByte() & 1) ? 5 : 0xe);
+        WaitFrameDelay();
+    }
+    gDrawPage = 0;
+    for (i = 0; i < 31; i++) {
+        if (i < 3)
+            MemFree(frames[i]);
+        MemFree(stars[i]);
+    }
+    MemFree(img);
+    ClearBottomBar();
+    gFrameDelay = 0x14;
+    ClipRect(0, 0x88, 0, 0, 6, 0x24, 4, 4);
+    LoadPalette("ORB.COL");
+    LoadPackedImage("ORB.CMP", 3, 5);
+    f19EC_002A(5, 2, FP_OFF(gOverlayBuf), FP_SEG(gOverlayBuf));
+    gFrameDelay = 6;
+    DrawGrid();
+    WaitFrameDelay();
+    ClipRect(0, 0x90, 0, 0xb8, 0x28, 0x10, 6, 0);
+    x = top = 0;
+    y = 0x88;
+    for (i = 0; i < 0x13; i++) {
+        gFrameDelay = 1;
+        ClipRect(x, y, 0xa, top + 0x10, 0x14, 8, 2, 0);
+        y += 8;
+        top += 8;
+        if (i == 6) {
+            x = 0x14;
+            y = 0;
+        }
+        WaitFrameDelay();
+    }
+    PlaySound(3);
+    gFrameDelay = 0x3c;
+    for (i = 0; i < 0x38; i++) {
+        ClipRect(0, i + 0x88, 0xa, 0x10, 0x14, 0x38 - i, 2, 0);
+        ClipRect(0x14, 0, 0xa, 0x48 - i, 0x14, 0x98 - (0x38 - i), 2, 0);
+        WaitFrameDelay();
+        gFrameDelay = 1;
+    }
+    for (i = 1; i <= 0x30; i++) {
+        gFrameDelay = 1;
+        ClipRect(0x14, i, 0xa, 0x10, 0x14, 0x98, 2, 0);
+        WaitFrameDelay();
+    }
+    gFrameDelay = 0x1e;
+    LoadPackedImage("TUNNEL.CMP", 3, 5);
+    f19EC_002A(5, 2, FP_OFF(gOverlayBuf), FP_SEG(gOverlayBuf));
+    WaitFrameDelay();
+    gDrawPage = 0;
+    gFillRect(0, 0x10, 0x13f, 0x1f, 0xc);
+    gFillRect(0, 0x88, 0x13f, 0xc7, 0xc);
+    ClipRect(0, 0, 0xa, 0x20, 0x14, 0x78, 2, 0);
+    gFrameDelay = 0x32;
+    LoadPalette("ZOOMTUNL.COL");
+}
 /*@ ovl0:23A3 stub */ void Ovl0_23A3(void) {}
 /* ovl0:2913: reveals the screen in horizontal strips. For each step 0..6 it walks the 25
    eight-line strips top to bottom and clips each strip twice: the whole strip (height
