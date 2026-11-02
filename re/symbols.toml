@@ -2082,6 +2082,7 @@ evidence = ["far", "segment"]
 name = "GetIndexedByte"
 level = "L2"
 match_flags = "-ml -O -Z"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0a72_007b"
@@ -2092,6 +2093,7 @@ evidence = ["far", "frame"]
 name = "FindClassSlot"
 level = "L2"
 match_flags = "-ml -O -Z"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0a72_00cf"
@@ -2102,6 +2104,7 @@ evidence = ["far", "frame"]
 name = "GetStrengthToHitBonus"
 level = "L2"
 match_flags = "-ml -O -Z"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0a72_0128"
@@ -2112,6 +2115,7 @@ evidence = ["far", "frame"]
 name = "GetStrengthDamageBonus"
 level = "L2"
 match_flags = "-ml -O -Z"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0a72_0181"
@@ -2122,6 +2126,7 @@ evidence = ["far", "frame"]
 name = "GetCharM15Value"
 level = "L2"
 match_flags = "-ml -O -Z"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0a72_019d"
@@ -2132,6 +2137,7 @@ evidence = ["far", "frame"]
 name = "GetArmourClassBase"
 level = "L2"
 match_flags = "-ml -O -Z"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0a72_01ae"
@@ -2142,6 +2148,7 @@ evidence = ["far", "frame"]
 name = "RollHitPoints"
 level = "L2"
 match_flags = "-ml -O -Z"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0a72_02b3"
@@ -2152,6 +2159,7 @@ evidence = ["frame"]
 name = "MaxHitPoints"
 level = "L2"
 match_flags = "-ml -O -Z"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0a72_03a4"
@@ -2162,6 +2170,7 @@ evidence = ["frame"]
 name = "MinHitPoints"
 level = "L2"
 match_flags = "-ml -O -Z"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0a72_0468"
@@ -2172,6 +2181,7 @@ evidence = ["far", "frame"]
 name = "FormatStrengthPercent"
 level = "L2"
 match_flags = "-ml -O -Z"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0a72_04b7"
@@ -2182,6 +2192,7 @@ evidence = ["far", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z"
 name = "GetClassSlotExpThreshold"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0a72_0509"
@@ -2192,6 +2203,7 @@ evidence = ["far", "frame"]
 name = "GetClassSlotByte"
 level = "L2"
 match_flags = "-ml -O -Z"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0a72_0522"
@@ -2202,6 +2214,7 @@ evidence = ["far", "frame"]
 name = "GetHitTarget"
 level = "L2"
 match_flags = "-ml -O -Z"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0a72_058c"
@@ -2212,6 +2225,7 @@ evidence = ["far", "frame"]
 name = "SubtractInts"
 level = "L2"
 match_flags = "-ml -O -Z"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0a72_0597"
@@ -2222,6 +2236,7 @@ evidence = ["far", "frame"]
 name = "GetClampedTableByte"
 level = "L2"
 match_flags = "-ml -O -Z"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0acd_0008"
