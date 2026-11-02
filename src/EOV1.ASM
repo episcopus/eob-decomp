@@ -1,4 +1,6 @@
-; Unit at overlay 1 of EOB.EXE (segment 2102, 9864 bytes, 12 functions), kind asm [H] by the map.
+; Unit at overlay 1 of EOB.EXE (segment 2102, 9864 bytes, 16 functions). The unit is C (escalation
+; eov1, 2026-11-02; src/EOV1.C): this file is the stopgap transcription from the disassembly, kept
+; until src/EOV1.C has each function in C (playbook 30).
 ; It is the party display and inventory overlay: it reads and rewrites the party's records at
 ; ds:F580 (gChars, 6 records of 0xF3 bytes, E08E6.C), draws rows and items through
 ; DrawRowList/DrawShadowText and the icon table ds:DD28 (gIconDD28, EOV2.C), and searches class

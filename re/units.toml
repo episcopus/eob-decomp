@@ -514,7 +514,7 @@ overlay = 1
 start = "ovl1:0000"
 bytes = 9864
 functions = 12
-kind = "asm"
+kind = "c"
 
 [[unit]]
 id = "eov2"
