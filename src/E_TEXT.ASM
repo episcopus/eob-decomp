@@ -157,17 +157,17 @@ _RebaseDriverBlock ENDP
 
 ; 0000:0416: the driver block (data, 13614 bytes to 3943). LoadSoundDriver reads the 32C8h bytes of adlib.dat or pcgamesn.dat
 ; over 0416 to 36DD at run time (177D:000A) and RebaseDriverBlock turns its first 300 words into near pointers; the bytes
-; here are the EXE's image of it and are overwritten before they are read: zeros but for 16 non-zero bytes in three places
-; (dw 066Eh at 0416h, dw 0671h at gPatchTable 0542h and the twelve bytes at 0670h), none of them the file's
+; here are the EXE's image of it and are overwritten before they are read: zeros but for 14 non-zero bytes in three places
+; (dw 066Eh at 0416h, dw 0671h at gPatchTable 0542h and ten of the twelve bytes at 0670h), none of them the file's
 ; (ADLIB.DAT's driver block begins 0258h, at file offset 78h after its 120-byte sound map; this block's is 066Eh): Purpose unknown. gBlockSpare (36DE, 614 bytes)
 ; follows the block, zero and unreferenced in this file.
         PUBLIC  _DriverBlock              ; @ 0000:0416
 _DriverBlock LABEL BYTE
         dw      066Eh
         db      298 dup (0)
-; 0542h: a table of near pointers to the instrument patches (11 bytes each), read by LoadVoicePatch at 4DC8
-; (mov si,[bx+gPatchTable]) for the script 90h command at 43AD and the C1h command at 4729. It sits inside
-; the 300-word table RebaseDriverBlock rebases (word 150), so its entries are rebased too.
+; 0542h: a table of near pointers to the instrument patches (11 bytes each), read by the script 90h command (43AD)
+; and the C1h command (4729), which load one with mov si,[bx+gPatchTable] and pass it to LoadVoicePatch (4DC8),
+; which reads its patch bytes with lodsb. It sits inside the 300-word table RebaseDriverBlock rebases (word 150), so its entries are rebased too.
 gPatchTable LABEL WORD
         dw      0671h
         db      300 dup (0)
@@ -284,8 +284,8 @@ gQueueRing      db      16 dup (0)      ; 3B83: the queued driver sound numbers,
 ; 0000:3B93: the ten voice records (data, 670 bytes, 43h each): the state of the nine AdLib voices (0 to 8) and the rhythm voice 9
 ; as UpdateVoices and its helpers read it through di. Zero in the image. The 43h-byte layout, by offset, with the code that proves
 ; each field (a byte unless it says otherwise):
-;   +00h  level adjustment added to both operator levels: script ACh sets it (44B5), ADh adds to it (44D6); VoiceCarrierLevel
-;         (4D1F) and VoiceModulatorLevel (4D57) add it to the register value
+;   +00h  level adjustment added to the carrier level (4D1F) and, when +31h is set, to the modulator level (4D57): script ACh
+;         sets it (44B5), ADh adds to it (44D6)
 ;   +03h  script pointer (word): ProcessSoundQueue stores it (402C), UpdateVoices reads and rewrites it (41F9, 423E)
 ;   +05h  note delay counter: StartVoiceNote sets it (4B47), UpdateVoices counts it down (41D8), GetVoiceDelay returns it
 ;   +06h  loop counter: script 80h sets it (4271), 81h decrements it (4276)
@@ -297,7 +297,7 @@ gQueueRing      db      16 dup (0)      ; 3B83: the queued driver sound numbers,
 ;   +13h  pitch slide rate: script 91h sets it (43C3), L_4F00 adds it to the phase
 ;   +14h  pitch slide phase accumulator: 91h sets it to FFh, L_4F00 adds +13h and carries
 ;   +15h  pitch slide amount (word): 91h stores it (43C3), L_4F00 adds it to the F-number
-;   +17h  oscillator delta (word): VoiceKeyOn computes it (4AEF), L_4E7E negates it at a carry
+;   +17h  oscillator delta (word): VoiceKeyOn computes it (4AEF), L_4E7E negates it each time the count +1Ah reaches zero
 ;   +19h  oscillator shift: script 95h sets it (43ED), VoiceKeyOn shifts the F-number by it
 ;   +1Ah  oscillator count: 95h stores it (43ED), L_4E7E reloads it from +1Bh
 ;   +1Bh  oscillator reload: 95h stores it (43ED), L_4E7E reloads +1Ah from it
@@ -310,11 +310,12 @@ gQueueRing      db      16 dup (0)      ; 3B83: the queued driver sound numbers,
 ;   +24h  fine tune, added to the F-number by SetVoicePitch (4A3A)
 ;   +25h  speed: scripts A9h, BAh and BDh set it, UpdateVoices copies gTempoRate into it while +40h is set (41CA), ClearVoice
 ;         sets it to FFh
-;   +26h  phase accumulator: UpdateVoices adds +25h each tick and starts the script on a carry (41CA to 41D8)
+;   +26h  phase accumulator: UpdateVoices adds +25h each tick; on a carry it counts the note delay +05h down, and the script runs
+;         when it reaches zero (41D8, L_41F9)
 ;   +27h  register A0h image (F-number low byte): SetVoicePitch stores it (4A3A), the B9h command and L_4E7E adjust it
 ;   +28h  register B0h image (F-number high bits and key-on bit 20h): the INT 08h handler (3E66), SetVoicePitch, VoiceKeyOn,
 ;         VoiceKeyOff, the B5h command and L_4E7E read and write it
-;   +29h  per-tick handler pointer (word): UpdateVoices calls it every tick (425F); scripts 91h, 92h, 95h, A7h, B6h and ClearVoice set it
+;   +29h  per-tick handler pointer (word): UpdateVoices calls it every tick (425F); scripts 91h, 92h, 95h, B6h and ClearVoice set it
 ;   +2Bh  per-voice handler pointer (word): UpdateVoices calls it every tick (425F); scripts 8Dh and A7h and ClearVoice set it
 ;   +2Dh  key-off multiplier: script A4h sets it (4490), StartVoiceNote uses it (4B5F)
 ;   +2Eh  patch modulator level byte: LoadVoicePatch stores it (4DC8), VoiceModulatorLevel reads it
@@ -323,8 +324,8 @@ gQueueRing      db      16 dup (0)      ; 3B83: the queued driver sound numbers,
 ;   +31h  connection bit: LoadVoicePatch keeps bit 0 of the patch C0h byte here (4DC8), WriteVoiceReg and the level routines test it
 ;   +32h  modulator level shift: script C9h sets it (4A30), VoiceModulatorLevel shifts by it
 ;   +33h  carrier level shift: script C9h sets it (4A30), VoiceCarrierLevel shifts by it
-;   +34h  decay level: scripts A0h and A1h store it (4467, 447A), the level routines shift it
-;   +35h  second key-off count: script 83h sets it (42CE), ClearVoice sets it to 1, UpdateVoices keys off at it (41F7)
+;   +34h  decay level: UpdateVoices stores the next script byte there (421A) when +32h or +33h is set, the level routines shift it
+;   +35h  second key-off count: script 83h sets it (42CE), ClearVoice sets it to 1, UpdateVoices keys off at it (41E8)
 ;   +36h  random-delay mask: script BCh sets it (46B1), StartVoiceNote masks SoundRandom with it (4B47)
 ;   +39h  pitch envelope rate: script 8Dh sets it (436C), L_4ED7 adds it to the accumulator
 ;   +3Ah  pitch envelope accumulator: 8Dh sets it (436C), L_4ED7 adds +39h and carries
@@ -685,7 +686,7 @@ L_409A:
 _ProcessSoundQueue ENDP
 
 ; 0000:409E: stores the note argument in gEffectIndex, then writes register A0 with the byte of the effect curve gEffectCurveB at that
-; index (gEffectCurveA's byte becomes the period gEffectPeriod). and ax,7fffh strips bit 15 from the argument before it is used
+; index (gEffectCurveA's byte becomes the period gEffectPeriod); and ax,7fffh strips bit 15 from the argument before it is used
 ; as the index, so a caller sets that bit as a flag; Purpose unknown: what the flag means (no caller names this far routine).
 ; Far routine, one argument; the ninth entry of the entry table (3944)
         PUBLIC  _SetNote              ; @ 0000:409E
@@ -825,9 +826,10 @@ L_4183:
         ret
 _ResetVoices ENDP
 
-; 0000:418F: the per-voice script interpreter: loops voice 9 down to 0 and runs its command through the 4F94 jump table. Each tick
-; counts the voice's note delay (+05h) down; the script runs only when it reaches zero (41D8, L_41F9). Every voice also calls its
-; per-tick handler (+29h) and then its per-voice handler (+2Bh) each tick (L_425F)
+; 0000:418F: the per-voice script interpreter: loops voice 9 down to 0 and runs its command through the 4F94 jump table. On each
+; speed carry it counts the voice's note delay (+05h) down (41D8); the script runs only when it reaches zero (L_41F9). A voice
+; whose delay is zero at the tick's start is skipped (419C); the others call their per-tick handler (+29h), then their
+; per-voice handler (+2Bh), at L_425F
         PUBLIC  _UpdateVoices              ; @ 0000:418F
 _UpdateVoices PROC NEAR
         cmp       byte ptr ds:[gUpdateEnable], 0
@@ -1955,11 +1957,11 @@ L_4B7B:
         ret
 _StartVoiceNote ENDP
 
-; 0000:4B7F: the AdLib sample driver on: writes the OPL2 registers 20h to B0h that set voice 0 up for the sample, polls PIT
-; channel 0 until its counter has run on by 952h (a start-up delay), then installs the INT 08h handler at 3EE5 with the PIT at
-; divisor 004Bh (about 15.9 kHz). The argument at [bp+6] is the far pointer to the sample (offset, then segment), stored at
-; gSamplePtrOff/gSampleStart/gSamplePtrSeg; the length in bytes at [bp+0Ah] goes to gSampleLength. It never touches the speaker
-; gate (port 61h); StartAdlibDriver (3FAE) cleared it
+; 0000:4B7F: the AdLib sample driver on: writes the OPL2 registers 20h, 60h, 80h, C0h, E0h, 43h, A0h and B0h that set voice 0
+; up for the sample, polls PIT channel 0 until its counter has run on by 952h (a start-up delay), then writes B0h 20h and A0h
+; 00h and installs the INT 08h handler at 3EE5 with the PIT at divisor 004Bh (about 15.9 kHz). The argument at [bp+6] is the far
+; pointer to the sample (offset, then segment), stored at gSamplePtrOff/gSampleStart/gSamplePtrSeg; the length in bytes at
+; [bp+0Ah] goes to gSampleLength. It never touches the speaker gate (port 61h); StartAdlibDriver (3FAE) cleared it
         PUBLIC  _StartSample              ; @ 0000:4B7F
 _StartSample PROC NEAR
         push      bp
@@ -2277,7 +2279,7 @@ _VoiceModulatorLevel ENDP
 
 ; 0000:4D95: zeroes the 40h bytes of the voice record from offset 3, then sets the record's speed (+25h) to FFh, its priority
 ; (+08h) to 0, both handler pointers (+29h and +2Bh) to L_4E7D (a bare ret) and its second key-off count (+35h) to 1. The
-; note delay (+05h) and the rest below offset 3 are cleared only by the zeroing
+; note delay (+05h) is cleared by the zeroing; +00h to +02h are not touched
         PUBLIC  _ClearVoice              ; @ 0000:4D95
 _ClearVoice PROC NEAR
         push      es
@@ -2368,7 +2370,7 @@ _LoadVoicePatch ENDP
 ; 0000:4E34: silences a voice: writes ffh to its attack/decay and sustain/release registers (60h, 63h, 80h, 83h plus the
 ; operator offset) and 0 to its B0h register (cl holds the voice number; while rhythm mode is on, gRhythmKeyBits, voices 6 and
 ; up are skipped). QUIRK 0000:4E79: the write that follows sends 20h to the same B0h register (AdlibWrite keeps AX, so AH is
-; still the register number), leaving the voice with key-on set and F-number 0
+; still the register number), leaving key-on set and the F-number's high bits (B0h bits 0 and 1) zero; A0h is not written
         PUBLIC  _VoiceSilence              ; @ 0000:4E34
 _VoiceSilence PROC NEAR
         cmp       byte ptr ds:[gRhythmKeyBits], 0
