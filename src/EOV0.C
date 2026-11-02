@@ -181,6 +181,9 @@ extern int gDD12; /*@ ds:DD12 */ /* the panel row ovl0:23EC redraws (Purpose unk
 extern int gFC7A; /*@ ds:FC7A */ /* the key UpdateOptionList did not handle (src/E14EF.C) */
 extern int g8140; /*@ ds:8140 */ /* x of the last click (src/E082C.C) */
 extern int g8142; /*@ ds:8142 */ /* y of the last click (src/E082C.C) */
+extern int gMouseDisabled; /*@ ds:814A */ /* nonzero disables the mouse (src/E07A9.C) */
+extern char g5EAC[]; /*@ ds:5EAC */ /* the four slot indices the party members hold */
+extern void Unpack0(char far *src, void far *dst, long len); /*@ 1BA8:0006 */
 extern int CountMaskBits(int n, long mask, char shift); /*@ 14EF:0107 */
 extern int PointInRect(int x, int y, int left, int top, int right, int bottom); /*@ 14EF:00E1 */
 extern int IsMouseInRect(int left, int top, int right, int bottom); /*@ 1A72:02A6 */
@@ -459,7 +462,116 @@ extern void far *g5E64[0x11]; /*@ ds:5E64 */ /* the 17 sliced icon pointers this
 {
     DrawRowList(10);
 }
-/*@ ovl0:0A5E stub */ void Ovl0_0A5E(void) {}
+void Ovl0_1224(void);              /* ovl0:1224, defined below */
+void Ovl0_1ADD(void);              /* ovl0:1ADD, defined below */
+void RollCharacterStats(int who);           /* ovl0:1BF2, defined below */
+void DrawPanelRow(int index);      /* ovl0:11BA, defined below */
+void BuildCombatTables(void);      /* ovl0:1EA9, defined below */
+int PickClass(int race);           /* ovl0:207A, defined below */
+int PickAlignment(int classIndex); /* ovl0:2238, defined below */
+
+/* ovl0:0A5E: the party-position screen. It lays out a six-row list from row 0x15, picks the first
+   free slot for the current member gDCB0 (FindSlot from slot 0x1a when the last option key was odd,
+   else from 0) and then, until a slot is confirmed (cur), redraws the four member cells: cell i
+   gets gPtrsFC8C[taken[i]] at (0xb0 + i*0x20, 0x42), with the four slots walked by FindSlot. It then
+   waits for a key (ovl0:1224 animates first) and turns it into a command: 0x2b/0x61 confirm (3), the
+   left keys 0x5c/0x8001 blink icon 0xc and step left (1), the right keys 0x66/0x8002 blink icon 0xd
+   and step right (2), the 0x8003..0x8006 keys pick position key-3 and confirm, anything else loops.
+   A command of 1/2 moves `pos` or, only at the ends (or with the mouse disabled), slides the slot
+   through FindSlot; a command of 3 records `pos`. On exit it stores the chosen slot into g5EAC[gDCB0]
+   and the record's m22, unpacks the chosen cell into the member's sprite and redraws the page in
+   mode 1. Called by ovl0:0DDC and ovl0:0EE5. Purpose unknown: the cell layout gPtrsFC8C. */
+/*@ ovl0:0A5E */ void PickPartySlot(void)
+{
+    int key;
+    char slot;
+    char i;
+    char prev;
+    char pos;
+    char cur;
+    char taken[4] = { 0, 0, 0, 0 };
+    struct Node far *list;
+
+    FlushKeyBuffer();
+    list = BuildRowNodeList(0x15, 6);
+    slot = gFC8A ? 0x1a : 0;
+    DrawCharPanel(gDCB0, 4);
+    DrawPanelIcon(0xc, 0, 0);
+    DrawPanelIcon(0xd, 0, 0);
+    DrawRowList(-1);
+    slot = FindSlot(slot, gFC8A, 1, g5EAC);
+    cur = -1;
+    pos = 1;
+    while (cur == -1) {
+        prev = slot;
+        LockHidePointer();
+        for (i = 0; i < 4; i++) {
+            taken[i] = slot;
+            f1A29_000F(0, gPtrsFC8C[taken[i]], i * 0x20 + 0xb0, 0x42, 0);
+            slot = FindSlot(slot + 1, gFC8A, 1, g5EAC);
+        }
+        LockShowPointer();
+        slot = prev;
+        do {
+            Ovl0_1224();
+            key = WaitKeyOrPause(list);
+            if (gMouseDisabled)
+                DrawRowList(pos + 0xa);
+            switch (key) {
+            case 0x8003:
+            case 0x8004:
+            case 0x8005:
+            case 0x8006:
+                pos = key - 3;
+            case 0x2b:
+            case 0x61:
+                key = 3;
+                break;
+            case 0x5c:
+            case 0x8001:
+                FlashPanelIcon(0xc);
+                key = 1;
+                break;
+            case 0x66:
+            case 0x8002:
+                FlashPanelIcon(0xd);
+                key = 2;
+                break;
+            default:
+                if (key < 0)
+                    key &= 0xff;
+                else
+                    key = 0;
+                break;
+            }
+        } while (key == 0);
+        if (gMouseDisabled)
+            DrawRowList(-1);
+        switch (key) {
+        case 1:
+            if (pos == 0 || !gMouseDisabled)
+                slot = FindSlot(slot - 1, gFC8A, -1, g5EAC);
+            else
+                pos--;
+            break;
+        case 2:
+            if (pos == 3 || !gMouseDisabled)
+                slot = FindSlot(slot + 1, gFC8A, 1, g5EAC);
+            else
+                pos++;
+            break;
+        case 3:
+            cur = pos;
+            break;
+        }
+    }
+    DrawRowList(-1);
+    Ovl0_1224();
+    g5EAC[gDCB0] = taken[cur];
+    gChars[gDCB0].m22 = taken[cur];
+    Unpack0(gPtrsFC8C[taken[cur]], gChars[gDCB0].sprite, 0x514);
+    DrawCharPanel(gDCB0, 1);
+}
 /* ovl0:0D5B: walks the panel slot indices modulo 0x2c (44) to find one that is free. Starting from
    `start` (a negative start is folded to 0x2b), it loops: a slot is rejected when one of the four
    named characters gChars[0..3] has `taken[di]` equal to it, when `flag` is nonzero and the slot is
@@ -495,13 +607,6 @@ extern void far *g5E64[0x11]; /*@ ds:5E64 */ /* the 17 sliced icon pointers this
     } while (found);
     return slot;
 }
-void Ovl0_1224(void);              /* ovl0:1224, defined below */
-void Ovl0_1ADD(void);              /* ovl0:1ADD, defined below */
-void RollCharacterStats(int who);           /* ovl0:1BF2, defined below */
-void DrawPanelRow(int index);      /* ovl0:11BA, defined below */
-void BuildCombatTables(void);      /* ovl0:1EA9, defined below */
-int PickClass(int race);           /* ovl0:207A, defined below */
-int PickAlignment(int classIndex); /* ovl0:2238, defined below */
 /* ovl0:0DDC: the character panel's function-key loop. It opens the panel page, builds the 0x1b-based
    four-row list, then until a key ends it redraws the animation and waits: the enter key (0x61) and
    key 0x8004 flash icon 6 and keep looping, keys 0x8001/0x8002/0x8003 flash icons 4/7/8 and run the
@@ -513,7 +618,7 @@ int PickAlignment(int classIndex); /* ovl0:2238, defined below */
     struct Node far *list;
     register int key;
 
-    Ovl0_0A5E();
+    PickPartySlot();
     DrawCharPanel(gDCB0, 1);
     list = BuildRowNodeList(0x1b, 4);
     FlushKeyBuffer();
@@ -534,7 +639,7 @@ int PickAlignment(int classIndex); /* ovl0:2238, defined below */
             break;
         case 0x8003:
             FlashPanelIcon(8);
-            Ovl0_0A5E();
+            PickPartySlot();
             key = -1;
             break;
         case 0x61:

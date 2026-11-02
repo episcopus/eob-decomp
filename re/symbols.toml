@@ -7206,6 +7206,9 @@ unit = "eov0"
 addr = "ovl0:0A5E"
 size = 765
 evidence = ["ovl", "near", "frame"]
+name = "PickPartySlot"
+level = "L2"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "eov0_0d5b"

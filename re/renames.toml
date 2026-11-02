@@ -1638,3 +1638,12 @@ new = "CreateCharacter"
 kind = "function"
 why = "ovl0:23EC is the character-creation driver: race (PickOption), class (207A), alignment (2238), RollCharacterStats (1BF2), the panel loop (0DDC) and the name field; called by 28F9"
 date = "2026-11-01"
+
+[[rename]]
+id = "ovl0:0A5E=PickPartySlot"
+addr = "ovl0:0A5E"
+old = "Ovl0_0A5E"
+new = "PickPartySlot"
+kind = "function"
+why = "ovl0:0A5E is the party-position screen: it assigns the current member gDCB0 a slot from the 0x2c panel cells, redrawing the four cells and taking left/right/confirm; called by 0DDC and 0EE5"
+date = "2026-11-01"
