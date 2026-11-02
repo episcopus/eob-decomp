@@ -11,9 +11,8 @@
    slots 7, 5 and 3 from the 19EC:0002 page/buffer table (ds:FC0C), loads the sound driver
    (177D:000A, 07A9:00D2), passes the slot 7 segment (gSegsFC0C[7], the word at ds:FC1A) and size
    0xFC00 to SetUnpackBuffer (1B82:0217, 07A9:00DB/00DF; 0xFC00 is the unpacker's work-buffer
-   requirement, not slot 7's block size, see UNPACK_BUFFER_SIZE; slot 7's own block is 0xCB20
-   bytes in cases 0 to 3,
-   src/E07C8.C:213, 222, 231, 237, and 0xFC00 only in case 4, src/E07C8.C:247), clears ds:810E
+   requirement, see UNPACK_BUFFER_SIZE). Slot 7's own block is 0xCB20 bytes in cases 0 to 3
+   (src/E07C8.C:213, 222, 231, 237) and 0xFC00 only in case 4 (src/E07C8.C:247). It clears ds:810E
    (07A9:00E6), loads the item tables (LoadItemData, 07A9:00EC), selects the 6x6 font as the
    current font (1A47:0169(gA9C0), 07A9:00F9) and loads the item sheets (LoadDecorateIcons, Ovl2
    entry 8, 07A9:0100), which reads ITEMRMP (FileRead at ovl2:047F, inside LoadItemSheets,
@@ -41,8 +40,10 @@
 /* the size SetUnpackBuffer is given for the shared unpack work buffer, 0xFC00 in every video
    mode (07A9:00D7). It is the unpacker's own work-buffer requirement, not the size of slot 7's
    block: the work segment holds the LZW dictionary the format 1 and format 2 decoders build
-   (src/E1B82.C:159, :172), while the unpacked output goes to the destination segment. Format 1's
-   dictionary stops below its 0x3C00 (1D9A:0327, 0360), inside slot 7's block; format 2's two
+   (format 1's 3C00h work buffer, docs/design/WHITEPAPER.md:157; the decoders are called with it,
+   src/E1B82.C:166 Unpack1 and :175 Unpack2), while the unpacked output goes to the destination
+   segment. Format 1's dictionary stops below its 0x3C00 (1D9A:0327, 0360), inside slot 7's block;
+   format 2's two
    tables run to 0xFC00 (the offsets stop at 0x7E00, the lengths follow, src/E1D9A.ASM:415-419),
    past the 0xCB20 block of cases 0 to 3, but no pinned file uses format 2 [H]
    (src/E1D9A.ASM:419-420). Slot 7's own block is 0xCB20 bytes in cases 0 to 3 (src/E07C8.C:213,
@@ -79,17 +80,17 @@ extern char gF43C; /*@ ds:F43C */  /* written by StartupAlloc (07A9:000D, set to
                                       src/E1547.C:235-238). Purpose unknown */
 extern char gFB45; /*@ ds:FB45 */  /* written by StartupAlloc (07A9:0024, set to 0); the overlay 3
                                       LoadMapScreen sets it to 1 (src/EOV3.C:686), and the overlay 4
-                                      DrawViewFrame (ovl4:1F51, src/EOV4.C:663) tests it with video mode 3
-                                      (src/EOV4.C:668) and clears it (src/EOV4.C:675; declared "request
-                                      flag, cleared here", src/EOV4.C:642). What the request is is
+                                      DrawViewFrame (ovl4:1F51, src/EOV4.C:657) tests it with video mode 3
+                                      (src/EOV4.C:662) and clears it (src/EOV4.C:669; declared "request
+                                      flag, cleared here", src/EOV4.C:636). What the request is is
                                       Purpose unknown */
 extern void far *gBuf8DCA; /*@ ds:8DCA */  /* start-up far allocation, 7500 bytes (07A9:002F); the base
                                               of the 122E action-script driver's script (declared
-                                              src/E122E.C:20): JumpToScriptOffset (122E:139D,
-                                              src/E122E.C:980) adds the script's word offset to it
-                                              (src/E122E.C:984, the comment at :978-979), and
-                                              PushScriptPointer (122E:1422, src/E122E.C:1013) does the
-                                              same (src/E122E.C:1023, the comment at :1010-1011). Overlay
+                                              src/E122E.C:22): JumpToScriptOffset (122E:139D,
+                                              src/E122E.C:993) adds the script's word offset to it
+                                              (src/E122E.C:997, the comment at :991-992), and
+                                              PushScriptPointer (122E:1422, src/E122E.C:1026) does the
+                                              same (src/E122E.C:1036, the comment at :1023-1025). Overlay
                                               3 uses it too: LoadMapScreen unpacks LEVEL<n>.INF into it
                                               (src/EOV3.C:573-574, "the 7500-byte unpacked level
                                               script", src/EOV3.C:200), reads the item records through
@@ -101,9 +102,11 @@ extern void far *gBufF43E; /*@ ds:F43E */  /* start-up far allocation, 6000 byte
                                               overlay 3 LoadMapScreen fills it from the level graphics
                                               file (src/EOV3.C:579-580, "the 6000-byte level
                                               graphics file", src/EOV3.C:201 [H]), and the overlay 4
-                                              page-buffer readers CopyViewColumn (src/EOV4.C:171) and
-                                              ToggleViewColumn (src/EOV4.C:214) read it as the page
-                                              buffer (src/EOV4.C:155-156). Purpose unknown */
+                                              page-buffer readers CopyViewColumn (its source
+                                              assignment at src/EOV4.C:171) and ToggleViewColumn
+                                              (source at src/EOV4.C:208, pixel read at :214) read it
+                                              as the page buffer (src/EOV4.C:155-156). Purpose
+                                              unknown */
 extern unsigned char far *gSoundMap; /*@ ds:DCAC */  /* the 120-byte sound map (game number to
                                                          driver number), read from the driver file
                                                          (adlib.dat or pcgamesn.dat, src/E177D.C:2-3) */
@@ -130,9 +133,9 @@ extern void far *gSegDCA6; /*@ ds:DCA6 */  /* the far pointer f19EC_0002(7) retu
                                               0xCB20-byte texture block through it (src/EOV3.C:471),
                                               expands and masks it (src/EOV3.C:474-478 and :482; the
                                               comment above LoadWallTextures, src/EOV3.C:454-459), and
-                                              DrawViewFrame draws from it (DrawTile(gSegDCA6), src/EOV4.C:666;
+                                              DrawViewFrame draws from it (DrawTile(gSegDCA6), src/EOV4.C:660;
                                               declared "the far pointer DrawTile draws",
-                                              src/EOV4.C:647) */
+                                              src/EOV4.C:641) */
 extern void far *gSegDF4E; /*@ ds:DF4E */  /* slot 5's far pointer, f19EC_0002(5) (07A9:00BA); the
                                               action screen's swap buffer: Action01E3 (src/E0ACD.C:263)
                                               blits it to the action field through gFn804A
