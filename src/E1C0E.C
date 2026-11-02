@@ -10,6 +10,8 @@
 
 /*@flags -ml -O -Z -G */
 
+#include <dos.h>
+
 /* Runtime library (Turbo C++ 1.00, large model). */
 extern int open(char far *path, int access, ...);   /*@ 0000:6443: runtime OPEN */
 extern int close(int fd);                          /*@ 0000:50C5: runtime CLOSE */
@@ -250,16 +252,16 @@ extern long gSlotLengths[];              /*@ ds:FF0C: the record's length per sl
    number of bytes read (0 when a read failed). A file loaded in memory is copied through
    1C0E:1240; a linked record (FILE_LINKED) is clamped to what is left of the record from the
    current position. The bytes are read in 0xFA00 byte chunks, each buffer normalised through
-   1BA8:0072. DRAFT: everything matches except the codegen of the loop's `buf += n`; the original
-   adds `n` to the far offset in registers (1C0E:0519), TCC -O here folds it into an integer add to
-   the low word, no source form found yet. */
-/*@ 1C0E:0400 draft */ long FileRead(int index, char far *buf, unsigned long len)
+   1BA8:0072, and after every chunk `buf` is advanced by that many bytes with
+   MK_FP(FP_SEG(buf), FP_OFF(buf) + n): only the offset moves and the segment is kept, which is the
+   form the original shows (1C0E:0519 loads the offset, adds, reloads and stores the segment). */
+/*@ 1C0E:0400 */ long FileRead(int index, char far *buf, unsigned long len)
 {
     int handle;
     unsigned long total;
     long remaining;
     long pos;
-    int n;
+    unsigned n;
 
     handle = gFileHandles[index];
     if (handle == SLOT_FREE)
@@ -282,7 +284,7 @@ extern long gSlotLengths[];              /*@ ds:FF0C: the record's length per sl
         if (n == -1)
             return 0;
         total = total + n;
-        buf += n;
+        buf = MK_FP(FP_SEG(buf), FP_OFF(buf) + n);
     }
     buf = f1BA8_0072(buf);
     n = read(handle, buf, len);
@@ -293,11 +295,10 @@ extern long gSlotLengths[];              /*@ ds:FF0C: the record's length per sl
 /* 1C0E:0578: write up to `len` bytes from `buf` to the file in cache slot `index` and return the
    number of bytes written (0 on a short write). A file loaded in memory cannot be written (code 9);
    a linked record (FILE_LINKED) is clamped to what is left of the record from the current position.
-   The bytes are written in 0xFA00 byte chunks, each buffer normalised through 1BA8:0072. DRAFT:
-   everything matches except the codegen of the loop's `buf` advance; the original adds the constant
-   to the far offset in AX (1C0E:067D), TCC -O here loads the segment into AX and the offset into DX,
-   so the add is one byte longer; no source form found yet. */
-/*@ 1C0E:0578 draft */ long FileWrite(int index, char far *buf, unsigned long len)
+   The bytes are written in 0xFA00 byte chunks, each buffer normalised through 1BA8:0072, and after
+   every full chunk `buf` is advanced by 0xFA00 with MK_FP(FP_SEG(buf), FP_OFF(buf) + 0xFA00): only
+   the offset moves and the segment is kept, the form the original shows (1C0E:067D). */
+/*@ 1C0E:0578 */ long FileWrite(int index, char far *buf, unsigned long len)
 {
     int handle;
     unsigned long total;
@@ -326,7 +327,7 @@ extern long gSlotLengths[];              /*@ ds:FF0C: the record's length per sl
             return 0;
         len -= 0xfa00;
         total += 0xfa00;
-        buf = &buf[0xfa00];
+        buf = MK_FP(FP_SEG(buf), FP_OFF(buf) + 0xfa00);
     }
     buf = f1BA8_0072(buf);
     n = write(handle, buf, len);
