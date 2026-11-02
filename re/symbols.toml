@@ -7332,6 +7332,9 @@ unit = "eov5"
 addr = "ovl5:0000"
 size = 161
 evidence = ["ovl", "near", "segment"]
+name = "DrawSheetCell"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov5_00a1"
@@ -7346,6 +7349,9 @@ unit = "eov5"
 addr = "ovl5:021C"
 size = 67
 evidence = ["ovl", "near"]
+name = "ClearPanel"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov5_025f"
@@ -7360,6 +7366,9 @@ unit = "eov5"
 addr = "ovl5:03A9"
 size = 70
 evidence = ["ovl", "near"]
+name = "PrintTableString"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov5_03ef"
@@ -7367,6 +7376,9 @@ unit = "eov5"
 addr = "ovl5:03EF"
 size = 102
 evidence = ["ovl", "near", "frame"]
+name = "DrawMenuRow"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov5_0455"
@@ -7402,6 +7414,9 @@ unit = "eov5"
 addr = "ovl5:08D2"
 size = 82
 evidence = ["ovl", "near", "frame"]
+name = "QueueItem"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov5_0924"
@@ -7423,6 +7438,9 @@ unit = "eov5"
 addr = "ovl5:0AB1"
 size = 101
 evidence = ["ovl", "near", "frame"]
+name = "CheckChar0F7"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov5_0b16"
@@ -7430,6 +7448,9 @@ unit = "eov5"
 addr = "ovl5:0B16"
 size = 66
 evidence = ["ovl", "near", "frame"]
+name = "CheckRemove6"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov5_0b58"
@@ -7437,6 +7458,9 @@ unit = "eov5"
 addr = "ovl5:0B58"
 size = 102
 evidence = ["ovl", "near", "frame"]
+name = "Menu1"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov5_0bbe"
