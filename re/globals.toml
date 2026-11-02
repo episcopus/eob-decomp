@@ -64,12 +64,12 @@ why = "the pointer sprite's width in 8-pixel units: filled from shape record byt
 [[global]]
 id = "ds:8158"
 name = "gPointerHotX"
-why = "the hot-spot x subtracted from the last drawn pointer position ds:815C before drawing: set from argument 1 at 1BB1:001B and used at 1BBE:0021 and 1BBE:0117 (the caller passes 8 or 0, E07A9.C:164 and :166)"
+why = "the hot-spot x subtracted from the last drawn pointer position ds:815C before drawing: set from argument 1 at 1BB1:001B and used at 1BBE:0021 and 1BBE:0117 (the caller passes 8 or 0, E07A9.C:204 and :206)"
 
 [[global]]
 id = "ds:815A"
 name = "gPointerHotY"
-why = "the hot-spot y subtracted from the last drawn pointer position ds:815E before drawing: set from argument 2 at 1BB1:0021 and used at 1BBE:002B and 1BBE:0127 (the caller passes 8 or 0, E07A9.C:164 and :166)"
+why = "the hot-spot y subtracted from the last drawn pointer position ds:815E before drawing: set from argument 2 at 1BB1:0021 and used at 1BBE:002B and 1BBE:0127 (the caller passes 8 or 0, E07A9.C:204 and :206)"
 
 [[global]]
 id = "ds:816A"
