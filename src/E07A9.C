@@ -18,8 +18,9 @@
    entry 8, 07A9:0100), which reads ITEMRMP (FileRead at ovl2:047F, inside LoadItemSheets,
    src/EOV2.C:255 and :296, called at src/EOV2.C:333). It ends by running the map loop (RunMapLoop,
    0ACD:0E8A, 07A9:0105), which runs the game. The second function (07A9:010C SetMouseItem)
-   redraws the item icon for the current slot
-   (the one the mouse shows, ds:FBCE). Overlay entries are reached through the stub at 2106
+   records the item shown by the mouse (SetCurrentItem stores ds:FBCE) and installs the item's
+   icon as the mouse pointer image (SetMousePointerShape, 1BB1:0002, at 07A9:01E6). Overlay entries
+   are reached through the stub at 2106
    (entries 2 and 8). Placeholder names remain where no evidence is given. */
 
 /* Meaningful constants of this unit. */
@@ -67,37 +68,59 @@ extern char gF43C; /*@ ds:F43C */  /* written by StartupAlloc (07A9:000D, set to
                                       DrawMemberHp, which draws the "HP" label instead of
                                       "%3d of %-3d" when it is set (src/E1547.C:269, the comment at
                                       src/E1547.C:235-238). Purpose unknown */
-extern char gFB45; /*@ ds:FB45 */  /* written by StartupAlloc (07A9:0024, set to 0); Purpose unknown */
-extern void far *gBuf8DCA; /*@ ds:8DCA */  /* start-up far allocation, 7500 bytes (07A9:002F); no
-                                              reader found in src/, Purpose unknown */
+extern char gFB45; /*@ ds:FB45 */  /* written by StartupAlloc (07A9:0024, set to 0); no reader found
+                                      in src/ (a grep finds only this file), Purpose unknown */
+extern void far *gBuf8DCA; /*@ ds:8DCA */  /* start-up far allocation, 7500 bytes (07A9:002F); the base
+                                              of the 122E action-script driver's script: JumpToScriptOffset
+                                              (122E:139D, src/E122E.C:16) adds the script's word
+                                              offset to it (src/E122E.C:473, the comment at :467-468), and
+                                              PushScriptPointer (122E:1422) does the same
+                                              (src/E122E.C:512, the comment at :500). Why the start-up
+                                              block holds the script is Purpose unknown */
 extern void far *gBufF43E; /*@ ds:F43E */  /* start-up far allocation, 6000 bytes (07A9:0046); no
                                               reader found in src/, Purpose unknown */
 extern unsigned char far *gSoundMap; /*@ ds:DCAC */  /* the 120-byte sound map (game number to
                                                          driver number), read from the driver file
                                                          (adlib.dat or pcgamesn.dat, src/E177D.C:2-3) */
-extern void far *gBufDCFC; /*@ ds:DCFC */  /* start-up far allocation, 4096 bytes (07A9:0074); read
-                                              by E19FC.ASM (src/E19FC.ASM:40, through ds:DCFC and
-                                              ds:DCFE) */
+extern void far *gBufDCFC; /*@ ds:DCFC */  /* start-up far allocation, 4096 bytes (07A9:0074); the
+                                              overlay 3 level-state work buffer: PackLevelState
+                                              (ovl3:0FD1) fills it with the gB894 bytes and compresses
+                                              it (src/EOV3.C:384-387), UnpackLevelState (ovl3:109D)
+                                              unpacks into it and reads it back (src/EOV3.C:408-413).
+                                              E19FC.ASM:40 describes the caller that fills the block
+                                              before compression (through ds:DCFC and ds:DCFE) */
 extern char far *gBufF534; /*@ ds:F534 */  /* the 1600-byte ITEMRMP buffer (07A9:008B,
                                               whitepaper 4.4) */
 extern void far *gSegDCA6; /*@ ds:DCA6 */  /* the far pointer f19EC_0002(7) returns (src/E19EC.C:20,
                                               07A9:00A3): offset 0, segment gSegsFC0C[7], the word at
                                               ds:FC1A that SetUnpackBuffer gets at 07A9:00DB */
-extern void far *gSegDF4E; /*@ ds:DF4E */  /* slot 5's buffer segment, f19EC_0002(5) (07A9:00BA); the
+extern void far *gSegDF4E; /*@ ds:DF4E */  /* slot 5's far pointer, f19EC_0002(5) (07A9:00BA); the
                                               action screen's swap buffer: Action01E3 (src/E0ACD.C:263)
                                               blits it to the action field through gFn804A
                                               (src/E0ACD.C:269), Action0264 (src/E0ACD.C:287) copies a
                                               0xF3-byte character record through it (three Unpack0
                                               copies, src/E0ACD.C:307-309), and FindWordPanel
-                                              passes it to gFn807E and gFn804A (src/EOV2.C:482, 522) */
-extern void far *gSegEFC2; /*@ ds:EFC2 */  /* slot 3's buffer segment, f19EC_0002(3) (07A9:00CB); the
-                                              resident E17A6 reader calls it the saved screen buffer
-                                              (src/E17A6.ASM:22), read at src/E17A6.ASM:256-257 when
-                                              g8102 != 2 [H]. Overlay 3
-                                              reads the far pointer (ds:EFC2 and ds:EFC4): ovl3:0815, 0833,
-                                              0855 (function at ovl3:07A5), ovl3:1186, 119E, 11B6 (ovl3:1147),
-                                              ovl3:1396, 13C0, 14BF (ovl3:1368), ovl3:15C1, 164D (ovl3:15B9, the
-                                              function that calls SetMouseItem). Purpose unknown */
+                                              passes it to gFn807E and gFn804A (src/EOV2.C:482, 522).
+                                              Overlay 3 uses it too: LoadObjects (ovl3:09AA) reads
+                                              0x1000 bytes into it and reads it back (src/EOV3.C:355,
+                                              360), and LoadWallSet (ovl3:004F) puts its decorations
+                                              at gSegDF4E + 0x3E80 (src/EOV3.C:179-188) */
+extern void far *gSegEFC2; /*@ ds:EFC2 */  /* slot 3's far pointer, f19EC_0002(3) (07A9:00CB); the
+                                              overlay 3 level-state buffer (src/EOV3.C:73 declares it
+                                              with no comment): LoadLevelState (ovl3:1147) reads 0x7F8
+                                              bytes of LEVELS.TMP into it and unpacks them (FileRead at
+                                              ovl3:1147, src/EOV3.C:421-429; UnpackLevelState,
+                                              ovl3:109D, src/EOV3.C:401-416), and SaveLevelState
+                                              (ovl3:11AF) packs from gSegEFC2 + 0xC800 back to
+                                              LEVELS.TMP (src/EOV3.C:435-441). Overlay 3 reads the far
+                                              pointer again (ds:EFC2 and ds:EFC4): ovl3:1186, 119E,
+                                              11B6 (ovl3:1147, the loader above), ovl3:0815, 0833,
+                                              0855 (ovl3:07A5), ovl3:1396, 13C0, 14BF (ovl3:1368),
+                                              ovl3:15C1, 164D (ovl3:15B9, the function that calls
+                                              SetMouseItem). The resident E17A6 reader calls it the
+                                              saved screen buffer (src/E17A6.ASM:22), read at
+                                              src/E17A6.ASM:256-257 when g8102 != 2 [H]. Purpose
+                                              unknown */
 /* the page/buffer segment table (src/E07C8.C:49, src/E19EC.C:15), whose eighth word at ds:FC1A
    is slot 7, the segment gSegDCA6 holds (f19EC_0002(7), 07A9:00A3). */
 extern unsigned gSegsFC0C[]; /*@ ds:FC0C */
@@ -128,10 +151,11 @@ extern unsigned char gFBD2; /*@ ds:FBD2 */  /* bit 0, with Entry14.flags bit 0x8
 extern int g8102; /*@ ds:8102 */  /* the mode word SetMouseItem tests at 07A9:016A (the colour row
                                      against the ds:0090 dummy) and passes to TranslateImage (07A9:018F);
                                      the switch at 17A6:199E tests it (cases 0, 2 and 3). src/ reads
-                                     it three ways: "graphics choice" (src/E07C8.C:27), "the video
-                                     mode ... 3 and 4 select the 6-bit cells" (src/E1DE7.C:46) and
-                                     "the video mode the game initialised (3 is CGA-compatible)"
-                                     (src/E082C.C:41) */
+                                     it four ways: "graphics choice" (src/E07C8.C:27), "the video
+                                     mode ... 3 and 4 select the 6-bit cells" (src/E1DE7.C:46), "the
+                                     video mode the game initialised (3 is CGA-compatible)"
+                                     (src/E082C.C:41 and src/E1547.C:55) and "nonzero: a colour row
+                                     exists" (src/E0D1C.C:51 and src/E0BD2.C:100) */
 /* a far function pointer whose argument is a colour row (an array of colour indices): a 16-byte
    row of the 1600-byte ITEMRMP buffer (ds:F534 + n<<4), the one-byte dummy at ds:0090, or the
    colour tables at ds:1CD3 and ds:1CE3 that other callers pass (08E6:0DFC `mov ax,0x1ce3` and
@@ -258,8 +282,9 @@ extern void SetMousePointerShape(int hotX, int hotY, void far *icon); /*@ 1BB1:0
    by 17A6:197E, and the translated image becomes the mouse pointer (item set to ICON_SLOT_TRANSLATED, 0x59, so item > 0 at
    07A9:01BC, and gIconsDDE4[ICON_SLOT_TRANSLATED] passed to 1BB1:0002 at (8,8)). When either gate
    fails the branch is skipped (07A9:0161 and 0168, je 0x1bc) and the plain item icon becomes the
-   pointer (gIconsDDE4[item] at 07A9:01BC onward); the (0,0) call belongs to that path, when the icon
-   number is 0 and item is 0. Why g811F == 7 gets the " taken." message is Purpose unknown. */
+   pointer (gIconsDDE4[item] at 07A9:01BC onward); on that path the (0,0) call is when item is 0
+   (the item is cleared) or its icon number is 0 or below (07A9:01BC `or si,si`, `jle 0x1d4` at
+   07A9:01BE). Why g811F == 7 gets the " taken." message is Purpose unknown. */
 /*@ 07A9:010C */ void SetMouseItem(int item)
 {
     SetCurrentItem(item);
