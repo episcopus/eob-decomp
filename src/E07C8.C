@@ -13,7 +13,7 @@
 #ifndef NULL
 #define NULL 0
 #endif
-/* Named constants for values whose meaning the code and the review establish (READABILITY 4). */
+/* Named constants for values whose meaning the code establishes (READABILITY 4). */
 #define DEFAULT_TEXT_ATTR1 0x0F      /* gTextAttr1's start-up value (main) */
 #define DEFAULT_TEXT_ATTR2 0x0C      /* gTextAttr2's start-up value (main) */
 #define INT3F_VECTOR 0x3F            /* the INT 3Fh handler vector (main, ShutdownGame) */
@@ -21,7 +21,7 @@
 #define DAC_MAX 0x3F                 /* the top value of a 6-bit DAC */
 #define TEXT_SCREEN_SEG 0xB800       /* the text-mode screen segment in the page table */
 #define VGA_SCREEN_SEG 0xA000        /* the VGA graphics screen segment in the page table */
-
+#define MEMALLOC_ALIGNED 0x20        /* the MemAlloc flag that returns a paragraph aligned block (src/E19BC.C:49) */
 struct Unk8894 {            /* the object the pointer at ds:8894 (g8894) points at. The object's
                                own address is unknown: nothing in src/ or docs/ writes the pointer
                                at ds:8894 (src/E1990.ASM:23-26). g8894 is the name E1990 uses */
@@ -30,7 +30,7 @@ struct Unk8894 {            /* the object the pointer at ds:8894 (g8894) points 
 };
 
 struct OverlayRequest {     /* the request 1C00:0055 runs, ds:8121 */
-    void far *name;         /* +0: the overlay file name (word +0 the offset, word +2 the segment) */
+    char far *name;         /* +0: the overlay file name (word +0 the offset, word +2 the segment) */
     void far *table;        /* +4: a far pointer (offset then segment) to a table the overlay entry's
                                pointer walks (src/E1C00.ASM:121-127); Purpose unknown: nothing in
                                src/ says who writes ds:8125/ds:8127; this unit reads only `name` */
@@ -53,10 +53,10 @@ extern int gSoundOn;                  /*@ ds:80E6: nonzero unless sound was '4' 
                                          (src/EOV1.ASM:3741). src/E1AAD.ASM:17 declares it BYTE
                                          and src/EOV1.ASM:115 WORD; int keeps the code */
 extern unsigned char g009E;           /*@ ds:009E: 1 on the Tandy path only (:433); the PC speaker
-                                         path (:428) leaves it 0. PlaySound (src/E177D.C:182) gates
-                                         the gTandyOn toggle on it. Purpose unknown beyond that: the
-                                         name g009E it used to carry is inherited and is not
-                                         evidence of a PC speaker mode (a placeholder name) */
+                                         path (:428) leaves it at its load value. PlaySound
+                                         (src/E177D.C:182) gates the gTandyOn toggle on it. Purpose
+                                         unknown beyond that: the name g009E it used to carry is
+                                         inherited and is not evidence of a PC speaker mode (a placeholder name) */
 extern unsigned char gTandyOn;        /*@ ds:8A67: the driver select: 1 is Tandy, 0 the PC speaker
                                          (src/E1948.ASM:7, tested at :279, :379, :500, :527 and
                                          :553). StartupGame sets it to 1 on the Tandy path (:432),
@@ -97,9 +97,9 @@ extern int g80EA;                     /*@ ds:80EA: start-up flag set to 1 by mai
 extern int gTextAttr2;                /*@ ds:811B: the second text attribute, the fill colour: ClearTextRegion
                                          fills the window with it (src/E1DE7.C:241), the redrawn scroll line fills
                                          with it and passes it to the draw-text hook (src/E1DE7.C:270-271); main sets DEFAULT_TEXT_ATTR2 (0xC) at start-up (:260); declared in src/E122E.C:75 and src/E1DE7.C:44, read with gTextAttr1 in src/EOV2.C:500 */
-extern int gTextAttr1;                /*@ ds:811D: the first text attribute, the foreground colour,
-                                         set by main to DEFAULT_TEXT_ATTR1 (0xF) at start-up (:259) and passed to
-                                         the draw-text hook (src/E1DE7.C:271); declared in src/E122E.C:74 and src/E1DE7.C:42, read with gTextAttr2 in src/EOV2.C:500 */
+extern int gTextAttr1;                /*@ ds:811D: the first text attribute, set by main to
+                                         DEFAULT_TEXT_ATTR1 (0xF) at start-up (:259) and passed to the draw-text
+                                         hook (src/E1DE7.C:271); declared in src/E122E.C:74 and src/E1DE7.C:42, read with gTextAttr2 in src/EOV2.C:500. That it is the foreground colour is [H]: the game meaning of the two attributes is not established (src/E1A29.C:27-28) */
 extern void (far *gFn80BA)(void far *table); /*@ ds:80BA: the palette setter (src/EOV4.C:1035, :1060), called with the palette buffers (:250, :255, :385, :395); Purpose unknown beyond the palette: nothing in src/ assigns ds:80BA */
 extern void (far *gFn8056)(void);     /*@ ds:8056: far function called before the fonts load
                                          (:372). Purpose unknown: nothing in src/ assigns ds:8056
@@ -127,7 +127,7 @@ extern struct Unk8894 far *g8894;   /*@ ds:8894: the pointer StartupGame derefer
                                          g8894->number (:308). The object's address is unknown:
                                          nothing in src/ or docs/ writes the pointer at ds:8894
                                          (src/E1990.ASM:23-26). g8894 is the name E1990 uses */
-extern void far *gOverlayFiles[];     /*@ ds:3074: the five overlay name pointers (cga/tga/ega/
+extern char far *gOverlayFiles[];     /*@ ds:3074: the five overlay name pointers (cga/tga/ega/
                                          mcga/vga), indexed by the graphics choice; the order is
                                          the EOB.EXE name order and whitepaper 2.6 (1 Tandy,
                                          3 VGA). Index 4 names vga.ovl, which EOB.EXE names but
@@ -211,7 +211,7 @@ int AllocationFailure(void);
    f1D8F_0010 (:245), then runs the start-up 07C8:0199. The launcher is INTRO.EXE, which START1.EXE
    starts and which passes the arguments on (whitepaper 2.6).
    When start-up succeeds it switches on the graphics choice reduced by 1 (gGraphicsChoice - 1): choices 1
-   and 2 take the built-in colour table at ds:3057 (length unknown), choices 3 and 4 load eobpal.col into
+   and 2 take the built-in colour table at ds:3057 (length unknown; whether it is a palette is [H]), choices 3 and 4 load eobpal.col into
    ds:FE68, both through the far function at ds:80BA; a graphics choice of 0 (CGA) matches neither
    case and sets no palette. It then calls 16A5:0D78, and, when g3092 is set, sets the mouse disabled
    flag from the mouse argument (:262-266) and calls StartupAlloc. Returns 0, and
@@ -224,9 +224,9 @@ int AllocationFailure(void);
                                                leaves it disabled */
 
     gGraphicsChoice = argv[1][0] + 1;
-    gSoundCard = argv[2][0] + 0xcf;
+    gSoundCard = argv[2][0] - '1';
     gSoundOn = argv[2][0] != '4';
-    mouseChoice = argv[3][0] + 0xffd0;
+    mouseChoice = argv[3][0] - '0';
     if (strcmp(argv[4], "homie"))
         return 0;
     gRestoreMode = atol(argv[5]);
@@ -325,14 +325,14 @@ int AllocationFailure(void);
     /* the page/buffer segment table ds:FC0C (src/E19EC.C:1-2, src/E07A9.C:11), eight segment words,
        filled per graphics choice: screen pages and the pages backing the buffers. Choices 0 and 2 use
        0xFA00 (64000), 0x7D00 (32000) and 0xCB20 (52000); choice 1 uses 0x7F40 (32576) for slots 4
-       and 5 (:343) with no 0xFA00; choice 3 uses 0xFDE8 (65000) for slots 2 and 3 (:357); choice 4
-       uses 0xFA00 (slots 1, 3 and 5) and 0xFC00 (slot 7). */
+       and 5 (:343) and 0xCB20 for slots 6 and 7 (:344), with no 0xFA00; choice 3 uses 0xFDE8 (65000)
+       for slots 2 and 3 (:357); choice 4 uses 0xFA00 (slots 1, 3 and 5) and 0xFC00 (slot 7). */
     switch (gGraphicsChoice) {
     case 0:
         gSegsFC0C[0] = gSegsFC0C[1] = TEXT_SCREEN_SEG;
-        gSegsFC0C[2] = gSegsFC0C[3] = FP_SEG(MemAlloc(0xfa00L, 0x20));
-        gSegsFC0C[4] = gSegsFC0C[5] = FP_SEG(MemAlloc(0x7d00L, 0x20));
-        gSegsFC0C[6] = gSegsFC0C[7] = FP_SEG(MemAlloc(0xcb20L, 0x20));
+        gSegsFC0C[2] = gSegsFC0C[3] = FP_SEG(MemAlloc(0xfa00L, MEMALLOC_ALIGNED));
+        gSegsFC0C[4] = gSegsFC0C[5] = FP_SEG(MemAlloc(0x7d00L, MEMALLOC_ALIGNED));
+        gSegsFC0C[6] = gSegsFC0C[7] = FP_SEG(MemAlloc(0xcb20L, MEMALLOC_ALIGNED));
         break;
     case 1:
         /* the original writes slots 0 and 1 as two immediate stores and slots 2 and 3 through ax
@@ -340,33 +340,33 @@ int AllocationFailure(void);
         gSegsFC0C[0] = TEXT_SCREEN_SEG;
         gSegsFC0C[1] = TEXT_SCREEN_SEG;
         gSegsFC0C[3] = gSegsFC0C[2] = memtop;
-        gSegsFC0C[4] = gSegsFC0C[5] = FP_SEG(MemAlloc(0x7f40L, 0x20));
-        gSegsFC0C[6] = gSegsFC0C[7] = FP_SEG(MemAlloc(0xcb20L, 0x20));
+        gSegsFC0C[4] = gSegsFC0C[5] = FP_SEG(MemAlloc(0x7f40L, MEMALLOC_ALIGNED));
+        gSegsFC0C[6] = gSegsFC0C[7] = FP_SEG(MemAlloc(0xcb20L, MEMALLOC_ALIGNED));
         break;
     case 2:
         gSegsFC0C[0] = VGA_SCREEN_SEG;
         gSegsFC0C[2] = 0xa200;
-        gSegsFC0C[3] = FP_SEG(MemAlloc(0xfa00L, 0x20));
+        gSegsFC0C[3] = FP_SEG(MemAlloc(0xfa00L, MEMALLOC_ALIGNED));
         gSegsFC0C[4] = 0xa200;
-        gSegsFC0C[5] = FP_SEG(MemAlloc(0x7d00L, 0x20));
+        gSegsFC0C[5] = FP_SEG(MemAlloc(0x7d00L, MEMALLOC_ALIGNED));
         gSegsFC0C[6] = 0xa200;
-        gSegsFC0C[7] = FP_SEG(MemAlloc(0xcb20L, 0x20));
+        gSegsFC0C[7] = FP_SEG(MemAlloc(0xcb20L, MEMALLOC_ALIGNED));
         break;
     case 3:
         gSegsFC0C[0] = gSegsFC0C[1] = VGA_SCREEN_SEG;
-        gSegsFC0C[2] = gSegsFC0C[3] = FP_SEG(MemAlloc(0xfde8L, 0x20));
-        gSegsFC0C[4] = gSegsFC0C[5] = FP_SEG(MemAlloc(0x7d00L, 0x20));
-        gSegsFC0C[6] = gSegsFC0C[7] = FP_SEG(MemAlloc(0xcb20L, 0x20));
+        gSegsFC0C[2] = gSegsFC0C[3] = FP_SEG(MemAlloc(0xfde8L, MEMALLOC_ALIGNED));
+        gSegsFC0C[4] = gSegsFC0C[5] = FP_SEG(MemAlloc(0x7d00L, MEMALLOC_ALIGNED));
+        gSegsFC0C[6] = gSegsFC0C[7] = FP_SEG(MemAlloc(0xcb20L, MEMALLOC_ALIGNED));
         break;
     case 4:
         gSegsFC0C[0] = VGA_SCREEN_SEG;
-        gSegsFC0C[1] = FP_SEG(MemAlloc(0xfa00L, 0x20));
+        gSegsFC0C[1] = FP_SEG(MemAlloc(0xfa00L, MEMALLOC_ALIGNED));
         gSegsFC0C[2] = 0xa400;
-        gSegsFC0C[3] = FP_SEG(MemAlloc(0xfa00L, 0x20));
+        gSegsFC0C[3] = FP_SEG(MemAlloc(0xfa00L, MEMALLOC_ALIGNED));
         gSegsFC0C[4] = 0xa800;
-        gSegsFC0C[5] = FP_SEG(MemAlloc(0xfa00L, 0x20));
+        gSegsFC0C[5] = FP_SEG(MemAlloc(0xfa00L, MEMALLOC_ALIGNED));
         gSegsFC0C[6] = 0xac00;
-        gSegsFC0C[7] = FP_SEG(MemAlloc(0xfc00L, 0x20));
+        gSegsFC0C[7] = FP_SEG(MemAlloc(0xfc00L, MEMALLOC_ALIGNED));
         break;
     }
     gFn8056();
@@ -439,8 +439,8 @@ done:
 /* 07C8:058A: the shut-down path, called by main. Stops sound the way the chosen card needs (AdLib
    driver off for gSoundCard 0, Tandy driver silenced to one voice and uninstalled for 2, only
    uninstalled for 1), calls the exit hook at ds:80FA, removes the mouse handler, stops the overlay
-   manager, restores the mode (argv[5]; :471) and the old INT 3Fh vector, then, for the Tandy graphics
-   choice only (gGraphicsChoice == 1, :473; also on the failed memory path), shrinks the last block to gMemTopSeg: the atol value when StartupGame stored it (:308), but its loaded 0 on the failed memory path, where StartupGame returns before that store (src/E1990.ASM:6-10, :388-391). Whether that atol value is the video top is [H]. exit(). */
+   manager, restores the INT 1Ch tick handler (f1D8F_0038, :469), removes the keyboard (:470),
+   restores the mode (argv[5]; :471) and the old INT 3Fh vector, then, for the Tandy graphics choice only (gGraphicsChoice == 1, :473; also on the failed memory path), shrinks the last block to gMemTopSeg: the atol value when StartupGame stored it (:308), but its loaded 0 on the failed memory path, where StartupGame returns before that store (src/E1990.ASM:6-10, :388-391). Whether that atol value is the video top is [H]. exit(). */
 /*@ 07C8:058A */ void ShutdownGame(void)
 {
     switch (gSoundCard) {
