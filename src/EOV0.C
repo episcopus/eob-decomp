@@ -686,8 +686,53 @@ void DrawPanelRow(int index);      /* ovl0:11BA, defined below */
     ShowPointerZone();
     gFC85 = gFC84;
 }
-/*@ ovl0:135D stub */ void Ovl0_135D(void) {}
-/*@ ovl0:1ADD stub */ void Ovl0_1ADD(void) {}
+/*@ ovl0:135D stub */ int Ovl0_135D(int i, char far *field, char far *other) { return 0; }
+/* ovl0:1ADD: Purpose unknown: edits one of the seven ability/stat fields of the current character. It draws the page
+   through ovl0:065B(mode 3) and loops over the field index i (0..6); for each it opens the field with
+   Ovl0_135D(i, &gChars[gDCB0].m? , second) and redraws the page. Field 0 passes both m0D and m0F;
+   fields 1..6 pass m11, m13, m15, m17, m19 and m1B with no second field. A return of -2 leaves, a
+   negative return wraps i to 6, then i is taken modulo 7. Finally it redraws the page through
+   ovl0:065B(mode 1). Called by ovl0:0DDC and ovl0:0EE5. */
+/*@ ovl0:1ADD */ void Ovl0_1ADD(void)
+{
+    int i;
+
+    i = 0;
+    FlushKeyBuffer();
+    Ovl0_065B(gDCB0, 3);
+    while (i >= 0 && i <= 6) {
+        switch (i) {
+        case 0:
+            i = Ovl0_135D(i, &gChars[gDCB0].m0D, &gChars[gDCB0].m0F);
+            break;
+        case 1:
+            i = Ovl0_135D(i, &gChars[gDCB0].m11, (char far *)0);
+            break;
+        case 2:
+            i = Ovl0_135D(i, &gChars[gDCB0].m13, (char far *)0);
+            break;
+        case 3:
+            i = Ovl0_135D(i, &gChars[gDCB0].m15, (char far *)0);
+            break;
+        case 4:
+            i = Ovl0_135D(i, &gChars[gDCB0].m17, (char far *)0);
+            break;
+        case 5:
+            i = Ovl0_135D(i, &gChars[gDCB0].m19, (char far *)0);
+            break;
+        case 6:
+            i = Ovl0_135D(i, &gChars[gDCB0].m1B, (char far *)0);
+            break;
+        }
+        Ovl0_065B(gDCB0, 3);
+        if (i == -2)
+            break;
+        if (i < 0)
+            i = 6;
+        i %= 7;
+    }
+    Ovl0_065B(gDCB0, 1);
+}
 /*@ ovl0:1BF2 stub */ void Ovl0_1BF2(int who) {}
 /* ovl0:1EA9: builds two six-word combat tables for the current character gDCB0. For each of the
    six slots it takes the larger of gTable5FC5[m20][i] and gTable5F35[m1F>>1][i] into gOutDD04[i],
