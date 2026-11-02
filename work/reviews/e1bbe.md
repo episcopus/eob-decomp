@@ -34,13 +34,16 @@ arguments at [bp+6] to [bp+0Ch], the 8000h and 4000h bits, the low-byte repeat c
 exit to 02B6) and the Lock pair (the busy wait and increment, the bracket). No name or comment is contradicted by the
 code. main (2627286) changes none of the files the cites name, so the findings hold on main as well.
 
-- [ ] must-fix src/E1BBE.ASM:132-133 (_gDraw80C2 EXTRN: "src/E1BBE.ASM:334-339 gives the push order, call at :340"):
+- [x] must-fix src/E1BBE.ASM:132-133 (_gDraw80C2 EXTRN: "src/E1BBE.ASM:334-339 gives the push order, call at :340"):
   the pushes are at :337-342 (`push word ptr [_gShapeY]` at :337, `_gShapeX` at :338, `_gPointerShapeSeg` at :339,
   `_gPointerShapeOff` at :340, `mov ax,0` at :341, `push ax` at :342) and the call, `call dword ptr [_gDraw80C2]`, is
   at :343. Round 12's fix moved the cite to :334-339 and :340, which is three lines early. (Evidence: `grep -n
   "_gShapeY\]\|_gDraw80C2\]" src/E1BBE.ASM` gives :337 and :343; the binary agrees: `push [0x8180]` (gShapeY) at
   1BBE:01E0 and `lcall [0x80c2]` at 1BBE:01F4.) Cite :337-342 and the call at :343.
-- [ ] must-fix src/E1BBE.ASM:480-482 (LockHidePointer header: "the declarations give LockHidePointer 'start a frame' and
+  Fixed: the _gDraw80C2 comment now cites the push order at src/E1BBE.ASM:337-342 and the call at :343. Re-checked at
+  fix time: `grep -n "_gShapeY\]\|_gDraw80C2\]" src/E1BBE.ASM` gives :337 and :343, and `tools/re/disasm.py eob/EOB.EXE
+  1BBE` gives the same order at 1BBE:01E0 to 01F4. `make match FILE=src/E1BBE.ASM` still 7 of 7, 860 bytes.
+- [x] must-fix src/E1BBE.ASM:480-482 (LockHidePointer header: "the declarations give LockHidePointer 'start a frame' and
   LockShowPointer 'end a frame', src/E14EF.C:80-81"): neither wording is in src/E14EF.C now. Lines 80-81 are blank and
   the DrawShadowText declaration. `grep -rn "start a frame\|end a frame" src/` finds only this line. The words were in
   E14EF.C before e2502f9 (`git log -S"start a frame" -- src/E14EF.C` gives e2502f9 and 0faf326), which removed them, so
@@ -48,14 +51,25 @@ code. main (2627286) changes none of the files the cites name, so the findings h
   bracket rests on: the code itself, [ds:80AA] and [ds:80A2] around the hide (1BBE:0307-0332). Keep the note that "Lock"
   does not mean mutual exclusion. The name Lock stays, since the callers use it (src/E14EF.C:87-88, src/E1C0E.C:39-40,
   src/E0D1C.C:134-135).
-- [ ] should src/E1BBE.ASM:20-21 (unit header, "the disjoint-rectangle exit of HidePointerZone (QUIRK 1BBE:02B6, which
+  Fixed: the LockHidePointer header no longer quotes src/E14EF.C; it now says "Lock" is the callers' name for the frame
+  bracket and that the bracket rests on the code itself, [ds:80AA] and [ds:80A2] around the hide (1BBE:0307-0332), with
+  the busy flag a test then an increment (1BBE:030A) and not atomic. `grep -rn "start a frame\|end a frame" src/` now
+  finds nothing. `make match FILE=src/E1BBE.ASM` still 7 of 7, 860 bytes.
+- [x] should src/E1BBE.ASM:20-21 (unit header, "the disjoint-rectangle exit of HidePointerZone (QUIRK 1BBE:02B6, which
   skips the bracket at 1BBE:029F-02B2)"): the bracket runs to the end of its closing `lcall [0x80a2]`, which is at
   1BBE:02B2 and four bytes long, so it ends at 02B5. Say 1BBE:029F-02B5. (Evidence: `tools/re/disasm.py eob/EOB.EXE 1BBE`
   shows 02AE `push cs`, 02AF `call` (near), 02B2 `lcall [0x80a2]`, 02B6 `dec word ptr [0x812e]`.)
-- [ ] should src/E1BBE.ASM:58 (_gCursorY EXTRN, "mouse position, y in pixels"): _gCursorX gives its writers and their
+  Fixed: the unit header now says the disjoint-rectangle exit skips the bracket at 1BBE:029F-02B5. Checked against
+  `tools/re/disasm.py eob/EOB.EXE 1BBE` (02B2 `lcall [0x80a2]` is four bytes, ending at 02B5; 02B6 is the `dec`).
+  `make match FILE=src/E1BBE.ASM` still 7 of 7, 860 bytes.
+- [x] should src/E1BBE.ASM:58 (_gCursorY EXTRN, "mouse position, y in pixels"): _gCursorX gives its writers and their
   evidence (the handler's store, the InitMouse stores), _gCursorY gives none. Add the same: written by the handler at
   src/E1A72.ASM:431 (after label L020C, grep `_gCursorY`), read back at label L0221 (`mov dx,[_gCursorY]` at :436, which
   the QUIRK jump at :434 can skip), and set to 64h by InitMouse (:298).
+  Fixed: the _gCursorY comment now names the writer at src/E1A72.ASM, label L020C, grep `_gCursorY` (the `mov [_gCursorY],dx`
+  right after the `_gCursorX` store at :431), the reload at label L0221, which the QUIRK 1A72:0229 jump can skip, and the
+  64h store by InitMouse (grep `_gCursorY`, :298). Labels and grep strings keep the cite from drifting, as the
+  _gCursorX comment already does. `make match FILE=src/E1BBE.ASM` still 7 of 7, 860 bytes.
 - [ ] note the _gPointerState name (round 12 should, still for the owner and the human): its three bits are zone-hide
   bookkeeping. The E1A72 declaration now says the same as this unit (src/E1A72.ASM:124-126, "8000h a zone hide is in
   force"), so only the name question is left; it does not block the pass.
