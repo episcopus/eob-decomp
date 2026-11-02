@@ -137,7 +137,7 @@ extern char gA95A; /*@ ds:A95A */
 extern char gA998; /*@ ds:A998 */
 extern char g8A6C; /*@ ds:8A6C */
 extern char g8A7D; /*@ ds:8A7D */
-extern char gFB34; /*@ ds:FB34 */
+extern char gIconTable; /*@ ds:FB34 */
 extern int gEFC8; /*@ ds:EFC8 */
 extern int gEFCA; /*@ ds:EFCA */
 extern long gB802[]; /*@ ds:B802 */
@@ -303,7 +303,7 @@ extern void FileClose(int handle); /*@ 1C0E:03BB */
 {
     int i;
 
-    gFB34 = 0xff;
+    gIconTable = 0xff;
     gEFC8 = 0;
     gEFCA = 0;
     for (i = 0; i < 0x24; i++)

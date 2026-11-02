@@ -104,7 +104,7 @@ extern int f0D1C_07DB(int who, int flag); /*@ 0D1C:07DB */
 
 extern char far *gFont1A47; /*@ ds:FE4E */  /* the current font (src/E1A47.C) */
 extern char far *gA9C0; /*@ ds:A9C0 */      /* the 6x6 font loaded from FONT6.FNT (src/E07A9.C) */
-extern char gFB34; /*@ ds:FB34 */          /* the party member being moved, -1 when none (src/E0ACD.C) */
+extern char gIconTable; /*@ ds:FB34 */          /* the party member being moved, -1 when none (src/E0ACD.C) */
 extern char gFB7B; /*@ ds:FB7B */          /* a colour (src/EOV2.C) */
 extern void far *gThrownIcon3; /*@ ds:EFB4 */ /* the third thrown-item icon (src/EOV2.C) */
 
@@ -447,7 +447,7 @@ extern void DrawItemRow(int who, int slot, int one); /*@ 0BD2:0917 */
 /* 1547:0991: redraws one member's block on the character screen. It returns unless the member
    passes f0D1C_0670(who, 1). The block layout depends on the screen mode gFB44: mode 0 (the
    plain character screen) draws the name (or "Swapping" while this member is the one being
-   moved, gFB34), the portrait, the two carried-item slots, the HP line and the bar; mode 1 (the
+   moved, gIconTable), the portrait, the two carried-item slots, the HP line and the bar; mode 1 (the
    inventory up) adds the six stat values and the item rows; mode 2 draws the stat panel with the
    class, race and alignment names, the six stat lines, armor class, EXP/LVL and the per-class
    slot lines. The name colour and text attribute come from m01 bits 1 and 2 (8/6), otherwise
@@ -490,7 +490,7 @@ extern void DrawItemRow(int who, int slot, int one); /*@ 0BD2:0917 */
         savedStatusLine = g8115;
         g8115 = 2;
         x <<= 3;    /* the layout tables hold 8-pixel columns; the text routines take pixels */
-        if (gFB34 == who)
+        if (gIconTable == who)
             gDrawText("Swapping", x + 2, y + 2, 8, gF57E);
         else
             gDrawText(rec->name, x + 2, y + 2, textColour, gF57E);

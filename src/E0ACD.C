@@ -39,7 +39,7 @@ extern void BuildList3(void); /*@ 0CF7:0140 */
 extern void ClipRect(int x1, int y1, int x2, int y2, int width, int height, int extra1, int extra2); /*@ 19F3:000E */
 extern void (far *gFn804A)(int x, int y, int w, int h, void far *buf); /*@ ds:804A */ /* src/EOV2.C */
 
-extern char gFB34; /*@ ds:FB34 */           /* the index of the party member being moved, -1 when
+extern char gIconTable; /*@ ds:FB34 */           /* the index of the party member being moved, -1 when
                                                none (src/EOV2.C) */
 extern int gFBCC; /*@ ds:FBCC */            /* a page number 0..3 (kept modulo 4 by this unit,
                                                src/E0D1C.C) */
@@ -279,7 +279,7 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
 }
 
 /* 0ACD:0264: the "move/swap party member" action. When f0D1C_0670 accepts the record's slot it
-   hides the pointer. With no member being moved (gFB34 == -1) it takes this slot as the moving
+   hides the pointer. With no member being moved (gIconTable == -1) it takes this slot as the moving
    member, redraws it and calls ArmEffect(0, 1); otherwise it swaps the moving member's 243-byte
    record with this slot's through the gSegDF4E buffer (three Unpack0 copies), redraws both,
    rebuilds list 1 and calls RearmCharEffects. The gFlag redraws bracket both ends of the swap. Returns
@@ -294,21 +294,21 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
     LockHidePointer();
     if (gFlag)
         RedrawPartyPanel(gF542);
-    if (gFB34 == -1) {
-        gFB34 = action->slot;
+    if (gIconTable == -1) {
+        gIconTable = action->slot;
         if (gFlag)
             RedrawPartyPanel(gF542);
         BuildList4();
-        RedrawMember(gFB34);
+        RedrawMember(gIconTable);
         ArmEffect(0, 1);
     } else {
-        old = gFB34;
+        old = gIconTable;
         slot = action->slot;
-        Unpack0((char far *)(gChars + gFB34), gSegDF4E, 0xF3L);
-        Unpack0((char far *)(gChars + slot), (void far *)(gChars + gFB34), 0xF3L);
+        Unpack0((char far *)(gChars + gIconTable), gSegDF4E, 0xF3L);
+        Unpack0((char far *)(gChars + slot), (void far *)(gChars + gIconTable), 0xF3L);
         Unpack0((char far *)gSegDF4E, (void far *)(gChars + slot), 0xF3L);
         ArmEffect(0, 0);
-        gFB34 = -1;
+        gIconTable = -1;
         RedrawMember(old);
         SelectCharacter(slot);
         RedrawMember(slot);
@@ -320,15 +320,15 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
 }
 
 /* 0ACD:0393: cancels the move: hides the pointer, calls ArmEffect(0, 0), clears the moving member
-   gFB34, redraws it, rebuilds list 1 and shows the pointer. Returns the record's +4. */
+   gIconTable, redraws it, rebuilds list 1 and shows the pointer. Returns the record's +4. */
 /*@ 0ACD:0393 */ int Action0393(struct Action far *action)
 {
     int old;
 
     LockHidePointer();
     ArmEffect(0, 0);
-    old = gFB34;
-    gFB34 = -1;
+    old = gIconTable;
+    gIconTable = -1;
     RedrawMember(old);
     BuildList1();
     LockShowPointer();

@@ -98,7 +98,7 @@ extern int gFB78; /*@ ds:FB78 */              /* a flag toggled by 04B0 */
 extern signed char g5CAA; /*@ ds:5CAA */      /* the blink phase toggled by 0000 */
 extern signed char g5C76; /*@ ds:5C76 */      /* the mode byte 03B4 reads (0ACD toggles it 1/-1) */
 extern unsigned char g5CAB[]; /*@ ds:5CAB */  /* a byte table indexed by direction in 0285 */
-extern char gFB34; /*@ ds:FB34 */             /* the character the blink highlights (src/EOV2.C) */
+extern char gIconTable; /*@ ds:FB34 */             /* the character the blink highlights (src/EOV2.C) */
 extern char gDF4C; /*@ ds:DF4C */             /* set when the object table has a hit (src/E0D1C.C) */
 extern char gFB44; /*@ ds:FB44 */              /* the display mode byte 07CA case 7 tests (src/E0D1C.C) */
 extern char gFileNameBuf[]; /*@ ds:FE6E */     /* the text buffer 07CA formats into (src/EOV2.C) */
@@ -130,21 +130,21 @@ extern void InsertListItem(void far *head, int key, int item, int sound); /*@ 0B
 extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
 
 /* 1414:0000: the selected-character blink effect, entry 0 of the table (16-tick period 9). It
-   flips the phase g5CAA; when the phase turns on it saves gFB34 (the highlighted member),
-   replaces it with 0xFF, redraws that member's row through RedrawMember and restores gFB34, and
-   when the phase turns off it just redraws gFB34's row. QUIRK 1414:0037: the argument comes in
+   flips the phase g5CAA; when the phase turns on it saves gIconTable (the highlighted member),
+   replaces it with 0xFF, redraws that member's row through RedrawMember and restores gIconTable, and
+   when the phase turns off it just redraws gIconTable's row. QUIRK 1414:0037: the argument comes in
    on the stack and is incremented by value, so the increment has no effect. */
 /*@ 1414:0000 */ void BlinkSelected(int slot)
 {
     int old;
 
     if (g5CAA ^= 1) {
-        old = gFB34;
-        gFB34 = 0xFF;
+        old = gIconTable;
+        gIconTable = 0xFF;
         RedrawMember(old);
-        gFB34 = old;
+        gIconTable = old;
     } else {
-        RedrawMember(gFB34);
+        RedrawMember(gIconTable);
     }
     slot++;
 }

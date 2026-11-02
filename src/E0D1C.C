@@ -116,7 +116,7 @@ extern char gFileNameBuf[]; /*@ ds:FE6E */   /* the text buffer sprintf formats 
 extern void f08E6_17FD(int far *list, int key, int field, char flags, char scanAll, char scanFiltered); /*@ 08E6:17FD */
 /* fills `list` with the gObjs indices whose m02 equals key, terminated by -1; flags, scanAll
    and scanFiltered select the scan (Purpose unknown) */
-extern void f0EF3_06E7(void); /*@ 0EF3:06E7 */
+extern void FlashViewDamage(void); /*@ 0EF3:06E7 */
 extern void f08E6_0E48(void); /*@ 08E6:0E48 */
 extern void PlaySound(int sound); /*@ 177D:0070 */
 extern void DrawText(char far *text); /*@ 1DE7:060A */
@@ -670,7 +670,7 @@ int f0D1C_02DC(void);
                 gChars[member].name);
         DrawText(gFileNameBuf);
         PlaySound(0x5F);
-        f0EF3_06E7();
+        FlashViewDamage();
         f08E6_0E48();
     }
     gF518 = 0;

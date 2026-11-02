@@ -3450,6 +3450,9 @@ unit = "e0ef3"
 addr = "0EF3:06E7"
 size = 488
 evidence = ["far", "near", "frame"]
+name = "FlashViewDamage"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0ef3_08cf"
@@ -3521,6 +3524,9 @@ unit = "e0ef3"
 addr = "0EF3:0F99"
 size = 208
 evidence = ["frame"]
+name = "DrawMemberIcons"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0ef3_1069"
@@ -3802,6 +3808,9 @@ unit = "e0ef3"
 addr = "0EF3:1702"
 size = 181
 evidence = ["frame"]
+name = "ClearObjectsFacingCell"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0ef3_17b7"
@@ -3959,6 +3968,9 @@ unit = "e0ef3"
 addr = "0EF3:1BA3"
 size = 162
 evidence = ["frame"]
+name = "ApplyAidEffect"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0ef3_1c45"
@@ -4294,6 +4306,9 @@ unit = "e0ef3"
 addr = "0EF3:2929"
 size = 298
 evidence = ["frame"]
+name = "HandleSpellList"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0ef3_2a53"

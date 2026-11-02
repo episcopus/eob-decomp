@@ -120,7 +120,7 @@ extern signed char g3875[]; /*@ ds:3875 */  /* a per-character byte (0, 1 or 2) 
 extern signed char g3890[]; /*@ ds:3890 */  /* a three-byte table read by 0BD2:0917 */
 extern signed char g38FA[]; /*@ ds:38FA */  /* a byte table indexed by an item's m0B in 0BD2:0EE8 */
 extern void StartPanelAction(int a, int b, int c); /*@ 0EF3:28ED */
-extern void f0EF3_06E7(void); /*@ 0EF3:06E7 */
+extern void FlashViewDamage(void); /*@ 0EF3:06E7 */
 extern void FlashPartyMembers(int who); /*@ 0EF3:0665 */
 extern void ClearPoisonEffect(int who); /*@ 0EF3:1CE8 */
 extern void MoveObjectToId(struct Obj28 far *obj, int a, int b); /*@ 08E6:0297 */
@@ -794,7 +794,7 @@ next:
     x = f0D1C_00DA(gPartyCell, page);
     y = f0D1C_00DA(x, page);
     PlaySound(0x62);
-    f0EF3_06E7();
+    FlashViewDamage();
     if ((g194B[gB894[y * 9 + (page ^ 2)]] & 4) && (gB894[y * 9 + 4] & 7) == 0
             && (gB894[x * 9 + 4] & 7) != 0) {
         obj = gObjs;

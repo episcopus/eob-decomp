@@ -208,6 +208,17 @@ extern int ClampValue(int value, int low, int high, int invert); /*@ 082C:0AB4 *
 extern signed char gAt5717[];          /*@ ds:5717 */ /* a per-member byte: nonzero when the member
                                                      can use melee effects (read by 0EF3:0E1B) */
 extern signed char gTable5733[];        /*@ ds:5733 */ /* four cell deltas walked by 0EF3:17D8 */
+extern signed char gIconIndex571B[];    /*@ ds:571B */ /* a per-member icon index; a negative value
+                                                           picks the 004D region drawing (0EF3:0F99) */
+extern int gIconX5721[];                /*@ ds:5721 */ /* the icon's x, per member (0EF3:0F99) */
+extern signed char gIconY572D[];        /*@ ds:572D */ /* the icon's y, per member (0EF3:0F99) */
+extern void far *gIconTable[];          /*@ ds:FB34 */ /* far sprite pointers indexed by an icon
+                                                           magnitude; entry 1 is ds:FB38 (src/EOV2.C
+                                                           names the entries gThrownIcon0..2 singly) */
+extern void DrawRegion000F(int mode, void far *src, int x, int y, int region); /*@ 082C:063B */
+extern void DrawRegion004D(int mode, void far *src, int x, int y, int region); /*@ 082C:0681 */
+extern void Obj16D6(int key, char count, char sides, char bonus, char flag); /*@ 08E6:16D6 */
+extern void ClipRect(int x1, int y1, int x2, int y2, int width, int height, int extra1, int extra2); /*@ 19F3:000E */
 
 extern char gText57A3[];                /*@ ds:57A3 */
 extern char gText57F1[];                /*@ ds:57F1 */
@@ -230,6 +241,7 @@ extern void (far *gFnEFBA)(void);       /*@ ds:EFBA */ /* a redraw hook run by 0
 extern char gFlag;                      /*@ ds:F3B9 */ /* cleared by 0EF3:2541 (E0ACD.C) */
 extern void far *gSegDF4E;              /*@ ds:DF4E */ /* the slot-5 buffer (E07A9.C) */
 extern void (far *gRestoreRect)(int x, int y, int width, int height, void far *buf); /*@ ds:804E */
+extern void (far *gFn804A)(int x, int y, int width, int height, void far *buf); /*@ ds:804A */
 extern void (far *gSaveRect)(int x, int y, int width, int height, void far *buf); /*@ ds:80AE */
 extern void HidePointerZone(int left, int top, int right, int bottom); /*@ 1BBE:01FE */
 extern void ShowPointerZone(void);      /*@ 1BBE:02C2 */
@@ -312,6 +324,15 @@ extern int gFlashBaseX[];        /*@ ds:5639 */ /* six per-member x bases */
 extern signed char gFlashBaseY[];/*@ ds:5645 */ /* six per-member y bases */
 extern char far *gFlashFrames[]; /*@ ds:DD1C */ /* far image pointers, indexed by frame - 1 */
 extern void f1A29_000F(int mode, void far *src, int x, int y, int region); /*@ 1A29:000F */
+extern int gFlags849E;           /*@ ds:849E */ /* bit 1 gates the object animation frames
+                                                    (src/E08E6.C) */
+extern char far *gBufDCFC;       /*@ ds:DCFC */ /* the 4096-byte screen scratch buffer, one far
+                                                    allocation (src/E07A9.C) */
+extern unsigned long gFlashPass2[]; /*@ ds:564B */ /* per-pass long masks for 0EF3:06E7 */
+extern unsigned long gFlashFrame2[];/*@ ds:5677 */ /* per-frame long masks for 0EF3:06E7 */
+extern unsigned char gFlashShift2[];/*@ ds:56B7 */ /* per-frame shift for 0EF3:06E7 */
+extern unsigned char gFlashX2[];    /*@ ds:56C7 */ /* per-frame x in pixels for 0EF3:06E7 */
+extern unsigned char gFlashY2[];    /*@ ds:56D7 */ /* per-frame y in pixels for 0EF3:06E7 */
 extern signed char g1A09[];      /*@ ds:1A09 */ /* per-slot object index (EOV4.C) */
 extern int g1D61[];              /*@ ds:1D61 */ /* per-slot, per-part x table (EOV4.C) */
 extern int g8115;                /*@ ds:8115 */ /* nonzero while a status line is up (E082C.C) */
@@ -520,8 +541,8 @@ extern void f0EF3_2A53(int a, int b, int c, int d, int e, void far *p); /*@ 0EF3
 /*@ 0EF3:0418 draft */ int CreateItemRecord(unsigned char flags, unsigned char icon, signed char m0B,
                                               signed char type)
 {
-    signed char zero;
     struct ItemRecord far *rec;
+    signed char zero;
     int index;
 
     rec = &gItems[0xB];
@@ -664,7 +685,53 @@ extern void f0EF3_2A53(int a, int b, int c, int d, int e, void far *p); /*@ 0EF3
         RedrawMember(who);
 }
 
-/*@ 0EF3:06E7 stub */ void f0EF3_06E7(void) {}
+/* 0EF3:06E7: flash damage over the view. It saves the sixteen 2-by-0x10 pixel cells described by
+   gFlashX2/gFlashY2 into the scratch buffer (256 bytes each), then runs eleven passes: restore the
+   cells, and for each of the sixteen frames take the unsigned long gFlashPass2[pass] masked by
+   gFlashFrame2[i] and shifted right by gFlashShift2[i]; when the result is nonzero draw
+   gFlashFrames[frame] at (gFlashX2[i], gFlashY2[i]) through 1A29:000F, then hide the pointer,
+   re-clip the view box, show the pointer and wait two ticks. A final restore leaves the view as it
+   was. It clears gFlags849E bit 1 for the duration. Called by the wand, turn-undead and
+   clear-objects paths (0BD2:0EE8, 0D1C:0A43, 0EF3:1702). */
+/*@ 0EF3:06E7 */ void FlashViewDamage(void)
+{
+    int x;
+    int y;
+    int frame;
+    int i;
+    int pass;
+
+    gFlags849E &= ~2;
+    HidePointerZone(0, 0, 0xB0, 0x78);
+    ClipRect(0, 0, 0, 0, 0x16, 0x78, 0, 2);
+    for (i = 0; i < 0x10; i++)
+        gSaveRect(gFlashX2[i] >> 3, gFlashY2[i], 2, 0x10, gBufDCFC + (i << 8));
+    for (pass = 0; pass < 0xB; pass++) {
+        g8115 = 2;
+        for (i = 0; i < 0x10; i++) {
+            x = gFlashX2[i];
+            y = gFlashY2[i];
+            gFn804A(gFlashX2[i] >> 3, gFlashY2[i], 2, 0x10, gBufDCFC + (i << 8));
+        }
+        for (i = 0; i < 0x10; i++) {
+            frame = (gFlashPass2[pass] & gFlashFrame2[i]) >> gFlashShift2[i];
+            x = gFlashX2[i];
+            y = gFlashY2[i];
+            if (frame-- == 0)
+                continue;
+            f1A29_000F(2, gFlashFrames[frame], x, y, 0);
+        }
+        g8115 = 0;
+        HidePointerZone(0, 0, 0xB0, 0x78);
+        ClipRect(0, 0, 0, 0, 0x16, 0x78, 2, 0);
+        ShowPointerZone();
+        WaitTicks(2);
+    }
+    for (i = 0; i < 0x10; i++)
+        gRestoreRect(gFlashX2[i] >> 3, gFlashY2[i], 2, 0x10, gBufDCFC + (i << 8));
+    ShowPointerZone();
+    gFlags849E |= 2;
+}
 
 /* 0EF3:08CF: apply one action record to the member it names (+0x38). It makes that member current
    and, while the member is alive (m01 bit 0), draws its name and the message ds:57C3, plays the
@@ -757,8 +824,10 @@ extern void f0EF3_2A53(int a, int b, int c, int d, int e, void far *p); /*@ 0EF3
    otherwise, when RollToHit accepts the object and 0D1C:0BAB does not reject it, roll count d
    sides plus bonus and damage the object. Called by 0EF3:1B43, 0EF3:1EF3 and 0EF3:1FF9.
    DRAFT: the frame and register use match (`register int obj, dmg`, target spilled to [bp-2]),
-   but the original lays the RollToHit test out as `jne body; jmp done` where our build emits the
-   inverted `je skip; body` (`make match` differs at that jmp, +0x15). */
+   but our build merges the two `sprintf`+`SayAndBeep` message tails (the obj==-1 branch and the
+   outer else), making the function about 0x1D bytes shorter; that pulls the function end within
+   short-branch range, so the RollToHit test emits `je skip; body` where the original, with its
+   separate tails, emits `jne body; jmp done` (`make match` differs at that jmp, +0x15). */
 /*@ 0EF3:0E1B draft */ void CastMeleeEffect(int count, int sides, int bonus)
 {
     int target;
@@ -811,7 +880,33 @@ extern void f0EF3_2A53(int a, int b, int c, int d, int e, void far *p); /*@ 0EF3
     ComputeArmourClass(rec->m00);
 }
 
-/*@ 0EF3:0F99 stub */ void f0EF3_0F99(void) {}
+/* 0EF3:0F99: draw one icon per party member in its panel cell, then strike the object the current
+   page faces. For each of the six members it draws the far sprite gThrownIcon0[abs(icon) - 1] at
+   (gIconX5721[i], gIconY572D[i]) with region 0: a positive icon (gIconIndex571B) goes through
+   082C:063B, a negative one (through its magnitude) through 082C:0681. It then waits two ticks,
+   takes the panel member's class-slot 1 value, finds the object the party cell faces (0D1C:00DA)
+   and runs 08E6:16D6 on it for 1d3 plus twice that value, and sets ds:DF4C. Reached through the
+   spell table (an apply callback). Purpose unknown: what the icon index means and what chooses the
+   two region drawings. */
+/*@ 0EF3:0F99 */ void DrawMemberIcons(void)
+{
+    int value;
+    int i;
+    int target;
+
+    for (i = 0; i < 6; i++) {
+        if (gIconIndex571B[i] < 0)
+            DrawRegion004D(0, gIconTable[gIconIndex571B[i] < 0 ? -gIconIndex571B[i] : gIconIndex571B[i]],
+                           gIconX5721[i], gIconY572D[i], 0);
+        else
+            DrawRegion000F(0, gIconTable[gIconIndex571B[i]], gIconX5721[i], gIconY572D[i], 0);
+    }
+    WaitTicks(2);
+    value = GetClassSlot1Value(gPanelMember);
+    target = f0D1C_00DA(gPartyCell, gFBCC);
+    Obj16D6(target, 1, 3, value << 1, 1);
+    gDF4C = 1;
+}
 
 /* 0EF3:1069: enter the item-swap mode: set gFBD2 bit 0, take the mouse item, move the pointer, and
    apply a 2-turn effect. Called through a table. */
@@ -1100,27 +1195,28 @@ extern void f0EF3_2A53(int a, int b, int c, int d, int e, void far *p); /*@ 0EF3
     DiscardEquippedItems(rec);
 }
 
-/* 0EF3:1702: after 0EF3:06E7, walk the 30 objects and for each whose id is the object the current
-   page faces (0D1C:00DA), whose character record's +0x0F long has bit 0 or 1 and which 0D1C:0BAB
-   does not reject, roll 1d20 and clear the object's type when the roll is under the value
-   0A72:0006 gives for the character record's +2 index. Called by the wand/turn-undead paths.
-   DRAFT: the body is right but the original spills `target` to the frame (0x0A bytes); our build
-   keeps it in a register (`make match` differs at sub sp). */
-/*@ 0EF3:1702 draft */ void ClearObjectsFacingCell(void)
+/* 0EF3:1702: after FlashViewDamage, walk the 30 objects and for each whose id is the object the
+   current page faces (0D1C:00DA), whose character record's +0x0F long has bit 0 or 1 and which
+   0D1C:0BAB does not reject, roll 1d20 and clear the object's type when the roll is under the value
+   0A72:0006 gives for the character record's +2 index. Called by the wand/turn-undead paths. The
+   threshold is a local and the clear uses &gObjs[i], not the walking pointer. */
+/*@ 0EF3:1702 */ void ClearObjectsFacingCell(void)
 {
     struct Entry27 far *rec;
     struct Obj28 far *obj;
     int target;
+    int limit;
     int i;
 
-    f0EF3_06E7();
+    FlashViewDamage();
     target = f0D1C_00DA(gPartyCell, gFBCC);
     obj = gObjs;
     for (i = 0; i < 0x1E; i++, obj++) {
         rec = &gTable1A3B[obj->b0];
         if (obj->id == target && (rec->m0F & 3) != 0 && f0D1C_0BAB(i) == 0) {
-            if (RollDice(1, 0x14, 0) < GetIndexedByte(0, rec->m02, 4))
-                ClearObjectType(obj);
+            limit = GetIndexedByte(0, rec->m02, 4);
+            if (RollDice(1, 0x14, 0) < limit)
+                ClearObjectType(&gObjs[i]);
         }
     }
 }
@@ -1303,7 +1399,27 @@ void f0EF3_2EBC(int a, int b, int c, int d, int e, char far *table);
     rec->mE3 &= ~0x200L;
 }
 
-/*@ 0EF3:1BA3 stub */ void f0EF3_1BA3(void) {}
+/* 0EF3:1BA3: the "aid" spell. When the current member is not protected (0D1C:0670 with mask 3) it
+   adds one 1d8 roll to the record's hit points, remembers the same amount in its +0xE2 byte and sets
+   effect flag bit 0x40 (the amount 0EF3:1C45 takes back); otherwise it says "The aid spell fails!"
+   (ds:5899). Either way it applies a 1-turn effect. Reached through the spell table (gSpells1344
+   "aid", its apply callback). */
+/*@ 0EF3:1BA3 */ void ApplyAidEffect(void)
+{
+    int amount;
+
+    if (f0D1C_0670(gCurMember, 3)) {
+        gCurRec->mE3 |= 0x40;
+        amount = RollDice(1, 8, 0);
+        if (gCurRec->hp < (signed char)(gCurRec->hp + amount)) {
+            gCurRec->mE2 += amount;
+            gCurRec->hp += amount;
+        }
+        ApplyTimedCharEffect(gEFB8, 1, 0x222L, 1, 1);
+    } else {
+        SayAndBeep(gText5899);
+    }
+}
 /* 0EF3:1C45: undo a bandage-like effect on the record: when its +0xE2 byte is set subtract it
    from the hit points and clear it, then clear the record's effect flag bit 0x40. Called by
    0BD2:0D2D and 0EF3:1F0B. */
@@ -1659,23 +1775,28 @@ void f0EF3_2295(void);
     return rec->m04;
 }
 
-/* 0EF3:2604: use the item in one of a member's rows. When the item's type is 0x22 or 0x23, or
-   its type is 0x30 and its flags low six bits are exactly 1, run 0BD2:0106(who, slot); for a
-   type 0x30 item with any other flag count, just decrement its flags. Called through a table.
-   DRAFT: the body is right but the original computes who*0xF3 before reading slot and keeps the
-   item in SI; our build caches slot in DI first (`make match` differs at the first instruction). */
+/* 0EF3:2604: use the item in one of a member's rows. It switches on the item's type: type 0x22 or
+   0x23, or a type 0x30 item whose flags low six bits are exactly 1, runs 0BD2:0106(who, slot); any
+   other type 0x30 item just decrements its flags. Called through a table.
+   DRAFT: the switch matches (the original loads the type byte, sign-extends it and compares 0x22,
+   0x23 and 0x30 in turn), but the original computes who*0xF3 before reading slot; our build caches
+   slot in DI first (`make match` differs at the first instruction). */
 /*@ 0EF3:2604 draft */ void UseItemRow(int who, int slot)
 {
     int item;
 
     item = gChars[who].m77[slot];
-    if (gTable8DD2[item].m02 == 0x22 || gTable8DD2[item].m02 == 0x23) {
+    switch (gTable8DD2[item].m02) {
+    case 0x22:
+    case 0x23:
         f0BD2_0106(who, slot);
-    } else if (gTable8DD2[item].m02 == 0x30) {
+        break;
+    case 0x30:
         if ((gTable8DD2[item].flags & 0x3F) == 1)
             f0BD2_0106(who, slot);
         else
             gTable8DD2[item].flags--;
+        break;
     }
 }
 
@@ -1701,12 +1822,9 @@ void f0EF3_2295(void);
    sets gA9C5 to the key when the key is under six and, below six, runs the panel body and casts
    the slot's spell through 0EF3:2676 (its value plus 0x19 when gF43D is 1), else redraws the
    party panel. Returns the node's +4 word. QUIRK 0EF3:2969: `found` is read uninitialised when the
-   first loop finds no slot. Reached through the list node's callback30.
-   DRAFT: the body is right but the original loads the far pointer before the second index in
-   `gDD14[gDDE2 * 6 + i]` (`les bx,[gDD14]; add bx,gDDE2*6; add bx,index`), while every form tried
-   (`gDD14[...]`, `(gDD14 + gDDE2*6)[...]`) sums the indexes or reloads the pointer in a different
-   order; the same compiler question as 0EF3:25BD (`make match` differs at the do-while, +0x89). */
-/*@ 0EF3:2929 draft */ int HandleSpellList(struct ActionNode far *node)
+   first loop finds no slot. Reached through the list node's callback30. The slot value plus 0x19
+   when gF43D is 1 is a ternary (the assigned local keeps the frame size). */
+/*@ 0EF3:2929 */ int HandleSpellList(struct ActionNode far *node)
 {
     int key;
     int found;
@@ -1739,8 +1857,7 @@ void f0EF3_2295(void);
             if (gA9C5 < 6) {
                 f0EF3_2295();
                 value = (gDD14 + gDDE2 * 6)[gA9C5];
-                if (gF43D == 1)
-                    value += 0x19;
+                value += (gF43D == 1 ? 0x19 : 0);
                 f0EF3_2676(value, 0);
             } else {
                 RedrawPartyPanel((struct ActRec far *)gF542);
