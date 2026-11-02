@@ -11,10 +11,14 @@
 ; The driver keeps its state in a segment that is an alias of DGROUP at 88A0h: the code sets DS to
 ; 29B8h itself (the value the install and every entry set), and DGROUP is 212Eh (whitepaper 2.2), so
 ; 29B8h is DGROUP + 88Ah and the driver's offset 1C7h is gTandyOn at DGROUP:8A67. The offsets below
-; are the driver-segment ones; the driver data segment holds the note tables (at 1Ah for the PC
-; speaker, DAh for Tandy) and the data the driver plays, read as a song [H] (the whitepaper calls
-; the same block "sound drivers data", docs/design/WHITEPAPER.md:147), while the code of this unit
-; lives in this code segment.
+; are the driver-segment ones; the segment holds the driver's variables and the note tables the code
+; reads at 1Ah (PC speaker) and DAh (Tandy). Nothing in src/ fills those tables (88B to 897A appear
+; only in this unit); src/E_TEXT.ASM:3 puts "the driver's frequency and note tables" at 0000:020C to
+; 03A1 in _TEXT, but that file also describes the AdLib driver, so its owner should confirm. The
+; song bytes are not in this segment: they are read from the block gSongPtrSeg names (cs:0416, the
+; far pointer f0_03E3 returns, src/E177D.C:121 to 123), read as a song [H] (the whitepaper gives the
+; block only as u16 offsets, docs/design/WHITEPAPER.md:177). The code of this unit lives in this
+; code segment.
 
         .MODEL  LARGE
 
@@ -23,8 +27,10 @@
 ; word displacement (16-bit), as the original shows (the offsets in the original are 16-bit even
 ; where they fit in a byte).
 SND     SEGMENT PARA PUBLIC 'SNDDATA'
-        db      6 dup (?)                ; 0 to 5: unused in this segment; the saved INT 8 vector
-                                         ; lives in the code segment at 1948:0006
+        db      6 dup (?)                ; 0 to 5: this unit does not read them. Offset 2 is
+                                         ; DGROUP:88A2, read by the code just before the 07A9 unit
+                                         ; (mov ax,[88A2] at 07A9:0003, src/E07A9.C:2-3); the saved
+                                         ; INT 8 vector lives in the code segment at 1948:0006
 gChainReload     dw      ?               ; @ ds:88A6: offset 06h, 0Fh, reload for the BIOS chain countdown
 gChainCount      dw      ?               ; @ ds:88A8: offset 08h, counts down; at 0 the handler chains to the BIOS
 gSongBase        dw      ?               ; @ ds:88AA: offset 0Ah, song base offset, copied once from gSongPtr
@@ -58,25 +64,14 @@ gVoiceReadNext   db      4 dup (?)       ; @ ds:8A44: offset 1A4h, byte per voic
 gVoiceSilent     db      4 dup (?)       ; @ ds:8A48: offset 1A8h, byte per voice, 1 when the driver has
                                          ; turned this voice off. Three writers: startVoice clears all
                                          ; four at each song start (1948:0086), muteVoice (1948:027F) sets
-                                         ; one voice, and _SetThreeVoices (1948:034A) sets all four, so after
-                                         ; _SoundDriverResume, _SoundDriverInstall or _SoundDriverUninstall
-                                         ; the flags are set with no mute by the song. Two readers:
-                                         ; checkRestart (1948:0258) skips the re-arm for a flagged voice
-                                         ; (1948:025F to 0264), and the end-of-song count clears gPlaying once
-                                         ; every voice is flagged (1948:029D to 02BB). A resume during a
-                                         ; song flags every voice, but the game never stops a song that way:
-                                         ; both callers that change the driver select call StartSound
-                                         ; straight after the resume (src/E177D.C:185 and 189, then 194;
-                                         ; 274 and 278, then 285), and the next tick's start path restarts
-                                         ; every voice and clears the flags (1948:0050 to 0081, startVoice
-                                         ; at 1948:0086) before the voice loop. The stop needs a resume with
-                                         ; no start request after it, and no caller in src/ makes one. Where
-                                         ; it does happen, a voice whose gVoiceReadNext is 1 still reads and
-                                         ; sounds its next note on that tick (readFirst, 1948:00FA, does not
-                                         ; test this flag), and nothing mutes it afterwards, since gPlaying
-                                         ; is then clear and the tick returns early. A voice muted by a CEh
-                                         ; or D2h overflow keeps this flag while it sounds, so the same test
-                                         ; never re-arms it
+                                         ; one voice, and _SetThreeVoices (1948:034A) sets all four, so
+                                         ; after _SoundDriverResume, _SoundDriverInstall or
+                                         ; _SoundDriverUninstall the flags are set with no mute by the
+                                         ; song. Two readers: checkRestart (1948:0258) skips the re-arm
+                                         ; for a flagged voice (1948:025F to 0264), and the end-of-song
+                                         ; count clears gPlaying once every voice is flagged (1948:029D
+                                         ; to 02BB). A voice muted by a CEh or D2h overflow keeps this
+                                         ; flag while it sounds, so checkRestart never re-arms it
 gVoiceDuration   dw      4 dup (?)       ; @ ds:8A4C: offset 1ACh, word per voice, note countdown, not
                                          ; "ticks left": readLoop stores (duration byte + 1) times
                                          ; gVoiceLengthMul, less 1 (1948:0142 to 0148). checkRestart
@@ -571,8 +566,10 @@ _SetVoicePitch ENDP
 ; silence (voice index 3) writes the SN76489 noise channel, because
 ; the latch's channel bits 6-5 are 3 [H]; no path sets gVoiceCount to 4, so voice 3 is never played.
 ; It also sets gVoiceSilent for all four voices in the loop (1948:0352), so a call during a song
-; flags every voice; that alone does not stop the song when a start request follows, as it does at
-; every caller in src/ (see gVoiceSilent).
+; flags every voice: the resume callers start a sound straight after (src/E177D.C:185 and 189;
+; 274 and 278) and the next tick's start path clears the flags (1948:0050 to 0081), but the
+; shutdown caller of _SoundDriverSilenceToOneVoice (src/E07C8.C:374) does not, so its flags end the
+; song at the next tick (see gVoiceSilent).
 ; Called by the install routine on Tandy (1948:0377), _SoundDriverResume (1948:0458),
 ; _SoundDriverUninstall (1948:03DA) and _SoundDriverSilenceToOneVoice (1948:046B).
         PUBLIC  _SetThreeVoices         ; @ 1948:034A
@@ -760,9 +757,15 @@ _StopSound PROC FAR
         ret
 _StopSound ENDP
 
-; 1948:0458: restart the three-voice output (_SetThreeVoices). E177D.C calls it when the driver
-; select gTandyOn changes (src/E177D.C:185 and 189 in PlaySound, 274 and 278 in PlaySoundAtCell),
-; and StartupGame calls it once after the Tandy install (src/E07C8.C:348 to 351).
+; 1948:0458: set up the three-voice output (_SetThreeVoices), which sets gVoiceCount to 3 and flags
+; all four voices silent (1948:034A). A resume during a song flags every voice, but the game never
+; stops a song that way: both callers that change the driver select call StartSound straight after
+; the resume (src/E177D.C:185 and 189, then 194; 274 and 278, then 285), and the next tick's start
+; path restarts every voice and clears the flags (1948:0050 to 0081, startVoice at 1948:0086). The
+; stop needs a resume with no start request after it, and no caller in src/ makes one during a song
+; (StartupGame's resume, src/E07C8.C:351, also has none, but no song is playing then). E177D.C calls
+; it when the driver select gTandyOn changes (src/E177D.C:185 and 189 in PlaySound, 274 and 278 in
+; PlaySoundAtCell); StartupGame calls it once after the Tandy install (src/E07C8.C:348 to 351).
         PUBLIC  _SoundDriverResume      ; @ 1948:0458
 _SoundDriverResume PROC FAR
         push    bp
