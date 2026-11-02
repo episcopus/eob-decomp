@@ -3847,6 +3847,9 @@ unit = "e122e"
 addr = "122E:0055"
 size = 226
 evidence = ["near", "frame"]
+name = "HitTestObjectKind"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e122e_0137"

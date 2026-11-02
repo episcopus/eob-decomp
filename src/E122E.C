@@ -27,6 +27,30 @@ extern void ArmEffectWith(int idx, int arg, int sub, int active); /*@ 1414:055B 
 extern void AdjustMemberStatus(int who); /*@ 1414:03B4 */
 extern void Obj1505(int kind, int id, int frame, int orient, int b0, int m07, int type, int timer, int m12, int m14); /*@ 08E6:1505 */
 extern void MarkListItems(void far *head); /*@ 0BD2:040E */
+extern int ClickInRect(int left, int top, int right, int bottom); /*@ 082C:0A5D */
+
+/* The 52-byte click-region records at ds:E06B, one chain per object kind (122E:0055 walks `next`).
+   `kind` indexes gRectKinds; bit 0 of `flags` mirrors `x` about the 176-pixel screen width. */
+struct SlotRegion {
+    unsigned char kind;                         /* +00: index into gRectKinds */
+    char pad01[8];
+    signed char next;                           /* +09: next record, 0 or negative ends the walk */
+    char flags;                                 /* +0A: bit 0 mirrors x */
+    char pad0B[2];
+    int x;                                      /* +0D: left edge */
+    char pad0F[0x12];
+    int y;                                      /* +21: top edge */
+    char pad23[0x11];
+};
+
+struct RectKind {                               /* the per-kind size record gRectKinds points at */
+    char pad00;
+    signed char height;                         /* +1: base height in pixels */
+    signed char width;                          /* +2: base width in eighths */
+};
+
+extern struct SlotRegion gSlotRegions[]; /*@ ds:E06B */
+extern struct RectKind far *gRectKinds[]; /*@ ds:EFD4 */
 
 struct CharRec {                                /* the 243-byte character records at ds:F580 */
     char pad00;
@@ -101,7 +125,40 @@ void f122E_1DA8(int a, int b);  /* forward: 1DA8 comes after its callers */
     DrawText(gText5AB5);
     UpdateDDEffects();
 }
-/*@ 122E:0055 stub */ int f122E_0055(int id) { return 0; }
+/* 122E:0055: hit-test the click regions of object kind `kind` against the last click. Only the
+   script-driving mode 0x40 has regions (any other mode returns 1, so every kind is "hit"). It walks
+   the kind's chain from the top: the region record `i - 1`'s x/y (inset by 3) and its gRectKinds
+   size (width in eighths times 8, both plus 6) form the rectangle, mirrored about the screen width
+   when the region's bit 0 is set, and the walk stops at the first hit or a non-positive next index.
+   Returns 1 when any region was hit. */
+/*@ 122E:0055 */ int HitTestObjectKind(int kind)
+{
+    register int i;
+    register int found;
+    int left;
+    int top;
+    int idx;
+    int width;
+    int height;
+
+    i = kind;
+    if (gEFD2 != 0x40)
+        return 1;
+    found = 0;
+    do {
+        i--;
+        left = gSlotRegions[i].x - 3;
+        top = gSlotRegions[i].y - 3;
+        idx = gSlotRegions[i].kind;
+        width = gRectKinds[idx]->width * 8 + 6;
+        height = gRectKinds[idx]->height + 6;
+        if (gSlotRegions[i].flags & 1)
+            left = 0xb0 - left - width;
+        found |= ClickInRect(left, top, left + width, top + height);
+        i = gSlotRegions[i].next;
+    } while (i > 0 && !found);
+    return found;
+}
 
 /* 122E:0137: push bit 0 of the frame-count byte of the gB894 record `id`. Called by 147F for one
    sub-opcode. Purpose unknown: the opcode it implements is not identified. */
@@ -182,28 +239,28 @@ void f122E_1DA8(int a, int b);  /* forward: 1DA8 comes after its callers */
 /*@ 122E:0325 stub */ void f122E_0325(void) {}
 /*@ 122E:04CA stub */ void f122E_04CA(void) {}
 
-/* 122E:05DF: look up the object kind in gB894[id * 9 + slot] and, if f122E_0055 accepts it, run the
+/* 122E:05DF: look up the object kind in gB894[id * 9 + slot] and, if HitTestObjectKind accepts it, run the
    driver for `id` in the current mode gEFD2. Returns 1 when it ran, 0 otherwise. */
 /*@ 122E:05DF */ int PerformItemSlotAction(int id, int slot)
 {
     int kind;
 
     kind = gTable18BF[gB894[id * 9 + slot]];
-    if (f122E_0055(kind)) {
+    if (HitTestObjectKind(kind)) {
         f122E_1DA8(id, gEFD2);
         return 1;
     }
     return 0;
 }
 
-/* 122E:0620: raise the count in gB894[id * 9 + slot] when f122E_0055 accepts the object kind,
+/* 122E:0620: raise the count in gB894[id * 9 + slot] when HitTestObjectKind accepts the object kind,
    mark the action dirty and run the driver. Returns 1 when it ran, 0 otherwise. */
 /*@ 122E:0620 */ int IncreaseItemSlot(int id, int slot)
 {
     int kind;
 
     kind = gTable18BF[gB894[id * 9 + slot]];
-    if (f122E_0055(kind)) {
+    if (HitTestObjectKind(kind)) {
         gB894[id * 9 + slot]++;
         gDF4C = 1;
         f122E_1DA8(id, gEFD2);
@@ -212,14 +269,14 @@ void f122E_1DA8(int a, int b);  /* forward: 1DA8 comes after its callers */
     return 0;
 }
 
-/* 122E:0678: lower the count in gB894[id * 9 + slot] when f122E_0055 accepts the object kind,
+/* 122E:0678: lower the count in gB894[id * 9 + slot] when HitTestObjectKind accepts the object kind,
    mark the action dirty and run the driver. Returns 1 when it ran, 0 otherwise. */
 /*@ 122E:0678 */ int DecreaseItemSlot(int id, int slot)
 {
     int kind;
 
     kind = gTable18BF[gB894[id * 9 + slot]];
-    if (f122E_0055(kind)) {
+    if (HitTestObjectKind(kind)) {
         gB894[id * 9 + slot]--;
         gDF4C = 1;
         f122E_1DA8(id, gEFD2);

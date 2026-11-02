@@ -1332,3 +1332,12 @@ new = "gMcbSeg"
 kind = "global"
 why = "MCB of our own allocated block, set by CheckMemoryChain at 1990:0088 and read by CheckMCB and CheckMemoryChain; READABILITY.md asks for the g prefix (no other file declares the address; it is code segment data annotated with a plain `;` comment, so rename.py could not bind it and the label was renamed in place)"
 date = "2026-11-01"
+
+[[rename]]
+id = "122E:0055=HitTestObjectKind"
+addr = "122E:0055"
+old = "f122E_0055"
+new = "HitTestObjectKind"
+kind = "function"
+why = "122E:0055 hit-tests the last click against the click-region chain of the object kind its argument names: it walks the ds:E06B records via their next field and tests each against ClickInRect (called by PerformItemSlotAction 122E:05DF and the item-slot actions 0620, 0678, 06D0 with a gTable18BF kind)"
+date = "2026-11-01"
