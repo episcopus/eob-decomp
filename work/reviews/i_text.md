@@ -13,6 +13,61 @@ Checked: `make match FILE=src/I_TEXT.ASM` 44 of 44 functions match; `make readab
 Each finding is a checkbox. `must-fix` blocks `make review-pass` until a decompiler ticks it off
 (with the commit that fixes it); `should` and `note` do not block.
 
+### Round 2 (rev-haiku, 2026-11-02)
+
+Reviewed at bb3f897 (main). The three files of this unit (src/I_TEXT.ASM, re/symbols.toml, re/globals.toml) are the
+same on branch review/i_text (3b0319b) and on main for the I_TEXT lines; the round 1 must-fix items were judged against
+the current text, and the diff from f05a54b to main was read for the changed lines. No code byte changed: the diff is
+comments, the gPatchTable comment, and registry and globals entries.
+
+Checked: `make match FILE=src/I_TEXT.ASM` 44 of 44, exit 0; `make readability UNIT=i_text` 0 findings. In eob/INTRO.EXE
+(load module at file offset 0E00h): 3EFB holds 34h and 3EFC holds 41h; the 12 bytes at 0670 are 88 01 01 08 01 00 18 00
+54 F2 60 46 (10 nonzero); the words are 066Eh at 0416 and 0671h at 0542. The queue reset (lines 483 and 484), the 3F7A
+ring overflow (gQueueRing at 3F6A, 16 bytes), the SetSoundByte, GetSoundData, SoundRandom, ClearVoice, ResetVoices,
+GetDriverTable, ProcessSoundQueue (line 608), StartSample and WriteVoiceReg claims were read against the code.
+
+Round 1 must-fix items: 313 (gBusyCountdown), 182 (3EFB), 87 (SetSoundByte), 1826 (VoiceKeyOff), 1847 (StartVoiceNote),
+2096 (WriteVoiceReg), 2279 (VoiceSilence) and 1878 (StartSample) are fixed right, ticks stay. The 493 (E07C8.C:65 to
+the INTRO caller) fix is right in the address, its line cites are stale (round 2 should, item 3). 240 (gRhythmKeyBits) is NOT
+fixed right: reopened (round 2 item 1).
+
+- [ ] must-fix src/I_TEXT.ASM:241 (gRhythmKeyBits; round 1 must-fix reopened). Two claims in the comment are wrong.
+  (a) "its readers test bit 5 as rhythm mode (VoiceKeyOff line 1829, VoiceSilence line 2282)": both readers test the whole
+  byte for nonzero (`cmp byte ptr ds:[gRhythmKeyBits], 0` at lines 1829 and 2282); bit 5 is not tested anywhere.
+  (b) "the OR of every C2h operand since the last C3h" omits the direct store `mov byte ptr ds:[gRhythmKeyBits], 20h` at
+  line 1481, which is inside the C1h handler (L_4B01 at line 1398, L_4BE0 at line 1487). Fix: say C1h sets it to 20h
+  (line 1481), C2h ORs its operand into it (lines 1502 to 1503), C3h clears it (line 1512), and VoiceKeyOff (1829) and
+  VoiceSilence (2282) test it for nonzero.
+
+- [ ] must-fix src/I_TEXT.ASM:242 (gTempoRate; a round 1 should, changed by the fix, now wrong). Two citations name the
+  wrong code. (a) "copied to a voice's speed byte [di+25h] when its follow flag [di+40h] is set (line 1783 to 1784)": the
+  copy is at lines 781 to 784 (cmp [di+40h] at 781, mov al,gTempoRate at 783, mov [di+25h],al at 784, in the UpdateVoices
+  loop before L_45A5); lines 1783 and 1784 are the A0 register setup in SetVoicePitch. (b) "by commands A9h and BAh (lines
+  1118 and 1340)": line 1118 (L_4881, script byte A9h) stores its own operand AH into [di+25h] and does not read
+  gTempoRate. The byte is written only by command A6h (L_4871, line 1111), and copied by BAh (L_4A7B, line 1340). Fix:
+  "written by A6h (line 1111); copied into a voice's speed byte [di+25h] by BAh (line 1340) and, when [di+40h] is set,
+  by the UpdateVoices copy (lines 781 to 784)".
+
+- [ ] should src/I_TEXT.ASM:493 (the 43A5 header): the address is right, but "src/I0892.C:420" and "declared at
+  I0892.C:127" are stale. ShutdownGame is at I0892.C:444 and calls StopAdlibDriver at I0892.C:454; the extern is at
+  I0892.C:149. Cite the address (0892:0835) and, if a line is kept, the current lines. E07C8.C:451 is right.
+
+- [ ] should src/I_TEXT.ASM:254 (gRhythmLevelC): the C6h list "lines 1659, 1670, 1681 and 1692" omits line 1648, the store
+  `mov byte ptr ds:[gRhythmLevelB+2], al` inside L_4D6B (line 1643). L_4D6B does store into B; add 1648 to the list.
+
+- note src/I_TEXT.ASM:2106 (WriteVoiceReg): the test is `cmp byte ptr [di + 31h], 0`, a nonzero test of the whole byte.
+  It is "the connection bit" only if byte 31h holds bit 0 and nothing else (the C0h comment says LoadVoicePatch keeps bit 0
+  there). Not a finding; say "nonzero" if the bit is not the only content.
+
+- note registry (round 1 note, still open): re/symbols.toml has 7 i_text entries for 44 functions (i0000_03fa, the
+  `_RebaseDriverBlock` entry, covers 16216 bytes, including both INT 08h handlers). review-pass stamps only the entries
+  that exist, so the split (one entry per function) is still needed before a passing review. Not changed in this round.
+
+- [ ] should carried from round 1 (still open): rename `WriteVoiceReg` to `WriteVoiceLevels` (make rename); cite WHITEPAPER
+  2.1.2 and 2.4 in the unit header; list the voice-record fields once (src/I_TEXT.ASM:281 to 282).
+
+### Round 1
+
 - [x] must-fix src/I_TEXT.ASM:313 (the 424D header): "counts gBusyCountdown down to zero" describes a byte this build does not decrement. The handler (lines 319 to 372) has no reference to it, and the unit header (lines 6 to 8) says the wait was dropped. E_TEXT.ASM:349 to 351 has the wait. Fix: delete the bullet. **Fixed:** Deleted the gBusyCountdown bullet; the handler has no such byte (the unit header already says the wait was dropped).
 
 - [x] must-fix src/I_TEXT.ASM:182 (the 3D2C header): "QUIRK 3EFC" should be 3EFB. The 34h is at 0000:3EFB; 0000:3EFC holds 41h (eob/INTRO.EXE). Curve 12 starts at 3EDE (3D5E + 12 * 32) and the 34h is its index 29. The 3E6E quirk on the same line is right (19h at 3E6E). **Fixed:** Changed QUIRK 3EFC to 3EFB; the 34h is at 3EFB and 3EFC holds 41h.
@@ -21,7 +76,7 @@ Each finding is a checkbox. `must-fix` blocks `make review-pass` until a decompi
 
 - [x] must-fix src/I_TEXT.ASM:87 (the 03B0 SetSoundByte header): "idx selects the 300-word table at 0416" is wrong. idx selects one word of that table (lines 94 to 95: the near pointer at cs:0416 + 2 * idx), and reg is the offset into the record that word points to (lines 96 to 98). E177D.C:251 to 252 passes idx as the sound number and reg as 3 or 1. **Fixed:** Corrected the SetSoundByte comment: idx selects one word of the 300-word table (cs:0416 + 2*idx); reg offsets into the record that word points to.
 
-- [x] must-fix src/I_TEXT.ASM:240 (gRhythmKeyBits): "the key bits last written to register BDh (bit 5 is the rhythm mode)" does not describe the byte. C2h stores `operand | old value` (lines 1502 to 1503), so the byte is the OR of every C2h operand since the last C3h, which clears it (line 1512). It is not the last value written to BDh, which also carries gRegBDDepth and 20h (lines 1504 to 1506). Its readers test it as rhythm mode (lines 1829 and 2282). **Fixed:** Rewrote gRhythmKeyBits as the OR of every C2h operand since the last C3h (which clears it), not the last BDh write; its readers test bit 5 as rhythm mode.
+- [ ] must-fix src/I_TEXT.ASM:240 (gRhythmKeyBits), REOPENED in round 2 (round 2 item 1): "the key bits last written to register BDh (bit 5 is the rhythm mode)" does not describe the byte. C2h stores `operand | old value` (lines 1502 to 1503), so the byte is the OR of every C2h operand since the last C3h, which clears it (line 1512). It is not the last value written to BDh, which also carries gRegBDDepth and 20h (lines 1504 to 1506). Its readers test it as rhythm mode (lines 1829 and 2282). **Fixed:** Rewrote gRhythmKeyBits as the OR of every C2h operand since the last C3h (which clears it), not the last BDh write; its readers test bit 5 as rhythm mode.
 
 - [x] must-fix src/I_TEXT.ASM:1826 (the 4EF7 VoiceKeyOff header): "skips the first six voices while a sample plays" is wrong. The routine returns at once when gRhythmKeyBits is nonzero (rhythm mode on) and the voice index is 6 or more (lines 1829 to 1833). Voice 9 gets no B0 write (lines 1835 to 1836). No sample test appears in the routine. Say: skips voices 6 to 9 while rhythm mode is on. **Fixed:** Corrected VoiceKeyOff: while rhythm mode is on it skips voices 6 to 9 (not the first six while a sample plays); voice 9 gets no B0 write.
 
@@ -88,5 +143,9 @@ Each finding is a checkbox. `must-fix` blocks `make review-pass` until a decompi
 - [ ] note checked and right, no action: the QUIRK 4627 (cmp al,70h against a 74-entry table), with "Runtime overlay error" starting at 0000:5400 just after the table; the PIT addresses 437D to 438B and the int 21h 2508h addresses 4372 to 4378 and 5021 to 5027; the write to 3A0h at 4DFB; the gEffectMode clear at 4923; the QUIRK 02F9 (6Fh where the ramp wants 5Fh); no far call or far pointer to 0000:03A1 in INTRO.EXE (search for A1 03 00 00 and 9A A1 03 00 00); gBlockSpare at 36DE; the variable offsets from 3F1E to 3F7A; and the names of the shared routines against I0892.C:127 to 132 (GetDriverBlock, RebaseDriverBlock, StartAdlibDriver, StopAdlibDriver), which agree.
 
 ## Summary
+
+Round 2 (bb3f897): not passed. Two must-fix, both in changed comment lines: gRhythmKeyBits (241; reopened from round 1, its readers test nonzero and C1h also sets it) and gTempoRate (242; its copy and command citations name the wrong lines). Two shoulds (the stale INTRO caller lines at 493; the C6h list at 254). Nothing escalated: no matcher, spec or pin question.
+
+Round 1 summary:
 
 The unit reads well at the level of its structure: the header, the pitch-curve and driver tables, the INT 08h comments, and the script interpreter are understandable from the source alone, and the addresses it cites check out. The errors are concentrated in four voice-level routines (VoiceKeyOff, VoiceSilence, StartVoiceNote and WriteVoiceReg), in one INT 08h bullet carried over from the EOB build (gBusyCountdown), in one QUIRK address (3EFC should be 3EFB), and in one stale cross-file citation (E07C8.C:65). The placeholder names are the L_ labels of the script handlers and the spare variables, which is fine. GetScriptFlag and gEntryTable keep their "Purpose unknown" with the evidence cited. The registry question in the note above is for the human, not the decompiler.
