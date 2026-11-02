@@ -6,7 +6,8 @@
 For each branch hand-off, oldest first (rejected ones only when named with KEY):
   1. a temporary worktree build/integrate/<key> on branch integrate/<key> from main;
   2. `git merge --no-ff --no-commit` of the commit that was handed off (not whatever the branch
-     holds now);
+     holds now); a conflict in the unit's own file is merged again with main's names given to the
+     ancestor and the branch (resolve_by_names: such conflicts come from renames at earlier merges);
   3. the recorded renames applied to the merged tree (`make rename APPLY=1`), so one address keeps
      one name whatever the branch called it;
   4. the branch's changes checked (tools/agent/safety.py: nothing under eob/, no dashes, and from a
@@ -49,6 +50,58 @@ def remove_worktree(path: Path, branch: str) -> None:
         common.git("branch", "-D", branch, cwd=main_dir, check=False)
 
 
+def resolve_by_names(tmp: Path, main_dir: Path, commit: str, uid: str, log: Path) -> bool:
+    """Most conflicts are names: main gave the unit's file new names (make rename APPLY=1 at an earlier
+    merge) while the branch edited lines nearby. Give main's names (the recorded renames and the one
+    real names of main's src/) to the common ancestor's and the branch's copies of the file too, and
+    merge the three again (git merge-file): both sides then differ from the ancestor only in what they
+    really changed. True when every conflicted file was the unit's own and merged cleanly."""
+    import tempfile
+    conflicted = common.git("diff", "--name-only", "--diff-filter=U", cwd=tmp).split()
+    own = [f for f in conflicted if f.startswith("src/") and Path(f).stem.lower() == uid]
+    if not conflicted or own != conflicted:
+        return False
+    sys.path.insert(0, str(main_dir / "tools/match"))
+    import rename
+    try:
+        rename.SRC, rename.LOG = main_dir / "src", main_dir / "re/renames.toml"
+        names = rename.recorded()
+        for addr, new in rename.real_names().items():
+            names.setdefault(addr, new)
+        base = common.git("merge-base", "HEAD", commit, cwd=tmp)
+        for f in own:
+            with tempfile.TemporaryDirectory() as d:
+                d = Path(d)
+                copies = {}
+                for side, rev in (("base", base), ("theirs", commit)):
+                    (d / side).mkdir()
+                    text = common.git("show", "%s:%s" % (rev, f), cwd=tmp, check=False)
+                    (d / side / Path(f).name).write_text(text + "\n" if text else "")
+                    rename.SRC = d / side
+                    for addr, new in names.items():
+                        try:
+                            rename.rename_address(addr, new, only=uid)
+                        except ValueError:
+                            pass
+                    copies[side] = d / side / Path(f).name
+                ours = d / "ours"
+                ours.write_text(common.git("show", "HEAD:%s" % f, cwd=tmp) + "\n")
+                r = subprocess.run(["git", "merge-file", "-p", str(ours), str(copies["base"]), str(copies["theirs"])],
+                                   capture_output=True, text=True)
+                if r.returncode:
+                    with open(log, "a") as out:
+                        out.write("resolve_by_names: %s still conflicts after main's names\n" % f)
+                    return False
+                (tmp / f).write_text(r.stdout)
+                common.git("add", "--", f, cwd=tmp)
+        with open(log, "a") as out:
+            out.write("resolve_by_names: %s merged once main's names were given to the ancestor and the branch\n"
+                      % ", ".join(own))
+        return True
+    finally:
+        rename.SRC, rename.LOG = main_dir / "src", main_dir / "re/renames.toml"
+
+
 def integrate_one(key: str, dry: bool) -> bool:
     main_dir = common.main_checkout()
     path = common.handoff_path(key)
@@ -67,6 +120,8 @@ def integrate_one(key: str, dry: bool) -> bool:
             raise Rejected("forbidden changes: " + "; ".join(problems))
         common.git("worktree", "add", "-b", tbranch, str(tmp), "main", cwd=main_dir)
         r = subprocess.run(["git", "merge", "--no-ff", "--no-commit", commit], cwd=tmp, capture_output=True, text=True)
+        if r.returncode and branch.startswith("unit/") and resolve_by_names(tmp, main_dir, commit, branch[5:], log):
+            r = subprocess.CompletedProcess(r.args, 0, "", "")
         if r.returncode:
             lines = [l.strip() for l in (r.stdout + r.stderr).splitlines() if l.strip()]
             raise Rejected("merge conflict: %s" % "; ".join(lines[-4:]))

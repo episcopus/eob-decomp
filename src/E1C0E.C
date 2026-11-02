@@ -10,6 +10,8 @@
 
 /*@flags -ml -O -Z -G */
 
+#include <dos.h>
+
 /* Runtime library (Turbo C++ 1.00, large model). */
 extern int open(char far *path, int access, ...);   /*@ 0000:6443: runtime OPEN */
 extern int close(int fd);                          /*@ 0000:50C5: runtime CLOSE */
@@ -41,7 +43,15 @@ extern void ClearTextRegion(void);                 /*@ 1DE7:0344 */
 extern void DrawText(char far *text);              /*@ 1DE7:060A */
 extern void f1A47_0169(void far *font);            /*@ 1A47:0169 */
 extern void FlushKeyBuffer(void);                  /*@ 1AAD:0480 */
-extern void WaitGameKey(void);                     /*@ 1AAD:053A */
+extern int WaitGameKey(void);                      /*@ 1AAD:053A */
+
+/* The screen routines and font the error dialog uses. */
+extern void (far *gRestoreRect)(int x, int y, int w, int h, void far *buf); /*@ ds:804E: buffer back to the screen (E1BBE.ASM) */
+extern void (far *gSaveRect)(int x, int y, int w, int h, void far *buf);    /*@ ds:80AE: screen into the buffer (E1BBE.ASM) */
+extern void (far *gDrawLine)(int x1, int y1, int x2, int y2, int colour);   /*@ ds:8062: line routine (E1547.C) */
+extern int (far *g80C6)(int width, int height);    /*@ ds:80C6: the save-under buffer size in bytes (E1BB1.ASM) */
+extern void far *gFE5A;                            /*@ ds:FE5A: the 8x8 font loaded from Font8.fnt (E07C8.C) */
+extern void far *gFont1A47;                        /*@ ds:FE4E: the current font (E1A47.C) */
 
 /* DGROUP globals and indirect far functions. */
 extern int g8115;                        /*@ ds:8115: nonzero while a status line is up (E082C.C) */
@@ -60,6 +70,15 @@ extern int gSavedDrive;                  /*@ ds:FEFE: the drive getdisk returned
 extern unsigned char gSearchAllDrives;   /*@ ds:81EA: nonzero: 1C0E:1310 also scans other drives */
 extern long gRecordLength;               /*@ ds:FF02: 1C0E:172E leaves the record's length here */
 extern long gRecordOffset;               /*@ ds:FF06: 1C0E:172E leaves the record's offset here */
+extern char far *gErrorText[];           /*@ ds:8196: the file error messages, indexed by FatalError code */
+extern void far *gMsgBuf;                /*@ ds:81E6: the saved screen rectangle of the error dialog */
+extern int gMsgLink;                     /*@ ds:FF0A: ResolveFileLink's result for the file in the dialog */
+extern int g80FE;                        /*@ ds:80FE: the text region the error dialog switches to; 1 in the image */
+
+#define KEY_ESC        0x1b     /* the key the error dialog treats as "abort" */
+#define MSG_NOT_FOUND  2        /* gErrorText[2]: "Could not find" (0ADD appends the name) */
+#define MSG_DISK_ERROR 12       /* gErrorText[12]: "A fatal disk error has occurred..." */
+#define MSG_LINE_BREAK 18       /* gErrorText[18]: "\r " */
 
 #define MAX_FILES      10
 #define SLOT_FREE      0x3fff   /* gFileHandles[i]: the slot holds no file */
@@ -87,6 +106,8 @@ int LocateOverlayFile(char far *name);   /*@ 1C0E:1310: defined later in the fil
 int LoadFileSlot(int index);               /*@ 1C0E:144E: defined later in the file */
 long ReadFromMemory(int index, void far *dst, long len); /*@ 1C0E:1240: defined later in the file */
 long LookupFileEntry(int handle, char far *name); /*@ 1C0E:172E: defined later in the file */
+void ExpandTextWindow(int cells);         /*@ 1C0E:13BB: defined later in the file */
+int ResolveFileLink(char far *name);      /*@ 1C0E:168E: defined later in the file */
 
 /* A cached file, a 19-byte record at ds:01FF (index * 19 + ds:01FF). The name is a C string; an
    empty name ends the table. */
@@ -250,16 +271,16 @@ extern long gSlotLengths[];              /*@ ds:FF0C: the record's length per sl
    number of bytes read (0 when a read failed). A file loaded in memory is copied through
    1C0E:1240; a linked record (FILE_LINKED) is clamped to what is left of the record from the
    current position. The bytes are read in 0xFA00 byte chunks, each buffer normalised through
-   1BA8:0072. DRAFT: everything matches except the codegen of the loop's `buf += n`; the original
-   adds `n` to the far offset in registers (1C0E:0519), TCC -O here folds it into an integer add to
-   the low word, no source form found yet. */
-/*@ 1C0E:0400 draft */ long FileRead(int index, char far *buf, unsigned long len)
+   1BA8:0072, and after every chunk `buf` is advanced by that many bytes with
+   MK_FP(FP_SEG(buf), FP_OFF(buf) + n): only the offset moves and the segment is kept, which is the
+   form the original shows (1C0E:0519 loads the offset, adds, reloads and stores the segment). */
+/*@ 1C0E:0400 */ long FileRead(int index, char far *buf, unsigned long len)
 {
     int handle;
     unsigned long total;
     long remaining;
     long pos;
-    int n;
+    unsigned n;
 
     handle = gFileHandles[index];
     if (handle == SLOT_FREE)
@@ -282,7 +303,7 @@ extern long gSlotLengths[];              /*@ ds:FF0C: the record's length per sl
         if (n == -1)
             return 0;
         total = total + n;
-        buf += n;
+        buf = MK_FP(FP_SEG(buf), FP_OFF(buf) + n);
     }
     buf = f1BA8_0072(buf);
     n = read(handle, buf, len);
@@ -293,11 +314,10 @@ extern long gSlotLengths[];              /*@ ds:FF0C: the record's length per sl
 /* 1C0E:0578: write up to `len` bytes from `buf` to the file in cache slot `index` and return the
    number of bytes written (0 on a short write). A file loaded in memory cannot be written (code 9);
    a linked record (FILE_LINKED) is clamped to what is left of the record from the current position.
-   The bytes are written in 0xFA00 byte chunks, each buffer normalised through 1BA8:0072. DRAFT:
-   everything matches except the codegen of the loop's `buf` advance; the original adds the constant
-   to the far offset in AX (1C0E:067D), TCC -O here loads the segment into AX and the offset into DX,
-   so the add is one byte longer; no source form found yet. */
-/*@ 1C0E:0578 draft */ long FileWrite(int index, char far *buf, unsigned long len)
+   The bytes are written in 0xFA00 byte chunks, each buffer normalised through 1BA8:0072, and after
+   every full chunk `buf` is advanced by 0xFA00 with MK_FP(FP_SEG(buf), FP_OFF(buf) + 0xFA00): only
+   the offset moves and the segment is kept, the form the original shows (1C0E:067D). */
+/*@ 1C0E:0578 */ long FileWrite(int index, char far *buf, unsigned long len)
 {
     int handle;
     unsigned long total;
@@ -326,7 +346,7 @@ extern long gSlotLengths[];              /*@ ds:FF0C: the record's length per sl
             return 0;
         len -= 0xfa00;
         total += 0xfa00;
-        buf = &buf[0xfa00];
+        buf = MK_FP(FP_SEG(buf), FP_OFF(buf) + 0xfa00);
     }
     buf = f1BA8_0072(buf);
     n = write(handle, buf, len);
@@ -338,10 +358,11 @@ extern long gSlotLengths[];              /*@ ds:FF0C: the record's length per sl
    memory has its slot position set (SEEK_SET clamps to the size, SEEK_CUR and SEEK_END add `offset`
    and clamp to [0, size]) and the new position is returned; an open file lseeks, shifting `offset`
    by the record's start and length for a linked record, and returns the result. `whence` 0, 1 and 2
-   are the runtime's SEEK_SET, SEEK_CUR and SEEK_END; any other reports code 8. DRAFT: the in-memory
-   SEEK_SET clamp and the non-memory branch lay the long comparisons out with the branches in the
-   other order; the values and control flow are right, no source form found yet. */
-/*@ 1C0E:06E5 draft */ long SeekFile(int index, long offset, int whence)
+   are the runtime's SEEK_SET, SEEK_CUR and SEEK_END; any other reports code 8. The in-memory switch
+   lists SEEK_END before SEEK_CUR so its body falls through into the SEEK_CUR clamp, and the
+   non-memory branch passes `whence` itself as lseek's third argument, which is why the original
+   pushes [bp+0xc] instead of a literal 0/1/2 (1C0E:0870, :0890, :08AF). */
+/*@ 1C0E:06E5 */ long SeekFile(int index, long offset, int whence)
 {
     register int handle;
     int record;
@@ -356,24 +377,21 @@ extern long gSlotLengths[];              /*@ ds:FF0C: the record's length per sl
         pos = gFiles[record].pos;
         switch (whence) {
         case 0:
-            if (gFiles[record].size <= offset)
+            if (gFiles[record].size < offset)
                 pos = gFiles[record].size;
             else
                 pos = offset;
             break;
-        case 1:
-            pos += offset;
-            if (pos > gFiles[record].size)
-                pos = gFiles[record].size;
-            if (pos < 0)
-                pos = 0;
-            break;
         case 2:
-            pos = gFiles[record].size + offset;
-            if (pos > gFiles[record].size)
+            pos = gFiles[record].size;
+            /* fall through: SEEK_END is the size, then the SEEK_CUR clamp below */
+        case 1:
+            if (pos + offset > gFiles[record].size)
                 pos = gFiles[record].size;
-            if (pos < 0)
+            else if (pos + offset < 0)
                 pos = 0;
+            else
+                pos += offset;
             break;
         default:
             FatalError(8, 0);
@@ -386,17 +404,17 @@ extern long gSlotLengths[];              /*@ ds:FF0C: the record's length per sl
     case 0:
         if (handle & FILE_LINKED)
             offset += gSlotOffsets[index];
-        result = lseek(handle & HANDLE_MASK, offset, 0);
+        result = lseek(handle & HANDLE_MASK, offset, whence);
         break;
     case 1:
-        result = lseek(handle & HANDLE_MASK, offset, 1);
+        result = lseek(handle & HANDLE_MASK, offset, whence);
         break;
     case 2:
         if (handle & FILE_LINKED) {
             offset -= gSlotOffsets[index];
             offset += gSlotLengths[index];
         }
-        result = lseek(handle & HANDLE_MASK, offset, 2);
+        result = lseek(handle & HANDLE_MASK, offset, whence);
         break;
     default:
         FatalError(8, 0);
@@ -465,7 +483,108 @@ extern long gSlotLengths[];              /*@ ds:FF0C: the record's length per sl
     close(fd);
     return 1;
 }
-/*@ 1C0E:0ADD stub */ int f1C0E_0ADD(int index, char far *name) { }
+/* 1C0E:0ADD: the file error dialog. It hides the mouse pointer, saves the status-line flag, the
+   window region and the current font, switches to the 8x8 font gFE5A and the region g80FE, and
+   frames the window with four 0xf lines through gDrawLine. It shows the message gErrorText[code]
+   (the array of FatalError texts at ds:8196); when `code` is MSG_NOT_FOUND ("Could not find") it
+   also shows the file `name`, wrapped in MSG_LINE_BREAK, the "Insert disk " and "into any drive."
+   literals and, when ResolveFileLink(name) is not -1, its value as a disk digit ('1' + the link).
+   It waits for a key; ESC clears the box, shows MSG_DISK_ERROR ("A fatal disk error has occurred.
+   Now returning to DOS.") and shuts the game down. Afterwards the saved attributes, region, font
+   and status flag are restored, the saved screen rectangle is written back (gRestoreRect) and the
+   buffer is freed. Returns 1. `code` is a FatalError code (1C0E:00AA) or a RetryFile mode
+   (1C0E:0046): the handlers at ds:8104 and ds:8111 are initialised to 0D9B and to this function. */
+/*@ 1C0E:0ADD */ int DisplayFileError(int code, char far *name)
+{
+    int saved811F;
+    int savedAttr1;
+    int savedAttr2;
+    int key;
+    int width;
+    int height;
+    int right;
+    int bottom;
+    unsigned bufSize;
+    char far *title;
+    char far *savedFont;
+    char text[3];
+    int saved8115;
+    int x, y;
+
+    bufSize = 0;
+    LockHidePointer();
+    saved8115 = g8115;
+    g8115 = 0;
+    title = gErrorText[code];
+    saved811F = g811F;
+    savedFont = gFont1A47;
+    f1A47_0169(gFE5A);
+    SetTextWindow(g80FE);
+    x = gTextLeft * 8;
+    y = gTextTop;
+    width = gTextWidth * 8;
+    height = gTextHeight;
+    right = x + width - 1;
+    bottom = y + height - 1;
+    if (gMsgBuf == 0) {
+        bufSize = g80C6(gTextWidth, height);
+        gMsgBuf = MemAlloc(bufSize, 0);
+    }
+    gSaveRect(gTextLeft, gTextTop, gTextWidth, height, gMsgBuf);
+    ClearTextRegion();
+    gDrawLine(x, y, right, y, 0xf);
+    gDrawLine(x, bottom, right, bottom, 0xf);
+    gDrawLine(x, y, x, bottom, 0xf);
+    gDrawLine(right, y, right, bottom, 0xf);
+    ExpandTextWindow(-1);
+    gMsgLink = ResolveFileLink(name);
+    if (code == MSG_NOT_FOUND) {
+        savedAttr1 = gTextAttr1;
+        savedAttr2 = gTextAttr2;
+        gTextAttr1 = 0xf;
+        gTextAttr2 = 0xc;
+        DrawText(title);
+        DrawText(gErrorText[MSG_LINE_BREAK]);
+        DrawText(name);
+        DrawText(gErrorText[MSG_LINE_BREAK]);
+        DrawText("Insert disk ");
+        if (gMsgLink != -1) {
+            text[0] = (char)gMsgLink + '1';
+            text[1] = ' ';
+            text[2] = 0;
+            DrawText(text);
+        }
+        DrawText("into any drive.");
+    } else {
+        savedAttr1 = gTextAttr1;
+        savedAttr2 = gTextAttr2;
+        gTextAttr1 = 0xf;
+        gTextAttr2 = 0xc;
+        DrawText(title);
+    }
+    FlushKeyBuffer();
+    key = WaitGameKey();
+    if (key == KEY_ESC) {
+        ClearTextRegion();
+        DrawText(gErrorText[MSG_DISK_ERROR]);
+        WaitGameKey();
+        ShutdownGame();
+    }
+    gTextAttr1 = savedAttr1;
+    gTextAttr2 = savedAttr2;
+    ExpandTextWindow(1);
+    gRestoreRect(gTextLeft, gTextTop, gTextWidth, height, gMsgBuf);
+    SetTextWindow(saved811F);
+    f1A47_0169(savedFont);
+    if (bufSize != 0) {
+        MemFree(gMsgBuf);
+        gMsgBuf = 0;
+    }
+    g8115 = saved8115;
+    LockShowPointer();
+    return 1;
+}
+
 
 /* 1C0E:0D9B: clear the status-line flag ds:8115 while 1C0E:0ADD draws its message box, then put
    the old value back and return 1. */
@@ -474,7 +593,7 @@ extern long gSlotLengths[];              /*@ ds:FF0C: the record's length per sl
     int saved = g8115;
 
     g8115 = 0;
-    f1C0E_0ADD(index, name);
+    DisplayFileError(index, name);
     g8115 = saved;
     return 1;
 }
@@ -553,21 +672,22 @@ extern long gSlotLengths[];              /*@ ds:FF0C: the record's length per sl
    clear its memory copy, counting the entries flagged FLAG_KEEP; then allocate a table of their
    indices and a table of their flag bits, fill them, sort them by flag bits (descending, the index
    table moved in parallel), and for every kept entry check its index and drop it into memory
-   through 1C0E:144E. Nothing happens when no entry is flagged. Called by InitOverlayCache. DRAFT:
-   the logic is right, but the sort's two temporaries and the loop variables do not settle into the
-   original's stack slots (the frame here is two bytes short of the original's 0x14); no source form
-   found yet. */
-/*@ 1C0E:0F6E draft */ void BuildFileCache(void)
+   through 1C0E:144E. Nothing happens when no entry is flagged. Called by InitOverlayCache. The two
+   tables hold `count` entries, so the index allocation is `keep = MemAlloc(count * 2, 0)` (an int
+   each, sign-extended) and the sort reads `keep[m]` and `*(keep + m + 1)`, the form the original
+   indexes with (base + m + one int, 1C0E:1042). */
+/*@ 1C0E:0F6E */ void BuildFileCache(void)
 {
     int count;
-    register int i;
-    int n;
-    int j;
-    int k;
     int far *keep;
-    char far *order;
+    unsigned char far *order;
+    int j;
+    int n;
+    int k;
     int savedOrder;
     int savedKeep;
+    register int i;
+    int idx;
 
     count = 0;
     for (i = 0; i < MAX_FILES; i++)
@@ -580,24 +700,23 @@ extern long gSlotLengths[];              /*@ ds:FF0C: the record's length per sl
     }
     if (count == 0)
         return;
-    keep = MemAlloc(count * sizeof(int), 0);
+    keep = MemAlloc(count * 2, 0);   /* 2 bytes per int */
     order = MemAlloc(count, 0);
-    n = 0;
-    for (j = 0; j < i; j++)
+    for (j = n = 0; j < i; j++)
         if (gFiles[j].flags & FLAG_KEEP) {
             keep[n] = j;
             order[n] = gFiles[j].flags & FLAG_BITS;
             n++;
         }
     for (k = count - 1; k >= 0; k--)
-        for (j = 0; j < k; j++)
-            if (order[j] < order[j + 1]) {
-                savedOrder = order[j];
-                savedKeep = keep[j];
-                order[j] = order[j + 1];
-                keep[j] = keep[j + 1];
-                order[j + 1] = savedOrder;
-                keep[j + 1] = savedKeep;
+        for (idx = 0; idx < k; idx++)
+            if (order[idx] < order[idx + 1]) {
+                savedOrder = order[idx];
+                savedKeep = keep[idx];
+                order[idx] = order[idx + 1];
+                keep[idx] = *(keep + idx + 1);
+                order[idx + 1] = savedOrder;
+                *(keep + idx + 1) = savedKeep;
             }
     for (j = 0; j < count; j++) {
         if (keep[j] < 0 || keep[j] >= i)
@@ -732,10 +851,10 @@ extern long gSlotLengths[];              /*@ ds:FF0C: the record's length per sl
    free block is too small), the file is opened (through the aliased entry when the slot's link is
    negative, recording the looked-up record length), its length is checked for a linked record, and
    the bytes are read into the copy; the slot's data pointer is set and 1 is returned. A failed
-   allocation, open or read frees the copy and returns 0. DRAFT: every byte matches except the last
-   read's success/failure blocks, where the original reloads no far pointer and jumps over the
-   failure to a shared `mov ax,1` (1C0E:1603), one byte longer; no source form found yet. */
-/*@ 1C0E:144E draft */ int LoadFileSlot(int index)
+   allocation, open or read frees the copy and returns 0. The evict and final read are written as
+   success-if/else-failure blocks so that the original's branch polarity and the tail `mov ax,1`
+   after the failure block (1C0E:1603) come out. */
+/*@ 1C0E:144E */ int LoadFileSlot(int index)
 {
     void far *data;
     struct FileEntry far *entry;
@@ -753,9 +872,10 @@ extern long gSlotLengths[];              /*@ ds:FF0C: the record's length per sl
     else
         data = 0;
     if (data == 0) {
-        if (!EvictFile(entry->size, entry->flags))
+        if (EvictFile(entry->size, entry->flags))
+            data = MemAlloc(entry->size, 0);
+        else
             return 0;
-        data = MemAlloc(entry->size, 0);
     }
     if (entry->link > 0) {
         fd = open(entry->name, 0x8001, 0x180);
@@ -774,12 +894,13 @@ extern long gSlotLengths[];              /*@ ds:FF0C: the record's length per sl
             return 0;
         }
     }
-    if (read(fd, data, entry->size) != entry->size) {
+    if (read(fd, data, entry->size) == entry->size) {
+        entry->data = data;
+        close(fd);
+    } else {
         MemFree(data);
         return 0;
     }
-    entry->data = data;
-    close(fd);
     return 1;
 }
 

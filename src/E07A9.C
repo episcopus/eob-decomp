@@ -23,7 +23,9 @@
 /* Meaningful constants of this unit. */
 /* Entry14.flags bit that, with gFBD2 bit 0, gates the flagged branch of SetMouseItem (07A9:015C to
    01B1): the icon colour row, the translated copy and the pointer image; when either gate fails the
-   branch is skipped (07A9:0161 and 0168, je 0x1bc). The same test is in src/E0D1C.C:478. */
+   branch is skipped (07A9:0161 and 0168, je 0x1bc). The same test is in src/E0D1C.C:478. The name
+   (the bit marks an item with an icon) is an inference from that branch: the bytes show only the
+   gate, and the same byte is tested for 0x20, 0x08 and 0x10 elsewhere (see Entry14.flags below). */
 #define ITEM_FLAG_ICON 0x80
 /* the MemAlloc flag that returns a paragraph-aligned, offset-0 block (src/E19BC.C:56-59) */
 #define MEMALLOC_ALIGNED 0x20
@@ -66,8 +68,7 @@ extern void far *gBuf8DCA; /*@ ds:8DCA */  /* start-up far allocation, 7500 byte
 extern void far *gBufF43E; /*@ ds:F43E */  /* start-up far allocation, 6000 bytes (07A9:0046) */
 extern unsigned char far *gSoundMap; /*@ ds:DCAC */  /* the 120-byte sound map (game number to
                                                          driver number), read from the driver file
-                                                         (adlib.dat or pcgamesn.dat, src/E177D.C:2-3,
-                                                         13) */
+                                                         (adlib.dat or pcgamesn.dat, src/E177D.C:2-3) */
 extern void far *gBufDCFC; /*@ ds:DCFC */  /* start-up far allocation, 4096 bytes (07A9:0074); read
                                               by E19FC.ASM (src/E19FC.ASM:40, through ds:DCFC and
                                               ds:DCFE) */
@@ -77,10 +78,11 @@ extern void far *gSegDCA6; /*@ ds:DCA6 */  /* the far pointer f19EC_0002(7) retu
                                               07A9:00A3): offset 0, segment gSegsFC0C[7], the word at
                                               ds:FC1A that SetUnpackBuffer gets at 07A9:00DB */
 extern void far *gSegDF4E; /*@ ds:DF4E */  /* slot 5's buffer segment, f19EC_0002(5) (07A9:00BA); the
-                                              action screen's swap buffer: Action01E3 blits it to the
-                                              action field through gFn804A (src/E0ACD.C:266), Action0264
-                                              copies a 0xF3-byte character record through it (three
-                                              Unpack0 copies, src/E0ACD.C:304-306), and FindWordPanel
+                                              action screen's swap buffer: Action01E3 (src/E0ACD.C:263)
+                                              blits it to the action field through gFn804A
+                                              (src/E0ACD.C:269), Action0264 (src/E0ACD.C:287) copies a
+                                              0xF3-byte character record through it (three Unpack0
+                                              copies, src/E0ACD.C:307-309), and FindWordPanel
                                               passes it to gFn807E and gFn804A (src/EOV2.C:482, 522) */
 extern void far *gSegEFC2; /*@ ds:EFC2 */  /* slot 3's buffer segment, f19EC_0002(3) (07A9:00CB); overlay 3
                                               reads the far pointer (ds:EFC2 and ds:EFC4): ovl3:0815, 0833,
@@ -113,7 +115,7 @@ extern unsigned char gFBD2; /*@ ds:FBD2 */  /* bit 0, with Entry14.flags bit 0x8
                                                  (src/E0D1C.C:50); read at 07A9:0163 and
                                                  src/E0D1C.C:478 */
 extern int g8102; /*@ ds:8102 */  /* the mode word SetMouseItem tests at 07A9:016A (the colour row
-                                     against the ds:0090 dummy) and passes to f17A6_197E (07A9:018F);
+                                     against the ds:0090 dummy) and passes to TranslateImage (07A9:018F);
                                      the switch at 17A6:199E tests it (cases 0, 2 and 3). src/ reads
                                      it three ways: "graphics choice" (src/E07C8.C:27), "the video
                                      mode ... 3 and 4 select the 6-bit cells" (src/E1DE7.C:46) and
@@ -127,13 +129,14 @@ extern int g8102; /*@ ds:8102 */  /* the mode word SetMouseItem tests at 07A9:01
    not measured here, so [H] there too. No writer of ds:80D2 in EOB.EXE or the overlays (a
    literal-address search). */
 extern void (far *gFn80D2)(void far *colors); /*@ ds:80D2 */
-extern void far *g80E2; /*@ ds:80E2 */  /* passed as the third argument of f17A6_197E (07A9:0197),
+extern void far *g80E2; /*@ ds:80E2 */  /* passed as the third argument of TranslateImage (07A9:0197),
                                            which reads it as the xlatb table (BX and DX from [bp+0xe]
                                            and [bp+0x10], 17A6:1995 and 1998; xlatb at 17A6:19BE).
                                            Purpose unknown: what writes ds:80E2 is not checked here */
 extern void far *gDF48; /*@ ds:DF48 */  /* the 0x12C-byte buffer LoadItemSheets allocates and stores
-                                           here (ovl2:041D; the far call at ovl2:0425..0428). This unit
-                                           shows it as the translated icon image: f17A6_197E's
+                                           here (the far call at ovl2:041D; the result is stored at
+                                           ovl2:0425 and 0428). This unit
+                                           shows it as the translated icon image: TranslateImage's
                                            destination (pushed at 07A9:019B and 019F), installed as the
                                            mouse pointer through gIconsDDE4[0x59] (07A9:01B9, 01C6 to
                                            01CE). The allocation's segment word 00C0 is an overlay
@@ -163,7 +166,7 @@ extern void f1A47_0169(char far *font); /*@ 1A47:0169 */
 extern void LoadDecorateIcons(void); /*@ 2106:0048 */
 extern void RunMapLoop(void); /*@ 0ACD:0E8A */
 extern void SetCurrentItem(int n); /*@ 0D1C:0304 */
-/* 0BD2:05B5 tests the item flag bit 0x40 (src/E0BD2.C:15-16). Called at 07A9:0126 with the item
+/* 0BD2:05B5 tests the item flag bit 0x40 (src/E0BD2.C:14-15). Called at 07A9:0126 with the item
    index, just before the " taken.\r" message (07A9:012D), when g811F == 7. Purpose unknown. */
 extern void DrawItemName(int n); /*@ 0BD2:05B5 */
 extern void DrawText(char far *text); /*@ 1DE7:060A */
@@ -174,7 +177,7 @@ extern void DrawText(char far *text); /*@ 1DE7:060A */
    word (17A6:199B) picks the path (cases 0, 2 and 3 at 17A6:199E to 19C8). The call
    (07A9:0193..01B1) passes the icon far pointer first, then gDF48 (the translated icon image),
    g80E2 (Purpose unknown, its only reader is 07A9:0197) and g8102. */
-extern void f17A6_197E(void far *src, void far *dst, void far *xlat, int mode); /*@ 17A6:197E */
+extern void TranslateImage(void far *src, void far *dst, void far *xlat, int mode); /*@ 17A6:197E */
 /* 1BB1:0002 stores the hot-spot offset and a pointer shape record; the caller passes the hot spot
    (8,8) when item > 0 and (0,0) otherwise, and the record gIconsDDE4[item] in both cases (see below). */
 extern void SetMousePointerShape(int hotX, int hotY, void far *icon); /*@ 1BB1:0002 */
@@ -196,14 +199,16 @@ extern void SetMousePointerShape(int hotX, int hotY, void far *icon); /*@ 1BB1:0
 /*@ 07A9:000A */ void StartupAlloc(int argc, char far * far *argv)
 {
     gF43C = 1;
-    /* QUIRK 07A9:0012: the test's result is unused: both branches reach 07A9:0024, so the body
-       is empty (07A9:0012..0024). */
+    /* QUIRK 07A9:0012: the condition's result is unused, so the body is empty (07A9:0012..0024):
+       with argc == 0 the bytes still read argv[1] (les bx,[bp+8]; les bx,es:[bx+4], 07A9:0018 and
+       001B) and its byte 1 (cmp byte es:[bx+1],0, 07A9:001F); only the result is dropped, both
+       branches reaching 07A9:0024, so a port keeps the read. */
     if (argc == 0 && argv[1][1])
         ;
     gFB45 = 0;
     /* of the five start-up allocations only this block asks for flag 0x20 (the other four pass 0;
        0x20 also appears in src/E07C8.C:211-247 and src/E1B82.C:114, 122 (Unpack)): E19BC.C:56-59 turns it
-       into an offset-0 block, the block shape E1B82.C:17-18 describes for the work buffer. Why
+       into an offset-0 block, the block shape E1B82.C:18-22 describes for the work buffer. Why
        this block alone gets the flag is Purpose unknown. */
     gBuf8DCA = MemAlloc(7500L, MEMALLOC_ALIGNED);
     gBufF43E = MemAlloc(6000L, 0);
@@ -257,7 +262,7 @@ extern void SetMousePointerShape(int hotX, int hotY, void far *icon); /*@ 1BB1:0
                    itself (ovl2:0478) has no branch on g8102. Why g8102 == 0 gets the dummy is
                    Purpose unknown. */
                 gFn80D2("");
-            f17A6_197E(gIconsDDE4[item], gDF48, g80E2, g8102);
+            TranslateImage(gIconsDDE4[item], gDF48, g80E2, g8102);
             /* gIconsDDE4[0x59] is gDF48 (0xDDE4 + 0x59 * 4 = 0xDF48), the same pointer just passed
                as the second argument: the translated icon image shown by 1BB1:0002 as the mouse
                pointer for a record whose flag has 0x80 set. gDF48's writer is in the overlay

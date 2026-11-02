@@ -122,7 +122,7 @@ extern void UpdateDDEffects(void); /*@ 1414:0D63 */
 extern void f0EF3_097B(char a, int b, int c, int d, int e); /*@ 0EF3:097B */
 extern int CopyItemToFreeSlot(int n); /*@ 0BD2:089E */
 extern void InsertListItem(void far *head, int key, int item, int sound); /*@ 0BD2:01D0 */
-extern int f17A6_0F61(int x, int y); /*@ 17A6:0F61 */
+extern int Distance(int x, int y); /*@ 17A6:0F61 */
 extern int f0D1C_0BAB(int obj); /*@ 0D1C:0BAB */
 extern int GetIndexedByte(char index, char limit, char offset); /*@ 0A72:0006 */
 extern int SubtractInts(int minuend, int subtrahend); /*@ 0A72:058C */
@@ -134,7 +134,7 @@ extern void ShutdownGame(void); /*@ 07C8:058A */
 extern void far *memset(void far *dst, int c, unsigned n); /*@ 0000:6384 */
 
 void Obj0EC3(struct Obj28 far *obj);   /* forward: Obj0E48 reaches it before its definition */
-extern int f17A6_0314(int obj, int volume); /*@ 17A6:0314 */
+extern int DirectionFromPoints(int obj, int volume); /*@ 17A6:0314 */
 extern int f0D1C_0006(int value); /*@ 0D1C:0006 */
 extern int f0D1C_00DA(int value, int page); /*@ 0D1C:00DA */
 extern void fOvl4_1F51(int n); /*@ 2116:005C */   /* overlay 4 entry, ovl4:1F51 */
@@ -163,7 +163,7 @@ void Obj10F3(struct Obj28 far *obj);   /* forward: 05EA reaches it before its de
     if (obj->type == 7 || obj->type == 8 || obj->type == 0xa)
         return;
     obj->type = 0;
-    obj->orient = (f17A6_0314(obj->id, gSoundVolume) ^ 4) >> 1;
+    obj->orient = (DirectionFromPoints(obj->id, gSoundVolume) ^ 4) >> 1;
     obj->m16 |= 8;
 }
 
@@ -208,10 +208,10 @@ void Obj10F3(struct Obj28 far *obj);   /* forward: 05EA reaches it before its de
 
     if (obj->type != 7 && obj->type != 8 && obj->type != 9 && obj->type != 0xa
             && obj->count > 0) {
-        first = f17A6_0F61(obj->id, gSoundVolume);
+        first = Distance(obj->id, gSoundVolume);
         if (first >= 4)
             return;
-        dir = f17A6_0314(obj->id, gSoundVolume) - obj->orient * 2 - 3;
+        dir = DirectionFromPoints(obj->id, gSoundVolume) - obj->orient * 2 - 3;
         if (dir < 0)
             dir += 8;
         if (dir <= 2 && first >= 2)
@@ -355,7 +355,7 @@ void Obj10F3(struct Obj28 far *obj);   /* forward: 05EA reaches it before its de
         }
     }
 }
-/* 08E6:0430: turn an object toward the direction f17A6_0314(id, value) reports. When the object's
+/* 08E6:0430: turn an object toward the direction DirectionFromPoints(id, value) reports. When the object's
    state is over 6 it resets it to 0 and toggles g321E, which selects the direction table g31FE or
    g320E. The target -1 leaves the object alone; bit 3 of m16 XORs 4 into it. When the target is even
    and id + g1790[target >> 1] equals gSoundVolume, the object takes one step through TurnObject with
@@ -382,7 +382,7 @@ void Obj10F3(struct Obj28 far *obj);   /* forward: 05EA reaches it before its de
         table = g320E;
     dir = obj->orient * 2;
     id = obj->id;
-    target = f17A6_0314(id, value);
+    target = DirectionFromPoints(id, value);
     if (target == -1)
         return;
     if (obj->m16 & 8)
@@ -497,7 +497,7 @@ void Obj10F3(struct Obj28 far *obj);   /* forward: 05EA reaches it before its de
 }
 /* 08E6:0765: the object's action for UpdateObjects. It returns 0 unless the object's 1A3B record
    has m0E bit 6, the object has m19 left and m18 is zero (otherwise m18 is decremented and 0 is
-   returned). It then checks f17A6_0F61(id, gSoundVolume) is at most 3 and f17A6_0314(id,
+   returned). It then checks Distance(id, gSoundVolume) is at most 3 and DirectionFromPoints(id,
    gSoundVolume) equals orient * 2, and walks f0D1C_00DA(id, orient), following it until it reaches
    gSoundVolume; each step must have g194B[gB894[value * 9 + (orient ^ 2)]] bits 0..1 set and no
    gB894[value * 9 + 4] count, else 0 is returned. The action then switches on b0: 4 turns to 9 and
@@ -527,9 +527,9 @@ void Obj10F3(struct Obj28 far *obj);   /* forward: 05EA reaches it before its de
         obj->m18--;
         return 0;
     }
-    if (f17A6_0F61(obj->id, gSoundVolume) > 3)
+    if (Distance(obj->id, gSoundVolume) > 3)
         return 0;
-    if (f17A6_0314(obj->id, gSoundVolume) != obj->orient * 2)
+    if (DirectionFromPoints(obj->id, gSoundVolume) != obj->orient * 2)
         return 0;
     orient = obj->orient;
     value = f0D1C_00DA(obj->id, orient);
@@ -983,7 +983,7 @@ fire:
     }
     if (any == 0) {
         for (i = 1; i < 30; i++) {
-            if (f17A6_0F61(gObjs[i].id, gSoundVolume) > 3) {
+            if (Distance(gObjs[i].id, gSoundVolume) > 3) {
                 Obj0EC3(&gObjs[i]);
                 break;
             }
