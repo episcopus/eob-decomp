@@ -1638,3 +1638,21 @@ new = "GetHitTarget"
 kind = "function"
 why = "0A72:0522 returns the number a d20 to-hit roll must reach before the attacker bonus; its only caller 0DE8:0007 computes ac = GetHitTarget(who, gTable1A3B[b0].m00) - bonus and compares a d20 roll against it"
 date = "2026-11-01"
+
+[[rename]]
+id = "0000:3F77=StartAdlibDriver"
+addr = "0000:3F77"
+old = "f0_3F77"
+new = "StartAdlibDriver"
+kind = "function"
+why = "gSoundCard 0 is AdLib (src/E177D.C:147-149 opens adlib.dat; :178 'On AdLib (gSoundCard 0)'): StartupGame's case 0 calls it to start the e_text AdLib driver, hooking INT 08h and programming PIT channel 0 (src/E_TEXT.ASM:81-123), then resets the AdLib through ResetVoices (src/E_TEXT.ASM:101, :351-359); the old 'PC speaker driver on' label is wrong (WHITEPAPER.md:107, :134)"
+date = "2026-11-01"
+
+[[rename]]
+id = "0000:3FCA=StopAdlibDriver"
+addr = "0000:3FCA"
+old = "f0_3FCA"
+new = "StopAdlibDriver"
+kind = "function"
+why = "the AdLib driver off (gSoundCard 0 is AdLib, src/E177D.C:178): ShutdownGame's case 0 calls it to restore the saved INT 08h vector, reset the AdLib through ResetVoices (src/E_TEXT.ASM:125-152, :140) and stop PIT channel 0; the old 'PC speaker driver off' label is wrong"
+date = "2026-11-01"
