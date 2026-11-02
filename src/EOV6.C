@@ -62,7 +62,7 @@ extern int gTextLeft; /*@ ds:FE64 */
 extern int gTextTop; /*@ ds:FE66 */
 extern char gFileNameBuf[]; /*@ ds:FE6E */              /* the text buffer ovl6:0858 formats into */
 extern void *gFont1A47; /*@ ds:FE4E */          /* the current font (1A47:0169 records it) */
-extern void *gFE5A; /*@ ds:FE5A */              /* the 8x8 font loaded from Font8.fnt */
+extern void *gFont8x8; /*@ ds:FE5A */              /* the 8x8 font loaded from Font8.fnt */
 extern void *gA9C0; /*@ ds:A9C0 */              /* the 6x6 font loaded from FONT6.FNT */
 extern int gPartyCell; /*@ ds:FBCA */
 extern signed char gF57E; /*@ ds:F57E */        /* the colour2 argument ovl6:0858 passes; 082C:0898
@@ -352,7 +352,7 @@ void f0B9B(int message);
 done:
         FlushKeyBuffer();
         SetTextWindow(4);
-        f1A47_0169(gFE5A);
+        f1A47_0169(gFont8x8);
         if (!foundWounded && !result)
             f0B9B(0x2b);
         return result;
@@ -395,7 +395,7 @@ done:
 
     region = gTextRegion;
     savedFont = gFont1A47;
-    f1A47_0169(gFE5A);
+    f1A47_0169(gFont8x8);
     SetTextWindow(0xa);
     if (draw) {
         gStatusLine = 0;
@@ -503,7 +503,7 @@ done:
     savedRegion = gStatusLine;
     savedFont = gFont1A47;
     savedSelect = gTextRegion;
-    f1A47_0169(gFE5A);
+    f1A47_0169(gFont8x8);
     LockHidePointer();
     g159 = gF57E;
     SetTextWindowAndClear(0xb);

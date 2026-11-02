@@ -89,7 +89,7 @@
                                         ; _SetFarPointer 1A72:02FE (src/E1A72.ASM:442), read by _GetFarPointer 1A72:033A
         EXTRN   g8174:WORD              ; @ ds:8174: argument of the [ds:80AA] call, segment; written by
                                         ; _SetFarPointer 1A72:02FE (src/E1A72.ASM:443), read by _GetFarPointer 1A72:033A
-        EXTRN   g80C6:DWORD             ; @ ds:80C6: indirect far function, returns the save-under buffer
+        EXTRN   gSaveRectSize:DWORD             ; @ ds:80C6: indirect far function, returns the save-under buffer
                                         ; size in bytes; called as (width, height) at 1BB1:006F
         EXTRN   g80AA:DWORD             ; @ ds:80AA: indirect far function, called with ds:8172/8174
         EXTRN   g80A2:DWORD             ; @ ds:80A2: indirect far function, no arguments
@@ -163,7 +163,7 @@ setsize:
         push    ax
         mov     word ptr [_gPointerWidth8],dx
         push    dx
-        call    dword ptr [g80C6]
+        call    dword ptr [gSaveRectSize]
         add     sp,4
         add     ax,HEAP_BLOCK           ; add back the 16 that LargestFreeBlock takes off
                                         ; (E19BC.C:142); 1BB1:0076

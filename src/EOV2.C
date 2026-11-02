@@ -130,7 +130,7 @@ extern void far *gDF48; /*@ ds:DF48 */
 extern void far *gSegDF4E; /*@ ds:DF4E */
 extern char far *gBufF534; /*@ ds:F534 */
 extern void far *gFont1A47; /*@ ds:FE4E */
-extern void far *gFE5A; /*@ ds:FE5A */
+extern void far *gFont8x8; /*@ ds:FE5A */
 extern int gTextHeight; /*@ ds:FE60 */
 extern int gTextWidth; /*@ ds:FE62 */
 extern int gTextLeft; /*@ ds:FE64 */
@@ -396,7 +396,7 @@ extern void FileClose(int handle); /*@ 1C0E:03BB */
    when it succeeded; both are nonzero, which is how EnterMapScreen (src/E0ACD.C:909-918) later
    shows the loaded map and the inventory. On failure it prints "Unable to load your saved game!",
    clears gA998 and redraws the panel to wait again. Entry 1 sets gA998 to 0, selects the 8x8 font
-   (f1A47_0169 with gFE5A, the Font8.fnt loaded at src/E07C8.C:376, src/E1C0E.C:53) and runs
+   (f1A47_0169 with gFont8x8, the Font8.fnt loaded at src/E07C8.C:376, src/E1C0E.C:53) and runs
    RunCharacterPanel (ovl0:28F9), then restores the 6x6 font (gA9C0, the FONT6.FNT loaded at
    src/E07C8.C:377, src/EOV0.C:168, src/EOV3.C:42): the "Start a new party" entry [H]
    (docs/design/WHITEPAPER.md:137). Entry 2 shuts the game down with exit. Called by LoadItemData. */
@@ -428,7 +428,7 @@ extern void FileClose(int handle); /*@ 1C0E:03BB */
             }
             break;
         case 1:
-            f1A47_0169(gFE5A);
+            f1A47_0169(gFont8x8);
             RunCharacterPanel();
             f1A47_0169(gA9C0);
             gA998 = 0;
@@ -491,7 +491,7 @@ extern void FileClose(int handle); /*@ 1C0E:03BB */
 }
 
 /* ovl2:09ED: the "find the word" dungeon puzzle panel. Saves ds:811F and the font, switches to the
-   8x8 font gFE5A, sets the text colour gColour179 from gF57E, draws the panel frame with two
+   8x8 font gFont8x8, sets the text colour gColour179 from gF57E, draws the panel frame with two
    DrawFilledPanel calls (082C:09D5) and insets the region by them, picks one of the 30 gWordCells
    records at random (RollDice), draws its item icon and the "On the page with this symbol... Find
    line %d / Enter word %d" text (082C:0898 DrawShadowText), reads the player's word through
@@ -510,7 +510,7 @@ extern void FileClose(int handle); /*@ 1C0E:03BB */
 
     saveRegion = gTextRegion;
     font = gFont1A47;
-    f1A47_0169(gFE5A);
+    f1A47_0169(gFont8x8);
     gColour179 = gF57E;
     gStatusLine = 0;
     SetTextWindow(0xd);
