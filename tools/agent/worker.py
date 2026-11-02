@@ -10,7 +10,8 @@ session (at most SESSIONS):
   1. claim: its own hand-off that `make integrate` rejected (once per worker run, with the reason
      in the prompt), else its own claim a session left with uncommitted changes (once per worker run;
      nothing else would take it: `make next` skips claimed units), else UNIT, else the next unit for
-     its tier (`make next`), or a review;
+     its tier (`make next`), or a review (a retaken claim left uncommitted again has its changes
+     stashed, `git stash list`, and is settled from its commits);
   2. run the session command in the unit's worktree, the prompt (tools/agent/worker_prompt.md,
      filled in) in a file. The default runs OpenCode on its background service, which holds the
      provider credentials, with a session id chosen here so the session can be found again:
@@ -312,6 +313,13 @@ def loop(a) -> int:
             a.agent, a.role, key, branch, wt, rejected[0][1] if rejected else "", a.tier),
             a.timeout * 60, log, model_flag, "%s %s" % (a.agent, key), a.cost_cap, on_start)
         outcome = settle(a.agent, key, branch, wt, head_before)
+        if outcome == "left" and rejected and rejected[0][1] == "LEFT" and wt.exists():
+            # left uncommitted again after its retake: set the changes aside (recoverable, never
+            # deleted) and settle what is committed, so the claim is not held with no one on it
+            note = "worker %s: %s left uncommitted twice" % (a.agent, key)
+            common.git("stash", "push", "-m", note, cwd=wt, check=False)
+            print("worker: %s: uncommitted changes stashed (git stash list: %s)" % (key, note), flush=True)
+            outcome = settle(a.agent, key, branch, wt, head_before)
         after = common.l2_count(wt, uid) if wt.exists() else common.l2_count(common.ROOT, uid)
         fixes_after = common.must_fix_count(wt, uid) if wt.exists() else fixes_before
         if a.role == "decompiler" and not r["refused"] and r["code"] != "stopped":
