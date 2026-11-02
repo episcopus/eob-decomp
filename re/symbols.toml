@@ -1575,6 +1575,9 @@ unit = "e08e6"
 addr = "08E6:0309"
 size = 245
 evidence = ["near", "frame"]
+name = "TurnObject"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e08e6_03fe"

@@ -114,6 +114,7 @@ extern int f17A6_0314(int obj, int volume); /*@ 17A6:0314 */
 extern int f0D1C_0006(int value); /*@ 0D1C:0006 */
 extern int f0D1C_00DA(int value, int page); /*@ 0D1C:00DA */
 extern void fOvl4_1F51(int n); /*@ 2116:005C */   /* overlay 4 entry, ovl4:1F51 */
+extern void PlaySoundVolume(int sound, int volume); /*@ 177D:0106 */
 
 /* 08E6:000B: reset an object whose type is not 7, 8 or 0xa: clear the type, pick an orientation
    from 17A6:0314(id, gSoundVolume) and set flag bit 3. Called by 0EF3:1702. */
@@ -249,7 +250,47 @@ extern void fOvl4_1F51(int n); /*@ 2116:005C */   /* overlay 4 entry, ovl4:1F51 
     f0D1C_0006(id);
 }
 
-/*@ 08E6:0309 stub */ int TurnObject(struct Obj28 far *obj, int arg2, int arg3) { return 0; }
+/* 08E6:0309: turn an object toward a new id and orientation. When `id` is not -1 and differs from
+   the object's own id, look up the nine-byte gB894 record for `id` and pick the byte at +orient^2:
+   when g194B of that byte has no bit 2, or `id` is the current gSoundVolume, fail (0). When the
+   record's +4 count has bits 0..2 set and `id` is nonzero, take the frame FindObjectFrameBit picks
+   (fail if none) and move the object to (id, orient); for a plain turn (`id` is the object's own id
+   or -1) only `orient` is applied when it is not -1. Then notify f0D1C_0006 of the old id and,
+   unless gF442 is set, play the object's record m17 through PlaySoundVolume. Returns 1 on success.
+   Called by 0430, 0B34 and 0B94 (StepObjectOrient passes -1 to leave a field alone). */
+/*@ 08E6:0309 */ int TurnObject(struct Obj28 far *obj, int id, int orient)
+{
+    char far *rec;
+    char dir;
+    char frame;
+    int oldId;
+
+    oldId = obj->id;
+    if (obj->id != id && id != -1) {
+        rec = (char far *)&gB894[id * 9];
+        if (orient == -1)
+            orient = obj->orient;
+        dir = orient ^ 2;
+        if ((g194B[rec[dir]] & 4) == 0)
+            return 0;
+        if (id == gSoundVolume)
+            return 0;
+        if ((rec[4] & 7) && id != 0) {
+            frame = FindObjectFrameBit(obj, id);
+            if (frame == -1)
+                return 0;
+            obj->frame = frame;
+        }
+        MoveObjectToId(obj, id, orient);
+        orient = -1;
+    }
+    if (orient != -1)
+        obj->orient = orient;
+    f0D1C_0006(oldId);
+    if (!gF442)
+        PlaySoundVolume(gTable1A3B[obj->b0].m17, obj->id);
+    return 1;
+}
 
 /* 08E6:03FE: for an object with flag bit 0 set: when its type is 8, run the 0055 cleanup, when the
    type is not 0xa, clear the type and reset its sound field. Called by UpdateObjects. */
