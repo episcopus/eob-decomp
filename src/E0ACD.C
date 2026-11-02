@@ -4,7 +4,7 @@
    messages ("You can't go that way."), turn undead, eat, browse the item list, and set the sound
    volume and page globals. Names that are not established say what a function does. */
 
-/*@flags -ml -O -Z */
+/*@flags -ml -O -Z -B */
 
 /* A 60-byte action record reached through a far pointer. Only the two fields the handlers touch
    are named; everything else is padding. */
@@ -643,10 +643,59 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
 {
 }
 
-/* 0ACD:0D9D draft: the key dispatcher over the nine-entry table at cs:0E48. Not written yet. */
-/*@ 0ACD:0D9D draft */ void Action0D9D(int key)
+/* 0ACD:0D9D: the key dispatcher for the map screen. It acts only while the mouse is disabled and
+   outside the rest phase (gDCAA != 5). It searches the nine-entry (key, handler) table at
+   cs:0E48; key 0x12/0x20/0x2e/0x1f set the direction dir 0/1/2/3, key 0x34 runs Action08E7, key
+   0x17 calls f0BD2_1001(gA99A, gF51A), keys 0x21 and 0x15 call Action0A61(0) and Action0A61(1)
+   and key 0x23 calls Action0BA6. The four action cases are skipped in mode 2 (gFB44 == 2), and a
+   direction set is passed to Action0A34 unless the mode is 2. */
+/*@ 0ACD:0D9D */ void Action0D9D(int key)
 {
-    (void)key;
+    int dir;
+
+    if (!gMouseDisabled)
+        return;
+    if (gDCAA == 5)
+        return;
+    dir = -1;
+    switch (key) {
+    case 0x34:
+        Action08E7();
+        break;
+    case 0x17:
+        if (gFB44 != 2)
+            f0BD2_1001(gA99A, gF51A);
+        break;
+    case 0x21:
+        if (gFB44 != 2)
+            Action0A61(0);
+        break;
+    case 0x15:
+        if (gFB44 != 2)
+            Action0A61(1);
+        break;
+    case 0x23:
+        if (gFB44 != 2)
+            Action0BA6();
+        break;
+    case 0x12:
+        dir = 0;
+        break;
+    case 0x20:
+        dir = 1;
+        break;
+    case 0x2e:
+        dir = 2;
+        break;
+    case 0x1f:
+        dir = 3;
+        break;
+    }
+    if (dir == -1)
+        return;
+    if (gFB44 == 2)
+        return;
+    Action0A34(dir);
 }
 
 /* 0ACD:0E6C: gets the current list node from 16A5:005A(gList) and dispatches it through 0D9D. */
