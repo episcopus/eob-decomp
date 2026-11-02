@@ -74,9 +74,9 @@ extern void InstallHardErr(void);                 /*@ 1A63:0019 */
 extern void f1D8F_0010(void);                     /*@ 1D8F:0010 */
 /* 16A5:0D78: stores its 32-bit second argument as a far pointer at ds:FC7C (the callee reads
    [bp+8] into ds:FC7C and [bp+0xa] into ds:FC7E) and ignores the first word argument, so main calls
-   it as f16A5_0D78(0, 0L): the word first is what makes Turbo C push 0L then the word, exactly as
+   it as SetNodeCallback(0, 0L): the word first is what makes Turbo C push 0L then the word, exactly as
    the original does. */
-extern void f16A5_0D78(int arg, long value);      /*@ 16A5:0D78 */
+extern void SetNodeCallback(int arg, long value);      /*@ 16A5:0D78 */
 extern void far *f1A47_0005(char far *name);      /*@ 1A47:0005 */
 extern void f1A47_0169(void far *font);           /*@ 1A47:0169 */
 extern int CheckMemoryChain(void);                /*@ 1990:0071 */
@@ -148,7 +148,7 @@ int AllocationFailure(void);
         g80EA = 1;
         gTextAttr1 = 0xf;
         gTextAttr2 = 0xc;
-        f16A5_0D78(0, 0L);
+        SetNodeCallback(0, 0L);
         if (g3092) {
             if (!g8148)
                 gMouseDisabled = 1;
