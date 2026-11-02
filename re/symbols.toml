@@ -6980,6 +6980,9 @@ unit = "eov0"
 addr = "ovl0:1F66"
 size = 235
 evidence = ["ovl", "near", "frame"]
+name = "PickOption"
+level = "L2"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "eov0_2051"

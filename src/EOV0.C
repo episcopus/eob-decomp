@@ -104,6 +104,16 @@ extern char gStr6272[]; /*@ ds:6272 */ /* a screen name (Purpose unknown) */
 extern char gStr627B[]; /*@ ds:627B */ /* a screen name (Purpose unknown) */
 extern char gStr6283[]; /*@ ds:6283 */ /* a screen name (Purpose unknown) */
 extern void SetTextWindow(int n); /*@ 1DE7:0009 */
+extern void DrawRect(int x1, int y1, int x2, int y2, int colour); /*@ 082C:04C4 */
+extern void FlushKeyBuffer(void); /*@ 1AAD:0480 */
+extern void DrawOptionList(int panel, char far * far *names, long mask, int shift, int spacing); /*@ 14EF:0154 */
+extern int UpdateOptionList(int panel, char far * far *names, long counter, long mask, int shift); /*@ 14EF:0274 */
+extern char far *g11AD[]; /*@ ds:11AD */ /* the race names (src/E1547.C) */
+extern int g197; /*@ ds:0197 */ /* a panel field cleared by ovl0:1F66 (Purpose unknown) */
+extern int gFC8A; /*@ ds:FC8A */ /* the parity of the key ovl0:1F66 last handled (Purpose unknown) */
+extern unsigned char g6079[]; /*@ ds:6079 */ /* per-character x read by ovl0:1F66 (Purpose unknown) */
+extern unsigned char g607D[]; /*@ ds:607D */ /* per-character y read by ovl0:1F66 (Purpose unknown) */
+extern char gStr623F[]; /*@ ds:623F */ /* a fixed panel label (Purpose unknown) */
 extern void (far *gDrawText)(char far *text, int a, int b, int c, int d); /*@ ds:80CA */
 extern char far *gFont1A47; /*@ ds:FE4E */ /* the current font (src/E1547.C) */
 extern void far *gA9C0; /*@ ds:A9C0 */ /* the 6x6 font loaded from FONT6.FNT (src/E07A9.C) */
@@ -460,7 +470,29 @@ extern void far *g5E64[0x11]; /*@ ds:5E64 */ /* the 17 sliced icon pointers this
         if (g116E[row])
             gOutDC98[0] = 0x12;
     }
-}/*@ ovl0:1F66 stub */ void Ovl0_1F66(void) {}
+}/* ovl0:1F66: opens the option list for the current character's race and returns the chosen value.
+   It draws the character's panel box (DrawRect), clips and labels it, then repeatedly runs
+   UpdateOptionList(1, g11AD, 0L, 0xffffffffL, 0) until it returns a value other than -1, redrawing
+   the panel row ovl0:1224 after each -1, and stores the value's parity in gFC8A. Called by
+   ovl0:23EC. */
+/*@ ovl0:1F66 */ int PickOption(void)
+{
+    int v;
+
+    g8115 = 0;
+    LockHidePointer();
+    DrawRect(g6079[gDCB0], g607D[gDCB0], g6079[gDCB0] + 0x20, g607D[gDCB0] + 0x21, 0xc);
+    ClipRect(0, 0, 0x12, 0x40, 0x14, 0x80, 2, 0);
+    DrawShadowText(gStr623F, 0x93, 0x43, 9, 0);
+    LockShowPointer();
+    FlushKeyBuffer();
+    g197 = 0;
+    DrawOptionList(1, g11AD, 0xffffffffL, 0, 0);
+    while ((v = UpdateOptionList(1, g11AD, 0L, 0xffffffffL, 0)) == -1)
+        Ovl0_1224();
+    gFC8A = v % 2;
+    return v;
+}
 /* ovl0:2051: returns the index (0-based) of the `n`th set bit of `mask`, scanning up to `count`
    bits; when fewer than `n` bits are set it returns `count`. No direct caller found. */
 /*@ ovl0:2051 */ int FindNthSetBit(int mask, int n, int count)
