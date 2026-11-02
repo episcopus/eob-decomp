@@ -77,8 +77,9 @@ extern struct Obj28 gObjs[]; /*@ ds:8A82 */
 struct Entry27 {            /* 27-byte records at ds:1A3B, indexed by gObjs[obj].b0 */
     char pad00[0x0E];
     signed char m0E;        /* +0xE (ds:1A49), bit 2 tested by 0D1C:0BEB */
-    int m0F;                /* +0xF (ds:1A4A), read by 0D1C:0A43 */
-    char pad11[0x19 - 0x11];
+    long m0F;               /* +0xF (ds:1A4A), tested by 0D1C:0A43; a `long` because the original
+                               emits the and/or bit-test form at 0D1C:0B17 */
+    char pad13[0x19 - 0x13];
     signed char m19;        /* +0x19 (ds:1A54), read by 0D1C:09CB */
     signed char m1A;        /* +0x1A (ds:1A55), read by 0D1C:0BAB */
 };
@@ -244,9 +245,11 @@ int f0D1C_02DC(void);
 /* 0D1C:0163: Purpose unknown: over the last two of the 27 word slots of gChars[who].m77 (25
    and 26), returns 1 when one of them holds an item (an index into the ds:8DD2 records) whose
    m02 is 0x2F and whose m0B equals `fieldB`, otherwise 0. Slots 25 and 26 are the only two
-   inspected. Called by 122E, 1414 and overlays 1 and 6. DRAFT: matches every byte except that the
-   original reloads `item` into AX before the first multiply (0D1C:018A `mov ax, di`); ours
-   forwards the value AX still holds from the test (two bytes shorter). */
+   inspected. Called by 122E, 1414 and overlays 1 and 6. DRAFT: matches every byte except one
+   two-byte instruction. The original reloads `item` into AX before the first multiply
+   (0D1C:0194 `mov ax, di`); our build with -ml -O -Z has AX still equal to `item` from the test
+   at 0D1C:0190 and elides the load (2 bytes shorter, every later byte identical). TCC's
+   redundant-load elimination in the -O optimiser. */
 /*@ 0D1C:0163 draft */ int f0D1C_0163(int who, int fieldB)
 {
     struct CharRec far *rec;
@@ -255,8 +258,7 @@ int f0D1C_02DC(void);
 
     rec = &gChars[who];
     for (i = 25; i <= 26; i++) {
-        item = rec->m77[i];
-        if (item) {
+        if (item = rec->m77[i]) {
             if (gTable8DD2[item].m02 == 0x2F && gTable8DD2[item].m0B == fieldB)
                 return 1;
         }
