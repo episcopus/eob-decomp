@@ -58,11 +58,15 @@ extern void StartSound(void far *routine); /*@ 084A:0417 */
 extern void SoundDriverResume(void);    /*@ 084A:0457 */
 
 /* The palette and image buffers of this unit's DGROUP. gPalette is a far pointer the front end
-   allocates and fills (i0892:05A2..061A); gOverlayBuf is the DGROUP image buffer f19EC_002A
-   hands to its copy handler, EOB.EXE's gOverlayBuf at ds:113F. */
+   allocates and fills (i0892:05A2..061A); gOverlayBuf and gCopyBuf are the DGROUP buffers
+   f19EC_002A hands to its copy handler, EOB.EXE's gOverlayBuf at ds:113F: ovl0:2A99 passes
+   gOverlayBuf and ovl0:003A passes gCopyBuf (ds:1BEA) for the title copy and gOverlayBuf
+   (ds:1C0A, 32 bytes into the same zeroed region) for the text copy. */
 extern unsigned char far *gPalette;     /*@ ds:2D42 */
 extern unsigned char gOverlayBuf[];     /*@ ds:1C0A */
+extern unsigned char gCopyBuf[];        /*@ ds:1BEA */
 extern unsigned char gEgaPalette[16];   /*@ ds:19E7 */
+extern int gDriverState;                /*@ ds:1F76 */  /* Purpose unknown: a driver flag; ovl0:003A sets bit 0 only */
 
 /* the delay of the Westwood logo card, in timer ticks: 50, read by PlayLogoSequence (ds:1D28) */
 extern int gWestwoodDelay;              /*@ ds:1D28 */
@@ -131,7 +135,46 @@ void PlayLogoSequence(void);
         PlayIntroSequence();
 }
 
-/*@ ovl0:003A stub */ void PlayIntroSequence(void) {}
+/* ovl0:003A: plays the title card and then every scene. It sets the intro's driver flag
+   (ds:1F76 bit 0), draws on page 0 and holds the title for 120 ticks: the TITLE-V card on the
+   VGA mode (gGraphicsMode 3), TITLE-E otherwise, then the WESTWOOD palette, sound 2, the
+   buffer copies and the dissolve from page 2 to page 0. Then TEXT.CMP, another copy and a
+   6-tick wait. Each of the eight scene functions follows guarded by the abort flag, so a key
+   during a wait skips the rest of the intro. */
+/*@ ovl0:003A */ void PlayIntroSequence(void)
+{
+    gDriverState |= 1;
+    gDrawPage = 0;
+    gFrameDelay = 0x78;
+    if (gGraphicsMode != 3)
+        LoadPackedImage("TITLE-E.CMP", 3, 5);
+    else
+        LoadPackedImage("TITLE-V.CMP", 3, 5);
+    WaitFrame();
+    LoadPalette("WESTWOOD.COL");
+    PlaySound(2);
+    f19EC_002A(5, 2, FP_OFF(gCopyBuf), FP_SEG(gCopyBuf));
+    Dissolve(0, 0, 320, 200, 2, 0);
+    LoadPackedImage("TEXT.CMP", 3, 5);
+    f19EC_002A(5, 6, FP_OFF(gOverlayBuf), FP_SEG(gOverlayBuf));
+    WaitFrameDelay();
+    if (!gAbort)
+        Ovl0_0B20();
+    if (!gAbort)
+        Ovl0_06E2();
+    if (!gAbort)
+        Ovl0_015D();
+    if (!gAbort)
+        Ovl0_1265();
+    if (!gAbort)
+        Ovl0_15F9();
+    if (!gAbort)
+        Ovl0_1DF3();
+    if (!gAbort)
+        Ovl0_23A3();
+    if (!gAbort)
+        DrawGrid();
+}
 /*@ ovl0:015D stub */ void Ovl0_015D(void) {}
 /*@ ovl0:06E2 stub */ void Ovl0_06E2(void) {}
 /* ovl0:09AD: copies an image between two rectangles of the same video buffer (slot 3, the
