@@ -2169,3 +2169,12 @@ new = "gClickY"
 kind = "global"
 why = "y of the last mouse click, written at src/E1AAD.ASM:405 and read as a point by ClickInRect (src/E1AAD.ASM:516-518)"
 date = "2026-11-02"
+
+[[rename]]
+id = "ovl2:078D=LoadIntroScreen"
+addr = "ovl2:078D"
+old = "LoadIntroIcons"
+new = "LoadIntroScreen"
+kind = "function"
+why = "ovl2:078D loads the INTRO screen into gOverlayBuf, draws two option-panel frames and clips the region; it slices no sprite cells. The icon slicer is LoadDecorateIcons at ovl2:0577"
+date = "2026-11-02"

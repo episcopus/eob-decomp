@@ -7893,7 +7893,7 @@ unit = "eov2"
 addr = "ovl2:078D"
 size = 185
 evidence = ["ovl", "near", "frame"]
-name = "LoadIntroIcons"
+name = "LoadIntroScreen"
 level = "L2"
 match_flags = "-ml -O -Z"
 

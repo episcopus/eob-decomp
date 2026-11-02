@@ -142,7 +142,7 @@
         EXTRN   _FileOpen:FAR           ; @ 1C0E:00DB (E082C.C)
         EXTRN   _FileClose:FAR          ; @ 1C0E:03BB (E082C.C)
         EXTRN   _WaitGameKey:FAR        ; @ 1AAD:053A (E1AAD.ASM)
-        EXTRN   _LoadSavedGame:FAR         ; @ 210C:0039: overlay 3 entry, ovl3:15B9 (LoadGame, EOV3.C)
+        EXTRN   _LoadGame:FAR              ; @ 210C:0039: overlay 3 entry, ovl3:15B9 (LoadGame, EOV3.C)
         EXTRN   _fOvl3_1368:FAR         ; @ 210C:0089: overlay 3 entry, ovl3:1368 (SaveGame, EOV3.C)
         EXTRN   _DrawViewFrame:FAR         ; @ 2116:005C: overlay 4 entry, ovl4:1F51 (DrawViewFrame, EOV4.C)
         EXTRN   _fOvl6_0000:FAR         ; @ 212A:0039: overlay 6 entry, ovl6:0000 (CampLoop, EOV6.C)
@@ -3795,7 +3795,7 @@ f1ACD_1F98:
         push    ax
         call    far ptr _DrawViewFrame
         pop     cx
-        call    far ptr _LoadSavedGame
+        call    far ptr _LoadGame
         or      ax,ax
         jne     short f1ACD_2014
         push    word ptr [gFE5A+2]
