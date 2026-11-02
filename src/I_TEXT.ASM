@@ -24,8 +24,8 @@
 ; (mov bx,[bx+20Ch] in the script command that starts a pitch effect; GetDriverTable returns 020Ch for its argument 4);
 ; gCurvePairs steps down by 1 every second byte from 50h to 10h, gCurveRamp counts 00h to 7Fh and gCurveTriples steps down
 ; every third byte from 40h to 15h. QUIRK 02F9: the ramp has 6Fh where its pattern wants 5Fh (the neighbours are 5Eh and 60h);
-; the EXE's byte is kept. gDriverTablePtrs (039C) holds the near pointers SelectDriverTable (40E5) picks the sound table from,
-; both 0416h. gScriptFlag (03A0) is the byte the script command C7h sets from its operand (4A23: mov [3A0h],ah), read back by
+; the EXE's byte is kept. gDriverTablePtrs (039C) holds the near pointers SelectDriverTable (44C0) picks the sound table from,
+; both 0416h. gScriptFlag (03A0) is the byte the script command C7h sets from its operand (4DFB: mov [3A0h],ah), read back by
 ; GetScriptFlag.
         PUBLIC  _CurveTables              ; @ 0000:020C
 _CurveTables LABEL BYTE
@@ -156,7 +156,7 @@ L_0409:
         retf
 _RebaseDriverBlock ENDP
 
-; 0000:0416: the driver block (data, 13614 bytes to 3943). LoadSoundDriver reads the 32C8h bytes of adlib.dat or pcgamesn.dat
+; 0000:0416: the driver block (data, 14614 bytes to 3D2B). LoadSoundDriver reads the 32C8h bytes of adlib.dat or pcgamesn.dat
 ; over 0416 to 36DD at run time (E177D.C:152) and RebaseDriverBlock turns its first 300 words into near pointers; the bytes
 ; here are the EXE's image of it and are overwritten before they are read: zeros but for 12 bytes in three places, none of
 ; them the file's (adlib.dat's first word is 0258h, this block's is 066Eh): Purpose unknown. gBlockSpare (36DE, 1614 bytes to 3D2C)
@@ -173,11 +173,11 @@ gPatchTable LABEL WORD
 gBlockSpare LABEL BYTE
         db      1614 dup (0)
 
-; 0000:3944: the driver's tables and variables (data, 591 bytes). The tables, 498 bytes: gEntryTable (3944) lists the eleven near entry points of the driver in the
+; 0000:3D2C: the driver's tables and variables (data, 590 bytes). The tables, 498 bytes: gEntryTable (3D2C) lists the eleven near entry points of the driver in the
 ; order the original links them: no reader in this file (Purpose unknown; the block's code may use it [H]). gLevelCurvePtrs
-; (395A) points to the fourteen 32-byte level curves from 3976: monotone maps of a level 0 to 1Fh to a larger one (UpdateVoices
-; reads them with mov si,[bx+395Ah] at 4646 and 4663, SetVoicePitch at 4A96 and 4AB3). QUIRK 3A86: curve 8 has 1Ah, 19h where its neighbours rise (17h,1Ah,
-; 19h,1Ah,1Ch); QUIRK 3B14: curve 12 has 34h between 3Bh and 41h (the pattern wants about 3Eh); the EXE's bytes are kept.
+; (3D42) points to the fourteen 32-byte level curves from 3D5E: monotone maps of a level 0 to 1Fh to a larger one (UpdateVoices
+; reads them with mov si,[bx+3D42h] at 4A1E and 4A3B, SetVoicePitch at 4E6E and 4E8B). QUIRK 3E6E: curve 8 has 1Ah, 19h where its neighbours rise (17h,1Ah,
+; 19h,1Ah,1Ch); QUIRK 3EFC: curve 12 has 34h between 3Bh and 41h (the pattern wants about 3Eh); the EXE's bytes are kept.
         PUBLIC  _DriverTables              ; @ 0000:3D2C
 _DriverTables LABEL BYTE
 gEntryTable LABEL WORD
@@ -228,55 +228,55 @@ gLevelCurve13 LABEL BYTE
         db      00h,02h,04h,06h,08h,0Bh,0Dh,11h,12h,13h,15h,17h,1Ah,1Dh,20h,23h
         db      24h,25h,27h,29h,2Ch,2Fh,32h,35h,36h,37h,39h,3Bh,3Eh,41h,44h,47h
 
-; The variables from 3B36, 93 bytes, DS = CS, with the EXE image's initial values. Names come from the code that uses them (the
+; The variables from 3F1E, 92 bytes, DS = CS, with the EXE image's initial values. Names come from the code that uses them (the
 ; UpdateVoices commands, the INT 08h handlers, E177D.C); the ones with no use in this file are spare.
-        db      4 dup (0)               ; 3B37 to 3B3A: spare
-gNoteDuration   db      0               ; 3B3B: StartVoiceNote stores the note's duration byte; zero lets the voice's script go on
-        db      2 dup (0)               ; 3B3C to 3B3D: spare
-gVoiceIndex     db      0               ; 3B3E: the voice UpdateVoices is serving, 9 down to 0 (the register offset of voice n is n)
-gUpdateEnable   db      0               ; 3B3F: UpdateVoices runs only while nonzero (set when a sound starts, cleared by reset)
-gRhythmKeyBits  db      0               ; 3B40: the key bits last written to register BDh (bit 5 is the rhythm mode)
-gTempoRate      db      0               ; 3B41: the script's speed byte: added to gTempoAccum each tick, the followers' voice speed
-gEffectMode     db      0               ; 3B42: the pitch effect in force, 0 none: L_46D4 sets it; ProcessSoundQueue, ResetVoices, the
-                                        ;   command at 454B and L_4720 clear it (_AdlibTimerIsr acts while it is nonzero)
-gEffectPeriod   db      1               ; 3B43: the reload of gEffectCounter
-gEffectCounter  db      1               ; 3B44: counted down by _AdlibTimerIsr
-gEffectIndex    dw      0FFFFh          ; 3B45: the index into the effect's two curves (SetNote stores its argument here, L_46D4 clears it)
-gRandomSeed     dw      1234h           ; 3B47: SoundRandom's state, 1234h from ResetVoices on
-gToggleBit      db      0               ; 3B49: _AdlibTimerIsr inverts it; its bit 5 becomes the key-on bit of voice 0
-gRegBDDepth     db      0               ; 3B4A: bits 7 and 6 of register BDh (amplitude and vibrato depth)
-gOperatorOffset db      0               ; 3B4B: the operator register offset of the voice being served (gOperatorOffsets)
-gRhythmLevelA   db      5 dup (0)       ; 3B4C: three five-byte sets of rhythm operator level terms, one byte per operator in the order of
-gRhythmLevelB   db      5 dup (0)       ; 3B51:   the level registers 53h, 54h, 51h, 52h, 55h. A is the level byte of the patch L_4729 loads
-gRhythmLevelC   db      5 dup (0)       ; 3B56:   for the rhythm voices, B is stored by L_48EF and C by L_484B; both commands write the
+        db      4 dup (0)               ; 3F1E to 3F21: spare
+gNoteDuration   db      0               ; 3F22: StartVoiceNote stores the note's duration byte; zero lets the voice's script go on
+        db      2 dup (0)               ; 3F23 to 3F24: spare
+gVoiceIndex     db      0               ; 3F25: the voice UpdateVoices is serving, 9 down to 0 (the register offset of voice n is n)
+gUpdateEnable   db      0               ; 3F26: UpdateVoices runs only while nonzero (set when a sound starts, cleared by reset)
+gRhythmKeyBits  db      0               ; 3F27: the key bits last written to register BDh (bit 5 is the rhythm mode)
+gTempoRate      db      0               ; 3F28: the script's speed byte: added to gTempoAccum each tick, the followers' voice speed
+gEffectMode     db      0               ; 3F29: the pitch effect in force, 0 none: L_4AAC sets it; ProcessSoundQueue, ResetVoices, the
+                                        ;   command at 4923 and L_4AF8 clear it (_AdlibTimerIsr acts while it is nonzero)
+gEffectPeriod   db      1               ; 3F2A: the reload of gEffectCounter
+gEffectCounter  db      1               ; 3F2B: counted down by _AdlibTimerIsr
+gEffectIndex    dw      0FFFFh          ; 3F2C: the index into the effect's two curves (SetNote stores its argument here, L_4AAC clears it)
+gRandomSeed     dw      1234h           ; 3F2E: SoundRandom's state, 1234h from ResetVoices on
+gToggleBit      db      0               ; 3F30: _AdlibTimerIsr inverts it; its bit 5 becomes the key-on bit of voice 0
+gRegBDDepth     db      0               ; 3F31: bits 7 and 6 of register BDh (amplitude and vibrato depth)
+gOperatorOffset db      0               ; 3F32: the operator register offset of the voice being served (gOperatorOffsets)
+gRhythmLevelA   db      5 dup (0)       ; 3F33: three five-byte sets of rhythm operator level terms, one byte per operator in the order of
+gRhythmLevelB   db      5 dup (0)       ; 3F38:   the level registers 53h, 54h, 51h, 52h, 55h. A is the level byte of the patch L_4B01 loads
+gRhythmLevelC   db      5 dup (0)       ; 3F3D:   for the rhythm voices, B is stored by L_4CC7 and C by L_4C23; both commands write the
                                         ;   clamped sum of the operand and the three terms to the operator's level register
-gTempoReload    db      0               ; 3B5B: half the tempo operand (the command at L_4412)
-gTempoCounter   db      0               ; 3B5C: counted down from gTempoReload each time gTempoAccum carries
-gTempoAccum     db      0FFh            ; 3B5D: TickTempo adds gTempoRate; a carry steps the counter
-gTempoBeat      db      0               ; 3B5E: the beat count: TickTempo adds one each time gTempoCounter reaches zero
-gTempoWait      db      0               ; 3B5F: the wait-for-beat command's phase flag (L_442E)
-gEffectCurveA   dw      0               ; 3B60: the near pointers the effect command picks from gCurveTablePtrs
-gEffectCurveB   dw      0               ; 3B62
-gSoundTable     dw      0               ; 3B64: the sound-number table ProcessSoundQueue indexes (SelectDriverTable, StartAdlibDriver)
-gSavedTimerOff  dw      0               ; 3B66: the BIOS INT 08h vector StartAdlibDriver saved, offset
-gSavedTimerSeg  dw      0               ; 3B68: and segment; StopAdlibDriver restores it, _AdlibTimerIsr chains to it
-gSampleSavedOff dw      0               ; 3B6A: the INT 08h vector StartSample saved (3E66's), offset
-gSampleSavedSeg dw      0               ; 3B6C: and segment; _SampleTimerIsr puts it back
-gTimerPasses12  db      0Ch             ; 3B6E: _AdlibTimerIsr calls the tick when it counts down to zero
-gTimerPasses48  db      30h             ; 3B6F: and chains to the BIOS when this one does
-        db      4 dup (0)               ; 3B70 to 3B73: spare
-gSampleNibbles  db      0               ; 3B74: the sample's pass counter (bit 0 selects the nibble)
-gSampleLevel    db      0               ; 3B75: the sample's running level, set to 8 by StartSample
-gSampleLength   dw      0               ; 3B76: its length in bytes
-gSamplePtrOff   dw      0               ; 3B78: the sample's read pointer, offset (zero when none plays: GetSampleOffset)
-gSamplePtrSeg   dw      0               ; 3B7A: and segment
-gSampleStart    dw      0               ; 3B7C: the sample's first offset
-gSampleEnable   db      0               ; 3B7E: nonzero while a sample plays (SetSamplePlaying, StartSample)
-gQueueWrite     dw      0               ; 3B7F: the sound queue's write index, 0 to 0Fh (_QueueSound)
-gQueueRead      dw      0               ; 3B81: its read index (ProcessSoundQueue)
-gQueueRing      db      16 dup (0)      ; 3B83: the queued driver sound numbers, one byte each (a word is stored at each index)
+gTempoReload    db      0               ; 3F42: half the tempo operand (the command at L_47EA)
+gTempoCounter   db      0               ; 3F43: counted down from gTempoReload each time gTempoAccum carries
+gTempoAccum     db      0FFh            ; 3F44: TickTempo adds gTempoRate; a carry steps the counter
+gTempoBeat      db      0               ; 3F45: the beat count: TickTempo adds one each time gTempoCounter reaches zero
+gTempoWait      db      0               ; 3F46: the wait-for-beat command's phase flag (L_4806)
+gEffectCurveA   dw      0               ; 3F47: the near pointers the effect command picks from gCurveTablePtrs
+gEffectCurveB   dw      0               ; 3F49
+gSoundTable     dw      0               ; 3F4B: the sound-number table ProcessSoundQueue indexes (SelectDriverTable, StartAdlibDriver)
+gSavedTimerOff  dw      0               ; 3F4D: the BIOS INT 08h vector StartAdlibDriver saved, offset
+gSavedTimerSeg  dw      0               ; 3F4F: and segment; StopAdlibDriver restores it, _AdlibTimerIsr chains to it
+gSampleSavedOff dw      0               ; 3F51: the INT 08h vector StartSample saved (424D's), offset
+gSampleSavedSeg dw      0               ; 3F53: and segment; _SampleTimerIsr puts it back
+gTimerPasses12  db      0Ch             ; 3F55: _AdlibTimerIsr calls the tick when it counts down to zero
+gTimerPasses48  db      30h             ; 3F56: and chains to the BIOS when this one does
+        db      4 dup (0)               ; 3F57 to 3F5A: spare
+gSampleNibbles  db      0               ; 3F5B: the sample's pass counter (bit 0 selects the nibble)
+gSampleLevel    db      0               ; 3F5C: the sample's running level, set to 8 by StartSample
+gSampleLength   dw      0               ; 3F5D: its length in bytes
+gSamplePtrOff   dw      0               ; 3F5F: the sample's read pointer, offset (zero when none plays: GetSampleOffset)
+gSamplePtrSeg   dw      0               ; 3F61: and segment
+gSampleStart    dw      0               ; 3F63: the sample's first offset
+gSampleEnable   db      0               ; 3F65: nonzero while a sample plays (SetSamplePlaying, StartSample)
+gQueueWrite     dw      0               ; 3F66: the sound queue's write index, 0 to 0Fh (_QueueSound)
+gQueueRead      dw      0               ; 3F68: its read index (ProcessSoundQueue)
+gQueueRing      db      16 dup (0)      ; 3F6A: the queued driver sound numbers, one byte each (a word is stored at each index)
 
-; 0000:3B93: the ten voice records (data, 670 bytes, 43h each): the state of the nine AdLib voices (0 to 8) and the rhythm voice 9
+; 0000:3F7A: the ten voice records (data, 670 bytes, 43h each): the state of the nine AdLib voices (0 to 8) and the rhythm voice 9
 ; as UpdateVoices and its helpers read it through di. Zero in the image.
         PUBLIC  _VoiceRecords              ; @ 0000:3F7A
 _VoiceRecords LABEL BYTE
@@ -291,7 +291,7 @@ gVoiceRecord7 db 43h dup (0)
 gVoiceRecord8 db 43h dup (0)
 gVoiceRecord9 db 43h dup (0)
 
-; 0000:3E31: the voice tables (data, 53 bytes). gVoiceRecordPtrs: the near pointer of each voice record, indexed by 2 * voice.
+; 0000:4218: the voice tables (data, 53 bytes). gVoiceRecordPtrs: the near pointer of each voice record, indexed by 2 * voice.
 ; gOperatorOffsets: the AdLib modulator operator offset of each of voices 0 to 8 (the carrier is 3 above it; register 20h + offset
 ; and so on). gFNumbers: the twelve F-numbers (register A0h and the low bits of B0h) of the notes of an octave.
         PUBLIC  _VoiceTables              ; @ 0000:4218
@@ -303,13 +303,13 @@ gOperatorOffsets LABEL BYTE
 gFNumbers LABEL WORD
         dw      0134h,0147h,015Ah,016Fh,0184h,019Ch,01B4h,01CEh,01E9h,0207h,0225h,0246h
 
-; 0000:3E66: the AdLib driver's INT 08h handler, installed by StartAdlibDriver (3F77: mov dx,3E66h; int 21h 2508h, 3F97 to 3F9D).
-; The PIT runs at divisor 0555h there (3FA2 to 3FB0), 874 Hz if its clock is the usual 1193182 Hz [H], and this handler divides it down:
+; 0000:424D: the AdLib driver's INT 08h handler, installed by StartAdlibDriver (4352: mov dx,424Dh; int 21h 2508h, 4372 to 4378).
+; The PIT runs at divisor 0555h there (437D to 438B), 874 Hz if its clock is the usual 1193182 Hz [H], and this handler divides it down:
 ;   - while gEffectMode is nonzero, counts gEffectCounter down; at zero it toggles the key-on bit (20h) of voice 0's register B0h image
 ;     (the byte at +28h of gVoiceRecord0, which VoiceKeyOn also sets), writes the register to the card, and reloads gEffectCounter from
 ;     gEffectPeriod;
 ;   - counts gBusyCountdown down to zero (PlaySoundAtCell sets it to 0Bh and waits for it, E177D.C:249 and :268);
-;   - every 0Ch passes (72.8 Hz) calls SoundDriverTick (3FF4), counted by gTimerPasses12;
+;   - every 0Ch passes (72.8 Hz) calls SoundDriverTick (43CF), counted by gTimerPasses12;
 ;   - every 30h passes (18.2 Hz, gTimerPasses48) chains to the BIOS handler StartAdlibDriver saved in gSavedTimerOff and gSavedTimerSeg;
 ;     that handler sends the end of interrupt, so this path does not; on every other pass it sends EOI itself.
 ; Saves and restores ax, bx, dx and ds; DS is set to CS, where the driver keeps its variables.
@@ -322,9 +322,9 @@ _AdlibTimerIsr PROC NEAR
         mov       ax, cs
         mov       ds, ax
         cmp       byte ptr ds:[gEffectMode], 0
-        je    L_3EAF
+        je    L_4295
         dec       byte ptr ds:[gEffectCounter]
-        jne    L_3EAF
+        jne    L_4295
         mov       bx, offset gVoiceRecord0
         mov       al, byte ptr [bx + 28h]
         mov       ah, al
@@ -345,21 +345,21 @@ _AdlibTimerIsr PROC NEAR
         call    _AdlibWaitAfterData
         mov       al, byte ptr ds:[gEffectPeriod]
         mov       byte ptr ds:[gEffectCounter], al
-L_3EAF:
+L_4295:
         dec       byte ptr ds:[gTimerPasses12]
-        jne    L_3EC8
+        jne    L_42A3
         mov       byte ptr ds:[gTimerPasses12], 0ch
         call    _SoundDriverTick
-L_3EC8:
+L_42A3:
         dec       byte ptr ds:[gTimerPasses48]
-        jne    L_3EDC
+        jne    L_42B7
         mov       byte ptr ds:[gTimerPasses48], 30h
         pop       ds
         pop       dx
         pop       bx
         pop       ax
         jmp       dword ptr cs:[gSavedTimerOff]
-L_3EDC:
+L_42B7:
         mov       al, 20h
         out       20h, al
         pop       ds
@@ -369,15 +369,15 @@ L_3EDC:
         iret
 _AdlibTimerIsr ENDP
 
-; 0000:3EE5: the INT 08h handler that plays a sample, installed by StartSample (4B7F: mov dx,3EE5h; int 21h 2508h, 4C49 to 4C4F)
-; in place of 3E66, with the PIT at divisor 004Bh (4C51 to 4C61), about 15.9 kHz on the same clock [H]. Each pass reads one 4-bit
+; 0000:42C0: the INT 08h handler that plays a sample, installed by StartSample (4F57: mov dx,42C0h; int 21h 2508h, 5021 to 5027)
+; in place of 424D, with the PIT at divisor 004Bh (5029 to 5039), about 15.9 kHz on the same clock [H]. Each pass reads one 4-bit
 ; delta from the sample at the far pointer gSamplePtrOff/gSamplePtrSeg (the low nibble of a byte first, then the high one; the count
 ; gSampleNibbles selects), adds it to gSampleLevel when bit 3 is clear and subtracts (value and 7) when it is set, and writes the
-; level to the AdLib data port 389h (the register StartSample selected last, 40h, at 4C2B to 4C37). The sample ends when the pointer
+; level to the AdLib data port 389h (the register StartSample selected last, 40h, at 5003 to 500F). The sample ends when the pointer
 ; is gSampleLength bytes past gSampleStart, or at once when gSampleEnable (set by StartSample and SetSamplePlaying) is zero: then it puts
-; the PIT back to 0555h, clears gSamplePtrOff, restores the INT 08h vector StartSample saved in gSampleSavedOff/Seg (the vector 3E66
+; the PIT back to 0555h, clears gSamplePtrOff, restores the INT 08h vector StartSample saved in gSampleSavedOff/Seg (the vector 424D
 ; was installed as) and clears gUpdateEnable (UpdateVoices runs only while it is nonzero).
-; QUIRK 3EE5: it always sends EOI itself and never chains to the BIOS handler, so the BIOS clock loses the ticks of a sample.
+; QUIRK 42C0: it always sends EOI itself and never chains to the BIOS handler, so the BIOS clock loses the ticks of a sample.
         PUBLIC  _SampleTimerIsr              ; @ 0000:42C0
 _SampleTimerIsr PROC NEAR
         push      ax
@@ -385,29 +385,29 @@ _SampleTimerIsr PROC NEAR
         push      ds
         push      si
         cmp       byte ptr cs:[gSampleEnable], 0
-        je    L_3F40
+        je    L_431B
         lds       si, dword ptr cs:[gSamplePtrOff]
         cld
         lodsb
         mov       ah, byte ptr cs:[gSampleLevel]
         test      byte ptr cs:[gSampleNibbles], 1
-        je    L_3F0E
+        je    L_42E9
         shr       al, 1
         shr       al, 1
         shr       al, 1
         shr       al, 1
         inc       si
-L_3F0E:
+L_42E9:
         dec       si
         and       al, 0fh
         test      al, 8
-        jne    L_3F19
+        jne    L_42F4
         add       ah, al
-        jmp short    L_3F1D
-L_3F19:
+        jmp short    L_42F8
+L_42F4:
         and       al, 7
         sub       ah, al
-L_3F1D:
+L_42F8:
         mov       al, ah
         mov       byte ptr cs:[gSampleLevel], ah
         mov       dx, 389h
@@ -417,8 +417,8 @@ L_3F1D:
         mov       ax, si
         sub       ax, word ptr cs:[gSampleStart]
         cmp       ax, word ptr cs:[gSampleLength]
-        jb    L_3F6E
-L_3F40:
+        jb    L_4349
+L_431B:
         mov       al, 36h
         out       43h, al
         mov       al, 55h
@@ -434,7 +434,7 @@ L_3F40:
         mov       word ptr [si], dx
         mov       word ptr [si + 2], ax
         mov       byte ptr cs:[gUpdateEnable], 0
-L_3F6E:
+L_4349:
         mov       al, 20h
         out       20h, al
         pop       si
@@ -444,7 +444,7 @@ L_3F6E:
         iret
 _SampleTimerIsr ENDP
 
-; 0000:3F77: the AdLib driver on: installs the INT 08h handler at 3E66, resets the AdLib voices (413B), programs the PIT and clears the ring
+; 0000:4352: the AdLib driver on: installs the INT 08h handler at 424D, resets the AdLib voices (4516), programs the PIT and clears the ring
         PUBLIC  _StartAdlibDriver              ; @ 0000:4352
 _StartAdlibDriver PROC NEAR
         push      ds
@@ -468,11 +468,11 @@ _StartAdlibDriver PROC NEAR
         mov       al, 36h
         out       43h, al
         jmp    $+2
-L_3FA8:
+L_4383:
         mov       al, 55h
         out       40h, al
         jmp    $+2
-L_3FAE:
+L_4389:
         mov       al, 5
         out       40h, al
         in        al, 61h
@@ -488,7 +488,7 @@ L_3FAE:
         retf
 _StartAdlibDriver ENDP
 
-; 0000:3FCA: the AdLib driver off: restores the saved INT 08h vector, resets the AdLib voices and stops the PIT (E07C8.C:65)
+; 0000:43A5: the AdLib driver off: restores the saved INT 08h vector, resets the AdLib voices and stops the PIT (E07C8.C:65)
         PUBLIC  _StopAdlibDriver              ; @ 0000:43A5
 _StopAdlibDriver PROC NEAR
         push      ds
@@ -507,17 +507,17 @@ _StopAdlibDriver PROC NEAR
         mov       al, 36h
         out       43h, al
         jmp    $+2
-L_3FEA:
+L_43C5:
         mov       al, 0
         out       40h, al
         jmp    $+2
-L_3FF0:
+L_43CB:
         out       40h, al
         pop       ds
         retf
 _StopAdlibDriver ENDP
 
-; 0000:3FF4: the driver tick, called from the INT 08h handler at 3E66 every 0ch passes: processes the ring, the voices and the tempo
+; 0000:43CF: the driver tick, called from the INT 08h handler at 424D every 0ch passes: processes the ring, the voices and the tempo
         PUBLIC  _SoundDriverTick              ; @ 0000:43CF
 _SoundDriverTick PROC NEAR
         push      cx
@@ -538,7 +538,7 @@ _SoundDriverTick PROC NEAR
         ret
 _SoundDriverTick ENDP
 
-; 0000:400C: queues a driver sound number in the 16-entry ring gQueueRing at the write index gQueueWrite, then advances the index
+; 0000:43E7: queues a driver sound number in the 16-entry ring gQueueRing at the write index gQueueWrite, then advances the index
 ; (masked with 0Fh); E177D.C calls it with the AdLib number. Far routine, one argument (stored as a word, so its high byte lands in the next
 ; ring byte)
         PUBLIC  _QueueSound              ; @ 0000:43E7
@@ -560,7 +560,7 @@ _QueueSound PROC NEAR
         retf
 _QueueSound ENDP
 
-; 0000:402C: drains the 16-entry ring gQueueRing from the read index gQueueRead up to the write index gQueueWrite: for each queued sound
+; 0000:4407: drains the 16-entry ring gQueueRing from the read index gQueueRead up to the write index gQueueWrite: for each queued sound
 ; takes its data pointer from gSoundTable; the first word of the data is the voice number (low byte) and the priority (high byte), and
 ; when the priority is not below that of the voice's current sound (record byte 8) it clears the voice, loads the script that follows and
 ; starts it. A sound for voice 0 also clears gEffectMode
@@ -571,12 +571,12 @@ _ProcessSoundQueue PROC NEAR
         push      di
         mov       bx, cs
         mov       ds, bx
-L_4033:
+L_440E:
         mov       bx, word ptr ds:[gQueueRead]
         cmp       bx, word ptr ds:[gQueueWrite]
-        jne    L_403F
-        jmp short    L_409A
-L_403F:
+        jne    L_441A
+        jmp short    L_4475
+L_441A:
         mov       bx, word ptr [bx + gQueueRing]
         sub       bh, bh
         shl       bx, 1
@@ -584,16 +584,16 @@ L_403F:
         mov       si, word ptr [bx]
         mov       bx, word ptr cs:[si]
         cmp       bl, 0
-        jne    L_405A
+        jne    L_4435
         mov       byte ptr ds:[gEffectMode], 0
-L_405A:
+L_4435:
         mov       al, bh
         mov       cl, bl
         sub       bh, bh
         shl       bx, 1
         mov       di, word ptr [bx + gVoiceRecordPtrs]
         cmp       al, byte ptr [di + 8]
-        jl    L_408F
+        jl    L_446A
         call    _ClearVoice
         mov       byte ptr [di + 8], al
         inc       si
@@ -604,21 +604,21 @@ L_405A:
         mov       byte ptr [di + 5], 1
         mov       byte ptr ds:[gUpdateEnable], 1
         cmp       bl, 12h
-        je    L_408F
+        je    L_446A
         call    _VoiceSilence
-L_408F:
+L_446A:
         inc       word ptr ds:[gQueueRead]
         and       word ptr ds:[gQueueRead], 0fh
-        jmp short    L_4033
-L_409A:
+        jmp short    L_440E
+L_4475:
         pop       di
         pop       si
         pop       ds
         ret
 _ProcessSoundQueue ENDP
 
-; 0000:409E: stores the note argument in gEffectIndex, then writes register A0 with the byte of the effect curve gEffectCurveB at that
-; index (gEffectCurveA's byte becomes the period gEffectPeriod). Far routine, one argument; the ninth entry of the entry table (3944)
+; 0000:4479: stores the note argument in gEffectIndex, then writes register A0 with the byte of the effect curve gEffectCurveB at that
+; index (gEffectCurveA's byte becomes the period gEffectPeriod). Far routine, one argument; the ninth entry of the entry table (3D2C)
         PUBLIC  _SetNote              ; @ 0000:4479
 _SetNote PROC NEAR
         push      bp
@@ -647,7 +647,7 @@ _SetNote PROC NEAR
         retf
 _SetNote ENDP
 
-; 0000:40CE: sets gSampleEnable, the flag _SampleTimerIsr tests, to the argument (a byte). Far routine, one argument
+; 0000:44A9: sets gSampleEnable, the flag _SampleTimerIsr tests, to the argument (a byte). Far routine, one argument
         PUBLIC  _SetSamplePlaying              ; @ 0000:44A9
 _SetSamplePlaying PROC NEAR
         push      bp
@@ -667,7 +667,7 @@ _SetSamplePlaying PROC NEAR
         retf
 _SetSamplePlaying ENDP
 
-; 0000:40E5: selects the sound-number table: gSoundTable = gDriverTablePtrs[argument] (both entries are 0416h), and returns it. Far routine,
+; 0000:44C0: selects the sound-number table: gSoundTable = gDriverTablePtrs[argument] (both entries are 0416h), and returns it. Far routine,
 ; one argument
         PUBLIC  _SelectDriverTable              ; @ 0000:44C0
 _SelectDriverTable PROC NEAR
@@ -687,39 +687,39 @@ _SelectDriverTable PROC NEAR
         retf
 _SelectDriverTable ENDP
 
-; 0000:4102: returns a near driver table pointer for arg 0 to 4: cs, block table, 542h, 20ch
+; 0000:44DD: returns a near driver table pointer for arg 0 to 4: cs, block table, 542h, 20ch
         PUBLIC  _GetDriverTable              ; @ 0000:44DD
 _GetDriverTable PROC NEAR
         push      bp
         mov       bp, sp
         cmp       word ptr [bp + 6], 0
-        jne    L_410F
+        jne    L_44EA
         mov       ax, cs
-        jmp short    L_4137
-L_410F:
+        jmp short    L_4512
+L_44EA:
         cmp       word ptr [bp + 6], 1
-        jne    L_411B
+        jne    L_44F6
         mov       ax, word ptr cs:[gSoundTable]
-        jmp short    L_4137
-L_411B:
+        jmp short    L_4512
+L_44F6:
         cmp       word ptr [bp + 6], 2
-        jne    L_4125
+        jne    L_4500
         mov       ax, word ptr cs:[gSoundTable]
-L_4125:
+L_4500:
         cmp       word ptr [bp + 6], 3
-        jne    L_412E
+        jne    L_4509
         mov       ax, offset gPatchTable
-L_412E:
+L_4509:
         cmp       word ptr [bp + 6], 4
-        jne    L_4137
+        jne    L_4512
         mov       ax, offset gCurveTablePtrs
-L_4137:
+L_4512:
         mov       sp, bp
         pop       bp
         retf
 _GetDriverTable ENDP
 
-; 0000:413B: writes the driver reset registers and clears all ten voice records (calls 4D95)
+; 0000:4516: writes the driver reset registers and clears all ten voice records (calls 516D)
         PUBLIC  _ResetVoices              ; @ 0000:4516
 _ResetVoices PROC NEAR
         mov       byte ptr ds:[gUpdateEnable], 0
@@ -733,11 +733,11 @@ _ResetVoices PROC NEAR
         mov       byte ptr ds:[gEffectMode], 0
         mov       cx, 0ah
         mov       bh, 0
-L_4162:
+L_453D:
         mov       bl, cl
         dec       bl
         cmp       bl, 9
-        je    L_4183
+        je    L_455E
         mov       ah, byte ptr [bx + gOperatorOffsets]
         add       ah, 40h
         mov       al, 3fh
@@ -746,79 +746,79 @@ L_4162:
         add       ah, 43h
         mov       al, 3fh
         call    _AdlibWrite
-L_4183:
+L_455E:
         shl       bl, 1
         mov       di, word ptr [bx + gVoiceRecordPtrs]
         call    _ClearVoice
-        loop    L_4162
+        loop    L_453D
         ret
 _ResetVoices ENDP
 
-; 0000:418F: the per-voice script interpreter: loops voice 9 down to 0 and runs its command through the 4F94 jump table
+; 0000:456A: the per-voice script interpreter: loops voice 9 down to 0 and runs its command through the 536C jump table
         PUBLIC  _UpdateVoices              ; @ 0000:456A
 _UpdateVoices PROC NEAR
         cmp       byte ptr ds:[gUpdateEnable], 0
-        jne    L_4197
+        jne    L_4572
         ret
-L_4197:
+L_4572:
         mov       byte ptr ds:[gVoiceIndex], 9
-L_419C:
+L_4577:
         mov       bl, byte ptr ds:[gVoiceIndex]
         mov       bh, 0
         shl       bl, 1
         mov       di, word ptr [bx + gVoiceRecordPtrs]
         mov       al, byte ptr [di + 5]
         or        al, al
-        jne    L_41B2
-        jmp    L_4267
-L_41B2:
+        jne    L_458D
+        jmp    L_4640
+L_458D:
         mov       bx, offset gOperatorOffsets
         add       bl, byte ptr ds:[gVoiceIndex]
         mov       al, byte ptr [bx]
         mov       byte ptr ds:[gOperatorOffset], al
         cmp       byte ptr [di + 40h], 0
-        je    L_41CA
+        je    L_45A5
         mov       al, byte ptr ds:[gTempoRate]
         mov       byte ptr [di + 25h], al
-L_41CA:
+L_45A5:
         mov       al, byte ptr [di + 26h]
         add       al, byte ptr [di + 25h]
         mov       byte ptr [di + 26h], al
-        jb    L_41D8
-        jmp    L_425F
-L_41D8:
+        jb    L_45B3
+        jmp    L_463A
+L_45B3:
         dec       byte ptr [di + 5]
-        je    L_41F9
+        je    L_45D4
         mov       al, byte ptr [di + 5]
         cmp       al, byte ptr [di + 21h]
-        jne    L_41E8
+        jne    L_45C3
         call    _VoiceKeyOff
-L_41E8:
+L_45C3:
         cmp       al, byte ptr [di + 35h]
-        jne    L_41F7
+        jne    L_45D2
         cmp       byte ptr ds:[gVoiceIndex], 9
-        je    L_41F7
+        je    L_45D2
         call    _VoiceKeyOff
-L_41F7:
-        jmp short    L_425F
-L_41F9:
+L_45D2:
+        jmp short    L_463A
+L_45D4:
         mov       si, word ptr [di + 3]
-L_41FC:
+L_45D7:
         lodsw
         or        al, al
-        jns    L_4203
-        jmp short    L_424A
-L_4203:
+        jns    L_45DE
+        jmp short    L_4625
+L_45DE:
         call    _SetVoicePitch
         call    _VoiceKeyOn
         call    _StartVoiceNote
         cmp       word ptr [di + 32h], 0
-        je    L_4214
-        jne    L_421A
-L_4214:
+        je    L_45EF
+        jne    L_45F5
+L_45EF:
         cmp       word ptr [di + 33h], 0
-        je    L_423E
-L_421A:
+        je    L_4619
+L_45F5:
         lodsb
         mov       byte ptr [di + 34h], al
         call    _VoiceCarrierLevel
@@ -831,49 +831,49 @@ L_421A:
         mov       ah, byte ptr ds:[gOperatorOffset]
         add       ah, 40h
         call    _AdlibWrite
-L_423E:
+L_4619:
         mov       al, byte ptr ds:[gNoteDuration]
         or        al, al
-        je    L_41FC
+        je    L_45D7
         mov       word ptr [di + 3], si
-        jmp short    L_425F
-L_424A:
+        jmp short    L_463A
+L_4625:
         and       al, 7fh
         cmp       al, 70h
-        jle    L_4253
-        jmp    L_4311
-L_4253:
+        jle    L_462E
+        jmp    L_46E9
+L_462E:
         mov       bl, al
         sub       bh, bh
         shl       bl, 1
         mov       bx, word ptr ds:[bx + _CommandTable]
         jmp       bx
-L_425F:
+L_463A:
         call      word ptr [di + 29h]
         call      word ptr [di + 2bh]
-L_4267:
+L_4640:
         dec       byte ptr ds:[gVoiceIndex]
-        js    L_4270
-        jmp    L_419C
-L_4270:
+        js    L_4649
+        jmp    L_4577
+L_4649:
         ret
-L_4271:                 ; script byte 80h
+L_464A:                 ; script byte 80h
         mov       byte ptr [di + 6], ah
-        jmp short    L_41FC
-L_4276:                 ; script byte 81h
+        jmp short    L_45D7
+L_464F:                 ; script byte 81h
         dec       byte ptr [di + 6]
-        jne    L_42D4
+        jne    L_46AC
         inc       si
-        jmp    L_41FC
-L_427F:                 ; script byte 82h
+        jmp    L_45D7
+L_4657:                 ; script byte 82h
         push      si
         push      di
         push      bx
         mov       bl, ah
         cmp       bl, 0ffh
-        jb    L_428B
-        jmp short    L_42C8
-L_428B:
+        jb    L_4663
+        jmp short    L_46A0
+L_4663:
         sub       bh, bh
         shl       bx, 1
         add       bx, word ptr ds:[gSoundTable]
@@ -885,7 +885,7 @@ L_428B:
         shl       bx, 1
         mov       di, word ptr [bx + gVoiceRecordPtrs]
         cmp       al, byte ptr [di + 8]
-        jl    L_42C8
+        jl    L_46A0
         call    _ClearVoice
         mov       byte ptr [di + 8], al
         inc       si
@@ -896,22 +896,22 @@ L_428B:
         mov       byte ptr [di + 5], 1
         mov       byte ptr ds:[gUpdateEnable], 1
         call    _VoiceSilence
-L_42C8:
+L_46A0:
         pop       bx
         pop       di
         pop       si
-        jmp    L_41FC
-L_42CE:                 ; script byte 83h
+        jmp    L_45D7
+L_46A6:                 ; script byte 83h
         mov       byte ptr [di + 35h], ah
-        jmp    L_41FC
-L_42D4:                 ; script byte 84h
+        jmp    L_45D7
+L_46AC:                 ; script byte 84h
         mov       cl, ah
         lodsb
         xchg      ah, al
         mov       al, cl
         mov       si, ax
-        jmp    L_41FC
-L_42E0:                 ; script byte 85h
+        jmp    L_45D7
+L_46B8:                 ; script byte 85h
         dec       si
         mov       bl, byte ptr [di + 9]
         mov       bh, 0
@@ -923,8 +923,8 @@ L_42E0:                 ; script byte 85h
         inc       byte ptr [di + 9]
         lodsw
         mov       si, ax
-        jmp    L_41FC
-L_42F8:                 ; script byte 86h
+        jmp    L_45D7
+L_46D0:                 ; script byte 86h
         dec       si
         dec       byte ptr [di + 9]
         mov       bl, byte ptr [di + 9]
@@ -932,38 +932,38 @@ L_42F8:                 ; script byte 86h
         shl       bl, 1
         mov       ax, word ptr [bx + di + 0ah]
         mov       si, ax
-        jmp    L_41FC
-L_430B:                 ; script byte 87h
+        jmp    L_45D7
+L_46E3:                 ; script byte 87h
         mov       byte ptr [di + 7], ah
-        jmp    L_41FC
+        jmp    L_45D7
 ; the end-of-script handler: 20 entries of the command table name it (the commands that have no handler of their own), and so does
 ; the range check of the dispatch (script bytes above F0h). It clears the voice's priority and script pointer and keys the voice off
-L_4311:
+L_46E9:
         mov       byte ptr [di + 8], 0
         mov       word ptr [di + 3], 0
         cmp       byte ptr ds:[gVoiceIndex], 9
-        je    L_4324
+        je    L_46FC
         call    _VoiceKeyOff
-L_4324:
-        jmp    L_4267
-L_4327:                 ; script byte 89h
+L_46FC:
+        jmp    L_4640
+L_46FF:                 ; script byte 89h
         call    _StartVoiceNote
         mov       word ptr [di + 3], si
         cmp       byte ptr ds:[gVoiceIndex], 9
-        je    L_4337
+        je    L_470F
         call    _VoiceKeyOff
-L_4337:
+L_470F:
         mov       al, byte ptr ds:[gNoteDuration]
         or        al, al
-        je    L_4341
-        jmp    L_425F
-L_4341:
-        jmp    L_41FC
-L_4344:                 ; script byte 8Ah
+        je    L_4719
+        jmp    L_463A
+L_4719:
+        jmp    L_45D7
+L_471C:                 ; script byte 8Ah
         lodsb
         call    _AdlibWrite
-        jmp    L_41FC
-L_434B:                 ; script byte 8Bh
+        jmp    L_45D7
+L_4723:                 ; script byte 8Bh
         xchg      ah, al
         call    _SetVoicePitch
         lodsb
@@ -972,14 +972,14 @@ L_434B:                 ; script byte 8Bh
         mov       word ptr [di + 3], si
         mov       al, byte ptr ds:[gNoteDuration]
         or        al, al
-        je    L_4363
-        jmp    L_425F
-L_4363:
-        jmp    L_41FC
-L_4366:                 ; script byte 8Ch
+        je    L_473B
+        jmp    L_463A
+L_473B:
+        jmp    L_45D7
+L_473E:                 ; script byte 8Ch
         mov       byte ptr [di + 12h], ah
-        jmp    L_41FC
-L_436C:                 ; script byte 8Dh
+        jmp    L_45D7
+L_4744:                 ; script byte 8Dh
         mov       byte ptr [di + 3ah], ah
         mov       byte ptr [di + 39h], ah
         lodsb
@@ -989,9 +989,9 @@ L_436C:                 ; script byte 8Dh
         mov       byte ptr [di + 3dh], al
         lodsw
         mov       word ptr [di + 3eh], ax
-        mov       word ptr [di + 2bh], offset L_4ED7
-        jmp    L_41FC
-L_4389:                 ; script byte 8Eh
+        mov       word ptr [di + 2bh], offset L_52AF
+        jmp    L_45D7
+L_4761:                 ; script byte 8Eh
         mov       al, byte ptr ds:[gVoiceIndex]
         push      ax
         push      di
@@ -1005,8 +1005,8 @@ L_4389:                 ; script byte 8Eh
         pop       di
         pop       ax
         mov       byte ptr ds:[gVoiceIndex], al
-        jmp    L_41FC
-L_43AD:                 ; script byte 90h
+        jmp    L_45D7
+L_4785:                 ; script byte 90h
         push      si
         mov       cl, byte ptr ds:[gOperatorOffset]
         sub       bx, bx
@@ -1015,25 +1015,25 @@ L_43AD:                 ; script byte 90h
         mov       si, word ptr [bx + gPatchTable]
         call    _LoadVoicePatch
         pop       si
-        jmp    L_41FC
-L_43C3:                 ; script byte 91h
+        jmp    L_45D7
+L_479B:                 ; script byte 91h
         mov       byte ptr [di + 13h], ah
         lodsb
         xchg      ah, al
         lodsb
         mov       word ptr [di + 15h], ax
-        mov       word ptr [di + 29h], offset L_4F00
+        mov       word ptr [di + 29h], offset L_52D8
         mov       byte ptr [di + 14h], 0ffh
-        jmp    L_41FC
-L_43D9:                 ; script byte 92h
+        jmp    L_45D7
+L_47B1:                 ; script byte 92h
         dec       si
-        mov       word ptr [di + 29h], offset L_4E7D
+        mov       word ptr [di + 29h], offset L_5255
         mov       word ptr [di + 15h], 0
-        jmp    L_41FC
-L_43E7:                 ; script byte 93h
+        jmp    L_45D7
+L_47BF:                 ; script byte 93h
         mov       byte ptr [di + 24h], ah
-        jmp    L_41FC
-L_43ED:                 ; script byte 95h
+        jmp    L_45D7
+L_47C5:                 ; script byte 95h
         mov       byte ptr [di + 1dh], ah
         lodsb
         mov       byte ptr [di + 19h], al
@@ -1044,12 +1044,12 @@ L_43ED:                 ; script byte 95h
         mov       byte ptr [di + 1bh], al
         lodsb
         mov       byte ptr [di + 1ch], al
-        mov       word ptr [di + 29h], offset L_4E7E
-        jmp    L_41FC
-L_440C:                 ; script byte 9Ah
+        mov       word ptr [di + 29h], offset L_5256
+        jmp    L_45D7
+L_47E4:                 ; script byte 9Ah
         mov       byte ptr [di + 8], ah
-        jmp    L_41FC
-L_4412:                 ; script byte 9Ch
+        jmp    L_45D7
+L_47EA:                 ; script byte 9Ch
         shr       ah, 1
         mov       byte ptr ds:[gTempoReload], ah
         mov       byte ptr ds:[gTempoCounter], ah
@@ -1057,68 +1057,68 @@ L_4412:                 ; script byte 9Ch
         mov       ah, 0
         mov       byte ptr ds:[gTempoBeat], ah
         mov       byte ptr ds:[gTempoWait], ah
-        jmp    L_41FC
-L_442E:                 ; script byte 9Dh
+        jmp    L_45D7
+L_4806:                 ; script byte 9Dh
         mov       al, byte ptr ds:[gTempoWait]
         or        al, al
-        jne    L_4441
+        jne    L_4819
         and       ah, byte ptr ds:[gTempoBeat]
-        jne    L_444F
+        jne    L_4827
         inc       byte ptr ds:[gTempoWait]
-        jmp short    L_444F
-L_4441:
+        jmp short    L_4827
+L_4819:
         and       ah, byte ptr ds:[gTempoBeat]
-        je    L_444F
+        je    L_4827
         mov       byte ptr ds:[gTempoWait], 0
-        jmp    L_41FC
-L_444F:
+        jmp    L_45D7
+L_4827:
         dec       si
         dec       si
         mov       byte ptr [di + 5], 1
         mov       word ptr [di + 3], si
-        jmp    L_4267
-        jmp    L_41FC
-L_445E:                 ; script byte 9Eh
+        jmp    L_4640
+        jmp    L_45D7
+L_4836:                 ; script byte 9Eh
         mov       byte ptr [di + 20h], ah
         call    _WriteVoiceReg
-        jmp    L_41FC
-L_4467:                 ; script byte A0h
+        jmp    L_45D7
+L_483F:                 ; script byte A0h
         call    _StartVoiceNote
         mov       word ptr [di + 3], si
         mov       al, byte ptr ds:[gNoteDuration]
         or        al, al
-        je    L_4477
-        jmp    L_425F
-L_4477:
-        jmp    L_41FC
-L_447A:                 ; script byte A1h
+        je    L_484F
+        jmp    L_463A
+L_484F:
+        jmp    L_45D7
+L_4852:                 ; script byte A1h
         call    _StartVoiceNote
         call    _VoiceKeyOn
         mov       word ptr [di + 3], si
         mov       al, byte ptr ds:[gNoteDuration]
         or        al, al
-        je    L_448D
-        jmp    L_425F
-L_448D:
-        jmp    L_41FC
-L_4490:                 ; script byte A4h
+        je    L_4865
+        jmp    L_463A
+L_4865:
+        jmp    L_45D7
+L_4868:                 ; script byte A4h
         and       ah, 7
         mov       byte ptr [di + 2dh], ah
-        jmp    L_41FC
-L_4499:                 ; script byte A6h
+        jmp    L_45D7
+L_4871:                 ; script byte A6h
         mov       byte ptr ds:[gTempoRate], ah
-        jmp    L_41FC
-L_44A0:                 ; script byte A7h
+        jmp    L_45D7
+L_4878:                 ; script byte A7h
         dec       si
-        mov       word ptr [di + 2bh], offset L_4E7D
-        jmp    L_41FC
-L_44A9:                 ; script byte A9h
+        mov       word ptr [di + 2bh], offset L_5255
+        jmp    L_45D7
+L_4881:                 ; script byte A9h
         mov       byte ptr [di + 25h], ah
-        jmp    L_41FC
-L_44AF:                 ; script byte ABh
+        jmp    L_45D7
+L_4887:                 ; script byte ABh
         mov       byte ptr [di + 30h], ah
-        jmp    L_41FC
-L_44B5:                 ; script byte ACh
+        jmp    L_45D7
+L_488D:                 ; script byte ACh
         mov       al, byte ptr ds:[gVoiceIndex]
         push      ax
         push      di
@@ -1133,8 +1133,8 @@ L_44B5:                 ; script byte ACh
         pop       di
         pop       ax
         mov       byte ptr ds:[gVoiceIndex], al
-        jmp    L_41FC
-L_44D6:                 ; script byte ADh
+        jmp    L_45D7
+L_48AE:                 ; script byte ADh
         mov       al, byte ptr ds:[gVoiceIndex]
         push      ax
         push      di
@@ -1150,8 +1150,8 @@ L_44D6:                 ; script byte ADh
         pop       di
         pop       ax
         mov       byte ptr ds:[gVoiceIndex], al
-        jmp    L_41FC
-L_44F9:                 ; script byte AEh
+        jmp    L_45D7
+L_48D1:                 ; script byte AEh
         and       ah, 1
         mov       cl, 7
         shl       ah, cl
@@ -1162,8 +1162,8 @@ L_44F9:                 ; script byte AEh
         mov       ah, 0bdh
         mov       al, bl
         call    _AdlibWrite
-        jmp    L_41FC
-L_4517:                 ; script byte AFh
+        jmp    L_45D7
+L_48EF:                 ; script byte AFh
         and       ah, 1
         mov       cl, 6
         shl       ah, cl
@@ -1174,20 +1174,20 @@ L_4517:                 ; script byte AFh
         mov       ah, 0bdh
         mov       al, bl
         call    _AdlibWrite
-        jmp    L_41FC
-L_4535:                 ; script byte B0h
+        jmp    L_45D7
+L_490D:                 ; script byte B0h
         add       ah, byte ptr [di + 20h]
         mov       byte ptr [di + 20h], ah
         call    _WriteVoiceReg
-        jmp    L_41FC
-L_4541:                 ; script byte B3h
+        jmp    L_45D7
+L_4919:                 ; script byte B3h
         mov       al, byte ptr ds:[gVoiceIndex]
         push      ax
         push      di
         cmp       ah, 0
-        jne    L_4550
+        jne    L_4928
         mov       byte ptr ds:[gEffectMode], 0
-L_4550:
+L_4928:
         mov       byte ptr ds:[gVoiceIndex], ah
         mov       bl, ah
         mov       bh, 0
@@ -1198,7 +1198,7 @@ L_4550:
         mov       word ptr [di + 3], 0
         mov       byte ptr [di], 0
         cmp       byte ptr ds:[gVoiceIndex], 9
-        je    L_45A5
+        je    L_497D
         mov       bl, ah
         xor       bh, bh
         mov       cl, byte ptr [bx + gOperatorOffsets]
@@ -1218,12 +1218,12 @@ L_4550:
         add       ah, byte ptr ds:[gVoiceIndex]
         mov       al, 0
         call    _AdlibWrite
-L_45A5:
+L_497D:
         pop       di
         pop       ax
         mov       byte ptr ds:[gVoiceIndex], al
-        jmp    L_41FC
-L_45AD:                 ; script byte B5h
+        jmp    L_45D7
+L_4985:                 ; script byte B5h
         lodsb
         mov       bx, ax
         call    _SoundRandom
@@ -1243,12 +1243,12 @@ L_45AD:                 ; script byte B5h
         add       ah, byte ptr ds:[gVoiceIndex]
         mov       al, bh
         call    _AdlibWrite
-        jmp    L_41FC
-L_45E0:                 ; script byte B6h
+        jmp    L_45D7
+L_49B8:                 ; script byte B6h
         dec       si
-        mov       word ptr [di + 29h], offset L_4E7D
-        jmp    L_41FC
-L_45E9:                 ; script byte B9h
+        mov       word ptr [di + 29h], offset L_5255
+        jmp    L_45D7
+L_49C1:                 ; script byte B9h
         mov       byte ptr [di + 42h], ah
         mov       al, byte ptr [di + 41h]
         push      ax
@@ -1260,16 +1260,16 @@ L_45E9:                 ; script byte B9h
         mov       bl, byte ptr [di + 12h]
         add       al, bl
         cmp       al, 0ch
-        jge    L_4610
+        jge    L_49E8
         cmp       al, 0
-        jge    L_4615
+        jge    L_49ED
         add       al, 0ch
         sub       ch, 10h
-        jmp short    L_4615
-L_4610:
+        jmp short    L_49ED
+L_49E8:
         sub       al, 0ch
         add       ch, 10h
-L_4615:
+L_49ED:
         mov       bl, al
         mov       bh, 0
         shl       bl, 1
@@ -1283,7 +1283,7 @@ L_4615:
         or        ch, ah
         mov       cl, al
         cmp       byte ptr [di + 42h], 0
-        jl    L_4658
+        jl    L_4A30
         xor       bh, bh
         mov       bl, byte ptr [di + 41h]
         and       bl, 0fh
@@ -1298,8 +1298,8 @@ L_4615:
         pop       si
         xor       ah, ah
         add       cx, ax
-        jmp short    L_467A
-L_4658:
+        jmp short    L_4A52
+L_4A30:
         xor       bh, bh
         mov       bl, byte ptr [di + 41h]
         and       bl, 0fh
@@ -1315,7 +1315,7 @@ L_4658:
         xor       ah, ah
         sub       cx, ax
         jmp    $+2
-L_467A:
+L_4A52:
         mov       ah, 0a0h
         mov       al, byte ptr [di + 28h]
         and       al, 20h
@@ -1331,34 +1331,34 @@ L_467A:
         mov       al, ch
         call    _AdlibWrite
         pop       ax
-        jmp    L_41FC
-L_46A3:                 ; script byte BAh
+        jmp    L_45D7
+L_4A7B:                 ; script byte BAh
         dec       si
         mov       al, byte ptr ds:[gTempoRate]
         mov       byte ptr [di + 25h], al
-        jmp    L_41FC
-L_46AD:                 ; script byte BBh
+        jmp    L_45D7
+L_4A85:                 ; script byte BBh
         dec       si
-        jmp    L_41FC
-L_46B1:                 ; script byte BCh
+        jmp    L_45D7
+L_4A89:                 ; script byte BCh
         mov       byte ptr [di + 36h], ah
-        jmp    L_41FC
-L_46B7:                 ; script byte BDh
+        jmp    L_45D7
+L_4A8F:                 ; script byte BDh
         or        ah, ah
-        js    L_46C4
+        js    L_4A9C
         add       ah, byte ptr [di + 25h]
-        jae    L_46CE
+        jae    L_4AA6
         mov       ah, 0ffh
-        jmp short    L_46CE
-L_46C4:
+        jmp short    L_4AA6
+L_4A9C:
         add       ah, byte ptr [di + 25h]
         cmp       ah, byte ptr [di + 25h]
-        jb    L_46CE
+        jb    L_4AA6
         mov       ah, 1
-L_46CE:
+L_4AA6:
         mov       byte ptr [di + 25h], ah
-        jmp    L_41FC
-L_46D4:                 ; script byte BFh
+        jmp    L_45D7
+L_4AAC:                 ; script byte BFh
         mov       byte ptr ds:[gEffectMode], ah
         lodsb
         push      si
@@ -1374,7 +1374,7 @@ L_46D4:                 ; script byte BFh
         mov       bx, word ptr [bx + gCurveTablePtrs]
         mov       word ptr ds:[gEffectCurveB], bx
         cmp       ah, 2
-        jne    L_471C
+        jne    L_4AF4
         mov       bx, 0
         mov       word ptr ds:[gEffectIndex], bx
         mov       si, word ptr ds:[gEffectCurveA]
@@ -1385,15 +1385,15 @@ L_46D4:                 ; script byte BFh
         mov       ah, 0a0h
         call    _AdlibWrite
         pop       si
-        jmp    L_41FC
-L_471C:
+        jmp    L_45D7
+L_4AF4:
         pop       si
-        jmp    L_41FC
-L_4720:                 ; script byte C0h
+        jmp    L_45D7
+L_4AF8:                 ; script byte C0h
         dec       si
         mov       byte ptr ds:[gEffectMode], 0
-        jmp    L_41FC
-L_4729:                 ; script byte C1h
+        jmp    L_45D7
+L_4B01:                 ; script byte C1h
         mov       al, byte ptr ds:[gVoiceIndex]
         push      ax
         mov       al, byte ptr ds:[gOperatorOffset]
@@ -1481,8 +1481,8 @@ L_4729:                 ; script byte C1h
         mov       byte ptr ds:[gOperatorOffset], al
         pop       ax
         mov       byte ptr ds:[gVoiceIndex], al
-        jmp    L_41FC
-L_4808:                 ; script byte C2h
+        jmp    L_45D7
+L_4BE0:                 ; script byte C2h
         mov       dx, 388h
         mov       al, 0bdh
         out       dx, al
@@ -1503,20 +1503,20 @@ L_4808:                 ; script byte C2h
         or        al, 20h
         out       dx, al
         call    _AdlibWaitAfterData
-        jmp    L_41FC
-L_4838:                 ; script byte C3h
+        jmp    L_45D7
+L_4C10:                 ; script byte C3h
         dec       si
         mov       al, byte ptr ds:[gRegBDDepth]
         mov       byte ptr ds:[gRhythmKeyBits], 0
         and       al, 0c0h
         mov       ah, 0bdh
         call    _AdlibWrite
-        jmp    L_41FC
-L_484B:                 ; script byte C4h
+        jmp    L_45D7
+L_4C23:                 ; script byte C4h
         lodsb
         mov       bx, ax
         test      ah, 1
-        je    L_486C
+        je    L_4C44
         mov       byte ptr ds:[gRhythmLevelC+2], al
         xor       ah, ah
         add       al, byte ptr ds:[gRhythmLevelA+2]
@@ -1525,10 +1525,10 @@ L_484B:                 ; script byte C4h
         call    _ClampLevel
         mov       ah, 51h
         call    _AdlibWrite
-L_486C:
+L_4C44:
         mov       ax, bx
         test      ah, 2
-        je    L_488C
+        je    L_4C64
         mov       byte ptr ds:[gRhythmLevelC+4], al
         xor       ah, ah
         add       al, byte ptr ds:[gRhythmLevelA+4]
@@ -1537,10 +1537,10 @@ L_486C:
         call    _ClampLevel
         mov       ah, 55h
         call    _AdlibWrite
-L_488C:
+L_4C64:
         mov       ax, bx
         test      ah, 4
-        je    L_48AC
+        je    L_4C84
         mov       byte ptr ds:[gRhythmLevelC+3], al
         xor       ah, ah
         add       al, byte ptr ds:[gRhythmLevelA+3]
@@ -1549,10 +1549,10 @@ L_488C:
         call    _ClampLevel
         mov       ah, 52h
         call    _AdlibWrite
-L_48AC:
+L_4C84:
         mov       ax, bx
         test      ah, 8
-        je    L_48CC
+        je    L_4CA4
         mov       byte ptr ds:[gRhythmLevelC+1], al
         xor       ah, ah
         add       al, byte ptr ds:[gRhythmLevelA+1]
@@ -1561,10 +1561,10 @@ L_48AC:
         call    _ClampLevel
         mov       ah, 54h
         call    _AdlibWrite
-L_48CC:
+L_4CA4:
         mov       ax, bx
         test      ah, 10h
-        je    L_48EC
+        je    L_4CC4
         mov       byte ptr ds:[gRhythmLevelC], al
         xor       ah, ah
         add       al, byte ptr ds:[gRhythmLevelA]
@@ -1573,13 +1573,13 @@ L_48CC:
         call    _ClampLevel
         mov       ah, 53h
         call    _AdlibWrite
-L_48EC:
-        jmp    L_41FC
-L_48EF:                 ; script byte C5h
+L_4CC4:
+        jmp    L_45D7
+L_4CC7:                 ; script byte C5h
         lodsb
         mov       bx, ax
         test      ah, 1
-        je    L_4910
+        je    L_4CE8
         xor       ah, ah
         add       al, byte ptr ds:[gRhythmLevelA+2]
         add       al, byte ptr ds:[gRhythmLevelB+2]
@@ -1588,10 +1588,10 @@ L_48EF:                 ; script byte C5h
         mov       byte ptr ds:[gRhythmLevelB+2], al
         mov       ah, 51h
         call    _AdlibWrite
-L_4910:
+L_4CE8:
         mov       ax, bx
         test      ah, 2
-        je    L_4930
+        je    L_4D08
         xor       ah, ah
         add       al, byte ptr ds:[gRhythmLevelA+4]
         add       al, byte ptr ds:[gRhythmLevelB+4]
@@ -1600,10 +1600,10 @@ L_4910:
         mov       byte ptr ds:[gRhythmLevelB+4], al
         mov       ah, 55h
         call    _AdlibWrite
-L_4930:
+L_4D08:
         mov       ax, bx
         test      ah, 4
-        je    L_4950
+        je    L_4D28
         xor       ah, ah
         add       al, byte ptr ds:[gRhythmLevelA+3]
         add       al, byte ptr ds:[gRhythmLevelB+3]
@@ -1612,10 +1612,10 @@ L_4930:
         mov       byte ptr ds:[gRhythmLevelB+3], al
         mov       ah, 52h
         call    _AdlibWrite
-L_4950:
+L_4D28:
         mov       ax, bx
         test      ah, 8
-        je    L_4970
+        je    L_4D48
         xor       ah, ah
         add       al, byte ptr ds:[gRhythmLevelA+1]
         add       al, byte ptr ds:[gRhythmLevelB+1]
@@ -1624,10 +1624,10 @@ L_4950:
         mov       byte ptr ds:[gRhythmLevelB+1], al
         mov       ah, 54h
         call    _AdlibWrite
-L_4970:
+L_4D48:
         mov       ax, bx
         test      ah, 10h
-        je    L_4990
+        je    L_4D68
         xor       ah, ah
         add       al, byte ptr ds:[gRhythmLevelA]
         add       al, byte ptr ds:[gRhythmLevelB]
@@ -1636,13 +1636,13 @@ L_4970:
         mov       byte ptr ds:[gRhythmLevelB], al
         mov       ah, 53h
         call    _AdlibWrite
-L_4990:
-        jmp    L_41FC
-L_4993:                 ; script byte C6h
+L_4D68:
+        jmp    L_45D7
+L_4D6B:                 ; script byte C6h
         lodsb
         mov       bx, ax
         test      ah, 1
-        je    L_49B0
+        je    L_4D88
         mov       byte ptr ds:[gRhythmLevelB+2], al
         xor       ah, ah
         add       al, byte ptr ds:[gRhythmLevelA+2]
@@ -1650,10 +1650,10 @@ L_4993:                 ; script byte C6h
         call    _ClampLevel
         mov       ah, 51h
         call    _AdlibWrite
-L_49B0:
+L_4D88:
         mov       ax, bx
         test      ah, 2
-        je    L_49CC
+        je    L_4DA4
         mov       byte ptr ds:[gRhythmLevelB+4], al
         xor       ah, ah
         add       al, byte ptr ds:[gRhythmLevelA+4]
@@ -1661,10 +1661,10 @@ L_49B0:
         call    _ClampLevel
         mov       ah, 55h
         call    _AdlibWrite
-L_49CC:
+L_4DA4:
         mov       ax, bx
         test      ah, 4
-        je    L_49E8
+        je    L_4DC0
         mov       byte ptr ds:[gRhythmLevelB+3], al
         xor       ah, ah
         add       al, byte ptr ds:[gRhythmLevelA+3]
@@ -1672,10 +1672,10 @@ L_49CC:
         call    _ClampLevel
         mov       ah, 52h
         call    _AdlibWrite
-L_49E8:
+L_4DC0:
         mov       ax, bx
         test      ah, 8
-        je    L_4A04
+        je    L_4DDC
         mov       byte ptr ds:[gRhythmLevelB+1], al
         xor       ah, ah
         add       al, byte ptr ds:[gRhythmLevelA+1]
@@ -1683,10 +1683,10 @@ L_49E8:
         call    _ClampLevel
         mov       ah, 54h
         call    _AdlibWrite
-L_4A04:
+L_4DDC:
         mov       ax, bx
         test      ah, 10h
-        je    L_4A20
+        je    L_4DF8
         mov       byte ptr ds:[gRhythmLevelB], al
         xor       ah, ah
         add       al, byte ptr ds:[gRhythmLevelA]
@@ -1694,22 +1694,22 @@ L_4A04:
         call    _ClampLevel
         mov       ah, 53h
         call    _AdlibWrite
-L_4A20:
-        jmp    L_41FC
-L_4A23:                 ; script byte C7h
+L_4DF8:
+        jmp    L_45D7
+L_4DFB:                 ; script byte C7h
         mov       byte ptr ds:[gScriptFlag], ah
-        jmp    L_41FC
-L_4A2A:                 ; script byte C8h
+        jmp    L_45D7
+L_4E02:                 ; script byte C8h
         mov       byte ptr [di + 40h], ah
-        jmp    L_41FC
-L_4A30:                 ; script byte C9h
+        jmp    L_45D7
+L_4E08:                 ; script byte C9h
         mov       byte ptr [di + 32h], ah
         lodsb
         mov       byte ptr [di + 33h], al
-        jmp    L_41FC
+        jmp    L_45D7
 _UpdateVoices ENDP
 
-; 0000:4A3A: builds the voice frequency and octave from its record and writes registers A0 and B0
+; 0000:4E12: builds the voice frequency and octave from its record and writes registers A0 and B0
         PUBLIC  _SetVoicePitch              ; @ 0000:4E12
 _SetVoicePitch PROC NEAR
         push      ax
@@ -1722,16 +1722,16 @@ _SetVoicePitch PROC NEAR
         mov       bl, byte ptr [di + 12h]
         add       al, bl
         cmp       al, 0ch
-        jge    L_4A5E
+        jge    L_4E36
         cmp       al, 0
-        jge    L_4A63
+        jge    L_4E3B
         add       al, 0ch
         sub       ch, 10h
-        jmp short    L_4A63
-L_4A5E:
+        jmp short    L_4E3B
+L_4E36:
         sub       al, 0ch
         add       ch, 10h
-L_4A63:
+L_4E3B:
         mov       bl, al
         mov       bh, 0
         shl       bl, 1
@@ -1745,8 +1745,8 @@ L_4A63:
         or        ch, ah
         mov       cl, al
         cmp       byte ptr [di + 42h], 0
-        je    L_4AC8
-        jl    L_4AA8
+        je    L_4EA0
+        jl    L_4E80
         xor       bh, bh
         mov       bl, byte ptr [di + 41h]
         and       bl, 0fh
@@ -1761,8 +1761,8 @@ L_4A63:
         pop       si
         xor       ah, ah
         add       cx, ax
-        jmp short    L_4AC8
-L_4AA8:
+        jmp short    L_4EA0
+L_4E80:
         xor       bh, bh
         mov       bl, byte ptr [di + 41h]
         and       bl, 0fh
@@ -1777,7 +1777,7 @@ L_4AA8:
         pop       si
         xor       ah, ah
         sub       cx, ax
-L_4AC8:
+L_4EA0:
         mov       ah, 0a0h
         mov       al, byte ptr [di + 28h]
         and       al, 20h
@@ -1796,7 +1796,7 @@ L_4AC8:
         ret
 _SetVoicePitch ENDP
 
-; 0000:4AEF: writes register B0 for the voice key-on gate and computes its period
+; 0000:4EC7: writes register B0 for the voice key-on gate and computes its period
         PUBLIC  _VoiceKeyOn              ; @ 0000:4EC7
 _VoiceKeyOn PROC NEAR
         push      ax
@@ -1821,42 +1821,42 @@ _VoiceKeyOn PROC NEAR
         ret
 _VoiceKeyOn ENDP
 
-; 0000:4B1F: clears the key-on bit of the voice and writes register B0 (skips the first six voices while a sample plays)
+; 0000:4EF7: clears the key-on bit of the voice and writes register B0 (skips the first six voices while a sample plays)
         PUBLIC  _VoiceKeyOff              ; @ 0000:4EF7
 _VoiceKeyOff PROC NEAR
         cmp       byte ptr ds:[gRhythmKeyBits], 0
-        je    L_4B2E
+        je    L_4F06
         cmp       byte ptr ds:[gVoiceIndex], 6
-        jl    L_4B2E
+        jl    L_4F06
         ret
-L_4B2E:
+L_4F06:
         cmp       byte ptr ds:[gVoiceIndex], 9
-        je    L_4B46
+        je    L_4F1E
         mov       ah, 0b0h
         add       ah, byte ptr ds:[gVoiceIndex]
         mov       al, byte ptr [di + 28h]
         and       al, 0dfh
         mov       byte ptr [di + 28h], al
         call    _AdlibWrite
-L_4B46:
+L_4F1E:
         ret
 _VoiceKeyOff ENDP
 
-; 0000:4B47: starts the note of a voice: records the level byte, uses the random byte and the 2dh shift, sets the delay
+; 0000:4F1F: starts the note of a voice: records the level byte, uses the random byte and the 2dh shift, sets the delay
         PUBLIC  _StartVoiceNote              ; @ 0000:4F1F
 _StartVoiceNote PROC NEAR
         mov       byte ptr ds:[gNoteDuration], ah
         cmp       byte ptr [di + 36h], 0
         mov       bl, ah
-        je    L_4B5F
+        je    L_4F37
         call    _SoundRandom
         and       al, byte ptr [di + 36h]
         add       bl, al
         mov       byte ptr [di + 5], bl
         ret
-L_4B5F:
+L_4F37:
         cmp       byte ptr [di + 2dh], 0
-        je    L_4B7B
+        je    L_4F53
         mov       bl, ah
         shr       ah, 1
         shr       ah, 1
@@ -1864,16 +1864,16 @@ L_4B5F:
         mov       cl, byte ptr [di + 2dh]
         xor       ch, ch
         xor       al, al
-L_4B74:
+L_4F4C:
         add       al, ah
-        loop    L_4B74
+        loop    L_4F4C
         mov       byte ptr [di + 21h], al
-L_4B7B:
+L_4F53:
         mov       byte ptr [di + 5], bl
         ret
 _StartVoiceNote ENDP
 
-; 0000:4B7F: the AdLib sample driver on: programs the PIT and the speakers and installs the INT 08h handler at 3EE5 for a sample far pointer
+; 0000:4F57: the AdLib sample driver on: programs the PIT and the speakers and installs the INT 08h handler at 42C0 for a sample far pointer
         PUBLIC  _StartSample              ; @ 0000:4F57
 _StartSample PROC NEAR
         push      bp
@@ -1913,7 +1913,7 @@ _StartSample PROC NEAR
         mov       bl, al
         in        al, 40h
         mov       bh, al
-L_4BD8:
+L_4FB0:
         mov       al, 0
         out       43h, al
         in        al, 40h
@@ -1923,7 +1923,7 @@ L_4BD8:
         neg       cx
         add       cx, bx
         cmp       cx, 952h
-        jb    L_4BD8
+        jb    L_4FB0
         mov       ax, 0b020h
         call    _AdlibWrite
         mov       ax, 0a000h
@@ -1975,7 +1975,7 @@ L_4BD8:
         retf
 _StartSample ENDP
 
-; 0000:4C6B: writes the value AL to the AdLib register AH: the register number to port 388h, a short wait, the value to port 389h, a
+; 0000:5043: writes the value AL to the AdLib register AH: the register number to port 388h, a short wait, the value to port 389h, a
 ; long wait (AdlibWaitAfterIndex, AdlibWaitAfterData). Clobbers dx; keeps ax. Every register write of the driver goes through here.
         PUBLIC  _AdlibWrite              ; @ 0000:5043
 _AdlibWrite PROC NEAR
@@ -1990,52 +1990,52 @@ _AdlibWrite PROC NEAR
         ret
 _AdlibWrite ENDP
 
-; 0000:4C7C: clamps the signed level in AX to 0 to 3Fh, the range of an AdLib level register's total level bits; the result is in AL
+; 0000:5054: clamps the signed level in AX to 0 to 3Fh, the range of an AdLib level register's total level bits; the result is in AL
         PUBLIC  _ClampLevel              ; @ 0000:5054
 _ClampLevel PROC NEAR
         cmp       ax, 0
-        jl    L_4C87
+        jl    L_505F
         cmp       ax, 3fh
-        jg    L_4C8A
+        jg    L_5062
         ret
-L_4C87:
+L_505F:
         mov       al, 0
         ret
-L_4C8A:
+L_5062:
         mov       al, 3fh
         ret
 _ClampLevel ENDP
 
-; 0000:4C8D: advances the tempo counters at 3B5D/3B5C and the step byte 3B5E
+; 0000:5065: advances the tempo counters at 3F44/3F43 and the step byte 3F45
         PUBLIC  _TickTempo              ; @ 0000:5065
 _TickTempo PROC NEAR
         mov       al, byte ptr ds:[gTempoAccum]
         add       al, byte ptr ds:[gTempoRate]
         mov       byte ptr ds:[gTempoAccum], al
-        jb    L_4C9A
+        jb    L_5072
         ret
-L_4C9A:
+L_5072:
         dec       byte ptr ds:[gTempoCounter]
-        je    L_4CA1
+        je    L_5079
         ret
-L_4CA1:
+L_5079:
         mov       al, byte ptr ds:[gTempoReload]
         mov       byte ptr ds:[gTempoCounter], al
         inc       byte ptr ds:[gTempoBeat]
         ret
 _TickTempo ENDP
 
-; 0000:4CAC: returns ax = the sample read pointer's offset (the word at 3B78), zero when no sample plays. Far routine, no arguments;
-; the seventh entry of the driver's entry table (3944).
+; 0000:5084: returns ax = the sample read pointer's offset (the word at 3F5F), zero when no sample plays. Far routine, no arguments;
+; the seventh entry of the driver's entry table (3D2C).
         PUBLIC  _GetSampleOffset              ; @ 0000:5084
 _GetSampleOffset PROC NEAR
         mov       ax, word ptr cs:[gSamplePtrOff]
         retf
 _GetSampleOffset ENDP
 
-; 0000:4CB1: returns the byte at +5 of the voice record of the voice given as the argument (0 to 9), the voice's note delay counter
+; 0000:5089: returns the byte at +5 of the voice record of the voice given as the argument (0 to 9), the voice's note delay counter
 ; (StartVoiceNote sets it, UpdateVoices counts it down): nonzero while the voice is sounding. Far routine, one argument; the sixth entry of
-; the entry table (3944)
+; the entry table (3D2C)
         PUBLIC  _GetVoiceState              ; @ 0000:5089
 _GetVoiceState PROC NEAR
         push      bp
@@ -2057,7 +2057,7 @@ _GetVoiceState PROC NEAR
         retf
 _GetVoiceState ENDP
 
-; 0000:4CD0: the wait after an AdLib data write: reads the status port 388h 17h (23) times; keeps ax, cx and dx
+; 0000:50A8: the wait after an AdLib data write: reads the status port 388h 17h (23) times; keeps ax, cx and dx
         PUBLIC  _AdlibWaitAfterData              ; @ 0000:50A8
 _AdlibWaitAfterData PROC NEAR
         push      ax
@@ -2065,16 +2065,16 @@ _AdlibWaitAfterData PROC NEAR
         push      dx
         mov       dx, 388h
         mov       cx, 17h
-L_4CD9:
+L_50B1:
         in        al, dx
-        loop    L_4CD9
+        loop    L_50B1
         pop       dx
         pop       cx
         pop       ax
         ret
 _AdlibWaitAfterData ENDP
 
-; 0000:4CE0: the wait after an AdLib register number write: reads the status port 388h 4 times; keeps ax, cx and dx
+; 0000:50B8: the wait after an AdLib register number write: reads the status port 388h 4 times; keeps ax, cx and dx
         PUBLIC  _AdlibWaitAfterIndex              ; @ 0000:50B8
 _AdlibWaitAfterIndex PROC NEAR
         push      ax
@@ -2082,16 +2082,16 @@ _AdlibWaitAfterIndex PROC NEAR
         push      dx
         mov       dx, 388h
         mov       cx, 4
-L_4CE9:
+L_50C1:
         in        al, dx
-        loop    L_4CE9
+        loop    L_50C1
         pop       dx
         pop       cx
         pop       ax
         ret
 _AdlibWaitAfterIndex ENDP
 
-; 0000:4CF0: writes the voice 3E45-table register 43h and, when the voice is two-operator, register 40h
+; 0000:50C8: writes the voice 422C-table register 43h and, when the voice is two-operator, register 40h
         PUBLIC  _WriteVoiceReg              ; @ 0000:50C8
 _WriteVoiceReg PROC NEAR
         call    _VoiceCarrierLevel
@@ -2102,7 +2102,7 @@ _WriteVoiceReg PROC NEAR
         add       ah, 43h
         call    _AdlibWrite
         cmp       byte ptr [di + 31h], 0
-        je    L_4D1E
+        je    L_50F6
         call    _VoiceModulatorLevel
         mov       bx, offset gOperatorOffsets
         add       bl, byte ptr ds:[gVoiceIndex]
@@ -2110,11 +2110,11 @@ _WriteVoiceReg PROC NEAR
         mov       ah, cl
         add       ah, 40h
         call    _AdlibWrite
-L_4D1E:
+L_50F6:
         ret
 _WriteVoiceReg ENDP
 
-; 0000:4D1F: computes the value of the carrier operator's level register (43h plus the operator offset) for the voice record at di:
+; 0000:50F7: computes the value of the carrier operator's level register (43h plus the operator offset) for the voice record at di:
 ; the level bits (3Fh) of record byte 2Fh (the patch's carrier byte, set by LoadVoicePatch) plus the bytes at 20h, 00h and 30h, less the high
 ; byte of byte 34h shifted left by byte 33h + 1 when byte 33h is nonzero, clamped to 0 to 3Fh; the top two bits (key scale) of byte 2Fh are
 ; kept. Result in AL
@@ -2126,30 +2126,30 @@ _VoiceCarrierLevel PROC NEAR
         add       al, byte ptr [di]
         add       al, byte ptr [di + 30h]
         cmp       byte ptr [di + 33h], 0
-        je    L_4D40
+        je    L_5118
         mov       cl, byte ptr [di + 33h]
         inc       cl
         xor       bh, bh
         mov       bl, byte ptr [di + 34h]
         shl       bx, cl
         sub       al, bh
-L_4D40:
+L_5118:
         cmp       al, 3fh
-        jbe    L_4D4E
+        jbe    L_5126
         cmp       al, 0
-        jl    L_4D4C
+        jl    L_5124
         mov       al, 3fh
-        jmp short    L_4D4E
-L_4D4C:
+        jmp short    L_5126
+L_5124:
         mov       al, 0
-L_4D4E:
+L_5126:
         mov       bl, byte ptr [di + 2fh]
         and       bl, 0c0h
         or        al, bl
         ret
 _VoiceCarrierLevel ENDP
 
-; 0000:4D57: the same for the modulator operator's level register (40h plus the operator offset), from record byte 2Eh: the bytes at 20h,
+; 0000:512F: the same for the modulator operator's level register (40h plus the operator offset), from record byte 2Eh: the bytes at 20h,
 ; 00h and 30h are added only when byte 31h (the patch's connection bit, additive: both operators sound) is set, and the shift is by byte
 ; 32h + 1. Result in AL
         PUBLIC  _VoiceModulatorLevel              ; @ 0000:512F
@@ -2157,36 +2157,36 @@ _VoiceModulatorLevel PROC NEAR
         mov       al, byte ptr [di + 2eh]
         and       al, 3fh
         cmp       byte ptr [di + 31h], 0
-        je    L_4D6A
+        je    L_5142
         add       al, byte ptr [di + 20h]
         add       al, byte ptr [di]
         add       al, byte ptr [di + 30h]
-L_4D6A:
+L_5142:
         cmp       byte ptr [di + 32h], 0
-        je    L_4D7E
+        je    L_5156
         mov       cl, byte ptr [di + 32h]
         inc       cl
         xor       bh, bh
         mov       bl, byte ptr [di + 34h]
         shl       bx, cl
         sub       al, bh
-L_4D7E:
+L_5156:
         cmp       al, 3fh
-        jbe    L_4D8C
+        jbe    L_5164
         cmp       al, 0
-        jl    L_4D8A
+        jl    L_5162
         mov       al, 3fh
-        jmp short    L_4D8C
-L_4D8A:
+        jmp short    L_5164
+L_5162:
         mov       al, 0
-L_4D8C:
+L_5164:
         mov       bl, byte ptr [di + 2eh]
         and       bl, 0c0h
         or        al, bl
         ret
 _VoiceModulatorLevel ENDP
 
-; 0000:4D95: zeroes the 40h-byte voice record from offset 3 and resets its delay and script pointers
+; 0000:516D: zeroes the 40h-byte voice record from offset 3 and resets its delay and script pointers
         PUBLIC  _ClearVoice              ; @ 0000:516D
 _ClearVoice PROC NEAR
         push      es
@@ -2205,8 +2205,8 @@ _ClearVoice PROC NEAR
         pop       di
         mov       byte ptr [di + 25h], 0ffh
         mov       byte ptr [di + 8], 0
-        mov       word ptr [di + 29h], offset L_4E7D
-        mov       word ptr [di + 2bh], offset L_4E7D
+        mov       word ptr [di + 29h], offset L_5255
+        mov       word ptr [di + 2bh], offset L_5255
         mov       byte ptr [di + 35h], 1
         pop       cx
         pop       ax
@@ -2214,7 +2214,7 @@ _ClearVoice PROC NEAR
         ret
 _ClearVoice ENDP
 
-; 0000:4DC8: writes a voice's patch (instrument), the 11 bytes at si, to the AdLib: registers 20h, 23h (tremolo, vibrato, sustain hold, key scale rate
+; 0000:51A0: writes a voice's patch (instrument), the 11 bytes at si, to the AdLib: registers 20h, 23h (tremolo, vibrato, sustain hold, key scale rate
 ; and multiplier of the two operators), C0h plus the voice (feedback and connection, whose bit 0 it keeps in record byte 31h), E0h, E3h
 ; (waveforms), 40h (modulator level, through VoiceModulatorLevel, base byte kept at +2Eh), 43h (carrier level, base byte at +2Fh), 60h, 63h,
 ; 80h, 83h (attack, decay, sustain, release). cl = the operator offset of the voice (gOperatorOffsets), di = its record. What each
@@ -2274,15 +2274,15 @@ _LoadVoicePatch PROC NEAR
         ret
 _LoadVoicePatch ENDP
 
-; 0000:4E34: silences a voice: writes ffh to its level registers and B0, then zeroes its gate and key-on
+; 0000:520C: silences a voice: writes ffh to its level registers and B0, then zeroes its gate and key-on
         PUBLIC  _VoiceSilence              ; @ 0000:520C
 _VoiceSilence PROC NEAR
         cmp       byte ptr ds:[gRhythmKeyBits], 0
-        je    L_4E41
+        je    L_5219
         cmp       cl, 6
-        jl    L_4E41
+        jl    L_5219
         ret
-L_4E41:
+L_5219:
         mov       bx, offset gOperatorOffsets
         mov       ch, cl
         add       bl, cl
@@ -2310,29 +2310,29 @@ L_4E41:
         mov       al, 20h
         call    _AdlibWrite
         ret
-L_4E7D:
+L_5255:
         ret
-L_4E7E:
+L_5256:
         cmp       byte ptr [di + 1fh], 0
-        je    L_4E88
+        je    L_5260
         dec       byte ptr [di + 1fh]
         ret
-L_4E88:
+L_5260:
         mov       cl, byte ptr [di + 1eh]
         add       cl, byte ptr [di + 1dh]
         mov       byte ptr [di + 1eh], cl
-        jb    L_4E94
+        jb    L_526C
         ret
-L_4E94:
+L_526C:
         mov       bx, word ptr [di + 17h]
         dec       byte ptr [di + 1ah]
-        jne    L_4EA9
+        jne    L_5281
         xor       bx, 0ffffh
         inc       bx
         mov       word ptr [di + 17h], bx
         mov       al, byte ptr [di + 1bh]
         mov       byte ptr [di + 1ah], al
-L_4EA9:
+L_5281:
         mov       ax, word ptr [di + 27h]
         and       ax, 3ffh
         add       ax, bx
@@ -2350,18 +2350,18 @@ L_4EA9:
         mov       al, byte ptr [di + 28h]
         call    _AdlibWrite
         ret
-L_4ED7:
+L_52AF:
         mov       al, byte ptr [di + 3ah]
         add       al, byte ptr [di + 39h]
         mov       byte ptr [di + 3ah], al
-        jb    L_4EE3
+        jb    L_52BB
         ret
-L_4EE3:
+L_52BB:
         dec       byte ptr [di + 3ch]
-        jns    L_4EEE
+        jns    L_52C6
         mov       al, byte ptr [di + 3bh]
         mov       byte ptr [di + 3ch], al
-L_4EEE:
+L_52C6:
         mov       ah, byte ptr [di + 3dh]
         add       ah, byte ptr ds:[gOperatorOffset]
         mov       al, byte ptr [di + 3ch]
@@ -2369,13 +2369,13 @@ L_4EEE:
         xlatb
         call    _AdlibWrite
         ret
-L_4F00:
+L_52D8:
         mov       cl, byte ptr [di + 14h]
         add       cl, byte ptr [di + 13h]
         mov       byte ptr [di + 14h], cl
-        jb    L_4F0C
+        jb    L_52E4
         ret
-L_4F0C:
+L_52E4:
         mov       bl, byte ptr [di + 27h]
         mov       bh, byte ptr [di + 28h]
         and       bh, 3
@@ -2385,36 +2385,36 @@ L_4F0C:
         and       dh, 20h
         mov       cx, word ptr [di + 15h]
         or        cx, cx
-        jl    L_4F43
+        jl    L_531B
         add       bx, cx
         cmp       bx, 2deh
-        jl    L_4F5D
+        jl    L_5335
         shr       bx, 1
         push      bx
         and       bx, 3ffh
-        jne    L_4F3A
+        jne    L_5312
         pop       bx
         inc       bx
-L_4F3A:
+L_5312:
         pop       bx
         add       dl, 4
         and       dl, 1ch
-        jmp short    L_4F5D
-L_4F43:
+        jmp short    L_5335
+L_531B:
         add       bx, cx
         cmp       bx, 184h
-        jg    L_4F5D
+        jg    L_5335
         shl       bx, 1
         push      bx
         and       bx, 3ffh
-        jne    L_4F56
+        jne    L_532E
         pop       bx
         dec       bx
-L_4F56:
+L_532E:
         pop       bx
         sub       dl, 4
         and       dl, 1ch
-L_4F5D:
+L_5335:
         and       bx, 3ffh
         mov       cx, dx
         mov       ah, 0a0h
@@ -2432,7 +2432,7 @@ L_4F5D:
         ret
 _VoiceSilence ENDP
 
-; 0000:4F84: the driver random byte: rotates 3B47 after adding 9248h; the jump table at 4F94 follows it
+; 0000:535C: the driver random byte: rotates 3F2E after adding 9248h; the jump table at 536C follows it
         PUBLIC  _SoundRandom              ; @ 0000:535C
 _SoundRandom PROC NEAR
         mov       ax, word ptr ds:[gRandomSeed]
@@ -2444,25 +2444,25 @@ _SoundRandom PROC NEAR
         ret
 _SoundRandom ENDP
 
-; 0000:4F94: the script command jump table (data, 148 bytes, 74 entries). UpdateVoices (424A to 425D: and al,7Fh; cmp al,70h; jle;
-; mov bx,[bx+4F94h]; jmp bx) runs entry n for a script byte with the high bit set, 80h + n; entries that name L_4311 are commands
-; with no handler of their own, they end the voice's script. QUIRK 424C: the bound is 70h but the table has 4Ah entries, so the
+; 0000:536C: the script command jump table (data, 148 bytes, 74 entries). UpdateVoices (4625 to 4638: and al,7Fh; cmp al,70h; jle;
+; mov bx,[bx+536Ch]; jmp bx) runs entry n for a script byte with the high bit set, 80h + n; entries that name L_46E9 are commands
+; with no handler of their own, they end the voice's script. QUIRK 4627: the bound is 70h but the table has 4Ah entries, so the
 ; script bytes CAh to F0h index past it, into the text that follows (the runtime library's "Runtime overlay error"), and jump to
-; whatever address those characters make; only F1h to FFh reach L_4311 by the range check.
+; whatever address those characters make; only F1h to FFh reach L_46E9 by the range check.
         PUBLIC  _CommandTable              ; @ 0000:536C
 _CommandTable LABEL WORD
-        dw      L_4271, L_4276, L_427F, L_42CE, L_42D4, L_42E0
-        dw      L_42F8, L_430B, L_4311, L_4327, L_4344, L_434B
-        dw      L_4366, L_436C, L_4389, L_4311, L_43AD, L_43C3
-        dw      L_43D9, L_43E7, L_4311, L_43ED, L_4311, L_4311
-        dw      L_4311, L_4311, L_440C, L_4311, L_4412, L_442E
-        dw      L_445E, L_4311, L_4467, L_447A, L_4311, L_4311
-        dw      L_4490, L_4311, L_4499, L_44A0, L_4311, L_44A9
-        dw      L_4311, L_44AF, L_44B5, L_44D6, L_44F9, L_4517
-        dw      L_4535, L_4311, L_4311, L_4541, L_4311, L_45AD
-        dw      L_45E0, L_4311, L_4311, L_45E9, L_46A3, L_46AD
-        dw      L_46B1, L_46B7, L_4311, L_46D4, L_4720, L_4729
-        dw      L_4808, L_4838, L_484B, L_48EF, L_4993, L_4A23
-        dw      L_4A2A, L_4A30
+        dw      L_464A, L_464F, L_4657, L_46A6, L_46AC, L_46B8
+        dw      L_46D0, L_46E3, L_46E9, L_46FF, L_471C, L_4723
+        dw      L_473E, L_4744, L_4761, L_46E9, L_4785, L_479B
+        dw      L_47B1, L_47BF, L_46E9, L_47C5, L_46E9, L_46E9
+        dw      L_46E9, L_46E9, L_47E4, L_46E9, L_47EA, L_4806
+        dw      L_4836, L_46E9, L_483F, L_4852, L_46E9, L_46E9
+        dw      L_4868, L_46E9, L_4871, L_4878, L_46E9, L_4881
+        dw      L_46E9, L_4887, L_488D, L_48AE, L_48D1, L_48EF
+        dw      L_490D, L_46E9, L_46E9, L_4919, L_46E9, L_4985
+        dw      L_49B8, L_46E9, L_46E9, L_49C1, L_4A7B, L_4A85
+        dw      L_4A89, L_4A8F, L_46E9, L_4AAC, L_4AF8, L_4B01
+        dw      L_4BE0, L_4C10, L_4C23, L_4CC7, L_4D6B, L_4DFB
+        dw      L_4E02, L_4E08
 
         END
