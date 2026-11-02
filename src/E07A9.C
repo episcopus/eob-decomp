@@ -69,17 +69,30 @@ extern char gF43C; /*@ ds:F43C */  /* written by StartupAlloc (07A9:000D, set to
                                       DrawMemberHp, which draws the "HP" label instead of
                                       "%3d of %-3d" when it is set (src/E1547.C:269, the comment at
                                       src/E1547.C:235-238). Purpose unknown */
-extern char gFB45; /*@ ds:FB45 */  /* written by StartupAlloc (07A9:0024, set to 0); no reader found
-                                      in src/ (a grep finds only this file), Purpose unknown */
+extern char gFB45; /*@ ds:FB45 */  /* written by StartupAlloc (07A9:0024, set to 0); the overlay 3
+                                      LoadMapScreen sets it to 1 (src/EOV3.C:702), and the overlay 4
+                                      DrawViewFrame tests it with video mode 3 (src/EOV4.C:395) and
+                                      clears it (src/EOV4.C:402; declared "request flag, cleared here",
+                                      src/EOV4.C:368). What the request is is Purpose unknown */
 extern void far *gBuf8DCA; /*@ ds:8DCA */  /* start-up far allocation, 7500 bytes (07A9:002F); the base
                                               of the 122E action-script driver's script: JumpToScriptOffset
                                               (122E:139D, src/E122E.C:16) adds the script's word
                                               offset to it (src/E122E.C:473, the comment at :467-468), and
                                               PushScriptPointer (122E:1422) does the same
-                                              (src/E122E.C:512, the comment at :500). Why the start-up
+                                              (src/E122E.C:512, the comment at :500). Overlay 3 uses
+                                              it too: LoadMapScreen unpacks LEVEL<n>.INF into it
+                                              (src/EOV3.C:585-586, "the 7500-byte unpacked level
+                                              script", src/EOV3.C:201), reads the item records through
+                                              it (src/EOV3.C:682-683) and passes gBuf8DCA + 0x1a to
+                                              LoadWallTextures (src/EOV3.C:698). Why the start-up
                                               block holds the script is Purpose unknown */
-extern void far *gBufF43E; /*@ ds:F43E */  /* start-up far allocation, 6000 bytes (07A9:0046); no
-                                              reader found in src/, Purpose unknown */
+extern void far *gBufF43E; /*@ ds:F43E */  /* start-up far allocation, 6000 bytes (07A9:0046); the
+                                              overlay 3 LoadMapScreen fills it from the level graphics
+                                              file (src/EOV3.C:591-592, "the 6000-byte level
+                                              graphics file", src/EOV3.C:202 [H]), and the overlay 4
+                                              page-buffer readers CopyViewColumn (src/EOV4.C:171) and
+                                              ToggleViewColumn (src/EOV4.C:214) read it as the page
+                                              buffer (src/EOV4.C:155-156). Purpose unknown */
 extern unsigned char far *gSoundMap; /*@ ds:DCAC */  /* the 120-byte sound map (game number to
                                                          driver number), read from the driver file
                                                          (adlib.dat or pcgamesn.dat, src/E177D.C:2-3) */
@@ -93,17 +106,30 @@ extern void far *gBufDCFC; /*@ ds:DCFC */  /* start-up far allocation, 4096 byte
                                               E19FC.ASM:40 describes the caller that fills the block
                                               before compression (through ds:DCFC and ds:DCFE) */
 extern char far *gBufF534; /*@ ds:F534 */  /* the 1600-byte ITEMRMP buffer (07A9:008B,
-                                              whitepaper 4.4) */
+                                              whitepaper 4.4). Its readers: the ITEMRMP read
+                                              (FileRead of 0x640 bytes into it, src/EOV2.C:296, in
+                                              LoadItemSheets) and the icon colour row (src/E0D1C.C:480,
+                                              gFn80D2(gBufF534 + (icon << 4))) */
 extern void far *gSegDCA6; /*@ ds:DCA6 */  /* the far pointer f19EC_0002(7) returns (src/E19EC.C:20,
                                               07A9:00A3): offset 0, segment gSegsFC0C[7], the word at
-                                              ds:FC1A that SetUnpackBuffer gets at 07A9:00DB */
+                                              ds:FC1A that SetUnpackBuffer gets at 07A9:00DB. Overlay 3
+                                              and 4 use it too: LoadWallTextures writes the
+                                              0xCB20-byte texture block through it (src/EOV3.C:476),
+                                              expands and masks it (src/EOV3.C:479-487; the comment
+                                              above LoadWallTextures, src/EOV3.C:457-464), and
+                                              DrawViewFrame draws from it (DrawTile, src/EOV4.C:393;
+                                              declared "the far pointer DrawTile draws",
+                                              src/EOV4.C:374) */
 extern void far *gSegDF4E; /*@ ds:DF4E */  /* slot 5's far pointer, f19EC_0002(5) (07A9:00BA); the
                                               action screen's swap buffer: Action01E3 (src/E0ACD.C:263)
                                               blits it to the action field through gFn804A
                                               (src/E0ACD.C:269), Action0264 (src/E0ACD.C:287) copies a
                                               0xF3-byte character record through it (three Unpack0
                                               copies, src/E0ACD.C:307-309), and FindWordPanel
-                                              passes it to gFn807E and gFn804A (src/EOV2.C:482, 522).
+                                              passes it to gFn807E and gFn804A (src/EOV2.C:482, 522);
+                                              RedrawRowArea (0BD2:0ABE, src/E0BD2.C:622) passes it to
+                                              gSaveRect with the same 0x12 by 0xA8 field that
+                                              Action01E3 blits (src/E0ACD.C:269).
                                               Overlay 3 uses it too: LoadObjects (ovl3:09AA,
                                               src/EOV3.C:508) reads 0x1000 bytes into it (FileRead at
                                               src/EOV3.C:518) and reads it back (src/EOV3.C:523-528),
