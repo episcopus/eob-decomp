@@ -9,16 +9,20 @@
    recorded, and records the new sound and cell only for a later call; PlaySoundDefault (177D:00F3)
    passes the party's map cell gPartyCell (ds:FBCA) as the sound's cell. A call's attenuation is the
    distance between gPartyCell and that cell, Distance(gPartyCell, cell) (177D:0261 to 0279). gDrvReg
-   (0000:3B36) is the driver's busy flag: the program waits for it to clear before it writes the
-   sound registers and sets it to 0Bh after a start. Whitepaper 2.7 (AdLib) and 4.4 (ADLIB.DAT /
-   PCGAMESN.DAT). Compiled -ml -O -Z. */
+   (0000:3B36) is the driver's busy countdown: set to 0Bh after a start and counted down by the
+   driver's timer; the AdLib path waits for it to reach 0 before it writes registers. Whitepaper
+   2.7 (AdLib) and 4.4 (ADLIB.DAT / PCGAMESN.DAT). Compiled -ml -O -Z. */
 
+/* kept for the unit convention (src/E07C8.C:10, src/E082C.C:12) */
 #include <dos.h>
 
 /* Meaningful constants of this unit. */
 /* the length read for the driver block (at most this many bytes, whitepaper 4.4); the FileRead
    length at 177D:004C */
 #define DRIVER_BLOCK_SIZE 0x32C8L
+/* the length of the 120-byte sound map StartupAlloc allocates (src/E07A9.C:216); the FileRead
+   length at 177D:004C */
+#define SOUND_MAP_SIZE 120L
 /* a game-sound map value from here up is ignored (whitepaper 4.4, 177D:008C) */
 #define SOUND_MAP_IGNORED 0x96
 /* the low seven bits of the driver sound, the speaker driver routine index (177D:00D2, 177D:0240) */
@@ -62,7 +66,8 @@ extern unsigned char gSpeakerOn; /*@ ds:8A67 */  /* the PC speaker / Tandy drive
                                                     their 0 stores (177D:00B3, 177D:021E) are dead:
                                                     both sit in the `driverSound < 0` / `gCurSound < 0`
                                                     blocks the QUIRKs name. The live 0 writer is
-                                                    ShutdownGame (src/E07C8.C:329) */
+                                                    ShutdownGame (src/E07C8.C:329). The name stays
+                                                    (owner's call): the value selects the driver */
 extern int gCurSound; /*@ ds:5E22 */  /* the driver sound number recorded by the previous call of
                                           PlaySoundAtCell; nonzero guards the retune, and 177D:0106
                                           restarts this recorded number, not the new one */
@@ -93,14 +98,16 @@ extern int gPartyCell; /*@ ds:FBCA */  /* the party's map cell: PlaySoundDefault
                                           src/EOV6.C:410) and it indexes the nine-byte cell records
                                           (src/E0D1C.C:352, :358) */
 
-extern unsigned char far gDrvReg; /*@ 0000:3B36 */  /* the driver's busy flag: the program waits for
-                                                       it to clear before it writes the sound
-                                                       registers, and the driver's timer decrements
-                                                       it (0000:3EB6) */
+extern unsigned char far gDrvReg; /*@ 0000:3B36 */  /* the driver's busy countdown: set to DRIVER_BUSY
+                                                       after a start and counted down by the driver's
+                                                       timer; the AdLib path waits for it to reach 0
+                                                       before it writes registers. Not volatile: the
+                                                       timer changes it, but volatile cross-jumps
+                                                       elsewhere (src/E1414.C:261) */
 
 /* FileOpen returns the cache slot index (not a DOS handle), 1C0E:00DB */
 extern int FileOpen(char far *name, int mode); /*@ 1C0E:00DB */
-extern long FileRead(int index, void far *buf, unsigned long len); /*@ 1C0E:0400 */  /* the returned
+extern long FileRead(int index, char far *buf, unsigned long len); /*@ 1C0E:0400 */  /* the returned
                                                                                        byte count is
                                                                                        not used here */
 extern void FileClose(int index); /*@ 1C0E:03BB */
@@ -136,11 +143,12 @@ void PlaySoundAtCell(int sound, int cell);
 {
     int slot;
 
+    /* FileOpen mode 1 is read (0x8001, src/E1C0E.C:166) */
     if (gSoundCard == 0)
         slot = FileOpen("adlib.dat", 1);
     else
         slot = FileOpen("pcgamesn.dat", 1);
-    FileRead(slot, gSoundMap, 120L);
+    FileRead(slot, gSoundMap, SOUND_MAP_SIZE);
     FileRead(slot, f0_03AA(), DRIVER_BLOCK_SIZE);
     FileClose(slot);
     f0_03FA();
@@ -189,7 +197,7 @@ void PlaySoundAtCell(int sound, int cell);
 
 /* 177D:00F3: passes the game sound numbered `sound` to PlaySoundAtCell with the party's map cell
    gPartyCell (ds:FBCA) as its cell, for the callers that do not give a cell themselves: the sound
-   is then heard from the party's own cell, so Distance(gPartyCell, gPartyCell) is 0, the
+   is then heard from the party's own cell [H], so Distance(gPartyCell, gPartyCell) is 0, the
    attenuation is 0 and the sound plays at full level. Like every PlaySoundAtCell call it does not
    play `sound` now: PlaySoundAtCell plays the sound recorded by the previous call and records
    `sound` for the next (QUIRK 177D:0106). */
@@ -216,12 +224,13 @@ void PlaySoundAtCell(int sound, int cell);
    (0000:03B0, 177D:01DA; whether that value is an amplitude is not known); then starts the recorded
    sound through 0000:400C and sets gDrvReg to 0Bh. On the other cards (1 PC speaker, 2 Tandy
    speaker) there is no attenuation test and no restore: the recorded sound starts on every call
-   through 0000:03E3 and 1948:0418, and when gSpeakerMode is 1 (the Tandy path) a nonzero sound sets
+   through 0000:03E3 and 1948:0418, and when gSpeakerMode is 1 (the Tandy path) the recorded sound sets
    gSpeakerOn to 1 and resumes the driver through 1948:0458, but only when gSpeakerOn is currently 0
    (177D:022F to 023B). QUIRK 177D:0106: the recorded sound gCurSound is played, not the new
    `sound`; the new number is stored only at 177D:0288. QUIRK 177D:0210: the `gCurSound < 0` test
-   (the `gSpeakerOn = 0` block) is dead for the same reason as in PlaySound: gCurSound is the
-   zero-extended map byte (`mov ah, 0` at 177D:0286), so it is never negative. QUIRK 177D:0288:
+   (the `gSpeakerOn = 0` block) is dead twice over: it sits inside the `gCurSound > 0` guard
+   (177D:0117), so it cannot be reached with a negative gCurSound, and gCurSound is the
+   zero-extended map byte (`mov ah, 0` at 177D:0286), so it is never negative anyway. QUIRK 177D:0288:
    unlike PlaySound there is no `gSoundMap[sound] < 96h` test, so a map value of 96h or more is
    recorded and played by the next call (through 0000:400C at 177D:01F2 on AdLib, left masked to
    seven bits at 177D:0240 on the speaker cards). Finally gCurAttenuation = cell ?
@@ -244,12 +253,13 @@ void PlaySoundAtCell(int sound, int cell);
                 gPrevSound = gCurSound;
                 gSoundLevel = f0_03CA(gCurSound, 3);
                 gSoundReg1 = f0_03CA(gCurSound, 1);
-                /* register 3 is read a second time here (177D:0170 and 177D:0194); it is what the
-                   original does, not a slip. The store to `level` is dead: it is reassigned at
-                   177D:01C7 before its only use (177D:01C9), and when gCurAttenuation is 0 it is
-                   never read */
+                /* QUIRK 177D:0194: register 3 is read a second time here (177D:0170 and 177D:0194);
+                   it is what the original does, not a slip. The store to `level` is dead on every
+                   path: it is reassigned at 177D:01C7 before its only read (177D:01C9) */
                 level = gSoundLevel = f0_03CA(gCurSound, 3);
                 if (gCurAttenuation > 0) {
+                    /* the level moves (gCurAttenuation - 1) / 16 of the way from gSoundLevel to
+                       LEVEL_FULL_ATTENUATION (177D:01AF to 01C7) */
                     level = gSoundLevel + ((LEVEL_FULL_ATTENUATION - gSoundLevel) * (gCurAttenuation - 1) >> 4);
                     f0_03B0(gCurSound, 3, level);
                     f0_03B0(gCurSound, 1, DRIVER_REG1_BASE - gCurAttenuation);
