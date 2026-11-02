@@ -1,18 +1,20 @@
 /* Unit at EOB.EXE 082C:000B (2976 bytes, 28 functions): the field editor and the shared drawing
    helpers. The main entry EditTextField (082C:000B) edits a string in place with a blinking
-   cursor; the drawing helpers draw text and numbers with a drop shadow (082C:0898/090A) and
-   rectangles and bevelled panels (082C:04C4/074D/09D5); the four DrawRegion front ends
-   (082C:063B/0681/06C7/070D) drive the region table at ds:009F (src/E1A29.C). 082C:051B formats
-   a name, loads a packed screen through LoadPacked and clips it, and 082C:0AE8/0974/09A6 format
-   names and number widths. The tail holds the dice roll (082C:0458), the tick helpers
-   (082C:0425/0B43), the memory report (082C:081A/0B0E), the file read (082C:0A7D), the block swap
-   (082C:07C5), the rectangle hit tests (082C:0613/0A5D) and the quit wrapper (082C:0A53). Only
-   the four DrawRegion front ends read the region table at ds:009F (src/E1A29.C); the unit also
-   reads the screen text pointer at ds:80CA (src/E14EF.C), the line pointer at ds:8062
-   (src/E1A1F.C) and the game's 32-bit tick counter at ds:848A (incremented by the INT 1Ch
-   handler, src/E1D8F.ASM). The graphics mode gGraphicsChoice and the video modes are whitepaper
-   2.6; the -B build through the assembler (playbook 30) is whitepaper 2.1.1. Placeholder names
-   until the callers name them. */
+   cursor; DrawShadowText (082C:0898) and DrawShadowInt (082C:090A) draw text and numbers with a
+   drop shadow; DrawRect (082C:04C4), DrawBevelBox (082C:074D) and DrawFilledPanel (082C:09D5)
+   draw rectangles and bevelled panels; the four DrawRegion front ends (082C:063B/0681/06C7/070D)
+   drive the region table at ds:009F (src/E1A29.C). LoadScreenImage (082C:051B) formats a name,
+   loads a packed screen through LoadPacked and clips it; FormatName (082C:0AE8) builds numbered
+   names; NumberWidthLong/NumberWidthInt (082C:0974/09A6) gives number widths; SwapChars
+   (082C:07A4) exchanges two bytes. The tail holds RollDice (082C:0458), the tick helpers
+   (082C:0425/0B43), the memory report (082C:081A/0B0E), ReadFileBytes (082C:0A7D), the block swap
+   SwapBlocks (082C:07C5), ClampOrWrap (082C:0AB4), the rectangle hit tests (082C:0613/0A5D), the
+   quit wrapper (082C:0A53) and SayAndPlaySound (082C:0B8F). Only the four DrawRegion front ends
+   in this unit read the region table at ds:009F (src/E1A29.C); the unit also reads the screen text
+   pointer at ds:80CA (src/E14EF.C), the line pointer at ds:8062 (src/E1A1F.C) and the game's
+   32-bit tick counter at ds:848A (incremented by the INT 1Ch handler, src/E1D8F.ASM). The graphics
+   mode gGraphicsChoice and the video modes are whitepaper 2.6; the -B build through the assembler
+   (playbook 30) is whitepaper 2.1.1. Placeholder names until the callers name them. */
 
 /*@flags -ml -O -Z -B */
 
@@ -23,10 +25,10 @@ struct Region {             /* 16-byte records at ds:009F (src/E1A29.C) */
     int top;                /* +2: top edge in lines */
     int width;              /* +4: width in 8-pixel columns */
     int height;             /* +6: height in lines */
-    int saved0;             /* +8: text attribute 1 (gTextAttr1, src/E1A29.C:25-30) */
-    int saved1;             /* +a: text attribute 2 (gTextAttr2) */
-    int saved2;             /* +c: cursor column (gTextCol) */
-    int saved3;             /* +e: cursor row (gTextRow) */
+    int attr1;              /* +8: text attribute 1 (gTextAttr1, src/E1A29.C:25-30) */
+    int attr2;              /* +a: text attribute 2 (gTextAttr2) */
+    int column;             /* +c: cursor column (gTextCol) */
+    int row;                /* +e: cursor row (gTextRow) */
 };
 
 /* The keys the text-field editor reacts to. WaitGameKey (1AAD:053A) returns a translated key
@@ -44,7 +46,7 @@ enum {
     KeyReturn = 0x0d,
     KeyEsc = 0x1b,
     KeySpace = 0x20,
-    KeyDelete = 0x7e,
+    KeyDelete = 0x7e,          /* the code of '~' as well; the editor folds it onto delete (see above) */
     KeyLeft = 0xb5,
     KeyRight = 0xb3
 };
@@ -54,15 +56,15 @@ extern void (far *gDrawLine)(int x1, int y1, int x2, int y2, int colour); /*@ ds
 extern void (far *gFillRect)(int x1, int y1, int x2, int y2, int pattern); /*@ ds:806A */
 extern void (far *gDrawText)(char far *text, int x, int y, int colour, int extra); /*@ ds:80CA */
 extern int gGraphicsChoice; /*@ ds:8102: the graphics mode chosen at start-up: 0 cga, 1 tandy, 2 ega,
-                            3 mcga/VGA, 4 vga (src/E07C8.C:31-34; src/E17A6.ASM:233 names 3 MCGA;
-                            whitepaper 2.6: 1 Tandy, 3 VGA). LoadScreenImage picks CPS for 3, the
-                            MCGA/VGA art suffix (src/E082C.C:274) */
-extern int g8140; /*@ ds:8140: x of the last click (src/E14EF.C) */
-extern int g8142; /*@ ds:8142: y of the last click (src/E14EF.C) */
+                             3 mcga/VGA, 4 vga (src/E07C8.C:39-43, the list at :42; src/E17A6.ASM:233
+                             names 3 MCGA; whitepaper 2.6: 1 Tandy, 3 VGA). LoadScreenImage picks CPS
+                             for 3, the MCGA/VGA art suffix (the sprintf below) */
+extern int g8140; /*@ ds:8140: x of the last click, written by src/E1AAD.ASM:396 and read here (src/E14EF.C) */
+extern int g8142; /*@ ds:8142: y of the last click, written by src/E1AAD.ASM:405 and read here (src/E14EF.C) */
 extern int gStatusLine; /*@ ds:8115: nonzero while a status line is up (set to 2 by LoadOverlayScreen) */
 extern unsigned long gTicks; /*@ ds:848A: BIOS-like tick counter, stepped by the INT 1Ch handler */
 extern char gFileNameBuf[]; /*@ ds:FE6E */ /* the shared text buffer the filename/format helpers and the memory report build into */
-extern char gOverlayBuf[]; /*@ ds:113F */ /* the DGROUP screen buffer passed as LoadScreenImage's extra pointer to f19EC_002A, which hands it to the far handler at ds:8046 only when two slots differ (src/E19EC.C:29-35) */
+extern char gOverlayBuf[]; /*@ ds:113F */ /* the DGROUP image buffer, passed as LoadScreenImage's extra pointer to f19EC_002A, which hands it to the far handler at ds:8046 only when two slots differ (src/E19EC.C:29-35); overlays cut sprite cells out of it (src/EOV2.C:209, src/EOV5.C:1021) */
 extern char gCursorChar; /*@ ds:31AC: the one character drawn at the editing cursor */
 extern char gCursorOn; /*@ ds:FC4C: nonzero while the cursor is drawn (blinks in the editor) */
 
@@ -76,11 +78,11 @@ extern void far *memmove(void far *dst, void far *src, unsigned n); /*@ 0000:63F
 extern char *ltoa(long value, char *string, int radix); /*@ 0000:62F1 */
 extern char *itoa(int value, char *string, int radix); /*@ 0000:62AA */
 extern void ClipRect(int x1, int y1, int x2, int y2, int width, int height, int extra1, int extra2); /*@ 19F3:000E */
-extern void f19EC_002A(int a, int b, int c, int d); /*@ 19EC:002A */
+extern void f19EC_002A(int a, int b, int c, int d); /*@ 19EC:002A: called here with c/d = FP_OFF/FP_SEG(extra); src/E19EC.C:29-35 says c and d are unused by its own tests */
 extern void LoadPacked(char far *name, int srcKind, int dstKind); /*@ 1B82:0041 */
 extern void Unpack0(char far *src, void far *dst, long len); /*@ 1BA8:0006 */
 extern void PrintInt(int value, int a, int b, int c, int d); /*@ 1AA6:000F */
-extern unsigned long LargestFreeBlock(void); /*@ 19BC:023D */
+extern long LargestFreeBlock(void); /*@ 19BC:023D */
 extern int FileOpen(char far *name, int mode); /*@ 1C0E:00DB */
 extern void FileRead(int handle, void far *buf, unsigned long len); /*@ 1C0E:0400 */
 extern void FileClose(int handle); /*@ 1C0E:03BB */
@@ -108,7 +110,10 @@ void DrawShadowText(char far *text, int x, int y, int colour, int extra);
    it and returns -1. `maxlen` is the highest buffer index (the buffer holds maxlen+1 bytes
    including the terminator); the two ClipRect calls (082C:006D and 082C:038A) set the field's
    maxlen+2 by 9 clip rectangle (see the QUIRK below), and the text and cursor are drawn with
-   DrawShadowText. Reached from FindWordPanel (ovl2:09ED) and ovl0:23EC. The unit is compiled
+   DrawShadowText. `colour` is the text colour, `attr` is the second colour passed to the draw
+   call (DrawShadowText's `extra`, below) and `cursorAttr` is the cursor colour: ovl0 passes 0xf, 0
+   and 8 (src/EOV0.C:1312), ovl2 passes gTextAttr1, gTextAttr2 and 8 (src/EOV2.C:504).
+   Reached from FindWordPanel (ovl2:09ED) and ovl0:23EC. The unit is compiled
    through the assembler (the flags line records -B), which keeps the insert path's
    `text[maxlen] = 0` and the append path's `text[cur] = 0` as two separate stores; TCC's own
    assembler merges them into one shared store. Evidence: with -B removed, make match reports
@@ -118,22 +123,22 @@ void DrawShadowText(char far *text, int x, int y, int colour, int extra);
                                     char attr, char cursorAttr)
 {
     char cur;
-    char n;
+    char len;
     unsigned long lastBlinkTick;
     int key;
     int i;
 
-    n = strlen(text);
-    if (n > maxlen) {
-        n = maxlen;
+    len = strlen(text);
+    if (len > maxlen) {
+        len = maxlen;
         text[maxlen] = 0;
     }
-    cur = n;
+    cur = len;
     if (cur >= maxlen)
         cur--;
     ClipRect(x - 1, y, 0, 0xbf, maxlen + 2, 9, 0, 2);
     DrawShadowText(text, x * 8, y, colour, attr);
-    if (cur < n)
+    if (cur < len)
         gCursorChar = text[cur];
     else
         gCursorChar = ' ';
@@ -175,40 +180,40 @@ void DrawShadowText(char far *text, int x, int y, int colour, int extra);
             goto special;
         if (cur == 0 && key == KeySpace)
             goto redraw;
-        if (cur < n) {
+        if (cur < len) {
             for (i = maxlen - 1; cur <= i; i--)
                 text[i + 1] = text[i];
             text[cur] = toupper(key);
             cur++;
-            if (n == maxlen)
+            if (len == maxlen)
                 text[maxlen] = 0;
         } else {
             if (cur == maxlen) {
                 cur--;
-                n--;
+                len--;
             }
             text[cur] = toupper(key);
             cur++;
             text[cur] = 0;
         }
-        if (++n > maxlen)
-            n = maxlen;
+        if (++len > maxlen)
+            len = maxlen;
         if (cur > maxlen - 1)
             cur = maxlen - 1;
         goto redraw;
     special:
         if (key == KeyBackspace) {
-            if (cur < n) {
+            if (cur < len) {
                 if (cur > 0) {
                     for (i = cur; i < maxlen; i++)
                         text[i - 1] = text[i];
                     cur--;
-                    text[--n] = 0;
+                    text[--len] = 0;
                 } else
                     goto redraw;
             } else {
-                if (n > 0) {
-                    text[--n] = 0;
+                if (len > 0) {
+                    text[--len] = 0;
                     cur--;
                 } else
                     goto redraw;
@@ -217,12 +222,12 @@ void DrawShadowText(char far *text, int x, int y, int colour, int extra);
             if (cur > 0)
                 cur--;
         } else if (key == KeyRight) {
-            if (cur < n && cur < maxlen - 1)
+            if (cur < len && cur < maxlen - 1)
                 cur++;
         } else if (key == KeyDelete) {
             if (text[cur] != 0) {
-                memmove(&text[cur], &text[cur + 1], n - cur);
-                n--;
+                memmove(&text[cur], &text[cur + 1], len - cur);
+                len--;
             }
         }
     redraw:
@@ -231,7 +236,7 @@ void DrawShadowText(char far *text, int x, int y, int colour, int extra);
            where the first has (x - 1, y) then (0, 0xbf)) and the extras 2, 0 instead of 0, 2. */
         ClipRect(0, 0xbf, x - 1, y, maxlen + 2, 9, 2, 0);
         DrawShadowText(text, x * 8, y, colour, attr);
-        if (cur < n)
+        if (cur < len)
             gCursorChar = text[cur];
         else
             gCursorChar = ' ';
@@ -241,7 +246,7 @@ void DrawShadowText(char far *text, int x, int y, int colour, int extra);
     }
     if (key == KeyEsc)
         return -1;
-    return n;
+    return len;
 }
 
 /* 082C:0425: busy-waits until the 32-bit tick counter ds:848A has advanced `ticks` ticks. The
@@ -290,9 +295,9 @@ void DrawShadowText(char far *text, int x, int y, int colour, int extra);
    gGraphicsChoice, otherwise EGA) into gFileNameBuf, load it with LoadPacked
    (source/destination kind `srcKind`/`dstKind`), and, unless `mode` is -1, blit the loaded page
    through the driver pair 19EC:002A. In two special cases it also clips the frame with ClipRect:
-   graphics modes 0 and 1 with `mode` 2 (kind 4, extras 4 and 2) and mode 2 with `mode` 0 (kind
-   2, extras 2 and 0); every other case uses `mode` as the kind. `extra` is the pointer argument
-   passed to 19EC:002A: Purpose unknown, the handler it reaches is at ds:8046 (src/E19EC.C:29-35).
+   graphics choice 0 or 1 with mode 2 (kind 4, extras 4 and 2) and graphics choice 2 with mode 0
+   (kind 2, extras 2 and 0); every other case uses `mode` as the kind. `extra` is the pointer
+   argument passed to 19EC:002A: Purpose unknown, the handler it reaches is at ds:8046 (src/E19EC.C:29-35).
    QUIRK 082C:05E5: the final `extra++` bumps the local pointer and has no later use, so it is
    dead. */
 /*@ 082C:051B */ void LoadScreenImage(char far *name, char far *extra, int srcKind, int dstKind, int mode)
@@ -388,7 +393,8 @@ done:
     gDrawLine(x2, y1, x2, y2, colourA);
 }
 
-/* 082C:07A4: exchange the bytes at the two far addresses. */
+/* 082C:07A4: exchange the bytes at the two far addresses. The only caller is SortSpellSlots
+   (src/E0EF3.C:442). */
 /*@ 082C:07A4 */ void SwapChars(char far *pa, char far *pb)
 {
     char saved;
@@ -400,10 +406,10 @@ done:
 
 /* 082C:07C5: exchange two far blocks through a third: copy the first into the third, the second
    into the first, then the third (already holding the first) into the second, so pa and pb swap
-   and pc holds the old pa. Uses Unpack0, the format-0 raw copy, for each leg. `len` is a signed
-   int widened to the long Unpack0 wants. The only caller passes pa = gChars[si], pb = gChars[di],
-   pc = gBufDCFC (src/EOV1.ASM:200-219), so it swaps two party records through the scratch buffer.
-   src/EOV1.ASM:157 still calls this a rotation: a note for that unit. */
+   and pc holds the old pa. Uses Unpack0, the format-0 raw copy (src/E1B82.C:68), for each leg.
+   `len` is a signed int widened to the long Unpack0 wants. The only caller passes pa = gChars[si],
+   pb = gChars[di], pc = gBufDCFC (src/EOV1.ASM:200-219), so it swaps two party records through the
+   scratch buffer. src/EOV1.ASM:157 still calls this a rotation: a note for that unit. */
 /*@ 082C:07C5 */ void SwapBlocks(char far *pa, char far *pb, char far *pc, register int len)
 {
     Unpack0(pa, pc, len);
@@ -412,10 +418,12 @@ done:
 }
 
 /* 082C:081A: draw a one-line memory report at (x, y) through the text routine ds:80CA and, when
-   `wait` is set, wait for a key. On a healthy far heap it prints "largest free:total free"; when
-   heapcheck reports corruption it prints the "HEAP CORRUPT!!" message with the largest free block.
-   gStatusLine, the status-line flag, is cleared while the report is drawn and restored after. The
-   report text is built in gFileNameBuf, the shared text buffer. */
+   `wait` is set, wait for a key. On a healthy far heap (heapcheck >= 0; _HEAPOK 2 and
+   _HEAPCORRUPT -1, build/toolchain/tc100/INCLUDE/ALLOC.H:12-17; 0x74B0 is both _heapcheck and
+   _farheapcheck, build/re/rtl_compare.json) it prints the "%lu:%lu" report with the largest free
+   block and then farcoreleft; when heapcheck reports corruption it prints the "HEAP CORRUPT!!"
+   message with the largest free block. gStatusLine, the status-line flag, is cleared while the
+   report is drawn and restored after. The report is built in gFileNameBuf, the shared text buffer. */
 /*@ 082C:081A */ void ShowMemoryDiagnostics(int x, int y, int wait)
 {
     int saved;
@@ -434,8 +442,10 @@ done:
 
 /* 082C:0898: draw one text string at (x, y): first its drop shadow at (x-1, y), (x, y+1) and
    (x-1, y+1) in the shadow colour 0x0C, then the text itself in `colour`. `extra` is forwarded as
-   the fifth argument of the first shadow draw only; what it means is unknown (Purpose unknown).
-   Used by the option-list and field code. */
+   the fifth argument of the first shadow draw only; that argument is a second colour in every
+   caller that passes one (gTextAttr2 at src/E1DE7.C:271 and :287, hiColour and fill at
+   src/E0EF3.C:1937/1946, EditTextField's `attr` above), so `extra` is a second colour; what the
+   hook at ds:80CA does with it is unknown (Purpose unknown). Used by the option-list and field code. */
 /*@ 082C:0898 */ void DrawShadowText(char far *text, int x, int y, int colour, int extra)
 {
     gDrawText(text, x - 1, y, 0xc, extra);
@@ -445,7 +455,7 @@ done:
 }
 
 /* 082C:090A: the integer twin of DrawShadowText: print `value` as decimal at (x, y) with the same
-   drop shadow (0x0C) through PrintInt. */
+   drop shadow (0x0C) through PrintInt. No caller found in src/. */
 /*@ 082C:090A */ void DrawShadowInt(int value, int x, int y, int colour, int extra)
 {
     PrintInt(value, x - 1, y, 0xc, extra);
@@ -505,9 +515,9 @@ done:
 }
 
 /* 082C:0A7D: read `len` bytes of the file `name` into `buf`: FileOpen in mode 1, FileRead, then
-   FileClose. QUIRK 082C:0A7D: the FileOpen result is not checked before FileRead, as in
-   LoadFile/LoadPacked (src/E1B82.C:97-98). The long length distinguishes it from LoadFile
-   (1B82:0009). */
+   FileClose. It takes its length as a long argument, as LoadPacked and LoadFile read theirs from
+   the file. QUIRK 082C:0A7D: the FileOpen result is not checked before FileRead, as in
+   LoadFile/LoadPacked (src/E1B82.C:97-98). No caller found in src/. */
 /*@ 082C:0A7D */ void ReadFileBytes(char far *name, void far *buf, unsigned long len)
 {
     int handle;
@@ -519,8 +529,8 @@ done:
 
 /* 082C:0AB4: fold `value` into the range [low, high]. With `invert` 0 it clamps: below low gives
    low and above high gives high. With `invert` 1 it wraps: below low gives high and above high
-   gives low. The two ifs share one result variable, so the same register is rewritten. The only
-   caller, src/E0EF3.C:2137, uses the wrap (a step of +-1 then a search loop). */
+   gives low. The only caller, src/E0EF3.C:2137, uses the wrap (a step of +-1 then a search
+   loop). */
 /*@ 082C:0AB4 */ int ClampOrWrap(int value, int low, int high, int invert)
 {
     if (value < low) {
@@ -538,16 +548,17 @@ done:
     return value;
 }
 
-/* 082C:0AE8: format "%s%d.%s" into gFileNameBuf (a far string, an int and a far string), the shape of
-   a numbered art file name. */
+/* 082C:0AE8: format "%s%d.%s" into gFileNameBuf (a far string, an int and a far string): a numbered
+   data file name, for example LEVEL<n>.INF (the only caller passes "LEVEL", a level number and
+   "INF" and opens the result: src/EOV3.C:568-569). */
 /*@ 082C:0AE8 */ void FormatName(char far *prefix, int number, char far *suffix)
 {
     sprintf(gFileNameBuf, "%s%d.%s", prefix, number, suffix);
 }
 
-/* 082C:0B0E: draw one line of text at (x, y) with gDrawText and then print the memory report
-   directly below it (y + 8) with ShowMemoryDiagnostics, waiting for a key. A debug status screen.
-   No caller found in src/. */
+/* 082C:0B0E: draw one line of text at (x, y) with gDrawText in colour 0xf and then print the
+   memory report directly below it (y + 8) with ShowMemoryDiagnostics, waiting for a key. A debug
+   status screen [H]. No caller found in src/. */
 /*@ 082C:0B0E */ void ShowStatus(char far *text, int x, int y)
 {
     gDrawText(text, x, y, 0xf, 0xc);
@@ -570,8 +581,9 @@ done:
     FlushKeyBuffer();
 }
 
-/* 082C:0B8F: write `text` to the message line (DrawText, 1DE7:060A) and play sound 0x4F;
-   nothing in src/ names sound 0x4F (src/E0EF3.C:672-677 plays the same code). */
+/* 082C:0B8F: write `text` to the text window with the current attributes (DrawText, 1DE7:060A;
+   callers name it "the message", src/E0EF3.C:672-677) and play sound 0x4F; nothing in src/ names
+   sound 0x4F. */
 /*@ 082C:0B8F */ void SayAndPlaySound(char far *text)
 {
     DrawText(text);

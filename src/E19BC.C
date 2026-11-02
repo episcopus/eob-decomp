@@ -37,7 +37,7 @@ extern int EvictFile(unsigned size, unsigned char flags); /*@ 1C0E:0E5B: first r
 extern void f1DDD_002D(int mode); /*@ 1DDD:002D: INT 10h AH=0 set video mode (src/E1DDD.C:43) */
 extern void PrintString(char far *s); /*@ 19EA:0000 */
 extern int WaitGameKey(void); /*@ 1AAD:053A: returns the value _ProcessKeyEvent leaves in AX
-                                 (src/E1AAD.ASM:481-483); src/E1C0E.C:46 and src/E082C.C:78
+                                 (src/E1AAD.ASM:481-483); src/E1C0E.C:46 and src/E082C.C:80
                                  declare int and use it, so the type fits the value */
 extern void ShutdownGame(void); /*@ 07C8:058A */
 
@@ -183,8 +183,8 @@ extern void ShutdownGame(void); /*@ 07C8:058A */
    usable block. It starts from farcoreleft and then walks the heap (farheapwalk returns _HEAPOK,
    which is 2, while a block is reported, build/toolchain/tc100/INCLUDE/ALLOC.H:13) keeping the
    largest block not in use, subtracts one 16 byte paragraph and clamps a non positive result to
-   0. The result is `long`, the type src/E07C8.C:69 and src/E1C0E.C:34 declare (src/E082C.C:65
-   still says unsigned long). The callers (for example 1BB1:0002, which adds the 16 back,
+   0. The result is `long`, the type src/E07C8.C:69, src/E1C0E.C:34 and src/E082C.C:85 declare. The
+   callers (for example 1BB1:0002, which adds the 16 back,
    src/E1BB1.ASM:34 and 168) compare the result with the size they need plus 16. */
 /*@ 19BC:023D */ long LargestFreeBlock(void)
 {
