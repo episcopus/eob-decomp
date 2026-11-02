@@ -1,10 +1,52 @@
 # Review: e1aad
 
 Reviewer: rev-haiku
-Commit reviewed: b4eaa33 (round 4; main at 6dbf414 has the same E1AAD files). Round 3 was 49e4d94, round 2 was 3331b69, round 1 was 7d0dd48.
+Commit reviewed: d7e541a (round 5; main, whose src/E1AAD.ASM is the same as 5947cc7). Round 4 was b4eaa33, round 3 was 49e4d94, round 2 was 3331b69, round 1 was 7d0dd48.
 
 Playbook 70. Judge what a matching file can still get wrong: names, types, comments, structure.
 The matcher already proved the bytes; do not re-prove them, read for meaning.
+
+## Round 5 (d7e541a)
+
+Judged only what the later-round rule asks: the round 4 items, and the diff since b4eaa33 in
+`src/E1AAD.ASM` (two hunks: the g8488 comment at :49-54 and the 0223 QUIRK at :113-120). The
+`re/symbols.toml` and `re/globals.toml` changes since b4eaa33 name no 1AAD address and no name of this
+unit (grep for 1AAD, E1AAD, g8488, g80E8, g80EC, g80EF, kExtendKeys and the k tables: no match).
+Checked against the code: f0C17_0C88 (1AAD:0C88, :1364) and f0C17_0D0A (1AAD:0D0A, :1407) each hold
+`mov word ptr [g8488],0`; a failed read goes to 0D12 (:1380, :1399) and does not clear; the 0223
+Ctrl branch is taken when kModifierState bit 200h is clear and kShiftFlagsCopy bit 2 is set
+(:169-172), and `sub bl,0Fh` (:177) gives F1h..FFh with BH cleared (:166). `make readability UNIT=e1aad`
+is 0 findings; `make match FILE=src/E1AAD.ASM` is 18 of 18 (3405 of 3405 bytes), no byte moved.
+
+The round 4 0223 QUIRK should is fixed right; its tick stays. The round 4 g8488 must-fix has the right
+addresses, but one word in the same lines is wrong; it is reopened below.
+
+### Findings
+
+- [ ] must-fix src/E1AAD.ASM:52-53 (the g8488 comment, round 4's must-fix, reopened for one clause):
+  "(1AAD:0C88, after the two FileWrite calls)". The clear at 1AAD:0C88 (:1364-1365) has two routes.
+  One is the fall-through after the second FileWrite (:1363). The other is the jumps at :1349 and
+  :1351: when the key is not 41h..44h, they go to 0C88 after the first FileWrite alone, and the second
+  call (:1352-1362) is skipped. So "after the two FileWrite calls" is wrong for that path. Fix:
+  "(1AAD:0C88, after a FileWrite call; a key outside 41h..44h skips the second one)". The 0D0A part is
+  right: both routes to 1AAD:0D0A (the jumps at :1386 and :1388, and the fall-through after the second
+  read at :1399) come after a successful read, and a failed read goes to 0D12.
+
+- [ ] should src/E1AAD.ASM:119-120 (the 0223 QUIRK, reflowed by round 4's edit): the paragraph breaks
+  inside a parenthesis, "70h..79h subtract a base (0C5h, or" / "98h/A2h/ACh by the control bits)". Reflow
+  the lines so each parenthesis stays whole. The meaning is unchanged.
+
+- [ ] note for other owners (rounds 1 to 4 notes, still open, not this unit): src/EOV1.ASM:116 still
+  says g80E8 is "toggled by the Ctrl-key handling"; src/E1A72.ASM:35 still says "game state, 0/1/2" for
+  g80EC; src/E07C8.C:95 still cites "1AAD:0718, src/E1AAD.ASM:793" for the install copy of ds:80EA,
+  where the read is in the INT 9 handler body (1AAD:07C0). Their owners should align them.
+
+### Summary
+
+One must-fix is open: the round 4 g8488 comment says the 1AAD:0C88 clear comes "after the two FileWrite
+calls", but a key outside 41h..44h reaches it after the first call alone. The fix is one clause. One
+should (the 0223 paragraph's line breaks). Nothing is escalated: each item is a comment, with no matcher,
+spec or pin question.
 
 ## Round 4 (b4eaa33)
 
