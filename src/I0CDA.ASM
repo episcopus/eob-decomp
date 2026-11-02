@@ -17,8 +17,8 @@
 ; through the carry, rotates DGROUP:2310 right through the low bit of its own shifted value, and returns
 ; the new DGROUP:2310 exclusive-ored with the new DGROUP:2311 in AL (AH 0). ES and SI are saved. The far
 ; twin is E1D8C.ASM; no near or far call reaches either copy, so its use is not established.
-        PUBLIC  _f0CDA_0006              ; @ 0CDA:0006
-_f0CDA_0006 PROC FAR
+        PUBLIC  _RandomByte              ; @ 0CDA:0006
+_RandomByte PROC FAR
         push    bp
         mov     bp,sp
         push    es
@@ -44,6 +44,6 @@ _f0CDA_0006 PROC FAR
         pop     es
         pop     bp
         ret
-_f0CDA_0006 ENDP
+_RandomByte ENDP
 
         END
