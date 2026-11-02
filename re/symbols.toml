@@ -7242,6 +7242,9 @@ unit = "eov3"
 addr = "ovl3:07A5"
 size = 428
 evidence = ["ovl", "near", "frame"]
+name = "LoadWallTextures"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov3_0951"

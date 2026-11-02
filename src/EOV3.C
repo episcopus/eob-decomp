@@ -29,6 +29,10 @@ extern int g80E8; /*@ ds:80E8 */            /* toggled by Ctrl-key handling (src
 extern int gSoundOn; /*@ ds:80E6 */
 extern char gF43C; /*@ ds:F43C */
 extern char gAD20[]; /*@ ds:AD20 */         /* a 96-byte saved-game buffer (Purpose unknown) */
+extern char *strcpy(char far *dest, char far *src); /*@ 0000:67CD */
+extern void far *gSegDCA6; /*@ ds:DCA6 */   /* the far pointer f19EC_0002(7) returns (src/E07A9.C) */
+extern int g8102; /*@ ds:8102 */            /* the video mode the game initialised (src/E082C.C) */
+extern char gWallNameBuf[]; /*@ ds:FE2E */  /* the wall texture name kept between LoadWallTextures calls (ovl3:07A5) */
 extern int FileOpen(char far *name, int mode); /*@ 1C0E:00DB */
 extern void FileRead(int handle, void far *buf, unsigned long len); /*@ 1C0E:0400 */
 extern void FileClose(int handle); /*@ 1C0E:03BB */
@@ -339,7 +343,40 @@ done:
             g6A50[si + 3], gOverlayBuf);
     g8115 = 0;
 }
-/*@ ovl3:07A5 stub */ void Ovl3_07A5(void) {}
+/* ovl3:07A5: loads a wall texture set for `name`. It builds the file name "<name>.VCN" (VGA mode
+   3) or "<name>.ECN" (otherwise), or an empty name when `name` is NULL, into gFileNameBuf, loads
+   it packed with LoadPacked, unpacks three 16-byte plane tables from gSegEFC2+2, +0x12 and +0x22
+   into ds:F4D6, ds:FB4D and gSegDCA6 and the 0xCB20-byte texture block after them through
+   ovl3:0FD1's counterpart, then sets the plane tables (17A6:037E). In EGA mode 2 it expands the
+   planes into gSegDF4E (17A6:0F1F) and blits them to the A400 planar window through the driver
+   ds:808E; in CGA mode 0 it slices a 1x8 cell from `sheet`, frees it and build-masks gSegDCA6
+   (17A6:18EA). It leaves gFileNameBuf empty. Called by ovl3:0A7C. */
+/*@ ovl3:07A5 */ void LoadWallTextures(char far *name, char far *sheet)
+{
+    void far *cell;
+
+    if (name)
+        sprintf(gFileNameBuf, "%s.%s", name, g8102 == 3 ? "VCN" : "ECN");
+    else
+        strcpy(gFileNameBuf, gWallNameBuf);
+    LoadPacked(gFileNameBuf, 7, 3);
+    Unpack0((char far *)gSegEFC2 + 2, (void far *)gF4D6, 0x10L);
+    Unpack0((char far *)gSegEFC2 + 0x12, (void far *)gFB4D, 0x10L);
+    Unpack0((char far *)gSegEFC2 + 0x22, gSegDCA6, 0xcb20L);
+    SetPlaneTables((void far *)gF4D6, (void far *)gFB4D);
+    if (g8102 == 2) {
+        gFn808E(gSegDCA6, 0xa400, 0xfa00);
+        ExpandNibbles(gSegDCA6, gSegDF4E);
+        gFn808E(gSegDF4E, 0xaa00, 0x7d00);
+        ExpandNibbles((char far *)gSegDCA6 + 0x7d00, gSegDF4E);
+        gFn808E(gSegDF4E, 0xabf4, 0x7d00);
+    } else if (g8102 == 0) {
+        cell = gGetSpriteCell(0, 0, 1, 8, sheet);
+        farfree(cell);
+        BuildMask(gSegDCA6);
+    }
+    strcpy(gWallNameBuf, gFileNameBuf);
+}
 /* ovl3:0951: rebuilds the ds:B899 item list: walks the 500 items at ds:8DD0 and, for every item
    whose m0A is the current action gFBC8 and whose key m04 is positive, inserts it through
    InsertListItem. Called by ovl3:0A7C. */
