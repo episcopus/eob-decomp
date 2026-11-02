@@ -4144,7 +4144,7 @@ size = 81
 evidence = ["segment"]
 name = "DispatchKey"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e16a5_005a"
@@ -4154,7 +4154,7 @@ size = 99
 evidence = ["far", "frame"]
 name = "DispatchKeyWait"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e16a5_00bd"
@@ -4169,6 +4169,9 @@ unit = "e16a5"
 addr = "16A5:07C3"
 size = 1461
 evidence = ["far"]
+name = "DrawNode"
+level = "L2"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e16a5_0d78"
@@ -4178,7 +4181,7 @@ size = 18
 evidence = ["far", "frame"]
 name = "SetNodeCallback"
 level = "L2"
-match_flags = "-ml -O -Z"
+match_flags = "-ml -O -Z -B"
 
 [[function]]
 id = "e177d_000a"
