@@ -127,7 +127,7 @@ extern void f0BD2_0917(int who, int slot, int one); /*@ 0BD2:0917 */
 extern void f0BD2_01D0(void far *head, int key, int item, int sound); /*@ 0BD2:01D0 */
 extern int f0BD2_02B9(void far *head, int key, int item); /*@ 0BD2:02B9 */
 extern int f0BD2_11FD(int who, int slot); /*@ 0BD2:11FD */
-extern void f07A9_010C(int n); /*@ 07A9:010C */
+extern void SetMouseItem(int n); /*@ 07A9:010C */
 extern int far RollDice(char count, char sides, char bonus); /*@ 082C:0458 */
 extern void RearmCharEffects(void); /*@ 1414:0B2E */
 extern void LockHidePointer(void); /*@ 1BBE:0307 */
@@ -269,7 +269,7 @@ int f0D1C_02DC(void);
    and redraws. Returns 1 when at least one item was removed, otherwise 0. The redraw paths: when
    gFB44 is 0 and the slot is one of the first two of a character before the sixth, f1547_07E7;
    when gFB44 is 1 and the character is the selected one, f0BD2_0917; and when the mouse is
-   enabled, the item in the slot f0D1C_02DC names is cleared and redrawn through f07A9_010C.
+   enabled, the item in the slot f0D1C_02DC names is cleared and redrawn through SetMouseItem.
    Called by overlays 5. What m02, m0B and m04 mean is not established. */
 /*@ 0D1C:01CA */ int RemoveCarriedItems(int field2, int fieldB)
 {
@@ -297,7 +297,7 @@ int f0D1C_02DC(void);
                 item = f0D1C_02DC();
                 if (gTable8DD2[item].m02 == field2) {
                     gTable8DD2[item].m04 = -1;
-                    f07A9_010C(0);
+                    SetMouseItem(0);
                 }
             }
         }
@@ -316,7 +316,7 @@ int f0D1C_02DC(void);
 /* 0D1C:0304: stores `n` as the item index in the current slot: gFBCE when the mouse is enabled,
    or gChars[gA99A].m77[gF51A] when it is disabled. When the mouse is disabled it also redraws
    the slot, through f1547_0991(gA99A) when gFB44 is 0 and f0BD2_0917(gF51A, 1, 0) otherwise.
-   Called by f07A9_010C to set the icon shown for a selected item. */
+   Called by SetMouseItem to set the icon shown for a selected item. */
 /*@ 0D1C:0304 */ void SetCurrentItem(int n)
 {
     if (!gMouseDisabled) {
