@@ -112,7 +112,7 @@ extern signed char g3890[]; /*@ ds:3890 */  /* a three-byte table read by 0BD2:0
 extern signed char g38FA[]; /*@ ds:38FA */  /* a byte table indexed by an item's m0B in 0BD2:0EE8 */
 extern void f0EF3_28ED(int a, int b, int c); /*@ 0EF3:28ED */
 extern void f0EF3_06E7(void); /*@ 0EF3:06E7 */
-extern void f08E6_0297(struct Obj28 far *obj, int a, int b); /*@ 08E6:0297 */
+extern void MoveObjectToId(struct Obj28 far *obj, int a, int b); /*@ 08E6:0297 */
 
 extern int f0D1C_02DC(void); /*@ 0D1C:02DC */
 extern void SetMouseItem(int n); /*@ 07A9:010C */
@@ -631,7 +631,7 @@ next:
         obj = gObjs;
         for (i = 0; i < 30; i++, obj++) {
             if (obj->m02 == x) {
-                f08E6_0297(obj, y, -1);
+                MoveObjectToId(obj, y, -1);
                 gDF4C = 1;
             }
         }

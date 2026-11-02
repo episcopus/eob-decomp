@@ -153,7 +153,7 @@ extern int AddDDEffect(int who, int field, int volume, int tableByte, int page, 
 extern int AddDDEffect(int who, int slot, int a, int b, int c, int d); /*@ 0BD2:07DE */
 extern int f08E6_15B4(char a, int b); /*@ 08E6:15B4 */
 extern int f0EF3_04F7(int who); /*@ 0EF3:04F7 */
-extern void f08E6_0FBE(struct Obj28 far *obj, int n); /*@ 08E6:0FBE */
+extern void DamageObject(struct Obj28 far *obj, int n); /*@ 08E6:0FBE */
 extern void f0EF3_12A1(void far *arg); /*@ 0EF3:12A1 */
 extern void f0EF3_0F86(void far *arg); /*@ 0EF3:0F86 */
 extern void ApplyCharEffect(char who, long interval, char value, char firstEmpty); /*@ 1414:05ED */
@@ -284,7 +284,7 @@ void LevelUpSlot(int who, int attr, int slot);  /* forward: 0B45 reaches it with
 /* 0DE8:02D4: tests and runs the attack of a ds:DD2C record against object `idx`. It takes the
    record's m08 slot, m0A item type and m0B attacker; when m0B is valid it first demands the
    0007 to-hit roll, then rolls 011A damage for the item type (or 1 when the type does not attack)
-   and hands the object to f08E6_0FBE. Returns 0 when the to-hit fails, else 1. Called by
+   and hands the object to DamageObject. Returns 0 when the to-hit fails, else 1. Called by
    1414:0172 via TestDDEffect. */
 /*@ 0DE8:02D4 */ int TryRecordAttack(struct DDRec far *rec, int idx)
 {
@@ -302,7 +302,7 @@ void LevelUpSlot(int who, int attr, int slot);  /* forward: 0B45 reaches it with
         damage = RollAttackDamage(who, idx, slot, itemType, 0);
     else
         damage = 1;
-    f08E6_0FBE(&gObjs[idx], damage);
+    DamageObject(&gObjs[idx], damage);
     return 1;
 }
 /* 0DE8:0359: one item/effect attack by character `who` on the item slot `slot`. It rejects a
@@ -451,7 +451,7 @@ fail:
    m02, calls f0EF3_12A1 when mE3 bit 2 is set, dispatches on the gItemTypes m0E kind (1 rolls
    0359 and forces a miss from 0 to -1 with sound 0x20, 2 runs 0537, 3 runs 05BB and redraws),
    then, on a hit, raises hp (capped at 0x7F) for a flag-8 item, clears m77[slot] for a flag-16
-   item and hands gObjs[gDCA4] to f08E6_0FBE. It toggles m1E bit `slot`, stores the result in
+   item and hands gObjs[gDCA4] to DamageObject. It toggles m1E bit `slot`, stores the result in
    mE8[slot], redraws and arms ApplyCharEffect(who, 0x12, slot or slot + 2, 1). Called by
    0BD2:1001. */
 /*@ 0DE8:0763 */ void UseItem(int who, int slot, int field)
@@ -491,7 +491,7 @@ fail:
         }
         if (gTable8DD2[field].flags & 0x10)
             gChars[who].m77[slot] = 0;
-        f08E6_0FBE(&gObjs[gDCA4], result);
+        DamageObject(&gObjs[gDCA4], result);
     }
     gChars[who].m1E ^= 1 << slot;
     gChars[who].mE8[slot] = result;
