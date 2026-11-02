@@ -1,41 +1,31 @@
 ; Unit at EOB.EXE 1BB1:0001 (208 bytes, 2 functions), kind asm [H] by the map. 1BB1:0001 is a
 ; single 00 byte with `segment` evidence (the unit's start marker, like 1990:0001); the one real
 ; function follows at 1BB1:0002. The pointer is the game's own, moved by the INT 33h handler
-; (docs/design/WHITEPAPER.md section 2.7 Input and sound, the mouse bullet at line 128: "The game
+; (docs/design/WHITEPAPER.md section 2.7 Input and sound, the mouse bullet at line 130: "The game
 ; draws its own pointer").
 ;
 ; 1BB1:0002 sets the mouse pointer's shape. Two callers. f07A9_010C (07A9:010C) passes the hot spot
 ; (8,8) when its n is above 0 and (0,0) otherwise, and the record gIconsDDE4[n] in both cases (the
-; two calls at E07A9.C:204 and :206; the table holds item icon images, E07A9.C:98-103, the comment
-; just above gIconsDDE4 at :104). SetPointerShape (ovl2:0000, src/EOV2.C:206-211) passes (0,0) and
+; two calls at E07A9.C:229 and :231, SetMousePointerShape(MOUSE_HOTSPOT, MOUSE_HOTSPOT, gIconsDDE4[n])
+; and SetMousePointerShape(0, 0, gIconsDDE4[n]); the table holds item icon images, E07A9.C:114-120,
+; the comment just above gIconsDDE4 at :121). SetPointerShape (ovl2:0000, src/EOV2.C:206-211) passes (0,0) and
 ; gPtrDD00, which it has just set to gIconsDDE4[0] (EOV2.C:210-211); LoadItemData calls
-; SetPointerShape at start-up (EOV2.C:451). Unit 1BBE shows what the globals are: the hide
-; 1BBE:0002 subtracts the hot spot gPointerHotX/gPointerHotY (ds:8158/815A) from the last drawn
-; pointer position gDrawnX/gDrawnY (ds:815C/815E) (1BBE:001E..002F), and the show 1BBE:00ED sets
-; that drawn position to the mouse position gCursorX/gCursorY (ds:8138/813A) and subtracts the hot
-; spot from it (1BBE:0111..012E); the shape record gPointerShapeOff/gPointerShapeSeg
-; (ds:816E/8170) is what 1BBE:00ED draws through gDraw80C2 ([ds:80C2]). The save-under
-; buffer gPointerBackOff/gPointerBackSeg (ds:816A/816C) is the screen behind the pointer:
-; 1BBE:0002 restores it through gRestoreRect ([ds:804E]) and 1BBE:00ED saves the background into
-; it through gSaveRect ([ds:80AE]).
+; SetPointerShape at start-up (EOV2.C:451). The globals this function fills are the pointer's hot
+; spot gPointerHotX/gPointerHotY (ds:8158/815A), its shape record gPointerShapeOff/gPointerShapeSeg
+; (ds:816E/8170), its size gPointerHeight/gPointerWidth8 (ds:8154/8156) and its save-under buffer
+; gPointerBackOff/gPointerBackSeg (ds:816A/816C); unit 1BBE (src/E1BBE.ASM) owns what reads and
+; writes them: the hide's restore through gRestoreRect ([ds:804E]), and the show's draw through
+; gDraw80C2 ([ds:80C2]) and save through gSaveRect ([ds:80AE]).
 ;
 ; The size comes from the shape record: byte SHAPE_HEIGHT_BYTE (+3) is the height in pixels, read
-; at 1BB1:0034 and stored unchanged at gPointerHeight (ds:8154, 1BB1:0066). 1BBE:0002 copies it
-; to gSpriteHeight (ds:8182, 1BBE:0032..0035) and negates that into gNegSpriteHeight (ds:8184):
-; 1BBE:0095 adds the copy to the top edge gRectTop (ds:8178) to make the bottom edge gRectBottom
-; (ds:817C), and the bottom edge is clipped to 200 at 1BBE:00AB..00B3. Byte SHAPE_WIDTH_BYTE (+2)
-; is read at 1BB1:003A and, plus 1 (1BB1:003E `inc dx`), stored at gPointerWidth8 (ds:8156,
+; at 1BB1:0034 and stored unchanged at gPointerHeight (ds:8154, 1BB1:0066). Byte SHAPE_WIDTH_BYTE
+; (+2) is read at 1BB1:003A and, plus 1 (1BB1:003E `inc dx`), stored at gPointerWidth8 (ds:8156,
 ; 1BB1:006A); the code shows only that the stored width is the byte plus one, so the byte's own
-; meaning (a count one less than the width in 8-pixel units) is a reading [H]. 1BBE:0002 copies it
-; to gSpriteWidth (ds:8186, 1BBE:003D..0040): 1BBE:005F adds the copy to the left edge gRectLeft
-; (ds:8176) to make the right edge gRectRight (ds:817A), the left edge is skipped when it is at
-; or below the negated width gNegSpriteWidth (ds:8188, 1BBE:0051..0055) or 40 or more
-; (1BBE:0057..005A), and the right edge is clipped to 40 at 1BBE:0077..007E. gRectLeft holds the
-; pixel value from 1BBE:0025 until the divide by 8 (1BBE:004B..004D `sar`) stores the column at
-; 1BBE:005C, so gRectLeft is "the x divided by 8" only on the drawn path (an off-screen hide
-; leaves it in pixels). The width and a region record share the 8-pixel column unit (the region's
-; left edge at E1A29.C:21 and its width at E1A29.C:23). The stored width of 0 means 1 column; a
-; stored height of 0 is 0 pixels. The buffer path depends on the buffer and the
+; meaning (a count one less than the width in 8-pixel units; a region record uses the same unit,
+; E1A29.C:21 and :23) is a reading [H]. The stored width of 0 means 1 column; a stored height of 0
+; is 0 pixels. 1BBE:0002 turns the pair into the hide and show rectangle and clips it (the copies
+; gSpriteHeight/gSpriteWidth and the clip bounds are in src/E1BBE.ASM). The buffer path depends on
+; the buffer and the
 ; size: with no buffer yet (gPointerBackSeg ds:816C == 0) the free is skipped (1BB1:0044 `je 0066`)
 ; and the size query and MemAlloc run; with a buffer and a changed size (height or width differ,
 ; 1BB1:004A/0050) the old buffer is freed (1BB1:0058..005C) before the query and MemAlloc; with a
@@ -51,23 +41,10 @@
 ;
 ; The order is what keeps the old buffer valid: 1BBE:0002 hides the pointer first, while the old
 ; buffer and sizes are still in place, then the globals are overwritten, the buffer is resized,
-; and 1BBE:00ED shows the pointer again and draws the new shape. 1BBE:0002 does nothing when
-; gMouseDisabled (ds:814A) is set; when the hide count gHideDepth (ds:8146) is nonzero it only
-; increments it (a nested hide); when the count is 0 and gPointerBackSeg (ds:816C, no buffer) is 0
-; it does nothing; otherwise it restores the background and increments gHideDepth, but the restore
-; is skipped when the pointer rectangle is off screen: the left edge at or below gNegSpriteWidth
-; (1BBE:0051..0055 `jle 0075`) or 40 or more (1BBE:0057..005A `jge 0075`) and the top edge at or
-; below gNegSpriteHeight (1BBE:008B `jle 00E0`) or 200 or more (1BBE:0090 `jge 00E0`) jump to
-; 1BBE:00E0, which increments gHideDepth and returns without the restore (1BBE:0075 is `jmp 00E0`).
-; 1BBE:00ED does nothing when gMouseDisabled is set (1BBE:00F1), when the count is 0 on entry
-; (1BBE:00F8), when the count is still nonzero after the decrement (1BBE:0103), or when
-; gPointerBackSeg is 0 (1BBE:010A); the decrement (1BBE:00FF) comes before the buffer test, so a
-; show with no buffer still decrements. When the count reaches 0 with a buffer, it copies the
-; position, saves the background and draws only when the rectangle is on screen: the left edge at
-; or below gNegSpriteWidth (1BBE:0154 `jle 015B`) or 40 or more (1BBE:0159 `jl 015E`, which falls
-; through to 015B) and the top edge at or below gNegSpriteHeight (1BBE:018B `jle 015B`) or 200 or
-; more (1BBE:0190 `jge 015B`) all reach 1BBE:015B (`jmp 01FB`, the return), skipping the save and
-; the draw. The pair
+; and 1BBE:00ED shows the pointer again and draws the new shape. Both halves gate on
+; gMouseDisabled (ds:814A), on the hide count gHideDepth (ds:8146) and on the
+; buffer gPointerBackSeg (ds:816C), and each skips its screen work when the pointer rectangle is
+; off screen; the gates and the clips are in src/E1BBE.ASM. The pair
 ; [ds:80AA] on the far pointer ds:8172/8174 and [ds:80A2] brackets only the show call at
 ; 1BB1:00B8 (1BB1:00B1 and 1BB1:00BD); this unit and E1BF3 only read ds:8172/8174, which
 ; _SetFarPointer (1A72:02FE, src/E1A72.ASM:442-443) writes and _GetFarPointer (1A72:033A) reads.
@@ -128,7 +105,7 @@
 ; sprite size changed (freeing an existing buffer of a changed size first); hides the pointer
 ; before overwriting the globals and shows it after, all under the busy flag gPointerBusy (ds:812E).
 ; Returns 1, or 0 when the largest-block test fails (1BB1:0084..0086) or MemAlloc returns no
-; segment (1BB1:009D..00A0); both callers ignore the value and the prototype is void (E07A9.C:124).
+; segment (1BB1:009D..00A0); both callers ignore the value and the prototype is void (E07A9.C:144).
         PUBLIC  _SetMousePointerShape             ; @ 1BB1:0002
 _SetMousePointerShape PROC FAR
         push    bp
@@ -194,7 +171,7 @@ alloc:  mov     ax,0                    ; MemAlloc flags = 0: neither zero-fill 
         xor     ax,ax
         push    ax                      ; size high word
         mov     ax,si
-        sub     ax,HEAP_BLOCK           ; undo the margin so MemAlloc sees the raw block (1BB1:0091)
+        sub     ax,HEAP_BLOCK           ; undo the margin: MemAlloc gets the size query's result (1BB1:0091)
         push    ax                      ; size low word
         ASSUME  CS:NOTHING
         call    far ptr _MemAlloc
@@ -225,10 +202,10 @@ ready:  push    word ptr [g8174]
 ; did is never undone and the pointer stays hidden until something else balances the count. The
 ; count can be nonzero two ways: it was already nonzero, so 1BBE:0002 only increments it (1BBE:0015
 ; `jne 0075` to 1BBE:00E0 `inc [8146]`, no buffer test), or ds:816C (the buffer) was nonzero on
-; entry, so 1BBE:0017 passes the buffer test and increments. ds:816C is stored once (1BB1:00A5,
-; only with a nonzero MemAlloc segment) and never cleared, so the count is nonzero only after a
-; hide that saw a buffer. Only when ds:816C is 0 and the count is 0 does 1BBE:0002 return before
-; incrementing (1BBE:0017), so the first-time failure above leaks no hide. Both paths still
+; entry, so 1BBE:0017 passes the buffer test and increments. ds:816C is stored only at 1BB1:00A5
+; and only with a nonzero MemAlloc segment, and it is never cleared, so the count is nonzero only
+; after a hide that saw a buffer. Only when ds:816C is 0 and the count is 0 does 1BBE:0002 return
+; before incrementing (1BBE:0017), so the first-time failure above leaks no hide. Both paths still
 ; release the busy flag gPointerBusy at `release`.
 failed: xor     ax,ax
 release:
