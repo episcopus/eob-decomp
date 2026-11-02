@@ -27,10 +27,12 @@
 /* Meaningful constants of this unit. */
 /* Entry14.flags bit that, with gFBD2 bit 0, gates the flagged branch of SetMouseItem (07A9:015C to
    01B1): the icon colour row, the translated copy and the pointer image; when either gate fails the
-   branch is skipped (07A9:0161 and 0168, je 0x1bc). The same test is in src/E0D1C.C:478. The name
-   (the bit marks an item with an icon) is an inference from that branch: the bytes show only the
-   gate, and the same byte is tested for 0x20, 0x08 and 0x10 elsewhere (see Entry14.flags below). */
-#define ITEM_FLAG_ICON 0x80
+   branch is skipped (07A9:0161 and 0168, je 0x1bc). The same test is in src/E0D1C.C:478. The bit
+   selects the colour-row draw path: in f0D1C_070F (src/E0D1C.C:478 to 484) a record whose flags
+   have the bit is drawn through its icon's colour row (gFn80D2) and f1A29_008B, any other record
+   through f1A29_000F; the same byte is tested for 0x20, 0x08 and 0x10 elsewhere (see Entry14.flags
+   below). */
+#define ITEM_FLAG_COLOUR_ICON 0x80
 /* the MemAlloc flag that returns a paragraph-aligned, offset-0 block: the bit is defined at
    src/E19BC.C:49 (described at :44-46), the block shape is described at src/E19BC.C:62-66 (the
    block starts at offset 0 of a paragraph, its header at offset 15), and the code is at
@@ -77,9 +79,10 @@ extern char gF43C; /*@ ds:F43C */  /* written by StartupAlloc (07A9:000D, set to
                                       src/E1547.C:235-238). Purpose unknown */
 extern char gFB45; /*@ ds:FB45 */  /* written by StartupAlloc (07A9:0024, set to 0); the overlay 3
                                       LoadMapScreen sets it to 1 (src/EOV3.C:686), and the overlay 4
-                                      DrawViewFrame tests it with video mode 3 (src/EOV4.C:395) and
-                                      clears it (src/EOV4.C:402; declared "request flag, cleared here",
-                                      src/EOV4.C:368). What the request is is Purpose unknown */
+                                      DrawViewFrame (ovl4:1F51, src/EOV4.C:663) tests it with video mode 3
+                                      (src/EOV4.C:668) and clears it (src/EOV4.C:675; declared "request
+                                      flag, cleared here", src/EOV4.C:642). What the request is is
+                                      Purpose unknown */
 extern void far *gBuf8DCA; /*@ ds:8DCA */  /* start-up far allocation, 7500 bytes (07A9:002F); the base
                                               of the 122E action-script driver's script (declared
                                               src/E122E.C:20): JumpToScriptOffset (122E:139D,
@@ -127,9 +130,9 @@ extern void far *gSegDCA6; /*@ ds:DCA6 */  /* the far pointer f19EC_0002(7) retu
                                               0xCB20-byte texture block through it (src/EOV3.C:471),
                                               expands and masks it (src/EOV3.C:474-478 and :482; the
                                               comment above LoadWallTextures, src/EOV3.C:454-459), and
-                                              DrawViewFrame draws from it (DrawTile, src/EOV4.C:393;
+                                              DrawViewFrame draws from it (DrawTile(gSegDCA6), src/EOV4.C:666;
                                               declared "the far pointer DrawTile draws",
-                                              src/EOV4.C:374) */
+                                              src/EOV4.C:647) */
 extern void far *gSegDF4E; /*@ ds:DF4E */  /* slot 5's far pointer, f19EC_0002(5) (07A9:00BA); the
                                               action screen's swap buffer: Action01E3 (src/E0ACD.C:263)
                                               blits it to the action field through gFn804A
@@ -213,7 +216,7 @@ extern int g8102; /*@ ds:8102 */  /* the mode word SetMouseItem tests at 07A9:01
                                      it four ways: "graphics choice" (src/E07C8.C:27), "the video
                                      mode ... 3 and 4 select the 6-bit cells" (src/E1DE7.C:46), "the
                                      video mode the game initialised (3 is CGA-compatible)"
-                                     (src/E082C.C:41 and src/E1547.C:55) and "nonzero: a colour row
+                                     (src/E082C.C:41; the bare phrase at src/E1547.C:55), and "nonzero: a colour row
                                      exists" (src/E0D1C.C:51 and src/E0BD2.C:100) */
 /* a far function pointer whose argument is a colour row (an array of colour indices): a 16-byte
    row of the 1600-byte ITEMRMP buffer (ds:F534 + n<<4), the one-byte dummy at ds:0090, or the
@@ -279,7 +282,7 @@ extern void DrawText(char far *text); /*@ 1DE7:060A */
    g80E2 (Purpose unknown, its only reader is 07A9:0197) and g8102. */
 extern void TranslateImage(void far *src, void far *dst, void far *xlat, int mode); /*@ 17A6:197E */
 /* 1BB1:0002 stores the hot-spot offset and a pointer shape record; the caller passes the hot spot
-   (8,8) when item > 0 and (0,0) otherwise, and the record gIconsDDE4[item] in both cases (see below). */
+   (8,8) when item > 0 and (0,0) otherwise, and the far pointer gIconsDDE4[item] in both cases (see below). */
 extern void SetMousePointerShape(int hotX, int hotY, void far *icon); /*@ 1BB1:0002 */
 
 /* 07A9:000A: the start-up routine called from `main` (07C8:017F passes argc, argv through). The name
@@ -357,7 +360,7 @@ extern void SetMousePointerShape(int hotX, int hotY, void far *icon); /*@ 1BB1:0
     if (!gMouseDisabled) {
         /* the record of the index SetCurrentItem stored (gFBCE), not item, which is the icon
            number by now */
-        if ((gTable8DD2[gFBCE].flags & ITEM_FLAG_ICON) && (gFBD2 & 1)) {
+        if ((gTable8DD2[gFBCE].flags & ITEM_FLAG_COLOUR_ICON) && (gFBD2 & 1)) {
             if (g8102)
                 gFn80D2(gBufF534 + (item << 4));   /* the icon's 16-byte colour row */
             else
