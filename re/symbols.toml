@@ -2099,9 +2099,9 @@ unit = "e0a72"
 addr = "0A72:00CF"
 size = 89
 evidence = ["far", "frame"]
-name = "GetDerivedStatA"
 level = "L2"
 match_flags = "-ml -O -Z"
+name = "GetStrengthToHitBonus"
 
 [[function]]
 id = "e0a72_0128"
@@ -2109,9 +2109,9 @@ unit = "e0a72"
 addr = "0A72:0128"
 size = 89
 evidence = ["far", "frame"]
-name = "GetDerivedStatB"
 level = "L2"
 match_flags = "-ml -O -Z"
+name = "GetStrengthDamageBonus"
 
 [[function]]
 id = "e0a72_0181"
@@ -2139,9 +2139,9 @@ unit = "e0a72"
 addr = "0A72:01AE"
 size = 261
 evidence = ["far", "frame"]
-name = "RollDamage"
 level = "L2"
 match_flags = "-ml -O -Z"
+name = "RollHitPoints"
 
 [[function]]
 id = "e0a72_02b3"
@@ -2149,9 +2149,9 @@ unit = "e0a72"
 addr = "0A72:02B3"
 size = 241
 evidence = ["frame"]
-name = "MaxDamage"
 level = "L2"
 match_flags = "-ml -O -Z"
+name = "MaxHitPoints"
 
 [[function]]
 id = "e0a72_03a4"
@@ -2159,9 +2159,9 @@ unit = "e0a72"
 addr = "0A72:03A4"
 size = 196
 evidence = ["frame"]
-name = "MinDamage"
 level = "L2"
 match_flags = "-ml -O -Z"
+name = "MinHitPoints"
 
 [[function]]
 id = "e0a72_0468"
