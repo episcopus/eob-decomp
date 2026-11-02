@@ -18,7 +18,8 @@ struct Effect {
     unsigned long period;     /* +04: the interval added to the current tick on re-arm */
     unsigned long expiry;     /* +08: the time the effect next runs (g8492) */
     int arg;                  /* +0C: the handler's argument */
-    char sub;                 /* +0E: the third argument ArmEffectWith stores (callers pass 1) */
+    char sub;                 /* +0E: the third argument ArmEffectWith stores (1, 0xffff or idx,
+                                 by caller; src/E122E.C:284, :307, :332) */
     char active;              /* +0F: nonzero: the effect is armed */
 };
 
@@ -425,8 +426,8 @@ extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
    stored in the first slot whose mAD is 0 when `firstEmpty` is zero, or in the slot whose mD5
    already holds `value` (else the first empty one) when `firstEmpty` is nonzero. Called by 0BD2,
    0DE8, 0EF3 and 07CA. QUIRK 1414:0755: when `firstEmpty` is nonzero and all ten slots are full
-   with none holding `value`, `slot` stays -1 and the stores write mAD[-1] and mD5[-1] (inside the
-   same character record, before the arrays). */
+   with none holding `value`, `slot` stays -1 and the stores write mAD[-1] (+A9, padding before the
+   arrays) and mD5[-1] (+D4, the top byte of mAD[9]). */
 /*@ 1414:05ED */ void ApplyCharEffect(char who, long interval, char value, char firstEmpty)
 {
     struct Effect far *effect;
