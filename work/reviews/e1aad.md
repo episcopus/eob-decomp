@@ -36,7 +36,7 @@ a comment, with no matcher, spec or pin question.
 
 ### Findings
 
-- [ ] must-fix src/E1AAD.ASM:47-51 (the g8488 extern; the round 2 note at :44-47 that this round
+- [x] must-fix src/E1AAD.ASM:47-51 (the g8488 extern; the round 2 note at :44-47 that this round
   reopens): "1AAD:0C17 writes 0 after a recorded write (line 1350) and after a replay read (line
   1393)". Neither line clears ds:8488. Line 1350 is `mov word ptr cs:[kRecCountD20],ax`, the mouse
   count load after `mov ax,[g80F5]` at 1349. Line 1393 is `or ax,ax`, the test of a FileRead result.
@@ -44,21 +44,31 @@ a comment, with no matcher, spec or pin question.
   the FileWrite calls at 1340 and 1357) and at line 1403 (the 0D0A path, after a successful replay
   read; a failed read goes to 0D12 and does not clear). Fix both cites to 1360 and 1403. Round 1 had
   the same wrong lines, so the round 2 fix carried them forward.
+  Fixed (dec-deepseek): the g8488 comment now cites line 1360 (after the FileWrite calls) and line
+  1403 (the 0D0A path).
 
-- [ ] should src/E1AAD.ASM:314 and :1180 (the 0409 and 0B0E headers): "E16A5.C:127-128" is stale.
+- [x] should src/E1AAD.ASM:314 and :1180 (the 0409 and 0B0E headers): "E16A5.C:127-128" is stale.
   The round 2 e16a5 fix (3d78486) moved the file: DispatchKey (16A5:0009) now calls ReadKeySpecial at
   E16A5.C:152 and WaitGameKey2 at :153, and 127-128 no longer hold those calls. Replace both cites with
   the address, "DispatchKey (16A5:0009)".
+  Fixed (dec-deepseek): the 0409 header now says DispatchKey (16A5:0009, E16A5.C) calls it to test
+  before taking the key with 1AAD:0588; the 0B0E header now says 0588 is what DispatchKey (16A5:0009)
+  calls after 0409. Both "E16A5.C:127-128" cites are gone.
 
-- [ ] should src/E1AAD.ASM:116-117 (the 0223 header, "its keys are 5Ah..6Dh, indexed by AL-5Ah"): the
+- [x] should src/E1AAD.ASM:116-117 (the 0223 header, "its keys are 5Ah..6Dh, indexed by AL-5Ah"): the
   Ctrl-function branch is taken for all of 4Bh..6Dh, but for 4Bh..59h the index wraps. `sub bl,4Bh`
   and `sub bl,0Fh` (163, 172) are byte operations, so AL 4Bh..59h give an index of F1h..FFh, and
   `mov al,cs:[bx+kCtrlFnCodes]` (173) reads past the 20-byte table. A QUIRK candidate: say so in the
   header, do not fix it. The table's own range, 5Ah..6Dh, is right.
+  Fixed (dec-deepseek): the 1AAD:0223 header now marks QUIRK 1AAD:0223: the branch is entered for all
+  of 4Bh..6Dh but AL 4Bh..59h give an index of F1h..FFh, so the read runs past the 20-byte table. No
+  byte changed.
 
-- [ ] should src/E1AAD.ASM:20-26 (the g80EC extern): the state 2 readers that skip the wait are listed
+- [x] should src/E1AAD.ASM:20-26 (the g80EC extern): the state 2 readers that skip the wait are listed
   as 038E, 053A and 05D3. 1AAD:0588 (WaitGameKey2) skips it too (lines 536-537: `cmp byte ptr
   [g80EC],2` and `je f0588_05A9`). Add 0588 to the list.
+  Fixed (dec-deepseek): the g80EC comment now lists the state 2 readers that skip the wait as
+  1AAD:038E/053A/0588/05D3.
 
 - [ ] note for other owners (round 1 and 2 notes, still open, not this unit): src/EOV1.ASM:114 and
   src/EOV3.C:29 still say g80E8 is "toggled by the Ctrl-key handling"; src/E1A72.ASM:35 still says
