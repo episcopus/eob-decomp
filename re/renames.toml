@@ -1323,3 +1323,12 @@ new = "TranslateImage"
 kind = "function"
 why = "copies an image from src to dst through the translation table xlat, the mode word choosing the pixel format (0, 2, 3; anything else is the 4-bit path); called from SetMouseItem (07A9:018F) to translate the mouse icon"
 date = "2026-11-01"
+
+[[rename]]
+id = "1990:000E=gMcbSeg"
+addr = "1990:000E"
+old = "mcbseg"
+new = "gMcbSeg"
+kind = "global"
+why = "MCB of our own allocated block, set by CheckMemoryChain at 1990:0088 and read by CheckMCB and CheckMemoryChain; READABILITY.md asks for the g prefix (no other file declares the address; it is code segment data annotated with a plain `;` comment, so rename.py could not bind it and the label was renamed in place)"
+date = "2026-11-01"
