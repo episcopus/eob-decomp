@@ -77,7 +77,37 @@ extern void (far *gFC7C)(); /*@ ds:FC7C: the callback 16A5:0D78 installs and 16A
     DispatchNodeEvent(head, key);
 }
 
+/* 16A5:00BD: the event dispatcher (1798 bytes). Walks the list from `head` through the far next
+   pointers and decides, per node, whether the event hits its rectangle (+1E..+24) and what to do
+   to its state word (+2E). Working data in DGROUP: ds:5E10/5E12 keep a far node pointer saved
+   across calls (the first call clears it), ds:5DE0/5DE2 the node visited last, ds:5DEA the draw
+   flags, ds:5DE4/5DE6 the pressed node, ds:5DE8 a "the list is active" flag; ds:5E20 is a mouse
+   moved flag. The node's type word +04 carries a 0x8000 bit the dispatcher reads; +06 and +08 are
+   two key words; flags +0E has bits 1 and 2; the mouse position is gCursorX/gCursorY (ds:8138/
+   813A) and the pointer size ds:8154/8156 (gPointerHeight/gPointerWidth8) is added to the hit
+   rectangle. Key event codes 0x41/0x42 and 0xC6/0xC7 are the mouse buttons; key events go through
+   f1AAD_05F1. Two jump tables at 16A5:07B3 (g5E1E, four cases) and 16A5:07BB (g5E1C, four cases)
+   select the state change. The pointer is hidden with HidePointerZone and shown again with
+   ShowPointerZone around the drawing; DrawNode (16A5:07C3) redraws a node and the callback at
+   ds:FC7C is fired for the node under the pointer. Long (about 150 lines of C); not yet written.
+   Callers: DispatchKey (16A5:0009) and DispatchKeyWait (16A5:005A). [H] The exact per-type
+   semantics of the type word's 0x8000 bit and of the key words are not established. */
 /*@ 16A5:00BD stub */ void DispatchNodeEvent(struct Node far *head, int key) {}
+
+/* 16A5:07C3: draw one node (1461 bytes). The node's box is at +1E (x), +20 (y), +22 (width) and
+   +24 (height); the pointer rectangle it expands to is the box grown by ds:8154 pixels in y and
+   ds:8156 8-pixel units in x. The type byte +0A (0..5) selects the drawing path: 1 draws a far
+   `src` pointer at +0x10 (off), +0x14 (on) or +0x18 (pressed) through f1A29_000F (the region
+   front end) at region +1C; 2 draws a text string at the src pointer through gDrawText (ds:80CA);
+   3 draws through the driver hook at ds:805E; 4 calls the src pointer as a far callback with the
+   node; 5 and 0 draw a box through DrawBox (1A1F:000C) or the hook at ds:8066. The mode byte +0B
+   (1..4) and the second type byte +0C are read; the colours and attributes at +26..+2D and the
+   state word +2E's bits 1/2/4 select the colour; the tile ids at +34/+36 are drawn in some paths.
+   The current attribute ds:8115 is saved, set to 0, and restored; ds:FC80 likewise. The pointer is
+   hidden and shown with HidePointerZone/ShowPointerZone. Callers: ToggleNode (1658:0073),
+   DisableNode (1658:0154), EnableNode (1658:017B), ResetNode (1658:01E6), SetNode (1658:02F5) and
+   the dispatcher (16A5:00BD). [H] The exact meaning of the src pointers, the mode byte and the
+   type byte's paths is not established. */
 /*@ 16A5:07C3 stub */ void DrawNode(struct Node far *node) {}
 
 /* 16A5:0D78: store the 32-bit second argument as the far callback at ds:FC7C; the word first
