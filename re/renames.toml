@@ -2385,3 +2385,129 @@ new = "GetVoiceDelay"
 kind = "function"
 why = "returns the voice record byte at +5, the note delay counter StartVoiceNote sets and UpdateVoices counts down (4CB1, 41D8); the sixth entry of the driver entry table at 3944 (review of e_text)"
 date = "2026-11-02"
+
+[[rename]]
+id = "ds:7E43=gFileNamePortalA"
+addr = "ds:7E43"
+old = "gText7E43"
+new = "gFileNamePortalA"
+kind = "global"
+why = "ds:7E43 holds the file name PORTALA (EOB.EXE literal)"
+date = "2026-11-02"
+
+[[rename]]
+id = "ds:7E4B=gFileNamePortalB"
+addr = "ds:7E4B"
+old = "gText7E4B"
+new = "gFileNamePortalB"
+kind = "global"
+why = "ds:7E4B holds the file name PORTALB (EOB.EXE literal)"
+date = "2026-11-02"
+
+[[rename]]
+id = "ds:7E53=gFileNameText"
+addr = "ds:7E53"
+old = "gText7E53"
+new = "gFileNameText"
+kind = "global"
+why = "ds:7E53 holds the file name TEXT.DAT (EOB.EXE literal)"
+date = "2026-11-02"
+
+[[rename]]
+id = "ds:7EEF=gFileNameXDeath2"
+addr = "ds:7EEF"
+old = "gText7EEF"
+new = "gFileNameXDeath2"
+kind = "global"
+why = "ds:7EEF holds the file name XDEATH2 (EOB.EXE literal)"
+date = "2026-11-02"
+
+[[rename]]
+id = "ds:7EF7=gFileNameXDeath3"
+addr = "ds:7EF7"
+old = "gText7EF7"
+new = "gFileNameXDeath3"
+kind = "global"
+why = "ds:7EF7 holds the file name XDEATH3 (EOB.EXE literal)"
+date = "2026-11-02"
+
+[[rename]]
+id = "ds:7EFF=gFileNameXDeath1"
+addr = "ds:7EFF"
+old = "gText7EFF"
+new = "gFileNameXDeath1"
+kind = "global"
+why = "ds:7EFF holds the file name XDEATH1 (EOB.EXE literal)"
+date = "2026-11-02"
+
+[[rename]]
+id = "ds:7F07=gFileNameOuttake"
+addr = "ds:7F07"
+old = "gText7F07"
+new = "gFileNameOuttake"
+kind = "global"
+why = "ds:7F07 holds the file name OUTTAKE (EOB.EXE literal)"
+date = "2026-11-02"
+
+[[rename]]
+id = "ds:7F0F=gFileNameText2"
+addr = "ds:7F0F"
+old = "gText7F0F"
+new = "gFileNameText2"
+kind = "global"
+why = "ds:7F0F holds the file name TEXT.DAT (EOB.EXE literal)"
+date = "2026-11-02"
+
+[[rename]]
+id = "ds:7F18=gFileNamePlayfld"
+addr = "ds:7F18"
+old = "gText7F18"
+new = "gFileNamePlayfld"
+kind = "global"
+why = "ds:7F18 holds the file name PLAYFLD (EOB.EXE literal)"
+date = "2026-11-02"
+
+[[rename]]
+id = "ds:7F20=gFileNameInvent"
+addr = "ds:7F20"
+old = "gText7F20"
+new = "gFileNameInvent"
+kind = "global"
+why = "ds:7F20 holds the file name INVENT (EOB.EXE literal)"
+date = "2026-11-02"
+
+[[rename]]
+id = "ds:7F27=gFileNameText3"
+addr = "ds:7F27"
+old = "gText7F27"
+new = "gFileNameText3"
+kind = "global"
+why = "ds:7F27 holds the file name TEXT.DAT (EOB.EXE literal)"
+date = "2026-11-02"
+
+[[rename]]
+id = "ds:7F30=gFileNamePlayfld2"
+addr = "ds:7F30"
+old = "gText7F30"
+new = "gFileNamePlayfld2"
+kind = "global"
+why = "ds:7F30 holds the file name PLAYFLD (EOB.EXE literal)"
+date = "2026-11-02"
+
+[[rename]]
+id = "ds:7F38=gFileNameInvent2"
+addr = "ds:7F38"
+old = "gText7F38"
+new = "gFileNameInvent2"
+kind = "global"
+why = "ds:7F38 holds the file name INVENT (EOB.EXE literal)"
+date = "2026-11-02"
+
+[[rename]]
+id = "ovl5:0B58=ItemPanelDispatch"
+addr = "ovl5:0B58"
+old = "Menu1"
+new = "ItemPanelDispatch"
+kind = "function"
+why = "ovl5:0B58 dispatches the give-item panel 09C5, CheckChar0F7 and CheckRemove6"
+date = "2026-11-02"
