@@ -2248,7 +2248,7 @@ addr = "ds:80C6"
 old = "g80C6"
 new = "gSaveRectSize"
 kind = "global"
-why = "an indirect far function that returns the save-under buffer size in bytes for a (width, height) request; DisplayFileError (1C0E:0ADD) calls it before MemAlloc and E1BB1.ASM:92 holds it at ds:80C6"
+why = "an indirect far function that returns the save-under buffer size in bytes for a (width, height) request; DisplayFileError (1C0E:0ADD) calls it before MemAlloc (src/E1C0E.C:552), and E1BB1.ASM:33 describes the query"
 date = "2026-11-02"
 
 [[rename]]
@@ -2257,7 +2257,7 @@ addr = "ds:FE5A"
 old = "gFE5A"
 new = "gFont8x8"
 kind = "global"
-why = "the 8x8 font loaded from Font8.fnt; E07C8.C:118 loads it and 1C0E:0ADD (DisplayFileError) switches the text font to it through 1A47:0169 (EOV1.ASM:65 and EOV2.C:124 declare the same address)"
+why = "the 8x8 font loaded from Font8.fnt; E07C8.C:376 loads it (gFont8x8 = f1A47_0005(\"Font8.fnt\")) and 1C0E:0ADD (DisplayFileError) switches the text font to it through 1A47:0169 (EOV1.ASM:65 and EOV2.C:124 declare the same address)"
 date = "2026-11-02"
 
 [[rename]]
@@ -2266,7 +2266,7 @@ addr = "ds:8104"
 old = "g8104"
 new = "gFatalHandler"
 kind = "global"
-why = "the fatal file error handler, a far pointer at ds:8104; the image holds 1C0E:0D9B (ShowMessage) there (EOB.EXE file offset 2BBE4) and FatalError (1C0E:00AA) calls it (E1A72.ASM:38)"
+why = "the fatal file error handler, a far pointer at ds:8104; the image holds 1C0E:0D9B (ShowMessage) there (EOB.EXE file offset 2BBE4) and FatalError (1C0E:00AA) calls it (src/E1C0E.C:175, :176)"
 date = "2026-11-02"
 
 [[rename]]
@@ -2275,7 +2275,7 @@ addr = "ds:8111"
 old = "g8111"
 new = "gRetryHandler"
 kind = "global"
-why = "the retry file error handler, a far pointer at ds:8111; the image holds 1C0E:0ADD (DisplayFileError) there (EOB.EXE file offset 2BBF1) and RetryFile (1C0E:0046) calls it (E1A72.ASM:40)"
+why = "the retry file error handler, a far pointer at ds:8111; the image holds 1C0E:0ADD (DisplayFileError) there (EOB.EXE file offset 2BBF1) and RetryFile (1C0E:0046) calls it (src/E1C0E.C:164)"
 date = "2026-11-02"
 
 [[rename]]

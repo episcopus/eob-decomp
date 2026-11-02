@@ -53,9 +53,9 @@ extern int WaitGameKey(void);                      /*@ 1AAD:053A */
 extern void (far *gRestoreRect)(int x, int y, int w, int h, void far *buf); /*@ ds:804E: buffer back to the screen (E1BBE.ASM) */
 extern void (far *gSaveRect)(int x, int y, int w, int h, void far *buf);    /*@ ds:80AE: screen into the buffer (E1BBE.ASM) */
 extern void (far *gDrawLine)(int x1, int y1, int x2, int y2, int colour);   /*@ ds:8062: line routine (E1547.C) */
-extern int (far *gSaveRectSize)(int width, int height);    /*@ ds:80C6: the save-under buffer size in bytes (E1BB1.ASM) */
-extern void far *gFont8x8;                            /*@ ds:FE5A: the 8x8 font loaded from Font8.fnt (E07C8.C) */
-extern void far *gFont1A47;                        /*@ ds:FE4E: the current font (E1A47.C) */
+extern int (far *gSaveRectSize)(int width, int height);                     /*@ ds:80C6: the save-under buffer size in bytes (E1BB1.ASM) */
+extern void far *gFont8x8;                                                  /*@ ds:FE5A: the 8x8 font loaded from Font8.fnt (E07C8.C) */
+extern void far *gFont1A47;                                                 /*@ ds:FE4E: the current font (E1A47.C) */
 
 /* DGROUP globals and indirect far functions. */
 extern int gStatusLine;                        /*@ ds:8115: nonzero while a status line is up (E082C.C) */
@@ -120,7 +120,7 @@ struct FileEntry {
     char far *name;             /* +0x00: the file name, upper cased */
     long size;                  /* +0x04: the length on disk; an alias record holds its length inside the PAK until LoadFileSlot replaces it */
     char far *data;             /* +0x08: the in-memory copy when the record is loaded */
-    int link;                   /* +0x0C: < 0: LINK_INDEX is the record this aliases; > 0: the disk number of a plain file (DisplayFileError prints link + 1); 0: a local file */
+    int link;                   /* +0x0C: < 0: LINK_INDEX is the record this aliases; >= 0: a plain file on the disk whose number is link + 1 (DisplayFileError prints link + 1; link 0 is disk 1, as INTRO.EXE and eobdata1.pak have) */
     long pos;                   /* +0x0E: the read/write position in the file */
     signed char flags;          /* +0x12: FLAG_KEEP, FLAG_LOAD and the low FLAG_BITS */
 };
@@ -142,12 +142,14 @@ extern long gSlotLengths[];              /*@ ds:FF0C: the record's length per sl
     return 0;
 }
 
-/* 1C0E:0046: hand `name`, upper cased to the last backslash it contains, and the error `mode` to
-   the retry handler at ds:8111 (the file error dialog, 1C0E:0ADD) and return its result. `mode` is
-   an index into gErrorText: 2 "Could not find" (FileOpen's CheckFile loop and the FindLoadedFile
-   miss at 1C0E:11D3 with 0xA), 0 "Could not create the file on disk." (FileOpen's ResetFile loop),
-   1 "Illegal MODE in Open_File." (FileOpen's bad mode) and 0xB "You are exiting with open files."
-   (FreeAllCachedFiles 1C0E:0EE7; BuildFileCache, 1C0E:0F6E, calls no RetryFile).
+/* 1C0E:0046: hand `name` (upper cased; see QUIRK 1C0E:0060) and the error `mode` to the retry
+   handler at ds:8111 (the file error dialog, 1C0E:0ADD) and return its result. `mode` is an index
+   into gErrorText: 0 "Could not create the file on disk." (FileOpen's ResetFile loop,
+   src/E1C0E.C:219), 1 "Illegal MODE in Open_File." (FileOpen's bad mode, src/E1C0E.C:225),
+   2 "Could not find" (FileOpen's CheckFile loop, src/E1C0E.C:205, and its open retry loop,
+   src/E1C0E.C:249), 0xA "Trying to Get_Resident_Index on unknown file." (FindLoadedFile,
+   src/E1C0E.C:793) and 0xB "You are exiting with open files." (FreeAllCachedFiles,
+   src/E1C0E.C:702; BuildFileCache, 1C0E:0F6E, calls no RetryFile).
    QUIRK 1C0E:0060: the loop sets `base` to the backslash strchr found and the next strchr(base)
    finds that same backslash, so a name that contains a backslash never leaves the loop; a name
    without one is upper-cased whole (1C0E:0088). No name in the 203 record table holds a backslash,
@@ -685,8 +687,10 @@ extern long gSlotLengths[];              /*@ ds:FF0C: the record's length per sl
 
 /* 1C0E:0EE7: free every record's in-memory copy and, for every handle slot still open, run the
    retry handler (gRetryHandler) with mode 0xB. Called by 1C0E:13FD on shutdown.
-   QUIRK 1C0E:0EE7: the RetryFile(0xb, 0) call passes a null name, and RetryFile runs strchr and
-   strupr on 0000:0000, which reads the interrupt vector table. */
+   QUIRK 1C0E:0EE7: the RetryFile(0xb, 0) call passes a null name, so RetryFile runs strchr and
+   strupr on 0000:0000, the interrupt vector table: strupr stores every byte back (only a lowercase
+   letter changes) and a backslash among those bytes would make its loop (QUIRK 1C0E:0060) never
+   end. */
 /*@ 1C0E:0EE7 */ void FreeAllCachedFiles(void)
 {
     int i;
@@ -893,12 +897,14 @@ extern long gSlotLengths[];              /*@ ds:FF0C: the record's length per sl
    largest free block is too small), the file is opened (through the aliased record when link <= 0,
    recording the looked-up record length), its length is checked for a plain file (link > 0), and
    the bytes are read into the copy; the record's data pointer is set and 1 is returned. A failed
-   first allocation, open or read frees the copy and returns 0.
+   first allocation has no copy to free (`data` is 0) and returns 0 only when EvictFile
+   (1C0E:0E5B) also fails, freeing nothing; only a failed open (1C0E:15A0) or read (1C0E:162B)
+   frees the copy and returns 0.
    QUIRK 1C0E:144E: the own-file test is `entry->link > 0` (1C0E:1520, `jle` at 1C0E:1525), so
-   every link <= 0 takes the alias branch, and link 0 too: the alias is then gFiles[0 &
-   LINK_INDEX], the record itself, so such a file is looked for through its own name (the image has
-   link 0 on INTRO.EXE, record 0). FileOpen and CheckFile test `link < 0` for an alias, so the two
-   tests disagree.
+   every link <= 0 takes the alias branch: the alias is `gFiles[gFiles[index].link & LINK_INDEX]`
+   (the link load at 1C0E:154C, the mask at 1C0E:1550), so with link 0 it is record 0 for every
+   record and the open is of record 0's name (only record 0, INTRO.EXE, is its own alias). FileOpen
+   and CheckFile test `link < 0` for an alias, so the two tests disagree.
    QUIRK 1C0E:144E: after EvictFile returns 1 the second `MemAlloc(entry->size, 0)` (1C0E:1508) is
    not tested, so a NULL copy goes on to open and read.
    The evict and final read are written as success-if/else-failure blocks so that the original's
