@@ -7357,6 +7357,9 @@ unit = "eov0"
 addr = "ovl0:2238"
 size = 436
 evidence = ["ovl", "near", "frame"]
+name = "PickAlignment"
+level = "L2"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "eov0_23ec"

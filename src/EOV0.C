@@ -892,7 +892,55 @@ int PickAlignment(int classIndex); /* ovl0:2238, defined below */
     }
     return sel;
 }
-/*@ ovl0:2238 stub */ void Ovl0_2238(void) {}
+/* ovl0:2238: the alignment picker of character creation, the twin of ovl0:207A. `classIndex` is a
+   party member's class index; it indexes the per-class alignment-availability mask gTable6099, and
+   bits 6..8 are cleared from that mask when any of the four named characters has class 2. It counts
+   the available alignments with CountMaskBits, sizes the shared panel 3 to them, draws the alignment
+   names g1240 through the option list and loops with `while (!done && UpdateOptionList(...) == -1)`:
+   each pass redraws the panel animation (ovl0:1224) and sets `done` for the keys UpdateOptionList
+   did not handle 0x6e/0x32 or the mouse buttons 0x41/0x42 whose last click (g8140, g8142) lies in
+   the list box; a confirmed entry (UpdateOptionList not -1) ends the loop. Returns
+   the chosen alignment index, or 0x6e when the mouse finished (icon 5 flashed). Called by ovl0:23EC
+   for the class member. */
+/*@ ovl0:2238 */ int PickAlignment(int classIndex)
+{
+    register int mask;
+    register int sel;
+    int done;
+
+    mask = -1;
+    for (sel = 0; sel < 4; sel++) {
+        if (gChars[sel].name[0] && gChars[sel].m20 == 2)
+            mask = 0xfe3f;
+    }
+    sel = CountMaskBits(9, gTable6099[classIndex] & mask, 0);
+    gPanels[3].height = sel;
+    gPanels[3].sel = 0;
+    Ovl0_1224();
+    LockHidePointer();
+    ClipRect(0, 0, 0x12, 0x40, 0x14, 0x80, 2, 0);
+    DrawShadowText(gStr625A, 0x93, 0x43, 9, 0);
+    DrawPanelIcon(5, 0, 0);
+    LockShowPointer();
+    DrawOptionList(3, g1240, gTable6099[classIndex] & mask, 0, 0);
+    FlushKeyBuffer();
+    done = 0;
+    while (!done
+        && (sel = UpdateOptionList(3, g1240, 0L, gTable6099[classIndex] & mask, 0)) == -1) {
+        Ovl0_1224();
+        if (gFC7A == 0x6e || gFC7A == 0x32)
+            done = 1;
+        if (gFC7A == 0x41 || gFC7A == 0x42) {
+            if (PointInRect(g8140, g8142, 0x109, 0xab, 0x12f, 0xbb))
+                done = 1;
+        }
+    }
+    if (done) {
+        sel = 0x6e;
+        FlashPanelIcon(5);
+    }
+    return sel;
+}
 /*@ ovl0:23EC stub */ void Ovl0_23EC(void) {}
 /* ovl0:2547: loads the character panel's screens and slices its icon buffers. It allocates the 0x13
    0x3c-byte gNodePtrs nodes, loads three named screens (gStr6272, gStr627B, gStr6283) and slices
