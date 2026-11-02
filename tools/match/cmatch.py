@@ -17,7 +17,7 @@ of the declaration or definition (`;` comments in assembly):
     /*@ 0ACD:091C draft */ void f(...)                 written but not matching yet: compared and
                                                         reported, not a failure, never L2
     /*@flags -ml -O -Z -G */                          the file's switches (default: cflags); -B: compiled
-                                                        through the assembler (TCC -S, then TASM /ml /jNOSMART)
+                                                        through the assembler (TCC -S, then TASM /ml /jNOSMART /m2)
     PUBLIC Blit ; @ 19EA:0000                          the same in assembly
 
 How it proves: the unit is compiled once (TCC with `cflags` of tools/re/tc_toolchain.toml, or TASM
@@ -75,7 +75,9 @@ FARDATA: set = set()   # externs annotated seg:off that are data, not functions:
 FAR_BASE = 0x8000
 # -B: units compiled through the assembler. Their bytes come from TASM without SMART encoding: with
 # SMART, TASM 2.0 shortens `or bx,1` to 83 and changes other forms the original has (e14ef, e19ec)
-TASM_OPTS = (__import__("os").environ.get("TASM_OPTS") or "/ml /jNOSMART").split()
+# /m2: two passes, so a forward jump that turns out short is not padded with a NOP (EB xx 90): the
+# original has none (e1414, 2026-11-01)
+TASM_OPTS = (__import__("os").environ.get("TASM_OPTS") or "/ml /jNOSMART /m2").split()
 # experiments: another installed assembler release for -B and the stubs (tools/re/tc_toolchain.toml)
 ASM_RELEASE = __import__("os").environ.get("ASM_RELEASE") or None      # their offsets in our stub start here, apart from anything in DGROUP
 

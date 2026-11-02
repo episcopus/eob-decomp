@@ -66,7 +66,7 @@ extern void RearmCharEffects(void); /*@ 1414:0B2E */
 extern void SetMouseItem(int n); /*@ 07A9:010C */
 extern void f122E_0001(int n); /*@ 122E:0001 */
 extern void f122E_0896(int a, int b); /*@ 122E:0896 */
-extern void f0DE8_0D5E(int who); /*@ 0DE8:0D5E */
+extern void ComputeArmourClass(int who); /*@ 0DE8:0D5E */
 extern int far RollDice(char count, char sides, char bonus); /*@ 082C:0458 */
 extern void BuildList4(void); /*@ 0CF7:01CC */
 extern void Unpack0(char far *src, void far *dst, long len); /*@ 1BA8:0006 */
@@ -96,8 +96,8 @@ struct Entry14 {
 };
 extern struct Entry14 gTable8DD2[]; /*@ ds:8DD2 */
 extern signed char g1A1B[]; /*@ ds:1A1B */  /* per-page sound table (src/E0D1C.C) */
-extern int g36B0[]; /*@ ds:36B0 */          /* a per-slot word (screen row) compared with g5E12 */
-extern int g5E12; /*@ ds:5E12 */
+extern int g36B0[]; /*@ ds:36B0 */          /* a per-slot word (screen row) compared with gHitY */
+extern int gHitY; /*@ ds:5E12 */
 extern unsigned g5E1C; /*@ ds:5E1C */       /* src/E1658.C */
 extern signed char g36D0[]; /*@ ds:36D0 */  /* a per-row four-byte action table (09EF) */
 extern signed char g373C[]; /*@ ds:373C */  /* a per-page byte table read by 0A61 */
@@ -124,7 +124,7 @@ extern void f0BD2_01D0(void far *head, int key, int item, int sound); /*@ 0BD2:0
 extern int f0BD2_02B9(void far *head, int key, int item); /*@ 0BD2:02B9 */
 extern void f0BD2_0917(int who, int slot, int one); /*@ 0BD2:0917 */
 extern int DispatchKeyWait(void far *list); /*@ 16A5:005A */
-extern void f1547_04A0(int who); /*@ 1547:04A0 */
+extern void DrawMemberLevel(int who); /*@ 1547:04A0 */
 extern void f122E_1DA8(int a, int b); /*@ 122E:1DA8 */
 extern void RunEffects(void); /*@ 1414:04E7 */
 extern void TurnUndead(void); /*@ 0D1C:0A43 */
@@ -349,7 +349,7 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
 }
 
 /* 0ACD:0415: Purpose unknown: when f0D1C_0670 accepts the record's slot it hides the pointer, sets
-   a flag from g36B0[slot] against g5E12 and dispatches to f0BD2_0C8E or f0BD2_1001 (by the low
+   a flag from g36B0[slot] against gHitY and dispatches to f0BD2_0C8E or f0BD2_1001 (by the low
    bits of g5E1C), then shows the pointer. Returns 1. */
 /*@ 0ACD:0415 */ int Action0415(struct Action far *action)
 {
@@ -359,7 +359,7 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
     if (!f0D1C_0670(slot, 1))
         return 1;
     LockHidePointer();
-    if (g36B0[slot] <= g5E12)
+    if (g36B0[slot] <= gHitY)
         flag = 1;
     else
         flag = 0;
@@ -533,7 +533,7 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
             rec->m23 += gTable8DD2[item].m0B;
         gTable8DD2[item].m04 = -1;
         SetMouseItem(0);
-        f1547_04A0(index);
+        DrawMemberLevel(index);
         PlaySound(9);
     } else if (item != 0) {
         DrawText("You may only eat food!\r");
@@ -549,14 +549,14 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
 
 /* 0ACD:08E7: Purpose unknown: derives a key from gSoundVolume and gFBCC (f0D1C_00DA), sets
    gEFD2 to 0xff, passes the key and the page to f122E_0896 and the selected character gA99A to
-   f0DE8_0D5E. */
+   ComputeArmourClass. */
 /*@ 0ACD:08E7 */ void Action08E7(void)
 {
     int x = f0D1C_00DA(gSoundVolume, gFBCC);
 
     gEFD2 = 0xff;
     f122E_0896(x, gFBCC);
-    f0DE8_0D5E(gA99A);
+    ComputeArmourClass(gA99A);
 }
 
 /* 0ACD:091C draft: a switch over a four-entry jump table at 0ACD:09E7, cases 1 and 3 shared.
@@ -639,7 +639,7 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
 }
 
 /* 0ACD:0A61: the list move/use handler. In mode 2 (gFB44 == 2) or the rest phase (gDCAA == 5) it
-   only redraws gA99A through f0DE8_0D5E. Otherwise it takes the current item (f0D1C_02DC, or
+   only redraws gA99A through ComputeArmourClass. Otherwise it takes the current item (f0D1C_02DC, or
    f0BD2_02B9 over the character's +0x97 sub-table at row 0x10) and gives up without redrawing
    when the item's flags have bit 0x20 or the item is 0. It then computes the per-page value
    g373C[gFBCC * 2 + g3744[gA99A]]: `used` zero runs f0BD2_01D0 over the volume's ds:B899 record
@@ -686,7 +686,7 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
             f0BD2_01D0((void far *)gChars[gA99A].m97, 0xFFFE, item, 0);
     }
 call:
-    f0DE8_0D5E(gA99A);
+    ComputeArmourClass(gA99A);
 }
 
 /* 0ACD:0BA6 draft: the list pick handler. It takes the item list for the current volume (or, when
@@ -696,7 +696,7 @@ call:
    ds:B899 record list with the kind g1A1B[gFBCC * 4 + gEFB2]. When a fresh item is found it marks
    it used (f0BD2_0AF2) and shows it (f0BD2_0458 and f122E_1DA8, or SetMouseItem / f1547_0991 and
    f0BD2_01D0 at row 0x10), sets gDF4C, and stops; an empty or repeated item runs f0BD2_01D0 and
-   clears gF3BA. It redraws gA99A through f0DE8_0D5E at the end. Everything matches except one
+   clears gF3BA. It redraws gA99A through ComputeArmourClass at the end. Everything matches except one
    byte: the original stores the picked item with `mov [gF3BA], ax`, our build with
    `mov [gF3BA], di` (both hold the item); the same value, a different register the source cannot
    choose. Open: another form of the gF3BA assignment. */
@@ -767,7 +767,7 @@ call:
         ;
     } while (flag == 0 && count < 5);
 done:
-    f0DE8_0D5E(gA99A);
+    ComputeArmourClass(gA99A);
 }
 
 /* 0ACD:0D9D: the key dispatcher for the map screen. It acts only while the mouse is disabled and

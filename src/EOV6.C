@@ -83,7 +83,7 @@ extern void WaitTicks(int n); /*@ 082C:0425 */
 extern int far RollDice(char count, char sides, char bonus); /*@ 082C:0458 */
 extern int f17A6_0F61(int x, int y); /*@ 17A6:0F61 */
 extern void f1547_0991(int member); /*@ 1547:0991 */
-extern void f0DE8_09B9(int member, int what); /*@ 0DE8:09B9 */
+extern void DamageCharacter(int member, int what); /*@ 0DE8:09B9 */
 extern void UpdateObjects(int kind); /*@ 08E6:0CC8 */
 extern void ClipRect(int x1, int y1, int x2, int y2, int width, int height, int extra1, int extra2); /*@ 19F3:000E */
 extern int ReadKey(void); /*@ 1AAD:038E */
@@ -260,7 +260,7 @@ void f0B9B(int message);
                     continue;
                 if (f0D1C_0670(member, 0x10))
                     continue;
-                f0DE8_09B9(member, 0xa);
+                DamageCharacter(member, 0xa);
                 WaitTicks(5);
             }
             if (hours % 8 == 0) {
@@ -277,7 +277,7 @@ void f0B9B(int message);
                         continue;
                     if (gChars[member].level == 0) {
                         if (hours % 0x18 == 0 && gChars[member].hp > 0xf6) {
-                            f0DE8_09B9(member, 1);
+                            DamageCharacter(member, 1);
                             gained = 1;
                             f1A47_0169(gA9C0);
                             f1547_0991(member);

@@ -64,12 +64,12 @@ why = "the pointer sprite's width in 8-pixel units: filled from shape record byt
 [[global]]
 id = "ds:8158"
 name = "gPointerHotX"
-why = "the hot-spot x subtracted from the last drawn pointer position ds:815C before drawing: set from argument 1 at 1BB1:001B and used at 1BBE:0021 and 1BBE:0117 (the caller passes 8 or 0, E07A9.C:164 and :166)"
+why = "the hot-spot x subtracted from the last drawn pointer position ds:815C before drawing: set from argument 1 at 1BB1:001B and used at 1BBE:0021 and 1BBE:0117 (the caller passes 8 or 0, E07A9.C:204 and :206)"
 
 [[global]]
 id = "ds:815A"
 name = "gPointerHotY"
-why = "the hot-spot y subtracted from the last drawn pointer position ds:815E before drawing: set from argument 2 at 1BB1:0021 and used at 1BBE:002B and 1BBE:0127 (the caller passes 8 or 0, E07A9.C:164 and :166)"
+why = "the hot-spot y subtracted from the last drawn pointer position ds:815E before drawing: set from argument 2 at 1BB1:0021 and used at 1BBE:002B and 1BBE:0127 (the caller passes 8 or 0, E07A9.C:204 and :206)"
 
 [[global]]
 id = "ds:816A"
@@ -109,17 +109,17 @@ why = "the sound choice from argv[2] minus '1' (whitepaper 2.6): 0 opens adlib.d
 [[global]]
 id = "ds:009E"
 name = "gSpeakerMode"
-why = "Purpose unknown: when 1 the PC-speaker path of PlaySound/PlaySoundVolume gates the speaker on the sign of the sound number through ds:8A67"
+why = "Purpose unknown: 1 only on the Tandy path (src/E07C8.C:307), where the speaker path of PlaySound/PlaySoundVolume drives ds:8A67; the sign test that would clear it is dead (gSoundMap is unsigned char)"
 
 [[global]]
 id = "ds:8A67"
 name = "gSpeakerOn"
-why = "the PC-speaker gate bit toggled by the sign of the sound number when gSpeakerMode is 1, then applied by 1948:0458"
+why = "the PC speaker / Tandy driver select applied by 1948:0458 (E1948.ASM: 1 is Tandy, 0 is PC speaker); PlaySound (177D:0070) and PlaySoundVolume (177D:0106) only ever set it to 1, never to 0"
 
 [[global]]
 id = "ds:5E22"
 name = "gCurSound"
-why = "the driver sound number PlaySoundVolume is playing; it guards the retune and becomes gSoundMap[sound] at the end"
+why = "the driver sound number recorded by the previous call of PlaySoundVolume; nonzero guards the retune, and 177D:0106 restarts this recorded number, not the new one, then becomes gSoundMap[sound] at the end"
 
 [[global]]
 id = "ds:5E24"
@@ -139,12 +139,12 @@ why = "the driver level written to register 3 of the current sound (0000:03B0/00
 [[global]]
 id = "ds:5E2A"
 name = "gSoundAmp"
-why = "the driver amplitude written to register 1 of the current sound (0000:03B0/0000:03CA)"
+why = "Purpose unknown: the driver value written to register 1 of the current sound (0000:03B0/0000:03CA); the AdLib write is 20h - gCurVolume (177D:01DA), and 20h is the OPL register block 20h (waveform and multiplier), not clearly an amplitude"
 
 [[global]]
 id = "ds:FBCA"
 name = "gSoundVolume"
-why = "the default sound volume PlaySoundDefault (177D:00F3) passes and PlaySoundVolume uses to derive the level"
+why = "the sound setting PlaySoundDefault (177D:00F3) passes and PlaySoundVolume scales by f17A6_0F61 to get gCurVolume; also indexes the nine-byte records at ds:B894 in src/E0D1C.C:334, is compared with an index in src/E1414.C:220, and is passed to f17A6_0F61 in src/EOV6.C:393"
 
 [[global]]
 id = "ds:DDE4"

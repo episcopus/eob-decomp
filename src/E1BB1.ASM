@@ -1,18 +1,20 @@
 ; Unit at EOB.EXE 1BB1:0001 (208 bytes, 2 functions), kind asm [H] by the map. 1BB1:0001 is a
 ; single 00 byte with `segment` evidence (the unit's start marker, like 1990:0001); the one real
-; function follows at 1BB1:0002.
+; function follows at 1BB1:0002. The pointer is the game's own, moved by the INT 33h handler
+; (docs/design/WHITEPAPER.md section 2.7 Input and sound, the mouse bullet at line 128: "The game
+; draws its own pointer").
 ;
 ; 1BB1:0002 sets the mouse pointer's shape. Two callers. f07A9_010C (07A9:010C) passes the hot spot
 ; (8,8) when its n is above 0 and (0,0) otherwise, and the record gIconsDDE4[n] in both cases (the
-; two calls at E07A9.C:164 and :166; the table holds item icon images, E07A9.C:64-68, the comment
-; just above gIconsDDE4 at :69). SetPointerShape (ovl2:0000, src/EOV2.C:206-211) passes (0,0) and
+; two calls at E07A9.C:204 and :206; the table holds item icon images, E07A9.C:98-103, the comment
+; just above gIconsDDE4 at :104). SetPointerShape (ovl2:0000, src/EOV2.C:206-211) passes (0,0) and
 ; gPtrDD00, which it has just set to gIconsDDE4[0] (EOV2.C:210-211); LoadItemData calls
 ; SetPointerShape at start-up (EOV2.C:451). Unit 1BBE shows what the globals are: the hide
 ; 1BBE:0002 subtracts the hot spot gPointerHotX/gPointerHotY (ds:8158/815A) from the last drawn
 ; pointer position gDrawnX/gDrawnY (ds:815C/815E) (1BBE:001E..002F), and the show 1BBE:00ED sets
 ; that drawn position to the mouse position gCursorX/gCursorY (ds:8138/813A) and subtracts the hot
 ; spot from it (1BBE:0111..012E); the shape record gPointerShapeOff/gPointerShapeSeg
-; (ds:816E/8170) is what 1BBE:00ED draws through [ds:80C2] (no registry name). The save-under
+; (ds:816E/8170) is what 1BBE:00ED draws through gDraw80C2 ([ds:80C2]). The save-under
 ; buffer gPointerBackOff/gPointerBackSeg (ds:816A/816C) is the screen behind the pointer:
 ; 1BBE:0002 restores it through gRestoreRect ([ds:804E]) and 1BBE:00ED saves the background into
 ; it through gSaveRect ([ds:80AE]).
@@ -126,7 +128,7 @@
 ; sprite size changed (freeing an existing buffer of a changed size first); hides the pointer
 ; before overwriting the globals and shows it after, all under the busy flag gPointerBusy (ds:812E).
 ; Returns 1, or 0 when the largest-block test fails (1BB1:0084..0086) or MemAlloc returns no
-; segment (1BB1:009D..00A0); both callers ignore the value and the prototype is void (E07A9.C:88).
+; segment (1BB1:009D..00A0); both callers ignore the value and the prototype is void (E07A9.C:124).
         PUBLIC  _SetMousePointerShape             ; @ 1BB1:0002
 _SetMousePointerShape PROC FAR
         push    bp

@@ -39,36 +39,52 @@ segment 212E).
 
 ## Findings
 
-- [ ] must-fix src/E0CF7.C:5-7 (`The records the tables point at are 60 bytes each in DGROUP`): the 0x3C grid is
+- [x] must-fix src/E0CF7.C:5-7 (`The records the tables point at are 60 bytes each in DGROUP`): the 0x3C grid is
   proven, the record size is not. Every table entry is 6 mod 60, and the closest two distinct records are 60 bytes
   apart, so the records sit on a 60-byte grid. Nothing in the bytes shows each record is 60 bytes long. The node
   layout in src/E1658.C:9-18 reaches +0x33 (52 bytes), so the real size is somewhere from 52 to 60. Say "spaced on a
-  60-byte grid", or give the size and its evidence.
-- [ ] should src/E0CF7.C:8 (`struct Node`): src/E1658.C:9 defines another `struct Node` for the same list nodes
+  60-byte grid", or give the size and its evidence. [FIXED (HEAD): the `Node` comment now says the records are
+  "spaced on a 60-byte grid (every table entry is 6 mod 0x3C)" and gives the size as 52 to 60, E1658.C's +0x33
+  layout being the lower bound. Re-read the eight tables from DGROUP (DGROUP = 0x212E): all 261 entries are 6 mod 60,
+  the closest distinct records 60 apart. `make match FILE=src/E0CF7.C` still 6 of 6, 591 bytes.]
+- [x] should src/E0CF7.C:8 (`struct Node`): src/E1658.C:9 defines another `struct Node` for the same list nodes
   (far `next` at +00, `key` at +04, `flags` at +0E, `state` at +2E, `callback` at +30). Two units with one tag and
   different members will collide once a shared header exists. Use the E1658 definition (its first member is the same
-  far `next`) or give this one another tag.
-- [ ] should src/E0CF7.C:12 (`gList`): cite the consumer. src/E16A5.C:56-60 says `DispatchKeyWait` dispatches a key to
+  far `next`) or give this one another tag. [FIXED (HEAD): E0CF7.C now declares the same `struct Node` as E1658.C
+  (`next` at +00, `key` at +04, `pad06[8]`, `flags` at +0E, `pad10[0x1E]`, `state` at +2E, `callback` at +30); the
+  two functions touch only `next`. `make match FILE=src/E0CF7.C` 6 of 6.]
+- [x] should src/E0CF7.C:12 (`gList`): cite the consumer. src/E16A5.C:56-60 says `DispatchKeyWait` dispatches a key to
   "the node list `head`", and that overlays 0 and 1 and 0ACD:0E6C each pass the list head at ds:FB48. That is the
   strongest evidence in the file for what gList is: the screen node list the key dispatcher walks, not only "the list
-  built last". The name can stay; the comment should carry the evidence.
-- [ ] should src/E0CF7.C:1-2 (`Go/no-go spike for the toolchain (SPEC 4.2)`): project history, not what the code does,
-  and it will go stale. Move it to the work notes or drop it.
-- [ ] should src/E0CF7.C:3 (`Names are placeholders until the callers and the tables are understood`): the packet
+  built last". The name can stay; the comment should carry the evidence. [FIXED (HEAD): the `gList` comment now calls
+  it the head of the screen node list walked by DispatchKeyWait (E16A5.C:56-60, 16A5:005A), and notes that 0ACD:0E6C
+  and overlays 0 and 1 pass it at ds:FB48.]
+- [x] should src/E0CF7.C:1-2 (`Go/no-go spike for the toolchain (SPEC 4.2)`): project history, not what the code does,
+  and it will go stale. Move it to the work notes or drop it. [FIXED (HEAD): the Go/no-go line is dropped from the
+  header, which now states what the unit does.]
+- [x] should src/E0CF7.C:3 (`Names are placeholders until the callers and the tables are understood`): the packet
   lists every caller and the tables are decoded, so the line says less than the file knows. Say what is still
   unknown instead: the meaning of gFlag (and so of the a and b sets), and the numbering of BuildList1 to BuildList5.
-- [ ] should src/E0CF7.C:10-11 (`gFlag`): name the writer context. 0EF3:2541 is the function that stores 0 and calls
+  [FIXED (HEAD): the header now says what is still unknown: the meaning of gFlag (and so of the a and b sets), and
+  what BuildList1 to BuildList5 number.]
+- [x] should src/E0CF7.C:10-11 (`gFlag`): name the writer context. 0EF3:2541 is the function that stores 0 and calls
   BuildList1 to 3; 0EF3:2281 stores 1 and calls BuildList1 at 0EF3:2286. Those two callers are where a reader would
-  look first, and the comment gives only the store addresses.
-- [ ] note the tables: the first entry of tables 1a, 1b, 2a, 2b, 3a and 3b is the same record, ds:4836 (tables 4 and 5
+  look first, and the comment gives only the store addresses. [FIXED (HEAD): the `gFlag` comment now names both
+  contexts: the 1 store at 0EF3:2281 is just before that function calls BuildList1 at 0EF3:2286, and the 0 store at
+  0EF3:2544 is in the function at 0EF3:2541 that calls BuildList1 to BuildList3.]
+- [x] note the tables: the first entry of tables 1a, 1b, 2a, 2b, 3a and 3b is the same record, ds:4836 (tables 4 and 5
   start at 0x3E9A and 0x4B7E). So the a and b sets differ only after their first node, and every BuildList1 to 3 call
   runs ListInit on ds:4836. A reader who expects the a and b heads to differ will be misled; the comment at the
-  tables could say so.
-- [ ] note src/E1658.C:6-7 says ListAdd is at "0CF7:001E". That address is inside ListInit (0CF7:0007); ListAdd is at
-  1658:001E, as src/E1658.C:51 says. Not in this unit; the E1658 owner should fix it.
-- [ ] note BuildList1 to BuildList5 are named by their table number, not by what the tables are. That is acceptable
+  tables could say so. [FIXED (HEAD): the new table block above the declarations records this, with the counts per
+  table; read back from DGROUP (DGROUP = 0x212E), confirmed: the six a/b first entries are ds:4836 and tables 4 and
+  5 start at ds:3E9A and ds:4B7E.]
+- [x] note src/E1658.C:6-7 says ListAdd is at "0CF7:001E". That address is inside ListInit (0CF7:0007); ListAdd is at
+  1658:001E, as src/E1658.C:51 says. Not in this unit; the E1658 owner should fix it. [ACKNOWLEDGED, no change:
+  E1658.C is another unit's file, so per this note its owner fixes it; E0CF7's own declaration is right
+  (1658:001E).]
+- [x] note BuildList1 to BuildList5 are named by their table number, not by what the tables are. That is acceptable
   for now (the bodies say what they do) and the numbers follow the tables, so leave them until the a and b meaning
-  is known.
+  is known. [ACKNOWLEDGED, no change.]
 
 ## Summary
 
@@ -79,3 +95,28 @@ code, and a gList comment that does not yet cite the dispatcher that reads it (E
 purpose: gFlag ("meaning unknown"; three writers, two sets), gTable1a to gTable5 and BuildList1 to BuildList5 (table
 numbering, no evidence for the real use), ListInit (sets gList to the head and clears its link: matches the bytes).
 Nothing here is a matcher or spec question, so no escalation.
+
+## Third review (rev-haiku)
+
+Reviewer: rev-haiku
+Commit reviewed: 29ba07f8b8e4e495447ae423a9da885f7691ad8d (review/e0cf7 at the start; src/E0CF7.C last changed at 35f6eca)
+
+Playbook 70, read for meaning. `make match FILE=src/E0CF7.C`: 6 of 6 (591 bytes); `make readability UNIT=e0cf7`: 0 findings. Checked this round: the segment records in build/re/eob.json (segments 8 and 9); ListInit (0CF7:0007..0027) and ListAdd (1658:001E..0072) by disassembly; every `b9 f3` displacement in the EXE image (ds:F3B9, ten hits, see the last note); the eight tables read from DGROUP (counts, first records, alignment); the call and store sites the comments name (0EF3:2257, 2281, 2286, 2544, 0ACD:0FA9, 0ACD:0E6C); the `struct Node` definitions in E1658.C and E16A5.C.
+
+### Findings
+
+- [ ] must-fix src/E0CF7.C:28 (`gList` comment): cites "E16A5.C:56-60" for DispatchKeyWait's node list. Lines 56 to 58 of E16A5.C are the `struct Node` fields `tile34`, `tile36` and the closing brace, not the dispatcher. The text is at E16A5.C:139-143 (the 16A5:005A comment: "dispatch it to the node list `head`", and "each passing the list head at ds:FB48", naming 0ACD:0E6C and overlays 0 and 1). The earlier rounds carried the wrong range forward; cite 139-143. I did not decode the overlay call sites; the overlay claim rests on E16A5.C:139-143.
+- [ ] should src/E0CF7.C:43-44 (`ListAdd` comment): "stores item there" reads as if item replaces the tail node. The bytes (1658:004E..0057) store item's far pointer in the tail's own link (`tail->next = item`), and the tail stays. E1658.C:49 says "links `item` after it", which is the better wording.
+- [ ] should src/E0CF7.C:1-4 and 55-70 (header and BuildList comments): every `gList = ListAdd(gList, x)` leaves gList unchanged, because ListAdd returns its first argument (1658:0069..006C). After each BuildList, gList is the first record of the table, not the last one appended. The header says "appends the rest with ListAdd", and the loop line reads as if gList advances. Say so in the header, in one sentence, and point at the ListAdd note.
+- [ ] should src/E0CF7.C:22-26 (`gFlag` comment): (a) "just before that function calls BuildList1" does not name the function; the packet's caller list gives it as 0EF3:21E0. (b) Readers are not listed. BuildList1 to BuildList3 test it with `cmp byte ptr [F3B9],0` (image 0xCF9E, 0xD02A, 0xD0B6, inside segment 0CF7); that is the table choice. At 0EF3:2257 the function tests it first: when it is zero, the code calls through the far pointer at ds:80AE (0EF3:2269..227A), then stores 1 at 0EF3:2281. The comment should say that path also writes 1. (c) READABILITY.md:25 asks for `Purpose unknown:` when the purpose is unknown; this comment says "Meaning unknown.".
+- [ ] should src/E0CF7.C:6-11 and 12-20 (`struct Node`): the comment says the struct has "the same tag and layout as E1658.C ... so the two agree once a header exists". That is true of E1658.C only. E16A5.C:28-58 defines `struct Node` under the same tag with a different layout: named keys at +06 and +08, kind and modes at +0A..+0C, a box at +1C..+24, colour bytes at +26..+2D, `callback30` returning int, and tile ids at +34 and +36 (56 bytes). This file calls +06 and +10..+2D "unknown fields". Two definitions under one tag will collide once a header exists, which is the point the earlier round made about E1658.C. Use E16A5's member names where its citations back them, or say in this comment that E16A5.C extends the record.
+- [ ] should src/E0CF7.C:7-8 (record size): "E1658.C lays one out through +0x33 (52 bytes), so it is 52 to 60". E16A5.C:28-58 lays the record out through +0x37 (tile36 at +36 and +37), so the project's own layouts give 56 as the lower bound. Say 56 to 60 and cite E16A5.C, or give both lower bounds.
+- [ ] should src/E0CF7.C:63, 67, 80, 84, 97, 101, 113, 124 (table counts): the counts 52, 38, 59, 47, 19, 32, 7 and 7 are literals in the loop bounds. READABILITY.md:56 asks that limits be named constants. One named constant per table (for example `TABLE1A_COUNT 52`) would tie each loop to its table.
+- [ ] note src/E0CF7.C:1 (segment start): 0CF7:0000..0006 is not this unit. Segment 8 (para 0xBD2, start 48430, size 4681) ends at 53111 = 0xCF77 = 0CF7:0007, and segment 9 (this unit) starts there (build/re/eob.json). So the header's "0CF7:0007 (591 bytes, the whole code segment)" is right; a reader who starts at 0CF7:0000 is reading the end of segment 8. [ACKNOWLEDGED, no change.]
+- [ ] note cross-unit, for the owners of E0ACD.C and E16A5.C (not this file): E0ACD.C:112 declares ds:FB48 as `extern void far *gList;`, while E0CF7.C and E16A5.C use `struct Node far *`. E0ACD.C:126 declares DispatchKeyWait as `extern int ... (void far *list)`, and E16A5.C:144 as `void ... (struct Node far *head)`. Same bytes, different types. E0ACD.C:112's comment still says "the head of the list built last (src/E0CF7.C)" and does not cite the dispatcher. [ACKNOWLEDGED, no change: other units' files.]
+- [ ] note the `gFlag` writers are complete for direct addressing: the EXE image has ten occurrences of `b9 f3` (the displacement of ds:F3B9). Three are the `c6 06` stores the comment lists (0ACD:0FA9, 0EF3:2281, 0EF3:2544). The other seven are reads: `cmp` at 0CF7 (BuildList1 to BuildList3), `cmp` at 0ACD:0289 and 02AD, `mov al` at 0EF3:2257, and one `cmp` at image 0x13DA6 that I did not identify. [ACKNOWLEDGED, no change.]
+- [ ] note verified this round, no change needed: ListInit and ListAdd match their comments (the walk test, the two link stores, the return of the first argument); the eight tables: counts, first records (ds:4836 for 1a, 1b, 2a, 2b, 3a and 3b; ds:3E9A for 4; ds:4B7E for 5), every entry in segment 212E and 6 mod 60. [ACKNOWLEDGED.]
+
+### Summary
+
+The unit matches (6 of 6), reads clearly from its source, and its evidence checks out against the bytes, the segment table and the callers, with one exception: the `gList` comment cites the wrong lines of E16A5.C for the dispatcher (must-fix). The remaining shoulds are wording and naming: the ListAdd "stores item there" phrase, the no-op `gList = ListAdd(...)` assignment (it needs one sentence in the header), the `gFlag` comment (the function is unnamed, a reader is not listed, and the unknown-purpose label does not follow READABILITY.md), the `struct Node` tag shared with E16A5.C (which has 56 bytes and named members), and the table counts as literals. Names still standing on purpose: gFlag (meaning unknown; three writers, seven readers), gTable1a to gTable5 and BuildList1 to BuildList5 (table numbering; no evidence for the real use). ListInit, ListAdd and gList have evidence. Nothing here is a matcher or spec question, so no escalation. Verdict: review-failed (one must-fix).
