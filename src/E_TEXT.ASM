@@ -863,15 +863,15 @@ L_4267:
         jmp    L_419C
 L_4270:
         ret
-L_4271:
+L_4271:                 ; script byte 80h
         mov       byte ptr [di + 6], ah
         jmp short    L_41FC
-L_4276:
+L_4276:                 ; script byte 81h
         dec       byte ptr [di + 6]
         jne    L_42D4
         inc       si
         jmp    L_41FC
-L_427F:
+L_427F:                 ; script byte 82h
         push      si
         push      di
         push      bx
@@ -907,17 +907,17 @@ L_42C8:
         pop       di
         pop       si
         jmp    L_41FC
-L_42CE:
+L_42CE:                 ; script byte 83h
         mov       byte ptr [di + 35h], ah
         jmp    L_41FC
-L_42D4:
+L_42D4:                 ; script byte 84h
         mov       cl, ah
         lodsb
         xchg      ah, al
         mov       al, cl
         mov       si, ax
         jmp    L_41FC
-L_42E0:
+L_42E0:                 ; script byte 85h
         dec       si
         mov       bl, byte ptr [di + 9]
         mov       bh, 0
@@ -930,7 +930,7 @@ L_42E0:
         lodsw
         mov       si, ax
         jmp    L_41FC
-L_42F8:
+L_42F8:                 ; script byte 86h
         dec       si
         dec       byte ptr [di + 9]
         mov       bl, byte ptr [di + 9]
@@ -939,9 +939,11 @@ L_42F8:
         mov       ax, word ptr [bx + di + 0ah]
         mov       si, ax
         jmp    L_41FC
-L_430B:
+L_430B:                 ; script byte 87h
         mov       byte ptr [di + 7], ah
         jmp    L_41FC
+; the end-of-script handler: 20 entries of the command table name it (the commands that have no handler of their own), and so does
+; the range check of the dispatch (script bytes above F0h). It clears the voice's priority and script pointer and keys the voice off
 L_4311:
         mov       byte ptr [di + 8], 0
         mov       word ptr [di + 3], 0
@@ -950,7 +952,7 @@ L_4311:
         call    _VoiceKeyOff
 L_4324:
         jmp    L_4267
-L_4327:
+L_4327:                 ; script byte 89h
         call    _StartVoiceNote
         mov       word ptr [di + 3], si
         cmp       byte ptr ds:[gVoiceIndex], 9
@@ -963,11 +965,11 @@ L_4337:
         jmp    L_425F
 L_4341:
         jmp    L_41FC
-L_4344:
+L_4344:                 ; script byte 8Ah
         lodsb
         call    _AdlibWrite
         jmp    L_41FC
-L_434B:
+L_434B:                 ; script byte 8Bh
         xchg      ah, al
         call    _SetVoicePitch
         lodsb
@@ -980,10 +982,10 @@ L_434B:
         jmp    L_425F
 L_4363:
         jmp    L_41FC
-L_4366:
+L_4366:                 ; script byte 8Ch
         mov       byte ptr [di + 12h], ah
         jmp    L_41FC
-L_436C:
+L_436C:                 ; script byte 8Dh
         mov       byte ptr [di + 3ah], ah
         mov       byte ptr [di + 39h], ah
         lodsb
@@ -995,7 +997,7 @@ L_436C:
         mov       word ptr [di + 3eh], ax
         mov       word ptr [di + 2bh], offset L_4ED7
         jmp    L_41FC
-L_4389:
+L_4389:                 ; script byte 8Eh
         mov       al, byte ptr ds:[gVoiceIndex]
         push      ax
         push      di
@@ -1010,7 +1012,7 @@ L_4389:
         pop       ax
         mov       byte ptr ds:[gVoiceIndex], al
         jmp    L_41FC
-L_43AD:
+L_43AD:                 ; script byte 90h
         push      si
         mov       cl, byte ptr ds:[gOperatorOffset]
         sub       bx, bx
@@ -1020,7 +1022,7 @@ L_43AD:
         call    _LoadVoicePatch
         pop       si
         jmp    L_41FC
-L_43C3:
+L_43C3:                 ; script byte 91h
         mov       byte ptr [di + 13h], ah
         lodsb
         xchg      ah, al
@@ -1029,15 +1031,15 @@ L_43C3:
         mov       word ptr [di + 29h], offset L_4F00
         mov       byte ptr [di + 14h], 0ffh
         jmp    L_41FC
-L_43D9:
+L_43D9:                 ; script byte 92h
         dec       si
         mov       word ptr [di + 29h], offset L_4E7D
         mov       word ptr [di + 15h], 0
         jmp    L_41FC
-L_43E7:
+L_43E7:                 ; script byte 93h
         mov       byte ptr [di + 24h], ah
         jmp    L_41FC
-L_43ED:
+L_43ED:                 ; script byte 95h
         mov       byte ptr [di + 1dh], ah
         lodsb
         mov       byte ptr [di + 19h], al
@@ -1050,10 +1052,10 @@ L_43ED:
         mov       byte ptr [di + 1ch], al
         mov       word ptr [di + 29h], offset L_4E7E
         jmp    L_41FC
-L_440C:
+L_440C:                 ; script byte 9Ah
         mov       byte ptr [di + 8], ah
         jmp    L_41FC
-L_4412:
+L_4412:                 ; script byte 9Ch
         shr       ah, 1
         mov       byte ptr ds:[gTempoReload], ah
         mov       byte ptr ds:[gTempoCounter], ah
@@ -1062,7 +1064,7 @@ L_4412:
         mov       byte ptr ds:[gTempoBeat], ah
         mov       byte ptr ds:[gTempoWait], ah
         jmp    L_41FC
-L_442E:
+L_442E:                 ; script byte 9Dh
         mov       al, byte ptr ds:[gTempoWait]
         or        al, al
         jne    L_4441
@@ -1082,11 +1084,11 @@ L_444F:
         mov       word ptr [di + 3], si
         jmp    L_4267
         jmp    L_41FC
-L_445E:
+L_445E:                 ; script byte 9Eh
         mov       byte ptr [di + 20h], ah
         call    _WriteVoiceReg
         jmp    L_41FC
-L_4467:
+L_4467:                 ; script byte A0h
         call    _StartVoiceNote
         mov       word ptr [di + 3], si
         mov       al, byte ptr ds:[gNoteDuration]
@@ -1095,7 +1097,7 @@ L_4467:
         jmp    L_425F
 L_4477:
         jmp    L_41FC
-L_447A:
+L_447A:                 ; script byte A1h
         call    _StartVoiceNote
         call    _VoiceKeyOn
         mov       word ptr [di + 3], si
@@ -1105,24 +1107,24 @@ L_447A:
         jmp    L_425F
 L_448D:
         jmp    L_41FC
-L_4490:
+L_4490:                 ; script byte A4h
         and       ah, 7
         mov       byte ptr [di + 2dh], ah
         jmp    L_41FC
-L_4499:
+L_4499:                 ; script byte A6h
         mov       byte ptr ds:[gTempoRate], ah
         jmp    L_41FC
-L_44A0:
+L_44A0:                 ; script byte A7h
         dec       si
         mov       word ptr [di + 2bh], offset L_4E7D
         jmp    L_41FC
-L_44A9:
+L_44A9:                 ; script byte A9h
         mov       byte ptr [di + 25h], ah
         jmp    L_41FC
-L_44AF:
+L_44AF:                 ; script byte ABh
         mov       byte ptr [di + 30h], ah
         jmp    L_41FC
-L_44B5:
+L_44B5:                 ; script byte ACh
         mov       al, byte ptr ds:[gVoiceIndex]
         push      ax
         push      di
@@ -1138,7 +1140,7 @@ L_44B5:
         pop       ax
         mov       byte ptr ds:[gVoiceIndex], al
         jmp    L_41FC
-L_44D6:
+L_44D6:                 ; script byte ADh
         mov       al, byte ptr ds:[gVoiceIndex]
         push      ax
         push      di
@@ -1155,7 +1157,7 @@ L_44D6:
         pop       ax
         mov       byte ptr ds:[gVoiceIndex], al
         jmp    L_41FC
-L_44F9:
+L_44F9:                 ; script byte AEh
         and       ah, 1
         mov       cl, 7
         shl       ah, cl
@@ -1167,7 +1169,7 @@ L_44F9:
         mov       al, bl
         call    _AdlibWrite
         jmp    L_41FC
-L_4517:
+L_4517:                 ; script byte AFh
         and       ah, 1
         mov       cl, 6
         shl       ah, cl
@@ -1179,12 +1181,12 @@ L_4517:
         mov       al, bl
         call    _AdlibWrite
         jmp    L_41FC
-L_4535:
+L_4535:                 ; script byte B0h
         add       ah, byte ptr [di + 20h]
         mov       byte ptr [di + 20h], ah
         call    _WriteVoiceReg
         jmp    L_41FC
-L_4541:
+L_4541:                 ; script byte B3h
         mov       al, byte ptr ds:[gVoiceIndex]
         push      ax
         push      di
@@ -1227,7 +1229,7 @@ L_45A5:
         pop       ax
         mov       byte ptr ds:[gVoiceIndex], al
         jmp    L_41FC
-L_45AD:
+L_45AD:                 ; script byte B5h
         lodsb
         mov       bx, ax
         call    _SoundRandom
@@ -1248,11 +1250,11 @@ L_45AD:
         mov       al, bh
         call    _AdlibWrite
         jmp    L_41FC
-L_45E0:
+L_45E0:                 ; script byte B6h
         dec       si
         mov       word ptr [di + 29h], offset L_4E7D
         jmp    L_41FC
-L_45E9:
+L_45E9:                 ; script byte B9h
         mov       byte ptr [di + 42h], ah
         mov       al, byte ptr [di + 41h]
         push      ax
@@ -1336,18 +1338,18 @@ L_467A:
         call    _AdlibWrite
         pop       ax
         jmp    L_41FC
-L_46A3:
+L_46A3:                 ; script byte BAh
         dec       si
         mov       al, byte ptr ds:[gTempoRate]
         mov       byte ptr [di + 25h], al
         jmp    L_41FC
-L_46AD:
+L_46AD:                 ; script byte BBh
         dec       si
         jmp    L_41FC
-L_46B1:
+L_46B1:                 ; script byte BCh
         mov       byte ptr [di + 36h], ah
         jmp    L_41FC
-L_46B7:
+L_46B7:                 ; script byte BDh
         or        ah, ah
         js    L_46C4
         add       ah, byte ptr [di + 25h]
@@ -1362,7 +1364,7 @@ L_46C4:
 L_46CE:
         mov       byte ptr [di + 25h], ah
         jmp    L_41FC
-L_46D4:
+L_46D4:                 ; script byte BFh
         mov       byte ptr ds:[gEffectMode], ah
         lodsb
         push      si
@@ -1393,11 +1395,11 @@ L_46D4:
 L_471C:
         pop       si
         jmp    L_41FC
-L_4720:
+L_4720:                 ; script byte C0h
         dec       si
         mov       byte ptr ds:[gEffectMode], 0
         jmp    L_41FC
-L_4729:
+L_4729:                 ; script byte C1h
         mov       al, byte ptr ds:[gVoiceIndex]
         push      ax
         mov       al, byte ptr ds:[gOperatorOffset]
@@ -1486,7 +1488,7 @@ L_4729:
         pop       ax
         mov       byte ptr ds:[gVoiceIndex], al
         jmp    L_41FC
-L_4808:
+L_4808:                 ; script byte C2h
         mov       dx, 388h
         mov       al, 0bdh
         out       dx, al
@@ -1508,7 +1510,7 @@ L_4808:
         out       dx, al
         call    _AdlibWaitAfterData
         jmp    L_41FC
-L_4838:
+L_4838:                 ; script byte C3h
         dec       si
         mov       al, byte ptr ds:[gRegBDDepth]
         mov       byte ptr ds:[gRhythmKeyBits], 0
@@ -1516,7 +1518,7 @@ L_4838:
         mov       ah, 0bdh
         call    _AdlibWrite
         jmp    L_41FC
-L_484B:
+L_484B:                 ; script byte C4h
         lodsb
         mov       bx, ax
         test      ah, 1
@@ -1579,7 +1581,7 @@ L_48CC:
         call    _AdlibWrite
 L_48EC:
         jmp    L_41FC
-L_48EF:
+L_48EF:                 ; script byte C5h
         lodsb
         mov       bx, ax
         test      ah, 1
@@ -1642,7 +1644,7 @@ L_4970:
         call    _AdlibWrite
 L_4990:
         jmp    L_41FC
-L_4993:
+L_4993:                 ; script byte C6h
         lodsb
         mov       bx, ax
         test      ah, 1
@@ -1700,13 +1702,13 @@ L_4A04:
         call    _AdlibWrite
 L_4A20:
         jmp    L_41FC
-L_4A23:
+L_4A23:                 ; script byte C7h
         mov       byte ptr ds:[gScriptFlag], ah
         jmp    L_41FC
-L_4A2A:
+L_4A2A:                 ; script byte C8h
         mov       byte ptr [di + 40h], ah
         jmp    L_41FC
-L_4A30:
+L_4A30:                 ; script byte C9h
         mov       byte ptr [di + 32h], ah
         lodsb
         mov       byte ptr [di + 33h], al
@@ -2448,10 +2450,11 @@ _SoundRandom PROC NEAR
         ret
 _SoundRandom ENDP
 
-; 0000:4F94: the script command jump table (data, 148 bytes, 74 entries). UpdateVoices (4250 to 425E: and al,7Fh; cmp al,70h;
-; mov bx,[bx+4F94h]; jmp bx) runs entry n for a script byte with the high bit set, 80h + n; entries that name L_4311 are
-; commands with no handler of their own, they end the voice's script. QUIRK 4250: the bound is 70h but the table has 4Ah
-; entries, so the opcodes F4h to FFh index past it, into the text that follows (the runtime library's "Runtime overlay error").
+; 0000:4F94: the script command jump table (data, 148 bytes, 74 entries). UpdateVoices (424A to 425D: and al,7Fh; cmp al,70h; jle;
+; mov bx,[bx+4F94h]; jmp bx) runs entry n for a script byte with the high bit set, 80h + n; entries that name L_4311 are commands
+; with no handler of their own, they end the voice's script. QUIRK 424C: the bound is 70h but the table has 4Ah entries, so the
+; script bytes CAh to F0h index past it, into the text that follows (the runtime library's "Runtime overlay error"), and jump to
+; whatever address those characters make; only F1h to FFh reach L_4311 by the range check.
         PUBLIC  _CommandTable              ; @ 0000:4F94
 _CommandTable LABEL WORD
         dw      L_4271, L_4276, L_427F, L_42CE, L_42D4, L_42E0
