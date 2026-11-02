@@ -6,7 +6,7 @@
    only it checks the memory chain, reserves 2 x 32 KB below the probed video segment and stores
    atol(g8894->number) in gMemTopSeg (:311; ReserveMemoryBelowVideo(3) returns the Tandy buffer
    base at :345; whether the stored value is the video top is [H], src/E1990.ASM:386-397). For the
-   VGA choice it clears A000:0000. On the way out 07C8:058A stops sound, calls the exit hook, removes the mouse handler, shuts the overlay cache down, restores the INT 1Ch vector, removes the keyboard, restores the video mode, puts back the old INT 3Fh vector and exits. 07C8:061D returns 1 (the exit hook at ds:80FA) and 07C8:0625 is the allocation failure hook at ds:810A. WHITEPAPER 2.6 and 4.4. Compiled -ml -O -Z. */
+   VGA choice it clears A000:0000. On the way out 07C8:058A stops sound, calls the exit hook, removes the mouse handler, shuts the overlay cache down, restores the INT 1Ch vector, removes the keyboard, restores the video mode, puts back the old INT 3Fh vector, shrinks memory for the Tandy graphics choice only (TrimMemoryToVideo, :476-477), and exits. 07C8:061D returns 1 (the exit hook at ds:80FA) and 07C8:0625 is the allocation failure hook at ds:810A. WHITEPAPER 2.6 and 4.4. Compiled -ml -O -Z. */
 
 #include <dos.h>
 
@@ -27,7 +27,7 @@ enum { DEFAULT_TEXT_ATTR1 = 0x0F, DEFAULT_TEXT_ATTR2 = 0x0C, INT3F_VECTOR = 0x3F
        VGA_SEG_AC00 = 0xAC00 };
 struct Unk8894 {            /* the object the pointer at ds:8894 (g8894) points at. The object's
                                own address is unknown: nothing in src/ or docs/ writes the pointer
-                               at ds:8894 (src/E1990.ASM:23-26). g8894 is the name E1990 uses */
+                               at ds:8894 (src/E1990.ASM:23-26). E1990.ASM calls it gEnvPtr; g8894 is this unit's placeholder name */
     char unknown[0x18];     /* +0x00 to +0x17: not read in src/; contents unknown */
     char far *number;       /* +0x18: a far pointer to a numeric string */
 };
@@ -45,11 +45,11 @@ extern int gGraphicsChoice;                     /*@ ds:8102: graphics choice: ar
                                          order: 0 cga, 1 tandy, 2 ega, 3 mcga/VGA, 4 vga;
                                          whitepaper 2.6: 1 Tandy, 3 VGA) */
 extern char gSoundCard;               /*@ ds:B892: sound choice, argument digit minus '1' (0 AdLib,
-                                         1 PC speaker, 2 Tandy; argument '4' gives 3, which neither
-                                         the start-up switch (:409) nor the shut-down switch (:449)
-                                         handles, so 3 leaves sound off through gSoundOn (:231)).
-                                         src/E177D.C:52 declares it unsigned char, but an unsigned
-                                         char here does not match (the switch promotes it differently), so char keeps the code) */
+                                         1 PC speaker, 2 Tandy); the handlers cover values 0 to 2.
+                                         The digit '4' gives 3, '0' gives -1 and '5' to '9' give 4 to 8,
+                                         and neither the start-up switch (:409) nor the shut-down
+                                         switch (:449) handles those, so no card is started for them;
+                                         gSoundOn (:231) is 1 for every digit except '4'. src/E177D.C:52 declares it unsigned char, but an unsigned char here does not match (the switch promotes it differently), so char keeps the code) */
 extern int gSoundOn;                  /*@ ds:80E6: nonzero unless sound was '4' at start-up, and
                                          toggled at run time (`xor word ptr [gSoundOn],1` at
                                          src/E1AAD.ASM:935) and written by the sound option
@@ -113,7 +113,7 @@ extern unsigned char far *gFE68;      /*@ ds:FE68: the palette buffer StartupGam
                                          (:387, 0xf) are written, the other 14 keeping what MemAlloc
                                          returned; the setter is given g3057 (:388), not this, so those 16
                                          bytes have no reader in src/. Case labels 2 and 3 (:392) get 0x300
-                                         bytes; main loads eobpal.col over it for choices 3 and 4 (:257), and the VGA choice (gGraphicsChoice == 3) has src/EOV3.C:584 load `<script>.PAL` over it and src/EOV4.C:1054-1060 send it to the setter each frame */
+                                         bytes; main loads eobpal.col over it for choices 3 and 4 (:257), and the VGA choice (gGraphicsChoice == 3) has src/EOV3.C:584 load `<script>.PAL` over it and src/EOV4.C:1054-1061 send it to the setter when the request flag gFB45 is set (set at src/EOV3.C:686) and clear gFB45 */
 extern unsigned char g3057[];  /*@ ds:3057: the table passed to the palette setter for graphics choices 1 and 2 (no eobpal.col). Its length is unknown: no source or doc gives it, and the 16 bytes written at :385-387 belong to the gFE68 buffer, not this. Whether it is a palette is [H] (src/EOV4.C:1035) */
 extern void far *gFE5A;               /*@ ds:FE5A: the 8x8 font loaded from Font8.fnt (whitepaper
                                          4.4, docs/design/WHITEPAPER.md:171: FONT8.FNT is 8 x 8,
@@ -123,13 +123,13 @@ extern void far *gA9C0;               /*@ ds:A9C0: the 6x6 font loaded from FONT
                                          is 0x104 + 128 x 6 bytes) */
 extern unsigned gSegsFC0C[];          /*@ ds:FC0C: the page/buffer segment table */
 extern unsigned far gMemTopSeg;       /*@ 1990:0002: the segment where program memory must end
-                                         (src/E1990.ASM:20-22); StartupGame stores the atol of
-                                         g8894+0x18 over it on the Tandy path only (:311). Whether
-                                         that value is the video top is [H] (src/E1990.ASM:386-397) */
+                                         (src/E1990.ASM:20-22); StartupGame stores the number atol
+                                         parses from the string that g8894->number points at over it
+                                         on the Tandy path only (:311). Whether that value is the video top is [H] (src/E1990.ASM:386-397) */
 extern struct Unk8894 far *g8894;   /*@ ds:8894: the pointer StartupGame dereferences as
                                          g8894->number (:311). The object's address is unknown:
                                          nothing in src/ or docs/ writes the pointer at ds:8894
-                                         (src/E1990.ASM:23-26). g8894 is the name E1990 uses */
+                                         (src/E1990.ASM:23-26). E1990.ASM calls it gEnvPtr; g8894 is this unit's placeholder name */
 extern char far *gOverlayFiles[];     /*@ ds:3074: the five overlay name pointers (cga/tga/ega/
                                          mcga/vga), indexed by the graphics choice; the order is
                                          the EOB.EXE name order and whitepaper 2.6 (1 Tandy,
@@ -219,7 +219,7 @@ int AllocationFailure(void);
    case and sets no palette. It then calls 16A5:0D78, and, when g3092 is set, sets the mouse disabled
    flag from the mouse argument (:265-269) and calls StartupAlloc. Returns 0, and
    always runs the shut-down 07C8:058A after the start-up `if`; only the homie check (:233) and the
-   memory check (:240) return before it. The function name is `Main`, not `main`, because the
+   memory check (:240) return before it, and that memory-check return comes after the INT 3Fh vector is set (:237), so it leaves Int3FHandler installed and does not put back the old vector ds:FC08. The function name is `Main`, not `main`, because the
    matcher's link stub already defines `_main` for the C0 startup. */
 /*@ 07C8:0001 */ int Main(int argc, char far * far *argv)
 {
@@ -277,11 +277,11 @@ int AllocationFailure(void);
    argv[1][0] + 1 (:229) and this subtracts 0x31 (:298), so the result is digit - '0', the
    graphics choice (1 Tandy, 3 VGA; whitepaper 2.6). For the Tandy graphics choice it checks the
    memory chain (CheckMemoryChain) and calls ReserveMemoryBelowVideo, which stores the end of DOS
-   memory in gMemTopSeg (src/E1990.ASM:20-22, the store at 1990:01F0) and returns the probed
-   segment as memtop (:308), which this function writes into the page table slots 2 and 3 (:345);
-   src/E1990.ASM:27-30 calls that value the base of a 64000 byte Tandy buffer [H], a size this file
-   does not give. This function then overwrites gMemTopSeg with atol(g8894->number) (:311; whether
-   that number is the video top is [H], src/E1990.ASM:386-397). For the VGA graphics choice it clears
+   memory in gMemTopSeg (src/E1990.ASM:20-22) and returns gVideoTopSeg, the base of the reserve
+   below the probed segment, not the probe itself (src/E1990.ASM:27-28, :237-238); it writes that
+   base as memtop into the page table slots 2 and 3 (:345), which src/E1990.ASM:27-30 calls the
+   base of a 64000 byte Tandy buffer [H], a size this file does not give. It then overwrites gMemTopSeg
+   with atol(g8894->number) (:311; whether it is the video top is [H], src/E1990.ASM:386-397). For the VGA graphics choice it clears
    A000:0000 with memset. Then it sets the video mode, resets the mouse, loads the graphics overlay
    named by gGraphicsChoice through the table at ds:3074 (cga/tga/ega/mcga/vga.ovl), builds the page/buffer
    segment table at ds:FC0C for the graphics choice, loads the two fonts, sets up the palette buffer,
@@ -306,8 +306,8 @@ int AllocationFailure(void);
         }
         f1DDD_002D(gGraphicsChoice);
         memtop = ReserveMemoryBelowVideo(3);   /* 3 steps reserves 2 x 32 KB = 64 KB below the probe */
-        /* the segment where program memory must end: the numeric string at g8894+0x18 parsed as a
-           number (its writer is Purpose unknown, src/E1990.ASM:23-26) */
+        /* the segment where program memory must end: atol parses the numeric string the far pointer
+           g8894->number (+0x18) points at (its writer is Purpose unknown, src/E1990.ASM:23-26) */
         gMemTopSeg = (unsigned)atol(g8894->number);
         break;
     case 3:
