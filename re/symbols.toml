@@ -3383,6 +3383,9 @@ unit = "e0ef3"
 addr = "0EF3:0418"
 size = 106
 evidence = ["near", "frame"]
+name = "CreateItemRecord"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0ef3_0482"
@@ -3594,6 +3597,9 @@ unit = "e0ef3"
 addr = "0EF3:1197"
 size = 132
 evidence = ["frame"]
+name = "CreateItemForEffect0"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0ef3_121b"
@@ -3791,6 +3797,9 @@ unit = "e0ef3"
 addr = "0EF3:1656"
 size = 134
 evidence = ["frame"]
+name = "CreateItemForEffect6"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0ef3_16dc"
@@ -4018,6 +4027,9 @@ unit = "e0ef3"
 addr = "0EF3:1D38"
 size = 136
 evidence = ["frame"]
+name = "CreateItemForEffect4"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0ef3_1dc0"
@@ -4282,6 +4294,9 @@ unit = "e0ef3"
 addr = "0EF3:2604"
 size = 114
 evidence = ["near", "frame"]
+name = "UseItemRow"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0ef3_2676"

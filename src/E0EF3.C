@@ -534,15 +534,13 @@ extern void f0EF3_2A53(int a, int b, int c, int d, int e, void far *p); /*@ 0EF3
    0x10 and stop at the first whose +6 key is -2 (freed). It fills the record's flags (+2, from
    arg1 plus 0x20), icon (+3), type (+4) and +0xD byte, clears the global ds:8DD5 and the record's
    +0, +1, +6, +8 and +0xA fields, and returns the record's index (the item id). Called by the item
-   creators 0EF3:1197, 0EF3:1656 and 0EF3:1D38. DRAFT: the original keeps the zero it stores in
-   AL (`mov al,0; mov [ds:8DD5],al; cwde; ...`), a single char temporary reused for every store;
-   our build either stores the immediates directly or keeps the temporary in DL (`make match`
-   differs at the first zero store, +0x49). */
-/*@ 0EF3:0418 draft */ int CreateItemRecord(unsigned char flags, unsigned char icon, signed char m0B,
-                                              signed char type)
+   creators 0EF3:1197, 0EF3:1656 and 0EF3:1D38. The six clears are one chained assignment
+   (`rec->m06 = rec->m08 = rec->m00 = rec->m01 = rec->m04 = g8DD5 = 0;`): the original keeps the
+   value in AL, stores the char fields from AL and sign-extends it once per word field
+   (`mov al,0; mov [ds:8DD5],al; cwde; ...`), which only the chained form produces. */
+/*@ 0EF3:0418 */ int CreateItemRecord(int flags, int icon, int m0B, int type)
 {
     struct ItemRecord far *rec;
-    signed char zero;
     int index;
 
     rec = &gItems[0xB];
@@ -554,13 +552,7 @@ extern void f0EF3_2A53(int a, int b, int c, int d, int e, void far *p); /*@ 0EF3
     rec->icon = icon;
     rec->m02 = type;
     rec->m0B = m0B;
-    zero = 0;
-    g8DD5 = zero;
-    rec->m04 = zero;
-    rec->m01 = zero;
-    rec->m00 = zero;
-    rec->m08 = zero;
-    rec->m06 = zero;
+    rec->m06 = rec->m08 = rec->m00 = rec->m01 = rec->m04 = g8DD5 = 0;
     return index;
 }
 
@@ -963,12 +955,12 @@ extern void f0EF3_2A53(int a, int b, int c, int d, int e, void far *p); /*@ 0EF3
 
 /* 0EF3:1197: give the panel member the item of effect mode 0: 0EF3:035A creates the drawing node,
    0EF3:0418 the item record, and the node's slot is the one 0EF3:0482 picks; then redraw and
-   apply a 1-turn effect. Called through a table. DRAFT: the body is right but the original keeps
-   the 0482 result in DI and the 035A result in SI with no stack frame; every declaration order
-   and `register` form tried spills one local (`make match` shows the difference at the prologue). */
-/*@ 0EF3:1197 draft */ void CreateItemForEffect0(void)
+   apply a 1-turn effect. Called through a table. The 0482 result is `index` and the 035A result
+   `slot`, declared in that order: the allocator then keeps index in DI and slot in SI with no
+   stack frame (the reverse order spills slot). */
+/*@ 0EF3:1197 */ void CreateItemForEffect0(void)
 {
-    register int slot, index;
+    int index, slot;
 
     index = ItemSlot1Empty(gCurRec);
     slot = CreateItemType(0, 0, 0, 0xF, 1, 8, GetClassSlot1Value(gPanelMember), 1);
@@ -1172,15 +1164,14 @@ extern void f0EF3_2A53(int a, int b, int c, int d, int e, void far *p); /*@ 0EF3
 }
 
 /* 0EF3:1656: give the panel member the item of effect mode 6, like 0EF3:1197 but with the item
-   record at a different row. Called through a table. DRAFT: same register-allocation difference
-   as 0EF3:1197 at the prologue. */
-/*@ 0EF3:1656 draft */ void CreateItemForEffect6(void)
+   record at a different row and the class-slot value halved with `>> 1` (the original shifts,
+   `sar ax,1`, where `/ 2` would call the divide routine). Called through a table. */
+/*@ 0EF3:1656 */ void CreateItemForEffect6(void)
 {
-    register int slot;
-    register int index;
+    int index, slot;
 
     index = ItemSlot1Empty(gCurRec);
-    slot = CreateItemType(0, 0, 0, 0xF, GetClassSlot1Value(gPanelMember) / 2, 6, 0, 1);
+    slot = CreateItemType(0, 0, 0, 0xF, GetClassSlot1Value(gPanelMember) >> 1, 6, 0, 1);
     gCurRec->m77[index] = CreateItemRecord(0x18, 0x53, 0, slot);
     RedrawMember(gPanelMember);
     ApplyTimedCharEffect(gEFB8, 0, 0x222L, 1, 1);
@@ -1462,18 +1453,17 @@ void f0EF3_2EBC(int a, int b, int c, int d, int e, char far *table);
 }
 
 /* 0EF3:1D38: give the panel member the item of effect mode 4, like 0EF3:1197 but with the item
-   record at a different row. Called through a table. DRAFT: same register-allocation difference
-   as 0EF3:1197 at the prologue. */
-/*@ 0EF3:1D38 draft */ void CreateItemForEffect4(void)
+   record at a different row and the class-slot value halved with `>> 1` (the original shifts,
+   `sar ax,1`). Called through a table. */
+/*@ 0EF3:1D38 */ void CreateItemForEffect4(void)
 {
-    register int slot;
-    register int index;
+    int index, slot;
 
     index = ItemSlot1Empty(gCurRec);
     slot = CreateItemType(0, 0, 0, 0xF, 1, 4, 4, 1);
     gCurRec->m77[index] = CreateItemRecord(0, 0x54, 0, slot);
     RedrawMember(gPanelMember);
-    ApplyTimedCharEffect(gEFB8, 4, 0x222L, GetClassSlot24Value(gPanelMember) / 2, 1);
+    ApplyTimedCharEffect(gEFB8, 4, 0x222L, GetClassSlot24Value(gPanelMember) >> 1, 1);
 }
 
 /* 0EF3:1DC0: set every member's +0x23 level byte to 100. */
@@ -1777,13 +1767,13 @@ void f0EF3_2295(void);
 
 /* 0EF3:2604: use the item in one of a member's rows. It switches on the item's type: type 0x22 or
    0x23, or a type 0x30 item whose flags low six bits are exactly 1, runs 0BD2:0106(who, slot); any
-   other type 0x30 item just decrements its flags. Called through a table.
-   DRAFT: the switch matches (the original loads the type byte, sign-extends it and compares 0x22,
-   0x23 and 0x30 in turn), but the original computes who*0xF3 before reading slot; our build caches
-   slot in DI first (`make match` differs at the first instruction). */
-/*@ 0EF3:2604 draft */ void UseItemRow(int who, int slot)
+   other type 0x30 item just decrements its flags. Called through a table. The type 0x30 test is
+   `left = flags & 0x3F; if (--left == 0)`: the temporary takes DI, which is why the original reloads
+   slot from the frame in the case bodies instead of caching it (a direct `== 1` test caches slot
+   in DI and compares with `cmp ax,1`). */
+/*@ 0EF3:2604 */ void UseItemRow(int who, int slot)
 {
-    int item;
+    int item, left;
 
     item = gChars[who].m77[slot];
     switch (gTable8DD2[item].m02) {
@@ -1792,7 +1782,8 @@ void f0EF3_2295(void);
         f0BD2_0106(who, slot);
         break;
     case 0x30:
-        if ((gTable8DD2[item].flags & 0x3F) == 1)
+        left = gTable8DD2[item].flags & 0x3F;
+        if (--left == 0)
             f0BD2_0106(who, slot);
         else
             gTable8DD2[item].flags--;
