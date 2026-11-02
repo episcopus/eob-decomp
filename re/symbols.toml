@@ -5827,6 +5827,7 @@ size = 1
 evidence = ["segment"]
 level = "L2"
 notes = "not a function: bytes of the unit outside its functions (a marker or padding), matched with the whole unit"
+review = "passed 2026-11-01 rev-haiku"
 
 [[function]]
 id = "e1c00_0002"
@@ -5837,6 +5838,7 @@ evidence = ["near"]
 name = "_LoadOverlayImage"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-01 rev-haiku"
 
 [[function]]
 id = "e1c00_0055"
@@ -5847,6 +5849,7 @@ evidence = ["far", "frame"]
 name = "_RunOverlayRequest"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-01 rev-haiku"
 
 [[function]]
 id = "e1c0e_000c"
