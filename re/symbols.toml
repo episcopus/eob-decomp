@@ -1371,6 +1371,7 @@ evidence = ["far", "segment"]
 name = "StartupAlloc"
 level = "L2"
 match_flags = "-ml -O -Z"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e07a9_010c"
@@ -1381,6 +1382,7 @@ evidence = ["far", "frame"]
 name = "SetMouseItem"
 level = "L2"
 match_flags = "-ml -O -Z"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e07c8_0001"
