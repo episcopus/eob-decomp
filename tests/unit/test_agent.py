@@ -288,3 +288,21 @@ def test_blocked_units_leave_the_queue(monkeypatch):
     monkeypatch.setattr(common, "open_must_fix", lambda uid: [])
     monkeypatch.setattr(nxt, "busy", lambda key: False)
     assert nxt.next_unit(1) == "e0002" and nxt.blocked_units() == ["e0001"]
+
+
+def test_apply_renames_stale_uses(tmp_path, monkeypatch):
+    """eov1, 2026-11-02: main renamed PointInRect and its EOV1.ASM declares the new name; the branch's
+    new call still used the old one, so the merged file did not assemble."""
+    src = tmp_path / "src"
+    src.mkdir()
+    (src / "EOV1.ASM").write_text("        EXTRN   _IsPointInRect:FAR        ; @ 14EF:00E1 (E14EF.C)\n"
+                                  "        call    far ptr _IsPointInRect\n        call    far ptr _PointInRect\n")
+    (src / "E0002.C").write_text("int PointInRect; /*@ ds:0100 */\n")   # bound to another address: left
+    log = tmp_path / "renames.toml"
+    log.write_text('[[rename]]\nid = "14EF:00E1=IsPointInRect"\naddr = "14EF:00E1"\nold = "PointInRect"\n'
+                   'new = "IsPointInRect"\nkind = "function"\nwhy = "x"\ndate = "2026-11-01"\n')
+    monkeypatch.setattr(rename, "SRC", src)
+    monkeypatch.setattr(rename, "LOG", log)
+    rename.apply()
+    assert "_PointInRect" not in (src / "EOV1.ASM").read_text()
+    assert "int PointInRect;" in (src / "E0002.C").read_text()
