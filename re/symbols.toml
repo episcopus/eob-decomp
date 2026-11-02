@@ -4312,6 +4312,9 @@ unit = "e0ef3"
 addr = "0EF3:2676"
 size = 631
 evidence = ["near", "frame"]
+name = "CastSpell"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e0ef3_28ed"

@@ -161,7 +161,7 @@ struct Spell {
     int (far *ddFn)(struct DDRec far *rec); /* +09: copied into DDRec.fn by 0EF3:097B */
     void (far *remove)(struct CharRec far *rec); /* +0D: run when the spell expires */
     signed char sound;                      /* +11: the sound id (ds:1355) */
-    char pad12;
+    signed char m12;                        /* +12: bit 0 gates 0EF3:2676's first flag clear */
 };
 
 /* The per-mode table at ds:56E7, four bytes per mode (0EF3:097B): the index of the mode's spell
@@ -268,6 +268,12 @@ extern struct CellRect gSpellCells[];   /*@ ds:5773 */ /* five spell cells 0EF3:
 extern char far *gSpellLabels[];        /*@ ds:5787 */ /* the "1ST".."5TH" row labels 0EF3:2295 draws */
 extern char gText592B[];                /*@ ds:592B */ /* "ABORT SPELL" (0EF3:2295) */
 extern char gText5937[];                /*@ ds:5937 */ /* "ABORT SPELL" (0EF3:2295) */
+extern char gText5943[];                /*@ ds:5943 */ /* "You must have a free hand for this spell." (0EF3:2676) */
+extern char gText596E[];                /*@ ds:596E */ /* "You can't have two of this spell type active." (0EF3:2676) */
+extern char gText599D[];                /*@ ds:599D */ /* "%s casts %s." (0EF3:2676) */
+extern char gText59AB[];                /*@ ds:59AB */ /* "ok" (0EF3:2676) */
+extern signed char g1A1B[];             /*@ ds:1A1B */ /* per-page sound table (src/E0ACD.C) */
+extern void movmem(void far *src, void far *dst, unsigned n); /*@ 0000:63A3 */
 extern signed char gF57E;               /*@ ds:F57E */ /* a colour (src/E0BD2.C) */
 extern signed char gF53A;               /*@ ds:F53A */ /* a colour (src/E0BD2.C) */
 extern signed char gFB4C;               /*@ ds:FB4C */ /* a colour (src/E0BD2.C) */
@@ -1988,7 +1994,75 @@ void DrawSpellPanel(void);
     }
 }
 
-/*@ 0EF3:2676 stub */ void f0EF3_2676(int a, int b) {}
+/* 0EF3:2676: cast spell `action` from the panel, in context `kind`. It remembers the spell value
+   gEFB8, clears the panel member's effect flag 4 when the spell's ds:1344+0x12 bit 0 says so and
+   the member has flag 4 set, copies the spell's apply callback into gFnEFBA, sets gF3B8 from the
+   per-page sound table g1A1B (the member index, minus two when it is over three), and, for a spell
+   whose flags have bit 1, says "You must have a free hand..." when both equipped slots are taken
+   or "...two of this spell type active" when either slot is a discarded item, and returns. When a
+   condition slot is open (g8DCE) it uses the item row (0EF3:2604); otherwise it removes the
+   selected memorized slot (shift with movmem, then store its negation at slot 5). It formats
+   "%s casts %s." with the member and spell names and draws it; for a spell with flag 1 it reports
+   it refused and returns. Otherwise it makes the member current (gCurMember, gCurRec), plays the
+   spell's sound, flashes the party for flags 6 (the member) or 8 (all), draws "ok", runs the apply
+   callback, redraws the member for flag 4, and finishes the member effect (0EF3:026F) or the party
+   panel. Called by 0EF3:28ED and 0EF3:2929. */
+/*@ 0EF3:2676 */ void CastSpell(int action, int kind)
+{
+    struct Spell far *spell;
+    int value;
+    int index;
+
+    gEFB8 = action;
+    if ((gSpells1344[action].m12 & 1) && (gChars[gPanelMember].mE3 & 4))
+        ClearEffectFlag4(&gChars[gPanelMember]);
+    spell = &gSpells1344[action];
+    gFnEFBA = spell->apply;
+    index = gPanelMember;
+    if (index > 3)
+        index -= 2;
+    gF3B8 = g1A1B[gFBCC * 4 + index];
+    if (spell->flags & 2) {
+        if (gChars[gPanelMember].m77[0] != 0 && gChars[gPanelMember].m77[1] != 0) {
+            SayAndBeep(gText5943);
+            return;
+        }
+        if (IsDiscardedItem(gChars[gPanelMember].m77[0]) ||
+            IsDiscardedItem(gChars[gPanelMember].m77[1])) {
+            SayAndBeep(gText596E);
+            return;
+        }
+    }
+    if (g8DCE == 0) {
+        value = (gDD14 + gDDE2 * 6)[gA9C5];
+        if (gA9C5 < 5)
+            movmem((gDD14 + gDDE2 * 6 + gA9C5) + 1, gDD14 + gDDE2 * 6 + gA9C5, 5 - gA9C5);
+        (gDD14 + gDDE2 * 6)[5] = -value;
+    } else {
+        UseItemRow(gPanelMember, kind);
+    }
+    sprintf(gFileNameBuf, gText599D, gChars[gPanelMember].name, spell->name);
+    DrawText(gFileNameBuf);
+    if (spell->flags & 1) {
+        ReportActionRefused();
+        return;
+    }
+    gCurMember = gPanelMember;
+    gCurRec = &gChars[gPanelMember];
+    PlaySound(gSpells1344[action].sound);
+    if (spell->flags & 6)
+        FlashPartyMembers(gCurMember);
+    else if (spell->flags & 8)
+        FlashPartyMembers(-1);
+    DrawText(gText59AB);
+    gFnEFBA();
+    if (gSpells1344[action].flags & 4)
+        RedrawMember(gCurMember);
+    if (g8DCE != 0)
+        FinishMemberEffect();
+    else
+        RedrawPartyPanel((struct ActRec far *)gF542);
+}
 
 /* 0EF3:28ED: save the panel member in ds:FC74 and gF43D in ds:FC76, start a condition slot
    (g8DCE = c + 1), make `a` the panel member, set gF43D when `b` is over 0x19, and run the panel
@@ -2000,7 +2074,7 @@ void DrawSpellPanel(void);
     g8DCE = kind + 1;
     gPanelMember = who;
     gF43D = (action > 0x19);
-    f0EF3_2676(action, kind);
+    CastSpell(action, kind);
 }
 
 /* 0EF3:2929: the spell panel's list callback. It reads the action key (the node's +0x38): key 6
@@ -2046,7 +2120,7 @@ void DrawSpellPanel(void);
                 DrawSpellPanel();
                 value = (gDD14 + gDDE2 * 6)[gA9C5];
                 value += (gF43D == 1 ? 0x19 : 0);
-                f0EF3_2676(value, 0);
+                CastSpell(value, 0);
             } else {
                 RedrawPartyPanel((struct ActRec far *)gF542);
             }
