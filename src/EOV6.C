@@ -38,17 +38,11 @@ struct Entry28 {
     char rest[0x1C - 2];
 };
 
-/* a 6-byte struct, the template ovl6:0000 copies into its per-member counter array */
-struct Six {
-    char b[6];
-};
-
 extern struct CharRec gChars[]; /*@ ds:F580 */  /* the 243-byte character records */
 extern struct Spell gSpells1344[]; /*@ ds:1344 */ /* far name pointers, indexed by a spell id */
 extern struct Spell gSpells151F[]; /*@ ds:151F */
 extern struct Entry28 gTable8A84[]; /*@ ds:8A84 */ /* 28-byte records, 30 of them */
 extern char far gStrings2003; /*@ 2003:0000 */    /* the message string table */
-extern struct Six g7F40; /*@ ds:7F40 */         /* six zero bytes, the counter template */
 extern int g811F; /*@ ds:811F */
 extern int g8115; /*@ ds:8115 */
 extern int g159; /*@ ds:0159 */                 /* holds gF57E while ovl6:0B9B is on screen */
@@ -106,7 +100,16 @@ void f0B9B(int message);
    and, every eight hours, grants the class-2 spell, levels members up or down and updates the
    object list. Each hour it prints "Hours rested: %-4d" (f0858), every read of a key or the end
    of the rest shows the warning box (f0B9B). Returns 1 or 0 when the camp could not start, or the
-   09D2 result otherwise. Called by the in-game menu through the overlay entry (stub 212A:0020). */
+   09D2 result otherwise. Called from ovl1:1ED2 through the overlay's stub entry 212A:0039.
+
+   The six zero bytes at +0008 are a local array initialiser, `char counters[6] = { 0, ... }`,
+   which the original copies from its compiler template at ds:7F40 (F_SCOPY@ 0000:78C9).
+
+   Blocked on the calls to its five siblings: every one is defined later in the file and the
+   original reaches it with `nop; push cs; call near` (5 bytes, 90 0E E8 at ovl6:001F, 00AC,
+   012A, 013E, 04FD, 0707, 0722, 0729, 0731, 075A, 0770, 0778, 07D3). TCC 1.00 emits a far call
+   (lcall, 9A) for a forward same-file call and `push cs; call near` (4 bytes, no nop) for a
+   backward one, so no source form gives those five bytes. See the notes in re/symbols.toml. */
 /*@ ovl6:0000 draft */ int CampLoop(void)
 {
     int healerFound;
@@ -115,7 +118,7 @@ void f0B9B(int message);
     int flag8;
     int gained;
     char *slots;
-    struct Six counters = g7F40;
+    char counters[6] = { 0, 0, 0, 0, 0, 0 };
     int healAmount;
     int foundWounded;
     int hours;
@@ -162,21 +165,21 @@ void f0B9B(int message);
     for (;;) {
         tick++;
         for (i = 0; i < 6; i++) {
-            counters.b[i]++;
+            counters[i]++;
             if (gChars[i].level == 0)
                 continue;
             if (!f0D1C_0670(i, 5))
                 continue;
             slots = &gChars[i].memorized[0];
             for (member = 0; member < 0x1e; member++) {
-                if (member / 6 + '0' >= counters.b[i])
+                if (member / 6 + '0' >= counters[i])
                     break;
                 if (*slots >= 0) {
                     slots++;
                     continue;
                 }
                 *slots = -*slots;
-                counters.b[i] = 0x30;
+                counters[i] = 0x30;
                 sprintf(gFileNameBuf, "%s gained %s.\r", &gChars[i].name[0],
                         gSpells151F[*slots].name);
                 LockHidePointer();
@@ -189,14 +192,14 @@ void f0B9B(int message);
                 continue;
             slots = &gChars[i].known[0];
             for (member = 0; member < 0x1e; member++) {
-                if (member / 6 + '0' >= counters.b[i])
+                if (member / 6 + '0' >= counters[i])
                     break;
                 if (*slots >= 0) {
                     slots++;
                     continue;
                 }
                 *slots = -*slots;
-                counters.b[i] = 0x30;
+                counters[i] = 0x30;
                 sprintf(gFileNameBuf, "%s memorized %s.\r", &gChars[i].name[0],
                         gSpells1344[*slots].name);
                 LockHidePointer();
@@ -232,7 +235,7 @@ void f0B9B(int message);
                     slots++;
                     if (!healAmount)
                         break;
-                    counters.b[i] = 0;
+                    counters[i] = 0;
                     foundWounded--;
                     sprintf(gFileNameBuf, "%s casts healing on %s.\r", &gChars[i].name[0],
                             &gChars[foundWounded].name[0]);
