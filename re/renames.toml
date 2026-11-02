@@ -313,7 +313,7 @@ addr = "ds:B892"
 old = ""
 new = "gSoundCard"
 kind = "global"
-why = "the sound choice from argv[2] minus '1' (whitepaper 2.6): 0 opens adlib.dat, nonzero pcgamesn.dat, and it picks the AdLib or PC-speaker play path"
+why = "the sound choice from argv[2] minus '1' (whitepaper 2.6): 0 opens adlib.dat, nonzero pcgamesn.dat, and it picks the AdLib path or the speaker path (1 PC speaker, 2 Tandy speaker)"
 date = "2026-11-01"
 
 [[rename]]
@@ -322,7 +322,7 @@ addr = "ds:009E"
 old = ""
 new = "gSpeakerMode"
 kind = "global"
-why = "Purpose unknown: 1 only on the Tandy path (src/E07C8.C:307), where the speaker path of PlaySound/PlaySoundAtCell drives ds:8A67; the sign test that would clear it is dead (gSoundMap is unsigned char)"
+why = "Purpose unknown: 1 only on the Tandy path (src/E07C8.C:307), where the speaker path of PlaySound/PlaySoundAtCell drives ds:8A67; the sign test that would clear gSpeakerOn (ds:8A67) is dead (gSoundMap is unsigned char)"
 date = "2026-11-01"
 
 [[rename]]

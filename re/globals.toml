@@ -94,7 +94,7 @@ why = "the pointer shape record's segment: set from the far pointer argument at 
 [[global]]
 id = "ds:DCAC"
 name = "gSoundMap"
-why = "a far pointer to the 120-byte u8 map from the game sound number to the driver's, allocated by StartupAlloc (gSoundMap = MemAlloc(120L, 0), src/E07A9.C:216), read by LoadSoundDriver (177D:000A) and indexed by PlaySound (177D:0070); whitepaper 4.4"
+why = "a far pointer to the 120-byte u8 map from the game sound number to the driver's, allocated by StartupAlloc (gSoundMap = MemAlloc(120L, 0), src/E07A9.C:216), read by LoadSoundDriver (177D:000A) and indexed by PlaySound (177D:0070) and PlaySoundAtCell (177D:0283); whitepaper 4.4"
 
 [[global]]
 id = "ds:80E6"
@@ -104,12 +104,12 @@ why = "the sound-on flag from argv[2] (whitepaper 2.6): PlaySound and PlaySoundA
 [[global]]
 id = "ds:B892"
 name = "gSoundCard"
-why = "the sound choice from argv[2] minus '1' (whitepaper 2.6): 0 opens adlib.dat, nonzero pcgamesn.dat, and it picks the AdLib or PC-speaker play path"
+why = "the sound choice from argv[2] minus '1' (whitepaper 2.6): 0 opens adlib.dat, nonzero pcgamesn.dat, and it picks the AdLib path or the speaker path (1 PC speaker, 2 Tandy speaker)"
 
 [[global]]
 id = "ds:009E"
 name = "gSpeakerMode"
-why = "Purpose unknown: 1 only on the Tandy path (src/E07C8.C:307), where the speaker path of PlaySound/PlaySoundAtCell drives ds:8A67; the sign test that would clear it is dead (gSoundMap is unsigned char)"
+why = "Purpose unknown: 1 only on the Tandy path (src/E07C8.C:307), where the speaker path of PlaySound/PlaySoundAtCell drives ds:8A67; the sign test that would clear gSpeakerOn (ds:8A67) is dead (gSoundMap is unsigned char)"
 
 [[global]]
 id = "ds:8A67"
@@ -144,7 +144,7 @@ why = "the value read from register 1 of the recorded sound gCurSound (177D:0182
 [[global]]
 id = "ds:FBCA"
 name = "gPartyCell"
-why = "the party's map cell: ResetMapScreen sets it to 0x1EA (src/E0ACD.C:939), monsters are measured from it (Distance(party cell, monster cell) < 2, src/EOV6.C:410), PlaySoundAtCell's callers pass an object's cell as the sound source (src/E08E6.C:346 and :553 to :596) and it is passed with that cell to Distance (17A6:0F61, 177D:026A), which reads each argument as a packed 5-bit coordinate pair (src/E17A6.ASM:1466); objects are compared with it (src/E08E6.C:331, :462) and it indexes the nine-byte cell records (src/E0D1C.C:352)"
+why = "the party's map cell: ResetMapScreen sets it to 0x1EA (src/E0ACD.C:939), monsters are measured from it (Distance(party cell, monster cell) < 2, src/EOV6.C:410), PlaySoundAtCell's callers pass an object's cell as the sound source (src/E08E6.C:351 and :558 to :601) and it is passed with that cell to Distance (17A6:0F61, 177D:026A), which reads each argument as a packed 5-bit coordinate pair (src/E17A6.ASM:1466); objects are compared with it (src/E08E6.C:336, :467) and it indexes the nine-byte cell records (src/E0D1C.C:352)"
 
 [[global]]
 id = "ds:DDE4"
