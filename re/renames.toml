@@ -2466,3 +2466,12 @@ new = "gNeedsRest"
 kind = "global"
 why = "ovl1:025D sets it when a spell slot is retired; ovl1:1ACD shows message 0x2C 'Your party needs to rest to gain spells.' when Exit is pressed with it set, and clears it when CampLoop (Rest Party) returns 0"
 date = "2026-11-02"
+
+[[rename]]
+id = "ovl1:0000=DropCharacter"
+addr = "ovl1:0000"
+old = "RotateOutMember"
+new = "DropCharacter"
+kind = "function"
+why = "ovl1:0000 is the Drop Character button of the camp menu (ovl1:1ACD passes MemberCommand(0x35), message 0x35 'Select the character you wish to drop.'); 0D1C:035A puts the member's items on the floor of the party cell and clears the member's status bits"
+date = "2026-11-02"

@@ -7994,9 +7994,9 @@ unit = "eov1"
 addr = "ovl1:0000"
 size = 221
 evidence = ["segment"]
-name = "_RotateOutMember"
+name = "DropCharacter"
 level = "L2"
-match_flags = "tasm /mx"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "eov1_00dd"

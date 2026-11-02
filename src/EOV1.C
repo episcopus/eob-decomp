@@ -116,6 +116,21 @@ extern char far gStrings2003; /*@ 2003:0000 */
 extern unsigned char far gSheet2067[]; /*@ 2067:0000 */
 extern unsigned char far gSheetDECORATE[]; /*@ 2069:0000 */
 extern char gOverlayBuf[]; /*@ ds:113F */
+
+struct Box {
+    int x1;
+    int y1;
+    int x2;
+    int y2;
+};
+extern struct Box gMemberBoxes[]; /*@ ds:62E2 */
+extern void far *gBufDCFC; /*@ ds:DCFC */
+extern void (far *gFillRect)(int x1, int y1, int x2, int y2, int colour); /*@ ds:806A */
+extern void SwapBlocks(char far *pa, char far *pb, char far *pc, int len); /*@ 082C:07C5 */
+extern void f0D1C_035A(int who); /*@ 0D1C:035A */
+extern void SelectCharacter(int who); /*@ 0D1C:003F */
+extern void BuildList1(void); /*@ 0CF7:0028 */
+extern void RearmCharEffects(void); /*@ 1414:0B2E */
 extern char gF542[]; /*@ ds:F542 */
 extern char gFB44; /*@ ds:FB44 */
 extern char gFlag; /*@ ds:F3B9 */
@@ -187,7 +202,42 @@ extern void DrawViewFrame(int full); /*@ 2116:005C */
 void DrawListNode(struct Node far *node, int mode1, int mode2, int mode3);
 int ChooseListEntry(int message);
 
-/*@ ovl1:0000 stub */ void RotateOutMember(int member) {}
+/* ovl1:0000: drops party member `who` (0 to 5) from the party: the "Drop Character" button of the camp
+   menu (RunCampMenu passes the member MemberCommand(0x35) picked, "Select the character you wish to
+   drop."). Nothing happens when `who` is negative or the slot holds no character (0D1C:0670 flag 1).
+   0D1C:035A puts the member's items on the floor of the party's cell and clears its status bits.
+   For a member of the four marching slots (below 4) the record of the reserve slot 5 (when it is
+   occupied, else slot 4) is swapped into the vacated place through gBufDCFC and the member is
+   redrawn; the reserve slot (`who` itself when it was 4 or 5) then has its portrait box in
+   gMemberBoxes painted in colour 0xC. Finally character 0 is selected, the list rebuilt (0CF7:0028)
+   and the character effects rearmed. */
+/*@ ovl1:0000 */ void DropCharacter(int who)
+{
+    int slot;
+
+    if (who < 0)
+        return;
+    if (!f0D1C_0670(who, 1))
+        return;
+    f0D1C_035A(who);
+    slot = who;
+    if (who < 4) {
+        if (f0D1C_0670(5, 1))
+            slot = 5;
+        else
+            slot = 4;
+        SwapBlocks((char *)&gChars[slot], (char *)&gChars[who], gBufDCFC, 0xf3);
+        RedrawMember(who);
+    }
+    slot -= 4;
+    LockHidePointer();
+    gFillRect(gMemberBoxes[slot].x1, gMemberBoxes[slot].y1, gMemberBoxes[slot].x2,
+        gMemberBoxes[slot].y2, 0xc);
+    LockShowPointer();
+    SelectCharacter(0);
+    BuildList1();
+    RearmCharEffects();
+}
 /*@ ovl1:00DD stub */ void BuildSpellSlots(void) {}
 /*@ ovl1:025D stub */ void SpendSpellSlot(void) {}
 /*@ ovl1:0416 stub */ int MemberCommand(int key) { return 0; }
@@ -390,7 +440,7 @@ int ChooseListEntry(int message);
             if (members < 5)
                 ShowMessage(0x2d);       /* "You cannot have less than four characters." */
             else {
-                RotateOutMember(MemberCommand(0x35));
+                DropCharacter(MemberCommand(0x35));
                 LockHidePointer();
                 LoadScreenImage("PLAYFLD", gOverlayBuf, 5, 3, 0);
                 reloadInvent = 1;
