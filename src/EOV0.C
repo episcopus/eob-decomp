@@ -51,7 +51,23 @@ struct CharRec {                /* 243-byte character records at ds:F580 (src/E0
     char pad00;
     unsigned char m01;          /* +01: status bits */
     char name[0x0b];            /* +02: the character's name, NUL padded */
-    char pad0d[0x20 - 0x0d];
+    char m0D;                   /* +0D: the source of 284A's byte copy */
+    char m0E;
+    char m0F;
+    char m10;
+    char m11;
+    char m12;
+    char m13;
+    char m14;
+    char m15;
+    char m16;
+    char m17;
+    char m18;
+    char m19;
+    char m1A;
+    char m1B;
+    char m1C;                   /* +1C: the destination of 284A's byte copy */
+    char pad1D[0x20 - 0x1d];
     signed char m20;            /* +20: indexes g1231 (src/E0DE8.C) */
     char pad21[0x73 - 0x21];
     long m7375;                 /* +73: a 32-bit value 280D sets to 0x26c (Purpose unknown) */
@@ -385,6 +401,27 @@ extern void far *g5E64[0x11]; /*@ ds:5E64 */ /* the 17 sliced icon pointers this
 }
 
 /*@ ovl0:284A stub */ void Ovl0_284A(void) {}
+
+/* ovl0:284A: for each of the first four character records, copies the nine bytes at +0x0D, +0x0F,
+   +0x11, +0x13, +0x15, +0x17, +0x19 and +0x1B one byte up (to +0x0E, +0x10, ..., +0x1C) through a
+   far pointer walked by 0xf3. Called by ovl0:28F9. Purpose unknown. */
+/*@ ovl0:284A */ void ShiftCharFields(void)
+{
+    struct CharRec far *rec;
+    int i;
+
+    rec = (struct CharRec far *)gChars;
+    for (i = 0; i < 4; i++, rec++) {
+        rec->m0E = rec->m0D;
+        rec->m10 = rec->m0F;
+        rec->m12 = rec->m11;
+        rec->m14 = rec->m13;
+        rec->m16 = rec->m15;
+        rec->m18 = rec->m17;
+        rec->m1A = rec->m19;
+        rec->m1C = rec->m1B;
+    }
+}
 
 /* ovl0:28B0: releases the panel's buffers: every far pointer in the 0x43-entry table gPtrsFC8C,
    then the 17-icon table through FreeIconTable, then every far pointer in the 0x13-entry table

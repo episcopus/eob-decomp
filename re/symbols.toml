@@ -7030,6 +7030,9 @@ unit = "eov0"
 addr = "ovl0:284A"
 size = 102
 evidence = ["ovl", "near", "frame"]
+name = "ShiftCharFields"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov0_28b0"
