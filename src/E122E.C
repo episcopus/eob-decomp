@@ -5,9 +5,8 @@
    opcode consumed, or jump the pointer; the driver stops when a handler sets gA9EC. 147F is the big
    sub-dispatcher with its own in-segment jump table; the map folded the 122E:1194 play-sound handler
    into 1097 and the 122E:1A3B drain-item handler into 147F, and both are separate functions here.
-   Below L2: the writer 147F (stub) and nine drafts (ArmMemberEffect 0154, ForceDoorAction 0325,
-   ItemSlotAction 06D0, WriteObjectFieldOp 0960, WriteObjectRunOp 0A16, AddEffectOp 0C4D, ShowTextOp
-   0FDC and MarkMemberItemsOp 1CAD), each with its difference in re/symbols.toml. */
+   Below L2: the writer 147F (stub) and four drafts (ForceDoorAction 0325, ItemSlotAction 06D0,
+   WriteObjectFieldOp 0960, WriteObjectRunOp 0A16), each with its difference in re/symbols.toml. */
 
 /*@flags -ml -O -Z */
 
@@ -256,8 +255,10 @@ void RunMemberScript(int who, int mode);  /* forward: 1DA8 comes after its calle
 
 /* 122E:0154: arm effect 0xC on member `who`. While a member is picked (gDragActive), arming either
    matches the picked member (and turns g5C76 on) or does nothing. Otherwise it picks the member's
-   free flag slot, arms the effect twice around AdjustMemberStatus. */
-/*@ 122E:0154 draft */ void ArmMemberEffect(int who)
+   free flag slot, arms the effect twice around AdjustMemberStatus. The flag test is written
+   `!!(x & 1)`: the original sign-extends the g194B byte before testing bit 0 (`mov al; cwde;
+   test ax,1`), while a plain `x & 1` folds to a memory byte test in our build. */
+/*@ 122E:0154 */ void ArmMemberEffect(int who)
 {
     int idx;
 
@@ -267,7 +268,7 @@ void RunMemberScript(int who, int mode);  /* forward: 1DA8 comes after its calle
         return;
     }
     idx = (g194B[gB894[who * 9]] & 8) ? 0 : 1;
-    if (g194B[gB894[who * 9 + idx]] & 1)
+    if (!!(g194B[gB894[who * 9 + idx]] & 1))
         return;
     ArmEffectWith(0xc, who, 1, 1);
     AdjustMemberStatus(who);
@@ -685,7 +686,7 @@ void RunMemberScript(int who, int mode);  /* forward: 1DA8 comes after its calle
    into a free slot and adds a DD effect with the word as the volume and g5A40[third + second * 2]
    as the kind; a zero result frees the slot again (m04 = -1). When it was 0xDF it clears gF43D
    around a f0EF3_097B call with the same fields. Returns the bytes read. */
-/*@ 122E:0C4D draft */ long AddEffectOp(char far *script)
+/*@ 122E:0C4D */ long AddEffectOp(char far *script)
 {
     char v1;
     char v2;
@@ -706,10 +707,10 @@ void RunMemberScript(int who, int mode);  /* forward: 1DA8 comes after its calle
     v3 = *script++;
     if (!flag) {
         item = CopyItemToFreeSlot(v1);
-        if (item == 0)
-            return (long)(script - start);
-        if (AddDDEffect(-1, item, id, g5A40[v2 * 2 + v3], v2, gTable8DD2[item].m02) == 0)
-            gTable8DD2[item].m04 = -1;
+        if (item != 0) {
+            if (AddDDEffect(-1, item, id, g5A40[v2 * 2 + v3], v2, gTable8DD2[item].m02) == 0)
+                gTable8DD2[item].m04 = -1;
+        }
     } else {
         saved = gF43D;
         gF43D = 0;
@@ -821,14 +822,16 @@ done:
    into a 5-byte control-code buffer initialised from the compiler template at ds:5A48, hides the
    pointer, draws the original text, the buffer, the buffer with the two saved text attributes,
    and a newline, then shows the pointer. Returns the bytes read. */
-/*@ 122E:0FDC draft */ long ShowTextOp(char far *script)
+/*@ 122E:0FDC */ long ShowTextOp(char far *script)
 {
-    char buf[5] = { 6, 0x21, 2, 0x21, 0 };
-    char far *start = script;
-    char far *text = script;
     int attr1;
     int attr2;
+    char far *start;
+    char far *text;
+    char buf[5] = { 6, 0x21, 2, 0x21, 0 };
 
+    start = script;
+    text = script;
     while (*script != 0)
         script++;
     script++;

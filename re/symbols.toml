@@ -3868,7 +3868,10 @@ unit = "e122e"
 addr = "122E:0154"
 size = 133
 evidence = ["near", "frame"]
-notes = "draft 2026-11-01: every byte matches except the flag test at 122E:0199-01A8, where the original reads `mov al,[bx+0x194b]; cwde; test ax,1` (sign-extends the byte before testing bit 0, 10 bytes). Our -ml -O -Z build folds it to `test byte [bx+0x194b],1` (7 bytes, 3 shorter). Full function 130 against 133 bytes. Tried: `g194B[...] & 1`, `& 1) != 0`, `== 1` (gives `and ax,1; cmp ax,1`), `% 2` (gives idiv), casting the byte to int/char/signed char, an int local (adds a stack slot), and g194B declared signed char/char/unsigned char; TCC always folds the `& 1` to a memory byte test. The earlier `& 8` test in the same function stays a byte test in the original, so the source form that keeps the sign-extended value is not identified. The sibling DisarmMemberEffect (122E:01D9) has the same `& 1` but the original there DOES use a byte test, so the two differ in source."
+notes = "2026-11-02: matches with the !! boolean-conversion form around the bit test. The original sign-extends the g194B byte before testing bit 0 (mov al,[bx+0x194b]; cwde; test ax,1, 8 bytes); a plain & 1 folds to a memory byte test in our build. The !! form reproduces the sign-extended bytes (133 total). The earlier & 8 test in the same function stays a byte test in the original, and the sibling DisarmMemberEffect (122E:01D9) uses a byte test for the same & 1."
+name = "ArmMemberEffect"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e122e_01d9"
@@ -3897,7 +3900,7 @@ addr = "122E:0325"
 size = 421
 evidence = ["frame"]
 name = "ForceDoorAction"
-notes = "draft 2026-11-01: matches every byte except the two `mov si,di` tails at 122E:03C1 (the A<=B branch) and 122E:03C5 (the who<0 branch): the original keeps both plus the `jmp 122E:03C7` between them, our -ml -O -Z build cross-jumps them into one `mov si,di` (4 bytes short, first difference the return-0 target at 122E:0028, ours jmp 0x199 against 0x19f). This is the TCC internal-assembler cross-jump class of 0A16. `-B` does not fix it: TCC -S then emits the far-branch form `or si,si; jge; jmp` where the original has one short `jl 122E:03C5`, and the function is still 4 bytes short. Tried: `if (who<0) who=i; else if (A<=B) who=i;`, the braced forms, `if (who<0) { who=i; continue; } if (A<=B) who=i;`, `if (who>=0 && A>B) continue; who=i;` (one assignment, 6 short), `who=i+0` in either branch, and an extra `else who=who;` (2 short); TCC always merges the two `who=i`. Same unresolved unit-flag question as 0A16. The rest of the function (the click gate, the six-character pick, the 1d20 roll against gForceDoorRoll[m0D], the messages and the gB894 slot rewrite) is written from the disassembly."
+notes = "blocked: 2026-11-01: matches every byte except the two `mov si,di` tails at 122E:03C1 (the A<=B branch) and 122E:03C5 (the who<0 branch): the original keeps both plus the `jmp 122E:03C7` between them, our -ml -O -Z build cross-jumps them into one `mov si,di` (4 bytes short, first difference the return-0 target at 122E:0028, ours jmp 0x199 against 0x19f). This is the TCC internal-assembler cross-jump class of 0A16. `-B` does not fix it: TCC -S then emits the far-branch form `or si,si; jge; jmp` where the original has one short `jl 122E:03C5`, and the function is still 4 bytes short. Tried: `if (who<0) who=i; else if (A<=B) who=i;`, the braced forms, `if (who<0) { who=i; continue; } if (A<=B) who=i;`, `if (who>=0 && A>B) continue; who=i;` (one assignment, 6 short), `who=i+0` in either branch, and an extra `else who=who;` (2 short); TCC always merges the two `who=i`. Same unresolved unit-flag question as 0A16. The rest of the function (the click gate, the six-character pick, the 1d20 roll against gForceDoorRoll[m0D], the messages and the gB894 slot rewrite) is written from the disassembly."
 
 [[function]]
 id = "e122e_04ca"
@@ -3946,7 +3949,7 @@ addr = "122E:06D0"
 size = 375
 evidence = ["frame"]
 name = "ItemSlotAction"
-notes = "draft 2026-11-01: matches every byte except the `return 0` at the top: the original shares one `xor ax,ax` at the function end (122E:083F) and its early exit is `or ax,ax; jne 122E:0032; jmp 122E:083F`, while our -ml -O -Z build emits `or ax,ax; jne 122E:0034; xor ax,ax; jmp 122E:00xx` inline (2 bytes longer; first difference 122E:002E). The body layout of the early-return form matches the original exactly. Tried: the early `if (!HitTestObjectKind(kind)) return 0;` (this, 2 bytes long), the same wrapped in `if (HitTestObjectKind(kind)) { ...; return 1; } return 0;` (the body then lays out differently, 17 bytes short: the two 6-byte cleanups merge on the wrong side and the shared `mov ax,1` moves to the end), an explicit `return 1` after the mouse-disabled branch, `goto ret0` with `ret0: return 0;` at the end, and inlining f0D1C_02DC() in the size check. All the rest (the kind gate, the mouse-disabled/row-0x10 branch, the two RemoveListItem paths, the item-type and g181F size checks) is written from the disassembly."
+notes = "blocked: 2026-11-01: matches every byte except the `return 0` at the top: the original shares one `xor ax,ax` at the function end (122E:083F) and its early exit is `or ax,ax; jne 122E:0032; jmp 122E:083F`, while our -ml -O -Z build emits `or ax,ax; jne 122E:0034; xor ax,ax; jmp 122E:00xx` inline (2 bytes longer; first difference 122E:002E). The body layout of the early-return form matches the original exactly. Tried: the early `if (!HitTestObjectKind(kind)) return 0;` (this, 2 bytes long), the same wrapped in `if (HitTestObjectKind(kind)) { ...; return 1; } return 0;` (the body then lays out differently, 17 bytes short: the two 6-byte cleanups merge on the wrong side and the shared `mov ax,1` moves to the end), an explicit `return 1` after the mouse-disabled branch, `goto ret0` with `ret0: return 0;` at the end, and inlining f0D1C_02DC() in the size check. All the rest (the kind gate, the mouse-disabled/row-0x10 branch, the two RemoveListItem paths, the item-type and g181F size checks) is written from the disassembly."
 
 [[function]]
 id = "e122e_0847"
@@ -3984,7 +3987,7 @@ unit = "e122e"
 addr = "122E:0960"
 size = 182
 evidence = ["frame"]
-notes = "draft 2026-11-01: the switch over the opcode matches every byte except its tail: the original keeps the 0xFFE9 case's `script++` in place (122E:09F1 `inc [bp+6]` then `jmp`, FFED's `inc` at 122E:09E6 before its `cwde`/store at 122E:09E5-09ED), so three case tails are separate. Our -ml -O -Z build merges the two increments into one shared `inc [bp+6]` at the common return path, 3 bytes shorter (the first difference is the FFED compare target at 122E:0026, ours 0x93 against 0x96). The case order FFF7, FFE9, FFED gives the original body layout exactly. Tried: `*script++` in both cases, splitting `*script` and `script++`, the (signed char) cast on the FFED read, and both source orders; TCC's tail merge always joins the increments. Also tried if/else-if (no reload expected): see the note history."
+notes = "blocked: 2026-11-01: the switch over the opcode matches every byte except its tail: the original keeps the 0xFFE9 case's `script++` in place (122E:09F1 `inc [bp+6]` then `jmp`, FFED's `inc` at 122E:09E6 before its `cwde`/store at 122E:09E5-09ED), so three case tails are separate. Our -ml -O -Z build merges the two increments into one shared `inc [bp+6]` at the common return path, 3 bytes shorter (the first difference is the FFED compare target at 122E:0026, ours 0x93 against 0x96). The case order FFF7, FFE9, FFED gives the original body layout exactly. Tried: `*script++` in both cases, splitting `*script` and `script++`, the (signed char) cast on the FFED read, and both source orders; TCC's tail merge always joins the increments. Also tried if/else-if (no reload expected): see the note history."
 
 [[function]]
 id = "e122e_0a16"
@@ -3992,7 +3995,7 @@ unit = "e122e"
 addr = "122E:0A16"
 size = 269
 evidence = ["frame"]
-notes = "draft 2026-11-01: with the unit's default -ml -O -Z our build merges the two 0xFFF7 branches' final `mov bx,ax; mov [bx-0x4769],dl` store (the not-equal branch jumps into the equal branch's tail at 122E:09E0, 6 bytes shorter; first difference at 122E:0022, ours jmp 0xE2 against 0xE8). The original keeps both four-store sequences separate, the assembler (-B) signature. With `/*@flags -ml -O -Z -B */` this function matches exactly (269 bytes), but the same flag set breaks DisarmMemberEffect (122E:01D9): TCC -S estimates its `if (gB894[who*9+4] & 7) return;` branch as too far and emits `je continue; jmp end` where the original has one short `jne end` (the boundary class of whitepaper 2.1.1). So the unit's assembler-vs-inline flag is unresolved: this function says -B, DisarmMemberEffect says inline. Escalation candidate (unit flags). Source order FFF7 then FFEA reproduces the original compare order (ascending) and body layout."
+notes = "blocked: 2026-11-01: with the unit's default -ml -O -Z our build merges the two 0xFFF7 branches' final `mov bx,ax; mov [bx-0x4769],dl` store (the not-equal branch jumps into the equal branch's tail at 122E:09E0, 6 bytes shorter; first difference at 122E:0022, ours jmp 0xE2 against 0xE8). The original keeps both four-store sequences separate, the assembler (-B) signature. With `/*@flags -ml -O -Z -B */` this function matches exactly (269 bytes), but the same flag set breaks DisarmMemberEffect (122E:01D9): TCC -S estimates its `if (gB894[who*9+4] & 7) return;` branch as too far and emits `je continue; jmp end` where the original has one short `jne end` (the boundary class of whitepaper 2.1.1). So the unit's assembler-vs-inline flag is unresolved: this function says -B, DisarmMemberEffect says inline. Escalation candidate (unit flags). Source order FFF7 then FFEA reproduces the original compare order (ascending) and body layout."
 
 [[function]]
 id = "e122e_0b23"
@@ -4030,8 +4033,9 @@ unit = "e122e"
 addr = "122E:0C4D"
 size = 266
 evidence = ["frame"]
-notes = "draft 2026-11-01: matches every byte except the first use of the copied item, 2 bytes short. After CopyItemToFreeSlot the original keeps its result in AX and reads gTable8DD2[item].m02 with `mov dx,0xe; imul dx; mov bx,ax; mov al,[bx-0x722c]` (122E:0CC2), reloading item from SI only for the later m04 store (122E:0CFA); our -ml -O -Z build reloads `mov ax,si` before the m02 read (first difference 122E:0060, ours jne 0xc0 against 0xbe). Tried: item declared plain and `register` (same), id `register` (breaks the id read, DI against SI), and swapping the g5A40 index to `v2 * 2 + v3` (that fixed an earlier 4-byte difference in the index). The local layout (the far pointer at bp-0xa, the five bytes at bp-5..bp-1) needs the declaration order v1, v2, v3, saved, flag, start. The rest (the opcode/flag read, the byte/word/byte/byte operands, the two-branch AddDDEffect/f0EF3_097B paths and the gF43D save/restore) is written from the disassembly."
 name = "AddEffectOp"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e122e_0d57"
@@ -4059,8 +4063,9 @@ unit = "e122e"
 addr = "122E:0FDC"
 size = 187
 evidence = ["frame"]
-notes = "draft 2026-11-01: the body is written from the disassembly (the skip to the text NUL, the two attribute saves, the two control bytes read into buf[1] and buf[3], the LockHidePointer/LockShowPointer bracket and the four DrawText calls). It does not match because of the local layout: the original's 5-byte buffer sits at the bottom of the frame (122E:0FE2 `lea ax,[bp-0x12]`, the F_SCOPY destination), with text at bp-0xc, start at bp-8, attr2 at bp-4 and attr1 at bp-2; our -ml -O -Z build puts the buffer at bp-6 (first difference 122E:0009). The buffer must be declared first for the F_SCOPY to stay at the top, but TCC then does not push it to the bottom. Tried only the current order so far."
 name = "ShowTextOp"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e122e_1097"
