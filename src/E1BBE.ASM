@@ -19,8 +19,8 @@
 ; frame and finds no C-like frame here, the same reading src/E1BB1.ASM:57-59 records; AX is saved with
 ; push/pop ax and the far call goes through a DGROUP pointer, the style of E1BB1 and E1BF3).
 ;
-; Globals src/ already names keep those names: _gPointerBusy, gMouseDisabled, gPointerHeight, gPointerWidth8,
-; gPointerHotX, gPointerHotY, gPointerBackOff, gPointerBackSeg, gPointerShapeOff, gPointerShapeSeg,
+; Globals src/ already names keep those names: _gPointerBusy, gMouseDisabled, _gPointerHeight, _gPointerWidth8,
+; _gPointerHotX, _gPointerHotY, _gPointerBackOff, _gPointerBackSeg, _gPointerShapeOff, _gPointerShapeSeg,
 ; g8172, g8174, g80AA and g80A2 from src/E1BB1.ASM (and gMouseDisabled from
 ; src/E07A9.C, gDraw80C2 from src/E1A29.C). The byte at 1BBE:0001 is the unit's segment start, as
 ; in 1BB1:0001 and 1BF3:000D.
@@ -33,8 +33,9 @@
                                                 ; same of its acquire; the wrappers below do the same at
                                                 ; 1BBE:0213, 02C6, 030A and 0335)
         EXTRN   _gCursorX:WORD          ; @ ds:8138: mouse position, x in pixels (written by the handler
-                                        ; at src/E1A72.ASM:338-339, set to 0A0h by InitMouse at
-                                        ; src/E1A72.ASM:218-219, and written by src/E1BF3.ASM:35)
+                                        ; at src/E1A72.ASM:355-356, skipped when g80EC is 2 at
+                                        ; :353-354; set to 0A0h by InitMouse at src/E1A72.ASM:233-234;
+                                        ; and written by src/E1BF3.ASM:35)
         EXTRN   _gCursorY:WORD          ; @ ds:813A: mouse position, y in pixels
         EXTRN   _gHideDepth:WORD        ; @ ds:8146: hide depth, 0 = drawn (1BBE:0002/00ED change it)
         EXTRN   gMouseDisabled:WORD              ; @ ds:814A: non-zero disables the pointer (E07A9 tests it too)
@@ -99,9 +100,11 @@ _f1BBE_0001 LABEL BYTE                    ; @ 1BBE:0001
 ; (_gPointerHeight/_gPointerWidth8; the x in 8-pixel columns, the y in rows, each clipped to the 40x200
 ; screen), the saved background is written back to the screen through [ds:804E] (x, y, w, h,
 ; _gPointerBackOff/_gPointerBackSeg) and gHideDepth is incremented. When the rectangle is off screen the
-; restore is skipped but gHideDepth is still incremented (1BBE:0055, 005A, 008B and 0090 jump to the
-; increment at 1BBE:00E0). The height and width used are the ones 1BB1 stored before it calls here,
-; which is what keeps the buffer valid while the shape is replaced. Called by 1BB1:0002, 1BF3:000E and
+; restore is skipped but gHideDepth is still incremented (1BBE:0055 and 005A reach the increment at
+; 1BBE:00E0 through the jmp short at 1BBE:0075; 1BBE:008B and 0090 jump there directly). The height
+; and width used are the ones still in place, the old shape's: 1BB1 calls here (src/E1BB1.ASM:130)
+; before it stores the new sizes (src/E1BB1.ASM:162-164), which is what keeps the old buffer valid
+; while the shape is replaced. Called by 1BB1:0002, 1BF3:000E and
 ; 1A72, and by the wrappers below. Pushes AX only to preserve the caller's.
         PUBLIC  _HidePointer            ; @ 1BBE:0002
 _HidePointer PROC FAR
@@ -297,7 +300,8 @@ _ShowPointer ENDP
 ; as given (1BBE:023C, 0240) but left and top reduced by the sprite width and height in pixels
 ; (1BBE:025B and 0272; 1A72:0244 reads the zone to test whether the cursor has entered it), the
 ; pointer's rectangle is computed in pixels without clipping (left x rounded down to a multiple of 8,
-; right = left + sprite width, top as drawn, bottom = top + sprite height; 1BBE:0244..0278),
+; right = left + sprite width, top = the drawn y less the hot spot y (no rounding), bottom = top +
+; sprite height; 1BBE:0244..0278),
 ; gPointerState is set to 8000h (hidden) and, if that rectangle overlaps the argument rectangle, bit
 ; 4000 (redraw) is set. Either way the hide call [ds:80AA], 1BBE:0002, [ds:80A2] runs, then the
 ; semaphore is released. Called by 0EF3, 16A5, 1DE7 and the overlays, always paired with 1BBE:02C2.
@@ -377,10 +381,10 @@ L02B6:  dec     word ptr [_gPointerBusy]
 _HidePointerZone ENDP
 
 ; 1BBE:02C2 ShowPointerZone: show the pointer again after 1BBE:01FE. Takes the semaphore. When the
-; low byte of gPointerState is non-zero it is decremented and the pointer is shown; at zero
-; gPointerState is cleared (1BBE:02DE) and the semaphore is released (1BBE:0300); the pointer is shown
-; only when bit 4000 (redraw) was set, otherwise it clears the state and draws nothing. The show call
-; is [ds:80AA], 1BBE:00ED, [ds:80A2], then the semaphore is released. Called by the same sites as
+; low byte of gPointerState is non-zero it is decremented and the pointer is shown (regardless of bit
+; 4000); at zero gPointerState is cleared (1BBE:02DE) and the pointer is shown only when bit 4000
+; (redraw) was set, otherwise it clears the state and draws nothing. The show call is [ds:80AA],
+; 1BBE:00ED, [ds:80A2]; the semaphore is released either way (1BBE:0300). Called by the same sites as
 ; 1BBE:01FE.
         PUBLIC  _ShowPointerZone        ; @ 1BBE:02C2
 _ShowPointerZone PROC FAR
@@ -412,7 +416,10 @@ L0300:  dec     word ptr [_gPointerBusy]
 _ShowPointerZone ENDP
 
 ; 1BBE:0307 LockHidePointer: hide the pointer, taking the semaphore and bracketing the work with
-; [ds:80AA] and [ds:80A2]. Like 1BBE:01FE without the rectangle, the zone and the redraw flag.
+; [ds:80AA] and [ds:80A2]. "Lock" is the callers' name for the frame bracket (src/E14EF.C:44-45 call
+; this pair "start a frame" and "end a frame"), not mutual exclusion: the busy flag is a test then an
+; increment (1BBE:030A), not atomic (src/E1BB1.ASM:53 says the same of its acquire). Like 1BBE:01FE
+; without the rectangle, the zone and the redraw flag.
 ; Called by many units of the resident code and the overlays, usually paired with 1BBE:0332 (the
 ; call-site lists differ: 0ACD:0E8A, 0ACD:0F72, ovl0:2547 and ovl5:17C8 call only the show, ovl0:28F9
 ; only the hide).
@@ -436,8 +443,9 @@ L030A:  cmp     word ptr [_gPointerBusy],0
 _LockHidePointer ENDP
 
 ; 1BBE:0332 LockShowPointer: show the pointer, taking the semaphore and bracketing the work with
-; [ds:80AA] and [ds:80A2]. Like 1BBE:02C2 without the state and redraw tests. Called by many units
-; of the resident code and the overlays, usually paired with 1BBE:0307 (see the note on 1BBE:0307).
+; [ds:80AA] and [ds:80A2] ("Lock" is the callers' name for the frame bracket, not mutual exclusion;
+; see the note on 1BBE:0307). Like 1BBE:02C2 without the state and redraw tests. Called by many units
+; of the resident code and the overlays, usually paired with 1BBE:0307.
         PUBLIC  _LockShowPointer        ; @ 1BBE:0332
 _LockShowPointer PROC FAR
         push    bp
