@@ -485,3 +485,7 @@ why = "the fatal file error handler, a far pointer at ds:8104; the image holds 1
 id = "ds:8111"
 name = "gRetryHandler"
 why = "the retry file error handler, a far pointer at ds:8111; the image holds 1C0E:0ADD (DisplayFileError) there (EOB.EXE file offset 2BBF1) and RetryFile (1C0E:0046) calls it (src/E1C0E.C:164)"
+[[global]]
+id = "ds:628C"
+name = "gMenus"
+why = "seven 5-byte records (message, text window, first button definition, count, colour) indexed by the menu number ovl1:1153 takes (1 to 6 in its callers); ovl1:1ACD edits their message bytes in place"

@@ -2403,3 +2403,30 @@ new = "DrawItemIcon"
 kind = "function"
 why = "draws the item icon of the ds:8DD2 record n at (x, y) from gIconsDDE4 (ds:DDE4); callers 0BD2:0917 (three sites, E0BD2.C:610) and 1547:07E7 (E1547.C:471) (review of e0d1c)"
 date = "2026-11-02"
+
+[[rename]]
+id = "ovl1:1153=BuildMenuButtons"
+addr = "ovl1:1153"
+old = "Ovl1_1153"
+new = "BuildMenuButtons"
+kind = "function"
+why = "ovl1:1153 builds one 60-byte list node per button definition of a menu (key words, box, label via ovl1:1551) and returns the list head; its callers (ovl1:0416, 097A, 1ACD, 243A) hand it to DispatchKeyWait"
+date = "2026-11-02"
+
+[[rename]]
+id = "ds:628C=gMenus"
+addr = "ds:628C"
+old = "gMemberMenu"
+new = "gMenus"
+kind = "global"
+why = "seven 5-byte records (message, text window, first button definition, count, colour) indexed by the menu number ovl1:1153 takes (1 to 6 in its callers); ovl1:1ACD edits their message bytes in place"
+date = "2026-11-02"
+
+[[rename]]
+id = "208E:0000=gButtonDefs"
+addr = "208E:0000"
+old = "gSpellInfo9"
+new = "gButtonDefs"
+kind = "function"
+why = "9-byte records ovl1:1153 turns into list nodes (label message at +0 read by ovl1:1551 through SkipStrings(gStrings2003), box x y w h at +1..+4, key word at +5)"
+date = "2026-11-02"

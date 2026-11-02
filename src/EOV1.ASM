@@ -98,9 +98,9 @@
         EXTRN   gFD98:WORD              ; @ ds:FD98: cleared while the member icons are drawn (ovl1:0416)
         EXTRN   g5E20:BYTE              ; @ ds:5E20: nonzero when the mouse moved (E16A5.C)
         EXTRN   gNodeTemplate:BYTE      ; @ ds:3A62: the 0x3c-byte node template (EOV0.C)
-        EXTRN   gMemberMenu:BYTE        ; @ ds:628C: six five-byte per-member menu records (this unit)
+        EXTRN   gMenus:BYTE        ; @ ds:628C: six five-byte per-member menu records (this unit)
         EXTRN   gColourTable:BYTE       ; @ ds:00A9: sixteen 16-byte colour records, indexed by attribute << 4
-        EXTRN   gSpellInfo9:BYTE        ; @ 208E:0000: nine-byte per-entry text/box records (this unit)
+        EXTRN   gButtonDefs:BYTE        ; @ 208E:0000: nine-byte per-entry text/box records (this unit)
         EXTRN   g62FE:BYTE              ; @ ds:62FE: spell-level to slot-count table, class/kind map A
         EXTRN   g6330:BYTE              ; @ ds:6330: spell-level to slot-count table, class/kind map B
         EXTRN   g6358:BYTE              ; @ ds:6358: spell-level to slot-count table, class/kind map C
@@ -663,7 +663,7 @@ _SpendSpellSlot ENDP
 ; is the last one (or -1). With none it shows a message keyed by `key` (0x17 -> 0x1C, 0x1A ->
 ; 0x1B, 0x31 -> 0x34) and returns -1. With one it draws that member's icons, then checks its class
 ; slot (FindClassSlot, kind 4): when the slot byte +0x24 is at most 8 it shows message 0x18 and
-; returns -1. Otherwise it stores `key` at ds:629B, builds a far key list with _Ovl1_1153(3), sets
+; returns -1. Otherwise it stores `key` at ds:629B, builds a far key list with _BuildMenuButtons(3), sets
 ; `sel` = -2 and enters the wait loop: DispatchKeyWait on the list, DrawRowList, then a switch on
 ; the key (key table at ovl1:0839, 18 keys and their case offsets) that moves `cur` to the previous
 ; or next non-empty slot (0x8013..0x8018 pick a slot directly, 0x43/0x97 accept `cur`, 0x110/0x8012
@@ -910,7 +910,7 @@ f0416_062D:
         push    ax
         nop
         push    cs
-        call    near ptr _Ovl1_1153
+        call    near ptr _BuildMenuButtons
         pop     cx
         mov     [bp-4],ax
         mov     [bp-2],dx
@@ -1291,7 +1291,7 @@ _ShowItemName ENDP
 ; rec[slot]+0x24 (minus 1 for kinds 2 and 1) indexes one of the five-byte-per-level tables
 ; g62FE+g6330, g6358 or g6394 into a local count[5]; the long `mask` (parameters 3 and 4) is the
 ; slot mask passed to BuildSpellSlots and parameter 2 is its flag (0 copies the far pointer at
-; rec+0x73). BuildSpellSlots(who, count, mask, flag) then fills the spell lists and _Ovl1_1153(4)
+; rec+0x73). BuildSpellSlots(who, count, mask, flag) then fills the spell lists and _BuildMenuButtons(4)
 ; builds the menu. The loop draws rows and item names, reads DispatchKeyWait and switches on a
 ; 20-entry key table (0x0C..0x8020) to move the cursor, add or remove one point and redraw the
 ; "%d of %d Remaining.  " line (g6465). On exit it frees the list, restores the fonts, redraws the
@@ -1516,7 +1516,7 @@ f097A_0B28:
         push    ax
         nop
         push    cs
-        call    near ptr _Ovl1_1153
+        call    near ptr _BuildMenuButtons
         pop     cx
         mov     [bp-18h],ax
         mov     [bp-16h],dx
@@ -2171,299 +2171,11 @@ _DrawOptionField PROC FAR
         ret
 _DrawOptionField ENDP
 
-; ovl1:1153: build and return the far linked list of the menu rows for member `who`. It reads the
-; five-byte gMemberMenu[who] record (message index, attribute, first table index, row count, colour),
-; tints gColourTable[attribute] with gF57E, clears text window `attribute` and fills it through
-; f0D1C_0C21, then draws the record's message (gStrings2003[message index] through SkipStrings and
-; DrawShadowText). For i in 0..count-1 it allocates a 0x3c-byte node, copies gNodeTemplate over it
-; and fills it from gSpellInfo9[first + i]: key index+1, key06 = rec+5, key08 = rec+5+0x100, x =
-; rec+1<<3, y = rec+2, width = rec+3<<3, height = rec+4, flags 0x1100, the far record pointer at
-; +0x34/+0x36 and rec+7 at +0x38; the node is drawn once through _DrawListNode and chained with
-; ListAdd. At the end it clips the text window, sets g5E20, flushes the key buffer and clears gStatusLine.
-; Called by ovl1:0416, 097A, 1551, 1ACD and 243A with a member index and returns the list head.
-; Purpose unknown: the exact meaning of the menu fields and of the 9-byte record bytes.
-        PUBLIC  _Ovl1_1153              ; @ ovl1:1153 draft
-_Ovl1_1153 PROC FAR
-        push    bp
-        mov     bp,sp
-        sub     sp,0Ah
-        push    si
-        push    di
-        mov     di,[bp+6]
-        mov     word ptr [gStatusLine],2
-        mov     ax,di
-        mov     dx,5
-        imul    dx
-        mov     bx,ax
-        cmp     byte ptr [bx+gMemberMenu+1],0
-        je      short f1153_11CD
-        mov     ax,di
-        mov     dx,5
-        imul    dx
-        mov     bx,ax
-        mov     al,byte ptr [bx+gMemberMenu+1]
-        cbw
-        mov     cl,4
-        shl     ax,cl
-        push    ax
-        mov     al,[gF57E]
-        cbw
-        pop     bx
-        mov     word ptr [bx+gColourTable],ax
-        mov     ax,di
-        mov     dx,5
-        imul    dx
-        mov     bx,ax
-        mov     al,byte ptr [bx+gMemberMenu+1]
-        cbw
-        push    ax
-        call    far ptr _SetTextWindowAndClear
-        pop     cx
-        xor     ax,ax
-        push    ax
-        push    ax
-        push    word ptr [gTextHeight]
-        mov     ax,[gTextWidth]
-        shl     ax,1
-        shl     ax,1
-        shl     ax,1
-        push    ax
-        push    word ptr [gTextTop]
-        mov     ax,[gTextLeft]
-        shl     ax,1
-        shl     ax,1
-        shl     ax,1
-        push    ax
-        call    far ptr _f0D1C_0C21
-        add     sp,0Ch
-f1153_11CD:
-        xor     ax,ax
-        push    ax
-        mov     ax,di
-        mov     dx,5
-        imul    dx
-        mov     bx,ax
-        mov     al,byte ptr [bx+gMemberMenu+4]
-        cbw
-        push    ax
-        mov     ax,5
-        push    ax
-        push    ax
-        mov     ax,di
-        mov     dx,5
-        imul    dx
-        mov     bx,ax
-        mov     al,byte ptr [bx+gMemberMenu]
-        cbw
-        push    ax
-        mov     ax,SEG gStrings2003
-        push    ax
-        mov     ax,OFFSET gStrings2003
-        push    ax
-        call    far ptr _SkipStrings
-        add     sp,6
-        push    dx
-        push    ax
-        call    far ptr _DrawShadowText
-        add     sp,0Ch
-        mov     word ptr [bp-6],0
-        mov     word ptr [bp-4],0
-        mov     word ptr [bp-2],0
-        jmp     f1153_1394
-f1153_121F:
-        mov     ax,di
-        mov     dx,5
-        imul    dx
-        mov     bx,ax
-        mov     al,byte ptr [bx+gMemberMenu+2]
-        cbw
-        mov     dx,[bp-2]
-        add     dx,ax
-        mov     si,dx
-        xor     ax,ax
-        push    ax
-        mov     dx,3Ch
-        push    ax
-        push    dx
-        call    far ptr _MemAlloc
-        add     sp,6
-        mov     [bp-0Ah],ax
-        mov     [bp-8],dx
-        mov     ax,3Ch
-        push    ax
-        push    dx
-        push    word ptr [bp-0Ah]
-        push    ds
-        mov     ax,OFFSET gNodeTemplate
-        push    ax
-        call    far ptr _movmem
-        add     sp,0Ah
-        les     bx,[bp-0Ah]
-        mov     ax,si
-        inc     ax
-        mov     word ptr es:[bx+4],ax
-        mov     ax,si
-        mov     dx,9
-        imul    dx
-        mov     dx,SEG gSpellInfo9
-        mov     bx,ax
-        mov     es,dx
-        NOSMART
-        mov     ax,word ptr es:[bx+5]
-        SMART
-        les     bx,[bp-0Ah]
-        mov     word ptr es:[bx+6],ax
-        mov     ax,si
-        mov     dx,9
-        imul    dx
-        mov     dx,SEG gSpellInfo9
-        mov     bx,ax
-        mov     es,dx
-        NOSMART
-        mov     ax,word ptr es:[bx+5]
-        SMART
-        add     ax,100h
-        les     bx,[bp-0Ah]
-        mov     word ptr es:[bx+8],ax
-        mov     ax,si
-        mov     dx,9
-        imul    dx
-        mov     dx,SEG gSpellInfo9
-        mov     bx,ax
-        mov     es,dx
-        NOSMART
-        mov     al,byte ptr es:[bx+1]
-        SMART
-        mov     ah,0
-        shl     ax,1
-        shl     ax,1
-        shl     ax,1
-        les     bx,[bp-0Ah]
-        mov     word ptr es:[bx+1Eh],ax
-        mov     ax,si
-        mov     dx,9
-        imul    dx
-        mov     dx,SEG gSpellInfo9
-        mov     bx,ax
-        mov     es,dx
-        NOSMART
-        mov     al,byte ptr es:[bx+2]
-        SMART
-        mov     ah,0
-        les     bx,[bp-0Ah]
-        mov     word ptr es:[bx+20h],ax
-        mov     ax,si
-        mov     dx,9
-        imul    dx
-        mov     dx,SEG gSpellInfo9
-        mov     bx,ax
-        mov     es,dx
-        NOSMART
-        mov     al,byte ptr es:[bx+3]
-        SMART
-        mov     ah,0
-        shl     ax,1
-        shl     ax,1
-        shl     ax,1
-        les     bx,[bp-0Ah]
-        mov     word ptr es:[bx+22h],ax
-        mov     ax,si
-        mov     dx,9
-        imul    dx
-        mov     dx,SEG gSpellInfo9
-        mov     bx,ax
-        mov     es,dx
-        NOSMART
-        mov     al,byte ptr es:[bx+4]
-        SMART
-        mov     ah,0
-        les     bx,[bp-0Ah]
-        mov     word ptr es:[bx+24h],ax
-        mov     ax,si
-        mov     dx,9
-        imul     dx
-        NOSMART
-        add     ax,0
-        SMART
-        mov     word ptr es:[bx+34h],ax
-        mov     word ptr es:[bx+36h],SEG gSpellInfo9
-        mov     word ptr es:[bx+0Eh],1100h
-        mov     ax,si
-        mov     dx,9
-        imul     dx
-        mov     dx,SEG gSpellInfo9
-        mov     bx,ax
-        mov     es,dx
-        NOSMART
-        mov     ax,word ptr es:[bx+7]
-        SMART
-        les     bx,[bp-0Ah]
-        mov     word ptr es:[bx+38h],ax
-        xor     ax,ax
-        push    ax
-        push    ax
-        push    ax
-        push    word ptr [bp-8]
-        push    bx
-        nop
-        push    cs
-        call    near ptr _DrawListNode
-        add     sp,0Ah
-        mov     ax,[bp-6]
-        or      ax,[bp-4]
-        je      short f1153_1385
-        push    word ptr [bp-8]
-        push    word ptr [bp-0Ah]
-        push    word ptr [bp-4]
-        push    word ptr [bp-6]
-        call    far ptr _ListAdd
-        add     sp,8
-        mov     [bp-6],ax
-        mov     [bp-4],dx
-        jmp     short f1153_1391
-f1153_1385:
-        mov     ax,[bp-8]
-        mov     dx,[bp-6]
-        mov     [bp-6],dx
-        mov     [bp-4],ax
-f1153_1391:
-        inc     word ptr [bp-2]
-f1153_1394:
-        mov     ax,di
-        mov     dx,5
-        imul    dx
-        mov     bx,ax
-        mov     al,byte ptr [bx+gMemberMenu+3]
-        cbw
-        cmp     ax,[bp-2]
-        jle     short f1153_13AA
-        jmp     f1153_121F
-f1153_13AA:
-        call    far ptr _LockHidePointer
-        xor     ax,ax
-        push    ax
-        mov     ax,2
-        push    ax
-        push    word ptr [gTextHeight]
-        push    word ptr [gTextWidth]
-        push    word ptr [gTextTop]
-        push    word ptr [gTextLeft]
-        push    word ptr [gTextTop]
-        push    word ptr [gTextLeft]
-        call    far ptr _ClipRect
-        add     sp,10h
-        call    far ptr _LockShowPointer
-        mov     byte ptr [g5E20],1
-        call    far ptr _FlushKeyBuffer
-        mov     word ptr [gStatusLine],0
-        mov     dx,[bp-4]
-        mov     ax,[bp-6]
-        pop     di
-        pop     si
-        mov     sp,bp
-        pop     bp
+; ovl1:1153: BuildMenuButtons, now written in src/EOV1.C (the stub only keeps the symbol).
+        PUBLIC  _BuildMenuButtons              ; @ ovl1:1153 stub
+_BuildMenuButtons PROC FAR
         ret
-_Ovl1_1153 ENDP
+_BuildMenuButtons ENDP
 
 ; ovl1:13F7: show the message whose key is `message` for up to 0x78 frames. It saves gStatusLine, the
 ; current font and gTextRegion, loads the 8x8 font (gFont8x8), hides the pointer, copies gF57E into g159,
@@ -2982,7 +2694,7 @@ f1691_1838:
         pop     cx
         mov     ax,6
         push    ax
-        call    far ptr _Ovl1_1153
+        call    far ptr _BuildMenuButtons
         pop     cx
         mov     [bp-4],ax
         mov     [bp-2],dx
@@ -3246,7 +2958,7 @@ _Ovl1_1691 ENDP
 ; is reached through the overlay dispatch). It drives the whole party panel: it saves the font and
 ; gTextRegion, clears three bytes of each member record, then loops on the far heap check (a "Far heap
 ; corrupt!" box when it fails), reads the option-field toggles, builds the member list with
-; _Ovl1_1153, waits with DispatchKeyWait and switches on a 0x17-entry key table at ovl1:23DE. Most
+; _BuildMenuButtons, waits with DispatchKeyWait and switches on a 0x17-entry key table at ovl1:23DE. Most
 ; cases call this unit's functions (ovl1:0000, 0416, 097A, 1153, 13F7, 1516, 1551, 1691, 243A) and
 ; the game overlays (ovl3 LoadGame/SaveGame, ovl4 DrawViewFrame, ovl6 CampLoop). Stack frame: [bp+6]/
 ; [bp+8] the current list node far pointer; [bp-8] `looping`; [bp-0xa] `key`; [bp-0xc]/[bp-0xe] the
@@ -3462,21 +3174,21 @@ f1ACD_1C9D:
         call    far ptr _FreeFarList
         pop     cx
         pop     cx
-        mov     byte ptr [gMemberMenu],1
+        mov     byte ptr [gMenus],1
         or      di,di
         jne     short f1ACD_1CBC
-        mov     byte ptr [gMemberMenu],38h
+        mov     byte ptr [gMenus],38h
 f1ACD_1CBC:
         cmp     di,2
         jne     short f1ACD_1CC6
-        mov     byte ptr [gMemberMenu+0Ah],39h
+        mov     byte ptr [gMenus+0Ah],39h
 f1ACD_1CC6:
         cmp     di,1
         jne     short f1ACD_1CD0
-        mov     byte ptr [gMemberMenu+5],3Ah
+        mov     byte ptr [gMenus+5],3Ah
 f1ACD_1CD0:
         push    di
-        call    far ptr _Ovl1_1153
+        call    far ptr _BuildMenuButtons
         pop     cx
         mov     [bp-0Eh],ax
         mov     [bp-0Ch],dx
@@ -3813,7 +3525,7 @@ f1ACD_1F98:
         pop     cx
         mov     ax,1
         push    ax
-        call    far ptr _Ovl1_1153
+        call    far ptr _BuildMenuButtons
         pop     cx
         mov     [bp-0Eh],ax
         mov     [bp-0Ch],dx
@@ -3957,7 +3669,7 @@ f1ACD_2132:
         mov     dx,5
         imul    dx
         mov     bx,ax
-        mov     al,byte ptr [bx+gMemberMenu+2]
+        mov     al,byte ptr [bx+gMenus+2]
         cbw
         inc     ax
         push    ax
@@ -3973,14 +3685,14 @@ f1ACD_215A:
         mov     dx,5
         imul    dx
         mov     bx,ax
-        mov     al,byte ptr [bx+gMemberMenu+2]
+        mov     al,byte ptr [bx+gMenus+2]
         cbw
         push    ax
         mov     ax,[bp-18h]
         mov     dx,5
         imul    dx
         mov     bx,ax
-        mov     al,byte ptr [bx+gMemberMenu+3]
+        mov     al,byte ptr [bx+gMenus+3]
         cbw
         pop     dx
         add     dx,ax
@@ -4011,7 +3723,7 @@ f1ACD_21B1:
         mov     dx,5
         imul    dx
         mov     bx,ax
-        mov     al,byte ptr [bx+gMemberMenu+2]
+        mov     al,byte ptr [bx+gMenus+2]
         cbw
         inc     ax
         mov     [bp-22h],ax
@@ -4019,7 +3731,7 @@ f1ACD_21B1:
         mov     dx,5
         imul    dx
         mov     bx,ax
-        mov     al,byte ptr [bx+gMemberMenu+3]
+        mov     al,byte ptr [bx+gMenus+3]
         cbw
         mov     dx,[bp-22h]
         add     dx,ax
@@ -4037,7 +3749,7 @@ f1ACD_21F8:
         mov     ax,si
         mov     dx,9
         imul    dx
-        mov     dx,SEG gSpellInfo9
+        mov     dx,SEG gButtonDefs
         mov     bx,ax
         mov     es,dx
         test    word ptr es:[bx-2],2
@@ -4234,7 +3946,7 @@ _Ovl1_1ACD ENDP
 ; ovl1:243A: show the gStrings2003 message `message` as a header and a scrollable list of the
 ; member inventory slots, letting the player pick one with the keyboard or the mouse. It saves
 ; gTextRegion and the current font, clears gStatusLine, selects the 8x8 font gFont8x8, builds a far list of the
-; nodes whose key is `cur+0x21` with _Ovl1_1153(5), hides the pointer, draws the message through
+; nodes whose key is `cur+0x21` with _BuildMenuButtons(5), hides the pointer, draws the message through
 ; SkipStrings(gStrings2003, message) and DrawShadowText, then loops: it highlights the current node
 ; with _DrawListNode (after _FindNode(index+0x21)), waits with DispatchKeyWait, and switches on the
 ; key (table at ovl1:266C, 7 keys): 0x5C/0x66 toggle `di`, 0x2B/0x3D/0x61 remove the node and walk
@@ -4267,7 +3979,7 @@ _ChooseListEntry PROC FAR
         pop     cx
         mov     ax,5
         push    ax
-        call    far ptr _Ovl1_1153
+        call    far ptr _BuildMenuButtons
         pop     cx
         mov     [bp-4],ax
         mov     [bp-2],dx
