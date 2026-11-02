@@ -81,17 +81,21 @@ extern char gF43C; /*@ ds:F43C */  /* written by StartupAlloc (07A9:000D, set to
                                       src/E1547.C:235-238). Purpose unknown */
 extern char gFB45; /*@ ds:FB45 */  /* written by StartupAlloc (07A9:0024, set to 0); the overlay 3
                                       LoadMapScreen sets it to 1 (src/EOV3.C:686), and the overlay 4
-                                      DrawViewFrame (ovl4:1F51, src/EOV4.C:657) tests it with video mode 3
-                                      (src/EOV4.C:662) and clears it (src/EOV4.C:669; declared "request
-                                      flag, cleared here", src/EOV4.C:636). What the request is is
+                                      DrawViewFrame (ovl4:1F51, src/EOV4.C:878) tests it with video mode 3
+                                      (src/EOV4.C:883) and clears it (src/EOV4.C:890; declared "request
+                                      flag, cleared here", src/EOV4.C:857). What the request is is
                                       Purpose unknown */
 extern void far *gBuf8DCA; /*@ ds:8DCA */  /* start-up far allocation, 7500 bytes (07A9:002F); the base
                                               of the 122E action-script driver's script (declared
                                               src/E122E.C:22): JumpToScriptOffset (122E:139D,
-                                              src/E122E.C:993) adds the script's word offset to it
-                                              (src/E122E.C:997, the comment at :991-992), and
-                                              PushScriptPointer (122E:1422, src/E122E.C:1026) does the
-                                              same (src/E122E.C:1036, the comment at :1023-1025). Overlay
+                                              src/E122E.C:1001) adds the script's word offset to it
+                                              (src/E122E.C:1005, the comment at :999-1000), and
+                                              PushScriptPointer (122E:1422, src/E122E.C:1034) does the
+                                              same (src/E122E.C:1044, the comment at :1031-1033).
+                                              EvaluateScriptExpr (122E:147F, a draft, src/E122E.C:1056)
+                                              jumps to the base with the word offset at src/E122E.C:1217,
+                                              and RunMemberScript (122E:1DA8, src/E122E.C:1399) starts its
+                                              script walk at it (src/E122E.C:1423). Overlay
                                               3 uses it too: LoadMapScreen unpacks LEVEL<n>.INF into it
                                               (src/EOV3.C:573-574, "the 7500-byte unpacked level
                                               script", src/EOV3.C:200), reads the item records through
@@ -134,9 +138,9 @@ extern void far *gSegDCA6; /*@ ds:DCA6 */  /* the far pointer f19EC_0002(7) retu
                                               0xCB20-byte texture block through it (src/EOV3.C:471),
                                               expands and masks it (src/EOV3.C:474-478 and :482; the
                                               comment above LoadWallTextures, src/EOV3.C:454-459), and
-                                              DrawViewFrame draws from it (DrawTile(gSegDCA6), src/EOV4.C:660;
+                                              DrawViewFrame draws from it (DrawTile(gSegDCA6), src/EOV4.C:881;
                                               declared "the far pointer DrawTile draws",
-                                              src/EOV4.C:641) */
+                                              src/EOV4.C:862) */
 extern void far *gSegDF4E; /*@ ds:DF4E */  /* slot 5's far pointer, f19EC_0002(5) (07A9:00BA); the
                                               action screen's swap buffer: Action01E3 (src/E0ACD.C:263)
                                               blits it to the action field through gFn804A
