@@ -340,3 +340,7 @@ why = "the flag 1C0E:1310 tests before scanning every logical drive for the over
 id = "ds:8148"
 name = "gMouseHandlerInstalled"
 why = "1 when the mouse driver handler is installed: set to 1 at install (E1A72.ASM:214), cleared at uninstall (E1A72.ASM:200); E1A72.ASM:334 reads it to remove the handler only when installed; Main reads it to choose gMouseDisabled (E07C8.C:153); E07C8.C:36 says 'mouse event handler'"
+[[global]]
+id = "ds:8052"
+name = "gFn8052"
+why = "one pattern for unknown-purpose far function pointers (gFn8072, gFn8056, gFn80BA, gFn80D2, gFn804A); review of e19f3"
