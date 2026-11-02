@@ -169,6 +169,22 @@ extern char gText58BB[];                /*@ ds:58BB */
 extern char gText58C6[];                /*@ ds:58C6 */
 extern char gText58D1[];                /*@ ds:58D1 */
 extern char gText58ED[];                /*@ ds:58ED */
+extern char gText57C3[];                /*@ ds:57C3 */ /* drawn by 0EF3:08CF */
+extern char gText57C8[];                /*@ ds:57C8 */ /* said by 0EF3:08CF when no member is set */
+extern unsigned char gEffectSound[];    /*@ ds:1355 */ /* one record per effect value, stride 0x13;
+                                                           the first byte is a sound id (0EF3:08CF) */
+extern void (far *gFnEFBA)(void);       /*@ ds:EFBA */ /* a redraw hook run by 0EF3:08CF */
+
+/* The record 0EF3:08CF, 0EF3:2541 and 0EF3:25BD take: an action context with the member it applies
+   to at +0x38 (-1 when none) and a result word at +4 the functions hand back. */
+struct ActRec {
+    char pad00[4];
+    int m04;                /* +04: the result returned to the caller */
+    char pad06[0x38 - 0x06];
+    signed char m38;        /* +38: the member the action applies to, -1 when none */
+};
+
+extern int f0EF3_2541(struct ActRec far *rec); /*@ 0EF3:2541 */
 
 extern void SwapChars(char far *pa, char far *pb); /*@ 082C:07A4 */
 extern void RedrawMember(int dir); /*@ 1547:0991 */
@@ -539,7 +555,39 @@ extern void f0EF3_2A53(int a, int b, int c, int d, int e, void far *p); /*@ 0EF3
 
 /*@ 0EF3:06E7 stub */ void f0EF3_06E7(void) {}
 
-/*@ 0EF3:08CF stub */ int f0EF3_08CF(void far *rec) {}
+/* 0EF3:08CF: apply one action record to the member it names (+0x38). It makes that member current
+   and, while the member is alive (m01 bit 0), draws its name and the message ds:57C3, plays the
+   effect's sound (the first byte of the ds:1355 record for gEFB8), flashes the member, runs the
+   redraw hook ds:EFBA and redraws it; a dead member just returns the record's +4 word. When the
+   record names no member (-1) it says ds:57C8. It then finishes the open condition slot through
+   0EF3:026F when g8DCE is set, else redraws the panel through 0EF3:2541. Reached through a
+   pointer; returns the record's +4 word. DRAFT: the body is right but the original lays the
+   alive test out as `test byte es:[bx+1],1; jne alive; jmp done` where our build emits the
+   shorter inverted `je done` (`make match` differs at the branch, +0x10). */
+/*@ 0EF3:08CF draft */ int ApplyMemberEffect(struct ActRec far *rec)
+{
+    gCurMember = rec->m38;
+    if (gCurMember != -1) {
+        gCurRec = &gChars[gCurMember];
+        if (gCurRec->m01 & 1) {
+            DrawText(gCurRec->name);
+            DrawText(gText57C3);
+            PlaySound(gEffectSound[gEFB8 * 0x13]);
+            FlashPartyMembers(gCurMember);
+            gFnEFBA();
+            RedrawMember(gCurMember);
+        } else {
+            return rec->m04;
+        }
+    } else {
+        SayAndBeep(gText57C8);
+    }
+    if (g8DCE != 0)
+        FinishMemberEffect();
+    else
+        f0EF3_2541(rec);
+    return rec->m04;
+}
 
 /*@ 0EF3:097B stub */ void f0EF3_097B(char a, int b, int c, int d, int e) {}
 
@@ -1310,7 +1358,7 @@ extern void f0EF3_2A53(int a, int b, int c, int d, int e, void far *p); /*@ 0EF3
 
 /*@ 0EF3:2295 stub */ void f0EF3_2295(void) {}
 
-/*@ 0EF3:2541 stub */ void f0EF3_2541(char far *text) {}
+/*@ 0EF3:2541 stub */ int f0EF3_2541(struct ActRec far *rec) {}
 
 /*@ 0EF3:25BD stub */ void f0EF3_25BD(void) {}
 
