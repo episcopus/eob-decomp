@@ -4974,6 +4974,7 @@ evidence = ["far", "segment"]
 name = "MemAlloc"
 level = "L2"
 match_flags = "-ml -O -Z -G"
+review = "passed 2026-11-01 rev-haiku"
 
 [[function]]
 id = "e19bc_0137"
@@ -4984,6 +4985,7 @@ evidence = ["far", "frame"]
 name = "MemFree"
 level = "L2"
 match_flags = "-ml -O -Z -G"
+review = "passed 2026-11-01 rev-haiku"
 
 [[function]]
 id = "e19bc_018a"
@@ -4994,6 +4996,7 @@ evidence = ["far", "frame"]
 name = "MemRealloc"
 level = "L2"
 match_flags = "-ml -O -Z -G"
+review = "passed 2026-11-01 rev-haiku"
 
 [[function]]
 id = "e19bc_023d"
@@ -5004,6 +5007,7 @@ evidence = ["far", "frame"]
 name = "LargestFreeBlock"
 level = "L2"
 match_flags = "-ml -O -Z -G"
+review = "passed 2026-11-01 rev-haiku"
 
 [[function]]
 id = "e19bc_02b6"
@@ -5014,6 +5018,7 @@ evidence = ["frame"]
 name = "OutOfMemory"
 level = "L2"
 match_flags = "-ml -O -Z -G"
+review = "passed 2026-11-01 rev-haiku"
 
 [[function]]
 id = "e19ea_0000"
