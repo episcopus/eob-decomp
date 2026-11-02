@@ -25,17 +25,21 @@ globals and callees were compared with every other file that declares them (grep
 Each finding is a checkbox. `must-fix` blocks `make review-pass` until a decompiler ticks it off
 (with the commit that fixes it); `should` and `note` do not block.
 
-- [ ] must-fix src/E14EF.C:72-73 (gMouseDisabled): "the store is src/E1A72.ASM:316" is wrong.
+- [x] must-fix src/E14EF.C:72-73 (gMouseDisabled): "the store is src/E1A72.ASM:316" is wrong.
   src/E1A72.ASM:316 is `mov word ptr [g8144],0`. The gMouseDisabled store is src/E1A72.ASM:325, the
   line after `mov word ptr [gMouseHandlerInstalled],1` at :324, and before the INT 33h set-handler
   call (`mov ax,0Ch` at :331, `mov dx,offset MouseEventHandler` at :335). Cite :325 and :324. The claim
   "InitMouse sets it to 1 before it installs the handler" holds. (evidence: `grep -n "gMouseDisabled\]"
   src/E1A72.ASM` gives :325 and :386; `sed -n 322,335p src/E1A72.ASM`)
-- [ ] must-fix src/E14EF.C:77 (g8134): "or ax,[g8134] at src/E1A72.ASM:401; mov [g8134],ax at :402"
+  [fixed in b6c4d4e: the comment now cites the store at src/E1A72.ASM:325 and the
+  gMouseHandlerInstalled store at :324; comments only, no code byte changed]
+- [x] must-fix src/E14EF.C:77 (g8134): "or ax,[g8134] at src/E1A72.ASM:401; mov [g8134],ax at :402"
   cites `and bx,3` and `or bx,ax`. The pair is src/E1A72.ASM:410 (`or ax,[g8134]`) and :411
   (`mov [g8134],ax`), after the `call far ptr _HandleMouseButtons` (:403-409) when the button state
   changed. (evidence: `grep -n "\[g8134\]" src/E1A72.ASM` gives :410, :411; `sed -n 400,412p`)
-- [ ] must-fix src/E14EF.C:84-88 (LockHidePointer, LockShowPointer): three cites are wrong.
+  [fixed in b6c4d4e: the comment now cites `or ax,[g8134]` at src/E1A72.ASM:410 and
+  `mov [g8134],ax` at :411; comments only]
+- [x] must-fix src/E14EF.C:84-88 (LockHidePointer, LockShowPointer): three cites are wrong.
   (a) "(src/E1BBE.ASM:489-499)" stops before the frame is released: `_LockHidePointer` runs from :489
   to :505, and its release `dec word ptr [_gPointerBusy]` is at :502. Cite 489-502.
   (b) "(src/E1BBE.ASM:123-124, src/E1A72.ASM:32-33)" is cited for the quoted "far fn (g8172/g8174)" and
@@ -45,23 +49,33 @@ Each finding is a checkbox. `must-fix` blocks `make review-pass` until a decompi
   (c) "(src/E1BBE.ASM:512-522)" for LockShowPointer: the routine runs :512-528 and releases at :525.
   Cite 512-525. (evidence: `grep -n "_LockHidePointer PROC\|_LockShowPointer PROC\|dec     word ptr
   \[_gPointerBusy\]" src/E1BBE.ASM` gives :489, :502, :505, :512, :525, :528; `sed -n 126,127p`)
-- [ ] must-fix src/E14EF.C:238-241 (UpdateOptionList header): the sentence says the mouse rectangle is
+  [fixed in b6c4d4e: the LockHidePointer comment now cites the release range src/E1BBE.ASM:489-502 and
+  the hook quotes at :126-127, and LockShowPointer cites :512-525; comments only]
+- [x] must-fix src/E14EF.C:238-241 (UpdateOptionList header): the sentence says the mouse rectangle is
   used "when ds:5D1A lets the pointer pick and the mouse is enabled (!gMouseDisabled, :290)". Only the
   cursor test is gated: `if (!gMouseDisabled)` (:290) and `&& g5D1A` (:292) decide the pointer pick.
   The click test (:316, `IsPointInRect(g8140, g8142, ...)`) has no g5D1A or gMouseDisabled check. Clicks
   reach this function only while the mouse is enabled, because the INT 33h handler returns at once when
   gMouseDisabled is set (src/E1A72.ASM:386-387), but this unit does not test it. Say which test each
   gate applies to. (evidence: src/E14EF.C:290-292, :316; src/E1A72.ASM:386-387)
-- [ ] should src/E14EF.C:35-36 and :48 ("both draw loops"): UpdateOptionList draws its two rows once
+  [fixed in b6c4d4e: the header now says the cursor pick needs !gMouseDisabled (:290) and ds:5D1A
+  (:292), and that the click test (:316) is not gated because the INT 33h handler returns at once
+  while gMouseDisabled is set (src/E1A72.ASM:386-387); comments only]
+- [x] should src/E14EF.C:35-36 and :48 ("both draw loops"): UpdateOptionList draws its two rows once
   each (:332-341) with no loop. Say "in both drawing functions" (DrawOptionList and UpdateOptionList).
-- [ ] should src/E14EF.C:286 and :288 (the hit rectangle): the rectangle multiplies x and width by
+  [fixed in b6c4d4e: both comments now say "in both drawing functions"]
+- [x] should src/E14EF.C:286 and :288 (the hit rectangle): the rectangle multiplies x and width by
   gFontWidth, while both draws shift by 3 (`<< 3` at :195, :279). The header says they agree only while
   the cell is eight pixels wide (:241-242). gFontWidth is read from font data (src/E1A47.C:84), so the
   two can differ. READABILITY.md asks that a behaviour a port must keep although it looks wrong be marked
   `QUIRK <address>:`. Decide whether it is one; if so, mark :286 with its address, if not, say why.
-- [ ] should src/E14EF.C:117-123 (BlinkText comment): it says "wait two frames" twice and "redrawing only
+  [fixed in b6c4d4e: it is one; marked QUIRK 14EF:0336 on the `left` line (:286), the `imul` that scales
+  the panel's x by gFontWidth (disasm 14EF:0336), with the same scale on the width at :288]
+- [x] should src/E14EF.C:117-123 (BlinkText comment): it says "wait two frames" twice and "redrawing only
   inside the frame", but the frame ends at LockShowPointer (:133), before the second WaitFrames(2)
   (:134). Say that the first wait (:131) is inside the frame and the second runs after it closes.
+  [fixed in b6c4d4e: the comment now says the first wait (:131) is inside the frame and the second
+  (:134) runs after LockShowPointer (:133) closes it]
 - [ ] note stale cites into this file from other units (routed, not edited): src/E1A72.ASM:59 cites
   "E14EF.C:197" for the g8134 clear (the clear is :209; :197 is the `rows` read); src/E1C00.ASM:288 cites
   "E14EF.C:227" (the mouse-enabled test is :290); src/E1BBE.ASM:482 cites "E14EF.C:80-81" (the
@@ -83,6 +97,12 @@ and no longer are, and one gating claim in the UpdateOptionList header covers th
 no gate. Four must-fix items, all comments, no code change; two shoulds and notes. The matcher (6 of 6)
 and the readability check (0 findings) were re-run on a2839a6. No matcher, spec or pin question;
 nothing escalated.
+
+Fixed in b6c4d4e (comments only, no code byte changed; make match FILE=src/E14EF.C 6 of 6, 1410
+bytes, exit 0; make readability UNIT=e14ef 0 findings): all four must-fix items and all three shoulds
+are ticked above. The routed notes are left to their owners (src/E1A72.ASM:59, src/E1C00.ASM:288,
+src/E1BBE.ASM:482, re/renames.toml:775, re/globals.toml:302), and the two carried notes stand
+(height 0 at :274, the prototypes and gDrawText parameter types).
 
 ---
 
