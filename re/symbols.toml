@@ -9828,6 +9828,9 @@ unit = "i0aed"
 addr = "0AED:000D"
 size = 56
 evidence = ["far", "segment"]
+name = "LoadFile"
+level = "L2"
+match_flags = "-ml -O -Z -G -P"
 
 [[function]]
 id = "i0aed_0045"
@@ -9835,6 +9838,9 @@ unit = "i0aed"
 addr = "0AED:0045"
 size = 134
 evidence = ["frame"]
+name = "LoadPacked"
+level = "L2"
+match_flags = "-ml -O -Z -G -P"
 
 [[function]]
 id = "i0aed_00cb"
@@ -9842,6 +9848,9 @@ unit = "i0aed"
 addr = "0AED:00CB"
 size = 357
 evidence = ["far", "frame"]
+name = "Unpack"
+level = "L2"
+match_flags = "-ml -O -Z -G -P"
 
 [[function]]
 id = "i0b10_0000"
