@@ -5300,9 +5300,9 @@ unit = "e1a72"
 addr = "1A72:0285"
 size = 33
 evidence = ["far", "frame"]
-name = "_MouseDisable"
 level = "L2"
 match_flags = "tasm /mx"
+name = "RemoveMouseHandler"
 
 [[function]]
 id = "e1a72_02a6"
