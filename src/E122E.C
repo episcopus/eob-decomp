@@ -137,7 +137,7 @@ void f122E_1DA8(int a, int b);  /* forward: 1DA8 comes after its callers */
     AdjustMemberStatus(who);
     ArmEffectWith(0xc, who, 0xffff, 1);
 }
-/*@ 122E:0271 stub */ void f122E_0271(void) {}
+/*@ 122E:0271 stub */ void f122E_0271(int who, int delta) {}
 /*@ 122E:0325 stub */ void f122E_0325(void) {}
 /*@ 122E:04CA stub */ void f122E_04CA(void) {}
 
@@ -243,7 +243,42 @@ void f122E_1DA8(int a, int b);  /* forward: 1DA8 comes after its callers */
     }
     return (long)(script - start);
 }
-/*@ 122E:0A16 stub */ void f122E_0A16(void) {}
+/* 122E:0A16: sub-opcode that writes a run of four gB894 bytes: 0xFFF7 compares the record's first
+   byte with a script byte and fills the first four bytes with the second script byte when they match
+   (or the first when they do not); 0xFFEA hands a word and -1 to f122E_0271. Returns the bytes read. */
+/*@ 122E:0A16 draft */ long WriteObjectRunOp(char far *script)
+{
+    int id;
+    int first;
+    int second;
+    char far *start = script;
+
+    switch (*script++) {
+    case 0xFFF7:
+        id = *(int far *)script;
+        script += 2;
+        first = *script++;
+        second = *script++;
+        if (gB894[id * 9] == first) {
+            gB894[id * 9] = second;
+            gB894[id * 9 + 1] = second;
+            gB894[id * 9 + 2] = second;
+            gB894[id * 9 + 3] = second;
+        } else {
+            gB894[id * 9] = first;
+            gB894[id * 9 + 1] = first;
+            gB894[id * 9 + 2] = first;
+            gB894[id * 9 + 3] = first;
+        }
+        break;
+    case 0xFFEA:
+        id = *(int far *)script;
+        script += 2;
+        f122E_0271(id, -1);
+        break;
+    }
+    return (long)(script - start);
+}
 /* 122E:0B23: sub-opcode that arms member effects: read a member index and hand it to f122E_0154.
    Returns the bytes read. */
 /*@ 122E:0B23 */ long ArmMember(char far *script)

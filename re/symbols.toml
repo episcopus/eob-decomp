@@ -3946,6 +3946,7 @@ unit = "e122e"
 addr = "122E:0A16"
 size = 269
 evidence = ["frame"]
+notes = "draft 2026-11-01: with the unit's default -ml -O -Z our build merges the two 0xFFF7 branches' final `mov bx,ax; mov [bx-0x4769],dl` store (the not-equal branch jumps into the equal branch's tail at 122E:09E0, 6 bytes shorter; first difference at 122E:0022, ours jmp 0xE2 against 0xE8). The original keeps both four-store sequences separate, the assembler (-B) signature. With `/*@flags -ml -O -Z -B */` this function matches exactly (269 bytes), but the same flag set breaks DisarmMemberEffect (122E:01D9): TCC -S estimates its `if (gB894[who*9+4] & 7) return;` branch as too far and emits `je continue; jmp end` where the original has one short `jne end` (the boundary class of whitepaper 2.1.1). So the unit's assembler-vs-inline flag is unresolved: this function says -B, DisarmMemberEffect says inline. Escalation candidate (unit flags). Source order FFF7 then FFEA reproduces the original compare order (ascending) and body layout."
 
 [[function]]
 id = "e122e_0b23"
