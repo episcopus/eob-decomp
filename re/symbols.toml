@@ -8074,9 +8074,9 @@ unit = "eov1"
 addr = "ovl1:1516"
 size = 59
 evidence = ["ovl", "near"]
-name = "_FreeFarList"
+name = "FreeFarList"
 level = "L2"
-match_flags = "tasm /mx"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "eov1_1551"

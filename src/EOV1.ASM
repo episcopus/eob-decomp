@@ -1989,79 +1989,21 @@ f097A_108E:
         dw      f097A_0E8D, f097A_0F64
 _SpellSlotScreen ENDP
 
-; ovl1:10DE: return the far string picked by the flag `which` (index 0x16 when `which` is 0, 0x15
-; otherwise) from the string table at segment 01E8. Called by ovl1:1ACD to label the option states.
-        PUBLIC  _BoolString             ; @ ovl1:10DE
+; ovl1:10DE: BoolString, now written in src/EOV1.C (the stub only keeps the symbol).
+        PUBLIC  _BoolString ; @ ovl1:10DE stub
 _BoolString PROC FAR
-        push    bp
-        mov     bp,sp
-        push    si
-        mov     si,[bp+6]
-        or      si,si
-        je      short f10DE_10EE
-        mov     ax,15h
-        jmp     short f10DE_10F1
-f10DE_10EE:
-        mov     ax,16h
-f10DE_10F1:
-        mov     si,ax
-        push    ax
-        mov     ax,1E8h
-        push    ax
-        mov     ax,0
-        push    ax
-        call    far ptr _SkipStrings
-        add     sp,6
-        pop     si
-        pop     bp
         ret
 _BoolString ENDP
 
-; ovl1:1107: save the option-field rectangle (0,0x78)-(0x16,0x18) into the buffer at gSegDF4E
-; plus 0x4E20 through gSaveRect. Called by ovl1:1ACD around the options page.
-        PUBLIC  _SaveOptionField        ; @ ovl1:1107
+; ovl1:1107: SaveOptionField, now written in src/EOV1.C (the stub only keeps the symbol).
+        PUBLIC  _SaveOptionField ; @ ovl1:1107 stub
 _SaveOptionField PROC FAR
-        push    bp
-        mov     bp,sp
-        mov     ax,word ptr [gSegDF4E]
-        add     ax,4E20h
-        push    word ptr [gSegDF4E+2]
-        push    ax
-        mov     ax,18h
-        push    ax
-        mov     ax,16h
-        push    ax
-        mov     ax,78h
-        push    ax
-        xor     ax,ax
-        push    ax
-        call    dword ptr [gSaveRect]
-        add     sp,0Ch
-        pop     bp
         ret
 _SaveOptionField ENDP
 
-; ovl1:112D: redraw the option-field rectangle (0,0x78)-(0x16,0x18) from the buffer at gSegDF4E
-; plus 0x4E20 through gFn804A. Called by ovl1:1ACD around the options page.
-        PUBLIC  _DrawOptionField        ; @ ovl1:112D
+; ovl1:112D: DrawOptionField, now written in src/EOV1.C (the stub only keeps the symbol).
+        PUBLIC  _DrawOptionField ; @ ovl1:112D stub
 _DrawOptionField PROC FAR
-        push    bp
-        mov     bp,sp
-        mov     ax,word ptr [gSegDF4E]
-        add     ax,4E20h
-        push    word ptr [gSegDF4E+2]
-        push    ax
-        mov     ax,18h
-        push    ax
-        mov     ax,16h
-        push    ax
-        mov     ax,78h
-        push    ax
-        xor     ax,ax
-        push    ax
-        call    dword ptr [gFn804A]
-        add     sp,0Ch
-        pop     bp
         ret
 _DrawOptionField ENDP
 
@@ -2196,38 +2138,9 @@ f13F7_14F1:
         ret
 _ShowMessage ENDP
 
-; ovl1:1516: free every block of a NULL-terminated far linked list. `first` is a far pointer
-; whose next link is the far pointer held in its first 4 bytes (offset at +0, segment at +2); each
-; block is released with farfree and the walk continues with the block's link until the pointer is
-; NULL:NULL. Callers pass the malloc'd list head by value (ovl1:0416, ovl1:097A, ovl1:1551,
-; ovl1:1ACD, ovl1:243A). Name from what it does; the original name is unknown.
-        PUBLIC  _FreeFarList             ; @ ovl1:1516
+; ovl1:1516: FreeFarList, now written in src/EOV1.C (the stub only keeps the symbol).
+        PUBLIC  _FreeFarList ; @ ovl1:1516 stub
 _FreeFarList PROC FAR
-        push    bp
-        mov     bp,sp
-        sub     sp,4
-        jmp     short f1516_1545
-f1516_151E:
-        les     bx,[bp+6]
-        mov     ax,es:[bx+2]
-        mov     dx,es:[bx]
-        mov     [bp-4],dx
-        mov     [bp-2],ax
-        push    word ptr [bp+8]
-        push    bx
-        call    far ptr _farfree
-        pop     cx
-        pop     cx
-        mov     ax,[bp-2]
-        mov     dx,[bp-4]
-        mov     [bp+6],dx
-        mov     [bp+8],ax
-f1516_1545:
-        mov     ax,[bp+6]
-        or      ax,[bp+8]
-        jne     short f1516_151E
-        mov     sp,bp
-        pop     bp
         ret
 _FreeFarList ENDP
 

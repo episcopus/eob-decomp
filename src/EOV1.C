@@ -175,6 +175,8 @@ extern void LockHidePointer(void); /*@ 1BBE:0307 */
 extern void LockShowPointer(void); /*@ 1BBE:0332 */
 extern void ClipRect(int x1, int y1, int x2, int y2, int width, int height, int extra1, int extra2); /*@ 19F3:000E */
 extern void FlushKeyBuffer(void); /*@ 1AAD:0480 */
+extern void farfree(void far *block); /*@ 0000:71EE */
+extern void (far *gFn804A)(int x, int y, int w, int h, void far *buf); /*@ ds:804A */
 extern int WaitGameKey(void); /*@ 1AAD:053A */
 extern int Action01E3(char far *text); /*@ 0ACD:01E3 */
 extern int RedrawPartyPanel(struct ActRec far *rec); /*@ 0EF3:2541 */
@@ -243,9 +245,26 @@ int ChooseListEntry(int message);
 /*@ ovl1:0416 stub */ int MemberCommand(int key) { return 0; }
 /*@ ovl1:0881 stub */ void ShowItemName(void) {}
 /*@ ovl1:097A stub */ void SpellSlotScreen(int member, int flag) {}
-/*@ ovl1:10DE stub */ char far *BoolString(int on) { return 0; }
-/*@ ovl1:1107 stub */ void SaveOptionField(void) {}
-/*@ ovl1:112D stub */ void DrawOptionField(void) {}
+/* ovl1:10DE: returns the word that labels an option state: gStrings2003 message 0x15 "ON" when `on`
+   is nonzero, else 0x16 "OFF". RunCampMenu formats it into its "Tunes are %-3s" style labels. */
+/*@ ovl1:10DE */ char far *BoolString(int on)
+{
+    on = on ? 0x15 : 0x16;
+    return SkipStrings(&gStrings2003, on);
+}
+/* ovl1:1107: saves the screen rectangle x 0, y 0x78, 0x16 by 0x18 (the "option field", the strip the
+   camp menu is drawn over) into the far buffer at gSegDF4E + 0x4E20 through gSaveRect. Called by
+   RunCampMenu before it draws a menu and after a loaded game's screens are replaced. */
+/*@ ovl1:1107 */ void SaveOptionField(void)
+{
+    gSaveRect(0, 0x78, 0x16, 0x18, (char far *)gSegDF4E + 0x4e20);
+}
+/* ovl1:112D: draws the rectangle SaveOptionField saved back to the screen through gFn804A (the
+   blit routine that puts the buffer at gSegDF4E + 0x4E20 at x 0, y 0x78, 0x16 by 0x18). */
+/*@ ovl1:112D */ void DrawOptionField(void)
+{
+    gFn804A(0, 0x78, 0x16, 0x18, (char far *)gSegDF4E + 0x4e20);
+}
 
 /* ovl1:1153: builds the button list of menu `menu` (an index into the seven five-byte records at
    ds:628C) and returns its head, with the pointer hidden while the window is drawn. When the
@@ -306,7 +325,19 @@ int ChooseListEntry(int message);
 }
 
 /*@ ovl1:13F7 stub */ void ShowMessage(int message) {}
-/*@ ovl1:1516 stub */ void FreeFarList(struct Node far *list) {}
+/* ovl1:1516: frees every node of a far linked list: each node's first four bytes are the far
+   pointer to the next one, and the walk ends at a null pointer. Called by RunCampMenu,
+   ChooseListEntry and the other screens with the head BuildMenuButtons returned. */
+/*@ ovl1:1516 */ void FreeFarList(struct Node far *list)
+{
+    struct Node far *next;
+
+    while (list) {
+        next = list->next;
+        farfree(list);
+        list = next;
+    }
+}
 /*@ ovl1:1551 stub */ void DrawListNode(struct Node far *node, int mode1, int mode2, int mode3) {}
 /*@ ovl1:1691 stub */ void Ovl1_1691(void) {}
 /* ovl1:1ACD: the camp menu, entered from the camp button on the game screen: it is the callback30 of
