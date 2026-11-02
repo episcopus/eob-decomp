@@ -249,9 +249,20 @@ extern int f0BD2_02B9(void far *head, int key, int item); /*@ 0BD2:02B9 */
    through 122E:1DA8(value, 0x10) and re-tests with TestDDEffect, or, when it fails and m0C has
    bit 0x20, runs 0EF3:00CD(rec) unless TestDDEffect(rec, m04, m06) accepts. The record is
    cleared through ClearDDEffect when clearIt holds (initially m0D == 0) and gDF4C is set. QUIRK
-   1414:028D: the argument is incremented by value, so the increment has no effect. DRAFT: matches
-   every byte except the shared `clearIt = 1` tail, which the pinned compiler merges into one
-   store reached by a jump while the original keeps a separate store in each branch (5 bytes). */
+   1414:028D: the argument is incremented by value, so the increment has no effect.
+
+   blocked: matches every byte except the success-path `clearIt = 1` store. The original keeps two
+   separate `mov word ptr [bp - 2], 1` stores (1414:034B and 1414:0382); our `-ml -O -Z` build sinks
+   the first into the second (1414:034C `je 0xfd` and 1414:034E `jmp 0xf8`, 5 bytes short). TCC -S
+   emits the two stores apart but TCC's internal assembler cross-jumps them (WHITEPAPER 2.1.1, the
+   same class as 0ACD:091C and 0D1C:0903), and TASM (TCC -B) does not: with `-B` this function
+   matches exactly (303 bytes, checked). The unit is not `-B` though: under -B TestDDEffect gains
+   TASM's forward-jump pad (1414:0015 `EB 7F` plus a `90` NOP at 1414:0017, original `EB 7E` with no
+   NOP) and ApplyCharEffect shifts one byte, while the rest of the unit only matches with -c. Forms
+   tried while keeping the original frame (clearIt at [bp - 2], value in DI): plain if/else, `goto`
+   from either or both branches, a label after the store, an empty statement after the store, braced
+   blocks, `else ;`, `if/else if`, `clearIt = 1 + 0`, a duplicated clear tail, and `volatile` and
+   `unsigned` declarations; every one cross-jumps. A compiler/assembler question. */
 /*@ 1414:0285 draft */ void MoveDDEffects(int unused)
 {
     int value;
@@ -468,9 +479,17 @@ extern int f0BD2_02B9(void far *head, int key, int item); /*@ 0BD2:02B9 */
    and 9 handles recovered paralysis ("%s is no longer paralyzed!") and clears m01 bit 2. It then
    computes the smallest nonzero gChars[who].mAD and stores it (minus gTimer when there is one,
    else -1 and it disarms effect who + 6) in gEffects[who + 6].period. Called from the table (and
-   0DE8, 0EF3, 0BD2). DRAFT: the dispatcher and every case are written, but the bytes diverge
-   early (the compiler lays the "has the time passed" test and the switch out differently); not
-   yet matched. */
+   0DE8, 0EF3, 0BD2).
+
+   blocked: the dispatcher and every case are written and understood, but the bytes diverge in at
+   least two compiler-codegen classes. (1) The bit tests compile here to `test word ptr [bx + N],
+   M; je` where the original has `mov ax, [bx + N]; and ax, M; or ax, 0; je` (the `or ax, 0` at
+   1414:08AD and 1414:09A1; mE3 and m01 tests). Forms tried: `!= 0`, `== 0`, `== M`, `| 0`, `!!`,
+   ternary, `else value >>= 0`, braces; none emits `and`/`or ax, 0`. This is the idiom blocked on
+   0D1C:0B17 (`or ax, 0` is distinct from `or ax, ax`, WHITEPAPER 2.1.1). (2) The unsigned-long
+   `tl > g8492` test (1414:0814..0825) lays out as `jbe L1; jmp cont; L1: jne body` in the original
+   while ours emits `jb body; jbe L1; jmp cont`. The switch jump table and some case tails also
+   differ (calls to 1547:0991 at 1414:0936 and 1414:09D4 among them). No single source form found. */
 /*@ 1414:07CA draft */ void RunCharEffects(int who)
 {
     unsigned long min;

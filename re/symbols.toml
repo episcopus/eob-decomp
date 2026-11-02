@@ -3800,6 +3800,7 @@ unit = "e1414"
 addr = "1414:0285"
 size = 303
 evidence = ["frame"]
+notes = "blocked: compiler codegen, TCC's internal assembler cross-jump. Matches every byte except the success-path `clearIt = 1` store: the original keeps two separate `mov word ptr [bp - 2], 1` stores (1414:034B, 1414:0382), our `-ml -O -Z` build sinks the first into the second (1414:034C `je 0xfd`, 1414:034E `jmp 0xf8`, 5 bytes short). Same class as 0ACD:091C and 0D1C:0903 (WHITEPAPER 2.1.1): TCC -S emits the two stores apart but TCC's internal assembler merges them, TASM (TCC -B) does not, and with -B this function matches exactly (303 bytes). The unit is not -B: under -B TestDDEffect gains TASM's forward-jump pad (1414:0015 `EB 7F` plus `90` at 1414:0017 against the original `EB 7E`) and ApplyCharEffect shifts one byte, while the other 17 functions match with -c. Tried while keeping the original frame: plain if/else, goto from either or both branches, a label or empty statement after the store, braced blocks, else with empty body, if/else if, `clearIt = 1 + 0`, duplicated clear tail, volatile and unsigned declarations; all cross-jump."
 
 [[function]]
 id = "e1414_03b4"
@@ -3863,6 +3864,7 @@ unit = "e1414"
 addr = "1414:07CA"
 size = 868
 evidence = ["frame"]
+notes = "blocked: compiler codegen. The dispatcher and every case are written and understood but the bytes diverge. (1) The bit tests compile here to `test word ptr [bx + N], M; je` where the original has `mov ax, [bx + N]; and ax, M; or ax, 0; je` (the `or ax, 0` at 1414:08AD and 1414:09A1, mE3 and m01 tests); tried `!= 0`, `== 0`, `== M`, `| 0`, `!!`, ternary, `else value >>= 0`, braces, none emits it; same idiom blocked on 0D1C:0B17. (2) The unsigned-long `tl > g8492` test (1414:0814..0825) lays out as `jbe L1; jmp cont; L1: jne body` in the original while ours emits `jb body; jbe L1; jmp cont`. The switch jump table and some case tails also differ (calls to 1547:0991 at 1414:0936 and 1414:09D4 among them)."
 
 [[function]]
 id = "e1414_0b2e"
