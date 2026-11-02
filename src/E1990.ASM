@@ -28,8 +28,8 @@ gVideoTopSeg  dw 0                      ; 1990:0004: top of video memory. Reserv
                                         ;   (1990:01A8 to 01B6), then lowers it to memtop plus the
                                         ;   moved footprint when memtop is at or below that value
                                         ;   less the footprint (1990:01FE to 0207: the add is
-                                        ;   skipped when memtop is above). It is lowered or left
-                                        ;   as it was, never raised.
+                                        ;   skipped when memtop is above). It never ends above the
+                                        ;   value the subtraction left it at (1990:01B6).
 gMovedSeg     dw 0                      ; 1990:0006: data segment DOS gave the relocated copy of the
                                         ;   environment block (1990:00E0). ReserveMemoryBelowVideo
                                         ;   copies that copy to its final place and frees it
@@ -197,22 +197,25 @@ chainDone:
         ret
 CheckMemoryChain ENDP
 
-; 1990:0133: find the top of video memory by writing a marker at B800:0000 and scanning down from
-; A000:0000, then reserve room below it. The argument n is the first word argument of the far call,
-; at bp+6; it is a count of 32 KB steps, not the graphics mode: the code computes (n-1) shifted by
-; 11 paragraphs (1990:01A8 to 1990:01B4), so it reserves (n-1) x 32 KB below the probed top. The
-; only caller passes 3 (src/E07C8.C:188, lcall at 07C8:01F2), a 64 KB reserve. It reaches the
-; chain by allocating a one-paragraph block (INT 21h AH=48h at 1990:01C0) but does not test the
-; carry flag, unlike CheckMemoryChain (jae at 1990:0080): when the allocation fails AX holds DOS's
-; error code (7 or 8), so the MCB type is read at segment 6 or 7; if that byte is not 'M' the
-; one-word-out exit marked below is taken, and if it is 'M' the chain is walked from there. Then
-; it shrinks the last block of the chain, the one whose type is 'Z' (1990:01DE to 1990:01E4, store
-; at 1990:021D; the owner is not checked), points PSP:002C at the moved block's data segment (its MCB
-; plus one, 1990:0256 to 025B), moves any block CheckMemoryChain had relocated and frees it, calls
-; CheckMCB (1990:0271) to merge the freed block into the chain, and stores the new top into
-; PSP:0002 (1990:0264). The result is gVideoTopSeg after the step at 1990:0202 to 0207 (loaded at
-; 1990:0274), not gMemTopSeg; the caller uses it as memtop (src/E07C8.C:188, slots 2 and 3 at
-; E07C8.C:220). The CheckMCB result is overwritten at 1990:0274.
+; 1990:0133: find the top of video memory by writing a marker at B800:0000 and scanning down in
+; 16 KB steps: the first test is A000 minus 16 KB (0x400 paragraphs, 1990:0155 to 015D), the scan
+; goes down while the segment is above 3C00h (1990:015A to 015D), and A000 is used when nothing
+; matches (the probeDone path, 1990:0197 to 01A1). Then reserve room below the top. The argument n
+; is the first word argument of the far call, at bp+6; it is a count of 32 KB steps, not the
+; graphics mode: the code computes (n-1) shifted by 11 paragraphs (1990:01A8 to 1990:01B4), so it
+; reserves (n-1) x 32 KB below the probed top. The only caller passes 3 (src/E07C8.C:188, lcall at
+; 07C8:01F2), a 64 KB reserve. It reaches the chain by allocating a one-paragraph block (INT 21h
+; AH=48h at 1990:01C0) but does not test the carry flag, unlike CheckMemoryChain (jae at
+; 1990:0080): when the allocation fails AX holds DOS's error code (7 or 8), so the MCB type is read
+; at segment 6 or 7; if that byte is not 'M' the one-word-out exit marked below is taken, and if it
+; is 'M' the chain is walked from there. Then it shrinks the last block of the chain, the one whose
+; type is 'Z' (1990:01DE to 1990:01E4, store at 1990:021D; the owner is not checked), and frees the
+; one-paragraph block it allocated (1990:0226 to 0229, INT 21h AH=49h). Only when a block was moved
+; (1990:0231) it points PSP:002C at that moved block's data segment (its MCB plus one, 1990:0256 to
+; 025B), moves the relocated copy and frees it, calls CheckMCB (1990:0271) to merge the freed block
+; into the chain, and stores the new top into PSP:0002 (1990:0264). The result is gVideoTopSeg after
+; the step at 1990:0202 to 0207 (loaded at 1990:0274), not gMemTopSeg; the caller uses it as memtop
+; (src/E07C8.C:188, slots 2 and 3 at E07C8.C:220). The CheckMCB result is overwritten at 1990:0274.
         PUBLIC  ReserveMemoryBelowVideo ; @ 1990:0133
 ReserveMemoryBelowVideo PROC FAR
         push    bp
@@ -359,14 +362,17 @@ retTop:
 ReserveMemoryBelowVideo ENDP
 
 ; 1990:027D: shrink the last MCB of the chain down to gMemTopSeg, then free the one-paragraph
-; block. The value is not the video top: ReserveMemoryBelowVideo stored the end of DOS memory there
-; (1990:01F0), and StartupGame overwrote it with atol(gEnvPtr->number) (07C8:0212) before the exit
-; path calls this function, so Trim uses the stored number, not a value Reserve left. Like
-; ReserveMemoryBelowVideo, it allocates the one-paragraph block (INT 21h AH=48h at 1990:0288)
-; without testing the carry flag: on failure AX is DOS's error code (7 or 8), the MCB type is read
-; at segment 6 or 7 (1990:028B to 028E), and the one-word-out exit marked below is taken when that
-; byte is not 'M'. Called from ShutdownGame at exit for the Tandy mode, when ds:8102 is 1
-; (07C8:060D, src/E07C8.C:343-344).
+; block (1990:02BD to 02C0, INT 21h AH=49h). The name's claim that this value is the video top is a
+; hypothesis [H]: the bytes show only that the last block is set to end at gMemTopSeg (1990:02B0 to
+; 02B9). ReserveMemoryBelowVideo stored the end of DOS memory there (1990:01F0), and StartupGame
+; overwrote it with atol(gEnvPtr->number) (07C8:0212) before this exit path, and nothing in src/ or
+; docs/ shows that string holds a video-buffer segment (its writer is Purpose unknown). It would be
+; confirmed by a writer of ds:8894 whose +0x18 numeric string is a video-buffer top (the value
+; ReserveMemoryBelowVideo computes), or by a docs source. Like ReserveMemoryBelowVideo, it allocates
+; the one-paragraph block (INT 21h AH=48h at 1990:0288) without testing the carry flag: on failure
+; AX is DOS's error code (7 or 8), the MCB type is read at segment 6 or 7 (1990:028B to 028E), and
+; the one-word-out exit marked below is taken when that byte is not 'M'. Called from ShutdownGame at
+; exit for the Tandy mode, when ds:8102 is 1 (07C8:060D, src/E07C8.C:343-344).
         PUBLIC  TrimMemoryToVideo       ; @ 1990:027D
 TrimMemoryToVideo PROC FAR
         push    bp
