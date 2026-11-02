@@ -4,10 +4,10 @@
    (re/units.toml). StartupAlloc (07A9:000A) is this unit's first function; main calls it at
    src/E07C8.C:157, inside `if (g3092)`, after it sets the palette, the text attributes and the
    callback (src/E07C8.C:140 to 152). In code order: it makes the start-up far
-   allocations through MemAlloc (7500 bytes at ds:8DCA, 6000 at ds:F43E, 120 at ds:DCAC the
-   120-byte sound map (game number to driver number), read from the driver file, 4096 at ds:DCFC,
-   1600 at ds:F534 the ITEMRMP buffer; the sizes are the MemAlloc arguments at 07A9:002F, 0046,
-   005D, 0074 and 008B, and whitepaper 4 names only ds:F534 and ds:DCAC), reads the segments of
+   allocations through MemAlloc (7500 bytes at ds:8DCA, 6000 at ds:F43E, a 120-byte sound map at
+   ds:DCAC (game number to driver number, read from the driver file), 4096 at ds:DCFC, 1600 at
+   ds:F534 the ITEMRMP buffer; the sizes are the MemAlloc arguments at 07A9:002F, 0046, 005D,
+   0074 and 008B, and whitepaper 4 names only ds:F534 and ds:DCAC), reads the segments of
    slots 7, 5 and 3 from the 19EC:0002 page/buffer table (ds:FC0C), loads the sound driver
    (177D:000A, 07A9:00D2), passes the slot 7 segment (gSegsFC0C[7], the word at ds:FC1A) and size
    0xFC00 to SetUnpackBuffer (1B82:0217, 07A9:00DB/00DF; 0xFC00 is the unpacker's work-buffer
@@ -28,26 +28,27 @@
    01B1): the icon colour row, the translated copy and the pointer image; when either gate fails the
    branch is skipped (07A9:0161 and 0168, je 0x1bc). The same test is in src/E0D1C.C:478. The bit
    selects the colour-row draw path: in f0D1C_070F (src/E0D1C.C:478 to 484) a record whose flags
-   have the bit is drawn through its icon's colour row (gFn80D2) and f1A29_008B, any other record
-   through f1A29_000F; the same byte is tested for 0x20, 0x08 and 0x10 elsewhere (see Entry14.flags
+   have the bit, when gFBD2 bit 0 is set too, is drawn through its icon's colour row (gFn80D2) and
+   f1A29_008B; any other record, or the same record with gFBD2 bit 0 clear, goes through
+   f1A29_000F. The same byte is tested for 0x20, 0x08 and 0x10 elsewhere (see Entry14.flags
    below). */
 #define ITEM_FLAG_COLOUR_ICON 0x80
 /* the MemAlloc flag that returns a paragraph-aligned, offset-0 block: the bit is defined at
    src/E19BC.C:49 (described at :44-46), the block shape is described at src/E19BC.C:62-66 (the
    block starts at offset 0 of a paragraph, its header at offset 15), and the code is at
-   src/E19BC.C:80 and :94-97 */
+   src/E19BC.C:81 and :95-98 */
 #define MEMALLOC_ALIGNED 0x20
 /* the size SetUnpackBuffer is given for the shared unpack work buffer, 0xFC00 in every video
    mode (07A9:00D7). It is the unpacker's own work-buffer requirement, not the size of slot 7's
    block: the work segment holds the LZW dictionary the format 1 and format 2 decoders build
    (format 1's 3C00h work buffer, docs/design/WHITEPAPER.md:157; the decoders are called with it,
    src/E1B82.C:166 Unpack1 and :175 Unpack2), while the unpacked output goes to the destination
-   segment. Format 1's dictionary stops below its 0x3C00 (1D9A:0327, 0360), inside slot 7's block;
-   format 2's two
-   tables run to 0xFC00 (the offsets stop at 0x7E00, the lengths follow, src/E1D9A.ASM:415-419),
-   past the 0xCB20 block of cases 0 to 3, but no pinned file uses format 2 [H]
-   (src/E1D9A.ASM:419-420). Slot 7's own block is 0xCB20 bytes in cases 0 to 3 (src/E07C8.C:213,
-   222, 231, 237) and 0xFC00 only in case 4 (src/E07C8.C:247) */
+   segment. Format 1's dictionary stops below its 0x3C00 (cmp bp,0x3C00 at 1D9A:0214 and 1D9A:026A,
+   src/E1D9A.ASM:336 and :369), inside slot 7's block; format 2's two tables run to 0xFC00 (the
+   entry offsets at 2 * (code - 0x100), the lengths at +0x7E00, described at src/E1D9A.ASM:424-429
+   and built at :483, :494 and :499), past the 0xCB20 block of cases 0 to 3, but no pinned file
+   uses format 2 [H] (docs/design/WHITEPAPER.md:157). Slot 7's own block is 0xCB20 bytes in cases
+   0 to 3 (src/E07C8.C:213, 222, 231, 237) and 0xFC00 only in case 4 (src/E07C8.C:247) */
 #define UNPACK_BUFFER_SIZE 0xFC00
 /* the gIconsDDE4 index that aliases gDF48, the translated icon image shown as the mouse pointer for
    flagged items (0xDDE4 + 0x59 * 4 = 0xDF48); slots 1..0x58 hold the item icons (src/EOV2.C:290) */
@@ -116,8 +117,8 @@ extern void far *gBufDCFC; /*@ ds:DCFC */  /* start-up far allocation, 4096 byte
                                               bytes (src/EOV3.C:701-704) and compresses it
                                               (CompressLcw, src/EOV3.C:705; the "Map compression
                                               failure" message at :708); UnpackLevelState
-                                              (ovl3:109D, src/EOV3.C:719) unpack4s into it
-                                              (src/EOV3.C:728) and reads it back into gB894
+                                              (ovl3:109D, src/EOV3.C:719) calls Unpack4 to fill
+                                              it (src/EOV3.C:728) and reads it back into gB894
                                               (src/EOV3.C:729-731). E19FC.ASM:40 describes the caller
                                               that fills the block before compression (through
                                               ds:DCFC and ds:DCFE) */
@@ -241,7 +242,7 @@ extern void far *gDF48; /*@ ds:DF48 */  /* the 0x12C-byte buffer LoadItemSheets 
                                            mouse pointer through gIconsDDE4[0x59] (07A9:01B9, 01C6 to
                                            01CE). The allocation's segment word 00C0 is an overlay
                                            segment fixup, a byte offset into TLINK's segment table
-                                           (index times 8, docs/design/WHITEPAPER.md:98), so index 24,
+                                           (index times 8, docs/design/WHITEPAPER.md:100), so index 24,
                                            paragraph 19BC (build/re/eob.json), the segment that holds
                                            MemAlloc at offset 7: the callee is MemAlloc [H]. src/EOV2.C:253
                                            calls it the item description buffer [H] */
@@ -292,7 +293,7 @@ extern void SetMousePointerShape(int hotX, int hotY, void far *icon); /*@ 1BB1:0
    is the registry's and covers only its first part, the five far allocations below; besides them it
    loads the sound driver, the item tables, the font and the ITEMRMP icons, and its last call runs
    the map loop. In code order it makes the start-up far allocations through MemAlloc (7500 at
-   ds:8DCA, 6000 at ds:F43E, 120 at ds:DCAC the 120-byte sound map, 4096 at ds:DCFC, 1600 at
+   ds:8DCA, 6000 at ds:F43E, a 120-byte sound map at ds:DCAC, 4096 at ds:DCFC, 1600 at
    ds:F534 the ITEMRMP buffer; the sizes are the MemAlloc arguments at 07A9:002F, 0046, 005D, 0074
    and 008B, and whitepaper 4 names only ds:F534 and ds:DCAC), reads the segments of slots 7, 5 and
    3 from the 19EC:0002 page/buffer table (ds:FC0C), loads the sound driver (177D:000A, 07A9:00D2),
@@ -316,7 +317,7 @@ extern void SetMousePointerShape(int hotX, int hotY, void far *icon); /*@ 1BB1:0
     /* of the five start-up allocations only this block asks for flag 0x20 (the other four pass 0;
        0x20 also appears in src/E07C8.C:211-247 and in the two Unpack allocations at src/E1B82.C:165
        and :174): the bit is defined at src/E19BC.C:49 (described at :44-46), and src/E19BC.C:62-66
-       (code at :80 and :94-97) turns it into an offset-0 block, the block shape E1B82.C:21-25
+       (code at :81 and :95-98) turns it into an offset-0 block, the block shape E1B82.C:21-25
        describes for the work buffer. Why this block alone gets the flag is Purpose unknown. */
     gBuf8DCA = MemAlloc(7500L, MEMALLOC_ALIGNED);
     gBufF43E = MemAlloc(6000L, 0);
