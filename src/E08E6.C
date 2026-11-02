@@ -19,7 +19,7 @@ struct Obj28 {              /* 28-byte records, 30 of them at ds:8A82 */
     char m07;               /* +7: set from Obj131D's m07 argument. Purpose unknown */
     signed char type;       /* +8 */
     signed char state;      /* +9 */
-    char m0A;               /* +A: written 0xfe then 0xff around the overlay draw (05EA), cleared by 0AB8 */
+    char m0A;               /* +A: written 0xfe then 0xff around the overlay draw (05EA), cleared by 0AB8 (:627) and 05EA (:492) */
     char timer;             /* +B: counted down by Obj0CA6 */
     int hitPoints;          /* +C */
     int count;              /* +E: remaining hit count; 0 or less means dead */
@@ -82,9 +82,10 @@ extern struct Obj28 gObjs[]; /*@ ds:8A82 */
 extern signed char gArg3237[]; /*@ ds:3237 */
 extern signed char gArg3234[]; /*@ ds:3234 */
 extern signed char g323B[]; /*@ ds:323B */
-extern unsigned char gB894[]; /*@ ds:B894 */   /* nine-byte records per object id: +4 (ds:B898) is
-                                                  the frame count in bits 0..2, +5 (ds:B899) an item
-                                                  list head */
+extern unsigned char gB894[]; /*@ ds:B894 */   /* nine-byte records per object id: +4 is the frame
+                                                  count in bits 0..2, +5 an item list head (ds:B898
+                                                  and ds:B899 are id 0's record; id n's record
+                                                  starts at n * 9) */
 extern struct Entry27 gTable1A3B[]; /*@ ds:1A3B */
 extern signed char g194B[]; /*@ ds:194B */
 extern signed char g1790[]; /*@ ds:1790 */
@@ -93,12 +94,13 @@ extern int g31FE[]; /*@ ds:31FE */
 extern int g320E[]; /*@ ds:320E */
 extern char g31F2[]; /*@ ds:31F2 */
 extern char g31F6[]; /*@ ds:31F6 */
-extern int gPartyCell; /*@ ds:FBCA */   /* the party's map cell (src/E177D.C:92): measured by
-                                           Distance (:217, :1010) and read as a direction point
-                                           (:395, :543), and compared against object ids (:467).
-                                           This unit reads it as a cell, not the "sound volume"
-                                           of src/E0ACD.C:55 and src/E122E.C:54. The disagreement
-                                           is resolved in those units' reviews */
+extern int gPartyCell; /*@ ds:FBCA */   /* the party's map cell (src/E177D.C:92): this unit reads
+                                           the word as a cell at :217, :220, :332, :401, :467, :543,
+                                           :547 and :1010. The question is open: src/E0ACD.C:56 and
+                                           src/E122E.C:197 still call it the sound volume, and
+                                           SetSoundVolume (src/E122E.C:212-213) writes
+                                           gPartyCell = volume; the E122E and E0ACD reviews must
+                                           settle it */
 extern char gF442; /*@ ds:F442 */
 extern unsigned long gFC04; /*@ ds:FC04 */
 extern unsigned long gCount849A; /*@ ds:849A */
@@ -786,12 +788,12 @@ second:
     }
     gF518 = gDD10 = 0;
 }
-/* 08E6:0EC3: an object's death: pick a hit value (its frame, or a 1d4 when the frame is 4); when
-   m12 is set, roll 1d2 and on a 1 resolve m12 through CopyItemToFreeSlot and hand it to
-   InsertListItem with the object's id and hit; when m14 is set, resolve m14 the same way with no
-   roll. Then give the party the record's m13 experience, move the object to id 0, shut the game
-   down when its b0 is 0x15, and clear the type-8 objects. Called by 0E48, 0FBE and 1410. `hit` is
-   declared register so it takes SI and `roll` DI, as the original. */
+/* 08E6:0EC3: an object's death: pick `roll` (its frame, or a 1d4 when the frame is 4); when m12
+   is set, roll 1d2 and on a 1 resolve m12 through CopyItemToFreeSlot and hand the item (`hit`) to
+   InsertListItem with the object's id and the roll as its sound argument; when m14 is set, resolve
+   m14 the same way with no roll. Then give the party the record's m13 experience, move the object
+   to id 0, shut the game down when its b0 is 0x15, and clear the type-8 objects. Called by 0E48,
+   0FBE and 1410. `hit` is declared register so it takes SI and `roll` DI, as the original. */
 /*@ 08E6:0EC3 */ void Obj0EC3(struct Obj28 far *obj)
 {
     int roll;
