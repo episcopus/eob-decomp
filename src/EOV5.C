@@ -262,11 +262,12 @@ void PrintTableString(int index, int flag);
         } else {
             sel = Ovl5_0455(2, 3, (void far *)gText7BA6);
         }
-        if (sel == 0) {
+        switch (sel) {
+        case 0:
             Ovl5_0828(6, 0xc, 0x17, 2);
             gFC04 |= 0x4000L;
             break;
-        } else if (sel == 1) {
+        case 1:
             PrintTableString(1, 1);
             gFC04 |= 0x2000L;
             continue;
@@ -274,6 +275,7 @@ void PrintTableString(int index, int flag);
         break;
     }
 }
+
 /*@ ovl5:09C5 stub */ void Ovl5_09C5(void) {}
 /* ovl5:0AB1: returns 1 when some party member (flags bit 0) has m22 == 0xf7, after drawing menu
    strings 0x19 and 0x1a and setting the 0x80000 bit of gFC04; otherwise 0. Called by the panel
@@ -419,7 +421,7 @@ void PrintTableString(int index, int flag);
             }
             switch (sel) {
             case 0:
-                Ovl5_0C9D();
+                HealLoop();
                 gFC04 |= 0x20000L;
                 break;
             case 1:
@@ -507,13 +509,12 @@ void PrintTableString(int index, int flag);
         PrintTableString(0x11, 1);
         for (i = 0; i < 6; i++) {
             for (j = 0; j < 2; j++) {
-                item = gChars[i].m77[j];
-                if (!item)
-                    continue;
-                if (gTable8DD2[item].m02 < 0x33 || gTable8DD2[item].m02 > 0x38) {
-                    gChars[i].m77[j] = 0;
-                    InsertListItem(&gB899[gSoundVolume * 9], gSoundVolume, item,
-                                   g1A1B[gFBCC * 4 + RollDice(1, 2, -1)]);
+                if (item = gChars[i].m77[j]) {
+                    if (gTable8DD2[item].m02 < 0x33 || gTable8DD2[item].m02 > 0x38) {
+                        gChars[i].m77[j] = 0;
+                        InsertListItem(&gB899[gSoundVolume * 9], gSoundVolume, item,
+                                       g1A1B[gFBCC * 4 + RollDice(1, 2, -1)]);
+                    }
                 }
             }
         }

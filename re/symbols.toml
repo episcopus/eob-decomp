@@ -7424,6 +7424,9 @@ unit = "eov5"
 addr = "ovl5:0924"
 size = 161
 evidence = ["ovl", "near", "frame"]
+name = "TemplePanel"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov5_09c5"
@@ -7489,6 +7492,9 @@ unit = "eov5"
 addr = "ovl5:0EB9"
 size = 190
 evidence = ["ovl", "near", "frame"]
+name = "ResurrectPanel"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov5_0f77"
@@ -7526,6 +7532,9 @@ unit = "eov5"
 addr = "ovl5:10A6"
 size = 248
 evidence = ["ovl", "near", "frame"]
+name = "SurrenderPanel"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "eov5_119e"
