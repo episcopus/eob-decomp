@@ -3,7 +3,7 @@
    the object records at ds:8A82 and the 9-byte tile records at ds:B894, clipped through the
    drawing wrappers in src/E082C.C. The unit is still being lifted. */
 
-/*@flags -ml -O -Z */
+/*@flags -ml -O -Z -B */
 
 extern signed char gHead199D[]; /*@ ds:199D */  /* rows of 18 signed heading offsets */
 extern unsigned char gB894[]; /*@ ds:B894 */    /* 9-byte tile records (src/E08E6.C) */
@@ -166,19 +166,19 @@ extern unsigned char gViewBufADB0[]; /*@ ds:ADB0 */  /* the view pixel buffer (t
     for (row = 0; row < height; row++) {
         dst = (unsigned int far *)(gViewBufADB0 + ((y + row) * 0x16 + x) * 2);
         for (col = 0; col < width; col++) {
-            if (x + col < 0 || x + col >= 0x16) {
+            if (x + col >= 0 && x + col < 0x16) {
+                if (*src != 0) {
+                    *dst = *src;
+                    src++;
+                    dst++;
+                } else {
+                    dst++;
+                    src++;
+                }
+            } else {
                 dst++;
                 src++;
-                continue;
             }
-            if (*src == 0) {
-                src++;
-                dst++;
-                continue;
-            }
-            *dst = *src;
-            src++;
-            dst++;
         }
     }
 }
