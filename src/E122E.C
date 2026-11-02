@@ -56,6 +56,10 @@ extern void ResetLevel(void); /*@ 210C:007F */  /* overlay 3 entry, ovl3:19F7 */
 extern void fOvl4_2039(void); /*@ 2116:0043 */  /* overlay 4 entry */
 extern void LoadScreenImage(char far *name, char far *extra, int srcKind, int dstKind, int mode); /*@ 082C:051B */
 extern char gText5BA1[]; /*@ ds:5BA1 */        /* the "INVENT" screen name (122E:1AAB) */
+extern void LockHidePointer(void); /*@ 1BBE:0307 */
+extern void LockShowPointer(void); /*@ 1BBE:0332 */
+extern int gTextAttr1; /*@ ds:811D */          /* the first text attribute (src/E07C8.C) */
+extern int gTextAttr2; /*@ ds:811B */          /* the second text attribute (src/E07C8.C) */
 
 /* The 52-byte click-region records at ds:E06B, one chain per object kind (122E:0055 walks `next`).
    `kind` indexes gRectKinds; bit 0 of `flags` mirrors `x` about the 176-pixel screen width. */
@@ -692,7 +696,35 @@ void f122E_1DA8(int a, int b);  /* forward: 1DA8 comes after its callers */
 }
 /*@ 122E:0D57 stub */ void f122E_0D57(void) {}
 /*@ 122E:0E9B stub */ void f122E_0E9B(void) {}
-/*@ 122E:0FDC stub */ void f122E_0FDC(void) {}
+/* 122E:0FDC: the show-text opcode. It skips the script to the text's NUL, then reads two bytes
+   into a 5-byte control-code buffer initialised from the compiler template at ds:5A48, hides the
+   pointer, draws the original text, the buffer, the buffer with the two saved text attributes,
+   and a newline, then shows the pointer. Returns the bytes read. */
+/*@ 122E:0FDC draft */ long ShowTextOp(char far *script)
+{
+    char buf[5] = { 6, 0x21, 2, 0x21, 0 };
+    char far *start = script;
+    char far *text = script;
+    int attr1;
+    int attr2;
+
+    while (*script != 0)
+        script++;
+    script++;
+    attr1 = gTextAttr1;
+    attr2 = gTextAttr2;
+    buf[1] = *script++;
+    buf[3] = *script++;
+    LockHidePointer();
+    DrawText(buf);
+    DrawText(text);
+    buf[1] = attr1;
+    buf[3] = attr2;
+    DrawText(buf);
+    DrawText("\r");
+    LockShowPointer();
+    return (long)(script - start);
+}
 /*@ 122E:1097 stub */ void f122E_1097(void) {}
 
 /* 122E:11E8: sub-opcode that clears one bit of a 32-bit action mask: 0xFFEF clears the bit in the

@@ -4051,6 +4051,8 @@ unit = "e122e"
 addr = "122E:0FDC"
 size = 187
 evidence = ["frame"]
+notes = "draft 2026-11-01: the body is written from the disassembly (the skip to the text NUL, the two attribute saves, the two control bytes read into buf[1] and buf[3], the LockHidePointer/LockShowPointer bracket and the four DrawText calls). It does not match because of the local layout: the original's 5-byte buffer sits at the bottom of the frame (122E:0FE2 `lea ax,[bp-0x12]`, the F_SCOPY destination), with text at bp-0xc, start at bp-8, attr2 at bp-4 and attr1 at bp-2; our -ml -O -Z build puts the buffer at bp-6 (first difference 122E:0009). The buffer must be declared first for the F_SCOPY to stay at the top, but TCC then does not push it to the bottom. Tried only the current order so far."
+name = "ShowTextOp"
 
 [[function]]
 id = "e122e_1097"

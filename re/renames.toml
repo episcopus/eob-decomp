@@ -1368,3 +1368,12 @@ new = "LoadLevelOp"
 kind = "function"
 why = "122E:1AAB is the load-level opcode: it reads a byte, a word (gSoundVolume) and a page byte (gFBCC), resets and saves the level through the ovl3 entries, loads the INVENT screen (gText5BA1), runs ovl4:2039, sets the sound volume and stops the script driver (gA9EC)"
 date = "2026-11-01"
+
+[[rename]]
+id = "122E:0FDC=ShowTextOp"
+addr = "122E:0FDC"
+old = "f122E_0FDC"
+new = "ShowTextOp"
+kind = "function"
+why = "122E:0FDC is the show-text opcode: it skips the script to the text's NUL, reads two control bytes into a local 5-byte buffer copied from ds:5A48, hides the pointer, draws the text and the buffer with the two text attributes, then shows the pointer"
+date = "2026-11-01"
