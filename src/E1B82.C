@@ -86,9 +86,9 @@ void Unpack(char far *src, void far *dst);
      1 and 2: Unpack1/Unpack2 get a 0x3C00/0xFC00 byte work buffer, the shared one at gBufSeg when
               gBufSize is large enough, otherwise a MemAlloc'd block freed after the call;
      4: Unpack reads the long unpacked size at block offset +2 and passes it on as Unpack4's length
-        (the decoder uses only its low word, 1D9A:003B/0043), skips the u16 at block offset +6 (the
-        palette bytes the format header carries before the data, WHITEPAPER 4.2 (WHITEPAPER.md:151))
-        and calls Unpack4 with the data at block offset +8+skipLen.
+        (the decoder uses only its low word, 1D9A:003B/0043), skips the u16 byte count at block offset
+        +6 (WHITEPAPER 4.2 (WHITEPAPER.md:151) calls it palette bytes [H]; no pinned file shows a
+        non-zero value) and calls Unpack4 with the data at block offset +8+skipLen.
    The original sign-extends the format byte (cbw; cwd) and switches on the int in AX. The C++ front
    end (-P) emits those bytes; the C front end folds the extension away (re/symbols.toml note on
    1B82:00C7). The case bodies follow the source order 0, 3, 1, 2, 4 (1B82:00E7, 010D, 011E, 0176,
@@ -129,8 +129,9 @@ void Unpack(char far *src, void far *dst);
         src += 2;                   /* block offset +2: skip the format byte and the pad byte */
         size = *(long far *)src;    /* block offset +2: the 32-bit unpacked size */
         src += 4;
-        /* block offset +6: the u16 palette byte count, WHITEPAPER 4.2 (WHITEPAPER.md:151), 0 in all
-           131 format-4 entries of the PAK files */
+        /* block offset +6: a u16 byte count that Unpack skips; 0 in all 131 format-4 entries of the
+           PAK files. WHITEPAPER 4.2 (WHITEPAPER.md:151) calls it palette bytes [H]: no pinned file
+           shows a non-zero value. */
         skipLen = *(unsigned far *)src;
         src += 2;
         src += skipLen;
