@@ -1,25 +1,25 @@
 /* Unit at overlay 4 of EOB.EXE (8259 bytes, 18 functions): the first-person view renderer. It
    draws the map objects, walls and creature sprites of the current page into the view region from
    the object records at ds:8A82 and the 9-byte tile records at ds:B894, clipped through the
-   drawing wrappers in src/E082C.C. The unit is still being lifted. */
+   drawing wrappers in src/E082C.C. */
 
 /*@flags -ml -O -Z -v */
 
 extern signed char gHead199D[]; /*@ ds:199D */  /* rows of 18 signed heading offsets */
 extern signed char gB894[]; /*@ ds:B894 */    /* 9-byte tile records (src/E08E6.C) */
 extern signed char far *gEF6A[]; /*@ ds:EF6A */ /* 18 far pointers into gB894 (src/E1414.C) */
-extern signed char gA9C6; /*@ ds:A9C6 */        /* offset into the gEF6A target (src/E0ACD.C) */
+extern signed char gA9C6; /*@ ds:A9C6 */        /* an offset added into gEF6A's targets (src/E1414.C:101; src/E0ACD.C:78, src/E122E.C:99 differ) */
 extern signed char g194B[]; /*@ ds:194B */      /* per-slot byte flags (src/E08E6.C) */
-extern signed char g1879[]; /*@ ds:1879 */      /* per-object count-1 (this unit) */
+extern signed char gTable1879[]; /*@ ds:1879 */      /* per-object count-1 (this unit) */
 extern int gAngleA9C8[]; /*@ ds:A9C8 */         /* 18 heading words, the masked sum (this unit) */
 extern int gViewSlots[]; /*@ ds:DCB2 */         /* 18 {left,right} view-slot pairs (this unit) */
 
 /* ovl4:0000: for each of the 18 view slots, compute a heading word from `base` plus the slot's
    signed offset in the 18-byte row `row` of ds:199D (row is scaled by 18 first), masked to 10 bits,
    store it in the heading table at ds:A9C8, point the slot's ds:EF6A entry at the 9-byte tile
-   record for that heading in ds:B894, and reset the slot to -1 in both halves of the view-slot
-   array at ds:DCB2. Called by Ovl4_044B at ovl4:04D3. Purpose unknown: the meaning of `row` and of
-   the 18 slots. */
+   record for that heading in ds:B894, and reset all 36 words of the view-slot array at ds:DCB2 to
+   -1 (word i and word i + 18 for each i < 18, i.e. both words of all 18 {left, right} pairs).
+   Called by Ovl4_044B at ovl4:04D3. Purpose unknown: the meaning of `row` and of the 18 slots. */
 /*@ ovl4:0000 */ void InitViewSlots(int base, int row)
 {
     int heading;
@@ -36,9 +36,10 @@ extern int gViewSlots[]; /*@ ds:DCB2 */         /* 18 {left,right} view-slot pai
 extern void SetRegionExtents(int region, int left, int top, int width, int height); /*@ 1DE7:02FE */
 
 /* ovl4:0066: wrapper for SetRegionExtents: builds a region record from a box whose left and right
-   edges are in 8-pixel columns and whose top and bottom are in units of 8 pixel rows (top is
-   scaled by 8, height is (bottom - top) * 8). Called by Ovl4_0097 at ovl4:0211 and Ovl4_1411 at
-   ovl4:19A0 to fit the view region to the visible tile span. */
+   edges are in 8-pixel columns (so the width, right - left, is in columns too and is not scaled)
+   and whose top and bottom are in units of 8 pixel rows (top is scaled by 8, height is
+   (bottom - top) * 8). Called by ComputeViewSpan at ovl4:0211 and Ovl4_1411 at ovl4:19A0 to fit the
+   view region to the visible tile span. */
 /*@ ovl4:0066 */ void SetRegionRect(int region, int left, int top, int right, int bottom)
 {
     SetRegionExtents(region, left, top * 8, right - left, (bottom - top) * 8);
@@ -55,18 +56,18 @@ extern signed char g6CC6[]; /*@ ds:6CC6 */   /* per slot,i signed {left,right} b
 #define TILE_FLAG 8         /* ds:194B bit 3: the record carries ds:6CC6 bounds, not an adjustment */
 
 /* ovl4:0097: computes the visible left and right columns of one view slot and fits region `region`
-   to them. `slot` indexes the view slots and gEF6A; `left`/`right` receive the span (2-pixel
-   columns). When the slot's cached pair in gViewSlots (at ds:DCB2, two words per slot) is not -1 it
-   returns that pair. Otherwise it starts at 0..VIEW_RIGHT and walks the VIEW_SLOTS tile records
-   gEF6A[i][gA9C6]: a record whose ds:194B heading flag has bit 3 clear contributes its ds:6B82
-   column adjustment (a positive value pulls *right left, a negative one pulls *left right; an
-   adjustment of ADJUST_SKIP on a record with a zero ds:1879 count is ignored and ADJUST_EMPTY
-   forces an empty span), a record whose bit 3 is set narrows the span with its ds:6CC6
-   {left,right} bounds; the walk stops when *right falls below *left. The pair is cached back into
-   gViewSlots and SetRegionRect fits `region` to (left, right). Called by Ovl4_1E18 at ovl4:1E23.
-   Purpose unknown: what the records and adjustments mean.
-   QUIRK ovl4:0097: the local `j` is used as the pair index before the loop and as the ds:6CC6
-   column index inside it; both are `2 * slot`, so the value is reused rather than recomputed. */
+   to them. `slot` indexes the view slots and gEF6A; `left`/`right` receive the span in 8-pixel
+   columns (their two words are passed straight to SetRegionRect, which takes 8-pixel columns). When
+   the slot's cached pair in gViewSlots (at ds:DCB2, whose 36 words are 18 {left, right} pairs) is
+   not -1 it returns that pair. Otherwise it starts at 0..VIEW_RIGHT and walks the VIEW_SLOTS tile
+   records gEF6A[i][gA9C6]: a record whose ds:194B heading flag has bit 3 clear contributes its
+   ds:6B82 column adjustment (a positive value pulls *right left, a negative one pulls *left right);
+   the record is ignored when its ds:1879 count is zero or its adjustment is ADJUST_SKIP, and an
+   adjustment of ADJUST_EMPTY forces an empty span. A record whose bit 3 is set narrows the span
+   with its ds:6CC6 {left,right} bounds; the walk stops when *right falls below *left. The pair is
+   cached back into gViewSlots and SetRegionRect fits `region` to (left, right). Called by
+   DrawViewSlots at ovl4:1E3C and Ovl4_0AD0 at ovl4:0C41 and ovl4:0CFB. Purpose unknown: what the
+   records and adjustments mean. */
 /*@ ovl4:0097 */ void ComputeViewSpan(int slot, int far *left, int far *right, int region)
 {
     int i;
@@ -88,7 +89,7 @@ extern signed char g6CC6[]; /*@ ds:6CC6 */   /* per slot,i signed {left,right} b
             heading = gEF6A[i][gA9C6];
             if (!(g194B[heading] & TILE_FLAG)) {
                 adjust = g6B82[slot + i];
-                if (g1879[heading] == 0 || adjust == ADJUST_SKIP)
+                if (gTable1879[heading] == 0 || adjust == ADJUST_SKIP)
                     continue;
                 if (adjust == ADJUST_EMPTY) {
                     *left = VIEW_RIGHT;
@@ -153,11 +154,10 @@ extern signed char g1A09[]; /*@ ds:1A09 */       /* per-object index into ds:6F4
 }
 
 extern unsigned char far *gBufF43E; /*@ ds:F43E */   /* 6000-byte start-up buffer (src/E07A9.C) */
-extern signed char g1879[]; /*@ ds:1879 */           /* per-object count-1 (this unit) */
 extern unsigned char gViewBufADB0[]; /*@ ds:ADB0 */  /* the view pixel buffer (this unit) */
 
 /* ovl4:02A5: copies a rectangle of word pixels out of the page buffer pointed to by ds:F43E into
-   the view buffer at ds:ADB0. `src` starts at (g1879[page] - 1) * 0x35E + x2 * 2 + 0x294 in
+   the view buffer at ds:ADB0. `src` starts at (gTable1879[page] - 1) * 0x35E + x2 * 2 + 0x294 in
    ds:F43E; each row walks `width` words and each of the `height` rows advances the destination by
    a 0x16-word row. Words outside columns 0..0x15 are skipped, and only nonzero source words are
    stored. Called by Ovl4_044B at ovl4:04B4 and ovl4:04CD. Purpose unknown: what the buffers hold.
@@ -170,9 +170,9 @@ extern unsigned char gViewBufADB0[]; /*@ ds:ADB0 */  /* the view pixel buffer (t
     int row;
     int col;
 
-    if (g1879[page] == 0)
+    if (gTable1879[page] == 0)
         return;
-    src = (unsigned int far *)(gBufF43E + (g1879[page] - 1) * 0x35E + x2 * 2);
+    src = (unsigned int far *)(gBufF43E + (gTable1879[page] - 1) * 0x35E + x2 * 2);
     src += 0x14A;
     for (row = 0; row < height; row++) {
         dst = (unsigned int far *)(gViewBufADB0 + ((y + row) * 0x16 + x) * 2);
@@ -196,7 +196,7 @@ extern unsigned char gViewBufADB0[]; /*@ ds:ADB0 */  /* the view pixel buffer (t
 
 /* ovl4:036A: flips bit 0x4000 of a rectangle of word pixels in the view buffer at ds:ADB0, reading
    from the page buffer at ds:F43E. The far pointer `src` starts at
-   (g1879[page] - 1) * 0x35E + x2 * 2 + 0x294; for each of the `height` rows and `width` columns it
+   (gTable1879[page] - 1) * 0x35E + x2 * 2 + 0x294; for each of the `height` rows and `width` columns it
    reads the word at (src + width * row)[width - 1 - col], skips it when zero and stores it to
    ds:ADB0[(y + row) * 0x16 + x + col] with bit 0x4000 toggled, skipping columns outside 0..0x15.
    Called by Ovl4_044B at ovl4:04B4 and ovl4:04CD. Purpose unknown: what the bit marks. */
@@ -207,9 +207,9 @@ extern unsigned char gViewBufADB0[]; /*@ ds:ADB0 */  /* the view pixel buffer (t
     int col;
     int pixel;
 
-    if (g1879[page] == 0)
+    if (gTable1879[page] == 0)
         return;
-    src = (unsigned int far *)(gBufF43E + (g1879[page] - 1) * 0x35E + x2 * 2);
+    src = (unsigned int far *)(gBufF43E + (gTable1879[page] - 1) * 0x35E + x2 * 2);
     src += 0x14A;
     for (row = 0; row < height; row++) {
         for (col = 0; col < width; col++) {
@@ -227,10 +227,10 @@ extern unsigned char gViewBufADB0[]; /*@ ds:ADB0 */  /* the view pixel buffer (t
     }
 }
 
-extern signed char g194B[]; /*@ ds:194B */  /* per-slot byte flags (src/E08E6.C) */
-
-/* ovl4:042C: returns 1 when `slot` is nonzero and the bit 3 of its ds:194B flag byte is clear
-   (the slot is a live map object), else 0. Called by Ovl4_044B at ovl4:0563 and ovl4:05D8. */
+/* ovl4:042C: returns 1 when `slot` is nonzero and bit 3 of its ds:194B flag byte is clear, else 0.
+   The callers use it to choose between the slot's own ds:EF6A record and a second record; bit 3
+   itself is read with other meanings in src/E1414.C:321 and src/EOV3.C:1010. Called by Ovl4_044B
+   at ovl4:0563 and ovl4:05D8. */
 /*@ ovl4:042C */ int IsSlotLive(int slot)
 {
     return slot != 0 && !(g194B[slot] & 8);
@@ -251,7 +251,7 @@ extern int gF4BC; /*@ ds:F4BC */             /* the cell and page parity (this u
    (gEF6A[i] at one of the three offsets) and, when the byte is a live slot (or a nonzero record,
    for the ones that are always drawn), copies or toggles its column (x, y, width, height, source x2)
    from the page buffer into the view buffer. The records with a ds:194B bit 3 also pick a second
-   record and draw whichever of the two the flag selects. Called by DrawViewFrame at ovl4:1F6B.
+   record and draw whichever of the two the flag selects. Called by DrawViewFrame at ovl4:1F5D.
    Purpose unknown: what the tile records and the many rectangles are. */
 /*@ ovl4:044B */ void Ovl4_044B(int base, int row)
 {
@@ -397,10 +397,16 @@ extern void DrawRegion000F(int mode, void far *src, int x, int y, int region); /
    is 8, from g19E5[slot] and g6FA8[g1A09[slot]] with sprite 0) and is nudged by ds:6FAE at
    `field & 7` and `(field >> 1) & 7`; the cell itself is ds:EC9A[g181F[icon]][frame], its byte +2
    (in 8-pixel units) and byte +1 shift the position. Items whose kind is 8 or below 4 are drawn;
-   the rest are skipped. The tile's ds:194B flags and its ds:1879 count gate the slot; bit 3 of the
-   flags also recomputes the span of ds:6F86[slot] and pulls the object up 4 pixels. After the list,
-   when that span slot was set, the slot's own span is recomputed. Called by DrawViewSlots when the
-   tile record's word +5 is nonzero. Purpose unknown: what the tables and the object are. */
+   the rest are skipped. The tile's ds:194B flags (forced to 0x80 when slot is 0x10) and its ds:1879
+   count gate the slot: it returns when the count is nonzero and bit 7 of the flags is clear, so it
+   proceeds when the count is zero or bit 7 is set. Bit 3 of the flags, when sprite < 2 and frame is
+   nonzero, also recomputes the span of the object's ds:6F86 span slot and pulls the object up 4
+   pixels. After each item, when that span slot was set, the slot's own span is recomputed (the
+   second call is inside the loop). Called by DrawViewSlots when the tile record's word +5 is
+   nonzero. Purpose unknown: what the tables and the object are.
+   QUIRK ovl4:0AD0: `spanSlot` is set only inside the drawn-item branch; a first item that is
+   skipped leaves the check after the item reading this slot's indeterminate stack value, and a
+   later skipped item reads the previous item's value. The original reads the same stack slot. */
 /*@ ovl4:0AD0 */ void Ovl4_0AD0(int slot, int field)
 {
     int x;
@@ -424,7 +430,7 @@ extern void DrawRegion000F(int mode, void far *src, int x, int y, int region); /
         flags = 0x80;
     else
         flags = g194B[tile];
-    if (g1879[tile] != 0 && !(flags & 0x80))
+    if (gTable1879[tile] != 0 && !(flags & 0x80))
         return;
 
     field = gItems[field].m06;
@@ -523,8 +529,8 @@ extern void far *gBufDCFC; /*@ ds:DCFC */    /* start-up far allocation, 4096 by
 extern int gGraphicsChoice; /*@ ds:8102 */             /* the video mode/format (src/E07A9.C) */
 extern int gPartyCell; /*@ ds:FBCA */        /* the current map cell id (src/E08E6.C) */
 extern void (far *gFn80D2)(char far *map); /*@ ds:80D2 */  /* the far colour-table callback (src/E07A9.C) */
-extern char g1CD3[]; /*@ ds:1CD3 */
-extern char g1CE3[]; /*@ ds:1CE3 */
+extern char g1CD3[]; /*@ ds:1CD3 */  /* a 16-byte colour row the colour callback ds:80D2 is passed (src/E08E6.C:110, :752) */
+extern char g1CE3[]; /*@ ds:1CE3 */  /* the 16-byte colour row ds:80D2 is passed when gGraphicsChoice is 0 (src/E08E6.C:111, :750) */
 extern void BlitSpriteEga(void far *src, void far *dst); /*@ 17A6:1715 */
 extern void BlitSpriteCga(void far *src, void far *dst); /*@ 17A6:11CD */
 extern void BlitSpriteDefault(void far *src, void far *dst); /*@ 17A6:0FFA */
@@ -664,16 +670,17 @@ struct ViewWallRec {        /* the 0x34-byte wall records at ds:E06A this unit w
 extern struct RectKind far *gRectKinds[]; /*@ ds:EFD4 */  /* per-cell far size records (src/E122E.C) */
 extern struct ViewWallRec gViewWalls[]; /*@ ds:E06A */
 
-/* ovl4:1091: draws the wall faces of one view slot. The slot has two faces (ds:7018[slot*2] and
-   ds:7018[slot*2+1]); each face, when its far pointer is set, starts a chain of 0x34-byte wall
-   records at ds:E06A. The chain head is gTable18BF of the byte the face's first byte selects in the
-   slot's ds:EF6A tile record, and `next` (which is read after the index is decremented) walks it.
-   The face's signed offset ds:70A8[face] picks the cell within each record (b = |offset| - 1) and
-   its sign picks the DrawRegion wrapper: a nonnegative offset draws the cell at its x, a negative
-   one mirrors it about the 0xb0-pixel screen. The second face (slot*2) also reads the record's
-   flags: bit 0 (or bit 1 with the parity ds:F4BC) reflects the offset, and bit 2 adds either
-   g1D61[(slot*5+4)*2] or ds:70CC[slot] to x. Called by DrawViewSlots at ovl4:1E2E. Purpose unknown:
-   what the wall faces and the ds:E06A records are. */
+/* ovl4:1091: draws the wall faces of one view slot. The slot's two faces are ds:7018[slot*2+1],
+   drawn first (ovl4:0693), and ds:7018[slot*2], drawn second (ovl4:0715); each face, when its far
+   pointer is set, starts a chain of 0x34-byte wall records at ds:E06A. The chain head is
+   gTable18BF of the byte the face's first byte selects in the slot's ds:EF6A tile record, and
+   `next` (which is read after the index is decremented) walks it. The face's signed offset
+   ds:70A8[face] picks the cell within each record (b = |offset| - 1) and its sign picks the
+   DrawRegion wrapper: a nonnegative offset draws the cell at its x, a negative one mirrors it about
+   the 0xb0-pixel screen. The face at slot*2 (drawn second) also reads the record's flags: bit 0 (or
+   bit 1 with the parity ds:F4BC) reflects the offset, and bit 2 adds either g1D61[(slot*5+4)*2] or
+   ds:70CC[slot] to x. Called by DrawViewSlots at ovl4:1E50. Purpose unknown: what the wall faces
+   and the ds:E06A records are. */
 /*@ ovl4:1091 */ void Ovl4_1091(int slot)
 {
     signed char offA;
@@ -756,10 +763,10 @@ struct SlotPos {
     unsigned char x;            /* +4 */
     unsigned char y;            /* +5 */
 };
-extern struct SlotSize far *gFB5E[]; /*@ ds:FB5E */  /* per column, a far size record (src/EOV3.C) */
+extern struct SlotSize far *gFB5E[]; /*@ ds:FB5E */  /* per column, a far size record (src/E0EF3.C:031A; src/EOV2.C:155 and src/EOV3.C:143 declare it long, but the ->width use here needs a far pointer) */
 extern struct SlotPos gA99C[]; /*@ ds:A99C */
-extern int gF1; /*@ ds:00F1 */               /* a region top (src/EOV5.C) */
-extern int gF5; /*@ ds:00F5 */               /* a region height (this unit) */
+extern int gF1; /*@ ds:00F1 */               /* the view region's top (src/E0EF3.C:395) */
+extern int gF5; /*@ ds:00F5 */               /* the view region's height (src/E0EF3.C:397) */
 extern signed char g716E[]; /*@ ds:716E */   /* per heading, a column base (this unit) */
 extern signed char g70F0[]; /*@ ds:70F0 */   /* per index y base, action 1..3 (this unit) */
 extern signed char g70F4[]; /*@ ds:70F4 */   /* per index y base, action 4..6 (this unit) */
@@ -779,19 +786,22 @@ extern signed char g71A2[]; /*@ ds:71A2 */   /* per index nudge f (this unit) */
 
 #define NO_RECORD -1        /* a ds:18BF byte that means "this heading has no size record" */
 
-/* ovl4:1411: draws the wall face(s) one view slot shows for the current action (ds:FBC8). It selects the
-   slot's size record gFB5E[col] (col = g716E[heading] + 2 - g1A09[slot]) and its x base
-   g1D61[(slot*5+4)*2]; unless the action is 7..9 it first fits region 5 to the column extent. For
-   actions 1..3 and 12 it draws one region at the record with a y base from ds:70F0/ds:7102 nudged by
-   ds:718E/ds:7192 when the heading is below 0x1e; 4..6 draws the record twice (region 000F and
-   004D, mirrored) at a y base ds:70F4 and fits the region to ds:7106/ds:7108, then redraws region 5
-   at the column extent; 7..9 draws gFB5E[col+3] first, then fits the column extent and draws the
-   record at y base ds:70F8; 10..11 draws gFB5E[col] and gFB5E[col+3] at y bases ds:70FC/ds:70FF
-   with a nudge from ds:719E/ds:71A2. Every case, when ds:18BF of the heading is NO_RECORD (0xff),
-   also draws the ds:A99C[col] position record, which needs its own x and y. Finally SetRegionRect
-   fits region 5 to the visible span. Called by DrawViewSlots at ovl4:1E2E when the slot is below 15
-   and the record's ds:194B bit 3 is set. Purpose unknown: what the actions, the size records and the
-   nudges mean, and what the 0x1e heading threshold selects.
+/* ovl4:1411: draws the wall face(s) one view slot shows for the current action (ds:FBC8). It selects
+   the slot's size record gFB5E[col] (col = g716E[heading] + 2 - g1A09[slot]) and its x base
+   g1D61[(slot*5+4)*2]; unless the action is 7..9 it first fits region 5 to the column extent
+   (SetRegionColumnExtent). Actions 1..3 and 12 draw the record once, at a y base from ds:70F0 (12:
+   ds:7102), nudged below heading 0x1e by (heading - ds:714E[heading]) * ds:718E and at or above it by
+   ds:7192 with no heading term. Actions 4..6 draw the record twice (region 000F and 004D, mirrored)
+   at y base ds:70F4, with a y shift from ds:7196 below 0x1e and ds:719A at or above, and fit region 5
+   once (ovl4:0852) to ds:7106/ds:7108 shifted right 3 and clamped to gViewColLeft/gViewColRight,
+   with gF1/gF5. Actions 7..9 draw gFB5E[col+3] first, then fit the column extent and draw the record
+   at y base ds:70F8, with the same nudge pair as 1..3. Actions 10..11 draw gFB5E[col] and
+   gFB5E[col+3] at y bases ds:70FC/ds:70FF with a nudge from ds:719E/ds:71A2. Every case, when
+   ds:18BF of the heading is NO_RECORD (0xff), also draws the ds:A99C[col] position record, which
+   needs its own x and y. Finally SetRegionRect (ovl4:19A0) fits region 5 to the visible span for
+   every case. Called by DrawViewSlots at ovl4:1EA2 when the slot is below 15 and the record's
+   ds:194B bit 3 is set. Purpose unknown: what the actions, the size records and the nudges mean, and
+   what the 0x1e heading threshold selects.
    QUIRK ovl4:1411: in cases 10 and 11 the slot parameter is dead and the compiler reuses its stack
    slot for the case's y nudge, so `slot` is reassigned there and no longer holds the slot number. */
 /*@ ovl4:1411 */ void Ovl4_1411(int slot)
@@ -912,7 +922,7 @@ struct DDRec {
     char pad01;
     int m02;                  /* +02 */
     int m04;                  /* +04: the slot heading the record belongs to */
-    char m06;                 /* +06: low two bits index ds:7246 and ds:7262 */
+    char m06;                 /* +06: its low two bits index ds:7246; ds:7262 is indexed by the whole byte (m07 * 4 + m06) */
     signed char m07;          /* +07: the page the record is seen from */
     int m08;                  /* +08: indexes the ds:8DD0 item records */
     char m0A;                 /* +0A: row in the ds:F2F8 cell table */
@@ -936,7 +946,7 @@ extern void far *gThrownIcons[][4]; /*@ ds:F2F8 */  /* far sprite cells, four pe
 #define NO_DD_ROW -1
 
 /* ovl4:19C4: draws the map objects whose ds:DD2C record is seen from the current page. Only when
-   g1879[tile] is nonzero and g194B[tile] bit 7 is clear does it run (tile is the slot's gEF6A
+   gTable1879[tile] is nonzero and g194B[tile] bit 7 is clear does it run (tile is the slot's gEF6A
    record byte, as in Ovl4_0D1B). It scans the ten 0x12-byte ds:DD2C records and, for each whose
    byte +0 is set and word +4 equals the slot's heading (gAngleA9C8[slot]), puts its far pointer in
    the list slot g7246[gFBCC * 5 + (record +6 & 3)]. Each non-empty slot picks a cell from the
@@ -944,15 +954,18 @@ extern void far *gThrownIcons[][4]; /*@ ds:F2F8 */  /* far sprite cells, four pe
    y from ds:71EE selected by the sprite base ds:1A2B[gFBCC * 4 + (+6 & 3)] and the frame ds:71FE:
    a record whose byte +0 is 1 picks the ds:F2F8 row ds:1D07[kind + side * 0x2d] (kind is the
    ds:8DD0 item icon through ds:181F, side -1 when the record +7 matches neither the page nor the
-   page xor 2) and shifts x by ds:725E[frame] when the cell +2 modulo 8 matches ds:725A[frame];
+   page xor 2) and shifts x by ds:725E[frame] when the sign-extended cell +2 byte matches
+   ds:725A[frame];
    any other record uses the row byte +0xA directly and, when its +0xC has bit 6, recomputes x from
    ds:1D61 and y from the cell. A wrapper of 0 draws with DrawRegion000F, any other with
    DrawRegion004D. Called by DrawViewSlots for every slot. Purpose unknown: what the records, the
    sides and the wrappers mean. Three source forms TCC pins down: the ds:194B bit 7 test is written
-   `g1879[tile] == 0 || (g194B[tile] & 0x80)` with an empty then, the only form that tests the byte
+   `gTable1879[tile] == 0 || (g194B[tile] & 0x80)` with an empty then, the only form that tests the byte
    without sign-extending it; the frame guard is `if (frame >= 0) { body }` (an `if (frame < 0)
    continue;` gives the same bytes but reloads ES before the record check, a -Z difference); and the
-   cell +2 test is a raw `<< 3 >> 3` (a `% 8` compiles to idiv). */
+   cell +2 test is a raw `<< 3 >> 3`, which for a signed char in a 16-bit int leaves the value
+   unchanged, so it just compares the sign-extended byte with ds:725A[frame] (a `% 8` would compile
+   to idiv). */
 /*@ ovl4:19C4 */ void Ovl4_19C4(int slot)
 {
     int tile;
@@ -972,7 +985,7 @@ extern void far *gThrownIcons[][4]; /*@ ds:F2F8 */  /* far sprite cells, four pe
 
     heading = gAngleA9C8[slot];
     tile = gB894[heading * 9 + gA9C6];
-    if (g1879[tile] == 0 || (g194B[tile] & 0x80))
+    if (gTable1879[tile] == 0 || (g194B[tile] & 0x80))
         ;
     else
         return;
@@ -1042,9 +1055,9 @@ extern signed char far gCellBytes[]; /*@ 20AB:0000 */  /* the cell bytes drawn h
    counted back from 2 (a slot with a larger ds:1A09 draws fewer). Each column i uses the far
    sprite cell ds:F4BE[(col * 2 + i) ^ ds:FB78] and reads its cells from the far bytes at
    20AB:0000, row (col*2+i) * CELL_ROW_BYTES, two bytes a cell: byte 0 shifts x and byte 1 shifts y,
-   on top of the per-column base ds:19E5[slot] - ds:7272[col] (x) and ds:7275[col] (y). Column 0 is
-   nudged by -4 on both axes. Called by Ovl4_1E18 at ovl4:1E2A when the slot's heading is 0x34.
-   Purpose unknown: what the object is and what the 20AB:0000 bytes mean. */
+   on top of the per-column base ds:19E5[slot] - ds:7272[col] (x) and ds:7275[col] (y). The first
+   cell (idx 0) is nudged by -4 on both axes. Called by DrawViewSlots at ovl4:1ECB when the slot's
+   heading is 0x34. Purpose unknown: what the object is and what the 20AB:0000 bytes mean. */
 /*@ ovl4:1D20 */ void Ovl4_1D20(int slot)
 {
     int col;
@@ -1080,14 +1093,13 @@ extern signed char far gCellBytes[]; /*@ 20AB:0000 */  /* the cell bytes drawn h
 }
 
 extern signed char g7278[]; /*@ ds:7278 */     /* per-view-slot byte (this unit) */
-extern signed char gA9C6; /*@ ds:A9C6 */       /* offset into the gEF6A target (src/E0ACD.C) */
 
 /* ovl4:1E18: walks the view slots from `start` to 17. For each, ds:7278 gives the slot number,
-   Ovl4_0097 computes the visible column span into ds:FE3E/ds:FE40 and the slot is drawn only if
-   the span is not empty: Ovl4_1091 draws the slot, Ovl4_0AD0 draws the sprite at word +5 of the
+   ComputeViewSpan computes the visible column span into ds:FE3E/ds:FE40 and the slot is drawn only
+   if the span is not empty: Ovl4_1091 draws the slot, Ovl4_0AD0 draws the sprite at word +5 of the
    slot's ds:EF6A tile record, and for slots below 15 Ovl4_1411 (when ds:194B of the record's
    heading byte has bit 3) and Ovl4_0D1B (when byte +4 of the record has any of bits 0..2).
-   Ovl4_19C4 always runs, and Ovl4_1D20 only for the heading value 0x34. Called by Ovl4_1F51 at
+   Ovl4_19C4 always runs, and Ovl4_1D20 only for the heading value 0x34. Called by DrawViewFrame at
    ovl4:1F75. Purpose unknown: what the slot numbers and the 0x34 heading mean. */
 /*@ ovl4:1E18 */ void DrawViewSlots(int start)
 {
@@ -1119,16 +1131,16 @@ extern signed char gA9C6; /*@ ds:A9C6 */       /* offset into the gEF6A target (
 extern int g7296; /*@ ds:7296 */              /* the page the rows were last drawn for (this unit) */
 extern int g7290[]; /*@ ds:7290 */             /* per-row y (this unit) */
 extern int g728A[]; /*@ ds:728A */             /* per-row x (this unit) */
-extern void far *gFarA92A[]; /*@ ds:A92A */    /* per-page, per-row far image pointers (this unit) */
+extern void far *gIconTableA92A[]; /*@ ds:A92A */    /* per-page, per-row far image pointers (this unit) */
 extern void f1A29_000F(int mode, void far *src, int x, int y, int region); /*@ 1A29:000F */
 extern void HidePointerZone(int left, int top, int right, int bottom); /*@ 1BBE:01FE */
 extern void ShowPointerZone(void); /*@ 1BBE:02C2 */
 
 /* ovl4:1EDE: redraws the three view rows for the current page. It returns early when ds:7296
-   already holds gFBCC; otherwise it hides the pointer over the view box, draws the three rows
-   through f1A29_000F(0, ds:A92A[gFBCC + 4 * i], ds:728A[i], ds:7290[i], 0), shows the pointer and
-   remembers gFBCC in ds:7296. Called by Ovl4_1F51 at ovl4:202F. Purpose unknown: what the rows
-   are. */
+   already holds gFBCC; otherwise it hides the pointer below the view box (0x46, 0x79, 0xb0, 0xaf),
+   draws the three rows through f1A29_000F(0, gIconTableA92A[gFBCC + 4 * i], g728A[i], g7290[i], 0),
+   shows the pointer and remembers gFBCC in ds:7296. Called by DrawViewFrame at ovl4:202F. Purpose
+   unknown: what the rows are. */
 /*@ ovl4:1EDE */ void DrawViewRows(void)
 {
     int i;
@@ -1137,7 +1149,7 @@ extern void ShowPointerZone(void); /*@ 1BBE:02C2 */
         return;
     HidePointerZone(0x46, 0x79, 0xb0, 0xaf);
     for (i = 0; i < 3; i++)
-        f1A29_000F(0, gFarA92A[gFBCC + 4 * i], g728A[i], g7290[i], 0);
+        f1A29_000F(0, gIconTableA92A[gFBCC + 4 * i], g728A[i], g7290[i], 0);
     ShowPointerZone();
     g7296 = gFBCC;
 }
@@ -1151,18 +1163,17 @@ extern void far *gSegDCA6; /*@ ds:DCA6 */   /* the far pointer DrawTile draws (s
 extern unsigned char far *gFE68; /*@ ds:FE68 */  /* the loaded palette buffer (src/E07C8.C) */
 extern void (far *gFn80BA)(void far *table); /*@ ds:80BA */  /* palette setter (src/E07C8.C) */
 extern void (far *gFillRect)(int x1, int y1, int x2, int y2, int pattern); /*@ ds:806A */
-extern void HidePointerZone(int left, int top, int right, int bottom); /*@ 1BBE:01FE */
-extern void ShowPointerZone(void); /*@ 1BBE:02C2 */
 extern void ClipRect(int x1, int y1, int x2, int y2, int width, int height, int extra1, int extra2); /*@ 19F3:000E */
 extern void DrawTile(void far *src); /*@ 17A6:03E7 */
 extern void PlaySoundDefault(int sound); /*@ 177D:00F3 */
 
 /* ovl4:1F51: draws one frame of the view: Ovl4_044B draws the objects into the page buffer (with
    gPartyCell and gFBCC), DrawTile blits it from gSegDCA6, DrawViewSlots(0) draws the slots, and
-   when gFB45 and video mode 3 are set the palette gFE68 is loaded and gFB45 cleared. Then it waits
-   for gCount849A to reach zero, and, when `full` is set and gF442 is clear, blanks the view box and
-   clips a rectangle. It always plays sound 0 and, when gFlag is zero, runs Ovl4_1EDE; finally it
-   clears gDF4C. Called from the game loop. */
+   when gFB45 and video mode 3 are set, and `full` is set, it blanks the view box (gFillRect with
+   pattern 0xc) and loads the palette gFE68, then clears gFB45. Then it waits for gCount849A to
+   reach zero, and, when `full` is set and gF442 is clear, clips a rectangle. It always plays sound
+   0 and, when gFlag is zero, runs DrawViewRows; finally it clears gDF4C. Called from the game
+   loop. */
 /*@ ovl4:1F51 */ void DrawViewFrame(int full)
 {
     Ovl4_044B(gPartyCell, gFBCC);
