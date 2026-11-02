@@ -3853,6 +3853,9 @@ unit = "e122e"
 addr = "122E:0271"
 size = 180
 evidence = ["near", "frame"]
+name = "ToggleArmEffect"
+level = "L2"
+match_flags = "-ml -O -Z"
 
 [[function]]
 id = "e122e_0325"

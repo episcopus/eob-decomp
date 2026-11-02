@@ -137,7 +137,31 @@ void f122E_1DA8(int a, int b);  /* forward: 1DA8 comes after its callers */
     AdjustMemberStatus(who);
     ArmEffectWith(0xc, who, 0xffff, 1);
 }
-/*@ 122E:0271 stub */ void f122E_0271(int who, int delta) {}
+/* 122E:0271: pick the arm slot for member `who` and arm effect 0xC: a member index of -1 is replaced
+   by the free flag slot (0 or 1). While a member is picked, arming either matches the picked member
+   (and negates g5C76) or does nothing. The effect is armed with arg -1 when the chosen slot is armed
+   and the member has no frame count, else with +1, twice around AdjustMemberStatus. */
+/*@ 122E:0271 */ void ToggleArmEffect(int who, int delta)
+{
+    int idx;
+
+    if (gDragActive != 0) {
+        if (gDragMember == who)
+            g5C76 = g5C76 * -1;
+        return;
+    }
+    if (delta == -1)
+        delta = (g194B[gB894[who * 9]] & 8) ? 0 : 1;
+    if (g194B[gB894[who * 9 + delta]] & 1)
+        idx = -1;
+    else
+        idx = 1;
+    if (idx == -1 && (gB894[who * 9 + 4] & 1))
+        return;
+    ArmEffectWith(0xc, who, idx, 1);
+    AdjustMemberStatus(who);
+    ArmEffectWith(0xc, who, idx, 1);
+}
 /*@ 122E:0325 stub */ void f122E_0325(void) {}
 /*@ 122E:04CA stub */ void f122E_04CA(void) {}
 
