@@ -243,7 +243,7 @@ void DrawItemName(int item);
 }
 
 /* 0BD2:01D0: inserts the item `item` into the circular list whose head word is `head`, stamping it
-   with the list's owner key `key` (m04) and the tag `tag` (m03; m0A becomes gFBC8, or -1 when the
+   with the list's owner key `key` (m04) and the tag `tag` (+5; m0A becomes gFBC8, or -1 when the
    key is negative). The key is a list owner: a map cell (E0ACD.C:568, E0D1C.C:362, 0BD2:07DE), an
    object's id (E08E6.C:807) or 0xFFFE for a character's own pack (E0ACD.C:780, :851, 0BD2:0BA0).
    An empty list becomes `item` alone, linked to itself. Otherwise `item` is spliced in between the
