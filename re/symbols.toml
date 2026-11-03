@@ -3495,6 +3495,7 @@ evidence = ["segment"]
 name = "SortSpellSlots"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0ef3_00cd"
@@ -3505,6 +3506,7 @@ evidence = ["far", "near", "frame"]
 name = "AnimateEffect"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0ef3_026f"
@@ -3515,6 +3517,7 @@ evidence = ["near"]
 name = "FinishMemberEffect"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0ef3_0302"
@@ -3525,6 +3528,7 @@ evidence = ["near", "frame"]
 name = "ApplyTimedCharEffect"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0ef3_035a"
@@ -3535,6 +3539,7 @@ evidence = ["near", "frame"]
 name = "CreateItemType"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0ef3_03d8"
@@ -3545,6 +3550,7 @@ evidence = ["near", "frame"]
 name = "FreeItemRecord"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0ef3_0418"
@@ -3555,6 +3561,7 @@ evidence = ["near", "frame"]
 name = "CreateItemRecord"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0ef3_0482"
@@ -3565,6 +3572,7 @@ evidence = ["near", "frame"]
 name = "ItemSlot1Empty"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0ef3_0498"
@@ -3575,6 +3583,7 @@ evidence = ["near", "frame"]
 name = "GetClassSlot1Value"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0ef3_04f7"
@@ -3585,6 +3594,7 @@ evidence = ["far", "near", "frame"]
 name = "GetClassSlot24Value"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0ef3_059d"
@@ -3595,6 +3605,7 @@ evidence = ["near", "frame"]
 name = "ReportActionRefused"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0ef3_05bd"
@@ -3605,6 +3616,7 @@ evidence = ["near", "frame"]
 name = "DrawFlashFrame"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0ef3_0665"
@@ -3615,6 +3627,7 @@ evidence = ["far", "near", "frame"]
 name = "FlashPartyMembers"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0ef3_06e7"
@@ -3625,6 +3638,7 @@ evidence = ["far", "near", "frame"]
 name = "FlashViewDamage"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0ef3_08cf"
@@ -3635,6 +3649,7 @@ evidence = ["frame"]
 name = "ApplyMemberEffect"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0ef3_097b"
@@ -3645,6 +3660,7 @@ evidence = ["far", "near", "frame"]
 name = "StartCellEffect"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0ef3_0a3f"
@@ -3655,6 +3671,7 @@ evidence = ["near", "frame"]
 name = "DamageTargetCell"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0ef3_0d78"
@@ -3665,6 +3682,7 @@ evidence = ["far", "frame"]
 name = "ExpireSpellEffect"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0ef3_0e1b"
@@ -3676,6 +3694,7 @@ notes = "matched 2026-11-02 under -v: the unit was compiled with debug informati
 name = "CastMeleeEffect"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0ef3_0f0b"
@@ -3686,6 +3705,7 @@ evidence = ["frame"]
 name = "FixArmourClass"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0ef3_0f86"
@@ -3696,6 +3716,7 @@ evidence = ["far", "near", "frame"]
 name = "RecomputeArmourClass"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0ef3_0f99"
@@ -3706,6 +3727,7 @@ evidence = ["frame"]
 name = "DrawMemberIcons"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0ef3_1069"
@@ -3716,6 +3738,7 @@ evidence = ["frame"]
 name = "EnterSwapMode"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0ef3_10ae"
@@ -3726,6 +3749,7 @@ evidence = ["frame"]
 name = "LeaveSwapMode"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0ef3_10d2"
@@ -3736,6 +3760,7 @@ evidence = ["frame"]
 name = "AddEffectRecord0"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0ef3_10f2"
@@ -3746,6 +3771,7 @@ evidence = ["frame"]
 name = "RunMelee1d4"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0ef3_1122"
@@ -3756,6 +3782,7 @@ evidence = ["frame"]
 name = "SetAttackEffect"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0ef3_1176"
@@ -3766,6 +3793,7 @@ evidence = ["frame"]
 name = "ClearAttackEffect"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0ef3_1197"
@@ -3776,6 +3804,7 @@ evidence = ["frame"]
 name = "CreateItemForEffect0"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0ef3_121b"
@@ -3786,6 +3815,7 @@ evidence = ["near", "frame"]
 name = "IsDiscardedItem"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0ef3_1233"
@@ -3796,6 +3826,7 @@ evidence = ["near", "frame"]
 name = "DiscardEquippedItems"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0ef3_127f"
@@ -3806,6 +3837,7 @@ evidence = ["frame"]
 name = "SetEffectFlag4"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0ef3_12a1"
@@ -3816,6 +3848,7 @@ evidence = ["far", "near", "frame"]
 name = "ClearEffectFlag4"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0ef3_12c2"
@@ -3826,6 +3859,7 @@ evidence = ["frame"]
 name = "AddEffectRecord1"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0ef3_12e3"
@@ -3836,6 +3870,7 @@ evidence = ["frame"]
 name = "RunMelee2d4"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0ef3_1315"
@@ -3846,6 +3881,7 @@ evidence = ["frame"]
 name = "EmptyFunction1315"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0ef3_131a"
@@ -3856,6 +3892,7 @@ evidence = ["frame"]
 name = "DispelMagic"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0ef3_13fd"
@@ -3866,6 +3903,7 @@ evidence = ["frame"]
 name = "AddEffectRecord2"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0ef3_141e"
@@ -3876,6 +3914,7 @@ evidence = ["frame"]
 name = "RunMelee1d6"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0ef3_144a"
@@ -3886,6 +3925,7 @@ evidence = ["frame"]
 name = "AddEffectRecord3"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0ef3_146b"
@@ -3896,6 +3936,7 @@ evidence = ["frame"]
 name = "RunMelee5d6"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0ef3_1497"
@@ -3906,6 +3947,7 @@ evidence = ["frame"]
 name = "MarkLivingMembers"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0ef3_14f9"
@@ -3916,6 +3958,7 @@ evidence = ["frame"]
 name = "ClearEffectFlag8"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0ef3_150f"
@@ -3926,6 +3969,7 @@ evidence = ["frame"]
 name = "AddEffectRecord4"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0ef3_1530"
@@ -3936,6 +3980,7 @@ evidence = ["frame"]
 name = "UpdateCellObjectsBit1"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0ef3_15d0"
@@ -3946,6 +3991,7 @@ evidence = ["frame"]
 name = "MarkAllMembersFlag4"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0ef3_1609"
@@ -3956,6 +4002,7 @@ evidence = ["frame"]
 name = "AddEffectRecord5"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0ef3_162a"
@@ -3966,6 +4013,7 @@ evidence = ["frame"]
 name = "RunMelee1d6B"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0ef3_1656"
@@ -3976,6 +4024,7 @@ evidence = ["frame"]
 name = "CreateItemForEffect6"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0ef3_16dc"
@@ -3986,6 +4035,7 @@ evidence = ["frame"]
 name = "ClampHitPoints"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0ef3_1702"
@@ -3996,6 +4046,7 @@ evidence = ["frame"]
 name = "ClearObjectsFacingCell"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0ef3_17b7"
@@ -4006,6 +4057,7 @@ evidence = ["frame"]
 name = "AddEffectRecord6"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0ef3_17d8"
@@ -4016,6 +4068,7 @@ evidence = ["frame"]
 name = "RunMeleeAroundCell"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0ef3_1865"
@@ -4026,6 +4079,7 @@ evidence = ["frame"]
 name = "SetBandageCountdown"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0ef3_1894"
@@ -4036,6 +4090,7 @@ evidence = ["near", "frame"]
 name = "ClearBandageCountdown"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0ef3_18a2"
@@ -4046,6 +4101,7 @@ evidence = ["far", "frame"]
 name = "TickBandageCountdown"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0ef3_18d3"
@@ -4056,6 +4112,7 @@ evidence = ["frame"]
 name = "EmptyFunction18D3"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0ef3_18d8"
@@ -4066,6 +4123,7 @@ evidence = ["frame"]
 name = "CastConeOfCold"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0ef3_1a0f"
@@ -4076,6 +4134,7 @@ evidence = ["frame"]
 name = "AddEffectRecord7"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0ef3_1a30"
@@ -4086,6 +4145,7 @@ evidence = ["frame"]
 name = "UpdateCellObjectsBit2"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0ef3_1ad0"
@@ -4096,6 +4156,7 @@ evidence = ["frame"]
 name = "ToggleSwapFlag"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0ef3_1b13"
@@ -4106,6 +4167,7 @@ evidence = ["frame"]
 name = "ClearSwapFlag"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0ef3_1b20"
@@ -4116,6 +4178,7 @@ evidence = ["frame"]
 name = "HealCurrent1d8"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0ef3_1b43"
@@ -4126,6 +4189,7 @@ evidence = ["frame"]
 name = "CastMelee1d8"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0ef3_1b5a"
@@ -4136,6 +4200,7 @@ evidence = ["frame"]
 name = "SetEffectFlag200"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0ef3_1b8d"
@@ -4146,6 +4211,7 @@ evidence = ["frame"]
 name = "ClearEffectFlag200"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0ef3_1ba3"
@@ -4156,6 +4222,7 @@ evidence = ["frame"]
 name = "ApplyAidEffect"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0ef3_1c45"
@@ -4166,6 +4233,7 @@ evidence = ["frame"]
 name = "UndoBandage"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0ef3_1c75"
@@ -4176,6 +4244,7 @@ evidence = ["frame"]
 name = "ApplyConditionEffect"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0ef3_1cd2"
@@ -4186,6 +4255,7 @@ evidence = ["frame"]
 name = "ClearEffectFlag80"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0ef3_1ce8"
@@ -4196,6 +4266,7 @@ evidence = ["far", "near", "frame"]
 name = "ClearPoisonEffect"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0ef3_1d38"
@@ -4206,6 +4277,7 @@ evidence = ["frame"]
 name = "CreateItemForEffect4"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0ef3_1dc0"
@@ -4216,6 +4288,7 @@ evidence = ["frame"]
 name = "FillPartyFood"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0ef3_1ddf"
@@ -4226,6 +4299,7 @@ evidence = ["frame"]
 name = "SetEffectFlag100"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0ef3_1e1d"
@@ -4236,6 +4310,7 @@ evidence = ["frame"]
 name = "ClearEffectFlag100"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0ef3_1e3e"
@@ -4246,6 +4321,7 @@ evidence = ["frame"]
 name = "SetSwapFlag20"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0ef3_1e6c"
@@ -4256,6 +4332,7 @@ evidence = ["frame"]
 name = "ClearSwapFlag20"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0ef3_1e7e"
@@ -4266,6 +4343,7 @@ evidence = ["frame"]
 name = "ClearParalysisFromFour"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0ef3_1ecc"
@@ -4276,6 +4354,7 @@ evidence = ["frame"]
 name = "HealCurrent2d8"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0ef3_1ef3"
@@ -4286,6 +4365,7 @@ evidence = ["frame"]
 name = "CastMelee2d8"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0ef3_1f0b"
@@ -4296,6 +4376,7 @@ evidence = ["frame"]
 name = "CureOrReportPoison"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0ef3_1f33"
@@ -4306,6 +4387,7 @@ evidence = ["frame"]
 name = "MarkAllFlag200"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0ef3_1f8f"
@@ -4316,6 +4398,7 @@ evidence = ["frame"]
 name = "ClearAllFlag200"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0ef3_1fc8"
@@ -4326,6 +4409,7 @@ evidence = ["frame"]
 name = "EmptyFunction1FC8"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0ef3_1fcd"
@@ -4336,6 +4420,7 @@ evidence = ["frame"]
 name = "EmptyFunction1FCD"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0ef3_1fd2"
@@ -4346,6 +4431,7 @@ evidence = ["frame"]
 name = "HealCurrent3d8"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0ef3_1ff9"
@@ -4356,6 +4442,7 @@ evidence = ["frame"]
 name = "CastMelee3d8"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0ef3_2011"
@@ -4366,6 +4453,7 @@ evidence = ["frame"]
 name = "AddEffectRecord8"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0ef3_2032"
@@ -4376,6 +4464,7 @@ evidence = ["frame"]
 name = "RunMelee6d8"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0ef3_2050"
@@ -4386,6 +4475,7 @@ evidence = ["frame"]
 name = "ReviveAtMinusTen"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0ef3_208a"
@@ -4396,6 +4486,7 @@ evidence = ["frame"]
 name = "RunMelee0"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0ef3_20a8"
@@ -4406,6 +4497,7 @@ evidence = ["frame"]
 name = "DamageOneMember"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0ef3_2145"
@@ -4416,6 +4508,7 @@ evidence = ["frame"]
 name = "DamageParty"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0ef3_21bc"
@@ -4426,6 +4519,7 @@ evidence = ["frame"]
 name = "HealFromClassSlot"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0ef3_21e0"
@@ -4436,6 +4530,7 @@ evidence = ["far", "frame"]
 name = "OpenSpellPanel"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0ef3_2295"
@@ -4447,6 +4542,7 @@ name = "DrawSpellPanel"
 notes = "matched 2026-11-02 under -v: the row loop's condition is `gA9C5 != i` (the original keeps the fill row as fallthrough and jumps to the highlighted row); the not-selected row-6 ABORT SPELL call stays apart from the highlighted one (debug information keeps the two tails)"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0ef3_2541"
@@ -4457,6 +4553,7 @@ evidence = ["far", "near", "frame"]
 name = "RedrawPartyPanel"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0ef3_25bd"
@@ -4467,6 +4564,7 @@ evidence = ["frame"]
 name = "f0EF3_25BD"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0ef3_2604"
@@ -4477,6 +4575,7 @@ evidence = ["near", "frame"]
 name = "UseItemRow"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0ef3_2676"
@@ -4487,6 +4586,7 @@ evidence = ["near", "frame"]
 name = "CastSpell"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0ef3_28ed"
@@ -4497,6 +4597,7 @@ evidence = ["far", "frame"]
 name = "StartPanelAction"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0ef3_2929"
@@ -4507,6 +4608,7 @@ evidence = ["frame"]
 name = "HandleSpellList"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0ef3_2a53"
@@ -4517,6 +4619,7 @@ evidence = ["far", "frame"]
 name = "f0EF3_2A53"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0ef3_2ebc"
@@ -4527,6 +4630,7 @@ evidence = ["far", "frame"]
 name = "AnimateConeOfCold"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e122e_0001"
