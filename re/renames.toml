@@ -2772,3 +2772,66 @@ new = "gScriptFlag"
 kind = "function"
 why = "the byte E_TEXT.ASM defines at 0000:03A0 as gScriptFlag: script command C7h sets it (0000:4A23 mov [3A0h],ah), GetScriptFlag 0000:03A1 reads it"
 date = "2026-11-03"
+
+[[rename]]
+id = "1A47:0169=SetFont"
+addr = "1A47:0169"
+old = "f1A47_0169"
+new = "SetFont"
+kind = "function"
+why = "stores its far argument as the current font gCurFont (ds:FE4E) and the font's bytes +103h and +102h as gFontWidth and gFontHeight (1A47:0169); TextWidth 1A47:018E reads the same pointer"
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:FE4E=gCurFont"
+addr = "ds:FE4E"
+old = "gFont1A47"
+new = "gCurFont"
+kind = "global"
+why = "the far pointer to the current font: SetFont 1A47:0169 stores it, TextWidth 1A47:018E reads byte +103h (the character width) through it"
+date = "2026-11-03"
+
+[[rename]]
+id = "1A47:018E=TextWidth"
+addr = "1A47:018E"
+old = "f1A47_018E"
+new = "TextWidth"
+kind = "function"
+why = "returns the current font's character width (gCurFont byte +103h) times strlen of its string argument: the string's width in pixels (1A47:018E)"
+date = "2026-11-03"
+
+[[rename]]
+id = "0D1C:0670=MemberIs"
+addr = "0D1C:0670"
+old = "f0D1C_0670"
+new = "MemberIs"
+kind = "function"
+why = "returns 1 when party member who meets every condition its mask selects (0D1C:0670): 1 the slot holds a character (status bit 0), 2 hp above -10 (not DEAD), 4 hp above 0 (not UNCONSCIOUS), 8 not paralyzed (status bit 2, cleared with 'is no longer paralyzed!' at 1414 case 9), 16 not poisoned (status bit 1, the POISONED label of 1547)"
+date = "2026-11-03"
+
+[[rename]]
+id = "1A29:000F=DrawShape"
+addr = "1A29:000F"
+old = "f1A29_000F"
+new = "DrawShape"
+kind = "function"
+why = "draws the shape record src at region-relative x, y through the driver entry gDrawShape (ds:80C2) after selecting the region (1A29:000F); DrawItemIcon 0D1C:070F draws item icons with it, and ShowPointer draws the mouse pointer's shape record through the same entry"
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:80C2=gDrawShape"
+addr = "ds:80C2"
+old = "gDraw80C2"
+new = "gDrawShape"
+kind = "global"
+why = "the driver entry that draws a shape record at a screen position: DrawShape 1A29:000F calls it with region offsets added, ShowPointer 1BBE:01F4 with the pointer's shape record (gPointerShapeOff/Seg)"
+date = "2026-11-03"
+
+[[rename]]
+id = "1A47:0005=LoadFont"
+addr = "1A47:0005"
+old = "f1A47_0005"
+new = "LoadFont"
+kind = "function"
+why = "opens a bitmap font file, checks its length against the header (0x104 + 128 * height * ceil(width / 8), height at +102h, width at +103h), and returns it read whole into memory (1A47:0005); E07C8 loads FONT6.FNT and the other fonts with it"
+date = "2026-11-03"

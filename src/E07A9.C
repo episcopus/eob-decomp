@@ -281,7 +281,7 @@ extern void SetUnpackBuffer(unsigned seg, unsigned size); /*@ 1B82:0217 */
 extern void LoadItemData(void); /*@ 2106:002A */
 /* sets gFont1A47 = font and reads the font's width and height bytes (src/E1A47.C:81-85); the
    placeholder name stays. */
-extern void f1A47_0169(char far *font); /*@ 1A47:0169 */
+extern void SetFont(char far *font); /*@ 1A47:0169 */
 /* the overlay entry at stub 2106:0048 resolves to ovl2:0577 LoadDecorateIcons (src/EOV2.C:328), which
    leads to the ITEMRMP read (ovl2:047F, via ovl2:0171; docs/design/WHITEPAPER.md, the ITEMRMP.VGA/EGA
    row). The stub is named after its target, like LoadItemData above. */
@@ -348,7 +348,7 @@ extern void SetMousePointerShape(int hotX, int hotY, void far *icon); /*@ 1BB1:0
     SetUnpackBuffer(gSegsFC0C[7], UNPACK_BUFFER_SIZE);
     gAllocCount = 0;
     LoadItemData();
-    f1A47_0169(gA9C0);
+    SetFont(gA9C0);
     LoadDecorateIcons();
     RunMapLoop();
 }

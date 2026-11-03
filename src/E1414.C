@@ -27,7 +27,7 @@ struct Effect {
    the fields this unit touches are named. */
 struct CharRec {
     char pad00;
-    char m01;                 /* +01: status bits tested by 0C82 and 07CA */
+    char status;                 /* +01: status bits tested by 0C82 and 07CA */
     char name[0x0D - 0x02];   /* +02: the character's NUL-padded name (src/EOV6.C) */
     signed char m0D;          /* +0D: a copy of m0E made by 07CA case 7 */
     signed char m0E;          /* +0E */
@@ -119,7 +119,7 @@ extern void PlaySoundDefault(int sound); /*@ 177D:00F3 */
 extern int f0D1C_0006(int value); /*@ 0D1C:0006 */
 extern int f0D1C_00DA(int value, int page); /*@ 0D1C:00DA */
 extern int f0D1C_0163(int who, int fieldB); /*@ 0D1C:0163 */
-extern int f0D1C_0670(int member, int what); /*@ 0D1C:0670 */
+extern int MemberIs(int member, int what); /*@ 0D1C:0670 */
 extern int far RollDice(char count, char sides, char bonus); /*@ 082C:0458 */
 extern void UpdateObjects(int kind); /*@ 08E6:0CC8 */
 extern void Obj1410(void); /*@ 08E6:1410 */
@@ -495,8 +495,8 @@ extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
    arm a 0x24 (halved when mE3 bit 3 is set) 4/5-type effect through 05ED; 6 clears mE7 and redraws
    the member; 7 prints "%s no longer has giant strength.", copies m0E/m10 into m0D/m0F and redraws
    in mode 2; 8 handles poison ("%s feels the effects of poison!"), damages 5 points through
-   DamageCharacter unless mE3 bit 7 is set, and re-arms effect 8, or clears m01 bit 1; and 9
-   handles recovered paralysis ("%s is no longer paralyzed!") and clears m01 bit 2. It then
+   DamageCharacter unless mE3 bit 7 is set, and re-arms effect 8, or clears status bit 1; and 9
+   handles recovered paralysis ("%s is no longer paralyzed!") and clears status bit 2. It then
    computes the smallest nonzero gChars[who].mAD and stores it (minus g8492 when there is one,
    else -1 and it disarms effect who + 6) in gEffects[who + 6].period. Called from the table (and
    0DE8, 0EF3, 0BD2).
@@ -569,7 +569,7 @@ extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
                     RedrawMember(who);
                 break;
             case 8:
-                if (rec->m01 & 2) {
+                if (rec->status & 2) {
                     if ((rec->mE3 & 0x80) == 0) {
                         DamageCharacter(who, 5);
                         sprintf(gFileNameBuf, "%s feels the effects of poison!\r", rec->name);
@@ -577,15 +577,15 @@ extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
                     }
                     ApplyCharEffect(who, 0x222L, 8, 1);
                 } else {
-                    rec->m01 &= ~2;
+                    rec->status &= ~2;
                     RedrawMember(who);
                 }
                 break;
             case 9:
-                if (rec->m01 & 4) {
+                if (rec->status & 4) {
                     sprintf(gFileNameBuf, "%s is no longer paralyzed!\r", rec->name);
                     DrawText(gFileNameBuf);
-                    rec->m01 &= ~4;
+                    rec->status &= ~4;
                     RedrawMember(who);
                 }
                 break;
@@ -605,7 +605,7 @@ extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
     }
 }
 
-/* 1414:0B2E: re-arms effect `who` + 6 for every party member `who` that passes f0D1C_0670(who, 1).
+/* 1414:0B2E: re-arms effect `who` + 6 for every party member `who` that passes MemberIs(who, 1).
    It takes the smallest nonzero of the member's 10 effect times gChars[who].mAD and, when there
    is one, sets the entry's period to that time minus g8492 and arms it; when all ten are zero it
    sets the period to -1 and disarms it. Called by 0ACD, 0D1C:035A, 0C2D and overlays 1 and 3. */
@@ -621,7 +621,7 @@ extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
     who = 0;
     rec = gChars;
     for (; who < 6; who++, rec++) {
-        if (!f0D1C_0670(who, 1))
+        if (!MemberIs(who, 1))
             continue;
         min = -1;
         for (i = 0; i < 10; i++) {
@@ -658,7 +658,7 @@ extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
     RearmCharEffects();
 }
 /* 1414:0C82: effect 14 of the table. For every party member whose f0D1C_0163(who, 2) test
-   passes, whose m01 bit 0 is set (the 0D1C:0670 mask-1 test), with a nonzero food value and hit
+   passes, whose status bit 0 is set (the 0D1C:0670 mask-1 test), with a nonzero food value and hit
    points above -10, it decrements the food value and runs 1547:04A0 for that member. */
 /*@ 1414:0C82 */ void DecayMemberState(void)
 {
@@ -669,7 +669,7 @@ extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
             continue;
         if (gChars[who].food == 0)
             continue;
-        if ((gChars[who].m01 & 1) == 0)
+        if ((gChars[who].status & 1) == 0)
             continue;
         if (gChars[who].hp <= -10)
             continue;

@@ -46,7 +46,7 @@ extern int gRegionBottom;        /*@ ds:FE44 */  /* selected region's bottom lin
    they are filled at load time [H]; their meanings are unknown and their first argument `mode`
    is passed straight through. This unit calls each of the five pointers other than ds:80C2
    (80A6, 80D6, 80DA, 809A, 8096) once, from its own front end (for example 1A29:0082 `lcall
-   [0x80a6]`), and calls ds:80C2 once from f1A29_000F (1A29:0044 `lcall [0x80c2]`). It is not
+   [0x80a6]`), and calls ds:80C2 once from DrawShape (1A29:0044 `lcall [0x80c2]`). It is not
    the only caller of ds:80C2: ShowPointer (1BBE:00ED, src/E1BBE.ASM:252-258) calls the same
    pointer at 1BBE:01F4 (`mov ax, 0` at 1BBE:01F0) with a literal 0 for `mode`, bypassing this
    unit. gSetRegion below is called once, in SelectRegion (1A29:01DB `lcall [0x80b6]`).
@@ -54,7 +54,7 @@ extern int gRegionBottom;        /*@ ds:FE44 */  /* selected region's bottom lin
    draws the mouse shape through it, src/E1BBE.ASM:252-258); ds:8062, another pointer of the
    same kind, is gDrawLine (src/E1A1F.C:6), which supports the family but is not evidence for
    these six. */
-extern void (far *gDraw80C2)(int mode, void far *src, int x, int y);        /*@ ds:80C2 */
+extern void (far *gDrawShape)(int mode, void far *src, int x, int y);        /*@ ds:80C2 */
 extern void (far *gDraw80A6)(int mode, void far *src, int x, int y);        /*@ ds:80A6 */
 extern void (far *gDraw80D6)(int mode, void far *src, int x, int y);        /*@ ds:80D6 */
 extern void (far *gDraw80DA)(int mode, void far *src, int x, int y);        /*@ ds:80DA */
@@ -65,7 +65,7 @@ extern void (far *gSetRegion)(int left, int right, int top, int bottom);    /*@ 
 
 void SelectRegion(int region);
 
-/* 1A29:000F: Purpose unknown: a front end that draws through the driver pointer ds:80C2. It
+/* 1A29:000F: draws the shape record `src` through the driver entry gDrawShape (ds:80C2). It
    does nothing when the source far pointer is null, selects `region` when it is not the current
    one, then calls the driver with x and y offset by the region's origin: its left edge in pixels
    for x, its top line for y. The mouse pointer
@@ -76,13 +76,13 @@ void SelectRegion(int region);
    `mode`. This front end is called from 20 functions (9 in the resident code, 11 in the
    overlays; for example 082C:063B, the `lcall 1A29:000F` at 082C:0675), which pass
    region-relative coordinates. */
-/*@ 1A29:000F */ void f1A29_000F(int mode, void far *src, int x, int y, int region)
+/*@ 1A29:000F */ void DrawShape(int mode, void far *src, int x, int y, int region)
 {
     if (!src)
         return;
     if (region != gCurRegion)
         SelectRegion(region);
-    gDraw80C2(mode, src, x + gRegionLeftPx, y + gRegionTop);
+    gDrawShape(mode, src, x + gRegionLeftPx, y + gRegionTop);
 }
 
 /* 1A29:004D: Purpose unknown: a front end over the driver pointer ds:80A6, identical to

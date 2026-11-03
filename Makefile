@@ -6,7 +6,7 @@ PROGRAMS := eob/EOB.EXE eob/INTRO.EXE eob/START1.EXE
 
 .PHONY: help setup doctor inputs overlays pak data emu2 test p0-check tc-install tc-check rtl-compare map match oracle-run golden test-slow \
 	match-gate check queue next claim locks unlock packet skeleton handoff handoffs handoff-done integrate review-pass worker progress \
-	start-run stop-run run-status run-add watch-agents smoke-agent readability readability-gate rename
+	start-run stop-run run-status run-add watch-agents smoke-agent readability readability-gate rename names field
 
 help:
 	@echo "Phase 0:  setup doctor inputs overlays pak emu2 test p0-check"
@@ -92,6 +92,12 @@ readability:      ## the checkable naming and comment rules (docs/process/READAB
 
 readability-gate: ## fail on readability findings not in work/readability-baseline.txt (part of make check)
 	$(PY) tools/match/readability.py --gate
+
+names:            ## what is still named by its address, by unit (Phase 6, playbook 65): [UNIT=<id>] [SHARED=1]
+	$(PY) tools/match/names.py $(if $(UNIT),--unit $(UNIT)) $(if $(SHARED),--shared)
+
+field:            ## give a struct field one name in every file that declares the struct: STRUCT=<Name> AT=<hex offset> NEW=<name> WHY="<evidence>"
+	$(PY) tools/match/field.py --struct "$(STRUCT)" --at "$(AT)" --new "$(NEW)" --why "$(WHY)"
 
 rename:           ## give a function or global its real name everywhere: OLD=<name or address> NEW=<Name> WHY="<evidence>"; APPLY=1 re-applies the recorded renames
 	$(PY) tools/match/rename.py $(if $(APPLY),--apply)

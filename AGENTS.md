@@ -55,6 +55,7 @@ You are working on a **matching decompilation of Westwood's Eye of the Beholder 
 | `make progress`, `make next [REVIEW=1]`, `make queue [WRITE=1]` | Where things stand; what to take next; the claim order (`work/queue.toml`) |
 | `make claim AGENT= [UNIT=] [REVIEW=1] [TASK=]` | Lock a unit and get its worktree `../eob-worktrees/<key>` (playbooks 30, 70) |
 | `make rename OLD= NEW= WHY=`, `make readability [UNIT=]` | One name per address, everywhere, with its evidence; the naming and comment rules (`docs/process/READABILITY.md`) |
+| `make names [UNIT=] [SHARED=1]`, `make field STRUCT= AT= NEW= WHY=` | What is still named by its address and where files disagree; one struct field name in every file that declares the struct (playbook 65) |
 | `make packet UNIT=`, `make skeleton UNIT=` | Everything to start a unit (`build/packets/<id>.md`); its source file with every function a stub |
 | `make handoff AGENT= UNIT= STATE= NOTE=` | From your worktree: the branch is ready, or a question for the human (`STATE=escalate`) |
 | `make review-pass UNIT= AGENT=` | Record a passed review (playbook 70) |
@@ -71,6 +72,7 @@ You are working on a **matching decompilation of Westwood's Eye of the Beholder 
 | `25-oracle.md` | Running the original in the emulator |
 | `30-lift-module.md` | Decompiling a unit (C or assembly) to L2: claim, packet, annotations, stubs, drafts, hand-off, the idioms found so far |
 | `50-rebuild.md` | Phase 5: building a program from `src/` identical to the original |
+| `65-consistency.md` | Phase 6: one vocabulary, every symbol named where the evidence allows |
 | `70-review.md` | Reviewing a complete unit |
 | `90-orchestrate.md` | The human: running workers, integrating hand-offs, escalations |
 

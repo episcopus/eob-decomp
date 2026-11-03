@@ -11,12 +11,12 @@
 
 struct CharRec {            /* 243-byte (0xF3) character records at ds:F580; see src/E0A72.C */
     char pad00;
-    unsigned char m01;      /* +01 */
+    unsigned char status;      /* +01 */
     char name[0x0B];        /* +02: the character's name, NUL padded (src/EOV6.C) */
     char pad0D[0x17 - 0x0D];
     signed char m17;        /* +17 */
     char pad18[0x1B - 0x18];
-    signed char m1B;        /* +1B */
+    signed char hp;        /* +1B */
     char pad1C[0x1F - 0x1C];
     signed char m1F;        /* +1F */
     signed char m20;        /* +20 */
@@ -150,12 +150,12 @@ extern int FindClassSlot(int slotId, int classIndex); /*@ 0A72:007B */
    cwde; push ax`), so the second parameter is int, not char */
 extern int GetClampedTableByte(int col, int row); /*@ 0A72:0597 */
 extern void f1A29_008B(int mode, void far *src, int x, int y, int region); /*@ 1A29:008B */
-extern void f1A29_000F(int mode, void far *src, int x, int y, int region); /*@ 1A29:000F */
+extern void DrawShape(int mode, void far *src, int x, int y, int region); /*@ 1A29:000F */
 extern void DrawFilledPanel(int x1, int y1, int x2, int y2, int c1, int c2, int c3); /*@ 082C:09D5 */
 extern int DirectionFromPoints(int fromCell, int toCell); /*@ 17A6:0314 */
 extern void DamageObject(struct Obj28 far *obj, int n); /*@ 08E6:0FBE */
 
-int f0D1C_0670(int who, int mask);
+int MemberIs(int who, int mask);
 int GetCurrentItem(void);
 
 /* 0D1C:0006: Purpose unknown: the value `value` is looked for in the 15 words at ds:A9C8; when
@@ -275,7 +275,7 @@ int GetCurrentItem(void);
     }
     return 0;
 }
-/* 0D1C:01CA: Purpose unknown: for every character `who` that passes f0D1C_0670(who, 1), removes
+/* 0D1C:01CA: Purpose unknown: for every character `who` that passes MemberIs(who, 1), removes
    all carried items whose ds:8DD2 record has m02 == `field2` and m0B == `fieldB`
    (FindCarriedSlot's match): clears the item's m04 (sets it to -1), clears the character's slot,
    and redraws. Returns 1 when at least one item was removed, otherwise 0. The redraw paths: when
@@ -292,7 +292,7 @@ int GetCurrentItem(void);
 
     found = who = 0;
     for (; who < 6; who++) {
-        if (!f0D1C_0670(who, 1))
+        if (!MemberIs(who, 1))
             continue;
         while ((slot = FindCarriedSlot(who, field2, fieldB)) != -1) {
             item = gChars[who].m77[slot];
@@ -341,7 +341,7 @@ int GetCurrentItem(void);
             DrawItemRow(gF51A, 1, 0);
     }
 }
-/* 0D1C:035A: Purpose unknown: clears gChars[who].m01 and then, for each of the 27 word slots of
+/* 0D1C:035A: Purpose unknown: clears gChars[who].status and then, for each of the 27 word slots of
    gChars[who].m77 except slot 16 (which is a list head at +97), queues the item in the slot
    through InsertListItem at the head gPartyCell * 9 + 5 (the nine-byte records at ds:B894) with a
    random sound g1A1B[gFBCC * 4 + RollDice(1, 2, -1)]. Then it drains the slot-16 list through
@@ -354,7 +354,7 @@ int GetCurrentItem(void);
     int i;
 
     rec = &gChars[who];
-    rec->m01 = 0;
+    rec->status = 0;
     for (i = 0; i < 27; i++) {
         if (i == 16)
             continue;
@@ -453,11 +453,13 @@ int GetCurrentItem(void);
     }
     return RollDice(1, 20, 0) >= value;
 }
-/* 0D1C:0670: Purpose unknown: tests up to five character conditions selected by `mask` and
-   returns 1 only when all the selected ones hold (AND of results, starting from 1). mask 1:
-   gChars[who].m01 & 1. mask 2: m1B > -10. mask 4: m1B > 0. mask 8: not (m01 & 4). mask 16: not
-   (m01 & 2). Called by 0D1C:01CA and, with mask 1, by Turn091C (src/E0ACD.C) and other units. */
-/*@ 0D1C:0670 */ int f0D1C_0670(int who, int mask)
+/* 0D1C:0670: whether party member `who` meets every condition `mask` selects (1 when it does,
+   the AND of the selected tests). The bits: 1 the slot holds a character (status bit 0);
+   2 hp above -10 (not DEAD); 4 hp above 0 (not UNCONSCIOUS); 8 not paralyzed (status bit 2);
+   16 not poisoned (status bit 1). The status bits are those the status line of 1547 draws (POISONED,
+   PARALYZED) and the effect ends of 1414 clear. Callers most often pass 1 (is there a character);
+   0D1C:01CA and others combine them. */
+/*@ 0D1C:0670 */ int MemberIs(int who, int mask)
 {
     struct CharRec far *rec;
     int result;
@@ -465,22 +467,22 @@ int GetCurrentItem(void);
     result = 1;
     rec = &gChars[who];
     if (mask & 1)
-        result &= rec->m01 & 1;
+        result &= rec->status & 1;
     if (mask & 2)
-        result &= rec->m1B > -10;
+        result &= rec->hp > -10;
     if (mask & 4)
-        result &= rec->m1B > 0;
+        result &= rec->hp > 0;
     if (mask & 8)
-        result &= (rec->m01 & 4) == 0;
+        result &= (rec->status & 4) == 0;
     if (mask & 16)
-        result &= (rec->m01 & 2) == 0;
+        result &= (rec->status & 2) == 0;
     return result;
 }
 /* 0D1C:070F: draws the item icon of the ds:8DD2 record `n` at (x, y), the far pointer
    gIconsDDE4[icon]. Colour-row path, Purpose unknown: when gFBD2 bit 0 is set and the record's
    flags have 0x80, it first selects the icon's 16-byte colour row (gBufF534 + (icon << 4), or the
    empty string at ds:550A when gGraphicsChoice is 0) through gFn80D2 and draws through f1A29_008B,
-   otherwise through f1A29_000F. Called by 0BD2 (three sites) and 1547:07E7. */
+   otherwise through DrawShape. Called by 0BD2 (three sites) and 1547:07E7. */
 /*@ 0D1C:070F */ void DrawItemIcon(int mode, int n, int x, int y)
 {
     int icon;
@@ -493,7 +495,7 @@ int GetCurrentItem(void);
             gFn80D2("");
         f1A29_008B(mode, gIconsDDE4[icon], x, y, 0);
     } else {
-        f1A29_000F(mode, gIconsDDE4[icon], x, y, 0);
+        DrawShape(mode, gIconsDDE4[icon], x, y, 0);
     }
 }
 /* 0D1C:07A7: advances the far string pointer `text` past `count` NUL-terminated strings (each
@@ -566,7 +568,7 @@ int GetCurrentItem(void);
     return 0;
 }
 /* 0D1C:0903: Purpose unknown: scans the six party members and returns a packed word. A member
-   qualifies when f0D1C_0670(who, 0xD) and f0D1C_08B1(rec) hold; for it the code takes
+   qualifies when MemberIs(who, 0xD) and f0D1C_08B1(rec) hold; for it the code takes
    FindClassSlot(2, m20) and, failing that, FindClassSlot(4, m20), and compares the member's
    m24[slot] (minus 2 in the second case) with the best so far. The result is (best member << 8)
    + best value, or 0 when none qualifies. Called by 0D1C:0A43. */
@@ -581,7 +583,7 @@ int GetCurrentItem(void);
     bestVal = best = 0;
     rec = gChars;
     for (who = 0; who < 6; who++, rec++) {
-        if (!f0D1C_0670(who, 0xD))
+        if (!MemberIs(who, 0xD))
             continue;
         if (!f0D1C_08B1(rec))
             continue;

@@ -33,7 +33,7 @@ extern void far *gSegDF4E; /*@ ds:DF4E */   /* the 19EC:0002(slot 5) far buffer 
 extern void DrawText(char far *text); /*@ 1DE7:060A */
 extern void PlaySound(int sound); /*@ 177D:0070 */
 extern void FlushKeyBuffer(void); /*@ 1AAD:0480 */
-extern int f0D1C_0670(int who, int mask); /*@ 0D1C:0670 */
+extern int MemberIs(int who, int mask); /*@ 0D1C:0670 */
 extern void RedrawMember(int dir); /*@ 1547:0991 */
 extern void LockHidePointer(void); /*@ 1BBE:0307 */
 extern void LockShowPointer(void); /*@ 1BBE:0332 */
@@ -182,7 +182,7 @@ extern void PlaySoundDefault(int sound); /*@ 177D:00F3 */
 extern void PlaySoundAtCell(int sound, int volume); /*@ 177D:0106 */
 extern void SetTextWindow(int n); /*@ 1DE7:0009 */
 extern void LoadScreenImage(char far *name, char far *extra, int srcKind, int dstKind, int mode); /*@ 082C:051B */
-extern void f1A47_0169(char far *font); /*@ 1A47:0169 */
+extern void SetFont(char far *font); /*@ 1A47:0169 */
 void EnterMapScreen(void);
 void ResetMapScreen(void);
 extern void LoadMapScreen(int level); /*@ 210C:007A */   /* overlay 3 entry, ovl3:0A7C (src/EOV3.C:540) */
@@ -206,12 +206,12 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
     return action->result;
 }
 
-/* 0ACD:0034: Purpose unknown: when the action mode gFC82 is nonzero or f0D1C_0670 accepts the
+/* 0ACD:0034: Purpose unknown: when the action mode gFC82 is nonzero or MemberIs accepts the
    record's slot, it hides the pointer, sets the mode byte to 1, selects the slot (mode 0 only),
    asks RedrawRowArea(1) and rebuilds list 2. Returns the record's +4. */
 /*@ 0ACD:0034 */ int Action0034(struct Action far *action)
 {
-    if (gFC82 != 0 || f0D1C_0670(action->slot, 1)) {
+    if (gFC82 != 0 || MemberIs(action->slot, 1)) {
         LockHidePointer();
         gFB44 = 1;
         if (gFC82 == 0)
@@ -224,7 +224,7 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
 }
 
 /* 0ACD:008C: when the action mode is 1 or 2 the selected character index is forced to 0 or 1;
-   otherwise it steps the index down (wrapping 0 to 5) until f0D1C_0670 accepts it. Then hides the
+   otherwise it steps the index down (wrapping 0 to 5) until MemberIs accepts it. Then hides the
    pointer, asks RedrawRowArea(0) and shows the pointer again. Returns the record's +4. */
 /*@ 0ACD:008C */ int Action008C(struct Action far *action)
 {
@@ -237,7 +237,7 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
             gA99A--;
             if (gA99A < 0)
                 gA99A = 5;
-        } while (!f0D1C_0670(gA99A, 1));
+        } while (!MemberIs(gA99A, 1));
     LockHidePointer();
     RedrawRowArea(0);
     LockShowPointer();
@@ -266,8 +266,8 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
             gA99A++;
             if (gA99A > 5)
                 gA99A = 0;
-        } while (!f0D1C_0670(gA99A, 1));
-    if (!f0D1C_0670(gA99A, 1)) {
+        } while (!MemberIs(gA99A, 1));
+    if (!MemberIs(gA99A, 1)) {
         gA99A = old;
         return 1;
     }
@@ -324,7 +324,7 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
     return action->result;
 }
 
-/* 0ACD:0264: the "move/swap party member" action. When f0D1C_0670 accepts the record's slot it
+/* 0ACD:0264: the "move/swap party member" action. When MemberIs accepts the record's slot it
    hides the pointer. With no member being moved (gIconTable == -1) it takes this slot as the moving
    member, rebuilds list 4, redraws the member and calls ArmEffect(0, 1); otherwise it swaps the
    moving member's 243-byte record with this slot's through the gSegDF4E buffer (three Unpack0
@@ -337,7 +337,7 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
     int old;
     int slot;
 
-    if (!f0D1C_0670(action->slot, 1))
+    if (!MemberIs(action->slot, 1))
         return action->result;
     LockHidePointer();
     if (gFlag)
@@ -399,7 +399,7 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
     f0D1C_006D(gF51A, 9);
 }
 
-/* 0ACD:0415: Purpose unknown: when f0D1C_0670 accepts the record's slot it hides the pointer, sets
+/* 0ACD:0415: Purpose unknown: when MemberIs accepts the record's slot it hides the pointer, sets
    a flag from g36B0[slot] against gHitY and dispatches to SwapSelectedItem or UseItemSlot (by the low
    bits of g5E1C), then shows the pointer. Returns 1. */
 /*@ 0ACD:0415 */ int Action0415(struct Action far *action)
@@ -407,7 +407,7 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
     char slot = action->slot;
     char flag;
 
-    if (!f0D1C_0670(slot, 1))
+    if (!MemberIs(slot, 1))
         return 1;
     LockHidePointer();
     if (g36B0[slot] <= gHitY)
@@ -586,12 +586,12 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
         f0D1C_0078(gF51A);
 }
 
-/* 0ACD:078C: selects the record's party slot: when f0D1C_0670 accepts it, the old row is
+/* 0ACD:078C: selects the record's party slot: when MemberIs accepts it, the old row is
    redrawn, SelectCharacter switches to the slot, the new row is drawn and the pointer shown;
    returns 0. When it is not accepted, returns 1. */
 /*@ 0ACD:078C */ int Action078C(struct Action far *action)
 {
-    if (!f0D1C_0670(action->slot, 1))
+    if (!MemberIs(action->slot, 1))
         return 1;
     LockHidePointer();
     f0D1C_0078(gF51A);
@@ -601,7 +601,7 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
     return 0;
 }
 
-/* 0ACD:07E0: the "eat" action for the character at `index`. When f0D1C_0670 rejects it (mask 5)
+/* 0ACD:07E0: the "eat" action for the character at `index`. When MemberIs rejects it (mask 5)
    it formats "%s isn't capable of eating food!" with the character's name and draws it. Otherwise
    it takes the current item and, when its type is 0x1F or 0x31, adds the item's m0B (the food
    value) to the character's m23 clamped to 100, sets the item's m04 to -1 (freeing the record),
@@ -613,7 +613,7 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
     struct CharRec far *rec = gChars + index;
     int item;
 
-    if (!f0D1C_0670(index, 5)) {
+    if (!MemberIs(index, 5)) {
         sprintf(gFileNameBuf, "%s isn't capable of eating food!\r", rec->name);
         DrawText(gFileNameBuf);
         return;
@@ -654,7 +654,7 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
 
 /* 0ACD:091C: the "turn" action, a switch over the four-entry jump table at 0ACD:09E7 (cases 1 and
    3 shared). Case 0 resets the action row gF51A to 0 when it is already set, otherwise steps the
-   selected character down by 2 (modulo 6) until f0D1C_0670 accepts it and sets gF51A to 1. Case 2
+   selected character down by 2 (modulo 6) until MemberIs accepts it and sets gF51A to 1. Case 2
    is the mirror: it sets gF51A to 1 when it is clear, otherwise steps the character up by 2
    (modulo 6) until accepted and clears gF51A. Cases 1 and 3 toggle the low bit of the character
    when accepted. It redraws the old character row and, when the character changed, the new one.
@@ -673,13 +673,13 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
                 gA99A -= 2;
                 if (gA99A < 0)
                     gA99A += 6;
-            } while (!f0D1C_0670(gA99A, 1));
+            } while (!MemberIs(gA99A, 1));
             gF51A = 1;
         }
         break;
     case 1:
     case 3:
-        if (f0D1C_0670(gA99A, 1))
+        if (MemberIs(gA99A, 1))
             gA99A ^= 1;
         break;
     case 2:
@@ -690,7 +690,7 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
                 gA99A += 2;
                 if (gA99A > 5)
                     gA99A -= 6;
-            } while (!f0D1C_0670(gA99A, 1));
+            } while (!MemberIs(gA99A, 1));
             gF51A = 0;
         }
         break;
@@ -987,7 +987,7 @@ done:
     BuildList1();
     LoadScreenImage("PLAYFLD", (char far *)gSheetDECORATE, 5, 3, 0);
     LoadScreenImage("INVENT", (char far *)gSheet2067, 5, 3, 2);
-    f1A47_0169(gA9C0);
+    SetFont(gA9C0);
     gStatusLine = 0;
     RedrawCharacters();
     DrawViewFrame(1);

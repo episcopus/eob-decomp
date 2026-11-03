@@ -15,7 +15,7 @@
 
 struct CharRec {            /* the 243-byte (0xF3) character records at ds:F580; see src/E0A72.C */
     char pad00;
-    unsigned char m01;      /* +01: status bits (0D1C:0670, 0DE8:09B9) */
+    unsigned char status;      /* +01: status bits (0D1C:0670, 0DE8:09B9) */
     char name[0x0B];        /* +02: the character's name, NUL padded (0DE8:0C82) */
     char pad0D[0x15 - 0x0D];
     signed char m15;        /* +15: one of the five further stat bytes (src/E0A72.C); indexes the
@@ -26,7 +26,7 @@ struct CharRec {            /* the 243-byte (0xF3) character records at ds:F580;
                                RollHitPoints (0A72:01AE), which LevelUpSlot passes there */
     char pad18[0x1B - 0x18];
     signed char hp;         /* +1B: current hit points */
-    signed char maxhp;      /* +1C: the maximum hit points (src/EOV5.C:32) */
+    signed char maxHp;      /* +1C: the maximum hit points (src/EOV5.C:32) */
     signed char m1D;        /* +1D: the armour-class byte 0D5E builds */
     signed char m1E;        /* +1E: a per-slot bit UseItem toggles itself (:522) */
     signed char m1F;        /* +1F */
@@ -160,7 +160,7 @@ extern long GetClassSlotExpThreshold(char row, char slot, char level); /*@ 0A72:
 extern int GetArmourClassBase(char m15); /*@ 0A72:019D */
 extern int GetIndexedByte(char index, char limit, char offset); /*@ 0A72:0006 */
 extern int RollHitPoints(char classIndex, char m17, char countA, char countB, char countC); /*@ 0A72:01AE */
-extern int f0D1C_0670(int who, int mask); /*@ 0D1C:0670 */
+extern int MemberIs(int who, int mask); /*@ 0D1C:0670 */
 extern int f0D1C_00DA(int value, int page); /*@ 0D1C:00DA */
 extern int f0D1C_0BAB(int obj); /*@ 0D1C:0BAB */
 extern int f0D1C_0BEB(int obj, int flag); /*@ 0D1C:0BEB */
@@ -273,7 +273,7 @@ void LevelUpSlot(int who, int cls, int slot);  /* forward: 0B45 reaches it with 
 /* 0DE8:01FF: runs the attack of a ds:DD2C record against the object it names. It takes the
    record's m08 slot (an index into gTable8DD2) and m0A item type, reads
    g1A2B[gFBCC * 4 + (gTable8DD2[slot].m03 & 3)] as the base member, rolls 011A damage (or 1 when
-   IsKind2Or3 is false) and adds 2 to the base when f0D1C_0670(5, 1) or f0D1C_0670(6, 1)
+   IsKind2Or3 is false) and adds 2 to the base when MemberIs(5, 1) or MemberIs(6, 1)
    holds and RollDice(1, 2, -1) is nonzero, then applies DamageCharacter to that member and
    returns 1, else 0. Called by 1414:0172 via TestDDEffect. */
 /*@ 0DE8:01FF */ int RunRecordAttack(struct DDRec far *rec)
@@ -292,11 +292,11 @@ void LevelUpSlot(int who, int cls, int slot);  /* forward: 0B45 reaches it with 
         damage = RollAttackDamage(-1, -1, slot, itemType, 0);
     else
         damage = 1;
-    if ((f0D1C_0670(5, 1) || f0D1C_0670(6, 1)) && RollDice(1, 2, -1))
+    if ((MemberIs(5, 1) || MemberIs(6, 1)) && RollDice(1, 2, -1))
         hitMember = baseMember + 2;
     else
         hitMember = baseMember;
-    if (f0D1C_0670(hitMember, 1)) {
+    if (MemberIs(hitMember, 1)) {
         DamageCharacter(hitMember, damage);
         return 1;
     }
@@ -529,7 +529,7 @@ fail:
         ApplyCharEffect(who, 0x12, slot + 2, 1);
 }
 /* 0DE8:093B: the party-wipe ending. It counts how many of the six characters pass the
-   f0D1C_0670(n, 5) test (m01 bit 0 and m1B > 0, src/E0D1C.C:445-448); when none does it hides the
+   MemberIs(n, 5) test (m01 bit 0 and m1B > 0, src/E0D1C.C:445-448); when none does it hides the
    pointer, fills the panel (0, 0x79)-(0x13F, 0xC8), writes "All of your party has been defeated.
    ..." in text window 9, shows the pointer again (LockShowPointer, :550), waits for a key
    (DelaySecondsThenKey(1), :551) and shuts the game down. Called by 0DE8:09B9. */
@@ -540,7 +540,7 @@ fail:
 
     alive = n = 0;
     for (; n < 6; n++)
-        alive += f0D1C_0670(n, 5);
+        alive += MemberIs(n, 5);
     if (alive != 0)
         return;
     LockHidePointer();
@@ -553,7 +553,7 @@ fail:
     ShutdownGame();
 }
 
-/* 0DE8:09B9: applies `amount` points of damage to character `who`. When f0D1C_0670(who, 3) holds
+/* 0DE8:09B9: applies `amount` points of damage to character `who`. When MemberIs(who, 3) holds
    it derates mE2 (the clamp to 0 is dead: QUIRK 0DE8:09FD), subtracts from hp, stores the amount
    in mE7, and at or below -10 sets hp to -10, clears mE2, clears mE3 bit 2 and keeps only bit 0 of
    m01; it plays sound 0x16 for the death and 0x15 otherwise, runs the mDF descending effect
@@ -568,7 +568,7 @@ fail:
 {
     struct CharRec far *rec;
 
-    if (!f0D1C_0670(who, 3))
+    if (!MemberIs(who, 3))
         return;
     rec = &gChars[who];
     if (rec->mE2 != 0) {
@@ -582,7 +582,7 @@ fail:
         rec->hp = -10;
         rec->mE2 = 0;
         rec->mE3 &= ~4;
-        rec->m01 &= 1;
+        rec->status &= 1;
         PlaySound(0x16);
     } else {
         PlaySound(0x15);
@@ -602,18 +602,18 @@ fail:
         CheckPartyWiped();
     ApplyCharEffect(who, 0x12, 6, 1);
 }
-/* 0DE8:0ADB: heals character `who` by `amount` hit points when the f0D1C_0670(who, 3) condition
-   holds, clamping at the record's maxhp maximum, then redraws the character through DrawMemberHp
+/* 0DE8:0ADB: heals character `who` by `amount` hit points when the MemberIs(who, 3) condition
+   holds, clamping at the record's maxHp maximum, then redraws the character through DrawMemberHp
    and RedrawMember. Called by 0BD2, 0EF3 and 122E. */
 /*@ 0DE8:0ADB */ void HealCharacter(int who, int amount)
 {
     struct CharRec far *rec;
 
-    if (!f0D1C_0670(who, 3))
+    if (!MemberIs(who, 3))
         return;
     rec = &gChars[who];
-    if (rec->hp + amount > rec->maxhp)
-        rec->hp = rec->maxhp;
+    if (rec->hp + amount > rec->maxHp)
+        rec->hp = rec->maxHp;
     else
         rec->hp = rec->hp + amount;
     DrawMemberHp(who);
@@ -644,7 +644,7 @@ fail:
     }
 }
 /* 0DE8:0C2B: gives `amount` experience to the whole party. It counts the members that pass
-   f0D1C_0670(n, 3), divides `amount` by that count and calls AddExperience(n, amount) for each of
+   MemberIs(n, 3), divides `amount` by that count and calls AddExperience(n, amount) for each of
    them. Called by 08E6:0EC3 and 122E:1B5A. */
 /*@ 0DE8:0C2B */ void AddPartyExperience(int amount)
 {
@@ -654,21 +654,21 @@ fail:
     count = 0;
     n = 0;
     for (; n < 6; n++) {
-        if (f0D1C_0670(n, 3))
+        if (MemberIs(n, 3))
             count++;
     }
     if (count <= 0)
         return;
     amount /= count;
     for (n = 0; n < 6; n++) {
-        if (f0D1C_0670(n, 3))
+        if (MemberIs(n, 3))
             AddExperience(n, amount);
     }
 }
 
 /* 0DE8:0C82: levels character `who` up in class slot `slot`. It bumps that m24 slot and, for the
    three slots 0/1/2, rolls one die of the matching damage group through RollHitPoints(cls, m17),
-   adding the result to both hp and maxhp, then formats
+   adding the result to both hp and maxHp, then formats
    "\x06\x01%s has gained a level of experience.\x06\x0f\r" into gFileNameBuf for the
    character's name (0x06 is the control byte that takes the next byte as the first text attribute,
    gTextAttr1 at ds:811D; 0x01 and 0x0f are attribute values, src/E1DE7.C:332, :379), redraws through
@@ -685,7 +685,7 @@ fail:
     else if (slot == 2)
         damage = RollHitPoints(cls, gChars[who].m17, 0, 0, 1);
     gChars[who].hp += damage;
-    gChars[who].maxhp += damage;
+    gChars[who].maxHp += damage;
     sprintf(gFileNameBuf, "\x06\x01%s has gained a level of experience.\x06\x0f\r",
             gChars[who].name);
     RedrawMember(who);
@@ -799,11 +799,11 @@ fail:
 /*@ 0DE8:101A */ void ApplyStatusEffect(int who, int mask, char far *text, int attack, int count,
                                  int value, int skipIfSet)
 {
-    if ((gChars[who].m01 & mask) != 0 && skipIfSet != 0)
+    if ((gChars[who].status & mask) != 0 && skipIfSet != 0)
         return;
     if (f0D1C_059B(who, attack))
         return;
-    gChars[who].m01 |= mask;
+    gChars[who].status |= mask;
     ApplyCharEffect(who, count * 0x222, value, 1);
     sprintf(gFileNameBuf, "%s is %s!\r", gChars[who].name, text);
     DrawText(gFileNameBuf);

@@ -1,5 +1,5 @@
 ; Unit at EOB.EXE 1BBE:0001 (860 bytes, 7 functions): the game's own mouse pointer, its hide and
-; show halves and the wrappers that call them. The pointer is drawn by [ds:80C2] (_gDraw80C2 in
+; show halves and the wrappers that call them. The pointer is drawn by [ds:80C2] (_gDrawShape in
 ; src/E1A29.C) from the shape record _gPointerShapeOff/_gPointerShapeSeg, positioned at the mouse
 ; position gCursorX/gCursorY less the hot spot _gPointerHotX/_gPointerHotY; before it is drawn at
 ; a new place the screen under it is saved through [ds:80AE] (gSaveRect) into the buffer
@@ -26,7 +26,7 @@
 ; Globals src/ already names keep those names: _gPointerBusy, _gMouseDisabled, _gPointerHeight, _gPointerWidth8,
 ; _gPointerHotX, _gPointerHotY, _gPointerBackOff, _gPointerBackSeg, _gPointerShapeOff, _gPointerShapeSeg,
 ; g8172, g8174, g80AA and g80A2 from src/E1BB1.ASM (and _gMouseDisabled from
-; src/E07A9.C, _gDraw80C2 from src/E1A29.C). The byte at 1BBE:0001 is the unit's segment start, as
+; src/E07A9.C, _gDrawShape from src/E1A29.C). The byte at 1BBE:0001 is the unit's segment start, as
 ; in 1BB1:0001 and 1BF3:000D.
 
         .MODEL  LARGE
@@ -129,7 +129,7 @@
                                         ; at 1BBE:0147-0149)
         EXTRN   g80AA:DWORD             ; @ ds:80AA: far fn (g8172/g8174) before the pointer work
         EXTRN   g80A2:DWORD             ; @ ds:80A2: far fn (no arguments) after the pointer work
-        EXTRN   _gDraw80C2:DWORD         ; @ ds:80C2: far fn (mode, void far *src, x, y); the `gDraw`
+        EXTRN   _gDrawShape:DWORD         ; @ ds:80C2: far fn (mode, void far *src, x, y); the `gDraw`
                                         ; prefix is a family guess (src/E1A29.C:53); the evidence is
                                         ; ShowPointer below, which calls it at 1BBE:01F4 with mode 0 and
                                         ; the shape record _gPointerShapeOff/_gPointerShapeSeg at the
@@ -344,7 +344,7 @@ L01B9:  push    word ptr [_gPointerBackSeg]
         push    word ptr [_gPointerShapeOff]
         mov     ax,0
         push    ax
-        call    dword ptr [_gDraw80C2]
+        call    dword ptr [_gDrawShape]
         add     sp,0Ah
 ShowDone: pop    ax
         pop     bp

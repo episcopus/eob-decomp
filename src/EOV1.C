@@ -158,7 +158,7 @@ extern char gF542[]; /*@ ds:F542 */
 extern char gFB44; /*@ ds:FB44 */
 extern char gFlag; /*@ ds:F3B9 */
 extern int gFlags849E; /*@ ds:849E */
-extern void far *gFont1A47; /*@ ds:FE4E */
+extern void far *gCurFont; /*@ ds:FE4E */
 extern void far *gFont8x8; /*@ ds:FE5A */
 extern void far *gA9C0; /*@ ds:A9C0 */
 extern void far *gSegDF4E; /*@ ds:DF4E */
@@ -248,13 +248,13 @@ extern int WaitGameKey(void); /*@ 1AAD:053A */
 extern int ReadKey(void); /*@ 1AAD:038E */
 extern int Action01E3(char far *text); /*@ 0ACD:01E3 */
 extern int RedrawPartyPanel(struct ActRec far *rec); /*@ 0EF3:2541 */
-extern int f0D1C_0670(int who, int mask); /*@ 0D1C:0670 */
-extern void f1A29_000F(int mode, void far *src, int x, int y, int region); /*@ 1A29:000F */
+extern int MemberIs(int who, int mask); /*@ 0D1C:0670 */
+extern void DrawShape(int mode, void far *src, int x, int y, int region); /*@ 1A29:000F */
 extern void DrawRowList(int index); /*@ 0D1C:0454 */
 extern int FindClassSlot(int slotId, int classIndex); /*@ 0A72:007B */
 extern int FindCarriedSlot(int who, int field2, int fieldB); /*@ 0D1C:00F1 */
 extern void RedrawMember(int who); /*@ 1547:0991 */
-extern void f1A47_0169(void far *font); /*@ 1A47:0169 */
+extern void SetFont(void far *font); /*@ 1A47:0169 */
 extern int heapcheck(void); /*@ 0000:74B0 */
 extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
 extern int DispatchKeyWait(struct Node far *head); /*@ 16A5:005A */
@@ -294,12 +294,12 @@ int AskYesNo(int message);
 
     if (who < 0)
         return;
-    if (!f0D1C_0670(who, 1))
+    if (!MemberIs(who, 1))
         return;
     f0D1C_035A(who);
     slot = who;
     if (who < 4) {
-        if (f0D1C_0670(5, 1))
+        if (MemberIs(5, 1))
             slot = 5;
         else
             slot = 4;
@@ -506,11 +506,11 @@ int AskYesNo(int message);
         return sel;
     }
     for (i = 0; i < 6; i++) {
-        if (avail[i] == -1 && f0D1C_0670(i, 1)) {
-            f1A29_000F(0, gIconDD28, g62F2[i] * 8, g62F8[i], 0);
-            f1A29_000F(0, gIconDD28, g62F2[i] * 8 + 0x10, g62F8[i], 0);
-            f1A29_000F(0, gIconDD28, g62F2[i] * 8 + 0x20, g62F8[i], 0);
-            f1A29_000F(0, gIconDD28, g62F2[i] * 8 + 0x30, g62F8[i], 0);
+        if (avail[i] == -1 && MemberIs(i, 1)) {
+            DrawShape(0, gIconDD28, g62F2[i] * 8, g62F8[i], 0);
+            DrawShape(0, gIconDD28, g62F2[i] * 8 + 0x10, g62F8[i], 0);
+            DrawShape(0, gIconDD28, g62F2[i] * 8 + 0x20, g62F8[i], 0);
+            DrawShape(0, gIconDD28, g62F2[i] * 8 + 0x30, g62F8[i], 0);
             gFD98 = 1;
         }
     }
@@ -536,7 +536,7 @@ int AskYesNo(int message);
     }
     if (!gMouseDisabled)
         cur = -1;
-    f1A47_0169(gA9C0);
+    SetFont(gA9C0);
     while (sel == -2) {
         key = DispatchKeyWait(list);
         DrawRowList(cur);
@@ -573,12 +573,12 @@ int AskYesNo(int message);
             break;
         case 0x6e:
         case 0x8012:
-            f1A47_0169(gFont8x8);
+            SetFont(gFont8x8);
             DrawListNode(list, 1, 1, 1);
             WaitFrames(5);
             DrawListNode(list, 0, 0, 1);
             sel = -1;
-            f1A47_0169(gA9C0);
+            SetFont(gA9C0);
             break;
         case 0x8013:
         case 0x8014:
@@ -600,7 +600,7 @@ int AskYesNo(int message);
     DrawRowList(-1);
     if (cur != 0)
         RedrawMember(cur);
-    f1A47_0169(gFont8x8);
+    SetFont(gFont8x8);
     if (sel != -1 && message != 0x35) {
         if (mode == 4) {
             int slot;
@@ -884,9 +884,9 @@ int AskYesNo(int message);
         }
         FreeFarList(list);
         DrawRowList(-1);
-        f1A47_0169(gA9C0);
+        SetFont(gA9C0);
         RedrawMember(who);
-        f1A47_0169(gFont8x8);
+        SetFont(gFont8x8);
         SpendSpellSlot(who, cleric);
     }
 }
@@ -989,9 +989,9 @@ int AskYesNo(int message);
     int i;
 
     savedStatus = gStatusLine;
-    savedFont = gFont1A47;
+    savedFont = gCurFont;
     savedWindow = gTextRegion;
-    f1A47_0169(gFont8x8);
+    SetFont(gFont8x8);
     LockHidePointer();
     g159 = gF57E;
     SetTextWindowAndClear(0xb);
@@ -1008,7 +1008,7 @@ int AskYesNo(int message);
         WaitFrames(1);
     }
     gStatusLine = savedStatus;
-    f1A47_0169(savedFont);
+    SetFont(savedFont);
     SetTextWindow(savedWindow);
     FlushKeyBuffer();
 }
@@ -1255,10 +1255,10 @@ int AskYesNo(int message);
     if (gFlag)
         RedrawPartyPanel((struct ActRec far *)gF542);
     gFlags849E &= ~2;
-    savedFont = gFont1A47;
+    savedFont = gCurFont;
     savedWindow = gTextRegion;
     for (i = 0; i < 6; i++) {
-        if (f0D1C_0670(i, 1)) {
+        if (MemberIs(i, 1)) {
             gChars[i].lastDamage = 0;
             gChars[i].lastAction[0] = 0;
             gChars[i].lastAction[1] = 0;
@@ -1268,7 +1268,7 @@ int AskYesNo(int message);
     LockHidePointer();
     SaveOptionField();
     LockShowPointer();
-    f1A47_0169(gFont8x8);
+    SetFont(gFont8x8);
     reloadInvent = 0;
     gFD98 = 0;
     redrawParty = 0;
@@ -1335,7 +1335,7 @@ int AskYesNo(int message);
 
             members = 0;
             for (i = 0; i < 6; i++) {
-                if (f0D1C_0670(i, 1))
+                if (MemberIs(i, 1))
                     members++;
             }
             if (members < 5)
@@ -1348,9 +1348,9 @@ int AskYesNo(int message);
                 reloadInvent = 1;
                 LoadScreenImage("INVENT", gOverlayBuf, 5, 3, 2);
                 gSaveRect(0, 0x78, 0x16, 0x18, (char far *)gSegDF4E + 0x4e20);
-                f1A47_0169(gA9C0);
+                SetFont(gA9C0);
                 RedrawCharacters();
-                f1A47_0169(gFont8x8);
+                SetFont(gFont8x8);
                 LockShowPointer();
             }
             nextMenu = MENU_CAMP;
@@ -1402,10 +1402,10 @@ int AskYesNo(int message);
                 reloadInvent = 1;
                 LockHidePointer();
                 DrawOptionField();
-                f1A47_0169(gA9C0);
+                SetFont(gA9C0);
                 DrawViewFrame(1);
                 if (LoadGame() == 0) {
-                    f1A47_0169(gFont8x8);
+                    SetFont(gFont8x8);
                     SaveOptionField();
                     FreeFarList(list);
                     hot = list = BuildMenuButtons(MENU_GAME_OPTIONS);
@@ -1418,7 +1418,7 @@ int AskYesNo(int message);
                     looping = 0;
                 }
                 LockShowPointer();
-                f1A47_0169(gFont8x8);
+                SetFont(gFont8x8);
             } else
                 nextMenu = MENU_GAME_OPTIONS;
             break;
@@ -1528,7 +1528,7 @@ int AskYesNo(int message);
         }
     } while (looping);
     FreeFarList(list);
-    f1A47_0169(savedFont);
+    SetFont(savedFont);
     gStatusLine = 2;
     DrawOptionField();
     SetTextWindow(savedWindow);
@@ -1570,9 +1570,9 @@ int AskYesNo(int message);
     int hot;
 
     savedWindow = gTextRegion;
-    savedFont = gFont1A47;
+    savedFont = gCurFont;
     gStatusLine = 0;
-    f1A47_0169(gFont8x8);
+    SetFont(gFont8x8);
     list = BuildMenuButtons(5);
     LockHidePointer();
     DrawShadowText(SkipStrings(&gStrings2003, message), (gTextLeft + 1) << 3, gTextTop + 4, 0xf, 0);
@@ -1630,7 +1630,7 @@ int AskYesNo(int message);
         }
     }
     FreeFarList(list);
-    f1A47_0169(savedFont);
+    SetFont(savedFont);
     SetTextWindow(savedWindow);
     return result;
 }

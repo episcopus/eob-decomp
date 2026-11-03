@@ -12,7 +12,7 @@
 
 struct CharRec {            /* the 243-byte (0xF3) records at ds:F580 (src/E0A72.C, src/E0D1C.C) */
     char pad00;
-    unsigned char m01;      /* +01: status bits: bit 0 alive, bit 1 poisoned, bit 2 paralyzed
+    unsigned char status;      /* +01: status bits: bit 0 alive, bit 1 poisoned, bit 2 paralyzed
                                (src/E0DE8.C:558 keeps only bit 0 at death; src/E1414.C:476-477
                                clears bit 1 at the end of poison and bit 2 at the end of paralysis) */
     char name[0x0B];        /* +02: the NUL-padded name (src/EOV6.C) */
@@ -33,7 +33,7 @@ struct CharRec {            /* the 243-byte (0xF3) records at ds:F580 (src/E0A72
     signed char m19;        /* +19: CHARISMA (ds:1195[5]) */
     signed char m1A;        /* +1A */
     signed char hp;         /* +1B: current hit points (src/E1414.C) */
-    signed char hpMax;      /* +1C: maximum hit points, the second %3d of the HP line */
+    signed char maxHp;      /* +1C: maximum hit points, the second %3d of the HP line */
     signed char m1D;        /* +1D: the armour-class byte, drawn on the ARMOR CLASS row
                                (src/E08E6.C:60 and src/E0EF3.C:25 name it the armour-class byte) */
     signed char m1E;        /* +1E: a per-slot bit toggled by UseItem's `m1E ^= 1 << slot`
@@ -115,15 +115,15 @@ extern unsigned strlen(char far *s); /*@ 0000:67F6 */
 extern char *strcpy(char far *dest, char far *src); /*@ 0000:67CD */
 extern void DrawRect(int x1, int y1, int x2, int y2, int colour); /*@ 082C:04C4 */
 extern void DrawFilledPanel(int x1, int y1, int x2, int y2, int colourA, int colourB, int fill); /*@ 082C:09D5 */
-extern int f0D1C_0670(int who, int mask); /*@ 0D1C:0670 */
-extern void f1A29_000F(int statusLine, void far *src, int x, int y, int region); /*@ 1A29:000F */
+extern int MemberIs(int who, int mask); /*@ 0D1C:0670 */
+extern void DrawShape(int statusLine, void far *src, int x, int y, int region); /*@ 1A29:000F */
 extern void ClipRect(int x1, int y1, int x2, int y2, int width, int height, int extra1, int extra2); /*@ 19F3:000E */
 extern void LockHidePointer(void); /*@ 1BBE:0307 */
 extern void LockShowPointer(void); /*@ 1BBE:0332 */
 extern void DrawItemIcon(int mode, int n, int x, int y); /*@ 0D1C:070F */
 extern int f0D1C_07DB(int who, int flag); /*@ 0D1C:07DB */
 
-extern char far *gFont1A47; /*@ ds:FE4E */  /* the current font (src/E1A47.C) */
+extern char far *gCurFont; /*@ ds:FE4E */  /* the current font (src/E1A47.C) */
 extern char far *gA9C0; /*@ ds:A9C0 */      /* the 6x6 font loaded from FONT6.FNT (src/E07A9.C) */
 extern char gIconTable; /*@ ds:FB34 */          /* the party member being moved, -1 when none
                                                 (src/E0ACD.C:42); src/EOV2.C:142 records the
@@ -149,7 +149,7 @@ extern char far *g1219[]; /*@ ds:1219 */     /* the per-class-slot names (GetCla
 extern char far *g1240[]; /*@ ds:1240 */     /* the alignment names */
 
 extern char *itoa(int value, char *string, int radix); /*@ 0000:62AA */
-extern void f1A47_0169(char far *font); /*@ 1A47:0169 */
+extern void SetFont(char far *font); /*@ 1A47:0169 */
 extern void DrawShadowText(char far *text, int x, int y, int color, int extra); /*@ 082C:0898 */
 extern void PrintInt(int value, int a, int b, int c, int d); /*@ 1AA6:000F */
 extern void f1BA4_000C(long value, int a, int b, int c, int d); /*@ 1BA4:000C */
@@ -257,14 +257,14 @@ extern void DrawItemRow(int who, int slot, int one); /*@ 0BD2:0917 */
     if (part < width)
         gFillRect(x + part, y, x + width, y + height, emptyColour);
 }
-/* 1547:033F: draws one member's HP line. It returns unless the member passes f0D1C_0670(member,
+/* 1547:033F: draws one member's HP line. It returns unless the member passes MemberIs(member,
    1) and, while gFB44 is nonzero, is also the selected member gA99A. The line is at (g5D24[member &
    1], g5D26[member >> 1]), shifted right by 0xB0 while no status line is up, or fixed at (0xfa, 0x10)
    while gFB44 is nonzero. When gBarGraphsOn is set it draws the "HP" label (only while gFB44 is 0) and a
-   ratio bar (DrawRatioBar) of hp + 10 against hpMax + 10 (the +10 keeps the bar visible at negative
-   hit points), the colour picked by a wound state: 1 when (hpMax + 10) / 3 exceeds hp + 10, 2 when
+   ratio bar (DrawRatioBar) of hp + 10 against maxHp + 10 (the +10 keeps the bar visible at negative
+   hit points), the colour picked by a wound state: 1 when (maxHp + 10) / 3 exceeds hp + 10, 2 when
    hp + 10 is 10 or less (hp at or below 0), else 0; when gBarGraphsOn is 0 it prints "%3d of %-3d" (hp,
-   hpMax) instead. Called by RedrawMember (0991) and HealCharacter (0DE8:0ADB, src/E0DE8.C:592). */
+   maxHp) instead. Called by RedrawMember (0991) and HealCharacter (0DE8:0ADB, src/E0DE8.C:592). */
 /*@ 1547:033F */ void DrawMemberHp(int member)
 {
     int state;
@@ -277,7 +277,7 @@ extern void DrawItemRow(int who, int slot, int one); /*@ 0BD2:0917 */
     int x;
     int y;
 
-    if (!f0D1C_0670(member, 1))
+    if (!MemberIs(member, 1))
         return;
     rec = &gChars[member];
     if (gFB44 != 0 && gA99A != member)
@@ -297,7 +297,7 @@ extern void DrawItemRow(int who, int slot, int one); /*@ 0BD2:0917 */
     }
     if (gBarGraphsOn) {
         value = rec->hp + 10;
-        max = rec->hpMax + 10;
+        max = rec->maxHp + 10;
         state = 0;
         if (max / 3 > value)
             state = 1;
@@ -307,7 +307,7 @@ extern void DrawItemRow(int who, int slot, int one); /*@ 0BD2:0917 */
             gDrawText("HP", x - 0xd, y - 1, 0xc, gF57E);
         DrawRatioBar(x, y, value, max, width, height, g5D1C[state], gFB7A);
     } else {
-        sprintf(buf, "%3d of %-3d", rec->hp, rec->hpMax);
+        sprintf(buf, "%3d of %-3d", rec->hp, rec->maxHp);
         if (gFB44 == 0) {
             x -= 0xd;
             y -= 1;
@@ -316,8 +316,8 @@ extern void DrawItemRow(int who, int slot, int one); /*@ 0BD2:0917 */
     }
 }
 /* 1547:04A0: draws one member's food/hunger bar (the small bar under the HP line while the
-   inventory is up). It returns unless gFB44 is nonzero, the member passes f0D1C_0670(member, 1),
-   m01 bit 0 (alive) is set and the member is the selected gA99A. The bar is at (0xfa, 0x19): value
+   inventory is up). It returns unless gFB44 is nonzero, the member passes MemberIs(member, 1),
+   status bit 0 (alive) is set and the member is the selected gA99A. The bar is at (0xfa, 0x19): value
    m23 (the food value) against 100, 51 wide, 5 tall, the colour picked by a hunger state (the lower
    the food value the hungrier: 1 below 0x21, 2 below 0x14, else 0). Called from RedrawMember (0991),
    EatFood (0ACD:07E0, src/E0ACD.C:577) and DecayMemberState (1414:0C82, src/E1414.C:657). */
@@ -328,10 +328,10 @@ extern void DrawItemRow(int who, int slot, int one); /*@ 0BD2:0917 */
 
     if (gFB44 == 0)
         return;
-    if (!f0D1C_0670(member, 1))
+    if (!MemberIs(member, 1))
         return;
     rec = &gChars[member];
-    if (!(rec->m01 & 1))
+    if (!(rec->status & 1))
         return;
     if (gFB44 && gA99A != member)
         return;
@@ -343,7 +343,7 @@ extern void DrawItemRow(int who, int slot, int one); /*@ 0BD2:0917 */
     DrawRatioBar(0xfa, 0x19, rec->m23, 0x64, 0x33, 5, g5D29[state], gFB7A);
 }
 /* 1547:0544: draws one member's portrait on the character screen. It returns unless the member
-   passes f0D1C_0670(who, 1). The portrait corner is (g5D2C[who & 1], g5D2E[who >> 1]), the x
+   passes MemberIs(who, 1). The portrait corner is (g5D2C[who & 1], g5D2E[who >> 1]), the x
    shifted by 0xB0 while no status line is up, or the fixed (0xb5, 3) while gFB44 is nonzero (and
    only for the selected member gA99A). At hp == -10 it draws the dead portrait gIconF2F4 and
    returns; when mE3 bit 2 is set and gFB44 is 0 it fills the portrait in colour 0xC and returns;
@@ -358,7 +358,7 @@ extern void DrawItemRow(int who, int slot, int one); /*@ 0BD2:0917 */
     int y;
 
     rec = &gChars[who];
-    if (!f0D1C_0670(who, 1))
+    if (!MemberIs(who, 1))
         return;
     if (gFB44 == 0) {
         x = g5D2C[who & 1];
@@ -372,7 +372,7 @@ extern void DrawItemRow(int who, int slot, int one); /*@ 0BD2:0917 */
         y = 3;
     }
     if (rec->hp == -10) {
-        f1A29_000F(gStatusLine, gIconF2F4, x, y, 0);
+        DrawShape(gStatusLine, gIconF2F4, x, y, 0);
         return;
     }
     if (rec->mE3 & 4) {
@@ -381,13 +381,13 @@ extern void DrawItemRow(int who, int slot, int one); /*@ 0BD2:0917 */
             return;
         }
     }
-    f1A29_000F(gStatusLine, rec->portrait, x, y, 0);
+    DrawShape(gStatusLine, rec->portrait, x, y, 0);
     if (rec->hp < 1)
-        f1A29_000F(gStatusLine, gIconDC94, x, y, 0);
+        DrawShape(gStatusLine, gIconDC94, x, y, 0);
 }
 /* 1547:0642: draws the label of an item-use result at (x, y). It clears the second line buffer,
    sets the colour (0xF, or 2 while the video mode gGraphicsChoice is 0), and then either draws the
-   thrown-item icon gThrownIcon4 at (x - 1, y) through f1A29_000F when `result` is above -3, or
+   thrown-item icon gThrownIcon4 at (x - 1, y) through DrawShape when `result` is above -3, or
    fills a panel (x, y)-(x + 0x1E, y + 0xF) in colours gA95A/g8A6C/g8A7D. The switch on `result`
    fills `name` (6 bytes) and the optional `suffix` (6 bytes, empty for the default): -1 "MISS" (and
    y + 1), -2 "HACK", -3 "CAN'T"+"REACH", -4 "NO"+"AMMO", anything else the decimal `result`. It
@@ -406,7 +406,7 @@ extern void DrawItemRow(int who, int slot, int one); /*@ 0BD2:0917 */
     if (gGraphicsChoice == 0)
         colour = 2;
     if (result > -3) {
-        f1A29_000F(gStatusLine, gThrownIcon4, x - 1, y, 0);
+        DrawShape(gStatusLine, gThrownIcon4, x - 1, y, 0);
     } else {
         DrawFilledPanel(x, y, x + 0x1e, y + 0xf, gA95A, g8A6C, g8A7D);
     }
@@ -445,9 +445,9 @@ extern void DrawItemRow(int who, int slot, int one); /*@ 0BD2:0917 */
    line is up. It hides the pointer, fills the panel in gFB4C/gF53A/gF57E, and outlines it in colour
    0xF when the mouse is DISABLED and the slot is the selected one (gMouseDisabled, gA99A, gF51A).
    When the record's mE8[slot] is set it draws the item-use label DrawActionLabel; else it draws the
-   item icon through DrawItemIcon, or the empty-slot icon gEmptySlotIcons[slot] through f1A29_000F,
+   item icon through DrawItemIcon, or the empty-slot icon gEmptySlotIcons[slot] through DrawShape,
    and then, in that else branch only, draws the highlight icon gIcon8A7E when the slot's m1E bit is
-   set, or f0D1C_07DB(who, slot) returns 0, or hp is 0 or below, or m01 bit 2 (paralyzed) is set.
+   set, or f0D1C_07DB(who, slot) returns 0, or hp is 0 or below, or status bit 2 (paralyzed) is set.
    Called by RedrawMember (0991) and RemoveCarriedItems (0D1C:01CA, src/E0D1C.C:294). */
 /*@ 1547:07E7 */ void DrawMemberSlot(char who, char slot)
 {
@@ -470,23 +470,23 @@ extern void DrawItemRow(int who, int slot, int one); /*@ 0BD2:0917 */
         if (item != 0)
             DrawItemIcon(gStatusLine, item, x + 8, y);
         else
-            f1A29_000F(gStatusLine, gEmptySlotIcons[slot], x + 8, y, 0);
+            DrawShape(gStatusLine, gEmptySlotIcons[slot], x + 8, y, 0);
         if ((gChars[who].m1E & (1 << slot)) || f0D1C_07DB(who, slot) == 0
-                || gChars[who].hp <= 0 || (gChars[who].m01 & 4))
-            f1A29_000F(gStatusLine, gIcon8A7E, x, y, 0);
+                || gChars[who].hp <= 0 || (gChars[who].status & 4))
+            DrawShape(gStatusLine, gIcon8A7E, x, y, 0);
     }
     LockShowPointer();
 }
 /* 1547:0991: redraws one member's block on the character screen. It returns unless the member
-   passes f0D1C_0670(who, 1). The block layout depends on the screen mode gFB44: mode 0 (the
+   passes MemberIs(who, 1). The block layout depends on the screen mode gFB44: mode 0 (the
    plain character screen) draws the name (or "Swapping" while this member is the one being moved,
    gIconTable), the portrait, the two carried-item slots, the HP line, the status bar and, while
    mE7 (the last damage amount) is above zero, the thrown-damage icon gThrownIcon3 and its number;
    mode 1 (the inventory up) draws the HP line, the food bar, one status line (DEAD, UNCONSCIOUS,
    POISON (SLOW), POISONED or PARALYZED) and the item rows; mode 2 (the character information
    panel) draws the stat panel with the class, race and alignment names, the six stat lines, armor
-   class, EXP/LVL and the per-class slot lines. The name colour and text attribute come from m01
-   bits 1 and 2 (8/6), otherwise 0xc/0xf; m01 bit 0 is the alive bit, bit 1 poisoned and bit 2
+   class, EXP/LVL and the per-class slot lines. The name colour and text attribute come from status
+   bits 1 and 2 (8/6), otherwise 0xc/0xf; status bit 0 is the alive bit, bit 1 poisoned and bit 2
    paralyzed (E1414.C:476-477 clears them at the end of the effect; E0DE8.C:558 keeps only bit 0
    at death). Called by several screens with the member index (for example Action0264, 0ACD:0264,
    while moving a member, src/E0ACD.C:302). */
@@ -505,10 +505,10 @@ extern void DrawItemRow(int who, int slot, int one); /*@ 0BD2:0917 */
     int x;
     int y;
 
-    if (!f0D1C_0670(who, 1))
+    if (!MemberIs(who, 1))
         return;
     rec = &gChars[who];
-    if (rec->m01 & 6) {
+    if (rec->status & 6) {
         textColour = 8;
         textAttr = 6;
     } else {
@@ -518,8 +518,8 @@ extern void DrawItemRow(int who, int slot, int one); /*@ 0BD2:0917 */
     switch (gFB44) {
     case 0:
         LockHidePointer();
-        savedFont = gFont1A47;
-        f1A47_0169(gA9C0);
+        savedFont = gCurFont;
+        SetFont(gA9C0);
         x = g5D4B[who & 1];
         y = g5D4F[who >> 1];
         ClipRect(0x16, 0xa8, x, y, 8, 0x18, 2, 2);
@@ -538,14 +538,14 @@ extern void DrawItemRow(int who, int slot, int one); /*@ 0BD2:0917 */
         DrawMemberBar(who);
         if (rec->mE7 > 0) {
             itoa(rec->mE7, buf, 10);
-            f1A29_000F(2, gThrownIcon3, x + 0xd, y + 0x1e, 0);
+            DrawShape(2, gThrownIcon3, x + 0xd, y + 0x1e, 0);
             gDrawText(buf, x + 0x22 - strlen(buf) * 3, y + 0x2a,
                     gGraphicsChoice == 0 ? 0xc : 0xf, 0);
         }
         gStatusLine = savedStatusLine;
         if (!gStatusLine)
             ClipRect(x >> 3, y, g5D4D[who & 1], y, 8, 0x32, 2, 0);
-        f1A47_0169(savedFont);
+        SetFont(savedFont);
         LockShowPointer();
         return;
     case 1:
@@ -567,11 +567,11 @@ extern void DrawItemRow(int who, int slot, int one); /*@ 0BD2:0917 */
                 DrawShadowText("DEAD", 0xf7, 0x9e, 6, gFB7B);
             else if ((unsigned)(rec->hp + 9) < 10)
                 DrawShadowText("UNCONSCIOUS", 0xe2, 0x9e, 6, gFB7B);
-            else if ((rec->m01 & 2) && (rec->mE3 & 0x80))
+            else if ((rec->status & 2) && (rec->mE3 & 0x80))
                 DrawShadowText("POISON (SLOW)", 0xdc, 0x9e, 6, gFB7B);
-            else if (rec->m01 & 2)
+            else if (rec->status & 2)
                 DrawShadowText("POISONED", 0xeb, 0x9e, 6, gFB7B);
-            else if (rec->m01 & 4)
+            else if (rec->status & 4)
                 DrawShadowText("PARALYZED", 0xe8, 0x9e, 6, gFB7B);
             for (n = 0; n < 0x1b; n++)
                 DrawItemRow(n, 0, 2);

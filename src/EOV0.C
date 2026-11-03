@@ -42,7 +42,7 @@ struct IconDef4 {               /* 4-byte rectangle records at 2080 (the icon ce
 extern struct IconDef4 far gIcons2080[]; /*@ 2080:0000 */
 
 extern void ClipRect(int x1, int y1, int x2, int y2, int width, int height, int extra1, int extra2); /*@ 19F3:000E */
-extern void f1A29_000F(int mode, void far *src, int x, int y, int region); /*@ 1A29:000F */
+extern void DrawShape(int mode, void far *src, int x, int y, int region); /*@ 1A29:000F */
 extern void HidePointerZone(int left, int top, int right, int bottom); /*@ 1BBE:01FE */
 extern void ShowPointerZone(void); /*@ 1BBE:02C2 */
 extern void movmem(void far *src, void far *dst, unsigned n); /*@ 0000:63A3 */
@@ -55,7 +55,7 @@ extern void DrawRowList(int index); /*@ 0D1C:0454 */
 
 struct CharRec {                /* 243-byte character records at ds:F580 (src/E0A72.C) */
     char index00;               /* +00: the character index ovl0:26C6 writes */
-    unsigned char m01;          /* +01: status bits */
+    unsigned char status;          /* +01: status bits */
     char name[0x0b];            /* +02: the character's name, NUL padded */
     char m0D;                   /* +0D: the source of 284A's byte copy */
     char m0E;
@@ -71,8 +71,8 @@ struct CharRec {                /* 243-byte character records at ds:F580 (src/E0
     char m18;
     char m19;
     char m1A;
-    char m1B;
-    char m1C;                   /* +1C: the destination of 284A's byte copy */
+    char hp;
+    char maxHp;                   /* +1C: the destination of 284A's byte copy */
     char m1D;
     char m1E;
     signed char m1F;            /* +1F: the race index, half of it indexes gTable5F35 (src/E0A72.C) */
@@ -164,9 +164,9 @@ extern unsigned char g6079[]; /*@ ds:6079 */ /* per-character x read by ovl0:1F6
 extern unsigned char g607D[]; /*@ ds:607D */ /* per-character y read by ovl0:1F66 (Purpose unknown) */
 extern char gStr623F[]; /*@ ds:623F */ /* a fixed panel label (Purpose unknown) */
 extern void (far *gDrawText)(char far *text, int x, int y, int colour, int extra); /*@ ds:80CA */
-extern char far *gFont1A47; /*@ ds:FE4E */ /* the current font (src/E1547.C) */
+extern char far *gCurFont; /*@ ds:FE4E */ /* the current font (src/E1547.C) */
 extern void far *gA9C0; /*@ ds:A9C0 */ /* the 6x6 font loaded from FONT6.FNT (src/E07A9.C) */
-extern void f1A47_0169(char far *font); /*@ 1A47:0169 */
+extern void SetFont(char far *font); /*@ 1A47:0169 */
 extern char gFontWidth; /*@ ds:8100 */ /* the current font's character width (src/E14EF.C) */
 extern int gNamePosX[]; /*@ ds:5E44 */ /* the x of each panel name slot (Purpose unknown) */
 extern int gNamePosY[]; /*@ ds:5E4C */ /* the y of each panel name slot (Purpose unknown) */
@@ -284,7 +284,7 @@ extern void far *g5E64[0x11]; /*@ ds:5E64 */ /* the 17 sliced icon pointers this
 }
 /* ovl0:0128: draws one character-panel icon. It maps slot `index` (0..0x10) to the cell row
    gIcons2084[index].m06 + `row`, clips the panel rectangle gIcons2080[row], draws the icon cell
-   g5E64[index] inside it through f1A29_000F (mode 2), and unless `mode` is 2 hides and shows the
+   g5E64[index] inside it through DrawShape (mode 2), and unless `mode` is 2 hides and shows the
    mouse pointer around the icon's live area. The rectangle's top-left is (0x14, 0) in mode 0,
    else the icon's own origin gIcons2084[index].m07 + 2 / m08 - 0x40. Called by ovl0:037A, 0504,
    0A5E, 11BA, 207A and 2238. */
@@ -307,7 +307,7 @@ extern void far *g5E64[0x11]; /*@ ds:5E64 */ /* the 17 sliced icon pointers this
     ClipRect(gIcons2080[cellRow].left, gIcons2080[cellRow].top, x, y, gIcons2080[cellRow].width,
         gIcons2080[cellRow].height, 2, 2);
     if (gIcons2084[index].w)
-        f1A29_000F(2, g5E64[index], (x << 3) + gIcons2084[index].m04, y + gIcons2084[index].m05, 0);
+        DrawShape(2, g5E64[index], (x << 3) + gIcons2084[index].m04, y + gIcons2084[index].m05, 0);
     if (mode == 2)
         return;
     HidePointerZone(gIcons2084[index].m07 << 3, gIcons2084[index].m08,
@@ -403,20 +403,20 @@ extern void far *g5E64[0x11]; /*@ ds:5E64 */ /* the 17 sliced icon pointers this
     char far *savedFont;
     int x;
 
-    savedFont = gFont1A47;
-    f1A47_0169(gA9C0);
+    savedFont = gCurFont;
+    SetFont(gA9C0);
     x = (0x3c - gFontWidth * len) >> 1;
     LockHidePointer();
     gDrawText(gStr618C, gNamePosX[index], gNamePosY[index], 0xc, 0xc);
     gDrawText(gChars[index].name, gNamePosX[index] + x, gNamePosY[index], color, 0);
     LockShowPointer();
-    f1A47_0169(savedFont);
+    SetFont(savedFont);
 }
 /* ovl0:065B: draws the current character's panel page for gChars[index]. It clips the page and,
    unless `mode` is 4, draws the character's sprite, then the name, race g11AD[m1F] and class
    g11DD[m20] centred over the page and six labels g115D[8..13] down the left column. It formats
    three stat lines into gFileNameBuf (the strength string "score/percentile" from m0D and m0F with
-   m11, m13, m15, m17, m19, the m1D/m1C pair and the m24[0..2] triple, the third picking one of three
+   m11, m13, m15, m17, m19, the m1D/maxHp pair and the m24[0..2] triple, the third picking one of three
    gStr61xx formats from m24[1] and m24[2]) and draws each; the mode selects which panel icons are
    highlighted: 1 highlights 4, 7, 8 and 6, 2 highlights 0x10 and 9, 3 highlights 0xa, 0xb and 9
    (each drawn through DrawPanelIcon mode 2, at the icon's own origin with the pointer left shown).
@@ -430,7 +430,7 @@ extern void far *g5E64[0x11]; /*@ ds:5E64 */ /* the 17 sliced icon pointers this
     ClipRect(0, 0, 0x14, 0, 0x14, 0x80, 2, 2);
     gStatusLine = 2;
     if (mode != 4)
-        f1A29_000F(2, gChars[index].sprite, 0xe0, 2, 0);
+        DrawShape(2, gChars[index].sprite, 0xe0, 2, 0);
     text = gChars[index].name;
     DrawShadowText(text, 0xa0 + (0x14 - strlen(text)) * 4, 0x23, 0xf, 0);
     text = g11AD[gChars[index].m1F];
@@ -444,7 +444,7 @@ extern void far *g5E64[0x11]; /*@ ds:5E64 */ /* the 17 sliced icon pointers this
         gChars[index].m11, gChars[index].m13, gChars[index].m15, gChars[index].m17,
         gChars[index].m19);
     DrawShadowText(gFileNameBuf, 0xc0, 0x40, 0xf, 0);
-    sprintf(gFileNameBuf, gStr61B3, gChars[index].m1D, gChars[index].m1C);
+    sprintf(gFileNameBuf, gStr61B3, gChars[index].m1D, gChars[index].maxHp);
     DrawShadowText(gFileNameBuf, 0x118, 0x40, 0xf, 0);
     text = gStr61B9;
     if (gChars[index].m24[1] > 0)
@@ -526,7 +526,7 @@ int PickAlignment(int classIndex); /* ovl0:2238, defined below */
         LockHidePointer();
         for (i = 0; i < 4; i++) {
             taken[i] = slot;
-            f1A29_000F(0, gPtrsFC8C[taken[i]], i * 0x20 + 0xb0, 0x42, 0);
+            DrawShape(0, gPtrsFC8C[taken[i]], i * 0x20 + 0xb0, 0x42, 0);
             slot = FindSlot(slot + 1, gFC8A, 1, g5EAC);
         }
         LockShowPointer();
@@ -814,7 +814,7 @@ int PickAlignment(int classIndex); /* ovl0:2238, defined below */
 }
 /* ovl0:11BA: draws the panel row the icon index `index` maps to. It clears the row list (-1), hides
    the pointer, then either draws panel icon index - 0x32 when `index` is above 0x30, or slices the
-   current character gDCB0's sprite over the row through f1A29_000F (mode 0) at gPanelX5E54/gDCB0,
+   current character gDCB0's sprite over the row through DrawShape (mode 0) at gPanelX5E54/gDCB0,
    gPanelY5E5C/gDCB0 + 1. Shows the pointer afterwards. Called by ovl0:0EE5 and 23EC. */
 /*@ ovl0:11BA */ void DrawPanelRow(int index)
 {
@@ -827,13 +827,13 @@ int PickAlignment(int classIndex); /* ovl0:2238, defined below */
         row -= 0x32;
         DrawPanelIcon(row, 0, 0);
     } else
-        f1A29_000F(0, gChars[gDCB0].sprite, gPanelX5E54[gDCB0], gPanelY5E5C[gDCB0] + 1, 0);
+        DrawShape(0, gChars[gDCB0].sprite, gPanelX5E54[gDCB0], gPanelY5E5C[gDCB0] + 1, 0);
     LockShowPointer();
 }
 /* ovl0:1224: advances and draws the current character's animation frame. When the selected character
    changed it resets the frame timer gFC86; when gFC86 is behind gTicks it steps gFC84 through 0..9
    and sets gFC86 two ticks ahead. If the frame did not change it returns, else it clips the character
-   cell, blits cell gPtrsFD54[gFC84] at (0x120, 0x80) through f1A29_000F, hides the pointer over the
+   cell, blits cell gPtrsFD54[gFC84] at (0x120, 0x80) through DrawShape, hides the pointer over the
    character's panel box, clips it and shows the pointer. Called by ovl0:0A5E, 0DDC, 135D, 1F66,
    207A and 2238. Purpose unknown: which animation the ten cells are. */
 /*@ ovl0:1224 */ void Ovl0_1224(void)
@@ -851,7 +851,7 @@ int PickAlignment(int classIndex); /* ovl0:2238, defined below */
     if (gFC85 == gFC84)
         return;
     ClipRect(gDCB0 * 4, 0x80, 0x24, 0x80, 4, 0x20, 2, 2);
-    f1A29_000F(2, gPtrsFD54[gFC84], 0x120, 0x80, 0);
+    DrawShape(2, gPtrsFD54[gFC84], 0x120, 0x80, 0);
     HidePointerZone(gPanelX5E54[gDCB0], gPanelY5E5C[gDCB0] + 1,
         gPanelX5E54[gDCB0] + 0x20, gPanelY5E5C[gDCB0] + 0x20);
     ClipRect(0x24, 0x80, gPanelX5E54[gDCB0] >> 3, gPanelY5E5C[gDCB0] + 1,
@@ -868,9 +868,9 @@ int PickAlignment(int classIndex); /* ovl0:2238, defined below */
    0xd/0x66/0x6a/0x8008 blink icon 0xa and raise it, 0x60/0x62 step the returned field index (mod 7),
    and 0x61/0x6e/0x800a confirm (icon 9). A changed value is clamped (index 0 between gOutDD04[0] and
    gOutDC98[0] & 0xff, with a strength above 0x12 moved into the percentile and the percentile reset,
-   later indexes between gOutDD04[index] and gOutDC98[index]), stored, and index 6 copies it to m1C
+   later indexes between gOutDD04[index] and gOutDC98[index]), stored, and index 6 copies it to maxHp
    (on entry for index 6 it also recomputes gDCA4/gDD10 from MaxHitPoints/MinHitPoints), index 4
-   recomputes the derived hit points (m1B/m1C from gDCA4/gDD10) or index 3 the armour class m1D
+   recomputes the derived hit points (hp/maxHp from gDCA4/gDD10) or index 3 the armour class m1D
    (GetArmourClassBase + 10). A key that changed nothing but set the done flag redraws the value and
    ends. Returns the field index to move to (-2 for the confirm key). Called by ovl0:1ADD. Purpose
    unknown: the per-index special cases and formats. */
@@ -980,7 +980,7 @@ int PickAlignment(int classIndex); /* ovl0:2238, defined below */
                 *value = amount;
             }
             if (index == 6)
-                gChars[gDCB0].m1C = amount;
+                gChars[gDCB0].maxHp = amount;
             if (index == 0)
                 sprintf(gFileNameBuf, gStr622D, FormatStrengthPercent(*value, *percent));
             else
@@ -990,17 +990,17 @@ int PickAlignment(int classIndex); /* ovl0:2238, defined below */
                 node->y, 5, node->height, 2, 0);
             DrawShadowText(gFileNameBuf, node->x + 0x20, node->y, 6, 0);
             if (index == 4) {
-                old = gChars[gDCB0].m1B;
+                old = gChars[gDCB0].hp;
                 gDCA4 = MaxHitPoints(gChars[gDCB0].m20, gChars[gDCB0].m17, gChars[gDCB0].m24[0],
                     gChars[gDCB0].m24[1], gChars[gDCB0].m24[2]);
                 gDD10 = MinHitPoints(gChars[gDCB0].m20, gChars[gDCB0].m17, gChars[gDCB0].m24[0],
                     gChars[gDCB0].m24[1], gChars[gDCB0].m24[2]);
-                gChars[gDCB0].m1B = gChars[gDCB0].m1C
-                    = gChars[gDCB0].m1B < gDD10 ? gDD10 : gChars[gDCB0].m1B;
-                gChars[gDCB0].m1B = gChars[gDCB0].m1C
-                    = gChars[gDCB0].m1B > gDCA4 ? gDCA4 : gChars[gDCB0].m1B;
-                if (gChars[gDCB0].m1B != old) {
-                    sprintf(gFileNameBuf, gStr6233, gChars[gDCB0].m1B);
+                gChars[gDCB0].hp = gChars[gDCB0].maxHp
+                    = gChars[gDCB0].hp < gDD10 ? gDD10 : gChars[gDCB0].hp;
+                gChars[gDCB0].hp = gChars[gDCB0].maxHp
+                    = gChars[gDCB0].hp > gDCA4 ? gDCA4 : gChars[gDCB0].hp;
+                if (gChars[gDCB0].hp != old) {
+                    sprintf(gFileNameBuf, gStr6233, gChars[gDCB0].hp);
                     ClipRect(0xf, 0x48, 0x21, 0x88, 5, 8, 2, 0);
                     DrawShadowText(gFileNameBuf, 0x108, 0x88, 0xf, 0);
                 }
@@ -1034,7 +1034,7 @@ int PickAlignment(int classIndex); /* ovl0:2238, defined below */
 /* ovl0:1ADD: Purpose unknown: edits one of the seven ability/stat fields of the current character.
    It draws the page through ovl0:065B(mode 3) and loops over the field index i (0..6); for each it
    opens the field with EditStatField(i, &gChars[gDCB0].<field>, second) and redraws the page.
-   Field 0 passes both m0D and m0F; fields 1..6 pass m11, m13, m15, m17, m19 and m1B with no second
+   Field 0 passes both m0D and m0F; fields 1..6 pass m11, m13, m15, m17, m19 and hp with no second
    field. A return of -2 leaves, a negative return wraps i to 6, then i is taken modulo 7. Finally
    it redraws the page through ovl0:065B(mode 1). Called by ovl0:0DDC. */
 /*@ ovl0:1ADD */ void Ovl0_1ADD(void)
@@ -1065,7 +1065,7 @@ int PickAlignment(int classIndex); /* ovl0:2238, defined below */
             i = EditStatField(i, &gChars[gDCB0].m19, (char far *)0);
             break;
         case 6:
-            i = EditStatField(i, &gChars[gDCB0].m1B, (char far *)0);
+            i = EditStatField(i, &gChars[gDCB0].hp, (char far *)0);
             break;
         }
         DrawCharPanel(gDCB0, 3);
@@ -1084,7 +1084,7 @@ int PickAlignment(int classIndex); /* ovl0:2238, defined below */
    up to gOutDD04; then, when the strength roll is exactly 18, the 1d100 percentile roll is ORed
    into the high byte (the low byte stays 18), and finally clamped down to gOutDC98. The order matters
    for the 0x12 case. The six values are stored into the record's stat pairs (m0D/m0E, m0F/m10 and
-   m11/m12..m19/m1A), m1D becomes GetArmourClassBase(m15) + 10, and the hit points m1B/m1C become
+   m11/m12..m19/m1A), m1D becomes GetArmourClassBase(m15) + 10, and the hit points hp/maxHp become
    RollHitPoints(class, m17, the three m24 slots). Called by ovl0:0DDC and ovl0:23EC. */
 /*@ ovl0:1BF2 */ void RollCharacterStats(int who)
 {
@@ -1113,7 +1113,7 @@ int PickAlignment(int classIndex); /* ovl0:2238, defined below */
     gChars[who].m17 = gChars[who].m18 = scores[4];
     gChars[who].m19 = gChars[who].m1A = scores[5];
     gChars[who].m1D = GetArmourClassBase(scores[3]) + 0xa;
-    gChars[who].m1B = gChars[who].m1C = RollHitPoints(gChars[who].m20, gChars[who].m17,
+    gChars[who].hp = gChars[who].maxHp = RollHitPoints(gChars[who].m20, gChars[who].m17,
         gChars[who].m24[0], gChars[who].m24[1], gChars[who].m24[2]);
 }
 /* ovl0:1EA9: builds two six-word combat tables for the current character gDCB0. For each of the
@@ -1376,7 +1376,7 @@ int PickAlignment(int classIndex); /* ovl0:2238, defined below */
     gChars[0].m77[2] = item;
     for (i = 0; i < 4; i++) {
         rec = &gChars[i];
-        rec->m01 = 1;
+        rec->status = 1;
         rec->m23 = 0x64;
         rec->index00 = i;
         item = CopyItemToFreeSlot(0xa);
@@ -1440,7 +1440,7 @@ int PickAlignment(int classIndex); /* ovl0:2238, defined below */
         rec->m16 = rec->m15;
         rec->m18 = rec->m17;
         rec->m1A = rec->m19;
-        rec->m1C = rec->m1B;
+        rec->maxHp = rec->hp;
     }
 }
 

@@ -3225,10 +3225,10 @@ unit = "e0d1c"
 addr = "0D1C:0670"
 size = 159
 evidence = ["far", "near", "frame"]
-name = "f0D1C_0670"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "MemberIs"
 
 [[function]]
 id = "e0d1c_070f"
@@ -6372,10 +6372,10 @@ unit = "e1a29"
 addr = "1A29:000F"
 size = 62
 evidence = ["far", "segment"]
-name = "f1A29_000F"
 level = "L2"
 match_flags = "-ml -O -Z -G"
 review = "passed 2026-11-01 rev-haiku"
+name = "DrawShape"
 
 [[function]]
 id = "e1a29_004d"
@@ -6449,10 +6449,10 @@ unit = "e1a47"
 addr = "1A47:0005"
 size = 356
 evidence = ["far", "segment"]
-name = "f1A47_0005"
 level = "L2"
 match_flags = "-ml -O -Z -G"
 review = "passed 2026-11-01 rev-sonnet"
+name = "LoadFont"
 
 [[function]]
 id = "e1a47_0169"
@@ -6460,10 +6460,10 @@ unit = "e1a47"
 addr = "1A47:0169"
 size = 37
 evidence = ["far", "frame"]
-name = "f1A47_0169"
 level = "L2"
 match_flags = "-ml -O -Z -G"
 review = "passed 2026-11-01 rev-sonnet"
+name = "SetFont"
 
 [[function]]
 id = "e1a47_018e"
@@ -6471,10 +6471,10 @@ unit = "e1a47"
 addr = "1A47:018E"
 size = 54
 evidence = ["frame"]
-name = "f1A47_018E"
 level = "L2"
 match_flags = "-ml -O -Z -G"
 review = "passed 2026-11-01 rev-sonnet"
+name = "TextWidth"
 
 [[function]]
 id = "e1a63_0004"

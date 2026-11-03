@@ -174,9 +174,9 @@ extern void f1D8F_0010(void);         /*@ 1D8F:0010: installs the INT 1Ch tick h
    (src/E16A5.C:6-7, :258-259, :679-684). The word first is what makes Turbo C push 0L then the
    word, exactly as the original does. */
 extern void SetNodeCallback(int arg, long value);      /*@ 16A5:0D78 */
-extern void far *f1A47_0005(char far *name);  /*@ 1A47:0005: opens a bitmap font file, validates
+extern void far *LoadFont(char far *name);  /*@ 1A47:0005: opens a bitmap font file, validates
                                                  it and returns it whole (src/E1A47.C:1-6) */
-extern void f1A47_0169(void far *font);  /*@ 1A47:0169: remembers the font and its two geometry
+extern void SetFont(void far *font);  /*@ 1A47:0169: remembers the font and its two geometry
                                             bytes as the current font (src/E1A47.C:1-6) */
 extern int CheckMemoryChain(void);                /*@ 1990:0071 */
 extern unsigned ReserveMemoryBelowVideo(int steps); /*@ 1990:0133: probes the segment at the top of
@@ -373,11 +373,11 @@ int AllocationFailure(void);
         break;
     }
     gFn8056();
-    gFont8x8 = f1A47_0005("Font8.fnt");
-    gA9C0 = f1A47_0005("FONT6.FNT");
+    gFont8x8 = LoadFont("Font8.fnt");
+    gA9C0 = LoadFont("FONT6.FNT");
     if (!gFont8x8 || !gA9C0)
         goto font_error;
-    f1A47_0169(gFont8x8);       /* makes the 8x8 font current after both fonts load; why it is set
+    SetFont(gFont8x8);       /* makes the 8x8 font current after both fonts load; why it is set
                                    here, after the loads, is not in the file */
     switch (gGraphicsChoice - 1) {
     case 0:

@@ -51,7 +51,7 @@ extern struct ItemType gItemTypes[]; /*@ ds:A9F0 */
 /* A 243-byte character record at ds:F580; only the fields this unit uses (src/E0A72.C, src/E0DE8.C). */
 struct CharRec {
     char pad00;
-    unsigned char m01;      /* +01: status bits, tested by 0BD2:0D2D */
+    unsigned char status;      /* +01: status bits, tested by 0BD2:0D2D */
     char name[0x0B];        /* +02: the character's name, NUL padded */
     signed char m0D;        /* +0D: the strength score, set to 0x16 by 0BD2:0D2D (src/E0A72.C) */
     char pad0E;
@@ -148,7 +148,7 @@ extern char g3837[]; /*@ ds:3837 */        /* a string table SkipStrings walks (
 
 extern int f0D1C_00DA(int value, int page); /*@ 0D1C:00DA */
 extern int GetCurrentItem(void); /*@ 0D1C:02DC */
-extern int f0D1C_0670(int who, int mask); /*@ 0D1C:0670 */
+extern int MemberIs(int who, int mask); /*@ 0D1C:0670 */
 extern int f0D1C_07DB(int who, int flag); /*@ 0D1C:07DB */
 extern void UseItem(int who, int slot, int field); /*@ 0DE8:0763 */
 extern void EatFood(int index); /*@ 0ACD:07E0 */
@@ -781,7 +781,7 @@ next:
         ClearPoisonEffect(who);
         break;
     }
-    if (kind - 1 != 3 || (rec->m01 & 2) == 0) {
+    if (kind - 1 != 3 || (rec->status & 2) == 0) {
         sprintf(gFileNameBuf, "%s feels %s!\r", rec->name, SkipStrings(g3893, kind));
         DrawText(gFileNameBuf);
     }
@@ -832,7 +832,7 @@ next:
 }
 
 /* 0BD2:1001: the "use the item in slot `slot`" action for character `who`. It returns early when
-   f0D1C_0670(who, 0x0D) refuses, and, when the slot maps to one of the first two carried slots
+   MemberIs(who, 0x0D) refuses, and, when the slot maps to one of the first two carried slots
    (0BD2:1244), when f0D1C_07DB refuses or the slot's m1E bit is set in mode 0. When the item type
    may not be worn it draws the character's name and " can not use this item.\r". Otherwise it
    switches on the item type's m0E low 7 bits and either draws a message, eats, uses the item
@@ -849,7 +849,7 @@ next:
     struct CharRec *rec;
 
     rec = &gChars[who];
-    if (!f0D1C_0670(who, 0x0D))
+    if (!MemberIs(who, 0x0D))
         return;
     item = rec->m77[slot];
     firstTwo = FirstTwoSlots(slot);
