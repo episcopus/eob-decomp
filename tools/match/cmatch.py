@@ -413,6 +413,7 @@ def compare(fname, a: Build, b: Build, at_a: int, at_b: int, length: int, orig: 
                 bad_template = compare_template(a, b, orig, va, vb, vo, template_size(a, pa), funcs, func_of)
                 if bad_template:
                     return fail(k, bad_template)
+                LITERALS[va - a.lits[0]] = vo           # a template too (make rebuild places its module by it)
             elif a.lits[0] <= va < a.lits[1]:
                 if a.cstr(va) != orig.cstr(vo):
                     return fail(k, "literal %r, original %r" % (a.cstr(va), orig.cstr(vo)))

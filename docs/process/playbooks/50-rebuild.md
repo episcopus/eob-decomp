@@ -12,8 +12,8 @@ header agrees too.
 | Program | State |
 |---|---|
 | START1.EXE | identical, the whole file (8,652 bytes), 2026-11-03 |
-| INTRO.EXE | links, 2026-11-03, but for the data two modules own (below) |
-| EOB.EXE | not yet: the large model's link and seven overlays |
+| INTRO.EXE | but for 42 bytes (the link date, the stub order), relocations in order, 2026-11-03 |
+| EOB.EXE | but for the link date, the stub order and overlay 5's three hook fixups; relocations in order, 2026-11-03 |
 
 ## Why the source that matches is not yet the program
 
@@ -101,6 +101,58 @@ the order is set by the original function names; one far call (0892:0161) and th
 The human decided (2026-11-03) that both stay documented differences: the rebuild gives neither a
 fixed date nor invented link names, and `test_intro_rebuilds_but_stub_order_and_date` pins the
 42 bytes, so a change there shows.
+
+Found on EOB.EXE (59 files, seven overlays):
+
+18. **An explicit `_TEXT`** in a unit with a segment of its own (E1BB1.ASM) is `<STEM>_TEXT` in the copy,
+    as `.CODE` would name it, and its `EXTRN`s of far routines go before the segment: TASM takes one
+    declared inside a segment as in it, and TLINK overflows on the offset.
+19. **One name, two things.** E17A6.ASM's `gSpriteHeight` is a word of its code; E1BBE.ASM's
+    `_gSpriteHeight` is ds:8182. The label C reaches with its underscore (item 13's gTandyOn) is matched
+    by address, not by name; C naming assembly data (EOB.EXE's gTandyOn) gets that label too.
+20. **A C global defined beside its extern** (EOV5.C's gTable7B89): defined by a top-level line
+    without `extern`.
+21. **Templates and the pool.** A C module's `_DATA` is its initialised globals and the templates of
+    its initialised locals (what `F_SCOPY@` copies), in source order, then the string pool. The pool's
+    start is voted from the matcher's map of literal addresses (E122E.C: 149 bytes of templates first);
+    a literal no function refers to is placed by the pool's shift.
+22. **A module's data by its templates.** Four zeros or a table of far pointers have no bytes to
+    place by, so the matcher records each template's address with the literals, and the module goes
+    there. A global the original module defined between its items (E122E.C's g5A40; EOV5.C's menu
+    tables) is defined in the copy, before the function whose template follows it, with the original's
+    bytes; a table of far pointers into DGROUP becomes a `char far *` array of pointers to labels at
+    the strings, so the copy has its relocations. Where the module's data begins: Turbo C writes a
+    module's data fixups from the highest address down, so the data relocations the original's table
+    lists right after the module's own, lower still, are the module's (EOV5.C's gText7B23), and so is
+    everything up to its first item; then a byte when that start is odd, as a C module's `_DATA` is word
+    aligned (EOV1.C: ds:63CB).
+23. **A name in the library's data** (E07C8.C's g8894 is `_argv`) takes the library's public; the
+    header's own declaration of it is renamed out of the way.
+24. **Fillers are cut before a far pointer**, at an even offset (the C module between two pieces has a
+    word-aligned `_DATA`; ds:0201 is the segment of 212E:1EC9).
+25. **Overlays.** TLINK gives every public of an overlay module a stub entry, so a function without
+    one was static (overlay 0: 30 entries for 35 functions, overlay 1: 6 for 16): `static` in the
+    copy, the same code (src/ keeps them public, the matcher finds functions by their publics). TLINK
+    numbers the overlays in link order: an overlay goes after the module whose data, its own or by
+    the relocations that follow its code's, precedes its own (EOV0 after E1414, not E122E); one with
+    no data after the overlay before it.
+26. **Segments as numbers.** An own assembly file's `mov r,1A16h` (a function's segment) is `SEG`
+    of a symbol there; a library segment (E1A72.ASM's 20B5h, the overlay manager's `_OVRDATA_`) is
+    named after the probe link that has the far data in place; a C constant `(char far *)0x1F280000L`
+    is the far object there (gItemNames); a far pointer in data to an overlay function (its stub, ds:3BBE)
+    is `dd` of the function. In an overlay's code a segment is its **segment-table index times 8**
+    (TLINK relocates overlay fixups by the table): EOV3.C's `MK_FP(0x1d8, 0)` is entry 59, gMapSheet.
+27. **The comparison** covers the relocation table's order and every overlay's code and fixups, and
+    counts far pointers that differ only in their stub entry apart.
+
+Left on EOB.EXE (2026-11-03): the **link date** (29 April 1991, like INTRO.EXE's); the **stub order**
+(as INTRO.EXE: 234 bytes of stub table, 26 far pointers to stub entries in the image, and far calls
+in overlays 1, 2, 3, 5 and 6); and **overlay 5's hook**. `gScrollHook = 0xac; g8119 = 0x2d0;` (EOV5.C)
+is a far pointer to overlay 5's own MessagePanel through its stub entry 0ACh, with a fixup on the
+segment. Turbo C writes that only for a function of another module: for one of its own it writes the
+function's offset and CS. The copy keeps src/'s two stores, the same bytes, so the overlay lacks three
+fixups (167F, 1BE4, 1D5F) and the file is 16 bytes shorter. That the hook's target was in another
+module of the original is a lead [H]. `test_eob_rebuilds_but_stub_order_date_and_hook` pins all of it.
 
 Still to come, from poolrad's experience: external objects, and patch
 sites (`re/patches.toml`, SPEC section 2: a byte the fan patch changed by hand in code is applied after

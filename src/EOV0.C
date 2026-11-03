@@ -18,7 +18,7 @@ extern void farfree(void far *block); /*@ 0000:71EE */
 extern void PlaySound(int sound); /*@ 177D:0070 */
 extern int DispatchKeyWait(void far *list); /*@ 16A5:005A */
 extern void WaitFrames(int n); /*@ 1A16:000B */
-extern unsigned char far g3A0; /*@ 0000:03A0 */ /* a flag in the resident segment (Purpose unknown) */
+extern unsigned char far gScriptFlag; /*@ 0000:03A0 */ /* the sound driver's script flag (src/E_TEXT.ASM: script command C7h sets it, 0000:4A23) */
 
 struct IconDef9 {               /* the 17 9-byte icon definitions at 2084 (17 * 9 = 153 bytes) */
     unsigned char x;            /* +0: the cell's left edge */
@@ -272,12 +272,12 @@ extern void far *g5E64[0x11]; /*@ ds:5E64 */ /* the 17 sliced icon pointers this
     }
 }
 /* ovl0:00F7: waits for a key through 16A5:005A with the caller's list and returns its code. When the
-   resident flag g3A0 (0000:03A0) is 1, it clears the flag and plays sound 0x14 first. Called by
+   resident flag gScriptFlag (0000:03A0) is 1, it clears the flag and plays sound 0x14 first. Called by
    ovl0:0A5E, 0DDC, 0EE5, 135D and 28F9. */
 /*@ ovl0:00F7 */ int WaitKeyOrPause(void far *list)
 {
-    if (g3A0 == 1) {
-        g3A0 = 0;
+    if (gScriptFlag == 1) {
+        gScriptFlag = 0;
         PlaySound(0x14);
     }
     return DispatchKeyWait(list);
