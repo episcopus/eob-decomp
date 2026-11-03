@@ -1,10 +1,35 @@
 # Review: iov0
 
 Reviewer: rev-haiku
-Commit reviewed: round 3 at 765cb58 (main; src/IOV0.C has the 3e1080e changes since round 2, comments only). Round 2 at 38df9a6 (main; src/IOV0.C is identical to ac24cbe3, the merge of the round 1 fixes eb19ee8). Round 1: c7d121dc592cf92656c3a40297462ce3a16fb3a7 (main when I started; src/IOV0.C, re/symbols.toml and re/globals.toml are identical in the worktree's HEAD 97332d0)
+Commit reviewed: round 4 at 8c882ae (main). Round 3 at 765cb58 (main; src/IOV0.C has the 3e1080e changes since round 2, comments only). Round 2 at 38df9a6 (main; src/IOV0.C is identical to ac24cbe3, the merge of the round 1 fixes eb19ee8). Round 1: c7d121dc592cf92656c3a40297462ce3a16fb3a7 (main when I started; src/IOV0.C, re/symbols.toml and re/globals.toml are identical in the worktree's HEAD 97332d0)
 
 Playbook 70. Judge what a matching file can still get wrong: names, types, comments, structure.
 The matcher already proved the bytes; do not re-prove them, read for meaning.
+
+## Round 4 (later round, playbook 70)
+
+Judged: the round 3 must-fix and should against the current file, and every changed line since 765cb58 (`git diff 765cb58 main -- src/IOV0.C re/symbols.toml re/globals.toml`). Checked: `make match FILE=src/IOV0.C` (22 of 22) and `make readability UNIT=iov0` (0 findings). The "unit iov0 not complete" line is the whole-unit check of an overlay unit, as in round 3.
+
+Round 3 must-fix, gFrameDelay (src/IOV0.C:37-41): fixed right, tick stays. `.venv/bin/python tools/re/disasm.py eob/INTRO.EXE 0CE7` shows 0CE7:0007 `sub word ptr [0x2326], 1` and 0CE7:000C `sbb word ptr [0x2328], 0`. The image offset is 0CE7 * 16 + 0007 = 0xCE77; the MZ header is 0xE00 bytes (the word at offset 8 is 0xE0 paragraphs), so the file offset is 0xDC77, and the bytes there are `83 2e 26 23 01`, the sub. The [H] tag stays.
+
+Round 3 should, gMemTopSeg row (re/globals.toml:452): fixed right, tick stays. src/I0923.ASM:328 is `mov word ptr cs:gMemTopSeg,ax`, the store; :3 is the header comment that names gMemTopSeg.
+
+Changed lines since 765cb58: only the two comment hunks in src/IOV0.C (the gFrameDelay comment at 37-41 and the WaitFrameDelay comment at 529-530) and the globals row. The iov0 rows of re/symbols.toml (from line 11737) did not change; the rest of that diff is review stamps and other units' rows. The gFrameDelay hunk is sound, as above.
+
+Changed line, new finding:
+
+- [ ] should src/IOV0.C:530 (WaitFrameDelay header, changed this round): "the timer (0CE7:0007) decrements it [H]" names the decrement instruction as the timer. 0CE7:0007 is inside a routine that tests `cs:[0xa]`, chains with `ljmp cs:[8]` and returns with `iret` (0CE7:0013 to 0020), which fits a timer hook. Nothing in src/ or the pinned notes shows this routine's entry or the vector it is installed on, so the timer identity is unproven. Say "the routine at 0CE7 (its decrement is at 0007) is the timer [H]", or cite the install that makes it the timer. The claim is tagged [H] and the decrement is right, so this is a should, not a must-fix.
+
+Carried open (not new, not blocking): the round 1 should on the Unpack4 length (src/IOV0.C:62 prototype, the call at 1162 passes 0xFA00). The prototype is still `int len` in src/E1B82.C:72, src/I0AED.C:77 and src/EOV3.C:81 as well, so it stays a shared change for those owners.
+
+### Round 4 notes (not findings)
+
+- re/globals.toml:527 (gBuiltinPalette) still says "so gEgaPalette has no evidence", the round 2 and 3 note; the registry owner (i0892) can fix it.
+- The round 3 note on the PlayAvalancheScene header (the four star draws after each rectangle at 1027) is still open; not a finding.
+
+### Round 4 summary
+
+No new must-fix. The round 3 must-fix and should are fixed right against the disassembly and the image, and the changed lines are sound apart from one should (the timer wording at src/IOV0.C:530). Nothing escalated: no matcher, spec or pin question.
 
 ## Round 3 (later round, playbook 70)
 
