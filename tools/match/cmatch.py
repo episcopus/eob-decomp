@@ -85,6 +85,10 @@ KEYWORDS = {"void", "char", "int", "long", "short", "unsigned", "signed", "far",
 ASM_WORDS = {"public", "extrn", "proc", "far", "near", "endp", "label", "byte", "word", "dword", "db", "dw", "dd"}
 PAD = 0x111       # data pad in link B
 PAD_CODE = 0x113  # code pad: with byte or word alignment the unit's offset in its paragraph changes
+# the small model (START1.EXE) has one code segment, so a code offset moves by the whole code pad: it
+# must lie outside the data pad's range [PAD, PAD + 16) or a label's offset reads as data (the
+# s_text review, 2026-11-03: `mov ax,offset Int2FHandler` was taken for a DGROUP global)
+PAD_CODE_SMALL = 0x133
 
 
 # ---------------------------------------------------------------- the source
@@ -155,7 +159,7 @@ def stub_source(funcs: dict, data: dict, defined: set, pad: bool, cname: bool = 
         out += ["PUBLIC %s" % sym(n), "%s db 256 dup (0)" % sym(n)]
     out.append(".CODE")
     if pad:
-        out.append("padc db %d dup (90h)" % PAD_CODE)
+        out.append("padc db %d dup (90h)" % (PAD_CODE_SMALL if small else PAD_CODE))
     for n in sorted(set(funcs) - defined - FARDATA):
         out += ["PUBLIC %s" % sym(n), "%s PROC %s" % (sym(n), dist), "ret", "%s ENDP" % sym(n)]
     # far data: one segment per original segment (FAR_SSSS), the objects at offsets that are unique
