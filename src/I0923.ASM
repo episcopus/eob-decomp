@@ -16,7 +16,7 @@
 gVideoTopSeg  dw 0                      ; 0923:0004: the base of the memory reserved below the
                                         ;   probed segment (the caller at 0892:02A6 takes
                                         ;   ReserveMemoryBelowVideo's result into DI at 0892:02AD
-                                        ;   and uses it as memtop (src/I0892.C:296, :325).
+                                        ;   and uses it as memtop (src/I0892.C:303, :332).
                                         ;   "Video top" is a hypothesis [H]: ReserveMemoryBelowVideo
                                         ;   probes the segment whose B800:0000 marker aliases (or A000,
                                         ;   0923:0139 to 0150) and subtracts (n-1) x 32 KB
@@ -54,8 +54,8 @@ gMcbSeg       dw 0                      ; 0923:000E: MCB of the one-paragraph bl
 ; DGROUP's frame (0E9F) is 057Ch paragraphs above this segment's (0923): 057C0h + 28C4h = 8084h. The
 ; word has no relocation in the EXE, so the assembler resolved it to a constant. ReserveMemoryBelowVideo
 ; stores the end of DOS memory here (0923:01F0) and TrimMemoryToVideo reads it back (0923:02B3); i0892
-; reads it at 0892:01D8, itoa's it into g28B4 (src/I0892.C:262) and passes g28B4 as the last execl
-; argument (src/I0892.C:264). That EOB.EXE then sets its own gMemTopSeg from atol of the number behind
+; reads it at 0892:01D8, itoa's it into g28B4 (0892:01CF) and passes g28B4 as the last execl
+; argument (src/I0892.C:271). That EOB.EXE then sets its own gMemTopSeg from atol of the number behind
 ; g8894 (src/E07C8.C:311) is a hypothesis [H]: no file in src/ reads argv[6] (src/E07C8.C reads argv[1]
 ; to argv[5], :229 to :235) and nothing in src/ or docs/ writes ds:8894 (src/E1990.ASM:23-26), so the
 ; link from this number to EOB's word is not shown, and the writer of ds:8894 is unknown.
