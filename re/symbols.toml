@@ -10489,6 +10489,7 @@ evidence = ["far", "segment"]
 name = "_Unpack0"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "i0b10_006c"
@@ -10499,6 +10500,7 @@ evidence = ["far", "frame"]
 name = "_NormalizeFarPointer"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "i0b10_007b"
@@ -10509,6 +10511,7 @@ evidence = ["far", "near"]
 name = "_NormFar"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "i0b18_000b"
