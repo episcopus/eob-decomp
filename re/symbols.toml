@@ -2745,6 +2745,7 @@ evidence = ["far", "segment"]
 name = "ReportLostItem"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0bd2_0106"
@@ -2755,6 +2756,7 @@ evidence = ["far", "near", "frame"]
 name = "TakeItemFromSlot"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0bd2_019f"
@@ -2765,6 +2767,7 @@ evidence = ["frame"]
 name = "RedrawSelectedRow"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0bd2_01d0"
@@ -2776,6 +2779,7 @@ name = "InsertListItem"
 notes = "Matched (esc-sonnet, 2026-11-03). The original has three register variables: item in SI, the head item's m06 (the tail) in DI and the head item in CX (0BD2:0238 `mov cx, ax`, 0248 `mov ax, cx`, 0251 `mov di, [bx - 0x7228]`), and `key` stays in memory. This function makes no call, so TCC gives out a third register (CX here; DX when the code has no mul or div: checked on a scratch leaf function), and the two int locals `oldHead` and `tail` (the head's m06) with `item` outrank `key`. Earlier sessions declared only `link`, which left `key` as the third register variable. Use counts tie between the two locals and the later declaration gets DI, so `oldHead` is declared before `tail`. Branch 1 `mov ax, si` is the chained assignment `rec->m08 = rec->m06 = item;`."
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0bd2_02b9"
@@ -2786,6 +2790,7 @@ evidence = ["far", "near", "frame"]
 name = "RemoveListItem"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0bd2_0385"
@@ -2796,6 +2801,7 @@ evidence = ["far", "near", "frame"]
 name = "ScanListItem"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0bd2_040e"
@@ -2806,6 +2812,7 @@ evidence = ["far", "frame"]
 name = "MarkListItems"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0bd2_0458"
@@ -2816,6 +2823,7 @@ evidence = ["far", "frame"]
 name = "PushListItem"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0bd2_04aa"
@@ -2826,6 +2834,7 @@ evidence = ["far", "frame"]
 name = "DrainListItem"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0bd2_05b5"
@@ -2837,6 +2846,7 @@ name = "DrawItemName"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 notes = "Matched. The case bodies are in the source order the jump table at 0BD2:07B8 shows (0..3, 9, 10, 14, 16, 18; all the rest fall to the default). Case 0..3's name selection must be written as `if (m0B != 0) { if (m0B < 0) ... else ... } else strcpy(...)`, or the compiler folds its `strcpy(buf, firstName)` into the default case's copy."
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0bd2_07de"
@@ -2847,6 +2857,7 @@ evidence = ["far"]
 name = "AddDDEffect"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0bd2_089e"
@@ -2857,6 +2868,7 @@ evidence = ["far", "frame"]
 name = "CopyItemToFreeSlot"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0bd2_0917"
@@ -2867,6 +2879,7 @@ evidence = ["far", "near", "frame"]
 name = "DrawItemRow"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0bd2_0abe"
@@ -2877,6 +2890,7 @@ evidence = ["far", "frame"]
 name = "RedrawRowArea"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0bd2_0af2"
@@ -2887,6 +2901,7 @@ evidence = ["far", "near", "frame"]
 name = "CanPlaceItemInSlot"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0bd2_0ba0"
@@ -2897,6 +2912,7 @@ evidence = ["far", "frame"]
 name = "UseSelectedItem"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0bd2_0c8e"
@@ -2907,6 +2923,7 @@ evidence = ["far", "frame"]
 name = "SwapSelectedItem"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0bd2_0d2d"
@@ -2918,6 +2935,7 @@ name = "ApplyItemEffect"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 notes = "Matched. The unit is compiled with `-v` (source-level debugging), which keeps case 5 and case 7's `RedrawMember(who)` calls apart where `-Z` alone cross-jumps them."
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0bd2_0ee8"
@@ -2928,6 +2946,7 @@ evidence = ["near"]
 name = "UseWandItem"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0bd2_1001"
@@ -2939,6 +2958,7 @@ name = "UseItemSlot"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 notes = "Matched. The `case` bodies are in the source order the jump table shows (0/16, 1/2/3, 5/6, 7, 4/8/12/13/15, 9, 10, 11, 14, 18); compiling the unit through the `-v` source-level-debug switch keeps the per-case `pop cx; pop cx` call cleanups apart the way the original does."
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0bd2_11fd"
@@ -2949,6 +2969,7 @@ evidence = ["far"]
 name = "ItemClassAllowed"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0bd2_1244"
@@ -2959,6 +2980,7 @@ evidence = ["far", "frame"]
 name = "FirstTwoSlots"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e0cf7_0007"

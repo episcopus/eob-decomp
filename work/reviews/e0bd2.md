@@ -10,6 +10,24 @@ Checked this round: `make match FILE=src/E0BD2.C` (22 of 22, 4681 bytes), `make 
 Read against: the callers and definitions in src/E0ACD.C, E0D1C.C, E08E6.C, E0DE8.C, E0EF3.C, E122E.C, E1414.C,
 E07A9.C, E177D.C, EOV5.C, and the registry rows in re/symbols.toml and re/globals.toml. No game run, nothing under eob/ touched.
 
+## Round 3 (at 8c882ae, main)
+
+Judged only what the later-round rule asks: the two must-fix items of round 2 (ticked by 7f051c6) and the diff since a746c03 in `src/E0BD2.C`, `re/symbols.toml` and `re/globals.toml`. The `src/E0BD2.C` diff is two comment hunks (105-107 and 517-522); no code line changed. The `re/symbols.toml` diff adds review stamps to i0000 and s0000 rows and no e0bd2 row. The `re/globals.toml` diff changes one "why" cite for intro ds:28C4 (gMemTopSeg, not used by this unit; its store is src/I0923.ASM:328, checked).
+
+Round 2 must-fix, both fixed right (ticks stay):
+
+- gPartyCell (105-107): this unit's only use of gPartyCell besides the declaration is UseWandItem's `f0D1C_00DA(gPartyCell, page)` (816). E0ACD.C indexes the nine-byte records with it (E0ACD.C:766, `gB899 + gPartyCell * 9`, with `vol = gPartyCell` at 552). The clause is right.
+- AddDDEffect (520): "most callers pass gPartyCell, E0ACD.C:434, :769, E0DE8.C:406" is right (the callers are E0ACD.C:434, :769, E0DE8.C:406, E0DE8.C:465 with gPartyCell, E08E6.C:587 with obj->id, E122E.C:751 with the script's id). The script-id claim is right in substance; its line cite is stale (see the should below).
+
+Changed lines:
+
+- must-fix: none.
+- should src/E0BD2.C:521 "E122E.C:728 passes the script's id": at a746c03 line 728 of E122E.C was the AddDDEffect call. Commit 49a7f00 (merged in bc30519) moved it: at 8c882ae the call is line 751, inside AddEffectOp (122E:0C4D), and the script's id is read at E122E.C:744. The claim holds, so the cite is stale: replace it with 122E:0C4D. The same sentence also reads as if E122E is the only caller that passes something other than gPartyCell; E08E6.C:587 (`AddDDEffect(-1, item, obj->id, ...)`) passes an object's cell id too. Name it, or say that the other callers pass an object's or the script's cell id.
+
+Round 3 count: 0 must-fix open, 1 should (new), 0 new notes. The round 2 notes and the round 1 notes still open stay with their owners (E0ACD.C:56, E0D1C.C:307, E08E6.C:793, the DrawItemName unset buffer, the m0A placeholder, the MarkListItems citation, and the three cross-file prototype notes). The `re/symbols.toml` review stamps on i0000 and s0000 rows are not this unit's.
+
+Evidence: `make match FILE=src/E0BD2.C` 22 of 22 (4681 of 4681 bytes); `make readability UNIT=e0bd2` 0 findings (0 new); `make review-pass UNIT=e0bd2 AGENT=rev-haiku` stamped the 22 rows of re/symbols.toml. Nothing escalated: no matcher, spec or pin question.
+
 ## Round 2 (at a746c03, main)
 
 Judged only what the later-round rule asks: the 12 must-fix and 16 should of round 1, and the diff since 21ed7a2 in `src/E0BD2.C` and `re/symbols.toml` (plus `re/renames.toml` for the two renames). Each changed comment was read against its function body and against the callers it cites (E0ACD.C, E0D1C.C, E0DE8.C, E08E6.C, E122E.C, E1547.C, E1414.C, E177D.C, E0EF3.C, EOV3.C, EOV5.C, E07A9.C). No game run, nothing under eob/ touched.
