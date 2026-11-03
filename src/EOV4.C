@@ -400,9 +400,9 @@ extern void DrawRegion000F(int mode, void far *src, int x, int y, int region); /
    the rest are skipped. The tile's ds:194B flags (forced to 0x80 when slot is 0x10) and its ds:1879
    count gate the slot: it returns when the count is nonzero and bit 7 of the flags is clear, so it
    proceeds when the count is zero or bit 7 is set. Bit 3 of the flags, when sprite < 2 and frame is
-   nonzero, also recomputes the span of ds:6F86[slot] (the view slot's span slot) and pulls the
-   object up 4 pixels. After each item, when that span slot was set, the slot's own span is
-   recomputed (the second call is inside the loop). Called by DrawViewSlots when the tile record's
+   nonzero, also recomputes the span of ds:6F86[slot] (the view slot's span slot), when that byte is
+   not -1, and pulls the object up 4 pixels. After each item, when that span slot was set, the slot's
+   own span is recomputed (the second call is inside the loop). Called by DrawViewSlots when the tile record's
    word +5 is nonzero. Purpose unknown: what the tables and the object are.
    QUIRK ovl4:0AD0: `spanSlot` is set only inside the drawn-item branch; a first item that is
    skipped leaves the check after the item reading this slot's indeterminate stack value, and a
@@ -526,7 +526,7 @@ extern signed char g6FE1[]; /*@ ds:6FE1 */   /* sprite table B (this unit) */
 extern signed char g7015[]; /*@ ds:7015 */   /* per-row y nudge (this unit) */
 extern void far *gB7FE[]; /*@ ds:B7FE */     /* far sprite cells indexed by sprite plus nudge (this unit) */
 extern void far *gBufDCFC; /*@ ds:DCFC */    /* start-up far allocation, 4096 bytes (src/E07A9.C) */
-extern int gGraphicsChoice; /*@ ds:8102 */             /* the video mode/format (src/E07A9.C) */
+extern int gGraphicsChoice; /*@ ds:8102 */  /* the graphics choice: 0 CGA, 1 Tandy, 2 EGA, 3 MCGA/VGA, 4 VGA (re/globals.toml ds:8102; src/E07C8.C:42-45) */
 extern int gPartyCell; /*@ ds:FBCA */        /* the current map cell id (src/E08E6.C) */
 extern void (far *gFn80D2)(char far *map); /*@ ds:80D2 */  /* the far colour-table callback (src/E07A9.C) */
 extern char g1CD3[]; /*@ ds:1CD3 */  /* a 16-byte colour row the colour callback ds:80D2 is passed (src/E08E6.C:110, :752) */
@@ -1169,8 +1169,9 @@ extern void PlaySoundDefault(int sound); /*@ 177D:00F3 */
 
 /* ovl4:1F51: draws one frame of the view: Ovl4_044B draws the objects into the page buffer (with
    gPartyCell and gFBCC), DrawTile blits it from gSegDCA6, DrawViewSlots(0) draws the slots, and
-   when gFB45 and video mode 3 are set it loads the palette gFE68 and clears gFB45; when `full` is
-   also set, it first blanks the view box (gFillRect with pattern 0xc). Then it waits for gCount849A
+   when gFB45 is set and gGraphicsChoice is 3 (MCGA/VGA, re/globals.toml ds:8102) it loads the
+   palette gFE68 and clears gFB45; when `full` is also set, it first blanks the view box (gFillRect
+   with pattern 0xc). Then it waits for gCount849A
    to reach zero, and, when `full` is set and gF442 is clear, clips a rectangle. It always plays
    sound 0 and, when gFlag is zero, runs DrawViewRows; finally it clears gDF4C. Called from the game
    loop. */
