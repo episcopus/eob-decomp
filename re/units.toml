@@ -922,16 +922,16 @@ id = "s_text"
 program = "START1.EXE"
 segment = "0000"
 start = "0000:0239"
-bytes = 827
-functions = 6
+bytes = 1097
+functions = 15
 kind = "unknown"
 
 [[unit]]
 id = "s_lib"
 program = "START1.EXE"
 segment = "0000"
-start = "0000:0574"
-bytes = 5420
-functions = 57
+start = "0000:0682"
+bytes = 5150
+functions = 52
 kind = "library"
 

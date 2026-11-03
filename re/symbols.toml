@@ -12122,7 +12122,7 @@ match_flags = "tasm /mx"
 id = "s0000_04a3"
 unit = "s_text"
 addr = "0000:04A3"
-size = 89
+size = 26
 evidence = ["near"]
 name = "TestCrtcRegister"
 level = "L2"
@@ -12142,7 +12142,7 @@ match_flags = "tasm /mx"
 id = "s0000_052d"
 unit = "s_text"
 addr = "0000:052D"
-size = 71
+size = 61
 evidence = ["near", "frame"]
 name = "InitVideo"
 level = "L2"
@@ -12150,38 +12150,73 @@ match_flags = "tasm /mx"
 
 [[function]]
 id = "s0000_05f6"
-unit = "s_lib"
+unit = "s_text"
 addr = "0000:05F6"
 size = 18
 evidence = ["near", "frame"]
 
 [[function]]
 id = "s0000_0608"
-unit = "s_lib"
+unit = "s_text"
 addr = "0000:0608"
 size = 24
 evidence = ["near", "frame"]
 
 [[function]]
 id = "s0000_0620"
-unit = "s_lib"
+unit = "s_text"
 addr = "0000:0620"
 size = 12
 evidence = ["frame"]
 
 [[function]]
 id = "s0000_062c"
-unit = "s_lib"
+unit = "s_text"
 addr = "0000:062C"
 size = 22
 evidence = ["frame"]
 
 [[function]]
 id = "s0000_0642"
-unit = "s_lib"
+unit = "s_text"
 addr = "0000:0642"
 size = 64
 evidence = ["near", "frame"]
+
+[[function]]
+id = "s0000_04bd"
+unit = "s_text"
+addr = "0000:04BD"
+size = 63
+evidence = ["source"]
+notes = "not listed by the map: DetectVideoAdapter in src/S_TEXT.ASM (review e of s_text, 2026-11-03: the unit runs to 0682, the first library module ATEXIT)"
+name = "DetectVideoAdapter"
+level = "L2"
+match_flags = "tasm /mx"
+
+[[function]]
+id = "s0000_056a"
+unit = "s_text"
+addr = "0000:056A"
+size = 80
+evidence = ["source"]
+notes = "not listed by the map: VGA probe (review e of s_text, 2026-11-03: the unit runs to 0682, the first library module ATEXIT)"
+
+[[function]]
+id = "s0000_05ba"
+unit = "s_text"
+addr = "0000:05BA"
+size = 44
+evidence = ["source"]
+notes = "not listed by the map: EGA probe (review e of s_text, 2026-11-03: the unit runs to 0682, the first library module ATEXIT)"
+
+[[function]]
+id = "s0000_05e6"
+unit = "s_text"
+addr = "0000:05E6"
+size = 16
+evidence = ["source"]
+notes = "not listed by the map: CRTC probe (review e of s_text, 2026-11-03: the unit runs to 0682, the first library module ATEXIT)"
 
 [[function]]
 id = "s0000_0682"

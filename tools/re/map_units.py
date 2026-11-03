@@ -21,7 +21,7 @@ Existing names, signatures, levels and notes in re/symbols.toml are kept (by id)
 """
 from __future__ import annotations
 
-import argparse, json, os, sys, tomllib
+import argparse, json, os, re, sys, tomllib
 from pathlib import Path
 
 from capstone import CS_ARCH_X86, CS_MODE_16, Cs
@@ -64,10 +64,21 @@ def same_code(a: bytes, b: bytes) -> bool:
 
 
 def lib_start(path: Path, default: int | None) -> int | None:
+    """The first library module found past the start-up code. A module of a byte or two of code
+    (OVRHP's is one `ret`) is found almost anywhere, so it never marks the start (START1.EXE: OVRHP
+    "found" at 0574h, inside Westwood's video probes; the library starts at ATEXIT, 0682h)."""
     if not path.exists():
         return default
-    found = json.loads(path.read_text())["tc100"]["found"]
-    lo = [v for k, v in found.items() if v >= 0x20C]
+    report = json.loads(path.read_text())["tc100"]
+    found = report["found"]
+    tiny = set()
+    ref = ROOT / "build" / "re" / "rtl" / "tc100" / report.get("model", "l") / "r.map"
+    if ref.exists():
+        for m in re.finditer(r"^\s*[0-9A-F]{4}:[0-9A-F]{4} ([0-9A-F]{4}) C=CODE\s+S=\S+\s+G=\S+\s+M=(\S+)",
+                             ref.read_text("latin-1"), re.M):
+            if int(m.group(1), 16) <= 2:
+                tiny.add(m.group(2).upper())
+    lo = [v for k, v in found.items() if v >= 0x20C and k.upper() not in tiny]
     return min(lo) if lo else default
 
 
@@ -117,9 +128,10 @@ def build() -> tuple[list, list]:
     # START1.EXE is small model (C0S, CS.LIB; 2026-11-03): no overlays, so no segment table; all code is
     # one segment, 0000 to DGROUP (01AA, the start-up code's relocated word at 0000:0001). C0.ASM is
     # 0239h bytes (the small-model reference link's map) and the library starts at its first module
-    # found by rtl_compare (build/re/rtl_start1.json, OVRHP at 0574h); Westwood's code lies between.
+    # found by rtl_compare (build/re/rtl_start1.json, ATEXIT at 0682h; lib_start passes over OVRHP's
+    # one byte); Westwood's code lies between.
     s1 = read_mz((ROOT / "eob" / "START1.EXE").read_bytes())
-    s1lib = lib_start(BUILD / "rtl_start1.json", 0x574)
+    s1lib = lib_start(BUILD / "rtl_start1.json", 0x682)
     fn = json.loads((BUILD / "start1-functions.json").read_text()) if (BUILD / "start1-functions.json").exists() else {"resident": []}
     for uid, a, b, kind in (("s_c0", 0, 0x239, "startup"), ("s_text", 0x239, s1lib, "unknown"), ("s_lib", s1lib, 0x1AA0, "library")):
         pf = [f for f in fn["resident"] if a <= f["linear"] < b]
