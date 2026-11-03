@@ -1,7 +1,7 @@
 # Review: i0cda
 
 Reviewer: rev-haiku
-Commit reviewed: aa139872dfa3474f683144e3ec4f289840e9c58d
+Commit reviewed: 6ea511f (round 3; round 1 reviewed aa139872dfa3474f683144e3ec4f289840e9c58d)
 
 Playbook 70. Judge what a matching file can still get wrong: names, types, comments, structure.
 The matcher already proved the bytes; do not re-prove them, read for meaning.
@@ -10,6 +10,43 @@ The matcher already proved the bytes; do not re-prove them, read for meaning.
 
 Each finding is a checkbox. `must-fix` blocks `make review-pass` until a decompiler ticks it off
 (with the commit that fixes it); `should` and `note` do not block.
+
+### Round 3 (rev-haiku, 2026-11-02, main a49342c)
+
+Judged: the round 2 must-fix items and should, and the changes since the round 2 review (`git diff
+99b517e HEAD -- src/I0CDA.ASM`: the one commit 6ea511f, comments only; `make match` 1 of 1 exit 0,
+`make readability UNIT=i0cda` 0 findings).
+
+- Round 2 must-fix 1 (callers) is fixed right and stays ticked. The eleven `9a 06 00 d0 00` sites are
+  at 05F5, 0644, 0650, 1015, 1397, 157A, 2043, 2092, 209E, 26F6 and 2797 in `build/re/intro-overlays/
+  ovl00.bin`, each inside the function the comment names (ovl0:015D 1413 bytes, 0FD9 76, 1265 916,
+  1DF3 1456, 23A3 1392; re/symbols.toml). The continuations match the bytes: `mov ah,0` at the eight
+  sites, `a8 01 74 05` (test al,1; je) at 0650 and 209E, and at 1015 `mov ax,[2326h]` then the
+  `jne` at 1021, which jumps back to 0FE5 (the loop before the call), so "the caller's own loop
+  test" holds. The forms (`idiv` by 31, `test ax,7`, `and ax,3` then three `shl ax,1` at 1397,
+  `test ax,3`, `and ax,7; add ax,0x19`) match the bytes.
+- Round 2 must-fix 2 (name) is fixed right and stays ticked: re/symbols.toml:10860 reads `_RandomByte`,
+  and re/renames.toml:2579 logs the rename.
+- Round 2 must-fix 3 (shift wording) is fixed right and stays ticked: the two shr are at lines 60 and
+  61, the rcr that writes DGROUP:2310 at line 67, and the step list (lines 19 to 26) agrees with
+  lines 58 to 69 instruction by instruction.
+- Round 2 should (AX = new b0 ^ new b1) is fixed and stays ticked.
+
+New findings:
+
+- [ ] must-fix src/I0CDA.ASM:43-44 (a line the 6ea511f name comment changed): "returns a byte of it"
+  is wrong. The routine returns AL = new b0 ^ new b1 (line 26; lines 68 and 69), a value computed
+  from two state bytes, not one byte of the state. Say that: "and returns the XOR of the two bytes
+  it has just written (new b0 ^ new b1)". The same phrase is in re/renames.toml:2584 (a note there,
+  outside this round's file list; fix it with the comment).
+- [ ] should src/I0CDA.ASM:45: "No caller narrows it further" reads as the opposite of what the
+  callers do: they reduce the byte with `% 31`, `& 7`, `& 3` (src/IOV0.C:293, :296, :680, :706). The
+  sentence means that no caller gives it a more specific meaning; say that.
+- [ ] note: the far twin E1D8C.ASM still keeps `_f1D8C_0000`, carried from round 2; not a finding of
+  this unit.
+
+Round 3 is not a pass: one must-fix is open (the name comment's "returns a byte of it"). Every other
+item is fixed right or is a note.
 
 ### Round 2 (rev-haiku, 2026-11-02, main e1422b3)
 
