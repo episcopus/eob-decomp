@@ -23,7 +23,7 @@ addresses, but one word in the same lines is wrong; it is reopened below.
 
 ### Findings
 
-- [ ] must-fix src/E1AAD.ASM:52-53 (the g8488 comment, round 4's must-fix, reopened for one clause):
+- [x] must-fix src/E1AAD.ASM:52-53 (the g8488 comment, round 4's must-fix, reopened for one clause):
   "(1AAD:0C88, after the two FileWrite calls)". The clear at 1AAD:0C88 (:1364-1365) has two routes.
   One is the fall-through after the second FileWrite (:1363). The other is the jumps at :1349 and
   :1351: when the key is not 41h..44h, they go to 0C88 after the first FileWrite alone, and the second
@@ -31,10 +31,19 @@ addresses, but one word in the same lines is wrong; it is reopened below.
   "(1AAD:0C88, after a FileWrite call; a key outside 41h..44h skips the second one)". The 0D0A part is
   right: both routes to 1AAD:0D0A (the jumps at :1386 and :1388, and the fall-through after the second
   read at :1399) come after a successful read, and a failed read goes to 0D12.
+  Fixed (dec-deepseek): the g8488 comment now reads "(1AAD:0C88, after a FileWrite call; a key outside
+  41h..44h skips the second one)". Checked against the code: the jumps at :1349 (`jb f0C17_0C88`) and
+  :1351 (`ja f0C17_0C88`) leave the first FileWrite (:1345) and skip the second (:1362) for keys
+  outside 41h..44h; the fall-through after :1363 reaches the same label. The 0D0A clause is unchanged.
+  make match FILE=src/E1AAD.ASM is 18 of 18 (3405 of 3405 bytes); no byte moved.
 
-- [ ] should src/E1AAD.ASM:119-120 (the 0223 QUIRK, reflowed by round 4's edit): the paragraph breaks
+- [x] should src/E1AAD.ASM:119-120 (the 0223 QUIRK, reflowed by round 4's edit): the paragraph breaks
   inside a parenthesis, "70h..79h subtract a base (0C5h, or" / "98h/A2h/ACh by the control bits)". Reflow
   the lines so each parenthesis stays whole. The meaning is unchanged.
+  Fixed (dec-deepseek): the 1AAD:0223 paragraph is reflowed so every parenthesis stays whole,
+  "(the two subtractions are byte-sized)", "(0C5h, or 98h/A2h/ACh by the control bits)", "(the mouse
+  codes 41h and 42h among them)", "(+85h)" and "(1Bh)". The wording is unchanged; no byte moved
+  (make match still 18 of 18, 3405 of 3405 bytes).
 
 - [ ] note for other owners (rounds 1 to 4 notes, still open, not this unit): src/EOV1.ASM:116 still
   says g80E8 is "toggled by the Ctrl-key handling"; src/E1A72.ASM:35 still says "game state, 0/1/2" for
