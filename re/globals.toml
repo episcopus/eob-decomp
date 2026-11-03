@@ -424,7 +424,7 @@ why = "the record index of the current text window: SetTextWindow stores it as g
 [[global]]
 id = "ds:8102"
 name = "gGraphicsChoice"
-why = "the graphics choice: Main sets it to argv[1][0] + 1 (src/E07C8.C:229) and StartupGame subtracts 0x31 (src/E07C8.C:298), after the 0x36 check at :296, so the digit 0..4 exists only after :298; the digit indexes gOverlayFiles (0 cga, 1 tandy, 2 ega, 3 mcga/VGA, 4 vga; src/E07C8.C:39-43); the dispatch at 17A6:03E7 names 0 CGA, 1 Tandy, 2 EGA, 3 MCGA; src/E14EF.C:68 reads it as the graphics choice, 1 Tandy and 3 VGA; 3 and 4 select the 6-bit cells (src/E1DE7.C:163-165, :197); whitepaper 2.6: 1 Tandy, 3 VGA"
+why = "the graphics choice: Main sets it to argv[1][0] + 1 (src/E07C8.C:229) and StartupGame subtracts 0x31 (src/E07C8.C:298), after the 0x36 check at :296, so the digit 0..4 exists only after :298; the digit indexes gOverlayFiles (0 cga, 1 tandy, 2 ega, 3 mcga/VGA, 4 vga; src/E07C8.C:44-45); the dispatch at 17A6:03E7 names 0 CGA, 1 Tandy, 2 EGA, 3 MCGA; src/E14EF.C:68 reads it as the graphics choice, 1 Tandy and 3 VGA; 3 and 4 select the 6-bit cells (src/E1DE7.C:163-165, :197); whitepaper 2.6: 1 Tandy, 3 VGA"
 
 [[global]]
 id = "ds:8115"
