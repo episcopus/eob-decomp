@@ -6383,6 +6383,7 @@ size = 535
 evidence = ["segment"]
 level = "L2"
 notes = "not a function: bytes of the unit outside its functions (a marker or padding), matched with the whole unit"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1aad_0223"
@@ -6393,6 +6394,7 @@ evidence = ["near"]
 name = "_TranslateKey"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1aad_038e"
@@ -6403,6 +6405,7 @@ evidence = ["far"]
 name = "_ReadKey"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1aad_0409"
@@ -6413,6 +6416,7 @@ evidence = ["far"]
 name = "_ReadKeySpecial"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1aad_0471"
@@ -6423,6 +6427,7 @@ evidence = ["far"]
 name = "_IsKeyPending"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1aad_0480"
@@ -6433,6 +6438,7 @@ evidence = ["far"]
 name = "_FlushKeyBuffer"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1aad_048d"
@@ -6443,6 +6449,7 @@ evidence = ["near"]
 name = "_DequeueKeyEvent"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1aad_053a"
@@ -6453,6 +6460,7 @@ evidence = ["far"]
 name = "_WaitGameKey"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1aad_0588"
@@ -6463,6 +6471,7 @@ evidence = ["far"]
 name = "_WaitGameKey2"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1aad_05d3"
@@ -6473,6 +6482,7 @@ evidence = ["far"]
 name = "_WaitKeyEvent"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1aad_05f1"
@@ -6483,6 +6493,7 @@ evidence = ["far", "near", "frame"]
 name = "_GetKeyState"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1aad_0718"
@@ -6493,6 +6504,7 @@ evidence = ["far"]
 name = "_InstallKeyboard"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1aad_09f6"
@@ -6503,6 +6515,7 @@ evidence = ["far"]
 name = "_RemoveKeyboard"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1aad_0a1f"
@@ -6513,6 +6526,7 @@ evidence = ["frame"]
 name = "_QueueInputEvent"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1aad_0b0e"
@@ -6523,6 +6537,7 @@ evidence = ["far", "frame"]
 name = "_HandleMouseButtons"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1aad_0b9c"
@@ -6533,6 +6548,7 @@ evidence = ["near"]
 name = "_QueueMouseEvent"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1aad_0bf1"
@@ -6543,6 +6559,7 @@ evidence = ["near"]
 name = "_SetKeyDownBit"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1aad_0c17"
@@ -6553,6 +6570,7 @@ evidence = ["near"]
 name = "_ProcessKeyEvent"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1aad_0d26"
@@ -6563,6 +6581,7 @@ evidence = ["near"]
 name = "_InjectRecordedKey"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1b82_0009"

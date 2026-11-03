@@ -1,10 +1,66 @@
 # Review: e1aad
 
 Reviewer: rev-haiku
-Commit reviewed: d7e541a (round 5; main, whose src/E1AAD.ASM is the same as 5947cc7). Round 4 was b4eaa33, round 3 was 49e4d94, round 2 was 3331b69, round 1 was 7d0dd48.
+Commit reviewed: ea86526 (round 6; main, whose src/E1AAD.ASM is the same as 01a8380's). Round 5 was d7e541a, round 4 was b4eaa33, round 3 was 49e4d94, round 2 was 3331b69, round 1 was 7d0dd48.
 
 Playbook 70. Judge what a matching file can still get wrong: names, types, comments, structure.
 The matcher already proved the bytes; do not re-prove them, read for meaning.
+
+## Round 6 (ea86526)
+
+Judged only what the later-round rule asks: the round 5 must-fix (the g8488 comment, reopened in round 5)
+and the diff since d7e541a in `src/E1AAD.ASM`: five hunks, the gTunesOn EXTRN (:18), the g8488 comment
+(:49-54), the 0223 paragraph (:114-124), the INT 9 header (:727-730) and the `xor` (:989). The rename also
+added the `re/globals.toml` entry for ds:80E8 (:495-497) and `re/renames.toml` carries it too; neither
+names another 1AAD address.
+
+Round 5 must-fix, checked against the code: the jumps at :1349 (`jb f0C17_0C88`) and :1351
+(`ja f0C17_0C88`) leave the first FileWrite (:1345) and skip the second (:1362) for keys outside 41h..44h;
+the fall-through after :1363 reaches the same label, so the clear at 1AAD:0C88 (:1364-1365) comes after a
+FileWrite call, as the comment says. 1AAD:0D0A (:1407-1408) is reached from :1386 and :1388 after a
+successful first read (a failed one goes to 0D12 at :1380), and by the fall-through after :1406.
+
+The rename is sound. gTunesOn is the Tunes option: RunCampMenu (ovl1:1ACD, src/EOV1.C:1214) formats
+"Tunes are %-3s" from it (EOV1.C:1263, string 0x11 of gStrings2003), and the BTN_TUNES case (0x800d,
+EOV1.C:38 and :1353) toggles it. The INT 9 handler toggles it on key 0434h (M) at :989, as before. src/
+uses the new name everywhere (EOV1.C:201, :1263, :1354; EOV3.C:29, :865, :936). `make match
+FILE=src/E1AAD.ASM` is 18 of 18 (3405 of 3405 bytes), exit 0; `make readability UNIT=e1aad` is 0
+findings. No byte moved.
+
+### Findings
+
+- [x] must-fix src/E1AAD.ASM:52-53 (round 5's g8488 must-fix): fixed right, the tick stays (see above).
+
+- [ ] should src/E1AAD.ASM:18-21 (the gTunesOn extern, renamed in this round). (a) The comment says only
+  "a toggled option flag". The name's evidence is in re/globals.toml:495-497 and in src/EOV1.C, but the
+  comment does not carry it. Say it here: "the Tunes option, toggled by the Tunes button of the camp menu
+  (ovl1:1ACD, which labels it 'Tunes are %-3s')". (b) Line 20 cites "(EOV1.ASM:3724-3731)", but
+  src/EOV1.ASM is gone (the file is now src/EOV1.C, commit 8aa33873), so the cite is stale: give the
+  address, ovl1:1ACD. The "(EOV3.C:808-840)" cite on line 19 still holds: the layout comment at EOV3.C:832
+  names ds:80E8 and the write is at :865. (c) The rename made line 18 one column longer than the EXTRN
+  lines around it: its ";" sits at column 43, the others and the continuation lines 19-21 at 40.
+  Realign it to 40.
+
+- [ ] should src/E1AAD.ASM:117-118 (the 0223 paragraph; round 5's should, reopened): the reflow fixed the
+  case it named, but it still breaks a parenthesis. "(the" ends line 117 and "two subtractions are
+  byte-sized)" starts line 118. Round 5 asked that each parenthesis stay whole, and the fix note lists
+  "(the two subtractions are byte-sized)" as whole, which the file does not show. Reflow so that
+  parenthesis is on one line. The wording is unchanged; no byte moves.
+
+- [ ] note for other owners (rounds 1 to 5 notes, still open, not this unit): src/EOV3.C:29 still says
+  gTunesOn is "toggled by Ctrl-key handling (src/E1AAD.ASM)", which this unit does not show; src/E1A72.ASM:35
+  still says "game state, 0/1/2" for g80EC and cites "E1AAD.ASM:20" (that line is now :23); src/E07C8.C:95
+  still cites "1AAD:0718, src/E1AAD.ASM:793" for the install copy of ds:80EA, where the read is in the INT 9
+  handler body (1AAD:07C0). The round 5 note on src/EOV1.ASM:116 is moot: that file is gone. Their owners
+  should align them.
+
+### Summary
+
+No must-fix is open. The round 5 g8488 must-fix is fixed right, and the rename is sound: gTunesOn has
+evidence in src/EOV1.C (the Tunes label and button) and is used the same way in every file of src/. Two
+shoulds are open, both in comment text: the gTunesOn comment (its evidence, the stale EOV1.ASM cite, the
+column) and the 0223 paragraph's split parenthesis. The unit passes on the changed lines, which are
+sound. Nothing is escalated: each item is a comment, with no matcher, spec or pin question.
 
 ## Round 5 (d7e541a)
 
