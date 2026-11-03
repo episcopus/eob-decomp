@@ -11,7 +11,7 @@ You are working on a **matching decompilation of Westwood's Eye of the Beholder 
 
 ## Facts you must not get wrong
 
-- The programs (`EOB.EXE`, `INTRO.EXE`, `START1.EXE`) were built with **Borland Turbo C++ 1.00, `-ml -O -Z`, and its TLINK 3.0**, with VROOMM overlays appended to the EXE as FBOV data. Not 1.01 (`make rtl-compare`, whitepaper 2.1). The assembler is provisionally TASM 2.0 [H].
+- The programs (`EOB.EXE`, `INTRO.EXE`, `START1.EXE`) were built with **Borland Turbo C++ 1.00, `-ml -O -Z` (`START1.EXE`: `-ms`, small model), and its TLINK 3.0**, with VROOMM overlays appended to the EXE as FBOV data. Not 1.01 (`make rtl-compare`, whitepaper 2.1). The assembler is provisionally TASM 2.0 [H].
 - **The copy in `eob/` is the fan patch "1.9"**, not the retail release (SPEC section 2). Some bytes may be hex edits no compiler wrote; record them as patch sites, never force them with C.
 - `LEVELS.TMP` and `EOBDATA.SAV` are written by the game and not pinned. Never run the game inside `eob/` from a tool; copy the files first. The oracle hides them: a session that needs a saved game names one (`option save fixtures/EOBDATA.SAV`), and `LEVELS.TMP` is made from it.
 - **The Borland runtime library is library**: linked, never decompiled.

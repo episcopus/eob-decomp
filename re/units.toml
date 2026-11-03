@@ -909,10 +909,29 @@ functions = 22
 kind = "c"
 
 [[unit]]
-id = "s1"
+id = "s_c0"
 program = "START1.EXE"
 segment = "0000"
 start = "0000:0000"
-bytes = 8140
-functions = 0
+bytes = 569
+functions = 7
+kind = "startup"
+
+[[unit]]
+id = "s_text"
+program = "START1.EXE"
+segment = "0000"
+start = "0000:0239"
+bytes = 827
+functions = 6
 kind = "unknown"
+
+[[unit]]
+id = "s_lib"
+program = "START1.EXE"
+segment = "0000"
+start = "0000:0574"
+bytes = 5420
+functions = 57
+kind = "library"
+

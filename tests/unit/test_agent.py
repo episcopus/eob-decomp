@@ -43,10 +43,12 @@ def test_queue_is_game_code_smallest_first():
     c = nxt.candidates()
     ids = [u["id"] for u in c]
     assert not {"e_lib", "e_c0", "i_lib", "i_c0"} & set(ids)
-    eob = [u for u in c if u["program"] == "EOB.EXE"]
-    assert c[:len(eob)] == eob                                  # EOB.EXE first, then INTRO.EXE
-    for part in (eob, c[len(eob):]):
-        assert [u["bytes"] for u in part] == sorted(u["bytes"] for u in part)
+    order = ("EOB.EXE", "INTRO.EXE", "START1.EXE")
+    assert [order.index(u["program"]) for u in c] == sorted(order.index(u["program"]) for u in c)
+    for prog in order:                                          # by program, then smallest first
+        part = [u["bytes"] for u in c if u["program"] == prog]
+        assert part == sorted(part)
+    assert "s_text" in ids and "s_lib" not in ids and "s_c0" not in ids
     assert "e0cf7" in ids and "eov2" in ids
     assert not any(u.get("twin") for u in c) and "i0892" in ids  # a twin is proven, not decompiled again
 
