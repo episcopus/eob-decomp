@@ -4712,6 +4712,7 @@ evidence = ["far", "near", "segment"]
 name = "SetSoundVolume"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e122e_0055"
@@ -4722,6 +4723,7 @@ evidence = ["near", "frame"]
 name = "HitTestObjectKind"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e122e_0137"
@@ -4732,6 +4734,7 @@ evidence = ["near", "frame"]
 name = "ObjectCountIsOdd"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e122e_0154"
@@ -4743,6 +4746,7 @@ notes = "2026-11-02: matches with the !! boolean-conversion form around the bit 
 name = "ArmMemberEffect"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e122e_01d9"
@@ -4753,6 +4757,7 @@ evidence = ["near", "frame"]
 name = "DisarmMemberEffect"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e122e_0271"
@@ -4763,6 +4768,7 @@ evidence = ["near", "frame"]
 name = "ToggleArmEffect"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e122e_0325"
@@ -4773,6 +4779,7 @@ evidence = ["frame"]
 name = "ForceDoorAction"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e122e_04ca"
@@ -4783,6 +4790,7 @@ evidence = ["frame"]
 name = "MemberSlotClickAction"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e122e_05df"
@@ -4793,6 +4801,7 @@ evidence = ["frame"]
 name = "PerformItemSlotAction"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e122e_0620"
@@ -4803,6 +4812,7 @@ evidence = ["frame"]
 name = "IncreaseItemSlot"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e122e_0678"
@@ -4813,6 +4823,7 @@ evidence = ["frame"]
 name = "DecreaseItemSlot"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e122e_06d0"
@@ -4824,6 +4835,7 @@ notes = "matched 2026-11-03 under -v. The form: `if (item != 0) { RunMemberScrip
 name = "ItemSlotAction"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e122e_0847"
@@ -4834,6 +4846,7 @@ evidence = ["far", "frame"]
 name = "CheckMemberSlotRect"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e122e_0896"
@@ -4844,6 +4857,7 @@ evidence = ["far", "near", "frame"]
 name = "DispatchSlotHandler"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e122e_0933"
@@ -4854,6 +4868,7 @@ evidence = ["frame"]
 name = "RunRowHandler"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e122e_0960"
@@ -4864,6 +4879,7 @@ evidence = ["frame"]
 name = "WriteObjectFieldOp"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e122e_0a16"
@@ -4875,6 +4891,7 @@ notes = "matched 2026-11-02 under -v: the game modules were compiled with debug 
 name = "WriteObjectRunOp"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e122e_0b23"
@@ -4885,6 +4902,7 @@ evidence = ["frame"]
 name = "ArmMember"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e122e_0b56"
@@ -4895,6 +4913,7 @@ evidence = ["frame"]
 name = "DisarmMember"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e122e_0b89"
@@ -4905,6 +4924,7 @@ evidence = ["frame"]
 name = "SpawnObjectOp"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e122e_0c4d"
@@ -4915,6 +4935,7 @@ evidence = ["frame"]
 name = "AddEffectOp"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e122e_0d57"
@@ -4925,6 +4946,7 @@ evidence = ["frame"]
 name = "ReassignObjectsOp"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e122e_0e9b"
@@ -4935,6 +4957,7 @@ evidence = ["frame"]
 name = "MoveCarriedItemOp"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e122e_0fdc"
@@ -4945,6 +4968,7 @@ evidence = ["frame"]
 name = "ShowTextOp"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e122e_1097"
@@ -4955,6 +4979,7 @@ evidence = ["frame"]
 name = "SetActionFlagsOp"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e122e_11e8"
@@ -4965,6 +4990,7 @@ evidence = ["frame"]
 name = "ClearActionBit"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e122e_126e"
@@ -4975,6 +5001,7 @@ evidence = ["frame"]
 name = "HealPartyMember"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e122e_12ce"
@@ -4985,6 +5012,7 @@ evidence = ["frame"]
 name = "DamagePartyMember"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e122e_139d"
@@ -4995,6 +5023,7 @@ evidence = ["frame"]
 name = "JumpToScriptOffset"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e122e_13d1"
@@ -5005,6 +5034,7 @@ evidence = ["frame"]
 name = "ScriptStop"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e122e_13e0"
@@ -5015,6 +5045,7 @@ evidence = ["frame"]
 name = "PopScriptPointer"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e122e_1422"
@@ -5025,6 +5056,7 @@ evidence = ["frame"]
 name = "PushScriptPointer"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e122e_147f"
@@ -5036,6 +5068,7 @@ notes = "matched 2026-11-02 under the unit's -v (whole function, 1468 bytes). Th
 name = "EvaluateScriptExpr"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e122e_1aab"
@@ -5046,6 +5079,7 @@ evidence = ["frame"]
 name = "LoadLevelOp"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e122e_1b5a"
@@ -5056,6 +5090,7 @@ evidence = ["frame"]
 name = "AddExperienceOp"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e122e_1b9a"
@@ -5066,6 +5101,7 @@ evidence = ["frame"]
 name = "TakeItemOp"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e122e_1c16"
@@ -5076,6 +5112,7 @@ evidence = ["frame"]
 name = "TurnPageOp"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e122e_1cad"
@@ -5086,6 +5123,7 @@ evidence = ["frame"]
 name = "MarkMemberItemsOp"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e122e_1d76"
@@ -5096,6 +5134,7 @@ evidence = ["frame"]
 name = "CallOverlayOp"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e122e_1da8"
@@ -5106,6 +5145,7 @@ evidence = ["far", "frame"]
 name = "RunMemberScript"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e122e_1194"
@@ -5116,6 +5156,7 @@ name = "PlaySoundOp"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 notes = "not listed by the map: a function of the source, its bounds proven by the whole-unit match"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e122e_1a3b"
@@ -5126,6 +5167,7 @@ name = "DrainItemOp"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 notes = "not listed by the map: a function of the source, its bounds proven by the whole-unit match"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1414_0000"
