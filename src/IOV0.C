@@ -37,7 +37,8 @@ extern int gDrawPage;                   /*@ ds:1FA1 */
 extern long gFrameDelay;                /*@ ds:2326: the frame hold; DelayFrames writes an
                                             unsigned count and clears the high word, so it is
                                             32-bit; a routine outside this unit decrements it [H]:
-                                            image offset 0xD479 runs sub word ptr [2326],1 and sbb [2328]. */
+                                            0CE7:0007 runs sub word ptr [2326],1 and 0CE7:000C sbb
+                                            word ptr [2328],0 (image offset 0xCE77, file offset 0xDC77). */
 extern int gAbort;                      /*@ ds:2D1C */
 
 /* The keyboard routines of the library (i0a19, the twin of EOB.EXE's 1AAD input unit). */
@@ -526,7 +527,7 @@ extern void MemFree(void far *block); /*@ 094F:0137 */
 }
 
 /* ovl0:0FD9: waits out gFrameDelay while polling the keyboard. This loop does not wait for a
-   tick: it spins while gFrameDelay is nonzero, and the timer (not in this unit) decrements it [H].
+   tick: it spins while gFrameDelay is nonzero, and the timer (0CE7:0007) decrements it [H].
    A pending key is taken: the rest of the key ring is drained (esc sets the abort flag gAbort,
    so the caller skips the rest of the intro) and the delay is cleared, so any key skips the
    wait. RandomByte is called once per pass even when a key was drained; it advances the seed at
