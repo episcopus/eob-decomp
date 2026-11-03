@@ -1744,7 +1744,7 @@ addr = "0EF3:21E0"
 old = ""
 new = "OpenSpellPanel"
 kind = "function"
-why = "opens the member's spell panel for an item of class 5/6: gDD14 = the member's known or memorized spell slots, gNameTable = g1278 or g12E0, scans the first nonzero slot, saves the panel rect and runs the panel body 0EF3:2295 (called by 0BD2:1001, E0BD2.C declares it f0EF3_21E0)"
+why = "opens the member's spell panel for an item of class 5/6: gDD14 = the member's known or memorized spell slots, gNameTable = gMageSpellNames or gClericSpellNames, scans the first nonzero slot, saves the panel rect and runs the panel body 0EF3:2295 (called by 0BD2:1001, E0BD2.C declares it f0EF3_21E0)"
 date = "2026-11-02"
 
 [[rename]]
@@ -1753,7 +1753,7 @@ addr = "ds:EFCC"
 old = ""
 new = "gNameTable"
 kind = "global"
-why = "the far table 0EF3:2295 reads names from; set to g12E0 or g1278 by 0EF3:21E0 (only E0EF3.C references ds:EFCC)"
+why = "the far table 0EF3:2295 reads names from; set to gClericSpellNames or gMageSpellNames by 0EF3:21E0 (only E0EF3.C references ds:EFCC)"
 date = "2026-11-02"
 
 [[rename]]
@@ -2617,7 +2617,7 @@ addr = "ds:5737"
 old = "gText5737"
 new = "g5737"
 kind = "global"
-why = "ds:5737 is a word table of animation frames (0EF3:2EBC reads it as frameTable[row6 >> 8], :2415), not a string; the gText prefix is this file's prefix for strings. No other src/ file names ds:5737"
+why = "ds:5737 is a word table of animation frames (0EF3:2EBC reads it as frameTable[row6 >> 8]), not a string; the gText prefix is this file's prefix for strings. No other src/ file names ds:5737"
 date = "2026-11-02"
 
 [[rename]]

@@ -159,7 +159,7 @@ struct DDRec {
 struct Spell {
     char *name;                             /* +00: the spell's name */
     signed char flags;                      /* +04: bits 0..3 read by 0EF3:0D78 (bits 0..2, bit 3)
-                                               and 0EF3:2676 (bit 1, bits 1|2, bit 2, bit 3) */
+                                               and 0EF3:2676 (bit 0, bit 1, bits 1|2, bit 2, bit 3) */
     void (far *apply)(void);                /* +05: run through gFnEFBA when the spell is cast */
     int (far *ddFn)(struct DDRec far *rec); /* +09: copied into DDRec.fn by 0EF3:097B */
     void (far *remove)(struct CharRec far *rec); /* +0D: run when the spell expires */
@@ -201,14 +201,15 @@ extern signed char gEFB8;               /*@ ds:EFB8 */ /* an effect value passed
 extern signed char g8DD5;               /*@ ds:8DD5 */ /* cleared by 0EF3:0418 */
 extern signed char gA999;               /*@ ds:A999 */ /* the member 0EF3:1233 redraws */
 extern signed char gA99A;               /*@ ds:A99A */ /* the selected character index */
-extern int gFC74;                       /*@ ds:FC74 */ /* the panel member saved by 0EF3:28ED
-                                                         (:2090) and restored by 0EF3:026F (:524) */
+extern int gFC74;                       /*@ ds:FC74 */ /* the panel member saved by 0EF3:28ED and
+                                                         restored by 0EF3:026F */
 extern int gFC76;                       /*@ ds:FC76 */
 extern char gF43D;                      /*@ ds:F43D */
 extern int gF518;                       /*@ ds:F518 */ /* set while 08E6:0E48 has not run */
 extern unsigned char gFBD2;             /*@ ds:FBD2 */ /* a flag byte: bit 0 is the item-swap mode
-                                                        (0EF3:1069, :10AE), bits 4 and 5 are set by
-                                                        the effects (src/E0DE8.C:198) */
+                                                        (0EF3:1069, 0EF3:10AE); bit 4 is the swap
+                                                        flag (set by 0EF3:1AD0, cleared by
+                                                        0EF3:1B13) and bit 5 is set by 0EF3:1E3E */
 extern char gFB44;                      /*@ ds:FB44 */
 extern int gFBC8;                       /*@ ds:FBC8 */
 extern int gFBCC;                       /*@ ds:FBCC */
@@ -224,8 +225,8 @@ extern char gF542[];                    /*@ ds:F542 */ /* the action record pass
                                                          struct ActRec far * (0EF3:2676, :2929,
                                                          src/E0ACD.C:72) */
 extern char far *g5763[];               /*@ ds:5763 */ /* far byte tables, one per page gFBCC */
-extern int g5737[];                 /*@ ds:5737 */ /* a word table of animation frames 0EF3:2EBC
-                                                        reads as frameTable[row6 >> 8] (:2415) */
+extern int g5737[];                     /*@ ds:5737 */ /* a word table of animation frames 0EF3:2EBC
+                                                           reads as frameTable[row6 >> 8] */
 extern void Obj0E48(void);              /*@ 08E6:0E48 */ /* clears the object marks (src/E08E6.C) */
 extern int ClampOrWrap(int value, int low, int high, int invert); /*@ 082C:0AB4 */
 extern signed char gAt5717[];          /*@ ds:5717 */ /* a per-member byte: nonzero when the member
@@ -265,12 +266,14 @@ extern signed char gEffectSound[];      /*@ ds:1355 */ /* one record per effect 
                                                            the first byte is a sound id (0EF3:08CF) */
 extern void (far *gFnEFBA)(void);       /*@ ds:EFBA */ /* the current spell's apply callback
                                                          (Spell.apply): set by 0EF3:2676 from
-                                                         spell->apply (:2038) and run there (:2076)
-                                                         and by 0EF3:08CF (:807) */
+                                                         spell->apply and run there, and run by
+                                                         0EF3:08CF */
 extern char gFlag;                      /*@ ds:F3B9 */ /* cleared by 0EF3:2541 (E0ACD.C) */
 extern void far *gSegDF4E;              /*@ ds:DF4E */ /* the slot-5 buffer (E07A9.C) */
 extern void (far *gRestoreRect)(int x, int y, int width, int height, void far *buf); /*@ ds:804E */
-extern void (far *gFn804A)(int x, int y, int width, int height, void far *buf); /*@ ds:804A */ /* the far blit that restores a saved rectangle (src/EOV1.ASM:110 calls it "far blit routine"); the counterpart of gSaveRect (ds:80AE) */
+extern void (far *gFn804A)(int x, int y, int width, int height, void far *buf); /*@ ds:804A */ /* the
+    far blit that restores a saved rectangle (src/EOV1.C ovl1:112D draws the option field back
+    through it); the counterpart of gSaveRect (ds:80AE) */
 extern void (far *gSaveRect)(int x, int y, int width, int height, void far *buf); /*@ ds:80AE */
 extern void HidePointerZone(int left, int top, int right, int bottom); /*@ 1BBE:01FE */
 extern void ShowPointerZone(void);      /*@ 1BBE:02C2 */
@@ -280,8 +283,8 @@ extern signed char gDDE2;               /*@ ds:DDE2 */ /* the member 0EF3:25BD s
 extern signed char gA9C5;               /*@ ds:A9C5 */ /* a counter 0EF3:25BD walks */
 extern char far **gNameTable;           /*@ ds:EFCC */ /* the table of far name pointers 0EF3:2295
                                                           reads, set to gMageSpellNames or gClericSpellNames by 0EF3:21E0 */
-extern char far *gMageSpellNames[];               /*@ ds:1278 */ /* far name pointers (src/E0BD2.C) */
-extern char far *gClericSpellNames[];               /*@ ds:12E0 */ /* far name pointers (src/E0BD2.C) */
+extern char far *gMageSpellNames[];     /*@ ds:1278 */ /* far name pointers (src/E0BD2.C) */
+extern char far *gClericSpellNames[];   /*@ ds:12E0 */ /* far name pointers (src/E0BD2.C) */
 extern struct CellRect gSpellCells[];   /*@ ds:5773 */ /* five spell cells 0EF3:2295 fills */
 extern char far *gSpellLabels[];        /*@ ds:5787 */ /* the "1ST".."5TH" row labels 0EF3:2295 draws */
 extern char gText592B[];                /*@ ds:592B */ /* "ABORT SPELL" (0EF3:2295) */
@@ -733,10 +736,9 @@ extern int gFC72;                /*@ ds:FC72 */ /* the handle gFn8072 returned u
 /* 0EF3:0665: run the "flash" animation for one member or the whole party: eight passes over the
    living members (m01 bit 0, and either the plain character screen is up, gFB44 == 0, or the
    member is the selected one gA99A), each drawing one frame through 0EF3:05BD and waiting two
-   ticks, then redraw each member. `who`
-   is a member index, or -1 for the whole party; the function reuses the parameter as the walk
-   index. Called by 0EF3:08CF and 0EF3:2676 CastSpell (packet row 32), and the item effect at
-   0BD2:0D2D. */
+   ticks, then redraw each member. `who` is a member index, or -1 for the whole party; the function
+   reuses the parameter as the walk index. Called by 0EF3:08CF and 0EF3:2676 CastSpell (packet row
+   32), and the item effect at 0BD2:0D2D. */
 /*@ 0EF3:0665 */ void FlashPartyMembers(int who)
 {
     int first;
@@ -912,7 +914,7 @@ extern int gFC72;                /*@ ds:FC72 */ /* the handle gFn8072 returned u
             dmg = RollDice(count, sides, bonus) * n;
             if (RollToHit(rec->m0B, *list, 0, 0) || !flag04) {
                 if (flag08)
-                    dmg = HalveSaveDamageB((char far *)&gObjs[*list], dmg);
+                    dmg = HalveSaveDamageB(&gObjs[*list], dmg);
                 hit = 1;
                 if (!f0D1C_0BAB(*list))
                     DamageObject(&gObjs[*list], dmg);
@@ -1334,7 +1336,7 @@ extern int gFC72;                /*@ ds:FC72 */ /* the handle gFn8072 returned u
 }
 
 /* 0EF3:1656: give the panel member the item of effect mode 6, like 0EF3:1197 but with flags 0x18
-   and icon 0x53 instead of 0x10 and 0x52, and the m05 item-type argument halved with `>> 1` (the
+   and icon 0x53 instead of 0x10 and 0x52, and the m0A item-type argument halved with `>> 1` (the
    original shifts, `sar ax,1`, where `/ 2` would call the divide routine). Called through a
    table. */
 /*@ 0EF3:1656 */ void CreateItemForEffect6(void)
@@ -1360,7 +1362,7 @@ extern int gFC72;                /*@ ds:FC72 */ /* the handle gFn8072 returned u
 /* 0EF3:1702: after FlashViewDamage, walk the 30 objects and for each whose id is the object the
    current page faces (0D1C:00DA), whose Entry27 record gTable1A3B[obj->b0] has bit 0 or 1 of its
    +0x0F long and which 0D1C:0BAB does not reject, roll 1d20 and clear the object's type when the
-   roll is under the value 0A72:0006 gives for that record's +2 index. The +2 byte is passed as
+   roll is under the value 0A72:0006 gives for that record. The +2 byte is passed as
    GetIndexedByte's `limit` argument, which 0A72:0006 clamps to g341E[index]
    (src/E0A72.C:73-80). Reached through a table (the packet finds no direct caller). The threshold
    is a local and the clear uses &gObjs[i], not the walking pointer. */
@@ -1534,7 +1536,7 @@ void AnimateConeOfCold(int count, int spread, int step, int cycle, int divisor,
     }
 }
 
-/* 0EF3:1B13: clear bit 4 of the gFBD2 flag byte; the swap mode is off again. */
+/* 0EF3:1B13: clear bit 4 of the gFBD2 flag byte; the swap flag is off again. */
 /*@ 0EF3:1B13 */ void ClearSwapFlag(void)
 {
     gFBD2 &= ~0x10;
@@ -1629,9 +1631,9 @@ void AnimateConeOfCold(int count, int spread, int step, int cycle, int divisor,
 }
 
 /* 0EF3:1D38: give the panel member the item of effect mode 4, like 0EF3:1197 but with flags 0 and
-   icon 0x54 instead of 0x10 and 0x52, and the effect duration (the extra argument to
-   ApplyTimedCharEffect) set to half the class-slot 2/4 value; the item-type arguments are
-   (0, 0, 0, 0xF, 1, 4, 4, 1). Called through a table. */
+   icon 0x54 instead of 0x10 and 0x52, and the effect duration longer by half the class-slot 2/4
+   value (added to the count 4 in ApplyTimedCharEffect's (count + extra) times span interval); the
+   item-type arguments are (0, 0, 0, 0xF, 1, 4, 4, 1). Called through a table. */
 /*@ 0EF3:1D38 */ void CreateItemForEffect4(void)
 {
     int index, itemType;
@@ -1909,8 +1911,8 @@ void DrawSpellPanel(void);
    seven rows of the member's slot row (gDD14 + gDDE2*6) draws the spell's name from gNameTable
    (row 6, the abort row, gets ds:592B, or ds:5937 when it is the highlighted row gA9C5). Finally
    it clears gStatusLine, hides the pointer, clips a 0xD by 0x35 box at (9, 0x7a), draws the
-   panel's inner line with
-   gDrawLine and shows the pointer. Called by 0EF3:21E0, 0EF3:25BD and 0EF3:2929.
+   panel's inner line with gDrawLine and shows the pointer. Called by 0EF3:21E0, 0EF3:25BD and
+   0EF3:2929.
    The row 6 loop writes its condition `gA9C5 != i` with the plain row first: the original keeps
    the fill-coloured row as the fallthrough and jumps to the highlighted row (and the -v build
    keeps the not-selected row-6 "ABORT SPELL" call at 0EF3:1F4 apart from the highlighted one).
@@ -2011,8 +2013,7 @@ void DrawSpellPanel(void);
 /* 0EF3:25BD: Purpose unknown: save the action record's member (+0x38) in ds:DDE2, then hunt along
    that member's row (six bytes) of the far table ds:DD14 (row base gDDE2 * 6) for the first byte
    over zero, breaking at six. It then runs 0EF3:2295 DrawSpellPanel (the spell panel) and returns
-   the record's +4
-   word. Its caller and what the row holds are not established. */
+   the record's +4 word. Its caller and what the row holds are not established. */
 /*@ 0EF3:25BD */ int f0EF3_25BD(struct ActRec far *rec)
 {
     gDDE2 = rec->m38;
@@ -2054,7 +2055,7 @@ void DrawSpellPanel(void);
 
 /* 0EF3:2676: cast spell `action` from the panel; `kind` is the slot passed to UseItemRow
    (0EF3:2604, which row's item to use) when a condition slot is open, and HandleSpellList passes
-   0 (:2141). It remembers the spell value
+   0 (0EF3:2929). It remembers the spell value
    gEFB8, clears the panel member's effect flag 4 when the spell's ds:1344+0x12 bit 0 says so and
    the member has flag 4 set, copies the spell's apply callback into gFnEFBA, sets gF3B8 from the
    per-page sound table g1A1B (the member index, minus two when it is over three), and, for a spell
@@ -2206,7 +2207,7 @@ void DrawSpellPanel(void);
    position and the high byte of row6), `spread` the random amplitude, `count` the particle number
    (capped at 0x96), `divisor` the frame-step divisor, `falloff` the extra spread shift,
    `frameTable` the animation template. Called by 0EF3:00CD. It clears bit 1 of ds:849E for the
-   duration (on entry, :2182; set again on exit, :2259). */
+   duration (clear on entry, set again on exit). */
 /*@ 0EF3:2A53 */ void f0EF3_2A53(int scale, int spread, int count, int divisor, int falloff,
                                   void far *frameTable)
 {
@@ -2322,7 +2323,7 @@ void DrawSpellPanel(void);
    (row5 = 0) and a live frame is drawn (gFn809E) only when the particle is not on hold
    (row7[i] == 0) and has no held handle (handle == 0). It runs
    until no particle is live, restores gStatusLine, increments `cycle`, and sets bit 1 of ds:849E
-   (it was cleared on entry, :2316).
+   (it was cleared on entry in 0EF3:2EBC).
    `count` is capped at 0x96, `divisor` scales the frame range, `frameTable` is the frame word
    table. `cycle` is only incremented (its value never used here). Called by 0EF3:18D8 with
    (0x96, 0x32, 0x0A, 1, 0x64, g5737). */
