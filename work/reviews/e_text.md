@@ -1,7 +1,7 @@
 # Review: e_text
 
 Reviewer: rev-haiku
-Commit reviewed: round 1 at 2ba0b7c; round 2 at c003ada; round 3 at 3165a9c; round 4 at 35510fa (see Findings, Round 4)
+Commit reviewed: round 1 at 2ba0b7c; round 2 at c003ada; round 3 at 3165a9c; round 4 at 35510fa; round 5 at ee9075d (see Findings, Round 5)
 
 Playbook 70. Judge what a matching file can still get wrong: names, types, comments, structure.
 The matcher already proved the bytes; do not re-prove them, read for meaning.
@@ -23,6 +23,29 @@ Not checked: the claim that the block's first word in ADLIB.DAT is 0258h (the fi
 
 Each finding is a checkbox. `must-fix` blocks `make review-pass` until a decompiler ticks it off
 (with the commit that fixes it); `should` and `note` do not block.
+
+### Round 5: must-fix items
+
+Reviewer: rev-haiku, round 5 at ee9075d (playbook 70, later round). Scope: the round 4 must-fix M11, should S4 and note, and the changed lines since 35510fa (`git diff 35510fa HEAD -- src/E_TEXT.ASM re/symbols.toml re/globals.toml`; the fix is a907cfc, comment lines only). The registry diff has no e_text row. Checked against the code: src/E_TEXT.ASM 831 to 938 (UpdateVoices), 911 to 916 (L_423E, the note duration), 1018 to 1027 (L_4311), 1140 to 1158 (script 9Dh and L_444F), 1960 to 2021 (StartSample), 2547 to 2564 (the command table). Every jump to 4267 or 425F in the file was listed with grep: the only jumps to L_4267 that skip 425F are 419C (850), L_4311 (1027) and L_444F (1158), and the only script route to L_444F is the 9Dh command (entry 1Dh, L_442E). `make match FILE=src/E_TEXT.ASM` 44 of 44 (19996 of 19996 bytes), exit 0; `make readability UNIT=e_text` 0 findings. The matcher was not asked to re-prove the bytes.
+
+Checked and right in round 5:
+
+- StartSample (1980 to 1999): the ten OPL2 writes before the poll are 20h, 60h, 80h, C0h, E0h, 43h, then B0h 00h, A0h 00h, A0h 8Fh and B0h 2Eh, in that order; the PIT line (1975 to 1979) is mode 36h and two 00h writes to port 40h; B0h 20h and A0h 00h come after the poll (2018 to 2021). S4 is right, and its tick stays.
+- The M11 paths are the right two: a voice that passes 419C and whose script ends at L_4311 or runs 9Dh into L_444F goes to 4267 without calling its handlers. M11 stays ticked for that concern. Its wording is what M12 corrects.
+
+- [ ] must-fix M12 (new; a wrong claim in lines changed by a907cfc, and my own round 4 wording of M11): src/E_TEXT.ASM:319 and :321 (+29h, +2Bh) and :834 (the UpdateVoices header) say the handlers are called "unless their script ends or waits that tick". "Waits" is wrong for a note with a duration. At L_423E (911 to 916), a note whose gNoteDuration is nonzero stores the script position (`mov [di+3],si`) and jumps to 425F: the script waits for the duration and the handlers are still called. Only the 9Dh tempo wait (L_444F) skips them. So the sentence claims a skip the code does not make, and the parenthetical names only L_4311 and L_444F without saying that a duration wait does not count. Fix: name the 9Dh wait and say the duration wait calls the handlers. Header (834), reflowed to its width: "the others call their per-tick handler (+29h), then their per-voice handler (+2Bh), at L_425F, except when their script ends (L_4311) or its 9Dh command waits (L_444F), both of which jump to 4267, past L_425F; a note's duration wait (423E) still calls them". Entries (319, 321), reflowed: "calls it each tick the voice is not skipped (419C), except when its script ends (L_4311) or its 9Dh command waits (L_444F), both of which jump to 4267, past L_425F". The +26h entry and the rest of the record table are not affected. Comment text only: make match FILE=src/E_TEXT.ASM 44 of 44 (19996 of 19996 bytes), exit 0; make readability UNIT=e_text 0 findings.
+
+### Round 5: should items
+
+None.
+
+### Round 5: notes
+
+- [x] The round 4 S4 and the UpdateVoices header note stay ticked; the header is reopened only for the "waits" word of M12 (line 834).
+
+### Round 5: summary
+
+One must-fix (M12): the round 4 M11 fix uses "waits" for a skip the code only makes for the 9Dh wait. M11's paths (L_4311, L_444F) and the StartSample register list (S4) are fixed right, and their ticks stay. No matcher, spec or pin question. Nothing escalated.
 
 ### Round 4: must-fix items
 
