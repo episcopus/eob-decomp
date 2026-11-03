@@ -1,6 +1,6 @@
 # The order in which units are claimed (make claim, make next). Made by `make queue WRITE=1`
-# from re/units.toml: the game units of EOB.EXE, then those of INTRO.EXE without an EOB twin, smallest
-# first. The human may reorder it.
+# from re/units.toml: the game units of EOB.EXE, then those of INTRO.EXE without an EOB twin, then
+# START1.EXE's, smallest first. The human may reorder it.
 
 [[unit]]
 id = "e19ea"
@@ -228,7 +228,7 @@ id = "eov4"
 
 [[unit]]
 id = "eov1"
-# asm ovl1:0000, 9864 bytes, 12 functions
+# c ovl1:0000, 9864 bytes, 12 functions
 
 [[unit]]
 id = "eov0"
@@ -273,3 +273,7 @@ id = "iov0"
 [[unit]]
 id = "i_text"
 # asm 0000:020C, 20980 bytes, 7 functions
+
+[[unit]]
+id = "s_text"
+# unknown 0000:0239, 827 bytes, 6 functions

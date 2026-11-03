@@ -15,7 +15,7 @@ import common  # noqa: E402
 
 def main() -> int:
     fs, us = common.functions(), common.units()
-    for prog in ("EOB.EXE", "INTRO.EXE"):
+    for prog in ("EOB.EXE", "INTRO.EXE", "START1.EXE"):
         ids = {u["id"] for u in us if u["program"] == prog and u["kind"] not in ("library", "startup")}
         pf = [f for f in fs if f["unit"] in ids]
         done = [f for f in pf if f.get("level") in ("L2", "L3")]
