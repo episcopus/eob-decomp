@@ -449,7 +449,7 @@ why = "the 120-byte game-number to driver-number sound map StartupGame allocates
 [[global]]
 id = "intro/ds:28C4"
 name = "gMemTopSeg"
-why = "the memory top ReserveMemoryBelowVideo (0923:0133) stores it at 0923:01F0 (src/I0923.ASM:3, :62) and TrimMemoryToVideo reads back (0923:02B3); i0892 reads it at 0892:01D8 and hands it to EOB.EXE as argv[6]. make rename declines this name because EOB's word at 1990:0002 (src/E07C8.C:125) already uses it in another program"
+why = "the memory top ReserveMemoryBelowVideo (0923:0133) stores it at 0923:01F0 (src/I0923.ASM:3, the store at :328) and TrimMemoryToVideo reads back (0923:02B3); i0892 reads it at 0892:01D8 and hands it to EOB.EXE as argv[6]. make rename declines this name because EOB's word at 1990:0002 (src/E07C8.C:125) already uses it in another program"
 
 [[global]]
 id = "intro/ds:28C6"
