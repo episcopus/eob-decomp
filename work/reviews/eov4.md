@@ -36,14 +36,19 @@ Changed since ac24cbe, besides the above:
 
 Must-fix:
 
-- [ ] must-fix src/EOV4.C:1172 (DrawViewFrame header): "when gFB45 and video mode 3 are set". The code tests `gGraphicsChoice == 3` (:1182), which is the graphics choice, not a video mode. Two pieces of evidence: whitepaper 2.6 gives argv[1] as the graphics choice and shows the oracle run (`3 4 0 homie 3`) with choice 3 loading `MCGA.OVL` and setting mode 13h; the `3` that is a video mode is argv[5] (ds:84A0, `gRestoreMode`, "the video mode restored on exit"). `re/globals.toml` ds:8102 also names choice 3 as MCGA/VGA. Fix: "when gFB45 is set and gGraphicsChoice is 3 (MCGA/VGA, re/globals.toml ds:8102)".
+- [x] must-fix src/EOV4.C:1172 (DrawViewFrame header): "when gFB45 and video mode 3 are set". The code tests `gGraphicsChoice == 3` (:1182), which is the graphics choice, not a video mode. Two pieces of evidence: whitepaper 2.6 gives argv[1] as the graphics choice and shows the oracle run (`3 4 0 homie 3`) with choice 3 loading `MCGA.OVL` and setting mode 13h; the `3` that is a video mode is argv[5] (ds:84A0, `gRestoreMode`, "the video mode restored on exit"). `re/globals.toml` ds:8102 also names choice 3 as MCGA/VGA. Fix: "when gFB45 is set and gGraphicsChoice is 3 (MCGA/VGA, re/globals.toml ds:8102)".
+  (fixed: the DrawViewFrame header now reads "when gFB45 is set and gGraphicsChoice is 3 (MCGA/VGA, re/globals.toml ds:8102) it loads the palette gFE68 and clears gFB45", matching the `gFB45 && gGraphicsChoice == 3` test at src/EOV4.C:1182.)
 
 Should:
 
-- [ ] should src/EOV4.C:529 (the gGraphicsChoice declaration): "the video mode/format (src/E07A9.C)" has the same conflation. Say the graphics choice (0 CGA, 1 Tandy, 2 EGA, 3 MCGA/VGA, 4 VGA) and cite re/globals.toml ds:8102.
-- [ ] should src/EOV4.C:403-404 (Ovl4_0AD0 header): "also recomputes the span of ds:6F86[slot]" reads as unconditional. The `ComputeViewSpan` call is only made when that byte is not -1 (:459-460). Add "when that byte is not -1".
-- [ ] should re/globals.toml, the ds:80C6, ds:8104 and ds:8111 whys (owner: the E1C0E unit; the same three items are the open round 4 must-fix in `work/reviews/e1c0e.md` on main, not this unit's): ds:80C6 cites src/E1C0E.C:554, which is `MemAlloc` (the `gSaveRectSize` call is :553); ds:8104 cites :177 and :178 (the `gFatalHandler` calls are :176 and :177; :178 is `ShutdownGame`); ds:8111 cites :166, the closing brace (the `RetryFile` call is :165). Line cites into another file are a should, not a must-fix, under playbook 70.
+- [x] should src/EOV4.C:529 (the gGraphicsChoice declaration): "the video mode/format (src/E07A9.C)" has the same conflation. Say the graphics choice (0 CGA, 1 Tandy, 2 EGA, 3 MCGA/VGA, 4 VGA) and cite re/globals.toml ds:8102.
+  (fixed: the declaration now reads "the graphics choice: 0 CGA, 1 Tandy, 2 EGA, 3 MCGA/VGA, 4 VGA (re/globals.toml ds:8102; src/E07C8.C:42-45)", matching the list at src/E07C8.C:42-45.)
+- [x] should src/EOV4.C:403-404 (Ovl4_0AD0 header): "also recomputes the span of ds:6F86[slot]" reads as unconditional. The `ComputeViewSpan` call is only made when that byte is not -1 (:459-460). Add "when that byte is not -1".
+  (fixed: the header now reads "also recomputes the span of ds:6F86[slot] (the view slot's span slot), when that byte is not -1, and pulls the object up 4 pixels", matching the `if (spanSlot != -1)` gate at src/EOV4.C:459.)
+- [x] should re/globals.toml, the ds:80C6, ds:8104 and ds:8111 whys (owner: the E1C0E unit; the same three items are the open round 4 must-fix in `work/reviews/e1c0e.md` on main, not this unit's): ds:80C6 cites src/E1C0E.C:554, which is `MemAlloc` (the `gSaveRectSize` call is :553); ds:8104 cites :177 and :178 (the `gFatalHandler` calls are :176 and :177; :178 is `ShutdownGame`); ds:8111 cites :166, the closing brace (the `RetryFile` call is :165). Line cites into another file are a should, not a must-fix, under playbook 70.
+  (fixed elsewhere: the E1C0E unit fixed these on main in commit a72407e, which is in this branch's history; re/globals.toml:472 now cites src/E1C0E.C:553, :482 cites :176, :177 and :487 cites :165, matching the calls.)
 - [ ] should src/E07A9.C:87 (owner: E07A9, not this unit): the gFB45 comment repeats "video mode 3" for the same test and cites src/EOV4.C:1049, :1054, :1060 and :1061. Those lines are stale: DrawViewFrame is at :1177, the test at :1182, the palette load at :1188 and the clear at :1189. Replace with the ovl4 addresses or the current lines, and use the same word as the fix above.
+  (still open: owner E07A9; src/E07A9.C:87 still reads "video mode 3" and cites the stale src/EOV4.C lines. Not changed on this unit branch.)
 
 Notes (for the next reader; they do not block):
 
