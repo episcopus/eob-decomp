@@ -1,7 +1,7 @@
 # Review: i0cda
 
 Reviewer: rev-haiku
-Commit reviewed: 0cbdc72 (round 5; round 4 reviewed a97a0d7; round 3 reviewed 6ea511f; round 1 reviewed aa139872dfa3474f683144e3ec4f289840e9c58d)
+Commit reviewed: 48c9060 (round 6; round 5 reviewed 0cbdc72; round 4 reviewed a97a0d7; round 3 reviewed 6ea511f; round 1 reviewed aa139872dfa3474f683144e3ec4f289840e9c58d)
 
 Playbook 70. Judge what a matching file can still get wrong: names, types, comments, structure.
 The matcher already proved the bytes; do not re-prove them, read for meaning.
@@ -10,6 +10,37 @@ The matcher already proved the bytes; do not re-prove them, read for meaning.
 
 Each finding is a checkbox. `must-fix` blocks `make review-pass` until a decompiler ticks it off
 (with the commit that fixes it); `should` and `note` do not block.
+
+### Round 6 (rev-haiku, 2026-11-02, main 7e11ed7)
+
+Judged: the round 5 must-fix (src/I0CDA.ASM:46-47), fixed at bf2f1da and ticked in 5b9ae9f, and the diff
+since 0cbdc72 (`git diff 0cbdc72 HEAD -- src/I0CDA.ASM re/symbols.toml re/globals.toml re/renames.toml`).
+In src/I0CDA.ASM the changes are lines 28 to 29 and 46 to 48 only (bf2f1da, 48c9060). The re/symbols.toml
+hunks are other units' review stamps and notes, with nothing on i0cda_0005 or i0cda_0006; the re/globals.toml
+and re/renames.toml hunks are other units' whys (gMemTopSeg, gFn1EE2, gBuiltinPalette), and the RandomByte
+row (re/renames.toml:2579) is unchanged. `make match FILE=src/I0CDA.ASM` 1 of 1 exit 0 (50 bytes);
+`make readability UNIT=i0cda` 0 findings.
+
+- Round 5 must-fix (46-47) is fixed right and stays ticked. The sentence now says the callers mask or take the
+  byte modulo, that some then scale or offset the result, and that two drop it. Each example is in
+  src/IOV0.C: `% 31` at :293 and :888, `& 7` at :296 and :891, `& 3` at :706, `& 1` at :297 and :892,
+  `* 8 + 0xb4` at :680, `+ 0x19` at :1018 and :1027, and the dropped `RandomByte();` at :545. The ovl0:1015
+  drop is the round 2 byte check, unchanged.
+- Round 4 should (28-29) stays ticked: the two shr that act on the copy are at lines 63 and 64 and the rcr is
+  at line 70 (`grep -n 'shr\|rcr' src/I0CDA.ASM` gives shr at 63, 64 and 69, rcr at 70; the shr at 69 is the
+  third, after the sbb, and the comment does not name it).
+
+New findings:
+
+No must-fix.
+
+- [ ] note src/I0CDA.ASM:46: "No caller gives the byte a more specific meaning" is a judgement a reader may
+  question. The callers do give it roles (`frame = RandomByte() % 31` at src/IOV0.C:293 makes it a frame
+  index, and `PlaySound((RandomByte() & 1) ? 5 : 0xe)` at :297 picks a sound). The sentence can stand if read as
+  "no caller treats it as anything but a random draw"; a clearer wording would say that. Not blocking.
+- [ ] note: the far twin E1D8C.ASM still keeps `_f1D8C_0000` (carried from round 2); not a finding of this unit.
+
+Round 6 is a pass: the round 5 must-fix is fixed right, the changed lines are sound, and no must-fix is open.
 
 ### Round 5 (rev-haiku, 2026-11-02, main 0c8ba51)
 
@@ -190,4 +221,4 @@ UNIT=i0cda` 0 findings) and both round-1 must-fixes stay fixed.
 
 ## Summary
 
-The unit is one 50-byte far function plus a lone padding byte, and it is understandable from its source: the step list describes the instructions, and the seed, the `2310h` access and the DGROUP relocation are all true. Two comments are wrong: the sentence on callers ("no near or far call reaches either copy" is false for the EOB copy, which has two far callers in e0ef3) and "the same value 212Eh" (INTRO's word is 0E9F). The step description also needs rewording (AL is shifted, not the memory byte, and the `cmc` is missing). The name stays a placeholder, which is fine: its only evidence is the EOB callers, which use the result as `& 3` and `& 1` (src/E1D8C.ASM:15-17). Two must-fix items are open.
+The unit is one 50-byte far function plus a lone padding byte, and it is understandable from its source: the step list describes the instructions, and the seed, the `2310h` access and the DGROUP relocation are all true. Two comments are wrong: the sentence on callers ("no near or far call reaches either copy" is false for the EOB copy, which has two far callers in e0ef3) and "the same value 212Eh" (INTRO's word is 0E9F). The step description also needs rewording (AL is shifted, not the memory byte, and the `cmc` is missing). The name stays a placeholder, which is fine: its only evidence is the EOB callers, which use the result as `& 3` and `& 1` (src/E1D8C.ASM:15-17). Two must-fix items were open at round 1; this summary is round 1's. The round headings above are current, and no must-fix is open after round 6.
