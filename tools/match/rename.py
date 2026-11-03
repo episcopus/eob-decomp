@@ -50,9 +50,13 @@ IDENT = re.compile(r"^[A-Za-z_][A-Za-z0-9_]{0,30}$")
 C_RESERVED = set("""auto break case char const continue default do double else enum extern float for goto if
 int long register return short signed sizeof static struct switch typedef union unsigned void volatile while
 far near huge cdecl pascal interrupt asm _cs _ds _es _ss""".split())
-# What a rename passes over: string and character literals. Comments are renamed like code.
+# What a rename passes over: string and character literals. Comments are renamed like code, except
+# by the stale-name pass, which passes over comments too (code_only): a comment may quote another
+# file's name on purpose (e07c8, 2026-11-03: "E1990.ASM calls it gEnvPtr", rewritten at nineteen merges).
 C_LITERALS = re.compile(r'"(?:[^"\\\n]|\\.)*"|\'(?:[^\'\\\n]|\\.)*\'')
 ASM_LITERALS = re.compile(r"'[^'\n]*'|\"[^\"\n]*\"")
+C_SKIP = re.compile(C_LITERALS.pattern + r"|/\*.*?\*/|//[^\n]*", re.S)
+ASM_SKIP = re.compile(ASM_LITERALS.pattern + r"|;[^\n]*")
 
 
 def norm(addr: str) -> str:
@@ -117,11 +121,13 @@ def sources() -> list[Path]:
     return sorted(p for p in SRC.iterdir() if p.suffix.upper() in (".C", ".ASM"))
 
 
-def replace_word(text: str, old: str, new: str, asm: bool) -> tuple[str, int]:
-    """Replace the identifier `old` by `new` outside string and character literals."""
+def replace_word(text: str, old: str, new: str, asm: bool, code_only: bool = False) -> tuple[str, int]:
+    """Replace the identifier `old` by `new` outside string and character literals (and, with
+    code_only, outside comments)."""
     word = re.compile(r"(?<![A-Za-z0-9_@$?])%s(?![A-Za-z0-9_@$?])" % re.escape(old))
+    skip = (ASM_SKIP if asm else C_SKIP) if code_only else (ASM_LITERALS if asm else C_LITERALS)
     out, n, pos = [], 0, 0
-    for m in (ASM_LITERALS if asm else C_LITERALS).finditer(text):
+    for m in skip.finditer(text):
         chunk, k = word.subn(new, text[pos:m.start()])
         out += [chunk, m.group(0)]
         n += k
@@ -303,7 +309,7 @@ def stale_uses(dry: bool = False) -> dict[str, int]:
                 stale = "_" + o if asm and cur.startswith("_") else o
                 if stale != cur and stale not in b and \
                         re.search(r"(?<![A-Za-z0-9_])%s(?![A-Za-z0-9_])" % re.escape(stale), text):
-                    text, k = replace_word(text, stale, cur, asm)
+                    text, k = replace_word(text, stale, cur, asm, code_only=True)
                     total += k
         if total:
             changed[p.name] = total
