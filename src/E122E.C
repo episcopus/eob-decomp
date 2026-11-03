@@ -35,7 +35,7 @@ extern void Obj1505(int kind, int id, int frame, int orient, int b0, int m07, in
 extern void MarkListItems(void far *head); /*@ 0BD2:040E */
 extern int ScanListItem(void far *head, int target, int type, int count); /*@ 0BD2:0385 */
 extern void DrainListItem(int vol, int type); /*@ 0BD2:04AA */
-extern int f0BD2_0106(int who, int row); /*@ 0BD2:0106 */
+extern int TakeItemFromSlot(int who, int row); /*@ 0BD2:0106 */
 extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
 extern void PushListItem(int who, int item, int value); /*@ 0BD2:0458 */
 extern int AddDDEffect(int who, int item, int volume, int kind, int page, int type); /*@ 0BD2:07DE */
@@ -1254,7 +1254,7 @@ done:
     op = *script++;
     switch (op) {
     case 0xffff:
-        f0BD2_0106(0, -1);
+        TakeItemFromSlot(0, -1);
         break;
     case 0xfffe:
         vol = *(int far *)script;

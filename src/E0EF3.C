@@ -346,7 +346,7 @@ extern int f0D1C_0BAB(int obj); /*@ 0D1C:0BAB */
 extern int f0D1C_00DA(int value, int page); /*@ 0D1C:00DA */
 extern int GetCurrentItem(void); /*@ 0D1C:02DC */
 extern int f0D1C_0670(int who, int mask); /*@ 0D1C:0670 */
-extern int f0BD2_0106(int who, int row); /*@ 0BD2:0106 */
+extern int TakeItemFromSlot(int who, int row); /*@ 0BD2:0106 */
 extern int Obj15B4(char who, int value); /*@ 08E6:15B4 */
 extern void DamageObject(struct Obj28 far *obj, int n); /*@ 08E6:0FBE */
 extern void ClearObjectType(struct Obj28 far *obj); /*@ 08E6:000B */
@@ -2041,12 +2041,12 @@ void DrawSpellPanel(void);
     switch (gTable8DD2[item].m02) {
     case 0x22:
     case 0x23:
-        f0BD2_0106(who, slot);
+        TakeItemFromSlot(who, slot);
         break;
     case 0x30:
         left = gTable8DD2[item].flags & 0x3F;
         if (--left == 0)
-            f0BD2_0106(who, slot);
+            TakeItemFromSlot(who, slot);
         else
             gTable8DD2[item].flags--;
         break;

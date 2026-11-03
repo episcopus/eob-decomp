@@ -162,7 +162,7 @@ extern unsigned char far gSheetDECORATE[]; /*@ 2069:0000 */  /* the PLAYFLD shee
 extern unsigned char far gSheet2067[]; /*@ 2067:0000 */      /* the INVENT sheet, loaded by
                                                EnterMapScreen (0ACD:0F72) (src/EOV3.C:26) */
 
-extern int f0BD2_0AF2(int a, int b, int c); /*@ 0BD2:0AF2 */
+extern int CanPlaceItemInSlot(int a, int b, int c); /*@ 0BD2:0AF2 */
 extern void PushListItem(int a, int b, int c); /*@ 0BD2:0458 */
 extern void InsertListItem(void far *head, int key, int item, int sound); /*@ 0BD2:01D0 */
 extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
@@ -789,7 +789,7 @@ call:
    chosen yet) it first clears gF3BA to -1. It picks the page's volume from f0D1C_00DA when
    g374A[gEFB2] is set, and asks RemoveListItem for the first item of that volume's ds:B899 record
    list with the kind g1A1B[gFBCC * 4 + gEFB2]. A fresh item (nonzero and not the one gF3BA already
-   holds) sets the local flag (which ends the page loop) and is tested with f0BD2_0AF2 (a check that
+   holds) sets the local flag (which ends the page loop) and is tested with CanPlaceItemInSlot (a check that
    returns whether the character may wear the item type, 0BD2:0AF2), then is shown: at row 0x10, when
    the check passes it is inserted into the character's own list with InsertListItem and the member is
    redrawn, otherwise it is pushed into the volume's list with PushListItem and RunMemberScript; at
@@ -836,7 +836,7 @@ call:
                 gF3BA = item;
             if (gF51A != 0x10) {
                 cur = GetCurrentItem();
-                if (f0BD2_0AF2(item, gA99A, gF51A)) {
+                if (CanPlaceItemInSlot(item, gA99A, gF51A)) {
                     if (cur != 0) {
                         PushListItem(vol, cur, value);
                         RunMemberScript(vol, 4);
@@ -847,7 +847,7 @@ call:
                     RunMemberScript(vol, 4);
                 }
             } else {
-                if (f0BD2_0AF2(item, gA99A, gF51A)) {
+                if (CanPlaceItemInSlot(item, gA99A, gF51A)) {
                     InsertListItem((void far *)gChars[gA99A].m97, 0xFFFE, item, 0);
                     RedrawMember(gA99A);
                 } else {
