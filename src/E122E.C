@@ -45,18 +45,23 @@ extern char g5A40[]; /*@ ds:5A40 */            /* byte table indexed by two scri
 extern void DrawItemRow(int who, int slot, int one); /*@ 0BD2:0917 */
 extern int GetCurrentItem(void); /*@ 0D1C:02DC */
 extern int gMouseDisabled; /*@ ds:814A */      /* nonzero disables the mouse (src/E07A9.C) */
-extern char gF51A; /*@ ds:F51A */              /* the selected action row 0..2 (src/E0ACD.C) */
+extern char gF51A; /*@ ds:F51A */              /* the selected action row: 0..2 in the action menu
+                                                  and 0x10 for the character's own item list (tested
+                                                  at 471 and 485) (src/E0ACD.C) */
 extern signed char gA99A; /*@ ds:A99A */       /* the selected character index (src/E0ACD.C) */
 extern signed char g181F[]; /*@ ds:181F */     /* byte table indexed by an item icon (src/E1414.C) */
 extern int ClickInRect(int left, int top, int right, int bottom); /*@ 082C:0A5D */
 extern void PlaySound(int sound); /*@ 177D:0070 */
-extern void PlaySoundAtCell(int sound, int volume); /*@ 177D:0106 */
+extern void PlaySoundAtCell(int sound, int cell); /*@ 177D:0106 */
 extern char gFB76; /*@ ds:FB76 */              /* set by opcode 0xFFE4, cleared when the driver starts (122E:1097, 122E:1DA8) */
 extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
 extern char gFileNameBuf[]; /*@ ds:FE6E */     /* the text buffer sprintf formats into (src/E082C.C) */
 extern int gForceDoorRoll[]; /*@ ds:59B0 */    /* force-door roll thresholds, indexed by the strength score CharRec.m0D (122E:0325) */
 extern signed char g1905[]; /*@ ds:1905 */     /* per-object-kind handler selector (src/E0DE8.C) */
-extern char gFB44; /*@ ds:FB44 */              /* a display-mode byte (src/E0ACD.C) */
+extern char gFB44; /*@ ds:FB44 */              /* a mode byte: 0, 1 and 2 gate the action handlers
+                                                  (src/E0ACD.C); MoveCarriedItemOp (122E:0E9B) skips
+                                                  slots 0 and 1 when it is 0 and exits when it is
+                                                  nonzero and the member is on screen */
 extern char gF542[]; /*@ ds:F542 */            /* a message buffer (src/E0ACD.C) */
 extern char gFlag; /*@ ds:F3B9 */              /* a mode byte (src/E0ACD.C) */
 extern int Action01E3(void far *action); /*@ 0ACD:01E3 */
@@ -64,7 +69,7 @@ extern void RedrawPartyPanel(char far *text); /*@ 0EF3:2541 */
 extern void LoadMapScreen(int n); /*@ 210C:007A */  /* overlay 3 entry, ovl3:0A7C */
 extern void SaveLevelState(int level); /*@ 210C:002F */  /* overlay 3 entry, ovl3:11AF */
 extern void ResetLevel(void); /*@ 210C:007F */  /* overlay 3 entry, ovl3:19F7 */
-extern void fOvl4_2039(void); /*@ 2116:0043 */  /* overlay 4 entry */
+extern void NoOp2039(void); /*@ 2116:0043 */  /* overlay 4 entry, ovl4:2039, a no-op (src/EOV4.C) */
 extern void LoadScreenImage(char far *name, char far *extra, int srcKind, int dstKind, int mode); /*@ 082C:051B */
 extern char gText5BA1[]; /*@ ds:5BA1 */        /* the "INVENT" screen name (122E:1AAB) */
 extern unsigned char far gSheet2067[]; /*@ 2067:0000 */ /* the sheet at segment 2067 (src/E0ACD.C) */
@@ -150,7 +155,8 @@ extern struct CharRec gChars[]; /*@ ds:F580 */
 extern struct Item14 gTable8DD2[]; /*@ ds:8DD2 */
 extern int gFBCC; /*@ ds:FBCC */               /* a page number 0..3 (src/E08E6.C) */
 extern char gEFB2; /*@ ds:EFB2 */              /* set when the sound page changes (src/E0ACD.C) */
-extern char gDF4C; /*@ ds:DF4C */              /* set to 1 when an action took effect (src/E08E6.C) */
+extern char gDF4C; /*@ ds:DF4C */              /* set to 1 when an action took effect, which this
+                                                  unit calls marking the action dirty (src/E08E6.C) */
 
 /* The 18-byte effect records at ds:DD2C, 10 of them (src/E1414.C). */
 struct DDRec {
@@ -187,13 +193,20 @@ extern void HealCharacter(int who, int amount); /*@ 0DE8:0ADB */
 extern void DamageCharacter(int who, int amount); /*@ 0DE8:09B9 */
 extern int far RollDice(char count, char sides, char bonus); /*@ 082C:0458 */
 extern int f0D1C_0163(int who, int fieldB); /*@ 0D1C:0163 */
-extern void fOvl5_1A82(int x); /*@ 211E:0057 */   /* overlay 5 entry, ovl5:1A82 */
+extern void CharOverlay(int mode); /*@ 211E:0057 */   /* overlay 5 entry, ovl5:1A82 (src/EOV5.C) */
 extern void Obj0150(void); /*@ 08E6:0150 */
 extern void UpdateDDEffects(void); /*@ 1414:0D63 */
 extern void DrawText(char far *text); /*@ 1DE7:060A */
 extern int IsMouseInRect(int left, int top, int right, int bottom); /*@ 1A72:02A6 */
 extern int f0D1C_00DA(int value, int page); /*@ 0D1C:00DA */
-extern int gPartyCell; /*@ ds:FBCA */        /* the global sound volume (src/E08E6.C) */
+extern int gPartyCell; /*@ ds:FBCA */        /* the meaning is open: this unit writes it from
+                                                SetSoundVolume's `volume` argument (212) and draws the
+                                                volume message (219), but also passes it to
+                                                RunMemberScript as `who` (213-214, 1423), to
+                                                f0D1C_00DA as a member (568) and compares it with a
+                                                character id (1390). src/E08E6.C:97-103 reads it as the
+                                                party's map cell; the E122E and E0ACD reviews must
+                                                settle it */
 extern int gF540; /*@ ds:F540 */               /* counts sound-volume changes (src/E08E6.C) */
 extern char g194B[]; /*@ ds:194B */             /* per-object bit flags (src/E08E6.C) */
 extern char gText5AB5[]; /*@ ds:5AB5 */        /* message drawn when the sound volume changes (122E:0001) */
@@ -201,8 +214,9 @@ extern char gText5B78[]; /*@ ds:5B78 */        /* message drawn for a highlighte
 void RunMemberScript(int who, int mode);  /* forward: 1DA8 comes after its callers */
 
 /* 122E:0001: switch the sound volume to `volume`: run Obj0150 around the change, hand the old and
-   the new value to the driver (codes 2 and 1), mark the sound page and action dirty, draw the
-   volume message and refresh the effects. */
+   the new value to the driver (modes 2 and 1), mark the sound page and action dirty, draw the
+   volume message and refresh the effects. The name follows the sound-volume reading of gPartyCell,
+   which is open (see its declaration); the cross-unit decision is E08E6's and E0ACD's. */
 /*@ 122E:0001 */ void SetSoundVolume(int volume)
 {
     int old;
@@ -220,11 +234,12 @@ void RunMemberScript(int who, int mode);  /* forward: 1DA8 comes after its calle
     UpdateDDEffects();
 }
 /* 122E:0055: hit-test the click regions of object kind `kind` against the last click. Only the
-   script-driving mode 0x40 has regions (any other mode returns 1, so every kind is "hit"). It walks
-   the kind's chain from the top: the region record `i - 1`'s x/y (inset by 3) and its gRectKinds
-   size (width in eighths times 8, both plus 6) form the rectangle, mirrored about the screen width
-   when the region's bit 0 is set, and the walk stops at the first hit or a non-positive next index.
-   Returns 1 when any region was hit. */
+   script-driving mode 0x40 has regions (any other mode returns 1, so every kind is "hit"). `kind` is
+   a 1-based record number: the walk starts at it, steps to `i - 1` and reads that record's x/y
+   (grown by 3) and its gRectKinds size (width in eighths times 8, both plus 6) to form the
+   rectangle, mirrored about the screen width when the record's bit 0 is set. It stops at the first
+   hit or a `next` of 0 or less (the record's `next` is a 1-based record number). Returns 1 when any
+   region was hit. */
 /*@ 122E:0055 */ int HitTestObjectKind(int kind)
 {
     register int i;
@@ -254,8 +269,9 @@ void RunMemberScript(int who, int mode);  /* forward: 1DA8 comes after its calle
     return found;
 }
 
-/* 122E:0137: push bit 0 of the frame-count byte of the gB894 record `id`. Called by 147F for one
-   sub-opcode. Purpose unknown: the opcode it implements is not identified. */
+/* 122E:0137: returns bit 0 of the gB894 record `id`'s byte +4 (this file calls +4 the frame-count
+   byte; the name is a placeholder). Called by 147F for one sub-opcode, which pushes the result.
+   Purpose unknown: the opcode it implements is not identified. */
 /*@ 122E:0137 */ int ObjectCountIsOdd(int id)
 {
     if (gB894[id * 9 + 4] & 1)
@@ -264,10 +280,11 @@ void RunMemberScript(int who, int mode);  /* forward: 1DA8 comes after its calle
 }
 
 /* 122E:0154: arm effect 0xC on member `who`. While a member is picked (gDragActive), arming either
-   matches the picked member (and turns g5C76 on) or does nothing. Otherwise it picks the member's
-   free flag slot, arms the effect twice around AdjustMemberStatus. The flag test is written
-   `!!(x & 1)`: the original sign-extends the g194B byte before testing bit 0 (`mov al; cwde;
-   test ax,1`), while a plain `x & 1` folds to a memory byte test in our build. */
+   matches the picked member (and turns g5C76 on) or does nothing. Otherwise it picks the flag slot
+   that bit 3 of the first flag byte selects (0 when set, else 1) and, when that slot's bit 0 is not
+   already set, arms the effect twice around AdjustMemberStatus. The flag test is written `!!(x & 1)`:
+   the original sign-extends the g194B byte before testing bit 0 (`mov al; cwde; test ax,1`), while a
+   plain `x & 1` folds to a memory byte test in our build. */
 /*@ 122E:0154 */ void ArmMemberEffect(int who)
 {
     int idx;
@@ -287,8 +304,8 @@ void RunMemberScript(int who, int mode);  /* forward: 1DA8 comes after its calle
 
 /* 122E:01D9: disarm effect 0xC on member `who`. It does nothing while the member still has a frame
    count (gB894[who * 9 + 4] & 7). While a member is picked, disarming either matches the picked
-   member (and turns g5C76 off) or does nothing. Otherwise it arms the effect with arg -1 twice
-   around AdjustMemberStatus when the flag slot is armed. */
+   member (and sets g5C76 to -1, a mode src/E1414.C:322-324 reads) or does nothing. Otherwise it arms
+   the effect with arg -1 twice around AdjustMemberStatus when the flag slot is armed. */
 /*@ 122E:01D9 */ void DisarmMemberEffect(int who)
 {
     int idx;
@@ -307,11 +324,12 @@ void RunMemberScript(int who, int mode);  /* forward: 1DA8 comes after its calle
     AdjustMemberStatus(who);
     ArmEffectWith(0xc, who, 0xffff, 1);
 }
-/* 122E:0271: pick the arm slot for member `who` and arm effect 0xC: a member index of -1 is replaced
-   by the free flag slot (0 or 1). While a member is picked, arming either matches the picked member
-   (and negates g5C76) or does nothing. The effect is armed with arg -1 when the chosen slot is armed
-   and the member has no frame count, else with +1, twice around AdjustMemberStatus. */
-/*@ 122E:0271 */ void ToggleArmEffect(int who, int delta)
+/* 122E:0271: pick the arm slot for member `who` and arm effect 0xC: a slot of -1 is replaced by the
+   free flag slot (0 or 1). While a member is picked, arming either matches the picked member (and
+   negates g5C76) or does nothing. When the chosen slot is armed the effect is armed with arg -1
+   unless bit 0 of the member's frame byte is set, in which case it does nothing; otherwise with +1,
+   twice around AdjustMemberStatus. */
+/*@ 122E:0271 */ void ToggleArmEffect(int who, int slot)
 {
     int idx;
 
@@ -320,9 +338,9 @@ void RunMemberScript(int who, int mode);  /* forward: 1DA8 comes after its calle
             g5C76 = g5C76 * -1;
         return;
     }
-    if (delta == -1)
-        delta = (g194B[gB894[who * 9]] & 8) ? 0 : 1;
-    if (g194B[gB894[who * 9 + delta]] & 1)
+    if (slot == -1)
+        slot = (g194B[gB894[who * 9]] & 8) ? 0 : 1;
+    if (g194B[gB894[who * 9 + slot]] & 1)
         idx = -1;
     else
         idx = 1;
@@ -333,13 +351,16 @@ void RunMemberScript(int who, int mode);  /* forward: 1DA8 comes after its calle
     ArmEffectWith(0xc, who, idx, 1);
 }
 /* 122E:0325: the force-door action. It only runs when the last click was in the member-slot
-   rectangle or the driver is not in mode 0x40. It picks the strongest live member (highest
-   m0D + m0F, among those with m1B above 0); with no candidate it prints "Nobody is able to force
-   the door." Otherwise it rolls 1d20: on a pass (roll <= gForceDoorRoll[its m0D]) it prints "The
-   party forces the door." and "%s forces the door!", rewrites the clicked slot's gB894 byte and
-   the opposite slot (slot ^ 2) to 8 when the byte was 0x1e else to 0x12, and arms the member; on a
-   miss it prints "The party tries to force the door and fails." All three outcomes share one
-   return 1. Returns 0 only when the click missed and the driver is in mode 0x40. */
+   rectangle or the driver is not in mode 0x40. It picks the live member with the highest m0D
+   strength score (among those with m1B above 0), a tie going to the later index; with no candidate
+   it formats "Nobody is able to force the door." into gFileNameBuf (not drawn here). Otherwise it
+   rolls 1d20: on a pass (roll <= gForceDoorRoll[its m0D]) it draws "The party forces the door.",
+   formats "%s forces the door!" into gFileNameBuf (not drawn here), rewrites the clicked slot's
+   gB894 byte and the opposite slot (slot ^ 2) to 8 when the byte was 0x1e else to 0x12, and arms the
+   member; on a miss it draws "The party tries to force the door and fails." All three outcomes share
+   one return 1. Returns 0 only when the click missed and the driver is in mode 0x40.
+   QUIRK 122E:0325: the pick test adds gChars[who].m0F to both sides, so the m0F term cancels and the
+   test reduces to gChars[who].m0D <= gChars[i].m0D. */
 /*@ 122E:0325 */ int ForceDoorAction(int id, int slot)
 {
     register int who;
@@ -380,10 +401,11 @@ void RunMemberScript(int who, int mode);  /* forward: 1DA8 comes after its calle
 }
 /* 122E:04CA: the member-slot click handler. It turns the clicked row (gEF9E[gA9C6]) into a gA99C
    slot entry (through g59F8), builds the slot's screen rectangle from the entry's x/y and the
-   far size record's width (in eighths) and height, all inset by 4 and offset by g1E75, and for the
-   item actions (gFBC8 4, 5, 6) shifts x by the scroll column (row - g59D8[row]) * 9, or by 4 when
-   the row is at least 0x1e. A hit, or a driver not in mode 0x40, toggles the arm effect and plays
-   sound 6 and returns 1; otherwise it defers to CheckMemberSlotRect and returns its result. */
+   far size record's width (in eighths) and height, all grown by 4 on each side and offset by g1E75,
+   and for the item actions (gFBC8 4, 5, 6) shifts x by the scroll column (row - g59D8[row]) * 9, or
+   by 4 when the row is at least 0x1e. A hit, or a driver not in mode 0x40, toggles the arm effect
+   and plays sound 6 and returns 1; otherwise it defers to CheckMemberSlotRect and returns its
+   result. */
 /*@ 122E:04CA */ int MemberSlotClickAction(int id, int slot)
 {
     register int x;
@@ -469,8 +491,8 @@ void RunMemberScript(int who, int mode);  /* forward: 1DA8 comes after its calle
 /* 122E:06D0: the item-slot action: a click on the item list of object `id` (slot `slot` of its gB894
    record names the object kind). It does nothing and returns 0 unless HitTestObjectKind accepts the
    kind. Then, with the mouse disabled and row 0x10 selected, it removes the list's item and either
-   drops it into the selected character's carried list (when the item type is 0x10) or says it cannot
-   go there and pushes it back. Otherwise, with nothing shown on the mouse it takes the list's item
+   drops it into slot 0x10 (items[16]) of the selected character (when the item type is 0x10) or says
+   it cannot go there and pushes it back. Otherwise, with nothing shown on the mouse it takes the list's item
    onto the mouse (when the list has one), and with an item shown it inserts that item into the list
    unless its g181F size says it is too large. Returns 1 once the kind is accepted.
    The `if (item != 0)` around the take branch and the one shared `return 1` after the if/else-if
@@ -527,11 +549,11 @@ void RunMemberScript(int who, int mode);  /* forward: 1DA8 comes after its calle
     return 0;
 }
 /* 122E:0896: the row handler. It flips bit 1 of the slot, looks the object there up in gB894, and
-   when its g1905 selector is nonzero, the driver mode gEFD2 has the selector's bit set
-   ((gB894[id*9+4] & 0xf8) >> 3 | 0xe0) and the selector minus one is not negative, calls that
-   handler (a local table of far function pointers copied from the compiler template at ds:5A18)
-   with (id, slot). Then it clears the driver mode and marks the action dirty. Returns 0 when a
-   guard fails, else the handler's result. */
+   when its g1905 selector is nonzero, the driver mode gEFD2 ANDed with the mask
+   ((gB894[id*9+4] & 0xf8) >> 3) | 0xe0 (the member's byte +4 bits 3 to 7, with 0xe0 set) is nonzero
+   and the selector minus one is not negative, calls that handler (a local table of far function
+   pointers copied from the compiler template at ds:5A18) with (id, slot). Then it clears the driver
+   mode and marks the action dirty. Returns 0 when a guard fails, else the handler's result. */
 /*@ 122E:0896 */ int DispatchSlotHandler(int id, int slot)
 {
     int (far *handlers[10])(int, int) = {
@@ -568,7 +590,7 @@ void RunMemberScript(int who, int mode);  /* forward: 1DA8 comes after its calle
     x = f0D1C_00DA(gPartyCell, gFBCC);
     DispatchSlotHandler(x, gFBCC);
 }
-/* 122E:0960: sub-opcode that writes gB894 fields: 0xFFE9 stores a byte into gB894[id * 9 + index],
+/* 122E:0960: opcode that writes gB894 fields: 0xFFE9 stores a byte into gB894[id * 9 + index],
    0xFFED sets the page gFBCC, and 0xFFF7 fills the first four bytes of gB894[id * 9] with a byte.
    Returns the bytes read. */
 /*@ 122E:0960 */ long WriteObjectFieldOp(char far *script)
@@ -602,7 +624,7 @@ void RunMemberScript(int who, int mode);  /* forward: 1DA8 comes after its calle
     }
     return (long)(script - start);
 }
-/* 122E:0A16: sub-opcode that writes a run of four gB894 bytes: 0xFFF7 compares the record's first
+/* 122E:0A16: opcode that writes a run of four gB894 bytes: 0xFFF7 compares the record's first
    byte with a script byte and fills the first four bytes with the second script byte when they match
    (or the first when they do not); 0xFFEA hands a word and -1 to f122E_0271. Returns the bytes read. */
 /*@ 122E:0A16 */ long WriteObjectRunOp(char far *script)
@@ -638,7 +660,7 @@ void RunMemberScript(int who, int mode);  /* forward: 1DA8 comes after its calle
     }
     return (long)(script - start);
 }
-/* 122E:0B23: sub-opcode that arms member effects: read a member index and hand it to f122E_0154.
+/* 122E:0B23: opcode that arms member effects: read a member index and hand it to f122E_0154.
    Returns the bytes read. */
 /*@ 122E:0B23 */ long ArmMember(char far *script)
 {
@@ -651,7 +673,7 @@ void RunMemberScript(int who, int mode);  /* forward: 1DA8 comes after its calle
     return (long)(script - start);
 }
 
-/* 122E:0B56: sub-opcode that disarms member effects: read a member index and hand it to f122E_01D9.
+/* 122E:0B56: opcode that disarms member effects: read a member index and hand it to f122E_01D9.
    Returns the bytes read. */
 /*@ 122E:0B56 */ long DisarmMember(char far *script)
 {
@@ -663,7 +685,7 @@ void RunMemberScript(int who, int mode);  /* forward: 1DA8 comes after its calle
     DisarmMemberEffect(who);
     return (long)(script - start);
 }
-/* 122E:0B89: sub-opcode that spawns an object: read an unused byte, then the ten Obj1505 arguments
+/* 122E:0B89: opcode that spawns an object: read an unused byte, then the ten Obj1505 arguments
    (eight bytes/words from the script and the two trailing words) and hand them on. Returns the bytes
    read. */
 /*@ 122E:0B89 */ long SpawnObjectOp(char far *script)
@@ -698,11 +720,12 @@ void RunMemberScript(int who, int mode);  /* forward: 1DA8 comes after its calle
     Obj1505(kind, id, frame, orient, b0, m07, type, timer, m12, m14);
     return (long)(script - start);
 }
-/* 122E:0C4D: the 0xDF/other effect-adding opcode. It reads the opcode byte (0xDF sets `flag`), a
-   byte, a word, and two more bytes. When the opcode was not 0xDF it copies the first byte's item
-   into a free slot and adds a DD effect with the word as the volume and g5A40[third + second * 2]
-   as the kind; a zero result frees the slot again (m04 = -1). When it was 0xDF it clears gF43D
-   around a StartCellEffect call with the same fields. Returns the bytes read. */
+/* 122E:0C4D: the 0xDF/other effect-adding opcode. It reads the first byte (0xDF sets `flag`), a
+   byte v1, then skips one byte that is never read (part of the record's layout), a word, and two
+   more bytes v2 and v3. When the first byte was not 0xDF it copies v1's item into a free slot and
+   adds a DD effect with the word as the volume and g5A40[v2 * 2 + v3] as the kind; a zero result
+   frees the slot again (m04 = -1). When it was 0xDF it clears gF43D around a StartCellEffect call
+   with the same fields. Returns the bytes read. */
 /*@ 122E:0C4D */ long AddEffectOp(char far *script)
 {
     char v1;
@@ -736,16 +759,17 @@ void RunMemberScript(int who, int mode);  /* forward: 1DA8 comes after its calle
     }
     return (long)(script - start);
 }
-/* 122E:0D57: reassign objects, items and effects from one id to another. It reads an opcode (a byte),
-   for 0xFFE8 sets the sound volume, for 0xFFF3 moves every gObjs record whose id matches `v` to
-   `id`, and for 0xFFF5 moves every item of the gB899 list of `v` to the list of `id` (keeping each
-   item's m03 key) and retargets every live gDD2C effect from `v` to `id`. Sets gDF4C. Returns the
-   bytes read. */
+/* 122E:0D57: reassign objects, items and effects from one id to another. It reads an opcode (a byte)
+   and, for every opcode but 0xFFF1, a source id `srcId`; 0xFFF1 reads only `id`. Then it reads
+   `id`. For 0xFFE8 it sets the sound volume to `id`, for 0xFFF3 it moves every gObjs record whose
+   id matches `srcId` to `id`, and for 0xFFF5 it moves every item of the gB899 list of `srcId` to the
+   list of `id` (keeping each item's old m03 key in `oldKey`) and retargets every live gDD2C effect
+   from `srcId` to `id`. Sets gDF4C. Returns the bytes read. */
 /*@ 122E:0D57 */ long ReassignObjectsOp(char far *script)
 {
     struct Obj28 far *obj;
     struct DDRec far *rec;
-    int saved;
+    int oldKey;
     int op;
     int srcId;
     int item;
@@ -773,9 +797,9 @@ void RunMemberScript(int who, int mode);  /* forward: 1DA8 comes after its calle
         break;
     case 0xfff5:
         while ((item = ScanListItem(&gB899[srcId * 9], -1, -1, 0)) != 0) {
-            saved = gTable8DD2[item].m03;
+            oldKey = gTable8DD2[item].m03;
             RemoveListItem(&gB899[srcId * 9], 0, item);
-            InsertListItem(&gB899[id * 9], id, item, saved);
+            InsertListItem(&gB899[id * 9], id, item, oldKey);
         }
         rec = gDD2C;
         for (i = 0; i < 0xa; i++) {
@@ -789,10 +813,12 @@ void RunMemberScript(int who, int mode);  /* forward: 1DA8 comes after its calle
     return (long)(script - start);
 }
 /* 122E:0E9B: move one item out of a party member's carried list. It reads a member index `who` (a
-   random live member when -1), a destination list `id` and a trailing byte, finds a carried item
-   whose g181F icon size is at least 0xf by scanning the member's 27 slots from a random start
-   (skipping the first two and slot 0x10 unless the member is the one on screen), clears its slot and
-   inserts it into the gB899 list of `id`. Returns the bytes read. */
+   random live member when -1), a destination list `id` and a trailing byte. It does nothing when
+   gFB44 is nonzero and the member is the one on screen (gA99A == who). Otherwise it scans the
+   member's 27 slots from a random start for a carried item whose g181F icon size is at least 0xf:
+   when gFB44 is nonzero every slot is eligible, otherwise slots 0 and 1 are skipped, and slot 0x10
+   is always skipped. It clears the found slot and inserts the item into the gB899 list of `id`.
+   Returns the bytes read. */
 /*@ 122E:0E9B */ long MoveCarriedItemOp(char far *script)
 {
     int id;
@@ -837,8 +863,8 @@ done:
 }
 /* 122E:0FDC: the show-text opcode. It skips the script to the text's NUL, then reads two bytes
    into a 5-byte control-code buffer initialised from the compiler template at ds:5A48, hides the
-   pointer, draws the original text, the buffer, the buffer with the two saved text attributes,
-   and a newline, then shows the pointer. Returns the bytes read. */
+   pointer, draws the control buffer, the text, the buffer with the two saved text attributes and a
+   newline, then shows the pointer. Returns the bytes read. */
 /*@ 122E:0FDC */ long ShowTextOp(char far *script)
 {
     int attr1;
@@ -866,7 +892,7 @@ done:
     LockShowPointer();
     return (long)(script - start);
 }
-/* 122E:1097: sub-opcode that sets action flags. 0xFFEF sets the bit in the gActionFlags entry of the
+/* 122E:1097: opcode that sets action flags. 0xFFEF sets the bit in the gActionFlags entry of the
    current action gFBC8, 0xFFF0 sets it in gFC04, 0xFFF3 sets a bit in gObjs[index].m16 and clears
    gObjs[index].type, and 0xFFE4 sets gFB76. Returns the bytes read. */
 /*@ 122E:1097 */ long SetActionFlagsOp(char far *script)
@@ -899,7 +925,7 @@ done:
     return (long)(script - start);
 }
 
-/* 122E:1194: sub-opcode that plays a sound: read a sound byte and a cell word; a nonzero cell plays
+/* 122E:1194: opcode that plays a sound: read a sound byte and a cell word; a nonzero cell plays
    the sound at that map cell, otherwise as a global sound. Returns the bytes read. */
 /*@ 122E:1194 */ long PlaySoundOp(char far *script)
 {
@@ -917,7 +943,7 @@ done:
     return (long)(script - start);
 }
 
-/* 122E:11E8: sub-opcode that clears one bit of a 32-bit action mask: 0xFFEF clears the bit in the
+/* 122E:11E8: opcode that clears one bit of a 32-bit action mask: 0xFFEF clears the bit in the
    gActionFlags entry of the current action gFBC8, 0xFFF0 clears it in gFC04. The byte after the
    opcode is the bit number. Returns the bytes read. */
 /*@ 122E:11E8 */ long ClearActionBit(char far *script)
@@ -939,7 +965,7 @@ done:
     return (long)(script - start);
 }
 
-/* 122E:126E: sub-opcode that heals: read a member index and an amount. A member index of -1 heals
+/* 122E:126E: opcode that heals: read a member index and an amount. A member index of -1 heals
    all six party members, otherwise only that member. Returns the bytes read. */
 /*@ 122E:126E */ long HealPartyMember(char far *script)
 {
@@ -958,11 +984,12 @@ done:
     return (long)(script - start);
 }
 
-/* 122E:12CE: sub-opcode that damages: read a member index, a dice count, sides and bonus. A member
-   index of -1 damages all six members (each must pass f0D1C_0163(who, 3) first), otherwise the one
-   member. QUIRK 122E:12CE: the single-member path passes the dice count, not the roll, to
-   DamageCharacter, so the roll only decides whether the damage happens for the whole party.
-   Returns the bytes read. */
+/* 122E:12CE: opcode that damages: read a member index, a dice count, sides and bonus. A member
+   index of -1 damages all six members: each rolls (count, sides, bonus) when sides is nonzero, else
+   takes the count, and takes that roll as its damage unless f0D1C_0163(who, 3) is nonzero.
+   Otherwise the one member rolls the same way but DamageCharacter is handed the dice count, not the
+   roll. QUIRK 122E:12CE: the single-member path rolls and discards the result (it passes `count`),
+   while the all-members path passes the roll as the amount. Returns the bytes read. */
 /*@ 122E:12CE */ long DamagePartyMember(char far *script)
 {
     int count;
@@ -995,7 +1022,7 @@ done:
     return (long)(script - start);
 }
 
-/* 122E:139D: sub-opcode that jumps the script pointer to a word offset from the script base
+/* 122E:139D: opcode that jumps the script pointer to a word offset from the script base
    gBuf8DCA. Returns the pointer's movement. */
 /*@ 122E:139D */ long JumpToScriptOffset(char far *script)
 {
@@ -1006,7 +1033,8 @@ done:
 }
 
 /* 122E:13D1: set the driver's stop flag and advance the script pointer by one; the driver stops its
-   walk as soon as gA9EC is set. Returns 0. */
+   walk as soon as gA9EC is set. Returns 0 as an int; the driver's handler table declares long and
+   casts the result to int (see RunMemberScript). */
 /*@ 122E:13D1 */ int ScriptStop(char far *script)
 {
     gA9EC = 1;
@@ -1014,7 +1042,7 @@ done:
     return 0;
 }
 
-/* 122E:13E0: sub-opcode that pops the far pointer stack: when it is not empty, take the top entry as
+/* 122E:13E0: opcode that pops the far pointer stack: when it is not empty, take the top entry as
    the new script pointer. Returns the pointer's movement, 0 when the stack was empty. */
 /*@ 122E:13E0 */ long PopScriptPointer(char far *script)
 {
@@ -1027,7 +1055,7 @@ done:
     return (long)(script - start);
 }
 
-/* 122E:1422: sub-opcode that pushes the far pointer stack: read a word offset, and when the stack is
+/* 122E:1422: opcode that pushes the far pointer stack: read a word offset, and when the stack is
    under its ten-deep limit, push the position after the operand and continue at gBuf8DCA + offset.
    Returns the pointer's movement. */
 /*@ 122E:1422 */ long PushScriptPointer(char far *script)
@@ -1084,6 +1112,9 @@ done:
             t2 = *script++;
             value = *(int far *)script;
             script += 2;
+            /* the two arms are one call in source form (`ScanListItem(&gB899[value * 9], -1, t2, 1)`,
+               equal when t2 is -1); the split reproduces the original's two call sites (matcher
+               notes). */
             if (t2 == -1)
                 value = ScanListItem(&gB899[value * 9], -1, -1, 1);
             else
@@ -1269,11 +1300,12 @@ done:
     }
     return (long)(script - start);
 }
-/* 122E:1AAB: the load-level opcode. It refreshes the display (Action01E3 and RedrawPartyPanel on the
-   gF542 buffer when gFB44 and gFlag are set), reads a byte, a word and a byte, stores the word as
-   gPartyCell and the byte as gFBCC (unless 0xFF), resets and saves the level, runs ovl3:0A7C,
-   loads the INVENT screen (gText5BA1) with the 0:0x2067 page, runs ovl4:2039, sets the sound volume
-   and stops the script driver (gA9EC). Returns 0. */
+/* 122E:1AAB: the load-level opcode. It refreshes the display: Action01E3(gF542) when gFB44 is
+   nonzero and RedrawPartyPanel(gF542) when gFlag is nonzero. It reads a byte, a word and a byte,
+   stores the word as gPartyCell and the byte as gFBCC (unless 0xFF), resets and saves the level,
+   runs ovl3:0A7C, loads the INVENT screen (gText5BA1) with the 2067:0000 sheet, runs ovl4:2039,
+   sets the sound volume and stops the script driver (gA9EC). Returns 0 as an int; the driver's
+   handler table declares long and casts the result to int (see RunMemberScript). */
 /*@ 122E:1AAB */ int LoadLevelOp(char far *script)
 {
     char v1;
@@ -1296,14 +1328,14 @@ done:
     SaveLevelState(gFBC8);
     LoadMapScreen(v1);
     LoadScreenImage(gText5BA1, (char far *)gSheet2067, 5, 3, 2);
-    fOvl4_2039();
+    NoOp2039();
     SetSoundVolume(id);
     gA9EC = 1;
     return 0;
 }
 
-/* 122E:1B5A: sub-opcode 0xE2: when the byte is 0xE2, read a word and add it as party experience.
-   Returns the bytes read. */
+/* 122E:1B5A: opcode that adds party experience: when the byte after the opcode is 0xE2, read a
+   word and add it as party experience. Returns the bytes read. */
 /*@ 122E:1B5A */ long AddExperienceOp(char far *script)
 {
     char far *start = script;
@@ -1317,7 +1349,7 @@ done:
     return (long)(script - start);
 }
 
-/* 122E:1B9A: sub-opcode that copies an item into a free slot and either shows it on the mouse (when
+/* 122E:1B9A: opcode that copies an item into a free slot and either shows it on the mouse (when
    the destination is -1 and nothing is shown yet) or inserts it into that member's list with the
    trailing sound byte. Returns the bytes read. */
 /*@ 122E:1B9A */ long TakeItemOp(char far *script)
@@ -1342,9 +1374,10 @@ done:
     return (long)(script - start);
 }
 
-/* 122E:1C16: sub-opcode that turns a page: 0xFFF1 rotates gFBCC by the byte argument (modulo 4) and
-   marks the sound page and action dirty; 0xFFF5 rotates the orientation (m07) of every live effect
-   record that names the running member. Returns the bytes read. */
+/* 122E:1C16: opcode that turns a page: 0xFFF1 rotates gFBCC by the byte argument (modulo 4) and
+   marks the sound page and action dirty; 0xFFF5 rotates m07 (called the orientation here; the name
+   is a placeholder, src/E1414.C owns the DDRec record) of every live effect record that names the
+   running member. Returns the bytes read. */
 /*@ 122E:1C16 */ long TurnPageOp(char far *script)
 {
     int op;
@@ -1372,10 +1405,11 @@ done:
     }
     return (long)(script - start);
 }
-/* 122E:1CAD: sub-opcode that marks a member's item list: read a member/character index and, when it
-   matches the sound volume (the running character), set flag 0x40 on every item in the first-item
-   list of each of that character's six 243-byte records that has bit 0 of its status set, and mark
-   each record's list (rec + 0x97). Always marks the gB899 list of the index. Returns the bytes read. */
+/* 122E:1CAD: opcode that marks a member's item list: read a member/character index and, when it
+   matches gPartyCell (see its declaration for the open reading), set flag 0x40 on every carried item
+   slot (items[0..26]) of each of that character's six 243-byte records that has bit 0 of its status
+   set, and mark each record's list (rec + 0x97). Always marks the gB899 list of the index. Returns
+   the bytes read. */
 /*@ 122E:1CAD */ long MarkMemberItemsOp(char far *script)
 {
     int item;
@@ -1388,6 +1422,8 @@ done:
     id = *(int far *)script;
     script += 2;
     if (id == gPartyCell) {
+        /* QUIRK 122E:1CAD: `rec = gChars` and the loop's `rec++` are dead, overwritten by the body's
+           `rec = &gChars[i]`; they keep the original's register shape (matcher notes). */
         rec = gChars;
         for (i = 0; i < 6; i++, rec++) {
             rec = &gChars[i];
@@ -1405,21 +1441,23 @@ done:
     return (long)(script - start);
 }
 
-/* 122E:1D76: sub-opcode that passes its byte argument to overlay 5 (ovl5:1A82). Returns the bytes
+/* 122E:1D76: opcode that passes its byte argument to overlay 5 (ovl5:1A82). Returns the bytes
    read. */
 /*@ 122E:1D76 */ long CallOverlayOp(char far *script)
 {
     char far *start = script;
-    fOvl5_1A82(*script++);
+    CharOverlay(*script++);
     return (long)(script - start);
 }
 
 /* 122E:1DA8: the script driver. Given a member `who` and a driver mode, it takes the member's
-   script offset from gB894[who * 9 + 7], checks the mode against the member's ((gB894[who*9+4] &
-   0xf8) >> 3) | 0xe0 mask, then walks the far script at gBuf8DCA + offset, dispatching each negative
-   opcode (0xFFE6..0xFFFF) through the 26-entry far handler table to a handler that returns how many
-   bytes it consumed, until a handler sets gA9EC. Records gB800 (member), gFB36 (mode) and clears
-   gFB76. */
+   script offset from gB894[who * 9 + 7] and returns without running anything when that offset is 0
+   or the mode misses the member's ((gB894[who*9+4] & 0xf8) >> 3) | 0xe0 mask. Otherwise it walks
+   the far script at gBuf8DCA + offset, dispatching each negative opcode (0xFFE6..0xFFFF) through the
+   26-entry far handler table to a handler that returns how many bytes it consumed, until a handler
+   sets gA9EC. Records gB800 (member), gFB36 (mode) and clears gFB76.
+   The table is `long (far *)(char far *)`; ScriptStop and LoadLevelOp return int (they always
+   return 0, so only AX is set) and the driver casts the result to int. */
 /*@ 122E:1DA8 */ void RunMemberScript(int who, int mode)
 {
     long (far *handlers[26])(char far *) = {
