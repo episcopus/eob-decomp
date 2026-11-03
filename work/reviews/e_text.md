@@ -32,7 +32,7 @@ Round 2 must-fix items M1 to M10 are fixed right, and their ticks stay. Checked:
 
 Round 2 should items S1 to S3 are fixed right, and their ticks stay: S1 names the eight registers the setup writes (1977 to 1996) and the post-poll B0h 20h and A0h 00h (2015 to 2018); S2 is the semicolon; S3 cites 41E8 (the `cmp al,[di+35h]` at 872).
 
-- [ ] must-fix M11 (changed by the round 2 fix; src/E_TEXT.ASM:313 and :318): "UpdateVoices adds +25h each tick" (313) and "UpdateVoices calls it every tick (425F)" (318) are wrong for a voice whose note delay is zero at the tick's start. At 419C the zero case jumps to 4267, past L_425F and the +25h add at 41CA, so the voice gets neither. The UpdateVoices header (829 to 832) says so. Fix: line 313 "UpdateVoices adds +25h each tick the voice is not skipped (419C)"; line 318 "UpdateVoices calls it each tick the voice is not skipped (419C, L_425F)". Line 319 (+2Bh) has the same "every tick" wording and round 2 did not touch it; fix it in the same edit (see the note below).
+- [x] must-fix M11 (changed by the round 2 fix; src/E_TEXT.ASM:313 and :318): "UpdateVoices adds +25h each tick" (313) and "UpdateVoices calls it every tick (425F)" (318) are wrong for a voice whose note delay is zero at the tick's start. At 419C the zero case jumps to 4267, past L_425F and the +25h add at 41CA, so the voice gets neither. The UpdateVoices header (829 to 832) says so. Fix: line 313 "UpdateVoices adds +25h each tick the voice is not skipped (419C)"; line 318 "UpdateVoices calls it each tick the voice is not skipped (419C, L_425F)". Line 319 (+2Bh) has the same "every tick" wording and round 2 did not touch it; fix it in the same edit (see the note below). Fixed in b0d7c46: the +26h entry now reads "adds +25h each tick the voice is not skipped (419C)", and the +29h and +2Bh entries now read "calls it each tick the voice is not skipped (419C, L_425F)". The +25h copy cite is now the copy's own address (41C7), not L_41CA, on the +25h and +40h entries.
 
 ### Round 3: should items
 
@@ -40,9 +40,9 @@ None.
 
 ### Round 3: notes
 
-- src/E_TEXT.ASM:319 (+2Bh, unchanged by round 2): the "every tick" wording of M11, the same fix. Left as a note because no round 2 fix touched that line.
-- src/E_TEXT.ASM:311 (+25h, unchanged): "UpdateVoices copies gTempoRate into it while +40h is set (41CA)". The copy (856 to 857) is before L_41CA (858), so the cite is the label after the copy. Cite the copy's own address, or say "before 41CA". Not a must-fix: the line did not change.
-- src/E_TEXT.ASM:1960 to 1964 (StartSample): the header lists the registers the setup writes, which is accurate as a set. The routine also sets PIT channel 0 to mode 36h and divisor 0000h before its poll (1972 to 1976), and writes B0h 00h, A0h 00h, A0h 8Fh and B0h 2Eh before the poll (1989 to 1996). A reader would want that in the header. Not a must-fix.
+- [x] src/E_TEXT.ASM:319 (+2Bh, unchanged by round 2): the "every tick" wording of M11, the same fix. Left as a note because no round 2 fix touched that line. Fixed in b0d7c46 with M11: the +2Bh entry now reads "calls it each tick the voice is not skipped (419C, L_425F)".
+- [x] src/E_TEXT.ASM:311 (+25h, unchanged): "UpdateVoices copies gTempoRate into it while +40h is set (41CA)". The copy (856 to 857) is before L_41CA (858), so the cite is the label after the copy. Cite the copy's own address, or say "before 41CA". Not a must-fix: the line did not change. Fixed in b0d7c46: the +25h entry now cites "the copy at 41C7, before L_41CA" (41C7 is the store), and the same fix is on the +40h entry (:338), the same claim.
+- [x] src/E_TEXT.ASM:1960 to 1964 (StartSample): the header lists the registers the setup writes, which is accurate as a set. The routine also sets PIT channel 0 to mode 36h and divisor 0000h before its poll (1972 to 1976), and writes B0h 00h, A0h 00h, A0h 8Fh and B0h 2Eh before the poll (1989 to 1996). A reader would want that in the header. Not a must-fix. Fixed in b0d7c46: the header now opens "sets PIT channel 0 to mode 36h and divisor 0000h, writes the OPL2 registers ... (the last four are B0h 00h, A0h 00h, A0h 8Fh, B0h 2Eh)".
 - The round 2 notes stand; they were not re-read.
 
 ### Round 3: summary

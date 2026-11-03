@@ -308,15 +308,17 @@ gQueueRing      db      16 dup (0)      ; 3B83: the queued driver sound numbers,
 ;   +20h  operator level offset: script 9Eh sets it (445E), B0h adds to it (4535), the level routines add it
 ;   +21h  key-off count: StartVoiceNote computes it (4B5F), UpdateVoices keys the voice off at it (41E8)
 ;   +24h  fine tune, added to the F-number by SetVoicePitch (4A3A)
-;   +25h  speed: scripts A9h, BAh and BDh set it, UpdateVoices copies gTempoRate into it while +40h is set (41CA), ClearVoice
-;         sets it to FFh
-;   +26h  phase accumulator: UpdateVoices adds +25h each tick; on a carry it counts the note delay +05h down, and the script runs
-;         when it reaches zero (41D8, L_41F9)
+;   +25h  speed: scripts A9h, BAh and BDh set it, UpdateVoices copies gTempoRate into it while +40h is set (the copy at 41C7,
+;         before L_41CA), ClearVoice sets it to FFh
+;   +26h  phase accumulator: UpdateVoices adds +25h each tick the voice is not skipped (419C); on a carry it counts the note delay
+;         +05h down, and the script runs when it reaches zero (41D8, L_41F9)
 ;   +27h  register A0h image (F-number low byte): SetVoicePitch stores it (4A3A), the B9h command and L_4E7E adjust it
 ;   +28h  register B0h image (F-number high bits and key-on bit 20h): the INT 08h handler (3E66), SetVoicePitch, VoiceKeyOn,
 ;         VoiceKeyOff, the B5h command and L_4E7E read and write it
-;   +29h  per-tick handler pointer (word): UpdateVoices calls it every tick (425F); scripts 91h, 92h, 95h, B6h and ClearVoice set it
-;   +2Bh  per-voice handler pointer (word): UpdateVoices calls it every tick (425F); scripts 8Dh and A7h and ClearVoice set it
+;   +29h  per-tick handler pointer (word): UpdateVoices calls it each tick the voice is not skipped (419C, L_425F); scripts 91h,
+;         92h, 95h, B6h and ClearVoice set it
+;   +2Bh  per-voice handler pointer (word): UpdateVoices calls it each tick the voice is not skipped (419C, L_425F); scripts 8Dh
+;         and A7h and ClearVoice set it
 ;   +2Dh  key-off multiplier: script A4h sets it (4490), StartVoiceNote uses it (4B5F)
 ;   +2Eh  patch modulator level byte: LoadVoicePatch stores it (4DC8), VoiceModulatorLevel reads it
 ;   +2Fh  patch carrier level byte: LoadVoicePatch stores it (4DC8), VoiceCarrierLevel reads it
@@ -333,7 +335,7 @@ gQueueRing      db      16 dup (0)      ; 3B83: the queued driver sound numbers,
 ;   +3Ch  pitch envelope count: 8Dh stores it (436C), L_4ED7 counts it down
 ;   +3Dh  pitch envelope register offset: 8Dh stores it (436C), L_4ED7 adds gOperatorOffset to it
 ;   +3Eh  pitch envelope table pointer (word): 8Dh stores it (436C), L_4ED7 indexes it with xlatb
-;   +40h  follow-tempo flag: script C8h sets it (4A2A), UpdateVoices copies gTempoRate into +25h while it is set (41CA)
+;   +40h  follow-tempo flag: script C8h sets it (4A2A), UpdateVoices copies gTempoRate into +25h while it is set (the copy at 41C7)
 ;   +41h  note byte (octave high nibble, semitone low nibble): SetVoicePitch stores its argument here (4A3A), the B9h command reads it
 ;   +42h  note effect amount: script B9h sets it (45E9), SetVoicePitch bends the level by it (4A3A)
         PUBLIC  _VoiceRecords              ; @ 0000:3B93
@@ -1957,11 +1959,12 @@ L_4B7B:
         ret
 _StartVoiceNote ENDP
 
-; 0000:4B7F: the AdLib sample driver on: writes the OPL2 registers 20h, 60h, 80h, C0h, E0h, 43h, A0h and B0h that set voice 0
-; up for the sample, polls PIT channel 0 until its counter has run on by 952h (a start-up delay), then writes B0h 20h and A0h
-; 00h and installs the INT 08h handler at 3EE5 with the PIT at divisor 004Bh (about 15.9 kHz). The argument at [bp+6] is the far
-; pointer to the sample (offset, then segment), stored at gSamplePtrOff/gSampleStart/gSamplePtrSeg; the length in bytes at
-; [bp+0Ah] goes to gSampleLength. It never touches the speaker gate (port 61h); StartAdlibDriver (3FAE) cleared it
+; 0000:4B7F: the AdLib sample driver on: sets PIT channel 0 to mode 36h and divisor 0000h, writes the OPL2 registers 20h, 60h,
+; 80h, C0h, E0h, 43h, B0h and A0h that set voice 0 up for the sample (the last four are B0h 00h, A0h 00h, A0h 8Fh, B0h 2Eh),
+; polls PIT channel 0 until its counter has run on by 952h (a start-up delay), then writes B0h 20h and A0h 00h and installs the
+; INT 08h handler at 3EE5 with the PIT at divisor 004Bh (about 15.9 kHz). The argument at [bp+6] is the far pointer to the sample
+; (offset, then segment), stored at gSamplePtrOff/gSampleStart/gSamplePtrSeg; the length in bytes at [bp+0Ah] goes to
+; gSampleLength. It never touches the speaker gate (port 61h); StartAdlibDriver (3FAE) cleared it
         PUBLIC  _StartSample              ; @ 0000:4B7F
 _StartSample PROC NEAR
         push      bp
