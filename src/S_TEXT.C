@@ -30,7 +30,7 @@ extern int gMenuIndex; /*@ ds:052C */           /* the menu line being printed *
 extern int gSelection; /*@ ds:052E */           /* the key the menu loop read (:90), then the zero-based menu index (:92, gSelection -= '1'), then 'N' as the restart flag (:104) */
 extern int gSound; /*@ ds:0530 */               /* the sound choice */
 extern int gMouse; /*@ ds:0532 */               /* the mouse choice */
-extern char gMode; /*@ ds:0534 */               /* index 0 to 6 into gModeMaskTable (:78): gDetectedMode, or 0 when it is above 5 (:72 to :73), or 6 when the byte at F000:C000 is 21h (:76 to :77) */
+extern char gMode; /*@ ds:0534 */               /* index into gModeMaskTable (:78): gDetectedMode as a signed byte, or 0 when it is 6 to 127 (:72 to :73, a signed compare), or 6 when the byte at F000:C000 is 21h (:76 to :77); a gDetectedMode of 80h to FFh is not clamped and reads before the table */
 extern char gMaskBit; /*@ ds:0535 */            /* the gModeMask bit of the menu line being printed */
 extern char gDetectedMode; /*@ ds:0536 */       /* first byte of the four-byte video info record; InitVideo (0000:052D) zeroes both words and NormalizeVideoInfo (0000:04FC) reads both words and byte +1 */
 
@@ -143,9 +143,9 @@ done:
 }
 
 /* 0000:0474: write the NUL-terminated string at text to the console, one character at a time
-   through PutChar (0000:05F6). The compiler keeps the index i in SI (a register variable) and
-   increments it before each PutChar call, because the loop condition reads the next character only
-   after the call returns (0000:047C to 0491). */
+   through PutChar (0000:05F6). The compiler keeps the index i in SI (a register variable); the
+   source is text[i++], so the increment precedes the call, and i survives it because PutChar saves
+   and restores SI (0000:05FA push si, 0604 pop si); the condition reads after the return (0000:047C to 0491). */
 /*@ 0000:0474 */ void PrintString(char *text)
 {
     int i = 0;

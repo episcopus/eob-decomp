@@ -45,9 +45,11 @@ StoreVideoWord ENDP
 
 ; 0000:04A3: probe CRTC register 0Fh: write 0Fh to the index port in DX, read that register back from
 ; DX+1, write 66h to it, wait 100h loops and read it back, then write the first read-back back to
-; restore the register and return carry set unless the second read-back is 66h. DX holds the CRTC
-; base, AL the first read-back (written back at the end), AH the second read-back (tested against
-; 66h); no frame. Called by DetectVideoAdapter (04BD) and ProbeColorCrtc (05E6).
+; restore the register and return carry set unless the second read-back is 66h. DX is the input (the
+; CRTC base); AL and AH are the routine's own values, not inputs: the first read-back `in al,dx`
+; (0000:04A7) is kept in AH (0000:04A8), and after the second read-back the `xchg ah,al` (0000:04B3)
+; leaves AL holding the first read-back (written back at the end) and AH the second read-back (tested
+; against 66h). No frame. Called by DetectVideoAdapter (04BD) and ProbeColorCrtc (05E6).
         PUBLIC  TestCrtcRegister        ; @ 0000:04A3
 TestCrtcRegister PROC NEAR
         mov     al,0fh
@@ -316,11 +318,13 @@ L_061A:
         ret
 GetKey ENDP
 
-; 0000:0620: Int2FHandler: an interrupt handler. It pushes BP, DI, SI and DS and then does iret; the
-; iret takes the first three of those words as the return IP, CS and FLAGS, so it does not return to
-; what interrupted it. InstallInt2FHandler sets it as the interrupt 2Fh vector; no call in START1.EXE
-; reaches it (the code bytes contain no INT 2Fh, CD 2F). QUIRK 0000:0620: the frame's pops and ret
-; after the iret are dead.
+; 0000:0620: Int2FHandler: an interrupt handler. It pushes BP, DI, SI and DS in that order (0000:0620
+; to 0625), so DS is on top of the stack; `iret` (0000:0626) pops the top three as the return IP, CS
+; and FLAGS, that is the last three pushed, DS, SI and DI, and BP stays on the stack. It therefore does
+; not return to what interrupted it. The install routine does not put this handler in the vector:
+; InstallInt2FHandler (0000:062C) installs DGROUP:0620h (DS:DX), not the code's 0620h, as its own
+; header says. No call in START1.EXE reaches either routine (the code bytes contain no
+; INT 2Fh, CD 2F). QUIRK 0000:0620: the frame's pops and ret after the iret are dead.
         PUBLIC  Int2FHandler            ; @ 0000:0620
 Int2FHandler PROC NEAR
         push    bp
@@ -339,8 +343,10 @@ Int2FHandler ENDP
 ; 0000:062C: InstallInt2FHandler: set the interrupt 2Fh vector with DOS function 25h. That function
 ; takes the handler in DS:DX; the code puts offset Int2FHandler in DX (0000:0632 to 0636) but never
 ; sets DS, which holds DGROUP, so the vector it installs is DGROUP:0620h, a data address, not Int2FHandler
-; at the code segment's 0620h. Purpose unknown: no caller in START1.EXE and no INT 2Fh in its code
-; bytes. QUIRK 0000:062C: because of that DS:DX mismatch the handler is never reached.
+; at the code segment's 0620h. Purpose unknown: nothing calls it (no caller in START1.EXE). QUIRK
+; 0000:062C: the handler is unreached first because nothing calls this routine and START1.EXE issues no
+; INT 2Fh (the code bytes contain no INT 2Fh, CD 2F); even an INT 2Fh would jump to DGROUP:0620h, a
+; data address, because of the DS:DX mismatch.
         PUBLIC  InstallInt2FHandler     ; @ 0000:062C
 InstallInt2FHandler PROC NEAR
         push    bp

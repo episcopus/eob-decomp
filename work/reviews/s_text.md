@@ -24,15 +24,21 @@ right; the three must-fix items below are not.
 
 ### Findings
 
-- [ ] must-fix src/S_TEXT.ASM:319-320 (Int2FHandler header; reopens round 2's item at :317-319): "the iret
+- [x] must-fix src/S_TEXT.ASM:319-320 (Int2FHandler header; reopens round 2's item at :317-319): "the iret
   takes the first three of those words as the return IP, CS and FLAGS" names the wrong three. The pushes
   are BP, DI, SI, DS in that order (0000:0620 to 0625: `push bp; mov bp,sp; push di; push si; push ds`), so
   DS is on top of the stack. iret (0000:0626) pops IP from the top, so it takes the last three pushed,
   DS, SI and DI, as IP, CS and FLAGS; BP stays on the stack. Say that.
-- [ ] must-fix src/S_TEXT.ASM:321 (Int2FHandler header): "InstallInt2FHandler sets it as the interrupt 2Fh
+  Fixed: the header now says the four pushes are in that order, that DS is on top, so `iret` (0000:0626)
+  pops the last three pushed, DS, SI and DI, as the return IP, CS and FLAGS, and BP stays on the stack.
+  Evidence: 0000:0620 `55 8B EC 57 56 1E CF` (push bp; mov bp,sp; push di; push si; push ds; iret).
+- [x] must-fix src/S_TEXT.ASM:321 (Int2FHandler header): "InstallInt2FHandler sets it as the interrupt 2Fh
   vector" is wrong. InstallInt2FHandler (0000:062C) puts DGROUP:0620h in the vector (DS:DX, as its own
   header says at :339 to :343). It does not install this handler. Say that.
-- [ ] must-fix src/S_TEXT.C:33 (gMode): "or 0 when it is above 5" is wrong for 80h to FFh. The clamp is a
+  Fixed: the header now says the install routine does not put this handler in the vector:
+  InstallInt2FHandler (0000:062C) installs DGROUP:0620h (DS:DX), not the code's 0620h. The citation of
+  InstallInt2FHandler's header line range was dropped (the header moved when this one grew two lines).
+- [x] must-fix src/S_TEXT.C:33 (gMode): "or 0 when it is above 5" is wrong for 80h to FFh. The clamp is a
   signed compare: `cmp byte ptr [0534h],5` then `jle` (0000:025E to 0263), so the `gMode = 0` store at
   0000:0265 runs only for 6 to 127. The "above 5" wording is mine (round 2's should at :26), and it is
   imprecise. It matters: the CGA/EGA path of DetectVideoAdapter (0000:04E1 to 04F8) stores AX = 0180h into
@@ -40,19 +46,31 @@ right; the three must-fix items below are not.
   (:78) reads ds:0029, before the table. Say: "index into gModeMaskTable (:78): gDetectedMode as a signed
   byte, or 0 when it is 6 to 127 (:72 to :73, a signed compare), or 6 when the byte at F000:C000 is 21h
   (:76 to :77); a gDetectedMode of 80h to FFh is not clamped and reads before the table."
-- [ ] should src/S_TEXT.ASM:46-50 (TestCrtcRegister header): "DX holds the CRTC base, AL the first read-back
+  Fixed: the gMode comment now reads as given above. Evidence: 0000:025E `80 3E 34 05 05 7E 05` (cmp
+  byte [0534h],5; jle), so the signed compare leaves 80h to FFh unclamped.
+- [x] should src/S_TEXT.ASM:46-50 (TestCrtcRegister header): "DX holds the CRTC base, AL the first read-back
   (written back at the end), AH the second read-back" reads as if AL and AH came in. The routine sets them
   itself (the first read-back `in al,dx` at :56, the second in AL and swapped into AH at :63 to :64). Say
   that DX is the input and AL and AH are the routine's own values at those points.
-- [ ] should src/S_TEXT.C:145-148 (PrintString comment): the because clause says why the condition reads
+  Fixed: the header now says DX is the input (the CRTC base) and AL and AH are the routine's own values,
+  not inputs: the first read-back `in al,dx` (0000:04A7) is kept in AH (0000:04A8) and the `xchg ah,al`
+  (0000:04B3) leaves AL the first read-back and AH the second. The source-line citations were replaced by
+  addresses (the header grew, so the old :56/:57/:64 line numbers would have shifted).
+- [x] should src/S_TEXT.C:145-148 (PrintString comment): the because clause says why the condition reads
   after the call, not why i must survive it. The bytes (0000:047C to 0491) show `mov ax,si; inc si` at
   047C to 047E, then the call (0487), then the condition `cmp byte ptr [bx+si],0` (048E) after the return.
   i survives the call because PutChar saves and restores SI (0000:05FA push si, 0604 pop si). Say that, and
   that the increment comes before the call because the source is text[i++].
-- [ ] should src/S_TEXT.ASM:343 (InstallInt2FHandler QUIRK): "because of that DS:DX mismatch the handler is
+  Fixed: the comment now says the source is text[i++], so the increment precedes the call, and i survives
+  it because PutChar saves and restores SI (0000:05FA push si, 0604 pop si); the condition reads after the
+  return. The comment keeps four lines, so the file's line numbers do not shift.
+- [x] should src/S_TEXT.ASM:343 (InstallInt2FHandler QUIRK): "because of that DS:DX mismatch the handler is
   never reached" gives the mismatch as the whole reason. The handler is unreached first because nothing
   calls InstallInt2FHandler and START1.EXE has no INT 2Fh (`CD 2F` nowhere in the file). The mismatch
   means that even an INT 2Fh would jump to DGROUP:0620h, a data address. Say both.
+  Fixed: the QUIRK now says the handler is unreached first because nothing calls this routine and
+  START1.EXE issues no INT 2Fh (the code bytes contain no CD 2F); even an INT 2Fh would jump to
+  DGROUP:0620h, a data address, because of the DS:DX mismatch.
 
 ### Summary (round 3)
 
@@ -62,6 +80,18 @@ contradicts. The gMode "above 5" wording is wrong for the signed byte 80h to FFh
 the must-fix gives the exact clamp. The remaining three items are clarity: TestCrtcRegister's inputs, the
 PrintString reason, and the InstallInt2FHandler QUIRK's cause. The unit is complete and matches; only the
 comments need fixing.
+
+Round 3 resolved (decompiler): the three must-fix and three should items are fixed in
+src/S_TEXT.ASM/src/S_TEXT.C. Int2FHandler: the four pushes are BP, DI, SI, DS, DS is on top, and `iret`
+(0000:0626) pops the last three pushed, DS, SI and DI, as IP, CS and FLAGS (BP stays); the header no
+longer says InstallInt2FHandler installs this handler, it installs DGROUP:0620h. gMode: the clamp is the
+signed `jle` at 0000:0263, so only 6 to 127 become 0 and 80h to FFh are not clamped. TestCrtcRegister: DX
+is the input and AL and AH are the routine's own values. PrintString: i survives the call because PutChar
+saves and restores SI, and the increment precedes the call because the source is text[i++].
+InstallInt2FHandler QUIRK: unreached first because nothing calls it and START1.EXE has no `CD 2F`, and the
+DS:DX mismatch would send even an INT 2Fh to DGROUP:0620h. Source-line citations that the edits would have
+shifted were replaced by code addresses. Evidence: make match FILE=src/S_TEXT.C 2 of 2 and
+FILE=src/S_TEXT.ASM 13 of 13, both exit 0; make readability UNIT=s_text 0 findings.
 
 ## Round 2 (rev-haiku, 3e16e87)
 
@@ -75,7 +105,7 @@ Each finding is a checkbox. `must-fix` blocks `make review-pass` until a decompi
 
 - [x] must-fix src/S_TEXT.ASM:48 (TestCrtcRegister header): "DX holds the CRTC base, AH the first read-back and AL the value to write back" is wrong for AH at the write-back. `mov ah,al` (:56) keeps the first read-back in AH, then `xchg ah,al` (:63) swaps the two, so at `out dx,al` (:64) AL is the first read-back (the value written back) and AH is the second read-back, which `cmp ah,66h` (:65) tests. Say: "AL the first read-back, written back at the end; AH the second read-back, tested against 66h". This reopens round 1's should on TestCrtcRegister: the wording I asked for ("AH keeps the first read-back") was imprecise. Fixed: the header now says "DX holds the CRTC base, AL the first read-back (written back at the end), AH the second read-back (tested against 66h)".
 - [x] must-fix src/S_TEXT.ASM:292-293 (GetKey header): "so the two ranges do not collide" is wrong. `cbw` (:309) sign-extends AL, so ASCII codes 128 to 255 come back as -128 to -1, the same values as the negated scan codes 1 to 127 (-1 to -127). Only ASCII 1 to 127 stays apart. Say what the code returns: ASCII 1 to 127 as they are, ASCII 128 to 255 negative, and an extended key as its negated scan code. Fixed: the header now gives all three returns: ASCII 1 to 127 as it is, ASCII 128 to 255 negative, and an extended key as its negated scan code.
-- [ ] must-fix src/S_TEXT.ASM:317-319 (Int2FHandler header; reopened in round 3, see round 3): "does nothing but iret" is wrong. The handler pushes BP, DI, SI and DS (:322 to :326) before `iret` (:327), and `iret` then pops those words as the return IP, CS and FLAGS, so it cannot return to what it interrupted. The pops after `iret` are dead, as the comment says; the four pushes are not. Describe the pushes and the iret. Fixed: the header now describes the four pushes and that the iret takes the first three as the return IP, CS and FLAGS, so it cannot return to what it interrupted; the QUIRK keeps the dead pops and ret.
+- [x] must-fix src/S_TEXT.ASM:317-319 (Int2FHandler header; reopened in round 3, see round 3): "does nothing but iret" is wrong. The handler pushes BP, DI, SI and DS (:322 to :326) before `iret` (:327), and `iret` then pops those words as the return IP, CS and FLAGS, so it cannot return to what it interrupted. The pops after `iret` are dead, as the comment says; the four pushes are not. Describe the pushes and the iret. Fixed: the header now describes the four pushes and that the iret takes the first three as the return IP, CS and FLAGS, so it cannot return to what it interrupted; the QUIRK keeps the dead pops and ret. Resolved further by round 3: the "first three" wording was wrong; the iret takes the last three pushed, DS, SI and DI (see round 3, fixed there).
 - [x] must-fix src/S_TEXT.ASM:335-336 (InstallInt2FHandler header): "install Int2FHandler (0000:0620) as interrupt 2Fh" and "it only installs a no-op handler" are wrong. DOS function 25h takes the handler as DS:DX. The code sets DX to 0620h (:347 to :348) and never sets DS (:346 only pushes it), and the header gives DS as DGROUP (:14). So the vector is DGROUP:0620h, a data address, not Int2FHandler at the code segment's 0620h. The comment must say so. The "no call" claim (src/S_TEXT.ASM:318) has evidence to cite: the code bytes of START1.EXE contain no `CD 2F` (INT 2Fh). Fixed: the header now says the code puts offset Int2FHandler in DX (0000:0632 to 0636) and never sets DS, so the vector is DGROUP:0620h, a data address; the "no call" claim cites the absent `CD 2F`.
 - [x] should src/S_TEXT.ASM:272-274 (PutChar header) and :362 (DetectMouse header): "because the DOS call may clobber them" and "the registers the DOS and BIOS calls may clobber" give a reason with no evidence. Say the frame reproduces the original's register saves and that the reason is not known, or cite what DOS 06h and INT 33h are known to preserve. Fixed: both headers now say the frame reproduces the original's register saves and that why the calls need them saved is not known.
 - [x] should src/S_TEXT.C:145-147 (PrintString comment): the last sentence restates the loop. Say why `i` must survive the PutChar call, or drop it. Fixed: the comment now says the compiler keeps i in SI (a register variable) and increments it before each PutChar call because the loop condition reads the next character only after the call returns (0000:047C to 0491).
@@ -83,7 +113,7 @@ Each finding is a checkbox. `must-fix` blocks `make review-pass` until a decompi
 - [x] should src/S_TEXT.C:35 (gDetectedMode): "NormalizeVideoInfo ... reads the second" is incomplete: it reads both words and byte +1 (src/S_TEXT.ASM:124 to :135). Say "reads the second word and byte +1". Fixed: the comment now says NormalizeVideoInfo reads both words and byte +1.
 - [x] should src/S_TEXT.C:40-41 (gNote, gModePrompt): the strings at ds:0172 and ds:01A6 begin with CR LF (the bytes are "\r\nNOTE - " and "\r\nMode?"). Say so, so that the printed text is not read as starting on the same line. Fixed: both comments now show the leading CR LF: "\r\nNOTE - ..." and "\r\nMode?".
 - [x] note src/S_TEXT.ASM:347 (the literal 0620h): the decompiler's note reports a matcher limitation (`make match` builds the ASM module alone, so `offset Int2FHandler` resolves to 03C8h there, and cmatch reads that near-label offset as a data global because it falls in the DGROUP pad range). I did not reproduce it. Whether the literal stays or the matcher changes is for the human (escalated in this handoff); the must-fix on :335 is needed either way. Resolved by task/small-code-pad (merged): the small model's code pad is now 133h, outside the data pad range, so the source says `offset Int2FHandler` and the literal 0620h is gone (make match FILE=src/S_TEXT.ASM 13 of 13); the must-fix on :335 was fixed above.
-- [ ] note re/symbols.toml: the new entries match their addresses (s0000_04bd is 63 bytes, 04BD to 04FC; s0000_056a is 80 bytes, 056A to 05BA). This is map data, not editable from the unit.
+- [x] note re/symbols.toml: the new entries match their addresses (s0000_04bd is 63 bytes, 04BD to 04FC; s0000_056a is 80 bytes, 056A to 05BA). This is map data, not editable from the unit. Confirmed: re/symbols.toml has s0000_04bd addr 0000:04BD size 63 and s0000_056a addr 0000:056A size 80, both L2, match_flags "tasm /mx".
 
 ### Summary (round 2)
 
