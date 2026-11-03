@@ -13,6 +13,49 @@ Checked: `make match FILE=src/I_TEXT.ASM` 44 of 44 functions match; `make readab
 Each finding is a checkbox. `must-fix` blocks `make review-pass` until a decompiler ticks it off
 (with the commit that fixes it); `should` and `note` do not block.
 
+### Round 3 (rev-haiku, 2026-11-02)
+
+Reviewed at cd26f41 (main). src/I_TEXT.ASM is identical on main and on branch review/i_text (0c8ba51); no i0000 or I_TEXT row of re/symbols.toml or re/globals.toml differs between them. The diff read is bb3f897 to main for src/I_TEXT.ASM: commit e4b4fe5 (the round 2 fixes and the 43h-byte field list at lines 283 to 334) and commit d05bca0 (the WriteVoiceLevels rename).
+
+Checked: `make match FILE=src/I_TEXT.ASM` 44 of 44, exit 0; `make readability UNIT=i_text` 0 findings. Every claim of the new field list was checked against the `[di + Nh]` accesses and the script handler labels (the `; script byte` comments); the round 2 claims were checked against the code at the lines they now cite.
+
+Main finding: the field list adds 51 lines above the code, and the fixes kept the bb3f897 line numbers, so every in-file line citation at or after line 283 now names code 51 lines below its target (the round 2 claims themselves are right). Cite labels or the current lines.
+
+Round 2 items, in order:
+- gRhythmKeyBits (round 2 item 1): the claims are right, the line citations are not. Reopened as R3-1.
+- gTempoRate (round 2 item 2): the claims are right, the line citations are not. Reopened as R3-2.
+- gRhythmLevelC (round 2 should): its changed line cites lines that are now wrong. Reopened as R3-3.
+- The 43A5 header (round 2 should): the address 0892:0835 is right; the I0892.C lines are stale. Now R3-8.
+- The WriteVoiceLevels rename and the WHITEPAPER 2.1.2 and 2.4 citations: right, ticks stay.
+- The field list (round 2 should): the list is useful, but four of its claims are wrong (R3-4 to R3-7).
+- The round 2 note on 2106 (nonzero test): the field list says LoadVoicePatch keeps bit 0 only (`and al, 1`), so the nonzero test is the connection bit. Resolved.
+
+- [ ] must-fix R3-1 src/I_TEXT.ASM:242 (gRhythmKeyBits, round 2 item 1 reopened). The claims are right: C1h sets 20h, C2h ORs its operand in, C3h clears it, VoiceKeyOff and VoiceSilence test it for nonzero. The line numbers name other code: the C1h store `mov byte ptr ds:[gRhythmKeyBits], 20h` is line 1532 (the cited 1481 is `shl bx, 1`); the C2h `or al, byte ptr ds:[gRhythmKeyBits]` and store are lines 1553 to 1554 (cited 1502 to 1503 is `mov al, [si + 5]`); the C3h clear is line 1563 (cited 1512 is `call _AdlibWrite`); the VoiceKeyOff test is line 1880 (cited 1829 is `mov al, [bx + si]`); the VoiceSilence test is line 2333 (cited 2282 is `add ah, cl`). Fix: cite the labels, which do not move (L_4B01 for C1h, L_4BE0 for C2h, L_4C10 for C3h, VoiceKeyOff, VoiceSilence), or the current lines.
+
+- [ ] must-fix R3-2 src/I_TEXT.ASM:243 (gTempoRate, round 2 item 2 reopened). The claims are right: A6h writes it, BAh copies it into [di+25h], the UpdateVoices copy when [di+40h] is set. The lines are wrong: the A6h store `mov byte ptr ds:[gTempoRate], ah` is line 1162 (cited 1111 is the gTempoBeat store); the BAh load `mov al, byte ptr ds:[gTempoRate]` is line 1390 and its store to [di+25h] is 1391 (cited 1340 is `xor bh, bh`); the UpdateVoices copy is lines 834 to 835 (cited 781 to 784 are AdlibWrite calls in ResetVoices). Fix: cite L_4871 (A6h), L_4A7B (BAh) and UpdateVoices, or the current lines.
+
+- [ ] must-fix R3-3 src/I_TEXT.ASM:255 (gRhythmLevelC, round 2 should, now a must-fix because this line changed). The C6h stores to gRhythmLevelB (label L_4D6B) are at lines 1699, 1710, 1721, 1732 and 1743; the list 1648, 1659, 1670, 1681 and 1692 is the bb3f897 numbering. Fix: the current lines, or cite L_4D6B.
+
+- [ ] must-fix R3-4 src/I_TEXT.ASM:288 (the +05h field): "GetVoiceDelay returns it" names no function. Nothing in src/ or the driver is called GetVoiceDelay. The function that returns the byte at [di+5] is `_GetVoiceState` (line 2093, a driver table entry at line 188; it does `mov al, [di+5]`). Fix: name _GetVoiceState.
+
+- [ ] must-fix R3-5 src/I_TEXT.ASM:298 (+17h) and 300 to 301 (+1Ah, +1Bh). "L_5256 negates it at a carry" and "L_5256 reloads it from +1Bh" are wrong as written. The step routine at L_5256 falls through to L_526C on a carry from +1Eh (lines 2368 to 2379), and L_526C does `dec [di+1ah]` and goes to L_5281 when the count is not zero. The negation of +17h and the reload of +1Ah from +1Bh happen only when the count runs out, not at every carry. Fix: say so, for both fields.
+
+- [ ] must-fix R3-6 src/I_TEXT.ASM:310 (+26h): "starts the script on a carry" is wrong. A carry out of the +26h add goes to L_45B3, which counts the note delay +05h down; the script resumes at L_45D4 (`mov si, [di+3]`) only when that count reaches zero. Fix: say a carry counts the note delay down and the script resumes when it reaches zero.
+
+- [ ] must-fix R3-7 src/I_TEXT.ASM:323 (+34h): "scripts A0h and A1h store it" is wrong. A0h (L_483F, line 1138) and A1h (L_4852, line 1147) call StartVoiceNote (A1h also calls VoiceKeyOn) and store nothing in +34h. The store is in UpdateVoices, at L_45F5 (line 876): it reads the next script byte into +34h when the word at +32h or +33h is nonzero (the cmp word tests at lines 868 and 872). Fix: name UpdateVoices and that test.
+
+- [ ] should R3-8 src/I_TEXT.ASM:544 (the 43A5 header, round 2 should reopened). The address 0892:0835 is right (src/I0892.C:451 carries `/*@ 0892:0835 */`), but the I0892.C lines are stale: ShutdownGame is at I0892.C:451, its call to StopAdlibDriver is line 461, and the extern is line 155 (the header says 444, 454 and 149). Fix: cite the address, or the current lines. E07C8.C:451 is right.
+
+- [ ] should R3-9 in-file line citations that the 51-line insertion moved (untouched by the fixes): src/I_TEXT.ASM:171 (line 1017 is now 1068; line 713 is now 764), :248 (1378 to 1381 is now 1429 to 1432), :619 (608 is now 659), :775 (740 to 750 is now about 791 to 801), :1765 (1718 is now 1769; 1749 to 1781 is now about 1800 to 1832), :2242 (2210 to 2211 is now 2261 to 2262), :2488 (1231 is now 1282). Cite labels, or the current lines.
+
+- [ ] should R3-10 src/I_TEXT.ASM:328 to 331 (+3Bh, +3Ch, +3Dh, +3Eh): "L_52AF reloads, counts, adds, indexes" describes the carry path. L_52AF carries into L_52BB (line 2412: the count `dec [di+3ch]` and the reload from +3Bh) and into L_52C6 (line 2417: the add of gOperatorOffset and the xlatb). A reader who follows L_52AF alone sees only the +39h add. Fix: name L_52BB and L_52C6.
+
+- [ ] note R3-11 src/I_TEXT.ASM:290, 291, 308 and 312: the field list is right but not complete. +07h is also set by script 87h (L_46E3), +08h is also compared and stored in the 82h handler (L_4663), +24h is set by script 93h (L_47BF). For +28h, script B5h (L_4985) reads the byte and writes only the registers; the writes are by SetVoicePitch, VoiceKeyOn, VoiceKeyOff, the INT 08h handler and the B9h tail.
+
+- [ ] note registry (round 1 and round 2 note, still open): re/symbols.toml still has 7 i_text rows for 44 functions (i0000_03fa is 16216 bytes, covering 03FA to 4352, both INT 08h handlers; i0000_43a5 is 4240 bytes). review-pass stamps only the existing rows, so the split still has to be done before a passing review (the human's task/split-on-match run).
+
+Checked and right, no action: the gRhythmKeyBits reader claims (nonzero tests, not bit 5); the gTempoRate writer and the BAh copy; the INT 08h handler reads and writes voice 0's +28h (through bx); the L_5255 ret; the connection bit (`and al, 1` in LoadVoicePatch); the WriteVoiceLevels name; the other field claims (+00h, +03h, +06h, +09h to +0Ah, +12h to +15h, +19h to +1Ch, +1Eh, +1Fh, +20h to +21h, +25h, +27h, +29h, +2Bh, +2Dh, +2Eh, +2Fh, +30h, +32h, +33h, +35h, +36h, +39h, +3Ah, +40h to +42h).
+
 ### Round 2 (rev-haiku, 2026-11-02)
 
 Reviewed at bb3f897 (main). The three files of this unit (src/I_TEXT.ASM, re/symbols.toml, re/globals.toml) are the
