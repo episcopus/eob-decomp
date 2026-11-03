@@ -6848,6 +6848,7 @@ evidence = ["segment"]
 name = "SetFileSize"
 level = "L2"
 match_flags = "-ml -O -Z -G"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1c0e_0046"
@@ -6858,6 +6859,7 @@ evidence = ["near", "frame"]
 name = "RetryFile"
 level = "L2"
 match_flags = "-ml -O -Z -G"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1c0e_00aa"
@@ -6868,6 +6870,7 @@ evidence = ["near", "frame"]
 name = "FatalError"
 level = "L2"
 match_flags = "-ml -O -Z -G"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1c0e_00db"
@@ -6878,6 +6881,7 @@ evidence = ["far", "frame"]
 name = "FileOpen"
 level = "L2"
 match_flags = "-ml -O -Z -G"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1c0e_03bb"
@@ -6888,6 +6892,7 @@ evidence = ["far", "frame"]
 name = "FileClose"
 level = "L2"
 match_flags = "-ml -O -Z -G"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1c0e_0400"
@@ -6898,6 +6903,7 @@ evidence = ["far", "frame"]
 name = "FileRead"
 level = "L2"
 match_flags = "-ml -O -Z -G"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1c0e_0578"
@@ -6908,6 +6914,7 @@ evidence = ["far", "frame"]
 name = "FileWrite"
 level = "L2"
 match_flags = "-ml -O -Z -G"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1c0e_06e5"
@@ -6918,6 +6925,7 @@ evidence = ["frame"]
 name = "SeekFile"
 level = "L2"
 match_flags = "-ml -O -Z -G"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1c0e_091b"
@@ -6928,6 +6936,7 @@ evidence = ["far", "frame"]
 name = "CheckFile"
 level = "L2"
 match_flags = "-ml -O -Z -G"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1c0e_0a35"
@@ -6938,6 +6947,7 @@ evidence = ["far", "near", "frame"]
 name = "DeleteFile"
 level = "L2"
 match_flags = "-ml -O -Z -G"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1c0e_0a9d"
@@ -6948,6 +6958,7 @@ evidence = ["far", "frame"]
 name = "ResetFile"
 level = "L2"
 match_flags = "-ml -O -Z -G"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1c0e_0add"
@@ -6958,6 +6969,7 @@ evidence = ["near", "frame"]
 name = "DisplayFileError"
 level = "L2"
 match_flags = "-ml -O -Z -G"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1c0e_0d9b"
@@ -6968,6 +6980,7 @@ evidence = ["frame"]
 name = "ShowMessage"
 level = "L2"
 match_flags = "-ml -O -Z -G"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1c0e_0dc3"
@@ -6978,6 +6991,7 @@ evidence = ["near", "frame"]
 name = "FindEvictableFile"
 level = "L2"
 match_flags = "-ml -O -Z -G"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1c0e_0e5b"
@@ -6988,6 +7002,7 @@ evidence = ["far", "near", "frame"]
 name = "EvictFile"
 level = "L2"
 match_flags = "-ml -O -Z -G"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1c0e_0ee7"
@@ -6998,6 +7013,7 @@ evidence = ["near", "frame"]
 name = "FreeAllCachedFiles"
 level = "L2"
 match_flags = "-ml -O -Z -G"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1c0e_0f6e"
@@ -7008,6 +7024,7 @@ evidence = ["near", "frame"]
 name = "BuildFileCache"
 level = "L2"
 match_flags = "-ml -O -Z -G"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1c0e_1161"
@@ -7018,6 +7035,7 @@ evidence = ["far", "frame"]
 name = "IsFileInMemory"
 level = "L2"
 match_flags = "-ml -O -Z -G"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1c0e_11d3"
@@ -7028,6 +7046,7 @@ evidence = ["far", "frame"]
 name = "FindLoadedFile"
 level = "L2"
 match_flags = "-ml -O -Z -G"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1c0e_1240"
@@ -7038,6 +7057,7 @@ evidence = ["far", "frame"]
 name = "ReadFromMemory"
 level = "L2"
 match_flags = "-ml -O -Z -G"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1c0e_1310"
@@ -7048,6 +7068,7 @@ evidence = ["far", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z -G"
 name = "LocateOverlayFile"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1c0e_13bb"
@@ -7058,6 +7079,7 @@ evidence = ["far", "frame"]
 name = "ExpandTextWindow"
 level = "L2"
 match_flags = "-ml -O -Z -G"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1c0e_13e7"
@@ -7068,6 +7090,7 @@ evidence = ["far", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z -G"
 name = "InitOverlayCache"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1c0e_13fd"
@@ -7078,6 +7101,7 @@ evidence = ["far", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z -G"
 name = "ShutdownOverlayCache"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1c0e_1411"
@@ -7088,6 +7112,7 @@ evidence = ["far", "frame"]
 name = "DropFile"
 level = "L2"
 match_flags = "-ml -O -Z -G"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1c0e_144e"
@@ -7098,6 +7123,7 @@ evidence = ["far", "frame"]
 name = "LoadFileSlot"
 level = "L2"
 match_flags = "-ml -O -Z -G"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1c0e_1645"
@@ -7108,6 +7134,7 @@ evidence = ["far", "frame"]
 name = "FindFile"
 level = "L2"
 match_flags = "-ml -O -Z -G"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1c0e_168e"
@@ -7118,6 +7145,7 @@ evidence = ["far", "frame"]
 name = "ResolveFileLink"
 level = "L2"
 match_flags = "-ml -O -Z -G"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1c0e_171a"
@@ -7128,6 +7156,7 @@ evidence = ["frame"]
 name = "ClearSearchAllDrives"
 level = "L2"
 match_flags = "-ml -O -Z -G"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1c0e_1724"
@@ -7138,6 +7167,7 @@ evidence = ["frame"]
 name = "SetSearchAllDrives"
 level = "L2"
 match_flags = "-ml -O -Z -G"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1c0e_172e"
@@ -7148,6 +7178,7 @@ evidence = ["far", "frame"]
 name = "LookupFileEntry"
 level = "L2"
 match_flags = "-ml -O -Z -G"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "e1d8c_0000"
