@@ -344,7 +344,7 @@ InstallInt2FHandler PROC NEAR
         push    di
         push    si
         push    ds
-        mov     ax,0620h
+        mov     ax,offset Int2FHandler
         mov     dx,ax
         mov     ah,25h
         mov     al,2fh
