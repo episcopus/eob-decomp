@@ -98,6 +98,9 @@ Left on INTRO.EXE (2026-11-03): 42 bytes. The **link date**: TLINK writes the da
 overlay module's stub entries in the reverse of its public definitions, and Turbo C writes those in an
 order of its symbol hash of the names (and, for names that share a bucket, of definition order), so
 the order is set by the original function names; one far call (0892:0161) and the stub table differ.
+The human decided (2026-11-03) that both stay documented differences: the rebuild gives neither a
+fixed date nor invented link names, and `test_intro_rebuilds_but_stub_order_and_date` pins the
+42 bytes, so a change there shows.
 
 Still to come, from poolrad's experience: external objects, and patch
 sites (`re/patches.toml`, SPEC section 2: a byte the fan patch changed by hand in code is applied after
