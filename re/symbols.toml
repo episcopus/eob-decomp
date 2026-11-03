@@ -12159,6 +12159,9 @@ unit = "s_text"
 addr = "0000:05F6"
 size = 18
 evidence = ["near", "frame"]
+name = "PutChar"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "s0000_0608"
@@ -12166,6 +12169,9 @@ unit = "s_text"
 addr = "0000:0608"
 size = 24
 evidence = ["near", "frame"]
+name = "GetKey"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "s0000_0620"
@@ -12173,6 +12179,9 @@ unit = "s_text"
 addr = "0000:0620"
 size = 12
 evidence = ["frame"]
+name = "Int2FHandler"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "s0000_062c"
@@ -12180,6 +12189,9 @@ unit = "s_text"
 addr = "0000:062C"
 size = 22
 evidence = ["frame"]
+name = "InstallInt2FHandler"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "s0000_0642"
@@ -12187,6 +12199,9 @@ unit = "s_text"
 addr = "0000:0642"
 size = 64
 evidence = ["near", "frame"]
+name = "DetectMouse"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "s0000_04bd"
@@ -12206,6 +12221,9 @@ addr = "0000:056A"
 size = 80
 evidence = ["source"]
 notes = "not listed by the map: VGA probe (review e of s_text, 2026-11-03: the unit runs to 0682, the first library module ATEXIT)"
+name = "ProbeVga"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "s0000_05ba"
@@ -12214,6 +12232,9 @@ addr = "0000:05BA"
 size = 44
 evidence = ["source"]
 notes = "not listed by the map: EGA probe (review e of s_text, 2026-11-03: the unit runs to 0682, the first library module ATEXIT)"
+name = "ProbeEga"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "s0000_05e6"
@@ -12222,6 +12243,9 @@ addr = "0000:05E6"
 size = 16
 evidence = ["source"]
 notes = "not listed by the map: CRTC probe (review e of s_text, 2026-11-03: the unit runs to 0682, the first library module ATEXIT)"
+name = "ProbeColorCrtc"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "s0000_0682"

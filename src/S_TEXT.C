@@ -1,14 +1,18 @@
-/* Unit at START1.EXE 0000:0239 (827 bytes, 6 functions): the setup program that runs before
-   INTRO.EXE. Main is the graphics, sound and mouse menu, ending in an execl of INTRO.EXE; PrintString
-   writes a NUL-terminated string a character at a time. The rest probe the video hardware. Small
-   model (-ms): every callee is a near call, and the library routines are named by their address. */
+/* Unit at START1.EXE 0000:0239 (1097 bytes, 15 functions in two modules): the setup program that
+   runs before INTRO.EXE. Main (0239) is the graphics, sound and mouse menu, ending in an execl of
+   INTRO.EXE; PrintString (0474) writes a NUL-terminated string a character at a time. The video
+   probes (0496 to 05F5) and the console and mouse routines (05F6 to 0681) are assembly, in
+   src/S_TEXT.ASM. Small model (-ms): every callee is a near call. execl (0000:0837) is the
+   library's _execl, the name build/re/rtl_start1.json gives the library entry there. */
 
 /*@flags -ms */
 
-/* library routines of START1.EXE's load module, reached by near call */
-extern void PutChar(char c); /*@ 0000:05F6 */
-extern int GetKey(void); /*@ 0000:0608 */
-extern int DetectMouse(void); /*@ 0000:0642 */
+/* the console and mouse routines of this unit's assembly module (src/S_TEXT.ASM), near calls */
+extern void PutChar(char c); /*@ 0000:05F6 */   /* prints one character: Main at :91, :117, :127, PrintString at :153 */
+extern int GetKey(void); /*@ 0000:0608 */        /* reads one key: the menu loop at :90, :101, :116, :126 */
+extern int DetectMouse(void); /*@ 0000:0642 */   /* true when a mouse driver answers; gates the prompt at :122 */
+
+/* the C library's exec: build/re/rtl_start1.json names the library entry at 0000:0837 _execl */
 extern int execl(char *path, char *arg0, ...); /*@ 0000:0837 */
 
 /* the video-hardware probes (src/S_TEXT.ASM): fills the four-byte info record at gDetectedMode */
@@ -23,32 +27,33 @@ extern char gArgMouse[]; /*@ ds:00B4 */         /* execl's one-character mouse a
 extern char *gMenuText[]; /*@ ds:00B6 */        /* the five mode-menu lines */
 extern char *gModeName[]; /*@ ds:00C0 */        /* the four mode names */
 extern int gMenuIndex; /*@ ds:052C */           /* the menu line being printed */
-extern int gSelection; /*@ ds:052E */           /* the key the menu loop last read */
+extern int gSelection; /*@ ds:052E */           /* the key the menu loop read (:90), then the zero-based menu index (:92, gSelection -= '1'), then 'N' as the restart flag (:104) */
 extern int gSound; /*@ ds:0530 */               /* the sound choice */
 extern int gMouse; /*@ ds:0532 */               /* the mouse choice */
-extern char gMode; /*@ ds:0534 */               /* the graphics mode the menu works on */
+extern char gMode; /*@ ds:0534 */               /* index 0 to 6 into gModeMaskTable (:78), from gDetectedMode or 6 when the byte at F000:C000 is 21h */
 extern char gMaskBit; /*@ ds:0535 */            /* the gModeMask bit of the menu line being printed */
-extern char gDetectedMode; /*@ ds:0536 */       /* the mode the video probes detected */
+extern char gDetectedMode; /*@ ds:0536 */       /* first byte of the four-byte video info record; InitVideo (0000:052D) zeroes both words and NormalizeVideoInfo (0000:04FC) reads the second */
 
-extern char gBanner[]; /*@ ds:0113 */
-extern char gStar[]; /*@ ds:016E */
-extern char gSpace[]; /*@ ds:0170 */
-extern char gNote[]; /*@ ds:0172 */
-extern char gModePrompt[]; /*@ ds:01A6 */
-extern char gWarningHead[]; /*@ ds:01AE */
-extern char gWarningTail[]; /*@ ds:01BD */
-extern char gSurePrompt[]; /*@ ds:01EC */
-extern char gSoundPrompt[]; /*@ ds:021F */
-extern char gMousePrompt[]; /*@ ds:02AA */
-extern char gIntroPath[]; /*@ ds:02FA */
-extern char gIntroName[]; /*@ ds:0304 */
-extern char gHomie[]; /*@ ds:030E */
+extern char gBanner[]; /*@ ds:0113 */      /* leading CRLFs and "Eye of the Beholder Version 1.9" then "Which graphics mode do you wish to use?" */
+extern char gStar[]; /*@ ds:016E */        /* "*", the mark next to the menu line of a detected mode */
+extern char gSpace[]; /*@ ds:0170 */       /* " ", the mark next to an undetected mode */
+extern char gNote[]; /*@ ds:0172 */        /* "NOTE - * denotes a mode detected in your machine." */
+extern char gModePrompt[]; /*@ ds:01A6 */  /* "Mode?" */
+extern char gWarningHead[]; /*@ ds:01AE */ /* "WARNING! - " before the rejected mode's name */
+extern char gWarningTail[]; /*@ ds:01BD */ /* " mode has not been detected in your machine." */
+extern char gSurePrompt[]; /*@ ds:01EC */  /* "Are you SURE that you want to use that mode? (Y/N)" */
+extern char gSoundPrompt[]; /*@ ds:021F */ /* the sound menu (Adlib, speaker, Tandy, none) and "Sound?" */
+extern char gMousePrompt[]; /*@ ds:02AA */ /* "A mouse has been detected on your system. Do you wish to use your mouse?" */
+extern char gIntroPath[]; /*@ ds:02FA */  /* "INTRO.EXE", execl's path */
+extern char gIntroName[]; /*@ ds:0304 */  /* "INTRO.EXE", execl's argv[0] */
+extern char gHomie[]; /*@ ds:030E */       /* "homie", execl's fifth argument; INTRO.EXE's main strcmp's it (whitepaper 2.6) */
 
 void PrintString(char *text);
 
 /* 0000:0239: the setup menu: initialise the video info, then loop over the graphics menu, the sound
-   menu and the mouse prompt, and execl INTRO.EXE with the three choices as one-character arguments
-   ("0" + the choice). The loop restarts on a "no" answer. The loop exits through the `done` label
+   menu and the mouse prompt, and execl INTRO.EXE with the three choices as one-character arguments.
+   The graphics and mouse arguments are "0" plus the choice (:112, :134); the sound argument is the
+   prompt's own key '1' to '4' (:120). The loop restarts on a "no" answer. The loop exits through the `done` label
    inside it, not a `break`, and after the `return` a dead `continue` is kept: TCC lays the `done`
    return (0000:046C) between the loop body's end jump (0000:046A) and the back edge (0000:046E),
    and without the dead `continue` the body's end jump folds into the back edge and the tail is two
@@ -66,6 +71,8 @@ restart:
         gMode = gDetectedMode;
         if (gMode > 5)
             gMode = 0;
+        /* Purpose unknown: the byte at F000:C000 is unidentified (whitepaper 2.4); when it is 21h the
+           menu uses table entry 6 (ds:00AF = 03h, the CGA and Tandy mask) */
         if (*(char far *)0xF000C000 == 0x21)
             gMode = 6;
         gModeMask = gModeMaskTable[gMode];
@@ -135,8 +142,9 @@ done:
     }
 }
 
-/* 0000:0474: write the NUL-terminated string at s to the console, one character at a time through
-   the library's PutChar (0000:05F6). No frame variable survives the loop, only the index i. */
+/* 0000:0474: write the NUL-terminated string at text to the console, one character at a time
+   through PutChar (0000:05F6). The index i stays across the PutChar call, so the loop reads and
+   advances it one character at a time. */
 /*@ 0000:0474 */ void PrintString(char *text)
 {
     int i = 0;
