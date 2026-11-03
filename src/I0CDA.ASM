@@ -43,8 +43,9 @@
 ; The name _RandomByte has evidence: the routine steps the 24-bit state at DGROUP:2310 (the seed
 ; 34 12 76 in the image) and returns the XOR of the two bytes it has just written (new b0 ^ new b1),
 ; and its callers use the byte as a random value (src/IOV0.C declares and calls it RandomByte).
-; No caller gives the byte a more specific meaning: the callers that use it only reduce it
-; (`% 31`, `& 7`, `& 3`, `& 1`), and two drop it (src/IOV0.C:545 and ovl0:1015).
+; No caller gives the byte a more specific meaning: the callers mask or take it modulo
+; (`% 31`, `& 7`, `& 3`, `& 1`), some then scale or offset the result (`* 8 + 0xb4`,
+; `+ 0x19`), and two drop it (src/IOV0.C:545 and ovl0:1015).
         PUBLIC  _RandomByte              ; @ 0CDA:0006
 _RandomByte PROC FAR
         push    bp
