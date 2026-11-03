@@ -48,7 +48,9 @@ void PrintString(char *text);
 
 /* 0000:0239: the setup menu: initialise the video info, then loop over the graphics menu, the sound
    menu and the mouse prompt, and execl INTRO.EXE with the three choices as one-character arguments
-   ("0" + the choice). The loop restarts on a "no" answer. */
+   ("0" + the choice). The loop restarts on a "no" answer. Draft: the loop tail (0000:046A to 046E)
+   keeps a separate back-edge trampoline that the source forms tried do not reproduce; see the
+   hand-off note. */
 /*@ 0000:0239 draft */ void Main(void)
 {
     int answer;
