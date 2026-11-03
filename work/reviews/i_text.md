@@ -13,6 +13,39 @@ Checked: `make match FILE=src/I_TEXT.ASM` 44 of 44 functions match; `make readab
 Each finding is a checkbox. `must-fix` blocks `make review-pass` until a decompiler ticks it off
 (with the commit that fixes it); `should` and `note` do not block.
 
+### Round 4 (rev-haiku, 2026-11-02)
+
+Reviewed at fa015bd (main). The unit's changes since cd26f41 (round 3) are in src/I_TEXT.ASM only, from commit 528956d (the round 3 fixes), and all are comment lines; no code byte changed. re/symbols.toml has no i_text row that changed (its diff is other units), and re/globals.toml changed only the gFn1EE2 and gBuiltinPalette rows (i0892's, not this unit).
+
+Checked: `make match FILE=src/I_TEXT.ASM` 44 of 44, exit 0; `make readability UNIT=i_text` 0 findings. Each changed line was read against the code at the label or address it names:
+- gPatchTable: the 90h handler L_4785 (line 1062) reads `[bx + gPatchTable]` at line 1068.
+- gRhythmKeyBits: C1h L_4B01 stores 20h (line 1532); C2h L_4BE0 ORs the operand in (1553) and stores (1554); C3h L_4C10 clears it (1563); VoiceKeyOff tests it (1880) and VoiceSilence tests it (2333), both for nonzero.
+- gTempoRate: A6h L_4871 stores it (1162); BAh L_4A7B loads it (1390) and stores it into [di+25h] (1391); the UpdateVoices copy is at 832 to 835 under the [di+40h] test.
+- gEffectIndex: L_4AAC clears it at 1431 to 1432, under the type-2 test at 1429 to 1430.
+- gRhythmLevelC: C5h L_4CC7 stores B (1641 and the others); C6h L_4D6B stores B at 1699; C by L_4C23 at 1573.
+- 43A5 header: src/I0892.C:451 is the ShutdownGame definition, its StopAdlibDriver call is line 461, the extern is line 155; E07C8.C:451 is the EOB call.
+- 4407 header: the `cmp bl, 12h` at 659 with the `je` at 660 skips the VoiceSilence call for voice 9.
+- 4516 header: the 3Fh writes to 40h and 43h are at 794 to 801.
+- 4E12 header: the store to [di+41h] is line 1769; the [di+42h] pitch adjust runs 1800 to 1832.
+- 516D header: L_5255 is a `ret` at 2367; the stores to [di+29h] and [di+2Bh] are at 2261 and 2262.
+- 535C header: the call to SoundRandom at 1282 is followed by `and ax, bx` at 1283 (see R4-2).
+- Field list: +05h, _GetVoiceState (2093) reads [di+5] and returns it, the sixth dispatch entry (line 188); +07h, L_46E3 stores it (990); +08h, the 82h handler body at L_4663 compares it (940) and stores it (943); +17h, +1Ah and +1Bh, L_526C (2379) negates or reloads only when `dec [di+1ah]` reaches zero (the `jne L_5281` at 2382); +24h, L_47BF stores it (1087); +26h, a carry goes to L_45B3 (842), which decrements [di+5] (843) and jumps to L_45D4 (844) at zero; +34h, L_45F5 (874) stores the next script byte (876) when the word at +32h or +33h is nonzero (868, 872); +3Bh to +3Eh, L_52BB (2412) decrements +3Ch and reloads it at 2415 to 2416, L_52C6 (2417) adds gOperatorOffset and runs xlatb (2422).
+
+Round 3 items:
+- Round 3 must-fix R3-1 to R3-7: fixed right; ticks stay.
+- R3-8 (the 43A5 header), R3-9 (the moved in-file cites at 171, 248, 619, 775, 1765, 2242 and 2488) and R3-10 (+3Bh to +3Eh): fixed right; ticks stay.
+- R3-11: +07h, +08h, +24h and the B5h clause of +28h are right. The +28h writer list is partial, see R4-1, so R3-11 stays ticked and R4-1 is the open item.
+
+Findings:
+
+- [ ] should R4-1 src/I_TEXT.ASM:312 to 313 (+28h): the list of writers is partial. Round 3 named the writers as SetVoicePitch, VoiceKeyOn, VoiceKeyOff, the INT 08h handler and the B9h tail; the fix dropped the B9h tail. The tail is `mov byte ptr [di + 28h], ch` at line 1376 (the code after L_49C1, reached at L_4A52). Two more writers are not named: the oscillator step L_526C (`mov byte ptr [di + 28h], al` at line 2396, on the path through L_5281) and VoiceSilence (line 2484). The sentence is not false, but it reads as the full list. Fix: name the B9h command's tail (L_4A52), L_526C and VoiceSilence, or say the list is partial.
+
+- [ ] note R4-2 src/I_TEXT.ASM:2488 (the 535C header): "caller line 1282 uses AX" names the call; the use is at 1283 (`and ax, bx`). Right enough: the call returns the seed in AX.
+
+- [ ] note R4-3 src/I_TEXT.ASM:291 (the +08h entry): the 82h handler's entry is L_4657 (line 921); L_4663 is the sound-number path inside it, which is where the compare and store are. The label is right for the claim; a reader following the 82h script byte will meet L_4657 first.
+
+- [ ] note registry (round 1 to 3 note, still open; not a review finding): re/symbols.toml has 7 i_text rows for 44 functions (i0000_03fa covers 03FA to 4352, both INT 08h handlers; i0000_43a5 is 4240 bytes). `review-pass` stamps only the existing rows, so 37 functions get no `review` stamp in this round. The split (task/split-on-match) is for the human; it is not a text finding and does not block this round.
+
 ### Round 3 (rev-haiku, 2026-11-02)
 
 Reviewed at cd26f41 (main). src/I_TEXT.ASM is identical on main and on branch review/i_text (0c8ba51); no i0000 or I_TEXT row of re/symbols.toml or re/globals.toml differs between them. The diff read is bb3f897 to main for src/I_TEXT.ASM: commit e4b4fe5 (the round 2 fixes and the 43h-byte field list at lines 283 to 334) and commit d05bca0 (the WriteVoiceLevels rename).
@@ -196,6 +229,8 @@ fixed right: reopened (round 2 item 1).
 - [ ] note checked and right, no action: the QUIRK 4627 (cmp al,70h against a 74-entry table), with "Runtime overlay error" starting at 0000:5400 just after the table; the PIT addresses 437D to 438B and the int 21h 2508h addresses 4372 to 4378 and 5021 to 5027; the write to 3A0h at 4DFB; the gEffectMode clear at 4923; the QUIRK 02F9 (6Fh where the ramp wants 5Fh); no far call or far pointer to 0000:03A1 in INTRO.EXE (search for A1 03 00 00 and 9A A1 03 00 00); gBlockSpare at 36DE; the variable offsets from 3F1E to 3F7A; and the names of the shared routines against I0892.C:127 to 132 (GetDriverBlock, RebaseDriverBlock, StartAdlibDriver, StopAdlibDriver), which agree.
 
 ## Summary
+
+Round 4 (fa015bd): passed. No must-fix open: the round 3 must-fix items are fixed right (ticks stay), and the changed lines are sound against the code, the labels and the addresses they name. Open, not blocking: R4-1 (should, the +28h writer list is partial: the B9h tail, L_526C and VoiceSilence also write +28h), and the notes R4-2, R4-3 and the registry note (7 i_text rows for 44 functions; `review-pass` stamps those 7 rows only, so the split is for the human). Evidence: make match FILE=src/I_TEXT.ASM 44 of 44, exit 0; make readability UNIT=i_text 0 findings; the changed lines checked against src/I_TEXT.ASM, src/I0892.C and src/E07C8.C as listed above. Nothing escalated: no matcher, spec or pin question.
 
 Round 2 (bb3f897): not passed. Two must-fix, both in changed comment lines: gRhythmKeyBits (241; reopened from round 1, its readers test nonzero and C1h also sets it) and gTempoRate (242; its copy and command citations name the wrong lines). Two shoulds (the stale INTRO caller lines at 493; the C6h list at 254). Nothing escalated: no matcher, spec or pin question.
 

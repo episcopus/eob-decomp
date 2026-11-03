@@ -9544,6 +9544,7 @@ evidence = ["far"]
 name = "_GetDriverBlock"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "i0000_03b0"
@@ -9554,6 +9555,7 @@ evidence = ["frame"]
 name = "_SetSoundByte"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "i0000_03ca"
@@ -9564,6 +9566,7 @@ evidence = ["frame"]
 name = "_GetSoundByte"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "i0000_03e3"
@@ -9574,6 +9577,7 @@ evidence = ["frame"]
 name = "_GetSoundData"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "i0000_03fa"
@@ -9584,6 +9588,7 @@ evidence = ["far"]
 name = "_RebaseDriverBlock"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "i0000_4352"
@@ -9594,6 +9599,7 @@ evidence = ["far"]
 name = "_StartAdlibDriver"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "i0000_43a5"
@@ -9604,6 +9610,7 @@ evidence = ["far"]
 name = "_StopAdlibDriver"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "i0000_5435"
