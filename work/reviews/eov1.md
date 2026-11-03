@@ -18,95 +18,78 @@ Evidence used: the code of `src/EOV1.C` (line numbers below); the other files of
 
 ### Round 1 (2026-11-02, reviewed at 5ab5e50)
 
-- [ ] must-fix src/EOV1.C:168 and :311: gFDBA is "nine 9-byte lists, one per spell level", and the
-  BuildSpellSlots header says "the nine 9-byte level lists". The code has five: memset(gFDBA, 0,
-  0x2d) at :330 clears 45 bytes (5 x 9), the spell levels are 1 to 5 (gFD9A, :176), and the tabs
-  are 0 to 4 (wantTab > 4 at :734, the tab keys 0x801b to 0x801f at :807 to :811). Say five.
-- [ ] must-fix src/EOV1.C:1055: ScribeScrolls calls FindCarriedSlot "kind 0x22". The second
-  argument of 0D1C:00F1 is the item type (field2, the m02 byte), the third the kind (fieldB, m0B)
-  (src/E0D1C.C:234-237). The call at :1090 passes 0x22 as the type and i + 1 (the spell number) as
-  the kind. Say "item type 0x22, kind i + 1".
-- [ ] must-fix src/EOV1.C:965-966: ShowMessage says it is called by "RunCampMenu, SelectPartyMember
-  and DrawListNode". DrawListNode (:1022 to :1052) makes no ShowMessage call. ScribeScrolls does
-  (:1098 and :1116) and is missing from the list. (Evidence: the bodies of the functions; the
-  packet's called-by row for ShowMessage lists DrawListNode only because of the stale registry, see
-  the note below.)
-- [ ] must-fix src/EOV1.C:913-915: the BuildMenuButtons header names the callers wrongly. "1ACD
-  (menus 1 and 6)": menu 6 is built only by ScribeScrolls (:1133); RunCampMenu builds menus 0, 1
-  and 2 (:1277, :1386). It also says the menu records are "edited in place by ovl1:1ACD": 1ACD sets
-  the headers of menus 0 to 2 (:1270 to :1276), and SelectPartyMember sets menu 3's header (:518).
-  Name the callers: 0416 (menu 3), 097A (menu 4), 1691 (menu 6), 1ACD (menus 0 to 2), 243A (menu 5).
-- [ ] must-fix src/EOV1.C:903: BuildMenuButtons "returns its head, with the pointer hidden while the
-  window is drawn". The only LockHidePointer in the function is at :951, around the final ClipRect
-  (:952). The window set-up (:923 to :929: SetTextWindowAndClear, 0C21, the header's DrawShadowText)
-  runs with the pointer shown; each node hides it inside DrawListNode. Say what is hidden.
-- [ ] should src/EOV1.C:905 and :1013: "bevelled panel" (0D1C:0C21). The 0C21 header in src/E0D1C.C:704
-  says it "draws a framed rectangle" with colours picked by its first and second arguments, and is
-  Purpose unknown. "Bevelled" is not in the evidence. Say "framed rectangle".
-- [ ] should src/EOV1.C:1022 and :1036 (DrawListNode, panelFirst and panelSecond): the names claim a
-  panel. The two values are the first and second arguments of 0D1C:0C21 (E0D1C.C:709, named first
-  and second there) and also choose gDrawText over DrawShadowText (:1046). Name them by that role,
-  or say in the header that "panel" is a guess.
-- [ ] should src/EOV1.C:1019 to :1020: DrawListNode's "Called by" list omits SpellSlotScreen, which
-  calls it at :739, :742, :802, :804 and :815.
-- [ ] should src/EOV1.C:452: "FindCarriedSlot item 0x1D" is the item type (field2 of 0D1C:00F1,
-  E0D1C.C:234-237), the spell book. Say "item type 0x1D".
-- [ ] should src/EOV1.C:492: SelectPartyMember reuses `count` for the message index (`count was 0: it
-  carries the message index`). A named local for the message (for example `msg`) keeps `count` a
-  count. The match decides whether the source form changes the bytes; try it.
-- [ ] should src/EOV1.C:885: BoolString overwrites its parameter `on` with the message index (0x15 or
-  0x16). Use a local.
-- [ ] should src/EOV1.C:181 and :200: `extern int gNeedsRest; /*@ ds:FE2C */` is declared twice. Keep one.
-- [ ] should placeholder globals with no note on what is known (READABILITY, "Placeholder globals"):
-  gFD98 (:163, set when a member is not selectable, SelectPartyMember header :442), gFDEA (:166, the
-  count byte of a spell, DrawSpellRow :635 and SpellSlotScreen :821), g62F2 and g62F8 (:182, :183,
-  the icon x in 8-pixel columns and the y of each member, SelectPartyMember :498 to :501),
-  gKeyRemapFrom and gKeyRemapTo (:209, :210, a key-to-button map read at :1287 to :1289), and
-  gFileNameBuf (:167; the other units' declarations say "the text buffer sprintf formats into", and
-  this unit uses it the same way).
-- [ ] should src/EOV1.C:172 to :173 (gFDEC): "32 pairs of counters per spell number - 1" is garbled.
-  Say: a pair per spell, byte 2 * (spell number - 1) the copies held in all, the next byte the copies
-  ready (SpendSpellSlot, :392 to :396).
-- [ ] should src/EOV1.C:176 (gFD9A): "the level (1 to 5) of spell number i + 1" omits that a spell
-  not on the 0-terminated map has 0 (memset at :333, the slot >= 0 test at :357). Add it.
-- [ ] should src/EOV1.C:83 (ButtonDef flags): bit 1 is missing. The key list selects a button by it
-  (RunCampMenu :1471, :1481; AskYesNo :1588), and the RunCampMenu header cites "definition flag bit 1".
-- [ ] should src/EOV1.C:1189 to :1213 (RunCampMenu header): `lit` (the highlighted node) and `hot` (the
-  node to light next) are used throughout the function but never explained here (AskYesNo explains
-  its own, :1526 to :1529).
-- [ ] should src/EOV1.C:1532: "(DrawListNode 0, 1, 1 after a pressed look)" is unclear. The code draws
-  (node, 1, 1, 1), waits 5 frames, then (node, 0, 1, 1) (:1599 to :1602). Write those calls.
-- [ ] should src/EOV1.C:1213: the header lists only QUIRK ovl1:20FF. The inline QUIRK ovl1:1D48 (:1294)
-  belongs in the same list, or the header should say it is inline.
-- [ ] should src/EOV1.C:1318: the quote "You cannot have less than four characters." is cut short.
-  eob/EOB.EXE holds "You cannot have less than four characters yet! Do you wish to continue anyway?"
-  (read only, grep). Quote the whole string of index 0x2d, after checking which string that index is.
-- [ ] note src/EOV1.C:1-9 (unit header): "which TASM cannot" is a claim about the assembler, given
-  as fact without a cite. Tag it [H] or cite the escalation record.
-- [ ] note src/EOV1.C:124 to :125 (CharRec known) and :372 to :374 (SpendSpellSlot): the struct says a
-  negative slot is "still to be memorised", the SpendSpellSlot header says "a copy that is spent until
-  the party rests". EOV6.C:27 uses the first wording. They agree (a spent spell is memorised again),
-  but the two comments should use the same words.
-- [ ] note src/EOV1.C:1190 (RunCampMenu header: "ds:3B8E", "2102:0020 sits at ds:3BBE"), :1067 to :1068
-  (ScribeScrolls: "ds:63CB", "ds:640B", "ds:644B"), :9 ("26 8B 87 05 00 at ovl1:1277") and the quirk
-  addresses ovl1:20FF, ovl1:1D48, ovl1:2558, ovl1:0401: not checked. The matcher proves the code, not
-  the addresses in comments, and the pre-C transcription (git df48650^:src/EOV1.ASM) gives none of
-  them to compare with. The next reader should trust them only once cited to a listing.
-- [ ] note src/EOV1.C:1525 (AskYesNo): "Are you sure you wish to LOAD a saved game?" and :1318 are quoted
-  whole in comments. The EXE shows "Are you sure you", "wish to LOAD a" and "wish to drop." as
-  fragments; the whole strings were not read.
-- [ ] note src/EOV1.C:167 (gFileNameBuf): the name says file name, but in this unit and the others it
-  is the text buffer. A project-wide name question for phase 6, not for this unit.
-- [ ] note src/EOV1.C:1333: the `break;` after the BTN_DROP block is kept so the match holds, and the
-  comment says so. Fine as it is.
-- [ ] note (registry, a question for the human): re/symbols.toml lists 12 ovl1 functions. DrawListNode
-  is 1404 bytes (ovl1:1551 to ovl1:1ACD) and SpellSlotScreen 2009 (ovl1:097A to ovl1:1153). The
-  matcher proves 16 functions with other sizes: DrawListNode 320, SpellSlotScreen 1892, and four
-  missing rows, BoolString (ovl1:10DE, 41 bytes), SaveOptionField (ovl1:1107, 38), DrawOptionField
-  (ovl1:112D, 38), ScribeScrolls (ovl1:1691, 1084). build/packets/eov1.md has the same stale rows,
-  so its called-by and calls columns are wrong (DrawListNode "calls" SelectPartyMember). I did not run
-  `make map` or edit re/symbols.toml. Until it is regenerated, `make review-pass` would stamp 12 of
-  the 16 functions. Please regenerate, or confirm the registry is right and tell me why.
+- [x] must-fix src/EOV1.C:168 and :311: fixed (commit ca0b550). The declaration now reads "five
+  9-byte lists, one per spell level 1 to 5 ... the memset clears 5 * 9 bytes" and the
+  BuildSpellSlots header "the five 9-byte level lists".
+- [x] must-fix src/EOV1.C:1055: fixed (ca0b550). The header now says "FindCarriedSlot item type
+  0x22, kind i + 1, one search per spell number 1 to 32".
+- [x] must-fix src/EOV1.C:965-966: fixed (ca0b550). The ShowMessage header now says "Called by
+  RunCampMenu, SelectPartyMember and ScribeScrolls (a plain message box; DrawListNode does not
+  call it)." ScribeScrolls calls it at :1098 and :1116; DrawListNode makes none.
+- [x] must-fix src/EOV1.C:913-915: fixed (ca0b550). The BuildMenuButtons header now names 0416
+  (menu 3), 097A (menu 4), 1691 (menu 6), 1ACD (menus 0 to 2) and 243A (menu 5), and says the
+  header messages are edited in place by ovl1:1ACD (menus 0 to 2) and ovl1:0416 (menu 3).
+- [x] must-fix src/EOV1.C:903: fixed (ca0b550). The header now says the pointer is hidden only
+  around the final ClipRect, and that each node hides it itself inside DrawListNode.
+- [x] should src/EOV1.C:905 and :1013: fixed (ca0b550). "bevelled panel" is now "framed rectangle"
+  in both places, matching the 0D1C:0C21 header.
+- [x] should src/EOV1.C:1022 and :1036: fixed (ca0b550). DrawListNode's parameters are renamed
+  panelFirst/panelSecond to first/second, the names 0D1C:0C21 uses, and the header says they are its
+  two mode arguments, not a panel shape.
+- [x] should src/EOV1.C:1019 to :1020: fixed (ca0b550). SpellSlotScreen is now in DrawListNode's
+  "Called by" list (its calls at :739, :742, :802, :804 and :815).
+- [x] should src/EOV1.C:452: fixed (ca0b550). The SelectPartyMember header now says "FindCarriedSlot
+  item type 0x1D".
+- [x] should src/EOV1.C:492: tried a `msg` local (commit ca0b550's working tree). It changes the
+  frame: `sub sp, 0x18` instead of `0x16`, so the original genuinely reuses `count`. The source form
+  is kept and the comment now says `count` carries the message index and why a named local cannot be
+  used. Same for BoolString at :885 (a local makes `cmp word ptr [bp+6],0` where the original keeps
+  `on` in SI); kept with a note.
+- [x] should src/EOV1.C:181 and :200: fixed (ca0b550). The duplicate `gNeedsRest` is removed; the
+  one near gSoundOn stays.
+- [x] should placeholder globals: fixed (ca0b550). gFD98, gFDEA, g62F2, g62F8, gKeyRemapFrom,
+  gKeyRemapTo and gFileNameBuf each now carry a note of what is known.
+- [x] should src/EOV1.C:172 to :173 (gFDEC): fixed (ca0b550). The comment now reads "a pair of
+  counters per spell number i, byte 2 * (i - 1) the copies held in all and the next byte the copies
+  ready".
+- [x] should src/EOV1.C:176 (gFD9A): fixed (ca0b550). The comment now adds "a spell not on the
+  0-terminated map stays 0 (the memset, and the slot >= 0 test)".
+- [x] should src/EOV1.C:83 (ButtonDef flags): fixed (ca0b550). Bit 1 is now documented as marking
+  the button selectable, tested by the key walk in RunCampMenu and AskYesNo.
+- [x] should src/EOV1.C:1189 to :1213 (RunCampMenu header): fixed (ca0b550). The header now explains
+  `lit` (the highlighted node, 0 when none) and `hot` (the node to light next), and that their
+  difference is drawn at the end of each pass.
+- [x] should src/EOV1.C:1532: fixed (ca0b550). The AskYesNo header now writes the calls: DrawListNode
+  (node, 1, 1, 1), WaitFrames(5), then DrawListNode(node, 0, 1, 1).
+- [x] should src/EOV1.C:1213: fixed (ca0b550). The header now lists the inline QUIRK ovl1:1D48 next
+  to QUIRK ovl1:20FF.
+- [x] should src/EOV1.C:1318: checked against the binary instead (ca0b550). gStrings2003 is
+  segment 2003:0000, file offset 0x22830 in eob/EOB.EXE (MZ header 0x2800 plus para 0x20030); index
+  0x2d (45) is " You cannot have\r less than four\r characters." So the comment's quote is the whole
+  string. "You have not created four characters yet!  Do you wish to continue anyway?" sits at file
+  offset 0x26AB6, not in gStrings2003, so it is not this index. The comment now says "string 0x2d,
+  whole".
+- [x] note src/EOV1.C:1-9 (unit header): fixed (ca0b550). The TASM claim is tagged "[H: the
+  escalation record]".
+- [x] note src/EOV1.C:124 to :125 and :372 to :374: fixed (ca0b550). The SpendSpellSlot header now
+  uses "a spell still to be memorised" (the negative encoding of the CharRec slot fields), the same
+  wording as the struct.
+- [x] note src/EOV1.C:1190, :1067 to :1068, :9, quirk addresses: checked the overlay 1 ones against
+  build/re/eob-overlays/ovl01.bin (ca0b550). ovl1:1277 holds 26 8B 87 05 00; ovl1:1D48 is the
+  confirm-key code with no test of `lit`; ovl1:20FF is `cmp word ptr [bp-0xa],0x6e`; ovl1:2558
+  stores `si + 0x8021`; ovl1:0401 is `dec [bp-2]; inc [bp-2]` (the net-zero index). The ds:
+  addresses (3B8E, 3BBE, 63CB, 640B, 644B) are still not checked to a listing.
+- [x] note src/EOV1.C:1525 and :1318: checked (ca0b550). Index 0x37 (55) is " Are you sure you\r
+  wish to LOAD a\r saved game?" and index 0x2d (45) is " You cannot have\r less than four\r
+  characters."; both comments quote the whole strings. The fragments the EXE grep showed are other
+  tables (0x22DA9 "wish to drop.") or another message (0x26AB6).
+- [x] note src/EOV1.C:167 (gFileNameBuf): confirmed a project-wide name question for phase 6; the
+  unit keeps the name and now says it is the text buffer sprintf formats into.
+- [x] note src/EOV1.C:1333: left as is; the comment explains the kept `break;`.
+- [x] note (registry, a question for the human): not fixed in this branch, as the reviewer said.
+  The matcher still proves 16 functions and re/symbols.toml still lists 12 with DrawListNode 1404
+  and SpellSlotScreen 2009. This needs `make map` (or a human decision) and is carried in the
+  hand-off note; it is not a source change.
 
 ## Summary
 
@@ -131,3 +114,15 @@ their addresses and by callers in src/, so no function name is a must-fix.
 Question for the human (registry, see the last note): re/symbols.toml does not list four of the 16
 functions of this unit and gives two of them the wrong size, so review-pass cannot stamp the unit
 as a whole. This needs `make map` or a human decision; it is not in this branch.
+
+## Resolution (dec-deepseek-2, 2026-11-02, commit ca0b550)
+
+Every finding above is ticked. The five must-fix items were comments only; all 16 functions still
+match (`make match FILE=src/EOV1.C` 16 of 16, 9864 of 9864 bytes) and `make readability UNIT=eov1`
+reports 0 findings. Two `should`s were checked with the matcher rather than changed: a named local
+for SelectPartyMember's message and for BoolString's `on` do move the bytes, so the original reuse
+of `count`/`on` is kept and noted. The quote findings were checked against `eob/EOB.EXE`: index 0x2d
+of gStrings2003 is " You cannot have\r less than four\r characters.", so the comment was right; the
+"You have not created four characters yet!" string is a different message. The ovl1 addresses in the
+comments were checked against `build/re/eob-overlays/ovl01.bin`. The registry row sizes (last note)
+are still wrong; that needs `make map` or a human and is carried in the hand-off.
