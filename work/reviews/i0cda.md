@@ -26,14 +26,18 @@ moving). `make match FILE=src/I0CDA.ASM` 1 of 1 exit 0 (50 bytes); `make readabi
 
 New findings:
 
-- [ ] must-fix src/I0CDA.ASM:46-47 (a line the a97a0d7 comment changed): "each only reduces it" is
+- [x] must-fix src/I0CDA.ASM:46-47 (a line the a97a0d7 comment changed): "each only reduces it" is
   false. The call at src/IOV0.C:545 is the statement `RandomByte();`, so it discards the byte, and the
   ovl0:1015 site drops it too (the comment's own lines 37 and 38 say so). Say that: "the callers that
   use it only reduce it (`% 31`, `& 7`, `& 3`, `& 1`), and two drop it (src/IOV0.C:545 and ovl0:1015)."
-- [ ] should src/I0CDA.ASM:28-29: "the two shr (lines 60 and 61)" and "the rcr at line 67" are stale.
+  FIXED 0cbdc72: the sentence now reads "No caller gives the byte a more specific meaning: the callers
+  that use it only reduce it (`% 31`, `& 7`, `& 3`, `& 1`), and two drop it (src/IOV0.C:545 and
+  ovl0:1015)."
+- [x] should src/I0CDA.ASM:28-29: "the two shr (lines 60 and 61)" and "the rcr at line 67" are stale.
   They were right at 6ea511f, but a97a0d7 added two comment lines above them: `grep -n 'shr\|rcr'
   src/I0CDA.ASM` now gives 62, 63 (shr) and 69 (rcr). Round 3 accepted the old numbers and the fix made
   them stale. Update them to 62, 63 and 69, or drop the numbers and name the instructions.
+  FIXED 0cbdc72: the numbers are now lines 62 and 63 (the shr) and line 69 (the rcr).
 
 Round 4 is not a pass: one must-fix is open (the caller sentence at :46-47). The byte, the name and the
 step list are fixed right.
