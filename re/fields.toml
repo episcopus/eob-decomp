@@ -1,0 +1,26 @@
+# Struct fields named across src/ by `make field` (tools/match/field.py): the struct, the offset,
+# the names the files used, the new name and its evidence.
+
+[[field]]
+struct = "CharRec"
+at = "01"
+old = "flags, m01"
+new = "status"
+why = "the character's status bits: bit 0 the slot holds a character, bit 1 poisoned, bit 2 paralyzed (MemberIs 0D1C:0670; the POISONED and PARALYZED labels of the status line in 1547; 'is no longer paralyzed!' clears bit 2 in the effect ends of 1414)"
+date = "2026-11-03"
+
+[[field]]
+struct = "CharRec"
+at = "1B"
+old = "m1B"
+new = "hp"
+why = "the current hit points: the status line of 1547 draws DEAD at hp -10 and UNCONSCIOUS at -9 to 0, MemberIs 0D1C:0670 tests above -10 and above 0, the healer 0DE8 clamps it at +1C"
+date = "2026-11-03"
+
+[[field]]
+struct = "CharRec"
+at = "1C"
+old = "hpMax, m1C, maxhp"
+new = "maxHp"
+why = "the maximum hit points: the healer at 0DE8 (E0DE8 line 615) and 0EF3 clamp hp at it, a level gain adds to both hp and it (0DE8 line 688), 1547's ratio bar draws hp against it"
+date = "2026-11-03"

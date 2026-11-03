@@ -53,7 +53,7 @@ struct Entry27 {            /* 27-byte records at ds:1A3B, indexed by Obj28.b0 (
 
 struct CharRec {            /* 243-byte character records at ds:F580; the fields this unit reads */
     char pad00;
-    unsigned char m01;      /* +01: status bits (src/E0DE8.C) */
+    unsigned char status;      /* +01: status bits (src/E0DE8.C) */
     char name[0x0B];        /* +02: the character's name, NUL padded (src/E0DE8.C) */
     char pad0D[0x1B - 0x0D];
     signed char hp;         /* +1B: current hit points (src/E0DE8.C) */
@@ -151,7 +151,7 @@ extern int f0D1C_00DA(int value, int page); /*@ 0D1C:00DA */
 extern void DrawViewFrame(int n); /*@ 2116:005C */   /* overlay 4 entry, ovl4:1F51 */
 extern void PlaySoundAtCell(int sound, int cell); /*@ 177D:0106 */
 extern void PlaySoundDefault(int sound); /*@ 177D:00F3 */
-extern int f0D1C_0670(int who, int mask); /*@ 0D1C:0670 */
+extern int MemberIs(int who, int mask); /*@ 0D1C:0670 */
 extern void DamageCharacter(int who, int amount); /*@ 0DE8:09B9 */
 extern void ApplyStatusEffect(int who, int mask, char far *text, int attack, int count, int value, int flag); /*@ 0DE8:101A */
 extern void RedrawMember(int dir); /*@ 1547:0991 */
@@ -561,7 +561,7 @@ void Obj10F3(struct Obj28 far *obj);   /* forward: 05EA reaches it before its de
             PlaySoundAtCell(g3223[roll], obj->id);
         } else {
             for (i = 0; i < 6; i++) {
-                if (f0D1C_0670(i, 3)) {
+                if (MemberIs(i, 3)) {
                     sprintf(gFileNameBuf, "%s is hit by a cause serious wounds spell!\r",
                             (char far *)gChars[i].name);
                     DrawText(gFileNameBuf);
@@ -593,7 +593,7 @@ void Obj10F3(struct Obj28 far *obj);   /* forward: 05EA reaches it before its de
         PlaySoundAtCell(0x53, obj->id);
         DrawText("The party is hit with a psychic mind blast!\r");
         for (i = 0; i < 6; i++) {
-            if (f0D1C_0670(i, 3)) {
+            if (MemberIs(i, 3)) {
                 ApplyStatusEffect(i, 4, "paralyzed", 1, 5, 9, 1);
                 RedrawMember(i);
             }
@@ -907,7 +907,7 @@ second:
     end = who + 6;
     for (i = who; i < end; i++) {
         member = &gChars[gTable325B[i]];
-        if ((member->m01 & 1) && member->hp > -10) {
+        if ((member->status & 1) && member->hp > -10) {
             if ((member->mE3 & 4) == 0 || RollDice(1, 0x14, 0) < 5) {
                 who = gTable325B[i];
                 break;

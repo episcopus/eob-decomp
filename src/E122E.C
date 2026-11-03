@@ -129,7 +129,7 @@ struct CharRec {                                /* the 243-byte character record
     char pad0E;
     signed char m0F;                            /* +0F: the exceptional strength percentile (src/E0A72.C) */
     char pad10[0x1B - 0x10];
-    signed char m1B;                            /* +1B: 122E:0325 skips a character at or below 0 */
+    signed char hp;                            /* +1B: 122E:0325 skips a character at or below 0 */
     char pad1C[0x1F - 0x1C];
     signed char m1F;                            /* +1F: the race index, halved and matched by 122E:147F (src/EOV0.C) */
     signed char m20;                            /* +20: indexes g1231 (122E:147F) */
@@ -354,7 +354,7 @@ void RunMemberScript(int who, int mode);  /* forward: 1DA8 comes after its calle
 }
 /* 122E:0325: the force-door action. It only runs when the last click was in the member-slot
    rectangle or the driver is not in mode 0x40. It picks the live member with the highest m0D
-   strength score (among those with m1B above 0), a tie going to the later index; with no candidate
+   strength score (among those with hp above 0), a tie going to the later index; with no candidate
    it formats "Nobody is able to force the door." into gFileNameBuf (not drawn here). Otherwise it
    rolls 1d20: on a pass (roll <= gForceDoorRoll[its m0D]) it draws "The party forces the door.",
    formats "%s forces the door!" into gFileNameBuf (not drawn here), rewrites the clicked slot's
@@ -373,7 +373,7 @@ void RunMemberScript(int who, int mode);  /* forward: 1DA8 comes after its calle
         for (i = 0; i < 6; i++) {
             if ((gChars[i].status & 1) == 0)
                 continue;
-            if (gChars[i].m1B <= 0)
+            if (gChars[i].hp <= 0)
                 continue;
             if (who >= 0) {
                 if (gChars[who].m0D + gChars[who].m0F <= gChars[i].m0D + gChars[who].m0F)

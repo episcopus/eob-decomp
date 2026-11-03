@@ -25,11 +25,11 @@ struct Cell {               /* the header gGetSpriteCell returns; bytes +1 and +
 
 struct CharRec {            /* 243-byte (0xF3) character records at ds:F580 (src/EOV6.C) */
     char index;             /* +00 */
-    unsigned char flags;    /* +01: status bits (only bit 0 is read here) */
+    unsigned char status;    /* +01: status bits (only bit 0 is read here) */
     char name[0x0B];        /* +02: the character's name, NUL padded */
     char pad0D[0x1B - 0x0D];
     signed char hp;         /* +1B: current hit points */
-    signed char maxhp;      /* +1C: maximum hit points */
+    signed char maxHp;      /* +1C: maximum hit points */
     char pad1D[0x22 - 0x1D];
     unsigned char m22;      /* +22: compared with 0xf7 by 0AB1 (0D1C:0415 uses it too) */
     char pad23[0x33 - 0x23];
@@ -138,7 +138,7 @@ extern char gText7BEE[]; /*@ ds:7BEE */
 extern char gText7BF2[]; /*@ ds:7BF2 */
 extern char gText7BFA[]; /*@ ds:7BFA */
 extern char gFileNameBuf[]; /*@ ds:FE6E */
-extern void far *gFont1A47; /*@ ds:FE4E */
+extern void far *gCurFont; /*@ ds:FE4E */
 extern void far *gA9C0; /*@ ds:A9C0 */
 extern char gFB44; /*@ ds:FB44 */
 extern char gFlag; /*@ ds:F3B9 */
@@ -171,7 +171,7 @@ extern void (far *gDrawText)(char far *text, int x, int y, int colour, int flag)
 extern void (far *gFn804A)(int x, int y, int w, int h, void far *buf); /*@ ds:804A */
 extern void (far *gFn807E)(int x, int y, int w, int h, void far *buf); /*@ ds:807E */
 
-extern void f1A29_000F(int mode, void far *src, int x, int y, int region); /*@ 1A29:000F */
+extern void DrawShape(int mode, void far *src, int x, int y, int region); /*@ 1A29:000F */
 extern void HidePointerZone(int left, int top, int right, int bottom); /*@ 1BBE:01FE */
 extern void ShowPointerZone(void); /*@ 1BBE:02C2 */
 extern void LockHidePointer(void); /*@ 1BBE:0307 */
@@ -195,7 +195,7 @@ extern int CopyItemToFreeSlot(int n); /*@ 0BD2:089E */
 extern void InsertListItem(void far *head, int key, int item, int sound); /*@ 0BD2:01D0 */
 extern int RemoveCarriedItems(int field2, int fieldB); /*@ 0D1C:01CA */
 extern void f0D1C_035A(int who); /*@ 0D1C:035A */
-extern int f0D1C_0670(int who, int mask); /*@ 0D1C:0670 */
+extern int MemberIs(int who, int mask); /*@ 0D1C:0670 */
 extern void ComputeArmourClass(int who); /*@ 0DE8:0D5E */
 extern void ClearCharEffectSlot(int who, int what); /*@ 1414:0C2D */
 extern void RedrawCharacters(void); /*@ 0D1C:0583 */
@@ -212,7 +212,7 @@ extern void LoadScreenImage(char far *name, void far *buf, int a, int b, int c);
 extern int FileOpen(char far *name, int mode); /*@ 1C0E:00DB */
 extern void FileRead(int handle, void far *buf, unsigned long len); /*@ 1C0E:0400 */
 extern void FileClose(int handle); /*@ 1C0E:03BB */
-extern void f1A47_0169(void far *font); /*@ 1A47:0169 */
+extern void SetFont(void far *font); /*@ 1A47:0169 */
 extern void ShutdownGame(void); /*@ 07C8:058A */
 extern void far *f19EC_0002(int kind); /*@ 19EC:0002 */
 extern void f19EC_002A(int a, int b, int c, int d); /*@ 19EC:002A */
@@ -258,7 +258,7 @@ void PrintTableString(int index, int flag);
     gStatusLine = 0;
     y -= ((struct Cell far *)cell)->b1;
     x -= (((struct Cell far *)cell)->b2 << 3) >> 1;
-    f1A29_000F(0, cell, x, y, 5);
+    DrawShape(0, cell, x, y, 5);
     farfree(cell);
 }
 
@@ -547,7 +547,7 @@ enum {
 
     count = i = 0;
     for (; i < 6; i++) {
-        count += gChars[i].flags & 1;
+        count += gChars[i].status & 1;
         names[i] = gChars[i].name;
     }
     names[6] = gText7B9F;
@@ -576,7 +576,7 @@ enum {
 
     slot = i = 0;
     for (; i < 6; i++) {
-        if ((gChars[i].flags & 1) == 0) {
+        if ((gChars[i].status & 1) == 0) {
             slot = i;
             break;
         }
@@ -721,7 +721,7 @@ enum {
     int i;
 
     for (i = 0; i < 6; i++) {
-        if (gChars[i].flags & 1) {
+        if (gChars[i].status & 1) {
             if (gChars[i].m22 == 0xf7)
                 break;
         }
@@ -790,7 +790,7 @@ enum {
     gCountDDE0 = i = 0;
     for (; i < 6; i++) {
         rec = &gChars[i];
-        if ((rec->flags & 1) == 0)
+        if ((rec->status & 1) == 0)
             continue;
         if (rec->hp != -10)
             continue;
@@ -798,7 +798,7 @@ enum {
     }
     for (i = 0; i < 6; i++) {
         rec = &gChars[i];
-        if (rec->flags & 1) {
+        if (rec->status & 1) {
             for (j = 0; j < 0x19; j++) {
                 item = rec->m77[j];
                 if (!item)
@@ -812,7 +812,7 @@ enum {
     }
     return gCountDDE0;
 }
-/* ovl5:0C9D: heals the party. Rolls 1d3+2 "cures", then for each party member that f0D1C_0670
+/* ovl5:0C9D: heals the party. Rolls 1d3+2 "cures", then for each party member that MemberIs
    accepts (mask 3) clears its flag bits 1..2, clears bit 7 of its effect flags, clears effect slot
    -0x22 and, while it is below its maximum hit points, spends one cure (1d8+9, clamped to the
    maximum) and heals it again. A member that is already at full hit points and one the effect
@@ -827,15 +827,15 @@ enum {
     i = 0;
     cures = RollDice(1, 3, 2);
     while (cures && i < 6) {
-        if (f0D1C_0670(i, 3)) {
-            gChars[i].flags &= 0xf9;
+        if (MemberIs(i, 3)) {
+            gChars[i].status &= 0xf9;
             gChars[i].mE3 &= ~0x80L;
             ClearCharEffectSlot(i, -0x22);
-            if (gChars[i].hp < gChars[i].maxhp) {
+            if (gChars[i].hp < gChars[i].maxHp) {
                 cures--;
                 heal = RollDice(1, 8, 9);
-                if (gChars[i].hp + heal > gChars[i].maxhp)
-                    gChars[i].hp = gChars[i].maxhp;
+                if (gChars[i].hp + heal > gChars[i].maxHp)
+                    gChars[i].hp = gChars[i].maxHp;
                 else
                     gChars[i].hp += heal;
             } else {
@@ -851,7 +851,7 @@ enum {
    (gCountDDE0 of them): a non-negative entry is a party member (gChars[entry].name), a negative
    entry -k-1 is the pre-made character gCharPool[k].name, read through gPoolNameBase at ds:71A7
    (gCharPool ds:7298, its name field +2, one 0xF3 record back). It then runs the 0455 menu (first
-   row 2) and acts on the chosen entry: a party member is healed to full (hp = maxhp); a pool
+   row 2) and acts on the chosen entry: a party member is healed to full (hp = maxHp); a pool
    character has its carried items of type 0x21 with m0B == k+1 removed, becomes the selected
    character gEFC6, redraws the portrait and runs the add-character panel with the yes message
    suppressed (-1). Called by 0EB9. `names[20]` holds gCountDDE0 entries: the match fixes the
@@ -881,7 +881,7 @@ enum {
         DrawCharPortrait(2);
         AddCharPanel(n, n * 2 + 0x20, -1, n * 2 + 0x21);
     } else {
-        gChars[n].hp = gChars[n].maxhp;
+        gChars[n].hp = gChars[n].maxHp;
     }
 }
 /* ovl5:0EB9: the resurrect/heal NPC panel. When gFC04 bit 0x10000 is clear it draws message
@@ -1066,19 +1066,19 @@ enum {
     gStatusLine = 2;
     gFn807E(3, 0, 0x12, 0x68, f19EC_0002(5));
     ClipRect(3, 0, 3, 0, 0x12, 0x68, 0, 2);
-    f1A29_000F(2, block[0], 0x1c, 9, 0);
-    f1A29_000F(2, stripA[0], 0x22, 0x1c, 0);
-    f1A29_000F(2, stripB[0], 0x78, 0x1c, 0);
-    f1A29_000F(2, extra[0], 0x38, 0x1b, 0);
+    DrawShape(2, block[0], 0x1c, 9, 0);
+    DrawShape(2, stripA[0], 0x22, 0x1c, 0);
+    DrawShape(2, stripB[0], 0x78, 0x1c, 0);
+    DrawShape(2, extra[0], 0x38, 0x1b, 0);
     ShuffleGrid(0x18, 0, 0x90, 0x68, 2, 0);
     gFn804A(3, 0, 0x12, 0x68, f19EC_0002(5));
     WaitTicks(0x1e);
     script = gText7C32;
     while (*script > -1) {
         i = *script++;
-        f1A29_000F(0, block[i], 0x1c, 9, 0);
-        f1A29_000F(0, stripA[i], 0x22, 0x1c, 0);
-        f1A29_000F(0, stripB[i], 0x78, 0x1c, 0);
+        DrawShape(0, block[i], 0x1c, 9, 0);
+        DrawShape(0, stripA[i], 0x22, 0x1c, 0);
+        DrawShape(0, stripB[i], 0x78, 0x1c, 0);
         if (i == 1 && script[-3] == 0) {
             PlaySound(0x18);
             PlaySound(0x56);
@@ -1088,7 +1088,7 @@ enum {
             i--;
             ClipRect((i % 5) * 8, (i / 5) * 0x4d, 7, 0x1b, 8, 0x4d, 2, 0);
         } else {
-            f1A29_000F(0, extra[0], 0x38, 0x1b, 0);
+            DrawShape(0, extra[0], 0x38, 0x1b, 0);
         }
         if (i == 1)
             PlaySound(0x1f);
@@ -1136,12 +1136,12 @@ enum {
         DrawText(gText7E5C);
         for (i = 0; i < 4; i++) {
             DrawText(gText7EDB);
-            if (gChars[i].flags & 1)
+            if (gChars[i].status & 1)
                 DrawText(gChars[i].name);
         }
         sum = 0;
         for (i = 0; i < 6; i++) {
-            if (gChars[i].flags & 1) {
+            if (gChars[i].status & 1) {
                 for (j = 0; j < strlen(gChars[i].name); j++)
                     sum += (long)gChars[i].name[j] * gChars[i].name[j];
             }
@@ -1193,7 +1193,7 @@ enum {
             ClipRect((i % 3) * 0xd, (i / 3) * 0x58, 4, 0xa, 0xd, 0x58, 2, 0);
         } else {
             PlaySound(0x2a);
-            f1A29_000F(0, sprites[i - 6], 0x20, 0xa, 0);
+            DrawShape(0, sprites[i - 6], 0x20, 0xa, 0);
         }
         WaitTicks(4);
     }
@@ -1204,7 +1204,7 @@ enum {
         PlaySound(0x77);
         gStatusLine = 2;
         gFn804A(0, 0, 0x16, 0x78, f19EC_0002(5));
-        f1A29_000F(2, cell, 0x18, i * 5 + 0xffa6, 5);
+        DrawShape(2, cell, 0x18, i * 5 + 0xffa6, 5);
         ClipRect(0, 0, 0, 0, 0x16, 0x78, 2, 0);
         WaitTicks(2);
     }
@@ -1235,7 +1235,7 @@ enum {
     void far *font;
     register int handle;
 
-    font = gFont1A47;
+    font = gCurFont;
     gEFC6 = -1;
     gFE42 = 0;
     LockHidePointer();
@@ -1262,7 +1262,7 @@ enum {
         handle = FileOpen(gFileNameText2, 1);
         FileRead(handle, gSegDF4E, 0x7d00L);
         FileClose(handle);
-        f1A47_0169(gA9C0);
+        SetFont(gA9C0);
         HidePointerZone(0, 0x79, 0x13f, 0xc8);
         DrawFilledPanel(0, 0x79, 0x13f, 0xc8, gFB4C, gF53A, gF57E);
         ShowPointerZone();
@@ -1297,7 +1297,7 @@ enum {
             FreeHimPanel();
             break;
         }
-        f1A47_0169(font);
+        SetFont(font);
         gScrollOn = 0;
         LockHidePointer();
         fOvl3_07A5(0, gMapSheet + (gMapTiles[gFBC8 - 1] << 5));

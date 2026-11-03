@@ -36,7 +36,7 @@ extern int gGraphicsChoice; /*@ ds:8102 */            /* the video mode the game
 extern char gWallNameBuf[]; /*@ ds:FE2E */  /* the wall texture name kept between LoadWallTextures calls (ovl3:07A5) */
 extern void far *(far *gFn8082)(int x, int y, int w, int h, void far *buf); /*@ ds:8082 */
 extern void DrawViewRows(void); /*@ 2116:0034 */  /* overlay 4 entry, ovl4:1EDE */
-extern void f1A47_0169(char far *font); /*@ 1A47:0169 */
+extern void SetFont(char far *font); /*@ 1A47:0169 */
 extern void RedrawCharacters(void); /*@ 0D1C:0583 */
 extern void SetMouseItem(int item); /*@ 07A9:010C */
 extern int far RollDice(char count, char sides, char bonus); /*@ 082C:0458 */
@@ -91,7 +91,7 @@ struct Obj28 {              /* 28-byte records, 30 of them at ds:8A82 (src/E08E6
 
 extern struct Obj28 gObjs[]; /*@ ds:8A82 */
 extern unsigned long g8492; /*@ ds:8492 */
-extern int f0D1C_0670(int who, int mask); /*@ 0D1C:0670 */
+extern int MemberIs(int who, int mask); /*@ 0D1C:0670 */
 extern void RearmCharEffects(void); /*@ 1414:0B2E */
 extern signed char g194B[]; /*@ ds:194B */
 extern signed char gTable18BF[]; /*@ ds:18BF */  /* per-object-kind table (src/E122E.C) */
@@ -118,7 +118,7 @@ extern struct Entry14 gTable8DD2[]; /*@ ds:8DD2 */
 
 struct CharRec {            /* 243-byte character records at ds:F580 (src/E08E6.C) */
     char pad00;
-    unsigned char m01;      /* +1: status bits (src/E08E6.C); 0 when the slot is empty */
+    unsigned char status;      /* +1: status bits (src/E08E6.C); 0 when the slot is empty */
     char pad02[0x22 - 0x02];
     signed char m22;        /* +0x22: the character's cell row/column (src/E0D1C.C) */
     char pad23[0x33 - 0x23];
@@ -785,7 +785,7 @@ done:
     FileClose(handle);
     gFBD0 |= 1 << (level - 1);
 }/* ovl3:123D: ages the ten 32-bit countdowns at gChars+0xAD for every character that passes
-   f0D1C_0670(i, 1): a countdown greater than the tick counter g8492 loses g8492, and a nonzero
+   MemberIs(i, 1): a countdown greater than the tick counter g8492 loses g8492, and a nonzero
    countdown not greater than g8492 is set to 1. Called by ovl3:1368. */
 /*@ ovl3:123D */ void AgeCharTimers(void)
 {
@@ -794,7 +794,7 @@ done:
     int j;
 
     for (rec = gChars, i = 0; i < 6; i++, rec++) {
-        if (f0D1C_0670(i, 1)) {
+        if (MemberIs(i, 1)) {
             for (j = 0; j < 0xa; j++) {
                 if (rec->timer[j] > g8492)
                     rec->timer[j] -= g8492;
@@ -805,7 +805,7 @@ done:
     }
 }
 /* ovl3:12F1: the counterpart of ovl3:123D: adds the tick counter g8492 to every nonzero countdown
-   at gChars+0xAD for each character that passes f0D1C_0670(i, 1), then calls RearmCharEffects.
+   at gChars+0xAD for each character that passes MemberIs(i, 1), then calls RearmCharEffects.
    Called by ovl3:1368 and ovl3:15B9. */
 /*@ ovl3:12F1 */ void AdvanceCharTimers(void)
 {
@@ -814,7 +814,7 @@ done:
     int j;
 
     for (rec = gChars, i = 0; i < 6; i++, rec++) {
-        if (f0D1C_0670(i, 1)) {
+        if (MemberIs(i, 1)) {
             for (j = 0; j < 0xa; j++) {
                 if (rec->timer[j])
                     rec->timer[j] += g8492;
@@ -885,7 +885,7 @@ done:
    and frees it (a character with m01 nonzero and m22 < 0 sets `flag` at :953 instead);
    when any slot is empty or any occupied character has m22 < 0 it then loads the OUTTAKE screen
    and cuts the m22 < 0 characters' 4 by 32 cells out of it the same way. Unless ds:A998 is -1 it then rebuilds the
-   map screen (ovl3:0A7C), reloads PLAYFLD and INVENT, hands gA9C0 to f1A47_0169, redraws the
+   map screen (ovl3:0A7C), reloads PLAYFLD and INVENT, hands gA9C0 to SetFont, redraws the
    characters, and either restores the mouse item when the mouse is enabled (gMouseDisabled is 0)
    or, when the mouse is disabled and gFBCE is nonzero, inserts it with a sound from the g1A1B table
    picked by RollDice(1, 2, -1) (the item is keyed by gPartyCell). Sets ds:A998 to 1 on success, 0 on
@@ -945,7 +945,7 @@ done:
         flag = 0;
         for (i = 0; i < 6; i++) {
             rec = &gChars[i];
-            if (rec->m01 != 0 && rec->m22 >= 0) {
+            if (rec->status != 0 && rec->m22 >= 0) {
                 cell = gFn8082((rec->m22 % 10) * 4, (rec->m22 / 10) * 32, 4, 0x20, gOverlayBuf);
                 Unpack0(cell, rec->sprite, 0x514L);
                 farfree(cell);
@@ -957,7 +957,7 @@ done:
             flag = 0;
             for (i = 0; i < 6; i++) {
                 rec = &gChars[i];
-                if (rec->m01 != 0 && rec->m22 < 0) {
+                if (rec->status != 0 && rec->m22 < 0) {
                     cell = gFn8082(-(rec->m22 + 1) * 4, 0xa0, 4, 0x20, gOverlayBuf);
                     Unpack0(cell, rec->sprite, 0x514L);
                     farfree(cell);
@@ -969,7 +969,7 @@ done:
             LoadScreenImage("PLAYFLD", (char far *)gSheetDECORATE, 5, 3, 0);
             DrawViewRows();
             LoadScreenImage("INVENT", (char far *)gSheet2067, 5, 3, 2);
-            f1A47_0169((char far *)gA9C0);
+            SetFont((char far *)gA9C0);
             RedrawCharacters();
             if (gMouseDisabled == 0)
                 SetMouseItem(gFBCE);

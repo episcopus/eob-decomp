@@ -615,3 +615,11 @@ why = "ds:7F38 holds the file name INVENT (EOB.EXE literal)"
 id = "ds:5737"
 name = "g5737"
 why = "ds:5737 is a word table of animation frames (0EF3:2EBC reads it as frameTable[row6 >> 8]), not a string; the gText prefix is this file's prefix for strings. No other src/ file names ds:5737"
+[[global]]
+id = "ds:FE4E"
+name = "gCurFont"
+why = "the far pointer to the current font: SetFont 1A47:0169 stores it, TextWidth 1A47:018E reads byte +103h (the character width) through it"
+[[global]]
+id = "ds:80C2"
+name = "gDrawShape"
+why = "the driver entry that draws a shape record at a screen position: DrawShape 1A29:000F calls it with region offsets added, ShowPointer 1BBE:01F4 with the pointer's shape record (gPointerShapeOff/Seg)"

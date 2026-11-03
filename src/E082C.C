@@ -97,7 +97,7 @@ extern void FileClose(int slot); /*@ 1C0E:03BB: `slot` is FileOpen's slot index,
 extern void ShutdownGame(void); /*@ 07C8:058A */
 extern void PlaySound(int sound); /*@ 177D:0070 */
 extern void DrawText(char far *text); /*@ 1DE7:060A */  /* the text console's string renderer (src/E1DE7.C) */
-extern void f1A29_000F(int mode, void far *src, int x, int y, int region); /*@ 1A29:000F */
+extern void DrawShape(int mode, void far *src, int x, int y, int region); /*@ 1A29:000F */
 extern void f1A29_004D(int mode, void far *src, int x, int y, int region); /*@ 1A29:004D */
 extern void f1A29_008B(int mode, void far *src, int x, int y, int region); /*@ 1A29:008B */
 extern void f1A29_00C9(int mode, void far *src, int x, int y, int region); /*@ 1A29:00C9 */
@@ -360,7 +360,7 @@ done:
     x &= -2;
     x -= gRegions[region].left * 8;
     y -= gRegions[region].top;
-    f1A29_000F(mode, src, x, y, region);
+    DrawShape(mode, src, x, y, region);
 }
 
 /* 082C:0681: like DrawRegion000F (even rounding of x and the region-relative coordinates) but

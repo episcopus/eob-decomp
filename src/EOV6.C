@@ -15,8 +15,8 @@ struct CharRec {
     char name[11];             /* +02: the character's name, NUL padded */
     char pad0D[0x1B - 0x0D];
     signed char hp;            /* +1B: current hit points (ovl6:07E2 picks the lowest) */
-    signed char maxhp;         /* +1C: maximum hit points; healing clamps to it as 0DE8:09B9 does
-                                  with m1C, "a copy of the max hit points" (src/E0DE8.C:26, :588) */
+    signed char maxHp;         /* +1C: maximum hit points; HealCharacter (0DE8:0ADB) clamps
+                                  hp at it */
     char pad1D[0x20 - 0x1D];
     signed char classIndex;    /* +20: an index into a class table (0A72:007B's classIndex) */
     char pad21[0x23 - 0x21];
@@ -61,7 +61,7 @@ extern int gTextWidth; /*@ ds:FE62 */
 extern int gTextLeft; /*@ ds:FE64 */
 extern int gTextTop; /*@ ds:FE66 */
 extern char gFileNameBuf[]; /*@ ds:FE6E */              /* the text buffer ovl6:0858 formats into */
-extern void *gFont1A47; /*@ ds:FE4E */          /* the current font (1A47:0169 records it) */
+extern void *gCurFont; /*@ ds:FE4E */          /* the current font (1A47:0169 records it) */
 extern void *gFont8x8; /*@ ds:FE5A */              /* the 8x8 font loaded from Font8.fnt */
 extern void *gA9C0; /*@ ds:A9C0 */              /* the 6x6 font loaded from FONT6.FNT */
 extern int gPartyCell; /*@ ds:FBCA */
@@ -76,9 +76,9 @@ extern void SetTextWindow(int n); /*@ 1DE7:0009 */
 extern void SetTextWindowAndClear(int n); /*@ 1DE7:00B6 */
 extern void ClearTextRegion(void); /*@ 1DE7:0344 */
 extern void DrawText(char *text); /*@ 1DE7:060A */
-extern void f1A47_0169(void *font); /*@ 1A47:0169 */
+extern void SetFont(void *font); /*@ 1A47:0169 */
 extern void WaitFrames(int n); /*@ 1A16:000B */
-extern int f0D1C_0670(int member, int what); /*@ 0D1C:0670 */
+extern int MemberIs(int member, int what); /*@ 0D1C:0670 */
 extern int FindCarriedSlot(int who, int field2, int fieldB); /*@ 0D1C:00F1 */
 extern int f0D1C_0163(int member, int what); /*@ 0D1C:0163 */
 extern void f0D1C_0C21(int x, int y, int width, int height, int c, int d); /*@ 0D1C:0C21 */
@@ -111,7 +111,7 @@ void f0B9B(int message);
    Each hour it prints "Hours rested: %-4d" (f0858) and damages by 10 hit points every member with
    flag 1 and without flag 0x10 (DamageCharacter(member, 10)). Every eight hours it puts the class-2
    spell 0x18 into a memorized slot of a member whose classIndex is 2, and, for a member with flag 3
-   above level 0 (`if (!f0D1C_0670(member, 3)) continue;`), regains one hit point of a member below
+   above level 0 (`if (!MemberIs(member, 3)) continue;`), regains one hit point of a member below
    his maximum and drops the level of a member whose 0D1C:0163(member, 2) is negative (by 5, or to 0
    when at 5 or less); every 24 hours it damages a member with flag 3 at level 0 above -10 hit points
    (hp > (signed char)0xf6; hp is a signed char). It never
@@ -156,8 +156,8 @@ void f0B9B(int message);
     f0D1C_0C21(gTextLeft << 3, gTextTop, gTextWidth << 3, gTextHeight, 0, 0);
     flag8 = 0;
     for (member = 0; member < 6; member++) {
-        if (f0D1C_0670(member, 1))
-            flag8 |= !f0D1C_0670(member, 0x10);
+        if (MemberIs(member, 1))
+            flag8 |= !MemberIs(member, 0x10);
     }
     if (flag8) {
         if (fOvl1_243A(0x3b) == 0)
@@ -185,14 +185,14 @@ void f0B9B(int message);
     tick = 0;
     f0858(hours, 1);
     SetTextWindow(7);
-    f1A47_0169(gA9C0);
+    SetFont(gA9C0);
     for (;;) {
         tick++;
         for (i = 0; i < 6; i++) {
             counters[i]++;
             if (gChars[i].level == 0)
                 continue;
-            if (!f0D1C_0670(i, 5))
+            if (!MemberIs(i, 5))
                 continue;
             slots = &gChars[i].memorized[0];
             for (member = 0; member < 0x1e; member++) {
@@ -266,8 +266,8 @@ void f0B9B(int message);
                             DrawText(gFileNameBuf);
                             LockShowPointer();
                             WaitFrames(5);
-                            if (gChars[foundWounded].hp + healAmount > gChars[foundWounded].maxhp)
-                                gChars[foundWounded].hp = gChars[foundWounded].maxhp;
+                            if (gChars[foundWounded].hp + healAmount > gChars[foundWounded].maxHp)
+                                gChars[foundWounded].hp = gChars[foundWounded].maxHp;
                             else
                                 gChars[foundWounded].hp += healAmount;
                             foundWounded++;
@@ -286,9 +286,9 @@ void f0B9B(int message);
             g8492 += 0x7ff8L;
             f0858(hours, 0);
             for (member = 0; member < 6; member++) {
-                if (!f0D1C_0670(member, 1))
+                if (!MemberIs(member, 1))
                     continue;
-                if (f0D1C_0670(member, 0x10))
+                if (MemberIs(member, 0x10))
                     continue;
                 DamageCharacter(member, 0xa);
                 WaitTicks(5);
@@ -302,12 +302,12 @@ void f0B9B(int message);
                         else if (!memchr(&gChars[member].memorized[0], 0x18, 6))
                             *(char *)memchr(&gChars[member].memorized[0], 0, 6) = 0x18;
                     }
-                    if (!f0D1C_0670(member, 3))
+                    if (!MemberIs(member, 3))
                         continue;
                     if (gChars[member].level != 0) {
-                        if (gChars[member].hp < gChars[member].maxhp) {
+                        if (gChars[member].hp < gChars[member].maxHp) {
                             gChars[member].hp++;
-                            f1A47_0169(gA9C0);
+                            SetFont(gA9C0);
                             RedrawMember(member);
                         }
                         if (f0D1C_0163(member, 2) < 0) {
@@ -321,7 +321,7 @@ void f0B9B(int message);
                     } else if (hours % 0x18 == 0 && gChars[member].hp > (signed char)0xf6) {
                         DamageCharacter(member, 1);
                         changed = 1;
-                        f1A47_0169(gA9C0);
+                        SetFont(gA9C0);
                         RedrawMember(member);
                     }
                 }
@@ -352,7 +352,7 @@ void f0B9B(int message);
 done:
         FlushKeyBuffer();
         SetTextWindow(4);
-        f1A47_0169(gFont8x8);
+        SetFont(gFont8x8);
         if (!foundWounded && !result)
             f0B9B(0x2b);
         return result;
@@ -372,7 +372,7 @@ done:
     found = -1;
     lowest = 0x384;
     for (member = 0; member < 6; member++) {
-        if (f0D1C_0670(member, 3) && gChars[member].hp < gChars[member].maxhp
+        if (MemberIs(member, 3) && gChars[member].hp < gChars[member].maxHp
             && gChars[member].hp < lowest) {
             found = member;
             lowest = gChars[member].hp;
@@ -394,8 +394,8 @@ done:
     register int region;
 
     region = gTextRegion;
-    savedFont = gFont1A47;
-    f1A47_0169(gFont8x8);
+    savedFont = gCurFont;
+    SetFont(gFont8x8);
     SetTextWindow(0xa);
     if (draw) {
         gStatusLine = 0;
@@ -414,7 +414,7 @@ done:
     ClipRect(gTextLeft + 1, gTextTop + 0x14, gTextLeft + 1, gTextTop + 0x14, 0x12, 8, 2, 0);
     LockShowPointer();
     WaitFrames(0xa);
-    f1A47_0169(savedFont);
+    SetFont(savedFont);
     SetTextWindow(region);
 }
 /* ovl6:09D2: the "objects are near" test. It selects the 6x6 font, marks the object update
@@ -429,8 +429,8 @@ done:
     register int i;
     register int savedRegion;
 
-    savedFont = gFont1A47;
-    f1A47_0169(gA9C0);
+    savedFont = gCurFont;
+    SetFont(gA9C0);
     gF442 = 1;
     UpdateObjects(0);
     UpdateObjects(1);
@@ -444,11 +444,11 @@ done:
             DrawText("\rYou can't rest here, monsters are near.");
             LockShowPointer();
             SetTextWindow(savedRegion);
-            f1A47_0169(savedFont);
+            SetFont(savedFont);
             return 1;
         }
     }
-    f1A47_0169(savedFont);
+    SetFont(savedFont);
     return 0;
 }
 /* ovl6:0A92: one when some party member (with hit points and a level) still has a spell to spend:
@@ -501,9 +501,9 @@ done:
     void *savedFont;
 
     savedRegion = gStatusLine;
-    savedFont = gFont1A47;
+    savedFont = gCurFont;
     savedSelect = gTextRegion;
-    f1A47_0169(gFont8x8);
+    SetFont(gFont8x8);
     LockHidePointer();
     g159 = gF57E;
     SetTextWindowAndClear(0xb);
@@ -520,7 +520,7 @@ done:
         WaitFrames(1);
     }
     gStatusLine = savedRegion;
-    f1A47_0169(savedFont);
+    SetFont(savedFont);
     SetTextWindow(savedSelect);
     FlushKeyBuffer();
 }

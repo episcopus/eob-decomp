@@ -45,7 +45,7 @@ extern void LockShowPointer(void);                 /*@ 1BBE:0332 */
 extern void SetTextWindow(int region);             /*@ 1DE7:0009 */
 extern void ClearTextRegion(void);                 /*@ 1DE7:0344 */
 extern void DrawText(char far *text);              /*@ 1DE7:060A */
-extern void f1A47_0169(void far *font);            /*@ 1A47:0169 */
+extern void SetFont(void far *font);            /*@ 1A47:0169 */
 extern void FlushKeyBuffer(void);                  /*@ 1AAD:0480 */
 extern int WaitGameKey(void);                      /*@ 1AAD:053A */
 
@@ -55,7 +55,7 @@ extern void (far *gSaveRect)(int x, int y, int w, int h, void far *buf);    /*@ 
 extern void (far *gDrawLine)(int x1, int y1, int x2, int y2, int colour);   /*@ ds:8062: line routine (E1547.C) */
 extern int (far *gSaveRectSize)(int width, int height);                     /*@ ds:80C6: the save-under buffer size in bytes (E1BB1.ASM) */
 extern void far *gFont8x8;                                                  /*@ ds:FE5A: the 8x8 font loaded from Font8.fnt (E07C8.C) */
-extern void far *gFont1A47;                                                 /*@ ds:FE4E: the current font (E1A47.C) */
+extern void far *gCurFont;                                                 /*@ ds:FE4E: the current font (E1A47.C) */
 
 /* DGROUP globals and indirect far functions. */
 extern int gStatusLine;                        /*@ ds:8115: nonzero while a status line is up (E082C.C) */
@@ -540,8 +540,8 @@ extern long gSlotLengths[];              /*@ ds:FF0C: the record's length per sl
     gStatusLine = 0;
     title = gErrorText[code];
     savedTextRegion = gTextRegion;
-    savedFont = gFont1A47;
-    f1A47_0169(gFont8x8);
+    savedFont = gCurFont;
+    SetFont(gFont8x8);
     SetTextWindow(g80FE);
     x = gTextLeft * 8;
     y = gTextTop;
@@ -598,7 +598,7 @@ extern long gSlotLengths[];              /*@ ds:FF0C: the record's length per sl
     ExpandTextWindow(1);
     gRestoreRect(gTextLeft, gTextTop, gTextWidth, height, gMsgBuf);
     SetTextWindow(savedTextRegion);
-    f1A47_0169(savedFont);
+    SetFont(savedFont);
     if (bufSize != 0) {
         MemFree(gMsgBuf);
         gMsgBuf = 0;

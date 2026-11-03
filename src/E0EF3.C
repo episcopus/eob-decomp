@@ -12,7 +12,7 @@
    src/E0BD2.C, src/EOV6.C name overlapping views). */
 struct CharRec {
     signed char m00;        /* +00: the member index (0..5) this record is */
-    unsigned char m01;      /* +01: status bits */
+    unsigned char status;      /* +01: status bits */
     char name[0x0B];        /* +02: the character's name, NUL padded */
     signed char m0D;        /* +0D: a class index */
     char pad0E;
@@ -21,7 +21,7 @@ struct CharRec {
     signed char m15;        /* +15: an index read by 0A72:019D */
     char pad16[0x1B - 0x16];
     signed char hp;         /* +1B: current hit points */
-    signed char maxhp;      /* +1C: maximum hit points */
+    signed char maxHp;      /* +1C: maximum hit points */
     signed char m1D;        /* +1D: the armour-class byte */
     signed char m1E;        /* +1E: a condition bit set */
     signed char m1F;        /* +1F */
@@ -345,7 +345,7 @@ extern void ClearCharEffectSlot(int who, int what); /*@ 1414:0C2D */
 extern int f0D1C_0BAB(int obj); /*@ 0D1C:0BAB */
 extern int f0D1C_00DA(int value, int page); /*@ 0D1C:00DA */
 extern int GetCurrentItem(void); /*@ 0D1C:02DC */
-extern int f0D1C_0670(int who, int mask); /*@ 0D1C:0670 */
+extern int MemberIs(int who, int mask); /*@ 0D1C:0670 */
 extern int TakeItemFromSlot(int who, int row); /*@ 0BD2:0106 */
 extern int Obj15B4(char who, int value); /*@ 08E6:15B4 */
 extern void DamageObject(struct Obj28 far *obj, int n); /*@ 08E6:0FBE */
@@ -374,7 +374,7 @@ extern struct FlashDelta gFlashDelta[]; /*@ ds:5631 */ /* four per-frame offsets
 extern int gFlashBaseX[];        /*@ ds:5639 */ /* six per-member x bases */
 extern signed char gFlashBaseY[];/*@ ds:5645 */ /* six per-member y bases */
 extern char far *gFlashFrames[]; /*@ ds:DD1C */ /* far image pointers, indexed by frame - 1 */
-extern void f1A29_000F(int mode, void far *src, int x, int y, int region); /*@ 1A29:000F */
+extern void DrawShape(int mode, void far *src, int x, int y, int region); /*@ 1A29:000F */
 extern int gFlags849E;           /*@ ds:849E */ /* bit 1 gates the object animation frames
                                                     (src/E08E6.C) */
 extern char far *gBufDCFC;       /*@ ds:DCFC */ /* the 4096-byte screen scratch buffer, one far
@@ -729,7 +729,7 @@ extern int gFC72;                /*@ ds:FC72 */ /* the handle gFn8072 returned u
         }
         y += gFlashDelta[i].dy;
         x += gFlashDelta[i].dx - 8;
-        f1A29_000F(0, gFlashFrames[frame], x, y, 0);
+        DrawShape(0, gFlashFrames[frame], x, y, 0);
     }
 }
 
@@ -753,7 +753,7 @@ extern int gFC72;                /*@ ds:FC72 */ /* the handle gFn8072 returned u
     }
     for (pass = 0; pass < 8; pass++) {
         for (who = first; who <= last; who++) {
-            if ((gChars[who].m01 & 1) && (gFB44 == 0 || who == gA99A))
+            if ((gChars[who].status & 1) && (gFB44 == 0 || who == gA99A))
                 DrawFlashFrame(who, pass);
         }
         WaitTicks(2);
@@ -796,7 +796,7 @@ extern int gFC72;                /*@ ds:FC72 */ /* the handle gFn8072 returned u
             y = gFlashY2[i];
             if (frame-- == 0)
                 continue;
-            f1A29_000F(2, gFlashFrames[frame], x, y, 0);
+            DrawShape(2, gFlashFrames[frame], x, y, 0);
         }
         gStatusLine = 0;
         HidePointerZone(0, 0, 0xB0, 0x78);
@@ -824,7 +824,7 @@ extern int gFC72;                /*@ ds:FC72 */ /* the handle gFn8072 returned u
     gCurMember = rec->m38;
     if (gCurMember != -1) {
         gCurRec = &gChars[gCurMember];
-        if ((gCurRec->m01 & 1) == 0)
+        if ((gCurRec->status & 1) == 0)
             return rec->m04;
         DrawText(gCurRec->name);
         DrawText(gText57C3);
@@ -923,7 +923,7 @@ extern int gFC72;                /*@ ds:FC72 */ /* the handle gFn8072 returned u
     } else if (rec->m04 == gPartyCell && (rec->m0B < 0 || flag10)) {
         if (flag02) {
             for (i = 0; i < 6; i++) {
-                if ((gChars[i].m01 & 1) == 0)
+                if ((gChars[i].status & 1) == 0)
                     continue;
                 if (Obj106B(gObjs, i) || !flag04) {
                     dmg = RollDice(count, sides, bonus) * n;
@@ -936,12 +936,12 @@ extern int gFC72;                /*@ ds:FC72 */ /* the handle gFn8072 returned u
         } else {
             idx = rec->m06 & 3;
             idx = g1A2B[gFBCC * 4 + idx];
-            if (idx > 2 && (f0D1C_0670(5, 1) || f0D1C_0670(6, 1)) && RollDice(1, 2, -1))
+            if (idx > 2 && (MemberIs(5, 1) || MemberIs(6, 1)) && RollDice(1, 2, -1))
                 i = idx + 2;
             else
                 i = idx;
             if (rec->m08 != 0 || (gChars[i].mE3 & 2) == 0) {
-                if ((gChars[i].m01 & 1) && (Obj106B(gObjs, i) || !flag04)) {
+                if ((gChars[i].status & 1) && (Obj106B(gObjs, i) || !flag04)) {
                     dmg = RollDice(count, sides, bonus) * n;
                     if (flag08)
                         dmg = HalveSaveDamageA(i, dmg);
@@ -1259,7 +1259,7 @@ extern int gFC72;                /*@ ds:FC72 */ /* the handle gFn8072 returned u
     int i;
 
     for (i = 0; i < 6; i++) {
-        if (gChars[i].m01 & 1) {
+        if (gChars[i].status & 1) {
             gChars[i].mE3 |= 8L;
             gCurMember = i;
             ApplyTimedCharEffect(gEFB8, 3, 0x222L, 1, 1);
@@ -1354,8 +1354,8 @@ extern int gFC72;                /*@ ds:FC72 */ /* the handle gFn8072 returned u
    0EF3:1233. */
 /*@ 0EF3:16DC */ void ClampHitPoints(struct CharRec far *rec)
 {
-    if (rec->hp > rec->maxhp)
-        rec->hp = rec->maxhp;
+    if (rec->hp > rec->maxHp)
+        rec->hp = rec->maxHp;
     DiscardEquippedItems(rec);
 }
 
@@ -1576,7 +1576,7 @@ void AnimateConeOfCold(int count, int spread, int step, int cycle, int divisor,
 {
     int amount;
 
-    if (f0D1C_0670(gCurMember, 3)) {
+    if (MemberIs(gCurMember, 3)) {
         gCurRec->mE3 |= 0x40;
         amount = RollDice(1, 8, 0);
         if (gCurRec->hp < (signed char)(gCurRec->hp + amount)) {
@@ -1606,7 +1606,7 @@ void AnimateConeOfCold(int count, int spread, int step, int cycle, int divisor,
    message at ds:58AF (DrawText, not SayAndPlaySound). Called through a table. */
 /*@ 0EF3:1C75 */ void ApplyConditionEffect(void)
 {
-    if (gChars[gCurMember].m01 & 2) {
+    if (gChars[gCurMember].status & 2) {
         gCurRec->mE3 |= 0x80L;
         ApplyTimedCharEffect(gEFB8, 1, 0x7FF8L, GetClassSlot24Value(gPanelMember), 1);
     } else {
@@ -1624,7 +1624,7 @@ void AnimateConeOfCold(int count, int spread, int step, int cycle, int divisor,
    redraw it. Called by 0EF3:1F0B and 0BD2:0D2D. */
 /*@ 0EF3:1CE8 */ void ClearPoisonEffect(int who)
 {
-    gChars[who].m01 &= ~2;
+    gChars[who].status &= ~2;
     gChars[who].mE3 &= ~0x80L;
     ClearCharEffectSlot(who, -0x22);
     RedrawMember(who);
@@ -1697,8 +1697,8 @@ void AnimateConeOfCold(int count, int spread, int step, int cycle, int divisor,
 
     remaining = 4;
     for (i = 0; i < 6; i++) {
-        if ((gChars[i].m01 & 4) && remaining) {
-            gChars[i].m01 &= ~4;
+        if ((gChars[i].status & 4) && remaining) {
+            gChars[i].status &= ~4;
             remaining--;
         }
     }
@@ -1725,7 +1725,7 @@ void AnimateConeOfCold(int count, int spread, int step, int cycle, int divisor,
    ds:58BB. */
 /*@ 0EF3:1F0B */ void CureOrReportPoison(void)
 {
-    if (gCurRec->m01 != 0)
+    if (gCurRec->status != 0)
         ClearPoisonEffect(gCurMember);
     else
         SayAndPlaySound(gText58BB);
@@ -1824,7 +1824,7 @@ void AnimateConeOfCold(int count, int spread, int step, int cycle, int divisor,
     if (rec->m04 == gPartyCell) {
         who = RollDice(1, 6, 0);
         for (tries = 0; tries < 6; tries++) {
-            if (f0D1C_0670(who, 3) && HalveSaveDamageA(who, 1) == 0) {
+            if (MemberIs(who, 3) && HalveSaveDamageA(who, 1) == 0) {
                 DamageCharacter(who, 0x64);
                 sprintf(gFileNameBuf, gText58D1, gChars[who].name);
                 DrawText(gFileNameBuf);
@@ -1852,7 +1852,7 @@ void AnimateConeOfCold(int count, int spread, int step, int cycle, int divisor,
         DrawText(gText58ED);
         count = RollDice(1, 4, 0);
         for (i = 0; i < 6; i++) {
-            if (f0D1C_0670(i, 3) && gChars[i].m24[0] < 8) {
+            if (MemberIs(i, 3) && gChars[i].m24[0] < 8) {
                 DamageCharacter(i, 0x64);
                 count--;
             }

@@ -129,7 +129,7 @@ extern void far *gPtrDD00; /*@ ds:DD00 */ /* the mouse pointer image: gIconsDDE4
 extern void far *gDF48; /*@ ds:DF48 */
 extern void far *gSegDF4E; /*@ ds:DF4E */
 extern char far *gBufF534; /*@ ds:F534 */
-extern void far *gFont1A47; /*@ ds:FE4E */
+extern void far *gCurFont; /*@ ds:FE4E */
 extern void far *gFont8x8; /*@ ds:FE5A */
 extern int gTextHeight; /*@ ds:FE60 */
 extern int gTextWidth; /*@ ds:FE62 */
@@ -188,8 +188,8 @@ extern void far *MemAlloc(unsigned long size, int flags); /*@ 19BC:0007 */
 extern void SetTextWindow(int n); /*@ 1DE7:0009 */
 extern void ClearTextRegion(void); /*@ 1DE7:0344 */
 extern void DrawText(char far *text); /*@ 1DE7:060A */
-extern void f1A47_0169(char far *font); /*@ 1A47:0169 */
-extern void f1A29_000F(int mode, void far *src, int x, int y, int region); /*@ 1A29:000F */
+extern void SetFont(char far *font); /*@ 1A47:0169 */
+extern void DrawShape(int mode, void far *src, int x, int y, int region); /*@ 1A29:000F */
 extern void DrawOptionList(int panel, char far * far *names, long mask, int shift, int spacing); /*@ 14EF:0154 */
 extern int UpdateOptionList(int panel, char far * far *names, long counter, long mask, int shift); /*@ 14EF:0274 */
 extern void LockShowPointer(void); /*@ 1BBE:0332 */
@@ -396,7 +396,7 @@ extern void FileClose(int handle); /*@ 1C0E:03BB */
    when it succeeded; both are nonzero, which is how EnterMapScreen (src/E0ACD.C:909-918) later
    shows the loaded map and the inventory. On failure it prints "Unable to load your saved game!",
    clears gA998 and redraws the panel to wait again. Entry 1 sets gA998 to 0, selects the 8x8 font
-   (f1A47_0169 with gFont8x8, the Font8.fnt loaded at src/E07C8.C:376, src/E1C0E.C:57) and runs
+   (SetFont with gFont8x8, the Font8.fnt loaded at src/E07C8.C:376, src/E1C0E.C:57) and runs
    RunCharacterPanel (ovl0:28F9), then restores the 6x6 font (gA9C0, the FONT6.FNT loaded at
    src/E07C8.C:377, src/EOV0.C:168, src/EOV3.C:42): the "Start a new party" entry [H]
    (docs/design/WHITEPAPER.md:137). Entry 2 shuts the game down with exit. Called by LoadItemData. */
@@ -428,9 +428,9 @@ extern void FileClose(int handle); /*@ 1C0E:03BB */
             }
             break;
         case 1:
-            f1A47_0169(gFont8x8);
+            SetFont(gFont8x8);
             RunCharacterPanel();
-            f1A47_0169(gA9C0);
+            SetFont(gA9C0);
             gA998 = 0;
             break;
         case 2:
@@ -509,8 +509,8 @@ extern void FileClose(int handle); /*@ 1C0E:03BB */
     int tries;
 
     saveRegion = gTextRegion;
-    font = gFont1A47;
-    f1A47_0169(gFont8x8);
+    font = gCurFont;
+    SetFont(gFont8x8);
     gColour179 = gF57E;
     gStatusLine = 0;
     SetTextWindow(0xd);
@@ -529,7 +529,7 @@ extern void FileClose(int handle); /*@ 1C0E:03BB */
     for (;;) {
         pick = RollDice(1, 0x1e, -1);
         ClearTextRegion();
-        f1A29_000F(0, gItemL1Icons[gWordCells[pick].row][0], 0x64, 2, 0xd);
+        DrawShape(0, gItemL1Icons[gWordCells[pick].row][0], 0x64, 2, 0xd);
         sprintf(text, "\r\r\r\rOn the page with this symbol...\r\rFind line %d\rEnter word %d\r",
             gWordCells[pick].line, gWordCells[pick].word);
         DrawShadowText(text, (gTextLeft + 1) * 8, gTextTop, gTextAttr1, gTextAttr2);
@@ -556,5 +556,5 @@ extern void FileClose(int handle); /*@ 1C0E:03BB */
     SetTextWindow(0xd);
     gFn804A(gTextLeft, gTextTop, gTextWidth, gTextHeight, gSegDF4E);
     SetTextWindow(saveRegion);
-    f1A47_0169(font);
+    SetFont(font);
 }

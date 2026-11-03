@@ -111,7 +111,7 @@ extern void (far *gDraw8066)(int x1, int y1, int x2, int y2, int colour); /*@ ds
 extern void HidePointerZone(int left, int top, int right, int bottom); /*@ 1BBE:01FE */
 extern void ShowPointerZone(void); /*@ 1BBE:02C2 */
 extern void DrawBox(int x1, int y1, int x2, int y2, int colour); /*@ 1A1F:000C */
-extern void f1A29_000F(int mode, void far *src, int x, int y, int region); /*@ 1A29:000F */
+extern void DrawShape(int mode, void far *src, int x, int y, int region); /*@ 1A29:000F */
 
 /* The dispatcher's working state in DGROUP. The hit point comes from the mouse (gCursorX/gCursorY)
    or, when a button is down, from the last click (ds:8140/8142). gLastNode and gPressedNode are
@@ -541,7 +541,7 @@ done:
    (0..5) picks the path, but the state word +2E gates it: with NODE_STATE_ON set the `modeB` +0B
    picks the path (its case 1 switches on the kind), with NODE_STATE_4 set `modeC` +0C does, and
    only when both bits are clear does the kind switch run directly. A kind of 1 blits an art
-   pointer through f1A29_000F (src10, src14 or src18), 2 draws text through gDrawText, 3 draws a
+   pointer through DrawShape (src10, src14 or src18), 2 draws text through gDrawText, 3 draws a
    tile through gDraw805E, 4 calls the art pointer as a far callback with the node, and 5 or 0
    draws a box. Kind 5 always draws through DrawBox. Kind 0 draws only in the cases the code shows:
    `modeB` or `modeC` is 2 (DrawBox), or `modeB` is 3 with NODE_STATE_PREV set, or `modeC` is 3
@@ -597,7 +597,7 @@ done:
             if (kind == 1) {
                 savedFC80 = gFC80;
                 gFC80 = 0;
-                f1A29_000F(0, node->src14, x, y, region);
+                DrawShape(0, node->src14, x, y, region);
                 gFC80 = savedFC80;
             } else if (kind == 2) {
                 if (!mark4) {
@@ -639,7 +639,7 @@ done:
             if (kind == 1) {
                 savedFC80 = gFC80;
                 gFC80 = 0;
-                f1A29_000F(0, node->src18, x, y, region);
+                DrawShape(0, node->src18, x, y, region);
                 gFC80 = savedFC80;
             } else if (kind == 2) {
                 savedAttr = gStatusLine;
@@ -680,7 +680,7 @@ done:
             if (kind == 1) {
                 savedFC80 = gFC80;
                 gFC80 = 0;
-                f1A29_000F(0, node->src10, x, y, region);
+                DrawShape(0, node->src10, x, y, region);
                 gFC80 = savedFC80;
             } else if (kind == 2) {
                 savedAttr = gStatusLine;

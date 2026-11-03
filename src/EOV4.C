@@ -1132,13 +1132,13 @@ extern int g7296; /*@ ds:7296 */              /* the page the rows were last dra
 extern int g7290[]; /*@ ds:7290 */             /* per-row y (this unit) */
 extern int g728A[]; /*@ ds:728A */             /* per-row x (this unit) */
 extern void far *gIconTableA92A[]; /*@ ds:A92A */    /* per-page, per-row far image pointers (this unit) */
-extern void f1A29_000F(int mode, void far *src, int x, int y, int region); /*@ 1A29:000F */
+extern void DrawShape(int mode, void far *src, int x, int y, int region); /*@ 1A29:000F */
 extern void HidePointerZone(int left, int top, int right, int bottom); /*@ 1BBE:01FE */
 extern void ShowPointerZone(void); /*@ 1BBE:02C2 */
 
 /* ovl4:1EDE: redraws the three view rows for the current page. It returns early when ds:7296
    already holds gFBCC; otherwise it hides the pointer below the view box (0x46, 0x79, 0xb0, 0xaf),
-   draws the three rows through f1A29_000F(0, gIconTableA92A[gFBCC + 4 * i], g728A[i], g7290[i], 0),
+   draws the three rows through DrawShape(0, gIconTableA92A[gFBCC + 4 * i], g728A[i], g7290[i], 0),
    shows the pointer and remembers gFBCC in ds:7296. Called by DrawViewFrame at ovl4:202F. Purpose
    unknown: what the rows are. */
 /*@ ovl4:1EDE */ void DrawViewRows(void)
@@ -1149,7 +1149,7 @@ extern void ShowPointerZone(void); /*@ 1BBE:02C2 */
         return;
     HidePointerZone(0x46, 0x79, 0xb0, 0xaf);
     for (i = 0; i < 3; i++)
-        f1A29_000F(0, gIconTableA92A[gFBCC + 4 * i], g728A[i], g7290[i], 0);
+        DrawShape(0, gIconTableA92A[gFBCC + 4 * i], g728A[i], g7290[i], 0);
     ShowPointerZone();
     g7296 = gFBCC;
 }
