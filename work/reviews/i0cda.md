@@ -1,7 +1,7 @@
 # Review: i0cda
 
 Reviewer: rev-haiku
-Commit reviewed: a97a0d7 (round 4; round 3 reviewed 6ea511f; round 1 reviewed aa139872dfa3474f683144e3ec4f289840e9c58d)
+Commit reviewed: 0cbdc72 (round 5; round 4 reviewed a97a0d7; round 3 reviewed 6ea511f; round 1 reviewed aa139872dfa3474f683144e3ec4f289840e9c58d)
 
 Playbook 70. Judge what a matching file can still get wrong: names, types, comments, structure.
 The matcher already proved the bytes; do not re-prove them, read for meaning.
@@ -10,6 +10,35 @@ The matcher already proved the bytes; do not re-prove them, read for meaning.
 
 Each finding is a checkbox. `must-fix` blocks `make review-pass` until a decompiler ticks it off
 (with the commit that fixes it); `should` and `note` do not block.
+
+### Round 5 (rev-haiku, 2026-11-02, main 0c8ba51)
+
+Judged: the round 4 must-fix (src/I0CDA.ASM:46-47) and should (:28-29), fixed in 0cbdc72, and the diff
+since a97a0d7 (`git diff a97a0d7 HEAD -- src/I0CDA.ASM re/symbols.toml re/globals.toml re/renames.toml`:
+src/I0CDA.ASM lines 25 to 26 and 46 to 47 only; the other hunks are other units (E0EF3 and E07C8 whys,
+e0bd2_01d0 and e122e_06d0 notes, review stamps). The RandomByte rows (re/renames.toml:2579 and :2582,
+re/symbols.toml:10984) are unchanged. `make match FILE=src/I0CDA.ASM` 1 of 1 exit 0 (50 bytes).
+
+- Round 4 should (:28-29) stays ticked: the two shr are at lines 62 and 63 and the rcr at line 69
+  (`grep -n 'shr\|rcr' src/I0CDA.ASM`).
+- Round 4 must-fix (:46-47) is reopened. Its drop half is right: src/IOV0.C:545 is the statement
+  `RandomByte();`, and ovl0:1015 drops the result. Its "only reduce it" half is wrong, and I wrote
+  that wording in round 4 without checking the callers. Some callers scale or offset the masked byte:
+  src/IOV0.C:680 `y[i] = (RandomByte() & 3) * 8 + 0xb4;` and src/IOV0.C:1018 and :1027
+  `(RandomByte() & 7) + 0x19`. The bytes agree: at ovl0:1397 `and ax,3` is followed by three
+  `shl ax,1` (times 8), and at ovl0:26F6 and 2797 `and ax,7` is followed by `add ax,0x19` (round 3
+  checked these bytes). "Only reduce" is therefore false, and the `test` forms (`test ax,7`,
+  `test al,1`) are masks used as tests, not reductions.
+
+New findings:
+
+- [ ] must-fix src/I0CDA.ASM:46-47: drop "only reduce it". Say that the callers mask or take the byte
+  modulo (`% 31`, `& 7`, `& 3`, `& 1`), that some then scale or offset the result (`* 8 + 0xb4`,
+  `+ 0x19`), and that two drop it (src/IOV0.C:545 and ovl0:1015). For example: "the callers take it
+  modulo or masked (`% 31`, `& 7`, `& 3`, `& 1`), some then scale or offset the result (`* 8 + 0xb4`,
+  `+ 0x19`), and two drop it (src/IOV0.C:545 and ovl0:1015)."
+
+Round 5 is not a pass: one must-fix is open (the caller sentence). Everything else is fixed right.
 
 ### Round 4 (rev-haiku, 2026-11-02, main 3c9d29a)
 
@@ -26,7 +55,8 @@ moving). `make match FILE=src/I0CDA.ASM` 1 of 1 exit 0 (50 bytes); `make readabi
 
 New findings:
 
-- [x] must-fix src/I0CDA.ASM:46-47 (a line the a97a0d7 comment changed): "each only reduces it" is
+- [ ] must-fix src/I0CDA.ASM:46-47 (a line the a97a0d7 comment changed; reopened in round 5, its 0cbdc72
+  wording is still wrong): "each only reduces it" is
   false. The call at src/IOV0.C:545 is the statement `RandomByte();`, so it discards the byte, and the
   ovl0:1015 site drops it too (the comment's own lines 37 and 38 say so). Say that: "the callers that
   use it only reduce it (`% 31`, `& 7`, `& 3`, `& 1`), and two drop it (src/IOV0.C:545 and ovl0:1015)."
