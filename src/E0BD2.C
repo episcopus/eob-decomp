@@ -103,8 +103,8 @@ extern char gFB44; /*@ ds:FB44 */           /* a display-mode byte (src/E0D1C.C)
 extern int gFBC8; /*@ ds:FBC8 */            /* the current action (src/E0D1C.C) */
 extern int gFBCC; /*@ ds:FBCC */            /* a page number 0..3 (src/E0D1C.C) */
 extern int gPartyCell; /*@ ds:FBCA */     /* the party's map cell (src/E177D.C:92): this unit passes
-                                            it to f0D1C_00DA (UseWandItem) as the cell and indexes
-                                            the nine-byte records with it */
+                                            it to f0D1C_00DA (UseWandItem) as the cell; E0ACD.C
+                                            indexes the nine-byte records with it */
 extern int gMouseDisabled; /*@ ds:814A */   /* nonzero disables the mouse (src/E07A9.C) */
 extern int gStatusLine; /*@ ds:8115 */            /* nonzero while a status line is up (src/E082C.C) */
 extern int gGraphicsChoice; /*@ ds:8102 */            /* nonzero: a colour row exists (src/E07A9.C) */
@@ -517,9 +517,9 @@ next:
 /* 0BD2:07DE: reserves one of the ten effect records at ds:DD2C (returning 0 when all are live),
    queues `item` at the map record gB899 + `volume` * 9 through 0BD2:01D0 with the tag `kind | 4`,
    fills the record from the arguments, plays sound 0x0B (0x1A when `type` is 7), and returns 1.
-   `volume` is the item's map cell (the callers pass gPartyCell, E0ACD.C:434, :769), `page` is the
-   page gFBCC, `kind` is the per-page action kind and `type` is the item's m02. QUIRK 0BD2:07DE:
-   rec->m02 is stored 1 twice (the second store is in the original). */
+   `volume` is the item's map cell (most callers pass gPartyCell, E0ACD.C:434, :769, E0DE8.C:406;
+   E122E.C:728 passes the script's id), `page` is gFBCC, `kind` is the per-page action kind and
+   `type` is the item's m02. QUIRK 0BD2:07DE: rec->m02 is stored 1 twice (the second store is in the original). */
 /*@ 0BD2:07DE */ int AddDDEffect(int who, int item, int volume, int kind, int page, int type)
 {
     struct DDRec *rec;
