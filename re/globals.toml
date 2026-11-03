@@ -394,7 +394,7 @@ why = "font cell height; the source is src/E1A47.C and src/E1DE7.C:54-55 calls i
 [[global]]
 id = "ds:EFCC"
 name = "gNameTable"
-why = "the far table 0EF3:2295 reads names from; set to g12E0 or g1278 by 0EF3:21E0 (only E0EF3.C references ds:EFCC)"
+why = "the far table 0EF3:2295 reads names from; set to gClericSpellNames or gMageSpellNames by 0EF3:21E0 (only E0EF3.C references ds:EFCC)"
 
 [[global]]
 id = "ds:84A0"
@@ -614,4 +614,4 @@ why = "ds:7F38 holds the file name INVENT (EOB.EXE literal)"
 [[global]]
 id = "ds:5737"
 name = "g5737"
-why = "ds:5737 is a word table of animation frames (0EF3:2EBC reads it as frameTable[row6 >> 8], :2415), not a string; the gText prefix is this file's prefix for strings. No other src/ file names ds:5737"
+why = "ds:5737 is a word table of animation frames (0EF3:2EBC reads it as frameTable[row6 >> 8]), not a string; the gText prefix is this file's prefix for strings. No other src/ file names ds:5737"
