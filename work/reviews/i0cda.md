@@ -1,7 +1,7 @@
 # Review: i0cda
 
 Reviewer: rev-haiku
-Commit reviewed: 6ea511f (round 3; round 1 reviewed aa139872dfa3474f683144e3ec4f289840e9c58d)
+Commit reviewed: a97a0d7 (round 4; round 3 reviewed 6ea511f; round 1 reviewed aa139872dfa3474f683144e3ec4f289840e9c58d)
 
 Playbook 70. Judge what a matching file can still get wrong: names, types, comments, structure.
 The matcher already proved the bytes; do not re-prove them, read for meaning.
@@ -10,6 +10,33 @@ The matcher already proved the bytes; do not re-prove them, read for meaning.
 
 Each finding is a checkbox. `must-fix` blocks `make review-pass` until a decompiler ticks it off
 (with the commit that fixes it); `should` and `note` do not block.
+
+### Round 4 (rev-haiku, 2026-11-02, main 3c9d29a)
+
+Judged: the round 3 must-fix (src/I0CDA.ASM:43-44) and should (:45), fixed in a97a0d7 and ticked in
+d34d7a9, and the diff since 6ea511f (`git diff 6ea511f HEAD -- src/I0CDA.ASM re/renames.toml`: src/I0CDA.ASM
+lines 43 to 47 and re/renames.toml:2584 only; the re/symbols.toml change at i0cda_0006 is the notes line
+moving). `make match FILE=src/I0CDA.ASM` 1 of 1 exit 0 (50 bytes); `make readability UNIT=i0cda` 0 findings.
+
+- Round 3 must-fix (43-44, "returns the XOR") is fixed right and stays ticked: line 69 (`rcr`) writes new
+  b0, line 65 (`rcl byte ptr es:[si+1]`) writes new b1, and line 71 (`xor al,es:[si+1]`) computes
+  new b0 ^ new b1. re/renames.toml:2584 says the same.
+- Round 3 should (45, "narrows") stays ticked: the sentence it asked to fix is gone. Its replacement
+  has a wrong claim, which is the must-fix below.
+
+New findings:
+
+- [ ] must-fix src/I0CDA.ASM:46-47 (a line the a97a0d7 comment changed): "each only reduces it" is
+  false. The call at src/IOV0.C:545 is the statement `RandomByte();`, so it discards the byte, and the
+  ovl0:1015 site drops it too (the comment's own lines 37 and 38 say so). Say that: "the callers that
+  use it only reduce it (`% 31`, `& 7`, `& 3`, `& 1`), and two drop it (src/IOV0.C:545 and ovl0:1015)."
+- [ ] should src/I0CDA.ASM:28-29: "the two shr (lines 60 and 61)" and "the rcr at line 67" are stale.
+  They were right at 6ea511f, but a97a0d7 added two comment lines above them: `grep -n 'shr\|rcr'
+  src/I0CDA.ASM` now gives 62, 63 (shr) and 69 (rcr). Round 3 accepted the old numbers and the fix made
+  them stale. Update them to 62, 63 and 69, or drop the numbers and name the instructions.
+
+Round 4 is not a pass: one must-fix is open (the caller sentence at :46-47). The byte, the name and the
+step list are fixed right.
 
 ### Round 3 (rev-haiku, 2026-11-02, main a49342c)
 
