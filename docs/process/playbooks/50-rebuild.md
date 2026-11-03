@@ -59,15 +59,47 @@ Found on INTRO.EXE (the large model, one overlay, 23 units built from their EOB.
 9. **Library modules nothing calls.** The original links GETCWD, which no code calls: an assembly
    module's unused `EXTRN` pulled it in. Where the library's modules stop lining up, the tool names the
    missing one from the reference link and adds an `EXTRN` for it.
-10. **Uninitialised globals** are Turbo C communal variables, after every module's `_BSS` (`c_common`).
-11. **A module's own data.** A C module's `_DATA` is its initialised globals and string literals in
-    source order. A global the module defines in the original but `src/` declares `extern` leaves a hole
-    no filler can fill (fillers go between modules): the source has to define it, with its value, where
-    the original did. INTRO.EXE: I0892.C (the sound file names, from +00F9) and IOV0.C (from +00F6);
-    E19BC.C and E1C0E.C are already exact.
+10. **Uninitialised globals** go in their module's `_BSS`, before the library's (INTRO.EXE's library code
+    addresses its BSS from ds:2E30, after Westwood's from ds:28A0): one generated `_BSS` module linked
+    before the libraries, from where the start-up code clears (C0's `bdata`, found by its reference) to
+    where the library's code addresses its own (found the same way). Not communal (`c_common` would go
+    after the library's).
+11. **A module's own data.** A C module's `_DATA` is its initialised globals, then one pool of every
+    string literal in source order. The copy names each literal by its original address (`__s1A3C`,
+    from the matcher's literal map) and declares it `extern`, so the compiled module has no data and the
+    generated data supplies it. The data is then split by owner (item 15).
+12. **Twin assembly** spells some addresses as EOB.EXE numbers: DGROUP (`212Eh`), a far segment
+    (`mov bx,1A16h`, a relocated word, becomes `SEG` of a function or far object there), a DS or CS
+    offset (`ds:[8496h]`, `cs:[4]`). Each takes the twin proof's value for that unit; a frame offset
+    (`[bp+6]`) is never relabelled.
+13. **Segment starts.** TLINK's segment table (`make overlays`) records where each segment begins, after
+    alignment (the low four bits). The map can count a word-alignment pad as a unit's first byte; `src/`
+    then has it as `db 0` (E1BBE.ASM, I0CDA.ASM, E1D9A.ASM's scratch), and the copy drops it. A segment
+    that begins at an odd address (E1948.ASM at 084A:0005) was byte aligned: the copy declares it `BYTE`
+    before `.MODEL`, which TASM 2.0 then keeps. An assembly data segment of its own (E1948's `SND`) is
+    byte aligned, class `DATA`, filled with the original's bytes.
+14. **Empty segments** are in the segment table too. `.MODEL` declares an empty code segment that TLINK
+    lists (and aligns); the copies avoid it (segment-0 assembly without `.MODEL`, the `EXTRN` module
+    without segments). The original has three of its own (INTRO.EXE 0892:0000, 0A19:0000, 0AED:000D):
+    data-only modules (item 15), each an empty code segment in its place.
+15. **Relocation order.** TLINK writes the relocation table module by module in fixup order. Each run of
+    the original's data relocations follows the code relocations of the module that owns that data
+    (I0892.C, E1C0E.C) or precedes a data-only module (after E1948.ASM, E1AAA.C, E1AAD.ASM). The data is
+    split there, each piece linked after its owner, its fixups (`dw DGROUP`, `dw SEG f`) written with
+    `ORG` in the original's order.
+16. **A library variable the program defines.** INTRO.EXE defines `_ovrbuffer` (the overlay buffer, 00C7h
+    paragraphs, ds:1A28) in its own data, so OVERLAY.LIB's OVRBUFF is not linked. The probe finds such a
+    public: the original's library code addresses it apart from where the library's data moved.
+17. **The output name** is written into the overlay data (`_EXEINFO_`): the link names its output after
+    the program.
 
-Still to come, from poolrad's experience: the overlay stub order (EOB.EXE's and INTRO.EXE's VROOMM stubs
-list the entries other modules call, in an order the code does not give), external objects, and patch
+Left on INTRO.EXE (2026-11-03): 42 bytes. The **link date**: TLINK writes the date into `_EXEINFO_`
+(INTRO.EXE: 29 April 1991), and emu2 gives the host's. The **overlay stub order**: TLINK numbers an
+overlay module's stub entries in the reverse of its public definitions, and Turbo C writes those in an
+order of its symbol hash of the names (and, for names that share a bucket, of definition order), so
+the order is set by the original function names; one far call (0892:0161) and the stub table differ.
+
+Still to come, from poolrad's experience: external objects, and patch
 sites (`re/patches.toml`, SPEC section 2: a byte the fan patch changed by hand in code is applied after
 linking, never forced in C; START1's "Version 1.9" banner is data and needs none).
 

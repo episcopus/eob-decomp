@@ -94,6 +94,7 @@ PAD_CODE_SMALL = 0x133
 # ---------------------------------------------------------------- the source
 
 DRAFTS: set = set()
+LITERALS: dict = {}   # offset of a literal in our unit's data -> the original's DGROUP offset of it
 FARDATA: set = set()   # externs annotated seg:off that are data, not functions: far objects in another segment
 FAR_BASE = 0x8000
 # -B: units compiled through the assembler. Their bytes come from TASM without SMART encoding: with
@@ -415,6 +416,7 @@ def compare(fname, a: Build, b: Build, at_a: int, at_b: int, length: int, orig: 
             elif a.lits[0] <= va < a.lits[1]:
                 if a.cstr(va) != orig.cstr(vo):
                     return fail(k, "literal %r, original %r" % (a.cstr(va), orig.cstr(vo)))
+                LITERALS[va - a.lits[0]] = vo           # for make rebuild: where the original keeps it
             elif va >= FAR_BASE - 256 and far_a and min(far_a, key=lambda o: abs(va - o)) - 256 <= va < \
                     min(far_a, key=lambda o: abs(va - o)) + 256:
                 # the nearest far object; a displacement may be negative (gMapTiles[i - 1] at offset 0
@@ -677,6 +679,8 @@ def main() -> int:
     print("cmatch: %d of %d functions match%s%s" % (
         len(defined - stubs) - bad - drafts, len(defined - stubs),
         ", %d drafts" % drafts if drafts else "", ", %d stubs" % len(stubs) if stubs else ""))
+    if __import__("os").environ.get("CMATCH_LITERALS"):
+        Path(__import__("os").environ["CMATCH_LITERALS"]).write_text(json.dumps({str(k): v for k, v in LITERALS.items()}))
     if a.write and program.name.upper() in ("EOB.EXE", "INTRO.EXE", "START1.EXE"):
         n = write_levels({funcs[k]: k for k in matched}, "tasm /mx" if asm else " ".join(flags),
                          u["id"] if whole else None, program.name.upper(), lengths)

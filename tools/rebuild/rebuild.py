@@ -28,7 +28,7 @@ get here and src/ does not:
 Then the load image, the relocation table and (when those agree) the whole file are compared with
 the original's, and every range that differs is reported with the unit or region it lies in. Exit
 code 0 when the image and the relocations are identical. The working files stay in
-build/rebuild/<program>/ (OUT.EXE, OUT.MAP, the copies, the fillers).
+build/rebuild/<program>/ (<PROGRAM>.EXE and .MAP, the copies, the fillers).
 """
 from __future__ import annotations
 
@@ -49,10 +49,13 @@ from mzutil import read_mz  # noqa: E402
 import cmatch  # noqa: E402
 import rename  # noqa: E402
 
-# the start-up code and libraries of each program (whitepaper 2.1, 2.6)
-PROGRAMS = {"START1.EXE": {"model": "S", "libs": ["CS"]},
-            "INTRO.EXE": {"model": "L", "libs": ["OVERLAY", "CL"]},
-            "EOB.EXE": {"model": "L", "libs": ["OVERLAY", "CL"]}}
+# the start-up code and libraries of each program (whitepaper 2.1, 2.6); `library_units` are units the
+# map took for Westwood code that are a library module: e1e8b (and INTRO.EXE's twin i0dd9) is
+# OVERLAY.LIB's overlay manager OVRMAN, its code segment _OVRTEXT_ (the library's copy and the
+# original's segment differ only in address fields, 2026-11-03), so the library brings it
+PROGRAMS = {"START1.EXE": {"model": "S", "libs": ["CS"], "library_units": []},
+            "INTRO.EXE": {"model": "L", "libs": ["OVERLAY", "CL"], "library_units": ["i0dd9"]},
+            "EOB.EXE": {"model": "L", "libs": ["OVERLAY", "CL"], "library_units": ["e1e8b"]}}
 DATA_DEF = re.compile(r"^\s*([A-Za-z_]\w*)\s+(?:db|dw|dd|label)\b", re.M | re.I)
 
 
@@ -66,7 +69,8 @@ def all_units() -> list[dict]:
 
 
 def own_units(program: str) -> list[dict]:
-    us = [u for u in all_units() if u["program"] == program and u["kind"] not in ("startup", "library")]
+    us = [u for u in all_units() if u["program"] == program and u["kind"] not in ("startup", "library")
+          and u["id"] not in PROGRAMS.get(program, {}).get("library_units", [])]
     return sorted(us, key=lambda u: (u["start"].startswith("ovl"), lin(u["start"]) if ":" in u["start"] and
                                      not u["start"].startswith("ovl") else int(u["start"][3:].split(":")[0])))
 
@@ -83,6 +87,7 @@ class Space:
         self.data: dict[int, int] = {}                 # EOB ds offset -> this program's (twins)
         self.far: dict[tuple, tuple] = {}              # EOB (seg, off) -> this program's, from the twin proofs
         self.seg: dict[int, int] = {}                  # EOB segment -> this program's, from the twin proofs
+        self.values: dict[str, dict] = {}              # EOB unit -> {(disp or imm, EOB value): this program's}
         self.lib = {p: self.library(p) for p in ("EOB.EXE", program)}
         man = json.loads((ROOT / "build/re" / ("%s.json" % program.split(".")[0].lower())).read_text())
         self.stubs = {o["stub_para"]: (o["overlay"], {0x20 + 5 * e["index"]: e["code_offset"] for e in o["entries"]})
@@ -102,6 +107,9 @@ class Space:
                             int.from_bytes(by[2:], "little"), int.from_bytes(by[:2], "little"))
                     elif kind == "seg":
                         self.seg[x] = y
+                    if kind in ("disp", "imm", "cs"):
+                        self.values.setdefault(e_id, {})[(kind, int.from_bytes(bytes.fromhex(x), "little"))] = \
+                            int.from_bytes(bytes.fromhex(y), "little")
                     if kind in ("disp", "imm") and len(x) == 4:
                         pairs[(int.from_bytes(bytes.fromhex(x), "little"), int.from_bytes(bytes.fromhex(y), "little"))] += 1
             self.pairs = sorted(pairs)
@@ -204,9 +212,13 @@ class Space:
         para = int(i["segment"], 16)
         return "%04X:%04X" % (para, t - para * 16)
 
-    def ds(self, off: int, eob_file: bool) -> int | None:
+    def ds(self, off: int, eob_file: bool, twin: str | None = None) -> int | None:
         if not eob_file or self.program == "EOB.EXE":
             return off
+        exact = self.values.get(twin, {})               # the twin proof's own value for this unit, when the
+        for kind in ("disp", "imm"):                    # unit's code uses the offset as it is (a nearby
+            if (kind, off) in exact:                    # pair can belong to the next segment's data)
+                return exact[(kind, off)]
         near = [(abs(x - off), y - x) for x, y in self.pairs if abs(x - off) <= 64]
         if not near:
             return None
@@ -287,7 +299,7 @@ def make_copies(program: str, w: Path, space: Space, main_addr: str | None) -> l
         seen[key] = a
     for c in copies:                                    # data an assembly or C module defines itself
         for n in c.data_defined & set(c.data):
-            d = space.ds(c.data[n], c.eob)
+            d = space.ds(c.data[n], c.eob, c.unit.get("twin"))
             if d is not None:
                 dsym[d] = n if c.asm else "_" + n
     unresolved, far = [], {}
@@ -318,7 +330,7 @@ def make_copies(program: str, w: Path, space: Space, main_addr: str | None) -> l
             if n != want:
                 text, _ = rename.replace_word(text, n, want, c.asm)
         for n, off in c.data.items():
-            d = space.ds(off, c.eob)
+            d = space.ds(off, c.eob, c.unit.get("twin"))
             if d is None:
                 if n not in c.data_defined:
                     unresolved.append("%s %s ds:%04X" % (c.src.name, n, off))
@@ -328,17 +340,65 @@ def make_copies(program: str, w: Path, space: Space, main_addr: str | None) -> l
                 if n != want:
                     text, _ = rename.replace_word(text, n, want, c.asm)
         c.text_out = text
+    names_lit: dict[int, list[str]] = {}
     # a far object an assembly module defines (gMovedSeg, a word in I0923.ASM's code): exported to C
     c_far = {n[1:] for c in copies if not c.asm for n in (("_" + m) for m in c.fardata)}
     for name in sorted(c_far & set(asm_labels)):
         d = asm_labels[name]
         d.text_out, _ = rename.replace_word(d.text_out, name, "_" + name, True)
         d.text_out = re.sub(r"(^\s*\.CODE\b[^\n]*\n)", r"\1        PUBLIC  _%s\n" % name, d.text_out, count=1, flags=re.M | re.I)
+    # a segment by a symbol in it: a function of this program, else a far object (alias_far may rename it)
+    seg_names: dict[int, tuple[str, str]] = {}
+    for (sg, off), syms in sorted(far.items(), key=str):
+        if not isinstance(sg, str):
+            seg_names.setdefault(sg, (sorted(syms)[0], "BYTE"))
+    for a, n in sorted(fsym.items()):
+        if ":" in a and not a.startswith("ovl"):
+            seg_names[int(a.split(":")[0], 16)] = ("_" + n if (a in c_uses or n == "main") else n, "FAR")
+    space.seg_names = seg_names
+    for c in copies:
+        relabel_literals(c, space, w, names_lit)
+        if c.asm:
+            src_prog = "EOB.EXE" if c.eob else program
+            img = space.image if src_prog == program else read_mz((ROOT / "eob" / src_prog).read_bytes())["image"]
+            own_data_segment(c, space, img, cmatch.dgroup_of(ROOT / "eob" / src_prog))
     for c in copies:
         # a large-model assembly unit in segment 0000 (INTRO.EXE's AdLib driver) is part of _TEXT, with
         # the start-up code and the library; TASM's .CODE would name its segment after the file
-        if c.asm and PROGRAMS[program]["model"] == "L" and c.unit["start"].startswith("0000:"):
+        large = c.asm and PROGRAMS[program]["model"] == "L"
+        if c.asm and c.eob and program != "EOB.EXE":
+            relabel_numbers(c, space.values.get(c.unit.get("twin"), {}))
+            relabel_segments(c, space, seg_names)
+        if c.asm:                                   # DGROUP's paragraph, which src/ spells as a number
+            para = cmatch.dgroup_of(ROOT / "eob" / ("EOB.EXE" if c.eob else program))   # (212Eh): the group
+            c.text_out = re.sub(r"^(\s*mov\s+\w+\s*,\s*)0*%Xh\b" % para, r"\g<1>DGROUP", c.text_out, flags=re.M | re.I)
+        if large and c.unit["start"].startswith("0000:") and not re.search(r"DGROUP|@data|\.DATA", c.text_out, re.I):
+            # without .MODEL, whose own empty code segment the original does not have (TLINK's segment
+            # table would list it)
+            c.text_out = re.sub(r"^\s*\.MODEL\b[^\n]*$", "", c.text_out, count=1, flags=re.M | re.I)
+            c.text_out = re.sub(r"^\s*\.CODE\s*$", "_TEXT SEGMENT WORD PUBLIC 'CODE'\n        ASSUME  cs:_TEXT",
+                                c.text_out, count=1, flags=re.M | re.I)
+            c.text_out = re.sub(r"@code\b", "_TEXT", c.text_out, flags=re.I)
+            c.text_out = re.sub(r"^(\s*END\b[^\n]*)\s*\Z", "_TEXT ENDS\n\\1\n", c.text_out, flags=re.M | re.I)
+        elif large and c.unit["start"].startswith("0000:"):
             c.text_out = re.sub(r"^(\s*\.CODE)\s*$", r"\1 _TEXT", c.text_out, flags=re.M | re.I)
+        # where the original's segment begins: TLINK's segment table records it (the low four bits of
+        # its start, after alignment), and the map can count an alignment pad as a unit's first byte
+        # (src/ then has it as `db 0`: E1BBE.ASM, I0CDA.ASM). The pad goes from the copy, and .CODE's
+        # word alignment makes it; a segment that begins at an odd address (E1948.ASM at 084A:0005 in
+        # INTRO.EXE) was byte aligned, so it is declared BYTE before .MODEL (TASM 2.0 then keeps it).
+        if large and not c.unit["start"].startswith("0000:") and not c.unit["start"].startswith("ovl"):
+            u = lin(c.unit["start"])
+            sg = next((x for x in space.segments if x["kind_name"] == "code" and x["size"] and x["start"] <= u < x["start"] + x["size"]), None)
+            begin = sg["para"] * 16 + sg["flags"] if sg else u
+            if begin > u:
+                c.text_out, dropped = drop_pad(c.text_out, begin - u)
+                if not dropped:
+                    print("rebuild: %s: the original's segment begins at %05X, after %d bytes of the unit; no pad found" % (c.path.name, begin, begin - u))
+            elif u % 2:
+                seg = "%s_TEXT" % c.path.stem.upper()
+                c.text_out = re.sub(r"^(\s*\.MODEL\b)", "%s SEGMENT BYTE PUBLIC 'CODE'\n%s ENDS\n\\1" % (seg, seg),
+                                    c.text_out, count=1, flags=re.M | re.I)
         c.path.write_text(c.text_out.replace("\r\n", "\n").replace("\n", "\r\n"))
     if unresolved:
         print("rebuild: globals of twin files not placed in %s: %s" % (program, "; ".join(unresolved[:8])))
@@ -347,13 +407,197 @@ def make_copies(program: str, w: Path, space: Space, main_addr: str | None) -> l
     for c in copies:
         _, data, _, _ = cmatch.parse_annotations(c.text_out, c.asm)
         for n, off in data.items():
-            d = space.ds(off, c.eob)
+            d = space.ds(off, c.eob, c.unit.get("twin"))
             if d is None or d in dsym:
                 continue
             sym = n if c.asm else "_" + n
             if sym not in names.setdefault(d, []):
                 names[d].append(sym)
+    # an assembly label that C code names with its underscore (E1948.ASM's gTandyOn, C's _gTandyOn,
+    # one address): the copy gives the C name a label of its own at the definition
+    for c in copies:
+        for lab in sorted(c.data_defined) if c.asm else ():
+            hit = [d for d, syms in names.items() if "_" + lab in syms]
+            if not hit or "_" + lab in c.data_defined:
+                continue
+            c.text_out = re.sub(r"^(%s\s+(db|dw|dd)\b)" % re.escape(lab), r"_%s label byte\n\1" % lab, c.text_out, count=1, flags=re.M | re.I)
+            c.text_out = re.sub(r"^(\s*\.MODEL\b[^\n]*\n)", r"\g<1>        PUBLIC  _%s\n" % lab, c.text_out, count=1, flags=re.M | re.I)
+            c.path.write_text(c.text_out.replace("\r\n", "\n").replace("\n", "\r\n"))
+            for d in hit:
+                names[d].remove("_" + lab)
+                if not names[d]:
+                    del names[d]
+    for o2, syms in names_lit.items():
+        for sy in syms:
+            if sy not in names.setdefault(o2, []):
+                names[o2].append(sy)
     return copies, names, far
+
+
+def alias_far(program: str, w: Path, exe: Path, copies: list, far: dict) -> dict:
+    """Name the far objects that lie in a library's segment by that library's public; the rest stay."""
+    if not far:
+        return far
+    import fbov
+    orig = json.loads((ROOT / "build/re" / ("%s.json" % program.split(".")[0].lower())).read_text())["segments"]
+    ours = fbov.manifest(exe.read_bytes())[0]["segments"]
+    text = map_text(w)
+    text = text[text.index("Publics by Value"):] if "Publics by Value" in text else ""
+    pubs = sorted((int(m.group(1), 16) * 16 + int(m.group(2), 16), m.group(3))
+                  for m in re.finditer(r"^\s*([0-9A-F]{4}):([0-9A-F]{4})\s+(?:idle\s+)?(\S+)\s*$", text, re.M))
+    def data_before_dgroup(tab):                    # the non-empty data segments before DGROUP, in order
+        dg = max(x["para"] for x in tab if x["kind_name"] == "data" and x["size"] > 1024)
+        return [x for x in tab if x["kind_name"] == "data" and x["size"] and x["para"] < dg]
+    od, wd = data_before_dgroup(orig), data_before_dgroup(ours)
+    rest = {}
+    for (seg, off), syms in far.items():
+        k = next((i for i, x in enumerate(od) if not isinstance(seg, str) and x["para"] == seg), None)
+        if k is None or k >= len(wd):
+            rest[(seg, off)] = syms
+            continue
+        lo = wd[k]["para"] * 16
+        hit = [(a, n) for a, n in pubs if lo <= a <= lo + off and a < lo + wd[k]["size"]]
+        if not hit:
+            rest[(seg, off)] = syms
+            continue
+        a, pub = max(hit)
+        delta = lo + off - a
+        for c in copies:
+            for sym in syms:
+                name = sym[1:] if not c.asm and sym.startswith("_") else sym
+                if c.asm and delta == 0 and re.search(r"\bSEG\s+%s\b" % re.escape(sym), c.text_out):
+                    c.text_out = re.sub(r"\b%s\b" % re.escape(sym), pub, c.text_out)   # relabel_segments'
+                    c.path.write_text(c.text_out.replace("\r\n", "\n").replace("\n", "\r\n"))
+                    continue
+                if c.asm or not re.search(r"\b%s\b" % re.escape(name), c.text_out):
+                    continue
+                m = re.search(r"^extern\s+(.*?)\s+far\s+%s\s*(\[\s*\])?\s*;[^\n]*$" % re.escape(name), c.text_out, re.M)
+                if not m:
+                    continue
+                cname = pub[1:] if pub.startswith("_") else pub
+                typ, arr = m.group(1), bool(m.group(2))
+                expr = ("((%s far *)((char far *)%s + %d))" if arr else "(*(%s far *)((char far *)%s + %d))") % (typ, cname, delta)
+                c.text_out = c.text_out[:m.start()] + "extern char far %s[];\n#define %s %s" % (cname, name, expr) + c.text_out[m.end():]
+                c.path.write_text(c.text_out.replace("\r\n", "\n").replace("\n", "\r\n"))
+                print("rebuild: %s is the library's %s+%d (%s)" % (name, pub, delta, c.path.name))
+    return rest
+
+
+ASM_DEF = re.compile(r"^(\s*)(\w+)?(\s+)(db|dw|dd)(\s+)(.*?)(\s*;.*)?$", re.I)
+
+
+HEXNUM = re.compile(r"\b(?:(0*[0-9][0-9A-Fa-f]*)h|([0-9]+))\b")
+
+
+def relabel_numbers(c: "Copy", values: dict) -> None:
+    """A twin assembly file spells some addresses as EOB.EXE's numbers (`mov ax,ds:[8496h]`): each
+    number on a code line that the twin proof relabels (a displacement inside brackets, an immediate
+    outside them) takes this program's value. Numbers the two programs share are not in the proof."""
+    out = []
+    for line in c.text_out.split("\n"):
+        code, sep, comment = line.partition(";")
+        if re.match(r"\s*(\w+\s+)?(db|dw|dd|EQU)\b", code, re.I) or not code.strip():
+            out.append(line)
+            continue
+        def sub(m, code=code):
+            inside = code[:m.start()].count("[") > code[:m.start()].count("]")
+            if inside and re.search(r"\bbp\b", code[code.rfind("[", 0, m.start()):code.find("]", m.end()) + 1], re.I):
+                return m.group(0)                   # a frame offset ([bp+6]), never an address
+            kind = ("cs" if re.search(r"\bcs:", code, re.I) else "disp") if inside else "imm"
+            if m.group(2) and not inside:           # a decimal outside brackets is a count, not an address
+                return m.group(0)
+            y = values.get((kind, int(m.group(1), 16) if m.group(1) else int(m.group(2))))
+            return m.group(0) if y is None else "0%Xh" % y
+        out.append(HEXNUM.sub(sub, code) + sep + comment)
+    c.text_out = "\n".join(out)
+
+
+def drop_pad(text: str, n: int) -> tuple[str, bool]:
+    """Take the n pad bytes off the first statement after .CODE when it is zeros (`db 0`, or E1D9A.ASM's
+    `dw 0,0,0,0`, a pad and seven bytes of scratch); labels before it stay where they are."""
+    m = re.search(r"^\s*\.CODE\b[^\n]*\n", text, re.M | re.I)
+    if not m:
+        return text, False
+    pos = m.end()
+    for line in re.finditer(r"[^\n]*\n", text[pos:]):
+        code = line.group(0).split(";")[0].strip()
+        if not code or re.match(r"(PUBLIC|EXTRN|ASSUME)\b|\w+\s+LABEL\b", code, re.I):
+            continue
+        z = re.fullmatch(r"(db|dw)\s+(0+h?(?:\s*,\s*0+h?)*)", code, re.I)
+        if not z:
+            return text, False
+        total = (z.group(2).count(",") + 1) * (1 if z.group(1).lower() == "db" else 2)
+        if total < n:
+            return text, False
+        at = pos + line.start()
+        new = "        db      %d dup (0)\n" % (total - n) if total > n else ""
+        return text[:at] + new + text[at + len(line.group(0)):], True
+    return text, False
+
+
+def relabel_segments(c: "Copy", space: "Space", seg_names: dict) -> None:
+    """An EOB.EXE segment that a twin assembly file loads as a number (`mov bx,1A16h`, a word the
+    original relocates) becomes SEG of a symbol in this program's segment, so TLINK relocates it."""
+    need = set()
+    def sub(m):
+        y = space.seg.get(int(m.group(2), 16))
+        if y is None or y not in seg_names:
+            return m.group(0)
+        need.add(seg_names[y])
+        return "%sSEG %s" % (m.group(1), seg_names[y][0])
+    out = []
+    for line in c.text_out.split("\n"):
+        code, sep, comment = line.partition(";")
+        out.append(re.sub(r"^(\s*(?:\w+:\s*)?mov\s+\w+\s*,\s*)0*([0-9][0-9A-Fa-f]*)h\b", sub, code, flags=re.I) + sep + comment)
+    c.text_out = "\n".join(out)
+    for name, kind in sorted(need):
+        if not re.search(r"^\s*(EXTRN|PUBLIC)\b[^;\n]*\b%s\b|^%s\s+(PROC|LABEL)\b" % (re.escape(name), re.escape(name)), c.text_out, re.M | re.I):
+            c.text_out = re.sub(r"^(\s*\.MODEL\b[^\n]*\n)", r"\g<1>        EXTRN   %s:%s\n" % (name, kind), c.text_out, count=1, flags=re.M | re.I)
+
+
+def own_data_segment(c: "Copy", space: "Space", image: bytes, odg: int) -> None:
+    """An assembly module's own data segment (E1948.ASM's SND: the PC speaker driver's tables, right
+    after every module's _DATA, at ds:88A6 in EOB.EXE and ds:26DA in INTRO.EXE): byte aligned, class
+    DATA, so TLINK puts it there; the padding src/ keeps before its first variable (to give match the
+    original's offsets from the paragraph) goes, and each `?` takes the original's bytes."""
+    m = re.search(r"^(\w+)\s+SEGMENT\s+PARA\s+PUBLIC\s+'(\w+)'(.*?)^\1\s+ENDS", c.text_out, re.M | re.S | re.I)
+    if not m or m.group(1).upper().endswith("_TEXT") or m.group(2).upper() in ("CODE", "DATA", "BSS"):
+        return
+    body, out, started, pos, first = m.group(3), [], False, None, None
+    for line in body.split("\n"):
+        mm = ASM_DEF.match(line)
+        ann = re.search(r"@\s*ds:([0-9A-Fa-f]{1,4})", line)
+        if mm and ann and not started:
+            started, pos = True, int(ann.group(1), 16)
+            first = pos   # in the file's own program: a twin's values are
+                                                          # its EOB.EXE twin's (the same in both programs)
+        if not started:
+            continue
+        if mm and pos is not None:
+            kind, operand = mm.group(4).lower(), mm.group(6)
+            size = {"db": 1, "dw": 2, "dd": 4}[kind]
+            dm = re.match(r"(\d+)\s+dup\s*\(\s*\?\s*\)", operand, re.I)
+            n = int(dm.group(1)) * size if dm else (size if operand.strip() == "?" else None)
+            if n is None:
+                out.append(line)
+                pos = None                          # an initialised value we cannot size: stop filling
+                continue
+            data = image[odg * 16 + pos:odg * 16 + pos + n]
+            vals = ["0%0*Xh" % (2 * size, int.from_bytes(data[k:k + size], "little")) for k in range(0, n, size)]
+            for k in range(0, len(vals), 16):       # the type stays (the code's operands need it); short lines
+                out.append("%s%s%s%s%s%s%s" % (mm.group(1), (mm.group(2) or "") if k == 0 else "",
+                                               mm.group(3) if k == 0 else " " * (len(mm.group(2) or "") + len(mm.group(3))),
+                                               kind, mm.group(5), ",".join(vals[k:k + 16]),
+                                               (mm.group(7) or "")[:60] if k == 0 else ""))
+            pos += n
+        else:
+            out.append(line)
+    new = "%s SEGMENT BYTE PUBLIC 'DATA'\n%s\n%s ENDS" % (m.group(1), "\n".join(out), m.group(1))
+    c.text_out = c.text_out[:m.start()] + new + c.text_out[m.end():]
+    if first is not None:                           # the frame src/ loads as a number (29B8h, the
+        frame = odg + first // 16                   # paragraph TLINK gave the segment) is the segment
+        c.text_out = re.sub(r"^(\s*mov\s+\w+\s*,\s*)0*%Xh\b" % frame, r"\g<1>%s" % m.group(1),
+                            c.text_out, flags=re.M | re.I)
 
 
 def far_objects(program: str, space: "Space", far: dict, image: bytes) -> str | None:
@@ -400,11 +644,110 @@ def far_objects(program: str, space: "Space", far: dict, image: bytes) -> str | 
     return "\r\n".join(groups + pubs + lines + ["END"]) + "\r\n"
 
 
-def filler(tag: str, image: bytes, base: int, lo: int, hi: int, names: dict, init: bool) -> str:
-    """A module of the original's DGROUP bytes [lo, hi) (or reserved, for _BSS), a public at each name."""
+C_LIT = re.compile(r'/\*.*?\*/|//[^\n]*|\'(?:[^\'\\\n]|\\.)*\'|"(?:[^"\\\n]|\\.)*"(?:\s*"(?:[^"\\\n]|\\.)*")*', re.S)
+ESC = {"n": 10, "r": 13, "t": 9, "a": 7, "b": 8, "f": 12, "v": 11, "\\": 92, '"': 34, "'": 39, "?": 63}
+
+
+def c_string_bytes(lit: str) -> bytes:
+    """The bytes of a C string literal (adjacent ones joined), escapes decoded, without the NUL."""
+    out = bytearray()
+    for part in re.findall(r'"((?:[^"\\\n]|\\.)*)"', lit):
+        k = 0
+        while k < len(part):
+            ch = part[k]
+            if ch != "\\":
+                out.append(ord(ch) & 0xFF)
+                k += 1
+                continue
+            nxt = part[k + 1]
+            if nxt == "x":
+                m = re.match(r"[0-9A-Fa-f]{1,2}", part[k + 2:])
+                out.append(int(m.group(0), 16))
+                k += 2 + len(m.group(0))
+            elif nxt in "01234567":
+                m = re.match(r"[0-7]{1,3}", part[k + 1:])
+                out.append(int(m.group(0), 8) & 0xFF)
+                k += 1 + len(m.group(0))
+            else:
+                out.append(ESC.get(nxt, ord(nxt)))
+                k += 2
+    return bytes(out)
+
+
+def literals_at_original(c: "Copy", space: "Space", w: Path) -> dict[int, int] | None:
+    """Where the original keeps each string literal of a C file: make match records it for every
+    literal a function refers to (CMATCH_LITERALS), by its offset in our module's data."""
+    out = w / ("%s.LIT" % c.path.stem)
+    import os
+    import subprocess
+    r = subprocess.run([sys.executable, str(ROOT / "tools/match/cmatch.py"), str(c.src)], cwd=ROOT,
+                       env=dict(os.environ, CMATCH_LITERALS=str(out)), capture_output=True, text=True)
+    if not out.exists():
+        return None
+    got = {int(k): v for k, v in json.loads(out.read_text()).items()}
+    return {k: space.ds(v, c.eob, c.unit.get("twin")) for k, v in got.items()}
+
+
+def relabel_literals(c: "Copy", space: "Space", w: Path, names: dict) -> int:
+    """Each string literal of a C copy becomes a reference to a label at the original's address of it
+    (__s1A07), so the module brings no data of its own and the program's data comes whole from the
+    original (the fillers); the code is the same, an offset in DGROUP either way."""
+    if c.asm or '"' not in c.text_out:
+        return 0
+    where = literals_at_original(c, space, w)
+    if not where:
+        return 0
+    text, out, pos, off, n = c.text_out, [], 0, 0, 0
+    used = set()
+    for m in C_LIT.finditer(text):
+        tok = m.group(0)
+        if not tok.startswith('"'):
+            continue
+        line_start = text.rfind("\n", 0, m.start()) + 1
+        if text[line_start:m.start()].lstrip().startswith("#"):      # #include "x.h"
+            continue
+        b = c_string_bytes(tok)
+        at = where.get(off)
+        off += len(b) + 1
+        if at is None:
+            continue
+        label = "__s%04X" % at
+        out += [text[pos:m.start()], label]
+        pos = m.end()
+        used.add(at)
+        n += 1
+    out.append(text[pos:])
+    decl = "".join("extern char __s%04X[];\n" % a for a in sorted(used))
+    body = "".join(out)
+    last_inc = max((mm.end() for mm in re.finditer(r"^#include[^\n]*\n", body, re.M)), default=0)
+    c.text_out = body[:last_inc] + decl + body[last_inc:]
+    for a in used:
+        if "___s%04X" % a not in names.setdefault(a, []):
+            names[a].append("___s%04X" % a)
+    return n
+
+
+def filler(tag: str, image: bytes, base: int, lo: int, hi: int, names: dict, init: bool,
+           relocs: set | None = None, seg_names: dict | None = None, dgroup: int | None = None,
+           order: list | None = None) -> str:
+    """A module of the original's DGROUP bytes [lo, hi) (or reserved, for _BSS), a public at each name.
+    A word the original relocates (the segment of a far pointer) is a fixup: DGROUP, or SEG of a
+    function in that code segment."""
     seg = "_DATA" if init else "_BSS"
     pub = sorted(o for o in names if lo <= o < hi)
+    fix = {}
+    for k in range(lo, hi - 1) if init and relocs else ():
+        if base + k in relocs:
+            v = int.from_bytes(image[base + k:base + k + 2], "little")
+            if v == dgroup:
+                fix[k] = "DGROUP"
+            elif seg_names and v in seg_names:
+                fix[k] = "SEG %s" % seg_names[v][0]
+            else:
+                print("rebuild: %s: the relocated word at ds:%04X (%04X) is no segment we know" % (tag, k, v))
+    ext = sorted({seg_names[int.from_bytes(image[base + k:base + k + 2], "little")] for k, f in fix.items() if f != "DGROUP"})
     lines = ["DGROUP GROUP _DATA, _BSS"] + ["PUBLIC %s" % s for o in pub for s in names[o]]
+    lines += ["EXTRN %s:%s" % (n, kind) for n, kind in ext]
     other = "_BSS SEGMENT BYTE PUBLIC 'BSS'\r\n_BSS ENDS" if init else "_DATA SEGMENT BYTE PUBLIC 'DATA'\r\n_DATA ENDS"
     lines.append(other)
     lines.append("%s SEGMENT BYTE PUBLIC '%s'" % (seg, "DATA" if init else "BSS"))
@@ -412,13 +755,23 @@ def filler(tag: str, image: bytes, base: int, lo: int, hi: int, names: dict, ini
     for o in pub + [hi]:
         if o > pos:
             if init:
-                chunk = image[base + pos:base + o]
-                lines += ["db " + ",".join("%03Xh" % b for b in chunk[k:k + 16]) for k in range(0, len(chunk), 16)]
+                at = pos
+                for f in sorted(x for x in fix if pos <= x < o) + [o]:
+                    chunk = image[base + at:base + f]
+                    lines += ["db " + ",".join("%03Xh" % b for b in chunk[k:k + 16]) for k in range(0, len(chunk), 16)]
+                    if f < o:                       # a fixup now, or (in the original's order) at the end
+                        lines.append("ORG %05Xh" % (f + 2 - lo) if order else "dw %s" % fix[f])
+                        at = f + 2
             else:
                 lines.append("db %d dup (?)" % (o - pos))
         if o < hi:
             lines += ["%s label byte" % s for s in names[o]]
         pos = max(pos, o)
+    if order:                                       # the fixups in the original's order (TLINK writes
+        for f in order:                             # the relocation table in fixup order)
+            if f in fix:
+                lines += ["ORG %05Xh" % (f - lo), "dw %s" % fix[f]]
+        lines.append("ORG %05Xh" % (hi - lo))
     lines += ["%s ENDS" % seg, "END"]
     return "\r\n".join(lines) + "\r\n"
 
@@ -453,25 +806,137 @@ def assemble(w: Path, name: str, text: str) -> None:
         raise SystemExit("rebuild: %s.ASM: %s" % (name, out[-800:]))
 
 
-def link(program: str, w: Path, copies: list[Copy], fillers: dict[int, str], tail: str | None):
-    """TLINK the start-up code, the modules in order (a filler after the module it follows, the
-    overlay units under /o) and the libraries."""
+def empty_segments(w: Path, space: "Space", copies: list) -> dict[int, list]:
+    """The original's segment table lists three empty code segments in INTRO.EXE (0892:0000, 0A19:0000,
+    0AED:000D), each between two of our modules: a module of the original with no code of its own (a
+    data-only module, its data now in a filler [H]). Each becomes a module with one empty segment, linked
+    after the module that ends where it is."""
+    out: dict[int, list] = {}
+    for k, sg in enumerate(x for x in space.segments if x["kind_name"] == "code" and x["size"] == 0):
+        at = sg["start"]
+        i = next((i for i, c in enumerate(copies) if ":" in c.unit["start"] and not c.unit["start"].startswith("ovl")
+                  and lin(c.unit["start"]) + c.unit["bytes"] == at), None)
+        if i is None:                               # the overlay stubs' segment (_1STUB_) is TLINK's
+            if at < max((lin(c.unit["start"]) + c.unit["bytes"] for c in copies if ":" in c.unit["start"]
+                         and not c.unit["start"].startswith("ovl")), default=0):
+                print("rebuild: the original's empty code segment at %04X:%04X follows none of our modules" % (sg["para"], at - sg["para"] * 16))
+            continue
+        name = "EMPTY%d" % k
+        assemble(w, name, "%s_TEXT SEGMENT BYTE PUBLIC 'CODE'\r\n%s_TEXT ENDS\r\nEND\r\n" % (name, name))
+        out.setdefault(i, []).append(name)
+    return out
+
+
+def data_owners(oseq: list, copies: list, odg: int, lo: int, hi: int, idx: int, verbose: bool) -> list:
+    """The modules that own the data [lo, hi): TLINK writes the relocation table module by module, so
+    each run of the original's data relocations follows the code relocations of the module whose data
+    it is (I0892.C's), or of the module before a data-only one (the empty code segment after E1948.ASM).
+    Each piece goes after that module, its fixups in the original's order. [(copy index, lo, hi, order)]"""
+    owner = {}
+    for i, c in enumerate(copies):
+        if ":" in c.unit["start"] and not c.unit["start"].startswith("ovl"):
+            u = lin(c.unit["start"])
+            owner[(u, u + c.unit["bytes"])] = i
+    def who(x):
+        return next((i for (p, q), i in owner.items() if p <= x < q), None)
+    dg = odg * 16
+    runs, last = [], -1                              # (owner, [ds offsets in order])
+    for x in oseq:
+        if x >= dg:
+            d = x - dg
+            if lo <= d < hi:
+                if runs and runs[-1][0] == last:
+                    runs[-1][1].append(d)
+                else:
+                    runs.append((last, [d]))
+            continue
+        i = who(x)
+        if i is not None:
+            last = i
+        elif x < min((p for p, q in owner), default=0):
+            last = -1                                # the start-up code
+    if not runs:
+        return [(idx, lo, hi, None)]
+    runs.sort(key=lambda r: min(r[1]))
+    if any(r1[0] > r2[0] for r1, r2 in zip(runs, runs[1:])) or runs[0][0] < idx:
+        print("rebuild: the data relocations of ds:%04X-%04X do not follow the link order; one filler" % (lo, hi))
+        return [(idx, lo, hi, sorted(d for r in runs for d in r[1]))]
+    merged = []
+    for o, ds in runs:
+        if merged and merged[-1][0] == o:
+            merged[-1][1].extend(ds)
+        else:
+            merged.append((o, list(ds)))
+    cuts = [lo] + [min(ds) for _, ds in merged[1:]] + [hi]
+    out = []
+    if merged[0][0] != idx:                          # data before the first relocation stays where it was
+        out.append((idx, lo, min(merged[0][1]), None))
+        cuts[0] = min(merged[0][1])
+    for k, (o, ds) in enumerate(merged):
+        out.append((o, cuts[k], cuts[k + 1], ds))
+        if verbose:
+            print("rebuild: data ds:%04X-%04X after %s, %d relocations" % (cuts[k], cuts[k + 1], copies[o].path.stem if o >= 0 else "C0", len(ds)))
+    return out
+
+
+def mods_of(copies: list) -> set:
+    return {c.path.stem.upper() for c in copies}
+
+
+def program_defines(w: Path, pimg: bytes, oimg: bytes, pdg: int, contribs: list, mine: set) -> list:
+    """The library's DGROUP publics whose references in the original's code all point somewhere else
+    than the library's data moved as a whole (the shift most publics share): the program defines them."""
+    text = map_text(w)
+    text = text[text.index("Publics by Value"):] if "Publics by Value" in text else ""
+    lib = [(o, l, m) for o, l, sg, m in contribs if l and m.split(".")[0] not in mine | {"C0", "PROBE"}]
+    pubs = []
+    for m in re.finditer(r"^\s*([0-9A-F]{4}):([0-9A-F]{4})\s+(?:idle\s+)?(\S+)\s*$", text, re.M):
+        off = (int(m.group(1), 16) - pdg) * 16 + int(m.group(2), 16)
+        if any(o <= off < o + l for o, l, _ in lib):
+            pubs.append((off, m.group(3)))
+    refs = {}
+    for k in range(0, min(pdg * 16, len(oimg)) - 1):
+        x = int.from_bytes(pimg[k:k + 2], "little")
+        refs.setdefault(x, []).append(int.from_bytes(oimg[k:k + 2], "little"))
+    shifts, seen = Counter(), {}
+    for off, sym in pubs:
+        ys = [y for y in refs.get(off, []) if y != off]
+        if len(ys) >= 2 and len(set(ys)) == 1:
+            seen[sym] = (off, ys[0])
+            shifts[ys[0] - off] += 1
+    if not shifts:
+        return []
+    common, _ = shifts.most_common(1)[0]
+    start = lib[0][0] + common                      # the library's data in the original
+    return [(y, sym) for sym, (off, y) in sorted(seen.items()) if y - off != common and y < start]
+
+
+def map_text(w: Path) -> str:
+    """TLINK's map of the last link in w."""
+    return next(iter(list(w.glob("*.MAP")) + list(w.glob("*.map")))).read_text("latin-1")
+
+
+def link(program: str, w: Path, copies: list[Copy], fillers: dict[int, list], tail: str | None,
+         empty: dict[int, list] | None = None):
+    """TLINK the start-up code, the modules in order (a filler, and an empty code segment, after the
+    module it follows, the overlay units under /o) and the libraries."""
     cfg = PROGRAMS[program]
     objs, overlaid = [], False
-    for k in sorted(fillers):
+    after = {k: list((empty or {}).get(k, [])) + list(fillers.get(k, [])) for k in set(fillers) | set(empty or {})}
+    for k in sorted(after):
         if k < 0:
-            objs.append(fillers[k])
+            objs += after[k]
     for i, c in enumerate(copies):
         ovl = c.unit["start"].startswith("ovl")
         if ovl != overlaid:
             objs.append("/o" if ovl else "/o-")
             overlaid = ovl
         objs.append(c.path.stem)
-        if i in fillers:
+        if i in after:
             if overlaid:
                 objs.append("/o-")
                 overlaid = False
-            objs.append(fillers[i])
+            objs += after[i]
     if overlaid:
         objs.append("/o-")
     if (w / "FAR.OBJ").exists() or (w / "far.obj").exists():
@@ -480,15 +945,16 @@ def link(program: str, w: Path, copies: list[Copy], fillers: dict[int, str], tai
         objs.append("EXTREF")
     if tail:
         objs.append(tail)
-    for f in ("OUT.EXE", "OUT.MAP", "out.exe", "out.map"):
-        (w / f).unlink(missing_ok=True)
+    out = program.split(".")[0].upper()          # TLINK writes the name into the overlay data (_EXEINFO_)
+    for f in list(w.glob("*.EXE")) + list(w.glob("*.exe")) + list(w.glob("*.MAP")) + list(w.glob("*.map")):
+        f.unlink()
     # a DOS command line holds 127 characters: the objects go in a response file, one per line
     resp = ["D:\\LIB\\C0%s" % cfg["model"]] + objs
-    (w / "OUT.LNK").write_text(" +\r\n".join(resp) + "\r\nOUT\r\nOUT\r\n" +
+    (w / "OUT.LNK").write_text(" +\r\n".join(resp) + "\r\n%s\r\n%s\r\n" % (out, out) +
                                "+".join("D:\\LIB\\" + l for l in cfg["libs"]) + "\r\n")
     r = tc.run("tc100", "TLINK", ["/c", "/m", "/s", "@OUT.LNK"], cwd=w)
     log = r.stdout.decode("latin-1")
-    exe = next((w / n for n in ("OUT.EXE", "out.exe") if (w / n).exists()), None)
+    exe = next(iter(list(w.glob("*.EXE")) + list(w.glob("*.exe"))), None)
     if not exe or re.search(r"^Error", log, re.M):
         return None, log
     return exe, log
@@ -496,11 +962,33 @@ def link(program: str, w: Path, copies: list[Copy], fillers: dict[int, str], tai
 
 def dgroup_contribs(w: Path) -> tuple[int, list]:
     """Our DGROUP frame and its contributions (offset, length, segment, module) in map order."""
-    text = next((w / n for n in ("OUT.MAP", "out.map") if (w / n).exists())).read_text("latin-1")
+    text = map_text(w)
     rows = re.findall(r"^\s*([0-9A-F]{4}):([0-9A-F]{4}) ([0-9A-F]{4}) C=(\w+)\s+S=(\S+)\s+G=(\S+)\s+M=(\S+)", text, re.M)
     dg = next(int(f, 16) for f, o, l, c, s, g, m in rows if g == "DGROUP")
     out = [((int(f, 16) - dg) * 16 + int(o, 16), int(l, 16), s, m.upper()) for f, o, l, c, s, g, m in rows if g == "DGROUP"]
     return dg, out
+
+
+def library_bss(pimg: bytes, oimg: bytes, pdg: int, contribs: list, mine: set, code: range) -> int | None:
+    """Where the library's _BSS starts in the original: the library's code addresses it."""
+    lib = [(o, l) for o, l, s, m in contribs if s == "_BSS" and l and m.split(".")[0] not in mine]
+    if not lib:
+        return None
+    return shifted(pimg, oimg, lib[0][0], max(o + l for o, l in lib), code)
+
+
+def shifted(pimg: bytes, oimg: bytes, lo: int, hi: int, code: range, least: int = 4) -> int | None:
+    """Where our DGROUP range [lo, hi) of the probe link is in the original: each word of the code that
+    points into it votes for the shift to the original's word there."""
+    votes = Counter()
+    for k in range(code.start, min(code.stop, len(pimg), len(oimg)) - 1):
+        x, y = int.from_bytes(pimg[k:k + 2], "little"), int.from_bytes(oimg[k:k + 2], "little")
+        if lo <= x < hi and y != x:                 # the probe has no fillers: its BSS lies elsewhere
+            votes[y - x] += 1
+    if not votes:
+        return None
+    shift, n = votes.most_common(1)[0]
+    return (lo + shift) & 0xFFFF if n >= least else None
 
 
 def locate(ours: bytes, orig: bytes, start: int, lo: int, hi: int) -> int | None:
@@ -524,7 +1012,7 @@ def missing_library(program: str, w: Path, space: "Space") -> str | None:
     names it (INTRO.EXE's GETCWD, which nothing calls: an assembly module's unused EXTRN pulled it)."""
     rtl = {"EOB.EXE": "rtl_compare.json", "INTRO.EXE": "rtl_intro.json", "START1.EXE": "rtl_start1.json"}[program]
     found = json.loads((ROOT / "build/re" / rtl).read_text())["tc100"]["found"]
-    text = next((w / n for n in ("OUT.MAP", "out.map") if (w / n).exists())).read_text("latin-1")
+    text = map_text(w)
     rows = re.findall(r"^\s*([0-9A-F]{4}):([0-9A-F]{4}) ([0-9A-F]{4}) C=CODE\s+S=(\S+)\s+G=\S+\s+M=(\S+)", text, re.M)
     ours = {m.upper(): (int(f, 16) * 16 + int(a, 16), int(l, 16)) for f, a, l, sg, m in rows}
     prev_end = None
@@ -556,17 +1044,15 @@ def main(argv=None) -> int:
     shutil.rmtree(w, ignore_errors=True)
     w.mkdir(parents=True)
     space = Space(program)
+    space.image, space.dgroup = oimg, odg
     copies, names, far = make_copies(program, w, space, find_main(program, oimg, orel))
     if far and a.verbose:
         print("rebuild: far objects to place: %s" % ", ".join("%s at %s:%04X" % ("/".join(sorted(v)), k[0] if isinstance(k[0], str) else "%04X" % k[0], k[1]) for k, v in sorted(far.items(), key=str)))
     build_objs(w, copies)
     if a.extern:                                        # library modules nothing calls (see missing_library)
-        assemble(w, "EXTREF", "\r\n".join([".MODEL LARGE" if PROGRAMS[program]["model"] == "L" else ".MODEL SMALL"] +
-                                           ["EXTRN %s:FAR" % x for x in a.extern] + ["END"]) + "\r\n")
-    far_mod = far_objects(program, space, far, oimg)
-    if far_mod:
-        assemble(w, "FAR", far_mod)
+        assemble(w, "EXTREF", "\r\n".join(["EXTRN %s:FAR" % x for x in a.extern] + ["END"]) + "\r\n")   # no segment
     syms = [s for o in sorted(names) for s in names[o]]
+    syms += sorted({x for v in far.values() for x in v} - set(syms))   # stand-ins until alias_far names them
     probe = "\r\n".join(["DGROUP GROUP _DATA, _BSS"] + ["PUBLIC %s" % s for s in syms] +
                         ["_DATA SEGMENT BYTE PUBLIC 'DATA'", "_DATA ENDS", "_BSS SEGMENT BYTE PUBLIC 'BSS'"] +
                         ["%s label byte" % s for s in syms] +
@@ -576,8 +1062,41 @@ def main(argv=None) -> int:
     if not exe:
         print(log[-3000:])
         return 1
+    # far objects: one in a library's segment (the overlay manager's data, INTRO.EXE 0E6C) is named from
+    # the library's public that covers it, in our own link (the segments map by their index in TLINK's
+    # segment table); Westwood's own far data is a generated module of the original's bytes
+    westwood = alias_far(program, w, exe, copies, far)
+    if westwood:
+        far_mod = far_objects(program, space, westwood, oimg)
+        if far_mod:
+            assemble(w, "FAR", far_mod)
+    if westwood != far:
+        build_objs(w, copies)
+        exe, log = link(program, w, copies, {}, "PROBE")
+        if not exe:
+            print(log[-3000:])
+            return 1
     pimg = read_mz(exe.read_bytes())["image"]
     pdg, contribs = dgroup_contribs(w)
+    # a library variable the program defines itself (INTRO.EXE's _ovrbuffer, the overlay buffer size,
+    # in Westwood's data at ds:1A28): the original's library code addresses it there, so the filler
+    # names it, and TLINK does not link the library's default (OVRBUFF)
+    own = program_defines(w, pimg, oimg, pdg, contribs, mods_of(copies))
+    if own:
+        for v, sym in own:
+            print("rebuild: the program defines the library's %s itself, at ds:%04X" % (sym, v))
+            names.setdefault(v, []).append(sym)
+        syms = [s for o in sorted(names) for s in names[o]]
+        syms += sorted({x for v in far.values() for x in v} - set(syms))
+        assemble(w, "PROBE", "\r\n".join(["DGROUP GROUP _DATA, _BSS"] + ["PUBLIC %s" % s for s in syms] +
+                                         ["_DATA SEGMENT BYTE PUBLIC 'DATA'", "_DATA ENDS", "_BSS SEGMENT BYTE PUBLIC 'BSS'"] +
+                                         ["%s label byte" % s for s in syms] + ["_BSS ENDS", "END"]) + "\r\n")
+        exe, log = link(program, w, copies, {}, "PROBE")
+        if not exe:
+            print(log[-3000:])
+            return 1
+        pimg = read_mz(exe.read_bytes())["image"]
+        pdg, contribs = dgroup_contribs(w)
     odata = oimg[odg * 16:]
     image_end = len(oimg) - odg * 16
     mods = {c.path.stem.upper() for c in copies}
@@ -628,38 +1147,48 @@ def main(argv=None) -> int:
         lib_at = end
     # the fillers: the original's bytes between the start-up code's data, each module's and the library's
     order = [c.path.stem.upper() for c in copies]
-    fillers, prev_end, prev_idx, k = {}, c0_end, -1, 0
+    ranges, prev_end, prev_idx = [], c0_end, -1
     for stem in [x for x in order if x in placed]:
         at, l = placed[stem]
         if at > prev_end:
-            fillers[prev_idx] = "FILL%02d" % k
-            assemble(w, fillers[prev_idx], filler(fillers[prev_idx], oimg, odg * 16, prev_end, at, names, True))
-            k += 1
+            ranges.append((prev_idx, prev_end, at))
         elif at < prev_end:
             print("rebuild: %s's data (ds:%04X) overlaps the module before it (to ds:%04X)" % (stem, at, prev_end))
         prev_end, prev_idx = at + l, order.index(stem)
     if lib_at > prev_end:
-        fillers[prev_idx] = "FILL%02d" % k
-        assemble(w, fillers[prev_idx], filler(fillers[prev_idx], oimg, odg * 16, prev_end, lib_at, names, True))
+        ranges.append((prev_idx, prev_end, lib_at))
+    oseq = [sg * 16 + o for o, sg in orig["relocs"]]
+    fillers: dict[int, list] = {}
+    for idx, lo, hi in ranges:
+        for i2, a2, b2, fix_order in data_owners(oseq, copies, odg, lo, hi, idx, a.verbose):
+            name = "FILL%02d" % sum(len(v) for v in fillers.values())
+            fillers.setdefault(i2, []).append(name)
+            assemble(w, name, filler(name, oimg, odg * 16, a2, b2, names, True, orel, space.seg_names, odg, fix_order))
     # the uninitialised globals: past the image (START1.EXE), or, when the image holds all of DGROUP
-    # (INTRO.EXE, its stack segment after it), the ones past every data filler and the library's data:
-    # Turbo C makes them communal variables, which TLINK places after every module's _BSS (c_common)
+    # (INTRO.EXE, its stack segment after it), the ones past every data filler and the library's data.
+    # Turbo C puts them in their module's _BSS, so they come before the library's _BSS (INTRO.EXE's
+    # library code addresses its BSS from ds:2E30, after them); the last one ends where that starts
     filled = [(c0_end, lib_at)]
-    common = sorted(o for o in names if o >= image_end or (image_end > max(names, default=0) and o >= lib_at
-                                                        and not any(lo <= o < hi for lo, hi in filled)))
+    lib_bss = library_bss(pimg, oimg, pdg, contribs, mods | {"C0"}, space.lib[program][0])
+    # where _BSS starts in the original: the start-up code clears it from there (C0's bdata)
+    p_bss = next(o for o, l, s, m in contribs if s == "_BSS")
+    c0 = next(u for u in all_units() if u["program"] == program and u["kind"] == "startup")
+    bss_at = shifted(pimg, oimg, p_bss, p_bss + 1, range(lin(c0["start"]), lin(c0["start"]) + c0["bytes"]), 1)
+    bss_at = p_bss if bss_at is None else bss_at
+    if a.verbose:
+        print("rebuild: _BSS at ds:%04X in the probe, ds:%04X in the original" % (p_bss, bss_at))
+    if a.verbose:
+        print("rebuild: the library's BSS at ds:%s in the original; image end %04X, data end %04X, names %04X-%04X" % (
+            "%04X" % lib_bss if lib_bss is not None else "?", image_end, lib_at, min(names), max(names)))
+    common = sorted(o for o in names if (o >= image_end or (image_end > max(names, default=0) and o >= lib_at
+                                                         and not any(lo <= o < hi for lo, hi in filled)))
+                    and (lib_bss is None or bss_at <= o < lib_bss))
     tail = None
     if common:
-        dg_size = next((x["size"] for x in space.segments if x["para"] == odg), None) or (max(common) + 4)
-        hi = max(common) + 4 if common[0] >= image_end else dg_size
-        seg = "_BSS" if common[0] >= image_end else "c_common"
-        text = filler("BSS", oimg, odg * 16, common[0], hi, names, False)
-        if seg != "_BSS":
-            text = text.replace("DGROUP GROUP _DATA, _BSS", "DGROUP GROUP _DATA, _BSS, c_common").replace(
-                "_BSS SEGMENT BYTE PUBLIC 'BSS'\r\n", "_BSS SEGMENT BYTE PUBLIC 'BSS'\r\n_BSS ENDS\r\nc_common SEGMENT BYTE PUBLIC 'BSS'\r\n", 1)
-            text = re.sub(r"^_BSS ENDS\r\nEND", "c_common ENDS\r\nEND", text, flags=re.M)
-        assemble(w, "BSS", text)
+        hi = lib_bss if lib_bss is not None else max(common) + 4
+        assemble(w, "BSS", filler("BSS", oimg, odg * 16, common[0], hi, names, False))
         tail = "BSS"
-    exe, log = link(program, w, copies, fillers, tail)
+    exe, log = link(program, w, copies, fillers, tail, empty_segments(w, space, copies))
     if not exe:
         print(log[-3000:])
         return 1
