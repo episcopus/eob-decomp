@@ -1,7 +1,7 @@
 # Review: eov1
 
 Reviewer: rev-haiku
-Commit reviewed: 5ab5e506c9de9a707573ad68b289af65bc246347 (main, round 1)
+Commit reviewed: aa12bec (main, round 2; round 1 at 5ab5e506c9de9a707573ad68b289af65bc246347)
 
 Playbook 70. Judge what a matching file can still get wrong: names, types, comments, structure.
 The matcher already proved the bytes; do not re-prove them, read for meaning.
@@ -15,6 +15,74 @@ Evidence used: the code of `src/EOV1.C` (line numbers below); the other files of
 (`E0D1C.C` headers for 0D1C:00F1, 0163, 0670, 0C21, 0454, 035A; `E0A72.C` for FindClassSlot;
 `EOV6.C` for the spell slots and g159); `make match FILE=src/EOV1.C` (16 of 16, exit 0);
 `make readability UNIT=eov1` (0 findings); and the quoted strings, read only, in `eob/EOB.EXE`.
+
+### Round 2 (2026-11-02, reviewed at aa12bec)
+
+Later round (playbook 70). Changed since 5ab5e50: the round 1 fixes (ca0b550, comments only) and
+the registry; `git diff 5ab5e50 main -- src/EOV1.C re/symbols.toml re/globals.toml`. No eov1 row
+of re/symbols.toml changed. Evidence: `make match FILE=src/EOV1.C` 16 of 16 (9864 bytes), exit 0;
+`make readability UNIT=eov1` 0 findings; the code at the addresses cited below.
+
+Round 1 must-fix items, checked against the code (all fixed right; ticks stay):
+
+- gFDBA is five 9-byte lists: `memset(gFDBA, 0, 0x2d)` (:340) is 5 * 9, and the level lists are
+  `gFDBA[(level - 1) * 9]` (:368-369).
+- ScribeScrolls: `FindCarriedSlot(member, 0x22, i + 1)` (:1109). The 0D1C:00F1 header compares its
+  second argument with m02 and its third with m0B (src/E0D1C.C:234-237), so 0x22 is the item type
+  and i + 1 the kind.
+- ShowMessage callers: SelectPartyMember (:503, :523, :611, :618), ScribeScrolls (:1117, :1135),
+  RunCampMenu (:1342, :1413, :1432, :1434, :1447). DrawListNode makes none.
+- BuildMenuButtons callers and headers: menu 3 from SelectPartyMember (:531, header set at :530),
+  menu 4 from SpellSlotScreen (:740), menu 6 from ScribeScrolls (:1152), menus 0 to 2 from
+  RunCampMenu (:1301 and :1411, headers set at :1294-1300), menu 5 from AskYesNo (:1576). ScribeScrolls and
+  AskYesNo set no header.
+- The pointer: LockHidePointer and LockShowPointer (:967, :969) bracket only the ClipRect (:968);
+  each DrawListNode hides it itself.
+
+Changed lines, checked: gFD98 (:166-167; set at :514, read at :1516), gFDEA (:630, :833-875),
+gFDEC (:359, :403-425), gFD9A (:340-347, the slot >= 0 test at :367), g62F2 and g62F8 (x is
+g62F2 * 8 at :510-513, so 8-pixel columns), gKeyRemapFrom and gKeyRemapTo (:1311-1314, BTN_REST
+at :27), ButtonDef bit 1 (tested on node->defFlags at :1506 and :1614), SpendSpellSlot's "still
+to be memorised" (the struct comment at :127-129 and src/EOV6.C:27-28, :455-457), the AskYesNo
+flash and keys (:1594, :1599-1600, :1626-1628; key is unused after :1600), the RunCampMenu flash
+and its unguarded confirm key (:1317-1318, :1319-1327). The BoolString remark (a register, not a
+local) and the stack frame size of SelectPartyMember rest on the matcher's experiments; accepted,
+not re-proved.
+
+- [ ] should src/EOV1.C:920-921 (BuildMenuButtons header): "For" ends a line and "each of its
+  `count`" starts the next. Rewrap the paragraph.
+- [ ] should src/EOV1.C:1033-1034 (DrawListNode header): "when def" ends a line and "flags bit 2 is
+  set" starts the next. Rewrap.
+- [ ] should src/EOV1.C:1075-1076 (ScribeScrolls header): "Without a scroll it" stands alone on its
+  line. Rewrap.
+- [ ] should src/EOV1.C:1036-1037 (DrawListNode header): "(the frame already holds a background)" is a
+  reason, not an observation. Nothing in the code or the other units says so: gDrawText is declared
+  without a meaning (src/EOV0.C:166, src/E16A5.C:107, src/E1547.C:112), and the 0D1C:0C21 header
+  (src/E0D1C.C:704-708) describes only the colours. Say what the code does (gDrawText, the plain
+  text routine, when first or second is set; DrawShadowText otherwise) and drop the reason, or
+  cite the evidence for it.
+- [ ] should src/EOV1.C:1232-1233 (RunCampMenu header): "at the end of each pass the difference
+  between them is drawn and `lit` becomes `hot`" leaves out the condition. The code draws only when
+  `lit != hot`, `nextMenu == -1` and `looping` (:1524-1528). Name the condition.
+
+Notes:
+
+- note src/EOV1.C:166-167 (gFD98): RunCampMenu reads it at :1516 (it redraws the party when set)
+  and clears it at :1521. The declaration names only the writer.
+- note src/EOV1.C:408 and :425 (SpendSpellSlot): `slot = gFD9A[i] - 1` has no `slot >= 0` test. A
+  spell off the map has gFD9A 0, yet BuildSpellSlots counts its held copies (:359-360), so such a
+  spell would write rec->memorized[-6 .. -1]. No path I checked reaches it (the slots hold map
+  spells); the only guard is the test at :367. For the owner to judge.
+- note (registry, a question for the human, still open, carried from round 1): re/symbols.toml
+  lists 12 eov1 rows (eov1_0000, 00dd, 025d, 0416, 0881, 097a, 1153, 13f7, 1516, 1551, 1acd, 243a)
+  and has no row for BoolString (ovl1:10DE), SaveOptionField (1107), DrawOptionField (112D) or
+  ScribeScrolls (1691). Two rows have the wrong size: DrawListNode (ovl1:1551) 1404 against 320 in
+  the match, SpellSlotScreen (097A) 2009 against 1892. `make review-pass CHECK=1` passes. The stamp
+  below covers the 12 rows only; the four missing functions need `make map` or a human decision.
+
+Summary, round 2: round 1 must-fix items are fixed right and the changed lines are sound. No
+must-fix is open. Five shoulds (three rewraps, one unevidenced reason, one missing condition) are
+open and do not block.
 
 ### Round 1 (2026-11-02, reviewed at 5ab5e50)
 
