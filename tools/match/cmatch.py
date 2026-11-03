@@ -673,7 +673,7 @@ def main() -> int:
     print("cmatch: %d of %d functions match%s%s" % (
         len(defined - stubs) - bad - drafts, len(defined - stubs),
         ", %d drafts" % drafts if drafts else "", ", %d stubs" % len(stubs) if stubs else ""))
-    if a.write and program.name.upper() in ("EOB.EXE", "INTRO.EXE"):
+    if a.write and program.name.upper() in ("EOB.EXE", "INTRO.EXE", "START1.EXE"):
         n = write_levels({funcs[k]: k for k in matched}, "tasm /mx" if asm else " ".join(flags),
                          u["id"] if whole else None, program.name.upper(), lengths)
         print("cmatch: recorded L2 for %d functions in re/symbols.toml" % n)

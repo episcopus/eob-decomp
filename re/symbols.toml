@@ -12101,6 +12101,9 @@ unit = "s_text"
 addr = "0000:0474"
 size = 34
 evidence = ["near", "frame"]
+name = "PrintString"
+level = "L2"
+match_flags = "-ms"
 
 [[function]]
 id = "s0000_0496"
