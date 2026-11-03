@@ -3,6 +3,7 @@
 Reviewer: rev-haiku
 Commit reviewed: 50a428c74364a60f97ecc541728e4cbae3720042 (round 1; main when I started; src/E0EF3.C is unchanged since a729f44 on both main and review/e0ef3)
 Round 2 commit reviewed: ec11fb5 (main; the diff since 50a428c, see the round 2 section)
+Round 3 commit reviewed: c48c94e (main; the diff since ec11fb5 is the round 2 fix commit 0c21ff5, merged in 298a3fc, see the round 3 section)
 
 Playbook 70. Judge what a matching file can still get wrong: names, types, comments, structure.
 The matcher already proved the bytes; do not re-prove them, read for meaning.
@@ -11,6 +12,24 @@ The matcher already proved the bytes; do not re-prove them, read for meaning.
 
 Each finding is a checkbox. `must-fix` blocks `make review-pass` until a decompiler ticks it off
 (with the commit that fixes it); `should` and `note` do not block.
+
+### Round 3 (rev-haiku, at c48c94e; the diff since ec11fb5)
+
+Judged: each round 2 must-fix (R2-1 to R2-10) and should (R2-11 to R2-15), and every changed line of `src/E0EF3.C`, `re/globals.toml` and `re/renames.toml` since ec11fb5 (the diff is the fix commit 0c21ff5). The e0ef3 rows of `re/symbols.toml` did not change; the other lines of that diff are review stamps of other units. Checked against the code: CreateItemType's argument order (:579 and the calls at :1135, :1347, :1642) for R2-3; the gFBD2 owners (bit 0 set and cleared at :1075 and :1086, bit 4 set at :1532 and cleared at :1542, bit 5 set at :1679); CastSpell's Spell.flags tests (:2086, :2107, :2114, :2116, :2120) for R2-2; the gFC74 save (:2134, in 0EF3:28ED) and restore (:547, in 0EF3:026F) for R2-4; gFnEFBA's set and calls (:2081, :2119, :833) for R2-5; the 2A53 entry clear and exit set (:2231, :2308) and the 2EBC entry clear and exit set (:2367, :2480) for R2-8 and R2-9; the HandleSpellList call (:2189) for R2-10; g5737's only caller (:1471, in 0EF3:18D8; f0EF3_2A53 is passed `anim`, not g5737) and its word read (:2466) for R2-6; src/EOV1.C:909 to :914 (ovl1:112D draws the rectangle SaveOptionField saved, through gFn804A) for R2-11; the 1D38 call (:1643, extra = class-slot 2/4 halved) for R2-13; the renames in `re/globals.toml` and `re/renames.toml` for R2-14; the reflowed headers for R2-15 (text unchanged).
+
+Evidence: `make match FILE=src/E0EF3.C` 104 of 104 (13219 bytes), exit 0; `make readability UNIT=e0ef3` 0 findings. Nothing escalated.
+
+#### Must-fix (round 3)
+
+None. The ten round 2 must-fix items are fixed right and their ticks stay. The changed lines are sound.
+
+#### Should (round 3)
+
+None. The five round 2 shoulds are fixed right.
+
+#### Notes (round 3)
+
+- [ ] note R3-1 src/E0EF3.C:1525 (ToggleSwapFlag, 0EF3:1AD0): the name says the function toggles the swap flag, but its comment (from round 1 item 91, untouched since) says it sets the bit and "does not toggle it". The code agrees with the comment (`gFBD2 |= 0x10` at :1532, inside the bit-clear branch). A later `make rename` to SetSwapFlag would remove the contradiction (no SetSwapFlag exists in src/; SetSwapFlag20 is 0EF3:1E3E). Not a blocker: the name is the decompiler's, and the comment is correct.
 
 ### Round 2 (rev-haiku, at ec11fb5; the diff since 50a428c)
 
@@ -113,4 +132,4 @@ Checked and right in round 2 (no finding): the round 1 items 18, 20, 21, 22, 23,
 
 ## Summary
 
-The unit is mostly understandable from its source alone. Names of the form `f0EF3_2A53`, `f0EF3_25BD`, `EmptyFunction*` and the `g` globals with a number are honest placeholders, and the `Purpose unknown:` notes on f0EF3_2A53, f0EF3_25BD and DrawMemberIcons are acceptable. What fails the review is the text that claims more than the evidence: several callers that the packet does not show (ClearAttackEffect, UndoBandage, ClearObjectsFacingCell, GetClassSlot24Value, StartPanelAction), two record identities (struct Entry27 called a "character record" in 1530, 1A30 and 1702), the meaning of gFB44 (a mode byte, not a status line), the food meaning of +0x23 (SetMemberLevels), a misdescribed branch in ApplyAidEffect, a stale DRAFT note on a matched function, a word table named gText5737, a save called a restore, and a wrong declaration of HalveSaveDamageB (the e0de8 routed item). Evidence: `make match FILE=src/E0EF3.C` 104 of 104 (13219 bytes), exit 0; `make readability UNIT=e0ef3` 0 findings. Nothing escalated: no matcher, spec or pin question. `make review-pass` is not run: there are open must-fix items.
+The unit is mostly understandable from its source alone. Names of the form `f0EF3_2A53`, `f0EF3_25BD`, `EmptyFunction*` and the `g` globals with a number are honest placeholders, and the `Purpose unknown:` notes on f0EF3_2A53, f0EF3_25BD and DrawMemberIcons are acceptable. What fails the review is the text that claims more than the evidence: several callers that the packet does not show (ClearAttackEffect, UndoBandage, ClearObjectsFacingCell, GetClassSlot24Value, StartPanelAction), two record identities (struct Entry27 called a "character record" in 1530, 1A30 and 1702), the meaning of gFB44 (a mode byte, not a status line), the food meaning of +0x23 (SetMemberLevels), a misdescribed branch in ApplyAidEffect, a stale DRAFT note on a matched function, a word table named gText5737, a save called a restore, and a wrong declaration of HalveSaveDamageB (the e0de8 routed item). Evidence: `make match FILE=src/E0EF3.C` 104 of 104 (13219 bytes), exit 0; `make readability UNIT=e0ef3` 0 findings. Nothing escalated: no matcher, spec or pin question. Round 3 (at c48c94e): no must-fix open; `make review-pass` is run on the strength of round 3 (see its section).
