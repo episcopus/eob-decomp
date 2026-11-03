@@ -315,10 +315,12 @@ gQueueRing      db      16 dup (0)      ; 3B83: the queued driver sound numbers,
 ;   +27h  register A0h image (F-number low byte): SetVoicePitch stores it (4A3A), the B9h command and L_4E7E adjust it
 ;   +28h  register B0h image (F-number high bits and key-on bit 20h): the INT 08h handler (3E66), SetVoicePitch, VoiceKeyOn,
 ;         VoiceKeyOff, the B5h command and L_4E7E read and write it
-;   +29h  per-tick handler pointer (word): UpdateVoices calls it each tick the voice is not skipped (419C) and its script does not
-;         end or wait that tick (L_4311 and L_444F jump to 4267, past L_425F); scripts 91h, 92h, 95h, B6h and ClearVoice set it
-;   +2Bh  per-voice handler pointer (word): UpdateVoices calls it each tick the voice is not skipped (419C) and its script does not
-;         end or wait that tick (L_4311 and L_444F jump to 4267, past L_425F); scripts 8Dh and A7h and ClearVoice set it
+;   +29h  per-tick handler pointer (word): UpdateVoices calls it each tick the voice is not skipped (419C), except when its script
+;         ends (L_4311) or its 9Dh command waits (L_444F), both of which jump to 4267, past L_425F; scripts 91h, 92h, 95h, B6h
+;         and ClearVoice set it
+;   +2Bh  per-voice handler pointer (word): UpdateVoices calls it each tick the voice is not skipped (419C), except when its script
+;         ends (L_4311) or its 9Dh command waits (L_444F), both of which jump to 4267, past L_425F; scripts 8Dh and A7h and ClearVoice
+;         set it
 ;   +2Dh  key-off multiplier: script A4h sets it (4490), StartVoiceNote uses it (4B5F)
 ;   +2Eh  patch modulator level byte: LoadVoicePatch stores it (4DC8), VoiceModulatorLevel reads it
 ;   +2Fh  patch carrier level byte: LoadVoicePatch stores it (4DC8), VoiceCarrierLevel reads it
@@ -830,8 +832,9 @@ _ResetVoices ENDP
 
 ; 0000:418F: the per-voice script interpreter: loops voice 9 down to 0 and runs its command through the 4F94 jump table. On each
 ; speed carry it counts the voice's note delay (+05h) down (41D8); the script runs only when it reaches zero (L_41F9). A voice
-; whose delay is zero at the tick's start is skipped (419C); the others call their per-tick handler (+29h), then their
-; per-voice handler (+2Bh), at L_425F, unless their script ends or waits that tick (L_4311 and L_444F jump to 4267, past L_425F)
+; whose delay is zero at the tick's start is skipped (419C); the others call their per-tick handler (+29h), then their per-voice
+; handler (+2Bh), at L_425F, except when their script ends (L_4311) or its 9Dh command waits (L_444F), both of which jump to 4267,
+; past L_425F; a note's duration wait (423E) still calls them
         PUBLIC  _UpdateVoices              ; @ 0000:418F
 _UpdateVoices PROC NEAR
         cmp       byte ptr ds:[gUpdateEnable], 0
