@@ -4749,8 +4749,10 @@ unit = "e122e"
 addr = "122E:06D0"
 size = 375
 evidence = ["frame"]
+notes = "matched 2026-11-03 under -v. The form: `if (item != 0) { RunMemberScript; SetMouseItem; gDF4C = 1; }` inside the `GetCurrentItem() == 0` arm, then an `else if (g181F[...] > 0xe)` / `else` chain, and ONE `return 1` after the chain (the `return 0` after the outer if). TCC then emits the long guard jump the original has (`jne 122E:07BD; jmp 122E:083C`, TCC -S: `jne @@8; jmp @12@386`, with `@12@386: jmp @12@194` as the last stub). Earlier sessions got the stub only from an early `return 1` for an empty list (`if (item == 0) return 1;`), which TCC chains straight to the shared return; the `!= 0` guard keeps the empty-list jump on the stub."
 name = "ItemSlotAction"
-notes = "tier 2 (the human, 2026-11-03): one session of the escalation model before this is set aside. Earlier: 2026-11-02 retried under the unit's -v: the body matches byte for byte from 122E:06D0 to the first return 1 jump (122E:06FF); the outer if around the body (not an early return 0) is what puts the single `xor ax,ax` at 122E:083F. The one remaining difference: the early `return 1` in the f0D1C_02DC()==0 branch (`if (item == 0) return 1;`) is emitted as a short `jmp` back to the shared return-1 at 122E:0789, where the original emits a near `jmp 122E:083C` to a per-statement stub that then jumps to 0789 (1 byte total). TCC generated that stub in our build too (122E:083B, unreferenced) but chained the test jump to the canonical block, and -v did not keep it apart (same jump-chaining class as 0ACD:091C). Tried under -v: the separate-if form (this), the braced `if (item == 0) { return 1; }`, `if (item != 0) { ... } return 1;` (3 short), `if (item != 0) { ... } else { return 1; } return 1;` (1 long, uses the stub but duplicates the tail), and an `else if` chain with a single shared return (4 short). The -S shows why: TCC emits `jmp short @12@194` for the item==0 return and, after the last `else`, a separate redundant `jmp @12@194` stub (the line-515 return); the original's item==0 return targets that stub instead, so the difference is TCC's return-block assignment, not the assembler. Two more forms tried under the -S (2026-11-02, dec-deepseek-3): an `else if` chain with each branch returning explicitly does put the item==0 fall-through block last (matching the original's stub position) but TCC then merges the two arms' `SetMouseItem(...); gDF4C = 1;` tails, which the original keeps separate (the f0D1C==0 arm and the g181F arm have their own SetMouseItem call at 122E:07CA and 122E:081F); and the same structure with both g181F branches returning but no trailing return loses the stub entirely (4 bytes short). So the stub position and the two-arm SetMouseItem tails cannot both be produced by the forms tried; this is a compiler-codegen question, not a source one."
+level = "L2"
+match_flags = "-ml -O -Z -v"
 
 [[function]]
 id = "e122e_0847"
@@ -4877,7 +4879,7 @@ match_flags = "-ml -O -Z -v"
 id = "e122e_1097"
 unit = "e122e"
 addr = "122E:1097"
-size = 337
+size = 253
 evidence = ["frame"]
 name = "SetActionFlagsOp"
 level = "L2"
@@ -4957,10 +4959,10 @@ match_flags = "-ml -O -Z -v"
 id = "e122e_147f"
 unit = "e122e"
 addr = "122E:147F"
-size = 1580
+size = 1468
 evidence = ["frame"]
+notes = "matched 2026-11-02 under the unit's -v (whole function, 1468 bytes). The forms that matter: the default case is `lhs = script[-1]` (the register scratch, so TCC emits `les bx,[bp+6]; mov al,es:[bx-1]; cwde; mov si,ax` at 122E:197A) not `op`; the FFDD/FFDC init is `lhs = i = 0; for (; i < 6; i++)`, which zeroes AX once and stores it to i then SI as the original does at 122E:16CD; the FFF5 case is `if (t2 == -1) value = ScanListItem(..., -1, -1, 1); else value = ScanListItem(..., -1, t2, 1);`; FFEF/FFF0 write the two arms out (each its own store) rather than `!= 0`."
 name = "EvaluateScriptExpr"
-notes = "2026-11-02 retried under the unit's -v; (b) and (c) then fixed from the compiler's own assembly: (b) the default case is `lhs = script[-1]` (the register scratch, so TCC emits `les bx,[bp+6]; mov al,es:[bx-1]; cwde; mov si,ax; or ax,ax; jl; cmp ax,0x80; jge` at 122E:197A, the original's bytes) not `op`; (c) the FFDD/FFDC init is `lhs = i = 0; for (; i < 6; i++)`, which zeroes AX once and stores it to i then SI as the original does at 122E:16CD, not `lhs = 0;` before a `for (i = 0; ...)`. The function is now 0x26 bytes short (ours' loop test at 122E:1975, the original's at 122E:199B). The FFEF/FFF0 store tails, the eight comparison/logical cases, FFDA, the default case, the FFDD/FFDC loops and the switch dispatch match. Remaining (a), the FFF5 argument order and tail, the bulk of the shortfall: the original evaluates the `t2 == -1 ? -1 : t2` condition before pushing the count 1 (`cmp word ptr [bp-8],-1` at 122E:14F9, then `mov ax,1; push ax` inside each arm at 122E:14FF and 122E:1509) and keeps FFF5's list push and ScanListItem call inline (122E:1510 to 1537); our build pushes the count 1 first and shares FFF5's tail with FFF2's (FFF5 `jmp`s to FFF2's list tail). Forms tried for (a), none matching: the plain ternary (count first), `t1 = cond ? -1 : t2` then a call (condition first but stores t1 to [bp-6]), `if (t2 == -1) t2 = -1;` then a call (stores t2), and the explicit if/else with two ScanListItem calls (one arm jumps to a shared tail, the other is inline). Case labels and structures are otherwise as in the earlier note."
 level = "L2"
 match_flags = "-ml -O -Z -v"
 
@@ -5033,6 +5035,26 @@ evidence = ["far", "frame"]
 name = "RunMemberScript"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+
+[[function]]
+id = "e122e_1194"
+unit = "e122e"
+addr = "122E:1194"
+size = 84
+name = "PlaySoundOp"
+level = "L2"
+match_flags = "-ml -O -Z -v"
+notes = "not listed by the map: a function of the source, its bounds proven by the whole-unit match"
+
+[[function]]
+id = "e122e_1a3b"
+unit = "e122e"
+addr = "122E:1A3B"
+size = 112
+name = "DrainItemOp"
+level = "L2"
+match_flags = "-ml -O -Z -v"
+notes = "not listed by the map: a function of the source, its bounds proven by the whole-unit match"
 
 [[function]]
 id = "e1414_0000"

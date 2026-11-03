@@ -5,7 +5,7 @@
    opcode consumed, or jump the pointer; the driver stops when a handler sets gA9EC. 147F is the big
    sub-dispatcher with its own in-segment jump table; the map folded the 122E:1194 play-sound handler
    into 1097 and the 122E:1A3B drain-item handler into 147F, and both are separate functions here.
-   Below L2: one draft (ItemSlotAction 06D0), with its difference in re/symbols.toml. */
+   Every function of the file matches. */
 
 /*@flags -ml -O -Z -v */
 
@@ -466,17 +466,17 @@ void RunMemberScript(int who, int mode);  /* forward: 1DA8 comes after its calle
     }
     return 0;
 }
-/* 122E:06D0: the item-slot action. It resolves the clicked slot's object kind and, when
-   HitTestObjectKind accepts it, acts on the item: with the mouse disabled and row 0x10 selected,
-   it removes the slot's item and either drops it into the selected character's carried list (when
-   the item type is 0x10) or says it cannot go there and pushes it back; otherwise it either takes
-   the item onto the mouse (nothing shown) or, when an item is shown, inserts the shown item back
-   into the slot unless its g181F size says it is too large. Returns 0 when the kind is not
-   clickable, else 1. The outer `if` around the body (rather than an early `return 0`) is what puts
-   the single `xor ax,ax` at 122E:083F; the inner branches return 1 or fall through to that shared
-   return. Draft: the item==0 `return 1` chains to the shared return instead of the original's
-   per-statement stub (see its note in re/symbols.toml). */
-/*@ 122E:06D0 draft */ int ItemSlotAction(int id, int slot)
+/* 122E:06D0: the item-slot action: a click on the item list of object `id` (slot `slot` of its gB894
+   record names the object kind). It does nothing and returns 0 unless HitTestObjectKind accepts the
+   kind. Then, with the mouse disabled and row 0x10 selected, it removes the list's item and either
+   drops it into the selected character's carried list (when the item type is 0x10) or says it cannot
+   go there and pushes it back. Otherwise, with nothing shown on the mouse it takes the list's item
+   onto the mouse (when the list has one), and with an item shown it inserts that item into the list
+   unless its g181F size says it is too large. Returns 1 once the kind is accepted.
+   The `if (item != 0)` around the take branch and the one shared `return 1` after the if/else-if
+   chain are what the original's layout needs: an early `return 1` for an empty list puts the jump
+   on the shared return instead of the last `jmp` stub (122E:083C) the original jumps to. */
+/*@ 122E:06D0 */ int ItemSlotAction(int id, int slot)
 {
     register int item;
     int kind;
@@ -496,14 +496,12 @@ void RunMemberScript(int who, int mode);  /* forward: 1DA8 comes after its calle
         }
         if (GetCurrentItem() == 0) {
             item = RemoveListItem(&gB899[id * 9], 8, -1);
-            if (item == 0)
-                return 1;
-            RunMemberScript(id, 8);
-            SetMouseItem(item);
-            gDF4C = 1;
-            return 1;
-        }
-        if (g181F[gTable8DD2[GetCurrentItem()].icon] > 0xe) {
+            if (item != 0) {
+                RunMemberScript(id, 8);
+                SetMouseItem(item);
+                gDF4C = 1;
+            }
+        } else if (g181F[gTable8DD2[GetCurrentItem()].icon] > 0xe) {
             InsertListItem(&gB899[id * 9], id, GetCurrentItem(), 8);
             RunMemberScript(id, 4);
             SetMouseItem(0);
