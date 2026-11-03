@@ -2,9 +2,36 @@
 
 Reviewer: rev-haiku
 Commit reviewed: 9a2b2fc (HEAD of review/s_text; the last change to the unit's files is aef98e7)
+Round 2 commit reviewed: 3e16e87 (main, the merge of unit/s_text; the diff from 9a2b2fc is round 1's fixes plus the probes and console routines, aa0e56a)
 
 Playbook 70. Judge what a matching file can still get wrong: names, types, comments, structure.
 The matcher already proved the bytes; do not re-prove them, read for meaning.
+
+## Round 2 (rev-haiku, 3e16e87)
+
+Judged only: the round 1 must-fix items, and the changed lines since 9a2b2fc (`git diff 9a2b2fc main -- src/S_TEXT.C src/S_TEXT.ASM re/symbols.toml`). Round 1's must-fix items are fixed right and stay ticked: the three probes and the four console and mouse routines are written and match their bodies; the header's table claim (record 1 is ProbeVga at 056A, enabled in the data) holds; the Main argument forms are right (:112, :120, :134); the DetectVideoAdapter values, the signed compare in NormalizeVideoInfo and the three gSelection uses (:90, :92, :104) match the code; and the library names are right (PutChar, GetKey and DetectMouse are this unit's labels, and build/re/rtl_start1.json gives `_execl` the value 2103, which is 0837h).
+
+Evidence for the data claims: the DGROUP base that the unit's strings and tables use is file offset 0x1CA0 in eob/START1.EXE (not 0x1CA2, which I tried first). At that base the probe table at ds:0334 reads `01 6A 05`, `00 BA 05`, `00 E6 05`, `00 BD 04` (records start at 0334, 0337, 033A, 033D), ds:031A reads 0000h, 0101h, 0202h, 0000h, 0303h, ds:00AF is 03h, and the marks at ds:016E and ds:0170 are `*` and space, as the comments say.
+
+### Findings
+
+Each finding is a checkbox. `must-fix` blocks `make review-pass` until a decompiler ticks it off with the commit that fixes it; `should` and `note` do not block.
+
+- [ ] must-fix src/S_TEXT.ASM:48 (TestCrtcRegister header): "DX holds the CRTC base, AH the first read-back and AL the value to write back" is wrong for AH at the write-back. `mov ah,al` (:56) keeps the first read-back in AH, then `xchg ah,al` (:63) swaps the two, so at `out dx,al` (:64) AL is the first read-back (the value written back) and AH is the second read-back, which `cmp ah,66h` (:65) tests. Say: "AL the first read-back, written back at the end; AH the second read-back, tested against 66h". This reopens round 1's should on TestCrtcRegister: the wording I asked for ("AH keeps the first read-back") was imprecise.
+- [ ] must-fix src/S_TEXT.ASM:292-293 (GetKey header): "so the two ranges do not collide" is wrong. `cbw` (:309) sign-extends AL, so ASCII codes 128 to 255 come back as -128 to -1, the same values as the negated scan codes 1 to 127 (-1 to -127). Only ASCII 1 to 127 stays apart. Say what the code returns: ASCII 1 to 127 as they are, ASCII 128 to 255 negative, and an extended key as its negated scan code.
+- [ ] must-fix src/S_TEXT.ASM:317-319 (Int2FHandler header): "does nothing but iret" is wrong. The handler pushes BP, DI, SI and DS (:322 to :326) before `iret` (:327), and `iret` then pops those words as the return IP, CS and FLAGS, so it cannot return to what it interrupted. The pops after `iret` are dead, as the comment says; the four pushes are not. Describe the pushes and the iret.
+- [ ] must-fix src/S_TEXT.ASM:335-336 (InstallInt2FHandler header): "install Int2FHandler (0000:0620) as interrupt 2Fh" and "it only installs a no-op handler" are wrong. DOS function 25h takes the handler as DS:DX. The code sets DX to 0620h (:347 to :348) and never sets DS (:346 only pushes it), and the header gives DS as DGROUP (:14). So the vector is DGROUP:0620h, a data address, not Int2FHandler at the code segment's 0620h. The comment must say so. The "no call" claim (src/S_TEXT.ASM:318) has evidence to cite: the code bytes of START1.EXE contain no `CD 2F` (INT 2Fh).
+- [ ] should src/S_TEXT.ASM:272-274 (PutChar header) and :362 (DetectMouse header): "because the DOS call may clobber them" and "the registers the DOS and BIOS calls may clobber" give a reason with no evidence. Say the frame reproduces the original's register saves and that the reason is not known, or cite what DOS 06h and INT 33h are known to preserve.
+- [ ] should src/S_TEXT.C:145-147 (PrintString comment): the last sentence restates the loop. Say why `i` must survive the PutChar call, or drop it.
+- [ ] should src/S_TEXT.C:33 (gMode): "from gDetectedMode" also means 0 when gDetectedMode is above 5 (`if (gMode > 5) gMode = 0`, :72 to :73). Say so.
+- [ ] should src/S_TEXT.C:35 (gDetectedMode): "NormalizeVideoInfo ... reads the second" is incomplete: it reads both words and byte +1 (src/S_TEXT.ASM:124 to :135). Say "reads the second word and byte +1".
+- [ ] should src/S_TEXT.C:40-41 (gNote, gModePrompt): the strings at ds:0172 and ds:01A6 begin with CR LF (the bytes are "\r\nNOTE - " and "\r\nMode?"). Say so, so that the printed text is not read as starting on the same line.
+- [ ] note src/S_TEXT.ASM:347 (the literal 0620h): the decompiler's note reports a matcher limitation (`make match` builds the ASM module alone, so `offset Int2FHandler` resolves to 03C8h there, and cmatch reads that near-label offset as a data global because it falls in the DGROUP pad range). I did not reproduce it. Whether the literal stays or the matcher changes is for the human (escalated in this handoff); the must-fix on :335 is needed either way.
+- [ ] note re/symbols.toml: the new entries match their addresses (s0000_04bd is 63 bytes, 04BD to 04FC; s0000_056a is 80 bytes, 056A to 05BA). This is map data, not editable from the unit.
+
+### Summary (round 2)
+
+The round 1 must-fix items are fixed right, and the table, string and mark claims check against the original's bytes. Four changed lines are wrong and block the pass: TestCrtcRegister's AH at the write-back, GetKey's range claim, Int2FHandler's "does nothing but iret", and InstallInt2FHandler's vector (DS:0620h, not the handler). The unit does not pass. The matcher question about the 0620h literal goes to the human (STATE=escalate); the four comment fixes do not depend on the answer, except the InstallInt2FHandler QUIRK line, which should say what the literal is either way.
 
 ## Round 1
 
