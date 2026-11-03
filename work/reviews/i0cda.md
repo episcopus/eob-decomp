@@ -59,7 +59,7 @@ moving). `make match FILE=src/I0CDA.ASM` 1 of 1 exit 0 (50 bytes); `make readabi
 
 New findings:
 
-- [ ] must-fix src/I0CDA.ASM:46-47 (a line the a97a0d7 comment changed; reopened in round 5, its 0cbdc72
+- [x] must-fix src/I0CDA.ASM:46-47 (a line the a97a0d7 comment changed; reopened in round 5, its 0cbdc72
   wording is still wrong): "each only reduces it" is
   false. The call at src/IOV0.C:545 is the statement `RandomByte();`, so it discards the byte, and the
   ovl0:1015 site drops it too (the comment's own lines 37 and 38 say so). Say that: "the callers that
@@ -67,6 +67,13 @@ New findings:
   FIXED 0cbdc72: the sentence now reads "No caller gives the byte a more specific meaning: the callers
   that use it only reduce it (`% 31`, `& 7`, `& 3`, `& 1`), and two drop it (src/IOV0.C:545 and
   ovl0:1015)."
+  TICKED: the final wording at bf2f1da (the round 5 item above) drops "only reduce it": src/I0CDA.ASM:46-48
+  now says the callers mask or take it modulo (`% 31`, `& 7`, `& 3`, `& 1`), some then scale or offset the
+  result (`* 8 + 0xb4`, `+ 0x19`), and two drop it (src/IOV0.C:545 and ovl0:1015), re-verified against
+  src/IOV0.C:545 (`RandomByte();`), :680 (`(RandomByte() & 3) * 8 + 0xb4`) and :1018, :1027
+  (`(RandomByte() & 7) + 0x19`). bf2f1da added one comment line above the code, so the round 4 should and
+  round 5 line cites went stale by one; src/I0CDA.ASM:28-29 is refreshed to the two shr at lines 63 and 64
+  and the rcr at line 70 (`grep -n 'shr\|rcr' src/I0CDA.ASM`).
 - [x] should src/I0CDA.ASM:28-29: "the two shr (lines 60 and 61)" and "the rcr at line 67" are stale.
   They were right at 6ea511f, but a97a0d7 added two comment lines above them: `grep -n 'shr\|rcr'
   src/I0CDA.ASM` now gives 62, 63 (shr) and 69 (rcr). Round 3 accepted the old numbers and the fix made

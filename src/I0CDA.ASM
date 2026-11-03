@@ -25,8 +25,8 @@
 ;   b0 = (b0 >> 1) | (carry << 7)         (rcr)
 ;   AX = new b0 ^ new b1, AH = 0          (the bytes the rcl and rcr just wrote)
 ;
-; The two shr (lines 62 and 63) act on the copy in AL; DGROUP:2310 is only read until the rcr at
-; line 69 writes it. Only b2 and b1 shift left (rcl), b0 shifts right (rcr). ES and SI are
+; The two shr (lines 63 and 64) act on the copy in AL; DGROUP:2310 is only read until the rcr at
+; line 70 writes it. Only b2 and b1 shift left (rcl), b0 shifts right (rcr). ES and SI are
 ; saved; DS is never read. The far twin is E1D8C.ASM (the same code over DGROUP:8484 in EOB.EXE).
 ;
 ; Callers: the INTRO copy is reached from the overlay ovl0 by eleven relocatable far calls
