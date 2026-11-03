@@ -1,7 +1,7 @@
 # Review: e_text
 
 Reviewer: rev-haiku
-Commit reviewed: round 1 at 2ba0b7c; round 2 at c003ada; round 3 at 3165a9c (see Findings, Round 3)
+Commit reviewed: round 1 at 2ba0b7c; round 2 at c003ada; round 3 at 3165a9c; round 4 at 35510fa (see Findings, Round 4)
 
 Playbook 70. Judge what a matching file can still get wrong: names, types, comments, structure.
 The matcher already proved the bytes; do not re-prove them, read for meaning.
@@ -24,6 +24,26 @@ Not checked: the claim that the block's first word in ADLIB.DAT is 0258h (the fi
 Each finding is a checkbox. `must-fix` blocks `make review-pass` until a decompiler ticks it off
 (with the commit that fixes it); `should` and `note` do not block.
 
+### Round 4: must-fix items
+
+Reviewer: rev-haiku, round 4 at 35510fa (playbook 70, later round). Scope: the round 3 must-fix M11 and its notes, and the changed lines since 3165a9c (`git diff 3165a9c HEAD -- src/E_TEXT.ASM re/symbols.toml re/globals.toml`): src/E_TEXT.ASM 308 to 340 (the record table) and 1962 to 1967 (the StartSample header). The registry diff has no e_text row (a grep of the diff for E_TEXT and e_text finds none). Checked against the code: `.venv/bin/python tools/re/disasm.py eob/EOB.EXE 0000 --start 0x41B2 --len 40` (41C7 is the store `mov [di+25h],al`, 41CA the add); src/E_TEXT.ASM 831 to 938 (UpdateVoices), 1018 to 1027 (L_4311), 1136 to 1158 (script 9Dh and L_444F), 1968 to 2021 (StartSample). `make match FILE=src/E_TEXT.ASM` 44 of 44 (19996 of 19996 bytes), exit 0; `make readability UNIT=e_text` 0 findings. The matcher was not asked to re-prove the bytes.
+
+Checked and right in round 4: the +26h entry (:316): the add at 41CA runs for every voice that is not skipped at 419C, before any script code; the +25h and +40h entries cite 41C7, which is the copy; the StartSample header's mode 36h and divisor 0000h (1975 to 1979), its four writes before the poll (B0h 00h, A0h 00h, A0h 8Fh, B0h 2Eh at 1992 to 1998) and B0h 20h and A0h 00h after it (2018, 2020).
+
+- [ ] must-fix M11 (reopened in round 4; the round 3 tick is cleared): src/E_TEXT.ASM:318 (+29h) and :320 (+2Bh) say "UpdateVoices calls it each tick the voice is not skipped (419C, L_425F)". That is still wrong. A voice that is not skipped at 419C does not reach the handler calls (929 to 932, L_425F) when its script ends or waits that tick: the end-of-script handler L_4311 (named by the end entries of the command table) clears the script pointer, keys the voice off and jumps to 4267 (1027), past L_425F; script 9Dh goes to L_444F, which sets the note delay to 1 and jumps to 4267 (1158), past L_425F. The round 3 wording was my suggestion and missed these two paths. Fix both lines the same way: "calls it each tick the voice is not skipped (419C) and its script does not end or wait that tick (L_4311 and L_444F jump to 4267, past L_425F)", reflowed to the width of the entries. The +26h entry is not affected.
+
+### Round 4: should items
+
+- [ ] should S4 (src/E_TEXT.ASM:1962 to 1963, StartSample; changed by the round 3 fix): "writes the OPL2 registers 20h, 60h, 80h, C0h, E0h, 43h, B0h and A0h ... (the last four are B0h 00h, A0h 00h, A0h 8Fh, B0h 2Eh)". The routine makes ten writes before the poll (1980 to 1998): 20h, 60h, 80h, C0h, E0h, 43h, then B0h 00h, A0h 00h, A0h 8Fh, B0h 2Eh; B0h and A0h are each written twice. The list names eight registers, so "the last four" does not say of what. Say: "writes ten OPL2 registers before the poll: 20h, 60h, 80h, C0h, E0h, 43h, then B0h 00h, A0h 00h, A0h 8Fh and B0h 2Eh".
+
+### Round 4: notes
+
+- The UpdateVoices header (src/E_TEXT.ASM:831 to 834) has the same gap as M11 ("the others call their per-tick handler (+29h), then their per-voice handler (+2Bh), at L_425F"), and no round 3 fix touched it, so it is a note: fix it with M11 if the decompiler wants the same wording everywhere.
+
+### Round 4: summary
+
+One must-fix (M11, reopened: the round 3 wording still claims the handler calls for every voice that is not skipped, which L_4311 and L_444F break), one should (S4). Round 3 notes on the +2Bh line are reopened with M11 (the same claim). Everything else the round 3 review checked is right, and its ticks stay. No matcher, spec or pin question. Nothing escalated.
+
 ### Round 3: must-fix items
 
 Reviewer: rev-haiku, round 3 at 3165a9c (playbook 70, later round). Scope: the round 2 must-fix and should items, and the changed lines since c003ada (`git diff c003ada 3165a9c -- src/E_TEXT.ASM re/symbols.toml re/globals.toml`; the fix commit is 03bd49c). re/symbols.toml and re/globals.toml have no e_text entry in that diff. Checked against the code: src/E_TEXT.ASM 157 to 181 (the byte count), 826 to 936 (UpdateVoices), 1059 to 1134 and 1180 to 1194 (the +29h and +2Bh setters), 1198 to 1217 (ACh, ADh), 1473 to 1529 (C1h and the gPatchTable readers), 1960 to 2019 (StartSample), 2196 to 2305 (the level routines, ClearVoice), 2370 to 2429 (VoiceSilence, L_4E7E). `make match FILE=src/E_TEXT.ASM` 44 of 44 (19996 of 19996 bytes), exit 0; `make readability UNIT=e_text` 0 findings. The matcher was not asked to re-prove the bytes.
@@ -32,7 +52,7 @@ Round 2 must-fix items M1 to M10 are fixed right, and their ticks stay. Checked:
 
 Round 2 should items S1 to S3 are fixed right, and their ticks stay: S1 names the eight registers the setup writes (1977 to 1996) and the post-poll B0h 20h and A0h 00h (2015 to 2018); S2 is the semicolon; S3 cites 41E8 (the `cmp al,[di+35h]` at 872).
 
-- [x] must-fix M11 (changed by the round 2 fix; src/E_TEXT.ASM:313 and :318): "UpdateVoices adds +25h each tick" (313) and "UpdateVoices calls it every tick (425F)" (318) are wrong for a voice whose note delay is zero at the tick's start. At 419C the zero case jumps to 4267, past L_425F and the +25h add at 41CA, so the voice gets neither. The UpdateVoices header (829 to 832) says so. Fix: line 313 "UpdateVoices adds +25h each tick the voice is not skipped (419C)"; line 318 "UpdateVoices calls it each tick the voice is not skipped (419C, L_425F)". Line 319 (+2Bh) has the same "every tick" wording and round 2 did not touch it; fix it in the same edit (see the note below). Fixed in b0d7c46: the +26h entry now reads "adds +25h each tick the voice is not skipped (419C)", and the +29h and +2Bh entries now read "calls it each tick the voice is not skipped (419C, L_425F)". The +25h copy cite is now the copy's own address (41C7), not L_41CA, on the +25h and +40h entries.
+- [ ] must-fix M11 (changed by the round 2 fix; src/E_TEXT.ASM:313 and :318; reopened in round 4, the fixed wording is still wrong for :318 and :320, see Round 4): "UpdateVoices adds +25h each tick" (313) and "UpdateVoices calls it every tick (425F)" (318) are wrong for a voice whose note delay is zero at the tick's start. At 419C the zero case jumps to 4267, past L_425F and the +25h add at 41CA, so the voice gets neither. The UpdateVoices header (829 to 832) says so. Fix: line 313 "UpdateVoices adds +25h each tick the voice is not skipped (419C)"; line 318 "UpdateVoices calls it each tick the voice is not skipped (419C, L_425F)". Line 319 (+2Bh) has the same "every tick" wording and round 2 did not touch it; fix it in the same edit (see the note below). Fixed in b0d7c46: the +26h entry now reads "adds +25h each tick the voice is not skipped (419C)", and the +29h and +2Bh entries now read "calls it each tick the voice is not skipped (419C, L_425F)". The +25h copy cite is now the copy's own address (41C7), not L_41CA, on the +25h and +40h entries.
 
 ### Round 3: should items
 
@@ -40,7 +60,7 @@ None.
 
 ### Round 3: notes
 
-- [x] src/E_TEXT.ASM:319 (+2Bh, unchanged by round 2): the "every tick" wording of M11, the same fix. Left as a note because no round 2 fix touched that line. Fixed in b0d7c46 with M11: the +2Bh entry now reads "calls it each tick the voice is not skipped (419C, L_425F)".
+- [ ] src/E_TEXT.ASM:319 (+2Bh, unchanged by round 2; now :320): the "every tick" wording of M11, the same fix. Reopened in round 4 with M11 (the fixed wording misses the L_4311 and L_444F paths). Left as a note because no round 2 fix touched that line. Fixed in b0d7c46 with M11: the +2Bh entry now reads "calls it each tick the voice is not skipped (419C, L_425F)".
 - [x] src/E_TEXT.ASM:311 (+25h, unchanged): "UpdateVoices copies gTempoRate into it while +40h is set (41CA)". The copy (856 to 857) is before L_41CA (858), so the cite is the label after the copy. Cite the copy's own address, or say "before 41CA". Not a must-fix: the line did not change. Fixed in b0d7c46: the +25h entry now cites "the copy at 41C7, before L_41CA" (41C7 is the store), and the same fix is on the +40h entry (:338), the same claim.
 - [x] src/E_TEXT.ASM:1960 to 1964 (StartSample): the header lists the registers the setup writes, which is accurate as a set. The routine also sets PIT channel 0 to mode 36h and divisor 0000h before its poll (1972 to 1976), and writes B0h 00h, A0h 00h, A0h 8Fh and B0h 2Eh before the poll (1989 to 1996). A reader would want that in the header. Not a must-fix. Fixed in b0d7c46: the header now opens "sets PIT channel 0 to mode 36h and divisor 0000h, writes the OPL2 registers ... (the last four are B0h 00h, A0h 00h, A0h 8Fh, B0h 2Eh)".
 - The round 2 notes stand; they were not re-read.
