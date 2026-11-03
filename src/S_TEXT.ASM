@@ -44,9 +44,10 @@ L_04A0:
 StoreVideoWord ENDP
 
 ; 0000:04A3: probe CRTC register 0Fh: write 0Fh to the index port in DX, read that register back from
-; DX+1 into AH, write 66h to it, wait 100h loops, read the port back, write the saved value back and
-; return carry set unless the read-back was 66h. DX holds the CRTC base, AH the first read-back and
-; AL the value to write back; no frame. Called by DetectVideoAdapter (04BD) and ProbeColorCrtc (05E6).
+; DX+1, write 66h to it, wait 100h loops and read it back, then write the first read-back back to
+; restore the register and return carry set unless the second read-back is 66h. DX holds the CRTC
+; base, AL the first read-back (written back at the end), AH the second read-back (tested against
+; 66h); no frame. Called by DetectVideoAdapter (04BD) and ProbeColorCrtc (05E6).
         PUBLIC  TestCrtcRegister        ; @ 0000:04A3
 TestCrtcRegister PROC NEAR
         mov     al,0fh
@@ -270,8 +271,8 @@ L_05F5:
 ProbeColorCrtc ENDP
 
 ; 0000:05F6: PutChar: write the character at [bp+4] with DOS function 06h (direct console output) and
-; return; no result. Main and PrintString call it. The frame saves DI, SI and DS because the DOS call
-; may clobber them.
+; return; no result. Main and PrintString call it. The frame saves DI, SI and DS, reproducing the
+; original's register saves; why the DOS call needs them saved is not known.
         PUBLIC  PutChar                 ; @ 0000:05F6
 PutChar PROC NEAR
         push    bp
@@ -289,9 +290,10 @@ PutChar PROC NEAR
         ret
 PutChar ENDP
 
-; 0000:0608: GetKey: read one key with BIOS INT 16h AH=0 and return it as an int; an extended key
-; (ASCII AL zero) returns the negated scan code, so the two ranges do not collide. The menu loop
-; calls it. The frame saves DI, SI and DS.
+; 0000:0608: GetKey: read one key with BIOS INT 16h AH=0 and return it as an int. An extended key
+; (ASCII AL zero) returns the negated scan code; `cbw` then sign-extends AL, so the return is ASCII 1
+; to 127 as it is, ASCII 128 to 255 negative, and an extended key as its negated scan code. The menu
+; loop calls it. The frame saves DI, SI and DS.
         PUBLIC  GetKey                  ; @ 0000:0608
 GetKey PROC NEAR
         push    bp
@@ -314,9 +316,11 @@ L_061A:
         ret
 GetKey ENDP
 
-; 0000:0620: Int2FHandler: an interrupt handler that does nothing but iret. InstallInt2FHandler
-; installs it as interrupt 2Fh; no call in START1.EXE reaches it. QUIRK 0000:0620: the standard
-; frame's pops and ret after the iret are dead.
+; 0000:0620: Int2FHandler: an interrupt handler. It pushes BP, DI, SI and DS and then does iret; the
+; iret takes the first three of those words as the return IP, CS and FLAGS, so it does not return to
+; what interrupted it. InstallInt2FHandler sets it as the interrupt 2Fh vector; no call in START1.EXE
+; reaches it (the code bytes contain no INT 2Fh, CD 2F). QUIRK 0000:0620: the frame's pops and ret
+; after the iret are dead.
         PUBLIC  Int2FHandler            ; @ 0000:0620
 Int2FHandler PROC NEAR
         push    bp
@@ -332,11 +336,11 @@ Int2FHandler PROC NEAR
         ret
 Int2FHandler ENDP
 
-; 0000:062C: InstallInt2FHandler: install Int2FHandler (0000:0620) as interrupt 2Fh with DOS
-; function 25h. Purpose unknown: no caller in START1.EXE; it only installs a no-op handler.
-; QUIRK 0000:062C: the offset is the original link's 0620h. In the original the C module (src/S_TEXT.C)
-; precedes this module at 0496h; make match proves this module on its own, so TASM resolves `offset
-; Int2FHandler` relative to it (03C8h) and the literal keeps the original's word.
+; 0000:062C: InstallInt2FHandler: set the interrupt 2Fh vector with DOS function 25h. That function
+; takes the handler in DS:DX; the code puts offset Int2FHandler in DX (0000:0632 to 0636) but never
+; sets DS, which holds DGROUP, so the vector it installs is DGROUP:0620h, a data address, not Int2FHandler
+; at the code segment's 0620h. Purpose unknown: no caller in START1.EXE and no INT 2Fh in its code
+; bytes. QUIRK 0000:062C: because of that DS:DX mismatch the handler is never reached.
         PUBLIC  InstallInt2FHandler     ; @ 0000:062C
 InstallInt2FHandler PROC NEAR
         push    bp
@@ -359,7 +363,8 @@ InstallInt2FHandler ENDP
 ; 0000:0642: DetectMouse: return 1 when a mouse driver is present, else 0. Read the INT 33h vector
 ; with DOS function 35h; a null vector or one whose first byte is iret (0CFh) means no driver;
 ; otherwise reset the driver (INT 33h function 0) and require AX = FFFFh. The caller gates the mouse
-; prompt on it. The frame saves the registers the DOS and BIOS calls may clobber.
+; prompt on it. The frame reproduces the original's register saves; why the DOS and BIOS calls need
+; them saved is not known.
         PUBLIC  DetectMouse             ; @ 0000:0642
 DetectMouse PROC NEAR
         push    bp

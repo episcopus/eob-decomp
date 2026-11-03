@@ -30,15 +30,15 @@ extern int gMenuIndex; /*@ ds:052C */           /* the menu line being printed *
 extern int gSelection; /*@ ds:052E */           /* the key the menu loop read (:90), then the zero-based menu index (:92, gSelection -= '1'), then 'N' as the restart flag (:104) */
 extern int gSound; /*@ ds:0530 */               /* the sound choice */
 extern int gMouse; /*@ ds:0532 */               /* the mouse choice */
-extern char gMode; /*@ ds:0534 */               /* index 0 to 6 into gModeMaskTable (:78), from gDetectedMode or 6 when the byte at F000:C000 is 21h */
+extern char gMode; /*@ ds:0534 */               /* index 0 to 6 into gModeMaskTable (:78): gDetectedMode, or 0 when it is above 5 (:72 to :73), or 6 when the byte at F000:C000 is 21h (:76 to :77) */
 extern char gMaskBit; /*@ ds:0535 */            /* the gModeMask bit of the menu line being printed */
-extern char gDetectedMode; /*@ ds:0536 */       /* first byte of the four-byte video info record; InitVideo (0000:052D) zeroes both words and NormalizeVideoInfo (0000:04FC) reads the second */
+extern char gDetectedMode; /*@ ds:0536 */       /* first byte of the four-byte video info record; InitVideo (0000:052D) zeroes both words and NormalizeVideoInfo (0000:04FC) reads both words and byte +1 */
 
 extern char gBanner[]; /*@ ds:0113 */      /* leading CRLFs and "Eye of the Beholder Version 1.9" then "Which graphics mode do you wish to use?" */
 extern char gStar[]; /*@ ds:016E */        /* "*", the mark next to the menu line of a detected mode */
 extern char gSpace[]; /*@ ds:0170 */       /* " ", the mark next to an undetected mode */
-extern char gNote[]; /*@ ds:0172 */        /* "NOTE - * denotes a mode detected in your machine." */
-extern char gModePrompt[]; /*@ ds:01A6 */  /* "Mode?" */
+extern char gNote[]; /*@ ds:0172 */        /* "\r\nNOTE - * denotes a mode detected in your machine.", begins CR LF */
+extern char gModePrompt[]; /*@ ds:01A6 */  /* "\r\nMode?", begins CR LF */
 extern char gWarningHead[]; /*@ ds:01AE */ /* "WARNING! - " before the rejected mode's name */
 extern char gWarningTail[]; /*@ ds:01BD */ /* " mode has not been detected in your machine." */
 extern char gSurePrompt[]; /*@ ds:01EC */  /* "Are you SURE that you want to use that mode? (Y/N)" */
@@ -143,8 +143,9 @@ done:
 }
 
 /* 0000:0474: write the NUL-terminated string at text to the console, one character at a time
-   through PutChar (0000:05F6). The index i stays across the PutChar call, so the loop reads and
-   advances it one character at a time. */
+   through PutChar (0000:05F6). The compiler keeps the index i in SI (a register variable) and
+   increments it before each PutChar call, because the loop condition reads the next character only
+   after the call returns (0000:047C to 0491). */
 /*@ 0000:0474 */ void PrintString(char *text)
 {
     int i = 0;
