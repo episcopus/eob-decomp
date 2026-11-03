@@ -41,8 +41,10 @@
 ; The EOB copy is called twice from game unit e0ef3 (0EF3:2FA2, 0EF3:305F; src/E1D8C.ASM).
 ;
 ; The name _RandomByte has evidence: the routine steps the 24-bit state at DGROUP:2310 (the seed
-; 34 12 76 in the image) and returns a byte of it, and its callers use the byte as a random value
-; (src/IOV0.C declares and calls it RandomByte). No caller narrows it further.
+; 34 12 76 in the image) and returns the XOR of the two bytes it has just written (new b0 ^ new b1),
+; and its callers use the byte as a random value (src/IOV0.C declares and calls it RandomByte).
+; No caller gives the byte a more specific meaning; each only reduces it (`% 31`, `& 7`, `& 3`,
+; `& 1`).
         PUBLIC  _RandomByte              ; @ 0CDA:0006
 _RandomByte PROC FAR
         push    bp
