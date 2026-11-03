@@ -2745,3 +2745,21 @@ new = "ScribeScrolls"
 kind = "function"
 why = "ovl1:1691 is the Scribe Scrolls button of the camp menu (RunCampMenu case 0x8004): it asks SelectPartyMember(0x31) 'Select a Mage from your party who would like to scribe spells', shows messages 0x32 and 0x33 when no scroll can be scribed, and moves the chosen scroll's spell into the mage's spell book at record +0x73 while freeing the item"
 date = "2026-11-02"
+
+[[rename]]
+id = "0BD2:0106=TakeItemFromSlot"
+addr = "0BD2:0106"
+old = "f0BD2_0106"
+new = "TakeItemFromSlot"
+kind = "function"
+why = "clears item slot row of character who (or the mouse slot when row is -1), marks the record free (m04=-1), redraws and returns the item m0B; called by ApplyItemEffect 0BD2:0D2D, UseItemRow 0EF3:2604 and DrainItemOp 122E:1A3B, all of which consume the item (review of e0bd2)"
+date = "2026-11-02"
+
+[[rename]]
+id = "0BD2:0AF2=CanPlaceItemInSlot"
+addr = "0BD2:0AF2"
+old = "f0BD2_0AF2"
+new = "CanPlaceItemInSlot"
+kind = "function"
+why = "when row is 0x11 and item is carried, checks the wearer class (0BD2:11FD); returns 0 when the worn item flags have 0x20 or the row class mask g1C8D does not cover the item type mask, printing the reason; called by UseSelectedItem 0BD2:0BA0 and PickListItem 0ACD:0BA6 (review of e0bd2)"
+date = "2026-11-02"

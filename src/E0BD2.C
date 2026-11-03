@@ -170,7 +170,7 @@ extern int far RollDice(char count, char sides, char bonus); /*@ 082C:0458 */
 void InsertListItem(void far *head, int key, int item, int tag);
 int RemoveListItem(void far *head, int key, int target);
 void DrawItemRow(int row, int slot, int drawMode);
-int f0BD2_0AF2(int item, int who, int row);
+int CanPlaceItemInSlot(int item, int who, int row);
 void UseSelectedItem(int slot);
 void SwapSelectedItem(int who, int row);
 int ItemClassAllowed(int who, int item);
@@ -209,9 +209,9 @@ void DrawItemName(int item);
     RedrawMember(who);
 }
 
-/* 0BD2:0106: Purpose unknown: clears item slot `row` of character `who` (or the mouse's slot when
-   `row` is -1), marks the item free (m04 = -1), redraws, and returns the item's m0B. */
-/*@ 0BD2:0106 */ int f0BD2_0106(int who, int row)
+/* 0BD2:0106: takes the item out of slot `row` of character `who` (or the mouse's slot when `row` is
+   -1): clears the slot, marks the record free (m04 = -1), redraws, and returns the item's m0B. */
+/*@ 0BD2:0106 */ int TakeItemFromSlot(int who, int row)
 {
     int item;
 
@@ -250,10 +250,7 @@ void DrawItemName(int item);
    old head and its predecessor, the tail of the m08 walk: the new item's m08 becomes the old head
    (the tail's forward link) and its m06 becomes the tail, so only the old head's m06 and the tail's
    m08 change. `item` becomes the new head, so the lists walked by m08 (0BD2:0385, 040E, 04AA) meet
-   the newest item first. The two int locals are register variables (DI and CX: this function makes
-   no call, so the compiler gives out a third register); `oldHead` is declared first because the
-   compiler gives DI to the later declaration when the use counts tie, and `key` is then left in
-   memory as the original has it. */
+   the newest item first. */
 /*@ 0BD2:01D0 */ void InsertListItem(void far *head, int key, int item, int tag)
 {
     struct ItemRecord *rec;
@@ -646,10 +643,10 @@ next:
     RedrawMember(gA99A);
 }
 
-/* 0BD2:0AF2: Purpose unknown: when `row` is 0x11 and `item` is carried, checks that character `who`
-   may wear the item type (0BD2:11FD); on failure prints why. Returns 0 when the worn item's flags
-   have 0x20, 1 otherwise, printing a message when the row's class mask does not cover the item. */
-/*@ 0BD2:0AF2 */ int f0BD2_0AF2(int item, int who, int row)
+/* 0BD2:0AF2: when `row` is 0x11 and `item` is carried, checks that character `who` may wear the
+   item type (0BD2:11FD) and prints why on failure. Returns 0 when the worn item's flags have 0x20
+   or the row's class mask does not cover the item type mask (printing a message), 1 when it fits. */
+/*@ 0BD2:0AF2 */ int CanPlaceItemInSlot(int item, int who, int row)
 {
     int mask;
 
@@ -685,7 +682,7 @@ next:
 
     saved = gChars[gA99A].m77[slot];
     item = GetCurrentItem();
-    if (!f0BD2_0AF2(item, gA99A, slot))
+    if (!CanPlaceItemInSlot(item, gA99A, slot))
         return;
     if (slot != 0x10) {
         SetMouseItem(saved);
@@ -744,7 +741,7 @@ next:
     int kind;
 
     rec = &gChars[who];
-    kind = f0BD2_0106(who, slot);
+    kind = TakeItemFromSlot(who, slot);
     PlaySound(0xA);
     switch (kind) {
     case 1:
@@ -839,11 +836,9 @@ next:
    (0BD2:1244), when f0D1C_07DB refuses or the slot's m1E bit is set in mode 0. When the item type
    may not be worn it draws the character's name and " can not use this item.\r". Otherwise it
    switches on the item type's m0E low 7 bits and either draws a message, eats, uses the item
-   through 0DE8:0763, arms 0EF3:21E0, dispatches through 0EF3:28ED or the overlay 5 entry, applies
-   the item effect (0BD2:0D2D) or uses it as a wand (0BD2:0EE8). Called by 0ACD:0415 and 0ACD:0D9D.
-   The `case` bodies are in the source order the jump table shows (0/16, 1/2/3, 5/6, 7,
-   4/8/12/13/15, 9, 10, 11, 14, 18); compiling the unit through the `-v` source-level-debug
-   switch keeps the per-case `pop cx; pop cx` call cleanups apart the way the original does. */
+   through 0DE8:0763, arms 0EF3:21E0, dispatches through 0EF3:28ED or the overlay 5 entry
+   UseItemPanel (ovl5:1CDD), applies the item effect (0BD2:0D2D) or uses it as a wand (0BD2:0EE8).
+   Called by 0ACD:0415 and 0ACD:0D9D. */
 /*@ 0BD2:1001 */ void UseItemSlot(int who, int slot)
 {
     int item;
@@ -927,7 +922,8 @@ next:
 }
 
 /* 0BD2:11FD: returns 1 when `item` is empty, otherwise the item-type byte gItemTypes[m02].m05 ANDed
-   with g1231[gChars[who].m20]. Purpose unknown. */
+   with g1231[gChars[who].m20], cast to signed char. The result is nonzero when the character's
+   class may use the item, so the callers use it as yes/no. Purpose unknown beyond that. */
 /*@ 0BD2:11FD */ int ItemClassAllowed(int who, int item)
 {
     int result;
