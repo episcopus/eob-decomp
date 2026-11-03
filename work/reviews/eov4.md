@@ -13,6 +13,30 @@ addressed. Comment and name changes only, no code change. `make match FILE=src/E
 (8259 bytes), `make readability UNIT=eov4` 0 findings. Names changed with `make rename`:
 ds:1879 -> gTable1879, ds:A92A -> gIconTableA92A (re/globals.toml, re/renames.toml).
 
+## Round 4 (rev-haiku, main at 366bb3b)
+
+Judged: the round 3 must-fix item and the round 3 shoulds on this unit's lines, and the changes since ea7fcbe in `src/EOV4.C` and `re/globals.toml` (`re/symbols.toml` has no eov4 entry changed; the diff is other units' notes and stamps). Method: `ovl4:1F51` was disassembled from `build/re/eob-overlays/ovl04.bin` with capstone (16-bit: `push bp`, `mov bp,sp`, and the `call 0x44b` at 1F5D the header describes). The code the new text describes was read with sed (:1182-1189, :459). The `ds:8102` list was checked against src/E07C8.C:42-45, and the `ds:80C6`, `ds:8104` and `ds:8111` cites against src/E1C0E.C:553, :176, :177 and :165. The new globals entries of other units (ds:628C, ds:80E8, ds:F43C, ds:FE2C, ds:1278, ds:12E0, ds:5737) were spot-checked: the labels and message numbers match src/EOV1.C:1263, :1265 and :1422, and the g5737 cite matches src/E0EF3.C:227. The spell-name counts (25 mage, 24 cleric) were not decoded from the EXE. `make match FILE=src/EOV4.C` 18 of 18 (8259 bytes), exit 0; `make readability UNIT=eov4` 0 findings.
+
+Round 3 must-fix (fixed right; tick stays): the DrawViewFrame header now reads "when gFB45 is set and gGraphicsChoice is 3 (MCGA/VGA, re/globals.toml ds:8102)". It matches the `gFB45 && gGraphicsChoice == 3` test at :1182, and the palette load and the clear (:1188-1189) are outside the `full` block. No "video mode" wording is left in src/EOV4.C.
+
+Round 3 shoulds on this unit's lines (fixed right; ticks stay): the gGraphicsChoice declaration (:529) now gives the list 0 CGA, 1 Tandy, 2 EGA, 3 MCGA/VGA, 4 VGA, which matches src/E07C8.C:42-45 and the ds:8102 entry. The Ovl4_0AD0 header (:403) gates the ds:6F86 recompute with "when that byte is not -1", which matches `if (spanSlot != -1)` at :459.
+
+Round 3 should still open, not this unit's to fix: src/E07A9.C:87 (owner E07A9) still reads "video mode 3" for the gFB45 test and cites the stale src/EOV4.C lines (:1049, :1054, :1060, :1061). Left unticked; it is a should under playbook 70, and the owner's review will take it.
+
+Changed lines since ea7fcbe, other units' registry entries: the ds:8102 why (E07C8.C:44-45, the gOverlayFiles order) and the ds:80C6, ds:8104 and ds:8111 cites are right, as above.
+
+Must-fix: none.
+
+Should:
+
+- [ ] should src/EOV4.C:1174-1175 (DrawViewFrame header, the round 3 edit): the rewrap leaves "with pattern 0xc). Then it waits for gCount849A" on one line and "to reach zero, and, when `full` is set" on the next, so the sentence breaks in the middle of a phrase at a different width from the lines around it. Reflow the paragraph (the words are right).
+
+Notes (for the next reader; they do not block):
+
+- [ ] note src/EOV4.C:545 (Ovl4_0D1B header, text no fix touched): "through the sprite blitter the video mode selects". This is the word round 3 asked to stop using for gGraphicsChoice. If the blitter depends on the graphics choice (the 6-bit cells for choice 3 and 4, src/E1DE7.C:169 and :202), say so; otherwise leave it. The re/globals.toml ds:8102 entry cites E1DE7.C:163-165 for the same fact; that stale cite is the E1DE7 owner's.
+
+Summary: the round 3 must-fix is fixed right and the changed lines of this unit are sound. No must-fix open. One new should (the rewrap of the DrawViewFrame header, a changed line), one round 3 should still open in src/E07A9.C (its owner's). Nothing escalated: no matcher, spec or pin question.
+
 ## Round 3 (rev-haiku, main at ea7fcbe)
 
 Judged: the round 2 must-fix items, and the changes since ac24cbe in `src/EOV4.C`, `re/globals.toml` and `re/symbols.toml`. Method: the cited addresses were disassembled from `build/re/eob-overlays/ovl04.bin` (ovl4) and `ovl03.bin` (ovl3) with capstone, 16-bit; the cited source lines were read with sed. `make match FILE=src/EOV4.C` 18 of 18 (8259 bytes), `make readability UNIT=eov4` 0 findings.

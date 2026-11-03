@@ -8703,6 +8703,7 @@ evidence = ["ovl", "near", "segment"]
 name = "InitViewSlots"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "eov4_0066"
@@ -8713,6 +8714,7 @@ evidence = ["ovl", "near", "frame"]
 name = "SetRegionRect"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "eov4_0097"
@@ -8723,6 +8725,7 @@ evidence = ["ovl", "near", "frame"]
 name = "ComputeViewSpan"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "eov4_021e"
@@ -8733,6 +8736,7 @@ evidence = ["ovl", "near", "frame"]
 name = "SetRegionColumnExtent"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "eov4_02a5"
@@ -8743,6 +8747,7 @@ evidence = ["ovl", "near", "frame"]
 name = "CopyViewColumn"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "eov4_036a"
@@ -8753,6 +8758,7 @@ evidence = ["ovl", "near", "frame"]
 name = "ToggleViewColumn"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "eov4_042c"
@@ -8763,6 +8769,7 @@ evidence = ["ovl", "near", "frame"]
 name = "IsSlotLive"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "eov4_044b"
@@ -8773,6 +8780,7 @@ evidence = ["ovl", "near", "frame"]
 name = "Ovl4_044B"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "eov4_0ad0"
@@ -8783,6 +8791,7 @@ evidence = ["ovl", "near", "frame"]
 name = "Ovl4_0AD0"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "eov4_0d1b"
@@ -8794,6 +8803,7 @@ notes = "matched 2026-11-02 under -v (the file's actual flag, which also keeps C
 name = "Ovl4_0D1B"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "eov4_1091"
@@ -8804,6 +8814,7 @@ evidence = ["ovl", "near", "frame"]
 name = "Ovl4_1091"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "eov4_1411"
@@ -8814,6 +8825,7 @@ evidence = ["ovl", "near", "frame"]
 name = "Ovl4_1411"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "eov4_19c4"
@@ -8825,6 +8837,7 @@ notes = "matched 2026-11-02 under -v. Three source forms the bytes pin down: the
 name = "Ovl4_19C4"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "eov4_1d20"
@@ -8835,6 +8848,7 @@ evidence = ["ovl", "near", "frame"]
 name = "Ovl4_1D20"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "eov4_1e18"
@@ -8845,6 +8859,7 @@ evidence = ["ovl", "near", "frame"]
 name = "DrawViewSlots"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "eov4_1ede"
@@ -8855,6 +8870,7 @@ evidence = ["ovl", "near", "frame"]
 name = "DrawViewRows"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "eov4_1f51"
@@ -8865,6 +8881,7 @@ evidence = ["ovl", "frame"]
 name = "DrawViewFrame"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "eov4_2039"
@@ -8875,6 +8892,7 @@ evidence = ["ovl", "frame"]
 name = "NoOp2039"
 level = "L2"
 match_flags = "-ml -O -Z -v"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "eov5_0000"
