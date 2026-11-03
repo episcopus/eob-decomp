@@ -32,11 +32,15 @@ re/symbols.toml:10984) are unchanged. `make match FILE=src/I0CDA.ASM` 1 of 1 exi
 
 New findings:
 
-- [ ] must-fix src/I0CDA.ASM:46-47: drop "only reduce it". Say that the callers mask or take the byte
+- [x] must-fix src/I0CDA.ASM:46-47: drop "only reduce it". Say that the callers mask or take the byte
   modulo (`% 31`, `& 7`, `& 3`, `& 1`), that some then scale or offset the result (`* 8 + 0xb4`,
   `+ 0x19`), and that two drop it (src/IOV0.C:545 and ovl0:1015). For example: "the callers take it
   modulo or masked (`% 31`, `& 7`, `& 3`, `& 1`), some then scale or offset the result (`* 8 + 0xb4`,
   `+ 0x19`), and two drop it (src/IOV0.C:545 and ovl0:1015)."
+  FIXED: the comment now reads "No caller gives the byte a more specific meaning: the callers mask or
+  take it modulo (`% 31`, `& 7`, `& 3`, `& 1`), some then scale or offset the result (`* 8 + 0xb4`,
+  `+ 0x19`), and two drop it (src/IOV0.C:545 and ovl0:1015)." "only reduce it" is gone; the scaling
+  callers (src/IOV0.C:680, :1018, :1027) and the two drops (src/IOV0.C:545, ovl0:1015) are named.
 
 Round 5 is not a pass: one must-fix is open (the caller sentence). Everything else is fixed right.
 
