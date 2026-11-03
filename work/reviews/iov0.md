@@ -1,12 +1,44 @@
 # Review: iov0
 
 Reviewer: rev-haiku
-Commit reviewed: c7d121dc592cf92656c3a40297462ce3a16fb3a7 (main when I started; src/IOV0.C, re/symbols.toml and re/globals.toml are identical in the worktree's HEAD 97332d0)
+Commit reviewed: round 2 at 38df9a6 (main; src/IOV0.C is identical to ac24cbe3, the merge of the round 1 fixes eb19ee8). Round 1: c7d121dc592cf92656c3a40297462ce3a16fb3a7 (main when I started; src/IOV0.C, re/symbols.toml and re/globals.toml are identical in the worktree's HEAD 97332d0)
 
 Playbook 70. Judge what a matching file can still get wrong: names, types, comments, structure.
 The matcher already proved the bytes; do not re-prove them, read for meaning.
 
-Round 1. Checked: `make match FILE=src/IOV0.C` (22 of 22, exit 0), `make readability UNIT=iov0` (0 findings).
+## Round 2 (later round, playbook 70)
+
+Judged: each round 1 must-fix (all 17 ticked) and every changed line since c7d121d (`git diff c7d121d main -- src/IOV0.C re/globals.toml re/symbols.toml`, src/IOV0.C only changed by eb19ee8). Every round 1 must-fix is fixed right; the ticks stand. I checked the rewritten claims against the code and the image: the title and logo order, the f19EC_002A slot names, GrowFrame's callers, the hands phases, the king's rise and clamp, the tunnel order, the mode 3 blit, the TOWRMAGE pages, the logo and palette waits, RevealInStrips' `strip` name, and the registry rows for ds:1EE2 (gFn1EE2), ds:19E7 (gBuiltinPalette) and ds:289B (gTandyOn). The values in the image: gWestwoodDelay 140, gLogoDelays 50, 100, 50, 140, gKingStep -4, -8, -2, -2, 1, 0, 0, 0 and the RandomByte seed 0x98761234. Rechecked: `make match FILE=src/IOV0.C` (22 of 22, exit 0), `make readability UNIT=iov0` (0 findings).
+
+### Round 2 findings
+
+- [ ] must-fix src/IOV0.C:958-962 (PlayAvalancheScene header, a sentence the round 1 fix wrote): "plays sounds 8 and 4 while a 30-step clip loop and the six ZOOMTUNL rectangles draw, plays sound 9" puts the rectangles inside the 8 and 4 phase. The code plays sound 8 (1009) and sound 4 (1012) before the 30-step loop (1013-1019), plays sound 9 (1020) after that loop, and draws the six rectangles after it (1021-1028). Then it loads ZOOMTUNL.CMP (1032), plays sound 6 (1035) and closes the bottom bar (1045). The same header says "flashes them three times (sound 7 each)": the loop at 976-985 runs three times and plays sound 7 twice per run (979, 983), six plays in all. Rewrite the sentence in code order with those counts, and cite the rectangle loop at 1021, not 998-1006.
+- [ ] should stale line numbers in comments. The round 1 fixes took line numbers from c7d121d, and this file has grown since (8 lines before DrawGrid's call, 20 before the hands, 22 before the tunnel, 23 before the avalanche). The claims they support are right, so these are shoulds; each cited number now points at other code. Replace them with the address of the call or code (or drop them):
+  - PlayIntroSequence: DrawGrid is called at 192 (header cites 184, the PlayKingScene call); Dissolve at 173 (header of Dissolve cites 165).
+  - PlayTowerMageScene: DrawGrid at 453 and 465 (cites 439, 451); the step-count comparison of `center` is at 493 (cites 479); `center` is used at 484, 497, 502 and 503 (cites 470, 483, 488).
+  - PlayTunnelScene: DrawGrid at 909 (cites 887); ORB.CMP is loaded at 906, copied at 907; the 19-step wipe is at 914-924 (cites 892-902); the shrinking box at 927-932 (cites 905-910); the reveal at 933-937 (cites 911-915); TUNNEL.CMP is loaded at 939, copied at 940, the screen cleared at 942-944 (cites 917, 918, 921-923).
+  - PlayHandsScene and GrowFrame's header: the four GrowFrame calls are at 735, 759, 790, 812 (cite 715, 739, 770, 792). In GrowFrame's header, "the ClipRect at 567" is 584 and "(559-560)" is 576-577.
+  - PlayWtrdpScene: the sprite frees are in the first loop at 246 (cites 233-234); the window slot is set at 278-279 (cites 266-267); the union is at 196-199 (cites 188-191); the sprite re-cut is at 252-255 (cites 240-243); the frame index is at 283-285 (cites 271-274); the end frees are at 301-305 (cites 289-295).
+  - Tile table comment: the tile cuts are at 259 and 857 (cite 247 and 835); the star draws at 294 and 889 (cite 282 and 867).
+  - gFn1EE2 declaration (src/IOV0.C:25) cites src/I0892.C:97; the declaration is at src/I0892.C:100 now. The same cite is in re/globals.toml:522 and re/renames.toml:2404. Cite 0892:0544 instead, which the I0892 comment gives as its own address.
+- [ ] should src/IOV0.C:637-638 (PlayKingScene header): "a fixed animation phase, anim[i] = (i * 5) & 3" holds only at the start. The loop advances it every step (693, `anim[i] = ++anim[i] & 7`). Say "starting phase".
+- [ ] should src/IOV0.C:37-40 and 528-530 (gFrameDelay and WaitFrameDelay): "the timer decrements it" is not shown by this unit or by any file in src/. INTRO.EXE does decrement ds:2326: `sub word ptr [2326],1` with an `sbb` on [2328] at image offset 0xD479 (file offset 0xDC79). The routine is not named. Name it with its segment:offset, or tag the claim [H].
+- [ ] should carried from round 1 (still open, not blocking): src/IOV0.C:55 and 1137, the Unpack4 length as unsigned. It is a shared change across src/I0AED.C and src/E1B82.C.
+
+### Round 2 notes (not findings)
+
+- re/globals.toml:527 (the gBuiltinPalette row) still says "so gEgaPalette has no evidence"; the old name is left in a why text. The registry owner can fix it.
+- gBuiltinPalette is `[16]` here and `[]` in src/I0892.C:118. Same object; the sizes should agree on the I0892 side.
+- The unit comment cites whitepaper 2.4 for "its overlay and its shared library". Section 2.4 covers the shared library, as an [H] claim; INTRO's overlay is in 2.3. Acceptable; the owner may cite both.
+- The call-site addresses in ClearBottomBar's header (0217, 04CF) are still unchecked (round 1 note).
+
+### Round 2 summary
+
+One new must-fix: the PlayAvalancheScene header puts the ZOOMTUNL rectangles before sound 9 and inside the 8 and 4 phase, and counts the sound 7 flashes wrongly. The round 1 must-fix items are fixed right. The stale line numbers are shoulds. Nothing escalated: no matcher, spec or pin question.
+
+## Round 1
+
+Checked: `make match FILE=src/IOV0.C` (22 of 22, exit 0), `make readability UNIT=iov0` (0 findings).
 
 ## Findings
 
