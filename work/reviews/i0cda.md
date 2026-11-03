@@ -34,14 +34,18 @@ Judged: the round 2 must-fix items and should, and the changes since the round 2
 
 New findings:
 
-- [ ] must-fix src/I0CDA.ASM:43-44 (a line the 6ea511f name comment changed): "returns a byte of it"
+- [x] must-fix src/I0CDA.ASM:43-44 (a line the 6ea511f name comment changed): "returns a byte of it"
   is wrong. The routine returns AL = new b0 ^ new b1 (line 26; lines 68 and 69), a value computed
   from two state bytes, not one byte of the state. Say that: "and returns the XOR of the two bytes
   it has just written (new b0 ^ new b1)". The same phrase is in re/renames.toml:2584 (a note there,
-  outside this round's file list; fix it with the comment).
-- [ ] should src/I0CDA.ASM:45: "No caller narrows it further" reads as the opposite of what the
+  outside this round's file list; fix it with the comment). FIXED a97a0d7: the comment now reads
+  "and returns the XOR of the two bytes it has just written (new b0 ^ new b1)", and re/renames.toml
+  2584's `why` was reworded the same way.
+- [x] should src/I0CDA.ASM:45: "No caller narrows it further" reads as the opposite of what the
   callers do: they reduce the byte with `% 31`, `& 7`, `& 3` (src/IOV0.C:293, :296, :680, :706). The
-  sentence means that no caller gives it a more specific meaning; say that.
+  sentence means that no caller gives it a more specific meaning; say that. FIXED a97a0d7: the
+  sentence now reads "No caller gives the byte a more specific meaning; each only reduces it
+  (`% 31`, `& 7`, `& 3`, `& 1`)."
 - [ ] note: the far twin E1D8C.ASM still keeps `_f1D8C_0000`, carried from round 2; not a finding of
   this unit.
 
