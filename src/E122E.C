@@ -47,7 +47,7 @@ extern int GetCurrentItem(void); /*@ 0D1C:02DC */
 extern int gMouseDisabled; /*@ ds:814A */      /* nonzero disables the mouse (src/E07A9.C) */
 extern char gF51A; /*@ ds:F51A */              /* the selected action row: 0..2 in the action menu
                                                   and 0x10 for the character's own item list (tested
-                                                  at 471 and 485) (src/E0ACD.C) */
+                                                  in ItemSlotAction, 122E:06D0) (src/E0ACD.C) */
 extern signed char gA99A; /*@ ds:A99A */       /* the selected character index (src/E0ACD.C) */
 extern signed char g181F[]; /*@ ds:181F */     /* byte table indexed by an item icon (src/E1414.C) */
 extern int ClickInRect(int left, int top, int right, int bottom); /*@ 082C:0A5D */
@@ -200,11 +200,13 @@ extern void DrawText(char far *text); /*@ 1DE7:060A */
 extern int IsMouseInRect(int left, int top, int right, int bottom); /*@ 1A72:02A6 */
 extern int f0D1C_00DA(int value, int page); /*@ 0D1C:00DA */
 extern int gPartyCell; /*@ ds:FBCA */        /* the meaning is open: this unit writes it from
-                                                SetSoundVolume's `volume` argument (212) and draws the
-                                                volume message (219), but also passes it to
-                                                RunMemberScript as `who` (213-214, 1423), to
-                                                f0D1C_00DA as a member (568) and compares it with a
-                                                character id (1390). src/E08E6.C:97-103 reads it as the
+                                                SetSoundVolume's `volume` argument (122E:0001),
+                                                which also passes it to RunMemberScript as `who`
+                                                and draws the volume message, but RunRowHandler
+                                                (122E:0933) passes it to f0D1C_00DA as a member,
+                                                MarkMemberItemsOp (122E:1CAD) compares it with a
+                                                character id, and LoadLevelOp (122E:1AAB) stores its
+                                                script word here. src/E08E6.C:97-103 reads it as the
                                                 party's map cell; the E122E and E0ACD reviews must
                                                 settle it */
 extern int gF540; /*@ ds:F540 */               /* counts sound-volume changes (src/E08E6.C) */
@@ -1407,7 +1409,7 @@ done:
 }
 /* 122E:1CAD: opcode that marks a member's item list: read a member/character index and, when it
    matches gPartyCell (see its declaration for the open reading), set flag 0x40 on every carried item
-   slot (items[0..26]) of each of that character's six 243-byte records that has bit 0 of its status
+   slot (items[0..26]) of each of the six party records (gChars[0..5]) that has bit 0 of its status
    set, and mark each record's list (rec + 0x97). Always marks the gB899 list of the index. Returns
    the bytes read. */
 /*@ 122E:1CAD */ long MarkMemberItemsOp(char far *script)
