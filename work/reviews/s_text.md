@@ -4,9 +4,53 @@ Reviewer: rev-haiku
 Commit reviewed: 9a2b2fc (HEAD of review/s_text; the last change to the unit's files is aef98e7)
 Round 2 commit reviewed: 3e16e87 (main, the merge of unit/s_text; the diff from 9a2b2fc is round 1's fixes plus the probes and console routines, aa0e56a)
 Round 3 commit reviewed: 3ec2009 (main; the diff from 3e16e87 is the round 2 fixes, b31cf07)
+Round 4 commit reviewed: fbf7526 (main; the diff from 3ec2009 is the round 3 fixes, b233ff9)
 
 Playbook 70. Judge what a matching file can still get wrong: names, types, comments, structure.
 The matcher already proved the bytes; do not re-prove them, read for meaning.
+
+## Round 4 (rev-haiku, fbf7526)
+
+Judged only: the round 3 must-fix and should items, and the changed lines since 3ec2009
+(`git diff 3ec2009 main -- src/S_TEXT.C src/S_TEXT.ASM re/symbols.toml re/globals.toml`; only the two
+src files changed, no map or globals change). The bytes were not re-proved; I checked the claims in the
+changed lines against eob/START1.EXE (code address + 0x200 is the file offset: the call at 0487 is
+`E8 6C 01`, whose target 0487 + 3 + 016Ch is 05F6, PutChar).
+
+Evidence, per changed line:
+- TestCrtcRegister (0000:04A3): `B0 0F EE 42 EC 8A E0 B0 66 EE B9 00 01 E2 FE EC 86 E0`. `in al,dx` is at
+  04A7, `mov ah,al` at 04A8, the second `in al,dx` at 04B2 and `xchg` at 04B3. The header's account of AL
+  and AH is right: AL the first read-back after the swap, AH the second; AL and AH are set by the routine.
+- Int2FHandler (0000:0620): `55 8B EC 57 56 1E CF`: push bp, mov bp,sp, push di, push si, push ds, iret at
+  0626. The iret pops DS, SI and DI as IP, CS and FLAGS; BP stays on the stack. Right.
+- InstallInt2FHandler (0000:062C): `push ds` at 0631, `mov ax,offset Int2FHandler` at 0632, `mov dx,ax` at
+  0635; nothing in the routine sets DS. The vector is DGROUP:0620h. Right.
+- Nothing reaches the two routines: START1.EXE has no `CD 2F` (count 0); no near call, jump, short jump or
+  far call targets 0620 or 062C; the one reference to 0620 is the immediate at 0632. Right.
+- PrintString (0000:0474): `push si` at 0477, `xor si,si` at 0478, `mov ax,si` at 047C, `inc si` at 047E,
+  the call at 0487, the condition `cmp byte ptr [bx+si],0` at 048E. PutChar's `push si` is at 05FA and its
+  `pop si` at 0604. The increment precedes the call and i survives it. Right.
+- gMode: `cmp byte ptr [0534h],5` at 025E, `jle` at 0263 (7Eh, a signed compare), `mov byte ptr [0534h],0` at
+  0265. So a gDetectedMode of 80h to FFh is not clamped, and 6 to 127 become 0. gModeMaskTable is at ds:00A9
+  (S_TEXT.C:23), so index -128 is ds:0029, before the table. Right.
+- No em or en dash in the changed lines.
+
+The round 3 must-fix items (the Int2FHandler iret, the Int2FHandler header's vector sentence, and gMode)
+are fixed right and stay ticked. The round 3 shoulds (TestCrtcRegister's inputs, PrintString's reason and
+the InstallInt2FHandler QUIRK's cause) are fixed right and stay ticked.
+
+### Findings
+
+- [ ] should src/S_TEXT.ASM:347-348 (InstallInt2FHandler QUIRK): "even an INT 2Fh would jump to
+  DGROUP:0620h, a data address, because of the DS:DX mismatch" holds only after InstallInt2FHandler has run.
+  Until then the vector is whatever DOS holds, so the sentence reads as if the vector were already
+  DGROUP:0620h. Say "once InstallInt2FHandler has run, an INT 2Fh would jump to DGROUP:0620h". Clarity only:
+  the claim is true with that condition, so it does not block.
+
+### Summary (round 4)
+
+The unit passes. The round 3 must-fix items are fixed right, every changed line checks against the
+bytes, and the one new finding is a should (the INT 2Fh sentence needs its condition) that does not block.
 
 ## Round 3 (rev-haiku, 3ec2009)
 

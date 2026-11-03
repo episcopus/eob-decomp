@@ -12102,6 +12102,7 @@ evidence = ["near"]
 name = "Main"
 level = "L2"
 match_flags = "-ms"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "s0000_0474"
@@ -12112,6 +12113,7 @@ evidence = ["near", "frame"]
 name = "PrintString"
 level = "L2"
 match_flags = "-ms"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "s0000_0496"
@@ -12122,6 +12124,7 @@ evidence = ["near"]
 name = "StoreVideoWord"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "s0000_04a3"
@@ -12132,6 +12135,7 @@ evidence = ["near"]
 name = "TestCrtcRegister"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "s0000_04fc"
@@ -12142,6 +12146,7 @@ evidence = ["near"]
 name = "NormalizeVideoInfo"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "s0000_052d"
@@ -12152,6 +12157,7 @@ evidence = ["near", "frame"]
 name = "InitVideo"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "s0000_05f6"
@@ -12162,6 +12168,7 @@ evidence = ["near", "frame"]
 name = "PutChar"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "s0000_0608"
@@ -12172,6 +12179,7 @@ evidence = ["near", "frame"]
 name = "GetKey"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "s0000_0620"
@@ -12182,6 +12190,7 @@ evidence = ["frame"]
 name = "Int2FHandler"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "s0000_062c"
@@ -12192,6 +12201,7 @@ evidence = ["frame"]
 name = "InstallInt2FHandler"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "s0000_0642"
@@ -12202,6 +12212,7 @@ evidence = ["near", "frame"]
 name = "DetectMouse"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "s0000_04bd"
@@ -12213,6 +12224,7 @@ notes = "not listed by the map: DetectVideoAdapter in src/S_TEXT.ASM (review e o
 name = "DetectVideoAdapter"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "s0000_056a"
@@ -12224,6 +12236,7 @@ notes = "not listed by the map: VGA probe (review e of s_text, 2026-11-03: the u
 name = "ProbeVga"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "s0000_05ba"
@@ -12235,6 +12248,7 @@ notes = "not listed by the map: EGA probe (review e of s_text, 2026-11-03: the u
 name = "ProbeEga"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "s0000_05e6"
@@ -12246,6 +12260,7 @@ notes = "not listed by the map: CRTC probe (review e of s_text, 2026-11-03: the 
 name = "ProbeColorCrtc"
 level = "L2"
 match_flags = "tasm /mx"
+review = "passed 2026-11-02 rev-haiku"
 
 [[function]]
 id = "s0000_0682"
