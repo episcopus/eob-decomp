@@ -25,8 +25,8 @@
 ;   b0 = (b0 >> 1) | (carry << 7)         (rcr)
 ;   AX = new b0 ^ new b1, AH = 0          (the bytes the rcl and rcr just wrote)
 ;
-; The two shr (lines 60 and 61) act on the copy in AL; DGROUP:2310 is only read until the rcr at
-; line 67 writes it. Only b2 and b1 shift left (rcl), b0 shifts right (rcr). ES and SI are
+; The two shr (lines 62 and 63) act on the copy in AL; DGROUP:2310 is only read until the rcr at
+; line 69 writes it. Only b2 and b1 shift left (rcl), b0 shifts right (rcr). ES and SI are
 ; saved; DS is never read. The far twin is E1D8C.ASM (the same code over DGROUP:8484 in EOB.EXE).
 ;
 ; Callers: the INTRO copy is reached from the overlay ovl0 by eleven relocatable far calls
@@ -43,8 +43,8 @@
 ; The name _RandomByte has evidence: the routine steps the 24-bit state at DGROUP:2310 (the seed
 ; 34 12 76 in the image) and returns the XOR of the two bytes it has just written (new b0 ^ new b1),
 ; and its callers use the byte as a random value (src/IOV0.C declares and calls it RandomByte).
-; No caller gives the byte a more specific meaning; each only reduces it (`% 31`, `& 7`, `& 3`,
-; `& 1`).
+; No caller gives the byte a more specific meaning: the callers that use it only reduce it
+; (`% 31`, `& 7`, `& 3`, `& 1`), and two drop it (src/IOV0.C:545 and ovl0:1015).
         PUBLIC  _RandomByte              ; @ 0CDA:0006
 _RandomByte PROC FAR
         push    bp
