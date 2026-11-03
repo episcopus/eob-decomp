@@ -12,7 +12,7 @@ extern void PutChar(char c); /*@ 0000:05F6 */   /* prints one character: Main at
 extern int GetKey(void); /*@ 0000:0608 */        /* reads one key: the menu loop at :90, :101, :116, :126 */
 extern int DetectMouse(void); /*@ 0000:0642 */   /* true when a mouse driver answers; gates the prompt at :122 */
 
-/* the C library's exec, reached by near call */
+/* the C library's exec: build/re/rtl_start1.json names the library entry at 0000:0837 _execl */
 extern int execl(char *path, char *arg0, ...); /*@ 0000:0837 */
 
 /* the video-hardware probes (src/S_TEXT.ASM): fills the four-byte info record at gDetectedMode */
@@ -32,7 +32,7 @@ extern int gSound; /*@ ds:0530 */               /* the sound choice */
 extern int gMouse; /*@ ds:0532 */               /* the mouse choice */
 extern char gMode; /*@ ds:0534 */               /* index 0 to 6 into gModeMaskTable (:78), from gDetectedMode or 6 when the byte at F000:C000 is 21h */
 extern char gMaskBit; /*@ ds:0535 */            /* the gModeMask bit of the menu line being printed */
-extern char gDetectedMode; /*@ ds:0536 */       /* first byte of the four-byte video info record; InitVideo zeroes both words (S_TEXT.ASM:145) and NormalizeVideoInfo reads the second (S_TEXT.ASM:109) */
+extern char gDetectedMode; /*@ ds:0536 */       /* first byte of the four-byte video info record; InitVideo (0000:052D) zeroes both words and NormalizeVideoInfo (0000:04FC) reads the second */
 
 extern char gBanner[]; /*@ ds:0113 */      /* leading CRLFs and "Eye of the Beholder Version 1.9" then "Which graphics mode do you wish to use?" */
 extern char gStar[]; /*@ ds:016E */        /* "*", the mark next to the menu line of a detected mode */
