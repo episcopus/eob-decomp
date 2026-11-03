@@ -63,6 +63,9 @@ match:            ## prove C and assembly units against their program (FILE=src/
 	@rc=0; for f in $(or $(FILE),$(wildcard src/*.C src/*.ASM)); do echo "== $$f"; \
 	  $(PY) tools/match/cmatch.py $$f $(if $(WRITE),--write) || rc=1; done; exit $$rc
 
+rebuild:          ## build a program from src/ and compare it with the original (PROGRAM=START1.EXE; playbook 50)
+	$(PY) tools/rebuild/rebuild.py $(or $(PROGRAM),START1.EXE) $(if $(V),-v)
+
 twin:             ## prove INTRO.EXE units by their EOB.EXE twin, the same module linked elsewhere (UNIT=, WRITE=1 records L2; FIND=1 looks for twins)
 	$(PY) tools/match/twin.py $(if $(FIND),--find) $(if $(UNIT),--unit $(UNIT)) $(if $(WRITE),--write)
 
