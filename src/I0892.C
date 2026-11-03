@@ -41,12 +41,12 @@
 #define SOUND_MAP_SIZE 0x78L
 #define DRIVER_BLOCK_SIZE 0x36B0L
 /* The palette entry the start-up paths set: entry 15 is white. StartupGame's palette switch
-   (:0596) allocates the 16-byte buffer in every case but writes entries only for the EGA and VGA
-   cases: case 0 (Tandy, :05B2) writes no entry; case 1 (EGA, :05D3 to :05DB) writes two bytes of
-   the 16-byte table, entry 0 = 0 and entry 15 = 0xf (EGA_WHITE), then passes the built-in table
-   gBuiltinPalette to the setter; the VGA cases (:0612 to :0625) write three DAC bytes per entry
-   into the 0x300-byte table, so entry 15 starts at 0x2d and its three bytes take the 6-bit VGA
-   maximum 0x3f. */
+   (:0596): case 0 (Tandy, :05B2) and case 1 (EGA, :05D3 to :05DB) allocate the 16-byte table
+   (PALETTE_BUFFER_SIZE); Tandy writes no entry, EGA writes entry 0 = 0 and entry 15 = 0xf
+   (EGA_WHITE) and passes the built-in table gBuiltinPalette to the setter. The VGA cases
+   (:0612 to :0625) allocate the 0x300-byte table (PALETTE_SIZE), zero all of it and write three
+   bytes of 0x3f (VGA_WHITE) at 0x2d, which is entry 15 (PALETTE_ENTRY15_OFFSET), the 6-bit VGA
+   maximum. */
 #define PALETTE_ENTRY15 0xf
 #define EGA_WHITE 0xf
 #define PALETTE_ENTRY_BYTES 3

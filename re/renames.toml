@@ -2401,7 +2401,7 @@ addr = "intro/ds:1EE2"
 old = "gUnknown1EE2"
 new = "gFn1EE2"
 kind = "global"
-why = "the driver routine the front end starts; src/I0892.C:97 calls it gFn1EE2 (StartupGame after the page table, :0544)"
+why = "the driver routine the front end starts; StartupGame calls it at 0892:0544 after it fills the page table"
 date = "2026-11-02"
 
 [[rename]]
@@ -2410,7 +2410,7 @@ addr = "intro/ds:19E7"
 old = "gEgaPalette"
 new = "gBuiltinPalette"
 kind = "global"
-why = "the 16-byte palette table at ds:19E7 passed to the palette setter on the Tandy and EGA choices (Main 0892:010F, 0892:0116; StartupGame 0892:05E5); its bytes 00 05 03 02 0A 0E 0C 06 04 0B 09 01 00 08 07 0F are the built-in palette table, not a 6-bit EGA palette, and the Tandy choice uses it too so gEgaPalette has no evidence"
+why = "the 16-byte palette table at ds:19E7 passed to the palette setter on the Tandy and EGA choices (Main 0892:010F, 0892:0116; StartupGame 0892:05E0); its bytes 00 05 03 02 0A 0E 0C 06 04 0B 09 01 00 08 07 0F are the built-in palette table, not a 6-bit EGA palette, and the Tandy choice uses it too so gEgaPalette has no evidence"
 date = "2026-11-02"
 
 [[rename]]
