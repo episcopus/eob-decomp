@@ -6,7 +6,8 @@
    reads and rewrites the party's records at ds:F580 (gChars, six records of 0xF3 bytes).
    The unit is C, compiled by TCC 1.00 (escalation eov1, 2026-11-02): every function has TCC's
    frame, and ovl1:1153 reads a far array with the 16-bit displacement only TCC's own assembler
-   writes (26 8B 87 05 00 at ovl1:1277), which TASM cannot. Every function is matched. */
+   writes (26 8B 87 05 00 at ovl1:1277), which TASM cannot [H: the escalation record]. Every
+   function is matched. */
 
 /*@flags -ml -O -Z -v */
 
@@ -80,7 +81,9 @@ struct ButtonDef {
     unsigned char w;            /* +3: box width, in 8-pixel columns */
     unsigned char h;            /* +4: box height */
     unsigned key;               /* +5: the first key word (node->key06) */
-    unsigned flags;             /* +7: bit 0 fills the box, bit 2 centres the label (ovl1:1551) */
+    unsigned flags;             /* +7: bit 0 fills the box, bit 1 marks the button selectable (the
+                                   key walk in RunCampMenu and AskYesNo tests it), bit 2 centres the
+                                   label (ovl1:1551) */
 };
 
 /* the seven five-byte menu records at ds:628C: a text window and the run of button definitions
@@ -160,27 +163,34 @@ extern void far *gFont8x8; /*@ ds:FE5A */
 extern void far *gA9C0; /*@ ds:A9C0 */
 extern void far *gSegDF4E; /*@ ds:DF4E */
 extern int gTextRegion; /*@ ds:811F */
-extern int gFD98; /*@ ds:FD98 */
+extern int gFD98; /*@ ds:FD98 */      /* set when a party member cannot be picked (SelectPartyMember
+                                          draws the icons over its portrait box) */
 extern char far *gMageSpellNames[]; /*@ ds:1278 */
 extern char far *gClericSpellNames[]; /*@ ds:12E0 */
-extern char gFDEA[]; /*@ ds:FDEA */
-extern char gFileNameBuf[]; /*@ ds:FE6E */
-extern char gFDBA[]; /*@ ds:FDBA */   /* nine 9-byte lists, one per spell level: the first byte counts the
-                                          spell numbers that follow (BuildSpellSlots) */
+extern char gFDEA[]; /*@ ds:FDEA */   /* the count of each spell, byte spell * 2 (DrawSpellRow,
+                                          SpellSlotScreen) */
+extern char gFileNameBuf[]; /*@ ds:FE6E */ /* the text buffer sprintf formats into (the other units
+                                          declare it the same way) */
+extern char gFDBA[]; /*@ ds:FDBA */   /* five 9-byte lists, one per spell level 1 to 5: the first byte
+                                          counts the spell numbers that follow (BuildSpellSlots; the
+                                          memset clears 5 * 9 bytes) */
 extern char gFDE7[]; /*@ ds:FDE7 */   /* ten bytes: the spells taken at each level, index level - 1 (the
                                           screen shows allowance - this) */
-extern char gFDEC[]; /*@ ds:FDEC */   /* 32 pairs of counters per spell number - 1: the copies held in all and
-                                          the copies ready (SpendSpellSlot) */
+extern char gFDEC[]; /*@ ds:FDEC */   /* a pair of counters per spell number i, byte 2 * (i - 1) the copies
+                                          held in all and the next byte the copies ready (SpendSpellSlot) */
 extern char gFDEB[]; /*@ ds:FDEB */   /* the odd bytes of the pairs in gFDEC, indexed by 2 * spell number */
 extern char gFDE6[]; /*@ ds:FDE6 */   /* copies held per spell level, index level (1 based) */
-extern char gFD9A[]; /*@ ds:FD9A */   /* the level (1 to 5) of spell number i + 1, copied from gMap62AF or gMap62C9 */
+extern char gFD9A[]; /*@ ds:FD9A */   /* the level (1 to 5) of spell number i + 1, copied from gMap62AF or
+                                          gMap62C9; a spell not on the 0-terminated map stays 0 (the
+                                          memset, and the slot >= 0 test) */
 extern char gMap62AF[]; /*@ ds:62AF */ /* the spell level of each mage spell, 0 terminated */
 extern char gMap62C9[]; /*@ ds:62C9 */ /* the spell level of each cleric spell, 0 terminated */
 extern void far *memset(void far *dst, int c, unsigned n); /*@ 0000:6384 */
 extern char *strcpy(char far *dest, char far *src); /*@ 0000:67CD */
 extern int gNeedsRest; /*@ ds:FE2C */
-extern unsigned char g62F2[]; /*@ ds:62F2 */
-extern unsigned char g62F8[]; /*@ ds:62F8 */
+extern unsigned char g62F2[]; /*@ ds:62F2 */ /* the icon x in 8-pixel columns for each member slot
+                                                 (SelectPartyMember) */
+extern unsigned char g62F8[]; /*@ ds:62F8 */ /* the icon y for each member slot (SelectPartyMember) */
 extern signed char g1231[]; /*@ ds:1231 */
 extern void far *gIconDD28; /*@ ds:DD28 */
 struct Entry14 {                /* the 14-byte item records at ds:8DD2 (src/E0D1C.C) */
@@ -197,7 +207,6 @@ extern unsigned char g6394[]; /*@ ds:6394 */ /* a mage's spells per level (5 byt
 extern int f0D1C_0163(int who, int fieldB); /*@ 0D1C:0163 */
 extern int IsMouseInRect(int left, int top, int right, int bottom); /*@ 1A72:02A6 */
 extern int g159; /*@ ds:0159 */ /* a copy of gF57E that ShowMessage and ovl6:0B9B store; no reader found */
-extern int gNeedsRest; /*@ ds:FE2C */
 extern int gTunesOn; /*@ ds:80E8 */
 extern int gSoundOn; /*@ ds:80E6 */
 extern char gBarGraphsOn; /*@ ds:F43C */
@@ -206,8 +215,9 @@ extern int gMouseHandlerInstalled; /*@ ds:8148 */
 extern int gGraphicsChoice; /*@ ds:8102 */
 extern int gCursorX; /*@ ds:8138 */
 extern int gCursorY; /*@ ds:813A */
-extern char gKeyRemapFrom[]; /*@ ds:6457 */
-extern char gKeyRemapTo[]; /*@ ds:6459 */
+extern char gKeyRemapFrom[]; /*@ ds:6457 */ /* a key-to-button map: gKeyRemapFrom[i] maps to
+                                               gKeyRemapTo[i] + BTN_REST (RunCampMenu) */
+extern char gKeyRemapTo[]; /*@ ds:6459 */   /* the button number of the key in gKeyRemapFrom */
 extern void (far *gDrawText)(char far *text, int x, int y, int colour, int extra); /*@ ds:80CA */
 extern void (far *gSaveRect)(int x, int y, int w, int h, void far *buf); /*@ ds:80AE */
 extern void (far *gFn807E)(int x, int y, int w, int h, void far *buf); /*@ ds:807E */
@@ -266,7 +276,7 @@ extern void DrawViewFrame(int full); /*@ 2116:005C */
 struct Node far *BuildMenuButtons(int menu);
 void ShowMessage(int message);
 void FreeFarList(struct Node far *list);
-void DrawListNode(struct Node far *node, int panelFirst, int highlight, int panelSecond);
+void DrawListNode(struct Node far *node, int first, int highlight, int second);
 int AskYesNo(int message);
 
 /* ovl1:0000: drops party member `who` (0 to 5) from the party: the "Drop Character" button of the camp
@@ -308,7 +318,7 @@ int AskYesNo(int message);
 /* ovl1:00DD: builds the spell tables of the spell-slot screen for character `who` (nothing happens
    for a negative `who`). `cleric` is 1 for the cleric and paladin screen (SpellSlotScreen's flag),
    0 for the mage screen; `counts` is the screen's five per-level spell allowances, `mask` the set of
-   spells that may be shown (bit i is spell i + 1). It clears gFDBA (the nine 9-byte level lists), gFDE7
+   spells that may be shown (bit i is spell i + 1). It clears gFDBA (the five 9-byte level lists), gFDE7
    (spells already taken per level), gFDEC (32 pairs of counters) and gFD9A, copies the spell-to-level
    map into gFD9A (gMap62C9 for clerics, gMap62AF for mages) and walks the 30 signed bytes of the
    character's spell slots (rec + 0x55 for a cleric, rec + 0x37 for a mage): a nonzero entry c names
@@ -370,7 +380,8 @@ int AskYesNo(int message);
    larger. While it is nonzero the spell is stored as i + 1 in the first free one of the six slots of
    its level (gFD9A[i] - 1, six slots per level) and both counters drop; the spell is then looked
    at again (the loop index steps back), so every copy gets a slot. A spell with only the first
-   counter left is stored as -(i + 1) instead, a copy that is spent until the party rests, and
+   counter left is stored as -(i + 1) instead, a spell still to be memorised (the negative encoding
+   of the CharRec slot fields; it is spent until the party rests, then memorised again), and
    gNeedsRest is set. Called by SpellSlotScreen when the screen is left. QUIRK ovl1:0401: the index
    steps back after every copy, also when the level has no free slot, so such a spell is visited again
    until its counters run out. Purpose unknown: the exact meaning of the counters. */
@@ -449,7 +460,7 @@ int AskYesNo(int message);
    candidate, and 0x6E (Esc) or the Exit button (0x8012) flashes Exit and cancels. The highlight starts
    on the first candidate, or on none (-1) when the mouse is enabled. After the loop the spell
    actions are checked: mode 4 re-tests the paladin level (message 0x18), mode 2 needs a spell book
-   (FindCarriedSlot item 0x1D, else message 0x19, "The Mage has no Spell Book!"); the choice then
+   (FindCarriedSlot item type 0x1D, else message 0x19, "The Mage has no Spell Book!"); the choice then
    becomes -1. Called by RunCampMenu and by the scroll-scribing screen (ovl1:1691). */
 /*@ ovl1:0416 */ int SelectPartyMember(int message)
 {
@@ -489,7 +500,8 @@ int AskYesNo(int message);
             count = 0x34;
             break;
         }
-        ShowMessage(count);          /* count was 0: it carries the message index */
+        ShowMessage(count);          /* count was 0: it now carries the message index (a named
+                                        local changes the frame, sub sp 0x16 -> 0x18) */
         sel = -1;
         return sel;
     }
@@ -879,7 +891,9 @@ int AskYesNo(int message);
     }
 }
 /* ovl1:10DE: returns the word that labels an option state: gStrings2003 message 0x15 "ON" when `on`
-   is nonzero, else 0x16 "OFF". RunCampMenu formats it into its "Tunes are %-3s" style labels. */
+   is nonzero, else 0x16 "OFF". RunCampMenu formats it into its "Tunes are %-3s" style labels.
+   `on` is overwritten with the message index: the original keeps it in a register, not a stack
+   local (a named local changes the bytes). */
 /*@ ovl1:10DE */ char far *BoolString(int on)
 {
     on = on ? 0x15 : 0x16;
@@ -900,19 +914,21 @@ int AskYesNo(int message);
 }
 
 /* ovl1:1153: builds the button list of menu `menu` (an index into the seven five-byte records at
-   ds:628C) and returns its head, with the pointer hidden while the window is drawn. When the
-   record names a text window (+1) it sets that window's fill colour gRegions[window].attr2 to gF57E,
-   selects and clears the window and fills its rectangle with a bevelled panel (0D1C:0C21), then
-   draws the record's header message (gStrings2003 string +0) at (5, 5) in the record's colour. For
+   ds:628C) and returns its head. When the record names a text window (+1) it sets that window's
+   fill colour gRegions[window].attr2 to gF57E, selects and clears the window and draws a framed
+   rectangle (0D1C:0C21) over its area, then draws the record's header message (gStrings2003
+   string +0) at (5, 5) in the record's colour. For
    each of its `count` (+3) entries it allocates a 60-byte node, copies gNodeTemplate over it and
    fills it from the 9-byte definition gButtonDefs[first + i] (+2): key = entry number + 1, the two key
    words (the definition's key and key + 0x100), the box (x and width in 8-pixel columns, so << 3),
    flags 0x1100, the definition pointer at +0x34 and its flag word at +0x38. Each node is drawn
-   once through DrawListNode (ovl1:1551) and chained with ListAdd. At the end it clips the window to
-   the screen (19F3:000E with its own edges), sets g5E20 (the key-list walk then rebuilds its screen,
-   src/E16A5.C), flushes the key buffer and clears gStatusLine again. Called by ovl1:0416 (menu 3),
-   097A (menu 4), 1ACD (menus 1 and 6, and the menu `di` it chooses) and 243A (menu 5). The menu
-   records are edited in place by ovl1:1ACD before the call (a record's header message). */
+   once through DrawListNode (ovl1:1551) and chained with ListAdd. At the end the pointer is hidden
+   only around the final ClipRect (each node hides it itself inside DrawListNode); that ClipRect
+   clips the window to the screen (19F3:000E with its own edges), then it sets g5E20 (the key-list
+   walk then rebuilds its screen, src/E16A5.C), flushes the key buffer and clears gStatusLine again.
+   Called by ovl1:0416 (menu 3), 097A (menu 4), 1691 (menu 6), 1ACD (menus 0 to 2) and 243A
+   (menu 5). The menu records' header messages are edited in place before the call: menus 0 to 2 by
+   ovl1:1ACD and menu 3 by ovl1:0416. */
 /*@ ovl1:1153 */ struct Node far *BuildMenuButtons(int menu)
 {
     int i;
@@ -963,7 +979,8 @@ int AskYesNo(int message);
    rectangle; the text goes at (left * 8 + 5, top + 5) in colour 0xF. It then polls ReadKey one frame
    at a time (WaitFrames(1)); a key press flushes the key buffer and ends the wait. Afterwards the
    status line, font and text window are restored and the key buffer flushed again. Called by
-   RunCampMenu, SelectPartyMember and DrawListNode. */
+   RunCampMenu, SelectPartyMember and ScribeScrolls (a plain message box; DrawListNode does not
+   call it). */
 /*@ ovl1:13F7 */ void ShowMessage(int message)
 {
     int savedWindow;
@@ -1010,16 +1027,17 @@ int AskYesNo(int message);
 }
 /* ovl1:1551: draws the list node `node` (one button of a camp menu, built by BuildMenuButtons) in
    the text window; a null node draws nothing. With the node's definition `def` (node->def): when
-   def->flags bit 0 is set the node's box is filled with the bevelled panel 0D1C:0C21 (panelFirst and
-   panelSecond are its two mode arguments); then, when def->message is nonzero, the label
-   gStrings2003[def->message] is drawn at the box origin plus (4, 3), or centred in the box when def
+   def->flags bit 0 is set the node's box is filled with the framed rectangle 0D1C:0C21 (the
+   parameters `first` and `second` are its two mode arguments, not a panel shape); then, when
+   def->message is nonzero, the label gStrings2003[def->message] is drawn at the box origin plus
+   (4, 3), or centred in the box when def
    flags bit 2 is set (x = (width - 8 * length) / 2 + 1, y = (height - 7) / 2). The label's colour is
    6 when `highlight` is nonzero, else 1 (0xF when gGraphicsChoice is nonzero). It goes through the
-   text routine gDrawText when panelFirst or panelSecond is set (the panel already holds a
+   text routine gDrawText when `first` or `second` is set (the frame already holds a
    background), else through DrawShadowText. The pointer is hidden while it draws. Called by
-   BuildMenuButtons, SelectPartyMember, RunCampMenu and AskYesNo: (node, 0, 0, 1) un-highlights,
-   (node, 0, 1, 1) highlights and (node, 1, 1, 1) draws the pressed button. */
-/*@ ovl1:1551 */ void DrawListNode(struct Node far *node, int panelFirst, int highlight, int panelSecond)
+   BuildMenuButtons, SelectPartyMember, SpellSlotScreen, RunCampMenu and AskYesNo: (node, 0, 0, 1)
+   un-highlights, (node, 0, 1, 1) highlights and (node, 1, 1, 1) draws the pressed button. */
+/*@ ovl1:1551 */ void DrawListNode(struct Node far *node, int first, int highlight, int second)
 {
     struct ButtonDef far *def;
     char far *text;
@@ -1033,7 +1051,7 @@ int AskYesNo(int message);
     def = node->def;
     LockHidePointer();
     if (def->flags & 1)
-        f0D1C_0C21(node->x, node->y, node->width, node->height, panelFirst, panelSecond);
+        f0D1C_0C21(node->x, node->y, node->width, node->height, first, second);
     if (def->message != 0) {
         text = SkipStrings(&gStrings2003, def->message);
         if (def->flags & 4) {
@@ -1043,7 +1061,7 @@ int AskYesNo(int message);
             x = 4;
             y = 3;
         }
-        if (panelSecond || panelFirst)
+        if (second || first)
             gDrawText(text, node->x + x, node->y + y, highlight ? 6 : colour, 0);
         else
             DrawShadowText(text, node->x + x, node->y + y, highlight ? 6 : colour, 0);
@@ -1052,8 +1070,9 @@ int AskYesNo(int message);
 }
 /* ovl1:1691: the "Scribe Scrolls" screen of the camp menu: a mage copies the spells of scrolls the
    party carries into his spell book. It searches every party member's carried items for scrolls
-   (FindCarriedSlot kind 0x22, one search per spell number 1 to 32): scroll[i] is the carrying slot
-   plus 1 (0 when no member has a scroll of spell i + 1) and owner[i] the member. Without a scroll it
+   (FindCarriedSlot item type 0x22, kind i + 1, one search per spell number 1 to 32): scroll[i] is
+   the carrying slot plus 1 (0 when no member has a scroll of spell i + 1) and owner[i] the member.
+   Without a scroll it
    shows message 0x32 ("You don't have any scrolls to be scribed.") and returns. SelectPartyMember(0x31)
    then picks the mage (-1 returns). The candidates are the scrolls whose spell the mage's spell book
    (rec->spellBook) lacks, at most six; with none message 0x33 ("You don't have any scrolls that
@@ -1210,7 +1229,12 @@ int AskYesNo(int message);
    corrupt!"). On the way out it redraws the option field, the view frame, text window 10 and, when a
    sub-screen replaced it (`reloadInvent`), the INVENT sheet. Always returns 1 (callback30: the key
    list walk stops).
-   QUIRK ovl1:20FF: the Exit test `key != 0x6E` is dead: 0x6E was remapped to 0x8007 above. */
+   `lit` is the node currently highlighted (0 when none) and `hot` the node that should be lit on
+   the next pass; at the end of each pass the difference between them is drawn and `lit` becomes
+   `hot`. A node is flashed when the key or click names it (FindNode), and `lit` is then cleared.
+   QUIRK ovl1:20FF: the Exit test `key != 0x6E` is dead: 0x6E was remapped to 0x8007 above.
+   QUIRK ovl1:1D48 (inline): the confirm keys use `lit` without testing it, and `lit` is 0 right
+   after a click (the flash above clears it). */
 /*@ ovl1:1ACD */ int RunCampMenu(struct Node far *node)
 {
     void far *savedFont;
@@ -1315,7 +1339,8 @@ int AskYesNo(int message);
                     members++;
             }
             if (members < 5)
-                ShowMessage(0x2d);       /* "You cannot have less than four characters." */
+                ShowMessage(0x2d);       /* string 0x2d, whole: "You cannot have less than four
+                                            characters." */
             else {
                 DropCharacter(SelectPartyMember(0x35));
                 LockHidePointer();
@@ -1528,8 +1553,9 @@ int AskYesNo(int message);
    keeps one button highlighted (`lit`, starting with none; `hot` is the one to light, starting with
    Yes at 0). The keys 0x5C and 0x66 flip `hot`, 0x2B, 0x3D and 0x61 take the highlighted button
    (Yes when it is button 0), a click answers 1 or 0 at once, and with the mouse enabled any other
-   key looks for a selectable button under the pointer. The chosen button is flashed (DrawListNode
-   0, 1, 1 after a pressed look) before the list is freed and the font and window restored.
+   key looks for a selectable button under the pointer. The chosen button is flashed: DrawListNode
+   (node, 1, 1, 1), WaitFrames(5), then DrawListNode(node, 0, 1, 1), before the list is freed and the
+   font and window restored.
    QUIRK ovl1:2558: the confirm keys store `lit + 0x8021` into `key`, which is never read again. */
 /*@ ovl1:243A */ int AskYesNo(int message)
 {
