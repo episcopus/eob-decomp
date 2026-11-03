@@ -388,3 +388,19 @@ def test_rename_cache_sees_a_changed_file(tmp_path, monkeypatch):
     assert rename.bindings(f) == {"gPlayingNow": "ds:8A40"}
     rename.forget(f)
     assert rename.bindings(f) == {"gPlayingNow": "ds:8A40"}
+
+
+def test_stale_names_are_renamed_in_code_not_in_comments(tmp_path, monkeypatch):
+    """e07c8, 2026-11-03: a comment quoting another file's old name lost it at nineteen merges."""
+    src = tmp_path / "src"
+    src.mkdir()
+    (src / "E07C8.C").write_text("/* E1990.ASM calls it gEnvPtr */\nextern char far *g8894; /*@ ds:8894 */\n"
+                                 "void f(void) { gEnvPtr = 0; } /* gEnvPtr here too */\n")
+    log = tmp_path / "renames.toml"
+    log.write_text('[[rename]]\nid = "ds:8894=g8894"\naddr = "ds:8894"\nold = "gEnvPtr"\nnew = "g8894"\n'
+                   'kind = "global"\nwhy = "x"\ndate = "2026-11-02"\n')
+    monkeypatch.setattr(rename, "SRC", src)
+    monkeypatch.setattr(rename, "LOG", log)
+    rename.apply()
+    text = (src / "E07C8.C").read_text()
+    assert "calls it gEnvPtr */" in text and "gEnvPtr here too" in text and "{ g8894 = 0; }" in text
