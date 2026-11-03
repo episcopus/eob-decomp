@@ -11945,3 +11945,493 @@ evidence = ["ovl", "near", "frame"]
 name = "PlaySound"
 level = "L2"
 match_flags = "-ml -O -Z -G"
+
+[[function]]
+id = "s0000_0000"
+unit = "s_c0"
+addr = "0000:0000"
+size = 271
+evidence = ["segment"]
+
+[[function]]
+id = "s0000_010f"
+unit = "s_c0"
+addr = "0000:010F"
+size = 31
+evidence = ["near"]
+
+[[function]]
+id = "s0000_012e"
+unit = "s_c0"
+addr = "0000:012E"
+size = 55
+evidence = ["near"]
+
+[[function]]
+id = "s0000_0165"
+unit = "s_c0"
+addr = "0000:0165"
+size = 67
+evidence = ["near"]
+
+[[function]]
+id = "s0000_01a8"
+unit = "s_c0"
+addr = "0000:01A8"
+size = 45
+evidence = ["near"]
+
+[[function]]
+id = "s0000_01d5"
+unit = "s_c0"
+addr = "0000:01D5"
+size = 67
+evidence = ["near"]
+
+[[function]]
+id = "s0000_0218"
+unit = "s_c0"
+addr = "0000:0218"
+size = 33
+evidence = ["near"]
+
+[[function]]
+id = "s0000_0239"
+unit = "s_text"
+addr = "0000:0239"
+size = 571
+evidence = ["near"]
+
+[[function]]
+id = "s0000_0474"
+unit = "s_text"
+addr = "0000:0474"
+size = 34
+evidence = ["near", "frame"]
+
+[[function]]
+id = "s0000_0496"
+unit = "s_text"
+addr = "0000:0496"
+size = 13
+evidence = ["near"]
+
+[[function]]
+id = "s0000_04a3"
+unit = "s_text"
+addr = "0000:04A3"
+size = 89
+evidence = ["near"]
+
+[[function]]
+id = "s0000_04fc"
+unit = "s_text"
+addr = "0000:04FC"
+size = 49
+evidence = ["near"]
+
+[[function]]
+id = "s0000_052d"
+unit = "s_text"
+addr = "0000:052D"
+size = 71
+evidence = ["near", "frame"]
+
+[[function]]
+id = "s0000_05f6"
+unit = "s_lib"
+addr = "0000:05F6"
+size = 18
+evidence = ["near", "frame"]
+
+[[function]]
+id = "s0000_0608"
+unit = "s_lib"
+addr = "0000:0608"
+size = 24
+evidence = ["near", "frame"]
+
+[[function]]
+id = "s0000_0620"
+unit = "s_lib"
+addr = "0000:0620"
+size = 12
+evidence = ["frame"]
+
+[[function]]
+id = "s0000_062c"
+unit = "s_lib"
+addr = "0000:062C"
+size = 22
+evidence = ["frame"]
+
+[[function]]
+id = "s0000_0642"
+unit = "s_lib"
+addr = "0000:0642"
+size = 64
+evidence = ["near", "frame"]
+
+[[function]]
+id = "s0000_0682"
+unit = "s_lib"
+addr = "0000:0682"
+size = 36
+evidence = ["frame"]
+
+[[function]]
+id = "s0000_06a6"
+unit = "s_lib"
+addr = "0000:06A6"
+size = 179
+evidence = ["near", "frame"]
+
+[[function]]
+id = "s0000_0759"
+unit = "s_lib"
+addr = "0000:0759"
+size = 222
+evidence = ["near", "frame"]
+
+[[function]]
+id = "s0000_0837"
+unit = "s_lib"
+addr = "0000:0837"
+size = 27
+evidence = ["near", "frame"]
+
+[[function]]
+id = "s0000_0852"
+unit = "s_lib"
+addr = "0000:0852"
+size = 35
+evidence = ["near", "frame"]
+
+[[function]]
+id = "s0000_0875"
+unit = "s_lib"
+addr = "0000:0875"
+size = 130
+evidence = ["near", "frame"]
+
+[[function]]
+id = "s0000_08f7"
+unit = "s_lib"
+addr = "0000:08F7"
+size = 54
+evidence = ["near", "frame"]
+
+[[function]]
+id = "s0000_092d"
+unit = "s_lib"
+addr = "0000:092D"
+size = 59
+evidence = ["near", "frame"]
+
+[[function]]
+id = "s0000_0968"
+unit = "s_lib"
+addr = "0000:0968"
+size = 79
+evidence = ["near", "frame"]
+
+[[function]]
+id = "s0000_09b7"
+unit = "s_lib"
+addr = "0000:09B7"
+size = 378
+evidence = ["near"]
+
+[[function]]
+id = "s0000_0b31"
+unit = "s_lib"
+addr = "0000:0B31"
+size = 102
+evidence = ["near"]
+
+[[function]]
+id = "s0000_0b97"
+unit = "s_lib"
+addr = "0000:0B97"
+size = 98
+evidence = ["near", "frame"]
+
+[[function]]
+id = "s0000_0bf9"
+unit = "s_lib"
+addr = "0000:0BF9"
+size = 65
+evidence = ["frame"]
+
+[[function]]
+id = "s0000_0c3a"
+unit = "s_lib"
+addr = "0000:0C3A"
+size = 242
+evidence = ["near", "frame"]
+
+[[function]]
+id = "s0000_0d2c"
+unit = "s_lib"
+addr = "0000:0D2C"
+size = 204
+evidence = ["near", "frame"]
+
+[[function]]
+id = "s0000_0df8"
+unit = "s_lib"
+addr = "0000:0DF8"
+size = 35
+evidence = ["near", "frame"]
+
+[[function]]
+id = "s0000_0e1b"
+unit = "s_lib"
+addr = "0000:0E1B"
+size = 24
+evidence = ["near", "frame"]
+
+[[function]]
+id = "s0000_0e33"
+unit = "s_lib"
+addr = "0000:0E33"
+size = 272
+evidence = ["near", "frame"]
+
+[[function]]
+id = "s0000_0f43"
+unit = "s_lib"
+addr = "0000:0F43"
+size = 34
+evidence = ["near", "frame"]
+
+[[function]]
+id = "s0000_0f65"
+unit = "s_lib"
+addr = "0000:0F65"
+size = 49
+evidence = ["near", "frame"]
+
+[[function]]
+id = "s0000_0f96"
+unit = "s_lib"
+addr = "0000:0F96"
+size = 12
+evidence = ["frame"]
+
+[[function]]
+id = "s0000_0fa2"
+unit = "s_lib"
+addr = "0000:0FA2"
+size = 16
+evidence = ["frame"]
+
+[[function]]
+id = "s0000_0fb2"
+unit = "s_lib"
+addr = "0000:0FB2"
+size = 22
+evidence = ["frame"]
+
+[[function]]
+id = "s0000_0fc8"
+unit = "s_lib"
+addr = "0000:0FC8"
+size = 6
+evidence = ["near"]
+
+[[function]]
+id = "s0000_0fce"
+unit = "s_lib"
+addr = "0000:0FCE"
+size = 13
+evidence = ["frame"]
+
+[[function]]
+id = "s0000_0fdb"
+unit = "s_lib"
+addr = "0000:0FDB"
+size = 50
+evidence = ["near", "frame"]
+
+[[function]]
+id = "s0000_100d"
+unit = "s_lib"
+addr = "0000:100D"
+size = 44
+evidence = ["frame"]
+
+[[function]]
+id = "s0000_1039"
+unit = "s_lib"
+addr = "0000:1039"
+size = 27
+evidence = ["near", "frame"]
+
+[[function]]
+id = "s0000_1054"
+unit = "s_lib"
+addr = "0000:1054"
+size = 94
+evidence = ["near", "frame"]
+
+[[function]]
+id = "s0000_10b2"
+unit = "s_lib"
+addr = "0000:10B2"
+size = 61
+evidence = ["near", "frame"]
+
+[[function]]
+id = "s0000_10ef"
+unit = "s_lib"
+addr = "0000:10EF"
+size = 17
+evidence = ["near", "frame"]
+
+[[function]]
+id = "s0000_1100"
+unit = "s_lib"
+addr = "0000:1100"
+size = 41
+evidence = ["near", "frame"]
+
+[[function]]
+id = "s0000_1129"
+unit = "s_lib"
+addr = "0000:1129"
+size = 33
+evidence = ["near", "frame"]
+
+[[function]]
+id = "s0000_114a"
+unit = "s_lib"
+addr = "0000:114A"
+size = 38
+evidence = ["near", "frame"]
+
+[[function]]
+id = "s0000_1170"
+unit = "s_lib"
+addr = "0000:1170"
+size = 172
+evidence = ["near", "frame"]
+
+[[function]]
+id = "s0000_121c"
+unit = "s_lib"
+addr = "0000:121C"
+size = 353
+evidence = ["near", "frame"]
+
+[[function]]
+id = "s0000_137d"
+unit = "s_lib"
+addr = "0000:137D"
+size = 15
+evidence = ["frame"]
+
+[[function]]
+id = "s0000_138c"
+unit = "s_lib"
+addr = "0000:138C"
+size = 36
+evidence = ["near", "frame"]
+
+[[function]]
+id = "s0000_13b0"
+unit = "s_lib"
+addr = "0000:13B0"
+size = 26
+evidence = ["near", "frame"]
+
+[[function]]
+id = "s0000_13ca"
+unit = "s_lib"
+addr = "0000:13CA"
+size = 44
+evidence = ["near", "frame"]
+
+[[function]]
+id = "s0000_13f6"
+unit = "s_lib"
+addr = "0000:13F6"
+size = 970
+evidence = ["near", "frame"]
+
+[[function]]
+id = "s0000_17c0"
+unit = "s_lib"
+addr = "0000:17C0"
+size = 29
+evidence = ["near"]
+
+[[function]]
+id = "s0000_17dd"
+unit = "s_lib"
+addr = "0000:17DD"
+size = 58
+evidence = ["near"]
+
+[[function]]
+id = "s0000_1817"
+unit = "s_lib"
+addr = "0000:1817"
+size = 57
+evidence = ["near"]
+
+[[function]]
+id = "s0000_1850"
+unit = "s_lib"
+addr = "0000:1850"
+size = 28
+evidence = ["near"]
+
+[[function]]
+id = "s0000_186c"
+unit = "s_lib"
+addr = "0000:186C"
+size = 35
+evidence = ["near"]
+
+[[function]]
+id = "s0000_188f"
+unit = "s_lib"
+addr = "0000:188F"
+size = 96
+evidence = ["near"]
+
+[[function]]
+id = "s0000_18ef"
+unit = "s_lib"
+addr = "0000:18EF"
+size = 64
+evidence = ["near"]
+
+[[function]]
+id = "s0000_192f"
+unit = "s_lib"
+addr = "0000:192F"
+size = 41
+evidence = ["near"]
+
+[[function]]
+id = "s0000_1958"
+unit = "s_lib"
+addr = "0000:1958"
+size = 25
+evidence = ["near"]
+
+[[function]]
+id = "s0000_1971"
+unit = "s_lib"
+addr = "0000:1971"
+size = 49
+evidence = ["near"]
+
+[[function]]
+id = "s0000_19a2"
+unit = "s_lib"
+addr = "0000:19A2"
+size = 254
+evidence = ["near"]

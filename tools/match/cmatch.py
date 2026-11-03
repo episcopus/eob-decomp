@@ -64,7 +64,10 @@ import tc_toolchain as tc  # noqa: E402
 MD = Cs(CS_ARCH_X86, CS_MODE_16)
 ANNOT = re.compile(r"(?:/\*|;)\s*@\s*(ds:[0-9A-Fa-f]{1,4}|ovl\d+:[0-9A-Fa-f]{1,4}|[0-9A-Fa-f]{4}:[0-9A-Fa-f]{4})(\s+stub|\s+draft)?\s*(?:\*/)?")
 FLAGS = re.compile(r"/\*@flags\s+([^*]+?)\s*\*/")
-DGROUP = {"EOB.EXE": 0x212E}   # used when build/re/<program>.json (make overlays) is missing
+# used when build/re/<program>.json (make overlays) gives no data segment: START1.EXE has no segment
+# table (no overlays), and its start-up code loads DGROUP with the relocated word at 0000:0001
+DGROUP = {"EOB.EXE": 0x212E, "START1.EXE": 0x01AA}
+RTL = {"EOB.EXE": "rtl_compare.json", "INTRO.EXE": "rtl_intro.json", "START1.EXE": "rtl_start1.json"}
 
 
 def dgroup_of(program: Path) -> int:
@@ -75,7 +78,8 @@ def dgroup_of(program: Path) -> int:
         return DGROUP.get(program.name.upper(), 0x212E)
     d = json.loads(man.read_text())
     stack = int(d["stack"].split(":")[0], 16)
-    return max(s["para"] for s in d["segments"] if s["kind_name"] == "data" and s["para"] < stack and s["size"])
+    paras = [s["para"] for s in d["segments"] if s["kind_name"] == "data" and s["para"] < stack and s["size"]]
+    return max(paras) if paras else DGROUP.get(program.name.upper(), 0x212E)
 KEYWORDS = {"void", "char", "int", "long", "short", "unsigned", "signed", "far", "near", "huge",
             "extern", "static", "struct", "union", "const", "volatile", "interrupt", "cdecl", "pascal"}
 ASM_WORDS = {"public", "extrn", "proc", "far", "near", "endp", "label", "byte", "word", "dword", "db", "dw", "dd"}
@@ -139,10 +143,12 @@ def parse_annotations(src: str, asm: bool = False) -> tuple[dict, dict, set, set
     return funcs, data, defined, stubs
 
 
-def stub_source(funcs: dict, data: dict, defined: set, pad: bool, cname: bool = True) -> str:
-    """TASM source defining every extern: data in DGROUP, functions as far returns."""
+def stub_source(funcs: dict, data: dict, defined: set, pad: bool, cname: bool = True, small: bool = False) -> str:
+    """TASM source defining every extern: data in DGROUP, functions as far returns (near ones in the
+    small model, START1.EXE)."""
     sym = (lambda n: "_" + n) if cname else (lambda n: n)
-    out = [".MODEL LARGE", ".DATA"]
+    dist = "NEAR" if small else "FAR"
+    out = [".MODEL SMALL" if small else ".MODEL LARGE", ".DATA"]
     if pad:
         out.append("padd db %d dup (0)" % PAD)
     for n in sorted(data):
@@ -151,7 +157,7 @@ def stub_source(funcs: dict, data: dict, defined: set, pad: bool, cname: bool = 
     if pad:
         out.append("padc db %d dup (90h)" % PAD_CODE)
     for n in sorted(set(funcs) - defined - FARDATA):
-        out += ["PUBLIC %s" % sym(n), "%s PROC FAR" % sym(n), "ret", "%s ENDP" % sym(n)]
+        out += ["PUBLIC %s" % sym(n), "%s PROC %s" % (sym(n), dist), "ret", "%s ENDP" % sym(n)]
     # far data: one segment per original segment (FAR_SSSS), the objects at offsets that are unique
     # across them (FAR_BASE + 256 * i); the pad build moves them by PAD, as it moves DGROUP
     i = 0
@@ -163,7 +169,7 @@ def stub_source(funcs: dict, data: dict, defined: set, pad: bool, cname: bool = 
             out += ["PUBLIC %s" % sym(n), "%s db 256 dup (0)" % sym(n)]
             i += 1
         out.append("FAR_%04X ENDS" % seg)
-    out += ["PUBLIC _main", "_main PROC FAR", "xor ax,ax", "ret", "_main ENDP", "END"]
+    out += ["PUBLIC _main", "_main PROC %s" % dist, "xor ax,ax", "ret", "_main ENDP", "END"]
     return "\r\n".join(out) + "\r\n"
 
 
@@ -228,12 +234,15 @@ def link(w: Path, release: str, flags: list, src_name: str, funcs, data, defined
     if not (w / "U.OBJ").exists() or failed:
         raise SystemExit(out)
     builds = []
+    # the small model (START1.EXE): -ms, or an assembly unit's .MODEL SMALL; C0S and CS.LIB
+    small = "-ms" in flags or (asm and re.search(r"^\s*\.MODEL\s+SMALL", (w / src_name).read_text(), re.M | re.I))
+    lib = "S" if small else "L"
     for v, pad in (("A", False), ("B", True)):
-        (w / ("STUB%s.ASM" % v)).write_text(stub_source(funcs, data, defined, pad, cname=not asm))
+        (w / ("STUB%s.ASM" % v)).write_text(stub_source(funcs, data, defined, pad, cname=not asm, small=bool(small)))
         r = tc.run((ASM_RELEASE or tc.manifest()["pinned_asm"]), "TASM", ["/mx", "STUB%s.ASM" % v], cwd=w)
         if not (w / ("STUB%s.OBJ" % v)).exists():
             raise SystemExit(r.stdout.decode("latin-1"))
-        r = tc.run(release, "TLINK", ["/c", "/m", "/s", "D:\\LIB\\C0L+STUB%s+U,P%s,P%s,D:\\LIB\\CL" % (v, v, v)], cwd=w)
+        r = tc.run(release, "TLINK", ["/c", "/m", "/s", "D:\\LIB\\C0%s+STUB%s+U,P%s,P%s,D:\\LIB\\C%s" % (lib, v, v, v, lib)], cwd=w)
         if not (w / ("P%s.EXE" % v)).exists():
             raise SystemExit(r.stdout.decode("latin-1"))
         builds.append(Build(w, "P%s.EXE" % v))
@@ -258,7 +267,7 @@ class Original:
             self.relocs = set(man["overlays"][overlay]["fixups"])
             # an overlay's segment fixups hold a byte offset into TLINK's segment table (index * 8)
             self.segtable = [s["para"] for s in man["segments"]]
-        lib = ROOT / "build" / "re" / ("rtl_compare.json" if program.name.upper() == "EOB.EXE" else "rtl_intro.json")
+        lib = ROOT / "build" / "re" / RTL.get(program.name.upper(), "rtl_compare.json")
         self.library = json.loads(lib.read_text())["tc100"].get("symbols", {}) if lib.exists() else {}
         # data of the load module (initialiser templates in DGROUP hold relocated far pointers)
         self.lm_relocs = {s * 16 + o for o, s in mz["relocs"]}
@@ -306,8 +315,15 @@ def compare(fname, a: Build, b: Build, at_a: int, at_b: int, length: int, orig: 
     k, want_seg = 0, {}
     while k < length:
         pa, pb, po = at_a + k, at_b + k, at_o + k
-        if k in near:  # a near call to a function of this unit: the same function by name
-            pub = a.by_linear.get(near[k])
+        if k in near:  # a near call: the same function by name (in the small model also an extern or
+            pub = a.by_linear.get(near[k])  # a runtime library function, located by rtl_compare)
+            if pub not in func_of and pub in orig.library:
+                got = (po + 2 + struct.unpack_from("<h", orig.image, po)[0]) & 0xFFFF
+                if got != orig.library[pub] & 0xFFFF:
+                    return fail(k, "near call to %s, original reaches %04X, %s is at %05X" % (
+                        pub.lstrip("_"), got, pub.lstrip("_"), orig.library[pub]))
+                k += 2
+                continue
             if pub not in func_of:
                 return fail(k, "near call to %05X, not a function of this file" % near[k])
             seg, off = funcs[func_of[pub]]

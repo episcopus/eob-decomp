@@ -133,3 +133,16 @@ def test_whole_unit_match_adds_the_functions_the_map_missed():
     assert 'addr = "17A6:0000"\nsize = 100' in text
     assert 'addr = "17A6:0064"\nsize = 150\nname = "_B"' in text and 'addr = "17A6:00FA"\nsize = 50' in text
     assert 'addr = "1800:0000"\nsize = 4' in text                 # another unit is left alone
+
+
+def test_small_model_stubs_are_near():
+    """START1.EXE is small model: its externs are near procedures, the large model's far."""
+    sys.path.insert(0, os.path.join(ROOT, "tools", "match"))
+    import cmatch
+    funcs = {"PutChar": (0, 0x5F6), "Mine": (0, 0x474)}
+    small = cmatch.stub_source(funcs, {}, {"Mine"}, False, small=True)
+    assert ".MODEL SMALL" in small and "_PutChar PROC NEAR" in small and "_Mine" not in small.replace("_main", "")
+    large = cmatch.stub_source(funcs, {}, {"Mine"}, False)
+    assert ".MODEL LARGE" in large and "_PutChar PROC FAR" in large
+    assert cmatch.DGROUP["START1.EXE"] == 0x01AA and cmatch.RTL["START1.EXE"] == "rtl_start1.json"
+

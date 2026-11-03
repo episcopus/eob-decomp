@@ -30,19 +30,23 @@ def text(uid: str) -> tuple[str, str]:
     u = common.unit(uid)
     fs = sorted(common.unit_functions(uid), key=lambda f: int(f["addr"].split(":")[1], 16))
     where = "overlay %d of %s" % (u["overlay"], u["program"]) if "overlay" in u else "%s %s" % (u["program"], u["start"])
+    small = u["program"] == "START1.EXE"
     if u["kind"] == "asm":
         lines = ["; Unit at %s (%d bytes, %d functions), kind asm [H] by the map. Skeleton by `make skeleton`:" % (
                      where, u["bytes"], len(fs)),
                  "; every function a stub. Placeholder names.", "",
-                 "        .MODEL  LARGE", "        .CODE", ""]
+                 "        .MODEL  %s" % ("SMALL" if small else "LARGE"), "        .CODE", ""]
         for f in fs:
             n = "_" + stub_name(f)
-            lines += ["        PUBLIC  %-24s ; @ %s stub" % (n, f["addr"]), "%s PROC FAR" % n, "        ret", "%s ENDP" % n, ""]
+            lines += ["        PUBLIC  %-24s ; @ %s stub" % (n, f["addr"]), "%s PROC %s" % (n, "NEAR" if small else "FAR"),
+                      "        ret", "%s ENDP" % n, ""]
         lines.append("        END")
         return ".ASM", "\n".join(lines) + "\n"
     lines = ["/* Unit at %s (%d bytes, %d functions). Skeleton by `make skeleton`: every function a" % (
                  where, u["bytes"], len(fs)),
              "   stub. Placeholder names. */", ""]
+    if u["program"] == "START1.EXE":         # small model (whitepaper 2.6): near calls, C0S and CS.LIB
+        lines += ["/*@flags -ms -O -Z */", ""]
     for f in fs:
         done = f.get("level") in ("L2", "L3")
         lines.append("/*@ %s stub */ void %s(void) {}%s" % (

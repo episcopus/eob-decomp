@@ -114,9 +114,20 @@ def build() -> tuple[list, list]:
                 funcs.append({"id": "%s_%04x" % (uid, f["offset"]), "unit": uid,
                               "addr": "ovl%d:%04X" % (o["overlay"], f["offset"]), "size": f["size"],
                               "evidence": f["evidence"]})
-    units.append({"id": "s1", "program": "START1.EXE", "segment": "0000", "start": "0000:0000",
-                  "bytes": len(read_mz((ROOT / "eob" / "START1.EXE").read_bytes())["image"]),
-                  "functions": 0, "kind": "unknown"})
+    # START1.EXE is small model (C0S, CS.LIB; 2026-11-03): no overlays, so no segment table; all code is
+    # one segment, 0000 to DGROUP (01AA, the start-up code's relocated word at 0000:0001). C0.ASM is
+    # 0239h bytes (the small-model reference link's map) and the library starts at its first module
+    # found by rtl_compare (build/re/rtl_start1.json, OVRHP at 0574h); Westwood's code lies between.
+    s1 = read_mz((ROOT / "eob" / "START1.EXE").read_bytes())
+    s1lib = lib_start(BUILD / "rtl_start1.json", 0x574)
+    fn = json.loads((BUILD / "start1-functions.json").read_text()) if (BUILD / "start1-functions.json").exists() else {"resident": []}
+    for uid, a, b, kind in (("s_c0", 0, 0x239, "startup"), ("s_text", 0x239, s1lib, "unknown"), ("s_lib", s1lib, 0x1AA0, "library")):
+        pf = [f for f in fn["resident"] if a <= f["linear"] < b]
+        units.append({"id": uid, "program": "START1.EXE", "segment": "0000", "start": "0000:%04X" % a, "linear": a,
+                      "bytes": b - a, "functions": len(pf), "kind": kind})
+        for f in pf:
+            funcs.append({"id": "s0000_%04x" % f["linear"], "unit": uid, "addr": "0000:%04X" % f["linear"],
+                          "size": min(f["size"], b - f["linear"]), "evidence": f["evidence"]})
     # INTRO units that are EOB units
     eob = [u for u in units if u["program"] == "EOB.EXE" and "linear" in u and u["kind"] != "library"]
     for u in units:

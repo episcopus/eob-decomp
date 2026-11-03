@@ -28,9 +28,9 @@ GAME_KINDS = ("c", "asm", "unknown")
 
 def candidates() -> list[dict]:
     # INTRO.EXE units with an EOB twin are proven by tools/match/twin.py, not decompiled again
-    return sorted((u for u in common.units() if u["program"] in ("EOB.EXE", "INTRO.EXE") and u["kind"] in GAME_KINDS
+    return sorted((u for u in common.units() if u["program"] in ("EOB.EXE", "INTRO.EXE", "START1.EXE") and u["kind"] in GAME_KINDS
                    and u.get("functions", 0) > 0 and not u.get("twin")),
-                  key=lambda u: (u["program"] != "EOB.EXE", u["bytes"], u["id"]))
+                  key=lambda u: (("EOB.EXE", "INTRO.EXE", "START1.EXE").index(u["program"]), u["bytes"], u["id"]))
 
 
 def busy(key: str) -> bool:
@@ -80,8 +80,8 @@ def next_review() -> str | None:
 
 def queue_text() -> str:
     lines = ["# The order in which units are claimed (make claim, make next). Made by `make queue WRITE=1`",
-             "# from re/units.toml: the game units of EOB.EXE, then those of INTRO.EXE without an EOB twin, smallest\n"
-             "# first. The human may reorder it.", ""]
+             "# from re/units.toml: the game units of EOB.EXE, then those of INTRO.EXE without an EOB twin, then\n"
+             "# START1.EXE's, smallest first. The human may reorder it.", ""]
     for u in candidates():
         lines += ["[[unit]]", 'id = "%s"' % u["id"], "# %s %s, %d bytes, %d functions" % (
             u["kind"], u["start"], u["bytes"], u["functions"]), ""]
