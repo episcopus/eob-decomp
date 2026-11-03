@@ -2763,3 +2763,12 @@ new = "CanPlaceItemInSlot"
 kind = "function"
 why = "when row is 0x11 and item is carried, checks the wearer class (0BD2:11FD); returns 0 when the worn item flags have 0x20 or the row class mask g1C8D does not cover the item type mask, printing the reason; called by UseSelectedItem 0BD2:0BA0 and PickListItem 0ACD:0BA6 (review of e0bd2)"
 date = "2026-11-02"
+
+[[rename]]
+id = "0000:03A0=gScriptFlag"
+addr = "0000:03A0"
+old = "g3A0"
+new = "gScriptFlag"
+kind = "function"
+why = "the byte E_TEXT.ASM defines at 0000:03A0 as gScriptFlag: script command C7h sets it (0000:4A23 mov [3A0h],ah), GetScriptFlag 0000:03A1 reads it"
+date = "2026-11-03"
