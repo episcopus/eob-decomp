@@ -12094,6 +12094,9 @@ unit = "s_text"
 addr = "0000:0239"
 size = 571
 evidence = ["near"]
+name = "Main"
+level = "L2"
+match_flags = "-ms"
 
 [[function]]
 id = "s0000_0474"
@@ -12111,6 +12114,9 @@ unit = "s_text"
 addr = "0000:0496"
 size = 13
 evidence = ["near"]
+name = "StoreVideoWord"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "s0000_04a3"
@@ -12118,6 +12124,9 @@ unit = "s_text"
 addr = "0000:04A3"
 size = 89
 evidence = ["near"]
+name = "TestCrtcRegister"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "s0000_04fc"
@@ -12125,6 +12134,9 @@ unit = "s_text"
 addr = "0000:04FC"
 size = 49
 evidence = ["near"]
+name = "NormalizeVideoInfo"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "s0000_052d"
@@ -12132,6 +12144,9 @@ unit = "s_text"
 addr = "0000:052D"
 size = 71
 evidence = ["near", "frame"]
+name = "InitVideo"
+level = "L2"
+match_flags = "tasm /mx"
 
 [[function]]
 id = "s0000_05f6"

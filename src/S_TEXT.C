@@ -48,10 +48,12 @@ void PrintString(char *text);
 
 /* 0000:0239: the setup menu: initialise the video info, then loop over the graphics menu, the sound
    menu and the mouse prompt, and execl INTRO.EXE with the three choices as one-character arguments
-   ("0" + the choice). The loop restarts on a "no" answer. Draft: the loop tail (0000:046A to 046E)
-   keeps a separate back-edge trampoline that the source forms tried do not reproduce; see the
-   hand-off note. */
-/*@ 0000:0239 draft */ void Main(void)
+   ("0" + the choice). The loop restarts on a "no" answer. The loop exits through the `done` label
+   inside it, not a `break`, and after the `return` a dead `continue` is kept: TCC lays the `done`
+   return (0000:046C) between the loop body's end jump (0000:046A) and the back edge (0000:046E),
+   and without the dead `continue` the body's end jump folds into the back edge and the tail is two
+   bytes short (make match, 2026-11-02). */
+/*@ 0000:0239 */ void Main(void)
 {
     int answer;
 
@@ -99,7 +101,7 @@ restart:
         if (gSelection == 'n')
             goto restart;
         if (gSelection >= 4)
-            break;
+            goto done;
         gArgGraphics[0] = gSelection + '0';
         PrintString(gSoundPrompt);
         gSound = 0;
@@ -126,8 +128,11 @@ restart:
         }
         execl(gIntroPath, gIntroName, gArgGraphics, gArgSound, gArgMouse, gHomie, 0);
         return;
+        /* QUIRK 0000:046A: dead (`return` above), but the loop tail's layout needs its jump. */
+        continue;
+done:
+        return;
     }
-    return;
 }
 
 /* 0000:0474: write the NUL-terminated string at s to the console, one character at a time through
