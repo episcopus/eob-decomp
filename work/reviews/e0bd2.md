@@ -10,6 +10,29 @@ Checked this round: `make match FILE=src/E0BD2.C` (22 of 22, 4681 bytes), `make 
 Read against: the callers and definitions in src/E0ACD.C, E0D1C.C, E08E6.C, E0DE8.C, E0EF3.C, E122E.C, E1414.C,
 E07A9.C, E177D.C, EOV5.C, and the registry rows in re/symbols.toml and re/globals.toml. No game run, nothing under eob/ touched.
 
+## Round 2 (at a746c03, main)
+
+Judged only what the later-round rule asks: the 12 must-fix and 16 should of round 1, and the diff since 21ed7a2 in `src/E0BD2.C` and `re/symbols.toml` (plus `re/renames.toml` for the two renames). Each changed comment was read against its function body and against the callers it cites (E0ACD.C, E0D1C.C, E0DE8.C, E08E6.C, E122E.C, E1547.C, E1414.C, E177D.C, E0EF3.C, EOV3.C, EOV5.C, E07A9.C). No game run, nothing under eob/ touched.
+
+Round 1 items: all 12 must-fix and all 16 should are fixed right against the code (the ticks stay). The renames have no stale references in src/ (`grep` for f0BD2_0106, f0BD2_0AF2, fOvl5_1CDD finds none), and the overlay entry UseItemPanel matches EOV5.C:1321 and the registry row ovl5:1CDD.
+
+Changed lines since 21ed7a2: the InsertListItem links (tail, tailRec, the m08/m06 updates), the DrawItemRow and CanPlaceItemInSlot and UseSelectedItem comments, ApplyItemEffect (case 1 arms giant strength, E1414.C:05ED and the 07CA runner agree), UseWandItem, DrawItemName, AddDDEffect (the QUIRK and the sound choice), the struct comments, and the re/symbols.toml notes all match the code except for the two must-fix items below.
+
+Must-fix (wrong claims in lines this round changed):
+
+- [ ] must-fix src/E0BD2.C:105-107 (the gPartyCell declaration): "and indexes the nine-byte records with it" is not true of this unit. Its only use of gPartyCell is UseWandItem's `f0D1C_00DA(gPartyCell, page)` (816). Every nine-byte record access here is by `volume` (402, 417, 436, 535). The indexing by gPartyCell is in other units (E0ACD.C:552-568 sets `vol` from gPartyCell and indexes gB899 with it). Drop the clause, or name the unit that indexes with it.
+- [ ] must-fix src/E0BD2.C:520 (AddDDEffect comment): "the callers pass gPartyCell, E0ACD.C:434, :769" is wrong for one caller. E122E.C:728 passes the script's object id (read at E122E.C:721) as the volume. E0ACD.C:434, :769 and E0DE8.C:406 pass gPartyCell. Say "most callers pass gPartyCell (E0ACD.C:434, :769, E0DE8.C:406); E122E.C:728 passes the script's id".
+
+Notes (for the next reader, not blocking):
+
+- [ ] note src/E0BD2.C:374-376 (MarkListItems, "so 0x40 is the identified flag"): the name rests on 05B5's reading of the bit. The caller that sets it over a party's pack and a cell's list is E122E.C:1390-1404 (MarkListItems on the +0x97 sub-table and on gB899 + id * 9). The name is acceptable; citing that caller would make the evidence explicit.
+- [ ] note: the 4th parameter of InsertListItem is still named `sound` in five other files' prototypes (E0ACD.C:167, E0D1C.C:137, E122E.C:183, EOV3.C:169, EOV5.C:195). Their reviews should take `tag`. EOV3.C:177 (struct field m03) also calls it "the sound InsertListItem plays" and cites src/E0BD2.C:420, which is now DrainListItem's re-queue line.
+- [ ] note: DrawItemRow's prototypes name its first two parameters `who` and `one` (E0ACD.C:169, E0D1C.C:136, E1547.C:160, E122E.C:45). Their reviews should take `row` and `drawMode`. E0D1C.C:307 (the wrong argument) stays for the E0D1C review.
+
+Round 2 count: 2 must-fix open, 0 should, 3 notes. The round 1 notes still open (E0ACD.C:56, E0D1C.C:307, E08E6.C:793, the DrawItemName unset-buffer note and the m0A placeholder) belong to their owners' reviews.
+
+Evidence: `make match FILE=src/E0BD2.C` 22 of 22 (4681 of 4681 bytes), exit 0; `make readability UNIT=e0bd2` 0 findings. Nothing escalated: no matcher, spec or pin question.
+
 ## Findings
 
 Each finding is a checkbox. `must-fix` blocks `make review-pass` until a decompiler ticks it off
