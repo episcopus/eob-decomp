@@ -1,10 +1,37 @@
 # Review: iov0
 
 Reviewer: rev-haiku
-Commit reviewed: round 2 at 38df9a6 (main; src/IOV0.C is identical to ac24cbe3, the merge of the round 1 fixes eb19ee8). Round 1: c7d121dc592cf92656c3a40297462ce3a16fb3a7 (main when I started; src/IOV0.C, re/symbols.toml and re/globals.toml are identical in the worktree's HEAD 97332d0)
+Commit reviewed: round 3 at 765cb58 (main; src/IOV0.C has the 3e1080e changes since round 2, comments only). Round 2 at 38df9a6 (main; src/IOV0.C is identical to ac24cbe3, the merge of the round 1 fixes eb19ee8). Round 1: c7d121dc592cf92656c3a40297462ce3a16fb3a7 (main when I started; src/IOV0.C, re/symbols.toml and re/globals.toml are identical in the worktree's HEAD 97332d0)
 
 Playbook 70. Judge what a matching file can still get wrong: names, types, comments, structure.
 The matcher already proved the bytes; do not re-prove them, read for meaning.
+
+## Round 3 (later round, playbook 70)
+
+Judged: the round 2 must-fix and shoulds against the current file, and every changed line since 38df9a6 (`git diff 38df9a6 main -- src/IOV0.C re/symbols.toml re/globals.toml`). Checked: `make match FILE=src/IOV0.C` (22 of 22, exit 0) and `make readability UNIT=iov0` (0 findings). The cmatch line "unit iov0 not complete" is its whole-unit check (an overlay unit, `ovl is None` fails); it is not a match failure.
+
+Round 2 must-fix, PlayAvalancheScene header (src/IOV0.C:958-962): fixed right, tick stays. Against the code: sound 7 at 979 and 983 in a three-pass loop (976-985, six plays); AVALANCH.CMP at 1004; sound 8 at 1009 and sound 4 at 1012; the 30-step loop at 1013-1019; sound 9 at 1020; the six ZOOMTUNL rectangles at 1021-1028 (the loop closes at 1029); ZOOMTUNL.CMP at 1032; sound 6 at 1035; the bottom bar wipe at 1045.
+
+Round 2 shoulds, the stale line cites: fixed right, ticks stand, each checked against its address: DrawGrid 192, 453, 465, 909; Dissolve 173; GrowFrame calls 735, 759, 790, 812, its ClipRect 584 and edges 576-577; tile cuts 259 and 857; star draws 294 and 889; the mage `center` at 484, 497, 502, 503 and the step compare at 493; WTRDP 246, 252-255, 278-279, 283-285, 196-199, 301-305; tunnel 906, 907, 909, 914-924, 927-932, 933-937, 939, 940, 942-944; gFn1EE2 at 0892:0544 (`lcall [0x1ee2]`, checked with tools/re/disasm.py). The gFrameDelay should is not fixed right (must-fix below).
+
+Changed lines since 38df9a6:
+
+- [ ] must-fix src/IOV0.C:37-40 (gFrameDelay): this reopens round 2's gFrameDelay should. "image offset 0xD479 runs sub word ptr [2326],1 and sbb [2328]" cites the wrong code. The bytes at image offset 0xD479 are `8b c7 48 50` (mov ax, di; dec ax; push ax), not a decrement. The decrement is at 0CE7:0007, `sub word ptr [0x2326], 1`, and the `sbb word ptr [0x2328], 0` is at 0CE7:000C (`.venv/bin/python tools/re/disasm.py eob/INTRO.EXE 0CE7`). The image offset is seg*16 + off (checked on 0923:01F0: image 0x9420 holds `mov word ptr cs:[0x8084], ax`), so 0CE7:0007 is image offset 0xCE77, file offset 0xDC77 with the MZ header of 0xE00 that mzutil uses. Round 2 gave 0xD479, and the 3e1080e fix copied it; the error is mine. Fix: cite 0CE7:0007 (image offset 0xCE77, file offset 0xDC77), keep the [H] tag. Evidence for the owner, not required: 0CE7:0013 to 001B compare cs:[0xa] and `ljmp cs:[8]` (a chain to a saved old vector) and then `iret`, which fits a timer hook [H].
+
+- [ ] should re/globals.toml, the gMemTopSeg row (changed this round): "stores it at 0923:01F0 (src/I0923.ASM:3, :62)". The address is right: 0923:01F0 is `mov word ptr cs:[0x8084], ax`. Line :62 is the `gMemTopSeg equ 8084h` definition, not the store; the store is at src/I0923.ASM:328. Cite :328 for the store (or drop the line cites). Not blocking; the registry owner can fix it.
+
+Checked and right (no finding): the gBuiltinPalette row now says StartupGame 0892:05E0, which is `push ds; mov ax, 0x19e7; push ax` (05E5 is the `jmp` after them), matching src/I0892.C:122 "(:05E0)". The gFn1EE2 row (0892:0544) is right. No iov0 row in re/symbols.toml changed since 38df9a6; the diff is review stamps and other units' rows.
+
+### Round 3 notes (not findings)
+
+- re/globals.toml, the gBuiltinPalette row still says "so gEgaPalette has no evidence" (round 2 note); the same line was edited this round and kept the old name.
+- gBuiltinPalette is `[16]` here and `[]` at src/I0892.C:118 (round 2 note, still open).
+- The PlayAvalancheScene header does not say that each of the six rectangles is followed by four star draws (1027). The range 1021-1028 is right.
+- src/I0892.C:89 cites "src/I0923.ASM:322" for the gMemTopSeg store (now :328), and :188 cites ":3, :57". That is the i0892 owner's to fix.
+
+### Round 3 summary
+
+One new must-fix: the gFrameDelay comment's image offset is wrong (0xD479 is not the decrement; 0CE7:0007 is), which reopens round 2's gFrameDelay should. Everything else from round 2 is fixed right, and the changed lines in src/IOV0.C and the globals.toml rows check out apart from the one should. Nothing escalated: no matcher, spec or pin question.
 
 ## Round 2 (later round, playbook 70)
 
@@ -22,7 +49,7 @@ Judged: each round 1 must-fix (all 17 ticked) and every changed line since c7d12
   - Tile table comment: the tile cuts are at 259 and 857 (cite 247 and 835); the star draws at 294 and 889 (cite 282 and 867).
   - gFn1EE2 declaration (src/IOV0.C:25) cites src/I0892.C:97; the declaration is at src/I0892.C:100 now. The same cite is in re/globals.toml:522 and re/renames.toml:2404. Cite 0892:0544 instead, which the I0892 comment gives as its own address.
 - [x] should src/IOV0.C:637-638 (PlayKingScene header): "a fixed animation phase, anim[i] = (i * 5) & 3" holds only at the start. The loop advances it every step (693, `anim[i] = ++anim[i] & 7`). Say "starting phase". FIXED 3e1080e: "a fixed animation phase" now reads "a starting animation phase".
-- [x] should src/IOV0.C:37-40 and 528-530 (gFrameDelay and WaitFrameDelay): "the timer decrements it" is not shown by this unit or by any file in src/. INTRO.EXE does decrement ds:2326: `sub word ptr [2326],1` with an `sbb` on [2328] at image offset 0xD479 (file offset 0xDC79). The routine is not named. Name it with its segment:offset, or tag the claim [H]. FIXED 3e1080e: both comments now tag the claim [H] and cite the image evidence (image offset 0xD479 runs sub word ptr [2326],1 and sbb [2328]); the routine stays unnamed as the reviewer found.
+- [ ] should src/IOV0.C:37-40 and 528-530 (gFrameDelay and WaitFrameDelay; REOPENED in round 3, the image offset it cites is wrong, see round 3): "the timer decrements it" is not shown by this unit or by any file in src/. INTRO.EXE does decrement ds:2326: `sub word ptr [2326],1` with an `sbb` on [2328] at image offset 0xD479 (file offset 0xDC79). The routine is not named. Name it with its segment:offset, or tag the claim [H]. FIXED 3e1080e: both comments now tag the claim [H] and cite the image evidence (image offset 0xD479 runs sub word ptr [2326],1 and sbb [2328]); the routine stays unnamed as the reviewer found.
 - [ ] should carried from round 1 (still open, not blocking): src/IOV0.C:55 and 1137, the Unpack4 length as unsigned. It is a shared change across src/I0AED.C and src/E1B82.C. Still open after 3e1080e: the reviewer says do not change this file alone, and a unit branch does not edit another unit's file; the owner of the shared `Unpack4` prototype (i0aed and e1b82) makes it unsigned in all three.
 
 ### Round 2 notes (not findings)
