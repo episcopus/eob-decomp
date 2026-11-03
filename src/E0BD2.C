@@ -18,8 +18,10 @@ struct ItemRecord {
     signed char m02;        /* +4 (ds:8DD4): the item type (src/E0D1C.C Entry14.m02) */
     signed char m03;        /* +5 (ds:8DD5): compared with 01D0's key and 02B9's key */
     int m04;                /* +6 (ds:8DD6): the key; -1 when the record is free (Entry14.m04) */
-    int m06;                /* +8 (ds:8DD8): one link of the circular list */
-    int m08;                /* +0xa (ds:8DDA): the other link */
+    int m06;                /* +8 (ds:8DD8): one link of the circular list; 0BD2:01D0 splices a
+                               new item in after this record through it */
+    int m08;                /* +0xa (ds:8DDA): the other link; the list walks (0BD2:0385, 040E,
+                               04AA) follow it */
     signed char m0A;        /* +0xc (ds:8DDC): gFBC8 or -1, set by 01D0 */
     signed char m0B;        /* +0xd (ds:8DDD): the value 01D0/02B9 return (Entry14.m0B) */
 };
@@ -231,20 +233,23 @@ void DrawItemName(int item);
         SwapSelectedItem(gA99A, gF51A);
 }
 
-/* 0BD2:01D0: inserts the item `item` at the head of the circular list `head`, stamping it with the
-   key `key` and the sound `sound` (m0A becomes gFBC8 or -1 by the key's sign). BLOCKED: compiler
-   register allocation. The original's frame is 0xc bytes (rec, next, cur): `item` is the SI
-   register variable (0BD2:01D8 `mov si,[bp+0xc]`), DI is a temporary holding cur->m06 (0BD2:0251
-   to 029B), and `key` stays in memory and is reloaded in each branch (0BD2:0212, 0268, 0276). Our
-   build promotes `key`: bare it takes DI and the cur->m06 temporary falls to AX and reloads; with a
-   `link` local taking DI it caches `key` in CX. The branch-1 `mov ax,si` (0BD2:0201) is the chained
-   assignment `rec->m08 = rec->m06 = item;`. Many source forms tried (see re/symbols.toml) still
-   promote or cache key. */
-/*@ 0BD2:01D0 draft */ void InsertListItem(void far *head, int key, int item, int sound)
+/* 0BD2:01D0: inserts the item `item` into the circular list whose head word is `head`, stamping it
+   with the key `key` and the sound `sound` (m0A becomes gFBC8, or -1 when the key is negative).
+   An empty list becomes `item` alone, linked to itself. Otherwise `item` is spliced in between the
+   old head item and the item its m06 names (their m06 and m08 now name `item`, whose own take the
+   old values) and becomes the new head, so the lists the other functions walk by m08 (0BD2:0385,
+   040E, 04AA) meet the newest item first. The two
+   int locals are register variables (DI and CX: this function makes no call, so the compiler
+   gives out a third register); `oldHead` is declared first because the compiler gives DI to the
+   later declaration when the use counts tie, and `key` is then left in memory as the original has
+   it. */
+/*@ 0BD2:01D0 */ void InsertListItem(void far *head, int key, int item, int sound)
 {
     struct ItemRecord *rec;
     struct ItemRecord *next;
     struct ItemRecord *cur;
+    int oldHead;
+    int afterHead;
 
     if (item == 0)
         return;
@@ -259,8 +264,10 @@ void DrawItemName(int item);
         else
             rec->m0A = -1;
     } else {
-        cur = &gItems[*(int far *)head];
-        next = &gItems[cur->m06];
+        oldHead = *(int far *)head;
+        cur = &gItems[oldHead];
+        afterHead = gItems[oldHead].m06;
+        next = &gItems[afterHead];
         rec->m04 = key;
         rec->m03 = sound;
         if (key >= 0)
@@ -268,7 +275,7 @@ void DrawItemName(int item);
         else
             rec->m0A = -1;
         rec->m08 = next->m08;
-        rec->m06 = cur->m06;
+        rec->m06 = afterHead;
         next->m08 = item;
         cur->m06 = item;
         *(int far *)head = item;
@@ -276,9 +283,7 @@ void DrawItemName(int item);
 }
 
 /* 0BD2:02B9: removes from the circular list `head` the first item whose m03 equals `key` (when
-   `target` is -1) or that equals `target`, unlinks it, and returns the item; 0 when none matches.
-   DRAFT: our build keeps the loop counter in CX and `next` in DI, the original the counter in DI and
-   `next` in CX; same instructions otherwise. */
+   `target` is -1) or that equals `target`, unlinks it, and returns the item; 0 when none matches. */
 /*@ 0BD2:02B9 */ int RemoveListItem(void far *head, int key, int target)
 {
     int start;
@@ -324,8 +329,7 @@ next:
 
 /* 0BD2:0385: walks the circular list `head`. With `target` -1 it matches an item whose m02 is
    `type` (or all when `type` is -1), otherwise the item `target` itself; returns the first match's
-   index when `count` is 0, otherwise the number of matches. Purpose unknown. DRAFT: the original's
-   first `return 0` is a `jmp` to the shared `xor ax,ax` tail (3 bytes); ours materialises it (5). */
+   index when `count` is 0, otherwise the number of matches. Purpose unknown. */
 /*@ 0BD2:0385 */ int ScanListItem(void far *head, int target, int type, int count)
 {
     int start;
@@ -389,8 +393,7 @@ next:
 
 /* 0BD2:04AA: drains the list at gB899 + `vol` * 9. Items whose m02 is `type` (or all when `type` is
    -1) are freed (m04 = -1, m0A = 0); the others are re-queued through 0BD2:01D0 in their original
-   order. Purpose unknown. DRAFT: our build keeps `count` in DI, the original on the stack with DI as
-   a scratch (`mov di,si`); two bytes apart. */
+   order. Purpose unknown. */
 /*@ 0BD2:04AA */ void DrainListItem(int vol, int type)
 {
     int start;
@@ -625,9 +628,7 @@ next:
 
 /* 0BD2:0AF2: Purpose unknown: when `row` is 0x11 and `item` is carried, checks that character `who`
    may wear the item type (0BD2:11FD); on failure prints why. Returns 0 when the worn item's flags
-   have 0x20, 1 otherwise, printing a message when the row's class mask does not cover the item.
-   DRAFT: TCC tail-merges the two DrawText calls in opposite directions (ours jumps the first
-   message forward, the original jumps the second back to the first). */
+   have 0x20, 1 otherwise, printing a message when the row's class mask does not cover the item. */
 /*@ 0BD2:0AF2 */ int f0BD2_0AF2(int item, int who, int row)
 {
     int mask;
