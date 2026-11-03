@@ -1,7 +1,7 @@
 # Review: e_text
 
 Reviewer: rev-haiku
-Commit reviewed: round 1 at 2ba0b7c; round 2 at c003ada; round 3 at 3165a9c; round 4 at 35510fa; round 5 at ee9075d (see Findings, Round 5)
+Commit reviewed: round 1 at 2ba0b7c; round 2 at c003ada; round 3 at 3165a9c; round 4 at 35510fa; round 5 at ee9075d; round 6 at 8acc261 (see Findings, Round 6)
 
 Playbook 70. Judge what a matching file can still get wrong: names, types, comments, structure.
 The matcher already proved the bytes; do not re-prove them, read for meaning.
@@ -23,6 +23,25 @@ Not checked: the claim that the block's first word in ADLIB.DAT is 0258h (the fi
 
 Each finding is a checkbox. `must-fix` blocks `make review-pass` until a decompiler ticks it off
 (with the commit that fixes it); `should` and `note` do not block.
+
+### Round 6: must-fix items
+
+None open.
+
+Reviewer: rev-haiku, round 6 at 8acc261 (playbook 70, later round). Scope: the round 5 must-fix M12 and the changed lines since ee9075d (`git diff ee9075d HEAD -- src/E_TEXT.ASM re/symbols.toml re/globals.toml`): src/E_TEXT.ASM 315 to 326 (the +29h and +2Bh entries) and 834 to 836 (the UpdateVoices header), all comment text; the fix is b826f8c, the tick 611f157, merged in 3295b64. The registry diff has no e_text row (its re/symbols.toml hunks are the e122e rows; re/globals.toml is unchanged). Checked against the code: src/E_TEXT.ASM 914 to 919 (L_423E, the note duration), 1023 to 1030 (L_4311), 1143 to 1161 (script 9Dh and L_444F). `make match FILE=src/E_TEXT.ASM` 44 of 44 (19996 of 19996 bytes), exit 0; `make readability UNIT=e_text` 0 findings. The matcher was not asked to re-prove the bytes.
+
+Checked and right in round 6:
+
+- M12 (fixed in b826f8c, ticked in 611f157): the +29h and +2Bh entries (319 to 322) and the UpdateVoices header (834 to 836) now name the 9Dh wait as the skip: L_444F (1156 to 1161) sets the note delay to 1 and jumps to 4267, past L_425F, and L_4311 (1030) jumps to 4267 too. The note duration wait is L_423E (914 to 919): a nonzero gNoteDuration stores the script position and jumps to 425F, so the handlers are still called, which is what the header's "a note's duration wait (423E) still calls them" says. M12 is fixed right; its tick stays.
+- The rest of the changed lines are the same text, rewrapped; the +26h entry and the record table are not affected.
+
+Round 6 should items: none.
+
+Round 6 notes:
+
+- The UpdateVoices header (834 to 836) says "their script ends (L_4311) or its 9Dh command waits". "their" is the voices and "its" is one voice; the referent is clear from the sentence, so this is a note, not a finding.
+
+Round 6 summary: no must-fix open, no should. M12 is fixed right and its tick stays. No matcher, spec or pin question. Nothing escalated.
 
 ### Round 5: must-fix items
 
