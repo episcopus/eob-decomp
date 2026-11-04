@@ -1,10 +1,28 @@
 # Review: i0aed
 
-Reviewer: rev-haiku
-Commit reviewed: 41f1cda (round 2, main; round 1 reviewed 6003a3d, the branch review/i0aed was at aa13987 and I fast-forwarded it to main first; src/I0AED.C is the same in both)
+Reviewer: p6-rev-12
+Commit reviewed: ce0608f367ed01b1b1df84e254eef04d1a734b27 (P6 round; the diff since round 2 at 41f1cda). Round 2 at 41f1cda (main; round 1 reviewed 6003a3d, the branch review/i0aed was at aa13987 and I fast-forwarded it to main first; src/I0AED.C is the same in both)
 
 Playbook 70. Judge what a matching file can still get wrong: names, types, comments, structure.
 The matcher already proved the bytes; do not re-prove them, read for meaning.
+
+## Round P6 (2026-11-04), commit ce0608f367ed01b1b1df84e254eef04d1a734b27
+
+Judged: the names and comments changed since round 2 at 41f1cda (`git diff 41f1cda HEAD -- src/I0AED.C`). The diff renames `f19EC_0002` to `GetPagePtr` and `gSegsFC0C` to `gPageSegs`, and replaces the local format constants and `MEMALLOC_ALIGNED` with `#include "EOB.H"`. Checked each rename against its `why` in `re/renames.toml` and `re/globals.toml`, against the code at its address, and against the EOB twin's name in `src/`. The `re/symbols.toml` changes for this unit are review stamps only.
+
+### Round P6 findings
+
+- [ ] must-fix src/I0AED.C:8, :63, :93, :105, :106, :133 (and the comments that name it): the function at 097F:0002 is named `GetPagePtr`, but its EOB twin 19EC:0002 is named `GetPageBuffer` in src/E19EC.C:20 and src/E1B82.C:58 (the rename's own why says "Twin of EOB's 19EC:0002"). The same module linked at two addresses must have one name. Rename it to `GetPageBuffer` in src/I0AED.C and src/IOV0.C. The evidence in the why is otherwise right: the function returns MK_FP(gPageSegs[kind | 1], 0).
+
+- [ ] should re/renames.toml, the `intro/097F:0002=GetPagePtr` row: the why cites `I0AED.C:112`, but the calls are at :105 and :106 (the line moved when the file changed). Cite the address 0AED:0045 or the current lines.
+
+### Round P6 notes (not findings)
+
+- The other changes check out: `gPageSegs` (intro/ds:28CC) matches EOB's ds:FC0C name; the `#include "EOB.H"` replaces the five `FORMAT_` constants, `MEMALLOC_ALIGNED`, `FORMAT1_BUFFER_SIZE` and `FORMAT2_BUFFER_SIZE`, all defined in src/EOB.H:360-383. The comments that name the new symbols are accurate.
+
+### Round P6 summary
+
+One must-fix: `GetPagePtr` diverges from the EOB twin's name (`GetPageBuffer`). One should: the stale line cite in the rename's why. Nothing escalated: no matcher, spec or pin question.
 
 ## Round 2 (41f1cda)
 
