@@ -1,13 +1,20 @@
 # Review: s_text
 
-Reviewer: rev-haiku
-Commit reviewed: 9a2b2fc (HEAD of review/s_text; the last change to the unit's files is aef98e7)
+Reviewer: p6-rev-12
+Commit reviewed: ce0608f367ed01b1b1df84e254eef04d1a734b27 (P6 round; `src/S_TEXT.C` and `src/S_TEXT.ASM` are unchanged since round 4 at fbf7526). Round 4 at fbf7526 (main; the diff from 3ec2009 is the round 3 fixes, b233ff9)
 Round 2 commit reviewed: 3e16e87 (main, the merge of unit/s_text; the diff from 9a2b2fc is round 1's fixes plus the probes and console routines, aa0e56a)
 Round 3 commit reviewed: 3ec2009 (main; the diff from 3e16e87 is the round 2 fixes, b31cf07)
-Round 4 commit reviewed: fbf7526 (main; the diff from 3ec2009 is the round 3 fixes, b233ff9)
 
 Playbook 70. Judge what a matching file can still get wrong: names, types, comments, structure.
 The matcher already proved the bytes; do not re-prove them, read for meaning.
+
+## Round P6 (2026-11-04), commit ce0608f367ed01b1b1df84e254eef04d1a734b27
+
+No changes to `src/S_TEXT.C` or `src/S_TEXT.ASM` since the round 4 commit `fbf7526` (`git diff fbf7526 HEAD -- src/S_TEXT.C src/S_TEXT.ASM` is empty). The previous review's findings (no open must-fix) stand. Nothing to re-judge.
+
+### Round P6 summary
+
+The files are unchanged. The round 4 review stands: no must-fix. Nothing escalated.
 
 ## Round 4 (rev-haiku, fbf7526)
 
