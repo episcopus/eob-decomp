@@ -1,5 +1,27 @@
 # Review: e1bb1
 
+# Round P6 (2026-11-04), commit ce0608f
+
+Reviewer: p6-rev-1
+Commit reviewed: ce0608f (main; review/e1bb1 was ce0608f when this round began and no fast-forward was needed). The last review round was the twelfth at 982cc05. Since 982cc05, src/E1BB1.ASM changed by the Phase 6 rename: gIconsDDE4 is gItemIcons, gPtrDD00 is gDefaultPointerIcon, gDraw80C2 is gDrawShape, g8172/g8174 are gEgaRegShadowOff/gEgaRegShadowSeg, g80C6 is gSaveRectSize, g80AA is gSaveDrawState and g80A2 is gRestoreDrawState. The diff is 16 insertions and 16 deletions. The names do not change the machine code.
+
+Later round (playbook 70). Judged: the diff since 982cc05 for src/E1BB1.ASM (the rename and its comments) and the names it introduces. The last round's shoulds (the QUIRK 1BB1:00C6 sentence, the "at start-up" caller cite, the TASM [H] tag) are unchanged by the P6 diff and remain shoulds.
+
+Checked: `make match FILE=src/E1BB1.ASM` 1 of 1 (208 bytes), exit 0; `make readability UNIT=e1bb1` 0 findings. Evidence used this round: `git diff 982cc05 HEAD -- src/E1BB1.ASM` (the rename); `grep -n -A7 "addr = \"ds:DD00\"" re/renames.toml` (:8043, gDefaultPointerIcon), the ds:80C2 (:2823), ds:8172 (:7044), ds:8174 (:7053), ds:80C6 (:2247), ds:80AA (:6954) and ds:80A2 (:6945) entries, and the ds:DDE4 entry (:7431).
+
+## Findings
+
+Each finding is a checkbox. `must-fix` blocks `make review-pass` until a decompiler ticks it off
+(with the commit that fixes it); `should` and `note` do not block.
+
+- [ ] note the P6 names gItemIcons (ds:DDE4), gDefaultPointerIcon (ds:DD00), gDrawShape (ds:80C2), gEgaRegShadowOff/Seg (ds:8172/8174), gSaveRectSize (ds:80C6), gSaveDrawState (ds:80AA) and gRestoreDrawState (ds:80A2) are backed by re/renames.toml (:7431, :8043, :2823, :7044, :7053, :2247, :6954, :6945). The changed lines are the header comment and the EXTRN names; the code is unchanged. The last round's "the placeholders stay on purpose" for g80AA, g80A2, g80C6, g8172 and g8174 is superseded: the P6 rename named them with the driver-table and EGA-shadow evidence.
+- [ ] note the last round's three shoulds are unchanged by the P6 diff and remain shoulds: the QUIRK 1BB1:00C6 sentence "The count can be nonzero two ways" (say "The hide increments the count in two cases"), the "LoadItemData calls SetPointerShape at start-up (EOV2.C:451)" (cite StartupAlloc at src/E07A9.C:219), and the TASM note (tag it [H] or cite the trial).
+- [ ] note the header's gItemIcons and gDefaultPointerIcon names match the E07A9 and EOV2 renames; the gDrawShape name matches the E1A29's draw shape; the gSaveRectSize name matches the E1C0E's save-under size query. The code at `call dword ptr [gSaveDrawState]` and `[gRestoreDrawState]` matches the save-before-show, restore-after-show order.
+
+## Summary
+
+No must-fix is open. The P6 rename named the seven globals with the driver-table, EGA-shadow and default-pointer evidence, and the changed header and EXTRN comments agree. The last round's shoulds (the QUIRK 1BB1:00C6 sentence, the "start-up" caller cite, the TASM [H] tag) remain shoulds; the P6 diff did not touch them. The matcher is 1 of 1 and readability is 0 findings; the bytes are unchanged. The unit passes (review-passed).
+
 Reviewer: rev-haiku
 Commit reviewed: a618630 (main when I started; src/E1BB1.ASM is identical on review/e1bb1 at b04b797)
 
