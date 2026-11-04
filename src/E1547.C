@@ -10,60 +10,7 @@
 
 /*@flags -ml -O -Z */
 
-struct CharRec {            /* the 243-byte (0xF3) records at ds:F580 (src/E0A72.C, src/E0D1C.C) */
-    char pad00;
-    unsigned char status;   /* +01: status bits: bit 0 alive, bit 1 poisoned, bit 2 paralyzed
-                               (src/E0DE8.C:558 keeps only bit 0 at death; src/E1414.C:476-477
-                               clears bit 1 at the end of poison and bit 2 at the end of paralysis) */
-    char name[0x0B];        /* +02: the NUL-padded name (src/EOV6.C) */
-    signed char strength;   /* +0D: the strength score, drawn by FormatStrengthPercent (src/E0A72.C) */
-    signed char baseStrength;        /* +0E (src/E1414.C) */
-    signed char strengthPct;        /* +0F: the exceptional strength percentile (src/E0A72.C) */
-    signed char baseStrengthPct;        /* +10 (src/E1414.C) */
-    signed char intelligence;        /* +11: INTELLIGENCE (ds:1195[1]), the first of the five stat bytes
-                               after strength (src/EOV0.C:442-444 formats intelligence, wisdom, dexterity, constitution, charisma) */
-    signed char m12;        /* +12 */
-    signed char wisdom;     /* +13: WISDOM (ds:1195[2]) */
-    signed char m14;        /* +14 */
-    signed char dexterity;  /* +15: DEXTERITY (ds:1195[3]); indexes the armour-class base table
-                               (GetArmourClassBase, 0A72:019D) */
-    signed char m16;        /* +16 */
-    signed char constitution;        /* +17: CONSTITUTION (ds:1195[4]) */
-    signed char m18;        /* +18 */
-    signed char charisma;   /* +19: CHARISMA (ds:1195[5]) */
-    signed char m1A;        /* +1A */
-    signed char hp;         /* +1B: current hit points (src/E1414.C) */
-    signed char maxHp;      /* +1C: maximum hit points, the second %3d of the HP line */
-    signed char armorClass; /* +1D: the armour-class byte, drawn on the ARMOR CLASS row
-                               (src/E08E6.C:60 and src/E0EF3.C:25 name it the armour-class byte) */
-    signed char m1E;        /* +1E: a per-slot bit toggled by UseItem's `m1E ^= 1 << slot`
-                               (0DE8:0763); DrawHandSlot tests bit `slot` (src/E1414.C) */
-    signed char race;       /* +1F: index into the race-name table ds:11AD */
-    signed char classIndex; /* +20: index into the class-name table ds:11DD (src/E0A72.C) */
-    signed char alignment;  /* +21: index into the alignment-name table ds:1240 */
-    signed char portraitIndex;        /* +22 */
-    unsigned char food;     /* +23: the hunger/food value, clamped to 100 by EatFood (0ACD:07E0)
-                               and decremented each tick for a living member by DecayMemberState
-                               (1414:0C82); unsigned here (the code tests < 0x21, < 0x14), while
-                               src/E0BD2.C:56, src/E0EF3.C:30 and src/EOV0.C:82 declare it signed */
-    signed char levels[3];  /* +24: three per-class-slot bytes (src/E0D1C.C) */
-    long experience[3];     /* +27: three per-class-slot experience totals (src/E0DE8.C:33) */
-    char far *portrait;     /* +33: the member's picture, which 0544 draws as the portrait; ovl3
-                               unpacks the sprite into it (src/EOV3.C) */
-    char pad37[0x77 - 0x37];
-    int items[27];          /* +77: 27 word slots, the carried items (src/E0D1C.C) */
-    char padAD[0xDF - 0xAD];
-    signed char mDF;        /* +0DF: a descending penalty counter; when it runs out the armour class
-                               is recomputed (src/E0DE8.C:563-566, src/E0EF3.C:1179 "penalty byte") */
-    signed char mE0;        /* +0E0: a countdown (src/E0EF3.C:39) */
-    char padE1[0xE3 - 0xE1];
-    long effectFlags;       /* +0E3: status/effect flags: a long, so the bit tests compile to the
-                               `mov ax,..; and ax,K; or ax,0` form (src/E1414.C, 0D1C:0B17) */
-    signed char lastDamage; /* +0E7: the damage amount last stored by DamageCharacter
-                               (src/E0DE8.C:553), drawn as a number while above zero */
-    signed char lastAction[0xF3 - 0xE8]; /* +0E8: per-slot item-use results: UseItem stores its `result`
-                               there (0DE8:0763), -1 for a forced miss and -2..-4 for failures */
-};
+#include "EOB.H"
 
 extern int gGraphicsChoice; /*@ ds:8102 */         /* the video mode the game initialised (src/E082C.C) */
 extern int gDrawPage; /*@ ds:8115 */         /* the graphics driver's draw page (src/E082C.C) */

@@ -5,43 +5,7 @@
    table's first record, the one ListInit set. Still unknown: the purpose of gFlag (and so of the a
    and b table sets), and what BuildList1 to BuildList5 number. */
 
-/* A list node: offset 0 is a far pointer to the next node, or null at the tail. The tables point
-   at records in DGROUP spaced on a 60-byte grid (every table entry is 6 mod 0x3C); the record's
-   real size is not proven, between 56 and 60: E16A5.C lays one out through tile36 at +0x36/+0x37
-   (56 bytes) and E1658.C through +0x33 (52 bytes). Only this link is touched here: ListInit zeroes
-   it (the two word stores the bytes show, a null far pointer). The layout below is E16A5.C's, which
-   names and extends the record E1658.C declares. */
-struct Node {
-    struct Node far *next;      /* +00: next node, or a null pointer at the tail */
-    unsigned key;               /* +04: the sort key E1658.C compares */
-    unsigned key06;             /* +06: the first key word the dispatcher matches */
-    unsigned key08;             /* +08: the second key word the dispatcher matches */
-    unsigned char kind;         /* +0A: the drawing kind 0..5 DrawNode switches on */
-    unsigned char modeB;        /* +0B: the "on" drawing mode DrawNode switches on */
-    unsigned char modeC;        /* +0C: the second drawing mode DrawNode switches on */
-    unsigned char pad0D;        /* +0D: unknown field, E16A5.C leaves it unnamed */
-    unsigned flags;             /* +0E: the inactive bit and the layout bits E1658.C names */
-    void far *src10;            /* +10: the default art pointer DrawNode draws */
-    void far *src14;            /* +14: the "on" art/callback pointer DrawNode draws */
-    void far *src18;            /* +18: the second art/callback pointer DrawNode draws */
-    int region;                 /* +1C: index into the region table ds:009F */
-    int x;                      /* +1E: box left, in the region's pixel space */
-    int y;                      /* +20: box top, in lines */
-    unsigned width;             /* +22: box width */
-    unsigned height;            /* +24: box height */
-    unsigned char color26;      /* +26: text foreground, the default pair */
-    unsigned char color27;      /* +27: text background/extra, the default pair */
-    unsigned char color28;      /* +28: foreground of the "on" pair */
-    unsigned char color29;      /* +29: background/extra of the "on" pair */
-    unsigned char color2A;      /* +2A: foreground of the third pair */
-    unsigned char color2B;      /* +2B: background/extra of the third pair */
-    unsigned char color2C;      /* +2C: foreground of the fourth pair */
-    unsigned char color2D;      /* +2D: background/extra of the fourth pair */
-    unsigned state;             /* +2E: the on bit, the previous-on bit, others */
-    int (far *callback30)(struct Node far *node); /* +30: fired when a state op asks, 0 stops the walk */
-    int tile34;                 /* +34: tile id DrawNode draws in the default kind */
-    int tile36;                 /* +36: tile id DrawNode draws in the switched modes */
-};
+#include "EOB.H"
 
 extern char gFlag; /*@ ds:F3B9 */ /* selects the "a" table set when nonzero (the longer lists for
                                      tables 1 and 2, the shorter for table 3). Three writers: 1 at

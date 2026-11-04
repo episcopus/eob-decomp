@@ -13,54 +13,9 @@
 
 /*@flags -ml -O -Z -v */
 
-struct Region {                 /* 16-byte records at ds:009F (src/E1A29.C): origin, size, then the
-                                   text window's two attributes and cursor position (textAttr1, textAttr2,
-                                   textCol, textRow) */
-    int left;                   /* +0: left edge in 8-pixel columns */
-    int top;                    /* +2: top edge in lines */
-    int width;                  /* +4: width in 8-pixel columns */
-    int height;                 /* +6: height in lines */
-    int textAttr1;                  /* +8: text attribute 1 [H] (gTextAttr1) */
-    int textAttr2;                  /* +a: text attribute 2 [H] (gTextAttr2) */
-    int textCol;                 /* +c: cursor column (gTextCol) */
-    int textRow;                    /* +e: cursor row (gTextRow) */
-};
+#include "EOB.H"
 
 typedef void (far *NodeFn)(struct Node far *node);
-
-struct Node {
-    struct Node far *next;      /* +00: next node, or a null pointer at the tail */
-    unsigned key;               /* +04: the sort key E1658.C compares */
-    unsigned key06;             /* +06: the first key word the dispatcher matches */
-    unsigned key08;             /* +08: the second key word the dispatcher matches */
-    unsigned char kind;         /* +0A: the drawing kind 0..5 DrawNode switches on */
-    unsigned char modeB;        /* +0B: the "on" drawing mode DrawNode switches on */
-    unsigned char modeC;        /* +0C: the second drawing mode DrawNode switches on */
-    unsigned char pad0D;
-    unsigned flags;             /* +0E: the inactive bit and the button-mode selector bits E1658.C
-                                   names (see the flag defines below) */
-    void far *src10;            /* +10: the default art pointer DrawNode draws */
-    void far *src14;            /* +14: the "on" art/callback pointer DrawNode draws */
-    void far *src18;            /* +18: the second art/callback pointer DrawNode draws */
-    int region;                 /* +1C: index into the region table ds:009F */
-    int x;                      /* +1E: box left, in the region's pixel space */
-    int y;                      /* +20: box top, in lines */
-    unsigned width;             /* +22: box width */
-    unsigned height;            /* +24: box height */
-    unsigned char color26;      /* +26: text foreground, the default pair */
-    unsigned char color27;      /* +27: text background/extra, the default pair */
-    unsigned char color28;      /* +28: foreground of the "on" pair */
-    unsigned char color29;      /* +29: background/extra of the "on" pair */
-    unsigned char color2A;      /* +2A: foreground of the third pair */
-    unsigned char color2B;      /* +2B: background/extra of the third pair */
-    unsigned char color2C;      /* +2C: foreground of the fourth pair */
-    unsigned char color2D;      /* +2D: background/extra of the fourth pair */
-    unsigned state;             /* +2E: the on bit, the previous-on bit, others */
-    int (far *callback30)(struct Node far *node); /* +30: fired when a case sets `changed`; a nonzero
-                                                   return stops the walk, 0 lets it go on */
-    int tile34;                 /* +34: the tile id DrawNode draws in the default kind */
-    int tile36;                 /* +36: the tile id DrawNode draws in the switched modes */
-};
 
 extern int ReadKeySpecial(void);   /*@ 1AAD:0409: nonzero when a key is ready to read (E1AAD.ASM) */
 extern int WaitGameKey2(void);   /*@ 1AAD:0588: read the ready key (E1AAD.ASM) */
@@ -78,11 +33,6 @@ extern void (far *gNodeCallback)(); /*@ ds:FC7C: the callback 16A5:0D78 installs
    and NODE_STATE_4/NODE_STATE_10 (ClearNode sets NODE_STATE_10 and clears NODE_STATE_4,
    E1658.C:240-244). The "0x0004 pressed" reading is [H]: E1658.C does not name bit 0x0004; the
    dispatcher sets it for a press. */
-#define NODE_STATE_ON   0x0001
-#define NODE_STATE_2    0x0002
-#define NODE_STATE_4    0x0004
-#define NODE_STATE_PREV 0x0008
-#define NODE_STATE_10   0x0010
 
 /* The +0E flags word, under the names E1658.C gives it. NODE_INACTIVE (0x0008) makes ToggleNode
    (1658:0073), ClearNode (1658:01E6) and SetNode (1658:02F5) do nothing; DisableNode (1658:0154)
@@ -90,12 +40,6 @@ extern void (far *gNodeCallback)(); /*@ ds:FC7C: the callback 16A5:0D78 installs
    selector bits 0x0100/0x0400 (gLeftButtonMode) and 0x1000/0x4000 (gRightButtonMode) pick the button mode E1658.C
    describes. The dispatcher also tests 0x0002, 0x0004, 0x0020, 0x0040, 0x0080, 0x0200, 0x0800,
    0x2000 and 0x8000 as gates; their meanings are not established [H], so they stay values. */
-#define NODE_INACTIVE   0x0008
-#define NODE_FLAG_ON    0x0001
-#define NODE_FLAG_ON_5E1C  0x0400
-#define NODE_FLAG_ON_5E1E  0x4000
-#define NODE_FLAG_OFF_5E1C 0x0100
-#define NODE_FLAG_OFF_5E1E 0x1000
 
 void DrawNode(struct Node far *node);
 
@@ -290,7 +234,7 @@ extern int gRightButtonMasks[];          /*@ ds:5DF2: words 1..4 the gRightButto
             DrawNode(head);
             gLeftButtonMasks[0] |= head->flags & 0xaa04;
             if (head->state & 0x20)
-                if (head->tile34 | head->tile36)
+                if (head->data.tile.tile34 | head->data.tile.tile36)
                     if (gNodeCallback)
                         gNodeCallback(head);
             if (head->next == 0)
@@ -609,7 +553,7 @@ done:
             } else if (kind == 3) {
                 savedAttr = gDrawPage;
                 gDrawPage = 0;
-                gDrawIndexedTile(node->tile36, x >> 3, y);
+                gDrawIndexedTile(node->data.tile.tile36, x >> 3, y);
                 gDrawPage = savedAttr;
             } else if (kind == 4) {
                 if (node->src14)
@@ -652,7 +596,7 @@ done:
             } else if (kind == 3) {
                 savedAttr = gDrawPage;
                 gDrawPage = 0;
-                gDrawIndexedTile(node->tile36, x >> 3, y);
+                gDrawIndexedTile(node->data.tile.tile36, x >> 3, y);
                 gDrawPage = savedAttr;
             } else if (kind == 4) {
                 if (node->src18)
@@ -690,7 +634,7 @@ done:
             } else if (kind == 3) {
                 savedAttr = gDrawPage;
                 gDrawPage = 0;
-                gDrawIndexedTile(node->tile34, x >> 3, y);
+                gDrawIndexedTile(node->data.tile.tile34, x >> 3, y);
                 gDrawPage = savedAttr;
             } else if (kind == 4) {
                 if (node->src10)

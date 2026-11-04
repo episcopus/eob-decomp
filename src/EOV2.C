@@ -19,46 +19,12 @@
 
 /*@flags -ml -O -Z */
 
-struct Region {             /* 16-byte records of the region table at ds:009F (src/E1A29.C) */
-    int left;
-    int top;
-    int width;
-    int height;
-    int textAttr1;
-    int textAttr2;
-    int textCol;
-    int textRow;
-};
-
-struct ItemType {           /* 16-byte records of ITEMTYPE.DAT, at ds:A9F0 */
-    char data[16];
-};
+#include "EOB.H"
 
 struct ItemRec {            /* the 14-byte ITEM.DAT records, at ds:8DD0 */
     char b0[6];
     int word6;              /* +06: set to -1 for all 500 slots before ITEM.DAT is read */
     char b8[6];
-};
-
-struct CharRec {            /* 243-byte character records at ds:F580 (src/E0A72.C) */
-    unsigned char index;    /* +00: the record's own member index, written here by InitGameTables
-                               (src/E0EF3.C reads it as the member's index) */
-    char pad01[0x32];
-    void far *portrait;     /* +33: the member's picture, a 0x514-byte buffer MemAlloc'd per
-                               record (src/E1547.C draws it as the portrait) */
-    char pad37[0xF3 - 0x37];
-};
-
-struct SlotSize {           /* the 3-byte size record a gDoorButtons entry points at (src/E122E.C:107-111) */
-    char pad00;
-    signed char height;     /* +1: base height in pixels */
-    signed char width;      /* +2: base width in eighths */
-};
-
-struct SlotPos {            /* the six-byte slot-position records at ds:A99C (src/E122E.C:112-117) */
-    struct SlotSize far *rec; /* +0: the far slot-size record */
-    unsigned char x;        /* +4 */
-    unsigned char y;        /* +5 */
 };
 
 struct Pos2 {               /* a word pair, the per-cell origin tables */
@@ -69,13 +35,6 @@ struct Pos2 {               /* a word pair, the per-cell origin tables */
 struct Size2 {              /* a byte pair, the per-cell width/height tables */
     char w;
     char h;
-};
-
-struct Cell4 {              /* a four-byte cell definition, x, y, w, h */
-    unsigned char x;
-    unsigned char y;
-    unsigned char w;
-    unsigned char h;
 };
 
 struct WordCell {           /* the 4-byte "find the word" records at ds:65F0, 30 of them */

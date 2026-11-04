@@ -46,7 +46,7 @@ extern void ShutdownGame(void); /*@ 07C8:058A */
    src/E1B82.C:43 defines it and uses it at src/E1B82.C:165 and :174.
    MEMALLOC_ZERO_FILL (0x10) zero fills the block; no caller in src/ passes it (the 0x10L at
    src/E07C8.C:259 is a size, not a flag), so its meaning is read from this unit's code alone. */
-#define MEMALLOC_ALIGNED 0x20
+#include "EOB.H"
 #define MEMALLOC_ZERO_FILL 0x10
 /* the maxFlags MemAlloc's retry passes to EvictFile: 0xff is the largest unsigned char, and
    FindEvictableFile keeps a slot whose flags are `<= maxFlags` (src/E1C0E.C:617), so any slot

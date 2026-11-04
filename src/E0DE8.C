@@ -13,116 +13,7 @@
 
 /*@flags -ml -O -Z */
 
-struct CharRec {            /* the 243-byte (0xF3) character records at ds:F580; see src/E0A72.C */
-    char pad00;
-    unsigned char status;   /* +01: status bits (0D1C:0670, 0DE8:09B9) */
-    char name[0x0B];        /* +02: the character's name, NUL padded (0DE8:0C82) */
-    char pad0D[0x15 - 0x0D];
-    signed char dexterity;  /* +15: one of the five further stat bytes (src/E0A72.C); indexes the
-                               per-stat table gDexArmourAdjust for the armour-class base (GetArmourClassBase, 0A72:019D)
-                               and the per-stat table ds:3474 (GetDexMissileBonus, 0A72:0181) */
-    char pad16;
-    signed char constitution;        /* +17: an index into gConSaveBonus (0D1C:059B); also the second argument of
-                               RollHitPoints (0A72:01AE), which LevelUpSlot passes there */
-    char pad18[0x1B - 0x18];
-    signed char hp;         /* +1B: current hit points */
-    signed char maxHp;      /* +1C: the maximum hit points (src/EOV5.C:32) */
-    signed char armorClass; /* +1D: the armour-class byte 0D5E builds */
-    signed char m1E;        /* +1E: a per-slot bit UseItem toggles itself (:522) */
-    signed char race;       /* +1F */
-    signed char classIndex; /* +20: an index into a class table */
-    char pad21[3];
-    signed char levels[3];  /* +24: three per-class-slot levels (AddExperience passes levels[i] + 1,
-                               src/E0A72.C:276-281) */
-    unsigned long experience[3];   /* +27: three per-class-slot experience totals (0DE8:0B45) */
-    char pad33[0x77 - 0x33];
-    int items[27];          /* +77: 27 carried-item slots (0D1C:00F1) */
-    char padAD[0xDF - 0xAD];
-    signed char mDF;        /* +DF: the descending armour-class penalty (DamageCharacter :589-594) */
-    char padE0[0xE2 - 0xE0];
-    signed char mE2;        /* +E2: the damage-reduction value (DamageCharacter :573-576) */
-    long effectFlags;       /* +E3: effect flags (a 32-bit mask; 09B9 clears bit 2 only) */
-    unsigned char lastDamage;      /* +E7: the last damage amount (DamageCharacter :579) */
-    unsigned char lastAction[0xF3 - 0xE8]; /* +E8: the last action result per carried slot (UseItem :523) */
-};
-
-struct Monster {              /* the 28-byte monster records at ds:8A82; see src/E08E6.C */
-    char typeIndex;                /* +0: an index into the ds:1A3B table */
-    char pad01;
-    int cell;                /* +2 */
-    char pad04;
-    char orient;               /* +5 */
-    char pad06[0x16 - 0x06];
-    char flags;               /* +16: bit 0 set on every 0007 call (the monster was attacked) */
-    char pad17[0x1C - 0x17];
-};
-
-struct MonsterType {            /* the 27-byte records at ds:1A3B; see src/E0D1C.C */
-    signed char m00;        /* +0: the target's class byte for GetHitTarget (0A72:0522) */
-    char m01;               /* +1 */
-    signed char m02;        /* +2: a class byte read by 0FCA */
-    char pad03[0x0E - 0x03];
-    signed char m0E;        /* +0E: bit 0 tested by 011A */
-    int m0F;                /* +0F */
-    char pad11[0x19 - 0x11];
-    signed char m19;        /* +19 */
-    signed char m1A;        /* +1A */
-};
-
-struct ItemRecord {
-    signed char nameIndex;        /* +0 (ds:8DD0): indexes the item-name table at segment 0x1F28 */
-    signed char identifiedNameIndex;        /* +1 (ds:8DD1): the second name index */
-    unsigned char flags;    /* +2 (ds:8DD2): bit 0x20 gates 0BD2:0AF2/0C8E, 0x40 is set by
-                               0BD2:040E and tested by 0BD2:05B5; src/E07A9.C calls it flags */
-    signed char icon;       /* +3 (ds:8DD3): the icon number */
-    signed char type;        /* +4 (ds:8DD4): the item type */
-    signed char cellPos;        /* +5 (ds:8DD5): 01D0 stores its 4th argument here and 02B9 matches it
-                               against its `key`. No caller shows a sound (01D0's callers pass a
-                               slot kind, E0ACD.C:561-568, a roll, E08E6.C:807, or an effect kind | 4,
-                               0BD2:07DE): the item's position in its cell, 8 a wall niche (122E:06D0) */
-    int key;                /* +6 (ds:8DD6): the key; -1 when the record is free */
-    int prevLink;                /* +8 (ds:8DD8): one link of the circular list; 0BD2:01D0 splices a
-                               new item in after this record through it */
-    int nextLink;                /* +0xa (ds:8DDA): the other link; the list walks (0BD2:0385, 040E,
-                               04AA) follow it */
-    signed char level;        /* +0xc (ds:8DDC): gCurLevel or -1, set by 01D0 */
-    signed char value;        /* +0xd (ds:8DDD): the item's bonus or effect value: the signed bonus
-                               printed as "%s +%d" and "Cursed %s %d", the spell index into ds:1278
-                               and ds:12E0, the wand effect index gWandSpells[m0B], and the scroll and
-                               potion values (0BD2:05B5, 0D2D, 0EE8, 1001) */
-};
-
-struct Projectile {              /* the records at ds:DD2C that 1414:0172 walks; see src/E1414.C */
-    char active;            /* +0 */
-    char pad01;
-    int m02;                /* +2 */
-    int cell;                /* +4 */
-    char m06;               /* +6 */
-    signed char dir;        /* +7 */
-    int item;                /* +8: an item slot, indexed into gItems (01FF, 02D4) */
-    char m0A;               /* +0A: an item type, indexed into gItemTypes (01FF, 02D4) */
-    char m0B;               /* +0B: the attacker (TryRecordAttack :318) */
-    char m0C;               /* +0C */
-    unsigned char m0D;      /* +0D */
-    int (far *fn)(struct Projectile far *rec); /* +0E */
-};
-
-struct ItemType {           /* the 16-byte item types at ds:A9F0; see src/EOV2.C */
-    signed char slotMask;        /* +0: bit 4 tested by 0D1C:0BEB */
-    signed char m01;        /* +1 */
-    char pad02[2];
-    signed char m04;        /* +4 */
-    signed char m05;        /* +5 */
-    char pad06;
-    signed char m07;        /* +7 */
-    signed char m08;        /* +8 */
-    signed char m09;        /* +9 */
-    signed char m0A;        /* +0A */
-    signed char m0B;        /* +0B */
-    char pad0C[2];
-    short m0E;              /* +0E: low 7 bits tested by 01D7; also UseItem's dispatch kind (:495)
-                               and ComputeArmourClass's test (:726) */
-};
+#include "EOB.H"
 
 extern struct CharRec gChars[]; /*@ ds:F580 */
 extern struct Monster gMonsters[]; /*@ ds:8A82 */
@@ -277,7 +168,7 @@ void LevelUpSlot(int who, int cls, int slot);  /* forward: 0B45 reaches it with 
 {
     int kind;
 
-    kind = gItemTypes[index].m0E & 0x7f;
+    kind = gItemTypes[index].m0E.word & 0x7f;
     return kind == 2 || kind == 3;
 }
 
@@ -504,7 +395,7 @@ fail:
     result = 0;
     if (gChars[who].effectFlags & 4)
         EndInvisibility(&gChars[who]);
-    switch (gItemTypes[m02].m0E & 0x7f) {
+    switch (gItemTypes[m02].m0E.word & 0x7f) {
     case 1:
         result = ApplyItemAttack(who, field);
         if (result == 0)
@@ -736,11 +627,11 @@ fail:
             continue;
         itemType = gItems[item].type;
         value = gItemTypes[itemType].m05 & gClassBaseBits[rec->classIndex];
-        if ((gItemTypes[itemType].m0E & 0x7f) != 0 || value == 0)
+        if ((gItemTypes[itemType].m0E.word & 0x7f) != 0 || value == 0)
             continue;
         if (i >= 1 && i <= 2 && itemType != 0x1b)
             continue;
-        rec->armorClass += gItemTypes[itemType].m04;
+        rec->armorClass += (signed char)gItemTypes[itemType].m04;
         rec->armorClass -= gItems[item].value;
     }
     item = rec->items[17];
@@ -748,10 +639,10 @@ fail:
         bonus25 = 0;
         bonus26 = 0;
         item = rec->items[25];
-        if (item != 0 && (gItemTypes[gItems[item].type].m0E & 0x7f) == 0)
+        if (item != 0 && (gItemTypes[gItems[item].type].m0E.word & 0x7f) == 0)
             bonus25 = gItems[item].value;
         item = rec->items[26];
-        if (item != 0 && (gItemTypes[gItems[item].type].m0E & 0x7f) == 0)
+        if (item != 0 && (gItemTypes[gItems[item].type].m0E.word & 0x7f) == 0)
             bonus26 = gItems[item].value;
         bonus25 = bonus25 > bonus26 ? bonus25 : bonus26;
         rec->armorClass -= bonus25;

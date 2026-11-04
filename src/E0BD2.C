@@ -7,94 +7,15 @@
 
 /*@flags -ml -O -Z -v */
 
-/* A 14-byte item record of ITEM.DAT, gItems at ds:8DD0. Every unit declares the table at this
-   base (before 2026-11-03 several used a view at ds:8DD2, two bytes in). */
-struct ItemRecord {
-    signed char nameIndex;        /* +0 (ds:8DD0): indexes the item-name table at segment 0x1F28 */
-    signed char identifiedNameIndex;        /* +1 (ds:8DD1): the second name index */
-    unsigned char flags;    /* +2 (ds:8DD2): bit 0x20 gates 0BD2:0AF2/0C8E, 0x40 is set by
-                               0BD2:040E and tested by 0BD2:05B5; src/E07A9.C calls it flags */
-    signed char icon;       /* +3 (ds:8DD3): the icon number */
-    signed char type;        /* +4 (ds:8DD4): the item type */
-    signed char cellPos;        /* +5 (ds:8DD5): 01D0 stores its 4th argument here and 02B9 matches it
-                               against its `key`. No caller shows a sound (01D0's callers pass a
-                               slot kind, E0ACD.C:561-568, a roll, E08E6.C:807, or an effect kind | 4,
-                               0BD2:07DE): the item's position in its cell, 8 a wall niche (122E:06D0) */
-    int key;                /* +6 (ds:8DD6): the key; -1 when the record is free */
-    int prevLink;                /* +8 (ds:8DD8): one link of the circular list; 0BD2:01D0 splices a
-                               new item in after this record through it */
-    int nextLink;                /* +0xa (ds:8DDA): the other link; the list walks (0BD2:0385, 040E,
-                               04AA) follow it */
-    signed char level;        /* +0xc (ds:8DDC): gCurLevel or -1, set by 01D0 */
-    signed char value;        /* +0xd (ds:8DDD): the item's bonus or effect value: the signed bonus
-                               printed as "%s +%d" and "Cursed %s %d", the spell index into ds:1278
-                               and ds:12E0, the wand effect index gWandSpells[m0B], and the scroll and
-                               potion values (0BD2:05B5, 0D2D, 0EE8, 1001) */
-};
+#include "EOB.H"
 extern struct ItemRecord gItems[]; /*@ ds:8DD0 */
 
-/* A 16-byte item-type record at ds:A9F0; src/E0D1C.C views the same table as gItemTypesClasses, five bytes in. */
-union ItemMask {
-    unsigned word;          /* +0: the 16-bit class mask 0BD2:0AF2 tests */
-    unsigned char byte;     /* +0: its low byte, which 0BD2:0C8E tests */
-};
-struct ItemType {
-    union ItemMask slotMask;     /* +0 (ds:A9F0) */
-    char pad02[3];
-    signed char m05;        /* +5 (ds:A9F5): ANDed with gClassBaseBits by 0BD2:11FD */
-    signed char m06;        /* +6 (ds:A9F6): src/E0D1C.C's gItemTypesClasses[].identifiedNameIndex */
-    char pad07[7];
-    union ItemMask m0E;     /* +0xE (ds:A9FE): bit 0x80 and the low 7 bits, read by 0BD2:000E and 05B5 */
-};
 extern struct ItemType gItemTypes[]; /*@ ds:A9F0 */
 
-/* A 243-byte character record at ds:F580; only the fields this unit uses (src/E0A72.C, src/E0DE8.C). */
-struct CharRec {
-    char pad00;
-    unsigned char status;   /* +01: status bits, tested by 0BD2:0D2D */
-    char name[0x0B];        /* +02: the character's name, NUL padded */
-    signed char strength;   /* +0D: the strength score, set to 0x16 by 0BD2:0D2D (src/E0A72.C) */
-    char pad0E;
-    signed char strengthPct;        /* +0F: the exceptional strength percentile, set to 0 by 0BD2:0D2D */
-    char pad10[0x1E - 0x10];
-    signed char m1E;        /* +1E: per-slot status bits; bit `slot` is tested by UseItemSlot */
-    signed char race;       /* +1F: bit 0 selects "her" over "his" in ReportLostItem (0BD2:000E) */
-    signed char classIndex; /* +20: indexes gClassBaseBits in 0BD2:11FD */
-    char pad21[0x23 - 0x21];
-    signed char food;       /* +23: set to 100 by 0BD2:0D2D */
-    char pad24[0x77 - 0x24];
-    int items[27];          /* +77: 27 carried-item slots; slot 16 (+97) is also a list head */
-    char padAD[0xE3 - 0xAD];
-    long effectFlags;       /* +E3: effect flags, changed by 0BD2:0D2D */
-    char padE7[0xF3 - 0xE7];
-};
 extern struct CharRec gChars[]; /*@ ds:F580 */
 
-/* An 18-byte effect record at ds:DD2C, 10 of them (src/E1414.C). */
-struct Projectile {
-    char active;            /* +0 */
-    char pad01;
-    int m02;                /* +2 */
-    int cell;                /* +4 */
-    char m06;               /* +6 */
-    signed char dir;        /* +7 */
-    int item;                /* +8 */
-    char m0A;               /* +0xa */
-    char m0B;               /* +0xb */
-    char m0C;               /* +0xc */
-    unsigned char m0D;      /* +0xd */
-    int (far *fn)(struct Projectile far *rec); /* +0xe */
-};
 extern struct Projectile gProjectiles[]; /*@ ds:DD2C */
 
-/* The 28-byte object records at ds:8A82 (src/E08E6.C). */
-struct Monster {
-    char pad00[2];
-    int cell;                /* +2 */
-    char pad04[0x16 - 0x04];
-    char flags;               /* +0x16 */
-    char pad17[0x1C - 0x17];
-};
 extern struct Monster gMonsters[]; /*@ ds:8A82 */
 
 extern signed char gInventoryMember; /*@ ds:A99A */    /* the selected character index (src/E0ACD.C) */

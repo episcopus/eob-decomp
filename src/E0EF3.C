@@ -8,75 +8,7 @@
 
 /*@flags -ml -O -Z -v */
 
-/* A 243-byte character record at ds:F580; only the fields this unit reads or writes (src/E0A72.C,
-   src/E0BD2.C, src/EOV6.C name overlapping views). */
-struct CharRec {
-    signed char index;      /* +00: the member index (0..5) this record is */
-    unsigned char status;   /* +01: status bits */
-    char name[0x0B];        /* +02: the character's name, NUL padded */
-    signed char strength;   /* +0D: a class index */
-    char pad0E;
-    signed char strengthPct;        /* +0F: a level or score */
-    char pad10[0x15 - 0x10];
-    signed char dexterity;  /* +15: an index read by 0A72:019D */
-    char pad16[0x1B - 0x16];
-    signed char hp;         /* +1B: current hit points */
-    signed char maxHp;      /* +1C: maximum hit points */
-    signed char armorClass; /* +1D: the armour-class byte */
-    signed char m1E;        /* +1E: a condition bit set */
-    signed char race;       /* +1F */
-    signed char classIndex; /* +20: an index into a class table */
-    char pad21[0x23 - 0x21];
-    signed char food;       /* +23: a hunger/food value clamped to 100 by EatFood (07E0,
-                               src/E0ACD.C:108, :623); set to 100 by 0EF3:1DC0 and by 0BD2
-                               case 5 (src/E0BD2.C:746) */
-    signed char levels[0x37 - 0x24]; /* +24: per-class-slot bytes, indexed by a FindClassSlot result */
-    signed char mageSpells[30];  /* +37: spell slots */
-    signed char clericSpells[30]; /* +55: spell slots */
-    char pad73[0x77 - 0x73];
-    int items[27];          /* +77: carried-item slots; slot 0 and 1 hold the equipped items */
-    long timers[10];        /* +AD: a 32-bit value per spell slot, cleared when its spell is removed */
-    signed char mD5[10];    /* +D5: ten per-member bytes (spell slots) */
-    signed char mDF;        /* +DF */
-    signed char mE0;        /* +E0: a countdown */
-    char padE1;
-    signed char mE2;        /* +E2: hit points pending from a bandage-like effect */
-    unsigned long effectFlags;      /* +E3: effect flags, a 32-bit mask */
-    char padE7[0xF3 - 0xE7];
-};
-
-
-/* A 16-byte item-type record at ds:A9F0 (src/E0BD2.C names the same table). */
-struct ItemType {
-    int slotMask;                /* +00: a word, set from 0EF3:035A's first (char) argument */
-    int m02;                /* +02: a word, set from 0EF3:035A's second (char) argument */
-    unsigned char m04;      /* +04: set to 0xE2 when the type is free (FreeItemRecord, 0EF3:035A) */
-    signed char m05;        /* +05 */
-    signed char m06;        /* +06: cleared by 0EF3:035A */
-    signed char m07;        /* +07 */
-    signed char m08;        /* +08 */
-    signed char m09;        /* +09 */
-    signed char m0A;        /* +0A */
-    signed char m0B;        /* +0B */
-    signed char m0C;        /* +0C */
-    char pad0D;
-    int m0E;                /* +0E */
-};
-
-/* A 14-byte item record, gItems at ds:8DD0 (src/E0BD2.C). */
-struct ItemRecord {
-    signed char nameIndex;        /* +00 */
-    signed char identifiedNameIndex;        /* +01 */
-    unsigned char flags;    /* +02: bit 0x20 gates E0BD2.C's branch */
-    signed char icon;       /* +03: the icon number */
-    signed char type;        /* +04: the item type */
-    signed char cellPos;        /* +05 */
-    int key;                /* +06: the key; -2 when the record is free (0EF3:0418) */
-    int prevLink;                /* +08: one link of the circular list */
-    int nextLink;                /* +0A: the other link */
-    signed char level;        /* +0C */
-    signed char value;        /* +0D: the value 0BD2:01D0 returns */
-};
+#include "EOB.H"
 
 /* The record 0EF3:0A3F and its callers read: an effect target with a member index at +0xB and a
    bit mask at +0xC. Only the fields this unit touches are named. */
@@ -92,65 +24,12 @@ struct Tgt {
     char m0C;               /* +0C: the effect flag bits */
 };
 
-/* The 28-byte object records at ds:8A82 (src/E08E6.C); only the fields this unit touches. */
-struct Monster {
-    signed char typeIndex;         /* +00: an index into the gMonsterTypes records */
-    signed char updateGroup;       /* +01 */
-    int cell;                 /* +02 */
-    char pad04[0x08 - 0x04];
-    signed char mode;       /* +08: set to 0x0A by 0EF3:1530 and 0EF3:1A30 */
-    char pad09[0x0B - 0x09];
-    signed char timer;      /* +0B: set to 0x0F by 0EF3:1530 and 0EF3:1A30 */
-    char pad0C[0x1C - 0x0C];
-};
-
-/* The 27-byte records at ds:1A3B (src/E08E6.C names it struct MonsterType); only +0x0F here. */
-struct MonsterType {
-    char pad00[2];
-    unsigned char m02;      /* +02: an index into the 0A72:0006 table (0EF3:1702) */
-    char pad03[0x0F - 0x03];
-    long m0F;               /* +0F: tested with 1 by 0EF3:1530 and 2 by 0EF3:1A30 */
-    char pad13[0x1B - 0x13];
-};
-
 /* One of the five spell cells 0EF3:2295 fills, at ds:5773 (four bytes: two corners). */
 struct CellRect {
     unsigned char x1;
     unsigned char y1;
     unsigned char x2;
     unsigned char y2;
-};
-
-/* The 18-byte effect records at ds:DD2C, ten of them (src/E1414.C and src/E122E.C name the same
-   records and the callback at +0x0E). */
-struct Projectile {
-    char active;             /* +00: 1 when the record is live, 2 runs fn (1414:0172) */
-    char pad01;
-    int m02;                 /* +02 */
-    int cell;                 /* +04: a character or object index */
-    char m06;                /* +06 */
-    signed char dir;         /* +07 */
-    int item;                 /* +08: an index into gItems */
-    char m0A;                /* +0A */
-    char m0B;                /* +0B */
-    char m0C;                /* +0C: flags, bit 0x20 tested by 1414:0285 */
-    unsigned char m0D;       /* +0D */
-    int (far *fn)(struct Projectile far *rec); /* +0E: called by 1414:0172 when active is 2 */
-};
-
-/* The 0x13-byte spell records at ds:1344 (src/EOV6.C names the table gSpells and its +0 a far
-   name pointer). This unit reads the apply callback at +5 (through gCurrentSpellApply), the DD callback at
-   +9 (copied into a Projectile.fn by 0EF3:097B) and the expire callback at +0xD (run by 0EF3:0D78 and
-   0EF3:131A); the sound id at +0x11 is ds:1355, gEffectSound. */
-struct Spell {
-    char *name;                             /* +00: the spell's name */
-    signed char flags;                      /* +04: bits 0..3 read by 0EF3:0D78 (bits 0..2, bit 3)
-                                               and 0EF3:2676 (bit 0, bit 1, bits 1|2, bit 2, bit 3) */
-    void (far *apply)(void);                /* +05: run through gCurrentSpellApply when the spell is cast */
-    int (far *ddFn)(struct Projectile far *rec); /* +09: copied into Projectile.fn by 0EF3:097B */
-    void (far *remove)(struct CharRec far *rec); /* +0D: run when the spell expires */
-    signed char sound;                      /* +11: the sound id (ds:1355) */
-    signed char m12;                        /* +12: bit 0 gates 0EF3:2676's first flag clear */
 };
 
 /* The per-mode table at ds:56E7, four bytes per mode (0EF3:097B): the index of the mode's spell
@@ -162,16 +41,6 @@ struct EffectMode {
     signed char m03;         /* +03 -> Projectile.m0A */
 };
 
-struct Region {             /* 16-byte records at ds:009F (src/E1A29.C) */
-    int left;               /* +0: left edge in 8-pixel columns */
-    int top;                /* +2: top edge in lines */
-    int width;              /* +4: width in 8-pixel columns */
-    int height;             /* +6: height in lines */
-    int textAttr1;              /* +8: text attribute 1 [H] (gTextAttr1, src/E1DE7.C:26) */
-    int textAttr2;              /* +a: text attribute 2 [H] (gTextAttr2, src/E1DE7.C:27) */
-    int textCol;             /* +c: cursor column (gTextCol) */
-    int textRow;                /* +e: cursor row (gTextRow) */
-};
 extern struct Region gRegions[]; /*@ ds:009F */ /* the text windows, 16 bytes each (src/E1A29.C) */
 extern struct Projectile gProjectiles[];            /*@ ds:DD2C */ /* ten 18-byte records */
 extern struct Spell gSpells[];      /*@ ds:1344 */ /* 0x13-byte spell records */
@@ -585,7 +454,7 @@ extern int gBurstMaskPixel;                /*@ ds:FC72 */ /* the handle gGetPixe
         if (rec->m04 == 0xE2)
             break;
     }
-    rec->slotMask = arg00;
+    rec->slotMask.word = arg00;
     rec->m06 = 0;
     rec->m02 = arg02;
     rec->m04 = type;
@@ -596,7 +465,7 @@ extern int gBurstMaskPixel;                /*@ ds:FC72 */ /* the handle gGetPixe
     rec->m08 = m0B;
     rec->m0C = m0C;
     rec->m09 = m0C;
-    rec->m0E = arg0E;
+    rec->m0E.word = arg0E;
     return index;
 }
 
