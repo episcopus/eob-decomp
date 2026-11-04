@@ -101,10 +101,10 @@ struct Region {                 /* 16-byte records at ds:009F (src/E1DE7.C) */
     int top;
     int width;
     int height;
-    int attr1;
-    int attr2;                  /* +0A: the fill colour */
-    int column;
-    int row;
+    int textAttr1;
+    int textAttr2;                  /* +0A: the fill colour */
+    int textCol;
+    int textRow;
 };
 
 extern struct Region gRegions[]; /*@ ds:009F */
@@ -195,7 +195,7 @@ extern signed char g1231[]; /*@ ds:1231 */
 extern void far *gIconDD28; /*@ ds:DD28 */
 struct Entry14 {                /* the 14-byte item records at ds:8DD2 (src/E0D1C.C) */
     char pad00[4];
-    int m04;                    /* +4: set to -1 when the record is freed (0D1C:01CA) */
+    int key;                    /* +4: set to -1 when the record is freed (0D1C:01CA) */
     char pad06[0x0E - 0x06];
 };
 extern struct Entry14 gTable8DD2[]; /*@ ds:8DD2 */
@@ -915,7 +915,7 @@ int AskYesNo(int message);
 
 /* ovl1:1153: builds the button list of menu `menu` (an index into the seven five-byte records at
    ds:628C) and returns its head. When the record names a text window (+1) it sets that window's
-   fill colour gRegions[window].attr2 to gF57E, selects and clears the window and draws a framed
+   fill colour gRegions[window].textAttr2 to gF57E, selects and clears the window and draws a framed
    rectangle (0D1C:0C21) over its area, then draws the record's header message (gStrings2003
    string +0) at (5, 5) in the record's colour. For
    each of its `count` (+3) entries it allocates a 60-byte node, copies gNodeTemplate over it and
@@ -938,7 +938,7 @@ int AskYesNo(int message);
 
     gStatusLine = 2;
     if (gMenus[menu].window) {
-        gRegions[gMenus[menu].window].attr2 = gF57E;
+        gRegions[gMenus[menu].window].textAttr2 = gF57E;
         SetTextWindowAndClear(gMenus[menu].window);
         f0D1C_0C21(gTextLeft << 3, gTextTop, gTextWidth << 3, gTextHeight, 0, 0);
     }
@@ -1081,7 +1081,7 @@ int AskYesNo(int message);
    down (wrapping), the mouse over the list moves it too, 0x2B, 0x3D, 0x61 or a click on the list (0x8024;
    a click below the last row keeps the old row and goes on) scribe the highlighted scroll: the spell's
    bit goes into the mage's spell book, the scroll's slot in the owner's record is cleared, the item
-   record is freed (its m04 set to -1), the owner's portrait redrawn and the list rebuilt without it.
+   record is freed (its key set to -1), the owner's portrait redrawn and the list rebuilt without it.
    0x6E (Esc) and the Exit button 0x8023 leave. The loop also ends when no scroll is left. Called by
    RunCampMenu. Local arrays: scroll and owner (32 words each, copied from zero templates at ds:63CB
    and ds:640B) and rows, the spell numbers of the visible rows (6 words from ds:644B). */
@@ -1190,7 +1190,7 @@ int AskYesNo(int message);
             gChars[member].spellBook |= 1L << i;
             gChars[owner[i]].items[scroll[i] - 1] = 0;
             scroll[i] = 0;
-            gTable8DD2[item].m04 = -1;
+            gTable8DD2[item].key = -1;
             rebuild = 1;
             RedrawMember(owner[i]);
             n--;

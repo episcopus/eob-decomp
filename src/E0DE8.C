@@ -49,9 +49,9 @@ struct CharRec {            /* the 243-byte (0xF3) character records at ds:F580;
 struct Obj28 {              /* the 28-byte object records at ds:8A82; see src/E08E6.C */
     char b0;                /* +0: an index into the ds:1A3B table */
     char pad01;
-    int m02;                /* +2 */
+    int cell;                /* +2 */
     char pad04;
-    char m05;               /* +5 */
+    char orient;               /* +5 */
     char pad06[0x16 - 0x06];
     char m16;               /* +16: bit 0 set on every 0007 call (the object was attacked) */
     char pad17[0x1C - 0x17];
@@ -72,11 +72,11 @@ struct Entry27 {            /* the 27-byte records at ds:1A3B; see src/E0D1C.C *
 struct Entry14 {            /* the 14-byte records at ds:8DD2; see src/E0D1C.C */
     unsigned char flags;    /* +0: bits 8 and 0x10 read by UseItem (:511, :518) */
     signed char icon;       /* +1 */
-    signed char m02;        /* +2: the item type index into gItemTypes (:406, :489) */
+    signed char type;        /* +2: the item type index into gItemTypes (:406, :489) */
     signed char m03;        /* +3: low two bits read by 01FF */
-    int m04;                /* +4 */
+    int key;                /* +4 */
     char pad06[0x0B - 0x06];
-    signed char m0B;        /* +0B: the weapon or slot bonus used by RollToHit and RollAttackDamage
+    signed char value;        /* +0B: the weapon or slot bonus used by RollToHit and RollAttackDamage
                                (:214, :255) and ComputeArmourClass (:731) */
     char pad0C[0x0E - 0x0C];
 };
@@ -97,7 +97,7 @@ struct DDRec {              /* the records at ds:DD2C that 1414:0172 walks; see 
 };
 
 struct ItemType {           /* the 16-byte item types at ds:A9F0; see src/EOV2.C */
-    signed char m00;        /* +0: bit 4 tested by 0D1C:0BEB */
+    signed char slotMask;        /* +0: bit 4 tested by 0D1C:0BEB */
     signed char m01;        /* +1 */
     char pad02[2];
     signed char m04;        /* +4 */
@@ -208,11 +208,11 @@ void LevelUpSlot(int who, int cls, int slot);  /* forward: 0B45 reaches it with 
     int roll;
 
     if (slot != 0)
-        itemType = gTable8DD2[slot].m02;
+        itemType = gTable8DD2[slot].type;
     else
         itemType = 0;
     if (itemType >= 1 && itemType <= 3)
-        bonus = gTable8DD2[slot].m0B;
+        bonus = gTable8DD2[slot].value;
     else
         bonus = 0;
     if (useStrength != 0)
@@ -253,7 +253,7 @@ void LevelUpSlot(int who, int cls, int slot);  /* forward: 0B45 reaches it with 
             total += RollDice(item->m0A, item->m0B, item->m09);
         else
             total += RollDice(item->m07, item->m08, item->m09);
-        total += gTable8DD2[slot].m0B;
+        total += gTable8DD2[slot].value;
     } else {
         total += RollDice(1, 2, 0);
     }
@@ -356,11 +356,11 @@ void LevelUpSlot(int who, int cls, int slot);  /* forward: 0B45 reaches it with 
     }
     if (RollToHit(who, target, slot, 1) == 0)
         goto fail;
-    m02 = gTable8DD2[slot].m02;
+    m02 = gTable8DD2[slot].type;
     if (m02 > 0x33 && m02 < 0x39 && f0D1C_0BAB(target))
         return -1;
     gDCA4 = target;
-    damage = RollAttackDamage(who, target, slot, gTable8DD2[slot].m02, 1);
+    damage = RollAttackDamage(who, target, slot, gTable8DD2[slot].type, 1);
     if (f0D1C_0BEB(target, m02))
         damage >>= 1;
     return damage;
@@ -383,7 +383,7 @@ fail:
     } else {
         for (i = 0x18; i >= 0x16; i--) {
             item = gChars[who].items[i];
-            if (item != 0 && (gTable8DD2[item].m02 != type || type == -1)) {
+            if (item != 0 && (gTable8DD2[item].type != type || type == -1)) {
                 gChars[who].items[slot] = item;
                 gChars[who].items[i] = 0;
                 break;
@@ -404,7 +404,7 @@ fail:
     if (idx > 3)
         idx -= 2;
     if (AddDDEffect(who, field, gPartyCell, g1A1B[gPartyDir * 4 + idx], gPartyDir,
-                   gTable8DD2[field].m02)) {
+                   gTable8DD2[field].type)) {
         PlaySound(0xb);
         gChars[who].items[slot] = 0;
         MoveCarriedItem(who, slot, -1, 0);
@@ -429,18 +429,18 @@ fail:
     int idx;
     int i;
 
-    m02 = gTable8DD2[slot].m02;
+    m02 = gTable8DD2[slot].type;
     kind = g552F[m02];
     item = 0;
     if (kind == 0x10) {
         item = gChars[who].items[0];
-        if (item == 0 || gTable8DD2[item].m02 != 0x10)
+        if (item == 0 || gTable8DD2[item].type != 0x10)
             item = 0;
         else
             gChars[who].items[0] = 0;
         if (item == 0) {
             item = gChars[who].items[1];
-            if (item == 0 || gTable8DD2[item].m02 != 0x10)
+            if (item == 0 || gTable8DD2[item].type != 0x10)
                 item = 0;
             else
                 gChars[who].items[1] = 0;
@@ -449,7 +449,7 @@ fail:
             item = RemoveListItem(&gChars[who].items[16], 0, -1);
     } else {
         for (i = 0; i < 0x1b; i++) {
-            if (gTable8DD2[gChars[who].items[i]].m02 == kind) {
+            if (gTable8DD2[gChars[who].items[i]].type == kind) {
                 item = gChars[who].items[i];
                 gChars[who].items[i] = 0;
                 if (i < 2)
@@ -487,7 +487,7 @@ fail:
     int result;
 
     if (field != 0)
-        m02 = gTable8DD2[field].m02;
+        m02 = gTable8DD2[field].type;
     else
         m02 = 0;
     result = 0;
@@ -722,25 +722,25 @@ fail:
             continue;
         if (i == 2 && !f0D1C_07DB(who, 1))
             continue;
-        itemType = gTable8DD2[item].m02;
+        itemType = gTable8DD2[item].type;
         value = gItemTypes[itemType].m05 & g1231[rec->classIndex];
         if ((gItemTypes[itemType].m0E & 0x7f) != 0 || value == 0)
             continue;
         if (i >= 1 && i <= 2 && itemType != 0x1b)
             continue;
         rec->armorClass += gItemTypes[itemType].m04;
-        rec->armorClass -= gTable8DD2[item].m0B;
+        rec->armorClass -= gTable8DD2[item].value;
     }
     item = rec->items[17];
-    if (gTable8DD2[item].m0B == 0) {
+    if (gTable8DD2[item].value == 0) {
         bonus25 = 0;
         bonus26 = 0;
         item = rec->items[25];
-        if (item != 0 && (gItemTypes[gTable8DD2[item].m02].m0E & 0x7f) == 0)
-            bonus25 = gTable8DD2[item].m0B;
+        if (item != 0 && (gItemTypes[gTable8DD2[item].type].m0E & 0x7f) == 0)
+            bonus25 = gTable8DD2[item].value;
         item = rec->items[26];
-        if (item != 0 && (gItemTypes[gTable8DD2[item].m02].m0E & 0x7f) == 0)
-            bonus26 = gTable8DD2[item].m0B;
+        if (item != 0 && (gItemTypes[gTable8DD2[item].type].m0E & 0x7f) == 0)
+            bonus26 = gTable8DD2[item].value;
         bonus25 = bonus25 > bonus26 ? bonus25 : bonus26;
         rec->armorClass -= bonus25;
     }

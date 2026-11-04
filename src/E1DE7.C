@@ -10,8 +10,8 @@
    what each routine does. The two text attributes are ds:811D (gTextAttr1, the foreground colour,
    default 0x0F at E07C8.C:262, DEFAULT_TEXT_ATTR1 at :21) and ds:811B (gTextAttr2, the fill colour of
    ClearTextRegion and of the redrawn scroll line, default 0x0C at E07C8.C:263, DEFAULT_TEXT_ATTR2 at :21);
-   the initial region record gRegions[0] at ds:009F (file offset 0x23B7F) holds attr1 = 0x0F and
-   attr2 = 0x0C (ds:00A7 and ds:00A9). ds:8115 is the status-line flag
+   the initial region record gRegions[0] at ds:009F (file offset 0x23B7F) holds textAttr1 = 0x0F and
+   textAttr2 = 0x0C (ds:00A7 and ds:00A9). ds:8115 is the status-line flag
    (src/E082C.C:72; set to 2 by LoadOverlayScreen at 082C:05EC, saved and cleared around
    the memory report at 082C:081A). Compiled with -G (the two-byte argument clean-ups are
    `inc sp; inc sp`). */
@@ -23,10 +23,10 @@ struct Region {             /* 16 bytes: four edges, then four words of saved st
     int top;                /* top edge, in pixel rows */
     int width;              /* width, in 8-pixel columns */
     int height;             /* height, in pixel rows */
-    int attr1;              /* first text attribute (foreground), per-window state SetTextWindow saves and loads */
-    int attr2;              /* second text attribute (fill colour), saved and loaded the same way */
-    int column;             /* cursor column, in font widths */
-    int row;                /* cursor row, in font heights */
+    int textAttr1;              /* first text attribute (foreground), per-window state SetTextWindow saves and loads */
+    int textAttr2;              /* second text attribute (fill colour), saved and loaded the same way */
+    int textCol;             /* cursor column, in font widths */
+    int textRow;                /* cursor row, in font heights */
 };
 
 extern struct Region gRegions[];  /*@ ds:009F */  /* the region table (src/E1A29.C) */
@@ -98,10 +98,10 @@ extern int gStatusLine;          /*@ ds:8115 */
 /*@ 1DE7:0009 */ void SetTextWindow(int region)
 {
     if (gTextSaved) {
-        gRegions[gTextRegion].attr1 = gTextAttr1;
-        gRegions[gTextRegion].attr2 = gTextAttr2;
-        gRegions[gTextRegion].column = gTextCol;
-        gRegions[gTextRegion].row = gTextRow;
+        gRegions[gTextRegion].textAttr1 = gTextAttr1;
+        gRegions[gTextRegion].textAttr2 = gTextAttr2;
+        gRegions[gTextRegion].textCol = gTextCol;
+        gRegions[gTextRegion].textRow = gTextRow;
     } else {
         gTextSaved = 1;
     }
@@ -110,10 +110,10 @@ extern int gStatusLine;          /*@ ds:8115 */
     gTextTop = gRegions[region].top;
     gTextWidth = gRegions[region].width;
     gTextHeight = gRegions[region].height;
-    gTextAttr1 = gRegions[region].attr1;
-    gTextAttr2 = gRegions[region].attr2;
-    gTextCol = gRegions[region].column;
-    gTextRow = gRegions[region].row;
+    gTextAttr1 = gRegions[region].textAttr1;
+    gTextAttr2 = gRegions[region].textAttr2;
+    gTextCol = gRegions[region].textCol;
+    gTextRow = gRegions[region].textRow;
 }
 
 extern void ClipRect(int x1, int y1, int x2, int y2, int width, int height, int extra1, int extra2); /*@ 19F3:000E */

@@ -118,12 +118,13 @@ def inventory() -> dict:
         if p.suffix.upper() != ".C":
             continue
         for sname, fields in struct_fields(texts[p]):
+            whole = len(fields) == 1          # one array over the whole record: a byte view, not a layout
             for at, fname in fields:
                 if PAD.match(fname):
                     continue
                 if FIELD_PLACEHOLDER.match(fname):
                     places[p]["fields"].append((sname, at, fname))
-                if at is not None and not re.search(r"^union\s+%s\b" % sname, texts[p], re.M):
+                if at is not None and not whole and not re.search(r"^union\s+%s\b" % sname, texts[p], re.M):
                     structs.setdefault((sname, at), {}).setdefault(fname, set()).add(p.stem)
     clashes = {k: v for k, v in structs.items() if len(v) > 1}
     unknown = {p: texts[p].count("Purpose unknown") for p in files}

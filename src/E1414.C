@@ -68,9 +68,9 @@ struct DDRec {
 /* The 14-byte records at ds:8DD2 (src/E0D1C.C names the same table Entry14); 020F keeps only the
    low two bits of the byte at +3 of one. */
 struct Entry14 {
-    char m00;                 /* +00 */
+    char flags;                 /* +00 */
     signed char icon;         /* +01: an index into g181F */
-    signed char m02;          /* +02 */
+    signed char type;          /* +02 */
     unsigned char m03;        /* +03: 020F clears its low two bits */
     char pad04[0x0E - 0x04];
 };
@@ -78,7 +78,7 @@ struct Entry14 {
 /* The 28-byte object records at ds:8A82 (src/E08E6.C). */
 struct Obj28 {
     char pad00[2];
-    int id;                   /* +02: the object's identity (src/E08E6.C:14, src/EOV3.C:81) */
+    int cell;                   /* +02: the object's identity (src/E08E6.C:14, src/EOV3.C:81) */
     char pad04[0x17 - 0x04];
     unsigned char m17;        /* +17: the value 0CE7 randomises */
     char pad18[0x1C - 0x18];
@@ -691,7 +691,7 @@ extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
         if (RollDice(1, 2, 0) == 1) {
             obj->m17 = RollDice(1, 2, 0) << 4;
             obj->m17 += RollDice(1, 2, 0);
-            f0D1C_0006(obj->id);
+            f0D1C_0006(obj->cell);
         }
     }
 }

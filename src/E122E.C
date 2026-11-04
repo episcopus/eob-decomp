@@ -173,7 +173,7 @@ extern struct DDRec gDD2C[]; /*@ ds:DD2C */    /* 10 records, 18 bytes each */
 
 struct Obj28 {                                  /* the 28-byte object records at ds:8A82 (src/E08E6.C) */
     char pad00[2];
-    int id;                                     /* +2 (ds:8A84): the object id */
+    int cell;                                     /* +2 (ds:8A84): the object id */
     char frame;                                 /* +4 (ds:8A86) */
     char pad05[0x08 - 5];
     signed char type;                           /* +8 (ds:8A8A): the object type, cleared by 122E:1097 */
@@ -786,7 +786,7 @@ void RunCellScript(int cell, int mode);  /* forward: 1DA8 comes after its caller
     case 0xfff3:
         obj = gObjs;
         for (i = 0; i < 0x1e; i++) {
-            if (obj->id == srcId)
+            if (obj->cell == srcId)
                 MoveObjectToId(obj, id, obj->frame);
             obj++;
         }

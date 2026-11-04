@@ -14,16 +14,16 @@
 /*@flags -ml -O -Z -v */
 
 struct Region {                 /* 16-byte records at ds:009F (src/E1A29.C): origin, size, then the
-                                   text window's two attributes and cursor position (attr1/attr2/
-                                   column/row, as src/E082C.C names them) */
+                                   text window's two attributes and cursor position (textAttr1, textAttr2,
+                                   textCol, textRow) */
     int left;                   /* +0: left edge in 8-pixel columns */
     int top;                    /* +2: top edge in lines */
     int width;                  /* +4: width in 8-pixel columns */
     int height;                 /* +6: height in lines */
-    int attr1;                  /* +8: text attribute 1 [H] (gTextAttr1) */
-    int attr2;                  /* +a: text attribute 2 [H] (gTextAttr2) */
-    int column;                 /* +c: cursor column (gTextCol) */
-    int row;                    /* +e: cursor row (gTextRow) */
+    int textAttr1;                  /* +8: text attribute 1 [H] (gTextAttr1) */
+    int textAttr2;                  /* +a: text attribute 2 [H] (gTextAttr2) */
+    int textCol;                 /* +c: cursor column (gTextCol) */
+    int textRow;                    /* +e: cursor row (gTextRow) */
 };
 
 typedef void (far *NodeFn)(struct Node far *node);

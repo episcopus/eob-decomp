@@ -43,7 +43,7 @@ struct Spell {
 struct Obj28 {
     char b0;                   /* +00: an index into the ds:1A3B table (src/E08E6.C) */
     signed char kind;          /* +01 */
-    int id;                    /* +02: the object's map cell, Distance-tested */
+    int cell;                    /* +02: the object's map cell, Distance-tested */
     char rest[0x1C - 4];
 };
 
@@ -436,7 +436,7 @@ done:
     UpdateObjects(1);
     gF442 = 0;
     for (i = 0; i < 0x1e; i++) {
-        if (Distance(gPartyCell, gObjs[i].id) < 2) {
+        if (Distance(gPartyCell, gObjs[i].cell) < 2) {
             savedRegion = gTextRegion;
             SetTextWindow(7);
             gStatusLine = 0;

@@ -122,10 +122,10 @@ struct Region {             /* the 16-byte region records at ds:009F (src/E1DE7.
     int top;                /* +2 */
     int width;              /* +4 */
     int height;             /* +6 */
-    int saved0;
-    int saved1;
-    int saved2;
-    int saved3;
+    int textAttr1;
+    int textAttr2;
+    int textCol;
+    int textRow;
 };
 
 extern struct Region gRegions[]; /*@ ds:009F */
@@ -362,17 +362,17 @@ extern int gF4BC; /*@ ds:F4BC */             /* the cell and page parity (this u
 
 /* A 14-byte item record at ds:8DD0 (src/E0BD2.C declares the same layout). */
 struct ItemRecord {
-    signed char m00;
-    signed char m01;
+    signed char nameIndex;
+    signed char identifiedNameIndex;
     unsigned char flags;
     signed char icon;       /* +3: indexes ds:181F */
-    signed char m02;
-    signed char m03;        /* +5: the kind tested here */
-    int m04;
-    int m06;                /* +8: one link of the circular list */
-    int m08;
+    signed char type;
+    signed char tag;        /* +5: the kind tested here */
+    int key;
+    int prevLink;                /* +8: one link of the circular list */
+    int nextLink;
     signed char m0A;
-    signed char m0B;
+    signed char value;
 };
 extern struct ItemRecord gItems[]; /*@ ds:8DD0 */
 extern signed char g1A2B[]; /*@ ds:1A2B */   /* per-page sprite base (src/E0DE8.C) */
@@ -433,15 +433,15 @@ extern void DrawRegion000F(int mode, void far *src, int x, int y, int region); /
     if (gTable1879[tile] != 0 && !(flags & 0x80))
         return;
 
-    field = gItems[field].m06;
+    field = gItems[field].prevLink;
     head = field;
     first = 1;
     while (field != head || first) {
         rec = &gItems[field];
-        is8 = (rec->m03 == 8);
-        if (is8 == 1 || rec->m03 < 4) {
+        is8 = (rec->tag == 8);
+        if (is8 == 1 || rec->tag < 4) {
             spanSlot = -1;
-            sprite = g1A2B[gPartyDir * 4 + (rec->m03 & 3)];
+            sprite = g1A2B[gPartyDir * 4 + (rec->tag & 3)];
             if (is8)
                 sprite = 4;
             k = (slotReg * 5 + sprite) * 2;
@@ -469,7 +469,7 @@ extern void DrawRegion000F(int mode, void far *src, int x, int y, int region); /
                 DrawRegion000F(2, cell, x, y, 5);
             }
         }
-        field = rec->m06;
+        field = rec->prevLink;
         first = 0;
         if (spanSlot != -1)
             ComputeViewSpan(slotReg, &gViewColLeft, &gViewColRight, 5);
@@ -480,7 +480,7 @@ extern void DrawRegion000F(int mode, void far *src, int x, int y, int region); /
 struct Obj28 {
     char b0;                /* +0: index into the ds:1A3B table */
     signed char kind;       /* +1 */
-    int id;                 /* +2 */
+    int cell;                 /* +2 */
     char frame;             /* +4 */
     char orient;            /* +5 */
     char toggle;            /* +6 */
@@ -582,7 +582,7 @@ extern void DrawRegion00C9(int mode, void far *src, int x, int y, int region); /
     obj = gObjs;
     i = 0;
     while (i < 0x1e) {
-        if (obj->id == cellId)
+        if (obj->cell == cellId)
             arr[g7001[page5 + obj->frame]] = obj;
         i++;
         obj++;

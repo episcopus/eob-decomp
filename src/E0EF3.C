@@ -50,18 +50,18 @@ struct CharRec {
 struct Entry14 {
     unsigned char flags;    /* +0 (ds:8DD2) */
     signed char icon;       /* +1 */
-    signed char m02;        /* +2: the item type */
+    signed char type;        /* +2: the item type */
     char pad03;
-    int m04;                /* +4: the key; -2 when the record is freed here */
+    int key;                /* +4: the key; -2 when the record is freed here */
     char pad06[0x0A - 0x06];
     signed char m0A;        /* +0A */
-    signed char m0B;        /* +0B */
+    signed char value;        /* +0B */
     char pad0C[0x0E - 0x0C];
 };
 
 /* A 16-byte item-type record at ds:A9F0 (src/E0BD2.C names the same table). */
 struct ItemType {
-    int m00;                /* +00: a word, set from 0EF3:035A's first (char) argument */
+    int slotMask;                /* +00: a word, set from 0EF3:035A's first (char) argument */
     int m02;                /* +02: a word, set from 0EF3:035A's second (char) argument */
     unsigned char m04;      /* +04: set to 0xE2 when the type is free (FreeItemRecord, 0EF3:035A) */
     signed char m05;        /* +05 */
@@ -79,17 +79,17 @@ struct ItemType {
 /* A 14-byte item record at ds:8DD0 (src/E0BD2.C's struct ItemRecord; src/E0D1C.C views the same
    table two bytes in at ds:8DD2 as Entry14). */
 struct ItemRecord {
-    signed char m00;        /* +00 */
-    signed char m01;        /* +01 */
+    signed char nameIndex;        /* +00 */
+    signed char identifiedNameIndex;        /* +01 */
     unsigned char flags;    /* +02: bit 0x20 gates E0BD2.C's branch */
     signed char icon;       /* +03: the icon number */
-    signed char m02;        /* +04: the item type */
-    signed char m03;        /* +05 */
-    int m04;                /* +06: the key; -2 when the record is free (0EF3:0418) */
-    int m06;                /* +08: one link of the circular list */
-    int m08;                /* +0A: the other link */
+    signed char type;        /* +04: the item type */
+    signed char tag;        /* +05 */
+    int key;                /* +06: the key; -2 when the record is free (0EF3:0418) */
+    int prevLink;                /* +08: one link of the circular list */
+    int nextLink;                /* +0A: the other link */
     signed char m0A;        /* +0C */
-    signed char m0B;        /* +0D: the value 0BD2:01D0 returns */
+    signed char value;        /* +0D: the value 0BD2:01D0 returns */
 };
 
 /* The record 0EF3:0A3F and its callers read: an effect target with a member index at +0xB and a
@@ -110,7 +110,7 @@ struct Tgt {
 struct Obj28 {
     signed char b0;         /* +00: an index into the gTable1A3B records */
     signed char kind;       /* +01 */
-    int id;                 /* +02 */
+    int cell;                 /* +02 */
     char pad04[0x08 - 0x04];
     signed char type;       /* +08: set to 0x0A by 0EF3:1530 and 0EF3:1A30 */
     char pad09[0x0B - 0x09];
@@ -588,7 +588,7 @@ extern int gFC72;                /*@ ds:FC72 */ /* the handle gFn8072 returned u
         if (rec->m04 == 0xE2)
             break;
     }
-    rec->m00 = arg00;
+    rec->slotMask = arg00;
     rec->m06 = 0;
     rec->m02 = arg02;
     rec->m04 = type;
@@ -607,9 +607,9 @@ extern int gFC72;                /*@ ds:FC72 */ /* the handle gFn8072 returned u
    +4 byte (0xE2). Called by 0EF3:1233. */
 /*@ 0EF3:03D8 */ void FreeItemRecord(int n)
 {
-    gTable8DD2[n].m04 = -2;
+    gTable8DD2[n].key = -2;
     gTable8DD2[n].m0A = -1;
-    gItemTypes[gTable8DD2[n].m02].m04 = 0xE2;
+    gItemTypes[gTable8DD2[n].type].m04 = 0xE2;
 }
 
 /* 0EF3:0418: allocate a free item record: walk the 14-byte records at ds:8DD0 from index 0x0B to
@@ -617,7 +617,7 @@ extern int gFC72;                /*@ ds:FC72 */ /* the handle gFn8072 returned u
    arg1 plus 0x20), icon (+3), type (+4) and +0xD byte, clears the global ds:8DD5 and the record's
    +0, +1, +6, +8 and +0xA fields, and returns the record's index (the item id). Called by the item
    creators 0EF3:1197, 0EF3:1656 and 0EF3:1D38. The six clears are one chained assignment
-   (`rec->m06 = rec->m08 = rec->m00 = rec->m01 = rec->m04 = g8DD5 = 0;`): the original keeps the
+   (`rec->m06 = rec->m08 = rec->slotMask = rec->m01 = rec->m04 = g8DD5 = 0;`): the original keeps the
    value in AL, stores the char fields from AL and sign-extends it once per word field
    (`mov al,0; mov [ds:8DD5],al; cwde; ...`), which only the chained form produces. */
 /*@ 0EF3:0418 */ int CreateItemRecord(int flags, int icon, int m0B, int type)
@@ -627,14 +627,14 @@ extern int gFC72;                /*@ ds:FC72 */ /* the handle gFn8072 returned u
 
     rec = &gItems[0xB];
     for (index = 0xB; index < 0x11; index++, rec++) {
-        if (rec->m04 == -2)
+        if (rec->key == -2)
             break;
     }
     rec->flags = flags + 0x20;
     rec->icon = icon;
-    rec->m02 = type;
-    rec->m0B = m0B;
-    rec->m06 = rec->m08 = rec->m00 = rec->m01 = rec->m04 = g8DD5 = 0;
+    rec->type = type;
+    rec->value = m0B;
+    rec->prevLink = rec->nextLink = rec->nameIndex = rec->identifiedNameIndex = rec->key = g8DD5 = 0;
     return index;
 }
 
@@ -1379,7 +1379,7 @@ extern int gFC72;                /*@ ds:FC72 */ /* the handle gFn8072 returned u
     obj = gObjs;
     for (i = 0; i < 0x1E; i++, obj++) {
         rec = &gTable1A3B[obj->b0];
-        if (obj->id == target && (rec->m0F & 3) != 0 && f0D1C_0BAB(i) == 0) {
+        if (obj->cell == target && (rec->m0F & 3) != 0 && f0D1C_0BAB(i) == 0) {
             limit = GetIndexedByte(0, rec->m02, 4);
             if (RollDice(1, 0x14, 0) < limit)
                 ClearObjectType(&gObjs[i]);
@@ -2038,7 +2038,7 @@ void DrawSpellPanel(void);
     int item, left;
 
     item = gChars[who].items[slot];
-    switch (gTable8DD2[item].m02) {
+    switch (gTable8DD2[item].type) {
     case 0x22:
     case 0x23:
         TakeItemFromSlot(who, slot);

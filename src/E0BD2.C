@@ -10,23 +10,23 @@
 /* A 14-byte item record. src/E0D1C.C declares the same layout with its base at ds:8DD2 (Entry14);
    the code here computes the base at ds:8DD0 and uses the fields below. */
 struct ItemRecord {
-    signed char m00;        /* +0 (ds:8DD0): indexes the item-name table at segment 0x1F28 */
-    signed char m01;        /* +1 (ds:8DD1): the second name index */
+    signed char nameIndex;        /* +0 (ds:8DD0): indexes the item-name table at segment 0x1F28 */
+    signed char identifiedNameIndex;        /* +1 (ds:8DD1): the second name index */
     unsigned char flags;    /* +2 (ds:8DD2): bit 0x20 gates 0BD2:0AF2/0C8E, 0x40 is set by
                                0BD2:040E and tested by 0BD2:05B5; src/E07A9.C calls it flags */
     signed char icon;       /* +3 (ds:8DD3): the icon number (src/E07A9.C Entry14.icon) */
-    signed char m02;        /* +4 (ds:8DD4): the item type (src/E0D1C.C Entry14.m02) */
+    signed char type;        /* +4 (ds:8DD4): the item type (src/E0D1C.C Entry14.m02) */
     signed char tag;        /* +5 (ds:8DD5): 01D0 stores its 4th argument here and 02B9 matches it
                                against its `key`. No caller shows a sound (01D0's callers pass a
                                slot kind, E0ACD.C:561-568, a roll, E08E6.C:807, or an effect kind | 4,
                                0BD2:07DE), so Purpose unknown: a per-entry tag */
-    int m04;                /* +6 (ds:8DD6): the key; -1 when the record is free (Entry14.m04) */
-    int m06;                /* +8 (ds:8DD8): one link of the circular list; 0BD2:01D0 splices a
+    int key;                /* +6 (ds:8DD6): the key; -1 when the record is free (Entry14.m04) */
+    int prevLink;                /* +8 (ds:8DD8): one link of the circular list; 0BD2:01D0 splices a
                                new item in after this record through it */
-    int m08;                /* +0xa (ds:8DDA): the other link; the list walks (0BD2:0385, 040E,
+    int nextLink;                /* +0xa (ds:8DDA): the other link; the list walks (0BD2:0385, 040E,
                                04AA) follow it */
     signed char m0A;        /* +0xc (ds:8DDC): gFBC8 or -1, set by 01D0 */
-    signed char m0B;        /* +0xd (ds:8DDD): the item's bonus or effect value: the signed bonus
+    signed char value;        /* +0xd (ds:8DDD): the item's bonus or effect value: the signed bonus
                                printed as "%s +%d" and "Cursed %s %d", the spell index into ds:1278
                                and ds:12E0, the wand effect index g38FA[m0B], and the scroll and
                                potion values (0BD2:05B5, 0D2D, 0EE8, 1001; Entry14.m0B) */
@@ -39,10 +39,10 @@ union ItemMask {
     unsigned char byte;     /* +0: its low byte, which 0BD2:0C8E tests */
 };
 struct ItemType {
-    union ItemMask m00;     /* +0 (ds:A9F0) */
+    union ItemMask slotMask;     /* +0 (ds:A9F0) */
     char pad02[3];
     signed char m05;        /* +5 (ds:A9F5): ANDed with g1231 by 0BD2:11FD */
-    signed char m06;        /* +6 (ds:A9F6): src/E0D1C.C's gA9F5[].m01 */
+    signed char m06;        /* +6 (ds:A9F6): src/E0D1C.C's gA9F5[].identifiedNameIndex */
     char pad07[7];
     union ItemMask m0E;     /* +0xE (ds:A9FE): bit 0x80 and the low 7 bits, read by 0BD2:000E and 05B5 */
 };
@@ -90,7 +90,7 @@ extern struct DDRec gDD2C[]; /*@ ds:DD2C */
 /* The 28-byte object records at ds:8A82 (src/E08E6.C). */
 struct Obj28 {
     char pad00[2];
-    int m02;                /* +2 */
+    int cell;                /* +2 */
     char pad04[0x16 - 0x04];
     char m16;               /* +0x16 */
     char pad17[0x1C - 0x17];
@@ -191,7 +191,7 @@ void DrawItemName(int item);
     for (i = 0; i < 0x1b; i++) {
         item = gChars[who].items[roll];
         if (item != 0) {
-            if (gItemTypes[gItems[item].m02].m0E.word & 0x80) {
+            if (gItemTypes[gItems[item].type].m0E.word & 0x80) {
                 gChars[who].items[roll] = 0;
                 if (gChars[who].race & 1)
                     sprintf(gFileNameBuf, "%s has lost her ", gChars[who].name);
@@ -219,7 +219,7 @@ void DrawItemName(int item);
         item = GetCurrentItem();
     else
         item = gChars[who].items[row];
-    gItems[item].m04 = -1;
+    gItems[item].key = -1;
     if (row == -1) {
         SetMouseItem(0);
     } else {
@@ -229,7 +229,7 @@ void DrawItemName(int item);
         else if (gPanelMode == 0)
             RedrawMember(who);
     }
-    return gItems[item].m0B;
+    return gItems[item].value;
 }
 
 /* 0BD2:019F: refreshes the current row: in mode 1 through 0BD2:0BA0 with the selected row, in any
@@ -264,9 +264,9 @@ void DrawItemName(int item);
     rec = &gItems[item];
     if (*(int far *)head == 0) {
         *(int far *)head = item;
-        rec->m08 = rec->m06 = item;
+        rec->nextLink = rec->prevLink = item;
         rec->tag = tag;
-        rec->m04 = key;
+        rec->key = key;
         if (key >= 0)
             rec->m0A = gFBC8;
         else
@@ -274,18 +274,18 @@ void DrawItemName(int item);
     } else {
         oldHead = *(int far *)head;
         cur = &gItems[oldHead];
-        tail = gItems[oldHead].m06;
+        tail = gItems[oldHead].prevLink;
         tailRec = &gItems[tail];
-        rec->m04 = key;
+        rec->key = key;
         rec->tag = tag;
         if (key >= 0)
             rec->m0A = gFBC8;
         else
             rec->m0A = -1;
-        rec->m08 = tailRec->m08;
-        rec->m06 = tail;
-        tailRec->m08 = item;
-        cur->m06 = item;
+        rec->nextLink = tailRec->nextLink;
+        rec->prevLink = tail;
+        tailRec->nextLink = item;
+        cur->prevLink = item;
         *(int far *)head = item;
     }
 }
@@ -316,13 +316,13 @@ void DrawItemName(int item);
         if (target != item)
             goto next;
 found:
-        link = rec->m06;
-        next = rec->m08;
-        gItems[link].m08 = next;
-        gItems[next].m06 = link;
-        rec->m08 = 0;
-        rec->m06 = 0;
-        rec->m04 = 0;
+        link = rec->prevLink;
+        next = rec->nextLink;
+        gItems[link].nextLink = next;
+        gItems[next].prevLink = link;
+        rec->nextLink = 0;
+        rec->prevLink = 0;
+        rec->key = 0;
         rec->m0A = 0;
         if (*(int far *)head == item)
             *(int far *)head = next;
@@ -331,7 +331,7 @@ found:
         return item;
 next:
         i++;
-        item = rec->m08;
+        item = rec->nextLink;
     }
     return 0;
 }
@@ -356,7 +356,7 @@ next:
     start = cur;
     while (cur != start || first) {
         rec = &gItems[cur];
-        if ((target == -1 && type == -1) || (target == -1 && rec->m02 == type)
+        if ((target == -1 && type == -1) || (target == -1 && rec->type == type)
                 || (type == -1 && cur == target)) {
             if (count)
                 n++;
@@ -364,7 +364,7 @@ next:
                 return cur;
         }
         first = 0;
-        cur = rec->m08;
+        cur = rec->nextLink;
     }
     if (count != 0)
         return n;
@@ -390,7 +390,7 @@ next:
         rec = &gItems[item];
         rec->flags |= 0x40;
         first = 0;
-        item = rec->m08;
+        item = rec->nextLink;
     }
 }
 
@@ -400,8 +400,8 @@ next:
 /*@ 0BD2:0458 */ void PushListItem(int volume, int item, int tag)
 {
     InsertListItem((void far *)(gMazeItems + volume * 9), volume, item, tag);
-    if (gItems[item].m08 != item)
-        *(int *)(gMazeItems + volume * 9) = gItems[item].m08;
+    if (gItems[item].nextLink != item)
+        *(int *)(gMazeItems + volume * 9) = gItems[item].nextLink;
 }
 
 /* 0BD2:04AA: drains the list at gMazeItems + `volume` * 9. Items whose m02 is `type` (or all when
@@ -421,18 +421,18 @@ next:
     count = 0;
     start = item;
     while (item != start || count == 0) {
-        if (gItems[item].m02 == type || type == -1) {
-            gItems[item].m04 = -1;
+        if (gItems[item].type == type || type == -1) {
+            gItems[item].key = -1;
             gItems[item].m0A = 0;
             saved = item;
-            item = gItems[item].m08;
-            gItems[saved].m08 = 0;
-            gItems[saved].m06 = 0;
+            item = gItems[item].nextLink;
+            gItems[saved].nextLink = 0;
+            gItems[saved].prevLink = 0;
         } else {
             saved = item;
-            item = gItems[item].m08;
-            gItems[saved].m08 = 0;
-            gItems[saved].m06 = 0;
+            item = gItems[item].nextLink;
+            gItems[saved].nextLink = 0;
+            gItems[saved].prevLink = 0;
             InsertListItem((void far *)(gMazeItems + volume * 9), volume, saved, gItems[saved].tag);
         }
         count++;
@@ -440,7 +440,7 @@ next:
 }
 
 /* 0BD2:05B5: draws item `item`'s name into the text buffer. The record's first two bytes index one
-   table of 0x23-byte entries at 1F28:0000: both m00 and m01 offset that base by * 0x23. When the
+   table of 0x23-byte entries at 1F28:0000: both slotMask and identifiedNameIndex offset that base by * 0x23. When the
    record's flags have 0x40 and the second name is empty, the item type's m0E low 7 bits select the
    name: the plain types use the first name with "%s +%d" or "Cursed %s %d", and types 9, 10, 16,
    14 and 18 use "Mage Scroll", "Cleric Scroll", "Ring", "Potion" or "Wand" joined with " of " to a
@@ -460,10 +460,10 @@ next:
     char buf[0x3C];
 
     rec = &gItems[item];
-    firstName = (char far *)0x1F280000L + rec->m00 * 0x23;
-    secondName = (char far *)0x1F280000L + rec->m01 * 0x23;
-    cls = gItemTypes[rec->m02].m0E.byte & 0x7F;
-    m0B = rec->m0B;
+    firstName = (char far *)0x1F280000L + rec->nameIndex * 0x23;
+    secondName = (char far *)0x1F280000L + rec->identifiedNameIndex * 0x23;
+    cls = gItemTypes[rec->type].m0E.byte & 0x7F;
+    m0B = rec->value;
     str1 = 0;
     str2 = 0;
     if ((rec->flags & 0x40) && strlen(secondName) == 0) {
@@ -519,7 +519,7 @@ next:
    fills the record from the arguments, plays sound 0x0B (0x1A when `type` is 7), and returns 1.
    `volume` is the item's map cell (most callers pass gPartyCell, E0ACD.C:434, :769, E0DE8.C:406;
    E122E.C:728 passes the script's id), `page` is gPartyDir, `kind` is the per-page action kind and
-   `type` is the item's m02. QUIRK 0BD2:07DE: rec->m02 is stored 1 twice (the second store is in the original). */
+   `type` is the item's m02. QUIRK 0BD2:07DE: rec->type is stored 1 twice (the second store is in the original). */
 /*@ 0BD2:07DE */ int AddDDEffect(int who, int item, int volume, int kind, int page, int type)
 {
     struct DDRec *rec;
@@ -563,13 +563,13 @@ next:
     int found;
 
     src = &gItems[item];
-    if (src->m04 == -1)
+    if (src->key == -1)
         return 0;
     slot = 1;
     found = 0;
     cand = &gItems[1];
     while (slot < 500) {
-        if (cand->m04 == -1) {
+        if (cand->key == -1) {
             found = 1;
             break;
         }
@@ -660,7 +660,7 @@ next:
     if (gItems[gChars[who].items[row]].flags & 0x20)
         return 0;
     if (item != 0)
-        mask = gItemTypes[gItems[item].m02].m00.word;
+        mask = gItemTypes[gItems[item].type].slotMask.word;
     else
         mask = -1;
     if (!(g1C8D[row] & mask)) {
@@ -713,9 +713,9 @@ next:
     if (gItems[item].flags & 0x20)
         return;
     heldItem = GetCurrentItem();
-    type = gItems[heldItem].m02;
+    type = gItems[heldItem].type;
     if (heldItem != 0)
-        mask = gItemTypes[type].m00.byte;
+        mask = gItemTypes[type].slotMask.byte;
     else
         mask = 0xFF;
     if (g1C8D[row] & mask) {
@@ -733,7 +733,7 @@ next:
    the type byte and the 07CA runner prints "%s no longer has giant strength" and restores m0D/strengthPct
    from m0E/m10 when it runs out), 2 and 3 heal by a dice roll, 4 poisons through 0DE8:101A, 5 sets
    food to 100, 6 and 8 run the 0EF3 helpers, 7 sets effect flag 4. After the switch it announces
-   "%s feels <effect>!\r" with the effect name from the ds:3893 table, except for effect 4 when m01
+   "%s feels <effect>!\r" with the effect name from the ds:3893 table, except for effect 4 when identifiedNameIndex
    bit 1 is set. Called by 0BD2:1001. */
 /*@ 0BD2:0D2D */ void ApplyItemEffect(int who, int slot)
 {
@@ -802,7 +802,7 @@ next:
     int type;
     int page;
 
-    type = gItems[gChars[who].items[slot]].m0B;
+    type = gItems[gChars[who].items[slot]].value;
     if (type == 0) {
         DrawText("The wand has no apparent magical effect\r");
         return;
@@ -821,7 +821,7 @@ next:
             && (gMaze[x * 9 + 4] & 7) != 0) {
         obj = gObjs;
         for (i = 0; i < 30; i++, obj++) {
-            if (obj->m02 == x) {
+            if (obj->cell == x) {
                 MoveObjectToId(obj, y, -1);
                 gDF4C = 1;
             }
@@ -866,7 +866,7 @@ next:
     }
     if (item == 0 && firstTwo == -1)
         return;
-    type = gItems[item].m02;
+    type = gItems[item].type;
     cls = gItemTypes[type].m0E.word & 0x7F;
     switch (cls) {
     case 0:
@@ -898,18 +898,18 @@ next:
         break;
     case 9:
         if (gPanelMode == 0) {
-            value = gItems[item].m0B;
+            value = gItems[item].value;
             StartPanelAction(who, value, firstTwo);
         }
         break;
     case 10:
         if (gPanelMode == 0) {
-            value = gItems[item].m0B + 0x19;
+            value = gItems[item].value + 0x19;
             StartPanelAction(who, value, firstTwo);
         }
         break;
     case 11:
-        UseItemPanel(gItems[item].m0B);
+        UseItemPanel(gItems[item].value);
         break;
     case 14:
         ApplyItemEffect(who, slot);
@@ -929,7 +929,7 @@ next:
     int result;
 
     if (item != 0) {
-        result = (signed char)(gItemTypes[gItems[item].m02].m05 & g1231[gChars[who].classIndex]);
+        result = (signed char)(gItemTypes[gItems[item].type].m05 & g1231[gChars[who].classIndex]);
     } else {
         result = 1;
     }

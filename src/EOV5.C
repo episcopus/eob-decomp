@@ -52,11 +52,11 @@ struct PoolNameRec {        /* a view of one 243-byte pre-made character record 
 struct Entry14 {            /* the 14-byte item records at ds:8DD2 (src/E0D1C.C) */
     char pad00;
     signed char icon;       /* +1 */
-    signed char m02;        /* +2: the item type */
+    signed char type;        /* +2: the item type */
     char pad03;
-    int m04;                /* +4 */
+    int key;                /* +4 */
     char pad06[0x0B - 0x06];
-    signed char m0B;        /* +0xB */
+    signed char value;        /* +0xB */
     char pad0C[0x0E - 0x0C];
 };
 
@@ -599,8 +599,8 @@ enum {
 /* ovl5:0828: the character add panel. It clears the panel, draws message `which`, then shows the
    two-entry menu ds:7B23 ("yes"/"no"). Choice 0 ("yes") either draws message `yesMsg` or, when
    `yesMsg` is -1, builds and draws "<name> joins the party." (ds:7D0E) for gCharPool[who] and
-   shows the modal message 025F; it then removes the carried items of type 0x21 whose m0B is
-   `who`+1 (RemoveCarriedItems matches m02 == class and m0B == fieldB; what m0B means is not
+   shows the modal message 025F; it then removes the carried items of type 0x21 whose value is
+   `who`+1 (RemoveCarriedItems matches type == class and value == fieldB; what value means is not
    established, 0D1C:01CA) and, when ChooseChar finds a free slot, adds the character through 070E.
    Choice 1 ("no") draws message `noMsg`. Called by the panels 0924, 09C5, 0DBB and 119E. */
 /*@ ovl5:0828 */ void AddCharPanel(int who, int which, int yesMsg, int noMsg)
@@ -774,9 +774,9 @@ enum {
    resurrect/heal panel 0EB9 may act on: first every character whose flags bit 0 is set and whose
    hit points are -10 (0xf6, a dead member); then, for every character with flags bit 0 set, each
    of its 25 item slots whose item type's gA9F5[type].m09 low 7 bits equal 8, stored as
-   -gTable8DD2[item].m0B. Returns the count. ResurrectPicker reads a negative entry n back as the
+   -gTable8DD2[item].value. Returns the count. ResurrectPicker reads a negative entry n back as the
    pool index -(n + 1): that reading is an inference from ResurrectPicker and the
-   RemoveCarriedItems(0x21, who + 1) calls; what m0B itself means is not established (0D1C:01CA).
+   RemoveCarriedItems(0x21, who + 1) calls; what value itself means is not established (0D1C:01CA).
    Called by 0EB9. */
 /*@ ovl5:0BBE */ int BuildDeathList(void)
 {
@@ -803,10 +803,10 @@ enum {
                 item = rec->items[j];
                 if (!item)
                     continue;
-                type = gTable8DD2[item].m02;
+                type = gTable8DD2[item].type;
                 kind = gA9F5[type].m09 & 0x7f;
                 if (kind == 8)
-                    gTableF4E6[gCountDDE0++] = -gTable8DD2[item].m0B;
+                    gTableF4E6[gCountDDE0++] = -gTable8DD2[item].value;
             }
         }
     }
@@ -852,7 +852,7 @@ enum {
    entry -k-1 is the pre-made character gCharPool[k].name, read through gPoolNameBase at ds:71A7
    (gCharPool ds:7298, its name field +2, one 0xF3 record back). It then runs the 0455 menu (first
    row 2) and acts on the chosen entry: a party member is healed to full (hp = maxHp); a pool
-   character has its carried items of type 0x21 with m0B == k+1 removed, becomes the selected
+   character has its carried items of type 0x21 with value == k+1 removed, becomes the selected
    character gEFC6, redraws the portrait and runs the add-character panel with the yes message
    suppressed (-1). Called by 0EB9. `names[20]` holds gCountDDE0 entries: the match fixes the
    array at 20 entries, nothing in the code caps gCountDDE0 at 20 (BuildDeathList can add up to
@@ -980,7 +980,7 @@ enum {
 }
 /* ovl5:10A6: the "surrender / attack" NPC panel. Draws message 0x10 and shows the 2-entry menu
    ds:7BF2 ("Surrender"/"Attack"); choice 0 draws message 0x11 and, for every character's first two
-   item slots whose item type gTable8DD2[item].m02 is outside 0x33..0x38, clears the slot and
+   item slots whose item type gTable8DD2[item].type is outside 0x33..0x38, clears the slot and
    queues the item on the list keyed by gPartyCell, with the sound from gPartyDir. Sets gFC04 bit
    0x2000000. Called from the menu dispatcher 1A82 (mode 5). */
 /*@ ovl5:10A6 */ void SurrenderPanel(void)
@@ -997,7 +997,7 @@ enum {
         for (i = 0; i < 6; i++) {
             for (j = 0; j < 2; j++) {
                 if (item = gChars[i].items[j]) {
-                    if (gTable8DD2[item].m02 < 0x33 || gTable8DD2[item].m02 > 0x38) {
+                    if (gTable8DD2[item].type < 0x33 || gTable8DD2[item].type > 0x38) {
                         gChars[i].items[j] = 0;
                         InsertListItem(&gMazeItems[gPartyCell * 9], gPartyCell, item,
                                        g1A1B[gPartyDir * 4 + RollDice(1, 2, -1)]);

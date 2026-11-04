@@ -24,10 +24,10 @@ struct Region {             /* 16-byte records of the region table at ds:009F (s
     int top;
     int width;
     int height;
-    int saved0;
-    int saved1;
-    int saved2;
-    int saved3;
+    int textAttr1;
+    int textAttr2;
+    int textCol;
+    int textRow;
 };
 
 struct ItemType {           /* 16-byte records of ITEMTYPE.DAT, at ds:A9F0 */

@@ -216,3 +216,155 @@ old = "mE8"
 new = "lastAction"
 why = "the last action result per carried slot: UseItem (0DE8) stores it, 1414:0770 clears the slot's byte"
 date = "2026-11-03"
+
+[[field]]
+struct = "ItemRecord"
+at = "00"
+old = "m00"
+new = "nameIndex"
+why = "the item's name for an unidentified item: an index into the 35-byte names at segment 1F28, used when flags bit 0x40 is clear (0BD2, the item-name builder at E0BD2 line 462)"
+date = "2026-11-03"
+
+[[field]]
+struct = "ItemRecord"
+at = "01"
+old = "m01"
+new = "identifiedNameIndex"
+why = "the item's name once identified: an index into the 35-byte names at segment 1F28, used when flags bit 0x40 is set (0BD2, E0BD2 line 463)"
+date = "2026-11-03"
+
+[[field]]
+struct = "ItemRecord"
+at = "04"
+old = "m02"
+new = "type"
+why = "the item type, an index into gItemTypes (ds:A9F0): the item-name builder reads gItemTypes[type] (E0BD2 line 465), E0EF3 calls it the item type"
+date = "2026-11-03"
+
+[[field]]
+struct = "ItemRecord"
+at = "05"
+old = "m03"
+new = "tag"
+why = "the tag InsertListItem 0BD2:01D0 stores from its fourth argument and 0BD2:02B9 matches against its key (a floor position, a roll or an effect kind by caller)"
+date = "2026-11-03"
+
+[[field]]
+struct = "ItemRecord"
+at = "06"
+old = "m04"
+new = "key"
+why = "the key of the list the item is in: the map cell, a monster's id (E08E6 line 807) or 0xFFFE for a member's pack (E0ACD); -1 or -2 when the record is free (0EF3:0418)"
+date = "2026-11-03"
+
+[[field]]
+struct = "ItemRecord"
+at = "08"
+old = "m06"
+new = "prevLink"
+why = "one link of the item's circular list: InsertListItem 0BD2:01D0 splices a new item in after the tail through it"
+date = "2026-11-03"
+
+[[field]]
+struct = "ItemRecord"
+at = "0A"
+old = "m08"
+new = "nextLink"
+why = "the link the list walks follow (0BD2:0385, 040E, 04AA): InsertListItem makes the newest item the head through it"
+date = "2026-11-03"
+
+[[field]]
+struct = "ItemRecord"
+at = "0D"
+old = "m0B"
+new = "value"
+why = "the item's bonus or effect value: the signed bonus printed as \"%s +%d\" and \"Cursed %s %d\", the spell index of a scroll, the wand effect index (0BD2:05B5, 0D2D, 0EE8, 1001)"
+date = "2026-11-03"
+
+[[field]]
+struct = "Entry14"
+at = "00"
+old = "m00"
+new = "flags"
+why = "the item's flags, ItemRecord +02 seen from ds:8DD2: bit 0x40 identified (0BD2 name builder), 0x80 gates the icon colour row (0D1C:070F)"
+date = "2026-11-03"
+
+[[field]]
+struct = "Entry14"
+at = "02"
+old = "m02"
+new = "type"
+why = "the item type, ItemRecord +04 seen from ds:8DD2 (the record two bytes later): compared by 0D1C:00F1 and 0D1C:01CA"
+date = "2026-11-03"
+
+[[field]]
+struct = "Entry14"
+at = "04"
+old = "m04"
+new = "key"
+why = "the item's list key, ItemRecord +06 seen from ds:8DD2: 0D1C:01CA sets it to -1 when the record is freed"
+date = "2026-11-03"
+
+[[field]]
+struct = "Entry14"
+at = "0B"
+old = "m0B"
+new = "value"
+why = "the item's bonus or effect value, ItemRecord +0D seen from ds:8DD2: EatFood adds it to food (0ACD:07E0), compared by 0D1C:00F1"
+date = "2026-11-03"
+
+[[field]]
+struct = "Obj28"
+at = "02"
+old = "id, m02"
+new = "cell"
+why = "the monster's map cell: 08E6:0297 counts it in and out of gMaze[cell * 9 + 4], drops go into gMaze[cell * 9 + 5] (E08E6 line 807), the move code steps it with StepCell"
+date = "2026-11-03"
+
+[[field]]
+struct = "Obj28"
+at = "05"
+old = "m05"
+new = "orient"
+why = "the monster's facing quarter 0..3 (times 2 is a direction): 08E6:0297 stores the new orientation with the new cell, E08E6, E0D1C and EOV4 call it orient"
+date = "2026-11-03"
+
+[[field]]
+struct = "Region"
+at = "08"
+old = "attr1, saved0"
+new = "textAttr1"
+why = "the window's first text attribute, saved and restored with it by SetTextWindow 1DE7:0009 as gTextAttr1 (E1DE7 lines 38 to 40, 80 to 95)"
+date = "2026-11-03"
+
+[[field]]
+struct = "Region"
+at = "0A"
+old = "attr2, saved1"
+new = "textAttr2"
+why = "the window's second text attribute, saved and restored by SetTextWindow 1DE7:0009 as gTextAttr2 (E1DE7 lines 38 to 40, 80 to 95)"
+date = "2026-11-03"
+
+[[field]]
+struct = "Region"
+at = "0C"
+old = "column, saved2"
+new = "textCol"
+why = "the window's text cursor column, saved and restored by SetTextWindow 1DE7:0009 as gTextCol (E1DE7 lines 41 and 80 to 95)"
+date = "2026-11-03"
+
+[[field]]
+struct = "Region"
+at = "0E"
+old = "row, saved3"
+new = "textRow"
+why = "the window's text cursor row, saved and restored by SetTextWindow 1DE7:0009 as gTextRow (E1DE7 lines 42 and 80 to 95)"
+date = "2026-11-03"
+
+[[field]]
+struct = "ItemType"
+at = "00"
+old = "data, m00"
+new = "slotMask"
+why = "the slots the item type may be put in: CanPlaceItemInSlot 0BD2:0AF2 tests the 16-bit mask against the slot's bit, 0BD2:0C8E its low byte"
+date = "2026-11-03"

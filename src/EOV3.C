@@ -83,7 +83,7 @@ extern void Unpack4(char far *src, void far *dst, int len); /*@ 1D9A:0013 */
 struct Obj28 {              /* 28-byte records, 30 of them at ds:8A82 (src/E08E6.C) */
     char b0;                /* +0 */
     signed char kind;       /* +1 */
-    int id;                 /* +2 */
+    int cell;                 /* +2 */
     char pad04[6];          /* +4 */
     char m0A;               /* +A: cleared by ovl3:19F7 */
     char pad0B[0x1c - 0x0b];/* +B */
@@ -169,17 +169,17 @@ extern char gMazeItems[]; /*@ ds:B899 */        /* the nine-byte record list hea
 extern void InsertListItem(void far *head, int key, int item, int sound); /*@ 0BD2:01D0 */
 
 struct ItemRecord {         /* the 14-byte records at ds:8DD0 (src/E0BD2.C) */
-    signed char m00;        /* +0 */
-    signed char m01;        /* +1 */
+    signed char nameIndex;        /* +0 */
+    signed char identifiedNameIndex;        /* +1 */
     unsigned char flags;    /* +2 */
     signed char icon;       /* +3 */
-    signed char m02;        /* +4 */
-    signed char m03;        /* +5: the sound InsertListItem plays for the item (src/E0BD2.C:420) */
-    int m04;                /* +6: the key, -1 when free */
-    int m06;                /* +8 */
-    int m08;                /* +0xa */
+    signed char type;        /* +4 */
+    signed char tag;        /* +5: the sound InsertListItem plays for the item (src/E0BD2.C:420) */
+    int key;                /* +6: the key, -1 when free */
+    int prevLink;                /* +8 */
+    int nextLink;                /* +0xa */
     signed char m0A;        /* +0xc: gFBC8 or -1 */
-    signed char m0B;        /* +0xd */
+    signed char value;        /* +0xd */
 };
 
 extern struct ItemRecord gItems[]; /*@ ds:8DD0 */
@@ -503,7 +503,7 @@ done:
     strcpy(gWallNameBuf, gFileNameBuf);
 }
 /* ovl3:0951: rebuilds the ds:B899 item list: walks the 500 items at ds:8DD0 and, for every item
-   whose m0A is the current action gFBC8 and whose key m04 is positive, inserts it through
+   whose m0A is the current action gFBC8 and whose key key is positive, inserts it through
    InsertListItem. Called by ovl3:0A7C. */
 /*@ ovl3:0951 */ void RebuildItemList(void)
 {
@@ -511,8 +511,8 @@ done:
     int i;
 
     for (rec = gItems, i = 0; i < 0x1f4; rec++, i++) {
-        if (rec->m0A == gFBC8 && rec->m04 > 0)
-            InsertListItem((void far *)(gMazeItems + rec->m04 * 9), rec->m04, i, rec->m03);
+        if (rec->m0A == gFBC8 && rec->key > 0)
+            InsertListItem((void far *)(gMazeItems + rec->key * 9), rec->key, i, rec->tag);
     }
 }
 /* ovl3:09AA: loads an object table. It clears the 0x2400 bytes at gMaze, opens `name`, reads 6
@@ -753,7 +753,7 @@ done:
             gMaze[i * 9 + j] = *src++;
     Unpack0(dst, gObjs, 0x348L);
     for (i = 0; i < 0x1e; i++)
-        gMaze[gObjs[i].id * 9 + 4]++;
+        gMaze[gObjs[i].cell * 9 + 4]++;
 }
 /* ovl3:1147: reads the level state `action` from LEVELS.TMP: opens the file, seeks to
    (action-1)*0x7F8 and reads 0x7F8 bytes into gSegEFC2, closes it and hands gSegEFC2 to ovl3:109D.
@@ -880,9 +880,9 @@ done:
    recreates LEVELS.TMP from block 3 (mode 2 deletes and recreates the file; FileWrite starts at
    offset 0 and carries the whole gBlockSizes[3] image). It stores the three single bytes ds:80E8
    (the Ctrl flag), ds:80E6 (gSoundOn) and ds:F43C, unpacks the 0x60 bytes into ds:AD20, loads
-   the CHARGENA screen and, for each character whose m01 is nonzero and whose m22 is >= 0, cuts its
+   the CHARGENA screen and, for each character whose identifiedNameIndex is nonzero and whose m22 is >= 0, cuts its
    4 by 32 cell out of gOverlayBuf (through ds:8082), unpacks it into its 0x514-byte sprite buffer
-   and frees it (a character with m01 nonzero and m22 < 0 sets `flag` at :953 instead);
+   and frees it (a character with identifiedNameIndex nonzero and m22 < 0 sets `flag` at :953 instead);
    when any slot is empty or any occupied character has m22 < 0 it then loads the OUTTAKE screen
    and cuts the m22 < 0 characters' 4 by 32 cells out of it the same way. Unless ds:A998 is -1 it then rebuilds the
    map screen (ovl3:0A7C), reloads PLAYFLD and INVENT, hands gFont6x6 to SetFont, redraws the

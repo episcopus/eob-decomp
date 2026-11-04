@@ -73,7 +73,7 @@ extern struct ItemInfo gA9F5[]; /*@ ds:A9F5 */
 struct Obj28 {              /* 28-byte object records at ds:8A82 (see src/E08E6.C) */
     char b0;                /* +0: an index into the ds:1A3B table */
     char pad01;
-    int id;                 /* +2: the object's map cell, read by 0D1C:09CB */
+    int cell;                 /* +2: the object's map cell, read by 0D1C:09CB */
     char pad04;
     char orient;            /* +5: the orientation quarter (times 2 is a direction), written by 0D1C:09CB */
     char pad06[0x16 - 0x06];
@@ -104,11 +104,11 @@ extern struct Row8 gRows5482[]; /*@ ds:5482 */
 struct Entry14 {            /* the 14-byte records E07A9 calls Entry14; view based at ds:8DD2 (E07A9) */
     unsigned char flags;    /* +0 (ds:8DD2), read by 07A9:015C */
     signed char icon;       /* +1 (ds:8DD3), read by 07A9:0141 and 0D1C:070F */
-    signed char m02;        /* +2 (ds:8DD4), compared by 0D1C:00F1 and 0D1C:01CA */
+    signed char type;        /* +2 (ds:8DD4), compared by 0D1C:00F1 and 0D1C:01CA */
     char pad03;
-    int m04;                /* +4 (ds:8DD6), set to -1 by 0D1C:01CA */
+    int key;                /* +4 (ds:8DD6), set to -1 by 0D1C:01CA */
     char pad06[0x0B - 0x06];
-    signed char m0B;        /* +0xB (ds:8DDD), compared by 0D1C:00F1 */
+    signed char value;        /* +0xB (ds:8DDD), compared by 0D1C:00F1 */
     char pad0C[0x0E - 0x0C];
 };
 extern struct Entry14 gTable8DD2[]; /*@ ds:8DD2 */
@@ -232,7 +232,7 @@ int GetCurrentItem(void);
     return (cell + gDirCellOffset[dir]) & 0x3FF;
 }
 /* 0D1C:00F1: finds the first of the 27 word slots of gChars[who].items that holds an item (a
-   nonzero index into the 14-byte records at ds:8DD2) whose m02 equals `field2` and whose m0B
+   nonzero index into the 14-byte records at ds:8DD2) whose type equals `field2` and whose value
    equals `fieldB`. A `field2` or `fieldB` of -1 is a wildcard. Returns the slot number, or -1.
    Called by 0D1C:01CA and from overlays 1 and 6. */
 /*@ 0D1C:00F1 */ int FindCarriedSlot(int who, int field2, int fieldB)
@@ -243,8 +243,8 @@ int GetCurrentItem(void);
     slot = gChars[who].items;
     for (i = 0; i < 27; slot++, i++) {
         if (*slot != 0) {
-            if (gTable8DD2[*slot].m02 == field2 || field2 == -1) {
-                if (gTable8DD2[*slot].m0B == fieldB || fieldB == -1)
+            if (gTable8DD2[*slot].type == field2 || field2 == -1) {
+                if (gTable8DD2[*slot].value == fieldB || fieldB == -1)
                     return i;
             }
         }
@@ -253,7 +253,7 @@ int GetCurrentItem(void);
 }
 /* 0D1C:0163: Purpose unknown: over the last two of the 27 word slots of gChars[who].items (25
    and 26), returns 1 when one of them holds an item (an index into the ds:8DD2 records) whose
-   m02 is 0x2F and whose m0B equals `fieldB`, otherwise 0. Slots 25 and 26 are the only two
+   type is 0x2F and whose value equals `fieldB`, otherwise 0. Slots 25 and 26 are the only two
    inspected. Called by 122E, 1414 and overlays 1 and 6. The empty-slot test is an early
    `continue`, not an `if` around the body: that is the source form the original has. The
    original reloads `item` into AX before the first multiply (0D1C:0194 `mov ax, di`), and the
@@ -270,19 +270,19 @@ int GetCurrentItem(void);
     for (i = 25; i <= 26; i++) {
         if (!(item = rec->items[i]))
             continue;
-        if (gTable8DD2[item].m02 == 0x2F && gTable8DD2[item].m0B == fieldB)
+        if (gTable8DD2[item].type == 0x2F && gTable8DD2[item].value == fieldB)
             return 1;
     }
     return 0;
 }
 /* 0D1C:01CA: Purpose unknown: for every character `who` that passes MemberIs(who, 1), removes
-   all carried items whose ds:8DD2 record has m02 == `field2` and m0B == `fieldB`
-   (FindCarriedSlot's match): clears the item's m04 (sets it to -1), clears the character's slot,
+   all carried items whose ds:8DD2 record has type == `field2` and value == `fieldB`
+   (FindCarriedSlot's match): clears the item's key (sets it to -1), clears the character's slot,
    and redraws. Returns 1 when at least one item was removed, otherwise 0. The redraw paths: when
    gPanelMode is 0 and the slot is one of the first two of a character before the sixth, DrawMemberSlot;
    when gPanelMode is 1 and the character is the selected one, DrawItemRow; and when the mouse is
    enabled, the item in the slot GetCurrentItem names is cleared and redrawn through SetMouseItem.
-   Called by overlays 5. What m02, m0B and m04 mean is not established. */
+   Called by overlays 5. What type, value and key mean is not established. */
 /*@ 0D1C:01CA */ int RemoveCarriedItems(int field2, int fieldB)
 {
     int slot;
@@ -296,7 +296,7 @@ int GetCurrentItem(void);
             continue;
         while ((slot = FindCarriedSlot(who, field2, fieldB)) != -1) {
             item = gChars[who].items[slot];
-            gTable8DD2[item].m04 = -1;
+            gTable8DD2[item].key = -1;
             gChars[who].items[slot] = 0;
             found = 1;
             if (gPanelMode == 0) {
@@ -307,8 +307,8 @@ int GetCurrentItem(void);
                 DrawItemRow(who, slot, 1);
             if (!gMouseDisabled) {
                 item = GetCurrentItem();
-                if (gTable8DD2[item].m02 == field2) {
-                    gTable8DD2[item].m04 = -1;
+                if (gTable8DD2[item].type == field2) {
+                    gTable8DD2[item].key = -1;
                     SetMouseItem(0);
                 }
             }
@@ -515,9 +515,9 @@ int GetCurrentItem(void);
     return cursor;
 }
 /* 0D1C:07DB: Purpose unknown: combines the first two carried items of gChars[who] (slots 0 and
-   1). Each slot's item is passed to ItemClassAllowed and its ds:8DD2 record's m02 indexes the
+   1). Each slot's item is passed to ItemClassAllowed and its ds:8DD2 record's type indexes the
    16-byte records at ds:A9F5. With `flag` 0 it returns 1 when slot 0 is empty or ItemClassAllowed
-   accepted its item. Otherwise it returns 0 when slot 0 holds an item whose gA9F5[m02].m01 is 2, then
+   accepted its item. Otherwise it returns 0 when slot 0 holds an item whose gA9F5[type].m01 is 2, then
    1 when slot 1 is empty, and for a slot-1 item whose gA9F5[m1].m09 (low 7 bits) is 1, 2 or 3,
    0 when gA9F5[m1].m01 is nonzero, else the slot-1 result. Called by 0BD2:1001, 0DE8:0D5E and
    1547:07E7. Placeholder: what the values mean is not established. */
@@ -532,12 +532,12 @@ int GetCurrentItem(void);
 
     slot0 = gChars[who].items[0];
     result0 = ItemClassAllowed(who, slot0);
-    m0 = gTable8DD2[slot0].m02;
+    m0 = gTable8DD2[slot0].type;
     if (flag == 0)
         return slot0 == 0 || result0 != 0;
     slot1 = gChars[who].items[1];
     result1 = ItemClassAllowed(who, slot1);
-    m1 = gTable8DD2[slot1].m02;
+    m1 = gTable8DD2[slot1].type;
     if (slot0 != 0 && gA9F5[m0].m01 == 2)
         return 0;
     if (slot1 == 0)
@@ -550,7 +550,7 @@ int GetCurrentItem(void);
     return result1;
 }
 /* 0D1C:08B1: Purpose unknown: returns 1 when one of the first two carried items of the character
-   record `rec` (items[0] or items[1]) holds a nonzero item whose ds:8DD2 record's m02 indexes a
+   record `rec` (items[0] or items[1]) holds a nonzero item whose ds:8DD2 record's type indexes a
    ds:A9F5 record with m09 == 6, otherwise 0. The pointer is a character record (the slots are at
    +77). Called by 0D1C:0903. */
 /*@ 0D1C:08B1 */ int f0D1C_08B1(struct CharRec far *rec)
@@ -560,7 +560,7 @@ int GetCurrentItem(void);
 
     for (i = 0; i <= 1; i++) {
         if (rec->items[i]) {
-            item = gTable8DD2[rec->items[i]].m02;
+            item = gTable8DD2[rec->items[i]].type;
             if (gA9F5[item].m09 == 6)
                 return 1;
         }
@@ -620,7 +620,7 @@ int GetCurrentItem(void);
     if (value != -1) {
         if (threshold >= value) {
             obj->m16 |= 8;
-            obj->orient = (DirectionFromPoints(obj->id, gPartyCell) ^ 4) >> 1;
+            obj->orient = (DirectionFromPoints(obj->cell, gPartyCell) ^ 4) >> 1;
             return 1;
         }
     } else {

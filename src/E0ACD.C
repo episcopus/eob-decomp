@@ -111,17 +111,17 @@ struct CharRec {
 };
 extern struct CharRec gChars[]; /*@ ds:F580 */
 
-/* A 14-byte ds:8DD2 record (ITEM.DAT): m02 is the item type, m04 the record's key (-1 when free)
-   and m0B the amount EatFood (07E0) adds to the character's food (the meaning is inferred; the
-   src/E0D1C.C:275 comment says what m02, m0B and m04 mean is not established). */
+/* A 14-byte ds:8DD2 record (ITEM.DAT): type is the item type, key the record's key (-1 when free)
+   and value the amount EatFood (07E0) adds to the character's food (the meaning is inferred; the
+   src/E0D1C.C:275 comment says what type, value and key mean is not established). */
 struct Entry14 {
     unsigned char flags;    /* +0 */
     signed char icon;       /* +1 */
-    signed char m02;        /* +2 */
+    signed char type;        /* +2 */
     char pad03;
-    int m04;                /* +4: the key; -1 when free (set to -1 after eating, 07E0) */
+    int key;                /* +4: the key; -1 when free (set to -1 after eating, 07E0) */
     char pad06[0x0B - 0x06];
-    signed char m0B;        /* +0xB: the amount EatFood (07E0) adds to food (meaning inferred,
+    signed char value;        /* +0xB: the amount EatFood (07E0) adds to food (meaning inferred,
                                src/E0D1C.C:275) */
     char pad0C[0x0E - 0x0C];
 };
@@ -430,7 +430,7 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
 
     if (item) {
         if (AddDDEffect(gInventoryMember, item, gPartyCell, g1A1B[action->slot + gPartyDir * 4], gPartyDir,
-                       gTable8DD2[item].m02)) {
+                       gTable8DD2[item].type)) {
             SetMouseItem(0);
             gDF4C = 1;
         }
@@ -600,8 +600,8 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
 
 /* 0ACD:07E0: the "eat" action for the character at `index`. When MemberIs rejects it (mask 5)
    it formats "%s isn't capable of eating food!" with the character's name and draws it. Otherwise
-   it takes the current item and, when its type is 0x1F or 0x31, adds the item's m0B (the food
-   value) to the character's m23 clamped to 100, sets the item's m04 to -1 (freeing the record),
+   it takes the current item and, when its type is 0x1F or 0x31, adds the item's value (the food
+   value) to the character's m23 clamped to 100, sets the item's key to -1 (freeing the record),
    redraws the icon and plays sound 9; for
    any other nonzero item it draws "You may only eat food!". index is the character index, not a
    pointer. */
@@ -616,12 +616,12 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
         return;
     }
     item = GetCurrentItem();
-    if (gTable8DD2[item].m02 == 0x1F || gTable8DD2[item].m02 == 0x31) {
-        if (rec->food + gTable8DD2[item].m0B > 100)
+    if (gTable8DD2[item].type == 0x1F || gTable8DD2[item].type == 0x31) {
+        if (rec->food + gTable8DD2[item].value > 100)
             rec->food = 100;
         else
-            rec->food += gTable8DD2[item].m0B;
-        gTable8DD2[item].m04 = -1;
+            rec->food += gTable8DD2[item].value;
+        gTable8DD2[item].key = -1;
         SetMouseItem(0);
         DrawMemberFood(index);
         PlaySound(9);
@@ -763,7 +763,7 @@ done:
         InsertListItem((void far *)(gMazeItems + gPartyCell * 9), gPartyCell, item, value);
         RunCellScript(gPartyCell, 4);
     } else {
-        flag = AddDDEffect(gInventoryMember, item, gPartyCell, value, gPartyDir, gTable8DD2[item].m02);
+        flag = AddDDEffect(gInventoryMember, item, gPartyCell, value, gPartyDir, gTable8DD2[item].type);
     }
     if (flag != 0) {
         if (gMouseDisabled == 0 || gF51A != 0x10)

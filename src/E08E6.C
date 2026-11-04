@@ -12,7 +12,7 @@
 struct Obj28 {              /* 28-byte records, 30 of them at ds:8A82 */
     char b0;                /* +0: index into the ds:1A3B object-type table */
     signed char kind;       /* +1: matched against UpdateObjects' `kind` argument */
-    int id;                 /* +2: the object's map cell */
+    int cell;                 /* +2: the object's map cell */
     char frame;             /* +4: 0..4, the frame within its id's group */
     char orient;            /* +5: 0..3, the orientation quarter (times 2 is a direction) */
     char toggle;            /* +6: flipped each update unless the type is 4 or 7 (0CC8:0D93) */
@@ -67,11 +67,11 @@ struct CharRec {            /* 243-byte character records at ds:F580; the fields
 struct Entry14 {            /* 14-byte item records at ds:8DD2 (src/E0D1C.C) */
     unsigned char flags;    /* +0 (ds:8DD2) */
     signed char icon;       /* +1 (ds:8DD3) */
-    signed char m02;        /* +2 (ds:8DD4): the item type */
+    signed char type;        /* +2 (ds:8DD4): the item type */
     char pad03;
-    int m04;                /* +4 (ds:8DD6): the key; -1 when free */
+    int key;                /* +4 (ds:8DD6): the key; -1 when free */
     char pad06[0x0B - 0x06];
-    signed char m0B;        /* +0xB (ds:8DDD) */
+    signed char value;        /* +0xB (ds:8DDD) */
     char pad0C[0x0E - 0x0C];
 };
 
@@ -171,7 +171,7 @@ void Obj10F3(struct Obj28 far *obj);   /* forward: 05EA reaches it before its de
     if (obj->type == 7 || obj->type == 8 || obj->type == 0xa)
         return;
     obj->type = 0;
-    obj->orient = (DirectionFromPoints(obj->id, gPartyCell) ^ 4) >> 1;
+    obj->orient = (DirectionFromPoints(obj->cell, gPartyCell) ^ 4) >> 1;
     obj->m16 |= 8;
 }
 
@@ -213,10 +213,10 @@ void Obj10F3(struct Obj28 far *obj);   /* forward: 05EA reaches it before its de
     if (obj->type == 7 || obj->type == 8 || obj->type == 9 || obj->type == 0xa
             || obj->count <= 0)
         return;
-    first = Distance(obj->id, gPartyCell);
+    first = Distance(obj->cell, gPartyCell);
     if (first >= 4)
         return;
-    dir = DirectionFromPoints(obj->id, gPartyCell) - obj->orient * 2 - 3;
+    dir = DirectionFromPoints(obj->cell, gPartyCell) - obj->orient * 2 - 3;
     if (dir < 0)
         dir += 8;
     if (dir <= 2 && first >= 2)
@@ -249,7 +249,7 @@ void Obj10F3(struct Obj28 far *obj);   /* forward: 05EA reaches it before its de
         return -2;
     bits = 0;
     for (obj = gObjs, i = 0; i < 30; i++, obj++) {
-        if (obj->id == id) {
+        if (obj->cell == id) {
             if (gTable1A3B[obj->b0].m15)
                 return -1;
             if (obj->frame == 4)
@@ -292,15 +292,15 @@ void Obj10F3(struct Obj28 far *obj);   /* forward: 05EA reaches it before its de
 /*@ 08E6:0297 */ void MoveObjectToId(struct Obj28 far *obj, int id, int orient)
 {
     if (id != -1) {
-        f0D1C_0006(obj->id);
-        if (gMaze[obj->id * 9 + 4] & 7)
-            gMaze[obj->id * 9 + 4]--;
-        obj->id = id;
+        f0D1C_0006(obj->cell);
+        if (gMaze[obj->cell * 9 + 4] & 7)
+            gMaze[obj->cell * 9 + 4]--;
+        obj->cell = id;
         gMaze[id * 9 + 4]++;
     }
     if (orient != -1) {
         obj->orient = orient;
-        id = obj->id;
+        id = obj->cell;
     }
     f0D1C_0006(id);
 }
@@ -320,8 +320,8 @@ void Obj10F3(struct Obj28 far *obj);   /* forward: 05EA reaches it before its de
     char frame;
     int oldId;
 
-    oldId = obj->id;
-    if (obj->id != id && id != -1) {
+    oldId = obj->cell;
+    if (obj->cell != id && id != -1) {
         rec = (char far *)&gMaze[id * 9];
         if (orient == -1)
             orient = obj->orient;
@@ -343,7 +343,7 @@ void Obj10F3(struct Obj28 far *obj);   /* forward: 05EA reaches it before its de
         obj->orient = orient;
     f0D1C_0006(oldId);
     if (!gF442)
-        PlaySoundAtCell(gTable1A3B[obj->b0].m17, obj->id);
+        PlaySoundAtCell(gTable1A3B[obj->b0].m17, obj->cell);
     return 1;
 }
 
@@ -390,7 +390,7 @@ void Obj10F3(struct Obj28 far *obj);   /* forward: 05EA reaches it before its de
     if (g321E != 0)
         table = g320E;
     dir = obj->orient * 2;
-    id = obj->id;
+    id = obj->cell;
     target = DirectionFromPoints(id, value);
     if (target == -1)
         return;
@@ -437,7 +437,7 @@ void Obj10F3(struct Obj28 far *obj);   /* forward: 05EA reaches it before its de
 {
     int id;
 
-    id = obj->id;
+    id = obj->cell;
     if ((gMaze[id * 9 + 4] & 7) == 1) {
         obj->frame = 4;
     } else {
@@ -446,7 +446,7 @@ void Obj10F3(struct Obj28 far *obj);   /* forward: 05EA reaches it before its de
             return;
         obj->frame = id;
     }
-    f0D1C_0006(obj->id);
+    f0D1C_0006(obj->cell);
 }
 /* 08E6:05EA: check the object against `handle` and turn it. When `handle` is -1 it is recomputed as
    StepCell(obj->id, obj->orient); when it is not the current gPartyCell the object does nothing
@@ -462,13 +462,13 @@ void Obj10F3(struct Obj28 far *obj);   /* forward: 05EA reaches it before its de
     register int found;
 
     if (handle == -1)
-        handle = StepCell(obj->id, obj->orient);
+        handle = StepCell(obj->cell, obj->orient);
     if (handle != gPartyCell)
         return 0;
     if (Obj103D(obj) != 0) {
         obj->m16 ^= 4;
         if (obj->m16 & 4) {
-            found = f0D1C_0006(obj->id);
+            found = f0D1C_0006(obj->cell);
             if (found != 0) {
                 gFlags849E &= ~2;
                 if (obj->b0 == 4)
@@ -502,7 +502,7 @@ void Obj10F3(struct Obj28 far *obj);   /* forward: 05EA reaches it before its de
    Called by 0765 as Obj073F(obj, value). Purpose unknown: what 0EF3:097B does with them is not known. */
 /*@ 08E6:073F */ void Obj073F(struct Obj28 far *obj, int value)
 {
-    StartCellEffect(0xff, value, obj->id, obj->frame, obj->orient);
+    StartCellEffect(0xff, value, obj->cell, obj->frame, obj->orient);
 }
 /* 08E6:0765: the object's action for UpdateObjects. It returns 0 unless the object's 1A3B record
    has m0E bit 6, the object has m19 left and m18 is zero (otherwise m18 is decremented and 0 is
@@ -512,7 +512,7 @@ void Obj10F3(struct Obj28 far *obj);   /* forward: 05EA reaches it before its de
    gMaze[value * 9 + 4] count, else 0 is returned. The action then switches on b0: 4 starts a cell
    effect at 9 through Obj073F and plays 0x1f; 14 plays g322F[m19] and starts a cell effect through
    Obj073F(obj, g3226[m19]); 15 frees an item 0x3c and queues AddDDEffect(-1, item, id, frame,
-   orient, gTable8DD2[item].m02), freeing it when that fails; 16 calls 0EF3:097B(0xff, 0, id, frame,
+   orient, gTable8DD2[item].type), freeing it when that fails; 16 calls 0EF3:097B(0xff, 0, id, frame,
    orient) and plays 0x55; 17 plays 0x53, announces the mind blast and paralyzes every affected
    member; 21 rolls 1d4 and, under 3, starts a cell effect through Obj073F and plays g3223[roll]
    after g3220[roll], else announces the wounds spell and hits the first affected member. Every
@@ -537,12 +537,12 @@ void Obj10F3(struct Obj28 far *obj);   /* forward: 05EA reaches it before its de
         obj->m18--;
         return 0;
     }
-    if (Distance(obj->id, gPartyCell) > 3)
+    if (Distance(obj->cell, gPartyCell) > 3)
         return 0;
-    if (DirectionFromPoints(obj->id, gPartyCell) != obj->orient * 2)
+    if (DirectionFromPoints(obj->cell, gPartyCell) != obj->orient * 2)
         return 0;
     orient = obj->orient;
-    value = StepCell(obj->id, orient);
+    value = StepCell(obj->cell, orient);
     while (value != gPartyCell) {
         if ((gWallTypeFlags[(signed char)gMaze[value * 9 + (orient ^ 2)]] & 3) == 0
                 || (gMaze[value * 9 + 4] & 7))
@@ -555,7 +555,7 @@ void Obj10F3(struct Obj28 far *obj);   /* forward: 05EA reaches it before its de
         if (roll < 3) {
             arg = g3220[roll];
             Obj073F(obj, arg);
-            PlaySoundAtCell(g3223[roll], obj->id);
+            PlaySoundAtCell(g3223[roll], obj->cell);
         } else {
             for (i = 0; i < 6; i++) {
                 if (MemberIs(i, 3)) {
@@ -566,28 +566,28 @@ void Obj10F3(struct Obj28 far *obj);   /* forward: 05EA reaches it before its de
                     break;
                 }
             }
-            PlaySoundAtCell(0x6c, obj->id);
+            PlaySoundAtCell(0x6c, obj->cell);
         }
         break;
     case 4:
         Obj073F(obj, 9);
-        PlaySoundAtCell(0x1f, obj->id);
+        PlaySoundAtCell(0x1f, obj->cell);
         break;
     case 14:
         arg = g3226[obj->m19];
-        PlaySoundAtCell(g322F[obj->m19], obj->id);
+        PlaySoundAtCell(g322F[obj->m19], obj->cell);
         Obj073F(obj, arg);
         break;
     case 15:
         item = CopyItemToFreeSlot(0x3c);
         if (item != 0) {
-            if (AddDDEffect(-1, item, obj->id, obj->frame, obj->orient,
-                            gTable8DD2[item].m02) == 0)
-                gTable8DD2[item].m04 = -1;
+            if (AddDDEffect(-1, item, obj->cell, obj->frame, obj->orient,
+                            gTable8DD2[item].type) == 0)
+                gTable8DD2[item].key = -1;
         }
         break;
     case 17:
-        PlaySoundAtCell(0x53, obj->id);
+        PlaySoundAtCell(0x53, obj->cell);
         DrawText("The party is hit with a psychic mind blast!\r");
         for (i = 0; i < 6; i++) {
             if (MemberIs(i, 3)) {
@@ -597,8 +597,8 @@ void Obj10F3(struct Obj28 far *obj);   /* forward: 05EA reaches it before its de
         }
         break;
     case 16:
-        StartCellEffect(0xff, 0, obj->id, obj->frame, obj->orient);
-        PlaySoundAtCell(0x55, obj->id);
+        StartCellEffect(0xff, 0, obj->cell, obj->frame, obj->orient);
+        PlaySoundAtCell(0x55, obj->cell);
         break;
     }
     DrawViewFrame(1);
@@ -616,7 +616,7 @@ void Obj10F3(struct Obj28 far *obj);   /* forward: 05EA reaches it before its de
 {
     int handle;
 
-    handle = StepCell(obj->id, obj->orient);
+    handle = StepCell(obj->cell, obj->orient);
     if (Obj0765(obj) != 0)
         return;
     if (Obj05EA(obj, handle) != 0)
@@ -632,7 +632,7 @@ void Obj10F3(struct Obj28 far *obj);   /* forward: 05EA reaches it before its de
 {
     int cur;
 
-    cur = StepCell(obj->id, obj->orient);
+    cur = StepCell(obj->cell, obj->orient);
     if (TurnObject(obj, cur, -1) == 0) {
         obj->orient += delta;
         obj->orient &= 3;
@@ -662,7 +662,7 @@ void Obj10F3(struct Obj28 far *obj);   /* forward: 05EA reaches it before its de
         if (obj->state == 0)
             StepObjectOrient(obj, -arg);
         dir = (obj->orient + arg) & 3;
-        cur = StepCell(obj->id, dir);
+        cur = StepCell(obj->cell, dir);
         add = g1991[dir];
         bits = gWallTypeFlags[(signed char)gMaze[cur * 9 + add]] & 4;
         if (obj->state == 0) {
@@ -677,7 +677,7 @@ void Obj10F3(struct Obj28 far *obj);   /* forward: 05EA reaches it before its de
         return;
     }
 second:
-    handle = StepCell(obj->id, obj->orient);
+    handle = StepCell(obj->cell, obj->orient);
     if (TurnObject(obj, handle, -1) == 0) {
         dir = (obj->orient - arg) & 3;
         TurnObject(obj, -1, dir);
@@ -741,7 +741,7 @@ second:
    by 0FBE. */
 /*@ 08E6:0DCA */ void RestoreObjectFlags(struct Obj28 far *obj)
 {
-    f0D1C_0006(obj->id);
+    f0D1C_0006(obj->cell);
     if (gDF4C) {
         gFlags849E &= ~2;
         obj->m16 |= 2;
@@ -801,11 +801,11 @@ second:
         roll = RollDice(1, 4, 0xff);
     if (obj->m12 != 0 && RollDice(1, 2, 0) == 1) {
         hit = CopyItemToFreeSlot(obj->m12);
-        InsertListItem(&gMaze[obj->id * 9 + 5], obj->id, hit, roll);
+        InsertListItem(&gMaze[obj->cell * 9 + 5], obj->cell, hit, roll);
     }
     if (obj->m14 != 0) {
         hit = CopyItemToFreeSlot(obj->m14);
-        InsertListItem(&gMaze[obj->id * 9 + 5], obj->id, hit, roll);
+        InsertListItem(&gMaze[obj->cell * 9 + 5], obj->cell, hit, roll);
     }
     AddPartyExperience(gTable1A3B[obj->b0].m13);
     MoveObjectToId(obj, 0, -1);
@@ -831,7 +831,7 @@ second:
     if (gF518 == 0) {
         RestoreObjectFlags(obj);
     } else {
-        id = f0D1C_0006(obj->id);
+        id = f0D1C_0006(obj->cell);
         if (id != 0)
             obj->m16 |= 2;
     }
@@ -1006,7 +1006,7 @@ fire:
     }
     if (any == 0) {
         for (i = 1; i < 30; i++) {
-            if (Distance(gObjs[i].id, gPartyCell) > 3) {
+            if (Distance(gObjs[i].cell, gPartyCell) > 3) {
                 Obj0EC3(&gObjs[i]);
                 break;
             }
@@ -1042,7 +1042,7 @@ fire:
     for (i = 0; i < 6; i++)
         list[i] = -1;
     for (obj = gObjs, i = 0; i < 30; i++, obj++) {
-        if (obj->id == key)
+        if (obj->cell == key)
             list[obj->frame] = i;
     }
 }
@@ -1122,7 +1122,7 @@ fire:
     bestSlot = 5;
     for (i = 0, obj = gObjs; i < 30; i++, obj++) {
         row = gTable32C3 + flags * 16 + field * 4;
-        if (obj->id == key) {
+        if (obj->cell == key) {
             if (obj->frame == field)
                 return i;
             for (slot = 0; slot < 4; slot++) {
@@ -1147,7 +1147,7 @@ fire:
 
     if (scanAll) {
         for (i = 0, obj = gObjs; i < 30; i++, obj++) {
-            if (obj->id == key)
+            if (obj->cell == key)
                 *list++ = i;
         }
     } else {
@@ -1168,7 +1168,7 @@ fire:
    frame? Returns 1 when it does, else 0. Called by Obj17FD (:1159) and 1414:0172 TestDDEffect. */
 /*@ 08E6:189D */ int Obj189D(struct Obj28 far *obj, int key, int field)
 {
-    if (obj->id == key && (obj->frame == field || obj->frame == 4))
+    if (obj->cell == key && (obj->frame == field || obj->frame == 4))
         return 1;
     return 0;
 }

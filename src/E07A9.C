@@ -70,11 +70,11 @@ struct Entry14 {            /* 14-byte records at ds:8DD2 (ITEM.DAT records, whi
                                (122E:1D2B). */
     signed char icon;       /* +1: the item's icon number, an index into gIconsDDE4 (read at
                                07A9:0141 and sign-extended by the cbw, byte 98h, at 07A9:0145) */
-    signed char m02;        /* +2: compared by 0D1C:00F1 and 0D1C:01CA (src/E0D1C.C) */
+    signed char type;        /* +2: compared by 0D1C:00F1 and 0D1C:01CA (src/E0D1C.C) */
     char pad03;
-    int m04;                /* +4: set to -1 by 0D1C:01CA (src/E0D1C.C) */
+    int key;                /* +4: set to -1 by 0D1C:01CA (src/E0D1C.C) */
     char pad06[0x0B - 0x06];
-    signed char m0B;        /* +0xB: compared by 0D1C:00F1 (src/E0D1C.C) */
+    signed char value;        /* +0xB: compared by 0D1C:00F1 (src/E0D1C.C) */
     char pad0C[0x0E - 0x0C];
 };
 

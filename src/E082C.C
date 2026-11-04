@@ -26,10 +26,10 @@ struct Region {             /* 16-byte records at ds:009F (src/E1A29.C) */
     int top;                /* +2: top edge in lines */
     int width;              /* +4: width in 8-pixel columns */
     int height;             /* +6: height in lines */
-    int attr1;              /* +8: text attribute 1 [H] (gTextAttr1, src/E1DE7.C:26) */
-    int attr2;              /* +a: text attribute 2 [H] (gTextAttr2, src/E1DE7.C:27) */
-    int column;             /* +c: cursor column (gTextCol) */
-    int row;                /* +e: cursor row (gTextRow) */
+    int textAttr1;              /* +8: text attribute 1 [H] (gTextAttr1, src/E1DE7.C:26) */
+    int textAttr2;              /* +a: text attribute 2 [H] (gTextAttr2, src/E1DE7.C:27) */
+    int textCol;             /* +c: cursor column (gTextCol) */
+    int textRow;                /* +e: cursor row (gTextRow) */
 };
 
 /* The keys the text-field editor reacts to. WaitGameKey (1AAD:053A) returns a translated key
