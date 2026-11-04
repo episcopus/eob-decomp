@@ -45,11 +45,11 @@ extern int gSoundOn;                  /*@ ds:80E6: nonzero unless sound was '4' 
                                          src/E1AAD.ASM:935) and written by the sound option
                                          (src/EOV1.ASM:3741). src/E1AAD.ASM:17 declares it BYTE
                                          and src/EOV1.ASM:115 WORD; int keeps the code */
-extern unsigned char gTandySelected;           /*@ ds:009E: 1 on the Tandy path only (:436); the PC speaker
-                                         path (:431) leaves it at its load value. PlaySound
-                                         (src/E177D.C:182) gates the gTandyOn toggle on it. Purpose
-                                         unknown beyond that: the name it used to carry, gTandySelected, is
-                                         inherited and is not evidence of a PC speaker mode (a placeholder name) */
+extern unsigned char gTandySelected;           /*@ ds:009E: records that the Tandy card was chosen: its only
+                                         store is 1 on StartupGame's Tandy sound path (07C8 image 0x81E8,
+                                         next to gTandyOn = 1); the PC speaker path leaves it at its load
+                                         value. PlaySound and PlaySoundAtCell test it == 1 to gate the
+                                         gTandyOn toggle (src/E177D.C:182; re/renames.toml, ds:009E) */
 extern unsigned char gTandyOn;        /*@ ds:8A67: the driver select: 1 is Tandy, 0 the PC speaker
                                          (src/E1948.ASM:7, tested at :279, :379, :500, :527 and
                                          :553). StartupGame sets it to 1 on the Tandy path (:435),
@@ -96,9 +96,11 @@ extern int gTextAttr1;                /*@ ds:811D: the first text attribute, set
                                          DEFAULT_TEXT_ATTR1 (0xF) at start-up (:262) and passed to the draw-text
                                          hook (src/E1DE7.C:271); declared in src/E122E.C:74 and src/E1DE7.C:42, read with gTextAttr2 in src/EOV2.C:500. That it is the foreground colour is [H]: the game meaning of the two attributes is not established (src/E1A29.C:27-28) */
 extern void (far *gSetPalette)(void far *table); /*@ ds:80BA: the palette setter (src/EOV4.C:1035, :1060), called with the palette buffers (:253, :258, :388, :398); Purpose unknown beyond the palette: nothing in src/ assigns ds:80BA */
-extern void (far *gClearPage)(void);     /*@ ds:8056: far function called before the fonts load
-                                         (:375). Purpose unknown: nothing in src/ assigns ds:8056
-                                         (re/renames.toml:1297 lists the name as an example of the unknown-purpose pattern) */
+extern void (far *gClearPage)(void);     /*@ ds:8056: a graphics driver entry (slot 11 of the ds:802A
+                                         table) that clears the current draw page's segment (MCGA.OVL
+                                         0693, EGA.OVL 07FB; re/renames.toml, ds:8056); StartupGame calls it
+                                         once the page table is built, before the fonts load. Nothing in
+                                         src/ assigns ds:8056 */
 extern unsigned char far *gPaletteBuf;      /*@ ds:FE68: the palette buffer StartupGame allocates. The
                                          gGraphicsChoice - 1 case labels 0 and 1 (graphics choices 1 and 2, :385)
                                          get 16 bytes, of which only byte 0 (:386, 0) and byte 0xf
@@ -298,7 +300,8 @@ int AllocationFailure(void);
         SetVideoMode(gGraphicsChoice);
         memtop = ReserveMemoryBelowVideo(3);   /* 3 steps reserves 2 x 32 KB = 64 KB below the probe */
         /* the segment where program memory must end: atol parses the numeric string the far pointer
-           gArgv->number (+0x18) points at (its writer is Purpose unknown, src/E1990.ASM:23-26) */
+           gArgv->number (+0x18) points at (the C library's start-up code, C0.ASM, sets _argv; the string is an argument the
+           launcher passes, src/E1990.ASM:23-26) */
         gMemTopSeg = (unsigned)atol(gArgv->number);
         break;
     case 3:
