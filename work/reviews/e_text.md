@@ -1,7 +1,7 @@
 # Review: e_text
 
-Reviewer: rev-haiku
-Commit reviewed: round 1 at 2ba0b7c; round 2 at c003ada; round 3 at 3165a9c; round 4 at 35510fa; round 5 at ee9075d; round 6 at 8acc261 (see Findings, Round 6)
+Reviewer: p6-rev-4
+Commit reviewed: round 1 at 2ba0b7c; round 2 at c003ada; round 3 at 3165a9c; round 4 at 35510fa; round 5 at ee9075d; round 6 at 8acc261; Round P6 at ce0608f (see Findings, Round P6)
 
 Playbook 70. Judge what a matching file can still get wrong: names, types, comments, structure.
 The matcher already proved the bytes; do not re-prove them, read for meaning.
@@ -23,6 +23,18 @@ Not checked: the claim that the block's first word in ADLIB.DAT is 0258h (the fi
 
 Each finding is a checkbox. `must-fix` blocks `make review-pass` until a decompiler ticks it off
 (with the commit that fixes it); `should` and `note` do not block.
+
+### Round P6: must-fix items
+
+None open. Scope: the state of the file since round 6 (`git diff 8acc261 HEAD -- src/E_TEXT.ASM re/symbols.toml re/globals.toml`): the source diff is empty, `re/symbols.toml` and `re/globals.toml` have no e_text row in that diff, and `re/renames.toml` and `re/fields.toml` likewise. `make match FILE=src/E_TEXT.ASM` 44 of 44 (19996 of 19996 bytes), exit 0; `make readability UNIT=e_text` 0 findings. The unit is an assembly file and Phase 6 did not rename anything in it; the round 6 must-fix M12 is still fixed right (its tick stays), and the diff introduces no new name or comment to check.
+
+Round P6 should items: none.
+
+Round P6 notes:
+
+- The file is unchanged since round 6. This round confirms the earlier review stands and records no Phase 6 rename or comment rewrite reaching `src/E_TEXT.ASM`.
+
+Round P6 summary: no must-fix open, no should. The round 6 M12 tick stays. No matcher, spec or pin question. Nothing escalated.
 
 ### Round 6: must-fix items
 
