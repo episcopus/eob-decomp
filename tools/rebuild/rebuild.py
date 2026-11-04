@@ -3,6 +3,7 @@
 (Phase 5, playbook 50).
 
   rebuild.py START1.EXE|INTRO.EXE|EOB.EXE [-v]
+  rebuild.py CGA.OVL|EGA.OVL|MCGA.OVL|TGA.OVL [-v]     a graphics driver from src/drivers/ (driver.py)
 
 The units of the program (re/units.toml, not its start-up code or runtime library) are compiled
 and assembled from working copies of their files in build/rebuild/<program>/, then linked by TLINK
@@ -1364,6 +1365,9 @@ def main(argv=None) -> int:
     ap.add_argument("--extern", action="append", default=[], help=argparse.SUPPRESS)
     a = ap.parse_args(argv)
     program = a.program.upper()
+    if program.endswith(".OVL"):                    # a graphics driver: one module, built and compared whole
+        import driver
+        return driver.main([program] + (["-v"] if a.verbose else []))
     raw = (ROOT / "eob" / program).read_bytes()
     orig = read_mz(raw)
     oimg, orel = orig["image"], {s * 16 + o for o, s in orig["relocs"]}
