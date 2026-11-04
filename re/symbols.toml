@@ -6619,7 +6619,7 @@ evidence = ["far", "segment"]
 name = "RandomRange"
 level = "L2"
 match_flags = "-ml -O -Z"
-review = "passed 2026-11-01 rev-sonnet"
+review = "passed 2026-11-04 p6-rev-5"
 
 [[function]]
 id = "e1aad_000c"
