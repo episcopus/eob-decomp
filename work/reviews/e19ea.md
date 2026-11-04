@@ -1,5 +1,13 @@
 # Review: e19ea
 
+## Round P6 (2026-11-04), commit 39d85cdcb71f673d7aafdc133a116c43ae11f606
+
+Reviewer: p6-rev-2. Commit reviewed: 39d85cdcb71f673d7aafdc133a116c43ae11f606 (P6 round; the earlier round read 2332e05).
+
+The diff 2332e05..39d85cd on src/E19EA.ASM is empty: P6 changed no name or comment in this unit. The name _PrintString is the Round 1 name and is backed by the callers (console messages) and the bytes; the Round 1 should on the register-save comment (DI is saved but unused, DF assumed clear) is still open.
+
+No open must-fix. The unit passes.
+
 Reviewer: rev-sonnet
 Commit reviewed: 2332e052b44a1e318efd752db3758d27f54a8c9f
 
