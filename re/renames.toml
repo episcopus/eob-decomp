@@ -5013,3 +5013,561 @@ new = "SelectSpellLevel"
 kind = "function"
 why = "The spell panel's level-tab callback: the five 0x3C-byte action records at ds:491A.. pointing at 0EF3:25BD carry keys 0..4 at +0x38; it sets gDDE2 (the level row) to the key, highlights the first slot over zero and redraws the panel through DrawSpellPanel (0EF3:2295)."
 date = "2026-11-03"
+
+[[rename]]
+id = "0EF3:0F0B=CastArmor"
+addr = "0EF3:0F0B"
+old = "FixArmourClass"
+new = "CastArmor"
+kind = "function"
+why = "the spell table ds:1344 (19-byte records, name pointer first) gives record 1, \"armor\", 0EF3:0F0B as its +05, the callback run when the spell is cast"
+date = "2026-11-03"
+
+[[rename]]
+id = "0EF3:0F86=EndArmor"
+addr = "0EF3:0F86"
+old = "RecomputeArmourClass"
+new = "EndArmor"
+kind = "function"
+why = "the spell table ds:1344 (19-byte records, name pointer first) gives record 1, \"armor\", 0EF3:0F86 as its +0D, the callback run when the spell ends"
+date = "2026-11-03"
+
+[[rename]]
+id = "0EF3:0F99=CastBurningHands"
+addr = "0EF3:0F99"
+old = "DrawMemberIcons"
+new = "CastBurningHands"
+kind = "function"
+why = "the spell table ds:1344 (19-byte records, name pointer first) gives record 2, \"burning hands\", 0EF3:0F99 as its +05, the callback run when the spell is cast"
+date = "2026-11-03"
+
+[[rename]]
+id = "0EF3:1069=CastDetectMagic"
+addr = "0EF3:1069"
+old = "EnterSwapMode"
+new = "CastDetectMagic"
+kind = "function"
+why = "the spell table ds:1344 (19-byte records, name pointer first) gives record 3, \"detect magic\", 0EF3:1069 as its +05, the callback run when the spell is cast (also record 29)"
+date = "2026-11-03"
+
+[[rename]]
+id = "0EF3:10AE=EndDetectMagic"
+addr = "0EF3:10AE"
+old = "LeaveSwapMode"
+new = "EndDetectMagic"
+kind = "function"
+why = "the spell table ds:1344 (19-byte records, name pointer first) gives record 3, \"detect magic\", 0EF3:10AE as its +0D, the callback run when the spell ends (also record 29)"
+date = "2026-11-03"
+
+[[rename]]
+id = "0EF3:10D2=CastMagicMissile"
+addr = "0EF3:10D2"
+old = "AddEffectRecord0"
+new = "CastMagicMissile"
+kind = "function"
+why = "the spell table ds:1344 (19-byte records, name pointer first) gives record 4, \"magic missile\", 0EF3:10D2 as its +05, the callback run when the spell is cast"
+date = "2026-11-03"
+
+[[rename]]
+id = "0EF3:10F2=HitMagicMissile"
+addr = "0EF3:10F2"
+old = "RunMelee1d4"
+new = "HitMagicMissile"
+kind = "function"
+why = "the spell table ds:1344 (19-byte records, name pointer first) gives record 4, \"magic missile\", 0EF3:10F2 as its +09, the callback the spell's projectile runs (Projectile.fn)"
+date = "2026-11-03"
+
+[[rename]]
+id = "0EF3:1122=CastShield"
+addr = "0EF3:1122"
+old = "SetAttackEffect"
+new = "CastShield"
+kind = "function"
+why = "the spell table ds:1344 (19-byte records, name pointer first) gives record 6, \"shield\", 0EF3:1122 as its +05, the callback run when the spell is cast"
+date = "2026-11-03"
+
+[[rename]]
+id = "0EF3:1176=EndShield"
+addr = "0EF3:1176"
+old = "ClearAttackEffect"
+new = "EndShield"
+kind = "function"
+why = "the spell table ds:1344 (19-byte records, name pointer first) gives record 6, \"shield\", 0EF3:1176 as its +0D, the callback run when the spell ends"
+date = "2026-11-03"
+
+[[rename]]
+id = "0EF3:1197=CastShockingGrasp"
+addr = "0EF3:1197"
+old = "CreateItemForEffect0"
+new = "CastShockingGrasp"
+kind = "function"
+why = "the spell table ds:1344 (19-byte records, name pointer first) gives record 7, \"shocking grasp\", 0EF3:1197 as its +05, the callback run when the spell is cast"
+date = "2026-11-03"
+
+[[rename]]
+id = "0EF3:127F=CastInvisibility"
+addr = "0EF3:127F"
+old = "SetEffectFlag4"
+new = "CastInvisibility"
+kind = "function"
+why = "the spell table ds:1344 (19-byte records, name pointer first) gives record 8, \"invisibility\", 0EF3:127F as its +05, the callback run when the spell is cast"
+date = "2026-11-03"
+
+[[rename]]
+id = "0EF3:12A1=EndInvisibility"
+addr = "0EF3:12A1"
+old = "ClearEffectFlag4"
+new = "EndInvisibility"
+kind = "function"
+why = "the spell table ds:1344 (19-byte records, name pointer first) gives record 8, \"invisibility\", 0EF3:12A1 as its +0D, the callback run when the spell ends (also record 17)"
+date = "2026-11-03"
+
+[[rename]]
+id = "0EF3:12C2=CastAcidArrow"
+addr = "0EF3:12C2"
+old = "AddEffectRecord1"
+new = "CastAcidArrow"
+kind = "function"
+why = "the spell table ds:1344 (19-byte records, name pointer first) gives record 10, \"melf's acid arrow\", 0EF3:12C2 as its +05, the callback run when the spell is cast"
+date = "2026-11-03"
+
+[[rename]]
+id = "0EF3:12E3=HitAcidArrow"
+addr = "0EF3:12E3"
+old = "RunMelee2d4"
+new = "HitAcidArrow"
+kind = "function"
+why = "the spell table ds:1344 (19-byte records, name pointer first) gives record 10, \"melf's acid arrow\", 0EF3:12E3 as its +09, the callback the spell's projectile runs (Projectile.fn)"
+date = "2026-11-03"
+
+[[rename]]
+id = "0EF3:131A=CastDispelMagic"
+addr = "0EF3:131A"
+old = "DispelMagic"
+new = "CastDispelMagic"
+kind = "function"
+why = "the spell table ds:1344 (19-byte records, name pointer first) gives record 12, \"dispel magic\", 0EF3:131A as its +05, the callback run when the spell is cast (also record 36)"
+date = "2026-11-03"
+
+[[rename]]
+id = "0EF3:13FD=CastFireball"
+addr = "0EF3:13FD"
+old = "AddEffectRecord2"
+new = "CastFireball"
+kind = "function"
+why = "the spell table ds:1344 (19-byte records, name pointer first) gives record 13, \"fireball\", 0EF3:13FD as its +05, the callback run when the spell is cast"
+date = "2026-11-03"
+
+[[rename]]
+id = "0EF3:141E=HitFireball"
+addr = "0EF3:141E"
+old = "RunMelee1d6"
+new = "HitFireball"
+kind = "function"
+why = "the spell table ds:1344 (19-byte records, name pointer first) gives record 13, \"fireball\", 0EF3:141E as its +09, the callback the spell's projectile runs (Projectile.fn)"
+date = "2026-11-03"
+
+[[rename]]
+id = "0EF3:144A=CastFlameArrow"
+addr = "0EF3:144A"
+old = "AddEffectRecord3"
+new = "CastFlameArrow"
+kind = "function"
+why = "the spell table ds:1344 (19-byte records, name pointer first) gives record 14, \"flame arrow\", 0EF3:144A as its +05, the callback run when the spell is cast"
+date = "2026-11-03"
+
+[[rename]]
+id = "0EF3:146B=HitFlameArrow"
+addr = "0EF3:146B"
+old = "RunMelee5d6"
+new = "HitFlameArrow"
+kind = "function"
+why = "the spell table ds:1344 (19-byte records, name pointer first) gives record 14, \"flame arrow\", 0EF3:146B as its +09, the callback the spell's projectile runs (Projectile.fn)"
+date = "2026-11-03"
+
+[[rename]]
+id = "0EF3:1497=CastHaste"
+addr = "0EF3:1497"
+old = "MarkLivingMembers"
+new = "CastHaste"
+kind = "function"
+why = "the spell table ds:1344 (19-byte records, name pointer first) gives record 15, \"haste\", 0EF3:1497 as its +05, the callback run when the spell is cast"
+date = "2026-11-03"
+
+[[rename]]
+id = "0EF3:14F9=EndHaste"
+addr = "0EF3:14F9"
+old = "ClearEffectFlag8"
+new = "EndHaste"
+kind = "function"
+why = "the spell table ds:1344 (19-byte records, name pointer first) gives record 15, \"haste\", 0EF3:14F9 as its +0D, the callback run when the spell ends"
+date = "2026-11-03"
+
+[[rename]]
+id = "0EF3:150F=CastHoldPerson"
+addr = "0EF3:150F"
+old = "AddEffectRecord4"
+new = "CastHoldPerson"
+kind = "function"
+why = "the spell table ds:1344 (19-byte records, name pointer first) gives record 16, \"hold person\", 0EF3:150F as its +05, the callback run when the spell is cast (also record 33)"
+date = "2026-11-03"
+
+[[rename]]
+id = "0EF3:1530=HitHoldPerson"
+addr = "0EF3:1530"
+old = "UpdateCellObjectsBit1"
+new = "HitHoldPerson"
+kind = "function"
+why = "the spell table ds:1344 (19-byte records, name pointer first) gives record 16, \"hold person\", 0EF3:1530 as its +09, the callback the spell's projectile runs (Projectile.fn)"
+date = "2026-11-03"
+
+[[rename]]
+id = "0EF3:15D0=CastInvisibility10"
+addr = "0EF3:15D0"
+old = "MarkAllMembersFlag4"
+new = "CastInvisibility10"
+kind = "function"
+why = "the spell table ds:1344 (19-byte records, name pointer first) gives record 17, \"invisibility 10' radius\", 0EF3:15D0 as its +05, the callback run when the spell is cast"
+date = "2026-11-03"
+
+[[rename]]
+id = "0EF3:1609=CastLightningBolt"
+addr = "0EF3:1609"
+old = "AddEffectRecord5"
+new = "CastLightningBolt"
+kind = "function"
+why = "the spell table ds:1344 (19-byte records, name pointer first) gives record 18, \"lightning bolt\", 0EF3:1609 as its +05, the callback run when the spell is cast"
+date = "2026-11-03"
+
+[[rename]]
+id = "0EF3:162A=HitLightningBolt"
+addr = "0EF3:162A"
+old = "RunMelee1d6B"
+new = "HitLightningBolt"
+kind = "function"
+why = "the spell table ds:1344 (19-byte records, name pointer first) gives record 18, \"lightning bolt\", 0EF3:162A as its +09, the callback the spell's projectile runs (Projectile.fn)"
+date = "2026-11-03"
+
+[[rename]]
+id = "0EF3:1656=CastVampiricTouch"
+addr = "0EF3:1656"
+old = "CreateItemForEffect6"
+new = "CastVampiricTouch"
+kind = "function"
+why = "the spell table ds:1344 (19-byte records, name pointer first) gives record 19, \"vampiric touch\", 0EF3:1656 as its +05, the callback run when the spell is cast"
+date = "2026-11-03"
+
+[[rename]]
+id = "0EF3:16DC=EndVampiricTouch"
+addr = "0EF3:16DC"
+old = "ClampHitPoints"
+new = "EndVampiricTouch"
+kind = "function"
+why = "the spell table ds:1344 (19-byte records, name pointer first) gives record 19, \"vampiric touch\", 0EF3:16DC as its +0D, the callback run when the spell ends"
+date = "2026-11-03"
+
+[[rename]]
+id = "0EF3:1702=CastFear"
+addr = "0EF3:1702"
+old = "ClearObjectsFacingCell"
+new = "CastFear"
+kind = "function"
+why = "the spell table ds:1344 (19-byte records, name pointer first) gives record 20, \"fear\", 0EF3:1702 as its +05, the callback run when the spell is cast"
+date = "2026-11-03"
+
+[[rename]]
+id = "0EF3:17B7=CastIceStorm"
+addr = "0EF3:17B7"
+old = "AddEffectRecord6"
+new = "CastIceStorm"
+kind = "function"
+why = "the spell table ds:1344 (19-byte records, name pointer first) gives record 21, \"ice storm\", 0EF3:17B7 as its +05, the callback run when the spell is cast"
+date = "2026-11-03"
+
+[[rename]]
+id = "0EF3:17D8=HitIceStorm"
+addr = "0EF3:17D8"
+old = "RunMeleeAroundCell"
+new = "HitIceStorm"
+kind = "function"
+why = "the spell table ds:1344 (19-byte records, name pointer first) gives record 21, \"ice storm\", 0EF3:17D8 as its +09, the callback the spell's projectile runs (Projectile.fn)"
+date = "2026-11-03"
+
+[[rename]]
+id = "0EF3:1865=CastStoneskin"
+addr = "0EF3:1865"
+old = "SetBandageCountdown"
+new = "CastStoneskin"
+kind = "function"
+why = "the spell table ds:1344 (19-byte records, name pointer first) gives record 22, \"stoneskin\", 0EF3:1865 as its +05, the callback run when the spell is cast"
+date = "2026-11-03"
+
+[[rename]]
+id = "0EF3:1A0F=CastHoldMonster"
+addr = "0EF3:1A0F"
+old = "AddEffectRecord7"
+new = "CastHoldMonster"
+kind = "function"
+why = "the spell table ds:1344 (19-byte records, name pointer first) gives record 25, \"hold monster\", 0EF3:1A0F as its +05, the callback run when the spell is cast"
+date = "2026-11-03"
+
+[[rename]]
+id = "0EF3:1A30=HitHoldMonster"
+addr = "0EF3:1A30"
+old = "UpdateCellObjectsBit2"
+new = "HitHoldMonster"
+kind = "function"
+why = "the spell table ds:1344 (19-byte records, name pointer first) gives record 25, \"hold monster\", 0EF3:1A30 as its +09, the callback the spell's projectile runs (Projectile.fn)"
+date = "2026-11-03"
+
+[[rename]]
+id = "0EF3:1AD0=CastBless"
+addr = "0EF3:1AD0"
+old = "ToggleSwapFlag"
+new = "CastBless"
+kind = "function"
+why = "the spell table ds:1344 (19-byte records, name pointer first) gives record 26, \"bless\", 0EF3:1AD0 as its +05, the callback run when the spell is cast"
+date = "2026-11-03"
+
+[[rename]]
+id = "0EF3:1B13=EndBless"
+addr = "0EF3:1B13"
+old = "ClearSwapFlag"
+new = "EndBless"
+kind = "function"
+why = "the spell table ds:1344 (19-byte records, name pointer first) gives record 26, \"bless\", 0EF3:1B13 as its +0D, the callback run when the spell ends"
+date = "2026-11-03"
+
+[[rename]]
+id = "0EF3:1B20=CastCureLightWounds"
+addr = "0EF3:1B20"
+old = "HealCurrent1d8"
+new = "CastCureLightWounds"
+kind = "function"
+why = "the spell table ds:1344 (19-byte records, name pointer first) gives record 27, \"cure light wounds\", 0EF3:1B20 as its +05, the callback run when the spell is cast"
+date = "2026-11-03"
+
+[[rename]]
+id = "0EF3:1B43=CastCauseLightWounds"
+addr = "0EF3:1B43"
+old = "CastMelee1d8"
+new = "CastCauseLightWounds"
+kind = "function"
+why = "the spell table ds:1344 (19-byte records, name pointer first) gives record 28, \"cause light wounds\", 0EF3:1B43 as its +05, the callback run when the spell is cast"
+date = "2026-11-03"
+
+[[rename]]
+id = "0EF3:1B5A=CastProtFromEvil"
+addr = "0EF3:1B5A"
+old = "SetEffectFlag200"
+new = "CastProtFromEvil"
+kind = "function"
+why = "the spell table ds:1344 (19-byte records, name pointer first) gives record 30, \"protection from evil\", 0EF3:1B5A as its +05, the callback run when the spell is cast"
+date = "2026-11-03"
+
+[[rename]]
+id = "0EF3:1B8D=EndProtFromEvil"
+addr = "0EF3:1B8D"
+old = "ClearEffectFlag200"
+new = "EndProtFromEvil"
+kind = "function"
+why = "the spell table ds:1344 (19-byte records, name pointer first) gives record 30, \"protection from evil\", 0EF3:1B8D as its +0D, the callback run when the spell ends"
+date = "2026-11-03"
+
+[[rename]]
+id = "0EF3:1BA3=CastAid"
+addr = "0EF3:1BA3"
+old = "ApplyAidEffect"
+new = "CastAid"
+kind = "function"
+why = "the spell table ds:1344 (19-byte records, name pointer first) gives record 31, \"aid\", 0EF3:1BA3 as its +05, the callback run when the spell is cast"
+date = "2026-11-03"
+
+[[rename]]
+id = "0EF3:1C45=EndAid"
+addr = "0EF3:1C45"
+old = "UndoBandage"
+new = "EndAid"
+kind = "function"
+why = "the spell table ds:1344 (19-byte records, name pointer first) gives record 31, \"aid\", 0EF3:1C45 as its +0D, the callback run when the spell ends"
+date = "2026-11-03"
+
+[[rename]]
+id = "0EF3:1D38=CastFlameBlade"
+addr = "0EF3:1D38"
+old = "CreateItemForEffect4"
+new = "CastFlameBlade"
+kind = "function"
+why = "the spell table ds:1344 (19-byte records, name pointer first) gives record 32, \"flame blade\", 0EF3:1D38 as its +05, the callback run when the spell is cast"
+date = "2026-11-03"
+
+[[rename]]
+id = "0EF3:1C75=CastSlowPoison"
+addr = "0EF3:1C75"
+old = "ApplyConditionEffect"
+new = "CastSlowPoison"
+kind = "function"
+why = "the spell table ds:1344 (19-byte records, name pointer first) gives record 34, \"slow poison\", 0EF3:1C75 as its +05, the callback run when the spell is cast"
+date = "2026-11-03"
+
+[[rename]]
+id = "0EF3:1CD2=EndSlowPoison"
+addr = "0EF3:1CD2"
+old = "ClearEffectFlag80"
+new = "EndSlowPoison"
+kind = "function"
+why = "the spell table ds:1344 (19-byte records, name pointer first) gives record 34, \"slow poison\", 0EF3:1CD2 as its +0D, the callback run when the spell ends"
+date = "2026-11-03"
+
+[[rename]]
+id = "0EF3:1DC0=CastCreateFood"
+addr = "0EF3:1DC0"
+old = "FillPartyFood"
+new = "CastCreateFood"
+kind = "function"
+why = "the spell table ds:1344 (19-byte records, name pointer first) gives record 35, \"create food\", 0EF3:1DC0 as its +05, the callback run when the spell is cast"
+date = "2026-11-03"
+
+[[rename]]
+id = "0EF3:1DDF=CastMagicalVestment"
+addr = "0EF3:1DDF"
+old = "SetEffectFlag100"
+new = "CastMagicalVestment"
+kind = "function"
+why = "the spell table ds:1344 (19-byte records, name pointer first) gives record 37, \"magical vestment\", 0EF3:1DDF as its +05, the callback run when the spell is cast"
+date = "2026-11-03"
+
+[[rename]]
+id = "0EF3:1E1D=EndMagicalVestment"
+addr = "0EF3:1E1D"
+old = "ClearEffectFlag100"
+new = "EndMagicalVestment"
+kind = "function"
+why = "the spell table ds:1344 (19-byte records, name pointer first) gives record 37, \"magical vestment\", 0EF3:1E1D as its +0D, the callback run when the spell ends"
+date = "2026-11-03"
+
+[[rename]]
+id = "0EF3:1E3E=CastPrayer"
+addr = "0EF3:1E3E"
+old = "SetSwapFlag20"
+new = "CastPrayer"
+kind = "function"
+why = "the spell table ds:1344 (19-byte records, name pointer first) gives record 38, \"prayer\", 0EF3:1E3E as its +05, the callback run when the spell is cast"
+date = "2026-11-03"
+
+[[rename]]
+id = "0EF3:1E6C=EndPrayer"
+addr = "0EF3:1E6C"
+old = "ClearSwapFlag20"
+new = "EndPrayer"
+kind = "function"
+why = "the spell table ds:1344 (19-byte records, name pointer first) gives record 38, \"prayer\", 0EF3:1E6C as its +0D, the callback run when the spell ends"
+date = "2026-11-03"
+
+[[rename]]
+id = "0EF3:1E7E=CastRemoveParalysis"
+addr = "0EF3:1E7E"
+old = "ClearParalysisFromFour"
+new = "CastRemoveParalysis"
+kind = "function"
+why = "the spell table ds:1344 (19-byte records, name pointer first) gives record 39, \"remove paralysis\", 0EF3:1E7E as its +05, the callback run when the spell is cast"
+date = "2026-11-03"
+
+[[rename]]
+id = "0EF3:1ECC=CastCureSeriousWounds"
+addr = "0EF3:1ECC"
+old = "HealCurrent2d8"
+new = "CastCureSeriousWounds"
+kind = "function"
+why = "the spell table ds:1344 (19-byte records, name pointer first) gives record 40, \"cure serious wounds\", 0EF3:1ECC as its +05, the callback run when the spell is cast"
+date = "2026-11-03"
+
+[[rename]]
+id = "0EF3:1EF3=CastCauseSeriousWounds"
+addr = "0EF3:1EF3"
+old = "CastMelee2d8"
+new = "CastCauseSeriousWounds"
+kind = "function"
+why = "the spell table ds:1344 (19-byte records, name pointer first) gives record 41, \"cause serious wounds\", 0EF3:1EF3 as its +05, the callback run when the spell is cast"
+date = "2026-11-03"
+
+[[rename]]
+id = "0EF3:1F0B=CastNeutralizePoison"
+addr = "0EF3:1F0B"
+old = "CureOrReportPoison"
+new = "CastNeutralizePoison"
+kind = "function"
+why = "the spell table ds:1344 (19-byte records, name pointer first) gives record 42, \"neutralize poison\", 0EF3:1F0B as its +05, the callback run when the spell is cast"
+date = "2026-11-03"
+
+[[rename]]
+id = "0EF3:1F33=CastProtFromEvil10"
+addr = "0EF3:1F33"
+old = "MarkAllFlag200"
+new = "CastProtFromEvil10"
+kind = "function"
+why = "the spell table ds:1344 (19-byte records, name pointer first) gives record 43, \"protection from evil 10'\", 0EF3:1F33 as its +05, the callback run when the spell is cast"
+date = "2026-11-03"
+
+[[rename]]
+id = "0EF3:1F8F=EndProtFromEvil10"
+addr = "0EF3:1F8F"
+old = "ClearAllFlag200"
+new = "EndProtFromEvil10"
+kind = "function"
+why = "the spell table ds:1344 (19-byte records, name pointer first) gives record 43, \"protection from evil 10'\", 0EF3:1F8F as its +0D, the callback run when the spell ends"
+date = "2026-11-03"
+
+[[rename]]
+id = "0EF3:1FD2=CastCureCriticalWounds"
+addr = "0EF3:1FD2"
+old = "HealCurrent3d8"
+new = "CastCureCriticalWounds"
+kind = "function"
+why = "the spell table ds:1344 (19-byte records, name pointer first) gives record 45, \"cure critical wounds\", 0EF3:1FD2 as its +05, the callback run when the spell is cast"
+date = "2026-11-03"
+
+[[rename]]
+id = "0EF3:1FF9=CastCauseCriticalWounds"
+addr = "0EF3:1FF9"
+old = "CastMelee3d8"
+new = "CastCauseCriticalWounds"
+kind = "function"
+why = "the spell table ds:1344 (19-byte records, name pointer first) gives record 46, \"cause critical wounds\", 0EF3:1FF9 as its +05, the callback run when the spell is cast"
+date = "2026-11-03"
+
+[[rename]]
+id = "0EF3:2011=CastFlameStrike"
+addr = "0EF3:2011"
+old = "AddEffectRecord8"
+new = "CastFlameStrike"
+kind = "function"
+why = "the spell table ds:1344 (19-byte records, name pointer first) gives record 47, \"flame strike\", 0EF3:2011 as its +05, the callback run when the spell is cast"
+date = "2026-11-03"
+
+[[rename]]
+id = "0EF3:2032=HitFlameStrike"
+addr = "0EF3:2032"
+old = "RunMelee6d8"
+new = "HitFlameStrike"
+kind = "function"
+why = "the spell table ds:1344 (19-byte records, name pointer first) gives record 47, \"flame strike\", 0EF3:2032 as its +09, the callback the spell's projectile runs (Projectile.fn)"
+date = "2026-11-03"
+
+[[rename]]
+id = "0EF3:2050=CastRaiseDead"
+addr = "0EF3:2050"
+old = "ReviveAtMinusTen"
+new = "CastRaiseDead"
+kind = "function"
+why = "the spell table ds:1344 (19-byte records, name pointer first) gives record 48, \"raise dead\", 0EF3:2050 as its +05, the callback run when the spell is cast"
+date = "2026-11-03"
+
+[[rename]]
+id = "0EF3:21BC=CastLayOnHands"
+addr = "0EF3:21BC"
+old = "HealFromClassSlot"
+new = "CastLayOnHands"
+kind = "function"
+why = "the spell table ds:1344 (19-byte records, name pointer first) gives record 49, \"lay on hands\", 0EF3:21BC as its +05, the callback run when the spell is cast"
+date = "2026-11-03"

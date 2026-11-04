@@ -182,8 +182,8 @@ extern int AddDDEffect(int who, int item, int volume, int kind, int page, int ty
 extern int Obj15B4(char who, int value); /*@ 08E6:15B4 */
 extern int GetClassSlot24Value(int who); /*@ 0EF3:04F7 */
 extern void DamageObject(struct Monster far *obj, int damage); /*@ 08E6:0FBE */
-extern void ClearEffectFlag4(struct CharRec far *rec); /*@ 0EF3:12A1 */
-extern void RecomputeArmourClass(struct CharRec far *rec); /*@ 0EF3:0F86 */
+extern void EndInvisibility(struct CharRec far *rec); /*@ 0EF3:12A1 */
+extern void EndArmor(struct CharRec far *rec); /*@ 0EF3:0F86 */
 extern void ApplyCharEffect(char who, long interval, char value, char firstEmpty); /*@ 1414:05ED */
 extern void RedrawMember(int who); /*@ 1547:0991 */
 extern void DrawMemberHp(int who); /*@ 1547:033F */
@@ -485,7 +485,7 @@ fail:
     return -4;
 }
 /* 0DE8:0763: runs the action item record `field` (an index into gItems) for character `who`
-   and carried slot `slot` (an index into items). It derives the item's m02, calls ClearEffectFlag4
+   and carried slot `slot` (an index into items). It derives the item's m02, calls EndInvisibility
    when effectFlags bit 2 is set, dispatches on the gItemTypes m0E kind (1 rolls 0359 and forces a miss
    from 0 to -1 with sound 0x20, 2 runs 0537, 3 runs 05BB and redraws), then, on a hit, raises hp
    (capped at 0x7F) for a flag-8 item, clears items[slot] for a flag-16 item and hands gMonsters[gHpMaxOrAttackTarget]
@@ -503,7 +503,7 @@ fail:
         m02 = 0;
     result = 0;
     if (gChars[who].effectFlags & 4)
-        ClearEffectFlag4(&gChars[who]);
+        EndInvisibility(&gChars[who]);
     switch (gItemTypes[m02].m0E & 0x7f) {
     case 1:
         result = ApplyItemAttack(who, field);
@@ -568,7 +568,7 @@ fail:
    it derates mE2 (the clamp to 0 is dead: QUIRK 0DE8:09FD), subtracts from hp, stores the amount
    in lastDamage, and at or below -10 sets hp to -10, clears mE2, clears effectFlags bit 2 and keeps only bit 0 of
    m01; it plays sound 0x16 for the death and 0x15 otherwise, runs the mDF descending effect
-   through RecomputeArmourClass when it runs out, redraws through RedrawMember (or
+   through EndArmor when it runs out, redraws through RedrawMember (or
    DrawMemberPortrait when gPanelMode is set), triggers the party-wipe ending when hp is at or below -10
    and arms ApplyCharEffect(who, 0x12, 6, 1). Called by 0EF3, 08E6, 122E, 1414, 0DE8:01FF
    RunRecordAttack and overlay 6.
@@ -602,7 +602,7 @@ fail:
         rec->mDF -= amount;
         if (rec->mDF <= 0) {
             rec->mDF = 0;
-            RecomputeArmourClass(&gChars[who]);
+            EndArmor(&gChars[who]);
         }
     }
     if (gPanelMode == 0)

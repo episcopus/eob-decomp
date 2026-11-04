@@ -1002,7 +1002,7 @@ extern int gBurstMaskPixel;                /*@ ds:FC72 */ /* the handle gGetPixe
    of its +0x15 index (0A72:019D), set its +0xDF penalty byte to the member's class-slot 1 value
    plus 8 and recompute the armour class; otherwise say the string ds:5830 with the
    record's name. Called through a table. */
-/*@ 0EF3:0F0B */ void FixArmourClass(void)
+/*@ 0EF3:0F0B */ void CastArmor(void)
 {
     char penalty;
     register int base;
@@ -1020,7 +1020,7 @@ extern int gBurstMaskPixel;                /*@ ds:FC72 */ /* the handle gGetPixe
 
 /* 0EF3:0F86: recompute the armour class of the record's member (its +0 byte). Called by 0DE8:09B9
    and 0EF3:131A. */
-/*@ 0EF3:0F86 */ void RecomputeArmourClass(struct CharRec far *rec)
+/*@ 0EF3:0F86 */ void EndArmor(struct CharRec far *rec)
 {
     ComputeArmourClass(rec->index);
 }
@@ -1033,7 +1033,7 @@ extern int gBurstMaskPixel;                /*@ ds:FC72 */ /* the handle gGetPixe
    and runs 08E6:16D6 on it for 1d3 plus twice that value, and sets ds:DF4C. Reached through the
    spell table (an apply callback). Purpose unknown: what the icon index means and what chooses the
    two region drawings. */
-/*@ 0EF3:0F99 */ void DrawMemberIcons(void)
+/*@ 0EF3:0F99 */ void CastBurningHands(void)
 {
     int value;
     int i;
@@ -1055,7 +1055,7 @@ extern int gBurstMaskPixel;                /*@ ds:FC72 */ /* the handle gGetPixe
 
 /* 0EF3:1069: enter the item-swap mode: set gPartySpellFlags bit 0, take the mouse item, move the pointer,
    redraw the characters, and apply a 2-turn effect. Called through a table. */
-/*@ 0EF3:1069 */ void EnterSwapMode(void)
+/*@ 0EF3:1069 */ void CastDetectMagic(void)
 {
     gPartySpellFlags |= 1;
     SetMouseItem(GetCurrentItem());
@@ -1066,7 +1066,7 @@ extern int gBurstMaskPixel;                /*@ ds:FC72 */ /* the handle gGetPixe
 
 /* 0EF3:10AE: leave the item-swap mode: clear gPartySpellFlags bit 0, take the mouse item and move the
    pointer. Called through a table. */
-/*@ 0EF3:10AE */ void LeaveSwapMode(void)
+/*@ 0EF3:10AE */ void EndDetectMagic(void)
 {
     gPartySpellFlags &= ~1;
     SetMouseItem(GetCurrentItem());
@@ -1074,21 +1074,21 @@ extern int gBurstMaskPixel;                /*@ ds:FC72 */ /* the handle gGetPixe
 }
 
 /* 0EF3:10D2: add the panel member's effect record of mode 0 through 0EF3:097B. */
-/*@ 0EF3:10D2 */ void AddEffectRecord0(void)
+/*@ 0EF3:10D2 */ void CastMagicMissile(void)
 {
     StartCellEffect(gPanelMember, 0, gPartyCell, gCasterSubPos, gPartyDir);
 }
 
 /* 0EF3:10F2: run the record's melee effect through 0EF3:0A3F with 1d4, a bonus of 1 and
    n = (class-slot 1 value - 1) >> 1. */
-/*@ 0EF3:10F2 */ void RunMelee1d4(struct Tgt far *rec)
+/*@ 0EF3:10F2 */ void HitMagicMissile(struct Tgt far *rec)
 {
     DamageTargetCell(rec, 1, 4, 1, (GetClassSlot1Value(rec->m0B) - 1) >> 1);
 }
 
 /* 0EF3:1122: set the panel member's effect flag bit 1, recompute the member's armour class and
    apply a 5-turn effect. */
-/*@ 0EF3:1122 */ void SetAttackEffect(void)
+/*@ 0EF3:1122 */ void CastShield(void)
 {
     struct CharRec far *rec;
 
@@ -1099,9 +1099,9 @@ extern int gBurstMaskPixel;                /*@ ds:FC72 */ /* the handle gGetPixe
 }
 
 /* 0EF3:1176: clear the record's effect flag bit 1 and recompute its member's armour class. Reached
-   through a table (the packet finds no direct caller); the counterpart of 0EF3:1122 SetAttackEffect,
+   through a table (the packet finds no direct caller); the counterpart of 0EF3:1122 CastShield,
    which sets the same bit and applies the same 5-turn effect. */
-/*@ 0EF3:1176 */ void ClearAttackEffect(struct CharRec far *rec)
+/*@ 0EF3:1176 */ void EndShield(struct CharRec far *rec)
 {
     rec->effectFlags &= ~2L;
     ComputeArmourClass(rec->index);
@@ -1112,7 +1112,7 @@ extern int gBurstMaskPixel;                /*@ ds:FC72 */ /* the handle gGetPixe
    picks; then redraw and apply a 1-turn effect. Called through a table. The 0482 result is
    `index` and the 035A result `itemType`, declared in that order: the allocator then keeps index
    in DI and itemType in SI with no stack frame (the reverse order spills itemType). */
-/*@ 0EF3:1197 */ void CreateItemForEffect0(void)
+/*@ 0EF3:1197 */ void CastShockingGrasp(void)
 {
     int index, itemType;
 
@@ -1149,7 +1149,7 @@ extern int gBurstMaskPixel;                /*@ ds:FC72 */ /* the handle gGetPixe
 }
 
 /* 0EF3:127F: set the current record's effect flag bit 2 and redraw the current member. */
-/*@ 0EF3:127F */ void SetEffectFlag4(void)
+/*@ 0EF3:127F */ void CastInvisibility(void)
 {
     gCurRec->effectFlags |= 4;
     RedrawMember(gCurMember);
@@ -1157,21 +1157,21 @@ extern int gBurstMaskPixel;                /*@ ds:FC72 */ /* the handle gGetPixe
 
 /* 0EF3:12A1: clear the record's effect flag bit 2 and redraw the current member. Called by
    0DE8:0763 and 0EF3:131A. */
-/*@ 0EF3:12A1 */ void ClearEffectFlag4(struct CharRec far *rec)
+/*@ 0EF3:12A1 */ void EndInvisibility(struct CharRec far *rec)
 {
     rec->effectFlags &= ~4L;
     RedrawMember(gCurMember);
 }
 
 /* 0EF3:12C2: add the panel member's effect record of mode 1 through 0EF3:097B. */
-/*@ 0EF3:12C2 */ void AddEffectRecord1(void)
+/*@ 0EF3:12C2 */ void CastAcidArrow(void)
 {
     StartCellEffect(gPanelMember, 1, gPartyCell, gCasterSubPos, gPartyDir);
 }
 
 /* 0EF3:12E3: run the record's melee effect through 0EF3:0A3F with 2d4 and a third of the
    member's class-slot 1 value. */
-/*@ 0EF3:12E3 */ void RunMelee2d4(struct Tgt far *rec)
+/*@ 0EF3:12E3 */ void HitAcidArrow(struct Tgt far *rec)
 {
     DamageTargetCell(rec, 2, 4, 0, GetClassSlot1Value(rec->m0B) / 3);
 }
@@ -1182,12 +1182,12 @@ extern int gBurstMaskPixel;                /*@ ds:FC72 */ /* the handle gGetPixe
 /* 0EF3:131A: the dispel-magic spell. Say "All spells on %s are dispelled." with the current
    record's name, then for each of its ten spell slots: when the slot byte at +0xD5 is negative
    the slot's spell expire callback gSpells[-slot].remove(gCurRec) runs, the slot and its
-   32-bit value at +0xAD are cleared; when the record's effect flag bit 2 is set ClearEffectFlag4
+   32-bit value at +0xAD are cleared; when the record's effect flag bit 2 is set EndInvisibility
    runs, and when its +0xDF penalty byte is over zero its armour class is recomputed. After the
    loop the penalty byte and the effect flags (+0xE3) are cleared (the flags stored twice, the
    second store what `make match` needs) and the record's member is redrawn. Reached through the
    spell table (record 12's apply callback). */
-/*@ 0EF3:131A */ void DispelMagic(void)
+/*@ 0EF3:131A */ void CastDispelMagic(void)
 {
     register int i;
     register int spell;
@@ -1202,9 +1202,9 @@ extern int gBurstMaskPixel;                /*@ ds:FC72 */ /* the handle gGetPixe
             gCurRec->timers[i] = 0;
         }
         if (gCurRec->effectFlags & 4)
-            ClearEffectFlag4(gCurRec);
+            EndInvisibility(gCurRec);
         if (gCurRec->mDF > 0)
-            RecomputeArmourClass(gCurRec);
+            EndArmor(gCurRec);
     }
     gCurRec->mDF = 0;
     gCurRec->effectFlags = 0;
@@ -1214,32 +1214,32 @@ extern int gBurstMaskPixel;                /*@ ds:FC72 */ /* the handle gGetPixe
 }
 
 /* 0EF3:13FD: add the panel member's effect record of mode 2 through 0EF3:097B. */
-/*@ 0EF3:13FD */ void AddEffectRecord2(void)
+/*@ 0EF3:13FD */ void CastFireball(void)
 {
     StartCellEffect(gPanelMember, 2, gPartyCell, gCasterSubPos, gPartyDir);
 }
 
 /* 0EF3:141E: run the record's 1d6 melee effect through 0EF3:0A3F. */
-/*@ 0EF3:141E */ void RunMelee1d6(struct Tgt far *rec)
+/*@ 0EF3:141E */ void HitFireball(struct Tgt far *rec)
 {
     DamageTargetCell(rec, 1, 6, 0, GetClassSlot1Value(rec->m0B));
 }
 
 /* 0EF3:144A: add the panel member's effect record of mode 3 through 0EF3:097B. */
-/*@ 0EF3:144A */ void AddEffectRecord3(void)
+/*@ 0EF3:144A */ void CastFlameArrow(void)
 {
     StartCellEffect(gPanelMember, 3, gPartyCell, gCasterSubPos, gPartyDir);
 }
 
 /* 0EF3:146B: run the record's 5d6 melee effect through 0EF3:0A3F. */
-/*@ 0EF3:146B */ void RunMelee5d6(struct Tgt far *rec)
+/*@ 0EF3:146B */ void HitFlameArrow(struct Tgt far *rec)
 {
     DamageTargetCell(rec, 5, 6, 0, GetClassSlot1Value(rec->m0B));
 }
 
 /* 0EF3:1497: mark every living member with effect flag bit 3, set the current member to each in
    turn and apply a 3-turn effect. Called through a table. */
-/*@ 0EF3:1497 */ void MarkLivingMembers(void)
+/*@ 0EF3:1497 */ void CastHaste(void)
 {
     int i;
 
@@ -1253,13 +1253,13 @@ extern int gBurstMaskPixel;                /*@ ds:FC72 */ /* the handle gGetPixe
 }
 
 /* 0EF3:14F9: clear the record's effect flag bit 3 (value 8) and leave the member alone. */
-/*@ 0EF3:14F9 */ void ClearEffectFlag8(struct CharRec far *rec)
+/*@ 0EF3:14F9 */ void EndHaste(struct CharRec far *rec)
 {
     rec->effectFlags &= ~8L;
 }
 
 /* 0EF3:150F: add the panel member's effect record of mode 4 through 0EF3:097B. */
-/*@ 0EF3:150F */ void AddEffectRecord4(void)
+/*@ 0EF3:150F */ void CastHoldPerson(void)
 {
     StartCellEffect(gPanelMember, 4, gPartyCell, gCasterSubPos, gPartyDir);
 }
@@ -1269,7 +1269,7 @@ extern int gBurstMaskPixel;                /*@ ds:FC72 */ /* the handle gGetPixe
    not rejected, not for every object listed) and, when the MonsterType record gMonsterTypes[obj->typeIndex]
    has bit 0 of its +0x0F long set, set the object's type byte to 0x0A and its timer to 0x0F.
    Called through a table. */
-/*@ 0EF3:1530 */ int UpdateCellObjectsBit1(struct Tgt far *rec)
+/*@ 0EF3:1530 */ int HitHoldPerson(struct Tgt far *rec)
 {
     int buffer[5];
     int far *list;
@@ -1296,7 +1296,7 @@ extern int gBurstMaskPixel;                /*@ ds:FC72 */ /* the handle gGetPixe
 }
 
 /* 0EF3:15D0: set every member's effect flag bit 2 and redraw the party rows. */
-/*@ 0EF3:15D0 */ void MarkAllMembersFlag4(void)
+/*@ 0EF3:15D0 */ void CastInvisibility10(void)
 {
     struct CharRec far *rec;
     int i;
@@ -1309,13 +1309,13 @@ extern int gBurstMaskPixel;                /*@ ds:FC72 */ /* the handle gGetPixe
 }
 
 /* 0EF3:1609: add the panel member's effect record of mode 5 through 0EF3:097B. */
-/*@ 0EF3:1609 */ void AddEffectRecord5(void)
+/*@ 0EF3:1609 */ void CastLightningBolt(void)
 {
     StartCellEffect(gPanelMember, 5, gPartyCell, gCasterSubPos, gPartyDir);
 }
 
 /* 0EF3:162A: run the record's 1d6 melee effect through 0EF3:0A3F. */
-/*@ 0EF3:162A */ void RunMelee1d6B(struct Tgt far *rec)
+/*@ 0EF3:162A */ void HitLightningBolt(struct Tgt far *rec)
 {
     DamageTargetCell(rec, 1, 6, 0, GetClassSlot1Value(rec->m0B));
 }
@@ -1324,7 +1324,7 @@ extern int gBurstMaskPixel;                /*@ ds:FC72 */ /* the handle gGetPixe
    and icon 0x53 instead of 0x10 and 0x52, and the m0A item-type argument halved with `>> 1` (the
    original shifts, `sar ax,1`, where `/ 2` would call the divide routine). Called through a
    table. */
-/*@ 0EF3:1656 */ void CreateItemForEffect6(void)
+/*@ 0EF3:1656 */ void CastVampiricTouch(void)
 {
     int index, itemType;
 
@@ -1337,7 +1337,7 @@ extern int gBurstMaskPixel;                /*@ ds:FC72 */ /* the handle gGetPixe
 
 /* 0EF3:16DC: clamp the record's hit points to its maximum, then run the equipped-item clear of
    0EF3:1233. */
-/*@ 0EF3:16DC */ void ClampHitPoints(struct CharRec far *rec)
+/*@ 0EF3:16DC */ void EndVampiricTouch(struct CharRec far *rec)
 {
     if (rec->hp > rec->maxHp)
         rec->hp = rec->maxHp;
@@ -1351,7 +1351,7 @@ extern int gBurstMaskPixel;                /*@ ds:FC72 */ /* the handle gGetPixe
    GetIndexedByte's `limit` argument, which 0A72:0006 clamps to g341E[index]
    (src/E0A72.C:73-80). Reached through a table (the packet finds no direct caller). The threshold
    is a local and the clear uses &gMonsters[i], not the walking pointer. */
-/*@ 0EF3:1702 */ void ClearObjectsFacingCell(void)
+/*@ 0EF3:1702 */ void CastFear(void)
 {
     struct MonsterType far *rec;
     struct Monster far *obj;
@@ -1373,7 +1373,7 @@ extern int gBurstMaskPixel;                /*@ ds:FC72 */ /* the handle gGetPixe
 }
 
 /* 0EF3:17B7: add the panel member's effect record of mode 6 through 0EF3:097B. */
-/*@ 0EF3:17B7 */ void AddEffectRecord6(void)
+/*@ 0EF3:17B7 */ void CastIceStorm(void)
 {
     StartCellEffect(gPanelMember, 6, gPartyCell, gCasterSubPos, gPartyDir);
 }
@@ -1381,7 +1381,7 @@ extern int gBurstMaskPixel;                /*@ ds:FC72 */ /* the handle gGetPixe
 /* 0EF3:17D8: run the record's 1d6 melee effect, then for each of the four cell deltas at ds:5733
    add the delta to the record's cell (masked to 0x3FF), run the effect again and restore the
    cell. Returns the first run's result. */
-/*@ 0EF3:17D8 */ int RunMeleeAroundCell(struct Tgt far *rec)
+/*@ 0EF3:17D8 */ int HitIceStorm(struct Tgt far *rec)
 {
     int found;
     int i;
@@ -1402,7 +1402,7 @@ extern int gBurstMaskPixel;                /*@ ds:FC72 */ /* the handle gGetPixe
 
 /* 0EF3:1865: roll 1d4 plus half the panel member's class-slot 1 value into the current record's
    +0xE0 countdown. */
-/*@ 0EF3:1865 */ void SetBandageCountdown(void)
+/*@ 0EF3:1865 */ void CastStoneskin(void)
 {
     gCurRec->mE0 = RollDice(1, 4, 0) + (GetClassSlot1Value(gPanelMember) >> 1);
 }
@@ -1472,7 +1472,7 @@ void AnimateConeOfCold(int count, int spread, int step, int cycle, int divisor,
 }
 
 /* 0EF3:1A0F: add the panel member's effect record of mode 7 through 0EF3:097B. */
-/*@ 0EF3:1A0F */ void AddEffectRecord7(void)
+/*@ 0EF3:1A0F */ void CastHoldMonster(void)
 {
     StartCellEffect(gPanelMember, 7, gPartyCell, gCasterSubPos, gPartyDir);
 }
@@ -1481,7 +1481,7 @@ void AnimateConeOfCold(int count, int spread, int step, int cycle, int divisor,
    list exactly as 0EF3:1530 does, but testing bit 1 of the MonsterType record gMonsterTypes[obj->typeIndex]'s
    +0x0F long and setting the object's type byte to 0x0A and its timer to 0x0F. `found` is set
    for the objects 0D1C:0BAB does not reject. Called through a table. */
-/*@ 0EF3:1A30 */ int UpdateCellObjectsBit2(struct Tgt far *rec)
+/*@ 0EF3:1A30 */ int HitHoldMonster(struct Tgt far *rec)
 {
     int buffer[5];
     int far *list;
@@ -1510,7 +1510,7 @@ void AnimateConeOfCold(int count, int spread, int step, int cycle, int divisor,
 /* 0EF3:1AD0: set the swap flag: when gPartySpellFlags bit 4 is clear apply a 6-turn effect, set the bit once
    and redraw the party rows; otherwise say the message at ds:587A. The function sets the bit, it
    does not toggle it. Called through a table. */
-/*@ 0EF3:1AD0 */ void ToggleSwapFlag(void)
+/*@ 0EF3:1AD0 */ void CastBless(void)
 {
     if ((gPartySpellFlags & 0x10) == 0) {
         ApplyTimedCharEffect(gCurrentSpell, 6, 0x222L, 0, 1);
@@ -1522,32 +1522,32 @@ void AnimateConeOfCold(int count, int spread, int step, int cycle, int divisor,
 }
 
 /* 0EF3:1B13: clear bit 4 of the gPartySpellFlags flag byte; the swap flag is off again. */
-/*@ 0EF3:1B13 */ void ClearSwapFlag(void)
+/*@ 0EF3:1B13 */ void EndBless(void)
 {
     gPartySpellFlags &= ~0x10;
 }
 
 /* 0EF3:1B20: heal the current member by 1d8. Called through a table. */
-/*@ 0EF3:1B20 */ void HealCurrent1d8(void)
+/*@ 0EF3:1B20 */ void CastCureLightWounds(void)
 {
     HealCharacter(gCurMember, RollDice(1, 8, 0));
 }
 
 /* 0EF3:1B43: apply the 1d8 melee effect at 0EF3:0E1B. Called through a table. */
-/*@ 0EF3:1B43 */ void CastMelee1d8(void)
+/*@ 0EF3:1B43 */ void CastCauseLightWounds(void)
 {
     CastMeleeEffect(1, 8, 0);
 }
 
 /* 0EF3:1B5A: set the current record's effect flag bit 0x200 and apply a 3-turn effect. */
-/*@ 0EF3:1B5A */ void SetEffectFlag200(void)
+/*@ 0EF3:1B5A */ void CastProtFromEvil(void)
 {
     gCurRec->effectFlags |= 0x200L;
     ApplyTimedCharEffect(gCurrentSpell, 0, 0x222L, 3, 1);
 }
 
 /* 0EF3:1B8D: clear the record's effect flag bit 0x200, the marker 0EF3:1B5A sets. */
-/*@ 0EF3:1B8D */ void ClearEffectFlag200(struct CharRec far *rec)
+/*@ 0EF3:1B8D */ void EndProtFromEvil(struct CharRec far *rec)
 {
     rec->effectFlags &= ~0x200L;
 }
@@ -1557,7 +1557,7 @@ void AnimateConeOfCold(int count, int spread, int step, int cycle, int divisor,
    effect flag bit 0x40 (the amount 0EF3:1C45 takes back); otherwise it says "The aid spell fails!"
    (ds:5899) and applies nothing. On success it applies a 1-turn effect. Reached through the spell
    table (gSpells "aid", its apply callback). */
-/*@ 0EF3:1BA3 */ void ApplyAidEffect(void)
+/*@ 0EF3:1BA3 */ void CastAid(void)
 {
     int amount;
 
@@ -1575,9 +1575,9 @@ void AnimateConeOfCold(int count, int spread, int step, int cycle, int divisor,
 }
 /* 0EF3:1C45: undo a bandage-like effect on the record: when its +0xE2 byte is set subtract it
    from the hit points and clear it, then clear the record's effect flag bit 0x40. Reached through
-   a table (the packet finds no direct caller); the counterpart of 0EF3:1BA3 ApplyAidEffect, which
+   a table (the packet finds no direct caller); the counterpart of 0EF3:1BA3 CastAid, which
    adds the same amount to +0xE2 and sets bit 0x40. */
-/*@ 0EF3:1C45 */ void UndoBandage(struct CharRec far *rec)
+/*@ 0EF3:1C45 */ void EndAid(struct CharRec far *rec)
 {
     if (rec->mE2 != 0) {
         rec->hp -= rec->mE2;
@@ -1589,7 +1589,7 @@ void AnimateConeOfCold(int count, int spread, int step, int cycle, int divisor,
 /* 0EF3:1C75: when the current member's m01 bit 1 is set, set the current record's effect flag bit
    0x80 and apply a (1 + class-slot 2/4 value) times 0x7FF8 tick effect; otherwise draw the
    message at ds:58AF (DrawText, not SayAndPlaySound). Called through a table. */
-/*@ 0EF3:1C75 */ void ApplyConditionEffect(void)
+/*@ 0EF3:1C75 */ void CastSlowPoison(void)
 {
     if (gChars[gCurMember].status & 2) {
         gCurRec->effectFlags |= 0x80L;
@@ -1600,7 +1600,7 @@ void AnimateConeOfCold(int count, int spread, int step, int cycle, int divisor,
 }
 
 /* 0EF3:1CD2: clear the record's effect flag bit 0x80. */
-/*@ 0EF3:1CD2 */ void ClearEffectFlag80(struct CharRec far *rec)
+/*@ 0EF3:1CD2 */ void EndSlowPoison(struct CharRec far *rec)
 {
     rec->effectFlags &= ~0x80L;
 }
@@ -1619,7 +1619,7 @@ void AnimateConeOfCold(int count, int spread, int step, int cycle, int divisor,
    icon 0x54 instead of 0x10 and 0x52, and the effect duration longer by half the class-slot 2/4
    value (added to the count 4 in ApplyTimedCharEffect's (count + extra) times span interval); the
    item-type arguments are (0, 0, 0, 0xF, 1, 4, 4, 1). Called through a table. */
-/*@ 0EF3:1D38 */ void CreateItemForEffect4(void)
+/*@ 0EF3:1D38 */ void CastFlameBlade(void)
 {
     int index, itemType;
 
@@ -1633,7 +1633,7 @@ void AnimateConeOfCold(int count, int spread, int step, int cycle, int divisor,
 /* 0EF3:1DC0: set every member's +0x23 food byte to 100. The field is the hunger/food value
    EatFood clamps at 100 (src/E0ACD.C:108, :623); 0BD2 case 5 makes the same write
    (src/E0BD2.C:746). */
-/*@ 0EF3:1DC0 */ void FillPartyFood(void)
+/*@ 0EF3:1DC0 */ void CastCreateFood(void)
 {
     int i;
 
@@ -1643,7 +1643,7 @@ void AnimateConeOfCold(int count, int spread, int step, int cycle, int divisor,
 
 /* 0EF3:1DDF: set the current record's effect flag bit 0x100, recompute the panel member's armour
    class and apply a 5-turn effect. */
-/*@ 0EF3:1DDF */ void SetEffectFlag100(void)
+/*@ 0EF3:1DDF */ void CastMagicalVestment(void)
 {
     gCurRec->effectFlags |= 0x100L;
     ComputeArmourClass(gPanelMember);
@@ -1652,14 +1652,14 @@ void AnimateConeOfCold(int count, int spread, int step, int cycle, int divisor,
 
 /* 0EF3:1E1D: clear the record's effect flag bit 0x100 and recompute the panel member's armour
    class. */
-/*@ 0EF3:1E1D */ void ClearEffectFlag100(struct CharRec far *rec)
+/*@ 0EF3:1E1D */ void EndMagicalVestment(struct CharRec far *rec)
 {
     rec->effectFlags &= ~0x100L;
     ComputeArmourClass(gPanelMember);
 }
 
 /* 0EF3:1E3E: set gPartySpellFlags bit 5, apply a 2-turn effect and redraw the party rows. */
-/*@ 0EF3:1E3E */ void SetSwapFlag20(void)
+/*@ 0EF3:1E3E */ void CastPrayer(void)
 {
     gPartySpellFlags |= 0x20;
     ApplyTimedCharEffect(gCurrentSpell, 0, 0x222L, 2, 1);
@@ -1667,7 +1667,7 @@ void AnimateConeOfCold(int count, int spread, int step, int cycle, int divisor,
 }
 
 /* 0EF3:1E6C: clear gPartySpellFlags bit 5 and redraw the party rows. */
-/*@ 0EF3:1E6C */ void ClearSwapFlag20(void)
+/*@ 0EF3:1E6C */ void EndPrayer(void)
 {
     gPartySpellFlags &= ~0x20;
     RedrawCharacters();
@@ -1675,7 +1675,7 @@ void AnimateConeOfCold(int count, int spread, int step, int cycle, int divisor,
 
 /* 0EF3:1E7E: clear m01 bit 2 on at most the first four members that have it and redraw the party
    rows. */
-/*@ 0EF3:1E7E */ void ClearParalysisFromFour(void)
+/*@ 0EF3:1E7E */ void CastRemoveParalysis(void)
 {
     int remaining;
     int i;
@@ -1691,7 +1691,7 @@ void AnimateConeOfCold(int count, int spread, int step, int cycle, int divisor,
 }
 
 /* 0EF3:1ECC: heal the current member by 2d8+1. Called through a table. */
-/*@ 0EF3:1ECC */ void HealCurrent2d8(void)
+/*@ 0EF3:1ECC */ void CastCureSeriousWounds(void)
 {
     int amount;
 
@@ -1700,7 +1700,7 @@ void AnimateConeOfCold(int count, int spread, int step, int cycle, int divisor,
 }
 
 /* 0EF3:1EF3: apply the 2d8+1 melee effect at 0EF3:0E1B. Called through a table. */
-/*@ 0EF3:1EF3 */ void CastMelee2d8(void)
+/*@ 0EF3:1EF3 */ void CastCauseSeriousWounds(void)
 {
     CastMeleeEffect(2, 8, 1);
 }
@@ -1708,7 +1708,7 @@ void AnimateConeOfCold(int count, int spread, int step, int cycle, int divisor,
 /* 0EF3:1F0B: when the current record's m01 status byte is nonzero (the test is the whole byte,
    not just the alive bit 0) clear its poison effect through 0EF3:1CE8, else say the message at
    ds:58BB. */
-/*@ 0EF3:1F0B */ void CureOrReportPoison(void)
+/*@ 0EF3:1F0B */ void CastNeutralizePoison(void)
 {
     if (gCurRec->status != 0)
         ClearPoisonEffect(gCurMember);
@@ -1718,7 +1718,7 @@ void AnimateConeOfCold(int count, int spread, int step, int cycle, int divisor,
 
 /* 0EF3:1F33: set every member's effect flag bit 0x200, apply a 0x1554-tick effect whose value is
    the panel member's class-slot 2/4 value, and redraw the party rows. Called through a table. */
-/*@ 0EF3:1F33 */ void MarkAllFlag200(void)
+/*@ 0EF3:1F33 */ void CastProtFromEvil10(void)
 {
     struct CharRec far *rec;
     int i;
@@ -1732,7 +1732,7 @@ void AnimateConeOfCold(int count, int spread, int step, int cycle, int divisor,
 }
 
 /* 0EF3:1F8F: clear every member's effect flag bit 0x200 and redraw the party rows. */
-/*@ 0EF3:1F8F */ void ClearAllFlag200(void)
+/*@ 0EF3:1F8F */ void EndProtFromEvil10(void)
 {
     struct CharRec far *rec;
     int i;
@@ -1751,7 +1751,7 @@ void AnimateConeOfCold(int count, int spread, int step, int cycle, int divisor,
 /*@ 0EF3:1FCD */ void UnusedProtLightningRemove(void) {}
 
 /* 0EF3:1FD2: heal the current member by 3d8+3. Called through a table. */
-/*@ 0EF3:1FD2 */ void HealCurrent3d8(void)
+/*@ 0EF3:1FD2 */ void CastCureCriticalWounds(void)
 {
     int amount;
 
@@ -1760,26 +1760,26 @@ void AnimateConeOfCold(int count, int spread, int step, int cycle, int divisor,
 }
 
 /* 0EF3:1FF9: apply the 3d8+3 melee effect at 0EF3:0E1B. Called through a table. */
-/*@ 0EF3:1FF9 */ void CastMelee3d8(void)
+/*@ 0EF3:1FF9 */ void CastCauseCriticalWounds(void)
 {
     CastMeleeEffect(3, 8, 3);
 }
 
 /* 0EF3:2011: add the panel member's effect record of mode 8 through 0EF3:097B. */
-/*@ 0EF3:2011 */ void AddEffectRecord8(void)
+/*@ 0EF3:2011 */ void CastFlameStrike(void)
 {
     StartCellEffect(gPanelMember, 8, gPartyCell, gCasterSubPos, gPartyDir);
 }
 
 /* 0EF3:2032: run the record's 6d8 melee effect through 0EF3:0A3F. */
-/*@ 0EF3:2032 */ void RunMelee6d8(struct Tgt far *rec)
+/*@ 0EF3:2032 */ void HitFlameStrike(struct Tgt far *rec)
 {
     DamageTargetCell(rec, 6, 8, 0, 0);
 }
 
 /* 0EF3:2050: when the current record is at -10 hit points and its +0x1F byte over two is not
    exactly one, set it to 1 and redraw the member; otherwise say the message at ds:58C6. */
-/*@ 0EF3:2050 */ void ReviveAtMinusTen(void)
+/*@ 0EF3:2050 */ void CastRaiseDead(void)
 {
     if (gCurRec->hp == -10 && (gCurRec->race >> 1) != 1) {
         gCurRec->hp = 1;
@@ -1850,7 +1850,7 @@ void AnimateConeOfCold(int count, int spread, int step, int cycle, int divisor,
 }
 
 /* 0EF3:21BC: heal the current member by twice the panel member's +0x24 class-slot 0 value. */
-/*@ 0EF3:21BC */ void HealFromClassSlot(void)
+/*@ 0EF3:21BC */ void CastLayOnHands(void)
 {
     HealCharacter(gCurMember, gChars[gPanelMember].levels[0] * 2);
 }
@@ -2061,7 +2061,7 @@ void DrawSpellPanel(void);
 
     gCurrentSpell = action;
     if ((gSpells[action].m12 & 1) && (gChars[gPanelMember].effectFlags & 4))
-        ClearEffectFlag4(&gChars[gPanelMember]);
+        EndInvisibility(&gChars[gPanelMember]);
     spell = &gSpells[action];
     gFnEFBA = spell->apply;
     index = gPanelMember;
