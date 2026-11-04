@@ -1,7 +1,7 @@
 # Review: e0bd2
 
-Reviewer: rev-haiku
-Commit reviewed: 21ed7a2 (main when this review started; src/E0BD2.C is identical on review/e0bd2 at c78f96d)
+Reviewer: p6-rev-9
+Commit reviewed: ce0608f367ed01b1b1df84e254eef04d1a734b27
 
 Playbook 70. Judge what a matching file can still get wrong: names, types, comments, structure.
 The matcher already proved the bytes; do not re-prove them, read for meaning.
@@ -9,6 +9,52 @@ The matcher already proved the bytes; do not re-prove them, read for meaning.
 Checked this round: `make match FILE=src/E0BD2.C` (22 of 22, 4681 bytes), `make readability UNIT=e0bd2` (0 findings).
 Read against: the callers and definitions in src/E0ACD.C, E0D1C.C, E08E6.C, E0DE8.C, E0EF3.C, E122E.C, E1414.C,
 E07A9.C, E177D.C, EOV5.C, and the registry rows in re/symbols.toml and re/globals.toml. No game run, nothing under eob/ touched.
+
+## Round P6 (2026-11-04), commit ce0608f367ed01b1b1df84e254eef04d1a734b27
+
+Judged only what the later-round rule asks: the names and comments the Phase 6 diff changed since 8c882ae in `src/E0BD2.C`, against the evidence in `re/renames.toml` and `re/fields.toml`. The diff is 218 insertions and 295 deletions: the private struct declarations are replaced by `#include "EOB.H"`, the globals and functions take their Phase 6 names, and the field accesses and comments follow.
+
+The names are backed: `MemberIs` (0D1C:0670), `StepCell` (0D1C:00DA), `CanUseHand` (0D1C:07DB), `StartItemCast` (0EF3:28ED), `MoveMonsterToCell` (08E6:0297), `IdentifyListItems` (0BD2:040E), `GetHandOfSlot` (0BD2:1244), `gInventoryMember` (ds:A99A), `gCursorSlot` (ds:F51A), `gPanelMode` (ds:FB44), `gCurLevel` (ds:FBC8), `gPartyDir` (ds:FBCC), `gDrawPage` (ds:8115), `gWallTypeFlags` (ds:194B), `gClassBaseBits` (ds:1231), `gSlotItemMask` (ds:1C8D), `gPanelFillColour` (ds:F57E), `gPanelShadow` (ds:F53A), `gPanelHighlight` (ds:FB4C), `gStagingPage` (ds:DF4E), `gViewDirty` (ds:DF4C), `gMaze` (ds:B894), `gMazeItems` (ds:B899), `gInvSlotX` (ds:17CE), `gInvSlotY` (ds:1804), `gInvSlotKind` (ds:3875), `gInvSlotBoxSize` (ds:3890), `gWandSpells` (ds:38FA), `gPotionFeelings` (ds:3893), `gRingNames` (ds:37B4), `gPotionNames` (ds:37E1), `gWandNames` (ds:3837), `gProjectiles` (ds:DD2C) and `gMonsters` (ds:8A82). Each `why` in the registries matches what the code at that address does, and the three shared-function names are used in the defining units (`StartItemCast` E0EF3.C:2005, `MoveMonsterToCell` E08E6.C:233, `IdentifyListItems` E0BD2.C:298) and in E122E.C.
+
+The comments the diff rewrote do not all survive the field renames. A global replacement hit the wrong struct in several places: `m01` in `CharRec` became `identifiedNameIndex` (an ItemRecord field) and `m00` in ItemRecord became `slotMask` (an ItemType field). ItemRecord's `m04`/`m08` became `cell`/`item` (Projectile fields) in comments that mean `key`/`nextLink`, and `m0A`, `m02` and `m0B` were left behind after their fields became `level`, `type` and `value`. The code is right; the prose is not. These are the must-fix items.
+
+Must-fix (wrong names in lines the diff changed):
+
+- [ ] must-fix src/E0BD2.C:134 (TakeItemFromSlot): "marks the record free (cell = -1)" and "returns the item's m0B". The code sets `gItems[item].key = -1` (143) and returns `gItems[item].value` (153). `cell` is Projectile +04 and Monster +02, not the item record's key; `m0B` is now `value`. Say `key = -1` and `value`.
+- [ ] must-fix src/E0BD2.C:167 (InsertListItem): "the list's owner key `key` (cell)" and "m0A becomes gCurLevel". The code stores `rec->key = key` (190) and `rec->level = gCurLevel` (192). The field is `key`; `cell` is a Projectile/Monster field. `m0A` is now `level`.
+- [ ] must-fix src/E0BD2.C:171-173 (InsertListItem): "the new item's item becomes the old head", "its m06 becomes the tail", "the old head's m06 and the tail's item change", "the lists walked by item". The code sets `rec->nextLink = tailRec->nextLink`, `rec->prevLink = tail`, `tailRec->nextLink = item`, `cur->prevLink = item` (206-209), and the walks follow `nextLink` (255, 288, 314). The link fields are `nextLink` and `prevLink`, not `item` and `m06`. The comment should say the new item's `nextLink` becomes the old head and its `prevLink` the tail, so the old head's `prevLink` and the tail's `nextLink` change.
+- [ ] must-fix src/E0BD2.C:319 (PushListItem): "When the queued item still links onward (its item is not itself), the record's head word moves to that item." The code tests `gItems[item].nextLink != item` and stores `gItems[item].nextLink` (324-325). The link field is `nextLink`, not `item`.
+- [ ] must-fix src/E0BD2.C:328-330 (DrainListItem): "Items whose m02 is `type`" and "freed (cell = -1, m0A = 0)"; the code tests `gItems[item].type == type` (345) and sets `key = -1`, `level = 0` (346-347). The words are `type`, `key` and `level`; `m02`, `cell` and `m0A` are stale. The same comment's "keeping each item's tag" (330) is a stale word for `cellPos` (357).
+- [ ] must-fix src/E0BD2.C:364 (DrawItemName): "both slotMask and identifiedNameIndex offset that base". The code uses `rec->nameIndex` and `rec->identifiedNameIndex` (384-385). `slotMask` is an ItemType field; the ItemRecord field is `nameIndex`.
+- [ ] must-fix src/E0BD2.C:443 (AddDDEffect): "QUIRK 0BD2:07DE: rec->type is stored 1 twice". The code stores `rec->m02 = 1` twice (458, 467), and `struct Projectile` has no `type` field (its +02 field is still `m02`). Say `rec->m02`.
+- [ ] must-fix src/E0BD2.C:476 (CopyItemToFreeSlot): "when item record `item` is live (cell != -1)". The code tests `src->key == -1` (487) and `cand->key == -1` (493). The field is `key`, not `cell`.
+- [ ] must-fix src/E0BD2.C:659 (ApplyItemEffect): "except for effect 4 when identifiedNameIndex bit 1 is set". The code tests `(rec->status & 2) == 0` (707), where `rec` is `struct CharRec *`. `identifiedNameIndex` is an ItemRecord field; the CharRec field at +01 is `status` (re/fields.toml).
+- [ ] must-fix src/E0BD2.C:716 (UseWandItem): "moves every gMonsters record whose m02 equals the cell x". The code tests `obj->cell == x` (747). The Monster field at +02 is `cell`; `m02` is its old name.
+
+Should (clarity; not blocking):
+
+- [ ] should src/E0BD2.C:656 (ApplyItemEffect): "restores m0D/strengthPct from m0E/m10" mixes old and new names. The fields are `strength`, `strengthPct`, `baseStrength` and `baseStrengthPct` (EOB.H +0D, +0E, +0F, +10), and the runner restores the first pair from the second.
+- [ ] should src/E0BD2.C:53 and :713-714: `gWandSpells` is "indexed by an item's m0B" and `gWandSpells[m0B]`; the item field is `value` (the local `m0B` in DrawItemName is a leftover, not the field). Say `value`.
+- [ ] should src/E0BD2.C:22: `gCursorSlot` is "the selected row"; re/renames.toml says it is the keyboard cursor's item slot 0..26 (0 and 1 the hands, 0x10 the list). Say item slot.
+- [ ] should src/E0BD2.C:32: `gWallTypeFlags` is only "byte table"; its why says flags per wall type, indexed by a wall byte of gMaze, with bits 0..1 for a step and bit 2 tested by the path search. Say that.
+- [ ] should src/E0BD2.C:35-37: the three panel colours are "a colour read by 0BD2:0917"; their whys name them the bevel's light edge (`gPanelHighlight`), dark edge (`gPanelShadow`) and panel fill (`gPanelFillColour`). Say which is which.
+- [ ] should src/E0BD2.C:39: `gStagingPage` is "slot 5's buffer segment"; its why says page 5 (f19EC_0002(5)), which is also where LoadMapScreen reads LEVEL<n>.INF and saved panel pixels. Say page 5 and what it stages.
+- [ ] should src/E0BD2.C:40: `gViewDirty` is "set to 1 when an action took effect"; its why says whenever something visible changes (TurnLeft, MoveParty, floor item moves, 0D1C:0006), and RunMapLoop redraws while it is set. Say that.
+
+Notes (for the next reader):
+
+- [ ] note src/E0BD2.C:214 (RemoveListItem): "whose tag equals `key`" is a stale word for `cellPos`; the code matches `rec->cellPos == key` (234). The line was not changed by the diff.
+- [ ] note src/E0BD2.C:262 (ScanListItem): "the item whose m02 is `type`" is stale; the code tests `rec->type` (280). The line was not changed.
+- [ ] note src/E0BD2.C:653 (ApplyItemEffect): "the item's m0B selects the effect" is stale; the item field is `value` and the local `kind` is the returned value. The line was not changed.
+- [ ] note src/E0BD2.C:368 (DrawItemName): "per-m0B" refers to the local `m0B` (374, `m0B = rec->value`), not to a field. The local could be `value`, but the line was not changed.
+- [ ] note src/E0BD2.C:847 (ItemClassAllowed): "gItemTypes[m02].m05" is stale; the code tests `gItems[item].type` (855). The line was not changed.
+- [ ] note src/E0BD2.C:443 (AddDDEffect): "`type` is the item's m02" is stale; the ItemRecord field is `type`. The line was not changed.
+- [ ] note src/E0BD2.C:512 (DrawItemRow): the comment stores `drawMode` in `gDrawPage` "for the duration". re/renames.toml names `gDrawPage` the graphics driver's page; the temporary store is a reuse of the drawing page. The code matches the comment; a QUIRK note would help the next reader.
+- [ ] note src/EOB.H:190 (`Projectile.dir`): the header comment says "the page the record is seen from", while re/fields.toml +07 says "the projectile's flight direction 0..3" and AddDDEffect sets it from `gPartyDir`. The header is shared, not this unit's file, so this belongs to the header review.
+
+Round P6 count: 10 must-fix open, 7 should, 8 notes. No previous must-fix is open. The Phase 6 names themselves pass their evidence; the failures are in the comments that follow them.
+
+Evidence: `make match FILE=src/E0BD2.C` 22 of 22 (4681 of 4681 bytes); `make readability UNIT=e0bd2` 0 findings. Nothing escalated: no matcher, spec or pin question.
 
 ## Round 3 (at 8c882ae, main)
 
