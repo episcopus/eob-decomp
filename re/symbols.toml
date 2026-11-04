@@ -6838,7 +6838,7 @@ evidence = ["far", "segment"]
 name = "LoadFile"
 level = "L2"
 match_flags = "-ml -O -Z -G -P"
-review = "passed 2026-11-01 rev-haiku"
+review = "passed 2026-11-04 p6-rev-1"
 
 [[function]]
 id = "e1b82_0041"
@@ -6849,7 +6849,7 @@ evidence = ["far", "frame"]
 name = "LoadPacked"
 level = "L2"
 match_flags = "-ml -O -Z -G -P"
-review = "passed 2026-11-01 rev-haiku"
+review = "passed 2026-11-04 p6-rev-1"
 
 [[function]]
 id = "e1b82_00c7"
@@ -6861,7 +6861,7 @@ notes = "2026-11-01: the format byte is sign-extended to long and the switch run
 name = "Unpack"
 level = "L2"
 match_flags = "-ml -O -Z -G -P"
-review = "passed 2026-11-01 rev-haiku"
+review = "passed 2026-11-04 p6-rev-1"
 
 [[function]]
 id = "e1b82_0217"
@@ -6872,7 +6872,7 @@ evidence = ["far"]
 name = "SetUnpackBuffer"
 level = "L2"
 match_flags = "-ml -O -Z -G -P"
-review = "passed 2026-11-01 rev-haiku"
+review = "passed 2026-11-04 p6-rev-1"
 
 [[function]]
 id = "e1ba4_000c"
