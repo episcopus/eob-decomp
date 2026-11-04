@@ -86,6 +86,17 @@ struct Monster {              /* 28-byte object records at ds:8A82 (src/E08E6.C)
     char pad09[0x1C - 0x09];
 };
 
+struct Region {             /* 16-byte records at ds:009F (src/E1A29.C) */
+    int left;               /* +0: left edge in 8-pixel columns */
+    int top;                /* +2: top edge in lines */
+    int width;              /* +4: width in 8-pixel columns */
+    int height;             /* +6: height in lines */
+    int textAttr1;              /* +8: text attribute 1 [H] (gTextAttr1, src/E1DE7.C:26) */
+    int textAttr2;              /* +a: text attribute 2 [H] (gTextAttr2, src/E1DE7.C:27) */
+    int textCol;             /* +c: cursor column (gTextCol) */
+    int textRow;                /* +e: cursor row (gTextRow) */
+};
+extern struct Region gRegions[]; /*@ ds:009F */ /* the text windows, 16 bytes each (src/E1A29.C) */
 extern int gDrawPage; /*@ ds:8115 */
 extern signed char gPanelFillColour; /*@ ds:F57E */
 extern signed char gPanelShadow; /*@ ds:F53A */
@@ -161,15 +172,13 @@ extern char gFileNameInvent[]; /*@ ds:7F20 */
 extern char gFileNameText3[]; /*@ ds:7F27 */
 extern char gFileNamePlayfld2[]; /*@ ds:7F30 */
 extern char gFileNameInvent2[]; /*@ ds:7F38 */
-extern int far *gBufDCFC; /*@ ds:DCFC */
-extern int g169; /*@ ds:0169 */
+extern int far *gScratchBuf; /*@ ds:DCFC */
 extern int (far *gGetPixel)(int x, int y); /*@ ds:8072 */
 extern void (far *gPutPixel)(int x, int y, int handle); /*@ ds:809E */
 extern int RandomRange(int low, int high); /*@ 1AAA:0005 */
 extern char gDirectAction[]; /*@ ds:F542 */
 extern int gScrollHook; /*@ ds:8117 */
 extern int gScrollHookSeg; /*@ ds:8119 */
-extern int g139; /*@ ds:0139 */
 extern int gCurLevel; /*@ ds:FBC8 */
 extern signed char far gLevelCgaMapIndex[]; /*@ 1F1D:0000 */  /* the level's tile-index table (src/EOV3.C) */
 extern unsigned char far gWallSetCgaMaps[]; /*@ 1F1E:0000 */  /* the sheet gLevelCgaMapIndex indexes into (src/EOV3.C's MAPSHEET) */
@@ -228,7 +237,6 @@ extern void SetFont(void far *font); /*@ 1A47:0169 */
 extern void ShutdownGame(void); /*@ 07C8:058A */
 extern void far *GetPageBuffer(int kind); /*@ 19EC:0002 */
 extern void CopyPage(int a, int b, int c, int d); /*@ 19EC:002A */
-extern int gF1; /*@ ds:00F1 */
 
 /* siblings not decompiled yet: their real signatures, so callers compile */
 int SelectMenu(char first, char count, char far **names);
@@ -1137,7 +1145,7 @@ enum {
     gDrawPage = 0;
     gScrollOn = 1;
     gTextPanelInView = 1;
-    g169 = gPanelFillColour;
+    gRegions[12].textAttr2 = gPanelFillColour;
     SetTextWindow(0xc);
     gScrollHook = 0xac;
     gScrollHookSeg = 0x2d0;
@@ -1173,9 +1181,9 @@ enum {
    and slices one 0x10 x 0x5f cell, blits XDEATH1 (ds:7EFF), then plays ten frames: six clipped
    cells (with the sounds 0x48, 0x36, 0x36, 0x22) and, for the last four, the 2x2 sprite grid
    (sprites[i-6], sound 0x2a). It then clears gDrawPage, fills the action field with
-   GetPageBuffer(5) (gSaveRectFromPage), sets gF1 to 8 and runs the 19-step explosion: each step plays 0x77,
+   GetPageBuffer(5) (gSaveRectFromPage), sets gRegions[5].top to 8 and runs the 19-step explosion: each step plays 0x77,
    blits the page (gRestoreRectToPage), draws the sliced cell moving from y=-0x5a in steps of 5, clips the
-   portrait region and waits 2 ticks. It finally plays sound 5, clears gF1, waits 0x3c ticks, shows
+   portrait region and waits 2 ticks. It finally plays sound 5, clears gRegions[5].top, waits 0x3c ticks, shows
    the pointer, runs the winning-party panel (160A), frees the four sprites and the sliced cell and
    shuts the game down. Called from the menu dispatcher 1A82 (mode 9). */
 /*@ ovl5:17C8 */ void EndingAnimation(void)
@@ -1212,7 +1220,7 @@ enum {
     }
     gDrawPage = 0;
     gSaveRectFromPage(0, 0, 0x16, 0x78, GetPageBuffer(5));
-    gF1 = 8;
+    gRegions[5].top = 8;
     for (i = 0; i < 0x13; i++) {
         PlaySound(0x77);
         gDrawPage = 2;
@@ -1222,7 +1230,7 @@ enum {
         WaitTicks(2);
     }
     PlaySound(5);
-    gF1 = 0;
+    gRegions[5].top = 0;
     WaitTicks(0x3c);
     LockShowPointer();
     WinnerPanel();
@@ -1280,7 +1288,7 @@ enum {
         DrawFilledPanel(0, 0x79, 0x13f, 0xc8, gPanelHighlight, gPanelShadow, gPanelFillColour);
         ShowPointerZone();
         gScrollOn = 1;
-        g139 = gPanelFillColour;
+        gRegions[9].textAttr2 = gPanelFillColour;
         SetTextWindow(9);
         gScrollHook = 0xac;
         gScrollHookSeg = 0x2d0;
@@ -1344,7 +1352,7 @@ enum {
     FileRead(handle, gStagingPage, 0x7d00L);
     FileClose(handle);
     gScrollOn = 1;
-    g169 = gPanelFillColour;
+    gRegions[12].textAttr2 = gPanelFillColour;
     SetTextWindow(0xc);
     gScrollHook = 0xac;
     gScrollHookSeg = 0x2d0;
@@ -1362,7 +1370,7 @@ enum {
     SetTextWindow(7);
     LockShowPointer();
 }
-/* ovl5:1E1B: shuffles a cols x rows grid. It fills two index arrays in the gBufDCFC buffer (the
+/* ovl5:1E1B: shuffles a cols x rows grid. It fills two index arrays in the gScratchBuf buffer (the
    x indices and, at +0x280, the y indices) with 0..cols-1 and 0..rows-1, Fisher-Yates shuffles
    each with RandomRange, then for each row k and column i saves the pixels under the cell at
    (x + xs[i], y + ys[j]) (j wrapping at rows) through the far pointer ds:8072 and restores them
@@ -1381,7 +1389,7 @@ enum {
     register int i;
     register int idx;           /* the register local: the swap index and the draw-loop y coordinate */
 
-    xs = gBufDCFC;
+    xs = gScratchBuf;
     ys = (int far *)((char far *)xs + 0x280);
     for (i = 0; i < cols; i++)
         xs[i] = i;

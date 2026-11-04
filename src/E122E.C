@@ -23,7 +23,7 @@ extern int gCurLevel; /*@ ds:FBC8 */               /* the dungeon level, 1..12 *
 extern unsigned long gLevelFlags[]; /*@ ds:FBD4 */ /* per-level 32-bit flags, indexed by gCurLevel */
 extern unsigned long gGameFlags; /*@ ds:FC04 */     /* effect flags (src/E08E6.C) */
 extern char gMazeItems[]; /*@ ds:B899 */            /* gMaze +5: each cell's item list head */
-extern int gFBCE; /*@ ds:FBCE */               /* the item index shown by the mouse (src/E07A9.C) */
+extern int gMouseItem; /*@ ds:FBCE */               /* the item index shown by the mouse (src/E07A9.C) */
 extern int gScriptCell; /*@ ds:B800 */               /* the cell whose script is running (122E:1DA8) */
 extern int gScriptTrigger; /*@ ds:FB36 */               /* the driver mode the script is running in (122E:1DA8) */
 extern char gDoorEffectActive; /*@ ds:5C77 */        /* gEffects[12].active: a door is moving (122E:0154) */
@@ -1379,7 +1379,7 @@ done:
     script += 2;
     item = CopyItemToFreeSlot(item);
     if (item != 0) {
-        if (dest == -1 && gFBCE == 0) {
+        if (dest == -1 && gMouseItem == 0) {
             SetMouseItem(item);
         } else {
             InsertListItem(&gMazeItems[dest * 9], dest, item, *script);

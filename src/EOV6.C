@@ -47,6 +47,17 @@ struct Monster {
     char rest[0x1C - 4];
 };
 
+struct Region {             /* 16-byte records at ds:009F (src/E1A29.C) */
+    int left;               /* +0: left edge in 8-pixel columns */
+    int top;                /* +2: top edge in lines */
+    int width;              /* +4: width in 8-pixel columns */
+    int height;             /* +6: height in lines */
+    int textAttr1;              /* +8: text attribute 1 [H] (gTextAttr1, src/E1DE7.C:26) */
+    int textAttr2;              /* +a: text attribute 2 [H] (gTextAttr2, src/E1DE7.C:27) */
+    int textCol;             /* +c: cursor column (gTextCol) */
+    int textRow;                /* +e: cursor row (gTextRow) */
+};
+extern struct Region gRegions[]; /*@ ds:009F */ /* the text windows, 16 bytes each (src/E1A29.C) */
 extern struct CharRec gChars[]; /*@ ds:F580 */  /* the 243-byte character records */
 extern struct Spell gSpells[]; /*@ ds:1344 */ /* far name pointers, indexed by a spell id */
 extern struct Spell gClericSpells[]; /*@ ds:151F */
@@ -54,8 +65,6 @@ extern struct Monster gMonsters[]; /*@ ds:8A82 */       /* the 28-byte map-objec
 extern char far gCampStrings; /*@ 2003:0000 */    /* the message string table */
 extern int gTextRegion; /*@ ds:811F */
 extern int gDrawPage; /*@ ds:8115 */
-extern int g159; /*@ ds:0159 */                 /* written from gPanelFillColour by ovl6:0B9B and ovl1:13F7
-                                                   (ShowMessageBox); no reader found in src/ */
 extern int gTextHeight; /*@ ds:FE60 */
 extern int gTextWidth; /*@ ds:FE62 */
 extern int gTextLeft; /*@ ds:FE64 */
@@ -505,7 +514,7 @@ done:
     savedSelect = gTextRegion;
     SetFont(gFont8x8);
     LockHidePointer();
-    g159 = gPanelFillColour;
+    gRegions[11].textAttr2 = gPanelFillColour;
     SetTextWindowAndClear(0xb);
     gDrawPage = 2;
     DrawFramedPanel(gTextLeft << 3, gTextTop, gTextWidth << 3, gTextHeight, 0, 0);

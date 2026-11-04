@@ -105,8 +105,36 @@ the findings below are empty or each has an owner; the reviewer signs each subsy
   named for their mechanics (`EnterSwapMode` is `CastDetectMagic`), `PickPortrait`, `ShowFileError`
   and `ShowMessageBox` (two functions had shared `ShowMessage`).
 
+- 2026-11-03, the names that were true to the mechanics but not to the game, second pass (three
+  read-only agents, each checking one area against the settled vocabulary): the monsters
+  (`UpdateMonsters`, `DamageMonster`, `FlashMonsterHit`, the Monster fields), the doors and wall
+  handlers of E122E, which had been read as party-member logic (`OpenDoor`, `CloseDoor`,
+  `ToggleDoor`, `StepDoor`, the wall handlers and script opcodes), the AD&D rule lookups
+  (`GetSavingThrowTarget`, `GetTurnUndeadTarget`), the level loader (`LoadLevel`, `LoadMaze`,
+  `LoadMonsterShapesA` to `C`), and about 250 comments. A sweep replaced the 128 old names comments
+  still used. `make readability` has no finding and its baseline is empty.
+
 ## Findings
 
+- ds:00EF to 00F5 are gRegions[5] (the maze view window) and ds:0139, 0159, 0169, 0179 the
+  textAttr2 of gRegions[9], [11], [12], [13] (the fill colour SetTextWindow loads): the files now
+  write them as gRegions fields (the same code). gPanels (ds:017F) starts where gRegions[14] would,
+  so the region table has 14 entries.
+- Open: gIconTable (ds:FB34) is declared as a byte (the member being moved) in several units and as
+  an array of far pointers in E0EF3 (CastBurningHands reads entries 1 to 3, from ds:FB38); one of the
+  two readings is a different object that shares the address. gSpellsTakenByTab (ds:FDE7) has 5
+  bytes but BuildSpellSlots clears 10, into ds:FDEC, which it clears again (a QUIRK). ds:DCAA
+  (gMenuPhase) has no store of 5 and its stepper 0ACD:0753 no caller found: the "rest phase"
+  reading is unsupported.
+- Open, for the oracle or a human: gLevelFlags (ds:FBD4) is indexed by gCurLevel 1 to 12, so
+  level 12's flags are the bytes of gGameFlags (ds:FC04), a QUIRK if the game relies on it; the
+  door code (122E:0137, ToggleDoor) tests only bit 0 of a cell's monster count; the 32-byte maps
+  named gCgaMap* hold only the values 0 to 3 and are only passed as a colour map (the CGA reading
+  is [medium], the driver is not in src/); Monster +0C maxHp is inferred (InitMonster writes the
+  same roll to +0C and +0E, nothing in src/ reads +0C); gPosSearchOrder searches the rear positions
+  first for a west-facing monster only; ds:E06B (gSlotRegions) is gWallRecs + 0x2B, which view
+  position that shape is was not read; the label kModifierState (1AAD:0180) is a copy of the
+  keyboard option word.
 - ds:DCA4 and ds:DD10 are one variable with two uses each: overlay 0 keeps the new character's hit
   point limits there (the seventh words after two six-word tables), the game keeps the attacked
   monster and a hit flag; named for both (`gHpMaxOrAttackTarget`, `gHpMinOrHitFlag`).

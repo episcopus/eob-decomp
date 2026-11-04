@@ -59,7 +59,7 @@ extern int gPartyCell; /*@ ds:FBCA */     /* the party's map cell: MoveParty (12
 extern char gPickViewPos; /*@ ds:EFB2 */           /* the floor position last picked from: set to 0xff when
                                                the party turns (056C, 0593) and used by PickListItem (0BA6) as the
                                                page index 0..3 into gViewPosAhead and gViewToCellPos */
-extern char gDCAA; /*@ ds:DCAA */           /* the menu/rest phase: 1 and 2 are the menu steps
+extern char gMenuPhase; /*@ ds:DCAA */           /* the menu/rest phase: 1 and 2 are the menu steps
                                                (0ACD:0753 wraps a value above 2 back to 1 and
                                                EnterMapScreen 0ACD:0F72 sets 1); 5 is the rest phase
                                                the handlers skip (0ACD:0A34, 0A61 and 0D9D). No writer
@@ -158,7 +158,7 @@ extern char gGameLoadState; /*@ ds:A998 */           /* the saved-game load flag
                                                (src/EOV2.C); EnterMapScreen (0ACD:0F72) tests it */
 extern int gMouseDisabled; /*@ ds:814A */   /* nonzero disables the mouse (src/E07A9.C) */
 extern int gCurLevel; /*@ ds:FBC8 */            /* the dungeon level, 1..12 (src/E0D1C.C) */
-extern int gFBCE; /*@ ds:FBCE */            /* the item index shown by the mouse (src/E07A9.C) */
+extern int gMouseItem; /*@ ds:FBCE */            /* the item index shown by the mouse (src/E07A9.C) */
 extern void far *gFont6x6; /*@ ds:A9C0 */       /* the current 6x6 font (src/E07A9.C) */
 extern void far *gList; /*@ ds:FB48 */      /* the head of the list built last (src/E0CF7.C) */
 extern unsigned long gNextRandomSoundTick; /*@ ds:FC5A */  /* the map timeout counter (0E8A) */
@@ -586,14 +586,14 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
     return 1;
 }
 
-/* 0ACD:0753: advances the menu step gDCAA, wrapping above 2 to 1, then moves the selected row
+/* 0ACD:0753: advances the menu step gMenuPhase, wrapping above 2 to 1, then moves the selected row
    gCursorSlot (step 2 passes it to NoOpAfterCursorMove with 9, otherwise NoOpBeforeCursorMove). */
 /*@ 0ACD:0753 */ void StepMenuPhase(void)
 {
-    gDCAA++;
-    if (gDCAA > 2)
-        gDCAA = 1;
-    if (gDCAA == 2)
+    gMenuPhase++;
+    if (gMenuPhase > 2)
+        gMenuPhase = 1;
+    if (gMenuPhase == 2)
         NoOpAfterCursorMove(gCursorSlot, 9);
     else
         NoOpBeforeCursorMove(gCursorSlot);
@@ -727,13 +727,13 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
     DrawItemRow(gCursorSlot, 1, 0);
 }
 
-/* 0ACD:0A34: the row/character turn dispatcher: does nothing in the rest phase (gDCAA == 5), calls
+/* 0ACD:0A34: the row/character turn dispatcher: does nothing in the rest phase (gMenuPhase == 5), calls
    MoveHandCursor in mode 0 or SetActionRow in mode 1 with the direction dir. Case 0 jumps to the shared
    exit rather than breaking: a plain `break` makes the compiler cross-jump the two calls' argument
    cleanup, which the original keeps apart. */
 /*@ 0ACD:0A34 */ void MoveKeyCursor(int dir)
 {
-    if (gDCAA == 5)
+    if (gMenuPhase == 5)
         return;
     switch (gPanelMode) {
     case 0:
@@ -746,7 +746,7 @@ done:
     return;
 }
 
-/* 0ACD:0A61: the list move/use handler. In mode 2 (gPanelMode == 2) or the rest phase (gDCAA == 5) it
+/* 0ACD:0A61: the list move/use handler. In mode 2 (gPanelMode == 2) or the rest phase (gMenuPhase == 5) it
    only recomputes the armour class of gInventoryMember (ComputeArmourClass, 0DE8:0D5E). Otherwise it takes the
    current item (GetCurrentItem, or RemoveListItem over the character's +0x97 sub-table at row 0x10) and
    gives up without redrawing when the item's flags have bit 0x20 or the item is 0. It then computes
@@ -764,7 +764,7 @@ done:
 
     if (gPanelMode == 2)
         goto call;
-    if (gDCAA == 5)
+    if (gMenuPhase == 5)
         goto call;
     if (gCursorSlot != 0x10) {
         item = GetCurrentItem();
@@ -885,7 +885,7 @@ done:
 }
 
 /* 0ACD:0D9D: the key dispatcher for the map screen. It acts only while the mouse is disabled and
-   outside the rest phase (gDCAA != 5). Keys 0x12/0x20/0x2e/0x1f set the direction dir 0/1/2/3, key
+   outside the rest phase (gMenuPhase != 5). Keys 0x12/0x20/0x2e/0x1f set the direction dir 0/1/2/3, key
    0x34 runs ActivateWallAhead, key 0x17 calls UseItemSlot(gInventoryMember, gCursorSlot), keys 0x21 and 0x15 call
    MoveListItem(0) and MoveListItem(1) and key 0x23 calls PickListItem (0ACD:0BA6). The four action
    cases are skipped in mode 2 (gPanelMode == 2), and a direction set is passed to MoveKeyCursor unless the
@@ -896,7 +896,7 @@ done:
 
     if (!gMouseDisabled)
         return;
-    if (gDCAA == 5)
+    if (gMenuPhase == 5)
         return;
     dir = -1;
     switch (key) {
@@ -983,7 +983,7 @@ done:
 /* 0ACD:0F72: enters the map screen. When gGameLoadState is clear (a normal entry) it calls
    ResetMapScreen
    (0ACD:1033); when it is nonzero (0xff while a load runs, 0xfe after a saved game loads, src/EOV2.C)
-   it shows the mouse item (SetMouseItem(gFBCE), unless the mouse is disabled), loads level gCurLevel's
+   it shows the mouse item (SetMouseItem(gMouseItem), unless the mouse is disabled), loads level gCurLevel's
    map and inventory (LoadLevel, ovl3:0A7C) and clears gGameLoadState. Then it clears gFlag, resets the
    character index and the menu phase, rebuilds list 1, loads PLAYFLD and INVENT through
    LoadScreenImage (into gCgaMapPlayfld and gCgaMapInvent), selects the font, clears the status
@@ -994,14 +994,14 @@ done:
         ResetMapScreen();
     } else {
         if (!gMouseDisabled)
-            SetMouseItem(gFBCE);
+            SetMouseItem(gMouseItem);
         LoadLevel(gCurLevel);
         gGameLoadState = 0;
     }
     NoOpAfterMapLoad();
     gFlag = 0;
     gInventoryMember = 0;
-    gDCAA = 1;
+    gMenuPhase = 1;
     BuildList1();
     LoadScreenImage("PLAYFLD", (char far *)gCgaMapPlayfld, 5, 3, 0);
     LoadScreenImage("INVENT", (char far *)gCgaMapInvent, 5, 3, 2);

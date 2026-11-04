@@ -9945,3 +9945,192 @@ new = "gTurnForMode5To6"
 kind = "global"
 why = "Indexed by Monster +08 for modes 5 and 6 at 08E6:0CC8, reading ds:3239 = 0xff and ds:323A = 1, the wall side StepMonsterAlongWall (08E6:0B94) follows; renamed to match the proposed field name mode for +08."
 date = "2026-11-03"
+
+[[rename]]
+id = "ds:DCFC=gScratchBuf"
+addr = "ds:DCFC"
+old = "gBufDCFC"
+new = "gScratchBuf"
+kind = "global"
+why = "StartupGame allocates it once as MemAlloc(4096L, 0) (07A9:0074, src/E07A9.C:348) and unrelated routines borrow it as scratch: the party record swap (ovl1, SwapBlocks), the flash save rects (0EF3, gSaveRect into gScratchBuf + i*256), the particle arrays (0EF3), the grid shuffle (ovl5:1E1B), the level save compression (ovl3, CompressLcw over 0x1000 bytes) and the sprite blit target (ovl4)."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:FBCE=gMouseItem"
+addr = "ds:FBCE"
+old = "gFBCE"
+new = "gMouseItem"
+kind = "global"
+why = "The item held on the mouse pointer: GetCurrentItem (0D1C:02DC) returns it while the mouse is enabled (else the cursor slot item), SetCurrentItem (0D1C:0304) stores it, EnterMapScreen (0ACD:0F72) and ovl3 redisplay it with SetMouseItem(gMouseItem), and 07A9 reads gItems[gMouseItem].flags for the pointer icon."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:DCAA=gMenuPhase"
+addr = "ds:DCAA"
+old = "gDCAA"
+new = "gMenuPhase"
+kind = "global"
+why = "Named after its only stepper StepMenuPhase (0ACD:0753, which wraps it over 1 and 2 and has no caller found in EOB.EXE); EnterMapScreen sets it to 1 (0ACD:0FA9) and MoveKeyCursor (0A34), MoveListItem (0A61) and HandleMapKey (0D9D) do nothing when it is 5. The six references in EOB.EXE are all in 0ACD and none stores 5, so the meaning of 5 is not shown."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:5721=gBurningHandsX"
+addr = "ds:5721"
+old = "gIconX5721"
+new = "gBurningHandsX"
+kind = "global"
+why = "Six words 0, 152, 24, 120, 56, 88 read only by CastBurningHands (0EF3:0F99) as the x of flame shape i, beside gBurningHandsShapes (ds:571B: 3, -3, 2, -2, 1, -1, the negative ones drawn flipped); the pairs mirror about the view centre, so these are the six flame positions, not per party member."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:572D=gBurningHandsY"
+addr = "ds:572D"
+old = "gIconY572D"
+new = "gBurningHandsY"
+kind = "global"
+why = "Six signed bytes 64, 64, 56, 56, 56, 56 read only by CastBurningHands (0EF3:0F99) as the y of flame shape i, the partner table of gBurningHandsX (ds:5721) and gBurningHandsShapes (ds:571B)."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:EFBA=gCurrentSpellApply"
+addr = "ds:EFBA"
+old = "gFnEFBA"
+new = "gCurrentSpellApply"
+kind = "global"
+why = "CastSpell (0EF3:2676) stores spell->apply (Spell +5) into it beside gCurrentSpell and calls it, and CastSpellOnTarget (0EF3:08CF) calls it again once the target member is chosen; it is the apply callback of the spell being cast."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:00EF=gViewRegionLeft"
+addr = "ds:00EF"
+old = "gEF"
+new = "gViewRegionLeft"
+kind = "global"
+why = "ds:00EF is gRegions[5].left (gRegions at ds:009F, 16-byte records, 0x9F + 5*16); the record holds 0, 0, 22, 120, the 176 by 120 maze view, which ovl4 rewrites with SetRegionExtents(5, ...) and the particle routine at 0EF3:2238 uses as left << 3."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:00F1=gViewRegionTop"
+addr = "ds:00F1"
+old = "gF1"
+new = "gViewRegionTop"
+kind = "global"
+why = "ds:00F1 is gRegions[5].top (gRegions at ds:009F, 16-byte records); read as the view top by 0EF3:2238 and ovl4 SetRegionExtents(5, left, gViewRegionTop, ...), and set to 8 then 0 around the explosion in ovl5 (EOV5.C:1215, 1225)."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:00F3=gViewRegionWidth"
+addr = "ds:00F3"
+old = "gF3"
+new = "gViewRegionWidth"
+kind = "global"
+why = "ds:00F3 is gRegions[5].width, in 8-pixel columns (value 22, gRegions at ds:009F, 16-byte records); 0EF3:2238 uses it as right = left + (width << 3) for the particles in the maze view."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:00F5=gViewRegionHeight"
+addr = "ds:00F5"
+old = "gF5"
+new = "gViewRegionHeight"
+kind = "global"
+why = "ds:00F5 is gRegions[5].height (value 120, gRegions at ds:009F, 16-byte records); 0EF3:2238 uses it as bottom = top + height - 1 and ovl4 passes it to SetRegionExtents(5, ...)."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:5E54=gChargenBoxX"
+addr = "ds:5E54"
+old = "gPanelX5E54"
+new = "gChargenBoxX"
+kind = "global"
+why = "Four words 16, 80, 16, 80 indexed by gChargenMember: DrawPanelRow (ovl0:11BA) draws the member's portrait at this x and AnimateMemberBox (ovl0:1224) hides the pointer over and copies the 32 by 32 box at it; the 2 by 2 grid of character boxes on the creation screen."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:5E5C=gChargenBoxY"
+addr = "ds:5E5C"
+old = "gPanelY5E5C"
+new = "gChargenBoxY"
+kind = "global"
+why = "Four words 63, 63, 127, 127 indexed by gChargenMember, the y partner of gChargenBoxX (ds:5E54): the portrait goes at y + 1 in DrawPanelRow (ovl0:11BA) and AnimateMemberBox (ovl0:1224) covers y + 1 to y + 0x20."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:FDEA=gSpellCopies"
+addr = "ds:FDEA"
+old = "gFDEA"
+new = "gSpellCopies"
+kind = "global"
+why = "A view two bytes before gSpellCopyPairs (ds:FDEC) so spell number s indexes it as [s * 2]: the first counter of the pair, the copies of the spell the character takes, printed by DrawSpellRow (ovl1:0881, \"%-18s %1d\") and raised or lowered by the spell-slot screen keys against the level allowance."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:FDBA=gLevelSpellLists"
+addr = "ds:FDBA"
+old = "gFDBA"
+new = "gLevelSpellLists"
+kind = "global"
+why = "Five 9-byte lists, one per spell level, cleared by BuildSpellSlots (ovl1:00DD, memset 0x2d) and filled with each allowed spell number i + 1 after a count byte; the spell-slot screen draws and walks tab * 9 + row + 1 from it."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:FDEC=gSpellCopyPairs"
+addr = "ds:FDEC"
+old = "gFDEC"
+new = "gSpellCopyPairs"
+kind = "global"
+why = "32 byte pairs, one per spell (0-based index * 2): BuildSpellSlots (ovl1:00DD) counts each nonzero slot of the character into the first byte and each positive (memorised) one into the second, and SpendSpellSlot (ovl1:025D) writes the second count back as ready slots and the rest as negative ones; gSpellCopies and gSpellCopiesReady are views of it."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:FDEB=gSpellCopiesReady"
+addr = "ds:FDEB"
+old = "gFDEB"
+new = "gSpellCopiesReady"
+kind = "global"
+why = "A view one byte before gSpellCopyPairs (ds:FDEC), indexed [s * 2] by spell number s, so it is the second byte of the pair: BuildSpellSlots (ovl1:00DD) bumps it only for a positive (memorised) slot entry, and SpendSpellSlot stores that many copies as ready."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:0159=gMessageWindowFill"
+addr = "ds:0159"
+old = "g159"
+new = "gMessageWindowFill"
+kind = "global"
+why = "ds:0159 is gRegions[11].textAttr2 (ds:009F + 11*16 + 0xA); ShowMessageBox (ovl1:13F7) and ShowCampMessage (ovl6:0B9B) store gPanelFillColour in it just before SetTextWindowAndClear(0xb), which loads it into gTextAttr2 (1DE7:0009), the fill colour, so it is read there."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:0179=gFindWordWindowFill"
+addr = "ds:0179"
+old = "gColour179"
+new = "gFindWordWindowFill"
+kind = "global"
+why = "ds:0179 is gRegions[13].textAttr2 (ds:009F + 13*16 + 0xA); FindWordPanel (ovl2:09ED) stores gPanelFillColour in it just before SetTextWindow(0xd), which loads it as gTextAttr2, the fill colour ClearTextRegion then uses."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:EFCA=gUnreadInitWord"
+addr = "ds:EFCA"
+old = "gEFCA"
+new = "gUnreadInitWord"
+kind = "global"
+why = "The only reference to ds:EFCA in all of EOB.EXE (overlays included) is the store of 0 in InitGameTables (ovl2:0496), next to gUnusedStartupWord (ds:EFC8); it is never read."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:0169=gTextPanelWindowFill"
+addr = "ds:0169"
+old = "g169"
+new = "gTextPanelWindowFill"
+kind = "global"
+why = "ds:0169 is gRegions[12].textAttr2 (ds:009F + 12*16 + 0xA); WinnerPanel (ovl5:160A) and UseItemPanel (ovl5:1CDD) store gPanelFillColour in it, set gTextPanelInView and call SetTextWindow(0xc), which loads it as the fill colour gTextAttr2, before printing TEXT.DAT strings."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:0139=gDialogWindowFill"
+addr = "ds:0139"
+old = "g139"
+new = "gDialogWindowFill"
+kind = "global"
+why = "ds:0139 is gRegions[9].textAttr2 (ds:009F + 9*16 + 0xA); CharOverlay (ovl5:1A82) stores gPanelFillColour in it just before SetTextWindow(9), the full-width lower window (1, 125, 38, 63) its portrait encounter panels such as TemplePanel and FreeHimPanel talk in."
+date = "2026-11-03"

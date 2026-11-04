@@ -126,7 +126,7 @@ struct ItemRecord {
 extern struct ItemRecord gItems[]; /*@ ds:8DD0 */
 
 extern char gPanelMode; /*@ ds:FB44 */            /* a mode byte: 0 and 1 gate the redraws in 0D1C:01CA and 0D1C:0304 */
-extern int gFBCE; /*@ ds:FBCE */             /* the item index shown by the mouse (src/E07A9.C) */
+extern int gMouseItem; /*@ ds:FBCE */             /* the item index shown by the mouse (src/E07A9.C) */
 extern int gMouseDisabled; /*@ ds:814A */    /* nonzero disables the mouse (src/E07A9.C) */
 extern int gCurLevel; /*@ ds:FBC8 */             /* the dungeon level: 2 or 7 gates the turn-undead
                                                 effect (0D1C:0A43); other units set it too */
@@ -334,23 +334,23 @@ int GetCurrentItem(void);
     }
     return found;
 }
-/* 0D1C:02DC: returns the item index of the currently displayed slot: gFBCE when the mouse is
+/* 0D1C:02DC: returns the item index of the currently displayed slot: gMouseItem when the mouse is
    enabled, otherwise gChars[gInventoryMember].items[gCursorSlot]. The getter of the SetCurrentItem pair (0D1C:0304).
    Called by 0D1C:01CA and from many other units. */
 /*@ 0D1C:02DC */ int GetCurrentItem(void)
 {
     if (!gMouseDisabled)
-        return gFBCE;
+        return gMouseItem;
     return gChars[gInventoryMember].items[gCursorSlot];
 }
-/* 0D1C:0304: stores `n` as the item index in the current slot: gFBCE when the mouse is enabled,
+/* 0D1C:0304: stores `n` as the item index in the current slot: gMouseItem when the mouse is enabled,
    or gChars[gInventoryMember].items[gCursorSlot] when it is disabled. When the mouse is disabled it also redraws
    the slot, through RedrawMember(gInventoryMember) when gPanelMode is 0 and DrawItemRow(gCursorSlot, 1, 0) otherwise.
    Called by SetMouseItem to set the icon shown for a selected item. */
 /*@ 0D1C:0304 */ void SetCurrentItem(int n)
 {
     if (!gMouseDisabled) {
-        gFBCE = n;
+        gMouseItem = n;
     } else {
         gChars[gInventoryMember].items[gCursorSlot] = n;
         if (gPanelMode == 0)

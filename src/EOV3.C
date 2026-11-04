@@ -45,7 +45,7 @@ extern char gGameLoadState; /*@ ds:A998 */           /* src/E0ACD.C */
 extern signed char gViewToCellPos[]; /*@ ds:1A1B */  /* the cell position seen at a view position, four per gPartyDir */
 extern int gPartyCell; /*@ ds:FBCA */
 extern int gPartyDir; /*@ ds:FBCC */
-extern int gFBCE; /*@ ds:FBCE */
+extern int gMouseItem; /*@ ds:FBCE */
 extern int gMouseDisabled; /*@ ds:814A */
 extern unsigned gBlockSizes[]; /*@ ds:6A8C */  /* the six EOBDATA.SAV block sizes (ovl3:1368 saves them in this order) */
 extern int FileOpen(char far *name, int mode); /*@ 1C0E:00DB */
@@ -56,7 +56,7 @@ extern void far *gStagingPage; /*@ ds:DF4E */
 extern struct Cell8 far *gDecorationRects; /*@ ds:E062 */  /* the 8-byte map cell rectangles (struct Cell8 below) */
 extern char gMaze[]; /*@ ds:B894 */
 extern int gSavedLevels; /*@ ds:FBD0 */            /* the saved-level bit mask: bit level-1 is set by SaveLevelState and SaveGame and tested by LoadMaze and LoadLevel */
-extern void far *gBufDCFC; /*@ ds:DCFC */
+extern void far *gScratchBuf; /*@ ds:DCFC */
 extern unsigned char gWallVmpSet[]; /*@ ds:1879 */  /* the four parallel per-kind tables at ds:1879..0x1990 */
 extern void movmem(void far *src, void far *dst, unsigned n); /*@ 0000:63A3 */
 
@@ -707,7 +707,7 @@ done:
     gLevelPalettePending = 1;
 }
 /* ovl3:0FD1: packs the level state into `buf`. It copies the four gMaze bytes of each of the 0x400
-   records into gBufDCFC, compresses gBufDCFC (0x1000 bytes) into `buf` with CompressLcw and, when
+   records into gScratchBuf, compresses gScratchBuf (0x1000 bytes) into `buf` with CompressLcw and, when
    the stream is longer than 0x4B0, prints "Map compression failure: size of map = %d" and shuts the
    game down. It finishes by Unpack0ing gMonsters into `buf`+0x4B0. Called by ovl3:11AF. */
 /*@ ovl3:0FD1 */ void PackLevelState(void far *buf)
@@ -719,11 +719,11 @@ done:
     int len;
 
     dst = (char far *)buf + 0x4b0;
-    src = (char far *)gBufDCFC;
+    src = (char far *)gScratchBuf;
     for (i = 0; i < 0x400; i++)
         for (j = 0; j < 4; j++)
             *src++ = gMaze[i * 9 + j];
-    len = CompressLcw((char far *)gBufDCFC, (char far *)buf, 0x1000);
+    len = CompressLcw((char far *)gScratchBuf, (char far *)buf, 0x1000);
     if (len > 0x4b0) {
         gDrawPage = 0;
         sprintf(gFileNameBuf, "Map compression failure: size of map = %d", len);
@@ -734,8 +734,8 @@ done:
     Unpack0(gMonsters, dst, 0x348L);
 }
 /* ovl3:109D: unpacks a level state. `buf` is the 0x7F8-byte level state ovl3:1147 read. It
-   Unpack4s 0x1000 bytes of `buf` into gBufDCFC and Unpack0s the 0x348 bytes at `buf`+0x4B0 into
-   gMonsters, copies the four gBufDCFC bytes of each of the 0x400 gMaze records into its +0 field, then
+   Unpack4s 0x1000 bytes of `buf` into gScratchBuf and Unpack0s the 0x348 bytes at `buf`+0x4B0 into
+   gMonsters, copies the four gScratchBuf bytes of each of the 0x400 gMaze records into its +0 field, then
    bumps the +4 byte of every gMaze record the 30 gMonsters objects index by id. Called by ovl3:1147. */
 /*@ ovl3:109D */ void UnpackLevelState(void far *buf)
 {
@@ -744,7 +744,7 @@ done:
     int i;
     int j;
 
-    src = (char far *)gBufDCFC;
+    src = (char far *)gScratchBuf;
     dst = (char far *)buf + 0x4b0;
     Unpack4(buf, src, 0x1000);
     for (i = 0; i < 0x400; i++)
@@ -886,7 +886,7 @@ done:
    and cuts the portraitIndex < 0 characters' 4 by 32 cells out of it the same way. Unless ds:A998 is -1 it then rebuilds the
    map screen (ovl3:0A7C), reloads PLAYFLD and INVENT, hands gFont6x6 to SetFont, redraws the
    characters, and either restores the mouse item when the mouse is enabled (gMouseDisabled is 0)
-   or, when the mouse is disabled and gFBCE is nonzero, drops it at a cell position from gViewToCellPos
+   or, when the mouse is disabled and gMouseItem is nonzero, drops it at a cell position from gViewToCellPos
    picked by RollDice(1, 2, -1) (the item is keyed by gPartyCell). Sets ds:A998 to 1 on success, 0 on
    (ovl1:1ACD) and overlay 2 (ovl2:0846). */
 /*@ ovl3:15B9 */ int LoadGame(void)
@@ -971,10 +971,10 @@ done:
             SetFont((char far *)gFont6x6);
             RedrawCharacters();
             if (gMouseDisabled == 0)
-                SetMouseItem(gFBCE);
-            else if (gFBCE) {
+                SetMouseItem(gMouseItem);
+            else if (gMouseItem) {
                 idx = gViewToCellPos[gPartyDir * 4 + RollDice(1, 2, -1)];
-                InsertListItem((void far *)(gMazeItems + gPartyCell * 9), gPartyCell, gFBCE, idx);
+                InsertListItem((void far *)(gMazeItems + gPartyCell * 9), gPartyCell, gMouseItem, idx);
             }
         }
         gGameLoadState = 1;

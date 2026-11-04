@@ -147,7 +147,7 @@ struct Box {
     int y2;
 };
 extern struct Box gMemberBoxes[]; /*@ ds:62E2 */
-extern void far *gBufDCFC; /*@ ds:DCFC */
+extern void far *gScratchBuf; /*@ ds:DCFC */
 extern void (far *gFillRect)(int x1, int y1, int x2, int y2, int colour); /*@ ds:806A */
 extern void SwapBlocks(char far *pa, char far *pb, char far *pc, int len); /*@ 082C:07C5 */
 extern void RemovePartyMember(int who); /*@ 0D1C:035A */
@@ -167,18 +167,18 @@ extern int gMembersMarkedDisabled; /*@ ds:FD98 */      /* set when a party membe
                                           draws the icons over its portrait box) */
 extern char far *gMageSpellNames[]; /*@ ds:1278 */
 extern char far *gClericSpellNames[]; /*@ ds:12E0 */
-extern char gFDEA[]; /*@ ds:FDEA */   /* the count of each spell, byte spell * 2 (DrawSpellRow,
+extern char gSpellCopies[]; /*@ ds:FDEA */   /* the count of each spell, byte spell * 2 (DrawSpellRow,
                                           SpellSlotScreen) */
 extern char gFileNameBuf[]; /*@ ds:FE6E */ /* the text buffer sprintf formats into (the other units
                                           declare it the same way) */
-extern char gFDBA[]; /*@ ds:FDBA */   /* five 9-byte lists, one per spell level 1 to 5: the first byte
+extern char gLevelSpellLists[]; /*@ ds:FDBA */   /* five 9-byte lists, one per spell level 1 to 5: the first byte
                                           counts the spell numbers that follow (BuildSpellSlots; the
                                           memset clears 5 * 9 bytes) */
 extern char gSpellsTakenByTab[]; /*@ ds:FDE7 */   /* ten bytes: the spells taken at each level, index level - 1 (the
                                           screen shows allowance - this) */
-extern char gFDEC[]; /*@ ds:FDEC */   /* a pair of counters per spell number i, byte 2 * (i - 1) the copies
+extern char gSpellCopyPairs[]; /*@ ds:FDEC */   /* a pair of counters per spell number i, byte 2 * (i - 1) the copies
                                           held in all and the next byte the copies ready (SpendSpellSlot) */
-extern char gFDEB[]; /*@ ds:FDEB */   /* the odd bytes of the pairs in gFDEC, indexed by 2 * spell number */
+extern char gSpellCopiesReady[]; /*@ ds:FDEB */   /* the odd bytes of the pairs in gSpellCopyPairs, indexed by 2 * spell number */
 extern char gSpellsTakenByLevel[]; /*@ ds:FDE6 */   /* copies held per spell level, index level (1 based) */
 extern char gSpellLevels[]; /*@ ds:FD9A */   /* the level (1 to 5) of spell number i + 1, copied from gMageSpellLevels or
                                           gClericSpellLevels; a spell not on the 0-terminated map stays 0 (the
@@ -223,7 +223,6 @@ extern unsigned char gPaladinSpellsPerLevel[]; /*@ ds:6358 */ /* a paladin's spe
 extern unsigned char gMageSpellsPerLevel[]; /*@ ds:6394 */ /* a mage's spells per level (5 bytes) by class level 1 to 11 */
 extern int IsWearingRing(int who, int fieldB); /*@ 0D1C:0163 */
 extern int IsMouseInRect(int left, int top, int right, int bottom); /*@ 1A72:02A6 */
-extern int g159; /*@ ds:0159 */ /* a copy of gPanelFillColour that ShowMessageBox and ovl6:0B9B store; no reader found */
 extern int gTunesOn; /*@ ds:80E8 */
 extern int gSoundOn; /*@ ds:80E6 */
 extern char gBarGraphsOn; /*@ ds:F43C */
@@ -301,7 +300,7 @@ int AskYesNo(int message);
    drop."). Nothing happens when `who` is negative or the slot holds no character (0D1C:0670 flag 1).
    0D1C:035A puts the member's items on the floor of the party's cell and clears its status bits.
    For a member of the four marching slots (below 4) the record of the reserve slot 5 (when it is
-   occupied, else slot 4) is swapped into the vacated place through gBufDCFC and the member is
+   occupied, else slot 4) is swapped into the vacated place through gScratchBuf and the member is
    redrawn; the reserve slot (`who` itself when it was 4 or 5) then has its portrait box in
    gMemberBoxes painted in colour 0xC. Finally character 0 is selected, the list rebuilt (0CF7:0028)
    and the character effects rearmed. */
@@ -320,7 +319,7 @@ int AskYesNo(int message);
             slot = 5;
         else
             slot = 4;
-        SwapBlocks((char *)&gChars[slot], (char *)&gChars[who], gBufDCFC, 0xf3);
+        SwapBlocks((char *)&gChars[slot], (char *)&gChars[who], gScratchBuf, 0xf3);
         RedrawMember(who);
     }
     slot -= 4;
@@ -335,13 +334,13 @@ int AskYesNo(int message);
 /* ovl1:00DD: builds the spell tables of the spell-slot screen for character `who` (nothing happens
    for a negative `who`). `cleric` is 1 for the cleric and paladin screen (SpellSlotScreen's flag),
    0 for the mage screen; `counts` is the screen's five per-level spell allowances, `mask` the set of
-   spells that may be shown (bit i is spell i + 1). It clears gFDBA (the five 9-byte level lists), gSpellsTakenByTab
-   (spells already taken per level), gFDEC (32 pairs of counters) and gSpellLevels, copies the spell-to-level
+   spells that may be shown (bit i is spell i + 1). It clears gLevelSpellLists (the five 9-byte level lists), gSpellsTakenByTab
+   (spells already taken per level), gSpellCopyPairs (32 pairs of counters) and gSpellLevels, copies the spell-to-level
    map into gSpellLevels (gClericSpellLevels for clerics, gMageSpellLevels for mages) and walks the 30 signed bytes of the
    character's spell slots (rec + 0x55 for a cleric, rec + 0x37 for a mage): a nonzero entry c names
-   spell |c|; a positive one bumps its second counter gFDEB[2 * c] and each bumps its first,
-   gFDEC[2 * (|c| - 1)], and the per-level total gSpellsTakenByLevel[level]. Then each spell i of `mask` is appended
-   to its level's list gFDBA[(level - 1) * 9] (the first byte counts the entries, the entry is i + 1),
+   spell |c|; a positive one bumps its second counter gSpellCopiesReady[2 * c] and each bumps its first,
+   gSpellCopyPairs[2 * (|c| - 1)], and the per-level total gSpellsTakenByLevel[level]. Then each spell i of `mask` is appended
+   to its level's list gLevelSpellLists[(level - 1) * 9] (the first byte counts the entries, the entry is i + 1),
    for a cleric only when the level has a nonzero allowance. Called by SpellSlotScreen. */
 /*@ ovl1:00DD */ void BuildSpellSlots(int who, char far *counts, long mask, int cleric)
 {
@@ -354,9 +353,9 @@ int AskYesNo(int message);
     if (who < 0)
         return;
     rec = &gChars[who];
-    memset(gFDBA, 0, 0x2d);
+    memset(gLevelSpellLists, 0, 0x2d);
     memset(gSpellsTakenByTab, 0, 0xa);
-    memset(gFDEC, 0, 0x40);
+    memset(gSpellCopyPairs, 0, 0x40);
     memset(gSpellLevels, 0, 0x20);
     if (cleric)
         strcpy(gSpellLevels, gClericSpellLevels);
@@ -369,11 +368,11 @@ int AskYesNo(int message);
         entry = *slots++;
         if (entry) {
             if (entry > 0)
-                gFDEB[entry * 2]++;
+                gSpellCopiesReady[entry * 2]++;
             else
                 entry = -entry;
             entry--;
-            gFDEC[entry * 2]++;
+            gSpellCopyPairs[entry * 2]++;
             gSpellsTakenByLevel[gSpellLevels[entry]]++;
         }
     }
@@ -382,8 +381,8 @@ int AskYesNo(int message);
             slot = gSpellLevels[i] - 1;
             if ((cleric && counts[slot]) || !cleric) {
                 if (slot >= 0) {
-                    gFDBA[slot * 9]++;
-                    gFDBA[slot * 9 + gFDBA[slot * 9]] = i + 1;
+                    gLevelSpellLists[slot * 9]++;
+                    gLevelSpellLists[slot * 9 + gLevelSpellLists[slot * 9]] = i + 1;
                 }
             }
         }
@@ -391,7 +390,7 @@ int AskYesNo(int message);
 }
 /* ovl1:025D: writes the spells chosen on the spell-slot screen back into character `who`'s spell
    slots (nothing happens for a negative `who`); `cleric` picks the 30 signed bytes at rec + 0x55
-   (cleric), else rec + 0x37 (mage). The slots are cleared first. gFDEC holds, for each of the 32
+   (cleric), else rec + 0x37 (mage). The slots are cleared first. gSpellCopyPairs holds, for each of the 32
    spells i, a pair of counters: the first is how many copies the character holds in all, the second
    how many of them are ready (positive). The second counter is cut down to the first when it is the
    larger. While it is nonzero the spell is stored as i + 1 in the first free one of the six slots of
@@ -417,11 +416,11 @@ int AskYesNo(int message);
     else
         memset(rec->mageSpells, 0, 0x1e);
     for (i = 0; i < 0x20; i++) {
-        if (gFDEC[i * 2] < gFDEC[i * 2 + 1])
-            gFDEC[i * 2 + 1] = gFDEC[i * 2];
-        if (gFDEC[i * 2 + 1] != 0) {
-            gFDEC[i * 2 + 1]--;
-            gFDEC[i * 2]--;
+        if (gSpellCopyPairs[i * 2] < gSpellCopyPairs[i * 2 + 1])
+            gSpellCopyPairs[i * 2 + 1] = gSpellCopyPairs[i * 2];
+        if (gSpellCopyPairs[i * 2 + 1] != 0) {
+            gSpellCopyPairs[i * 2 + 1]--;
+            gSpellCopyPairs[i * 2]--;
             slot = gSpellLevels[i] - 1;
             for (k = 0; k < 6; k++) {
                 if (cleric) {
@@ -437,8 +436,8 @@ int AskYesNo(int message);
                 }
             }
             i--;
-        } else if (gFDEC[i * 2] != 0) {
-            gFDEC[i * 2]--;
+        } else if (gSpellCopyPairs[i * 2] != 0) {
+            gSpellCopyPairs[i * 2]--;
             slot = gSpellLevels[i] - 1;
             gNeedsRest = 1;
             for (k = 0; k < 6; k++) {
@@ -644,7 +643,7 @@ int AskYesNo(int message);
    `row` (a negative row draws nothing). The row sits at y = row * 9 + 0x32, x = 8. For a nonzero
    `spell` it formats "%-18s %1d" into gFileNameBuf from the spell's name (gClericSpellNames when
    `cleric` is set, else gMageSpellNames; both are far name pointers indexed by the spell number) and
-   its count, the byte gFDEA[spell * 2]; `noShadow` picks the plain text routine gDrawText, else
+   its count, the byte gSpellCopies[spell * 2]; `noShadow` picks the plain text routine gDrawText, else
    DrawShadowText with gPanelFillColour as the shadow; the colour is 6 when `highlight` is set, else 1 (0xF when
    gGraphicsChoice is nonzero). For spell 0 with `noShadow` clear it blanks the row instead by
    filling x 6 to 0xA8, y to y + 8 with gPanelFillColour through gFillRect. The pointer is hidden while it
@@ -661,7 +660,7 @@ int AskYesNo(int message);
     LockHidePointer();
     if (spell != 0) {
         sprintf(gFileNameBuf, "%-18s %1d",
-            cleric ? gClericSpellNames[spell] : gMageSpellNames[spell], gFDEA[spell * 2]);
+            cleric ? gClericSpellNames[spell] : gMageSpellNames[spell], gSpellCopies[spell * 2]);
         if (noShadow)
             gDrawText(gFileNameBuf, 8, y, highlight ? 6 : colour, 0);
         else
@@ -779,7 +778,7 @@ int AskYesNo(int message);
                 redrawRows = 0;
                 gDrawPage = 2;
                 for (i = 1; i < 9; i++)
-                    DrawSpellRow(gFDBA[tab * 9 + i], i - 1, cleric, 0, 0);
+                    DrawSpellRow(gLevelSpellLists[tab * 9 + i], i - 1, cleric, 0, 0);
                 gDrawPage = 0;
                 LockHidePointer();
                 CopyRegion(0, 0x32, 0, 0x32, 0x16, 0x48, 2, 0);
@@ -795,12 +794,12 @@ int AskYesNo(int message);
                 LockShowPointer();
             }
             if (wantRow < 0)
-                wantRow = gFDBA[tab * 9] - 1;
-            if (gFDBA[tab * 9] <= wantRow)
+                wantRow = gLevelSpellLists[tab * 9] - 1;
+            if (gLevelSpellLists[tab * 9] <= wantRow)
                 wantRow = 0;
             if (wantRow != selRow) {
-                DrawSpellRow(gFDBA[tab * 9 + selRow + 1], selRow, cleric, 1, 0);
-                DrawSpellRow(gFDBA[tab * 9 + wantRow + 1], wantRow, cleric, 1, 1);
+                DrawSpellRow(gLevelSpellLists[tab * 9 + selRow + 1], selRow, cleric, 1, 0);
+                DrawSpellRow(gLevelSpellLists[tab * 9 + wantRow + 1], wantRow, cleric, 1, 1);
                 selRow = wantRow;
             }
             key = DispatchKeyWait(list);
@@ -821,8 +820,8 @@ int AskYesNo(int message);
                 if (!gMouseDisabled) {
                     if (IsPointInRect(gCursorX, gCursorY, 8, 0x32, 0xa8, 0x7a)) {
                         wantRow = (gCursorY - 0x32) / 9;
-                        if (gFDBA[tab * 9] - 1 < wantRow)
-                            wantRow = gFDBA[tab * 9] - 1;
+                        if (gLevelSpellLists[tab * 9] - 1 < wantRow)
+                            wantRow = gLevelSpellLists[tab * 9] - 1;
                     }
                 }
             }
@@ -846,9 +845,9 @@ int AskYesNo(int message);
                 break;
             case 0x8019:
                 if (gSpellsTakenByTab[tab]) {
-                    for (i = 1; i <= gFDBA[tab * 9]; i++) {
-                        gSpellsTakenByTab[tab] -= gFDEA[gFDBA[tab * 9 + i] * 2];
-                        gFDEA[gFDBA[tab * 9 + i] * 2] = 0;
+                    for (i = 1; i <= gLevelSpellLists[tab * 9]; i++) {
+                        gSpellsTakenByTab[tab] -= gSpellCopies[gLevelSpellLists[tab * 9 + i] * 2];
+                        gSpellCopies[gLevelSpellLists[tab * 9 + i] * 2] = 0;
                     }
                     redrawLine = 1;
                     redrawRows = 1;
@@ -868,7 +867,7 @@ int AskYesNo(int message);
                 wantRow = selRow - 1;
                 break;
             case 0x5d:
-                wantRow = gFDBA[tab * 9] - 1;
+                wantRow = gLevelSpellLists[tab * 9] - 1;
                 break;
             case 0x0d:
             case 0x2b:
@@ -878,9 +877,9 @@ int AskYesNo(int message);
             case 0x8020:
                 if (allowance[tab] - gSpellsTakenByTab[tab] > 0) {
                     if (selRow > -1) {
-                        gFDEA[gFDBA[tab * 9 + selRow + 1] * 2]++;
+                        gSpellCopies[gLevelSpellLists[tab * 9 + selRow + 1] * 2]++;
                         gSpellsTakenByTab[tab]++;
-                        DrawSpellRow(gFDBA[wantTab * 9 + selRow + 1], selRow, cleric, 0, 1);
+                        DrawSpellRow(gLevelSpellLists[wantTab * 9 + selRow + 1], selRow, cleric, 0, 1);
                         redrawLine = 1;
                     }
                 }
@@ -889,10 +888,10 @@ int AskYesNo(int message);
             case 0x42:
             case 0x69:
                 if (allowance[tab]) {
-                    if (gFDEA[gFDBA[tab * 9 + selRow + 1] * 2]) {
-                        gFDEA[gFDBA[tab * 9 + selRow + 1] * 2]--;
+                    if (gSpellCopies[gLevelSpellLists[tab * 9 + selRow + 1] * 2]) {
+                        gSpellCopies[gLevelSpellLists[tab * 9 + selRow + 1] * 2]--;
                         gSpellsTakenByTab[tab]--;
-                        DrawSpellRow(gFDBA[wantTab * 9 + selRow + 1], selRow, cleric, 0, 1);
+                        DrawSpellRow(gLevelSpellLists[wantTab * 9 + selRow + 1], selRow, cleric, 0, 1);
                         redrawLine = 1;
                     }
                 }
@@ -993,7 +992,7 @@ int AskYesNo(int message);
 
 /* ovl1:13F7: shows the gCampStrings message `message` in a framed box (text window 11) and waits for
    a key or at most 0x78 frames. It hides the pointer, selects the 8x8 font gFont8x8, copies the
-   shadow colour gPanelFillColour into g159, sets gDrawPage to 2 while it draws and fills and clips the window
+   shadow colour gPanelFillColour into gRegions[11].textAttr2, sets gDrawPage to 2 while it draws and fills and clips the window
    rectangle; the text goes at (left * 8 + 5, top + 5) in colour 0xF. It then polls ReadKey one frame
    at a time (WaitFrames(1)); a key press flushes the key buffer and ends the wait. Afterwards the
    draw page, font and text window are restored and the key buffer flushed again. Called by
@@ -1011,7 +1010,7 @@ int AskYesNo(int message);
     savedWindow = gTextRegion;
     SetFont(gFont8x8);
     LockHidePointer();
-    g159 = gPanelFillColour;
+    gRegions[11].textAttr2 = gPanelFillColour;
     SetTextWindowAndClear(0xb);
     gDrawPage = 2;
     DrawFramedPanel(gTextLeft << 3, gTextTop, gTextWidth << 3, gTextHeight, 0, 0);

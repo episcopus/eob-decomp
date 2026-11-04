@@ -120,8 +120,8 @@ extern signed char gClassBaseBits[]; /*@ ds:1231 */ /* byte table indexed by gCh
 extern int far RollDice(char count, char sides, char bonus); /*@ 082C:0458 */
 extern void far *gPortraitCells[]; /*@ ds:FC8C */ /* the overlay screen buffers, ds:FC8C up to ds:FD98 (0x43 far pointers); ovl0:28B0 frees all of them, InitPanelScreens sets only the first 0x2c (ovl0:2547) and entries 0x32..0x3b alias the ten gBoxAnimCells row cells */
 extern int gChargenMember; /*@ ds:DCB0 */ /* the current character index for the panel: RunCharacterPanel toggles it (ovl0:28F9) and the panel routines index gChars[gChargenMember]. Purpose unknown beyond "current character" */
-extern int gPanelX5E54[]; /*@ ds:5E54 */ /* per-character x read by ovl0:11BA (Purpose unknown) */
-extern int gPanelY5E5C[]; /*@ ds:5E5C */ /* per-character y read by ovl0:11BA (Purpose unknown) */
+extern int gChargenBoxX[]; /*@ ds:5E54 */ /* per-character x read by ovl0:11BA (Purpose unknown) */
+extern int gChargenBoxY[]; /*@ ds:5E5C */ /* per-character y read by ovl0:11BA (Purpose unknown) */
 extern char gStrSelectBoxPrompt[]; /*@ ds:61CB */ /* a fixed report label (Purpose unknown) */
 extern char gStrEnteringGame[]; /*@ ds:6207 */ /* a fixed report label (Purpose unknown) */
 extern int gClassMinAbilities[][6]; /*@ ds:5FC5 */ /* per-class rows read by ovl0:1EA9 (Purpose unknown) */
@@ -824,8 +824,8 @@ int PickAlignment(int classIndex); /* ovl0:2238, defined below */
 }
 /* ovl0:11BA: draws the panel row the icon index `index` maps to. It clears the row list (-1), hides
    the pointer, then either draws panel icon index - 0x32 when `index` is above 0x30, or slices the
-   current character gChargenMember's sprite over the row through DrawShape (mode 0) at gPanelX5E54/gChargenMember,
-   gPanelY5E5C/gChargenMember + 1. Shows the pointer afterwards. Called by ovl0:0EE5 and 23EC. */
+   current character gChargenMember's sprite over the row through DrawShape (mode 0) at gChargenBoxX/gChargenMember,
+   gChargenBoxY/gChargenMember + 1. Shows the pointer afterwards. Called by ovl0:0EE5 and 23EC. */
 /*@ ovl0:11BA */ void DrawPanelRow(int index)
 {
     int row;
@@ -837,7 +837,7 @@ int PickAlignment(int classIndex); /* ovl0:2238, defined below */
         row -= 0x32;
         DrawPanelIcon(row, 0, 0);
     } else
-        DrawShape(0, gChars[gChargenMember].portrait, gPanelX5E54[gChargenMember], gPanelY5E5C[gChargenMember] + 1, 0);
+        DrawShape(0, gChars[gChargenMember].portrait, gChargenBoxX[gChargenMember], gChargenBoxY[gChargenMember] + 1, 0);
     LockShowPointer();
 }
 /* ovl0:1224: advances and draws the current character's animation frame. When the selected character
@@ -862,9 +862,9 @@ int PickAlignment(int classIndex); /* ovl0:2238, defined below */
         return;
     CopyRegion(gChargenMember * 4, 0x80, 0x24, 0x80, 4, 0x20, 2, 2);
     DrawShape(2, gBoxAnimCells[gBoxAnimFrame], 0x120, 0x80, 0);
-    HidePointerZone(gPanelX5E54[gChargenMember], gPanelY5E5C[gChargenMember] + 1,
-        gPanelX5E54[gChargenMember] + 0x20, gPanelY5E5C[gChargenMember] + 0x20);
-    CopyRegion(0x24, 0x80, gPanelX5E54[gChargenMember] >> 3, gPanelY5E5C[gChargenMember] + 1,
+    HidePointerZone(gChargenBoxX[gChargenMember], gChargenBoxY[gChargenMember] + 1,
+        gChargenBoxX[gChargenMember] + 0x20, gChargenBoxY[gChargenMember] + 0x20);
+    CopyRegion(0x24, 0x80, gChargenBoxX[gChargenMember] >> 3, gChargenBoxY[gChargenMember] + 1,
         4, 0x20, 2, 0);
     ShowPointerZone();
     gBoxAnimDrawnFrame = gBoxAnimFrame;

@@ -107,7 +107,6 @@ extern void far *gThrownIcon2; /*@ ds:FB40 */
 extern void far *gThrownIcon3; /*@ ds:EFB4 */
 extern void far *gThrownIcon4; /*@ ds:EFBE */
 extern char gFileNameBuf[]; /*@ ds:FE6E */
-extern int gColour179; /*@ ds:0179 */ /* a text colour FindWordPanel copies from gPanelFillColour (src/EOV2.C:501); no reader in src/ yet */
 extern struct WordCell gWordCells[]; /*@ ds:65F0 */
 extern unsigned char gCompassRowHeights[]; /*@ ds:65C0 */ /* the three per-row cell heights of the gCompassIcons loop, indexed by the row i (0..2) (src/EOV2.C:366-368) */
 extern unsigned char gCompassRowTops[]; /*@ ds:65C3 */ /* the three per-row cell y origins of the gCompassIcons loop, indexed by the row i (0..2) (src/EOV2.C:366-368) */
@@ -149,7 +148,7 @@ extern char gFailLabelShadow; /*@ ds:8A6C */ /* the left and bottom edge colour 
 extern char gFailLabelFill; /*@ ds:8A7D */ /* the fill colour of the action label panel (src/E1547.C:412), set by SetUiPalette */
 extern char gIconTable; /*@ ds:FB34 */ /* this unit, src/E0ACD.C:48, src/E1414.C:106 and src/E1547.C:128 read it as the party member being moved (-1 when none); the BlinkSelected comment (1414:0000, src/E1414.C:141-145) saves and restores it as that member. src/E0EF3.C:227 declares ds:FB34 as an array of far sprite pointers (a cross-unit conflict to settle) */
 extern int gUnusedStartupWord; /*@ ds:EFC8 */ /* a word cleared by InitGameTables; no other reader in src/ yet */
-extern int gEFCA; /*@ ds:EFCA */ /* a word cleared by InitGameTables; no other reader in src/ yet */
+extern int gUnreadInitWord; /*@ ds:EFCA */ /* a word cleared by InitGameTables; no other reader in src/ yet */
 extern void far *gLoadedMonsterShapes[]; /*@ ds:B802 */ /* 36 far monster shape pointers (src/EOV3.C:146, freed by ovl3:05D2), cleared by InitGameTables */
 extern long gDoorShapes[]; /*@ ds:FB5E */ /* six size-record pointers (src/EOV3.C:138 declares them longs; src/EOV4.C:756 declares them struct SlotSize far *), cleared by InitGameTables */
 extern struct SlotPos gDoorButtons[]; /*@ ds:A99C */
@@ -313,7 +312,7 @@ extern void FileClose(int handle); /*@ 1C0E:03BB */
 
 /* ovl2:0496: resets the tables a new game starts from and allocates one 0x514-byte scratch buffer
    for each of the six character records: sets gIconTable (ds:FB34, the party member being moved,
-   -1 when none; src/E0ACD.C:42) to -1, clears the two words gUnusedStartupWord and gEFCA, the 36 far pointers
+   -1 when none; src/E0ACD.C:42) to -1, clears the two words gUnusedStartupWord and gUnreadInitWord, the 36 far pointers
    of gLoadedMonsterShapes (src/EOV3.C:146), the six longs of gDoorShapes (src/EOV3.C:138), the far size-record pointer
    of each of the six gDoorButtons records (src/E122E.C:112-117) and the 200 far pointers of gDecorShapes
    (src/E122E.C:98, freed by src/EOV3.C:230-241), then writes each character record's index and
@@ -324,7 +323,7 @@ extern void FileClose(int handle); /*@ 1C0E:03BB */
 
     gIconTable = 0xff;
     gUnusedStartupWord = 0;
-    gEFCA = 0;
+    gUnreadInitWord = 0;
     for (i = 0; i < 0x24; i++)
         gLoadedMonsterShapes[i] = 0;
     for (i = 0; i < 6; i++) {
@@ -490,7 +489,7 @@ extern void FileClose(int handle); /*@ 1C0E:03BB */
 }
 
 /* ovl2:09ED: the "find the word" dungeon puzzle panel. Saves ds:811F and the font, switches to the
-   8x8 font gFont8x8, sets the text colour gColour179 from gPanelFillColour, draws the panel frame with two
+   8x8 font gFont8x8, sets the text colour gRegions[13].textAttr2 from gPanelFillColour, draws the panel frame with two
    DrawFilledPanel calls (082C:09D5) and insets the region by them, picks one of the 30 gWordCells
    records at random (RollDice), draws its item icon and the "On the page with this symbol... Find
    line %d / Enter word %d" text (082C:0898 DrawShadowText), reads the player's word through
@@ -510,7 +509,7 @@ extern void FileClose(int handle); /*@ 1C0E:03BB */
     saveRegion = gTextRegion;
     font = gCurFont;
     SetFont(gFont8x8);
-    gColour179 = gPanelFillColour;
+    gRegions[13].textAttr2 = gPanelFillColour;
     gDrawPage = 0;
     SetTextWindow(0xd);
     gSaveRectFromPage(gTextLeft, gTextTop, gTextWidth, gTextHeight, gStagingPage);

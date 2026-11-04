@@ -128,7 +128,7 @@ extern void far *gWallBlockMaps; /*@ ds:F43E */  /* start-up far allocation, 600
 extern unsigned char far *gSoundMap; /*@ ds:DCAC */  /* the 120-byte sound map (game number to
                                                          driver number), read from the driver file
                                                          (adlib.dat or pcgamesn.dat, src/E177D.C:2-3) */
-extern void far *gBufDCFC; /*@ ds:DCFC */  /* start-up far allocation, 4096 bytes (07A9:0074); the
+extern void far *gScratchBuf; /*@ ds:DCFC */  /* start-up far allocation, 4096 bytes (07A9:0074); the
                                               overlay 3 level-state work buffer: PackLevelState
                                               (ovl3:0FD1, src/EOV3.C:692) fills it with the gMaze
                                               bytes (src/EOV3.C:701-704) and compresses it
@@ -230,7 +230,7 @@ extern int gMouseDisabled; /*@ ds:814A */  /* nonzero disables the mouse pointer
                                               !gMouseHandlerInstalled, else !mouse
                                               (src/E07C8.C:190 to 193); src/E0D1C.C:110 gives the
                                               meaning (nonzero disables the mouse) */
-extern int gFBCE; /*@ ds:FBCE */  /* the item index shown by the mouse (src/E0D1C.C:109); SetCurrentItem
+extern int gMouseItem; /*@ ds:FBCE */  /* the item index shown by the mouse (src/E0D1C.C:109); SetCurrentItem
                                      stores it (0D1C:0311) */
 extern unsigned char gPartySpellFlags; /*@ ds:FBD2 */  /* bit 0, with ItemRecord.flags bit 0x80, gates the flagged
                                                  branch of SetMouseItem (07A9:0163 to 01B1); the same
@@ -345,7 +345,7 @@ extern void SetMousePointerShape(int hotX, int hotY, void far *icon); /*@ 1BB1:0
     gLevelInf = MemAlloc(7500L, MEMALLOC_ALIGNED);
     gWallBlockMaps = MemAlloc(6000L, 0);
     gSoundMap = MemAlloc(120L, 0);
-    gBufDCFC = MemAlloc(4096L, 0);
+    gScratchBuf = MemAlloc(4096L, 0);
     gItemRemapTable = MemAlloc(1600L, 0);
     gWallBlocks = GetPageBuffer(7);
     gStagingPage = GetPageBuffer(5);
@@ -360,12 +360,12 @@ extern void SetMousePointerShape(int hotX, int hotY, void far *icon); /*@ 1BB1:0
 }
 
 /* 07A9:010C: sets the item shown by the mouse to `item` and shows its icon. SetCurrentItem stores the
-   index item in ds:FBCE (gFBCE, the item index shown by the mouse, src/E0D1C.C:109) unless
+   index item in ds:FBCE (gMouseItem, the item index shown by the mouse, src/E0D1C.C:109) unless
    gMouseDisabled; src/E0D1C.C:274 says an item is cleared and redrawn through SetMouseItem, and the
    call SetMouseItem(0) is at src/E0D1C.C:302 (the tests leading to it at :298 and :300). A nonzero
    item also passes " taken.\r" (ds:0094) to 1DE7:060A after 0BD2:05B5 when gTextRegion == 7, and the
    record gItems[item].icon then supplies the icon number. When the current record
-   gItems[gFBCE] has flag 0x80 and gPartySpellFlags bit 0 is set, the flagged branch runs (07A9:015C to
+   gItems[gMouseItem] has flag 0x80 and gPartySpellFlags bit 0 is set, the flagged branch runs (07A9:015C to
    01B1): the icon's 16-byte colour row (gItemRemapTable + (item << 4), item now the icon number, or the
    dummy byte at ds:0090 when gGraphicsChoice == 0) is passed to ds:80D2, the icon is translated into gRemappedIcon
    by 17A6:197E, and the translated image becomes the mouse pointer (item set to ICON_SLOT_TRANSLATED, 0x59, so item > 0 at
@@ -389,9 +389,9 @@ extern void SetMousePointerShape(int hotX, int hotY, void far *icon); /*@ 1BB1:0
         item = gItems[item].icon;   /* the item index becomes the icon number */
     }
     if (!gMouseDisabled) {
-        /* the record of the index SetCurrentItem stored (gFBCE), not item, which is the icon
+        /* the record of the index SetCurrentItem stored (gMouseItem), not item, which is the icon
            number by now */
-        if ((gItems[gFBCE].flags & ITEM_FLAG_COLOUR_ICON) && (gPartySpellFlags & 1)) {
+        if ((gItems[gMouseItem].flags & ITEM_FLAG_COLOUR_ICON) && (gPartySpellFlags & 1)) {
             if (gGraphicsChoice)
                 gSetRemapTable(gItemRemapTable + (item << 4));   /* the icon's 16-byte colour row */
             else

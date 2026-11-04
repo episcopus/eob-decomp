@@ -139,14 +139,14 @@ struct Projectile {
 };
 
 /* The 0x13-byte spell records at ds:1344 (src/EOV6.C names the table gSpells and its +0 a far
-   name pointer). This unit reads the apply callback at +5 (through gFnEFBA), the DD callback at
+   name pointer). This unit reads the apply callback at +5 (through gCurrentSpellApply), the DD callback at
    +9 (copied into a Projectile.fn by 0EF3:097B) and the expire callback at +0xD (run by 0EF3:0D78 and
    0EF3:131A); the sound id at +0x11 is ds:1355, gEffectSound. */
 struct Spell {
     char *name;                             /* +00: the spell's name */
     signed char flags;                      /* +04: bits 0..3 read by 0EF3:0D78 (bits 0..2, bit 3)
                                                and 0EF3:2676 (bit 0, bit 1, bits 1|2, bit 2, bit 3) */
-    void (far *apply)(void);                /* +05: run through gFnEFBA when the spell is cast */
+    void (far *apply)(void);                /* +05: run through gCurrentSpellApply when the spell is cast */
     int (far *ddFn)(struct Projectile far *rec); /* +09: copied into Projectile.fn by 0EF3:097B */
     void (far *remove)(struct CharRec far *rec); /* +0D: run when the spell expires */
     signed char sound;                      /* +11: the sound id (ds:1355) */
@@ -162,6 +162,17 @@ struct EffectMode {
     signed char m03;         /* +03 -> Projectile.m0A */
 };
 
+struct Region {             /* 16-byte records at ds:009F (src/E1A29.C) */
+    int left;               /* +0: left edge in 8-pixel columns */
+    int top;                /* +2: top edge in lines */
+    int width;              /* +4: width in 8-pixel columns */
+    int height;             /* +6: height in lines */
+    int textAttr1;              /* +8: text attribute 1 [H] (gTextAttr1, src/E1DE7.C:26) */
+    int textAttr2;              /* +a: text attribute 2 [H] (gTextAttr2, src/E1DE7.C:27) */
+    int textCol;             /* +c: cursor column (gTextCol) */
+    int textRow;                /* +e: cursor row (gTextRow) */
+};
+extern struct Region gRegions[]; /*@ ds:009F */ /* the text windows, 16 bytes each (src/E1A29.C) */
 extern struct Projectile gProjectiles[];            /*@ ds:DD2C */ /* ten 18-byte records */
 extern struct Spell gSpells[];      /*@ ds:1344 */ /* 0x13-byte spell records */
 extern struct EffectMode gEffectModes[]; /*@ ds:56E7 */ /* four bytes per effect mode */
@@ -226,8 +237,8 @@ extern char gMaze[];                    /*@ ds:B894 */ /* nine-byte records; +4 
 extern signed char gViewRelativePos[];             /*@ ds:1A2B */ /* per-page sprite base (src/E0DE8.C) */
 extern signed char gBurningHandsShapes[];    /*@ ds:571B */ /* a per-member icon index; a negative value
                                                            picks the 004D region drawing (0EF3:0F99) */
-extern int gIconX5721[];                /*@ ds:5721 */ /* the icon's x, per member (0EF3:0F99) */
-extern signed char gIconY572D[];        /*@ ds:572D */ /* the icon's y, per member (0EF3:0F99) */
+extern int gBurningHandsX[];                /*@ ds:5721 */ /* the x of each of the six flames CastBurningHands draws, mirrored in pairs (0EF3:0F99) */
+extern signed char gBurningHandsY[];        /*@ ds:572D */ /* the y of each of the six flames (0EF3:0F99) */
 extern void far *gIconTable[];          /*@ ds:FB34 */ /* far sprite pointers indexed by an icon
                                                            magnitude; entry 1 is ds:FB38 (src/EOV2.C
                                                            names the entries gThrownIcon0..2 singly) */
@@ -253,7 +264,7 @@ extern char gStrAllDispelled[];                /*@ ds:5859 */ /* "All spells on 
 extern char gStrAidFails[];                /*@ ds:5899 */ /* "The aid spell fails!" (0EF3:1BA3) */
 extern signed char gEffectSound[];      /*@ ds:1355 */ /* one record per effect value, stride 0x13;
                                                            the first byte is a sound id (0EF3:08CF) */
-extern void (far *gFnEFBA)(void);       /*@ ds:EFBA */ /* the current spell's apply callback
+extern void (far *gCurrentSpellApply)(void);       /*@ ds:EFBA */ /* the current spell's apply callback
                                                          (Spell.apply): set by 0EF3:2676 from
                                                          spell->apply and run there, and run by
                                                          0EF3:08CF */
@@ -366,7 +377,7 @@ extern char far *gFlashFrames[]; /*@ ds:DD1C */ /* far image pointers, indexed b
 extern void DrawShape(int page, void far *src, int x, int y, int region); /*@ 1A29:000F */
 extern int gTimerEnableFlags;           /*@ ds:849E */ /* bit 1 gates the object animation frames
                                                     (src/E08E6.C) */
-extern char far *gBufDCFC;       /*@ ds:DCFC */ /* the 4096-byte screen scratch buffer, one far
+extern char far *gScratchBuf;       /*@ ds:DCFC */ /* the 4096-byte screen scratch buffer, one far
                                                     allocation (src/E07A9.C) */
 extern unsigned long gFlashPass2[]; /*@ ds:564B */ /* per-pass long masks for 0EF3:06E7 */
 extern unsigned long gFlashFrame2[];/*@ ds:5677 */ /* per-frame long masks for 0EF3:06E7 */
@@ -400,10 +411,6 @@ extern int (far *gGetPixel)(int x, int y); /*@ ds:8072 */ /* saves the pixels un
 extern void (far *gPutPixel)(int x, int y, int handle); /*@ ds:809E */ /* puts a saved handle back
                                                                         (src/EOV5.C) */
 extern int gBurstFloorY[];              /*@ ds:579B */ /* a per-scale word bound 0EF3:2A53 clamps y to */
-extern int gEF;                  /*@ ds:00EF */ /* the view region's left, in eighths (this unit) */
-extern int gF1;                  /*@ ds:00F1 */ /* the view region's top (src/EOV4.C) */
-extern int gF3;                  /*@ ds:00F3 */ /* the view region's width in eighths */
-extern int gF5;                  /*@ ds:00F5 */ /* the view region's height (src/EOV4.C) */
 extern int gBurstParticle;                /*@ ds:FC62 */ /* 0EF3:2A53's loop index (0EF3:2EBC uses its
                                                     own locals `i` and `frameCount`) */
 extern int gBurstColour;                /*@ ds:FC64 */ /* 0EF3:2A53's current animation frame's byte */
@@ -772,13 +779,13 @@ extern int gBurstMaskPixel;                /*@ ds:FC72 */ /* the handle gGetPixe
     HidePointerZone(0, 0, 0xB0, 0x78);
     CopyRegion(0, 0, 0, 0, 0x16, 0x78, 0, 2);
     for (i = 0; i < 0x10; i++)
-        gSaveRect(gFlashX2[i] >> 3, gFlashY2[i], 2, 0x10, gBufDCFC + (i << 8));
+        gSaveRect(gFlashX2[i] >> 3, gFlashY2[i], 2, 0x10, gScratchBuf + (i << 8));
     for (pass = 0; pass < 0xB; pass++) {
         gDrawPage = 2;
         for (i = 0; i < 0x10; i++) {
             x = gFlashX2[i];
             y = gFlashY2[i];
-            gRestoreRectToPage(gFlashX2[i] >> 3, gFlashY2[i], 2, 0x10, gBufDCFC + (i << 8));
+            gRestoreRectToPage(gFlashX2[i] >> 3, gFlashY2[i], 2, 0x10, gScratchBuf + (i << 8));
         }
         for (i = 0; i < 0x10; i++) {
             frame = (gFlashPass2[pass] & gFlashFrame2[i]) >> gFlashShift2[i];
@@ -795,7 +802,7 @@ extern int gBurstMaskPixel;                /*@ ds:FC72 */ /* the handle gGetPixe
         WaitTicks(2);
     }
     for (i = 0; i < 0x10; i++)
-        gRestoreRect(gFlashX2[i] >> 3, gFlashY2[i], 2, 0x10, gBufDCFC + (i << 8));
+        gRestoreRect(gFlashX2[i] >> 3, gFlashY2[i], 2, 0x10, gScratchBuf + (i << 8));
     ShowPointerZone();
     gTimerEnableFlags |= 2;
 }
@@ -820,7 +827,7 @@ extern int gBurstMaskPixel;                /*@ ds:FC72 */ /* the handle gGetPixe
         DrawText(gStrTargetOk);
         PlaySound(gEffectSound[gCurrentSpell * 0x13]);
         FlashPartyMembers(gCurMember);
-        gFnEFBA();
+        gCurrentSpellApply();
         RedrawMember(gCurMember);
     } else {
         SayAndPlaySound(gStrSpellAborted);
@@ -1032,7 +1039,7 @@ extern int gBurstMaskPixel;                /*@ ds:FC72 */ /* the handle gGetPixe
 
 /* 0EF3:0F99: draw one icon per party member in its panel cell, then strike the object the current
    page faces. For each of the six members it draws the far sprite gIconTable[abs(icon)] at
-   (gIconX5721[i], gIconY572D[i]) with region 0: a positive icon (gBurningHandsShapes) goes through
+   (gBurningHandsX[i], gBurningHandsY[i]) with region 0: a positive icon (gBurningHandsShapes) goes through
    082C:063B, a negative one (through its magnitude) through 082C:0681. It then waits two ticks,
    takes the panel member's class-slot 1 value, finds the object the party cell faces (0D1C:00DA)
    and runs 08E6:16D6 on it for 1d3 plus twice that value, and sets ds:DF4C. Reached through the
@@ -1047,9 +1054,9 @@ extern int gBurstMaskPixel;                /*@ ds:FC72 */ /* the handle gGetPixe
     for (i = 0; i < 6; i++) {
         if (gBurningHandsShapes[i] < 0)
             DrawShapeClippedFlipped(0, gIconTable[gBurningHandsShapes[i] < 0 ? -gBurningHandsShapes[i] : gBurningHandsShapes[i]],
-                           gIconX5721[i], gIconY572D[i], 0);
+                           gBurningHandsX[i], gBurningHandsY[i], 0);
         else
-            DrawShapeClipped(0, gIconTable[gBurningHandsShapes[i]], gIconX5721[i], gIconY572D[i], 0);
+            DrawShapeClipped(0, gIconTable[gBurningHandsShapes[i]], gBurningHandsX[i], gBurningHandsY[i], 0);
     }
     WaitTicks(2);
     value = GetCasterLevel(gPanelMember);
@@ -2054,7 +2061,7 @@ void DrawSpellPanel(void);
    (0EF3:2604, which row's item to use) when a condition slot is open, and HandleSpellList passes
    0 (0EF3:2929). It remembers the spell value
    gCurrentSpell, clears the panel member's effect flag 4 when the spell's ds:1344+0x12 bit 0 says so and
-   the member has flag 4 set, copies the spell's apply callback into gFnEFBA, sets gCasterSubPos from the
+   the member has flag 4 set, copies the spell's apply callback into gCurrentSpellApply, sets gCasterSubPos from the
    cell position table gViewToCellPos (the member index, minus two when it is over three), and, for a spell
    whose flags have bit 1, says "You must have a free hand..." when both equipped slots are taken
    or "...two of this spell type active" when either slot is a discarded item, and returns. When a
@@ -2075,7 +2082,7 @@ void DrawSpellPanel(void);
     if ((gSpells[action].m12 & 1) && (gChars[gPanelMember].effectFlags & 4))
         EndInvisibility(&gChars[gPanelMember]);
     spell = &gSpells[action];
-    gFnEFBA = spell->apply;
+    gCurrentSpellApply = spell->apply;
     index = gPanelMember;
     if (index > 3)
         index -= 2;
@@ -2113,7 +2120,7 @@ void DrawSpellPanel(void);
     else if (spell->flags & 8)
         FlashPartyMembers(-1);
     DrawText(gStrCastOk);
-    gFnEFBA();
+    gCurrentSpellApply();
     if (gSpells[action].flags & 4)
         RedrawMember(gCurMember);
     if (gItemCastHand != 0)
@@ -2195,7 +2202,7 @@ void DrawSpellPanel(void);
 /* 0EF3:2A53: Animates a burst of pixel particles thrown from gBurstOriginX/Y with gravity and
    bounces, coloured by the ramp frameTable, until every particle's colour reaches 0. A screen-space
    particle animation. It fills seven 150-word rows of
-   the gBufDCFC scratch buffer: row0/row1 (the x and y positions) are zeroed, row2/row3 the x and
+   the gScratchBuf scratch buffer: row0/row1 (the x and y positions) are zeroed, row2/row3 the x and
    y velocities take a random value, row5 a random frame step, row6 the frame counter starts at the
    depth `scale << 8`. It then loops while gBurstState is set: the erase pass restores each particle's
    saved rectangle (gPutPixel at its x, y), the draw pass moves row2 one toward zero, advances row3 by
@@ -2231,14 +2238,14 @@ void DrawSpellPanel(void);
     bound = gBurstFloorY[scale];
     if (scale)
         scale--;
-    base = (int far *)gBufDCFC;
+    base = (int far *)gScratchBuf;
     floorLimit = 0;
     minX = -100;
     maxX = 0x114;
-    top = gF1;
-    bottom = top + gF5 - 1;
-    left = gEF << 3;
-    right = left + (gF3 << 3);
+    top = gRegions[5].top;
+    bottom = top + gRegions[5].height - 1;
+    left = gRegions[5].left << 3;
+    right = left + (gRegions[5].width << 3);
     row0 = base;
     row1 = base + 0x96;
     row2 = base + 0x12C;
@@ -2309,7 +2316,7 @@ void DrawSpellPanel(void);
 }
 
 /* 0EF3:2EBC: the cone-of-cold animation. It fills eight 150-word rows of the
-   gBufDCFC scratch buffer with a set of particles: for each of `count` particles it picks a random
+   gScratchBuf scratch buffer with a set of particles: for each of `count` particles it picks a random
    `radius` (between spread>>2 and spread, with spread shifted left 6), accumulates a quadratic
    `total` by adding `speed` (growing by `step` each pass) until it reaches the radius, then places
    the particle on one of four edges chosen by the low two bits of RandomByte, and mirrors both
@@ -2353,7 +2360,7 @@ void DrawSpellPanel(void);
     register int i;
     register int total;
 
-    base = (int far *)gBufDCFC;
+    base = (int far *)gScratchBuf;
     row0 = base;
     row1 = base + 0x96;
     row2 = base + 0x12C;

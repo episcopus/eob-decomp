@@ -527,7 +527,7 @@ extern signed char gMonsterFramesMirrorStep[]; /*@ ds:6FC1 */   /* sprite table 
 extern signed char gMonsterFrames[]; /*@ ds:6FE1 */   /* sprite table B (this unit) */
 extern signed char gMonsterYAdjust[]; /*@ ds:7015 */   /* per-row y nudge (this unit) */
 extern void far *gMonsterShapes[]; /*@ ds:B7FE */     /* far sprite cells indexed by sprite plus nudge (this unit) */
-extern void far *gBufDCFC; /*@ ds:DCFC */    /* start-up far allocation, 4096 bytes (src/E07A9.C) */
+extern void far *gScratchBuf; /*@ ds:DCFC */    /* start-up far allocation, 4096 bytes (src/E07A9.C) */
 extern int gGraphicsChoice; /*@ ds:8102 */  /* the graphics choice: 0 CGA, 1 Tandy, 2 EGA, 3 MCGA/VGA, 4 VGA (re/globals.toml ds:8102; src/E07C8.C:42-45) */
 extern int gPartyCell; /*@ ds:FBCA */        /* the current map cell id (src/E08E6.C) */
 extern void (far *gSetRemapTable)(char far *map); /*@ ds:80D2 */  /* the far colour-table callback (src/E07A9.C) */
@@ -617,12 +617,12 @@ extern void DrawShapeClippedRemapFlipped(int page, void far *src, int x, int y, 
         cell = gMonsterShapes[spriteAbs + nudge];
         for (n = tileRow; n != 0; n--) {
             if (gGraphicsChoice == 2)
-                BlitSpriteEga(cell, gBufDCFC);
+                BlitSpriteEga(cell, gScratchBuf);
             else if (gGraphicsChoice == 0)
-                BlitSpriteCga(cell, gBufDCFC);
+                BlitSpriteCga(cell, gScratchBuf);
             else
-                BlitSpriteDefault(cell, gBufDCFC);
-            cell = gBufDCFC;
+                BlitSpriteDefault(cell, gScratchBuf);
+            cell = gScratchBuf;
         }
         if (obj->cellPos != 4)
             spriteBase = gViewRelativePos[page4 + obj->cellPos];
@@ -769,8 +769,6 @@ struct SlotPos {
 };
 extern struct SlotSize far *gDoorShapes[]; /*@ ds:FB5E */  /* per column, a far size record (ovl3:031A frees and clears the entries, src/EOV3.C:356-358; src/EOV2.C:155 and src/EOV3.C:143 declare it long, but the ->width use here needs a far pointer) */
 extern struct SlotPos gDoorButtons[]; /*@ ds:A99C */
-extern int gF1; /*@ ds:00F1 */               /* the view region's top (src/E0EF3.C:395) */
-extern int gF5; /*@ ds:00F5 */               /* the view region's height (src/E0EF3.C:397) */
 extern signed char gDoorShapeSet[]; /*@ ds:716E */   /* per heading, a column base (this unit) */
 extern signed char gDoorYLevels1to3[]; /*@ ds:70F0 */   /* per index y base, action 1..3 (this unit) */
 extern signed char gDoorYLevels4to6[]; /*@ ds:70F4 */   /* per index y base, action 4..6 (this unit) */
@@ -798,7 +796,7 @@ extern signed char gDoorSplitFrom30[]; /*@ ds:71A2 */   /* per index nudge f (th
    ds:7192 with no heading term. Actions 4..6 draw the record twice (region 000F and 004D, mirrored)
    at y base ds:70F4, with an x shift from ds:7196 below 0x1e and ds:719A at or above, and fit region
    5 once (ovl4:1614) to ds:7106/ds:7108 shifted right 3 and clamped to gViewColLeft/gViewColRight,
-   with gF1/gF5. Actions 7..9 draw gDoorShapes[col+3] first, then fit the column extent and draw the record
+   with gRegions[5].top/gRegions[5].height. Actions 7..9 draw gDoorShapes[col+3] first, then fit the column extent and draw the record
    at y base ds:70F8, with the same nudge pair as 1..3. Actions 10..11 draw gDoorShapes[col] and
    gDoorShapes[col+3] at y bases ds:70FC/ds:70FF with a nudge from ds:719E/ds:71A2. Every case, when
    ds:18BF of the heading is NO_RECORD (0xff), also draws the ds:A99C[col] position record, which
@@ -863,7 +861,7 @@ extern signed char gDoorSplitFrom30[]; /*@ ds:71A2 */   /* per index nudge f (th
             left = gViewColLeft;
         if (gViewColRight < right)
             right = gViewColRight;
-        SetRegionExtents(5, left, gF1, right - left, gF5);
+        SetRegionExtents(5, left, gRegions[5].top, right - left, gRegions[5].height);
         if (gViewCells[slot][gViewFrontSide] < 0x1e)
             shift = -((heading - gDoorStepBase[heading]) * gDoorSlideStep[idx]);
         else
