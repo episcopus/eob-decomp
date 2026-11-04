@@ -183,7 +183,9 @@ extern signed char gPanelMember;        /*@ ds:DF52 */ /* the member whose panel
 extern int gItemCastHand;                       /*@ ds:8DCE */ /* a condition slot number, nonzero while in use */
 extern signed char gCasterSubPos;               /*@ ds:F3B8 */ /* a view byte passed to 0EF3:097B */
 extern signed char gCurrentSpell;               /*@ ds:EFB8 */ /* an effect value passed to 0EF3:0302 */
-extern signed char gItemZeroTag;               /*@ ds:8DD5 */ /* cleared by 0EF3:0418 */
+extern signed char gItemZeroTag;               /*@ ds:8DD5 */ /* QUIRK 0EF3:0418: CreateItemRecord clears this
+                                                  byte, item 0's cellPos, by its fixed address
+                                                  instead of the new record's */
 extern signed char gExpiringMember;               /*@ ds:A999 */ /* the member 0EF3:1233 redraws */
 extern signed char gInventoryMember;               /*@ ds:A99A */ /* the selected character index */
 extern int gSavedPanelMember;                       /*@ ds:FC74 */ /* the panel member saved by 0EF3:28ED and
@@ -215,7 +217,9 @@ extern int gConeOfColdColours[];                     /*@ ds:5737 */ /* a word ta
 extern void FinishDeferredHits(void);              /*@ 08E6:0E48 */ /* clears the object marks (src/E08E6.C) */
 extern int ClampOrWrap(int value, int low, int high, int invert); /*@ 082C:0AB4 */
 extern signed char gInFrontRank[];          /*@ ds:5717 */ /* a per-member byte: nonzero when the member
-                                                     can use melee effects (read by 0EF3:0E1B) */
+                                                     can use melee effects (read by 0EF3:0E1B).
+                                                     QUIRK ds:5717: four bytes only; members 4 and 5
+                                                     read ds:571B onwards and count as front rank */
 extern signed char gNeighbourCellDeltas[];        /*@ ds:5733 */ /* four cell deltas walked by 0EF3:17D8 */
 extern char gMaze[];                    /*@ ds:B894 */ /* nine-byte records; +4 (ds:B898) is the
                                                        object's type byte tested by 0EF3:0A3F */
@@ -518,7 +522,8 @@ extern int gBurstMaskPixel;                /*@ ds:FC72 */ /* the handle gGetPixe
     LockShowPointer();
 }
 
-/* 0EF3:026F: ends one condition slot on the panel member. It decrements gItemCastHand and toggles (XORs)
+/* 0EF3:026F: ends one condition slot on the panel member. It decrements gItemCastHand and toggles
+   (XORs)
    the bit at that index in the member's +0x1E condition byte, applies a 0x12-tick char effect
    whose value is the slot number plus two, redraws the member, then restores the panel member
    from ds:FC74, gClericSpellMode from ds:FC76 and the slot number to zero, and rebuilds the active item list
@@ -1053,7 +1058,8 @@ extern int gBurstMaskPixel;                /*@ ds:FC72 */ /* the handle gGetPixe
     gViewDirty = 1;
 }
 
-/* 0EF3:1069: enter the item-swap mode: set gPartySpellFlags bit 0, take the mouse item, move the pointer,
+/* 0EF3:1069: enter the item-swap mode: set gPartySpellFlags bit 0, take the mouse item, move the
+   pointer,
    redraw the characters, and apply a 2-turn effect. Called through a table. */
 /*@ 0EF3:1069 */ void CastDetectMagic(void)
 {
@@ -1264,7 +1270,8 @@ extern int gBurstMaskPixel;                /*@ ds:FC72 */ /* the handle gGetPixe
     StartCellEffect(gPanelMember, 4, gPartyCell, gCasterSubPos, gPartyDir);
 }
 
-/* 0EF3:1530: list the objects that match the record's cell and field with ListMonstersAtCell, then walk the
+/* 0EF3:1530: list the objects that match the record's cell and field with ListMonstersAtCell, then
+   walk the
    list: for every object 0D1C:0BAB does not reject, set `found` (so it is set only for objects
    not rejected, not for every object listed) and, when the MonsterType record gMonsterTypes[obj->typeIndex]
    has bit 0 of its +0x0F long set, set the object's type byte to 0x0A and its timer to 0x0F.
@@ -1477,7 +1484,8 @@ void AnimateConeOfCold(int count, int spread, int step, int cycle, int divisor,
     StartCellEffect(gPanelMember, 7, gPartyCell, gCasterSubPos, gPartyDir);
 }
 
-/* 0EF3:1A30: list the objects that match the record's cell and field with ListMonstersAtCell, then walk the
+/* 0EF3:1A30: list the objects that match the record's cell and field with ListMonstersAtCell, then
+   walk the
    list exactly as 0EF3:1530 does, but testing bit 1 of the MonsterType record gMonsterTypes[obj->typeIndex]'s
    +0x0F long and setting the object's type byte to 0x0A and its timer to 0x0F. `found` is set
    for the objects 0D1C:0BAB does not reject. Called through a table. */
@@ -1507,7 +1515,8 @@ void AnimateConeOfCold(int count, int spread, int step, int cycle, int divisor,
     return found;
 }
 
-/* 0EF3:1AD0: set the swap flag: when gPartySpellFlags bit 4 is clear apply a 6-turn effect, set the bit once
+/* 0EF3:1AD0: set the swap flag: when gPartySpellFlags bit 4 is clear apply a 6-turn effect, set the
+   bit once
    and redraw the party rows; otherwise say the message at ds:587A. The function sets the bit, it
    does not toggle it. Called through a table. */
 /*@ 0EF3:1AD0 */ void CastBless(void)
@@ -1856,7 +1865,8 @@ void AnimateConeOfCold(int count, int spread, int step, int cycle, int divisor,
 }
 
 void DrawSpellPanel(void);
-/* 0EF3:21E0: open the member's spell panel: clear gSpellPanelLevel, make `who` the panel member, set gClericSpellMode
+/* 0EF3:21E0: open the member's spell panel: clear gSpellPanelLevel, make `who` the panel member,
+   set gClericSpellMode
    when `flag` is 1, point gNameTable at gClericSpellNames (memorized) or gMageSpellNames (known), point gSpellBookSlots at the
    member's +0x55 or +0x37 spell slots and gSpellPanelSlot at its first slot over zero. Save the panel
    rectangle into gStagingPage + 0x61a8 (gSaveRect, ds:80AE) when gFlag is clear, then set gFlag,
@@ -1995,7 +2005,9 @@ void DrawSpellPanel(void);
     return rec->m04;
 }
 
-/* 0EF3:25BD: Selects the spell level whose tab was clicked (the record's key 0..4), moves the highlight to its first memorized spell and redraws the spell panel. save the action record's member (+0x38) in ds:DDE2, then hunt along
+/* 0EF3:25BD: Selects the spell level whose tab was clicked (the record's key 0..4), moves the
+   highlight to its first memorized spell and redraws the spell panel. Save the action record's
+   member (+0x38) in ds:DDE2, then hunt along
    that member's row (six bytes) of the far table ds:DD14 (row base gSpellPanelLevel * 6) for the first byte
    over zero, breaking at six. It then runs 0EF3:2295 DrawSpellPanel (the spell panel) and returns
    the record's +4 word. Its caller and what the row holds are not established. */
@@ -2180,7 +2192,9 @@ void DrawSpellPanel(void);
     return node->m04;
 }
 
-/* 0EF3:2A53: Animates a burst of pixel particles thrown from gBurstOriginX/Y with gravity and bounces, coloured by the ramp frameTable, until every particle's colour reaches 0. a screen-space particle animation. It fills seven 150-word rows of
+/* 0EF3:2A53: Animates a burst of pixel particles thrown from gBurstOriginX/Y with gravity and
+   bounces, coloured by the ramp frameTable, until every particle's colour reaches 0. A screen-space
+   particle animation. It fills seven 150-word rows of
    the gBufDCFC scratch buffer: row0/row1 (the x and y positions) are zeroed, row2/row3 the x and
    y velocities take a random value, row5 a random frame step, row6 the frame counter starts at the
    depth `scale << 8`. It then loops while gBurstState is set: the erase pass restores each particle's

@@ -187,7 +187,8 @@ void ResolveMonsterMelee(struct Monster far *obj);   /* forward: 05EA reaches it
     obj->m16 |= 8;
 }
 
-/* 08E6:0055: clear the type of every type-8 object and set its target cell (targetCell) to the party cell,
+/* 08E6:0055: clear the type of every type-8 object and set its target cell (targetCell) to the
+   party cell,
    remembering the last one; when that object's typeIndex is 7 set bit 18 of ds:FC04, when it is 0xc set
    bit 27. Called by 03FE and 0EC3. Purpose unknown: what ds:FC04 flags. `last` is set only inside
    the loop, but both callers test type == 8 first (:357, :817), so one object is always found. */
@@ -274,7 +275,8 @@ void ResolveMonsterMelee(struct Monster far *obj);   /* forward: 05EA reaches it
     return bits;
 }
 
-/* 08E6:0218: walk the four bytes of gPosSearchOrder + (orient & 1) * 4 and return the first `orient ^ *row`
+/* 08E6:0218: walk the four bytes of gPosSearchOrder + (orient & 1) * 4 and return the first `orient
+   ^ *row`
    (the orientation XOR the table byte, not the table byte) whose bit BuildObjectFrameMask(id) does
    not have; -1 when the object's record's m15 is set, the mask is negative, or no bit qualifies.
    Called by 0309 and 058A. */
@@ -373,7 +375,8 @@ void ResolveMonsterMelee(struct Monster far *obj);   /* forward: 05EA reaches it
         }
     }
 }
-/* 08E6:0430: turn an object toward the direction DirectionFromPoints(id, value) reports. When the object's
+/* 08E6:0430: turn an object toward the direction DirectionFromPoints(id, value) reports. When the
+   object's
    state is over 6 it resets it to 0 and toggles gDirSearchLeftFirst, which selects the direction table gDirSearchRight or
    gDirSearchLeft. The target -1 leaves the object alone; bit 3 of m16 XORs 4 into it. When the target is even
    and id + gDirCellOffset[target >> 1] equals gPartyCell, the object takes one step through TryMoveMonster with
@@ -620,7 +623,8 @@ void ResolveMonsterMelee(struct Monster far *obj);   /* forward: 05EA reaches it
     obj->actionDelay = 5;
     return 1;
 }
-/* 08E6:0AB8: run the type-0 object update: run TryMonsterRangedAttack, which returns 1 when it acts, then TryMonsterMelee,
+/* 08E6:0AB8: run the type-0 object update: run TryMonsterRangedAttack, which returns 1 when it
+   acts, then TryMonsterMelee,
    which returns 1 when handled; on either the object is done (the function returns). Otherwise clear
    m0A, turn the object toward its target cell with StepMonsterToward(obj, targetCell) and run TryMonsterMelee with -1 when its
    record's m0E has bit 3 set. Called by UpdateObjects. */
@@ -747,7 +751,8 @@ second:
     UpdateDDEffects();
 }
 
-/* 08E6:0DCA: notify IsCellInView of the object's id, and when gViewDirty is set clear counter flag bit 1,
+/* 08E6:0DCA: notify IsCellInView of the object's id, and when gViewDirty is set clear counter flag
+   bit 1,
    set m16 bit 1, run the colour callback on ds:1CD3 or ds:1CE3, reset the countdown, run the
    overlay-4 entry, clear m16 bit 1 again, set the countdown to 1, set flag bit 1 and gViewDirty. Called
    by 0FBE. */
@@ -980,7 +985,8 @@ second:
     obj->dropItem2 = m14;
     MoveObjectToId(obj, id, orient);
 }
-/* 08E6:1410: the periodic effect tick. Mode 1 (gLevelTimerMode == 1) fires when the deadline gDeadline is
+/* 08E6:1410: the periodic effect tick. Mode 1 (gLevelTimerMode == 1) fires when the deadline
+   gDeadline is
    behind gGameTicks (gDeadline < gGameTicks); mode 2 fires when gStepCount has reached gLevelTimerSteps; mode 3 fires when
    either holds; any other mode does nothing. Firing runs RunCellScript(0, 0x20), then, when no
    object of the 30 (from index 1) has a count of zero or less (that is, every object still has a
@@ -1100,7 +1106,8 @@ fire:
     if (MonsterResistsMagic(index) == 0)
         DamageObject(&gMonsters[index], roll);
 }
-/* 08E6:16D6: list the objects with id `key`, mark gDeferMonsterHits, damage list[4] and then the two indices
+/* 08E6:16D6: list the objects with id `key`, mark gDeferMonsterHits, damage list[4] and then the
+   two indices
    in gNearPosPair + gPartyDir * 2 through 1634, and run the 0E48 cleanup. Called by 0EF3:0F99. */
 /*@ 08E6:16D6 */ void DamageNearRowMonsters(int key, char count, char sides, char bonus, char flag)
 {

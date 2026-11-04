@@ -399,7 +399,8 @@ second:
 done:
     gDrawPage = 0;
 }
-/* ovl3:05D2: frees and clears the `count` map icon pointers in gLoadedMonsterShapes starting at index `base`.
+/* ovl3:05D2: frees and clears the `count` map icon pointers in gLoadedMonsterShapes starting at
+   index `base`.
    Called by ovl3:0A7C and overlay 5. */
 /*@ ovl3:05D2 */ void FreeMapIcons(int base, int count)
 {

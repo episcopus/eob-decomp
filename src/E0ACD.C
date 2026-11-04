@@ -215,7 +215,8 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
     return action->result;
 }
 
-/* 0ACD:0034: Opens the inventory screen for the clicked portrait's member. when the action mode gMatchedNodeKey is nonzero or MemberIs accepts the
+/* 0ACD:0034: Opens the inventory screen for the clicked portrait's member. When the action mode
+   gMatchedNodeKey is nonzero or MemberIs accepts the
    record's slot, it hides the pointer, sets the mode byte to 1, selects the slot (mode 0 only),
    asks RedrawRowArea(1) and rebuilds list 2. Returns the record's +4. */
 /*@ 0ACD:0034 */ int OpenInventory(struct Action far *action)
@@ -408,7 +409,9 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
     NoOpAfterCursorMove(gCursorSlot, 9);
 }
 
-/* 0ACD:0415: Handles a click on a member's hand slot: the left button swaps the mouse item with the hand, the other uses the hand's item. when MemberIs accepts the record's slot it hides the pointer, sets
+/* 0ACD:0415: Handles a click on a member's hand slot: the left button swaps the mouse item with the
+   hand, the other uses the hand's item. When MemberIs accepts the record's slot it hides the
+   pointer, sets
    a flag from gHandSplitY[slot] against gHitY and dispatches to SwapSelectedItem or UseItemSlot (by the low
    bits of gLeftButtonMode), then shows the pointer. Returns 1. */
 /*@ 0ACD:0415 */ int ClickHandSlot(struct Action far *action)
@@ -476,7 +479,8 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
     return action->result;
 }
 
-/* 0ACD:056C: turns the party left: gPartyDir down (wrapping to 3), gPickViewPos reset to 0xff, gViewDirty set.
+/* 0ACD:056C: turns the party left: gPartyDir down (wrapping to 3), gPickViewPos reset to 0xff,
+   gViewDirty set.
    Returns the record's +4. */
 /*@ 0ACD:056C */ int TurnLeft(struct Action far *action)
 {
@@ -488,7 +492,8 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
     return action->result;
 }
 
-/* 0ACD:0593: turns the party right: gPartyDir up modulo 4, gPickViewPos reset to 0xff, gViewDirty set. Returns
+/* 0ACD:0593: turns the party right: gPartyDir up modulo 4, gPickViewPos reset to 0xff, gViewDirty
+   set. Returns
    the record's +4. */
 /*@ 0ACD:0593 */ int TurnRight(struct Action far *action)
 {
@@ -648,7 +653,9 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
     return action->result;
 }
 
-/* 0ACD:08E7: Runs the handler of the wall the party faces in the cell ahead, as a click on the view does, then recomputes the armour class of gInventoryMember. derives a key from gPartyCell and gPartyDir (StepCell), sets
+/* 0ACD:08E7: Runs the handler of the wall the party faces in the cell ahead, as a click on the view
+   does, then recomputes the armour class of gInventoryMember. Derives a key from gPartyCell and
+   gPartyDir (StepCell), sets
    gWallTrigger to 0xff, passes the key and the page to DispatchSlotHandler and the selected character gInventoryMember to
    ComputeArmourClass. */
 /*@ 0ACD:08E7 */ void ActivateWallAhead(void)
@@ -708,7 +715,8 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
         RedrawMember(gInventoryMember);
 }
 
-/* 0ACD:09EF: sets the selected action row gCursorSlot from the four-byte table gSlotNeighbours[old * 4 + dir] and
+/* 0ACD:09EF: sets the selected action row gCursorSlot from the four-byte table gSlotNeighbours[old
+   * 4 + dir] and
    redraws the old and new rows through DrawItemRow. dir is the direction. */
 /*@ 0ACD:09EF */ void SetActionRow(int dir)
 {
@@ -972,7 +980,8 @@ done:
     }
 }
 
-/* 0ACD:0F72: enters the map screen. When gGameLoadState is clear (a normal entry) it calls ResetMapScreen
+/* 0ACD:0F72: enters the map screen. When gGameLoadState is clear (a normal entry) it calls
+   ResetMapScreen
    (0ACD:1033); when it is nonzero (0xff while a load runs, 0xfe after a saved game loads, src/EOV2.C)
    it shows the mouse item (SetMouseItem(gFBCE), unless the mouse is disabled), loads level gCurLevel's
    map and inventory (LoadMapScreen, ovl3:0A7C) and clears gGameLoadState. Then it clears gFlag, resets the

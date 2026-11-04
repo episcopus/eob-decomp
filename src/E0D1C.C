@@ -169,7 +169,9 @@ extern void DamageObject(struct Monster far *obj, int n); /*@ 08E6:0FBE */
 int MemberIs(int who, int mask);
 int GetCurrentItem(void);
 
-/* 0D1C:0006: Returns 1 and sets gDF4C when the cell is one of the first 15 cells the view shows (ds:A9C8), so a change there is redrawn. the value `value` is looked for in the 15 words at ds:A9C8; when
+/* 0D1C:0006: Returns 1 and sets gDF4C when the cell is one of the first 15 cells the view shows
+   (ds:A9C8), so a change there is redrawn. The value `value` is looked for in the 15 words at
+   ds:A9C8; when
    it is found, ds:DF4C is set to 1 and the function returns 1, otherwise it returns 0. Called
    from the object unit (08E6) and from 1414. */
 /*@ 0D1C:0006 */ int IsCellInView(int value)
@@ -204,7 +206,8 @@ int GetCurrentItem(void);
     }
 }
 
-/* 0D1C:006D: Does nothing; called with the cursor slot and 9 after the keyboard cursor moves. increments its two word arguments (which the caller passes by
+/* 0D1C:006D: Does nothing; called with the cursor slot and 9 after the keyboard cursor moves.
+   Increments its two word arguments (which the caller passes by
    value, so the increment has no effect). Called by 0ACD as (gCursorSlot, 9). */
 /*@ 0D1C:006D */ void NoOpAfterCursorMove(int first, int second)
 {
@@ -212,7 +215,8 @@ int GetCurrentItem(void);
     second++;
 }
 
-/* 0D1C:0078: Does nothing; called with the cursor slot before the keyboard cursor moves. increments its word argument (passed by value, so the increment
+/* 0D1C:0078: Does nothing; called with the cursor slot before the keyboard cursor moves. Increments
+   its word argument (passed by value, so the increment
    has no effect). Called by 0ACD as (gCursorSlot). */
 /*@ 0D1C:0078 */ void NoOpBeforeCursorMove(int value)
 {
@@ -263,7 +267,9 @@ int GetCurrentItem(void);
     }
     return -1;
 }
-/* 0D1C:0163: Tests whether character who wears, in item slot 25 or 26, an item of type 0x2F with the given power value (1, 2 or 3 by the callers); EOV1.C:678 reads value 1 as a ring of wizardry [H]. over the last two of the 27 word slots of gChars[who].items (25
+/* 0D1C:0163: Tests whether character who wears, in item slot 25 or 26, an item of type 0x2F with
+   the given power value (1, 2 or 3 by the callers); EOV1.C:678 reads value 1 as a ring of wizardry
+   [H]. Over the last two of the 27 word slots of gChars[who].items (25
    and 26), returns 1 when one of them holds an item (an index into gItems) whose
    type is 0x2F and whose value equals `fieldB`, otherwise 0. Slots 25 and 26 are the only two
    inspected. Called by 122E, 1414 and overlays 1 and 6. The empty-slot test is an early
@@ -353,7 +359,9 @@ int GetCurrentItem(void);
             DrawItemRow(gCursorSlot, 1, 0);
     }
 }
-/* 0D1C:035A: Removes party member `who`: clears its status, drops all its items onto the party's cell and fixes up the selected inventory member. clears gChars[who].status and then, for each of the 27 word slots of
+/* 0D1C:035A: Removes party member `who`: clears its status, drops all its items onto the party's
+   cell and fixes up the selected inventory member. Clears gChars[who].status and then, for each of
+   the 27 word slots of
    gChars[who].items except slot 16 (which is a list head at +97), queues the item in the slot
    through InsertListItem at the head gPartyCell * 9 + 5 (the nine-byte records at ds:B894) with a
    random sound gViewToCellPos[gPartyDir * 4 + RollDice(1, 2, -1)]. Then it drains the slot-16 list through
@@ -384,7 +392,8 @@ int GetCurrentItem(void);
         gInventoryMember = 0;
     RearmCharEffects();
 }
-/* 0D1C:0454: draws the animated row list at ds:5482. When `index` differs from the stored gSelectFrameIndex
+/* 0D1C:0454: draws the animated row list at ds:5482. When `index` differs from the stored
+   gSelectFrameIndex
    it hides the pointer, erases the old row (DrawBox over gSelectFrameRects[gSelectFrameIndex] in colour 0xC), shows
    the pointer, resets the row counter gSelectFrameStep to 0, stores `index` in gSelectFrameIndex and records the
    current tick (gSelectFrameTick = gTicks). Otherwise, when a row is selected and one tick has passed, it
@@ -435,7 +444,8 @@ int GetCurrentItem(void);
     for (i = 0; i < 6; i++)
         RedrawMember(i);
 }
-/* 0D1C:059B: Rolls a character's saving throw of the given kind and returns 1 when it succeeds. a per-character check against a 1d20 roll. It derives a class
+/* 0D1C:059B: Rolls a character's saving throw of the given kind and returns 1 when it succeeds. A
+   per-character check against a 1d20 roll. It derives a class
    slot from gChars[who].classIndex (GetClassSlotByte, with 4 and 5 folded to 0), a value from
    GetIndexedByte(classSlot, levels, `attack`), then, depending on a level-like value race * 2
    (3 or 5, and separately 4), for `attack` 4, 0 or 1 in the 3-or-5 case and for `attack` 4 or 1
@@ -526,7 +536,8 @@ int GetCurrentItem(void);
     }
     return cursor;
 }
-/* 0D1C:07DB: Returns whether the member can use hand 0 or hand 1 with the items held (class and two-handed rules). combines the first two carried items of gChars[who] (slots 0 and
+/* 0D1C:07DB: Returns whether the member can use hand 0 or hand 1 with the items held (class and
+   two-handed rules). Combines the first two carried items of gChars[who] (slots 0 and
    1). Each slot's item is passed to ItemClassAllowed and its item record's type indexes the
    16-byte records at ds:A9F5. With `flag` 0 it returns 1 when slot 0 is empty or ItemClassAllowed
    accepted its item. Otherwise it returns 0 when slot 0 holds an item whose gItemTypesClasses[type].m01 is 2, then
@@ -561,7 +572,8 @@ int GetCurrentItem(void);
     }
     return result1;
 }
-/* 0D1C:08B1: Tests whether a character holds an item of kind 6 in either hand, the item turning undead requires. returns 1 when one of the first two carried items of the character
+/* 0D1C:08B1: Tests whether a character holds an item of kind 6 in either hand, the item turning
+   undead requires. Returns 1 when one of the first two carried items of the character
    record `rec` (items[0] or items[1]) holds a nonzero item whose item record's type indexes a
    ds:A9F5 record with m09 == 6, otherwise 0. The pointer is a character record (the slots are at
    +77). Called by 0D1C:0903. */
@@ -579,7 +591,9 @@ int GetCurrentItem(void);
     }
     return 0;
 }
-/* 0D1C:0903: Picks the party member with the best turning level (class slot 2 level, or slot 4 level minus 2) and returns its index and level packed. scans the six party members and returns a packed word. A member
+/* 0D1C:0903: Picks the party member with the best turning level (class slot 2 level, or slot 4
+   level minus 2) and returns its index and level packed. Scans the six party members and returns a
+   packed word. A member
    qualifies when MemberIs(who, 0xD) and HoldsHolySymbol(rec) hold; for it the code takes
    FindClassSlot(2, classIndex) and, failing that, FindClassSlot(4, classIndex), and compares the member's
    levels[slot] (minus 2 in the second case) with the best so far. The result is (best member << 8)
@@ -617,7 +631,8 @@ int GetCurrentItem(void);
     }
     return (best << 8) + bestVal;
 }
-/* 0D1C:09CB: Applies one turn-undead roll to a monster: destroy, turn away or no effect. a per-object check. It takes the object's ds:1A3B record's m19 as
+/* 0D1C:09CB: Applies one turn-undead roll to a monster: destroy, turn away or no effect. A
+   per-object check. It takes the object's ds:1A3B record's m19 as
    a row and GetClampedTableByte(column, m19) as a value. A value of -1 calls DamageObject(obj, 100)
    and returns 1. Otherwise, when `threshold` is below the value it returns 0; else it sets bit 3
    of obj->m16, stores (DirectionFromPoints(obj->id, gPartyCell) ^ 4) >> 1 in obj->orient and returns 1.
@@ -698,7 +713,9 @@ int GetCurrentItem(void);
     }
     gDeferMonsterHits = 0;
 }
-/* 0D1C:0BAB: Rolls percentile dice against the monster type's resistance byte (+0x1A) and returns 1 when the spell or spell item is resisted. a percentage check on the object `objIndex` (its ds:8A82 record,
+/* 0D1C:0BAB: Rolls percentile dice against the monster type's resistance byte (+0x1A) and returns 1
+   when the spell or spell item is resisted. A percentage check on the object `objIndex` (its
+   ds:8A82 record,
    not a pointer like 0D1C:09CB's `obj`): through gMonsters[objIndex].typeIndex it reads gMonsterTypes[typeIndex].m1A
    and returns 1 when RollDice(1, 100, 0) is below it, otherwise 0. Called by 0DE8:0359. */
 /*@ 0D1C:0BAB */ int MonsterResistsMagic(int objIndex)
@@ -708,14 +725,17 @@ int GetCurrentItem(void);
     chance = gMonsterTypes[gMonsters[objIndex].typeIndex].m1A;
     return RollDice(1, 100, 0) < chance;
 }
-/* 0D1C:0BEB: Tests whether a monster type takes half damage from the given weapon item type. returns 1 when gMonsterTypes[gMonsters[obj].typeIndex].m0E has bit 2 set and
+/* 0D1C:0BEB: Tests whether a monster type takes half damage from the given weapon item type.
+   Returns 1 when gMonsterTypes[gMonsters[obj].typeIndex].m0E has bit 2 set and
    gItemTypesClasses[item].m00 has bit 2 clear, otherwise 0. `item` indexes the ItemInfo records. Called by
    0DE8:0359. */
 /*@ 0D1C:0BEB */ int IsWeaponDamageHalved(int obj, int item)
 {
     return (gMonsterTypes[gMonsters[obj].typeIndex].m0E & 4) && (gItemTypesClasses[item].m00 & 4) == 0;
 }
-/* 0D1C:0C21: Draws a double-bevelled frame (x, y, width, height) for a menu box or button, flat on the outside when `first` is set and without interior fill when `second` is set. draws a framed rectangle at (x, y) `width` by `height` through
+/* 0D1C:0C21: Draws a double-bevelled frame (x, y, width, height) for a menu box or button, flat on
+   the outside when `first` is set and without interior fill when `second` is set. Draws a framed
+   rectangle at (x, y) `width` by `height` through
    082C:09D5. It hides the pointer, draws the whole rectangle in the colours picked by `first`
    (gPanelFillColour, gPanelFillColour when `first`, else gPanelHighlight and gPanelShadow) with -1 as the third colour, then shrinks the
    rectangle by one on each side and draws the inner border in gPanelHighlight/gPanelShadow with a third colour of

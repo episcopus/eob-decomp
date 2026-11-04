@@ -91,7 +91,9 @@ void SelectRegion(int region);
     gDrawShapeFlipped(page, src, x + gRegionLeftPx, y + gRegionTop);
 }
 
-/* 1A29:008B: Draws a shape like DrawShape but through the driver's colour-remapping entry ds:80D6, after the caller has set the remap row through ds:80D2. a front end over the driver pointer ds:80D6, identical to
+/* 1A29:008B: Draws a shape like DrawShape but through the driver's colour-remapping entry ds:80D6,
+   after the caller has set the remap row through ds:80D2. A front end over the driver pointer
+   ds:80D6, identical to
    1A29:000F otherwise (null check, lazy region select, region-relative x and y). */
 /*@ 1A29:008B */ void DrawShapeRemapped(int page, void far *src, int x, int y, int region)
 {

@@ -361,7 +361,8 @@ enum {
     KEY_NEXT      = 0x66        /* SelectMenu: next row */
 };
 
-/* ovl5:025F: the modal message box. It picks one of two rectangles from gTextPanelInView: 0 (CharOverlay)
+/* ovl5:025F: the modal message box. It picks one of two rectangles from gTextPanelInView: 0
+   (CharOverlay)
    uses (0x11D,0xBD)-(0x13B,0xC5), 1 (UseItemPanel, WinnerPanel) uses (0x8B,0xA2)-(0xA9,0xAA). It
    hides the pointer, fills the panel in the three colours, draws the "MORE" prompt ds:7CB7 in
    colour 0xf and shows the pointer. It then waits for a key or a click: KEY_CONFIRM, KEY_CONFIRM4

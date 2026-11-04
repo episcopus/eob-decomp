@@ -89,19 +89,47 @@ the findings below are empty or each has an owner; the reviewer signs each subsy
     `MoveBackward`, `MoveLeft`, `MoveRight`, `TurnLeft`, `TurnRight`;
   - the panel: `gPanelMode`, `gInventoryMember`; the 6x6 font `gFont6x6`.
 
+- 2026-11-03, every placeholder named (608 functions and globals): nine read-only research agents
+  each read one group of units and proposed a name with its evidence for every placeholder; the
+  operator applied them one group at a time through `make rename` (which logs each WHY), matched
+  every touched unit and committed per group. The evidence came from the game's own tables and
+  strings read from the image: the spell table ds:1344 (each spell's apply, projectile and remove
+  callbacks, so `Cast<Spell>`, `End<Spell>`, `Hit<Spell>`), the screen-node tables of ds:5102
+  (each action handler's box on screen), the graphics driver's export table at ds:8046 (filled by
+  MCGA.OVL, so the driver pointers and their front ends), character creation's name and limit
+  tables, and the INTRO.EXE twins. The struct types are named (`Monster`, `MonsterType`,
+  `Projectile`, `ArgVector`), the item view at ds:8DD2 is merged into `gItems`, and the timer
+  views of EOV3 are `gEffects` fields. `make names`: no placeholder function or global is left.
+- Names a closer reading showed wrong were corrected, among them `gDrawPage` (ds:8115, was
+  "status line"), `gCurLevel` (ds:FBC8, was "the current action"), the spell callbacks that were
+  named for their mechanics (`EnterSwapMode` is `CastDetectMagic`), `PickPortrait`, `ShowFileError`
+  and `ShowMessageBox` (two functions had shared `ShowMessage`).
+
 ## Findings
+
+- ds:DCA4 and ds:DD10 are one variable with two uses each: overlay 0 keeps the new character's hit
+  point limits there (the seventh words after two six-word tables), the game keeps the attacked
+  monster and a hit flag; named for both (`gHpMaxOrAttackTarget`, `gHpMinOrHitFlag`).
+- `struct Node` +34 is a variant record: tile nodes keep two tile ids there (E0CF7, E16A5), the
+  button nodes of overlay 1 a far pointer to their definition (`def`, +34 to +37). Both readings are
+  right; `make names SHARED=1` lists it, and it is the one clash left on purpose.
+- An overlay function's resident stub takes the function's name (2116:005C `DrawViewFrame`):
+  `make rename` refuses a name another address has, so a stub is renamed with
+  `rename.rename_address` and logged by hand (see the commits of 2026-11-03).
+- QUIRKs found on the way, for a port to keep: the four-byte table gAt5717 is read for members 4 and
+  5 past its end; CreateItemRecord (0EF3:0418) clears item 0's cellPos by a fixed address; the
+  door clip table ds:6F6D has 12 bytes but is indexed by level 1 to 12; ds:DD12 is read and never
+  written; in overlay 0, the byte 255 in ds:6101 indexes ds:60D5 at -1.
 
 - Settled 2026-11-03: gPartyCell is the party's map cell. E0ACD and E122E had read it as a sound
   volume (`SetSoundVolume`), from the movement keys' table walk; 122E:0001 moves the party and runs
   the cells' scripts, and the "volume message" is a carriage return.
 - `gEFB2` is the floor position (0..3) PickListItem 0ACD:0BA6 last took an item from; turning and
   moving reset it to 0xFF. Its old comment called it the sound page.
-- `gF51A`: E0D1C reads it as an index into the inventory's 27 slots, E0ACD as an action-menu row
-  0..2 with 0x10 for the own list. Not settled.
+- `gCursorSlot` (ds:F51A, was gF51A) is the keyboard cursor's item slot 0..26 (0 and 1 the hands);
+  StepActionRow (0ACD:03CD) wraps it to 0..2, the one reader that disagrees.
 - `rename.replace_word` treats an apostrophe in a comment as the start of a character literal, so
   a rename can miss a name between two apostrophes ("the character's ... LevelUpSlot's"); `make
   names` and a grep for the old name catch it.
-- `struct Region` +08 to +0E: four files call the words `attr1`, `attr2`, `column`, `row`, three call
-  them `saved0` to `saved3`; which is right has not been read yet.
-- ds:8DD2 is declared as `struct Entry14` (10 files) and `struct Item14` (1), and ds:8DD0 as
-  `struct ItemRecord gItems[]`: one item array seen from two bases (an alias to merge).
+- Settled: `struct Region` +08 to +0E are the window's saved `textAttr1`, `textAttr2`, `textCol`,
+  `textRow`; the view at ds:8DD2 is merged into `gItems`.

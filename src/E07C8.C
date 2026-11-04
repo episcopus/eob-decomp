@@ -477,7 +477,9 @@ done:
     exit(0);
 }
 
-/* 07C8:061D: The default exit hook main installs at ds:80FA: it does nothing and returns 1, so ShutdownGame's call through gExitHook is a no-op until something replaces it. returns 1 and does nothing else. main installs it as the far function
+/* 07C8:061D: The default exit hook main installs at ds:80FA: it does nothing and returns 1, so
+   ShutdownGame's call through gExitHook is a no-op until something replaces it. Returns 1 and does
+   nothing else. main installs it as the far function
    pointer at ds:80FA (:244) and 07C8:058A calls it through that pointer during shut-down; it is the
    exit hook main installs, until something else replaces it; nothing outside this unit assigns ds:80FA. */
 /*@ 07C8:061D */ int ExitHook(void)

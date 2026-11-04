@@ -95,7 +95,10 @@ struct ItemSlot {               /* 4-byte records at ds:60D5 (ovl0:26C6) */
     int slot;                   /* +2: the carrying slot it prefers */
 };
 extern struct ItemSlot gStartItems[]; /*@ ds:60D5 */ /* the per-class item/slot table ovl0:26C6 walks (Purpose unknown) */
-extern char gClassStartItems[]; /*@ ds:6101 */ /* the per-class four-entry item table ovl0:26C6 walks (Purpose unknown) */
+extern char gClassStartItems[]; /*@ ds:6101 */ /* the per-class four-entry starting item table
+                                                   ovl0:26C6 walks. QUIRK ds:6101: an entry 255
+                                                   (signed -1) indexes ds:60D5 at -1, the last word of
+                                                   ds:6099; harmless because slot 0 is filled first */
 extern int GetArmourClassBase(char m15); /*@ 0A72:019D */
 extern int RollHitPoints(char classIndex, char m17, char countA, char countB, char countC); /*@ 0A72:01AE */
 extern int MaxHitPoints(char classIndex, char m17, char countA, char countB, char countC); /*@ 0A72:02B3 */
@@ -194,7 +197,9 @@ extern unsigned char gClassStartLevelsNumClasses[]; /*@ ds:5EFC */ /* the diviso
 extern char gStrSelectClass[]; /*@ ds:624C */ /* the caption ovl0:207A draws (Purpose unknown) */
 extern char gStrSelectAlignment[]; /*@ ds:625A */ /* the caption ovl0:2238 draws (Purpose unknown) */
 extern char gStrNamePrompt[]; /*@ ds:626C */ /* the caption ovl0:23EC draws (Purpose unknown) */
-extern int gUnwrittenPanelRow; /*@ ds:DD12 */ /* the panel row ovl0:23EC redraws (Purpose unknown) */
+extern int gUnwrittenPanelRow; /*@ ds:DD12 */ /* the panel row ovl0:23EC redraws. QUIRK ds:DD12:
+                                                   nothing writes it (its address occurs once in the
+                                                   code, at that read), so it is always 0 */
 extern int gUnhandledOptionKey; /*@ ds:FC7A */ /* the key UpdateOptionList did not handle (src/E14EF.C) */
 extern int gClickX; /*@ ds:8140 */ /* x of the last click (src/E082C.C) */
 extern int gClickY; /*@ ds:8142 */ /* y of the last click (src/E082C.C) */
@@ -243,7 +248,8 @@ extern struct RowDef8 far gRowNodeDefs[]; /*@ 206B:0000 */
 
 extern void far *gPanelIconCells[0x11]; /*@ ds:5E64 */ /* the 17 sliced icon pointers this unit builds and draws */
 
-/* ovl0:0000: builds the 17-entry far-pointer table gPanelIconCells. For each of the 17 icon definitions in
+/* ovl0:0000: builds the 17-entry far-pointer table gPanelIconCells. For each of the 17 icon
+   definitions in
    gPanelIconDefs whose +2 byte (the width) is nonzero, it slices a sprite cell out of the overlay buffer
    gOverlayBuf through ds:8082 (the definition's four leading bytes are the cell rectangle) and
    stores the pointer at gPanelIconCells[i]; every slot is cleared first. Called by ovl0:2547. */
@@ -258,7 +264,8 @@ extern void far *gPanelIconCells[0x11]; /*@ ds:5E64 */ /* the 17 sliced icon poi
                 gOverlayBuf);
     }
 }
-/* ovl0:00AF: frees the 17 far pointers in gPanelIconCells through farfree and clears every slot. Called by
+/* ovl0:00AF: frees the 17 far pointers in gPanelIconCells through farfree and clears every slot.
+   Called by
    ovl0:28B0. */
 /*@ ovl0:00AF */ void FreeIconTable(void)
 {
@@ -683,7 +690,9 @@ int PickAlignment(int classIndex); /* ovl0:2238, defined below */
         return 0;
     }
 }
-/* ovl0:0EE5: Shows a created member's page, letting the player move to another member, delete this one, go back, or start the game (returns 1 for PLAY). the character-editor loop. It builds a seven-row list, draws the page
+/* ovl0:0EE5: Shows a created member's page, letting the player move to another member, delete this
+   one, go back, or start the game (returns 1 for PLAY). The character-editor loop. It builds a
+   seven-row list, draws the page
    ovl0:065B(mode 2), then until the current character has a name and no exit was asked for it waits
    for a key: the four 0x8001..0x8004 keys pick the character (key & 0xff) - 1, 0x8005 returns 1
    (leaving the editor), 0x8006 and the enter/confirm keys 0x2b/0x3d/0x61/0x6e flash icon 9 and clear
@@ -759,7 +768,8 @@ int PickAlignment(int classIndex); /* ovl0:2238, defined below */
     }
     return result;
 }
-/* ovl0:1071: draws the panel report line gStrSelectBoxPrompt at (0xa8, 0x10) over a fresh region (gDrawPage = 2
+/* ovl0:1071: draws the panel report line gStrSelectBoxPrompt at (0xa8, 0x10) over a fresh region
+   (gDrawPage = 2
    while it draws), restores gDrawPage, redraws the report box and then calls DrawPartyStatus. Called
    by ovl0:28F9. */
 /*@ ovl0:1071 */ void ShowSelectBoxPrompt(void)
@@ -1031,7 +1041,8 @@ int PickAlignment(int classIndex); /* ovl0:2238, defined below */
     }
     return move;
 }
-/* ovl0:1ADD: Lets the player edit the rolled member's six abilities and hit points one field at a time within the stat limits. edits one of the seven ability/stat fields of the current character.
+/* ovl0:1ADD: Lets the player edit the rolled member's six abilities and hit points one field at a
+   time within the stat limits. Edits one of the seven ability/stat fields of the current character.
    It draws the page through ovl0:065B(mode 3) and loops over the field index i (0..6); for each it
    opens the field with EditStatField(i, &gChars[gChargenMember].<field>, second) and redraws the page.
    Field 0 passes both strength and strengthPct; fields 1..6 pass intelligence, wisdom, dexterity, constitution, charisma and hp with no second
@@ -1280,7 +1291,8 @@ int PickAlignment(int classIndex); /* ovl0:2238, defined below */
     }
     return sel;
 }
-/* ovl0:23EC: the character-creation driver. It walks a three-step loop over the new member gChargenMember:
+/* ovl0:23EC: the character-creation driver. It walks a three-step loop over the new member
+   gChargenMember:
    step 0 picks its race (PickRace), step 1 its class (ovl0:207A PickClass) and step 2 its alignment
    (ovl0:2238 PickAlignment); each of steps 1 and 2, when its picker reported confirmed (0x6e, the
    mouse's accept), steps the index back one instead of forward, so the loop ends only after all three
@@ -1411,7 +1423,8 @@ int PickAlignment(int classIndex); /* ovl0:2238, defined below */
         ComputeArmourClass(i);
     }
 }
-/* ovl0:280D: for each of the first four characters whose class byte gClassBaseBits[gChars[i].classIndex] has bit 1
+/* ovl0:280D: for each of the first four characters whose class byte
+   gClassBaseBits[gChars[i].classIndex] has bit 1
    (value 2) set, sets the 32-bit spell book gChars[i].spellBook to 0x26c, the starting mage spells. Called by
    ovl0:28F9. */
 /*@ ovl0:280D */ void GiveStartingSpellBooks(void)

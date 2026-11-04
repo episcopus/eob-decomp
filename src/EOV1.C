@@ -923,7 +923,8 @@ int AskYesNo(int message);
 {
     gSaveRect(0, 0x78, 0x16, 0x18, (char far *)gStagingPage + 0x4e20);
 }
-/* ovl1:112D: draws the rectangle SaveOptionField saved back to the screen through gRestoreRectToPage (the
+/* ovl1:112D: draws the rectangle SaveOptionField saved back to the screen through
+   gRestoreRectToPage (the
    blit routine that puts the buffer at gStagingPage + 0x4E20 at x 0, y 0x78, 0x16 by 0x18). */
 /*@ ovl1:112D */ void DrawOptionField(void)
 {

@@ -158,7 +158,8 @@ extern int NumberWidthInt(int value); /*@ 082C:09A6 */
 extern char *FormatStrengthPercent(char score, char percent); /*@ 0A72:0468 */
 extern char GetClassSlotByte(char row, char slot); /*@ 0A72:0509 */
 extern void DrawItemRow(int who, int slot, int one); /*@ 0BD2:0917 */
-/* 1547:0009: draws the status bar at the member's block corner (gMemberFrameX[who & 1], gMemberFrameY[who >> 1],
+/* 1547:0009: draws the status bar at the member's block corner (gMemberFrameX[who & 1],
+   gMemberFrameY[who >> 1],
    the x shifted by 0xB0 while gDrawPage is 0). Two conditions chosen from the record decide
    the shape: `outline` is set by effectFlags bits 0x302, the descending penalty counter mDF or the
    countdown mE0; `hatch` by effectFlags bits 0x4c8 or the gPartySpellFlags bits 0x30. When neither holds the bar is

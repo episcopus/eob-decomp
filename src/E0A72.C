@@ -82,7 +82,8 @@ char GetClassSlotByte(char row, char slot); /*@ 0A72:0509 */
     return base[limit];
 }
 
-/* 0A72:007B: the slot 0, 1 or 2 whose gClassSlotBaseClass byte for class `classIndex` equals `slotId`, or -1.
+/* 0A72:007B: the slot 0, 1 or 2 whose gClassSlotBaseClass byte for class `classIndex` equals
+   `slotId`, or -1.
    `slotId` is the gClassSlotBaseClass slot value searched for; the src/ callers pass 1, 2 and 4 (E0D1C.C:579,
    :586; E0EF3.C:640, :660, :663; EOV6.C:144, :209, :440, :441, :447). Called by 0D1C:0903,
    0EF3:0498, 0EF3:04F7 and overlays 1 and 6. */
@@ -97,7 +98,8 @@ char GetClassSlotByte(char row, char slot); /*@ 0A72:0509 */
     return -1;
 }
 
-/* 0A72:00CF: the attacker's strength to-hit bonus. It starts from the base gStrHitBonus[strength] (+0D is the
+/* 0A72:00CF: the attacker's strength to-hit bonus. It starts from the base gStrHitBonus[strength]
+   (+0D is the
    strength score) and, only when the +0F percentile is nonzero, replaces it with gStrPctHitBonus[i] for
    every i with +0F >= gStrPctHitSteps[i] (so the last threshold that matches wins, and nothing is added or
    raised); when +0F is 0 the base is returned untouched. The evidence that +0D/+0F are a score and
@@ -303,7 +305,8 @@ char GetClassSlotByte(char row, char slot); /*@ 0A72:0509 */
     return gClassSlotBaseClass[row * 4 + slot];
 }
 
-/* 0A72:0522: 20 - (levels[0] - 1) / gHitLevelsPerStep[gClassCombatGroup[classIndex]] * gHitGainPerStep[gClassCombatGroup[classIndex]] - classByte, computed in
+/* 0A72:0522: 20 - (levels[0] - 1) / gHitLevelsPerStep[gClassCombatGroup[classIndex]] *
+   gHitGainPerStep[gClassCombatGroup[classIndex]] - classByte, computed in
    bytes. It is the d20 number a to-hit roll must reach before the attacker bonus is subtracted:
    its only caller 0DE8:0007 computes `ac = GetHitTarget(who, gTable1A3B[b0].m00) - bonus`
    (E0DE8.C:206) and then compares a d20 roll against it (`return roll >= ac;`, E0DE8.C:214).

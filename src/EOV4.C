@@ -132,8 +132,10 @@ extern struct Region gRegions[]; /*@ ds:009F */
 extern int gCurLevel; /*@ ds:FBC8 */                 /* the current action (src/E0D1C.C) */
 extern int gPartyDir; /*@ ds:FBCC */                 /* the party's facing, 0..3 north, east, south, west */
 extern signed char gDoorClipY[]; /*@ ds:6F4E */       /* row value table this unit indexes */
-extern signed char gDoorClipTopRow[]; /*@ ds:6F6D */       /* per-page index into ds:6F4E */
-extern signed char gDoorClipBottomRow[]; /*@ ds:6F79 */       /* per-page index into ds:6F4E */
+extern signed char gDoorClipTopRow[]; /*@ ds:6F6D */       /* per-level index into ds:6F4E. QUIRK ds:6F6D:
+                                                           12 bytes indexed by gCurLevel 1 to 12, so level 12
+                                                           reads gDoorClipBottomRow[0] */
+extern signed char gDoorClipBottomRow[]; /*@ ds:6F79 */       /* per-level index into ds:6F4E */
 extern signed char gViewSlotRow[]; /*@ ds:1A09 */       /* per-object index into ds:6F4E */
 
 /* ovl4:021E: computes the top and bottom pixel rows of one column of the current page's view
@@ -1167,7 +1169,8 @@ extern void CopyRegion(int x1, int y1, int x2, int y2, int width, int height, in
 extern void DrawTile(void far *src); /*@ 17A6:03E7 */
 extern void PlaySoundDefault(int sound); /*@ 177D:00F3 */
 
-/* ovl4:1F51: draws one frame of the view: BuildViewBlockMap draws the objects into the page buffer (with
+/* ovl4:1F51: draws one frame of the view: BuildViewBlockMap draws the objects into the page buffer
+   (with
    gPartyCell and gPartyDir), DrawTile blits it from gWallBlocks, DrawViewSlots(0) draws the slots, and
    when gLevelPalettePending is set and gGraphicsChoice is 3 (MCGA/VGA, re/globals.toml ds:8102) it loads the
    palette gPaletteBuf and clears gLevelPalettePending; when `full` is also set, it first blanks the view box (gFillRect

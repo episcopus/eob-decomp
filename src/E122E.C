@@ -407,7 +407,8 @@ void RunCellScript(int cell, int mode);  /* forward: 1DA8 comes after its caller
     }
     return 0;
 }
-/* 122E:04CA: the member-slot click handler. It turns the clicked row (gClickedWallTypes[gViewFrontSide]) into a gDoorButtons
+/* 122E:04CA: the member-slot click handler. It turns the clicked row
+   (gClickedWallTypes[gViewFrontSide]) into a gDoorButtons
    slot entry (through gDoorButtonIndex), builds the slot's screen rectangle from the entry's x/y and the
    far size record's width (in eighths) and height, all grown by 4 on each side and offset by gDoorButtonXBias,
    and for the item actions (gCurLevel 4, 5, 6) shifts x by the scroll column (row - gDoorFirstWallType[row]) * 9, or
@@ -451,7 +452,8 @@ void RunCellScript(int cell, int mode);  /* forward: 1DA8 comes after its caller
     return CheckMemberSlotRect(id, slot);
 }
 
-/* 122E:05DF: look up the object kind in gMaze[id * 9 + slot] and, if HitTestObjectKind accepts it, run the
+/* 122E:05DF: look up the object kind in gMaze[id * 9 + slot] and, if HitTestObjectKind accepts it,
+   run the
    driver for `id` in the current mode gWallTrigger. Returns 1 when it ran, 0 otherwise. */
 /*@ 122E:05DF */ int PerformItemSlotAction(int id, int slot)
 {
@@ -1308,7 +1310,8 @@ done:
     }
     return (long)(script - start);
 }
-/* 122E:1AAB: the load-level opcode. It refreshes the display: RestorePortraitPanel(gDirectAction) when gPanelMode is
+/* 122E:1AAB: the load-level opcode. It refreshes the display: RestorePortraitPanel(gDirectAction)
+   when gPanelMode is
    nonzero and RedrawPartyPanel(gDirectAction) when gFlag is nonzero. It reads a byte, a word and a byte,
    stores the word as gPartyCell and the byte as gPartyDir (unless 0xFF), resets and saves the level,
    runs ovl3:0A7C, loads the INVENT screen (gStrInvent) with the 2067:0000 sheet, runs ovl4:2039,

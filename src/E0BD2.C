@@ -582,7 +582,8 @@ next:
     return slot;
 }
 
-/* 0BD2:0917: draws the selected character's (gInventoryMember) item row `row`. When `slot` is nonzero it draws
+/* 0BD2:0917: draws the selected character's (gInventoryMember) item row `row`. When `slot` is
+   nonzero it draws
    the row's frame: a filled panel and rectangle at x gInvSlotX[row], y gInvSlotY[row] sized by
    gInvSlotBoxSize[gInvSlotKind[row]] (a kind-1 row is the count row, which also prints the row's item count, and a
    row that is the selected row gCursorSlot is highlighted when gMouseDisabled). When the row holds an
@@ -669,7 +670,8 @@ next:
     }
     return 1;
 }
-/* 0BD2:0BA0: uses the item in slot `slot` of the selected character gInventoryMember through 0BD2:0AF2. For a
+/* 0BD2:0BA0: uses the item in slot `slot` of the selected character gInventoryMember through
+   0BD2:0AF2. For a
    slot other than 0x10 it exchanges the held item with the slot: the slot's item goes into the hand
    (SetMouseItem) and the held item goes into the slot, then the row is redrawn and the armour class
    recomputed. For slot 0x10 (the pack list) with an empty hand it takes the first item out of the

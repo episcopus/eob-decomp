@@ -703,7 +703,8 @@ fail:
     DrawText(gFileNameBuf);
     PlaySound(0x17);
 }
-/* 0DE8:0D5E: computes the armour class armorClass of character `who`. It starts from GetArmourClassBase(dexterity) + 10,
+/* 0DE8:0D5E: computes the armour class armorClass of character `who`. It starts from
+   GetArmourClassBase(dexterity) + 10,
    then for the four slots named by gArmourSlots adds the item type's m04 and subtracts the slot's m0B when
    the item m02 passes the gItemTypes m0E and gClassBaseBits[classIndex] tests (slot 2 also needs CanUseHand); for
    slots 1 and 2 only item type 0x1B counts (:728), and the items[25]/items[26] items count only
