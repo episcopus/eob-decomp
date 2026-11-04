@@ -8,22 +8,22 @@
    the mouse buttons E14EF.C names KEY_CLICK and KEY_CLICK2 (the table at 14EF:055D); the pair
    0xC6/0xC7 is the mouse's confirm keys (ovl0:207A PickClass tests it). Placeholder names. The
    unit was compiled with debug information (the flags line records -v): that keeps DrawNode's
-   identical restart tails (the gStatusLine and gFC80 save/restore around each kind) as separate
+   identical restart tails (the gDrawPage and gUnreadShapeDrawWord save/restore around each kind) as separate
    copies, where a build without it merges them into one (whitepaper 2.1.1). */
 
 /*@flags -ml -O -Z -v */
 
 struct Region {                 /* 16-byte records at ds:009F (src/E1A29.C): origin, size, then the
-                                   text window's two attributes and cursor position (attr1/attr2/
-                                   column/row, as src/E082C.C names them) */
+                                   text window's two attributes and cursor position (textAttr1, textAttr2,
+                                   textCol, textRow) */
     int left;                   /* +0: left edge in 8-pixel columns */
     int top;                    /* +2: top edge in lines */
     int width;                  /* +4: width in 8-pixel columns */
     int height;                 /* +6: height in lines */
-    int attr1;                  /* +8: text attribute 1 [H] (gTextAttr1) */
-    int attr2;                  /* +a: text attribute 2 [H] (gTextAttr2) */
-    int column;                 /* +c: cursor column (gTextCol) */
-    int row;                    /* +e: cursor row (gTextRow) */
+    int textAttr1;                  /* +8: text attribute 1 [H] (gTextAttr1) */
+    int textAttr2;                  /* +a: text attribute 2 [H] (gTextAttr2) */
+    int textCol;                 /* +c: cursor column (gTextCol) */
+    int textRow;                    /* +e: cursor row (gTextRow) */
 };
 
 typedef void (far *NodeFn)(struct Node far *node);
@@ -70,7 +70,7 @@ extern int GetKeyState(int key); /*@ 1AAD:05F1 */
 
 int DispatchNodeEvent(struct Node far *head, int key);
 
-extern void (far *gFC7C)(); /*@ ds:FC7C: the callback 16A5:0D78 installs and 16A5:00BD fires */
+extern void (far *gNodeCallback)(); /*@ ds:FC7C: the callback 16A5:0D78 installs and 16A5:00BD fires */
 
 /* The +2E state word bits, under the names E1658.C gives them: NODE_STATE_ON (the on bit 0073
    toggles and 02F5 sets), NODE_STATE_PREV (the previous-on value, set from the on bit so a redraw
@@ -87,7 +87,7 @@ extern void (far *gFC7C)(); /*@ ds:FC7C: the callback 16A5:0D78 installs and 16A
 /* The +0E flags word, under the names E1658.C gives it. NODE_INACTIVE (0x0008) makes ToggleNode
    (1658:0073), ClearNode (1658:01E6) and SetNode (1658:02F5) do nothing; DisableNode (1658:0154)
    sets the bit and EnableNode (1658:017B) clears it. NODE_FLAG_ON (0x0001) and the four
-   selector bits 0x0100/0x0400 (g5E1C) and 0x1000/0x4000 (g5E1E) pick the button mode E1658.C
+   selector bits 0x0100/0x0400 (gLeftButtonMode) and 0x1000/0x4000 (gRightButtonMode) pick the button mode E1658.C
    describes. The dispatcher also tests 0x0002, 0x0004, 0x0020, 0x0040, 0x0080, 0x0200, 0x0800,
    0x2000 and 0x8000 as gates; their meanings are not established [H], so they stay values. */
 #define NODE_INACTIVE   0x0008
@@ -101,17 +101,17 @@ void DrawNode(struct Node far *node);
 
 extern int gPointerHeight;   /*@ ds:8154: sprite height in pixels (E1BBE.ASM) */
 extern int gPointerWidth8;   /*@ ds:8156: sprite width in 8-pixel columns (E1BBE.ASM) */
-extern int gStatusLine;            /*@ ds:8115: nonzero while a status line is up (src/E082C.C) */
-extern int gFC80;            /*@ ds:FC80: a flag DrawNode clears while it draws a kind-1 node */
+extern int gDrawPage;            /*@ ds:8115: the graphics driver's draw page (src/E082C.C) */
+extern int gUnreadShapeDrawWord;            /*@ ds:FC80: a flag DrawNode clears while it draws a kind-1 node */
 extern struct Region gRegions[]; /*@ ds:009F */
 extern void (far *gDrawText)(char far *text, int x, int y, int color, int extra); /*@ ds:80CA */
-extern void (far *gDraw805E)(int tile, int x, int y); /*@ ds:805E */
-extern void (far *gDraw8066)(int x1, int y1, int x2, int y2, int colour); /*@ ds:8066 */
+extern void (far *gDrawIndexedTile)(int tile, int x, int y); /*@ ds:805E */
+extern void (far *gXorRect)(int x1, int y1, int x2, int y2, int colour); /*@ ds:8066 */
 
 extern void HidePointerZone(int left, int top, int right, int bottom); /*@ 1BBE:01FE */
 extern void ShowPointerZone(void); /*@ 1BBE:02C2 */
 extern void DrawBox(int x1, int y1, int x2, int y2, int colour); /*@ 1A1F:000C */
-extern void DrawShape(int mode, void far *src, int x, int y, int region); /*@ 1A29:000F */
+extern void DrawShape(int page, void far *src, int x, int y, int region); /*@ 1A29:000F */
 
 /* The dispatcher's working state in DGROUP. The hit point comes from the mouse (gCursorX/gCursorY)
    or, when a button is down, from the last click (ds:8140/8142). gLastNode and gPressedNode are
@@ -121,22 +121,22 @@ extern int gCursorX;         /*@ ds:8138 */
 extern int gCursorY;         /*@ ds:813A */
 extern int gClickX;            /*@ ds:8140: x of the last click (src/E14EF.C) */
 extern int gClickY;            /*@ ds:8142: y of the last click (src/E14EF.C) */
-extern int g5E1C;            /*@ ds:5E1C: the left-button mode (src/E1658.C) */
-extern int g5E1E;            /*@ ds:5E1E: the right-button mode (src/E1658.C) */
+extern int gLeftButtonMode;            /*@ ds:5E1C: the left-button mode (src/E1658.C) */
+extern int gRightButtonMode;            /*@ ds:5E1E: the right-button mode (src/E1658.C) */
 extern int gHitX;            /*@ ds:5E10: the x the hit test uses */
 extern int gHitY;            /*@ ds:5E12: the y the hit test uses */
 extern struct Node far *gLastNode;   /*@ ds:5DE0: the list head the last walk drew from */
-extern int g5DEA[];          /*@ ds:5DEA: word 0 the drawn-node flags, words 1..4 the release-test masks */
+extern int gLeftButtonMasks[];          /*@ ds:5DEA: word 0 the drawn-node flags, words 1..4 the release-test masks */
 extern struct Node far *gPressedNode; /*@ ds:5DE4: the node a press selected, 0 when none */
 extern int gListActive;      /*@ ds:5DE8: 0 stops the walk from reacting to the mouse */
-extern char g5E20;           /*@ ds:5E20: nonzero forces the walk to rebuild and redraw the whole
+extern char gNodeListChanged;           /*@ ds:5E20: nonzero forces the walk to rebuild and redraw the whole
                                 list; the list builders set it (ovl0:042F BuildRowNodeList,
                                 ovl1:1153), not the mouse */
-extern int gFC82;            /*@ ds:FC82: the dispatcher writes which key word matched (1 for +06,
+extern int gMatchedNodeKey;            /*@ ds:FC82: the dispatcher writes which key word matched (1 for +06,
                                 2 for +08, 0 none); 0ACD:0034 tests it only against 0, and
-                                0ACD:008C (Action008C) and 0ACD:00EB (Action00EB) read 1 and 2 as
+                                0ACD:008C (SelectPrevMember) and 0ACD:00EB (SelectNextMember) read 1 and 2 as
                                 an action mode (src/E0ACD.C) */
-extern int g5DF2[];          /*@ ds:5DF2: words 1..4 the g5E1E redraw masks */
+extern int gRightButtonMasks[];          /*@ ds:5DF2: words 1..4 the gRightButtonMode redraw masks */
 
 /* 16A5:0009: read one pending key event and dispatch it to the node list `head`. 1AAD:0409 says
    a key is ready and 1AAD:0588 reads it; the event gets the 0x8000 tag. A letter 'A' to 'Z' is
@@ -234,18 +234,18 @@ extern int g5DF2[];          /*@ ds:5DF2: words 1..4 the g5E1E redraw masks */
     register int flags;
 
     mouseEvent = 0;
-    gFC82 = 0;
+    gMatchedNodeKey = 0;
     if (!gMouseDisabled) {
         gHitX = gCursorX;
         gHitY = gCursorY;
         if (GetKeyState(0x41))
-            g5E1C = 2;
+            gLeftButtonMode = 2;
         else
-            g5E1C = 4;
+            gLeftButtonMode = 4;
         if (GetKeyState(0x42))
-            g5E1E = 2;
+            gRightButtonMode = 2;
         else
-            g5E1E = 4;
+            gRightButtonMode = 4;
         code = key & 0xff;
         if (key < 0) {
             if (code >= 0xc6 && code <= 0xc7) {
@@ -254,9 +254,9 @@ extern int g5DF2[];          /*@ ds:5DF2: words 1..4 the g5E1E redraw masks */
                 else
                     buttonMode = 1;
                 if (code == 0xc6)
-                    g5E1C = buttonMode;
+                    gLeftButtonMode = buttonMode;
                 else
-                    g5E1E = buttonMode;
+                    gRightButtonMode = buttonMode;
                 gHitX = gClickX;
                 gHitY = gClickY;
                 mouseEvent = 1;
@@ -270,9 +270,9 @@ extern int g5DF2[];          /*@ ds:5DF2: words 1..4 the g5E1E redraw masks */
             else
                 buttonMode = 1;
             if (code == 0x41)
-                g5E1C = buttonMode;
+                gLeftButtonMode = buttonMode;
             else
-                g5E1E = buttonMode;
+                gRightButtonMode = buttonMode;
             gHitX = gClickX;
             gHitY = gClickY;
             mouseEvent = 1;
@@ -283,16 +283,16 @@ extern int g5DF2[];          /*@ ds:5DF2: words 1..4 the g5E1E redraw masks */
     more = 1;
     if (head == 0)
         return key;
-    if (head != gLastNode || g5E20 != 0) {
+    if (head != gLastNode || gNodeListChanged != 0) {
         gLastNode = head;
-        g5DEA[0] = 0;
+        gLeftButtonMasks[0] = 0;
         do {
             DrawNode(head);
-            g5DEA[0] |= head->flags & 0xaa04;
+            gLeftButtonMasks[0] |= head->flags & 0xaa04;
             if (head->state & 0x20)
                 if (head->tile34 | head->tile36)
-                    if (gFC7C)
-                        gFC7C(head);
+                    if (gNodeCallback)
+                        gNodeCallback(head);
             if (head->next == 0)
                 more = 0;
             if (more)
@@ -300,7 +300,7 @@ extern int g5DF2[];          /*@ ds:5DF2: words 1..4 the g5E1E redraw masks */
         } while (more);
         gPressedNode = 0;
         gListActive = 1;
-        g5E20 = 0;
+        gNodeListChanged = 0;
     }
     justPressed = 0;
     if (gPressedNode)
@@ -325,14 +325,14 @@ extern int g5DF2[];          /*@ ds:5DF2: words 1..4 the g5E1E redraw masks */
             state &= ~NODE_STATE_10;
         if (key != 0) {
             if (head->key06 == key) {
-                gFC82 = 1;
-                g5E1C = 1;
+                gMatchedNodeKey = 1;
+                gLeftButtonMode = 1;
                 state ^= NODE_STATE_ON;
                 result = keyCode;
                 changed = 1;
             } else if (head->key08 == key) {
-                gFC82 = 2;
-                g5E1E = 1;
+                gMatchedNodeKey = 2;
+                gRightButtonMode = 1;
                 state ^= NODE_STATE_ON;
                 result = keyCode;
                 changed = 1;
@@ -341,7 +341,7 @@ extern int g5DF2[];          /*@ ds:5DF2: words 1..4 the g5E1E redraw masks */
         }
         if (gMouseDisabled)
             goto update;
-        if (g5DEA[0] == 0 && mouseEvent == 0)
+        if (gLeftButtonMasks[0] == 0 && mouseEvent == 0)
             goto update;
         leftFlags = flags & 0xf00;
         rightFlags = flags & 0xf000;
@@ -351,7 +351,7 @@ extern int g5DF2[];          /*@ ds:5DF2: words 1..4 the g5E1E redraw masks */
             head->y <= gHitY && head->y + head->height > gHitY) {
             state |= NODE_STATE_2;
             if (leftFlags != 0) {
-                switch (g5E1C) {
+                switch (gLeftButtonMode) {
                 case 4:
                     if (!(flags & 4) && head->modeC != 0) {
                         state |= NODE_STATE_4;
@@ -420,7 +420,7 @@ extern int g5DF2[];          /*@ ds:5DF2: words 1..4 the g5E1E redraw masks */
                 goto update;
             if (pressedFlag)
                 goto update;
-            switch (g5E1E) {
+            switch (gRightButtonMode) {
             case 4:
                 if (!(flags & 4) && head->modeC != 0)
                     state |= NODE_STATE_4;
@@ -485,12 +485,12 @@ extern int g5DF2[];          /*@ ds:5DF2: words 1..4 the g5E1E redraw masks */
                 gListActive = 0;
             } else {
                 if (leftFlags != 0) {
-                    mask = g5DEA[g5E1C];
+                    mask = gLeftButtonMasks[gLeftButtonMode];
                     if (flags & mask)
                         changed = 1;
                 }
                 if (rightFlags != 0 && changed == 0) {
-                    mask = g5DF2[g5E1E];
+                    mask = gRightButtonMasks[gRightButtonMode];
                     if (flags & mask)
                         changed = 1;
                 }
@@ -513,7 +513,7 @@ extern int g5DF2[];          /*@ ds:5DF2: words 1..4 the g5E1E redraw masks */
         if ((state & NODE_STATE_2) && (flags & 0x20))
             more = 0;
         if (gPressedNode) {
-            if ((leftFlags != 0 && g5E1C == 3) || (rightFlags != 0 && g5E1E == 3)) {
+            if ((leftFlags != 0 && gLeftButtonMode == 3) || (rightFlags != 0 && gRightButtonMode == 3)) {
                 gPressedNode = 0;
                 gListActive = 1;
             }
@@ -542,13 +542,13 @@ done:
    picks the path (its case 1 switches on the kind), with NODE_STATE_4 set `modeC` +0C does, and
    only when both bits are clear does the kind switch run directly. A kind of 1 blits an art
    pointer through DrawShape (src10, src14 or src18), 2 draws text through gDrawText, 3 draws a
-   tile through gDraw805E, 4 calls the art pointer as a far callback with the node, and 5 or 0
+   tile through gDrawIndexedTile, 4 calls the art pointer as a far callback with the node, and 5 or 0
    draws a box. Kind 5 always draws through DrawBox. Kind 0 draws only in the cases the code shows:
    `modeB` or `modeC` is 2 (DrawBox), or `modeB` is 3 with NODE_STATE_PREV set, or `modeC` is 3
-   with NODE_STATE_10 set (gDraw8066), and only in the both-clear branch (NODE_STATE_ON and
+   with NODE_STATE_10 set (gXorRect), and only in the both-clear branch (NODE_STATE_ON and
    NODE_STATE_4 clear). The pointer is hidden with HidePointerZone over the box grown by the mouse
-   sprite size and shown again at the end; gStatusLine (ds:8115) is cleared around every DrawBox
-   and gDraw8066 call and around the kind 0, 2, 3 and 5 draws; the kind 1 and 4 art calls never
+   sprite size and shown again at the end; gDrawPage (ds:8115) is cleared around every DrawBox
+   and gXorRect call and around the kind 0, 2, 3 and 5 draws; the kind 1 and 4 art calls never
    clear it, and ds:FC80 is cleared while a kind-1 node is. Callers: ToggleNode (1658:0073),
    DisableNode (1658:0154), EnableNode (1658:017B), ClearNode (1658:01E6), SetNode (1658:02F5) and
    the dispatcher (16A5:00BD). [H] The exact meaning of the four colour pairs and of the two mode
@@ -595,39 +595,39 @@ done:
     if (isOn) {
         if (modeB == 1) {
             if (kind == 1) {
-                savedFC80 = gFC80;
-                gFC80 = 0;
+                savedFC80 = gUnreadShapeDrawWord;
+                gUnreadShapeDrawWord = 0;
                 DrawShape(0, node->src14, x, y, region);
-                gFC80 = savedFC80;
+                gUnreadShapeDrawWord = savedFC80;
             } else if (kind == 2) {
                 if (!mark4) {
-                    savedAttr = gStatusLine;
-                    gStatusLine = 0;
+                    savedAttr = gDrawPage;
+                    gDrawPage = 0;
                     gDrawText(node->src14, x, y, node->color28, node->color29);
-                    gStatusLine = savedAttr;
+                    gDrawPage = savedAttr;
                 }
             } else if (kind == 3) {
-                savedAttr = gStatusLine;
-                gStatusLine = 0;
-                gDraw805E(node->tile36, x >> 3, y);
-                gStatusLine = savedAttr;
+                savedAttr = gDrawPage;
+                gDrawPage = 0;
+                gDrawIndexedTile(node->tile36, x >> 3, y);
+                gDrawPage = savedAttr;
             } else if (kind == 4) {
                 if (node->src14)
                     ((NodeFn)node->src14)(node);
             }
         } else if (modeB == 2) {
             if (!mark4) {
-                savedAttr = gStatusLine;
-                gStatusLine = 0;
+                savedAttr = gDrawPage;
+                gDrawPage = 0;
                 DrawBox(x, y, x + node->width - 1, y + node->height - 1, node->color28);
-                gStatusLine = savedAttr;
+                gDrawPage = savedAttr;
             }
         } else if (modeB == 3) {
             if (!mark4) {
-                savedAttr = gStatusLine;
-                gStatusLine = 0;
-                gDraw8066(x, y, x + node->width - 1, y + node->height - 1, node->color28);
-                gStatusLine = savedAttr;
+                savedAttr = gDrawPage;
+                gDrawPage = 0;
+                gXorRect(x, y, x + node->width - 1, y + node->height - 1, node->color28);
+                gDrawPage = savedAttr;
             }
         } else if (modeB == 4) {
             if (node->src14)
@@ -637,39 +637,39 @@ done:
     if (mark4) {
         if (modeC == 1) {
             if (kind == 1) {
-                savedFC80 = gFC80;
-                gFC80 = 0;
+                savedFC80 = gUnreadShapeDrawWord;
+                gUnreadShapeDrawWord = 0;
                 DrawShape(0, node->src18, x, y, region);
-                gFC80 = savedFC80;
+                gUnreadShapeDrawWord = savedFC80;
             } else if (kind == 2) {
-                savedAttr = gStatusLine;
-                gStatusLine = 0;
+                savedAttr = gDrawPage;
+                gDrawPage = 0;
                 if (isOn)
                     gDrawText(node->src18, x, y, node->color2C, node->color2D);
                 else
                     gDrawText(node->src18, x, y, node->color2A, node->color2B);
-                gStatusLine = savedAttr;
+                gDrawPage = savedAttr;
             } else if (kind == 3) {
-                savedAttr = gStatusLine;
-                gStatusLine = 0;
-                gDraw805E(node->tile36, x >> 3, y);
-                gStatusLine = savedAttr;
+                savedAttr = gDrawPage;
+                gDrawPage = 0;
+                gDrawIndexedTile(node->tile36, x >> 3, y);
+                gDrawPage = savedAttr;
             } else if (kind == 4) {
                 if (node->src18)
                     ((NodeFn)node->src18)(node);
             }
         } else if (modeC == 2) {
-            savedAttr = gStatusLine;
-            gStatusLine = 0;
+            savedAttr = gDrawPage;
+            gDrawPage = 0;
             colour = isOn ? node->color2C : node->color2A;
             DrawBox(x, y, x + node->width - 1, y + node->height - 1, colour);
-            gStatusLine = savedAttr;
+            gDrawPage = savedAttr;
         } else if (modeC == 3) {
-            savedAttr = gStatusLine;
-            gStatusLine = 0;
+            savedAttr = gDrawPage;
+            gDrawPage = 0;
             colour = isOn ? node->color2C : node->color2A;
-            gDraw8066(x, y, x + node->width - 1, y + node->height - 1, colour);
-            gStatusLine = savedAttr;
+            gXorRect(x, y, x + node->width - 1, y + node->height - 1, colour);
+            gDrawPage = savedAttr;
         } else if (modeC == 4) {
             if (node->src18)
                 ((NodeFn)node->src18)(node);
@@ -678,38 +678,38 @@ done:
     if (mark4 == 0) {
         if (isOn == 0) {
             if (kind == 1) {
-                savedFC80 = gFC80;
-                gFC80 = 0;
+                savedFC80 = gUnreadShapeDrawWord;
+                gUnreadShapeDrawWord = 0;
                 DrawShape(0, node->src10, x, y, region);
-                gFC80 = savedFC80;
+                gUnreadShapeDrawWord = savedFC80;
             } else if (kind == 2) {
-                savedAttr = gStatusLine;
-                gStatusLine = 0;
+                savedAttr = gDrawPage;
+                gDrawPage = 0;
                 gDrawText(node->src10, x, y, node->color26, node->color27);
-                gStatusLine = savedAttr;
+                gDrawPage = savedAttr;
             } else if (kind == 3) {
-                savedAttr = gStatusLine;
-                gStatusLine = 0;
-                gDraw805E(node->tile34, x >> 3, y);
-                gStatusLine = savedAttr;
+                savedAttr = gDrawPage;
+                gDrawPage = 0;
+                gDrawIndexedTile(node->tile34, x >> 3, y);
+                gDrawPage = savedAttr;
             } else if (kind == 4) {
                 if (node->src10)
                     ((NodeFn)node->src10)(node);
             } else if (kind == 5) {
-                savedAttr = gStatusLine;
-                gStatusLine = 0;
+                savedAttr = gDrawPage;
+                gDrawPage = 0;
                 DrawBox(x, y, x + node->width - 1, y + node->height - 1, node->color26);
-                gStatusLine = savedAttr;
+                gDrawPage = savedAttr;
             } else if (kind == 0) {
-                savedAttr = gStatusLine;
-                gStatusLine = 0;
+                savedAttr = gDrawPage;
+                gDrawPage = 0;
                 if (modeB == 2 || modeC == 2)
                     DrawBox(x, y, x + node->width - 1, y + node->height - 1, node->color26);
                 else if (modeB == 3 && wasOn)
-                    gDraw8066(x, y, x + node->width - 1, y + node->height - 1, node->color28);
+                    gXorRect(x, y, x + node->width - 1, y + node->height - 1, node->color28);
                 else if (modeC == 3 && mark10)
-                    gDraw8066(x, y, x + node->width - 1, y + node->height - 1, node->color2A);
-                gStatusLine = savedAttr;
+                    gXorRect(x, y, x + node->width - 1, y + node->height - 1, node->color2A);
+                gDrawPage = savedAttr;
             }
         }
     }
@@ -718,8 +718,8 @@ done:
 
 /* 16A5:0D78: store the 32-bit second argument as the far callback at ds:FC7C; the word first
    argument is ignored. Main (07C8:0001) calls it once as (0, 0L) to clear the callback before the
-   game starts; the dispatcher 16A5:00BD fires gFC7C for the node under the pointer. */
+   game starts; the dispatcher 16A5:00BD fires gNodeCallback for the node under the pointer. */
 /*@ 16A5:0D78 */ void SetNodeCallback(int arg, long value)
 {
-    gFC7C = (void (far *)())value;
+    gNodeCallback = (void (far *)())value;
 }

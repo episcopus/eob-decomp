@@ -26,10 +26,10 @@ struct Region {             /* 16-byte records at ds:009F (src/E1A29.C) */
     int top;                /* +2: top edge in lines */
     int width;              /* +4: width in 8-pixel columns */
     int height;             /* +6: height in lines */
-    int attr1;              /* +8: text attribute 1 [H] (gTextAttr1, src/E1DE7.C:26) */
-    int attr2;              /* +a: text attribute 2 [H] (gTextAttr2, src/E1DE7.C:27) */
-    int column;             /* +c: cursor column (gTextCol) */
-    int row;                /* +e: cursor row (gTextRow) */
+    int textAttr1;              /* +8: text attribute 1 [H] (gTextAttr1, src/E1DE7.C:26) */
+    int textAttr2;              /* +a: text attribute 2 [H] (gTextAttr2, src/E1DE7.C:27) */
+    int textCol;             /* +c: cursor column (gTextCol) */
+    int textRow;                /* +e: cursor row (gTextRow) */
 };
 
 /* The keys the text-field editor reacts to. WaitGameKey (1AAD:053A) returns a translated key
@@ -69,10 +69,10 @@ extern int gGraphicsChoice; /*@ ds:8102: the graphics mode chosen at start-up: 0
                              for 3, the MCGA/VGA art suffix (the sprintf below) */
 extern int gClickX; /*@ ds:8140: x of the last click, written by src/E1AAD.ASM:396 and also read by src/E14EF.C:325 */
 extern int gClickY; /*@ ds:8142: y of the last click, written by src/E1AAD.ASM:405 and also read by src/E14EF.C:325 */
-extern int gStatusLine; /*@ ds:8115: nonzero while a status line is up (set to 2 by LoadOverlayScreen) */
+extern int gDrawPage; /*@ ds:8115: the graphics driver's draw page (2 while LoadOverlayScreen draws off screen) */
 extern unsigned long gTicks; /*@ ds:848A: the game's own 32-bit tick counter, stepped by the INT 1Ch handler at src/E1D8F.ASM:76 (label 1D8F:0055); the increment of ds:848A is at src/E1D8F.ASM:91 (`inc word ptr ds:[848Ah]`) */
 extern char gFileNameBuf[]; /*@ ds:FE6E */ /* the shared text buffer the filename/format helpers and the memory report build into */
-extern char gOverlayBuf[]; /*@ ds:113F */ /* the DGROUP image buffer, passed as LoadScreenImage's extra pointer to f19EC_002A, which hands it to the far handler at ds:8046 only when two slots hold non-zero segments that differ (src/E19EC.C:29-35); overlays cut sprite cells out of it (src/EOV2.C:209, src/EOV5.C:1021) */
+extern char gCgaMapDefault[]; /*@ ds:113F */ /* the DGROUP image buffer, passed as LoadScreenImage's extra pointer to CopyPage, which hands it to the far handler at ds:8046 only when two slots hold non-zero segments that differ (src/E19EC.C:29-35); overlays cut sprite cells out of it (src/EOV2.C:209, src/EOV5.C:1021) */
 extern char gCursorChar; /*@ ds:31AC: the one character drawn at the editing cursor */
 extern char gCursorOn; /*@ ds:FC4C: nonzero while the cursor is drawn (blinks in the editor) */
 
@@ -85,8 +85,8 @@ extern int toupper(int c); /*@ 0000:5BD2 */
 extern void far *memmove(void far *dst, void far *src, unsigned n); /*@ 0000:63F5 */
 extern char *ltoa(long value, char *string, int radix); /*@ 0000:62F1 */
 extern char *itoa(int value, char *string, int radix); /*@ 0000:62AA */
-extern void ClipRect(int x1, int y1, int x2, int y2, int width, int height, int extra1, int extra2); /*@ 19F3:000E */
-extern void f19EC_002A(int a, int b, int c, int d); /*@ 19EC:002A: called here with c/d = FP_OFF/FP_SEG(extra); src/E19EC.C:29-35 says c and d are unused by its own tests */
+extern void CopyRegion(int x1, int y1, int x2, int y2, int width, int height, int extra1, int extra2); /*@ 19F3:000E */
+extern void CopyPage(int a, int b, int c, int d); /*@ 19EC:002A: called here with c/d = FP_OFF/FP_SEG(extra); src/E19EC.C:29-35 says c and d are unused by its own tests */
 extern void LoadPacked(char far *name, int srcKind, int dstKind); /*@ 1B82:0041 */
 extern void Unpack0(char far *src, void far *dst, long len); /*@ 1BA8:0006 */
 extern void PrintInt(int value, int a, int b, int c, int d); /*@ 1AA6:000F */
@@ -97,10 +97,10 @@ extern void FileClose(int slot); /*@ 1C0E:03BB: `slot` is FileOpen's slot index,
 extern void ShutdownGame(void); /*@ 07C8:058A */
 extern void PlaySound(int sound); /*@ 177D:0070 */
 extern void DrawText(char far *text); /*@ 1DE7:060A */  /* the text console's string renderer (src/E1DE7.C) */
-extern void DrawShape(int mode, void far *src, int x, int y, int region); /*@ 1A29:000F */
-extern void f1A29_004D(int mode, void far *src, int x, int y, int region); /*@ 1A29:004D */
-extern void f1A29_008B(int mode, void far *src, int x, int y, int region); /*@ 1A29:008B */
-extern void f1A29_00C9(int mode, void far *src, int x, int y, int region); /*@ 1A29:00C9 */
+extern void DrawShape(int page, void far *src, int x, int y, int region); /*@ 1A29:000F */
+extern void DrawShapeFlipped(int page, void far *src, int x, int y, int region); /*@ 1A29:004D */
+extern void DrawShapeRemapped(int page, void far *src, int x, int y, int region); /*@ 1A29:008B */
+extern void DrawShapeFlippedRemapped(int page, void far *src, int x, int y, int region); /*@ 1A29:00C9 */
 extern void FlushKeyBuffer(void); /*@ 1AAD:0480 */
 extern int ReadKey(void); /*@ 1AAD:038E */
 extern int WaitGameKey(void); /*@ 1AAD:053A */
@@ -115,7 +115,7 @@ void DrawShadowText(char far *text, int x, int y, int colour, int colour2);
    space is refused at the start), KeyBackspace deletes to the left of the cursor, KeyDelete at
    it, the arrow keys move it, KeyReturn ends the edit and returns the new length and KeyEsc ends
    it and returns -1. `maxlen` is the highest buffer index (the buffer holds maxlen+1 bytes
-   including the terminator); the two ClipRect calls (082C:006D and 082C:038A) set the field's
+   including the terminator); the two CopyRegion calls (082C:006D and 082C:038A) set the field's
    maxlen+2 by 9 clip rectangle (see the QUIRK below), and the text and cursor are drawn with
    DrawShadowText. `colour` is the text colour, `attr` is the second colour passed to the draw
    call (DrawShadowText's `colour2`, below) and `cursorAttr` is the cursor colour: ovl0 passes 0xf, 0
@@ -142,7 +142,7 @@ void DrawShadowText(char far *text, int x, int y, int colour, int colour2);
     cur = len;
     if (cur >= maxlen)
         cur--;
-    ClipRect(x - 1, y, 0, 0xbf, maxlen + 2, 9, 0, 2);  /* 0xBF = 191: the screen's last line
+    CopyRegion(x - 1, y, 0, 0xbf, maxlen + 2, 9, 0, 2);  /* 0xBF = 191: the screen's last line
                                                            (200) minus the field's 9 lines */
     DrawShadowText(text, x * 8, y, colour, attr);
     if (cur < len)
@@ -237,10 +237,10 @@ void DrawShadowText(char far *text, int x, int y, int colour, int colour2);
             }
         }
     redraw:
-        /* QUIRK 082C:038A: the second ClipRect sets the same field rectangle as the first at
+        /* QUIRK 082C:038A: the second CopyRegion sets the same field rectangle as the first at
            082C:006D, but with the two corner pairs exchanged ((0, 0xbf) then (x - 1, y) here,
            where the first has (x - 1, y) then (0, 0xbf)) and the extras 2, 0 instead of 0, 2. */
-        ClipRect(0, 0xbf, x - 1, y, maxlen + 2, 9, 2, 0);  /* 0xBF as at 082C:006D */
+        CopyRegion(0, 0xbf, x - 1, y, maxlen + 2, 9, 2, 0);  /* 0xBF as at 082C:006D */
         DrawShadowText(text, x * 8, y, colour, attr);
         if (cur < len)
             gCursorChar = text[cur];
@@ -300,10 +300,11 @@ void DrawShadowText(char far *text, int x, int y, int colour, int colour2);
 /* 082C:051B: build the art file name "%s.%s" (name plus CPS for the MCGA/VGA mode 3 at
    gGraphicsChoice, otherwise EGA) into gFileNameBuf, load it with LoadPacked
    (source/destination kind `srcKind`/`dstKind`), and, unless `mode` is -1, blit the loaded page
-   through the driver pair 19EC:002A. In two special cases it also clips the frame with ClipRect:
+   through the driver pair 19EC:002A. In two special cases it also clips the frame with CopyRegion:
    graphics choice 0 or 1 with mode 2 (kind 4, extras 4 and 2) and graphics choice 2 with mode 0
    (kind 2, extras 2 and 0); every other case uses `mode` as the kind. `extra` is the pointer
-   argument passed to 19EC:002A: Purpose unknown, the handler it reaches is at ds:8046 (src/E19EC.C:29-35).
+   argument passed to 19EC:002A: a 32-byte colour map of values 0..3 (ds:113F, 2067:0000 and the
+   like), which the handler at ds:8046 gets (src/E19EC.C:29-35).
    QUIRK 082C:05E5: the final `extra++` bumps the local pointer and has no later use, so it is
    dead. */
 /*@ 082C:051B */ void LoadScreenImage(char far *name, char far *extra, int srcKind, int dstKind, int mode)
@@ -313,29 +314,29 @@ void DrawShadowText(char far *text, int x, int y, int colour, int colour2);
     if (mode == -1)
         goto done;
     if ((gGraphicsChoice == 0 || gGraphicsChoice == 1) && mode == 2) {
-        f19EC_002A(dstKind, 4, FP_OFF(extra), FP_SEG(extra));
-        ClipRect(0, 0, 0, 0, 40, 200, 4, 2);  /* 40 by 200: the whole screen, in 8-pixel cells and lines */
+        CopyPage(dstKind, 4, FP_OFF(extra), FP_SEG(extra));
+        CopyRegion(0, 0, 0, 0, 40, 200, 4, 2);  /* 40 by 200: the whole screen, in 8-pixel cells and lines */
     } else if (gGraphicsChoice != 2 || mode != 0)
-        f19EC_002A(dstKind, mode, FP_OFF(extra), FP_SEG(extra));
+        CopyPage(dstKind, mode, FP_OFF(extra), FP_SEG(extra));
     else {
-        f19EC_002A(dstKind, 2, FP_OFF(extra), FP_SEG(extra));
-        ClipRect(0, 0, 0, 0, 40, 200, 2, 0);  /* 40 by 200: the whole screen, as above */
+        CopyPage(dstKind, 2, FP_OFF(extra), FP_SEG(extra));
+        CopyRegion(0, 0, 0, 0, 40, 200, 2, 0);  /* 40 by 200: the whole screen, as above */
     }
 done:
     extra++;
 }
 
-/* 082C:05EC: load the art page `name` into the slot `dstKind` (LoadPacked) and mark the status
-   line as up (gStatusLine = 2). With mode -1 LoadScreenImage skips the 19EC:002A blit, so nothing
+/* 082C:05EC: load the art page `name` into the slot `dstKind` (LoadPacked) and set the draw
+   page gDrawPage to 2. With mode -1 LoadScreenImage skips the 19EC:002A blit, so nothing
    is drawn here: the page reaches the screen only when `dstKind` is itself a screen slot (segment
    0xB800 or 0xA000, src/E19EC.C:5-7). Called by many overlays, all with dstKind 3, for example
    src/EOV0.C:1328 and src/EOV2.C:208. `name` is the art name the caller passes (for example
-   "ITEMICN", src/EOV2.C:208); gOverlayBuf is the `extra` pointer passed on to LoadScreenImage. The
+   "ITEMICN", src/EOV2.C:208); gCgaMapDefault is the `extra` pointer passed on to LoadScreenImage. The
    "Overlay" in this name refers to that buffer, the DGROUP image buffer, not a VROOMM code overlay. */
 /*@ 082C:05EC */ void LoadOverlayScreen(char far *name, int srcKind, int dstKind)
 {
-    LoadScreenImage(name, gOverlayBuf, srcKind, dstKind, -1);
-    gStatusLine = 2;
+    LoadScreenImage(name, gCgaMapDefault, srcKind, dstKind, -1);
+    gDrawPage = 2;
 }
 
 /* 082C:0613: the point (x, y) is inside the inclusive rectangle built from its left, top, right
@@ -355,44 +356,44 @@ done:
    front end's address. It makes the coordinates relative to `region`: x is first rounded down to an
    even value and the region's left edge in pixels (left * 8) is subtracted, y has the region's top
    line subtracted. */
-/*@ 082C:063B */ void DrawRegion000F(int mode, void far *src, int x, int y, int region)
+/*@ 082C:063B */ void DrawShapeClipped(int page, void far *src, int x, int y, int region)
 {
     x &= -2;
     x -= gRegions[region].left * 8;
     y -= gRegions[region].top;
-    DrawShape(mode, src, x, y, region);
+    DrawShape(page, src, x, y, region);
 }
 
-/* 082C:0681: like DrawRegion000F (even rounding of x and the region-relative coordinates) but
+/* 082C:0681: like DrawShapeClipped (even rounding of x and the region-relative coordinates) but
    through the region front end 1A29:004D, which is Purpose unknown, so the name is only that
    front end's address. */
-/*@ 082C:0681 */ void DrawRegion004D(int mode, void far *src, int x, int y, int region)
+/*@ 082C:0681 */ void DrawShapeClippedFlipped(int page, void far *src, int x, int y, int region)
 {
     x &= -2;
     x -= gRegions[region].left * 8;
     y -= gRegions[region].top;
-    f1A29_004D(mode, src, x, y, region);
+    DrawShapeFlipped(page, src, x, y, region);
 }
 
-/* 082C:06C7: like DrawRegion000F (even rounding of x and the region-relative coordinates) but
+/* 082C:06C7: like DrawShapeClipped (even rounding of x and the region-relative coordinates) but
    through the region front end 1A29:008B, which is Purpose unknown, so the name is only that
    front end's address. */
-/*@ 082C:06C7 */ void DrawRegion008B(int mode, void far *src, int x, int y, int region)
+/*@ 082C:06C7 */ void DrawShapeClippedRemapped(int page, void far *src, int x, int y, int region)
 {
     x &= -2;
     x -= gRegions[region].left * 8;
     y -= gRegions[region].top;
-    f1A29_008B(mode, src, x, y, region);
+    DrawShapeRemapped(page, src, x, y, region);
 }
 
-/* 082C:070D: like DrawRegion000F through the region front end 1A29:00C9, which is Purpose unknown,
+/* 082C:070D: like DrawShapeClipped through the region front end 1A29:00C9, which is Purpose unknown,
    so the name is only that front end's address; unlike the other three wrappers it does not round
    x down to an even value. */
-/*@ 082C:070D */ void DrawRegion00C9(int mode, void far *src, int x, int y, int region)
+/*@ 082C:070D */ void DrawShapeClippedRemapFlipped(int page, void far *src, int x, int y, int region)
 {
     x -= gRegions[region].left * 8;
     y -= gRegions[region].top;
-    f1A29_00C9(mode, src, x, y, region);
+    DrawShapeFlippedRemapped(page, src, x, y, region);
 }
 
 /* 082C:074D: draw a bevelled rectangle: the top and right edges in `colourA`, the left and bottom
@@ -434,7 +435,7 @@ done:
    _HEAPCORRUPT -1, build/toolchain/tc100/INCLUDE/ALLOC.H:12-17; 0x74B0 is both _heapcheck and
    _farheapcheck, build/re/rtl_compare.json) it prints the "%lu:%lu" report with the largest free
    block and then farcoreleft; when heapcheck reports corruption it prints the "HEAP CORRUPT!!"
-   message with the largest free block. gStatusLine, the status-line flag, is cleared while the
+   message with the largest free block. the draw page gDrawPage is set to 0 while the
    report is drawn and restored after. The report is built in gFileNameBuf, the shared text buffer.
    Both cited files sit under build/ (git-ignored, so absent from a clean clone): ALLOC.H is
    installed by `make tc-install` and rtl_compare.json written by `make rtl-compare`. */
@@ -442,8 +443,8 @@ done:
 {
     int saved;
 
-    saved = gStatusLine;
-    gStatusLine = 0;
+    saved = gDrawPage;
+    gDrawPage = 0;
     if (heapcheck() >= 0)
         sprintf(gFileNameBuf, "%lu:%lu", LargestFreeBlock(), farcoreleft());
     else
@@ -451,7 +452,7 @@ done:
     gDrawText(gFileNameBuf, x, y, 0xf, 0xc);  /* 0xF foreground, 0xC the shadow colour */
     if (wait)
         WaitGameKey();
-    gStatusLine = saved;
+    gDrawPage = saved;
 }
 
 /* 082C:0898: draw one text string at (x, y): first its drop shadow at (x-1, y), (x, y+1) and
@@ -608,6 +609,6 @@ done:
 /*@ 082C:0B8F */ void SayAndPlaySound(char far *text)
 {
     DrawText(text);
-    PlaySound(0x4f);  /* the refuse sound; ReportActionRefused plays it again after this call
+    PlaySound(0x4f);  /* the refuse sound; PromptSpellTarget plays it again after this call
                          (src/E0EF3.C:677) */
 }

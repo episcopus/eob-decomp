@@ -10,8 +10,8 @@
 
 ; 1D8F:0002: the saved INT 1Ch vector lives at cs:[2]/cs:[4]; then AX:DX = the 32-bit tick
 ; counter at ds:8496:8498, read atomically (cli/sti).
-        PUBLIC  _f1D8F_0002              ; @ 1D8F:0002
-_f1D8F_0002 PROC FAR
+        PUBLIC  _ReadTickCount              ; @ 1D8F:0002
+_ReadTickCount PROC FAR
         dw      0                       ; cs:[2]: old INT 1Ch offset
         dw      0                       ; cs:[4]: old INT 1Ch segment
         cli
@@ -19,11 +19,11 @@ _f1D8F_0002 PROC FAR
         mov     dx,ds:[8498h]
         sti
         retf
-_f1D8F_0002 ENDP
+_ReadTickCount ENDP
 
 ; 1D8F:0010: save the current INT 1Ch vector into cs:[2]/cs:[4], then point INT 1Ch at cs:0055.
-        PUBLIC  _f1D8F_0010              ; @ 1D8F:0010
-_f1D8F_0010 PROC FAR
+        PUBLIC  _InstallTickHandler              ; @ 1D8F:0010
+_InstallTickHandler PROC FAR
         push    bp
         mov     bp,sp
         push    ax
@@ -47,14 +47,14 @@ _f1D8F_0010 PROC FAR
         pop     ax
         pop     bp
         retf
-_f1D8F_0010 ENDP
+_InstallTickHandler ENDP
 
 ; 1D8F:0038: restore the saved INT 1Ch vector from cs:[2]/cs:[4]. 1D8F:0055 (inside this
 ; function's range, reached through the vector) is the handler: switch to DGROUP, bump the
 ; counters selected by the flags at ds:849E, and run the countdown at ds:849A:849C; if no old
 ; vector was saved, iret, else chain to it.
-        PUBLIC  _f1D8F_0038              ; @ 1D8F:0038
-_f1D8F_0038 PROC FAR
+        PUBLIC  _RemoveTickHandler              ; @ 1D8F:0038
+_RemoveTickHandler PROC FAR
         push    bp
         mov     bp,sp
         push    ax
@@ -105,6 +105,6 @@ LAb:    pop     ds
         je      LBa
         jmp     dword ptr cs:[2]
 LBa:    iret
-_f1D8F_0038 ENDP
+_RemoveTickHandler ENDP
 
         END

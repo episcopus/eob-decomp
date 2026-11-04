@@ -1,48 +1,48 @@
 /* Unit at EOB.EXE 0BD2:000E (4681 bytes, 22 functions): the inventory and item-use module. Its
-   functions walk the item records at ds:8DD0 (struct ItemRecord, the same table src/E0D1C.C calls
-   Entry14 at ds:8DD2) through the circular lists whose head is a word, and the character records at
+   functions walk the item records at ds:8DD0 (struct ItemRecord, gItems) through the circular
+   lists whose head is a word, and the character records at
    ds:F580 (struct CharRec, src/E0A72.C). It draws the item rows, uses and wears items, applies a
    status effect, and is reached from the action handlers of 0ACD and the object/effect units.
    Placeholder names remain where the evidence names the behaviour but not the game concept. */
 
 /*@flags -ml -O -Z -v */
 
-/* A 14-byte item record. src/E0D1C.C declares the same layout with its base at ds:8DD2 (Entry14);
-   the code here computes the base at ds:8DD0 and uses the fields below. */
+/* A 14-byte item record of ITEM.DAT, gItems at ds:8DD0. Every unit declares the table at this
+   base (before 2026-11-03 several used a view at ds:8DD2, two bytes in). */
 struct ItemRecord {
-    signed char m00;        /* +0 (ds:8DD0): indexes the item-name table at segment 0x1F28 */
-    signed char m01;        /* +1 (ds:8DD1): the second name index */
+    signed char nameIndex;        /* +0 (ds:8DD0): indexes the item-name table at segment 0x1F28 */
+    signed char identifiedNameIndex;        /* +1 (ds:8DD1): the second name index */
     unsigned char flags;    /* +2 (ds:8DD2): bit 0x20 gates 0BD2:0AF2/0C8E, 0x40 is set by
                                0BD2:040E and tested by 0BD2:05B5; src/E07A9.C calls it flags */
-    signed char icon;       /* +3 (ds:8DD3): the icon number (src/E07A9.C Entry14.icon) */
-    signed char m02;        /* +4 (ds:8DD4): the item type (src/E0D1C.C Entry14.m02) */
-    signed char tag;        /* +5 (ds:8DD5): 01D0 stores its 4th argument here and 02B9 matches it
+    signed char icon;       /* +3 (ds:8DD3): the icon number */
+    signed char type;        /* +4 (ds:8DD4): the item type */
+    signed char cellPos;        /* +5 (ds:8DD5): 01D0 stores its 4th argument here and 02B9 matches it
                                against its `key`. No caller shows a sound (01D0's callers pass a
                                slot kind, E0ACD.C:561-568, a roll, E08E6.C:807, or an effect kind | 4,
-                               0BD2:07DE), so Purpose unknown: a per-entry tag */
-    int m04;                /* +6 (ds:8DD6): the key; -1 when the record is free (Entry14.m04) */
-    int m06;                /* +8 (ds:8DD8): one link of the circular list; 0BD2:01D0 splices a
+                               0BD2:07DE): the item's position in its cell, 8 a wall niche (122E:06D0) */
+    int key;                /* +6 (ds:8DD6): the key; -1 when the record is free */
+    int prevLink;                /* +8 (ds:8DD8): one link of the circular list; 0BD2:01D0 splices a
                                new item in after this record through it */
-    int m08;                /* +0xa (ds:8DDA): the other link; the list walks (0BD2:0385, 040E,
+    int nextLink;                /* +0xa (ds:8DDA): the other link; the list walks (0BD2:0385, 040E,
                                04AA) follow it */
-    signed char m0A;        /* +0xc (ds:8DDC): gFBC8 or -1, set by 01D0 */
-    signed char m0B;        /* +0xd (ds:8DDD): the item's bonus or effect value: the signed bonus
+    signed char level;        /* +0xc (ds:8DDC): gCurLevel or -1, set by 01D0 */
+    signed char value;        /* +0xd (ds:8DDD): the item's bonus or effect value: the signed bonus
                                printed as "%s +%d" and "Cursed %s %d", the spell index into ds:1278
-                               and ds:12E0, the wand effect index g38FA[m0B], and the scroll and
-                               potion values (0BD2:05B5, 0D2D, 0EE8, 1001; Entry14.m0B) */
+                               and ds:12E0, the wand effect index gWandSpells[m0B], and the scroll and
+                               potion values (0BD2:05B5, 0D2D, 0EE8, 1001) */
 };
 extern struct ItemRecord gItems[]; /*@ ds:8DD0 */
 
-/* A 16-byte item-type record at ds:A9F0; src/E0D1C.C views the same table as gA9F5, five bytes in. */
+/* A 16-byte item-type record at ds:A9F0; src/E0D1C.C views the same table as gItemTypesClasses, five bytes in. */
 union ItemMask {
     unsigned word;          /* +0: the 16-bit class mask 0BD2:0AF2 tests */
     unsigned char byte;     /* +0: its low byte, which 0BD2:0C8E tests */
 };
 struct ItemType {
-    union ItemMask m00;     /* +0 (ds:A9F0) */
+    union ItemMask slotMask;     /* +0 (ds:A9F0) */
     char pad02[3];
-    signed char m05;        /* +5 (ds:A9F5): ANDed with g1231 by 0BD2:11FD */
-    signed char m06;        /* +6 (ds:A9F6): src/E0D1C.C's gA9F5[].m01 */
+    signed char m05;        /* +5 (ds:A9F5): ANDed with gClassBaseBits by 0BD2:11FD */
+    signed char m06;        /* +6 (ds:A9F6): src/E0D1C.C's gItemTypesClasses[].identifiedNameIndex */
     char pad07[7];
     union ItemMask m0E;     /* +0xE (ds:A9FE): bit 0x80 and the low 7 bits, read by 0BD2:000E and 05B5 */
 };
@@ -59,7 +59,7 @@ struct CharRec {
     char pad10[0x1E - 0x10];
     signed char m1E;        /* +1E: per-slot status bits; bit `slot` is tested by UseItemSlot */
     signed char race;       /* +1F: bit 0 selects "her" over "his" in ReportLostItem (0BD2:000E) */
-    signed char classIndex; /* +20: indexes g1231 in 0BD2:11FD */
+    signed char classIndex; /* +20: indexes gClassBaseBits in 0BD2:11FD */
     char pad21[0x23 - 0x21];
     signed char food;       /* +23: set to 100 by 0BD2:0D2D */
     char pad24[0x77 - 0x24];
@@ -71,52 +71,52 @@ struct CharRec {
 extern struct CharRec gChars[]; /*@ ds:F580 */
 
 /* An 18-byte effect record at ds:DD2C, 10 of them (src/E1414.C). */
-struct DDRec {
+struct Projectile {
     char active;            /* +0 */
     char pad01;
     int m02;                /* +2 */
-    int m04;                /* +4 */
+    int cell;                /* +4 */
     char m06;               /* +6 */
-    signed char m07;        /* +7 */
-    int m08;                /* +8 */
+    signed char dir;        /* +7 */
+    int item;                /* +8 */
     char m0A;               /* +0xa */
     char m0B;               /* +0xb */
     char m0C;               /* +0xc */
     unsigned char m0D;      /* +0xd */
-    int (far *fn)(struct DDRec far *rec); /* +0xe */
+    int (far *fn)(struct Projectile far *rec); /* +0xe */
 };
-extern struct DDRec gDD2C[]; /*@ ds:DD2C */
+extern struct Projectile gProjectiles[]; /*@ ds:DD2C */
 
 /* The 28-byte object records at ds:8A82 (src/E08E6.C). */
-struct Obj28 {
+struct Monster {
     char pad00[2];
-    int m02;                /* +2 */
+    int cell;                /* +2 */
     char pad04[0x16 - 0x04];
-    char m16;               /* +0x16 */
+    char flags;               /* +0x16 */
     char pad17[0x1C - 0x17];
 };
-extern struct Obj28 gObjs[]; /*@ ds:8A82 */
+extern struct Monster gMonsters[]; /*@ ds:8A82 */
 
 extern signed char gInventoryMember; /*@ ds:A99A */    /* the selected character index (src/E0ACD.C) */
-extern char gF51A; /*@ ds:F51A */           /* the selected row (src/E0D1C.C) */
+extern char gCursorSlot; /*@ ds:F51A */           /* the selected row (src/E0D1C.C) */
 extern char gPanelMode; /*@ ds:FB44 */           /* a display-mode byte (src/E0D1C.C) */
-extern int gFBC8; /*@ ds:FBC8 */            /* the current action (src/E0D1C.C) */
+extern int gCurLevel; /*@ ds:FBC8 */            /* the dungeon level, 1..12 (src/E0D1C.C) */
 extern int gPartyDir; /*@ ds:FBCC */            /* the party's facing, 0..3 north, east, south, west */
 extern int gPartyCell; /*@ ds:FBCA */     /* the party's map cell (src/E177D.C:92): this unit passes
                                             it to StepCell (UseWandItem) as the cell; E0ACD.C
                                             indexes the nine-byte records with it */
 extern int gMouseDisabled; /*@ ds:814A */   /* nonzero disables the mouse (src/E07A9.C) */
-extern int gStatusLine; /*@ ds:8115 */            /* nonzero while a status line is up (src/E082C.C) */
+extern int gDrawPage; /*@ ds:8115 */            /* the graphics driver's draw page (src/E082C.C) */
 extern int gGraphicsChoice; /*@ ds:8102 */            /* nonzero: a colour row exists (src/E07A9.C) */
 extern signed char gWallTypeFlags[]; /*@ ds:194B */  /* byte table (src/E0D1C.C) */
-extern signed char g1231[]; /*@ ds:1231 */  /* byte table indexed by gChars[].classIndex (src/E0DE8.C) */
-extern int g1C8D[]; /*@ ds:1C8D */          /* per-row class mask (0BD2:0AF2/0C8E) */
-extern signed char gF57E; /*@ ds:F57E */    /* a colour read by 0BD2:0917 (src/E0D1C.C) */
-extern signed char gF53A; /*@ ds:F53A */    /* a colour read by 0BD2:0917 (src/E0D1C.C) */
-extern signed char gFB4C; /*@ ds:FB4C */    /* a colour read by 0BD2:0917 (src/E0D1C.C) */
+extern signed char gClassBaseBits[]; /*@ ds:1231 */  /* byte table indexed by gChars[].classIndex (src/E0DE8.C) */
+extern int gSlotItemMask[]; /*@ ds:1C8D */          /* per-row class mask (0BD2:0AF2/0C8E) */
+extern signed char gPanelFillColour; /*@ ds:F57E */    /* a colour read by 0BD2:0917 (src/E0D1C.C) */
+extern signed char gPanelShadow; /*@ ds:F53A */    /* a colour read by 0BD2:0917 (src/E0D1C.C) */
+extern signed char gPanelHighlight; /*@ ds:FB4C */    /* a colour read by 0BD2:0917 (src/E0D1C.C) */
 extern char gFileNameBuf[]; /*@ ds:FE6E */  /* the text buffer sprintf formats into (src/EOV2.C) */
-extern void far *gSegDF4E; /*@ ds:DF4E */   /* slot 5's buffer segment (src/E07A9.C) */
-extern char gDF4C; /*@ ds:DF4C */           /* set to 1 when an action took effect (src/E0ACD.C) */
+extern void far *gStagingPage; /*@ ds:DF4E */   /* slot 5's buffer segment (src/E07A9.C) */
+extern char gViewDirty; /*@ ds:DF4C */           /* set to 1 when an action took effect (src/E0ACD.C) */
 extern char gMazeItems[]; /*@ ds:B899 */         /* the nine-byte record list head (src/E0D1C.C) */
 extern char gMaze[]; /*@ ds:B894 */         /* the nine-byte records (src/E0D1C.C) */
 extern void (far *gSaveRect)(int x, int y, int w, int h, void far *buf); /*@ ds:80AE */ /* E1BBE.ASM */
@@ -124,32 +124,32 @@ extern void (far *gFillRect)(int x1, int y1, int x2, int y2, int pattern); /*@ d
 extern void DrawFilledPanel(int x1, int y1, int x2, int y2, int c1, int c2, int c3); /*@ 082C:09D5 */
 extern void DrawRect(int x1, int y1, int x2, int y2, int colour); /*@ 082C:04C4 */
 extern void PrintInt(int value, int a, int b, int c, int d); /*@ 1AA6:000F */
-extern int g17CE[]; /*@ ds:17CE */          /* a per-row word (the item row's x) */
-extern unsigned char g1804[]; /*@ ds:1804 */ /* a per-row byte (the item row's y) */
-extern signed char g3875[]; /*@ ds:3875 */  /* a per-row byte (0, 1 or 2): the row's kind, 1 is
+extern int gInvSlotX[]; /*@ ds:17CE */          /* a per-row word (the item row's x) */
+extern unsigned char gInvSlotY[]; /*@ ds:1804 */ /* a per-row byte (the item row's y) */
+extern signed char gInvSlotKind[]; /*@ ds:3875 */  /* a per-row byte (0, 1 or 2): the row's kind, 1 is
                                               the count row, 2 the item's icon is drawn offset */
-extern signed char g3890[]; /*@ ds:3890 */  /* a three-byte table read by 0BD2:0917 */
-extern signed char g38FA[]; /*@ ds:38FA */  /* a byte table indexed by an item's m0B in 0BD2:0EE8 */
-extern void StartPanelAction(int who, int action, int kind); /*@ 0EF3:28ED */
+extern signed char gInvSlotBoxSize[]; /*@ ds:3890 */  /* a three-byte table read by 0BD2:0917 */
+extern signed char gWandSpells[]; /*@ ds:38FA */  /* a byte table indexed by an item's m0B in 0BD2:0EE8 */
+extern void StartItemCast(int who, int action, int kind); /*@ 0EF3:28ED */
 extern void FlashViewDamage(void); /*@ 0EF3:06E7 */
 extern void FlashPartyMembers(int who); /*@ 0EF3:0665 */
 extern void ClearPoisonEffect(int who); /*@ 0EF3:1CE8 */
-extern void MoveObjectToId(struct Obj28 far *obj, int id, int orient); /*@ 08E6:0297 */
+extern void MoveMonsterToCell(struct Monster far *obj, int id, int orient); /*@ 08E6:0297 */
 extern void ApplyCharEffect(char who, long interval, char value, char firstEmpty); /*@ 1414:05ED */
 extern void HealCharacter(int who, int amount); /*@ 0DE8:0ADB */
 extern void ApplyStatusEffect(int who, int mask, char far *text, int attack, int count, int value, int flag); /*@ 0DE8:101A */
 extern char far *SkipStrings(char far *text, int count); /*@ 0D1C:07A7 */
-extern char g3893[]; /*@ ds:3893 */        /* the "feels ..." string table (0BD2:0D2D) */
+extern char gPotionFeelings[]; /*@ ds:3893 */        /* the "feels ..." string table (0BD2:0D2D) */
 extern char far *gMageSpellNames[]; /*@ ds:1278 */   /* far item-name pointers indexed by m0B (0BD2:05B5) */
 extern char far *gClericSpellNames[]; /*@ ds:12E0 */   /* far item-name pointers indexed by m0B (0BD2:05B5) */
-extern char g37B4[]; /*@ ds:37B4 */        /* a string table SkipStrings walks (0BD2:05B5) */
-extern char g37E1[]; /*@ ds:37E1 */        /* a string table SkipStrings walks (0BD2:05B5) */
-extern char g3837[]; /*@ ds:3837 */        /* a string table SkipStrings walks (0BD2:05B5) */
+extern char gRingNames[]; /*@ ds:37B4 */        /* a string table SkipStrings walks (0BD2:05B5) */
+extern char gPotionNames[]; /*@ ds:37E1 */        /* a string table SkipStrings walks (0BD2:05B5) */
+extern char gWandNames[]; /*@ ds:3837 */        /* a string table SkipStrings walks (0BD2:05B5) */
 
 extern int StepCell(int cell, int dir); /*@ 0D1C:00DA */
 extern int GetCurrentItem(void); /*@ 0D1C:02DC */
 extern int MemberIs(int who, int mask); /*@ 0D1C:0670 */
-extern int f0D1C_07DB(int who, int flag); /*@ 0D1C:07DB */
+extern int CanUseHand(int who, int flag); /*@ 0D1C:07DB */
 extern void UseItem(int who, int slot, int field); /*@ 0DE8:0763 */
 extern void EatFood(int index); /*@ 0ACD:07E0 */
 extern void OpenSpellPanel(int who, int flag); /*@ 0EF3:21E0 */
@@ -191,7 +191,7 @@ void DrawItemName(int item);
     for (i = 0; i < 0x1b; i++) {
         item = gChars[who].items[roll];
         if (item != 0) {
-            if (gItemTypes[gItems[item].m02].m0E.word & 0x80) {
+            if (gItemTypes[gItems[item].type].m0E.word & 0x80) {
                 gChars[who].items[roll] = 0;
                 if (gChars[who].race & 1)
                     sprintf(gFileNameBuf, "%s has lost her ", gChars[who].name);
@@ -210,7 +210,7 @@ void DrawItemName(int item);
 }
 
 /* 0BD2:0106: takes the item out of slot `row` of character `who` (or the mouse's slot when `row` is
-   -1): clears the slot, marks the record free (m04 = -1), redraws, and returns the item's m0B. */
+   -1): clears the slot, marks the record free (cell = -1), redraws, and returns the item's m0B. */
 /*@ 0BD2:0106 */ int TakeItemFromSlot(int who, int row)
 {
     int item;
@@ -219,7 +219,7 @@ void DrawItemName(int item);
         item = GetCurrentItem();
     else
         item = gChars[who].items[row];
-    gItems[item].m04 = -1;
+    gItems[item].key = -1;
     if (row == -1) {
         SetMouseItem(0);
     } else {
@@ -229,7 +229,7 @@ void DrawItemName(int item);
         else if (gPanelMode == 0)
             RedrawMember(who);
     }
-    return gItems[item].m0B;
+    return gItems[item].value;
 }
 
 /* 0BD2:019F: refreshes the current row: in mode 1 through 0BD2:0BA0 with the selected row, in any
@@ -237,19 +237,19 @@ void DrawItemName(int item);
 /*@ 0BD2:019F */ void RedrawSelectedRow(void)
 {
     if (gPanelMode == 1)
-        UseSelectedItem(gF51A);
+        UseSelectedItem(gCursorSlot);
     else if (gPanelMode != 2)
-        SwapSelectedItem(gInventoryMember, gF51A);
+        SwapSelectedItem(gInventoryMember, gCursorSlot);
 }
 
 /* 0BD2:01D0: inserts the item `item` into the circular list whose head word is `head`, stamping it
-   with the list's owner key `key` (m04) and the tag `tag` (+5; m0A becomes gFBC8, or -1 when the
+   with the list's owner key `key` (cell) and the tag `tag` (+5; m0A becomes gCurLevel, or -1 when the
    key is negative). The key is a list owner: a map cell (E0ACD.C:568, E0D1C.C:362, 0BD2:07DE), an
    object's id (E08E6.C:807) or 0xFFFE for a character's own pack (E0ACD.C:780, :851, 0BD2:0BA0).
    An empty list becomes `item` alone, linked to itself. Otherwise `item` is spliced in between the
-   old head and its predecessor, the tail of the m08 walk: the new item's m08 becomes the old head
+   old head and its predecessor, the tail of the item walk: the new item's item becomes the old head
    (the tail's forward link) and its m06 becomes the tail, so only the old head's m06 and the tail's
-   m08 change. `item` becomes the new head, so the lists walked by m08 (0BD2:0385, 040E, 04AA) meet
+   item change. `item` becomes the new head, so the lists walked by item (0BD2:0385, 040E, 04AA) meet
    the newest item first. */
 /*@ 0BD2:01D0 */ void InsertListItem(void far *head, int key, int item, int tag)
 {
@@ -264,28 +264,28 @@ void DrawItemName(int item);
     rec = &gItems[item];
     if (*(int far *)head == 0) {
         *(int far *)head = item;
-        rec->m08 = rec->m06 = item;
-        rec->tag = tag;
-        rec->m04 = key;
+        rec->nextLink = rec->prevLink = item;
+        rec->cellPos = tag;
+        rec->key = key;
         if (key >= 0)
-            rec->m0A = gFBC8;
+            rec->level = gCurLevel;
         else
-            rec->m0A = -1;
+            rec->level = -1;
     } else {
         oldHead = *(int far *)head;
         cur = &gItems[oldHead];
-        tail = gItems[oldHead].m06;
+        tail = gItems[oldHead].prevLink;
         tailRec = &gItems[tail];
-        rec->m04 = key;
-        rec->tag = tag;
+        rec->key = key;
+        rec->cellPos = tag;
         if (key >= 0)
-            rec->m0A = gFBC8;
+            rec->level = gCurLevel;
         else
-            rec->m0A = -1;
-        rec->m08 = tailRec->m08;
-        rec->m06 = tail;
-        tailRec->m08 = item;
-        cur->m06 = item;
+            rec->level = -1;
+        rec->nextLink = tailRec->nextLink;
+        rec->prevLink = tail;
+        tailRec->nextLink = item;
+        cur->prevLink = item;
         *(int far *)head = item;
     }
 }
@@ -310,20 +310,20 @@ void DrawItemName(int item);
     while (item != start || i == 0) {
         rec = &gItems[item];
         if (target == -1) {
-            if (rec->tag == key)
+            if (rec->cellPos == key)
                 goto found;
         }
         if (target != item)
             goto next;
 found:
-        link = rec->m06;
-        next = rec->m08;
-        gItems[link].m08 = next;
-        gItems[next].m06 = link;
-        rec->m08 = 0;
-        rec->m06 = 0;
-        rec->m04 = 0;
-        rec->m0A = 0;
+        link = rec->prevLink;
+        next = rec->nextLink;
+        gItems[link].nextLink = next;
+        gItems[next].prevLink = link;
+        rec->nextLink = 0;
+        rec->prevLink = 0;
+        rec->key = 0;
+        rec->level = 0;
         if (*(int far *)head == item)
             *(int far *)head = next;
         if (*(int far *)head == item)
@@ -331,7 +331,7 @@ found:
         return item;
 next:
         i++;
-        item = rec->m08;
+        item = rec->nextLink;
     }
     return 0;
 }
@@ -356,7 +356,7 @@ next:
     start = cur;
     while (cur != start || first) {
         rec = &gItems[cur];
-        if ((target == -1 && type == -1) || (target == -1 && rec->m02 == type)
+        if ((target == -1 && type == -1) || (target == -1 && rec->type == type)
                 || (type == -1 && cur == target)) {
             if (count)
                 n++;
@@ -364,7 +364,7 @@ next:
                 return cur;
         }
         first = 0;
-        cur = rec->m08;
+        cur = rec->nextLink;
     }
     if (count != 0)
         return n;
@@ -374,7 +374,7 @@ next:
 /* 0BD2:040E: sets bit 0x40 of the flags of every item in the circular list `head`. 0BD2:05B5 reads
    that bit to show the item's specific name (or its second name) instead of the generic first name,
    so 0x40 is the identified flag. */
-/*@ 0BD2:040E */ void MarkListItems(void far *head)
+/*@ 0BD2:040E */ void IdentifyListItems(void far *head)
 {
     int start;
     int item;
@@ -390,22 +390,22 @@ next:
         rec = &gItems[item];
         rec->flags |= 0x40;
         first = 0;
-        item = rec->m08;
+        item = rec->nextLink;
     }
 }
 
 /* 0BD2:0458: queues item `item` at the nine-byte record gMazeItems + `volume` * 9 through 0BD2:01D0
-   with the tag `tag`. When the queued item still links onward (its m08 is not itself), the record's
-   head word moves to that m08. Purpose unknown. */
+   with the tag `tag`. When the queued item still links onward (its item is not itself), the record's
+   head word moves to that item. Purpose unknown. */
 /*@ 0BD2:0458 */ void PushListItem(int volume, int item, int tag)
 {
     InsertListItem((void far *)(gMazeItems + volume * 9), volume, item, tag);
-    if (gItems[item].m08 != item)
-        *(int *)(gMazeItems + volume * 9) = gItems[item].m08;
+    if (gItems[item].nextLink != item)
+        *(int *)(gMazeItems + volume * 9) = gItems[item].nextLink;
 }
 
 /* 0BD2:04AA: drains the list at gMazeItems + `volume` * 9. Items whose m02 is `type` (or all when
-   `type` is -1) are freed (m04 = -1, m0A = 0); the others are re-queued through 0BD2:01D0 in their
+   `type` is -1) are freed (cell = -1, m0A = 0); the others are re-queued through 0BD2:01D0 in their
    original order, keeping each item's tag. Purpose unknown. */
 /*@ 0BD2:04AA */ void DrainListItem(int volume, int type)
 {
@@ -421,26 +421,26 @@ next:
     count = 0;
     start = item;
     while (item != start || count == 0) {
-        if (gItems[item].m02 == type || type == -1) {
-            gItems[item].m04 = -1;
-            gItems[item].m0A = 0;
+        if (gItems[item].type == type || type == -1) {
+            gItems[item].key = -1;
+            gItems[item].level = 0;
             saved = item;
-            item = gItems[item].m08;
-            gItems[saved].m08 = 0;
-            gItems[saved].m06 = 0;
+            item = gItems[item].nextLink;
+            gItems[saved].nextLink = 0;
+            gItems[saved].prevLink = 0;
         } else {
             saved = item;
-            item = gItems[item].m08;
-            gItems[saved].m08 = 0;
-            gItems[saved].m06 = 0;
-            InsertListItem((void far *)(gMazeItems + volume * 9), volume, saved, gItems[saved].tag);
+            item = gItems[item].nextLink;
+            gItems[saved].nextLink = 0;
+            gItems[saved].prevLink = 0;
+            InsertListItem((void far *)(gMazeItems + volume * 9), volume, saved, gItems[saved].cellPos);
         }
         count++;
     }
 }
 
 /* 0BD2:05B5: draws item `item`'s name into the text buffer. The record's first two bytes index one
-   table of 0x23-byte entries at 1F28:0000: both m00 and m01 offset that base by * 0x23. When the
+   table of 0x23-byte entries at 1F28:0000: both slotMask and identifiedNameIndex offset that base by * 0x23. When the
    record's flags have 0x40 and the second name is empty, the item type's m0E low 7 bits select the
    name: the plain types use the first name with "%s +%d" or "Cursed %s %d", and types 9, 10, 16,
    14 and 18 use "Mage Scroll", "Cleric Scroll", "Ring", "Potion" or "Wand" joined with " of " to a
@@ -460,10 +460,10 @@ next:
     char buf[0x3C];
 
     rec = &gItems[item];
-    firstName = (char far *)0x1F280000L + rec->m00 * 0x23;
-    secondName = (char far *)0x1F280000L + rec->m01 * 0x23;
-    cls = gItemTypes[rec->m02].m0E.byte & 0x7F;
-    m0B = rec->m0B;
+    firstName = (char far *)0x1F280000L + rec->nameIndex * 0x23;
+    secondName = (char far *)0x1F280000L + rec->identifiedNameIndex * 0x23;
+    cls = gItemTypes[rec->type].m0E.byte & 0x7F;
+    m0B = rec->value;
     str1 = 0;
     str2 = 0;
     if ((rec->flags & 0x40) && strlen(secondName) == 0) {
@@ -490,15 +490,15 @@ next:
             break;
         case 16:
             str1 = "Ring";
-            str2 = SkipStrings(g37B4, m0B);
+            str2 = SkipStrings(gRingNames, m0B);
             break;
         case 14:
             str1 = "Potion";
-            str2 = SkipStrings(g37E1, m0B);
+            str2 = SkipStrings(gPotionNames, m0B);
             break;
         case 18:
             str1 = "Wand";
-            str2 = SkipStrings(g3837, m0B);
+            str2 = SkipStrings(gWandNames, m0B);
             break;
         default:
             strcpy(buf, firstName);
@@ -519,13 +519,13 @@ next:
    fills the record from the arguments, plays sound 0x0B (0x1A when `type` is 7), and returns 1.
    `volume` is the item's map cell (most callers pass gPartyCell, E0ACD.C:434, :769, E0DE8.C:406;
    E122E.C:728 passes the script's id), `page` is gPartyDir, `kind` is the per-page action kind and
-   `type` is the item's m02. QUIRK 0BD2:07DE: rec->m02 is stored 1 twice (the second store is in the original). */
+   `type` is the item's m02. QUIRK 0BD2:07DE: rec->type is stored 1 twice (the second store is in the original). */
 /*@ 0BD2:07DE */ int AddDDEffect(int who, int item, int volume, int kind, int page, int type)
 {
-    struct DDRec *rec;
+    struct Projectile *rec;
     int i;
 
-    rec = gDD2C;
+    rec = gProjectiles;
     for (i = 0; i < 10; i++, rec++) {
         if (rec->active == 0)
             break;
@@ -536,11 +536,11 @@ next:
     rec->active = 1;
     rec->m02 = 1;
     rec->m0C = 0;
-    rec->m07 = page;
+    rec->dir = page;
     rec->m0D = 0xC;
-    rec->m04 = volume;
+    rec->cell = volume;
     rec->m06 = kind;
-    rec->m08 = item;
+    rec->item = item;
     rec->m0A = type;
     rec->m0B = who;
     rec->m02 = 1;
@@ -552,7 +552,7 @@ next:
     return 1;
 }
 
-/* 0BD2:089E: when item record `item` is live (m04 != -1), finds the first free record from index 1
+/* 0BD2:089E: when item record `item` is live (cell != -1), finds the first free record from index 1
    on, copies `item`'s 14 bytes into it with Unpack0, and returns the new index; 0 when none is
    free. Purpose unknown. */
 /*@ 0BD2:089E */ int CopyItemToFreeSlot(int item)
@@ -563,13 +563,13 @@ next:
     int found;
 
     src = &gItems[item];
-    if (src->m04 == -1)
+    if (src->key == -1)
         return 0;
     slot = 1;
     found = 0;
     cand = &gItems[1];
     while (slot < 500) {
-        if (cand->m04 == -1) {
+        if (cand->key == -1) {
             found = 1;
             break;
         }
@@ -582,12 +582,13 @@ next:
     return slot;
 }
 
-/* 0BD2:0917: draws the selected character's (gInventoryMember) item row `row`. When `slot` is nonzero it draws
-   the row's frame: a filled panel and rectangle at x g17CE[row], y g1804[row] sized by
-   g3890[g3875[row]] (a kind-1 row is the count row, which also prints the row's item count, and a
-   row that is the selected row gF51A is highlighted when gMouseDisabled). When the row holds an
-   item and its kind g3875[row] is not 1 it draws the item icon, offset by -4 when the kind is 2.
-   `drawMode` is stored in gStatusLine for the duration. Called by 0ACD:09EF, 0BD2:0106, 0BD2:0BA0,
+/* 0BD2:0917: draws the selected character's (gInventoryMember) item row `row`. When `slot` is
+   nonzero it draws
+   the row's frame: a filled panel and rectangle at x gInvSlotX[row], y gInvSlotY[row] sized by
+   gInvSlotBoxSize[gInvSlotKind[row]] (a kind-1 row is the count row, which also prints the row's item count, and a
+   row that is the selected row gCursorSlot is highlighted when gMouseDisabled). When the row holds an
+   item and its kind gInvSlotKind[row] is not 1 it draws the item icon, offset by -4 when the kind is 2.
+   `drawMode` is stored in gDrawPage for the duration. Called by 0ACD:09EF, 0BD2:0106, 0BD2:0BA0,
    0D1C:01CA, 0D1C:0304, 122E:06D0 and 1547:0991. */
 /*@ 0BD2:0917 */ void DrawItemRow(int row, int slot, int drawMode)
 {
@@ -599,19 +600,19 @@ next:
     int kind;
 
     kind = slot;
-    saved = gStatusLine;
-    gStatusLine = drawMode;
-    x = g17CE[row];
-    y = g1804[row];
+    saved = gDrawPage;
+    gDrawPage = drawMode;
+    x = gInvSlotX[row];
+    y = gInvSlotY[row];
     item = gChars[gInventoryMember].items[row];
     if (kind != 0) {
-        kind = g3875[row];
+        kind = gInvSlotKind[row];
         if (gGraphicsChoice == 0)
-            DrawFilledPanel(x - 1, y - 1, x + g3890[kind], y + g3890[kind], 3, 1,
-                    kind != 1 ? gF57E : -1);
+            DrawFilledPanel(x - 1, y - 1, x + gInvSlotBoxSize[kind], y + gInvSlotBoxSize[kind], 3, 1,
+                    kind != 1 ? gPanelFillColour : -1);
         else
-            DrawFilledPanel(x - 1, y - 1, x + g3890[kind], y + g3890[kind], gFB4C, gF53A,
-                    kind != 1 ? gF57E : -1);
+            DrawFilledPanel(x - 1, y - 1, x + gInvSlotBoxSize[kind], y + gInvSlotBoxSize[kind], gPanelHighlight, gPanelShadow,
+                    kind != 1 ? gPanelFillColour : -1);
         if (kind == 1) {
             gFillRect(0xE3, 0x41, 0xEE, 0x45, 0xC);
             count = ScanListItem(&gChars[gInventoryMember].items[row], -1, -1, 1);
@@ -620,18 +621,18 @@ next:
             else
                 x = 0xE3;
             PrintInt(count, x, 0x41, 0xF, 0);
-            x = g17CE[row];
+            x = gInvSlotX[row];
         }
-        if (gMouseDisabled && gF51A == row)
-            DrawRect(x - 1, y - 1, x + g3890[kind], y + g3890[kind], 0xF);
+        if (gMouseDisabled && gCursorSlot == row)
+            DrawRect(x - 1, y - 1, x + gInvSlotBoxSize[kind], y + gInvSlotBoxSize[kind], 0xF);
     }
-    if (item != 0 && g3875[row] != 1) {
-        if (g3875[row] != 2)
+    if (item != 0 && gInvSlotKind[row] != 1) {
+        if (gInvSlotKind[row] != 2)
             DrawItemIcon(drawMode, item, x, y);
         else
             DrawItemIcon(drawMode, item, x - 4, y - 4);
     }
-    gStatusLine = saved;
+    gDrawPage = saved;
 }
 
 /* 0BD2:0ABE: when `drawMode` is set, saves the 18x168 item sheet rectangle through the save-rect
@@ -639,7 +640,7 @@ next:
 /*@ 0BD2:0ABE */ void RedrawRowArea(int drawMode)
 {
     if (drawMode)
-        gSaveRect(0x16, 0, 0x12, 0xA8, gSegDF4E);
+        gSaveRect(0x16, 0, 0x12, 0xA8, gStagingPage);
     RedrawMember(gInventoryMember);
 }
 
@@ -660,16 +661,17 @@ next:
     if (gItems[gChars[who].items[row]].flags & 0x20)
         return 0;
     if (item != 0)
-        mask = gItemTypes[gItems[item].m02].m00.word;
+        mask = gItemTypes[gItems[item].type].slotMask.word;
     else
         mask = -1;
-    if (!(g1C8D[row] & mask)) {
+    if (!(gSlotItemMask[row] & mask)) {
         DrawText("You cant put that item there.\r");
         return 0;
     }
     return 1;
 }
-/* 0BD2:0BA0: uses the item in slot `slot` of the selected character gInventoryMember through 0BD2:0AF2. For a
+/* 0BD2:0BA0: uses the item in slot `slot` of the selected character gInventoryMember through
+   0BD2:0AF2. For a
    slot other than 0x10 it exchanges the held item with the slot: the slot's item goes into the hand
    (SetMouseItem) and the held item goes into the slot, then the row is redrawn and the armour class
    recomputed. For slot 0x10 (the pack list) with an empty hand it takes the first item out of the
@@ -713,12 +715,12 @@ next:
     if (gItems[item].flags & 0x20)
         return;
     heldItem = GetCurrentItem();
-    type = gItems[heldItem].m02;
+    type = gItems[heldItem].type;
     if (heldItem != 0)
-        mask = gItemTypes[type].m00.byte;
+        mask = gItemTypes[type].slotMask.byte;
     else
         mask = 0xFF;
-    if (g1C8D[row] & mask) {
+    if (gSlotItemMask[row] & mask) {
         SetMouseItem(item);
         gChars[who].items[row] = heldItem;
         RedrawMember(who);
@@ -733,7 +735,7 @@ next:
    the type byte and the 07CA runner prints "%s no longer has giant strength" and restores m0D/strengthPct
    from m0E/m10 when it runs out), 2 and 3 heal by a dice roll, 4 poisons through 0DE8:101A, 5 sets
    food to 100, 6 and 8 run the 0EF3 helpers, 7 sets effect flag 4. After the switch it announces
-   "%s feels <effect>!\r" with the effect name from the ds:3893 table, except for effect 4 when m01
+   "%s feels <effect>!\r" with the effect name from the ds:3893 table, except for effect 4 when identifiedNameIndex
    bit 1 is set. Called by 0BD2:1001. */
 /*@ 0BD2:0D2D */ void ApplyItemEffect(int who, int slot)
 {
@@ -782,34 +784,34 @@ next:
         break;
     }
     if (kind - 1 != 3 || (rec->status & 2) == 0) {
-        sprintf(gFileNameBuf, "%s feels %s!\r", rec->name, SkipStrings(g3893, kind));
+        sprintf(gFileNameBuf, "%s feels %s!\r", rec->name, SkipStrings(gPotionFeelings, kind));
         DrawText(gFileNameBuf);
     }
 }
 
 /* 0BD2:0EE8: uses the wand in slot `slot` of character `who`. When the item's m0B is 0 it reports
-   no effect; when it is not 5 it dispatches through 0EF3:28ED with the action g38FA[m0B]; for 5 it
-   plays the wand sound, and when the surroundings pass the gWallTypeFlags/gMaze tests, moves every gObjs
+   no effect; when it is not 5 it dispatches through 0EF3:28ED with the action gWandSpells[m0B]; for 5 it
+   plays the wand sound, and when the surroundings pass the gWallTypeFlags/gMaze tests, moves every gMonsters
    record whose m02 equals the cell x (from StepCell(gPartyCell, page)) to the cell y
-   (MoveObjectToId(obj, y, -1)) and sets gDF4C, otherwise reports no effect. */
+   (MoveMonsterToCell(obj, y, -1)) and sets gViewDirty, otherwise reports no effect. */
 /*@ 0BD2:0EE8 */ void UseWandItem(int who, int slot)
 {
     int effect;
     int x;
     int y;
     int i;
-    struct Obj28 *obj;
+    struct Monster *obj;
     int type;
     int page;
 
-    type = gItems[gChars[who].items[slot]].m0B;
+    type = gItems[gChars[who].items[slot]].value;
     if (type == 0) {
         DrawText("The wand has no apparent magical effect\r");
         return;
     }
     if (type != 5) {
-        effect = g38FA[type];
-        StartPanelAction(who, effect, slot);
+        effect = gWandSpells[type];
+        StartItemCast(who, effect, slot);
         return;
     }
     page = gPartyDir;
@@ -819,11 +821,11 @@ next:
     FlashViewDamage();
     if ((gWallTypeFlags[gMaze[y * 9 + (page ^ 2)]] & 4) && (gMaze[y * 9 + 4] & 7) == 0
             && (gMaze[x * 9 + 4] & 7) != 0) {
-        obj = gObjs;
+        obj = gMonsters;
         for (i = 0; i < 30; i++, obj++) {
-            if (obj->m02 == x) {
-                MoveObjectToId(obj, y, -1);
-                gDF4C = 1;
+            if (obj->cell == x) {
+                MoveMonsterToCell(obj, y, -1);
+                gViewDirty = 1;
             }
         }
     } else {
@@ -833,7 +835,7 @@ next:
 
 /* 0BD2:1001: the "use the item in slot `slot`" action for character `who`. It returns early when
    MemberIs(who, 0x0D) refuses, and, when the slot maps to one of the first two carried slots
-   (0BD2:1244), when f0D1C_07DB refuses or the slot's m1E bit is set in mode 0. When the item type
+   (0BD2:1244), when CanUseHand refuses or the slot's m1E bit is set in mode 0. When the item type
    may not be worn it draws the character's name and " can not use this item.\r". Otherwise it
    switches on the item type's m0E low 7 bits and either draws a message, eats, uses the item
    through 0DE8:0763, arms 0EF3:21E0, dispatches through 0EF3:28ED or the overlay 5 entry
@@ -852,9 +854,9 @@ next:
     if (!MemberIs(who, 0x0D))
         return;
     item = rec->items[slot];
-    firstTwo = FirstTwoSlots(slot);
+    firstTwo = GetHandOfSlot(slot);
     if (firstTwo != -1) {
-        if (!f0D1C_07DB(who, firstTwo))
+        if (!CanUseHand(who, firstTwo))
             return;
         if (gPanelMode == 0 && (gChars[who].m1E & (1 << slot)))
             return;
@@ -866,7 +868,7 @@ next:
     }
     if (item == 0 && firstTwo == -1)
         return;
-    type = gItems[item].m02;
+    type = gItems[item].type;
     cls = gItemTypes[type].m0E.word & 0x7F;
     switch (cls) {
     case 0:
@@ -898,18 +900,18 @@ next:
         break;
     case 9:
         if (gPanelMode == 0) {
-            value = gItems[item].m0B;
-            StartPanelAction(who, value, firstTwo);
+            value = gItems[item].value;
+            StartItemCast(who, value, firstTwo);
         }
         break;
     case 10:
         if (gPanelMode == 0) {
-            value = gItems[item].m0B + 0x19;
-            StartPanelAction(who, value, firstTwo);
+            value = gItems[item].value + 0x19;
+            StartItemCast(who, value, firstTwo);
         }
         break;
     case 11:
-        UseItemPanel(gItems[item].m0B);
+        UseItemPanel(gItems[item].value);
         break;
     case 14:
         ApplyItemEffect(who, slot);
@@ -922,22 +924,22 @@ next:
 }
 
 /* 0BD2:11FD: returns 1 when `item` is empty, otherwise the item-type byte gItemTypes[m02].m05 ANDed
-   with g1231[gChars[who].classIndex], cast to signed char. The result is nonzero when the character's
+   with gClassBaseBits[gChars[who].classIndex], cast to signed char. The result is nonzero when the character's
    class may use the item, so the callers use it as yes/no. Purpose unknown beyond that. */
 /*@ 0BD2:11FD */ int ItemClassAllowed(int who, int item)
 {
     int result;
 
     if (item != 0) {
-        result = (signed char)(gItemTypes[gItems[item].m02].m05 & g1231[gChars[who].classIndex]);
+        result = (signed char)(gItemTypes[gItems[item].type].m05 & gClassBaseBits[gChars[who].classIndex]);
     } else {
         result = 1;
     }
     return result;
 }
 
-/* 0BD2:1244: returns `slot` when it is 0 or 1, otherwise -1. Purpose unknown. */
-/*@ 0BD2:1244 */ int FirstTwoSlots(int slot)
+/* 0BD2:1244: returns `slot` when it is 0 or 1, one of the two hands, otherwise -1. */
+/*@ 0BD2:1244 */ int GetHandOfSlot(int slot)
 {
     if (slot > 1)
         return -1;

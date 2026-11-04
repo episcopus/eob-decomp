@@ -9,15 +9,15 @@
    and moves the selection. The 16-byte stride and field offsets come from DrawOptionList (14EF:0154), which reads
    y at :200, x at :201, sel at :202, height at :203, colorA at :208 and colorB at :210, and from UpdateOptionList
    (14EF:0274), which reads height at :282, sel at :283, y at :287, x at :288, colorA at :289, colorB at :290 and
-   width at :297. The mask and shift come from the callers. PickOption (src/EOV0.C:1148, :1149) and LoadGamePanel
+   width at :297. The mask and shift come from the callers. PickRace (src/EOV0.C:1148, :1149) and LoadGamePanel
    (src/EOV2.C:380, :383) pass the all-ones mask 0xffffffff with shift 0, the case FindMaskBit returns n for at
-   once; PickClass (src/EOV0.C:1203, :1215) and PickAlignment (src/EOV0.C:1253, :1257) pass gTable6081[race] & mask
-   and gTable6099[classIndex] & mask with shift 0, masks other than -1 (mask -5 when a party member has alignment >= 6,
+   once; PickClass (src/EOV0.C:1203, :1215) and PickAlignment (src/EOV0.C:1253, :1257) pass gRaceClassMasks[race] & mask
+   and gClassAlignmentMasks[classIndex] & mask with shift 0, masks other than -1 (mask -5 when a party member has alignment >= 6,
    :1189-1190; mask 0xfe3f when one has classIndex == 2, :1241-1242), so FindMaskBit's bit scan is reached in play.
    CountMaskBits is called by PickClass with n 15 (:1193) and PickAlignment with n 9 (:1244), both with shift 0
    (see its comment). The flags (`-v`, debug information) are whitepaper 2.1.1. The modulo at
    UpdateOptionList :283 and the two `/ lineheight` divisions (:302, :326) divide by zero if the panel height or
-   gFontHeight + gFC78 is zero; whether either can be zero is not established. Placeholder names. A bare `:NNN` in
+   gFontHeight + gOptionLineSpacing is zero; whether either can be zero is not established. Placeholder names. A bare `:NNN` in
    a comment in this file is a line of this file; `SSSS:NNNN` is a disassembly address. */
 
 /*@flags -ml -O -Z -v */
@@ -27,7 +27,7 @@
    cross-jumps the later copy into the earlier one and drops 7 bytes, so the switch table would land
    at 14EF:0556 instead of 14EF:055D (2026-11-01 under -B, which also keeps them; -v since
    2026-11-02, whitepaper 2.1.1). The KEY_CLICK case is written
-   in the positive form (`if (IsPointInRect) { ...; break; } gFC7A = key;`) so the success path falls
+   in the positive form (`if (IsPointInRect) { ...; break; } gUnhandledOptionKey = key;`) so the success path falls
    through and the failure is taken, matching 14EF:0417 `je`; the negated form made the optimizer
    branch the other way. Same class as 0ACD:091C. */
 
@@ -49,11 +49,11 @@ extern struct Panel gPanels[]; /*@ ds:017F */
    (:201, :288) and font-width units in the hit rectangle (:295) */
 extern int gTextLeft; /*@ ds:FE64 */
 extern int gTextTop; /*@ ds:FE66 */
-extern int gFC78; /*@ ds:FC78: extra pixels between lines, written by DrawOptionList, read by UpdateOptionList */
-extern int gFC7A; /*@ ds:FC7A: the key UpdateOptionList did not handle; its reader is PickAlignment
+extern int gOptionLineSpacing; /*@ ds:FC78: extra pixels between lines, written by DrawOptionList, read by UpdateOptionList */
+extern int gUnhandledOptionKey; /*@ ds:FC7A: the key UpdateOptionList did not handle; its reader is PickAlignment
                      (src/EOV0.C:1259, :1261), which tests it for 0x6e/0x32 and 0x41/0x42 before
                      IsPointInRect on the last click gClickX/gClickY (:1262) */
-extern int g5D1A; /*@ ds:5D1A: nonzero lets the pointer position pick the entry in UpdateOptionList (:301),
+extern int gHoverSelectsOption; /*@ ds:5D1A: nonzero lets the pointer position pick the entry in UpdateOptionList (:301),
                       and it or gMouseDisabled being nonzero makes DrawOptionList draw the selected row in
                       colorB (:209-210). No writer is found in src/ */
 extern int gClickX; /*@ ds:8140: x of the last click; the click event writes it (src/E1AAD.ASM:396) and
@@ -75,8 +75,8 @@ extern int gMouseDisabled; /*@ ds:814A: nonzero disables the mouse: the INT 33h 
                               gives the same order, "before it installs the handler (1A72:0150)" */
 extern int gCursorX; /*@ ds:8138: mouse x in pixels (src/E1A72.ASM:65); tested with the pixel rectangle (:301) */
 extern int gCursorY; /*@ ds:813A: mouse y in pixels (src/E1A72.ASM:73) */
-extern int g8134; /*@ ds:8134: accumulated button changes; the INT 33h handler folds each change into
-                      it (or ax,[g8134] at src/E1A72.ASM:410; mov [g8134],ax at :411), this file clears
+extern int gUnreadButtonChanges; /*@ ds:8134: accumulated button changes; the INT 33h handler folds each change into
+                      it (or ax,[gUnreadButtonChanges] at src/E1A72.ASM:410; mov [gUnreadButtonChanges],ax at :411), this file clears
                       it (:215) and RunMapLoop clears it after the map screen is entered (src/E0ACD.C:886) */
 extern void (far *gDrawText)(char far *text, int x, int y, int color, int extra); /*@ ds:80CA */
 
@@ -85,7 +85,7 @@ extern void DrawShadowText(char far *text, int x, int y, int color, int extra); 
    and takes it (1BBE:030A), calls the far hook [ds:80AA] with the pointer at ds:8172/8174, calls
    HidePointer, calls the far hook [ds:80A2], then releases the flag (src/E1BBE.ASM:493-506). The
    callers call the pair a frame bracket; the two hooks' role is Purpose unknown, src/ names them only
-   as "far fn (g8172/g8174)" and "far fn (no arguments)" (src/E1BBE.ASM:130-131, src/E1A72.ASM:32-33) */
+   as "far fn (gEgaRegShadowOff/gEgaRegShadowSeg)" and "far fn (no arguments)" (src/E1BBE.ASM:130-131, src/E1A72.ASM:32-33) */
 extern void LockHidePointer(void); /*@ 1BBE:0307 */
 extern void LockShowPointer(void); /*@ 1BBE:0332: the same bracket around ShowPointer (src/E1BBE.ASM:516-529) */
 extern int IsKeyPending(void); /*@ 1AAD:0471: nonzero when an event waits in the ring (src/E1AAD.ASM:337-338) */
@@ -177,7 +177,7 @@ extern void WaitFrames(int n); /*@ 1A16:000B */
 /* 14EF:0154: draw the option list of panel `panel`. `names` is the caller's array of far strings,
    indexed by entry; `mask` and `shift` are the selectable-entry mask (entry e is selectable when bit
    e + shift of `mask` is set, see the header); `spacing` is the extra pixels between lines, stored
-   in ds:FC78 for UpdateOptionList; every caller passes 0, so the line-spacing terms (`i * spacing` :207 and the UpdateOptionList `gFC78 >> 1` :286) are inert in the shipped callers. It takes the panel's record (ds:017F), computes its origin from
+   in ds:FC78 for UpdateOptionList; every caller passes 0, so the line-spacing terms (`i * spacing` :207 and the UpdateOptionList `gOptionLineSpacing >> 1` :286) are inert in the shipped callers. It takes the panel's record (ds:017F), computes its origin from
    ds:FE64 (times eight pixels, so a cell column) and ds:FE66, finds the currently selected entry
    with FindMaskBit, then draws `height` rows; row i shows the i-th selectable entry (FindMaskBit(i))
    through 082C:0898 with the normal colour (1 when ds:8102 is zero, else the panel's colorA), inside
@@ -206,13 +206,13 @@ extern void WaitFrames(int n); /*@ 1A16:000B */
         entry = FindMaskBit(i, mask, shift);
         dy = y + gFontHeight * i + i * spacing;
         DrawShadowText(names[entry], x, dy, !gGraphicsChoice ? 1 : panelDef->colorA, 0);
-        if (entry == selEntry && (g5D1A || gMouseDisabled))
+        if (entry == selEntry && (gHoverSelectsOption || gMouseDisabled))
             gDrawText(names[entry], x, dy, panelDef->colorB, 0);
     }
-    gFC78 = spacing;
+    gOptionLineSpacing = spacing;
     LockShowPointer();
     FlushKeyBuffer();
-    g8134 = 0;
+    gUnreadButtonChanges = 0;
 }
 /* the key codes UpdateOptionList accepts; the switch table at 14EF:055D lists them. Confirm has three
    codes (0x2B, 0x3D, 0x61), the mouse buttons two (0x41, 0x42), first and last two each (0x5B/0x65,
@@ -282,14 +282,14 @@ enum {
     lastRow = panelDef->height - 1;
     row = prev = panelDef->sel % (lastRow + 1); /* wrap a stored row into 0..lastRow; why it can be out of range is not established */
     picked = -1;
-    lineheight = gFontHeight + gFC78;
-    halfspace = gFC78 >> 1;
+    lineheight = gFontHeight + gOptionLineSpacing;
+    halfspace = gOptionLineSpacing >> 1;
     ybase = gTextTop + panelDef->y;
     xbase = (gTextLeft + panelDef->x) << 3;
     colorA = !gGraphicsChoice ? 1 : panelDef->colorA;
     colorB = panelDef->colorB;
     key = 0;
-    gFC7A = 0;
+    gUnhandledOptionKey = 0;
     if (IsKeyPending())
         key = WaitKeyEvent() & KEY_CODE_MASK;
     left = (gTextLeft << 3) + panelDef->x * gFontWidth; /* QUIRK 14EF:0336: x and width scaled by gFontWidth; the draws use << 3 */
@@ -298,7 +298,7 @@ enum {
     bottom = top + panelDef->height * lineheight - 1;
     if (!gMouseDisabled) {
         cursory = gCursorY;
-        if (IsPointInRect(gCursorX, cursory, left, top, right, bottom) && g5D1A)
+        if (IsPointInRect(gCursorX, cursory, left, top, right, bottom) && gHoverSelectsOption)
             row = (cursory - top) / lineheight;
     }
     switch (key) {
@@ -327,7 +327,7 @@ enum {
             picked = row;
             break;
         }
-        gFC7A = key;
+        gUnhandledOptionKey = key;
         break;
     case KEY_CONFIRM:
     case KEY_CONFIRM2:
@@ -335,7 +335,7 @@ enum {
         picked = row;
         break;
     default:
-        gFC7A = key;
+        gUnhandledOptionKey = key;
         break;
     }
     if (row != prev) {

@@ -362,7 +362,10 @@ def main(argv=None) -> int:
         if not a.why.strip() or any(ord(c) < 32 for c in a.why):
             raise ValueError("WHY=\"<evidence: an address, a caller, a string, a data file>\" is required, on one line")
         addr = resolve(a.old)
-        for p in sources():                # NEW must not name another address anywhere
+        prog = addr.split("/")[0] + "/" if "/" in addr else ""
+        for p in sources():                # NEW must not name another address of the same program
+            if PREFIX.get(program_of(p), "") != prog:
+                continue                   # INTRO.EXE shares library code with EOB.EXE: one name for both is right
             other = [x for n, x in bindings(p).items() if n == local(a.new, p) and x != addr]
             if other:
                 raise ValueError("%s already names %s in %s" % (a.new, other[0], p.name))

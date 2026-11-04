@@ -31,7 +31,7 @@ struct CharRec {            /* 243-byte (0xF3) character records at ds:F580 (src
     signed char hp;         /* +1B: current hit points */
     signed char maxHp;      /* +1C: maximum hit points */
     char pad1D[0x22 - 0x1D];
-    unsigned char m22;      /* +22: compared with 0xf7 by 0AB1 (0D1C:0415 uses it too) */
+    unsigned char portraitIndex;      /* +22: compared with 0xf7 by 0AB1 (0D1C:0415 uses it too) */
     char pad23[0x33 - 0x23];
     void far *portrait;     /* +33: a far pointer to the character's picture buffer, preserved by
                                    the record swap at 070E (the movmem destination there) */
@@ -49,15 +49,27 @@ struct PoolNameRec {        /* a view of one 243-byte pre-made character record 
     char rest[0xE8];        /* +0x0B: the rest of the record, not read here */
 };
 
-struct Entry14 {            /* the 14-byte item records at ds:8DD2 (src/E0D1C.C) */
-    char pad00;
-    signed char icon;       /* +1 */
-    signed char m02;        /* +2: the item type */
-    char pad03;
-    int m04;                /* +4 */
-    char pad06[0x0B - 0x06];
-    signed char m0B;        /* +0xB */
-    char pad0C[0x0E - 0x0C];
+struct ItemRecord {
+    signed char nameIndex;        /* +0 (ds:8DD0): indexes the item-name table at segment 0x1F28 */
+    signed char identifiedNameIndex;        /* +1 (ds:8DD1): the second name index */
+    unsigned char flags;    /* +2 (ds:8DD2): bit 0x20 gates 0BD2:0AF2/0C8E, 0x40 is set by
+                               0BD2:040E and tested by 0BD2:05B5; src/E07A9.C calls it flags */
+    signed char icon;       /* +3 (ds:8DD3): the icon number */
+    signed char type;        /* +4 (ds:8DD4): the item type */
+    signed char cellPos;        /* +5 (ds:8DD5): 01D0 stores its 4th argument here and 02B9 matches it
+                               against its `key`. No caller shows a sound (01D0's callers pass a
+                               slot kind, E0ACD.C:561-568, a roll, E08E6.C:807, or an effect kind | 4,
+                               0BD2:07DE): the item's position in its cell, 8 a wall niche (122E:06D0) */
+    int key;                /* +6 (ds:8DD6): the key; -1 when the record is free */
+    int prevLink;                /* +8 (ds:8DD8): one link of the circular list; 0BD2:01D0 splices a
+                               new item in after this record through it */
+    int nextLink;                /* +0xa (ds:8DDA): the other link; the list walks (0BD2:0385, 040E,
+                               04AA) follow it */
+    signed char level;        /* +0xc (ds:8DDC): gCurLevel or -1, set by 01D0 */
+    signed char value;        /* +0xd (ds:8DDD): the item's bonus or effect value: the signed bonus
+                               printed as "%s +%d" and "Cursed %s %d", the spell index into ds:1278
+                               and ds:12E0, the wand effect index gWandSpells[m0B], and the scroll and
+                               potion values (0BD2:05B5, 0D2D, 0EE8, 1001) */
 };
 
 struct ItemInfo {           /* 16-byte records at ds:A9F5 (src/E0D1C.C) */
@@ -68,16 +80,27 @@ struct ItemInfo {           /* 16-byte records at ds:A9F5 (src/E0D1C.C) */
     char pad0B[0x10 - 0x0B];
 };
 
-struct Obj28 {              /* 28-byte object records at ds:8A82 (src/E08E6.C) */
+struct Monster {              /* 28-byte object records at ds:8A82 (src/E08E6.C) */
     char pad00[8];
-    signed char type;       /* +8 */
+    signed char mode;       /* +8 */
     char pad09[0x1C - 0x09];
 };
 
-extern int gStatusLine; /*@ ds:8115 */
-extern signed char gF57E; /*@ ds:F57E */
-extern signed char gF53A; /*@ ds:F53A */
-extern signed char gFB4C; /*@ ds:FB4C */
+struct Region {             /* 16-byte records at ds:009F (src/E1A29.C) */
+    int left;               /* +0: left edge in 8-pixel columns */
+    int top;                /* +2: top edge in lines */
+    int width;              /* +4: width in 8-pixel columns */
+    int height;             /* +6: height in lines */
+    int textAttr1;              /* +8: text attribute 1 [H] (gTextAttr1, src/E1DE7.C:26) */
+    int textAttr2;              /* +a: text attribute 2 [H] (gTextAttr2, src/E1DE7.C:27) */
+    int textCol;             /* +c: cursor column (gTextCol) */
+    int textRow;                /* +e: cursor row (gTextRow) */
+};
+extern struct Region gRegions[]; /*@ ds:009F */ /* the text windows, 16 bytes each (src/E1A29.C) */
+extern int gDrawPage; /*@ ds:8115 */
+extern signed char gPanelFillColour; /*@ ds:F57E */
+extern signed char gPanelShadow; /*@ ds:F53A */
+extern signed char gPanelHighlight; /*@ ds:FB4C */
 extern char gFontHeight; /*@ ds:8101 */
 extern int gTextRow; /*@ ds:FE54 */
 extern int gTextTop; /*@ ds:FE66 */
@@ -87,56 +110,56 @@ extern int gClickX; /*@ ds:8140 */
 extern int gClickY; /*@ ds:8142 */
 extern int gMouseDisabled; /*@ ds:814A */
 extern int gHideDepth; /*@ ds:8146 */
-extern int gEFC6; /*@ ds:EFC6 */
-extern int gFE42; /*@ ds:FE42 */
+extern int gResurrectedPoolChar; /*@ ds:EFC6 */
+extern int gTextPanelInView; /*@ ds:FE42 */
 extern char gScrollOn; /*@ ds:8110 */
-extern unsigned long gFC04; /*@ ds:FC04 */
+extern unsigned long gGameFlags; /*@ ds:FC04 */
 extern int gPartyDir; /*@ ds:FBCC */
 extern int gPartyCell; /*@ ds:FBCA */
-extern signed char g1A1B[]; /*@ ds:1A1B */
+extern signed char gViewToCellPos[]; /*@ ds:1A1B */
 extern char gMazeItems[]; /*@ ds:B899 */
 extern struct CharRec gChars[]; /*@ ds:F580 */
 extern struct CharRec gCharPool[]; /*@ ds:7298 */  /* the pre-made character records 070E copies into gChars */
 extern struct PoolNameRec gPoolNameBase[]; /*@ ds:71A7 */  /* ds:71A7 = gCharPool + 2 - 0xF3, the base of the
                                                               folded gCharPool[-n-1].name access */
-extern struct Entry14 gTable8DD2[]; /*@ ds:8DD2 */
-extern struct ItemInfo gA9F5[]; /*@ ds:A9F5 */
-extern struct Obj28 gObjs[]; /*@ ds:8A82 */
-extern int gCountDDE0; /*@ ds:DDE0 */
-extern int gTableF4E6[]; /*@ ds:F4E6 */
-extern char gOverlayBuf[]; /*@ ds:113F */
-extern char far *gSegDF4E; /*@ ds:DF4E */
-extern unsigned char gCellDef7B2B[]; /*@ ds:7B2B */
-extern unsigned char gTable7B89[]; /*@ ds:7B89 */
-extern char gTable7B94[]; /*@ ds:7B94 */
-extern char far *gText7B23[]; /*@ ds:7B23 */  /* the two-entry "yes"/"no" menu table */
-extern char gText7B9F[]; /*@ ds:7B9F */
-extern char gText7BBA[]; /*@ ds:7BBA */
-extern char gText7BC2[]; /*@ ds:7BC2 */
-extern char gText7CB7[]; /*@ ds:7CB7 */
-extern char gText7CBC[]; /*@ ds:7CBC */
-extern char gText7D0E[]; /*@ ds:7D0E */
-extern char gText7D77[]; /*@ ds:7D77 */
-extern char gText7D9E[]; /*@ ds:7D9E */
+extern struct ItemRecord gItems[]; /*@ ds:8DD0 */
+extern struct ItemInfo gItemTypesClasses[]; /*@ ds:A9F5 */
+extern struct Monster gMonsters[]; /*@ ds:8A82 */
+extern int gDeathListCount; /*@ ds:DDE0 */
+extern int gDeathList[]; /*@ ds:F4E6 */
+extern char gCgaMapDefault[]; /*@ ds:113F */
+extern char far *gStagingPage; /*@ ds:DF4E */
+extern unsigned char gOuttakeCellRects[]; /*@ ds:7B2B */
+extern unsigned char gMenuRowX[]; /*@ ds:7B89 */
+extern char gMenuRowYOffset[]; /*@ ds:7B94 */
+extern char far *gYesNoMenu[]; /*@ ds:7B23 */  /* the two-entry "yes"/"no" menu table */
+extern char gStrCancel[]; /*@ ds:7B9F */
+extern char gProposalMenu[]; /*@ ds:7BBA */
+extern char gHelpHimMenu[]; /*@ ds:7BC2 */
+extern char gStrMore[]; /*@ ds:7CB7 */
+extern char gStrPartyFull[]; /*@ ds:7CBC */
+extern char gStrJoinsParty[]; /*@ ds:7D0E */
+extern char gStrFarewell[]; /*@ ds:7D77 */
+extern char gStrWhichResurrect[]; /*@ ds:7D9E */
 extern char gFileNameText[]; /*@ ds:7E53 */
-extern char gText7E5C[]; /*@ ds:7E5C */
-extern char gText7EDB[]; /*@ ds:7EDB */
-extern char gText7EDD[]; /*@ ds:7EDD */
+extern char gStrWinnerTitle[]; /*@ ds:7E5C */
+extern char gStrWinnerNameBreak[]; /*@ ds:7EDB */
+extern char gStrPasswordFormat[]; /*@ ds:7EDD */
 extern char gFileNameXDeath2[]; /*@ ds:7EEF */
 extern char gFileNameXDeath3[]; /*@ ds:7EF7 */
 extern char gFileNameXDeath1[]; /*@ ds:7EFF */
 extern char gFileNamePortalA[]; /*@ ds:7E43 */
 extern char gFileNamePortalB[]; /*@ ds:7E4B */
-extern char gText7C32[]; /*@ ds:7C32 */
-extern char gText7BA6[]; /*@ ds:7BA6 */
-extern char gText7BB2[]; /*@ ds:7BB2 */
-extern char gText7BCA[]; /*@ ds:7BCA */
-extern char gText7BD2[]; /*@ ds:7BD2 */
-extern char gText7BDE[]; /*@ ds:7BDE */
-extern char gText7BE6[]; /*@ ds:7BE6 */
-extern char gText7BEE[]; /*@ ds:7BEE */
-extern char gText7BF2[]; /*@ ds:7BF2 */
-extern char gText7BFA[]; /*@ ds:7BFA */
+extern char gPortalAnimScript[]; /*@ ds:7C32 */
+extern char gTendTalkMenu[]; /*@ ds:7BA6 */
+extern char gTendLeaveMenu[]; /*@ ds:7BB2 */
+extern char gHealMenu[]; /*@ ds:7BCA */
+extern char gHealResurrectMenu[]; /*@ ds:7BD2 */
+extern char gAttackBribeMenu[]; /*@ ds:7BDE */
+extern char gKillHerMenu[]; /*@ ds:7BE6 */
+extern char gKillHerMenuLetGo[]; /*@ ds:7BEE */
+extern char gSurrenderMenu[]; /*@ ds:7BF2 */
+extern char gFreeHimMenu[]; /*@ ds:7BFA */
 extern char gFileNameBuf[]; /*@ ds:FE6E */
 extern void far *gCurFont; /*@ ds:FE4E */
 extern void far *gFont6x6; /*@ ds:A9C0 */
@@ -149,29 +172,27 @@ extern char gFileNameInvent[]; /*@ ds:7F20 */
 extern char gFileNameText3[]; /*@ ds:7F27 */
 extern char gFileNamePlayfld2[]; /*@ ds:7F30 */
 extern char gFileNameInvent2[]; /*@ ds:7F38 */
-extern int far *gBufDCFC; /*@ ds:DCFC */
-extern int g169; /*@ ds:0169 */
-extern int (far *gFn8072)(int x, int y); /*@ ds:8072 */
-extern void (far *gFn809E)(int x, int y, int handle); /*@ ds:809E */
+extern int far *gScratchBuf; /*@ ds:DCFC */
+extern int (far *gGetPixel)(int x, int y); /*@ ds:8072 */
+extern void (far *gPutPixel)(int x, int y, int handle); /*@ ds:809E */
 extern int RandomRange(int low, int high); /*@ 1AAA:0005 */
-extern char gF542[]; /*@ ds:F542 */
+extern char gDirectAction[]; /*@ ds:F542 */
 extern int gScrollHook; /*@ ds:8117 */
-extern int g8119; /*@ ds:8119 */
-extern int g139; /*@ ds:0139 */
-extern int gFBC8; /*@ ds:FBC8 */
-extern signed char far gMapTiles[]; /*@ 1F1D:0000 */  /* the level's tile-index table (src/EOV3.C) */
-extern unsigned char far gMapSheet[]; /*@ 1F1E:0000 */  /* the sheet gMapTiles indexes into (src/EOV3.C's MAPSHEET) */
-extern unsigned char far gSheetDECORATE[]; /*@ 2069:0000 */  /* the PLAYFLD sheet (src/E0ACD.C, src/EOV3.C) */
-extern unsigned char far gSheet2067[]; /*@ 2067:0000 */  /* the INVENT sheet (src/E0ACD.C, src/EOV3.C) */
+extern int gScrollHookSeg; /*@ ds:8119 */
+extern int gCurLevel; /*@ ds:FBC8 */
+extern signed char far gLevelCgaMapIndex[]; /*@ 1F1D:0000 */  /* the level's tile-index table (src/EOV3.C) */
+extern unsigned char far gWallSetCgaMaps[]; /*@ 1F1E:0000 */  /* the sheet gLevelCgaMapIndex indexes into (src/EOV3.C's MAPSHEET) */
+extern unsigned char far gCgaMapPlayfld[]; /*@ 2069:0000 */  /* the PLAYFLD sheet (src/E0ACD.C, src/EOV3.C) */
+extern unsigned char far gCgaMapInvent[]; /*@ 2067:0000 */  /* the INVENT sheet (src/E0ACD.C, src/EOV3.C) */
 
 extern void far * (far *gGetSpriteCell)(int x, int y, int w, int h, void far *sheet); /*@ ds:8086 */
-extern void far * (far *gFn8082)(int x, int y, int w, int h, void far *buf); /*@ ds:8082 */
+extern void far * (far *gGetSpriteCellRle)(int x, int y, int w, int h, void far *buf); /*@ ds:8082 */
 extern void (far *gFillRect)(int x1, int y1, int x2, int y2, int pattern); /*@ ds:806A */
 extern void (far *gDrawText)(char far *text, int x, int y, int colour, int flag); /*@ ds:80CA */
-extern void (far *gFn804A)(int x, int y, int w, int h, void far *buf); /*@ ds:804A */
-extern void (far *gFn807E)(int x, int y, int w, int h, void far *buf); /*@ ds:807E */
+extern void (far *gRestoreRectToPage)(int x, int y, int w, int h, void far *buf); /*@ ds:804A */
+extern void (far *gSaveRectFromPage)(int x, int y, int w, int h, void far *buf); /*@ ds:807E */
 
-extern void DrawShape(int mode, void far *src, int x, int y, int region); /*@ 1A29:000F */
+extern void DrawShape(int page, void far *src, int x, int y, int region); /*@ 1A29:000F */
 extern void HidePointerZone(int left, int top, int right, int bottom); /*@ 1BBE:01FE */
 extern void ShowPointerZone(void); /*@ 1BBE:02C2 */
 extern void LockHidePointer(void); /*@ 1BBE:0307 */
@@ -180,7 +201,7 @@ extern void ClearTextRegion(void); /*@ 1DE7:0344 */
 extern void SetTextWindow(int n); /*@ 1DE7:0009 */
 extern void DrawText(char far *text); /*@ 1DE7:060A */
 extern void DrawFilledPanel(int x1, int y1, int x2, int y2, int c1, int c2, int c3); /*@ 082C:09D5 */
-extern void ClipRect(int x1, int y1, int x2, int y2, int width, int height, int extra1, int extra2); /*@ 19F3:000E */
+extern void CopyRegion(int x1, int y1, int x2, int y2, int width, int height, int extra1, int extra2); /*@ 19F3:000E */
 extern int IsPointInsideRect(int x, int y, int left, int top, int right, int bottom); /*@ 082C:0613 */
 extern int far RollDice(char count, char sides, char bonus); /*@ 082C:0458 */
 extern void WaitTicks(int n); /*@ 082C:0425 */
@@ -194,18 +215,18 @@ extern void movmem(void far *src, void far *dst, unsigned n); /*@ 0000:63A3 */
 extern int CopyItemToFreeSlot(int n); /*@ 0BD2:089E */
 extern void InsertListItem(void far *head, int key, int item, int sound); /*@ 0BD2:01D0 */
 extern int RemoveCarriedItems(int field2, int fieldB); /*@ 0D1C:01CA */
-extern void f0D1C_035A(int who); /*@ 0D1C:035A */
+extern void RemovePartyMember(int who); /*@ 0D1C:035A */
 extern int MemberIs(int who, int mask); /*@ 0D1C:0670 */
 extern void ComputeArmourClass(int who); /*@ 0DE8:0D5E */
 extern void ClearCharEffectSlot(int who, int what); /*@ 1414:0C2D */
 extern void RedrawCharacters(void); /*@ 0D1C:0583 */
-extern void Action01E3(char far *text); /*@ 0ACD:01E3 */
+extern void RestorePortraitPanel(char far *text); /*@ 0ACD:01E3 */
 extern void RedrawPartyPanel(char far *text); /*@ 0EF3:2541 */
-extern void fOvl2_09ED(void); /*@ 2106:0039 */  /* overlay 2 entry, ovl2:09ED */
-extern void fOvl3_07A5(char far *name, char far *sheet); /*@ 210C:0052 */  /* overlay 3 entry, ovl3:07A5 */
+extern void FindWordPanel(void); /*@ 2106:0039 */  /* overlay 2 entry, ovl2:09ED */
+extern void LoadWallTextures(char far *name, char far *sheet); /*@ 210C:0052 */  /* overlay 3 entry, ovl3:07A5 */
 extern void FreePtrTable(void); /*@ 210C:0048 */  /* overlay 3 entry, ovl3:0000 */
-extern void FreeEffectTables(void); /*@ 210C:003E */  /* overlay 3 entry, ovl3:031A */
-extern void FreeMapIcons(int base, int count); /*@ 210C:0061 */  /* overlay 3 entry, ovl3:05D2 */
+extern void FreeSlotTables(void); /*@ 210C:003E */  /* overlay 3 entry, ovl3:031A */
+extern void FreeMonsterShapes(int base, int count); /*@ 210C:0061 */  /* overlay 3 entry, ovl3:05D2 */
 extern void DrawViewFrame(int n); /*@ 2116:005C */  /* overlay 4 entry, ovl4:1F51 */
 extern void LoadOverlayScreen(char far *name, int a, int b); /*@ 082C:05EC */
 extern void LoadScreenImage(char far *name, void far *buf, int a, int b, int c); /*@ 082C:051B */
@@ -214,9 +235,8 @@ extern void FileRead(int handle, void far *buf, unsigned long len); /*@ 1C0E:040
 extern void FileClose(int handle); /*@ 1C0E:03BB */
 extern void SetFont(void far *font); /*@ 1A47:0169 */
 extern void ShutdownGame(void); /*@ 07C8:058A */
-extern void far *f19EC_0002(int kind); /*@ 19EC:0002 */
-extern void f19EC_002A(int a, int b, int c, int d); /*@ 19EC:002A */
-extern int gF1; /*@ ds:00F1 */
+extern void far *GetPageBuffer(int kind); /*@ 19EC:0002 */
+extern void CopyPage(int a, int b, int c, int d); /*@ 19EC:002A */
 
 /* siblings not decompiled yet: their real signatures, so callers compile */
 int SelectMenu(char first, char count, char far **names);
@@ -235,27 +255,27 @@ void ShuffleGrid(int x, int y, unsigned cols, unsigned rows, int saveStatus, int
 
 void PrintTableString(int index, int flag);
 
-/* ovl5:0000: draws sprite cell `index` of the ds:7B2B table out of the overlay buffer gOverlayBuf
+/* ovl5:0000: draws sprite cell `index` of the ds:7B2B table out of the overlay buffer gCgaMapDefault
    at (x, y), moved left by the returned cell's byte +2 (times four) and up by its byte +1, into
-   region 5. Sets gStatusLine for the draw and frees the sliced cell. Called by DrawCharPortrait
+   region 5. Sets gDrawPage for the draw and frees the sliced cell. Called by DrawCharPortrait
    (00A1). */
 /*@ ovl5:0000 */ void DrawSheetCell(int index, int x, int y)
 {
     void far *cell;
-    int cx;                 /* the cell's source x in gOverlayBuf, ds:7B2B[index*4 + 0] */
+    int cx;                 /* the cell's source x in gCgaMapDefault, ds:7B2B[index*4 + 0] */
     int cy;                 /* the cell's source y, ds:7B2B[index*4 + 1] */
     int cw;                 /* the cell's width, ds:7B2B[index*4 + 2] */
     int ch;                 /* the cell's height, ds:7B2B[index*4 + 3] */
     int i;
 
-    gStatusLine = 2;
+    gDrawPage = 2;
     i = index * 4;
-    cx = gCellDef7B2B[i];
-    cy = gCellDef7B2B[i + 1];
-    cw = gCellDef7B2B[i + 2];
-    ch = gCellDef7B2B[i + 3];
-    cell = gGetSpriteCell(cx, cy, cw, ch, gOverlayBuf);
-    gStatusLine = 0;
+    cx = gOuttakeCellRects[i];
+    cy = gOuttakeCellRects[i + 1];
+    cw = gOuttakeCellRects[i + 2];
+    ch = gOuttakeCellRects[i + 3];
+    cell = gGetSpriteCell(cx, cy, cw, ch, gCgaMapDefault);
+    gDrawPage = 0;
     y -= ((struct Cell far *)cell)->b1;
     x -= (((struct Cell far *)cell)->b2 << 3) >> 1;
     DrawShape(0, cell, x, y, 5);
@@ -266,7 +286,7 @@ void PrintTableString(int index, int flag);
    (0,0)-(0x16,0x78) and copies three six-entry, per-party-member tables into locals: two cell
    index tables (ds:7B77 and ds:7B7D) and a y-offset table (ds:7B83). Through DrawSheetCell it
    draws the fixed cells 2 (mode 0), 0 and 5 (mode 1), 3 (mode 2), 7 (mode 3), 6 (mode 4), 0x12
-   (mode 5), 0x11 (mode 6) and 4 (mode 7); for mode 2 with a selected member (gEFC6 != -1) it
+   (mode 5), 0x11 (mode 6) and 4 (mode 7); for mode 2 with a selected member (gResurrectedPoolChar != -1) it
    also draws that member's cellIdxA and cellIdxB cells at x 0x74, the cellIdxB cell at the
    ds:7B83 y offset. Called by the overlay dispatcher 1A82 for modes 0..7 and by the resurrect
    picker 0DBB with mode 2. */
@@ -276,13 +296,13 @@ void PrintTableString(int index, int flag);
     char cellIdxB[6] = { 0x0D, 0x0B, 0x0C, 0x0E, 0x0F, 0x10 };  /* ds:7B7D */
     char yOff[6] = { 0x34, 0x31, 0x31, 0x34, 0x34, 0x45 };   /* ds:7B83 */
 
-    ClipRect(0, 0, 0, 0, 0x16, 0x78, 6, 0);
+    CopyRegion(0, 0, 0, 0, 0x16, 0x78, 6, 0);
     switch (mode) {
     case 0:
         DrawSheetCell(2, 0x58, 0x68);
         break;
     case 1:
-        if (gEFC6 == -1) {
+        if (gResurrectedPoolChar == -1) {
             DrawSheetCell(0, 0x58, 0x68);
         } else {
             DrawSheetCell(0, 0x3C, 0x68);
@@ -290,12 +310,12 @@ void PrintTableString(int index, int flag);
         }
         break;
     case 2:
-        if (gEFC6 == -1) {
+        if (gResurrectedPoolChar == -1) {
             DrawSheetCell(3, 0x58, 0x68);
         } else {
             DrawSheetCell(3, 0x3C, 0x68);
-            DrawSheetCell(cellIdxA[gEFC6], 0x74, 0x68);
-            DrawSheetCell(cellIdxB[gEFC6], 0x74, yOff[gEFC6]);
+            DrawSheetCell(cellIdxA[gResurrectedPoolChar], 0x74, 0x68);
+            DrawSheetCell(cellIdxB[gResurrectedPoolChar], 0x74, yOff[gResurrectedPoolChar]);
         }
         break;
     case 3:
@@ -318,16 +338,16 @@ void PrintTableString(int index, int flag);
 
 /* The menu x-position table ds:7B89, defined here because the original lays it out right after
    00A1's three array initialisers (the matcher compares that block by content); 0455 reads it. */
-unsigned char gTable7B89[] = { 0x3B, 0xA6, 0x04, 0x70, 0xDC, 0x04, 0x70, 0xDC, 0x04, 0x70, 0xDC }; /*@ ds:7B89 */
+unsigned char gMenuRowX[] = { 0x3B, 0xA6, 0x04, 0x70, 0xDC, 0x04, 0x70, 0xDC, 0x04, 0x70, 0xDC }; /*@ ds:7B89 */
 
 /* ovl5:021C: clears the character panel (1, 0x7a)-(0x13e, 0xc7): hides the pointer, clears the
-   text region, fills the rectangle with gF57E and shows the pointer again. Called before every
+   text region, fills the rectangle with gPanelFillColour and shows the pointer again. Called before every
    panel of the overlay draws itself. */
 /*@ ovl5:021C */ void ClearPanel(void)
 {
     HidePointerZone(1, 0x7a, 0x13e, 0xc7);
     ClearTextRegion();
-    gFillRect(1, 0x7a, 0x13e, 0xc7, gF57E);
+    gFillRect(1, 0x7a, 0x13e, 0xc7, gPanelFillColour);
     ShowPointerZone();
 }
 
@@ -349,7 +369,8 @@ enum {
     KEY_NEXT      = 0x66        /* SelectMenu: next row */
 };
 
-/* ovl5:025F: the modal message box. It picks one of two rectangles from gFE42: 0 (CharOverlay)
+/* ovl5:025F: the modal message box. It picks one of two rectangles from gTextPanelInView: 0
+   (CharOverlay)
    uses (0x11D,0xBD)-(0x13B,0xC5), 1 (UseItemPanel, WinnerPanel) uses (0x8B,0xA2)-(0xA9,0xAA). It
    hides the pointer, fills the panel in the three colours, draws the "MORE" prompt ds:7CB7 in
    colour 0xf and shows the pointer. It then waits for a key or a click: KEY_CONFIRM, KEY_CONFIRM4
@@ -366,7 +387,7 @@ enum {
     int left;
     int top;
 
-    if (gFE42) {
+    if (gTextPanelInView) {
         left = 0x8B;
         top = 0xA2;
         right = 0xA9;
@@ -378,8 +399,8 @@ enum {
         bottom = 0xC5;
     }
     HidePointerZone(left, top, right, bottom);
-    DrawFilledPanel(left, top, right, bottom, gFB4C, gF53A, gF57E);
-    gDrawText(gText7CB7, left + 4, top + 2, 0xF, 0);
+    DrawFilledPanel(left, top, right, bottom, gPanelHighlight, gPanelShadow, gPanelFillColour);
+    gDrawText(gStrMore, left + 4, top + 2, 0xF, 0);
     ShowPointerZone();
     FlushKeyBuffer();
     redraws = gHideDepth;
@@ -408,23 +429,23 @@ enum {
             LockHidePointer();
     }
     LockHidePointer();
-    gFillRect(left, top, right, bottom, gF57E);
+    gFillRect(left, top, right, bottom, gPanelFillColour);
     ClearTextRegion();
     LockShowPointer();
 }
-/* ovl5:03A9: draws string `index` (1-based) of the string-offset table pointed at by gSegDF4E
+/* ovl5:03A9: draws string `index` (1-based) of the string-offset table pointed at by gStagingPage
    (the word at index-1 is an offset from that base), then, when `flag` is nonzero, the modal
    message panel 025F. The indexed strings are the overlay's message texts (a TEXT.DAT page read
-   into gSegDF4E); the menu labels are the ds:7B tables, not these. */
+   into gStagingPage); the menu labels are the ds:7B tables, not these. */
 /*@ ovl5:03A9 */ void PrintTableString(int index, int flag)
 {
     char far *offsets;
     int off;
 
-    offsets = gSegDF4E;
+    offsets = gStagingPage;
     index--;
     off = ((int far *)offsets)[index];
-    DrawText(gSegDF4E + off);
+    DrawText(gStagingPage + off);
     if (flag)
         MessagePanel();
 }
@@ -434,7 +455,7 @@ enum {
    `colour`. Called by the grid 0455 for every entry it draws. */
 /*@ ovl5:03EF */ void DrawMenuRow(int x, int y, int colour, char far *text)
 {
-    DrawFilledPanel(x, y, x + 0x5e, y + 8, gFB4C, gF53A, gF57E);
+    DrawFilledPanel(x, y, x + 0x5e, y + 8, gPanelHighlight, gPanelShadow, gPanelFillColour);
     gDrawText(text, x + 0x30 - strlen(text) * 3, y + 2, colour, 0);
 }
 
@@ -469,7 +490,7 @@ enum {
         if (drawn != i) {
             for (j = 0; j < count; j++) {
                 row = first + j;
-                DrawMenuRow(gTable7B89[row], ybase + gTable7B94[row],
+                DrawMenuRow(gMenuRowX[row], ybase + gMenuRowYOffset[row],
                             i == j ? 9 : 0xf, names[j]);
             }
             drawn = i;
@@ -478,10 +499,10 @@ enum {
         key = WaitKeyEvent() & KEY_CODE_MASK;
         for (j = 0; j < count; j++) {
             row = first + j;
-            if (IsPointInsideRect(gCursorX, gCursorY, gTable7B89[row],
-                                  gTable7B94[row] + ybase,
-                                  gTable7B89[row] + 0x5e,
-                                  gTable7B94[row] + ybase + 8)) {
+            if (IsPointInsideRect(gCursorX, gCursorY, gMenuRowX[row],
+                                  gMenuRowYOffset[row] + ybase,
+                                  gMenuRowX[row] + 0x5e,
+                                  gMenuRowYOffset[row] + ybase + 8)) {
                 i = j;
                 break;
             }
@@ -491,10 +512,10 @@ enum {
         case KEY_CLICK2:
             for (j = 0; j < count; j++) {
                 row = first + j;
-                if (IsPointInsideRect(gClickX, gClickY, gTable7B89[row],
-                                      gTable7B94[row] + ybase,
-                                      gTable7B89[row] + 0x5e,
-                                      gTable7B94[row] + ybase + 8)) {
+                if (IsPointInsideRect(gClickX, gClickY, gMenuRowX[row],
+                                      gMenuRowYOffset[row] + ybase,
+                                      gMenuRowX[row] + 0x5e,
+                                      gMenuRowYOffset[row] + ybase + 8)) {
                     sel = j;
                     break;
                 }
@@ -537,7 +558,7 @@ enum {
    "CANCEL" string ds:7B9F, at the same time counting how many members are present (flags bit 0).
    When every slot is taken it clears the panel, draws the title ds:7CBC and shows the seven-entry
    menu table through SelectMenu; choosing CANCEL (index 6) returns 0, any other choice is applied
-   through f0D1C_035A. A free slot returns 1 at once. Called by 0828. */
+   through RemovePartyMember. A free slot returns 1 at once. Called by 0828. */
 /*@ ovl5:067B */ int ChooseChar(void)
 {
     char far *names[7];
@@ -550,22 +571,22 @@ enum {
         count += gChars[i].status & 1;
         names[i] = gChars[i].name;
     }
-    names[6] = gText7B9F;
+    names[6] = gStrCancel;
     if (count > 5) {
         ClearPanel();
-        DrawText(gText7CBC);
+        DrawText(gStrPartyFull);
         sel = SelectMenu(2, 7, names);
         if (sel == 6)
             return 0;
-        f0D1C_035A(sel);
+        RemovePartyMember(sel);
     }
     return 1;
 }
 /* ovl5:070E: adds the character `which` of the pool ds:7298 to the party. It finds the first slot
    of gChars whose flags bit 0 is clear, saves that slot's picture pointer portrait, copies the pool
    record over it through movmem, restores portrait, recomputes the armour class, requeues every carried
-   item through CopyItemToFreeSlot, then slices the character's sprite cell through gFn8082
-   (ds:8082: which*4, 0xa0, 4, 0x20 out of gOverlayBuf) into the picture buffer portrait and frees the
+   item through CopyItemToFreeSlot, then slices the character's sprite cell through gGetSpriteCellRle
+   (ds:8082: which*4, 0xa0, 4, 0x20 out of gCgaMapDefault) into the picture buffer portrait and frees the
    slice. Called by AddCharPanel. */
 /*@ ovl5:070E */ void AddPartyMember(int which)
 {
@@ -590,17 +611,17 @@ enum {
         if (rec->items[i])
             rec->items[i] = CopyItemToFreeSlot(rec->items[i]);
     }
-    gStatusLine = 2;
-    saved = gFn8082(which * 4, 0xA0, 4, 0x20, gOverlayBuf);
+    gDrawPage = 2;
+    saved = gGetSpriteCellRle(which * 4, 0xA0, 4, 0x20, gCgaMapDefault);
     movmem(saved, rec->portrait, 0x514);
     farfree(saved);
-    gStatusLine = 0;
+    gDrawPage = 0;
 }
 /* ovl5:0828: the character add panel. It clears the panel, draws message `which`, then shows the
    two-entry menu ds:7B23 ("yes"/"no"). Choice 0 ("yes") either draws message `yesMsg` or, when
    `yesMsg` is -1, builds and draws "<name> joins the party." (ds:7D0E) for gCharPool[who] and
-   shows the modal message 025F; it then removes the carried items of type 0x21 whose m0B is
-   `who`+1 (RemoveCarriedItems matches m02 == class and m0B == fieldB; what m0B means is not
+   shows the modal message 025F; it then removes the carried items of type 0x21 whose value is
+   `who`+1 (RemoveCarriedItems matches type == class and value == fieldB; what value means is not
    established, 0D1C:01CA) and, when ChooseChar finds a free slot, adds the character through 070E.
    Choice 1 ("no") draws message `noMsg`. Called by the panels 0924, 09C5, 0DBB and 119E. */
 /*@ ovl5:0828 */ void AddCharPanel(int who, int which, int yesMsg, int noMsg)
@@ -609,13 +630,13 @@ enum {
 
     ClearPanel();
     PrintTableString(which, 0);
-    sel = SelectMenu(0, 2, gText7B23);
+    sel = SelectMenu(0, 2, gYesNoMenu);
     switch (sel) {
     case 0:
         if (yesMsg != -1) {
             PrintTableString(yesMsg, 1);
         } else {
-            sprintf(gFileNameBuf, gText7D0E, gCharPool[who].name);
+            sprintf(gFileNameBuf, gStrJoinsParty, gCharPool[who].name);
             DrawText(gFileNameBuf);
             MessagePanel();
         }
@@ -629,19 +650,19 @@ enum {
     }
 }
 /* ovl5:08D2: turns item `n` into a carried item (CopyItemToFreeSlot) and queues it on the list
-   head gMazeItems keyed by gPartyCell (the party's map cell), with a random sound from the current
-   sound page gPartyDir. Called by the panels that add an item to a character. */
+   head gMazeItems keyed by gPartyCell (the party's map cell), at a random cell position for the
+   facing gPartyDir. Called by the panels that add an item to a character. */
 /*@ ovl5:08D2 */ void QueueItem(int item)
 {
     int sound;
 
     item = CopyItemToFreeSlot(item);
-    sound = g1A1B[gPartyDir * 4 + RollDice(1, 2, -1)];
+    sound = gViewToCellPos[gPartyDir * 4 + RollDice(1, 2, -1)];
     InsertListItem(&gMazeItems[gPartyCell * 9], gPartyCell, item, sound);
 }
 
 /* ovl5:0924: the temple/NPC panel. Clears the panel, draws message 8 and shows the menu ds:7BB2
-   ("Tend his wounds"/"Leave") when gFC04 bit 0x2000 is set, otherwise ds:7BA6 ("Tend his
+   ("Tend his wounds"/"Leave") when gGameFlags bit 0x2000 is set, otherwise ds:7BA6 ("Tend his
    wounds"/"Talk"/"Leave"). Choice 0 runs the character panel 0828 and sets bit 0x4000 and returns;
    choice 1 draws message 1, sets bit 0x2000 and repeats; anything else returns. Called from the
    dispatcher 1A82 (mode 0). */
@@ -652,32 +673,32 @@ enum {
     for (;;) {
         ClearPanel();
         PrintTableString(8, 0);
-        if (gFC04 & 0x2000L) {
-            sel = SelectMenu(0, 2, (void far *)gText7BB2);
+        if (gGameFlags & 0x2000L) {
+            sel = SelectMenu(0, 2, (void far *)gTendLeaveMenu);
             if (sel == 1)
                 sel = 2;
         } else {
-            sel = SelectMenu(2, 3, (void far *)gText7BA6);
+            sel = SelectMenu(2, 3, (void far *)gTendTalkMenu);
         }
         switch (sel) {
         case 0:
             AddCharPanel(6, 0xc, 0x17, 2);
-            gFC04 |= 0x4000L;
+            gGameFlags |= 0x4000L;
             break;
         case 1:
             PrintTableString(1, 1);
-            gFC04 |= 0x2000L;
+            gGameFlags |= 0x2000L;
             continue;
         }
         break;
     }
 }
 
-/* ovl5:09C5: the "give an item" panel. On the first pass (gFC04 bit 0x8000 clear) it sets that
+/* ovl5:09C5: the "give an item" panel. On the first pass (gGameFlags bit 0x8000 clear) it sets that
    bit and shows the two-entry menu ds:7BBA ("Hear proposal"/"Leave"); choice 0 draws message 4,
    choice 1 skips the second menu (showSecond = 0). Otherwise it draws message 0xd. When the second
    menu is shown (showSecond) it runs ds:7BC2 ("Help him"/"Leave"); choice 0 queues six healing
-   items 0x37 and the item 0x3e through QueueItem, sets gFC04 bit 0x10000, draws message 6 and
+   items 0x37 and the item 0x3e through QueueItem, sets gGameFlags bit 0x10000, draws message 6 and
    runs the character panel 0828(7, 7, 0x1d, 0x1e); choice 1 (or a skipped second menu) draws
    message 5 and returns. Called by the panel dispatcher 0B58. */
 /*@ ovl5:09C5 */ void GiveItemPanel(void)
@@ -687,10 +708,10 @@ enum {
     int i;
 
     showSecond = 1;
-    if (!(gFC04 & 0x8000L)) {
-        gFC04 |= 0x8000L;
+    if (!(gGameFlags & 0x8000L)) {
+        gGameFlags |= 0x8000L;
         PrintTableString(3, 0);
-        sel = SelectMenu(0, 2, (void far *)gText7BBA);
+        sel = SelectMenu(0, 2, (void far *)gProposalMenu);
         if (sel == 0)
             PrintTableString(4, 0);
         else if (sel == 1)
@@ -699,22 +720,22 @@ enum {
         PrintTableString(0xd, 0);
     }
     if (showSecond)
-        sel = SelectMenu(0, 2, (void far *)gText7BC2);
+        sel = SelectMenu(0, 2, (void far *)gHelpHimMenu);
     else
         sel = 1;
     if (sel == 0) {
         for (i = 0; i < 6; i++)
             QueueItem(0x37);
         QueueItem(0x3e);
-        gFC04 |= 0x10000L;
+        gGameFlags |= 0x10000L;
         PrintTableString(6, 1);
         AddCharPanel(7, 7, 0x1d, 0x1e);
     } else {
         PrintTableString(5, 1);
     }
 }
-/* ovl5:0AB1: returns 1 when some party member (flags bit 0) has m22 == 0xf7, after drawing
-   messages 0x19 and 0x1a and setting the 0x80000 bit of gFC04; otherwise 0. Called by the panel
+/* ovl5:0AB1: returns 1 when some party member (flags bit 0) has portraitIndex == 0xf7, after drawing
+   messages 0x19 and 0x1a and setting the 0x80000 bit of gGameFlags; otherwise 0. Called by the panel
    dispatcher 0B58. */
 /*@ ovl5:0AB1 */ int CheckChar0F7(void)
 {
@@ -722,7 +743,7 @@ enum {
 
     for (i = 0; i < 6; i++) {
         if (gChars[i].status & 1) {
-            if (gChars[i].m22 == 0xf7)
+            if (gChars[i].portraitIndex == 0xf7)
                 break;
         }
     }
@@ -730,53 +751,53 @@ enum {
         return 0;
     PrintTableString(0x19, 1);
     PrintTableString(0x1a, 1);
-    gFC04 |= 0x80000L;
+    gGameFlags |= 0x80000L;
     return 1;
 }
 
 /* ovl5:0B16: when RemoveCarriedItems(6, -1) removes something, draws message 0x1c, queues
-   item 0x20 and sets the 0x100000 bit of gFC04, returning 1; otherwise 0. Called by 0B58. */
+   item 0x20 and sets the 0x100000 bit of gGameFlags, returning 1; otherwise 0. Called by 0B58. */
 /*@ ovl5:0B16 */ int CheckRemove6(void)
 {
     if (RemoveCarriedItems(6, -1)) {
         PrintTableString(0x1c, 1);
         QueueItem(0x20);
-        gFC04 |= 0x100000L;
+        gGameFlags |= 0x100000L;
         return 1;
     }
     return 0;
 }
 
-/* ovl5:0B58: the item-panel dispatcher. When bit 0x10000 of gFC04 is clear it runs the give-item
+/* ovl5:0B58: the item-panel dispatcher. When bit 0x10000 of gGameFlags is clear it runs the give-item
    panel 09C5, when 0x80000 is clear it runs 0AB1, when 0x100000 is clear it runs 0B16; if none of
-   them did anything it draws the farewell line gText7D77 ("I wish you luck in your travels.") and
+   them did anything it draws the farewell line gStrFarewell ("I wish you luck in your travels.") and
    the modal message panel 025F. Called from the menu dispatcher 1A82. */
 /*@ ovl5:0B58 */ void ItemPanelDispatch(void)
 {
     int done;
 
     done = 0;
-    if (!(gFC04 & 0x10000L)) {
+    if (!(gGameFlags & 0x10000L)) {
         GiveItemPanel();
         done = 1;
     }
-    if (!(gFC04 & 0x80000L))
+    if (!(gGameFlags & 0x80000L))
         done |= CheckChar0F7();
-    if (!(gFC04 & 0x100000L))
+    if (!(gGameFlags & 0x100000L))
         done |= CheckRemove6();
     if (!done) {
-        DrawText(gText7D77);
+        DrawText(gStrFarewell);
         MessagePanel();
     }
 }
 
-/* ovl5:0BBE: builds the list at ds:F4E6 (count in gCountDDE0) of the characters and items the
+/* ovl5:0BBE: builds the list at ds:F4E6 (count in gDeathListCount) of the characters and items the
    resurrect/heal panel 0EB9 may act on: first every character whose flags bit 0 is set and whose
    hit points are -10 (0xf6, a dead member); then, for every character with flags bit 0 set, each
-   of its 25 item slots whose item type's gA9F5[type].m09 low 7 bits equal 8, stored as
-   -gTable8DD2[item].m0B. Returns the count. ResurrectPicker reads a negative entry n back as the
+   of its 25 item slots whose item type's gItemTypesClasses[type].m09 low 7 bits equal 8, stored as
+   -gItems[item].value. Returns the count. ResurrectPicker reads a negative entry n back as the
    pool index -(n + 1): that reading is an inference from ResurrectPicker and the
-   RemoveCarriedItems(0x21, who + 1) calls; what m0B itself means is not established (0D1C:01CA).
+   RemoveCarriedItems(0x21, who + 1) calls; what value itself means is not established (0D1C:01CA).
    Called by 0EB9. */
 /*@ ovl5:0BBE */ int BuildDeathList(void)
 {
@@ -787,14 +808,14 @@ enum {
     int i;
     int j;
 
-    gCountDDE0 = i = 0;
+    gDeathListCount = i = 0;
     for (; i < 6; i++) {
         rec = &gChars[i];
         if ((rec->status & 1) == 0)
             continue;
         if (rec->hp != -10)
             continue;
-        gTableF4E6[gCountDDE0++] = i;
+        gDeathList[gDeathListCount++] = i;
     }
     for (i = 0; i < 6; i++) {
         rec = &gChars[i];
@@ -803,14 +824,14 @@ enum {
                 item = rec->items[j];
                 if (!item)
                     continue;
-                type = gTable8DD2[item].m02;
-                kind = gA9F5[type].m09 & 0x7f;
+                type = gItems[item].type;
+                kind = gItemTypesClasses[type].m09 & 0x7f;
                 if (kind == 8)
-                    gTableF4E6[gCountDDE0++] = -gTable8DD2[item].m0B;
+                    gDeathList[gDeathListCount++] = -gItems[item].value;
             }
         }
     }
-    return gCountDDE0;
+    return gDeathListCount;
 }
 /* ovl5:0C9D: heals the party. Rolls 1d3+2 "cures", then for each party member that MemberIs
    accepts (mask 3) clears its flag bits 1..2, clears bit 7 of its effect flags, clears effect slot
@@ -847,15 +868,15 @@ enum {
     }
 }
 /* ovl5:0DBB: the resurrect panel's "which one?" picker. It clears the panel, draws the title
-   ds:7D9E, builds the far string list of the entries BuildDeathList left in gTableF4E6
-   (gCountDDE0 of them): a non-negative entry is a party member (gChars[entry].name), a negative
+   ds:7D9E, builds the far string list of the entries BuildDeathList left in gDeathList
+   (gDeathListCount of them): a non-negative entry is a party member (gChars[entry].name), a negative
    entry -k-1 is the pre-made character gCharPool[k].name, read through gPoolNameBase at ds:71A7
    (gCharPool ds:7298, its name field +2, one 0xF3 record back). It then runs the 0455 menu (first
    row 2) and acts on the chosen entry: a party member is healed to full (hp = maxHp); a pool
-   character has its carried items of type 0x21 with m0B == k+1 removed, becomes the selected
-   character gEFC6, redraws the portrait and runs the add-character panel with the yes message
-   suppressed (-1). Called by 0EB9. `names[20]` holds gCountDDE0 entries: the match fixes the
-   array at 20 entries, nothing in the code caps gCountDDE0 at 20 (BuildDeathList can add up to
+   character has its carried items of type 0x21 with value == k+1 removed, becomes the selected
+   character gResurrectedPoolChar, redraws the portrait and runs the add-character panel with the yes message
+   suppressed (-1). Called by 0EB9. `names[20]` holds gDeathListCount entries: the match fixes the
+   array at 20 entries, nothing in the code caps gDeathListCount at 20 (BuildDeathList can add up to
    6 + 6*25 = 156), and whether the original's data can exceed 20 is not established. */
 /*@ ovl5:0DBB */ void ResurrectPicker(void)
 {
@@ -865,55 +886,55 @@ enum {
     int n;
 
     ClearPanel();
-    DrawText(gText7D9E);
-    for (i = 0; i < gCountDDE0; i++) {
-        if (gTableF4E6[i] < 0)
-            names[i] = gPoolNameBase[-gTableF4E6[i]].name;
+    DrawText(gStrWhichResurrect);
+    for (i = 0; i < gDeathListCount; i++) {
+        if (gDeathList[i] < 0)
+            names[i] = gPoolNameBase[-gDeathList[i]].name;
         else
-            names[i] = gChars[gTableF4E6[i]].name;
+            names[i] = gChars[gDeathList[i]].name;
     }
-    sel = SelectMenu(2, gCountDDE0, names);
-    n = gTableF4E6[sel];
+    sel = SelectMenu(2, gDeathListCount, names);
+    n = gDeathList[sel];
     if (n < 0) {
         n = (n < 0 ? -n : n) - 1;
         RemoveCarriedItems(0x21, n + 1);
-        gEFC6 = n;
+        gResurrectedPoolChar = n;
         DrawCharPortrait(2);
         AddCharPanel(n, n * 2 + 0x20, -1, n * 2 + 0x21);
     } else {
         gChars[n].hp = gChars[n].maxHp;
     }
 }
-/* ovl5:0EB9: the resurrect/heal NPC panel. When gFC04 bit 0x10000 is clear it draws message
+/* ovl5:0EB9: the resurrect/heal NPC panel. When gGameFlags bit 0x10000 is clear it draws message
    0x18; when bit 0x20000 is set it draws message 0xb; otherwise it draws message 9 and shows the
    menu ds:7BD2 ("Heal Party"/"Resurrect Dead"/"Leave") when BuildDeathList found something, or
-   ds:7BCA ("Heal Party"/"Leave") otherwise. Choice 0 runs the heal loop 0C9D and sets gFC04 bit
+   ds:7BCA ("Heal Party"/"Leave") otherwise. Choice 0 runs the heal loop 0C9D and sets gGameFlags bit
    0x20000; choice 1 runs the picker 0DBB and sets the bit, but in the two-entry branch choice 1 is
    remapped to 2 and does nothing. Called from the menu dispatcher 1A82 (mode 2). */
 /*@ ovl5:0EB9 */ void ResurrectPanel(void)
 {
     int sel;
 
-    if (gFC04 & 0x10000L) {
-        if (gFC04 & 0x20000L) {
+    if (gGameFlags & 0x10000L) {
+        if (gGameFlags & 0x20000L) {
             PrintTableString(0xb, 1);
         } else {
             PrintTableString(9, 0);
             if (BuildDeathList()) {
-                sel = SelectMenu(2, 3, (void far *)gText7BD2);
+                sel = SelectMenu(2, 3, (void far *)gHealResurrectMenu);
             } else {
-                sel = SelectMenu(0, 2, (void far *)gText7BCA);
+                sel = SelectMenu(0, 2, (void far *)gHealMenu);
                 if (sel == 1)
                     sel = 2;
             }
             switch (sel) {
             case 0:
                 HealLoop();
-                gFC04 |= 0x20000L;
+                gGameFlags |= 0x20000L;
                 break;
             case 1:
                 ResurrectPicker();
-                gFC04 |= 0x20000L;
+                gGameFlags |= 0x20000L;
                 break;
             }
         }
@@ -922,7 +943,7 @@ enum {
     }
 }
 /* ovl5:0F77: the "attack / bribe" NPC panel. Draws message 0x12 and shows the 2-entry menu
-   ds:7BDE ("Attack"/"Bribe"); choice 0 sets gFC04 bits 0x8000000 and 0x400000 and changes every
+   ds:7BDE ("Attack"/"Bribe"); choice 0 sets gGameFlags bits 0x8000000 and 0x400000 and changes every
    type-8 object to 5; choice 1 removes the item class from RemoveCarriedItems(0x31, -1) and draws
    message 0x14 and sets 0x400000 when something was removed, otherwise message 0x13. Called from
    the menu dispatcher 1A82 (mode 3). */
@@ -932,20 +953,20 @@ enum {
     int i;
 
     PrintTableString(0x12, 0);
-    sel = SelectMenu(0, 2, (void far *)gText7BDE);
+    sel = SelectMenu(0, 2, (void far *)gAttackBribeMenu);
     switch (sel) {
     case 0:
-        gFC04 |= 0x8000000L;
-        gFC04 |= 0x400000L;
+        gGameFlags |= 0x8000000L;
+        gGameFlags |= 0x400000L;
         for (i = 0; i < 0x1e; i++) {
-            if (gObjs[i].type == 8)
-                gObjs[i].type = 5;
+            if (gMonsters[i].mode == 8)
+                gMonsters[i].mode = 5;
         }
         break;
     case 1:
         if (RemoveCarriedItems(0x31, -1)) {
             PrintTableString(0x14, 1);
-            gFC04 |= 0x400000L;
+            gGameFlags |= 0x400000L;
         } else {
             PrintTableString(0x13, 1);
         }
@@ -953,35 +974,35 @@ enum {
     }
 }
 /* ovl5:102C: the "kill her / hear her out / let her go" NPC panel. Draws message 0xe, shows the
-   3-entry menu ds:7BE6; choice 0 sets gFC04 bit 0x200000, choice 1 draws message 0xf. Always sets
+   3-entry menu ds:7BE6; choice 0 sets gGameFlags bit 0x200000, choice 1 draws message 0xf. Always sets
    bit 0x800000. Called from the menu dispatcher 1A82 (mode 4). */
 /*@ ovl5:102C */ void KillHerPanel(void)
 {
     int sel;
 
     PrintTableString(0xe, 0);
-    sel = SelectMenu(2, 3, (void far *)gText7BE6);
+    sel = SelectMenu(2, 3, (void far *)gKillHerMenu);
     switch (sel) {
     case 0:
-        gFC04 |= 0x200000L;
+        gGameFlags |= 0x200000L;
         break;
     case 1:
         PrintTableString(0xf, 1);
         break;
     }
-    gFC04 |= 0x800000L;
+    gGameFlags |= 0x800000L;
 }
-/* ovl5:1087: the quit panel. It has no menu: it draws message 0x15 and sets gFC04 bit 0x1000000.
+/* ovl5:1087: the quit panel. It has no menu: it draws message 0x15 and sets gGameFlags bit 0x1000000.
    Called from the menu dispatcher 1A82 (mode 6). */
 /*@ ovl5:1087 */ void QuitPanel(void)
 {
     PrintTableString(0x15, 1);
-    gFC04 |= 0x1000000L;
+    gGameFlags |= 0x1000000L;
 }
 /* ovl5:10A6: the "surrender / attack" NPC panel. Draws message 0x10 and shows the 2-entry menu
    ds:7BF2 ("Surrender"/"Attack"); choice 0 draws message 0x11 and, for every character's first two
-   item slots whose item type gTable8DD2[item].m02 is outside 0x33..0x38, clears the slot and
-   queues the item on the list keyed by gPartyCell, with the sound from gPartyDir. Sets gFC04 bit
+   item slots whose item type gItems[item].type is outside 0x33..0x38, clears the slot and
+   queues the item on the list keyed by gPartyCell, with the sound from gPartyDir. Sets gGameFlags bit
    0x2000000. Called from the menu dispatcher 1A82 (mode 5). */
 /*@ ovl5:10A6 */ void SurrenderPanel(void)
 {
@@ -991,33 +1012,33 @@ enum {
     int j;
 
     PrintTableString(0x10, 0);
-    sel = SelectMenu(0, 2, (void far *)gText7BF2);
+    sel = SelectMenu(0, 2, (void far *)gSurrenderMenu);
     if (sel == 0) {
         PrintTableString(0x11, 1);
         for (i = 0; i < 6; i++) {
             for (j = 0; j < 2; j++) {
                 if (item = gChars[i].items[j]) {
-                    if (gTable8DD2[item].m02 < 0x33 || gTable8DD2[item].m02 > 0x38) {
+                    if (gItems[item].type < 0x33 || gItems[item].type > 0x38) {
                         gChars[i].items[j] = 0;
                         InsertListItem(&gMazeItems[gPartyCell * 9], gPartyCell, item,
-                                       g1A1B[gPartyDir * 4 + RollDice(1, 2, -1)]);
+                                       gViewToCellPos[gPartyDir * 4 + RollDice(1, 2, -1)]);
                     }
                 }
             }
         }
     }
-    gFC04 |= 0x2000000L;
+    gGameFlags |= 0x2000000L;
 }
 /* ovl5:119E: the "free him / kill him / leave" NPC panel. Draws message 0x16, shows the 3-entry
    menu ds:7BFA ("Free Him"/"Kill Him"/"Leave"); choice 0 calls 0828(8, 0x1b, 0x2c, 0x2d) and
-   choice 1 draws message 0x1f. Choices 0 and 1 set gFC04 bit 0x4000000; the default (choice 2)
+   choice 1 draws message 0x1f. Choices 0 and 1 set gGameFlags bit 0x4000000; the default (choice 2)
    returns before it. Called from the menu dispatcher 1A82 (mode 7). */
 /*@ ovl5:119E */ void FreeHimPanel(void)
 {
     int sel;
 
     PrintTableString(0x16, 0);
-    sel = SelectMenu(2, 3, (void far *)gText7BFA);
+    sel = SelectMenu(2, 3, (void far *)gFreeHimMenu);
     switch (sel) {
     case 0:
         AddCharPanel(8, 0x1b, 0x2c, 0x2d);
@@ -1028,12 +1049,12 @@ enum {
     default:
         return;
     }
-    gFC04 |= 0x4000000L;
+    gGameFlags |= 0x4000000L;
 }
 /* ovl5:1204: the first ending animation (mode 8). It tears down the dungeon resources, loads
-   PORTALA ds:7E43 and slices fifteen cells out of gOverlayBuf (three per sprite: a 3x0x4b column, a
+   PORTALA ds:7E43 and slices fifteen cells out of gCgaMapDefault (three per sprite: a 3x0x4b column, a
    3x0x4b column offset 0x50, and an 0xf x 0x12 cell) plus one 8 x 0x4d cell, blits PORTALB
-   ds:7E4B, fills the action field with f19EC_0002(5), clips the panel, draws block[0], stripA[0],
+   ds:7E4B, fills the action field with GetPageBuffer(5), clips the panel, draws block[0], stripA[0],
    stripB[0] and extra[0] and shuffles the grid at origin (0x18, 0) of 0x90 columns by 0x68 rows.
    It then runs an animation script at ds:7C32 of (cell, step) byte pairs: each pair draws
    block[i], stripA[i] and stripB[i], then draws the board cell the step selects (or the extra
@@ -1050,30 +1071,30 @@ enum {
                                      is what the original frame reserves */
     int i;
 
-    FreeEffectTables();
-    FreeMapIcons(0, 0x24);
+    FreeSlotTables();
+    FreeMonsterShapes(0, 0x24);
     FreePtrTable();
     LoadOverlayScreen(gFileNamePortalA, 5, 3);
     for (i = 0; i < 5; i++) {
-        stripA[i] = gGetSpriteCell(i * 3, 0, 3, 0x4b, gOverlayBuf);
-        stripB[i] = gGetSpriteCell(i * 3, 0x50, 3, 0x4b, gOverlayBuf);
-        block[i] = gGetSpriteCell(0xf, i * 0x12, 0xf, 0x12, gOverlayBuf);
+        stripA[i] = gGetSpriteCell(i * 3, 0, 3, 0x4b, gCgaMapDefault);
+        stripB[i] = gGetSpriteCell(i * 3, 0x50, 3, 0x4b, gCgaMapDefault);
+        block[i] = gGetSpriteCell(0xf, i * 0x12, 0xf, 0x12, gCgaMapDefault);
     }
-    extra[0] = gGetSpriteCell(0x1e, 0, 8, 0x4d, gOverlayBuf);
-    LoadScreenImage(gFileNamePortalB, gOverlayBuf, 5, 3, 2);
+    extra[0] = gGetSpriteCell(0x1e, 0, 8, 0x4d, gCgaMapDefault);
+    LoadScreenImage(gFileNamePortalB, gCgaMapDefault, 5, 3, 2);
     PlaySound(0x21);
     PlaySound(0x13);
-    gStatusLine = 2;
-    gFn807E(3, 0, 0x12, 0x68, f19EC_0002(5));
-    ClipRect(3, 0, 3, 0, 0x12, 0x68, 0, 2);
+    gDrawPage = 2;
+    gSaveRectFromPage(3, 0, 0x12, 0x68, GetPageBuffer(5));
+    CopyRegion(3, 0, 3, 0, 0x12, 0x68, 0, 2);
     DrawShape(2, block[0], 0x1c, 9, 0);
     DrawShape(2, stripA[0], 0x22, 0x1c, 0);
     DrawShape(2, stripB[0], 0x78, 0x1c, 0);
     DrawShape(2, extra[0], 0x38, 0x1b, 0);
     ShuffleGrid(0x18, 0, 0x90, 0x68, 2, 0);
-    gFn804A(3, 0, 0x12, 0x68, f19EC_0002(5));
+    gRestoreRectToPage(3, 0, 0x12, 0x68, GetPageBuffer(5));
     WaitTicks(0x1e);
-    script = gText7C32;
+    script = gPortalAnimScript;
     while (*script > -1) {
         i = *script++;
         DrawShape(0, block[i], 0x1c, 9, 0);
@@ -1086,7 +1107,7 @@ enum {
         i = *script++;
         if (i != 0) {
             i--;
-            ClipRect((i % 5) * 8, (i / 5) * 0x4d, 7, 0x1b, 8, 0x4d, 2, 0);
+            CopyRegion((i % 5) * 8, (i / 5) * 0x4d, 7, 0x1b, 8, 0x4d, 2, 0);
         } else {
             DrawShape(0, extra[0], 0x38, 0x1b, 0);
         }
@@ -1104,12 +1125,12 @@ enum {
     }
 }
 /* ovl5:160A: the winning-party password screen at the end of the game. It loads TEXT.DAT
-   (ds:7E53) into the string base gSegDF4E, sets up the panel, and when gFC04 bits 1..12 are all
-   set (gFC04 & 0x1FFE == 0x1FFE) draws the winner title ds:7E5C, the first four party members'
+   (ds:7E53) into the string base gStagingPage, sets up the panel, and when gGameFlags bits 1..12 are all
+   set (gGameFlags & 0x1FFE == 0x1FFE) draws the winner title ds:7E5C, the first four party members'
    names (separated by ds:7EDB) and then a checksum of every party member's name: the sum, over the
    name's characters, of the signed long square of each character (F_LXMUL@, 0000:7737), formatted
    into gFileNameBuf through the "\r\rPassword: %04x\r" format at ds:7EDD. It then waits for a key
-   and clears gScrollOn. Called by EndingAnimation (17C8) and by 08E6:0EC3 Obj0EC3. */
+   and clears gScrollOn. Called by EndingAnimation (17C8) and by 08E6:0EC3 KillMonster. */
 /*@ ovl5:160A */ void WinnerPanel(void)
 {
     int handle;
@@ -1118,24 +1139,24 @@ enum {
     int j;
 
     handle = FileOpen(gFileNameText, 1);
-    FileRead(handle, gSegDF4E, 0x7d00L);
+    FileRead(handle, gStagingPage, 0x7d00L);
     FileClose(handle);
     PlaySound(0x14);
-    gStatusLine = 0;
+    gDrawPage = 0;
     gScrollOn = 1;
-    gFE42 = 1;
-    g169 = gF57E;
+    gTextPanelInView = 1;
+    gRegions[12].textAttr2 = gPanelFillColour;
     SetTextWindow(0xc);
     gScrollHook = 0xac;
-    g8119 = 0x2d0;
+    gScrollHookSeg = 0x2d0;
     LockHidePointer();
-    DrawFilledPanel(0, 0, 0xaf, 0xae, gFB4C, gF53A, gF57E);
+    DrawFilledPanel(0, 0, 0xaf, 0xae, gPanelHighlight, gPanelShadow, gPanelFillColour);
     LockShowPointer();
     PrintTableString(0x33, 1);
-    if ((gFC04 & 0x1ffe) == 0x1ffe) {
-        DrawText(gText7E5C);
+    if ((gGameFlags & 0x1ffe) == 0x1ffe) {
+        DrawText(gStrWinnerTitle);
         for (i = 0; i < 4; i++) {
-            DrawText(gText7EDB);
+            DrawText(gStrWinnerNameBreak);
             if (gChars[i].status & 1)
                 DrawText(gChars[i].name);
         }
@@ -1146,7 +1167,7 @@ enum {
                     sum += (long)gChars[i].name[j] * gChars[i].name[j];
             }
         }
-        sprintf(gFileNameBuf, gText7EDD, sum);
+        sprintf(gFileNameBuf, gStrPasswordFormat, sum);
         DrawText(gFileNameBuf);
         WaitTicks(0xa);
         FlushKeyBuffer();
@@ -1155,14 +1176,14 @@ enum {
     gScrollOn = 0;
 }
 /* ovl5:17C8: the second ending animation (mode 9). It tears down the dungeon resources
-   (FreeEffectTables, FreeMapIcons(0,0x24), FreePtrTable), loads XDEATH2 (ds:7EEF) and builds the
-   four sprite cells from gOverlayBuf (a 2x2 grid of 0xE x 0x58 cells), loads XDEATH3 (ds:7EF7)
+   (FreeSlotTables, FreeMonsterShapes(0,0x24), FreePtrTable), loads XDEATH2 (ds:7EEF) and builds the
+   four sprite cells from gCgaMapDefault (a 2x2 grid of 0xE x 0x58 cells), loads XDEATH3 (ds:7EF7)
    and slices one 0x10 x 0x5f cell, blits XDEATH1 (ds:7EFF), then plays ten frames: six clipped
    cells (with the sounds 0x48, 0x36, 0x36, 0x22) and, for the last four, the 2x2 sprite grid
-   (sprites[i-6], sound 0x2a). It then clears gStatusLine, fills the action field with
-   f19EC_0002(5) (gFn807E), sets gF1 to 8 and runs the 19-step explosion: each step plays 0x77,
-   blits the page (gFn804A), draws the sliced cell moving from y=-0x5a in steps of 5, clips the
-   portrait region and waits 2 ticks. It finally plays sound 5, clears gF1, waits 0x3c ticks, shows
+   (sprites[i-6], sound 0x2a). It then clears gDrawPage, fills the action field with
+   GetPageBuffer(5) (gSaveRectFromPage), sets gRegions[5].top to 8 and runs the 19-step explosion: each step plays 0x77,
+   blits the page (gRestoreRectToPage), draws the sliced cell moving from y=-0x5a in steps of 5, clips the
+   portrait region and waits 2 ticks. It finally plays sound 5, clears gRegions[5].top, waits 0x3c ticks, shows
    the pointer, runs the winning-party panel (160A), frees the four sprites and the sliced cell and
    shuts the game down. Called from the menu dispatcher 1A82 (mode 9). */
 /*@ ovl5:17C8 */ void EndingAnimation(void)
@@ -1171,16 +1192,16 @@ enum {
     void far *cell;
     int i;
 
-    FreeEffectTables();
-    FreeMapIcons(0, 0x24);
+    FreeSlotTables();
+    FreeMonsterShapes(0, 0x24);
     FreePtrTable();
     LoadOverlayScreen(gFileNameXDeath2, 5, 3);
     for (i = 0; i < 4; i++)
-        sprites[i] = gFn8082((i % 2) * 0xe, (i / 2) * 0x58, 0xe, 0x58, gOverlayBuf);
+        sprites[i] = gGetSpriteCellRle((i % 2) * 0xe, (i / 2) * 0x58, 0xe, 0x58, gCgaMapDefault);
     LoadOverlayScreen(gFileNameXDeath3, 5, 3);
-    cell = gFn8082(0x16, 0, 0x10, 0x5f, gOverlayBuf);
-    LoadScreenImage(gFileNameXDeath1, gOverlayBuf, 5, 3, -1);
-    f19EC_002A(3, 2, FP_OFF(gOverlayBuf), FP_SEG(gOverlayBuf));
+    cell = gGetSpriteCellRle(0x16, 0, 0x10, 0x5f, gCgaMapDefault);
+    LoadScreenImage(gFileNameXDeath1, gCgaMapDefault, 5, 3, -1);
+    CopyPage(3, 2, FP_OFF(gCgaMapDefault), FP_SEG(gCgaMapDefault));
     for (i = 0; i < 0xa; i++) {
         if (i == 2)
             PlaySound(0x48);
@@ -1190,26 +1211,26 @@ enum {
             PlaySound(0x36);
         PlaySound(0x22);
         if (i < 6) {
-            ClipRect((i % 3) * 0xd, (i / 3) * 0x58, 4, 0xa, 0xd, 0x58, 2, 0);
+            CopyRegion((i % 3) * 0xd, (i / 3) * 0x58, 4, 0xa, 0xd, 0x58, 2, 0);
         } else {
             PlaySound(0x2a);
             DrawShape(0, sprites[i - 6], 0x20, 0xa, 0);
         }
         WaitTicks(4);
     }
-    gStatusLine = 0;
-    gFn807E(0, 0, 0x16, 0x78, f19EC_0002(5));
-    gF1 = 8;
+    gDrawPage = 0;
+    gSaveRectFromPage(0, 0, 0x16, 0x78, GetPageBuffer(5));
+    gRegions[5].top = 8;
     for (i = 0; i < 0x13; i++) {
         PlaySound(0x77);
-        gStatusLine = 2;
-        gFn804A(0, 0, 0x16, 0x78, f19EC_0002(5));
+        gDrawPage = 2;
+        gRestoreRectToPage(0, 0, 0x16, 0x78, GetPageBuffer(5));
         DrawShape(2, cell, 0x18, i * 5 + 0xffa6, 5);
-        ClipRect(0, 0, 0, 0, 0x16, 0x78, 2, 0);
+        CopyRegion(0, 0, 0, 0, 0x16, 0x78, 2, 0);
         WaitTicks(2);
     }
     PlaySound(5);
-    gF1 = 0;
+    gRegions[5].top = 0;
     WaitTicks(0x3c);
     LockShowPointer();
     WinnerPanel();
@@ -1222,10 +1243,10 @@ enum {
    entry). It hides the pointer, saves the current font, handles the gPanelMode/gFlag message redraws
    and the overlay-4 call, then dispatches `mode`: 8 runs the 1204 animation, 9 the 17C8 one and
    0xa the "find the word" panel (ovl2:09ED); every other mode draws the item screen (loads OUTTAKE
-   ds:7F07, reads TEXT.DAT ds:7F0F into gSegDF4E, draws the panel and the 8x8 font) and runs one of
+   ds:7F07, reads TEXT.DAT ds:7F0F into gStagingPage, draws the panel and the 8x8 font) and runs one of
    the eight menu panels through the jump table at cs:1CCD. Finally it restores the font and the
-   pointer, loads a wall texture set (fOvl3_07A5, LoadWallTextures) for the sheet
-   gMapSheet + (gMapTiles[gFBC8 - 1] << 5), with a NULL name so the current wall name is reused,
+   pointer, loads a wall texture set (LoadWallTextures) for the sheet
+   gWallSetCgaMaps + (gLevelCgaMapIndex[gCurLevel - 1] << 5), with a NULL name so the current wall name is reused,
    loads the PLAYFLD (ds:7F18) and INVENT (ds:7F20) images,
    redraws the characters and resets the text window to 7. The eight panel cases are laid out in
    the source order 0,1,2,3,4,6,5,7 (the original's bodies are 0924, 0B58, 0EB9, 0F77, 102C, 1087,
@@ -1236,13 +1257,13 @@ enum {
     register int handle;
 
     font = gCurFont;
-    gEFC6 = -1;
-    gFE42 = 0;
+    gResurrectedPoolChar = -1;
+    gTextPanelInView = 0;
     LockHidePointer();
     if (gPanelMode)
-        Action01E3(gF542);
+        RestorePortraitPanel(gDirectAction);
     if (gFlag)
-        RedrawPartyPanel(gF542);
+        RedrawPartyPanel(gDirectAction);
     DrawViewFrame(1);
     switch (mode) {
     case 8:
@@ -1252,25 +1273,25 @@ enum {
         EndingAnimation();
         break;
     case 0xa:
-        fOvl2_09ED();
+        FindWordPanel();
         break;
     default:
         LoadOverlayScreen(gFileNameOuttake, 5, 3);
-        ClipRect(0, 0, 0, 0, 0x16, 0x78, 0, 6);
+        CopyRegion(0, 0, 0, 0, 0x16, 0x78, 0, 6);
         DrawCharPortrait(mode);
         LockShowPointer();
         handle = FileOpen(gFileNameText2, 1);
-        FileRead(handle, gSegDF4E, 0x7d00L);
+        FileRead(handle, gStagingPage, 0x7d00L);
         FileClose(handle);
         SetFont(gFont6x6);
         HidePointerZone(0, 0x79, 0x13f, 0xc8);
-        DrawFilledPanel(0, 0x79, 0x13f, 0xc8, gFB4C, gF53A, gF57E);
+        DrawFilledPanel(0, 0x79, 0x13f, 0xc8, gPanelHighlight, gPanelShadow, gPanelFillColour);
         ShowPointerZone();
         gScrollOn = 1;
-        g139 = gF57E;
+        gRegions[9].textAttr2 = gPanelFillColour;
         SetTextWindow(9);
         gScrollHook = 0xac;
-        g8119 = 0x2d0;
+        gScrollHookSeg = 0x2d0;
         switch (mode) {
         case 0:
             TemplePanel();
@@ -1300,10 +1321,10 @@ enum {
         SetFont(font);
         gScrollOn = 0;
         LockHidePointer();
-        fOvl3_07A5(0, gMapSheet + (gMapTiles[gFBC8 - 1] << 5));
-        LoadScreenImage(gFileNamePlayfld, gSheetDECORATE, 5, 3, 0);
-        LoadScreenImage(gFileNameInvent, gSheet2067, 5, 3, 2);
-        gStatusLine = 0;
+        LoadWallTextures(0, gWallSetCgaMaps + (gLevelCgaMapIndex[gCurLevel - 1] << 5));
+        LoadScreenImage(gFileNamePlayfld, gCgaMapPlayfld, 5, 3, 0);
+        LoadScreenImage(gFileNameInvent, gCgaMapInvent, 5, 3, 2);
+        gDrawPage = 0;
         RedrawCharacters();
         DrawViewFrame(1);
         break;
@@ -1313,53 +1334,53 @@ enum {
 }
 /* ovl5:1CDD: the "use item" result panel. It hides the mouse cursor, runs the pending
    gPanelMode/gFlag messages, opens TEXT.DAT (ds:7F27, 1: read) and reads it into the string base
-   gSegDF4E, sets the text window and the panel colours, draws the panel (0,0)-(0xaf,0xae) and
+   gStagingPage, sets the text window and the panel colours, draws the panel (0,0)-(0xaf,0xae) and
    shows message `msg` through PrintTableString. It then restores the screen: loads the wall
-   textures through fOvl3_07A5 (LoadWallTextures, sheet gOverlayBuf, name NULL reuses the current
+   textures through LoadWallTextures (sheet gCgaMapDefault, name NULL reuses the current
    wall name), loads the PLAYFLD (ds:7F30) and INVENT (ds:7F38) images, redraws the characters and
    the view frame and resets the text window to 7. Called by the item-slot handler 0BD2:1001. */
 /*@ ovl5:1CDD */ void UseItemPanel(int msg)
 {
     int handle;
 
-    gFE42 = 1;
+    gTextPanelInView = 1;
     if (gPanelMode)
-        Action01E3(gF542);
+        RestorePortraitPanel(gDirectAction);
     if (gFlag)
-        RedrawPartyPanel(gF542);
+        RedrawPartyPanel(gDirectAction);
     handle = FileOpen(gFileNameText3, 1);
-    FileRead(handle, gSegDF4E, 0x7d00L);
+    FileRead(handle, gStagingPage, 0x7d00L);
     FileClose(handle);
     gScrollOn = 1;
-    g169 = gF57E;
+    gRegions[12].textAttr2 = gPanelFillColour;
     SetTextWindow(0xc);
     gScrollHook = 0xac;
-    g8119 = 0x2d0;
-    DrawFilledPanel(0, 0, 0xaf, 0xae, gFB4C, gF53A, gF57E);
+    gScrollHookSeg = 0x2d0;
+    DrawFilledPanel(0, 0, 0xaf, 0xae, gPanelHighlight, gPanelShadow, gPanelFillColour);
     LockShowPointer();
     PrintTableString(msg, 1);
     gScrollOn = 0;
     LockHidePointer();
-    fOvl3_07A5(0, gOverlayBuf);
-    LoadScreenImage(gFileNamePlayfld2, gSheetDECORATE, 5, 3, 0);
-    LoadScreenImage(gFileNameInvent2, gSheet2067, 5, 3, 2);
-    gStatusLine = 0;
+    LoadWallTextures(0, gCgaMapDefault);
+    LoadScreenImage(gFileNamePlayfld2, gCgaMapPlayfld, 5, 3, 0);
+    LoadScreenImage(gFileNameInvent2, gCgaMapInvent, 5, 3, 2);
+    gDrawPage = 0;
     RedrawCharacters();
     DrawViewFrame(1);
     SetTextWindow(7);
     LockShowPointer();
 }
-/* ovl5:1E1B: shuffles a cols x rows grid. It fills two index arrays in the gBufDCFC buffer (the
+/* ovl5:1E1B: shuffles a cols x rows grid. It fills two index arrays in the gScratchBuf buffer (the
    x indices and, at +0x280, the y indices) with 0..cols-1 and 0..rows-1, Fisher-Yates shuffles
    each with RandomRange, then for each row k and column i saves the pixels under the cell at
    (x + xs[i], y + ys[j]) (j wrapping at rows) through the far pointer ds:8072 and restores them
-   through ds:809E, with gStatusLine set to saveStatus for the save and restoreStatus for the
+   through ds:809E, with gDrawPage set to saveStatus for the save and restoreStatus for the
    restore. Called by the 1204 animation. */
 /*@ ovl5:1E1B */ void ShuffleGrid(int x, int y, unsigned cols, unsigned rows, int saveStatus, int restoreStatus)
 {
     int far *xs;
     int far *ys;
-    int handle;                 /* the gFn8072 handle, and the Fisher-Yates swap temp: the original
+    int handle;                 /* the gGetPixel handle, and the Fisher-Yates swap temp: the original
                                    reuses one slot (a second local grows the frame and breaks the match) */
     int k;
     int pick;
@@ -1368,7 +1389,7 @@ enum {
     register int i;
     register int idx;           /* the register local: the swap index and the draw-loop y coordinate */
 
-    xs = gBufDCFC;
+    xs = gScratchBuf;
     ys = (int far *)((char far *)xs + 0x280);
     for (i = 0; i < cols; i++)
         xs[i] = i;
@@ -1388,7 +1409,7 @@ enum {
         ys[pick] = ys[idx];
         ys[idx] = handle;
     }
-    saved = gStatusLine;
+    saved = gDrawPage;
     for (k = 0; k < rows; k++) {
         j = k;
         for (i = 0; i < cols; i++) {
@@ -1397,11 +1418,11 @@ enum {
             j++;
             if (j >= rows)
                 j = 0;
-            gStatusLine = saveStatus;
-            handle = gFn8072(pick, idx);
-            gStatusLine = restoreStatus;
-            gFn809E(pick, idx, handle);
+            gDrawPage = saveStatus;
+            handle = gGetPixel(pick, idx);
+            gDrawPage = restoreStatus;
+            gPutPixel(pick, idx, handle);
         }
     }
-    gStatusLine = saved;
+    gDrawPage = saved;
 }

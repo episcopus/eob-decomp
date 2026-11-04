@@ -81,6 +81,16 @@ def struct_fields(text: str) -> list[tuple[str, list[tuple[int | None, str]]]]:
     return out
 
 
+def is_placeholder(name: str, addr: str) -> bool:
+    """rename.PLACEHOLDER, or a name that ends with its own address (gDCAA, g159, gIconX5721): the
+    pattern needs a digit and four hex digits, these escape it."""
+    if rename.PLACEHOLDER.match(name):
+        return True
+    off = addr.split(":")[-1].lstrip("0")
+    return len(off) >= 2 and name.lstrip("_").upper().endswith(off.upper()) and \
+        re.match(r"^_?g?[A-Za-z]*[a-z]?%s$" % re.escape(off), name, re.I) is not None
+
+
 def units() -> dict:
     return {u["id"]: u for u in tomllib.loads((ROOT / "re/units.toml").read_text())["unit"]}
 
@@ -105,7 +115,7 @@ def inventory() -> dict:
     places: dict[Path, dict[str, list]] = {p: {"functions": [], "globals": [], "fields": []} for p in files}
     shared = []
     for addr, names in by_addr.items():
-        if any(not rename.PLACEHOLDER.match(n) for n in names.values()):
+        if any(not is_placeholder(n, addr) for n in names.values()):
             continue
         far_data = all(re.match(r"_?g[A-Z0-9]", n) for n in names.values())   # gSheet2067 at 2067:0000
         kind = "globals" if addr.split("/")[-1].startswith("ds:") or far_data else "functions"
@@ -118,12 +128,13 @@ def inventory() -> dict:
         if p.suffix.upper() != ".C":
             continue
         for sname, fields in struct_fields(texts[p]):
+            whole = len(fields) == 1          # one array over the whole record: a byte view, not a layout
             for at, fname in fields:
                 if PAD.match(fname):
                     continue
                 if FIELD_PLACEHOLDER.match(fname):
                     places[p]["fields"].append((sname, at, fname))
-                if at is not None and not re.search(r"^union\s+%s\b" % sname, texts[p], re.M):
+                if at is not None and not whole and not re.search(r"^union\s+%s\b" % sname, texts[p], re.M):
                     structs.setdefault((sname, at), {}).setdefault(fname, set()).add(p.stem)
     clashes = {k: v for k, v in structs.items() if len(v) > 1}
     unknown = {p: texts[p].count("Purpose unknown") for p in files}

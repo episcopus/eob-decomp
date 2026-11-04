@@ -89,19 +89,75 @@ the findings below are empty or each has an owner; the reviewer signs each subsy
     `MoveBackward`, `MoveLeft`, `MoveRight`, `TurnLeft`, `TurnRight`;
   - the panel: `gPanelMode`, `gInventoryMember`; the 6x6 font `gFont6x6`.
 
+- 2026-11-03, every placeholder named (608 functions and globals): nine read-only research agents
+  each read one group of units and proposed a name with its evidence for every placeholder; the
+  operator applied them one group at a time through `make rename` (which logs each WHY), matched
+  every touched unit and committed per group. The evidence came from the game's own tables and
+  strings read from the image: the spell table ds:1344 (each spell's apply, projectile and remove
+  callbacks, so `Cast<Spell>`, `End<Spell>`, `Hit<Spell>`), the screen-node tables of ds:5102
+  (each action handler's box on screen), the graphics driver's export table at ds:8046 (filled by
+  MCGA.OVL, so the driver pointers and their front ends), character creation's name and limit
+  tables, and the INTRO.EXE twins. The struct types are named (`Monster`, `MonsterType`,
+  `Projectile`, `ArgVector`), the item view at ds:8DD2 is merged into `gItems`, and the timer
+  views of EOV3 are `gEffects` fields. `make names`: no placeholder function or global is left.
+- Names a closer reading showed wrong were corrected, among them `gDrawPage` (ds:8115, was
+  "status line"), `gCurLevel` (ds:FBC8, was "the current action"), the spell callbacks that were
+  named for their mechanics (`EnterSwapMode` is `CastDetectMagic`), `PickPortrait`, `ShowFileError`
+  and `ShowMessageBox` (two functions had shared `ShowMessage`).
+
+- 2026-11-03, the names that were true to the mechanics but not to the game, second pass (three
+  read-only agents, each checking one area against the settled vocabulary): the monsters
+  (`UpdateMonsters`, `DamageMonster`, `FlashMonsterHit`, the Monster fields), the doors and wall
+  handlers of E122E, which had been read as party-member logic (`OpenDoor`, `CloseDoor`,
+  `ToggleDoor`, `StepDoor`, the wall handlers and script opcodes), the AD&D rule lookups
+  (`GetSavingThrowTarget`, `GetTurnUndeadTarget`), the level loader (`LoadLevel`, `LoadMaze`,
+  `LoadMonsterShapesA` to `C`), and about 250 comments. A sweep replaced the 128 old names comments
+  still used. `make readability` has no finding and its baseline is empty.
+
 ## Findings
+
+- ds:00EF to 00F5 are gRegions[5] (the maze view window) and ds:0139, 0159, 0169, 0179 the
+  textAttr2 of gRegions[9], [11], [12], [13] (the fill colour SetTextWindow loads): the files now
+  write them as gRegions fields (the same code). gPanels (ds:017F) starts where gRegions[14] would,
+  so the region table has 14 entries.
+- Open: gIconTable (ds:FB34) is declared as a byte (the member being moved) in several units and as
+  an array of far pointers in E0EF3 (CastBurningHands reads entries 1 to 3, from ds:FB38); one of the
+  two readings is a different object that shares the address. gSpellsTakenByTab (ds:FDE7) has 5
+  bytes but BuildSpellSlots clears 10, into ds:FDEC, which it clears again (a QUIRK). ds:DCAA
+  (gMenuPhase) has no store of 5 and its stepper 0ACD:0753 no caller found: the "rest phase"
+  reading is unsupported.
+- Open, for the oracle or a human: gLevelFlags (ds:FBD4) is indexed by gCurLevel 1 to 12, so
+  level 12's flags are the bytes of gGameFlags (ds:FC04), a QUIRK if the game relies on it; the
+  door code (122E:0137, ToggleDoor) tests only bit 0 of a cell's monster count; the 32-byte maps
+  named gCgaMap* hold only the values 0 to 3 and are only passed as a colour map (the CGA reading
+  is [medium], the driver is not in src/); Monster +0C maxHp is inferred (InitMonster writes the
+  same roll to +0C and +0E, nothing in src/ reads +0C); gPosSearchOrder searches the rear positions
+  first for a west-facing monster only; ds:E06B (gSlotRegions) is gWallRecs + 0x2B, which view
+  position that shape is was not read; the label kModifierState (1AAD:0180) is a copy of the
+  keyboard option word.
+- ds:DCA4 and ds:DD10 are one variable with two uses each: overlay 0 keeps the new character's hit
+  point limits there (the seventh words after two six-word tables), the game keeps the attacked
+  monster and a hit flag; named for both (`gHpMaxOrAttackTarget`, `gHpMinOrHitFlag`).
+- `struct Node` +34 is a variant record: tile nodes keep two tile ids there (E0CF7, E16A5), the
+  button nodes of overlay 1 a far pointer to their definition (`def`, +34 to +37). Both readings are
+  right; `make names SHARED=1` lists it, and it is the one clash left on purpose.
+- An overlay function's resident stub takes the function's name (2116:005C `DrawViewFrame`):
+  `make rename` refuses a name another address has, so a stub is renamed with
+  `rename.rename_address` and logged by hand (see the commits of 2026-11-03).
+- QUIRKs found on the way, for a port to keep: the four-byte table gAt5717 is read for members 4 and
+  5 past its end; CreateItemRecord (0EF3:0418) clears item 0's cellPos by a fixed address; the
+  door clip table ds:6F6D has 12 bytes but is indexed by level 1 to 12; ds:DD12 is read and never
+  written; in overlay 0, the byte 255 in ds:6101 indexes ds:60D5 at -1.
 
 - Settled 2026-11-03: gPartyCell is the party's map cell. E0ACD and E122E had read it as a sound
   volume (`SetSoundVolume`), from the movement keys' table walk; 122E:0001 moves the party and runs
   the cells' scripts, and the "volume message" is a carriage return.
 - `gEFB2` is the floor position (0..3) PickListItem 0ACD:0BA6 last took an item from; turning and
   moving reset it to 0xFF. Its old comment called it the sound page.
-- `gF51A`: E0D1C reads it as an index into the inventory's 27 slots, E0ACD as an action-menu row
-  0..2 with 0x10 for the own list. Not settled.
+- `gCursorSlot` (ds:F51A, was gF51A) is the keyboard cursor's item slot 0..26 (0 and 1 the hands);
+  StepActionRow (0ACD:03CD) wraps it to 0..2, the one reader that disagrees.
 - `rename.replace_word` treats an apostrophe in a comment as the start of a character literal, so
   a rename can miss a name between two apostrophes ("the character's ... LevelUpSlot's"); `make
   names` and a grep for the old name catch it.
-- `struct Region` +08 to +0E: four files call the words `attr1`, `attr2`, `column`, `row`, three call
-  them `saved0` to `saved3`; which is right has not been read yet.
-- ds:8DD2 is declared as `struct Entry14` (10 files) and `struct Item14` (1), and ds:8DD0 as
-  `struct ItemRecord gItems[]`: one item array seen from two bases (an alias to merge).
+- Settled: `struct Region` +08 to +0E are the window's saved `textAttr1`, `textAttr2`, `textCol`,
+  `textRow`; the view at ds:8DD2 is merged into `gItems`.

@@ -1,6 +1,6 @@
 /* Unit at EOB.EXE 1B82:0009 (547 bytes, 4 functions): file loading and unpacking. LoadFile reads
    up to len bytes of a named file into a buffer; LoadPacked takes two slot kinds, srcKind and dstKind, and
-   f19EC_0002 turns each into the far pointer (offset 0) of that slot's segment (MK_FP(gSegsFC0C[kind
+   GetPageBuffer turns each into the far pointer (offset 0) of that slot's segment (MK_FP(gPageSegs[kind
    | 1], 0), a segment read from the page/buffer table, not an allocation), reads a 2-byte length then
    the packed block and calls Unpack; Unpack dispatches on the block's format byte to one of five
    unpackers (1BA8:0006 for format 0 and 1D9A:0013/0113/018B/02CB for formats 4/3/1/2), allocating a
@@ -62,7 +62,7 @@ extern int FileOpen(char far *name, int mode); /*@ 1C0E:00DB */
    (src/E1C0E.C:277, at 1C0E:0400). */
 extern long FileRead(int index, char far *buf, unsigned long len); /*@ 1C0E:0400 */
 extern void FileClose(int index); /*@ 1C0E:03BB */
-extern void far *f19EC_0002(int kind); /*@ 19EC:0002 */
+extern void far *GetPageBuffer(int kind); /*@ 19EC:0002 */
 extern void far *MemAlloc(unsigned long size, int flags); /*@ 19BC:0007 */
 extern void MemFree(void far *block); /*@ 19BC:0137 */
 extern void Unpack0(char far *src, void far *dst, long len); /*@ 1BA8:0006: format 0, a raw copy */
@@ -92,7 +92,7 @@ void Unpack(char far *src, void far *dst);
     FileClose(slot);
 }
 
-/* 1B82:0041: loads a packed file: takes two slot kinds, srcKind and dstKind; f19EC_0002 turns each
+/* 1B82:0041: loads a packed file: takes two slot kinds, srcKind and dstKind; GetPageBuffer turns each
    into the far pointer (offset 0) of that slot's segment. Reads a 2-byte length then up to that many
    bytes into src, closes the file, and unpacks src into dst. QUIRK 1B82:0041: as in LoadFile, the
    FileOpen result is not checked before FileRead and the count FileRead returns is discarded
@@ -104,8 +104,8 @@ void Unpack(char far *src, void far *dst);
     void far *dst;
     int slot;
 
-    src = f19EC_0002(srcKind);
-    dst = f19EC_0002(dstKind);
+    src = GetPageBuffer(srcKind);
+    dst = GetPageBuffer(dstKind);
     slot = FileOpen(name, 1);   /* mode 1: read (src/E1C0E.C:166) */
     /* the packed block's byte length: WHITEPAPER 4.2 (WHITEPAPER.md:151) gives this u16 as the "size
        of the rest (some files: the file size)"; LoadPacked reads up to that many bytes after the
@@ -131,7 +131,7 @@ void Unpack(char far *src, void far *dst);
         +6 (WHITEPAPER 4.2 (WHITEPAPER.md:151) calls it palette bytes [H]; no pinned file shows a
         non-zero value) and calls Unpack4 with the data at block offset +8+skipLen.
    Cases 1 to 3 pass only segments (FP_SEG(src), FP_SEG(dst) and the work segment), so they rely on
-   the block and the output sitting at offset 0, as LoadPacked's f19EC_0002 pointers do (src/E19EC.C:20);
+   the block and the output sitting at offset 0, as LoadPacked's GetPageBuffer pointers do (src/E19EC.C:20);
    the decoders take segments (src/E1D9A.ASM:156, :245), so a port of Unpack must keep that rule.
    The original sign-extends the format byte (cbw; cwd) and switches on the int in AX. The C++ front
    end (-P) emits those bytes; the C front end folds the extension away (re/symbols.toml note on
@@ -194,7 +194,7 @@ void Unpack(char far *src, void far *dst);
 
 /* 1B82:0217: records the shared work buffer's segment and size, the one formats 1 and 2 in Unpack use
    when it is large enough. StartupAlloc calls it once at 07A9:00DF, with slot 7's segment
-   (gSegsFC0C[7], f19EC_0002(7)) pushed at 07A9:00DB and size UNPACK_BUFFER_SIZE (src/E07A9.C:241, in
+   (gPageSegs[7], GetPageBuffer(7)) pushed at 07A9:00DB and size UNPACK_BUFFER_SIZE (src/E07A9.C:241, in
    StartupAlloc, whose header is src/E07A9.C:202-216; UNPACK_BUFFER_SIZE is defined at
    src/E07A9.C:39). Both arguments are plain stores tested and discarded (the empty if bodies are
    what the bytes show, 1B82:0217-022C). */

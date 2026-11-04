@@ -36,7 +36,7 @@ extern void ShutdownGame(void);                    /*@ 07C8:058A */
 extern void far *MemAlloc(unsigned long size, int flags); /*@ 19BC:0007 */
 extern void MemFree(void far *p);                  /*@ 19BC:0137 */
 extern long LargestFreeBlock(void);                /*@ 19BC:023D */
-extern void far *f1BA8_0072(void far *p);          /*@ 1BA8:0072 */
+extern void far *NormalizePtr(void far *p);          /*@ 1BA8:0072 */
 extern void Unpack0(char far *src, void far *dst, long len); /*@ 1BA8:0006 */
 extern int IsLastLogicalDrive(int drive);          /*@ 1A19:003B */
 extern void FindLastDrive(void);                   /*@ 1A19:0006 */
@@ -58,7 +58,7 @@ extern void far *gFont8x8;                                                  /*@ 
 extern void far *gCurFont;                                                 /*@ ds:FE4E: the current font (E1A47.C) */
 
 /* DGROUP globals and indirect far functions. */
-extern int gStatusLine;                        /*@ ds:8115: nonzero while a status line is up (E082C.C) */
+extern int gDrawPage;                        /*@ ds:8115: the graphics driver's draw page (E082C.C) */
 extern int gTextRegion;                        /*@ ds:811F */
 extern int gGraphicsChoice;                        /*@ ds:8102: the video mode the game initialised (E07A9.C) */
 extern int gTextLeft;                    /*@ ds:FE64: the text window's left edge, 8-pixel columns */
@@ -77,7 +77,7 @@ extern long gRecordOffset;               /*@ ds:FF06: 1C0E:172E leaves the recor
 extern char far *gErrorText[];           /*@ ds:8196: the file error messages, indexed by FatalError code */
 extern void far *gMsgBuf;                /*@ ds:81E6: the saved screen rectangle of the error dialog */
 extern int gMsgLink;                     /*@ ds:FF0A: ResolveFileLink's result for the file in the dialog */
-extern int g80FE;                        /*@ ds:80FE: the text region the error dialog switches to; 1 in the image */
+extern int gErrorDialogRegion;                        /*@ ds:80FE: the text region the error dialog switches to; 1 in the image */
 
 #define KEY_ESC        0x1b     /* the key the error dialog treats as "abort" */
 #define MSG_NOT_FOUND  2        /* gErrorText[2]: "Could not find" (0ADD appends the name) */
@@ -317,7 +317,7 @@ extern long gSlotLengths[];              /*@ ds:FF0C: the record's length per sl
     handle &= HANDLE_MASK;
     total = 0;
     while (len > 0xfa00) {
-        buf = f1BA8_0072(buf);
+        buf = NormalizePtr(buf);
         n = read(handle, buf, 0xfa00);
         len -= 0xfa00;
         if (n == -1)
@@ -325,7 +325,7 @@ extern long gSlotLengths[];              /*@ ds:FF0C: the record's length per sl
         total = total + n;
         buf = MK_FP(FP_SEG(buf), FP_OFF(buf) + n);
     }
-    buf = f1BA8_0072(buf);
+    buf = NormalizePtr(buf);
     n = read(handle, buf, len);
     if (n == -1)
         return 0;
@@ -360,7 +360,7 @@ extern long gSlotLengths[];              /*@ ds:FF0C: the record's length per sl
     handle &= HANDLE_MASK;
     total = 0;
     while (len > 0xfa00) {
-        buf = f1BA8_0072(buf);
+        buf = NormalizePtr(buf);
         n = write(handle, buf, 0xfa00);
         if (n != 0xfa00)
             return 0;
@@ -368,7 +368,7 @@ extern long gSlotLengths[];              /*@ ds:FF0C: the record's length per sl
         total += 0xfa00;
         buf = MK_FP(FP_SEG(buf), FP_OFF(buf) + 0xfa00);
     }
-    buf = f1BA8_0072(buf);
+    buf = NormalizePtr(buf);
     n = write(handle, buf, len);
     if (n != len)
         return 0;
@@ -505,8 +505,8 @@ extern long gSlotLengths[];              /*@ ds:FF0C: the record's length per sl
     close(fd);
     return 1;
 }
-/* 1C0E:0ADD: the file error dialog. It hides the mouse pointer, saves the status-line flag, the
-   window region and the current font, switches to the 8x8 font gFont8x8 and the region g80FE, and
+/* 1C0E:0ADD: the file error dialog. It hides the mouse pointer, saves the draw page gDrawPage, the
+   window region and the current font, switches to the 8x8 font gFont8x8 and the region gErrorDialogRegion, and
    frames the window with four 0xf lines through gDrawLine. It shows the message gErrorText[code]
    (the array of FatalError texts at ds:8196); when `code` is MSG_NOT_FOUND ("Could not find") it
    also shows the file `name`, wrapped in MSG_LINE_BREAK, the "Insert disk " and "into any drive."
@@ -536,13 +536,13 @@ extern long gSlotLengths[];              /*@ ds:FF0C: the record's length per sl
 
     bufSize = 0;
     LockHidePointer();
-    savedStatusLine = gStatusLine;
-    gStatusLine = 0;
+    savedStatusLine = gDrawPage;
+    gDrawPage = 0;
     title = gErrorText[code];
     savedTextRegion = gTextRegion;
     savedFont = gCurFont;
     SetFont(gFont8x8);
-    SetTextWindow(g80FE);
+    SetTextWindow(gErrorDialogRegion);
     x = gTextLeft * 8;
     y = gTextTop;
     width = gTextWidth * 8;
@@ -603,23 +603,23 @@ extern long gSlotLengths[];              /*@ ds:FF0C: the record's length per sl
         MemFree(gMsgBuf);
         gMsgBuf = 0;
     }
-    gStatusLine = savedStatusLine;
+    gDrawPage = savedStatusLine;
     LockShowPointer();
     return 1;
 }
 
 
-/* 1C0E:0D9B: clear the status-line flag ds:8115 while 1C0E:0ADD draws its message box, then put
+/* 1C0E:0D9B: draw to page 0 (gDrawPage, ds:8115) while 1C0E:0ADD draws its message box, then put
    the old value back and return 1. This is the fatal file error handler stored at ds:8104
    (gFatalHandler; the image holds 1C0E:0D9B there, file offset 2BBE4); `code` is the FatalError
    code, the index into gErrorText (1C0E:00AA). */
-/*@ 1C0E:0D9B */ int ShowMessage(int code, char far *name)
+/*@ 1C0E:0D9B */ int ShowFileError(int code, char far *name)
 {
-    int saved = gStatusLine;
+    int saved = gDrawPage;
 
-    gStatusLine = 0;
+    gDrawPage = 0;
     DisplayFileError(code, name);
-    gStatusLine = saved;
+    gDrawPage = saved;
     return 1;
 }
 
@@ -807,7 +807,7 @@ extern long gSlotLengths[];              /*@ ds:FF0C: the record's length per sl
 
     if (gFiles[index].pos + len > gFiles[index].size)
         len = gFiles[index].size - gFiles[index].pos;
-    src = f1BA8_0072(gFiles[index].data + gFiles[index].pos);
+    src = NormalizePtr(gFiles[index].data + gFiles[index].pos);
     Unpack0(src, dst, len);
     gFiles[index].pos += len;
     return len;

@@ -216,3 +216,347 @@ old = "mE8"
 new = "lastAction"
 why = "the last action result per carried slot: UseItem (0DE8) stores it, 1414:0770 clears the slot's byte"
 date = "2026-11-03"
+
+[[field]]
+struct = "ItemRecord"
+at = "00"
+old = "m00"
+new = "nameIndex"
+why = "the item's name for an unidentified item: an index into the 35-byte names at segment 1F28, used when flags bit 0x40 is clear (0BD2, the item-name builder at E0BD2 line 462)"
+date = "2026-11-03"
+
+[[field]]
+struct = "ItemRecord"
+at = "01"
+old = "m01"
+new = "identifiedNameIndex"
+why = "the item's name once identified: an index into the 35-byte names at segment 1F28, used when flags bit 0x40 is set (0BD2, E0BD2 line 463)"
+date = "2026-11-03"
+
+[[field]]
+struct = "ItemRecord"
+at = "04"
+old = "m02"
+new = "type"
+why = "the item type, an index into gItemTypes (ds:A9F0): the item-name builder reads gItemTypes[type] (E0BD2 line 465), E0EF3 calls it the item type"
+date = "2026-11-03"
+
+[[field]]
+struct = "ItemRecord"
+at = "05"
+old = "m03"
+new = "tag"
+why = "the tag InsertListItem 0BD2:01D0 stores from its fourth argument and 0BD2:02B9 matches against its key (a floor position, a roll or an effect kind by caller)"
+date = "2026-11-03"
+
+[[field]]
+struct = "ItemRecord"
+at = "06"
+old = "m04"
+new = "key"
+why = "the key of the list the item is in: the map cell, a monster's id (E08E6 line 807) or 0xFFFE for a member's pack (E0ACD); -1 or -2 when the record is free (0EF3:0418)"
+date = "2026-11-03"
+
+[[field]]
+struct = "ItemRecord"
+at = "08"
+old = "m06"
+new = "prevLink"
+why = "one link of the item's circular list: InsertListItem 0BD2:01D0 splices a new item in after the tail through it"
+date = "2026-11-03"
+
+[[field]]
+struct = "ItemRecord"
+at = "0A"
+old = "m08"
+new = "nextLink"
+why = "the link the list walks follow (0BD2:0385, 040E, 04AA): InsertListItem makes the newest item the head through it"
+date = "2026-11-03"
+
+[[field]]
+struct = "ItemRecord"
+at = "0D"
+old = "m0B"
+new = "value"
+why = "the item's bonus or effect value: the signed bonus printed as \"%s +%d\" and \"Cursed %s %d\", the spell index of a scroll, the wand effect index (0BD2:05B5, 0D2D, 0EE8, 1001)"
+date = "2026-11-03"
+
+[[field]]
+struct = "Entry14"
+at = "00"
+old = "m00"
+new = "flags"
+why = "the item's flags, ItemRecord +02 seen from ds:8DD2: bit 0x40 identified (0BD2 name builder), 0x80 gates the icon colour row (0D1C:070F)"
+date = "2026-11-03"
+
+[[field]]
+struct = "Entry14"
+at = "02"
+old = "m02"
+new = "type"
+why = "the item type, ItemRecord +04 seen from ds:8DD2 (the record two bytes later): compared by 0D1C:00F1 and 0D1C:01CA"
+date = "2026-11-03"
+
+[[field]]
+struct = "Entry14"
+at = "04"
+old = "m04"
+new = "key"
+why = "the item's list key, ItemRecord +06 seen from ds:8DD2: 0D1C:01CA sets it to -1 when the record is freed"
+date = "2026-11-03"
+
+[[field]]
+struct = "Entry14"
+at = "0B"
+old = "m0B"
+new = "value"
+why = "the item's bonus or effect value, ItemRecord +0D seen from ds:8DD2: EatFood adds it to food (0ACD:07E0), compared by 0D1C:00F1"
+date = "2026-11-03"
+
+[[field]]
+struct = "Obj28"
+at = "02"
+old = "id, m02"
+new = "cell"
+why = "the monster's map cell: 08E6:0297 counts it in and out of gMaze[cell * 9 + 4], drops go into gMaze[cell * 9 + 5] (E08E6 line 807), the move code steps it with StepCell"
+date = "2026-11-03"
+
+[[field]]
+struct = "Obj28"
+at = "05"
+old = "m05"
+new = "orient"
+why = "the monster's facing quarter 0..3 (times 2 is a direction): 08E6:0297 stores the new orientation with the new cell, E08E6, E0D1C and EOV4 call it orient"
+date = "2026-11-03"
+
+[[field]]
+struct = "Region"
+at = "08"
+old = "attr1, saved0"
+new = "textAttr1"
+why = "the window's first text attribute, saved and restored with it by SetTextWindow 1DE7:0009 as gTextAttr1 (E1DE7 lines 38 to 40, 80 to 95)"
+date = "2026-11-03"
+
+[[field]]
+struct = "Region"
+at = "0A"
+old = "attr2, saved1"
+new = "textAttr2"
+why = "the window's second text attribute, saved and restored by SetTextWindow 1DE7:0009 as gTextAttr2 (E1DE7 lines 38 to 40, 80 to 95)"
+date = "2026-11-03"
+
+[[field]]
+struct = "Region"
+at = "0C"
+old = "column, saved2"
+new = "textCol"
+why = "the window's text cursor column, saved and restored by SetTextWindow 1DE7:0009 as gTextCol (E1DE7 lines 41 and 80 to 95)"
+date = "2026-11-03"
+
+[[field]]
+struct = "Region"
+at = "0E"
+old = "row, saved3"
+new = "textRow"
+why = "the window's text cursor row, saved and restored by SetTextWindow 1DE7:0009 as gTextRow (E1DE7 lines 42 and 80 to 95)"
+date = "2026-11-03"
+
+[[field]]
+struct = "ItemType"
+at = "00"
+old = "data, m00"
+new = "slotMask"
+why = "the slots the item type may be put in: CanPlaceItemInSlot 0BD2:0AF2 tests the 16-bit mask against the slot's bit, 0BD2:0C8E its low byte"
+date = "2026-11-03"
+
+[[field]]
+struct = "Monster"
+at = "10"
+old = "m10"
+new = "targetCell"
+why = "the cell the monster turns and moves toward: 08E6:0AB8 passes it to 08E6:0430, the turn toward a cell"
+date = "2026-11-03"
+
+[[field]]
+struct = "Monster"
+at = "12"
+old = "m12"
+new = "dropItem1"
+why = "the first item the monster drops when it dies: 08E6:0EC3 rolls 1d2 and on a 1 puts it into the cell's item list"
+date = "2026-11-03"
+
+[[field]]
+struct = "Monster"
+at = "14"
+old = "m14"
+new = "dropItem2"
+why = "the second item the monster drops when it dies: 08E6:0EC3 puts it into the cell's item list with no roll"
+date = "2026-11-03"
+
+[[field]]
+struct = "Monster"
+at = "18"
+old = "m18"
+new = "actionDelay"
+why = "the delay between the monster's actions: 08E6:0765 counts it down and resets it to 5"
+date = "2026-11-03"
+
+[[field]]
+struct = "Monster"
+at = "19"
+old = "m19"
+new = "actionsLeft"
+why = "the monster's remaining actions: 08E6:0765 decrements it, 08E6:131D sets it from actionDelay"
+date = "2026-11-03"
+
+[[field]]
+struct = "Projectile"
+at = "04"
+old = "m04"
+new = "cell"
+why = "the projectile's map cell: the spinner opcode 122E (case 0xFFF5) turns the projectiles whose cell equals the script's cell, AddDDEffect sets it from the party's cell"
+date = "2026-11-03"
+
+[[field]]
+struct = "Projectile"
+at = "07"
+old = "m07"
+new = "dir"
+why = "the projectile's flight direction 0..3: the spinner opcode adds its turn to it modulo 4 (E122E case 0xFFF5), AddDDEffect sets it from gPartyDir"
+date = "2026-11-03"
+
+[[field]]
+struct = "Projectile"
+at = "08"
+old = "m08"
+new = "item"
+why = "the item the projectile carries, an index into gItems (an index into the 14-byte records at ds:8DD2 by its comment, E1414)"
+date = "2026-11-03"
+
+[[field]]
+struct = "Monster"
+at = "00"
+old = "b0"
+new = "typeIndex"
+why = "the monster's type, an index into gMonsterTypes (ds:1A3B, the 27-byte records): E0D1C and E0DE8 index the table by it"
+date = "2026-11-03"
+
+[[field]]
+struct = "CharRec"
+at = "22"
+old = "m22"
+new = "portraitIndex"
+why = "the face cell the member's portrait was cut from: PickPortrait ovl0:0A5E stores the chosen cell index in it and in gMemberPortraits"
+date = "2026-11-03"
+
+[[field]]
+struct = "CharRec"
+at = "37"
+old = "known"
+new = "mageSpells"
+why = "the member's 30 memorized mage spell slots (five levels of six): the camp screen CampLoop prints the +0x37 slots with the mage spell names (ds:1344 records 1 to 25); negative while a spell is still to be memorized"
+date = "2026-11-03"
+
+[[field]]
+struct = "CharRec"
+at = "55"
+old = "memorized"
+new = "clericSpells"
+why = "the member's 30 memorized cleric spell slots (five levels of six): CampLoop prints the +0x55 slots with the cleric spell names (gClericSpells, ds:151F); positive a spell ready to cast, negative one still to be memorized"
+date = "2026-11-03"
+
+[[field]]
+struct = "Monster"
+at = "04"
+old = "frame"
+new = "cellPos"
+why = "the monster's position inside its cell, 0 NW, 1 NE, 2 SW, 3 SE, 4 the centre: the tables ds:323B (gMonsterFrontPos), ds:329B, ds:32BB and ds:5CAB are indexed by it with the facing"
+date = "2026-11-03"
+
+[[field]]
+struct = "ItemRecord"
+at = "05"
+old = "tag"
+new = "cellPos"
+why = "the item's position inside its cell (0 to 3, through gViewToCellPos by facing), with 4 added while the item flies (AddDDEffect stores kind | 4); InsertListItem 0BD2:01D0 stores it, 0BD2:02B9 matches it"
+date = "2026-11-03"
+
+[[field]]
+struct = "ItemRecord"
+at = "0C"
+old = "m0A"
+new = "level"
+why = "InsertListItem 0BD2:01D0 stores gCurLevel or -1 in it and RebuildItemList ovl3:0951 inserts only the items whose +0C equals gCurLevel: the dungeon level the item lies on"
+date = "2026-11-03"
+
+[[field]]
+struct = "Monster"
+at = "01"
+old = "kind"
+new = "updateGroup"
+why = "UpdateObjects(kind) at 08E6:0CC8 updates only the records whose +01 equals kind; InitMonster (08E6:131D) stores the level file's group * 2 plus the slot's parity, and timed effects 2 to 5 (1414:05DF, args 0..3) with per-level periods (ovl3:0A7C) run the groups"
+date = "2026-11-03"
+
+[[field]]
+struct = "Monster"
+at = "06"
+old = "toggle"
+new = "animPhase"
+why = "DrawSlotMonsters (ovl4:0D1B) picks the shape from gMonsterFrames[(+06 << 4) + gPartyDir * 4 + orient]; UpdateObjects flips it each update unless the mode is 4 or 7, and TryMonsterMelee flips it after a swing"
+date = "2026-11-03"
+
+[[field]]
+struct = "Monster"
+at = "07"
+old = "m07"
+new = "altShapes"
+why = "DrawSlotMonsters (ovl4:0D1B) adds 0x12 to the shape index when +07 is nonzero, choosing the second set of 18 shapes in gMonsterShapes (ds:B7FE); InitMonster copies it from the level file"
+date = "2026-11-03"
+
+[[field]]
+struct = "Monster"
+at = "08"
+old = "type"
+new = "mode"
+why = "UpdateObjects (08E6:0CC8) switches on +08 for the behaviour: 0 hunting (0AB8), 1..3 walk (0B34), 5 and 6 wall following (0B94), 7 and 10 wait on the timer (0CA6); 00C3, 03FE and 000B set it to 0, the hold spells to 10 (0EF3:1530, 0EF3:1A30); it is not the type, which is +00 typeIndex"
+date = "2026-11-03"
+
+[[field]]
+struct = "Monster"
+at = "0A"
+old = "m0A"
+new = "attackFrame"
+why = "TryMonsterMelee (08E6:05EA) writes 0xfe then 0xff around two view redraws of a swing and 0 after; DrawSlotMonsters (ovl4:0D1B) draws shape 5 for 0xfe and 6 for 0xff in the nearest row; 0AB8 and ovl3:19F7 clear it"
+date = "2026-11-03"
+
+[[field]]
+struct = "Monster"
+at = "0C"
+old = "hitPoints"
+new = "maxHp"
+why = "InitMonster (08E6:131D) stores the same roll in +0C and +0E (hitPoints = count = RollDice(m02, 8, 0)); damage only lowers +0E (08E6:0FBE) and nothing in src/ reads +0C back, so it holds the starting maximum"
+date = "2026-11-03"
+
+[[field]]
+struct = "Monster"
+at = "0E"
+old = "count"
+new = "hp"
+why = "The current hit points: DamageObject (08E6:0FBE) subtracts the damage from +0E, KillMonster runs at 0 or less, UpdateObjects, SpawnMonster and FinishDeferredHits treat <= 0 as dead or free; named like CharRec hp (+1B)"
+date = "2026-11-03"
+
+[[field]]
+struct = "Monster"
+at = "16"
+old = "m16"
+new = "flags"
+why = "A bit set: 1 attacked (0DE8:0007, 08E6:0FBE, read by 03FE), 2 hit flash (0DCA, 0E48, drawn remapped by ovl4:0D1B), 4 swing phase (05EA), 8 fleeing (000B, 0D1C:09CB, read by 0430), 0x10 turn undead tried (0D1C:0A43)"
+date = "2026-11-03"
+
+[[field]]
+struct = "Monster"
+at = "17"
+old = "m17"
+new = "drawOffset"
+why = "DrawSlotMonsters (ovl4:0D1B) adds (+17 & 0xf0) >> 4 to the shape's x and +17 & 0xf to its y; RandomiseObjectState (1414:0CE7) re-rolls it as (1d2 << 4) + 1d2 every 25 ticks"
+date = "2026-11-03"

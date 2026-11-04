@@ -10,8 +10,8 @@
    what each routine does. The two text attributes are ds:811D (gTextAttr1, the foreground colour,
    default 0x0F at E07C8.C:262, DEFAULT_TEXT_ATTR1 at :21) and ds:811B (gTextAttr2, the fill colour of
    ClearTextRegion and of the redrawn scroll line, default 0x0C at E07C8.C:263, DEFAULT_TEXT_ATTR2 at :21);
-   the initial region record gRegions[0] at ds:009F (file offset 0x23B7F) holds attr1 = 0x0F and
-   attr2 = 0x0C (ds:00A7 and ds:00A9). ds:8115 is the status-line flag
+   the initial region record gRegions[0] at ds:009F (file offset 0x23B7F) holds textAttr1 = 0x0F and
+   textAttr2 = 0x0C (ds:00A7 and ds:00A9). ds:8115 is the graphics driver's draw page gDrawPage
    (src/E082C.C:72; set to 2 by LoadOverlayScreen at 082C:05EC, saved and cleared around
    the memory report at 082C:081A). Compiled with -G (the two-byte argument clean-ups are
    `inc sp; inc sp`). */
@@ -23,10 +23,10 @@ struct Region {             /* 16 bytes: four edges, then four words of saved st
     int top;                /* top edge, in pixel rows */
     int width;              /* width, in 8-pixel columns */
     int height;             /* height, in pixel rows */
-    int attr1;              /* first text attribute (foreground), per-window state SetTextWindow saves and loads */
-    int attr2;              /* second text attribute (fill colour), saved and loaded the same way */
-    int column;             /* cursor column, in font widths */
-    int row;                /* cursor row, in font heights */
+    int textAttr1;              /* first text attribute (foreground), per-window state SetTextWindow saves and loads */
+    int textAttr2;              /* second text attribute (fill colour), saved and loaded the same way */
+    int textCol;             /* cursor column, in font widths */
+    int textRow;                /* cursor row, in font heights */
 };
 
 extern struct Region gRegions[];  /*@ ds:009F */  /* the region table (src/E1A29.C) */
@@ -64,13 +64,13 @@ extern char gFontHeight; /*@ ds:8101 */  /* font cell height (src/E1A47.C) */
 /* ds:805A: a far tile routine called with a tile source far pointer and a cell position
    (src, x, y). DrawTextFrame draws the four corners through it (1DE7:0130, 0163, 0196, 01CC) and
    DrawTileRun the frame edges (1DE7:025E); its first argument is a four-byte far pointer `void far *src`,
-   not the same signature as ds:805E (gDraw805E, src/E16A5.C:88), which takes an int tile. No store
+   not the same signature as ds:805E (gDrawIndexedTile, src/E16A5.C:88), which takes an int tile. No store
    to the slot found: a byte search of eob/EOB.EXE and the overlay bins for its disp16 (5a 80) in
    the store forms (A3, 89 06, C7 06 and 8C 06 with that disp16) finds none, and the overlay bins
    hold no occurrence of the disp16 at all. The search does find six occurrences of the disp16 in
    eob/EOB.EXE: the five far calls `ff 1e 5a 80` (four in DrawTextFrame, one in DrawTileRun) and one
    `3e 40 5a 80` at file offset 0x1d4f0, which is not a store to the slot. */
-extern void (far *gDraw805A)(void far *src, int x, int y); /*@ ds:805A */
+extern void (far *gDrawCell8x8)(void far *src, int x, int y); /*@ ds:805A */
 /* ds:806A: a far routine called with (x1, y1, x2, y2, colour) like the line routine at ds:8062
    (src/E1A1F.C); ClearTextRegion and DrawTextLine fill rectangles through it. The value
    passed is a colour (gTextAttr2); the parameter is named `colour` (src/E082C.C:64). */
@@ -79,16 +79,16 @@ extern void (far *gDrawText)(char far *text, int x, int y, int color, int extra)
 /* ds:8117: a far routine DrawTextLine calls when the cursor row starts below the last full line
    (the same condition as the clip branch of DrawTextLine); gScrollOn (ds:8110) gates it. Overlay 5
    sets the ds:8117/ds:8119 pair when it opens windows 0xC and 9 (src/EOV5.C:1114-1115, :1254-1255,
-   :1317-1318; EOV5.C:161 declares extern int gScrollHook at ds:8117 and g8119 at :162; the
+   :1317-1318; EOV5.C:161 declares extern int gScrollHook at ds:8117 and gScrollHookSeg at :162; the
    words 0xAC and 0x2D0 at EOV5.C:1114-1115 are the offset and segment of the far pointer). */
 extern void (far *gScrollHook)(void);  /*@ ds:8117 */
 extern char gScrollOn;     /*@ ds:8110 */  /* overlay 5 sets it to 1 beside the hook (EOV5.C:1110, :1114-1115) and the hook is gated by it at src/E1DE7.C:274 */
-/* ds:8115: the status-line flag, nonzero while a status line is up (src/E082C.C:72); it is set to 2
+/* ds:8115: gDrawPage, the page the graphics driver draws to (src/E082C.C:72); it is set to 2
    by LoadOverlayScreen (082C:05EC), saved and cleared around the memory
    report ShowMemoryDiagnostics (082C:081A) and the message box (src/E1C0E.C:589), and cleared
-   while a node is drawn (src/E16A5.C:511). Passed twice as the two extra arguments of ClipRect
+   while a node is drawn (src/E16A5.C:511). Passed twice as the two extra arguments of CopyRegion
    here. */
-extern int gStatusLine;          /*@ ds:8115 */
+extern int gDrawPage;          /*@ ds:8115 */
 
 /* 1DE7:0009: make `region` (an index into gRegions) the active text window. The first call only
    sets gTextSaved; after that, the window being left has its live attributes and cursor saved back
@@ -98,10 +98,10 @@ extern int gStatusLine;          /*@ ds:8115 */
 /*@ 1DE7:0009 */ void SetTextWindow(int region)
 {
     if (gTextSaved) {
-        gRegions[gTextRegion].attr1 = gTextAttr1;
-        gRegions[gTextRegion].attr2 = gTextAttr2;
-        gRegions[gTextRegion].column = gTextCol;
-        gRegions[gTextRegion].row = gTextRow;
+        gRegions[gTextRegion].textAttr1 = gTextAttr1;
+        gRegions[gTextRegion].textAttr2 = gTextAttr2;
+        gRegions[gTextRegion].textCol = gTextCol;
+        gRegions[gTextRegion].textRow = gTextRow;
     } else {
         gTextSaved = 1;
     }
@@ -110,13 +110,13 @@ extern int gStatusLine;          /*@ ds:8115 */
     gTextTop = gRegions[region].top;
     gTextWidth = gRegions[region].width;
     gTextHeight = gRegions[region].height;
-    gTextAttr1 = gRegions[region].attr1;
-    gTextAttr2 = gRegions[region].attr2;
-    gTextCol = gRegions[region].column;
-    gTextRow = gRegions[region].row;
+    gTextAttr1 = gRegions[region].textAttr1;
+    gTextAttr2 = gRegions[region].textAttr2;
+    gTextCol = gRegions[region].textCol;
+    gTextRow = gRegions[region].textRow;
 }
 
-extern void ClipRect(int x1, int y1, int x2, int y2, int width, int height, int extra1, int extra2); /*@ 19F3:000E */
+extern void CopyRegion(int x1, int y1, int x2, int y2, int width, int height, int extra1, int extra2); /*@ 19F3:000E */
 extern unsigned strlen(char far *s); /*@ 0000:67F6 */
 extern void HidePointerZone(int left, int top, int right, int bottom); /*@ 1BBE:01FE */
 extern void ShowPointerZone(void); /*@ 1BBE:02C2 */
@@ -153,8 +153,8 @@ extern unsigned far *gFrameTable[]; /*@ ds:113B */
    the packet's call graph over the resident and overlay functions lists no direct call to it (packet.py calls()). It appears unused. QUIRK 1DE7:01FE: the
    second and third edge runs re-read the global gTextLeft (1DE7:01FE and 1DE7:021C) where the
    corners and the first and fourth runs use the local copy taken at 1DE7:00E9. The re-reads come
-   after four gDraw805A calls (:175-181) and the DrawTileRun call at :183; nothing in this unit
-   writes gTextLeft between them, but gDraw805A's far target is not identified, so the two values
+   after four gDrawCell8x8 calls (:175-181) and the DrawTileRun call at :183; nothing in this unit
+   writes gTextLeft between them, but gDrawCell8x8's far target is not identified, so the two values
    are equal only if that code does not write it: the read is presumably dead, not proven to be. */
 /*@ 1DE7:00C9 */ void DrawTextFrame(int style)
 {
@@ -172,13 +172,13 @@ extern unsigned far *gFrameTable[]; /*@ ds:113B */
     top = gTextTop;
     frame = gFrameTable[style];
     tile = (char far *)gTileBuf + (frame[0] << shift);
-    gDraw805A(tile, left - 1, top - 1);
+    gDrawCell8x8(tile, left - 1, top - 1);
     tile = (char far *)gTileBuf + (frame[1] << shift);
-    gDraw805A(tile, left + gTextWidth, top - 1);
+    gDrawCell8x8(tile, left + gTextWidth, top - 1);
     tile = (char far *)gTileBuf + (frame[2] << shift);
-    gDraw805A(tile, left - 1, top + gTextHeight);
+    gDrawCell8x8(tile, left - 1, top + gTextHeight);
     tile = (char far *)gTileBuf + (frame[3] << shift);
-    gDraw805A(tile, left + gTextWidth, top + gTextHeight);
+    gDrawCell8x8(tile, left + gTextWidth, top + gTextHeight);
     n = 4;
     n = DrawTileRun(frame, n, left, top - 1, gTextWidth, 1);
     n = DrawTileRun(frame, n, gTextLeft - 1, top, gTextHeight, 0);
@@ -203,7 +203,7 @@ extern unsigned far *gFrameTable[]; /*@ ds:113B */
     n = start;
     for (i = 0; i < count; i++) {
         tile = (char far *)gTileBuf + (pattern[n] << shift);
-        gDraw805A(tile, x, y);
+        gDrawCell8x8(tile, x, y);
         if (horizontal)
             x++;
         else
@@ -256,7 +256,7 @@ extern unsigned far *gFrameTable[]; /*@ ds:113B */
    gTextRow * font height below the window top and the column gTextCol * font width right of its
    left edge. When that row has no room for a full line left, the scroll hook ds:8117 is called
    (gated by ds:8110), then the visible lines are copied from one font height lower to the top:
-   ClipRect (19F3:000E, a front end whose far target is not identified, src/E19F3.C) is passed the
+   CopyRegion (19F3:000E, a front end whose far target is not identified, src/E19F3.C) is passed the
    origins (gTextLeft, gTextTop + font height) and (gTextLeft, gTextTop) with width gTextWidth and height `bottomLine`, which
    reads as a scroll up by one line (the copy's far target is not identified), and the bottom line
    is refilled through ds:806A (the gFillRect slot); the text is then drawn on that line.
@@ -278,7 +278,7 @@ extern unsigned far *gFrameTable[]; /*@ ds:113B */
     if (gTextHeight - gFontHeight < y) {
         HidePointerZone(gTextLeft * 8, gTextTop, (gTextLeft + gTextWidth) * 8, gTextTop + gTextHeight);
         bottomLine = (gTextHeight / gFontHeight - 1) * gFontHeight;
-        ClipRect(gTextLeft, gTextTop + gFontHeight, gTextLeft, gTextTop, gTextWidth, bottomLine, gStatusLine, gStatusLine);
+        CopyRegion(gTextLeft, gTextTop + gFontHeight, gTextLeft, gTextTop, gTextWidth, bottomLine, gDrawPage, gDrawPage);
         gFillRect(gTextLeft * 8, gTextTop + bottomLine, (gTextLeft + gTextWidth) * 8 - 1,
                   gTextTop + bottomLine + gFontHeight - 1, gTextAttr2);
         gDrawText(text, gTextLeft * 8, gTextTop + bottomLine, gTextAttr1, gTextAttr2);

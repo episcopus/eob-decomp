@@ -19,32 +19,32 @@
                                         ; (EOV3.C:808-840) and toggled by the options code
                                         ; (EOV1.ASM:3724-3731); the INT 9 handler also toggles it on
                                         ; key 0434h (M), as it toggles gSoundOn on 0420h (S)
-        EXTRN   g80EA:WORD              ; @ ds:80EA: start-up flag copied into the unit's 1AAD:0180
-        EXTRN   g80EC:BYTE              ; @ ds:80EC: input mode, 0/1/2: 1 writes the recorded input
+        EXTRN   gKeyboardOptions:WORD              ; @ ds:80EA: the driver's option bits, copied into 1AAD:0180
+        EXTRN   gRecordMode:BYTE              ; @ ds:80EC: input mode, 0/1/2: 1 writes the recorded input
                                         ; stream (1AAD:0C17), 2 replays it (1AAD:0C17/0D26). In state
                                         ; 2 the readers skip the wait for a ring event
                                         ; (1AAD:038E/053A/0588/05D3) and take the ring slot that
                                         ; 1AAD:0D26 has filled
-        EXTRN   g80ED:WORD              ; @ ds:80ED: file handle for the recorded input stream
-        EXTRN   g80EF:WORD              ; @ ds:80EF: key of the recorded event last decoded. 1AAD:048D
+        EXTRN   gRecordHandle:WORD              ; @ ds:80ED: file handle for the recorded input stream
+        EXTRN   gLastEventKey:WORD              ; @ ds:80EF: key of the recorded event last decoded. 1AAD:048D
                                         ; copies every event taken from the ring to ds:80EF in any
                                         ; state and, in state 2, reads ds:80EF back directly; the
                                         ; other state 2 readers (1AAD:038E/0409) read the ring slot
                                         ; that 1AAD:0D26 filled with it
-        EXTRN   g80F1:WORD              ; @ ds:80F1: count that goes with that recorded event
-        EXTRN   g80F3:WORD              ; @ ds:80F3: x of the recorded mouse event
-        EXTRN   g80F5:WORD              ; @ ds:80F5: y of the recorded mouse event
-        EXTRN   g80F7:WORD              ; @ ds:80F7: 1 when reading the recorded stream failed
-        EXTRN   g8136:WORD              ; @ ds:8136: latched to 1 once any button has been seen
+        EXTRN   gRecordDelay:WORD              ; @ ds:80F1: count that goes with that recorded event
+        EXTRN   gLastEventX:WORD              ; @ ds:80F3: x of the recorded mouse event
+        EXTRN   gLastEventY:WORD              ; @ ds:80F5: y of the recorded mouse event
+        EXTRN   gRecordEnded:WORD              ; @ ds:80F7: 1 when reading the recorded stream failed
+        EXTRN   gMouseButtonSeen:WORD              ; @ ds:8136: latched to 1 once any button has been seen
                                         ; (1A72:01DC); nothing in src/ clears it, and the recorded
                                         ; replay sets it too (1AAD:0D04)
         EXTRN   _gCursorX:WORD          ; @ ds:8138: mouse x in pixels (E1A72.ASM)
         EXTRN   _gCursorY:WORD          ; @ ds:813A: mouse y in pixels (E1A72.ASM)
-        EXTRN   g813C:WORD              ; @ ds:813C: x of the event just handled (E1A72.ASM)
-        EXTRN   g813E:WORD              ; @ ds:813E: y of the event just handled (E1A72.ASM)
+        EXTRN   gMouseEventX:WORD              ; @ ds:813C: x of the event just handled (E1A72.ASM)
+        EXTRN   gMouseEventY:WORD              ; @ ds:813E: y of the event just handled (E1A72.ASM)
         EXTRN   gClickX:WORD              ; @ ds:8140: x of the last mouse click (E14EF.C)
         EXTRN   gClickY:WORD              ; @ ds:8142: y of the last mouse click (E14EF.C)
-        EXTRN   g8488:WORD              ; @ ds:8488: tick counter, 18.2 per second: the INT 1Ch
+        EXTRN   gTicksSinceEvent:WORD              ; @ ds:8488: tick counter, 18.2 per second: the INT 1Ch
                                         ; handler increments it (1D8F:0055, E1D8F.ASM); 1AAD:0C17
                                         ; stores its value with each recorded event and 1AAD:0D26
                                         ; waits for it to reach the stored count (ds:80F1). The unit
@@ -245,8 +245,8 @@ kCtrlFnCodes    db 00h,37h,34h,31h,00h,2Fh,38h,35h,32h,30h,2Ah,39h   ; 1AAD:037A
 ; kShiftFlags to kShiftFlagsCopy, translates a nonzero key through 1AAD:0223 and clears AH.
 ; Callers test the return and leave the key in the ring; the callers flush it afterwards
 ; (FlushKeyBuffer, e.g. EOV6.C:353 and :517). Callers: EditTextField (082C:000B),
-; DelaySecondsThenKey (082C:0B43), PickClass (ovl0:207A), ShowMessage (ovl1:13F7), CampLoop
-; (ovl6:0000) and f0B9B (ovl6:0B9B). Purpose unknown: why this filter differs from 1AAD:0409's.
+; DelaySecondsThenKey (082C:0B43), PickClass (ovl0:207A), ShowMessageBox (ovl1:13F7), CampLoop
+; (ovl6:0000) and ShowCampMessage (ovl6:0B9B). Purpose unknown: why this filter differs from 1AAD:0409's.
         PUBLIC  _ReadKey                 ; @ 1AAD:038E
 _ReadKey PROC FAR
         call    _InjectRecordedKey
@@ -259,14 +259,14 @@ _ReadKey PROC FAR
 f038E_0399:
         cli
         mov     ax,cs:[kKeyBufRead]
-        cmp     byte ptr [g80EC],2
+        cmp     byte ptr [gRecordMode],2
         je      f038E_03AC
         cmp     ax,cs:[kKeyBufWrite]
         je      f038E_03ED
 f038E_03AC:
         mov     si,ax
         mov     ax,word ptr cs:[si+kKeyBuf]
-        cmp     byte ptr [g80EC],2
+        cmp     byte ptr [gRecordMode],2
         jne     f038E_03BE
         or      ax,ax
         je      f038E_03EF
@@ -329,14 +329,14 @@ _ReadKeySpecial PROC FAR
 f0409_0414:
         cli
         mov     ax,cs:[kKeyBufRead]
-        cmp     byte ptr [g80EC],2
+        cmp     byte ptr [gRecordMode],2
         je      f0409_0427
         cmp     ax,cs:[kKeyBufWrite]
         je      f0409_0458
 f0409_0427:
         mov     si,ax
         mov     ax,word ptr cs:[si+kKeyBuf]
-        cmp     byte ptr [g80EC],2
+        cmp     byte ptr [gRecordMode],2
         jne     f0409_0439
         or      ax,ax
         je      f0409_045A
@@ -411,11 +411,11 @@ _DequeueKeyEvent PROC NEAR
         mov     ax,212Eh
         mov     ds,ax
         mov     ax,word ptr cs:[di+kKeyBuf]
-        cmp     byte ptr [g80EC],2
+        cmp     byte ptr [gRecordMode],2
         jne     f048D_04A5
-        mov     ax,[g80EF]
+        mov     ax,[gLastEventKey]
 f048D_04A5:
-        mov     [g80EF],ax
+        mov     [gLastEventKey],ax
         add     di,2
         and     di,0FFh
         cmp     al,41h
@@ -424,20 +424,20 @@ f048D_04A5:
         ja      f048D_04F3
         push    ax
         mov     ax,word ptr cs:[di+kKeyBuf]
-        cmp     byte ptr [g80EC],2
+        cmp     byte ptr [gRecordMode],2
         jne     f048D_04C7
-        mov     ax,[g80F3]
+        mov     ax,[gLastEventX]
 f048D_04C7:
-        mov     [g80F3],ax
+        mov     [gLastEventX],ax
         add     di,2
         and     di,0FFh
         mov     [gClickX],ax
         mov     ax,word ptr cs:[di+kKeyBuf]
-        cmp     byte ptr [g80EC],2
+        cmp     byte ptr [gRecordMode],2
         jne     f048D_04E3
-        mov     ax,[g80F5]
+        mov     ax,[gLastEventY]
 f048D_04E3:
-        mov     [g80F5],ax
+        mov     [gLastEventY],ax
         add     di,2
         and     di,0FFh
         mov     [gClickY],ax
@@ -448,24 +448,24 @@ f048D_04F3:
         ja      f048D_052B
         push    ax
         mov     ax,word ptr cs:[di+kKeyBuf]
-        cmp     byte ptr [g80EC],2
+        cmp     byte ptr [gRecordMode],2
         jne     f048D_0507
-        mov     ax,[g80F3]
+        mov     ax,[gLastEventX]
 f048D_0507:
-        mov     [g80F3],ax
+        mov     [gLastEventX],ax
         add     di,2
         and     di,0FFh
         mov     ax,word ptr cs:[di+kKeyBuf]
-        cmp     byte ptr [g80EC],2
+        cmp     byte ptr [gRecordMode],2
         jne     f048D_0520
-        mov     ax,[g80F5]
+        mov     ax,[gLastEventY]
 f048D_0520:
-        mov     [g80F5],ax
+        mov     [gLastEventY],ax
         add     di,2
         and     di,0FFh
         pop     ax
 f048D_052B:
-        cmp     byte ptr [g80EC],2
+        cmp     byte ptr [gRecordMode],2
         je      f048D_0537
         mov     cs:[kKeyBufRead],di
 f048D_0537:
@@ -491,7 +491,7 @@ _WaitGameKey PROC FAR
         mov     es,ax
 f053A_0543:
         cli
-        cmp     byte ptr [g80EC],2
+        cmp     byte ptr [gRecordMode],2
         je      f053A_0559
         mov     ax,cs:[kKeyBufRead]
         cmp     ax,cs:[kKeyBufWrite]
@@ -538,7 +538,7 @@ _WaitGameKey2 PROC FAR
         mov     ds,ax
 f0588_0593:
         cli
-        cmp     byte ptr [g80EC],2
+        cmp     byte ptr [gRecordMode],2
         je      f0588_05A9
         mov     ax,cs:[kKeyBufRead]
         cmp     ax,cs:[kKeyBufWrite]
@@ -573,7 +573,7 @@ _WaitGameKey2 ENDP
 _WaitKeyEvent PROC FAR
 f05D3_05D3:
         cli
-        cmp     byte ptr [g80EC],2
+        cmp     byte ptr [gRecordMode],2
         je      f05D3_05E9
         mov     ax,cs:[kKeyBufRead]
         cmp     ax,cs:[kKeyBufWrite]
@@ -612,7 +612,7 @@ _GetKeyState PROC FAR
         push    ax
         mov     ax,212Eh
         mov     ds,ax
-        mov     ax,[g80EA]
+        mov     ax,[gKeyboardOptions]
         mov     cs:[kModifierState],ax
         pop     ax
         pop     ds
@@ -835,7 +835,7 @@ f0718_07E1:
 f0718_07EF:
         mov     ax,212Eh
         mov     ds,ax
-        mov     ax,[g80EA]
+        mov     ax,[gKeyboardOptions]
         mov     cs:[kModifierState],ax
         mov     dx,word ptr cs:[kModifierState]
         mov     ax,cs
@@ -1275,11 +1275,11 @@ f0B9C_0BB5:
 f0B9C_0BBC:
         mov     word ptr cs:[si+kKeyBuf],ax
         mov     bp,ax
-        mov     ax,word ptr es:[g813C]
+        mov     ax,word ptr es:[gMouseEventX]
         add     si,2
         and     si,0FFh
         mov     word ptr cs:[si+kKeyBuf],ax
-        mov     ax,word ptr es:[g813E]
+        mov     ax,word ptr es:[gMouseEventY]
         add     si,2
         and     si,0FFh
         mov     word ptr cs:[si+kKeyBuf],ax
@@ -1317,7 +1317,7 @@ kMouseButtons   db 00h          ; 1AAD:0C16: mouse button state last handled by 
 
 ; 1AAD:0C17: the recorded-input event handler, called after an event is taken from the ring
 ; (1AAD:053A/0588/05D3). In state 0 (ds:80EC = 0) it does nothing. In state 1 it writes the last
-; decoded key (ds:80EF) and the pacing count (ds:8488) to the file handle g80ED through
+; decoded key (ds:80EF) and the pacing count (ds:8488) to the file handle gRecordHandle through
 ; 1C0E:0578 (4 bytes), and for a mouse key (41h..44h) writes ds:80F3/ds:80F5 instead, then clears
 ; the count. In state 2 it reads 4 bytes through FileRead into kRecKeyD1E/kRecCountD20; on success
 ; it copies them to ds:80EF/ds:80F1 and, for a mouse key, reads 4 more bytes into kRecXD22/kRecYD24
@@ -1326,22 +1326,22 @@ kMouseButtons   db 00h          ; 1AAD:0C16: mouse button state last handled by 
         PUBLIC  _ProcessKeyEvent        ; @ 1AAD:0C17
 _ProcessKeyEvent PROC NEAR
         push    ax
-        cmp     byte ptr [g80EC],0
+        cmp     byte ptr [gRecordMode],0
         jne     f0C17_0C22
         jmp     f0C17_0D18
 f0C17_0C22:
-        mov     ax,[g80EF]
-        cmp     byte ptr [g80EC],1
+        mov     ax,[gLastEventKey]
+        cmp     byte ptr [gRecordMode],1
         jne     f0C17_0C91
         mov     word ptr cs:[kRecKeyD1E],ax
-        mov     ax,[g8488]
+        mov     ax,[gTicksSinceEvent]
         mov     word ptr cs:[kRecCountD20],ax
         push    word ptr cs:[kRecLenD1A+2]
         push    word ptr cs:[kRecLenD1A]
         push    cs
         mov     ax,OFFSET kRecKeyD1E
         push    ax
-        push    word ptr [g80ED]
+        push    word ptr [gRecordHandle]
         call    far ptr _FileWrite
         add     sp,0Ah
         mov     ax,word ptr cs:[kRecKeyD1E]
@@ -1349,39 +1349,39 @@ f0C17_0C22:
         jb      f0C17_0C88
         cmp     al,44h
         ja      f0C17_0C88
-        mov     ax,[g80F3]
+        mov     ax,[gLastEventX]
         mov     word ptr cs:[kRecKeyD1E],ax
-        mov     ax,[g80F5]
+        mov     ax,[gLastEventY]
         mov     word ptr cs:[kRecCountD20],ax
         push    word ptr cs:[kRecLenD1A+2]
         push    word ptr cs:[kRecLenD1A]
         push    cs
         mov     ax,OFFSET kRecKeyD1E
         push    ax
-        push    word ptr [g80ED]
+        push    word ptr [gRecordHandle]
         call    far ptr _FileWrite
         add     sp,0Ah
 f0C17_0C88:
-        mov     word ptr [g8488],0
+        mov     word ptr [gTicksSinceEvent],0
 f0C17_0C8E:
         jmp     f0C17_0D18
 f0C17_0C91:
-        cmp     byte ptr [g80EC],2
+        cmp     byte ptr [gRecordMode],2
         jne     f0C17_0C8E
         push    word ptr cs:[kRecLenD1A+2]
         push    word ptr cs:[kRecLenD1A]
         push    cs
         mov     ax,OFFSET kRecKeyD1E
         push    ax
-        push    word ptr [g80ED]
+        push    word ptr [gRecordHandle]
         call    far ptr _FileRead
         add     sp,0Ah
         or      ax,ax
         je      f0C17_0D12
         mov     ax,word ptr cs:[kRecCountD20]
-        mov     [g80F1],ax
+        mov     [gRecordDelay],ax
         mov     ax,word ptr cs:[kRecKeyD1E]
-        mov     [g80EF],ax
+        mov     [gLastEventKey],ax
         cmp     ax,41h
         jb      f0C17_0D0A
         cmp     al,44h
@@ -1392,23 +1392,23 @@ f0C17_0C91:
         mov     ax,OFFSET kRecKeyD1E
         add     ax,4
         push    ax
-        push    word ptr [g80ED]
+        push    word ptr [gRecordHandle]
         call    far ptr _FileRead
         add     sp,0Ah
         or      ax,ax
         je      f0C17_0D12
         mov     ax,word ptr cs:[kRecXD22]
-        mov     [g80F3],ax
+        mov     [gLastEventX],ax
         mov     [_gCursorX],ax
         mov     ax,word ptr cs:[kRecYD24]
-        mov     [g80F5],ax
+        mov     [gLastEventY],ax
         mov     [_gCursorY],ax
-        mov     word ptr [g8136],1
+        mov     word ptr [gMouseButtonSeen],1
 f0C17_0D0A:
-        mov     word ptr [g8488],0
+        mov     word ptr [gTicksSinceEvent],0
         jmp     short f0C17_0D18
 f0C17_0D12:
-        mov     word ptr [g80F7],1
+        mov     word ptr [gRecordEnded],1
 f0C17_0D18:
         pop     ax
         ret
@@ -1426,16 +1426,16 @@ kRecYD24        dw 0000h        ; 1AAD:0D24: mouse y read from the recording
 ; Purpose unknown: how the injected value is consumed.
         PUBLIC  _InjectRecordedKey      ; @ 1AAD:0D26
 _InjectRecordedKey PROC NEAR
-        cmp     byte ptr [g80EC],0
+        cmp     byte ptr [gRecordMode],0
         je      f0D26_0D58
-        cmp     byte ptr [g80EC],1
+        cmp     byte ptr [gRecordMode],1
         je      f0D26_0D58
-        cmp     word ptr [g80F7],0
+        cmp     word ptr [gRecordEnded],0
         jne     f0D26_0D49
-        mov     ax,[g80F1]
-        cmp     [g8488],ax
+        mov     ax,[gRecordDelay]
+        cmp     [gTicksSinceEvent],ax
         jb      f0D26_0D49
-        mov     ax,[g80EF]
+        mov     ax,[gLastEventKey]
         jmp     short f0D26_0D4C
 f0D26_0D49:
         mov     ax,0

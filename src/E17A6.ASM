@@ -7,7 +7,7 @@
 ; translator TranslateImage (17A6:197E). The code writes the sequencer map mask data port
 ; 3C5 and the graphics controller (3CE/3CF); it never writes the sequencer index port 3C4,
 ; it relies on the index its caller left. DrawTile stores through ES:DI, where ES is 0A200h
-; in EGA mode (L0419) and the gSegEFC2 far pointer otherwise (just before L041F); the
+; in EGA mode (L0419) and the gArtPage far pointer otherwise (just before L041F); the
 ; A400/A600 segments hold the source tile planes (L04B8, L0535 and L0576). The scratch words at
 ; CS:0300..03E6 and CS:0FEF..0FF9 hold the saved far pointer, the port shadows and the
 ; current source and destination pointers. The overlays call the blitters; the call sites
@@ -24,12 +24,12 @@
 
         .DATA
         EXTRN   gGraphicsChoice:WORD              ; @ ds:8102: graphics mode word
-        EXTRN   gSegEFC2:DWORD          ; @ ds:EFC2: far pointer to the saved screen buffer
-        EXTRN   gTable7FBC:BYTE         ; @ ds:7FBC: direction table (17A6:0373)
-        EXTRN   gTable7FCC:WORD         ; @ ds:7FCC: neighbour offsets (17A6:0FB8)
-        EXTRN   gTable7FDC:WORD         ; @ ds:7FDC: neighbour offsets (17A6:0FD3)
-        EXTRN   g80CE:WORD              ; @ ds:80CE: font/table base offset (17A6:18FF)
-        EXTRN   g80D0:WORD              ; @ ds:80D0: font/table base segment (17A6:1913)
+        EXTRN   gArtPage:DWORD          ; @ ds:EFC2: far pointer to the saved screen buffer
+        EXTRN   gDirectionFromMask:BYTE         ; @ ds:7FBC: direction table (17A6:0373)
+        EXTRN   gNeighbourOffsets:WORD         ; @ ds:7FCC: neighbour offsets (17A6:0FB8)
+        EXTRN   gAheadOffsets2And3:WORD         ; @ ds:7FDC: neighbour offsets (17A6:0FD3)
+        EXTRN   gRowOffsetTableOff:WORD              ; @ ds:80CE: driver row offset table, offset (17A6:18FF)
+        EXTRN   gRowOffsetTableSeg:WORD              ; @ ds:80D0: driver row offset table, segment (17A6:1913)
         .CODE
 
 ; ---- data 0000..0100
@@ -170,7 +170,7 @@ L036A:
         inc si
 L0371:
         xor ax, ax
-        mov al, byte ptr [si+gTable7FBC]
+        mov al, byte ptr [si+gDirectionFromMask]
         pop si
         pop di
         pop dx
@@ -273,8 +273,8 @@ _DrawTile PROC FAR
         mov bp, cx
         cmp word ptr [gGraphicsChoice], 2
         je L0419
-        mov di, word ptr [gSegEFC2]
-        mov ax, word ptr [gSegEFC2+2]
+        mov di, word ptr [gArtPage]
+        mov ax, word ptr [gArtPage+2]
         jmp short L041F
 L0419:
         mov ax, 0A200h
@@ -1441,7 +1441,7 @@ _SetPlaneAndWrite ENDP
 ; 17A6:0F1F: copy 0x1F40 groups of four source bytes from the far pointer at [bp+6]/[bp+8] to
 ; [bp+0A]/[bp+0C], nibble-swapping each byte through the table at CS:0200, one output byte per
 ; source byte. A group is read backwards from si + 3, then si advances by 4. The name rests on
-; the caller's comment, "expands the planes into gSegDF4E" (src/EOV3.C:456 to :457). Called
+; the caller's comment, "expands the planes into gStagingPage" (src/EOV3.C:456 to :457). Called
 ; from overlay 3 (ovl3:08A8, 08DA).
         PUBLIC  _ExpandNibbles              ; @ 17A6:0F1F
 _ExpandNibbles PROC FAR
@@ -1558,7 +1558,7 @@ _FindNeighbour PROC FAR
         mov bx, 0
 L0FB6:
         mov ax, si
-        add ax, word ptr [bx+gTable7FCC]
+        add ax, word ptr [bx+gNeighbourOffsets]
         and ax, 3FFh
         cmp ax, di
         je L0FE6
@@ -1570,7 +1570,7 @@ L0FB6:
         shl bx, 1
 L0FD1:
         mov ax, si
-        add ax, word ptr [bx+gTable7FDC]
+        add ax, word ptr [bx+gAheadOffsets2And3]
         and ax, 3FFh
         cmp ax, di
         je L0FE6
@@ -2253,12 +2253,12 @@ _BuildMask PROC FAR
         mov es, word ptr [bp+8]
         mov cx, 6590h
         xor dx, dx
-        mov bx, word ptr [g80CE]
+        mov bx, word ptr [gRowOffsetTableOff]
         add bx, 190h
         mov word ptr cs:[gMaskTableOff], bx
         inc bh
         mov word ptr cs:[gMaskTableOff2], bx
-        mov ds, word ptr [g80D0]
+        mov ds, word ptr [gRowOffsetTableSeg]
 L1917:
         mov bx, word ptr cs:[gMaskTableOff]
 L191C:
