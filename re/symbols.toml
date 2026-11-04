@@ -6882,8 +6882,8 @@ size = 57
 evidence = ["far", "segment"]
 level = "L2"
 match_flags = "-ml -O -Z"
-review = "passed 2026-11-01 rev-sonnet"
 name = "PrintLong"
+review = "passed 2026-11-04 p6-rev-2"
 
 [[function]]
 id = "e1ba8_0005"

@@ -1,10 +1,38 @@
 # Review: e1ba4
 
-Reviewer: rev-sonnet
-Commit reviewed: df9790636fc1643202508eedca47483bb8c174d1
+Reviewer: p6-rev-2
+Commit reviewed: d3391d6da34006ee3c1476339fac7460db591f8e (P6 round; the earlier round read df97906)
 
 Playbook 70. Judge what a matching file can still get wrong: names, types, comments, structure.
 The matcher already proved the bytes; do not re-prove them, read for meaning.
+
+## Round P6 (2026-11-04), commit d3391d6da34006ee3c1476339fac7460db591f8e
+
+Judged the diff df97906..d3391d6 on src/E1BA4.C: the header drops "Placeholder names";
+gFn80CA -> gDrawText (ds:80CA); f1BA4_000C -> PrintLong (1BA4:000C); the parameters are
+renamed a, b, c, d -> x, y, colour, flag; a PrintLong comment is added.
+
+Evidence checked against re/renames.toml (ds:80CA=gDrawText: the callers pass a far string,
+x, y, a colour and a flag; 1BA4:000C=PrintLong: ltoa, gDrawText, the long twin of PrintInt,
+RedrawMember 1547:0991 prints the class experience totals; no struct field in re/fields.toml).
+The names match: gDrawText is the text routine, PrintLong is the long twin of PrintInt, and
+x, y, colour, flag are the caller's arguments at 1547:1075 (expValue, x, y, 0xf, gAltPanelFill).
+
+The earlier round's duplicate-name should is partly resolved: the name is gDrawText in both
+files, but E1BA4.C still declares it with (); use the typed prototype from src/E1AA6.C:7. The
+other should also remains: the header still says "installed at run time" although no direct
+store to ds:80CA was found.
+
+- [ ] should (carried) src/E1BA4.C:7: gDrawText is now the name in both files, but this
+  declaration is still () while src/E1AA6.C:7 has the typed prototype; use the typed one.
+- [ ] should (carried) src/E1BA4.C:1-4: "installed at run time" still implies a known
+  installer; no direct store to ds:80CA was found, so say "set by something not yet found".
+- [ ] note The new names x, y, colour, flag match the caller at 1547:1075 and the typed
+  gDrawText prototype; the PrintLong comment is accurate.
+- [ ] note The earlier round's note that this is the long twin of PrintInt is now reflected in
+  the name PrintLong; the types note (long value, 30 byte buffer) still holds.
+
+No open must-fix. The names are backed by the evidence and the callers use them consistently.
 
 ## Findings
 
