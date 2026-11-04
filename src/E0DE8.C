@@ -144,7 +144,7 @@ extern unsigned char gPartySpellFlags; /*@ ds:FBD2 */   /* bit 0 gates the icon 
                                                 RollToHit reads bits 4 and 5 (:225) */
 extern int gPartyDir; /*@ ds:FBCC */             /* the party's facing, 0..3 north, east, south, west */
 extern int gPartyCell; /*@ ds:FBCA */      /* the party's map cell (src/E177D.C:92) */
-extern signed char gF57E; /*@ ds:F57E */     /* a colour read by 0D1C:0C21 */
+extern signed char gPanelFillColour; /*@ ds:F57E */     /* a colour read by 0D1C:0C21 */
 extern signed char gPanelHighlight; /*@ ds:FB4C */     /* a colour read by 0D1C:0C21 */
 extern signed char gPanelShadow; /*@ ds:F53A */     /* a colour read by 0D1C:0C21 */
 extern char gPanelMode; /*@ ds:FB44 */            /* a mode byte: 0 and 1 gate 0D1C:01CA's redraws
@@ -555,7 +555,7 @@ fail:
     if (alive != 0)
         return;
     LockHidePointer();
-    DrawFilledPanel(0, 0x79, 0x13f, 0xc8, gPanelHighlight, gPanelShadow, gF57E);
+    DrawFilledPanel(0, 0x79, 0x13f, 0xc8, gPanelHighlight, gPanelShadow, gPanelFillColour);
     SetTextWindow(9);
     DrawText("All of your party has been defeated.  The minions of evil will be able to carry out "
              "their plans unhindered!\r");

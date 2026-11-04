@@ -543,8 +543,8 @@ why = "Per wall type (RegisterWallObject ovl3:01C8 fills it): the 1-based block 
 
 [[global]]
 id = "ds:A92A"
-name = "gIconTableA92A"
-why = "per-page, per-row far image pointers (src/EOV2.C:122); gFarA92A was this unit's placeholder"
+name = "gCompassIcons"
+why = "Twelve cells, three rows by four facings, cut from DECORATE by LoadDecorateIcons (ovl2:0577); DrawViewRows (ovl4:1EDE) draws gCompassIcons[gPartyDir + 4 * i] for the three rows below the view (x 0x70, 0x4D, 0x95) and only when gPartyDir changed, which is the compass [H: the game's compass under the view]."
 
 [[global]]
 id = "ds:7E43"
@@ -2024,3 +2024,235 @@ why = "The union REGS output of the unit's int86 calls (int86(0x10, &gFF46, &gFF
 id = "ds:323B"
 name = "gMonsterFrontPos"
 why = "16 bytes read as [orient * 4 + position] by 08E6:103D: {1,1,0,0, 0,1,0,1, 0,0,1,1, 1,0,1,0} is 1 for the two positions in a cell (0 NW, 1 NE, 2 SW, 3 SE) on the side the monster faces"
+[[global]]
+id = "ds:F442"
+name = "gQuietObjectUpdate"
+why = "AreMonstersNear (ovl6:09D2) sets it to 1 around UpdateObjects(0) and UpdateObjects(1) and clears it after; while set, TurnObject (08E6:0309) skips PlaySoundAtCell and DrawViewFrame (ovl4:1F51) skips its view clip, so the camp's object update runs silently and without a screen update."
+[[global]]
+id = "ds:FC04"
+name = "gGameFlags"
+why = "A 32-bit set of game-wide flags: the cell-script opcodes 0xFFF0 set, clear and test bit n of it (122E:1097 SetActionFlagsOp, 122E:1142 and the clear at 122E:0958), ClearType8Objects (08E6:0055) sets bits 18 and 27, the overlay 5 NPC panels set bits 0x2000 to 0x8000000, and WinnerPanel (ovl5:160A) requires bits 1..12 (the 12 Beholder Bonuses). Unlike gActionFlags (ds:FBD4) it is not per level."
+[[global]]
+id = "ds:804A"
+name = "gRestoreRectToPage"
+why = "Graphics driver slot 1 of the table at ds:8046 (MCGA.OVL function table cs:0003, entry 8 = 0516h): it reads the page number through the far pointer ds:8032 (= ds:8115) and then runs gRestoreRect's body (0536h, buffer back to a rectangle) on page gSegsFC0C[page & 0x1F] instead of page 0; callers pair it with gSaveRect or gSaveRectFromPage (ovl1:112D, ovl2:09ED, ovl5:1204, 0ACD:01E3)."
+[[global]]
+id = "ds:A998"
+name = "gGameLoadState"
+why = "Records how the map screen is entered after a load: LoadGamePanel (ovl2:0846) sets 0xFF while the title load runs and 0xFE when it worked, LoadGame (ovl3:15B9) sets 1 on success and 0 on failure and skips its map reload on 0xFF, and EnterMapScreen (0ACD:0F72) loads the saved map instead of resetting when it is nonzero, then clears it."
+[[global]]
+id = "ds:F57E"
+name = "gPanelFillColour"
+why = "The UI panel background colour set by SetUiPalette (ovl2:0937, 0x84 on VGA, 2 otherwise): it is the fill argument of every DrawFilledPanel panel (ovl5:025F, ovl5:03EF, 0DE8, 0EF3:1963, 1547:0464), the colour ClearPanel (ovl5:021C) fills the character panel with, and the text background passed to gDrawText and DrawShadowText (1547:0307, ovl6:0858)."
+[[global]]
+id = "ds:8082"
+name = "gGetSpriteCellRle"
+why = "Graphics driver slot 15 of the table at ds:8046 (MCGA.OVL entry 22 = 0C8Dh): like gGetSpriteCell (0DD9h, which writes a header of type 1 with a 16-colour map) it cuts the cell (x, y, w, h) from a page, but writes a type-0 header and codes runs of zero bytes, which is why LoadGame (ovl3:15B9) unpacks its result with Unpack0 into the 0x514-byte portraits (also ovl5:070E, ovl5:17C8, EOV0)."
+[[global]]
+id = "ds:FD98"
+name = "gMembersMarkedDisabled"
+why = "SelectPartyMember (ovl1:0416) clears it and sets it to 1 when it draws gDisabledMemberIcon over a member that cannot be picked; RunCampMenu (ovl1:1ACD, at the `if (gFD98 || redrawParty)` test) then redraws every member (RedrawMember, SortSpellSlots) to remove the marks and clears it."
+[[global]]
+id = "ds:FDE7"
+name = "gSpellsTakenByTab"
+why = "The count of spells chosen at each spell level, indexed by the 0-based level tab of SpellSlotScreen (ovl1:097A: \"%d of %d Remaining.\" shows allowance[tab] - gFDE7[tab], the take keys increment it, Clear subtracts); cleared for 10 bytes by BuildSpellSlots (ovl1:00DD). Same array as ds:FDE6 one byte earlier."
+[[global]]
+id = "ds:FDE6"
+name = "gSpellsTakenByLevel"
+why = "One byte before gSpellsTakenByTab (ds:FDE7) and the same array, indexed by the 1-based spell level: BuildSpellSlots (ovl1:00DD) bumps gFDE6[gSpellLevels[spell]] for each spell already in the member's slots, the same counter SpellSlotScreen reads as gFDE7[tab]."
+[[global]]
+id = "ds:FD9A"
+name = "gSpellLevels"
+why = "BuildSpellSlots (ovl1:00DD) strcpy's the class's spell-to-level map into it (ds:62C9 for clerics, ds:62AF for mages); BuildSpellSlots and SpendSpellSlot (ovl1:025D) read gFD9A[spell - 1] as the spell's level 1 to 5 to pick its list and its six slots."
+[[global]]
+id = "ds:62AF"
+name = "gMageSpellLevels"
+why = "The level of each mage spell, NUL terminated (bytes 01 x7, 02 x4, 03 x8, 04 x3, 05 x3: 25 spells), copied into gSpellLevels by BuildSpellSlots (ovl1:00DD) when the screen is not the cleric one."
+[[global]]
+id = "ds:62C9"
+name = "gClericSpellLevels"
+why = "The level of each cleric spell, NUL terminated (01 x5, 02 x4, 03 x5, 04 x5, 05 x4, then 01: 24 spells), copied into gSpellLevels by BuildSpellSlots (ovl1:00DD) for the Pray for Spells screen."
+[[global]]
+id = "ds:62F2"
+name = "gMemberBoxColumn"
+why = "Six bytes 17 20 17 20 17 20: the x of each party member's box in 8-pixel columns (184 and 256, the two columns of the party panel); SelectPartyMember (ovl1:0416) draws the four marks at gMemberBoxColumn[i] * 8 + 0, 0x10, 0x20, 0x30."
+[[global]]
+id = "ds:62F8"
+name = "gMemberBoxTop"
+why = "Six bytes 02 02 36 36 6A 6A: the top y of each party member's box (three rows of the party panel), the y SelectPartyMember (ovl1:0416) draws gDisabledMemberIcon at, paired with gMemberBoxColumn."
+[[global]]
+id = "ds:DD28"
+name = "gDisabledMemberIcon"
+why = "A 2 by 8 cell cut from DECORATE at (9, 0x58) by LoadDecorateIcons (ovl2:0577); SelectPartyMember (ovl1:0416) draws it four times across the top strip of the box of every member that cannot be picked, then sets gMembersMarkedDisabled."
+[[global]]
+id = "ds:62FE"
+name = "gClericSpellsPerLevel"
+why = "Ten rows of five bytes (01 00 00 00 00, 02 00 .., 02 01 .., up to 04 04 03 03 02): SpellSlotScreen (ovl1:097A) takes allowance[i] = gClericSpellsPerLevel[(classLevel - 1) * 5 + i] for a cleric's class slot (FindClassSlot kind 2), the spells per spell level."
+[[global]]
+id = "ds:6330"
+name = "gClericWisdomBonus"
+why = "Rows of five bytes indexed by wisdom - 12 (clamped at 0): SpellSlotScreen (ovl1:097A) adds gClericWisdomBonus[wisdom * 5 + i] to each nonzero cleric allowance, the extra spells for high wisdom (row 0 all zero, row 1 one first-level spell)."
+[[global]]
+id = "ds:6358"
+name = "gPaladinSpellsPerLevel"
+why = "Rows of five bytes (01 00 00 00 00 for many rows, then 02, 02 01, 02 02): SpellSlotScreen (ovl1:097A) takes allowance[i] from it by class level for a member whose class slot is the paladin one (FindClassSlot kind 4), with the paladin spell mask 0x00800FF2."
+[[global]]
+id = "ds:6394"
+name = "gMageSpellsPerLevel"
+why = "Eleven rows of five bytes (01 00 00 00 00 up to 04 04 04 03 03): SpellSlotScreen (ovl1:097A) takes allowance[i] = gMageSpellsPerLevel[(classLevel - 1) * 5 + i] for a mage (FindClassSlot kind 1), doubled at levels 4 and 5 when 0D1C:0163(who, 1) finds its item."
+[[global]]
+id = "ds:807E"
+name = "gSaveRectFromPage"
+why = "Graphics driver slot 14 of the table at ds:8046 (MCGA.OVL entry 21 = 1ABDh): it reads the page number through the far pointer ds:8032 (= ds:8115) and runs gSaveRect's body (1ADCh, a screen rectangle into a buffer) on page gSegsFC0C[page & 0x1F] instead of page 0; FindWordPanel (ovl2:09ED), TileAnimation and EndingAnimation save with it and restore with gRestoreRectToPage."
+[[global]]
+id = "ds:65C0"
+name = "gCompassRowHeights"
+why = "Three bytes 11 0A 0A: the height of the cells of row i of gCompassIcons that LoadDecorateIcons (ovl2:0577) cuts from DECORATE (gGetSpriteCell(j * 3, gCompassRowTops[i], 3, gCompassRowHeights[i]))."
+[[global]]
+id = "ds:65C3"
+name = "gCompassRowTops"
+why = "Three bytes 78 89 93: the DECORATE y of row i of gCompassIcons, used by LoadDecorateIcons (ovl2:0577) with gCompassRowHeights to cut the four facings of each of the three rows."
+[[global]]
+id = "ds:65C6"
+name = "gDecorateCellRects"
+why = "Six four-byte rectangles x, y, w, h (0C 58 02 0E, 0C 67 01 07, ... 0C 83 01 03) that LoadDecorateIcons (ovl2:0577) cuts from the DECORATE page in gOverlayBuf into the six cells at ds:F4BE that Ovl4_1D20 draws; what the cells show is not established."
+[[global]]
+id = "ds:DD00"
+name = "gDefaultPointerIcon"
+why = "SetPointerShape (ovl2:0000) cuts cell 0 of ITEMICN (2 by 0x10) into gIconsDDE4[0], copies it here and passes it to SetMousePointerShape (1BB1:0002) with hot spot (0, 0): the mouse pointer shown when no item is held."
+[[global]]
+id = "ds:65EA"
+name = "gBoxCycleColours16"
+why = "The NUL-terminated colour cycle 0C 0D 0E 0F 0E 0D that SetUiPalette (ovl2:0937) strcpy's into ds:1CE7 for the non-VGA modes; DrawRowList (0D1C:0454) steps through ds:1CE7 one colour per tick to animate the selection box, so this is the 16-colour version of that cycle."
+[[global]]
+id = "ds:EFC6"
+name = "gResurrectedPoolChar"
+why = "CharOverlay (ovl5:1A82) sets it to -1; ResurrectPicker (ovl5:0DBB) stores the pool index of the pre-made character chosen for resurrection (gCharPool[n]) and calls DrawCharPortrait(2), which then draws that character's cells cellIdxA[gEFC6] and cellIdxB[gEFC6] beside the panel picture."
+[[global]]
+id = "ds:FE42"
+name = "gTextPanelInView"
+why = "1 when the overlay's text panel is the one over the view, (0,0)-(0xAF,0xAE) (UseItemPanel ovl5:1CDD and WinnerPanel ovl5:160A set it), 0 for the bottom panel (0,0x79)-(0x13F,0xC8) of CharOverlay (ovl5:1A82); MessagePanel (ovl5:025F) places its MORE box at (0x8B,0xA2) or (0x11D,0xBD) by it."
+[[global]]
+id = "ds:DDE0"
+name = "gDeathListCount"
+why = "BuildDeathList (ovl5:0BBE) resets it, increments it for each entry it stores in gDeathList and returns it; ResurrectPicker (ovl5:0DBB) loops over gDeathListCount entries and passes it to SelectMenu as the row count."
+[[global]]
+id = "ds:F4E6"
+name = "gDeathList"
+why = "The word list BuildDeathList (ovl5:0BBE) fills: party members with hp -10 (their index) and, for each carried item whose type kind is 8, -m0B (a pool character); ResurrectPicker (ovl5:0DBB, \"Which should be resurrected?\") names and acts on its entries."
+[[global]]
+id = "ds:7B2B"
+name = "gOuttakeCellRects"
+why = "Nineteen four-byte rectangles x, y, w, h that DrawSheetCell (ovl5:0000) cuts from gOverlayBuf after CharOverlay (ovl5:1A82) loads OUTTAKE (ds:7F07) into it; DrawCharPortrait (ovl5:00A1) picks the cells per NPC panel mode (2, 0, 5, 3, 7, 6, 0x12, 0x11, 4 and the per-character 8 to 0x10)."
+[[global]]
+id = "ds:7B89"
+name = "gMenuRowX"
+why = "Eleven bytes 3B A6 04 70 DC 04 70 DC 04 70 DC: SelectMenu (ovl5:0455) zero-extends gMenuRowX[first + j] as the x of menu row j for DrawMenuRow and its IsPointInsideRect hit tests."
+[[global]]
+id = "ds:7B94"
+name = "gMenuRowYOffset"
+why = "Signed bytes 00 00 00 00 00 0C 0C 0C 18 18 18 right after gMenuRowX: SelectMenu (ovl5:0455) adds gMenuRowYOffset[first + j] to the text baseline ybase to place menu row j."
+[[global]]
+id = "ds:7B23"
+name = "gYesNoMenu"
+why = "Two far pointers to \"yes\" and \"no\" (ds:7CB0, ds:7CB4), the menu AddCharPanel (ovl5:0828) shows through SelectMenu(0, 2, gYesNoMenu) before adding a character."
+[[global]]
+id = "ds:7B9F"
+name = "gStrCancel"
+why = "The string \"CANCEL\", which ChooseChar (ovl5:067B) appends as the seventh row after the six member names; choosing it (row 6) returns 0."
+[[global]]
+id = "ds:7BBA"
+name = "gProposalMenu"
+why = "Two far pointers, \"Hear proposal\" (ds:7D54) and \"Leave\" (ds:7D62): the first menu of GiveItemPanel (ovl5:09C5), SelectMenu(0, 2, ...)."
+[[global]]
+id = "ds:7BC2"
+name = "gHelpHimMenu"
+why = "Two far pointers, \"Help him\" (ds:7D68) and \"Leave\" (ds:7D71): the second menu of GiveItemPanel (ovl5:09C5); choice 0 queues the items and runs AddCharPanel(7, ...)."
+[[global]]
+id = "ds:7CB7"
+name = "gStrMore"
+why = "The string \"MORE\", which MessagePanel (ovl5:025F) draws in colour 0xF inside its box before it waits for a key or a click."
+[[global]]
+id = "ds:7CBC"
+name = "gStrPartyFull"
+why = "The string \"You may only have six characters in your party. Select the one you wish to drop.\", which ChooseChar (ovl5:067B) draws when all six slots are taken."
+[[global]]
+id = "ds:7D0E"
+name = "gStrJoinsParty"
+why = "The sprintf format \"%s joins the party.\\r\" that AddCharPanel (ovl5:0828) fills with gCharPool[who].name into gFileNameBuf when the yes message is -1."
+[[global]]
+id = "ds:7D77"
+name = "gStrFarewell"
+why = "The string \"\\r I wish you luck in your travels.\" that ItemPanelDispatch (ovl5:0B58) draws when none of its three panels did anything."
+[[global]]
+id = "ds:7D9E"
+name = "gStrWhichResurrect"
+why = "The string \"Which should be resurrected?\", the title ResurrectPicker (ovl5:0DBB) draws above its list of gDeathList entries."
+[[global]]
+id = "ds:7E5C"
+name = "gStrWinnerTitle"
+why = "The string \"Congratulations on completing all 12 Beholder Bonuses. ... winning Beholder Bonus party are:\" that WinnerPanel (ovl5:160A) draws when gGameFlags bits 1..12 are all set."
+[[global]]
+id = "ds:7EDB"
+name = "gStrWinnerNameBreak"
+why = "The one-character string \"\\r\" that WinnerPanel (ovl5:160A) draws before each of the first four party names; ds:5AB5 already holds the name gStrNewline, so this copy is named by its use."
+[[global]]
+id = "ds:7EDD"
+name = "gStrPasswordFormat"
+why = "The sprintf format \"\\r\\rPassword: %04x\\r\" into which WinnerPanel (ovl5:160A) prints the checksum of the party's names into gFileNameBuf."
+[[global]]
+id = "ds:7C32"
+name = "gPortalAnimScript"
+why = "The (cell, step) byte pairs ending at 0xFF that TileAnimation (ovl5:1204, mode 8, the PORTALA/PORTALB sequence) walks: each pair selects block/strip cells and a board cell, with sounds at chosen steps; the bytes after the 0xFF are \"yes\" and \"no\"."
+[[global]]
+id = "ds:7BA6"
+name = "gTendTalkMenu"
+why = "Three far pointers, \"Tend his wounds\" (ds:7D23), \"Talk\" and \"Leave\": TemplePanel (ovl5:0924) shows it with SelectMenu(2, 3, ...) while gGameFlags bit 0x2000 is clear."
+[[global]]
+id = "ds:7BB2"
+name = "gTendLeaveMenu"
+why = "Two far pointers, \"Tend his wounds\" (ds:7D3E) and \"Leave\" (ds:7D4E): TemplePanel (ovl5:0924) shows it once gGameFlags bit 0x2000 is set, remapping choice 1 to 2."
+[[global]]
+id = "ds:7BCA"
+name = "gHealMenu"
+why = "Two far pointers, \"Heal Party\" (ds:7DBB) and \"Leave\" (ds:7DC6): ResurrectPanel (ovl5:0EB9) shows it when BuildDeathList found nobody to resurrect."
+[[global]]
+id = "ds:7BD2"
+name = "gHealResurrectMenu"
+why = "Three far pointers, \"Heal Party\", \"Resurrect Dead\" (ds:7DD7) and \"Leave\": ResurrectPanel (ovl5:0EB9) shows it when BuildDeathList found entries; choice 1 runs ResurrectPicker."
+[[global]]
+id = "ds:7BDE"
+name = "gAttackBribeMenu"
+why = "Two far pointers, \"Attack\" (ds:7DEC) and \"Bribe\" (ds:7DF3): AttackPanel (ovl5:0F77) shows it with SelectMenu(0, 2, ...)."
+[[global]]
+id = "ds:7BE6"
+name = "gKillHerMenu"
+why = "Three far pointers, \"Kill her\" (ds:7DF9), \"Hear her out\" (ds:7E02) and \"Let her go\" (ds:7E0F): KillHerPanel (ovl5:102C) shows it with SelectMenu(2, 3, ...); it spans ds:7BE6 to 7BF1, so ds:7BEE is its third entry."
+[[global]]
+id = "ds:7BEE"
+name = "gKillHerMenuLetGo"
+why = "ds:7BEE is gKillHerMenu (ds:7BE6) + 8, its third far pointer (\"Let her go\", ds:7E0F); the menu tables are laid out back to back (7BE6 + 12 = 7BF2) and nothing in src/ uses this declaration."
+[[global]]
+id = "ds:7BF2"
+name = "gSurrenderMenu"
+why = "Two far pointers, \"Surrender\" (ds:7E1A) and \"Attack\" (ds:7E24): SurrenderPanel (ovl5:10A6) shows it with SelectMenu(0, 2, ...)."
+[[global]]
+id = "ds:7BFA"
+name = "gFreeHimMenu"
+why = "Three far pointers, \"Free Him\" (ds:7E2B), \"Kill Him\" and \"Leave\": FreeHimPanel (ovl5:119E) shows it with SelectMenu(2, 3, ...)."
+[[global]]
+id = "ds:8119"
+name = "gScrollHookSeg"
+why = "The segment word of the far pointer gScrollHook (ds:8117): overlay 5 stores offset 0xAC and segment 0x2D0 in the pair (ovl5:1A82, ovl5:160A, ovl5:1CDD), the far address of its MessagePanel stub that DrawTextLine (1DE7:03B2) calls (src/E1DE7.C:79-84, whitepaper rebuild notes)."
+[[global]]
+id = "ds:151F"
+name = "gClericSpells"
+why = "ds:151F is ds:1344 + 25 * 19: record 25 of the spell table, so gClericSpells[n] is the cleric spell n (record 1 names \"bless\", 2 \"cure light wounds\"); CampLoop (ovl6:0000) prints \"%s gained %s.\" with gClericSpells[*slot].name for the slots at +0x55."
+[[global]]
+id = "ds:F53B"
+name = "gUnusedPanelColour"
+why = "a panel colour SetUiPalette ovl2:0937 sets to 0x85 in both branches, next to gF53A and gFB4C, which no code in src/ reads"
+[[global]]
+id = "ds:EFC8"
+name = "gUnusedStartupWord"
+why = "a word InitGameTables ovl2:0496 clears at start-up with ds:EFCA, which no code in src/ (C or assembly) reads or writes otherwise"

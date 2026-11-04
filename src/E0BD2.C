@@ -111,7 +111,7 @@ extern int gGraphicsChoice; /*@ ds:8102 */            /* nonzero: a colour row e
 extern signed char gWallTypeFlags[]; /*@ ds:194B */  /* byte table (src/E0D1C.C) */
 extern signed char gClassBaseBits[]; /*@ ds:1231 */  /* byte table indexed by gChars[].classIndex (src/E0DE8.C) */
 extern int gSlotItemMask[]; /*@ ds:1C8D */          /* per-row class mask (0BD2:0AF2/0C8E) */
-extern signed char gF57E; /*@ ds:F57E */    /* a colour read by 0BD2:0917 (src/E0D1C.C) */
+extern signed char gPanelFillColour; /*@ ds:F57E */    /* a colour read by 0BD2:0917 (src/E0D1C.C) */
 extern signed char gPanelShadow; /*@ ds:F53A */    /* a colour read by 0BD2:0917 (src/E0D1C.C) */
 extern signed char gPanelHighlight; /*@ ds:FB4C */    /* a colour read by 0BD2:0917 (src/E0D1C.C) */
 extern char gFileNameBuf[]; /*@ ds:FE6E */  /* the text buffer sprintf formats into (src/EOV2.C) */
@@ -608,10 +608,10 @@ next:
         kind = gInvSlotKind[row];
         if (gGraphicsChoice == 0)
             DrawFilledPanel(x - 1, y - 1, x + gInvSlotBoxSize[kind], y + gInvSlotBoxSize[kind], 3, 1,
-                    kind != 1 ? gF57E : -1);
+                    kind != 1 ? gPanelFillColour : -1);
         else
             DrawFilledPanel(x - 1, y - 1, x + gInvSlotBoxSize[kind], y + gInvSlotBoxSize[kind], gPanelHighlight, gPanelShadow,
-                    kind != 1 ? gF57E : -1);
+                    kind != 1 ? gPanelFillColour : -1);
         if (kind == 1) {
             gFillRect(0xE3, 0x41, 0xEE, 0x45, 0xC);
             count = ScanListItem(&gChars[gInventoryMember].items[row], -1, -1, 1);

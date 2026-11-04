@@ -83,7 +83,7 @@ extern char gPanelMode; /*@ ds:FB44 */            /* a screen mode: 0 the plain 
                                                 three pick RedrawMember's branches and gate the other
                                                 redraws (src/E0ACD.C:20) */
 extern signed char gInventoryMember; /*@ ds:A99A */     /* the selected member (src/E0ACD.C) */
-extern signed char gF57E; /*@ ds:F57E */     /* a colour (src/EOV2.C) */
+extern signed char gPanelFillColour; /*@ ds:F57E */     /* a colour (src/EOV2.C) */
 extern char gBarEmptyColour; /*@ ds:FB7A */            /* a colour: the empty part of DrawRatioBar (:279), set
                                                 by SetUiPalette (src/EOV2.C:134) */
 extern char gBarGraphsOn; /*@ ds:F43C */            /* nonzero after the startup allocations (src/E07A9.C);
@@ -304,7 +304,7 @@ extern void DrawItemRow(int who, int slot, int one); /*@ 0BD2:0917 */
         if (value <= 10)
             state = 2;
         if (gPanelMode == 0)
-            gDrawText("HP", x - 0xd, y - 1, 0xc, gF57E);
+            gDrawText("HP", x - 0xd, y - 1, 0xc, gPanelFillColour);
         DrawRatioBar(x, y, value, max, width, height, gHpBarColours[state], gBarEmptyColour);
     } else {
         sprintf(buf, "%3d of %-3d", rec->hp, rec->maxHp);
@@ -312,7 +312,7 @@ extern void DrawItemRow(int who, int slot, int one); /*@ 0BD2:0917 */
             x -= 0xd;
             y -= 1;
         }
-        gDrawText(buf, x, y, 0xc, gF57E);
+        gDrawText(buf, x, y, 0xc, gPanelFillColour);
     }
 }
 /* 1547:04A0: draws one member's food/hunger bar (the small bar under the HP line while the
@@ -442,7 +442,7 @@ extern void DrawItemRow(int who, int slot, int one); /*@ 0BD2:0917 */
 }
 /* 1547:07E7: draws one carried item slot of member `who` (0 or 1) on the character screen. The
    slot corner is (gHandSlotX[who & 1], gHandSlotY[(who & 6) + slot]), the x shifted by 0xB0 while no status
-   line is up. It hides the pointer, fills the panel in gPanelHighlight/gPanelShadow/gF57E, and outlines it in colour
+   line is up. It hides the pointer, fills the panel in gPanelHighlight/gPanelShadow/gPanelFillColour, and outlines it in colour
    0xF when the mouse is DISABLED and the slot is the selected one (gMouseDisabled, gInventoryMember, gCursorSlot).
    When the record's lastAction[slot] is set it draws the item-use label DrawActionLabel; else it draws the
    item icon through DrawItemIcon, or the empty-slot icon gEmptySlotIcons[slot] through DrawShape,
@@ -461,7 +461,7 @@ extern void DrawItemRow(int who, int slot, int one); /*@ 0BD2:0917 */
         x += 0xb0;
     item = gChars[who].items[slot];
     LockHidePointer();
-    DrawFilledPanel(x, y, x + 0x1e, y + 0xf, gPanelHighlight, gPanelShadow, gF57E);
+    DrawFilledPanel(x, y, x + 0x1e, y + 0xf, gPanelHighlight, gPanelShadow, gPanelFillColour);
     if (gMouseDisabled && who == gInventoryMember && slot == gCursorSlot)
         DrawRect(x, y, x + 0x1e, y + 0xf, 0xf);
     if (gChars[who].lastAction[slot] != 0) {
@@ -528,9 +528,9 @@ extern void DrawItemRow(int who, int slot, int one); /*@ 0BD2:0917 */
         gStatusLine = 2;
         x <<= 3;    /* the layout tables hold 8-pixel columns; the text routines take pixels */
         if (gIconTable == who)
-            gDrawText("Swapping", x + 2, y + 2, 8, gF57E);
+            gDrawText("Swapping", x + 2, y + 2, 8, gPanelFillColour);
         else
-            gDrawText(rec->name, x + 2, y + 2, textColour, gF57E);
+            gDrawText(rec->name, x + 2, y + 2, textColour, gPanelFillColour);
         DrawMemberPortrait(who);
         DrawMemberSlot(who, 0);
         DrawMemberSlot(who, 1);
@@ -555,7 +555,7 @@ extern void DrawItemRow(int who, int slot, int one); /*@ 0BD2:0917 */
         ClipRect(0x16, 0, 0, 0, 0x12, 0xa8, 2, 2);
         gStatusLine = 2;
         DrawMemberPortrait(who);
-        DrawShadowText(rec->name, 0xdb, 6, textAttr, gF57E);
+        DrawShadowText(rec->name, 0xdb, 6, textAttr, gPanelFillColour);
         DrawMemberHp(who);
         DrawMemberFood(who);
         if (gPanelMode == 1) {

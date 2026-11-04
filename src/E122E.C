@@ -21,7 +21,7 @@ extern void far *gScriptStack[]; /*@ ds:F444 */ /* the ten-deep far pointer stac
 extern void far *gBuf8DCA; /*@ ds:8DCA */      /* start-up far allocation (src/E07A9.C) */
 extern int gFBC8; /*@ ds:FBC8 */               /* the current action (src/E0ACD.C) */
 extern unsigned long gActionFlags[]; /*@ ds:FBD4 */ /* per-action 32-bit masks, indexed by gFBC8 */
-extern unsigned long gFC04; /*@ ds:FC04 */     /* effect flags (src/E08E6.C) */
+extern unsigned long gGameFlags; /*@ ds:FC04 */     /* effect flags (src/E08E6.C) */
 extern char gMazeItems[]; /*@ ds:B899 */            /* the nine-byte record list head (src/E0ACD.C) */
 extern int gFBCE; /*@ ds:FBCE */               /* the item index shown by the mouse (src/E07A9.C) */
 extern int gScriptCell; /*@ ds:B800 */               /* the cell whose script is running (122E:1DA8) */
@@ -901,7 +901,7 @@ done:
     return (long)(script - start);
 }
 /* 122E:1097: opcode that sets action flags. 0xFFEF sets the bit in the gActionFlags entry of the
-   current action gFBC8, 0xFFF0 sets it in gFC04, 0xFFF3 sets a bit in gMonsters[index].m16 and clears
+   current action gFBC8, 0xFFF0 sets it in gGameFlags, 0xFFF3 sets a bit in gMonsters[index].m16 and clears
    gMonsters[index].type, and 0xFFE4 sets gFB76. Returns the bytes read. */
 /*@ 122E:1097 */ long SetActionFlagsOp(char far *script)
 {
@@ -918,7 +918,7 @@ done:
         break;
     case 0xfff0:
         arg = *script++;
-        gFC04 |= 1L << arg;
+        gGameFlags |= 1L << arg;
         break;
     case 0xfff3:
         idx = *script++;
@@ -952,7 +952,7 @@ done:
 }
 
 /* 122E:11E8: opcode that clears one bit of a 32-bit action mask: 0xFFEF clears the bit in the
-   gActionFlags entry of the current action gFBC8, 0xFFF0 clears it in gFC04. The byte after the
+   gActionFlags entry of the current action gFBC8, 0xFFF0 clears it in gGameFlags. The byte after the
    opcode is the bit number. Returns the bytes read. */
 /*@ 122E:11E8 */ long ClearActionBit(char far *script)
 {
@@ -967,7 +967,7 @@ done:
         gActionFlags[gFBC8] &= ~(1L << bit);
         break;
     case 0xFFF0:
-        gFC04 &= ~(1L << bit);
+        gGameFlags &= ~(1L << bit);
         break;
     }
     return (long)(script - start);
@@ -1151,7 +1151,7 @@ done:
                != 0`: the `!= 0` form makes TCC share the store-0 tail, where the original inlines
                store 0 in each case and shares store 1. */
             value = *script++;
-            if (gFC04 & (1L << value))
+            if (gGameFlags & (1L << value))
                 gEvalStack[gEvalTop++] = 1;
             else
                 gEvalStack[gEvalTop++] = 0;

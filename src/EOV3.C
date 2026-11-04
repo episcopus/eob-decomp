@@ -34,14 +34,14 @@ extern char *strcpy(char far *dest, char far *src); /*@ 0000:67CD */
 extern void far *gSegDCA6; /*@ ds:DCA6 */   /* the far pointer f19EC_0002(7) returns (src/E07A9.C) */
 extern int gGraphicsChoice; /*@ ds:8102 */            /* the video mode the game initialised (src/E082C.C) */
 extern char gWallNameBuf[]; /*@ ds:FE2E */  /* the wall texture name kept between LoadWallTextures calls (ovl3:07A5) */
-extern void far *(far *gFn8082)(int x, int y, int w, int h, void far *buf); /*@ ds:8082 */
+extern void far *(far *gGetSpriteCellRle)(int x, int y, int w, int h, void far *buf); /*@ ds:8082 */
 extern void DrawViewRows(void); /*@ 2116:0034 */  /* overlay 4 entry, ovl4:1EDE */
 extern void SetFont(char far *font); /*@ 1A47:0169 */
 extern void RedrawCharacters(void); /*@ 0D1C:0583 */
 extern void SetMouseItem(int item); /*@ 07A9:010C */
 extern int far RollDice(char count, char sides, char bonus); /*@ 082C:0458 */
 extern void far *gFont6x6; /*@ ds:A9C0 */      /* the current 6x6 font (src/E07A9.C) */
-extern char gA998; /*@ ds:A998 */           /* src/E0ACD.C */
+extern char gGameLoadState; /*@ ds:A998 */           /* src/E0ACD.C */
 extern signed char gViewToCellPos[]; /*@ ds:1A1B */  /* per-page sound table (src/E0ACD.C:131) */
 extern int gPartyCell; /*@ ds:FBCA */
 extern int gPartyDir; /*@ ds:FBCC */
@@ -941,7 +941,7 @@ done:
         for (i = 0; i < 6; i++) {
             rec = &gChars[i];
             if (rec->status != 0 && rec->portraitIndex >= 0) {
-                cell = gFn8082((rec->portraitIndex % 10) * 4, (rec->portraitIndex / 10) * 32, 4, 0x20, gOverlayBuf);
+                cell = gGetSpriteCellRle((rec->portraitIndex % 10) * 4, (rec->portraitIndex / 10) * 32, 4, 0x20, gOverlayBuf);
                 Unpack0(cell, rec->portrait, 0x514L);
                 farfree(cell);
             } else
@@ -953,13 +953,13 @@ done:
             for (i = 0; i < 6; i++) {
                 rec = &gChars[i];
                 if (rec->status != 0 && rec->portraitIndex < 0) {
-                    cell = gFn8082(-(rec->portraitIndex + 1) * 4, 0xa0, 4, 0x20, gOverlayBuf);
+                    cell = gGetSpriteCellRle(-(rec->portraitIndex + 1) * 4, 0xa0, 4, 0x20, gOverlayBuf);
                     Unpack0(cell, rec->portrait, 0x514L);
                     farfree(cell);
                 }
             }
         }
-        if (gA998 != (char)0xff) {
+        if (gGameLoadState != (char)0xff) {
             LoadMapScreen(gFBC8);
             LoadScreenImage("PLAYFLD", (char far *)gSheetDECORATE, 5, 3, 0);
             DrawViewRows();
@@ -973,9 +973,9 @@ done:
                 InsertListItem((void far *)(gMazeItems + gPartyCell * 9), gPartyCell, gFBCE, idx);
             }
         }
-        gA998 = 1;
+        gGameLoadState = 1;
     } else
-        gA998 = 0;
+        gGameLoadState = 0;
     return ok;
 }
 /* ovl3:19F7: resets the level. It clears the m0A byte of the 30 gMonsters objects, clears every live

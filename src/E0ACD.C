@@ -43,7 +43,7 @@ extern void BuildList1(void); /*@ 0CF7:0028 */
 extern void BuildList2(void); /*@ 0CF7:00B4 */
 extern void BuildList3(void); /*@ 0CF7:0140 */
 extern void ClipRect(int x1, int y1, int x2, int y2, int width, int height, int extra1, int extra2); /*@ 19F3:000E */
-extern void (far *gFn804A)(int x, int y, int w, int h, void far *buf); /*@ ds:804A */ /* src/EOV2.C */
+extern void (far *gRestoreRectToPage)(int x, int y, int w, int h, void far *buf); /*@ ds:804A */ /* src/EOV2.C */
 
 extern char gIconTable; /*@ ds:FB34 */           /* the index of the party member being moved, -1 when
                                                none; src/E1414.C:106 agrees ("the index of the party
@@ -153,7 +153,7 @@ extern char gFlag; /*@ ds:F3B9 */           /* picks the "a" table set when nonz
                                                this unit uses it as a redraw gate in PickOrSwapMember
                                                (0ACD:0264) and clears it in EnterMapScreen
                                                (0ACD:0F72) */
-extern char gA998; /*@ ds:A998 */           /* the saved-game load flag: 0xff while a load runs,
+extern char gGameLoadState; /*@ ds:A998 */           /* the saved-game load flag: 0xff while a load runs,
                                                0xfe after a saved game loads and 0 otherwise
                                                (src/EOV2.C); EnterMapScreen (0ACD:0F72) tests it */
 extern int gMouseDisabled; /*@ ds:814A */   /* nonzero disables the mouse (src/E07A9.C) */
@@ -321,7 +321,7 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
 
     LockHidePointer();
     gStatusLine = 2;
-    gFn804A(0, 0, 0x12, 0xa8, gSegDF4E);
+    gRestoreRectToPage(0, 0, 0x12, 0xa8, gSegDF4E);
     gCursorSlot = 0;
     gPanelMode = 0;
     for (i = 0; i < 6; i++)
@@ -972,22 +972,22 @@ done:
     }
 }
 
-/* 0ACD:0F72: enters the map screen. When gA998 is clear (a normal entry) it calls ResetMapScreen
+/* 0ACD:0F72: enters the map screen. When gGameLoadState is clear (a normal entry) it calls ResetMapScreen
    (0ACD:1033); when it is nonzero (0xff while a load runs, 0xfe after a saved game loads, src/EOV2.C)
    it shows the mouse item (SetMouseItem(gFBCE), unless the mouse is disabled), loads level gFBC8's
-   map and inventory (LoadMapScreen, ovl3:0A7C) and clears gA998. Then it clears gFlag, resets the
+   map and inventory (LoadMapScreen, ovl3:0A7C) and clears gGameLoadState. Then it clears gFlag, resets the
    character index and the menu phase, rebuilds list 1, loads PLAYFLD and INVENT through
    LoadScreenImage (into gSheetDECORATE and gSheet2067), selects the font, clears the status
    flag, redraws the characters, shows the pointer and sets text window 7. */
 /*@ 0ACD:0F72 */ void EnterMapScreen(void)
 {
-    if (!gA998) {
+    if (!gGameLoadState) {
         ResetMapScreen();
     } else {
         if (!gMouseDisabled)
             SetMouseItem(gFBCE);
         LoadMapScreen(gFBC8);
-        gA998 = 0;
+        gGameLoadState = 0;
     }
     NoOpAfterMapLoad();
     gFlag = 0;

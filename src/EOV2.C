@@ -107,24 +107,24 @@ extern void far *gThrownIcon2; /*@ ds:FB40 */
 extern void far *gThrownIcon3; /*@ ds:EFB4 */
 extern void far *gThrownIcon4; /*@ ds:EFBE */
 extern char gFileNameBuf[]; /*@ ds:FE6E */
-extern int gColour179; /*@ ds:0179 */ /* a text colour FindWordPanel copies from gF57E (src/EOV2.C:501); no reader in src/ yet */
+extern int gColour179; /*@ ds:0179 */ /* a text colour FindWordPanel copies from gPanelFillColour (src/EOV2.C:501); no reader in src/ yet */
 extern struct WordCell gWordCells[]; /*@ ds:65F0 */
-extern unsigned char g65C0[]; /*@ ds:65C0 */ /* the three per-row cell heights of the gIconTableA92A loop, indexed by the row i (0..2) (src/EOV2.C:366-368) */
-extern unsigned char g65C3[]; /*@ ds:65C3 */ /* the three per-row cell y origins of the gIconTableA92A loop, indexed by the row i (0..2) (src/EOV2.C:366-368) */
-extern struct Cell4 gCellDef65C6[]; /*@ ds:65C6 */ /* the six decoration-cell rectangles LoadDecorateIcons cuts from gOverlayBuf */
+extern unsigned char gCompassRowHeights[]; /*@ ds:65C0 */ /* the three per-row cell heights of the gCompassIcons loop, indexed by the row i (0..2) (src/EOV2.C:366-368) */
+extern unsigned char gCompassRowTops[]; /*@ ds:65C3 */ /* the three per-row cell y origins of the gCompassIcons loop, indexed by the row i (0..2) (src/EOV2.C:366-368) */
+extern struct Cell4 gDecorateCellRects[]; /*@ ds:65C6 */ /* the six decoration-cell rectangles LoadDecorateIcons cuts from gOverlayBuf */
 extern void far *gIntroCells[]; /*@ ds:F4BE */ /* the six decoration cells LoadDecorateIcons cuts from gOverlayBuf (src/EOV2.C:346); src/EOV4.C:955 indexes the table */
-extern char far *gFlashFrames[]; /*@ ds:DD1C */ /* the flash-frame images src/E0EF3.C lays over a member, indexed by frame - 1 (src/E0EF3.C:356, :707, :773). The readers compute a frame 0 to 3 and then skip 0 (if (frame-- == 0) continue;, src/E0EF3.C:696, :771), so 0 means no frame and frames 1 to 3 index gFlashFrames[0..2]: DrawFlashFrame (0EF3:05BD) computes (gFlashPassMask[pass] & gFlashFrameMask[i]) >> gFlashFrameShift[i] from the bytes at ds:5621 (40 90 e4 b9 6e 1b 06 01), ds:5629 (c0 30 0c 03) and ds:562D (06 04 02 00), and FlashViewDamage (0EF3:06E7) does the same with gFlashPass2 (ds:564B), gFlashFrame2 (ds:5677) and gFlashShift2 (ds:56B7, shifts 0x1e to 0). So the array holds the three entries DD1C, DD20 and DD24 that LoadDecorateIcons fills; the next slot DD28 is the separate icon pointer gIconDD28 */
-extern char far *gIconDD28; /*@ ds:DD28 */ /* the icon table src/EOV1.ASM:87 draws member icons from, filled by LoadDecorateIcons at the slot after gFlashFrames */
+extern char far *gFlashFrames[]; /*@ ds:DD1C */ /* the flash-frame images src/E0EF3.C lays over a member, indexed by frame - 1 (src/E0EF3.C:356, :707, :773). The readers compute a frame 0 to 3 and then skip 0 (if (frame-- == 0) continue;, src/E0EF3.C:696, :771), so 0 means no frame and frames 1 to 3 index gFlashFrames[0..2]: DrawFlashFrame (0EF3:05BD) computes (gFlashPassMask[pass] & gFlashFrameMask[i]) >> gFlashFrameShift[i] from the bytes at ds:5621 (40 90 e4 b9 6e 1b 06 01), ds:5629 (c0 30 0c 03) and ds:562D (06 04 02 00), and FlashViewDamage (0EF3:06E7) does the same with gFlashPass2 (ds:564B), gFlashFrame2 (ds:5677) and gFlashShift2 (ds:56B7, shifts 0x1e to 0). So the array holds the three entries DD1C, DD20 and DD24 that LoadDecorateIcons fills; the next slot DD28 is the separate icon pointer gDisabledMemberIcon */
+extern char far *gDisabledMemberIcon; /*@ ds:DD28 */ /* the icon table src/EOV1.ASM:87 draws member icons from, filled by LoadDecorateIcons at the slot after gFlashFrames */
 extern void far *gDeadPortraitIcon; /*@ ds:F2F4 */
 extern void far *gUnconsciousIcon; /*@ ds:DC94 */
 extern void far *gHandShadeIcon; /*@ ds:8A7E */
-extern void far *gIconTableA92A[]; /*@ ds:A92A */
+extern void far *gCompassIcons[]; /*@ ds:A92A */
 extern int gItemCount; /*@ ds:E066 */
 extern int gItemNameCount; /*@ ds:F516 */
 extern unsigned char far gItemNames[]; /*@ 1F28:0000 */
 extern struct CharRec gChars[]; /*@ ds:F580 */
 extern void far *gItemIcons[]; /*@ ds:DDE4 */
-extern void far *gPtrDD00; /*@ ds:DD00 */ /* the mouse pointer image: gItemIcons[0], set by SetPointerShape (src/EOV2.C:214) and given to SetMousePointerShape (src/E1BB1.ASM:12) */
+extern void far *gDefaultPointerIcon; /*@ ds:DD00 */ /* the mouse pointer image: gItemIcons[0], set by SetPointerShape (src/EOV2.C:214) and given to SetMousePointerShape (src/E1BB1.ASM:12) */
 extern void far *gRemappedIcon; /*@ ds:DF48 */
 extern void far *gSegDF4E; /*@ ds:DF4E */
 extern char far *gItemRemapTable; /*@ ds:F534 */
@@ -135,27 +135,27 @@ extern int gTextWidth; /*@ ds:FE62 */
 extern int gTextLeft; /*@ ds:FE64 */
 extern int gTextTop; /*@ ds:FE66 */
 extern char far *gFont6x6; /*@ ds:A9C0 */
-extern char gF57E; /*@ ds:F57E */ /* a UI colour (src/E0D1C.C:46), set by SetUiPalette */
+extern char gPanelFillColour; /*@ ds:F57E */ /* a UI colour (src/E0D1C.C:46), set by SetUiPalette */
 extern char gPanelHighlight; /*@ ds:FB4C */ /* a UI colour (src/E0D1C.C:47), set by SetUiPalette */
 extern char gPanelShadow; /*@ ds:F53A */ /* a UI colour (src/E0D1C.C:48), set by SetUiPalette */
-extern char gF53B; /*@ ds:F53B */ /* a UI colour set by SetUiPalette; no reader in src/ yet */
+extern char gUnusedPanelColour; /*@ ds:F53B */ /* a UI colour set by SetUiPalette; no reader in src/ yet */
 extern char gBarEmptyColour; /*@ ds:FB7A */ /* a colour DrawRatioBar is passed (src/E1547.C:279), set by SetUiPalette */
 extern char gAltPanelFill; /*@ ds:FB7B */ /* a colour DrawShadowText is passed (src/E1547.C:529), set by SetUiPalette */
 extern char gUnselTabLightColour; /*@ ds:A9C4 */ /* a panel colour (src/E0EF3.C:1911), set by SetUiPalette */
 extern char gUnselTabDarkColour; /*@ ds:A928 */ /* a panel colour (src/E0EF3.C:1912), set by SetUiPalette */
 extern char gFailLabelLight; /*@ ds:A95A */ /* the outer colour of the action panel (src/E1547.C:379), set by SetUiPalette */
-extern char gA998; /*@ ds:A998 */ /* nonzero tells EnterMapScreen (src/E0ACD.C:911) to show the inventory and the loaded map; the saved-game panel writes it in LoadGamePanel */
+extern char gGameLoadState; /*@ ds:A998 */ /* nonzero tells EnterMapScreen (src/E0ACD.C:911) to show the inventory and the loaded map; the saved-game panel writes it in LoadGamePanel */
 extern char gFailLabelShadow; /*@ ds:8A6C */ /* the fill colour of the action panel (src/E1547.C:379), set by SetUiPalette */
 extern char gFailLabelFill; /*@ ds:8A7D */ /* the third colour of the action panel (src/E1547.C:379), set by SetUiPalette */
 extern char gIconTable; /*@ ds:FB34 */ /* this unit, src/E0ACD.C:48, src/E1414.C:106 and src/E1547.C:128 read it as the party member being moved (-1 when none); the BlinkSelected comment (1414:0000, src/E1414.C:141-145) saves and restores it as that member. src/E0EF3.C:227 declares ds:FB34 as an array of far sprite pointers (a cross-unit conflict to settle) */
-extern int gEFC8; /*@ ds:EFC8 */ /* a word cleared by InitGameTables; no other reader in src/ yet */
+extern int gUnusedStartupWord; /*@ ds:EFC8 */ /* a word cleared by InitGameTables; no other reader in src/ yet */
 extern int gEFCA; /*@ ds:EFCA */ /* a word cleared by InitGameTables; no other reader in src/ yet */
 extern void far *gB802[]; /*@ ds:B802 */ /* 36 far map-icon pointers (src/EOV3.C:146, freed at :390-401), cleared by InitGameTables */
 extern long gDoorShapes[]; /*@ ds:FB5E */ /* six size-record pointers (src/EOV3.C:138 declares them longs; src/EOV4.C:756 declares them struct SlotSize far *), cleared by InitGameTables */
 extern struct SlotPos gDoorButtons[]; /*@ ds:A99C */
 extern void far *gRectKinds[]; /*@ ds:EFD4 */ /* 200 far size-record pointers (src/EOV3.C:14, freed at :230-241; src/E122E.C:98 declares them struct RectKind far *), cleared by InitGameTables */
 extern char gSelectFrameColours[]; /*@ ds:1CE7 */
-extern char gData65EA[]; /*@ ds:65EA */
+extern char gBoxCycleColours16[]; /*@ ds:65EA */
 extern char gOverlayBuf[]; /*@ ds:113F */
 extern char far *gOptionNames[]; /*@ ds:65DE */
 
@@ -174,8 +174,8 @@ extern unsigned char far gSheetITEMICN[]; /*@ 20A9:0000 */
 extern void far * (far *gGetSpriteCell)(int x, int y, int w, int h, void far *sheet); /*@ ds:8086 */
 extern int (far *gGetPixel)(int x, int y); /*@ ds:8072 */ /* saves the pixels under (x, y) and returns a handle (src/E0EF3.C:389) */
 extern void (far *gFillRect)(int x1, int y1, int x2, int y2, int colour); /*@ ds:806A */ /* the rectangle fill hook (src/E082C.C:64) */
-extern void (far *gFn807E)(int x, int y, int w, int h, void far *buf); /*@ ds:807E */
-extern void (far *gFn804A)(int x, int y, int w, int h, void far *buf); /*@ ds:804A */
+extern void (far *gSaveRectFromPage)(int x, int y, int w, int h, void far *buf); /*@ ds:807E */
+extern void (far *gRestoreRectToPage)(int x, int y, int w, int h, void far *buf); /*@ ds:804A */
 
 extern void LoadOverlayScreen(char far *name, int a, int b); /*@ 082C:05EC */
 extern void LoadScreenImage(char far *name, char far *buf, int a, int b, int c); /*@ 082C:051B */
@@ -203,7 +203,7 @@ extern unsigned strlen(char far *s); /*@ 0000:67F6 */
 extern int strcmp(char far *a, char far *b); /*@ 0000:679D */
 extern int sprintf(char far *buf, char far *fmt, ...); /*@ 0000:57AE */
 extern void exit(int status); /*@ 0000:50F3 */
-extern int f6815(char far *s); /*@ 0000:6815 */ /* runtime-library strlwr: lowercases the far string
+extern int strlwr(char far *s); /*@ 0000:6815 */ /* runtime-library strlwr: lowercases the far string
    in place ('A' to 'Z' get +0x20 and are stored back, 0000:6822-682C) and returns the pointer in
    dx:ax (0000:6815 decode: push bp, mov bp,sp, push si, cld, lds si,[bp+6], the loop, then
    0000:6832-6838: xchg dx,ax, mov dx,ds, pop ds, pop si, pop bp, retf) */
@@ -215,14 +215,14 @@ extern void FileRead(int handle, void far *buf, unsigned long len); /*@ 1C0E:040
 extern void FileClose(int handle); /*@ 1C0E:03BB */
 
 /* ovl2:0000: loads the ITEMICN image, slices one 2 by 0x10 cell out of gOverlayBuf through
-   gGetSpriteCell and makes the result (gItemIcons[0] and gPtrDD00) the mouse pointer shape at
+   gGetSpriteCell and makes the result (gItemIcons[0] and gDefaultPointerIcon) the mouse pointer shape at
    (0,0), then clears the status line. Called first by LoadItemData. */
 /*@ ovl2:0000 */ void SetPointerShape(void)
 {
     LoadOverlayScreen("ITEMICN", 5, 3);
     gItemIcons[0] = gGetSpriteCell(0, 0, 2, 0x10, gOverlayBuf);
-    gPtrDD00 = gItemIcons[0];
-    SetMousePointerShape(0, 0, gPtrDD00);
+    gDefaultPointerIcon = gItemIcons[0];
+    SetMousePointerShape(0, 0, gDefaultPointerIcon);
     gStatusLine = 0;
 }
 
@@ -313,7 +313,7 @@ extern void FileClose(int handle); /*@ 1C0E:03BB */
 
 /* ovl2:0496: resets the tables a new game starts from and allocates one 0x514-byte scratch buffer
    for each of the six character records: sets gIconTable (ds:FB34, the party member being moved,
-   -1 when none; src/E0ACD.C:42) to -1, clears the two words gEFC8 and gEFCA, the 36 far pointers
+   -1 when none; src/E0ACD.C:42) to -1, clears the two words gUnusedStartupWord and gEFCA, the 36 far pointers
    of gB802 (src/EOV3.C:146), the six longs of gDoorShapes (src/EOV3.C:138), the far size-record pointer
    of each of the six gDoorButtons records (src/E122E.C:112-117) and the 200 far pointers of gRectKinds
    (src/E122E.C:98, freed by src/EOV3.C:230-241), then writes each character record's index and
@@ -323,7 +323,7 @@ extern void FileClose(int handle); /*@ 1C0E:03BB */
     int i;
 
     gIconTable = 0xff;
-    gEFC8 = 0;
+    gUnusedStartupWord = 0;
     gEFCA = 0;
     for (i = 0; i < 0x24; i++)
         gB802[i] = 0;
@@ -341,10 +341,10 @@ extern void FileClose(int handle); /*@ 1C0E:03BB */
 
 /* ovl2:0577: the overlay-8 entry (reached as 2106:0048), leads to the ITEMRMP read. First calls
    LoadItemSheets, then loads the DECORATE image (its page lands in gOverlayBuf, ds:113F) and
-   slices the creature/decoration icons out of it: six cells described by gCellDef65C6, cut from
+   slices the creature/decoration icons out of it: six cells described by gDecorateCellRects, cut from
    gOverlayBuf into gIntroCells, the three flash frames gFlashFrames[0..2], three more single cells
-   (gDeadPortraitIcon, gUnconsciousIcon, gHandShadeIcon), the icon pointer gIconDD28, and the 3x4 gIconTableA92A whose
-   cells are 3 wide with y from g65C3 and height from g65C0. Called by StartupAlloc (07A9:000A). */
+   (gDeadPortraitIcon, gUnconsciousIcon, gHandShadeIcon), the icon pointer gDisabledMemberIcon, and the 3x4 gCompassIcons whose
+   cells are 3 wide with y from gCompassRowTops and height from gCompassRowHeights. Called by StartupAlloc (07A9:000A). */
 /*@ ovl2:0577 */ void LoadDecorateIcons(void)
 {
     char i;
@@ -353,18 +353,18 @@ extern void FileClose(int handle); /*@ 1C0E:03BB */
     LoadItemSheets();
     LoadOverlayScreen("DECORATE", 5, 3);
     for (i = 0; i < 6; i++)
-        gIntroCells[i] = gGetSpriteCell(gCellDef65C6[i].x, gCellDef65C6[i].y,
-            gCellDef65C6[i].w, gCellDef65C6[i].h, gOverlayBuf);
+        gIntroCells[i] = gGetSpriteCell(gDecorateCellRects[i].x, gDecorateCellRects[i].y,
+            gDecorateCellRects[i].w, gDecorateCellRects[i].h, gOverlayBuf);
     gFlashFrames[0] = gGetSpriteCell(0x1d, 0, 2, 0x10, gSheetDECORATE);
     gFlashFrames[1] = gGetSpriteCell(0x1f, 0, 2, 0x10, gSheetDECORATE);
     gFlashFrames[2] = gGetSpriteCell(0x21, 0, 2, 0x10, gSheetDECORATE);
     gDeadPortraitIcon = gGetSpriteCell(0, 0x58, 4, 0x20, gSheetDECORATE);
     gUnconsciousIcon = gGetSpriteCell(4, 0x58, 4, 0x20, gSheetDECORATE);
     gHandShadeIcon = gGetSpriteCell(8, 0x58, 4, 0x10, gSheetDECORATE);
-    gIconDD28 = gGetSpriteCell(9, 0x58, 2, 8, gSheetDECORATE);
+    gDisabledMemberIcon = gGetSpriteCell(9, 0x58, 2, 8, gSheetDECORATE);
     for (i = 0; i < 3; i++)
         for (j = 0; j < 4; j++)
-            gIconTableA92A[i * 4 + j] = gGetSpriteCell(j * 3, g65C3[i], 3, g65C0[i], gSheetDECORATE);
+            gCompassIcons[i * 4 + j] = gGetSpriteCell(j * 3, gCompassRowTops[i], 3, gCompassRowHeights[i], gSheetDECORATE);
     gStatusLine = 0;
 }
 
@@ -391,10 +391,10 @@ extern void FileClose(int handle); /*@ 1C0E:03BB */
 
 /* ovl2:0846: the title menu's "load a saved game" panel. Draws the panel (DrawOptionList) and waits
    (UpdateOptionList) until the pointer picks an entry. Entry 0 loads a saved game and marks the
-   load in gA998: 0xff while it runs (src/EOV3.C:937 skips its map reload on that value) and 0xfe
+   load in gGameLoadState: 0xff while it runs (src/EOV3.C:937 skips its map reload on that value) and 0xfe
    when it succeeded; both are nonzero, which is how EnterMapScreen (src/E0ACD.C:909-918) later
    shows the loaded map and the inventory. On failure it prints "Unable to load your saved game!",
-   clears gA998 and redraws the panel to wait again. Entry 1 sets gA998 to 0, selects the 8x8 font
+   clears gGameLoadState and redraws the panel to wait again. Entry 1 sets gGameLoadState to 0, selects the 8x8 font
    (SetFont with gFont8x8, the Font8.fnt loaded at src/E07C8.C:376, src/E1C0E.C:57) and runs
    RunCharacterPanel (ovl0:28F9), then restores the 6x6 font (gFont6x6, the FONT6.FNT loaded at
    src/E07C8.C:377, src/EOV0.C:168, src/EOV3.C:42): the "Start a new party" entry [H]
@@ -414,23 +414,23 @@ extern void FileClose(int handle); /*@ 1C0E:03BB */
         LockHidePointer();
         switch (sel) {
         case 0:
-            gA998 = 0xff;
+            gGameLoadState = 0xff;
             if (!LoadGame()) {
                 ClearTextRegion();
                 DrawText("Unable to load your saved game!");
                 WaitGameKey();
                 ClearTextRegion();
                 sel = 3;
-                gA998 = 0;
+                gGameLoadState = 0;
             } else {
-                gA998 = 0xfe;
+                gGameLoadState = 0xfe;
             }
             break;
         case 1:
             SetFont(gFont8x8);
             RunCharacterPanel();
             SetFont(gFont6x6);
-            gA998 = 0;
+            gGameLoadState = 0;
             break;
         case 2:
             ShutdownGame();
@@ -448,10 +448,10 @@ extern void FileClose(int handle); /*@ 1C0E:03BB */
 /*@ ovl2:0937 */ void SetUiPalette(void)
 {
     if (gGraphicsChoice == 4 || gGraphicsChoice == 3) {
-        gF57E = 0x84;
+        gPanelFillColour = 0x84;
         gPanelHighlight = 0x82;
         gPanelShadow = 0x87;
-        gF53B = 0x85;
+        gUnusedPanelColour = 0x85;
         gBarEmptyColour = 0x85;
         gAltPanelFill = 0xb4;
         gUnselTabLightColour = 0xb1;
@@ -460,10 +460,10 @@ extern void FileClose(int handle); /*@ 1C0E:03BB */
         gFailLabelShadow = 0x17;
         gFailLabelFill = 0x14;
     } else {
-        gF57E = 2;
+        gPanelFillColour = 2;
         gPanelHighlight = 9;
         gPanelShadow = 0xd;
-        gF53B = 0x85;
+        gUnusedPanelColour = 0x85;
         gBarEmptyColour = 2;
         gAltPanelFill = 0xe;
         gUnselTabLightColour = 0xf;
@@ -471,7 +471,7 @@ extern void FileClose(int handle); /*@ 1C0E:03BB */
         gFailLabelLight = 6;
         gFailLabelShadow = 0xd;
         gFailLabelFill = 8;
-        strcpy(gSelectFrameColours, gData65EA);
+        strcpy(gSelectFrameColours, gBoxCycleColours16);
     }
 }
 
@@ -490,7 +490,7 @@ extern void FileClose(int handle); /*@ 1C0E:03BB */
 }
 
 /* ovl2:09ED: the "find the word" dungeon puzzle panel. Saves ds:811F and the font, switches to the
-   8x8 font gFont8x8, sets the text colour gColour179 from gF57E, draws the panel frame with two
+   8x8 font gFont8x8, sets the text colour gColour179 from gPanelFillColour, draws the panel frame with two
    DrawFilledPanel calls (082C:09D5) and insets the region by them, picks one of the 30 gWordCells
    records at random (RollDice), draws its item icon and the "On the page with this symbol... Find
    line %d / Enter word %d" text (082C:0898 DrawShadowText), reads the player's word through
@@ -510,10 +510,10 @@ extern void FileClose(int handle); /*@ 1C0E:03BB */
     saveRegion = gTextRegion;
     font = gCurFont;
     SetFont(gFont8x8);
-    gColour179 = gF57E;
+    gColour179 = gPanelFillColour;
     gStatusLine = 0;
     SetTextWindow(0xd);
-    gFn807E(gTextLeft, gTextTop, gTextWidth, gTextHeight, gSegDF4E);
+    gSaveRectFromPage(gTextLeft, gTextTop, gTextWidth, gTextHeight, gSegDF4E);
     tries = 0;
     ClearTextRegion();
     DrawFilledPanel(gTextLeft * 8, gTextTop, (gTextLeft + gTextWidth) * 8 - 1, gTextTop + gTextHeight - 1,
@@ -539,7 +539,7 @@ extern void FileClose(int handle); /*@ 1C0E:03BB */
             ;
         while (input[strlen(input) - 1] == ' ')
             input[strlen(input) - 1] = 0;
-        f6815(input);
+        strlwr(input);
         if (strcmp(SkipStrings("attacks", pick), input) == 0)
             break;
         tries++;
@@ -553,7 +553,7 @@ extern void FileClose(int handle); /*@ 1C0E:03BB */
     gRegions[gTextRegion].width += 2;
     gRegions[gTextRegion].height += 0x10;
     SetTextWindow(0xd);
-    gFn804A(gTextLeft, gTextTop, gTextWidth, gTextHeight, gSegDF4E);
+    gRestoreRectToPage(gTextLeft, gTextTop, gTextWidth, gTextHeight, gSegDF4E);
     SetTextWindow(saveRegion);
     SetFont(font);
 }

@@ -1098,6 +1098,7 @@ unit = "e_lib"
 addr = "0000:6815"
 size = 36
 evidence = ["frame"]
+name = "strlwr"
 
 [[function]]
 id = "e0000_6839"
@@ -3182,10 +3183,10 @@ unit = "e0d1c"
 addr = "0D1C:035A"
 size = 250
 evidence = ["frame"]
-name = "f0D1C_035A"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "RemovePartyMember"
 
 [[function]]
 id = "e0d1c_0454"
@@ -3338,10 +3339,10 @@ unit = "e0d1c"
 addr = "0D1C:0C21"
 size = 166
 evidence = ["frame"]
-name = "f0D1C_0C21"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "DrawFramedPanel"
 
 [[function]]
 id = "e0de8_0007"
@@ -9514,10 +9515,10 @@ unit = "eov6"
 addr = "ovl6:07E2"
 size = 118
 evidence = ["ovl", "near", "frame"]
-name = "f07E2"
 level = "L2"
 match_flags = "-ml -O -Z"
 review = "passed 2026-11-02 rev-haiku"
+name = "FindMostWoundedMember"
 
 [[function]]
 id = "eov6_0858"
@@ -9525,10 +9526,10 @@ unit = "eov6"
 addr = "ovl6:0858"
 size = 378
 evidence = ["ovl", "near", "frame"]
-name = "f0858"
 level = "L2"
 match_flags = "-ml -O -Z"
 review = "passed 2026-11-02 rev-haiku"
+name = "ShowHoursRested"
 
 [[function]]
 id = "eov6_09d2"
@@ -9536,10 +9537,10 @@ unit = "eov6"
 addr = "ovl6:09D2"
 size = 192
 evidence = ["ovl", "near", "frame"]
-name = "f09D2"
 level = "L2"
 match_flags = "-ml -O -Z"
 review = "passed 2026-11-02 rev-haiku"
+name = "AreMonstersNear"
 
 [[function]]
 id = "eov6_0a92"
@@ -9547,10 +9548,10 @@ unit = "eov6"
 addr = "ovl6:0A92"
 size = 265
 evidence = ["ovl", "near", "frame"]
-name = "f0A92"
 level = "L2"
 match_flags = "-ml -O -Z"
 review = "passed 2026-11-02 rev-haiku"
+name = "HasSpellsToRegain"
 
 [[function]]
 id = "eov6_0b9b"
@@ -9558,10 +9559,10 @@ unit = "eov6"
 addr = "ovl6:0B9B"
 size = 287
 evidence = ["ovl", "near", "frame"]
-name = "f0B9B"
 level = "L2"
 match_flags = "-ml -O -Z"
 review = "passed 2026-11-02 rev-haiku"
+name = "ShowCampMessage"
 
 [[function]]
 id = "i0000_0000"

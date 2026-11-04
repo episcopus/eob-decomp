@@ -17,7 +17,7 @@
 #define MENU_PREFERENCES 2
 #define MENU_SELECT_MEMBER 3
 
-/* gStrings2003 messages used as menu headers and status boxes */
+/* gCampStrings messages used as menu headers and status boxes */
 #define MSG_SELECT_OPTION 1
 #define MSG_CAMP 0x38
 #define MSG_PREFERENCES 0x39
@@ -75,7 +75,7 @@ struct Node {
 /* the 9-byte button definitions at 208E:0000: a label message, a box, a key word and flag bits
    (ovl1:1153 builds one node from each; ovl1:1551 draws it) */
 struct ButtonDef {
-    signed char message;        /* +0: the button's label, a gStrings2003 string index, 0 for none */
+    signed char message;        /* +0: the button's label, a gCampStrings string index, 0 for none */
     unsigned char x;            /* +1: box left, in 8-pixel columns */
     unsigned char y;            /* +2: box top */
     unsigned char w;            /* +3: box width, in 8-pixel columns */
@@ -89,7 +89,7 @@ struct ButtonDef {
 /* the seven five-byte menu records at ds:628C: a text window and the run of button definitions
    that make up one menu */
 struct Menu {
-    signed char message;        /* +0: the message index in gStrings2003 */
+    signed char message;        /* +0: the message index in gCampStrings */
     signed char window;         /* +1: the text window, 0 for none */
     signed char first;          /* +2: the first gButtonDefs index */
     signed char count;          /* +3: how many entries */
@@ -115,7 +115,7 @@ struct CharRec {                /* the 243-byte character records at ds:F580 (sr
     char pad00;
     unsigned char status;       /* +01: bit 0 set while the slot holds a character (0D1C:0670) */
     char pad02[0x13 - 0x02];
-    signed char wisdom;         /* +13: the score ovl1:097A turns into a bonus-spell row (g6330) */
+    signed char wisdom;         /* +13: the score ovl1:097A turns into a bonus-spell row (gClericWisdomBonus) */
     char pad14[0x1B - 0x14];
     signed char hp;             /* +1B: current hit points */
     char pad1C[0x20 - 0x1C];
@@ -135,7 +135,7 @@ struct CharRec {                /* the 243-byte character records at ds:F580 (sr
     char padEA[0xF3 - 0xEA];
 };
 extern struct CharRec gChars[]; /*@ ds:F580 */
-extern char far gStrings2003; /*@ 2003:0000 */
+extern char far gCampStrings; /*@ 2003:0000 */
 extern unsigned char far gSheet2067[]; /*@ 2067:0000 */
 extern unsigned char far gSheetDECORATE[]; /*@ 2069:0000 */
 extern char gOverlayBuf[]; /*@ ds:113F */
@@ -150,7 +150,7 @@ extern struct Box gMemberBoxes[]; /*@ ds:62E2 */
 extern void far *gBufDCFC; /*@ ds:DCFC */
 extern void (far *gFillRect)(int x1, int y1, int x2, int y2, int colour); /*@ ds:806A */
 extern void SwapBlocks(char far *pa, char far *pb, char far *pc, int len); /*@ 082C:07C5 */
-extern void f0D1C_035A(int who); /*@ 0D1C:035A */
+extern void RemovePartyMember(int who); /*@ 0D1C:035A */
 extern void SelectCharacter(int who); /*@ 0D1C:003F */
 extern void BuildList1(void); /*@ 0CF7:0028 */
 extern void RearmCharEffects(void); /*@ 1414:0B2E */
@@ -163,7 +163,7 @@ extern void far *gFont8x8; /*@ ds:FE5A */
 extern void far *gFont6x6; /*@ ds:A9C0 */
 extern void far *gSegDF4E; /*@ ds:DF4E */
 extern int gTextRegion; /*@ ds:811F */
-extern int gFD98; /*@ ds:FD98 */      /* set when a party member cannot be picked (SelectPartyMember
+extern int gMembersMarkedDisabled; /*@ ds:FD98 */      /* set when a party member cannot be picked (SelectPartyMember
                                           draws the icons over its portrait box) */
 extern char far *gMageSpellNames[]; /*@ ds:1278 */
 extern char far *gClericSpellNames[]; /*@ ds:12E0 */
@@ -174,25 +174,25 @@ extern char gFileNameBuf[]; /*@ ds:FE6E */ /* the text buffer sprintf formats in
 extern char gFDBA[]; /*@ ds:FDBA */   /* five 9-byte lists, one per spell level 1 to 5: the first byte
                                           counts the spell numbers that follow (BuildSpellSlots; the
                                           memset clears 5 * 9 bytes) */
-extern char gFDE7[]; /*@ ds:FDE7 */   /* ten bytes: the spells taken at each level, index level - 1 (the
+extern char gSpellsTakenByTab[]; /*@ ds:FDE7 */   /* ten bytes: the spells taken at each level, index level - 1 (the
                                           screen shows allowance - this) */
 extern char gFDEC[]; /*@ ds:FDEC */   /* a pair of counters per spell number i, byte 2 * (i - 1) the copies
                                           held in all and the next byte the copies ready (SpendSpellSlot) */
 extern char gFDEB[]; /*@ ds:FDEB */   /* the odd bytes of the pairs in gFDEC, indexed by 2 * spell number */
-extern char gFDE6[]; /*@ ds:FDE6 */   /* copies held per spell level, index level (1 based) */
-extern char gFD9A[]; /*@ ds:FD9A */   /* the level (1 to 5) of spell number i + 1, copied from gMap62AF or
-                                          gMap62C9; a spell not on the 0-terminated map stays 0 (the
+extern char gSpellsTakenByLevel[]; /*@ ds:FDE6 */   /* copies held per spell level, index level (1 based) */
+extern char gSpellLevels[]; /*@ ds:FD9A */   /* the level (1 to 5) of spell number i + 1, copied from gMageSpellLevels or
+                                          gClericSpellLevels; a spell not on the 0-terminated map stays 0 (the
                                           memset, and the slot >= 0 test) */
-extern char gMap62AF[]; /*@ ds:62AF */ /* the spell level of each mage spell, 0 terminated */
-extern char gMap62C9[]; /*@ ds:62C9 */ /* the spell level of each cleric spell, 0 terminated */
+extern char gMageSpellLevels[]; /*@ ds:62AF */ /* the spell level of each mage spell, 0 terminated */
+extern char gClericSpellLevels[]; /*@ ds:62C9 */ /* the spell level of each cleric spell, 0 terminated */
 extern void far *memset(void far *dst, int c, unsigned n); /*@ 0000:6384 */
 extern char *strcpy(char far *dest, char far *src); /*@ 0000:67CD */
 extern int gNeedsRest; /*@ ds:FE2C */
-extern unsigned char g62F2[]; /*@ ds:62F2 */ /* the icon x in 8-pixel columns for each member slot
+extern unsigned char gMemberBoxColumn[]; /*@ ds:62F2 */ /* the icon x in 8-pixel columns for each member slot
                                                  (SelectPartyMember) */
-extern unsigned char g62F8[]; /*@ ds:62F8 */ /* the icon y for each member slot (SelectPartyMember) */
+extern unsigned char gMemberBoxTop[]; /*@ ds:62F8 */ /* the icon y for each member slot (SelectPartyMember) */
 extern signed char gClassBaseBits[]; /*@ ds:1231 */
-extern void far *gIconDD28; /*@ ds:DD28 */
+extern void far *gDisabledMemberIcon; /*@ ds:DD28 */
 struct ItemRecord {
     signed char nameIndex;        /* +0 (ds:8DD0): indexes the item-name table at segment 0x1F28 */
     signed char identifiedNameIndex;        /* +1 (ds:8DD1): the second name index */
@@ -217,13 +217,13 @@ struct ItemRecord {
 };
 extern struct ItemRecord gItems[]; /*@ ds:8DD0 */
 extern int gClickY; /*@ ds:8142 */
-extern unsigned char g62FE[]; /*@ ds:62FE */ /* a cleric's spells per level (5 bytes) by class level 1 to 10 */
-extern char g6330[]; /*@ ds:6330 */ /* a cleric's bonus spells per level (5 bytes) by wisdom - 12 */
-extern unsigned char g6358[]; /*@ ds:6358 */ /* a paladin's spells per level (5 bytes) by class level */
-extern unsigned char g6394[]; /*@ ds:6394 */ /* a mage's spells per level (5 bytes) by class level 1 to 11 */
+extern unsigned char gClericSpellsPerLevel[]; /*@ ds:62FE */ /* a cleric's spells per level (5 bytes) by class level 1 to 10 */
+extern char gClericWisdomBonus[]; /*@ ds:6330 */ /* a cleric's bonus spells per level (5 bytes) by wisdom - 12 */
+extern unsigned char gPaladinSpellsPerLevel[]; /*@ ds:6358 */ /* a paladin's spells per level (5 bytes) by class level */
+extern unsigned char gMageSpellsPerLevel[]; /*@ ds:6394 */ /* a mage's spells per level (5 bytes) by class level 1 to 11 */
 extern int f0D1C_0163(int who, int fieldB); /*@ 0D1C:0163 */
 extern int IsMouseInRect(int left, int top, int right, int bottom); /*@ 1A72:02A6 */
-extern int g159; /*@ ds:0159 */ /* a copy of gF57E that ShowMessage and ovl6:0B9B store; no reader found */
+extern int g159; /*@ ds:0159 */ /* a copy of gPanelFillColour that ShowMessage and ovl6:0B9B store; no reader found */
 extern int gTunesOn; /*@ ds:80E8 */
 extern int gSoundOn; /*@ ds:80E6 */
 extern char gBarGraphsOn; /*@ ds:F43C */
@@ -237,9 +237,9 @@ extern char gKeyRemapFrom[]; /*@ ds:6457 */ /* a key-to-button map: gKeyRemapFro
 extern char gKeyRemapTo[]; /*@ ds:6459 */   /* the button number of the key in gKeyRemapFrom */
 extern void (far *gDrawText)(char far *text, int x, int y, int colour, int extra); /*@ ds:80CA */
 extern void (far *gSaveRect)(int x, int y, int w, int h, void far *buf); /*@ ds:80AE */
-extern void (far *gFn807E)(int x, int y, int w, int h, void far *buf); /*@ ds:807E */
+extern void (far *gSaveRectFromPage)(int x, int y, int w, int h, void far *buf); /*@ ds:807E */
 extern struct Node gNodeTemplate; /*@ ds:3A62 */
-extern signed char gF57E; /*@ ds:F57E */
+extern signed char gPanelFillColour; /*@ ds:F57E */
 extern int gStatusLine; /*@ ds:8115 */
 extern int gTextHeight; /*@ ds:FE60 */
 extern int gTextWidth; /*@ ds:FE62 */
@@ -248,7 +248,7 @@ extern int gTextTop; /*@ ds:FE66 */
 extern char gNodeListChanged; /*@ ds:5E20 */
 
 extern void SetTextWindowAndClear(int region); /*@ 1DE7:00B6 */
-extern void f0D1C_0C21(int x, int y, int width, int height, int c, int d); /*@ 0D1C:0C21 */
+extern void DrawFramedPanel(int x, int y, int width, int height, int c, int d); /*@ 0D1C:0C21 */
 extern char far *SkipStrings(char far *text, int count); /*@ 0D1C:07A7 */
 extern void DrawShadowText(char far *text, int x, int y, int colour, int colour2); /*@ 082C:0898 */
 extern void far *MemAlloc(unsigned long size, int flags); /*@ 19BC:0007 */
@@ -260,7 +260,7 @@ extern void ClipRect(int x1, int y1, int x2, int y2, int width, int height, int 
 extern void FlushKeyBuffer(void); /*@ 1AAD:0480 */
 extern void farfree(void far *block); /*@ 0000:71EE */
 extern int strlen(char far *s); /*@ 0000:67F6 */
-extern void (far *gFn804A)(int x, int y, int w, int h, void far *buf); /*@ ds:804A */
+extern void (far *gRestoreRectToPage)(int x, int y, int w, int h, void far *buf); /*@ ds:804A */
 extern int WaitGameKey(void); /*@ 1AAD:053A */
 extern int ReadKey(void); /*@ 1AAD:038E */
 extern int Action01E3(char far *text); /*@ 0ACD:01E3 */
@@ -313,7 +313,7 @@ int AskYesNo(int message);
         return;
     if (!MemberIs(who, 1))
         return;
-    f0D1C_035A(who);
+    RemovePartyMember(who);
     slot = who;
     if (who < 4) {
         if (MemberIs(5, 1))
@@ -335,12 +335,12 @@ int AskYesNo(int message);
 /* ovl1:00DD: builds the spell tables of the spell-slot screen for character `who` (nothing happens
    for a negative `who`). `cleric` is 1 for the cleric and paladin screen (SpellSlotScreen's flag),
    0 for the mage screen; `counts` is the screen's five per-level spell allowances, `mask` the set of
-   spells that may be shown (bit i is spell i + 1). It clears gFDBA (the five 9-byte level lists), gFDE7
-   (spells already taken per level), gFDEC (32 pairs of counters) and gFD9A, copies the spell-to-level
-   map into gFD9A (gMap62C9 for clerics, gMap62AF for mages) and walks the 30 signed bytes of the
+   spells that may be shown (bit i is spell i + 1). It clears gFDBA (the five 9-byte level lists), gSpellsTakenByTab
+   (spells already taken per level), gFDEC (32 pairs of counters) and gSpellLevels, copies the spell-to-level
+   map into gSpellLevels (gClericSpellLevels for clerics, gMageSpellLevels for mages) and walks the 30 signed bytes of the
    character's spell slots (rec + 0x55 for a cleric, rec + 0x37 for a mage): a nonzero entry c names
    spell |c|; a positive one bumps its second counter gFDEB[2 * c] and each bumps its first,
-   gFDEC[2 * (|c| - 1)], and the per-level total gFDE6[level]. Then each spell i of `mask` is appended
+   gFDEC[2 * (|c| - 1)], and the per-level total gSpellsTakenByLevel[level]. Then each spell i of `mask` is appended
    to its level's list gFDBA[(level - 1) * 9] (the first byte counts the entries, the entry is i + 1),
    for a cleric only when the level has a nonzero allowance. Called by SpellSlotScreen. */
 /*@ ovl1:00DD */ void BuildSpellSlots(int who, char far *counts, long mask, int cleric)
@@ -355,13 +355,13 @@ int AskYesNo(int message);
         return;
     rec = &gChars[who];
     memset(gFDBA, 0, 0x2d);
-    memset(gFDE7, 0, 0xa);
+    memset(gSpellsTakenByTab, 0, 0xa);
     memset(gFDEC, 0, 0x40);
-    memset(gFD9A, 0, 0x20);
+    memset(gSpellLevels, 0, 0x20);
     if (cleric)
-        strcpy(gFD9A, gMap62C9);
+        strcpy(gSpellLevels, gClericSpellLevels);
     else
-        strcpy(gFD9A, gMap62AF);
+        strcpy(gSpellLevels, gMageSpellLevels);
     slots = rec->known;
     if (cleric)
         slots = rec->memorized;
@@ -374,12 +374,12 @@ int AskYesNo(int message);
                 entry = -entry;
             entry--;
             gFDEC[entry * 2]++;
-            gFDE6[gFD9A[entry]]++;
+            gSpellsTakenByLevel[gSpellLevels[entry]]++;
         }
     }
     for (i = 0; i < 0x20; i++) {
         if (mask & (1L << i)) {
-            slot = gFD9A[i] - 1;
+            slot = gSpellLevels[i] - 1;
             if ((cleric && counts[slot]) || !cleric) {
                 if (slot >= 0) {
                     gFDBA[slot * 9]++;
@@ -395,7 +395,7 @@ int AskYesNo(int message);
    spells i, a pair of counters: the first is how many copies the character holds in all, the second
    how many of them are ready (positive). The second counter is cut down to the first when it is the
    larger. While it is nonzero the spell is stored as i + 1 in the first free one of the six slots of
-   its level (gFD9A[i] - 1, six slots per level) and both counters drop; the spell is then looked
+   its level (gSpellLevels[i] - 1, six slots per level) and both counters drop; the spell is then looked
    at again (the loop index steps back), so every copy gets a slot. A spell with only the first
    counter left is stored as -(i + 1) instead, a spell still to be memorised (the negative encoding
    of the CharRec slot fields; it is spent until the party rests, then memorised again), and
@@ -422,7 +422,7 @@ int AskYesNo(int message);
         if (gFDEC[i * 2 + 1] != 0) {
             gFDEC[i * 2 + 1]--;
             gFDEC[i * 2]--;
-            slot = gFD9A[i] - 1;
+            slot = gSpellLevels[i] - 1;
             for (k = 0; k < 6; k++) {
                 if (cleric) {
                     if (rec->memorized[slot * 6 + k] == 0) {
@@ -439,7 +439,7 @@ int AskYesNo(int message);
             i--;
         } else if (gFDEC[i * 2] != 0) {
             gFDEC[i * 2]--;
-            slot = gFD9A[i] - 1;
+            slot = gSpellLevels[i] - 1;
             gNeedsRest = 1;
             for (k = 0; k < 6; k++) {
                 if (cleric) {
@@ -459,7 +459,7 @@ int AskYesNo(int message);
     }
 }
 /* ovl1:0416: the "select a character" box of the camp menu: it asks the player to pick one party member
-   for the action named by the gStrings2003 message `message`: 0x17 "Select a character from your party
+   for the action named by the gCampStrings message `message`: 0x17 "Select a character from your party
    who would like to learn spells.", 0x1A the same for praying, 0x31 scribing scrolls, 0x35 "Select the
    character you wish to drop." Returns the member's slot (0 to 5), or -1 when none can be chosen or
    the player cancels.
@@ -467,7 +467,7 @@ int AskYesNo(int message);
    and the class bit `mode` (4 for message 0x1A, else 2) is set in gClassBaseBits[classIndex]; for the drop
    message any occupied slot will do. With nobody selectable it shows message 0x1C, 0x1B or 0x34 for
    the three spell actions ("You don't have any Mage able to learn spells." and so on) and returns -1.
-   Members that cannot be picked get four icons drawn over their portrait box (gIconDD28) and gFD98
+   Members that cannot be picked get four icons drawn over their portrait box (gDisabledMemberIcon) and gMembersMarkedDisabled
    is set. With exactly one candidate that member is chosen at once, unless its paladin class slot
    (FindClassSlot kind 4) is at level 8 or less (message 0x18, "Your Paladin is too low a level for
    spells.", -1). Otherwise the header of menu 3 becomes `message` and its button list (the six
@@ -492,7 +492,7 @@ int AskYesNo(int message);
 
     mode = message == 0x1a ? 4 : 2;
     FlushKeyBuffer();
-    gFD98 = 0;
+    gMembersMarkedDisabled = 0;
     count = 0;
     sel = -1;
     for (i = 0; i < 6; i++) {
@@ -524,11 +524,11 @@ int AskYesNo(int message);
     }
     for (i = 0; i < 6; i++) {
         if (avail[i] == -1 && MemberIs(i, 1)) {
-            DrawShape(0, gIconDD28, g62F2[i] * 8, g62F8[i], 0);
-            DrawShape(0, gIconDD28, g62F2[i] * 8 + 0x10, g62F8[i], 0);
-            DrawShape(0, gIconDD28, g62F2[i] * 8 + 0x20, g62F8[i], 0);
-            DrawShape(0, gIconDD28, g62F2[i] * 8 + 0x30, g62F8[i], 0);
-            gFD98 = 1;
+            DrawShape(0, gDisabledMemberIcon, gMemberBoxColumn[i] * 8, gMemberBoxTop[i], 0);
+            DrawShape(0, gDisabledMemberIcon, gMemberBoxColumn[i] * 8 + 0x10, gMemberBoxTop[i], 0);
+            DrawShape(0, gDisabledMemberIcon, gMemberBoxColumn[i] * 8 + 0x20, gMemberBoxTop[i], 0);
+            DrawShape(0, gDisabledMemberIcon, gMemberBoxColumn[i] * 8 + 0x30, gMemberBoxTop[i], 0);
+            gMembersMarkedDisabled = 1;
         }
     }
     if (count == 1) {
@@ -645,9 +645,9 @@ int AskYesNo(int message);
    `spell` it formats "%-18s %1d" into gFileNameBuf from the spell's name (gClericSpellNames when
    `cleric` is set, else gMageSpellNames; both are far name pointers indexed by the spell number) and
    its count, the byte gFDEA[spell * 2]; `noShadow` picks the plain text routine gDrawText, else
-   DrawShadowText with gF57E as the shadow; the colour is 6 when `highlight` is set, else 1 (0xF when
+   DrawShadowText with gPanelFillColour as the shadow; the colour is 6 when `highlight` is set, else 1 (0xF when
    gGraphicsChoice is nonzero). For spell 0 with `noShadow` clear it blanks the row instead by
-   filling x 6 to 0xA8, y to y + 8 with gF57E through gFillRect. The pointer is hidden while it
+   filling x 6 to 0xA8, y to y + 8 with gPanelFillColour through gFillRect. The pointer is hidden while it
    draws. Called by SpellSlotScreen. */
 /*@ ovl1:0881 */ void DrawSpellRow(int spell, int row, int cleric, int noShadow, int highlight)
 {
@@ -665,17 +665,17 @@ int AskYesNo(int message);
         if (noShadow)
             gDrawText(gFileNameBuf, 8, y, highlight ? 6 : colour, 0);
         else
-            DrawShadowText(gFileNameBuf, 8, y, highlight ? 6 : colour, gF57E);
+            DrawShadowText(gFileNameBuf, 8, y, highlight ? 6 : colour, gPanelFillColour);
     } else if (!noShadow)
-        gFillRect(6, y, 0xa8, y + 8, gF57E);
+        gFillRect(6, y, 0xa8, y + 8, gPanelFillColour);
     LockShowPointer();
 }
 /* ovl1:097A: the spell screen of the camp menu for party member `who` (-1 does nothing): Memorize
    Spells (`pray` 0, a mage) or Pray for Spells (`pray` 1, a cleric or a paladin). The member's class
    slot (FindClassSlot kind 2 cleric, 4 paladin, 1 mage) gives the allowance[5], the spells the
-   member may take at each of the five spell levels: a cleric's from g62FE by class level plus the
-   bonus g6330 by wisdom - 12 (for each level that has any), a paladin's from g6358, a mage's from
-   g6394, with levels 4 and 5 doubled while 0D1C:0163 finds its item (type 0x2F, kind 1) in one of
+   member may take at each of the five spell levels: a cleric's from gClericSpellsPerLevel by class level plus the
+   bonus gClericWisdomBonus by wisdom - 12 (for each level that has any), a paladin's from g6358, a mage's from
+   gMageSpellsPerLevel, with levels 4 and 5 doubled while 0D1C:0163 finds its item (type 0x2F, kind 1) in one of
    the last two item slots [H: a ring of wizardry]. `mask` (bit i set = spell i + 1) is what may be
    offered: 0x007BFFFF for a cleric, 0x00800FF2 for a paladin, the mage's spell book.
    BuildSpellSlots then fills the lists and menu 4 ("Spells Available:": Clear, Exit, the level
@@ -709,8 +709,8 @@ int AskYesNo(int message);
         if (slot != -1) {
             levelRow = gChars[who].levels[slot] - 1;
             for (i = 0; i < 5; i++) {
-                if (allowance[i] = g62FE[levelRow * 5 + i])
-                    allowance[i] += g6330[wisdom * 5 + i];
+                if (allowance[i] = gClericSpellsPerLevel[levelRow * 5 + i])
+                    allowance[i] += gClericWisdomBonus[wisdom * 5 + i];
             }
             mask = 0x7bffffL;
         } else {
@@ -719,7 +719,7 @@ int AskYesNo(int message);
                 levelRow = gChars[who].levels[slot];
                 levelRow = levelRow < 0 ? 0 : levelRow;
                 for (i = 0; i < 5; i++)
-                    allowance[i] = g6358[levelRow * 5 + i];
+                    allowance[i] = gPaladinSpellsPerLevel[levelRow * 5 + i];
                 mask = 0x800ff2L;
             }
         }
@@ -729,7 +729,7 @@ int AskYesNo(int message);
         if (slot != -1) {
             levelRow = gChars[who].levels[slot] - 1;
             for (i = 0; i < 5; i++)
-                allowance[i] = g6394[levelRow * 5 + i];
+                allowance[i] = gMageSpellsPerLevel[levelRow * 5 + i];
             mask = gChars[who].spellBook;
         }
         if (f0D1C_0163(who, 1)) {
@@ -788,10 +788,10 @@ int AskYesNo(int message);
             }
             if (redrawLine) {
                 redrawLine = 0;
-                sprintf(gFileNameBuf, "%d of %d Remaining.  ", allowance[tab] - gFDE7[tab],
+                sprintf(gFileNameBuf, "%d of %d Remaining.  ", allowance[tab] - gSpellsTakenByTab[tab],
                     allowance[tab]);
                 LockHidePointer();
-                DrawShadowText(gFileNameBuf, 8, 0x26, 9, gF57E);
+                DrawShadowText(gFileNameBuf, 8, 0x26, 9, gPanelFillColour);
                 LockShowPointer();
             }
             if (wantRow < 0)
@@ -845,9 +845,9 @@ int AskYesNo(int message);
                 }
                 break;
             case 0x8019:
-                if (gFDE7[tab]) {
+                if (gSpellsTakenByTab[tab]) {
                     for (i = 1; i <= gFDBA[tab * 9]; i++) {
-                        gFDE7[tab] -= gFDEA[gFDBA[tab * 9 + i] * 2];
+                        gSpellsTakenByTab[tab] -= gFDEA[gFDBA[tab * 9 + i] * 2];
                         gFDEA[gFDBA[tab * 9 + i] * 2] = 0;
                     }
                     redrawLine = 1;
@@ -876,10 +876,10 @@ int AskYesNo(int message);
             case 0x61:
             case 0x6a:
             case 0x8020:
-                if (allowance[tab] - gFDE7[tab] > 0) {
+                if (allowance[tab] - gSpellsTakenByTab[tab] > 0) {
                     if (selRow > -1) {
                         gFDEA[gFDBA[tab * 9 + selRow + 1] * 2]++;
-                        gFDE7[tab]++;
+                        gSpellsTakenByTab[tab]++;
                         DrawSpellRow(gFDBA[wantTab * 9 + selRow + 1], selRow, cleric, 0, 1);
                         redrawLine = 1;
                     }
@@ -891,7 +891,7 @@ int AskYesNo(int message);
                 if (allowance[tab]) {
                     if (gFDEA[gFDBA[tab * 9 + selRow + 1] * 2]) {
                         gFDEA[gFDBA[tab * 9 + selRow + 1] * 2]--;
-                        gFDE7[tab]--;
+                        gSpellsTakenByTab[tab]--;
                         DrawSpellRow(gFDBA[wantTab * 9 + selRow + 1], selRow, cleric, 0, 1);
                         redrawLine = 1;
                     }
@@ -907,14 +907,14 @@ int AskYesNo(int message);
         SpendSpellSlot(who, cleric);
     }
 }
-/* ovl1:10DE: returns the word that labels an option state: gStrings2003 message 0x15 "ON" when `on`
+/* ovl1:10DE: returns the word that labels an option state: gCampStrings message 0x15 "ON" when `on`
    is nonzero, else 0x16 "OFF". RunCampMenu formats it into its "Tunes are %-3s" style labels.
    `on` is overwritten with the message index: the original keeps it in a register, not a stack
    local (a named local changes the bytes). */
 /*@ ovl1:10DE */ char far *BoolString(int on)
 {
     on = on ? 0x15 : 0x16;
-    return SkipStrings(&gStrings2003, on);
+    return SkipStrings(&gCampStrings, on);
 }
 /* ovl1:1107: saves the screen rectangle x 0, y 0x78, 0x16 by 0x18 (the "option field", the strip the
    camp menu is drawn over) into the far buffer at gSegDF4E + 0x4E20 through gSaveRect. Called by
@@ -923,17 +923,17 @@ int AskYesNo(int message);
 {
     gSaveRect(0, 0x78, 0x16, 0x18, (char far *)gSegDF4E + 0x4e20);
 }
-/* ovl1:112D: draws the rectangle SaveOptionField saved back to the screen through gFn804A (the
+/* ovl1:112D: draws the rectangle SaveOptionField saved back to the screen through gRestoreRectToPage (the
    blit routine that puts the buffer at gSegDF4E + 0x4E20 at x 0, y 0x78, 0x16 by 0x18). */
 /*@ ovl1:112D */ void DrawOptionField(void)
 {
-    gFn804A(0, 0x78, 0x16, 0x18, (char far *)gSegDF4E + 0x4e20);
+    gRestoreRectToPage(0, 0x78, 0x16, 0x18, (char far *)gSegDF4E + 0x4e20);
 }
 
 /* ovl1:1153: builds the button list of menu `menu` (an index into the seven five-byte records at
    ds:628C) and returns its head. When the record names a text window (+1) it sets that window's
-   fill colour gRegions[window].textAttr2 to gF57E, selects and clears the window and draws a framed
-   rectangle (0D1C:0C21) over its area, then draws the record's header message (gStrings2003
+   fill colour gRegions[window].textAttr2 to gPanelFillColour, selects and clears the window and draws a framed
+   rectangle (0D1C:0C21) over its area, then draws the record's header message (gCampStrings
    string +0) at (5, 5) in the record's colour. For
    each of its `count` (+3) entries it allocates a 60-byte node, copies gNodeTemplate over it and
    fills it from the 9-byte definition gButtonDefs[first + i] (+2): key = entry number + 1, the two key
@@ -955,11 +955,11 @@ int AskYesNo(int message);
 
     gStatusLine = 2;
     if (gMenus[menu].window) {
-        gRegions[gMenus[menu].window].textAttr2 = gF57E;
+        gRegions[gMenus[menu].window].textAttr2 = gPanelFillColour;
         SetTextWindowAndClear(gMenus[menu].window);
-        f0D1C_0C21(gTextLeft << 3, gTextTop, gTextWidth << 3, gTextHeight, 0, 0);
+        DrawFramedPanel(gTextLeft << 3, gTextTop, gTextWidth << 3, gTextHeight, 0, 0);
     }
-    DrawShadowText(SkipStrings(&gStrings2003, gMenus[menu].message), 5, 5, gMenus[menu].colour, 0);
+    DrawShadowText(SkipStrings(&gCampStrings, gMenus[menu].message), 5, 5, gMenus[menu].colour, 0);
     list = 0;
     for (i = 0; i < gMenus[menu].count; i++) {
         index = i + gMenus[menu].first;
@@ -990,9 +990,9 @@ int AskYesNo(int message);
     return list;
 }
 
-/* ovl1:13F7: shows the gStrings2003 message `message` in a framed box (text window 11) and waits for
+/* ovl1:13F7: shows the gCampStrings message `message` in a framed box (text window 11) and waits for
    a key or at most 0x78 frames. It hides the pointer, selects the 8x8 font gFont8x8, copies the
-   shadow colour gF57E into g159, sets gStatusLine to 2 while it draws and fills and clips the window
+   shadow colour gPanelFillColour into g159, sets gStatusLine to 2 while it draws and fills and clips the window
    rectangle; the text goes at (left * 8 + 5, top + 5) in colour 0xF. It then polls ReadKey one frame
    at a time (WaitFrames(1)); a key press flushes the key buffer and ends the wait. Afterwards the
    status line, font and text window are restored and the key buffer flushed again. Called by
@@ -1010,11 +1010,11 @@ int AskYesNo(int message);
     savedWindow = gTextRegion;
     SetFont(gFont8x8);
     LockHidePointer();
-    g159 = gF57E;
+    g159 = gPanelFillColour;
     SetTextWindowAndClear(0xb);
     gStatusLine = 2;
-    f0D1C_0C21(gTextLeft << 3, gTextTop, gTextWidth << 3, gTextHeight, 0, 0);
-    DrawShadowText(SkipStrings(&gStrings2003, message), (gTextLeft << 3) + 5, gTextTop + 5, 0xf, 0);
+    DrawFramedPanel(gTextLeft << 3, gTextTop, gTextWidth << 3, gTextHeight, 0, 0);
+    DrawShadowText(SkipStrings(&gCampStrings, message), (gTextLeft << 3) + 5, gTextTop + 5, 0xf, 0);
     ClipRect(gTextLeft, gTextTop, gTextLeft, gTextTop, gTextWidth, gTextHeight, 2, 0);
     LockShowPointer();
     for (i = 0; i < 0x78; i++) {
@@ -1046,7 +1046,7 @@ int AskYesNo(int message);
    the text window; a null node draws nothing. With the node's definition `def` (node->def): when
    def->flags bit 0 is set the node's box is filled with the framed rectangle 0D1C:0C21 (the
    parameters `first` and `second` are its two mode arguments, not a panel shape); then, when
-   def->message is nonzero, the label gStrings2003[def->message] is drawn at the box origin plus
+   def->message is nonzero, the label gCampStrings[def->message] is drawn at the box origin plus
    (4, 3), or centred in the box when def
    flags bit 2 is set (x = (width - 8 * length) / 2 + 1, y = (height - 7) / 2). The label's colour is
    6 when `highlight` is nonzero, else 1 (0xF when gGraphicsChoice is nonzero). It goes through the
@@ -1068,9 +1068,9 @@ int AskYesNo(int message);
     def = node->def;
     LockHidePointer();
     if (def->flags & 1)
-        f0D1C_0C21(node->x, node->y, node->width, node->height, first, second);
+        DrawFramedPanel(node->x, node->y, node->width, node->height, first, second);
     if (def->message != 0) {
-        text = SkipStrings(&gStrings2003, def->message);
+        text = SkipStrings(&gCampStrings, def->message);
         if (def->flags & 4) {
             x = (node->width - strlen(text) * 8) / 2 + 1;
             y = (node->height - 7) / 2;
@@ -1238,7 +1238,7 @@ int AskYesNo(int message);
    spells." first when gNeedsRest is set), Load Game and Save Game (after a yes/no box through
    AskYesNo), Drop Character (needs more than four members), Quit Game, the four
    Preferences toggles (tunes, sounds, bar graphs, mouse; each rewrites its "... are ON/OFF" label in
-   gStrings2003) and the cursor keys: 0x5B and 0x65 light the first button; 0x60 and 0x62 step the
+   gCampStrings) and the cursor keys: 0x5B and 0x65 light the first button; 0x60 and 0x62 step the
    highlight to the previous or next selectable button (definition flag bit 1), wrapping; 0x5D and
    0x67 light the last button and, when a button is already lit, go on as 0x60 (previous). Any
    other key looks for a selectable button under the mouse. The loop ends when `looping` is cleared
@@ -1287,7 +1287,7 @@ int AskYesNo(int message);
     LockShowPointer();
     SetFont(gFont8x8);
     reloadInvent = 0;
-    gFD98 = 0;
+    gMembersMarkedDisabled = 0;
     redrawParty = 0;
     curMenu = -1;
     nextMenu = MENU_CAMP;
@@ -1301,10 +1301,10 @@ int AskYesNo(int message);
             WaitGameKey();
         }
         if (nextMenu == MENU_PREFERENCES) {
-            sprintf(SkipStrings(&gStrings2003, 0x11), "Tunes are %-3s", BoolString(gTunesOn));
-            sprintf(SkipStrings(&gStrings2003, 0x12), "Sounds are %-3s", BoolString(gSoundOn));
-            sprintf(SkipStrings(&gStrings2003, 0x13), "Bar Graphs are %-3s", BoolString(gBarGraphsOn));
-            sprintf(SkipStrings(&gStrings2003, 0x14), "Mouse is %-3s", BoolString(!gMouseDisabled));
+            sprintf(SkipStrings(&gCampStrings, 0x11), "Tunes are %-3s", BoolString(gTunesOn));
+            sprintf(SkipStrings(&gCampStrings, 0x12), "Sounds are %-3s", BoolString(gSoundOn));
+            sprintf(SkipStrings(&gCampStrings, 0x13), "Bar Graphs are %-3s", BoolString(gBarGraphsOn));
+            sprintf(SkipStrings(&gCampStrings, 0x14), "Mouse is %-3s", BoolString(!gMouseDisabled));
         }
         if (nextMenu != -1) {
             FreeFarList(list);
@@ -1452,7 +1452,7 @@ int AskYesNo(int message);
                 if (gGraphicsChoice == 1) {
                     LoadScreenImage("PLAYFLD", (char far *)gSheetDECORATE, 5, 3, 2);
                     gStatusLine = 2;
-                    gFn807E(0, 0x78, 0x16, 0x18, (char far *)gSegDF4E + 0x4e20);
+                    gSaveRectFromPage(0, 0x78, 0x16, 0x18, (char far *)gSegDF4E + 0x4e20);
                     gStatusLine = 0;
                     reloadInvent = 1;
                 }
@@ -1530,12 +1530,12 @@ int AskYesNo(int message);
             }
             break;
         }
-        if (gFD98 || redrawParty) {
+        if (gMembersMarkedDisabled || redrawParty) {
             for (i = 0; i < 6; i++) {
                 RedrawMember(i);
                 SortSpellSlots(i);
             }
-            gFD98 = 0;
+            gMembersMarkedDisabled = 0;
             redrawParty = 0;
         }
         if (lit != hot && nextMenu == -1 && looping) {
@@ -1563,7 +1563,7 @@ int AskYesNo(int message);
     return 1;
 }
 
-/* ovl1:243A: a Yes/No box: it shows the gStrings2003 message `message` (for example 0x37 "Are you sure
+/* ovl1:243A: a Yes/No box: it shows the gCampStrings message `message` (for example 0x37 "Are you sure
    you wish to LOAD a saved game?", 0x36 for saving, 0x2E for quitting) over the two buttons of menu 5
    (Yes is button 0x8021, No 0x8022) and returns 1 for Yes, 0 for No. It selects the 8x8 font and
    clears gStatusLine, builds the list, draws the message at (gTextLeft * 8 + 8, gTextTop + 4) and
@@ -1592,7 +1592,7 @@ int AskYesNo(int message);
     SetFont(gFont8x8);
     list = BuildMenuButtons(5);
     LockHidePointer();
-    DrawShadowText(SkipStrings(&gStrings2003, message), (gTextLeft + 1) << 3, gTextTop + 4, 0xf, 0);
+    DrawShadowText(SkipStrings(&gCampStrings, message), (gTextLeft + 1) << 3, gTextTop + 4, 0xf, 0);
     LockShowPointer();
     lit = -1;
     hot = 0;

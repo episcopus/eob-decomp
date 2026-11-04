@@ -13,7 +13,7 @@
 #include <dos.h>
 
 extern char gOverlayBuf[]; /*@ ds:113F */ /* the overlay screen buffer the cell slicer reads */
-extern void far * (far *gFn8082)(int x, int y, int w, int h, void far *buf); /*@ ds:8082 */
+extern void far * (far *gGetSpriteCellRle)(int x, int y, int w, int h, void far *buf); /*@ ds:8082 */
 extern void farfree(void far *block); /*@ 0000:71EE */
 extern void PlaySound(int sound); /*@ 177D:0070 */
 extern int DispatchKeyWait(void far *list); /*@ 16A5:005A */
@@ -254,7 +254,7 @@ extern void far *gPanelIconCells[0x11]; /*@ ds:5E64 */ /* the 17 sliced icon poi
     for (i = 0; i < 0x11; i++) {
         gPanelIconCells[i] = 0;
         if (gPanelIconDefs[i].w)
-            gPanelIconCells[i] = gFn8082(gPanelIconDefs[i].x, gPanelIconDefs[i].y, gPanelIconDefs[i].w, gPanelIconDefs[i].h,
+            gPanelIconCells[i] = gGetSpriteCellRle(gPanelIconDefs[i].x, gPanelIconDefs[i].y, gPanelIconDefs[i].w, gPanelIconDefs[i].h,
                 gOverlayBuf);
     }
 }
@@ -1340,12 +1340,12 @@ int PickAlignment(int classIndex); /* ovl0:2238, defined below */
         gNodePtrs[i] = (struct Node far *)MemAlloc(0x3cL, 0);
     LoadOverlayScreen(gFileNameChargenA, 5, 3);
     for (i = 0; i < 0x2c; i++)
-        gPortraitCells[i] = gFn8082((i % 10) * 4, (i / 10) * 0x20, 4, 0x20, gOverlayBuf);
+        gPortraitCells[i] = gGetSpriteCellRle((i % 10) * 4, (i / 10) * 0x20, 4, 0x20, gOverlayBuf);
     gStatusLine = 0;
     LoadScreenImage(gFileNameChargen, gOverlayBuf, 5, 3, 0);
     LoadOverlayScreen(gFileNameChargenB, 5, 3);
     for (i = 0; i < 0xa; i++)
-        gBoxAnimCells[i] = gFn8082(i * 4, 0, 4, 0x20, gOverlayBuf);
+        gBoxAnimCells[i] = gGetSpriteCellRle(i * 4, 0, 4, 0x20, gOverlayBuf);
     BuildIconTable();
     if (gGraphicsChoice == 0 || gGraphicsChoice == 1) {
         CopyPage(3, 4, FP_OFF(gOverlayBuf), FP_SEG(gOverlayBuf));

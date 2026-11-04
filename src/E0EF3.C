@@ -256,7 +256,7 @@ extern void (far *gFnEFBA)(void);       /*@ ds:EFBA */ /* the current spell's ap
 extern char gFlag;                      /*@ ds:F3B9 */ /* cleared by 0EF3:2541 (E0ACD.C) */
 extern void far *gSegDF4E;              /*@ ds:DF4E */ /* the slot-5 buffer (E07A9.C) */
 extern void (far *gRestoreRect)(int x, int y, int width, int height, void far *buf); /*@ ds:804E */
-extern void (far *gFn804A)(int x, int y, int width, int height, void far *buf); /*@ ds:804A */ /* the
+extern void (far *gRestoreRectToPage)(int x, int y, int width, int height, void far *buf); /*@ ds:804A */ /* the
     far blit that restores a saved rectangle (src/EOV1.C ovl1:112D draws the option field back
     through it); the counterpart of gSaveRect (ds:80AE) */
 extern void (far *gSaveRect)(int x, int y, int width, int height, void far *buf); /*@ ds:80AE */
@@ -280,7 +280,7 @@ extern char gStrCastsSpell[];                /*@ ds:599D */ /* "%s casts %s." (0
 extern char gStrCastOk[];                /*@ ds:59AB */ /* "ok" (0EF3:2676) */
 extern signed char gViewToCellPos[];             /*@ ds:1A1B */ /* per-page sound table (src/E0ACD.C) */
 extern void movmem(void far *src, void far *dst, unsigned n); /*@ 0000:63A3 */
-extern signed char gF57E;               /*@ ds:F57E */ /* a colour (src/E0BD2.C) */
+extern signed char gPanelFillColour;               /*@ ds:F57E */ /* a colour (src/E0BD2.C) */
 extern signed char gPanelShadow;               /*@ ds:F53A */ /* a colour (src/E0BD2.C) */
 extern signed char gPanelHighlight;               /*@ ds:FB4C */ /* a colour (src/E0BD2.C) */
 extern signed char gUnselTabLightColour;               /*@ ds:A9C4 */ /* a colour (src/EOV2.C) */
@@ -773,7 +773,7 @@ extern int gBurstMaskPixel;                /*@ ds:FC72 */ /* the handle gGetPixe
         for (i = 0; i < 0x10; i++) {
             x = gFlashX2[i];
             y = gFlashY2[i];
-            gFn804A(gFlashX2[i] >> 3, gFlashY2[i], 2, 0x10, gBufDCFC + (i << 8));
+            gRestoreRectToPage(gFlashX2[i] >> 3, gFlashY2[i], 2, 0x10, gBufDCFC + (i << 8));
         }
         for (i = 0; i < 0x10; i++) {
             frame = (gFlashPass2[pass] & gFlashFrame2[i]) >> gFlashShift2[i];
@@ -1889,7 +1889,7 @@ void DrawSpellPanel(void);
 
 /* 0EF3:2295: draw the spell panel body. It sets gStatusLine, fills the panel's outer rectangle with
    gFillRect, then draws the five spell cells: for each cell (the gSpellCells rectangle) it picks
-   three colours: gPanelHighlight/gPanelShadow/gF57E for the member's own row (i == gSpellPanelLevel) and gUnselTabLightColour/gUnselTabDarkColour/gAltPanelFill
+   three colours: gPanelHighlight/gPanelShadow/gPanelFillColour for the member's own row (i == gSpellPanelLevel) and gUnselTabLightColour/gUnselTabDarkColour/gAltPanelFill
    for the others when gGraphicsChoice is nonzero; when it is zero the own row uses 1/2/3 and the
    others 0/1/2 (the literals are the gGraphicsChoice == 0 branch only).
    It then draws the "1ST".."5TH" labels (gSpellLabels) and the name list box, and for each of the
@@ -1914,7 +1914,7 @@ void DrawSpellPanel(void);
     int textColour;
 
     gStatusLine = 2;
-    gFillRect(0x46, 0x7a, 0xaf, 0xaf, gF57E);
+    gFillRect(0x46, 0x7a, 0xaf, 0xaf, gPanelFillColour);
     for (i = 0; i < 5; i++) {
         cell = i * 4;
         if (gGraphicsChoice == 0) {
@@ -1926,7 +1926,7 @@ void DrawSpellPanel(void);
         } else {
             colourA = gSpellPanelLevel == i ? gPanelHighlight : gUnselTabLightColour;
             colourB = gSpellPanelLevel == i ? gPanelShadow : gUnselTabDarkColour;
-            fill = gSpellPanelLevel == i ? gF57E : gAltPanelFill;
+            fill = gSpellPanelLevel == i ? gPanelFillColour : gAltPanelFill;
             hiColour = 6;
             textColour = 0xc;
         }
@@ -1939,13 +1939,13 @@ void DrawSpellPanel(void);
         hiColour = 0xc;
         textColour = 3;
     } else {
-        fill = gF57E;
+        fill = gPanelFillColour;
         hiColour = 0xb;
         textColour = 0xf;
     }
     for (i = 0; i < 5; i++)
         gDrawText(gSpellLabels[i], i * 0x15 + 0x49, 0x7c, 0xc, 0);
-    DrawFilledPanel(0x47, 0x83, 0xaf, 0xae, gPanelHighlight, gPanelShadow, gF57E);
+    DrawFilledPanel(0x47, 0x83, 0xaf, 0xae, gPanelHighlight, gPanelShadow, gPanelFillColour);
     for (i = 0; i < 7; i++) {
         slot = (gSpellBookSlots + gSpellPanelLevel * 6)[i];
         if (gSpellPanelSlot != i) {

@@ -1131,14 +1131,14 @@ extern signed char gViewDrawOrder[]; /*@ ds:7278 */     /* per-view-slot byte (t
 extern int gCompassDir; /*@ ds:7296 */              /* the page the rows were last drawn for (this unit) */
 extern int gCompassY[]; /*@ ds:7290 */             /* per-row y (this unit) */
 extern int gCompassX[]; /*@ ds:728A */             /* per-row x (this unit) */
-extern void far *gIconTableA92A[]; /*@ ds:A92A */    /* per-page, per-row far image pointers (this unit) */
+extern void far *gCompassIcons[]; /*@ ds:A92A */    /* per-page, per-row far image pointers (this unit) */
 extern void DrawShape(int mode, void far *src, int x, int y, int region); /*@ 1A29:000F */
 extern void HidePointerZone(int left, int top, int right, int bottom); /*@ 1BBE:01FE */
 extern void ShowPointerZone(void); /*@ 1BBE:02C2 */
 
 /* ovl4:1EDE: redraws the three view rows for the current page. It returns early when ds:7296
    already holds gPartyDir; otherwise it hides the pointer below the view box (0x46, 0x79, 0xb0, 0xaf),
-   draws the three rows through DrawShape(0, gIconTableA92A[gPartyDir + 4 * i], gCompassX[i], gCompassY[i], 0),
+   draws the three rows through DrawShape(0, gCompassIcons[gPartyDir + 4 * i], gCompassX[i], gCompassY[i], 0),
    shows the pointer and remembers gPartyDir in ds:7296. Called by DrawViewFrame at ovl4:202F. Purpose
    unknown: what the rows are. */
 /*@ ovl4:1EDE */ void DrawViewRows(void)
@@ -1149,13 +1149,13 @@ extern void ShowPointerZone(void); /*@ 1BBE:02C2 */
         return;
     HidePointerZone(0x46, 0x79, 0xb0, 0xaf);
     for (i = 0; i < 3; i++)
-        DrawShape(0, gIconTableA92A[gPartyDir + 4 * i], gCompassX[i], gCompassY[i], 0);
+        DrawShape(0, gCompassIcons[gPartyDir + 4 * i], gCompassX[i], gCompassY[i], 0);
     ShowPointerZone();
     gCompassDir = gPartyDir;
 }
 
 extern char gLevelPalettePending; /*@ ds:FB45 */           /* request flag, cleared here (src/E07A9.C) */
-extern char gF442; /*@ ds:F442 */           /* gate checked here (src/E08E6.C) */
+extern char gQuietObjectUpdate; /*@ ds:F442 */           /* gate checked here (src/E08E6.C) */
 extern char gFlag; /*@ ds:F3B9 */           /* selects a table set (src/E0ACD.C) */
 extern char gViewDirty; /*@ ds:DF4C */           /* a notify flag, cleared here (src/E08E6.C) */
 extern unsigned long gFrameWaitTicks; /*@ ds:849A */  /* the frame/effect busy counter (src/E08E6.C) */
@@ -1172,7 +1172,7 @@ extern void PlaySoundDefault(int sound); /*@ 177D:00F3 */
    when gLevelPalettePending is set and gGraphicsChoice is 3 (MCGA/VGA, re/globals.toml ds:8102) it loads the
    palette gFE68 and clears gLevelPalettePending; when `full` is also set, it first blanks the view box (gFillRect
    with pattern 0xc). Then it waits for gFrameWaitTicks
-   to reach zero, and, when `full` is set and gF442 is clear, clips a rectangle. It always plays
+   to reach zero, and, when `full` is set and gQuietObjectUpdate is clear, clips a rectangle. It always plays
    sound 0 and, when gFlag is zero, runs DrawViewRows; finally it clears gViewDirty. Called from the game
    loop. */
 /*@ ovl4:1F51 */ void DrawViewFrame(int full)
@@ -1191,7 +1191,7 @@ extern void PlaySoundDefault(int sound); /*@ 177D:00F3 */
     }
     while (gFrameWaitTicks != 0)
         ;
-    if (full && !gF442) {
+    if (full && !gQuietObjectUpdate) {
         HidePointerZone(0, 0, 0xb0, 0x78);
         ClipRect(0, 0, 0, 0, 0x16, 0x78, 2, 0);
         ShowPointerZone();

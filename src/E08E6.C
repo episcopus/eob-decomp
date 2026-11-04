@@ -110,8 +110,8 @@ extern int gPartyCell; /*@ ds:FBCA */   /* the party's map cell (src/E177D.C:92)
                                            the word as a cell at :219, :222, :334, :403, :469, :545,
                                            :549 and :1012. MoveParty (122E:0001) sets it on every
                                            step (settled 2026-11-03, playbook 65) */
-extern char gF442; /*@ ds:F442 */
-extern unsigned long gFC04; /*@ ds:FC04 */
+extern char gQuietObjectUpdate; /*@ ds:F442 */
+extern unsigned long gGameFlags; /*@ ds:FC04 */
 extern unsigned long gFrameWaitTicks; /*@ ds:849A */
 extern int gTimerEnableFlags; /*@ ds:849E */
 extern char gViewDirty; /*@ ds:DF4C */
@@ -204,9 +204,9 @@ void ResolveMonsterMelee(struct Monster far *obj);   /* forward: 05EA reaches it
         }
     }
     if (last->typeIndex == 7)
-        gFC04 |= 0x40000L;
+        gGameFlags |= 0x40000L;
     if (last->typeIndex == 0xc)
-        gFC04 |= 0x8000000L;
+        gGameFlags |= 0x8000000L;
 }
 
 /* 08E6:00C3: for an object whose type is not 7, 8, 9 or 0xa and whose count is positive: run
@@ -323,7 +323,7 @@ void ResolveMonsterMelee(struct Monster far *obj);   /* forward: 05EA reaches it
    record's +4 count has bits 0..2 set and `id` is nonzero, take the frame FindObjectFrameBit picks
    (fail if none) and move the object to (id, orient); for a plain turn (`id` is the object's own id
    or -1) only `orient` is applied when it is not -1. Then notify IsCellInView of the old id and,
-   unless gF442 is set, play the object's record m17 through PlaySoundAtCell. Returns 1 on success.
+   unless gQuietObjectUpdate is set, play the object's record m17 through PlaySoundAtCell. Returns 1 on success.
    Called by 0430, 0B34 and 0B94 (StepObjectOrient passes -1 to leave a field alone). */
 /*@ 08E6:0309 */ int TurnObject(struct Monster far *obj, int id, int orient)
 {
@@ -354,7 +354,7 @@ void ResolveMonsterMelee(struct Monster far *obj);   /* forward: 05EA reaches it
     if (orient != -1)
         obj->orient = orient;
     IsCellInView(oldId);
-    if (!gF442)
+    if (!gQuietObjectUpdate)
         PlaySoundAtCell(gMonsterTypes[obj->typeIndex].m17, obj->cell);
     return 1;
 }

@@ -51,7 +51,7 @@ extern int gSelectFrameStep; /*@ ds:54F4 */            /* the row of the animate
 extern unsigned long gTicks; /*@ ds:848A */  /* a tick counter compared with gSelectFrameTick by 0D1C:0454 */
 extern unsigned long gSelectFrameTick; /*@ ds:FC5E */  /* the next tick 0D1C:0454 may draw at */
 extern signed char gSelectFrameColours[]; /*@ ds:1CE7 */  /* per-row colours for the list 0D1C:0454 draws */
-extern signed char gF57E; /*@ ds:F57E */    /* a colour read by 0D1C:0C21 */
+extern signed char gPanelFillColour; /*@ ds:F57E */    /* a colour read by 0D1C:0C21 */
 extern signed char gPanelHighlight; /*@ ds:FB4C */    /* a colour read by 0D1C:0C21 */
 extern signed char gPanelShadow; /*@ ds:F53A */    /* a colour read by 0D1C:0C21 */
 extern signed char gConSaveBonus[]; /*@ ds:54F6 */  /* byte table indexed by a character's constitution in 0D1C:059B */
@@ -353,13 +353,13 @@ int GetCurrentItem(void);
             DrawItemRow(gCursorSlot, 1, 0);
     }
 }
-/* 0D1C:035A: Purpose unknown: clears gChars[who].status and then, for each of the 27 word slots of
+/* 0D1C:035A: Removes party member `who`: clears its status, drops all its items onto the party's cell and fixes up the selected inventory member. clears gChars[who].status and then, for each of the 27 word slots of
    gChars[who].items except slot 16 (which is a list head at +97), queues the item in the slot
    through InsertListItem at the head gPartyCell * 9 + 5 (the nine-byte records at ds:B894) with a
    random sound gViewToCellPos[gPartyDir * 4 + RollDice(1, 2, -1)]. Then it drains the slot-16 list through
    RemoveListItem and queues each returned item the same way. Finally, when `who` is the selected
    character, gInventoryMember is cleared to 0, and RearmCharEffects runs. Called by overlays 1 and 5. */
-/*@ 0D1C:035A */ void f0D1C_035A(int who)
+/*@ 0D1C:035A */ void RemovePartyMember(int who)
 {
     struct CharRec far *rec;
     int item;
@@ -715,12 +715,12 @@ int GetCurrentItem(void);
 {
     return (gMonsterTypes[gMonsters[obj].typeIndex].m0E & 4) && (gItemTypesClasses[item].m00 & 4) == 0;
 }
-/* 0D1C:0C21: Purpose unknown: draws a framed rectangle at (x, y) `width` by `height` through
+/* 0D1C:0C21: Draws a double-bevelled frame (x, y, width, height) for a menu box or button, flat on the outside when `first` is set and without interior fill when `second` is set. draws a framed rectangle at (x, y) `width` by `height` through
    082C:09D5. It hides the pointer, draws the whole rectangle in the colours picked by `first`
-   (gF57E, gF57E when `first`, else gPanelHighlight and gPanelShadow) with -1 as the third colour, then shrinks the
+   (gPanelFillColour, gPanelFillColour when `first`, else gPanelHighlight and gPanelShadow) with -1 as the third colour, then shrinks the
    rectangle by one on each side and draws the inner border in gPanelHighlight/gPanelShadow with a third colour of
-   -1 when `second`, else gF57E, and shows the pointer. Called by overlay 1 and overlay 6. */
-/*@ 0D1C:0C21 */ void f0D1C_0C21(int x, int y, int width, int height, int first, int second)
+   -1 when `second`, else gPanelFillColour, and shows the pointer. Called by overlay 1 and overlay 6. */
+/*@ 0D1C:0C21 */ void DrawFramedPanel(int x, int y, int width, int height, int first, int second)
 {
     int x1;
     int y1;
@@ -735,8 +735,8 @@ int GetCurrentItem(void);
     x2 = x + width - 1;
     y2 = y + height - 1;
     if (first) {
-        c2 = gF57E;
-        c1 = gF57E;
+        c2 = gPanelFillColour;
+        c1 = gPanelFillColour;
     } else {
         c1 = gPanelHighlight;
         c2 = gPanelShadow;
@@ -746,6 +746,6 @@ int GetCurrentItem(void);
     y1++;
     x2--;
     y2--;
-    DrawFilledPanel(x1, y1, x2, y2, gPanelHighlight, gPanelShadow, second ? -1 : gF57E);
+    DrawFilledPanel(x1, y1, x2, y2, gPanelHighlight, gPanelShadow, second ? -1 : gPanelFillColour);
     LockShowPointer();
 }
