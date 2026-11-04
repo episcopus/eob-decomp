@@ -50,19 +50,19 @@ struct CharRec {
 };
 
 /* The 18-byte records at ds:DD2C, 10 of them, walked by 0285 and 0D63. */
-struct DDRec {
+struct Projectile {
     char active;              /* +00: the record state: 0 is cleared, 1 and 2 are the live states */
     char pad01;
     int m02;                  /* +02 */
-    int m04;                  /* +04: a character or object index */
+    int cell;                  /* +04: a character or object index */
     char m06;                 /* +06 */
-    signed char m07;          /* +07 */
-    int m08;                  /* +08: an index into the 14-byte records at ds:8DD2 */
+    signed char dir;          /* +07 */
+    int item;                  /* +08: an index into the 14-byte records at ds:8DD2 */
     char m0A;                 /* +0A */
     char m0B;                 /* +0B */
     char m0C;                 /* +0C: flags, bit 0x20 tested by 0285 */
     unsigned char m0D;        /* +0D: a counter decremented by 003E */
-    int (far *fn)(struct DDRec far *rec); /* +0E: called by 0172 when active is 2 */
+    int (far *fn)(struct Projectile far *rec); /* +0E: called by 0172 when active is 2 */
 };
 
 /* The 14-byte records at ds:8DD2 (src/E0D1C.C names the same table Entry14); 020F keeps only the
@@ -76,7 +76,7 @@ struct Entry14 {
 };
 
 /* The 28-byte object records at ds:8A82 (src/E08E6.C). */
-struct Obj28 {
+struct Monster {
     char pad00[2];
     int cell;                   /* +02: the object's identity (src/E08E6.C:14, src/EOV3.C:81) */
     char pad04[0x17 - 0x04];
@@ -87,9 +87,9 @@ struct Obj28 {
 extern struct Effect gEffects[]; /*@ ds:5BA8 */
 extern int gEffectCount; /*@ ds:5CA8 */       /* the number of entries, 16 */
 extern struct CharRec gChars[]; /*@ ds:F580 */
-extern struct DDRec gDD2C[]; /*@ ds:DD2C */   /* 10 records, 18 bytes each */
+extern struct Projectile gProjectiles[]; /*@ ds:DD2C */   /* 10 records, 18 bytes each */
 extern struct Entry14 gTable8DD2[]; /*@ ds:8DD2 */ /* 14-byte records (src/E0D1C.C) */
-extern struct Obj28 gObjs[]; /*@ ds:8A82 */   /* 30 records, 28 bytes each (src/E08E6.C) */
+extern struct Monster gMonsters[]; /*@ ds:8A82 */   /* 30 records, 28 bytes each (src/E08E6.C) */
 extern char gMaze[]; /*@ ds:B894 */             /* nine-byte records (src/E0D1C.C) */
 extern signed char gWallTypeFlags[]; /*@ ds:194B */      /* byte table indexed by a gMaze byte (src/E0D1C.C) */
 extern signed char g181F[]; /*@ ds:181F */      /* byte table indexed by a ds:8DD2 icon in 003E */
@@ -130,11 +130,11 @@ extern void DrawText(char *text); /*@ 1DE7:060A */
 extern void DrawMemberFood(int member); /*@ 1547:04A0 */
 extern void DispatchSlotHandler(int member, int a); /*@ 122E:0896 */
 extern void RunCellScript(int cell, int mode); /*@ 122E:1DA8 */
-extern int Obj189D(struct Obj28 far *obj, int a, int b); /*@ 08E6:189D */
-extern int RunRecordAttack(struct DDRec far *rec); /*@ 0DE8:01FF */
-extern int TryRecordAttack(struct DDRec far *rec, int idx); /*@ 0DE8:02D4 */
+extern int Obj189D(struct Monster far *obj, int a, int b); /*@ 08E6:189D */
+extern int RunRecordAttack(struct Projectile far *rec); /*@ 0DE8:01FF */
+extern int TryRecordAttack(struct Projectile far *rec, int idx); /*@ 0DE8:02D4 */
 extern void DamageCharacter(int who, int what); /*@ 0DE8:09B9 */
-extern void AnimateEffect(struct DDRec far *rec); /*@ 0EF3:00CD */
+extern void AnimateEffect(struct Projectile far *rec); /*@ 0EF3:00CD */
 extern void ExpireSpellEffect(int a, int b); /*@ 0EF3:0D78 */
 extern void InsertListItem(void far *head, int key, int item, int sound); /*@ 0BD2:01D0 */
 extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
@@ -159,16 +159,16 @@ extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
     unused++;
 }
 /* 1414:003E: the per-record step 0285 runs for every live ds:DD2C record. It reads a status byte
-   db = gMaze[target * 9 + (rec->m07 ^ 2)] and bits = gWallTypeFlags[db]. A record in state 1 whose bits say
+   db = gMaze[target * 9 + (rec->dir ^ 2)] and bits = gWallTypeFlags[db]. A record in state 1 whose bits say
    so (bits bit 0, a nonzero m02, or bits bit 1 together with a ds:8DD2 icon of 15 or more) is moved
    onto character `target`: one RemoveListItem takes the record's item m08 off the old cell's list
-   (gMaze[rec->m04 * 9 + 5]) and one InsertListItem puts it on the target's list
-   (gMaze[target * 9 + 5], key target, sound sel | 4); m04 and m06 are set to `target` and `sel`,
+   (gMaze[rec->cell * 9 + 5]) and one InsertListItem puts it on the target's list
+   (gMaze[target * 9 + 5], key target, sound sel | 4); cell and m06 are set to `target` and `sel`,
    m0D is decremented and it returns 1; otherwise gEFD2 is 0x10. Any other record is moved when bits
-   bit 0 is set or when m04 already equals `target` (m0D is decremented unless it is -1) and returns
+   bit 0 is set or when cell already equals `target` (m0D is decremented unless it is -1) and returns
    1; otherwise gEFD2 is 1. The two failure paths report through DispatchSlotHandler(target,
-   rec->m07) (122E:0896) and return 0. Called by 0285. */
-/*@ 1414:003E */ int StepDDEffect(struct DDRec far *rec, register int target, int sel)
+   rec->dir) (122E:0896) and return 0. Called by 0285. */
+/*@ 1414:003E */ int StepDDEffect(struct Projectile far *rec, register int target, int sel)
 {
     int flag;
     int hit;
@@ -176,24 +176,24 @@ extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
     int m08;
     register int bits;
 
-    db = gMaze[target * 9 + (rec->m07 ^ 2)];
+    db = gMaze[target * 9 + (rec->dir ^ 2)];
     bits = gWallTypeFlags[db];
     if (rec->active == 1) {
-        m08 = rec->m08;
+        m08 = rec->item;
         flag = g181F[gTable8DD2[m08].icon] >= 0xF;
         hit = (bits & 1) || rec->m02 != 0 || ((bits & 2) && flag);
         if (hit) {
-            RemoveListItem((int far *)(gMaze + rec->m04 * 9 + 5), 0, m08);
+            RemoveListItem((int far *)(gMaze + rec->cell * 9 + 5), 0, m08);
             InsertListItem((int far *)(gMaze + target * 9 + 5), target, m08, sel | 4);
-            rec->m04 = target;
+            rec->cell = target;
             rec->m06 = sel;
             rec->m0D--;
             return 1;
         }
         gEFD2 = 0x10;
     } else {
-        if ((bits & 1) || rec->m04 == target) {
-            rec->m04 = target;
+        if ((bits & 1) || rec->cell == target) {
+            rec->cell = target;
             rec->m06 = sel;
             if (rec->m0D != 0xFF)
                 rec->m0D--;
@@ -201,7 +201,7 @@ extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
         }
         gEFD2 = 1;
     }
-    DispatchSlotHandler(target, rec->m07);
+    DispatchSlotHandler(target, rec->dir);
     return 0;
 }
 /* 1414:0172: the per-record test 0285 and 0D63 use. It returns 0 when the record already has a
@@ -210,9 +210,9 @@ extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
    scans the 30 objects at ds:8A82 for one that Obj189D accepts and that TryRecordAttack then
    also accepts, returning 1 on the first; when the bits are clear it runs RunRecordAttack(rec)
    only when `index` is the party's map cell and returns that. Called by 0285 and 0D63. */
-/*@ 1414:0172 */ int TestDDEffect(struct DDRec far *rec, int index, int sel)
+/*@ 1414:0172 */ int TestDDEffect(struct Projectile far *rec, int index, int sel)
 {
-    struct Obj28 far *obj;
+    struct Monster far *obj;
     int i;
 
     if (rec->m02 != 0)
@@ -222,7 +222,7 @@ extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
     }
     if (gMaze[index * 9 + 4] & 7) {
         i = 0;
-        obj = gObjs;
+        obj = gMonsters;
         for (; i < 30; i++, obj++) {
             if (Obj189D(obj, index, sel)) {
                 if (TryRecordAttack(rec, i))
@@ -238,30 +238,30 @@ extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
 }
 
 /* 1414:020F: clears a live ds:DD2C record. When it is in state 1 it first keeps only the low two
-   bits of gTable8DD2[rec->m08].m03, redraws rec->m04 through 122E:1DA8 with mode 4 and plays
-   sound 0x12, then clears the record's active flag and its m0D, m07, m04, m0B, m0A and m08
+   bits of gTable8DD2[rec->item].m03, redraws rec->cell through 122E:1DA8 with mode 4 and plays
+   sound 0x12, then clears the record's active flag and its m0D, dir, cell, m0B, m0A and item
    fields. Called by 0285 and 0D63. */
-/*@ 1414:020F */ void ClearDDEffect(struct DDRec far *rec)
+/*@ 1414:020F */ void ClearDDEffect(struct Projectile far *rec)
 {
     if (rec->active == 1) {
-        gTable8DD2[rec->m08].m03 &= 3;
-        RunCellScript(rec->m04, 4);
+        gTable8DD2[rec->item].m03 &= 3;
+        RunCellScript(rec->cell, 4);
         PlaySoundDefault(0x12);
     }
     rec->active = 0;
     rec->m0D = 0;
-    rec->m07 = 0;
-    rec->m04 = 0;
+    rec->dir = 0;
+    rec->cell = 0;
     rec->m0B = 0;
     rec->m0A = 0;
-    rec->m08 = 0;
+    rec->item = 0;
 }
 /* 1414:0285: the DD-record step, effect 1 of the table. For every live ds:DD2C record it looks
-   up the direction byte sel = g5CAB[rec->m07 * 4 + (rec->m06 & 3)]. When sel has bit 7 set the
-   target index is StepCell(rec->m04, rec->m07) and m02 is cleared, otherwise it is rec->m04
+   up the direction byte sel = g5CAB[rec->dir * 4 + (rec->m06 & 3)]. When sel has bit 7 set the
+   target index is StepCell(rec->cell, rec->dir) and m02 is cleared, otherwise it is rec->cell
    itself. StepDDEffect(rec, value, sel) then either, when it succeeds, redraws a translated target
    through 122E:1DA8(value, 0x10) and re-tests with TestDDEffect, or, when it fails and m0C has
-   bit 0x20, runs 0EF3:00CD(rec) unless TestDDEffect(rec, m04, m06) accepts. The record is
+   bit 0x20, runs 0EF3:00CD(rec) unless TestDDEffect(rec, cell, m06) accepts. The record is
    cleared through ClearDDEffect when clearIt holds (initially m0D == 0; set when the re-test
    passes or the step fails), and gDF4C = 1 is then set unconditionally (written after the clear,
    not tested). QUIRK 1414:028D: the argument is incremented by value, so the increment has no
@@ -282,22 +282,22 @@ extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
     int clearIt;
     int i;
     int high;
-    struct DDRec far *rec;
+    struct Projectile far *rec;
 
     unused++;
     i = 0;
-    rec = gDD2C;
+    rec = gProjectiles;
     for (; i < 10; i++, rec++) {
         if (rec->active != 0) {
             clearIt = rec->m0D == 0;
-            sel = g5CAB[rec->m07 * 4 + (rec->m06 & 3)];
+            sel = g5CAB[rec->dir * 4 + (rec->m06 & 3)];
             high = sel & 0x80;
             if (high) {
                 sel &= 3;
-                value = StepCell(rec->m04, rec->m07);
+                value = StepCell(rec->cell, rec->dir);
                 rec->m02 = 0;
             } else {
-                value = rec->m04;
+                value = rec->cell;
             }
             if (StepDDEffect(rec, value, sel)) {
                 if (high)
@@ -306,7 +306,7 @@ extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
                     clearIt = 1;
             } else {
                 if (rec->m0C & 0x20) {
-                    if (!TestDDEffect(rec, rec->m04, rec->m06))
+                    if (!TestDDEffect(rec, rec->cell, rec->m06))
                         AnimateEffect(rec);
                 }
                 clearIt = 1;
@@ -682,11 +682,11 @@ extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
    through f0D1C_0006. */
 /*@ 1414:0CE7 */ void RandomiseObjectState(void)
 {
-    struct Obj28 far *obj;
+    struct Monster far *obj;
     int i;
 
     i = 0;
-    obj = gObjs;
+    obj = gMonsters;
     for (; i < 30; i++, obj++) {
         if (RollDice(1, 2, 0) == 1) {
             obj->m17 = RollDice(1, 2, 0) << 4;
@@ -699,14 +699,14 @@ extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
    runs 020F on it. Called by UpdateObjects (08E6:0CC8) and 122E:0001. */
 /*@ 1414:0D63 */ void UpdateDDEffects(void)
 {
-    struct DDRec far *rec;
+    struct Projectile far *rec;
     int result;
     int i;
 
-    rec = gDD2C;
+    rec = gProjectiles;
     for (i = 0; i < 10; i++, rec++) {
         if (rec->active != 0) {
-            result = TestDDEffect(rec, rec->m04, rec->m06);
+            result = TestDDEffect(rec, rec->cell, rec->m06);
             if (result)
                 ClearDDEffect(rec);
         }

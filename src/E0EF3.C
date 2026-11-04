@@ -107,8 +107,8 @@ struct Tgt {
 };
 
 /* The 28-byte object records at ds:8A82 (src/E08E6.C); only the fields this unit touches. */
-struct Obj28 {
-    signed char b0;         /* +00: an index into the gTable1A3B records */
+struct Monster {
+    signed char typeIndex;         /* +00: an index into the gMonsterTypes records */
     signed char kind;       /* +01 */
     int cell;                 /* +02 */
     char pad04[0x08 - 0x04];
@@ -118,8 +118,8 @@ struct Obj28 {
     char pad0C[0x1C - 0x0C];
 };
 
-/* The 27-byte records at ds:1A3B (src/E08E6.C names it struct Entry27); only +0x0F here. */
-struct Entry27 {
+/* The 27-byte records at ds:1A3B (src/E08E6.C names it struct MonsterType); only +0x0F here. */
+struct MonsterType {
     char pad00[2];
     unsigned char m02;      /* +02: an index into the 0A72:0006 table (0EF3:1702) */
     char pad03[0x0F - 0x03];
@@ -137,46 +137,46 @@ struct CellRect {
 
 /* The 18-byte effect records at ds:DD2C, ten of them (src/E1414.C and src/E122E.C name the same
    records and the callback at +0x0E). */
-struct DDRec {
+struct Projectile {
     char active;             /* +00: 1 when the record is live, 2 runs fn (1414:0172) */
     char pad01;
     int m02;                 /* +02 */
-    int m04;                 /* +04: a character or object index */
+    int cell;                 /* +04: a character or object index */
     char m06;                /* +06 */
-    signed char m07;         /* +07 */
-    int m08;                 /* +08: an index into the 14-byte records at ds:8DD2 */
+    signed char dir;         /* +07 */
+    int item;                 /* +08: an index into the 14-byte records at ds:8DD2 */
     char m0A;                /* +0A */
     char m0B;                /* +0B */
     char m0C;                /* +0C: flags, bit 0x20 tested by 1414:0285 */
     unsigned char m0D;       /* +0D */
-    int (far *fn)(struct DDRec far *rec); /* +0E: called by 1414:0172 when active is 2 */
+    int (far *fn)(struct Projectile far *rec); /* +0E: called by 1414:0172 when active is 2 */
 };
 
 /* The 0x13-byte spell records at ds:1344 (src/EOV6.C names the table gSpells1344 and its +0 a far
    name pointer). This unit reads the apply callback at +5 (through gFnEFBA), the DD callback at
-   +9 (copied into a DDRec.fn by 0EF3:097B) and the expire callback at +0xD (run by 0EF3:0D78 and
+   +9 (copied into a Projectile.fn by 0EF3:097B) and the expire callback at +0xD (run by 0EF3:0D78 and
    0EF3:131A); the sound id at +0x11 is ds:1355, gEffectSound. */
 struct Spell {
     char *name;                             /* +00: the spell's name */
     signed char flags;                      /* +04: bits 0..3 read by 0EF3:0D78 (bits 0..2, bit 3)
                                                and 0EF3:2676 (bit 0, bit 1, bits 1|2, bit 2, bit 3) */
     void (far *apply)(void);                /* +05: run through gFnEFBA when the spell is cast */
-    int (far *ddFn)(struct DDRec far *rec); /* +09: copied into DDRec.fn by 0EF3:097B */
+    int (far *ddFn)(struct Projectile far *rec); /* +09: copied into Projectile.fn by 0EF3:097B */
     void (far *remove)(struct CharRec far *rec); /* +0D: run when the spell expires */
     signed char sound;                      /* +11: the sound id (ds:1355) */
     signed char m12;                        /* +12: bit 0 gates 0EF3:2676's first flag clear */
 };
 
 /* The per-mode table at ds:56E7, four bytes per mode (0EF3:097B): the index of the mode's spell
-   in gSpells1344 and three bytes copied into a DDRec. */
+   in gSpells1344 and three bytes copied into a Projectile. */
 struct EffectMode {
     signed char spell;       /* +00: an index into gSpells1344 */
-    signed char m01;         /* +01 -> DDRec.m0D */
-    signed char m02;         /* +02 -> DDRec.m0C */
-    signed char m03;         /* +03 -> DDRec.m0A */
+    signed char m01;         /* +01 -> Projectile.m0D */
+    signed char m02;         /* +02 -> Projectile.m0C */
+    signed char m03;         /* +03 -> Projectile.m0A */
 };
 
-extern struct DDRec gDD2C[];            /*@ ds:DD2C */ /* ten 18-byte records */
+extern struct Projectile gProjectiles[];            /*@ ds:DD2C */ /* ten 18-byte records */
 extern struct Spell gSpells1344[];      /*@ ds:1344 */ /* 0x13-byte spell records */
 extern struct EffectMode gEffectModes[]; /*@ ds:56E7 */ /* four bytes per effect mode */
 
@@ -187,8 +187,8 @@ extern struct ItemType gItemTypes[];    /*@ ds:A9F0 */
 /* The six item-type slots 0x33..0x38 the game creates at runtime live at ds:AD20, the same 96
    bytes src/EOV3.C names gAD20 (its saved-game buffer). */
 extern struct ItemType gAD20[];         /*@ ds:AD20 */
-extern struct Obj28 gObjs[];            /*@ ds:8A82 */
-extern struct Entry27 gTable1A3B[];     /*@ ds:1A3B */
+extern struct Monster gMonsters[];            /*@ ds:8A82 */
+extern struct MonsterType gMonsterTypes[];     /*@ ds:1A3B */
 
 extern struct CharRec far *gCurRec;     /*@ ds:F51C */ /* the far pointer to the current record */
 extern signed char gCurMember;          /*@ ds:DCFA */ /* the member whose record is current
@@ -333,7 +333,7 @@ extern int far RollDice(char count, char sides, char bonus); /*@ 082C:0458 */
 extern int RollToHit(int who, int obj, int slot, int flag); /*@ 0DE8:0007 */
 extern void DamageCharacter(int who, int amount); /*@ 0DE8:09B9 */
 extern int HalveSaveDamageA(int who, int value); /*@ 0DE8:0F98 */
-extern int HalveSaveDamageB(struct Obj28 far *objRec, int value); /*@ 0DE8:0FCA */
+extern int HalveSaveDamageB(struct Monster far *objRec, int value); /*@ 0DE8:0FCA */
 extern int FindClassSlot(int value, int classIndex); /*@ 0A72:007B */
 extern int GetIndexedByte(char index, char limit, char offset); /*@ 0A72:0006 */
 extern int GetArmourClassBase(char classIndex); /*@ 0A72:019D */
@@ -348,10 +348,10 @@ extern int GetCurrentItem(void); /*@ 0D1C:02DC */
 extern int MemberIs(int who, int mask); /*@ 0D1C:0670 */
 extern int TakeItemFromSlot(int who, int row); /*@ 0BD2:0106 */
 extern int Obj15B4(char who, int value); /*@ 08E6:15B4 */
-extern void DamageObject(struct Obj28 far *obj, int n); /*@ 08E6:0FBE */
-extern void ClearObjectType(struct Obj28 far *obj); /*@ 08E6:000B */
+extern void DamageObject(struct Monster far *obj, int n); /*@ 08E6:0FBE */
+extern void ClearObjectType(struct Monster far *obj); /*@ 08E6:000B */
 extern void Obj17FD(int far *list, int key, int field, char flags, char scanAll, char scanFiltered); /*@ 08E6:17FD */
-extern int Obj106B(struct Obj28 far *obj, int who); /*@ 08E6:106B */
+extern int Obj106B(struct Monster far *obj, int who); /*@ 08E6:106B */
 extern void SetMouseItem(int n); /*@ 07A9:010C */
 extern void f1BF3_00A8(int dx, int dy); /*@ 1BF3:00A8 */
 extern int sprintf(char far *buf, char far *fmt, ...); /*@ 0000:57AE */
@@ -850,9 +850,9 @@ extern int gFC72;                /*@ ds:FC72 */ /* the handle gFn8072 returned u
 /*@ 0EF3:097B */ void StartCellEffect(char who, register int mode, int cell, int m06, int m07)
 {
     int i;
-    struct DDRec far *rec;
+    struct Projectile far *rec;
 
-    rec = gDD2C;
+    rec = gProjectiles;
     for (i = 0; i < 10; i++, rec++) {
         if (rec->active == 0)
             break;
@@ -862,11 +862,11 @@ extern int gFC72;                /*@ ds:FC72 */ /* the handle gFn8072 returned u
     rec->active = 2;
     rec->m02 = 1;
     rec->m0C = gEffectModes[mode].m02;
-    rec->m07 = m07;
+    rec->dir = m07;
     rec->m0D = gEffectModes[mode].m01;
-    rec->m04 = cell;
+    rec->cell = cell;
     rec->m06 = m06;
-    rec->m08 = mode;
+    rec->item = mode;
     rec->m0A = gEffectModes[mode].m03;
     rec->m0B = who;
     mode = gEffectModes[mode].spell;
@@ -914,10 +914,10 @@ extern int gFC72;                /*@ ds:FC72 */ /* the handle gFn8072 returned u
             dmg = RollDice(count, sides, bonus) * n;
             if (RollToHit(rec->m0B, *list, 0, 0) || !flag04) {
                 if (flag08)
-                    dmg = HalveSaveDamageB(&gObjs[*list], dmg);
+                    dmg = HalveSaveDamageB(&gMonsters[*list], dmg);
                 hit = 1;
                 if (!f0D1C_0BAB(*list))
-                    DamageObject(&gObjs[*list], dmg);
+                    DamageObject(&gMonsters[*list], dmg);
             }
         }
     } else if (rec->m04 == gPartyCell && (rec->m0B < 0 || flag10)) {
@@ -925,7 +925,7 @@ extern int gFC72;                /*@ ds:FC72 */ /* the handle gFn8072 returned u
             for (i = 0; i < 6; i++) {
                 if ((gChars[i].status & 1) == 0)
                     continue;
-                if (Obj106B(gObjs, i) || !flag04) {
+                if (Obj106B(gMonsters, i) || !flag04) {
                     dmg = RollDice(count, sides, bonus) * n;
                     if (flag08)
                         dmg = HalveSaveDamageA(i, dmg);
@@ -941,7 +941,7 @@ extern int gFC72;                /*@ ds:FC72 */ /* the handle gFn8072 returned u
             else
                 i = idx;
             if (rec->m08 != 0 || (gChars[i].effectFlags & 2) == 0) {
-                if ((gChars[i].status & 1) && (Obj106B(gObjs, i) || !flag04)) {
+                if ((gChars[i].status & 1) && (Obj106B(gMonsters, i) || !flag04)) {
                     dmg = RollDice(count, sides, bonus) * n;
                     if (flag08)
                         dmg = HalveSaveDamageA(i, dmg);
@@ -1002,7 +1002,7 @@ extern int gFC72;                /*@ ds:FC72 */ /* the handle gFn8072 returned u
                 return;
             dmg = RollDice(count, sides, bonus);
             if (!f0D1C_0BAB(obj))
-                DamageObject(&gObjs[obj], dmg);
+                DamageObject(&gMonsters[obj], dmg);
         } else {
             sprintf(gFileNameBuf, gText57F1, gChars[gPanelMember].name);
             SayAndPlaySound(gFileNameBuf);
@@ -1281,7 +1281,7 @@ extern int gFC72;                /*@ ds:FC72 */ /* the handle gFn8072 returned u
 
 /* 0EF3:1530: list the objects that match the record's cell and field with Obj17FD, then walk the
    list: for every object 0D1C:0BAB does not reject, set `found` (so it is set only for objects
-   not rejected, not for every object listed) and, when the Entry27 record gTable1A3B[obj->b0]
+   not rejected, not for every object listed) and, when the MonsterType record gMonsterTypes[obj->typeIndex]
    has bit 0 of its +0x0F long set, set the object's type byte to 0x0A and its timer to 0x0F.
    Called through a table. */
 /*@ 0EF3:1530 */ int UpdateCellObjectsBit1(struct Tgt far *rec)
@@ -1289,17 +1289,17 @@ extern int gFC72;                /*@ ds:FC72 */ /* the handle gFn8072 returned u
     int buffer[5];
     int far *list;
     int found;
-    struct Obj28 far *obj;
+    struct Monster far *obj;
 
     found = 0;
     list = buffer;
     Obj17FD(list, rec->m04, rec->m06, rec->m07, 1, 1);
     for (; *list != -1; ) {
         if (f0D1C_0BAB(*list) == 0) {
-            obj = &gObjs[*list];
+            obj = &gMonsters[*list];
             list++;
             found = 1;
-            if (gTable1A3B[obj->b0].m0F & 1) {
+            if (gMonsterTypes[obj->typeIndex].m0F & 1) {
                 obj->type = 0x0A;
                 obj->timer = 0x0F;
             }
@@ -1360,29 +1360,29 @@ extern int gFC72;                /*@ ds:FC72 */ /* the handle gFn8072 returned u
 }
 
 /* 0EF3:1702: after FlashViewDamage, walk the 30 objects and for each whose id is the object the
-   current page faces (0D1C:00DA), whose Entry27 record gTable1A3B[obj->b0] has bit 0 or 1 of its
+   current page faces (0D1C:00DA), whose MonsterType record gMonsterTypes[obj->typeIndex] has bit 0 or 1 of its
    +0x0F long and which 0D1C:0BAB does not reject, roll 1d20 and clear the object's type when the
    roll is under the value 0A72:0006 gives for that record. The +2 byte is passed as
    GetIndexedByte's `limit` argument, which 0A72:0006 clamps to g341E[index]
    (src/E0A72.C:73-80). Reached through a table (the packet finds no direct caller). The threshold
-   is a local and the clear uses &gObjs[i], not the walking pointer. */
+   is a local and the clear uses &gMonsters[i], not the walking pointer. */
 /*@ 0EF3:1702 */ void ClearObjectsFacingCell(void)
 {
-    struct Entry27 far *rec;
-    struct Obj28 far *obj;
+    struct MonsterType far *rec;
+    struct Monster far *obj;
     int target;
     int limit;
     int i;
 
     FlashViewDamage();
     target = StepCell(gPartyCell, gPartyDir);
-    obj = gObjs;
+    obj = gMonsters;
     for (i = 0; i < 0x1E; i++, obj++) {
-        rec = &gTable1A3B[obj->b0];
+        rec = &gMonsterTypes[obj->typeIndex];
         if (obj->cell == target && (rec->m0F & 3) != 0 && f0D1C_0BAB(i) == 0) {
             limit = GetIndexedByte(0, rec->m02, 4);
             if (RollDice(1, 0x14, 0) < limit)
-                ClearObjectType(&gObjs[i]);
+                ClearObjectType(&gMonsters[i]);
         }
     }
 }
@@ -1479,7 +1479,7 @@ void AnimateConeOfCold(int count, int spread, int step, int cycle, int divisor,
         while (*list != -1) {
             dmg = RollDice(classSlot, 4, classSlot);
             if (f0D1C_0BAB(*list) == 0)
-                DamageObject(&gObjs[*list], dmg);
+                DamageObject(&gMonsters[*list], dmg);
             list++;
         }
     }
@@ -1493,7 +1493,7 @@ void AnimateConeOfCold(int count, int spread, int step, int cycle, int divisor,
 }
 
 /* 0EF3:1A30: list the objects that match the record's cell and field with Obj17FD, then walk the
-   list exactly as 0EF3:1530 does, but testing bit 1 of the Entry27 record gTable1A3B[obj->b0]'s
+   list exactly as 0EF3:1530 does, but testing bit 1 of the MonsterType record gMonsterTypes[obj->typeIndex]'s
    +0x0F long and setting the object's type byte to 0x0A and its timer to 0x0F. `found` is set
    for the objects 0D1C:0BAB does not reject. Called through a table. */
 /*@ 0EF3:1A30 */ int UpdateCellObjectsBit2(struct Tgt far *rec)
@@ -1501,17 +1501,17 @@ void AnimateConeOfCold(int count, int spread, int step, int cycle, int divisor,
     int buffer[5];
     int far *list;
     int found;
-    struct Obj28 far *obj;
+    struct Monster far *obj;
 
     found = 0;
     list = buffer;
     Obj17FD(list, rec->m04, rec->m06, rec->m07, 1, 1);
     for (; *list != -1; ) {
         if (f0D1C_0BAB(*list) == 0) {
-            obj = &gObjs[*list];
+            obj = &gMonsters[*list];
             list++;
             found = 1;
-            if (gTable1A3B[obj->b0].m0F & 2) {
+            if (gMonsterTypes[obj->typeIndex].m0F & 2) {
                 obj->type = 0x0A;
                 obj->timer = 0x0F;
             }

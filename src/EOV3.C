@@ -80,8 +80,8 @@ extern struct WallRec gWallRecs[]; /*@ ds:E040 */
 extern void Unpack0(char far *src, void far *dst, long len); /*@ 1BA8:0006 */
 extern void Unpack4(char far *src, void far *dst, int len); /*@ 1D9A:0013 */
 
-struct Obj28 {              /* 28-byte records, 30 of them at ds:8A82 (src/E08E6.C) */
-    char b0;                /* +0 */
+struct Monster {              /* 28-byte records, 30 of them at ds:8A82 (src/E08E6.C) */
+    char typeIndex;                /* +0 */
     signed char kind;       /* +1 */
     int cell;                 /* +2 */
     char pad04[6];          /* +4 */
@@ -89,7 +89,7 @@ struct Obj28 {              /* 28-byte records, 30 of them at ds:8A82 (src/E08E6
     char pad0B[0x1c - 0x0b];/* +B */
 };
 
-extern struct Obj28 gObjs[]; /*@ ds:8A82 */
+extern struct Monster gMonsters[]; /*@ ds:8A82 */
 extern unsigned long g8492; /*@ ds:8492 */
 extern int MemberIs(int who, int mask); /*@ 0D1C:0670 */
 extern void RearmCharEffects(void); /*@ 1414:0B2E */
@@ -100,10 +100,10 @@ extern int gDragMember; /*@ ds:5C74 */
 extern signed char g5C76; /*@ ds:5C76 */
 extern char gDragActive; /*@ ds:5C77 */
 
-struct DDRec {              /* 18-byte effect records, 10 of them at ds:DD2C (src/E1414.C) */
+struct Projectile {              /* 18-byte effect records, 10 of them at ds:DD2C (src/E1414.C) */
     char active;            /* +0: 1 or 2 when live */
     char pad01[7];
-    int m08;                /* +8: an index into the ds:8DD2 records */
+    int item;                /* +8: an index into the ds:8DD2 records */
     char pad0A[8];
 };
 
@@ -113,7 +113,7 @@ struct Entry14 {            /* 14-byte records at ds:8DD2 (src/E0D1C.C) */
     char pad04[0xa];
 };
 
-extern struct DDRec gDD2C[]; /*@ ds:DD2C */
+extern struct Projectile gProjectiles[]; /*@ ds:DD2C */
 extern struct Entry14 gTable8DD2[]; /*@ ds:8DD2 */
 
 struct CharRec {            /* 243-byte character records at ds:F580 (src/E08E6.C) */
@@ -214,13 +214,13 @@ extern void LoadFile(char far *name, void far *buf, unsigned len); /*@ 1B82:0009
 extern void Obj131D(int index, int kind, int id, int frame, int orient, int b0, int m07, int type, int timer, int m12, int m14); /*@ 08E6:131D */
 extern void PlaySound(int sound); /*@ 177D:0070 */
 
-struct T16 {                /* the 16-byte timer records ovl3:0A7C fills from the level script */
+struct LevelTimer {                /* the 16-byte timer records ovl3:0A7C fills from the level script */
     unsigned long f0;       /* +0: the script (index, value) value / the derived deadline */
     char pad04[0xc];
 };
-extern struct T16 g5BCC[]; /*@ ds:5BCC */
-extern struct T16 g5BD0[]; /*@ ds:5BD0 */
-extern struct T16 g5BDC[]; /*@ ds:5BDC */
+extern struct LevelTimer g5BCC[]; /*@ ds:5BCC */
+extern struct LevelTimer g5BD0[]; /*@ ds:5BD0 */
+extern struct LevelTimer g5BDC[]; /*@ ds:5BDC */
 
 /* ds:6A80 is the initialiser template for ovl3:0A7C's local `handlers` array: the three map icon
    loaders LoadMapIcons6 (stub entry 0x25), LoadNamedIcons (0x2A) and LoadMapIcons6b (0x34), which
@@ -642,7 +642,7 @@ done:
             g5BD0[i].f0 = g8492 + g5BCC[i].f0;
     }
     if (!(gFBD0 & (1 << (level - 1)))) {
-        memset(gObjs, 0, 0x348);
+        memset(gMonsters, 0, 0x348);
         for (i = 0; i < 0x1e; i++) {
             objIndex = script[0];
             script++;
@@ -710,7 +710,7 @@ done:
 /* ovl3:0FD1: packs the level state into `buf`. It copies the four gMaze bytes of each of the 0x400
    records into gBufDCFC, compresses gBufDCFC (0x1000 bytes) into `buf` with CompressLcw and, when
    the stream is longer than 0x4B0, prints "Map compression failure: size of map = %d" and shuts the
-   game down. It finishes by Unpack0ing gObjs into `buf`+0x4B0. Called by ovl3:11AF. */
+   game down. It finishes by Unpack0ing gMonsters into `buf`+0x4B0. Called by ovl3:11AF. */
 /*@ ovl3:0FD1 */ void PackLevelState(void far *buf)
 {
     char far *dst;
@@ -732,12 +732,12 @@ done:
         WaitKeyEvent();
         ShutdownGame();
     }
-    Unpack0(gObjs, dst, 0x348L);
+    Unpack0(gMonsters, dst, 0x348L);
 }
 /* ovl3:109D: unpacks a level state. `buf` is the 0x7F8-byte level state ovl3:1147 read. It
    Unpack4s 0x1000 bytes of `buf` into gBufDCFC and Unpack0s the 0x348 bytes at `buf`+0x4B0 into
-   gObjs, copies the four gBufDCFC bytes of each of the 0x400 gMaze records into its +0 field, then
-   bumps the +4 byte of every gMaze record the 30 gObjs objects index by id. Called by ovl3:1147. */
+   gMonsters, copies the four gBufDCFC bytes of each of the 0x400 gMaze records into its +0 field, then
+   bumps the +4 byte of every gMaze record the 30 gMonsters objects index by id. Called by ovl3:1147. */
 /*@ ovl3:109D */ void UnpackLevelState(void far *buf)
 {
     char far *dst;
@@ -751,9 +751,9 @@ done:
     for (i = 0; i < 0x400; i++)
         for (j = 0; j < 4; j++)
             gMaze[i * 9 + j] = *src++;
-    Unpack0(dst, gObjs, 0x348L);
+    Unpack0(dst, gMonsters, 0x348L);
     for (i = 0; i < 0x1e; i++)
-        gMaze[gObjs[i].cell * 9 + 4]++;
+        gMaze[gMonsters[i].cell * 9 + 4]++;
 }
 /* ovl3:1147: reads the level state `action` from LEVELS.TMP: opens the file, seeks to
    (action-1)*0x7F8 and reads 0x7F8 bytes into gSegEFC2, closes it and hands gSegEFC2 to ovl3:109D.
@@ -983,9 +983,9 @@ done:
         gA998 = 0;
     return ok;
 }
-/* ovl3:19F7: resets the level. It clears the m0A byte of the 30 gObjs objects, clears every live
+/* ovl3:19F7: resets the level. It clears the m0A byte of the 30 gMonsters objects, clears every live
    ds:DD2C effect record (for an active 1, keeping only the low two bits of the m03 byte of the
-   ds:8DD2 record its m08 indexes, then clearing its active byte; an active 2 is just cleared),
+   ds:8DD2 record its item indexes, then clearing its active byte; an active 2 is just cleared),
    then, when gDragActive is set, walks the gMaze record of character gDragMember adding the mode
    byte g5C76 to two bytes of its slot until the gWallTypeFlags flag of that slot has bit 0x30 set (the
    loop has no other bound), and clears gDragActive. Called by ovl3:1368 and ovl3:15B9. */
@@ -997,14 +997,14 @@ done:
     int slot;
 
     for (i = 0; i < 0x1e; i++)
-        gObjs[i].m0A = 0;
+        gMonsters[i].m0A = 0;
     for (i = 0; i < 0xa; i++) {
-        if (gDD2C[i].active == 1) {
-            gTable8DD2[gDD2C[i].m08].m03 &= 3;
-            gDD2C[i].active = 0;
+        if (gProjectiles[i].active == 1) {
+            gTable8DD2[gProjectiles[i].item].m03 &= 3;
+            gProjectiles[i].active = 0;
         }
-        if (gDD2C[i].active == 2)
-            gDD2C[i].active = 0;
+        if (gProjectiles[i].active == 2)
+            gProjectiles[i].active = 0;
     }
     if (gDragActive) {
         who = gDragMember;

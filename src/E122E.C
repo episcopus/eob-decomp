@@ -159,19 +159,19 @@ extern char gDF4C; /*@ ds:DF4C */              /* set to 1 when an action took e
                                                   unit calls marking the action dirty (src/E08E6.C) */
 
 /* The 18-byte effect records at ds:DD2C, 10 of them (src/E1414.C). */
-struct DDRec {
+struct Projectile {
     char active;                                /* +00: 1 when the record is live */
     char pad01;
     int m02;                                    /* +02 */
-    int m04;                                    /* +04: a character or object index */
+    int cell;                                    /* +04: a character or object index */
     char m06;                                   /* +06 */
-    signed char m07;                            /* +07 */
+    signed char dir;                            /* +07 */
     char pad08[0x12 - 0x08];
 };
 
-extern struct DDRec gDD2C[]; /*@ ds:DD2C */    /* 10 records, 18 bytes each */
+extern struct Projectile gProjectiles[]; /*@ ds:DD2C */    /* 10 records, 18 bytes each */
 
-struct Obj28 {                                  /* the 28-byte object records at ds:8A82 (src/E08E6.C) */
+struct Monster {                                  /* the 28-byte object records at ds:8A82 (src/E08E6.C) */
     char pad00[2];
     int cell;                                     /* +2 (ds:8A84): the object id */
     char frame;                                 /* +4 (ds:8A86) */
@@ -181,8 +181,8 @@ struct Obj28 {                                  /* the 28-byte object records at
     char m16;                                   /* +0x16 (ds:8A98): a bit flags byte set by 122E:1097 */
     char pad17[0x1c - 0x17];
 };
-extern struct Obj28 gObjs[]; /*@ ds:8A82 */
-extern void MoveObjectToId(struct Obj28 far *obj, int id, int orient); /*@ 08E6:0297 */
+extern struct Monster gMonsters[]; /*@ ds:8A82 */
+extern void MoveObjectToId(struct Monster far *obj, int id, int orient); /*@ 08E6:0297 */
 
 extern int CopyItemToFreeSlot(int n); /*@ 0BD2:089E */
 extern void SetMouseItem(int n); /*@ 07A9:010C */
@@ -757,14 +757,14 @@ void RunCellScript(int cell, int mode);  /* forward: 1DA8 comes after its caller
 }
 /* 122E:0D57: reassign objects, items and effects from one id to another. It reads an opcode (a byte)
    and, for every opcode but 0xFFF1, a source id `srcId`; 0xFFF1 reads only `id`. Then it reads
-   `id`. For 0xFFE8 it moves the party to cell `id` (MoveParty), for 0xFFF3 it moves every gObjs record whose
+   `id`. For 0xFFE8 it moves the party to cell `id` (MoveParty), for 0xFFF3 it moves every gMonsters record whose
    id matches `srcId` to `id`, and for 0xFFF5 it moves every item of the gMazeItems list of `srcId` to the
-   list of `id` (keeping each item's old m03 key in `oldKey`) and retargets every live gDD2C effect
+   list of `id` (keeping each item's old m03 key in `oldKey`) and retargets every live gProjectiles effect
    from `srcId` to `id`. Sets gDF4C. Returns the bytes read. */
 /*@ 122E:0D57 */ long ReassignObjectsOp(char far *script)
 {
-    struct Obj28 far *obj;
-    struct DDRec far *rec;
+    struct Monster far *obj;
+    struct Projectile far *rec;
     int oldKey;
     int op;
     int srcId;
@@ -784,7 +784,7 @@ void RunCellScript(int cell, int mode);  /* forward: 1DA8 comes after its caller
         MoveParty(id);
         break;
     case 0xfff3:
-        obj = gObjs;
+        obj = gMonsters;
         for (i = 0; i < 0x1e; i++) {
             if (obj->cell == srcId)
                 MoveObjectToId(obj, id, obj->frame);
@@ -797,10 +797,10 @@ void RunCellScript(int cell, int mode);  /* forward: 1DA8 comes after its caller
             RemoveListItem(&gMazeItems[srcId * 9], 0, item);
             InsertListItem(&gMazeItems[id * 9], id, item, oldKey);
         }
-        rec = gDD2C;
+        rec = gProjectiles;
         for (i = 0; i < 0xa; i++) {
-            if (rec->active == 1 && rec->m04 == srcId)
-                rec->m04 = id;
+            if (rec->active == 1 && rec->cell == srcId)
+                rec->cell = id;
             rec++;
         }
         break;
@@ -889,8 +889,8 @@ done:
     return (long)(script - start);
 }
 /* 122E:1097: opcode that sets action flags. 0xFFEF sets the bit in the gActionFlags entry of the
-   current action gFBC8, 0xFFF0 sets it in gFC04, 0xFFF3 sets a bit in gObjs[index].m16 and clears
-   gObjs[index].type, and 0xFFE4 sets gFB76. Returns the bytes read. */
+   current action gFBC8, 0xFFF0 sets it in gFC04, 0xFFF3 sets a bit in gMonsters[index].m16 and clears
+   gMonsters[index].type, and 0xFFE4 sets gFB76. Returns the bytes read. */
 /*@ 122E:1097 */ long SetActionFlagsOp(char far *script)
 {
     int op;
@@ -911,8 +911,8 @@ done:
     case 0xfff3:
         idx = *script++;
         arg = *script++;
-        gObjs[idx].m16 |= 1 << arg;
-        gObjs[idx].type = 0;
+        gMonsters[idx].m16 |= 1 << arg;
+        gMonsters[idx].type = 0;
         break;
     case 0xffe4:
         gFB76 = 1;
@@ -1371,14 +1371,14 @@ done:
 }
 
 /* 122E:1C16: opcode that turns a page: 0xFFF1 rotates gPartyDir by the byte argument (modulo 4) and
-   marks the sound page and action dirty; 0xFFF5 rotates m07 (called the orientation here; the name
-   is a placeholder, src/E1414.C owns the DDRec record) of every live effect record that names the
+   marks the sound page and action dirty; 0xFFF5 rotates dir (called the orientation here; the name
+   is a placeholder, src/E1414.C owns the Projectile record) of every live effect record that names the
    running member. Returns the bytes read. */
 /*@ 122E:1C16 */ long TurnPageOp(char far *script)
 {
     int op;
     int delta;
-    struct DDRec far *rec;
+    struct Projectile far *rec;
     char far *start = script;
     int i;
 
@@ -1391,10 +1391,10 @@ done:
         gDF4C = 1;
         break;
     case 0xFFF5:
-        rec = gDD2C;
+        rec = gProjectiles;
         for (i = 0; i < 10; i++) {
-            if (rec->active != 0 && rec->m04 == gScriptCell)
-                rec->m07 = (rec->m07 + delta) & 3;
+            if (rec->active != 0 && rec->cell == gScriptCell)
+                rec->dir = (rec->dir + delta) & 3;
             rec++;
         }
         break;

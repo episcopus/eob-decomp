@@ -1,6 +1,6 @@
 /* Unit at EOB.EXE 0D1C:0006 (3265 bytes, 26 functions): the party-status and character-effect
    module. It walks the six 243-byte character records at ds:F580 (struct CharRec, src/E0A72.C),
-   the 28-byte object records at ds:8A82 (struct Obj28, src/E08E6.C) and a 15-word table at
+   the 28-byte object records at ds:8A82 (struct Monster, src/E08E6.C) and a 15-word table at
    ds:A9C8, and it draws the party rows through the rectangle and region front ends. Several
    helpers are pulled in from the character unit (0A72), the object unit (08E6) and the resident
    drawing code. Most meanings are not established, so most function names say what a function
@@ -70,8 +70,8 @@ struct ItemInfo {           /* 16-byte records at ds:A9F5; read by 0D1C:07DB, 0D
 };
 extern struct ItemInfo gA9F5[]; /*@ ds:A9F5 */
 
-struct Obj28 {              /* 28-byte object records at ds:8A82 (see src/E08E6.C) */
-    char b0;                /* +0: an index into the ds:1A3B table */
+struct Monster {              /* 28-byte object records at ds:8A82 (see src/E08E6.C) */
+    char typeIndex;                /* +0: an index into the ds:1A3B table */
     char pad01;
     int cell;                 /* +2: the object's map cell, read by 0D1C:09CB */
     char pad04;
@@ -80,9 +80,9 @@ struct Obj28 {              /* 28-byte object records at ds:8A82 (see src/E08E6.
     char m16;               /* +0x16, bit 3 set by 0D1C:09CB */
     char pad17[0x1C - 0x17];
 };
-extern struct Obj28 gObjs[]; /*@ ds:8A82 */
+extern struct Monster gMonsters[]; /*@ ds:8A82 */
 
-struct Entry27 {            /* 27-byte records at ds:1A3B, indexed by gObjs[obj].b0 */
+struct MonsterType {            /* 27-byte records at ds:1A3B, indexed by gMonsters[obj].typeIndex */
     char pad00[0x0E];
     signed char m0E;        /* +0xE (ds:1A49), bit 2 tested by 0D1C:0BEB */
     long m0F;               /* +0xF (ds:1A4A), tested by 0D1C:0A43; a `long` because the original
@@ -91,7 +91,7 @@ struct Entry27 {            /* 27-byte records at ds:1A3B, indexed by gObjs[obj]
     signed char m19;        /* +0x19 (ds:1A54), read by 0D1C:09CB */
     signed char m1A;        /* +0x1A (ds:1A55), read by 0D1C:0BAB */
 };
-extern struct Entry27 gTable1A3B[]; /*@ ds:1A3B */
+extern struct MonsterType gMonsterTypes[]; /*@ ds:1A3B */
 
 struct Row8 {               /* eight-byte rows at ds:5482, four words: a DrawBox rectangle */
     int x1;
@@ -122,7 +122,7 @@ extern int gF518; /*@ ds:F518 */             /* set to 1 while an object is bein
 extern char gFileNameBuf[]; /*@ ds:FE6E */   /* the text buffer sprintf formats into (src/EOV2.C) */
 
 extern void f08E6_17FD(int far *list, int key, int field, char flags, char scanAll, char scanFiltered); /*@ 08E6:17FD */
-/* fills `list` with the gObjs indices whose id equals key, terminated by -1; flags, scanAll
+/* fills `list` with the gMonsters indices whose id equals key, terminated by -1; flags, scanAll
    and scanFiltered select the scan (Purpose unknown) */
 extern void FlashViewDamage(void); /*@ 0EF3:06E7 */
 extern void f08E6_0E48(void); /*@ 08E6:0E48 */
@@ -152,7 +152,7 @@ extern void f1A29_008B(int mode, void far *src, int x, int y, int region); /*@ 1
 extern void DrawShape(int mode, void far *src, int x, int y, int region); /*@ 1A29:000F */
 extern void DrawFilledPanel(int x1, int y1, int x2, int y2, int c1, int c2, int c3); /*@ 082C:09D5 */
 extern int DirectionFromPoints(int fromCell, int toCell); /*@ 17A6:0314 */
-extern void DamageObject(struct Obj28 far *obj, int n); /*@ 08E6:0FBE */
+extern void DamageObject(struct Monster far *obj, int n); /*@ 08E6:0FBE */
 
 int MemberIs(int who, int mask);
 int GetCurrentItem(void);
@@ -610,12 +610,12 @@ int GetCurrentItem(void);
    and returns 1. Otherwise, when `threshold` is below the value it returns 0; else it sets bit 3
    of obj->m16, stores (DirectionFromPoints(obj->id, gPartyCell) ^ 4) >> 1 in obj->orient and returns 1.
    Called by 0D1C:0A43 and 17A6. */
-/*@ 0D1C:09CB */ int f0D1C_09CB(struct Obj28 far *obj, int threshold, int column)
+/*@ 0D1C:09CB */ int f0D1C_09CB(struct Monster far *obj, int threshold, int column)
 {
     int row;
     int value;
 
-    row = gTable1A3B[obj->b0].m19;
+    row = gMonsterTypes[obj->typeIndex].m19;
     value = GetClampedTableByte(column, row);
     if (value != -1) {
         if (threshold >= value) {
@@ -632,7 +632,7 @@ int GetCurrentItem(void);
 /* 0D1C:0A43: the "turn undead" action. When gFBC8 is 2 or 7 it derives a ten-bit key from
    gPartyCell and gPartyDir (StepCell) and requires gMaze[key * 9 + 4] & 7 to be nonzero, then
    asks f0D1C_0903 for the best qualifying party member (its low byte the member's value, its
-   high byte the member's index) and rolls 1d20. It lists the gObjs indices whose ds:8A82 object
+   high byte the member's index) and rolls 1d20. It lists the gMonsters indices whose ds:8A82 object
    record's m02 equals key (f08E6_17FD) and, for each object whose ds:1A3B record's m0F has bit 2
    set and whose m16 has bit 4 clear, sets gF518, marks the object (m16 |= 0x10) and runs
    f0D1C_09CB(obj, roll, member value), ORing the results. When any object turned it formats "%s
@@ -641,7 +641,7 @@ int GetCurrentItem(void);
    by 0ACD:0E8A. */
 /*@ 0D1C:0A43 */ void TurnUndead(void)
 {
-    struct Obj28 far *obj;
+    struct Monster far *obj;
     int key;
     int value;
     int list[5];
@@ -669,8 +669,8 @@ int GetCurrentItem(void);
     for (i = 0; i < 5; i++) {
         if (list[i] == -1)
             break;
-        obj = &gObjs[list[i]];
-        if ((gTable1A3B[obj->b0].m0F & 4) && !(obj->m16 & 0x10)) {
+        obj = &gMonsters[list[i]];
+        if ((gMonsterTypes[obj->typeIndex].m0F & 4) && !(obj->m16 & 0x10)) {
             gF518 = 1;
             obj->m16 |= 0x10;
             turned |= f0D1C_09CB(obj, roll, memberVal);
@@ -687,21 +687,21 @@ int GetCurrentItem(void);
     gF518 = 0;
 }
 /* 0D1C:0BAB: Purpose unknown: a percentage check on the object `objIndex` (its ds:8A82 record,
-   not a pointer like 0D1C:09CB's `obj`): through gObjs[objIndex].b0 it reads gTable1A3B[b0].m1A
+   not a pointer like 0D1C:09CB's `obj`): through gMonsters[objIndex].typeIndex it reads gMonsterTypes[typeIndex].m1A
    and returns 1 when RollDice(1, 100, 0) is below it, otherwise 0. Called by 0DE8:0359. */
 /*@ 0D1C:0BAB */ int f0D1C_0BAB(int objIndex)
 {
     int chance;
 
-    chance = gTable1A3B[gObjs[objIndex].b0].m1A;
+    chance = gMonsterTypes[gMonsters[objIndex].typeIndex].m1A;
     return RollDice(1, 100, 0) < chance;
 }
-/* 0D1C:0BEB: Purpose unknown: returns 1 when gTable1A3B[gObjs[obj].b0].m0E has bit 2 set and
+/* 0D1C:0BEB: Purpose unknown: returns 1 when gMonsterTypes[gMonsters[obj].typeIndex].m0E has bit 2 set and
    gA9F5[item].m00 has bit 2 clear, otherwise 0. `item` indexes the ItemInfo records. Called by
    0DE8:0359. */
 /*@ 0D1C:0BEB */ int f0D1C_0BEB(int obj, int item)
 {
-    return (gTable1A3B[gObjs[obj].b0].m0E & 4) && (gA9F5[item].m00 & 4) == 0;
+    return (gMonsterTypes[gMonsters[obj].typeIndex].m0E & 4) && (gA9F5[item].m00 & 4) == 0;
 }
 /* 0D1C:0C21: Purpose unknown: draws a framed rectangle at (x, y) `width` by `height` through
    082C:09D5. It hides the pointer, draws the whole rectangle in the colours picked by `first`

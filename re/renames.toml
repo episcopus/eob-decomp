@@ -3033,3 +3033,39 @@ new = "gScriptCell"
 kind = "global"
 why = "the map cell whose script is running: RunCellScript 122E:1DA8 stores its cell argument in it, and the turning opcode 122E (case 0xFFF5) turns the gDD2C effects whose cell +04 equals it"
 date = "2026-11-03"
+
+[[rename]]
+id = "ds:8A82=gMonsters"
+addr = "ds:8A82"
+old = "gObjs"
+new = "gMonsters"
+kind = "global"
+why = "the 30 monster records of 28 bytes (struct Monster): each has hit points and a death check (+E at or below 0 is dead), drops its item ids at death (08E6:0EC3), walks toward a target cell and is counted in gMaze[cell * 9 + 4] (08E6:0297)"
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:DD2C=gProjectiles"
+addr = "ds:DD2C"
+old = "gDD2C"
+new = "gProjectiles"
+kind = "global"
+why = "the ten 18-byte flying-object records (struct Projectile): the use-item action 0ACD:0494 adds one with the item, the party's cell and gPartyDir (AddDDEffect 0BD2:07DE), each holds its cell (+04, which the spinner opcode turns), its direction (+07) and its item (+08), and a handler 1414:0172 calls each tick"
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:1A3B=gMonsterTypes"
+addr = "ds:1A3B"
+old = "gTable1A3B"
+new = "gMonsterTypes"
+kind = "global"
+why = "the 27-byte monster type records at ds:1A3B, indexed by each monster's typeIndex (Monster +00): its +0 is the class byte the to-hit roll reads (0DE8:0007, E0A72), +0E the flags 08E6 tests"
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:8894=gArgv"
+addr = "ds:8894"
+old = "g8894"
+new = "gArgv"
+kind = "global"
+why = "the C library's _argv: make rebuild links ds:8894 to the library public _argv (playbook 50 item 23), and StartupGame reads argv[6] through it, atol(gArgv->number) (07C8:0212)"
+date = "2026-11-03"

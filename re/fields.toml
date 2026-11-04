@@ -368,3 +368,75 @@ old = "data, m00"
 new = "slotMask"
 why = "the slots the item type may be put in: CanPlaceItemInSlot 0BD2:0AF2 tests the 16-bit mask against the slot's bit, 0BD2:0C8E its low byte"
 date = "2026-11-03"
+
+[[field]]
+struct = "Monster"
+at = "10"
+old = "m10"
+new = "targetCell"
+why = "the cell the monster turns and moves toward: 08E6:0AB8 passes it to 08E6:0430, the turn toward a cell"
+date = "2026-11-03"
+
+[[field]]
+struct = "Monster"
+at = "12"
+old = "m12"
+new = "dropItem1"
+why = "the first item the monster drops when it dies: 08E6:0EC3 rolls 1d2 and on a 1 puts it into the cell's item list"
+date = "2026-11-03"
+
+[[field]]
+struct = "Monster"
+at = "14"
+old = "m14"
+new = "dropItem2"
+why = "the second item the monster drops when it dies: 08E6:0EC3 puts it into the cell's item list with no roll"
+date = "2026-11-03"
+
+[[field]]
+struct = "Monster"
+at = "18"
+old = "m18"
+new = "actionDelay"
+why = "the delay between the monster's actions: 08E6:0765 counts it down and resets it to 5"
+date = "2026-11-03"
+
+[[field]]
+struct = "Monster"
+at = "19"
+old = "m19"
+new = "actionsLeft"
+why = "the monster's remaining actions: 08E6:0765 decrements it, 08E6:131D sets it from actionDelay"
+date = "2026-11-03"
+
+[[field]]
+struct = "Projectile"
+at = "04"
+old = "m04"
+new = "cell"
+why = "the projectile's map cell: the spinner opcode 122E (case 0xFFF5) turns the projectiles whose cell equals the script's cell, AddDDEffect sets it from the party's cell"
+date = "2026-11-03"
+
+[[field]]
+struct = "Projectile"
+at = "07"
+old = "m07"
+new = "dir"
+why = "the projectile's flight direction 0..3: the spinner opcode adds its turn to it modulo 4 (E122E case 0xFFF5), AddDDEffect sets it from gPartyDir"
+date = "2026-11-03"
+
+[[field]]
+struct = "Projectile"
+at = "08"
+old = "m08"
+new = "item"
+why = "the item the projectile carries, an index into gItems (an index into the 14-byte records at ds:8DD2 by its comment, E1414)"
+date = "2026-11-03"
+
+[[field]]
+struct = "Monster"
+at = "00"
+old = "b0"
+new = "typeIndex"
+why = "the monster's type, an index into gMonsterTypes (ds:1A3B, the 27-byte records): E0D1C and E0DE8 index the table by it"
+date = "2026-11-03"

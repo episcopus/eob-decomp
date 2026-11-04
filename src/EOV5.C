@@ -68,7 +68,7 @@ struct ItemInfo {           /* 16-byte records at ds:A9F5 (src/E0D1C.C) */
     char pad0B[0x10 - 0x0B];
 };
 
-struct Obj28 {              /* 28-byte object records at ds:8A82 (src/E08E6.C) */
+struct Monster {              /* 28-byte object records at ds:8A82 (src/E08E6.C) */
     char pad00[8];
     signed char type;       /* +8 */
     char pad09[0x1C - 0x09];
@@ -101,7 +101,7 @@ extern struct PoolNameRec gPoolNameBase[]; /*@ ds:71A7 */  /* ds:71A7 = gCharPoo
                                                               folded gCharPool[-n-1].name access */
 extern struct Entry14 gTable8DD2[]; /*@ ds:8DD2 */
 extern struct ItemInfo gA9F5[]; /*@ ds:A9F5 */
-extern struct Obj28 gObjs[]; /*@ ds:8A82 */
+extern struct Monster gMonsters[]; /*@ ds:8A82 */
 extern int gCountDDE0; /*@ ds:DDE0 */
 extern int gTableF4E6[]; /*@ ds:F4E6 */
 extern char gOverlayBuf[]; /*@ ds:113F */
@@ -938,8 +938,8 @@ enum {
         gFC04 |= 0x8000000L;
         gFC04 |= 0x400000L;
         for (i = 0; i < 0x1e; i++) {
-            if (gObjs[i].type == 8)
-                gObjs[i].type = 5;
+            if (gMonsters[i].type == 8)
+                gMonsters[i].type = 5;
         }
         break;
     case 1:

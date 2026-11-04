@@ -4,7 +4,7 @@
    runs 07C8:0199: it sets the video mode, allocates the page/buffer table at ds:FC0C, loads the
    overlays and the two fonts and turns sound on. For the Tandy graphics choice (gGraphicsChoice 1)
    only it checks the memory chain, reserves 2 x 32 KB below the probed video segment and stores
-   atol(g8894->number) in gMemTopSeg (:311; ReserveMemoryBelowVideo(3) returns the Tandy buffer
+   atol(gArgv->number) in gMemTopSeg (:311; ReserveMemoryBelowVideo(3) returns the Tandy buffer
    base, written at :345; whether that value is the video top is [H], src/E1990.ASM:386-397).
    For the VGA choice it clears A000:0000. On the way out 07C8:058A stops sound, calls the exit hook, removes the mouse handler, shuts the overlay cache down, restores the INT 1Ch vector, removes the keyboard, restores the video mode, puts back the old INT 3Fh vector, shrinks memory for the Tandy graphics choice only (TrimMemoryToVideo, :476-477), and exits. 07C8:061D returns 1 (the exit hook at ds:80FA) and 07C8:0625 is the allocation failure hook at ds:810A. WHITEPAPER 2.6 and 4.4. Compiled -ml -O -Z. */
 
@@ -25,11 +25,11 @@ enum { DEFAULT_TEXT_ATTR1 = 0x0F, DEFAULT_TEXT_ATTR2 = 0x0C, INT3F_VECTOR = 0x3F
        PALETTE_SIZE = 0x300, PAGE_32000 = 0x7D00, PAGE_32576 = 0x7F40,
        VGA_SEG_A200 = 0xA200, VGA_SEG_A400 = 0xA400, VGA_SEG_A800 = 0xA800,
        VGA_SEG_AC00 = 0xAC00 };
-struct Unk8894 {            /* the object the pointer at ds:8894 (g8894) points at. The object's
-                               own address is unknown: nothing in src/ or docs/ writes the pointer
-                               at ds:8894 (src/E1990.ASM:23-26). E1990.ASM calls it g8894 (src/E1990.ASM:23, :388); g8894 is this unit's placeholder name */
-    char unknown[0x18];     /* +0x00 to +0x17: not read in src/; contents unknown */
-    char far *number;       /* +0x18: a far pointer to a numeric string */
+struct ArgVector {          /* the program's argument vector, which the C library's _argv (ds:8894)
+                               points at (the rebuild links ds:8894 to the library's _argv,
+                               playbook 50 item 23) */
+    char far *arg[6];       /* argv[0] to argv[5]: not read in src/ */
+    char far *number;       /* argv[6]: the numeric argument StartupGame parses with atol */
 };
 
 struct OverlayRequest {     /* the request 1C00:0055 runs, ds:8121 */
@@ -124,12 +124,11 @@ extern void far *gFont6x6;               /*@ ds:A9C0: the 6x6 font loaded from F
 extern unsigned gSegsFC0C[];          /*@ ds:FC0C: the page/buffer segment table */
 extern unsigned far gMemTopSeg;       /*@ 1990:0002: the segment where program memory must end
                                          (src/E1990.ASM:20-22); StartupGame stores the number atol
-                                         parses from the string that g8894->number points at over it
+                                         parses from the string that gArgv->number points at over it
                                          on the Tandy path only (:311). Whether that value is the video top is [H] (src/E1990.ASM:386-397) */
-extern struct Unk8894 far *g8894;   /*@ ds:8894: the pointer StartupGame dereferences as
-                                         g8894->number (:311). The object's address is unknown:
-                                         nothing in src/ or docs/ writes the pointer at ds:8894
-                                         (src/E1990.ASM:23-26). E1990.ASM calls it g8894 (src/E1990.ASM:23, :388); g8894 is this unit's placeholder name */
+extern struct ArgVector far *gArgv;   /*@ ds:8894: the C library's _argv, which the startup
+                                         code sets; StartupGame reads argv[6] through it
+                                         (gArgv->number, :311) */
 extern char far *gOverlayFiles[];     /*@ ds:3074: the five overlay name pointers (cga/tga/ega/
                                          mcga/vga), indexed by the graphics choice; the order is
                                          the EOB.EXE name order and whitepaper 2.6 (1 Tandy,
@@ -281,7 +280,7 @@ int AllocationFailure(void);
    below the probed segment, not the probe itself (src/E1990.ASM:27-28, :237-238); it writes that
    base as memtop into the page table slots 2 and 3 (:345), which src/E1990.ASM:27-30 calls the
    base of a 64000 byte Tandy buffer [H], a size this file does not give. It then overwrites gMemTopSeg
-   with atol(g8894->number) (:311; whether it is the video top is [H], src/E1990.ASM:386-397). For the VGA graphics choice it clears
+   with atol(gArgv->number) (:311; whether it is the video top is [H], src/E1990.ASM:386-397). For the VGA graphics choice it clears
    A000:0000 with memset. Then it sets the video mode, resets the mouse, loads the graphics overlay
    named by gGraphicsChoice through the table at ds:3074 (cga/tga/ega/mcga/vga.ovl), builds the page/buffer
    segment table at ds:FC0C for the graphics choice, loads the two fonts, sets up the palette buffer,
@@ -307,8 +306,8 @@ int AllocationFailure(void);
         f1DDD_002D(gGraphicsChoice);
         memtop = ReserveMemoryBelowVideo(3);   /* 3 steps reserves 2 x 32 KB = 64 KB below the probe */
         /* the segment where program memory must end: atol parses the numeric string the far pointer
-           g8894->number (+0x18) points at (its writer is Purpose unknown, src/E1990.ASM:23-26) */
-        gMemTopSeg = (unsigned)atol(g8894->number);
+           gArgv->number (+0x18) points at (its writer is Purpose unknown, src/E1990.ASM:23-26) */
+        gMemTopSeg = (unsigned)atol(gArgv->number);
         break;
     case 3:
         memset(MK_FP(VGA_SCREEN_SEG, 0), 0, PAGE_64000);

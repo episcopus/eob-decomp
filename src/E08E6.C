@@ -1,7 +1,7 @@
 /* Unit at EOB.EXE 08E6:000B (6331 bytes, 36 functions); the object update dispatch and the
    per-type behaviour routines of the game's map objects: UpdateObjects walks the 30 28-byte object
-   records at ds:8A82 (struct Obj28, indexed by the 27-byte object-type records at ds:1A3B, struct
-   Entry27) and dispatches each live object by its type to the 000B/00C3/03FE/0AB8/0B34/0B94/0CA6
+   records at ds:8A82 (struct Monster, indexed by the 27-byte object-type records at ds:1A3B, struct
+   MonsterType) and dispatches each live object by its type to the 000B/00C3/03FE/0AB8/0B34/0B94/0CA6
    behaviours. All 36 functions are at L2. The unit is compiled with -v (debug information): that is
    what keeps the identical jump tails of 0765, 0B94, 17FD and 1410 that a -O build without it merges
    (whitepaper 2.1.1).
@@ -9,8 +9,8 @@
 
 /*@flags -ml -O -Z -v */
 
-struct Obj28 {              /* 28-byte records, 30 of them at ds:8A82 */
-    char b0;                /* +0: index into the ds:1A3B object-type table */
+struct Monster {              /* 28-byte records, 30 of them at ds:8A82 */
+    char typeIndex;                /* +0: index into the ds:1A3B object-type table */
     signed char kind;       /* +1: matched against UpdateObjects' `kind` argument */
     int cell;                 /* +2: the object's map cell */
     char frame;             /* +4: 0..4, the frame within its id's group */
@@ -23,18 +23,18 @@ struct Obj28 {              /* 28-byte records, 30 of them at ds:8A82 */
     char timer;             /* +B: counted down by Obj0CA6 */
     int hitPoints;          /* +C */
     int count;              /* +E: remaining hit count; 0 or less means dead */
-    int m10;                /* +10: the target cell the object turns toward (0AB8 passes it to 0430) */
-    int m12;                /* +12: an item id dropped at death (0EC3 rolls 1d2, copies it on a 1) */
-    int m14;                /* +14: a second item id dropped at death (0EC3 copies it with no roll) */
+    int targetCell;                /* +10: the target cell the object turns toward (0AB8 passes it to 0430) */
+    int dropItem1;                /* +12: an item id dropped at death (0EC3 rolls 1d2, copies it on a 1) */
+    int dropItem2;                /* +14: a second item id dropped at death (0EC3 copies it with no roll) */
     char m16;               /* +16: flag byte */
     char m17;               /* +17: Purpose unknown: not read by this unit */
-    char m18;               /* +18: the action delay Obj0765 counts down, reset to 5 */
-    char m19;               /* +19: the remaining action count Obj0765 decrements; 131D sets it from the record's m18 */
+    char actionDelay;               /* +18: the action delay Obj0765 counts down, reset to 5 */
+    char actionsLeft;               /* +19: the remaining action count Obj0765 decrements; 131D sets it from the record's m18 */
     char m1A;               /* +1A: Purpose unknown: not read by this unit */
     char m1B;               /* +1B: Purpose unknown: not read by this unit */
 };
 
-struct Entry27 {            /* 27-byte records at ds:1A3B, indexed by Obj28.b0 (src/E0D1C.C) */
+struct MonsterType {            /* 27-byte records at ds:1A3B, indexed by Monster.typeIndex (src/E0D1C.C) */
     char pad00;
     char m01;               /* +1 (ds:1A3C) */
     char m02;               /* +2 (ds:1A3D) */
@@ -78,7 +78,7 @@ struct Entry14 {            /* 14-byte item records at ds:8DD2 (src/E0D1C.C) */
 extern struct CharRec gChars[]; /*@ ds:F580 */
 extern struct Entry14 gTable8DD2[]; /*@ ds:8DD2 */
 
-extern struct Obj28 gObjs[]; /*@ ds:8A82 */
+extern struct Monster gMonsters[]; /*@ ds:8A82 */
 extern signed char gArg3237[]; /*@ ds:3237 */
 extern signed char gArg3234[]; /*@ ds:3234 */
 extern signed char g323B[]; /*@ ds:323B */
@@ -86,7 +86,7 @@ extern unsigned char gMaze[]; /*@ ds:B894 */   /* nine-byte records per object i
                                                   count in bits 0..2, +5 an item list head (ds:B898
                                                   and ds:B899 are id 0's record; id n's record
                                                   starts at n * 9) */
-extern struct Entry27 gTable1A3B[]; /*@ ds:1A3B */
+extern struct MonsterType gMonsterTypes[]; /*@ ds:1A3B */
 extern signed char gWallTypeFlags[]; /*@ ds:194B */
 extern signed char gDirCellOffset[]; /*@ ds:1790 */
 extern int g321E; /*@ ds:321E */
@@ -140,7 +140,7 @@ extern void fOvl5_160A(void); /*@ 211E:007F */   /* overlay 5 entry, ovl5:160A *
 extern void ShutdownGame(void); /*@ 07C8:058A */
 extern void far *memset(void far *dst, int c, unsigned n); /*@ 0000:6384 */
 
-void Obj0EC3(struct Obj28 far *obj);   /* forward: Obj0E48 reaches it before its definition */
+void Obj0EC3(struct Monster far *obj);   /* forward: Obj0E48 reaches it before its definition */
 /* two packed map cells (y * 32 + x); returns a direction 0..7 or -1 */
 extern int DirectionFromPoints(int point, int cell); /*@ 17A6:0314 */
 extern int f0D1C_0006(int value); /*@ 0D1C:0006 */
@@ -162,11 +162,11 @@ extern signed char g3226[]; /*@ ds:3226 */
 extern signed char g322F[]; /*@ ds:322F */
 extern int TickBandageCountdown(struct CharRec far *who); /*@ 0EF3:18A2 */
 extern void ReportLostItem(int who); /*@ 0BD2:000E */
-void Obj10F3(struct Obj28 far *obj);   /* forward: 05EA reaches it before its definition */
+void Obj10F3(struct Monster far *obj);   /* forward: 05EA reaches it before its definition */
 
 /* 08E6:000B: reset an object whose type is not 7, 8 or 0xa: clear the type, set the orientation to
    (DirectionFromPoints(id, gPartyCell) ^ 4) >> 1 (:175) and set flag bit 3. Called by 0EF3:1702. */
-/*@ 08E6:000B */ void ClearObjectType(struct Obj28 far *obj)
+/*@ 08E6:000B */ void ClearObjectType(struct Monster far *obj)
 {
     if (obj->type == 7 || obj->type == 8 || obj->type == 0xa)
         return;
@@ -175,38 +175,38 @@ void Obj10F3(struct Obj28 far *obj);   /* forward: 05EA reaches it before its de
     obj->m16 |= 8;
 }
 
-/* 08E6:0055: clear the type of every type-8 object and set its target cell (m10) to the party cell,
-   remembering the last one; when that object's b0 is 7 set bit 18 of ds:FC04, when it is 0xc set
+/* 08E6:0055: clear the type of every type-8 object and set its target cell (targetCell) to the party cell,
+   remembering the last one; when that object's typeIndex is 7 set bit 18 of ds:FC04, when it is 0xc set
    bit 27. Called by 03FE and 0EC3. Purpose unknown: what ds:FC04 flags. `last` is set only inside
    the loop, but both callers test type == 8 first (:357, :817), so one object is always found. */
 /*@ 08E6:0055 */ void ClearType8Objects(void)
 {
-    struct Obj28 far *obj, *last;
+    struct Monster far *obj, *last;
     int i;
 
-    for (obj = gObjs, i = 0; i < 30; i++, obj++) {
+    for (obj = gMonsters, i = 0; i < 30; i++, obj++) {
         if (obj->type == 8) {
             obj->type = 0;
-            obj->m10 = gPartyCell;
+            obj->targetCell = gPartyCell;
             last = obj;
         }
     }
-    if (last->b0 == 7)
+    if (last->typeIndex == 7)
         gFC04 |= 0x40000L;
-    if (last->b0 == 0xc)
+    if (last->typeIndex == 0xc)
         gFC04 |= 0x8000000L;
 }
 
 /* 08E6:00C3: for an object whose type is not 7, 8, 9 or 0xa and whose count is positive: run
    17A6:0F61(id, gPartyCell) and 17A6:0314(id, gPartyCell); when the first is under 4 and the
    second minus twice the orientation, minus 3, wrapped into 0..7, is over 2 or the first is under 2,
-   clear the type and set its target cell (m10) to the party cell. Called by 0150 and UpdateObjects.
+   clear the type and set its target cell (targetCell) to the party cell. Called by 0150 and UpdateObjects.
    Purpose unknown: what the two 17A6 calls compute. The limit tests are an early-return `||` chain,
    not an `&&` chain:
    that is what makes TCC reload `les bx,[bp+6]` at 08E6:00F2 for the Distance argument (a statement
    after a `||` chain is a reload point), matching the original; the `&&` form reuses the bx the five
    tests already hold and comes out 3 bytes short. */
-/*@ 08E6:00C3 */ void Obj00C3(struct Obj28 far *obj)
+/*@ 08E6:00C3 */ void Obj00C3(struct Monster far *obj)
 {
     int first, dir;
 
@@ -222,16 +222,16 @@ void Obj10F3(struct Obj28 far *obj);   /* forward: 05EA reaches it before its de
     if (dir <= 2 && first >= 2)
         return;
     obj->type = 0;
-    obj->m10 = gPartyCell;
+    obj->targetCell = gPartyCell;
 }
 
-/* 08E6:0150: run Obj00C3 over every one of the 30 objects in gObjs */
+/* 08E6:0150: run Obj00C3 over every one of the 30 objects in gMonsters */
 /*@ 08E6:0150 */ void Obj0150(void)
 {
-    struct Obj28 far *obj;
+    struct Monster far *obj;
     int i;
 
-    for (obj = gObjs, i = 0; i < 30; i++, obj++)
+    for (obj = gMonsters, i = 0; i < 30; i++, obj++)
         Obj00C3(obj);
 }
 
@@ -241,16 +241,16 @@ void Obj10F3(struct Obj28 far *obj);   /* forward: 05EA reaches it before its de
 /*@ 08E6:017E */ int BuildObjectFrameMask(int id)
 {
     int count;
-    struct Obj28 far *obj;
+    struct Monster far *obj;
     int i, bits;
 
     count = gMaze[id * 9 + 4] & 7;
     if (count == 4)
         return -2;
     bits = 0;
-    for (obj = gObjs, i = 0; i < 30; i++, obj++) {
+    for (obj = gMonsters, i = 0; i < 30; i++, obj++) {
         if (obj->cell == id) {
-            if (gTable1A3B[obj->b0].m15)
+            if (gMonsterTypes[obj->typeIndex].m15)
                 return -1;
             if (obj->frame == 4)
                 obj->frame = g31F2[obj->orient];
@@ -266,13 +266,13 @@ void Obj10F3(struct Obj28 far *obj);   /* forward: 05EA reaches it before its de
    (the orientation XOR the table byte, not the table byte) whose bit BuildObjectFrameMask(id) does
    not have; -1 when the object's record's m15 is set, the mask is negative, or no bit qualifies.
    Called by 0309 and 058A. */
-/*@ 08E6:0218 */ int FindObjectFrameBit(struct Obj28 far *obj, int id)
+/*@ 08E6:0218 */ int FindObjectFrameBit(struct Monster far *obj, int id)
 {
     int bit;
     char far *row;
     int bits, i;
 
-    if (gTable1A3B[obj->b0].m15)
+    if (gMonsterTypes[obj->typeIndex].m15)
         return -1;
     bits = BuildObjectFrameMask(id);
     if (bits < 0)
@@ -289,7 +289,7 @@ void Obj10F3(struct Obj28 far *obj);   /* forward: 05EA reaches it before its de
 /* 08E6:0297: move an object to a new id and orientation: count the move in gMaze (dropping the old
    id's count when bits 0..2 are set) and notify f0D1C_0006 of the id. Either argument may be -1 to
    leave that field alone. Called by 0309 and 131D. */
-/*@ 08E6:0297 */ void MoveObjectToId(struct Obj28 far *obj, int id, int orient)
+/*@ 08E6:0297 */ void MoveObjectToId(struct Monster far *obj, int id, int orient)
 {
     if (id != -1) {
         f0D1C_0006(obj->cell);
@@ -313,7 +313,7 @@ void Obj10F3(struct Obj28 far *obj);   /* forward: 05EA reaches it before its de
    or -1) only `orient` is applied when it is not -1. Then notify f0D1C_0006 of the old id and,
    unless gF442 is set, play the object's record m17 through PlaySoundAtCell. Returns 1 on success.
    Called by 0430, 0B34 and 0B94 (StepObjectOrient passes -1 to leave a field alone). */
-/*@ 08E6:0309 */ int TurnObject(struct Obj28 far *obj, int id, int orient)
+/*@ 08E6:0309 */ int TurnObject(struct Monster far *obj, int id, int orient)
 {
     char far *rec;
     char dir;
@@ -343,21 +343,21 @@ void Obj10F3(struct Obj28 far *obj);   /* forward: 05EA reaches it before its de
         obj->orient = orient;
     f0D1C_0006(oldId);
     if (!gF442)
-        PlaySoundAtCell(gTable1A3B[obj->b0].m17, obj->cell);
+        PlaySoundAtCell(gMonsterTypes[obj->typeIndex].m17, obj->cell);
     return 1;
 }
 
 /* 08E6:03FE: for an object with flag bit 0 set and a type that is not 0xa: when its type is 8, run
-   the 0055 cleanup; otherwise clear the type and set its target cell (m10) to the party cell. Called
+   the 0055 cleanup; otherwise clear the type and set its target cell (targetCell) to the party cell. Called
    by UpdateObjects. */
-/*@ 08E6:03FE */ void Obj03FE(struct Obj28 far *obj)
+/*@ 08E6:03FE */ void Obj03FE(struct Monster far *obj)
 {
     if ((obj->m16 & 1) && obj->type != 0xa) {
         if (obj->type == 8) {
             ClearType8Objects();
         } else {
             obj->type = 0;
-            obj->m10 = gPartyCell;
+            obj->targetCell = gPartyCell;
         }
     }
 }
@@ -372,7 +372,7 @@ void Obj10F3(struct Obj28 far *obj);   /* forward: 05EA reaches it before its de
    from 7 down to 0, adding the table byte, skipping odd directions, and turning through
    TurnObject(obj, StepCell(id, dir >> 1), dir >> 1); the first turn that succeeds returns. Called
    by 0AB8. */
-/*@ 08E6:0430 */ void Obj0430(struct Obj28 far *obj, int value)
+/*@ 08E6:0430 */ void Obj0430(struct Monster far *obj, int value)
 {
     int target;
     int handle;
@@ -433,7 +433,7 @@ void Obj10F3(struct Obj28 far *obj);   /* forward: 05EA reaches it before its de
 }
 /* 08E6:058A: give an object the frame the first free id frame bit picks; when its gMaze count is 1
    its frame is 4 instead. Called by 05EA. */
-/*@ 08E6:058A */ void SetObjectFrameFromId(struct Obj28 far *obj)
+/*@ 08E6:058A */ void SetObjectFrameFromId(struct Monster far *obj)
 {
     int id;
 
@@ -452,12 +452,12 @@ void Obj10F3(struct Obj28 far *obj);   /* forward: 05EA reaches it before its de
    StepCell(obj->id, obj->orient); when it is not the current gPartyCell the object does nothing
    and 0 is returned. Otherwise, when Obj103D(obj) is 0 the object takes the frame SetObjectFrameFromId
    picks and 1 is returned. Else m16 bit 2 toggles, and when it is not now set 1 is returned. Then
-   f0D1C_0006(obj->id) decides: when nonzero the object plays gTable1A3B[b0].m16 only when b0 is 4,
+   f0D1C_0006(obj->id) decides: when nonzero the object plays gMonsterTypes[typeIndex].m16 only when typeIndex is 4,
    runs the 0xfe/0xff m0A sequence with the countdown and the overlay-4 entry, and does not repeat the
-   sound when b0 is not 4; when it is zero the sound plays unconditionally. When m16 bit 2 is set
+   sound when typeIndex is not 4; when it is zero the sound plays unconditionally. When m16 bit 2 is set
    after the toggle 10F3 runs on either branch, and when the id was found m0A clears, the toggle
    flips, gDF4C is set, gFlags849E bit 1 is set and the countdown is 8. Returns 1. Called by 0AB8. */
-/*@ 08E6:05EA */ int Obj05EA(struct Obj28 far *obj, int handle)
+/*@ 08E6:05EA */ int Obj05EA(struct Monster far *obj, int handle)
 {
     register int found;
 
@@ -471,18 +471,18 @@ void Obj10F3(struct Obj28 far *obj);   /* forward: 05EA reaches it before its de
             found = f0D1C_0006(obj->cell);
             if (found != 0) {
                 gFlags849E &= ~2;
-                if (obj->b0 == 4)
-                    PlaySoundDefault(gTable1A3B[obj->b0].m16);
+                if (obj->typeIndex == 4)
+                    PlaySoundDefault(gMonsterTypes[obj->typeIndex].m16);
                 obj->m0A = 0xfe;
                 gCount849A = 0;
                 DrawViewFrame(1);
                 obj->m0A = 0xff;
-                if (obj->b0 != 4)
-                    PlaySoundDefault(gTable1A3B[obj->b0].m16);
+                if (obj->typeIndex != 4)
+                    PlaySoundDefault(gMonsterTypes[obj->typeIndex].m16);
                 gCount849A = 8;
                 DrawViewFrame(1);
             } else {
-                PlaySoundDefault(gTable1A3B[obj->b0].m16);
+                PlaySoundDefault(gMonsterTypes[obj->typeIndex].m16);
             }
             Obj10F3(obj);
             if (found != 0) {
@@ -500,29 +500,29 @@ void Obj10F3(struct Obj28 far *obj);   /* forward: 05EA reaches it before its de
 }
 /* 08E6:073F: pass an object's id, frame and orientation and a caller value to 0EF3:097B with 0xff.
    Called by 0765 as Obj073F(obj, value). Purpose unknown: what 0EF3:097B does with them is not known. */
-/*@ 08E6:073F */ void Obj073F(struct Obj28 far *obj, int value)
+/*@ 08E6:073F */ void Obj073F(struct Monster far *obj, int value)
 {
     StartCellEffect(0xff, value, obj->cell, obj->frame, obj->orient);
 }
 /* 08E6:0765: the object's action for UpdateObjects. It returns 0 unless the object's 1A3B record
-   has m0E bit 6, the object has m19 left and m18 is zero (otherwise m18 is decremented and 0 is
+   has m0E bit 6, the object has actionsLeft left and m18 is zero (otherwise m18 is decremented and 0 is
    returned). It then checks Distance(id, gPartyCell) is at most 3 and DirectionFromPoints(id,
    gPartyCell) equals orient * 2, and walks StepCell(id, orient), following it until it reaches
    gPartyCell; each step must have gWallTypeFlags[gMaze[value * 9 + (orient ^ 2)]] bits 0..1 set and no
-   gMaze[value * 9 + 4] count, else 0 is returned. The action then switches on b0: 4 starts a cell
-   effect at 9 through Obj073F and plays 0x1f; 14 plays g322F[m19] and starts a cell effect through
-   Obj073F(obj, g3226[m19]); 15 frees an item 0x3c and queues AddDDEffect(-1, item, id, frame,
+   gMaze[value * 9 + 4] count, else 0 is returned. The action then switches on typeIndex: 4 starts a cell
+   effect at 9 through Obj073F and plays 0x1f; 14 plays g322F[actionsLeft] and starts a cell effect through
+   Obj073F(obj, g3226[actionsLeft]); 15 frees an item 0x3c and queues AddDDEffect(-1, item, id, frame,
    orient, gTable8DD2[item].type), freeing it when that fails; 16 calls 0EF3:097B(0xff, 0, id, frame,
    orient) and plays 0x55; 17 plays 0x53, announces the mind blast and paralyzes every affected
    member; 21 rolls 1d4 and, under 3, starts a cell effect through Obj073F and plays g3223[roll]
    after g3220[roll], else announces the wounds spell and hits the first affected member. Every
-   action then runs the overlay-4 entry, clears gDF4C, decrements m19 unless it is 0xff and sets m18
+   action then runs the overlay-4 entry, clears gDF4C, decrements actionsLeft unless it is 0xff and sets m18
    to 5, returning 1. Called by 0AB8. The unit's -v flag is what keeps case 21's
    PlaySoundAtCell(0x6c, id) at 08E6:0907 inline instead of tail-merging it into the shared block at
    08E6:0A5E. */
-/*@ 08E6:0765 */ int Obj0765(struct Obj28 far *obj)
+/*@ 08E6:0765 */ int Obj0765(struct Monster far *obj)
 {
-    struct Entry27 far *rec;
+    struct MonsterType far *rec;
     int value;
     int orient;
     int arg;
@@ -530,11 +530,11 @@ void Obj10F3(struct Obj28 far *obj);   /* forward: 05EA reaches it before its de
     int roll;
     int i;
 
-    rec = &gTable1A3B[obj->b0];
-    if ((rec->m0E & 0x40) == 0 || obj->m19 == 0)
+    rec = &gMonsterTypes[obj->typeIndex];
+    if ((rec->m0E & 0x40) == 0 || obj->actionsLeft == 0)
         return 0;
-    if (obj->m18 != 0) {
-        obj->m18--;
+    if (obj->actionDelay != 0) {
+        obj->actionDelay--;
         return 0;
     }
     if (Distance(obj->cell, gPartyCell) > 3)
@@ -549,7 +549,7 @@ void Obj10F3(struct Obj28 far *obj);   /* forward: 05EA reaches it before its de
             return 0;
         value = StepCell(value, orient);
     }
-    switch (obj->b0) {
+    switch (obj->typeIndex) {
     case 21:
         roll = RollDice(1, 4, 0xff);
         if (roll < 3) {
@@ -574,8 +574,8 @@ void Obj10F3(struct Obj28 far *obj);   /* forward: 05EA reaches it before its de
         PlaySoundAtCell(0x1f, obj->cell);
         break;
     case 14:
-        arg = g3226[obj->m19];
-        PlaySoundAtCell(g322F[obj->m19], obj->cell);
+        arg = g3226[obj->actionsLeft];
+        PlaySoundAtCell(g322F[obj->actionsLeft], obj->cell);
         Obj073F(obj, arg);
         break;
     case 15:
@@ -603,16 +603,16 @@ void Obj10F3(struct Obj28 far *obj);   /* forward: 05EA reaches it before its de
     }
     DrawViewFrame(1);
     gDF4C = 0;
-    if (obj->m19 != -1)
-        obj->m19--;
-    obj->m18 = 5;
+    if (obj->actionsLeft != -1)
+        obj->actionsLeft--;
+    obj->actionDelay = 5;
     return 1;
 }
 /* 08E6:0AB8: run the type-0 object update: run Obj0765, which returns 1 when it acts, then Obj05EA,
    which returns 1 when handled; on either the object is done (the function returns). Otherwise clear
-   m0A, turn the object toward its target cell with Obj0430(obj, m10) and run Obj05EA with -1 when its
+   m0A, turn the object toward its target cell with Obj0430(obj, targetCell) and run Obj05EA with -1 when its
    record's m0E has bit 3 set. Called by UpdateObjects. */
-/*@ 08E6:0AB8 */ void Obj0AB8(struct Obj28 far *obj)
+/*@ 08E6:0AB8 */ void Obj0AB8(struct Monster far *obj)
 {
     int handle;
 
@@ -622,13 +622,13 @@ void Obj10F3(struct Obj28 far *obj);   /* forward: 05EA reaches it before its de
     if (Obj05EA(obj, handle) != 0)
         return;
     obj->m0A = 0;
-    Obj0430(obj, obj->m10);
-    if (gTable1A3B[obj->b0].m0E & 8)
+    Obj0430(obj, obj->targetCell);
+    if (gMonsterTypes[obj->typeIndex].m0E & 8)
         Obj05EA(obj, -1);
 }
 /* 08E6:0B34: turn the object through 0309; when that fails, move its orientation by `delta` (mod 4)
    and turn again. Called by UpdateObjects and 0B94. */
-/*@ 08E6:0B34 */ void StepObjectOrient(struct Obj28 far *obj, int delta)
+/*@ 08E6:0B34 */ void StepObjectOrient(struct Monster far *obj, int delta)
 {
     int cur;
 
@@ -650,7 +650,7 @@ void Obj10F3(struct Obj28 far *obj);   /* forward: 05EA reaches it before its de
    Called by UpdateObjects. Purpose unknown: what g1991 and the state values select. The unit's -v
    flag is what keeps the two separate `obj->state = -1` stores at 0B94:0083 and 0B94:00A4 that a -O
    build cross-jumps. */
-/*@ 08E6:0B94 */ void Obj0B94(struct Obj28 far *obj, int arg)
+/*@ 08E6:0B94 */ void Obj0B94(struct Monster far *obj, int arg)
 {
     int handle;
     int cur;
@@ -688,7 +688,7 @@ second:
 }
 /* 08E6:0CA6: count an object's timer down and clear its type when it reaches zero. Called for the
    object types 7 and 10 by UpdateObjects (08E6:0CC8). */
-/*@ 08E6:0CA6 */ void Obj0CA6(struct Obj28 far *obj)
+/*@ 08E6:0CA6 */ void Obj0CA6(struct Monster far *obj)
 {
     if (obj->timer) {
         if (--obj->timer == 0)
@@ -702,10 +702,10 @@ second:
    run UpdateDDEffects. */
 /*@ 08E6:0CC8 */ void UpdateObjects(int kind)
 {
-    struct Obj28 far *obj;
+    struct Monster far *obj;
     int i;
 
-    for (obj = gObjs, i = 0; i < 30; i++, obj++) {
+    for (obj = gMonsters, i = 0; i < 30; i++, obj++) {
         if (obj->kind != kind || obj->count <= 0)
             continue;
         Obj00C3(obj);
@@ -739,7 +739,7 @@ second:
    set m16 bit 1, run the colour callback on ds:1CD3 or ds:1CE3, reset the countdown, run the
    overlay-4 entry, clear m16 bit 1 again, set the countdown to 1, set flag bit 1 and gDF4C. Called
    by 0FBE. */
-/*@ 08E6:0DCA */ void RestoreObjectFlags(struct Obj28 far *obj)
+/*@ 08E6:0DCA */ void RestoreObjectFlags(struct Monster far *obj)
 {
     f0D1C_0006(obj->cell);
     if (gDF4C) {
@@ -765,7 +765,7 @@ second:
    Obj16D6 (:1109), 0D1C:0A43 TurnUndead and 0EF3:18D8 CastConeOfCold. */
 /*@ 08E6:0E48 */ void Obj0E48(void)
 {
-    struct Obj28 far *obj = gObjs;
+    struct Monster far *obj = gMonsters;
     int i, any;
 
     DrawViewFrame(1);
@@ -785,13 +785,13 @@ second:
     }
     gF518 = gDD10 = 0;
 }
-/* 08E6:0EC3: an object's death: pick `roll` (its frame, or a 1d4 when the frame is 4); when m12
-   is set, roll 1d2 and on a 1 resolve m12 through CopyItemToFreeSlot and hand the item (`hit`) to
-   InsertListItem with the object's id and the roll as its sound argument; when m14 is set, resolve
-   m14 the same way with no roll. Then give the party the record's m13 experience, move the object
-   to id 0, shut the game down when its b0 is 0x15, and clear the type-8 objects. Called by 0E48,
+/* 08E6:0EC3: an object's death: pick `roll` (its frame, or a 1d4 when the frame is 4); when dropItem1
+   is set, roll 1d2 and on a 1 resolve dropItem1 through CopyItemToFreeSlot and hand the item (`hit`) to
+   InsertListItem with the object's id and the roll as its sound argument; when dropItem2 is set, resolve
+   dropItem2 the same way with no roll. Then give the party the record's m13 experience, move the object
+   to id 0, shut the game down when its typeIndex is 0x15, and clear the type-8 objects. Called by 0E48,
    0FBE and 1410. `hit` is declared register so it takes SI and `roll` DI, as the original. */
-/*@ 08E6:0EC3 */ void Obj0EC3(struct Obj28 far *obj)
+/*@ 08E6:0EC3 */ void Obj0EC3(struct Monster far *obj)
 {
     int roll;
     register int hit;
@@ -799,17 +799,17 @@ second:
     roll = obj->frame;
     if (roll == 4)
         roll = RollDice(1, 4, 0xff);
-    if (obj->m12 != 0 && RollDice(1, 2, 0) == 1) {
-        hit = CopyItemToFreeSlot(obj->m12);
+    if (obj->dropItem1 != 0 && RollDice(1, 2, 0) == 1) {
+        hit = CopyItemToFreeSlot(obj->dropItem1);
         InsertListItem(&gMaze[obj->cell * 9 + 5], obj->cell, hit, roll);
     }
-    if (obj->m14 != 0) {
-        hit = CopyItemToFreeSlot(obj->m14);
+    if (obj->dropItem2 != 0) {
+        hit = CopyItemToFreeSlot(obj->dropItem2);
         InsertListItem(&gMaze[obj->cell * 9 + 5], obj->cell, hit, roll);
     }
-    AddPartyExperience(gTable1A3B[obj->b0].m13);
+    AddPartyExperience(gMonsterTypes[obj->typeIndex].m13);
     MoveObjectToId(obj, 0, -1);
-    if (obj->b0 == 0x15) {
+    if (obj->typeIndex == 0x15) {
         fOvl5_160A();
         ShutdownGame();
     }
@@ -821,7 +821,7 @@ second:
    count has run out run 0EC3 only when gF518 is 0 or f0D1C_0006 returned 0 (:841). Called by
    Obj1634 (:1090), 0D1C:09CB, 0DE8:02D4 TryRecordAttack, 0DE8:0763 UseItem, 0EF3:0A3F
    DamageTargetCell, 0EF3:0E1B CastMeleeEffect and 0EF3:18D8 CastConeOfCold. */
-/*@ 08E6:0FBE */ void DamageObject(struct Obj28 far *obj, int damage)
+/*@ 08E6:0FBE */ void DamageObject(struct Monster far *obj, int damage)
 {
     int id;
 
@@ -843,7 +843,7 @@ second:
 }
 /* 08E6:103D: an object's orientation row byte: 1 when its frame is 4, else the byte at
    ds:323B[orient * 4 + frame]. Called by 05EA. */
-/*@ 08E6:103D */ int Obj103D(struct Obj28 far *obj)
+/*@ 08E6:103D */ int Obj103D(struct Monster far *obj)
 {
     if (obj->frame == 4)
         return 1;
@@ -852,13 +852,13 @@ second:
 /* 08E6:106B: roll 1d20 for a hit against character `who`; a roll of 20 always hits; otherwise the
    target's effectFlags bit 9 costs 2 and gFBD2 bit 5 costs 1. The hit succeeds when the roll reaches
    SubtractInts(the object's record m01, the character's armorClass). Called by 10F3 and 0EF3:0A3F. */
-/*@ 08E6:106B */ int Obj106B(struct Obj28 far *obj, int who)
+/*@ 08E6:106B */ int Obj106B(struct Monster far *obj, int who)
 {
     int index;
     int roll;
     int need;
 
-    index = obj->b0;
+    index = obj->typeIndex;
     roll = RollDice(1, 0x14, 0);
     if (roll != 0x14) {
         if (gChars[who].effectFlags & 0x200)
@@ -866,7 +866,7 @@ second:
         if (gFBD2 & 0x20)
             roll--;
     }
-    need = SubtractInts(gTable1A3B[index].m01, gChars[who].armorClass);
+    need = SubtractInts(gMonsterTypes[index].m01, gChars[who].armorClass);
     return roll >= need || roll == 0x14;
 }
 /* 08E6:10F3: resolve a type-0 object's attack on the party. It takes the current page and the
@@ -880,7 +880,7 @@ second:
    loop goes on to the next attack. When the total is positive it reports a loss (m0E bit 7), damages
    the member, applies "poisoned" (m0E bit 4, clearing effectFlags bit 7) and "paralyzed" (m0E bit 5).
    Called by 05EA. */
-/*@ 08E6:10F3 */ void Obj10F3(struct Obj28 far *obj)
+/*@ 08E6:10F3 */ void Obj10F3(struct Monster far *obj)
 {
     int index;
     int total;
@@ -892,7 +892,7 @@ second:
     register int who;
     struct CharRec far *member;
 
-    index = obj->b0;
+    index = obj->typeIndex;
     group = gTable324B[gPartyDir * 4 + obj->orient];
     who = group * 12;
     if (obj->frame != 4)
@@ -914,58 +914,58 @@ second:
     if (i == end)
         return;
     total = 0;
-    attacks = gTable1A3B[index].m03;
+    attacks = gMonsterTypes[index].m03;
     for (i = 0; i < attacks; i++) {
         if (!Obj106B(obj, who))
             continue;
-        total += RollDice(gTable1A3B[index].m04[i][0],
-                          gTable1A3B[index].m04[i][1],
-                          gTable1A3B[index].m04[i][2]);
+        total += RollDice(gMonsterTypes[index].m04[i][0],
+                          gMonsterTypes[index].m04[i][1],
+                          gMonsterTypes[index].m04[i][2]);
         if (TickBandageCountdown(member) != 0)
             total = 0;
     }
     if (total <= 0)
         return;
-    if (gTable1A3B[index].m0E & 0x80)
+    if (gMonsterTypes[index].m0E & 0x80)
         ReportLostItem(who);
     DamageCharacter(who, total);
-    if (gTable1A3B[index].m0E & 0x10) {
+    if (gMonsterTypes[index].m0E & 0x10) {
         ApplyStatusEffect(who, 2, "poisoned", 0, 1, 8, 1);
         gChars[who].effectFlags &= ~0x80L;
     }
-    if (gTable1A3B[index].m0E & 0x20)
+    if (gMonsterTypes[index].m0E & 0x20)
         ApplyStatusEffect(who, 4, "paralyzed", 2, 5, 9, 1);
 }
 /* 08E6:131D: build object `index` from scratch: clear it (memset), then, unless `id` is 0, set its
-   b0, its kind (the argument doubled, plus one when the slot index is odd, :953-955), frame,
-   orientation, m07, type and timer and its m19 from the record's m18; roll its count as the record's
-   m02 d8 (or 1d4 when m02 is 0xff); set m12 and m14 and move it to `id`. Called by 1505 and
+   typeIndex, its kind (the argument doubled, plus one when the slot index is odd, :953-955), frame,
+   orientation, m07, type and timer and its actionsLeft from the record's m18; roll its count as the record's
+   m02 d8 (or 1d4 when m02 is 0xff); set dropItem1 and dropItem2 and move it to `id`. Called by 1505 and
    ovl3:0A7C LoadMapScreen. */
 /*@ 08E6:131D */ void Obj131D(int index, int kind, int id, int frame, int orient, int b0, int m07, int type, int timer, int m12, int m14)
 {
-    struct Obj28 far *obj;
+    struct Monster far *obj;
 
-    obj = &gObjs[index];
+    obj = &gMonsters[index];
     memset(obj, 0, 0x1c);
     if (id == 0)
         return;
     kind <<= 1;
     if (index & 1)
         kind++;
-    obj->b0 = b0;
-    obj->m19 = gTable1A3B[b0].m18;
+    obj->typeIndex = b0;
+    obj->actionsLeft = gMonsterTypes[b0].m18;
     obj->kind = kind;
     obj->frame = frame;
     obj->m07 = m07;
     obj->type = type;
     obj->timer = timer;
     obj->orient = orient;
-    if (gTable1A3B[b0].m02 != -1)
-        obj->hitPoints = obj->count = RollDice(gTable1A3B[b0].m02, 8, 0);
+    if (gMonsterTypes[b0].m02 != -1)
+        obj->hitPoints = obj->count = RollDice(gMonsterTypes[b0].m02, 8, 0);
     else
         obj->hitPoints = obj->count = RollDice(1, 4, 0);
-    obj->m12 = m12;
-    obj->m14 = m14;
+    obj->dropItem1 = m12;
+    obj->dropItem2 = m14;
     MoveObjectToId(obj, id, orient);
 }
 /* 08E6:1410: the periodic effect tick. Mode 1 (gF51B == 1) fires when the deadline gDeadline is
@@ -1002,12 +1002,12 @@ fire:
     RunCellScript(0, 0x20);
     any = 0;
     for (i = 1; i < 30; i++) {
-        any += gObjs[i].count <= 0;
+        any += gMonsters[i].count <= 0;
     }
     if (any == 0) {
         for (i = 1; i < 30; i++) {
-            if (Distance(gObjs[i].cell, gPartyCell) > 3) {
-                Obj0EC3(&gObjs[i]);
+            if (Distance(gMonsters[i].cell, gPartyCell) > 3) {
+                Obj0EC3(&gMonsters[i]);
                 break;
             }
         }
@@ -1016,8 +1016,8 @@ fire:
     gStepCount = 0;
 }
 /* 08E6:1505: when the object id `id` has no count in gMaze, fill the first free object slot (count
-   <= 0) by calling 131D with the ten new-object fields (kind, id, frame, orient, b0, m07, type,
-   timer, m12, m14). Called by 122E:0B89. Purpose unknown: what the fields select. */
+   <= 0) by calling 131D with the ten new-object fields (kind, id, frame, orient, typeIndex, m07, type,
+   timer, dropItem1, dropItem2). Called by 122E:0B89. Purpose unknown: what the fields select. */
 /*@ 08E6:1505 */ void Obj1505(int kind, int id, int frame, int orient, int b0, int m07, int type, int timer, int m12, int m14)
 {
     int i;
@@ -1025,7 +1025,7 @@ fire:
     if (gMaze[id * 9 + 4] & 7)
         return;
     for (i = 0; i < 30; i++) {
-        if (gObjs[i].count <= 0) {
+        if (gMonsters[i].count <= 0) {
             Obj131D(i, kind, id, frame, orient, b0, m07, type, timer, m12, m14);
             break;
         }
@@ -1036,12 +1036,12 @@ fire:
    which the function fills. Called by 15B4 and 16D6. */
 /*@ 08E6:155F */ void BuildObjectIdList(int far *list, int key)
 {
-    struct Obj28 far *obj;
+    struct Monster far *obj;
     int i;
 
     for (i = 0; i < 6; i++)
         list[i] = -1;
-    for (obj = gObjs, i = 0; i < 30; i++, obj++) {
+    for (obj = gMonsters, i = 0; i < 30; i++, obj++) {
         if (obj->cell == key)
             list[obj->frame] = i;
     }
@@ -1066,7 +1066,7 @@ fire:
     return -1;
 }
 /* 08E6:1634: roll RollDice(count, sides, bonus) against the object `index`: when `flag` is set and
-   a 1d20 reaches GetIndexedByte(0, gTable1A3B[b0].m02, 4), halve the roll when flag is 1, else
+   a 1d20 reaches GetIndexedByte(0, gMonsterTypes[typeIndex].m02, 4), halve the roll when flag is 1, else
    zero it; then, unless 0D1C:0BAB rejects the object, damage it by the roll. Called by 16D6. */
 /*@ 08E6:1634 */ void Obj1634(char index, char count, char sides, char bonus, char flag)
 {
@@ -1074,7 +1074,7 @@ fire:
     int cls;
     int save;
 
-    cls = gTable1A3B[gObjs[index].b0].m02;
+    cls = gMonsterTypes[gMonsters[index].typeIndex].m02;
     roll = RollDice(count, sides, bonus);
     if (flag != 0) {
         save = GetIndexedByte(0, cls, 4);
@@ -1086,7 +1086,7 @@ fire:
         }
     }
     if (f0D1C_0BAB(index) == 0)
-        DamageObject(&gObjs[index], roll);
+        DamageObject(&gMonsters[index], roll);
 }
 /* 08E6:16D6: list the objects with id `key`, mark gF518, damage list[4] and then the two indices
    in gTable32BB + gPartyDir * 2 through 1634, and run the 0E48 cleanup. Called by 0EF3:0F99. */
@@ -1115,12 +1115,12 @@ fire:
 {
     char far *row;
     int best, bestSlot;
-    struct Obj28 far *obj;
+    struct Monster far *obj;
     int i, slot;
 
     best = -1;
     bestSlot = 5;
-    for (i = 0, obj = gObjs; i < 30; i++, obj++) {
+    for (i = 0, obj = gMonsters; i < 30; i++, obj++) {
         row = gTable32C3 + flags * 16 + field * 4;
         if (obj->cell == key) {
             if (obj->frame == field)
@@ -1135,18 +1135,18 @@ fire:
     }
     return best;
 }
-/* 08E6:17FD: fill `list` with gObjs indices and end it with -1: when scanAll is set, every object
+/* 08E6:17FD: fill `list` with gMonsters indices and end it with -1: when scanAll is set, every object
    whose id is key; otherwise when scanFiltered is set, the single index 1775(key, field, flags)
    finds; otherwise the first object 189D accepts for (key, field). Called by 0D1C:0A43, 0EF3:0A3F,
    0EF3:1530, 0EF3:18D8 and 0EF3:1A30. The unit's -v flag is what keeps the two identical `*list++`
    tails at 17FD:0058 and 17FD:0082 apart that a -O build cross-jumps. */
 /*@ 08E6:17FD */ void Obj17FD(int far *list, int key, int field, char flags, char scanAll, char scanFiltered)
 {
-    struct Obj28 far *obj;
+    struct Monster far *obj;
     int i;
 
     if (scanAll) {
-        for (i = 0, obj = gObjs; i < 30; i++, obj++) {
+        for (i = 0, obj = gMonsters; i < 30; i++, obj++) {
             if (obj->cell == key)
                 *list++ = i;
         }
@@ -1154,7 +1154,7 @@ fire:
         if (scanFiltered) {
             *list++ = Obj1775(key, field, flags);
         } else {
-            for (i = 0, obj = gObjs; i < 30; i++, obj++) {
+            for (i = 0, obj = gMonsters; i < 30; i++, obj++) {
                 if (Obj189D(obj, key, field)) {
                     *list++ = i;
                     break;
@@ -1166,7 +1166,7 @@ fire:
 }
 /* 08E6:189D: does this object have `key` (an object id) as its id and either `field` or 4 as its
    frame? Returns 1 when it does, else 0. Called by Obj17FD (:1159) and 1414:0172 TestDDEffect. */
-/*@ 08E6:189D */ int Obj189D(struct Obj28 far *obj, int key, int field)
+/*@ 08E6:189D */ int Obj189D(struct Monster far *obj, int key, int field)
 {
     if (obj->cell == key && (obj->frame == field || obj->frame == 4))
         return 1;

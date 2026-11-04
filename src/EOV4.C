@@ -477,8 +477,8 @@ extern void DrawRegion000F(int mode, void far *src, int x, int y, int region); /
 }
 
 /* The 28-byte object records at ds:8A82 and the 27-byte records at ds:1A3B (src/E08E6.C). */
-struct Obj28 {
-    char b0;                /* +0: index into the ds:1A3B table */
+struct Monster {
+    char typeIndex;                /* +0: index into the ds:1A3B table */
     signed char kind;       /* +1 */
     int cell;                 /* +2 */
     char frame;             /* +4 */
@@ -491,17 +491,17 @@ struct Obj28 {
     char timer;             /* +B */
     int hitPoints;          /* +C */
     int count;              /* +E */
-    int m10;
-    int m12;
-    int m14;
+    int targetCell;
+    int dropItem1;
+    int dropItem2;
     char m16;               /* +16: flag byte */
     char m17;               /* +17 */
-    char m18;
-    char m19;
+    char actionDelay;
+    char actionsLeft;
     char m1A;
     char m1B;
 };
-struct Entry27 {
+struct MonsterType {
     char pad00;
     char m01;
     char m02;
@@ -517,8 +517,8 @@ struct Entry27 {
     char m18;
     char pad19[0x1B - 0x19];
 };
-extern struct Obj28 gObjs[]; /*@ ds:8A82 */
-extern struct Entry27 gTable1A3B[]; /*@ ds:1A3B */
+extern struct Monster gMonsters[]; /*@ ds:8A82 */
+extern struct MonsterType gMonsterTypes[]; /*@ ds:1A3B */
 extern signed char g6FBE[]; /*@ ds:6FBE */   /* byte table indexed by g1A09[slot] (this unit) */
 extern signed char g7001[]; /*@ ds:7001 */   /* per-page, per-frame byte (this unit) */
 extern signed char g6FC1[]; /*@ ds:6FC1 */   /* sprite table A (this unit) */
@@ -555,8 +555,8 @@ extern void DrawRegion00C9(int mode, void far *src, int x, int y, int region); /
    far-pointer local ds:1A3B `info`). */
 /*@ ovl4:0D1B */ void Ovl4_0D1B(int slot)
 {
-    struct Entry27 far *info;
-    struct Obj28 far *obj;
+    struct MonsterType far *info;
+    struct Monster far *obj;
     int sprite;
     int x;
     int k;
@@ -569,7 +569,7 @@ extern void DrawRegion00C9(int mode, void far *src, int x, int y, int region); /
     int page4;
     int nudge;
     char far *cell;
-    struct Obj28 far *arr[5];
+    struct Monster far *arr[5];
     register int i;
     register int y;
 
@@ -579,7 +579,7 @@ extern void DrawRegion00C9(int mode, void far *src, int x, int y, int region); /
     page4 = gPartyDir * 4;
     for (i = 0; i < 5; i++)
         arr[i] = 0;
-    obj = gObjs;
+    obj = gMonsters;
     i = 0;
     while (i < 0x1e) {
         if (obj->cell == cellId)
@@ -591,7 +591,7 @@ extern void DrawRegion00C9(int mode, void far *src, int x, int y, int region); /
         if (arr[page5] == 0)
             continue;
         obj = arr[page5];
-        info = &gTable1A3B[obj->b0];
+        info = &gMonsterTypes[obj->typeIndex];
         if (info->m0E & 2)
             sprite = g6FC1[(obj->toggle << 4) + page4 + obj->orient];
         else
@@ -627,7 +627,7 @@ extern void DrawRegion00C9(int mode, void far *src, int x, int y, int region); /
         k = (slot * 5 + spriteBase) * 2;
         x = g1D61[k] + 0x58;
         y = g1D63[k] + 0x7f;
-        if (gTable1A3B[obj->b0].m15 == 1 && (spriteAbs == 1 || spriteAbs > 3))
+        if (gMonsterTypes[obj->typeIndex].m15 == 1 && (spriteAbs == 1 || spriteAbs > 3))
             y += g7015[tileRow];
         x -= (((signed char far *)cell)[2] << 3) >> 1;
         y -= ((signed char far *)cell)[1];
@@ -917,21 +917,21 @@ extern signed char g71A2[]; /*@ ds:71A2 */   /* per index nudge f (this unit) */
     SetRegionRect(5, gViewColLeft, 0, gViewColRight, 0xf);
 }
 /* The 18-byte records at ds:DD2C (src/E1414.C declares the same layout). */
-struct DDRec {
+struct Projectile {
     char active;              /* +00: the record state, 1 selects the ds:F2F8 path here */
     char pad01;
     int m02;                  /* +02 */
-    int m04;                  /* +04: the slot heading the record belongs to */
+    int cell;                  /* +04: the slot heading the record belongs to */
     char m06;                 /* +06: its low two bits index ds:7246; ds:7262 is indexed by the whole byte (m07 * 4 + m06) */
-    signed char m07;          /* +07: the page the record is seen from */
-    int m08;                  /* +08: indexes the ds:8DD0 item records */
+    signed char dir;          /* +07: the page the record is seen from */
+    int item;                  /* +08: indexes the ds:8DD0 item records */
     char m0A;                 /* +0A: row in the ds:F2F8 cell table */
     char m0B;                 /* +0B */
     char m0C;                 /* +0C: bit 6 gates a position recompute */
     unsigned char m0D;        /* +0D */
-    int (far *fn)(struct DDRec far *rec); /* +0E */
+    int (far *fn)(struct Projectile far *rec); /* +0E */
 };
-extern struct DDRec gDD2C[]; /*@ ds:DD2C */
+extern struct Projectile gProjectiles[]; /*@ ds:DD2C */
 extern signed char g7246[]; /*@ ds:7246 */   /* per page and low-2-bit index, the list slot (this unit) */
 extern unsigned char g71A6[]; /*@ ds:71A6 */ /* per slot, per sprite, the x base (this unit) */
 extern signed char g71EE[]; /*@ ds:71EE */   /* per g1A09 slot, per sprite, the y base (this unit) */
@@ -977,9 +977,9 @@ extern void far *gThrownIcons[][4]; /*@ ds:F2F8 */  /* far sprite cells, four pe
     int y;
     int heading;
     int wrapper;
-    struct DDRec far *rec;
+    struct Projectile far *rec;
     char far *cell;
-    struct DDRec far *arr[5];
+    struct Projectile far *arr[5];
     int i;
     int frame;
 
@@ -992,9 +992,9 @@ extern void far *gThrownIcons[][4]; /*@ ds:F2F8 */  /* far sprite cells, four pe
     page = gPartyDir * 5;
     for (i = 0; i < 5; i++)
         arr[i] = 0;
-    rec = gDD2C;
+    rec = gProjectiles;
     for (i = 0; i < 0xa; i++, rec++) {
-        if (rec->active != 0 && rec->m04 == heading)
+        if (rec->active != 0 && rec->cell == heading)
             arr[g7246[page + (rec->m06 & 3)]] = rec;
     }
     for (page = 0; page < 5; page++) {
@@ -1008,25 +1008,25 @@ extern void far *gThrownIcons[][4]; /*@ ds:F2F8 */  /* far sprite cells, four pe
         wrapper = 0;
         if (frame >= 0) {
             if (rec->active == 1) {
-                kind = g181F[gItems[rec->m08].icon];
-                if (rec->m07 == gPartyDir)
+                kind = g181F[gItems[rec->item].icon];
+                if (rec->dir == gPartyDir)
                     side = 0;
-                else if (rec->m07 == (gPartyDir ^ 2))
+                else if (rec->dir == (gPartyDir ^ 2))
                     side = 1;
                 else
                     side = -1;
                 if (side != -1 && g1D07[kind + side * DD_SIDE_STRIDE] != NO_DD_ROW) {
                     cell = (char far *)gThrownIcons[g1D07[side * DD_SIDE_STRIDE + kind]][frame];
-                    wrapper = g7262[rec->m07 * 4 + rec->m06];
+                    wrapper = g7262[rec->dir * 4 + rec->m06];
                 } else {
                     cell = (char far *)gItemL1Icons[kind][frame];
-                    wrapper = (rec->m07 == ((gPartyDir + 1) & 3)) ? 1 : 0;
+                    wrapper = (rec->dir == ((gPartyDir + 1) & 3)) ? 1 : 0;
                 }
                 if ((((signed char far *)cell)[2] << 3 >> 3) == g725A[frame])
                     x += g725E[frame];
             } else {
                 cell = (char far *)gThrownIcons[rec->m0A][frame];
-                wrapper = g7262[rec->m07 * 4 + rec->m06];
+                wrapper = g7262[rec->dir * 4 + rec->m06];
                 if (rec->m0C & 0x40) {
                     x = g1D61[(slot * 5 + 4) * 2] + 0x58;
                     x -= (((signed char far *)cell)[2] << 3) >> 1;

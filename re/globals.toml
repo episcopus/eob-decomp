@@ -403,8 +403,8 @@ why = "ds:84A0 is set from argv[5] (E07C8.C:193) and put back through f1DDD_002D
 
 [[global]]
 id = "ds:8894"
-name = "g8894"
-why = "ds:8894 is the far pointer StartupGame dereferences as g8894->number (E07C8.C:263); nothing in src/ or docs/ shows it is the DOS environment pointer (that block is the one E1990 relocates from PSP:002C, src/E1990.ASM:3, :44), and nothing in src/ or docs/ writes the pointer, so the object and its address are unknown; a placeholder name fits"
+name = "gArgv"
+why = "the C library's _argv: make rebuild links ds:8894 to the library public _argv (playbook 50 item 23), and StartupGame reads argv[6] through it, atol(gArgv->number) (07C8:0212)"
 
 [[global]]
 id = "ds:805A"
@@ -671,3 +671,15 @@ why = "the one-character string carriage return at ds:5AB5 (bytes 0D 00); MovePa
 id = "ds:B800"
 name = "gScriptCell"
 why = "the map cell whose script is running: RunCellScript 122E:1DA8 stores its cell argument in it, and the turning opcode 122E (case 0xFFF5) turns the gDD2C effects whose cell +04 equals it"
+[[global]]
+id = "ds:8A82"
+name = "gMonsters"
+why = "the 30 monster records of 28 bytes (struct Monster): each has hit points and a death check (+E at or below 0 is dead), drops its item ids at death (08E6:0EC3), walks toward a target cell and is counted in gMaze[cell * 9 + 4] (08E6:0297)"
+[[global]]
+id = "ds:DD2C"
+name = "gProjectiles"
+why = "the ten 18-byte flying-object records (struct Projectile): the use-item action 0ACD:0494 adds one with the item, the party's cell and gPartyDir (AddDDEffect 0BD2:07DE), each holds its cell (+04, which the spinner opcode turns), its direction (+07) and its item (+08), and a handler 1414:0172 calls each tick"
+[[global]]
+id = "ds:1A3B"
+name = "gMonsterTypes"
+why = "the 27-byte monster type records at ds:1A3B, indexed by each monster's typeIndex (Monster +00): its +0 is the class byte the to-hit roll reads (0DE8:0007, E0A72), +0E the flags 08E6 tests"

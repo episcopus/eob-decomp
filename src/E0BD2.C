@@ -20,7 +20,7 @@ struct ItemRecord {
                                against its `key`. No caller shows a sound (01D0's callers pass a
                                slot kind, E0ACD.C:561-568, a roll, E08E6.C:807, or an effect kind | 4,
                                0BD2:07DE), so Purpose unknown: a per-entry tag */
-    int key;                /* +6 (ds:8DD6): the key; -1 when the record is free (Entry14.m04) */
+    int key;                /* +6 (ds:8DD6): the key; -1 when the record is free (Entry14.cell) */
     int prevLink;                /* +8 (ds:8DD8): one link of the circular list; 0BD2:01D0 splices a
                                new item in after this record through it */
     int nextLink;                /* +0xa (ds:8DDA): the other link; the list walks (0BD2:0385, 040E,
@@ -71,31 +71,31 @@ struct CharRec {
 extern struct CharRec gChars[]; /*@ ds:F580 */
 
 /* An 18-byte effect record at ds:DD2C, 10 of them (src/E1414.C). */
-struct DDRec {
+struct Projectile {
     char active;            /* +0 */
     char pad01;
     int m02;                /* +2 */
-    int m04;                /* +4 */
+    int cell;                /* +4 */
     char m06;               /* +6 */
-    signed char m07;        /* +7 */
-    int m08;                /* +8 */
+    signed char dir;        /* +7 */
+    int item;                /* +8 */
     char m0A;               /* +0xa */
     char m0B;               /* +0xb */
     char m0C;               /* +0xc */
     unsigned char m0D;      /* +0xd */
-    int (far *fn)(struct DDRec far *rec); /* +0xe */
+    int (far *fn)(struct Projectile far *rec); /* +0xe */
 };
-extern struct DDRec gDD2C[]; /*@ ds:DD2C */
+extern struct Projectile gProjectiles[]; /*@ ds:DD2C */
 
 /* The 28-byte object records at ds:8A82 (src/E08E6.C). */
-struct Obj28 {
+struct Monster {
     char pad00[2];
     int cell;                /* +2 */
     char pad04[0x16 - 0x04];
     char m16;               /* +0x16 */
     char pad17[0x1C - 0x17];
 };
-extern struct Obj28 gObjs[]; /*@ ds:8A82 */
+extern struct Monster gMonsters[]; /*@ ds:8A82 */
 
 extern signed char gInventoryMember; /*@ ds:A99A */    /* the selected character index (src/E0ACD.C) */
 extern char gF51A; /*@ ds:F51A */           /* the selected row (src/E0D1C.C) */
@@ -134,7 +134,7 @@ extern void StartPanelAction(int who, int action, int kind); /*@ 0EF3:28ED */
 extern void FlashViewDamage(void); /*@ 0EF3:06E7 */
 extern void FlashPartyMembers(int who); /*@ 0EF3:0665 */
 extern void ClearPoisonEffect(int who); /*@ 0EF3:1CE8 */
-extern void MoveObjectToId(struct Obj28 far *obj, int id, int orient); /*@ 08E6:0297 */
+extern void MoveObjectToId(struct Monster far *obj, int id, int orient); /*@ 08E6:0297 */
 extern void ApplyCharEffect(char who, long interval, char value, char firstEmpty); /*@ 1414:05ED */
 extern void HealCharacter(int who, int amount); /*@ 0DE8:0ADB */
 extern void ApplyStatusEffect(int who, int mask, char far *text, int attack, int count, int value, int flag); /*@ 0DE8:101A */
@@ -210,7 +210,7 @@ void DrawItemName(int item);
 }
 
 /* 0BD2:0106: takes the item out of slot `row` of character `who` (or the mouse's slot when `row` is
-   -1): clears the slot, marks the record free (m04 = -1), redraws, and returns the item's m0B. */
+   -1): clears the slot, marks the record free (cell = -1), redraws, and returns the item's m0B. */
 /*@ 0BD2:0106 */ int TakeItemFromSlot(int who, int row)
 {
     int item;
@@ -243,13 +243,13 @@ void DrawItemName(int item);
 }
 
 /* 0BD2:01D0: inserts the item `item` into the circular list whose head word is `head`, stamping it
-   with the list's owner key `key` (m04) and the tag `tag` (+5; m0A becomes gFBC8, or -1 when the
+   with the list's owner key `key` (cell) and the tag `tag` (+5; m0A becomes gFBC8, or -1 when the
    key is negative). The key is a list owner: a map cell (E0ACD.C:568, E0D1C.C:362, 0BD2:07DE), an
    object's id (E08E6.C:807) or 0xFFFE for a character's own pack (E0ACD.C:780, :851, 0BD2:0BA0).
    An empty list becomes `item` alone, linked to itself. Otherwise `item` is spliced in between the
-   old head and its predecessor, the tail of the m08 walk: the new item's m08 becomes the old head
+   old head and its predecessor, the tail of the item walk: the new item's item becomes the old head
    (the tail's forward link) and its m06 becomes the tail, so only the old head's m06 and the tail's
-   m08 change. `item` becomes the new head, so the lists walked by m08 (0BD2:0385, 040E, 04AA) meet
+   item change. `item` becomes the new head, so the lists walked by item (0BD2:0385, 040E, 04AA) meet
    the newest item first. */
 /*@ 0BD2:01D0 */ void InsertListItem(void far *head, int key, int item, int tag)
 {
@@ -395,8 +395,8 @@ next:
 }
 
 /* 0BD2:0458: queues item `item` at the nine-byte record gMazeItems + `volume` * 9 through 0BD2:01D0
-   with the tag `tag`. When the queued item still links onward (its m08 is not itself), the record's
-   head word moves to that m08. Purpose unknown. */
+   with the tag `tag`. When the queued item still links onward (its item is not itself), the record's
+   head word moves to that item. Purpose unknown. */
 /*@ 0BD2:0458 */ void PushListItem(int volume, int item, int tag)
 {
     InsertListItem((void far *)(gMazeItems + volume * 9), volume, item, tag);
@@ -405,7 +405,7 @@ next:
 }
 
 /* 0BD2:04AA: drains the list at gMazeItems + `volume` * 9. Items whose m02 is `type` (or all when
-   `type` is -1) are freed (m04 = -1, m0A = 0); the others are re-queued through 0BD2:01D0 in their
+   `type` is -1) are freed (cell = -1, m0A = 0); the others are re-queued through 0BD2:01D0 in their
    original order, keeping each item's tag. Purpose unknown. */
 /*@ 0BD2:04AA */ void DrainListItem(int volume, int type)
 {
@@ -522,10 +522,10 @@ next:
    `type` is the item's m02. QUIRK 0BD2:07DE: rec->type is stored 1 twice (the second store is in the original). */
 /*@ 0BD2:07DE */ int AddDDEffect(int who, int item, int volume, int kind, int page, int type)
 {
-    struct DDRec *rec;
+    struct Projectile *rec;
     int i;
 
-    rec = gDD2C;
+    rec = gProjectiles;
     for (i = 0; i < 10; i++, rec++) {
         if (rec->active == 0)
             break;
@@ -536,11 +536,11 @@ next:
     rec->active = 1;
     rec->m02 = 1;
     rec->m0C = 0;
-    rec->m07 = page;
+    rec->dir = page;
     rec->m0D = 0xC;
-    rec->m04 = volume;
+    rec->cell = volume;
     rec->m06 = kind;
-    rec->m08 = item;
+    rec->item = item;
     rec->m0A = type;
     rec->m0B = who;
     rec->m02 = 1;
@@ -552,7 +552,7 @@ next:
     return 1;
 }
 
-/* 0BD2:089E: when item record `item` is live (m04 != -1), finds the first free record from index 1
+/* 0BD2:089E: when item record `item` is live (cell != -1), finds the first free record from index 1
    on, copies `item`'s 14 bytes into it with Unpack0, and returns the new index; 0 when none is
    free. Purpose unknown. */
 /*@ 0BD2:089E */ int CopyItemToFreeSlot(int item)
@@ -789,7 +789,7 @@ next:
 
 /* 0BD2:0EE8: uses the wand in slot `slot` of character `who`. When the item's m0B is 0 it reports
    no effect; when it is not 5 it dispatches through 0EF3:28ED with the action g38FA[m0B]; for 5 it
-   plays the wand sound, and when the surroundings pass the gWallTypeFlags/gMaze tests, moves every gObjs
+   plays the wand sound, and when the surroundings pass the gWallTypeFlags/gMaze tests, moves every gMonsters
    record whose m02 equals the cell x (from StepCell(gPartyCell, page)) to the cell y
    (MoveObjectToId(obj, y, -1)) and sets gDF4C, otherwise reports no effect. */
 /*@ 0BD2:0EE8 */ void UseWandItem(int who, int slot)
@@ -798,7 +798,7 @@ next:
     int x;
     int y;
     int i;
-    struct Obj28 *obj;
+    struct Monster *obj;
     int type;
     int page;
 
@@ -819,7 +819,7 @@ next:
     FlashViewDamage();
     if ((gWallTypeFlags[gMaze[y * 9 + (page ^ 2)]] & 4) && (gMaze[y * 9 + 4] & 7) == 0
             && (gMaze[x * 9 + 4] & 7) != 0) {
-        obj = gObjs;
+        obj = gMonsters;
         for (i = 0; i < 30; i++, obj++) {
             if (obj->cell == x) {
                 MoveObjectToId(obj, y, -1);

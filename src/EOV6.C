@@ -38,10 +38,10 @@ struct Spell {
     char rest[0x13 - 4];
 };
 
-/* the 28-byte map-object records at ds:8A82 (struct Obj28 in src/E08E6.C); ovl6:09D2 reads each
+/* the 28-byte map-object records at ds:8A82 (struct Monster in src/E08E6.C); ovl6:09D2 reads each
    record's id at +2 for its Distance test */
-struct Obj28 {
-    char b0;                   /* +00: an index into the ds:1A3B table (src/E08E6.C) */
+struct Monster {
+    char typeIndex;                   /* +00: an index into the ds:1A3B table (src/E08E6.C) */
     signed char kind;          /* +01 */
     int cell;                    /* +02: the object's map cell, Distance-tested */
     char rest[0x1C - 4];
@@ -50,7 +50,7 @@ struct Obj28 {
 extern struct CharRec gChars[]; /*@ ds:F580 */  /* the 243-byte character records */
 extern struct Spell gSpells1344[]; /*@ ds:1344 */ /* far name pointers, indexed by a spell id */
 extern struct Spell gSpells151F[]; /*@ ds:151F */
-extern struct Obj28 gObjs[]; /*@ ds:8A82 */       /* the 28-byte map-object records, 30 of them */
+extern struct Monster gMonsters[]; /*@ ds:8A82 */       /* the 28-byte map-object records, 30 of them */
 extern char far gStrings2003; /*@ 2003:0000 */    /* the message string table */
 extern int gTextRegion; /*@ ds:811F */
 extern int gStatusLine; /*@ ds:8115 */
@@ -418,7 +418,7 @@ done:
     SetTextWindow(region);
 }
 /* ovl6:09D2: the "objects are near" test. It selects the 6x6 font, marks the object update
-   (gF442) and updates objects 0 and 1, then scans the 30 28-byte map-object records gObjs
+   (gF442) and updates objects 0 and 1, then scans the 30 28-byte map-object records gMonsters
    (ds:8A82): when Distance(gPartyCell, obj.id) is below two an object is close, so it switches to
    region 7 (saving the previous region), draws "\rYou can't rest here, monsters are near." and
    returns 1. Restores the caller's font and returns 0 when nothing is close. Called at the start
@@ -436,7 +436,7 @@ done:
     UpdateObjects(1);
     gF442 = 0;
     for (i = 0; i < 0x1e; i++) {
-        if (Distance(gPartyCell, gObjs[i].cell) < 2) {
+        if (Distance(gPartyCell, gMonsters[i].cell) < 2) {
             savedRegion = gTextRegion;
             SetTextWindow(7);
             gStatusLine = 0;
