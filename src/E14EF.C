@@ -12,8 +12,8 @@
    width at :297. The mask and shift come from the callers. PickOption (src/EOV0.C:1148, :1149) and LoadGamePanel
    (src/EOV2.C:380, :383) pass the all-ones mask 0xffffffff with shift 0, the case FindMaskBit returns n for at
    once; PickClass (src/EOV0.C:1203, :1215) and PickAlignment (src/EOV0.C:1253, :1257) pass gTable6081[race] & mask
-   and gTable6099[classIndex] & mask with shift 0, masks other than -1 (mask -5 when a party member has align >= 6,
-   :1189-1190; mask 0xfe3f when one has m20 == 2, :1241-1242), so FindMaskBit's bit scan is reached in play.
+   and gTable6099[classIndex] & mask with shift 0, masks other than -1 (mask -5 when a party member has alignment >= 6,
+   :1189-1190; mask 0xfe3f when one has classIndex == 2, :1241-1242), so FindMaskBit's bit scan is reached in play.
    CountMaskBits is called by PickClass with n 15 (:1193) and PickAlignment with n 9 (:1244), both with shift 0
    (see its comment). The flags (`-v`, debug information) are whitepaper 2.1.1. The modulo at
    UpdateOptionList :283 and the two `/ lineheight` divisions (:302, :326) divide by zero if the panel height or

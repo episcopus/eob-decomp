@@ -24,3 +24,195 @@ old = "hpMax, m1C, maxhp"
 new = "maxHp"
 why = "the maximum hit points: the healer at 0DE8 (E0DE8 line 615) and 0EF3 clamp hp at it, a level gain adds to both hp and it (0DE8 line 688), 1547's ratio bar draws hp against it"
 date = "2026-11-03"
+
+[[field]]
+struct = "CharRec"
+at = "00"
+old = "index00, m00"
+new = "index"
+why = "the record's own member index 0..5: InitGameTables (EOV2) writes it, ovl0:26C6 writes it at creation, E0EF3 reads it as the member's index"
+date = "2026-11-03"
+
+[[field]]
+struct = "CharRec"
+at = "0D"
+old = "m0D"
+new = "strength"
+why = "the strength score: the character screen formats it through FormatStrengthPercent (EOV0, the ds:1195 STRENGTH row), E122E indexes the door table by it"
+date = "2026-11-03"
+
+[[field]]
+struct = "CharRec"
+at = "0E"
+old = "m0E"
+new = "baseStrength"
+why = "the strength the score returns to: 'no longer has giant strength' copies it back into +0D (1414 effect end 7); creation sets +0D and +0E together (ovl0 1108)"
+date = "2026-11-03"
+
+[[field]]
+struct = "CharRec"
+at = "0F"
+old = "m0F"
+new = "strengthPct"
+why = "the exceptional strength percentile, the second argument of FormatStrengthPercent (EOV0) with +0D"
+date = "2026-11-03"
+
+[[field]]
+struct = "CharRec"
+at = "10"
+old = "m10"
+new = "baseStrengthPct"
+why = "the percentile +0F returns to when giant strength ends (1414 effect end 7 copies it back)"
+date = "2026-11-03"
+
+[[field]]
+struct = "CharRec"
+at = "11"
+old = "m11"
+new = "intelligence"
+why = "INTELLIGENCE, ds:1195[1]: the character screen prints +11, +13, +15, +17, +19 in the order of the ds:1195 stat names (EOV0)"
+date = "2026-11-03"
+
+[[field]]
+struct = "CharRec"
+at = "13"
+old = "m13"
+new = "wisdom"
+why = "WISDOM, ds:1195[2] (EOV0's stat line); ovl1:097A turns it into the bonus spell row"
+date = "2026-11-03"
+
+[[field]]
+struct = "CharRec"
+at = "15"
+old = "m15"
+new = "dexterity"
+why = "DEXTERITY, ds:1195[3] (EOV0's stat line); it indexes the armour class base table (0A72:019D)"
+date = "2026-11-03"
+
+[[field]]
+struct = "CharRec"
+at = "17"
+old = "m17"
+new = "constitution"
+why = "CONSTITUTION, ds:1195[4] (EOV0's stat line); it indexes the hit point multiplier ds:1778 (0A72:01AE)"
+date = "2026-11-03"
+
+[[field]]
+struct = "CharRec"
+at = "19"
+old = "m19"
+new = "charisma"
+why = "CHARISMA, ds:1195[5], the last of EOV0's stat line"
+date = "2026-11-03"
+
+[[field]]
+struct = "CharRec"
+at = "1D"
+old = "m1D"
+new = "armorClass"
+why = "the armour class: drawn on the ARMOR CLASS row (1547), printed beside the hit points on the character screen (EOV0), rebuilt by 0DE8:0D5E"
+date = "2026-11-03"
+
+[[field]]
+struct = "CharRec"
+at = "1F"
+old = "m1F"
+new = "race"
+why = "the race: an index into the race name table ds:11AD (1547, EOV0); 122E:147F matches it halved"
+date = "2026-11-03"
+
+[[field]]
+struct = "CharRec"
+at = "20"
+old = "class, m20"
+new = "classIndex"
+why = "the class: an index into the class name table ds:11DD (1547, EOV0) and the per-class tables g1231 (0BD2:11FD) and 0A72:007B"
+date = "2026-11-03"
+
+[[field]]
+struct = "CharRec"
+at = "21"
+old = "align"
+new = "alignment"
+why = "an index into the alignment name table ds:1240 (1547, EOV0)"
+date = "2026-11-03"
+
+[[field]]
+struct = "CharRec"
+at = "23"
+old = "level, m23"
+new = "food"
+why = "the food value: EatFood 0ACD:07E0 adds to it and clamps it at 100, creation and 0BD2:0D2D set it to 100, 1414 counts it down"
+date = "2026-11-03"
+
+[[field]]
+struct = "CharRec"
+at = "24"
+old = "classLevel, m24"
+new = "levels"
+why = "the level in each of the three class slots: LevelUpSlot increments levels[slot] (0DE8), AddExperience passes levels[i] + 1, RollHitPoints takes the three (0A72)"
+date = "2026-11-03"
+
+[[field]]
+struct = "CharRec"
+at = "27"
+old = "exp, m27"
+new = "experience"
+why = "the experience total of each class slot: 0DE8:0B45 adds to them, the character screen prints them (1547)"
+date = "2026-11-03"
+
+[[field]]
+struct = "CharRec"
+at = "33"
+old = "buf, m33, sprite"
+new = "portrait"
+why = "the far pointer to the member's picture: 1547:0544 draws it as the member's portrait, ovl3 unpacks the sprite into it, EOV5 keeps it across a pool record copy"
+date = "2026-11-03"
+
+[[field]]
+struct = "CharRec"
+at = "73"
+old = "m7375"
+new = "spellBook"
+why = "the mage's spell book: bit i set when spell i + 1 is known (EOV1's spell list); creation sets 0x26C (ovl0 280D)"
+date = "2026-11-03"
+
+[[field]]
+struct = "CharRec"
+at = "77"
+old = "m77"
+new = "items"
+why = "the 27 carried item slots; 0 and 1 are the hands, 16 (+97) also a list head (0D1C:00F1, E0BD2, E0EF3)"
+date = "2026-11-03"
+
+[[field]]
+struct = "CharRec"
+at = "AD"
+old = "mAD, timer"
+new = "timers"
+why = "ten 32-bit effect times, one per effect slot: 1414:07CA runs each when the clock passes it, cleared when its spell is removed (E0EF3)"
+date = "2026-11-03"
+
+[[field]]
+struct = "CharRec"
+at = "E3"
+old = "lE3, mE3"
+new = "effectFlags"
+why = "a 32-bit mask of active effects: 1414:07CA tests it, 0DE8:09B9 clears bit 2, ovl5:0C9D clears bit 7, the status line's POISON (SLOW) tests bit 7 (1547)"
+date = "2026-11-03"
+
+[[field]]
+struct = "CharRec"
+at = "E7"
+old = "mE7"
+new = "lastDamage"
+why = "the last damage amount: DamageCharacter (0DE8) stores it, 1414:07CA clears it"
+date = "2026-11-03"
+
+[[field]]
+struct = "CharRec"
+at = "E8"
+old = "mE8"
+new = "lastAction"
+why = "the last action result per carried slot: UseItem (0DE8) stores it, 1414:0770 clears the slot's byte"
+date = "2026-11-03"

@@ -14,7 +14,7 @@
    requirement, see UNPACK_BUFFER_SIZE). Slot 7's own block is 0xCB20 bytes in cases 0 to 3
    (src/E07C8.C:256, 265, 274, 280) and 0xFC00 only in case 4 (src/E07C8.C:290). It clears ds:810E
    (07A9:00E6), loads the item tables (LoadItemData, 07A9:00EC), selects the 6x6 font as the
-   current font (1A47:0169(gA9C0), 07A9:00F9) and loads the item sheets (LoadDecorateIcons, Ovl2
+   current font (1A47:0169(gFont6x6), 07A9:00F9) and loads the item sheets (LoadDecorateIcons, Ovl2
    entry 8, 07A9:0100), which reads ITEMRMP (FileRead at ovl2:047F, inside LoadItemSheets,
    src/EOV2.C:255 and :296, called at src/EOV2.C:333). It ends by running the map loop (RunMapLoop,
    0ACD:0E8A, 07A9:0105), which runs the game. The second function (07A9:010C SetMouseItem)
@@ -209,7 +209,7 @@ extern unsigned gSegsFC0C[]; /*@ ds:FC0C */
    calls and can fall below the number of live blocks (src/E19BC.C:17-21). StartupAlloc sets it
    to 0 at 07A9:00E6, after its five allocations, so they are no longer counted: Purpose unknown. */
 extern unsigned gAllocCount; /*@ ds:810E */
-extern void far *gA9C0; /*@ ds:A9C0 */  /* the 6x6 font loaded from FONT6.FNT (src/E07C8.C:73 and
+extern void far *gFont6x6; /*@ ds:A9C0 */  /* the 6x6 font loaded from FONT6.FNT (src/E07C8.C:73 and
                                            :295, the call at 07C8:0419, the store at 07C8:0420); the
                                            6x6 size is eob/FONT6.FNT bytes 102h and 103h (6 and 6, the
                                            height and width bytes src/E1A47.C:81-85 reads),
@@ -317,7 +317,7 @@ extern void SetMousePointerShape(int hotX, int hotY, void far *icon); /*@ 1BB1:0
    passes the slot 7 segment (gSegsFC0C[7], the word at ds:FC1A) and size 0xFC00 to SetUnpackBuffer
    (1B82:0217, 07A9:00DB; see the header for the size's relation to the video mode), clears ds:810E
    (07A9:00E6), loads the item tables (LoadItemData, Ovl2 stub entry 2, 07A9:00EC), selects the 6x6
-   font as the current font (1A47:0169(gA9C0), 07A9:00F9), and loads the item sheets
+   font as the current font (1A47:0169(gFont6x6), 07A9:00F9), and loads the item sheets
    (LoadDecorateIcons, Ovl2 stub entry 8, 07A9:0100), which reads ITEMRMP (FileRead at ovl2:047F,
    inside LoadItemSheets, src/EOV2.C:255 and :296). It ends by running the map loop (RunMapLoop,
    0ACD:0E8A, 07A9:0105), which runs the game. Sets ds:F43C = 1 and ds:FB45 = 0. */
@@ -348,7 +348,7 @@ extern void SetMousePointerShape(int hotX, int hotY, void far *icon); /*@ 1BB1:0
     SetUnpackBuffer(gSegsFC0C[7], UNPACK_BUFFER_SIZE);
     gAllocCount = 0;
     LoadItemData();
-    SetFont(gA9C0);
+    SetFont(gFont6x6);
     LoadDecorateIcons();
     RunMapLoop();
 }

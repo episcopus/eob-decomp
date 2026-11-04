@@ -2835,3 +2835,201 @@ new = "LoadFont"
 kind = "function"
 why = "opens a bitmap font file, checks its length against the header (0x104 + 128 * height * ceil(width / 8), height at +102h, width at +103h), and returns it read whole into memory (1A47:0005); E07C8 loads FONT6.FNT and the other fonts with it"
 date = "2026-11-03"
+
+[[rename]]
+id = "ds:A9C0=gFont6x6"
+addr = "ds:A9C0"
+old = "gA9C0"
+new = "gFont6x6"
+kind = "global"
+why = "the 6x6 font: 07C8:0419 stores LoadFont(\"FONT6.FNT\") in it (E07C8 line 377), and the file's header bytes 102h and 103h are 6 and 6"
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:B894=gMaze"
+addr = "ds:B894"
+old = "gB894"
+new = "gMaze"
+kind = "global"
+why = "the maze in memory, one nine-byte record per map cell indexed by the cell (gPartyCell, a monster's cell): bytes 0..3 the cell's walls by side (08E6:0297 reads +(orient ^ 2)), +4 bits 0..2 the monsters in the cell (08E6:0297 counts moves in and out), +5 the cell's item list"
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:B899=gMazeItems"
+addr = "ds:B899"
+old = "gB899"
+new = "gMazeItems"
+kind = "global"
+why = "the item list head of each nine-byte maze cell, gMaze + 5 (gMaze[cell * 9 + 5]): 08E6 inserts into it at a monster's cell, 0D1C:035A drains a member's items into the party's cell"
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:194B=gWallTypeFlags"
+addr = "ds:194B"
+old = "g194B"
+new = "gWallTypeFlags"
+kind = "global"
+why = "flags per wall type, indexed by a wall byte of gMaze: a step needs bits 0..1 set in the target side's entry (08E6:058A area, E08E6 line 550), bit 2 is tested by the path search (E08E6 line 670)"
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:FB44=gPanelMode"
+addr = "ds:FB44"
+old = "gFB44"
+new = "gPanelMode"
+kind = "global"
+why = "what the right-hand panel shows: 0 the party (Action01E3 0ACD:01E3 restores it), 1 a member's inventory (Action0034 sets it when a portrait is picked; 1547 draws the 27 item rows), 2 the member's second page (Action018E toggles 1 and 2)"
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:A99A=gInventoryMember"
+addr = "ds:A99A"
+old = "gA99A"
+new = "gInventoryMember"
+kind = "global"
+why = "the party member whose inventory the panel shows: Action0034 0ACD:0034 sets it to the picked slot as it sets gPanelMode to 1, and the panel reads gChars[it].items (0D1C:02DC, 0D1C:0304)"
+date = "2026-11-03"
+
+[[rename]]
+id = "0D1C:00DA=StepCell"
+addr = "0D1C:00DA"
+old = "f0D1C_00DA"
+new = "StepCell"
+kind = "function"
+why = "returns the map cell one step from cell in direction dir: (cell + gDirCellOffset[dir]) & 0x3FF on the 32 x 32 maze (0D1C:00DA); the movement handlers of 0ACD and the attack of 0EF3 call StepCell(gPartyCell, gPartyDir)"
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:1790=gDirCellOffset"
+addr = "ds:1790"
+old = "g1790"
+new = "gDirCellOffset"
+kind = "global"
+why = "the cell offset of one step north, east, south and west: the bytes -32, 1, 32, -1 at ds:1790 in EOB.EXE, added to a cell by StepCell 0D1C:00DA"
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:FBCC=gPartyDir"
+addr = "ds:FBCC"
+old = "gFBCC"
+new = "gPartyDir"
+kind = "global"
+why = "the direction the party faces, 0..3 north, east, south, west: 0ACD:056C and 0ACD:0593 turn by decrementing and incrementing it modulo 4, 0ACD:0529 steps back along (it + 2) % 4, StepCell(gPartyCell, it) is the cell ahead"
+date = "2026-11-03"
+
+[[rename]]
+id = "122E:0001=MoveParty"
+addr = "122E:0001"
+old = "SetSoundVolume"
+new = "MoveParty"
+kind = "function"
+why = "moves the party to cell: stores it in gPartyCell, runs the old cell's script in mode 2 and the new cell's in mode 1 (RunCellScript), counts the step in gStepCount and redraws (122E:0001); the movement keys 0ACD:04F8 to 05FF call it with StepIfOpen's cell"
+date = "2026-11-03"
+
+[[rename]]
+id = "122E:1DA8=RunCellScript"
+addr = "122E:1DA8"
+old = "RunMemberScript"
+new = "RunCellScript"
+kind = "function"
+why = "runs the trigger script of a maze cell: its offset is gMaze[cell * 9 + 7], its mode mask (gMaze[cell * 9 + 4] & 0xf8) >> 3 (122E:1DA8); MoveParty runs it on leaving (2) and entering (1) a cell"
+date = "2026-11-03"
+
+[[rename]]
+id = "0D1C:0080=StepIfOpen"
+addr = "0D1C:0080"
+old = "f0D1C_0080"
+new = "StepIfOpen"
+kind = "function"
+why = "returns the cell one step from cell in direction dir, or -1 when the wall between is closed (bit 0 of gWallTypeFlags for the target's side gOppositeSide[dir]) or monsters stand there (gMaze + 4 bits 0..2) (0D1C:0080); the movement keys call it before MoveParty"
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:547E=gOppositeSide"
+addr = "ds:547E"
+old = "g547E"
+new = "gOppositeSide"
+kind = "global"
+why = "the side of a cell that faces back along each direction: the bytes 2, 3, 0, 1 at ds:547E, indexed by the step direction in StepIfOpen 0D1C:0080"
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:F540=gStepCount"
+addr = "ds:F540"
+old = "gF540"
+new = "gStepCount"
+kind = "global"
+why = "counts the party's steps: MoveParty 122E:0001 increments it on every move"
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:5AB5=gStrNewline"
+addr = "ds:5AB5"
+old = "gText5AB5"
+new = "gStrNewline"
+kind = "global"
+why = "the one-character string carriage return at ds:5AB5 (bytes 0D 00); MoveParty 122E:0001 draws it to scroll the message area on every step"
+date = "2026-11-03"
+
+[[rename]]
+id = "0ACD:04F8=MoveForward"
+addr = "0ACD:04F8"
+old = "Action04F8"
+new = "MoveForward"
+kind = "function"
+why = "the forward movement key: MoveParty(StepIfOpen(gPartyCell, gPartyDir)), MoveBlocked when the way is closed (0ACD:04F8)"
+date = "2026-11-03"
+
+[[rename]]
+id = "0ACD:0529=MoveBackward"
+addr = "0ACD:0529"
+old = "Action0529"
+new = "MoveBackward"
+kind = "function"
+why = "the backward movement key: steps along (gPartyDir + 2) % 4 through StepIfOpen and MoveParty (0ACD:0529)"
+date = "2026-11-03"
+
+[[rename]]
+id = "0ACD:056C=TurnLeft"
+addr = "0ACD:056C"
+old = "Action056C"
+new = "TurnLeft"
+kind = "function"
+why = "turns the party left: gPartyDir minus 1, wrapping to 3, then resets gEFB2 to 0xFF (0ACD:056C)"
+date = "2026-11-03"
+
+[[rename]]
+id = "0ACD:0593=TurnRight"
+addr = "0ACD:0593"
+old = "Action0593"
+new = "TurnRight"
+kind = "function"
+why = "turns the party right: gPartyDir plus 1 modulo 4, then resets gEFB2 to 0xFF (0ACD:0593)"
+date = "2026-11-03"
+
+[[rename]]
+id = "0ACD:05BA=MoveLeft"
+addr = "0ACD:05BA"
+old = "Action05BA"
+new = "MoveLeft"
+kind = "function"
+why = "the sideways step to the left: along gPartyDir - 1, wrapping to 3, through StepIfOpen and MoveParty (0ACD:05BA)"
+date = "2026-11-03"
+
+[[rename]]
+id = "0ACD:05FF=MoveRight"
+addr = "0ACD:05FF"
+old = "Action05FF"
+new = "MoveRight"
+kind = "function"
+why = "the sideways step to the right: along (gPartyDir + 1) % 4 through StepIfOpen and MoveParty (0ACD:05FF)"
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:B800=gScriptCell"
+addr = "ds:B800"
+old = "gB800"
+new = "gScriptCell"
+kind = "global"
+why = "the map cell whose script is running: RunCellScript 122E:1DA8 stores its cell argument in it, and the turning opcode 122E (case 0xFFF5) turns the gDD2C effects whose cell +04 equals it"
+date = "2026-11-03"

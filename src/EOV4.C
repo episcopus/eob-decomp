@@ -6,10 +6,10 @@
 /*@flags -ml -O -Z -v */
 
 extern signed char gHead199D[]; /*@ ds:199D */  /* rows of 18 signed heading offsets */
-extern signed char gB894[]; /*@ ds:B894 */    /* 9-byte tile records (src/E08E6.C) */
-extern signed char far *gEF6A[]; /*@ ds:EF6A */ /* 18 far pointers into gB894 (src/E1414.C) */
+extern signed char gMaze[]; /*@ ds:B894 */    /* 9-byte tile records (src/E08E6.C) */
+extern signed char far *gEF6A[]; /*@ ds:EF6A */ /* 18 far pointers into gMaze (src/E1414.C) */
 extern signed char gA9C6; /*@ ds:A9C6 */        /* an offset added into gEF6A's targets (src/E1414.C:101; src/E0ACD.C:78, src/E122E.C:99 differ) */
-extern signed char g194B[]; /*@ ds:194B */      /* per-slot byte flags (src/E08E6.C) */
+extern signed char gWallTypeFlags[]; /*@ ds:194B */      /* per-slot byte flags (src/E08E6.C) */
 extern signed char gTable1879[]; /*@ ds:1879 */      /* per-object count-1 (this unit) */
 extern int gAngleA9C8[]; /*@ ds:A9C8 */         /* 18 heading words, the masked sum (this unit) */
 extern int gViewSlots[]; /*@ ds:DCB2 */         /* 18 {left,right} view-slot pairs (this unit) */
@@ -28,7 +28,7 @@ extern int gViewSlots[]; /*@ ds:DCB2 */         /* 18 {left,right} view-slot pai
     row *= 18;
     for (i = 0; i < 18; i++) {
         heading = gAngleA9C8[i] = (base + gHead199D[row + i]) & 0x3FF;
-        gEF6A[i] = (signed char far *)&gB894[heading * 9];
+        gEF6A[i] = (signed char far *)&gMaze[heading * 9];
         gViewSlots[i] = gViewSlots[i + 18] = -1;
     }
 }
@@ -87,7 +87,7 @@ extern signed char g6CC6[]; /*@ ds:6CC6 */   /* per slot,i signed {left,right} b
         slot *= VIEW_SLOTS;
         for (i = 0; i < VIEW_SLOTS; i++) {
             heading = gEF6A[i][gA9C6];
-            if (!(g194B[heading] & TILE_FLAG)) {
+            if (!(gWallTypeFlags[heading] & TILE_FLAG)) {
                 adjust = g6B82[slot + i];
                 if (gTable1879[heading] == 0 || adjust == ADJUST_SKIP)
                     continue;
@@ -130,7 +130,7 @@ struct Region {             /* the 16-byte region records at ds:009F (src/E1DE7.
 
 extern struct Region gRegions[]; /*@ ds:009F */
 extern int gFBC8; /*@ ds:FBC8 */                 /* the current action (src/E0D1C.C) */
-extern int gFBCC; /*@ ds:FBCC */                 /* the current page 0..3 (src/E08E6.C) */
+extern int gPartyDir; /*@ ds:FBCC */                 /* the party's facing, 0..3 north, east, south, west */
 extern signed char g6F4E[]; /*@ ds:6F4E */       /* row value table this unit indexes */
 extern signed char g6F6D[]; /*@ ds:6F6D */       /* per-page index into ds:6F4E */
 extern signed char g6F79[]; /*@ ds:6F79 */       /* per-page index into ds:6F4E */
@@ -233,7 +233,7 @@ extern unsigned char gViewBufADB0[]; /*@ ds:ADB0 */  /* the view pixel buffer (t
    at ovl4:0563 and ovl4:05D8. */
 /*@ ovl4:042C */ int IsSlotLive(int slot)
 {
-    return slot != 0 && !(g194B[slot] & 8);
+    return slot != 0 && !(gWallTypeFlags[slot] & 8);
 }
 
 extern signed char g1991[]; /*@ ds:1991 */   /* per-page index into a gEF6A target (src/E08E6.C) */
@@ -259,12 +259,12 @@ extern int gF4BC; /*@ ds:F4BC */             /* the cell and page parity (this u
     int slot;
     int slot2;
 
-    gA9C6 = g1991[gFBCC];
-    gEFB9 = g1995[gFBCC];
-    gEFD0 = g1999[gFBCC];
+    gA9C6 = g1991[gPartyDir];
+    gEFB9 = g1995[gPartyDir];
+    gEFD0 = g1999[gPartyDir];
     for (i = 0; i < 0x14a; i++)
         ((unsigned int *)gViewBufADB0)[i] = 0;
-    gF4BC = ((base >> 5) + (base & 0x1f) + gFBCC) & 1;
+    gF4BC = ((base >> 5) + (base & 0x1f) + gPartyDir) & 1;
     if (gF4BC == 0)
         CopyViewColumn(0, 0xf, 1, 0xfeb6, 0x16, 0xf);
     else
@@ -279,15 +279,15 @@ extern int gF4BC; /*@ ds:F4BC */             /* the cell and page parity (this u
         ToggleViewColumn(0x15, 3, slot, 0x66, 3, 5);
     slot = gEF6A[1][gEFB9];
     slot2 = gEF6A[2][gA9C6];
-    if (IsSlotLive(slot) && !(g194B[slot2] & 8))
+    if (IsSlotLive(slot) && !(gWallTypeFlags[slot2] & 8))
         CopyViewColumn(2, 3, slot, 0x66, 3, 5);
-    else if (slot != 0 && (g194B[slot2] & 8))
+    else if (slot != 0 && (gWallTypeFlags[slot2] & 8))
         CopyViewColumn(2, 3, slot2, 0x66, 3, 5);
     slot = gEF6A[5][gEFD0];
     slot2 = gEF6A[4][gA9C6];
-    if (IsSlotLive(slot) && !(g194B[slot2] & 8))
+    if (IsSlotLive(slot) && !(gWallTypeFlags[slot2] & 8))
         ToggleViewColumn(0x11, 3, slot, 0x66, 3, 5);
-    else if (slot != 0 && (g194B[slot2] & 8))
+    else if (slot != 0 && (gWallTypeFlags[slot2] & 8))
         ToggleViewColumn(0x11, 3, slot2, 0x66, 3, 5);
     slot = gEF6A[2][gEFB9];
     if (slot)
@@ -333,10 +333,10 @@ extern int gF4BC; /*@ ds:F4BC */             /* the cell and page parity (this u
         ToggleViewColumn(0x10, 1, slot, 0x2d, 3, 0xc);
     slot = gEF6A[12][gA9C6];
     slot2 = gEF6A[13][gA9C6];
-    if (!(g194B[slot] & 8))
+    if (!(gWallTypeFlags[slot] & 8))
         CopyViewColumn(0xf3, 1, slot, 0xef, 0x10, 0xc);
     slot = gEF6A[14][gA9C6];
-    if (!(g194B[slot] & 8))
+    if (!(gWallTypeFlags[slot] & 8))
         CopyViewColumn(0x13, 1, slot, 0xef, 0x10, 0xc);
     slot = gEF6A[13][gA9C6];
     if (slot)
@@ -393,7 +393,7 @@ extern void DrawRegion000F(int mode, void far *src, int x, int y, int region); /
    sprite cells taken from the circular item list at ds:8DD0. `slot` is the view slot, `field` the
    index of the object: it starts at gItems[field]'s +8 link (the item's list), remembers that link
    as the head and walks the list back to it. For each item, the kind +5 picks the sprite base
-   ds:1A2B[gFBCC * 4 + (kind & 3)]; the cell position comes from ds:1D61/ds:1D63 (or, when the kind
+   ds:1A2B[gPartyDir * 4 + (kind & 3)]; the cell position comes from ds:1D61/ds:1D63 (or, when the kind
    is 8, from g19E5[slot] and g6FA8[g1A09[slot]] with sprite 0) and is nudged by ds:6FAE at
    `field & 7` and `(field >> 1) & 7`; the cell itself is ds:EC9A[g181F[icon]][frame], its byte +2
    (in 8-pixel units) and byte +1 shift the position. Items whose kind is 8 or below 4 are drawn;
@@ -425,11 +425,11 @@ extern void DrawRegion000F(int mode, void far *src, int x, int y, int region); /
     register int y;
 
     slotReg = slot;
-    tile = gB894[gAngleA9C8[slotReg] * 9 + gA9C6];
+    tile = gMaze[gAngleA9C8[slotReg] * 9 + gA9C6];
     if (slotReg == 0x10)
         flags = 0x80;
     else
-        flags = g194B[tile];
+        flags = gWallTypeFlags[tile];
     if (gTable1879[tile] != 0 && !(flags & 0x80))
         return;
 
@@ -441,7 +441,7 @@ extern void DrawRegion000F(int mode, void far *src, int x, int y, int region); /
         is8 = (rec->m03 == 8);
         if (is8 == 1 || rec->m03 < 4) {
             spanSlot = -1;
-            sprite = g1A2B[gFBCC * 4 + (rec->m03 & 3)];
+            sprite = g1A2B[gPartyDir * 4 + (rec->m03 & 3)];
             if (is8)
                 sprite = 4;
             k = (slotReg * 5 + sprite) * 2;
@@ -539,9 +539,9 @@ extern void DrawRegion008B(int mode, void far *src, int x, int y, int region); /
 extern void DrawRegion00C9(int mode, void far *src, int x, int y, int region); /*@ 082C:070D */
 
 /* ovl4:0D1B: draws the map objects whose ds:8A82 record id matches the cell the player's facing
-   points at. The cell id is (gPartyCell + gHead199D[gFBCC * 18 + slot]) & 0x3ff; the 30 object
+   points at. The cell id is (gPartyCell + gHead199D[gPartyDir * 18 + slot]) & 0x3ff; the 30 object
    records are scanned and each matching one is put in a 5-entry far-pointer slot indexed by
-   g7001[gFBCC * 5 + obj->frame]. Each non-empty slot is then blitted g6FBE[g1A09[slot]] times into
+   g7001[gPartyDir * 5 + obj->frame]. Each non-empty slot is then blitted g6FBE[g1A09[slot]] times into
    ds:DCFC through the sprite blitter the video mode selects, positioned by ds:1D61/ds:1D63 nudged
    by the object's ds:1A3B record and its +0x17 byte, and drawn by one of four DrawRegion wrappers
    (which one depends on the sprite's sign and the +0x16 flag bit 2, which also runs the colour
@@ -574,9 +574,9 @@ extern void DrawRegion00C9(int mode, void far *src, int x, int y, int region); /
     register int y;
 
     tileRow = g6FBE[g1A09[slot]];
-    cellId = (gPartyCell + gHead199D[gFBCC * 18 + slot]) & 0x3ff;
-    page5 = gFBCC * 5;
-    page4 = gFBCC * 4;
+    cellId = (gPartyCell + gHead199D[gPartyDir * 18 + slot]) & 0x3ff;
+    page5 = gPartyDir * 5;
+    page4 = gPartyDir * 4;
     for (i = 0; i < 5; i++)
         arr[i] = 0;
     obj = gObjs;
@@ -946,12 +946,12 @@ extern void far *gThrownIcons[][4]; /*@ ds:F2F8 */  /* far sprite cells, four pe
 #define NO_DD_ROW -1
 
 /* ovl4:19C4: draws the map objects whose ds:DD2C record is seen from the current page. Only when
-   gTable1879[tile] is nonzero and g194B[tile] bit 7 is clear does it run (tile is the slot's gEF6A
+   gTable1879[tile] is nonzero and gWallTypeFlags[tile] bit 7 is clear does it run (tile is the slot's gEF6A
    record byte, as in Ovl4_0D1B). It scans the ten 0x12-byte ds:DD2C records and, for each whose
    byte +0 is set and word +4 equals the slot's heading (gAngleA9C8[slot]), puts its far pointer in
-   the list slot g7246[gFBCC * 5 + (record +6 & 3)]. Each non-empty slot picks a cell from the
+   the list slot g7246[gPartyDir * 5 + (record +6 & 3)]. Each non-empty slot picks a cell from the
    ds:F2F8 or ds:EC9A far sprite tables and a draw wrapper from ds:7262, at an x from ds:71A6 and a
-   y from ds:71EE selected by the sprite base ds:1A2B[gFBCC * 4 + (+6 & 3)] and the frame ds:71FE:
+   y from ds:71EE selected by the sprite base ds:1A2B[gPartyDir * 4 + (+6 & 3)] and the frame ds:71FE:
    a record whose byte +0 is 1 picks the ds:F2F8 row ds:1D07[kind + side * 0x2d] (kind is the
    ds:8DD0 item icon through ds:181F, side -1 when the record +7 matches neither the page nor the
    page xor 2) and shifts x by ds:725E[frame] when the sign-extended cell +2 byte matches
@@ -960,7 +960,7 @@ extern void far *gThrownIcons[][4]; /*@ ds:F2F8 */  /* far sprite cells, four pe
    ds:1D61 and y from the cell. A wrapper of 0 draws with DrawRegion000F, any other with
    DrawRegion004D. Called by DrawViewSlots for every slot. Purpose unknown: what the records, the
    sides and the wrappers mean. Three source forms TCC pins down: the ds:194B bit 7 test is written
-   `gTable1879[tile] == 0 || (g194B[tile] & 0x80)` with an empty then, the only form that tests the byte
+   `gTable1879[tile] == 0 || (gWallTypeFlags[tile] & 0x80)` with an empty then, the only form that tests the byte
    without sign-extending it; the frame guard is `if (frame >= 0) { body }` (an `if (frame < 0)
    continue;` gives the same bytes but reloads ES before the record check, a -Z difference); and the
    cell +2 test is a raw `<< 3 >> 3`, which for a signed char in a 16-bit int leaves the value
@@ -984,12 +984,12 @@ extern void far *gThrownIcons[][4]; /*@ ds:F2F8 */  /* far sprite cells, four pe
     int frame;
 
     heading = gAngleA9C8[slot];
-    tile = gB894[heading * 9 + gA9C6];
-    if (gTable1879[tile] == 0 || (g194B[tile] & 0x80))
+    tile = gMaze[heading * 9 + gA9C6];
+    if (gTable1879[tile] == 0 || (gWallTypeFlags[tile] & 0x80))
         ;
     else
         return;
-    page = gFBCC * 5;
+    page = gPartyDir * 5;
     for (i = 0; i < 5; i++)
         arr[i] = 0;
     rec = gDD2C;
@@ -1001,7 +1001,7 @@ extern void far *gThrownIcons[][4]; /*@ ds:F2F8 */  /* far sprite cells, four pe
         if (arr[page] == 0)
             continue;
         rec = arr[page];
-        spriteBase = g1A2B[gFBCC * 4 + (rec->m06 & 3)];
+        spriteBase = g1A2B[gPartyDir * 4 + (rec->m06 & 3)];
         x = g71A6[slot * 4 + spriteBase];
         y = g71EE[g1A09[slot] * 4 + spriteBase];
         frame = g71FE[slot * 4 + spriteBase];
@@ -1009,9 +1009,9 @@ extern void far *gThrownIcons[][4]; /*@ ds:F2F8 */  /* far sprite cells, four pe
         if (frame >= 0) {
             if (rec->active == 1) {
                 kind = g181F[gItems[rec->m08].icon];
-                if (rec->m07 == gFBCC)
+                if (rec->m07 == gPartyDir)
                     side = 0;
-                else if (rec->m07 == (gFBCC ^ 2))
+                else if (rec->m07 == (gPartyDir ^ 2))
                     side = 1;
                 else
                     side = -1;
@@ -1020,7 +1020,7 @@ extern void far *gThrownIcons[][4]; /*@ ds:F2F8 */  /* far sprite cells, four pe
                     wrapper = g7262[rec->m07 * 4 + rec->m06];
                 } else {
                     cell = (char far *)gItemL1Icons[kind][frame];
-                    wrapper = (rec->m07 == ((gFBCC + 1) & 3)) ? 1 : 0;
+                    wrapper = (rec->m07 == ((gPartyDir + 1) & 3)) ? 1 : 0;
                 }
                 if ((((signed char far *)cell)[2] << 3 >> 3) == g725A[frame])
                     x += g725E[frame];
@@ -1117,7 +1117,7 @@ extern signed char g7278[]; /*@ ds:7278 */     /* per-view-slot byte (this unit)
         if (*(int far *)(gEF6A[slot] + 5) != 0)
             Ovl4_0AD0(slot, *(int far *)(gEF6A[slot] + 5));
         if (slot < 0xf) {
-            if (g194B[heading] & 8)
+            if (gWallTypeFlags[heading] & 8)
                 Ovl4_1411(slot);
             if (*(gEF6A[slot] + 4) & 7)
                 Ovl4_0D1B(slot);
@@ -1137,21 +1137,21 @@ extern void HidePointerZone(int left, int top, int right, int bottom); /*@ 1BBE:
 extern void ShowPointerZone(void); /*@ 1BBE:02C2 */
 
 /* ovl4:1EDE: redraws the three view rows for the current page. It returns early when ds:7296
-   already holds gFBCC; otherwise it hides the pointer below the view box (0x46, 0x79, 0xb0, 0xaf),
-   draws the three rows through DrawShape(0, gIconTableA92A[gFBCC + 4 * i], g728A[i], g7290[i], 0),
-   shows the pointer and remembers gFBCC in ds:7296. Called by DrawViewFrame at ovl4:202F. Purpose
+   already holds gPartyDir; otherwise it hides the pointer below the view box (0x46, 0x79, 0xb0, 0xaf),
+   draws the three rows through DrawShape(0, gIconTableA92A[gPartyDir + 4 * i], g728A[i], g7290[i], 0),
+   shows the pointer and remembers gPartyDir in ds:7296. Called by DrawViewFrame at ovl4:202F. Purpose
    unknown: what the rows are. */
 /*@ ovl4:1EDE */ void DrawViewRows(void)
 {
     int i;
 
-    if (g7296 == gFBCC)
+    if (g7296 == gPartyDir)
         return;
     HidePointerZone(0x46, 0x79, 0xb0, 0xaf);
     for (i = 0; i < 3; i++)
-        DrawShape(0, gIconTableA92A[gFBCC + 4 * i], g728A[i], g7290[i], 0);
+        DrawShape(0, gIconTableA92A[gPartyDir + 4 * i], g728A[i], g7290[i], 0);
     ShowPointerZone();
-    g7296 = gFBCC;
+    g7296 = gPartyDir;
 }
 
 extern char gFB45; /*@ ds:FB45 */           /* request flag, cleared here (src/E07A9.C) */
@@ -1168,7 +1168,7 @@ extern void DrawTile(void far *src); /*@ 17A6:03E7 */
 extern void PlaySoundDefault(int sound); /*@ 177D:00F3 */
 
 /* ovl4:1F51: draws one frame of the view: Ovl4_044B draws the objects into the page buffer (with
-   gPartyCell and gFBCC), DrawTile blits it from gSegDCA6, DrawViewSlots(0) draws the slots, and
+   gPartyCell and gPartyDir), DrawTile blits it from gSegDCA6, DrawViewSlots(0) draws the slots, and
    when gFB45 is set and gGraphicsChoice is 3 (MCGA/VGA, re/globals.toml ds:8102) it loads the
    palette gFE68 and clears gFB45; when `full` is also set, it first blanks the view box (gFillRect
    with pattern 0xc). Then it waits for gCount849A
@@ -1177,7 +1177,7 @@ extern void PlaySoundDefault(int sound); /*@ 177D:00F3 */
    loop. */
 /*@ ovl4:1F51 */ void DrawViewFrame(int full)
 {
-    Ovl4_044B(gPartyCell, gFBCC);
+    Ovl4_044B(gPartyCell, gPartyDir);
     DrawTile(gSegDCA6);
     DrawViewSlots(0);
     if (gFB45 && gGraphicsChoice == 3) {

@@ -118,7 +118,7 @@ extern unsigned char g3057[];  /*@ ds:3057: the table passed to the palette sett
 extern void far *gFont8x8;            /*@ ds:FE5A: the 8x8 font loaded from Font8.fnt (whitepaper
                                          4.4, docs/design/WHITEPAPER.md:171: FONT8.FNT is 8 x 8,
                                          checked by 1A47:0005; the file is 0x104 + 128 x 8 bytes) */
-extern void far *gA9C0;               /*@ ds:A9C0: the 6x6 font loaded from FONT6.FNT (whitepaper
+extern void far *gFont6x6;               /*@ ds:A9C0: the 6x6 font loaded from FONT6.FNT (whitepaper
                                          4.4: FONT6.FNT is 6 x 6, checked by 1A47:0005; the file
                                          is 0x104 + 128 x 6 bytes) */
 extern unsigned gSegsFC0C[];          /*@ ds:FC0C: the page/buffer segment table */
@@ -374,8 +374,8 @@ int AllocationFailure(void);
     }
     gFn8056();
     gFont8x8 = LoadFont("Font8.fnt");
-    gA9C0 = LoadFont("FONT6.FNT");
-    if (!gFont8x8 || !gA9C0)
+    gFont6x6 = LoadFont("FONT6.FNT");
+    if (!gFont8x8 || !gFont6x6)
         goto font_error;
     SetFont(gFont8x8);       /* makes the 8x8 font current after both fonts load; why it is set
                                    here, after the loads, is not in the file */

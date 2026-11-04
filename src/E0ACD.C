@@ -2,7 +2,7 @@
    Most entries are reached through a 60-byte DGROUP action record (struct Action) whose +0x38
    field is the party slot and whose +4 is the value the handler returns; they draw the block
    messages ("You can't go that way."), move and swap party members, move and pick items, eat,
-   browse the item list, and set the sound volume and page globals. RunMapLoop (0ACD:0E8A) is the
+   browse the item list, and move and turn the party. RunMapLoop (0ACD:0E8A) is the
    map timeout loop and this unit's only caller of TurnUndead. Names that are not established say
    what a function does. */
 
@@ -18,12 +18,12 @@ struct Action {
     int slot;               /* +0x38: the party slot the action applies to */
 };
 
-extern signed char gA99A; /*@ ds:A99A */    /* the selected character index (src/E0D1C.C) */
+extern signed char gInventoryMember; /*@ ds:A99A */    /* the selected character index (src/E0D1C.C) */
 extern char gF51A; /*@ ds:F51A */           /* the selected action row: 0..2 in the action menu
                                                (StepActionRow 0ACD:03CD wraps it) and 0x10 for the
                                                character's own item list (0ACD:0A61 and 0BA6; the same
                                                tests at src/E122E.C:471 and :485) (src/E0D1C.C) */
-extern char gFB44; /*@ ds:FB44 */           /* a mode byte: 0, 1 and 2 gate the action handlers
+extern char gPanelMode; /*@ ds:FB44 */           /* a mode byte: 0, 1 and 2 gate the action handlers
                                                (src/E0D1C.C) */
 extern int gFC82; /*@ ds:FC82 */            /* an action mode: 0, 1 and 2 pick the branches of the
                                                0034, 008C and 00EB handlers */
@@ -51,15 +51,13 @@ extern char gIconTable; /*@ ds:FB34 */           /* the index of the party membe
                                                declares the same address as void far *gIconTable[]
                                                (far sprite pointers). This unit reads the byte as a
                                                member index */
-extern int gFBCC; /*@ ds:FBCC */            /* a page number 0..3 (kept modulo 4 by this unit,
-                                               src/E0D1C.C) */
-extern int gPartyCell; /*@ ds:FBCA */     /* the sound volume: SetSoundVolume (122E:0001) assigns it
-                                               and 0ACD:0644/0A61 use it as the volume whose ds:B899
-                                               list receives an item. src/E177D.C:92 and src/EOV4.C:524
-                                               read the same word as the party's map cell (the sound's
-                                               listener cell) (src/E0D1C.C) */
-extern char gEFB2; /*@ ds:EFB2 */           /* the sound page: set to 0xff when the page changes
-                                               (056C, 0593) and used by PickListItem (0BA6) as the
+extern int gPartyDir; /*@ ds:FBCC */            /* the direction the party faces, 0..3 (kept
+                                               modulo 4 by TurnLeft and TurnRight) */
+extern int gPartyCell; /*@ ds:FBCA */     /* the party's map cell: MoveParty (122E:0001)
+                                               sets it; 0ACD:0644/0A61 drop items into its
+                                               gMazeItems list */
+extern char gEFB2; /*@ ds:EFB2 */           /* the floor position last picked from: set to 0xff when
+                                               the party turns (056C, 0593) and used by PickListItem (0BA6) as the
                                                page index 0..3 into g374A and g1A1B */
 extern char gDCAA; /*@ ds:DCAA */           /* the menu/rest phase: 1 and 2 are the menu steps
                                                (0ACD:0753 wraps a value above 2 back to 1 and
@@ -73,23 +71,23 @@ extern char gF542[]; /*@ ds:F542 */         /* the action record passed to Redra
                                                (0EF3:2541) when gFlag is set (0ACD:0264);
                                                RedrawPartyPanel takes it as struct ActRec far * */
 extern char gDF4C; /*@ ds:DF4C */           /* set to 1 when an action took effect (src/E0D1C.C) */
-extern char gB894[]; /*@ ds:B894 */         /* nine-byte object records (src/E0D1C.C) */
-extern signed char g194B[]; /*@ ds:194B */  /* per-object bit flags (src/E0D1C.C) */
-extern signed char gA9C6; /*@ ds:A9C6 */    /* an offset into a gB894 record (src/E0DE8.C) */
+extern char gMaze[]; /*@ ds:B894 */         /* nine-byte object records (src/E0D1C.C) */
+extern signed char gWallTypeFlags[]; /*@ ds:194B */  /* per-object bit flags (src/E0D1C.C) */
+extern signed char gA9C6; /*@ ds:A9C6 */    /* an offset into a gMaze record (src/E0DE8.C) */
 
-extern int f0D1C_00DA(int value, int page); /*@ 0D1C:00DA */
-extern int f0D1C_0080(int value, signed char page); /*@ 0D1C:0080 */
+extern int StepCell(int cell, int dir); /*@ 0D1C:00DA */
+extern int StepIfOpen(int cell, signed char dir); /*@ 0D1C:0080 */
 extern int GetCurrentItem(void); /*@ 0D1C:02DC */
 extern void SelectCharacter(int value); /*@ 0D1C:003F */
 extern void f0D1C_006D(int first, int second); /*@ 0D1C:006D */
 extern void f0D1C_0078(int value); /*@ 0D1C:0078 */
 extern void SwapSelectedItem(int slot, int flag); /*@ 0BD2:0C8E */
 extern void UseItemSlot(int slot, int flag); /*@ 0BD2:1001 */
-extern int AddDDEffect(int who, int item, int volume, int kind, int page, int type); /*@ 0BD2:07DE */
+extern int AddDDEffect(int who, int item, int cell, int kind, int page, int type); /*@ 0BD2:07DE */
 extern void ArmEffect(int a, int b); /*@ 1414:05A4 */
 extern void RearmCharEffects(void); /*@ 1414:0B2E */
 extern void SetMouseItem(int n); /*@ 07A9:010C */
-extern void SetSoundVolume(int n); /*@ 122E:0001 */
+extern void MoveParty(int cell); /*@ 122E:0001 */
 extern void DispatchSlotHandler(int a, int b); /*@ 122E:0896 */
 extern void ComputeArmourClass(int who); /*@ 0DE8:0D5E */
 extern int far RollDice(char count, char sides, char bonus); /*@ 082C:0458 */
@@ -99,13 +97,13 @@ struct ActRec;      /* the action record 0EF3:2541 takes: the same +4 result wor
                        a byte in ActRec (src/E0EF3.C:292) and a word here (:18) */
 extern int RedrawPartyPanel(struct ActRec far *rec); /*@ 0EF3:2541 */
 
-/* A character record: this unit touches the name, the hunger byte m23 and the m97 item sub-table
+/* A character record: this unit touches the name, the hunger byte food and the m97 item sub-table
    (src/E0A72.C). */
 struct CharRec {
     char pad00[2];
     char name[0x0B];        /* +2: the character's name, NUL padded (src/E0D1C.C) */
     char pad0D[0x23 - 0x0D];
-    unsigned char m23;      /* +0x23: a hunger/food value clamped to 100 by EatFood (07E0) */
+    unsigned char food;     /* +0x23: a hunger/food value clamped to 100 by EatFood (07E0) */
     char pad24[0x97 - 0x24];
     char m97[0xF3 - 0x97];  /* +0x97: the character's own item sub-table; RemoveListItem
                                (0BD2:02B9) takes an item from it and InsertListItem
@@ -114,7 +112,7 @@ struct CharRec {
 extern struct CharRec gChars[]; /*@ ds:F580 */
 
 /* A 14-byte ds:8DD2 record (ITEM.DAT): m02 is the item type, m04 the record's key (-1 when free)
-   and m0B the amount EatFood (07E0) adds to the character's m23 (the meaning is inferred; the
+   and m0B the amount EatFood (07E0) adds to the character's food (the meaning is inferred; the
    src/E0D1C.C:275 comment says what m02, m0B and m04 mean is not established). */
 struct Entry14 {
     unsigned char flags;    /* +0 */
@@ -123,7 +121,7 @@ struct Entry14 {
     char pad03;
     int m04;                /* +4: the key; -1 when free (set to -1 after eating, 07E0) */
     char pad06[0x0B - 0x06];
-    signed char m0B;        /* +0xB: the amount EatFood (07E0) adds to m23 (meaning inferred,
+    signed char m0B;        /* +0xB: the amount EatFood (07E0) adds to food (meaning inferred,
                                src/E0D1C.C:275) */
     char pad0C[0x0E - 0x0C];
 };
@@ -137,9 +135,9 @@ extern unsigned g5E1C; /*@ ds:5E1C */       /* the left-button mode word: Action
                                                tests g5E1C for the left button, g5E1E for the right */
 extern signed char g36D0[]; /*@ ds:36D0 */  /* a per-row four-byte action table (09EF) */
 extern signed char g373C[]; /*@ ds:373C */  /* a table with two entries per page: 0A61 reads
-                                               g373C[gFBCC * 2 + g3744[gA99A]] */
+                                               g373C[gPartyDir * 2 + g3744[gInventoryMember]] */
 extern signed char g3744[]; /*@ ds:3744 */  /* a per-character byte table read by 0A61 */
-extern char gB899[]; /*@ ds:B899 */         /* the nine-byte record list head (src/E0D1C.C) */
+extern char gMazeItems[]; /*@ ds:B899 */         /* the nine-byte record list head (src/E0D1C.C) */
 extern char gFlag; /*@ ds:F3B9 */           /* picks the "a" table set when nonzero (src/E0CF7.C);
                                                this unit uses it as a redraw gate in Action0264
                                                (0ACD:0264) and clears it in EnterMapScreen
@@ -150,10 +148,10 @@ extern char gA998; /*@ ds:A998 */           /* the saved-game load flag: 0xff wh
 extern int gMouseDisabled; /*@ ds:814A */   /* nonzero disables the mouse (src/E07A9.C) */
 extern int gFBC8; /*@ ds:FBC8 */            /* the current action (src/E0D1C.C) */
 extern int gFBCE; /*@ ds:FBCE */            /* the item index shown by the mouse (src/E07A9.C) */
-extern void far *gA9C0; /*@ ds:A9C0 */       /* the current 6x6 font (src/E07A9.C) */
+extern void far *gFont6x6; /*@ ds:A9C0 */       /* the current 6x6 font (src/E07A9.C) */
 extern void far *gList; /*@ ds:FB48 */      /* the head of the list built last (src/E0CF7.C) */
 extern unsigned long gFC5A; /*@ ds:FC5A */  /* the map timeout counter (0E8A) */
-extern int gFC58; /*@ ds:FC58 */            /* the sound volume saved by the map loop (0E8A) */
+extern int gFC58; /*@ ds:FC58 */            /* the party's cell saved by the map loop (0E8A) */
 extern unsigned long g8492; /*@ ds:8492 */  /* the 32-bit counter the 1Ch handler bumps (src/EOV6.C) */
 extern int g8134; /*@ ds:8134 */            /* set to 0 by the map screen (src/E14EF.C) */
 extern char gFileNameBuf[]; /*@ ds:FE6E */  /* the text buffer sprintf formats into (src/E082C.C) */
@@ -174,12 +172,12 @@ struct Node;    /* the screen list node 16A5:005A walks (src/E16A5.C) */
    a mouse-only call (src/E16A5.C:185 to 188 and :523 to 524). */
 extern int DispatchKeyWait(struct Node far *head); /*@ 16A5:005A */
 extern void DrawMemberFood(int who); /*@ 1547:04A0 */
-extern void RunMemberScript(int a, int b); /*@ 122E:1DA8 */
+extern void RunCellScript(int cell, int mode); /*@ 122E:1DA8 */
 extern void RunEffects(void); /*@ 1414:04E7 */
 extern void TurnUndead(void); /*@ 0D1C:0A43 */
 extern void RedrawCharacters(void); /*@ 0D1C:0583 */
 extern void PlaySoundDefault(int sound); /*@ 177D:00F3 */
-extern void PlaySoundAtCell(int sound, int volume); /*@ 177D:0106 */
+extern void PlaySoundAtCell(int sound, int cell); /*@ 177D:0106 */
 extern void SetTextWindow(int n); /*@ 1DE7:0009 */
 extern void LoadScreenImage(char far *name, char far *extra, int srcKind, int dstKind, int mode); /*@ 082C:051B */
 extern void SetFont(char far *font); /*@ 1A47:0169 */
@@ -191,7 +189,7 @@ extern void NoOp2039(void); /*@ 2116:0043 */    /* overlay 4 entry, ovl4:2039, a
 extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
 
 /* 0ACD:0008: draws "You can't go that way.", plays the bump sound and drops any pending key. The
-   fallback the sound-volume handlers (04F8..05FF) run when the volume lookup yields -1. */
+   fallback of the movement keys (04F8..05FF) when StepIfOpen finds the way closed. */
 /*@ 0ACD:0008 */ void MoveBlocked(void)
 {
     DrawText("You can't go that way.\r");
@@ -213,9 +211,9 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
 {
     if (gFC82 != 0 || MemberIs(action->slot, 1)) {
         LockHidePointer();
-        gFB44 = 1;
+        gPanelMode = 1;
         if (gFC82 == 0)
-            gA99A = action->slot;
+            gInventoryMember = action->slot;
         RedrawRowArea(1);
         BuildList2();
         LockShowPointer();
@@ -229,15 +227,15 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
 /*@ 0ACD:008C */ int Action008C(struct Action far *action)
 {
     if (gFC82 == 1)
-        gA99A = 0;
+        gInventoryMember = 0;
     else if (gFC82 == 2)
-        gA99A = 1;
+        gInventoryMember = 1;
     else
         do {
-            gA99A--;
-            if (gA99A < 0)
-                gA99A = 5;
-        } while (!MemberIs(gA99A, 1));
+            gInventoryMember--;
+            if (gInventoryMember < 0)
+                gInventoryMember = 5;
+        } while (!MemberIs(gInventoryMember, 1));
     LockHidePointer();
     RedrawRowArea(0);
     LockShowPointer();
@@ -251,24 +249,24 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
 /*@ 0ACD:00EB */ int Action00EB(struct Action far *action)
 {
     int base;
-    int old = gA99A;
+    int old = gInventoryMember;
 
     if (action->slot == 2)
         base = 2;
     else
         base = 0;
     if (gFC82 == 1)
-        gA99A = base + 2;
+        gInventoryMember = base + 2;
     else if (gFC82 == 2)
-        gA99A = base + 3;
+        gInventoryMember = base + 3;
     else
         do {
-            gA99A++;
-            if (gA99A > 5)
-                gA99A = 0;
-        } while (!MemberIs(gA99A, 1));
-    if (!MemberIs(gA99A, 1)) {
-        gA99A = old;
+            gInventoryMember++;
+            if (gInventoryMember > 5)
+                gInventoryMember = 0;
+        } while (!MemberIs(gInventoryMember, 1));
+    if (!MemberIs(gInventoryMember, 1)) {
+        gInventoryMember = old;
         return 1;
     }
     LockHidePointer();
@@ -277,16 +275,16 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
     return action->result;
 }
 
-/* 0ACD:018E: toggles the list mode byte gFB44 between 1 (rebuilds list 3) and 2, asks
+/* 0ACD:018E: toggles the list mode byte gPanelMode between 1 (rebuilds list 3) and 2, asks
    RedrawRowArea(0) and returns the record's +4. */
 /*@ 0ACD:018E */ int Action018E(struct Action far *action)
 {
-    if (gFB44 == 1) {
+    if (gPanelMode == 1) {
         BuildList3();
-        gFB44 = 2;
+        gPanelMode = 2;
     } else {
         BuildList2();
-        gFB44 = 1;
+        gPanelMode = 1;
     }
     RedrawRowArea(0);
     return action->result;
@@ -314,7 +312,7 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
     gStatusLine = 2;
     gFn804A(0, 0, 0x12, 0xa8, gSegDF4E);
     gF51A = 0;
-    gFB44 = 0;
+    gPanelMode = 0;
     for (i = 0; i < 6; i++)
         RedrawMember(i);
     gStatusLine = 0;
@@ -423,15 +421,15 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
 }
 
 /* 0ACD:0494: the "use item on the selected character" action. It takes the current item from
-   GetCurrentItem and passes it, the selected character gA99A, the volume, the per-page kind
-   g1A1B[slot + gFBCC * 4], the page gFBCC and the item type to AddDDEffect; a nonzero result sets
+   GetCurrentItem and passes it, the selected character gInventoryMember, the party's cell, the kind
+   g1A1B[slot + gPartyDir * 4], the page gPartyDir and the item type to AddDDEffect; a nonzero result sets
    the mouse item to none (SetMouseItem(0)) and sets gDF4C. Returns the record's +4. */
 /*@ 0ACD:0494 */ int Action0494(struct Action far *action)
 {
     int item = GetCurrentItem();
 
     if (item) {
-        if (AddDDEffect(gA99A, item, gPartyCell, g1A1B[action->slot + gFBCC * 4], gFBCC,
+        if (AddDDEffect(gInventoryMember, item, gPartyCell, g1A1B[action->slot + gPartyDir * 4], gPartyDir,
                        gTable8DD2[item].m02)) {
             SetMouseItem(0);
             gDF4C = 1;
@@ -440,103 +438,102 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
     return action->result;
 }
 
-/* 0ACD:04F8: sets the sound volume for the current page: f0D1C_0080 maps gPartyCell and gFBCC to a
-   volume value and SetSoundVolume (122E:0001) applies it (setting gPartyCell and redrawing the
-   volume message); the "You can't go that way." fallback runs when the lookup yields -1. Returns the
-   record's +4. */
-/*@ 0ACD:04F8 */ int Action04F8(struct Action far *action)
+/* 0ACD:04F8: the forward key: moves the party one cell ahead (StepIfOpen(gPartyCell, gPartyDir),
+   then MoveParty), or runs MoveBlocked ("You can't go that way.") when the way is closed. Returns
+   the record's +4. */
+/*@ 0ACD:04F8 */ int MoveForward(struct Action far *action)
 {
-    int x = f0D1C_0080(gPartyCell, gFBCC);
+    int x = StepIfOpen(gPartyCell, gPartyDir);
 
     if (x != -1)
-        SetSoundVolume(x);
+        MoveParty(x);
     else
         MoveBlocked();
     return action->result;
 }
 
-/* 0ACD:0529: the same volume dispatch as 04F8 for page (gFBCC + 2) % 4. Returns the record's +4. */
-/*@ 0ACD:0529 */ int Action0529(struct Action far *action)
+/* 0ACD:0529: the backward key: as MoveForward along (gPartyDir + 2) % 4. Returns the record's +4. */
+/*@ 0ACD:0529 */ int MoveBackward(struct Action far *action)
 {
-    int page = (gFBCC + 2) % 4;
-    int x = f0D1C_0080(gPartyCell, page);
+    int page = (gPartyDir + 2) % 4;
+    int x = StepIfOpen(gPartyCell, page);
 
     if (x != -1)
-        SetSoundVolume(x);
+        MoveParty(x);
     else
         MoveBlocked();
     return action->result;
 }
 
-/* 0ACD:056C: steps the page gFBCC down (wrapping to 3), marks the page changed (gEFB2 = 0xff)
-   and sets gDF4C. Returns the record's +4. */
-/*@ 0ACD:056C */ int Action056C(struct Action far *action)
+/* 0ACD:056C: turns the party left: gPartyDir down (wrapping to 3), gEFB2 reset to 0xff, gDF4C set.
+   Returns the record's +4. */
+/*@ 0ACD:056C */ int TurnLeft(struct Action far *action)
 {
-    gFBCC--;
+    gPartyDir--;
     gEFB2 = 0xff;
-    if (gFBCC < 0)
-        gFBCC = 3;
+    if (gPartyDir < 0)
+        gPartyDir = 3;
     gDF4C = 1;
     return action->result;
 }
 
-/* 0ACD:0593: steps the page gFBCC up modulo 4, marks the page changed and sets gDF4C. Returns the
+/* 0ACD:0593: turns the party right: gPartyDir up modulo 4, gEFB2 reset to 0xff, gDF4C set. Returns
+   the record's +4. */
+/*@ 0ACD:0593 */ int TurnRight(struct Action far *action)
+{
+    gPartyDir++;
+    gEFB2 = 0xff;
+    gPartyDir %= 4;
+    gDF4C = 1;
+    return action->result;
+}
+
+/* 0ACD:05BA: the step-left key: as MoveForward along gPartyDir - 1 (wrapping to 3). Returns the
    record's +4. */
-/*@ 0ACD:0593 */ int Action0593(struct Action far *action)
+/*@ 0ACD:05BA */ int MoveLeft(struct Action far *action)
 {
-    gFBCC++;
-    gEFB2 = 0xff;
-    gFBCC %= 4;
-    gDF4C = 1;
-    return action->result;
-}
-
-/* 0ACD:05BA: the volume dispatch of 04F8 for page gFBCC - 1 (wrapping to 3). Returns the record's
-   +4. */
-/*@ 0ACD:05BA */ int Action05BA(struct Action far *action)
-{
-    int page = gFBCC - 1;
+    int page = gPartyDir - 1;
     int x;
 
     if (page < 0)
         page = 3;
-    x = f0D1C_0080(gPartyCell, page);
+    x = StepIfOpen(gPartyCell, page);
     if (x != -1)
-        SetSoundVolume(x);
+        MoveParty(x);
     else
         MoveBlocked();
     return action->result;
 }
 
-/* 0ACD:05FF: the volume dispatch of 04F8 for page (gFBCC + 1) % 4. Returns the record's +4. */
-/*@ 0ACD:05FF */ int Action05FF(struct Action far *action)
+/* 0ACD:05FF: the step-right key: as MoveForward along (gPartyDir + 1) % 4. Returns the record's +4. */
+/*@ 0ACD:05FF */ int MoveRight(struct Action far *action)
 {
-    int page = gFBCC + 1;
+    int page = gPartyDir + 1;
     int x;
 
     page %= 4;
-    x = f0D1C_0080(gPartyCell, page);
+    x = StepIfOpen(gPartyCell, page);
 
     if (x != -1)
-        SetSoundVolume(x);
+        MoveParty(x);
     else
         MoveBlocked();
     return action->result;
 }
 
-/* 0ACD:0644: the item-slot action: moves the item in the slot at `action` into or out of the
-   volume's list. It never reads the selected character gA99A. For slot 0 or 1 the volume is the
-   global gPartyCell; for a higher slot it is gPartyCell plus the per-page pageVolume[] adjustment
-   and the action only proceeds when the object there (gB894/g194B) has one of the bits 0, 1 or 3 set
-   (g194B[...] & 0xB). The per-page, per-slot kind is slotKind[]; a nonzero current item is queued in
-   the volume's list through InsertListItem (then RunMemberScript(vol, 4)), otherwise the first
+/* 0ACD:0644: the item-slot action: moves the item in the floor slot at `action` into or out of a
+   cell's item list. It never reads gInventoryMember. For slot 0 or 1 the cell is the party's,
+   gPartyCell; for a higher slot it is the cell ahead, gPartyCell plus stepOffset[gPartyDir] (-32, 1,
+   32, -1 as bytes, the same steps as gDirCellOffset), and the action only proceeds when the wall there (gMaze/gWallTypeFlags) has one of the bits 0, 1 or 3 set
+   (gWallTypeFlags[...] & 0xB). The per-page, per-slot kind is slotKind[]; a nonzero current item is queued in
+   the cell's list through InsertListItem (then RunCellScript(cell, 4)), otherwise the first
    matching entry of that list is removed through RemoveListItem and shown with SetMouseItem (then
-   RunMemberScript(vol, 8)). Any effect sets gDF4C. Returns 1. The two tables are local arrays
+   RunCellScript(cell, 8)). Any effect sets gDF4C. Returns 1. The two tables are local arrays
    initialised from constant lists, as the original copies them with F_SCOPY (0000:78C9) in the
    segment-first order that form produces (whitepaper 2.1.1). */
 /*@ 0ACD:0644 */ int Action0644(struct Action far *action)
 {
-    char pageVolume[4] = { 0xE0, 0x01, 0x20, 0xFF };
+    char stepOffset[4] = { 0xE0, 0x01, 0x20, 0xFF };
     char slotKind[4][4] = {
         { 0, 1, 2, 3 },
         { 1, 3, 0, 2 },
@@ -544,29 +541,29 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
         { 2, 0, 3, 1 },
     };
     register int slot;
-    register int vol;
+    register int cell;
     int removed;
 
     slot = action->slot;
     if (slot < 2) {
-        vol = gPartyCell;
+        cell = gPartyCell;
     } else {
-        vol = gPartyCell + pageVolume[gFBCC];
-        if (!(g194B[gB894[vol * 9 + gA9C6]] & 0xB))
+        cell = gPartyCell + stepOffset[gPartyDir];
+        if (!(gWallTypeFlags[gMaze[cell * 9 + gA9C6]] & 0xB))
             return 1;
     }
     /* one register variable: slot is reused to hold the per-page kind, as the original does. */
-    slot = slotKind[gFBCC][slot];
+    slot = slotKind[gPartyDir][slot];
     if (GetCurrentItem() == 0) {
-        removed = RemoveListItem((void far *)(gB899 + vol * 9), slot, -1);
+        removed = RemoveListItem((void far *)(gMazeItems + cell * 9), slot, -1);
         if (removed) {
-            RunMemberScript(vol, 8);
+            RunCellScript(cell, 8);
             SetMouseItem(removed);
             gDF4C = 1;
         }
     } else {
-        InsertListItem((void far *)(gB899 + vol * 9), vol, GetCurrentItem(), slot);
-        RunMemberScript(vol, 4);
+        InsertListItem((void far *)(gMazeItems + cell * 9), cell, GetCurrentItem(), slot);
+        RunCellScript(cell, 4);
         SetMouseItem(0);
         gDF4C = 1;
     }
@@ -620,10 +617,10 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
     }
     item = GetCurrentItem();
     if (gTable8DD2[item].m02 == 0x1F || gTable8DD2[item].m02 == 0x31) {
-        if (rec->m23 + gTable8DD2[item].m0B > 100)
-            rec->m23 = 100;
+        if (rec->food + gTable8DD2[item].m0B > 100)
+            rec->food = 100;
         else
-            rec->m23 += gTable8DD2[item].m0B;
+            rec->food += gTable8DD2[item].m0B;
         gTable8DD2[item].m04 = -1;
         SetMouseItem(0);
         DrawMemberFood(index);
@@ -633,23 +630,23 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
     }
 }
 
-/* 0ACD:08D1: eats for the selected character gA99A. Returns the record's +4. */
+/* 0ACD:08D1: eats for the selected character gInventoryMember. Returns the record's +4. */
 /*@ 0ACD:08D1 */ int Action08D1(struct Action far *action)
 {
-    EatFood(gA99A);
+    EatFood(gInventoryMember);
     return action->result;
 }
 
-/* 0ACD:08E7: Purpose unknown: derives a key from gPartyCell and gFBCC (f0D1C_00DA), sets
-   gEFD2 to 0xff, passes the key and the page to DispatchSlotHandler and the selected character gA99A to
+/* 0ACD:08E7: Purpose unknown: derives a key from gPartyCell and gPartyDir (StepCell), sets
+   gEFD2 to 0xff, passes the key and the page to DispatchSlotHandler and the selected character gInventoryMember to
    ComputeArmourClass. */
 /*@ 0ACD:08E7 */ void Action08E7(void)
 {
-    int x = f0D1C_00DA(gPartyCell, gFBCC);
+    int x = StepCell(gPartyCell, gPartyDir);
 
     gEFD2 = 0xff;
-    DispatchSlotHandler(x, gFBCC);
-    ComputeArmourClass(gA99A);
+    DispatchSlotHandler(x, gPartyDir);
+    ComputeArmourClass(gInventoryMember);
 }
 
 /* 0ACD:091C: the "turn" action, a switch over the four-entry jump table at 0ACD:09E7 (cases 1 and
@@ -662,7 +659,7 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
    form makes the compiler cross-jump the two gF51A stores (the original keeps them apart). */
 /*@ 0ACD:091C */ void Turn091C(int how)
 {
-    int old = gA99A;
+    int old = gInventoryMember;
 
     switch (how) {
     case 0:
@@ -670,34 +667,34 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
             gF51A = 0;
         else {
             do {
-                gA99A -= 2;
-                if (gA99A < 0)
-                    gA99A += 6;
-            } while (!MemberIs(gA99A, 1));
+                gInventoryMember -= 2;
+                if (gInventoryMember < 0)
+                    gInventoryMember += 6;
+            } while (!MemberIs(gInventoryMember, 1));
             gF51A = 1;
         }
         break;
     case 1:
     case 3:
-        if (MemberIs(gA99A, 1))
-            gA99A ^= 1;
+        if (MemberIs(gInventoryMember, 1))
+            gInventoryMember ^= 1;
         break;
     case 2:
         if (!gF51A)
             gF51A = 1;
         else {
             do {
-                gA99A += 2;
-                if (gA99A > 5)
-                    gA99A -= 6;
-            } while (!MemberIs(gA99A, 1));
+                gInventoryMember += 2;
+                if (gInventoryMember > 5)
+                    gInventoryMember -= 6;
+            } while (!MemberIs(gInventoryMember, 1));
             gF51A = 0;
         }
         break;
     }
     RedrawMember(old);
-    if (gA99A != old)
-        RedrawMember(gA99A);
+    if (gInventoryMember != old)
+        RedrawMember(gInventoryMember);
 }
 
 /* 0ACD:09EF: sets the selected action row gF51A from the four-byte table g36D0[old * 4 + dir] and
@@ -719,7 +716,7 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
 {
     if (gDCAA == 5)
         return;
-    switch (gFB44) {
+    switch (gPanelMode) {
     case 0:
         Turn091C(dir);
         goto done;
@@ -730,23 +727,23 @@ done:
     return;
 }
 
-/* 0ACD:0A61: the list move/use handler. In mode 2 (gFB44 == 2) or the rest phase (gDCAA == 5) it
-   only recomputes the armour class of gA99A (ComputeArmourClass, 0DE8:0D5E). Otherwise it takes the
+/* 0ACD:0A61: the list move/use handler. In mode 2 (gPanelMode == 2) or the rest phase (gDCAA == 5) it
+   only recomputes the armour class of gInventoryMember (ComputeArmourClass, 0DE8:0D5E). Otherwise it takes the
    current item (GetCurrentItem, or RemoveListItem over the character's +0x97 sub-table at row 0x10) and
    gives up without redrawing when the item's flags have bit 0x20 or the item is 0. It then computes
-   the per-page value g373C[gFBCC * 2 + g3744[gA99A]]: `used` zero runs InsertListItem over the
-   volume's ds:B899 record list and RunMemberScript, otherwise AddDDEffect returns whether the use
+   the per-page value g373C[gPartyDir * 2 + g3744[gInventoryMember]]: `used` zero runs InsertListItem over the
+   cell's gMazeItems list and RunCellScript, otherwise AddDDEffect returns whether the use
    took effect. On success it clears the mouse item (SetMouseItem(0)) or, when the mouse is disabled
-   and the row is 0x10, redraws the member (RedrawMember(gA99A)), and sets gDF4C and gEFB2; on no
+   and the row is 0x10, redraws the member (RedrawMember(gInventoryMember)), and sets gDF4C and gEFB2; on no
    effect at row 0x10 it runs InsertListItem over the character's +0x97 table. Always recomputes the
-   armour class of gA99A at the end. */
+   armour class of gInventoryMember at the end. */
 /*@ 0ACD:0A61 */ void MoveListItem(int used)
 {
     int item;
     int flag;
     int value;
 
-    if (gFB44 == 2)
+    if (gPanelMode == 2)
         goto call;
     if (gDCAA == 5)
         goto call;
@@ -755,49 +752,49 @@ done:
         if (gTable8DD2[item].flags & 0x20)
             return;
     } else {
-        item = RemoveListItem((void far *)gChars[gA99A].m97, 0, -1);
+        item = RemoveListItem((void far *)gChars[gInventoryMember].m97, 0, -1);
     }
     if (item == 0)
         return;
     flag = 1;
-    value = g3744[gA99A];
-    value = g373C[gFBCC * 2 + value];
+    value = g3744[gInventoryMember];
+    value = g373C[gPartyDir * 2 + value];
     if (used == 0) {
-        InsertListItem((void far *)(gB899 + gPartyCell * 9), gPartyCell, item, value);
-        RunMemberScript(gPartyCell, 4);
+        InsertListItem((void far *)(gMazeItems + gPartyCell * 9), gPartyCell, item, value);
+        RunCellScript(gPartyCell, 4);
     } else {
-        flag = AddDDEffect(gA99A, item, gPartyCell, value, gFBCC, gTable8DD2[item].m02);
+        flag = AddDDEffect(gInventoryMember, item, gPartyCell, value, gPartyDir, gTable8DD2[item].m02);
     }
     if (flag != 0) {
         if (gMouseDisabled == 0 || gF51A != 0x10)
             SetMouseItem(0);
         else
-            RedrawMember(gA99A);
+            RedrawMember(gInventoryMember);
         gDF4C = 1;
         gEFB2 = 0xff;
     } else {
         if (gF51A == 0x10)
-            InsertListItem((void far *)gChars[gA99A].m97, 0xFFFE, item, 0);
+            InsertListItem((void far *)gChars[gInventoryMember].m97, 0xFFFE, item, 0);
     }
 call:
-    ComputeArmourClass(gA99A);
+    ComputeArmourClass(gInventoryMember);
 }
 
-/* 0ACD:0BA6: the list pick handler. It takes the item list for the current volume (or, when that
-   list is empty, for the key from f0D1C_00DA) and scans up to five pages: while gF3BA is -1 it
+/* 0ACD:0BA6: the list pick handler. It takes the item list of the party's cell (or, when that
+   list is empty, of the cell ahead, from StepCell) and scans up to five pages: while gF3BA is -1 it
    steps the page byte gEFB2 up (wrapping 0..3) and counts the pages, and when gEFB2 is -1 (no page
-   chosen yet) it first clears gF3BA to -1. It picks the page's volume from f0D1C_00DA when
-   g374A[gEFB2] is set, and asks RemoveListItem for the first item of that volume's ds:B899 record
-   list with the kind g1A1B[gFBCC * 4 + gEFB2]. A fresh item (nonzero and not the one gF3BA already
+   chosen yet) it first clears gF3BA to -1. It picks the cell ahead (StepCell) when
+   g374A[gEFB2] is set, and asks RemoveListItem for the first item of that cell's gMazeItems
+   list with the kind g1A1B[gPartyDir * 4 + gEFB2]. A fresh item (nonzero and not the one gF3BA already
    holds) sets the local flag (which ends the page loop) and is tested with CanPlaceItemInSlot (a check that
    returns whether the character may wear the item type, 0BD2:0AF2), then is shown: at row 0x10, when
    the check passes it is inserted into the character's own list with InsertListItem and the member is
-   redrawn, otherwise it is pushed into the volume's list with PushListItem and RunMemberScript; at
+   redrawn, otherwise it is pushed into the cell's list with PushListItem and RunCellScript; at
    any other row, when the check passes it goes onto the mouse with SetMouseItem (a second item
-   already held is pushed back into the volume's list first), otherwise it is pushed into the
-   volume's list. It sets gDF4C and stops. A
+   already held is pushed back into the cell's list first), otherwise it is pushed into the
+   cell's list. It sets gDF4C and stops. A
    repeated item (nonzero and equal to gF3BA) is inserted back with InsertListItem and a zero item
-   runs nothing, both clearing gF3BA. It recomputes the armour class of gA99A (ComputeArmourClass,
+   runs nothing, both clearing gF3BA. It recomputes the armour class of gInventoryMember (ComputeArmourClass,
    0DE8:0D5E) at the end. The success path is a positive `if (item != 0 && item != gF3BA)` with the
    miss path as its `else`: with a `goto miss` the compiler stores the register variable item from DI
    at 0ACD:0C7F, but the original stores it from AX, which the if/else form produces. */
@@ -807,12 +804,12 @@ call:
     int value;
     int count;
     int cur;
-    int vol;
+    int cell;
     int item;
 
-    vol = gPartyCell;
-    if (*(int *)(gB899 + vol * 9) == 0) {
-        if (*(int *)(gB899 + f0D1C_00DA(vol, gFBCC) * 9) == 0)
+    cell = gPartyCell;
+    if (*(int *)(gMazeItems + cell * 9) == 0) {
+        if (*(int *)(gMazeItems + StepCell(cell, gPartyDir) * 9) == 0)
             goto done;
     }
     count = 0;
@@ -825,54 +822,54 @@ call:
             count++;
         }
         if (g374A[gEFB2] != 0)
-            vol = f0D1C_00DA(gPartyCell, gFBCC);
+            cell = StepCell(gPartyCell, gPartyDir);
         else
-            vol = gPartyCell;
-        value = g1A1B[gFBCC * 4 + gEFB2];
-        item = RemoveListItem((void far *)(gB899 + vol * 9), value, -1);
+            cell = gPartyCell;
+        value = g1A1B[gPartyDir * 4 + gEFB2];
+        item = RemoveListItem((void far *)(gMazeItems + cell * 9), value, -1);
         if (item != 0 && item != gF3BA) {
             flag = 1;
             if (gF3BA == -1)
                 gF3BA = item;
             if (gF51A != 0x10) {
                 cur = GetCurrentItem();
-                if (CanPlaceItemInSlot(item, gA99A, gF51A)) {
+                if (CanPlaceItemInSlot(item, gInventoryMember, gF51A)) {
                     if (cur != 0) {
-                        PushListItem(vol, cur, value);
-                        RunMemberScript(vol, 4);
+                        PushListItem(cell, cur, value);
+                        RunCellScript(cell, 4);
                     }
                     SetMouseItem(item);
                 } else {
-                    PushListItem(vol, item, value);
-                    RunMemberScript(vol, 4);
+                    PushListItem(cell, item, value);
+                    RunCellScript(cell, 4);
                 }
             } else {
-                if (CanPlaceItemInSlot(item, gA99A, gF51A)) {
-                    InsertListItem((void far *)gChars[gA99A].m97, 0xFFFE, item, 0);
-                    RedrawMember(gA99A);
+                if (CanPlaceItemInSlot(item, gInventoryMember, gF51A)) {
+                    InsertListItem((void far *)gChars[gInventoryMember].m97, 0xFFFE, item, 0);
+                    RedrawMember(gInventoryMember);
                 } else {
-                    PushListItem(vol, item, value);
-                    RunMemberScript(vol, 4);
+                    PushListItem(cell, item, value);
+                    RunCellScript(cell, 4);
                 }
             }
             gDF4C = 1;
         } else {
             if (item != 0) {
-                InsertListItem((void far *)(gB899 + vol * 9), vol, item, value);
-                RunMemberScript(vol, 4);
+                InsertListItem((void far *)(gMazeItems + cell * 9), cell, item, value);
+                RunCellScript(cell, 4);
             }
             gF3BA = -1;
         }
     } while (flag == 0 && count < 5);
 done:
-    ComputeArmourClass(gA99A);
+    ComputeArmourClass(gInventoryMember);
 }
 
 /* 0ACD:0D9D: the key dispatcher for the map screen. It acts only while the mouse is disabled and
    outside the rest phase (gDCAA != 5). Keys 0x12/0x20/0x2e/0x1f set the direction dir 0/1/2/3, key
-   0x34 runs Action08E7, key 0x17 calls UseItemSlot(gA99A, gF51A), keys 0x21 and 0x15 call
+   0x34 runs Action08E7, key 0x17 calls UseItemSlot(gInventoryMember, gF51A), keys 0x21 and 0x15 call
    MoveListItem(0) and MoveListItem(1) and key 0x23 calls PickListItem (0ACD:0BA6). The four action
-   cases are skipped in mode 2 (gFB44 == 2), and a direction set is passed to Action0A34 unless the
+   cases are skipped in mode 2 (gPanelMode == 2), and a direction set is passed to Action0A34 unless the
    mode is 2. */
 /*@ 0ACD:0D9D */ void Action0D9D(int key)
 {
@@ -888,19 +885,19 @@ done:
         Action08E7();
         break;
     case 0x17:
-        if (gFB44 != 2)
-            UseItemSlot(gA99A, gF51A);
+        if (gPanelMode != 2)
+            UseItemSlot(gInventoryMember, gF51A);
         break;
     case 0x21:
-        if (gFB44 != 2)
+        if (gPanelMode != 2)
             MoveListItem(0);
         break;
     case 0x15:
-        if (gFB44 != 2)
+        if (gPanelMode != 2)
             MoveListItem(1);
         break;
     case 0x23:
-        if (gFB44 != 2)
+        if (gPanelMode != 2)
             PickListItem();
         break;
     case 0x12:
@@ -918,7 +915,7 @@ done:
     }
     if (dir == -1)
         return;
-    if (gFB44 == 2)
+    if (gPanelMode == 2)
         return;
     Action0A34(dir);
 }
@@ -935,9 +932,10 @@ done:
 
 /* 0ACD:0E8A: the map timeout/encounter loop, run from the start-up after the item tables are
    loaded. It arms the timeout gFC5A from one (1d10 + 3) roll times 0x12 plus the 32-bit counter
-   g8492, enters the map screen, then loops: saves the volume, services the key dispatcher
+   g8492, enters the map screen, then loops: saves the party's cell, services the key dispatcher
    (Action0E6C) and RunEffects, runs the overlay effect when gDF4C is set, and when gFC5A has run
-   below g8492 while gFBC8 is in 1..3 re-arms the timeout and plays the volume-bumped sound 0x1E.
+   below g8492 while gFBC8 is in 1..3 re-arms the timeout and plays sound 0x1E at a cell near the party
+   (gPartyCell plus 0 to 11).
    Each pass plays the default sound and runs TurnUndead. */
 /*@ 0ACD:0E8A */ void RunMapLoop(void)
 {
@@ -982,12 +980,12 @@ done:
     }
     NoOp2039();
     gFlag = 0;
-    gA99A = 0;
+    gInventoryMember = 0;
     gDCAA = 1;
     BuildList1();
     LoadScreenImage("PLAYFLD", (char far *)gSheetDECORATE, 5, 3, 0);
     LoadScreenImage("INVENT", (char far *)gSheet2067, 5, 3, 2);
-    SetFont(gA9C0);
+    SetFont(gFont6x6);
     gStatusLine = 0;
     RedrawCharacters();
     DrawViewFrame(1);
@@ -996,13 +994,13 @@ done:
 }
 
 /* 0ACD:1033: resets the map screen to its initial state: loads map level 1 (LoadMapScreen,
-   ovl3:0A7C), sets gPartyCell to 0x1EA and the page gFBCC to 0, and clears the mouse item
+   ovl3:0A7C), sets gPartyCell to 0x1EA and the page gPartyDir to 0, and clears the mouse item
    (SetMouseItem(0)) when the mouse is enabled. */
 /*@ 0ACD:1033 */ void ResetMapScreen(void)
 {
     LoadMapScreen(1);
     gPartyCell = 0x1EA;
-    gFBCC = 0;
+    gPartyDir = 0;
     if (!gMouseDisabled)
         SetMouseItem(0);
 }
