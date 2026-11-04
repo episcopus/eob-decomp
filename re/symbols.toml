@@ -7607,7 +7607,7 @@ size = 13
 evidence = ["far", "segment"]
 level = "L2"
 match_flags = "tasm /mx"
-review = "passed 2026-11-01 rev-sonnet"
+review = "passed 2026-11-04 p6-rev-2"
 name = "IsInVerticalRetrace"
 
 [[function]]
@@ -7618,7 +7618,7 @@ size = 44
 evidence = ["far", "frame"]
 level = "L2"
 match_flags = "tasm /mx"
-review = "passed 2026-11-01 rev-sonnet"
+review = "passed 2026-11-04 p6-rev-2"
 name = "WaitRetrace"
 
 [[function]]
