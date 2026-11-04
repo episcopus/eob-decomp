@@ -1,10 +1,35 @@
 # Review: e0de8
 
-Reviewer: rev-haiku
-Commit reviewed: 5529429 (round 3: src/E0DE8.C at e7f5f0c; round 2 reviewed 64798e7; round 1 reviewed a3d753d)
+Reviewer: p6-rev-6
+Commit reviewed: ce0608f (HEAD; the previous round read 5529429)
 
 Playbook 70. Judge what a matching file can still get wrong: names, types, comments, structure.
 The matcher already proved the bytes; do not re-prove them, read for meaning.
+
+## Round P6 (2026-11-04), commit ce0608f
+
+Judged: the changes since 5529429 in src/E0DE8.C (543 lines), the e0de8 entries in re/symbols.toml,
+and the e0de8 entries in re/renames.toml and re/fields.toml. The matcher still proves 20 of 20
+functions; `make readability UNIT=e0de8` 0 findings. The previous round's must-fix items are fixed
+and stay ticked; no new must-fix.
+
+- [ ] should: the comments still use the old item and character field names in several places:
+  `m02` for the ItemRecord `type` in ApplyItemAttack (:271), MoveCarriedItem (:279), UseItemByKind
+  (:347) and UseItem (:395); `m0B` for the ItemRecord `value` in ComputeArmourClass (:660); `m0E`
+  for the ItemType `m0E.word` in ComputeArmourClass (:663); `m01` for the CharRec `status` in
+  DamageCharacter and ApplyStatusEffect; `mE2`, `mE3` and `m77` for `damageReduction`, `effectFlags`
+  and `items`. Use the new field names so one word names one thing.
+- [ ] should: the gViewFrontSide `why` cites "src/E122E.C:104"; the line is a stale file line cite
+  in another unit's file. Cite the address 122E:xxxx instead.
+- [ ] note: the P6 names are backed by detailed `why` entries: gViewToCellPos (ds:1A1B), gViewRelativePos
+  (ds:1A2B), gClassSlotCount (ds:115F), gClassBaseBits (ds:1231), gWallHandlerIndex (ds:1905),
+  gLauncherAmmoType (ds:552F), gArmourSlots (ds:553E), EndInvisibility (0EF3:12A1), RollMemberSave
+  (0D1C:059B), IsWeaponDamageHalved (0D1C:0BEB), gPanelHighlight (ds:FB4C), gPanelShadow (ds:F53A)
+  and gPanelFillColour (ds:F57E).
+- [ ] note: the previous Round 2 should called g1A1B "the sound ids"; the P6 name gViewToCellPos
+  says "Not a sound table" and the table values back it. The owner's AddDDEffect comment
+  (src/E0BD2.C:506) still calls the fourth argument a sound kind, which is the contradiction to
+  resolve in E0BD2's review, not here.
 
 ## Round 3 (5529429)
 
