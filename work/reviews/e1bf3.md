@@ -1,12 +1,43 @@
 # Review: e1bf3
 
-Reviewer: rev-sonnet
-Commit reviewed: af6af1dd6cfefe54987a3e1774dbeff10dedab70
+Reviewer: p6-rev-3 (round P6; round 1 by rev-sonnet)
+Commit reviewed: ce0608f (round P6, 2026-11-04; diffed against af6af1dd6cfefe54987a3e1774dbeff10dedab70, round 1's commit).
 
 Playbook 70. Judge what a matching file can still get wrong: names, types, comments, structure.
 The matcher already proved the bytes; do not re-prove them, read for meaning.
 
 ## Findings
+
+### Round P6 (p6-rev-3, 2026-11-04, commit ce0608f)
+
+Judged: round 1 had no must-fix (four shoulds and four notes; the shoulds are still open below), and
+what changed since af6af1d (`git diff af6af1d..ce0608f -- src/E1BF3.ASM re/symbols.toml
+re/globals.toml`). The diff is names only: the four `_f1BF3_*` placeholders became
+_PadBeforePlacePointer (1BF3:000D), _PlacePointer (1BF3:000E), _MovePointerTo (1BF3:0087) and
+_MovePointerBy (1BF3:00A8), and the two E1BBE callees `_f1BBE_0002`/`_f1BBE_00ED` became
+_HidePointer/_ShowPointer. No instruction or operand changed. `make match FILE=src/E1BF3.ASM` 4 of 4
+(196 bytes); `make readability UNIT=e1bf3` 0 findings; `make names UNIT=e1bf3` 0 placeholders.
+
+The new names are true and recorded in re/renames.toml: 000E clamps (CX, DX) to ds:814C..814E and
+ds:8150..8152, stores gCursorX/gCursorY, moves the INT 33h cursor (function 4) and redraws through
+the save/HidePointer/ShowPointer/restore bracket, so PlacePointer says what it does; 0087 sets the
+cursor to (x, y) under the busy flag and calls it (MovePointerTo); 00A8 adds a delta to
+gCursorX/gCursorY and calls it (MovePointerBy); 000D is the lone 00 pad before the even entry, named
+like _PadBeforeHidePointer in E1BBE.ASM and _PadBeforeUnpack0 in E1BA8.ASM. _HidePointer/_ShowPointer
+are the real E1BBE function names. The old "Placeholder names" note is resolved by the rename.
+
+Notes (not blocking):
+
+- note src/E1BF3.ASM:13-14: the EXTRN lines now name _HidePointer and _ShowPointer; their comments
+  are still just the addresses (1BBE:0002, 1BBE:00ED). A one-line role note would make the file read
+  on its own, but the names are self-explanatory.
+- note the round 1 notes stand: 1BF3:0087 has no direct caller in the resident image (only 00A8 has
+  callers, 0EF3:1069 and 0EF3:10AE), the busy flag ds:812E is a spin lock with no timeout, and the
+  000D pad is the segment's word alignment.
+- note the source now uses the real E1BBE names; the four shoulds in round 1 are the remaining wording
+  items in this file, unchanged by P6.
+
+## Round 1 (rev-sonnet, af6af1d)
 
 - [ ] should src/E1BF3.ASM:5-6: "(with the two arguments at ds:8172/8174)" reads as two separate arguments. E1BB1.ASM (its writer of the same globals) calls them one far pointer (8172 offset, 8174 segment), and the code here pushes 8174 then 8172 and cleans up 4 bytes (`add sp, 4`, 1BF3:0063), which is one far pointer passed to the function at ds:80AA. Say "the far pointer at ds:8172/8174".
 - [ ] should src/E1BF3.ASM:4-7: the header says the pointer is redrawn "when the position changed" but never says changed from what. The test (1BF3:0054..005B) compares ds:8138/813A with ds:815C/815E. Those are the last drawn position: 1BBE:0111..0124 copies 8138/813A into 815C/815E, and the mouse handler at 1A72:0221..022F makes the same comparison. Name them in the header ("compared with the position last drawn, ds:815C/815E").
