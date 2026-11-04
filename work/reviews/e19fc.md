@@ -1,8 +1,34 @@
 # Review: e19fc
 
-Reviewer: rev-haiku
-Commit reviewed: af827ef (main); src/E19FC.ASM, re/symbols.toml and re/renames.toml are the same at
-9f13115, the review/e19fc worktree HEAD.
+Reviewer: p6-rev-2
+Commit reviewed: 56564f47340d5ac4b21eb3c1aff893ca9e08d024 (P6 round; earlier rounds read through 0236171)
+
+## Round P6 (2026-11-04), commit 56564f47340d5ac4b21eb3c1aff893ca9e08d024
+
+Judged the diff 0236171..56564f4 on src/E19FC.ASM: _f19FC_0007 -> _PadBeforeCompressLcw for
+the lone 00 byte at 19FC:0007, and the marker comment updated.
+
+Evidence checked against re/renames.toml (19FC:0007=PadBeforeCompressLcw; no struct field in
+re/fields.toml). The WHY says the byte is the first byte of segment 19FC after the 19F3 unit's
+retf, before CompressLcw's push bp at the even 19FC:0008, and whitepaper 2.6 shows this db 0
+form is a word-alignment pad. That matches the code: the byte is db 0, the function starts at
+19FC:0008, and the previous rounds established the segment boundary. The name is true.
+
+- [ ] should (carried) src/E19FC.ASM:3: "Its only caller is ovl3:0FD1" states more than the byte
+  search shows; the round 7 wording fix still applies.
+- [ ] should (carried) src/E19FC.ASM:111-112: the reuse of bp as the end-of-source pointer is
+  still not stated in the function comment; the round 7 fix still applies.
+- [ ] note re/renames.toml: the WHY of 19FC:0008=CompressLcw still calls the marker byte
+  "_f19FC_0007"; the new name is _PadBeforeCompressLcw. The evidence is otherwise right.
+- [ ] note re/symbols.toml: the 19FC:0007 notes still call it "the segment-start marker byte
+  (data, not code)" while the name says Pad; the round 7 note about trimming the process
+  history still applies.
+- [ ] note The rename log records 19FC:0007 as kind "function"; the symbol is a data byte
+  (src/E19FC.ASM:77-79, PUBLIC ... LABEL BYTE then db 0). The name and comment say data; the
+  kind field is a registry category, not a code claim.
+
+No open must-fix. The new name is backed by the WHY and whitepaper 2.6, and the changed comment
+matches the code.
 
 Playbook 70. Judge what a matching file can still get wrong: names, types, comments, structure.
 The matcher already proved the bytes; do not re-prove them, read for meaning.

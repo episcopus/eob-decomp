@@ -6298,8 +6298,8 @@ evidence = ["segment"]
 level = "L2"
 match_flags = "tasm /mx"
 notes = "the segment-start marker byte (data, not code); CompressLcw follows at 19FC:0008 (see e19fc_0008)"
-review = "passed 2026-11-01 rev-haiku"
 name = "PadBeforeCompressLcw"
+review = "passed 2026-11-04 p6-rev-2"
 
 [[function]]
 id = "e19fc_0008"
@@ -6311,7 +6311,7 @@ name = "CompressLcw"
 level = "L2"
 match_flags = "tasm /mx"
 notes = "split by hand from the map's single entry at 19FC:0007: the map's start is the marker byte (_f19FC_0007), the code begins at 19FC:0008 (the 55 8B EC frame), which functions.py did not see because the byte before it is not a ret; not produced by make map"
-review = "passed 2026-11-01 rev-haiku"
+review = "passed 2026-11-04 p6-rev-2"
 
 [[function]]
 id = "e1a16_000b"
