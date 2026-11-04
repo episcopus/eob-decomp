@@ -7035,9 +7035,9 @@ size = 1
 evidence = ["segment"]
 level = "L2"
 match_flags = "tasm /mx"
-review = "passed 2026-11-01 rev-sonnet"
 notes = "not a function: bytes of the unit outside its functions (a marker or padding), matched with the whole unit"
 name = "PadBeforePlacePointer"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e1bf3_000e"
@@ -7047,8 +7047,8 @@ size = 121
 evidence = ["near"]
 level = "L2"
 match_flags = "tasm /mx"
-review = "passed 2026-11-01 rev-sonnet"
 name = "PlacePointer"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e1bf3_0087"
@@ -7058,8 +7058,8 @@ size = 33
 evidence = ["frame"]
 level = "L2"
 match_flags = "tasm /mx"
-review = "passed 2026-11-01 rev-sonnet"
 name = "MovePointerTo"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e1bf3_00a8"
@@ -7069,8 +7069,8 @@ size = 41
 evidence = ["far", "frame"]
 level = "L2"
 match_flags = "tasm /mx"
-review = "passed 2026-11-01 rev-sonnet"
 name = "MovePointerBy"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e1c00_0001"
