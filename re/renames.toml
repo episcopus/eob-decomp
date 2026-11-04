@@ -10134,3 +10134,21 @@ new = "gDialogWindowFill"
 kind = "global"
 why = "ds:0139 is gRegions[9].textAttr2 (ds:009F + 9*16 + 0xA); CharOverlay (ovl5:1A82) stores gPanelFillColour in it just before SetTextWindow(9), the full-width lower window (1, 125, 38, 63) its portrait encounter panels such as TemplePanel and FreeHimPanel talk in."
 date = "2026-11-03"
+
+[[rename]]
+id = "ds:DCAA=gMapPhase"
+addr = "ds:DCAA"
+old = "gMenuPhase"
+new = "gMapPhase"
+kind = "global"
+why = "ds:DCAA: EnterMapScreen 0ACD:0F72 stores 1 and the uncalled 0ACD:0753 steps it 1, 2; the tests for 5 at 0ACD:0A34, 0A61 and 0D9D never fire since no code stores 5 (every reference in EOB.EXE and its overlays read from the bytes); the rest-phase reading is withdrawn"
+date = "2026-11-04"
+
+[[rename]]
+id = "0ACD:0753=StepMapPhase"
+addr = "0ACD:0753"
+old = "StepMenuPhase"
+new = "StepMapPhase"
+kind = "function"
+why = "0ACD:0753 steps gMapPhase (ds:DCAA) 1, 2, 1 and moves the cursor; nothing calls it (no near call and no stored far pointer in EOB.EXE or its overlays)"
+date = "2026-11-04"

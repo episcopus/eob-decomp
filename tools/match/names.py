@@ -30,6 +30,7 @@ import rename  # noqa: E402
 SRC = ROOT / "src"
 FIELD_PLACEHOLDER = re.compile(r"^(?:[mbwd]_?[0-9A-Fa-f]{1,3}|unk\w*|field\d*|f[0-9A-F]{2,})$")
 PAD = re.compile(r"^(?:pad|_pad|gap|res|reserved)\w*$")
+INCLUDE = re.compile(r'^#include\s+"EOB\.H"', re.M)
 STRUCT = re.compile(r"^(struct|union)\s+(\w+)\s*\{([^{}]*)\}\s*;", re.M)
 SIZES = {"char": 1, "signed char": 1, "unsigned char": 1, "int": 2, "unsigned": 2, "unsigned int": 2,
          "short": 2, "unsigned short": 2, "signed int": 2, "long": 4, "unsigned long": 4, "signed long": 4}
@@ -113,6 +114,10 @@ def inventory() -> dict:
             addr = rename.PREFIX.get(rename.program_of(p), "") + rename.norm(m.group(1))
             owner.setdefault(addr, p)
     places: dict[Path, dict[str, list]] = {p: {"functions": [], "globals": [], "fields": []} for p in files}
+    header = SRC / "EOB.H"                    # the shared structs (playbook 65): its fields count once, there
+    if header.exists():
+        texts[header] = header.read_text()
+        places[header] = {"functions": [], "globals": [], "fields": []}
     shared = []
     for addr, names in by_addr.items():
         if any(not is_placeholder(n, addr) for n in names.values()):
@@ -124,9 +129,7 @@ def inventory() -> dict:
             places[p][kind].append((addr, names[p] if p in names else next(iter(names.values())), len(names)))
         shared.append((len(names), kind, addr, sorted(set(names.values())), sorted(q.stem for q in names)))
     structs: dict[tuple[str, int], dict[str, set]] = {}
-    for p in files:
-        if p.suffix.upper() != ".C":
-            continue
+    for p in [q for q in files if q.suffix.upper() == ".C"] + ([header] if header.exists() else []):
         for sname, fields in struct_fields(texts[p]):
             whole = len(fields) == 1          # one array over the whole record: a byte view, not a layout
             for at, fname in fields:

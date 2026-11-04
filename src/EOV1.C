@@ -53,24 +53,7 @@
 #define KEY_CONFIRM_B 0x3d
 #define KEY_CONFIRM_C 0x61
 
-/* the 60-byte screen list node (src/E0CF7.C, src/EOV0.C); only the fields this unit sets are named */
-struct Node {
-    struct Node far *next;      /* +00 */
-    unsigned key;               /* +04: the sort key ListAdd compares */
-    unsigned key06;             /* +06: the first key word the dispatcher matches */
-    unsigned key08;             /* +08: the second key word the dispatcher matches */
-    char pad0A[0x0E - 0x0A];
-    unsigned flags;             /* +0E: the inactive bit and the layout bits */
-    char pad10[0x1E - 0x10];
-    int x;                      /* +1E: box left */
-    int y;                      /* +20: box top */
-    unsigned width;             /* +22: box width */
-    unsigned height;            /* +24: box height */
-    char pad26[0x34 - 0x26];
-    struct ButtonDef far *def;    /* +34: the definition record the node was built from */
-    unsigned defFlags;          /* +38: a copy of def->flags */
-    char pad3A[0x3c - 0x3A];
-};
+#include "EOB.H"
 
 /* the 9-byte button definitions at 208E:0000: a label message, a box, a key word and flag bits
    (ovl1:1153 builds one node from each; ovl1:1551 draws it) */
@@ -96,44 +79,10 @@ struct Menu {
     signed char colour;         /* +4: the colour of the message */
 };
 
-struct Region {                 /* 16-byte records at ds:009F (src/E1DE7.C) */
-    int left;
-    int top;
-    int width;
-    int height;
-    int textAttr1;
-    int textAttr2;                  /* +0A: the fill colour */
-    int textCol;
-    int textRow;
-};
-
 extern struct Region gRegions[]; /*@ ds:009F */
 extern struct Menu gMenus[]; /*@ ds:628C */
 extern struct ButtonDef far gButtonDefs[]; /*@ 208E:0000 */
 struct ActRec;
-struct CharRec {                /* the 243-byte character records at ds:F580 (src/E0A72.C) */
-    char pad00;
-    unsigned char status;       /* +01: bit 0 set while the slot holds a character (0D1C:0670) */
-    char pad02[0x13 - 0x02];
-    signed char wisdom;         /* +13: the score ovl1:097A turns into a bonus-spell row (gClericWisdomBonus) */
-    char pad14[0x1B - 0x14];
-    signed char hp;             /* +1B: current hit points */
-    char pad1C[0x20 - 0x1C];
-    signed char classIndex;     /* +20: an index into the per-class tables (gClassBaseBits, 0A72:007B) */
-    char pad21[0x23 - 0x21];
-    unsigned char food;         /* +23: the food value EatFood clamps (src/E0ACD.C) */
-    signed char levels[3];      /* +24: the level in each class slot (src/E0A72.C) */
-    char pad27[0x37 - 0x27];
-    signed char mageSpells[30];      /* +37: the mage's spell slots: a spell number, negative while it is
-                                   still to be memorised (src/EOV6.C) */
-    signed char clericSpells[30];  /* +55: the cleric's spell slots, the same way */
-    long spellBook;             /* +73: the mage's spell book, bit i set when spell i + 1 is known */
-    int items[27];              /* +77: the 27 carried-item slots (src/E0DE8.C) */
-    char padAD[0xE7 - 0xAD];
-    unsigned char lastDamage;   /* +E7: the last damage amount (src/E0DE8.C) */
-    unsigned char lastAction[2]; /* +E8: the last action results (src/E0DE8.C) */
-    char padEA[0xF3 - 0xEA];
-};
 extern struct CharRec gChars[]; /*@ ds:F580 */
 extern char far gCampStrings; /*@ 2003:0000 */
 extern unsigned char far gCgaMapInvent[]; /*@ 2067:0000 */
@@ -193,28 +142,6 @@ extern unsigned char gMemberBoxColumn[]; /*@ ds:62F2 */ /* the icon x in 8-pixel
 extern unsigned char gMemberBoxTop[]; /*@ ds:62F8 */ /* the icon y for each member slot (SelectPartyMember) */
 extern signed char gClassBaseBits[]; /*@ ds:1231 */
 extern void far *gDisabledMemberIcon; /*@ ds:DD28 */
-struct ItemRecord {
-    signed char nameIndex;        /* +0 (ds:8DD0): indexes the item-name table at segment 0x1F28 */
-    signed char identifiedNameIndex;        /* +1 (ds:8DD1): the second name index */
-    unsigned char flags;    /* +2 (ds:8DD2): bit 0x20 gates 0BD2:0AF2/0C8E, 0x40 is set by
-                               0BD2:040E and tested by 0BD2:05B5; src/E07A9.C calls it flags */
-    signed char icon;       /* +3 (ds:8DD3): the icon number */
-    signed char type;        /* +4 (ds:8DD4): the item type */
-    signed char cellPos;        /* +5 (ds:8DD5): 01D0 stores its 4th argument here and 02B9 matches it
-                               against its `key`. No caller shows a sound (01D0's callers pass a
-                               slot kind, E0ACD.C:561-568, a roll, E08E6.C:807, or an effect kind | 4,
-                               0BD2:07DE): the item's position in its cell, 8 a wall niche (122E:06D0) */
-    int key;                /* +6 (ds:8DD6): the key; -1 when the record is free */
-    int prevLink;                /* +8 (ds:8DD8): one link of the circular list; 0BD2:01D0 splices a
-                               new item in after this record through it */
-    int nextLink;                /* +0xa (ds:8DDA): the other link; the list walks (0BD2:0385, 040E,
-                               04AA) follow it */
-    signed char level;        /* +0xc (ds:8DDC): gCurLevel or -1, set by 01D0 */
-    signed char value;        /* +0xd (ds:8DDD): the item's bonus or effect value: the signed bonus
-                               printed as "%s +%d" and "Cursed %s %d", the spell index into ds:1278
-                               and ds:12E0, the wand effect index gWandSpells[m0B], and the scroll and
-                               potion values (0BD2:05B5, 0D2D, 0EE8, 1001) */
-};
 extern struct ItemRecord gItems[]; /*@ ds:8DD0 */
 extern int gClickY; /*@ ds:8142 */
 extern unsigned char gClericSpellsPerLevel[]; /*@ ds:62FE */ /* a cleric's spells per level (5 bytes) by class level 1 to 10 */
@@ -972,7 +899,7 @@ int AskYesNo(int message);
         node->y = gButtonDefs[index].y;
         node->width = gButtonDefs[index].w << 3;
         node->height = gButtonDefs[index].h;
-        node->def = &gButtonDefs[index];
+        node->data.def = &gButtonDefs[index];
         node->flags = 0x1100;
         node->defFlags = gButtonDefs[index].flags;
         DrawListNode(node, 0, 0, 0);
@@ -1043,7 +970,7 @@ int AskYesNo(int message);
     }
 }
 /* ovl1:1551: draws the list node `node` (one button of a camp menu, built by BuildMenuButtons) in
-   the text window; a null node draws nothing. With the node's definition `def` (node->def): when
+   the text window; a null node draws nothing. With the node's definition `def` (node->data.def): when
    def->flags bit 0 is set the node's box is filled with the framed rectangle 0D1C:0C21 (the
    parameters `first` and `second` are its two mode arguments, not a panel shape); then, when
    def->message is nonzero, the label gCampStrings[def->message] is drawn at the box origin plus
@@ -1065,7 +992,7 @@ int AskYesNo(int message);
     if (node == 0)
         return;
     colour = gGraphicsChoice == 0 ? 1 : 0xf;
-    def = node->def;
+    def = node->data.def;
     LockHidePointer();
     if (def->flags & 1)
         DrawFramedPanel(node->x, node->y, node->width, node->height, first, second);

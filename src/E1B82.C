@@ -32,20 +32,13 @@ typedef union {
    on the five EGA wall-set files and format 4 on the 131 files the oracle decodes (WHITEPAPER 4.2,
    WHITEPAPER.md:153, 155); formats 2 and 3 have no pinned file (WHITEPAPER.md:155), so their codec
    labels come from the bytes of 1D9A:03CC and 1D9A:0113 only. */
-#define FORMAT_STORED      0L  /* stored: Unpack0 copies the data */
-#define FORMAT_LZW_12      1L  /* 12-bit LZW (Unpack1, 3C00h work buffer) */
-#define FORMAT_LZW_14      2L  /* 14-bit LZW (Unpack2, FC00h work buffer) */
-#define FORMAT_LITERAL_FILL 3L /* a literal and fill stream (Unpack3) */
-#define FORMAT_LCW         4L  /* LCW (Unpack4) */
+#include "EOB.H"
 
 /* the MemAlloc flag that returns a paragraph-aligned, offset-0 block: the bit is defined at
    src/E19BC.C:46, and the block shape it gives is at src/E19BC.C:80-83 */
-#define MEMALLOC_ALIGNED 0x20
 /* work-buffer sizes of formats 1 and 2 (docs/design/WHITEPAPER.md:151); UNPACK_BUFFER_SIZE in
    src/E07A9.C:39 is the size of the shared buffer, a different thing that happens to equal format
    2's */
-#define FORMAT1_BUFFER_SIZE 0x3C00
-#define FORMAT2_BUFFER_SIZE 0xFC00
 
 extern "C" {
 

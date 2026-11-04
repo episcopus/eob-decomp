@@ -268,7 +268,7 @@ class Copy:
         self.src, self.eob, self.unit = src, eob, unit
         self.asm = src.suffix.upper() == ".ASM"
         self.path = w / (src.stem.upper() + (".ASM" if self.asm else ".C"))
-        self.text = src.read_text()
+        self.text = src.read_text() if self.asm else cmatch.expand(src.read_text())   # src/EOB.H inlined
         self.funcs, self.data, self.defined, self.stubs = cmatch.parse_annotations(self.text, self.asm)
         self.fardata = set(cmatch.FARDATA)              # externs at seg:off that are data (far objects)
         # a C global is defined by a top-level line without extern (EOV5.C has both for gTable7B89)

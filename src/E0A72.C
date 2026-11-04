@@ -9,30 +9,7 @@
    and 6. The meaning of each field and table is not established, so most function names say what a
    function computes rather than what the game calls it. */
 
-/* A character record: the 243-byte records at ds:F580 (6 of them in EOBDATA.SAV). Only the fields
-   this unit touches are named; everything else is padding. */
-struct CharRec {
-    char pad00[0x0D];
-    signed char strength;      /* +0D: the strength score, the base gStrHitBonus/strength and gStrDamageBonus/strength of 0A72:00CF
-                             and 0A72:0128; E122E.C:364 indexes gForceDoorRoll by it and
-                             E0BD2.C:0D2D sets it to 0x16 for a strength item */
-    char pad0E;
-    signed char strengthPct;   /* +0F: the exceptional strength percentile: 0A72:00CF and 0A72:0128
-                             compare it with {1, 51, 76, 91, 100}, and 100 prints as "00"
-                             (FormatStrengthPercent) */
-    char pad10[5];
-    signed char dexterity;     /* +15: one of the five further stat bytes drawn after the strength
-                             score (EOV0.C:442-444 formats intelligence, wisdom, dexterity, constitution, charisma); it indexes the
-                             per-stat tables ds:3474 (0A72:0181) and ds:349E (0A72:019D) */
-    char pad16[0x0A];
-    signed char classIndex;    /* +20: an index into a class table, read by 0A72:0522 and 0DE8:0B45 */
-    char pad21[3];
-    signed char levels[3];     /* +24: the three class-slot levels: LevelUpSlot increments levels[slot]
-                             when a slot gains a level (E0DE8.C:650), E1547.C:570 reads it as
-                             `slotValue` and E1547.C:573-574 prints it as the slot's level-like byte
-                             (E1547.C:563-564), and 0A72:0522 reads element [0] */
-    char pad27[0xF3 - 0x27];
-};
+#include "EOB.H"
 
 extern struct CharRec gChars[]; /*@ ds:F580 */ /* the 243-byte character records */
 extern char far *gSaveTables[]; /*@ ds:3406 */       /* per-index far buffers, read by 0A72:0006 */

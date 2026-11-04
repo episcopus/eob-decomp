@@ -17,22 +17,7 @@
 
 /*@flags -ml -O -Z -G */
 
-struct Region {             /* 16 bytes: left, top, width, height, then four words of saved state */
-    int left;               /* left edge, in 8-pixel columns */
-    int top;                /* top edge, in lines */
-    int width;              /* width, in 8-pixel columns */
-    int height;             /* height, in lines */
-    /* words 4..7: per-record text-window state, copied out by 1DE7:0009 (SetTextWindow) for the
-       window it switches away from (src/E1DE7.C:80-83) and copied in for the window it switches to
-       (src/E1DE7.C:88-95). textAttr1 and textAttr2 are the window's two text attributes (gTextAttr1,
-       gTextAttr2, src/E1DE7.C:38-40; their game meaning is not established [H]); textCol and textRow
-       are its cursor column and row (gTextCol, gTextRow, src/E1DE7.C:41-42). This unit does not
-       use them. */
-    int textAttr1;
-    int textAttr2;
-    int textCol;
-    int textRow;
-};
+#include "EOB.H"
 
 extern struct Region gRegions[]; /*@ ds:009F */  /* the region table, read by 082C (four sites, 082C:0650/0696/06DC/071E), 1DE7:005F and SelectRegion (1A29:019A); indexed by a region number, so gRegions[region] is region * 16 */
 extern int gCurRegion;           /*@ ds:8108 */  /* index of the region selected last, set by SelectRegion and compared by the front ends and by 1DE7:0333; 1DE7 keeps its own record index at ds:811F, and nothing here says the two agree */

@@ -2581,10 +2581,10 @@ unit = "e0acd"
 addr = "0ACD:0753"
 size = 57
 evidence = ["frame"]
-name = "StepMenuPhase"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "StepMapPhase"
 
 [[function]]
 id = "e0acd_078c"
