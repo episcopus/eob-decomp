@@ -18,8 +18,10 @@ does for START1.EXE.
 from __future__ import annotations
 
 import argparse
+import os
 import re
 import shutil
+import subprocess
 import sys
 from pathlib import Path
 
@@ -29,6 +31,19 @@ import tc_toolchain as tc  # noqa: E402
 
 DRIVERS = ("CGA.OVL", "EGA.OVL", "MCGA.OVL", "TGA.OVL")
 TASM_OPTS = ["/mx"]
+TIMEOUT = 120        # seconds: TASM 2.0 with a listing never ends on some errors inside a REPT block
+
+
+def run(release: str, tool: str, args: list[str], cwd: Path) -> str:
+    """tc.run with a time limit; returns the tool's output (a timeout is reported in it)."""
+    target = tc.TOOLCHAIN / release
+    env = dict(os.environ, EMU2_DRIVE_C=str(cwd), EMU2_DRIVE_D=str(target), EMU2_DEFAULT_DRIVE="C")
+    try:
+        r = subprocess.run([str(tc.EMU2), str(target / "BIN" / (tool + ".EXE"))] + args, env=env, cwd=cwd,
+                           capture_output=True, stdin=subprocess.DEVNULL, timeout=TIMEOUT)
+        return r.stdout.decode("latin-1")
+    except subprocess.TimeoutExpired as e:
+        return (e.stdout or b"").decode("latin-1") + "\n**Error** %s did not finish in %d s\n" % (tool, TIMEOUT)
 
 
 def source_of(name: str) -> Path:
@@ -40,14 +55,12 @@ def build(name: str, source: Path, w: Path) -> tuple[bytes | None, str]:
     shutil.rmtree(w, ignore_errors=True)
     w.mkdir(parents=True)
     (w / "D.ASM").write_bytes(source.read_text().replace("\r\n", "\n").replace("\n", "\r\n").encode("latin-1"))
-    r = tc.run(tc.manifest()["pinned_asm"], "TASM", TASM_OPTS + ["/l", "D.ASM"], cwd=w)
-    log = r.stdout.decode("latin-1")
-    if "**Error**" in log or not (w / "D.OBJ").exists():
+    log = run(tc.manifest()["pinned_asm"], "TASM", TASM_OPTS + ["/l", "D.ASM"], cwd=w)
+    if "**Error**" in log or "*Warning*" in log or not (w / "D.OBJ").exists():
         return None, log
-    r = tc.run(tc.manifest()["pinned"], "TLINK", ["D.OBJ,D.EXE"], cwd=w)
-    log += r.stdout.decode("latin-1")
+    log += run(tc.manifest()["pinned"], "TLINK", ["D.OBJ,D.EXE"], cwd=w)
     exe = w / "D.EXE"
-    if re.search(r"^(Fatal|Error):", log, re.M) or not exe.exists():
+    if re.search(r"^(Fatal|Error):|\*\*Error\*\*", log, re.M) or not exe.exists():
         return None, log
     return exe.read_bytes(), log
 
