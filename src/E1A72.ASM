@@ -101,7 +101,7 @@
         ;                                              Main then forces it to 1 when no handler is
         ;                                              installed and otherwise sets it to !mouse
         ;                                              (E07C8.C:190-193, inside
-        ;                                              `if (StartupGame() == 1)` and `if (g3092)`);
+        ;                                              `if (StartupGame() == 1)` and `if (gStartupDone)`);
         ;                                              the overlay loader clears it when a handler
         ;                                              is installed (E1C00.ASM:298); many units test
         ;                                              it (E07A9, E0ACD, E0BD2, E0D1C, E14EF,
@@ -499,9 +499,9 @@ _RemoveMouseHandler ENDP
 ; basis) lies inside the rectangle [bp+6, bp+0Ah] x [bp+8, bp+0Ch]
 ; inclusive, 0 otherwise. It spins at 1A72:02B9 while the busy flag at DGROUP:812E is set, takes the
 ; flag, copies the drawn position through DGROUP:8026/8028, tests it and releases the flag.
-; Arguments are x1, y1, x2, y2 words. The callers in src/ are CheckMemberSlotRect
+; Arguments are x1, y1, x2, y2 words. The callers in src/ are UnpryableDoorAction
 ; (122E:0847, the call at E122E.C:522, extern at :195), PickClass (ovl0:207A, the call at
-; EOV0.C:1208, function at EOV0.C:1180) and _Ovl1_1691 (EOV1.ASM:3096, function at
+; EOV0.C:1208, function at EOV0.C:1180) and _ScribeScrolls (EOV1.ASM:3096, function at
 ; EOV1.ASM:2791; EOV1.ASM:2779 says the map folds that routine into range 1551).
         PUBLIC  _IsMouseInRect            ; @ 1A72:02A6
 _IsMouseInRect PROC FAR

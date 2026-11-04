@@ -176,7 +176,7 @@ char GetClassSlotByte(char row, char slot); /*@ 0A72:0509 */
    new character (EOV0.C:1107-1108), while LevelUpSlot calls it with one die for the single slot
    that gained a level (E0DE8.C:652-656). `constitution` is decremented in place and then reused to hold
    the multiplier (a separate local does not match: the original shows `dec byte ptr [bp + 8]` at
-   0A72:01B2); `constitution` is the character's constitution (CharRec +17, which also indexes g54F6;
+   0A72:01B2); `constitution` is the character's constitution (CharRec +17, which also indexes gConSaveBonus;
    the caller 0DE8:0C82 passes gChars[who].constitution, E0DE8.C:652), whose hit point bonus per
    die gConHitPointBonus holds. `classIndex` is the character's class index, CharRec +20 (the caller 0DE8:0C82 passes LevelUpSlot's
    `attr`, which AddExperience sets to gChars[who].classIndex, E0DE8.C:652 and :607, and overlay 0 pushes
@@ -206,7 +206,7 @@ char GetClassSlotByte(char row, char slot); /*@ 0A72:0509 */
 /* 0A72:02B3: the maximum of the same three hit dice groups for class `classIndex`: countA *
    gHitDieSlot0[classIndex] + countB * gHitDieSlot1[classIndex] + countC * gHitDieSlot2[classIndex], plus the
    per-stat multiplier term. The same divide-by-3-or-2 as 0A72:01AE. Called by overlay 0 at 135D,
-   which pushes gChars[gDCB0].classIndex as `classIndex` (135D:14BE) and gChars[gDCB0].constitution as `constitution`. */
+   which pushes gChars[gChargenMember].classIndex as `classIndex` (135D:14BE) and gChars[gChargenMember].constitution as `constitution`. */
 /*@ 0A72:02B3 */ int MaxHitPoints(char classIndex, char constitution, char countA, char countB, char countC)
 {
     int total;
@@ -230,8 +230,8 @@ char GetClassSlotByte(char row, char slot); /*@ 0A72:0509 */
 
 /* 0A72:03A4: the minimum of the same three hit dice groups for class `classIndex`: countA + countB +
    countC (one per die), plus the per-stat multiplier term, the same divide-by-3-or-2, and finally
-   clamped to at least 1. Called by overlay 0 at 135D, which pushes gChars[gDCB0].classIndex as
-   `classIndex` (135D:1514) and gChars[gDCB0].constitution as `constitution`. */
+   clamped to at least 1. Called by overlay 0 at 135D, which pushes gChars[gChargenMember].classIndex as
+   `classIndex` (135D:1514) and gChars[gChargenMember].constitution as `constitution`. */
 /*@ 0A72:03A4 */ int MinHitPoints(char classIndex, char constitution, char countA, char countB, char countC)
 {
     int total;
@@ -299,7 +299,7 @@ char GetClassSlotByte(char row, char slot); /*@ 0A72:0509 */
    the class has no such slot: 0A72:007B scans slots 0, 1 and 2 for a match, 0A72:04B7 uses the
    byte as an index into gExpTables and returns -1 when it is -1, and the callers test for -1
    (E1547.C:566, E0DE8.C:610; E0DE8.C:614 tests 0A72:04B7's long result, not this byte). A
-   non-negative byte indexes g1219, the per-class-slot names, at E1547.C:568 (g1219 is declared at
+   non-negative byte indexes gBaseClassNames, the per-class-slot names, at E1547.C:568 (gBaseClassNames is declared at
    E1547.C:124), and gExpTables, and 0D1C:059B passes it to GetSavingThrowTarget as `index`, the gSaveTables buffer,
    after folding 4 and 5 to 0 (E0D1C.C:430-433). Purpose unknown. */
 /*@ 0A72:0509 */ char GetClassSlotByte(char row, char slot)
@@ -310,7 +310,7 @@ char GetClassSlotByte(char row, char slot); /*@ 0A72:0509 */
 /* 0A72:0522: 20 - (levels[0] - 1) / gHitLevelsPerStep[gClassCombatGroup[classIndex]] *
    gHitGainPerStep[gClassCombatGroup[classIndex]] - classByte, computed in
    bytes. It is the d20 number a to-hit roll must reach before the attacker bonus is subtracted:
-   its only caller 0DE8:0007 computes `ac = GetHitTarget(who, gTable1A3B[b0].m00) - bonus`
+   its only caller 0DE8:0007 computes `ac = GetHitTarget(who, gMonsterTypes[b0].m00) - bonus`
    (E0DE8.C:206) and then compares a d20 roll against it (`return roll >= ac;`, E0DE8.C:214).
    `classByte` is the +0 field of the target's ds:1A3B entry (E0DE8.C:57), classIndex is the character's
    class index into ds:116E, and levels[0] is the character's first class-slot level at +24; this
@@ -332,7 +332,7 @@ char GetClassSlotByte(char row, char slot); /*@ 0A72:0509 */
 }
 
 /* 0A72:058C: the difference of two ints, a monster's to-hit target: its only caller 08E6:106B takes
-   `need = SubtractInts(gTable1A3B[index].m01, gChars[who].armorClass)` and hits when a d20 roll reaches
+   `need = SubtractInts(gMonsterTypes[index].m01, gChars[who].armorClass)` and hits when a d20 roll reaches
    `need` (E08E6.C:861-862). */
 /*@ 0A72:058C */ int SubtractInts(int minuend, int subtrahend)
 {

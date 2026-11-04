@@ -1,8 +1,8 @@
 /* Unit at EOB.EXE 0D1C:0006 (3265 bytes, 26 functions): the party-status and character-effect
    module. It walks the six 243-byte character records at ds:F580 (struct CharRec, src/E0A72.C),
-   the 28-byte object records at ds:8A82 (struct Monster, src/E08E6.C) and a 15-word table at
+   the 28-byte monster records at ds:8A82 (struct Monster, src/E08E6.C) and a 15-word table at
    ds:A9C8, and it draws the party rows through the rectangle and region front ends. Several
-   helpers are pulled in from the character unit (0A72), the object unit (08E6) and the resident
+   helpers are pulled in from the character unit (0A72), the monster unit (08E6) and the resident
    drawing code. Most meanings are not established, so most function names say what a function
    does rather than what the game calls it. The unit is compiled with -v, the debug information
    that keeps identical code tails apart while TCC still sizes the jumps (whitepaper 2.1.1). */
@@ -70,14 +70,14 @@ struct ItemInfo {           /* 16-byte records at ds:A9F5; read by 0D1C:07DB, 0D
 };
 extern struct ItemInfo gItemTypesClasses[]; /*@ ds:A9F5 */
 
-struct Monster {              /* 28-byte object records at ds:8A82 (see src/E08E6.C) */
+struct Monster {              /* 28-byte monster records at ds:8A82 (see src/E08E6.C) */
     char typeIndex;                /* +0: an index into the ds:1A3B table */
     char pad01;
-    int cell;                 /* +2: the object's map cell, read by 0D1C:09CB */
+    int cell;                 /* +2: the monster's map cell, read by 0D1C:09CB */
     char pad04;
-    char orient;            /* +5: the orientation quarter (times 2 is a direction), written by 0D1C:09CB */
+    char orient;            /* +5: the facing 0..3 N E S W (times 2 is a direction), written by 0D1C:09CB */
     char pad06[0x16 - 0x06];
-    char m16;               /* +0x16, bit 3 set by 0D1C:09CB */
+    char flags;               /* +0x16: flags; 0D1C:09CB sets bit 3 (fleeing), 0D1C:0A43 bit 4 */
     char pad17[0x1C - 0x17];
 };
 extern struct Monster gMonsters[]; /*@ ds:8A82 */
@@ -120,7 +120,7 @@ struct ItemRecord {
     signed char level;        /* +0xc (ds:8DDC): gCurLevel or -1, set by 01D0 */
     signed char value;        /* +0xd (ds:8DDD): the item's bonus or effect value: the signed bonus
                                printed as "%s +%d" and "Cursed %s %d", the spell index into ds:1278
-                               and ds:12E0, the wand effect index g38FA[m0B], and the scroll and
+                               and ds:12E0, the wand effect index gWandSpells[m0B], and the scroll and
                                potion values (0BD2:05B5, 0D2D, 0EE8, 1001) */
 };
 extern struct ItemRecord gItems[]; /*@ ds:8DD0 */
@@ -130,11 +130,11 @@ extern int gFBCE; /*@ ds:FBCE */             /* the item index shown by the mous
 extern int gMouseDisabled; /*@ ds:814A */    /* nonzero disables the mouse (src/E07A9.C) */
 extern int gCurLevel; /*@ ds:FBC8 */             /* the dungeon level: 2 or 7 gates the turn-undead
                                                 effect (0D1C:0A43); other units set it too */
-extern int gDeferMonsterHits; /*@ ds:F518 */             /* set to 1 while an object is being turned (0D1C:0A43) */
+extern int gDeferMonsterHits; /*@ ds:F518 */             /* 1 while several monsters are hit at once (0D1C:0A43, 08E6:16D6): 08E6:0FBE then leaves the flashes and deaths to 08E6:0E48 */
 extern char gFileNameBuf[]; /*@ ds:FE6E */   /* the text buffer sprintf formats into (src/EOV2.C) */
 
 extern void ListMonstersAtCell(int far *list, int key, int field, char flags, char scanAll, char scanFiltered); /*@ 08E6:17FD */
-/* fills `list` with the gMonsters indices whose id equals key, terminated by -1; flags, scanAll
+/* fills `list` with the gMonsters indices whose cell equals key, terminated by -1; flags, scanAll
    and scanFiltered select the scan (Purpose unknown) */
 extern void FlashViewDamage(void); /*@ 0EF3:06E7 */
 extern void FinishDeferredHits(void); /*@ 08E6:0E48 */
@@ -164,16 +164,16 @@ extern void DrawShapeRemapped(int page, void far *src, int x, int y, int region)
 extern void DrawShape(int page, void far *src, int x, int y, int region); /*@ 1A29:000F */
 extern void DrawFilledPanel(int x1, int y1, int x2, int y2, int c1, int c2, int c3); /*@ 082C:09D5 */
 extern int DirectionFromPoints(int fromCell, int toCell); /*@ 17A6:0314 */
-extern void DamageObject(struct Monster far *obj, int n); /*@ 08E6:0FBE */
+extern void DamageMonster(struct Monster far *obj, int n); /*@ 08E6:0FBE */
 
 int MemberIs(int who, int mask);
 int GetCurrentItem(void);
 
-/* 0D1C:0006: Returns 1 and sets gDF4C when the cell is one of the first 15 cells the view shows
+/* 0D1C:0006: Returns 1 and sets gViewDirty when the cell is one of the first 15 cells the view shows
    (ds:A9C8), so a change there is redrawn. The value `value` is looked for in the 15 words at
    ds:A9C8; when
    it is found, ds:DF4C is set to 1 and the function returns 1, otherwise it returns 0. Called
-   from the object unit (08E6) and from 1414. */
+   from the monster unit (08E6) and from 1414. */
 /*@ 0D1C:0006 */ int IsCellInView(int value)
 {
     int far *slot;
@@ -192,7 +192,7 @@ int GetCurrentItem(void);
 /* 0D1C:003F: selects the party member at index `who` (the signed char at ds:A99A). When
    `who` differs from the current one, the old index and the new index are passed to RedrawMember
    (which redraws that member's row), and nothing is done when they are equal. gInventoryMember indexes the
-   character records read by 0D1C:0670 and is toggled 0..5 by Turn091C (src/E0ACD.C). Called by
+   character records read by 0D1C:0670 and is toggled 0..5 by MoveHandCursor (src/E0ACD.C). Called by
    0ACD, 0DE8, 0EF3, 1414 and overlays 1, 5 and 6. */
 /*@ 0D1C:003F */ void SelectCharacter(int who)
 {
@@ -364,7 +364,7 @@ int GetCurrentItem(void);
    the 27 word slots of
    gChars[who].items except slot 16 (which is a list head at +97), queues the item in the slot
    through InsertListItem at the head gPartyCell * 9 + 5 (the nine-byte records at ds:B894) with a
-   random sound gViewToCellPos[gPartyDir * 4 + RollDice(1, 2, -1)]. Then it drains the slot-16 list through
+   random front cell position gViewToCellPos[gPartyDir * 4 + RollDice(1, 2, -1)]. Then it drains the slot-16 list through
    RemoveListItem and queues each returned item the same way. Finally, when `who` is the selected
    character, gInventoryMember is cleared to 0, and RearmCharEffects runs. Called by overlays 1 and 5. */
 /*@ 0D1C:035A */ void RemovePartyMember(int who)
@@ -632,10 +632,10 @@ int GetCurrentItem(void);
     return (best << 8) + bestVal;
 }
 /* 0D1C:09CB: Applies one turn-undead roll to a monster: destroy, turn away or no effect. A
-   per-object check. It takes the object's ds:1A3B record's m19 as
-   a row and GetTurnUndeadTarget(column, m19) as a value. A value of -1 calls DamageObject(obj, 100)
+   per-monster check. It takes the monster's ds:1A3B record's m19 as
+   a row and GetTurnUndeadTarget(column, m19) as a value. A value of -1 calls DamageMonster(obj, 100)
    and returns 1. Otherwise, when `threshold` is below the value it returns 0; else it sets bit 3
-   of obj->m16, stores (DirectionFromPoints(obj->id, gPartyCell) ^ 4) >> 1 in obj->orient and returns 1.
+   of obj->flags, stores (DirectionFromPoints(obj->cell, gPartyCell) ^ 4) >> 1 in obj->orient and returns 1.
    Called by 0D1C:0A43 and 17A6. */
 /*@ 0D1C:09CB */ int TryTurnMonster(struct Monster far *obj, int threshold, int column)
 {
@@ -646,23 +646,23 @@ int GetCurrentItem(void);
     value = GetTurnUndeadTarget(column, row);
     if (value != -1) {
         if (threshold >= value) {
-            obj->m16 |= 8;
+            obj->flags |= 8;
             obj->orient = (DirectionFromPoints(obj->cell, gPartyCell) ^ 4) >> 1;
             return 1;
         }
     } else {
-        DamageObject(obj, 100);
+        DamageMonster(obj, 100);
         return 1;
     }
     return 0;
 }
-/* 0D1C:0A43: the "turn undead" action. When gCurLevel is 2 or 7 it derives a ten-bit key from
+/* 0D1C:0A43: the "turn undead" action. When the dungeon level gCurLevel is 2 or 7 it derives a ten-bit key from
    gPartyCell and gPartyDir (StepCell) and requires gMaze[key * 9 + 4] & 7 to be nonzero, then
    asks FindBestUndeadTurner for the best qualifying party member (its low byte the member's value, its
-   high byte the member's index) and rolls 1d20. It lists the gMonsters indices whose ds:8A82 object
-   record's m02 equals key (f08E6_17FD) and, for each object whose ds:1A3B record's m0F has bit 2
-   set and whose m16 has bit 4 clear, sets gDeferMonsterHits, marks the object (m16 |= 0x10) and runs
-   TryTurnMonster(obj, roll, member value), ORing the results. When any object turned it formats "%s
+   high byte the member's index) and rolls 1d20. It lists the gMonsters indices whose ds:8A82 monster
+   record's cell equals key (08E6:17FD) and, for each monster whose ds:1A3B record's m0F has bit 2
+   set and whose flags has bit 4 clear, sets gDeferMonsterHits, marks the monster (m16 |= 0x10) and runs
+   TryTurnMonster(obj, roll, member value), ORing the results. When any monster turned it formats "%s
    uses the power to turn undead!" (ds:550E) with the best member's name, draws it, plays sound
    0x5F and runs 0EF3:06E7 and 08E6:0E48. gDeferMonsterHits is cleared at the end on the normal path. Called
    by 0ACD:0E8A. */
@@ -697,9 +697,9 @@ int GetCurrentItem(void);
         if (list[i] == -1)
             break;
         obj = &gMonsters[list[i]];
-        if ((gMonsterTypes[obj->typeIndex].m0F & 4) && !(obj->m16 & 0x10)) {
+        if ((gMonsterTypes[obj->typeIndex].m0F & 4) && !(obj->flags & 0x10)) {
             gDeferMonsterHits = 1;
-            obj->m16 |= 0x10;
+            obj->flags |= 0x10;
             turned |= TryTurnMonster(obj, roll, memberVal);
         }
     }
@@ -714,7 +714,7 @@ int GetCurrentItem(void);
     gDeferMonsterHits = 0;
 }
 /* 0D1C:0BAB: Rolls percentile dice against the monster type's resistance byte (+0x1A) and returns 1
-   when the spell or spell item is resisted. A percentage check on the object `objIndex` (its
+   when the spell or spell item is resisted. A percentage check on the monster `objIndex` (its
    ds:8A82 record,
    not a pointer like 0D1C:09CB's `obj`): through gMonsters[objIndex].typeIndex it reads gMonsterTypes[typeIndex].m1A
    and returns 1 when RollDice(1, 100, 0) is below it, otherwise 0. Called by 0DE8:0359. */

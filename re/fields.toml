@@ -488,3 +488,75 @@ old = "m0A"
 new = "level"
 why = "InsertListItem 0BD2:01D0 stores gCurLevel or -1 in it and RebuildItemList ovl3:0951 inserts only the items whose +0C equals gCurLevel: the dungeon level the item lies on"
 date = "2026-11-03"
+
+[[field]]
+struct = "Monster"
+at = "01"
+old = "kind"
+new = "updateGroup"
+why = "UpdateObjects(kind) at 08E6:0CC8 updates only the records whose +01 equals kind; InitMonster (08E6:131D) stores the level file's group * 2 plus the slot's parity, and timed effects 2 to 5 (1414:05DF, args 0..3) with per-level periods (ovl3:0A7C) run the groups"
+date = "2026-11-03"
+
+[[field]]
+struct = "Monster"
+at = "06"
+old = "toggle"
+new = "animPhase"
+why = "DrawSlotMonsters (ovl4:0D1B) picks the shape from gMonsterFrames[(+06 << 4) + gPartyDir * 4 + orient]; UpdateObjects flips it each update unless the mode is 4 or 7, and TryMonsterMelee flips it after a swing"
+date = "2026-11-03"
+
+[[field]]
+struct = "Monster"
+at = "07"
+old = "m07"
+new = "altShapes"
+why = "DrawSlotMonsters (ovl4:0D1B) adds 0x12 to the shape index when +07 is nonzero, choosing the second set of 18 shapes in gMonsterShapes (ds:B7FE); InitMonster copies it from the level file"
+date = "2026-11-03"
+
+[[field]]
+struct = "Monster"
+at = "08"
+old = "type"
+new = "mode"
+why = "UpdateObjects (08E6:0CC8) switches on +08 for the behaviour: 0 hunting (0AB8), 1..3 walk (0B34), 5 and 6 wall following (0B94), 7 and 10 wait on the timer (0CA6); 00C3, 03FE and 000B set it to 0, the hold spells to 10 (0EF3:1530, 0EF3:1A30); it is not the type, which is +00 typeIndex"
+date = "2026-11-03"
+
+[[field]]
+struct = "Monster"
+at = "0A"
+old = "m0A"
+new = "attackFrame"
+why = "TryMonsterMelee (08E6:05EA) writes 0xfe then 0xff around two view redraws of a swing and 0 after; DrawSlotMonsters (ovl4:0D1B) draws shape 5 for 0xfe and 6 for 0xff in the nearest row; 0AB8 and ovl3:19F7 clear it"
+date = "2026-11-03"
+
+[[field]]
+struct = "Monster"
+at = "0C"
+old = "hitPoints"
+new = "maxHp"
+why = "InitMonster (08E6:131D) stores the same roll in +0C and +0E (hitPoints = count = RollDice(m02, 8, 0)); damage only lowers +0E (08E6:0FBE) and nothing in src/ reads +0C back, so it holds the starting maximum"
+date = "2026-11-03"
+
+[[field]]
+struct = "Monster"
+at = "0E"
+old = "count"
+new = "hp"
+why = "The current hit points: DamageObject (08E6:0FBE) subtracts the damage from +0E, KillMonster runs at 0 or less, UpdateObjects, SpawnMonster and FinishDeferredHits treat <= 0 as dead or free; named like CharRec hp (+1B)"
+date = "2026-11-03"
+
+[[field]]
+struct = "Monster"
+at = "16"
+old = "m16"
+new = "flags"
+why = "A bit set: 1 attacked (0DE8:0007, 08E6:0FBE, read by 03FE), 2 hit flash (0DCA, 0E48, drawn remapped by ovl4:0D1B), 4 swing phase (05EA), 8 fleeing (000B, 0D1C:09CB, read by 0430), 0x10 turn undead tried (0D1C:0A43)"
+date = "2026-11-03"
+
+[[field]]
+struct = "Monster"
+at = "17"
+old = "m17"
+new = "drawOffset"
+why = "DrawSlotMonsters (ovl4:0D1B) adds (+17 & 0xf0) >> 4 to the shape's x and +17 & 0xf to its y; RandomiseObjectState (1414:0CE7) re-rolls it as (1d2 << 4) + 1d2 every 25 ticks"
+date = "2026-11-03"

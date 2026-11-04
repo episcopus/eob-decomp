@@ -64,7 +64,7 @@ extern char gFontHeight; /*@ ds:8101 */  /* font cell height (src/E1A47.C) */
 /* ds:805A: a far tile routine called with a tile source far pointer and a cell position
    (src, x, y). DrawTextFrame draws the four corners through it (1DE7:0130, 0163, 0196, 01CC) and
    DrawTileRun the frame edges (1DE7:025E); its first argument is a four-byte far pointer `void far *src`,
-   not the same signature as ds:805E (gDraw805E, src/E16A5.C:88), which takes an int tile. No store
+   not the same signature as ds:805E (gDrawIndexedTile, src/E16A5.C:88), which takes an int tile. No store
    to the slot found: a byte search of eob/EOB.EXE and the overlay bins for its disp16 (5a 80) in
    the store forms (A3, 89 06, C7 06 and 8C 06 with that disp16) finds none, and the overlay bins
    hold no occurrence of the disp16 at all. The search does find six occurrences of the disp16 in
@@ -79,7 +79,7 @@ extern void (far *gDrawText)(char far *text, int x, int y, int color, int extra)
 /* ds:8117: a far routine DrawTextLine calls when the cursor row starts below the last full line
    (the same condition as the clip branch of DrawTextLine); gScrollOn (ds:8110) gates it. Overlay 5
    sets the ds:8117/ds:8119 pair when it opens windows 0xC and 9 (src/EOV5.C:1114-1115, :1254-1255,
-   :1317-1318; EOV5.C:161 declares extern int gScrollHook at ds:8117 and g8119 at :162; the
+   :1317-1318; EOV5.C:161 declares extern int gScrollHook at ds:8117 and gScrollHookSeg at :162; the
    words 0xAC and 0x2D0 at EOV5.C:1114-1115 are the offset and segment of the far pointer). */
 extern void (far *gScrollHook)(void);  /*@ ds:8117 */
 extern char gScrollOn;     /*@ ds:8110 */  /* overlay 5 sets it to 1 beside the hook (EOV5.C:1110, :1114-1115) and the hook is gated by it at src/E1DE7.C:274 */

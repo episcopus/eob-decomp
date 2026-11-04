@@ -42,7 +42,7 @@ struct Spell {
    record's id at +2 for its Distance test */
 struct Monster {
     char typeIndex;                   /* +00: an index into the ds:1A3B table (src/E08E6.C) */
-    signed char kind;          /* +01 */
+    signed char updateGroup;          /* +01 */
     int cell;                    /* +02: the object's map cell, Distance-tested */
     char rest[0x1C - 4];
 };
@@ -55,7 +55,7 @@ extern char far gCampStrings; /*@ 2003:0000 */    /* the message string table */
 extern int gTextRegion; /*@ ds:811F */
 extern int gDrawPage; /*@ ds:8115 */
 extern int g159; /*@ ds:0159 */                 /* written from gPanelFillColour by ovl6:0B9B and ovl1:13F7
-                                                   (ShowMessage); no reader found in src/ */
+                                                   (ShowMessageBox); no reader found in src/ */
 extern int gTextHeight; /*@ ds:FE60 */
 extern int gTextWidth; /*@ ds:FE62 */
 extern int gTextLeft; /*@ ds:FE64 */
@@ -67,7 +67,7 @@ extern void *gFont6x6; /*@ ds:A9C0 */              /* the 6x6 font loaded from F
 extern int gPartyCell; /*@ ds:FBCA */
 extern signed char gPanelFillColour; /*@ ds:F57E */        /* the colour2 argument ovl6:0858 passes; 082C:0898
                                                    forwards it to its first shadow draw only */
-extern char gQuietObjectUpdate; /*@ ds:F442 */               /* 1 while ovl6:09D2 updates the objects */
+extern char gQuietMonsterUpdate; /*@ ds:F442 */               /* 1 while ovl6:09D2 updates the objects */
 extern unsigned long gGameTicks; /*@ ds:8492 */      /* the 32-bit counter the 1Ch handler bumps */
 
 extern void LockHidePointer(void); /*@ 1BBE:0307 */
@@ -89,7 +89,7 @@ extern int far RollDice(char count, char sides, char bonus); /*@ 082C:0458 */
 extern int Distance(int x, int y); /*@ 17A6:0F61 */
 extern void RedrawMember(int member); /*@ 1547:0991 */
 extern void DamageCharacter(int who, int amount); /*@ 0DE8:09B9 */
-extern void UpdateObjects(int kind); /*@ 08E6:0CC8 */
+extern void UpdateMonsters(int kind); /*@ 08E6:0CC8 */
 extern void CopyRegion(int x1, int y1, int x2, int y2, int width, int height, int extra1, int extra2); /*@ 19F3:000E */
 extern int ReadKey(void); /*@ 1AAD:038E */
 extern void FlushKeyBuffer(void); /*@ 1AAD:0480 */
@@ -115,7 +115,7 @@ void ShowCampMessage(int message);
    his maximum and drops the level of a member whose 0D1C:0163(member, 2) is negative (by 5, or to 0
    when at 5 or less); every 24 hours it damages a member with flag 3 at level 0 above -10 hit points
    (hp > (signed char)0xf6; hp is a signed char). It never
-   updates the object list: only AreMonstersNear does (UpdateObjects), at the start and on each key test. On
+   updates the object list: only AreMonstersNear does (UpdateMonsters), at the start and on each key test. On
    the done path, when the last AreMonstersNear result was 0 and no member is wounded, it shows the warning box
    ShowCampMessage(0x2b), "All characters are fully rested." (gCampStrings message 0x2b). It returns 1 when the
    opening AreMonstersNear found an object near and 0 when the "Poisoned party members will die!" picker
@@ -418,7 +418,7 @@ done:
     SetTextWindow(region);
 }
 /* ovl6:09D2: the "objects are near" test. It selects the 6x6 font, marks the object update
-   (gQuietObjectUpdate) and updates objects 0 and 1, then scans the 30 28-byte map-object records gMonsters
+   (gQuietMonsterUpdate) and updates objects 0 and 1, then scans the 30 28-byte map-object records gMonsters
    (ds:8A82): when Distance(gPartyCell, obj.id) is below two an object is close, so it switches to
    region 7 (saving the previous region), draws "\rYou can't rest here, monsters are near." and
    returns 1. Restores the caller's font and returns 0 when nothing is close. Called at the start
@@ -431,10 +431,10 @@ done:
 
     savedFont = gCurFont;
     SetFont(gFont6x6);
-    gQuietObjectUpdate = 1;
-    UpdateObjects(0);
-    UpdateObjects(1);
-    gQuietObjectUpdate = 0;
+    gQuietMonsterUpdate = 1;
+    UpdateMonsters(0);
+    UpdateMonsters(1);
+    gQuietMonsterUpdate = 0;
     for (i = 0; i < 0x1e; i++) {
         if (Distance(gPartyCell, gMonsters[i].cell) < 2) {
             savedRegion = gTextRegion;
@@ -486,7 +486,7 @@ done:
     }
     return 0;
 }
-/* ovl6:0B9B: the copy in overlay 6 of ShowMessage (ovl1:13F7): shows the modal warning box for
+/* ovl6:0B9B: the copy in overlay 6 of ShowMessageBox (ovl1:13F7): shows the modal warning box for
    message number `message` in the far string table at 2003:0000. It saves gDrawPage, the
    current font and gTextRegion, selects the 8x8 font and text region 0xb, stores gPanelFillColour in ds:0159
    (the value here, gDrawPage = 2 at ds:8115), fills the panel (DrawFramedPanel) and draws the message

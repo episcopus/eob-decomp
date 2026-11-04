@@ -2,10 +2,10 @@
    16-entry table of timed effects at ds:5BA8 (a far handler, a period, the next expiry time, a
    word argument and an active byte; the count word at ds:5CA8 is 0x0010) and the tick routine that
    fires each due effect. The effects themselves are here: the selected-character blink (0000), a
-   pass over the 10 moving/effect records at ds:DD2C (0285), object-list updates (05DF), the
+   pass over the 10 projectile records at ds:DD2C (0285), monster group updates (05DF), the
    per-character status messages ("%s no longer has giant strength.", "%s feels the effects of
-   poison!", "%s is no longer paralyzed!", 07CA), the member status-byte adjustment (03B4), the
-   18-entry far table at ds:EF6A (04B0), the per-member food decay (0C82) and the object m17
+   poison!", "%s is no longer paralyzed!", 07CA), the door step (03B4), the
+   18-entry far table at ds:EF6A (04B0), the per-member food decay (0C82) and the monster draw-offset
    re-roll (0CE7). The game timer is the 32-bit counter gGameTicks that the 1Ch handler bumps (src/EOV6.C);
    most meanings are not established, so names say what a function does rather than what the game
    calls it. */
@@ -54,7 +54,7 @@ struct Projectile {
     char active;              /* +00: the record state: 0 is cleared, 1 and 2 are the live states */
     char pad01;
     int m02;                  /* +02 */
-    int cell;                  /* +04: a character or object index */
+    int cell;                  /* +04: the map cell the projectile is in (003E moves its item between cell lists) */
     char m06;                 /* +06 */
     signed char dir;          /* +07 */
     int item;                  /* +08: an index into gItems */
@@ -83,19 +83,19 @@ struct ItemRecord {
                                new item in after this record through it */
     int nextLink;                /* +0xa (ds:8DDA): the other link; the list walks (0BD2:0385, 040E,
                                04AA) follow it */
-    signed char level;        /* +0xc (ds:8DDC): gFBC8 or -1, set by 01D0 */
+    signed char level;        /* +0xc (ds:8DDC): gCurLevel or -1, set by 01D0 */
     signed char value;        /* +0xd (ds:8DDD): the item's bonus or effect value: the signed bonus
                                printed as "%s +%d" and "Cursed %s %d", the spell index into ds:1278
-                               and ds:12E0, the wand effect index g38FA[m0B], and the scroll and
+                               and ds:12E0, the wand effect index gWandSpells[m0B], and the scroll and
                                potion values (0BD2:05B5, 0D2D, 0EE8, 1001) */
 };
 
-/* The 28-byte object records at ds:8A82 (src/E08E6.C). */
+/* The 28-byte monster records at ds:8A82 (src/E08E6.C). */
 struct Monster {
     char pad00[2];
-    int cell;                   /* +02: the object's identity (src/E08E6.C:14, src/EOV3.C:81) */
+    int cell;                   /* +02: the monster's map cell (src/E08E6.C) */
     char pad04[0x17 - 0x04];
-    unsigned char m17;        /* +17: the value 0CE7 randomises */
+    unsigned char drawOffset;        /* +17: the draw offset (x high nibble, y low) 0CE7 re-rolls */
     char pad18[0x1C - 0x18];
 };
 
@@ -136,7 +136,7 @@ extern int StepCell(int cell, int dir); /*@ 0D1C:00DA */
 extern int IsWearingRing(int who, int fieldB); /*@ 0D1C:0163 */
 extern int MemberIs(int member, int what); /*@ 0D1C:0670 */
 extern int far RollDice(char count, char sides, char bonus); /*@ 082C:0458 */
-extern void UpdateObjects(int kind); /*@ 08E6:0CC8 */
+extern void UpdateMonsters(int kind); /*@ 08E6:0CC8 */
 extern void TickLevelScriptTimer(void); /*@ 08E6:1410 */
 extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
 
@@ -176,7 +176,7 @@ extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
 /* 1414:003E: the per-record step 0285 runs for every live ds:DD2C record. It reads a status byte
    db = gMaze[target * 9 + (rec->dir ^ 2)] and bits = gWallTypeFlags[db]. A record in state 1 whose bits say
    so (bits bit 0, a nonzero m02, or bits bit 1 together with an item icon of 15 or more) is moved
-   onto character `target`: one RemoveListItem takes the record's item m08 off the old cell's list
+   onto the map cell `target`: one RemoveListItem takes the record's item m08 off the old cell's list
    (gMaze[rec->cell * 9 + 5]) and one InsertListItem puts it on the target's list
    (gMaze[target * 9 + 5], key target, sound sel | 4); cell and m06 are set to `target` and `sel`,
    m0D is decremented and it returns 1; otherwise gWallTrigger is 0x10. Any other record is moved when bits
@@ -222,7 +222,7 @@ extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
 /* 1414:0172: the per-record test 0285 and 0D63 use. It returns 0 when the record already has a
    nonzero m02. A record in state 2 calls the far handler stored at +0E (rec->fn(rec)) and returns
    its result. Otherwise it looks up gMaze[index * 9 + 4]: when that byte has bits 0..2 set it
-   scans the 30 objects at ds:8A82 for one that IsMonsterAtPos accepts and that TryRecordAttack then
+   scans the 30 monsters at ds:8A82 for one that IsMonsterAtPos accepts and that TryRecordAttack then
    also accepts, returning 1 on the first; when the bits are clear it runs RunRecordAttack(rec)
    only when `index` is the party's map cell and returns that. Called by 0285 and 0D63. */
 /*@ 1414:0172 */ int TestDDEffect(struct Projectile far *rec, int index, int sel)
@@ -386,7 +386,7 @@ extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
    counter) has passed, call its handler with its argument; when the handler leaves the entry
    active, re-arm it with expiry = gGameTicks + period (the expiry is taken from the current tick, not
    the old expiry). Finally runs 08E6:1410. An entry the handler disarms (active 0) is left alone.
-   Called by RunMapLoop (src/E0ACD.C:890) on every pass of its for (;;) loop, after Action0E6C,
+   Called by RunMapLoop (src/E0ACD.C:890) on every pass of its for (;;) loop, after PollMapInput,
    with no condition. */
 /*@ 1414:04E7 */ void RunEffects(void)
 {
@@ -428,11 +428,11 @@ extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
     effect->active = active;
     effect->expiry = gGameTicks + effect->period;
 }
-/* 1414:05DF: the four table entries that point here (ds:5BC8 to ds:5BF8) run the object-list
-   update of one kind through UpdateObjects (08E6:0CC8). */
-/*@ 1414:05DF */ void UpdateEffectObjects(int kind)
+/* 1414:05DF: the four table entries that point here (ds:5BC8 to ds:5BF8, effects 2 to 5) move the
+   monsters of update group `kind` through UpdateMonsters (08E6:0CC8); ovl3:0A7C sets their periods. */
+/*@ 1414:05DF */ void UpdateMonsterGroup(int kind)
 {
-    UpdateObjects(kind);
+    UpdateMonsters(kind);
 }
 /* 1414:05ED: applies a timed effect to character `who`. The interval is added to gGameTicks (time),
    and effect `who` + 6 is armed. When that entry is inactive its period is set to `interval`,
@@ -693,10 +693,10 @@ extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
         DrawMemberFood(who);
     }
 }
-/* 1414:0CE7: effect 15 of the table. For every one of the 30 objects at ds:8A82 that wins a
-   1d2 roll, it stores a fresh (1d2 << 4) + 1d2 value in obj->m17 and reports the object's id
-   through IsCellInView. */
-/*@ 1414:0CE7 */ void RandomiseObjectState(void)
+/* 1414:0CE7: effect 15 of the table. For every one of the 30 monsters at ds:8A82 that wins a
+   1d2 roll, it stores a fresh (1d2 << 4) + 1d2 in its draw offset (+17, which ovl4:0D1B adds to x
+   and y) and reports its cell through IsCellInView. */
+/*@ 1414:0CE7 */ void RandomiseMonsterOffsets(void)
 {
     struct Monster far *obj;
     int i;
@@ -705,14 +705,14 @@ extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
     obj = gMonsters;
     for (; i < 30; i++, obj++) {
         if (RollDice(1, 2, 0) == 1) {
-            obj->m17 = RollDice(1, 2, 0) << 4;
-            obj->m17 += RollDice(1, 2, 0);
+            obj->drawOffset = RollDice(1, 2, 0) << 4;
+            obj->drawOffset += RollDice(1, 2, 0);
             IsCellInView(obj->cell);
         }
     }
 }
 /* 1414:0D63: walks the 10 records at ds:DD2C and, for every live one whose 0172 test passes,
-   runs 020F on it. Called by UpdateObjects (08E6:0CC8) and 122E:0001. */
+   runs 020F on it. Called by UpdateMonsters (08E6:0CC8) and 122E:0001. */
 /*@ 1414:0D63 */ void UpdateDDEffects(void)
 {
     struct Projectile far *rec;

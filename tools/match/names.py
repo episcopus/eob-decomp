@@ -81,6 +81,16 @@ def struct_fields(text: str) -> list[tuple[str, list[tuple[int | None, str]]]]:
     return out
 
 
+def is_placeholder(name: str, addr: str) -> bool:
+    """rename.PLACEHOLDER, or a name that ends with its own address (gDCAA, g159, gIconX5721): the
+    pattern needs a digit and four hex digits, these escape it."""
+    if rename.PLACEHOLDER.match(name):
+        return True
+    off = addr.split(":")[-1].lstrip("0")
+    return len(off) >= 2 and name.lstrip("_").upper().endswith(off.upper()) and \
+        re.match(r"^_?g?[A-Za-z]*[a-z]?%s$" % re.escape(off), name, re.I) is not None
+
+
 def units() -> dict:
     return {u["id"]: u for u in tomllib.loads((ROOT / "re/units.toml").read_text())["unit"]}
 
@@ -105,7 +115,7 @@ def inventory() -> dict:
     places: dict[Path, dict[str, list]] = {p: {"functions": [], "globals": [], "fields": []} for p in files}
     shared = []
     for addr, names in by_addr.items():
-        if any(not rename.PLACEHOLDER.match(n) for n in names.values()):
+        if any(not is_placeholder(n, addr) for n in names.values()):
             continue
         far_data = all(re.match(r"_?g[A-Z0-9]", n) for n in names.values())   # gSheet2067 at 2067:0000
         kind = "globals" if addr.split("/")[-1].startswith("ds:") or far_data else "functions"

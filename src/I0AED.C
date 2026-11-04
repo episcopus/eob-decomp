@@ -6,7 +6,7 @@
    than its EOB entry (0AED:00EB for 1B82:00E7, and so on), which twin.py does not relocate. The INTRO
    map also folded SetUnpackBuffer into Unpack's range. LoadFile reads up to len bytes of a named file
    into a buffer; LoadPacked takes two slot kinds, srcKind and dstKind, and GetPagePtr turns each into
-   the far pointer (offset 0) of that slot's segment (MK_FP(gSegsFC0C[kind | 1], 0), a segment read
+   the far pointer (offset 0) of that slot's segment (MK_FP(gPageSegs[kind | 1], 0), a segment read
    from the page/buffer table, not an allocation), reads a 2-byte length then the packed block and
    calls Unpack; Unpack dispatches on the block's format byte to one of five unpackers (0B10:0000 for
    format 0 and 0CE9:0009/0109/0181/02C1 for formats 4/3/1/2), allocating a work buffer for formats 1

@@ -2,7 +2,7 @@
    Turbo C++ 1.00, -ml -Z -O. The 10 bytes before the segment, 07A9:0000 to 07A9:0009
    (mov [0071],ax; mov ax,[88A2]; mov [006F],ax; ret), are also code, but no unit covers them
    (re/units.toml). StartupAlloc (07A9:000A) is this unit's first function; main calls it at
-   src/E07C8.C:194, inside `if (g3092)` at src/E07C8.C:189, after it sets the palette, the text
+   src/E07C8.C:194, inside `if (gStartupDone)` at src/E07C8.C:189, after it sets the palette, the text
    attributes and the callback (src/E07C8.C:173 to 188). In code order: it makes the start-up far
    allocations through MemAlloc (7500 bytes at ds:8DCA, 6000 at ds:F43E, a 120-byte sound map at
    ds:DCAC (game number to driver number, read from the driver file), 4096 at ds:DCFC, 1600 at
@@ -27,10 +27,10 @@
 /* ItemRecord.flags bit that, with gPartySpellFlags bit 0, gates the flagged branch of SetMouseItem (07A9:015C to
    01B1): the icon colour row, the translated copy and the pointer image; when either gate fails the
    branch is skipped (07A9:0161 and 0168, je 0x1bc). The same test is in src/E0D1C.C:478. The bit
-   selects the colour-row draw path: in f0D1C_070F (src/E0D1C.C:478 to 484) a record whose flags
+   selects the colour-row draw path: in DrawItemIcon (src/E0D1C.C:478 to 484) a record whose flags
    have the bit, when gPartySpellFlags bit 0 is set too, is drawn through its icon's colour row (gSetRemapTable) and
-   f1A29_008B; any other record, or the same record with gPartySpellFlags bit 0 clear, goes through
-   f1A29_000F. The same byte is tested for 0x20, 0x08 and 0x10 elsewhere (see ItemRecord.flags
+   DrawShapeRemapped; any other record, or the same record with gPartySpellFlags bit 0 clear, goes through
+   DrawShape. The same byte is tested for 0x20, 0x08 and 0x10 elsewhere (see ItemRecord.flags
    below). */
 #define ITEM_FLAG_COLOUR_ICON 0x80
 /* the MemAlloc flag that returns a paragraph-aligned, offset-0 block: the bit is defined at
@@ -77,10 +77,10 @@ struct ItemRecord {
                                new item in after this record through it */
     int nextLink;                /* +0xa (ds:8DDA): the other link; the list walks (0BD2:0385, 040E,
                                04AA) follow it */
-    signed char level;        /* +0xc (ds:8DDC): gFBC8 or -1, set by 01D0 */
+    signed char level;        /* +0xc (ds:8DDC): gCurLevel or -1, set by 01D0 */
     signed char value;        /* +0xd (ds:8DDD): the item's bonus or effect value: the signed bonus
                                printed as "%s +%d" and "Cursed %s %d", the spell index into ds:1278
-                               and ds:12E0, the wand effect index g38FA[m0B], and the scroll and
+                               and ds:12E0, the wand effect index gWandSpells[m0B], and the scroll and
                                potion values (0BD2:05B5, 0D2D, 0EE8, 1001) */
 };
 
@@ -89,13 +89,13 @@ extern char gBarGraphsOn; /*@ ds:F43C */  /* written by StartupAlloc (07A9:000D,
                                       "%3d of %-3d" when it is set (src/E1547.C:269, the comment at
                                       src/E1547.C:235-238). Purpose unknown */
 extern char gLevelPalettePending; /*@ ds:FB45 */  /* written by StartupAlloc (07A9:0024, set to 0); the overlay 3
-                                      LoadMapScreen sets it to 1 (src/EOV3.C:686), and the overlay 4
+                                      LoadLevel sets it to 1 (src/EOV3.C:686), and the overlay 4
                                       DrawViewFrame (ovl4:1F51, src/EOV4.C:1049) tests it with video mode 3
-                                      (src/EOV4.C:1054) and, when set, loads the palette gFE68 through
-                                      gFn80BA (src/EOV4.C:1060) and clears it (src/EOV4.C:1061). The
+                                      (src/EOV4.C:1054) and, when set, loads the palette gPaletteBuf through
+                                      gSetPalette (src/EOV4.C:1060) and clears it (src/EOV4.C:1061). The
                                       declaration is src/EOV4.C:1028 ("request flag, cleared here") and
                                       its comment at :1045 says the same; main makes the start-up palette
-                                      call too (gFn80BA(gFE68), src/E07C8.C:182, described at :145-147).
+                                      call too (gSetPalette(gPaletteBuf), src/E07C8.C:182, described at :145-147).
                                       What the request is is Purpose unknown */
 extern void far *gLevelInf; /*@ ds:8DCA */  /* start-up far allocation, 7500 bytes (07A9:002F); the base
                                               of the 122E action-script driver's script (declared
@@ -106,9 +106,9 @@ extern void far *gLevelInf; /*@ ds:8DCA */  /* start-up far allocation, 7500 byt
                                               same (src/E122E.C:1044, the comment at :1031-1033).
                                               EvaluateScriptExpr (122E:147F, a draft, src/E122E.C:1058)
                                               jumps to the base with the word offset at src/E122E.C:1232,
-                                              and RunMemberScript (122E:1DA8, src/E122E.C:1414) starts its
+                                              and RunCellScript (122E:1DA8, src/E122E.C:1414) starts its
                                               script walk at it (src/E122E.C:1438). Overlay
-                                              3 uses it too: LoadMapScreen unpacks LEVEL<n>.INF
+                                              3 uses it too: LoadLevel unpacks LEVEL<n>.INF
                                               (read into gStagingPage at src/EOV3.C:571) into it
                                               (src/EOV3.C:573-574, "the 7500-byte unpacked level
                                               script", src/EOV3.C:200), reads the item records through
@@ -117,7 +117,7 @@ extern void far *gLevelInf; /*@ ds:8DCA */  /* start-up far allocation, 7500 byt
                                               (src/EOV3.C:682). Why the start-up block holds the script
                                               is Purpose unknown */
 extern void far *gWallBlockMaps; /*@ ds:F43E */  /* start-up far allocation, 6000 bytes (07A9:0046); the
-                                              overlay 3 LoadMapScreen fills it from the level graphics
+                                              overlay 3 LoadLevel fills it from the level graphics
                                               file (src/EOV3.C:579-580, "the 6000-byte level
                                               graphics file", src/EOV3.C:201), and the overlay 4
                                               readers CopyViewColumn (src/EOV4.C:166, its
@@ -130,12 +130,12 @@ extern unsigned char far *gSoundMap; /*@ ds:DCAC */  /* the 120-byte sound map (
                                                          (adlib.dat or pcgamesn.dat, src/E177D.C:2-3) */
 extern void far *gBufDCFC; /*@ ds:DCFC */  /* start-up far allocation, 4096 bytes (07A9:0074); the
                                               overlay 3 level-state work buffer: PackLevelState
-                                              (ovl3:0FD1, src/EOV3.C:692) fills it with the gB894
+                                              (ovl3:0FD1, src/EOV3.C:692) fills it with the gMaze
                                               bytes (src/EOV3.C:701-704) and compresses it
                                               (CompressLcw, src/EOV3.C:705; the "Map compression
                                               failure" message at :708); UnpackLevelState
                                               (ovl3:109D, src/EOV3.C:719) calls Unpack4 to fill
-                                              it (src/EOV3.C:728) and reads it back into gB894
+                                              it (src/EOV3.C:728) and reads it back into gMaze
                                               (src/EOV3.C:729-731). E19FC.ASM:40 describes the caller
                                               that fills the block before compression (through
                                               ds:DCFC and ds:DCFE) */
@@ -155,20 +155,20 @@ extern void far *gWallBlocks; /*@ ds:DCA6 */  /* the far pointer GetPageBuffer(7
                                               declared "the far pointer DrawTile draws",
                                               src/EOV4.C:1033) */
 extern void far *gStagingPage; /*@ ds:DF4E */  /* slot 5's far pointer, GetPageBuffer(5) (07A9:00BA); the
-                                              action screen's swap buffer: Action0264 (src/E0ACD.C:287)
+                                              action screen's swap buffer: PickOrSwapMember (src/E0ACD.C:287)
                                               swaps the moving member's 243-byte record with the slot's
                                               through it (the record at gChars + gFB34 out to it, the
                                               slot's record into gChars + gFB34, and it back to the
                                               slot; three Unpack0 copies, src/E0ACD.C:307-309).
-                                              Action01E3 (src/E0ACD.C:263) blits it to the action field
-                                              through gFn804A (src/E0ACD.C:269), and FindWordPanel
-                                              passes it to gFn807E and gFn804A (src/EOV2.C:482, 522);
+                                              RestorePortraitPanel (src/E0ACD.C:263) blits it to the action field
+                                              through gRestoreRectToPage (src/E0ACD.C:269), and FindWordPanel
+                                              passes it to gSaveRectFromPage and gRestoreRectToPage (src/EOV2.C:482, 522);
                                               RedrawRowArea (0BD2:0ABE, src/E0BD2.C:622) passes it to
                                               gSaveRect with the same 0x12 by 0xA8 field that
-                                              Action01E3 blits (src/E0ACD.C:269).
-                                              Overlay 3 uses it too: LoadMapScreen reads LEVEL<n>.INF
+                                              RestorePortraitPanel blits (src/E0ACD.C:269).
+                                              Overlay 3 uses it too: LoadLevel reads LEVEL<n>.INF
                                               into it before unpacking that into gLevelInf (src/EOV3.C:571,
-                                              the Unpack at :573), LoadObjects (ovl3:09AA,
+                                              the Unpack at :573), LoadMaze (ovl3:09AA,
                                               src/EOV3.C:503) reads 0x1000 bytes into it (FileRead at
                                               src/EOV3.C:513) and copies it back (src/EOV3.C:518-525),
                                               LoadWallSet (ovl3:004F, src/EOV3.C:250) puts its
@@ -271,7 +271,7 @@ extern void far *gRemappedIcon; /*@ ds:DF48 */  /* the 0x12C-byte buffer LoadIte
                                            item description buffer (the old reading of src/EOV2.C) */
 /* one far pointer per icon to the image it holds, indexed by icon number; slot 0 holds the
    pointer shape (src/EOV2.C:205-211). ovl2:0029..0033 writes entry 0 (ds:DDE4 and
-   ds:DDE6) from a separate call through [ds:8086] with cell (0,0) and the sheet gOverlayBuf
+   ds:DDE6) from a separate call through [ds:8086] with cell (0,0) and the sheet gCgaMapDefault
    (ds:113F, src/EOV2.C:149, passed to gGetSpriteCell at src/EOV2.C:209); the loop at ovl2:03D0
    starts with `mov si,1` and fills entries 1..0x58 from the same call with a 16x16 cell position
    on the 20-per-row ITEMICN sheet (the string at ds:677D). */
@@ -285,7 +285,7 @@ extern void LoadSoundDriver(void); /*@ 177D:000A */
 extern void SetUnpackBuffer(unsigned seg, unsigned size); /*@ 1B82:0217 */
 /* the overlay entry at stub 2106:002A resolves to ovl2:09CC LoadItemData (src/EOV2.C:449). */
 extern void LoadItemData(void); /*@ 2106:002A */
-/* sets gFont1A47 = font and reads the font's width and height bytes (src/E1A47.C:81-85); the
+/* sets gCurFont = font and reads the font's width and height bytes (src/E1A47.C:81-85); the
    placeholder name stays. */
 extern void SetFont(char far *font); /*@ 1A47:0169 */
 /* the overlay entry at stub 2106:0048 resolves to ovl2:0577 LoadDecorateIcons (src/EOV2.C:328), which

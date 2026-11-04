@@ -33,7 +33,7 @@ struct ItemRecord {
 };
 extern struct ItemRecord gItems[]; /*@ ds:8DD0 */
 
-/* A 16-byte item-type record at ds:A9F0; src/E0D1C.C views the same table as gA9F5, five bytes in. */
+/* A 16-byte item-type record at ds:A9F0; src/E0D1C.C views the same table as gItemTypesClasses, five bytes in. */
 union ItemMask {
     unsigned word;          /* +0: the 16-bit class mask 0BD2:0AF2 tests */
     unsigned char byte;     /* +0: its low byte, which 0BD2:0C8E tests */
@@ -42,7 +42,7 @@ struct ItemType {
     union ItemMask slotMask;     /* +0 (ds:A9F0) */
     char pad02[3];
     signed char m05;        /* +5 (ds:A9F5): ANDed with gClassBaseBits by 0BD2:11FD */
-    signed char m06;        /* +6 (ds:A9F6): src/E0D1C.C's gA9F5[].identifiedNameIndex */
+    signed char m06;        /* +6 (ds:A9F6): src/E0D1C.C's gItemTypesClasses[].identifiedNameIndex */
     char pad07[7];
     union ItemMask m0E;     /* +0xE (ds:A9FE): bit 0x80 and the low 7 bits, read by 0BD2:000E and 05B5 */
 };
@@ -92,7 +92,7 @@ struct Monster {
     char pad00[2];
     int cell;                /* +2 */
     char pad04[0x16 - 0x04];
-    char m16;               /* +0x16 */
+    char flags;               /* +0x16 */
     char pad17[0x1C - 0x17];
 };
 extern struct Monster gMonsters[]; /*@ ds:8A82 */
@@ -134,7 +134,7 @@ extern void StartItemCast(int who, int action, int kind); /*@ 0EF3:28ED */
 extern void FlashViewDamage(void); /*@ 0EF3:06E7 */
 extern void FlashPartyMembers(int who); /*@ 0EF3:0665 */
 extern void ClearPoisonEffect(int who); /*@ 0EF3:1CE8 */
-extern void MoveObjectToId(struct Monster far *obj, int id, int orient); /*@ 08E6:0297 */
+extern void MoveMonsterToCell(struct Monster far *obj, int id, int orient); /*@ 08E6:0297 */
 extern void ApplyCharEffect(char who, long interval, char value, char firstEmpty); /*@ 1414:05ED */
 extern void HealCharacter(int who, int amount); /*@ 0DE8:0ADB */
 extern void ApplyStatusEffect(int who, int mask, char far *text, int attack, int count, int value, int flag); /*@ 0DE8:101A */
@@ -793,7 +793,7 @@ next:
    no effect; when it is not 5 it dispatches through 0EF3:28ED with the action gWandSpells[m0B]; for 5 it
    plays the wand sound, and when the surroundings pass the gWallTypeFlags/gMaze tests, moves every gMonsters
    record whose m02 equals the cell x (from StepCell(gPartyCell, page)) to the cell y
-   (MoveObjectToId(obj, y, -1)) and sets gViewDirty, otherwise reports no effect. */
+   (MoveMonsterToCell(obj, y, -1)) and sets gViewDirty, otherwise reports no effect. */
 /*@ 0BD2:0EE8 */ void UseWandItem(int who, int slot)
 {
     int effect;
@@ -824,7 +824,7 @@ next:
         obj = gMonsters;
         for (i = 0; i < 30; i++, obj++) {
             if (obj->cell == x) {
-                MoveObjectToId(obj, y, -1);
+                MoveMonsterToCell(obj, y, -1);
                 gViewDirty = 1;
             }
         }

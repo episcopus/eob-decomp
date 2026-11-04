@@ -288,7 +288,7 @@ _RunOverlayRequest PROC FAR
 ; (07A9:010C, its `if (!gMouseDisabled)` test at 07A9:0148: `cmp [814A],0; je`) and E14EF.C:227
 ; run their pointer work only when it is zero. Clearing it after a driver overlay has loaded and the
 ; pointer the entry returned has run therefore turns the handler and the pointer on [H]. This clear
-; is not the last word: after start-up returns 1, when g3092 is set (E07C8.C:152), Main sets the
+; is not the last word: after start-up returns 1, when gStartupDone is set (E07C8.C:152), Main sets the
 ; flag again from the mouse command-line argument, `if (!gMouseHandlerInstalled) gMouseDisabled = 1;
 ; else gMouseDisabled = !mouse;` (E07C8.C:153-156), so the mouse argument decides the final value.
         mov     ax,212Eh

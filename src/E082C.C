@@ -609,6 +609,6 @@ done:
 /*@ 082C:0B8F */ void SayAndPlaySound(char far *text)
 {
     DrawText(text);
-    PlaySound(0x4f);  /* the refuse sound; ReportActionRefused plays it again after this call
+    PlaySound(0x4f);  /* the refuse sound; PromptSpellTarget plays it again after this call
                          (src/E0EF3.C:677) */
 }

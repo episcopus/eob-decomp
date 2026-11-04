@@ -1370,7 +1370,7 @@ int PickAlignment(int classIndex); /* ovl0:2238, defined below */
 }
 /* ovl0:26C6: gives each of the first four characters its class starting equipment. It copies item
    0x23 into gChars[0]'s slot 2, then for each character sets m01 = 1, food = 0x64, index00 = i and slot
-   3 = item 0xa; for each of the class's four table entries g6101[m20][j] it looks up g60D5[idx]'s
+   3 = item 0xa; for each of the class's four table entries gClassStartItems[m20][j] it looks up gStartItems[idx]'s
    item and slot: an item of -1 is skipped, a negative slot takes the first free of slots 0..2, an
    occupied slot is skipped, item 5 for race >> 1 == 3 becomes 0x24, the item is copied into a free
    slot (the first free from slot 2) and stored. Finally it rebuilds the character's armour class

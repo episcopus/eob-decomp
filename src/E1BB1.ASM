@@ -5,17 +5,17 @@
 ; line 130: "The game draws its own pointer").
 ;
 ; 1BB1:0002 sets the mouse pointer's shape. Two callers. SetMouseItem (07A9:010C) passes the hot spot
-; (8,8) when its icon number item is above 0 and (0,0) otherwise, and the record gIconsDDE4[item] in
-; both cases (the calls SetMousePointerShape(MOUSE_HOTSPOT, MOUSE_HOTSPOT, gIconsDDE4[item]) and
-; SetMousePointerShape(0, 0, gIconsDDE4[item]) in src/E07A9.C; the table holds item icon images, the
-; comment just above gIconsDDE4). SetPointerShape (ovl2:0000, src/EOV2.C:206-211) passes (0,0) and
-; gPtrDD00, which it has just set to gIconsDDE4[0] (EOV2.C:210-211); LoadItemData calls
+; (8,8) when its icon number item is above 0 and (0,0) otherwise, and the record gItemIcons[item] in
+; both cases (the calls SetMousePointerShape(MOUSE_HOTSPOT, MOUSE_HOTSPOT, gItemIcons[item]) and
+; SetMousePointerShape(0, 0, gItemIcons[item]) in src/E07A9.C; the table holds item icon images, the
+; comment just above gItemIcons). SetPointerShape (ovl2:0000, src/EOV2.C:206-211) passes (0,0) and
+; gDefaultPointerIcon, which it has just set to gItemIcons[0] (EOV2.C:210-211); LoadItemData calls
 ; SetPointerShape at start-up (EOV2.C:451). The globals this function fills are the pointer's hot
 ; spot gPointerHotX/gPointerHotY (ds:8158/815A), its shape record gPointerShapeOff/gPointerShapeSeg
 ; (ds:816E/8170), its size gPointerHeight/gPointerWidth8 (ds:8154/8156) and its save-under buffer
 ; gPointerBackOff/gPointerBackSeg (ds:816A/816C); unit 1BBE (src/E1BBE.ASM) owns what reads and
 ; writes them: the hide's restore through gRestoreRect ([ds:804E]), and the show's draw through
-; gDraw80C2 ([ds:80C2]) and save through gSaveRect ([ds:80AE]).
+; gDrawShape ([ds:80C2]) and save through gSaveRect ([ds:80AE]).
 ;
 ; The size comes from the shape record: byte SHAPE_HEIGHT_BYTE (+3) is the height in pixels, read
 ; at 1BB1:0034 and stored unchanged at gPointerHeight (ds:8154, 1BB1:0066). Byte SHAPE_WIDTH_BYTE

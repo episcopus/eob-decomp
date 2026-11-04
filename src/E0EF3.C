@@ -95,10 +95,10 @@ struct Tgt {
 /* The 28-byte object records at ds:8A82 (src/E08E6.C); only the fields this unit touches. */
 struct Monster {
     signed char typeIndex;         /* +00: an index into the gMonsterTypes records */
-    signed char kind;       /* +01 */
+    signed char updateGroup;       /* +01 */
     int cell;                 /* +02 */
     char pad04[0x08 - 0x04];
-    signed char type;       /* +08: set to 0x0A by 0EF3:1530 and 0EF3:1A30 */
+    signed char mode;       /* +08: set to 0x0A by 0EF3:1530 and 0EF3:1A30 */
     char pad09[0x0B - 0x09];
     signed char timer;      /* +0B: set to 0x0F by 0EF3:1530 and 0EF3:1A30 */
     char pad0C[0x1C - 0x0C];
@@ -337,8 +337,8 @@ extern int GetCurrentItem(void); /*@ 0D1C:02DC */
 extern int MemberIs(int who, int mask); /*@ 0D1C:0670 */
 extern int TakeItemFromSlot(int who, int row); /*@ 0BD2:0106 */
 extern int FindMeleeTarget(char who, int value); /*@ 08E6:15B4 */
-extern void DamageObject(struct Monster far *obj, int n); /*@ 08E6:0FBE */
-extern void ClearObjectType(struct Monster far *obj); /*@ 08E6:000B */
+extern void DamageMonster(struct Monster far *obj, int n); /*@ 08E6:0FBE */
+extern void MakeMonsterFlee(struct Monster far *obj); /*@ 08E6:000B */
 extern void ListMonstersAtCell(int far *list, int key, int field, char flags, char scanAll, char scanFiltered); /*@ 08E6:17FD */
 extern int RollMonsterToHit(struct Monster far *obj, int who); /*@ 08E6:106B */
 extern void SetMouseItem(int n); /*@ 07A9:010C */
@@ -907,7 +907,7 @@ extern int gBurstMaskPixel;                /*@ ds:FC72 */ /* the handle gGetPixe
                     dmg = HalveSaveDamageB(&gMonsters[*list], dmg);
                 hit = 1;
                 if (!MonsterResistsMagic(*list))
-                    DamageObject(&gMonsters[*list], dmg);
+                    DamageMonster(&gMonsters[*list], dmg);
             }
         }
     } else if (rec->m04 == gPartyCell && (rec->m0B < 0 || flag10)) {
@@ -952,7 +952,7 @@ extern int gBurstMaskPixel;                /*@ ds:FC72 */ /* the handle gGetPixe
 }
 
 /* 0EF3:0D78: expire one spell on character `who`: format the message ds:57D9 with the member's
-   name and the spell's name, say it, remember `who` in gA999, then run the spell's expire callback
+   name and the spell's name, say it, remember `who` in gExpiringMember, then run the spell's expire callback
    gSpells[spell].remove(&gChars[who]). When the spell's flags byte has bits 0..2 set redraw
    the member, else when bit 3 is set redraw every character. Called by 1414:07CA. */
 /*@ 0EF3:0D78 */ void ExpireSpellEffect(register int spell, int who)
@@ -992,7 +992,7 @@ extern int gBurstMaskPixel;                /*@ ds:FC72 */ /* the handle gGetPixe
                 return;
             dmg = RollDice(count, sides, bonus);
             if (!MonsterResistsMagic(obj))
-                DamageObject(&gMonsters[obj], dmg);
+                DamageMonster(&gMonsters[obj], dmg);
         } else {
             sprintf(gFileNameBuf, gStrMissedMonster, gChars[gPanelMember].name);
             SayAndPlaySound(gFileNameBuf);
@@ -1292,7 +1292,7 @@ extern int gBurstMaskPixel;                /*@ ds:FC72 */ /* the handle gGetPixe
             list++;
             found = 1;
             if (gMonsterTypes[obj->typeIndex].m0F & 1) {
-                obj->type = 0x0A;
+                obj->mode = 0x0A;
                 obj->timer = 0x0F;
             }
         } else {
@@ -1355,7 +1355,7 @@ extern int gBurstMaskPixel;                /*@ ds:FC72 */ /* the handle gGetPixe
    faces (StepCell(gPartyCell, gPartyDir)), whose MonsterType record gMonsterTypes[obj->typeIndex] has bit 0 or 1 of its
    +0x0F long and which 0D1C:0BAB does not reject, roll 1d20 and clear the object's type when the
    roll is under the value 0A72:0006 gives for that record. The +2 byte is passed as
-   GetSavingThrowTarget's `limit` argument, which 0A72:0006 clamps to g341E[index]
+   GetSavingThrowTarget's `limit` argument, which 0A72:0006 clamps to gSaveMaxLevel[index]
    (src/E0A72.C:73-80). Reached through a table (the packet finds no direct caller). The threshold
    is a local and the clear uses &gMonsters[i], not the walking pointer. */
 /*@ 0EF3:1702 */ void CastFear(void)
@@ -1374,7 +1374,7 @@ extern int gBurstMaskPixel;                /*@ ds:FC72 */ /* the handle gGetPixe
         if (obj->cell == target && (rec->m0F & 3) != 0 && MonsterResistsMagic(i) == 0) {
             limit = GetSavingThrowTarget(0, rec->m02, 4);
             if (RollDice(1, 0x14, 0) < limit)
-                ClearObjectType(&gMonsters[i]);
+                MakeMonsterFlee(&gMonsters[i]);
         }
     }
 }
@@ -1471,7 +1471,7 @@ void AnimateConeOfCold(int count, int spread, int step, int cycle, int divisor,
         while (*list != -1) {
             dmg = RollDice(classSlot, 4, classSlot);
             if (MonsterResistsMagic(*list) == 0)
-                DamageObject(&gMonsters[*list], dmg);
+                DamageMonster(&gMonsters[*list], dmg);
             list++;
         }
     }
@@ -1505,7 +1505,7 @@ void AnimateConeOfCold(int count, int spread, int step, int cycle, int divisor,
             list++;
             found = 1;
             if (gMonsterTypes[obj->typeIndex].m0F & 2) {
-                obj->type = 0x0A;
+                obj->mode = 0x0A;
                 obj->timer = 0x0F;
             }
         } else {
@@ -1903,7 +1903,7 @@ void DrawSpellPanel(void);
    for the others when gGraphicsChoice is nonzero; when it is zero the own row uses 1/2/3 and the
    others 0/1/2 (the literals are the gGraphicsChoice == 0 branch only).
    It then draws the "1ST".."5TH" labels (gSpellLabels) and the name list box, and for each of the
-   seven rows of the member's slot row (gDD14 + gDDE2*6) draws the spell's name from gNameTable
+   seven rows of the member's slot row (gSpellBookSlots + gSpellPanelLevel*6) draws the spell's name from gNameTable
    (row 6, the abort row, gets ds:592B, or ds:5937 when it is the highlighted row gSpellPanelSlot). Finally
    it clears gDrawPage, hides the pointer, clips a 0xD by 0x35 box at (9, 0x7a), draws the
    panel's inner line with gDrawLine and shows the pointer. Called by 0EF3:21E0, 0EF3:25BD and

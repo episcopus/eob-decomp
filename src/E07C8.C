@@ -115,7 +115,7 @@ extern unsigned char far *gPaletteBuf;      /*@ ds:FE68: the palette buffer Star
                                          (:387, 0xf) are written, the other 14 keeping what MemAlloc
                                          returned; the setter is given gBuiltinPalette (:388), not this, so those 16
                                          bytes have no reader in src/. Case labels 2 and 3 (:392) get 0x300
-                                         bytes; main loads eobpal.col over it for choices 3 and 4 (:257), and the VGA choice (gGraphicsChoice == 3) has src/EOV3.C:584 load `<script>.PAL` over it and src/EOV4.C:1054-1061 send it to the setter when the request flag gFB45 is set (set at src/EOV3.C:686) and clear gFB45 */
+                                         bytes; main loads eobpal.col over it for choices 3 and 4 (:257), and the VGA choice (gGraphicsChoice == 3) has src/EOV3.C:584 load `<script>.PAL` over it and src/EOV4.C:1054-1061 send it to the setter when the request flag gLevelPalettePending is set (set at src/EOV3.C:686) and clear gLevelPalettePending */
 extern unsigned char gBuiltinPalette[];  /*@ ds:3057: the table passed to the palette setter for graphics choices 1 and 2 (no eobpal.col). Its length is unknown: no source or doc gives it, and the 16 bytes written at :385-387 belong to the gPaletteBuf buffer, not this. Whether it is a palette is [H] (src/EOV4.C:1035) */
 extern void far *gFont8x8;            /*@ ds:FE5A: the 8x8 font loaded from Font8.fnt (whitepaper
                                          4.4, docs/design/WHITEPAPER.md:171: FONT8.FNT is 8 x 8,

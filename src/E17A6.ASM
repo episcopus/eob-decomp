@@ -1441,7 +1441,7 @@ _SetPlaneAndWrite ENDP
 ; 17A6:0F1F: copy 0x1F40 groups of four source bytes from the far pointer at [bp+6]/[bp+8] to
 ; [bp+0A]/[bp+0C], nibble-swapping each byte through the table at CS:0200, one output byte per
 ; source byte. A group is read backwards from si + 3, then si advances by 4. The name rests on
-; the caller's comment, "expands the planes into gSegDF4E" (src/EOV3.C:456 to :457). Called
+; the caller's comment, "expands the planes into gStagingPage" (src/EOV3.C:456 to :457). Called
 ; from overlay 3 (ovl3:08A8, 08DA).
         PUBLIC  _ExpandNibbles              ; @ 17A6:0F1F
 _ExpandNibbles PROC FAR

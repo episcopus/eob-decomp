@@ -1,6 +1,6 @@
 /* Unit at EOB.EXE 1B82:0009 (547 bytes, 4 functions): file loading and unpacking. LoadFile reads
    up to len bytes of a named file into a buffer; LoadPacked takes two slot kinds, srcKind and dstKind, and
-   GetPageBuffer turns each into the far pointer (offset 0) of that slot's segment (MK_FP(gSegsFC0C[kind
+   GetPageBuffer turns each into the far pointer (offset 0) of that slot's segment (MK_FP(gPageSegs[kind
    | 1], 0), a segment read from the page/buffer table, not an allocation), reads a 2-byte length then
    the packed block and calls Unpack; Unpack dispatches on the block's format byte to one of five
    unpackers (1BA8:0006 for format 0 and 1D9A:0013/0113/018B/02CB for formats 4/3/1/2), allocating a
@@ -194,7 +194,7 @@ void Unpack(char far *src, void far *dst);
 
 /* 1B82:0217: records the shared work buffer's segment and size, the one formats 1 and 2 in Unpack use
    when it is large enough. StartupAlloc calls it once at 07A9:00DF, with slot 7's segment
-   (gSegsFC0C[7], GetPageBuffer(7)) pushed at 07A9:00DB and size UNPACK_BUFFER_SIZE (src/E07A9.C:241, in
+   (gPageSegs[7], GetPageBuffer(7)) pushed at 07A9:00DB and size UNPACK_BUFFER_SIZE (src/E07A9.C:241, in
    StartupAlloc, whose header is src/E07A9.C:202-216; UNPACK_BUFFER_SIZE is defined at
    src/E07A9.C:39). Both arguments are plain stores tested and discarded (the empty if bodies are
    what the bytes show, 1B82:0217-022C). */

@@ -134,7 +134,7 @@ extern char gNodeListChanged;           /*@ ds:5E20: nonzero forces the walk to 
                                 ovl1:1153), not the mouse */
 extern int gMatchedNodeKey;            /*@ ds:FC82: the dispatcher writes which key word matched (1 for +06,
                                 2 for +08, 0 none); 0ACD:0034 tests it only against 0, and
-                                0ACD:008C (Action008C) and 0ACD:00EB (Action00EB) read 1 and 2 as
+                                0ACD:008C (SelectPrevMember) and 0ACD:00EB (SelectNextMember) read 1 and 2 as
                                 an action mode (src/E0ACD.C) */
 extern int gRightButtonMasks[];          /*@ ds:5DF2: words 1..4 the gRightButtonMode redraw masks */
 

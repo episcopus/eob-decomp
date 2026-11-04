@@ -212,7 +212,7 @@ extern void ShutdownGame(void); /*@ 07C8:058A */
    hook. It restores the command line's video mode only when
    argv[5] (ds:84A0) is nonzero: SetVideoMode(7) takes the index 7 branch, which loads ds:84A0 (the
    mode from argv[5], src/E07C8.C:124), not the literal 7 (src/E1DDD.C:45-48), and SetVideoMode
-   calls the BIOS only when g84A2[7] (ds:84B0, 0 in the image, src/E1DDD.C:16-18) differs from
+   calls the BIOS only when gBiosVideoModes[7] (ds:84B0, 0 in the image, src/E1DDD.C:16-18) differs from
    ds:84A0 (src/E1DDD.C:49). It then prints "Memory Allocation Error! Press any key to exit to
    DOS.", waits for a key (WaitGameKey, which does no cleanup) and runs the shut-down path
    ShutdownGame (07C8:058A), which ends in exit(0). The `return 0` only meets the hook's int type;

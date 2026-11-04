@@ -9801,3 +9801,147 @@ new = "gTeleporterCells"
 kind = "global"
 why = "Six cells LoadDecorateIcons ovl2:0577 cuts from the DECORATE screen by gDecorateCellRects; their only reader is DrawSlotTeleporter ovl4:1D20, which draws gIntroCells[idx ^ gAnimWallPhase] for the animated wall type 0x34; nothing ties them to INTRO."
 date = "2026-11-03"
+
+[[rename]]
+id = "08E6:000B=MakeMonsterFlee"
+addr = "08E6:000B"
+old = "ClearObjectType"
+new = "MakeMonsterFlee"
+kind = "function"
+why = "Its only caller is CastFear (0EF3:1702); it sets mode +08 to 0, turns the monster to face away from the party ((DirectionFromPoints(cell, gPartyCell) ^ 4) >> 1) and sets m16 bit 3, which makes StepMonsterToward (08E6:0430) reverse its target direction; 0D1C:09CB TryTurnMonster does the same for a turned undead."
+date = "2026-11-03"
+
+[[rename]]
+id = "08E6:0055=AlertMode8Monsters"
+addr = "08E6:0055"
+old = "ClearType8Objects"
+new = "AlertMode8Monsters"
+kind = "function"
+why = "Sets every monster whose mode (+08) is 8 to mode 0 (hunting) with the party cell as targetCell, like AlertMonsterToParty (08E6:00C3) does for one; it runs when a mode-8 monster is attacked (08E6:03FE) or dies (08E6:0EC3), so the group wakes together; mode 8 is skipped by 00C3's alert."
+date = "2026-11-03"
+
+[[rename]]
+id = "08E6:017E=BuildCellPosMask"
+addr = "08E6:017E"
+old = "BuildObjectFrameMask"
+new = "BuildCellPosMask"
+kind = "function"
+why = "Returns a bit mask of the cell positions (Monster +04, 0..3) taken by the monsters in map cell `id`, -2 when gMaze[id * 9 + 4] & 7 says four monsters fill it; +04 is cellPos, not a frame (FindObjectFrameBit 08E6:0218 picks a clear bit as the new position)."
+date = "2026-11-03"
+
+[[rename]]
+id = "08E6:0218=FindFreeCellPos"
+addr = "08E6:0218"
+old = "FindObjectFrameBit"
+new = "FindFreeCellPos"
+kind = "function"
+why = "Returns the first cell position (0..3) not set in BuildObjectFrameMask(cell), searched in gPosSearchOrder by the monster's facing, or -1; TryMoveMonster (08E6:0309) and 08E6:058A store the result in Monster +04, the cellPos."
+date = "2026-11-03"
+
+[[rename]]
+id = "08E6:0297=MoveMonsterToCell"
+addr = "08E6:0297"
+old = "MoveObjectToId"
+new = "MoveMonsterToCell"
+kind = "function"
+why = "Moves a monster to map cell `id` (Monster +02) and facing `orient`, decrementing the old cell's monster count at gMaze[cell * 9 + 4] and incrementing the new one's; KillMonster (08E6:0EC3) passes cell 0 to take a dead monster off the map; callers 0309, 131D, 0BD2, 122E."
+date = "2026-11-03"
+
+[[rename]]
+id = "08E6:058A=RepickMonsterCellPos"
+addr = "08E6:058A"
+old = "SetObjectFrameFromId"
+new = "RepickMonsterCellPos"
+kind = "function"
+why = "Sets Monster +04 cellPos to 4 (the centre) when the monster is alone in its cell (gMaze[cell * 9 + 4] & 7 == 1), else to FindObjectFrameBit's free position; TryMonsterMelee (08E6:05EA) calls it when the monster faces the party but IsMonsterAtFront (08E6:103D) is 0."
+date = "2026-11-03"
+
+[[rename]]
+id = "08E6:0B34=StepMonsterOrTurn"
+addr = "08E6:0B34"
+old = "StepObjectOrient"
+new = "StepMonsterOrTurn"
+kind = "function"
+why = "Calls TryMoveMonster(obj, StepCell(cell, orient), -1), a step into the cell ahead, and only when that fails turns the facing by `delta` in place; UpdateObjects (08E6:0CC8) runs it for modes 1 to 3 with gTurnForType1To3 deltas 2, -1 and 1 (ds:3238)."
+date = "2026-11-03"
+
+[[rename]]
+id = "08E6:0CC8=UpdateMonsters"
+addr = "08E6:0CC8"
+old = "UpdateObjects"
+new = "UpdateMonsters"
+kind = "function"
+why = "Walks the 30 monster records gMonsters (ds:8A82) of update group `kind` (+01) with hit points above 0, alerts them, and switches on mode +08 to UpdateHuntingMonster, StepObjectOrient, StepMonsterAlongWall and TickMonsterTimer; called by the timed effects 2 to 5 (1414:05DF) and ovl6:09D2."
+date = "2026-11-03"
+
+[[rename]]
+id = "08E6:0DCA=FlashMonsterHit"
+addr = "08E6:0DCA"
+old = "RestoreObjectFlags"
+new = "FlashMonsterHit"
+kind = "function"
+why = "Called only by DamageObject (08E6:0FBE): when the monster's cell is in view it sets m16 bit 1, which DrawSlotMonsters (ovl4:0D1B) draws through the remap row ds:1CD3 (colour 0 kept, the rest 15) or ds:1CE3, redraws the view at once and clears the bit: the white flash of a hit."
+date = "2026-11-03"
+
+[[rename]]
+id = "08E6:0FBE=DamageMonster"
+addr = "08E6:0FBE"
+old = "DamageObject"
+new = "DamageMonster"
+kind = "function"
+why = "Subtracts `damage` from Monster +0E, the current hit points, flashes the monster (08E6:0DCA) and runs KillMonster (08E6:0EC3) at 0 or less; every caller passes a gMonsters record (0D1C:09CB, 0DE8:02D4, 0DE8:0763, 0EF3:0A3F, 0EF3:18D8, 08E6:1634)."
+date = "2026-11-03"
+
+[[rename]]
+id = "08E6:155F=ListMonstersByCellPos"
+addr = "08E6:155F"
+old = "BuildObjectIdList"
+new = "ListMonstersByCellPos"
+kind = "function"
+why = "Fills a six-entry list with -1, then sets list[cellPos] to the gMonsters index of each monster in map cell `key` (Monster +02 and +04); FindMeleeTarget (08E6:15B4) and DamageNearRowMonsters (08E6:16D6) then read list[4], the centre, and the positions nearest the party."
+date = "2026-11-03"
+
+[[rename]]
+id = "1414:05DF=UpdateMonsterGroup"
+addr = "1414:05DF"
+old = "UpdateEffectObjects"
+new = "UpdateMonsterGroup"
+kind = "function"
+why = "The handler of timed effects 2 to 5 at ds:5BC8..ds:5BF8 with arguments 0..3; it calls UpdateObjects(kind), which moves only the monsters whose +01 update group equals kind; LoadMapScreen (ovl3:0A7C) sets each group's period from the level file."
+date = "2026-11-03"
+
+[[rename]]
+id = "1414:0CE7=RandomiseMonsterOffsets"
+addr = "1414:0CE7"
+old = "RandomiseObjectState"
+new = "RandomiseMonsterOffsets"
+kind = "function"
+why = "Timed effect 15 (period 25): for each of the 30 monsters that wins a 1d2 it stores (1d2 << 4) + 1d2 in Monster +17, which DrawSlotMonsters (ovl4:0D1B) adds to the shape's x (high nibble) and y (low nibble), and reports the cell to IsCellInView for a redraw."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:F442=gQuietMonsterUpdate"
+addr = "ds:F442"
+old = "gQuietObjectUpdate"
+new = "gQuietMonsterUpdate"
+kind = "global"
+why = "Set to 1 by ovl6:09D2 around UpdateObjects(0) and UpdateObjects(1), the monster updates; TryMoveMonster (08E6:0309) skips the monster move sound and ovl4:1F51 skips its redraw while it is set."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:3237=gTurnForMode1To3"
+addr = "ds:3237"
+old = "gTurnForType1To3"
+new = "gTurnForMode1To3"
+kind = "global"
+why = "Indexed by Monster +08 for modes 1 to 3 at 08E6:0CC8 (ds:3238..ds:323A are 2, 0xff, 1, the turn StepObjectOrient makes when blocked); +08 is the behaviour mode, so this follows the proposed field name mode."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:3234=gTurnForMode5To6"
+addr = "ds:3234"
+old = "gTurnForType5To6"
+new = "gTurnForMode5To6"
+kind = "global"
+why = "Indexed by Monster +08 for modes 5 and 6 at 08E6:0CC8, reading ds:3239 = 0xff and ds:323A = 1, the wall side StepMonsterAlongWall (08E6:0B94) follows; renamed to match the proposed field name mode for +08."
+date = "2026-11-03"

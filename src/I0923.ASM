@@ -54,9 +54,9 @@ gMcbSeg       dw 0                      ; 0923:000E: MCB of the one-paragraph bl
 ; DGROUP's frame (0E9F) is 057Ch paragraphs above this segment's (0923): 057C0h + 28C4h = 8084h. The
 ; word has no relocation in the EXE, so the assembler resolved it to a constant. ReserveMemoryBelowVideo
 ; stores the end of DOS memory here (0923:01F0) and TrimMemoryToVideo reads it back (0923:02B3); i0892
-; reads it at 0892:01D8, itoa's it into g28B4 (0892:01CF) and passes g28B4 as the last execl
+; reads it at 0892:01D8, itoa's it into gMemTopArg (0892:01CF) and passes gMemTopArg as the last execl
 ; argument (src/I0892.C:271). That EOB.EXE then sets its own gMemTopSeg from atol of the number behind
-; g8894 (src/E07C8.C:311) is a hypothesis [H]: no file in src/ reads argv[6] (src/E07C8.C reads argv[1]
+; gArgv (src/E07C8.C:311) is a hypothesis [H]: no file in src/ reads argv[6] (src/E07C8.C reads argv[1]
 ; to argv[5], :229 to :235) and nothing in src/ or docs/ writes ds:8894 (src/E1990.ASM:23-26), so the
 ; link from this number to EOB's word is not shown, and the writer of ds:8894 is unknown.
 gMemTopSeg    equ 8084h
@@ -117,7 +117,7 @@ CheckMCB ENDP
 ; block to free), the walk finds a block type that is neither 'M' nor 'Z' (0923:00B1), and the
 ; environment copy's allocation fails (0923:00DB, jb); the last two reach 0923:011C, which frees the
 ; one-paragraph block first. The caller at 0892:0241 tests the result at 0892:0271 and, on 1, prints
-; a message (PrintString, 097D:0000; f1DDD_002D(7) at 0D2B:0033 runs first) and exits instead of
+; a message (PrintString, 097D:0000; SetVideoMode(7) at 0D2B:0033 runs first) and exits instead of
 ; reserving memory; 0892:026C is the call itself.
         PUBLIC  CheckMemoryChain        ; @ 0923:0071
 CheckMemoryChain PROC FAR

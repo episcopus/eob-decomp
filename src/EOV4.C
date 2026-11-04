@@ -481,23 +481,23 @@ extern void DrawShapeClipped(int page, void far *src, int x, int y, int region);
 /* The 28-byte object records at ds:8A82 and the 27-byte records at ds:1A3B (src/E08E6.C). */
 struct Monster {
     char typeIndex;                /* +0: index into the ds:1A3B table */
-    signed char kind;       /* +1 */
+    signed char updateGroup;       /* +1 */
     int cell;                 /* +2 */
     char cellPos;             /* +4 */
     char orient;            /* +5 */
-    char toggle;            /* +6 */
-    char m07;               /* +7 */
-    signed char type;       /* +8 */
+    char animPhase;            /* +6 */
+    char altShapes;               /* +7 */
+    signed char mode;       /* +8 */
     signed char state;      /* +9 */
-    char m0A;               /* +A */
+    char attackFrame;               /* +A */
     char timer;             /* +B */
-    int hitPoints;          /* +C */
-    int count;              /* +E */
+    int maxHp;          /* +C */
+    int hp;              /* +E */
     int targetCell;
     int dropItem1;
     int dropItem2;
-    char m16;               /* +16: flag byte */
-    char m17;               /* +17 */
+    char flags;               /* +16: flag byte */
+    char drawOffset;               /* +17 */
     char actionDelay;
     char actionsLeft;
     char m1A;
@@ -522,7 +522,7 @@ struct MonsterType {
 extern struct Monster gMonsters[]; /*@ ds:8A82 */
 extern struct MonsterType gMonsterTypes[]; /*@ ds:1A3B */
 extern signed char gMonsterShrinkSteps[]; /*@ ds:6FBE */   /* byte table indexed by gViewSlotRow[slot] (this unit) */
-extern signed char gMonsterDrawOrder[]; /*@ ds:7001 */   /* per-page, per-frame byte (this unit) */
+extern signed char gMonsterDrawOrder[]; /*@ ds:7001 */   /* by gPartyDir and cellPos, the draw slot 0..4, the far half first (this unit) */
 extern signed char gMonsterFramesMirrorStep[]; /*@ ds:6FC1 */   /* sprite table A (this unit) */
 extern signed char gMonsterFrames[]; /*@ ds:6FE1 */   /* sprite table B (this unit) */
 extern signed char gMonsterYAdjust[]; /*@ ds:7015 */   /* per-row y nudge (this unit) */
@@ -540,15 +540,17 @@ extern void DrawShapeClippedFlipped(int page, void far *src, int x, int y, int r
 extern void DrawShapeClippedRemapped(int page, void far *src, int x, int y, int region); /*@ 082C:06C7 */
 extern void DrawShapeClippedRemapFlipped(int page, void far *src, int x, int y, int region); /*@ 082C:070D */
 
-/* ovl4:0D1B: draws the map objects whose ds:8A82 record id matches the cell the player's facing
-   points at. The cell id is (gPartyCell + gViewCellOffsets[gPartyDir * 18 + slot]) & 0x3ff; the 30 object
-   records are scanned and each matching one is put in a 5-entry far-pointer slot indexed by
-   gMonsterDrawOrder[gPartyDir * 5 + obj->frame]. Each non-empty slot is then blitted gMonsterShrinkSteps[gViewSlotRow[slot]] times into
-   ds:DCFC through the sprite blitter the video mode selects, positioned by ds:1D61/ds:1D63 nudged
-   by the object's ds:1A3B record and its +0x17 byte, and drawn by one of four DrawRegion wrappers
-   (which one depends on the sprite's sign and the +0x16 flag bit 2, which also runs the colour
-   callback ds:80D2 with ds:1CD3 or ds:1CE3). Called by DrawViewSlots when the tile record's byte
-   +4 has any of bits 0..2. Purpose unknown: what the counters and the four wrappers mean.
+/* ovl4:0D1B: draws the monsters standing in the map cell view slot `slot` shows. The cell is
+   (gPartyCell + gViewCellOffsets[gPartyDir * 18 + slot]) & 0x3ff; the 30 monster records are
+   scanned and each one in the cell is put in a 5-entry far-pointer slot indexed by
+   gMonsterDrawOrder[gPartyDir * 5 + obj->cellPos], the far half first. Each slot's shape comes from
+   the animation phase (+06) and facing, or is 5 or 6 for the attack frames 0xfe and 0xff (+0A) in
+   the nearest row, from the second shape set when +07 is set; it is shrunk
+   gMonsterShrinkSteps[gViewSlotRow[slot]] times into ds:DCFC through the sprite blitter the video
+   mode selects, positioned by gViewPosX and gViewPosY nudged by the monster's ds:1A3B record and its
+   draw offset (+17), and drawn by one of four DrawShape wrappers: mirrored for a negative shape, and
+   remapped through ds:1CD3 or ds:1CE3 (the hit flash) when m16 bit 1 is set. Called by DrawViewSlots
+   when the cell's gMaze +4 monster count is nonzero.
    Four source forms TCC is picky about, all confirmed by the match: the object byte +0xA is tested
    against (char)0xfe/(char)0xff so the compare is a byte compare (against int constants it would
    sign-extend first); the absolute sprite is an explicit if/else (abs() compiles to a library
@@ -595,20 +597,20 @@ extern void DrawShapeClippedRemapFlipped(int page, void far *src, int x, int y, 
         obj = arr[page5];
         info = &gMonsterTypes[obj->typeIndex];
         if (info->m0E & 2)
-            sprite = gMonsterFramesMirrorStep[(obj->toggle << 4) + page4 + obj->orient];
+            sprite = gMonsterFramesMirrorStep[(obj->animPhase << 4) + page4 + obj->orient];
         else
-            sprite = gMonsterFrames[(obj->toggle << 4) + page4 + obj->orient];
+            sprite = gMonsterFrames[(obj->animPhase << 4) + page4 + obj->orient];
         if (tileRow == 0) {
-            if (obj->m0A == (char)0xfe)
+            if (obj->attackFrame == (char)0xfe)
                 sprite = 5;
-            else if (obj->m0A == (char)0xff)
+            else if (obj->attackFrame == (char)0xff)
                 sprite = 6;
         }
         if (sprite < 0)
             spriteAbs = -sprite;
         else
             spriteAbs = sprite;
-        if (obj->m07)
+        if (obj->altShapes)
             nudge = 0x12;
         else
             nudge = 0;
@@ -633,9 +635,9 @@ extern void DrawShapeClippedRemapFlipped(int page, void far *src, int x, int y, 
             y += gMonsterYAdjust[tileRow];
         x -= (((signed char far *)cell)[2] << 3) >> 1;
         y -= ((signed char far *)cell)[1];
-        x += (obj->m17 & 0xf0) >> 4;
-        y += obj->m17 & 0xf;
-        if (obj->m16 & 2) {
+        x += (obj->drawOffset & 0xf0) >> 4;
+        y += obj->drawOffset & 0xf;
+        if (obj->flags & 2) {
             if (gGraphicsChoice == 0)
                 gSetRemapTable(gHitFlashRemapCga);
             else
@@ -788,7 +790,7 @@ extern signed char gDoorSplitFrom30[]; /*@ ds:71A2 */   /* per index nudge f (th
 
 #define NO_RECORD -1        /* a ds:18BF byte that means "this heading has no size record" */
 
-/* ovl4:1411: draws the wall face(s) one view slot shows for the current action (ds:FBC8). It selects
+/* ovl4:1411: draws the wall face(s) one view slot shows for the dungeon level (gCurLevel, ds:FBC8). It selects
    the slot's size record gDoorShapes[col] (col = gDoorShapeSet[heading] + 2 - gViewSlotRow[slot]) and its x base
    gViewPosX[(slot*5+4)*2]; unless the action is 7..9 it first fits region 5 to the column extent
    (SetRegionColumnExtent). Actions 1..3 and 12 draw the record once, at a y base from ds:70F0 (12:
@@ -924,7 +926,7 @@ struct Projectile {
     char pad01;
     int m02;                  /* +02 */
     int cell;                  /* +04: the slot heading the record belongs to */
-    char m06;                 /* +06: its low two bits index ds:7246; ds:7262 is indexed by the whole byte (m07 * 4 + m06) */
+    char m06;                 /* +06: its low two bits index ds:7246; ds:7262 is indexed by the whole byte (altShapes * 4 + m06) */
     signed char dir;          /* +07: the page the record is seen from */
     int item;                  /* +08: indexes the ds:8DD0 item records */
     char m0A;                 /* +0A: row in the ds:F2F8 cell table */
@@ -1099,7 +1101,7 @@ extern signed char gViewDrawOrder[]; /*@ ds:7278 */     /* per-view-slot byte (t
 /* ovl4:1E18: walks the view slots from `start` to 17. For each, ds:7278 gives the slot number,
    ComputeViewSpan computes the visible column span into ds:FE3E/ds:FE40 and the slot is drawn only
    if the span is not empty: DrawSlotDecorations draws the slot, DrawSlotItems draws the sprite at word +5 of the
-   slot's ds:EF6A tile record, and for slots below 15 Ovl4_1411 (when ds:194B of the record's
+   slot's ds:EF6A tile record, and for slots below 15 DrawSlotDoor (when ds:194B of the record's
    heading byte has bit 3) and DrawSlotMonsters (when byte +4 of the record has any of bits 0..2).
    DrawSlotProjectiles always runs, and DrawSlotTeleporter only for the heading value 0x34. Called by DrawViewFrame at
    ovl4:1F75. Purpose unknown: what the slot numbers and the 0x34 heading mean. */
@@ -1157,7 +1159,7 @@ extern void ShowPointerZone(void); /*@ 1BBE:02C2 */
 }
 
 extern char gLevelPalettePending; /*@ ds:FB45 */           /* request flag, cleared here (src/E07A9.C) */
-extern char gQuietObjectUpdate; /*@ ds:F442 */           /* gate checked here (src/E08E6.C) */
+extern char gQuietMonsterUpdate; /*@ ds:F442 */           /* gate checked here (src/E08E6.C) */
 extern char gFlag; /*@ ds:F3B9 */           /* selects a table set (src/E0ACD.C) */
 extern char gViewDirty; /*@ ds:DF4C */           /* a notify flag, cleared here (src/E08E6.C) */
 extern unsigned long gFrameWaitTicks; /*@ ds:849A */  /* the frame/effect busy counter (src/E08E6.C) */
@@ -1175,7 +1177,7 @@ extern void PlaySoundDefault(int sound); /*@ 177D:00F3 */
    when gLevelPalettePending is set and gGraphicsChoice is 3 (MCGA/VGA, re/globals.toml ds:8102) it loads the
    palette gPaletteBuf and clears gLevelPalettePending; when `full` is also set, it first blanks the view box (gFillRect
    with pattern 0xc). Then it waits for gFrameWaitTicks
-   to reach zero, and, when `full` is set and gQuietObjectUpdate is clear, clips a rectangle. It always plays
+   to reach zero, and, when `full` is set and gQuietMonsterUpdate is clear, clips a rectangle. It always plays
    sound 0 and, when gFlag is zero, runs DrawCompass; finally it clears gViewDirty. Called from the game
    loop. */
 /*@ ovl4:1F51 */ void DrawViewFrame(int full)
@@ -1194,7 +1196,7 @@ extern void PlaySoundDefault(int sound); /*@ 177D:00F3 */
     }
     while (gFrameWaitTicks != 0)
         ;
-    if (full && !gQuietObjectUpdate) {
+    if (full && !gQuietMonsterUpdate) {
         HidePointerZone(0, 0, 0xb0, 0x78);
         CopyRegion(0, 0, 0, 0, 0x16, 0x78, 2, 0);
         ShowPointerZone();

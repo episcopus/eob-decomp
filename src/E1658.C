@@ -10,8 +10,8 @@
    when both bits are set. Only when both are clear does it draw by the kind +0A: the region
    front end 1A29:000F for kind 1 (Purpose unknown, E1A29.C:68), called with the src14 or src10
    pointer (E16A5.C:560, 643), text through gDrawText ds:80CA for kind 2, a tile through
-   gDraw805E ds:805E for kind 3, the src10 pointer as a far callback for kind 4 (E16A5.C:655-657),
-   and a box through DrawBox 1A1F:000C or gDraw8066 ds:8066 for kinds 5 and 0, where kind 0 draws
+   gDrawIndexedTile ds:805E for kind 3, the src10 pointer as a far callback for kind 4 (E16A5.C:655-657),
+   and a box through DrawBox 1A1F:000C or gXorRect ds:8066 for kinds 5 and 0, where kind 0 draws
    the box only when the mode bytes say so (inside this both-clear gate): mode 2 draws with no
    state test, and mode 3 also needs 0x0008 (modeB) or 0x0010 (modeC) set (E16A5.C:663-671).
    The five state operations here (0073, 0154, 017B, 01E6, 02F5) and the dispatcher 16A5:00BD
@@ -69,7 +69,7 @@ struct Node {
    sets the mode on every call (E16A5.C:205-212, inside the gMouseDisabled gate at
    E16A5.C:202-245); while it is disabled only a key match writes the mode (E16A5.C:293, 299),
    which clears the latch. E0ACD.C:369 reads the same value 1 in gLeftButtonMode as a slot choice
-   (Action0415, 0ACD:0415): (gLeftButtonMode & 0x7F) == 1 swaps the selected item, anything else uses it,
+   (ClickHandSlot, 0ACD:0415): (gLeftButtonMode & 0x7F) == 1 swaps the selected item, anything else uses it,
    so 0x80 is a flag beside the mode value and 1 is not only this dispatcher's mode. */
 #define BUTTON_MODE_NODE_OFF 1
 #define BUTTON_MODE_NODE_ON  3
@@ -116,7 +116,7 @@ extern void DrawNode(struct Node far *node); /*@ 16A5:07C3 */
 
 /* 1658:001E: walks `head` to its tail, links `item` after it, clears item's own link and returns
    the original head. Used by other units: the BuildList functions (BuildList1 to BuildList5 in
-   E0CF7.C), BuildRowNodeList (ovl0:042F, EOV0.C:354-367) and _Ovl1_1153 (ovl1:1153,
+   E0CF7.C), BuildRowNodeList (ovl0:042F, EOV0.C:354-367) and _BuildMenuButtons (ovl1:1153,
    EOV1.ASM:2184, call at :2417); E0ACD.C reaches it only through its calls to BuildList1 to
    BuildList4 (E0ACD.C:174, 239, 242, 276, 301, 315, 333 and 923). Called by InsertNode below. */
 /*@ 1658:001E */ struct Node far *ListAdd(struct Node far *head, struct Node far *item)

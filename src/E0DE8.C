@@ -5,7 +5,7 @@
    against an effect (0F98, 0FCA, 101A), runs the party-wipe ending (093B) and uses carried items
    (0359 ApplyItemAttack, 0474 MoveCarriedItem, 0537 UseCarriedItem, 05BB UseItemByKind, 0763
    UseItem). It walks the 243-byte character records at ds:F580 (struct CharRec, src/E0A72.C), the
-   28-byte object records at ds:8A82 (struct Monster, src/E08E6.C), the item records gItems (ds:8DD0)
+   28-byte monster records at ds:8A82 (struct Monster, src/E08E6.C), the item records gItems (ds:8DD0)
    (struct ItemRecord, src/E0D1C.C), the 27-byte records at ds:1A3B (struct MonsterType, src/E0D1C.C) and
    the 16-byte item types at ds:A9F0 (struct ItemType, src/EOV2.C). Most meanings are not
    established, so most function names say what a function does rather than what the game calls
@@ -19,7 +19,7 @@ struct CharRec {            /* the 243-byte (0xF3) character records at ds:F580;
     char name[0x0B];        /* +02: the character's name, NUL padded (0DE8:0C82) */
     char pad0D[0x15 - 0x0D];
     signed char dexterity;  /* +15: one of the five further stat bytes (src/E0A72.C); indexes the
-                               per-stat table g349E for the armour-class base (GetArmourClassBase, 0A72:019D)
+                               per-stat table gDexArmourAdjust for the armour-class base (GetArmourClassBase, 0A72:019D)
                                and the per-stat table ds:3474 (GetDexMissileBonus, 0A72:0181) */
     char pad16;
     signed char constitution;        /* +17: an index into gConSaveBonus (0D1C:059B); also the second argument of
@@ -46,14 +46,14 @@ struct CharRec {            /* the 243-byte (0xF3) character records at ds:F580;
     unsigned char lastAction[0xF3 - 0xE8]; /* +E8: the last action result per carried slot (UseItem :523) */
 };
 
-struct Monster {              /* the 28-byte object records at ds:8A82; see src/E08E6.C */
+struct Monster {              /* the 28-byte monster records at ds:8A82; see src/E08E6.C */
     char typeIndex;                /* +0: an index into the ds:1A3B table */
     char pad01;
     int cell;                /* +2 */
     char pad04;
     char orient;               /* +5 */
     char pad06[0x16 - 0x06];
-    char m16;               /* +16: bit 0 set on every 0007 call (the object was attacked) */
+    char flags;               /* +16: bit 0 set on every 0007 call (the monster was attacked) */
     char pad17[0x1C - 0x17];
 };
 
@@ -85,10 +85,10 @@ struct ItemRecord {
                                new item in after this record through it */
     int nextLink;                /* +0xa (ds:8DDA): the other link; the list walks (0BD2:0385, 040E,
                                04AA) follow it */
-    signed char level;        /* +0xc (ds:8DDC): gFBC8 or -1, set by 01D0 */
+    signed char level;        /* +0xc (ds:8DDC): gCurLevel or -1, set by 01D0 */
     signed char value;        /* +0xd (ds:8DDD): the item's bonus or effect value: the signed bonus
                                printed as "%s +%d" and "Cursed %s %d", the spell index into ds:1278
-                               and ds:12E0, the wand effect index g38FA[m0B], and the scroll and
+                               and ds:12E0, the wand effect index gWandSpells[m0B], and the scroll and
                                potion values (0BD2:05B5, 0D2D, 0EE8, 1001) */
 };
 
@@ -130,7 +130,7 @@ extern struct MonsterType gMonsterTypes[]; /*@ ds:1A3B */
 extern struct ItemRecord gItems[]; /*@ ds:8DD0 */
 extern struct ItemType gItemTypes[]; /*@ ds:A9F0 */
 extern signed char gViewToCellPos[]; /*@ ds:1A1B */   /* the cell position seen at a view position, four per gPartyDir (src/E0D1C.C) */
-extern signed char gViewRelativePos[]; /*@ ds:1A2B */   /* per-page byte table used by 01FF */
+extern signed char gViewRelativePos[]; /*@ ds:1A2B */   /* by gPartyDir, a cell position to its view position; used by 01FF */
 extern signed char gClassSlotCount[]; /*@ ds:115F */   /* a byte table indexed by a class, used by 0B45 */
 extern signed char gClassBaseBits[]; /*@ ds:1231 */   /* a byte table indexed by the class classIndex (:725;
                                                 src/E0BD2.C:102) */
@@ -154,7 +154,7 @@ extern signed char gViewFrontSide; /*@ ds:A9C6 */     /* an offset within a nine
                                                 0ACD:0644) */
 extern char gViewDirty; /*@ ds:DF4C */            /* set to 1 when an action took effect (0DE8:0359,
                                                 0DE8:0537, 0DE8:05BB) */
-extern char gHpMaxOrAttackTarget; /*@ ds:DCA4 */            /* the target object 0359 records (:361); UseItem damages
+extern char gHpMaxOrAttackTarget; /*@ ds:DCA4 */            /* the target monster 0359 records (:361); UseItem damages
                                                 gMonsters[gHpMaxOrAttackTarget] (:520) */
 extern unsigned char gWallHandlerIndex[]; /*@ ds:1905 */   /* a 256-byte table gMaze indexes into (0359) */
 extern char gMaze[]; /*@ ds:B894 */          /* the nine-byte records at ds:B894 indexed by row * 9
@@ -181,7 +181,7 @@ extern int RemoveListItem(void far *head, int key, int target); /*@ 0BD2:02B9 */
 extern int AddDDEffect(int who, int item, int volume, int kind, int page, int type); /*@ 0BD2:07DE */
 extern int FindMeleeTarget(char who, int value); /*@ 08E6:15B4 */
 extern int GetClassSlot24Value(int who); /*@ 0EF3:04F7 */
-extern void DamageObject(struct Monster far *obj, int damage); /*@ 08E6:0FBE */
+extern void DamageMonster(struct Monster far *obj, int damage); /*@ 08E6:0FBE */
 extern void EndInvisibility(struct CharRec far *rec); /*@ 0EF3:12A1 */
 extern void EndArmor(struct CharRec far *rec); /*@ 0EF3:0F86 */
 extern void ApplyCharEffect(char who, long interval, char value, char firstEmpty); /*@ 1414:05ED */
@@ -201,11 +201,11 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
 void DamageCharacter(int who, int what);  /* forward: 01FF reaches it with a far call */
 void LevelUpSlot(int who, int cls, int slot);  /* forward: 0B45 reaches it with a far call */
 
-/* 0DE8:0007: the to-hit roll of character `who` against object `obj`. It derives an attack bonus
+/* 0DE8:0007: the to-hit roll of character `who` against monster `obj`. It derives an attack bonus
    from the item record `slot` (an index into gItems; its m02 item type index selects the m0B
    weapon value when it is 1..3), adds either the attacker's strength to-hit bonus
    (GetStrengthToHitBonus, 0A72:00CF) or the dexterity char value depending on `useStrength`, sets
-   gMonsters[obj].m16 bit 0 on every call (the object was attacked), whatever the outcome, and compares
+   gMonsters[obj].m16 bit 0 on every call (the monster was attacked), whatever the outcome, and compares
    a d20 roll (raised by gPartySpellFlags bits 4 and 5 and by gChars[who].effectFlags bit 6, clamped to 1..20) against
    GetHitTarget(who, gMonsterTypes[gMonsters[obj].typeIndex].m00) minus the bonus. Returns 1 when the roll
    reaches that to-hit target. Called by 0DE8:02D4, 0DE8:0359, 0EF3:0A3F DamageTargetCell and
@@ -231,7 +231,7 @@ void LevelUpSlot(int who, int cls, int slot);  /* forward: 0B45 reaches it with 
     else
         bonus += GetDexMissileBonus(who);
     entry = gMonsters[obj].typeIndex;
-    gMonsters[obj].m16 |= 1;
+    gMonsters[obj].flags |= 1;
     toHit = GetHitTarget(who, gMonsterTypes[entry].m00) - bonus;
     roll = RollDice(1, 20, 0);
     if (gPartySpellFlags & 0x30)
@@ -281,9 +281,9 @@ void LevelUpSlot(int who, int cls, int slot);  /* forward: 0B45 reaches it with 
     return kind == 2 || kind == 3;
 }
 
-/* 0DE8:01FF: runs the attack of a ds:DD2C record against the object it names. It takes the
+/* 0DE8:01FF: runs the hit of a projectile (a ds:DD2C record) on the party. It takes the
    record's m08 slot (an index into gItems) and m0A item type, reads
-   gViewRelativePos[gPartyDir * 4 + (gItems[slot].tag & 3)] as the base member, rolls 011A damage (or 1 when
+   gViewRelativePos[gPartyDir * 4 + (gItems[slot].cellPos & 3)] (the item's cell position seen from the party) as the base member, rolls 011A damage (or 1 when
    IsKind2Or3 is false) and adds 2 to the base when MemberIs(5, 1) or MemberIs(6, 1)
    holds and RollDice(1, 2, -1) is nonzero, then applies DamageCharacter to that member and
    returns 1, else 0. Called by 1414:0172 via TestDDEffect. */
@@ -313,10 +313,10 @@ void LevelUpSlot(int who, int cls, int slot);  /* forward: 0B45 reaches it with 
     }
     return 0;
 }
-/* 0DE8:02D4: tests and runs the attack of a ds:DD2C record against object `idx`. It takes the
+/* 0DE8:02D4: tests and runs the attack of a ds:DD2C record against monster `idx`. It takes the
    record's m08 slot, m0A item type and m0B attacker; when m0B is valid it first demands the
    0007 to-hit roll, then rolls 011A damage for the item type (or 1 when IsKind2Or3 is false)
-   and hands the object to DamageObject. Returns 0 when the to-hit fails, else 1. Called by
+   and hands the monster to DamageMonster. Returns 0 when the to-hit fails, else 1. Called by
    1414:0172 via TestDDEffect. */
 /*@ 0DE8:02D4 */ int TryRecordAttack(struct Projectile far *rec, int idx)
 {
@@ -334,13 +334,13 @@ void LevelUpSlot(int who, int cls, int slot);  /* forward: 0B45 reaches it with 
         damage = RollAttackDamage(who, idx, slot, itemType, 0);
     else
         damage = 1;
-    DamageObject(&gMonsters[idx], damage);
+    DamageMonster(&gMonsters[idx], damage);
     return 1;
 }
 /* 0DE8:0359: one item/effect attack by character `who` on the item record `slot` (an index into
    gItems). It rejects a `who` above 1 with -3, then looks the action up through
    StepCell(gPartyCell, gPartyDir) and FindMeleeTarget. A -1 target with gWallHandlerIndex[gMaze[row * 9 + gViewFrontSide]] at
-   0xFF bumps two gMaze cells and sets gViewDirty, returning -2, otherwise -1. A real target demands the
+   0xFF bumps that cell's wall bytes on the side facing the party and its opposite (gViewFrontSide ^ 2) and sets gViewDirty, returning -2, otherwise -1. A real target demands the
    0007 to-hit roll (returns -1 on a miss), and when the slot's m02 is 0x34..0x38 MonsterResistsMagic can
    also fail it; the surviving hit is rolled through 011A and halved when IsWeaponDamageHalved says so.
    Returns -3, -2 or -1 as above, else the damage. Called by 0DE8:0763. The gHpMaxOrAttackTarget byte records the
@@ -404,7 +404,7 @@ fail:
 }
 /* 0DE8:0537: tries to use the item in the carried slot `slot` (an index into items) of character
    `who` against the item record `field` (an index into gItems). It dispatches through
-   AddDDEffect(who, field, gPartyCell as volume, the gViewToCellPos page byte as kind, gPartyDir as page, the
+   AddDDEffect(who, field, gPartyCell as the cell, the member's cell position from gViewToCellPos, gPartyDir as the direction, the
    item's m02 as type); on success it plays sound 0x0B, clears gChars[who].items[slot] and refills
    it through MoveCarriedItem(who, slot, -1, 0), setting gViewDirty. Returns 0. Called by 0DE8:0763. */
 /*@ 0DE8:0537 */ int UseCarriedItem(int who, int slot, int field)
@@ -489,7 +489,7 @@ fail:
    when effectFlags bit 2 is set, dispatches on the gItemTypes m0E kind (1 rolls 0359 and forces a miss
    from 0 to -1 with sound 0x20, 2 runs 0537, 3 runs 05BB and redraws), then, on a hit, raises hp
    (capped at 0x7F) for a flag-8 item, clears items[slot] for a flag-16 item and hands gMonsters[gHpMaxOrAttackTarget]
-   to DamageObject. It toggles m1E bit `slot`, stores the result in lastAction[slot], redraws and arms
+   to DamageMonster. It toggles m1E bit `slot`, stores the result in lastAction[slot], redraws and arms
    ApplyCharEffect(who, 0x12, slot, 1) when the result is below -2, else ApplyCharEffect(who, 0x12,
    slot + 2, 1). Called by 0BD2:1001. */
 /*@ 0DE8:0763 */ void UseItem(int who, int slot, int field)
@@ -529,7 +529,7 @@ fail:
         }
         if (gItems[field].flags & 0x10)
             gChars[who].items[slot] = 0;
-        DamageObject(&gMonsters[gHpMaxOrAttackTarget], result);
+        DamageMonster(&gMonsters[gHpMaxOrAttackTarget], result);
     }
     gChars[who].m1E ^= 1 << slot;
     gChars[who].lastAction[slot] = result;
@@ -775,7 +775,7 @@ fail:
 /* 0DE8:0F98: a saving-throw style keeper: it takes 0D1C:059B's 0/1 result as the threshold
    `chance` and halves `value` when a fresh RollDice(1, 20, 0) is at least it. As 059B returns 0 or
    1 and the roll is 1..20, the test holds on every roll, so it always halves (QUIRK 0DE8:0F98).
-   A takes a character index; B takes a pointer to a 28-byte object record (struct Monster) and reads
+   A takes a character index; B takes a pointer to a 28-byte monster record (struct Monster) and reads
    that record's typeIndex as the gMonsterTypes index. Called by 0EF3:0A3F and 0EF3:20A8. */
 /*@ 0DE8:0F98 */ int HalveSaveDamageA(int who, int value)
 {
@@ -787,7 +787,7 @@ fail:
     return value;
 }
 
-/* 0DE8:0FCA: the same half-on-success keeper for the object record `objRec`: it reads that
+/* 0DE8:0FCA: the same half-on-success keeper for the monster record `objRec`: it reads that
    record's typeIndex as the gMonsterTypes index, derives a class value through gMonsterTypes[typeIndex].m02 and
    GetSavingThrowTarget, then halves `value` on a d20 roll at or above it. Its chance is a real
    threshold (A, by contrast, always halves). A takes a character index. Called by 0EF3:0A3F. */

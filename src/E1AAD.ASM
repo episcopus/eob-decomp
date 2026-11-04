@@ -245,8 +245,8 @@ kCtrlFnCodes    db 00h,37h,34h,31h,00h,2Fh,38h,35h,32h,30h,2Ah,39h   ; 1AAD:037A
 ; kShiftFlags to kShiftFlagsCopy, translates a nonzero key through 1AAD:0223 and clears AH.
 ; Callers test the return and leave the key in the ring; the callers flush it afterwards
 ; (FlushKeyBuffer, e.g. EOV6.C:353 and :517). Callers: EditTextField (082C:000B),
-; DelaySecondsThenKey (082C:0B43), PickClass (ovl0:207A), ShowMessage (ovl1:13F7), CampLoop
-; (ovl6:0000) and f0B9B (ovl6:0B9B). Purpose unknown: why this filter differs from 1AAD:0409's.
+; DelaySecondsThenKey (082C:0B43), PickClass (ovl0:207A), ShowMessageBox (ovl1:13F7), CampLoop
+; (ovl6:0000) and ShowCampMessage (ovl6:0B9B). Purpose unknown: why this filter differs from 1AAD:0409's.
         PUBLIC  _ReadKey                 ; @ 1AAD:038E
 _ReadKey PROC FAR
         call    _InjectRecordedKey

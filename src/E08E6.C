@@ -1,7 +1,7 @@
-/* Unit at EOB.EXE 08E6:000B (6331 bytes, 36 functions); the object update dispatch and the
-   per-type behaviour routines of the game's map objects: UpdateObjects walks the 30 28-byte object
-   records at ds:8A82 (struct Monster, indexed by the 27-byte object-type records at ds:1A3B, struct
-   MonsterType) and dispatches each live object by its type to the 000B/00C3/03FE/0AB8/0B34/0B94/0CA6
+/* Unit at EOB.EXE 08E6:000B (6331 bytes, 36 functions); the monster update dispatch and the
+   per-mode behaviour routines of the monsters: UpdateMonsters walks the 30 28-byte monster
+   records at ds:8A82 (struct Monster, indexed by the 27-byte monster-type records at ds:1A3B, struct
+   MonsterType) and dispatches each live monster by its mode (+08) to the 00C3/03FE/0AB8/0B34/0B94/0CA6
    behaviours. All 36 functions are at L2. The unit is compiled with -v (debug information): that is
    what keeps the identical jump tails of 0765, 0B94, 17FD and 1410 that a -O build without it merges
    (whitepaper 2.1.1).
@@ -10,24 +10,33 @@
 /*@flags -ml -O -Z -v */
 
 struct Monster {              /* 28-byte records, 30 of them at ds:8A82 */
-    char typeIndex;                /* +0: index into the ds:1A3B object-type table */
-    signed char kind;       /* +1: matched against UpdateObjects' `kind` argument */
-    int cell;                 /* +2: the object's map cell */
-    char cellPos;             /* +4: 0..4, the frame within its id's group */
-    char orient;            /* +5: 0..3, the orientation quarter (times 2 is a direction) */
-    char toggle;            /* +6: flipped each update unless the type is 4 or 7 (0CC8:0D93) */
-    char m07;               /* +7: set from InitMonster's m07 argument. Purpose unknown */
-    signed char type;       /* +8 */
-    signed char state;      /* +9 */
-    char m0A;               /* +A: written 0xfe then 0xff around the overlay draw (05EA), cleared by 0AB8 (:627) and 05EA (:492) */
-    char timer;             /* +B: counted down by TickMonsterTimer */
-    int hitPoints;          /* +C */
-    int count;              /* +E: remaining hit count; 0 or less means dead */
-    int targetCell;                /* +10: the target cell the object turns toward (0AB8 passes it to 0430) */
+    char typeIndex;                /* +0: index into the ds:1A3B monster-type table */
+    signed char updateGroup;       /* +1: the update group UpdateMonsters(kind) matches: InitMonster
+                               stores the level file's group * 2 plus the slot's parity, and
+                               timed effects 2 to 5 (ds:5BC8) run the groups (ovl3:0A7C) */
+    int cell;                 /* +2: the monster's map cell */
+    char cellPos;             /* +4: where in its cell it stands: 0..3 a quarter, 4 the centre (058A, 0EC3) */
+    char orient;            /* +5: 0..3, its facing N E S W (times 2 is a DirectionFromPoints direction) */
+    char animPhase;            /* +6: the walk animation phase ovl4:0D1B picks the shape row by
+                               (+06 << 4); flipped each update unless the mode is 4 or 7 (0CC8) */
+    char altShapes;               /* +7: nonzero draws it from its second set of 18 shapes (ovl4:0D1B adds 0x12) */
+    signed char mode;       /* +8: the behaviour mode UpdateMonsters switches on: 0 hunts its
+                               target cell, 1..3 walk, 4 stands, 5 and 6 follow a wall, 7 and 10
+                               wait out the timer, 8 wakes with its group (0055), 9 is never
+                               alerted (00C3) */
+    signed char state;      /* +9: StepMonsterAlongWall's state (-1, 0, 1); StepMonsterToward resets it when over 6 */
+    char attackFrame;               /* +A: the attack frame: 0xfe then 0xff while 05EA draws a melee swing, shown by ovl4:0D1B
+                               as shapes 5 and 6 in the nearest row; else 0 */
+    char timer;             /* +B: counted down by TickMonsterTimer in modes 7 and 10; the hold spells set 15 with
+                               mode 10 (0EF3:1530, 0EF3:1A30) */
+    int maxHp;          /* +C: the starting hit points, the roll InitMonster also gives +E; not read in src/ */
+    int hp;              /* +E: the current hit points: DamageMonster subtracts from them, 0 or less means dead */
+    int targetCell;                /* +10: the target cell the monster heads for (0AB8 passes it to 0430) */
     int dropItem1;                /* +12: an item id dropped at death (0EC3 rolls 1d2, copies it on a 1) */
     int dropItem2;                /* +14: a second item id dropped at death (0EC3 copies it with no roll) */
-    char m16;               /* +16: flag byte */
-    char m17;               /* +17: Purpose unknown: not read by this unit */
+    char flags;               /* +16: flags: 1 attacked (0FBE, 03FE), 2 hit flash (0DCA), 4 swing phase (05EA),
+                               8 fleeing (000B, 0430), 0x10 turn undead tried (0D1C:0A43) */
+    char drawOffset;               /* +17: a draw offset, x in the high nibble and y in the low (ovl4:0D1B); 1414:0CE7 re-rolls it */
     char actionDelay;               /* +18: the action delay TryMonsterRangedAttack counts down, reset to 5 */
     char actionsLeft;               /* +19: the remaining action count TryMonsterRangedAttack decrements; 131D sets it from the record's m18 */
     char m1A;               /* +1A: Purpose unknown: not read by this unit */
@@ -80,10 +89,10 @@ struct ItemRecord {
                                new item in after this record through it */
     int nextLink;                /* +0xa (ds:8DDA): the other link; the list walks (0BD2:0385, 040E,
                                04AA) follow it */
-    signed char level;        /* +0xc (ds:8DDC): gFBC8 or -1, set by 01D0 */
+    signed char level;        /* +0xc (ds:8DDC): gCurLevel or -1, set by 01D0 */
     signed char value;        /* +0xd (ds:8DDD): the item's bonus or effect value: the signed bonus
                                printed as "%s +%d" and "Cursed %s %d", the spell index into ds:1278
-                               and ds:12E0, the wand effect index g38FA[m0B], and the scroll and
+                               and ds:12E0, the wand effect index gWandSpells[m0B], and the scroll and
                                potion values (0BD2:05B5, 0D2D, 0EE8, 1001) */
 };
 
@@ -91,13 +100,13 @@ extern struct CharRec gChars[]; /*@ ds:F580 */
 extern struct ItemRecord gItems[]; /*@ ds:8DD0 */
 
 extern struct Monster gMonsters[]; /*@ ds:8A82 */
-extern signed char gTurnForType1To3[]; /*@ ds:3237 */
-extern signed char gTurnForType5To6[]; /*@ ds:3234 */
+extern signed char gTurnForMode1To3[]; /*@ ds:3237 */
+extern signed char gTurnForMode5To6[]; /*@ ds:3234 */
 extern signed char gMonsterFrontPos[]; /*@ ds:323B */
-extern unsigned char gMaze[]; /*@ ds:B894 */   /* nine-byte records per object id: +4 is the frame
-                                                  count in bits 0..2, +5 an item list head (ds:B898
-                                                  and ds:B899 are id 0's record; id n's record
-                                                  starts at n * 9) */
+extern unsigned char gMaze[]; /*@ ds:B894 */   /* nine-byte records per map cell: +0..+3 the walls
+                                                  by side, +4 bits 0..2 the monster count, +5 the item
+                                                  list head (ds:B898 and ds:B899 are cell 0's; cell
+                                                  n's record starts at n * 9) */
 extern struct MonsterType gMonsterTypes[]; /*@ ds:1A3B */
 extern signed char gWallTypeFlags[]; /*@ ds:194B */
 extern signed char gDirCellOffset[]; /*@ ds:1790 */
@@ -110,7 +119,7 @@ extern int gPartyCell; /*@ ds:FBCA */   /* the party's map cell (src/E177D.C:92)
                                            the word as a cell at :219, :222, :334, :403, :469, :545,
                                            :549 and :1012. MoveParty (122E:0001) sets it on every
                                            step (settled 2026-11-03, playbook 65) */
-extern char gQuietObjectUpdate; /*@ ds:F442 */
+extern char gQuietMonsterUpdate; /*@ ds:F442 */
 extern unsigned long gGameFlags; /*@ ds:FC04 */
 extern unsigned long gFrameWaitTicks; /*@ ds:849A */
 extern int gTimerEnableFlags; /*@ ds:849E */
@@ -125,9 +134,9 @@ extern char gNearSideByDir[]; /*@ ds:1991 */
 extern char gProjectileHitOrder[]; /*@ ds:32C3 */
 extern char gTargetPosOrder[]; /*@ ds:329B */
 extern char gNearPosPair[]; /*@ ds:32BB */
-extern signed char gAttackSideByDir[]; /*@ ds:324B */   /* (page, orientation) to a 12-slot group */
-extern signed char gAttackTargetOrder[]; /*@ ds:325B */   /* 4 groups of 12 slot to party-member bytes */
-extern signed char gRightSidePosByDir[]; /*@ ds:328B */   /* (orientation, frame) to the group's half */
+extern signed char gAttackSideByDir[]; /*@ ds:324B */   /* (gPartyDir, facing) to the side of the party attacked */
+extern signed char gAttackTargetOrder[]; /*@ ds:325B */   /* per side, two halves of six party members in attack order */
+extern signed char gRightSidePosByDir[]; /*@ ds:328B */   /* (facing, cellPos) to the half of the side group */
 extern int gPartyDir; /*@ ds:FBCC */
 extern unsigned char gPartySpellFlags; /*@ ds:FBD2 */
 extern unsigned long gDeadline; /*@ ds:F512 */   /* a 32-bit deadline at ds:F512:F514 */
@@ -176,30 +185,31 @@ extern int TickBandageCountdown(struct CharRec far *who); /*@ 0EF3:18A2 */
 extern void ReportLostItem(int who); /*@ 0BD2:000E */
 void ResolveMonsterMelee(struct Monster far *obj);   /* forward: 05EA reaches it before its definition */
 
-/* 08E6:000B: reset an object whose type is not 7, 8 or 0xa: clear the type, set the orientation to
-   (DirectionFromPoints(id, gPartyCell) ^ 4) >> 1 (:175) and set flag bit 3. Called by 0EF3:1702. */
-/*@ 08E6:000B */ void ClearObjectType(struct Monster far *obj)
+/* 08E6:000B: make a monster flee, unless its mode is 7, 8 or 0xa: set the mode to 0, face it away
+   from the party ((DirectionFromPoints(cell, gPartyCell) ^ 4) >> 1) and set m16 bit 3, which makes
+   StepMonsterToward (0430) head away from its target. Called by 0EF3:1702 CastFear. */
+/*@ 08E6:000B */ void MakeMonsterFlee(struct Monster far *obj)
 {
-    if (obj->type == 7 || obj->type == 8 || obj->type == 0xa)
+    if (obj->mode == 7 || obj->mode == 8 || obj->mode == 0xa)
         return;
-    obj->type = 0;
+    obj->mode = 0;
     obj->orient = (DirectionFromPoints(obj->cell, gPartyCell) ^ 4) >> 1;
-    obj->m16 |= 8;
+    obj->flags |= 8;
 }
 
-/* 08E6:0055: clear the type of every type-8 object and set its target cell (targetCell) to the
-   party cell,
-   remembering the last one; when that object's typeIndex is 7 set bit 18 of ds:FC04, when it is 0xc set
-   bit 27. Called by 03FE and 0EC3. Purpose unknown: what ds:FC04 flags. `last` is set only inside
-   the loop, but both callers test type == 8 first (:357, :817), so one object is always found. */
-/*@ 08E6:0055 */ void ClearType8Objects(void)
+/* 08E6:0055: wake the mode-8 monsters: set every one to mode 0 with the party cell as its target
+   cell (targetCell), remembering the last one; when that monster's typeIndex is 7 set bit 18 of
+   gGameFlags, when it is 0xc set bit 27. Called by 03FE, when a mode-8 monster was attacked, and
+   0EC3, when one dies. Purpose unknown: what the two gGameFlags bits gate. `last` is set only inside
+   the loop, but both callers test mode == 8 first, so one monster is always found. */
+/*@ 08E6:0055 */ void AlertMode8Monsters(void)
 {
     struct Monster far *obj, *last;
     int i;
 
     for (obj = gMonsters, i = 0; i < 30; i++, obj++) {
-        if (obj->type == 8) {
-            obj->type = 0;
+        if (obj->mode == 8) {
+            obj->mode = 0;
             obj->targetCell = gPartyCell;
             last = obj;
         }
@@ -210,11 +220,11 @@ void ResolveMonsterMelee(struct Monster far *obj);   /* forward: 05EA reaches it
         gGameFlags |= 0x8000000L;
 }
 
-/* 08E6:00C3: for an object whose type is not 7, 8, 9 or 0xa and whose count is positive: run
-   17A6:0F61(id, gPartyCell) and 17A6:0314(id, gPartyCell); when the first is under 4 and the
-   second minus twice the orientation, minus 3, wrapped into 0..7, is over 2 or the first is under 2,
-   clear the type and set its target cell (targetCell) to the party cell. Called by 0150 and UpdateObjects.
-   Purpose unknown: what the two 17A6 calls compute. The limit tests are an early-return `||` chain,
+/* 08E6:00C3: alert a monster to the party. For a monster whose mode is not 7, 8, 9 or 0xa and
+   that has hit points left: when Distance(cell, gPartyCell) is under 4, and the party is not behind
+   it (DirectionFromPoints(cell, gPartyCell) minus twice the facing, minus 3, wrapped into 0..7, is
+   over 2; 0..2 are the three directions at its back) or is under 2 away, set mode 0 and the party
+   cell as its target cell (targetCell). Called by 0150 and UpdateMonsters. The limit tests are an early-return `||` chain,
    not an `&&` chain:
    that is what makes TCC reload `les bx,[bp+6]` at 08E6:00F2 for the Distance argument (a statement
    after a `||` chain is a reload point), matching the original; the `&&` form reuses the bx the five
@@ -223,8 +233,8 @@ void ResolveMonsterMelee(struct Monster far *obj);   /* forward: 05EA reaches it
 {
     int first, dir;
 
-    if (obj->type == 7 || obj->type == 8 || obj->type == 9 || obj->type == 0xa
-            || obj->count <= 0)
+    if (obj->mode == 7 || obj->mode == 8 || obj->mode == 9 || obj->mode == 0xa
+            || obj->hp <= 0)
         return;
     first = Distance(obj->cell, gPartyCell);
     if (first >= 4)
@@ -234,11 +244,11 @@ void ResolveMonsterMelee(struct Monster far *obj);   /* forward: 05EA reaches it
         dir += 8;
     if (dir <= 2 && first >= 2)
         return;
-    obj->type = 0;
+    obj->mode = 0;
     obj->targetCell = gPartyCell;
 }
 
-/* 08E6:0150: run AlertMonsterToParty over every one of the 30 objects in gMonsters */
+/* 08E6:0150: run AlertMonsterToParty over every one of the 30 monsters in gMonsters */
 /*@ 08E6:0150 */ void AlertNearbyMonsters(void)
 {
     struct Monster far *obj;
@@ -248,10 +258,11 @@ void ResolveMonsterMelee(struct Monster far *obj);   /* forward: 05EA reaches it
         AlertMonsterToParty(obj);
 }
 
-/* 08E6:017E: OR together one bit (1 << frame) for each of the first (gMaze[id * 9 + 4] & 7)
-   objects with this id; -2 when that count is 4, -1 when one of their ds:1A3B records has m15 set,
-   and an object whose frame is 4 first takes frame = gFrontLeftPosByDir[orient]. */
-/*@ 08E6:017E */ int BuildObjectFrameMask(int id)
+/* 08E6:017E: the cell positions taken in map cell `id`: OR together one bit (1 << cellPos) for
+   each of the first (gMaze[id * 9 + 4] & 7) monsters in the cell; -2 when that count is 4 (the cell
+   is full), -1 when one of their ds:1A3B records has m15 set, and a monster in the centre (cellPos
+   4) first moves to gFrontLeftPosByDir[orient]. */
+/*@ 08E6:017E */ int BuildCellPosMask(int id)
 {
     int count;
     struct Monster far *obj;
@@ -275,12 +286,12 @@ void ResolveMonsterMelee(struct Monster far *obj);   /* forward: 05EA reaches it
     return bits;
 }
 
-/* 08E6:0218: walk the four bytes of gPosSearchOrder + (orient & 1) * 4 and return the first `orient
-   ^ *row`
-   (the orientation XOR the table byte, not the table byte) whose bit BuildObjectFrameMask(id) does
-   not have; -1 when the object's record's m15 is set, the mask is negative, or no bit qualifies.
-   Called by 0309 and 058A. */
-/*@ 08E6:0218 */ int FindObjectFrameBit(struct Monster far *obj, int id)
+/* 08E6:0218: a free cell position for the monster in map cell `id`: walk the four bytes of
+   gPosSearchOrder + (orient & 1) * 4 and return the first `orient ^ *row` (the facing XOR the table
+   byte, not the table byte) whose bit BuildCellPosMask(id) does not have; -1 when the monster's
+   record's m15 is set, the mask is negative (the cell is full) or no position is free. Called by
+   0309 and 058A. */
+/*@ 08E6:0218 */ int FindFreeCellPos(struct Monster far *obj, int id)
 {
     int bit;
     char far *row;
@@ -288,7 +299,7 @@ void ResolveMonsterMelee(struct Monster far *obj);   /* forward: 05EA reaches it
 
     if (gMonsterTypes[obj->typeIndex].m15)
         return -1;
-    bits = BuildObjectFrameMask(id);
+    bits = BuildCellPosMask(id);
     if (bits < 0)
         return -1;
     row = gPosSearchOrder + (obj->orient & 1) * 4;
@@ -300,10 +311,11 @@ void ResolveMonsterMelee(struct Monster far *obj);   /* forward: 05EA reaches it
     return -1;
 }
 
-/* 08E6:0297: move an object to a new id and orientation: count the move in gMaze (dropping the old
-   id's count when bits 0..2 are set) and notify IsCellInView of the id. Either argument may be -1 to
-   leave that field alone. Called by 0309 and 131D. */
-/*@ 08E6:0297 */ void MoveObjectToId(struct Monster far *obj, int id, int orient)
+/* 08E6:0297: move a monster to map cell `id` and facing `orient`: keep the monster counts in gMaze
+   (+4, dropping the old cell's when bits 0..2 are set) and report the cells to IsCellInView. Either
+   argument may be -1 to leave that field alone; 0EC3 passes cell 0 for a dead monster. Called by
+   0309, 0EC3 and 131D (and 0BD2, 122E). */
+/*@ 08E6:0297 */ void MoveMonsterToCell(struct Monster far *obj, int id, int orient)
 {
     if (id != -1) {
         IsCellInView(obj->cell);
@@ -319,14 +331,14 @@ void ResolveMonsterMelee(struct Monster far *obj);   /* forward: 05EA reaches it
     IsCellInView(id);
 }
 
-/* 08E6:0309: turn an object toward a new id and orientation. When `id` is not -1 and differs from
-   the object's own id, look up the nine-byte gMaze record for `id` and pick the byte at +orient^2:
-   when gWallTypeFlags of that byte has no bit 2, or `id` is the current gPartyCell, fail (0). When the
-   record's +4 count has bits 0..2 set and `id` is nonzero, take the frame FindObjectFrameBit picks
-   (fail if none) and move the object to (id, orient); for a plain turn (`id` is the object's own id
-   or -1) only `orient` is applied when it is not -1. Then notify IsCellInView of the old id and,
-   unless gQuietObjectUpdate is set, play the object's record m17 through PlaySoundAtCell. Returns 1 on success.
-   Called by 0430, 0B34 and 0B94 (StepObjectOrient passes -1 to leave a field alone). */
+/* 08E6:0309: move a monster into map cell `id` facing `orient`, or only turn it. When `id` is not
+   -1 and differs from its own cell, read the cell's wall on the side facing back (+orient^2): when
+   gWallTypeFlags of that byte has no bit 2 (no monster may pass), or `id` is the party's cell, fail
+   (0). When the cell already holds monsters (+4 bits 0..2) and `id` is nonzero, take the cell
+   position FindFreeCellPos picks (fail if none) and move the monster to (id, orient); for a plain
+   turn (`id` is its own cell or -1) only `orient` is applied when it is not -1. Then report the old
+   cell to IsCellInView and, unless gQuietMonsterUpdate is set, play the type's m17 sound at its cell
+   through PlaySoundAtCell. Returns 1 on success. */
 /*@ 08E6:0309 */ int TryMoveMonster(struct Monster far *obj, int id, int orient)
 {
     char far *rec;
@@ -345,40 +357,40 @@ void ResolveMonsterMelee(struct Monster far *obj);   /* forward: 05EA reaches it
         if (id == gPartyCell)
             return 0;
         if ((rec[4] & 7) && id != 0) {
-            frame = FindObjectFrameBit(obj, id);
+            frame = FindFreeCellPos(obj, id);
             if (frame == -1)
                 return 0;
             obj->cellPos = frame;
         }
-        MoveObjectToId(obj, id, orient);
+        MoveMonsterToCell(obj, id, orient);
         orient = -1;
     }
     if (orient != -1)
         obj->orient = orient;
     IsCellInView(oldId);
-    if (!gQuietObjectUpdate)
+    if (!gQuietMonsterUpdate)
         PlaySoundAtCell(gMonsterTypes[obj->typeIndex].m17, obj->cell);
     return 1;
 }
 
-/* 08E6:03FE: for an object with flag bit 0 set and a type that is not 0xa: when its type is 8, run
-   the 0055 cleanup; otherwise clear the type and set its target cell (targetCell) to the party cell. Called
-   by UpdateObjects. */
+/* 08E6:03FE: a monster that was attacked (m16 bit 0, set by 0FBE and 0DE8:0007) and whose mode is
+   not 0xa goes after the party: a mode-8 monster wakes its whole group through 0055, any other is set
+   to mode 0 with the party cell as its target cell (targetCell). Called by UpdateMonsters. */
 /*@ 08E6:03FE */ void ChasePartyIfAttacked(struct Monster far *obj)
 {
-    if ((obj->m16 & 1) && obj->type != 0xa) {
-        if (obj->type == 8) {
-            ClearType8Objects();
+    if ((obj->flags & 1) && obj->mode != 0xa) {
+        if (obj->mode == 8) {
+            AlertMode8Monsters();
         } else {
-            obj->type = 0;
+            obj->mode = 0;
             obj->targetCell = gPartyCell;
         }
     }
 }
-/* 08E6:0430: turn an object toward the direction DirectionFromPoints(id, value) reports. When the
-   object's
+/* 08E6:0430: step a monster toward cell `value`, in the direction DirectionFromPoints(id, value)
+   reports (away from it while m16 bit 3, fleeing, is set). When the monster's
    state is over 6 it resets it to 0 and toggles gDirSearchLeftFirst, which selects the direction table gDirSearchRight or
-   gDirSearchLeft. The target -1 leaves the object alone; bit 3 of m16 XORs 4 into it. When the target is even
+   gDirSearchLeft. The target -1 leaves the monster alone; bit 3 of m16 XORs 4 into it. When the target is even
    and id + gDirCellOffset[target >> 1] equals gPartyCell, the object takes one step through TryMoveMonster with
    -1: `dir` becomes orientation + 1 when the difference from 2*orient is nonzero and under 5,
    orientation - 1 when it is nonzero and not under 5, and is left at orient * 2 when the difference
@@ -409,7 +421,7 @@ void ResolveMonsterMelee(struct Monster far *obj);   /* forward: 05EA reaches it
     target = DirectionFromPoints(id, value);
     if (target == -1)
         return;
-    if (obj->m16 & 8)
+    if (obj->flags & 8)
         target ^= 4;
     diff = (target - dir) & 7;
     if (!(target & 1) && id + gDirCellOffset[target >> 1] == gPartyCell) {
@@ -446,9 +458,10 @@ void ResolveMonsterMelee(struct Monster far *obj);   /* forward: 05EA reaches it
             return;
     }
 }
-/* 08E6:058A: give an object the frame the first free id frame bit picks; when its gMaze count is 1
-   its frame is 4 instead. Called by 05EA. */
-/*@ 08E6:058A */ void SetObjectFrameFromId(struct Monster far *obj)
+/* 08E6:058A: give a monster a new cell position: the centre (4) when it is alone in its cell, else
+   the free position FindFreeCellPos picks (none: no change); then report its cell to IsCellInView.
+   Called by 05EA when the monster faces the party's cell but IsMonsterAtFront is 0. */
+/*@ 08E6:058A */ void RepickMonsterCellPos(struct Monster far *obj)
 {
     int id;
 
@@ -456,22 +469,22 @@ void ResolveMonsterMelee(struct Monster far *obj);   /* forward: 05EA reaches it
     if ((gMaze[id * 9 + 4] & 7) == 1) {
         obj->cellPos = 4;
     } else {
-        id = FindObjectFrameBit(obj, id);
+        id = FindFreeCellPos(obj, id);
         if (id < 0)
             return;
         obj->cellPos = id;
     }
     IsCellInView(obj->cell);
 }
-/* 08E6:05EA: check the object against `handle` and turn it. When `handle` is -1 it is recomputed as
-   StepCell(obj->id, obj->orient); when it is not the current gPartyCell the object does nothing
-   and 0 is returned. Otherwise, when IsMonsterAtFront(obj) is 0 the object takes the frame SetObjectFrameFromId
-   picks and 1 is returned. Else m16 bit 2 toggles, and when it is not now set 1 is returned. Then
-   IsCellInView(obj->id) decides: when nonzero the object plays gMonsterTypes[typeIndex].m16 only when typeIndex is 4,
-   runs the 0xfe/0xff m0A sequence with the countdown and the overlay-4 entry, and does not repeat the
-   sound when typeIndex is not 4; when it is zero the sound plays unconditionally. When m16 bit 2 is set
-   after the toggle 10F3 runs on either branch, and when the id was found m0A clears, the toggle
-   flips, gViewDirty is set, gTimerEnableFlags bit 1 is set and the countdown is 8. Returns 1. Called by 0AB8. */
+/* 08E6:05EA: the monster's melee attempt on the cell ahead, `handle` (-1: recomputed as
+   StepCell(cell, orient)). When that is not the party's cell nothing happens and 0 is returned. When
+   IsMonsterAtFront(obj) is 0 the monster takes the cell position 058A picks and 1 is returned. Else
+   m16 bit 2 toggles, so it swings every other update, and while it is clear 1 is returned. A swing
+   in view (IsCellInView) plays the type's m16 sound (before the frames for typeIndex 4, after them
+   otherwise) and shows the attack frames 0xfe and 0xff (+0A) through the overlay-4 entry; out of
+   view it only plays the sound. Then 10F3 resolves the attack, and in view the attack frame clears,
+   the animation phase flips, gViewDirty is set, gTimerEnableFlags bit 1 is set and the countdown is
+   8. Returns 1. Called by 0AB8. */
 /*@ 08E6:05EA */ int TryMonsterMelee(struct Monster far *obj, int handle)
 {
     register int found;
@@ -481,17 +494,17 @@ void ResolveMonsterMelee(struct Monster far *obj);   /* forward: 05EA reaches it
     if (handle != gPartyCell)
         return 0;
     if (IsMonsterAtFront(obj) != 0) {
-        obj->m16 ^= 4;
-        if (obj->m16 & 4) {
+        obj->flags ^= 4;
+        if (obj->flags & 4) {
             found = IsCellInView(obj->cell);
             if (found != 0) {
                 gTimerEnableFlags &= ~2;
                 if (obj->typeIndex == 4)
                     PlaySoundDefault(gMonsterTypes[obj->typeIndex].m16);
-                obj->m0A = 0xfe;
+                obj->attackFrame = 0xfe;
                 gFrameWaitTicks = 0;
                 DrawViewFrame(1);
-                obj->m0A = 0xff;
+                obj->attackFrame = 0xff;
                 if (obj->typeIndex != 4)
                     PlaySoundDefault(gMonsterTypes[obj->typeIndex].m16);
                 gFrameWaitTicks = 8;
@@ -501,27 +514,28 @@ void ResolveMonsterMelee(struct Monster far *obj);   /* forward: 05EA reaches it
             }
             ResolveMonsterMelee(obj);
             if (found != 0) {
-                obj->m0A = 0;
-                obj->toggle ^= 1;
+                obj->attackFrame = 0;
+                obj->animPhase ^= 1;
                 gViewDirty = 1;
                 gTimerEnableFlags |= 2;
                 gFrameWaitTicks = 8;
             }
         }
     } else {
-        SetObjectFrameFromId(obj);
+        RepickMonsterCellPos(obj);
     }
     return 1;
 }
-/* 08E6:073F: pass an object's id, frame and orientation and a caller value to 0EF3:097B with 0xff.
-   Called by 0765 as LaunchMonsterSpell(obj, value). Purpose unknown: what 0EF3:097B does with them is not known. */
+/* 08E6:073F: the monster casts: start the spell effect `value` through StartCellEffect (0EF3:097B)
+   from its cell, cell position and facing, with caster 0xff where the party's own casts pass the
+   casting member (0EF3:1A0F CastHoldMonster). Called by 0765 as LaunchMonsterSpell(obj, value). */
 /*@ 08E6:073F */ void LaunchMonsterSpell(struct Monster far *obj, int value)
 {
     StartCellEffect(0xff, value, obj->cell, obj->cellPos, obj->orient);
 }
-/* 08E6:0765: the object's action for UpdateObjects. It returns 0 unless the object's 1A3B record
-   has m0E bit 6, the object has actionsLeft left and m18 is zero (otherwise m18 is decremented and 0 is
-   returned). It then checks Distance(id, gPartyCell) is at most 3 and DirectionFromPoints(id,
+/* 08E6:0765: the monster's ranged attack for UpdateMonsters. It returns 0 unless its 1A3B record
+   has m0E bit 6, it has actionsLeft left and actionDelay is zero (otherwise actionDelay is decremented
+   and 0 is returned). It then checks Distance(id, gPartyCell) is at most 3 and DirectionFromPoints(id,
    gPartyCell) equals orient * 2, and walks StepCell(id, orient), following it until it reaches
    gPartyCell; each step must have gWallTypeFlags[gMaze[value * 9 + (orient ^ 2)]] bits 0..1 set and no
    gMaze[value * 9 + 4] count, else 0 is returned. The action then switches on typeIndex: 4 starts a cell
@@ -531,7 +545,7 @@ void ResolveMonsterMelee(struct Monster far *obj);   /* forward: 05EA reaches it
    orient) and plays 0x55; 17 plays 0x53, announces the mind blast and paralyzes every affected
    member; 21 rolls 1d4 and, under 3, starts a cell effect through LaunchMonsterSpell and plays gBossSpellSounds[roll]
    after gBossSpellModes[roll], else announces the wounds spell and hits the first affected member. Every
-   action then runs the overlay-4 entry, clears gViewDirty, decrements actionsLeft unless it is 0xff and sets m18
+   action then runs the overlay-4 entry, clears gViewDirty, decrements actionsLeft unless it is 0xff and sets actionDelay
    to 5, returning 1. Called by 0AB8. The unit's -v flag is what keeps case 21's
    PlaySoundAtCell(0x6c, id) at 08E6:0907 inline instead of tail-merging it into the shared block at
    08E6:0A5E. */
@@ -623,11 +637,11 @@ void ResolveMonsterMelee(struct Monster far *obj);   /* forward: 05EA reaches it
     obj->actionDelay = 5;
     return 1;
 }
-/* 08E6:0AB8: run the type-0 object update: run TryMonsterRangedAttack, which returns 1 when it
-   acts, then TryMonsterMelee,
-   which returns 1 when handled; on either the object is done (the function returns). Otherwise clear
-   m0A, turn the object toward its target cell with StepMonsterToward(obj, targetCell) and run TryMonsterMelee with -1 when its
-   record's m0E has bit 3 set. Called by UpdateObjects. */
+/* 08E6:0AB8: the mode-0 (hunting) monster update: run TryMonsterRangedAttack, which returns 1 when
+   it acts, then TryMonsterMelee, which returns 1 when handled; on either the monster is done.
+   Otherwise clear the attack frame (+0A), step it toward its target cell with StepMonsterToward(obj,
+   targetCell) and run TryMonsterMelee with -1 when its record's m0E has bit 3 set. Called by
+   UpdateMonsters. */
 /*@ 08E6:0AB8 */ void UpdateHuntingMonster(struct Monster far *obj)
 {
     int handle;
@@ -637,14 +651,15 @@ void ResolveMonsterMelee(struct Monster far *obj);   /* forward: 05EA reaches it
         return;
     if (TryMonsterMelee(obj, handle) != 0)
         return;
-    obj->m0A = 0;
+    obj->attackFrame = 0;
     StepMonsterToward(obj, obj->targetCell);
     if (gMonsterTypes[obj->typeIndex].m0E & 8)
         TryMonsterMelee(obj, -1);
 }
-/* 08E6:0B34: turn the object through 0309; when that fails, move its orientation by `delta` (mod 4)
-   and turn again. Called by UpdateObjects and 0B94. */
-/*@ 08E6:0B34 */ void StepObjectOrient(struct Monster far *obj, int delta)
+/* 08E6:0B34: step the monster one cell ahead through 0309; when that fails, turn its facing by
+   `delta` (mod 4) in place. Called by UpdateMonsters for modes 1 to 3 (gTurnForMode1To3 gives 2, -1
+   and 1) and by 0B94. */
+/*@ 08E6:0B34 */ void StepMonsterOrTurn(struct Monster far *obj, int delta)
 {
     int cur;
 
@@ -655,15 +670,17 @@ void ResolveMonsterMelee(struct Monster far *obj);   /* forward: 05EA reaches it
         TryMoveMonster(obj, -1, obj->orient);
     }
 }
-/* 08E6:0B94: turn an object by `arg` quarters. A state below zero falls straight to the second half;
-   a state of zero first steps the object through StepObjectOrient(obj, -arg). It then looks up the
+/* 08E6:0B94: walk a monster along the wall on its `arg` side (modes 5 and 6 pass -1 and 1). A state below zero falls straight to the second half;
+   a state of zero first steps the object through StepMonsterOrTurn(obj, -arg). It then looks up the
    direction dir = (orient + arg) & 3, cur = StepCell(id, dir) and the byte gNearSideByDir[dir]: when the
    gWallTypeFlags record at gMaze[cur * 9 + gNearSideByDir[dir]] has bit 2 clear it leaves a state of zero as -1 and
    returns, and a nonzero state with that bit clear falls through to the second half. Otherwise it
    turns through TryMoveMonster(obj, -1, dir), sets the state to -1 and returns. The second half looks up
    handle = StepCell(id, orient): when TryMoveMonster(obj, handle, -1) fails it turns the other way,
    TryMoveMonster(obj, -1, (orient - arg) & 3), and clears the state, else it sets the state to 1.
-   Called by UpdateObjects. Purpose unknown: what gNearSideByDir and the state values select. The unit's -v
+   Called by UpdateMonsters. gNearSideByDir[dir] is dir ^ 2 (the bytes of gOppositeSide, ds:547E), the side
+   of `cur` facing back, whose bit 2 lets a monster in as in 0309. Purpose unknown: what the state
+   values select. The unit's -v
    flag is what keeps the two separate `obj->state = -1` stores at 0B94:0083 and 0B94:00A4 that a -O
    build cross-jumps. */
 /*@ 08E6:0B94 */ void StepMonsterAlongWall(struct Monster far *obj, int arg)
@@ -676,7 +693,7 @@ void ResolveMonsterMelee(struct Monster far *obj);   /* forward: 05EA reaches it
 
     if (obj->state >= 0) {
         if (obj->state == 0)
-            StepObjectOrient(obj, -arg);
+            StepMonsterOrTurn(obj, -arg);
         dir = (obj->orient + arg) & 3;
         cur = StepCell(obj->cell, dir);
         add = gNearSideByDir[dir];
@@ -702,83 +719,83 @@ second:
         obj->state = 1;
     }
 }
-/* 08E6:0CA6: count an object's timer down and clear its type when it reaches zero. Called for the
-   object types 7 and 10 by UpdateObjects (08E6:0CC8). */
+/* 08E6:0CA6: count a monster's timer (+0B) down and set its mode to 0 when it reaches zero. Called
+   for modes 7 and 10 by UpdateMonsters (08E6:0CC8); the hold spells set mode 10 with 15 (0EF3:1530). */
 /*@ 08E6:0CA6 */ void TickMonsterTimer(struct Monster far *obj)
 {
     if (obj->timer) {
         if (--obj->timer == 0)
-            obj->type = 0;
+            obj->mode = 0;
     }
 }
 
-/* 08E6:0CC8: update every live object of a kind: run the 00C3 reset, the 03FE flag handler when the
-   type is positive, then a switch on the type (its jump table at 08E6:0DB4 has 11 entries, 0..10,
-   with types 4, 8 and 9 falling through) and toggle the object unless the type is 4 or 7; finally
-   run UpdateDDEffects. */
-/*@ 08E6:0CC8 */ void UpdateObjects(int kind)
+/* 08E6:0CC8: update every live monster (hit points above 0) of update group `kind` (+01): run
+   AlertMonsterToParty, ChasePartyIfAttacked when the mode is positive, then a switch on the mode
+   (its jump table at 08E6:0DB4 has 11 entries, 0..10, with modes 4, 8 and 9 falling through) and
+   flip the animation phase (+06) unless the mode is 4 or 7; finally run UpdateDDEffects. */
+/*@ 08E6:0CC8 */ void UpdateMonsters(int kind)
 {
     struct Monster far *obj;
     int i;
 
     for (obj = gMonsters, i = 0; i < 30; i++, obj++) {
-        if (obj->kind != kind || obj->count <= 0)
+        if (obj->updateGroup != kind || obj->hp <= 0)
             continue;
         AlertMonsterToParty(obj);
-        if (obj->type > 0)
+        if (obj->mode > 0)
             ChasePartyIfAttacked(obj);
-        switch (obj->type) {
+        switch (obj->mode) {
         case 0:
             UpdateHuntingMonster(obj);
             break;
         case 1:
         case 2:
         case 3:
-            StepObjectOrient(obj, gTurnForType1To3[obj->type]);
+            StepMonsterOrTurn(obj, gTurnForMode1To3[obj->mode]);
             break;
         case 5:
         case 6:
-            StepMonsterAlongWall(obj, gTurnForType5To6[obj->type]);
+            StepMonsterAlongWall(obj, gTurnForMode5To6[obj->mode]);
             break;
         case 7:
         case 10:
             TickMonsterTimer(obj);
             break;
         }
-        if (obj->type != 4 && obj->type != 7)
-            obj->toggle ^= 1;
+        if (obj->mode != 4 && obj->mode != 7)
+            obj->animPhase ^= 1;
     }
     UpdateDDEffects();
 }
 
-/* 08E6:0DCA: notify IsCellInView of the object's id, and when gViewDirty is set clear counter flag
-   bit 1,
-   set m16 bit 1, run the colour callback on ds:1CD3 or ds:1CE3, reset the countdown, run the
-   overlay-4 entry, clear m16 bit 1 again, set the countdown to 1, set flag bit 1 and gViewDirty. Called
-   by 0FBE. */
-/*@ 08E6:0DCA */ void RestoreObjectFlags(struct Monster far *obj)
+/* 08E6:0DCA: flash a hit monster: report its cell to IsCellInView and, when gViewDirty is set (the
+   cell is in view), clear gTimerEnableFlags bit 1, set m16 bit 1, which makes ovl4:0D1B draw it
+   remapped (ds:1CD3 turns every colour but 0 into 15, ds:1CE3 is the CGA row), pass that row to the
+   colour callback, reset the countdown and run the overlay-4 entry, clear the bit again, set the
+   countdown to 1, set gTimerEnableFlags bit 1 and gViewDirty. Called by 0FBE. */
+/*@ 08E6:0DCA */ void FlashMonsterHit(struct Monster far *obj)
 {
     IsCellInView(obj->cell);
     if (gViewDirty) {
         gTimerEnableFlags &= ~2;
-        obj->m16 |= 2;
+        obj->flags |= 2;
         if (!gGraphicsChoice)
             gSetRemapTable(gHitFlashRemapCga);
         else
             gSetRemapTable(gHitFlashRemap);
         gFrameWaitTicks = 0;
         DrawViewFrame(1);
-        obj->m16 &= ~2;
+        obj->flags &= ~2;
         gFrameWaitTicks = 1;
         gTimerEnableFlags |= 2;
         gViewDirty = 1;
     }
 }
 
-/* 08E6:0E48: run the overlay-4 entry with 1, then clear m16 bit 1 of every object that has it; when
-   an object with that bit has no count left, run 0EC3. When any was found set gViewDirty and the
+/* 08E6:0E48: draw the deferred hit flashes (the overlay-4 entry with 1), then clear m16 bit 1 of
+   every monster that has it; when such a monster has no hit points left, run 0EC3. When any was found set gViewDirty and the
    countdown to 1, else clear gViewDirty; finally clear gHpMinOrHitFlag and gDeferMonsterHits. An uninitialized `any` is a
-   QUIRK 08E6:0E99 of the original: only objects with m16 bit 1 set define its value. Called by
+   QUIRK 08E6:0E99 of the original: only monsters with m16 bit 1 set define its value. Called by
    DamageNearRowMonsters (:1109), 0D1C:0A43 TurnUndead and 0EF3:18D8 CastConeOfCold. */
 /*@ 08E6:0E48 */ void FinishDeferredHits(void)
 {
@@ -787,10 +804,10 @@ second:
 
     DrawViewFrame(1);
     for (i = 0; i < 30; i++, obj++) {
-        if (obj->m16 & 2) {
-            obj->m16 &= ~2;
+        if (obj->flags & 2) {
+            obj->flags &= ~2;
             any = 1;
-            if (obj->count <= 0)
+            if (obj->hp <= 0)
                 KillMonster(obj);
         }
     }
@@ -802,11 +819,13 @@ second:
     }
     gDeferMonsterHits = gHpMinOrHitFlag = 0;
 }
-/* 08E6:0EC3: an object's death: pick `roll` (its frame, or a 1d4 when the frame is 4); when dropItem1
-   is set, roll 1d2 and on a 1 resolve dropItem1 through CopyItemToFreeSlot and hand the item (`hit`) to
-   InsertListItem with the object's id and the roll as its sound argument; when dropItem2 is set, resolve
-   dropItem2 the same way with no roll. Then give the party the record's m13 experience, move the object
-   to id 0, shut the game down when its typeIndex is 0x15, and clear the type-8 objects. Called by 0E48,
+/* 08E6:0EC3: a monster's death: pick `roll`, the cell position its drops land on (its cellPos, or
+   1d4 - 1 when it stands in the centre); when dropItem1 is set, roll 1d2 and on a 1 copy dropItem1
+   through CopyItemToFreeSlot and put the item (`hit`) on its cell's item list (gMaze + cell * 9 + 5)
+   through InsertListItem with the roll as the item's cell position; when dropItem2 is set, drop a
+   copy the same way with no roll. Then give the party the record's m13 experience, move the monster
+   to cell 0, run WinnerPanel and shut the game down when its typeIndex is 0x15, and wake the mode-8
+   monsters when it was one. Called by 0E48,
    0FBE and 1410. `hit` is declared register so it takes SI and `roll` DI, as the original. */
 /*@ 08E6:0EC3 */ void KillMonster(struct Monster far *obj)
 {
@@ -825,41 +844,42 @@ second:
         InsertListItem(&gMaze[obj->cell * 9 + 5], obj->cell, hit, roll);
     }
     AddPartyExperience(gMonsterTypes[obj->typeIndex].m13);
-    MoveObjectToId(obj, 0, -1);
+    MoveMonsterToCell(obj, 0, -1);
     if (obj->typeIndex == 0x15) {
         WinnerPanel();
         ShutdownGame();
     }
-    if (obj->type == 8)
-        ClearType8Objects();
+    if (obj->mode == 8)
+        AlertMode8Monsters();
 }
-/* 08E6:0FBE: damage an object by `damage`: subtract it from the count, clear m16 bit 3, run 0DCA
-   (or mark m16 bit 1 when IsCellInView finds its id and gDeferMonsterHits is set), set m16 bit 0, and when the
-   count has run out run 0EC3 only when gDeferMonsterHits is 0 or IsCellInView returned 0 (:841). Called by
+/* 08E6:0FBE: damage a monster by `damage`: subtract it from its hit points (+0E), clear m16 bit 3
+   (it stops fleeing), flash it through 0DCA (or, while gDeferMonsterHits is set, only mark m16 bit 1
+   for 0E48 when IsCellInView finds its cell), set m16 bit 0 (attacked, read by 03FE), and when the
+   hit points have run out run 0EC3 only when gDeferMonsterHits is 0 or IsCellInView returned 0. Called by
    DamageMonsterWithSave (:1090), 0D1C:09CB, 0DE8:02D4 TryRecordAttack, 0DE8:0763 UseItem, 0EF3:0A3F
    DamageTargetCell, 0EF3:0E1B CastMeleeEffect and 0EF3:18D8 CastConeOfCold. */
-/*@ 08E6:0FBE */ void DamageObject(struct Monster far *obj, int damage)
+/*@ 08E6:0FBE */ void DamageMonster(struct Monster far *obj, int damage)
 {
     int id;
 
     gHpMinOrHitFlag = 1;
-    obj->count -= damage;
-    obj->m16 &= ~8;
+    obj->hp -= damage;
+    obj->flags &= ~8;
     if (gDeferMonsterHits == 0) {
-        RestoreObjectFlags(obj);
+        FlashMonsterHit(obj);
     } else {
         id = IsCellInView(obj->cell);
         if (id != 0)
-            obj->m16 |= 2;
+            obj->flags |= 2;
     }
-    obj->m16 |= 1;
-    if (obj->count <= 0) {
+    obj->flags |= 1;
+    if (obj->hp <= 0) {
         if (gDeferMonsterHits == 0 || id == 0)
             KillMonster(obj);
     }
 }
-/* 08E6:103D: an object's orientation row byte: 1 when its frame is 4, else the byte at
-   ds:323B[orient * 4 + frame]. Called by 05EA. */
+/* 08E6:103D: does the monster stand in the half of its cell that its facing points to? 1 in the
+   centre (cellPos 4), else gMonsterFrontPos[orient * 4 + cellPos]. Called by 05EA. */
 /*@ 08E6:103D */ int IsMonsterAtFront(struct Monster far *obj)
 {
     if (obj->cellPos == 4)
@@ -886,12 +906,12 @@ second:
     need = SubtractInts(gMonsterTypes[index].m01, gChars[who].armorClass);
     return roll >= need || roll == 0x14;
 }
-/* 08E6:10F3: resolve a type-0 object's attack on the party. It takes the current page and the
-   object's orientation to select one of the four 12-slot groups of gAttackTargetOrder, then picks the
-   group's first or second half with gRightSidePosByDir[orientation * 4 + frame] (frame 4 rolls 1d2 - 1 to
-   choose). It scans the six slots of that half for the first party member whose gChars m01 bit 0
+/* 08E6:10F3: resolve a monster's melee attack on the party. gAttackSideByDir[gPartyDir * 4 +
+   facing] gives the side of the party it attacks, one of the four 12-byte groups of
+   gAttackTargetOrder; gRightSidePosByDir[facing * 4 + cellPos] picks the group's first or second
+   half (cellPos 4 rolls 1d2 - 1 to choose). It scans the six slots of that half for the first party member whose status bit 0
    is set, whose hp (CharRec +1B) is above -10, and who passes a 1d20 < 5 save when its effectFlags has bit
-   2, and remembers that member. It then rolls the object record's m03 attack routines through
+   2, and remembers that member. It then rolls the monster type's m03 attack routines through
    RollMonsterToHit, adding RollDice(m04[i][0], m04[i][1], m04[i][2]) damage per hit; each time
    0EF3:18A2 TickBandageCountdown on the member returns nonzero the total is reset to 0 and the
    loop goes on to the next attack. When the total is positive it reports a loss (m0E bit 7), damages
@@ -953,11 +973,11 @@ second:
     if (gMonsterTypes[index].m0E & 0x20)
         ApplyStatusEffect(who, 4, "paralyzed", 2, 5, 9, 1);
 }
-/* 08E6:131D: build object `index` from scratch: clear it (memset), then, unless `id` is 0, set its
+/* 08E6:131D: build monster `index` from scratch: clear it (memset), then, unless `id` is 0, set its
    typeIndex, its kind (the argument doubled, plus one when the slot index is odd, :953-955), frame,
-   orientation, m07, type and timer and its actionsLeft from the record's m18; roll its count as the record's
+   orientation, altShapes, type and timer and its actionsLeft from the record's m18; roll its hit points (+0C, +0E) as the record's
    m02 d8 (or 1d4 when m02 is 0xff); set dropItem1 and dropItem2 and move it to `id`. Called by 1505 and
-   ovl3:0A7C LoadMapScreen. */
+   ovl3:0A7C LoadLevel. */
 /*@ 08E6:131D */ void InitMonster(int index, int kind, int id, int frame, int orient, int b0, int m07, int type, int timer, int m12, int m14)
 {
     struct Monster far *obj;
@@ -971,26 +991,26 @@ second:
         kind++;
     obj->typeIndex = b0;
     obj->actionsLeft = gMonsterTypes[b0].m18;
-    obj->kind = kind;
+    obj->updateGroup = kind;
     obj->cellPos = frame;
-    obj->m07 = m07;
-    obj->type = type;
+    obj->altShapes = m07;
+    obj->mode = type;
     obj->timer = timer;
     obj->orient = orient;
     if (gMonsterTypes[b0].m02 != -1)
-        obj->hitPoints = obj->count = RollDice(gMonsterTypes[b0].m02, 8, 0);
+        obj->maxHp = obj->hp = RollDice(gMonsterTypes[b0].m02, 8, 0);
     else
-        obj->hitPoints = obj->count = RollDice(1, 4, 0);
+        obj->maxHp = obj->hp = RollDice(1, 4, 0);
     obj->dropItem1 = m12;
     obj->dropItem2 = m14;
-    MoveObjectToId(obj, id, orient);
+    MoveMonsterToCell(obj, id, orient);
 }
 /* 08E6:1410: the periodic effect tick. Mode 1 (gLevelTimerMode == 1) fires when the deadline
    gDeadline is
    behind gGameTicks (gDeadline < gGameTicks); mode 2 fires when gStepCount has reached gLevelTimerSteps; mode 3 fires when
    either holds; any other mode does nothing. Firing runs RunCellScript(0, 0x20), then, when no
-   object of the 30 (from index 1) has a count of zero or less (that is, every object still has a
-   count), runs 0EC3 on the first object whose Distance(id, gPartyCell) is over 3. After that
+   monster slot from 1 to 29 is free (every one has hit points above 0), kills through 0EC3
+   the first monster whose Distance(cell, gPartyCell) is over 3. After that
    optional 0EC3 the fire path resets the deadline to gGameTicks + gLevelTimerPeriod and clears gStepCount. Called by
    1414:04E7 and overlay 6. The unit's -v flag is what keeps the mode-3 low-word branch at
    1410:005A the right way round that a -O build inverts. */
@@ -1020,7 +1040,7 @@ fire:
     RunCellScript(0, 0x20);
     any = 0;
     for (i = 1; i < 30; i++) {
-        any += gMonsters[i].count <= 0;
+        any += gMonsters[i].hp <= 0;
     }
     if (any == 0) {
         for (i = 1; i < 30; i++) {
@@ -1033,9 +1053,9 @@ fire:
     gDeadline = gGameTicks + gLevelTimerPeriod;
     gStepCount = 0;
 }
-/* 08E6:1505: when the object id `id` has no count in gMaze, fill the first free object slot (count
-   <= 0) by calling 131D with the ten new-object fields (kind, id, frame, orient, typeIndex, m07, type,
-   timer, dropItem1, dropItem2). Called by 122E:0B89. Purpose unknown: what the fields select. */
+/* 08E6:1505: spawn a monster: when map cell `id` holds no monster (gMaze + 4, bits 0..2), fill the
+   first free monster slot (hit points <= 0) through 131D with the ten fields (update group, cell,
+   cellPos, facing, typeIndex, shape set, mode, timer, dropItem1, dropItem2). Called by 122E:0B89. */
 /*@ 08E6:1505 */ void SpawnMonster(int kind, int id, int frame, int orient, int b0, int m07, int type, int timer, int m12, int m14)
 {
     int i;
@@ -1043,16 +1063,17 @@ fire:
     if (gMaze[id * 9 + 4] & 7)
         return;
     for (i = 0; i < 30; i++) {
-        if (gMonsters[i].count <= 0) {
+        if (gMonsters[i].hp <= 0) {
             InitMonster(i, kind, id, frame, orient, b0, m07, type, timer, m12, m14);
             break;
         }
     }
 }
-/* 08E6:155F: fill a six-entry list with -1, then set list[frame] = i for every object of the 30
-   whose id equals `key`. Both callers pass an `int list[6]` (:1055 in FindMeleeTarget, :1096 in DamageNearRowMonsters),
-   which the function fills. Called by 15B4 and 16D6. */
-/*@ 08E6:155F */ void BuildObjectIdList(int far *list, int key)
+/* 08E6:155F: list the monsters in map cell `key` by where they stand: fill a six-entry list with
+   -1, then set list[cellPos] = i for every one of the 30 in that cell. Both callers pass an `int
+   list[6]` (FindMeleeTarget and DamageNearRowMonsters), which the function fills. Called by 15B4 and
+   16D6. */
+/*@ 08E6:155F */ void ListMonstersByCellPos(int far *list, int key)
 {
     struct Monster far *obj;
     int i;
@@ -1064,16 +1085,17 @@ fire:
             list[obj->cellPos] = i;
     }
 }
-/* 08E6:15B4: list the objects with id `value`, then return list[4] when set, else the first of the
-   four indices in gTargetPosOrder + gPartyDir * 8 + (who & 1) * 4 whose list entry is set, else -1. Called
-   by 0DE8:0359 and 0EF3:0E1B. */
+/* 08E6:15B4: the monster party member `who` hits in map cell `value`: the one in the centre
+   (list[4]) when there is one, else the first of the four cell positions in gTargetPosOrder +
+   gPartyDir * 8 + (who & 1) * 4 (the near half first, the member's side first) that holds one, else
+   -1. Called by 0DE8:0359 and 0EF3:0E1B. */
 /*@ 08E6:15B4 */ int FindMeleeTarget(char who, int value)
 {
     int list[6];
     char far *row;
     int i;
 
-    BuildObjectIdList(list, value);
+    ListMonstersByCellPos(list, value);
     if (list[4] != -1)
         return list[4];
     row = gTargetPosOrder + gPartyDir * 8 + (who & 1) * 4;
@@ -1083,9 +1105,9 @@ fire:
     }
     return -1;
 }
-/* 08E6:1634: roll RollDice(count, sides, bonus) against the object `index`: when `flag` is set and
+/* 08E6:1634: roll RollDice(count, sides, bonus) against the monster `index`: when `flag` is set and
    a 1d20 reaches GetSavingThrowTarget(0, gMonsterTypes[typeIndex].m02, 4), halve the roll when flag is 1, else
-   zero it; then, unless 0D1C:0BAB rejects the object, damage it by the roll. Called by 16D6. */
+   zero it; then, unless MonsterResistsMagic (0D1C:0BAB) says it resists, damage it by the roll. Called by 16D6. */
 /*@ 08E6:1634 */ void DamageMonsterWithSave(char index, char count, char sides, char bonus, char flag)
 {
     int roll;
@@ -1104,18 +1126,18 @@ fire:
         }
     }
     if (MonsterResistsMagic(index) == 0)
-        DamageObject(&gMonsters[index], roll);
+        DamageMonster(&gMonsters[index], roll);
 }
-/* 08E6:16D6: list the objects with id `key`, mark gDeferMonsterHits, damage list[4] and then the
-   two indices
-   in gNearPosPair + gPartyDir * 2 through 1634, and run the 0E48 cleanup. Called by 0EF3:0F99. */
+/* 08E6:16D6: list the monsters in map cell `key`, mark gDeferMonsterHits, damage the one in the
+   centre (list[4]) and then those at the two cell positions nearest the party,
+   gNearPosPair + gPartyDir * 2, through 1634, and run the 0E48 cleanup. Called by 0EF3:0F99. */
 /*@ 08E6:16D6 */ void DamageNearRowMonsters(int key, char count, char sides, char bonus, char flag)
 {
     int list[6];
     char far *row;
     int i;
 
-    BuildObjectIdList(list, key);
+    ListMonstersByCellPos(list, key);
     gDeferMonsterHits = 1;
     if (list[4] != -1)
         DamageMonsterWithSave(list[4], count, sides, bonus, flag);
@@ -1126,10 +1148,10 @@ fire:
     }
     FinishDeferredHits();
 }
-/* 08E6:1775: find the object whose id is `key`: when its frame equals `field` return its index;
-   otherwise scan the four bytes of gProjectileHitOrder + flags * 16 + field * 4 and remember the first
-   (lowest) slot whose byte equals the object's frame and beats the current best slot. Returns -1
-   when none. Called by 17FD. Purpose unknown: what the two index arguments select. */
+/* 08E6:1775: find a monster in map cell `key`: one at cell position `field` is returned at once;
+   otherwise scan the four bytes of gProjectileHitOrder + flags * 16 + field * 4 and remember the
+   monster whose cellPos comes earliest there. Returns -1 when none. Called by 17FD. Purpose unknown:
+   what `flags` selects (every row of ds:32C3 starts with 4, the centre). */
 /*@ 08E6:1775 */ int FindMonsterNearPos(int key, int field, int flags)
 {
     char far *row;
@@ -1154,9 +1176,9 @@ fire:
     }
     return best;
 }
-/* 08E6:17FD: fill `list` with gMonsters indices and end it with -1: when scanAll is set, every object
-   whose id is key; otherwise when scanFiltered is set, the single index 1775(key, field, flags)
-   finds; otherwise the first object 189D accepts for (key, field). Called by 0D1C:0A43, 0EF3:0A3F,
+/* 08E6:17FD: fill `list` with gMonsters indices and end it with -1: when scanAll is set, every monster
+   in map cell key; otherwise when scanFiltered is set, the single index 1775(key, field, flags)
+   finds; otherwise the first monster 189D accepts for (key, field). Called by 0D1C:0A43, 0EF3:0A3F,
    0EF3:1530, 0EF3:18D8 and 0EF3:1A30. The unit's -v flag is what keeps the two identical `*list++`
    tails at 17FD:0058 and 17FD:0082 apart that a -O build cross-jumps. */
 /*@ 08E6:17FD */ void ListMonstersAtCell(int far *list, int key, int field, char flags, char scanAll, char scanFiltered)
@@ -1183,8 +1205,8 @@ fire:
     }
     *list = -1;
 }
-/* 08E6:189D: does this object have `key` (an object id) as its id and either `field` or 4 as its
-   frame? Returns 1 when it does, else 0. Called by ListMonstersAtCell (:1159) and 1414:0172 TestDDEffect. */
+/* 08E6:189D: does this monster stand in map cell `key`, at cell position `field` or in the
+   centre (4)? Returns 1 when it does, else 0. Called by ListMonstersAtCell (:1159) and 1414:0172 TestDDEffect. */
 /*@ 08E6:189D */ int IsMonsterAtPos(struct Monster far *obj, int key, int field)
 {
     if (obj->cell == key && (obj->cellPos == field || obj->cellPos == 4))

@@ -68,7 +68,7 @@ struct ItemRecord {
     signed char level;        /* +0xc (ds:8DDC): gCurLevel or -1, set by 01D0 */
     signed char value;        /* +0xd (ds:8DDD): the item's bonus or effect value: the signed bonus
                                printed as "%s +%d" and "Cursed %s %d", the spell index into ds:1278
-                               and ds:12E0, the wand effect index g38FA[m0B], and the scroll and
+                               and ds:12E0, the wand effect index gWandSpells[m0B], and the scroll and
                                potion values (0BD2:05B5, 0D2D, 0EE8, 1001) */
 };
 
@@ -82,7 +82,7 @@ struct ItemInfo {           /* 16-byte records at ds:A9F5 (src/E0D1C.C) */
 
 struct Monster {              /* 28-byte object records at ds:8A82 (src/E08E6.C) */
     char pad00[8];
-    signed char type;       /* +8 */
+    signed char mode;       /* +8 */
     char pad09[0x1C - 0x09];
 };
 
@@ -951,8 +951,8 @@ enum {
         gGameFlags |= 0x8000000L;
         gGameFlags |= 0x400000L;
         for (i = 0; i < 0x1e; i++) {
-            if (gMonsters[i].type == 8)
-                gMonsters[i].type = 5;
+            if (gMonsters[i].mode == 8)
+                gMonsters[i].mode = 5;
         }
         break;
     case 1:
@@ -1122,7 +1122,7 @@ enum {
    names (separated by ds:7EDB) and then a checksum of every party member's name: the sum, over the
    name's characters, of the signed long square of each character (F_LXMUL@, 0000:7737), formatted
    into gFileNameBuf through the "\r\rPassword: %04x\r" format at ds:7EDD. It then waits for a key
-   and clears gScrollOn. Called by EndingAnimation (17C8) and by 08E6:0EC3 Obj0EC3. */
+   and clears gScrollOn. Called by EndingAnimation (17C8) and by 08E6:0EC3 KillMonster. */
 /*@ ovl5:160A */ void WinnerPanel(void)
 {
     int handle;

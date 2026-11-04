@@ -240,7 +240,7 @@ swap_out:
 _SwapAndReopenOverlayFile ENDP
 
 ; 1E8B:0185: Purpose unknown. It is a teardown of the manager's own state, so the file keeps the
-; placeholder f1E8B_0185 rather than a name that claims a role: if the overlay file handle at
+; placeholder ShutdownOverlayManager rather than a name that claims a role: if the overlay file handle at
 ; 20B5:00B8 is open it closes it and restores the swapped interrupt vector through 0134, then calls the
 ; two near pointers at 20B5:0014 and 20B5:0012 in the manager's own data segment; the packet finds no
 ; caller, so what it is for is not established. Purpose unknown: what those two pointers do; no

@@ -133,7 +133,7 @@ struct ItemRecord {
     signed char level;        /* +0xc (ds:8DDC): gCurLevel or -1, set by 01D0 */
     signed char value;        /* +0xd (ds:8DDD): the item's bonus or effect value: the signed bonus
                                printed as "%s +%d" and "Cursed %s %d", the spell index into ds:1278
-                               and ds:12E0, the wand effect index g38FA[m0B], and the scroll and
+                               and ds:12E0, the wand effect index gWandSpells[m0B], and the scroll and
                                potion values (0BD2:05B5, 0D2D, 0EE8, 1001) */
 };
 extern struct ItemRecord gItems[]; /*@ ds:8DD0 */
@@ -143,7 +143,7 @@ extern int gHitY; /*@ ds:5E12 */            /* the y the hit test uses (the walk
 extern unsigned gLeftButtonMode; /*@ ds:5E1C */       /* the left-button mode word: ClickHandSlot (0ACD:0415)
                                                takes its low seven bits, 1 selects SwapSelectedItem,
                                                anything else UseItemSlot (src/E1658.C); src/E16A5.C:506
-                                               tests gLeftButtonMode for the left button, g5E1E for the right */
+                                               tests gLeftButtonMode for the left button, gRightButtonMode for the right */
 extern signed char gSlotNeighbours[]; /*@ ds:36D0 */  /* a per-row four-byte action table (09EF) */
 extern signed char gFrontPosByDir[]; /*@ ds:373C */  /* a table with two entries per page: 0A61 reads
                                                gFrontPosByDir[gPartyDir * 2 + gMemberSide[gInventoryMember]] */

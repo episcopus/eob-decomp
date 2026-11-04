@@ -61,3 +61,9 @@ def test_field_refusals():
     unknown = SRC.replace("gChars[who + 1].m01", "Lookup(who)->m01")
     assert field.rename_in(unknown, "CharRec", 1, "status") == (
         None, "REFUSED: cannot tell the struct of the access at line 22 (an expression)")
+
+
+def test_address_suffix_placeholders():
+    assert names.is_placeholder("gDCAA", "ds:DCAA") and names.is_placeholder("g159", "ds:0159")
+    assert names.is_placeholder("gIconX5721", "ds:5721") and names.is_placeholder("f19EC_0016", "19EC:0016")
+    assert not names.is_placeholder("gPartyCell", "ds:FBCA") and not names.is_placeholder("gF1Key", "ds:00F1")

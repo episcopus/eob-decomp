@@ -159,7 +159,7 @@ struct ItemRecord {
     signed char level;        /* +0xc (ds:8DDC): gCurLevel or -1, set by 01D0 */
     signed char value;        /* +0xd (ds:8DDD): the item's bonus or effect value: the signed bonus
                                printed as "%s +%d" and "Cursed %s %d", the spell index into ds:1278
-                               and ds:12E0, the wand effect index g38FA[m0B], and the scroll and
+                               and ds:12E0, the wand effect index gWandSpells[m0B], and the scroll and
                                potion values (0BD2:05B5, 0D2D, 0EE8, 1001) */
 };
 
@@ -188,13 +188,13 @@ struct Monster {                                  /* the 28-byte monster records
     int cell;                                     /* +2 (ds:8A84): the monster's map cell */
     char cellPos;                                 /* +4 (ds:8A86) */
     char pad05[0x08 - 5];
-    signed char type;                           /* +8 (ds:8A8A): the object type, cleared by 122E:1097 */
+    signed char mode;                           /* +8 (ds:8A8A): the object type, cleared by 122E:1097 */
     char pad09[0x16 - 9];
-    char m16;                                   /* +0x16 (ds:8A98): a bit flags byte set by 122E:1097 */
+    char flags;                                   /* +0x16 (ds:8A98): a bit flags byte set by 122E:1097 */
     char pad17[0x1c - 0x17];
 };
 extern struct Monster gMonsters[]; /*@ ds:8A82 */
-extern void MoveObjectToId(struct Monster far *obj, int id, int orient); /*@ 08E6:0297 */
+extern void MoveMonsterToCell(struct Monster far *obj, int id, int orient); /*@ 08E6:0297 */
 
 extern int CopyItemToFreeSlot(int n); /*@ 0BD2:089E */
 extern void SetMouseItem(int n); /*@ 07A9:010C */
@@ -286,11 +286,11 @@ void RunCellScript(int cell, int mode);  /* forward: 1DA8 comes after its caller
     return 0;
 }
 
-/* 122E:0154: open the door of cell `who`. While a door is moving (gDragActive, gEffects[12]), it
+/* 122E:0154: open the door of cell `who`. While a door is moving (gDoorEffectActive, gEffects[12]), it
    only turns that door to opening (gDoorMoveDir 1) when it is this cell's. Otherwise it picks the
    door side (0 when side 0's wall type has gWallTypeFlags bit 3, a door, else 1) and, unless the
    door is already passable (bit 0), arms the door effect 12 with step +1 twice around one
-   AdjustMemberStatus step. The flag test is written `!!(x & 1)`: the original sign-extends the
+   StepDoor step. The flag test is written `!!(x & 1)`: the original sign-extends the
    gWallTypeFlags byte before testing bit 0 (`mov al; cwde; test ax,1`), while a plain `x & 1` folds
    to a memory byte test. */
 /*@ 122E:0154 */ void OpenDoor(int who)
@@ -313,7 +313,7 @@ void RunCellScript(int cell, int mode);  /* forward: 1DA8 comes after its caller
 /* 122E:01D9: close the door of cell `who`. It does nothing while monsters are in the cell
    (gMaze[who * 9 + 4] & 7). While a door is moving, it only turns that door to closing
    (gDoorMoveDir -1, read by 1414:03B4) when it is this cell's. Otherwise, when the door side is
-   passable, it arms the door effect 12 with step -1 twice around AdjustMemberStatus. */
+   passable, it arms the door effect 12 with step -1 twice around StepDoor. */
 /*@ 122E:01D9 */ void CloseDoor(int who)
 {
     int idx;
@@ -335,7 +335,7 @@ void RunCellScript(int cell, int mode);  /* forward: 1DA8 comes after its caller
 /* 122E:0271: toggle the door of cell `who` on wall side `slot` (-1 picks the door side, 0 or 1).
    While a door is moving, it only reverses that door (negates gDoorMoveDir) when it is this cell's.
    A passable door is closed (step -1) unless bit 0 of the cell's monster count is set; a closed one
-   is opened (+1): the door effect 12 is armed twice around AdjustMemberStatus. */
+   is opened (+1): the door effect 12 is armed twice around StepDoor. */
 /*@ 122E:0271 */ void ToggleDoor(int who, int slot)
 {
     int idx;
@@ -407,12 +407,12 @@ void RunCellScript(int cell, int mode);  /* forward: 1DA8 comes after its caller
     return 0;
 }
 /* 122E:04CA: wall handler 1, the door button. It turns the faced wall type
-   (gClickedWallTypes[gViewFrontSide]) into a gDoorButtons entry (through gDoorButtonIndex), builds
+   (gViewCellAhead[gViewFrontSide]) into a gDoorButtons entry (through gDoorButtonIndex), builds
    the button's screen rectangle from the entry's x/y and the far size record's width (in eighths)
    and height, all grown by 4 on each side and offset by gDoorButtonXBias, and on levels 4, 5 and 6
    (gCurLevel) shifts x by the door frame (type - gDoorFirstWallType[type]) * 9, or by 4 when the
    type is at least 0x1e. A hit, or a trigger other than the click 0x40, toggles the door and plays
-   sound 6 and returns 1; otherwise it defers to CheckMemberSlotRect and returns its result. */
+   sound 6 and returns 1; otherwise it defers to UnpryableDoorAction and returns its result. */
 /*@ 122E:04CA */ int DoorButtonAction(int id, int slot)
 {
     register int x;
@@ -451,7 +451,7 @@ void RunCellScript(int cell, int mode);  /* forward: 1DA8 comes after its caller
 }
 
 /* 122E:05DF: wall handler 2: look up the decoration of wall type gMaze[id * 9 + slot] and, if
-   HitTestObjectKind accepts it, run the cell's script with the current trigger gWallTrigger.
+   IsWallDecorClicked accepts it, run the cell's script with the current trigger gWallTrigger.
    Returns 1 when it ran, 0 otherwise. */
 /*@ 122E:05DF */ int WallScriptAction(int id, int slot)
 {
@@ -465,7 +465,7 @@ void RunCellScript(int cell, int mode);  /* forward: 1DA8 comes after its caller
     return 0;
 }
 
-/* 122E:0620: wall handler 3: raise the wall type gMaze[id * 9 + slot] when HitTestObjectKind
+/* 122E:0620: wall handler 3: raise the wall type gMaze[id * 9 + slot] when IsWallDecorClicked
    accepts its decoration, set gViewDirty and run the cell's script. Returns 1 when it ran, 0
    otherwise. */
 /*@ 122E:0620 */ int WallTypeUpAction(int id, int slot)
@@ -482,7 +482,7 @@ void RunCellScript(int cell, int mode);  /* forward: 1DA8 comes after its caller
     return 0;
 }
 
-/* 122E:0678: wall handler 4: lower the wall type gMaze[id * 9 + slot] when HitTestObjectKind
+/* 122E:0678: wall handler 4: lower the wall type gMaze[id * 9 + slot] when IsWallDecorClicked
    accepts its decoration, set gViewDirty and run the cell's script. Returns 1 when it ran, 0
    otherwise. */
 /*@ 122E:0678 */ int WallTypeDownAction(int id, int slot)
@@ -590,7 +590,7 @@ void RunCellScript(int cell, int mode);  /* forward: 1DA8 comes after its caller
     return result;
 }
 
-/* 122E:0933: set the trigger gWallTrigger to the click 0x40 and run DispatchSlotHandler on the wall
+/* 122E:0933: set the trigger gWallTrigger to the click 0x40 and run DispatchWallHandler on the wall
    the party faces in the cell ahead (StepCell). QUIRK 122E:0933: the argument is raised by 0x3c and
    then never read. */
 /*@ 122E:0933 */ void ClickWallAhead(int entry)
@@ -638,7 +638,7 @@ void RunCellScript(int cell, int mode);  /* forward: 1DA8 comes after its caller
 }
 /* 122E:0A16: opcode that toggles wall types: 0xFFF7 compares the cell's side 0 wall type with a
    script byte and sets all four sides to the second script byte when they match (or the first when
-   they do not); 0xFFEA toggles the door of a cell (ToggleArmEffect with side -1). Returns the bytes
+   they do not); 0xFFEA toggles the door of a cell (ToggleDoor with side -1). Returns the bytes
    read. */
 /*@ 122E:0A16 */ long ToggleWallTypeOp(char far *script)
 {
@@ -673,7 +673,7 @@ void RunCellScript(int cell, int mode);  /* forward: 1DA8 comes after its caller
     }
     return (long)(script - start);
 }
-/* 122E:0B23: opcode that opens a door: read a cell and hand it to ArmMemberEffect (122E:0154).
+/* 122E:0B23: opcode that opens a door: read a cell and hand it to OpenDoor (122E:0154).
    Returns the bytes read. */
 /*@ 122E:0B23 */ long OpenDoorOp(char far *script)
 {
@@ -686,7 +686,7 @@ void RunCellScript(int cell, int mode);  /* forward: 1DA8 comes after its caller
     return (long)(script - start);
 }
 
-/* 122E:0B56: opcode that closes a door: read a cell and hand it to DisarmMemberEffect (122E:01D9).
+/* 122E:0B56: opcode that closes a door: read a cell and hand it to CloseDoor (122E:01D9).
    Returns the bytes read. */
 /*@ 122E:0B56 */ long CloseDoorOp(char far *script)
 {
@@ -805,7 +805,7 @@ void RunCellScript(int cell, int mode);  /* forward: 1DA8 comes after its caller
         obj = gMonsters;
         for (i = 0; i < 0x1e; i++) {
             if (obj->cell == srcId)
-                MoveObjectToId(obj, id, obj->cellPos);
+                MoveMonsterToCell(obj, id, obj->cellPos);
             obj++;
         }
         break;
@@ -906,9 +906,9 @@ done:
     LockShowPointer();
     return (long)(script - start);
 }
-/* 122E:1097: opcode that sets flags. 0xFFEF sets the bit in the gActionFlags entry of the current
-   level gCurLevel, 0xFFF0 sets it in gGameFlags, 0xFFF3 sets a bit in gMonsters[index].m16 and
-   clears gMonsters[index].type, and 0xFFE4 sets gUnreadScriptFlag. Returns the bytes read. */
+/* 122E:1097: opcode that sets flags. 0xFFEF sets the bit in the gLevelFlags entry of the current
+   level gCurLevel, 0xFFF0 sets it in gGameFlags, 0xFFF3 sets a bit in gMonsters[index].flags and
+   clears gMonsters[index].mode, and 0xFFE4 sets gUnreadScriptFlag. Returns the bytes read. */
 /*@ 122E:1097 */ long SetFlagOp(char far *script)
 {
     int op;
@@ -929,8 +929,8 @@ done:
     case 0xfff3:
         idx = *script++;
         arg = *script++;
-        gMonsters[idx].m16 |= 1 << arg;
-        gMonsters[idx].type = 0;
+        gMonsters[idx].flags |= 1 << arg;
+        gMonsters[idx].mode = 0;
         break;
     case 0xffe4:
         gUnreadScriptFlag = 1;
@@ -958,7 +958,7 @@ done:
 }
 
 /* 122E:11E8: opcode that clears one bit of a 32-bit flag word: 0xFFEF clears the bit in the
-   gActionFlags entry of the current level gCurLevel, 0xFFF0 clears it in gGameFlags. The byte after
+   gLevelFlags entry of the current level gCurLevel, 0xFFF0 clears it in gGameFlags. The byte after
    the opcode is the bit number. Returns the bytes read. */
 /*@ 122E:11E8 */ long ClearFlagOp(char far *script)
 {

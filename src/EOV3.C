@@ -31,7 +31,7 @@ extern int gSoundOn; /*@ ds:80E6 */
 extern char gBarGraphsOn; /*@ ds:F43C */
 extern char gSpellItemTypes[]; /*@ ds:AD20 */         /* a 96-byte saved-game buffer (Purpose unknown) */
 extern char *strcpy(char far *dest, char far *src); /*@ 0000:67CD */
-extern void far *gWallBlocks; /*@ ds:DCA6 */   /* the far pointer f19EC_0002(7) returns (src/E07A9.C) */
+extern void far *gWallBlocks; /*@ ds:DCA6 */   /* the far pointer GetPageBuffer(7) returns (src/E07A9.C) */
 extern int gGraphicsChoice; /*@ ds:8102 */            /* the video mode the game initialised (src/E082C.C) */
 extern char gWallNameBuf[]; /*@ ds:FE2E */  /* the wall texture name kept between LoadWallTextures calls (ovl3:07A5) */
 extern void far *(far *gGetSpriteCellRle)(int x, int y, int w, int h, void far *buf); /*@ ds:8082 */
@@ -82,10 +82,10 @@ extern void Unpack4(char far *src, void far *dst, int len); /*@ 1D9A:0013 */
 
 struct Monster {              /* 28-byte records, 30 of them at ds:8A82 (src/E08E6.C) */
     char typeIndex;                /* +0 */
-    signed char kind;       /* +1 */
+    signed char updateGroup;       /* +1 */
     int cell;                 /* +2 */
     char pad04[6];          /* +4 */
-    char m0A;               /* +A: cleared by ovl3:19F7 */
+    char attackFrame;               /* +A: cleared by ovl3:19F7 */
     char pad0B[0x1c - 0x0b];/* +B */
 };
 
@@ -982,7 +982,7 @@ done:
         gGameLoadState = 0;
     return ok;
 }
-/* ovl3:19F7: resets the level. It clears the m0A byte of the 30 gMonsters objects, clears every live
+/* ovl3:19F7: resets the level. It clears the attackFrame byte of the 30 gMonsters objects, clears every live
    ds:DD2C effect record (for an active 1, keeping only the low two bits of the m03 byte of the
    item record its item indexes, then clearing its active byte; an active 2 is just cleared),
    then, when gDoorEffectActive is set, steps the moving door in cell gDoorEffectCell, adding the
@@ -996,7 +996,7 @@ done:
     int slot;
 
     for (i = 0; i < 0x1e; i++)
-        gMonsters[i].m0A = 0;
+        gMonsters[i].attackFrame = 0;
     for (i = 0; i < 0xa; i++) {
         if (gProjectiles[i].active == 1) {
             gItems[gProjectiles[i].item].cellPos &= 3;

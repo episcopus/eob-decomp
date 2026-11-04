@@ -1799,10 +1799,10 @@ unit = "e08e6"
 addr = "08E6:000B"
 size = 74
 evidence = ["far", "segment"]
-name = "ClearObjectType"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "MakeMonsterFlee"
 
 [[function]]
 id = "e08e6_0055"
@@ -1810,10 +1810,10 @@ unit = "e08e6"
 addr = "08E6:0055"
 size = 110
 evidence = ["near", "frame"]
-name = "ClearType8Objects"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "AlertMode8Monsters"
 
 [[function]]
 id = "e08e6_00c3"
@@ -1843,10 +1843,10 @@ unit = "e08e6"
 addr = "08E6:017E"
 size = 154
 evidence = ["near", "frame"]
-name = "BuildObjectFrameMask"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "BuildCellPosMask"
 
 [[function]]
 id = "e08e6_0218"
@@ -1854,10 +1854,10 @@ unit = "e08e6"
 addr = "08E6:0218"
 size = 127
 evidence = ["near", "frame"]
-name = "FindObjectFrameBit"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "FindFreeCellPos"
 
 [[function]]
 id = "e08e6_0297"
@@ -1865,10 +1865,10 @@ unit = "e08e6"
 addr = "08E6:0297"
 size = 114
 evidence = ["far", "near", "frame"]
-name = "MoveObjectToId"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "MoveMonsterToCell"
 
 [[function]]
 id = "e08e6_0309"
@@ -1909,10 +1909,10 @@ unit = "e08e6"
 addr = "08E6:058A"
 size = 96
 evidence = ["near", "frame"]
-name = "SetObjectFrameFromId"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "RepickMonsterCellPos"
 
 [[function]]
 id = "e08e6_05ea"
@@ -1964,10 +1964,10 @@ unit = "e08e6"
 addr = "08E6:0B34"
 size = 96
 evidence = ["near", "frame"]
-name = "StepObjectOrient"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "StepMonsterOrTurn"
 
 [[function]]
 id = "e08e6_0b94"
@@ -1997,10 +1997,10 @@ unit = "e08e6"
 addr = "08E6:0CC8"
 size = 258
 evidence = ["far", "frame"]
-name = "UpdateObjects"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "UpdateMonsters"
 
 [[function]]
 id = "e08e6_0dca"
@@ -2008,10 +2008,10 @@ unit = "e08e6"
 addr = "08E6:0DCA"
 size = 126
 evidence = ["near"]
-name = "RestoreObjectFlags"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "FlashMonsterHit"
 
 [[function]]
 id = "e08e6_0e48"
@@ -2041,10 +2041,10 @@ unit = "e08e6"
 addr = "08E6:0FBE"
 size = 127
 evidence = ["far", "near", "frame"]
-name = "DamageObject"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "DamageMonster"
 
 [[function]]
 id = "e08e6_103d"
@@ -2118,10 +2118,10 @@ unit = "e08e6"
 addr = "08E6:155F"
 size = 85
 evidence = ["near", "frame"]
-name = "BuildObjectIdList"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "ListMonstersByCellPos"
 
 [[function]]
 id = "e08e6_15b4"
@@ -5293,10 +5293,10 @@ unit = "e1414"
 addr = "1414:05DF"
 size = 14
 evidence = ["frame"]
-name = "UpdateEffectObjects"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "UpdateMonsterGroup"
 
 [[function]]
 id = "e1414_05ed"
@@ -5371,10 +5371,10 @@ unit = "e1414"
 addr = "1414:0CE7"
 size = 124
 evidence = ["frame"]
-name = "RandomiseObjectState"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "RandomiseMonsterOffsets"
 
 [[function]]
 id = "e1414_0d63"

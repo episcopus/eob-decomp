@@ -51,7 +51,7 @@
                                                 ; to 0 (label L0279). It does not increment and does not wait.
         EXTRN   _gCursorX:WORD          ; @ ds:8138: mouse position, x in pixels (written by the handler
                                         ; at src/E1A72.ASM, label L020C, grep `_gCursorX`: it stores cx,
-                                        ; skipped by `je L0221` when `cmp byte ptr [g80EC],2` is 2, and the
+                                        ; skipped by `je L0221` when `cmp byte ptr [gRecordMode],2` is 2, and the
                                         ; reload is at label L0221; set to 0A0h and 64h by InitMouse, grep
                                         ; `_gCursorX`, the 0A0h and 64h stores; and written by
                                         ; src/E1BF3.ASM:35)

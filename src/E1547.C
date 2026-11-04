@@ -489,7 +489,7 @@ extern void DrawItemRow(int who, int slot, int one); /*@ 0BD2:0917 */
    class, EXP/LVL and the per-class slot lines. The name colour and text attribute come from status
    bits 1 and 2 (8/6), otherwise 0xc/0xf; status bit 0 is the alive bit, bit 1 poisoned and bit 2
    paralyzed (E1414.C:476-477 clears them at the end of the effect; E0DE8.C:558 keeps only bit 0
-   at death). Called by several screens with the member index (for example Action0264, 0ACD:0264,
+   at death). Called by several screens with the member index (for example PickOrSwapMember, 0ACD:0264,
    while moving a member, src/E0ACD.C:302). */
 /*@ 1547:0991 */ void RedrawMember(int who)
 {
