@@ -1,7 +1,7 @@
 # Review: e0d1c
 
-Reviewer: rev-haiku
-Commit reviewed: afdb33a (round 1, main; src/E0D1C.C and re/symbols.toml are identical on review/e0d1c at 7d4b343)
+Reviewer: p6-rev-5
+Commit reviewed: ce0608f367ed01b1b1df84e254eef04d1a734b27 (review/e0d1c HEAD at the start of this round; src/E0D1C.C last changed in d0ed4202, the P6 naming pass; `make match FILE=src/E0D1C.C`: 26 of 26, 3265 bytes, exit 0; `make readability UNIT=e0d1c`: 0 findings)
 Round 2 at b45d745 (main, after round 1 was merged as 5529429): diff since afdb33a of src/E0D1C.C, re/symbols.toml and re/globals.toml
 
 Playbook 70. Judge what a matching file can still get wrong: names, types, comments, structure.
@@ -11,6 +11,25 @@ The matcher already proved the bytes; do not re-prove them, read for meaning.
 
 Each finding is a checkbox. `must-fix` blocks `make review-pass` until a decompiler ticks it off
 (with the commit that fixes it); `should` and `note` do not block.
+
+## Round P6 (2026-11-04), commit ce0608f367ed01b1b1df84e254eef04d1a734b27
+
+Reviewer: p6-rev-5. Commit reviewed: ce0608f367ed01b1b1df84e254eef04d1a734b27 (review/e0d1c HEAD at the start of this round; src/E0D1C.C last changed in d0ed4202, the P6 naming pass). The diff from the previous round's commit b45d745 to HEAD touches src/E0D1C.C in the P6 naming pass. `make match FILE=src/E0D1C.C`: 26 of 26, 3265 bytes, exit 0; `make readability UNIT=e0d1c`: 0 findings.
+
+### Findings (round P6)
+
+- [ ] must-fix src/E0D1C.C:600 (TurnUndead): "marks the monster (m16 |= 0x10)" uses the old field name. The code is `obj->flags |= 0x10` (src/E0D1C.C:638) and the Monster field at +16 is `flags` (re/fields.toml). Say `flags |= 0x10`.
+- [ ] should src/E0D1C.C:530-534 (HoldsHolySymbol): the name claims a holy symbol, but the only evidence in re/renames.toml is marked [H] ("which in the game needs a holy symbol [H]"); the source comment does not mark it. Add [H] to the comment or say "the turn-undead item (a holy symbol [H])".
+- [ ] should src/E0D1C.C:479 and :481 (CanUseHand): `gItemTypesClasses[type].m01` and `gItemTypesClasses[m1].m01` still use the address name `m01`. The field is named in re/fields.toml; use that name (the same point as the e0a72 review's `m01` should).
+- [ ] note src/E0D1C.C:574, :596 and :940: `m19`, `m0F` and `m1A` are still address names for MonsterType fields; the P6 pass named the Monster fields but left these. They are placeholders, not wrong claims.
+- [ ] note src/E0D1C.C:384 and :388 (NoOpAfterCursorMove, NoOpBeforeCursorMove): the names and comments match the re/renames.toml why (StepActionRow 0ACD:03CD, StepMenuPhase 0753 and 0ACD:078C call them at the cursor slot or member changes).
+- [ ] note src/E0D1C.C:208 (IsWearingRing): the name is backed by the why (slots 25 and 26 are the ring slots ComputeArmourClass reads); the ring-of-wizardry reading is marked [H], which is honest.
+
+Checked and right (no finding): the renames gViewCellIds, gViewDirty, gInventoryMember, gCursorSlot, gDirCellOffset, gOppositeSide, gMaze, gWallTypeFlags, gViewToCellPos, gPartyDir, gSelectFrameIndex, gSelectFrameStep, gSelectFrameTick, gSelectFrameColours, gPanelFillColour, gPanelHighlight, gPanelShadow, gConSaveBonus, gPartySpellFlags, gItemRemapTable, gSetRemapTable, gItemIcons, gItemTypesClasses, gPanelMode, gMouseItem, gCurLevel and gDeferMonsterHits against their re/renames.toml whys; the function renames IsCellInView, NoOpAfterCursorMove, NoOpBeforeCursorMove, StepIfOpen, StepCell, IsWearingRing, RemoveCarriedItems, RemovePartyMember, CanUseHand, HoldsHolySymbol, FindBestUndeadTurner, TryTurnMonster, MonsterResistsMagic, IsWeaponDamageHalved and DrawFramedPanel; the struct changes from Obj28 to Monster and Entry27 to MonsterType; the CharRec fields (status, hp, race, classIndex, levels, constitution, items) against re/fields.toml; the code in StepIfOpen and StepCell against the gMaze arithmetic; the TurnUndead flow (gCurLevel 2 or 7, the gMaze key, ListMonstersAtCell, the m0F bit 2 and flags bit 4 tests, TryTurnMonster, FinishDeferredHits).
+
+### Summary (round P6)
+
+The P6 names are true to the code: the globals, functions and struct names match their re/renames.toml whys, and the comments describe the maze steps, the turn-undead flow, the item and inventory paths and the panel drawing. One must-fix: the TurnUndead comment still calls the Monster +16 field `m16`, but the field is `flags` and the code uses `obj->flags |= 0x10`. The shoulds are the unmarked [H] on HoldsHolySymbol, the old `m01` field name in CanUseHand, and the placeholder MonsterType fields. No matcher or spec question; nothing escalated. The reviewer did not edit src/.
 
 ### Round 2 (rev-haiku, b45d745)
 
