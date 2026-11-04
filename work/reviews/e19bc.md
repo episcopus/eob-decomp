@@ -1,5 +1,31 @@
 # Review: e19bc
 
+# Round P6 (2026-11-04), commit ce0608f
+
+Reviewer: p6-rev-1
+Commit reviewed: ce0608f (main; review/e19bc was ce0608f when this round began and no fast-forward was needed). The last review round was Round 3 at e1ffddc. Since e1ffddc, src/E19BC.C changed by the Phase 6 rename: `f1BA8_0072` is `NormalizePtr`, `f1DDD_002D` is `SetVideoMode`, `g84A2` is `gBiosVideoModes` in the OutOfMemory comment, and `MEMALLOC_ALIGNED` moved to `EOB.H` (`#define MEMALLOC_ALIGNED 0x20` became `#include "EOB.H"`). The diff is 11 insertions and 11 deletions. The names do not change the machine code; this round judges only whether each new name and comment is true, specific and consistent.
+
+Later round (playbook 70). Judged: the diff since e1ffddc for src/E19BC.C (the Phase 6 rename and its comments) and the names and comments it introduces. The Round 3 must-fix and should items are all ticked and their byte claims are unchanged, so they are not reopened here.
+
+Checked: `make match FILE=src/E19BC.C` 5 of 5 (728 bytes), exit 0; `make readability UNIT=e19bc` 0 findings. Evidence used this round: `git diff e1ffddc HEAD -- src/E19BC.C` (the rename and its comments); `grep -n -A7 "addr = \"1BA8:0072\"" re/renames.toml` (re/renames.toml:7602, the NormalizePtr why); `grep -n -A7 "addr = \"ds:84A2\"" re/renames.toml` (re/renames.toml:7728, the gBiosVideoModes why); `grep -n "MEMALLOC_ALIGNED" src/E07A9.C src/E1B82.C src/EOB.H` (the define is at src/EOB.H:360; the uses at src/E07A9.C:322 and src/E1B82.C:158, :167); `grep -n "0x10L" src/E07C8.C` (the size is at :376); `sed -n '84p' src/E082C.C` (the LargestFreeBlock declaration); `sed -n '99p' src/E082C.C` (the WaitGameKey declaration); `sed -n '124p;132p' src/E07C8.C` (the lines the OutOfMemory comment cites).
+
+## Findings
+
+Each finding is a checkbox. `must-fix` blocks `make review-pass` until a decompiler ticks it off
+(with the commit that fixes it); `should` and `note` do not block.
+
+- [ ] must-fix src/E19BC.C:32-34 (the NormalizePtr declaration), 1BA8:0072: "the name stays a placeholder" is false. The P6 rename replaced the placeholder f1BA8_0072 with NormalizePtr (re/renames.toml:7602, old = f1BA8_0072, new = NormalizePtr), and the why backs the name: "Loads its far pointer argument into DX:AX and calls NormFar (1BA8:0081), which returns offset & 0Fh and segment + offset >> 4 (src/E1BA8.ASM:80-104); callers normalise buffers before large reads and writes (src/E1C0E.C:320, 363, 810; MemAlloc src/E19BC.C:94; src/EOV3.C:780)". Drop "the name stays a placeholder"; the "normalizes a far pointer to DX:AX (its body calls _NormFar, src/E1BA8.ASM:81-90)" part stays.
+- [ ] should src/E19BC.C:44-49 (the MEMALLOC_ALIGNED comment): the define moved to the shared header. The P6 diff replaced `#define MEMALLOC_ALIGNED 0x20` with `#include "EOB.H"`, and the define is now at src/EOB.H:360. The comment still says "src/E07A9.C:37 defines it and uses it at src/E07A9.C:276; src/E1B82.C:43 defines it and uses it at src/E1B82.C:165 and :174." The current uses are src/E07A9.C:322 and src/E1B82.C:158 and :167. Say that EOB.H defines it and the units use it.
+- [ ] should src/E19BC.C:46-49 (the MEMALLOC_ZERO_FILL comment): "the 0x10L at src/E07C8.C:259 is a size" is stale. The 0x10L is at src/E07C8.C:376 (`gPaletteBuf = MemAlloc(0x10L, 0)`); :259 is `else` in Main. Update the cite.
+- [ ] should src/E19BC.C:210-216 (the OutOfMemory comment): "src/E07C8.C:132" for the allocation failure hook and "src/E07C8.C:124" for argv[5] are stale. The hook install is src/E07C8.C:236 (`gAllocFailHook = AllocationFailure;`) and argv[5] is read at src/E07C8.C:226 (`gRestoreMode = atol(argv[5]);`). Update the cites.
+- [ ] should src/E19BC.C:183-186 (the LargestFreeBlock comment): "src/E082C.C:86 declare" is stale; the declaration is at src/E082C.C:84. The type claim (long) holds. Update the cite.
+- [ ] note src/E19BC.C:17-22 (the gAllocCount comment) cites src/E07A9.C:148 (declaration) and :286 (clear). The current E07A9.C lines are :194 (the declaration) and :332 (the clear). The P6 diff did not touch this comment, so it is a note, not a must-fix; the next edit of either file should update it.
+- [ ] note the P6 names SetVideoMode (1DDD:002D) and gBiosVideoModes (ds:84A2) are backed by re/renames.toml (SetVideoMode: INT 10h AH=00h through the seven-word table; gBiosVideoModes: the seven words 4, 9, 0Dh, 13h, 13h, 7, 2), and the comments that use them now agree. The WaitGameKey comment's src/E082C.C:99 is the current declaration. The NormalizePtr name is backed; only the "placeholder" sentence is left.
+
+## Summary
+
+One must-fix item is open. The NormalizePtr comment (src/E19BC.C:32-34) still says "the name stays a placeholder" after the P6 rename replaced f1BA8_0072 with NormalizePtr, a name the rename backs with the DX:AX normalisation and the NormFar call. The should items are stale cites: the MEMALLOC_ALIGNED comment still names the old per-unit defines after the move to EOB.H, and the MEMALLOC_ZERO_FILL, OutOfMemory and LargestFreeBlock comments cite lines that moved. The matcher is 5 of 5 and readability is 0 findings; the names themselves are backed and the machine code is unchanged. The unit does not pass (review-failed) until the NormalizePtr comment is rewritten.
+
 Reviewer: rev-haiku
 Commit reviewed: b628deba92bbe741f650e67e40dd0b37d40146f0 (main, when I started)
 
