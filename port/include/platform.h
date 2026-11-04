@@ -12,7 +12,7 @@
    The host never sees the arena or the game. Everything below is a plain value.
 
    Status (skeleton, 2026-11-04): video present and the event pump are implemented by
-   port/host/host_sdl.c; the rest is declared for the plan and lands with the machine layer. */
+   port/platform/sdl_host.c (null.c, headless, answers them with nothing); the rest is declared for the plan and lands with the machine layer. */
 #ifndef PLATFORM_H
 #define PLATFORM_H
 

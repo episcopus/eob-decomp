@@ -1,6 +1,6 @@
-/* host_sdl.c: SDL3 implementation of platform.h (playbook 80).
+/* sdl_host.c: SDL3 implementation of platform.h, the game you play (playbook 80, "Platform separation").
 
-   Adapted from poolrad's src/platform/host/host_sdl.c (branch track-c-hybrid): one window, one
+   Adapted from poolrad's c/platform/sdl_host.c: one window, one
    streaming texture, scaled; SDL key events become what the hardware would deliver. Unlike poolrad's
    host, which queues BIOS key codes (scan code and ASCII, INT 16h), this one queues set 1 scancodes,
    make and break, because the game reads port 60h itself (E1AAD.ASM). Skeleton status: video,

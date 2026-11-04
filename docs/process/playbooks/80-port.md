@@ -3,10 +3,11 @@
 **Inputs:** SPEC O5 and the non-goals (section 1): the matched C, a platform layer replacing DOS, video
 and sound, SDL3, poolrad's platform layer as the start, the original's behaviour kept with its quirks so
 the goldens stay an exact test (the human, 2026-11-04). Whitepaper 2.5 (the graphics drivers' 47 slots),
-2.6 (start-up), 2.7 (input and sound). Poolrad's Phase 7 groundwork, branch `track-c-hybrid` of
-`../poolrad-decomp` (read only): `src/platform/platform.h`, `src/platform/host/host_sdl.c` and
-`main.c`, `src/rtl/`, its SPEC 7.3 to 7.5 (the DGROUP mirror, `farptr` and `FP()`), 8.4 (hybrid
-execution) and `tools/oracle/replay.py`.
+2.6 (start-up), 2.7 (input and sound). Poolrad's C translation, `../poolrad-decomp/c/` (read only):
+`c/include/platform.h` (its only boundary with the machine), `c/platform/` (`sdl_host.c`, `replay.c`,
+`null.c`), `c/rtl/`, `c/README.md`; its SPEC 7.3 to 7.5 (the DGROUP mirror, `farptr` and `FP()`), 8.4
+(hybrid execution) and `tools/oracle/replay.py`. The human's answers to the decisions, 2026-11-04
+(section "Decisions").
 
 **Goal:** `EOB.EXE` built natively from `src/`, unchanged, with SDL3 for the window, the input and the
 sound, and every golden session of `EOB.EXE` playing on it with the original's checkpoints, screens,
@@ -14,8 +15,9 @@ sound and state.
 
 | Step | State |
 |---|---|
-| M0 skeleton | done 2026-11-04: `make port` translates `src/E0CF7.C` and `src/E1658.C`, links them with the arena runtime and the SDL3 host into `build/port/eob-port`, and its self-test runs them on `EOB.EXE`'s own DGROUP (`tests/unit/test_port.py`, fast set) |
-| M1 to M7 | not started (section "Order of work"); they wait for the decisions at the end |
+| M0 skeleton | done 2026-11-04: `make port` translates `src/E0CF7.C` and `src/E1658.C`, links them with the arena runtime twice, headless (`build/port/eob-port-headless`, no SDL) and with the SDL3 host (`build/port/eob-port`), and the self-test runs them headless on `EOB.EXE`'s own DGROUP (`tests/unit/test_port.py`, fast set) |
+| Decisions | answered by the human 2026-11-04 (section "Decisions"); five questions they raise wait for the human |
+| M1 to M7 | not started (section "Order of work") |
 
 ## Why `src/` does not compile natively as it is
 
@@ -36,7 +38,7 @@ records the game reads from its files and `EOBDATA.SAV` have 16-bit fields and 4
 **the files in `src/` are never edited for the port; the port build translates them**, and every
 difference above is resolved by the translation, the same way for every unit.
 
-## The arena (recommended memory model, decision 1)
+## The arena (the memory model, decision 1: chosen)
 
 The port keeps poolrad's model (its SPEC 7.3: DGROUP mirrored byte for byte, heap records behind
 `farptr` handles, `FP()` into a 1 MB arena) and takes it one step further, because here no C is written
@@ -73,19 +75,20 @@ Why this model: every byte the game keeps is where and as the original keeps it,
 The cost is speed (every access goes through a helper; the game ran on an 8 MHz 286, so this is far from
 a concern) and generated code nobody reads: the readable source stays `src/`.
 
-The alternative (decision 1, option B) is poolrad-style native C with flat pointers and serialisers for
+The alternative (decision 1, option B, not taken) was native C with flat pointers and serialisers for
 the files. It needs a second, hand-maintained source, and its state cannot be compared with the oracle
 byte for byte, so the goldens would test less.
 
-## The translator, `tools/port/tc2c.py` (recommended, decision 2)
+## The translator, `tools/port/tc2c.py` (decision 2: chosen)
 
 `tc2c.py` reads a unit through clang's typed AST and writes C99 for the arena:
 
 - clang parses the unit as C for the **MSP430** target, used for its front end only: `int` 16 bits,
   `long` 32 bits, as Turbo C++. With `-fsigned-char` (no `-K`) and `#pragma pack(1)` (no `-a`)
   (`port/include/tc/prelude.h`), clang applies C's conversion rules with Turbo C's widths, and every
-  promotion and usual arithmetic conversion is an explicit node of the AST (`ImplicitCastExpr`). Apple
-  clang 17.0.0 is what the skeleton was built with; no download.
+  promotion and usual arithmetic conversion is an explicit node of the AST (`ImplicitCastExpr`). The
+  skeleton was built with Apple clang 17.0.0; the reference is to be one pinned LLVM release on every
+  platform (decision 2), installed by the human (question B below).
 - `far`, `near` and `huge` are dropped for parsing: in the large model every data pointer is far, so
   tc2c gives every pointer 4 bytes itself and computes every struct layout itself (bytes, no padding,
   unions at offset 0). clang's own sizes (2-byte MSP430 pointers) are never used.
@@ -100,7 +103,7 @@ byte for byte, so the goldens would test less.
   stops (`build/port/gen/unported.c`), so the worklist is always printed.
 
 The generated C uses GNU statement expressions (compound assignment, `++` and `--` evaluate the address
-once); clang and gcc build it, MSVC does not (decision 2).
+once); clang and gcc build it, MSVC does not (decision 2: allowed; Windows builds with clang).
 
 Other ways considered:
 
@@ -151,39 +154,67 @@ things remain:
 4. Overlay 5's `gScrollHook` fixups (SPEC O2's accepted difference) are a property of the rebuild's
    link, not of the C; the port registers `MessagePanel` at the address the original stores.
 
-## What the platform layer replaces
+## Platform separation
 
-Eye of the Beholder drives its own hardware, so the boundary is two layers, not poolrad's one:
+As in poolrad, where `c/include/platform.h` is "the only boundary between the game and the machine it
+runs on", one header separates everything portable from the host, and only one directory sees the host:
 
-- **The host** (`port/include/platform.h`, `port/host/host_sdl.c`, from poolrad's): a window and
-  `platform_present` (320 by 200 indexed pixels and 256 six-bit DAC entries), input as hardware events
-  (set 1 scancodes, make and break, for port 60h; mouse position in the INT 33h driver's 640-wide range
-  and buttons), the wall clock, AdLib register writes and the speaker, files. It never sees the arena.
-  Poolrad's host queues BIOS key codes (INT 16h); this one queues scancodes, because `EOB.EXE` never
-  calls INT 16h (whitepaper 2.7).
-- **The machine** (`port/runtime/`, M3): the PC the game's code expects, in the arena: the interrupt
-  vector table at `0000:0000`, the PIT (channel 0 divisor, channel 2 for the speaker), interrupt
-  delivery, the I/O ports, the INT 33h driver, INT 10h, and DOS. It is the machine, not the host, that a
-  replay records and plays back. It follows the oracle's own models (`tools/oracle/dos.py`, `bios.py`,
-  `input.py`, `adlib.py`, `ega.py`), which already make the goldens deterministic, so that the two agree
-  by construction.
+| Layer | Where | Uses | Never uses |
+|---|---|---|---|
+| The game | `build/port/gen/` (tc2c's output from `src/`); the hand-written assembly routines, `port/asm/` (decision 3, M3) | the arena, the runtime's interface | the host, SDL, the wall clock |
+| The runtime and the machine | `port/runtime/`: the arena, the loader, the code table; from M3 the PC the game expects (vector table, PIT, ports, INT 33h, INT 10h, DOS) | the arena, `platform.h` | SDL or any other host header |
+| The platform | `port/platform/`, behind `port/include/platform.h` | the host's libraries | the arena, the game's types |
+
+The implementations of `platform.h`, as poolrad's three:
+
+- `port/platform/sdl_host.c`: the game you play (window, set 1 scancodes, mouse, wall clock; sound at
+  M7), linked into `build/port/eob-port`.
+- `port/platform/null.c`: headless, no input, a clock only `platform_sleep_ms` advances; linked into
+  `build/port/eob-port-headless`, on which the self-test runs and on which M2's per-function tests build.
+- `port/platform/replay.c` (M5): headless; answers from a golden's recording and checks its checkpoints.
+
+Another host (another windowing library, a console, a browser through Emscripten) is one more file in
+`port/platform/`. The rules, which the build checks:
+
+1. Only `port/platform/` includes or calls SDL. `make port` runs `port-boundary` first and
+   `tests/unit/test_port.py` checks the same; the game and the runtime are compiled once without SDL's
+   include path and linked with each platform.
+2. `platform.h` passes plain values: pixels and the DAC, scancodes, the mouse in the INT 33h driver's
+   range, milliseconds, OPL register writes, file bytes. It never passes the arena or a game type.
+3. The machine, not the platform, is what a replay records and plays back: the platform delivers
+   hardware events, the machine turns them into interrupts and port reads. So a recording is the same
+   whichever host made it, and the machine follows the oracle's own models (`tools/oracle/dos.py`,
+   `bios.py`, `input.py`, `adlib.py`, `ega.py`), which already make the goldens deterministic.
+4. Portable C99 with the fixed-width types of `tcport.h`, plus GNU statement expressions in the
+   generated code (decision 2; poolrad's C11 has no extension); no floating point; files only through
+   `platform_file_*`.
+
+Where the two ports differ: Pool of Radiance asks the BIOS for keys and ticks, so poolrad's `platform.h`
+has those reads as calls (`platform_key_peek`, `platform_pit_counter`, `platform_timer_set`). Eye of the
+Beholder drives its own hardware (whitepaper 2.7): an INT 9 handler reads port 60h, an INT 33h handler
+takes the mouse, INT 8 and INT 1Ch handlers run its sound and timers. So here the platform produces
+hardware events and consumes hardware output, and the machine layer between it and the game is the PC.
+Poolrad's host queues BIOS key codes (INT 16h); this one queues scancodes, because `EOB.EXE` never calls
+INT 16h.
+
+### What the machine replaces
 
 What each original mechanism becomes:
 
 | Original | Where in `src/` | Port |
 |---|---|---|
-| Graphics drivers, 47 slots: 7 imports the game provides, 40 exports (whitepaper 2.5) | `E1C00.ASM` loads `*.OVL` with DOS 4B03h and calls `LinkDriver`; the game calls the slots at `ds:8046` | The machine's 4B03h allocates the block as DOS does (the driver's size in paragraphs) and fills the driver's export table with the code addresses of the port's driver functions, registered at `loadseg:offset` of each export, so the game's slot table holds the far pointers it holds in the oracle. MCGA first (decision 4) |
+| Graphics drivers, 47 slots: 7 imports the game provides, 40 exports (whitepaper 2.5) | `E1C00.ASM` loads `*.OVL` with DOS 4B03h and calls `LinkDriver`; the game calls the slots at `ds:8046` | The machine's 4B03h allocates the block as DOS does (the driver's size in paragraphs) and fills the driver's export table with the code addresses of the port's driver functions, registered at `loadseg:offset` of each export, so the game's slot table holds the far pointers it holds in the oracle. MCGA only (decision 4) |
 | Video memory and palette | MCGA draws page 0 at `A000:0000`; DAC through INT 10h AX=1012h and ports 3C8h, 3C9h (`I0921.ASM`); retrace port 3DAh (`E1DE4.ASM`); mode set through `int86` (`E1DDD.C`) | `A000:0000` is arena memory; the machine keeps the DAC; the host presents both. Port 3DAh is a read the replay records |
 | Mouse, INT 33h | `E1A72.ASM` (detect, reset, position, handler at `1A72:017A` for mask 1Fh), `E1BF3.ASM` (function 4), the pointer drawn by the game (`E1BBE.ASM`) | The machine is the INT 33h driver: functions 0, 1, 3, 4, 0Ch, with the vector not null so the game finds it; host mouse events become calls of the game's handler with the driver's registers |
 | Keyboard, INT 9 | `E1AAD.ASM`: reads port 60h, acknowledges the PIC, its 256-byte ring | Host scancodes become INT 9 deliveries; port 60h returns the scancode; port 20h is accepted |
 | Timer, INT 8 and INT 1Ch | `E_TEXT.ASM` (AdLib timer, PIT divisor 0555h; the sample player, 004Bh), `E1948.ASM` (speaker and Tandy), `E1D8F.ASM` (INT 1Ch) | The machine runs the PIT at the programmed divisor and delivers INT 8 through the arena's vector, the chain to the BIOS handler raising INT 1Ch, as in the oracle |
-| AdLib, ports 388h and 389h | `E_TEXT.ASM` | `platform_adlib_write`; the host synthesises (decision 7); the sound digest compares the register stream |
+| AdLib, ports 388h and 389h | `E_TEXT.ASM` | `platform_adlib_write`; the SDL host synthesises with ymfm (decision 7, M7); the sound digest compares the register stream |
 | PC speaker, Tandy | `E1948.ASM`, ports 42h, 43h, 61h, C0h | `platform_speaker`; Tandy later |
 | DOS files | the library's `_open`, `_read` (`E1A47.C`), `LoadFile`, `FileRead` | INT 21h 3Dh to 42h over `platform_file_*`, in a copy of the game's directory (never `eob/` itself) |
 | DOS memory | `MemAlloc` (`E19BC.C`), `E1990.ASM`, which walks the MCB chain itself | INT 21h 48h, 49h, 4Ah with MCBs in the arena, laid out as `tools/oracle/dos.py` lays them |
 | Console, drives | `E19EA.ASM` (DOS 06h), `E1A19.ASM` (19h, 0Eh) | the machine's INT 21h |
 
-## The assembly units (decision 3)
+## The assembly units (decision 3: hand-written C)
 
 Nineteen assembly units of `EOB.EXE` need an equivalent (five more in `INTRO.EXE`, `S_TEXT.ASM` in
 `START1.EXE`):
@@ -203,23 +234,32 @@ Nineteen assembly units of `EOB.EXE` need an equivalent (five more in `INTRO.EXE
 | `E1DE4.ASM` | retrace | 3DAh |
 | `E1E8B.ASM` | the VROOMM overlay manager | INT 3Fh, INT 21h; natively only its allocation remains |
 
-Two ways:
+The human chose **hand-written C**, one file per unit in `port/asm/` (`port/asm/E_TEXT.c` and so on), and
+the same for `MCGA.ASM` (decision 4). How:
 
-- **Recompiled** (recommended): `tools/port/asm2c.py` turns the matched TASM source, instruction by
-  instruction, into C over an emulated register file and the arena: flags, string instructions,
-  `cs:` variables (which live in the code image in the arena, at their original addresses) and all. Port
-  instructions call the machine (`in`, `out`, `int`). Exact by construction, mechanical for all 19 units
-  and for `MCGA.ASM` (whose 40 exports then draw into arena pages exactly as the original). A small bridge
-  calls between C and recompiled code: C pushes the arguments on the arena stack in the `cdecl` order of
-  the prototype with a far return address, and the recompiled routine reads them at `[bp+6]` as it does.
-- **Hand-written C** per routine, proven by the differential test of M2. More readable, slower to prove,
-  and a second description of code that is already matched. Possible later, routine by routine.
+- Each routine is written from the matched TASM source in `src/`, which stays the reference; its file
+  names the routine's original address, and the port registers it there (`tc_code_register`), so far
+  pointers to it (driver slots, interrupt vectors, `callback30`) find it.
+- A routine takes and returns what the C prototype in `src/` says (`cdecl`, large model). Routines with
+  register conventions C cannot state (the four unpackers of `E1D8C.ASM`, `DrawTile`, the INT 33h
+  handler at `1A72:017A`, the driver slots) get a small register record in the machine layer, filled
+  and read by the caller's side as the original's registers would be.
+- Variables an assembly unit keeps in its code segment (`cs:` variables; `E_TEXT.ASM` runs with
+  DS = CS) stay in the arena at their original addresses, so the state digests see them.
+- Each routine is proven against the original by the per-function test of M2, on the states the
+  goldens reach, before a session test relies on it.
+- The interrupt handlers (INT 8 in `E_TEXT.ASM` and `E1948.ASM`, INT 9 in `E1AAD.ASM`, INT 1Ch in
+  `E1D8F.ASM`) and the waits on the hardware (the retrace in `E1DE4.ASM`) are where hand-written code
+  meets the proof's clock; see "The clock with hand-written assembly".
+
+The alternative not taken was `tools/port/asm2c.py`, recompiling the TASM source instruction by
+instruction over an emulated register file: exact by construction, but unreadable.
 
 ## How the port is proven
 
 The goldens (`tests/sessions/golden/<name>.json`) are keyed by instruction counts: each checkpoint is
 "after N instructions of the original". C executes none of the original's instructions, so the port needs
-a clock both sides can count. Three choices (decision 5):
+a clock both sides can count. Three choices were offered (decision 5); the human chose the third:
 
 1. **Reads of the outside world** (poolrad's `replay.py`, its SPEC 8.4): each read of the keyboard, the
    clock or a port is recorded with the number of timer interrupts raised by then; a replay returns the
@@ -231,14 +271,39 @@ a clock both sides can count. Three choices (decision 5):
    addresses and taken backward branches in game code) and in the port (tc2c emits a count at each
    function entry and loop head). A spin loop on a timer variable is then exact; whether every C loop is
    one backward branch per iteration in the compiled code is checkable per function against the original.
-3. **The original's instruction clock** (recommended): the matched code has the same control flow as the
+3. **The original's instruction clock** (chosen): the matched code has the same control flow as the
    original's, block for block, so tc2c can give each basic block of its output the number of
-   instructions the original's block executes (mapped through the matcher, which has both), and recompiled
-   assembly counts its instructions exactly. The port then runs on the oracle's virtual clock: the timer
-   interrupts fire at the same instruction counts, and the goldens are checked as they are, the
-   rebuild's way (`make golden CHECK=1`). An interrupt the oracle delivers inside a block is delivered at
-   the end of that block in the port; that is exact unless the block itself reads what the handler wrote,
-   which the goldens then show.
+   instructions the original's block executes (mapped through the matcher, which has both). The port
+   then runs on the oracle's virtual clock: the timer interrupts fire at the same counts, and the
+   goldens are checked as they are, the rebuild's way (`make golden CHECK=1`). An interrupt the oracle
+   delivers inside a block is delivered at the end of that block in the port; that is exact unless the
+   block itself reads what the handler wrote, which the goldens then show.
+
+### The clock with hand-written assembly (decisions 3 and 5)
+
+Hand-written C runs none of the original's instructions and has no blocks the matcher can map, and the
+Borland library (which the port's runtime replaces) has none either. Proposed rule (question A below):
+**the clock counts only the instructions of the C units.**
+
+- In the oracle: the clock advances on an instruction whose `CS:IP` lies in a C unit's code (resident
+  or overlay, from TLINK's segment table, `build/re/eob.json`); instructions in assembly units, in the
+  library and in interrupt handlers do not advance it. This is a counter added to the oracle's tools
+  (`tools/oracle/`), not a change to the goldens; their instruction-count checkpoints are mapped to it
+  once, when the recording file is made.
+- In the port: tc2c's blocks add their counts; hand-written routines and the runtime add nothing.
+- Each interrupt and input is recorded at its position on this clock, with its order among the others at
+  the same position (the recording file, decision 5).
+- While assembly or library code runs, the C clock stands still but interrupts still arrive in the
+  oracle (a retrace wait spins through many INT 8s). The port's hand-written routine waits on the same
+  condition (the tick counter, the retrace bit) and, while it waits, the machine delivers the interrupts
+  recorded at that position, in order, until the condition holds. The condition depends only on what
+  the handlers write, so the count delivered is the oracle's.
+- What this cannot reproduce: an interrupt landing midway through an assembly routine that reads what
+  the handler writes. The goldens show it if it happens; none is known.
+
+The alternative is to recompile just the handlers and the hardware waits (`E_TEXT.ASM`, `E1948.ASM`,
+`E1AAD.ASM`, `E1D8F.ASM`, `E1DE4.ASM`) with asm2c, so their instructions count exactly, and hand-write
+the rest.
 
 Whatever the clock, the proof has two levels:
 
@@ -254,7 +319,8 @@ Whatever the clock, the proof has two levels:
   the per-function test then finds the function.
 
 The new recording artefacts (per golden: the clock positions of each interrupt and input) are files
-beside the goldens; adding them is a change to the golden format (decision 5).
+beside the goldens, `tests/sessions/golden/<name>.clock.json`; the human approved this change to the
+golden format (decision 5). The goldens themselves do not change.
 
 ## The skeleton (M0)
 
@@ -265,9 +331,12 @@ make port
 - `tools/port/tc2c.py` translates the units of `port/units.txt` into `build/port/gen/` (`E0CF7.c`,
   `E1658.c`, `units.c` (the init table), `ported.h` (prototypes), `unported.c` (the stub for `DrawNode`,
   `16A5:07C3`)). `src/` is read only; the test checks that `git status src` is unchanged.
-- `port/port.mk` compiles them with `port/runtime/arena.c`, `port/main.c` and `port/host/host_sdl.c`
-  (`pkg-config sdl3`; SDL3 3.4.18 here) into `build/port/eob-port`, with `-Wall -Wextra -Werror`.
-- `build/port/eob-port --self-test eob/EOB.EXE` loads the load module into the arena, runs the
+- `port/port.mk` checks the platform boundary (`port-boundary`), compiles the generated C,
+  `port/runtime/arena.c` and `port/main.c` once with no SDL on the include path (`-Wall -Wextra
+  -Werror`), and links them twice: with `port/platform/null.c` into `build/port/eob-port-headless`, and,
+  when `pkg-config sdl3` finds SDL3 (3.4.18 here), with `port/platform/sdl_host.c` into
+  `build/port/eob-port`. Without SDL3 only the headless program is built, and `make port` says so.
+- `build/port/eob-port-headless --self-test eob/EOB.EXE` loads the load module into the arena, runs the
   translated `BuildList1` to `BuildList5` (both values of `gFlag`) and checks each list is its table's
   records in order, in DGROUP, ending in null, then `FindNode`, `IsNodeEnabled`, `IsNodeOn` and
   `GetNodeState1` on patterns written into each record; and that `1658:001E` finds `ListAdd` in the code
@@ -275,43 +344,68 @@ make port
   a link left set) each make it fail (the last by its 10 s watchdog, since it makes a list circular). On
   `INTRO.EXE` it fails, as it should: the addresses are `EOB.EXE`'s.
 - `build/port/eob-port --window` opens the SDL3 window (320 by 200, 4:3, nearest scaling) and shows a test
-  frame through `platform_present`; Escape or 10 s closes it.
-- `tests/unit/test_port.py` (fast set, skipped without clang or SDL3): the build and the self-test, and a
-  unit taking a local's address refused by name.
+  frame through `platform_present`; Escape or 10 s closes it. The headless program refuses `--window`.
+- `tests/unit/test_port.py` (fast set, skipped without clang or SDL3): the build and the self-test on the
+  headless program, no SDL use outside `port/platform/`, and a unit taking a local's address refused by
+  name.
 
 ## Order of work
 
+Every step's check runs on macOS, Linux and Windows from M1 on (decision 9), once the human has said
+where the other two build (question D).
+
 | Step | Deliverable | Check |
 |---|---|---|
-| M1 | tc2c handles every C unit of `EOB.EXE` (the arena stack, literals, `switch`, the library calls, the overlay rules); `port/units.txt` lists them all | `make port`; no unit refused |
+| M1 | tc2c handles every C unit of `EOB.EXE` (the arena stack, literals, `switch`, the library calls, the overlay rules); `port/units.txt` lists them all; the pinned LLVM in `make doctor` | `make port`; no unit refused |
 | M2 | `make port-hybrid`, `tools/port/hybrid.py`: each translated function against the original on golden states | every function of `src/` |
-| M3 | the machine: vector table, PIT, ports, INT 33h, INT 10h, DOS memory, files and 4B03h; asm2c and the 19 assembly units | per-function test of the recompiled routines |
-| M4 | the MCGA driver (recompiled `MCGA.ASM`) | screens of `boot-title` |
-| M5 | headless replay of `boot-title` to the title menu | its checkpoints |
+| M3 | the machine: vector table, PIT, ports, INT 33h, INT 10h, DOS memory, files and 4B03h; the 19 assembly units hand-written in `port/asm/`; the C-unit clock in the oracle and the `.clock.json` recordings | M2's test of each hand-written routine |
+| M4 | the MCGA driver, hand-written from `MCGA.ASM` | screens of `boot-title` |
+| M5 | `port/platform/replay.c`: headless replay of `boot-title` to the title menu | its checkpoints |
 | M6 | every `EOB.EXE` golden (`boot-adlib`, `load-walk`, `mouse-party`, `new-party`); then `INTRO.EXE` (the twin map of `make twin` gives its addresses for the shared units) | `make port-golden` in `make check` |
-| M7 | live play: real-time pacing from the PIT, AdLib synthesis, the launcher's choices (VGA, AdLib, mouse) | a human plays |
+| M7 | live play: real-time pacing from the PIT, AdLib synthesis with ymfm, the launcher's choices (VGA, AdLib, mouse) | a human plays |
 
-## Decisions for the human
+## Decisions
 
-1. **Memory model**: the arena (recommended), or native C with flat pointers and serialisers.
-2. **Translation**: `tc2c.py` over clang's AST (recommended); which clang is the reference (Apple clang
-   17.0.0 here; the JSON AST changes little between releases, but a pin makes the output reproducible);
-   GNU statement expressions in the generated C (clang and gcc only).
-3. **Assembly units and drivers**: recompiled by `asm2c.py` (recommended), or hand-written C.
-4. **Graphics**: MCGA (VGA) only for the port (recommended: the goldens are all VGA), or the four drivers.
-5. **The clock for the proof**: the original's instruction clock (recommended), control events, or
-   poolrad's reads; and the golden format grows by one recording file per session.
-6. **The initial image**: read from the user's own `EOB.EXE` at start (recommended: the port needs the
-   user's PAKs anyway, and the image is exactly the original's), or generated from `src/` and the
-   rebuild's data so the port ships no game bytes but the user's data files.
-7. **The OPL emulator** for AdLib sound: it must not be GPL (rule 3 of AGENTS.md; DOSBox's is GPL).
-   Candidates: ymfm (BSD 3-clause), Nuked OPL3 (LGPL 2.1). Either is a download, so the human chooses and
-   installs it.
-8. **Start-up**: the port starts `EOB.EXE` with the arguments `START1.EXE` and `INTRO.EXE` would pass
-   (`3 4 0 homie 3`), with its own choice of the three settings; `INTRO.EXE` and `START1.EXE` come
-   later, or not at all.
-9. **Platforms**: macOS arm64 now; Linux and Windows later (the generated C is portable but for
-   decision 2's statement expressions).
+The human answered all nine on 2026-11-04:
+
+| # | Decision | Answer |
+|---|---|---|
+| 1 | Memory model | the arena |
+| 2 | Translation | `tc2c.py` over clang's AST; the reference is **one pinned LLVM release** on every platform (not the installed Apple clang); GNU statement expressions allowed |
+| 3 | Assembly units and drivers | **hand-written C** (not asm2c) |
+| 4 | Graphics | MCGA (VGA) only |
+| 5 | The clock for the proof | the original's instruction clock; the golden format grows by one recording file per session (approved) |
+| 6 | The initial image | **generated from `src/`**, so the port ships no game bytes (not read from the player's `EOB.EXE`) |
+| 7 | The OPL emulator | ymfm (BSD 3-clause); the human installs it, at M7 |
+| 8 | Start-up | `EOB.EXE` directly with `3 4 0 homie 3` and the port's own settings; `INTRO.EXE` later |
+| 9 | Platforms | **macOS, Linux and Windows from the start** |
+
+And a note: keep poolrad's platform separation. It is the section "Platform separation" above, now
+enforced by the build.
+
+### Questions the answers raise (for the human)
+
+- **A. The clock with hand-written assembly** (decisions 3 and 5): accept the rule that the clock counts
+  only the instructions of the C units ("The clock with hand-written assembly"), or recompile just the
+  interrupt handlers and hardware waits with asm2c and hand-write the rest. Recommended: the C-unit
+  clock; it keeps decision 3 whole and needs only a counter in the oracle's tools.
+- **B. Which LLVM** (decision 2): a release every platform ships (Homebrew on macOS, apt.llvm.org on
+  Linux, the LLVM installer on Windows), installed by the human; `make doctor` then checks its version.
+  Recommended: the newest major release all three offer on the day it is installed.
+- **C. The data of a generated image** (decision 6): the rebuild's program data is still a copy of the
+  original's bytes (`DATA.ASM`, generated from `EOB.EXE`, playbook 50), and DGROUP also holds the Borland
+  library's data, which is library, not ours. A generated image needs (1) the program's data as C
+  definitions in `src/`, which P6 was to do and which is a source change (after the review in
+  `work/p6-review.md`), and (2) the port's runtime writing its own library data at the same offsets.
+  Until both are done, may the port keep reading the data from the player's `EOB.EXE` at start (what the
+  skeleton does), with a test that the generated part equals it? Recommended: yes, and the data
+  conversion as its own P6 task.
+- **D. Where Linux and Windows build** (decision 9): this Mac has neither, and pushing is not allowed, so
+  CI is out. A Linux virtual machine or container on this Mac and a Windows machine or virtual machine,
+  each with the pinned LLVM and SDL3, installed by the human; the agents then run `make port` there
+  through a command the human names. Recommended: a Linux container now, Windows when M5 runs.
+- **E. The recording file** (decision 5): `tests/sessions/golden/<name>.clock.json`, written by the
+  golden tools beside each golden. Recommended as named; say if the format should live elsewhere.
 
 ## Open questions (none needs `src/` changed now)
 

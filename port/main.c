@@ -5,8 +5,8 @@
    relocations, so DGROUP and its far pointer tables are the original's bytes, and the translated
    functions run on them.
 
-     eob-port --self-test EOB.EXE   run the checks below; exit 0 when they pass
-     eob-port --window             open the SDL3 window and show a test frame (Escape closes it)
+     eob-port[-headless] --self-test EOB.EXE   run the checks below; exit 0 when they pass
+     eob-port --window                       open the SDL3 window and show a test frame (Escape closes it)
 
    The checks are for the skeleton units, src/E0CF7.C and src/E1658.C: each BuildList links its
    table's records into a list at gList (ds:FB48) through ListAdd; the list must be the table's

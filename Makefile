@@ -17,7 +17,7 @@ help:
 	@echo "Phase 3:  match-gate check progress queue next packet skeleton rename readability (playbook 30)"
 	@echo "          claim locks unlock handoff handoffs integrate handoff-done review-pass worker (playbooks 70, 90)"
 	@echo "          smoke-agent start-run watch-agents run-status run-add stop-run (work/roster.toml)"
-	@echo "Phase 7:  port (playbook 80: translate port/units.txt, build build/port/eob-port with SDL3, self-test)"
+	@echo "Phase 7:  port (playbook 80: translate port/units.txt, build build/port/eob-port-headless and, with SDL3, build/port/eob-port; self-test)"
 	@echo "See AGENTS.md and docs/spec/SPEC.md."
 
 setup:            ## create .venv with the Python tools (uv)
@@ -73,7 +73,7 @@ twin:             ## prove INTRO.EXE units by their EOB.EXE twin, the same modul
 oracle-run:       ## run the original EOB.EXE in the oracle (build/oracle/run: summary.json, shots/)
 	$(PY) tools/oracle/run.py --max-insns $(or $(INSNS),30000000) $(if $(ARGS),--args "$(ARGS)") $(if $(SCRIPT),--script $(SCRIPT))
 
-port:             ## Phase 7 skeleton (playbook 80): translate the units of port/units.txt from src/, build build/port/eob-port (SDL3), run its self-test
+port:             ## Phase 7 skeleton (playbook 80): translate the units of port/units.txt from src/, build build/port/eob-port-headless and eob-port (SDL3), run the self-test headless
 	$(MAKE) --no-print-directory -f port/port.mk PY=$(PY)
 
 golden:           ## record the golden sessions (NAME=x for one; CHECK=1 verifies instead; CHECK=1 REBUILT=1 on the programs make rebuild linked)

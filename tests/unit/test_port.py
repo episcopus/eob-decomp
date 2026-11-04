@@ -3,6 +3,7 @@ port/units.txt from src/ without touching them, the C compiler links them with t
 the SDL3 host, and the program's self-test runs the translated functions on EOB.EXE's own DGROUP.
 A unit with a construct tc2c does not handle is refused by name, never translated by a guess.
 Skipped where clang or SDL3 is missing (the playbook says what to install)."""
+import re
 import shutil
 import subprocess
 import sys
@@ -28,8 +29,22 @@ def test_the_skeleton_builds_and_passes_its_self_test():
                        capture_output=True, text=True)
     assert r.returncode == 0, r.stdout[-3000:] + r.stderr[-3000:]
     assert "8 lists: ok" in r.stdout
+    # platform separation: the self-test ran on the headless program, which links no SDL
+    assert "eob-port-headless --self-test" in r.stdout
+    assert (ROOT / "build" / "port" / "eob-port-headless").exists()
     after = subprocess.run(["git", "status", "--porcelain", "src"], cwd=ROOT, capture_output=True, text=True).stdout
     assert before == after, "the port build changed src/"
+
+
+def test_only_the_platform_directory_uses_sdl():
+    """platform.h is the only boundary (playbook 80, "Platform separation"): the game, the runtime and
+    the machine never include or call SDL, so they build for any host."""
+    offenders = []
+    for f in (ROOT / "port").rglob("*"):
+        if f.suffix in (".c", ".h") and "platform" not in f.relative_to(ROOT / "port").parts[:1]:
+            if re.search(r"#include *<SDL|SDL_[A-Za-z]", f.read_text()):
+                offenders.append(str(f.relative_to(ROOT)))
+    assert offenders == []
 
 
 @needs_clang
