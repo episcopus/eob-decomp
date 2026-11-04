@@ -1,7 +1,7 @@
 # Review: eov3
 
-Reviewer: rev-haiku
-Commit reviewed: 01237b0 (main when I started; src/EOV3.C is identical in this worktree at 8443107)
+Reviewer: p6-rev-8
+Commit reviewed: ce0608f367ed01b1b1df84e254eef04d1a734b27 (main tip when claimed for the P6 round)
 
 Playbook 70. Judge what a matching file can still get wrong: names, types, comments, structure.
 The matcher already proved the bytes; do not re-prove them, read for meaning.
@@ -10,6 +10,25 @@ The matcher already proved the bytes; do not re-prove them, read for meaning.
 
 Each finding is a checkbox. `must-fix` blocks `make review-pass` until a decompiler ticks it off
 (with the commit that fixes it); `should` and `note` do not block.
+
+### Round P6 (2026-11-04), commit ce0608f367ed01b1b1df84e254eef04d1a734b27
+
+Judged: the changes since 6118e25 in src/EOV3.C and re/symbols.toml. The diff is the Phase 6 rename of the unit's functions, globals and struct fields, with the comments rewritten to the maze, door and level vocabulary. I checked the evidence for the new names in re/renames.toml and re/fields.toml and the code they describe. The rename log backs the new names: gDecorShapes (ds:EFD4), gWallRecCount (ds:F538), gCopyToPlanar (ds:808E), gWallPlaneTableA (ds:F4D6), gWallPlaneTableB (ds:FB4D), gCgaMapInvent (2067:0000), gCgaMapPlayfld (2069:0000), gTunesOn (ds:80E8), gBarGraphsOn (ds:F43C), gSpellItemTypes (ds:AD20), gWallBlocks (ds:DCA6), gGetSpriteCellRle (ds:8082), gFont6x6 (ds:A9C0), gGameLoadState (ds:A998), gViewToCellPos (ds:1A1B), gPartyDir (ds:FBCC), gMouseItem (ds:FBCE), gStagingPage (ds:DF4E), gDecorationRects (ds:E062), gMaze (ds:B894), gSavedLevels (ds:FBD0), gScratchBuf (ds:DCFC), gWallVmpSet (ds:1879), gMonsters (ds:8A82), gGameTicks (ds:8492), gWallTypeFlags (ds:194B), gWallDecorHead (ds:18BF), gWallHandlerIndex (ds:1905), gDoorEffectCell (ds:5C74), gDoorMoveDir (ds:5C76), gDoorEffectActive (ds:5C77), gProjectiles (ds:DD2C), gItems (ds:8DD0), gDoorShapes (ds:FB5E), gDoorButtons (ds:A99C), gLoadedMonsterShapes (ds:B802), gMonsterRectsA (ds:6930), gMonsterRectsB (ds:69C0), gMonsterRectsC (ds:6A50), gDrawPage (ds:8115), gCgaMapDefault (ds:113F), gCurLevel (ds:FBC8), gMazeItems (ds:B899), gDoorRects (ds:6840), gDoorButtonRects (ds:68A0), gDoorButtonPos (ds:6900), gLevelCgaMapIndex (1F1D:0000), gTimerEnableFlags (ds:849E), gLevelTimerMode (ds:F51B), gLevelTimerPeriod (ds:F510), gLevelTimerSteps (ds:FB32), gStepCount (ds:F540), gLevelPalettePending (ds:FB45), gLevelInf (ds:8DCA), gWallBlockMaps (ds:F43E), gPaletteBuf (ds:FE68), gEffects (ds:5BA8); and the functions DefineWallType (ovl3:01C8), LoadDoorShapes (ovl3:03A2), FreeMonsterShapes (ovl3:05D2), LoadMonsterShapesA (ovl3:0624), LoadMonsterShapesB (ovl3:069E), LoadMonsterShapesC (ovl3:0718), LoadMaze (ovl3:09AA), LoadLevel (ovl3:0A7C), InitMonster (08E6:131D), MemberIs (0D1C:0670), SetFont (1A47:0169), NormalizePtr (1BA8:0072); and the CharRec fields status (01), portraitIndex (22), portrait (33), timers (AD), ItemRecord.level (0C), key (06), cellPos (05), Monster.cell (02), attackFrame (0A), Projectile.item (08). The comments match the code at those addresses except the must-fix below. `make match FILE=src/EOV3.C` 23 of 23 (6961 of 6961 bytes); `make readability UNIT=eov3` 0 findings.
+
+#### Round P6 must-fix
+
+- [ ] must-fix src/EOV3.C:827 and :829 (LoadGame header, changed in this diff): the header says the sprite cut runs "for each character whose identifiedNameIndex is nonzero" and "a character with identifiedNameIndex nonzero ... sets `flag`". The code tests `rec->status != 0` at :892 and :904, not `identifiedNameIndex`. `status` is the byte at +01; `identifiedNameIndex` is a different field. Say `status`. Evidence: src/EOV3.C:892 and :904.
+
+#### Round P6 should
+
+- [ ] should src/EOV3.C:932 (ResetLevel header, changed in this diff): "keeping only the low two bits of the item record its item indexes" is unclear. The code at :941 keeps the low two bits of `gItems[gProjectiles[i].item].cellPos`; say "the item's cellPos". Evidence: src/EOV3.C:941.
+
+#### Round P6 notes
+
+- note src/EOV3.C:32: the gSpellItemTypes declaration still says "a 96-byte saved-game buffer (Purpose unknown)"; the rename why says it is the six 16-byte item-type records for spells. The comment was not changed by the diff, so this is for the next reader. Evidence: re/renames.toml ds:AD20.
+- note src/EOV3.C:499: the LoadLevel header says "the 30 14-byte object records"; the Monster record is 28 bytes. The line was changed only to rename InitMonster, so the size error is pre-existing. Evidence: the old Obj28 is 28 bytes (src/EOV3.C:107 in the diff).
+- note src/EOV3.C:91: the gWallHandlerIndex comment "a 256-byte table gMaze indexes into" could say per wall type, the handler index. Evidence: re/renames.toml ds:1905.
+- note src/EOV3.C:130: the gMazeItems comment "the nine-byte record list head" could say each cell's item list head. Evidence: re/renames.toml ds:B899.
 
 Round 4 (at 6118e25, rev-haiku, a later round: round 3 must-fix items and the diff since a2c0a9e only).
 The diff since a2c0a9e is 8db5863 and the merges after it. src/EOV3.C changes are comments and declaration types
