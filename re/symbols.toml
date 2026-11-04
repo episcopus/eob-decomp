@@ -5551,7 +5551,7 @@ evidence = ["near", "segment"]
 name = "LinkNode"
 level = "L2"
 match_flags = "-ml -O -Z"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e1658_001e"
@@ -5562,7 +5562,7 @@ evidence = ["far", "near", "frame"]
 name = "ListAdd"
 level = "L2"
 match_flags = "-ml -O -Z"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e1658_0073"
@@ -5573,7 +5573,7 @@ evidence = ["frame"]
 name = "ToggleNode"
 level = "L2"
 match_flags = "-ml -O -Z"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e1658_0154"
@@ -5584,7 +5584,7 @@ evidence = ["frame"]
 name = "DisableNode"
 level = "L2"
 match_flags = "-ml -O -Z"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e1658_017b"
@@ -5595,7 +5595,7 @@ evidence = ["frame"]
 name = "EnableNode"
 level = "L2"
 match_flags = "-ml -O -Z"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e1658_01a2"
@@ -5606,7 +5606,7 @@ evidence = ["frame"]
 name = "FindNode"
 level = "L2"
 match_flags = "-ml -O -Z"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e1658_01e6"
@@ -5617,7 +5617,7 @@ evidence = ["frame"]
 name = "ClearNode"
 level = "L2"
 match_flags = "-ml -O -Z"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e1658_02f5"
@@ -5628,7 +5628,7 @@ evidence = ["frame"]
 name = "SetNode"
 level = "L2"
 match_flags = "-ml -O -Z"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e1658_03d6"
@@ -5639,7 +5639,7 @@ evidence = ["frame"]
 name = "InsertNode"
 level = "L2"
 match_flags = "-ml -O -Z"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e1658_04a7"
@@ -5650,7 +5650,7 @@ evidence = ["frame"]
 name = "IsNodeEnabled"
 level = "L2"
 match_flags = "-ml -O -Z"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e1658_04bb"
@@ -5661,7 +5661,7 @@ evidence = ["frame"]
 name = "IsNodeOn"
 level = "L2"
 match_flags = "-ml -O -Z"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e1658_04ca"
@@ -5672,7 +5672,7 @@ evidence = ["frame"]
 name = "GetNodeState1"
 level = "L2"
 match_flags = "-ml -O -Z"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e16a5_0009"
