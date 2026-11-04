@@ -1,5 +1,27 @@
 # Review: e14ef
 
+# Round P6
+
+Reviewer: p6-rev-2
+Commit reviewed: bb684d466740774ddfe8339c57991eba902d43f2 (P6 round; the earlier round read 85f5594)
+
+Playbook 70, later round. Judge the changed names and comments since 85f5594.
+
+Checked: `make match FILE=src/E14EF.C` 6 of 6 functions, 1410 bytes; `make readability UNIT=e14ef` 0 findings. The diff 85f5594..bb684d4 changes names and comments: gFC78 -> gOptionLineSpacing, gFC7A -> gUnhandledOptionKey, g5D1A -> gHoverSelectsOption, g8140/g8142 -> gClickX/gClickY, g8102 -> gGraphicsChoice, g8134 -> gUnreadButtonChanges, g8172/g8174 -> gEgaRegShadowOff/gEgaRegShadowSeg, the mask tables gTable6081/gTable6099 -> gRaceClassMasks/gClassAlignmentMasks; struct Panel moves to EOB.H with pad0E; the file flags change from -B to -v and the assembler note becomes a flags note; PickOption -> PickRace and m20 -> classIndex in the header.
+
+Evidence checked against re/renames.toml (the eleven ds: entries above) and re/fields.toml (the Region fields; the Panel pad0E has no entry). The names match their WHYs: gOptionLineSpacing is DrawOptionList's spacing argument read by UpdateOptionList; gUnhandledOptionKey is the key UpdateOptionList did not handle; gHoverSelectsOption is the ds:5D1A word that lets the pointer pick a row; gClickX/gClickY are the last click; gGraphicsChoice is argv[1][0]; gUnreadButtonChanges is the INT 33h button-change accumulator; gEgaRegShadowOff/Seg are the EGA register shadow pointer; gRaceClassMasks and gClassAlignmentMasks are the mask tables. The callers in src/EOV0.C, src/EOV2.C, src/E1A72.ASM, src/E1BBE.ASM and src/E16A5.C use the new names. struct Panel is in EOB.H with pad0E. The -v flags produce the same 6 of 6 bytes.
+
+## Findings
+
+- [ ] should src/E14EF.C:43-62: the P6 renames made the cross-file line cites stale. The current lines: gGraphicsChoice is src/EOV0.C:103 (not :134); the gClickX/gClickY clear is src/EOV0.C:1161 (not :1204); PickAlignment tests gUnhandledOptionKey at :1217, :1219 and the click at :1220 (not :1259, :1261, :1262); src/E16A5.C reads gClickX/gClickY at :204, :220 and :205, :221 (not :224, :240 and :225, :241); the ClickInRect wrapper is src/E082C.C:522 (not :465). Use the current lines or the stable addresses (ovl0:2342..235C for the PickAlignment tests).
+- [ ] should src/E14EF.C:20: the header still ends "Placeholder names." after the globals got real names; say which remain (counter, extra, pad0E) or drop the sentence.
+- [ ] note src/EOB.H:348: the Panel field pad0E has no re/fields.toml entry; the name is a neutral placeholder by offset, so it is honest, but the registry should record it.
+- [ ] note the -B to -v flag change is a build change, not a name; make match proves the same 6 of 6 bytes. The flags note's history (2026-11-01 under -B, -v since 2026-11-02) is a compiler inference; whitepaper 2.1.1 is the support.
+
+## Summary
+
+The P6 names are backed by re/renames.toml and re/fields.toml, and the callers use them. The shoulds are the stale cross-file line cites the renames left behind and the header's "Placeholder names" sentence. The notes are the pad0E registry gap and the -B to -v flags change. No must-fix; the unit passes.
+
 # Round 12
 
 Reviewer: rev-haiku
