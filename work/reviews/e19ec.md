@@ -1,10 +1,43 @@
 # Review: e19ec
 
-Reviewer: rev-sonnet
-Commit reviewed: 8afc719b2730588a3f7f5fe83f8ce0e7a71e447e (first pass); re-review at 36d77ba6058a5e4014be8869973523d717099b8b
+Reviewer: p6-rev-2
+Commit reviewed: ce0608f367ed01b1b1df84e254eef04d1a734b27 (P6 round; earlier rounds read 8afc719b2730588a3f7f5fe83f8ce0e7a71e447e and 36d77ba6058a5e4014be8869973523d717099b8b)
 
 Playbook 70. Judge what a matching file can still get wrong: names, types, comments, structure.
 The matcher already proved the bytes; do not re-prove them, read for meaning.
+
+## Round P6 (2026-11-04), commit ce0608f367ed01b1b1df84e254eef04d1a734b27
+
+Judged the diff 36d77ba..ce0608f on src/E19EC.C: the placeholder names are replaced by
+GetPageBuffer, GetPageVideo, CopyPage, gPageSegs and gCopyPage; the parameters are from, to,
+driverArg3 and driverArg4; the header and function comments are rewritten.
+
+Evidence checked against re/renames.toml (19EC:0002=GetPageBuffer, 19EC:0016=GetPageVideo,
+19EC:002A=CopyPage, ds:8046=gCopyPage, ds:FC0C=gPageSegs; no struct field in re/fields.toml).
+The names match their WHYs: the odd slot is the MemAlloc'd memory copy (GetPageBuffer), the even
+slot the video page (GetPageVideo), and ds:8046 the graphics driver's page copy (gCopyPage); the
+callers in src/E07A9.C, src/E1B82.C, src/EOV5.C and src/IOV0.C use the new names.
+
+- [ ] must-fix src/E19EC.C:33: the comment calls gCopyPage "its export 7". The evidence in
+  re/renames.toml (ds:8046=gCopyPage and 19EC:002A=CopyPage) and the driver table mapping
+  (ds:8046 + 4*i is mcga.ovl export i) make ds:8046 graphics driver export 0 (mcga.ovl 04F8);
+  export 7 would be ds:8062. Say "export 0", or drop the parenthetical.
+- [ ] should src/E19EC.C:5-9: the header's fill list still omits the mode 4 block's 0xAC00 into
+  ds:FC18 (07C8:03E0) and the 0xFC00 MemAlloc for ds:FC1A (07C8:03EC); the previous round's
+  should item remains open. (should, not must-fix)
+- [ ] should src/E19EC.C:25-26: "the video memory of page `kind`" is only true in the EGA/VGA
+  choices; in the other modes the even slot holds the same segment as the odd slot
+  (re/renames.toml 19EC:0016). Add that caveat or choose a name that does not claim video memory
+  in every mode.
+- [ ] note The "GetPageBuffer" name and comment are supported by the WHY (the odd slot is the
+  MemAlloc'd memory copy).
+- [ ] note The "gPageSegs" and "gCopyPage" names are supported by the WHY; the callers use them
+  consistently.
+- [ ] note The "CopyPage" name is supported by the WHY (the driver copies a whole 64000-byte page
+  from the first segment to the second).
+
+No open must-fix from the earlier rounds; the new must-fix is in a line the diff changed. The unit
+fails until the "export 7" comment is corrected.
 
 ## Findings
 
