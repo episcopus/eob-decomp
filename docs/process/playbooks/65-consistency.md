@@ -152,12 +152,21 @@ the findings below are empty or each has an owner; the reviewer signs each subsy
   textAttr2 of gRegions[9], [11], [12], [13] (the fill colour SetTextWindow loads): the files now
   write them as gRegions fields (the same code). gPanels (ds:017F) starts where gRegions[14] would,
   so the region table has 14 entries.
-- Open (the human, 2026-11-04: fix these three from the code, guesses marked [H]): gIconTable (ds:FB34) is declared as a byte (the member being moved) in several units and as
-  an array of far pointers in E0EF3 (CastBurningHands reads entries 1 to 3, from ds:FB38); one of the
-  two readings is a different object that shares the address. gSpellsTakenByTab (ds:FDE7) has 5
-  bytes but BuildSpellSlots clears 10, into ds:FDEC, which it clears again (a QUIRK). ds:DCAA
-  (gMenuPhase) has no store of 5 and its stepper 0ACD:0753 no caller found: the "rest phase"
-  reading is unsupported.
+- The three loose ends (the human, 2026-11-04: fix them from the code, guesses marked [H]):
+  - Settled: ds:DCAA is `gMapPhase`. Every reference in EOB.EXE and its overlays, read from the bytes:
+    EnterMapScreen (0ACD:0F72) stores 1, `StepMapPhase` (0ACD:0753) steps it 1, 2, 1, and three
+    handlers skip their work at 5 (0ACD:0A34, 0A61, 0D9D). Nothing calls 0ACD:0753 (no near call,
+    no stored far pointer) and nothing stores 5: dead code, and the "rest phase" reading is withdrawn.
+  - Settled: Monster +0C `maxHp` stays, marked [H] in src/EOB.H (InitMonster writes the roll it
+    gives +0E; nothing reads +0C).
+  - Open, waiting for the human: ds:FB34 is a byte, the party member being moved (five units).
+    E0EF3's far-pointer table "at ds:FB34" is the flame sprites at ds:FB38 (EOV2 cuts them from the
+    thrown-item sheet, `gThrownIcon0` to `2`), indexed from 1, so the compiler's base sits 4 bytes
+    early. The true source form, `gThrownIcons[n - 1]` declared at ds:FB38, compiles to the
+    original's bytes, but `make match` cannot resolve a reference below a symbol's start (each
+    extern is a 256-byte block in its stub DGROUP): a matcher change, asked first.
+- gSpellsTakenByTab (ds:FDE7) has 5 bytes but BuildSpellSlots clears 10, into ds:FDEC, which it
+  clears again (a QUIRK).
 - Open, for the oracle (the human, 2026-11-04: trace each one; results go in the whitepaper as QUIRKs with evidence): gLevelFlags (ds:FBD4) is indexed by gCurLevel 1 to 12, so
   level 12's flags are the bytes of gGameFlags (ds:FC04), a QUIRK if the game relies on it; the
   door code (122E:0137, ToggleDoor) tests only bit 0 of a cell's monster count; the 32-byte maps

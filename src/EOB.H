@@ -144,7 +144,8 @@ struct Monster {
                                as shapes 5 and 6 in the nearest row; else 0 */
     char timer;             /* +B: counted down by TickMonsterTimer in modes 7 and 10; the hold spells set 15 with
                                mode 10 (0EF3:1530, 0EF3:1A30) */
-    int maxHp;          /* +C: the starting hit points, the roll InitMonster also gives +E; not read in src/ */
+    int maxHp;          /* +C: [H] the maximum hit points: InitMonster (08E6:131D) writes the roll it
+                           also gives +E, and nothing in src/ reads +C, so the name is inferred */
     int hp;              /* +E: the current hit points: DamageMonster subtracts from them, 0 or less means dead */
     int targetCell;                /* +10: the target cell the monster heads for (0AB8 passes it to 0430) */
     int dropItem1;                /* +12: an item id dropped at death (0EC3 rolls 1d2, copies it on a 1) */

@@ -2567,8 +2567,9 @@ name = "gMouseItem"
 why = "The item held on the mouse pointer: GetCurrentItem (0D1C:02DC) returns it while the mouse is enabled (else the cursor slot item), SetCurrentItem (0D1C:0304) stores it, EnterMapScreen (0ACD:0F72) and ovl3 redisplay it with SetMouseItem(gMouseItem), and 07A9 reads gItems[gMouseItem].flags for the pointer icon."
 [[global]]
 id = "ds:DCAA"
-name = "gMenuPhase"
-why = "Named after its only stepper StepMenuPhase (0ACD:0753, which wraps it over 1 and 2 and has no caller found in EOB.EXE); EnterMapScreen sets it to 1 (0ACD:0FA9) and MoveKeyCursor (0A34), MoveListItem (0A61) and HandleMapKey (0D9D) do nothing when it is 5. The six references in EOB.EXE are all in 0ACD and none stores 5, so the meaning of 5 is not shown."
+name = "gMapPhase"
+why = "ds:DCAA: EnterMapScreen 0ACD:0F72 stores 1 and the uncalled 0ACD:0753 steps it 1, 2; the tests for 5 at 0ACD:0A34, 0A61 and 0D9D never fire since no code stores 5 (every reference in EOB.EXE and its overlays read from the bytes); the rest-phase reading is withdrawn"
+
 [[global]]
 id = "ds:5721"
 name = "gBurningHandsX"
