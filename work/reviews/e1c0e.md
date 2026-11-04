@@ -1,5 +1,29 @@
 # Review: e1c0e
 
+# Round P6 (2026-11-04), commit ce0608f
+
+Reviewer: p6-rev-1
+Commit reviewed: ce0608f (main; review/e1c0e was ce0608f when this round began and no fast-forward was needed). The last review round was Round 1 at 43c76cf. Since 43c76cf, src/E1C0E.C changed by the Phase 6 rename: f1BA8_0072 is NormalizePtr, f1A47_0169 is SetFont, g80C6 is gSaveRectSize, gFE5A is gFont8x8, gFont1A47 is gCurFont, gStatusLine is gDrawPage, g8104 is gFatalHandler, g8111 is gRetryHandler, g80FE is gErrorDialogRegion and ShowMessage is ShowFileError. The header, the FileEntry struct comments and many function comments are rewritten; the five FORMAT_* defines are not in this file (the P6 diff adds #include "EOB.H" and the constants FILE_IN_MEMORY, FILE_LINKED, FLAG_KEEP and FLAG_LOAD stay local). The diff is 210 insertions and 154 deletions. The names do not change the machine code; this round judges only whether each new name and comment is true, specific and consistent.
+
+Later round (playbook 70). Judged: the diff since 43c76cf for src/E1C0E.C (the P6 rename and its comments) and the names and comments it introduces. The Round 1 shoulds and notes are not must-fix items; the P6 diff resolves some of them and leaves the rest.
+
+Checked: `make match FILE=src/E1C0E.C` 31 of 31 (6099 bytes), exit 0; `make readability UNIT=e1c0e` 0 findings. Evidence used this round: `git diff 43c76cf HEAD -- src/E1C0E.C` (the rename and its comments); `grep -n -A8 "addr = \"ds:8115\"" re/renames.toml` (the gDrawPage why at :8439); `grep -n -A7 "addr = \"ds:80C6\"" re/renames.toml` (the gSaveRectSize why at :2247); `grep -n -A7 "addr = \"ds:FE5A\"" re/renames.toml` (the gFont8x8 why at :2256); `grep -n -A7 "addr = \"ds:FE4E\"" re/renames.toml` (the gCurFont why at :2787); `grep -n -A7 "addr = \"ds:8104\"" re/renames.toml` (the gFatalHandler why at :2265); `grep -n -A7 "addr = \"ds:8111\"" re/renames.toml` (the gRetryHandler why at :2274); `grep -n -A7 "addr = \"ds:80FE\"" re/renames.toml` (the gErrorDialogRegion why at :7719); `grep -n -A7 "addr = \"1C0E:0D9B\"" re/renames.toml` (the ShowFileError why at :8466).
+
+## Findings
+
+Each finding is a checkbox. `must-fix` blocks `make review-pass` until a decompiler ticks it off
+(with the commit that fixes it); `should` and `note` do not block.
+
+- [ ] should src/E1C0E.C:531, :537, :605 (DisplayFileError): the P6 diff renamed the local `saved8115` to `savedStatusLine`, matching the old global name, but the global is `gDrawPage` now. Say `savedDrawPage` (or `savedPage`) so the local and the global agree. The local is only a name; no byte changes.
+- [ ] note src/E1C0E.C:56 (the gDrawPage declaration): "the graphics driver's draw page (E082C.C)" matches the rename's why at re/renames.toml:8439 ("the page the graphics driver draws to ... setting it to 2 draws to page 2"). The earlier ledger entry for ds:8115 (re/renames.toml:2031, gStatusLine) still says "the status-line flag in E082C.C:44, E1C0E.C:589, E16A5.C:511"; the later entry supersedes it. A note for the next ledger edit.
+- [ ] note src/E1C0E.C:76 (the gFatalHandler comment): "the fatal file error handler" is fine. The rename's why at re/renames.toml:2269 still says "the image holds 1C0E:0D9B (ShowMessage)"; the name is ShowFileError now. A note for the next ledger edit.
+- [ ] note the P6 names NormalizePtr (1BA8:0072), SetFont (1A47:0169), gSaveRectSize (ds:80C6), gFont8x8 (ds:FE5A), gCurFont (ds:FE4E), gDrawPage (ds:8115), gFatalHandler (ds:8104), gRetryHandler (ds:8111), gErrorDialogRegion (ds:80FE) and ShowFileError (1C0E:0D9B) are backed by re/renames.toml and the changed comments agree. The name ShowFileError is a verb phrase; gSaveRectSize is a noun phrase for a function pointer. The constants FILE_IN_MEMORY, FILE_LINKED, FLAG_KEEP and FLAG_LOAD keep their old definitions and comments; FLAG_LOAD is new and its comment ("DropFile loads this record on demand") matches the DropFile body.
+- [ ] note the P6 diff changed "cache slot" to "handle slot", "slot" to "record" and "linked" to "aliased" in many comments. The terms "handle slot" and "record" match the ten-entry handle table (gFileHandles) and the 203-entry file table (gFiles). The header comment "203 of them in this image" and the FileEntry struct comments are detailed and evidence-heavy. The new QUIRK comments (1C0E:0060 the backslash loop, 1C0E:14EB the size truncation, 1C0E:0EE7 the null name, 1C0E:144E the own-file test) are specific claims; this round did not re-prove every byte. A note for the next reader: the QUIRKs should be checked against the disassembly in a full review.
+
+## Summary
+
+No must-fix is open. The P6 names are backed by re/renames.toml and the changed comments agree. The should item is the local `savedStatusLine`, which still carries the old global name after the global became `gDrawPage`. The notes are the ledger's stale "gStatusLine" entry (re/renames.toml:2031) and "ShowMessage" why (:2269), and the new QUIRK comments, which this round did not re-prove byte for byte. The matcher is 31 of 31 and readability is 0 findings; the machine code is unchanged. The unit passes (review-passed).
+
 Reviewer: rev-haiku
 Commit reviewed: 43c76cf (the review branch; src/E1C0E.C is unchanged on main at 14fec78, and the main changes since 43c76cf do not touch the unit: they rename ovl2:078D in re/symbols.toml and re/renames.toml)
 Round 2 commit reviewed: c2b1de9 (main). The unit's fixes are in 9ab1b8a, merged in 6454398; the changed lines are `git diff 43c76cf main -- src/E1C0E.C re/globals.toml re/symbols.toml`.
