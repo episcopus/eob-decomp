@@ -1,7 +1,7 @@
 # Review: i_text
 
-Reviewer: rev-haiku
-Commit reviewed: f05a54b (main when I started). This branch was at 991e9b2; src/I_TEXT.ASM, re/symbols.toml and re/globals.toml are identical on both for this unit.
+Reviewer: p6-rev-12
+Commit reviewed: ce0608f367ed01b1b1df84e254eef04d1a734b27 (P6 round; `src/I_TEXT.ASM` is unchanged since round 4 at fa015bd). Round 4 at fa015bd (main). Round 1 at f05a54b (main when I started; the branch was at 991e9b2).
 
 Playbook 70. Judge what a matching file can still get wrong: names, types, comments, structure.
 The matcher already proved the bytes; do not re-prove them, read for meaning.
@@ -12,6 +12,14 @@ Checked: `make match FILE=src/I_TEXT.ASM` 44 of 44 functions match; `make readab
 
 Each finding is a checkbox. `must-fix` blocks `make review-pass` until a decompiler ticks it off
 (with the commit that fixes it); `should` and `note` do not block.
+
+## Round P6 (2026-11-04), commit ce0608f367ed01b1b1df84e254eef04d1a734b27
+
+No changes to `src/I_TEXT.ASM` since the round 4 commit `fa015bd` (`git diff fa015bd HEAD -- src/I_TEXT.ASM` is empty). The previous review's findings (one should, two notes, no must-fix) stand. Nothing to re-judge.
+
+### Round P6 summary
+
+The file is unchanged. The round 4 review stands: no must-fix. Nothing escalated.
 
 ### Round 4 (rev-haiku, 2026-11-02)
 
