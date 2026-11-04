@@ -12,7 +12,7 @@
 extern signed char gMaze[]; /*@ ds:B894 */     /* nine-byte per-object records (src/E08E6.C) */
 extern int gEvalStack[]; /*@ ds:A95C */         /* the script-expression value stack (122E:147F) */
 extern int gEvalTop; /*@ ds:A9EE */             /* the index into gEvalStack (122E:147F) */
-extern char g1231[]; /*@ ds:1231 */             /* per-class byte table (src/E0BD2.C) */
+extern char gClassBaseBits[]; /*@ ds:1231 */             /* per-class byte table (src/E0BD2.C) */
 extern signed char gTable18BF[]; /*@ ds:18BF */ /* per-object-kind table (Purpose unknown) */
 extern int gEFD2; /*@ ds:EFD2 */               /* the mode the driver runs a script in (src/E0ACD.C) */
 extern char gA9EC; /*@ ds:A9EC */              /* set by a handler to stop the driver's script walk */
@@ -40,12 +40,12 @@ extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
 extern void PushListItem(int who, int item, int value); /*@ 0BD2:0458 */
 extern int AddDDEffect(int who, int item, int cell, int kind, int page, int type); /*@ 0BD2:07DE */
 extern void StartCellEffect(char a, int b, int c, int d, int e); /*@ 0EF3:097B */
-extern char gF43D; /*@ ds:F43D */              /* cleared around the StartCellEffect call (122E:0C4D) */
+extern char gClericSpellMode; /*@ ds:F43D */              /* cleared around the StartCellEffect call (122E:0C4D) */
 extern char g5A40[]; /*@ ds:5A40 */            /* byte table indexed by two script bytes (122E:0C4D) */
 extern void DrawItemRow(int who, int slot, int one); /*@ 0BD2:0917 */
 extern int GetCurrentItem(void); /*@ 0D1C:02DC */
 extern int gMouseDisabled; /*@ ds:814A */      /* nonzero disables the mouse (src/E07A9.C) */
-extern char gF51A; /*@ ds:F51A */              /* the selected action row: 0..2 in the action menu
+extern char gCursorSlot; /*@ ds:F51A */              /* the selected action row: 0..2 in the action menu
                                                   and 0x10 for the character's own item list (tested
                                                   in ItemSlotAction, 122E:06D0) (src/E0ACD.C) */
 extern signed char gInventoryMember; /*@ ds:A99A */       /* the selected character index (src/E0ACD.C) */
@@ -69,7 +69,7 @@ extern void RedrawPartyPanel(char far *text); /*@ 0EF3:2541 */
 extern void LoadMapScreen(int n); /*@ 210C:007A */  /* overlay 3 entry, ovl3:0A7C */
 extern void SaveLevelState(int level); /*@ 210C:002F */  /* overlay 3 entry, ovl3:11AF */
 extern void ResetLevel(void); /*@ 210C:007F */  /* overlay 3 entry, ovl3:19F7 */
-extern void NoOp2039(void); /*@ 2116:0043 */  /* overlay 4 entry, ovl4:2039, a no-op (src/EOV4.C) */
+extern void NoOpAfterMapLoad(void); /*@ 2116:0043 */  /* overlay 4 entry, ovl4:2039, a no-op (src/EOV4.C) */
 extern void LoadScreenImage(char far *name, char far *extra, int srcKind, int dstKind, int mode); /*@ 082C:051B */
 extern char gText5BA1[]; /*@ ds:5BA1 */        /* the "INVENT" screen name (122E:1AAB) */
 extern unsigned char far gSheet2067[]; /*@ 2067:0000 */ /* the sheet at segment 2067 (src/E0ACD.C) */
@@ -132,7 +132,7 @@ struct CharRec {                                /* the 243-byte character record
     signed char hp;                             /* +1B: 122E:0325 skips a character at or below 0 */
     char pad1C[0x1F - 0x1C];
     signed char race;                           /* +1F: the race index, halved and matched by 122E:147F (src/EOV0.C) */
-    signed char classIndex;                     /* +20: indexes g1231 (122E:147F) */
+    signed char classIndex;                     /* +20: indexes gClassBaseBits (122E:147F) */
     char pad21[0x77 - 0x21];
     int items[0x1b];                            /* +77: 27 item slots */
     char padAD[0xE3 - 0xAD];
@@ -166,8 +166,8 @@ struct ItemRecord {
 extern struct CharRec gChars[]; /*@ ds:F580 */
 extern struct ItemRecord gItems[]; /*@ ds:8DD0 */
 extern int gPartyDir; /*@ ds:FBCC */               /* the party's facing, 0..3 north, east, south, west */
-extern char gEFB2; /*@ ds:EFB2 */              /* set when the sound page changes (src/E0ACD.C) */
-extern char gDF4C; /*@ ds:DF4C */              /* set to 1 when an action took effect, which this
+extern char gPickViewPos; /*@ ds:EFB2 */              /* set when the sound page changes (src/E0ACD.C) */
+extern char gViewDirty; /*@ ds:DF4C */              /* set to 1 when an action took effect, which this
                                                   unit calls marking the action dirty (src/E08E6.C) */
 
 /* The 18-byte effect records at ds:DD2C, 10 of them (src/E1414.C). */
@@ -223,7 +223,7 @@ void RunCellScript(int cell, int mode);  /* forward: 1DA8 comes after its caller
 
 /* 122E:0001: moves the party to map cell `cell`: runs Obj0150 around the move, runs the old
    cell's script on leaving (mode 2) and the new cell's on entering (mode 1), counts the step,
-   resets gEFB2 to 0xFF, sets gDF4C, scrolls the message area and
+   resets gPickViewPos to 0xFF, sets gViewDirty, scrolls the message area and
    refreshes the effects. The movement keys (0ACD:04F8 to 05FF) call it with StepIfOpen's cell. */
 /*@ 122E:0001 */ void MoveParty(int cell)
 {
@@ -236,8 +236,8 @@ void RunCellScript(int cell, int mode);  /* forward: 1DA8 comes after its caller
     RunCellScript(cell, 1);
     Obj0150();
     gStepCount++;
-    gEFB2 = (char)0xff;
-    gDF4C = 1;
+    gPickViewPos = (char)0xff;
+    gViewDirty = 1;
     DrawText(gStrNewline);
     UpdateDDEffects();
 }
@@ -474,7 +474,7 @@ void RunCellScript(int cell, int mode);  /* forward: 1DA8 comes after its caller
     kind = gTable18BF[gMaze[id * 9 + slot]];
     if (HitTestObjectKind(kind)) {
         gMaze[id * 9 + slot]++;
-        gDF4C = 1;
+        gViewDirty = 1;
         RunCellScript(id, gEFD2);
         return 1;
     }
@@ -490,7 +490,7 @@ void RunCellScript(int cell, int mode);  /* forward: 1DA8 comes after its caller
     kind = gTable18BF[gMaze[id * 9 + slot]];
     if (HitTestObjectKind(kind)) {
         gMaze[id * 9 + slot]--;
-        gDF4C = 1;
+        gViewDirty = 1;
         RunCellScript(id, gEFD2);
         return 1;
     }
@@ -513,7 +513,7 @@ void RunCellScript(int cell, int mode);  /* forward: 1DA8 comes after its caller
 
     kind = gTable18BF[gMaze[id * 9 + slot]];
     if (HitTestObjectKind(kind)) {
-        if (gMouseDisabled != 0 && gF51A == 0x10) {
+        if (gMouseDisabled != 0 && gCursorSlot == 0x10) {
             item = RemoveListItem(&gMazeItems[id * 9], 8, -1);
             if (gItems[item].type == 0x10) {
                 InsertListItem(&gChars[gInventoryMember].items[16], -2, item, 0);
@@ -529,13 +529,13 @@ void RunCellScript(int cell, int mode);  /* forward: 1DA8 comes after its caller
             if (item != 0) {
                 RunCellScript(id, 8);
                 SetMouseItem(item);
-                gDF4C = 1;
+                gViewDirty = 1;
             }
         } else if (g181F[gItems[GetCurrentItem()].icon] > 0xe) {
             InsertListItem(&gMazeItems[id * 9], id, GetCurrentItem(), 8);
             RunCellScript(id, 4);
             SetMouseItem(0);
-            gDF4C = 1;
+            gViewDirty = 1;
         } else {
             DrawText("The item is too large to fit.\r");
         }
@@ -583,7 +583,7 @@ void RunCellScript(int cell, int mode);  /* forward: 1DA8 comes after its caller
         return 0;
     result = handlers[g1905[idx] - 1](id, slot);
     gEFD2 = 0;
-    gDF4C = 1;
+    gViewDirty = 1;
     return result;
 }
 
@@ -732,7 +732,7 @@ void RunCellScript(int cell, int mode);  /* forward: 1DA8 comes after its caller
    byte v1, then skips one byte that is never read (part of the record's layout), a word, and two
    more bytes v2 and v3. When the first byte was not 0xDF it copies v1's item into a free slot and
    adds a DD effect with the word as the cell and g5A40[v2 * 2 + v3] as the kind; a zero result
-   frees the slot again (m04 = -1). When it was 0xDF it clears gF43D around a StartCellEffect call
+   frees the slot again (m04 = -1). When it was 0xDF it clears gClericSpellMode around a StartCellEffect call
    with the same fields. Returns the bytes read. */
 /*@ 122E:0C4D */ long AddEffectOp(char far *script)
 {
@@ -760,10 +760,10 @@ void RunCellScript(int cell, int mode);  /* forward: 1DA8 comes after its caller
                 gItems[item].key = -1;
         }
     } else {
-        saved = gF43D;
-        gF43D = 0;
+        saved = gClericSpellMode;
+        gClericSpellMode = 0;
         StartCellEffect(-1, v1, id, g5A40[v2 * 2 + v3], v2);
-        gF43D = saved;
+        gClericSpellMode = saved;
     }
     return (long)(script - start);
 }
@@ -772,7 +772,7 @@ void RunCellScript(int cell, int mode);  /* forward: 1DA8 comes after its caller
    `id`. For 0xFFE8 it moves the party to cell `id` (MoveParty), for 0xFFF3 it moves every gMonsters record whose
    id matches `srcId` to `id`, and for 0xFFF5 it moves every item of the gMazeItems list of `srcId` to the
    list of `id` (keeping each item's old m03 key in `oldKey`) and retargets every live gProjectiles effect
-   from `srcId` to `id`. Sets gDF4C. Returns the bytes read. */
+   from `srcId` to `id`. Sets gViewDirty. Returns the bytes read. */
 /*@ 122E:0D57 */ long ReassignObjectsOp(char far *script)
 {
     struct Monster far *obj;
@@ -817,7 +817,7 @@ void RunCellScript(int cell, int mode);  /* forward: 1DA8 comes after its caller
         }
         break;
     }
-    gDF4C = 1;
+    gViewDirty = 1;
     return (long)(script - start);
 }
 /* 122E:0E9B: move one item out of a party member's carried list. It reads a member index `who` (a
@@ -1197,7 +1197,7 @@ done:
             t1 = *script++;
             lhs = i = 0;
             for (; i < 6; i++) {
-                if ((gChars[i].status & 1) && (g1231[gChars[i].classIndex] & t1)) {
+                if ((gChars[i].status & 1) && (gClassBaseBits[gChars[i].classIndex] & t1)) {
                     lhs = 1;
                     break;
                 }
@@ -1336,7 +1336,7 @@ done:
     SaveLevelState(gFBC8);
     LoadMapScreen(v1);
     LoadScreenImage(gText5BA1, (char far *)gSheet2067, 5, 3, 2);
-    NoOp2039();
+    NoOpAfterMapLoad();
     MoveParty(id);
     gA9EC = 1;
     return 0;
@@ -1399,8 +1399,8 @@ done:
     switch (op) {
     case 0xFFF1:
         gPartyDir = (gPartyDir + delta) & 3;
-        gEFB2 = (char)0xff;
-        gDF4C = 1;
+        gPickViewPos = (char)0xff;
+        gViewDirty = 1;
         break;
     case 0xFFF5:
         rec = gProjectiles;

@@ -121,7 +121,7 @@ extern signed char g5C76; /*@ ds:5C76 */      /* the mode byte 03B4 reads; writt
 extern unsigned char g5CAB[]; /*@ ds:5CAB */  /* a byte table indexed by direction in 0285 */
 extern char gIconTable; /*@ ds:FB34 */             /* the index of the party member being moved, -1
                                                        when none (src/E0ACD.C:42) */
-extern char gDF4C; /*@ ds:DF4C */             /* set to 1 when 0D1C:0006 finds the value
+extern char gViewDirty; /*@ ds:DF4C */             /* set to 1 when 0D1C:0006 finds the value
                                                  (src/E0D1C.C:30) or when an action took effect
                                                  (src/E0ACD.C:53); CheckFarTable sets it on a 0x34
                                                  byte */
@@ -278,7 +278,7 @@ extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
    through 122E:1DA8(value, 0x10) and re-tests with TestDDEffect, or, when it fails and m0C has
    bit 0x20, runs 0EF3:00CD(rec) unless TestDDEffect(rec, cell, m06) accepts. The record is
    cleared through ClearDDEffect when clearIt holds (initially m0D == 0; set when the re-test
-   passes or the step fails), and gDF4C = 1 is then set unconditionally (written after the clear,
+   passes or the step fails), and gViewDirty = 1 is then set unconditionally (written after the clear,
    not tested). QUIRK 1414:028D: the argument is incremented by value, so the increment has no
    effect.
 
@@ -328,7 +328,7 @@ extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
             }
             if (clearIt)
                 ClearDDEffect(rec);
-            gDF4C = 1;
+            gViewDirty = 1;
         }
     }
 }
@@ -364,7 +364,7 @@ extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
     f0D1C_0006(who);
 }
 /* 1414:04B0: effect 13 of the table. Toggles gFB78, then walks the 18 far pointers at ds:EF6A,
-   adding gA9C6 to each target and setting gDF4C when a byte there is 0x34 ('4'); the loop stops
+   adding gA9C6 to each target and setting gViewDirty when a byte there is 0x34 ('4'); the loop stops
    at the first such byte. QUIRK 1414:04B4: the argument is incremented by value, so the increment
    has no effect. */
 /*@ 1414:04B0 */ void CheckFarTable(int unused)
@@ -375,7 +375,7 @@ extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
     gFB78 ^= 1;
     for (i = 0; i < 0x12; i++) {
         if (gEF6A[i][gA9C6] == 0x34) {
-            gDF4C = 1;
+            gViewDirty = 1;
             break;
         }
     }

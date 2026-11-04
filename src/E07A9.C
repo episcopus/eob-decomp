@@ -24,12 +24,12 @@
    (entries 2 and 8). Placeholder names remain where no evidence is given. */
 
 /* Meaningful constants of this unit. */
-/* ItemRecord.flags bit that, with gFBD2 bit 0, gates the flagged branch of SetMouseItem (07A9:015C to
+/* ItemRecord.flags bit that, with gPartySpellFlags bit 0, gates the flagged branch of SetMouseItem (07A9:015C to
    01B1): the icon colour row, the translated copy and the pointer image; when either gate fails the
    branch is skipped (07A9:0161 and 0168, je 0x1bc). The same test is in src/E0D1C.C:478. The bit
    selects the colour-row draw path: in f0D1C_070F (src/E0D1C.C:478 to 484) a record whose flags
-   have the bit, when gFBD2 bit 0 is set too, is drawn through its icon's colour row (gFn80D2) and
-   f1A29_008B; any other record, or the same record with gFBD2 bit 0 clear, goes through
+   have the bit, when gPartySpellFlags bit 0 is set too, is drawn through its icon's colour row (gFn80D2) and
+   f1A29_008B; any other record, or the same record with gPartySpellFlags bit 0 clear, goes through
    f1A29_000F. The same byte is tested for 0x20, 0x08 and 0x10 elsewhere (see ItemRecord.flags
    below). */
 #define ITEM_FLAG_COLOUR_ICON 0x80
@@ -232,7 +232,7 @@ extern int gMouseDisabled; /*@ ds:814A */  /* nonzero disables the mouse pointer
                                               meaning (nonzero disables the mouse) */
 extern int gFBCE; /*@ ds:FBCE */  /* the item index shown by the mouse (src/E0D1C.C:109); SetCurrentItem
                                      stores it (0D1C:0311) */
-extern unsigned char gFBD2; /*@ ds:FBD2 */  /* bit 0, with ItemRecord.flags bit 0x80, gates the flagged
+extern unsigned char gPartySpellFlags; /*@ ds:FBD2 */  /* bit 0, with ItemRecord.flags bit 0x80, gates the flagged
                                                  branch of SetMouseItem (07A9:0163 to 01B1); the same
                                                  bit gates the icon colour row in 0D1C:070F
                                                  (src/E0D1C.C:50); read at 07A9:0163 and
@@ -365,7 +365,7 @@ extern void SetMousePointerShape(int hotX, int hotY, void far *icon); /*@ 1BB1:0
    call SetMouseItem(0) is at src/E0D1C.C:302 (the tests leading to it at :298 and :300). A nonzero
    item also passes " taken.\r" (ds:0094) to 1DE7:060A after 0BD2:05B5 when gTextRegion == 7, and the
    record gItems[item].icon then supplies the icon number. When the current record
-   gItems[gFBCE] has flag 0x80 and gFBD2 bit 0 is set, the flagged branch runs (07A9:015C to
+   gItems[gFBCE] has flag 0x80 and gPartySpellFlags bit 0 is set, the flagged branch runs (07A9:015C to
    01B1): the icon's 16-byte colour row (gBufF534 + (item << 4), item now the icon number, or the
    dummy byte at ds:0090 when gGraphicsChoice == 0) is passed to ds:80D2, the icon is translated into gDF48
    by 17A6:197E, and the translated image becomes the mouse pointer (item set to ICON_SLOT_TRANSLATED, 0x59, so item > 0 at
@@ -391,7 +391,7 @@ extern void SetMousePointerShape(int hotX, int hotY, void far *icon); /*@ 1BB1:0
     if (!gMouseDisabled) {
         /* the record of the index SetCurrentItem stored (gFBCE), not item, which is the icon
            number by now */
-        if ((gItems[gFBCE].flags & ITEM_FLAG_COLOUR_ICON) && (gFBD2 & 1)) {
+        if ((gItems[gFBCE].flags & ITEM_FLAG_COLOUR_ICON) && (gPartySpellFlags & 1)) {
             if (gGraphicsChoice)
                 gFn80D2(gBufF534 + (item << 4));   /* the icon's 16-byte colour row */
             else

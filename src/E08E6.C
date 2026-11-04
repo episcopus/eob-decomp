@@ -113,8 +113,8 @@ extern int gPartyCell; /*@ ds:FBCA */   /* the party's map cell (src/E177D.C:92)
 extern char gF442; /*@ ds:F442 */
 extern unsigned long gFC04; /*@ ds:FC04 */
 extern unsigned long gCount849A; /*@ ds:849A */
-extern int gFlags849E; /*@ ds:849E */
-extern char gDF4C; /*@ ds:DF4C */
+extern int gTimerEnableFlags; /*@ ds:849E */
+extern char gViewDirty; /*@ ds:DF4C */
 extern int gF518; /*@ ds:F518 */
 extern int gHpMinOrHitFlag; /*@ ds:DD10 */
 extern int gGraphicsChoice; /*@ ds:8102 */
@@ -129,7 +129,7 @@ extern signed char gTable324B[]; /*@ ds:324B */   /* (page, orientation) to a 12
 extern signed char gTable325B[]; /*@ ds:325B */   /* 4 groups of 12 slot to party-member bytes */
 extern signed char gTable328B[]; /*@ ds:328B */   /* (orientation, frame) to the group's half */
 extern int gPartyDir; /*@ ds:FBCC */
-extern unsigned char gFBD2; /*@ ds:FBD2 */
+extern unsigned char gPartySpellFlags; /*@ ds:FBD2 */
 extern unsigned long gDeadline; /*@ ds:F512 */   /* a 32-bit deadline at ds:F512:F514 */
 extern unsigned long g8492; /*@ ds:8492 */       /* the 32-bit tick counter (src/E0ACD.C) */
 extern int gF510; /*@ ds:F510 */
@@ -142,7 +142,7 @@ extern void StartCellEffect(char who, int mode, int cell, int m06, int m07); /*@
 extern int CopyItemToFreeSlot(int n); /*@ 0BD2:089E */
 extern void InsertListItem(void far *head, int key, int item, int sound); /*@ 0BD2:01D0 */
 extern int Distance(int x, int y); /*@ 17A6:0F61 */
-extern int f0D1C_0BAB(int obj); /*@ 0D1C:0BAB */
+extern int MonsterResistsMagic(int obj); /*@ 0D1C:0BAB */
 extern int GetIndexedByte(char index, char limit, char offset); /*@ 0A72:0006 */
 extern int SubtractInts(int minuend, int subtrahend); /*@ 0A72:058C */
 extern int far RollDice(char count, char sides, char bonus); /*@ 082C:0458 */
@@ -468,7 +468,7 @@ void Obj10F3(struct Monster far *obj);   /* forward: 05EA reaches it before its 
    runs the 0xfe/0xff m0A sequence with the countdown and the overlay-4 entry, and does not repeat the
    sound when typeIndex is not 4; when it is zero the sound plays unconditionally. When m16 bit 2 is set
    after the toggle 10F3 runs on either branch, and when the id was found m0A clears, the toggle
-   flips, gDF4C is set, gFlags849E bit 1 is set and the countdown is 8. Returns 1. Called by 0AB8. */
+   flips, gViewDirty is set, gTimerEnableFlags bit 1 is set and the countdown is 8. Returns 1. Called by 0AB8. */
 /*@ 08E6:05EA */ int Obj05EA(struct Monster far *obj, int handle)
 {
     register int found;
@@ -482,7 +482,7 @@ void Obj10F3(struct Monster far *obj);   /* forward: 05EA reaches it before its 
         if (obj->m16 & 4) {
             found = f0D1C_0006(obj->cell);
             if (found != 0) {
-                gFlags849E &= ~2;
+                gTimerEnableFlags &= ~2;
                 if (obj->typeIndex == 4)
                     PlaySoundDefault(gMonsterTypes[obj->typeIndex].m16);
                 obj->m0A = 0xfe;
@@ -500,8 +500,8 @@ void Obj10F3(struct Monster far *obj);   /* forward: 05EA reaches it before its 
             if (found != 0) {
                 obj->m0A = 0;
                 obj->toggle ^= 1;
-                gDF4C = 1;
-                gFlags849E |= 2;
+                gViewDirty = 1;
+                gTimerEnableFlags |= 2;
                 gCount849A = 8;
             }
         }
@@ -528,7 +528,7 @@ void Obj10F3(struct Monster far *obj);   /* forward: 05EA reaches it before its 
    orient) and plays 0x55; 17 plays 0x53, announces the mind blast and paralyzes every affected
    member; 21 rolls 1d4 and, under 3, starts a cell effect through Obj073F and plays g3223[roll]
    after g3220[roll], else announces the wounds spell and hits the first affected member. Every
-   action then runs the overlay-4 entry, clears gDF4C, decrements actionsLeft unless it is 0xff and sets m18
+   action then runs the overlay-4 entry, clears gViewDirty, decrements actionsLeft unless it is 0xff and sets m18
    to 5, returning 1. Called by 0AB8. The unit's -v flag is what keeps case 21's
    PlaySoundAtCell(0x6c, id) at 08E6:0907 inline instead of tail-merging it into the shared block at
    08E6:0A5E. */
@@ -614,7 +614,7 @@ void Obj10F3(struct Monster far *obj);   /* forward: 05EA reaches it before its 
         break;
     }
     DrawViewFrame(1);
-    gDF4C = 0;
+    gViewDirty = 0;
     if (obj->actionsLeft != -1)
         obj->actionsLeft--;
     obj->actionDelay = 5;
@@ -747,15 +747,15 @@ second:
     UpdateDDEffects();
 }
 
-/* 08E6:0DCA: notify f0D1C_0006 of the object's id, and when gDF4C is set clear counter flag bit 1,
+/* 08E6:0DCA: notify f0D1C_0006 of the object's id, and when gViewDirty is set clear counter flag bit 1,
    set m16 bit 1, run the colour callback on ds:1CD3 or ds:1CE3, reset the countdown, run the
-   overlay-4 entry, clear m16 bit 1 again, set the countdown to 1, set flag bit 1 and gDF4C. Called
+   overlay-4 entry, clear m16 bit 1 again, set the countdown to 1, set flag bit 1 and gViewDirty. Called
    by 0FBE. */
 /*@ 08E6:0DCA */ void RestoreObjectFlags(struct Monster far *obj)
 {
     f0D1C_0006(obj->cell);
-    if (gDF4C) {
-        gFlags849E &= ~2;
+    if (gViewDirty) {
+        gTimerEnableFlags &= ~2;
         obj->m16 |= 2;
         if (!gGraphicsChoice)
             gFn80D2(g1CE3);
@@ -765,14 +765,14 @@ second:
         DrawViewFrame(1);
         obj->m16 &= ~2;
         gCount849A = 1;
-        gFlags849E |= 2;
-        gDF4C = 1;
+        gTimerEnableFlags |= 2;
+        gViewDirty = 1;
     }
 }
 
 /* 08E6:0E48: run the overlay-4 entry with 1, then clear m16 bit 1 of every object that has it; when
-   an object with that bit has no count left, run 0EC3. When any was found set gDF4C and the
-   countdown to 1, else clear gDF4C; finally clear gHpMinOrHitFlag and gF518. An uninitialized `any` is a
+   an object with that bit has no count left, run 0EC3. When any was found set gViewDirty and the
+   countdown to 1, else clear gViewDirty; finally clear gHpMinOrHitFlag and gF518. An uninitialized `any` is a
    QUIRK 08E6:0E99 of the original: only objects with m16 bit 1 set define its value. Called by
    Obj16D6 (:1109), 0D1C:0A43 TurnUndead and 0EF3:18D8 CastConeOfCold. */
 /*@ 08E6:0E48 */ void Obj0E48(void)
@@ -790,10 +790,10 @@ second:
         }
     }
     if (any) {
-        gDF4C = 1;
+        gViewDirty = 1;
         gCount849A = 1;
     } else {
-        gDF4C = 0;
+        gViewDirty = 0;
     }
     gF518 = gHpMinOrHitFlag = 0;
 }
@@ -862,7 +862,7 @@ second:
     return g323B[obj->orient * 4 + obj->frame];
 }
 /* 08E6:106B: roll 1d20 for a hit against character `who`; a roll of 20 always hits; otherwise the
-   target's effectFlags bit 9 costs 2 and gFBD2 bit 5 costs 1. The hit succeeds when the roll reaches
+   target's effectFlags bit 9 costs 2 and gPartySpellFlags bit 5 costs 1. The hit succeeds when the roll reaches
    SubtractInts(the object's record m01, the character's armorClass). Called by 10F3 and 0EF3:0A3F. */
 /*@ 08E6:106B */ int Obj106B(struct Monster far *obj, int who)
 {
@@ -875,7 +875,7 @@ second:
     if (roll != 0x14) {
         if (gChars[who].effectFlags & 0x200)
             roll -= 2;
-        if (gFBD2 & 0x20)
+        if (gPartySpellFlags & 0x20)
             roll--;
     }
     need = SubtractInts(gMonsterTypes[index].m01, gChars[who].armorClass);
@@ -1097,7 +1097,7 @@ fire:
                 roll = 0;
         }
     }
-    if (f0D1C_0BAB(index) == 0)
+    if (MonsterResistsMagic(index) == 0)
         DamageObject(&gMonsters[index], roll);
 }
 /* 08E6:16D6: list the objects with id `key`, mark gF518, damage list[4] and then the two indices
@@ -1152,7 +1152,7 @@ fire:
    finds; otherwise the first object 189D accepts for (key, field). Called by 0D1C:0A43, 0EF3:0A3F,
    0EF3:1530, 0EF3:18D8 and 0EF3:1A30. The unit's -v flag is what keeps the two identical `*list++`
    tails at 17FD:0058 and 17FD:0082 apart that a -O build cross-jumps. */
-/*@ 08E6:17FD */ void Obj17FD(int far *list, int key, int field, char flags, char scanAll, char scanFiltered)
+/*@ 08E6:17FD */ void ListMonstersAtCell(int far *list, int key, int field, char flags, char scanAll, char scanFiltered)
 {
     struct Monster far *obj;
     int i;
@@ -1177,7 +1177,7 @@ fire:
     *list = -1;
 }
 /* 08E6:189D: does this object have `key` (an object id) as its id and either `field` or 4 as its
-   frame? Returns 1 when it does, else 0. Called by Obj17FD (:1159) and 1414:0172 TestDDEffect. */
+   frame? Returns 1 when it does, else 0. Called by ListMonstersAtCell (:1159) and 1414:0172 TestDDEffect. */
 /*@ 08E6:189D */ int Obj189D(struct Monster far *obj, int key, int field)
 {
     if (obj->cell == key && (obj->frame == field || obj->frame == 4))

@@ -29,7 +29,7 @@ extern unsigned char far gSheetDECORATE[]; /*@ 2069:0000 */  /* the PLAYFLD shee
 extern int gTunesOn; /*@ ds:80E8 */            /* toggled by Ctrl-key handling (src/E1AAD.ASM) */
 extern int gSoundOn; /*@ ds:80E6 */
 extern char gBarGraphsOn; /*@ ds:F43C */
-extern char gAD20[]; /*@ ds:AD20 */         /* a 96-byte saved-game buffer (Purpose unknown) */
+extern char gSpellItemTypes[]; /*@ ds:AD20 */         /* a 96-byte saved-game buffer (Purpose unknown) */
 extern char *strcpy(char far *dest, char far *src); /*@ 0000:67CD */
 extern void far *gSegDCA6; /*@ ds:DCA6 */   /* the far pointer f19EC_0002(7) returns (src/E07A9.C) */
 extern int gGraphicsChoice; /*@ ds:8102 */            /* the video mode the game initialised (src/E082C.C) */
@@ -42,7 +42,7 @@ extern void SetMouseItem(int item); /*@ 07A9:010C */
 extern int far RollDice(char count, char sides, char bonus); /*@ 082C:0458 */
 extern void far *gFont6x6; /*@ ds:A9C0 */      /* the current 6x6 font (src/E07A9.C) */
 extern char gA998; /*@ ds:A998 */           /* src/E0ACD.C */
-extern signed char g1A1B[]; /*@ ds:1A1B */  /* per-page sound table (src/E0ACD.C:131) */
+extern signed char gViewToCellPos[]; /*@ ds:1A1B */  /* per-page sound table (src/E0ACD.C:131) */
 extern int gPartyCell; /*@ ds:FBCA */
 extern int gPartyDir; /*@ ds:FBCC */
 extern int gFBCE; /*@ ds:FBCE */
@@ -193,7 +193,7 @@ extern signed char far gMapTiles[]; /*@ 1F1D:0000 */  /* the map tile byte table
 
 #define MAPSHEET ((void far *)((char far *)MK_FP(0x1d8, 0) + (gMapTiles[gFBC8 - 1] << 5)))
 
-extern int gFlags849E; /*@ ds:849E */
+extern int gTimerEnableFlags; /*@ ds:849E */
 extern char gF51B; /*@ ds:F51B */
 extern int gF510; /*@ ds:F510 */
 extern int gFB32; /*@ ds:FB32 */
@@ -538,7 +538,7 @@ done:
         }
     }
 }
-/* ovl3:0A7C: mounts the map screen for level `level`. It clears bit 2 of gFlags849E, reads the
+/* ovl3:0A7C: mounts the map screen for level `level`. It clears bit 2 of gTimerEnableFlags, reads the
    level's packed script "LEVEL<n>.INF" (FormatName, FileOpen, FileRead into gSegDF4E, Unpack into
    gBuf8DCA), names its two object/screen files through LoadObjects and a "%s.%s" sprite name, loads
    the sprite file into gBufF43E and, in VGA mode, the "%s.PAL" palette, then frees the slot,
@@ -551,7 +551,7 @@ done:
    unpacked), the wall/object records (0xEC introduces a 0x18-byte wall set through LoadWallSet,
    otherwise a five-byte RegisterWallObject record), the item records keyed against gMaze, and
    finally the wall textures (LoadWallTextures with the gMapTiles[gFBC8-1] sheet) and the INVENT
-   screen. It clears the 0x400 ds:B899 item-list heads, rebuilds the list, sets bit 2 of gFlags849E,
+   screen. It clears the 0x400 ds:B899 item-list heads, rebuilds the list, sets bit 2 of gTimerEnableFlags,
    calls PlaySound(0) and sets gFB45 to 1. Called by EnterMapScreen (0ACD:0F72), ResetMapScreen
    (0ACD:1033), LoadLevelOp (122E:1AAB, through the 210C:007A stub) and ovl3:15B9 LoadGame. */
 /*@ ovl3:0A7C */ void LoadMapScreen(int level)
@@ -580,7 +580,7 @@ done:
     int i;
     int handle;
 
-    gFlags849E &= ~2;
+    gTimerEnableFlags &= ~2;
     gFBC8 = level;
     FormatName("LEVEL", level, "INF");
     handle = FileOpen(gFileNameBuf, 1);
@@ -698,7 +698,7 @@ done:
     }
     LoadWallTextures(gBuf8DCA + 0x1a, MAPSHEET);
     LoadScreenImage("INVENT", (char far *)gSheet2067, 5, 3, 2);
-    gFlags849E |= 2;
+    gTimerEnableFlags |= 2;
     PlaySound(0);
     gFB45 = 1;
 }
@@ -861,7 +861,7 @@ done:
         ok &= (FileWrite(handle, (char far *)&gSoundOn, 1L) == 1L);
         ok &= (FileWrite(handle, (char far *)&gBarGraphsOn, 1L) == 1L);
         len = 0x60;
-        ok &= (FileWrite(handle, (char far *)gAD20, len) == len);
+        ok &= (FileWrite(handle, (char far *)gSpellItemTypes, len) == len);
         FileClose(handle);
         LoadScreenImage("INVENT", (char far *)gSheet2067, 5, 3, 2);
     }
@@ -882,7 +882,7 @@ done:
    and cuts the portraitIndex < 0 characters' 4 by 32 cells out of it the same way. Unless ds:A998 is -1 it then rebuilds the
    map screen (ovl3:0A7C), reloads PLAYFLD and INVENT, hands gFont6x6 to SetFont, redraws the
    characters, and either restores the mouse item when the mouse is enabled (gMouseDisabled is 0)
-   or, when the mouse is disabled and gFBCE is nonzero, inserts it with a sound from the g1A1B table
+   or, when the mouse is disabled and gFBCE is nonzero, inserts it with a sound from the gViewToCellPos table
    picked by RollDice(1, 2, -1) (the item is keyed by gPartyCell). Sets ds:A998 to 1 on success, 0 on
    (ovl1:1ACD) and overlay 2 (ovl2:0846). */
 /*@ ovl3:15B9 */ int LoadGame(void)
@@ -934,7 +934,7 @@ done:
         buf++;
         gBarGraphsOn = buf[0];
         buf++;
-        Unpack0(buf, (char far *)gAD20, gBlockSizes[5]);
+        Unpack0(buf, (char far *)gSpellItemTypes, gBlockSizes[5]);
         buf += gBlockSizes[5];
         LoadOverlayScreen("CHARGENA", 5, 3);
         flag = 0;
@@ -969,7 +969,7 @@ done:
             if (gMouseDisabled == 0)
                 SetMouseItem(gFBCE);
             else if (gFBCE) {
-                idx = g1A1B[gPartyDir * 4 + RollDice(1, 2, -1)];
+                idx = gViewToCellPos[gPartyDir * 4 + RollDice(1, 2, -1)];
                 InsertListItem((void far *)(gMazeItems + gPartyCell * 9), gPartyCell, gFBCE, idx);
             }
         }

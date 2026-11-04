@@ -6,7 +6,7 @@
 extern char *ltoa(long value, char *string, int radix); /*@ 0000:62F1 */
 extern void (far *gDrawText)(); /*@ ds:80CA */
 
-/*@ 1BA4:000C */ void f1BA4_000C(long value, int a, int b, int c, int d)
+/*@ 1BA4:000C */ void PrintLong(long value, int a, int b, int c, int d)
 {
     char buf[30];
 

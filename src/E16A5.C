@@ -132,7 +132,7 @@ extern int gListActive;      /*@ ds:5DE8: 0 stops the walk from reacting to the 
 extern char g5E20;           /*@ ds:5E20: nonzero forces the walk to rebuild and redraw the whole
                                 list; the list builders set it (ovl0:042F BuildRowNodeList,
                                 ovl1:1153), not the mouse */
-extern int gFC82;            /*@ ds:FC82: the dispatcher writes which key word matched (1 for +06,
+extern int gMatchedNodeKey;            /*@ ds:FC82: the dispatcher writes which key word matched (1 for +06,
                                 2 for +08, 0 none); 0ACD:0034 tests it only against 0, and
                                 0ACD:008C (Action008C) and 0ACD:00EB (Action00EB) read 1 and 2 as
                                 an action mode (src/E0ACD.C) */
@@ -234,7 +234,7 @@ extern int g5DF2[];          /*@ ds:5DF2: words 1..4 the g5E1E redraw masks */
     register int flags;
 
     mouseEvent = 0;
-    gFC82 = 0;
+    gMatchedNodeKey = 0;
     if (!gMouseDisabled) {
         gHitX = gCursorX;
         gHitY = gCursorY;
@@ -325,13 +325,13 @@ extern int g5DF2[];          /*@ ds:5DF2: words 1..4 the g5E1E redraw masks */
             state &= ~NODE_STATE_10;
         if (key != 0) {
             if (head->key06 == key) {
-                gFC82 = 1;
+                gMatchedNodeKey = 1;
                 g5E1C = 1;
                 state ^= NODE_STATE_ON;
                 result = keyCode;
                 changed = 1;
             } else if (head->key08 == key) {
-                gFC82 = 2;
+                gMatchedNodeKey = 2;
                 g5E1E = 1;
                 state ^= NODE_STATE_ON;
                 result = keyCode;

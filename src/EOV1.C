@@ -119,7 +119,7 @@ struct CharRec {                /* the 243-byte character records at ds:F580 (sr
     char pad14[0x1B - 0x14];
     signed char hp;             /* +1B: current hit points */
     char pad1C[0x20 - 0x1C];
-    signed char classIndex;     /* +20: an index into the per-class tables (g1231, 0A72:007B) */
+    signed char classIndex;     /* +20: an index into the per-class tables (gClassBaseBits, 0A72:007B) */
     char pad21[0x23 - 0x21];
     unsigned char food;         /* +23: the food value EatFood clamps (src/E0ACD.C) */
     signed char levels[3];      /* +24: the level in each class slot (src/E0A72.C) */
@@ -157,7 +157,7 @@ extern void RearmCharEffects(void); /*@ 1414:0B2E */
 extern char gF542[]; /*@ ds:F542 */
 extern char gPanelMode; /*@ ds:FB44 */
 extern char gFlag; /*@ ds:F3B9 */
-extern int gFlags849E; /*@ ds:849E */
+extern int gTimerEnableFlags; /*@ ds:849E */
 extern void far *gCurFont; /*@ ds:FE4E */
 extern void far *gFont8x8; /*@ ds:FE5A */
 extern void far *gFont6x6; /*@ ds:A9C0 */
@@ -191,7 +191,7 @@ extern int gNeedsRest; /*@ ds:FE2C */
 extern unsigned char g62F2[]; /*@ ds:62F2 */ /* the icon x in 8-pixel columns for each member slot
                                                  (SelectPartyMember) */
 extern unsigned char g62F8[]; /*@ ds:62F8 */ /* the icon y for each member slot (SelectPartyMember) */
-extern signed char g1231[]; /*@ ds:1231 */
+extern signed char gClassBaseBits[]; /*@ ds:1231 */
 extern void far *gIconDD28; /*@ ds:DD28 */
 struct ItemRecord {
     signed char nameIndex;        /* +0 (ds:8DD0): indexes the item-name table at segment 0x1F28 */
@@ -464,7 +464,7 @@ int AskYesNo(int message);
    character you wish to drop." Returns the member's slot (0 to 5), or -1 when none can be chosen or
    the player cancels.
    A member can be picked when its slot holds a character (status bit 0), it has hit points and food,
-   and the class bit `mode` (4 for message 0x1A, else 2) is set in g1231[classIndex]; for the drop
+   and the class bit `mode` (4 for message 0x1A, else 2) is set in gClassBaseBits[classIndex]; for the drop
    message any occupied slot will do. With nobody selectable it shows message 0x1C, 0x1B or 0x34 for
    the three spell actions ("You don't have any Mage able to learn spells." and so on) and returns -1.
    Members that cannot be picked get four icons drawn over their portrait box (gIconDD28) and gFD98
@@ -498,7 +498,7 @@ int AskYesNo(int message);
     for (i = 0; i < 6; i++) {
         avail[i] = -1;
         if ((gChars[i].status & 1) && gChars[i].hp > 0 && gChars[i].food != 0 &&
-                (mode & g1231[gChars[i].classIndex]) ||
+                (mode & gClassBaseBits[gChars[i].classIndex]) ||
             message == 0x35 && (gChars[i].status & 1)) {
             avail[i] = 0;
             count++;
@@ -1271,7 +1271,7 @@ int AskYesNo(int message);
         Action01E3(gF542);
     if (gFlag)
         RedrawPartyPanel((struct ActRec far *)gF542);
-    gFlags849E &= ~2;
+    gTimerEnableFlags &= ~2;
     savedFont = gCurFont;
     savedWindow = gTextRegion;
     for (i = 0; i < 6; i++) {
@@ -1559,7 +1559,7 @@ int AskYesNo(int message);
     SetTextWindow(savedWindow);
     LockShowPointer();
     gStatusLine = 0;
-    gFlags849E |= 2;
+    gTimerEnableFlags |= 2;
     return 1;
 }
 

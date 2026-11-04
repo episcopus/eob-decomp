@@ -2171,10 +2171,10 @@ unit = "e08e6"
 addr = "08E6:17FD"
 size = 160
 evidence = ["far", "frame"]
-name = "Obj17FD"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "ListMonstersAtCell"
 
 [[function]]
 id = "e08e6_189d"
@@ -2380,10 +2380,10 @@ unit = "e0acd"
 addr = "0ACD:0034"
 size = 88
 evidence = ["frame"]
-name = "Action0034"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "OpenInventory"
 
 [[function]]
 id = "e0acd_008c"
@@ -2391,10 +2391,10 @@ unit = "e0acd"
 addr = "0ACD:008C"
 size = 95
 evidence = ["frame"]
-name = "Action008C"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "SelectPrevMember"
 
 [[function]]
 id = "e0acd_00eb"
@@ -2402,10 +2402,10 @@ unit = "e0acd"
 addr = "0ACD:00EB"
 size = 163
 evidence = ["frame"]
-name = "Action00EB"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "SelectNextMember"
 
 [[function]]
 id = "e0acd_018e"
@@ -2413,10 +2413,10 @@ unit = "e0acd"
 addr = "0ACD:018E"
 size = 50
 evidence = ["frame"]
-name = "Action018E"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "ToggleCharacterInfo"
 
 [[function]]
 id = "e0acd_01c0"
@@ -2424,10 +2424,10 @@ unit = "e0acd"
 addr = "0ACD:01C0"
 size = 35
 evidence = ["frame"]
-name = "Action01C0"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "ClickInventorySlot"
 
 [[function]]
 id = "e0acd_01e3"
@@ -2446,10 +2446,10 @@ unit = "e0acd"
 addr = "0ACD:0264"
 size = 303
 evidence = ["frame"]
-name = "Action0264"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "PickOrSwapMember"
 
 [[function]]
 id = "e0acd_0393"
@@ -2457,10 +2457,10 @@ unit = "e0acd"
 addr = "0ACD:0393"
 size = 58
 evidence = ["frame"]
-name = "Action0393"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "CancelMemberSwap"
 
 [[function]]
 id = "e0acd_03cd"
@@ -2479,10 +2479,10 @@ unit = "e0acd"
 addr = "0ACD:0415"
 size = 127
 evidence = ["frame"]
-name = "Action0415"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "ClickHandSlot"
 
 [[function]]
 id = "e0acd_0494"
@@ -2490,10 +2490,10 @@ unit = "e0acd"
 addr = "0ACD:0494"
 size = 100
 evidence = ["frame"]
-name = "Action0494"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "ThrowMouseItem"
 
 [[function]]
 id = "e0acd_04f8"
@@ -2568,10 +2568,10 @@ addr = "0ACD:0644"
 size = 271
 evidence = ["frame"]
 notes = "unblocked 2026-11-01: the two copies are local ARRAY initialisers (char pageVolume[4] = {...}; char slotKind[4][4] = {...};), the F_SCOPY@ segment-first form the whitepaper records (2.1.1, eov6), and the rest then matched (271 bytes). It copies the per-page volume adjustment into pageVolume and the per-page per-slot kind into slotKind, then: slot < 2 uses gSoundVolume, otherwise gSoundVolume + pageVolume[gFBCC] gated by g194B[gB894[vol*9+gA9C6]] & 0xB; the current item (f0D1C_02DC) is queued with InsertListItem(head, vol, f0D1C_02DC(), kind) or the first matching entry removed with RemoveListItem(head, kind, -1) and shown with SetMouseItem. The 0x16 frame is the 20-byte arrays plus one int (removed); slot and vol are register variables and slot is reused to hold the kind so tc100 needs only SI and DI."
-name = "Action0644"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "ClickFloorItem"
 
 [[function]]
 id = "e0acd_0753"
@@ -2590,10 +2590,10 @@ unit = "e0acd"
 addr = "0ACD:078C"
 size = 84
 evidence = ["frame"]
-name = "Action078C"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "SelectClickedMember"
 
 [[function]]
 id = "e0acd_07e0"
@@ -2612,10 +2612,10 @@ unit = "e0acd"
 addr = "0ACD:08D1"
 size = 22
 evidence = ["frame"]
-name = "Action08D1"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "FeedInventoryMember"
 
 [[function]]
 id = "e0acd_08e7"
@@ -2623,10 +2623,10 @@ unit = "e0acd"
 addr = "0ACD:08E7"
 size = 53
 evidence = ["near", "frame"]
-name = "Action08E7"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "ActivateWallAhead"
 
 [[function]]
 id = "e0acd_091c"
@@ -2635,10 +2635,10 @@ addr = "0ACD:091C"
 size = 211
 evidence = ["near", "frame"]
 notes = "matched 2026-11-01: the two character searches are `do { ... } while (!f0D1C_0670(gA99A, 1)); gF51A = v;` loops, not `for(;;) { ...; if (f0D1C_0670(gA99A, 1)) { gF51A = v; break; } }`. With the for(;;) form the compiler cross-jumps case 0's `gF51A = 0` into case 2's and case 2's `gF51A = 1` into case 0's (11 bytes shorter); with the do/while the two stores stay apart, as the original has them."
-name = "Turn091C"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "MoveHandCursor"
 
 [[function]]
 id = "e0acd_09ef"
@@ -2657,11 +2657,11 @@ unit = "e0acd"
 addr = "0ACD:0A34"
 size = 45
 evidence = ["near", "frame"]
-name = "Action0A34"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 notes = "matched 2026-11-01: case 0 is `Turn091C(dir); goto done;` and case 1 falls through to `done: return;`, not `break`. With a plain switch/break the compiler cross-jumps the two calls' argument cleanup (`pop cx` after each), one byte shorter than the original."
 review = "passed 2026-11-02 rev-haiku"
+name = "MoveKeyCursor"
 
 [[function]]
 id = "e0acd_0a61"
@@ -2692,10 +2692,10 @@ unit = "e0acd"
 addr = "0ACD:0D9D"
 size = 207
 evidence = ["near", "frame"]
-name = "Action0D9D"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "HandleMapKey"
 
 [[function]]
 id = "e0acd_0e6c"
@@ -2703,10 +2703,10 @@ unit = "e0acd"
 addr = "0ACD:0E6C"
 size = 30
 evidence = ["near"]
-name = "Action0E6C"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "PollMapInput"
 
 [[function]]
 id = "e0acd_0e8a"
@@ -3081,10 +3081,10 @@ unit = "e0d1c"
 addr = "0D1C:006D"
 size = 11
 evidence = ["far", "frame"]
-name = "f0D1C_006D"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "NoOpAfterCursorMove"
 
 [[function]]
 id = "e0d1c_0078"
@@ -3092,10 +3092,10 @@ unit = "e0d1c"
 addr = "0D1C:0078"
 size = 8
 evidence = ["far", "frame"]
-name = "f0D1C_0078"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "NoOpBeforeCursorMove"
 
 [[function]]
 id = "e0d1c_0080"
@@ -3258,10 +3258,10 @@ unit = "e0d1c"
 addr = "0D1C:07DB"
 size = 214
 evidence = ["far", "frame"]
-name = "f0D1C_07DB"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "CanUseHand"
 
 [[function]]
 id = "e0d1c_08b1"
@@ -3315,10 +3315,10 @@ unit = "e0d1c"
 addr = "0D1C:0BAB"
 size = 64
 evidence = ["far", "frame"]
-name = "f0D1C_0BAB"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "MonsterResistsMagic"
 
 [[function]]
 id = "e0d1c_0beb"
@@ -3954,10 +3954,10 @@ unit = "e0ef3"
 addr = "0EF3:1315"
 size = 5
 evidence = ["frame"]
-name = "EmptyFunction1315"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "CastStinkingCloudNoOp"
 
 [[function]]
 id = "e0ef3_131a"
@@ -4185,10 +4185,10 @@ unit = "e0ef3"
 addr = "0EF3:18D3"
 size = 5
 evidence = ["frame"]
-name = "EmptyFunction18D3"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "CastCloudkillNoOp"
 
 [[function]]
 id = "e0ef3_18d8"
@@ -4482,10 +4482,10 @@ unit = "e0ef3"
 addr = "0EF3:1FC8"
 size = 5
 evidence = ["frame"]
-name = "EmptyFunction1FC8"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "CastProtFromLightningNoOp"
 
 [[function]]
 id = "e0ef3_1fcd"
@@ -4493,10 +4493,10 @@ unit = "e0ef3"
 addr = "0EF3:1FCD"
 size = 5
 evidence = ["frame"]
-name = "EmptyFunction1FCD"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "UnusedProtLightningRemove"
 
 [[function]]
 id = "e0ef3_1fd2"
@@ -4637,10 +4637,10 @@ unit = "e0ef3"
 addr = "0EF3:25BD"
 size = 71
 evidence = ["frame"]
-name = "f0EF3_25BD"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "SelectSpellLevel"
 
 [[function]]
 id = "e0ef3_2604"
@@ -4692,10 +4692,10 @@ unit = "e0ef3"
 addr = "0EF3:2A53"
 size = 1129
 evidence = ["far", "frame"]
-name = "f0EF3_2A53"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "AnimateParticleBurst"
 
 [[function]]
 id = "e0ef3_2ebc"
@@ -6878,10 +6878,10 @@ unit = "e1ba4"
 addr = "1BA4:000C"
 size = 57
 evidence = ["far", "segment"]
-name = "f1BA4_000C"
 level = "L2"
 match_flags = "-ml -O -Z"
 review = "passed 2026-11-01 rev-sonnet"
+name = "PrintLong"
 
 [[function]]
 id = "e1ba8_0005"
@@ -7065,10 +7065,10 @@ unit = "e1bf3"
 addr = "1BF3:00A8"
 size = 41
 evidence = ["far", "frame"]
-name = "_f1BF3_00A8"
 level = "L2"
 match_flags = "tasm /mx"
 review = "passed 2026-11-01 rev-sonnet"
+name = "MovePointerBy"
 
 [[function]]
 id = "e1c00_0001"
@@ -7449,10 +7449,10 @@ unit = "e1d8c"
 addr = "1D8C:0000"
 size = 50
 evidence = ["far", "segment"]
-name = "_f1D8C_0000"
 level = "L2"
 match_flags = "tasm /mx"
 review = "passed 2026-11-01 rev-sonnet"
+name = "RandomByte"
 
 [[function]]
 id = "e1d8f_0002"

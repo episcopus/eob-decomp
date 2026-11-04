@@ -88,8 +88,8 @@ struct Monster {              /* 28-byte object records at ds:8A82 (src/E08E6.C)
 
 extern int gStatusLine; /*@ ds:8115 */
 extern signed char gF57E; /*@ ds:F57E */
-extern signed char gF53A; /*@ ds:F53A */
-extern signed char gFB4C; /*@ ds:FB4C */
+extern signed char gPanelShadow; /*@ ds:F53A */
+extern signed char gPanelHighlight; /*@ ds:FB4C */
 extern char gFontHeight; /*@ ds:8101 */
 extern int gTextRow; /*@ ds:FE54 */
 extern int gTextTop; /*@ ds:FE66 */
@@ -105,7 +105,7 @@ extern char gScrollOn; /*@ ds:8110 */
 extern unsigned long gFC04; /*@ ds:FC04 */
 extern int gPartyDir; /*@ ds:FBCC */
 extern int gPartyCell; /*@ ds:FBCA */
-extern signed char g1A1B[]; /*@ ds:1A1B */
+extern signed char gViewToCellPos[]; /*@ ds:1A1B */
 extern char gMazeItems[]; /*@ ds:B899 */
 extern struct CharRec gChars[]; /*@ ds:F580 */
 extern struct CharRec gCharPool[]; /*@ ds:7298 */  /* the pre-made character records 070E copies into gChars */
@@ -163,8 +163,8 @@ extern char gFileNamePlayfld2[]; /*@ ds:7F30 */
 extern char gFileNameInvent2[]; /*@ ds:7F38 */
 extern int far *gBufDCFC; /*@ ds:DCFC */
 extern int g169; /*@ ds:0169 */
-extern int (far *gFn8072)(int x, int y); /*@ ds:8072 */
-extern void (far *gFn809E)(int x, int y, int handle); /*@ ds:809E */
+extern int (far *gGetPixel)(int x, int y); /*@ ds:8072 */
+extern void (far *gPutPixel)(int x, int y, int handle); /*@ ds:809E */
 extern int RandomRange(int low, int high); /*@ 1AAA:0005 */
 extern char gF542[]; /*@ ds:F542 */
 extern int gScrollHook; /*@ ds:8117 */
@@ -390,7 +390,7 @@ enum {
         bottom = 0xC5;
     }
     HidePointerZone(left, top, right, bottom);
-    DrawFilledPanel(left, top, right, bottom, gFB4C, gF53A, gF57E);
+    DrawFilledPanel(left, top, right, bottom, gPanelHighlight, gPanelShadow, gF57E);
     gDrawText(gText7CB7, left + 4, top + 2, 0xF, 0);
     ShowPointerZone();
     FlushKeyBuffer();
@@ -446,7 +446,7 @@ enum {
    `colour`. Called by the grid 0455 for every entry it draws. */
 /*@ ovl5:03EF */ void DrawMenuRow(int x, int y, int colour, char far *text)
 {
-    DrawFilledPanel(x, y, x + 0x5e, y + 8, gFB4C, gF53A, gF57E);
+    DrawFilledPanel(x, y, x + 0x5e, y + 8, gPanelHighlight, gPanelShadow, gF57E);
     gDrawText(text, x + 0x30 - strlen(text) * 3, y + 2, colour, 0);
 }
 
@@ -648,7 +648,7 @@ enum {
     int sound;
 
     item = CopyItemToFreeSlot(item);
-    sound = g1A1B[gPartyDir * 4 + RollDice(1, 2, -1)];
+    sound = gViewToCellPos[gPartyDir * 4 + RollDice(1, 2, -1)];
     InsertListItem(&gMazeItems[gPartyCell * 9], gPartyCell, item, sound);
 }
 
@@ -1012,7 +1012,7 @@ enum {
                     if (gItems[item].type < 0x33 || gItems[item].type > 0x38) {
                         gChars[i].items[j] = 0;
                         InsertListItem(&gMazeItems[gPartyCell * 9], gPartyCell, item,
-                                       g1A1B[gPartyDir * 4 + RollDice(1, 2, -1)]);
+                                       gViewToCellPos[gPartyDir * 4 + RollDice(1, 2, -1)]);
                     }
                 }
             }
@@ -1141,7 +1141,7 @@ enum {
     gScrollHook = 0xac;
     g8119 = 0x2d0;
     LockHidePointer();
-    DrawFilledPanel(0, 0, 0xaf, 0xae, gFB4C, gF53A, gF57E);
+    DrawFilledPanel(0, 0, 0xaf, 0xae, gPanelHighlight, gPanelShadow, gF57E);
     LockShowPointer();
     PrintTableString(0x33, 1);
     if ((gFC04 & 0x1ffe) == 0x1ffe) {
@@ -1276,7 +1276,7 @@ enum {
         FileClose(handle);
         SetFont(gFont6x6);
         HidePointerZone(0, 0x79, 0x13f, 0xc8);
-        DrawFilledPanel(0, 0x79, 0x13f, 0xc8, gFB4C, gF53A, gF57E);
+        DrawFilledPanel(0, 0x79, 0x13f, 0xc8, gPanelHighlight, gPanelShadow, gF57E);
         ShowPointerZone();
         gScrollOn = 1;
         g139 = gF57E;
@@ -1347,7 +1347,7 @@ enum {
     SetTextWindow(0xc);
     gScrollHook = 0xac;
     g8119 = 0x2d0;
-    DrawFilledPanel(0, 0, 0xaf, 0xae, gFB4C, gF53A, gF57E);
+    DrawFilledPanel(0, 0, 0xaf, 0xae, gPanelHighlight, gPanelShadow, gF57E);
     LockShowPointer();
     PrintTableString(msg, 1);
     gScrollOn = 0;
@@ -1371,7 +1371,7 @@ enum {
 {
     int far *xs;
     int far *ys;
-    int handle;                 /* the gFn8072 handle, and the Fisher-Yates swap temp: the original
+    int handle;                 /* the gGetPixel handle, and the Fisher-Yates swap temp: the original
                                    reuses one slot (a second local grows the frame and breaks the match) */
     int k;
     int pick;
@@ -1410,9 +1410,9 @@ enum {
             if (j >= rows)
                 j = 0;
             gStatusLine = saveStatus;
-            handle = gFn8072(pick, idx);
+            handle = gGetPixel(pick, idx);
             gStatusLine = restoreStatus;
-            gFn809E(pick, idx, handle);
+            gPutPixel(pick, idx, handle);
         }
     }
     gStatusLine = saved;

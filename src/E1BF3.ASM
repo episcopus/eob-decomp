@@ -90,8 +90,8 @@ busyset:
 _f1BF3_0087 ENDP
 
 ; 1BF3:00A8: move the cursor by (dx, dy), guarding the work with the busy flag at ds:812E.
-        PUBLIC  _f1BF3_00A8              ; @ 1BF3:00A8
-_f1BF3_00A8 PROC FAR
+        PUBLIC  _MovePointerBy              ; @ 1BF3:00A8
+_MovePointerBy PROC FAR
         push    bp
         mov     bp, sp
         push    cx
@@ -110,6 +110,6 @@ busymove:
         pop     cx
         pop     bp
         ret
-_f1BF3_00A8 ENDP
+_MovePointerBy ENDP
 
         END

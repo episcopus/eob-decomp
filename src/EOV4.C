@@ -1157,7 +1157,7 @@ extern void ShowPointerZone(void); /*@ 1BBE:02C2 */
 extern char gFB45; /*@ ds:FB45 */           /* request flag, cleared here (src/E07A9.C) */
 extern char gF442; /*@ ds:F442 */           /* gate checked here (src/E08E6.C) */
 extern char gFlag; /*@ ds:F3B9 */           /* selects a table set (src/E0ACD.C) */
-extern char gDF4C; /*@ ds:DF4C */           /* a notify flag, cleared here (src/E08E6.C) */
+extern char gViewDirty; /*@ ds:DF4C */           /* a notify flag, cleared here (src/E08E6.C) */
 extern unsigned long gCount849A; /*@ ds:849A */  /* the frame/effect busy counter (src/E08E6.C) */
 extern void far *gSegDCA6; /*@ ds:DCA6 */   /* the far pointer DrawTile draws (src/E07A9.C) */
 extern unsigned char far *gFE68; /*@ ds:FE68 */  /* the loaded palette buffer (src/E07C8.C) */
@@ -1173,7 +1173,7 @@ extern void PlaySoundDefault(int sound); /*@ 177D:00F3 */
    palette gFE68 and clears gFB45; when `full` is also set, it first blanks the view box (gFillRect
    with pattern 0xc). Then it waits for gCount849A
    to reach zero, and, when `full` is set and gF442 is clear, clips a rectangle. It always plays
-   sound 0 and, when gFlag is zero, runs DrawViewRows; finally it clears gDF4C. Called from the game
+   sound 0 and, when gFlag is zero, runs DrawViewRows; finally it clears gViewDirty. Called from the game
    loop. */
 /*@ ovl4:1F51 */ void DrawViewFrame(int full)
 {
@@ -1199,7 +1199,7 @@ extern void PlaySoundDefault(int sound); /*@ 177D:00F3 */
     PlaySoundDefault(0);
     if (!gFlag)
         DrawViewRows();
-    gDF4C = 0;
+    gViewDirty = 0;
 }
 /* ovl4:2039: discards its work: si = 0 then si++ and return. Purpose unknown. */
 /*@ ovl4:2039 */ void NoOp2039(void)

@@ -25,8 +25,8 @@
         .MODEL  LARGE
         .CODE
 
-        PUBLIC  _f1D8C_0000              ; @ 1D8C:0000
-_f1D8C_0000 PROC FAR
+        PUBLIC  _RandomByte              ; @ 1D8C:0000
+_RandomByte PROC FAR
         push    bp
         mov     bp,sp
         push    es
@@ -50,6 +50,6 @@ _f1D8C_0000 PROC FAR
         pop     es
         pop     bp
         ret
-_f1D8C_0000 ENDP
+_RandomByte ENDP
 
         END

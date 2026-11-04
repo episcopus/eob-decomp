@@ -48,7 +48,7 @@ struct Monster {
 };
 
 extern struct CharRec gChars[]; /*@ ds:F580 */  /* the 243-byte character records */
-extern struct Spell gSpells1344[]; /*@ ds:1344 */ /* far name pointers, indexed by a spell id */
+extern struct Spell gSpells[]; /*@ ds:1344 */ /* far name pointers, indexed by a spell id */
 extern struct Spell gSpells151F[]; /*@ ds:151F */
 extern struct Monster gMonsters[]; /*@ ds:8A82 */       /* the 28-byte map-object records, 30 of them */
 extern char far gStrings2003; /*@ 2003:0000 */    /* the message string table */
@@ -221,7 +221,7 @@ void f0B9B(int message);
                     *slots *= -1;
                     counters[i] = 0x30;
                     sprintf(gFileNameBuf, "%s memorized %s.\r", &gChars[i].name[0],
-                            gSpells1344[*slots].name);
+                            gSpells[*slots].name);
                     LockHidePointer();
                     DrawText(gFileNameBuf);
                     LockShowPointer();

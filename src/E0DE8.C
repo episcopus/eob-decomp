@@ -129,10 +129,10 @@ extern struct Monster gMonsters[]; /*@ ds:8A82 */
 extern struct MonsterType gMonsterTypes[]; /*@ ds:1A3B */
 extern struct ItemRecord gItems[]; /*@ ds:8DD0 */
 extern struct ItemType gItemTypes[]; /*@ ds:A9F0 */
-extern signed char g1A1B[]; /*@ ds:1A1B */   /* per-page sound table (src/E0D1C.C) */
+extern signed char gViewToCellPos[]; /*@ ds:1A1B */   /* per-page sound table (src/E0D1C.C) */
 extern signed char g1A2B[]; /*@ ds:1A2B */   /* per-page byte table used by 01FF */
 extern signed char g115F[]; /*@ ds:115F */   /* a byte table indexed by a class, used by 0B45 */
-extern signed char g1231[]; /*@ ds:1231 */   /* a byte table indexed by the class classIndex (:725;
+extern signed char gClassBaseBits[]; /*@ ds:1231 */   /* a byte table indexed by the class classIndex (:725;
                                                 src/E0BD2.C:102) */
 extern signed char g552F[]; /*@ ds:552F */   /* a byte table indexed by the item's m02 (UseItemByKind
                                                 :432) */
@@ -140,19 +140,19 @@ extern signed char g553E[]; /*@ ds:553E */   /* the four items slot indexes Comp
                                                 (:719) */
 extern signed char g54F6[]; /*@ ds:54F6 */   /* byte table indexed by constitution; used by 0D1C:059B
                                                 (src/E0D1C.C:437, :441) */
-extern unsigned char gFBD2; /*@ ds:FBD2 */   /* bit 0 gates the icon colour row (src/E07A9.C);
+extern unsigned char gPartySpellFlags; /*@ ds:FBD2 */   /* bit 0 gates the icon colour row (src/E07A9.C);
                                                 RollToHit reads bits 4 and 5 (:225) */
 extern int gPartyDir; /*@ ds:FBCC */             /* the party's facing, 0..3 north, east, south, west */
 extern int gPartyCell; /*@ ds:FBCA */      /* the party's map cell (src/E177D.C:92) */
 extern signed char gF57E; /*@ ds:F57E */     /* a colour read by 0D1C:0C21 */
-extern signed char gFB4C; /*@ ds:FB4C */     /* a colour read by 0D1C:0C21 */
-extern signed char gF53A; /*@ ds:F53A */     /* a colour read by 0D1C:0C21 */
+extern signed char gPanelHighlight; /*@ ds:FB4C */     /* a colour read by 0D1C:0C21 */
+extern signed char gPanelShadow; /*@ ds:F53A */     /* a colour read by 0D1C:0C21 */
 extern char gPanelMode; /*@ ds:FB44 */            /* a mode byte: 0 and 1 gate 0D1C:01CA's redraws
                                                 (src/E0D1C.C:108); DamageCharacter redraws the member
                                                 when it is 0 and the portrait otherwise (:596-599) */
 extern signed char gA9C6; /*@ ds:A9C6 */     /* an offset within a nine-byte gMaze record (:348-350;
                                                 0ACD:0644) */
-extern char gDF4C; /*@ ds:DF4C */            /* set to 1 when an action took effect (0DE8:0359,
+extern char gViewDirty; /*@ ds:DF4C */            /* set to 1 when an action took effect (0DE8:0359,
                                                 0DE8:0537, 0DE8:05BB) */
 extern char gHpMaxOrAttackTarget; /*@ ds:DCA4 */            /* the target object 0359 records (:361); UseItem damages
                                                 gMonsters[gHpMaxOrAttackTarget] (:520) */
@@ -173,10 +173,10 @@ extern int GetIndexedByte(char index, char limit, char offset); /*@ 0A72:0006 */
 extern int RollHitPoints(char classIndex, char m17, char countA, char countB, char countC); /*@ 0A72:01AE */
 extern int MemberIs(int who, int mask); /*@ 0D1C:0670 */
 extern int StepCell(int cell, int dir); /*@ 0D1C:00DA */
-extern int f0D1C_0BAB(int obj); /*@ 0D1C:0BAB */
+extern int MonsterResistsMagic(int obj); /*@ 0D1C:0BAB */
 extern int f0D1C_0BEB(int obj, int flag); /*@ 0D1C:0BEB */
 extern int f0D1C_059B(int who, int attack); /*@ 0D1C:059B */
-extern int f0D1C_07DB(int who, int flag); /*@ 0D1C:07DB */
+extern int CanUseHand(int who, int flag); /*@ 0D1C:07DB */
 extern int RemoveListItem(void far *head, int key, int target); /*@ 0BD2:02B9 */
 extern int AddDDEffect(int who, int item, int volume, int kind, int page, int type); /*@ 0BD2:07DE */
 extern int Obj15B4(char who, int value); /*@ 08E6:15B4 */
@@ -206,7 +206,7 @@ void LevelUpSlot(int who, int cls, int slot);  /* forward: 0B45 reaches it with 
    weapon value when it is 1..3), adds either the attacker's strength to-hit bonus
    (GetStrengthToHitBonus, 0A72:00CF) or the dexterity char value depending on `useStrength`, sets
    gMonsters[obj].m16 bit 0 on every call (the object was attacked), whatever the outcome, and compares
-   a d20 roll (raised by gFBD2 bits 4 and 5 and by gChars[who].effectFlags bit 6, clamped to 1..20) against
+   a d20 roll (raised by gPartySpellFlags bits 4 and 5 and by gChars[who].effectFlags bit 6, clamped to 1..20) against
    GetHitTarget(who, gMonsterTypes[gMonsters[obj].typeIndex].m00) minus the bonus. Returns 1 when the roll
    reaches that to-hit target. Called by 0DE8:02D4, 0DE8:0359, 0EF3:0A3F DamageTargetCell and
    0EF3:0E1B CastMeleeEffect. */
@@ -234,7 +234,7 @@ void LevelUpSlot(int who, int cls, int slot);  /* forward: 0B45 reaches it with 
     gMonsters[obj].m16 |= 1;
     toHit = GetHitTarget(who, gMonsterTypes[entry].m00) - bonus;
     roll = RollDice(1, 20, 0);
-    if (gFBD2 & 0x30)
+    if (gPartySpellFlags & 0x30)
         roll++;
     if ((gChars[who].effectFlags & 0x40) != 0)
         roll++;
@@ -340,8 +340,8 @@ void LevelUpSlot(int who, int cls, int slot);  /* forward: 0B45 reaches it with 
 /* 0DE8:0359: one item/effect attack by character `who` on the item record `slot` (an index into
    gItems). It rejects a `who` above 1 with -3, then looks the action up through
    StepCell(gPartyCell, gPartyDir) and Obj15B4. A -1 target with g1905[gMaze[row * 9 + gA9C6]] at
-   0xFF bumps two gMaze cells and sets gDF4C, returning -2, otherwise -1. A real target demands the
-   0007 to-hit roll (returns -1 on a miss), and when the slot's m02 is 0x34..0x38 f0D1C_0BAB can
+   0xFF bumps two gMaze cells and sets gViewDirty, returning -2, otherwise -1. A real target demands the
+   0007 to-hit roll (returns -1 on a miss), and when the slot's m02 is 0x34..0x38 MonsterResistsMagic can
    also fail it; the surviving hit is rolled through 011A and halved when f0D1C_0BEB says so.
    Returns -3, -2 or -1 as above, else the damage. Called by 0DE8:0763. The gHpMaxOrAttackTarget byte records the
    target for the effect dispatcher. */
@@ -360,7 +360,7 @@ void LevelUpSlot(int who, int cls, int slot);  /* forward: 0B45 reaches it with 
         if (g1905[gMaze[row * 9 + gA9C6]] == 0xff) {
             gMaze[row * 9 + gA9C6]++;
             gMaze[row * 9 + (gA9C6 ^ 2)]++;
-            gDF4C = 1;
+            gViewDirty = 1;
             return -2;
         }
         return -1;
@@ -368,7 +368,7 @@ void LevelUpSlot(int who, int cls, int slot);  /* forward: 0B45 reaches it with 
     if (RollToHit(who, target, slot, 1) == 0)
         goto fail;
     m02 = gItems[slot].type;
-    if (m02 > 0x33 && m02 < 0x39 && f0D1C_0BAB(target))
+    if (m02 > 0x33 && m02 < 0x39 && MonsterResistsMagic(target))
         return -1;
     gHpMaxOrAttackTarget = target;
     damage = RollAttackDamage(who, target, slot, gItems[slot].type, 1);
@@ -404,9 +404,9 @@ fail:
 }
 /* 0DE8:0537: tries to use the item in the carried slot `slot` (an index into items) of character
    `who` against the item record `field` (an index into gItems). It dispatches through
-   AddDDEffect(who, field, gPartyCell as volume, the g1A1B page byte as kind, gPartyDir as page, the
+   AddDDEffect(who, field, gPartyCell as volume, the gViewToCellPos page byte as kind, gPartyDir as page, the
    item's m02 as type); on success it plays sound 0x0B, clears gChars[who].items[slot] and refills
-   it through MoveCarriedItem(who, slot, -1, 0), setting gDF4C. Returns 0. Called by 0DE8:0763. */
+   it through MoveCarriedItem(who, slot, -1, 0), setting gViewDirty. Returns 0. Called by 0DE8:0763. */
 /*@ 0DE8:0537 */ int UseCarriedItem(int who, int slot, int field)
 {
     int idx;
@@ -414,12 +414,12 @@ fail:
     idx = who;
     if (idx > 3)
         idx -= 2;
-    if (AddDDEffect(who, field, gPartyCell, g1A1B[gPartyDir * 4 + idx], gPartyDir,
+    if (AddDDEffect(who, field, gPartyCell, gViewToCellPos[gPartyDir * 4 + idx], gPartyDir,
                    gItems[field].type)) {
         PlaySound(0xb);
         gChars[who].items[slot] = 0;
         MoveCarriedItem(who, slot, -1, 0);
-        gDF4C = 1;
+        gViewDirty = 1;
     }
     return 0;
 }
@@ -430,7 +430,7 @@ fail:
    with no m02 test); otherwise it scans all 27 slots for the first whose item m02 equals `kind`
    (clearing it and redrawing with RedrawMember when the slot is below 2). A found item is
    dispatched through AddDDEffect; when that returns nonzero it plays sound 0x1A when m02 is 7
-   (else 0x0B) and sets gDF4C. Returns 0 once an item was found, whether or not AddDDEffect took
+   (else 0x0B) and sets gViewDirty. Returns 0 once an item was found, whether or not AddDDEffect took
    it, -4 when none was found. Called by 0DE8:0763. */
 /*@ 0DE8:05BB */ int UseItemByKind(int who, int slot)
 {
@@ -473,12 +473,12 @@ fail:
         idx = who;
         if (idx > 3)
             idx -= 2;
-        if (AddDDEffect(who, item, gPartyCell, g1A1B[idx + gPartyDir * 4], gPartyDir, m02)) {
+        if (AddDDEffect(who, item, gPartyCell, gViewToCellPos[idx + gPartyDir * 4], gPartyDir, m02)) {
             if (m02 == 7)
                 PlaySound(0x1a);
             else
                 PlaySound(0xb);
-            gDF4C = 1;
+            gViewDirty = 1;
         }
         return 0;
     }
@@ -555,7 +555,7 @@ fail:
     if (alive != 0)
         return;
     LockHidePointer();
-    DrawFilledPanel(0, 0x79, 0x13f, 0xc8, gFB4C, gF53A, gF57E);
+    DrawFilledPanel(0, 0x79, 0x13f, 0xc8, gPanelHighlight, gPanelShadow, gF57E);
     SetTextWindow(9);
     DrawText("All of your party has been defeated.  The minions of evil will be able to carry out "
              "their plans unhindered!\r");
@@ -705,7 +705,7 @@ fail:
 }
 /* 0DE8:0D5E: computes the armour class armorClass of character `who`. It starts from GetArmourClassBase(dexterity) + 10,
    then for the four slots named by g553E adds the item type's m04 and subtracts the slot's m0B when
-   the item m02 passes the gItemTypes m0E and g1231[classIndex] tests (slot 2 also needs f0D1C_07DB); for
+   the item m02 passes the gItemTypes m0E and gClassBaseBits[classIndex] tests (slot 2 also needs CanUseHand); for
    slots 1 and 2 only item type 0x1B counts (:728), and the items[25]/items[26] items count only
    when their m0E kind is 0 (:738, :741). When items[17]'s slot m0B is 0 it subtracts the larger m0B
    of those two items. It clamps against base + 6 while mDF holds (when armorClass is not above base + 6
@@ -731,10 +731,10 @@ fail:
         item = rec->items[g553E[i]];
         if (item == 0)
             continue;
-        if (i == 2 && !f0D1C_07DB(who, 1))
+        if (i == 2 && !CanUseHand(who, 1))
             continue;
         itemType = gItems[item].type;
-        value = gItemTypes[itemType].m05 & g1231[rec->classIndex];
+        value = gItemTypes[itemType].m05 & gClassBaseBits[rec->classIndex];
         if ((gItemTypes[itemType].m0E & 0x7f) != 0 || value == 0)
             continue;
         if (i >= 1 && i <= 2 && itemType != 0x1b)

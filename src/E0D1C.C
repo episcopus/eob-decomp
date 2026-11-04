@@ -28,9 +28,9 @@ struct CharRec {            /* 243-byte (0xF3) character records at ds:F580; see
 };
 
 extern int gA9C8[]; /*@ ds:A9C8 */       /* a 15-word table searched by 0D1C:0006 */
-extern char gDF4C; /*@ ds:DF4C */        /* set to 1 when 0D1C:0006 finds the value */
+extern char gViewDirty; /*@ ds:DF4C */        /* set to 1 when 0D1C:0006 finds the value */
 extern signed char gInventoryMember; /*@ ds:A99A */ /* the selected character index (src/E0ACD.C) */
-extern char gF51A; /*@ ds:F51A */        /* an index into the 27 word slots of gChars[gInventoryMember].items
+extern char gCursorSlot; /*@ ds:F51A */        /* an index into the 27 word slots of gChars[gInventoryMember].items
                                             (0D1C:02DC, 0D1C:0304); slot 16 is the own-list head
                                             0D1C:035A drains. E0ACD disagrees: it reads it as an
                                             action-menu row 0..2 with 0x10 for the own list */
@@ -39,7 +39,7 @@ extern signed char gDirCellOffset[]; /*@ ds:1790 */  /* byte table indexed by th
 extern signed char gOppositeSide[]; /*@ ds:547E */  /* byte table indexed by the second argument of 0D1C:0080 */
 extern char gMaze[]; /*@ ds:B894 */         /* nine-byte records; +4 (ds:B898) is tested by 0D1C:0080 and +5 (ds:B899) is a list head used by 0D1C:035A */
 extern signed char gWallTypeFlags[]; /*@ ds:194B */  /* byte table read by 0D1C:0080 */
-extern signed char g1A1B[]; /*@ ds:1A1B */  /* per-page sound table read by 0D1C:035A */
+extern signed char gViewToCellPos[]; /*@ ds:1A1B */  /* per-page sound table read by 0D1C:035A */
 extern int gPartyCell; /*@ ds:FBCA */     /* the party's map cell: 0D1C:035A indexes the nine-byte
                                             records (gMaze + gPartyCell * 9 + 5) and passes it as the
                                             InsertListItem key, and 0D1C:09CB passes it as the second
@@ -52,10 +52,10 @@ extern unsigned long gTicks; /*@ ds:848A */  /* a tick counter compared with gFC
 extern unsigned long gFC5E; /*@ ds:FC5E */  /* the next tick 0D1C:0454 may draw at */
 extern signed char g1CE7[]; /*@ ds:1CE7 */  /* per-row colours for the list 0D1C:0454 draws */
 extern signed char gF57E; /*@ ds:F57E */    /* a colour read by 0D1C:0C21 */
-extern signed char gFB4C; /*@ ds:FB4C */    /* a colour read by 0D1C:0C21 */
-extern signed char gF53A; /*@ ds:F53A */    /* a colour read by 0D1C:0C21 */
+extern signed char gPanelHighlight; /*@ ds:FB4C */    /* a colour read by 0D1C:0C21 */
+extern signed char gPanelShadow; /*@ ds:F53A */    /* a colour read by 0D1C:0C21 */
 extern signed char g54F6[]; /*@ ds:54F6 */  /* byte table indexed by a character's constitution in 0D1C:059B */
-extern unsigned char gFBD2; /*@ ds:FBD2 */  /* bit 0 gates the icon colour row in 0D1C:070F (src/E07A9.C) */
+extern unsigned char gPartySpellFlags; /*@ ds:FBD2 */  /* bit 0 gates the icon colour row in 0D1C:070F (src/E07A9.C) */
 extern int gGraphicsChoice; /*@ ds:8102 */            /* nonzero: a colour row exists (src/E07A9.C) */
 extern char far *gBufF534; /*@ ds:F534 */   /* the 1600-byte ITEMRMP buffer (src/E07A9.C) */
 extern void (far *gFn80D2)(void far *map); /*@ ds:80D2 */ /* the far colour-table callback (src/E07A9.C) */
@@ -133,7 +133,7 @@ extern int gFBC8; /*@ ds:FBC8 */             /* the current action: 2 or 7 gates
 extern int gF518; /*@ ds:F518 */             /* set to 1 while an object is being turned (0D1C:0A43) */
 extern char gFileNameBuf[]; /*@ ds:FE6E */   /* the text buffer sprintf formats into (src/EOV2.C) */
 
-extern void f08E6_17FD(int far *list, int key, int field, char flags, char scanAll, char scanFiltered); /*@ 08E6:17FD */
+extern void ListMonstersAtCell(int far *list, int key, int field, char flags, char scanAll, char scanFiltered); /*@ 08E6:17FD */
 /* fills `list` with the gMonsters indices whose id equals key, terminated by -1; flags, scanAll
    and scanFiltered select the scan (Purpose unknown) */
 extern void FlashViewDamage(void); /*@ 0EF3:06E7 */
@@ -180,7 +180,7 @@ int GetCurrentItem(void);
     slot = gA9C8;
     for (i = 0; i < 15; i++, slot++) {
         if (*slot == value) {
-            gDF4C = 1;
+            gViewDirty = 1;
             return 1;
         }
     }
@@ -204,17 +204,17 @@ int GetCurrentItem(void);
     }
 }
 
-/* 0D1C:006D: Purpose unknown: increments its two word arguments (which the caller passes by
-   value, so the increment has no effect). Called by 0ACD as (gF51A, 9). */
-/*@ 0D1C:006D */ void f0D1C_006D(int first, int second)
+/* 0D1C:006D: Does nothing; called with the cursor slot and 9 after the keyboard cursor moves. increments its two word arguments (which the caller passes by
+   value, so the increment has no effect). Called by 0ACD as (gCursorSlot, 9). */
+/*@ 0D1C:006D */ void NoOpAfterCursorMove(int first, int second)
 {
     first++;
     second++;
 }
 
-/* 0D1C:0078: Purpose unknown: increments its word argument (passed by value, so the increment
-   has no effect). Called by 0ACD as (gF51A). */
-/*@ 0D1C:0078 */ void f0D1C_0078(int value)
+/* 0D1C:0078: Does nothing; called with the cursor slot before the keyboard cursor moves. increments its word argument (passed by value, so the increment
+   has no effect). Called by 0ACD as (gCursorSlot). */
+/*@ 0D1C:0078 */ void NoOpBeforeCursorMove(int value)
 {
     value++;
 }
@@ -329,34 +329,34 @@ int GetCurrentItem(void);
     return found;
 }
 /* 0D1C:02DC: returns the item index of the currently displayed slot: gFBCE when the mouse is
-   enabled, otherwise gChars[gInventoryMember].items[gF51A]. The getter of the SetCurrentItem pair (0D1C:0304).
+   enabled, otherwise gChars[gInventoryMember].items[gCursorSlot]. The getter of the SetCurrentItem pair (0D1C:0304).
    Called by 0D1C:01CA and from many other units. */
 /*@ 0D1C:02DC */ int GetCurrentItem(void)
 {
     if (!gMouseDisabled)
         return gFBCE;
-    return gChars[gInventoryMember].items[gF51A];
+    return gChars[gInventoryMember].items[gCursorSlot];
 }
 /* 0D1C:0304: stores `n` as the item index in the current slot: gFBCE when the mouse is enabled,
-   or gChars[gInventoryMember].items[gF51A] when it is disabled. When the mouse is disabled it also redraws
-   the slot, through RedrawMember(gInventoryMember) when gPanelMode is 0 and DrawItemRow(gF51A, 1, 0) otherwise.
+   or gChars[gInventoryMember].items[gCursorSlot] when it is disabled. When the mouse is disabled it also redraws
+   the slot, through RedrawMember(gInventoryMember) when gPanelMode is 0 and DrawItemRow(gCursorSlot, 1, 0) otherwise.
    Called by SetMouseItem to set the icon shown for a selected item. */
 /*@ 0D1C:0304 */ void SetCurrentItem(int n)
 {
     if (!gMouseDisabled) {
         gFBCE = n;
     } else {
-        gChars[gInventoryMember].items[gF51A] = n;
+        gChars[gInventoryMember].items[gCursorSlot] = n;
         if (gPanelMode == 0)
             RedrawMember(gInventoryMember);
         else
-            DrawItemRow(gF51A, 1, 0);
+            DrawItemRow(gCursorSlot, 1, 0);
     }
 }
 /* 0D1C:035A: Purpose unknown: clears gChars[who].status and then, for each of the 27 word slots of
    gChars[who].items except slot 16 (which is a list head at +97), queues the item in the slot
    through InsertListItem at the head gPartyCell * 9 + 5 (the nine-byte records at ds:B894) with a
-   random sound g1A1B[gPartyDir * 4 + RollDice(1, 2, -1)]. Then it drains the slot-16 list through
+   random sound gViewToCellPos[gPartyDir * 4 + RollDice(1, 2, -1)]. Then it drains the slot-16 list through
    RemoveListItem and queues each returned item the same way. Finally, when `who` is the selected
    character, gInventoryMember is cleared to 0, and RearmCharEffects runs. Called by overlays 1 and 5. */
 /*@ 0D1C:035A */ void f0D1C_035A(int who)
@@ -372,13 +372,13 @@ int GetCurrentItem(void);
             continue;
         if (item = rec->items[i]) {
             InsertListItem((int far *)(gMaze + gPartyCell * 9 + 5), gPartyCell, item,
-                    g1A1B[gPartyDir * 4 + RollDice(1, 2, -1)]);
+                    gViewToCellPos[gPartyDir * 4 + RollDice(1, 2, -1)]);
         }
     }
     while (rec->items[16]) {
         item = RemoveListItem(&rec->items[16], 0, -1);
         InsertListItem((int far *)(gMaze + gPartyCell * 9 + 5), gPartyCell, item,
-                g1A1B[gPartyDir * 4 + RollDice(1, 2, -1)]);
+                gViewToCellPos[gPartyDir * 4 + RollDice(1, 2, -1)]);
     }
     if (gInventoryMember == who)
         gInventoryMember = 0;
@@ -491,7 +491,7 @@ int GetCurrentItem(void);
     return result;
 }
 /* 0D1C:070F: draws the item icon of item record `n` (gItems) at (x, y), the far pointer
-   gIconsDDE4[icon]. Colour-row path, Purpose unknown: when gFBD2 bit 0 is set and the record's
+   gIconsDDE4[icon]. Colour-row path, Purpose unknown: when gPartySpellFlags bit 0 is set and the record's
    flags have 0x80, it first selects the icon's 16-byte colour row (gBufF534 + (icon << 4), or the
    empty string at ds:550A when gGraphicsChoice is 0) through gFn80D2 and draws through f1A29_008B,
    otherwise through DrawShape. Called by 0BD2 (three sites) and 1547:07E7. */
@@ -500,7 +500,7 @@ int GetCurrentItem(void);
     int icon;
 
     icon = gItems[n].icon;
-    if ((gFBD2 & 1) && (gItems[n].flags & 0x80)) {
+    if ((gPartySpellFlags & 1) && (gItems[n].flags & 0x80)) {
         if (gGraphicsChoice)
             gFn80D2(gBufF534 + (icon << 4));
         else
@@ -526,14 +526,14 @@ int GetCurrentItem(void);
     }
     return cursor;
 }
-/* 0D1C:07DB: Purpose unknown: combines the first two carried items of gChars[who] (slots 0 and
+/* 0D1C:07DB: Returns whether the member can use hand 0 or hand 1 with the items held (class and two-handed rules). combines the first two carried items of gChars[who] (slots 0 and
    1). Each slot's item is passed to ItemClassAllowed and its item record's type indexes the
    16-byte records at ds:A9F5. With `flag` 0 it returns 1 when slot 0 is empty or ItemClassAllowed
    accepted its item. Otherwise it returns 0 when slot 0 holds an item whose gA9F5[type].m01 is 2, then
    1 when slot 1 is empty, and for a slot-1 item whose gA9F5[m1].m09 (low 7 bits) is 1, 2 or 3,
    0 when gA9F5[m1].m01 is nonzero, else the slot-1 result. Called by 0BD2:1001, 0DE8:0D5E and
    1547:07E7. Placeholder: what the values mean is not established. */
-/*@ 0D1C:07DB */ int f0D1C_07DB(int who, int flag)
+/*@ 0D1C:07DB */ int CanUseHand(int who, int flag)
 {
     int slot0;
     int result0;
@@ -676,7 +676,7 @@ int GetCurrentItem(void);
         return;
     memberVal = packed & 0xff;
     member = (packed & 0xff00) >> 8;
-    f08E6_17FD(list, key, 4, 4, 1, 1);
+    ListMonstersAtCell(list, key, 4, 4, 1, 1);
     roll = RollDice(1, 20, 0);
     for (i = 0; i < 5; i++) {
         if (list[i] == -1)
@@ -698,10 +698,10 @@ int GetCurrentItem(void);
     }
     gF518 = 0;
 }
-/* 0D1C:0BAB: Purpose unknown: a percentage check on the object `objIndex` (its ds:8A82 record,
+/* 0D1C:0BAB: Rolls percentile dice against the monster type's resistance byte (+0x1A) and returns 1 when the spell or spell item is resisted. a percentage check on the object `objIndex` (its ds:8A82 record,
    not a pointer like 0D1C:09CB's `obj`): through gMonsters[objIndex].typeIndex it reads gMonsterTypes[typeIndex].m1A
    and returns 1 when RollDice(1, 100, 0) is below it, otherwise 0. Called by 0DE8:0359. */
-/*@ 0D1C:0BAB */ int f0D1C_0BAB(int objIndex)
+/*@ 0D1C:0BAB */ int MonsterResistsMagic(int objIndex)
 {
     int chance;
 
@@ -717,8 +717,8 @@ int GetCurrentItem(void);
 }
 /* 0D1C:0C21: Purpose unknown: draws a framed rectangle at (x, y) `width` by `height` through
    082C:09D5. It hides the pointer, draws the whole rectangle in the colours picked by `first`
-   (gF57E, gF57E when `first`, else gFB4C and gF53A) with -1 as the third colour, then shrinks the
-   rectangle by one on each side and draws the inner border in gFB4C/gF53A with a third colour of
+   (gF57E, gF57E when `first`, else gPanelHighlight and gPanelShadow) with -1 as the third colour, then shrinks the
+   rectangle by one on each side and draws the inner border in gPanelHighlight/gPanelShadow with a third colour of
    -1 when `second`, else gF57E, and shows the pointer. Called by overlay 1 and overlay 6. */
 /*@ 0D1C:0C21 */ void f0D1C_0C21(int x, int y, int width, int height, int first, int second)
 {
@@ -738,14 +738,14 @@ int GetCurrentItem(void);
         c2 = gF57E;
         c1 = gF57E;
     } else {
-        c1 = gFB4C;
-        c2 = gF53A;
+        c1 = gPanelHighlight;
+        c2 = gPanelShadow;
     }
     DrawFilledPanel(x1, y1, x2, y2, c1, c2, -1);
     x1++;
     y1++;
     x2--;
     y2--;
-    DrawFilledPanel(x1, y1, x2, y2, gFB4C, gF53A, second ? -1 : gF57E);
+    DrawFilledPanel(x1, y1, x2, y2, gPanelHighlight, gPanelShadow, second ? -1 : gF57E);
     LockShowPointer();
 }

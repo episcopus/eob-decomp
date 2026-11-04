@@ -76,7 +76,7 @@ struct CharRec {                /* 243-byte character records at ds:F580 (src/E0
     char armorClass;
     char m1E;
     signed char race;             /* +1F: the race index, half of it indexes gRaceMinAbilities (src/E0A72.C) */
-    signed char classIndex;       /* +20: the class index, indexes g1231 (src/E0BD2.C) */
+    signed char classIndex;       /* +20: the class index, indexes gClassBaseBits (src/E0BD2.C) */
     signed char alignment;        /* +21: index into the alignment-name table ds:1240 (src/E1547.C) */
     signed char portraitIndex;              /* +22: the position ovl0:0A5E stores (Purpose unknown) */
     signed char food;             /* +23: the food value, set to 100 (full) by ovl0:26C6 */
@@ -113,7 +113,7 @@ extern char gFmtStrengthOnExit[]; /*@ ds:6239 */ /* a value format ovl0:135D use
 extern char gFmtValueOnExit[]; /*@ ds:623C */ /* a value format ovl0:135D uses (Purpose unknown) */
 extern int CopyItemToFreeSlot(int n); /*@ 0BD2:089E */
 extern void ComputeArmourClass(int who); /*@ 0DE8:0D5E */
-extern signed char g1231[]; /*@ ds:1231 */ /* byte table indexed by gChars[].classIndex (src/E0BD2.C) */
+extern signed char gClassBaseBits[]; /*@ ds:1231 */ /* byte table indexed by gChars[].classIndex (src/E0BD2.C) */
 extern int far RollDice(char count, char sides, char bonus); /*@ 082C:0458 */
 extern void far *gPortraitCells[]; /*@ ds:FC8C */ /* the overlay screen buffers, ds:FC8C up to ds:FD98 (0x43 far pointers); ovl0:28B0 frees all of them, InitPanelScreens sets only the first 0x2c (ovl0:2547) and entries 0x32..0x3b alias the ten gBoxAnimCells row cells */
 extern int gChargenMember; /*@ ds:DCB0 */ /* the current character index for the panel: RunCharacterPanel toggles it (ovl0:28F9) and the panel routines index gChars[gChargenMember]. Purpose unknown beyond "current character" */
@@ -1411,7 +1411,7 @@ int PickAlignment(int classIndex); /* ovl0:2238, defined below */
         ComputeArmourClass(i);
     }
 }
-/* ovl0:280D: for each of the first four characters whose class byte g1231[gChars[i].classIndex] has bit 1
+/* ovl0:280D: for each of the first four characters whose class byte gClassBaseBits[gChars[i].classIndex] has bit 1
    (value 2) set, sets the 32-bit spell book gChars[i].spellBook to 0x26c, the starting mage spells. Called by
    ovl0:28F9. */
 /*@ ovl0:280D */ void GiveStartingSpellBooks(void)
@@ -1419,7 +1419,7 @@ int PickAlignment(int classIndex); /* ovl0:2238, defined below */
     int i;
 
     for (i = 0; i < 4; i++) {
-        if (g1231[gChars[i].classIndex] & 2)
+        if (gClassBaseBits[gChars[i].classIndex] & 2)
             gChars[i].spellBook = 0x26c;
     }
 }
