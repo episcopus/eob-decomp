@@ -1,7 +1,7 @@
 # Review: e1bbe
 
-Reviewer: rev-haiku
-Commit reviewed: 9a32867 for round 14 (review/e1bbe; src/E1BBE.ASM last changed at b6f8784, the round 13 fixes). Round 13: cb4de6d (review/e1bbe; main at 2627286 changes none of the files the cites name). Round 12: fef890a (main; src/E1BBE.ASM last changed at 08c8575, the round 11 fixes; src/E1A72.ASM at 7f9b24e, which moved its lines 289-291 and 551-556 by one line, see round 12). Round 10: 890d7f8 (main, the 0385631 fixes merged; src/E1BBE.ASM last changed at 0385631; the review branch is identical to main). Round 9: 68d16c2 (main; src/E1BBE.ASM last changed at e831c19, the round 8 fixes; src/E1A72.ASM at b00a8c7, and the round 8 label cites still hold against it; the review branch is identical to main). Round 8: 20871bc (main; src/E1BBE.ASM last changed at d1e1a32, src/E1A72.ASM at 2af4699). Round 7: 07c010f (main; src/E1BBE.ASM, src/E1A72.ASM and the other files the cites name are the same in the review branch at 1d5a0ef). Round 6: a53aa55 (main; src/E1BBE.ASM last changed at 887afda, src/E1A72.ASM at e3ea88d; the review branch is identical to main in this worktree). Round 5: d1538ee for round 5 (main; src/E1BBE.ASM last changed at 6ddaa61, src/E1A72.ASM at 65ebeb1; both are identical in this worktree). Round 4: 433dc71 (main; src/E1BBE.ASM is unchanged since 5cfa933). Earlier: 421cd1e7a31c20710200fe18247bdf159a34d76c (round 3, main; src/E1BBE.ASM is identical to the review branch at 8225102, which is on main). Round 2 was reviewed at 089dfd1 and round 1 at 0cfccb1 (see below). E1A72.ASM has moved on main since round 2 (commit e856ab9), which is why round 3 finds stale citations.
+Reviewer: p6-rev-3 (round P6; rounds 1 to 14 by rev-haiku)
+Commit reviewed: ce0608f (round P6, 2026-11-04; diffed against 9a32867, round 14's commit). Earlier: round 14 read 9a32867 (src/E1BBE.ASM last changed at b6f8784), round 13 cb4de6d, round 12 fef890a, round 10 890d7f8, round 9 68d16c2, round 8 20871bc, round 7 07c010f, round 6 a53aa55, round 5 d1538ee, round 4 433dc71, round 3 421cd1e, round 2 089dfd1, round 1 0cfccb1.
 
 Playbook 70. Judge what a matching file can still get wrong: names, types, comments, structure.
 The matcher already proved the bytes; do not re-prove them, read for meaning.
@@ -10,6 +10,38 @@ The matcher already proved the bytes; do not re-prove them, read for meaning.
 
 Each finding is a checkbox. `must-fix` blocks `make review-pass` until a decompiler ticks it off
 (with the commit that fixes it); `should` and `note` do not block.
+
+### Round 15 (P6 round: p6-rev-3, 2026-11-04, commit ce0608f)
+
+Judged: round 14 had no must-fix (three shoulds still open below), and the P6 diff since 9a32867
+(`git diff 9a32867..ce0608f -- src/E1BBE.ASM re/symbols.toml re/globals.toml`). The diff is names
+and comments only: _gDraw80C2, g8172, g8174, g80AA, g80A2 and _f1BBE_0001 became _gDrawShape,
+gEgaRegShadowOff, gEgaRegShadowSeg, gSaveDrawState, gRestoreDrawState and _PadBeforeHidePointer, and
+the g80EC reference in the gCursorX comment became gRecordMode. No instruction or operand changed.
+`make match FILE=src/E1BBE.ASM` 7 of 7 (860 bytes); `make readability UNIT=e1bbe` 0 findings;
+`make names UNIT=e1bbe` 0 placeholders and 1 `Purpose unknown` (pre-existing).
+
+The new names are true. ds:80C2 is the driver entry src/E1A29.C declares as gDrawShape and ShowPointer
+calls at 1BBE:01F4; ds:8172/8174 is the far pointer the EGA driver uses as its register shadow and the
+17A6 blitters point at their 16-byte save buffer; ds:80AA/80A2 are the save and restore driver entries
+the WHY describes; 1BBE:0001 is the one-byte segment-start marker and _PadBeforeHidePointer follows the
+_PadBeforeUnpack0, _PadBeforePlacePointer and _PadBeforeCompressLcw convention (src/E1BA8.ASM:11-12,
+src/E1BF3.ASM:19-20, src/E19FC.ASM:77-78). The names match src/E1BB1.ASM:88-95 and src/E1A72.ASM.
+
+Notes (not blocking):
+
+- note src/E1BBE.ASM:2 and :29: the comment says "_gDrawShape in src/E1A29.C"; the C declaration is
+  `gDrawShape` (src/E1A29.C:38). The underscore is the assembler's object symbol, as in this file's
+  EXTRN. The cross-reference is clear; say `gDrawShape` if the C name is meant.
+- note src/E1BBE.ASM:99-102 and :127-132: gEgaRegShadowOff/Seg names the EGA driver's use (its slot
+  32 copies 16 register-shadow bytes from the pointer); the 17A6 blitters point the same pointer at
+  their own 16-byte save buffer (gSaveBuf, E17A6.ASM:104, :283, :356), so the name describes the
+  driver's consumer, not the game's data. The declaration comments say both uses.
+- note the three open shoulds of round 14 (HidePointerZone missing from the hot-spot reader lists, the
+  unnamed 8000h/4000h state bits, and the HidePointerZone "zone" wording) are unchanged by P6 and
+  still stand.
+- note the open notes of round 14 (the registry rows for ds:8158/815A, _gPointerState, Lock names and
+  the stale cites into this file owned elsewhere) are unchanged by P6 and still stand.
 
 ### Round 14 (review of commit 9a32867, src/E1BBE.ASM last changed at b6f8784, the round 13 fixes)
 
