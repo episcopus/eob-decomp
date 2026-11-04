@@ -5738,7 +5738,7 @@ evidence = ["far", "segment"]
 name = "LoadSoundDriver"
 level = "L2"
 match_flags = "-ml -O -Z"
-review = "passed 2026-11-01 rev-haiku"
+review = "passed 2026-11-04 p6-rev-4"
 
 [[function]]
 id = "e177d_0070"
@@ -5749,7 +5749,7 @@ evidence = ["far", "frame"]
 name = "PlaySound"
 level = "L2"
 match_flags = "-ml -O -Z"
-review = "passed 2026-11-01 rev-haiku"
+review = "passed 2026-11-04 p6-rev-4"
 
 [[function]]
 id = "e177d_00f3"
@@ -5760,7 +5760,7 @@ evidence = ["far", "frame"]
 name = "PlaySoundDefault"
 level = "L2"
 match_flags = "-ml -O -Z"
-review = "passed 2026-11-01 rev-haiku"
+review = "passed 2026-11-04 p6-rev-4"
 
 [[function]]
 id = "e177d_0106"
@@ -5772,7 +5772,7 @@ notes = "resolved 2026-11-01: the two far accesses are the far object gDrvReg an
 name = "PlaySoundAtCell"
 level = "L2"
 match_flags = "-ml -O -Z"
-review = "passed 2026-11-01 rev-haiku"
+review = "passed 2026-11-04 p6-rev-4"
 
 [[function]]
 id = "e17a6_0000"
