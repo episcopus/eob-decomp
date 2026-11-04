@@ -1801,7 +1801,7 @@ size = 74
 evidence = ["far", "segment"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-6"
 name = "MakeMonsterFlee"
 
 [[function]]
@@ -1812,7 +1812,7 @@ size = 110
 evidence = ["near", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-6"
 name = "AlertMode8Monsters"
 
 [[function]]
@@ -1823,7 +1823,7 @@ size = 141
 evidence = ["near", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-6"
 name = "AlertMonsterToParty"
 
 [[function]]
@@ -1834,7 +1834,7 @@ size = 46
 evidence = ["far", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-6"
 name = "AlertNearbyMonsters"
 
 [[function]]
@@ -1845,7 +1845,7 @@ size = 154
 evidence = ["near", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-6"
 name = "BuildCellPosMask"
 
 [[function]]
@@ -1856,7 +1856,7 @@ size = 127
 evidence = ["near", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-6"
 name = "FindFreeCellPos"
 
 [[function]]
@@ -1867,7 +1867,7 @@ size = 114
 evidence = ["far", "near", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-6"
 name = "MoveMonsterToCell"
 
 [[function]]
@@ -1878,7 +1878,7 @@ size = 245
 evidence = ["near", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-6"
 name = "TryMoveMonster"
 
 [[function]]
@@ -1889,7 +1889,7 @@ size = 50
 evidence = ["near", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-6"
 name = "ChasePartyIfAttacked"
 
 [[function]]
@@ -1900,7 +1900,7 @@ size = 346
 evidence = ["near", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-6"
 name = "StepMonsterToward"
 
 [[function]]
@@ -1911,7 +1911,7 @@ size = 96
 evidence = ["near", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-6"
 name = "RepickMonsterCellPos"
 
 [[function]]
@@ -1922,7 +1922,7 @@ size = 341
 evidence = ["near", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-6"
 name = "TryMonsterMelee"
 
 [[function]]
@@ -1933,7 +1933,7 @@ size = 38
 evidence = ["near", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-6"
 name = "LaunchMonsterSpell"
 
 [[function]]
@@ -1944,7 +1944,7 @@ size = 851
 evidence = ["near", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-6"
 name = "TryMonsterRangedAttack"
 
 [[function]]
@@ -1955,7 +1955,7 @@ size = 124
 evidence = ["near"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-6"
 name = "UpdateHuntingMonster"
 
 [[function]]
@@ -1966,7 +1966,7 @@ size = 96
 evidence = ["near", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-6"
 name = "StepMonsterOrTurn"
 
 [[function]]
@@ -1977,7 +1977,7 @@ size = 274
 evidence = ["near", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-6"
 name = "StepMonsterAlongWall"
 
 [[function]]
@@ -1988,7 +1988,7 @@ size = 34
 evidence = ["near", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-6"
 name = "TickMonsterTimer"
 
 [[function]]
@@ -1999,7 +1999,7 @@ size = 258
 evidence = ["far", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-6"
 name = "UpdateMonsters"
 
 [[function]]
@@ -2010,7 +2010,7 @@ size = 126
 evidence = ["near"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-6"
 name = "FlashMonsterHit"
 
 [[function]]
@@ -2021,7 +2021,7 @@ size = 123
 evidence = ["far", "near", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-6"
 name = "FinishDeferredHits"
 
 [[function]]
@@ -2032,7 +2032,7 @@ size = 251
 evidence = ["far", "near", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-6"
 name = "KillMonster"
 
 [[function]]
@@ -2043,7 +2043,7 @@ size = 127
 evidence = ["far", "near", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-6"
 name = "DamageMonster"
 
 [[function]]
@@ -2054,7 +2054,7 @@ size = 46
 evidence = ["far", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-6"
 name = "IsMonsterAtFront"
 
 [[function]]
@@ -2065,7 +2065,7 @@ size = 136
 evidence = ["far", "near", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-6"
 name = "RollMonsterToHit"
 
 [[function]]
@@ -2076,7 +2076,7 @@ size = 554
 evidence = ["far", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-6"
 name = "ResolveMonsterMelee"
 
 [[function]]
@@ -2087,7 +2087,7 @@ size = 243
 evidence = ["near", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-6"
 name = "InitMonster"
 
 [[function]]
@@ -2098,7 +2098,7 @@ size = 245
 evidence = ["far", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-6"
 name = "TickLevelScriptTimer"
 
 [[function]]
@@ -2109,7 +2109,7 @@ size = 90
 evidence = ["far", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-6"
 name = "SpawnMonster"
 
 [[function]]
@@ -2120,7 +2120,7 @@ size = 85
 evidence = ["near", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-6"
 name = "ListMonstersByCellPos"
 
 [[function]]
@@ -2131,7 +2131,7 @@ size = 128
 evidence = ["far", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-6"
 name = "FindMeleeTarget"
 
 [[function]]
@@ -2142,7 +2142,7 @@ size = 162
 evidence = ["near", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-6"
 name = "DamageMonsterWithSave"
 
 [[function]]
@@ -2153,7 +2153,7 @@ size = 159
 evidence = ["far", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-6"
 name = "DamageNearRowMonsters"
 
 [[function]]
@@ -2164,7 +2164,7 @@ size = 136
 evidence = ["near", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-6"
 name = "FindMonsterNearPos"
 
 [[function]]
@@ -2175,7 +2175,7 @@ size = 160
 evidence = ["far", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-6"
 name = "ListMonstersAtCell"
 
 [[function]]
@@ -2186,7 +2186,7 @@ size = 41
 evidence = ["far", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-6"
 name = "IsMonsterAtPos"
 
 [[function]]
