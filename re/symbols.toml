@@ -5185,7 +5185,7 @@ evidence = ["segment"]
 name = "BlinkSelected"
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-7"
 
 [[function]]
 id = "e1414_003e"
@@ -5196,7 +5196,7 @@ evidence = ["near", "frame"]
 name = "StepDDEffect"
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-7"
 
 [[function]]
 id = "e1414_0172"
@@ -5207,7 +5207,7 @@ evidence = ["near", "frame"]
 name = "TestDDEffect"
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-7"
 
 [[function]]
 id = "e1414_020f"
@@ -5218,7 +5218,7 @@ evidence = ["near", "frame"]
 name = "ClearDDEffect"
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-7"
 
 [[function]]
 id = "e1414_0285"
@@ -5230,7 +5230,7 @@ notes = "unblocked 2026-11-01: the unit matches whole through the assembler, /*@
 name = "MoveDDEffects"
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-7"
 
 [[function]]
 id = "e1414_03b4"
@@ -5240,7 +5240,7 @@ size = 252
 evidence = ["far", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-7"
 name = "StepDoor"
 
 [[function]]
@@ -5252,7 +5252,7 @@ evidence = ["frame"]
 name = "CheckFarTable"
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-7"
 
 [[function]]
 id = "e1414_04e7"
@@ -5263,7 +5263,7 @@ evidence = ["far", "frame"]
 name = "RunEffects"
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-7"
 
 [[function]]
 id = "e1414_055b"
@@ -5274,7 +5274,7 @@ evidence = ["far", "frame"]
 name = "ArmEffectWith"
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-7"
 
 [[function]]
 id = "e1414_05a4"
@@ -5285,7 +5285,7 @@ evidence = ["far", "near", "frame"]
 name = "ArmEffect"
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-7"
 
 [[function]]
 id = "e1414_05df"
@@ -5295,7 +5295,7 @@ size = 14
 evidence = ["frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-7"
 name = "UpdateMonsterGroup"
 
 [[function]]
@@ -5307,7 +5307,7 @@ evidence = ["far", "near", "frame"]
 name = "ApplyCharEffect"
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-7"
 
 [[function]]
 id = "e1414_0770"
@@ -5318,7 +5318,7 @@ evidence = ["near", "frame"]
 name = "SetCharEffectSlot"
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-7"
 
 [[function]]
 id = "e1414_07ca"
@@ -5330,7 +5330,7 @@ notes = "unblocked 2026-11-01: the bit tests are LONG bit tests (mE3 long), and 
 name = "RunCharEffects"
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-7"
 
 [[function]]
 id = "e1414_0b2e"
@@ -5341,7 +5341,7 @@ evidence = ["far", "near"]
 name = "RearmCharEffects"
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-7"
 
 [[function]]
 id = "e1414_0c2d"
@@ -5352,7 +5352,7 @@ evidence = ["far", "frame"]
 name = "ClearCharEffectSlot"
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-7"
 
 [[function]]
 id = "e1414_0c82"
@@ -5363,7 +5363,7 @@ evidence = ["frame"]
 name = "DecayMemberState"
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-7"
 
 [[function]]
 id = "e1414_0ce7"
@@ -5373,7 +5373,7 @@ size = 124
 evidence = ["frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-7"
 name = "RandomiseMonsterOffsets"
 
 [[function]]
@@ -5385,7 +5385,7 @@ evidence = ["far", "frame"]
 name = "UpdateDDEffects"
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-7"
 
 [[function]]
 id = "e14ef_0007"
