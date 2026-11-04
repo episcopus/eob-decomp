@@ -1,7 +1,45 @@
 # Review: eov4
 
-Reviewer: rev-haiku
-Commit reviewed: 467a5b5 (main, when review started; unit complete at e03cf0a)
+Reviewer: p6-rev-10
+Commit reviewed: ce0608f367ed01b1b1df84e254eef04d1a734b27
+
+## Round P6 (2026-11-04), commit ce0608f367ed01b1b1df84e254eef04d1a734b27
+
+Judged: the P6 changes in `src/EOV4.C` since 366bb3b (the round 4 base), 414 insertions and 507 deletions. Method: read the whole diff, checked every new function, global and struct field against `re/renames.toml` and `re/fields.toml`, read the code at each named address, and grepped the other files of `src/` for the new names. The names are mostly backed by the WHY entries. The comments on the changed lines still use the old vocabulary in many places: "page" for the party's facing (ds:FBCC), "action" for the dungeon level (ds:FBC8), "per-slot" for a table indexed by a wall type (ds:194B), "per-object" for a table indexed by a view slot (ds:1A09), "per-heading" for a table indexed by a wall type (ds:716E and ds:714E), "per-cell" for a table indexed by a wall type (ds:EFD4), and "per-object-kind" for a per-wall-type table (ds:18BF). These are wrong in changed lines.
+
+Must-fix:
+
+- [ ] must-fix src/EOV4.C:12 `gWallTypeFlags` (ds:194B): the comment "per-slot byte flags" is wrong. The table is per wall type: `re/renames.toml` ds:194B says "flags per wall type, indexed by a wall byte of gMaze", and the code indexes it by a wall type (`gWallTypeFlags[tile]` at DrawSlotItems, `gWallTypeFlags[slot]` where slot is a wall type at BuildViewBlockMap). Say "per-wall-type byte flags".
+- [ ] must-fix src/EOV4.C:13 `gWallVmpSet` (ds:1879): "per-object count-1" is wrong. The entry says "the 1-based block set in the level's .VMP/.EMP file", and CopyViewColumn reads `(gWallVmpSet[page] - 1) * 0x35E`. Say "per-wall-type 1-based block set in the level's .VMP/.EMP".
+- [ ] must-fix src/EOV4.C:130 `gViewSlotRow` (ds:1A09): "per-object index" is wrong. The table is indexed by a view slot row: the code uses `gViewSlotRow[slot]` and `gViewSlotRow[col]` where slot and col are view slots. Say "per-view-slot row index".
+- [ ] must-fix src/EOV4.C:691 `gDoorShapeSet` (ds:716E): "per heading" is wrong. The entry at ds:716E (line 6535) says "per wall type". Say "per wall type".
+- [ ] must-fix src/EOV4.C:692-697 the six `gDoorYLevels...` tables (ds:70F0, ds:70F4, ds:70F8, ds:70FC, ds:70FF, ds:7102): the comments say "action 1..3" etc., but the code uses `gCurLevel` (the dungeon level). Say "level 1..3", "level 4..6", "level 7..9", "level 10..11" (twice) and "level 12".
+- [ ] must-fix src/EOV4.C:698 `gDoorClipLeftX` (ds:7106): "per slot x, action 4..6" should say "level 4..6".
+- [ ] must-fix src/EOV4.C:699 `gDoorClipRightX` (ds:7108): "per slot y, action 4..6" is wrong twice. The entry at ds:7108 (line 6598) says "ds:7108 is the right word two bytes on" (an x bound), and the code uses `right = gDoorClipRightX[slot * 2] >> 3`. Say "per slot x, level 4..6".
+- [ ] must-fix src/EOV4.C:700 `gDoorStepBase` (ds:714E): "per heading" is wrong. The entry at ds:714E (line 6616) says "Per wall type". Say "per wall type".
+- [ ] must-fix src/EOV4.C:593 `gWallDecorHead` (ds:18BF): "per-object-kind table" is wrong. The entry at ds:18BF (line 9658) calls it one of "the four per-wall-type tables". Say "per-wall-type table".
+- [ ] must-fix src/EOV4.C:605 `gDecorShapes` (ds:EFD4): "per-cell far size records" is wrong. The entry at ds:EFD4 (line 6301) says "Six far shape pointers" cut per wall type. Say "per-wall-type far size records".
+- [ ] must-fix src/EOV4.C:1037 `gCompassDir` (ds:7296): "the page the rows were last drawn for" is wrong. The entry at ds:7296 (line 6773) says "the facing the compass was last drawn for", and the code compares it to `gPartyDir`. Say "the facing".
+- [ ] must-fix src/EOV4.C:841 `gProjectileDrawOrder` (ds:7246): "per page and low-2-bit index" is wrong. The entry at ds:7246 (line 6679) says "Per facing", and the code uses `gPartyDir * 5 + ...`. Say "per facing".
+- [ ] must-fix src/EOV4.C:1040 `gCompassIcons` (ds:A92A): "per-page, per-row" is wrong. The entry at ds:A92A (line 8033) says "three rows by four facings". Say "per facing, per row".
+- [ ] must-fix src/EOV4.C:357 `gViewRelativePos` (ds:1A2B): "per-page sprite base" is wrong. The entry at ds:1A2B (line 3781) says "indexed [gPartyDir * 4 + view position]". Say "per facing".
+- [ ] must-fix src/EOV4.C:239-246 the `BuildViewBlockMap` header (ovl4:044B): "draws the whole view page", "per-page gViewCells target offsets", "at the page index", "the page's tile records" and "from the page buffer" still use the old "page". The entry at ovl4:044B (line 6800) says it "Clears the 22 by 15 word map at ds:ADB0 ... copies each visible wall's .VMP blocks into the map". Say "the view block map" and "per facing".
+- [ ] must-fix src/EOV4.C:1076 the `DrawViewFrame` header (ovl4:1F51): "draws the objects into the page buffer" still says "page buffer". The function's name is `BuildViewBlockMap` and the entry says it builds the map at ds:ADB0. Say "block map" or "view buffer".
+- [ ] must-fix src/EOV4.C:1045 the `DrawCompass` header (ovl4:1EDE): "for the current page" should say "for the current facing".
+- [ ] must-fix src/EOV4.C:854 and :862 the `DrawSlotProjectiles` header (ovl4:19C4): "seen from the current page" and "neither the page nor the page xor 2" should say "facing".
+
+Should:
+
+- [ ] should src/EOV4.C:1204 the `PreloadViewOverlay` header (ovl4:2039): "Purpose unknown" is stale. The entry at ovl4:2039 (line 6863) says its callers bring overlay 4 into memory; say that instead.
+- [ ] should src/EOV4.C:175 the `gViewBlockMap` declaration (ds:ADB0): "the view pixel buffer" is the old term; the name is `gViewBlockMap`, so say "the view block map" or "the 22 by 15 word block map".
+- [ ] should src/EOV4.C:349 the `gMonsterDrawOrder` declaration (ds:7001): "the far half first" paraphrases "back to front" from the entry; say "back to front".
+
+Notes (for the next reader; they do not block):
+
+- [ ] note src/EOV4.C:45 and :3052 `gTeleporterCells` (ds:F4BE) and `DrawSlotTeleporter` (ovl4:1D20) are marked [H] in `re/renames.toml` (ScummVM's EOB1 teleporter is wall type 0x34); the source comments do not say [H], so a reader may take the name as established. The wall type 0x34 and the two-frame animation are established; the "teleporter" reading is the hypothesis.
+- [ ] note src/EOV4.C:143-145 the QUIRK on ds:6F6D (12 bytes indexed by gCurLevel 1 to 12, level 12 reads gDoorClipBottomRow[0]) matches the table addresses ds:6F6D and ds:6F79 12 bytes apart. The note stands.
+
+Summary: the P6 names are backed, but the changed lines still carry the old "page", "action", "per-slot", "per-object", "per-heading", "per-cell" and "per-object-kind" wording in 18 places. These are must-fix. Two shoulds (the PreloadViewOverlay header and two vague descriptions). Nothing escalated: no matcher, spec or pin question.
 
 Playbook 70. Judge what a matching file can still get wrong: names, types, comments, structure.
 The matcher already proved the bytes; do not re-prove them, read for meaning.
