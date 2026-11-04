@@ -1801,8 +1801,8 @@ size = 74
 evidence = ["far", "segment"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
 name = "MakeMonsterFlee"
+review = "passed 2026-11-04 p6-rev-6"
 
 [[function]]
 id = "e08e6_0055"
@@ -1812,8 +1812,8 @@ size = 110
 evidence = ["near", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
 name = "AlertMode8Monsters"
+review = "passed 2026-11-04 p6-rev-6"
 
 [[function]]
 id = "e08e6_00c3"
@@ -1823,8 +1823,8 @@ size = 141
 evidence = ["near", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
 name = "AlertMonsterToParty"
+review = "passed 2026-11-04 p6-rev-6"
 
 [[function]]
 id = "e08e6_0150"
@@ -1834,8 +1834,8 @@ size = 46
 evidence = ["far", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
 name = "AlertNearbyMonsters"
+review = "passed 2026-11-04 p6-rev-6"
 
 [[function]]
 id = "e08e6_017e"
@@ -1845,8 +1845,8 @@ size = 154
 evidence = ["near", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
 name = "BuildCellPosMask"
+review = "passed 2026-11-04 p6-rev-6"
 
 [[function]]
 id = "e08e6_0218"
@@ -1856,8 +1856,8 @@ size = 127
 evidence = ["near", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
 name = "FindFreeCellPos"
+review = "passed 2026-11-04 p6-rev-6"
 
 [[function]]
 id = "e08e6_0297"
@@ -1867,8 +1867,8 @@ size = 114
 evidence = ["far", "near", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
 name = "MoveMonsterToCell"
+review = "passed 2026-11-04 p6-rev-6"
 
 [[function]]
 id = "e08e6_0309"
@@ -1878,8 +1878,8 @@ size = 245
 evidence = ["near", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
 name = "TryMoveMonster"
+review = "passed 2026-11-04 p6-rev-6"
 
 [[function]]
 id = "e08e6_03fe"
@@ -1889,8 +1889,8 @@ size = 50
 evidence = ["near", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
 name = "ChasePartyIfAttacked"
+review = "passed 2026-11-04 p6-rev-6"
 
 [[function]]
 id = "e08e6_0430"
@@ -1900,8 +1900,8 @@ size = 346
 evidence = ["near", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
 name = "StepMonsterToward"
+review = "passed 2026-11-04 p6-rev-6"
 
 [[function]]
 id = "e08e6_058a"
@@ -1911,8 +1911,8 @@ size = 96
 evidence = ["near", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
 name = "RepickMonsterCellPos"
+review = "passed 2026-11-04 p6-rev-6"
 
 [[function]]
 id = "e08e6_05ea"
@@ -1922,8 +1922,8 @@ size = 341
 evidence = ["near", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
 name = "TryMonsterMelee"
+review = "passed 2026-11-04 p6-rev-6"
 
 [[function]]
 id = "e08e6_073f"
@@ -1933,8 +1933,8 @@ size = 38
 evidence = ["near", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
 name = "LaunchMonsterSpell"
+review = "passed 2026-11-04 p6-rev-6"
 
 [[function]]
 id = "e08e6_0765"
@@ -1944,8 +1944,8 @@ size = 851
 evidence = ["near", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
 name = "TryMonsterRangedAttack"
+review = "passed 2026-11-04 p6-rev-6"
 
 [[function]]
 id = "e08e6_0ab8"
@@ -1955,8 +1955,8 @@ size = 124
 evidence = ["near"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
 name = "UpdateHuntingMonster"
+review = "passed 2026-11-04 p6-rev-6"
 
 [[function]]
 id = "e08e6_0b34"
@@ -1966,8 +1966,8 @@ size = 96
 evidence = ["near", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
 name = "StepMonsterOrTurn"
+review = "passed 2026-11-04 p6-rev-6"
 
 [[function]]
 id = "e08e6_0b94"
@@ -1977,8 +1977,8 @@ size = 274
 evidence = ["near", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
 name = "StepMonsterAlongWall"
+review = "passed 2026-11-04 p6-rev-6"
 
 [[function]]
 id = "e08e6_0ca6"
@@ -1988,8 +1988,8 @@ size = 34
 evidence = ["near", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
 name = "TickMonsterTimer"
+review = "passed 2026-11-04 p6-rev-6"
 
 [[function]]
 id = "e08e6_0cc8"
@@ -1999,8 +1999,8 @@ size = 258
 evidence = ["far", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
 name = "UpdateMonsters"
+review = "passed 2026-11-04 p6-rev-6"
 
 [[function]]
 id = "e08e6_0dca"
@@ -2010,8 +2010,8 @@ size = 126
 evidence = ["near"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
 name = "FlashMonsterHit"
+review = "passed 2026-11-04 p6-rev-6"
 
 [[function]]
 id = "e08e6_0e48"
@@ -2021,8 +2021,8 @@ size = 123
 evidence = ["far", "near", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
 name = "FinishDeferredHits"
+review = "passed 2026-11-04 p6-rev-6"
 
 [[function]]
 id = "e08e6_0ec3"
@@ -2032,8 +2032,8 @@ size = 251
 evidence = ["far", "near", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
 name = "KillMonster"
+review = "passed 2026-11-04 p6-rev-6"
 
 [[function]]
 id = "e08e6_0fbe"
@@ -2043,8 +2043,8 @@ size = 127
 evidence = ["far", "near", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
 name = "DamageMonster"
+review = "passed 2026-11-04 p6-rev-6"
 
 [[function]]
 id = "e08e6_103d"
@@ -2054,8 +2054,8 @@ size = 46
 evidence = ["far", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
 name = "IsMonsterAtFront"
+review = "passed 2026-11-04 p6-rev-6"
 
 [[function]]
 id = "e08e6_106b"
@@ -2065,8 +2065,8 @@ size = 136
 evidence = ["far", "near", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
 name = "RollMonsterToHit"
+review = "passed 2026-11-04 p6-rev-6"
 
 [[function]]
 id = "e08e6_10f3"
@@ -2076,8 +2076,8 @@ size = 554
 evidence = ["far", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
 name = "ResolveMonsterMelee"
+review = "passed 2026-11-04 p6-rev-6"
 
 [[function]]
 id = "e08e6_131d"
@@ -2087,8 +2087,8 @@ size = 243
 evidence = ["near", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
 name = "InitMonster"
+review = "passed 2026-11-04 p6-rev-6"
 
 [[function]]
 id = "e08e6_1410"
@@ -2098,8 +2098,8 @@ size = 245
 evidence = ["far", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
 name = "TickLevelScriptTimer"
+review = "passed 2026-11-04 p6-rev-6"
 
 [[function]]
 id = "e08e6_1505"
@@ -2109,8 +2109,8 @@ size = 90
 evidence = ["far", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
 name = "SpawnMonster"
+review = "passed 2026-11-04 p6-rev-6"
 
 [[function]]
 id = "e08e6_155f"
@@ -2120,8 +2120,8 @@ size = 85
 evidence = ["near", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
 name = "ListMonstersByCellPos"
+review = "passed 2026-11-04 p6-rev-6"
 
 [[function]]
 id = "e08e6_15b4"
@@ -2131,8 +2131,8 @@ size = 128
 evidence = ["far", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
 name = "FindMeleeTarget"
+review = "passed 2026-11-04 p6-rev-6"
 
 [[function]]
 id = "e08e6_1634"
@@ -2142,8 +2142,8 @@ size = 162
 evidence = ["near", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
 name = "DamageMonsterWithSave"
+review = "passed 2026-11-04 p6-rev-6"
 
 [[function]]
 id = "e08e6_16d6"
@@ -2153,8 +2153,8 @@ size = 159
 evidence = ["far", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
 name = "DamageNearRowMonsters"
+review = "passed 2026-11-04 p6-rev-6"
 
 [[function]]
 id = "e08e6_1775"
@@ -2164,8 +2164,8 @@ size = 136
 evidence = ["near", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
 name = "FindMonsterNearPos"
+review = "passed 2026-11-04 p6-rev-6"
 
 [[function]]
 id = "e08e6_17fd"
@@ -2175,8 +2175,8 @@ size = 160
 evidence = ["far", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
 name = "ListMonstersAtCell"
+review = "passed 2026-11-04 p6-rev-6"
 
 [[function]]
 id = "e08e6_189d"
@@ -2186,8 +2186,8 @@ size = 41
 evidence = ["far", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
 name = "IsMonsterAtPos"
+review = "passed 2026-11-04 p6-rev-6"
 
 [[function]]
 id = "e0a72_0006"
