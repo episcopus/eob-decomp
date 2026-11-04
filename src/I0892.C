@@ -89,10 +89,10 @@ extern unsigned char far *gPaletteBuf;   /*@ ds:2D42: the palette buffer Startup
                                              (:05B2, :05CC, :05F7) and main loads palette.col into (:0121) */
 extern void (far *gSetPalette)(void far *table); /*@ ds:1F46: the palette setter (:013E, :01AE, :0635),
                                              called with the built-in table ds:19E7 or gPaletteBuf */
-extern void (far *gClearDrawPage)(void);        /*@ ds:1EE2: called by StartupGame after the page table (:0544) */
+extern void (far *gClearPage)(void);        /*@ ds:1EE2: called by StartupGame after the page table (:0544) */
 extern int gMouseHandlerInstalled;       /*@ ds:1FD4: nonzero once the mouse handler is installed;
                                              ShutdownGame removes it then (:0845) */
-extern unsigned char gOverlayCacheOn;              /*@ ds:19E6: set to 1 by StartupGame after InitOverlayCache
+extern unsigned char gOverlayCacheUp;              /*@ ds:19E6: set to 1 by StartupGame after InitOverlayCache
                                              (:0641); ShutdownGame shuts the cache down then (:0851) */
 extern unsigned char gTandyOn;              /*@ ds:289B: set to 1 on the Tandy sound path (:0807) and
                                              cleared by ShutdownGame (:087F) */
@@ -351,7 +351,7 @@ int AllocationFailure(void);
         gPageSegs[7] = FP_SEG(MemAlloc(PAGE_64512, MEMALLOC_ALIGNED));
         break;
     }
-    gClearDrawPage();
+    gClearPage();
     setdisk(gOverlayDrive);
     gFont8 = LoadFont("Font8.fnt");
     setdisk(gSavedDisk);
@@ -377,7 +377,7 @@ int AllocationFailure(void);
         break;
     }
     InitOverlayCache();
-    gOverlayCacheOn = 1;
+    gOverlayCacheUp = 1;
     CalibrateRetrace();
     srand(time(NULL));
     SetTextWindow(0);
@@ -446,7 +446,7 @@ done:
         gExitHook();
     if (gMouseHandlerInstalled)
         RemoveMouseHandler();
-    if (gOverlayCacheOn)
+    if (gOverlayCacheUp)
         ShutdownOverlayCache();
     switch (gSoundChoice) {
     case 1:

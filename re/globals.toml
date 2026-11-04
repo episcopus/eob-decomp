@@ -518,8 +518,8 @@ why = "ds:12E0 is a table of far name pointers whose strings, decoded from the E
 
 [[global]]
 id = "intro/ds:1EE2"
-name = "gClearDrawPage"
-why = "Slot 11 of the driver table (ds:1EB6 + 4 * 11, as EOB's ds:8056): MCGA.OVL 0693 zeroes 7D00h words at the segment of the page named by the draw page word (driver import slot 2, gDrawPage ds:1FA1) through the page table (slot 1, ds:28CC); EGA 07FB, CGA 095B and TGA 07F2 do the same."
+name = "gClearPage"
+why = "One name for one driver slot: INTRO ds:1EE2 is the slot EOB calls gClearPage at ds:8056 (src/E07C8.C) and src/drivers/MCGA.ASM:57 exports; it zeroes 0x7D00 words of the draw page; reviews i0892 and iov0 (P6)"
 
 [[global]]
 id = "intro/ds:19E7"
@@ -2223,8 +2223,8 @@ why = "itoa's buffer for gMemTopSeg (ds:28C4) at 0892:01CF; main passes it to EO
 
 [[global]]
 id = "intro/ds:19E6"
-name = "gOverlayCacheOn"
-why = "Set to 1 by StartupGame right after InitOverlayCache (0892:0641); ShutdownGame calls ShutdownOverlayCache only when it is set (0892:0851). EOB's twin is ds:3056."
+name = "gOverlayCacheUp"
+why = "One name for the twin flag: INTRO ds:19E6 is EOB's ds:3056 gOverlayCacheUp (src/E07C8.C:80), set to 1 after InitOverlayCache and checked by ShutdownGame; review i0892 (P6)"
 
 [[global]]
 id = "intro/ds:28CC"

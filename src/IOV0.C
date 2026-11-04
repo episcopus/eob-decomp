@@ -21,9 +21,9 @@
 /* The driver entry points. The front end fills these words at load time (i0892 sets ds:1F46
    from its palette setup at 0892:011D..0142); their DGROUP neighbours ds:1E98..1ED0 hold far
    pointers into this program's own segments, so the block is a driver vtable [H]. Only the
-   entries this unit calls are declared. gClearDrawPage (ds:1EE2) is the routine StartupGame starts
+   entries this unit calls are declared. gClearPage (ds:1EE2) is the routine StartupGame starts
    after it fills the page table (0892:0544). */
-extern void (far *gClearDrawPage)(void);                              /*@ ds:1EE2 */
+extern void (far *gClearPage)(void);                              /*@ ds:1EE2 */
 extern void (far *gDrawLine)(int x1, int y1, int x2, int y2, int color); /*@ ds:1EEE */
 extern void (far *gFillRect)(int x1, int y1, int x2, int y2, int color); /*@ ds:1EF6 */
 extern int (far *gGetPixel)(int x, int y);                          /*@ ds:1EFE */
@@ -55,7 +55,7 @@ extern void CopyPage(int slotA, int slotB, int extraOff, int extraSeg); /*@ 097F
 /* 0AED:000D: reads a named file into a far buffer, the EOB LoadFile at 1B82:0009 linked at
    another address (the twin unit is i0aed). */
 extern void LoadFile(char far *name, void far *buf, unsigned len); /*@ 0AED:000D */
-extern void far *GetPagePtr(int kind); /*@ 097F:0002 */
+extern void far *GetPageBuffer(int kind); /*@ 097F:0002 */
 extern int FileOpen(char far *name, int mode); /*@ 0B5D:00D1 */
 extern long FileRead(int index, char far *buf, unsigned long len); /*@ 0B5D:03F6 */
 extern void FileClose(int index); /*@ 0B5D:03B1 */
@@ -142,7 +142,7 @@ void PlayLogoSequence(void);
 {
     gAbort = 0;
     if (gGraphicsChoice == 1 || gGraphicsChoice == 2) {
-        gClearDrawPage();
+        gClearPage();
         gSetPalette(gBuiltinPalette);
     }
     PlayLogoSequence();
@@ -332,7 +332,7 @@ extern void MemFree(void far *block); /*@ 094F:0137 */
     gDrawPage = 0;
     CopyPage(3, 4, FP_OFF(gCgaMapDefault), FP_SEG(gCgaMapDefault));
     WaitFrameDelay();
-    gClearDrawPage();
+    gClearPage();
     PlaySound(6);
     for (i = -1; i < 4; i++) {
         gFrameDelay = 3;
@@ -362,7 +362,7 @@ extern void MemFree(void far *block); /*@ 094F:0137 */
     MemFree(orb);
 }
 /* ovl0:09AD: copies an image between two rectangles of the same video buffer (slot 3, the
-   segment GetPagePtr(3) returns), from the rectangle at (x1,y1) to the one at (x2,y2), each
+   segment GetPageBuffer(3) returns), from the rectangle at (x1,y1) to the one at (x2,y2), each
    row `width` bytes wide and `height` lines high. `mode` selects the byte interleave:
      0: nothing;
      1: two source rows per pass, the low bytes (i even) and the high bytes (i odd) written
@@ -379,7 +379,7 @@ extern void MemFree(void far *block); /*@ 094F:0137 */
     char far *dst;
     int row;
 
-    src = dst = (char far *)GetPagePtr(3);
+    src = dst = (char far *)GetPageBuffer(3);
     src += x1 + y1 * 320;
     dst += x2 + y2 * 320;
     switch (mode) {
@@ -457,7 +457,7 @@ extern void MemFree(void far *block); /*@ 094F:0137 */
     gDrawPage = 2;
     mage = gMakeImage(0, 0, 0x10, 0x38, gCgaMapDefault);
     CopyPage(3, 4, FP_OFF(gCgaMapDefault), FP_SEG(gCgaMapDefault));
-    gClearDrawPage();
+    gClearPage();
     for (i = 0; i < 0xc8; i += 0x40)
         ClipRect(0x10, 0x68, 0xc, i, 0x10, 0x40, 4, 2);
     gFillRect(0, 0xb8, 0x13f, 0xc7, 0xc);
@@ -465,7 +465,7 @@ extern void MemFree(void far *block); /*@ 094F:0137 */
     gDrawPage = 0;
     DrawGrid();
     gDrawPage = page;
-    gClearDrawPage();
+    gClearPage();
     for (i = 0; i < 0xc8; i += 0x40)
         ClipRect(0x10, 0x68, 0, i, 0x10, 0x40, 4, 2);
     gDrawPage = 0;
@@ -1120,7 +1120,7 @@ extern void DrawShapeFlipped(int page, void far *src, int x, int y, int region);
     int i;
 
     LoadPackedImage("WESTWOOD.CMP", 5, 3);
-    gClearDrawPage();
+    gClearPage();
     LoadPalette("WESTWOOD.COL");
     CopyPage(3, 0, FP_OFF(gCgaMapDefault), FP_SEG(gCgaMapDefault));
     PlaySound(1);
@@ -1153,8 +1153,8 @@ extern void DrawShapeFlipped(int page, void far *src, int x, int y, int region);
     void far *dst;
     int slot;
 
-    src = GetPagePtr(srcKind);
-    dst = GetPagePtr(dstKind);
+    src = GetPageBuffer(srcKind);
+    dst = GetPageBuffer(dstKind);
     slot = FileOpen(name, 1);
     FileRead(slot, (char far *)&size, 2);
     FileRead(slot, (char far *)src, size);
