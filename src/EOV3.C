@@ -824,9 +824,9 @@ done:
    recreates LEVELS.TMP from block 3 (mode 2 deletes and recreates the file; FileWrite starts at
    offset 0 and carries the whole gBlockSizes[3] image). It stores the three single bytes ds:80E8
    (the Ctrl flag), ds:80E6 (gSoundOn) and ds:F43C, unpacks the 0x60 bytes into ds:AD20, loads
-   the CHARGENA screen and, for each character whose identifiedNameIndex is nonzero and whose portraitIndex is >= 0, cuts its
+   the CHARGENA screen and, for each character whose status is nonzero and whose portraitIndex is >= 0, cuts its
    4 by 32 cell out of gCgaMapDefault (through ds:8082), unpacks it into its 0x514-byte sprite buffer
-   and frees it (a character with identifiedNameIndex nonzero and portraitIndex < 0 sets `flag` at :953 instead);
+   and frees it (a character with status nonzero and portraitIndex < 0 sets `flag` at :953 instead);
    when any slot is empty or any occupied character has portraitIndex < 0 it then loads the OUTTAKE screen
    and cuts the portraitIndex < 0 characters' 4 by 32 cells out of it the same way. Unless ds:A998 is -1 it then rebuilds the
    map screen (ovl3:0A7C), reloads PLAYFLD and INVENT, hands gFont6x6 to SetFont, redraws the

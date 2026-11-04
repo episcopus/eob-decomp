@@ -12,7 +12,7 @@ Judged: the names and comments changed since round 2 at 41f1cda (`git diff 41f1c
 
 ### Round P6 findings
 
-- [ ] must-fix src/I0AED.C:8, :63, :93, :105, :106, :133 (and the comments that name it): the function at 097F:0002 is named `GetPagePtr`, but its EOB twin 19EC:0002 is named `GetPageBuffer` in src/E19EC.C:20 and src/E1B82.C:58 (the rename's own why says "Twin of EOB's 19EC:0002"). The same module linked at two addresses must have one name. Rename it to `GetPageBuffer` in src/I0AED.C and src/IOV0.C. The evidence in the why is otherwise right: the function returns MK_FP(gPageSegs[kind | 1], 0).
+- [x] must-fix src/I0AED.C:8, :63, :93, :105, :106, :133 (and the comments that name it): the function at 097F:0002 is named `GetPagePtr`, but its EOB twin 19EC:0002 is named `GetPageBuffer` in src/E19EC.C:20 and src/E1B82.C:58 (the rename's own why says "Twin of EOB's 19EC:0002"). The same module linked at two addresses must have one name. Rename it to `GetPageBuffer` in src/I0AED.C and src/IOV0.C. The evidence in the why is otherwise right: the function returns MK_FP(gPageSegs[kind | 1], 0). Fixed in d9406b2 (make rename).
 
 - [ ] should re/renames.toml, the `intro/097F:0002=GetPagePtr` row: the why cites `I0AED.C:112`, but the calls are at :105 and :106 (the line moved when the file changed). Cite the address 0AED:0045 or the current lines.
 

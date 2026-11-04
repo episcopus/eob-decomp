@@ -84,8 +84,8 @@ char GetClassSlotByte(char row, char slot); /*@ 0A72:0509 */
    raised); when +0F is 0 the base is returned untouched. The evidence that +0D/+0F are a score and
    its percentile: gStrPctHitSteps holds five bytes {1, 51, 76, 91, 100} and gStrPctHitBonus holds {1, 2, 2, 2, 3}
    (ds:3430 and ds:3435), gStrHitBonus is the per-score base {3, -5, -3, ...}, and the only caller
-   0DE8:0007 adds the result to the attack bonus when its `flag` is set (GetDexMissileBonus is added
-   otherwise, E0DE8.C:200-203). */
+   0DE8:0007 adds the result to the attack bonus when its `useStrength` is nonzero (GetDexMissileBonus is added
+   otherwise, E0DE8.C:120-123). */
 /*@ 0A72:00CF */ int GetStrengthToHitBonus(int who)
 {
     int value;
@@ -105,7 +105,7 @@ char GetClassSlotByte(char row, char slot); /*@ 0A72:0509 */
    of tables: the base gStrDamageBonus[strength +0D] is replaced by gStrPctDamageBonus[i] for every i with the +0F
    percentile >= gStrPctDamageSteps[i] (the last match wins), and only when +0F is nonzero are the thresholds
    read; gStrPctDamageSteps is again {1, 51, 76, 91, 100}. The only caller 0DE8:011A starts its damage total
-   from the result when its `flag` is set (E0DE8.C:227-228). */
+   from the result when its `useStrength` is nonzero and `who` is not -1 (E0DE8.C:148). */
 /*@ 0A72:0128 */ int GetStrengthDamageBonus(int who)
 {
     int value;
@@ -137,9 +137,9 @@ char GetClassSlotByte(char row, char slot); /*@ 0A72:0509 */
    ovl0:135D EditStatField (`GetArmourClassBase(amount)` under `if (index == 3)`, EOV0.C:1002) and
    ovl0:1BF2 RollCharacterStats (`GetArmourClassBase(scores[3])`, where scores[3] is stored as dexterity
    at EOV0.C:1103, EOV0.C:1106). */
-/*@ 0A72:019D */ int GetArmourClassBase(char m15)
+/*@ 0A72:019D */ int GetArmourClassBase(char dexterity)
 {
-    return gDexArmourAdjust[m15];
+    return gDexArmourAdjust[dexterity];
 }
 
 /* 0A72:01AE: a random hit-point total for class `classIndex`. It rolls the three hit dice groups
@@ -258,7 +258,7 @@ char GetClassSlotByte(char row, char slot); /*@ 0A72:0509 */
    or -1 when that byte is -1 (the class has no such slot); the byte replaces `row` in place, the
    original uses one local for both. `level` is the level being reached, so the entry for level 1
    is at index 0: the caller 0DE8:0B45 passes gChars[who].levels[i] + 1 (E0DE8.C:613), adds the share
-   to the slot's experience total m27[i] and levels the slot up when that total passes this value
+   to the slot's experience total experience[i] and levels the slot up when that total passes this value
    (E0DE8.C:612-615). Called by 0DE8:0B45 (AddExperience). */
 /*@ 0A72:04B7 */ long GetClassSlotExpThreshold(char row, char slot, char level)
 {
@@ -287,8 +287,8 @@ char GetClassSlotByte(char row, char slot); /*@ 0A72:0509 */
 /* 0A72:0522: 20 - (levels[0] - 1) / gHitLevelsPerStep[gClassCombatGroup[classIndex]] *
    gHitGainPerStep[gClassCombatGroup[classIndex]] - classByte, computed in
    bytes. It is the d20 number a to-hit roll must reach before the attacker bonus is subtracted:
-   its only caller 0DE8:0007 computes `ac = GetHitTarget(who, gMonsterTypes[b0].m00) - bonus`
-   (E0DE8.C:206) and then compares a d20 roll against it (`return roll >= ac;`, E0DE8.C:214).
+   its only caller 0DE8:0007 computes `toHit = GetHitTarget(who, gMonsterTypes[entry].m00) - bonus;`
+   (E0DE8.C:126) and then compares a d20 roll against it (`return roll >= toHit;`, E0DE8.C:134).
    `classByte` is the +0 field of the target's ds:1A3B entry (E0DE8.C:57), classIndex is the character's
    class index into ds:116E, and levels[0] is the character's first class-slot level at +24; this
    function subtracts 1 from it (`num`), while E0D1C.C:433 passes the unchanged levels[0] as

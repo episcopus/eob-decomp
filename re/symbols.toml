@@ -10267,7 +10267,7 @@ size = 20
 level = "L2"
 match_flags = "twin e19ec"
 evidence = ["far", "segment"]
-name = "GetPagePtr"
+name = "GetPageBuffer"
 
 [[function]]
 id = "i097f_0016"

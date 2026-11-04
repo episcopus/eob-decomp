@@ -50,7 +50,7 @@ extern unsigned char gInvSlotY[]; /*@ ds:1804 */ /* a per-row byte (the item row
 extern signed char gInvSlotKind[]; /*@ ds:3875 */  /* a per-row byte (0, 1 or 2): the row's kind, 1 is
                                               the count row, 2 the item's icon is drawn offset */
 extern signed char gInvSlotBoxSize[]; /*@ ds:3890 */  /* a three-byte table read by 0BD2:0917 */
-extern signed char gWandSpells[]; /*@ ds:38FA */  /* a byte table indexed by an item's m0B in 0BD2:0EE8 */
+extern signed char gWandSpells[]; /*@ ds:38FA */  /* a byte table indexed by an item's value in 0BD2:0EE8 */
 extern void StartItemCast(int who, int action, int kind); /*@ 0EF3:28ED */
 extern void FlashViewDamage(void); /*@ 0EF3:06E7 */
 extern void FlashPartyMembers(int who); /*@ 0EF3:0665 */
@@ -131,7 +131,7 @@ void DrawItemName(int item);
 }
 
 /* 0BD2:0106: takes the item out of slot `row` of character `who` (or the mouse's slot when `row` is
-   -1): clears the slot, marks the record free (cell = -1), redraws, and returns the item's m0B. */
+   -1): clears the slot, marks the record free (key = -1), redraws, and returns the item's value. */
 /*@ 0BD2:0106 */ int TakeItemFromSlot(int who, int row)
 {
     int item;
@@ -164,13 +164,13 @@ void DrawItemName(int item);
 }
 
 /* 0BD2:01D0: inserts the item `item` into the circular list whose head word is `head`, stamping it
-   with the list's owner key `key` (cell) and the tag `tag` (+5; m0A becomes gCurLevel, or -1 when the
+   with the list's owner key `key` and the tag `tag` (+5; `level` becomes gCurLevel, or -1 when the
    key is negative). The key is a list owner: a map cell (E0ACD.C:568, E0D1C.C:362, 0BD2:07DE), an
    object's id (E08E6.C:807) or 0xFFFE for a character's own pack (E0ACD.C:780, :851, 0BD2:0BA0).
    An empty list becomes `item` alone, linked to itself. Otherwise `item` is spliced in between the
-   old head and its predecessor, the tail of the item walk: the new item's item becomes the old head
-   (the tail's forward link) and its m06 becomes the tail, so only the old head's m06 and the tail's
-   item change. `item` becomes the new head, so the lists walked by item (0BD2:0385, 040E, 04AA) meet
+   old head and its predecessor, the tail of the item walk: the new item's nextLink becomes the old head
+   (the tail's forward link) and its prevLink becomes the tail, so only the old head's prevLink and the
+   tail's nextLink change. `item` becomes the new head, so the lists walked by nextLink (0BD2:0385, 040E, 04AA) meet
    the newest item first. */
 /*@ 0BD2:01D0 */ void InsertListItem(void far *head, int key, int item, int tag)
 {
@@ -316,8 +316,8 @@ next:
 }
 
 /* 0BD2:0458: queues item `item` at the nine-byte record gMazeItems + `volume` * 9 through 0BD2:01D0
-   with the tag `tag`. When the queued item still links onward (its item is not itself), the record's
-   head word moves to that item. Purpose unknown. */
+   with the tag `tag`. When the queued item still links onward (its nextLink is not itself), the record's
+   head word moves to that nextLink. Purpose unknown. */
 /*@ 0BD2:0458 */ void PushListItem(int volume, int item, int tag)
 {
     InsertListItem((void far *)(gMazeItems + volume * 9), volume, item, tag);
@@ -325,9 +325,9 @@ next:
         *(int *)(gMazeItems + volume * 9) = gItems[item].nextLink;
 }
 
-/* 0BD2:04AA: drains the list at gMazeItems + `volume` * 9. Items whose m02 is `type` (or all when
-   `type` is -1) are freed (cell = -1, m0A = 0); the others are re-queued through 0BD2:01D0 in their
-   original order, keeping each item's tag. Purpose unknown. */
+/* 0BD2:04AA: drains the list at gMazeItems + `volume` * 9. Items whose type is `type` (or all when
+   `type` is -1) are freed (key = -1, level = 0); the others are re-queued through 0BD2:01D0 in their
+   original order, keeping each item's cellPos. Purpose unknown. */
 /*@ 0BD2:04AA */ void DrainListItem(int volume, int type)
 {
     int start;
@@ -361,7 +361,7 @@ next:
 }
 
 /* 0BD2:05B5: draws item `item`'s name into the text buffer. The record's first two bytes index one
-   table of 0x23-byte entries at 1F28:0000: both slotMask and identifiedNameIndex offset that base by * 0x23. When the
+   table of 0x23-byte entries at 1F28:0000: both nameIndex and identifiedNameIndex offset that base by * 0x23. When the
    record's flags have 0x40 and the second name is empty, the item type's m0E low 7 bits select the
    name: the plain types use the first name with "%s +%d" or "Cursed %s %d", and types 9, 10, 16,
    14 and 18 use "Mage Scroll", "Cleric Scroll", "Ring", "Potion" or "Wand" joined with " of " to a
@@ -440,7 +440,7 @@ next:
    fills the record from the arguments, plays sound 0x0B (0x1A when `type` is 7), and returns 1.
    `volume` is the item's map cell (most callers pass gPartyCell, E0ACD.C:434, :769, E0DE8.C:406;
    E122E.C:728 passes the script's id), `page` is gPartyDir, `kind` is the per-page action kind and
-   `type` is the item's m02. QUIRK 0BD2:07DE: rec->type is stored 1 twice (the second store is in the original). */
+   `type` is the item's m02. QUIRK 0BD2:07DE: rec->m02 is stored 1 twice (the second store is in the original). */
 /*@ 0BD2:07DE */ int AddDDEffect(int who, int item, int volume, int kind, int page, int type)
 {
     struct Projectile *rec;
@@ -473,7 +473,7 @@ next:
     return 1;
 }
 
-/* 0BD2:089E: when item record `item` is live (cell != -1), finds the first free record from index 1
+/* 0BD2:089E: when item record `item` is live (key != -1), finds the first free record from index 1
    on, copies `item`'s 14 bytes into it with Unpack0, and returns the new index; 0 when none is
    free. Purpose unknown. */
 /*@ 0BD2:089E */ int CopyItemToFreeSlot(int item)
@@ -656,7 +656,7 @@ next:
    the type byte and the 07CA runner prints "%s no longer has giant strength" and restores m0D/strengthPct
    from m0E/m10 when it runs out), 2 and 3 heal by a dice roll, 4 poisons through 0DE8:101A, 5 sets
    food to 100, 6 and 8 run the 0EF3 helpers, 7 sets effect flag 4. After the switch it announces
-   "%s feels <effect>!\r" with the effect name from the ds:3893 table, except for effect 4 when identifiedNameIndex
+   "%s feels <effect>!\r" with the effect name from the ds:3893 table, except for effect 4 when the character's status
    bit 1 is set. Called by 0BD2:1001. */
 /*@ 0BD2:0D2D */ void ApplyItemEffect(int who, int slot)
 {
@@ -711,9 +711,9 @@ next:
 }
 
 /* 0BD2:0EE8: uses the wand in slot `slot` of character `who`. When the item's m0B is 0 it reports
-   no effect; when it is not 5 it dispatches through 0EF3:28ED with the action gWandSpells[m0B]; for 5 it
+   no effect; when it is not 5 it dispatches through 0EF3:28ED with the action gWandSpells[value]; for 5 it
    plays the wand sound, and when the surroundings pass the gWallTypeFlags/gMaze tests, moves every gMonsters
-   record whose m02 equals the cell x (from StepCell(gPartyCell, page)) to the cell y
+   record whose cell equals the cell x (from StepCell(gPartyCell, page)) to the cell y
    (MoveMonsterToCell(obj, y, -1)) and sets gViewDirty, otherwise reports no effect. */
 /*@ 0BD2:0EE8 */ void UseWandItem(int who, int slot)
 {

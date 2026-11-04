@@ -18,7 +18,7 @@ Reviewer: p6-rev-5. Commit reviewed: ce0608f367ed01b1b1df84e254eef04d1a734b27 (r
 
 ### Findings (round P6)
 
-- [ ] must-fix src/E0D1C.C:600 (TurnUndead): "marks the monster (m16 |= 0x10)" uses the old field name. The code is `obj->flags |= 0x10` (src/E0D1C.C:638) and the Monster field at +16 is `flags` (re/fields.toml). Say `flags |= 0x10`.
+- [x] must-fix src/E0D1C.C:600 (TurnUndead): "marks the monster (m16 |= 0x10)" uses the old field name. The code is `obj->flags |= 0x10` (src/E0D1C.C:638) and the Monster field at +16 is `flags` (re/fields.toml). Say `flags |= 0x10`. Fixed in def28b2.
 - [ ] should src/E0D1C.C:530-534 (HoldsHolySymbol): the name claims a holy symbol, but the only evidence in re/renames.toml is marked [H] ("which in the game needs a holy symbol [H]"); the source comment does not mark it. Add [H] to the comment or say "the turn-undead item (a holy symbol [H])".
 - [ ] should src/E0D1C.C:479 and :481 (CanUseHand): `gItemTypesClasses[type].m01` and `gItemTypesClasses[m1].m01` still use the address name `m01`. The field is named in re/fields.toml; use that name (the same point as the e0a72 review's `m01` should).
 - [ ] note src/E0D1C.C:574, :596 and :940: `m19`, `m0F` and `m1A` are still address names for MonsterType fields; the P6 pass named the Monster fields but left these. They are placeholders, not wrong claims.

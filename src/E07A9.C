@@ -61,19 +61,18 @@
    is not cited */
 #define MOUSE_HOTSPOT 8
 
-extern char gBarGraphsOn; /*@ ds:F43C */  /* written by StartupAlloc (07A9:000D, set to 1); read by
-                                      DrawMemberHp, which draws the "HP" label instead of
-                                      "%3d of %-3d" when it is set (src/E1547.C:269, the comment at
-                                      src/E1547.C:235-238). Purpose unknown */
-extern char gLevelPalettePending; /*@ ds:FB45 */  /* written by StartupAlloc (07A9:0024, set to 0); the overlay 3
-                                      LoadLevel sets it to 1 (src/EOV3.C:686), and the overlay 4
-                                      DrawViewFrame (ovl4:1F51, src/EOV4.C:1049) tests it with video mode 3
-                                      (src/EOV4.C:1054) and, when set, loads the palette gPaletteBuf through
-                                      gSetPalette (src/EOV4.C:1060) and clears it (src/EOV4.C:1061). The
-                                      declaration is src/EOV4.C:1028 ("request flag, cleared here") and
-                                      its comment at :1045 says the same; main makes the start-up palette
-                                      call too (gSetPalette(gPaletteBuf), src/E07C8.C:182, described at :145-147).
-                                      What the request is is Purpose unknown */
+extern char gBarGraphsOn; /*@ ds:F43C */  /* the Bar Graphs option: ovl1:1ACD formats the
+                                      "Bar Graphs are %-3s" label from BoolString(ds:F43C) and button
+                                      0x800F toggles it (re/renames.toml, ds:F43C); StartupAlloc
+                                      (07A9:000D) sets it to 1. DrawMemberHp also reads it, to draw the
+                                      "HP" label instead of "%3d of %-3d" (src/E1547.C:269) */
+extern char gLevelPalettePending; /*@ ds:FB45 */  /* a new level's palette waiting for the next view frame:
+                                      LoadMapScreen (ovl3:0A7C) sets it to 1 after loading the level's
+                                      .PAL, StartupAlloc (07A9:0024) clears it, and DrawViewFrame
+                                      (ovl4:1F51), in VGA mode (gGraphicsChoice 3), loads the palette
+                                      gPaletteBuf through gSetPalette and clears it (re/renames.toml,
+                                      ds:FB45). main makes the start-up palette call itself
+                                      (gSetPalette(gPaletteBuf) in StartupGame, src/E07C8.C) */
 extern void far *gLevelInf; /*@ ds:8DCA */  /* start-up far allocation, 7500 bytes (07A9:002F); the base
                                               of the 122E action-script driver's script (declared
                                               src/E122E.C:22): JumpToScriptOffset (122E:139D,
@@ -256,14 +255,13 @@ extern void far *gItemIcons[]; /*@ ds:DDE4 */
 
 extern void far *MemAlloc(unsigned long size, int flags); /*@ 19BC:0007 */
 /* returns MK_FP(gPageSegs[kind | 1], 0): offset 0 and the segment word at the table slot
-   (src/E19EC.C:20); the placeholder name stays. */
+   (src/E19EC.C:20). */
 extern void far *GetPageBuffer(int kind); /*@ 19EC:0002 */
 extern void LoadSoundDriver(void); /*@ 177D:000A */
 extern void SetUnpackBuffer(unsigned seg, unsigned size); /*@ 1B82:0217 */
 /* the overlay entry at stub 2106:002A resolves to ovl2:09CC LoadItemData (src/EOV2.C:449). */
 extern void LoadItemData(void); /*@ 2106:002A */
-/* sets gCurFont = font and reads the font's width and height bytes (src/E1A47.C:81-85); the
-   placeholder name stays. */
+/* sets gCurFont = font and reads the font's width and height bytes (src/E1A47.C:81-85). */
 extern void SetFont(char far *font); /*@ 1A47:0169 */
 /* the overlay entry at stub 2106:0048 resolves to ovl2:0577 LoadDecorateIcons (src/EOV2.C:328), which
    leads to the ITEMRMP read (ovl2:047F, via ovl2:0171; docs/design/WHITEPAPER.md, the ITEMRMP.VGA/EGA

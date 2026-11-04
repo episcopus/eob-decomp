@@ -9,8 +9,8 @@ extern signed char gViewCellOffsets[]; /*@ ds:199D */  /* rows of 18 signed head
 extern signed char gMaze[]; /*@ ds:B894 */    /* 9-byte tile records (src/E08E6.C) */
 extern signed char far *gViewCells[]; /*@ ds:EF6A */ /* 18 far pointers into gMaze (src/E1414.C) */
 extern signed char gViewFrontSide; /*@ ds:A9C6 */        /* the cell side facing the party, gNearSideByDir[gPartyDir] = (dir + 2) & 3 (ovl4:044B) */
-extern signed char gWallTypeFlags[]; /*@ ds:194B */      /* per-slot byte flags (src/E08E6.C) */
-extern signed char gWallVmpSet[]; /*@ ds:1879 */      /* per-object count-1 (this unit) */
+extern signed char gWallTypeFlags[]; /*@ ds:194B */      /* per-wall-type byte flags (src/E08E6.C) */
+extern signed char gWallVmpSet[]; /*@ ds:1879 */      /* per-wall-type 1-based block set in the level's .VMP/.EMP */
 extern int gViewCellIds[]; /*@ ds:A9C8 */         /* 18 heading words, the masked sum (this unit) */
 extern int gViewSlots[]; /*@ ds:DCB2 */         /* 18 {left,right} view-slot pairs (this unit) */
 
@@ -127,7 +127,7 @@ extern signed char gDoorClipTopRow[]; /*@ ds:6F6D */       /* per-level index in
                                                            12 bytes indexed by gCurLevel 1 to 12, so level 12
                                                            reads gDoorClipBottomRow[0] */
 extern signed char gDoorClipBottomRow[]; /*@ ds:6F79 */       /* per-level index into ds:6F4E */
-extern signed char gViewSlotRow[]; /*@ ds:1A09 */       /* per-object index into ds:6F4E */
+extern signed char gViewSlotRow[]; /*@ ds:1A09 */       /* per-view-slot row index into ds:6F4E */
 
 /* ovl4:021E: computes the top and bottom pixel rows of one column of the current page's view
    and fits region `region` to them. The column value comes from ds:6F4E at the row index
@@ -236,16 +236,16 @@ extern signed char gViewRightSide; /*@ ds:EFB9 */     /* gRightSideByDir[gPartyD
 extern signed char gViewLeftSide; /*@ ds:EFD0 */     /* gLeftSideByDir[gPartyDir], cached by ovl4:044B */
 extern int gViewMirrorParity; /*@ ds:F4BC */             /* the cell and page parity (this unit) */
 
-/* ovl4:044B: draws the whole view page. It caches the three per-page gViewCells target offsets
-   (gNearSideByDir, gRightSideByDir and gLeftSideByDir at the page index, into gViewFrontSide, gViewRightSide and gViewLeftSide), clears the 0x14a-word
-   view buffer at ds:ADB0, computes a parity from the cell (`base`) and the page into ds:F4BC, copies
+/* ovl4:044B: builds the view block map. It caches the three per-facing gViewCells target offsets
+   (gNearSideByDir, gRightSideByDir and gLeftSideByDir at the facing index, into gViewFrontSide, gViewRightSide and gViewLeftSide), clears the 0x14a-word
+   block map at ds:ADB0 (22 by 15 words), computes a parity from the cell (`base`) and the facing into ds:F4BC, copies
    or toggles the top strip (page 1, x2 -0x14a), initialises the 18 view slots through InitViewSlots,
-   and then walks a fixed list of rectangles. Each rectangle selects one of the page's tile records
+   and then walks a fixed list of rectangles. Each rectangle selects one of the facing's wall bytes
    (gViewCells[i] at one of the three offsets) and, when the byte is a live slot (or a nonzero record,
    for the ones that are always drawn), copies or toggles its column (x, y, width, height, source x2)
-   from the page buffer into the view buffer. The records with a ds:194B bit 3 also pick a second
+   of the wall's .VMP blocks into the block map (re/renames.toml, ovl4:044B). The records with a ds:194B bit 3 also pick a second
    record and draw whichever of the two the flag selects. Called by DrawViewFrame at ovl4:1F5D.
-   Purpose unknown: what the tile records and the many rectangles are. */
+   Not established: which view position each rectangle is. */
 /*@ ovl4:044B */ void BuildViewBlockMap(int base, int row)
 {
     int i;
@@ -354,7 +354,7 @@ extern int gViewMirrorParity; /*@ ds:F4BC */             /* the cell and page pa
 }
 
 extern struct ItemRecord gItems[]; /*@ ds:8DD0 */
-extern signed char gViewRelativePos[]; /*@ ds:1A2B */   /* per-page sprite base (src/E0DE8.C) */
+extern signed char gViewRelativePos[]; /*@ ds:1A2B */   /* per facing, the sprite base (src/E0DE8.C) */
 extern signed char gIconPictureIndex[]; /*@ ds:181F */   /* byte table indexed by an item icon (src/E122E.C) */
 extern signed char gItemClipSlot[]; /*@ ds:6F86 */   /* per-slot byte (this unit) */
 extern signed char gItemScaleFrame[]; /*@ ds:6F98 */   /* per-slot, per-part byte (this unit) */
@@ -590,7 +590,7 @@ extern void DrawShapeClippedRemapFlipped(int page, void far *src, int x, int y, 
         }
     }
 }
-extern signed char gWallDecorHead[]; /*@ ds:18BF */   /* per-object-kind table (src/E122E.C) */
+extern signed char gWallDecorHead[]; /*@ ds:18BF */   /* per-wall-type table (src/E122E.C) */
 extern void far *gWallFaces[]; /*@ ds:7018 */      /* per slot, two far pointers to a wall face record (this unit) */
 extern signed char gWallOffsets[]; /*@ ds:70A8 */  /* per wall face, its signed segment offset (this unit) */
 extern int gWallXBias[]; /*@ ds:70CC */            /* per slot, the x base when the face flag bit 2 is clear (this unit) */
@@ -602,7 +602,7 @@ struct ViewWallRec {        /* the 0x34-byte wall records at ds:E06A this unit w
     int x[0xa];             /* +0C: the per-cell x, the cell index doubled apart */
     int y[0xa];             /* +20: the per-cell y, the cell index doubled apart */
 };
-extern struct RectKind far *gDecorShapes[]; /*@ ds:EFD4 */  /* per-cell far size records (src/E122E.C) */
+extern struct RectKind far *gDecorShapes[]; /*@ ds:EFD4 */  /* per-wall-type far size records (src/E122E.C) */
 extern struct ViewWallRec gViewWalls[]; /*@ ds:E06A */
 
 /* ovl4:1091: draws the wall faces of one view slot. The slot's two faces are ds:7018[slot*2+1],
@@ -688,16 +688,16 @@ extern struct ViewWallRec gViewWalls[]; /*@ ds:E06A */
 }
 extern struct SlotSize far *gDoorShapes[]; /*@ ds:FB5E */  /* per column, a far size record (ovl3:031A frees and clears the entries, src/EOV3.C:356-358; src/EOV2.C:155 and src/EOV3.C:143 declare it long, but the ->width use here needs a far pointer) */
 extern struct SlotPos gDoorButtons[]; /*@ ds:A99C */
-extern signed char gDoorShapeSet[]; /*@ ds:716E */   /* per heading, a column base (this unit) */
-extern signed char gDoorYLevels1to3[]; /*@ ds:70F0 */   /* per index y base, action 1..3 (this unit) */
-extern signed char gDoorYLevels4to6[]; /*@ ds:70F4 */   /* per index y base, action 4..6 (this unit) */
-extern signed char gDoorYLevels7to9[]; /*@ ds:70F8 */   /* per index y base, action 7..9 (this unit) */
-extern signed char gDoorYLevels10to11[]; /*@ ds:70FC */   /* per index y base, action 10..11 (this unit) */
-extern signed char gDoorBackYLevels10to11[]; /*@ ds:70FF */   /* per index y base, action 10..11, second draw (this unit) */
-extern signed char gDoorYLevel12[]; /*@ ds:7102 */   /* per index y base, action 12 (this unit) */
-extern int gDoorClipLeftX[]; /*@ ds:7106 */           /* per slot x, action 4..6 (this unit) */
-extern int gDoorClipRightX[]; /*@ ds:7108 */           /* per slot y, action 4..6 (this unit) */
-extern signed char gDoorStepBase[]; /*@ ds:714E */   /* per heading nudge base (this unit) */
+extern signed char gDoorShapeSet[]; /*@ ds:716E */   /* per wall type, a column base (this unit) */
+extern signed char gDoorYLevels1to3[]; /*@ ds:70F0 */   /* per index y base, level 1..3 (this unit) */
+extern signed char gDoorYLevels4to6[]; /*@ ds:70F4 */   /* per index y base, level 4..6 (this unit) */
+extern signed char gDoorYLevels7to9[]; /*@ ds:70F8 */   /* per index y base, level 7..9 (this unit) */
+extern signed char gDoorYLevels10to11[]; /*@ ds:70FC */   /* per index y base, level 10..11 (this unit) */
+extern signed char gDoorBackYLevels10to11[]; /*@ ds:70FF */   /* per index y base, level 10..11, second draw (this unit) */
+extern signed char gDoorYLevel12[]; /*@ ds:7102 */   /* per index y base, level 12 (this unit) */
+extern int gDoorClipLeftX[]; /*@ ds:7106 */           /* per slot x, level 4..6 (this unit) */
+extern int gDoorClipRightX[]; /*@ ds:7108 */           /* per slot x, level 4..6 (this unit) */
+extern signed char gDoorStepBase[]; /*@ ds:714E */   /* per wall type, a nudge base (this unit) */
 extern signed char gDoorLiftStep[]; /*@ ds:718E */   /* per index nudge a (this unit) */
 extern signed char gDoorLiftFrom30[]; /*@ ds:7192 */   /* per index nudge b (this unit) */
 extern signed char gDoorSlideStep[]; /*@ ds:7196 */   /* per index nudge c (this unit) */
@@ -838,7 +838,7 @@ extern signed char gDoorSplitFrom30[]; /*@ ds:71A2 */   /* per index nudge f (th
     SetRegionRect(5, gViewColLeft, 0, gViewColRight, 0xf);
 }
 extern struct Projectile gProjectiles[]; /*@ ds:DD2C */
-extern signed char gProjectileDrawOrder[]; /*@ ds:7246 */   /* per page and low-2-bit index, the list slot (this unit) */
+extern signed char gProjectileDrawOrder[]; /*@ ds:7246 */   /* per facing and low-2-bit index, the list slot (this unit) */
 extern unsigned char gProjectileX[]; /*@ ds:71A6 */ /* per slot, per sprite, the x base (this unit) */
 extern signed char gProjectileY[]; /*@ ds:71EE */   /* per gViewSlotRow slot, per sprite, the y base (this unit) */
 extern signed char gProjectileFrame[]; /*@ ds:71FE */   /* per slot, per sprite, the frame (this unit) */
@@ -851,16 +851,16 @@ extern void far *gThrownIcons[][4]; /*@ ds:F2F8 */  /* far sprite cells, four pe
 #define DD_SIDE_STRIDE 0x2d
 #define NO_DD_ROW -1
 
-/* ovl4:19C4: draws the map objects whose ds:DD2C record is seen from the current page. Only when
+/* ovl4:19C4: draws the map objects whose ds:DD2C record is seen from the current facing. Only when
    gWallVmpSet[tile] is nonzero and gWallTypeFlags[tile] bit 7 is clear does it run (tile is the slot's gViewCells
    record byte, as in DrawSlotMonsters). It scans the ten 0x12-byte ds:DD2C records and, for each whose
-   byte +0 is set and word +4 equals the slot's heading (gViewCellIds[slot]), puts its far pointer in
+   byte +0 is set and cell (+4) equals the slot's cell (gViewCellIds[slot]), puts its far pointer in
    the list slot gProjectileDrawOrder[gPartyDir * 5 + (record +6 & 3)]. Each non-empty slot picks a cell from the
    ds:F2F8 or ds:EC9A far sprite tables and a draw wrapper from ds:7262, at an x from ds:71A6 and a
    y from ds:71EE selected by the sprite base ds:1A2B[gPartyDir * 4 + (+6 & 3)] and the frame ds:71FE:
    a record whose byte +0 is 1 picks the ds:F2F8 row ds:1D07[kind + side * 0x2d] (kind is the
-   ds:8DD0 item icon through ds:181F, side -1 when the record +7 matches neither the page nor the
-   page xor 2) and shifts x by ds:725E[frame] when the sign-extended cell +2 byte matches
+   ds:8DD0 item icon through ds:181F, side -1 when the record +7 matches neither the facing nor the
+   facing xor 2) and shifts x by ds:725E[frame] when the sign-extended cell +2 byte matches
    ds:725A[frame];
    any other record uses the row byte +0xA directly and, when its +0xC has bit 6, recomputes x from
    ds:1D61 and y from the cell. A wrapper of 0 draws with DrawShapeClipped, any other with
@@ -1034,15 +1034,15 @@ extern signed char gViewDrawOrder[]; /*@ ds:7278 */     /* per-view-slot byte (t
     }
 }
 
-extern int gCompassDir; /*@ ds:7296 */              /* the page the rows were last drawn for (this unit) */
+extern int gCompassDir; /*@ ds:7296 */              /* the facing the compass was last drawn for (this unit) */
 extern int gCompassY[]; /*@ ds:7290 */             /* per-row y (this unit) */
 extern int gCompassX[]; /*@ ds:728A */             /* per-row x (this unit) */
-extern void far *gCompassIcons[]; /*@ ds:A92A */    /* per-page, per-row far image pointers (this unit) */
+extern void far *gCompassIcons[]; /*@ ds:A92A */    /* per facing, per row far image pointers (this unit) */
 extern void DrawShape(int page, void far *src, int x, int y, int region); /*@ 1A29:000F */
 extern void HidePointerZone(int left, int top, int right, int bottom); /*@ 1BBE:01FE */
 extern void ShowPointerZone(void); /*@ 1BBE:02C2 */
 
-/* ovl4:1EDE: redraws the three view rows for the current page. It returns early when ds:7296
+/* ovl4:1EDE: redraws the three view rows for the current facing. It returns early when ds:7296
    already holds gPartyDir; otherwise it hides the pointer below the view box (0x46, 0x79, 0xb0, 0xaf),
    draws the three rows through DrawShape(0, gCompassIcons[gPartyDir + 4 * i], gCompassX[i], gCompassY[i], 0),
    shows the pointer and remembers gPartyDir in ds:7296. Called by DrawViewFrame at ovl4:202F. Purpose
@@ -1073,7 +1073,7 @@ extern void CopyRegion(int x1, int y1, int x2, int y2, int width, int height, in
 extern void DrawTile(void far *src); /*@ 17A6:03E7 */
 extern void PlaySoundDefault(int sound); /*@ 177D:00F3 */
 
-/* ovl4:1F51: draws one frame of the view: BuildViewBlockMap draws the objects into the page buffer
+/* ovl4:1F51: draws one frame of the view: BuildViewBlockMap builds the view block map
    (with
    gPartyCell and gPartyDir), DrawTile blits it from gWallBlocks, DrawViewSlots(0) draws the slots, and
    when gLevelPalettePending is set and gGraphicsChoice is 3 (MCGA/VGA, re/globals.toml ds:8102) it loads the
