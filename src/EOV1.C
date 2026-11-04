@@ -2,7 +2,7 @@
    screens it opens. RunCampMenu (ovl1:1ACD) is the camp menu itself; it calls the member picker
    (SelectPartyMember), the spell screens (SpellSlotScreen with its list builders BuildSpellSlots,
    SpendSpellSlot and DrawSpellRow), ScribeScrolls, DropCharacter and the yes/no and message boxes
-   (AskYesNo, ShowMessage), all built on the button lists BuildMenuButtons and DrawListNode make. It
+   (AskYesNo, ShowMessageBox), all built on the button lists BuildMenuButtons and DrawListNode make. It
    reads and rewrites the party's records at ds:F580 (gChars, six records of 0xF3 bytes).
    The unit is C, compiled by TCC 1.00 (escalation eov1, 2026-11-02): every function has TCC's
    frame, and ovl1:1153 reads a far array with the 16-bit displacement only TCC's own assembler
@@ -124,9 +124,9 @@ struct CharRec {                /* the 243-byte character records at ds:F580 (sr
     unsigned char food;         /* +23: the food value EatFood clamps (src/E0ACD.C) */
     signed char levels[3];      /* +24: the level in each class slot (src/E0A72.C) */
     char pad27[0x37 - 0x27];
-    signed char known[30];      /* +37: the mage's spell slots: a spell number, negative while it is
+    signed char mageSpells[30];      /* +37: the mage's spell slots: a spell number, negative while it is
                                    still to be memorised (src/EOV6.C) */
-    signed char memorized[30];  /* +55: the cleric's spell slots, the same way */
+    signed char clericSpells[30];  /* +55: the cleric's spell slots, the same way */
     long spellBook;             /* +73: the mage's spell book, bit i set when spell i + 1 is known */
     int items[27];              /* +77: the 27 carried-item slots (src/E0DE8.C) */
     char padAD[0xE7 - 0xAD];
@@ -200,7 +200,7 @@ struct ItemRecord {
                                0BD2:040E and tested by 0BD2:05B5; src/E07A9.C calls it flags */
     signed char icon;       /* +3 (ds:8DD3): the icon number */
     signed char type;        /* +4 (ds:8DD4): the item type */
-    signed char tag;        /* +5 (ds:8DD5): 01D0 stores its 4th argument here and 02B9 matches it
+    signed char cellPos;        /* +5 (ds:8DD5): 01D0 stores its 4th argument here and 02B9 matches it
                                against its `key`. No caller shows a sound (01D0's callers pass a
                                slot kind, E0ACD.C:561-568, a roll, E08E6.C:807, or an effect kind | 4,
                                0BD2:07DE), so Purpose unknown: a per-entry tag */
@@ -223,7 +223,7 @@ extern unsigned char gPaladinSpellsPerLevel[]; /*@ ds:6358 */ /* a paladin's spe
 extern unsigned char gMageSpellsPerLevel[]; /*@ ds:6394 */ /* a mage's spells per level (5 bytes) by class level 1 to 11 */
 extern int f0D1C_0163(int who, int fieldB); /*@ 0D1C:0163 */
 extern int IsMouseInRect(int left, int top, int right, int bottom); /*@ 1A72:02A6 */
-extern int g159; /*@ ds:0159 */ /* a copy of gPanelFillColour that ShowMessage and ovl6:0B9B store; no reader found */
+extern int g159; /*@ ds:0159 */ /* a copy of gPanelFillColour that ShowMessageBox and ovl6:0B9B store; no reader found */
 extern int gTunesOn; /*@ ds:80E8 */
 extern int gSoundOn; /*@ ds:80E6 */
 extern char gBarGraphsOn; /*@ ds:F43C */
@@ -256,7 +256,7 @@ extern void movmem(void far *src, void far *dst, unsigned n); /*@ 0000:63A3 */
 extern struct Node far *ListAdd(struct Node far *head, struct Node far *item); /*@ 1658:001E */
 extern void LockHidePointer(void); /*@ 1BBE:0307 */
 extern void LockShowPointer(void); /*@ 1BBE:0332 */
-extern void ClipRect(int x1, int y1, int x2, int y2, int width, int height, int extra1, int extra2); /*@ 19F3:000E */
+extern void CopyRegion(int x1, int y1, int x2, int y2, int width, int height, int extra1, int extra2); /*@ 19F3:000E */
 extern void FlushKeyBuffer(void); /*@ 1AAD:0480 */
 extern void farfree(void far *block); /*@ 0000:71EE */
 extern int strlen(char far *s); /*@ 0000:67F6 */
@@ -291,7 +291,7 @@ extern int LoadGame(void); /*@ 210C:0039 */
 extern void DrawViewFrame(int full); /*@ 2116:005C */
 
 struct Node far *BuildMenuButtons(int menu);
-void ShowMessage(int message);
+void ShowMessageBox(int message);
 void FreeFarList(struct Node far *list);
 void DrawListNode(struct Node far *node, int first, int highlight, int second);
 int AskYesNo(int message);
@@ -362,9 +362,9 @@ int AskYesNo(int message);
         strcpy(gSpellLevels, gClericSpellLevels);
     else
         strcpy(gSpellLevels, gMageSpellLevels);
-    slots = rec->known;
+    slots = rec->mageSpells;
     if (cleric)
-        slots = rec->memorized;
+        slots = rec->clericSpells;
     for (i = 0; i < 0x1e; i++) {
         entry = *slots++;
         if (entry) {
@@ -413,9 +413,9 @@ int AskYesNo(int message);
         return;
     rec = &gChars[who];
     if (cleric)
-        memset(rec->memorized, 0, 0x1e);
+        memset(rec->clericSpells, 0, 0x1e);
     else
-        memset(rec->known, 0, 0x1e);
+        memset(rec->mageSpells, 0, 0x1e);
     for (i = 0; i < 0x20; i++) {
         if (gFDEC[i * 2] < gFDEC[i * 2 + 1])
             gFDEC[i * 2 + 1] = gFDEC[i * 2];
@@ -425,13 +425,13 @@ int AskYesNo(int message);
             slot = gSpellLevels[i] - 1;
             for (k = 0; k < 6; k++) {
                 if (cleric) {
-                    if (rec->memorized[slot * 6 + k] == 0) {
-                        rec->memorized[slot * 6 + k] = i + 1;
+                    if (rec->clericSpells[slot * 6 + k] == 0) {
+                        rec->clericSpells[slot * 6 + k] = i + 1;
                         break;
                     }
                 } else {
-                    if (rec->known[slot * 6 + k] == 0) {
-                        rec->known[slot * 6 + k] = i + 1;
+                    if (rec->mageSpells[slot * 6 + k] == 0) {
+                        rec->mageSpells[slot * 6 + k] = i + 1;
                         break;
                     }
                 }
@@ -443,13 +443,13 @@ int AskYesNo(int message);
             gNeedsRest = 1;
             for (k = 0; k < 6; k++) {
                 if (cleric) {
-                    if (rec->memorized[slot * 6 + k] == 0) {
-                        rec->memorized[slot * 6 + k] = -(i + 1);
+                    if (rec->clericSpells[slot * 6 + k] == 0) {
+                        rec->clericSpells[slot * 6 + k] = -(i + 1);
                         break;
                     }
                 } else {
-                    if (rec->known[slot * 6 + k] == 0) {
-                        rec->known[slot * 6 + k] = -(i + 1);
+                    if (rec->mageSpells[slot * 6 + k] == 0) {
+                        rec->mageSpells[slot * 6 + k] = -(i + 1);
                         break;
                     }
                 }
@@ -517,7 +517,7 @@ int AskYesNo(int message);
             count = 0x34;
             break;
         }
-        ShowMessage(count);          /* count was 0: it now carries the message index (a named
+        ShowMessageBox(count);          /* count was 0: it now carries the message index (a named
                                         local changes the frame, sub sp 0x16 -> 0x18) */
         sel = -1;
         return sel;
@@ -537,7 +537,7 @@ int AskYesNo(int message);
         slot = FindClassSlot(4, gChars[sel].classIndex);
         if (slot != -1) {
             if (gChars[sel].levels[slot] <= 8) {
-                ShowMessage(0x18);
+                ShowMessageBox(0x18);
                 sel = -1;
                 return sel;
             }
@@ -625,14 +625,14 @@ int AskYesNo(int message);
             slot = FindClassSlot(4, gChars[sel].classIndex);
             if (slot != -1) {
                 if (gChars[sel].levels[slot] <= 8) {
-                    ShowMessage(0x18);
+                    ShowMessageBox(0x18);
                     sel = -1;
                 }
             }
         }
         if (mode == 2) {
             if (FindCarriedSlot(sel, 0x1d, -1) == -1) {
-                ShowMessage(0x19);
+                ShowMessageBox(0x19);
                 sel = -1;
             }
         }
@@ -782,7 +782,7 @@ int AskYesNo(int message);
                     DrawSpellRow(gFDBA[tab * 9 + i], i - 1, cleric, 0, 0);
                 gDrawPage = 0;
                 LockHidePointer();
-                ClipRect(0, 0x32, 0, 0x32, 0x16, 0x48, 2, 0);
+                CopyRegion(0, 0x32, 0, 0x32, 0x16, 0x48, 2, 0);
                 LockShowPointer();
                 selRow = -1;
             }
@@ -940,7 +940,7 @@ int AskYesNo(int message);
    words (the definition's key and key + 0x100), the box (x and width in 8-pixel columns, so << 3),
    flags 0x1100, the definition pointer at +0x34 and its flag word at +0x38. Each node is drawn
    once through DrawListNode (ovl1:1551) and chained with ListAdd. At the end the pointer is hidden
-   only around the final ClipRect (each node hides it itself inside DrawListNode); that ClipRect
+   only around the final CopyRegion (each node hides it itself inside DrawListNode); that CopyRegion
    clips the window to the screen (19F3:000E with its own edges), then it sets gNodeListChanged (the key-list
    walk then rebuilds its screen, src/E16A5.C), flushes the key buffer and clears gDrawPage again.
    Called by ovl1:0416 (menu 3), 097A (menu 4), 1691 (menu 6), 1ACD (menus 0 to 2) and 243A
@@ -982,7 +982,7 @@ int AskYesNo(int message);
             list = node;
     }
     LockHidePointer();
-    ClipRect(gTextLeft, gTextTop, gTextLeft, gTextTop, gTextWidth, gTextHeight, 2, 0);
+    CopyRegion(gTextLeft, gTextTop, gTextLeft, gTextTop, gTextWidth, gTextHeight, 2, 0);
     LockShowPointer();
     gNodeListChanged = 1;
     FlushKeyBuffer();
@@ -998,7 +998,7 @@ int AskYesNo(int message);
    draw page, font and text window are restored and the key buffer flushed again. Called by
    RunCampMenu, SelectPartyMember and ScribeScrolls (a plain message box; DrawListNode does not
    call it). */
-/*@ ovl1:13F7 */ void ShowMessage(int message)
+/*@ ovl1:13F7 */ void ShowMessageBox(int message)
 {
     int savedWindow;
     void far *savedFont;
@@ -1015,7 +1015,7 @@ int AskYesNo(int message);
     gDrawPage = 2;
     DrawFramedPanel(gTextLeft << 3, gTextTop, gTextWidth << 3, gTextHeight, 0, 0);
     DrawShadowText(SkipStrings(&gCampStrings, message), (gTextLeft << 3) + 5, gTextTop + 5, 0xf, 0);
-    ClipRect(gTextLeft, gTextTop, gTextLeft, gTextTop, gTextWidth, gTextHeight, 2, 0);
+    CopyRegion(gTextLeft, gTextTop, gTextLeft, gTextTop, gTextWidth, gTextHeight, 2, 0);
     LockShowPointer();
     for (i = 0; i < 0x78; i++) {
         if (ReadKey()) {
@@ -1131,7 +1131,7 @@ int AskYesNo(int message);
         }
     }
     if (count == 0) {
-        ShowMessage(0x32);
+        ShowMessageBox(0x32);
         return;
     }
     member = SelectPartyMember(0x31);
@@ -1149,7 +1149,7 @@ int AskYesNo(int message);
             break;
     }
     if (n == 0) {
-        ShowMessage(0x33);
+        ShowMessageBox(0x33);
         return;
     }
     list = 0;
@@ -1356,7 +1356,7 @@ int AskYesNo(int message);
                     members++;
             }
             if (members < 5)
-                ShowMessage(0x2d);       /* string 0x2d, whole: "You cannot have less than four
+                ShowMessageBox(0x2d);       /* string 0x2d, whole: "You cannot have less than four
                                             characters." */
             else {
                 DropCharacter(SelectPartyMember(0x35));
@@ -1427,7 +1427,7 @@ int AskYesNo(int message);
                     FreeFarList(list);
                     hot = list = BuildMenuButtons(MENU_GAME_OPTIONS);
                     LockShowPointer();
-                    ShowMessage(0x10);
+                    ShowMessageBox(0x10);
                     LockHidePointer();
                     nextMenu = MENU_GAME_OPTIONS;
                 } else {
@@ -1446,9 +1446,9 @@ int AskYesNo(int message);
                 slot = FileOpen("EOBDATA.SAV", 1);
                 FileClose(slot);
                 if (SaveGame())
-                    ShowMessage(0xe);
+                    ShowMessageBox(0xe);
                 else
-                    ShowMessage(0xf);
+                    ShowMessageBox(0xf);
                 if (gGraphicsChoice == 1) {
                     LoadScreenImage("PLAYFLD", (char far *)gSheetDECORATE, 5, 3, 2);
                     gDrawPage = 2;
@@ -1461,7 +1461,7 @@ int AskYesNo(int message);
             break;
         case BTN_EXIT:
             if (gNeedsRest)
-                ShowMessage(0x2c);
+                ShowMessageBox(0x2c);
         case BTN_OPTIONS_EXIT:
         case BTN_PREFERENCES_EXIT:
             switch (curMenu) {
@@ -1553,7 +1553,7 @@ int AskYesNo(int message);
     gDrawPage = 0;
     LockHidePointer();
     SetTextWindow(0xa);
-    ClipRect(gTextLeft, gTextTop, gTextLeft, gTextTop, gTextWidth, gTextHeight, 2, 0);
+    CopyRegion(gTextLeft, gTextTop, gTextLeft, gTextTop, gTextWidth, gTextHeight, 2, 0);
     if (reloadInvent)
         LoadScreenImage("INVENT", (char far *)gSheet2067, 5, 3, 2);
     SetTextWindow(savedWindow);

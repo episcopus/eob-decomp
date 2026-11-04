@@ -13,7 +13,7 @@ struct Monster {              /* 28-byte records, 30 of them at ds:8A82 */
     char typeIndex;                /* +0: index into the ds:1A3B object-type table */
     signed char kind;       /* +1: matched against UpdateObjects' `kind` argument */
     int cell;                 /* +2: the object's map cell */
-    char frame;             /* +4: 0..4, the frame within its id's group */
+    char cellPos;             /* +4: 0..4, the frame within its id's group */
     char orient;            /* +5: 0..3, the orientation quarter (times 2 is a direction) */
     char toggle;            /* +6: flipped each update unless the type is 4 or 7 (0CC8:0D93) */
     char m07;               /* +7: set from InitMonster's m07 argument. Purpose unknown */
@@ -71,7 +71,7 @@ struct ItemRecord {
                                0BD2:040E and tested by 0BD2:05B5; src/E07A9.C calls it flags */
     signed char icon;       /* +3 (ds:8DD3): the icon number */
     signed char type;        /* +4 (ds:8DD4): the item type */
-    signed char tag;        /* +5 (ds:8DD5): 01D0 stores its 4th argument here and 02B9 matches it
+    signed char cellPos;        /* +5 (ds:8DD5): 01D0 stores its 4th argument here and 02B9 matches it
                                against its `key`. No caller shows a sound (01D0's callers pass a
                                slot kind, E0ACD.C:561-568, a roll, E08E6.C:807, or an effect kind | 4,
                                0BD2:07DE), so Purpose unknown: a per-entry tag */
@@ -264,9 +264,9 @@ void ResolveMonsterMelee(struct Monster far *obj);   /* forward: 05EA reaches it
         if (obj->cell == id) {
             if (gMonsterTypes[obj->typeIndex].m15)
                 return -1;
-            if (obj->frame == 4)
-                obj->frame = gFrontLeftPosByDir[obj->orient];
-            bits |= 1 << obj->frame;
+            if (obj->cellPos == 4)
+                obj->cellPos = gFrontLeftPosByDir[obj->orient];
+            bits |= 1 << obj->cellPos;
             if (--count == 0)
                 break;
         }
@@ -325,7 +325,7 @@ void ResolveMonsterMelee(struct Monster far *obj);   /* forward: 05EA reaches it
    or -1) only `orient` is applied when it is not -1. Then notify IsCellInView of the old id and,
    unless gQuietObjectUpdate is set, play the object's record m17 through PlaySoundAtCell. Returns 1 on success.
    Called by 0430, 0B34 and 0B94 (StepObjectOrient passes -1 to leave a field alone). */
-/*@ 08E6:0309 */ int TurnObject(struct Monster far *obj, int id, int orient)
+/*@ 08E6:0309 */ int TryMoveMonster(struct Monster far *obj, int id, int orient)
 {
     char far *rec;
     char dir;
@@ -346,7 +346,7 @@ void ResolveMonsterMelee(struct Monster far *obj);   /* forward: 05EA reaches it
             frame = FindObjectFrameBit(obj, id);
             if (frame == -1)
                 return 0;
-            obj->frame = frame;
+            obj->cellPos = frame;
         }
         MoveObjectToId(obj, id, orient);
         orient = -1;
@@ -376,13 +376,13 @@ void ResolveMonsterMelee(struct Monster far *obj);   /* forward: 05EA reaches it
 /* 08E6:0430: turn an object toward the direction DirectionFromPoints(id, value) reports. When the object's
    state is over 6 it resets it to 0 and toggles gDirSearchLeftFirst, which selects the direction table gDirSearchRight or
    gDirSearchLeft. The target -1 leaves the object alone; bit 3 of m16 XORs 4 into it. When the target is even
-   and id + gDirCellOffset[target >> 1] equals gPartyCell, the object takes one step through TurnObject with
+   and id + gDirCellOffset[target >> 1] equals gPartyCell, the object takes one step through TryMoveMonster with
    -1: `dir` becomes orientation + 1 when the difference from 2*orient is nonzero and under 5,
    orientation - 1 when it is nonzero and not under 5, and is left at orient * 2 when the difference
    is 0, so the `dir &= 3` (:406) then wraps orient * 2 mod 4, not the orientation (QUIRK
    08E6:04E5). Otherwise the difference picks a direction and the loop walks the eight orientations
    from 7 down to 0, adding the table byte, skipping odd directions, and turning through
-   TurnObject(obj, StepCell(id, dir >> 1), dir >> 1); the first turn that succeeds returns. Called
+   TryMoveMonster(obj, StepCell(id, dir >> 1), dir >> 1); the first turn that succeeds returns. Called
    by 0AB8. */
 /*@ 08E6:0430 */ void StepMonsterToward(struct Monster far *obj, int value)
 {
@@ -415,7 +415,7 @@ void ResolveMonsterMelee(struct Monster far *obj);   /* forward: 05EA reaches it
         else if (diff != 0)
             dir = obj->orient - 1;
         dir &= 3;
-        TurnObject(obj, -1, dir);
+        TryMoveMonster(obj, -1, dir);
         return;
     }
     if (diff != 0) {
@@ -439,7 +439,7 @@ void ResolveMonsterMelee(struct Monster far *obj);   /* forward: 05EA reaches it
         } else {
             handle = StepCell(id, dir >> 1);
         }
-        if (handle != 0 && TurnObject(obj, handle, dir >> 1) != 0)
+        if (handle != 0 && TryMoveMonster(obj, handle, dir >> 1) != 0)
             return;
     }
 }
@@ -451,12 +451,12 @@ void ResolveMonsterMelee(struct Monster far *obj);   /* forward: 05EA reaches it
 
     id = obj->cell;
     if ((gMaze[id * 9 + 4] & 7) == 1) {
-        obj->frame = 4;
+        obj->cellPos = 4;
     } else {
         id = FindObjectFrameBit(obj, id);
         if (id < 0)
             return;
-        obj->frame = id;
+        obj->cellPos = id;
     }
     IsCellInView(obj->cell);
 }
@@ -514,7 +514,7 @@ void ResolveMonsterMelee(struct Monster far *obj);   /* forward: 05EA reaches it
    Called by 0765 as LaunchMonsterSpell(obj, value). Purpose unknown: what 0EF3:097B does with them is not known. */
 /*@ 08E6:073F */ void LaunchMonsterSpell(struct Monster far *obj, int value)
 {
-    StartCellEffect(0xff, value, obj->cell, obj->frame, obj->orient);
+    StartCellEffect(0xff, value, obj->cell, obj->cellPos, obj->orient);
 }
 /* 08E6:0765: the object's action for UpdateObjects. It returns 0 unless the object's 1A3B record
    has m0E bit 6, the object has actionsLeft left and m18 is zero (otherwise m18 is decremented and 0 is
@@ -593,7 +593,7 @@ void ResolveMonsterMelee(struct Monster far *obj);   /* forward: 05EA reaches it
     case 15:
         item = CopyItemToFreeSlot(0x3c);
         if (item != 0) {
-            if (AddDDEffect(-1, item, obj->cell, obj->frame, obj->orient,
+            if (AddDDEffect(-1, item, obj->cell, obj->cellPos, obj->orient,
                             gItems[item].type) == 0)
                 gItems[item].key = -1;
         }
@@ -609,7 +609,7 @@ void ResolveMonsterMelee(struct Monster far *obj);   /* forward: 05EA reaches it
         }
         break;
     case 16:
-        StartCellEffect(0xff, 0, obj->cell, obj->frame, obj->orient);
+        StartCellEffect(0xff, 0, obj->cell, obj->cellPos, obj->orient);
         PlaySoundAtCell(0x55, obj->cell);
         break;
     }
@@ -645,10 +645,10 @@ void ResolveMonsterMelee(struct Monster far *obj);   /* forward: 05EA reaches it
     int cur;
 
     cur = StepCell(obj->cell, obj->orient);
-    if (TurnObject(obj, cur, -1) == 0) {
+    if (TryMoveMonster(obj, cur, -1) == 0) {
         obj->orient += delta;
         obj->orient &= 3;
-        TurnObject(obj, -1, obj->orient);
+        TryMoveMonster(obj, -1, obj->orient);
     }
 }
 /* 08E6:0B94: turn an object by `arg` quarters. A state below zero falls straight to the second half;
@@ -656,9 +656,9 @@ void ResolveMonsterMelee(struct Monster far *obj);   /* forward: 05EA reaches it
    direction dir = (orient + arg) & 3, cur = StepCell(id, dir) and the byte gNearSideByDir[dir]: when the
    gWallTypeFlags record at gMaze[cur * 9 + gNearSideByDir[dir]] has bit 2 clear it leaves a state of zero as -1 and
    returns, and a nonzero state with that bit clear falls through to the second half. Otherwise it
-   turns through TurnObject(obj, -1, dir), sets the state to -1 and returns. The second half looks up
-   handle = StepCell(id, orient): when TurnObject(obj, handle, -1) fails it turns the other way,
-   TurnObject(obj, -1, (orient - arg) & 3), and clears the state, else it sets the state to 1.
+   turns through TryMoveMonster(obj, -1, dir), sets the state to -1 and returns. The second half looks up
+   handle = StepCell(id, orient): when TryMoveMonster(obj, handle, -1) fails it turns the other way,
+   TryMoveMonster(obj, -1, (orient - arg) & 3), and clears the state, else it sets the state to 1.
    Called by UpdateObjects. Purpose unknown: what gNearSideByDir and the state values select. The unit's -v
    flag is what keeps the two separate `obj->state = -1` stores at 0B94:0083 and 0B94:00A4 that a -O
    build cross-jumps. */
@@ -684,15 +684,15 @@ void ResolveMonsterMelee(struct Monster far *obj);   /* forward: 05EA reaches it
         }
         if (bits == 0)
             goto second;
-        TurnObject(obj, -1, dir);
+        TryMoveMonster(obj, -1, dir);
         obj->state = -1;
         return;
     }
 second:
     handle = StepCell(obj->cell, obj->orient);
-    if (TurnObject(obj, handle, -1) == 0) {
+    if (TryMoveMonster(obj, handle, -1) == 0) {
         dir = (obj->orient - arg) & 3;
-        TurnObject(obj, -1, dir);
+        TryMoveMonster(obj, -1, dir);
         obj->state = 0;
     } else {
         obj->state = 1;
@@ -808,7 +808,7 @@ second:
     int roll;
     register int hit;
 
-    roll = obj->frame;
+    roll = obj->cellPos;
     if (roll == 4)
         roll = RollDice(1, 4, 0xff);
     if (obj->dropItem1 != 0 && RollDice(1, 2, 0) == 1) {
@@ -857,9 +857,9 @@ second:
    ds:323B[orient * 4 + frame]. Called by 05EA. */
 /*@ 08E6:103D */ int IsMonsterAtFront(struct Monster far *obj)
 {
-    if (obj->frame == 4)
+    if (obj->cellPos == 4)
         return 1;
-    return gMonsterFrontPos[obj->orient * 4 + obj->frame];
+    return gMonsterFrontPos[obj->orient * 4 + obj->cellPos];
 }
 /* 08E6:106B: roll 1d20 for a hit against character `who`; a roll of 20 always hits; otherwise the
    target's effectFlags bit 9 costs 2 and gPartySpellFlags bit 5 costs 1. The hit succeeds when the roll reaches
@@ -907,8 +907,8 @@ second:
     index = obj->typeIndex;
     group = gAttackSideByDir[gPartyDir * 4 + obj->orient];
     who = group * 12;
-    if (obj->frame != 4)
-        roll = gRightSidePosByDir[obj->orient * 4 + obj->frame];
+    if (obj->cellPos != 4)
+        roll = gRightSidePosByDir[obj->orient * 4 + obj->cellPos];
     else
         roll = RollDice(1, 2, 0xff);
     if (roll != 0)
@@ -967,7 +967,7 @@ second:
     obj->typeIndex = b0;
     obj->actionsLeft = gMonsterTypes[b0].m18;
     obj->kind = kind;
-    obj->frame = frame;
+    obj->cellPos = frame;
     obj->m07 = m07;
     obj->type = type;
     obj->timer = timer;
@@ -1055,7 +1055,7 @@ fire:
         list[i] = -1;
     for (obj = gMonsters, i = 0; i < 30; i++, obj++) {
         if (obj->cell == key)
-            list[obj->frame] = i;
+            list[obj->cellPos] = i;
     }
 }
 /* 08E6:15B4: list the objects with id `value`, then return list[4] when set, else the first of the
@@ -1135,10 +1135,10 @@ fire:
     for (i = 0, obj = gMonsters; i < 30; i++, obj++) {
         row = gProjectileHitOrder + flags * 16 + field * 4;
         if (obj->cell == key) {
-            if (obj->frame == field)
+            if (obj->cellPos == field)
                 return i;
             for (slot = 0; slot < 4; slot++) {
-                if (obj->frame == row[slot] && slot < bestSlot) {
+                if (obj->cellPos == row[slot] && slot < bestSlot) {
                     bestSlot = slot;
                     best = i;
                 }
@@ -1180,7 +1180,7 @@ fire:
    frame? Returns 1 when it does, else 0. Called by ListMonstersAtCell (:1159) and 1414:0172 TestDDEffect. */
 /*@ 08E6:189D */ int IsMonsterAtPos(struct Monster far *obj, int key, int field)
 {
-    if (obj->cell == key && (obj->frame == field || obj->frame == 4))
+    if (obj->cell == key && (obj->cellPos == field || obj->cellPos == 4))
         return 1;
     return 0;
 }

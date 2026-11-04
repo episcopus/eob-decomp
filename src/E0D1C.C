@@ -108,7 +108,7 @@ struct ItemRecord {
                                0BD2:040E and tested by 0BD2:05B5; src/E07A9.C calls it flags */
     signed char icon;       /* +3 (ds:8DD3): the icon number */
     signed char type;        /* +4 (ds:8DD4): the item type */
-    signed char tag;        /* +5 (ds:8DD5): 01D0 stores its 4th argument here and 02B9 matches it
+    signed char cellPos;        /* +5 (ds:8DD5): 01D0 stores its 4th argument here and 02B9 matches it
                                against its `key`. No caller shows a sound (01D0's callers pass a
                                slot kind, E0ACD.C:561-568, a roll, E08E6.C:807, or an effect kind | 4,
                                0BD2:07DE), so Purpose unknown: a per-entry tag */
@@ -117,7 +117,7 @@ struct ItemRecord {
                                new item in after this record through it */
     int nextLink;                /* +0xa (ds:8DDA): the other link; the list walks (0BD2:0385, 040E,
                                04AA) follow it */
-    signed char m0A;        /* +0xc (ds:8DDC): gFBC8 or -1, set by 01D0 */
+    signed char m0A;        /* +0xc (ds:8DDC): gCurLevel or -1, set by 01D0 */
     signed char value;        /* +0xd (ds:8DDD): the item's bonus or effect value: the signed bonus
                                printed as "%s +%d" and "Cursed %s %d", the spell index into ds:1278
                                and ds:12E0, the wand effect index g38FA[m0B], and the scroll and
@@ -128,7 +128,7 @@ extern struct ItemRecord gItems[]; /*@ ds:8DD0 */
 extern char gPanelMode; /*@ ds:FB44 */            /* a mode byte: 0 and 1 gate the redraws in 0D1C:01CA and 0D1C:0304 */
 extern int gFBCE; /*@ ds:FBCE */             /* the item index shown by the mouse (src/E07A9.C) */
 extern int gMouseDisabled; /*@ ds:814A */    /* nonzero disables the mouse (src/E07A9.C) */
-extern int gFBC8; /*@ ds:FBC8 */             /* the current action: 2 or 7 gates the turn-undead
+extern int gCurLevel; /*@ ds:FBC8 */             /* the current action: 2 or 7 gates the turn-undead
                                                 effect (0D1C:0A43); other units set it too */
 extern int gDeferMonsterHits; /*@ ds:F518 */             /* set to 1 while an object is being turned (0D1C:0A43) */
 extern char gFileNameBuf[]; /*@ ds:FE6E */   /* the text buffer sprintf formats into (src/EOV2.C) */
@@ -641,7 +641,7 @@ int GetCurrentItem(void);
     }
     return 0;
 }
-/* 0D1C:0A43: the "turn undead" action. When gFBC8 is 2 or 7 it derives a ten-bit key from
+/* 0D1C:0A43: the "turn undead" action. When gCurLevel is 2 or 7 it derives a ten-bit key from
    gPartyCell and gPartyDir (StepCell) and requires gMaze[key * 9 + 4] & 7 to be nonzero, then
    asks FindBestUndeadTurner for the best qualifying party member (its low byte the member's value, its
    high byte the member's index) and rolls 1d20. It lists the gMonsters indices whose ds:8A82 object
@@ -664,7 +664,7 @@ int GetCurrentItem(void);
     unsigned packed;
     int i;
 
-    if (gFBC8 != 2 && gFBC8 != 7)
+    if (gCurLevel != 2 && gCurLevel != 7)
         return;
     turned = 0;
     key = StepCell(gPartyCell, gPartyDir);

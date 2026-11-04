@@ -76,7 +76,7 @@ struct ItemRecord {
                                0BD2:040E and tested by 0BD2:05B5; src/E07A9.C calls it flags */
     signed char icon;       /* +3 (ds:8DD3): the icon number */
     signed char type;        /* +4 (ds:8DD4): the item type */
-    signed char tag;        /* +5 (ds:8DD5): 01D0 stores its 4th argument here and 02B9 matches it
+    signed char cellPos;        /* +5 (ds:8DD5): 01D0 stores its 4th argument here and 02B9 matches it
                                against its `key`. No caller shows a sound (01D0's callers pass a
                                slot kind, E0ACD.C:561-568, a roll, E08E6.C:807, or an effect kind | 4,
                                0BD2:07DE), so Purpose unknown: a per-entry tag */
@@ -297,7 +297,7 @@ void LevelUpSlot(int who, int cls, int slot);  /* forward: 0B45 reaches it with 
 
     slot = rec->item;
     itemType = rec->m0A;
-    baseMember = gItems[slot].tag & 3;
+    baseMember = gItems[slot].cellPos & 3;
     baseMember = gViewRelativePos[gPartyDir * 4 + baseMember];
     if (IsKind2Or3(itemType))
         damage = RollAttackDamage(-1, -1, slot, itemType, 0);

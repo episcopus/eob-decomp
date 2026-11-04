@@ -31,8 +31,8 @@ struct CharRec {
                                src/E0ACD.C:108, :623); set to 100 by 0EF3:1DC0 and by 0BD2
                                case 5 (src/E0BD2.C:746) */
     signed char levels[0x37 - 0x24]; /* +24: per-class-slot bytes, indexed by a FindClassSlot result */
-    signed char known[30];  /* +37: spell slots */
-    signed char memorized[30]; /* +55: spell slots */
+    signed char mageSpells[30];  /* +37: spell slots */
+    signed char clericSpells[30]; /* +55: spell slots */
     char pad73[0x77 - 0x73];
     int items[27];          /* +77: carried-item slots; slot 0 and 1 hold the equipped items */
     long timers[10];        /* +AD: a 32-bit value per spell slot, cleared when its spell is removed */
@@ -70,7 +70,7 @@ struct ItemRecord {
     unsigned char flags;    /* +02: bit 0x20 gates E0BD2.C's branch */
     signed char icon;       /* +03: the icon number */
     signed char type;        /* +04: the item type */
-    signed char tag;        /* +05 */
+    signed char cellPos;        /* +05 */
     int key;                /* +06: the key; -2 when the record is free (0EF3:0418) */
     int prevLink;                /* +08: one link of the circular list */
     int nextLink;                /* +0A: the other link */
@@ -196,7 +196,7 @@ extern unsigned char gPartySpellFlags;             /*@ ds:FBD2 */ /* a flag byte
                                                         flag (set by 0EF3:1AD0, cleared by
                                                         0EF3:1B13) and bit 5 is set by 0EF3:1E3E */
 extern char gPanelMode;                      /*@ ds:FB44 */
-extern int gFBC8;                       /*@ ds:FBC8 */
+extern int gCurLevel;                       /*@ ds:FBC8 */
 extern int gPartyDir;                       /*@ ds:FBCC */
 extern int gPartyCell;                  /*@ ds:FBCA */
 extern char gViewDirty;                      /*@ ds:DF4C */
@@ -230,7 +230,7 @@ extern void far *gIconTable[];          /*@ ds:FB34 */ /* far sprite pointers in
 extern void DrawShapeClipped(int page, void far *src, int x, int y, int region); /*@ 082C:063B */
 extern void DrawShapeClippedFlipped(int page, void far *src, int x, int y, int region); /*@ 082C:0681 */
 extern void DamageNearRowMonsters(int key, char count, char sides, char bonus, char flag); /*@ 08E6:16D6 */
-extern void ClipRect(int x1, int y1, int x2, int y2, int width, int height, int extra1, int extra2); /*@ 19F3:000E */
+extern void CopyRegion(int x1, int y1, int x2, int y2, int width, int height, int extra1, int extra2); /*@ 19F3:000E */
 
 extern char gStrCastOnWhich[];                /*@ ds:57A3 */
 extern char gStrMissedMonster[];                /*@ ds:57F1 */
@@ -430,7 +430,7 @@ extern int gBurstMaskPixel;                /*@ ds:FC72 */ /* the handle gGetPixe
     register int wa;
     register int wb;
 
-    row = gChars[who].known;
+    row = gChars[who].mageSpells;
     for (i = 0; i < 10; i++) {
         do {
             swapped = 0;
@@ -523,7 +523,7 @@ extern int gBurstMaskPixel;                /*@ ds:FC72 */ /* the handle gGetPixe
    whose value is the slot number plus two, redraws the member, then restores the panel member
    from ds:FC74, gClericSpellMode from ds:FC76 and the slot number to zero, and rebuilds the active item list
    (BuildList1 to 3 by gPanelMode). Called by 0EF3:08CF and 0EF3:2676 CastSpell (packet row 22). */
-/*@ 0EF3:026F */ void FinishMemberEffect(void)
+/*@ 0EF3:026F */ void EndItemCast(void)
 {
     gItemCastHand--;
     gChars[gPanelMember].m1E ^= 1 << gItemCastHand;
@@ -632,17 +632,17 @@ extern int gBurstMaskPixel;                /*@ ds:FC72 */ /* the handle gGetPixe
 
 /* 0EF3:0498: the character's class-slot 1 value: the byte at +0x24 indexed by the class table
    slot for class 1, or 1 when there is none. While a condition slot is in use (gItemCastHand) it returns
-   9, and when no member is named (who == -1) it returns 5 while gFBC8 is under 7, else 9. Called
+   9, and when no member is named (who == -1) it returns 5 while gCurLevel is under 7, else 9. Called
    by this unit's 0EF3:0F0B, 0F99, 10F2, 1197, 12E3, 141E, 146B, 162A, 1656, 17D8, 1865 and 18D8
    (packet row 28). */
-/*@ 0EF3:0498 */ int GetClassSlot1Value(int who)
+/*@ 0EF3:0498 */ int GetCasterLevel(int who)
 {
     int slot;
 
     if (gItemCastHand != 0)
         return 9;
     if (who == -1) {
-        if (gFBC8 < 7)
+        if (gCurLevel < 7)
             return 5;
         return 9;
     }
@@ -663,7 +663,7 @@ extern int gBurstMaskPixel;                /*@ ds:FC72 */ /* the handle gGetPixe
     if (gItemCastHand != 0)
         return 9;
     if (who == -1) {
-        if (gFBC8 < 7)
+        if (gCurLevel < 7)
             return 5;
         return 9;
     }
@@ -681,7 +681,7 @@ extern int gBurstMaskPixel;                /*@ ds:FC72 */ /* the handle gGetPixe
 
 /* 0EF3:059D: refuse the action: say the message at ds:57A3, play sound 0x4F and rebuild the item
    list (BuildList5). Called by the panel action at 0EF3:2676. */
-/*@ 0EF3:059D */ void ReportActionRefused(void)
+/*@ 0EF3:059D */ void PromptSpellTarget(void)
 {
     SayAndPlaySound(gStrCastOnWhich);
     PlaySound(0x4F);
@@ -765,7 +765,7 @@ extern int gBurstMaskPixel;                /*@ ds:FC72 */ /* the handle gGetPixe
 
     gTimerEnableFlags &= ~2;
     HidePointerZone(0, 0, 0xB0, 0x78);
-    ClipRect(0, 0, 0, 0, 0x16, 0x78, 0, 2);
+    CopyRegion(0, 0, 0, 0, 0x16, 0x78, 0, 2);
     for (i = 0; i < 0x10; i++)
         gSaveRect(gFlashX2[i] >> 3, gFlashY2[i], 2, 0x10, gBufDCFC + (i << 8));
     for (pass = 0; pass < 0xB; pass++) {
@@ -785,7 +785,7 @@ extern int gBurstMaskPixel;                /*@ ds:FC72 */ /* the handle gGetPixe
         }
         gDrawPage = 0;
         HidePointerZone(0, 0, 0xB0, 0x78);
-        ClipRect(0, 0, 0, 0, 0x16, 0x78, 2, 0);
+        CopyRegion(0, 0, 0, 0, 0x16, 0x78, 2, 0);
         ShowPointerZone();
         WaitTicks(2);
     }
@@ -821,7 +821,7 @@ extern int gBurstMaskPixel;                /*@ ds:FC72 */ /* the handle gGetPixe
         SayAndPlaySound(gStrSpellAborted);
     }
     if (gItemCastHand != 0)
-        FinishMemberEffect();
+        EndItemCast();
     else
         RedrawPartyPanel(rec);
     return rec->m04;
@@ -1009,7 +1009,7 @@ extern int gBurstMaskPixel;                /*@ ds:FC72 */ /* the handle gGetPixe
 
     base = GetArmourClassBase(gCurRec->dexterity);
     if (gCurRec->armorClass > base + 6) {
-        penalty = GetClassSlot1Value(gPanelMember) + 8;
+        penalty = GetCasterLevel(gPanelMember) + 8;
         gCurRec->mDF = penalty;
         ComputeArmourClass(gCurMember);
     } else {
@@ -1047,7 +1047,7 @@ extern int gBurstMaskPixel;                /*@ ds:FC72 */ /* the handle gGetPixe
             DrawShapeClipped(0, gIconTable[gBurningHandsShapes[i]], gIconX5721[i], gIconY572D[i], 0);
     }
     WaitTicks(2);
-    value = GetClassSlot1Value(gPanelMember);
+    value = GetCasterLevel(gPanelMember);
     target = StepCell(gPartyCell, gPartyDir);
     DamageNearRowMonsters(target, 1, 3, value << 1, 1);
     gViewDirty = 1;
@@ -1083,7 +1083,7 @@ extern int gBurstMaskPixel;                /*@ ds:FC72 */ /* the handle gGetPixe
    n = (class-slot 1 value - 1) >> 1. */
 /*@ 0EF3:10F2 */ void HitMagicMissile(struct Tgt far *rec)
 {
-    DamageTargetCell(rec, 1, 4, 1, (GetClassSlot1Value(rec->m0B) - 1) >> 1);
+    DamageTargetCell(rec, 1, 4, 1, (GetCasterLevel(rec->m0B) - 1) >> 1);
 }
 
 /* 0EF3:1122: set the panel member's effect flag bit 1, recompute the member's armour class and
@@ -1117,7 +1117,7 @@ extern int gBurstMaskPixel;                /*@ ds:FC72 */ /* the handle gGetPixe
     int index, itemType;
 
     index = ItemSlot1Empty(gCurRec);
-    itemType = CreateItemType(0, 0, 0, 0xF, 1, 8, GetClassSlot1Value(gPanelMember), 1);
+    itemType = CreateItemType(0, 0, 0, 0xF, 1, 8, GetCasterLevel(gPanelMember), 1);
     gCurRec->items[index] = CreateItemRecord(0x10, 0x52, 0, itemType);
     RedrawMember(gPanelMember);
     ApplyTimedCharEffect(gCurrentSpell, 0, 0x222L, 1, 1);
@@ -1173,7 +1173,7 @@ extern int gBurstMaskPixel;                /*@ ds:FC72 */ /* the handle gGetPixe
    member's class-slot 1 value. */
 /*@ 0EF3:12E3 */ void HitAcidArrow(struct Tgt far *rec)
 {
-    DamageTargetCell(rec, 2, 4, 0, GetClassSlot1Value(rec->m0B) / 3);
+    DamageTargetCell(rec, 2, 4, 0, GetCasterLevel(rec->m0B) / 3);
 }
 
 /* 0EF3:1315: an empty function reached through a table; nothing to do. */
@@ -1222,7 +1222,7 @@ extern int gBurstMaskPixel;                /*@ ds:FC72 */ /* the handle gGetPixe
 /* 0EF3:141E: run the record's 1d6 melee effect through 0EF3:0A3F. */
 /*@ 0EF3:141E */ void HitFireball(struct Tgt far *rec)
 {
-    DamageTargetCell(rec, 1, 6, 0, GetClassSlot1Value(rec->m0B));
+    DamageTargetCell(rec, 1, 6, 0, GetCasterLevel(rec->m0B));
 }
 
 /* 0EF3:144A: add the panel member's effect record of mode 3 through 0EF3:097B. */
@@ -1234,7 +1234,7 @@ extern int gBurstMaskPixel;                /*@ ds:FC72 */ /* the handle gGetPixe
 /* 0EF3:146B: run the record's 5d6 melee effect through 0EF3:0A3F. */
 /*@ 0EF3:146B */ void HitFlameArrow(struct Tgt far *rec)
 {
-    DamageTargetCell(rec, 5, 6, 0, GetClassSlot1Value(rec->m0B));
+    DamageTargetCell(rec, 5, 6, 0, GetCasterLevel(rec->m0B));
 }
 
 /* 0EF3:1497: mark every living member with effect flag bit 3, set the current member to each in
@@ -1317,7 +1317,7 @@ extern int gBurstMaskPixel;                /*@ ds:FC72 */ /* the handle gGetPixe
 /* 0EF3:162A: run the record's 1d6 melee effect through 0EF3:0A3F. */
 /*@ 0EF3:162A */ void HitLightningBolt(struct Tgt far *rec)
 {
-    DamageTargetCell(rec, 1, 6, 0, GetClassSlot1Value(rec->m0B));
+    DamageTargetCell(rec, 1, 6, 0, GetCasterLevel(rec->m0B));
 }
 
 /* 0EF3:1656: give the panel member the item of effect mode 6, like 0EF3:1197 but with flags 0x18
@@ -1329,7 +1329,7 @@ extern int gBurstMaskPixel;                /*@ ds:FC72 */ /* the handle gGetPixe
     int index, itemType;
 
     index = ItemSlot1Empty(gCurRec);
-    itemType = CreateItemType(0, 0, 0, 0xF, GetClassSlot1Value(gPanelMember) >> 1, 6, 0, 1);
+    itemType = CreateItemType(0, 0, 0, 0xF, GetCasterLevel(gPanelMember) >> 1, 6, 0, 1);
     gCurRec->items[index] = CreateItemRecord(0x18, 0x53, 0, itemType);
     RedrawMember(gPanelMember);
     ApplyTimedCharEffect(gCurrentSpell, 0, 0x222L, 1, 1);
@@ -1387,13 +1387,13 @@ extern int gBurstMaskPixel;                /*@ ds:FC72 */ /* the handle gGetPixe
     int i;
     int cell;
 
-    found = DamageTargetCell(rec, 1, 6, 0, GetClassSlot1Value(rec->m0B));
+    found = DamageTargetCell(rec, 1, 6, 0, GetCasterLevel(rec->m0B));
     if (found) {
         for (i = 0; i < 4; i++) {
             cell = rec->m04;
             rec->m04 += gNeighbourCellDeltas[i];
             rec->m04 &= 0x3FF;
-            DamageTargetCell(rec, 1, 6, 0, GetClassSlot1Value(rec->m0B));
+            DamageTargetCell(rec, 1, 6, 0, GetCasterLevel(rec->m0B));
             rec->m04 = cell;
         }
     }
@@ -1404,7 +1404,7 @@ extern int gBurstMaskPixel;                /*@ ds:FC72 */ /* the handle gGetPixe
    +0xE0 countdown. */
 /*@ 0EF3:1865 */ void CastStoneskin(void)
 {
-    gCurRec->mE0 = RollDice(1, 4, 0) + (GetClassSlot1Value(gPanelMember) >> 1);
+    gCurRec->mE0 = RollDice(1, 4, 0) + (GetCasterLevel(gPanelMember) >> 1);
 }
 
 /* 0EF3:1894: clear the record's +0xE0 countdown. Called by 0EF3:18A2. */
@@ -1447,7 +1447,7 @@ void AnimateConeOfCold(int count, int spread, int step, int cycle, int divisor,
     int row;
     int dmg;
 
-    classSlot = GetClassSlot1Value(gPanelMember);
+    classSlot = GetCasterLevel(gPanelMember);
     gDrawPage = 2;
     gFillRect(0, 0, 0xB0, 0x78, 0);
     DrawViewSlots(7);
@@ -1868,10 +1868,10 @@ void DrawSpellPanel(void);
     gPanelMember = who;
     if (gClericSpellMode = (flag == 1)) {
         gNameTable = gClericSpellNames;
-        gSpellBookSlots = gChars[who].memorized;
+        gSpellBookSlots = gChars[who].clericSpells;
     } else {
         gNameTable = gMageSpellNames;
-        gSpellBookSlots = gChars[who].known;
+        gSpellBookSlots = gChars[who].mageSpells;
     }
     gSpellPanelSlot = 0;
     while (gSpellPanelSlot < 6) {
@@ -1964,7 +1964,7 @@ void DrawSpellPanel(void);
     }
     gDrawPage = 0;
     HidePointerZone(0x48, 0x78, 0xb0, 0xaf);
-    ClipRect(9, 0x7a, 9, 0x7a, 0xd, 0x35, 2, 0);
+    CopyRegion(9, 0x7a, 9, 0x7a, 0xd, 0x35, 2, 0);
     gDrawLine(0x47, 0x7a, 0x47, 0xae, gPanelShadow);
     ShowPointerZone();
 }
@@ -2090,7 +2090,7 @@ void DrawSpellPanel(void);
     sprintf(gFileNameBuf, gStrCastsSpell, gChars[gPanelMember].name, spell->name);
     DrawText(gFileNameBuf);
     if (spell->flags & 1) {
-        ReportActionRefused();
+        PromptSpellTarget();
         return;
     }
     gCurMember = gPanelMember;
@@ -2105,7 +2105,7 @@ void DrawSpellPanel(void);
     if (gSpells[action].flags & 4)
         RedrawMember(gCurMember);
     if (gItemCastHand != 0)
-        FinishMemberEffect();
+        EndItemCast();
     else
         RedrawPartyPanel((struct ActRec far *)gF542);
 }
@@ -2114,7 +2114,7 @@ void DrawSpellPanel(void);
    (gItemCastHand = kind + 1), make `who` the panel member, set gClericSpellMode when `action` is over 0x19, and run
    the panel action 0EF3:2676(action, kind) that uses them. Called by UseWandItem (0BD2:0EE8) and
    UseItemSlot (0BD2:1001). */
-/*@ 0EF3:28ED */ void StartPanelAction(char who, int action, int kind)
+/*@ 0EF3:28ED */ void StartItemCast(char who, int action, int kind)
 {
     gSavedPanelMember = gPanelMember;
     gSavedClericMode = gClericSpellMode;

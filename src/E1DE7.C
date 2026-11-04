@@ -86,7 +86,7 @@ extern char gScrollOn;     /*@ ds:8110 */  /* overlay 5 sets it to 1 beside the 
 /* ds:8115: gDrawPage, the page the graphics driver draws to (src/E082C.C:72); it is set to 2
    by LoadOverlayScreen (082C:05EC), saved and cleared around the memory
    report ShowMemoryDiagnostics (082C:081A) and the message box (src/E1C0E.C:589), and cleared
-   while a node is drawn (src/E16A5.C:511). Passed twice as the two extra arguments of ClipRect
+   while a node is drawn (src/E16A5.C:511). Passed twice as the two extra arguments of CopyRegion
    here. */
 extern int gDrawPage;          /*@ ds:8115 */
 
@@ -116,7 +116,7 @@ extern int gDrawPage;          /*@ ds:8115 */
     gTextRow = gRegions[region].textRow;
 }
 
-extern void ClipRect(int x1, int y1, int x2, int y2, int width, int height, int extra1, int extra2); /*@ 19F3:000E */
+extern void CopyRegion(int x1, int y1, int x2, int y2, int width, int height, int extra1, int extra2); /*@ 19F3:000E */
 extern unsigned strlen(char far *s); /*@ 0000:67F6 */
 extern void HidePointerZone(int left, int top, int right, int bottom); /*@ 1BBE:01FE */
 extern void ShowPointerZone(void); /*@ 1BBE:02C2 */
@@ -256,7 +256,7 @@ extern unsigned far *gFrameTable[]; /*@ ds:113B */
    gTextRow * font height below the window top and the column gTextCol * font width right of its
    left edge. When that row has no room for a full line left, the scroll hook ds:8117 is called
    (gated by ds:8110), then the visible lines are copied from one font height lower to the top:
-   ClipRect (19F3:000E, a front end whose far target is not identified, src/E19F3.C) is passed the
+   CopyRegion (19F3:000E, a front end whose far target is not identified, src/E19F3.C) is passed the
    origins (gTextLeft, gTextTop + font height) and (gTextLeft, gTextTop) with width gTextWidth and height `bottomLine`, which
    reads as a scroll up by one line (the copy's far target is not identified), and the bottom line
    is refilled through ds:806A (the gFillRect slot); the text is then drawn on that line.
@@ -278,7 +278,7 @@ extern unsigned far *gFrameTable[]; /*@ ds:113B */
     if (gTextHeight - gFontHeight < y) {
         HidePointerZone(gTextLeft * 8, gTextTop, (gTextLeft + gTextWidth) * 8, gTextTop + gTextHeight);
         bottomLine = (gTextHeight / gFontHeight - 1) * gFontHeight;
-        ClipRect(gTextLeft, gTextTop + gFontHeight, gTextLeft, gTextTop, gTextWidth, bottomLine, gDrawPage, gDrawPage);
+        CopyRegion(gTextLeft, gTextTop + gFontHeight, gTextLeft, gTextTop, gTextWidth, bottomLine, gDrawPage, gDrawPage);
         gFillRect(gTextLeft * 8, gTextTop + bottomLine, (gTextLeft + gTextWidth) * 8 - 1,
                   gTextTop + bottomLine + gFontHeight - 1, gTextAttr2);
         gDrawText(text, gTextLeft * 8, gTextTop + bottomLine, gTextAttr1, gTextAttr2);

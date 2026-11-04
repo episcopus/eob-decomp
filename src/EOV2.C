@@ -196,7 +196,7 @@ extern void LockHidePointer(void); /*@ 1BBE:0307 */
 extern void SetMousePointerShape(int hotX, int hotY, void far *icon); /*@ 1BB1:0002 */
 extern void WaitGameKey(void); /*@ 1AAD:053A */
 extern void ShutdownGame(void); /*@ 07C8:058A */
-extern void ClipRect(int x1, int y1, int x2, int y2, int width, int height, int extra1, int extra2); /*@ 19F3:000E */
+extern void CopyRegion(int x1, int y1, int x2, int y2, int width, int height, int extra1, int extra2); /*@ 19F3:000E */
 extern char far *SkipStrings(char far *p, int n); /*@ 0D1C:07A7 */
 extern char far *strcpy(char far *dst, char far *src); /*@ 0000:67CD */
 extern unsigned strlen(char far *s); /*@ 0000:67F6 */
@@ -385,7 +385,7 @@ extern void FileClose(int handle); /*@ 1C0E:03BB */
     gFillRect(0, 0x9f, 0x13f, 0xc7, handle);
     DrawFilledPanel(0x4d, 0xa5, 0xf9, 0xc1, 0xd, 0xe, 0xc);
     DrawFilledPanel(0x4c, 0xa4, 0xfa, 0xc2, 0xd, 0xe, -1);
-    ClipRect(0, 0, 0, 0, 0x28, 0xc8, 2, 0);
+    CopyRegion(0, 0, 0, 0, 0x28, 0xc8, 2, 0);
     gDrawPage = 0;
 }
 

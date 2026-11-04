@@ -2256,3 +2256,7 @@ why = "a panel colour SetUiPalette ovl2:0937 sets to 0x85 in both branches, next
 id = "ds:EFC8"
 name = "gUnusedStartupWord"
 why = "a word InitGameTables ovl2:0496 clears at start-up with ds:EFCA, which no code in src/ (C or assembly) reads or writes otherwise"
+[[global]]
+id = "ds:FBC8"
+name = "gCurLevel"
+why = "the current dungeon level, 1 to 12: EnterMapScreen loads LoadMapScreen(gCurLevel), overlay 5 indexes gMapTiles[gCurLevel - 1], the door styles of ovl4:1411 switch on levels 1 to 3 and 12, 4 to 6, 7 to 9, 10 and 11, and RunMapLoop plays the random sound only on levels 1 to 3"

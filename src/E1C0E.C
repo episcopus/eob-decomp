@@ -613,7 +613,7 @@ extern long gSlotLengths[];              /*@ ds:FF0C: the record's length per sl
    the old value back and return 1. This is the fatal file error handler stored at ds:8104
    (gFatalHandler; the image holds 1C0E:0D9B there, file offset 2BBE4); `code` is the FatalError
    code, the index into gErrorText (1C0E:00AA). */
-/*@ 1C0E:0D9B */ int ShowMessage(int code, char far *name)
+/*@ 1C0E:0D9B */ int ShowFileError(int code, char far *name)
 {
     int saved = gDrawPage;
 

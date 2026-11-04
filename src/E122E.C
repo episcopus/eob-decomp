@@ -19,8 +19,8 @@ extern char gA9EC; /*@ ds:A9EC */              /* set by a handler to stop the d
 extern int gF50E; /*@ ds:F50E */               /* the depth of the far pointer stack the driver pushes to */
 extern void far *gScriptStack[]; /*@ ds:F444 */ /* the ten-deep far pointer stack the driver pushes to */
 extern void far *gBuf8DCA; /*@ ds:8DCA */      /* start-up far allocation (src/E07A9.C) */
-extern int gFBC8; /*@ ds:FBC8 */               /* the current action (src/E0ACD.C) */
-extern unsigned long gActionFlags[]; /*@ ds:FBD4 */ /* per-action 32-bit masks, indexed by gFBC8 */
+extern int gCurLevel; /*@ ds:FBC8 */               /* the current action (src/E0ACD.C) */
+extern unsigned long gActionFlags[]; /*@ ds:FBD4 */ /* per-action 32-bit masks, indexed by gCurLevel */
 extern unsigned long gGameFlags; /*@ ds:FC04 */     /* effect flags (src/E08E6.C) */
 extern char gMazeItems[]; /*@ ds:B899 */            /* the nine-byte record list head (src/E0ACD.C) */
 extern int gFBCE; /*@ ds:FBCE */               /* the item index shown by the mouse (src/E07A9.C) */
@@ -147,7 +147,7 @@ struct ItemRecord {
                                0BD2:040E and tested by 0BD2:05B5; src/E07A9.C calls it flags */
     signed char icon;       /* +3 (ds:8DD3): the icon number */
     signed char type;        /* +4 (ds:8DD4): the item type */
-    signed char tag;        /* +5 (ds:8DD5): 01D0 stores its 4th argument here and 02B9 matches it
+    signed char cellPos;        /* +5 (ds:8DD5): 01D0 stores its 4th argument here and 02B9 matches it
                                against its `key`. No caller shows a sound (01D0's callers pass a
                                slot kind, E0ACD.C:561-568, a roll, E08E6.C:807, or an effect kind | 4,
                                0BD2:07DE), so Purpose unknown: a per-entry tag */
@@ -156,7 +156,7 @@ struct ItemRecord {
                                new item in after this record through it */
     int nextLink;                /* +0xa (ds:8DDA): the other link; the list walks (0BD2:0385, 040E,
                                04AA) follow it */
-    signed char m0A;        /* +0xc (ds:8DDC): gFBC8 or -1, set by 01D0 */
+    signed char m0A;        /* +0xc (ds:8DDC): gCurLevel or -1, set by 01D0 */
     signed char value;        /* +0xd (ds:8DDD): the item's bonus or effect value: the signed bonus
                                printed as "%s +%d" and "Cursed %s %d", the spell index into ds:1278
                                and ds:12E0, the wand effect index g38FA[m0B], and the scroll and
@@ -186,7 +186,7 @@ extern struct Projectile gProjectiles[]; /*@ ds:DD2C */    /* 10 records, 18 byt
 struct Monster {                                  /* the 28-byte object records at ds:8A82 (src/E08E6.C) */
     char pad00[2];
     int cell;                                     /* +2 (ds:8A84): the object id */
-    char frame;                                 /* +4 (ds:8A86) */
+    char cellPos;                                 /* +4 (ds:8A86) */
     char pad05[0x08 - 5];
     signed char type;                           /* +8 (ds:8A8A): the object type, cleared by 122E:1097 */
     char pad09[0x16 - 9];
@@ -410,7 +410,7 @@ void RunCellScript(int cell, int mode);  /* forward: 1DA8 comes after its caller
 /* 122E:04CA: the member-slot click handler. It turns the clicked row (gEF9E[gViewFrontSide]) into a gDoorButtons
    slot entry (through g59F8), builds the slot's screen rectangle from the entry's x/y and the
    far size record's width (in eighths) and height, all grown by 4 on each side and offset by g1E75,
-   and for the item actions (gFBC8 4, 5, 6) shifts x by the scroll column (row - g59D8[row]) * 9, or
+   and for the item actions (gCurLevel 4, 5, 6) shifts x by the scroll column (row - g59D8[row]) * 9, or
    by 4 when the row is at least 0x1e. A hit, or a driver not in mode 0x40, toggles the arm effect
    and plays sound 6 and returns 1; otherwise it defers to CheckMemberSlotRect and returns its
    result. */
@@ -433,7 +433,7 @@ void RunCellScript(int cell, int mode);  /* forward: 1DA8 comes after its caller
     y = gDoorButtons[idx].y - 4;
     width = rec->width * 8 + 8;
     height = rec->height + 8;
-    switch (gFBC8) {
+    switch (gCurLevel) {
     case 4:
     case 5:
     case 6:
@@ -799,13 +799,13 @@ void RunCellScript(int cell, int mode);  /* forward: 1DA8 comes after its caller
         obj = gMonsters;
         for (i = 0; i < 0x1e; i++) {
             if (obj->cell == srcId)
-                MoveObjectToId(obj, id, obj->frame);
+                MoveObjectToId(obj, id, obj->cellPos);
             obj++;
         }
         break;
     case 0xfff5:
         while ((item = ScanListItem(&gMazeItems[srcId * 9], -1, -1, 0)) != 0) {
-            oldKey = gItems[item].tag;
+            oldKey = gItems[item].cellPos;
             RemoveListItem(&gMazeItems[srcId * 9], 0, item);
             InsertListItem(&gMazeItems[id * 9], id, item, oldKey);
         }
@@ -901,7 +901,7 @@ done:
     return (long)(script - start);
 }
 /* 122E:1097: opcode that sets action flags. 0xFFEF sets the bit in the gActionFlags entry of the
-   current action gFBC8, 0xFFF0 sets it in gGameFlags, 0xFFF3 sets a bit in gMonsters[index].m16 and clears
+   current action gCurLevel, 0xFFF0 sets it in gGameFlags, 0xFFF3 sets a bit in gMonsters[index].m16 and clears
    gMonsters[index].type, and 0xFFE4 sets gFB76. Returns the bytes read. */
 /*@ 122E:1097 */ long SetActionFlagsOp(char far *script)
 {
@@ -914,7 +914,7 @@ done:
     switch (op) {
     case 0xffef:
         arg = *script++;
-        gActionFlags[gFBC8] |= 1L << arg;
+        gActionFlags[gCurLevel] |= 1L << arg;
         break;
     case 0xfff0:
         arg = *script++;
@@ -952,7 +952,7 @@ done:
 }
 
 /* 122E:11E8: opcode that clears one bit of a 32-bit action mask: 0xFFEF clears the bit in the
-   gActionFlags entry of the current action gFBC8, 0xFFF0 clears it in gGameFlags. The byte after the
+   gActionFlags entry of the current action gCurLevel, 0xFFF0 clears it in gGameFlags. The byte after the
    opcode is the bit number. Returns the bytes read. */
 /*@ 122E:11E8 */ long ClearActionBit(char far *script)
 {
@@ -964,7 +964,7 @@ done:
     bit = *script++;
     switch (op) {
     case 0xFFEF:
-        gActionFlags[gFBC8] &= ~(1L << bit);
+        gActionFlags[gCurLevel] &= ~(1L << bit);
         break;
     case 0xFFF0:
         gGameFlags &= ~(1L << bit);
@@ -1158,7 +1158,7 @@ done:
             break;
         case 0xFFEF:
             value = *script++;
-            if (gActionFlags[gFBC8] & (1L << value))
+            if (gActionFlags[gCurLevel] & (1L << value))
                 gEvalStack[gEvalTop++] = 1;
             else
                 gEvalStack[gEvalTop++] = 0;
@@ -1333,7 +1333,7 @@ done:
     if (v2 != (char)0xff)
         gPartyDir = v2;
     ResetLevel();
-    SaveLevelState(gFBC8);
+    SaveLevelState(gCurLevel);
     LoadMapScreen(v1);
     LoadScreenImage(gText5BA1, (char far *)gSheet2067, 5, 3, 2);
     NoOpAfterMapLoad();

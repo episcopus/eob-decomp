@@ -129,7 +129,7 @@ struct Region {             /* the 16-byte region records at ds:009F (src/E1DE7.
 };
 
 extern struct Region gRegions[]; /*@ ds:009F */
-extern int gFBC8; /*@ ds:FBC8 */                 /* the current action (src/E0D1C.C) */
+extern int gCurLevel; /*@ ds:FBC8 */                 /* the current action (src/E0D1C.C) */
 extern int gPartyDir; /*@ ds:FBCC */                 /* the party's facing, 0..3 north, east, south, west */
 extern signed char gDoorClipY[]; /*@ ds:6F4E */       /* row value table this unit indexes */
 extern signed char gDoorClipTopRow[]; /*@ ds:6F6D */       /* per-page index into ds:6F4E */
@@ -138,14 +138,14 @@ extern signed char gViewSlotRow[]; /*@ ds:1A09 */       /* per-object index into
 
 /* ovl4:021E: computes the top and bottom pixel rows of one column of the current page's view
    and fits region `region` to them. The column value comes from ds:6F4E at the row index
-   ds:6F6D[gFBC8] + ds:1A09[col] for the top and ds:6F79[gFBC8] + ds:1A09[col] for the bottom;
+   ds:6F6D[gCurLevel] + ds:1A09[col] for the top and ds:6F79[gCurLevel] + ds:1A09[col] for the bottom;
    then SetRegionExtents rewrites the region with its current left and width and the new top and
    height. Called by DrawSlotDoor at ovl4:149B and ovl4:179E. Purpose unknown: what the tables
    mean. */
 /*@ ovl4:021E */ void SetRegionColumnExtent(char col, int far *top, int far *bottom, int region)
 {
-    char topRow = gDoorClipTopRow[gFBC8];
-    char bottomRow = gDoorClipBottomRow[gFBC8];
+    char topRow = gDoorClipTopRow[gCurLevel];
+    char bottomRow = gDoorClipBottomRow[gCurLevel];
 
     *top = gDoorClipY[topRow + gViewSlotRow[col]];
     *bottom = gDoorClipY[bottomRow + gViewSlotRow[col]];
@@ -343,12 +343,12 @@ extern int gViewMirrorParity; /*@ ds:F4BC */             /* the cell and page pa
         CopyViewColumn(3, 1, slot, 0xef, 0x10, 0xc);
     slot = gViewCells[15][gViewRightSide];
     slot2 = gViewCells[17][gViewLeftSide];
-    if (gFBC8 > 6 && gFBC8 < 0xa) {
+    if (gCurLevel > 6 && gCurLevel < 0xa) {
         if (slot2 == 0x17)
             slot2 = 0;
         if (slot2 == 0x18)
             slot2 = 0;
-    } else if (gFBC8 > 3) {
+    } else if (gCurLevel > 3) {
         if (slot == 0x18)
             slot = 0;
         if (slot2 == 0x17)
@@ -367,7 +367,7 @@ struct ItemRecord {
     unsigned char flags;
     signed char icon;       /* +3: indexes ds:181F */
     signed char type;
-    signed char tag;        /* +5: the kind tested here */
+    signed char cellPos;        /* +5: the kind tested here */
     int key;
     int prevLink;                /* +8: one link of the circular list */
     int nextLink;
@@ -438,10 +438,10 @@ extern void DrawShapeClipped(int page, void far *src, int x, int y, int region);
     first = 1;
     while (field != head || first) {
         rec = &gItems[field];
-        is8 = (rec->tag == 8);
-        if (is8 == 1 || rec->tag < 4) {
+        is8 = (rec->cellPos == 8);
+        if (is8 == 1 || rec->cellPos < 4) {
             spanSlot = -1;
-            sprite = gViewRelativePos[gPartyDir * 4 + (rec->tag & 3)];
+            sprite = gViewRelativePos[gPartyDir * 4 + (rec->cellPos & 3)];
             if (is8)
                 sprite = 4;
             k = (slotReg * 5 + sprite) * 2;
@@ -481,7 +481,7 @@ struct Monster {
     char typeIndex;                /* +0: index into the ds:1A3B table */
     signed char kind;       /* +1 */
     int cell;                 /* +2 */
-    char frame;             /* +4 */
+    char cellPos;             /* +4 */
     char orient;            /* +5 */
     char toggle;            /* +6 */
     char m07;               /* +7 */
@@ -583,7 +583,7 @@ extern void DrawShapeClippedRemapFlipped(int page, void far *src, int x, int y, 
     i = 0;
     while (i < 0x1e) {
         if (obj->cell == cellId)
-            arr[gMonsterDrawOrder[page5 + obj->frame]] = obj;
+            arr[gMonsterDrawOrder[page5 + obj->cellPos]] = obj;
         i++;
         obj++;
     }
@@ -620,8 +620,8 @@ extern void DrawShapeClippedRemapFlipped(int page, void far *src, int x, int y, 
                 BlitSpriteDefault(cell, gBufDCFC);
             cell = gBufDCFC;
         }
-        if (obj->frame != 4)
-            spriteBase = gViewRelativePos[page4 + obj->frame];
+        if (obj->cellPos != 4)
+            spriteBase = gViewRelativePos[page4 + obj->cellPos];
         else
             spriteBase = 4;
         k = (slot * 5 + spriteBase) * 2;
@@ -826,14 +826,14 @@ extern signed char gDoorSplitFrom30[]; /*@ ds:71A2 */   /* per index nudge f (th
     rec = gDoorShapes[col];
     xBase = gViewPosX[(slot * 5 + 4) * 2];
     x = xBase + 0x58;
-    if (gFBC8 < 7 || gFBC8 > 9)
+    if (gCurLevel < 7 || gCurLevel > 9)
         SetRegionColumnExtent(slot, &top, &bottom, 5);
-    switch (gFBC8) {
+    switch (gCurLevel) {
     case 1:
     case 2:
     case 3:
     case 12:
-        if (gFBC8 != 0xc)
+        if (gCurLevel != 0xc)
             y = gDoorYLevels1to3[idx] - rec->height;
         else
             y = gDoorYLevel12[idx] - rec->height;
@@ -1141,7 +1141,7 @@ extern void ShowPointerZone(void); /*@ 1BBE:02C2 */
    draws the three rows through DrawShape(0, gCompassIcons[gPartyDir + 4 * i], gCompassX[i], gCompassY[i], 0),
    shows the pointer and remembers gPartyDir in ds:7296. Called by DrawViewFrame at ovl4:202F. Purpose
    unknown: what the rows are. */
-/*@ ovl4:1EDE */ void DrawViewRows(void)
+/*@ ovl4:1EDE */ void DrawCompass(void)
 {
     int i;
 
@@ -1163,7 +1163,7 @@ extern void far *gSegDCA6; /*@ ds:DCA6 */   /* the far pointer DrawTile draws (s
 extern unsigned char far *gFE68; /*@ ds:FE68 */  /* the loaded palette buffer (src/E07C8.C) */
 extern void (far *gFn80BA)(void far *table); /*@ ds:80BA */  /* palette setter (src/E07C8.C) */
 extern void (far *gFillRect)(int x1, int y1, int x2, int y2, int pattern); /*@ ds:806A */
-extern void ClipRect(int x1, int y1, int x2, int y2, int width, int height, int extra1, int extra2); /*@ 19F3:000E */
+extern void CopyRegion(int x1, int y1, int x2, int y2, int width, int height, int extra1, int extra2); /*@ 19F3:000E */
 extern void DrawTile(void far *src); /*@ 17A6:03E7 */
 extern void PlaySoundDefault(int sound); /*@ 177D:00F3 */
 
@@ -1173,7 +1173,7 @@ extern void PlaySoundDefault(int sound); /*@ 177D:00F3 */
    palette gFE68 and clears gLevelPalettePending; when `full` is also set, it first blanks the view box (gFillRect
    with pattern 0xc). Then it waits for gFrameWaitTicks
    to reach zero, and, when `full` is set and gQuietObjectUpdate is clear, clips a rectangle. It always plays
-   sound 0 and, when gFlag is zero, runs DrawViewRows; finally it clears gViewDirty. Called from the game
+   sound 0 and, when gFlag is zero, runs DrawCompass; finally it clears gViewDirty. Called from the game
    loop. */
 /*@ ovl4:1F51 */ void DrawViewFrame(int full)
 {
@@ -1193,12 +1193,12 @@ extern void PlaySoundDefault(int sound); /*@ 177D:00F3 */
         ;
     if (full && !gQuietObjectUpdate) {
         HidePointerZone(0, 0, 0xb0, 0x78);
-        ClipRect(0, 0, 0, 0, 0x16, 0x78, 2, 0);
+        CopyRegion(0, 0, 0, 0, 0x16, 0x78, 2, 0);
         ShowPointerZone();
     }
     PlaySoundDefault(0);
     if (!gFlag)
-        DrawViewRows();
+        DrawCompass();
     gViewDirty = 0;
 }
 /* ovl4:2039: discards its work: si = 0 then si++ and return. Purpose unknown. */

@@ -68,7 +68,7 @@ struct CharRec {            /* the 243-byte (0xF3) records at ds:F580 (src/E0A72
 extern int gGraphicsChoice; /*@ ds:8102 */         /* the video mode the game initialised (src/E082C.C) */
 extern int gDrawPage; /*@ ds:8115 */         /* the graphics driver's draw page (src/E082C.C) */
 extern unsigned char gPartySpellFlags; /*@ ds:FBD2 */ /* bit 0 gates the icon colour row (src/E0D1C.C); the 0x30
-                                              bits DrawMemberBar tests (:163) are not understood */
+                                              bits DrawMemberFrame tests (:163) are not understood */
 extern signed char gPanelHighlight; /*@ ds:FB4C */ /* a colour (src/E0D1C.C) */
 extern signed char gPanelShadow; /*@ ds:F53A */ /* a colour (src/E0D1C.C) */
 extern struct CharRec gChars[]; /*@ ds:F580 */ /* the six character records */
@@ -117,7 +117,7 @@ extern void DrawRect(int x1, int y1, int x2, int y2, int colour); /*@ 082C:04C4 
 extern void DrawFilledPanel(int x1, int y1, int x2, int y2, int colourA, int colourB, int fill); /*@ 082C:09D5 */
 extern int MemberIs(int who, int mask); /*@ 0D1C:0670 */
 extern void DrawShape(int page, void far *src, int x, int y, int region); /*@ 1A29:000F */
-extern void ClipRect(int x1, int y1, int x2, int y2, int width, int height, int extra1, int extra2); /*@ 19F3:000E */
+extern void CopyRegion(int x1, int y1, int x2, int y2, int width, int height, int extra1, int extra2); /*@ 19F3:000E */
 extern void LockHidePointer(void); /*@ 1BBE:0307 */
 extern void LockShowPointer(void); /*@ 1BBE:0332 */
 extern void DrawItemIcon(int mode, int n, int x, int y); /*@ 0D1C:070F */
@@ -169,7 +169,7 @@ extern void DrawItemRow(int who, int slot, int one); /*@ 0BD2:0917 */
    src/E0DE8.C:563-566, src/E0EF3.C:39). Called by RedrawMember (0991) only. The flag tests read
    effectFlags as a long, so they take the `mov ax,es:[bx+0xE3]; and ax,K; or ax,0` form (the long bit test
    at 0D1C:0B17). */
-/*@ 1547:0009 */ void DrawMemberBar(int who)
+/*@ 1547:0009 */ void DrawMemberFrame(int who)
 {
     int colour;
     struct CharRec far *rec;
@@ -522,8 +522,8 @@ extern void DrawItemRow(int who, int slot, int one); /*@ 0BD2:0917 */
         SetFont(gFont6x6);
         x = gMemberBlockCol[who & 1];
         y = gMemberBlockY[who >> 1];
-        ClipRect(0x16, 0xa8, x, y, 8, 0x18, 2, 2);
-        ClipRect(0x1e, 0xa8, x, y + 0x18, 8, 0x1a, 2, 2);
+        CopyRegion(0x16, 0xa8, x, y, 8, 0x18, 2, 2);
+        CopyRegion(0x1e, 0xa8, x, y + 0x18, 8, 0x1a, 2, 2);
         savedStatusLine = gDrawPage;
         gDrawPage = 2;
         x <<= 3;    /* the layout tables hold 8-pixel columns; the text routines take pixels */
@@ -535,7 +535,7 @@ extern void DrawItemRow(int who, int slot, int one); /*@ 0BD2:0917 */
         DrawMemberSlot(who, 0);
         DrawMemberSlot(who, 1);
         DrawMemberHp(who);
-        DrawMemberBar(who);
+        DrawMemberFrame(who);
         if (rec->lastDamage > 0) {
             itoa(rec->lastDamage, buf, 10);
             DrawShape(2, gThrownIcon3, x + 0xd, y + 0x1e, 0);
@@ -544,7 +544,7 @@ extern void DrawItemRow(int who, int slot, int one); /*@ 0BD2:0917 */
         }
         gDrawPage = savedStatusLine;
         if (!gDrawPage)
-            ClipRect(x >> 3, y, gMemberScreenCol[who & 1], y, 8, 0x32, 2, 0);
+            CopyRegion(x >> 3, y, gMemberScreenCol[who & 1], y, 8, 0x32, 2, 0);
         SetFont(savedFont);
         LockShowPointer();
         return;
@@ -552,7 +552,7 @@ extern void DrawItemRow(int who, int slot, int one); /*@ 0BD2:0917 */
     case 2:
         if (gInventoryMember != who)
             return;
-        ClipRect(0x16, 0, 0, 0, 0x12, 0xa8, 2, 2);
+        CopyRegion(0x16, 0, 0, 0, 0x12, 0xa8, 2, 2);
         gDrawPage = 2;
         DrawMemberPortrait(who);
         DrawShadowText(rec->name, 0xdb, 6, textAttr, gPanelFillColour);
@@ -615,9 +615,9 @@ extern void DrawItemRow(int who, int slot, int one); /*@ 0BD2:0917 */
         }
         gDrawPage = 0;
         LockHidePointer();
-        ClipRect(0x16, 0, 0x16, 0, 0x12, 0xa8, 2, 0);
+        CopyRegion(0x16, 0, 0x16, 0, 0x12, 0xa8, 2, 0);
         LockShowPointer();
-        ClipRect(0, 0, 0x16, 0, 0x12, 0xa8, 2, 2);
+        CopyRegion(0, 0, 0x16, 0, 0x12, 0xa8, 2, 2);
         break;
     }
 }

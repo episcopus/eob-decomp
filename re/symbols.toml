@@ -1876,10 +1876,10 @@ unit = "e08e6"
 addr = "08E6:0309"
 size = 245
 evidence = ["near", "frame"]
-name = "TurnObject"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "TryMoveMonster"
 
 [[function]]
 id = "e08e6_03fe"
@@ -3592,10 +3592,10 @@ unit = "e0ef3"
 addr = "0EF3:026F"
 size = 147
 evidence = ["near"]
-name = "FinishMemberEffect"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "EndItemCast"
 
 [[function]]
 id = "e0ef3_0302"
@@ -3658,10 +3658,10 @@ unit = "e0ef3"
 addr = "0EF3:0498"
 size = 95
 evidence = ["near", "frame"]
-name = "GetClassSlot1Value"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "GetCasterLevel"
 
 [[function]]
 id = "e0ef3_04f7"
@@ -3680,10 +3680,10 @@ unit = "e0ef3"
 addr = "0EF3:059D"
 size = 32
 evidence = ["near", "frame"]
-name = "ReportActionRefused"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "PromptSpellTarget"
 
 [[function]]
 id = "e0ef3_05bd"
@@ -4672,10 +4672,10 @@ unit = "e0ef3"
 addr = "0EF3:28ED"
 size = 60
 evidence = ["far", "frame"]
-name = "StartPanelAction"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "StartItemCast"
 
 [[function]]
 id = "e0ef3_2929"
@@ -5460,10 +5460,10 @@ unit = "e1547"
 addr = "1547:0009"
 size = 643
 evidence = ["near", "segment"]
-name = "DrawMemberBar"
 level = "L2"
 match_flags = "-ml -O -Z"
 review = "passed 2026-11-02 rev-haiku"
+name = "DrawMemberFrame"
 
 [[function]]
 id = "e1547_028c"
@@ -6284,10 +6284,10 @@ unit = "e19f3"
 addr = "19F3:000E"
 size = 137
 evidence = ["far", "segment"]
-name = "ClipRect"
 level = "L2"
 match_flags = "-ml -O -Z"
 review = "passed 2026-11-01 rev-haiku"
+name = "CopyRegion"
 
 [[function]]
 id = "e19fc_0007"
@@ -7242,10 +7242,10 @@ unit = "e1c0e"
 addr = "1C0E:0D9B"
 size = 40
 evidence = ["frame"]
-name = "ShowMessage"
 level = "L2"
 match_flags = "-ml -O -Z -G"
 review = "passed 2026-11-02 rev-haiku"
+name = "ShowFileError"
 
 [[function]]
 id = "e1c0e_0dc3"
@@ -8529,10 +8529,10 @@ unit = "eov1"
 addr = "ovl1:13F7"
 size = 287
 evidence = ["ovl", "near"]
-name = "ShowMessage"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "ShowMessageBox"
 
 [[function]]
 id = "eov1_1516"
@@ -9125,10 +9125,10 @@ unit = "eov4"
 addr = "ovl4:1EDE"
 size = 115
 evidence = ["ovl", "near", "frame"]
-name = "DrawViewRows"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "DrawCompass"
 
 [[function]]
 id = "eov4_1f51"

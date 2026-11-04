@@ -24,8 +24,8 @@ struct CharRec {
                                   regains neither spells nor hit points while resting, and rest
                                   without a ration costs 5 (ovl6:0000) */
     char pad24[0x37 - 0x24];
-    signed char known[30];     /* +37: spell slots, negative: a spell to be memorised */
-    signed char memorized[30]; /* +55: spell slots, positive: a spell ready to cast; negative:
+    signed char mageSpells[30];     /* +37: spell slots, negative: a spell to be memorised */
+    signed char clericSpells[30]; /* +55: spell slots, positive: a spell ready to cast; negative:
                                   spent or not yet regained (CampLoop turns it positive as
                                   "gained") */
     char pad73[0xF3 - 0x55 - 30];
@@ -90,7 +90,7 @@ extern int Distance(int x, int y); /*@ 17A6:0F61 */
 extern void RedrawMember(int member); /*@ 1547:0991 */
 extern void DamageCharacter(int who, int amount); /*@ 0DE8:09B9 */
 extern void UpdateObjects(int kind); /*@ 08E6:0CC8 */
-extern void ClipRect(int x1, int y1, int x2, int y2, int width, int height, int extra1, int extra2); /*@ 19F3:000E */
+extern void CopyRegion(int x1, int y1, int x2, int y2, int width, int height, int extra1, int extra2); /*@ 19F3:000E */
 extern int ReadKey(void); /*@ 1AAD:038E */
 extern void FlushKeyBuffer(void); /*@ 1AAD:0480 */
 extern int AskYesNo(int what); /*@ 2102:0039 */
@@ -194,7 +194,7 @@ void ShowCampMessage(int message);
                 continue;
             if (!MemberIs(i, 5))
                 continue;
-            slots = &gChars[i].memorized[0];
+            slots = &gChars[i].clericSpells[0];
             for (member = 0; member < 0x1e; member++) {
                 if (member / 6 + '0' >= counters[i])
                     break;
@@ -213,7 +213,7 @@ void ShowCampMessage(int message);
             }
             if (FindCarriedSlot(i, 0x1d, -1) == -1)
                 continue;
-            slots = &gChars[i].known[0];
+            slots = &gChars[i].mageSpells[0];
             for (member = 0; member < 0x1e; member++) {
                 if (member / 6 + '0' >= counters[i])
                     break;
@@ -235,11 +235,11 @@ void ShowCampMessage(int message);
             for (i = 0; i < 6; i++) {
                 if (FindClassSlot(2, gChars[i].classIndex) != -1) {
                     if (counters[i] >= '0'
-                        && (memchr(&gChars[i].memorized[0], -2, 0x1e) != 0
-                            || memchr(&gChars[i].memorized[0], -0xf, 0x1e) != 0
-                            || memchr(&gChars[i].memorized[0], -0x14, 0x1e) != 0))
+                        && (memchr(&gChars[i].clericSpells[0], -2, 0x1e) != 0
+                            || memchr(&gChars[i].clericSpells[0], -0xf, 0x1e) != 0
+                            || memchr(&gChars[i].clericSpells[0], -0x14, 0x1e) != 0))
                         break;
-                    slots = &gChars[i].memorized[0];
+                    slots = &gChars[i].clericSpells[0];
                     for (member = 0; member < 0x1e; member++) {
                         healAmount = 0;
                         switch (*slots) {
@@ -297,10 +297,10 @@ void ShowCampMessage(int message);
                 changed = 0;
                 for (member = 0; member < 6; member++) {
                     if (gChars[member].classIndex == 2) {
-                        if ((slots = memchr(&gChars[member].memorized[0], 0xffe8, 6)) != 0)
+                        if ((slots = memchr(&gChars[member].clericSpells[0], 0xffe8, 6)) != 0)
                             *slots = 0x18;
-                        else if (!memchr(&gChars[member].memorized[0], 0x18, 6))
-                            *(char *)memchr(&gChars[member].memorized[0], 0, 6) = 0x18;
+                        else if (!memchr(&gChars[member].clericSpells[0], 0x18, 6))
+                            *(char *)memchr(&gChars[member].clericSpells[0], 0, 6) = 0x18;
                     }
                     if (!MemberIs(member, 3))
                         continue;
@@ -383,7 +383,7 @@ done:
 
 /* ovl6:0858: shows the camp panel and the "Hours rested" line. It selects the 8x8 font and the
    region 0xa, and when `draw` is nonzero clears gDrawPage, hides the pointer, fills the panel
-   rectangle (DrawFramedPanel) inside its clip (ClipRect), draws the title through DrawShadowText and shows
+   rectangle (DrawFramedPanel) inside its clip (CopyRegion), draws the title through DrawShadowText and shows
    the pointer again. Then it formats "Hours rested: %-4d" with gFileNameBuf and, with gDrawPage set to 2,
    draws the line in colour 0xf with gPanelFillColour as the colour2 (fifth) argument of the first shadow draw
    only (DrawShadowText 082C:0898) inside a second clip. Finally it waits ten frames and restores the
@@ -402,7 +402,7 @@ done:
         LockHidePointer();
         ClearTextRegion();
         DrawFramedPanel(gTextLeft << 3, gTextTop, gTextWidth << 3, gTextHeight, 0, 0);
-        ClipRect(gTextLeft, gTextTop, gTextLeft, gTextTop, gTextWidth, gTextHeight, 0, 2);
+        CopyRegion(gTextLeft, gTextTop, gTextLeft, gTextTop, gTextWidth, gTextHeight, 0, 2);
         DrawShadowText(SkipStrings(&gCampStrings, 0x2a), (gTextLeft + 1) << 3, gTextTop + 5, 9, 0);
         LockShowPointer();
     }
@@ -411,7 +411,7 @@ done:
     LockHidePointer();
     DrawShadowText(gFileNameBuf, (gTextLeft + 1) << 3, gTextTop + 0x14, 0xf, gPanelFillColour);
     gDrawPage = 0;
-    ClipRect(gTextLeft + 1, gTextTop + 0x14, gTextLeft + 1, gTextTop + 0x14, 0x12, 8, 2, 0);
+    CopyRegion(gTextLeft + 1, gTextTop + 0x14, gTextLeft + 1, gTextTop + 0x14, 0x12, 8, 2, 0);
     LockShowPointer();
     WaitFrames(0xa);
     SetFont(savedFont);
@@ -470,7 +470,7 @@ done:
             continue;
         if (FindClassSlot(2, gChars[member].classIndex) != -1
             || FindClassSlot(4, gChars[member].classIndex) != 0) {
-            slots = &gChars[member].memorized[0];
+            slots = &gChars[member].clericSpells[0];
             for (i = 0; i < 0x1e; i++)
                 if (*slots++ < 0)
                     return 1;
@@ -479,7 +479,7 @@ done:
             continue;
         if (FindCarriedSlot(member, 0x1d, -1) == -1)
             continue;
-        slots = &gChars[member].known[0];
+        slots = &gChars[member].mageSpells[0];
         for (i = 0; i < 0x1e; i++)
             if (*slots++ < 0)
                 return 1;
@@ -490,7 +490,7 @@ done:
    message number `message` in the far string table at 2003:0000. It saves gDrawPage, the
    current font and gTextRegion, selects the 8x8 font and text region 0xb, stores gPanelFillColour in ds:0159
    (the value here, gDrawPage = 2 at ds:8115), fills the panel (DrawFramedPanel) and draws the message
-   string through DrawShadowText in color 0xf inside a clip (ClipRect). Then it waits up to 0x78
+   string through DrawShadowText in color 0xf inside a clip (CopyRegion). Then it waits up to 0x78
    frames for a key (1AAD:038E), clears the pending key (1AAD:0480) and restores the font, region
    and gDrawPage. Its only caller's message is 0x2b, "All characters are fully rested." */
 /*@ ovl6:0B9B */ void ShowCampMessage(int message)
@@ -510,7 +510,7 @@ done:
     gDrawPage = 2;
     DrawFramedPanel(gTextLeft << 3, gTextTop, gTextWidth << 3, gTextHeight, 0, 0);
     DrawShadowText(SkipStrings(&gCampStrings, message), (gTextLeft << 3) + 5, gTextTop + 5, 0xf, 0);
-    ClipRect(gTextLeft, gTextTop, gTextLeft, gTextTop, gTextWidth, gTextHeight, 2, 0);
+    CopyRegion(gTextLeft, gTextTop, gTextLeft, gTextTop, gTextWidth, gTextHeight, 2, 0);
     LockShowPointer();
     for (i = 0; i < 0x78; i++) {
         if (ReadKey()) {

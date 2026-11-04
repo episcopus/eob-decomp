@@ -8442,3 +8442,111 @@ new = "gDrawPage"
 kind = "global"
 why = "the page the graphics driver draws to: the driver's import slot ds:8032 points at it (212E:8115) and MCGA.OVL 0B3F reads it masked with 1Fh to index the page segments gPageSegs (ds:FC0C); setting it to 2 draws to page 2; its INTRO.EXE twin ds:1FA1 is gDrawPage"
 date = "2026-11-03"
+
+[[rename]]
+id = "0EF3:059D=PromptSpellTarget"
+addr = "0EF3:059D"
+old = "ReportActionRefused"
+new = "PromptSpellTarget"
+kind = "function"
+why = "says gStrCastOnWhich (\"Cast spell on which character?\"), plays sound 0x4F and rebuilds the list of members to pick (0EF3:059D)"
+date = "2026-11-03"
+
+[[rename]]
+id = "0EF3:0498=GetCasterLevel"
+addr = "0EF3:0498"
+old = "GetClassSlot1Value"
+new = "GetCasterLevel"
+kind = "function"
+why = "returns the casting level: the member's level in the mage class slot (FindClassSlot(1, class)), 9 for a spell cast from an item, and for a monster 5 below level 7 or 9 (0EF3:0498); the spell callbacks scale their damage by it"
+date = "2026-11-03"
+
+[[rename]]
+id = "1C0E:0D9B=ShowFileError"
+addr = "1C0E:0D9B"
+old = "ShowMessage"
+new = "ShowFileError"
+kind = "function"
+why = "the fatal file error handler stored at ds:8104 (gFatalHandler): it draws the error text gErrorText[code] for the file name in the message box of 1C0E:0ADD on page 0 and returns 1 (1C0E:0D9B)"
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:FBC8=gCurLevel"
+addr = "ds:FBC8"
+old = "gFBC8"
+new = "gCurLevel"
+kind = "global"
+why = "the current dungeon level, 1 to 12: EnterMapScreen loads LoadMapScreen(gCurLevel), overlay 5 indexes gMapTiles[gCurLevel - 1], the door styles of ovl4:1411 switch on levels 1 to 3 and 12, 4 to 6, 7 to 9, 10 and 11, and RunMapLoop plays the random sound only on levels 1 to 3"
+date = "2026-11-03"
+
+[[rename]]
+id = "ovl4:1EDE=DrawCompass"
+addr = "ovl4:1EDE"
+old = "DrawViewRows"
+new = "DrawCompass"
+kind = "function"
+why = "redraws the three compass shapes gCompassIcons, four versions each by facing, only when gPartyDir changed (ovl4:1EDE)"
+date = "2026-11-03"
+
+[[rename]]
+id = "19F3:000E=CopyRegion"
+addr = "19F3:000E"
+old = "ClipRect"
+new = "CopyRegion"
+kind = "function"
+why = "copies a rectangle from one page to another through the driver's page-to-page copy ds:8052 (gCopyRegion); CopyRegion(0, 0, 0, 0, 40, 200, 4, 2) copies page 4 to page 2 (19F3:000E)"
+date = "2026-11-03"
+
+[[rename]]
+id = "08E6:0309=TryMoveMonster"
+addr = "08E6:0309"
+old = "TurnObject"
+new = "TryMoveMonster"
+kind = "function"
+why = "moves the monster into the adjacent cell when it can: the wall between must have gWallTypeFlags bit 2 (monster passable), the party must not stand there and a position in the cell must be free (08E6:0309); returns whether it moved"
+date = "2026-11-03"
+
+[[rename]]
+id = "0EF3:28ED=StartItemCast"
+addr = "0EF3:28ED"
+old = "StartPanelAction"
+new = "StartItemCast"
+kind = "function"
+why = "starts a spell cast from a scroll or a wand in the hand (gItemCastHand holds the hand slot plus one): saves the panel member and opens the spell's target choice (0EF3:28ED)"
+date = "2026-11-03"
+
+[[rename]]
+id = "0EF3:026F=EndItemCast"
+addr = "0EF3:026F"
+old = "FinishMemberEffect"
+new = "EndItemCast"
+kind = "function"
+why = "ends a spell cast from an item started by StartItemCast 0EF3:28ED: restores the panel member and clears gItemCastHand (0EF3:026F)"
+date = "2026-11-03"
+
+[[rename]]
+id = "1547:0009=DrawMemberFrame"
+addr = "1547:0009"
+old = "DrawMemberBar"
+new = "DrawMemberFrame"
+kind = "function"
+why = "draws the frame around a party member's block in the party panel (1547:0009), in the highlight or the plain colours"
+date = "2026-11-03"
+
+[[rename]]
+id = "ovl1:13F7=ShowMessageBox"
+addr = "ovl1:13F7"
+old = "ShowMessage"
+new = "ShowMessageBox"
+kind = "function"
+why = "draws message `message` in a framed box on page 2 and waits for a key (ovl1:13F7); called by RunCampMenu, SelectPartyMember and ScribeScrolls; 1C0E:0D9B, which shared its old name ShowMessage, is ShowFileError"
+date = "2026-11-03"
+
+[[rename]]
+id = "210C:003E=FreeSlotTables"
+addr = "210C:003E"
+old = "FreeEffectTables"
+new = "FreeSlotTables"
+kind = "function"
+why = "the resident stub of overlay 3's ovl3:031A, FreeSlotTables: an overlay stub takes its function's name, as 2116:005C DrawViewFrame does"
+date = "2026-11-03"

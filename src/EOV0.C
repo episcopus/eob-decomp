@@ -41,7 +41,7 @@ struct IconDef4 {               /* 4-byte rectangle records at 2080 (the icon ce
 };
 extern struct IconDef4 far gPanelIconRects[]; /*@ 2080:0000 */
 
-extern void ClipRect(int x1, int y1, int x2, int y2, int width, int height, int extra1, int extra2); /*@ 19F3:000E */
+extern void CopyRegion(int x1, int y1, int x2, int y2, int width, int height, int extra1, int extra2); /*@ 19F3:000E */
 extern void DrawShape(int page, void far *src, int x, int y, int region); /*@ 1A29:000F */
 extern void HidePointerZone(int left, int top, int right, int bottom); /*@ 1BBE:01FE */
 extern void ShowPointerZone(void); /*@ 1BBE:02C2 */
@@ -304,7 +304,7 @@ extern void far *gPanelIconCells[0x11]; /*@ ds:5E64 */ /* the 17 sliced icon poi
         x = gPanelIconDefs[index].m07 + 2;
         y = gPanelIconDefs[index].m08 - 0x40;
     }
-    ClipRect(gPanelIconRects[cellRow].left, gPanelIconRects[cellRow].top, x, y, gPanelIconRects[cellRow].width,
+    CopyRegion(gPanelIconRects[cellRow].left, gPanelIconRects[cellRow].top, x, y, gPanelIconRects[cellRow].width,
         gPanelIconRects[cellRow].height, 2, 2);
     if (gPanelIconDefs[index].w)
         DrawShape(2, gPanelIconCells[index], (x << 3) + gPanelIconDefs[index].m04, y + gPanelIconDefs[index].m05, 0);
@@ -313,7 +313,7 @@ extern void far *gPanelIconCells[0x11]; /*@ ds:5E64 */ /* the 17 sliced icon poi
     HidePointerZone(gPanelIconDefs[index].m07 << 3, gPanelIconDefs[index].m08,
         (gPanelIconDefs[index].m07 + gPanelIconRects[cellRow].width) << 3,
         gPanelIconDefs[index].m08 + gPanelIconRects[cellRow].height);
-    ClipRect(0x14, 0, gPanelIconDefs[index].m07, gPanelIconDefs[index].m08, gPanelIconRects[cellRow].width,
+    CopyRegion(0x14, 0, gPanelIconDefs[index].m07, gPanelIconDefs[index].m08, gPanelIconRects[cellRow].width,
         gPanelIconRects[cellRow].height, 2, 0);
     ShowPointerZone();
 }
@@ -387,7 +387,7 @@ extern void far *gPanelIconCells[0x11]; /*@ ds:5E64 */ /* the 17 sliced icon poi
         DrawShadowText(gStrPartyComplete, 0xa8, 0x3d, 0xf, 0);
         gDrawPage = 0;
         LockHidePointer();
-        ClipRect(0x15, 0x3d, 0x13, 0x7d, 0x11, 0x28, 2, 0);
+        CopyRegion(0x15, 0x3d, 0x13, 0x7d, 0x11, 0x28, 2, 0);
         LockShowPointer();
         DrawPanelIcon(0xf, 0, 0);
     } else
@@ -427,7 +427,7 @@ extern void far *gPanelIconCells[0x11]; /*@ ds:5E64 */ /* the 17 sliced icon poi
     int i;
 
     LockHidePointer();
-    ClipRect(0, 0, 0x14, 0, 0x14, 0x80, 2, 2);
+    CopyRegion(0, 0, 0x14, 0, 0x14, 0x80, 2, 2);
     gDrawPage = 2;
     if (mode != 4)
         DrawShape(2, gChars[index].portrait, 0xe0, 2, 0);
@@ -470,7 +470,7 @@ extern void far *gPanelIconCells[0x11]; /*@ ds:5E64 */ /* the 17 sliced icon poi
         DrawPanelIcon(9, 0, 2);
         break;
     }
-    ClipRect(0x14, 0, 0x12, 0x40, 0x14, 0x80, 2, 0);
+    CopyRegion(0x14, 0, 0x12, 0x40, 0x14, 0x80, 2, 0);
     LockShowPointer();
     gDrawPage = 0;
 }
@@ -766,13 +766,13 @@ int PickAlignment(int classIndex); /* ovl0:2238, defined below */
 {
     int saved;
 
-    ClipRect(0, 0, 0x14, 0, 0x14, 0x80, 2, 2);
+    CopyRegion(0, 0, 0x14, 0, 0x14, 0x80, 2, 2);
     saved = gDrawPage;
     gDrawPage = 2;
     DrawShadowText(gStrSelectBoxPrompt, 0xa8, 0x10, 0xf, 0);
     gDrawPage = saved;
     LockHidePointer();
-    ClipRect(0x14, 0, 0x12, 0x40, 0x14, 0x80, 2, 0);
+    CopyRegion(0x14, 0, 0x12, 0x40, 0x14, 0x80, 2, 0);
     LockShowPointer();
     DrawPartyStatus();
 }
@@ -783,13 +783,13 @@ int PickAlignment(int classIndex); /* ovl0:2238, defined below */
 {
     int saved;
 
-    ClipRect(0, 0, 0x14, 0, 0x14, 0x80, 2, 2);
+    CopyRegion(0, 0, 0x14, 0, 0x14, 0x80, 2, 2);
     saved = gDrawPage;
     gDrawPage = 2;
     DrawShadowText(gStrEnteringGame, 0xa8, 0x20, 0xf, 0);
     gDrawPage = saved;
     LockHidePointer();
-    ClipRect(0x14, 0, 0x12, 0x40, 0x14, 0x80, 2, 0);
+    CopyRegion(0x14, 0, 0x12, 0x40, 0x14, 0x80, 2, 0);
     LockShowPointer();
 }
 /* ovl0:1177: rolls an ability score: four 1d6 rolls summed with the lowest dropped. Returns the
@@ -850,11 +850,11 @@ int PickAlignment(int classIndex); /* ovl0:2238, defined below */
     }
     if (gBoxAnimDrawnFrame == gBoxAnimFrame)
         return;
-    ClipRect(gChargenMember * 4, 0x80, 0x24, 0x80, 4, 0x20, 2, 2);
+    CopyRegion(gChargenMember * 4, 0x80, 0x24, 0x80, 4, 0x20, 2, 2);
     DrawShape(2, gBoxAnimCells[gBoxAnimFrame], 0x120, 0x80, 0);
     HidePointerZone(gPanelX5E54[gChargenMember], gPanelY5E5C[gChargenMember] + 1,
         gPanelX5E54[gChargenMember] + 0x20, gPanelY5E5C[gChargenMember] + 0x20);
-    ClipRect(0x24, 0x80, gPanelX5E54[gChargenMember] >> 3, gPanelY5E5C[gChargenMember] + 1,
+    CopyRegion(0x24, 0x80, gPanelX5E54[gChargenMember] >> 3, gPanelY5E5C[gChargenMember] + 1,
         4, 0x20, 2, 0);
     ShowPointerZone();
     gBoxAnimDrawnFrame = gBoxAnimFrame;
@@ -893,7 +893,7 @@ int PickAlignment(int classIndex); /* ovl0:2238, defined below */
     else
         sprintf(gFileNameBuf, gFmtValueOnEntry, *value);
     LockHidePointer();
-    ClipRect(((node->x + 0x20) >> 3) - 0x12, node->y - 0x40, (node->x + 0x20) >> 3, node->y,
+    CopyRegion(((node->x + 0x20) >> 3) - 0x12, node->y - 0x40, (node->x + 0x20) >> 3, node->y,
         5, node->height, 2, 0);
     DrawShadowText(gFileNameBuf, node->x + 0x20, node->y, 6, 0);
     LockShowPointer();
@@ -986,7 +986,7 @@ int PickAlignment(int classIndex); /* ovl0:2238, defined below */
             else
                 sprintf(gFileNameBuf, gFmtValueChanged, *value);
             LockHidePointer();
-            ClipRect(((node->x + 0x20) >> 3) - 0x12, node->y - 0x40, (node->x + 0x20) >> 3,
+            CopyRegion(((node->x + 0x20) >> 3) - 0x12, node->y - 0x40, (node->x + 0x20) >> 3,
                 node->y, 5, node->height, 2, 0);
             DrawShadowText(gFileNameBuf, node->x + 0x20, node->y, 6, 0);
             if (index == 4) {
@@ -1001,7 +1001,7 @@ int PickAlignment(int classIndex); /* ovl0:2238, defined below */
                     = gChars[gChargenMember].hp > gHpMaxOrAttackTarget ? gHpMaxOrAttackTarget : gChars[gChargenMember].hp;
                 if (gChars[gChargenMember].hp != old) {
                     sprintf(gFileNameBuf, gFmtHpChanged, gChars[gChargenMember].hp);
-                    ClipRect(0xf, 0x48, 0x21, 0x88, 5, 8, 2, 0);
+                    CopyRegion(0xf, 0x48, 0x21, 0x88, 5, 8, 2, 0);
                     DrawShadowText(gFileNameBuf, 0x108, 0x88, 0xf, 0);
                 }
             }
@@ -1010,7 +1010,7 @@ int PickAlignment(int classIndex); /* ovl0:2238, defined below */
                 gChars[gChargenMember].armorClass = GetArmourClassBase(amount) + 0xa;
                 if (gChars[gChargenMember].armorClass != old) {
                     sprintf(gFileNameBuf, gFmtArmorClassChanged, gChars[gChargenMember].armorClass);
-                    ClipRect(0xf, 0x40, 0x21, 0x80, 5, 8, 2, 0);
+                    CopyRegion(0xf, 0x40, 0x21, 0x80, 5, 8, 2, 0);
                     DrawShadowText(gFileNameBuf, 0x108, 0x80, 0xf, 0);
                 }
             }
@@ -1150,7 +1150,7 @@ int PickAlignment(int classIndex); /* ovl0:2238, defined below */
     gDrawPage = 0;
     LockHidePointer();
     DrawRect(gMemberBoxX[gChargenMember], gMemberBoxY[gChargenMember], gMemberBoxX[gChargenMember] + 0x20, gMemberBoxY[gChargenMember] + 0x21, 0xc);
-    ClipRect(0, 0, 0x12, 0x40, 0x14, 0x80, 2, 0);
+    CopyRegion(0, 0, 0x12, 0x40, 0x14, 0x80, 2, 0);
     DrawShadowText(gStrSelectRace, 0x93, 0x43, 9, 0);
     LockShowPointer();
     FlushKeyBuffer();
@@ -1206,7 +1206,7 @@ int PickAlignment(int classIndex); /* ovl0:2238, defined below */
     FlushKeyBuffer();
     AnimateMemberBox();
     LockHidePointer();
-    ClipRect(0, 0, 0x12, 0x40, 0x14, 0x80, 2, 0);
+    CopyRegion(0, 0, 0x12, 0x40, 0x14, 0x80, 2, 0);
     DrawShadowText(gStrSelectClass, 0x93, 0x43, 9, 0);
     DrawPanelIcon(5, 0, 0);
     LockShowPointer();
@@ -1257,7 +1257,7 @@ int PickAlignment(int classIndex); /* ovl0:2238, defined below */
     gPanels[3].sel = 0;
     AnimateMemberBox();
     LockHidePointer();
-    ClipRect(0, 0, 0x12, 0x40, 0x14, 0x80, 2, 0);
+    CopyRegion(0, 0, 0x12, 0x40, 0x14, 0x80, 2, 0);
     DrawShadowText(gStrSelectAlignment, 0x93, 0x43, 9, 0);
     DrawPanelIcon(5, 0, 0);
     LockShowPointer();
@@ -1349,11 +1349,11 @@ int PickAlignment(int classIndex); /* ovl0:2238, defined below */
     BuildIconTable();
     if (gGraphicsChoice == 0 || gGraphicsChoice == 1) {
         CopyPage(3, 4, FP_OFF(gOverlayBuf), FP_SEG(gOverlayBuf));
-        ClipRect(0, 0, 0, 0, 0x28, 0xc8, 4, 2);
+        CopyRegion(0, 0, 0, 0, 0x28, 0xc8, 4, 2);
     } else
         CopyPage(3, 2, FP_OFF(gOverlayBuf), FP_SEG(gOverlayBuf));
     gDrawPage = 0;
-    ClipRect(0x12, 0x40, 0, 0, 0x14, 0x80, 0, 2);
+    CopyRegion(0x12, 0x40, 0, 0, 0x14, 0x80, 0, 2);
     LockShowPointer();
 }
 /* ovl0:26C6: gives each of the first four characters its class starting equipment. It copies item

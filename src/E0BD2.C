@@ -16,7 +16,7 @@ struct ItemRecord {
                                0BD2:040E and tested by 0BD2:05B5; src/E07A9.C calls it flags */
     signed char icon;       /* +3 (ds:8DD3): the icon number */
     signed char type;        /* +4 (ds:8DD4): the item type */
-    signed char tag;        /* +5 (ds:8DD5): 01D0 stores its 4th argument here and 02B9 matches it
+    signed char cellPos;        /* +5 (ds:8DD5): 01D0 stores its 4th argument here and 02B9 matches it
                                against its `key`. No caller shows a sound (01D0's callers pass a
                                slot kind, E0ACD.C:561-568, a roll, E08E6.C:807, or an effect kind | 4,
                                0BD2:07DE), so Purpose unknown: a per-entry tag */
@@ -25,7 +25,7 @@ struct ItemRecord {
                                new item in after this record through it */
     int nextLink;                /* +0xa (ds:8DDA): the other link; the list walks (0BD2:0385, 040E,
                                04AA) follow it */
-    signed char m0A;        /* +0xc (ds:8DDC): gFBC8 or -1, set by 01D0 */
+    signed char m0A;        /* +0xc (ds:8DDC): gCurLevel or -1, set by 01D0 */
     signed char value;        /* +0xd (ds:8DDD): the item's bonus or effect value: the signed bonus
                                printed as "%s +%d" and "Cursed %s %d", the spell index into ds:1278
                                and ds:12E0, the wand effect index gWandSpells[m0B], and the scroll and
@@ -100,7 +100,7 @@ extern struct Monster gMonsters[]; /*@ ds:8A82 */
 extern signed char gInventoryMember; /*@ ds:A99A */    /* the selected character index (src/E0ACD.C) */
 extern char gCursorSlot; /*@ ds:F51A */           /* the selected row (src/E0D1C.C) */
 extern char gPanelMode; /*@ ds:FB44 */           /* a display-mode byte (src/E0D1C.C) */
-extern int gFBC8; /*@ ds:FBC8 */            /* the current action (src/E0D1C.C) */
+extern int gCurLevel; /*@ ds:FBC8 */            /* the current action (src/E0D1C.C) */
 extern int gPartyDir; /*@ ds:FBCC */            /* the party's facing, 0..3 north, east, south, west */
 extern int gPartyCell; /*@ ds:FBCA */     /* the party's map cell (src/E177D.C:92): this unit passes
                                             it to StepCell (UseWandItem) as the cell; E0ACD.C
@@ -130,7 +130,7 @@ extern signed char gInvSlotKind[]; /*@ ds:3875 */  /* a per-row byte (0, 1 or 2)
                                               the count row, 2 the item's icon is drawn offset */
 extern signed char gInvSlotBoxSize[]; /*@ ds:3890 */  /* a three-byte table read by 0BD2:0917 */
 extern signed char gWandSpells[]; /*@ ds:38FA */  /* a byte table indexed by an item's m0B in 0BD2:0EE8 */
-extern void StartPanelAction(int who, int action, int kind); /*@ 0EF3:28ED */
+extern void StartItemCast(int who, int action, int kind); /*@ 0EF3:28ED */
 extern void FlashViewDamage(void); /*@ 0EF3:06E7 */
 extern void FlashPartyMembers(int who); /*@ 0EF3:0665 */
 extern void ClearPoisonEffect(int who); /*@ 0EF3:1CE8 */
@@ -243,7 +243,7 @@ void DrawItemName(int item);
 }
 
 /* 0BD2:01D0: inserts the item `item` into the circular list whose head word is `head`, stamping it
-   with the list's owner key `key` (cell) and the tag `tag` (+5; m0A becomes gFBC8, or -1 when the
+   with the list's owner key `key` (cell) and the tag `tag` (+5; m0A becomes gCurLevel, or -1 when the
    key is negative). The key is a list owner: a map cell (E0ACD.C:568, E0D1C.C:362, 0BD2:07DE), an
    object's id (E08E6.C:807) or 0xFFFE for a character's own pack (E0ACD.C:780, :851, 0BD2:0BA0).
    An empty list becomes `item` alone, linked to itself. Otherwise `item` is spliced in between the
@@ -265,10 +265,10 @@ void DrawItemName(int item);
     if (*(int far *)head == 0) {
         *(int far *)head = item;
         rec->nextLink = rec->prevLink = item;
-        rec->tag = tag;
+        rec->cellPos = tag;
         rec->key = key;
         if (key >= 0)
-            rec->m0A = gFBC8;
+            rec->m0A = gCurLevel;
         else
             rec->m0A = -1;
     } else {
@@ -277,9 +277,9 @@ void DrawItemName(int item);
         tail = gItems[oldHead].prevLink;
         tailRec = &gItems[tail];
         rec->key = key;
-        rec->tag = tag;
+        rec->cellPos = tag;
         if (key >= 0)
-            rec->m0A = gFBC8;
+            rec->m0A = gCurLevel;
         else
             rec->m0A = -1;
         rec->nextLink = tailRec->nextLink;
@@ -310,7 +310,7 @@ void DrawItemName(int item);
     while (item != start || i == 0) {
         rec = &gItems[item];
         if (target == -1) {
-            if (rec->tag == key)
+            if (rec->cellPos == key)
                 goto found;
         }
         if (target != item)
@@ -433,7 +433,7 @@ next:
             item = gItems[item].nextLink;
             gItems[saved].nextLink = 0;
             gItems[saved].prevLink = 0;
-            InsertListItem((void far *)(gMazeItems + volume * 9), volume, saved, gItems[saved].tag);
+            InsertListItem((void far *)(gMazeItems + volume * 9), volume, saved, gItems[saved].cellPos);
         }
         count++;
     }
@@ -809,7 +809,7 @@ next:
     }
     if (type != 5) {
         effect = gWandSpells[type];
-        StartPanelAction(who, effect, slot);
+        StartItemCast(who, effect, slot);
         return;
     }
     page = gPartyDir;
@@ -899,13 +899,13 @@ next:
     case 9:
         if (gPanelMode == 0) {
             value = gItems[item].value;
-            StartPanelAction(who, value, firstTwo);
+            StartItemCast(who, value, firstTwo);
         }
         break;
     case 10:
         if (gPanelMode == 0) {
             value = gItems[item].value + 0x19;
-            StartPanelAction(who, value, firstTwo);
+            StartItemCast(who, value, firstTwo);
         }
         break;
     case 11:

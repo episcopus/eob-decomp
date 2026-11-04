@@ -159,7 +159,7 @@ struct Rect {               /* a four-word cell rectangle (x, y, w, h) */
 
 extern void far * (far *gGetSpriteCell)(int x, int y, int w, int h, void far *sheet); /*@ ds:8086 */
 extern int sprintf(char far *buf, char far *fmt, ...); /*@ 0000:57AE */
-extern int gFBC8; /*@ ds:FBC8 */
+extern int gCurLevel; /*@ ds:FBC8 */
 extern char gMazeItems[]; /*@ ds:B899 */        /* the nine-byte record list head (src/E0ACD.C) */
 extern void InsertListItem(void far *head, int key, int item, int sound); /*@ 0BD2:01D0 */
 
@@ -169,11 +169,11 @@ struct ItemRecord {         /* the 14-byte records at ds:8DD0 (src/E0BD2.C) */
     unsigned char flags;    /* +2 */
     signed char icon;       /* +3 */
     signed char type;        /* +4 */
-    signed char tag;        /* +5: the sound InsertListItem plays for the item (src/E0BD2.C:420) */
+    signed char cellPos;        /* +5: the sound InsertListItem plays for the item (src/E0BD2.C:420) */
     int key;                /* +6: the key, -1 when free */
     int prevLink;                /* +8 */
     int nextLink;                /* +0xa */
-    signed char m0A;        /* +0xc: gFBC8 or -1 */
+    signed char m0A;        /* +0xc: gCurLevel or -1 */
     signed char value;        /* +0xd */
 };
 
@@ -191,7 +191,7 @@ extern signed char far gMapTiles[]; /*@ 1F1D:0000 */  /* the map tile byte table
                                                          segment-table index 01D0, which resolves to
                                                          paragraph 1F1D; src/EOV5.C calls it gSeg1D0) */
 
-#define MAPSHEET ((void far *)((char far *)MK_FP(0x1d8, 0) + (gMapTiles[gFBC8 - 1] << 5)))
+#define MAPSHEET ((void far *)((char far *)MK_FP(0x1d8, 0) + (gMapTiles[gCurLevel - 1] << 5)))
 
 extern int gTimerEnableFlags; /*@ ds:849E */
 extern char gLevelTimerMode; /*@ ds:F51B */
@@ -302,7 +302,7 @@ struct WallDec {            /* the 52-byte wall-set decorations LoadWallSet read
    gSegDF4E+0x3E80+recordIndex*0x34 into gWallRecs[gF538].cells, 52 bytes at +0x2a of the slot, so
    the decoration's byte 0x0a lands at +0 of the next slot. For each of the ten cell indices in
    those first ten bytes that has no sprite yet in ds:EFD4, it slices the cell's 8-byte rectangle
-   out of gE062 through ds:8086 with the map sheet (gMapTiles[gFBC8-1] cells). gF538 (the slot
+   out of gE062 through ds:8086 with the map sheet (gMapTiles[gCurLevel-1] cells). gF538 (the slot
    count) is bumped and the link is the decoration byte 0x0a now at gWallRecs[gF538].next: when it
    is nonzero it is set to gF538+1 and the walk continues, otherwise the loop ends. Called by
    ovl3:0A7C. */
@@ -359,7 +359,7 @@ struct WallDec {            /* the 52-byte wall-set decorations LoadWallSet read
     }
 }
 /* ovl3:03A2: loads the overlay screen "DOOR" (LoadOverlayScreen) and slices map icon cells out of
-   the map sheet (segment 0x1D8, offset from the tile byte table gMapTiles[gFBC8-1] shifted left 5).
+   the map sheet (segment 0x1D8, offset from the tile byte table gMapTiles[gCurLevel-1] shifted left 5).
    For `srcA` (when not -1) it slices three cells from the 4-byte rectangles at ds:6840 into gDoorShapes
    starting at `dstA` and three more from ds:68A0 into gDoorButtons[dstA].rec, and copies the x and y bytes of
    gDoorButtons[dstA] from ds:6900. For `srcB` (when not -1) it slices the three cells at `dstB` the same way,
@@ -498,7 +498,7 @@ done:
     strcpy(gWallNameBuf, gFileNameBuf);
 }
 /* ovl3:0951: rebuilds the ds:B899 item list: walks the 500 items at ds:8DD0 and, for every item
-   whose m0A is the current action gFBC8 and whose key key is positive, inserts it through
+   whose m0A is the current action gCurLevel and whose key key is positive, inserts it through
    InsertListItem. Called by ovl3:0A7C. */
 /*@ ovl3:0951 */ void RebuildItemList(void)
 {
@@ -506,13 +506,13 @@ done:
     int i;
 
     for (rec = gItems, i = 0; i < 0x1f4; rec++, i++) {
-        if (rec->m0A == gFBC8 && rec->key > 0)
-            InsertListItem((void far *)(gMazeItems + rec->key * 9), rec->key, i, rec->tag);
+        if (rec->m0A == gCurLevel && rec->key > 0)
+            InsertListItem((void far *)(gMazeItems + rec->key * 9), rec->key, i, rec->cellPos);
     }
 }
 /* ovl3:09AA: loads an object table. It clears the 0x2400 bytes at gMaze, opens `name`, reads 6
-   bytes into gMaze and 0x1000 bytes into gSegDF4E and closes it. When bit gFBC8-1 of gFBD0 is set
-   it hands gFBC8 to the sibling ovl3:1147; otherwise it copies the 0x400 far pointers of gSegDF4E
+   bytes into gMaze and 0x1000 bytes into gSegDF4E and closes it. When bit gCurLevel-1 of gFBD0 is set
+   it hands gCurLevel to the sibling ovl3:1147; otherwise it copies the 0x400 far pointers of gSegDF4E
    into the +0 field of the gMaze records. Called by ovl3:0A7C. */
 /*@ ovl3:09AA */ void LoadObjects(char far *name)
 {
@@ -526,8 +526,8 @@ done:
     FileRead(handle, (void far *)gMaze, 6L);
     FileRead(handle, gSegDF4E, 0x1000L);
     FileClose(handle);
-    if (gFBD0 & (1 << (gFBC8 - 1))) {
-        LoadLevelState(gFBC8);
+    if (gFBD0 & (1 << (gCurLevel - 1))) {
+        LoadLevelState(gCurLevel);
     } else {
         src = (char far *)gSegDF4E;
         dst = (struct ObjRec far *)gMaze;
@@ -550,7 +550,7 @@ done:
    14-byte object records handed to InitMonster (or skipped by 0x1a4 when the level was already
    unpacked), the wall/object records (0xEC introduces a 0x18-byte wall set through LoadWallSet,
    otherwise a five-byte RegisterWallObject record), the item records keyed against gMaze, and
-   finally the wall textures (LoadWallTextures with the gMapTiles[gFBC8-1] sheet) and the INVENT
+   finally the wall textures (LoadWallTextures with the gMapTiles[gCurLevel-1] sheet) and the INVENT
    screen. It clears the 0x400 ds:B899 item-list heads, rebuilds the list, sets bit 2 of gTimerEnableFlags,
    calls PlaySound(0) and sets gLevelPalettePending to 1. Called by EnterMapScreen (0ACD:0F72), ResetMapScreen
    (0ACD:1033), LoadLevelOp (122E:1AAB, through the 210C:007A stub) and ovl3:15B9 LoadGame. */
@@ -581,7 +581,7 @@ done:
     int handle;
 
     gTimerEnableFlags &= ~2;
-    gFBC8 = level;
+    gCurLevel = level;
     FormatName("LEVEL", level, "INF");
     handle = FileOpen(gFileNameBuf, 1);
     FileRead(handle, (char far *)&payloadLen, 2L);
@@ -820,7 +820,7 @@ done:
 }
 /* ovl3:1368: saves the game. It runs ResetLevel, reads the whole 0x5FA0-byte LEVELS.TMP image
    into gSegEFC2 (mode 1), packs the level state into the in-memory image at gSegEFC2 +
-   (gFBC8-1)*0x7F8 through ovl3:0FD1, sets bit gFBC8-1 in ds:FBD0, probes EOBDATA.SAV (a mode-1
+   (gCurLevel-1)*0x7F8 through ovl3:0FD1, sets bit gCurLevel-1 in ds:FBD0, probes EOBDATA.SAV (a mode-1
    FileOpen/FileClose), then deletes and recreates EOBDATA.SAV (mode 2) and writes, checking each
    length: the six 243-byte characters ds:F580 (after AgeCharTimers and before AdvanceCharTimers),
    the 0x40-byte header at ds:FBC8, the 500 14-byte items ds:8DD0, the 0x5FA0-byte image
@@ -835,7 +835,7 @@ done:
     int ok;
     long len;
 
-    slot = gFBC8 - 1;
+    slot = gCurLevel - 1;
     ResetLevel();
     handle = FileOpen("LEVELS.TMP", 1);
     FileRead(handle, gSegEFC2, 0x5fa0L);
@@ -852,7 +852,7 @@ done:
         ok &= (FileWrite(handle, (char far *)gChars, len) == len);
         AdvanceCharTimers();
         len = 0x40;
-        ok &= (FileWrite(handle, (char far *)&gFBC8, len) == len);
+        ok &= (FileWrite(handle, (char far *)&gCurLevel, len) == len);
         len = 0x1b58;
         ok &= (FileWrite(handle, (char far *)gItems, len) == len);
         len = 0x5fa0;
@@ -918,7 +918,7 @@ done:
         for (j = 0; j < 6; j++)
             gChars[j].portrait = sprites[j];
         AdvanceCharTimers();
-        Unpack0(buf, (char far *)&gFBC8, gBlockSizes[1]);
+        Unpack0(buf, (char far *)&gCurLevel, gBlockSizes[1]);
         buf += gBlockSizes[1];
         Unpack0(buf, (char far *)gItems, gBlockSizes[2]);
         buf += gBlockSizes[2];
@@ -960,7 +960,7 @@ done:
             }
         }
         if (gGameLoadState != (char)0xff) {
-            LoadMapScreen(gFBC8);
+            LoadMapScreen(gCurLevel);
             LoadScreenImage("PLAYFLD", (char far *)gSheetDECORATE, 5, 3, 0);
             DrawViewRows();
             LoadScreenImage("INVENT", (char far *)gSheet2067, 5, 3, 2);
@@ -995,7 +995,7 @@ done:
         gMonsters[i].m0A = 0;
     for (i = 0; i < 0xa; i++) {
         if (gProjectiles[i].active == 1) {
-            gItems[gProjectiles[i].item].tag &= 3;
+            gItems[gProjectiles[i].item].cellPos &= 3;
             gProjectiles[i].active = 0;
         }
         if (gProjectiles[i].active == 2)

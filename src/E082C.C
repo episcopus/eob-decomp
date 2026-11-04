@@ -85,7 +85,7 @@ extern int toupper(int c); /*@ 0000:5BD2 */
 extern void far *memmove(void far *dst, void far *src, unsigned n); /*@ 0000:63F5 */
 extern char *ltoa(long value, char *string, int radix); /*@ 0000:62F1 */
 extern char *itoa(int value, char *string, int radix); /*@ 0000:62AA */
-extern void ClipRect(int x1, int y1, int x2, int y2, int width, int height, int extra1, int extra2); /*@ 19F3:000E */
+extern void CopyRegion(int x1, int y1, int x2, int y2, int width, int height, int extra1, int extra2); /*@ 19F3:000E */
 extern void CopyPage(int a, int b, int c, int d); /*@ 19EC:002A: called here with c/d = FP_OFF/FP_SEG(extra); src/E19EC.C:29-35 says c and d are unused by its own tests */
 extern void LoadPacked(char far *name, int srcKind, int dstKind); /*@ 1B82:0041 */
 extern void Unpack0(char far *src, void far *dst, long len); /*@ 1BA8:0006 */
@@ -115,7 +115,7 @@ void DrawShadowText(char far *text, int x, int y, int colour, int colour2);
    space is refused at the start), KeyBackspace deletes to the left of the cursor, KeyDelete at
    it, the arrow keys move it, KeyReturn ends the edit and returns the new length and KeyEsc ends
    it and returns -1. `maxlen` is the highest buffer index (the buffer holds maxlen+1 bytes
-   including the terminator); the two ClipRect calls (082C:006D and 082C:038A) set the field's
+   including the terminator); the two CopyRegion calls (082C:006D and 082C:038A) set the field's
    maxlen+2 by 9 clip rectangle (see the QUIRK below), and the text and cursor are drawn with
    DrawShadowText. `colour` is the text colour, `attr` is the second colour passed to the draw
    call (DrawShadowText's `colour2`, below) and `cursorAttr` is the cursor colour: ovl0 passes 0xf, 0
@@ -142,7 +142,7 @@ void DrawShadowText(char far *text, int x, int y, int colour, int colour2);
     cur = len;
     if (cur >= maxlen)
         cur--;
-    ClipRect(x - 1, y, 0, 0xbf, maxlen + 2, 9, 0, 2);  /* 0xBF = 191: the screen's last line
+    CopyRegion(x - 1, y, 0, 0xbf, maxlen + 2, 9, 0, 2);  /* 0xBF = 191: the screen's last line
                                                            (200) minus the field's 9 lines */
     DrawShadowText(text, x * 8, y, colour, attr);
     if (cur < len)
@@ -237,10 +237,10 @@ void DrawShadowText(char far *text, int x, int y, int colour, int colour2);
             }
         }
     redraw:
-        /* QUIRK 082C:038A: the second ClipRect sets the same field rectangle as the first at
+        /* QUIRK 082C:038A: the second CopyRegion sets the same field rectangle as the first at
            082C:006D, but with the two corner pairs exchanged ((0, 0xbf) then (x - 1, y) here,
            where the first has (x - 1, y) then (0, 0xbf)) and the extras 2, 0 instead of 0, 2. */
-        ClipRect(0, 0xbf, x - 1, y, maxlen + 2, 9, 2, 0);  /* 0xBF as at 082C:006D */
+        CopyRegion(0, 0xbf, x - 1, y, maxlen + 2, 9, 2, 0);  /* 0xBF as at 082C:006D */
         DrawShadowText(text, x * 8, y, colour, attr);
         if (cur < len)
             gCursorChar = text[cur];
@@ -300,7 +300,7 @@ void DrawShadowText(char far *text, int x, int y, int colour, int colour2);
 /* 082C:051B: build the art file name "%s.%s" (name plus CPS for the MCGA/VGA mode 3 at
    gGraphicsChoice, otherwise EGA) into gFileNameBuf, load it with LoadPacked
    (source/destination kind `srcKind`/`dstKind`), and, unless `mode` is -1, blit the loaded page
-   through the driver pair 19EC:002A. In two special cases it also clips the frame with ClipRect:
+   through the driver pair 19EC:002A. In two special cases it also clips the frame with CopyRegion:
    graphics choice 0 or 1 with mode 2 (kind 4, extras 4 and 2) and graphics choice 2 with mode 0
    (kind 2, extras 2 and 0); every other case uses `mode` as the kind. `extra` is the pointer
    argument passed to 19EC:002A: Purpose unknown, the handler it reaches is at ds:8046 (src/E19EC.C:29-35).
@@ -314,12 +314,12 @@ void DrawShadowText(char far *text, int x, int y, int colour, int colour2);
         goto done;
     if ((gGraphicsChoice == 0 || gGraphicsChoice == 1) && mode == 2) {
         CopyPage(dstKind, 4, FP_OFF(extra), FP_SEG(extra));
-        ClipRect(0, 0, 0, 0, 40, 200, 4, 2);  /* 40 by 200: the whole screen, in 8-pixel cells and lines */
+        CopyRegion(0, 0, 0, 0, 40, 200, 4, 2);  /* 40 by 200: the whole screen, in 8-pixel cells and lines */
     } else if (gGraphicsChoice != 2 || mode != 0)
         CopyPage(dstKind, mode, FP_OFF(extra), FP_SEG(extra));
     else {
         CopyPage(dstKind, 2, FP_OFF(extra), FP_SEG(extra));
-        ClipRect(0, 0, 0, 0, 40, 200, 2, 0);  /* 40 by 200: the whole screen, as above */
+        CopyRegion(0, 0, 0, 0, 40, 200, 2, 0);  /* 40 by 200: the whole screen, as above */
     }
 done:
     extra++;

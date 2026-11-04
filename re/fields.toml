@@ -448,3 +448,35 @@ old = "m22"
 new = "portraitIndex"
 why = "the face cell the member's portrait was cut from: PickPortrait ovl0:0A5E stores the chosen cell index in it and in gMemberPortraits"
 date = "2026-11-03"
+
+[[field]]
+struct = "CharRec"
+at = "37"
+old = "known"
+new = "mageSpells"
+why = "the member's 30 memorized mage spell slots (five levels of six): the camp screen CampLoop prints the +0x37 slots with the mage spell names (ds:1344 records 1 to 25); negative while a spell is still to be memorized"
+date = "2026-11-03"
+
+[[field]]
+struct = "CharRec"
+at = "55"
+old = "memorized"
+new = "clericSpells"
+why = "the member's 30 memorized cleric spell slots (five levels of six): CampLoop prints the +0x55 slots with the cleric spell names (gClericSpells, ds:151F); positive a spell ready to cast, negative one still to be memorized"
+date = "2026-11-03"
+
+[[field]]
+struct = "Monster"
+at = "04"
+old = "frame"
+new = "cellPos"
+why = "the monster's position inside its cell, 0 NW, 1 NE, 2 SW, 3 SE, 4 the centre: the tables ds:323B (gMonsterFrontPos), ds:329B, ds:32BB and ds:5CAB are indexed by it with the facing"
+date = "2026-11-03"
+
+[[field]]
+struct = "ItemRecord"
+at = "05"
+old = "tag"
+new = "cellPos"
+why = "the item's position inside its cell (0 to 3, through gViewToCellPos by facing), with 4 added while the item flies (AddDDEffect stores kind | 4); InsertListItem 0BD2:01D0 stores it, 0BD2:02B9 matches it"
+date = "2026-11-03"

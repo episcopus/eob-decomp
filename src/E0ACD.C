@@ -42,7 +42,7 @@ extern void UseSelectedItem(int slot); /*@ 0BD2:0BA0 */
 extern void BuildList1(void); /*@ 0CF7:0028 */
 extern void BuildList2(void); /*@ 0CF7:00B4 */
 extern void BuildList3(void); /*@ 0CF7:0140 */
-extern void ClipRect(int x1, int y1, int x2, int y2, int width, int height, int extra1, int extra2); /*@ 19F3:000E */
+extern void CopyRegion(int x1, int y1, int x2, int y2, int width, int height, int extra1, int extra2); /*@ 19F3:000E */
 extern void (far *gRestoreRectToPage)(int x, int y, int w, int h, void far *buf); /*@ ds:804A */ /* src/EOV2.C */
 
 extern char gIconTable; /*@ ds:FB34 */           /* the index of the party member being moved, -1 when
@@ -121,7 +121,7 @@ struct ItemRecord {
                                0BD2:040E and tested by 0BD2:05B5; src/E07A9.C calls it flags */
     signed char icon;       /* +3 (ds:8DD3): the icon number */
     signed char type;        /* +4 (ds:8DD4): the item type */
-    signed char tag;        /* +5 (ds:8DD5): 01D0 stores its 4th argument here and 02B9 matches it
+    signed char cellPos;        /* +5 (ds:8DD5): 01D0 stores its 4th argument here and 02B9 matches it
                                against its `key`. No caller shows a sound (01D0's callers pass a
                                slot kind, E0ACD.C:561-568, a roll, E08E6.C:807, or an effect kind | 4,
                                0BD2:07DE), so Purpose unknown: a per-entry tag */
@@ -130,7 +130,7 @@ struct ItemRecord {
                                new item in after this record through it */
     int nextLink;                /* +0xa (ds:8DDA): the other link; the list walks (0BD2:0385, 040E,
                                04AA) follow it */
-    signed char m0A;        /* +0xc (ds:8DDC): gFBC8 or -1, set by 01D0 */
+    signed char m0A;        /* +0xc (ds:8DDC): gCurLevel or -1, set by 01D0 */
     signed char value;        /* +0xd (ds:8DDD): the item's bonus or effect value: the signed bonus
                                printed as "%s +%d" and "Cursed %s %d", the spell index into ds:1278
                                and ds:12E0, the wand effect index g38FA[m0B], and the scroll and
@@ -157,7 +157,7 @@ extern char gGameLoadState; /*@ ds:A998 */           /* the saved-game load flag
                                                0xfe after a saved game loads and 0 otherwise
                                                (src/EOV2.C); EnterMapScreen (0ACD:0F72) tests it */
 extern int gMouseDisabled; /*@ ds:814A */   /* nonzero disables the mouse (src/E07A9.C) */
-extern int gFBC8; /*@ ds:FBC8 */            /* the current action (src/E0D1C.C) */
+extern int gCurLevel; /*@ ds:FBC8 */            /* the current action (src/E0D1C.C) */
 extern int gFBCE; /*@ ds:FBCE */            /* the item index shown by the mouse (src/E07A9.C) */
 extern void far *gFont6x6; /*@ ds:A9C0 */       /* the current 6x6 font (src/E07A9.C) */
 extern void far *gList; /*@ ds:FB48 */      /* the head of the list built last (src/E0CF7.C) */
@@ -327,7 +327,7 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
     for (i = 0; i < 6; i++)
         RedrawMember(i);
     gDrawPage = 0;
-    ClipRect(0, 0, 0x16, 0, 0x12, 0xa8, 2, 0);
+    CopyRegion(0, 0, 0x16, 0, 0x12, 0xa8, 2, 0);
     BuildList1();
     LockShowPointer();
     return action->result;
@@ -945,7 +945,7 @@ done:
    loaded. It arms the timeout gNextRandomSoundTick from one (1d10 + 3) roll times 0x12 plus the 32-bit counter
    gGameTicks, enters the map screen, then loops: saves the party's cell, services the key dispatcher
    (PollMapInput) and RunEffects, runs the overlay effect when gViewDirty is set, and when gNextRandomSoundTick has run
-   below gGameTicks while gFBC8 is in 1..3 re-arms the timeout and plays sound 0x1E at a cell near the party
+   below gGameTicks while gCurLevel is in 1..3 re-arms the timeout and plays sound 0x1E at a cell near the party
    (gPartyCell plus 0 to 11).
    Each pass plays the default sound and runs TurnUndead. */
 /*@ 0ACD:0E8A */ void RunMapLoop(void)
@@ -962,7 +962,7 @@ done:
         if (gViewDirty)
             DrawViewFrame(1);
         if (gNextRandomSoundTick < gGameTicks) {
-            if (gFBC8 > 0 && gFBC8 < 4) {
+            if (gCurLevel > 0 && gCurLevel < 4) {
                 gNextRandomSoundTick = gGameTicks + (long)(RollDice(1, 10, 3) * 0x12);
                 PlaySoundAtCell(0x1E, gPartyCell + RollDice(1, 12, -1));
             }
@@ -974,7 +974,7 @@ done:
 
 /* 0ACD:0F72: enters the map screen. When gGameLoadState is clear (a normal entry) it calls ResetMapScreen
    (0ACD:1033); when it is nonzero (0xff while a load runs, 0xfe after a saved game loads, src/EOV2.C)
-   it shows the mouse item (SetMouseItem(gFBCE), unless the mouse is disabled), loads level gFBC8's
+   it shows the mouse item (SetMouseItem(gFBCE), unless the mouse is disabled), loads level gCurLevel's
    map and inventory (LoadMapScreen, ovl3:0A7C) and clears gGameLoadState. Then it clears gFlag, resets the
    character index and the menu phase, rebuilds list 1, loads PLAYFLD and INVENT through
    LoadScreenImage (into gSheetDECORATE and gSheet2067), selects the font, clears the status
@@ -986,7 +986,7 @@ done:
     } else {
         if (!gMouseDisabled)
             SetMouseItem(gFBCE);
-        LoadMapScreen(gFBC8);
+        LoadMapScreen(gCurLevel);
         gGameLoadState = 0;
     }
     NoOpAfterMapLoad();
