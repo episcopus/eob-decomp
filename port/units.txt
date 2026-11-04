@@ -1,0 +1,5 @@
+# The src/ units the portable build translates (tools/port/tc2c.py), one a line. A unit joins when
+# tc2c handles every construct it uses; a function they call that no unit here defines is linked as
+# a stub that stops the program (build/port/gen/unported.c). Playbook 80.
+E0CF7.C
+E1658.C
