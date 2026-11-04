@@ -3,8 +3,7 @@
    It waits for the BIOS tick counter (0000:046C, the linear alias of 0040:006C) to
    change, then for four more ticks (about 220 ms), then samples the retrace bit of
    port 3DAh (through 1DE4:0000) 10000 times and sets gRetraceInverted = 1 when it read the bit
-   set more often than clear. `timer` is a far pointer into segment 0. Placeholder
-   name; the two chained assignments are what the compiler needs to merge the two
+   set more often than clear. `timer` is a far pointer into segment 0. The two chained assignments are what the compiler needs to merge the two
    zero stores into one `xor ax,ax` (-Z). */
 
 #include <dos.h>
@@ -15,6 +14,8 @@ extern void far DisableInterrupts(void); /*@ 1A72:02FC */
 extern void far EnableInterrupts(void); /*@ 1A72:02FA */
 extern int IsInVerticalRetrace(void); /*@ 1DE4:0000 */
 
+/* 1A65:000E: decides which way the retrace bit reads on this display (gRetraceInverted), from
+   10000 samples taken after the BIOS tick has turned over four times. */
 /*@ 1A65:000E */ void CalibrateRetrace(void)
 {
     unsigned long far *timer = (unsigned long far *)MK_FP(0, 0x46c);

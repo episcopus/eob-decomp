@@ -19,7 +19,7 @@
    and 022E, the graphics mode from argv[1][0] minus '1', 0..6 [H]), the table case: i < 7,
    so the mode comes from gBiosVideoModes[i] and the call is skipped when that already equals the
    restore mode ds:84A0.
-   Placeholder names; the runtime int86 is not in build/re/rtl_compare.json. The 6 bytes at
+   The runtime int86 is not in build/re/rtl_compare.json. The 6 bytes at
    1DDD:0000..0005 before the first function (pop dx, cx, bx, ax; pop bp; retf) are code, not
    padding, and are outside this unit. */
 
@@ -33,6 +33,7 @@ extern unsigned gVideoOutRegs; /*@ ds:FF36 */
 
 /* int86 returns the output AX; declared void here because both callers ignore it. */
 
+/* 1DDD:0006: the current BIOS video mode, INT 10h AH=0Fh through int86 (the low byte of AX). */
 /*@ 1DDD:0006 */ int GetVideoMode(void)
 {
     gVideoInRegs = 0xF00;
@@ -40,6 +41,8 @@ extern unsigned gVideoOutRegs; /*@ ds:FF36 */
     return gVideoOutRegs & 0xff;
 }
 
+/* 1DDD:002D: sets the BIOS video mode for graphics choice `i` (gBiosVideoModes[i]), or the mode to
+   restore on exit (gRestoreMode) for 7; skipped when the mode already is the restore mode. */
 /*@ 1DDD:002D */ void SetVideoMode(int i)
 {
     if (i < 7)
