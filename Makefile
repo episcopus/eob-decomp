@@ -72,13 +72,13 @@ twin:             ## prove INTRO.EXE units by their EOB.EXE twin, the same modul
 oracle-run:       ## run the original EOB.EXE in the oracle (build/oracle/run: summary.json, shots/)
 	$(PY) tools/oracle/run.py --max-insns $(or $(INSNS),30000000) $(if $(ARGS),--args "$(ARGS)") $(if $(SCRIPT),--script $(SCRIPT))
 
-golden:           ## record the golden sessions (NAME=x for one; CHECK=1 verifies instead)
-	$(PY) tools/oracle/golden.py $(if $(CHECK),--check) $(NAME)
+golden:           ## record the golden sessions (NAME=x for one; CHECK=1 verifies instead; CHECK=1 REBUILT=1 on the programs make rebuild linked)
+	$(PY) tools/oracle/golden.py $(if $(CHECK),--check) $(if $(REBUILT),--rebuilt) $(NAME)
 
 test:             ## Python tests (the fast set)
 	$(PY) -m pytest -q -m "not slow" tests/unit
 
-test-slow:        ## the tests that run the game: every golden session (about half a minute)
+test-slow:        ## the tests that run the game: every golden session, on the originals and on the rebuilds (about three minutes)
 	$(PY) -m pytest -q -m slow tests/unit
 
 match-gate:       ## every src/ unit matches, every L2 function is still proven, every negative fixture is rejected

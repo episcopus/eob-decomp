@@ -9,7 +9,8 @@
 | `machine.py` | IRQ1 and port 60h for the keyboard; EOI clears the highest request in service; a port handler table for devices |
 | `input.py` | scripts of keys and mouse moves and clicks, delivered as hardware does at fixed virtual times; the INT 33h driver and its event trampoline |
 | `adlib.py` | the OPL2: registers, timers, status; every register write logged |
-| `run.py` | one run: program, command line, devices, checkpoints, summary; only the pinned files of `eob/` are visible (`hide_unpinned`), a session's save comes with its `LEVELS.TMP` (`use_save`) |
+| `run.py` | one run: program, command line, devices, checkpoints, summary; only the pinned files of `eob/` are visible (`hide_unpinned`), a session's save comes with its `LEVELS.TMP` (`use_save`); `--rebuilt` runs the programs `make rebuild` linked |
+| `layout.py` | which files a run loads (the originals, or the rebuilds served under their names), and the rebuild's memory read in the original's form for the state digest (playbook 50) |
 | `call.py` | `call_far(m, seg, off, args)`: run one routine of the original and return (decoders checked against the game's own unpack routines, `tests/unit/test_wwfmt.py`; later, lifted routines) |
 | `golden.py` | record and verify golden sessions |
 
@@ -30,6 +31,7 @@ A session is `tests/sessions/<name>.keys` (the format is in `tools/oracle/input.
 
 - `make golden NAME=x` runs the session twice and writes `tests/sessions/golden/x.json` (instructions, state digest, image hash of every checkpoint and of the end, sound digest) and the screenshots beside it, only if both runs agree.
 - `make golden CHECK=1` verifies every session; `make test-slow` does the same from pytest.
+- `make golden CHECK=1 REBUILT=1` replays every golden on the rebuilt `EOB.EXE` and `INTRO.EXE` (`make rebuild` both first); a session that differs is played again on both and the first state that differs is printed, with the memory that differs.
 - A golden changes only when the oracle changes what the program can observe (a new device, a fix): record again and say why in the commit.
 
 Sessions so far: `boot-title`, `boot-adlib`, `new-party`, `mouse-party`, `load-walk`, `intro-play`, `intro-skip` (see `tests/sessions/README.md`).
