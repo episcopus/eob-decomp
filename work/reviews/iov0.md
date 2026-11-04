@@ -1,10 +1,30 @@
 # Review: iov0
 
-Reviewer: rev-haiku
-Commit reviewed: round 4 at 8c882ae (main). Round 3 at 765cb58 (main; src/IOV0.C has the 3e1080e changes since round 2, comments only). Round 2 at 38df9a6 (main; src/IOV0.C is identical to ac24cbe3, the merge of the round 1 fixes eb19ee8). Round 1: c7d121dc592cf92656c3a40297462ce3a16fb3a7 (main when I started; src/IOV0.C, re/symbols.toml and re/globals.toml are identical in the worktree's HEAD 97332d0)
+Reviewer: p6-rev-12
+Commit reviewed: P6 round at ce0608f367ed01b1b1df84e254eef04d1a734b27 (main; src/IOV0.C has the changes since round 4 at 8c882ae). Round 4 at 8c882ae (main). Round 3 at 765cb58 (main; src/IOV0.C has the 3e1080e changes since round 2, comments only). Round 2 at 38df9a6 (main; src/IOV0.C is identical to ac24cbe3, the merge of the round 1 fixes eb19ee8). Round 1: c7d121dc592cf92656c3a40297462ce3a16fb3a7 (main when I started; src/IOV0.C, re/symbols.toml and re/globals.toml are identical in the worktree's HEAD 97332d0)
 
 Playbook 70. Judge what a matching file can still get wrong: names, types, comments, structure.
 The matcher already proved the bytes; do not re-prove them, read for meaning.
+
+## Round P6 (2026-11-04), commit ce0608f367ed01b1b1df84e254eef04d1a734b27
+
+Judged: the names and comments changed since round 4 at 8c882ae (`git diff 8c882ae HEAD -- src/IOV0.C`). The diff renames six symbols and replaces the local `KEY_ESC` define with `#include "EOB.H"`. Checked each rename against its `why` in `re/renames.toml`, `re/globals.toml` and `re/symbols.toml`, against the code at its address, and against the EOB twin's name in `src/`.
+
+### Round P6 findings
+
+- [ ] must-fix src/IOV0.C:58, :365, :382, :1156, :1157 (and the comments that name it): the function at 097F:0002 is named `GetPagePtr`, but its EOB twin 19EC:0002 is named `GetPageBuffer` in src/E19EC.C:20 and src/E1B82.C:58 (the rename's own why says "Twin of EOB's 19EC:0002"). The same module linked at two addresses must have one name. Rename it to `GetPageBuffer` in src/IOV0.C and src/I0AED.C:8, :63, :93, :105, :106, :133. The evidence in the why is otherwise right: the function returns MK_FP(gPageSegs[kind | 1], 0).
+
+- [ ] must-fix src/IOV0.C:24, :26, :145, :335, :460, :468, :1123 (and src/I0892.C:92, :354): the driver entry at INTRO ds:1EE2 is named `gClearDrawPage`, but the same driver slot in EOB (ds:8056) is named `gClearPage` in src/E07C8.C:99 and the driver source src/drivers/MCGA.ASM:57. The rename's own why says "as EOB's ds:8056". The name `gClearPage` is the one the driver source uses. Rename it to `gClearPage` in src/IOV0.C and src/I0892.C. The behaviour in the why is right (zeroes 0x7D00 words at the draw page's segment).
+
+- [ ] should src/IOV0.C:103-104 (the KEY_ESC define, removed this round): the local `#define KEY_ESC 0x1B` and its comment "the key code of the escape key, the one key the wait loop reacts to" were replaced by `#include "EOB.H"`. The include provides the name (src/EOB.H:384), but its comment there is "the key the error dialog treats as 'abort'", which loses the wait-loop detail. Add a short comment at the include, or keep a local comment naming the wait loop (541).
+
+### Round P6 notes (not findings)
+
+- The other renames check out: `DrawShape` (intro/0998:0008) and `DrawShapeFlipped` (intro/0998:0046) match EOB's 1A29:000F and 1A29:004D in name and behaviour; `CopyPage` (intro/097F:002A) matches EOB's 19EC:002A; `gCgaMapDefault` (intro/ds:1C0A) matches EOB's ds:113F. The line cites in the whys (IOV0.C:173, 176, 235, 240, 246, 267, 974) all point at the right calls.
+
+### Round P6 summary
+
+Two must-fix: `GetPagePtr` and `gClearDrawPage` diverge from the EOB twins' names (`GetPageBuffer`, `gClearPage`), against "the same word for the same thing". One should: the wait-loop comment lost with the KEY_ESC define. The other four renames are right. Nothing escalated: no matcher, spec or pin question.
 
 ## Round 4 (later round, playbook 70)
 
