@@ -440,3 +440,11 @@ old = "b0"
 new = "typeIndex"
 why = "the monster's type, an index into gMonsterTypes (ds:1A3B, the 27-byte records): E0D1C and E0DE8 index the table by it"
 date = "2026-11-03"
+
+[[field]]
+struct = "CharRec"
+at = "22"
+old = "m22"
+new = "portraitIndex"
+why = "the face cell the member's portrait was cut from: PickPortrait ovl0:0A5E stores the chosen cell index in it and in gMemberPortraits"
+date = "2026-11-03"

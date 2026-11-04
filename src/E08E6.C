@@ -116,7 +116,7 @@ extern unsigned long gCount849A; /*@ ds:849A */
 extern int gFlags849E; /*@ ds:849E */
 extern char gDF4C; /*@ ds:DF4C */
 extern int gF518; /*@ ds:F518 */
-extern int gDD10; /*@ ds:DD10 */
+extern int gHpMinOrHitFlag; /*@ ds:DD10 */
 extern int gGraphicsChoice; /*@ ds:8102 */
 extern char g1CD3[]; /*@ ds:1CD3 */
 extern char g1CE3[]; /*@ ds:1CE3 */
@@ -772,7 +772,7 @@ second:
 
 /* 08E6:0E48: run the overlay-4 entry with 1, then clear m16 bit 1 of every object that has it; when
    an object with that bit has no count left, run 0EC3. When any was found set gDF4C and the
-   countdown to 1, else clear gDF4C; finally clear gDD10 and gF518. An uninitialized `any` is a
+   countdown to 1, else clear gDF4C; finally clear gHpMinOrHitFlag and gF518. An uninitialized `any` is a
    QUIRK 08E6:0E99 of the original: only objects with m16 bit 1 set define its value. Called by
    Obj16D6 (:1109), 0D1C:0A43 TurnUndead and 0EF3:18D8 CastConeOfCold. */
 /*@ 08E6:0E48 */ void Obj0E48(void)
@@ -795,7 +795,7 @@ second:
     } else {
         gDF4C = 0;
     }
-    gF518 = gDD10 = 0;
+    gF518 = gHpMinOrHitFlag = 0;
 }
 /* 08E6:0EC3: an object's death: pick `roll` (its frame, or a 1d4 when the frame is 4); when dropItem1
    is set, roll 1d2 and on a 1 resolve dropItem1 through CopyItemToFreeSlot and hand the item (`hit`) to
@@ -837,7 +837,7 @@ second:
 {
     int id;
 
-    gDD10 = 1;
+    gHpMinOrHitFlag = 1;
     obj->count -= damage;
     obj->m16 &= ~8;
     if (gF518 == 0) {

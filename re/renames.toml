@@ -3069,3 +3069,651 @@ new = "gArgv"
 kind = "global"
 why = "the C library's _argv: make rebuild links ds:8894 to the library public _argv (playbook 50 item 23), and StartupGame reads argv[6] through it, atol(gArgv->number) (07C8:0212)"
 date = "2026-11-03"
+
+[[rename]]
+id = "ds:DD10=gHpMinOrHitFlag"
+addr = "ds:DD10"
+old = "gDD10"
+new = "gHpMinOrHitFlag"
+kind = "global"
+why = "one variable with two uses: overlay 0's stat editor ovl0:135D keeps the new character's minimum hit points in it (MinHitPoints 0A72:03A4, the seventh word after the six-word table ds:DD04), and in play 08E6:0FBE sets it to 1 and 08E6:0E48 clears it"
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:DCA4=gHpMaxOrAttackTarget"
+addr = "ds:DCA4"
+old = "gDCA4"
+new = "gHpMaxOrAttackTarget"
+kind = "global"
+why = "one variable with two uses: overlay 0's stat editor ovl0:135D keeps the new character's maximum hit points in it (MaxHitPoints 0A72:02B3, the seventh word after the six-word table ds:DC98), and in play 0DE8:0359 stores the attacked monster's index in its low byte, which UseItem 0DE8:0763 damages (gMonsters[it])"
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:11AD=gRaceNames"
+addr = "ds:11AD"
+old = "g11AD"
+new = "gRaceNames"
+kind = "global"
+why = "Twelve far string pointers whose targets read HUMAN MALE, HUMAN FEMALE, ELF MALE ... HALFLING FEMALE; ovl0:065B draws g11AD[race] and PickOption ovl0:1F66 lists them; E1547.C already calls them the race names."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:11DD=gClassNames"
+addr = "ds:11DD"
+old = "g11DD"
+new = "gClassNames"
+kind = "global"
+why = "Fifteen far string pointers whose targets read FIGHTER, RANGER, PALADIN ... CLERIC/MAGE; ovl0:065B draws g11DD[classIndex] and PickClass ovl0:207A lists them; E1547.C already calls them the class names."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:1240=gAlignmentNames"
+addr = "ds:1240"
+old = "g1240"
+new = "gAlignmentNames"
+kind = "global"
+why = "Nine far string pointers whose targets read LAWFUL GOOD ... CHAOTIC EVIL; PickAlignment ovl0:2238 lists them and E1547.C draws g1240[rec->alignment]."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:613D=gStrPartyComplete"
+addr = "ds:613D"
+old = "gStr613D"
+new = "gStrPartyComplete"
+kind = "global"
+why = "The string reads \"Your party is complete. Select the PLAY button or press 'P' to start the game.\"; DrawPartyStatus ovl0:0504 draws it only when all four members have a name."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:60D5=gStartItems"
+addr = "ds:60D5"
+old = "g60D5"
+new = "gStartItems"
+kind = "global"
+why = "Eleven (item type, slot) word pairs; GiveStartingEquipment ovl0:26C6 looks one up per class entry of ds:6101, makes the item through CopyItemToFreeSlot and puts it in that carried slot (-1 slot means the first free hand slot 0..2)."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:6101=gClassStartItems"
+addr = "ds:6101"
+old = "g6101"
+new = "gClassStartItems"
+kind = "global"
+why = "Fifteen rows of four bytes, one row per class index (ovl0:26C6 reads g6101[classIndex * 4 + j]), each byte an index into the starting-item table ds:60D5; 255 marks an unused entry (see the quirk note in the report)."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:6227=gFmtStrengthOnEntry"
+addr = "ds:6227"
+old = "gStr6227"
+new = "gFmtStrengthOnEntry"
+kind = "global"
+why = "The string is \"%s\"; EditStatField ovl0:135D formats the strength field's FormatStrengthPercent text with it when the field editor opens (index 0)."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:622A=gFmtValueOnEntry"
+addr = "ds:622A"
+old = "gStr622A"
+new = "gFmtValueOnEntry"
+kind = "global"
+why = "The string is \"%d\"; EditStatField ovl0:135D formats a non-strength field's value with it when the field editor opens (index 1..6)."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:622D=gFmtStrengthChanged"
+addr = "ds:622D"
+old = "gStr622D"
+new = "gFmtStrengthChanged"
+kind = "global"
+why = "The string is \"%s\"; EditStatField ovl0:135D formats the strength text with it after a key changed the value (index 0)."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:6230=gFmtValueChanged"
+addr = "ds:6230"
+old = "gStr6230"
+new = "gFmtValueChanged"
+kind = "global"
+why = "The string is \"%d\"; EditStatField ovl0:135D formats a non-strength field with it after a key changed the value (index 1..6)."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:6233=gFmtHpChanged"
+addr = "ds:6233"
+old = "gStr6233"
+new = "gFmtHpChanged"
+kind = "global"
+why = "The string is \"%d\"; EditStatField ovl0:135D formats gChars[].hp with it and draws it at (0x108, 0x88) when a constitution change moved the hit points."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:6236=gFmtArmorClassChanged"
+addr = "ds:6236"
+old = "gStr6236"
+new = "gFmtArmorClassChanged"
+kind = "global"
+why = "The string is \"%d\"; EditStatField ovl0:135D formats gChars[].armorClass with it and draws it at (0x108, 0x80) when a dexterity change moved the armour class."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:6239=gFmtStrengthOnExit"
+addr = "ds:6239"
+old = "gStr6239"
+new = "gFmtStrengthOnExit"
+kind = "global"
+why = "The string is \"%s\"; EditStatField ovl0:135D formats the final strength text with it when the field editor ends (index 0)."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:623C=gFmtValueOnExit"
+addr = "ds:623C"
+old = "gStr623C"
+new = "gFmtValueOnExit"
+kind = "global"
+why = "The string is \"%d\"; EditStatField ovl0:135D formats a non-strength field's final value with it when the field editor ends (index 1..6)."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:FC8C=gPortraitCells"
+addr = "ds:FC8C"
+old = "gPtrsFC8C"
+new = "gPortraitCells"
+kind = "global"
+why = "InitPanelScreens ovl0:2547 slices 0x2c (44) 32 by 32 cells out of CHARGENA into it; PickPartySlot ovl0:0A5E draws four of them in a row and unpacks the chosen one into gChars[].portrait (Unpack0, 0x514 bytes). FreePanelBuffers ovl0:28B0 frees 0x43 entries, so the table also covers ds:FD54 (entries 0x32..0x3b)."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:DCB0=gChargenMember"
+addr = "ds:DCB0"
+old = "gDCB0"
+new = "gChargenMember"
+kind = "global"
+why = "The party member 0..3 the character-generation screens act on: RunCharacterPanel ovl0:28F9 sets it from the clicked box and flips bits 0/1 with the arrow keys, and CreateCharacter ovl0:23EC, ReviewRolledStats and EditStatField all index gChars[gDCB0]."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:61CB=gStrSelectBoxPrompt"
+addr = "ds:61CB"
+old = "gStr61CB"
+new = "gStrSelectBoxPrompt"
+kind = "global"
+why = "The string reads \"Select the box of the character you wish to create or view.\"; ShowReportLine1 ovl0:1071 draws it at (0xa8, 0x10) on the party screen."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:6207=gStrEnteringGame"
+addr = "ds:6207"
+old = "gStr6207"
+new = "gStrEnteringGame"
+kind = "global"
+why = "The string reads \"Entering game. Please wait.\"; ShowReportLine2 ovl0:10F6 draws it, and RunCharacterPanel ovl0:28F9 calls that only after the PLAY icon 0xf flashed."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:5FC5=gClassMinAbilities"
+addr = "ds:5FC5"
+old = "gTable5FC5"
+new = "gClassMinAbilities"
+kind = "global"
+why = "Fifteen rows of six words, one per class index, the minimum ability scores: row 1 (RANGER) is 13,0,14,13,14,0 and row 2 (PALADIN) 12,0,13,0,9,17; ovl0:1EA9 takes the larger of it and the race minimum into the stat minimum table ds:DD04."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:5F35=gRaceMinAbilities"
+addr = "ds:5F35"
+old = "gTable5F35"
+new = "gRaceMinAbilities"
+kind = "global"
+why = "Six rows of six words indexed by race >> 1 (the race without its sex), the race minimum ability scores (row 3, DWARF: str 8, con 12); ovl0:1EA9 takes the larger of it and the class minimum into ds:DD04."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:5F7D=gRaceMaxAbilities"
+addr = "ds:5F7D"
+old = "gTable5F7D"
+new = "gRaceMaxAbilities"
+kind = "global"
+why = "Six rows of six words indexed by race >> 1, the race maximum ability scores (0x6412 is strength 18/100, elves have dex 19 and con 17); ovl0:1EA9 copies the row into the stat maximum table ds:DC98."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:DD04=gStatMin"
+addr = "ds:DD04"
+old = "gOutDD04"
+new = "gStatMin"
+kind = "global"
+why = "The minimum of each stat for the member being made: ovl0:1EA9 fills words 0..5 from gClassMinAbilities and gRaceMinAbilities, RollCharacterStats ovl0:1BF2 raises rolls to it and EditStatField ovl0:135D clamps to it, index 6 (hp) being ds:DD10."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:DC98=gStatMax"
+addr = "ds:DC98"
+old = "gOutDC98"
+new = "gStatMax"
+kind = "global"
+why = "The maximum of each stat for the member being made: ovl0:1EA9 copies gRaceMaxAbilities into words 0..5 (strength forced to 18 for classes with a nonzero ds:116E byte), and ovl0:1BF2 and ovl0:135D clamp to it, index 6 (hp) being ds:DCA4."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:FD54=gBoxAnimCells"
+addr = "ds:FD54"
+old = "gPtrsFD54"
+new = "gBoxAnimCells"
+kind = "global"
+why = "InitPanelScreens ovl0:2547 slices ten 32 by 32 cells from CHARGENB into it, and AnimateMemberBox ovl0:1224 cycles them (gFC84 0..9) into the current member's box; the ten entries are also entries 0x32..0x3b of gPortraitCells."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:6272=gFileNameChargenA"
+addr = "ds:6272"
+old = "gStr6272"
+new = "gFileNameChargenA"
+kind = "global"
+why = "The string is \"CHARGENA\"; InitPanelScreens ovl0:2547 loads that screen through LoadOverlayScreen and slices the 44 portraits from it, matching the gFileName naming of other screen names."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:627B=gFileNameChargen"
+addr = "ds:627B"
+old = "gStr627B"
+new = "gFileNameChargen"
+kind = "global"
+why = "The string is \"CHARGEN\"; InitPanelScreens ovl0:2547 loads that screen through LoadScreenImage into gOverlayBuf as the character-generation background."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:6283=gFileNameChargenB"
+addr = "ds:6283"
+old = "gStr6283"
+new = "gFileNameChargenB"
+kind = "global"
+why = "The string is \"CHARGENB\"; InitPanelScreens ovl0:2547 loads it through LoadOverlayScreen and slices the ten box-animation cells and the 17 panel icons from it."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:6197=gStrAcHpLvlLabels"
+addr = "ds:6197"
+old = "gStr6197"
+new = "gStrAcHpLvlLabels"
+kind = "global"
+why = "The string is \"AC\\rHP\\rLVL\"; DrawCharPanel ovl0:065B draws it at (0xf8, 0x40), beside the values it formats with ds:61B3 and the level formats."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:61A1=gFmtAbilityScores"
+addr = "ds:61A1"
+old = "gStr61A1"
+new = "gFmtAbilityScores"
+kind = "global"
+why = "The string is \"%s\\r%d\\r%d\\r%d\\r%d\\r%d\"; DrawCharPanel ovl0:065B formats strength (FormatStrengthPercent) and the five other abilities with it into one column."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:61B3=gFmtAcHp"
+addr = "ds:61B3"
+old = "gStr61B3"
+new = "gFmtAcHp"
+kind = "global"
+why = "The string is \"%d\\r%d\"; DrawCharPanel ovl0:065B formats armorClass and maxHp with it, drawn at (0x118, 0x40) next to the AC and HP labels."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:61B9=gFmtOneLevel"
+addr = "ds:61B9"
+old = "gStr61B9"
+new = "gFmtOneLevel"
+kind = "global"
+why = "The string is \"%d\"; DrawCharPanel ovl0:065B formats the levels with it when the second and third class slots have no level (single class)."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:61BC=gFmtTwoLevels"
+addr = "ds:61BC"
+old = "gStr61BC"
+new = "gFmtTwoLevels"
+kind = "global"
+why = "The string is \"%d/%d\"; DrawCharPanel ovl0:065B picks it when levels[1] is above 0 (a two-class character)."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:61C2=gFmtThreeLevels"
+addr = "ds:61C2"
+old = "gStr61C2"
+new = "gFmtThreeLevels"
+kind = "global"
+why = "The string is \"%d/%d/%d\"; DrawCharPanel ovl0:065B picks it when levels[2] is above 0 (a three-class character)."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:115D=gAbilityAbbrevs"
+addr = "ds:115D"
+old = "g115D"
+new = "gAbilityAbbrevs"
+kind = "global"
+why = "DrawCharPanel ovl0:065B draws entries 8..13, whose targets read STR, INT, WIS, DEX, CON, CHA. The real table starts at ds:117D (115D + 8 * 4); 115D..117C hold other tables (ds:115F, ds:116E), so src should declare it at 117D and index [i - 8]."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:FC8A=gNewMemberFemale"
+addr = "ds:FC8A"
+old = "gFC8A"
+new = "gNewMemberFemale"
+kind = "global"
+why = "PickOption ovl0:1F66 stores choice % 2 of the race list, and odd race indices are the FEMALE entries of gRaceNames; PickPartySlot passes it to FindSlot, which limits a female to portraits 0x1a.. and a male to ..0x1c."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:5EB0=gBoxAnimMember"
+addr = "ds:5EB0"
+old = "g5EB0"
+new = "gBoxAnimMember"
+kind = "global"
+why = "AnimateMemberBox ovl0:1224 compares it with gChargenMember and, when they differ, resets the frame timer and stores the member; its initial byte is 6 (no member yet)."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:FC84=gBoxAnimFrame"
+addr = "ds:FC84"
+old = "gFC84"
+new = "gBoxAnimFrame"
+kind = "global"
+why = "AnimateMemberBox ovl0:1224 steps it 0..9 every two ticks and draws gBoxAnimCells[gFC84] into the current member's box."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:FC85=gBoxAnimDrawnFrame"
+addr = "ds:FC85"
+old = "gFC85"
+new = "gBoxAnimDrawnFrame"
+kind = "global"
+why = "AnimateMemberBox ovl0:1224 returns early while it equals gBoxAnimFrame and sets it to gBoxAnimFrame after drawing, so it holds the frame last drawn."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:FC86=gBoxAnimNextTick"
+addr = "ds:FC86"
+old = "gFC86"
+new = "gBoxAnimNextTick"
+kind = "global"
+why = "AnimateMemberBox ovl0:1224 advances the frame when it is below gTicks and then sets it to gTicks + 2; a member change resets it to 0."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:6079=gMemberBoxX"
+addr = "ds:6079"
+old = "g6079"
+new = "gMemberBoxX"
+kind = "global"
+why = "Four bytes 16, 80, 16, 80, the left edge of each member's box (the same values as ds:5E54); PickOption ovl0:1F66 draws the box outline with DrawRect from them."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:607D=gMemberBoxY"
+addr = "ds:607D"
+old = "g607D"
+new = "gMemberBoxY"
+kind = "global"
+why = "Four bytes 63, 63, 127, 127, the top edge of each member's box (the same values as ds:5E5C); PickOption ovl0:1F66 draws the box outline with DrawRect from them."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:623F=gStrSelectRace"
+addr = "ds:623F"
+old = "gStr623F"
+new = "gStrSelectRace"
+kind = "global"
+why = "The string reads \"SELECT RACE:\"; PickOption ovl0:1F66 draws it at (0x93, 0x43) before listing gRaceNames."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:618C=gStrBlankName"
+addr = "ds:618C"
+old = "gStr618C"
+new = "gStrBlankName"
+kind = "global"
+why = "The string is ten spaces; DrawCharName ovl0:05BA draws it at the name slot before the centred name, erasing the old name (ten is the name length EditTextField allows in ovl0:23EC)."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:6081=gRaceClassMasks"
+addr = "ds:6081"
+old = "gTable6081"
+new = "gRaceClassMasks"
+kind = "global"
+why = "Six longs indexed by race >> 1, a bit per class index the race may take (HUMAN 0x3f is the six single classes); PickClass ovl0:207A filters the class list gClassNames with it."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:6099=gClassAlignmentMasks"
+addr = "ds:6099"
+old = "gTable6099"
+new = "gClassAlignmentMasks"
+kind = "global"
+why = "Fifteen longs indexed by class, a bit per alignment allowed (PALADIN 0x1 is LAWFUL GOOD only, RANGER 0x7 the good ones, THIEF 0x1fe no LAWFUL GOOD); PickAlignment ovl0:2238 filters gAlignmentNames with it."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:5EB1=gRaceAbilityBonus"
+addr = "ds:5EB1"
+old = "gTable5EB1"
+new = "gRaceAbilityBonus"
+kind = "global"
+why = "Six rows of six words indexed by race >> 1 (ELF dex +1 con -1, DWARF con +1 cha -1, GNOME int +1 wis -1, HALFLING str -1 dex +1); RollCharacterStats ovl0:1BF2 adds row[i] to each rolled ability."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:5EF9=gClassStartLevels"
+addr = "ds:5EF9"
+old = "gTable5EF9"
+new = "gClassStartLevels"
+kind = "global"
+why = "Fifteen 4-byte records per class: bytes 0..2 the starting level of each class slot for 5000 experience (FIGHTER 3, THIEF 4, FIGHTER/MAGE/THIEF 1/1/2), which RollCharacterStats ovl0:1BF2 copies to levels[]; byte 3 is ds:5EFC."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:5EFC=gClassStartLevelsNumClasses"
+addr = "ds:5EFC"
+old = "gTable5EFC"
+new = "gClassStartLevelsNumClasses"
+kind = "global"
+why = "Byte 3 of each gClassStartLevels record (ds:5EF9 + 3), the number of classes (1, 2 or 3); RollCharacterStats ovl0:1BF2 gives each class slot 5000 / it experience. One object with ds:5EF9."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:624C=gStrSelectClass"
+addr = "ds:624C"
+old = "gStr624C"
+new = "gStrSelectClass"
+kind = "global"
+why = "The string reads \"SELECT CLASS:\"; PickClass ovl0:207A draws it at (0x93, 0x43) before listing gClassNames."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:625A=gStrSelectAlignment"
+addr = "ds:625A"
+old = "gStr625A"
+new = "gStrSelectAlignment"
+kind = "global"
+why = "The string reads \"SELECT ALIGNMENT:\"; PickAlignment ovl0:2238 draws it at (0x93, 0x43) before listing gAlignmentNames."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:626C=gStrNamePrompt"
+addr = "ds:626C"
+old = "gStr626C"
+new = "gStrNamePrompt"
+kind = "global"
+why = "The string reads \"Name:\"; CreateCharacter ovl0:23EC draws it at (0x95, 0x64) just before EditTextField reads the new member's name."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:DD12=gUnwrittenPanelRow"
+addr = "ds:DD12"
+old = "gDD12"
+new = "gUnwrittenPanelRow"
+kind = "global"
+why = "CreateCharacter ovl0:23EC passes it to DrawPanelRow, but no code writes it (the bytes 12 DD occur once in the code, at that read), so it is always 0 and the call redraws the member's portrait."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:5EAC=gMemberPortraits"
+addr = "ds:5EAC"
+old = "g5EAC"
+new = "gMemberPortraits"
+kind = "global"
+why = "Four bytes, initially 0xFF, the portrait index each member chose: PickPartySlot ovl0:0A5E stores the chosen cell into g5EAC[gChargenMember] and gChars[].m22, and FindSlot ovl0:0D5B skips portraits another named member already holds."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:5E64=gPanelIconCells"
+addr = "ds:5E64"
+old = "g5E64"
+new = "gPanelIconCells"
+kind = "global"
+why = "The 17 sprite cells BuildIconTable ovl0:0000 slices from CHARGENB using gIcons2084, which DrawPanelIcon ovl0:0128 draws through DrawShape and FreeIconTable ovl0:00AF frees."
+date = "2026-11-03"
+
+[[rename]]
+id = "2084:0000=gPanelIconDefs"
+addr = "2084:0000"
+old = "gIcons2084"
+new = "gPanelIconDefs"
+kind = "function"
+why = "Seventeen 9-byte panel icon definitions: bytes 0..3 the source cell in CHARGENB (y 192), 4..5 the draw offset, 6 the rect row in 2080, 7..8 the screen position (icon 0xf, PLAY, at 3,181); read by ovl0:0000 and ovl0:0128."
+date = "2026-11-03"
+
+[[rename]]
+id = "2080:0000=gPanelIconRects"
+addr = "2080:0000"
+old = "gIcons2080"
+new = "gPanelIconRects"
+kind = "function"
+why = "Four-byte rectangles (left, top, width, height) DrawPanelIcon ovl0:0128 indexes by gPanelIconDefs[i].m06 + rowBase, rowBase 1 being the highlighted state FlashPanelIcon ovl0:037A shows; the rectangle is the copy source and the icon's size."
+date = "2026-11-03"
+
+[[rename]]
+id = "206B:0000=gRowNodeDefs"
+addr = "206B:0000"
+old = "gRowDefs206B"
+new = "gRowNodeDefs"
+kind = "function"
+why = "Forty-one 8-byte (x, y, width, height, key) click-box definitions BuildRowNodeList ovl0:042F turns into row nodes: 0..3 the four member boxes, 4 the PLAY box, 21..26 the portrait arrows and four portraits, 31..37 the stat fields."
+date = "2026-11-03"
+
+[[rename]]
+id = "ovl0:0DDC=ReviewRolledStats"
+addr = "ovl0:0DDC"
+old = "Ovl0_0DDC"
+new = "ReviewRolledStats"
+kind = "function"
+why = "After the portrait pick it builds row defs 0x1b..0x1e and loops: 0x8001 flashes icon 4 and rerolls (RollCharacterStats), 0x8002 icon 7 modifies the stats (ovl0:1ADD), 0x8003 icon 8 picks the portrait again (ovl0:0A5E), 0x8004 or 0x61 icon 6 keeps the roll and returns. Called by CreateCharacter ovl0:23EC."
+date = "2026-11-03"
+
+[[rename]]
+id = "ovl0:0EE5=ViewCharacter"
+addr = "ovl0:0EE5"
+old = "Ovl0_0EE5"
+new = "ViewCharacter"
+kind = "function"
+why = "Called by RunCharacterPanel ovl0:28F9 when a named member's box is chosen; it draws the page in mode 2 and loops on row defs 0..6: 0x8001..0x8004 switch to another box, 0x8005 (the PLAY box, row 4) returns 1, 0x8006 (icon 9, OK) returns 0, 0x8007 (icon 0x10) deletes the member's name."
+date = "2026-11-03"
+
+[[rename]]
+id = "ovl0:1224=AnimateMemberBox"
+addr = "ovl0:1224"
+old = "Ovl0_1224"
+new = "AnimateMemberBox"
+kind = "function"
+why = "Every two ticks it steps gFC84 through the ten CHARGENB cells gPtrsFD54 and copies the frame into the current member's box at gPanelX5E54/gPanelY5E5C[gDCB0]; called inside every waiting loop of the creation screens (ovl0:0A5E, 0DDC, 135D, 1F66, 207A, 2238)."
+date = "2026-11-03"
+
+[[rename]]
+id = "ovl0:1ADD=ModifyCharacterStats"
+addr = "ovl0:1ADD"
+old = "Ovl0_1ADD"
+new = "ModifyCharacterStats"
+kind = "function"
+why = "Called for key 0x8002 (icon 7) by ovl0:0DDC; it runs EditStatField ovl0:135D over fields 0..6 (strength with strengthPct, intelligence, wisdom, dexterity, constitution, charisma, hp), moving between them by the returned index until -2."
+date = "2026-11-03"
+
+[[rename]]
+id = "ovl0:26C6=GiveStartingEquipment"
+addr = "ovl0:26C6"
+old = "Ovl0_26C6"
+new = "GiveStartingEquipment"
+kind = "function"
+why = "Run once by RunCharacterPanel ovl0:28F9 when the party is complete: it makes item 0x23 for member 0 and item 0xa for each member, then the four class entries of gClassStartItems (ds:6101 into ds:60D5) into their carried slots, sets status 1 and food 100, and recomputes the armour class."
+date = "2026-11-03"
+
+[[rename]]
+id = "ovl0:0A5E=PickPortrait"
+addr = "ovl0:0A5E"
+old = "PickPartySlot"
+new = "PickPortrait"
+kind = "function"
+why = "lets the player pick the new character's face: it walks the 44 face cells sliced from CHARGENA (gPortraitCells), stores the choice in gMemberPortraits and CharRec +22 and unpacks the cell into the member's portrait (ovl0:0A5E)"
+date = "2026-11-03"
+
+[[rename]]
+id = "ovl0:0D5B=FindFreePortrait"
+addr = "ovl0:0D5B"
+old = "FindSlot"
+new = "FindFreePortrait"
+kind = "function"
+why = "returns the next face cell no other named character uses, female faces from 0x1A up and male up to 0x1C (ovl0:0D5B), for PickPortrait"
+date = "2026-11-03"
+
+[[rename]]
+id = "ovl0:1EA9=BuildAbilityLimits"
+addr = "ovl0:1EA9"
+old = "BuildCombatTables"
+new = "BuildAbilityLimits"
+kind = "function"
+why = "fills the new character's per-ability minimum gStatMin (the larger of the class and race minimums) and maximum gStatMax (the race maximum, strength 18 for some classes) (ovl0:1EA9)"
+date = "2026-11-03"
+
+[[rename]]
+id = "ovl0:1F66=PickRace"
+addr = "ovl0:1F66"
+old = "PickOption"
+new = "PickRace"
+kind = "function"
+why = "the race picker of character creation: it runs UpdateOptionList over gRaceNames until a race is chosen and keeps its parity, the sex, in gNewMemberFemale (ovl0:1F66)"
+date = "2026-11-03"
+
+[[rename]]
+id = "ovl0:1071=ShowSelectBoxPrompt"
+addr = "ovl0:1071"
+old = "ShowReportLine1"
+new = "ShowSelectBoxPrompt"
+kind = "function"
+why = "draws the prompt gStrSelectBoxPrompt (\"Select the box of the character you wish to create or view.\") and the party status (ovl0:1071)"
+date = "2026-11-03"
+
+[[rename]]
+id = "ovl0:10F6=ShowEnteringGame"
+addr = "ovl0:10F6"
+old = "ShowReportLine2"
+new = "ShowEnteringGame"
+kind = "function"
+why = "draws gStrEnteringGame (\"Entering game. Please wait.\") when the party leaves character creation (ovl0:10F6)"
+date = "2026-11-03"
+
+[[rename]]
+id = "ovl0:284A=SetBaseStats"
+addr = "ovl0:284A"
+old = "ShiftCharFields"
+new = "SetBaseStats"
+kind = "function"
+why = "copies each current ability byte and the hit points of the four created characters into the base byte after it (+0D to +0E, ..., hp +1B to maxHp +1C) before the game starts (ovl0:284A)"
+date = "2026-11-03"
+
+[[rename]]
+id = "ovl0:280D=GiveStartingSpellBooks"
+addr = "ovl0:280D"
+old = "InitCharSlotValues"
+new = "GiveStartingSpellBooks"
+kind = "function"
+why = "gives each created character whose class can cast mage spells (class byte g1231 bit 1) the starting spell book 0x26C (ovl0:280D)"
+date = "2026-11-03"

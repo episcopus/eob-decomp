@@ -154,8 +154,8 @@ extern signed char gA9C6; /*@ ds:A9C6 */     /* an offset within a nine-byte gMa
                                                 0ACD:0644) */
 extern char gDF4C; /*@ ds:DF4C */            /* set to 1 when an action took effect (0DE8:0359,
                                                 0DE8:0537, 0DE8:05BB) */
-extern char gDCA4; /*@ ds:DCA4 */            /* the target object 0359 records (:361); UseItem damages
-                                                gMonsters[gDCA4] (:520) */
+extern char gHpMaxOrAttackTarget; /*@ ds:DCA4 */            /* the target object 0359 records (:361); UseItem damages
+                                                gMonsters[gHpMaxOrAttackTarget] (:520) */
 extern unsigned char g1905[]; /*@ ds:1905 */   /* a 256-byte table gMaze indexes into (0359) */
 extern char gMaze[]; /*@ ds:B894 */          /* the nine-byte records at ds:B894 indexed by row * 9
                                                 (:348-350); the +4 byte is read at 0D1C:0080 */
@@ -343,7 +343,7 @@ void LevelUpSlot(int who, int cls, int slot);  /* forward: 0B45 reaches it with 
    0xFF bumps two gMaze cells and sets gDF4C, returning -2, otherwise -1. A real target demands the
    0007 to-hit roll (returns -1 on a miss), and when the slot's m02 is 0x34..0x38 f0D1C_0BAB can
    also fail it; the surviving hit is rolled through 011A and halved when f0D1C_0BEB says so.
-   Returns -3, -2 or -1 as above, else the damage. Called by 0DE8:0763. The gDCA4 byte records the
+   Returns -3, -2 or -1 as above, else the damage. Called by 0DE8:0763. The gHpMaxOrAttackTarget byte records the
    target for the effect dispatcher. */
 /*@ 0DE8:0359 */ int ApplyItemAttack(int who, int slot)
 {
@@ -370,7 +370,7 @@ void LevelUpSlot(int who, int cls, int slot);  /* forward: 0B45 reaches it with 
     m02 = gItems[slot].type;
     if (m02 > 0x33 && m02 < 0x39 && f0D1C_0BAB(target))
         return -1;
-    gDCA4 = target;
+    gHpMaxOrAttackTarget = target;
     damage = RollAttackDamage(who, target, slot, gItems[slot].type, 1);
     if (f0D1C_0BEB(target, m02))
         damage >>= 1;
@@ -488,7 +488,7 @@ fail:
    and carried slot `slot` (an index into items). It derives the item's m02, calls ClearEffectFlag4
    when effectFlags bit 2 is set, dispatches on the gItemTypes m0E kind (1 rolls 0359 and forces a miss
    from 0 to -1 with sound 0x20, 2 runs 0537, 3 runs 05BB and redraws), then, on a hit, raises hp
-   (capped at 0x7F) for a flag-8 item, clears items[slot] for a flag-16 item and hands gMonsters[gDCA4]
+   (capped at 0x7F) for a flag-8 item, clears items[slot] for a flag-16 item and hands gMonsters[gHpMaxOrAttackTarget]
    to DamageObject. It toggles m1E bit `slot`, stores the result in lastAction[slot], redraws and arms
    ApplyCharEffect(who, 0x12, slot, 1) when the result is below -2, else ApplyCharEffect(who, 0x12,
    slot + 2, 1). Called by 0BD2:1001. */
@@ -529,7 +529,7 @@ fail:
         }
         if (gItems[field].flags & 0x10)
             gChars[who].items[slot] = 0;
-        DamageObject(&gMonsters[gDCA4], result);
+        DamageObject(&gMonsters[gHpMaxOrAttackTarget], result);
     }
     gChars[who].m1E ^= 1 << slot;
     gChars[who].lastAction[slot] = result;

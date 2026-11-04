@@ -8186,10 +8186,10 @@ unit = "eov0"
 addr = "ovl0:0A5E"
 size = 765
 evidence = ["ovl", "near", "frame"]
-name = "PickPartySlot"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "PickPortrait"
 
 [[function]]
 id = "eov0_0d5b"
@@ -8197,10 +8197,10 @@ unit = "eov0"
 addr = "ovl0:0D5B"
 size = 129
 evidence = ["ovl", "near"]
-name = "FindSlot"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "FindFreePortrait"
 
 [[function]]
 id = "eov0_0ddc"
@@ -8208,10 +8208,10 @@ unit = "eov0"
 addr = "ovl0:0DDC"
 size = 265
 evidence = ["ovl", "near", "frame"]
-name = "Ovl0_0DDC"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "ReviewRolledStats"
 
 [[function]]
 id = "eov0_0ee5"
@@ -8219,10 +8219,10 @@ unit = "eov0"
 addr = "ovl0:0EE5"
 size = 396
 evidence = ["ovl", "near"]
-name = "Ovl0_0EE5"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "ViewCharacter"
 
 [[function]]
 id = "eov0_1071"
@@ -8230,10 +8230,10 @@ unit = "eov0"
 addr = "ovl0:1071"
 size = 133
 evidence = ["ovl", "near"]
-name = "ShowReportLine1"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "ShowSelectBoxPrompt"
 
 [[function]]
 id = "eov0_10f6"
@@ -8241,10 +8241,10 @@ unit = "eov0"
 addr = "ovl0:10F6"
 size = 129
 evidence = ["ovl", "near", "frame"]
-name = "ShowReportLine2"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "ShowEnteringGame"
 
 [[function]]
 id = "eov0_1177"
@@ -8274,10 +8274,10 @@ unit = "eov0"
 addr = "ovl0:1224"
 size = 313
 evidence = ["ovl", "near", "frame"]
-name = "Ovl0_1224"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "AnimateMemberBox"
 
 [[function]]
 id = "eov0_135d"
@@ -8296,10 +8296,10 @@ unit = "eov0"
 addr = "ovl0:1ADD"
 size = 277
 evidence = ["ovl", "near"]
-name = "Ovl0_1ADD"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "ModifyCharacterStats"
 
 [[function]]
 id = "eov0_1bf2"
@@ -8318,10 +8318,10 @@ unit = "eov0"
 addr = "ovl0:1EA9"
 size = 189
 evidence = ["ovl", "near", "frame"]
-name = "BuildCombatTables"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "BuildAbilityLimits"
 
 [[function]]
 id = "eov0_1f66"
@@ -8329,10 +8329,10 @@ unit = "eov0"
 addr = "ovl0:1F66"
 size = 235
 evidence = ["ovl", "near", "frame"]
-name = "PickOption"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "PickRace"
 
 [[function]]
 id = "eov0_2051"
@@ -8395,10 +8395,10 @@ unit = "eov0"
 addr = "ovl0:26C6"
 size = 327
 evidence = ["ovl", "near", "frame"]
-name = "Ovl0_26C6"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "GiveStartingEquipment"
 
 [[function]]
 id = "eov0_280d"
@@ -8406,10 +8406,10 @@ unit = "eov0"
 addr = "ovl0:280D"
 size = 61
 evidence = ["ovl", "near", "frame"]
-name = "InitCharSlotValues"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "GiveStartingSpellBooks"
 
 [[function]]
 id = "eov0_284a"
@@ -8417,10 +8417,10 @@ unit = "eov0"
 addr = "ovl0:284A"
 size = 102
 evidence = ["ovl", "near", "frame"]
-name = "ShiftCharFields"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "SetBaseStats"
 
 [[function]]
 id = "eov0_28b0"

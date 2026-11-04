@@ -41,7 +41,7 @@ struct CharRec {            /* the 243-byte (0xF3) records at ds:F580 (src/E0A72
     signed char race;       /* +1F: index into the race-name table ds:11AD */
     signed char classIndex; /* +20: index into the class-name table ds:11DD (src/E0A72.C) */
     signed char alignment;  /* +21: index into the alignment-name table ds:1240 */
-    signed char m22;        /* +22 */
+    signed char portraitIndex;        /* +22 */
     unsigned char food;     /* +23: the hunger/food value, clamped to 100 by EatFood (0ACD:07E0)
                                and decremented each tick for a living member by DecayMemberState
                                (1414:0C82); unsigned here (the code tests < 0x21, < 0x14), while
@@ -143,10 +143,10 @@ extern unsigned g5D42[]; /*@ ds:5D42 */      /* column x2: 271, 300, 318 */
 extern unsigned char g5D48[]; /*@ ds:5D48 */ /* column y2: 165, 165, 147 */
 /* the far string tables: stat, race, class and alignment names and the per-class-slot names */
 extern char far *g1195[]; /*@ ds:1195 */     /* the six stat names */
-extern char far *g11AD[]; /*@ ds:11AD */     /* the race names */
-extern char far *g11DD[]; /*@ ds:11DD */     /* the class names */
+extern char far *gRaceNames[]; /*@ ds:11AD */     /* the race names */
+extern char far *gClassNames[]; /*@ ds:11DD */     /* the class names */
 extern char far *g1219[]; /*@ ds:1219 */     /* the per-class-slot names (GetClassSlotByte index) */
-extern char far *g1240[]; /*@ ds:1240 */     /* the alignment names */
+extern char far *gAlignmentNames[]; /*@ ds:1240 */     /* the alignment names */
 
 extern char *itoa(int value, char *string, int radix); /*@ 0000:62AA */
 extern void SetFont(char far *font); /*@ 1A47:0169 */
@@ -581,9 +581,9 @@ extern void DrawItemRow(int who, int slot, int one); /*@ 0BD2:0917 */
             for (n = 0; n < 3; n++)
                 gFillRect(g5D39[n], g5D3F[n], g5D42[n], g5D48[n], gFB7B);
             DrawShadowText("CHARACTER INFO", 0xb7, 0x2a, 0xf, gFB7B);
-            gDrawText(g11DD[rec->classIndex], 0xb7, 0x37, 0xc, gFB7B);
-            gDrawText(g1240[rec->alignment], 0xb7, 0x3e, 0xc, gFB7B);
-            gDrawText(g11AD[rec->race], 0xb7, 0x45, 0xc, gFB7B);
+            gDrawText(gClassNames[rec->classIndex], 0xb7, 0x37, 0xc, gFB7B);
+            gDrawText(gAlignmentNames[rec->alignment], 0xb7, 0x3e, 0xc, gFB7B);
+            gDrawText(gRaceNames[rec->race], 0xb7, 0x45, 0xc, gFB7B);
             for (n = 0; n < 6; n++)
                 gDrawText(g1195[n], 0xb7, n * 7 + 0x52, 0xc, gFB7B);
             gDrawText("ARMOR CLASS", 0xb7, 0x7c, 0xc, gFB7B);

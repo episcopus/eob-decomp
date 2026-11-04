@@ -115,7 +115,7 @@ struct CharRec {            /* 243-byte character records at ds:F580 (src/E08E6.
     char pad00;
     unsigned char status;     /* +1: status bits (src/E08E6.C); 0 when the slot is empty */
     char pad02[0x22 - 0x02];
-    signed char m22;          /* +0x22: the character's cell row/column (src/E0D1C.C) */
+    signed char portraitIndex;          /* +0x22: the character's cell row/column (src/E0D1C.C) */
     char pad23[0x33 - 0x23];
     void far *portrait;       /* +0x33: the character's packed sprite buffer */
     char pad37[0xad - 0x37];
@@ -875,11 +875,11 @@ done:
    recreates LEVELS.TMP from block 3 (mode 2 deletes and recreates the file; FileWrite starts at
    offset 0 and carries the whole gBlockSizes[3] image). It stores the three single bytes ds:80E8
    (the Ctrl flag), ds:80E6 (gSoundOn) and ds:F43C, unpacks the 0x60 bytes into ds:AD20, loads
-   the CHARGENA screen and, for each character whose identifiedNameIndex is nonzero and whose m22 is >= 0, cuts its
+   the CHARGENA screen and, for each character whose identifiedNameIndex is nonzero and whose portraitIndex is >= 0, cuts its
    4 by 32 cell out of gOverlayBuf (through ds:8082), unpacks it into its 0x514-byte sprite buffer
-   and frees it (a character with identifiedNameIndex nonzero and m22 < 0 sets `flag` at :953 instead);
-   when any slot is empty or any occupied character has m22 < 0 it then loads the OUTTAKE screen
-   and cuts the m22 < 0 characters' 4 by 32 cells out of it the same way. Unless ds:A998 is -1 it then rebuilds the
+   and frees it (a character with identifiedNameIndex nonzero and portraitIndex < 0 sets `flag` at :953 instead);
+   when any slot is empty or any occupied character has portraitIndex < 0 it then loads the OUTTAKE screen
+   and cuts the portraitIndex < 0 characters' 4 by 32 cells out of it the same way. Unless ds:A998 is -1 it then rebuilds the
    map screen (ovl3:0A7C), reloads PLAYFLD and INVENT, hands gFont6x6 to SetFont, redraws the
    characters, and either restores the mouse item when the mouse is enabled (gMouseDisabled is 0)
    or, when the mouse is disabled and gFBCE is nonzero, inserts it with a sound from the g1A1B table
@@ -940,8 +940,8 @@ done:
         flag = 0;
         for (i = 0; i < 6; i++) {
             rec = &gChars[i];
-            if (rec->status != 0 && rec->m22 >= 0) {
-                cell = gFn8082((rec->m22 % 10) * 4, (rec->m22 / 10) * 32, 4, 0x20, gOverlayBuf);
+            if (rec->status != 0 && rec->portraitIndex >= 0) {
+                cell = gFn8082((rec->portraitIndex % 10) * 4, (rec->portraitIndex / 10) * 32, 4, 0x20, gOverlayBuf);
                 Unpack0(cell, rec->portrait, 0x514L);
                 farfree(cell);
             } else
@@ -952,8 +952,8 @@ done:
             flag = 0;
             for (i = 0; i < 6; i++) {
                 rec = &gChars[i];
-                if (rec->status != 0 && rec->m22 < 0) {
-                    cell = gFn8082(-(rec->m22 + 1) * 4, 0xa0, 4, 0x20, gOverlayBuf);
+                if (rec->status != 0 && rec->portraitIndex < 0) {
+                    cell = gFn8082(-(rec->portraitIndex + 1) * 4, 0xa0, 4, 0x20, gOverlayBuf);
                     Unpack0(cell, rec->portrait, 0x514L);
                     farfree(cell);
                 }

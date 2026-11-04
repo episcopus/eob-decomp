@@ -31,7 +31,7 @@ struct CharRec {            /* 243-byte (0xF3) character records at ds:F580 (src
     signed char hp;         /* +1B: current hit points */
     signed char maxHp;      /* +1C: maximum hit points */
     char pad1D[0x22 - 0x1D];
-    unsigned char m22;      /* +22: compared with 0xf7 by 0AB1 (0D1C:0415 uses it too) */
+    unsigned char portraitIndex;      /* +22: compared with 0xf7 by 0AB1 (0D1C:0415 uses it too) */
     char pad23[0x33 - 0x23];
     void far *portrait;     /* +33: a far pointer to the character's picture buffer, preserved by
                                    the record swap at 070E (the movmem destination there) */
@@ -725,7 +725,7 @@ enum {
         PrintTableString(5, 1);
     }
 }
-/* ovl5:0AB1: returns 1 when some party member (flags bit 0) has m22 == 0xf7, after drawing
+/* ovl5:0AB1: returns 1 when some party member (flags bit 0) has portraitIndex == 0xf7, after drawing
    messages 0x19 and 0x1a and setting the 0x80000 bit of gFC04; otherwise 0. Called by the panel
    dispatcher 0B58. */
 /*@ ovl5:0AB1 */ int CheckChar0F7(void)
@@ -734,7 +734,7 @@ enum {
 
     for (i = 0; i < 6; i++) {
         if (gChars[i].status & 1) {
-            if (gChars[i].m22 == 0xf7)
+            if (gChars[i].portraitIndex == 0xf7)
                 break;
         }
     }
