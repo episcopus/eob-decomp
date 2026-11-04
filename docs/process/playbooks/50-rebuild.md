@@ -12,13 +12,14 @@ header agrees too.
 | Program | State |
 |---|---|
 | START1.EXE | identical, the whole file (8,652 bytes), 2026-11-03 |
-| INTRO.EXE | but for 42 bytes (the link date, the stub order), relocations in order, 2026-11-03 |
-| EOB.EXE | but for the link date, the stub order and overlay 5's three hook fixups; relocations in order, 2026-11-03 |
+| INTRO.EXE | but for 42 bytes (the link date, the stub order), relocations in order, 2026-11-03; the goldens play on it, 2026-11-04 |
+| EOB.EXE | but for the link date, the stub order and overlay 5's three hook fixups; relocations in order, 2026-11-03; the goldens play on it, 2026-11-04 |
 
 The differences above are accepted as documented (the human: INTRO.EXE 2026-11-03, EOB.EXE 2026-11-04;
-SPEC O2). What is left of Phase 5 is the goldens on the rebuild: the oracle has to know where the
-rebuild's stubs and data are (as poolrad's `tools/oracle/layout.py`), then each of the 7 golden
-sessions replays on the rebuilt `EOB.EXE` and `INTRO.EXE` (decided 2026-11-04).
+SPEC O2). All 7 golden sessions, recorded on the originals, replay on the rebuilt `EOB.EXE` and
+`INTRO.EXE` with the same instructions, checkpoints, screens, sound and state digests (2026-11-04,
+`make golden CHECK=1 REBUILT=1`, `test_goldens_play_on_the_rebuilds`; "The goldens on the rebuild"
+below). START1.EXE has no golden (the oracle does not run it, playbook 25); it is the original's file.
 
 ## Why the source that matches is not yet the program
 
@@ -159,6 +160,40 @@ function's offset and CS. The copy keeps src/'s two stores, the same bytes, so t
 fixups (167F, 1BE4, 1D5F) and the file is 16 bytes shorter. That the hook's target was in another
 module of the original is a lead [H]. `test_eob_rebuilds_but_stub_order_date_and_hook` pins all of it.
 
+## The goldens on the rebuild
+
+`make rebuild PROGRAM=INTRO.EXE`, `make rebuild PROGRAM=EOB.EXE`, then `make golden CHECK=1 REBUILT=1`.
+`tools/oracle/layout.py` (poolrad's idea; this oracle has no hooks at the original's addresses, so only
+the files and the digest move) serves `build/rebuild/eob/eob.exe` and `build/rebuild/intro/intro.exe`
+under their names in the game directory: the overlay manager reads its overlays from its own file, and
+INTRO.EXE loads EOB.EXE with INT 21h 4B03h (at segment 1000h, over itself). The state digest hashes all
+of conventional memory, so the rebuild's memory is read in the original's form first, and only for what
+the accepted differences explain, each found by running both and comparing memory (2026-11-04):
+
+28. **Stub entries.** Each stub's entries go back to the original's order (an entry is the same function
+    in both, matched by its offset in the overlay's code), and every far pointer to an entry (offset,
+    then the stub's segment: data, a far call in resident or overlay code) takes the original's entry
+    for that function. 264 or 265 bytes in EOB.EXE's sessions, 42 in INTRO.EXE's.
+29. **The link date**: the three bytes of `_EXEINFO_`, where memory still holds the rebuild's.
+30. **The overlay data's offsets.** Overlay 5 is 6 bytes shorter (its three fixups), so its record in the
+    FBOV data is 16 bytes shorter (the padding) and three values read from the file differ: overlay 5's
+    stub's fixup bytes (+0A), overlay 6's stub's record offset (+04, which the overlay manager turns into
+    the file offset at start-up: plus the load module's size and the FBOV header's 16 bytes, 3FB80h
+    against the rebuild's 3FB70h), and the FBOV header's size, which the manager keeps in OVRDATA's dword
+    (ds:84B2: CDC0h, the rebuild's CDB0h). Each goes back where memory holds the rebuild's value.
+
+A value is put back only where memory still holds the rebuild's (`file_values`), and an image a later
+load wrote over is left alone (INTRO.EXE's, once EOB.EXE is loaded). Nothing else is rewritten: the
+hook itself (overlay 5's three fixups, `gScrollHook`'s segment) would show as a difference.
+
+**Not covered.** The goldens load overlays 0, 2, 3 and 4 only (EOB.EXE, every session). Overlays 1, 5
+and 6 never run, so a replay tests neither overlay 5's hook nor the far calls through stub entries in
+overlays 1, 5 and 6. The hook is `gScrollHook = 0xac; g8119 = 0x2d0;`: 2D0h is segment-table entry 5Ah,
+overlay 5's stub (211E), and entry 0ACh of that stub is code 025Fh (MessagePanel) in the original but
+code 09C5h in the rebuild's stub order; without the three fixups the segment is not relocated either.
+So the rebuild's hook would very likely call something else [H]. A session that reaches overlay 5's
+scrolling message panel would show it.
+
 Still to come, from poolrad's experience: external objects, and patch
 sites (`re/patches.toml`, SPEC section 2: a byte the fan patch changed by hand in code is applied after
 linking, never forced in C; START1's "Version 1.9" banner is data and needs none).
@@ -172,3 +207,7 @@ linking, never forced in C; START1's "Version 1.9" banner is data and needs none
 2. Fix the tool, not the bytes: a difference is a fact about how the original was built (an option, an
    order, a module), found once and then applied to every program. Never edit the copies by hand.
 3. When it is identical, add the program to `tests/unit/test_rebuild.py`, so `make check` keeps it so.
+4. `make golden CHECK=1 REBUILT=1` (after `make rebuild` of both EOB.EXE and INTRO.EXE): every golden
+   plays on the rebuild. A session that differs prints the first state that differs and the memory
+   that differs, in the original's form: explain it from how the rebuild was linked (a new kind goes in
+   `layout.py` with the run that showed it), never by editing the golden.
