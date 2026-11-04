@@ -15,6 +15,11 @@ header agrees too.
 | INTRO.EXE | but for 42 bytes (the link date, the stub order), relocations in order, 2026-11-03 |
 | EOB.EXE | but for the link date, the stub order and overlay 5's three hook fixups; relocations in order, 2026-11-03 |
 
+The differences above are accepted as documented (the human: INTRO.EXE 2026-11-03, EOB.EXE 2026-11-04;
+SPEC O2). What is left of Phase 5 is the goldens on the rebuild: the oracle has to know where the
+rebuild's stubs and data are (as poolrad's `tools/oracle/layout.py`), then each of the 7 golden
+sessions replays on the rebuilt `EOB.EXE` and `INTRO.EXE` (decided 2026-11-04).
+
 ## Why the source that matches is not yet the program
 
 `make match` compares each function's code and resolves every name by its address. A program can match
