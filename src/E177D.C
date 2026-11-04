@@ -57,7 +57,7 @@ extern unsigned char gSoundCard; /*@ ds:B892 */  /* the sound choice from argv[2
                                                     speaker / Tandy driver at src/E1948.ASM:1-2, with the
                                                     Tandy path at src/E07C8.C:306-307. The value is 0..2;
                                                     src/E07C8.C:28 declares it char */
-extern unsigned char g009E; /*@ ds:009E */  /* 1 only on the Tandy path (src/E07C8.C:307), where
+extern unsigned char gTandySelected; /*@ ds:009E */  /* 1 only on the Tandy path (src/E07C8.C:307), where
                                                       the speaker path of PlaySound/PlaySoundAtCell drives
                                                       gTandyOn; Purpose unknown beyond that */
 extern unsigned char gTandyOn; /*@ ds:8A67 */  /* the PC speaker / Tandy driver select applied by
@@ -158,7 +158,7 @@ void PlaySoundAtCell(int sound, int cell);
    (unsigned char, so 0..0FFh) and a value of 96h or more is ignored. On AdLib (gSoundCard 0) the
    driver number is handed to 0000:400C. On the other cards (1 PC speaker, 2 Tandy speaker) the low
    seven bits select a driver routine through 0000:03E3 and start it through 1948:0418; when
-   g009E is 1 (the Tandy path, src/E07C8.C:307) a nonzero number sets gTandyOn to 1 and
+   gTandySelected is 1 (the Tandy path, src/E07C8.C:307) a nonzero number sets gTandyOn to 1 and
    resumes the driver through 1948:0458, but only when gTandyOn is currently 0 (177D:00C1 to 00CD;
    1 is Tandy, 0 the PC speaker, E1948.ASM:7). QUIRK
    177D:00A8: the `driverSound < 0` test (the `gTandyOn = 0` block) is dead: the map byte is
@@ -179,7 +179,7 @@ void PlaySoundAtCell(int sound, int cell);
             QueueSound(driverSound);
             return;
         }
-        if (g009E == 1) {
+        if (gTandySelected == 1) {
             if (driverSound < 0 && gTandyOn) {
                 gTandyOn = 0;
                 SoundDriverResume();
@@ -224,7 +224,7 @@ void PlaySoundAtCell(int sound, int cell);
    (0000:03B0, 177D:01DA; whether that value is an amplitude is not known); then starts the recorded
    sound through 0000:400C and sets gBusyCountdown to 0Bh. On the other cards (1 PC speaker, 2 Tandy
    speaker) there is no attenuation test and no restore: the recorded sound starts on every call
-   through 0000:03E3 and 1948:0418, and when g009E is 1 (the Tandy path) the recorded sound sets
+   through 0000:03E3 and 1948:0418, and when gTandySelected is 1 (the Tandy path) the recorded sound sets
    gTandyOn to 1 and resumes the driver through 1948:0458, but only when gTandyOn is currently 0
    (177D:022F to 023B). QUIRK 177D:0106: the recorded sound gCurSound is played, not the new
    `sound`; the new number is stored only at 177D:0288. QUIRK 177D:0210: the `gCurSound < 0` test
@@ -268,7 +268,7 @@ void PlaySoundAtCell(int sound, int cell);
                 gBusyCountdown = DRIVER_BUSY;
             }
         } else {
-            if (g009E == 1) {
+            if (gTandySelected == 1) {
                 if (gCurSound < 0 && gTandyOn) {
                     gTandyOn = 0;
                     SoundDriverResume();

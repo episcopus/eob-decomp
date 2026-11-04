@@ -7,8 +7,8 @@
 
 ; 1DE4:0000: AX = inportb(3DAh) & 8 (bit 3, vertical retrace), sampled once. Caller 1A65:00A7
 ; counts set and clear samples to measure the retrace rate.
-        PUBLIC  _f1DE4_0000              ; @ 1DE4:0000
-_f1DE4_0000 PROC FAR
+        PUBLIC  _IsInVerticalRetrace              ; @ 1DE4:0000
+_IsInVerticalRetrace PROC FAR
         push    bp
         mov     bp,sp
         mov     dx,3DAh
@@ -17,12 +17,12 @@ _f1DE4_0000 PROC FAR
         xor     ah,ah
         pop     bp
         ret
-_f1DE4_0000 ENDP
+_IsInVerticalRetrace ENDP
 
 ; 1DE4:000D: wait on vertical retrace. [bp+6] == 1 waits for the end of retrace then its start
 ; (into active display), otherwise waits for the start of retrace then its end. Caller 1A16:0014.
-        PUBLIC  _f1DE4_000D              ; @ 1DE4:000D
-_f1DE4_000D PROC FAR
+        PUBLIC  _WaitRetrace              ; @ 1DE4:000D
+_WaitRetrace PROC FAR
         push    bp
         mov     bp,sp
         push    ax
@@ -55,6 +55,6 @@ done:
         pop     ax
         pop     bp
         ret
-_f1DE4_000D ENDP
+_WaitRetrace ENDP
 
         END

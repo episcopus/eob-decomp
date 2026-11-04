@@ -107,7 +107,7 @@
    gDrawLine, ds:8096, ds:809A, ds:80A6, ds:80C2, ds:80D6, ds:80DA, ds:80AE, ds:80B6), which
    fits a table of far pointers but does not prove one. The setter and the target routine are
    not traced. */
-extern void (far *gFn8052)(int x1, int y1, int x2, int y2, int width, int height, int extra1, int extra2); /*@ ds:8052 */
+extern void (far *gCopyRegion)(int x1, int y1, int x2, int y2, int width, int height, int extra1, int extra2); /*@ ds:8052 */
 
 /* 19F3:000E: clips a rectangle request, then hands it to the far routine ds:8052. Takes the
    two origins (x1, y1 and x2, y2), a width and a height in the region table's units (the
@@ -151,5 +151,5 @@ extern void (far *gFn8052)(int x1, int y1, int x2, int y2, int width, int height
         height += y2;
         y2 = 0;
     }
-    gFn8052(x1, y1, x2, y2, width, height, extra1, extra2);
+    gCopyRegion(x1, y1, x2, y2, width, height, extra1, extra2);
 }

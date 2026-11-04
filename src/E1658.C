@@ -42,10 +42,10 @@ struct Node {
 /* The +0E flags word. Bit 0x0008 makes 0073, 01E6 and 02F5 do nothing but return the node, and
    04A7 returns its inverse, so it reads as an "inactive" mark: 0154 sets it and 017B clears it.
    Bit 0x0001 chooses both which of the two globals below is touched and the value written: set,
-   0x0400 picks g5E1C and 0x4000 picks g5E1E, and the value written is 0x83 (3 with the latch bit)
-   unless the global is already 3; clear, 0x0100 picks g5E1C and 0x1000 picks g5E1E, and the value
-   is 0x81 (1 with the latch bit) unless the global is already 1. In each pair g5E1C is tested
-   first, so when both bits are set only the g5E1C write happens and g5E1E is written only when
+   0x0400 picks gLeftButtonMode and 0x4000 picks gRightButtonMode, and the value written is 0x83 (3 with the latch bit)
+   unless the global is already 3; clear, 0x0100 picks gLeftButtonMode and 0x1000 picks gRightButtonMode, and the value
+   is 0x81 (1 with the latch bit) unless the global is already 1. In each pair gLeftButtonMode is tested
+   first, so when both bits are set only the gLeftButtonMode write happens and gRightButtonMode is written only when
    0x0400 (or 0x0100) is clear. The 0x80 of 0x81/0x83 then makes
    the whole block a no-op for the next state operation. While the mouse is enabled,
    DispatchNodeEvent sets the mode on every call (E16A5.C:205-212, inside the gMouseDisabled
@@ -53,12 +53,12 @@ struct Node {
    (E16A5.C:293, 299), which clears the latch. */
 #define NODE_INACTIVE   0x0008
 #define NODE_FLAG_ON    0x0001  /* picks BUTTON_MODE_NODE_ON over BUTTON_MODE_NODE_OFF */
-#define NODE_FLAG_ON_5E1C  0x0400 /* with NODE_FLAG_ON set: g5E1C gets 0x83 unless it is already 3 */
-#define NODE_FLAG_ON_5E1E  0x4000 /* with NODE_FLAG_ON set: g5E1E gets 0x83 unless it is already 3 */
-#define NODE_FLAG_OFF_5E1C 0x0100 /* with NODE_FLAG_ON clear: g5E1C gets 0x81 unless it is already 1 */
-#define NODE_FLAG_OFF_5E1E 0x1000 /* with NODE_FLAG_ON clear: g5E1E gets 0x81 unless it is already 1 */
+#define NODE_FLAG_ON_5E1C  0x0400 /* with NODE_FLAG_ON set: gLeftButtonMode gets 0x83 unless it is already 3 */
+#define NODE_FLAG_ON_5E1E  0x4000 /* with NODE_FLAG_ON set: gRightButtonMode gets 0x83 unless it is already 3 */
+#define NODE_FLAG_OFF_5E1C 0x0100 /* with NODE_FLAG_ON clear: gLeftButtonMode gets 0x81 unless it is already 1 */
+#define NODE_FLAG_OFF_5E1E 0x1000 /* with NODE_FLAG_ON clear: gRightButtonMode gets 0x81 unless it is already 1 */
 
-/* The g5E1C/g5E1E button modes. With the mouse enabled DispatchNodeEvent sets them to 2 or 4 from
+/* The gLeftButtonMode/gRightButtonMode button modes. With the mouse enabled DispatchNodeEvent sets them to 2 or 4 from
    GetKeyState on every call (E16A5.C:202-212), writes 1 or 3 on a button click (E16A5.C:217-223,
    232-239; 3 when the key's 0x800 bit is set) and 1 on a key match (E16A5.C:293, 299). The
    dispatcher then gives each mode a behaviour: BUTTON_MODE_NODE_OFF toggles the node's on bit on
@@ -68,8 +68,8 @@ struct Node {
    block is a no-op for the next state operation. While the mouse is enabled, DispatchNodeEvent
    sets the mode on every call (E16A5.C:205-212, inside the gMouseDisabled gate at
    E16A5.C:202-245); while it is disabled only a key match writes the mode (E16A5.C:293, 299),
-   which clears the latch. E0ACD.C:369 reads the same value 1 in g5E1C as a slot choice
-   (Action0415, 0ACD:0415): (g5E1C & 0x7F) == 1 swaps the selected item, anything else uses it,
+   which clears the latch. E0ACD.C:369 reads the same value 1 in gLeftButtonMode as a slot choice
+   (Action0415, 0ACD:0415): (gLeftButtonMode & 0x7F) == 1 swaps the selected item, anything else uses it,
    so 0x80 is a flag beside the mode value and 1 is not only this dispatcher's mode. */
 #define BUTTON_MODE_NODE_OFF 1
 #define BUTTON_MODE_NODE_ON  3
@@ -95,8 +95,8 @@ struct Node {
    (E16A5.C:205-212), and 1 or 3 on a button click (the key codes 0x41/0x42 and 0xC6/0xC7,
    E16A5.C:215-223, 231-239), and 1 on a key match (E16A5.C:293, 299). What drives them here is
    unknown. Declared `unsigned` here and in E0ACD.C:104; E16A5.C:104-105 still calls them `int`. */
-extern unsigned g5E1C; /*@ ds:5E1C */
-extern unsigned g5E1E; /*@ ds:5E1E */
+extern unsigned gLeftButtonMode; /*@ ds:5E1C */
+extern unsigned gRightButtonMode; /*@ ds:5E1E */
 
 /* 16A5:07C3: draws the node by its kind +0A, box at +1E..+24. For the "on" looks it uses the art
    or callback pointer src14 at +14 and the colour pair at +28/+29, and it reads gPointerHeight
@@ -144,22 +144,22 @@ extern void DrawNode(struct Node far *node); /*@ 16A5:07C3 */
             node->state &= ~NODE_STATE_PREV;
         node->state ^= NODE_STATE_ON;
         DrawNode(node);
-        if (!(g5E1C & BUTTON_MODE_LATCH) && !(g5E1E & BUTTON_MODE_LATCH)) {
+        if (!(gLeftButtonMode & BUTTON_MODE_LATCH) && !(gRightButtonMode & BUTTON_MODE_LATCH)) {
             if (node->flags & NODE_FLAG_ON) {
                 if (node->flags & NODE_FLAG_ON_5E1C) {
-                    if (g5E1C != BUTTON_MODE_NODE_ON)
-                        g5E1C = BUTTON_MODE_NODE_ON | BUTTON_MODE_LATCH;
+                    if (gLeftButtonMode != BUTTON_MODE_NODE_ON)
+                        gLeftButtonMode = BUTTON_MODE_NODE_ON | BUTTON_MODE_LATCH;
                 } else if (node->flags & NODE_FLAG_ON_5E1E) {
-                    if (g5E1E != BUTTON_MODE_NODE_ON)
-                        g5E1E = BUTTON_MODE_NODE_ON | BUTTON_MODE_LATCH;
+                    if (gRightButtonMode != BUTTON_MODE_NODE_ON)
+                        gRightButtonMode = BUTTON_MODE_NODE_ON | BUTTON_MODE_LATCH;
                 }
             } else {
                 if (node->flags & NODE_FLAG_OFF_5E1C) {
-                    if (g5E1C != BUTTON_MODE_NODE_OFF)
-                        g5E1C = BUTTON_MODE_NODE_OFF | BUTTON_MODE_LATCH;
+                    if (gLeftButtonMode != BUTTON_MODE_NODE_OFF)
+                        gLeftButtonMode = BUTTON_MODE_NODE_OFF | BUTTON_MODE_LATCH;
                 } else if (node->flags & NODE_FLAG_OFF_5E1E) {
-                    if (g5E1E != BUTTON_MODE_NODE_OFF)
-                        g5E1E = BUTTON_MODE_NODE_OFF | BUTTON_MODE_LATCH;
+                    if (gRightButtonMode != BUTTON_MODE_NODE_OFF)
+                        gRightButtonMode = BUTTON_MODE_NODE_OFF | BUTTON_MODE_LATCH;
                 }
             }
         }
@@ -243,22 +243,22 @@ extern void DrawNode(struct Node far *node); /*@ 16A5:07C3 */
             node->state &= ~NODE_STATE_10;
         node->state &= ~NODE_STATE_4;
         DrawNode(node);
-        if (!(g5E1C & BUTTON_MODE_LATCH) && !(g5E1E & BUTTON_MODE_LATCH)) {
+        if (!(gLeftButtonMode & BUTTON_MODE_LATCH) && !(gRightButtonMode & BUTTON_MODE_LATCH)) {
             if (node->flags & NODE_FLAG_ON) {
                 if (node->flags & NODE_FLAG_ON_5E1C) {
-                    if (g5E1C != BUTTON_MODE_NODE_ON)
-                        g5E1C = BUTTON_MODE_NODE_ON | BUTTON_MODE_LATCH;
+                    if (gLeftButtonMode != BUTTON_MODE_NODE_ON)
+                        gLeftButtonMode = BUTTON_MODE_NODE_ON | BUTTON_MODE_LATCH;
                 } else if (node->flags & NODE_FLAG_ON_5E1E) {
-                    if (g5E1E != BUTTON_MODE_NODE_ON)
-                        g5E1E = BUTTON_MODE_NODE_ON | BUTTON_MODE_LATCH;
+                    if (gRightButtonMode != BUTTON_MODE_NODE_ON)
+                        gRightButtonMode = BUTTON_MODE_NODE_ON | BUTTON_MODE_LATCH;
                 }
             } else {
                 if (node->flags & NODE_FLAG_OFF_5E1C) {
-                    if (g5E1C != BUTTON_MODE_NODE_OFF)
-                        g5E1C = BUTTON_MODE_NODE_OFF | BUTTON_MODE_LATCH;
+                    if (gLeftButtonMode != BUTTON_MODE_NODE_OFF)
+                        gLeftButtonMode = BUTTON_MODE_NODE_OFF | BUTTON_MODE_LATCH;
                 } else if (node->flags & NODE_FLAG_OFF_5E1E) {
-                    if (g5E1E != BUTTON_MODE_NODE_OFF)
-                        g5E1E = BUTTON_MODE_NODE_OFF | BUTTON_MODE_LATCH;
+                    if (gRightButtonMode != BUTTON_MODE_NODE_OFF)
+                        gRightButtonMode = BUTTON_MODE_NODE_OFF | BUTTON_MODE_LATCH;
                 }
             }
         }
@@ -280,22 +280,22 @@ extern void DrawNode(struct Node far *node); /*@ 16A5:07C3 */
             node->state &= ~NODE_STATE_PREV;
         node->state |= NODE_STATE_ON;
         DrawNode(node);
-        if (!(g5E1C & BUTTON_MODE_LATCH) && !(g5E1E & BUTTON_MODE_LATCH)) {
+        if (!(gLeftButtonMode & BUTTON_MODE_LATCH) && !(gRightButtonMode & BUTTON_MODE_LATCH)) {
             if (node->flags & NODE_FLAG_ON) {
                 if (node->flags & NODE_FLAG_ON_5E1C) {
-                    if (g5E1C != BUTTON_MODE_NODE_ON)
-                        g5E1C = BUTTON_MODE_NODE_ON | BUTTON_MODE_LATCH;
+                    if (gLeftButtonMode != BUTTON_MODE_NODE_ON)
+                        gLeftButtonMode = BUTTON_MODE_NODE_ON | BUTTON_MODE_LATCH;
                 } else if (node->flags & NODE_FLAG_ON_5E1E) {
-                    if (g5E1E != BUTTON_MODE_NODE_ON)
-                        g5E1E = BUTTON_MODE_NODE_ON | BUTTON_MODE_LATCH;
+                    if (gRightButtonMode != BUTTON_MODE_NODE_ON)
+                        gRightButtonMode = BUTTON_MODE_NODE_ON | BUTTON_MODE_LATCH;
                 }
             } else {
                 if (node->flags & NODE_FLAG_OFF_5E1C) {
-                    if (g5E1C != BUTTON_MODE_NODE_OFF)
-                        g5E1C = BUTTON_MODE_NODE_OFF | BUTTON_MODE_LATCH;
+                    if (gLeftButtonMode != BUTTON_MODE_NODE_OFF)
+                        gLeftButtonMode = BUTTON_MODE_NODE_OFF | BUTTON_MODE_LATCH;
                 } else if (node->flags & NODE_FLAG_OFF_5E1E) {
-                    if (g5E1E != BUTTON_MODE_NODE_OFF)
-                        g5E1E = BUTTON_MODE_NODE_OFF | BUTTON_MODE_LATCH;
+                    if (gRightButtonMode != BUTTON_MODE_NODE_OFF)
+                        gRightButtonMode = BUTTON_MODE_NODE_OFF | BUTTON_MODE_LATCH;
                 }
             }
         }

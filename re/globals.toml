@@ -108,8 +108,8 @@ why = "the sound choice from argv[2] minus '1' (whitepaper 2.6): 0 opens adlib.d
 
 [[global]]
 id = "ds:009E"
-name = "g009E"
-why = "placeholder: the only writer sets 1 on the Tandy path (src/E07C8.C:433); src/E177D.C:182 tests it as the gate of the Tandy toggle, but nothing shows a PC speaker mode, so the inherited name gSpeakerMode is not evidence"
+name = "gTandySelected"
+why = "Its only store is mov byte [9E],1 on StartupGame's Tandy sound path (07C8 image 0x81E8, src/E07C8.C:436, next to gTandyOn = 1); PlaySound and PlaySoundAtCell test it == 1 (177D image 0x17871, 0x179D9) to gate the gTandyOn voice toggle, so it records that the Tandy card was chosen."
 
 [[global]]
 id = "ds:8A67"
@@ -148,13 +148,13 @@ why = "the party's map cell: ResetMapScreen sets it to 0x1EA (src/E0ACD.C:1004),
 
 [[global]]
 id = "ds:DDE4"
-name = "gIconsDDE4"
-why = "the table at ds:DDE4 is far pointers to item icon images, not names: ovl2:03D5..0413 fills entries 1..0x58 from the call through [ds:8086] with a 16x16 cell position on the 20-per-row ITEMICN sheet (the string at ds:677D), and 07A9:018F passes each to the sprite drawer f17A6_197E/f1BB1_0002 (review of e07a9)"
+name = "gItemIcons"
+why = "One far pointer per item icon number: ovl2:03D0 fills entries 1..0x58 from 16x16 cells of the ITEMICN sheet (string ds:677D) and ovl2:0029 writes entry 0, the default pointer shape; SetMouseItem indexes it with Entry14.icon (07A9:0141) and DrawItemIcon draws gIconsDDE4[icon] (src/E0D1C.C:496). Entry 0x59 is gRemappedIcon (ds:DF48), so the two are one array."
 
 [[global]]
 id = "ds:80D2"
-name = "gFn80D2"
-why = "a far function pointer called with a pointer to a 16-byte colour table, not text: E07A9 passes a row of the 1600-byte ITEMRMP buffer (ds:F534 + n<<4) or the one-byte dummy at ds:0090, and the other callers pass the 16-byte tables at ds:1CD3 and ds:1CE3 (review of e07a9)"
+name = "gSetRemapTable"
+why = "Graphics driver export 35. mcga.ovl 277B copies eight words from its far argument into the driver's 16-byte buffer at mcga.ovl 030C, the buffer ds:80E2 points at and that the remapped shape draw ds:80D6 translates pixels through (mcga.ovl 28C2 mov bx,30Ch then xlatb); callers pass an ITEMRMP row (07A9:0184) or the rows ds:1CD3/ds:1CE3 (08E6:0DFC). The driver table mapping: the graphics overlay's init (mcga.ovl 0BF2..0C2F) walks the request table at ds:802A (request +4, ds:8125 = 802A:212E), copies the game's seven import pointers into the driver and writes its own export pointers into the zero pairs that follow, so ds:8046 + 4*i is mcga.ovl export i (the far pointer table at mcga.ovl 001F)."
 
 [[global]]
 id = "ds:804E"
@@ -343,8 +343,8 @@ why = "1 when the mouse driver handler is installed: set to 1 at install (1A72:0
 
 [[global]]
 id = "ds:8052"
-name = "gFn8052"
-why = "one pattern for unknown-purpose far function pointers (gFn8072, gFn8056, gFn80BA, gFn80D2, gFn804A); review of e19f3"
+name = "gCopyRegion"
+why = "Graphics driver export 3 (mcga.ovl 05D4): it takes (x1, y1, x2, y2, width, height, srcPage, dstPage), x in 8-pixel columns, looks the two page segments up through the gSegsFC0C import (mcga.ovl 0641..064F calling 0B3F) and copies the rectangle at (x1, y1) to (x2, y2); ClipRect (19F3:000E) is its only caller, e.g. ClipRect(0,0,0,0,40,200,4,2) copies page 4 to page 2. The driver table mapping: the graphics overlay's init (mcga.ovl 0BF2..0C2F) walks the request table at ds:802A (request +4, ds:8125 = 802A:212E), copies the game's seven import pointers into the driver and writes its own export pointers into the zero pairs that follow, so ds:8046 + 4*i is mcga.ovl export i (the far pointer table at mcga.ovl 001F)."
 
 [[global]]
 id = "ds:810E"
@@ -408,8 +408,8 @@ why = "the C library's _argv: make rebuild links ds:8894 to the library public _
 
 [[global]]
 id = "ds:805A"
-name = "gDraw805A"
-why = "a far tile routine drawn with (tile, x, y): DrawTextFrame draws its four corners through it (1DE7:0130, 0163, 0196, 01CC) and DrawTileRun its four edges (1DE7:025E), the same signature as ds:805E (gDraw805E)"
+name = "gDrawCell8x8"
+why = "Graphics driver export 5 (mcga.ovl 06AF): it clamps the column to 0..39 and the line to 0..192 and copies 8 rows of 8 bytes (rep movsw cx=4, eight times, stride 138h) from the far source to the page; DrawTextFrame and DrawTileRun draw each frame tile through it at gTileBuf + (n << 5 or 6) (src/E1DE7.C:180-215). The driver table mapping: the graphics overlay's init (mcga.ovl 0BF2..0C2F) walks the request table at ds:802A (request +4, ds:8125 = 802A:212E), copies the game's seven import pointers into the driver and writes its own export pointers into the zero pairs that follow, so ds:8046 + 4*i is mcga.ovl export i (the far pointer table at mcga.ovl 001F)."
 
 [[global]]
 id = "ds:8117"
@@ -518,8 +518,8 @@ why = "ds:12E0 is a table of far name pointers whose strings, decoded from the E
 
 [[global]]
 id = "intro/ds:1EE2"
-name = "gFn1EE2"
-why = "the driver routine the front end starts; StartupGame calls it at 0892:0544 after it fills the page table"
+name = "gClearDrawPage"
+why = "Slot 11 of the driver table (ds:1EB6 + 4 * 11, as EOB's ds:8056): MCGA.OVL 0693 zeroes 7D00h words at the segment of the page named by the draw page word (driver import slot 2, gDrawPage ds:1FA1) through the page table (slot 1, ds:28CC); EGA 07FB, CGA 095B and TGA 07F2 do the same."
 
 [[global]]
 id = "intro/ds:19E7"
@@ -538,8 +538,8 @@ why = "the PC speaker / Tandy driver select at ds:289B: StartupGame sets it to 1
 
 [[global]]
 id = "ds:1879"
-name = "gTable1879"
-why = "the four parallel per-kind tables at ds:1879..0x1990, indexed per kind (src/EOV3.C:60); g1879 was this unit's placeholder"
+name = "gWallVmpSet"
+why = "Per wall type (RegisterWallObject ovl3:01C8 fills it): the 1-based block set in the level's .VMP/.EMP file loaded into gBufF43E (ovl3:0A7C sprintf \"%s.%s\" VMP/EMP); CopyViewColumn (ovl4:02A5) reads blocks at (set - 1) * 0x35E bytes + 0x294, and 0 means nothing is drawn (ComputeViewSpan skips it, ovl4:0AD0 and ovl4:19C4 draw items behind it)."
 
 [[global]]
 id = "ds:A92A"
@@ -1352,3 +1352,675 @@ why = "0EF3:2A53 saves ds:8115 (gStatusLine, which INTRO.EXE's twin ds:1FA1 name
 id = "ds:FC72"
 name = "gBurstMaskPixel"
 why = "0EF3:2A53 reads the pixel at the particle with ds:8115 set to 2 (page 2, where AnimateEffect drew the nearer view slots) into it, and draws the particle only when that pixel is 0, so nearer walls hide the burst [H]."
+[[global]]
+id = "ds:8DD2"
+name = "gItemsFlags"
+why = "A view of the 14-byte ITEM.DAT records gItems (ds:8DD0) two bytes later, so its +0 is the record's flags byte (E0BD2.C ItemRecord +2), +1 the icon, +2 the item type and +4 the key; named after gItems as the view that starts at the flags."
+[[global]]
+id = "ds:3237"
+name = "gTurnForType1To3"
+why = "The bytes {2, -1, 1} at ds:3238 seen with base ds:3237 so UpdateObjects (08E6:0CC8) can index them by monster type 1..3 for StepObjectOrient's turn: type 1 turns around (+2), 2 left (-1), 3 right (+1). Same bytes as gTurnForType5To6 (ds:3234), which is the base four bytes earlier."
+[[global]]
+id = "ds:3234"
+name = "gTurnForType5To6"
+why = "The same three bytes {2, -1, 1} at ds:3238 seen with base ds:3234, so UpdateObjects (08E6:0CC8) indexes them by monster type 5 and 6 and passes -1 or +1 to Obj0B94 (the side the wall follower keeps to). One object with gTurnForType1To3 (ds:3237)."
+[[global]]
+id = "ds:321E"
+name = "gDirSearchLeftFirst"
+why = "An int Obj0430 (08E6:0430) flips whenever a monster's state exceeds 6; it selects which direction search table the step uses: 0 gDirSearchRight (ds:31FE, tries +1 before -1) and 1 gDirSearchLeft (ds:320E, tries -1 first)."
+[[global]]
+id = "ds:31FE"
+name = "gDirSearchRight"
+why = "Eight words {7,-6,5,-4,3,-2,1,0} that Obj0430 (08E6:0430) adds to the preferred eighth-direction from index 7 down to 0, so the tries are d, d+1, d-1, d+2, d-2, d+3, d-3, d+4: the clockwise neighbour first. Selected when gDirSearchLeftFirst (ds:321E) is 0."
+[[global]]
+id = "ds:320E"
+name = "gDirSearchLeft"
+why = "Eight words {-7,6,-5,4,-3,2,-1,0}, the mirror of gDirSearchRight: Obj0430 (08E6:0430) tries d, d-1, d+1, d-2, d+2 and so on, the anticlockwise neighbour first. Selected when gDirSearchLeftFirst (ds:321E) is 1."
+[[global]]
+id = "ds:31F2"
+name = "gFrontLeftPosByDir"
+why = "Four bytes {0,1,3,2} by orientation: BuildObjectFrameMask (08E6:017E) gives a monster at the centre position 4 the position g31F2[orient], which is the front-left quarter of the cell for that facing (N: 0 NW, E: 1 NE, S: 3 SE, W: 2 SW)."
+[[global]]
+id = "ds:31F6"
+name = "gPosSearchOrder"
+why = "Two rows of four bytes {0,1,2,3} and {0,2,1,3}, chosen by orient & 1 and XORed with the orientation by FindObjectFrameBit (08E6:0218): the order in which the four sub-cell positions are tried for a free one when a monster enters a cell."
+[[global]]
+id = "ds:849A"
+name = "gFrameWaitTicks"
+why = "A 32-bit countdown the INT 1Ch handler decrements to zero (E1D8F.ASM 1D8F:0098); DrawViewFrame (ovl4:1F51) spins until it is zero, and 08E6:05EA, 0DCA and 0E48 set it to 8 or 1 around the attack and hit-flash frames to hold them on screen."
+[[global]]
+id = "ds:F518"
+name = "gDeferMonsterHits"
+why = "Set to 1 by Obj16D6 (08E6:16D6), TurnUndead (0D1C:0A43) and 0EF3:18D8 before damaging several monsters; while set DamageObject (08E6:0FBE) only marks a visible monster (m16 bit 1) and leaves its death to 08E6:0E48, which shows the frame, kills the dead and clears it."
+[[global]]
+id = "ds:1CD3"
+name = "gHitFlashRemap"
+why = "A 16-byte colour row {0, 15 x 15}: RestoreObjectFlags (08E6:0DCA) passes it to the colour callback ds:80D2 when gGraphicsChoice is nonzero right after a monster is damaged, and ovl4:0D1B uses it for monsters with m16 bit 1, so every colour but 0 draws as 15 (a white hit flash)."
+[[global]]
+id = "ds:1CE3"
+name = "gHitFlashRemapCga"
+why = "The CGA counterpart of gHitFlashRemap: 08E6:0DCA and ovl4:0D1B pass it to ds:80D2 when gGraphicsChoice is 0 (cga.ovl, table ds:3074); its first four bytes {0,255,255,255} are the remap and the bytes from ds:1CE7 are the selection-frame colour string, which overlaps it."
+[[global]]
+id = "ds:1991"
+name = "gNearSideByDir"
+why = "Four bytes {2,3,0,1} by direction, the side of the cell ahead that faces back toward the viewer: ovl4:044B caches g1991[gPartyDir] in gA9C6 to pick the front wall of each view cell, and Obj0B94 (08E6:0B94) reads gMaze[cell * 9 + g1991[dir]]. Same bytes as gOppositeSide (ds:547E)."
+[[global]]
+id = "ds:32C3"
+name = "gProjectileHitOrder"
+why = "64 bytes read as [dir * 16 + position * 4] by Obj1775 (08E6:1775), which 08E6:17FD calls with a ds:DD2C projectile's cell, position (m06) and direction (m07): the order of sub-cell positions (centre 4 first) whose monster is hit when none stands at the exact position."
+[[global]]
+id = "ds:329B"
+name = "gTargetPosOrder"
+why = "32 bytes read as [gPartyDir * 8 + (who & 1) * 4] by Obj15B4 (08E6:15B4): for facing north the left front member tries positions 2,3,0,1 and the right one 3,2,1,0, the near-side quarter on its own side first; the melee target order of the two front members."
+[[global]]
+id = "ds:32BB"
+name = "gNearPosPair"
+why = "Eight bytes, two per party facing {2,3, 0,2, 0,1, 1,3}: the two sub-cell positions of the cell ahead nearest the party (facing north the south pair 2 and 3), which Obj16D6 (08E6:16D6) damages together with the centre position 4."
+[[global]]
+id = "ds:324B"
+name = "gAttackSideByDir"
+why = "16 bytes read as [gPartyDir * 4 + monster orient] by Obj10F3 (08E6:10F3); the value is (orient - gPartyDir + 2) & 3, the side of the party the monster attacks from, which selects one of the four 12-byte groups of gAttackTargetOrder. The comment's \"page\" index is gPartyDir."
+[[global]]
+id = "ds:325B"
+name = "gAttackTargetOrder"
+why = "48 bytes, four groups of two six-member orders, which Obj10F3 (08E6:10F3) scans for the first living member to attack: from the front {1,0,3,2,5,4} or {0,1,2,3,4,5}, from behind {4,5,2,3,0,1} or {5,4,3,2,1,0}, the rank nearest the attacker first."
+[[global]]
+id = "ds:328B"
+name = "gRightSidePosByDir"
+why = "16 bytes read as [orient * 4 + position] by Obj10F3 (08E6:10F3) to choose a half of the target order: the value is 1 exactly for the two positions on the monster's right for that facing (north: 1 and 3, east: 2 and 3, south: 0 and 2, west: 0 and 1)."
+[[global]]
+id = "ds:8492"
+name = "gGameTicks"
+why = "The 32-bit counter the INT 1Ch handler increments only while ds:849E bit 1 is set (E1D8F.ASM 1D8F:006E), so animations that clear the bit pause it; RunEffects (1414:04E7) compares effect expiries with it and the level timer deadline (ds:F512) is set from it (ovl3:0A7C, 08E6:1410)."
+[[global]]
+id = "ds:F51B"
+name = "gLevelTimerMode"
+why = "The first byte of a level script header (LoadMapScreen ovl3:0A7C stores script[0]); Obj1410 (08E6:1410) fires the level's timed script on 1 when gGameTicks passes gDeadline, on 2 when gStepCount reaches ds:FB32, on 3 on either, never otherwise."
+[[global]]
+id = "ds:FB32"
+name = "gLevelTimerSteps"
+why = "A word from the level script header (ovl3:0A7C); Obj1410 (08E6:1410) fires the timed level script in modes 2 and 3 once gStepCount (the party's steps, MoveParty) reaches it, then clears gStepCount."
+[[global]]
+id = "ds:3220"
+name = "gBossSpellModes"
+why = "Three bytes {2,10,11} indexed by a 1d4-1 roll in Obj0765 case 21 (08E6:0765) and passed as the StartCellEffect mode; type 21 (0x15) is the monster whose death 08E6:0EC3 answers with the winner screen and ShutdownGame, so these are the final enemy's spells."
+[[global]]
+id = "ds:3223"
+name = "gBossSpellSounds"
+why = "Three sound numbers {0x62,0x53,0x40} played through PlaySoundAtCell in Obj0765 case 21 (08E6:0765) with the spell gBossSpellModes (ds:3220) picks by the same roll; type 21 is the monster whose death ends the game (08E6:0EC3)."
+[[global]]
+id = "ds:3226"
+name = "gSpellSequenceModes"
+why = "Bytes indexed by the monster's remaining action count m19 in Obj0765 case 14 (08E6:0765), passed to Obj073F as the StartCellEffect spell mode, so a type-14 monster casts a fixed sequence (6, 5, 2, 2, then 0) as its count runs down."
+[[global]]
+id = "ds:322F"
+name = "gSpellSequenceSounds"
+why = "Bytes indexed by the monster's remaining action count m19 in Obj0765 case 14 (08E6:0765) and played through PlaySoundAtCell before the spell gSpellSequenceModes (ds:3226) names; index 8 reads ds:3237, the next table."
+[[global]]
+id = "ds:54F2"
+name = "gSelectFrameIndex"
+why = "The index into the rectangle table ds:5482 that DrawRowList (0D1C:0454) currently outlines in cycling colours, -1 when none (initial value 0xFFFF); a new index erases the old frame in colour 0xC."
+[[global]]
+id = "ds:54F4"
+name = "gSelectFrameStep"
+why = "The position in the colour string ds:1CE7 that DrawRowList (0D1C:0454) draws the selection frame with next; it advances once per tick and wraps to 0 at the string's NUL."
+[[global]]
+id = "ds:FC5E"
+name = "gSelectFrameTick"
+why = "The 32-bit tick (gTicks, ds:848A) after which DrawRowList (0D1C:0454) redraws the selection frame in the next colour; set to gTicks on a new index and gTicks + 1 after each redraw."
+[[global]]
+id = "ds:1CE7"
+name = "gSelectFrameColours"
+why = "A NUL-terminated colour string {15, 0xB0..0xBC, 12, ...} DrawRowList (0D1C:0454) cycles the selection frame through; ovl2 copies another one in from ds:65EA for the EGA choice (EOV2.C strcpy). It starts four bytes into gHitFlashRemapCga (ds:1CE3)."
+[[global]]
+id = "ds:54F6"
+name = "gConSaveBonus"
+why = "Bytes indexed by constitution {0,0,0,0,1,1,1,2,2,2,2,3,3,3,4,4,4,4,5,5}, one point per 3.5 points of constitution, which f0D1C_059B (0D1C:059B) subtracts from the saving throw target for certain races and save kinds."
+[[global]]
+id = "ds:A9F5"
+name = "gItemTypesClasses"
+why = "A view of the 16-byte ITEMTYPE.DAT records gItemTypes (ds:A9F0) five bytes later: its +0 is ItemType m05, the class mask ItemClassAllowed (0BD2:11FD) ANDs with g1231[classIndex], and its +9 is m0E, the item kind (0D1C:07DB, 08B1); named after gItemTypes as the view starting at the class mask."
+[[global]]
+id = "ds:5482"
+name = "gSelectFrameRects"
+why = "Rectangles of four words (x1, y1, x2, y2) that DrawRowList (0D1C:0454) outlines with DrawBox: the six party boxes on the right (x 0xB7..0x13F, three rows) and further boxes for the character panel (overlay 0 calls it with indices from 6 and 10)."
+[[global]]
+id = "ds:115F"
+name = "gClassSlotCount"
+why = "Bytes indexed by classIndex {1,1,1,1,1,1,2,2,2,3,2,2,3,2,2}, the number of class slots of each class (single classes 1, multi-classes 2 or 3); AddExperience (0DE8:0B45) divides the experience by it before sharing it among the slots."
+[[global]]
+id = "ds:552F"
+name = "gLauncherAmmoType"
+why = "Bytes indexed by an item type that UseItemByKind (0DE8:05BB) uses as the type of item to fire: kind 0x10 is taken from the hands or the quiver slot items[16], and item type 7 plays sound 0x1A; launcher item types map to their ammunition item type."
+[[global]]
+id = "ds:553E"
+name = "gArmourSlots"
+why = "Four item slot numbers {17, 0, 1, 18} that ComputeArmourClass (0DE8:0D5E) walks to add the armour value m04 and bonus of the items there; the hand slots 0 and 1 count only item type 0x1B."
+[[global]]
+id = "ds:FB78"
+name = "gAnimWallPhase"
+why = "Flipped by CheckFarTable (1414:04B0, a timed effect), which sets gDF4C when a view cell's wall byte is 0x34; ovl4:1D20, the drawer of wall type 0x34, picks its sprite cells by idx ^ gFB78, so it is that wall's two-frame animation phase."
+[[global]]
+id = "ds:5CAA"
+name = "gBlinkPhase"
+why = "The phase BlinkSelected (1414:0000, timed effect 0) flips each period: on, it redraws the member being moved with gIconTable set to 0xFF (hidden); off, it redraws the member normally."
+[[global]]
+id = "ds:5CAB"
+name = "gNextPosByDir"
+why = "16 bytes read as [dir * 4 + position] by MoveDDEffects (1414:0285) for a projectile: the sub-cell position it moves to, bit 7 meaning it enters the next cell (StepCell); for north 0 and 1 go to 2 and 3 of the next cell, 2 and 3 to 0 and 1 of the same cell."
+[[global]]
+id = "ds:FB45"
+name = "gLevelPalettePending"
+why = "LoadMapScreen (ovl3:0A7C) sets it to 1 at its end after loading the level's .PAL, StartupAlloc (07A9:0024) clears it, and DrawViewFrame (ovl4:1F51) in VGA mode (gGraphicsChoice 3) loads the palette gFE68 through ds:80BA and clears it: a new level's palette waiting to be applied on the next view frame."
+[[global]]
+id = "ds:A9C6"
+name = "gViewFrontSide"
+why = "Set at ovl4:044B to g1991[gPartyDir], whose bytes are 2,3,0,1, i.e. (gPartyDir + 2) & 3: the wall side of each visible cell that faces the party; gEF6A[i][gA9C6] is then the wall type drawn as a front wall, and E0DE8:349-351 opens a door by bumping side gA9C6 and its opposite gA9C6 ^ 2. The src/E122E.C:104 comment calling it a member row is wrong."
+[[global]]
+id = "ds:A9C8"
+name = "gViewCellIds"
+why = "InitViewSlots (ovl4:0000) stores (base + gHead199D[dir * 18 + i]) & 0x3FF for each of the 18 visible slots, base being gPartyCell (DrawViewFrame passes it); 0D1C:0006 searches its first 15 words for a cell to request a redraw, 0EF3:00CD searches it for a target cell, ovl4:19C4 compares projectile cells with it. Cell numbers, not headings."
+[[global]]
+id = "ds:1A2B"
+name = "gViewRelativePos"
+why = "Bytes 0,1,2,3 / 2,0,3,1 / 3,2,1,0 / 1,3,0,2 indexed gPartyDir * 4 + (pos & 3): a rotation of the four positions within a cell into the party's frame; ovl4:0AD0 (items), ovl4:0D1B (monsters, obj->frame) and ovl4:19C4 (projectiles) use the result to pick the per-slot screen position, and E0DE8:290 to pick the member hit."
+[[global]]
+id = "ds:1A09"
+name = "gViewSlotRow"
+why = "18 bytes 0 x7, 1 x5, 2 x3, 3 x3 for the 18 visible slots, whose cell offsets in gHead199D are 3, 2, 1 and 0 rows ahead of the party: the slot's row counted from the farthest (0) to the party's own row (3); it indexes the per-row tables g6FBE, g6FA8, g6F98, g70F0 and the door shape choice col = base + 2 - row (ovl4:1411)."
+[[global]]
+id = "ds:1D61"
+name = "gViewPosX"
+why = "Interleaved {x, y} word pairs, five per view slot (index (slot * 5 + pos) * 2, pos 0..3 the cell positions and 4 the centre): ovl4:0AD0 and ovl4:0D1B take x from here plus 0x58 and y from ds:1D63 (the same pairs two bytes on); ovl4:1411 and 0EF3 use pos 4 as the slot's centre x offset. One table with ds:1D63 (gViewPosY)."
+[[global]]
+id = "ds:18BF"
+name = "gWallDecorHead"
+why = "Per wall type: RegisterWallObject (ovl3:01C8) stores gF538 + 1, the 1-based index of the type's first 0x34-byte decoration record in gViewWalls, or 0 when it has none; ovl4:1091 walks gViewWalls from it, ovl4:1411 draws the door button when it is -1 (the static bytes are -1 for door types 3..7 and 13..17), 122E:05DF hit-tests the decoration it names."
+[[global]]
+id = "ds:A99C"
+name = "gDoorButtons"
+why = "Six records {far shape, x, y} that LoadMapCells (ovl3:03A2) cuts from the DOOR screen beside gFB5E's door shapes; DrawSlotDoor (ovl4:1411) draws gA99C[col] next to the door when gTable18BF is -1, and 122E:04CA hit-tests its rectangle (grown by 4) and on a hit plays sound 6 and toggles: a clickable button drawn by a door."
+[[global]]
+id = "ds:EF6A"
+name = "gViewCells"
+why = "InitViewSlots (ovl4:0000) points entry i at &gMaze[cell * 9] for each of the 18 visible cell ids it stores in gAngleA9C8; the drawers read the cell's wall bytes (gEF6A[i][side]), its +4 monster bits and +5 item list head, and 1414:04B0 scans the 18 entries for wall type 0x34."
+[[global]]
+id = "ds:FB5E"
+name = "gDoorShapes"
+why = "Six far shape pointers that LoadMapCells (ovl3:03A2) cuts from the DOOR overlay screen (LoadOverlayScreen(\"DOOR\")) through the ds:6840 rectangles; DrawSlotDoor (ovl4:1411) draws gFB5E[g716E[wall] + 2 - row], three sizes per door graphic, and FreeSlotTables (ovl3:031A) frees them."
+[[global]]
+id = "ds:199D"
+name = "gViewCellOffsets"
+why = "Four rows of 18 signed cell offsets, one row per facing (InitViewSlots ovl4:0000 indexes row * 18): facing north the row is -99..-93, -66..-62, -33..-31, -1, 0, 1, the cells 3, 2, 1 and 0 rows ahead on a 32-wide map; added to gPartyCell (masked 0x3FF) they give the visible cells."
+[[global]]
+id = "ds:6B82"
+name = "gSpanWallClip"
+why = "Per view slot, 18 signed bytes, one per visible cell (index slot * 18 + i), read by ComputeViewSpan (ovl4:0097) when cell i's front wall is not a door (gWallTypeFlags bit 3 clear) and has blocks (gWallVmpSet nonzero): a positive value caps the right column, a negative one raises the left, -41 empties the span, -40 leaves it."
+[[global]]
+id = "ds:6CC6"
+name = "gSpanDoorClip"
+why = "Per view slot and visible cell (index (slot * 18 + i) * 2) a {left, right} column pair that ComputeViewSpan (ovl4:0097) intersects with the span when cell i's front wall has gWallTypeFlags bit 3, the bit DrawViewSlots tests before calling the door drawer ovl4:1411."
+[[global]]
+id = "ds:6F4E"
+name = "gDoorClipY"
+why = "The row table SetRegionColumnExtent (ovl4:021E) reads the clip top and bottom lines from, at gDoorClipTopRow[level] + gViewSlotRow[slot] and gDoorClipBottomRow[level] + row; its only caller is the door drawer ovl4:1411, which clips region 5 vertically to the door before drawing (values 32, 24, 15 and 58, 72, 96, 120 lines)."
+[[global]]
+id = "ds:6F6D"
+name = "gDoorClipTopRow"
+why = "Indexed by gFBC8 (the current level 1..12, see LoadMapScreen ovl3:0A7C) in SetRegionColumnExtent (ovl4:021E): the start in gDoorClipY of the door clip's top lines (0, 4, 8, 12 by level group). It holds 12 bytes, so level 12 reads ds:6F79[0] (28)."
+[[global]]
+id = "ds:6F79"
+name = "gDoorClipBottomRow"
+why = "Indexed by gFBC8 (the current level) in SetRegionColumnExtent (ovl4:021E): the start in gDoorClipY of the door clip's bottom lines (16, 24, 20 by level group); its first byte also serves as level 12's entry of gDoorClipTopRow (ds:6F6D)."
+[[global]]
+id = "ds:ADB0"
+name = "gViewBlockMap"
+why = "0x14A words (22 columns by 15 rows of 8-pixel blocks, the 176 by 120 view) filled by ovl4:044B with block words copied from the .VMP data (bit 0x4000 marks a mirrored block, ovl4:036A); DrawTile (17A6:03E7) loads 0ADB0h into BX and draws the view from it with the block graphics gSegDCA6. Block indices, not pixels."
+[[global]]
+id = "ds:1995"
+name = "gRightSideByDir"
+why = "Bytes 1, 2, 3, 0, i.e. (dir + 1) & 3: ovl4:044B copies gPartyDir's entry into gEFB9, the wall side of the cells left of the party that faces the viewer's right, drawn as left side walls (CopyViewColumn at x -2, 2, 8)."
+[[global]]
+id = "ds:1999"
+name = "gLeftSideByDir"
+why = "Bytes 3, 0, 1, 2, i.e. (dir + 3) & 3: ovl4:044B copies gPartyDir's entry into gEFD0, the wall side of the cells right of the party that faces the viewer's left, drawn mirrored as right side walls (ToggleViewColumn at x 0x15, 0x11, 0xd)."
+[[global]]
+id = "ds:EFB9"
+name = "gViewRightSide"
+why = "Set to gRightSideByDir[gPartyDir] ((dir + 1) & 3) at ovl4:044B and used as gEF6A[i][gEFB9] for the slots left of the centre line (0, 1, 2, 7, 8, 12, 15): the side wall drawn on the left of the view."
+[[global]]
+id = "ds:EFD0"
+name = "gViewLeftSide"
+why = "Set to gLeftSideByDir[gPartyDir] ((dir + 3) & 3) at ovl4:044B and used as gEF6A[i][gEFD0] for the slots right of the centre line (4, 5, 6, 10, 11, 14, 17), drawn mirrored on the right of the view."
+[[global]]
+id = "ds:F4BC"
+name = "gViewMirrorParity"
+why = "ovl4:044B stores ((cell >> 5) + (cell & 0x1f) + gPartyDir) & 1 and draws the floor and ceiling strip mirrored (ToggleViewColumn) when it is 1, plain otherwise; ovl4:1091 also mirrors decorations whose flag bit 1 is set when it is 1. It alternates with every step and turn."
+[[global]]
+id = "ds:6F86"
+name = "gItemClipSlot"
+why = "Per view slot a slot number or -1 (set only for slots 9, 13, 15, 16, 17, giving 3, 9, 11, 12, 13); ovl4:0AD0 refits the clip span to that slot through ComputeViewSpan while drawing an item at the two far positions of a cell whose wall has gWallTypeFlags bit 3, then restores the slot's own span."
+[[global]]
+id = "ds:6F98"
+name = "gItemScaleFrame"
+why = "Indexed gViewSlotRow * 4 + position (bytes -1,-1,3,3 / 2,2,2,2 / 1,1,1,1 / 0,0,-1,-1): ovl4:0AD0 draws the item icon gItemL1Icons[icon][frame] only when it is not negative, so it is the icon size per row and position, 0 largest for the party's own row, -1 out of sight."
+[[global]]
+id = "ds:6FA8"
+name = "gNicheItemY"
+why = "Three words 37, 49, 56 indexed by gViewSlotRow; ovl4:0AD0 uses it as the y of an item whose position byte is 8, drawn at the slot's centre x (ds:19E5) with frame from position 0, and items show in a wall with blocks only when its gWallTypeFlags bit 7 is set: an item placed in a wall."
+[[global]]
+id = "ds:6FAE"
+name = "gItemJitter"
+why = "Eight words 0, -2, 1, -1, 2, 0, 1, -1; ovl4:0AD0 adds entry (item & 7) * 2 to x and entry ((item >> 1) & 7) to y, so items on the same spot are drawn slightly apart according to their item number."
+[[global]]
+id = "ds:1D63"
+name = "gViewPosY"
+why = "The y word of the {x, y} pairs at ds:1D61 (gViewPosX), read with the same index (slot * 5 + pos) * 2 at ovl4:0AD0 (plus 0x7c for items) and ovl4:0D1B (plus 0x7f for monsters); it is ds:1D61 two bytes on, one table."
+[[global]]
+id = "ds:19E5"
+name = "gViewSlotCenterX"
+why = "18 words, -56, -8, 40, 88, 136, 184, 232 for the farthest row and 88 for every centre slot (3, 9, 13, 16): the screen x of a slot's middle in the 176-pixel view; ovl4:0AD0 draws items in a wall there and ovl4:1D20 centres its cells on it."
+[[global]]
+id = "ds:6FBE"
+name = "gMonsterShrinkSteps"
+why = "Bytes 2, 1, 0 indexed by gViewSlotRow; ovl4:0D1B passes the monster shape through the sprite blitter (BlitSpriteEga/Cga/Default into gBufDCFC) that many times, so the farthest row is shrunk twice, and the value 0 (nearest row) also enables the attack frames 5 and 6."
+[[global]]
+id = "ds:7001"
+name = "gMonsterDrawOrder"
+why = "Per facing, five bytes indexed gPartyDir * 5 + obj->frame (the monster's position 0..4 in its cell): ovl4:0D1B stores each monster of the cell at arr[g7001[...]] and then draws arr[0..4] in order, so the table orders the five positions back to front for the party's facing."
+[[global]]
+id = "ds:6FC1"
+name = "gMonsterFramesMirrorStep"
+why = "Frame table indexed (obj->toggle << 4) + gPartyDir * 4 + obj->orient used by ovl4:0D1B when the type's gTable1A3B[b0].m0E has bit 1; a negative frame is drawn mirrored. It differs from ds:6FE1 only on the second animation step, where it mirrors frames 4 and 1 (-4, -1) that ds:6FE1 keeps plain."
+[[global]]
+id = "ds:6FE1"
+name = "gMonsterFrames"
+why = "Frame table indexed (obj->toggle << 4) + gPartyDir * 4 + obj->orient used by ovl4:0D1B when the type's m0E bit 1 is clear (the other case uses ds:6FC1); its absolute value picks the shape in gB7FE and a negative value the mirrored DrawShapeClipped wrapper."
+[[global]]
+id = "ds:7015"
+name = "gMonsterYAdjust"
+why = "Bytes 20, 12, 4 indexed by the shrink steps (gMonsterShrinkSteps); ovl4:0D1B adds it to the monster's y only for types whose gTable1A3B[b0].m15 is 1 and only for frames 1 or above 3. What those types are is not shown."
+[[global]]
+id = "ds:B7FE"
+name = "gMonsterShapes"
+why = "Far shape pointers indexed |frame| + (obj->m07 ? 0x12 : 0) in ovl4:0D1B, which shrinks the shape by gMonsterShrinkSteps and draws it for every monster record (gObjs at ds:8A82) in the slot's cell: 18 shapes per monster graphic set, two sets."
+[[global]]
+id = "ds:716E"
+name = "gDoorShapeSet"
+why = "32 bytes per wall type, 0 for door types 3..12 and 3 for 13..22; DrawSlotDoor (ovl4:1411) computes col = g716E[wall] + 2 - gViewSlotRow to pick gDoorShapes[col], so it selects which of the level's two door graphics (three sizes each) a door wall uses."
+[[global]]
+id = "ds:70F0"
+name = "gDoorYLevels1to3"
+why = "Bytes 58, 71, 86 indexed by gViewSlotRow: DrawSlotDoor (ovl4:1411) takes the door's bottom y from it for gFBC8 (the current level) 1, 2, 3, then subtracts the shape height and the open step's lift."
+[[global]]
+id = "ds:70F4"
+name = "gDoorYLevels4to6"
+why = "Bytes 59, 71, 88 indexed by gViewSlotRow: the door's bottom y in DrawSlotDoor (ovl4:1411) for levels 4..6 (gFBC8), where the door is drawn as two mirrored halves pushed apart."
+[[global]]
+id = "ds:70F8"
+name = "gDoorYLevels7to9"
+why = "Bytes 32, 32, 24 indexed by gViewSlotRow: in DrawSlotDoor (ovl4:1411) for levels 7..9 (gFBC8) the y of both the back shape gDoorShapes[col + 3] and the door itself, before the lift."
+[[global]]
+id = "ds:70FC"
+name = "gDoorYLevels10to11"
+why = "Bytes 30, 24, 16 indexed by gViewSlotRow: in DrawSlotDoor (ovl4:1411) for levels 10 and 11 (gFBC8) the y of the first half gDoorShapes[col], moved down by the open step."
+[[global]]
+id = "ds:70FF"
+name = "gDoorBackYLevels10to11"
+why = "Bytes 48, 52, 59 indexed by gViewSlotRow: in DrawSlotDoor (ovl4:1411) for levels 10 and 11 the y of the second half gDoorShapes[col + 3], moved up by 3/8 of the first half's offset."
+[[global]]
+id = "ds:7102"
+name = "gDoorYLevel12"
+why = "Bytes 58, 69, 90 indexed by gViewSlotRow: DrawSlotDoor (ovl4:1411) uses it instead of ds:70F0 when gFBC8 (the current level) is 12, otherwise drawing like levels 1..3."
+[[global]]
+id = "ds:7106"
+name = "gDoorClipLeftX"
+why = "Interleaved {left, right} pixel words per view slot (index slot * 2; ds:7108 is the right word two bytes on): DrawSlotDoor (ovl4:1411) for levels 4..6 shifts them right 3, clamps them to gViewColLeft/gViewColRight and clips region 5 to them before drawing the two door halves."
+[[global]]
+id = "ds:7108"
+name = "gDoorClipRightX"
+why = "The right word of the {left, right} pairs at ds:7106 (gDoorClipLeftX), read with the same index slot * 2 at ovl4:1411 for levels 4..6 and clamped to gViewColRight."
+[[global]]
+id = "ds:714E"
+name = "gDoorStepBase"
+why = "Per wall type, the first wall type of its run of five (0,0,0,3x5,8x5,13x5,18x5, then 30 and 31): DrawSlotDoor (ovl4:1411) multiplies (wall - g714E[wall]) by the per-row step tables, so it gives the door's open step for wall types below 0x1e."
+[[global]]
+id = "ds:718E"
+name = "gDoorLiftStep"
+why = "Bytes 8, 12, 18 indexed by gViewSlotRow: DrawSlotDoor (ovl4:1411) raises the door by (wall - gDoorStepBase[wall]) times this for levels 1..3, 7..9 and 12 when the wall type is below 0x1e."
+[[global]]
+id = "ds:7192"
+name = "gDoorLiftFrom30"
+why = "Bytes 0, 2, 4 indexed by gViewSlotRow: the fixed lift DrawSlotDoor (ovl4:1411) uses instead of gDoorLiftStep times the step when the wall type is 0x1e or above (levels 1..3, 7..9, 12)."
+[[global]]
+id = "ds:7196"
+name = "gDoorSlideStep"
+why = "Bytes 4, 6, 9 indexed by gViewSlotRow: for levels 4..6 DrawSlotDoor (ovl4:1411) moves the two mirrored door halves apart by the open step times this when the wall type is below 0x1e."
+[[global]]
+id = "ds:719A"
+name = "gDoorSlideFrom30"
+why = "Bytes 0, 2, 4 indexed by gViewSlotRow: the fixed sideways shift DrawSlotDoor (ovl4:1411) uses for levels 4..6 instead of gDoorSlideStep when the wall type is 0x1e or above."
+[[global]]
+id = "ds:719E"
+name = "gDoorSplitStep"
+why = "Bytes 7, 11, 14 indexed by gViewSlotRow: for levels 10 and 11 DrawSlotDoor (ovl4:1411) moves the first door half down by the open step times this and the second half up by 3/8 of it, wall types below 0x1e."
+[[global]]
+id = "ds:71A2"
+name = "gDoorSplitFrom30"
+why = "Bytes 0, 2, 4 indexed by gViewSlotRow: the fixed offset DrawSlotDoor (ovl4:1411) uses for levels 10 and 11 instead of gDoorSplitStep when the wall type is 0x1e or above."
+[[global]]
+id = "ds:7246"
+name = "gProjectileDrawOrder"
+why = "Per facing, five bytes indexed gPartyDir * 5 + (record +6 & 3), the same bytes as gMonsterDrawOrder (ds:7001): ovl4:19C4 sorts the flying records of the slot's cell into arr[] through it and draws arr[0..4] in order, back to front."
+[[global]]
+id = "ds:71A6"
+name = "gProjectileX"
+why = "Unsigned bytes indexed slot * 4 + gViewRelativePos value: the screen x ovl4:19C4 draws a flying record's shape at in that view slot (recomputed from gViewPosX when the record's +0xC has bit 6)."
+[[global]]
+id = "ds:71EE"
+name = "gProjectileY"
+why = "Signed bytes indexed gViewSlotRow * 4 + position (32, 32, 31, 31 for the farthest row): the screen y ovl4:19C4 draws a flying record's shape at."
+[[global]]
+id = "ds:71FE"
+name = "gProjectileFrame"
+why = "Signed bytes indexed slot * 4 + position, -1 for the positions out of sight and 0..3 for the size: ovl4:19C4 draws a flying record only when it is not negative and uses it as the frame of the ds:F2F8 or ds:EC9A shape row."
+[[global]]
+id = "ds:725A"
+name = "gProjectileFixWidth"
+why = "Bytes 4, 3, 2, 1 per frame: ovl4:19C4 compares a flying item's shape width byte (cell +2) with entry [frame] and, when equal, adds gProjectileFixX[frame] to x; only the mechanics are shown."
+[[global]]
+id = "ds:725E"
+name = "gProjectileFixX"
+why = "Bytes 16, 8, 4, 2 per frame: the x shift ovl4:19C4 adds to a flying item's position when its shape width matches gProjectileFixWidth[frame] (ds:725A)."
+[[global]]
+id = "ds:7262"
+name = "gProjectileFlip"
+why = "Bytes 0 or 1 indexed record +7 * 4 + record +6: ovl4:19C4 draws a flying shape mirrored (DrawShapeClippedFlipped) when the entry is nonzero, for the thrown-shape rows and for every non-item record."
+[[global]]
+id = "ds:1D07"
+name = "gItemThrownShape"
+why = "Per item shape (g181F[icon] (ds:181F)) and side (0 flying away along the facing, 1 toward the party, stride 0x2d), a row of gThrownIcons (ds:F2F8) or -1; ovl4:19C4 draws a flying item with that row, or with its own icon gItemL1Icons when it is -1 or the item flies sideways."
+[[global]]
+id = "ds:7272"
+name = "gTeleporterLeftOffset"
+why = "Bytes 40, 28, 18, 13 indexed by col = 2 - gViewSlotRow: ovl4:1D20 subtracts it from gViewSlotCenterX[slot] to get the left x of its two columns of 13 cells; larger for nearer rows."
+[[global]]
+id = "ds:7275"
+name = "gTeleporterTopY"
+why = "Bytes 13, 21, 26 indexed by col = 2 - gViewSlotRow: the top y ovl4:1D20 adds the per-cell y bytes of 20AB:0000 to."
+[[global]]
+id = "ds:7278"
+name = "gViewDrawOrder"
+why = "18 bytes 0, 6, 1, 5, 2, 4, 3, 7, 11, 8, 10, 9, 12, 14, 13, 15, 17, 16: DrawViewSlots (ovl4:1E18) draws slot g7278[i] for i = start..17, so the slots are drawn from the farthest row inward, outer cells before the centre one."
+[[global]]
+id = "ds:7296"
+name = "gCompassDir"
+why = "DrawViewRows (ovl4:1EDE) returns at once when it equals gPartyDir and otherwise redraws its three shapes, each with four versions gIconTableA92A[gPartyDir + 4 * i], below the view and then stores gPartyDir in it (initial -1): the facing the compass was last drawn for."
+[[global]]
+id = "ds:7290"
+name = "gCompassY"
+why = "Three words 127, 154, 154: the y DrawViewRows (ovl4:1EDE) draws each of its three facing-dependent shapes at; one table with the x words at ds:728A."
+[[global]]
+id = "ds:728A"
+name = "gCompassX"
+why = "Three words 112, 77, 149: the x DrawViewRows (ovl4:1EDE) draws each of its three facing-dependent shapes at, inside the pointer zone (0x46, 0x79)-(0xb0, 0xaf) below the view."
+[[global]]
+id = "ds:80EA"
+name = "gKeyboardOptions"
+why = "The keyboard driver copies this word into its kModifierState on every INT 9 (the load at 1AAD:07F4) and every GetKeyState call (1AAD:0607); its bits steer the driver (bit 2 skips GetKeyState's key list search, 80h diverts E1-prefixed bytes in the INT 9 handler, 200h picks the keypad table in TranslateKey 1AAD:0223). Load-time value 0110h, main sets 1 (E07C8.C:261)."
+[[global]]
+id = "ds:7FBC"
+name = "gDirectionFromMask"
+why = "DirectionFromPoints (17A6:0314) builds a 4-bit mask from the signs and dominance of dx and dy and indexes this 16-byte table at 17A6:0373; its bytes are FF,6,2,FF,4,5,3,FF,0,7,1,FF... so mask 8 gives 0 (north), 2 gives 2 (east), 4 gives 4 (south), 1 gives 6 (west), FF none."
+[[global]]
+id = "ds:7FCC"
+name = "gNeighbourOffsets"
+why = "Eight words -33,-32,-31,-1,1,31,32,33 in the EOB.EXE image: the offsets of the eight cells around a cell on the 32-wide map; FindNeighbour (17A6:0F9D) adds each to a packed cell and masks with 3FFh (17A6:0FB8)."
+[[global]]
+id = "ds:7FDC"
+name = "gAheadOffsets2And3"
+why = "Eight words -64,-96, 2,3, 64,96, -2,-3 in the EOB.EXE image: for each facing N, E, S, W the cell offsets two and three squares ahead on the 32-wide map; FindNeighbour (17A6:0F9D) picks the pair by its third argument (17A6:0FCB, 17A6:0FD3)."
+[[global]]
+id = "ds:80CE"
+name = "gRowOffsetTableOff"
+why = "Slot 41 of the driver table at ds:802A (the request's table pointer 212E:802A at ds:8125), filled by the graphics driver: EGA.OVL slot 41 is cs:03A9, a 200-word table 0, 28h, 50h... (y * 40), MCGA y * 320, CGA interleaved; EGA indexes it by y (EGA.OVL 1033, 159A). BuildMask (17A6:18FF) reads the tables 190h and 290h past it. Offset half."
+[[global]]
+id = "ds:80D0"
+name = "gRowOffsetTableSeg"
+why = "Segment half of the driver table slot 41 far pointer at ds:80CE (the driver's own code segment, stored by the exchange loop EGA.OVL 0F2A..0F2F); BuildMask loads it into DS at 17A6:1913 to read the driver's translation tables after the row offsets."
+[[global]]
+id = "ds:80A2"
+name = "gRestoreDrawState"
+why = "Slot 30 of the driver table ds:802A: in CGA.OVL (19CF), TGA and MCGA.OVL (1612) it copies the saved region words back into the driver's current region (cs:CA..D0, the words gSetRegion slot 35 writes, CGA 1DE5); EGA.OVL (13BE) also reloads the EGA registers from the shadow. Called after each pointer redraw (1A72:0200, 1A72:0275, 1BBE:02B2, 1BF3:0082)."
+[[global]]
+id = "ds:80AA"
+name = "gSaveDrawState"
+why = "Slot 32 of the driver table ds:802A: CGA.OVL 1C9D and MCGA.OVL 1A7A save the driver's region (cs:CA..D0) and set it to the full screen (0, 28h, 0, C8h); EGA.OVL 1746 also copies 16 bytes of register shadow from its far argument (ds:8172/8174). Called before each pointer redraw (1A72:01F4, 1A72:0264, 1BBE:02A7, 1BF3:0071)."
+[[global]]
+id = "ds:80EC"
+name = "gRecordMode"
+why = "Input record mode, a byte 0/1/2: ProcessKeyEvent (1AAD:0C17) does nothing at 0, writes each event to the file at ds:80ED at 1 and reads them back at 2; InjectRecordedKey (1AAD:0D26) and DequeueKeyEvent (1AAD:04A2) replay at 2, and the mouse handler skips the position update at 2 (1A72:0212)."
+[[global]]
+id = "ds:8130"
+name = "gLastMouseButtons"
+why = "The INT 33h handler compares the event's button word BX with it (1A72:01B8), calls HandleMouseButtons only when they differ, folds the change into ds:8134 and then stores BX here (1A72:01D3)."
+[[global]]
+id = "ds:8132"
+name = "gMiddleButtonBits"
+why = "When nonzero and the event has the middle button bit 4 set, the handler replaces BX with (BX and 3) or this word (1A72:01A6 to 01B6); the image holds 0002, the right button bit, so a held middle button reads as the right one."
+[[global]]
+id = "ds:8136"
+name = "gMouseButtonSeen"
+why = "Latched to 1 when an INT 33h event carries any button (1A72:01DC) and when a replayed mouse event is read (1AAD:0D04); nothing in src/ clears it, so it records that a button has been seen."
+[[global]]
+id = "ds:813C"
+name = "gMouseEventX"
+why = "x of the INT 33h event being handled, after the 640-wide halving and the 13Fh clamp (stored at 1A72:019E); HandleMouseButtons queues it with the button event (E1AAD.ASM:1228). Pairs with gMouseEventY at ds:813E."
+[[global]]
+id = "ds:813E"
+name = "gMouseEventY"
+why = "y of the INT 33h event being handled, stored unclamped next to gMouseEventX (1A72:01A2); HandleMouseButtons queues it after the x (E1AAD.ASM:1232)."
+[[global]]
+id = "ds:8144"
+name = "gMouseXDoubled"
+why = "InitMouse sets it to 1 when the driver's x after reset is not 0A0h (1A72:013E); then the handler halves each event x (the test at 1A72:018C), InitMouse doubles the x it sets (the test at 1A72:0156) and PlacePointer doubles x for INT 33h function 4 (1BF3:000E). Whether that means a 640-wide range is [H]."
+[[global]]
+id = "ds:814E"
+name = "gCursorMaxX"
+why = "Set to 13Fh (screen width minus one) by InitMouse (1A72:00FE); PlacePointer (1BF3:000E) clamps gCursorX to it from above, with ds:814C as the lower limit."
+[[global]]
+id = "ds:8152"
+name = "gCursorMaxY"
+why = "Set to 0C7h (screen height minus one) by InitMouse (1A72:0104); PlacePointer (1BF3:000E) clamps gCursorY to it from above, with ds:8150 as the lower limit."
+[[global]]
+id = "ds:8172"
+name = "gEgaRegShadowOff"
+why = "Offset of the far pointer the game exports to the driver as slots 5 and 6 (GetFarPointer, SetFarPointer at ds:803E, 8042); only EGA.OVL calls SetFarPointer, with its own register shadow cs:00C1 (EGA.OVL 0F3A to 0F3F), and the 17A6 blitters redirect it to their own 16-byte copy (17A6:0446, 04EE)."
+[[global]]
+id = "ds:8174"
+name = "gEgaRegShadowSeg"
+why = "Segment half of the EGA register shadow pointer at ds:8172; SetFarPointer tests it (jcxz at 1A72:0320) and copies the 16 shadow bytes only when it is nonzero, and the pointer redraws push it before the offset for gSaveDrawState (1BBE:029F)."
+[[global]]
+id = "ds:8026"
+name = "gHitTestX"
+why = "Scratch copy of gDrawnX that IsMouseInRect (1A72:02A6) makes under the busy flag (1A72:02C7) and compares with the rectangle's left and right edges (1A72:02D0, 02D6); no other reader."
+[[global]]
+id = "ds:8028"
+name = "gHitTestY"
+why = "Scratch copy of gDrawnY that IsMouseInRect (1A72:02A6) makes under the busy flag (1A72:02CD) and compares with the rectangle's top and bottom edges (1A72:02DC, 02E2); no other reader."
+[[global]]
+id = "ds:80ED"
+name = "gRecordHandle"
+why = "File handle of the recorded input stream: ProcessKeyEvent passes it to FileWrite in record mode 1 (the push at 1AAD:0C46) and to FileRead in replay mode 2 (1AAD:0CA7), four bytes per call."
+[[global]]
+id = "ds:80EF"
+name = "gLastEventKey"
+why = "DequeueKeyEvent stores every event key taken from the ring here (1AAD:04A5) and reads it back instead of the ring in replay mode; ProcessKeyEvent writes it to the recording (1AAD:0C22) or loads it from the recording (1AAD:0CC2)."
+[[global]]
+id = "ds:80F1"
+name = "gRecordDelay"
+why = "Tick count read with each replayed event (1AAD:0CBB); InjectRecordedKey releases the replayed key only once gTicksSinceEvent (ds:8488) reaches it (1AAD:0D3E), so it is the delay before the event."
+[[global]]
+id = "ds:80F3"
+name = "gLastEventX"
+why = "x word of the last mouse event taken from the ring (DequeueKeyEvent 1AAD:04C7, 0507), written to or read from the recording by ProcessKeyEvent (1AAD:0C5F, 0CF4), which also copies it to gCursorX on replay."
+[[global]]
+id = "ds:80F5"
+name = "gLastEventY"
+why = "y word of the last mouse event taken from the ring (DequeueKeyEvent 1AAD:04E3, 0520), written to or read from the recording by ProcessKeyEvent (1AAD:0C66, 0CFE), which also copies it to gCursorY on replay."
+[[global]]
+id = "ds:80F7"
+name = "gRecordEnded"
+why = "Set to 1 when a FileRead of the recording fails (1AAD:0D12); InjectRecordedKey then injects 0 instead of the recorded key (the test at 1AAD:0D34), so it marks the end of the replay."
+[[global]]
+id = "ds:8488"
+name = "gTicksSinceEvent"
+why = "16-bit counter the INT 1Ch handler increments every tick (1D8F:0080); ProcessKeyEvent records it with each event (1AAD:0C30) and clears it after each recorded or replayed event (1AAD:0C88, 0D0A), and replay waits for it to reach gRecordDelay (1AAD:0D3E)."
+[[global]]
+id = "intro/ds:1FA9"
+name = "gTextAttr1"
+why = "Twin of EOB's gTextAttr1 (ds:811D, same 6174h DGROUP shift as gGraphicsChoice 8102/1F8E): load-time 000Fh, main sets 0xF after the palette (0892:0145) as EOB main sets DEFAULT_TEXT_ATTR1 (E07C8.C:262), and the twin text unit reads it at the same relative sites."
+[[global]]
+id = "intro/ds:1FA7"
+name = "gTextAttr2"
+why = "Twin of EOB's gTextAttr2 (ds:811B, the 6174h DGROUP shift): load-time 000Ch, main sets 0xC after the palette (0892:014B) as EOB main sets DEFAULT_TEXT_ATTR2 (E07C8.C:263); the twin text unit reads it."
+[[global]]
+id = "intro/ds:1A34"
+name = "gStartupDone"
+why = "Set to 1 only on StartupGame's success exit (0892:0817 at the done label, after the sound card starts); main runs the intro overlay Ovl0Main only when it is set (0892:0151)."
+[[global]]
+id = "intro/ds:232C"
+name = "gRestoreMode"
+why = "Twin of EOB's gRestoreMode (ds:84A0): StartupGame stores the mode INT 10h AH=0Fh reports (GetVideoMode, 0892:024B), SetVideoMode (0D2B:0033) reads it for index 7 (image 0xD2FA, 0xD309), and main passes it to EOB.EXE as argv[5], which EOB restores on exit."
+[[global]]
+id = "intro/ds:28A4"
+name = "gRestoreModeArg"
+why = "itoa's decimal buffer for gRestoreMode (ds:232C) at 0892:01BA; main passes it to EOB.EXE as argv[5] in the execl (I0892.C:271)."
+[[global]]
+id = "intro/ds:28B4"
+name = "gMemTopArg"
+why = "itoa's buffer for gMemTopSeg (ds:28C4) at 0892:01CF; main passes it to EOB.EXE as argv[6] in the execl (I0892.C:271)."
+[[global]]
+id = "intro/ds:19E6"
+name = "gOverlayCacheOn"
+why = "Set to 1 by StartupGame right after InitOverlayCache (0892:0641); ShutdownGame calls ShutdownOverlayCache only when it is set (0892:0851). EOB's twin is ds:3056."
+[[global]]
+id = "intro/ds:28CC"
+name = "gPageSegs"
+why = "Eight segment words StartupGame fills per graphics choice with screen segments (B800, A000, A200..AC00) and MemAlloc'd page buffers (0892:036B to 0540); driver import slot 1 and GetPagePtr (097F:0002) index it by page. Twin of EOB's ds:FC0C."
+[[global]]
+id = "intro/ds:19F7"
+name = "gBlackPalette"
+why = "Sixteen zero bytes right after gBuiltinPalette in the INTRO.EXE image (ds:19F7 to 1A06); main passes it to gSetPalette for the Tandy choice when gMovedSeg is set (0892:01AE), every entry colour 0."
+[[global]]
+id = "ds:F534"
+name = "gItemRemapTable"
+why = "The 1600-byte block StartupAlloc allocates at 07A9:008B; LoadItemSheets reads the 0x640-byte ITEMRMP file (item remap) into it (ovl2:0478 push [F534], src/EOV2.C:296), and SetMouseItem (07A9:0184 path) and DrawItemIcon (0D1C:070F, src/E0D1C.C:493) pass its 16-byte row icon<<4 to gSetRemapTable before a remapped draw."
+[[global]]
+id = "ds:80E2"
+name = "gRemapTable"
+why = "Graphics driver export 39 is not code: its far pointer is mcga.ovl offset 030C, the 16-byte colour remap buffer gSetRemapTable (ds:80D2, mcga.ovl 277B) fills; SetMouseItem passes it to TranslateImage as the xlatb table (07A9:0197, 17A6:19BE). The driver table mapping: the graphics overlay's init (mcga.ovl 0BF2..0C2F) walks the request table at ds:802A (request +4, ds:8125 = 802A:212E), copies the game's seven import pointers into the driver and writes its own export pointers into the zero pairs that follow, so ds:8046 + 4*i is mcga.ovl export i (the far pointer table at mcga.ovl 001F)."
+[[global]]
+id = "ds:DF48"
+name = "gRemappedIcon"
+why = "LoadItemSheets allocates 0x12C bytes and stores them here (ovl2:041D, 0425); SetMouseItem translates the item icon into it through gRemapTable (TranslateImage destination pushed at 07A9:019B) and shows it as the mouse pointer as gIconsDDE4[0x59] (0xDDE4 + 0x59*4 = 0xDF48, 07A9:01B9). src/EOV2.C:253 calls it the item description buffer [H], which this contradicts."
+[[global]]
+id = "ds:5E1C"
+name = "gLeftButtonMode"
+why = "DispatchNodeEvent sets it from the left button: 2 or 4 from GetKeyState(0x41) on every call and 1 or 3 on the 0xC6 click (src/E16A5.C:240-259); E1658.C writes 0x81/0x83 with a latch bit, Action0415 tests its low seven bits (0ACD:0415) and src/E0EF3.C:2158 its 0x81 bits; src/E0ACD.C:132 already calls it the left-button mode word."
+[[global]]
+id = "ds:8134"
+name = "gUnreadButtonChanges"
+why = "The INT 33h handler ORs the changed button bits (old xor new) into it (or ax,[8134]; mov [8134],ax at 1A72 image 0x1A8EC, src/E1A72.ASM:410-411); DrawOptionList (14EF image 0x15158) and RunMapLoop (image 0xBB98) clear it, and no instruction in EOB.EXE or the overlays reads it otherwise."
+[[global]]
+id = "ds:FC78"
+name = "gOptionLineSpacing"
+why = "DrawOptionList (14EF:0154) stores its spacing argument here (14EF image 0x1514B, src/E14EF.C:212) and UpdateOptionList adds it to the font height for each row and uses half of it for the band top (src/E14EF.C:285-286); every shipped caller passes 0."
+[[global]]
+id = "ds:FC7A"
+name = "gUnhandledOptionKey"
+why = "UpdateOptionList clears it (14EF image 0x151F4) and stores a key it did not handle there, a click outside the list or any other key (src/E14EF.C:330, 338); PickAlignment reads it for 0x6E/0x32 and the click codes 0x41/0x42 (ovl0:2342..235C, src/EOV0.C:1270-1272)."
+[[global]]
+id = "ds:5D1A"
+name = "gHoverSelectsOption"
+why = "Word 1 in the image (ds:5D1A = 01 00) and never written in EOB.EXE or the overlays; UpdateOptionList lets the pointer position pick the row only when it is set (14EF image 0x15288, src/E14EF.C:301) and DrawOptionList draws the selected row in colorB when it or gMouseDisabled is set (image 0x15108, src/E14EF.C:209)."
+[[global]]
+id = "ds:5E1E"
+name = "gRightButtonMode"
+why = "The right-button twin of gLeftButtonMode: DispatchNodeEvent sets it 2 or 4 from GetKeyState(0x42) and 1 or 3 on the 0xC7 click (src/E16A5.C:246-259), E1658.C writes 0x81/0x83 for node flags 0x1000/0x4000, and the dispatcher indexes gRightButtonMasks with it (16A5 image 0x170CF)."
+[[global]]
+id = "ds:FC7C"
+name = "gNodeCallback"
+why = "SetNodeCallback (16A5:0D78) stores its far argument here (image 0x177D1) and main clears it with SetNodeCallback(0, 0L) (src/E07C8.C:264, \"the node callback\"); DispatchNodeEvent calls it with each node it redraws whose state has 0x20 and a tile (lcall [FC7C] at image 0x16C86, src/E16A5.C:293-295)."
+[[global]]
+id = "ds:FC80"
+name = "gUnreadShapeDrawWord"
+why = "Only DrawNode (16A5:07C3) touches it: it saves the word, clears it and restores it around each kind-1 DrawShape call (three copies, 16A5 image 0x17332..0x1768E, src/E16A5.C:598-601, 640-643, 681-684); no other instruction in EOB.EXE or the overlays reads it, so the cleared value is never used."
+[[global]]
+id = "ds:805E"
+name = "gDrawIndexedTile"
+why = "Graphics driver export 6 (mcga.ovl 0717): it maps the tile number through the byte table set by export 13 (ds:807A, mcga.ovl 0C5C stores the tile data, colour rows and map pointers), copies that 16-byte colour row and draws the tile's 4-bit pixels through it at column x, line y; DrawNode passes node->tile34/36 and x>>3 (src/E16A5.C:612, 655, 693). The driver table mapping: the graphics overlay's init (mcga.ovl 0BF2..0C2F) walks the request table at ds:802A (request +4, ds:8125 = 802A:212E), copies the game's seven import pointers into the driver and writes its own export pointers into the zero pairs that follow, so ds:8046 + 4*i is mcga.ovl export i (the far pointer table at mcga.ovl 001F)."
+[[global]]
+id = "ds:8066"
+name = "gXorRect"
+why = "Graphics driver export 8 (mcga.ovl 2617): it clamps (x1, y1, x2, y2) to 320 by 200 and XORs the colour byte into every pixel of the rectangle (xor es:[di],bl at mcga.ovl 2736, 2748, 2762); DrawNode uses it for the mode-3 highlight of kind-0 nodes (src/E16A5.C:629, 671, 709). The driver table mapping: the graphics overlay's init (mcga.ovl 0BF2..0C2F) walks the request table at ds:802A (request +4, ds:8125 = 802A:212E), copies the game's seven import pointers into the driver and writes its own export pointers into the zero pairs that follow, so ds:8046 + 4*i is mcga.ovl export i (the far pointer table at mcga.ovl 001F)."
+[[global]]
+id = "ds:5DEA"
+name = "gLeftButtonMasks"
+why = "Words 1..4 are 0x100, 0x200, 0x400, 0x800 in the image, the node flag bit DispatchNodeEvent picks with mask = g5DEA[gLeftButtonMode] (16A5 image 0x170AD, src/E16A5.C:488); word 0 is reused as the OR of the drawn nodes' flags & 0xAA04 (image 0x16C40..0x16C63) and tested at 0x16DBA. Same layout as gRightButtonMasks (ds:5DF2), which overlaps its word 4."
+[[global]]
+id = "ds:5E20"
+name = "gNodeListChanged"
+why = "DispatchNodeEvent redraws the whole list and resets the press state when it is nonzero (cmp byte [5E20],0 at 16A5 image 0x16C29) and clears it after (0x16CCB); the list builders set it to 1 (BuildRowNodeList ovl0:04F3, src/EOV0.C:368; ovl1:13DB, src/EOV1.C:970)."
+[[global]]
+id = "ds:5DF2"
+name = "gRightButtonMasks"
+why = "Words 1..4 are 0x1000, 0x2000, 0x4000, 0x8000 in the image, the node flag bit DispatchNodeEvent picks with mask = g5DF2[gRightButtonMode] (16A5 image 0x170CF, src/E16A5.C:493); word 0 is gLeftButtonMasks[4] (0x800), so the two tables are one run of nine words at ds:5DEA."
+[[global]]
+id = "ds:8046"
+name = "gCopyPage"
+why = "Graphics driver export 0 (mcga.ovl 04F8): it copies 0x7D00 words from offset 0 of its first segment argument to offset 0 of the second, a whole 64000-byte page; its only caller is CopyPage (19EC:002A). The driver table mapping: the graphics overlay's init (mcga.ovl 0BF2..0C2F) walks the request table at ds:802A (request +4, ds:8125 = 802A:212E), copies the game's seven import pointers into the driver and writes its own export pointers into the zero pairs that follow, so ds:8046 + 4*i is mcga.ovl export i (the far pointer table at mcga.ovl 001F)."
+[[global]]
+id = "ds:FE6C"
+name = "gRetraceInverted"
+why = "CalibrateRetrace (1A65:000E) sets it to 1 when 10000 samples of port 3DAh bit 3 read set more often than clear (image 0x1A71A); WaitFrames passes it to WaitRetrace (1A16 image 0x1A170), which with 1 swaps the order of its two waits, treating a clear bit as the retrace (src/E1DE4.ASM:24-48)."
+[[global]]
+id = "ds:80A6"
+name = "gDrawShapeFlipped"
+why = "Graphics driver export 24 (mcga.ovl 1639): the same argument list as gDrawShape (ds:80C2) but it writes each run pixel then decrements DI (mcga.ovl 17F7 to 17FA), drawing the shape mirrored left to right; reached through DrawShapeFlipped (1A29:004D). The driver table mapping: the graphics overlay's init (mcga.ovl 0BF2..0C2F) walks the request table at ds:802A (request +4, ds:8125 = 802A:212E), copies the game's seven import pointers into the driver and writes its own export pointers into the zero pairs that follow, so ds:8046 + 4*i is mcga.ovl export i (the far pointer table at mcga.ovl 001F)."
+[[global]]
+id = "ds:80D6"
+name = "gDrawShapeRemapped"
+why = "Graphics driver export 36 (mcga.ovl 279C): it draws a 4-bit packed shape translating each pixel through the remap buffer (mov bx,30Ch at mcga.ovl 28C2, xlatb at 2930 and 293B) that gSetRemapTable fills; reached through 1A29:008B, called right after gSetRemapTable (src/E0D1C.C:493-496, src/EOV4.C:638-642). The driver table mapping: the graphics overlay's init (mcga.ovl 0BF2..0C2F) walks the request table at ds:802A (request +4, ds:8125 = 802A:212E), copies the game's seven import pointers into the driver and writes its own export pointers into the zero pairs that follow, so ds:8046 + 4*i is mcga.ovl export i (the far pointer table at mcga.ovl 001F)."
+[[global]]
+id = "ds:80DA"
+name = "gDrawShapeFlippedRemapped"
+why = "Graphics driver export 37 (mcga.ovl 298A): like gDrawShapeRemapped it returns at once for a shape whose first byte is 0 and draws through the remap buffer at mcga.ovl 030C, and it also swaps the pixel nibbles through the table at mcga.ovl 00F6 (2BA8, 2BBD); its caller pairs it with DrawShapeFlipped for sprite < 0 (src/EOV4.C:642-649). The driver table mapping: the graphics overlay's init (mcga.ovl 0BF2..0C2F) walks the request table at ds:802A (request +4, ds:8125 = 802A:212E), copies the game's seven import pointers into the driver and writes its own export pointers into the zero pairs that follow, so ds:8046 + 4*i is mcga.ovl export i (the far pointer table at mcga.ovl 001F)."
+[[global]]
+id = "ds:809A"
+name = "gDrawShapeMasked"
+why = "Graphics driver export 21 (mcga.ovl 12F0): its extra word is a level compared with up to seven mask planes in page 4 (offsets 1F40h steps, mcga.ovl 14DE..1568); a covered pixel is replaced by the page 2 pixel (1576..157F), so the shape is drawn behind the masked layers. Reached through 1A29:0107, which has no caller. The driver table mapping: the graphics overlay's init (mcga.ovl 0BF2..0C2F) walks the request table at ds:802A (request +4, ds:8125 = 802A:212E), copies the game's seven import pointers into the driver and writes its own export pointers into the zero pairs that follow, so ds:8046 + 4*i is mcga.ovl export i (the far pointer table at mcga.ovl 001F)."
+[[global]]
+id = "ds:8096"
+name = "gDrawShapeMaskedFlipped"
+why = "Graphics driver export 20 (mcga.ovl 1006): the same level and page 4 mask test as gDrawShapeMasked (cs:[1FB] set from [bp+10h] at 1012, plane reads at 11FF and 1213) with a decrementing destination (dec di at 117C), the mirrored twin. Reached through 1A29:0148, which has no caller. The driver table mapping: the graphics overlay's init (mcga.ovl 0BF2..0C2F) walks the request table at ds:802A (request +4, ds:8125 = 802A:212E), copies the game's seven import pointers into the driver and writes its own export pointers into the zero pairs that follow, so ds:8046 + 4*i is mcga.ovl export i (the far pointer table at mcga.ovl 001F)."
+[[global]]
+id = "ds:80FE"
+name = "gErrorDialogRegion"
+why = "Its only reader is DisplayFileError (1C0E:0ADD), which pushes it for SetTextWindow (push [80FE] at image 0x1CC13, src/E1C0E.C:545) to switch to the error box's text window; 1 in the image and never written."
+[[global]]
+id = "ds:84A2"
+name = "gBiosVideoModes"
+why = "Seven words 4, 9, 0Dh, 13h, 13h, 7, 2 in the image: f1DDD_002D (1DDD:002D, INT 10h set mode) loads entry [graphics choice] into AX for INT 10h AH=00h, mode 4 for CGA, 9 Tandy, 0Dh EGA, 13h MCGA and VGA (src/E1DDD.C:10-12)."
+[[global]]
+id = "ds:FF46"
+name = "gVideoInRegs"
+why = "The union REGS input of the unit's int86 calls: 1DDD:0006 stores 0F00h (image 0x1DDD9) and 1DDD:002D the mode (0x1DE16) before int86(0x10, &gFF46, &gFF36) (src/E1DDD.C:35-48)."
+[[global]]
+id = "ds:FF36"
+name = "gVideoOutRegs"
+why = "The union REGS output of the unit's int86 calls (int86(0x10, &gFF46, &gFF36)); GetVideoMode returns its low byte, the AL of INT 10h AH=0Fh (image 0x1DDF5, src/E1DDD.C:37)."
+[[global]]
+id = "ds:323B"
+name = "gMonsterFrontPos"
+why = "16 bytes read as [orient * 4 + position] by 08E6:103D: {1,1,0,0, 0,1,0,1, 0,0,1,1, 1,0,1,0} is 1 for the two positions in a cell (0 NW, 1 NE, 2 SW, 3 SE) on the side the monster faces"

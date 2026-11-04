@@ -55,10 +55,10 @@ extern int gSoundOn;                  /*@ ds:80E6: nonzero unless sound was '4' 
                                          src/E1AAD.ASM:935) and written by the sound option
                                          (src/EOV1.ASM:3741). src/E1AAD.ASM:17 declares it BYTE
                                          and src/EOV1.ASM:115 WORD; int keeps the code */
-extern unsigned char g009E;           /*@ ds:009E: 1 on the Tandy path only (:436); the PC speaker
+extern unsigned char gTandySelected;           /*@ ds:009E: 1 on the Tandy path only (:436); the PC speaker
                                          path (:431) leaves it at its load value. PlaySound
                                          (src/E177D.C:182) gates the gTandyOn toggle on it. Purpose
-                                         unknown beyond that: the name it used to carry, g009E, is
+                                         unknown beyond that: the name it used to carry, gTandySelected, is
                                          inherited and is not evidence of a PC speaker mode (a placeholder name) */
 extern unsigned char gTandyOn;        /*@ ds:8A67: the driver select: 1 is Tandy, 0 the PC speaker
                                          (src/E1948.ASM:7, tested at :279, :379, :500, :527 and
@@ -90,7 +90,7 @@ extern unsigned char g3092;           /*@ ds:3092: start-up-completed flag: set 
 extern unsigned char g3056;           /*@ ds:3056: set to 1 at :402 right after InitOverlayCache and
                                          tested only by ShutdownGame (:470) before
                                          ShutdownOverlayCache; no other unit reads ds:3056 */
-extern int g80EA;                     /*@ ds:80EA: start-up flag set to 1 by main (:261), after
+extern int gKeyboardOptions;                     /*@ ds:80EA: start-up flag set to 1 by main (:261), after
                                          InstallKeyboard (:246), so the install copy (InstallKeyboard,
                                          1AAD:0718, src/E1AAD.ASM:793) takes the load-time value,
                                          not 1; the value 1 reaches kModifierState only through the
@@ -257,7 +257,7 @@ int AllocationFailure(void);
             gFn80BA(gFE68);
             break;
         }
-        g80EA = 1;
+        gKeyboardOptions = 1;
         gTextAttr1 = DEFAULT_TEXT_ATTR1;
         gTextAttr2 = DEFAULT_TEXT_ATTR2;
         SetNodeCallback(0, 0L);                /* clears the node callback ds:FC7C */
@@ -432,7 +432,7 @@ speaker:
 tandy:
     SoundDriverInstall();
     gTandyOn = 1;
-    g009E = 1;
+    gTandySelected = 1;
     SoundDriverResume();
 done:
     return 1;

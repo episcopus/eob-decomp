@@ -70,7 +70,7 @@ extern char gFontHeight; /*@ ds:8101 */  /* font cell height (src/E1A47.C) */
    hold no occurrence of the disp16 at all. The search does find six occurrences of the disp16 in
    eob/EOB.EXE: the five far calls `ff 1e 5a 80` (four in DrawTextFrame, one in DrawTileRun) and one
    `3e 40 5a 80` at file offset 0x1d4f0, which is not a store to the slot. */
-extern void (far *gDraw805A)(void far *src, int x, int y); /*@ ds:805A */
+extern void (far *gDrawCell8x8)(void far *src, int x, int y); /*@ ds:805A */
 /* ds:806A: a far routine called with (x1, y1, x2, y2, colour) like the line routine at ds:8062
    (src/E1A1F.C); ClearTextRegion and DrawTextLine fill rectangles through it. The value
    passed is a colour (gTextAttr2); the parameter is named `colour` (src/E082C.C:64). */
@@ -153,8 +153,8 @@ extern unsigned far *gFrameTable[]; /*@ ds:113B */
    the packet's call graph over the resident and overlay functions lists no direct call to it (packet.py calls()). It appears unused. QUIRK 1DE7:01FE: the
    second and third edge runs re-read the global gTextLeft (1DE7:01FE and 1DE7:021C) where the
    corners and the first and fourth runs use the local copy taken at 1DE7:00E9. The re-reads come
-   after four gDraw805A calls (:175-181) and the DrawTileRun call at :183; nothing in this unit
-   writes gTextLeft between them, but gDraw805A's far target is not identified, so the two values
+   after four gDrawCell8x8 calls (:175-181) and the DrawTileRun call at :183; nothing in this unit
+   writes gTextLeft between them, but gDrawCell8x8's far target is not identified, so the two values
    are equal only if that code does not write it: the read is presumably dead, not proven to be. */
 /*@ 1DE7:00C9 */ void DrawTextFrame(int style)
 {
@@ -172,13 +172,13 @@ extern unsigned far *gFrameTable[]; /*@ ds:113B */
     top = gTextTop;
     frame = gFrameTable[style];
     tile = (char far *)gTileBuf + (frame[0] << shift);
-    gDraw805A(tile, left - 1, top - 1);
+    gDrawCell8x8(tile, left - 1, top - 1);
     tile = (char far *)gTileBuf + (frame[1] << shift);
-    gDraw805A(tile, left + gTextWidth, top - 1);
+    gDrawCell8x8(tile, left + gTextWidth, top - 1);
     tile = (char far *)gTileBuf + (frame[2] << shift);
-    gDraw805A(tile, left - 1, top + gTextHeight);
+    gDrawCell8x8(tile, left - 1, top + gTextHeight);
     tile = (char far *)gTileBuf + (frame[3] << shift);
-    gDraw805A(tile, left + gTextWidth, top + gTextHeight);
+    gDrawCell8x8(tile, left + gTextWidth, top + gTextHeight);
     n = 4;
     n = DrawTileRun(frame, n, left, top - 1, gTextWidth, 1);
     n = DrawTileRun(frame, n, gTextLeft - 1, top, gTextHeight, 0);
@@ -203,7 +203,7 @@ extern unsigned far *gFrameTable[]; /*@ ds:113B */
     n = start;
     for (i = 0; i < count; i++) {
         tile = (char far *)gTileBuf + (pattern[n] << shift);
-        gDraw805A(tile, x, y);
+        gDrawCell8x8(tile, x, y);
         if (horizontal)
             x++;
         else

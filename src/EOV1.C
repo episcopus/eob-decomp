@@ -245,7 +245,7 @@ extern int gTextHeight; /*@ ds:FE60 */
 extern int gTextWidth; /*@ ds:FE62 */
 extern int gTextLeft; /*@ ds:FE64 */
 extern int gTextTop; /*@ ds:FE66 */
-extern char g5E20; /*@ ds:5E20 */
+extern char gNodeListChanged; /*@ ds:5E20 */
 
 extern void SetTextWindowAndClear(int region); /*@ 1DE7:00B6 */
 extern void f0D1C_0C21(int x, int y, int width, int height, int c, int d); /*@ 0D1C:0C21 */
@@ -941,7 +941,7 @@ int AskYesNo(int message);
    flags 0x1100, the definition pointer at +0x34 and its flag word at +0x38. Each node is drawn
    once through DrawListNode (ovl1:1551) and chained with ListAdd. At the end the pointer is hidden
    only around the final ClipRect (each node hides it itself inside DrawListNode); that ClipRect
-   clips the window to the screen (19F3:000E with its own edges), then it sets g5E20 (the key-list
+   clips the window to the screen (19F3:000E with its own edges), then it sets gNodeListChanged (the key-list
    walk then rebuilds its screen, src/E16A5.C), flushes the key buffer and clears gStatusLine again.
    Called by ovl1:0416 (menu 3), 097A (menu 4), 1691 (menu 6), 1ACD (menus 0 to 2) and 243A
    (menu 5). The menu records' header messages are edited in place before the call: menus 0 to 2 by
@@ -984,7 +984,7 @@ int AskYesNo(int message);
     LockHidePointer();
     ClipRect(gTextLeft, gTextTop, gTextLeft, gTextTop, gTextWidth, gTextHeight, 2, 0);
     LockShowPointer();
-    g5E20 = 1;
+    gNodeListChanged = 1;
     FlushKeyBuffer();
     gStatusLine = 0;
     return list;

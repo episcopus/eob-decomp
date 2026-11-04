@@ -5571,3 +5571,2226 @@ new = "CastLayOnHands"
 kind = "function"
 why = "the spell table ds:1344 (19-byte records, name pointer first) gives record 49, \"lay on hands\", 0EF3:21BC as its +05, the callback run when the spell is cast"
 date = "2026-11-03"
+
+[[rename]]
+id = "ds:8DD2=gItemsFlags"
+addr = "ds:8DD2"
+old = ""
+new = "gItemsFlags"
+kind = "global"
+why = "A view of the 14-byte ITEM.DAT records gItems (ds:8DD0) two bytes later, so its +0 is the record's flags byte (E0BD2.C ItemRecord +2), +1 the icon, +2 the item type and +4 the key; named after gItems as the view that starts at the flags."
+date = "2026-11-03"
+
+[[rename]]
+id = "1A29:008B=DrawShapeRemapped"
+addr = "1A29:008B"
+old = "f1A29_008B"
+new = "DrawShapeRemapped"
+kind = "function"
+why = "Like DrawShape (1A29:000F) but through the driver pointer ds:80D6; both callers first hand the colour callback ds:80D2 a 16-byte remap row: 0D1C:070F an ITEMRMP row for a flagged item icon, and ovl4:0D1B (through 082C:06C7) the hit-flash rows ds:1CD3/ds:1CE3 for a monster with m16 bit 1."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:3237=gTurnForType1To3"
+addr = "ds:3237"
+old = "gArg3237"
+new = "gTurnForType1To3"
+kind = "global"
+why = "The bytes {2, -1, 1} at ds:3238 seen with base ds:3237 so UpdateObjects (08E6:0CC8) can index them by monster type 1..3 for StepObjectOrient's turn: type 1 turns around (+2), 2 left (-1), 3 right (+1). Same bytes as gTurnForType5To6 (ds:3234), which is the base four bytes earlier."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:3234=gTurnForType5To6"
+addr = "ds:3234"
+old = "gArg3234"
+new = "gTurnForType5To6"
+kind = "global"
+why = "The same three bytes {2, -1, 1} at ds:3238 seen with base ds:3234, so UpdateObjects (08E6:0CC8) indexes them by monster type 5 and 6 and passes -1 or +1 to Obj0B94 (the side the wall follower keeps to). One object with gTurnForType1To3 (ds:3237)."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:321E=gDirSearchLeftFirst"
+addr = "ds:321E"
+old = "g321E"
+new = "gDirSearchLeftFirst"
+kind = "global"
+why = "An int Obj0430 (08E6:0430) flips whenever a monster's state exceeds 6; it selects which direction search table the step uses: 0 gDirSearchRight (ds:31FE, tries +1 before -1) and 1 gDirSearchLeft (ds:320E, tries -1 first)."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:31FE=gDirSearchRight"
+addr = "ds:31FE"
+old = "g31FE"
+new = "gDirSearchRight"
+kind = "global"
+why = "Eight words {7,-6,5,-4,3,-2,1,0} that Obj0430 (08E6:0430) adds to the preferred eighth-direction from index 7 down to 0, so the tries are d, d+1, d-1, d+2, d-2, d+3, d-3, d+4: the clockwise neighbour first. Selected when gDirSearchLeftFirst (ds:321E) is 0."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:320E=gDirSearchLeft"
+addr = "ds:320E"
+old = "g320E"
+new = "gDirSearchLeft"
+kind = "global"
+why = "Eight words {-7,6,-5,4,-3,2,-1,0}, the mirror of gDirSearchRight: Obj0430 (08E6:0430) tries d, d-1, d+1, d-2, d+2 and so on, the anticlockwise neighbour first. Selected when gDirSearchLeftFirst (ds:321E) is 1."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:31F2=gFrontLeftPosByDir"
+addr = "ds:31F2"
+old = "g31F2"
+new = "gFrontLeftPosByDir"
+kind = "global"
+why = "Four bytes {0,1,3,2} by orientation: BuildObjectFrameMask (08E6:017E) gives a monster at the centre position 4 the position g31F2[orient], which is the front-left quarter of the cell for that facing (N: 0 NW, E: 1 NE, S: 3 SE, W: 2 SW)."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:31F6=gPosSearchOrder"
+addr = "ds:31F6"
+old = "g31F6"
+new = "gPosSearchOrder"
+kind = "global"
+why = "Two rows of four bytes {0,1,2,3} and {0,2,1,3}, chosen by orient & 1 and XORed with the orientation by FindObjectFrameBit (08E6:0218): the order in which the four sub-cell positions are tried for a free one when a monster enters a cell."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:849A=gFrameWaitTicks"
+addr = "ds:849A"
+old = "gCount849A"
+new = "gFrameWaitTicks"
+kind = "global"
+why = "A 32-bit countdown the INT 1Ch handler decrements to zero (E1D8F.ASM 1D8F:0098); DrawViewFrame (ovl4:1F51) spins until it is zero, and 08E6:05EA, 0DCA and 0E48 set it to 8 or 1 around the attack and hit-flash frames to hold them on screen."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:F518=gDeferMonsterHits"
+addr = "ds:F518"
+old = "gF518"
+new = "gDeferMonsterHits"
+kind = "global"
+why = "Set to 1 by Obj16D6 (08E6:16D6), TurnUndead (0D1C:0A43) and 0EF3:18D8 before damaging several monsters; while set DamageObject (08E6:0FBE) only marks a visible monster (m16 bit 1) and leaves its death to 08E6:0E48, which shows the frame, kills the dead and clears it."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:1CD3=gHitFlashRemap"
+addr = "ds:1CD3"
+old = "g1CD3"
+new = "gHitFlashRemap"
+kind = "global"
+why = "A 16-byte colour row {0, 15 x 15}: RestoreObjectFlags (08E6:0DCA) passes it to the colour callback ds:80D2 when gGraphicsChoice is nonzero right after a monster is damaged, and ovl4:0D1B uses it for monsters with m16 bit 1, so every colour but 0 draws as 15 (a white hit flash)."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:1CE3=gHitFlashRemapCga"
+addr = "ds:1CE3"
+old = "g1CE3"
+new = "gHitFlashRemapCga"
+kind = "global"
+why = "The CGA counterpart of gHitFlashRemap: 08E6:0DCA and ovl4:0D1B pass it to ds:80D2 when gGraphicsChoice is 0 (cga.ovl, table ds:3074); its first four bytes {0,255,255,255} are the remap and the bytes from ds:1CE7 are the selection-frame colour string, which overlaps it."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:1991=gNearSideByDir"
+addr = "ds:1991"
+old = "g1991"
+new = "gNearSideByDir"
+kind = "global"
+why = "Four bytes {2,3,0,1} by direction, the side of the cell ahead that faces back toward the viewer: ovl4:044B caches g1991[gPartyDir] in gA9C6 to pick the front wall of each view cell, and Obj0B94 (08E6:0B94) reads gMaze[cell * 9 + g1991[dir]]. Same bytes as gOppositeSide (ds:547E)."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:32C3=gProjectileHitOrder"
+addr = "ds:32C3"
+old = "gTable32C3"
+new = "gProjectileHitOrder"
+kind = "global"
+why = "64 bytes read as [dir * 16 + position * 4] by Obj1775 (08E6:1775), which 08E6:17FD calls with a ds:DD2C projectile's cell, position (m06) and direction (m07): the order of sub-cell positions (centre 4 first) whose monster is hit when none stands at the exact position."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:329B=gTargetPosOrder"
+addr = "ds:329B"
+old = "gTable329B"
+new = "gTargetPosOrder"
+kind = "global"
+why = "32 bytes read as [gPartyDir * 8 + (who & 1) * 4] by Obj15B4 (08E6:15B4): for facing north the left front member tries positions 2,3,0,1 and the right one 3,2,1,0, the near-side quarter on its own side first; the melee target order of the two front members."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:32BB=gNearPosPair"
+addr = "ds:32BB"
+old = "gTable32BB"
+new = "gNearPosPair"
+kind = "global"
+why = "Eight bytes, two per party facing {2,3, 0,2, 0,1, 1,3}: the two sub-cell positions of the cell ahead nearest the party (facing north the south pair 2 and 3), which Obj16D6 (08E6:16D6) damages together with the centre position 4."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:324B=gAttackSideByDir"
+addr = "ds:324B"
+old = "gTable324B"
+new = "gAttackSideByDir"
+kind = "global"
+why = "16 bytes read as [gPartyDir * 4 + monster orient] by Obj10F3 (08E6:10F3); the value is (orient - gPartyDir + 2) & 3, the side of the party the monster attacks from, which selects one of the four 12-byte groups of gAttackTargetOrder. The comment's \"page\" index is gPartyDir."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:325B=gAttackTargetOrder"
+addr = "ds:325B"
+old = "gTable325B"
+new = "gAttackTargetOrder"
+kind = "global"
+why = "48 bytes, four groups of two six-member orders, which Obj10F3 (08E6:10F3) scans for the first living member to attack: from the front {1,0,3,2,5,4} or {0,1,2,3,4,5}, from behind {4,5,2,3,0,1} or {5,4,3,2,1,0}, the rank nearest the attacker first."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:328B=gRightSidePosByDir"
+addr = "ds:328B"
+old = "gTable328B"
+new = "gRightSidePosByDir"
+kind = "global"
+why = "16 bytes read as [orient * 4 + position] by Obj10F3 (08E6:10F3) to choose a half of the target order: the value is 1 exactly for the two positions on the monster's right for that facing (north: 1 and 3, east: 2 and 3, south: 0 and 2, west: 0 and 1)."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:8492=gGameTicks"
+addr = "ds:8492"
+old = "g8492"
+new = "gGameTicks"
+kind = "global"
+why = "The 32-bit counter the INT 1Ch handler increments only while ds:849E bit 1 is set (E1D8F.ASM 1D8F:006E), so animations that clear the bit pause it; RunEffects (1414:04E7) compares effect expiries with it and the level timer deadline (ds:F512) is set from it (ovl3:0A7C, 08E6:1410)."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:F51B=gLevelTimerMode"
+addr = "ds:F51B"
+old = "gF51B"
+new = "gLevelTimerMode"
+kind = "global"
+why = "The first byte of a level script header (LoadMapScreen ovl3:0A7C stores script[0]); Obj1410 (08E6:1410) fires the level's timed script on 1 when gGameTicks passes gDeadline, on 2 when gStepCount reaches ds:FB32, on 3 on either, never otherwise."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:FB32=gLevelTimerSteps"
+addr = "ds:FB32"
+old = "gFB32"
+new = "gLevelTimerSteps"
+kind = "global"
+why = "A word from the level script header (ovl3:0A7C); Obj1410 (08E6:1410) fires the timed level script in modes 2 and 3 once gStepCount (the party's steps, MoveParty) reaches it, then clears gStepCount."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:3220=gBossSpellModes"
+addr = "ds:3220"
+old = "g3220"
+new = "gBossSpellModes"
+kind = "global"
+why = "Three bytes {2,10,11} indexed by a 1d4-1 roll in Obj0765 case 21 (08E6:0765) and passed as the StartCellEffect mode; type 21 (0x15) is the monster whose death 08E6:0EC3 answers with the winner screen and ShutdownGame, so these are the final enemy's spells."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:3223=gBossSpellSounds"
+addr = "ds:3223"
+old = "g3223"
+new = "gBossSpellSounds"
+kind = "global"
+why = "Three sound numbers {0x62,0x53,0x40} played through PlaySoundAtCell in Obj0765 case 21 (08E6:0765) with the spell gBossSpellModes (ds:3220) picks by the same roll; type 21 is the monster whose death ends the game (08E6:0EC3)."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:3226=gSpellSequenceModes"
+addr = "ds:3226"
+old = "g3226"
+new = "gSpellSequenceModes"
+kind = "global"
+why = "Bytes indexed by the monster's remaining action count m19 in Obj0765 case 14 (08E6:0765), passed to Obj073F as the StartCellEffect spell mode, so a type-14 monster casts a fixed sequence (6, 5, 2, 2, then 0) as its count runs down."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:322F=gSpellSequenceSounds"
+addr = "ds:322F"
+old = "g322F"
+new = "gSpellSequenceSounds"
+kind = "global"
+why = "Bytes indexed by the monster's remaining action count m19 in Obj0765 case 14 (08E6:0765) and played through PlaySoundAtCell before the spell gSpellSequenceModes (ds:3226) names; index 8 reads ds:3237, the next table."
+date = "2026-11-03"
+
+[[rename]]
+id = "0D1C:0006=IsCellInView"
+addr = "0D1C:0006"
+old = "f0D1C_0006"
+new = "IsCellInView"
+kind = "function"
+why = "Looks the cell up in the first 15 words of ds:A9C8, the view cells InitViewSlots (ovl4:0000) fills from gPartyCell, and sets the redraw flag gDF4C when found; callers pass cells (MoveObjectToId 08E6:0297, DamageObject 08E6:0FBE, 1414:0CE7 with obj->id)."
+date = "2026-11-03"
+
+[[rename]]
+id = "08E6:00C3=AlertMonsterToParty"
+addr = "08E6:00C3"
+old = "Obj00C3"
+new = "AlertMonsterToParty"
+kind = "function"
+why = "For a monster of type other than 7..10 with hit points, when Distance to gPartyCell is under 4 and the party is not behind it (or is within 2), it sets type 0 and its target cell m10 to gPartyCell, which 08E6:0AB8 then walks toward."
+date = "2026-11-03"
+
+[[rename]]
+id = "08E6:03FE=ChasePartyIfAttacked"
+addr = "08E6:03FE"
+old = "Obj03FE"
+new = "ChasePartyIfAttacked"
+kind = "function"
+why = "Acts on m16 bit 0, which RollToHit (0DE8:0007) and DamageObject (08E6:0FBE) set when a monster is attacked: unless type 10, a type-8 monster wakes all type-8 monsters (ClearType8Objects), any other gets type 0 and target cell gPartyCell."
+date = "2026-11-03"
+
+[[rename]]
+id = "08E6:0430=StepMonsterToward"
+addr = "08E6:0430"
+old = "Obj0430"
+new = "StepMonsterToward"
+kind = "function"
+why = "Moves a monster one step toward the cell `value` (its target m10, from 08E6:0AB8): DirectionFromPoints picks the direction, gDirSearchRight/Left order the alternatives, TurnObject(obj, StepCell(...)) enters the first open cell; when the party is in the way it only turns to face it."
+date = "2026-11-03"
+
+[[rename]]
+id = "08E6:05EA=TryMonsterMelee"
+addr = "08E6:05EA"
+old = "Obj05EA"
+new = "TryMonsterMelee"
+kind = "function"
+why = "Returns 0 unless the cell ahead is gPartyCell; then a monster at the front of its cell (Obj103D) attacks every other call (m16 bit 2), showing its attack frames (m0A 0xfe/0xff) when visible and running 08E6:10F3, and one at the back repositions (SetObjectFrameFromId)."
+date = "2026-11-03"
+
+[[rename]]
+id = "08E6:073F=LaunchMonsterSpell"
+addr = "08E6:073F"
+old = "Obj073F"
+new = "LaunchMonsterSpell"
+kind = "function"
+why = "Calls StartCellEffect (0EF3:097B), which fills a free ds:DD2C projectile record from gEffectModes[mode], with who 0xff and the monster's cell, position and facing; Obj0765 passes spell modes (9, gBossSpellModes, gSpellSequenceModes)."
+date = "2026-11-03"
+
+[[rename]]
+id = "08E6:0765=TryMonsterRangedAttack"
+addr = "08E6:0765"
+old = "Obj0765"
+new = "TryMonsterRangedAttack"
+kind = "function"
+why = "Acts only for a type with m0E bit 6 and charges left (m19, delay m18): the party must be straight ahead within 3 cells with open walls and no monster between; then by type it casts spells, throws item 0x3c, mind-blasts (\"paralyzed\") or casts cause serious wounds. Returns 1 when it acted."
+date = "2026-11-03"
+
+[[rename]]
+id = "08E6:0AB8=UpdateHuntingMonster"
+addr = "08E6:0AB8"
+old = "Obj0AB8"
+new = "UpdateHuntingMonster"
+kind = "function"
+why = "The type-0 case of UpdateObjects (08E6:0CC8): tries TryMonsterRangedAttack (0765), then TryMonsterMelee (05EA), else steps toward its target cell m10 with 08E6:0430 and, for a type with m0E bit 3, tries the melee again; m10 is the party cell set by every alert."
+date = "2026-11-03"
+
+[[rename]]
+id = "08E6:0B94=StepMonsterAlongWall"
+addr = "08E6:0B94"
+old = "Obj0B94"
+new = "StepMonsterAlongWall"
+kind = "function"
+why = "The type 5 and 6 case of UpdateObjects with arg -1 or +1 (gTurnForType5To6): turns into the side `arg` when that cell's near wall lets monsters pass (gWallTypeFlags bit 2), else steps forward and turns away when blocked; the state field remembers whether it just turned."
+date = "2026-11-03"
+
+[[rename]]
+id = "08E6:0CA6=TickMonsterTimer"
+addr = "08E6:0CA6"
+old = "Obj0CA6"
+new = "TickMonsterTimer"
+kind = "function"
+why = "Counts the monster's timer (+B, set from Obj131D's timer argument) down by one and, when it reaches zero, sets type 0; UpdateObjects (08E6:0CC8) runs it for types 7 and 10."
+date = "2026-11-03"
+
+[[rename]]
+id = "08E6:0E48=FinishDeferredHits"
+addr = "08E6:0E48"
+old = "Obj0E48, f08E6_0E48"
+new = "FinishDeferredHits"
+kind = "function"
+why = "Ends a gDeferMonsterHits batch: DrawViewFrame(1) shows the marked monsters in the hit-flash colours, then it clears m16 bit 1, kills each marked monster with no hit points through 08E6:0EC3, and clears gDeferMonsterHits; called by 08E6:16D6, TurnUndead and CastConeOfCold."
+date = "2026-11-03"
+
+[[rename]]
+id = "08E6:0EC3=KillMonster"
+addr = "08E6:0EC3"
+old = "Obj0EC3"
+new = "KillMonster"
+kind = "function"
+why = "The monster's death: drops m12 (on a 1d2) and m14 into its cell's item list (gMaze +5) through CopyItemToFreeSlot and InsertListItem, gives the party gMonsterTypes m13 experience (AddPartyExperience), moves it to cell 0, and for type 0x15 shows WinnerPanel and ShutdownGame."
+date = "2026-11-03"
+
+[[rename]]
+id = "08E6:103D=IsMonsterAtFront"
+addr = "08E6:103D"
+old = "Obj103D"
+new = "IsMonsterAtFront"
+kind = "function"
+why = "Returns 1 when the monster stands at the centre (position 4) or gFrontPosByDir (ds:323B) says its position is on the side it faces; TryMonsterMelee (08E6:05EA) attacks only when it is, and otherwise moves the monster forward in its cell."
+date = "2026-11-03"
+
+[[rename]]
+id = "08E6:106B=RollMonsterToHit"
+addr = "08E6:106B"
+old = "Obj106B"
+new = "RollMonsterToHit"
+kind = "function"
+why = "The monster's to-hit roll against member `who`: 1d20 (20 always hits), less 2 for effectFlags bit 9 and 1 for gFBD2 bit 5, against SubtractInts(gMonsterTypes m01, the member's armorClass); the monster counterpart of RollToHit (0DE8:0007). Called by 08E6:10F3 and 0EF3:0A3F."
+date = "2026-11-03"
+
+[[rename]]
+id = "08E6:10F3=ResolveMonsterMelee"
+addr = "08E6:10F3"
+old = "Obj10F3"
+new = "ResolveMonsterMelee"
+kind = "function"
+why = "A monster's melee on the party: picks the attacked side (gAttackSideByDir) and member order (gAttackTargetOrder), takes the first living member, rolls its m03 attacks with RollMonsterToHit and m04 dice, then DamageCharacter, poison and paralysis by m0E bits. Called by 08E6:05EA."
+date = "2026-11-03"
+
+[[rename]]
+id = "08E6:131D=InitMonster"
+addr = "08E6:131D"
+old = "Obj131D"
+new = "InitMonster"
+kind = "function"
+why = "Clears monster record `index` (memset 0x1c) and, unless the cell is 0, fills type, unit, position, facing, mode, timer, item drops and charges, rolls hit points as gMonsterTypes m02 d8, and places it with MoveObjectToId; called by the spawner 08E6:1505 and LoadMapScreen (ovl3:0A7C)."
+date = "2026-11-03"
+
+[[rename]]
+id = "08E6:1410=TickLevelScriptTimer"
+addr = "08E6:1410"
+old = "Obj1410"
+new = "TickLevelScriptTimer"
+kind = "function"
+why = "Called every RunEffects pass (1414:04E7): by gLevelTimerMode it fires when gGameTicks passes gDeadline or gStepCount reaches gLevelTimerSteps, runs the level script RunCellScript(0, 0x20), kills a distant monster when all 29 slots are used, and re-arms the deadline."
+date = "2026-11-03"
+
+[[rename]]
+id = "08E6:15B4=FindMeleeTarget"
+addr = "08E6:15B4"
+old = "Obj15B4"
+new = "FindMeleeTarget"
+kind = "function"
+why = "Returns the index of the monster member `who` hits in the cell: the centre one first, else the first position gTargetPosOrder gives for gPartyDir and the member's side (who & 1), else -1; called by ApplyItemAttack (0DE8:0359, who above 1 is refused) and CastMeleeEffect (0EF3:0E1B)."
+date = "2026-11-03"
+
+[[rename]]
+id = "08E6:1634=DamageMonsterWithSave"
+addr = "08E6:1634"
+old = "Obj1634"
+new = "DamageMonsterWithSave"
+kind = "function"
+why = "Rolls count d sides + bonus damage for monster `index`; with `flag` a 1d20 save against GetIndexedByte(0, gMonsterTypes m02, 4) halves it (flag 1) or cancels it, then unless 0D1C:0BAB's percentage roll rejects the monster, DamageObject applies it. Called by 08E6:16D6."
+date = "2026-11-03"
+
+[[rename]]
+id = "08E6:16D6=DamageNearRowMonsters"
+addr = "08E6:16D6"
+old = "Obj16D6"
+new = "DamageNearRowMonsters"
+kind = "function"
+why = "Lists the monsters in cell `key`, sets gDeferMonsterHits, damages the centre one and the two in gNearPosPair[gPartyDir] (the positions nearest the party) through DamageMonsterWithSave, and finishes with FinishDeferredHits; called by the spell code 0EF3:0F99."
+date = "2026-11-03"
+
+[[rename]]
+id = "08E6:1775=FindMonsterNearPos"
+addr = "08E6:1775"
+old = "Obj1775"
+new = "FindMonsterNearPos"
+kind = "function"
+why = "Returns the monster in cell `key` at position `field`, else the one whose position comes first in gProjectileHitOrder[dir * 16 + field * 4] (`flags` is the projectile direction m07 that 08E6:17FD passes), else -1; called by 08E6:17FD."
+date = "2026-11-03"
+
+[[rename]]
+id = "08E6:189D=IsMonsterAtPos"
+addr = "08E6:189D"
+old = "Obj189D"
+new = "IsMonsterAtPos"
+kind = "function"
+why = "Returns 1 when the monster's cell is `key` and its position is `field` or the centre 4; used by 08E6:17FD and TestDDEffect (1414:0172) to find the monster a projectile at that cell and position strikes."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:54F2=gSelectFrameIndex"
+addr = "ds:54F2"
+old = "g54F2"
+new = "gSelectFrameIndex"
+kind = "global"
+why = "The index into the rectangle table ds:5482 that DrawRowList (0D1C:0454) currently outlines in cycling colours, -1 when none (initial value 0xFFFF); a new index erases the old frame in colour 0xC."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:54F4=gSelectFrameStep"
+addr = "ds:54F4"
+old = "g54F4"
+new = "gSelectFrameStep"
+kind = "global"
+why = "The position in the colour string ds:1CE7 that DrawRowList (0D1C:0454) draws the selection frame with next; it advances once per tick and wraps to 0 at the string's NUL."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:FC5E=gSelectFrameTick"
+addr = "ds:FC5E"
+old = "gFC5E"
+new = "gSelectFrameTick"
+kind = "global"
+why = "The 32-bit tick (gTicks, ds:848A) after which DrawRowList (0D1C:0454) redraws the selection frame in the next colour; set to gTicks on a new index and gTicks + 1 after each redraw."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:1CE7=gSelectFrameColours"
+addr = "ds:1CE7"
+old = "g1CE7, gBuf1CE7"
+new = "gSelectFrameColours"
+kind = "global"
+why = "A NUL-terminated colour string {15, 0xB0..0xBC, 12, ...} DrawRowList (0D1C:0454) cycles the selection frame through; ovl2 copies another one in from ds:65EA for the EGA choice (EOV2.C strcpy). It starts four bytes into gHitFlashRemapCga (ds:1CE3)."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:54F6=gConSaveBonus"
+addr = "ds:54F6"
+old = "g54F6"
+new = "gConSaveBonus"
+kind = "global"
+why = "Bytes indexed by constitution {0,0,0,0,1,1,1,2,2,2,2,3,3,3,4,4,4,4,5,5}, one point per 3.5 points of constitution, which f0D1C_059B (0D1C:059B) subtracts from the saving throw target for certain races and save kinds."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:A9F5=gItemTypesClasses"
+addr = "ds:A9F5"
+old = "gA9F5"
+new = "gItemTypesClasses"
+kind = "global"
+why = "A view of the 16-byte ITEMTYPE.DAT records gItemTypes (ds:A9F0) five bytes later: its +0 is ItemType m05, the class mask ItemClassAllowed (0BD2:11FD) ANDs with g1231[classIndex], and its +9 is m0E, the item kind (0D1C:07DB, 08B1); named after gItemTypes as the view starting at the class mask."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:5482=gSelectFrameRects"
+addr = "ds:5482"
+old = "gRows5482"
+new = "gSelectFrameRects"
+kind = "global"
+why = "Rectangles of four words (x1, y1, x2, y2) that DrawRowList (0D1C:0454) outlines with DrawBox: the six party boxes on the right (x 0xB7..0x13F, three rows) and further boxes for the character panel (overlay 0 calls it with indices from 6 and 10)."
+date = "2026-11-03"
+
+[[rename]]
+id = "0D1C:059B=RollMemberSave"
+addr = "0D1C:059B"
+old = "f0D1C_059B"
+new = "RollMemberSave"
+kind = "function"
+why = "A character's saving throw of kind `attack`: target GetIndexedByte(class slot, level, attack), less gConSaveBonus[constitution] for some races and kinds, and returns 1 when 1d20 reaches it; ApplyStatusEffect (0DE8:101A) skips the effect on 1 and HalveSaveDamageA uses it."
+date = "2026-11-03"
+
+[[rename]]
+id = "0D1C:08B1=HoldsHolySymbol"
+addr = "0D1C:08B1"
+old = "f0D1C_08B1"
+new = "HoldsHolySymbol"
+kind = "function"
+why = "Returns 1 when hand slot 0 or 1 holds an item whose item type kind (gItemTypes m0E through the ds:A9F5 view) is 6; its only caller 0D1C:0903 uses it to pick the member who turns undead, which in the game needs a holy symbol [H]."
+date = "2026-11-03"
+
+[[rename]]
+id = "0D1C:0903=FindBestUndeadTurner"
+addr = "0D1C:0903"
+old = "f0D1C_0903"
+new = "FindBestUndeadTurner"
+kind = "function"
+why = "Over the members passing MemberIs(who, 0xD) that HoldsHolySymbol, takes the level of class slot 2 or, failing that, slot 4 minus 2, and returns (member << 8) + best level; TurnUndead (0D1C:0A43) uses the level as the turning column and the member's name in its message."
+date = "2026-11-03"
+
+[[rename]]
+id = "0D1C:09CB=TryTurnMonster"
+addr = "0D1C:09CB"
+old = "f0D1C_09CB"
+new = "TryTurnMonster"
+kind = "function"
+why = "Reads GetClampedTableByte(turning level, gMonsterTypes m19): -1 destroys the monster (DamageObject 100), a roll at or above the value turns it (m16 bit 3, facing away from gPartyCell) and returns 1; else 0. Called per undead monster by TurnUndead (0D1C:0A43)."
+date = "2026-11-03"
+
+[[rename]]
+id = "0D1C:0BEB=IsWeaponDamageHalved"
+addr = "0D1C:0BEB"
+old = "f0D1C_0BEB"
+new = "IsWeaponDamageHalved"
+kind = "function"
+why = "Returns 1 when the target monster type's m0E has bit 2 and the weapon's item type class mask (gItemTypesClasses m00, that is gItemTypes m05) lacks bit 2; ApplyItemAttack (0DE8:0359) then halves the damage."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:115F=gClassSlotCount"
+addr = "ds:115F"
+old = "g115F"
+new = "gClassSlotCount"
+kind = "global"
+why = "Bytes indexed by classIndex {1,1,1,1,1,1,2,2,2,3,2,2,3,2,2}, the number of class slots of each class (single classes 1, multi-classes 2 or 3); AddExperience (0DE8:0B45) divides the experience by it before sharing it among the slots."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:552F=gLauncherAmmoType"
+addr = "ds:552F"
+old = "g552F"
+new = "gLauncherAmmoType"
+kind = "global"
+why = "Bytes indexed by an item type that UseItemByKind (0DE8:05BB) uses as the type of item to fire: kind 0x10 is taken from the hands or the quiver slot items[16], and item type 7 plays sound 0x1A; launcher item types map to their ammunition item type."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:553E=gArmourSlots"
+addr = "ds:553E"
+old = "g553E"
+new = "gArmourSlots"
+kind = "global"
+why = "Four item slot numbers {17, 0, 1, 18} that ComputeArmourClass (0DE8:0D5E) walks to add the armour value m04 and bonus of the items there; the hand slots 0 and 1 count only item type 0x1B."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:FB78=gAnimWallPhase"
+addr = "ds:FB78"
+old = "gFB78"
+new = "gAnimWallPhase"
+kind = "global"
+why = "Flipped by CheckFarTable (1414:04B0, a timed effect), which sets gDF4C when a view cell's wall byte is 0x34; ovl4:1D20, the drawer of wall type 0x34, picks its sprite cells by idx ^ gFB78, so it is that wall's two-frame animation phase."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:5CAA=gBlinkPhase"
+addr = "ds:5CAA"
+old = "g5CAA"
+new = "gBlinkPhase"
+kind = "global"
+why = "The phase BlinkSelected (1414:0000, timed effect 0) flips each period: on, it redraws the member being moved with gIconTable set to 0xFF (hidden); off, it redraws the member normally."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:5CAB=gNextPosByDir"
+addr = "ds:5CAB"
+old = "g5CAB"
+new = "gNextPosByDir"
+kind = "global"
+why = "16 bytes read as [dir * 4 + position] by MoveDDEffects (1414:0285) for a projectile: the sub-cell position it moves to, bit 7 meaning it enters the next cell (StepCell); for north 0 and 1 go to 2 and 3 of the next cell, 2 and 3 to 0 and 1 of the same cell."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:FB45=gLevelPalettePending"
+addr = "ds:FB45"
+old = "gFB45"
+new = "gLevelPalettePending"
+kind = "global"
+why = "LoadMapScreen (ovl3:0A7C) sets it to 1 at its end after loading the level's .PAL, StartupAlloc (07A9:0024) clears it, and DrawViewFrame (ovl4:1F51) in VGA mode (gGraphicsChoice 3) loads the palette gFE68 through ds:80BA and clears it: a new level's palette waiting to be applied on the next view frame."
+date = "2026-11-03"
+
+[[rename]]
+id = "082C:063B=DrawShapeClipped"
+addr = "082C:063B"
+old = "DrawRegion000F"
+new = "DrawShapeClipped"
+kind = "function"
+why = "Takes screen coordinates, rounds x even, subtracts the region's origin (gRegions[region].left * 8, .top) and calls DrawShape (1A29:000F); every view drawer in overlay 4 (items ovl4:0AD0, decorations ovl4:1091, doors ovl4:1411) passes absolute view x,y and region 5, the clip region ComputeViewSpan fits."
+date = "2026-11-03"
+
+[[rename]]
+id = "082C:0681=DrawShapeClippedFlipped"
+addr = "082C:0681"
+old = "DrawRegion004D"
+new = "DrawShapeClippedFlipped"
+kind = "function"
+why = "Same as DrawShapeClipped but through front end 1A29:004D; every caller uses it for the mirrored case: ovl4:1091 when the decoration offset is negative (x = 0xb0 - x - width), ovl4:0D1B when the monster frame is negative, ovl4:1411 for the mirrored second half of the level 4..6 door, and 0EF3 (src/E0EF3.C:1059) for a negative icon index drawn by its absolute value."
+date = "2026-11-03"
+
+[[rename]]
+id = "082C:06C7=DrawShapeClippedRemapped"
+addr = "082C:06C7"
+old = "DrawRegion008B"
+new = "DrawShapeClippedRemapped"
+kind = "function"
+why = "Like DrawShapeClipped through front end 1A29:008B; ovl4:0D1B uses it only when the monster's m16 bit 1 is set, right after gFn80D2 (ds:80D2) is given the colour row ds:1CD3 or ds:1CE3, and RestoreObjectFlags (08E6:0DCA) sets that bit just for one DrawViewFrame(1): a one-frame colour-remapped (flash) draw."
+date = "2026-11-03"
+
+[[rename]]
+id = "082C:070D=DrawShapeClippedRemapFlipped"
+addr = "082C:070D"
+old = "DrawRegion00C9"
+new = "DrawShapeClippedRemapFlipped"
+kind = "function"
+why = "Like DrawShapeClippedRemapped through front end 1A29:00C9 (and without rounding x even); ovl4:0D1B picks it instead of DrawShapeClippedRemapped exactly when the monster frame is negative, the same sign test that picks DrawShapeClippedFlipped over DrawShapeClipped."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:A9C6=gViewFrontSide"
+addr = "ds:A9C6"
+old = "gA9C6"
+new = "gViewFrontSide"
+kind = "global"
+why = "Set at ovl4:044B to g1991[gPartyDir], whose bytes are 2,3,0,1, i.e. (gPartyDir + 2) & 3: the wall side of each visible cell that faces the party; gEF6A[i][gA9C6] is then the wall type drawn as a front wall, and E0DE8:349-351 opens a door by bumping side gA9C6 and its opposite gA9C6 ^ 2. The src/E122E.C:104 comment calling it a member row is wrong."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:A9C8=gViewCellIds"
+addr = "ds:A9C8"
+old = "gA9C8, gAngleA9C8"
+new = "gViewCellIds"
+kind = "global"
+why = "InitViewSlots (ovl4:0000) stores (base + gHead199D[dir * 18 + i]) & 0x3FF for each of the 18 visible slots, base being gPartyCell (DrawViewFrame passes it); 0D1C:0006 searches its first 15 words for a cell to request a redraw, 0EF3:00CD searches it for a target cell, ovl4:19C4 compares projectile cells with it. Cell numbers, not headings."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:1A2B=gViewRelativePos"
+addr = "ds:1A2B"
+old = "g1A2B"
+new = "gViewRelativePos"
+kind = "global"
+why = "Bytes 0,1,2,3 / 2,0,3,1 / 3,2,1,0 / 1,3,0,2 indexed gPartyDir * 4 + (pos & 3): a rotation of the four positions within a cell into the party's frame; ovl4:0AD0 (items), ovl4:0D1B (monsters, obj->frame) and ovl4:19C4 (projectiles) use the result to pick the per-slot screen position, and E0DE8:290 to pick the member hit."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:1A09=gViewSlotRow"
+addr = "ds:1A09"
+old = "g1A09"
+new = "gViewSlotRow"
+kind = "global"
+why = "18 bytes 0 x7, 1 x5, 2 x3, 3 x3 for the 18 visible slots, whose cell offsets in gHead199D are 3, 2, 1 and 0 rows ahead of the party: the slot's row counted from the farthest (0) to the party's own row (3); it indexes the per-row tables g6FBE, g6FA8, g6F98, g70F0 and the door shape choice col = base + 2 - row (ovl4:1411)."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:1D61=gViewPosX"
+addr = "ds:1D61"
+old = "g1D61"
+new = "gViewPosX"
+kind = "global"
+why = "Interleaved {x, y} word pairs, five per view slot (index (slot * 5 + pos) * 2, pos 0..3 the cell positions and 4 the centre): ovl4:0AD0 and ovl4:0D1B take x from here plus 0x58 and y from ds:1D63 (the same pairs two bytes on); ovl4:1411 and 0EF3 use pos 4 as the slot's centre x offset. One table with ds:1D63 (gViewPosY)."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:18BF=gWallDecorHead"
+addr = "ds:18BF"
+old = "gTable18BF"
+new = "gWallDecorHead"
+kind = "global"
+why = "Per wall type: RegisterWallObject (ovl3:01C8) stores gF538 + 1, the 1-based index of the type's first 0x34-byte decoration record in gViewWalls, or 0 when it has none; ovl4:1091 walks gViewWalls from it, ovl4:1411 draws the door button when it is -1 (the static bytes are -1 for door types 3..7 and 13..17), 122E:05DF hit-tests the decoration it names."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:A99C=gDoorButtons"
+addr = "ds:A99C"
+old = "gA99C"
+new = "gDoorButtons"
+kind = "global"
+why = "Six records {far shape, x, y} that LoadMapCells (ovl3:03A2) cuts from the DOOR screen beside gFB5E's door shapes; DrawSlotDoor (ovl4:1411) draws gA99C[col] next to the door when gTable18BF is -1, and 122E:04CA hit-tests its rectangle (grown by 4) and on a hit plays sound 6 and toggles: a clickable button drawn by a door."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:EF6A=gViewCells"
+addr = "ds:EF6A"
+old = "gEF6A"
+new = "gViewCells"
+kind = "global"
+why = "InitViewSlots (ovl4:0000) points entry i at &gMaze[cell * 9] for each of the 18 visible cell ids it stores in gAngleA9C8; the drawers read the cell's wall bytes (gEF6A[i][side]), its +4 monster bits and +5 item list head, and 1414:04B0 scans the 18 entries for wall type 0x34."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:FB5E=gDoorShapes"
+addr = "ds:FB5E"
+old = "gFB5E"
+new = "gDoorShapes"
+kind = "global"
+why = "Six far shape pointers that LoadMapCells (ovl3:03A2) cuts from the DOOR overlay screen (LoadOverlayScreen(\"DOOR\")) through the ds:6840 rectangles; DrawSlotDoor (ovl4:1411) draws gFB5E[g716E[wall] + 2 - row], three sizes per door graphic, and FreeSlotTables (ovl3:031A) frees them."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:1879=gWallVmpSet"
+addr = "ds:1879"
+old = "gTable1879"
+new = "gWallVmpSet"
+kind = "global"
+why = "Per wall type (RegisterWallObject ovl3:01C8 fills it): the 1-based block set in the level's .VMP/.EMP file loaded into gBufF43E (ovl3:0A7C sprintf \"%s.%s\" VMP/EMP); CopyViewColumn (ovl4:02A5) reads blocks at (set - 1) * 0x35E bytes + 0x294, and 0 means nothing is drawn (ComputeViewSpan skips it, ovl4:0AD0 and ovl4:19C4 draw items behind it)."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:199D=gViewCellOffsets"
+addr = "ds:199D"
+old = "gHead199D"
+new = "gViewCellOffsets"
+kind = "global"
+why = "Four rows of 18 signed cell offsets, one row per facing (InitViewSlots ovl4:0000 indexes row * 18): facing north the row is -99..-93, -66..-62, -33..-31, -1, 0, 1, the cells 3, 2, 1 and 0 rows ahead on a 32-wide map; added to gPartyCell (masked 0x3FF) they give the visible cells."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:6B82=gSpanWallClip"
+addr = "ds:6B82"
+old = "g6B82"
+new = "gSpanWallClip"
+kind = "global"
+why = "Per view slot, 18 signed bytes, one per visible cell (index slot * 18 + i), read by ComputeViewSpan (ovl4:0097) when cell i's front wall is not a door (gWallTypeFlags bit 3 clear) and has blocks (gWallVmpSet nonzero): a positive value caps the right column, a negative one raises the left, -41 empties the span, -40 leaves it."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:6CC6=gSpanDoorClip"
+addr = "ds:6CC6"
+old = "g6CC6"
+new = "gSpanDoorClip"
+kind = "global"
+why = "Per view slot and visible cell (index (slot * 18 + i) * 2) a {left, right} column pair that ComputeViewSpan (ovl4:0097) intersects with the span when cell i's front wall has gWallTypeFlags bit 3, the bit DrawViewSlots tests before calling the door drawer ovl4:1411."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:6F4E=gDoorClipY"
+addr = "ds:6F4E"
+old = "g6F4E"
+new = "gDoorClipY"
+kind = "global"
+why = "The row table SetRegionColumnExtent (ovl4:021E) reads the clip top and bottom lines from, at gDoorClipTopRow[level] + gViewSlotRow[slot] and gDoorClipBottomRow[level] + row; its only caller is the door drawer ovl4:1411, which clips region 5 vertically to the door before drawing (values 32, 24, 15 and 58, 72, 96, 120 lines)."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:6F6D=gDoorClipTopRow"
+addr = "ds:6F6D"
+old = "g6F6D"
+new = "gDoorClipTopRow"
+kind = "global"
+why = "Indexed by gFBC8 (the current level 1..12, see LoadMapScreen ovl3:0A7C) in SetRegionColumnExtent (ovl4:021E): the start in gDoorClipY of the door clip's top lines (0, 4, 8, 12 by level group). It holds 12 bytes, so level 12 reads ds:6F79[0] (28)."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:6F79=gDoorClipBottomRow"
+addr = "ds:6F79"
+old = "g6F79"
+new = "gDoorClipBottomRow"
+kind = "global"
+why = "Indexed by gFBC8 (the current level) in SetRegionColumnExtent (ovl4:021E): the start in gDoorClipY of the door clip's bottom lines (16, 24, 20 by level group); its first byte also serves as level 12's entry of gDoorClipTopRow (ds:6F6D)."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:ADB0=gViewBlockMap"
+addr = "ds:ADB0"
+old = "gViewBufADB0"
+new = "gViewBlockMap"
+kind = "global"
+why = "0x14A words (22 columns by 15 rows of 8-pixel blocks, the 176 by 120 view) filled by ovl4:044B with block words copied from the .VMP data (bit 0x4000 marks a mirrored block, ovl4:036A); DrawTile (17A6:03E7) loads 0ADB0h into BX and draws the view from it with the block graphics gSegDCA6. Block indices, not pixels."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:1995=gRightSideByDir"
+addr = "ds:1995"
+old = "g1995"
+new = "gRightSideByDir"
+kind = "global"
+why = "Bytes 1, 2, 3, 0, i.e. (dir + 1) & 3: ovl4:044B copies gPartyDir's entry into gEFB9, the wall side of the cells left of the party that faces the viewer's right, drawn as left side walls (CopyViewColumn at x -2, 2, 8)."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:1999=gLeftSideByDir"
+addr = "ds:1999"
+old = "g1999"
+new = "gLeftSideByDir"
+kind = "global"
+why = "Bytes 3, 0, 1, 2, i.e. (dir + 3) & 3: ovl4:044B copies gPartyDir's entry into gEFD0, the wall side of the cells right of the party that faces the viewer's left, drawn mirrored as right side walls (ToggleViewColumn at x 0x15, 0x11, 0xd)."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:EFB9=gViewRightSide"
+addr = "ds:EFB9"
+old = "gEFB9"
+new = "gViewRightSide"
+kind = "global"
+why = "Set to gRightSideByDir[gPartyDir] ((dir + 1) & 3) at ovl4:044B and used as gEF6A[i][gEFB9] for the slots left of the centre line (0, 1, 2, 7, 8, 12, 15): the side wall drawn on the left of the view."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:EFD0=gViewLeftSide"
+addr = "ds:EFD0"
+old = "gEFD0"
+new = "gViewLeftSide"
+kind = "global"
+why = "Set to gLeftSideByDir[gPartyDir] ((dir + 3) & 3) at ovl4:044B and used as gEF6A[i][gEFD0] for the slots right of the centre line (4, 5, 6, 10, 11, 14, 17), drawn mirrored on the right of the view."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:F4BC=gViewMirrorParity"
+addr = "ds:F4BC"
+old = "gF4BC"
+new = "gViewMirrorParity"
+kind = "global"
+why = "ovl4:044B stores ((cell >> 5) + (cell & 0x1f) + gPartyDir) & 1 and draws the floor and ceiling strip mirrored (ToggleViewColumn) when it is 1, plain otherwise; ovl4:1091 also mirrors decorations whose flag bit 1 is set when it is 1. It alternates with every step and turn."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:6F86=gItemClipSlot"
+addr = "ds:6F86"
+old = "g6F86"
+new = "gItemClipSlot"
+kind = "global"
+why = "Per view slot a slot number or -1 (set only for slots 9, 13, 15, 16, 17, giving 3, 9, 11, 12, 13); ovl4:0AD0 refits the clip span to that slot through ComputeViewSpan while drawing an item at the two far positions of a cell whose wall has gWallTypeFlags bit 3, then restores the slot's own span."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:6F98=gItemScaleFrame"
+addr = "ds:6F98"
+old = "g6F98"
+new = "gItemScaleFrame"
+kind = "global"
+why = "Indexed gViewSlotRow * 4 + position (bytes -1,-1,3,3 / 2,2,2,2 / 1,1,1,1 / 0,0,-1,-1): ovl4:0AD0 draws the item icon gItemL1Icons[icon][frame] only when it is not negative, so it is the icon size per row and position, 0 largest for the party's own row, -1 out of sight."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:6FA8=gNicheItemY"
+addr = "ds:6FA8"
+old = "g6FA8"
+new = "gNicheItemY"
+kind = "global"
+why = "Three words 37, 49, 56 indexed by gViewSlotRow; ovl4:0AD0 uses it as the y of an item whose position byte is 8, drawn at the slot's centre x (ds:19E5) with frame from position 0, and items show in a wall with blocks only when its gWallTypeFlags bit 7 is set: an item placed in a wall."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:6FAE=gItemJitter"
+addr = "ds:6FAE"
+old = "g6FAE"
+new = "gItemJitter"
+kind = "global"
+why = "Eight words 0, -2, 1, -1, 2, 0, 1, -1; ovl4:0AD0 adds entry (item & 7) * 2 to x and entry ((item >> 1) & 7) to y, so items on the same spot are drawn slightly apart according to their item number."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:1D63=gViewPosY"
+addr = "ds:1D63"
+old = "g1D63"
+new = "gViewPosY"
+kind = "global"
+why = "The y word of the {x, y} pairs at ds:1D61 (gViewPosX), read with the same index (slot * 5 + pos) * 2 at ovl4:0AD0 (plus 0x7c for items) and ovl4:0D1B (plus 0x7f for monsters); it is ds:1D61 two bytes on, one table."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:19E5=gViewSlotCenterX"
+addr = "ds:19E5"
+old = "g19E5"
+new = "gViewSlotCenterX"
+kind = "global"
+why = "18 words, -56, -8, 40, 88, 136, 184, 232 for the farthest row and 88 for every centre slot (3, 9, 13, 16): the screen x of a slot's middle in the 176-pixel view; ovl4:0AD0 draws items in a wall there and ovl4:1D20 centres its cells on it."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:6FBE=gMonsterShrinkSteps"
+addr = "ds:6FBE"
+old = "g6FBE"
+new = "gMonsterShrinkSteps"
+kind = "global"
+why = "Bytes 2, 1, 0 indexed by gViewSlotRow; ovl4:0D1B passes the monster shape through the sprite blitter (BlitSpriteEga/Cga/Default into gBufDCFC) that many times, so the farthest row is shrunk twice, and the value 0 (nearest row) also enables the attack frames 5 and 6."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:7001=gMonsterDrawOrder"
+addr = "ds:7001"
+old = "g7001"
+new = "gMonsterDrawOrder"
+kind = "global"
+why = "Per facing, five bytes indexed gPartyDir * 5 + obj->frame (the monster's position 0..4 in its cell): ovl4:0D1B stores each monster of the cell at arr[g7001[...]] and then draws arr[0..4] in order, so the table orders the five positions back to front for the party's facing."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:6FC1=gMonsterFramesMirrorStep"
+addr = "ds:6FC1"
+old = "g6FC1"
+new = "gMonsterFramesMirrorStep"
+kind = "global"
+why = "Frame table indexed (obj->toggle << 4) + gPartyDir * 4 + obj->orient used by ovl4:0D1B when the type's gTable1A3B[b0].m0E has bit 1; a negative frame is drawn mirrored. It differs from ds:6FE1 only on the second animation step, where it mirrors frames 4 and 1 (-4, -1) that ds:6FE1 keeps plain."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:6FE1=gMonsterFrames"
+addr = "ds:6FE1"
+old = "g6FE1"
+new = "gMonsterFrames"
+kind = "global"
+why = "Frame table indexed (obj->toggle << 4) + gPartyDir * 4 + obj->orient used by ovl4:0D1B when the type's m0E bit 1 is clear (the other case uses ds:6FC1); its absolute value picks the shape in gB7FE and a negative value the mirrored DrawShapeClipped wrapper."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:7015=gMonsterYAdjust"
+addr = "ds:7015"
+old = "g7015"
+new = "gMonsterYAdjust"
+kind = "global"
+why = "Bytes 20, 12, 4 indexed by the shrink steps (gMonsterShrinkSteps); ovl4:0D1B adds it to the monster's y only for types whose gTable1A3B[b0].m15 is 1 and only for frames 1 or above 3. What those types are is not shown."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:B7FE=gMonsterShapes"
+addr = "ds:B7FE"
+old = "gB7FE"
+new = "gMonsterShapes"
+kind = "global"
+why = "Far shape pointers indexed |frame| + (obj->m07 ? 0x12 : 0) in ovl4:0D1B, which shrinks the shape by gMonsterShrinkSteps and draws it for every monster record (gObjs at ds:8A82) in the slot's cell: 18 shapes per monster graphic set, two sets."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:716E=gDoorShapeSet"
+addr = "ds:716E"
+old = "g716E"
+new = "gDoorShapeSet"
+kind = "global"
+why = "32 bytes per wall type, 0 for door types 3..12 and 3 for 13..22; DrawSlotDoor (ovl4:1411) computes col = g716E[wall] + 2 - gViewSlotRow to pick gDoorShapes[col], so it selects which of the level's two door graphics (three sizes each) a door wall uses."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:70F0=gDoorYLevels1to3"
+addr = "ds:70F0"
+old = "g70F0"
+new = "gDoorYLevels1to3"
+kind = "global"
+why = "Bytes 58, 71, 86 indexed by gViewSlotRow: DrawSlotDoor (ovl4:1411) takes the door's bottom y from it for gFBC8 (the current level) 1, 2, 3, then subtracts the shape height and the open step's lift."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:70F4=gDoorYLevels4to6"
+addr = "ds:70F4"
+old = "g70F4"
+new = "gDoorYLevels4to6"
+kind = "global"
+why = "Bytes 59, 71, 88 indexed by gViewSlotRow: the door's bottom y in DrawSlotDoor (ovl4:1411) for levels 4..6 (gFBC8), where the door is drawn as two mirrored halves pushed apart."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:70F8=gDoorYLevels7to9"
+addr = "ds:70F8"
+old = "g70F8"
+new = "gDoorYLevels7to9"
+kind = "global"
+why = "Bytes 32, 32, 24 indexed by gViewSlotRow: in DrawSlotDoor (ovl4:1411) for levels 7..9 (gFBC8) the y of both the back shape gDoorShapes[col + 3] and the door itself, before the lift."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:70FC=gDoorYLevels10to11"
+addr = "ds:70FC"
+old = "g70FC"
+new = "gDoorYLevels10to11"
+kind = "global"
+why = "Bytes 30, 24, 16 indexed by gViewSlotRow: in DrawSlotDoor (ovl4:1411) for levels 10 and 11 (gFBC8) the y of the first half gDoorShapes[col], moved down by the open step."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:70FF=gDoorBackYLevels10to11"
+addr = "ds:70FF"
+old = "g70FF"
+new = "gDoorBackYLevels10to11"
+kind = "global"
+why = "Bytes 48, 52, 59 indexed by gViewSlotRow: in DrawSlotDoor (ovl4:1411) for levels 10 and 11 the y of the second half gDoorShapes[col + 3], moved up by 3/8 of the first half's offset."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:7102=gDoorYLevel12"
+addr = "ds:7102"
+old = "g7102"
+new = "gDoorYLevel12"
+kind = "global"
+why = "Bytes 58, 69, 90 indexed by gViewSlotRow: DrawSlotDoor (ovl4:1411) uses it instead of ds:70F0 when gFBC8 (the current level) is 12, otherwise drawing like levels 1..3."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:7106=gDoorClipLeftX"
+addr = "ds:7106"
+old = "g7106"
+new = "gDoorClipLeftX"
+kind = "global"
+why = "Interleaved {left, right} pixel words per view slot (index slot * 2; ds:7108 is the right word two bytes on): DrawSlotDoor (ovl4:1411) for levels 4..6 shifts them right 3, clamps them to gViewColLeft/gViewColRight and clips region 5 to them before drawing the two door halves."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:7108=gDoorClipRightX"
+addr = "ds:7108"
+old = "g7108"
+new = "gDoorClipRightX"
+kind = "global"
+why = "The right word of the {left, right} pairs at ds:7106 (gDoorClipLeftX), read with the same index slot * 2 at ovl4:1411 for levels 4..6 and clamped to gViewColRight."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:714E=gDoorStepBase"
+addr = "ds:714E"
+old = "g714E"
+new = "gDoorStepBase"
+kind = "global"
+why = "Per wall type, the first wall type of its run of five (0,0,0,3x5,8x5,13x5,18x5, then 30 and 31): DrawSlotDoor (ovl4:1411) multiplies (wall - g714E[wall]) by the per-row step tables, so it gives the door's open step for wall types below 0x1e."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:718E=gDoorLiftStep"
+addr = "ds:718E"
+old = "g718E"
+new = "gDoorLiftStep"
+kind = "global"
+why = "Bytes 8, 12, 18 indexed by gViewSlotRow: DrawSlotDoor (ovl4:1411) raises the door by (wall - gDoorStepBase[wall]) times this for levels 1..3, 7..9 and 12 when the wall type is below 0x1e."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:7192=gDoorLiftFrom30"
+addr = "ds:7192"
+old = "g7192"
+new = "gDoorLiftFrom30"
+kind = "global"
+why = "Bytes 0, 2, 4 indexed by gViewSlotRow: the fixed lift DrawSlotDoor (ovl4:1411) uses instead of gDoorLiftStep times the step when the wall type is 0x1e or above (levels 1..3, 7..9, 12)."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:7196=gDoorSlideStep"
+addr = "ds:7196"
+old = "g7196"
+new = "gDoorSlideStep"
+kind = "global"
+why = "Bytes 4, 6, 9 indexed by gViewSlotRow: for levels 4..6 DrawSlotDoor (ovl4:1411) moves the two mirrored door halves apart by the open step times this when the wall type is below 0x1e."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:719A=gDoorSlideFrom30"
+addr = "ds:719A"
+old = "g719A"
+new = "gDoorSlideFrom30"
+kind = "global"
+why = "Bytes 0, 2, 4 indexed by gViewSlotRow: the fixed sideways shift DrawSlotDoor (ovl4:1411) uses for levels 4..6 instead of gDoorSlideStep when the wall type is 0x1e or above."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:719E=gDoorSplitStep"
+addr = "ds:719E"
+old = "g719E"
+new = "gDoorSplitStep"
+kind = "global"
+why = "Bytes 7, 11, 14 indexed by gViewSlotRow: for levels 10 and 11 DrawSlotDoor (ovl4:1411) moves the first door half down by the open step times this and the second half up by 3/8 of it, wall types below 0x1e."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:71A2=gDoorSplitFrom30"
+addr = "ds:71A2"
+old = "g71A2"
+new = "gDoorSplitFrom30"
+kind = "global"
+why = "Bytes 0, 2, 4 indexed by gViewSlotRow: the fixed offset DrawSlotDoor (ovl4:1411) uses for levels 10 and 11 instead of gDoorSplitStep when the wall type is 0x1e or above."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:7246=gProjectileDrawOrder"
+addr = "ds:7246"
+old = "g7246"
+new = "gProjectileDrawOrder"
+kind = "global"
+why = "Per facing, five bytes indexed gPartyDir * 5 + (record +6 & 3), the same bytes as gMonsterDrawOrder (ds:7001): ovl4:19C4 sorts the flying records of the slot's cell into arr[] through it and draws arr[0..4] in order, back to front."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:71A6=gProjectileX"
+addr = "ds:71A6"
+old = "g71A6"
+new = "gProjectileX"
+kind = "global"
+why = "Unsigned bytes indexed slot * 4 + gViewRelativePos value: the screen x ovl4:19C4 draws a flying record's shape at in that view slot (recomputed from gViewPosX when the record's +0xC has bit 6)."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:71EE=gProjectileY"
+addr = "ds:71EE"
+old = "g71EE"
+new = "gProjectileY"
+kind = "global"
+why = "Signed bytes indexed gViewSlotRow * 4 + position (32, 32, 31, 31 for the farthest row): the screen y ovl4:19C4 draws a flying record's shape at."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:71FE=gProjectileFrame"
+addr = "ds:71FE"
+old = "g71FE"
+new = "gProjectileFrame"
+kind = "global"
+why = "Signed bytes indexed slot * 4 + position, -1 for the positions out of sight and 0..3 for the size: ovl4:19C4 draws a flying record only when it is not negative and uses it as the frame of the ds:F2F8 or ds:EC9A shape row."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:725A=gProjectileFixWidth"
+addr = "ds:725A"
+old = "g725A"
+new = "gProjectileFixWidth"
+kind = "global"
+why = "Bytes 4, 3, 2, 1 per frame: ovl4:19C4 compares a flying item's shape width byte (cell +2) with entry [frame] and, when equal, adds gProjectileFixX[frame] to x; only the mechanics are shown."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:725E=gProjectileFixX"
+addr = "ds:725E"
+old = "g725E"
+new = "gProjectileFixX"
+kind = "global"
+why = "Bytes 16, 8, 4, 2 per frame: the x shift ovl4:19C4 adds to a flying item's position when its shape width matches gProjectileFixWidth[frame] (ds:725A)."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:7262=gProjectileFlip"
+addr = "ds:7262"
+old = "g7262"
+new = "gProjectileFlip"
+kind = "global"
+why = "Bytes 0 or 1 indexed record +7 * 4 + record +6: ovl4:19C4 draws a flying shape mirrored (DrawShapeClippedFlipped) when the entry is nonzero, for the thrown-shape rows and for every non-item record."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:1D07=gItemThrownShape"
+addr = "ds:1D07"
+old = "g1D07"
+new = "gItemThrownShape"
+kind = "global"
+why = "Per item shape (g181F[icon] (ds:181F)) and side (0 flying away along the facing, 1 toward the party, stride 0x2d), a row of gThrownIcons (ds:F2F8) or -1; ovl4:19C4 draws a flying item with that row, or with its own icon gItemL1Icons when it is -1 or the item flies sideways."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:7272=gTeleporterLeftOffset"
+addr = "ds:7272"
+old = "g7272"
+new = "gTeleporterLeftOffset"
+kind = "global"
+why = "Bytes 40, 28, 18, 13 indexed by col = 2 - gViewSlotRow: ovl4:1D20 subtracts it from gViewSlotCenterX[slot] to get the left x of its two columns of 13 cells; larger for nearer rows."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:7275=gTeleporterTopY"
+addr = "ds:7275"
+old = "g7275"
+new = "gTeleporterTopY"
+kind = "global"
+why = "Bytes 13, 21, 26 indexed by col = 2 - gViewSlotRow: the top y ovl4:1D20 adds the per-cell y bytes of 20AB:0000 to."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:7278=gViewDrawOrder"
+addr = "ds:7278"
+old = "g7278"
+new = "gViewDrawOrder"
+kind = "global"
+why = "18 bytes 0, 6, 1, 5, 2, 4, 3, 7, 11, 8, 10, 9, 12, 14, 13, 15, 17, 16: DrawViewSlots (ovl4:1E18) draws slot g7278[i] for i = start..17, so the slots are drawn from the farthest row inward, outer cells before the centre one."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:7296=gCompassDir"
+addr = "ds:7296"
+old = "g7296"
+new = "gCompassDir"
+kind = "global"
+why = "DrawViewRows (ovl4:1EDE) returns at once when it equals gPartyDir and otherwise redraws its three shapes, each with four versions gIconTableA92A[gPartyDir + 4 * i], below the view and then stores gPartyDir in it (initial -1): the facing the compass was last drawn for."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:7290=gCompassY"
+addr = "ds:7290"
+old = "g7290"
+new = "gCompassY"
+kind = "global"
+why = "Three words 127, 154, 154: the y DrawViewRows (ovl4:1EDE) draws each of its three facing-dependent shapes at; one table with the x words at ds:728A."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:728A=gCompassX"
+addr = "ds:728A"
+old = "g728A"
+new = "gCompassX"
+kind = "global"
+why = "Three words 112, 77, 149: the x DrawViewRows (ovl4:1EDE) draws each of its three facing-dependent shapes at, inside the pointer zone (0x46, 0x79)-(0xb0, 0xaf) below the view."
+date = "2026-11-03"
+
+[[rename]]
+id = "ovl4:044B=BuildViewBlockMap"
+addr = "ovl4:044B"
+old = "Ovl4_044B"
+new = "BuildViewBlockMap"
+kind = "function"
+why = "Clears the 22 by 15 word map at ds:ADB0, copies the floor and ceiling strip (mirrored on odd parity), sets the visible cells (InitViewSlots) and copies each visible wall's .VMP blocks into the map, side walls through gViewRightSide/gViewLeftSide and front walls through gViewFrontSide; DrawViewFrame then draws the map with DrawTile (17A6:03E7)."
+date = "2026-11-03"
+
+[[rename]]
+id = "ovl4:0AD0=DrawSlotItems"
+addr = "ovl4:0AD0"
+old = "Ovl4_0AD0"
+new = "DrawSlotItems"
+kind = "function"
+why = "Walks the item list whose head is the cell's word +5 (gItems at ds:8DD0, via the +8 link) and draws each item at position 0..3 or 8 with gItemL1Icons[g181F[icon] (ds:181F)][frame], at gViewPosX/Y or the wall position, with gItemJitter; skipped when the cell's front wall has blocks unless gWallTypeFlags bit 7."
+date = "2026-11-03"
+
+[[rename]]
+id = "ovl4:0D1B=DrawSlotMonsters"
+addr = "ovl4:0D1B"
+old = "Ovl4_0D1B"
+new = "DrawSlotMonsters"
+kind = "function"
+why = "Collects the monster records (gObjs, 30 records at ds:8A82) whose cell word equals the slot's cell, orders them by gMonsterDrawOrder, picks a frame by facing and animation step, shrinks the shape gB7FE by gMonsterShrinkSteps and draws it, colour-remapped for the one-frame flash of m16 bit 1; DrawViewSlots calls it when the cell's +4 count bits 0..2 are nonzero."
+date = "2026-11-03"
+
+[[rename]]
+id = "ovl4:1091=DrawSlotDecorations"
+addr = "ovl4:1091"
+old = "Ovl4_1091"
+new = "DrawSlotDecorations"
+kind = "function"
+why = "For the slot's two wall faces (gWallFaces) it walks the chain of 0x34-byte decoration records in gViewWalls from gWallDecorHead[wall type] (the records RegisterWallObject ovl3:01C8 loads from the wall set .DAT), drawing each rectangle shape from gRectKinds, mirrored about the 0xb0-pixel view when the offset is negative."
+date = "2026-11-03"
+
+[[rename]]
+id = "ovl4:1411=DrawSlotDoor"
+addr = "ovl4:1411"
+old = "Ovl4_1411"
+new = "DrawSlotDoor"
+kind = "function"
+why = "Called by DrawViewSlots when the front wall has gWallTypeFlags bit 3; it draws gDoorShapes (cut from the DOOR screen by ovl3:03A2) sized by row and moved by the wall type's open step, in a style chosen by the current level gFBC8 (1..3 and 12, 4..6, 7..9, 10..11), and the door button gDoorButtons when gWallDecorHead is -1."
+date = "2026-11-03"
+
+[[rename]]
+id = "ovl4:19C4=DrawSlotProjectiles"
+addr = "ovl4:19C4"
+old = "Ovl4_19C4"
+new = "DrawSlotProjectiles"
+kind = "function"
+why = "Collects the ten 0x12-byte ds:DD2C records that are active and whose cell (+4) is the slot's cell, and draws each with a thrown-item shape (gThrownIcons, ds:F2F8) or the item's own icon for records carrying an item (+8 into gItems), else the shape row +0xA, with per-direction mirroring (ds:7262): objects flying through the cell."
+date = "2026-11-03"
+
+[[rename]]
+id = "ovl4:1D20=DrawSlotTeleporter"
+addr = "ovl4:1D20"
+old = "Ovl4_1D20"
+new = "DrawSlotTeleporter"
+kind = "function"
+why = "Draws two columns of 13 small cells around gViewSlotCenterX[slot] for a cell whose front wall type is 0x34 (DrawViewSlots ovl4:1ECB); the cell shape alternates with gFB78, which the timed effect 1414:04B0 flips while forcing a redraw (gDF4C) whenever a visible wall is 0x34: an animated sparkle wall. [H] ScummVM's EOB1 teleporter is wall type 52 (0x34)."
+date = "2026-11-03"
+
+[[rename]]
+id = "ovl4:2039=PreloadViewOverlay"
+addr = "ovl4:2039"
+old = "NoOp2039"
+new = "PreloadViewOverlay"
+kind = "function"
+why = "Does nothing (a dead local); its only callers, EnterMapScreen (0ACD:0F72) and LoadLevelOp (122E:1AAB), call it right after LoadMapScreen loads a level, so its effect is that the overlay manager brings overlay 4 (the view renderer) into memory."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:80EA=gKeyboardOptions"
+addr = "ds:80EA"
+old = "g80EA"
+new = "gKeyboardOptions"
+kind = "global"
+why = "The keyboard driver copies this word into its kModifierState on every INT 9 (the load at 1AAD:07F4) and every GetKeyState call (1AAD:0607); its bits steer the driver (bit 2 skips GetKeyState's key list search, 80h diverts E1-prefixed bytes in the INT 9 handler, 200h picks the keypad table in TranslateKey 1AAD:0223). Load-time value 0110h, main sets 1 (E07C8.C:261)."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:7FBC=gDirectionFromMask"
+addr = "ds:7FBC"
+old = "gTable7FBC"
+new = "gDirectionFromMask"
+kind = "global"
+why = "DirectionFromPoints (17A6:0314) builds a 4-bit mask from the signs and dominance of dx and dy and indexes this 16-byte table at 17A6:0373; its bytes are FF,6,2,FF,4,5,3,FF,0,7,1,FF... so mask 8 gives 0 (north), 2 gives 2 (east), 4 gives 4 (south), 1 gives 6 (west), FF none."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:7FCC=gNeighbourOffsets"
+addr = "ds:7FCC"
+old = "gTable7FCC"
+new = "gNeighbourOffsets"
+kind = "global"
+why = "Eight words -33,-32,-31,-1,1,31,32,33 in the EOB.EXE image: the offsets of the eight cells around a cell on the 32-wide map; FindNeighbour (17A6:0F9D) adds each to a packed cell and masks with 3FFh (17A6:0FB8)."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:7FDC=gAheadOffsets2And3"
+addr = "ds:7FDC"
+old = "gTable7FDC"
+new = "gAheadOffsets2And3"
+kind = "global"
+why = "Eight words -64,-96, 2,3, 64,96, -2,-3 in the EOB.EXE image: for each facing N, E, S, W the cell offsets two and three squares ahead on the 32-wide map; FindNeighbour (17A6:0F9D) picks the pair by its third argument (17A6:0FCB, 17A6:0FD3)."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:80CE=gRowOffsetTableOff"
+addr = "ds:80CE"
+old = "g80CE"
+new = "gRowOffsetTableOff"
+kind = "global"
+why = "Slot 41 of the driver table at ds:802A (the request's table pointer 212E:802A at ds:8125), filled by the graphics driver: EGA.OVL slot 41 is cs:03A9, a 200-word table 0, 28h, 50h... (y * 40), MCGA y * 320, CGA interleaved; EGA indexes it by y (EGA.OVL 1033, 159A). BuildMask (17A6:18FF) reads the tables 190h and 290h past it. Offset half."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:80D0=gRowOffsetTableSeg"
+addr = "ds:80D0"
+old = "g80D0"
+new = "gRowOffsetTableSeg"
+kind = "global"
+why = "Segment half of the driver table slot 41 far pointer at ds:80CE (the driver's own code segment, stored by the exchange loop EGA.OVL 0F2A..0F2F); BuildMask loads it into DS at 17A6:1913 to read the driver's translation tables after the row offsets."
+date = "2026-11-03"
+
+[[rename]]
+id = "19FC:0007=PadBeforeCompressLcw"
+addr = "19FC:0007"
+old = "f19FC_0007"
+new = "PadBeforeCompressLcw"
+kind = "function"
+why = "A lone 00 byte at 19FC:0007, the first byte of segment 19FC after the 19F3 unit's retf and before CompressLcw's push bp at the even 19FC:0008 (E19FC.ASM:65-69); whitepaper 2.6 shows this db 0 form is a word-alignment pad."
+date = "2026-11-03"
+
+[[rename]]
+id = "1DE4:0000=IsInVerticalRetrace"
+addr = "1DE4:0000"
+old = "f1DE4_0000"
+new = "IsInVerticalRetrace"
+kind = "function"
+why = "Reads port 3DAh (input status 1) once and returns bit 3 (vertical retrace) as 8 or 0 (1DE4:0003 to 0009); CalibrateRetrace (1A65:00A7) counts its set and clear samples."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:80A2=gRestoreDrawState"
+addr = "ds:80A2"
+old = "g80A2"
+new = "gRestoreDrawState"
+kind = "global"
+why = "Slot 30 of the driver table ds:802A: in CGA.OVL (19CF), TGA and MCGA.OVL (1612) it copies the saved region words back into the driver's current region (cs:CA..D0, the words gSetRegion slot 35 writes, CGA 1DE5); EGA.OVL (13BE) also reloads the EGA registers from the shadow. Called after each pointer redraw (1A72:0200, 1A72:0275, 1BBE:02B2, 1BF3:0082)."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:80AA=gSaveDrawState"
+addr = "ds:80AA"
+old = "g80AA"
+new = "gSaveDrawState"
+kind = "global"
+why = "Slot 32 of the driver table ds:802A: CGA.OVL 1C9D and MCGA.OVL 1A7A save the driver's region (cs:CA..D0) and set it to the full screen (0, 28h, 0, C8h); EGA.OVL 1746 also copies 16 bytes of register shadow from its far argument (ds:8172/8174). Called before each pointer redraw (1A72:01F4, 1A72:0264, 1BBE:02A7, 1BF3:0071)."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:80EC=gRecordMode"
+addr = "ds:80EC"
+old = "g80EC"
+new = "gRecordMode"
+kind = "global"
+why = "Input record mode, a byte 0/1/2: ProcessKeyEvent (1AAD:0C17) does nothing at 0, writes each event to the file at ds:80ED at 1 and reads them back at 2; InjectRecordedKey (1AAD:0D26) and DequeueKeyEvent (1AAD:04A2) replay at 2, and the mouse handler skips the position update at 2 (1A72:0212)."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:8130=gLastMouseButtons"
+addr = "ds:8130"
+old = "g8130"
+new = "gLastMouseButtons"
+kind = "global"
+why = "The INT 33h handler compares the event's button word BX with it (1A72:01B8), calls HandleMouseButtons only when they differ, folds the change into ds:8134 and then stores BX here (1A72:01D3)."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:8132=gMiddleButtonBits"
+addr = "ds:8132"
+old = "g8132"
+new = "gMiddleButtonBits"
+kind = "global"
+why = "When nonzero and the event has the middle button bit 4 set, the handler replaces BX with (BX and 3) or this word (1A72:01A6 to 01B6); the image holds 0002, the right button bit, so a held middle button reads as the right one."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:8136=gMouseButtonSeen"
+addr = "ds:8136"
+old = "g8136"
+new = "gMouseButtonSeen"
+kind = "global"
+why = "Latched to 1 when an INT 33h event carries any button (1A72:01DC) and when a replayed mouse event is read (1AAD:0D04); nothing in src/ clears it, so it records that a button has been seen."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:813C=gMouseEventX"
+addr = "ds:813C"
+old = "g813C"
+new = "gMouseEventX"
+kind = "global"
+why = "x of the INT 33h event being handled, after the 640-wide halving and the 13Fh clamp (stored at 1A72:019E); HandleMouseButtons queues it with the button event (E1AAD.ASM:1228). Pairs with gMouseEventY at ds:813E."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:813E=gMouseEventY"
+addr = "ds:813E"
+old = "g813E"
+new = "gMouseEventY"
+kind = "global"
+why = "y of the INT 33h event being handled, stored unclamped next to gMouseEventX (1A72:01A2); HandleMouseButtons queues it after the x (E1AAD.ASM:1232)."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:8144=gMouseXDoubled"
+addr = "ds:8144"
+old = "g8144"
+new = "gMouseXDoubled"
+kind = "global"
+why = "InitMouse sets it to 1 when the driver's x after reset is not 0A0h (1A72:013E); then the handler halves each event x (the test at 1A72:018C), InitMouse doubles the x it sets (the test at 1A72:0156) and PlacePointer doubles x for INT 33h function 4 (1BF3:000E). Whether that means a 640-wide range is [H]."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:814E=gCursorMaxX"
+addr = "ds:814E"
+old = "g814E"
+new = "gCursorMaxX"
+kind = "global"
+why = "Set to 13Fh (screen width minus one) by InitMouse (1A72:00FE); PlacePointer (1BF3:000E) clamps gCursorX to it from above, with ds:814C as the lower limit."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:8152=gCursorMaxY"
+addr = "ds:8152"
+old = "g8152"
+new = "gCursorMaxY"
+kind = "global"
+why = "Set to 0C7h (screen height minus one) by InitMouse (1A72:0104); PlacePointer (1BF3:000E) clamps gCursorY to it from above, with ds:8150 as the lower limit."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:8172=gEgaRegShadowOff"
+addr = "ds:8172"
+old = "g8172"
+new = "gEgaRegShadowOff"
+kind = "global"
+why = "Offset of the far pointer the game exports to the driver as slots 5 and 6 (GetFarPointer, SetFarPointer at ds:803E, 8042); only EGA.OVL calls SetFarPointer, with its own register shadow cs:00C1 (EGA.OVL 0F3A to 0F3F), and the 17A6 blitters redirect it to their own 16-byte copy (17A6:0446, 04EE)."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:8174=gEgaRegShadowSeg"
+addr = "ds:8174"
+old = "g8174"
+new = "gEgaRegShadowSeg"
+kind = "global"
+why = "Segment half of the EGA register shadow pointer at ds:8172; SetFarPointer tests it (jcxz at 1A72:0320) and copies the 16 shadow bytes only when it is nonzero, and the pointer redraws push it before the offset for gSaveDrawState (1BBE:029F)."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:8026=gHitTestX"
+addr = "ds:8026"
+old = "g8026"
+new = "gHitTestX"
+kind = "global"
+why = "Scratch copy of gDrawnX that IsMouseInRect (1A72:02A6) makes under the busy flag (1A72:02C7) and compares with the rectangle's left and right edges (1A72:02D0, 02D6); no other reader."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:8028=gHitTestY"
+addr = "ds:8028"
+old = "g8028"
+new = "gHitTestY"
+kind = "global"
+why = "Scratch copy of gDrawnY that IsMouseInRect (1A72:02A6) makes under the busy flag (1A72:02CD) and compares with the rectangle's top and bottom edges (1A72:02DC, 02E2); no other reader."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:80ED=gRecordHandle"
+addr = "ds:80ED"
+old = "g80ED"
+new = "gRecordHandle"
+kind = "global"
+why = "File handle of the recorded input stream: ProcessKeyEvent passes it to FileWrite in record mode 1 (the push at 1AAD:0C46) and to FileRead in replay mode 2 (1AAD:0CA7), four bytes per call."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:80EF=gLastEventKey"
+addr = "ds:80EF"
+old = "g80EF"
+new = "gLastEventKey"
+kind = "global"
+why = "DequeueKeyEvent stores every event key taken from the ring here (1AAD:04A5) and reads it back instead of the ring in replay mode; ProcessKeyEvent writes it to the recording (1AAD:0C22) or loads it from the recording (1AAD:0CC2)."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:80F1=gRecordDelay"
+addr = "ds:80F1"
+old = "g80F1"
+new = "gRecordDelay"
+kind = "global"
+why = "Tick count read with each replayed event (1AAD:0CBB); InjectRecordedKey releases the replayed key only once gTicksSinceEvent (ds:8488) reaches it (1AAD:0D3E), so it is the delay before the event."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:80F3=gLastEventX"
+addr = "ds:80F3"
+old = "g80F3"
+new = "gLastEventX"
+kind = "global"
+why = "x word of the last mouse event taken from the ring (DequeueKeyEvent 1AAD:04C7, 0507), written to or read from the recording by ProcessKeyEvent (1AAD:0C5F, 0CF4), which also copies it to gCursorX on replay."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:80F5=gLastEventY"
+addr = "ds:80F5"
+old = "g80F5"
+new = "gLastEventY"
+kind = "global"
+why = "y word of the last mouse event taken from the ring (DequeueKeyEvent 1AAD:04E3, 0520), written to or read from the recording by ProcessKeyEvent (1AAD:0C66, 0CFE), which also copies it to gCursorY on replay."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:80F7=gRecordEnded"
+addr = "ds:80F7"
+old = "g80F7"
+new = "gRecordEnded"
+kind = "global"
+why = "Set to 1 when a FileRead of the recording fails (1AAD:0D12); InjectRecordedKey then injects 0 instead of the recorded key (the test at 1AAD:0D34), so it marks the end of the replay."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:8488=gTicksSinceEvent"
+addr = "ds:8488"
+old = "g8488"
+new = "gTicksSinceEvent"
+kind = "global"
+why = "16-bit counter the INT 1Ch handler increments every tick (1D8F:0080); ProcessKeyEvent records it with each event (1AAD:0C30) and clears it after each recorded or replayed event (1AAD:0C88, 0D0A), and replay waits for it to reach gRecordDelay (1AAD:0D3E)."
+date = "2026-11-03"
+
+[[rename]]
+id = "1BA8:0005=PadBeforeUnpack0"
+addr = "1BA8:0005"
+old = "f1BA8_0005"
+new = "PadBeforeUnpack0"
+kind = "function"
+why = "A lone 00 byte at the start of segment 1BA8 before the even entry Unpack0 at 1BA8:0006; the whitepaper (2.6) shows the same db 0 in E1BBE, I0CDA and E1D9A is a word-alignment pad."
+date = "2026-11-03"
+
+[[rename]]
+id = "1BBE:0001=PadBeforeHidePointer"
+addr = "1BBE:0001"
+old = "f1BBE_0001"
+new = "PadBeforeHidePointer"
+kind = "function"
+why = "A lone 00 byte at the start of segment 1BBE before the even entry HidePointer at 1BBE:0002; whitepaper 2.6 identifies this db 0 in E1BBE.ASM as a word-alignment pad recorded by TLINK's segment table."
+date = "2026-11-03"
+
+[[rename]]
+id = "1BF3:000D=PadBeforePlacePointer"
+addr = "1BF3:000D"
+old = "f1BF3_000D"
+new = "PadBeforePlacePointer"
+kind = "function"
+why = "A lone 00 byte at the start of segment 1BF3 before the even entry 1BF3:000E; the whitepaper (2.6) shows the matching db 0 in E1BBE, I0CDA and E1D9A is a word-alignment pad TLINK records in the segment table."
+date = "2026-11-03"
+
+[[rename]]
+id = "1BF3:000E=PlacePointer"
+addr = "1BF3:000E"
+old = "f1BF3_000E"
+new = "PlacePointer"
+kind = "function"
+why = "Clamps (CX, DX) to ds:814C..814E and ds:8150..8152, stores gCursorX and gCursorY, moves the INT 33h cursor (function 4) when a driver is installed, and redraws the pointer through gSaveDrawState, HidePointer, ShowPointer, gRestoreDrawState when it moved (1BF3:000E to 0086); near helper of 0087 and 00A8 (MovePointerBy)."
+date = "2026-11-03"
+
+[[rename]]
+id = "1BF3:0087=MovePointerTo"
+addr = "1BF3:0087"
+old = "f1BF3_0087"
+new = "MovePointerTo"
+kind = "function"
+why = "Spins until the busy flag ds:812E is free, takes it, calls PlacePointer with the arguments (x, y) and releases the flag; the absolute twin of 1BF3:00A8 (MovePointerBy), which adds a delta to gCursorX/gCursorY first."
+date = "2026-11-03"
+
+[[rename]]
+id = "1D8F:0002=ReadTickCount"
+addr = "1D8F:0002"
+old = "f1D8F_0002"
+new = "ReadTickCount"
+kind = "function"
+why = "Returns the 32-bit counter at ds:8496/8498 in AX:DX, read between cli and sti (1D8F:0006 to 000F); the INT 1Ch handler increments it every tick (1D8F:008E). No direct far call 9A 02 00 8F 1D exists in EOB.EXE."
+date = "2026-11-03"
+
+[[rename]]
+id = "1E8B:0185=ShutdownOverlayManager"
+addr = "1E8B:0185"
+old = "f1E8B_0185"
+new = "ShutdownOverlayManager"
+kind = "function"
+why = "Closes the overlay file and swaps the interrupt vector back through SwapAndReopenOverlayFile when the handle 20B5:00B8 is open (1E8B:0190), then calls the manager's two near hooks at 20B5:0014 and 20B5:0012; the teardown half of InitOverlayManager."
+date = "2026-11-03"
+
+[[rename]]
+id = "intro/ds:1FA9=gTextAttr1"
+addr = "intro/ds:1FA9"
+old = "g1FA9"
+new = "gTextAttr1"
+kind = "global"
+why = "Twin of EOB's gTextAttr1 (ds:811D, same 6174h DGROUP shift as gGraphicsChoice 8102/1F8E): load-time 000Fh, main sets 0xF after the palette (0892:0145) as EOB main sets DEFAULT_TEXT_ATTR1 (E07C8.C:262), and the twin text unit reads it at the same relative sites."
+date = "2026-11-03"
+
+[[rename]]
+id = "intro/ds:1FA7=gTextAttr2"
+addr = "intro/ds:1FA7"
+old = "g1FA7"
+new = "gTextAttr2"
+kind = "global"
+why = "Twin of EOB's gTextAttr2 (ds:811B, the 6174h DGROUP shift): load-time 000Ch, main sets 0xC after the palette (0892:014B) as EOB main sets DEFAULT_TEXT_ATTR2 (E07C8.C:263); the twin text unit reads it."
+date = "2026-11-03"
+
+[[rename]]
+id = "intro/ds:1A34=gStartupDone"
+addr = "intro/ds:1A34"
+old = "g1A34"
+new = "gStartupDone"
+kind = "global"
+why = "Set to 1 only on StartupGame's success exit (0892:0817 at the done label, after the sound card starts); main runs the intro overlay Ovl0Main only when it is set (0892:0151)."
+date = "2026-11-03"
+
+[[rename]]
+id = "intro/ds:232C=gRestoreMode"
+addr = "intro/ds:232C"
+old = "g232C"
+new = "gRestoreMode"
+kind = "global"
+why = "Twin of EOB's gRestoreMode (ds:84A0): StartupGame stores the mode INT 10h AH=0Fh reports (GetVideoMode, 0892:024B), SetVideoMode (0D2B:0033) reads it for index 7 (image 0xD2FA, 0xD309), and main passes it to EOB.EXE as argv[5], which EOB restores on exit."
+date = "2026-11-03"
+
+[[rename]]
+id = "intro/ds:28A4=gRestoreModeArg"
+addr = "intro/ds:28A4"
+old = "g28A4"
+new = "gRestoreModeArg"
+kind = "global"
+why = "itoa's decimal buffer for gRestoreMode (ds:232C) at 0892:01BA; main passes it to EOB.EXE as argv[5] in the execl (I0892.C:271)."
+date = "2026-11-03"
+
+[[rename]]
+id = "intro/ds:28B4=gMemTopArg"
+addr = "intro/ds:28B4"
+old = "g28B4"
+new = "gMemTopArg"
+kind = "global"
+why = "itoa's buffer for gMemTopSeg (ds:28C4) at 0892:01CF; main passes it to EOB.EXE as argv[6] in the execl (I0892.C:271)."
+date = "2026-11-03"
+
+[[rename]]
+id = "intro/ds:1EE2=gClearDrawPage"
+addr = "intro/ds:1EE2"
+old = "gFn1EE2"
+new = "gClearDrawPage"
+kind = "global"
+why = "Slot 11 of the driver table (ds:1EB6 + 4 * 11, as EOB's ds:8056): MCGA.OVL 0693 zeroes 7D00h words at the segment of the page named by the draw page word (driver import slot 2, gDrawPage ds:1FA1) through the page table (slot 1, ds:28CC); EGA 07FB, CGA 095B and TGA 07F2 do the same."
+date = "2026-11-03"
+
+[[rename]]
+id = "intro/ds:19E6=gOverlayCacheOn"
+addr = "intro/ds:19E6"
+old = "g19E6"
+new = "gOverlayCacheOn"
+kind = "global"
+why = "Set to 1 by StartupGame right after InitOverlayCache (0892:0641); ShutdownGame calls ShutdownOverlayCache only when it is set (0892:0851). EOB's twin is ds:3056."
+date = "2026-11-03"
+
+[[rename]]
+id = "intro/ds:28CC=gPageSegs"
+addr = "intro/ds:28CC"
+old = "gSegs28CC"
+new = "gPageSegs"
+kind = "global"
+why = "Eight segment words StartupGame fills per graphics choice with screen segments (B800, A000, A200..AC00) and MemAlloc'd page buffers (0892:036B to 0540); driver import slot 1 and GetPagePtr (097F:0002) index it by page. Twin of EOB's ds:FC0C."
+date = "2026-11-03"
+
+[[rename]]
+id = "intro/ds:19F7=gBlackPalette"
+addr = "intro/ds:19F7"
+old = "g19F7"
+new = "gBlackPalette"
+kind = "global"
+why = "Sixteen zero bytes right after gBuiltinPalette in the INTRO.EXE image (ds:19F7 to 1A06); main passes it to gSetPalette for the Tandy choice when gMovedSeg is set (0892:01AE), every entry colour 0."
+date = "2026-11-03"
+
+[[rename]]
+id = "intro/0D2B:0033=SetVideoMode"
+addr = "intro/0D2B:0033"
+old = "f1DDD_002D"
+new = "SetVideoMode"
+kind = "function"
+why = "Twin of EOB's 1DDD:002D: INT 10h AH=00h through int86 with the mode from the 7-word table for an index below 7, else gRestoreMode (ds:232C); StartupGame calls it with gGraphicsChoice and with 7 to restore (I0892.C:297, :302, :309)."
+date = "2026-11-03"
+
+[[rename]]
+id = "intro/0D2B:000C=GetVideoMode"
+addr = "intro/0D2B:000C"
+old = "f1DDD_0006"
+new = "GetVideoMode"
+kind = "function"
+why = "Twin of EOB's 1DDD:0006: INT 10h AH=0Fh through int86 and returns AL, the current video mode; StartupGame stores it in gRestoreMode (0892:024B)."
+date = "2026-11-03"
+
+[[rename]]
+id = "intro/0CDD:0016=InstallTickHandler"
+addr = "intro/0CDD:0016"
+old = "f1D8F_0010"
+new = "InstallTickHandler"
+kind = "function"
+why = "Twin of EOB's 1D8F:0010: saves the INT 1Ch vector (INT 21h/35h) in its code segment and points INT 1Ch at its tick handler (INT 21h/25h); main calls it after InstallHardErr (I0892.C:236)."
+date = "2026-11-03"
+
+[[rename]]
+id = "intro/0CDD:003E=RemoveTickHandler"
+addr = "intro/0CDD:003E"
+old = "f1D8F_0038"
+new = "RemoveTickHandler"
+kind = "function"
+why = "Twin of EOB's 1D8F:0038: puts the saved INT 1Ch vector back with INT 21h/25h; ShutdownGame calls it before RemoveKeyboard (I0892.C:472)."
+date = "2026-11-03"
+
+[[rename]]
+id = "intro/09B5:000E=LoadFont"
+addr = "intro/09B5:000E"
+old = "f1A47_0005"
+new = "LoadFont"
+kind = "function"
+why = "Twin of EOB's LoadFont (1A47:0005, the e1a47 module linked again, make twin): StartupGame loads \"Font8.fnt\" with it into gFont8 (0892:0560) and reports \"Unable to load font\" when it returns null."
+date = "2026-11-03"
+
+[[rename]]
+id = "intro/09B5:0172=SetFont"
+addr = "intro/09B5:0172"
+old = "f1A47_0169"
+new = "SetFont"
+kind = "function"
+why = "Twin of EOB's SetFont (1A47:0169): StartupGame calls it with gFont8 right after LoadFont (I0892.C:368) to make the 8x8 font current."
+date = "2026-11-03"
+
+[[rename]]
+id = "intro/0E6C:00B8=gOverlayFileHandle"
+addr = "intro/0E6C:00B8"
+old = "g0E6C_00B8"
+new = "gOverlayFileHandle"
+kind = "function"
+why = "The overlay manager's handle of INTRO.EXE: the INT 3Fh handler closes it and stores the reopened _open result here (09E1:00A9), as EOB's handler does at 20B5:00B8 (E1A72.ASM:169); main closes it with CloseFileHandle before the hand-off (0892:018E)."
+date = "2026-11-03"
+
+[[rename]]
+id = "intro/097F:0002=GetPagePtr"
+addr = "intro/097F:0002"
+old = "f19EC_0002"
+new = "GetPagePtr"
+kind = "function"
+why = "Twin of EOB's 19EC:0002: returns MK_FP(gPageSegs[kind | 1], 0), a far pointer to the start of a page buffer; LoadPacked (0AED:0045) turns its source and destination page numbers into buffers with it (I0AED.C:112)."
+date = "2026-11-03"
+
+[[rename]]
+id = "intro/097F:002A=CopyPage"
+addr = "intro/097F:002A"
+old = "f19EC_002A"
+new = "CopyPage"
+kind = "function"
+why = "Twin of EOB's 19EC:002A: when pages a and b hold distinct nonzero segments it calls driver slot 7 (ds:1EB6 + 28), which in MCGA.OVL (04F8) copies 7D00h words from the first segment to the second; the intro copies page 5 to 2 and 3 to 4 with it (IOV0.C:173, 240)."
+date = "2026-11-03"
+
+[[rename]]
+id = "intro/0998:0008=DrawShape"
+addr = "intro/0998:0008"
+old = "f1A29_000F"
+new = "DrawShape"
+kind = "function"
+why = "Twin of EOB's DrawShape (1A29:000F, the e1a29 module linked again): null check, lazy SelectRegion, then the driver's shape entry (slot 38) at region-relative x and y; the intro draws its scene sprites with it (IOV0.C:246, 267)."
+date = "2026-11-03"
+
+[[rename]]
+id = "intro/0998:0046=DrawShapeFlipped"
+addr = "intro/0998:0046"
+old = "f1A29_004D"
+new = "DrawShapeFlipped"
+kind = "function"
+why = "Twin of EOB's 1A29:004D, the DrawShape front end over driver slot 31: MCGA.OVL 1639 starts the destination at x plus width minus 1 (17A3 to 17AD) and writes each pixel with dec di (17F7 to 17FA), so the shape is drawn mirrored left to right; PlayAvalancheScene draws its two panels with it (IOV0.C:974)."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:F534=gItemRemapTable"
+addr = "ds:F534"
+old = "gBufF534"
+new = "gItemRemapTable"
+kind = "global"
+why = "The 1600-byte block StartupAlloc allocates at 07A9:008B; LoadItemSheets reads the 0x640-byte ITEMRMP file (item remap) into it (ovl2:0478 push [F534], src/EOV2.C:296), and SetMouseItem (07A9:0184 path) and DrawItemIcon (0D1C:070F, src/E0D1C.C:493) pass its 16-byte row icon<<4 to gSetRemapTable before a remapped draw."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:80D2=gSetRemapTable"
+addr = "ds:80D2"
+old = "gFn80D2"
+new = "gSetRemapTable"
+kind = "global"
+why = "Graphics driver export 35. mcga.ovl 277B copies eight words from its far argument into the driver's 16-byte buffer at mcga.ovl 030C, the buffer ds:80E2 points at and that the remapped shape draw ds:80D6 translates pixels through (mcga.ovl 28C2 mov bx,30Ch then xlatb); callers pass an ITEMRMP row (07A9:0184) or the rows ds:1CD3/ds:1CE3 (08E6:0DFC). The driver table mapping: the graphics overlay's init (mcga.ovl 0BF2..0C2F) walks the request table at ds:802A (request +4, ds:8125 = 802A:212E), copies the game's seven import pointers into the driver and writes its own export pointers into the zero pairs that follow, so ds:8046 + 4*i is mcga.ovl export i (the far pointer table at mcga.ovl 001F)."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:80E2=gRemapTable"
+addr = "ds:80E2"
+old = "g80E2"
+new = "gRemapTable"
+kind = "global"
+why = "Graphics driver export 39 is not code: its far pointer is mcga.ovl offset 030C, the 16-byte colour remap buffer gSetRemapTable (ds:80D2, mcga.ovl 277B) fills; SetMouseItem passes it to TranslateImage as the xlatb table (07A9:0197, 17A6:19BE). The driver table mapping: the graphics overlay's init (mcga.ovl 0BF2..0C2F) walks the request table at ds:802A (request +4, ds:8125 = 802A:212E), copies the game's seven import pointers into the driver and writes its own export pointers into the zero pairs that follow, so ds:8046 + 4*i is mcga.ovl export i (the far pointer table at mcga.ovl 001F)."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:DF48=gRemappedIcon"
+addr = "ds:DF48"
+old = "gDF48"
+new = "gRemappedIcon"
+kind = "global"
+why = "LoadItemSheets allocates 0x12C bytes and stores them here (ovl2:041D, 0425); SetMouseItem translates the item icon into it through gRemapTable (TranslateImage destination pushed at 07A9:019B) and shows it as the mouse pointer as gIconsDDE4[0x59] (0xDDE4 + 0x59*4 = 0xDF48, 07A9:01B9). src/EOV2.C:253 calls it the item description buffer [H], which this contradicts."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:DDE4=gItemIcons"
+addr = "ds:DDE4"
+old = "gIconsDDE4"
+new = "gItemIcons"
+kind = "global"
+why = "One far pointer per item icon number: ovl2:03D0 fills entries 1..0x58 from 16x16 cells of the ITEMICN sheet (string ds:677D) and ovl2:0029 writes entry 0, the default pointer shape; SetMouseItem indexes it with Entry14.icon (07A9:0141) and DrawItemIcon draws gIconsDDE4[icon] (src/E0D1C.C:496). Entry 0x59 is gRemappedIcon (ds:DF48), so the two are one array."
+date = "2026-11-03"
+
+[[rename]]
+id = "19EC:0002=GetPageBuffer"
+addr = "19EC:0002"
+old = "f19EC_0002"
+new = "GetPageBuffer"
+kind = "function"
+why = "Returns MK_FP(gSegsFC0C[kind | 1], 0), the odd slot of a page pair; StartupGame fills the odd slots with the MemAlloc'd memory copy of each page and the even ones with video memory in the EGA and VGA choices (src/E07C8.C:349-372, 0xA000/0xA200 or 0xA400 even, MemAlloc odd). Callers take the buffer of pages 7, 5, 3 (07A9:00A3..00CB) and LoadPacked's source and destination (src/E1B82.C:107)."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:009E=gTandySelected"
+addr = "ds:009E"
+old = "g009E"
+new = "gTandySelected"
+kind = "global"
+why = "Its only store is mov byte [9E],1 on StartupGame's Tandy sound path (07C8 image 0x81E8, src/E07C8.C:436, next to gTandyOn = 1); PlaySound and PlaySoundAtCell test it == 1 (177D image 0x17871, 0x179D9) to gate the gTandyOn voice toggle, so it records that the Tandy card was chosen."
+date = "2026-11-03"
+
+[[rename]]
+id = "19EC:002A=CopyPage"
+addr = "19EC:002A"
+old = "f19EC_002A"
+new = "CopyPage"
+kind = "function"
+why = "Calls gCopyPage (ds:8046, graphics driver export 0) with the segments of page slots a and b when both are nonzero and differ; the MCGA export (mcga.ovl 04F8) copies 0x7D00 words, a whole 64000-byte page, from the first segment to the second. Callers copy a loaded screen to page 4 or 2 (LoadScreenImage 082C:051B, EOV0.C:1351, IOV0.C:173)."
+date = "2026-11-03"
+
+[[rename]]
+id = "1A29:004D=DrawShapeFlipped"
+addr = "1A29:004D"
+old = "f1A29_004D"
+new = "DrawShapeFlipped"
+kind = "function"
+why = "The region front end over gDrawShapeFlipped (ds:80A6): its MCGA body (mcga.ovl 1639) writes each pixel then decrements DI (mcga.ovl 17F7 to 17FA), drawing the shape mirrored; callers use it for the negative-delta side of wall faces with x mirrored as 0xB0 - x - width (src/EOV4.C:707-718) and for negative icon indexes (DrawMemberIcons, src/E0EF3.C:1059)."
+date = "2026-11-03"
+
+[[rename]]
+id = "1A29:00C9=DrawShapeFlippedRemapped"
+addr = "1A29:00C9"
+old = "f1A29_00C9"
+new = "DrawShapeFlippedRemapped"
+kind = "function"
+why = "The region front end over ds:80DA (driver export 37); the MCGA body (mcga.ovl 298A) draws 4-bit packed shapes through the remap buffer and nibble-swaps pixel pairs through the table at mcga.ovl 00F6, and the only caller picks it for sprite < 0 after gSetRemapTable, where the unremapped branch picks DrawShapeFlipped (src/EOV4.C:636-649). The flip rests on that pairing and the nibble swap."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:5E1C=gLeftButtonMode"
+addr = "ds:5E1C"
+old = "g5E1C"
+new = "gLeftButtonMode"
+kind = "global"
+why = "DispatchNodeEvent sets it from the left button: 2 or 4 from GetKeyState(0x41) on every call and 1 or 3 on the 0xC6 click (src/E16A5.C:240-259); E1658.C writes 0x81/0x83 with a latch bit, Action0415 tests its low seven bits (0ACD:0415) and src/E0EF3.C:2158 its 0x81 bits; src/E0ACD.C:132 already calls it the left-button mode word."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:8134=gUnreadButtonChanges"
+addr = "ds:8134"
+old = "g8134"
+new = "gUnreadButtonChanges"
+kind = "global"
+why = "The INT 33h handler ORs the changed button bits (old xor new) into it (or ax,[8134]; mov [8134],ax at 1A72 image 0x1A8EC, src/E1A72.ASM:410-411); DrawOptionList (14EF image 0x15158) and RunMapLoop (image 0xBB98) clear it, and no instruction in EOB.EXE or the overlays reads it otherwise."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:FC78=gOptionLineSpacing"
+addr = "ds:FC78"
+old = "gFC78"
+new = "gOptionLineSpacing"
+kind = "global"
+why = "DrawOptionList (14EF:0154) stores its spacing argument here (14EF image 0x1514B, src/E14EF.C:212) and UpdateOptionList adds it to the font height for each row and uses half of it for the band top (src/E14EF.C:285-286); every shipped caller passes 0."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:FC7A=gUnhandledOptionKey"
+addr = "ds:FC7A"
+old = "gFC7A"
+new = "gUnhandledOptionKey"
+kind = "global"
+why = "UpdateOptionList clears it (14EF image 0x151F4) and stores a key it did not handle there, a click outside the list or any other key (src/E14EF.C:330, 338); PickAlignment reads it for 0x6E/0x32 and the click codes 0x41/0x42 (ovl0:2342..235C, src/EOV0.C:1270-1272)."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:5D1A=gHoverSelectsOption"
+addr = "ds:5D1A"
+old = "g5D1A"
+new = "gHoverSelectsOption"
+kind = "global"
+why = "Word 1 in the image (ds:5D1A = 01 00) and never written in EOB.EXE or the overlays; UpdateOptionList lets the pointer position pick the row only when it is set (14EF image 0x15288, src/E14EF.C:301) and DrawOptionList draws the selected row in colorB when it or gMouseDisabled is set (image 0x15108, src/E14EF.C:209)."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:5E1E=gRightButtonMode"
+addr = "ds:5E1E"
+old = "g5E1E"
+new = "gRightButtonMode"
+kind = "global"
+why = "The right-button twin of gLeftButtonMode: DispatchNodeEvent sets it 2 or 4 from GetKeyState(0x42) and 1 or 3 on the 0xC7 click (src/E16A5.C:246-259), E1658.C writes 0x81/0x83 for node flags 0x1000/0x4000, and the dispatcher indexes gRightButtonMasks with it (16A5 image 0x170CF)."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:FC7C=gNodeCallback"
+addr = "ds:FC7C"
+old = "gFC7C"
+new = "gNodeCallback"
+kind = "global"
+why = "SetNodeCallback (16A5:0D78) stores its far argument here (image 0x177D1) and main clears it with SetNodeCallback(0, 0L) (src/E07C8.C:264, \"the node callback\"); DispatchNodeEvent calls it with each node it redraws whose state has 0x20 and a tile (lcall [FC7C] at image 0x16C86, src/E16A5.C:293-295)."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:FC80=gUnreadShapeDrawWord"
+addr = "ds:FC80"
+old = "gFC80"
+new = "gUnreadShapeDrawWord"
+kind = "global"
+why = "Only DrawNode (16A5:07C3) touches it: it saves the word, clears it and restores it around each kind-1 DrawShape call (three copies, 16A5 image 0x17332..0x1768E, src/E16A5.C:598-601, 640-643, 681-684); no other instruction in EOB.EXE or the overlays reads it, so the cleared value is never used."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:805E=gDrawIndexedTile"
+addr = "ds:805E"
+old = "gDraw805E"
+new = "gDrawIndexedTile"
+kind = "global"
+why = "Graphics driver export 6 (mcga.ovl 0717): it maps the tile number through the byte table set by export 13 (ds:807A, mcga.ovl 0C5C stores the tile data, colour rows and map pointers), copies that 16-byte colour row and draws the tile's 4-bit pixels through it at column x, line y; DrawNode passes node->tile34/36 and x>>3 (src/E16A5.C:612, 655, 693). The driver table mapping: the graphics overlay's init (mcga.ovl 0BF2..0C2F) walks the request table at ds:802A (request +4, ds:8125 = 802A:212E), copies the game's seven import pointers into the driver and writes its own export pointers into the zero pairs that follow, so ds:8046 + 4*i is mcga.ovl export i (the far pointer table at mcga.ovl 001F)."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:8066=gXorRect"
+addr = "ds:8066"
+old = "gDraw8066"
+new = "gXorRect"
+kind = "global"
+why = "Graphics driver export 8 (mcga.ovl 2617): it clamps (x1, y1, x2, y2) to 320 by 200 and XORs the colour byte into every pixel of the rectangle (xor es:[di],bl at mcga.ovl 2736, 2748, 2762); DrawNode uses it for the mode-3 highlight of kind-0 nodes (src/E16A5.C:629, 671, 709). The driver table mapping: the graphics overlay's init (mcga.ovl 0BF2..0C2F) walks the request table at ds:802A (request +4, ds:8125 = 802A:212E), copies the game's seven import pointers into the driver and writes its own export pointers into the zero pairs that follow, so ds:8046 + 4*i is mcga.ovl export i (the far pointer table at mcga.ovl 001F)."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:5DEA=gLeftButtonMasks"
+addr = "ds:5DEA"
+old = "g5DEA"
+new = "gLeftButtonMasks"
+kind = "global"
+why = "Words 1..4 are 0x100, 0x200, 0x400, 0x800 in the image, the node flag bit DispatchNodeEvent picks with mask = g5DEA[gLeftButtonMode] (16A5 image 0x170AD, src/E16A5.C:488); word 0 is reused as the OR of the drawn nodes' flags & 0xAA04 (image 0x16C40..0x16C63) and tested at 0x16DBA. Same layout as gRightButtonMasks (ds:5DF2), which overlaps its word 4."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:5E20=gNodeListChanged"
+addr = "ds:5E20"
+old = "g5E20"
+new = "gNodeListChanged"
+kind = "global"
+why = "DispatchNodeEvent redraws the whole list and resets the press state when it is nonzero (cmp byte [5E20],0 at 16A5 image 0x16C29) and clears it after (0x16CCB); the list builders set it to 1 (BuildRowNodeList ovl0:04F3, src/EOV0.C:368; ovl1:13DB, src/EOV1.C:970)."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:5DF2=gRightButtonMasks"
+addr = "ds:5DF2"
+old = "g5DF2"
+new = "gRightButtonMasks"
+kind = "global"
+why = "Words 1..4 are 0x1000, 0x2000, 0x4000, 0x8000 in the image, the node flag bit DispatchNodeEvent picks with mask = g5DF2[gRightButtonMode] (16A5 image 0x170CF, src/E16A5.C:493); word 0 is gLeftButtonMasks[4] (0x800), so the two tables are one run of nine words at ds:5DEA."
+date = "2026-11-03"
+
+[[rename]]
+id = "1BA8:0072=NormalizePtr"
+addr = "1BA8:0072"
+old = "f1BA8_0072"
+new = "NormalizePtr"
+kind = "function"
+why = "Loads its far pointer argument into DX:AX and calls NormFar (1BA8:0081), which returns offset & 0Fh and segment + offset >> 4 (src/E1BA8.ASM:80-104); callers normalise buffers before large reads and writes (src/E1C0E.C:320, 363, 810; MemAlloc src/E19BC.C:94; src/EOV3.C:780)."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:8046=gCopyPage"
+addr = "ds:8046"
+old = "gHandler8046"
+new = "gCopyPage"
+kind = "global"
+why = "Graphics driver export 0 (mcga.ovl 04F8): it copies 0x7D00 words from offset 0 of its first segment argument to offset 0 of the second, a whole 64000-byte page; its only caller is CopyPage (19EC:002A). The driver table mapping: the graphics overlay's init (mcga.ovl 0BF2..0C2F) walks the request table at ds:802A (request +4, ds:8125 = 802A:212E), copies the game's seven import pointers into the driver and writes its own export pointers into the zero pairs that follow, so ds:8046 + 4*i is mcga.ovl export i (the far pointer table at mcga.ovl 001F)."
+date = "2026-11-03"
+
+[[rename]]
+id = "19EC:0016=GetPageVideo"
+addr = "19EC:0016"
+old = "f19EC_0016"
+new = "GetPageVideo"
+kind = "function"
+why = "Returns MK_FP(gSegsFC0C[kind & ~1], 0), the even slot of a page pair, which StartupGame fills with video memory in the EGA and VGA choices (0xA000, 0xA200, 0xA400, 0xA800, 0xAC00, src/E07C8.C:349-372) and with the same segment as the odd slot otherwise; the twin of GetPageBuffer. No caller found."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:8052=gCopyRegion"
+addr = "ds:8052"
+old = "gFn8052"
+new = "gCopyRegion"
+kind = "global"
+why = "Graphics driver export 3 (mcga.ovl 05D4): it takes (x1, y1, x2, y2, width, height, srcPage, dstPage), x in 8-pixel columns, looks the two page segments up through the gSegsFC0C import (mcga.ovl 0641..064F calling 0B3F) and copies the rectangle at (x1, y1) to (x2, y2); ClipRect (19F3:000E) is its only caller, e.g. ClipRect(0,0,0,0,40,200,4,2) copies page 4 to page 2. The driver table mapping: the graphics overlay's init (mcga.ovl 0BF2..0C2F) walks the request table at ds:802A (request +4, ds:8125 = 802A:212E), copies the game's seven import pointers into the driver and writes its own export pointers into the zero pairs that follow, so ds:8046 + 4*i is mcga.ovl export i (the far pointer table at mcga.ovl 001F)."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:FE6C=gRetraceInverted"
+addr = "ds:FE6C"
+old = "gFE6C"
+new = "gRetraceInverted"
+kind = "global"
+why = "CalibrateRetrace (1A65:000E) sets it to 1 when 10000 samples of port 3DAh bit 3 read set more often than clear (image 0x1A71A); WaitFrames passes it to WaitRetrace (1A16 image 0x1A170), which with 1 swaps the order of its two waits, treating a clear bit as the retrace (src/E1DE4.ASM:24-48)."
+date = "2026-11-03"
+
+[[rename]]
+id = "1DE4:000D=WaitRetrace"
+addr = "1DE4:000D"
+old = "f1DE4_000D"
+new = "WaitRetrace"
+kind = "function"
+why = "Polls port 3DAh bit 3 (vertical retrace) twice: for the start then the end of retrace, or with argument 1 the end then the start (src/E1DE4.ASM:24-48); WaitFrames (1A16:000B) calls it once per frame with gRetraceInverted."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:80A6=gDrawShapeFlipped"
+addr = "ds:80A6"
+old = "gDraw80A6"
+new = "gDrawShapeFlipped"
+kind = "global"
+why = "Graphics driver export 24 (mcga.ovl 1639): the same argument list as gDrawShape (ds:80C2) but it writes each run pixel then decrements DI (mcga.ovl 17F7 to 17FA), drawing the shape mirrored left to right; reached through DrawShapeFlipped (1A29:004D). The driver table mapping: the graphics overlay's init (mcga.ovl 0BF2..0C2F) walks the request table at ds:802A (request +4, ds:8125 = 802A:212E), copies the game's seven import pointers into the driver and writes its own export pointers into the zero pairs that follow, so ds:8046 + 4*i is mcga.ovl export i (the far pointer table at mcga.ovl 001F)."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:80D6=gDrawShapeRemapped"
+addr = "ds:80D6"
+old = "gDraw80D6"
+new = "gDrawShapeRemapped"
+kind = "global"
+why = "Graphics driver export 36 (mcga.ovl 279C): it draws a 4-bit packed shape translating each pixel through the remap buffer (mov bx,30Ch at mcga.ovl 28C2, xlatb at 2930 and 293B) that gSetRemapTable fills; reached through 1A29:008B, called right after gSetRemapTable (src/E0D1C.C:493-496, src/EOV4.C:638-642). The driver table mapping: the graphics overlay's init (mcga.ovl 0BF2..0C2F) walks the request table at ds:802A (request +4, ds:8125 = 802A:212E), copies the game's seven import pointers into the driver and writes its own export pointers into the zero pairs that follow, so ds:8046 + 4*i is mcga.ovl export i (the far pointer table at mcga.ovl 001F)."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:80DA=gDrawShapeFlippedRemapped"
+addr = "ds:80DA"
+old = "gDraw80DA"
+new = "gDrawShapeFlippedRemapped"
+kind = "global"
+why = "Graphics driver export 37 (mcga.ovl 298A): like gDrawShapeRemapped it returns at once for a shape whose first byte is 0 and draws through the remap buffer at mcga.ovl 030C, and it also swaps the pixel nibbles through the table at mcga.ovl 00F6 (2BA8, 2BBD); its caller pairs it with DrawShapeFlipped for sprite < 0 (src/EOV4.C:642-649). The driver table mapping: the graphics overlay's init (mcga.ovl 0BF2..0C2F) walks the request table at ds:802A (request +4, ds:8125 = 802A:212E), copies the game's seven import pointers into the driver and writes its own export pointers into the zero pairs that follow, so ds:8046 + 4*i is mcga.ovl export i (the far pointer table at mcga.ovl 001F)."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:809A=gDrawShapeMasked"
+addr = "ds:809A"
+old = "gDraw809A"
+new = "gDrawShapeMasked"
+kind = "global"
+why = "Graphics driver export 21 (mcga.ovl 12F0): its extra word is a level compared with up to seven mask planes in page 4 (offsets 1F40h steps, mcga.ovl 14DE..1568); a covered pixel is replaced by the page 2 pixel (1576..157F), so the shape is drawn behind the masked layers. Reached through 1A29:0107, which has no caller. The driver table mapping: the graphics overlay's init (mcga.ovl 0BF2..0C2F) walks the request table at ds:802A (request +4, ds:8125 = 802A:212E), copies the game's seven import pointers into the driver and writes its own export pointers into the zero pairs that follow, so ds:8046 + 4*i is mcga.ovl export i (the far pointer table at mcga.ovl 001F)."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:8096=gDrawShapeMaskedFlipped"
+addr = "ds:8096"
+old = "gDraw8096"
+new = "gDrawShapeMaskedFlipped"
+kind = "global"
+why = "Graphics driver export 20 (mcga.ovl 1006): the same level and page 4 mask test as gDrawShapeMasked (cs:[1FB] set from [bp+10h] at 1012, plane reads at 11FF and 1213) with a decrementing destination (dec di at 117C), the mirrored twin. Reached through 1A29:0148, which has no caller. The driver table mapping: the graphics overlay's init (mcga.ovl 0BF2..0C2F) walks the request table at ds:802A (request +4, ds:8125 = 802A:212E), copies the game's seven import pointers into the driver and writes its own export pointers into the zero pairs that follow, so ds:8046 + 4*i is mcga.ovl export i (the far pointer table at mcga.ovl 001F)."
+date = "2026-11-03"
+
+[[rename]]
+id = "1A29:0107=DrawShapeMasked"
+addr = "1A29:0107"
+old = "f1A29_0107"
+new = "DrawShapeMasked"
+kind = "function"
+why = "The region front end over gDrawShapeMasked (ds:809A), like DrawShape (1A29:000F) plus the extra mask level word it forwards; the MCGA body (mcga.ovl 12F0) draws the shape behind the page 4 mask planes from that level. No caller in EOB.EXE or its overlays (make packet)."
+date = "2026-11-03"
+
+[[rename]]
+id = "1A29:0148=DrawShapeMaskedFlipped"
+addr = "1A29:0148"
+old = "f1A29_0148"
+new = "DrawShapeMaskedFlipped"
+kind = "function"
+why = "The region front end over gDrawShapeMaskedFlipped (ds:8096), like 1A29:0107 but through the mirrored driver body (mcga.ovl 1006, dec di at 117C); no caller in EOB.EXE or its overlays (make packet)."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:80FE=gErrorDialogRegion"
+addr = "ds:80FE"
+old = "g80FE"
+new = "gErrorDialogRegion"
+kind = "global"
+why = "Its only reader is DisplayFileError (1C0E:0ADD), which pushes it for SetTextWindow (push [80FE] at image 0x1CC13, src/E1C0E.C:545) to switch to the error box's text window; 1 in the image and never written."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:84A2=gBiosVideoModes"
+addr = "ds:84A2"
+old = "g84A2"
+new = "gBiosVideoModes"
+kind = "global"
+why = "Seven words 4, 9, 0Dh, 13h, 13h, 7, 2 in the image: f1DDD_002D (1DDD:002D, INT 10h set mode) loads entry [graphics choice] into AX for INT 10h AH=00h, mode 4 for CGA, 9 Tandy, 0Dh EGA, 13h MCGA and VGA (src/E1DDD.C:10-12)."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:FF46=gVideoInRegs"
+addr = "ds:FF46"
+old = "gFF46"
+new = "gVideoInRegs"
+kind = "global"
+why = "The union REGS input of the unit's int86 calls: 1DDD:0006 stores 0F00h (image 0x1DDD9) and 1DDD:002D the mode (0x1DE16) before int86(0x10, &gFF46, &gFF36) (src/E1DDD.C:35-48)."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:FF36=gVideoOutRegs"
+addr = "ds:FF36"
+old = "gFF36"
+new = "gVideoOutRegs"
+kind = "global"
+why = "The union REGS output of the unit's int86 calls (int86(0x10, &gFF46, &gFF36)); GetVideoMode returns its low byte, the AL of INT 10h AH=0Fh (image 0x1DDF5, src/E1DDD.C:37)."
+date = "2026-11-03"
+
+[[rename]]
+id = "1DDD:0006=GetVideoMode"
+addr = "1DDD:0006"
+old = "f1DDD_0006"
+new = "GetVideoMode"
+kind = "function"
+why = "Puts 0F00h in gVideoInRegs, calls int86(0x10, ...) and returns AL of the output, INT 10h AH=0Fh (get current video mode) (src/E1DDD.C:33-38); the INTRO twin 0D2B:000C is used to query the mode to restore (src/I0892.C:8, :290)."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:805A=gDrawCell8x8"
+addr = "ds:805A"
+old = "gDraw805A"
+new = "gDrawCell8x8"
+kind = "global"
+why = "Graphics driver export 5 (mcga.ovl 06AF): it clamps the column to 0..39 and the line to 0..192 and copies 8 rows of 8 bytes (rep movsw cx=4, eight times, stride 138h) from the far source to the page; DrawTextFrame and DrawTileRun draw each frame tile through it at gTileBuf + (n << 5 or 6) (src/E1DE7.C:180-215). The driver table mapping: the graphics overlay's init (mcga.ovl 0BF2..0C2F) walks the request table at ds:802A (request +4, ds:8125 = 802A:212E), copies the game's seven import pointers into the driver and writes its own export pointers into the zero pairs that follow, so ds:8046 + 4*i is mcga.ovl export i (the far pointer table at mcga.ovl 001F)."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:323B=gMonsterFrontPos"
+addr = "ds:323B"
+old = "g323B"
+new = "gMonsterFrontPos"
+kind = "global"
+why = "16 bytes read as [orient * 4 + position] by 08E6:103D: {1,1,0,0, 0,1,0,1, 0,0,1,1, 1,0,1,0} is 1 for the two positions in a cell (0 NW, 1 NE, 2 SW, 3 SE) on the side the monster faces"
+date = "2026-11-03"
+
+[[rename]]
+id = "0000:60BD=int86"
+addr = "0000:60BD"
+old = "f60BD"
+new = "int86"
+kind = "function"
+why = "Borland's runtime int86(intno, inregs, outregs): it calls segread (0000:66BB) and builds an int N stub on its stack (0CDh, N from its first argument, 0000:6109); E1DDD calls it with 0x10 for the BIOS video mode"
+date = "2026-11-03"
+
+[[rename]]
+id = "211E:007F=WinnerPanel"
+addr = "211E:007F"
+old = "fOvl5_160A"
+new = "WinnerPanel"
+kind = "function"
+why = "the resident stub of overlay 5's entry ovl5:160A, WinnerPanel; stubs take their function's name, as 2116:005C DrawViewFrame does; 08E6:0EC3 calls it when a type 0x15 monster dies"
+date = "2026-11-03"

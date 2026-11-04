@@ -25,7 +25,7 @@
 ;
 ; Globals src/ already names keep those names: _gPointerBusy, _gMouseDisabled, _gPointerHeight, _gPointerWidth8,
 ; _gPointerHotX, _gPointerHotY, _gPointerBackOff, _gPointerBackSeg, _gPointerShapeOff, _gPointerShapeSeg,
-; g8172, g8174, g80AA and g80A2 from src/E1BB1.ASM (and _gMouseDisabled from
+; gEgaRegShadowOff, gEgaRegShadowSeg, gSaveDrawState and gRestoreDrawState from src/E1BB1.ASM (and _gMouseDisabled from
 ; src/E07A9.C, _gDrawShape from src/E1A29.C). The byte at 1BBE:0001 is the unit's segment start, as
 ; in 1BB1:0001 and 1BF3:000D.
 
@@ -97,11 +97,11 @@
         EXTRN   _gPointerBackSeg:WORD    ; @ ds:816C: save-under buffer, far segment, 0 = none
         EXTRN   _gPointerShapeOff:WORD   ; @ ds:816E: pointer shape record, far offset (1BB1 stores it)
         EXTRN   _gPointerShapeSeg:WORD   ; @ ds:8170: pointer shape record, far segment
-        EXTRN   g8172:WORD              ; @ ds:8172: far pointer handed to [ds:80AA], offset; the 17A6
+        EXTRN   gEgaRegShadowOff:WORD              ; @ ds:8172: far pointer handed to [ds:80AA], offset; the 17A6
                                         ; unit saves and restores the 16 bytes under it (src/E1A72.ASM:561-569
                                         ; is the _SetFarPointer header, grep `_SetFarPointer`; the sentence
                                         ; is at :565; the saved copy is E17A6.ASM:93-95)
-        EXTRN   g8174:WORD              ; @ ds:8174: the same far pointer, segment (pushed first)
+        EXTRN   gEgaRegShadowSeg:WORD              ; @ ds:8174: the same far pointer, segment (pushed first)
         EXTRN   _gRectLeft:WORD         ; @ ds:8176: pointer rectangle, left; in 8-pixel columns and
                                         ; clipped in HidePointer/ShowPointer, in pixels and unclipped
                                         ; in HidePointerZone, which compares it with the zone
@@ -127,8 +127,8 @@
                                         ; (ShowPointer shifts the left edge right by three, the three
                                         ; `sar ax,1` at 1BBE:014A-014F, after the `mov ax,[_gRectLeft]`
                                         ; at 1BBE:0147-0149)
-        EXTRN   g80AA:DWORD             ; @ ds:80AA: far fn (g8172/g8174) before the pointer work
-        EXTRN   g80A2:DWORD             ; @ ds:80A2: far fn (no arguments) after the pointer work
+        EXTRN   gSaveDrawState:DWORD             ; @ ds:80AA: far fn (gEgaRegShadowOff/gEgaRegShadowSeg) before the pointer work
+        EXTRN   gRestoreDrawState:DWORD             ; @ ds:80A2: far fn (no arguments) after the pointer work
         EXTRN   _gDrawShape:DWORD         ; @ ds:80C2: far fn (mode, void far *src, x, y); the `gDraw`
                                         ; prefix is a family guess (src/E1A29.C:53); the evidence is
                                         ; ShowPointer below, which calls it at 1BBE:01F4 with mode 0 and
@@ -140,8 +140,8 @@
 ; 1BBE:0001: Purpose unknown: the unit's first byte is 00. It is emitted under a public symbol
 ; so the registry records it and the unit counts complete, as 1BB1:0001, 1BA8:0005 and 1BF3:000D
 ; do; it is the unit's segment start, not code and not called.
-        PUBLIC  _f1BBE_0001
-_f1BBE_0001 LABEL BYTE                    ; @ 1BBE:0001
+        PUBLIC  _PadBeforeHidePointer
+_PadBeforeHidePointer LABEL BYTE                    ; @ 1BBE:0001
         db      0
 
 ; 1BBE:0002 HidePointer: hide the pointer. Does nothing when the pointer is disabled (_gMouseDisabled).
@@ -428,13 +428,13 @@ L0234:  mov     [_gZoneLeft],cx
         cmp     [_gRectTop],di
         jg      L02B6
         or      word ptr [_gPointerState],4000h
-L029F:  push    word ptr [g8174]
-        push    word ptr [g8172]
-        call    dword ptr [g80AA]
+L029F:  push    word ptr [gEgaRegShadowSeg]
+        push    word ptr [gEgaRegShadowOff]
+        call    dword ptr [gSaveDrawState]
         add     sp,4
         push    cs                      ; far call: the FAR ret pops this CS (see 1BBE:01FE)
         call    near ptr _HidePointer
-        call    dword ptr [g80A2]
+        call    dword ptr [gRestoreDrawState]
 L02B6:  dec     word ptr [_gPointerBusy]
         pop     si
         pop     dx
@@ -468,13 +468,13 @@ L02C6:  cmp     word ptr [_gPointerBusy],0
 L02DE:  mov     word ptr [_gPointerState],0
         test    ax,4000h
         je      L0300
-L02E9:  push    word ptr [g8174]
-        push    word ptr [g8172]
-        call    dword ptr [g80AA]
+L02E9:  push    word ptr [gEgaRegShadowSeg]
+        push    word ptr [gEgaRegShadowOff]
+        call    dword ptr [gSaveDrawState]
         add     sp,4
         push    cs                      ; far call: the FAR ret pops this CS (see 1BBE:01FE)
         call    near ptr _ShowPointer
-        call    dword ptr [g80A2]
+        call    dword ptr [gRestoreDrawState]
 L0300:  dec     word ptr [_gPointerBusy]
         pop     ax
         pop     bp
@@ -496,13 +496,13 @@ _LockHidePointer PROC FAR
 L030A:  cmp     word ptr [_gPointerBusy],0
         jne     L030A
         inc     word ptr [_gPointerBusy]
-        push    word ptr [g8174]
-        push    word ptr [g8172]
-        call    dword ptr [g80AA]
+        push    word ptr [gEgaRegShadowSeg]
+        push    word ptr [gEgaRegShadowOff]
+        call    dword ptr [gSaveDrawState]
         add     sp,4
         push    cs                      ; far call: the FAR ret pops this CS (see 1BBE:01FE)
         call    near ptr _HidePointer
-        call    dword ptr [g80A2]
+        call    dword ptr [gRestoreDrawState]
         dec     word ptr [_gPointerBusy]
         pop     bp
         ret
@@ -519,13 +519,13 @@ _LockShowPointer PROC FAR
 L0335:  cmp     word ptr [_gPointerBusy],0
         jne     L0335
         inc     word ptr [_gPointerBusy]
-        push    word ptr [g8174]
-        push    word ptr [g8172]
-        call    dword ptr [g80AA]
+        push    word ptr [gEgaRegShadowSeg]
+        push    word ptr [gEgaRegShadowOff]
+        call    dword ptr [gSaveDrawState]
         add     sp,4
         push    cs                      ; far call: the FAR ret pops this CS (see 1BBE:01FE)
         call    near ptr _ShowPointer
-        call    dword ptr [g80A2]
+        call    dword ptr [gRestoreDrawState]
         dec     word ptr [_gPointerBusy]
         pop     bp
         ret

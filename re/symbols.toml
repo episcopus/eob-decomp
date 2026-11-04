@@ -880,6 +880,7 @@ unit = "e_lib"
 addr = "0000:60BD"
 size = 50
 evidence = ["far", "frame"]
+name = "int86"
 
 [[function]]
 id = "e0000_60ef"
@@ -1566,10 +1567,10 @@ unit = "e082c"
 addr = "082C:063B"
 size = 70
 evidence = ["far", "frame"]
-name = "DrawRegion000F"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "DrawShapeClipped"
 
 [[function]]
 id = "e082c_0681"
@@ -1577,10 +1578,10 @@ unit = "e082c"
 addr = "082C:0681"
 size = 70
 evidence = ["far", "frame"]
-name = "DrawRegion004D"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "DrawShapeClippedFlipped"
 
 [[function]]
 id = "e082c_06c7"
@@ -1588,10 +1589,10 @@ unit = "e082c"
 addr = "082C:06C7"
 size = 70
 evidence = ["frame"]
-name = "DrawRegion008B"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "DrawShapeClippedRemapped"
 
 [[function]]
 id = "e082c_070d"
@@ -1599,10 +1600,10 @@ unit = "e082c"
 addr = "082C:070D"
 size = 64
 evidence = ["frame"]
-name = "DrawRegion00C9"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "DrawShapeClippedRemapFlipped"
 
 [[function]]
 id = "e082c_074d"
@@ -1819,10 +1820,10 @@ unit = "e08e6"
 addr = "08E6:00C3"
 size = 141
 evidence = ["near", "frame"]
-name = "Obj00C3"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "AlertMonsterToParty"
 
 [[function]]
 id = "e08e6_0150"
@@ -1885,10 +1886,10 @@ unit = "e08e6"
 addr = "08E6:03FE"
 size = 50
 evidence = ["near", "frame"]
-name = "Obj03FE"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "ChasePartyIfAttacked"
 
 [[function]]
 id = "e08e6_0430"
@@ -1896,10 +1897,10 @@ unit = "e08e6"
 addr = "08E6:0430"
 size = 346
 evidence = ["near", "frame"]
-name = "Obj0430"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "StepMonsterToward"
 
 [[function]]
 id = "e08e6_058a"
@@ -1918,10 +1919,10 @@ unit = "e08e6"
 addr = "08E6:05EA"
 size = 341
 evidence = ["near", "frame"]
-name = "Obj05EA"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "TryMonsterMelee"
 
 [[function]]
 id = "e08e6_073f"
@@ -1929,10 +1930,10 @@ unit = "e08e6"
 addr = "08E6:073F"
 size = 38
 evidence = ["near", "frame"]
-name = "Obj073F"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "LaunchMonsterSpell"
 
 [[function]]
 id = "e08e6_0765"
@@ -1940,10 +1941,10 @@ unit = "e08e6"
 addr = "08E6:0765"
 size = 851
 evidence = ["near", "frame"]
-name = "Obj0765"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "TryMonsterRangedAttack"
 
 [[function]]
 id = "e08e6_0ab8"
@@ -1951,10 +1952,10 @@ unit = "e08e6"
 addr = "08E6:0AB8"
 size = 124
 evidence = ["near"]
-name = "Obj0AB8"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "UpdateHuntingMonster"
 
 [[function]]
 id = "e08e6_0b34"
@@ -1973,10 +1974,10 @@ unit = "e08e6"
 addr = "08E6:0B94"
 size = 274
 evidence = ["near", "frame"]
-name = "Obj0B94"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "StepMonsterAlongWall"
 
 [[function]]
 id = "e08e6_0ca6"
@@ -1984,10 +1985,10 @@ unit = "e08e6"
 addr = "08E6:0CA6"
 size = 34
 evidence = ["near", "frame"]
-name = "Obj0CA6"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "TickMonsterTimer"
 
 [[function]]
 id = "e08e6_0cc8"
@@ -2017,10 +2018,10 @@ unit = "e08e6"
 addr = "08E6:0E48"
 size = 123
 evidence = ["far", "near", "frame"]
-name = "Obj0E48"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "FinishDeferredHits"
 
 [[function]]
 id = "e08e6_0ec3"
@@ -2028,10 +2029,10 @@ unit = "e08e6"
 addr = "08E6:0EC3"
 size = 251
 evidence = ["far", "near", "frame"]
-name = "Obj0EC3"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "KillMonster"
 
 [[function]]
 id = "e08e6_0fbe"
@@ -2050,10 +2051,10 @@ unit = "e08e6"
 addr = "08E6:103D"
 size = 46
 evidence = ["far", "frame"]
-name = "Obj103D"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "IsMonsterAtFront"
 
 [[function]]
 id = "e08e6_106b"
@@ -2061,10 +2062,10 @@ unit = "e08e6"
 addr = "08E6:106B"
 size = 136
 evidence = ["far", "near", "frame"]
-name = "Obj106B"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "RollMonsterToHit"
 
 [[function]]
 id = "e08e6_10f3"
@@ -2072,10 +2073,10 @@ unit = "e08e6"
 addr = "08E6:10F3"
 size = 554
 evidence = ["far", "frame"]
-name = "Obj10F3"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "ResolveMonsterMelee"
 
 [[function]]
 id = "e08e6_131d"
@@ -2083,10 +2084,10 @@ unit = "e08e6"
 addr = "08E6:131D"
 size = 243
 evidence = ["near", "frame"]
-name = "Obj131D"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "InitMonster"
 
 [[function]]
 id = "e08e6_1410"
@@ -2094,10 +2095,10 @@ unit = "e08e6"
 addr = "08E6:1410"
 size = 245
 evidence = ["far", "frame"]
-name = "Obj1410"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "TickLevelScriptTimer"
 
 [[function]]
 id = "e08e6_1505"
@@ -2127,10 +2128,10 @@ unit = "e08e6"
 addr = "08E6:15B4"
 size = 128
 evidence = ["far", "frame"]
-name = "Obj15B4"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "FindMeleeTarget"
 
 [[function]]
 id = "e08e6_1634"
@@ -2138,10 +2139,10 @@ unit = "e08e6"
 addr = "08E6:1634"
 size = 162
 evidence = ["near", "frame"]
-name = "Obj1634"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "DamageMonsterWithSave"
 
 [[function]]
 id = "e08e6_16d6"
@@ -2149,10 +2150,10 @@ unit = "e08e6"
 addr = "08E6:16D6"
 size = 159
 evidence = ["far", "frame"]
-name = "Obj16D6"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "DamageNearRowMonsters"
 
 [[function]]
 id = "e08e6_1775"
@@ -2160,10 +2161,10 @@ unit = "e08e6"
 addr = "08E6:1775"
 size = 136
 evidence = ["near", "frame"]
-name = "Obj1775"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "FindMonsterNearPos"
 
 [[function]]
 id = "e08e6_17fd"
@@ -2182,10 +2183,10 @@ unit = "e08e6"
 addr = "08E6:189D"
 size = 41
 evidence = ["far", "frame"]
-name = "Obj189D"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "IsMonsterAtPos"
 
 [[function]]
 id = "e0a72_0006"
@@ -3059,10 +3060,10 @@ unit = "e0d1c"
 addr = "0D1C:0006"
 size = 57
 evidence = ["far", "segment"]
-name = "f0D1C_0006"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "IsCellInView"
 
 [[function]]
 id = "e0d1c_003f"
@@ -3214,10 +3215,10 @@ unit = "e0d1c"
 addr = "0D1C:059B"
 size = 213
 evidence = ["far", "frame"]
-name = "f0D1C_059B"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "RollMemberSave"
 
 [[function]]
 id = "e0d1c_0670"
@@ -3269,10 +3270,10 @@ unit = "e0d1c"
 addr = "0D1C:08B1"
 size = 82
 evidence = ["near", "frame"]
-name = "f0D1C_08B1"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "HoldsHolySymbol"
 
 [[function]]
 id = "e0d1c_0903"
@@ -3281,10 +3282,10 @@ addr = "0D1C:0903"
 size = 200
 evidence = ["near", "frame"]
 notes = "matched 2026-11-02 under -v: the game modules were compiled with debug information, which keeps identical code tails apart while TCC sizes the jumps (whitepaper 2.1.1); the earlier -B question is answered"
-name = "f0D1C_0903"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "FindBestUndeadTurner"
 
 [[function]]
 id = "e0d1c_09cb"
@@ -3292,10 +3293,10 @@ unit = "e0d1c"
 addr = "0D1C:09CB"
 size = 120
 evidence = ["near", "frame"]
-name = "f0D1C_09CB"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "TryTurnMonster"
 
 [[function]]
 id = "e0d1c_0a43"
@@ -3326,10 +3327,10 @@ unit = "e0d1c"
 addr = "0D1C:0BEB"
 size = 54
 evidence = ["far", "frame"]
-name = "f0D1C_0BEB"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "IsWeaponDamageHalved"
 
 [[function]]
 id = "e0d1c_0c21"
@@ -6249,10 +6250,10 @@ unit = "e19ec"
 addr = "19EC:0002"
 size = 20
 evidence = ["far", "segment"]
-name = "f19EC_0002"
 level = "L2"
 match_flags = "-ml -O -Z"
 review = "passed 2026-11-01 rev-sonnet"
+name = "GetPageBuffer"
 
 [[function]]
 id = "e19ec_0016"
@@ -6260,10 +6261,10 @@ unit = "e19ec"
 addr = "19EC:0016"
 size = 20
 evidence = ["frame"]
-name = "f19EC_0016"
 level = "L2"
 match_flags = "-ml -O -Z"
 review = "passed 2026-11-01 rev-sonnet"
+name = "GetPageVideo"
 
 [[function]]
 id = "e19ec_002a"
@@ -6271,10 +6272,10 @@ unit = "e19ec"
 addr = "19EC:002A"
 size = 84
 evidence = ["far", "frame"]
-name = "f19EC_002A"
 level = "L2"
 match_flags = "-ml -O -Z"
 review = "passed 2026-11-01 rev-sonnet"
+name = "CopyPage"
 
 [[function]]
 id = "e19f3_000e"
@@ -6295,9 +6296,9 @@ size = 1
 evidence = ["segment"]
 level = "L2"
 match_flags = "tasm /mx"
-name = "_f19FC_0007"
 notes = "the segment-start marker byte (data, not code); CompressLcw follows at 19FC:0008 (see e19fc_0008)"
 review = "passed 2026-11-01 rev-haiku"
+name = "PadBeforeCompressLcw"
 
 [[function]]
 id = "e19fc_0008"
@@ -6383,10 +6384,10 @@ unit = "e1a29"
 addr = "1A29:004D"
 size = 62
 evidence = ["far", "frame"]
-name = "f1A29_004D"
 level = "L2"
 match_flags = "-ml -O -Z -G"
 review = "passed 2026-11-01 rev-haiku"
+name = "DrawShapeFlipped"
 
 [[function]]
 id = "e1a29_008b"
@@ -6394,10 +6395,10 @@ unit = "e1a29"
 addr = "1A29:008B"
 size = 62
 evidence = ["far", "frame"]
-name = "f1A29_008B"
 level = "L2"
 match_flags = "-ml -O -Z -G"
 review = "passed 2026-11-01 rev-haiku"
+name = "DrawShapeRemapped"
 
 [[function]]
 id = "e1a29_00c9"
@@ -6405,10 +6406,10 @@ unit = "e1a29"
 addr = "1A29:00C9"
 size = 62
 evidence = ["far", "frame"]
-name = "f1A29_00C9"
 level = "L2"
 match_flags = "-ml -O -Z -G"
 review = "passed 2026-11-01 rev-haiku"
+name = "DrawShapeFlippedRemapped"
 
 [[function]]
 id = "e1a29_0107"
@@ -6416,10 +6417,10 @@ unit = "e1a29"
 addr = "1A29:0107"
 size = 65
 evidence = ["frame"]
-name = "f1A29_0107"
 level = "L2"
 match_flags = "-ml -O -Z -G"
 review = "passed 2026-11-01 rev-haiku"
+name = "DrawShapeMasked"
 
 [[function]]
 id = "e1a29_0148"
@@ -6427,10 +6428,10 @@ unit = "e1a29"
 addr = "1A29:0148"
 size = 65
 evidence = ["frame"]
-name = "f1A29_0148"
 level = "L2"
 match_flags = "-ml -O -Z -G"
 review = "passed 2026-11-01 rev-haiku"
+name = "DrawShapeMaskedFlipped"
 
 [[function]]
 id = "e1a29_0189"
@@ -6889,10 +6890,10 @@ unit = "e1ba8"
 addr = "1BA8:0005"
 size = 1
 evidence = ["segment"]
-name = "_f1BA8_0005"
 level = "L2"
 match_flags = "tasm /mx"
 review = "passed 2026-11-01 rev-sonnet"
+name = "PadBeforeUnpack0"
 
 [[function]]
 id = "e1ba8_0006"
@@ -6911,10 +6912,10 @@ unit = "e1ba8"
 addr = "1BA8:0072"
 size = 15
 evidence = ["far", "frame"]
-name = "_f1BA8_0072"
 level = "L2"
 match_flags = "tasm /mx"
 review = "passed 2026-11-01 rev-sonnet"
+name = "NormalizePtr"
 
 [[function]]
 id = "e1ba8_0081"
@@ -6954,10 +6955,10 @@ unit = "e1bbe"
 addr = "1BBE:0001"
 size = 1
 evidence = ["segment"]
-name = "_f1BBE_0001"
 level = "L2"
 match_flags = "tasm /mx"
 review = "passed 2026-11-02 rev-haiku"
+name = "PadBeforeHidePointer"
 
 [[function]]
 id = "e1bbe_0002"
@@ -7031,11 +7032,11 @@ unit = "e1bf3"
 addr = "1BF3:000D"
 size = 1
 evidence = ["segment"]
-name = "_f1BF3_000D"
 level = "L2"
 match_flags = "tasm /mx"
 review = "passed 2026-11-01 rev-sonnet"
 notes = "not a function: bytes of the unit outside its functions (a marker or padding), matched with the whole unit"
+name = "PadBeforePlacePointer"
 
 [[function]]
 id = "e1bf3_000e"
@@ -7043,10 +7044,10 @@ unit = "e1bf3"
 addr = "1BF3:000E"
 size = 121
 evidence = ["near"]
-name = "_f1BF3_000E"
 level = "L2"
 match_flags = "tasm /mx"
 review = "passed 2026-11-01 rev-sonnet"
+name = "PlacePointer"
 
 [[function]]
 id = "e1bf3_0087"
@@ -7054,10 +7055,10 @@ unit = "e1bf3"
 addr = "1BF3:0087"
 size = 33
 evidence = ["frame"]
-name = "_f1BF3_0087"
 level = "L2"
 match_flags = "tasm /mx"
 review = "passed 2026-11-01 rev-sonnet"
+name = "MovePointerTo"
 
 [[function]]
 id = "e1bf3_00a8"
@@ -7460,10 +7461,10 @@ unit = "e1d8f"
 addr = "1D8F:0002"
 size = 14
 evidence = ["segment"]
-name = "_f1D8F_0002"
 level = "L2"
 match_flags = "tasm /mx"
 review = "passed 2026-11-01 rev-sonnet"
+name = "ReadTickCount"
 
 [[function]]
 id = "e1d8f_0010"
@@ -7581,10 +7582,10 @@ unit = "e1ddd"
 addr = "1DDD:0006"
 size = 39
 evidence = ["segment"]
-name = "f1DDD_0006"
 level = "L2"
 match_flags = "-ml -O -Z"
 review = "passed 2026-11-01 rev-haiku"
+name = "GetVideoMode"
 
 [[function]]
 id = "e1ddd_002d"
@@ -7603,10 +7604,10 @@ unit = "e1de4"
 addr = "1DE4:0000"
 size = 13
 evidence = ["far", "segment"]
-name = "_f1DE4_0000"
 level = "L2"
 match_flags = "tasm /mx"
 review = "passed 2026-11-01 rev-sonnet"
+name = "IsInVerticalRetrace"
 
 [[function]]
 id = "e1de4_000d"
@@ -7614,10 +7615,10 @@ unit = "e1de4"
 addr = "1DE4:000D"
 size = 44
 evidence = ["far", "frame"]
-name = "_f1DE4_000D"
 level = "L2"
 match_flags = "tasm /mx"
 review = "passed 2026-11-01 rev-sonnet"
+name = "WaitRetrace"
 
 [[function]]
 id = "e1de7_0009"
@@ -7758,8 +7759,8 @@ size = 34
 evidence = ["frame"]
 level = "L2"
 match_flags = "tasm /mx"
-name = "f1E8B_0185"
 review = "passed 2026-11-02 rev-haiku"
+name = "ShutdownOverlayManager"
 
 [[function]]
 id = "e1e8b_01a7"
@@ -9033,10 +9034,10 @@ unit = "eov4"
 addr = "ovl4:044B"
 size = 1669
 evidence = ["ovl", "near", "frame"]
-name = "Ovl4_044B"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "BuildViewBlockMap"
 
 [[function]]
 id = "eov4_0ad0"
@@ -9044,10 +9045,10 @@ unit = "eov4"
 addr = "ovl4:0AD0"
 size = 587
 evidence = ["ovl", "near", "frame"]
-name = "Ovl4_0AD0"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "DrawSlotItems"
 
 [[function]]
 id = "eov4_0d1b"
@@ -9056,10 +9057,10 @@ addr = "ovl4:0D1B"
 size = 886
 evidence = ["ovl", "near", "frame"]
 notes = "matched 2026-11-02 under -v (the file's actual flag, which also keeps CopyViewColumn's tails apart). Four source forms the bytes pin down: the object byte +0xA compares against (char)0xfe/(char)0xff so it is a byte compare (int constants sign-extend first); the absolute sprite is an explicit if/else (abs() is a library call); the +7 nudge is an if/else assigning the local (a ?: keeps the value in AX and stores once); the ds:1A3B m15 test indexes the table directly (only the m0E test keeps the far-pointer local). The earlier -B store question (87 D8 vs 93) is moot: -v is right."
-name = "Ovl4_0D1B"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "DrawSlotMonsters"
 
 [[function]]
 id = "eov4_1091"
@@ -9067,10 +9068,10 @@ unit = "eov4"
 addr = "ovl4:1091"
 size = 896
 evidence = ["ovl", "near", "frame"]
-name = "Ovl4_1091"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "DrawSlotDecorations"
 
 [[function]]
 id = "eov4_1411"
@@ -9078,10 +9079,10 @@ unit = "eov4"
 addr = "ovl4:1411"
 size = 1459
 evidence = ["ovl", "near", "frame"]
-name = "Ovl4_1411"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "DrawSlotDoor"
 
 [[function]]
 id = "eov4_19c4"
@@ -9090,10 +9091,10 @@ addr = "ovl4:19C4"
 size = 860
 evidence = ["ovl", "near"]
 notes = "matched 2026-11-02 under -v. Three source forms the bytes pin down: the ds:194B bit-7 test is written `g1879[tile] == 0 || (g194B[tile] & 0x80)` with an empty then (a plain `g194B[tile] & 0x80` sign-extends the byte first); the frame guard is written `if (frame >= 0) { body }` (an `if (frame < 0) continue;` gives identical bytes but reloads ES before the record check, a TCC -Z register-state difference); and the cell +2 test is a raw `<< 3 >> 3` (a `% 8` compiles to idiv). The earlier xchg/store question is settled: -v is the file's flag."
-name = "Ovl4_19C4"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "DrawSlotProjectiles"
 
 [[function]]
 id = "eov4_1d20"
@@ -9101,10 +9102,10 @@ unit = "eov4"
 addr = "ovl4:1D20"
 size = 248
 evidence = ["ovl", "near", "frame"]
-name = "Ovl4_1D20"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "DrawSlotTeleporter"
 
 [[function]]
 id = "eov4_1e18"
@@ -9145,10 +9146,10 @@ unit = "eov4"
 addr = "ovl4:2039"
 size = 10
 evidence = ["ovl", "frame"]
-name = "NoOp2039"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "PreloadViewOverlay"
 
 [[function]]
 id = "eov5_0000"
@@ -10262,10 +10263,10 @@ id = "i097f_0002"
 unit = "i097f"
 addr = "097F:0002"
 size = 20
-name = "f19EC_0002"
 level = "L2"
 match_flags = "twin e19ec"
 evidence = ["far", "segment"]
+name = "GetPagePtr"
 
 [[function]]
 id = "i097f_0016"
@@ -10282,10 +10283,10 @@ id = "i097f_002a"
 unit = "i097f"
 addr = "097F:002A"
 size = 84
-name = "f19EC_002A"
 level = "L2"
 match_flags = "twin e19ec"
 evidence = ["frame"]
+name = "CopyPage"
 
 [[function]]
 id = "i0986_000e"
@@ -10342,20 +10343,20 @@ id = "i0998_0008"
 unit = "i0998"
 addr = "0998:0008"
 size = 62
-name = "f1A29_000F"
 level = "L2"
 match_flags = "twin e1a29"
 evidence = ["segment"]
+name = "DrawShape"
 
 [[function]]
 id = "i0998_0046"
 unit = "i0998"
 addr = "0998:0046"
 size = 62
-name = "f1A29_004D"
 level = "L2"
 match_flags = "twin e1a29"
 evidence = ["frame"]
+name = "DrawShapeFlipped"
 
 [[function]]
 id = "i0998_0084"
@@ -10412,20 +10413,20 @@ id = "i09b5_000e"
 unit = "i09b5"
 addr = "09B5:000E"
 size = 356
-name = "f1A47_0005"
 level = "L2"
 match_flags = "twin e1a47"
 evidence = ["far", "segment"]
+name = "LoadFont"
 
 [[function]]
 id = "i09b5_0172"
 unit = "i09b5"
 addr = "09B5:0172"
 size = 37
-name = "f1A47_0169"
 level = "L2"
 match_flags = "twin e1a47"
 evidence = ["far", "frame"]
+name = "SetFont"
 
 [[function]]
 id = "i09b5_0197"
@@ -11268,20 +11269,20 @@ id = "i0cdd_0016"
 unit = "i0cdd"
 addr = "0CDD:0016"
 size = 40
-name = "_f1D8F_0010"
 level = "L2"
 match_flags = "twin e1d8f"
 evidence = ["far", "frame"]
+name = "InstallTickHandler"
 
 [[function]]
 id = "i0cdd_003e"
 unit = "i0cdd"
 addr = "0CDD:003E"
 size = 131
-name = "_f1D8F_0038"
 level = "L2"
 match_flags = "twin e1d8f"
 evidence = ["far", "frame"]
+name = "RemoveTickHandler"
 
 [[function]]
 id = "i0ce9_0001"
@@ -11368,20 +11369,20 @@ id = "i0d2b_000c"
 unit = "i0d2b"
 addr = "0D2B:000C"
 size = 39
-name = "f1DDD_0006"
 level = "L2"
 match_flags = "twin e1ddd"
 evidence = ["far", "segment"]
+name = "GetVideoMode"
 
 [[function]]
 id = "i0d2b_0033"
 unit = "i0d2b"
 addr = "0D2B:0033"
 size = 67
-name = "f1DDD_002D"
 level = "L2"
 match_flags = "twin e1ddd"
 evidence = ["far", "frame"]
+name = "SetVideoMode"
 
 [[function]]
 id = "i0d32_0006"

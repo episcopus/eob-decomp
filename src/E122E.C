@@ -13,7 +13,7 @@ extern signed char gMaze[]; /*@ ds:B894 */     /* nine-byte per-object records (
 extern int gEvalStack[]; /*@ ds:A95C */         /* the script-expression value stack (122E:147F) */
 extern int gEvalTop; /*@ ds:A9EE */             /* the index into gEvalStack (122E:147F) */
 extern char gClassBaseBits[]; /*@ ds:1231 */             /* per-class byte table (src/E0BD2.C) */
-extern signed char gTable18BF[]; /*@ ds:18BF */ /* per-object-kind table (Purpose unknown) */
+extern signed char gWallDecorHead[]; /*@ ds:18BF */ /* per-object-kind table (Purpose unknown) */
 extern int gEFD2; /*@ ds:EFD2 */               /* the mode the driver runs a script in (src/E0ACD.C) */
 extern char gA9EC; /*@ ds:A9EC */              /* set by a handler to stop the driver's script walk */
 extern int gF50E; /*@ ds:F50E */               /* the depth of the far pointer stack the driver pushes to */
@@ -101,14 +101,14 @@ struct RectKind {                               /* the per-kind size record gRec
 extern struct SlotRegion gSlotRegions[]; /*@ ds:E06B */
 extern struct RectKind far *gRectKinds[]; /*@ ds:EFD4 */
 extern char far *gEF9E; /*@ ds:EF9E */         /* a far byte array the clicked member row indexes (122E:04CA) */
-extern signed char gA9C6; /*@ ds:A9C6 */       /* the member row the mouse is over (src/E0ACD.C) */
-extern char g59F8[]; /*@ ds:59F8 */            /* maps a member row (gEF9E[gA9C6]) to a gA99C entry (122E:04CA) */
+extern signed char gViewFrontSide; /*@ ds:A9C6 */       /* the member row the mouse is over (src/E0ACD.C) */
+extern char g59F8[]; /*@ ds:59F8 */            /* maps a member row (gEF9E[gViewFrontSide]) to a gDoorButtons entry (122E:04CA) */
 extern char g59D8[]; /*@ ds:59D8 */            /* maps a member row to a column offset (122E:04CA) */
 extern int g1E75; /*@ ds:1E75 */               /* the viewport x origin added to a slot's x (122E:04CA) */
 
 /* The six-byte slot-position records at ds:A99C (src/EOV3.C calls them Triple6): a far pointer to
    a size record, then the slot's x and y. */
-struct SlotSize {                               /* the 3-byte size record a gA99C entry points at */
+struct SlotSize {                               /* the 3-byte size record a gDoorButtons entry points at */
     char pad00;
     signed char height;                         /* +1: base height in pixels */
     signed char width;                          /* +2: base width in eighths */
@@ -118,7 +118,7 @@ struct SlotPos {
     unsigned char x;                            /* +4 */
     unsigned char y;                            /* +5 */
 };
-extern struct SlotPos gA99C[]; /*@ ds:A99C */
+extern struct SlotPos gDoorButtons[]; /*@ ds:A99C */
 
 struct CharRec {                                /* the 243-byte character records at ds:F580 */
     char pad00;
@@ -407,7 +407,7 @@ void RunCellScript(int cell, int mode);  /* forward: 1DA8 comes after its caller
     }
     return 0;
 }
-/* 122E:04CA: the member-slot click handler. It turns the clicked row (gEF9E[gA9C6]) into a gA99C
+/* 122E:04CA: the member-slot click handler. It turns the clicked row (gEF9E[gViewFrontSide]) into a gDoorButtons
    slot entry (through g59F8), builds the slot's screen rectangle from the entry's x/y and the
    far size record's width (in eighths) and height, all grown by 4 on each side and offset by g1E75,
    and for the item actions (gFBC8 4, 5, 6) shifts x by the scroll column (row - g59D8[row]) * 9, or
@@ -425,19 +425,19 @@ void RunCellScript(int cell, int mode);  /* forward: 1DA8 comes after its caller
     int top;
     struct SlotSize far *rec;
 
-    row = gEF9E[gA9C6];
+    row = gEF9E[gViewFrontSide];
     idx = g59F8[row];
-    rec = gA99C[idx].rec;
+    rec = gDoorButtons[idx].rec;
     top = g1E75;
-    x = gA99C[idx].x + top - 4;
-    y = gA99C[idx].y - 4;
+    x = gDoorButtons[idx].x + top - 4;
+    y = gDoorButtons[idx].y - 4;
     width = rec->width * 8 + 8;
     height = rec->height + 8;
     switch (gFBC8) {
     case 4:
     case 5:
     case 6:
-        if (gEF9E[gA9C6] < 0x1e)
+        if (gEF9E[gViewFrontSide] < 0x1e)
             x += (row - g59D8[row]) * 9;
         else
             x += 4;
@@ -457,7 +457,7 @@ void RunCellScript(int cell, int mode);  /* forward: 1DA8 comes after its caller
 {
     int kind;
 
-    kind = gTable18BF[gMaze[id * 9 + slot]];
+    kind = gWallDecorHead[gMaze[id * 9 + slot]];
     if (HitTestObjectKind(kind)) {
         RunCellScript(id, gEFD2);
         return 1;
@@ -471,7 +471,7 @@ void RunCellScript(int cell, int mode);  /* forward: 1DA8 comes after its caller
 {
     int kind;
 
-    kind = gTable18BF[gMaze[id * 9 + slot]];
+    kind = gWallDecorHead[gMaze[id * 9 + slot]];
     if (HitTestObjectKind(kind)) {
         gMaze[id * 9 + slot]++;
         gViewDirty = 1;
@@ -487,7 +487,7 @@ void RunCellScript(int cell, int mode);  /* forward: 1DA8 comes after its caller
 {
     int kind;
 
-    kind = gTable18BF[gMaze[id * 9 + slot]];
+    kind = gWallDecorHead[gMaze[id * 9 + slot]];
     if (HitTestObjectKind(kind)) {
         gMaze[id * 9 + slot]--;
         gViewDirty = 1;
@@ -511,7 +511,7 @@ void RunCellScript(int cell, int mode);  /* forward: 1DA8 comes after its caller
     register int item;
     int kind;
 
-    kind = gTable18BF[gMaze[id * 9 + slot]];
+    kind = gWallDecorHead[gMaze[id * 9 + slot]];
     if (HitTestObjectKind(kind)) {
         if (gMouseDisabled != 0 && gCursorSlot == 0x10) {
             item = RemoveListItem(&gMazeItems[id * 9], 8, -1);

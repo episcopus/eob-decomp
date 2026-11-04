@@ -65,7 +65,7 @@
 ; 106302) at 137 bytes, so it ends at 106439, which is 19FC:0007 (19FC is paragraph 6652, linear
 ; 106432; 19FC:0000..0006 repeat the 19F3 unit's last seven bytes). The 00 is therefore the byte
 ; after that retf and the 19FC segment's first byte in the table, just before the encoder's push bp
-; at 19FC:0008. It is emitted as a public byte symbol (_f19FC_0007), and CompressLcw starts at
+; at 19FC:0008. It is emitted as a public byte symbol (_PadBeforeCompressLcw), and CompressLcw starts at
 ; 19FC:0008 with the same 419 code bytes. The unit stays 420 bytes.
 
         .MODEL  LARGE
@@ -74,8 +74,8 @@
 
         .CODE
 
-        PUBLIC  _f19FC_0007
-_f19FC_0007 LABEL BYTE                   ; @ 19FC:0007
+        PUBLIC  _PadBeforeCompressLcw
+_PadBeforeCompressLcw LABEL BYTE                   ; @ 19FC:0007
         db      0                       ; the segment-start byte: data, not code
 
 ; 19FC:0008: encode. Arg 1 at [bp+6]/[bp+8] is the source far pointer, arg 2 at [bp+0Ah]/[bp+0Ch] the

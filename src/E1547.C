@@ -103,8 +103,8 @@ extern void far *gDeadPortraitIcon; /*@ ds:F2F4 */   /* the dead-member portrait
 extern void far *gUnconsciousIcon; /*@ ds:DC94 */   /* the wounded-member overlay icon (src/EOV2.C) */
 extern signed char gPortraitX[]; /*@ ds:5D2C */   /* portrait x by (who & 1): 8, 80 */
 extern signed char gPortraitY[]; /*@ ds:5D2E */   /* portrait y by (who >> 1): 11, 63, 115 */
-extern void far *gIconsDDE4[]; /*@ ds:DDE4 */ /* the item icon far pointers (src/E0D1C.C) */
-extern void far *gEmptySlotIcons[]; /*@ ds:DF38 */ /* the two no-item slot icons, gIconsDDE4[0x55]
+extern void far *gItemIcons[]; /*@ ds:DDE4 */ /* the item icon far pointers (src/E0D1C.C) */
+extern void far *gEmptySlotIcons[]; /*@ ds:DF38 */ /* the two no-item slot icons, gItemIcons[0x55]
                                                   and [0x56] (0xDDE4 + 0x55 * 4) */
 
 extern void (far *gDrawLine)(int x1, int y1, int x2, int y2, int colour); /*@ ds:8062 */

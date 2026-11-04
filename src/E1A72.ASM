@@ -29,10 +29,10 @@
         EXTRN   _ShowPointer:FAR         ; @ 1BBE:00ED (E1BBE.ASM)
 
         .DATA
-        EXTRN   g80A2:DWORD             ; @ ds:80A2: indirect far function, no arguments
-        EXTRN   g80AA:DWORD             ; @ ds:80AA: indirect far function, takes one far pointer
+        EXTRN   gRestoreDrawState:DWORD             ; @ ds:80A2: indirect far function, no arguments
+        EXTRN   gSaveDrawState:DWORD             ; @ ds:80AA: indirect far function, takes one far pointer
         ;                                              argument (the pointer at ds:8172/8174)
-        EXTRN   g80EC:BYTE              ; @ ds:80EC: game state, 0/1/2 (E1AAD.ASM:20); the handler
+        EXTRN   gRecordMode:BYTE              ; @ ds:80EC: game state, 0/1/2 (E1AAD.ASM:20); the handler
         ;                                              compares it with 2 and skips the position
         ;                                              update when it is 2 (1A72:0212)
         EXTRN   gFatalHandler:DWORD             ; @ ds:8104: the fatal file error handler (E1C0E.C:66),
@@ -41,8 +41,8 @@
         ;                                              called as (2, name) after a failed probe
         EXTRN   _gPointerBusy:WORD              ; @ ds:812E: busy flag, 0 = free; the game takes it
         ;                                              with a test then a store, so it is not a lock
-        EXTRN   g8130:WORD              ; @ ds:8130: mouse buttons seen by the last event
-        EXTRN   g8132:WORD              ; @ ds:8132: a mask: when nonzero and the middle bit
+        EXTRN   gLastMouseButtons:WORD              ; @ ds:8130: mouse buttons seen by the last event
+        EXTRN   gMiddleButtonBits:WORD              ; @ ds:8132: a mask: when nonzero and the middle bit
         ;                                              (BX bit 2, value 4 [H]) is set, it sets BX to
         ;                                              (BX and 3) or the mask: the old low two bits
         ;                                              are kept, the rest of BX is dropped, and the
@@ -54,12 +54,12 @@
         ;                                              (BX and 3) or 2, forcing bit 1.
         ;                                              QUIRK 1A72:01A6: the (BX and 3) or mask
         ;                                              replacement is behaviour a port must keep
-        EXTRN   g8134:WORD              ; @ ds:8134: accumulated button changes; DrawOptionList
+        EXTRN   gUnreadButtonChanges:WORD              ; @ ds:8134: accumulated button changes; DrawOptionList
         ;                                              (14EF:0154) clears it as its last statement
         ;                                              (14EF:0268), and RunMapLoop clears it
         ;                                              after EnterMapScreen and LockShowPointer
         ;                                              (0ACD:0EC8, E0ACD.C:886)
-        EXTRN   g8136:WORD              ; @ ds:8136: latched to 1 once any button has been seen;
+        EXTRN   gMouseButtonSeen:WORD              ; @ ds:8136: latched to 1 once any button has been seen;
         ;                                              this unit never clears it, E1AAD.ASM:1356
         ;                                              sets it too and nothing in src/ clears it
         EXTRN   _gCursorX:WORD              ; @ ds:8138: the cursor (mouse pointer) x in pixels.
@@ -75,13 +75,13 @@
         ;                                              the handler (1A72:021D), the placer
         ;                                              (E1BF3.ASM:44, 1BF3:0028) and the glue
         ;                                              (1AAD:0D01, E1AAD.ASM:1355)
-        EXTRN   g813C:WORD              ; @ ds:813C: x of the event just handled, after the 640 wide
+        EXTRN   gMouseEventX:WORD              ; @ ds:813C: x of the event just handled, after the 640 wide
         ;                                              halving and the 13Fh clamp (1A72:0193-019B);
-        ;                                              the keyboard glue queues it and g813E
+        ;                                              the keyboard glue queues it and gMouseEventY
         ;                                              (E1AAD.ASM:1228 and :1232)
-        EXTRN   g813E:WORD              ; @ ds:813E: y of the event just handled; the keyboard glue
-        ;                                              queues it after g813C (E1AAD.ASM:1232)
-        EXTRN   g8144:WORD              ; @ ds:8144: 1 when the x that function 3 reads after the
+        EXTRN   gMouseEventY:WORD              ; @ ds:813E: y of the event just handled; the keyboard glue
+        ;                                              queues it after gMouseEventX (E1AAD.ASM:1232)
+        EXTRN   gMouseXDoubled:WORD              ; @ ds:8144: 1 when the x that function 3 reads after the
         ;                                              reset is not 0A0h, which InitMouse reads as a
         ;                                              640 wide mode [H]
         EXTRN   _gHideDepth:WORD              ; @ ds:8146: hide count; the pointer is drawn only at
@@ -109,11 +109,11 @@
         ;                                              EOV5; the list is partial); HidePointer and
         ;                                              ShowPointer do nothing when it is set (the
         ;                                              tests at 1BBE:0006 and 1BBE:00F1)
-        EXTRN   g814E:WORD              ; @ ds:814E: screen width minus 1, 13Fh; the pointer
+        EXTRN   gCursorMaxX:WORD              ; @ ds:814E: screen width minus 1, 13Fh; the pointer
         ;                                              placer reads it as the x clamp limit
         ;                                              (E1BF3.ASM:29, :31); this unit clamps with
         ;                                              the literal 13Fh, not with this variable
-        EXTRN   g8152:WORD              ; @ ds:8152: screen height minus 1, 0C7h, set at
+        EXTRN   gCursorMaxY:WORD              ; @ ds:8152: screen height minus 1, 0C7h, set at
         ;                                              1A72:0104. The pointer placer reads it as
         ;                                              the y clamp limit (E1BF3.ASM:38, :40); this
         ;                                              unit never reads it and clamps no y
@@ -146,17 +146,17 @@
         ;                                              given (1BBE:023C)
         EXTRN   _gZoneBottom:WORD              ; @ ds:8168: hide zone, bottom in pixels, stored as
         ;                                              given (1BBE:0240)
-        EXTRN   g8172:WORD              ; @ ds:8172: far pointer handed to DGROUP:80AA as its
+        EXTRN   gEgaRegShadowOff:WORD              ; @ ds:8172: far pointer handed to DGROUP:80AA as its
         ;                                              argument, offset. E1BBE pushes the segment
         ;                                              then this offset before the call
         ;                                              (1BBE:029F-02A7). SetFarPointer stores it,
         ;                                              GetFarPointer reads it; the 17A6 unit points
         ;                                              it at its 16-byte save buffer
         ;                                              (17A6:0304; calls in 17A6:0446 and 17A6:04EE)
-        EXTRN   g8174:WORD              ; @ ds:8174: the same far pointer, segment (pushed first
+        EXTRN   gEgaRegShadowSeg:WORD              ; @ ds:8174: the same far pointer, segment (pushed first
         ;                                              at 1BBE:029F)
-        EXTRN   g8026:WORD              ; @ ds:8026: scratch copy of gDrawnX made by IsMouseInRect
-        EXTRN   g8028:WORD              ; @ ds:8028: scratch copy of gDrawnY made by IsMouseInRect
+        EXTRN   gHitTestX:WORD              ; @ ds:8026: scratch copy of gDrawnX made by IsMouseInRect
+        EXTRN   gHitTestY:WORD              ; @ ds:8028: scratch copy of gDrawnY made by IsMouseInRect
         EXTRN   gFC08:DWORD             ; @ ds:FC08: previous INT 3Fh vector, chained by 1A72:0006
         .CODE
 
@@ -298,8 +298,8 @@ _InitMouse PROC FAR
         mov     word ptr [_gCursorY],64h
         mov     word ptr [_gHideDepth],1
         mov     word ptr [_gPointerState],0
-        mov     word ptr [g814E],13Fh
-        mov     word ptr [g8152],0C7h
+        mov     word ptr [gCursorMaxX],13Fh
+        mov     word ptr [gCursorMaxY],0C7h
         mov     ax,es
         or      ax,bx
         je      L0118
@@ -313,17 +313,17 @@ L0123:  mov     ax,0
         int     33h
         cmp     ax,0FFFFh
         jne     L0118
-        mov     word ptr [g8144],0
+        mov     word ptr [gMouseXDoubled],0
         mov     ax,3
         int     33h
         cmp     cx,0A0h
         je      L0144
-        mov     word ptr [g8144],1
+        mov     word ptr [gMouseXDoubled],1
 L0144:  mov     cx,0A0h
         mov     dx,64h
         mov     word ptr [gMouseHandlerInstalled],1
         mov     word ptr [gMouseDisabled],1
-        cmp     word ptr [g8144],1
+        cmp     word ptr [gMouseXDoubled],1
         jne     L015F
         shl     cx,1
 L015F:  mov     ax,4
@@ -385,47 +385,47 @@ MouseEventHandler:
         mov     ds,ax
         cmp     word ptr [gMouseDisabled],0
         jne     L01E9
-        cmp     word ptr [g8144],1
+        cmp     word ptr [gMouseXDoubled],1
         jne     L0195
         shr     cx,1
 L0195:  cmp     cx,13Fh
         jbe     L019E
         mov     cx,13Fh
-L019E:  mov     word ptr [g813C],cx
-        mov     word ptr [g813E],dx
-        mov     ax,[g8132]
+L019E:  mov     word ptr [gMouseEventX],cx
+        mov     word ptr [gMouseEventY],dx
+        mov     ax,[gMiddleButtonBits]
         or      ax,ax
         je      L01B8
         test    bx,4
         je      L01B8
         and     bx,3
         or      bx,ax
-L01B8:  cmp     word ptr [g8130],bx
+L01B8:  cmp     word ptr [gLastMouseButtons],bx
         je      L01D7
         push    bx
         call    far ptr _HandleMouseButtons
         add     sp,2
-        mov     ax,[g8130]
+        mov     ax,[gLastMouseButtons]
         xor     ax,bx
-        or      ax,[g8134]
-        mov     [g8134],ax
-        mov     [g8130],bx
+        or      ax,[gUnreadButtonChanges]
+        mov     [gUnreadButtonChanges],ax
+        mov     [gLastMouseButtons],bx
 L01D7:  cmp     bx,0
         je      L01E2
-        mov     word ptr [g8136],1
+        mov     word ptr [gMouseButtonSeen],1
 L01E2:  cmp     word ptr [_gPointerBusy],0
         je      L020C
 L01E9:  jmp     L027F
-L01EC:  push    word ptr [g8174]
-        push    word ptr [g8172]
-        call    dword ptr [g80AA]
+L01EC:  push    word ptr [gEgaRegShadowSeg]
+        push    word ptr [gEgaRegShadowOff]
+        call    dword ptr [gSaveDrawState]
         add     sp,4
         call    far ptr _HidePointer
-        call    dword ptr [g80A2]
+        call    dword ptr [gRestoreDrawState]
         or      word ptr [_gPointerState],4000h
         jmp     short L0279
 L020C:  mov     word ptr [_gPointerBusy],1
-        cmp     byte ptr [g80EC],2
+        cmp     byte ptr [gRecordMode],2
         je      L0221
         mov     word ptr [_gCursorX],cx
         mov     word ptr [_gCursorY],dx
@@ -449,13 +449,13 @@ L0250:  cmp     dx,[_gZoneTop]
         jl      L025C
         cmp     dx,[_gZoneBottom]
         jle     L01EC
-L025C:  push    word ptr [g8174]
-        push    word ptr [g8172]
-        call    dword ptr [g80AA]
+L025C:  push    word ptr [gEgaRegShadowSeg]
+        push    word ptr [gEgaRegShadowOff]
+        call    dword ptr [gSaveDrawState]
         add     sp,4
         call    far ptr _HidePointer
         call    far ptr _ShowPointer
-        call    dword ptr [g80A2]
+        call    dword ptr [gRestoreDrawState]
 L0279:  mov     word ptr [_gPointerBusy],0
 L027F:  popf
         pop     dx
@@ -519,16 +519,16 @@ L02B9:  cmp     word ptr [_gPointerBusy],0
         jne     L02B9
         inc     word ptr [_gPointerBusy]
         mov     ax,[_gDrawnX]
-        mov     [g8026],ax
+        mov     [gHitTestX],ax
         mov     ax,[_gDrawnY]
-        mov     [g8028],ax
-        cmp     [g8026],cx
+        mov     [gHitTestY],ax
+        cmp     [gHitTestX],cx
         jl      L02ED
-        cmp     [g8026],si
+        cmp     [gHitTestX],si
         jg      L02ED
-        cmp     [g8028],dx
+        cmp     [gHitTestY],dx
         jl      L02ED
-        cmp     [g8028],di
+        cmp     [gHitTestY],di
         jg      L02ED
         mov     ax,1
         jmp     short L02F0
@@ -583,10 +583,10 @@ _SetFarPointer PROC FAR
         mov     ax,[bp+6]
         mov     bx,[bp+8]
         cli
-        mov     si,[g8172]
-        mov     cx,[g8174]
-        mov     [g8172],ax
-        mov     [g8174],bx
+        mov     si,[gEgaRegShadowOff]
+        mov     cx,[gEgaRegShadowSeg]
+        mov     [gEgaRegShadowOff],ax
+        mov     [gEgaRegShadowSeg],bx
         jcxz    L0330
         mov     ds,cx
         mov     di,ax
@@ -617,8 +617,8 @@ _GetFarPointer PROC FAR
         mov     ax,212Eh
         mov     ds,ax
         cli
-        mov     ax,[g8172]
-        mov     dx,[g8174]
+        mov     ax,[gEgaRegShadowOff]
+        mov     dx,[gEgaRegShadowSeg]
         sti
         pop     ds
         pop     bp

@@ -11,7 +11,7 @@
    HANDS), PlayTunnelScene (ovl0:1DF3, WTRDP3/ORB/TUNNEL/ZOOMTUNL) and PlayAvalancheScene
    (ovl0:23A3, AVALANCH/ZOOMTUNL). They are long ClipRect/frame animations; every utility they
    use (LoadPackedImage, LoadPalette, PlaySound, Dissolve, BlitImage, DrawGrid, GrowFrame,
-   WaitFrameDelay, f19EC_002A) is matched. Whitepaper 2.4 (INTRO.EXE, its overlay and its
+   WaitFrameDelay, CopyPage) is matched. Whitepaper 2.4 (INTRO.EXE, its overlay and its
    shared library) and 2.6 (start-up). */
 
 /*@flags -ml -O -Z -G */
@@ -21,9 +21,9 @@
 /* The driver entry points. The front end fills these words at load time (i0892 sets ds:1F46
    from its palette setup at 0892:011D..0142); their DGROUP neighbours ds:1E98..1ED0 hold far
    pointers into this program's own segments, so the block is a driver vtable [H]. Only the
-   entries this unit calls are declared. gFn1EE2 (ds:1EE2) is the routine StartupGame starts
+   entries this unit calls are declared. gClearDrawPage (ds:1EE2) is the routine StartupGame starts
    after it fills the page table (0892:0544). */
-extern void (far *gFn1EE2)(void);                              /*@ ds:1EE2 */
+extern void (far *gClearDrawPage)(void);                              /*@ ds:1EE2 */
 extern void (far *gDrawLine)(int x1, int y1, int x2, int y2, int color); /*@ ds:1EEE */
 extern void (far *gFillRect)(int x1, int y1, int x2, int y2, int color); /*@ ds:1EF6 */
 extern int (far *gGetPixel)(int x, int y);                          /*@ ds:1EFE */
@@ -50,12 +50,12 @@ extern void WaitFrame(void);            /*@ 098F:0023 */
    distinct non-zero segments (19EC:002A, src/E19EC.C:29-35). Its first two arguments are
    buffer slots (ds:FC0C kinds); which is the source and which the destination is not shown.
    The third and fourth are a far pointer the handler passes on, their role unknown [H]. */
-extern void f19EC_002A(int slotA, int slotB, int extraOff, int extraSeg); /*@ 097F:002A */
+extern void CopyPage(int slotA, int slotB, int extraOff, int extraSeg); /*@ 097F:002A */
 
 /* 0AED:000D: reads a named file into a far buffer, the EOB LoadFile at 1B82:0009 linked at
    another address (the twin unit is i0aed). */
 extern void LoadFile(char far *name, void far *buf, unsigned len); /*@ 0AED:000D */
-extern void far *f19EC_0002(int kind); /*@ 097F:0002 */
+extern void far *GetPagePtr(int kind); /*@ 097F:0002 */
 extern int FileOpen(char far *name, int mode); /*@ 0B5D:00D1 */
 extern long FileRead(int index, char far *buf, unsigned long len); /*@ 0B5D:03F6 */
 extern void FileClose(int index); /*@ 0B5D:03B1 */
@@ -74,7 +74,7 @@ extern void SoundDriverResume(void);    /*@ 084A:0457 */
 
 /* The palette and image buffers of this unit's DGROUP. gPaletteBuf is a far pointer the front end
    allocates and fills (i0892:05A2..061A); gOverlayBuf and gCopyBuf are the DGROUP buffers
-   f19EC_002A hands to its copy handler, EOB.EXE's gOverlayBuf at ds:113F: ovl0:2A99 passes
+   CopyPage hands to its copy handler, EOB.EXE's gOverlayBuf at ds:113F: ovl0:2A99 passes
    gOverlayBuf and ovl0:003A passes gCopyBuf (ds:1BEA) for the title copy and gOverlayBuf
    (ds:1C0A, 32 bytes into the same region) for the text copy. */
 extern unsigned char far *gPaletteBuf;     /*@ ds:2D42 */
@@ -142,7 +142,7 @@ void PlayLogoSequence(void);
 {
     gAbort = 0;
     if (gGraphicsChoice == 1 || gGraphicsChoice == 2) {
-        gFn1EE2();
+        gClearDrawPage();
         gSetPalette(gBuiltinPalette);
     }
     PlayLogoSequence();
@@ -154,7 +154,7 @@ void PlayLogoSequence(void);
    (ds:1F76 bit 0), draws on page 0 and arms a 120-tick hold (gFrameDelay = 0x78). It loads the
    TITLE-V card on the VGA mode (gGraphicsChoice 3), TITLE-E otherwise, waits one frame, applies
    the WESTWOOD palette and plays sound 2, copies the title card out of gCopyBuf through
-   f19EC_002A (slots 5 and 2), and dissolves it from page 2 to page 0. Then it loads TEXT.CMP,
+   CopyPage (slots 5 and 2), and dissolves it from page 2 to page 0. Then it loads TEXT.CMP,
    copies it out of gOverlayBuf (slots 5 and 6), and WaitFrameDelay waits the 120 ticks armed
    above. Then the seven scene functions follow, DrawGrid last, each guarded by the abort flag,
    so a key during a wait skips the rest of the intro. */
@@ -170,10 +170,10 @@ void PlayLogoSequence(void);
     WaitFrame();
     LoadPalette("WESTWOOD.COL");
     PlaySound(2);
-    f19EC_002A(5, 2, FP_OFF(gCopyBuf), FP_SEG(gCopyBuf));
+    CopyPage(5, 2, FP_OFF(gCopyBuf), FP_SEG(gCopyBuf));
     Dissolve(0, 0, 320, 200, 2, 0);
     LoadPackedImage("TEXT.CMP", 3, 5);
-    f19EC_002A(5, 6, FP_OFF(gOverlayBuf), FP_SEG(gOverlayBuf));
+    CopyPage(5, 6, FP_OFF(gOverlayBuf), FP_SEG(gOverlayBuf));
     WaitFrameDelay();
     if (!gAbort)
         PlayTowerMageScene();
@@ -208,7 +208,7 @@ extern unsigned char gTileY[31];        /*@ ds:1C49 */  /* Purpose unknown: y ro
 extern unsigned gStarX[31];             /*@ ds:1C68 */  /* Purpose unknown: x to draw each star, ovl0:015D */
 extern unsigned char gStarY[31];        /*@ ds:1CA6 */  /* Purpose unknown: y of each star, ovl0:015D */
 extern unsigned char gTileScale[31];    /*@ ds:1CC5 */  /* Purpose unknown: size of each tile, ovl0:015D */
-extern void f1A29_000F(int mode, void far *src, int x, int y, int region); /*@ 0998:0008 */
+extern void DrawShape(int mode, void far *src, int x, int y, int region); /*@ 0998:0008 */
 extern void MemFree(void far *block); /*@ 094F:0137 */
 
 /* ovl0:015D: the WTRDP scene, the tutorial corridor. It loads the WTRDP2 palette and the
@@ -237,13 +237,13 @@ extern void MemFree(void far *block); /*@ 094F:0137 */
         BlitImage(0, 0, 0, 0, 0xa0, 0x88, i);
         sprites[3 - i].image = gMakeImage(0, 0, 0x14, 0x88, gOverlayBuf);
     }
-    f19EC_002A(3, 4, FP_OFF(gOverlayBuf), FP_SEG(gOverlayBuf));
+    CopyPage(3, 4, FP_OFF(gOverlayBuf), FP_SEG(gOverlayBuf));
     WaitFrameDelay();
     ClearBottomBar();
     PlaySound(6);
     for (i = 0; i < 4; i++) {
         gFrameDelay = 3;
-        f1A29_000F(0, sprites[i].image, 0x50, 0x18, 0);
+        DrawShape(0, sprites[i].image, 0x50, 0x18, 0);
         MemFree(sprites[i].image);
         WaitFrameDelay();
     }
@@ -260,11 +260,11 @@ extern void MemFree(void far *block); /*@ 094F:0137 */
         stars[i] = gMakeImage(gTileX[i], gTileY[i] * 8 + 0x88, gTileScale[i], gTileScale[i] * 8, gOverlayBuf);
     for (i = 0; i < 3; i++)
         frames[i] = gMakeImage(i * 5, 0x98, 5, 0x20, gOverlayBuf);
-    f19EC_002A(3, 4, FP_OFF(gOverlayBuf), FP_SEG(gOverlayBuf));
+    CopyPage(3, 4, FP_OFF(gOverlayBuf), FP_SEG(gOverlayBuf));
     for (i = 0; i < 3; i++) {
         WaitFrameDelay();
         gFillRect(0, 0, 0x9f, 0x87, 0xc);
-        f1A29_000F(2, sprites[i].image, 0, 0, 0);
+        DrawShape(2, sprites[i].image, 0, 0, 0);
         ClipRect(0, 0, 0xa, 0x18, 0x14, 0x88, 2, 0);
         gFrameDelay = 3;
     }
@@ -284,7 +284,7 @@ extern void MemFree(void far *block); /*@ 094F:0137 */
         frame = i & 3;
         if (frame == 3)
             frame = 1;
-        f1A29_000F(4, frames[frame], sprites[3].win.x, sprites[3].win.y, 0);
+        DrawShape(4, frames[frame], sprites[3].win.x, sprites[3].win.y, 0);
         ClipRect((sprites[3].win.x - 2) >> 3, sprites[3].win.y - 2,
                  (sprites[3].win.x - 0x52) >> 3, sprites[3].win.y + 0x16, 6, 0x24, 4, 0);
         ClipRect(0, 0, (sprites[3].win.x - 2) >> 3, sprites[3].win.y - 2, 6, 0x24, 4, 4);
@@ -292,7 +292,7 @@ extern void MemFree(void far *block); /*@ 094F:0137 */
         sprites[3].win.y++;
         for (k = 0; k < 5; k++) {
             frame = RandomByte() % 31;
-            f1A29_000F(0, stars[frame], gStarX[frame] - 0x50, gStarY[frame] + 0x18, 0);
+            DrawShape(0, stars[frame], gStarX[frame] - 0x50, gStarY[frame] + 0x18, 0);
         }
         if (!(RandomByte() & 7))
             PlaySound((RandomByte() & 1) ? 5 : 0xe);
@@ -330,15 +330,15 @@ extern void MemFree(void far *block); /*@ 094F:0137 */
     }
     gFillRect(0, 0, 0x9f, 0x87, 0xc);
     gDrawPage = 0;
-    f19EC_002A(3, 4, FP_OFF(gOverlayBuf), FP_SEG(gOverlayBuf));
+    CopyPage(3, 4, FP_OFF(gOverlayBuf), FP_SEG(gOverlayBuf));
     WaitFrameDelay();
-    gFn1EE2();
+    gClearDrawPage();
     PlaySound(6);
     for (i = -1; i < 4; i++) {
         gFrameDelay = 3;
         if (i >= 0)
-            f1A29_000F(2, mage[i], 0x10, 0x10, 0);
-        f1A29_000F(2, orb, 0, 0, 0);
+            DrawShape(2, mage[i], 0x10, 0x10, 0);
+        DrawShape(2, orb, 0, 0, 0);
         ClipRect(0, 0, 0xa, 0x18, 0x14, 0x88, 2, 0);
         WaitFrameDelay();
     }
@@ -351,8 +351,8 @@ extern void MemFree(void far *block); /*@ 094F:0137 */
         gFillRect(0x10, 0x10, 0x8f, 0x77, 0xc);
         gDrawPage = 0;
         if (i >= 0)
-            f1A29_000F(2, mage[i], 0x10, 0x10, 0);
-        f1A29_000F(2, orb, 0, 0, 0);
+            DrawShape(2, mage[i], 0x10, 0x10, 0);
+        DrawShape(2, orb, 0, 0, 0);
         ClipRect(0, 0, 0xa, 0x18, 0x14, 0x88, 2, 0);
         WaitFrameDelay();
     }
@@ -362,7 +362,7 @@ extern void MemFree(void far *block); /*@ 094F:0137 */
     MemFree(orb);
 }
 /* ovl0:09AD: copies an image between two rectangles of the same video buffer (slot 3, the
-   segment f19EC_0002(3) returns), from the rectangle at (x1,y1) to the one at (x2,y2), each
+   segment GetPagePtr(3) returns), from the rectangle at (x1,y1) to the one at (x2,y2), each
    row `width` bytes wide and `height` lines high. `mode` selects the byte interleave:
      0: nothing;
      1: two source rows per pass, the low bytes (i even) and the high bytes (i odd) written
@@ -379,7 +379,7 @@ extern void MemFree(void far *block); /*@ 094F:0137 */
     char far *dst;
     int row;
 
-    src = dst = (char far *)f19EC_0002(3);
+    src = dst = (char far *)GetPagePtr(3);
     src += x1 + y1 * 320;
     dst += x2 + y2 * 320;
     switch (mode) {
@@ -456,8 +456,8 @@ extern void MemFree(void far *block); /*@ 094F:0137 */
     LoadPackedImage("TOWRMAGE.CMP", 5, 3);
     gDrawPage = 2;
     mage = gMakeImage(0, 0, 0x10, 0x38, gOverlayBuf);
-    f19EC_002A(3, 4, FP_OFF(gOverlayBuf), FP_SEG(gOverlayBuf));
-    gFn1EE2();
+    CopyPage(3, 4, FP_OFF(gOverlayBuf), FP_SEG(gOverlayBuf));
+    gClearDrawPage();
     for (i = 0; i < 0xc8; i += 0x40)
         ClipRect(0x10, 0x68, 0xc, i, 0x10, 0x40, 4, 2);
     gFillRect(0, 0xb8, 0x13f, 0xc7, 0xc);
@@ -465,7 +465,7 @@ extern void MemFree(void far *block); /*@ 094F:0137 */
     gDrawPage = 0;
     DrawGrid();
     gDrawPage = page;
-    gFn1EE2();
+    gClearDrawPage();
     for (i = 0; i < 0xc8; i += 0x40)
         ClipRect(0x10, 0x68, 0, i, 0x10, 0x40, 4, 2);
     gDrawPage = 0;
@@ -503,7 +503,7 @@ extern void MemFree(void far *block); /*@ 094F:0137 */
             ClipRect(0x13, i + 1, 0xf, center + i + 1, 0xa, 0x17, 4, 0);
             ClipRect(0x13, 0, 0x13, center, 0xa, i + 1, 4, 2);
         }
-        f1A29_000F(2, mage, 0x80, i - 0x37, 0);
+        DrawShape(2, mage, 0x80, i - 0x37, 0);
         ClipRect(0x10, 0, 0xc, 0, 0x10, i + 1, 2, 0);
         ClipRect(0, 0, 0xc, i + 0x59, 0x10, 0xa7 - (i + 0x58), 2, 0);
         WaitFrameDelay();
@@ -654,7 +654,7 @@ extern int gKingStep[8];                /*@ ds:1CF4 */  /* Purpose unknown: per-
     register int edge;
 
     LoadPackedImage("KING.CMP", 5, 3);
-    f19EC_002A(3, 4, FP_OFF(gOverlayBuf), FP_SEG(gOverlayBuf));
+    CopyPage(3, 4, FP_OFF(gOverlayBuf), FP_SEG(gOverlayBuf));
     inset = 0xf;
     edge = 0xe;
     width = height = 1;
@@ -700,7 +700,7 @@ extern int gKingStep[8];                /*@ ds:1CF4 */  /* Purpose unknown: per-
                 continue;
             }
             ClipRect(gKingX[i] + 8, y[i] - 2, 0, y[i] - 2, gKingW[i], 0xb6 - y[i], 4, 4);
-            f1A29_000F(4, imgs[i], 0, y[i], 0);
+            DrawShape(4, imgs[i], 0, y[i], 0);
             ClipRect(0, y[i] - 2, gKingX[i] + 8, y[i] - 2, gKingW[i], 0xb6 - y[i], 4, 0);
             done = 0;
         }
@@ -731,8 +731,8 @@ extern int gKingStep[8];                /*@ ds:1CF4 */  /* Purpose unknown: per-
     WaitFrameDelay();
     ClearBottomBar();
     gFillRect(0, 0, 0xbf, 0x3f, 0x9d);
-    f1A29_000F(2, sprites[0], 0, 4, 0);
-    f1A29_000F(2, sprites[1], 0x97, 4, 0);
+    DrawShape(2, sprites[0], 0, 4, 0);
+    DrawShape(2, sprites[1], 0x97, 4, 0);
     GrowFrame(0x19, 8, 0x12, 4, 3, 0, 0x15, 8, 6, 0, 0x1c, 0x17);
     ClipRect(0, 0x80, 0, 0xb0, 0x28, 0x10, 6, 0);
     DelayFrames(0xf);
@@ -740,8 +740,8 @@ extern int gKingStep[8];                /*@ ds:1CF4 */  /* Purpose unknown: per-
     for (i = 0xffea; i <= 0x14; i += 4) {
         gFrameDelay = 1;
         gFillRect(0, 0, 0xa7, 0x3f, 0x9d);
-        f1A29_000F(2, sprites[0], i, 4, 0);
-        f1A29_000F(2, sprites[1], 0x7f - (i + 0x16), 4, 0);
+        DrawShape(2, sprites[0], i, 4, 0);
+        DrawShape(2, sprites[1], 0x7f - (i + 0x16), 4, 0);
         ClipRect(0, 0, 0x12, 0x20, 0x15, 0x40, 2, 0);
         WaitFrameDelay();
     }
@@ -755,15 +755,15 @@ extern int gKingStep[8];                /*@ ds:1CF4 */  /* Purpose unknown: per-
     sprites[2] = gMakeImage(9, 0x8a, 0xe, 0x36, gOverlayBuf);
     gDrawPage = 2;
     gFillRect(0, 0, 0x87, 0x3f, 0x9d);
-    f1A29_000F(2, sprites[0], 0x20, 0xffb0, 0);
-    f1A29_000F(2, sprites[1], 0x28, 0xfff0, 0);
+    DrawShape(2, sprites[0], 0x20, 0xffb0, 0);
+    DrawShape(2, sprites[1], 0x28, 0xfff0, 0);
     GrowFrame(0x12, 0x10, 0xa, 0xc, 0, 0, 0x11, 8, 0x11, 3, 0x19, 0xa);
     DelayFrames(0xf);
     for (i = 0xffb0; i <= 0; i += 4) {
         gFrameDelay = 1;
         gFillRect(0, 0, 0x87, 0x3f, 0x9d);
-        f1A29_000F(2, sprites[0], 0x20, i, 0);
-        f1A29_000F(2, sprites[1], 0x28, i + 0x40, 0);
+        DrawShape(2, sprites[0], 0x20, i, 0);
+        DrawShape(2, sprites[1], 0x28, i + 0x40, 0);
         ClipRect(0, 0, 0xa, 0x60, 0x11, 0x40, 2, 0);
         WaitFrameDelay();
     }
@@ -772,8 +772,8 @@ extern int gKingStep[8];                /*@ ds:1CF4 */  /* Purpose unknown: per-
     for (i = 0; i > -0x36; i -= 4) {
         gFrameDelay = 1;
         gFillRect(0, 0, 0x87, 0x3f, 0x9d);
-        f1A29_000F(2, sprites[2], 0xc, i + 0x40, 0);
-        f1A29_000F(2, sprites[0], 0x20, i, 0);
+        DrawShape(2, sprites[2], 0xc, i + 0x40, 0);
+        DrawShape(2, sprites[0], 0x20, i, 0);
         ClipRect(0, 0, 0xa, 0x60, 0x11, 0x40, 2, 0);
         WaitFrameDelay();
     }
@@ -786,16 +786,16 @@ extern int gKingStep[8];                /*@ ds:1CF4 */  /* Purpose unknown: per-
     sprites[1] = gMakeImage(0, 0x88, 9, 0x30, gOverlayBuf);
     gDrawPage = 2;
     gFillRect(0, 0, 0x8f, 0x5f, 0x9d);
-    f1A29_000F(2, sprites[0], 0xffc8, 0xffc8, 0);
-    f1A29_000F(2, sprites[1], 0x34, 0x31, 0);
+    DrawShape(2, sprites[0], 0xffc8, 0xffc8, 0);
+    DrawShape(2, sprites[1], 0x34, 0x31, 0);
     GrowFrame(9, 6, 0, 0, 0, 0, 0x12, 0xc, 8, 0xb, 0x15, 0xa);
     DelayFrames(0xf);
     PlaySound(0xb);
     for (i = 0xffc8; i <= -8; i += 4) {
         gFrameDelay = 1;
         gFillRect(0, 0, 0x8f, 0x5f, 0x9d);
-        f1A29_000F(2, sprites[0], i, i, 0);
-        f1A29_000F(2, sprites[1], (i == -8 ? 1 : 0) * 3 + 0x34, (i == -8 ? 1 : 0) * 3 + 0x31, 0);
+        DrawShape(2, sprites[0], i, i, 0);
+        DrawShape(2, sprites[1], (i == -8 ? 1 : 0) * 3 + 0x34, (i == -8 ? 1 : 0) * 3 + 0x31, 0);
         ClipRect(0, 0, 0, 0, 0x12, 0x60, 2, 0);
         WaitFrameDelay();
     }
@@ -809,14 +809,14 @@ extern int gKingStep[8];                /*@ ds:1CF4 */  /* Purpose unknown: per-
     sprites[1] = gMakeImage(0x1c, 0x28, 0xa, 0x48, gOverlayBuf);
     gDrawPage = 2;
     gFillRect(0, 0, 0x57, 0x70, 0x9d);
-    f1A29_000F(2, sprites[1], 0, 0x5a, 0);
+    DrawShape(2, sprites[1], 0, 0x5a, 0);
     GrowFrame(0x14, 0xd, 0xf, 6, 0, 0, 0xb, 0xe, 0, 0, 0x18, 0x10);
     DelayFrames(0xf);
     tall = 0x5a;
     for (i = 0xffd8; i <= 0; i += 4) {
         gFrameDelay = 1;
         gFillRect(0, 0, 0x57, 0x70, 0x9d);
-        f1A29_000F(2, sprites[1], 0, tall, 0);
+        DrawShape(2, sprites[1], 0, tall, 0);
         ClipRect(0, 0, 0xf, 0x30, 0xb, 0x70, 2, 0);
         WaitFrameDelay();
         tall -= 5;
@@ -825,7 +825,7 @@ extern int gKingStep[8];                /*@ ds:1CF4 */  /* Purpose unknown: per-
     for (i = 0xffd8; i <= 0; i += 4) {
         gFrameDelay = 1;
         gFillRect(0, 0, 0x57, 0x27, 0x9d);
-        f1A29_000F(2, sprites[0], 0, i, 0);
+        DrawShape(2, sprites[0], 0, i, 0);
         ClipRect(0, 0, 0xf, 0x30, 0xb, 0x28, 2, 0);
         WaitFrameDelay();
     }
@@ -859,7 +859,7 @@ extern int gKingStep[8];                /*@ ds:1CF4 */  /* Purpose unknown: per-
     for (i = 0; i < 3; i++)
         frames[i] = gMakeImage(i * 5 + 0xf, 0x98, 5, 0x20, gOverlayBuf);
     img = gMakeImage(0x1f, 0x88, 5, 0x20, gOverlayBuf);
-    f19EC_002A(3, 4, FP_OFF(gOverlayBuf), FP_SEG(gOverlayBuf));
+    CopyPage(3, 4, FP_OFF(gOverlayBuf), FP_SEG(gOverlayBuf));
     ClipRect(0, 0, 0, 0x88, 6, 0x24, 4, 4);
     WaitFrameDelay();
     ClearBottomBar();
@@ -879,15 +879,15 @@ extern int gKingStep[8];                /*@ ds:1CF4 */  /* Purpose unknown: per-
         frame = i & 3;
         if (frame == 3)
             frame = 1;
-        f1A29_000F(4, frames[frame], x, y, 0);
-        f1A29_000F(4, img, 0xa0, 0x68, 0);
+        DrawShape(4, frames[frame], x, y, 0);
+        DrawShape(4, img, 0xa0, 0x68, 0);
         ClipRect(left, top, left - 0xa, top + 0x18, 6, 0x24, 4, 0);
         ClipRect(0, 0, left, top, 6, 0x24, 4, 4);
         x++;
         y--;
         for (k = 0; k < 5; k++) {
             frame = RandomByte() % 31;
-            f1A29_000F(0, stars[frame], gStarX[frame] - 0x50, gStarY[frame] + 0x18, 0);
+            DrawShape(0, stars[frame], gStarX[frame] - 0x50, gStarY[frame] + 0x18, 0);
         }
         if (!(RandomByte() & 7))
             PlaySound((RandomByte() & 1) ? 5 : 0xe);
@@ -905,7 +905,7 @@ extern int gKingStep[8];                /*@ ds:1CF4 */  /* Purpose unknown: per-
     ClipRect(0, 0x88, 0, 0, 6, 0x24, 4, 4);
     LoadPalette("ORB.COL");
     LoadPackedImage("ORB.CMP", 3, 5);
-    f19EC_002A(5, 2, FP_OFF(gOverlayBuf), FP_SEG(gOverlayBuf));
+    CopyPage(5, 2, FP_OFF(gOverlayBuf), FP_SEG(gOverlayBuf));
     gFrameDelay = 6;
     DrawGrid();
     WaitFrameDelay();
@@ -938,7 +938,7 @@ extern int gKingStep[8];                /*@ ds:1CF4 */  /* Purpose unknown: per-
     }
     gFrameDelay = 0x1e;
     LoadPackedImage("TUNNEL.CMP", 3, 5);
-    f19EC_002A(5, 2, FP_OFF(gOverlayBuf), FP_SEG(gOverlayBuf));
+    CopyPage(5, 2, FP_OFF(gOverlayBuf), FP_SEG(gOverlayBuf));
     WaitFrameDelay();
     gDrawPage = 0;
     gFillRect(0, 0x10, 0x13f, 0x1f, 0xc);
@@ -954,7 +954,7 @@ extern unsigned char gZoomW[6];         /*@ ds:1D10 */  /* Purpose unknown: widt
 extern unsigned char gZoomH[6];         /*@ ds:1D16 */  /* Purpose unknown: height of each zoom rect, ovl0:23A3 */
 extern unsigned char gZoomX2[6];        /*@ ds:1D1C */  /* Purpose unknown: x2 of each zoom rect, ovl0:23A3 */
 extern unsigned char gZoomY2[6];        /*@ ds:1D22 */  /* Purpose unknown: y2 of each zoom rect, ovl0:23A3 */
-extern void f1A29_004D(int mode, void far *src, int x, int y, int region); /*@ 0998:0046 */
+extern void DrawShapeFlipped(int mode, void far *src, int x, int y, int region); /*@ 0998:0046 */
 
 /* ovl0:23A3: the AVALANCH/ZOOMTUNL scene. It cuts two 0x14 by 0x78 panels out of gOverlayBuf
    and flashes them three times with ClipRect wipes, sound 7 twice per pass, six plays in
@@ -971,8 +971,8 @@ extern void f1A29_004D(int mode, void far *src, int x, int y, int region); /*@ 0
     gDrawPage = 4;
     imgA = gMakeImage(0x14, 0, 0x14, 0x78, gOverlayBuf);
     imgB = gMakeImage(0, 0, 0x14, 0x78, gOverlayBuf);
-    f1A29_004D(4, imgA, 0xa0, 0, 0);
-    f1A29_004D(4, imgB, 0, 0, 0);
+    DrawShapeFlipped(4, imgA, 0xa0, 0, 0);
+    DrawShapeFlipped(4, imgB, 0, 0, 0);
     WaitFrameDelay();
     for (i = 0; i < 3; i++) {
         gFrameDelay = 8;
@@ -1003,7 +1003,7 @@ extern void f1A29_004D(int mode, void far *src, int x, int y, int region); /*@ 0
     gFrameDelay = 0x28;
     ClipRect(0, 0, 0xa, 0x20, 0x14, 0x78, 2, 0);
     LoadPackedImage("AVALANCH.CMP", 5, 3);
-    f19EC_002A(3, 4, FP_OFF(gOverlayBuf), FP_SEG(gOverlayBuf));
+    CopyPage(3, 4, FP_OFF(gOverlayBuf), FP_SEG(gOverlayBuf));
     WaitFrameDelay();
     gFrameDelay = 0x10;
     ClipRect(0x21, 0, 0x11, 0x38, 6, 0x30, 4, 0);
@@ -1031,7 +1031,7 @@ extern void f1A29_004D(int mode, void far *src, int x, int y, int region); /*@ 0
     ClipRect(0, 0, 0, 0, 0x28, 0xa8, 2, 0);
     gFrameDelay = 0x28;
     LoadPackedImage("ZOOMTUNL.CMP", 5, 3);
-    f19EC_002A(3, 4, FP_OFF(gOverlayBuf), FP_SEG(gOverlayBuf));
+    CopyPage(3, 4, FP_OFF(gOverlayBuf), FP_SEG(gOverlayBuf));
     WaitFrameDelay();
     PlaySound(6);
     gFrameDelay = 2;
@@ -1109,7 +1109,7 @@ extern void f1A29_004D(int mode, void far *src, int x, int y, int region); /*@ 0
     }
 }
 /* ovl0:2A99: plays the Westwood logo card: loads WESTWOOD.CMP into the buffer slots 5/3,
-   starts the driver, applies the WESTWOOD.COL palette, copies the buffers through f19EC_002A,
+   starts the driver, applies the WESTWOOD.COL palette, copies the buffers through CopyPage,
    makes sound 1, arms gWestwoodDelay ticks and waits them. Then, unless a key aborted, it
    shows the four SSI logo cards in turn (each from gLogoFiles into slots 5/3): for each it arms
    its gLogoDelays entry, loads and copies the card, dissolves it from page 4 to page 0, and
@@ -1120,9 +1120,9 @@ extern void f1A29_004D(int mode, void far *src, int x, int y, int region); /*@ 0
     int i;
 
     LoadPackedImage("WESTWOOD.CMP", 5, 3);
-    gFn1EE2();
+    gClearDrawPage();
     LoadPalette("WESTWOOD.COL");
-    f19EC_002A(3, 0, FP_OFF(gOverlayBuf), FP_SEG(gOverlayBuf));
+    CopyPage(3, 0, FP_OFF(gOverlayBuf), FP_SEG(gOverlayBuf));
     PlaySound(1);
     gFrameDelay = gWestwoodDelay;
     WaitFrameDelay();
@@ -1131,7 +1131,7 @@ extern void f1A29_004D(int mode, void far *src, int x, int y, int region); /*@ 0
     for (i = 0; i < 4; i++) {
         gFrameDelay = gLogoDelays[i];
         LoadPackedImage(gLogoFiles[i], 5, 3);
-        f19EC_002A(3, 4, FP_OFF(gOverlayBuf), FP_SEG(gOverlayBuf));
+        CopyPage(3, 4, FP_OFF(gOverlayBuf), FP_SEG(gOverlayBuf));
         Dissolve(0, 0x32, 0x140, 0x66, 4, 0);
         WaitFrameDelay();
         if (gAbort)
@@ -1153,8 +1153,8 @@ extern void f1A29_004D(int mode, void far *src, int x, int y, int region); /*@ 0
     void far *dst;
     int slot;
 
-    src = f19EC_0002(srcKind);
-    dst = f19EC_0002(dstKind);
+    src = GetPagePtr(srcKind);
+    dst = GetPagePtr(dstKind);
     slot = FileOpen(name, 1);
     FileRead(slot, (char far *)&size, 2);
     FileRead(slot, (char far *)src, size);

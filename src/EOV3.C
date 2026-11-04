@@ -57,7 +57,7 @@ extern struct Cell8 far *gE062; /*@ ds:E062 */  /* the 8-byte map cell rectangle
 extern char gMaze[]; /*@ ds:B894 */
 extern int gFBD0; /*@ ds:FBD0 */            /* the saved-level bit mask: bit level-1 is set by SaveLevelState and SaveGame and tested by LoadObjects and LoadMapScreen */
 extern void far *gBufDCFC; /*@ ds:DCFC */
-extern unsigned char gTable1879[]; /*@ ds:1879 */  /* the four parallel per-kind tables at ds:1879..0x1990 */
+extern unsigned char gWallVmpSet[]; /*@ ds:1879 */  /* the four parallel per-kind tables at ds:1879..0x1990 */
 extern void movmem(void far *src, void far *dst, unsigned n); /*@ 0000:63A3 */
 
 struct Cell8 {              /* the 8-byte sprite rectangles gE062 points at (ovl3:01C8, 03A2) */
@@ -90,11 +90,11 @@ struct Monster {              /* 28-byte records, 30 of them at ds:8A82 (src/E08
 };
 
 extern struct Monster gMonsters[]; /*@ ds:8A82 */
-extern unsigned long g8492; /*@ ds:8492 */
+extern unsigned long gGameTicks; /*@ ds:8492 */
 extern int MemberIs(int who, int mask); /*@ 0D1C:0670 */
 extern void RearmCharEffects(void); /*@ 1414:0B2E */
 extern signed char gWallTypeFlags[]; /*@ ds:194B */
-extern signed char gTable18BF[]; /*@ ds:18BF */  /* per-object-kind table (src/E122E.C) */
+extern signed char gWallDecorHead[]; /*@ ds:18BF */  /* per-object-kind table (src/E122E.C) */
 extern unsigned char g1905[]; /*@ ds:1905 */     /* a 256-byte table gMaze indexes into (src/E0DE8.C) */
 extern int gDragMember; /*@ ds:5C74 */
 extern signed char g5C76; /*@ ds:5C76 */
@@ -128,21 +128,21 @@ extern void LoadLevelState(int action); /*@ ovl3:1147 */
 extern void ResetLevel(void); /*@ ovl3:19F7 */
 extern long SeekFile(int index, long offset, int whence); /*@ 1C0E:06E5 */
 extern void far *gSegEFC2; /*@ ds:EFC2 */
-extern void far *f1BA8_0072(void far *p); /*@ 1BA8:0072 */
+extern void far *NormalizePtr(void far *p); /*@ 1BA8:0072 */
 extern long FileWrite(int index, char far *buf, unsigned long len); /*@ 1C0E:0578 */
 extern int CompressLcw(char far *src, char far *dst, unsigned len); /*@ 19FC:0008 */
 extern void (far *gDrawText)(char far *text, int a, int b, int c, int d); /*@ ds:80CA */
 extern char gFileNameBuf[]; /*@ ds:FE6E */
 extern void WaitKeyEvent(void); /*@ 1AAD:05D3 */
 extern void ShutdownGame(void); /*@ 07C8:058A */
-extern struct SlotSize far *gFB5E[]; /*@ ds:FB5E (the per-column size records, src/E122E.C:106) */
+extern struct SlotSize far *gDoorShapes[]; /*@ ds:FB5E (the per-column size records, src/E122E.C:106) */
 
 struct SlotPos {            /* the six-byte slot-position records at ds:A99C (src/E122E.C:112) */
     struct SlotSize far *rec; /* +0: the far size record */
     unsigned char x;        /* +4 */
     unsigned char y;        /* +5 */
 };
-extern struct SlotPos gA99C[]; /*@ ds:A99C */
+extern struct SlotPos gDoorButtons[]; /*@ ds:A99C */
 extern void far *gB802[]; /*@ ds:B802 */
 extern int g6930[]; /*@ ds:6930 */
 extern int g69C0[]; /*@ ds:69C0 */
@@ -194,19 +194,19 @@ extern signed char far gMapTiles[]; /*@ 1F1D:0000 */  /* the map tile byte table
 #define MAPSHEET ((void far *)((char far *)MK_FP(0x1d8, 0) + (gMapTiles[gFBC8 - 1] << 5)))
 
 extern int gTimerEnableFlags; /*@ ds:849E */
-extern char gF51B; /*@ ds:F51B */
+extern char gLevelTimerMode; /*@ ds:F51B */
 extern int gF510; /*@ ds:F510 */
-extern int gFB32; /*@ ds:FB32 */
+extern int gLevelTimerSteps; /*@ ds:FB32 */
 extern int gStepCount; /*@ ds:F540 */
 extern unsigned long gDeadline; /*@ ds:F512 */
-extern char gFB45; /*@ ds:FB45 */
+extern char gLevelPalettePending; /*@ ds:FB45 */
 extern char far *gBuf8DCA; /*@ ds:8DCA */   /* the 7500-byte unpacked level script (src/E07A9.C) */
 extern char far *gBufF43E; /*@ ds:F43E */   /* the 6000-byte level graphics file (src/E07A9.C) */
 extern unsigned char far *gFE68; /*@ ds:FE68 */  /* the 0x300-byte palette file (src/E07C8.C) */
 extern void FormatName(char far *prefix, int number, char far *suffix); /*@ 082C:0AE8 */
 extern void Unpack(char far *src, void far *dst); /*@ 1B82:00C7 */
 extern void LoadFile(char far *name, void far *buf, unsigned len); /*@ 1B82:0009 */
-extern void Obj131D(int index, int kind, int id, int frame, int orient, int b0, int m07, int type, int timer, int m12, int m14); /*@ 08E6:131D */
+extern void InitMonster(int index, int kind, int id, int frame, int orient, int b0, int m07, int type, int timer, int m12, int m14); /*@ 08E6:131D */
 extern void PlaySound(int sound); /*@ 177D:0070 */
 
 struct LevelTimer {                /* the 16-byte timer records ovl3:0A7C fills from the level script */
@@ -312,8 +312,8 @@ struct WallDec {            /* the 52-byte wall-set decorations LoadWallSet read
     int cell;
     struct Cell8 far *rect;
 
-    gTable1879[kind] = field1879;
-    gTable18BF[kind] = gF538 + 1;
+    gWallVmpSet[kind] = field1879;
+    gWallDecorHead[kind] = gF538 + 1;
     g1905[kind] = field1905;
     gWallTypeFlags[kind] = objectFlags;
     gWallTypeFlags[kind] ^= 4;
@@ -338,7 +338,7 @@ struct WallDec {            /* the 52-byte wall-set decorations LoadWallSet read
                 recordIndex = -1;
         }
     } else
-        gTable18BF[kind] = 0;
+        gWallDecorHead[kind] = 0;
 }
 /* ovl3:031A: frees and clears the six far pointers in the per-slot size-record table ds:FB5E and
    the six size-record pointers in the SlotPos records at ds:A99C. The counterpart of the
@@ -348,21 +348,21 @@ struct WallDec {            /* the 52-byte wall-set decorations LoadWallSet read
     int i;
 
     for (i = 0; i < 6; i++) {
-        if (gFB5E[i]) {
-            farfree((void far *)gFB5E[i]);
-            gFB5E[i] = 0;
+        if (gDoorShapes[i]) {
+            farfree((void far *)gDoorShapes[i]);
+            gDoorShapes[i] = 0;
         }
-        if (gA99C[i].rec) {
-            farfree((void far *)gA99C[i].rec);
-            gA99C[i].rec = 0;
+        if (gDoorButtons[i].rec) {
+            farfree((void far *)gDoorButtons[i].rec);
+            gDoorButtons[i].rec = 0;
         }
     }
 }
 /* ovl3:03A2: loads the overlay screen "DOOR" (LoadOverlayScreen) and slices map icon cells out of
    the map sheet (segment 0x1D8, offset from the tile byte table gMapTiles[gFBC8-1] shifted left 5).
-   For `srcA` (when not -1) it slices three cells from the 4-byte rectangles at ds:6840 into gFB5E
-   starting at `dstA` and three more from ds:68A0 into gA99C[dstA].rec, and copies the x and y bytes of
-   gA99C[dstA] from ds:6900. For `srcB` (when not -1) it slices the three cells at `dstB` the same way,
+   For `srcA` (when not -1) it slices three cells from the 4-byte rectangles at ds:6840 into gDoorShapes
+   starting at `dstA` and three more from ds:68A0 into gDoorButtons[dstA].rec, and copies the x and y bytes of
+   gDoorButtons[dstA] from ds:6900. For `srcB` (when not -1) it slices the three cells at `dstB` the same way,
    but reads its ds:6900 x/y pair with srcA's index (QUIRK ovl3:0597). Clears gStatusLine. Called by
    ovl3:0A7C. */
 /*@ ovl3:03A2 */ void LoadMapCells(int srcA, int dstA, int srcB, int dstB)
@@ -374,25 +374,25 @@ struct WallDec {            /* the 52-byte wall-set decorations LoadWallSet read
     if (srcA == -1) goto second;
     for (i = 0; i < 3; i++) {
         j = srcA * 0xc + i * 4;
-        gFB5E[dstA + i] = (struct SlotSize far *)gGetSpriteCell(g6840[j], g6840[j + 1], g6840[j + 2],
+        gDoorShapes[dstA + i] = (struct SlotSize far *)gGetSpriteCell(g6840[j], g6840[j + 1], g6840[j + 2],
             g6840[j + 3], MAPSHEET);
-        gA99C[dstA + i].rec = (struct SlotSize far *)gGetSpriteCell(g68A0[j], g68A0[j + 1], g68A0[j + 2],
+        gDoorButtons[dstA + i].rec = (struct SlotSize far *)gGetSpriteCell(g68A0[j], g68A0[j + 1], g68A0[j + 2],
             g68A0[j + 3], MAPSHEET);
         j = srcA * 6 + i * 2;
-        gA99C[dstA + i].x = g6900[j];
-        gA99C[dstA + i].y = g6900[j + 1];
+        gDoorButtons[dstA + i].x = g6900[j];
+        gDoorButtons[dstA + i].y = g6900[j + 1];
     }
 second:
     if (srcB == -1) goto done;
     for (i = 0; i < 3; i++) {
         j = srcB * 0xc + i * 4;
-        gFB5E[dstB + i] = (struct SlotSize far *)gGetSpriteCell(g6840[j], g6840[j + 1], g6840[j + 2],
+        gDoorShapes[dstB + i] = (struct SlotSize far *)gGetSpriteCell(g6840[j], g6840[j + 1], g6840[j + 2],
             g6840[j + 3], MAPSHEET);
-        gA99C[dstB + i].rec = (struct SlotSize far *)gGetSpriteCell(g68A0[j], g68A0[j + 1], g68A0[j + 2],
+        gDoorButtons[dstB + i].rec = (struct SlotSize far *)gGetSpriteCell(g68A0[j], g68A0[j + 1], g68A0[j + 2],
             g68A0[j + 3], MAPSHEET);
         j = srcA * 6 + i * 2;   /* QUIRK ovl3:0597: the srcB branch reads srcA's ds:6900 pair too */
-        gA99C[dstB + i].x = g6900[j];
-        gA99C[dstB + i].y = g6900[j + 1];
+        gDoorButtons[dstB + i].x = g6900[j];
+        gDoorButtons[dstB + i].y = g6900[j + 1];
     }
 done:
     gStatusLine = 0;
@@ -543,16 +543,16 @@ done:
    gBuf8DCA), names its two object/screen files through LoadObjects and a "%s.%s" sprite name, loads
    the sprite file into gBufF43E and, in VGA mode, the "%s.PAL" palette, then frees the slot,
    map-icon and pointer tables (FreeSlotTables, FreeMapIcons and FreePtrTable).
-   The rest of the script: four LoadMapCells arguments, the header bytes gF51B/gF510/gFB32 and the
+   The rest of the script: four LoadMapCells arguments, the header bytes gLevelTimerMode/gF510/gLevelTimerSteps and the
    gDeadline/gStepCount timers, two far function-pointer records (the local `handlers` list of the icon
    loaders, called with 0 and 0x12), a run of (index, value) timer pairs stored into the 16-byte
-   g5BCC/g5BDC records, four g5BD0 deadlines derived from g5BCC plus the tick counter g8492, the 30
-   14-byte object records handed to Obj131D (or skipped by 0x1a4 when the level was already
+   g5BCC/g5BDC records, four g5BD0 deadlines derived from g5BCC plus the tick counter gGameTicks, the 30
+   14-byte object records handed to InitMonster (or skipped by 0x1a4 when the level was already
    unpacked), the wall/object records (0xEC introduces a 0x18-byte wall set through LoadWallSet,
    otherwise a five-byte RegisterWallObject record), the item records keyed against gMaze, and
    finally the wall textures (LoadWallTextures with the gMapTiles[gFBC8-1] sheet) and the INVENT
    screen. It clears the 0x400 ds:B899 item-list heads, rebuilds the list, sets bit 2 of gTimerEnableFlags,
-   calls PlaySound(0) and sets gFB45 to 1. Called by EnterMapScreen (0ACD:0F72), ResetMapScreen
+   calls PlaySound(0) and sets gLevelPalettePending to 1. Called by EnterMapScreen (0ACD:0F72), ResetMapScreen
    (0ACD:1033), LoadLevelOp (122E:1AAB, through the 210C:007A stub) and ovl3:15B9 LoadGame. */
 /*@ ovl3:0A7C */ void LoadMapScreen(int level)
 {
@@ -606,13 +606,13 @@ done:
     FreePtrTable();
     LoadMapCells(script[0], script[1], script[2], script[3]);
     script += 4;
-    gF51B = script[0];
+    gLevelTimerMode = script[0];
     script++;
     gF510 = *(int far *)script;
     script += 2;
-    gFB32 = *(int far *)script;
+    gLevelTimerSteps = *(int far *)script;
     script += 2;
-    gDeadline = g8492 + gF510;
+    gDeadline = gGameTicks + gF510;
     gStepCount = 0;
     handlerIdx = script[0];
     script++;
@@ -632,9 +632,9 @@ done:
     }
     for (i = 0; i < 4; i++) {
         if (i & 1)
-            g5BD0[i].f0 = g8492 + (g5BCC[i].f0 >> 1);
+            g5BD0[i].f0 = gGameTicks + (g5BCC[i].f0 >> 1);
         else
-            g5BD0[i].f0 = g8492 + g5BCC[i].f0;
+            g5BD0[i].f0 = gGameTicks + g5BCC[i].f0;
     }
     if (!(gFBD0 & (1 << (level - 1)))) {
         memset(gMonsters, 0, 0x348);
@@ -661,7 +661,7 @@ done:
             script += 2;
             objM14 = *(int far *)script;
             script += 2;
-            Obj131D(objIndex, objKind, objId, objFrame, objOrient, objB0, objM07, objType, objTimer,
+            InitMonster(objIndex, objKind, objId, objFrame, objOrient, objB0, objM07, objType, objTimer,
                 objM12, objM14);
         }
     } else
@@ -700,7 +700,7 @@ done:
     LoadScreenImage("INVENT", (char far *)gSheet2067, 5, 3, 2);
     gTimerEnableFlags |= 2;
     PlaySound(0);
-    gFB45 = 1;
+    gLevelPalettePending = 1;
 }
 /* ovl3:0FD1: packs the level state into `buf`. It copies the four gMaze bytes of each of the 0x400
    records into gBufDCFC, compresses gBufDCFC (0x1000 bytes) into `buf` with CompressLcw and, when
@@ -772,7 +772,7 @@ done:
     char far *state;
     int handle;
 
-    state = (char far *)f1BA8_0072((char far *)gSegEFC2 + 0xc800);
+    state = (char far *)NormalizePtr((char far *)gSegEFC2 + 0xc800);
     PackLevelState((void far *)state);
     handle = FileOpen("LEVELS.TMP", 3);
     SeekFile(handle, (long)(level - 1) * 0x7f8, 0);
@@ -780,8 +780,8 @@ done:
     FileClose(handle);
     gFBD0 |= 1 << (level - 1);
 }/* ovl3:123D: ages the ten 32-bit countdowns at gChars+0xAD for every character that passes
-   MemberIs(i, 1): a countdown greater than the tick counter g8492 loses g8492, and a nonzero
-   countdown not greater than g8492 is set to 1. Called by ovl3:1368. */
+   MemberIs(i, 1): a countdown greater than the tick counter gGameTicks loses gGameTicks, and a nonzero
+   countdown not greater than gGameTicks is set to 1. Called by ovl3:1368. */
 /*@ ovl3:123D */ void AgeCharTimers(void)
 {
     struct CharRec far *rec;
@@ -791,15 +791,15 @@ done:
     for (rec = gChars, i = 0; i < 6; i++, rec++) {
         if (MemberIs(i, 1)) {
             for (j = 0; j < 0xa; j++) {
-                if (rec->timers[j] > g8492)
-                    rec->timers[j] -= g8492;
+                if (rec->timers[j] > gGameTicks)
+                    rec->timers[j] -= gGameTicks;
                 else if (rec->timers[j])
                     rec->timers[j] = 1;
             }
         }
     }
 }
-/* ovl3:12F1: the counterpart of ovl3:123D: adds the tick counter g8492 to every nonzero countdown
+/* ovl3:12F1: the counterpart of ovl3:123D: adds the tick counter gGameTicks to every nonzero countdown
    at gChars+0xAD for each character that passes MemberIs(i, 1), then calls RearmCharEffects.
    Called by ovl3:1368 and ovl3:15B9. */
 /*@ ovl3:12F1 */ void AdvanceCharTimers(void)
@@ -812,7 +812,7 @@ done:
         if (MemberIs(i, 1)) {
             for (j = 0; j < 0xa; j++) {
                 if (rec->timers[j])
-                    rec->timers[j] += g8492;
+                    rec->timers[j] += gGameTicks;
             }
         }
     }

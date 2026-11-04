@@ -27,7 +27,7 @@ struct CharRec {            /* 243-byte (0xF3) character records at ds:F580; see
     char padAD[0xF3 - 0xAD];
 };
 
-extern int gA9C8[]; /*@ ds:A9C8 */       /* a 15-word table searched by 0D1C:0006 */
+extern int gViewCellIds[]; /*@ ds:A9C8 */       /* a 15-word table searched by 0D1C:0006 */
 extern char gViewDirty; /*@ ds:DF4C */        /* set to 1 when 0D1C:0006 finds the value */
 extern signed char gInventoryMember; /*@ ds:A99A */ /* the selected character index (src/E0ACD.C) */
 extern char gCursorSlot; /*@ ds:F51A */        /* an index into the 27 word slots of gChars[gInventoryMember].items
@@ -46,20 +46,20 @@ extern int gPartyCell; /*@ ds:FBCA */     /* the party's map cell: 0D1C:035A ind
                                             point of DirectionFromPoints. MoveParty (122E:0001)
                                             sets it (settled 2026-11-03, playbook 65) */
 extern int gPartyDir; /*@ ds:FBCC */            /* the party's facing, 0..3 (TurnLeft, TurnRight) */
-extern int g54F2; /*@ ds:54F2 */            /* the index drawn by 0D1C:0454, -1 when none */
-extern int g54F4; /*@ ds:54F4 */            /* the row of the animated list 0D1C:0454 draws */
-extern unsigned long gTicks; /*@ ds:848A */  /* a tick counter compared with gFC5E by 0D1C:0454 */
-extern unsigned long gFC5E; /*@ ds:FC5E */  /* the next tick 0D1C:0454 may draw at */
-extern signed char g1CE7[]; /*@ ds:1CE7 */  /* per-row colours for the list 0D1C:0454 draws */
+extern int gSelectFrameIndex; /*@ ds:54F2 */            /* the index drawn by 0D1C:0454, -1 when none */
+extern int gSelectFrameStep; /*@ ds:54F4 */            /* the row of the animated list 0D1C:0454 draws */
+extern unsigned long gTicks; /*@ ds:848A */  /* a tick counter compared with gSelectFrameTick by 0D1C:0454 */
+extern unsigned long gSelectFrameTick; /*@ ds:FC5E */  /* the next tick 0D1C:0454 may draw at */
+extern signed char gSelectFrameColours[]; /*@ ds:1CE7 */  /* per-row colours for the list 0D1C:0454 draws */
 extern signed char gF57E; /*@ ds:F57E */    /* a colour read by 0D1C:0C21 */
 extern signed char gPanelHighlight; /*@ ds:FB4C */    /* a colour read by 0D1C:0C21 */
 extern signed char gPanelShadow; /*@ ds:F53A */    /* a colour read by 0D1C:0C21 */
-extern signed char g54F6[]; /*@ ds:54F6 */  /* byte table indexed by a character's constitution in 0D1C:059B */
+extern signed char gConSaveBonus[]; /*@ ds:54F6 */  /* byte table indexed by a character's constitution in 0D1C:059B */
 extern unsigned char gPartySpellFlags; /*@ ds:FBD2 */  /* bit 0 gates the icon colour row in 0D1C:070F (src/E07A9.C) */
 extern int gGraphicsChoice; /*@ ds:8102 */            /* nonzero: a colour row exists (src/E07A9.C) */
-extern char far *gBufF534; /*@ ds:F534 */   /* the 1600-byte ITEMRMP buffer (src/E07A9.C) */
-extern void (far *gFn80D2)(void far *map); /*@ ds:80D2 */ /* the far colour-table callback (src/E07A9.C) */
-extern void far *gIconsDDE4[]; /*@ ds:DDE4 */ /* the item icon far pointers (src/E07A9.C) */
+extern char far *gItemRemapTable; /*@ ds:F534 */   /* the 1600-byte ITEMRMP buffer (src/E07A9.C) */
+extern void (far *gSetRemapTable)(void far *map); /*@ ds:80D2 */ /* the far colour-table callback (src/E07A9.C) */
+extern void far *gItemIcons[]; /*@ ds:DDE4 */ /* the item icon far pointers (src/E07A9.C) */
 
 struct ItemInfo {           /* 16-byte records at ds:A9F5; read by 0D1C:07DB, 0D1C:08B1 and 0D1C:0BEB */
     signed char m00;        /* +0 (ds:A9F5), bit 2 tested by 0D1C:0BEB */
@@ -68,7 +68,7 @@ struct ItemInfo {           /* 16-byte records at ds:A9F5; read by 0D1C:07DB, 0D
     int m09;                /* +9 (ds:A9FE), tested by 0D1C:07DB */
     char pad0B[5];
 };
-extern struct ItemInfo gA9F5[]; /*@ ds:A9F5 */
+extern struct ItemInfo gItemTypesClasses[]; /*@ ds:A9F5 */
 
 struct Monster {              /* 28-byte object records at ds:8A82 (see src/E08E6.C) */
     char typeIndex;                /* +0: an index into the ds:1A3B table */
@@ -99,7 +99,7 @@ struct Row8 {               /* eight-byte rows at ds:5482, four words: a DrawBox
     int x2;
     int y2;
 };
-extern struct Row8 gRows5482[]; /*@ ds:5482 */
+extern struct Row8 gSelectFrameRects[]; /*@ ds:5482 */
 
 struct ItemRecord {
     signed char nameIndex;        /* +0 (ds:8DD0): indexes the item-name table at segment 0x1F28 */
@@ -130,14 +130,14 @@ extern int gFBCE; /*@ ds:FBCE */             /* the item index shown by the mous
 extern int gMouseDisabled; /*@ ds:814A */    /* nonzero disables the mouse (src/E07A9.C) */
 extern int gFBC8; /*@ ds:FBC8 */             /* the current action: 2 or 7 gates the turn-undead
                                                 effect (0D1C:0A43); other units set it too */
-extern int gF518; /*@ ds:F518 */             /* set to 1 while an object is being turned (0D1C:0A43) */
+extern int gDeferMonsterHits; /*@ ds:F518 */             /* set to 1 while an object is being turned (0D1C:0A43) */
 extern char gFileNameBuf[]; /*@ ds:FE6E */   /* the text buffer sprintf formats into (src/EOV2.C) */
 
 extern void ListMonstersAtCell(int far *list, int key, int field, char flags, char scanAll, char scanFiltered); /*@ 08E6:17FD */
 /* fills `list` with the gMonsters indices whose id equals key, terminated by -1; flags, scanAll
    and scanFiltered select the scan (Purpose unknown) */
 extern void FlashViewDamage(void); /*@ 0EF3:06E7 */
-extern void f08E6_0E48(void); /*@ 08E6:0E48 */
+extern void FinishDeferredHits(void); /*@ 08E6:0E48 */
 extern void PlaySound(int sound); /*@ 177D:0070 */
 extern void DrawText(char far *text); /*@ 1DE7:060A */
 extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
@@ -160,7 +160,7 @@ extern int FindClassSlot(int slotId, int classIndex); /*@ 0A72:007B */
 /* the original sign-extends the classIndex argument at 0D1C:0942 and 0D1C:0977 (`mov al,es:[bx+0x20];
    cwde; push ax`), so the second parameter is int, not char */
 extern int GetClampedTableByte(int col, int row); /*@ 0A72:0597 */
-extern void f1A29_008B(int mode, void far *src, int x, int y, int region); /*@ 1A29:008B */
+extern void DrawShapeRemapped(int mode, void far *src, int x, int y, int region); /*@ 1A29:008B */
 extern void DrawShape(int mode, void far *src, int x, int y, int region); /*@ 1A29:000F */
 extern void DrawFilledPanel(int x1, int y1, int x2, int y2, int c1, int c2, int c3); /*@ 082C:09D5 */
 extern int DirectionFromPoints(int fromCell, int toCell); /*@ 17A6:0314 */
@@ -169,15 +169,15 @@ extern void DamageObject(struct Monster far *obj, int n); /*@ 08E6:0FBE */
 int MemberIs(int who, int mask);
 int GetCurrentItem(void);
 
-/* 0D1C:0006: Purpose unknown: the value `value` is looked for in the 15 words at ds:A9C8; when
+/* 0D1C:0006: Returns 1 and sets gDF4C when the cell is one of the first 15 cells the view shows (ds:A9C8), so a change there is redrawn. the value `value` is looked for in the 15 words at ds:A9C8; when
    it is found, ds:DF4C is set to 1 and the function returns 1, otherwise it returns 0. Called
    from the object unit (08E6) and from 1414. */
-/*@ 0D1C:0006 */ int f0D1C_0006(int value)
+/*@ 0D1C:0006 */ int IsCellInView(int value)
 {
     int far *slot;
     int i;
 
-    slot = gA9C8;
+    slot = gViewCellIds;
     for (i = 0; i < 15; i++, slot++) {
         if (*slot == value) {
             gViewDirty = 1;
@@ -384,12 +384,12 @@ int GetCurrentItem(void);
         gInventoryMember = 0;
     RearmCharEffects();
 }
-/* 0D1C:0454: draws the animated row list at ds:5482. When `index` differs from the stored g54F2
-   it hides the pointer, erases the old row (DrawBox over gRows5482[g54F2] in colour 0xC), shows
-   the pointer, resets the row counter g54F4 to 0, stores `index` in g54F2 and records the
-   current tick (gFC5E = gTicks). Otherwise, when a row is selected and one tick has passed, it
-   draws the next row g1CE7[g54F4] in the row's colour, advances g54F4 (wrapping to 0 at a zero
-   colour) and sets gFC5E = gTicks + 1. Called by overlays 0 and 1. */
+/* 0D1C:0454: draws the animated row list at ds:5482. When `index` differs from the stored gSelectFrameIndex
+   it hides the pointer, erases the old row (DrawBox over gSelectFrameRects[gSelectFrameIndex] in colour 0xC), shows
+   the pointer, resets the row counter gSelectFrameStep to 0, stores `index` in gSelectFrameIndex and records the
+   current tick (gSelectFrameTick = gTicks). Otherwise, when a row is selected and one tick has passed, it
+   draws the next row gSelectFrameColours[gSelectFrameStep] in the row's colour, advances gSelectFrameStep (wrapping to 0 at a zero
+   colour) and sets gSelectFrameTick = gTicks + 1. Called by overlays 0 and 1. */
 /*@ 0D1C:0454 */ void DrawRowList(int index)
 {
     int x1;
@@ -397,30 +397,30 @@ int GetCurrentItem(void);
     int x2;
     int y2;
 
-    if (g54F2 != index) {
-        if (g54F2 != -1) {
+    if (gSelectFrameIndex != index) {
+        if (gSelectFrameIndex != -1) {
             LockHidePointer();
-            DrawBox(gRows5482[g54F2].x1, gRows5482[g54F2].y1, gRows5482[g54F2].x2,
-                    gRows5482[g54F2].y2, 0xC);
+            DrawBox(gSelectFrameRects[gSelectFrameIndex].x1, gSelectFrameRects[gSelectFrameIndex].y1, gSelectFrameRects[gSelectFrameIndex].x2,
+                    gSelectFrameRects[gSelectFrameIndex].y2, 0xC);
             LockShowPointer();
         }
-        g54F4 = 0;
-        g54F2 = index;
-        gFC5E = gTicks;
+        gSelectFrameStep = 0;
+        gSelectFrameIndex = index;
+        gSelectFrameTick = gTicks;
     } else {
-        if (g54F2 != -1) {
-            if (gTicks > gFC5E) {
-                if (g1CE7[g54F4] == 0)
-                    g54F4 = 0;
-                x1 = gRows5482[g54F2].x1;
-                y1 = gRows5482[g54F2].y1;
-                x2 = gRows5482[g54F2].x2;
-                y2 = gRows5482[g54F2].y2;
+        if (gSelectFrameIndex != -1) {
+            if (gTicks > gSelectFrameTick) {
+                if (gSelectFrameColours[gSelectFrameStep] == 0)
+                    gSelectFrameStep = 0;
+                x1 = gSelectFrameRects[gSelectFrameIndex].x1;
+                y1 = gSelectFrameRects[gSelectFrameIndex].y1;
+                x2 = gSelectFrameRects[gSelectFrameIndex].x2;
+                y2 = gSelectFrameRects[gSelectFrameIndex].y2;
                 LockHidePointer();
-                DrawBox(x1, y1, x2, y2, g1CE7[g54F4]);
+                DrawBox(x1, y1, x2, y2, gSelectFrameColours[gSelectFrameStep]);
                 LockShowPointer();
-                g54F4++;
-                gFC5E = gTicks + 1;
+                gSelectFrameStep++;
+                gSelectFrameTick = gTicks + 1;
             }
         }
     }
@@ -435,14 +435,14 @@ int GetCurrentItem(void);
     for (i = 0; i < 6; i++)
         RedrawMember(i);
 }
-/* 0D1C:059B: Purpose unknown: a per-character check against a 1d20 roll. It derives a class
+/* 0D1C:059B: Rolls a character's saving throw of the given kind and returns 1 when it succeeds. a per-character check against a 1d20 roll. It derives a class
    slot from gChars[who].classIndex (GetClassSlotByte, with 4 and 5 folded to 0), a value from
    GetIndexedByte(classSlot, levels, `attack`), then, depending on a level-like value race * 2
    (3 or 5, and separately 4), for `attack` 4, 0 or 1 in the 3-or-5 case and for `attack` 4 or 1
-   in the level-4 case, subtracts g54F6[constitution]; finally it returns 1 when RollDice(1, 20, 0) >=
+   in the level-4 case, subtracts gConSaveBonus[constitution]; finally it returns 1 when RollDice(1, 20, 0) >=
    value. QUIRK 0D1C:0609/0604: race * 2 is even, so the tests for 3
    and 5 can never hold; the original still has them. Called by 0DE8:0F98 and 0DE8:101A. */
-/*@ 0D1C:059B */ int f0D1C_059B(int who, int attack)
+/*@ 0D1C:059B */ int RollMemberSave(int who, int attack)
 {
     struct CharRec far *rec;
     int classSlot;
@@ -457,11 +457,11 @@ int GetCurrentItem(void);
     level = rec->race * 2;
     if (level == 3 || level == 5) {
         if (attack == 4 || attack == 0 || attack == 1)
-            value -= g54F6[rec->constitution];
+            value -= gConSaveBonus[rec->constitution];
     }
     if (level == 4) {
         if (attack == 4 || attack == 1)
-            value -= g54F6[rec->constitution];
+            value -= gConSaveBonus[rec->constitution];
     }
     return RollDice(1, 20, 0) >= value;
 }
@@ -491,9 +491,9 @@ int GetCurrentItem(void);
     return result;
 }
 /* 0D1C:070F: draws the item icon of item record `n` (gItems) at (x, y), the far pointer
-   gIconsDDE4[icon]. Colour-row path, Purpose unknown: when gPartySpellFlags bit 0 is set and the record's
-   flags have 0x80, it first selects the icon's 16-byte colour row (gBufF534 + (icon << 4), or the
-   empty string at ds:550A when gGraphicsChoice is 0) through gFn80D2 and draws through f1A29_008B,
+   gItemIcons[icon]. Colour-row path, Purpose unknown: when gPartySpellFlags bit 0 is set and the record's
+   flags have 0x80, it first selects the icon's 16-byte colour row (gItemRemapTable + (icon << 4), or the
+   empty string at ds:550A when gGraphicsChoice is 0) through gSetRemapTable and draws through DrawShapeRemapped,
    otherwise through DrawShape. Called by 0BD2 (three sites) and 1547:07E7. */
 /*@ 0D1C:070F */ void DrawItemIcon(int mode, int n, int x, int y)
 {
@@ -502,12 +502,12 @@ int GetCurrentItem(void);
     icon = gItems[n].icon;
     if ((gPartySpellFlags & 1) && (gItems[n].flags & 0x80)) {
         if (gGraphicsChoice)
-            gFn80D2(gBufF534 + (icon << 4));
+            gSetRemapTable(gItemRemapTable + (icon << 4));
         else
-            gFn80D2("");
-        f1A29_008B(mode, gIconsDDE4[icon], x, y, 0);
+            gSetRemapTable("");
+        DrawShapeRemapped(mode, gItemIcons[icon], x, y, 0);
     } else {
-        DrawShape(mode, gIconsDDE4[icon], x, y, 0);
+        DrawShape(mode, gItemIcons[icon], x, y, 0);
     }
 }
 /* 0D1C:07A7: advances the far string pointer `text` past `count` NUL-terminated strings (each
@@ -529,9 +529,9 @@ int GetCurrentItem(void);
 /* 0D1C:07DB: Returns whether the member can use hand 0 or hand 1 with the items held (class and two-handed rules). combines the first two carried items of gChars[who] (slots 0 and
    1). Each slot's item is passed to ItemClassAllowed and its item record's type indexes the
    16-byte records at ds:A9F5. With `flag` 0 it returns 1 when slot 0 is empty or ItemClassAllowed
-   accepted its item. Otherwise it returns 0 when slot 0 holds an item whose gA9F5[type].m01 is 2, then
-   1 when slot 1 is empty, and for a slot-1 item whose gA9F5[m1].m09 (low 7 bits) is 1, 2 or 3,
-   0 when gA9F5[m1].m01 is nonzero, else the slot-1 result. Called by 0BD2:1001, 0DE8:0D5E and
+   accepted its item. Otherwise it returns 0 when slot 0 holds an item whose gItemTypesClasses[type].m01 is 2, then
+   1 when slot 1 is empty, and for a slot-1 item whose gItemTypesClasses[m1].m09 (low 7 bits) is 1, 2 or 3,
+   0 when gItemTypesClasses[m1].m01 is nonzero, else the slot-1 result. Called by 0BD2:1001, 0DE8:0D5E and
    1547:07E7. Placeholder: what the values mean is not established. */
 /*@ 0D1C:07DB */ int CanUseHand(int who, int flag)
 {
@@ -550,22 +550,22 @@ int GetCurrentItem(void);
     slot1 = gChars[who].items[1];
     result1 = ItemClassAllowed(who, slot1);
     m1 = gItems[slot1].type;
-    if (slot0 != 0 && gA9F5[m0].m01 == 2)
+    if (slot0 != 0 && gItemTypesClasses[m0].m01 == 2)
         return 0;
     if (slot1 == 0)
         return 1;
-    if ((gA9F5[m1].m09 & 0x7f) > 0 && (gA9F5[m1].m09 & 0x7f) < 4) {
-        if (gA9F5[m1].m01 == 0)
+    if ((gItemTypesClasses[m1].m09 & 0x7f) > 0 && (gItemTypesClasses[m1].m09 & 0x7f) < 4) {
+        if (gItemTypesClasses[m1].m01 == 0)
             return result1;
         return 0;
     }
     return result1;
 }
-/* 0D1C:08B1: Purpose unknown: returns 1 when one of the first two carried items of the character
+/* 0D1C:08B1: Tests whether a character holds an item of kind 6 in either hand, the item turning undead requires. returns 1 when one of the first two carried items of the character
    record `rec` (items[0] or items[1]) holds a nonzero item whose item record's type indexes a
    ds:A9F5 record with m09 == 6, otherwise 0. The pointer is a character record (the slots are at
    +77). Called by 0D1C:0903. */
-/*@ 0D1C:08B1 */ int f0D1C_08B1(struct CharRec far *rec)
+/*@ 0D1C:08B1 */ int HoldsHolySymbol(struct CharRec far *rec)
 {
     int item;
     int i;
@@ -573,18 +573,18 @@ int GetCurrentItem(void);
     for (i = 0; i <= 1; i++) {
         if (rec->items[i]) {
             item = gItems[rec->items[i]].type;
-            if (gA9F5[item].m09 == 6)
+            if (gItemTypesClasses[item].m09 == 6)
                 return 1;
         }
     }
     return 0;
 }
-/* 0D1C:0903: Purpose unknown: scans the six party members and returns a packed word. A member
-   qualifies when MemberIs(who, 0xD) and f0D1C_08B1(rec) hold; for it the code takes
+/* 0D1C:0903: Picks the party member with the best turning level (class slot 2 level, or slot 4 level minus 2) and returns its index and level packed. scans the six party members and returns a packed word. A member
+   qualifies when MemberIs(who, 0xD) and HoldsHolySymbol(rec) hold; for it the code takes
    FindClassSlot(2, classIndex) and, failing that, FindClassSlot(4, classIndex), and compares the member's
    levels[slot] (minus 2 in the second case) with the best so far. The result is (best member << 8)
    + best value, or 0 when none qualifies. Called by 0D1C:0A43. */
-/*@ 0D1C:0903 */ int f0D1C_0903(void)
+/*@ 0D1C:0903 */ int FindBestUndeadTurner(void)
 {
     struct CharRec far *rec;
     int bestVal;
@@ -597,7 +597,7 @@ int GetCurrentItem(void);
     for (who = 0; who < 6; who++, rec++) {
         if (!MemberIs(who, 0xD))
             continue;
-        if (!f0D1C_08B1(rec))
+        if (!HoldsHolySymbol(rec))
             continue;
         slot = FindClassSlot(2, rec->classIndex);
         if (slot != -1) {
@@ -617,12 +617,12 @@ int GetCurrentItem(void);
     }
     return (best << 8) + bestVal;
 }
-/* 0D1C:09CB: Purpose unknown: a per-object check. It takes the object's ds:1A3B record's m19 as
+/* 0D1C:09CB: Applies one turn-undead roll to a monster: destroy, turn away or no effect. a per-object check. It takes the object's ds:1A3B record's m19 as
    a row and GetClampedTableByte(column, m19) as a value. A value of -1 calls DamageObject(obj, 100)
    and returns 1. Otherwise, when `threshold` is below the value it returns 0; else it sets bit 3
    of obj->m16, stores (DirectionFromPoints(obj->id, gPartyCell) ^ 4) >> 1 in obj->orient and returns 1.
    Called by 0D1C:0A43 and 17A6. */
-/*@ 0D1C:09CB */ int f0D1C_09CB(struct Monster far *obj, int threshold, int column)
+/*@ 0D1C:09CB */ int TryTurnMonster(struct Monster far *obj, int threshold, int column)
 {
     int row;
     int value;
@@ -643,13 +643,13 @@ int GetCurrentItem(void);
 }
 /* 0D1C:0A43: the "turn undead" action. When gFBC8 is 2 or 7 it derives a ten-bit key from
    gPartyCell and gPartyDir (StepCell) and requires gMaze[key * 9 + 4] & 7 to be nonzero, then
-   asks f0D1C_0903 for the best qualifying party member (its low byte the member's value, its
+   asks FindBestUndeadTurner for the best qualifying party member (its low byte the member's value, its
    high byte the member's index) and rolls 1d20. It lists the gMonsters indices whose ds:8A82 object
    record's m02 equals key (f08E6_17FD) and, for each object whose ds:1A3B record's m0F has bit 2
-   set and whose m16 has bit 4 clear, sets gF518, marks the object (m16 |= 0x10) and runs
-   f0D1C_09CB(obj, roll, member value), ORing the results. When any object turned it formats "%s
+   set and whose m16 has bit 4 clear, sets gDeferMonsterHits, marks the object (m16 |= 0x10) and runs
+   TryTurnMonster(obj, roll, member value), ORing the results. When any object turned it formats "%s
    uses the power to turn undead!" (ds:550E) with the best member's name, draws it, plays sound
-   0x5F and runs 0EF3:06E7 and 08E6:0E48. gF518 is cleared at the end on the normal path. Called
+   0x5F and runs 0EF3:06E7 and 08E6:0E48. gDeferMonsterHits is cleared at the end on the normal path. Called
    by 0ACD:0E8A. */
 /*@ 0D1C:0A43 */ void TurnUndead(void)
 {
@@ -671,7 +671,7 @@ int GetCurrentItem(void);
     value = (unsigned char)gMaze[key * 9 + 4] & 7;
     if (value == 0)
         return;
-    packed = f0D1C_0903();
+    packed = FindBestUndeadTurner();
     if (packed == 0)
         return;
     memberVal = packed & 0xff;
@@ -683,9 +683,9 @@ int GetCurrentItem(void);
             break;
         obj = &gMonsters[list[i]];
         if ((gMonsterTypes[obj->typeIndex].m0F & 4) && !(obj->m16 & 0x10)) {
-            gF518 = 1;
+            gDeferMonsterHits = 1;
             obj->m16 |= 0x10;
-            turned |= f0D1C_09CB(obj, roll, memberVal);
+            turned |= TryTurnMonster(obj, roll, memberVal);
         }
     }
     if (turned) {
@@ -694,9 +694,9 @@ int GetCurrentItem(void);
         DrawText(gFileNameBuf);
         PlaySound(0x5F);
         FlashViewDamage();
-        f08E6_0E48();
+        FinishDeferredHits();
     }
-    gF518 = 0;
+    gDeferMonsterHits = 0;
 }
 /* 0D1C:0BAB: Rolls percentile dice against the monster type's resistance byte (+0x1A) and returns 1 when the spell or spell item is resisted. a percentage check on the object `objIndex` (its ds:8A82 record,
    not a pointer like 0D1C:09CB's `obj`): through gMonsters[objIndex].typeIndex it reads gMonsterTypes[typeIndex].m1A
@@ -708,12 +708,12 @@ int GetCurrentItem(void);
     chance = gMonsterTypes[gMonsters[objIndex].typeIndex].m1A;
     return RollDice(1, 100, 0) < chance;
 }
-/* 0D1C:0BEB: Purpose unknown: returns 1 when gMonsterTypes[gMonsters[obj].typeIndex].m0E has bit 2 set and
-   gA9F5[item].m00 has bit 2 clear, otherwise 0. `item` indexes the ItemInfo records. Called by
+/* 0D1C:0BEB: Tests whether a monster type takes half damage from the given weapon item type. returns 1 when gMonsterTypes[gMonsters[obj].typeIndex].m0E has bit 2 set and
+   gItemTypesClasses[item].m00 has bit 2 clear, otherwise 0. `item` indexes the ItemInfo records. Called by
    0DE8:0359. */
-/*@ 0D1C:0BEB */ int f0D1C_0BEB(int obj, int item)
+/*@ 0D1C:0BEB */ int IsWeaponDamageHalved(int obj, int item)
 {
-    return (gMonsterTypes[gMonsters[obj].typeIndex].m0E & 4) && (gA9F5[item].m00 & 4) == 0;
+    return (gMonsterTypes[gMonsters[obj].typeIndex].m0E & 4) && (gItemTypesClasses[item].m00 & 4) == 0;
 }
 /* 0D1C:0C21: Purpose unknown: draws a framed rectangle at (x, y) `width` by `height` through
    082C:09D5. It hides the pointer, draws the whole rectangle in the colours picked by `first`

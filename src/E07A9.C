@@ -28,7 +28,7 @@
    01B1): the icon colour row, the translated copy and the pointer image; when either gate fails the
    branch is skipped (07A9:0161 and 0168, je 0x1bc). The same test is in src/E0D1C.C:478. The bit
    selects the colour-row draw path: in f0D1C_070F (src/E0D1C.C:478 to 484) a record whose flags
-   have the bit, when gPartySpellFlags bit 0 is set too, is drawn through its icon's colour row (gFn80D2) and
+   have the bit, when gPartySpellFlags bit 0 is set too, is drawn through its icon's colour row (gSetRemapTable) and
    f1A29_008B; any other record, or the same record with gPartySpellFlags bit 0 clear, goes through
    f1A29_000F. The same byte is tested for 0x20, 0x08 and 0x10 elsewhere (see ItemRecord.flags
    below). */
@@ -53,7 +53,7 @@
    uses format 2 [H] (docs/design/WHITEPAPER.md:157). Slot 7's own block is 0xCB20 bytes in cases
    0 to 3 (src/E07C8.C:256, 265, 274, 280) and 0xFC00 only in case 4 (src/E07C8.C:290) */
 #define UNPACK_BUFFER_SIZE 0xFC00
-/* the gIconsDDE4 index that aliases gDF48, the translated icon image shown as the mouse pointer for
+/* the gItemIcons index that aliases gRemappedIcon, the translated icon image shown as the mouse pointer for
    flagged items (0xDDE4 + 0x59 * 4 = 0xDF48); slots 1..0x58 hold the item icons (src/EOV2.C:290) */
 #define ICON_SLOT_TRANSLATED 0x59
 /* the mouse pointer's hot spot, the centre of a 16x16 icon [H]: the 16x16 cell comes from
@@ -88,7 +88,7 @@ extern char gBarGraphsOn; /*@ ds:F43C */  /* written by StartupAlloc (07A9:000D,
                                       DrawMemberHp, which draws the "HP" label instead of
                                       "%3d of %-3d" when it is set (src/E1547.C:269, the comment at
                                       src/E1547.C:235-238). Purpose unknown */
-extern char gFB45; /*@ ds:FB45 */  /* written by StartupAlloc (07A9:0024, set to 0); the overlay 3
+extern char gLevelPalettePending; /*@ ds:FB45 */  /* written by StartupAlloc (07A9:0024, set to 0); the overlay 3
                                       LoadMapScreen sets it to 1 (src/EOV3.C:686), and the overlay 4
                                       DrawViewFrame (ovl4:1F51, src/EOV4.C:1049) tests it with video mode 3
                                       (src/EOV4.C:1054) and, when set, loads the palette gFE68 through
@@ -139,12 +139,12 @@ extern void far *gBufDCFC; /*@ ds:DCFC */  /* start-up far allocation, 4096 byte
                                               (src/EOV3.C:729-731). E19FC.ASM:40 describes the caller
                                               that fills the block before compression (through
                                               ds:DCFC and ds:DCFE) */
-extern char far *gBufF534; /*@ ds:F534 */  /* the 1600-byte ITEMRMP buffer (07A9:008B,
+extern char far *gItemRemapTable; /*@ ds:F534 */  /* the 1600-byte ITEMRMP buffer (07A9:008B,
                                               whitepaper 4.4). Its readers: the ITEMRMP read
                                               (FileRead of 0x640 bytes into it, src/EOV2.C:296, in
                                               LoadItemSheets) and the icon colour row (src/E0D1C.C:480,
-                                              gFn80D2(gBufF534 + (icon << 4))) */
-extern void far *gSegDCA6; /*@ ds:DCA6 */  /* the far pointer f19EC_0002(7) returns (src/E19EC.C:20,
+                                              gSetRemapTable(gItemRemapTable + (icon << 4))) */
+extern void far *gSegDCA6; /*@ ds:DCA6 */  /* the far pointer GetPageBuffer(7) returns (src/E19EC.C:20,
                                               07A9:00A3): offset 0, segment gSegsFC0C[7], the word at
                                               ds:FC1A that SetUnpackBuffer gets at 07A9:00DB. Overlay 3
                                               and 4 use it too: LoadWallTextures writes the
@@ -154,7 +154,7 @@ extern void far *gSegDCA6; /*@ ds:DCA6 */  /* the far pointer f19EC_0002(7) retu
                                               DrawViewFrame draws from it (DrawTile(gSegDCA6), src/EOV4.C:1052;
                                               declared "the far pointer DrawTile draws",
                                               src/EOV4.C:1033) */
-extern void far *gSegDF4E; /*@ ds:DF4E */  /* slot 5's far pointer, f19EC_0002(5) (07A9:00BA); the
+extern void far *gSegDF4E; /*@ ds:DF4E */  /* slot 5's far pointer, GetPageBuffer(5) (07A9:00BA); the
                                               action screen's swap buffer: Action0264 (src/E0ACD.C:287)
                                               swaps the moving member's 243-byte record with the slot's
                                               through it (the record at gChars + gFB34 out to it, the
@@ -176,7 +176,7 @@ extern void far *gSegDF4E; /*@ ds:DF4E */  /* slot 5's far pointer, f19EC_0002(5
                                               274), and LoadWallTextures (ovl3:07A5, src/EOV3.C:460)
                                               expands the texture plane tables into it in EGA mode 2
                                               (src/EOV3.C:474-478) */
-extern void far *gSegEFC2; /*@ ds:EFC2 */  /* slot 3's far pointer, f19EC_0002(3) (07A9:00CB); a
+extern void far *gSegEFC2; /*@ ds:EFC2 */  /* slot 3's far pointer, GetPageBuffer(3) (07A9:00CB); a
                                               shared overlay 3 buffer (src/EOV3.C:130 declares it
                                               with no comment), used four ways. Level state:
                                               LoadLevelState (ovl3:1147, src/EOV3.C:739) reads 0x7F8
@@ -208,7 +208,7 @@ extern void far *gSegEFC2; /*@ ds:EFC2 */  /* slot 3's far pointer, f19EC_0002(3
                                               src/E17A6.ASM:256-257 when gGraphicsChoice != 2 [H]. What the
                                               buffer is is Purpose unknown */
 /* the page/buffer segment table (src/E07C8.C:74, src/E19EC.C:15), whose eighth word at ds:FC1A
-   is slot 7, the segment gSegDCA6 holds (f19EC_0002(7), 07A9:00A3). */
+   is slot 7, the segment gSegDCA6 holds (GetPageBuffer(7), 07A9:00A3). */
 extern unsigned gSegsFC0C[]; /*@ ds:FC0C */
 /* the net allocation counter: MemAlloc adds one at src/E19BC.C:112 and MemFree subtracts one at
    src/E19BC.C:137, so it is the number of successful MemAlloc calls minus the number of MemFree
@@ -252,17 +252,17 @@ extern int gGraphicsChoice; /*@ ds:8102 */  /* the mode word SetMouseItem tests 
    bytes is [H] for ITEMRMP (whitepaper 4.4: 100 rows of 16 colours); the two DGROUP tables are
    not measured here, so [H] there too. No writer of ds:80D2 in EOB.EXE or the overlays (a
    literal-address search). */
-extern void (far *gFn80D2)(void far *colors); /*@ ds:80D2 */
-extern void far *g80E2; /*@ ds:80E2 */  /* passed as the third argument of TranslateImage (07A9:0197),
+extern void (far *gSetRemapTable)(void far *colors); /*@ ds:80D2 */
+extern void far *gRemapTable; /*@ ds:80E2 */  /* passed as the third argument of TranslateImage (07A9:0197),
                                            which reads it as the xlatb table (BX and DX from [bp+0xe]
                                            and [bp+0x10], 17A6:1995 and 1998; xlatb at 17A6:19BE).
                                            Purpose unknown: what writes ds:80E2 is not checked here */
-extern void far *gDF48; /*@ ds:DF48 */  /* the 0x12C-byte buffer LoadItemSheets allocates and stores
+extern void far *gRemappedIcon; /*@ ds:DF48 */  /* the 0x12C-byte buffer LoadItemSheets allocates and stores
                                            here (the far call at ovl2:041D; the result is stored at
                                            ovl2:0425 and 0428). This unit
                                            shows it as the translated icon image: TranslateImage's
                                            destination (pushed at 07A9:019B and 019F), installed as the
-                                           mouse pointer through gIconsDDE4[0x59] (07A9:01B9, 01C6 to
+                                           mouse pointer through gItemIcons[0x59] (07A9:01B9, 01C6 to
                                            01CE). The allocation's segment word 00C0 is an overlay
                                            segment fixup, a byte offset into TLINK's segment table
                                            (index times 8, docs/design/WHITEPAPER.md:100), so index 24,
@@ -275,12 +275,12 @@ extern void far *gDF48; /*@ ds:DF48 */  /* the 0x12C-byte buffer LoadItemSheets 
    (ds:113F, src/EOV2.C:149, passed to gGetSpriteCell at src/EOV2.C:209); the loop at ovl2:03D0
    starts with `mov si,1` and fills entries 1..0x58 from the same call with a 16x16 cell position
    on the 20-per-row ITEMICN sheet (the string at ds:677D). */
-extern void far *gIconsDDE4[]; /*@ ds:DDE4 */
+extern void far *gItemIcons[]; /*@ ds:DDE4 */
 
 extern void far *MemAlloc(unsigned long size, int flags); /*@ 19BC:0007 */
 /* returns MK_FP(gSegsFC0C[kind | 1], 0): offset 0 and the segment word at the table slot
    (src/E19EC.C:20); the placeholder name stays. */
-extern void far *f19EC_0002(int kind); /*@ 19EC:0002 */
+extern void far *GetPageBuffer(int kind); /*@ 19EC:0002 */
 extern void LoadSoundDriver(void); /*@ 177D:000A */
 extern void SetUnpackBuffer(unsigned seg, unsigned size); /*@ 1B82:0217 */
 /* the overlay entry at stub 2106:002A resolves to ovl2:09CC LoadItemData (src/EOV2.C:449). */
@@ -305,11 +305,11 @@ extern void DrawText(char far *text); /*@ 1DE7:060A */
    (17A6:198F-1992; stosw and stosb); the third is the xlatb table, its offset and segment in BX
    and DX (17A6:1995, 1998) with `mov ds,dx` before each xlatb (17A6:19BE, 19E4, 19F2); the mode
    word (17A6:199B) picks the path (cases 0, 2 and 3 at 17A6:199E to 19C8). The call
-   (07A9:0193..01B1) passes the icon far pointer first, then gDF48 (the translated icon image),
-   g80E2 (Purpose unknown, its only reader is 07A9:0197) and gGraphicsChoice. */
+   (07A9:0193..01B1) passes the icon far pointer first, then gRemappedIcon (the translated icon image),
+   gRemapTable (Purpose unknown, its only reader is 07A9:0197) and gGraphicsChoice. */
 extern void TranslateImage(void far *src, void far *dst, void far *xlat, int mode); /*@ 17A6:197E */
 /* 1BB1:0002 stores the hot-spot offset and a pointer shape record; the caller passes the hot spot
-   (8,8) when item > 0 and (0,0) otherwise, and the far pointer gIconsDDE4[item] in both cases (see below). */
+   (8,8) when item > 0 and (0,0) otherwise, and the far pointer gItemIcons[item] in both cases (see below). */
 extern void SetMousePointerShape(int hotX, int hotY, void far *icon); /*@ 1BB1:0002 */
 
 /* 07A9:000A: the start-up routine called from `main` (07C8:017F passes argc, argv through). The name
@@ -336,7 +336,7 @@ extern void SetMousePointerShape(int hotX, int hotY, void far *icon); /*@ 1BB1:0
        branches reaching 07A9:0024, so a port keeps the read. */
     if (argc == 0 && argv[1][1])
         ;
-    gFB45 = 0;
+    gLevelPalettePending = 0;
     /* of the five start-up allocations only this block asks for flag 0x20 (the other four pass 0;
        0x20 also appears in src/E07C8.C:254 to 290 and in the two Unpack allocations at src/E1B82.C:165
        and :174): the bit is defined at src/E19BC.C:49 (described at :44-46), and src/E19BC.C:62-66
@@ -346,10 +346,10 @@ extern void SetMousePointerShape(int hotX, int hotY, void far *icon); /*@ 1BB1:0
     gBufF43E = MemAlloc(6000L, 0);
     gSoundMap = MemAlloc(120L, 0);
     gBufDCFC = MemAlloc(4096L, 0);
-    gBufF534 = MemAlloc(1600L, 0);
-    gSegDCA6 = f19EC_0002(7);
-    gSegDF4E = f19EC_0002(5);
-    gSegEFC2 = f19EC_0002(3);
+    gItemRemapTable = MemAlloc(1600L, 0);
+    gSegDCA6 = GetPageBuffer(7);
+    gSegDF4E = GetPageBuffer(5);
+    gSegEFC2 = GetPageBuffer(3);
     LoadSoundDriver();
     SetUnpackBuffer(gSegsFC0C[7], UNPACK_BUFFER_SIZE);
     gAllocCount = 0;
@@ -366,14 +366,14 @@ extern void SetMousePointerShape(int hotX, int hotY, void far *icon); /*@ 1BB1:0
    item also passes " taken.\r" (ds:0094) to 1DE7:060A after 0BD2:05B5 when gTextRegion == 7, and the
    record gItems[item].icon then supplies the icon number. When the current record
    gItems[gFBCE] has flag 0x80 and gPartySpellFlags bit 0 is set, the flagged branch runs (07A9:015C to
-   01B1): the icon's 16-byte colour row (gBufF534 + (item << 4), item now the icon number, or the
-   dummy byte at ds:0090 when gGraphicsChoice == 0) is passed to ds:80D2, the icon is translated into gDF48
+   01B1): the icon's 16-byte colour row (gItemRemapTable + (item << 4), item now the icon number, or the
+   dummy byte at ds:0090 when gGraphicsChoice == 0) is passed to ds:80D2, the icon is translated into gRemappedIcon
    by 17A6:197E, and the translated image becomes the mouse pointer (item set to ICON_SLOT_TRANSLATED, 0x59, so item > 0 at
-   07A9:01BC, and gIconsDDE4[ICON_SLOT_TRANSLATED] passed to 1BB1:0002 at (8,8)). When either gate
+   07A9:01BC, and gItemIcons[ICON_SLOT_TRANSLATED] passed to 1BB1:0002 at (8,8)). When either gate
    fails the branch is skipped (07A9:0161 and 0168, je 0x1bc) and the plain item icon becomes the
-   pointer (gIconsDDE4[item] at 07A9:01BC onward); on that path the (0,0) call is when item is 0
+   pointer (gItemIcons[item] at 07A9:01BC onward); on that path the (0,0) call is when item is 0
    (the item is cleared) or its icon number is 0 or below (07A9:01BC `or si,si`, `jle 0x1d4` at
-   07A9:01BE). QUIRK 07A9:01D4: that path indexes gIconsDDE4[item] with the sign-extended icon
+   07A9:01BE). QUIRK 07A9:01D4: that path indexes gItemIcons[item] with the sign-extended icon
    number and no test, so a negative number reads four bytes before the table for each step below
    zero (the table at ds:DDE4, entries of 4 bytes). No record in the pinned ITEM.DAT has a negative
    icon (432 records, icon numbers 1 to 97), so the game's data does not reach the read. Why
@@ -393,24 +393,24 @@ extern void SetMousePointerShape(int hotX, int hotY, void far *icon); /*@ 1BB1:0
            number by now */
         if ((gItems[gFBCE].flags & ITEM_FLAG_COLOUR_ICON) && (gPartySpellFlags & 1)) {
             if (gGraphicsChoice)
-                gFn80D2(gBufF534 + (item << 4));   /* the icon's 16-byte colour row */
+                gSetRemapTable(gItemRemapTable + (item << 4));   /* the icon's 16-byte colour row */
             else
                 /* QUIRK 07A9:0184: when gGraphicsChoice == 0 the argument is the one-byte literal at
                    ds:0090, a dummy. gGraphicsChoice only chooses the ITEMRMP name, "VGA" (ds:6790) when
                    it is 3 and "EGA" (ds:6794) otherwise (ovl2:0432..0446); the ITEMRMP read
                    itself (ovl2:047F) has no branch on gGraphicsChoice. Why gGraphicsChoice == 0 gets the dummy is
                    Purpose unknown. */
-                gFn80D2("");
-            TranslateImage(gIconsDDE4[item], gDF48, g80E2, gGraphicsChoice);
-            /* gIconsDDE4[0x59] is gDF48 (0xDDE4 + 0x59 * 4 = 0xDF48), the same pointer just passed
+                gSetRemapTable("");
+            TranslateImage(gItemIcons[item], gRemappedIcon, gRemapTable, gGraphicsChoice);
+            /* gItemIcons[0x59] is gRemappedIcon (0xDDE4 + 0x59 * 4 = 0xDF48), the same pointer just passed
                as the second argument: the translated icon image shown by 1BB1:0002 as the mouse
-               pointer for a record whose flag has 0x80 set. gDF48's writer is in the overlay
+               pointer for a record whose flag has 0x80 set. gRemappedIcon's writer is in the overlay
                (ovl2:0425). */
             item = ICON_SLOT_TRANSLATED;
         }
         if (item > 0)
-            SetMousePointerShape(MOUSE_HOTSPOT, MOUSE_HOTSPOT, gIconsDDE4[item]);
+            SetMousePointerShape(MOUSE_HOTSPOT, MOUSE_HOTSPOT, gItemIcons[item]);
         else
-            SetMousePointerShape(0, 0, gIconsDDE4[item]);
+            SetMousePointerShape(0, 0, gItemIcons[item]);
     }
 }

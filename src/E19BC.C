@@ -29,7 +29,7 @@ extern int (far *gAllocFailHook)(void); /*@ ds:810A */
    (ALLOC.H); farcoreleft 0000:5244 and farheapwalk 0000:76C0 likewise. memset (MEM.H) is
    0000:6384 in this large model build, a far pointer fill. */
 
-extern void far *f1BA8_0072(void far *p); /*@ 1BA8:0072: normalizes a far pointer to DX:AX (its
+extern void far *NormalizePtr(void far *p); /*@ 1BA8:0072: normalizes a far pointer to DX:AX (its
                                               body calls _NormFar, src/E1BA8.ASM:81-90); the name
                                               stays a placeholder */
 extern int EvictFile(unsigned size, unsigned char flags); /*@ 1C0E:0E5B: first retry before the
@@ -91,7 +91,7 @@ extern void ShutdownGame(void); /*@ 07C8:058A */
             break;
         return NULL;
     }
-    blk = (unsigned char far *)f1BA8_0072(blk);
+    blk = (unsigned char far *)NormalizePtr(blk);
     if (flags & MEMALLOC_ALIGNED) {
         pad = 0x10 - (unsigned char)FP_OFF(blk);
         (blk - 1)[pad] = (pad - 1) | flags;

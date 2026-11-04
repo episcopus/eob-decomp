@@ -8,8 +8,8 @@
         .MODEL  LARGE
         .CODE
 
-        PUBLIC  _f1BA8_0005
-_f1BA8_0005 LABEL BYTE                     ; @ 1BA8:0005
+        PUBLIC  _PadBeforeUnpack0
+_PadBeforeUnpack0 LABEL BYTE                     ; @ 1BA8:0005
         db      0
 
         PUBLIC  _Unpack0                ; @ 1BA8:0006
@@ -77,8 +77,8 @@ L0068:  pop     si
         ret
 _Unpack0 ENDP
 
-        PUBLIC  _f1BA8_0072                ; @ 1BA8:0072
-_f1BA8_0072 PROC FAR
+        PUBLIC  _NormalizePtr                ; @ 1BA8:0072
+_NormalizePtr PROC FAR
         push    bp
         mov     bp,sp
         mov     ax,[bp+6]
@@ -87,7 +87,7 @@ _f1BA8_0072 PROC FAR
         call    near ptr _NormFar
         pop     bp
         ret
-_f1BA8_0072 ENDP
+_NormalizePtr ENDP
 
         PUBLIC  _NormFar                ; @ 1BA8:0081
 _NormFar PROC FAR

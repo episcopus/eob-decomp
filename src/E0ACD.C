@@ -73,7 +73,7 @@ extern char gF542[]; /*@ ds:F542 */         /* the action record passed to Redra
 extern char gViewDirty; /*@ ds:DF4C */           /* set to 1 when an action took effect (src/E0D1C.C) */
 extern char gMaze[]; /*@ ds:B894 */         /* nine-byte object records (src/E0D1C.C) */
 extern signed char gWallTypeFlags[]; /*@ ds:194B */  /* per-object bit flags (src/E0D1C.C) */
-extern signed char gA9C6; /*@ ds:A9C6 */    /* an offset into a gMaze record (src/E0DE8.C) */
+extern signed char gViewFrontSide; /*@ ds:A9C6 */    /* an offset into a gMaze record (src/E0DE8.C) */
 
 extern int StepCell(int cell, int dir); /*@ 0D1C:00DA */
 extern int StepIfOpen(int cell, signed char dir); /*@ 0D1C:0080 */
@@ -140,10 +140,10 @@ extern struct ItemRecord gItems[]; /*@ ds:8DD0 */
 extern signed char gViewToCellPos[]; /*@ ds:1A1B */  /* per-page sound table (src/E0D1C.C) */
 extern int gHandSplitY[]; /*@ ds:36B0 */          /* a per-slot word (screen row) compared with gHitY */
 extern int gHitY; /*@ ds:5E12 */            /* the y the hit test uses (the walk is 16A5:00BD, src/E16A5.C) */
-extern unsigned g5E1C; /*@ ds:5E1C */       /* the left-button mode word: ClickHandSlot (0ACD:0415)
+extern unsigned gLeftButtonMode; /*@ ds:5E1C */       /* the left-button mode word: ClickHandSlot (0ACD:0415)
                                                takes its low seven bits, 1 selects SwapSelectedItem,
                                                anything else UseItemSlot (src/E1658.C); src/E16A5.C:506
-                                               tests g5E1C for the left button, g5E1E for the right */
+                                               tests gLeftButtonMode for the left button, g5E1E for the right */
 extern signed char gSlotNeighbours[]; /*@ ds:36D0 */  /* a per-row four-byte action table (09EF) */
 extern signed char gFrontPosByDir[]; /*@ ds:373C */  /* a table with two entries per page: 0A61 reads
                                                gFrontPosByDir[gPartyDir * 2 + gMemberSide[gInventoryMember]] */
@@ -163,8 +163,8 @@ extern void far *gFont6x6; /*@ ds:A9C0 */       /* the current 6x6 font (src/E07
 extern void far *gList; /*@ ds:FB48 */      /* the head of the list built last (src/E0CF7.C) */
 extern unsigned long gNextRandomSoundTick; /*@ ds:FC5A */  /* the map timeout counter (0E8A) */
 extern int gUnreadPartyCellCopy; /*@ ds:FC58 */            /* the party's cell saved by the map loop (0E8A) */
-extern unsigned long g8492; /*@ ds:8492 */  /* the 32-bit counter the 1Ch handler bumps (src/EOV6.C) */
-extern int g8134; /*@ ds:8134 */            /* set to 0 by the map screen (src/E14EF.C) */
+extern unsigned long gGameTicks; /*@ ds:8492 */  /* the 32-bit counter the 1Ch handler bumps (src/EOV6.C) */
+extern int gUnreadButtonChanges; /*@ ds:8134 */            /* set to 0 by the map screen (src/E14EF.C) */
 extern char gFileNameBuf[]; /*@ ds:FE6E */  /* the text buffer sprintf formats into (src/E082C.C) */
 extern unsigned char far gSheetDECORATE[]; /*@ 2069:0000 */  /* the PLAYFLD sheet, loaded by
                                                EnterMapScreen (0ACD:0F72) (src/EOV3.C:27) */
@@ -410,7 +410,7 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
 
 /* 0ACD:0415: Handles a click on a member's hand slot: the left button swaps the mouse item with the hand, the other uses the hand's item. when MemberIs accepts the record's slot it hides the pointer, sets
    a flag from gHandSplitY[slot] against gHitY and dispatches to SwapSelectedItem or UseItemSlot (by the low
-   bits of g5E1C), then shows the pointer. Returns 1. */
+   bits of gLeftButtonMode), then shows the pointer. Returns 1. */
 /*@ 0ACD:0415 */ int ClickHandSlot(struct Action far *action)
 {
     char slot = action->slot;
@@ -423,7 +423,7 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
         flag = 1;
     else
         flag = 0;
-    if ((g5E1C & 0x7F) == 1)
+    if ((gLeftButtonMode & 0x7F) == 1)
         SwapSelectedItem(slot, flag);
     else
         UseItemSlot(slot, flag);
@@ -560,7 +560,7 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
         cell = gPartyCell;
     } else {
         cell = gPartyCell + stepOffset[gPartyDir];
-        if (!(gWallTypeFlags[gMaze[cell * 9 + gA9C6]] & 0xB))
+        if (!(gWallTypeFlags[gMaze[cell * 9 + gViewFrontSide]] & 0xB))
             return 1;
     }
     /* one register variable: slot is reused to hold the per-page kind, as the original does. */
@@ -943,27 +943,27 @@ done:
 
 /* 0ACD:0E8A: the map timeout/encounter loop, run from the start-up after the item tables are
    loaded. It arms the timeout gNextRandomSoundTick from one (1d10 + 3) roll times 0x12 plus the 32-bit counter
-   g8492, enters the map screen, then loops: saves the party's cell, services the key dispatcher
+   gGameTicks, enters the map screen, then loops: saves the party's cell, services the key dispatcher
    (PollMapInput) and RunEffects, runs the overlay effect when gViewDirty is set, and when gNextRandomSoundTick has run
-   below g8492 while gFBC8 is in 1..3 re-arms the timeout and plays sound 0x1E at a cell near the party
+   below gGameTicks while gFBC8 is in 1..3 re-arms the timeout and plays sound 0x1E at a cell near the party
    (gPartyCell plus 0 to 11).
    Each pass plays the default sound and runs TurnUndead. */
 /*@ 0ACD:0E8A */ void RunMapLoop(void)
 {
-    gNextRandomSoundTick = g8492 + (long)(RollDice(1, 10, 3) * 0x12);
+    gNextRandomSoundTick = gGameTicks + (long)(RollDice(1, 10, 3) * 0x12);
     EnterMapScreen();
     LockShowPointer();
     gUnreadPartyCellCopy = gPartyCell;
-    g8134 = 0;
+    gUnreadButtonChanges = 0;
     for (;;) {
         gUnreadPartyCellCopy = gPartyCell;
         PollMapInput();
         RunEffects();
         if (gViewDirty)
             DrawViewFrame(1);
-        if (gNextRandomSoundTick < g8492) {
+        if (gNextRandomSoundTick < gGameTicks) {
             if (gFBC8 > 0 && gFBC8 < 4) {
-                gNextRandomSoundTick = g8492 + (long)(RollDice(1, 10, 3) * 0x12);
+                gNextRandomSoundTick = gGameTicks + (long)(RollDice(1, 10, 3) * 0x12);
                 PlaySoundAtCell(0x1E, gPartyCell + RollDice(1, 12, -1));
             }
         }

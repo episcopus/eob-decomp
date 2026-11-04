@@ -25,11 +25,11 @@
         .DATA
         EXTRN   gGraphicsChoice:WORD              ; @ ds:8102: graphics mode word
         EXTRN   gSegEFC2:DWORD          ; @ ds:EFC2: far pointer to the saved screen buffer
-        EXTRN   gTable7FBC:BYTE         ; @ ds:7FBC: direction table (17A6:0373)
-        EXTRN   gTable7FCC:WORD         ; @ ds:7FCC: neighbour offsets (17A6:0FB8)
-        EXTRN   gTable7FDC:WORD         ; @ ds:7FDC: neighbour offsets (17A6:0FD3)
-        EXTRN   g80CE:WORD              ; @ ds:80CE: font/table base offset (17A6:18FF)
-        EXTRN   g80D0:WORD              ; @ ds:80D0: font/table base segment (17A6:1913)
+        EXTRN   gDirectionFromMask:BYTE         ; @ ds:7FBC: direction table (17A6:0373)
+        EXTRN   gNeighbourOffsets:WORD         ; @ ds:7FCC: neighbour offsets (17A6:0FB8)
+        EXTRN   gAheadOffsets2And3:WORD         ; @ ds:7FDC: neighbour offsets (17A6:0FD3)
+        EXTRN   gRowOffsetTableOff:WORD              ; @ ds:80CE: font/table base offset (17A6:18FF)
+        EXTRN   gRowOffsetTableSeg:WORD              ; @ ds:80D0: font/table base segment (17A6:1913)
         .CODE
 
 ; ---- data 0000..0100
@@ -170,7 +170,7 @@ L036A:
         inc si
 L0371:
         xor ax, ax
-        mov al, byte ptr [si+gTable7FBC]
+        mov al, byte ptr [si+gDirectionFromMask]
         pop si
         pop di
         pop dx
@@ -1558,7 +1558,7 @@ _FindNeighbour PROC FAR
         mov bx, 0
 L0FB6:
         mov ax, si
-        add ax, word ptr [bx+gTable7FCC]
+        add ax, word ptr [bx+gNeighbourOffsets]
         and ax, 3FFh
         cmp ax, di
         je L0FE6
@@ -1570,7 +1570,7 @@ L0FB6:
         shl bx, 1
 L0FD1:
         mov ax, si
-        add ax, word ptr [bx+gTable7FDC]
+        add ax, word ptr [bx+gAheadOffsets2And3]
         and ax, 3FFh
         cmp ax, di
         je L0FE6
@@ -2253,12 +2253,12 @@ _BuildMask PROC FAR
         mov es, word ptr [bp+8]
         mov cx, 6590h
         xor dx, dx
-        mov bx, word ptr [g80CE]
+        mov bx, word ptr [gRowOffsetTableOff]
         add bx, 190h
         mov word ptr cs:[gMaskTableOff], bx
         inc bh
         mov word ptr cs:[gMaskTableOff2], bx
-        mov ds, word ptr [g80D0]
+        mov ds, word ptr [gRowOffsetTableSeg]
 L1917:
         mov bx, word ptr cs:[gMaskTableOff]
 L191C:

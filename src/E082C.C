@@ -72,7 +72,7 @@ extern int gClickY; /*@ ds:8142: y of the last click, written by src/E1AAD.ASM:4
 extern int gStatusLine; /*@ ds:8115: nonzero while a status line is up (set to 2 by LoadOverlayScreen) */
 extern unsigned long gTicks; /*@ ds:848A: the game's own 32-bit tick counter, stepped by the INT 1Ch handler at src/E1D8F.ASM:76 (label 1D8F:0055); the increment of ds:848A is at src/E1D8F.ASM:91 (`inc word ptr ds:[848Ah]`) */
 extern char gFileNameBuf[]; /*@ ds:FE6E */ /* the shared text buffer the filename/format helpers and the memory report build into */
-extern char gOverlayBuf[]; /*@ ds:113F */ /* the DGROUP image buffer, passed as LoadScreenImage's extra pointer to f19EC_002A, which hands it to the far handler at ds:8046 only when two slots hold non-zero segments that differ (src/E19EC.C:29-35); overlays cut sprite cells out of it (src/EOV2.C:209, src/EOV5.C:1021) */
+extern char gOverlayBuf[]; /*@ ds:113F */ /* the DGROUP image buffer, passed as LoadScreenImage's extra pointer to CopyPage, which hands it to the far handler at ds:8046 only when two slots hold non-zero segments that differ (src/E19EC.C:29-35); overlays cut sprite cells out of it (src/EOV2.C:209, src/EOV5.C:1021) */
 extern char gCursorChar; /*@ ds:31AC: the one character drawn at the editing cursor */
 extern char gCursorOn; /*@ ds:FC4C: nonzero while the cursor is drawn (blinks in the editor) */
 
@@ -86,7 +86,7 @@ extern void far *memmove(void far *dst, void far *src, unsigned n); /*@ 0000:63F
 extern char *ltoa(long value, char *string, int radix); /*@ 0000:62F1 */
 extern char *itoa(int value, char *string, int radix); /*@ 0000:62AA */
 extern void ClipRect(int x1, int y1, int x2, int y2, int width, int height, int extra1, int extra2); /*@ 19F3:000E */
-extern void f19EC_002A(int a, int b, int c, int d); /*@ 19EC:002A: called here with c/d = FP_OFF/FP_SEG(extra); src/E19EC.C:29-35 says c and d are unused by its own tests */
+extern void CopyPage(int a, int b, int c, int d); /*@ 19EC:002A: called here with c/d = FP_OFF/FP_SEG(extra); src/E19EC.C:29-35 says c and d are unused by its own tests */
 extern void LoadPacked(char far *name, int srcKind, int dstKind); /*@ 1B82:0041 */
 extern void Unpack0(char far *src, void far *dst, long len); /*@ 1BA8:0006 */
 extern void PrintInt(int value, int a, int b, int c, int d); /*@ 1AA6:000F */
@@ -98,9 +98,9 @@ extern void ShutdownGame(void); /*@ 07C8:058A */
 extern void PlaySound(int sound); /*@ 177D:0070 */
 extern void DrawText(char far *text); /*@ 1DE7:060A */  /* the text console's string renderer (src/E1DE7.C) */
 extern void DrawShape(int mode, void far *src, int x, int y, int region); /*@ 1A29:000F */
-extern void f1A29_004D(int mode, void far *src, int x, int y, int region); /*@ 1A29:004D */
-extern void f1A29_008B(int mode, void far *src, int x, int y, int region); /*@ 1A29:008B */
-extern void f1A29_00C9(int mode, void far *src, int x, int y, int region); /*@ 1A29:00C9 */
+extern void DrawShapeFlipped(int mode, void far *src, int x, int y, int region); /*@ 1A29:004D */
+extern void DrawShapeRemapped(int mode, void far *src, int x, int y, int region); /*@ 1A29:008B */
+extern void DrawShapeFlippedRemapped(int mode, void far *src, int x, int y, int region); /*@ 1A29:00C9 */
 extern void FlushKeyBuffer(void); /*@ 1AAD:0480 */
 extern int ReadKey(void); /*@ 1AAD:038E */
 extern int WaitGameKey(void); /*@ 1AAD:053A */
@@ -313,12 +313,12 @@ void DrawShadowText(char far *text, int x, int y, int colour, int colour2);
     if (mode == -1)
         goto done;
     if ((gGraphicsChoice == 0 || gGraphicsChoice == 1) && mode == 2) {
-        f19EC_002A(dstKind, 4, FP_OFF(extra), FP_SEG(extra));
+        CopyPage(dstKind, 4, FP_OFF(extra), FP_SEG(extra));
         ClipRect(0, 0, 0, 0, 40, 200, 4, 2);  /* 40 by 200: the whole screen, in 8-pixel cells and lines */
     } else if (gGraphicsChoice != 2 || mode != 0)
-        f19EC_002A(dstKind, mode, FP_OFF(extra), FP_SEG(extra));
+        CopyPage(dstKind, mode, FP_OFF(extra), FP_SEG(extra));
     else {
-        f19EC_002A(dstKind, 2, FP_OFF(extra), FP_SEG(extra));
+        CopyPage(dstKind, 2, FP_OFF(extra), FP_SEG(extra));
         ClipRect(0, 0, 0, 0, 40, 200, 2, 0);  /* 40 by 200: the whole screen, as above */
     }
 done:
@@ -355,7 +355,7 @@ done:
    front end's address. It makes the coordinates relative to `region`: x is first rounded down to an
    even value and the region's left edge in pixels (left * 8) is subtracted, y has the region's top
    line subtracted. */
-/*@ 082C:063B */ void DrawRegion000F(int mode, void far *src, int x, int y, int region)
+/*@ 082C:063B */ void DrawShapeClipped(int mode, void far *src, int x, int y, int region)
 {
     x &= -2;
     x -= gRegions[region].left * 8;
@@ -363,36 +363,36 @@ done:
     DrawShape(mode, src, x, y, region);
 }
 
-/* 082C:0681: like DrawRegion000F (even rounding of x and the region-relative coordinates) but
+/* 082C:0681: like DrawShapeClipped (even rounding of x and the region-relative coordinates) but
    through the region front end 1A29:004D, which is Purpose unknown, so the name is only that
    front end's address. */
-/*@ 082C:0681 */ void DrawRegion004D(int mode, void far *src, int x, int y, int region)
+/*@ 082C:0681 */ void DrawShapeClippedFlipped(int mode, void far *src, int x, int y, int region)
 {
     x &= -2;
     x -= gRegions[region].left * 8;
     y -= gRegions[region].top;
-    f1A29_004D(mode, src, x, y, region);
+    DrawShapeFlipped(mode, src, x, y, region);
 }
 
-/* 082C:06C7: like DrawRegion000F (even rounding of x and the region-relative coordinates) but
+/* 082C:06C7: like DrawShapeClipped (even rounding of x and the region-relative coordinates) but
    through the region front end 1A29:008B, which is Purpose unknown, so the name is only that
    front end's address. */
-/*@ 082C:06C7 */ void DrawRegion008B(int mode, void far *src, int x, int y, int region)
+/*@ 082C:06C7 */ void DrawShapeClippedRemapped(int mode, void far *src, int x, int y, int region)
 {
     x &= -2;
     x -= gRegions[region].left * 8;
     y -= gRegions[region].top;
-    f1A29_008B(mode, src, x, y, region);
+    DrawShapeRemapped(mode, src, x, y, region);
 }
 
-/* 082C:070D: like DrawRegion000F through the region front end 1A29:00C9, which is Purpose unknown,
+/* 082C:070D: like DrawShapeClipped through the region front end 1A29:00C9, which is Purpose unknown,
    so the name is only that front end's address; unlike the other three wrappers it does not round
    x down to an even value. */
-/*@ 082C:070D */ void DrawRegion00C9(int mode, void far *src, int x, int y, int region)
+/*@ 082C:070D */ void DrawShapeClippedRemapFlipped(int mode, void far *src, int x, int y, int region)
 {
     x -= gRegions[region].left * 8;
     y -= gRegions[region].top;
-    f1A29_00C9(mode, src, x, y, region);
+    DrawShapeFlippedRemapped(mode, src, x, y, region);
 }
 
 /* 082C:074D: draw a bevelled rectangle: the top and right edges in `colourA`, the left and bottom

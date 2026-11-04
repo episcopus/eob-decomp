@@ -49,7 +49,7 @@ struct CharRec {            /* 243-byte character records at ds:F580 (src/E0A72.
     char pad37[0xF3 - 0x37];
 };
 
-struct SlotSize {           /* the 3-byte size record a gA99C entry points at (src/E122E.C:107-111) */
+struct SlotSize {           /* the 3-byte size record a gDoorButtons entry points at (src/E122E.C:107-111) */
     char pad00;
     signed char height;     /* +1: base height in pixels */
     signed char width;      /* +2: base width in eighths */
@@ -123,11 +123,11 @@ extern int gItemCount; /*@ ds:E066 */
 extern int gItemNameCount; /*@ ds:F516 */
 extern unsigned char far gItemNames[]; /*@ 1F28:0000 */
 extern struct CharRec gChars[]; /*@ ds:F580 */
-extern void far *gIconsDDE4[]; /*@ ds:DDE4 */
-extern void far *gPtrDD00; /*@ ds:DD00 */ /* the mouse pointer image: gIconsDDE4[0], set by SetPointerShape (src/EOV2.C:214) and given to SetMousePointerShape (src/E1BB1.ASM:12) */
-extern void far *gDF48; /*@ ds:DF48 */
+extern void far *gItemIcons[]; /*@ ds:DDE4 */
+extern void far *gPtrDD00; /*@ ds:DD00 */ /* the mouse pointer image: gItemIcons[0], set by SetPointerShape (src/EOV2.C:214) and given to SetMousePointerShape (src/E1BB1.ASM:12) */
+extern void far *gRemappedIcon; /*@ ds:DF48 */
 extern void far *gSegDF4E; /*@ ds:DF4E */
-extern char far *gBufF534; /*@ ds:F534 */
+extern char far *gItemRemapTable; /*@ ds:F534 */
 extern void far *gCurFont; /*@ ds:FE4E */
 extern void far *gFont8x8; /*@ ds:FE5A */
 extern int gTextHeight; /*@ ds:FE60 */
@@ -151,10 +151,10 @@ extern char gIconTable; /*@ ds:FB34 */ /* this unit, src/E0ACD.C:48, src/E1414.C
 extern int gEFC8; /*@ ds:EFC8 */ /* a word cleared by InitGameTables; no other reader in src/ yet */
 extern int gEFCA; /*@ ds:EFCA */ /* a word cleared by InitGameTables; no other reader in src/ yet */
 extern void far *gB802[]; /*@ ds:B802 */ /* 36 far map-icon pointers (src/EOV3.C:146, freed at :390-401), cleared by InitGameTables */
-extern long gFB5E[]; /*@ ds:FB5E */ /* six size-record pointers (src/EOV3.C:138 declares them longs; src/EOV4.C:756 declares them struct SlotSize far *), cleared by InitGameTables */
-extern struct SlotPos gA99C[]; /*@ ds:A99C */
+extern long gDoorShapes[]; /*@ ds:FB5E */ /* six size-record pointers (src/EOV3.C:138 declares them longs; src/EOV4.C:756 declares them struct SlotSize far *), cleared by InitGameTables */
+extern struct SlotPos gDoorButtons[]; /*@ ds:A99C */
 extern void far *gRectKinds[]; /*@ ds:EFD4 */ /* 200 far size-record pointers (src/EOV3.C:14, freed at :230-241; src/E122E.C:98 declares them struct RectKind far *), cleared by InitGameTables */
-extern char gBuf1CE7[]; /*@ ds:1CE7 */
+extern char gSelectFrameColours[]; /*@ ds:1CE7 */
 extern char gData65EA[]; /*@ ds:65EA */
 extern char gOverlayBuf[]; /*@ ds:113F */
 extern char far *gOptionNames[]; /*@ ds:65DE */
@@ -215,13 +215,13 @@ extern void FileRead(int handle, void far *buf, unsigned long len); /*@ 1C0E:040
 extern void FileClose(int handle); /*@ 1C0E:03BB */
 
 /* ovl2:0000: loads the ITEMICN image, slices one 2 by 0x10 cell out of gOverlayBuf through
-   gGetSpriteCell and makes the result (gIconsDDE4[0] and gPtrDD00) the mouse pointer shape at
+   gGetSpriteCell and makes the result (gItemIcons[0] and gPtrDD00) the mouse pointer shape at
    (0,0), then clears the status line. Called first by LoadItemData. */
 /*@ ovl2:0000 */ void SetPointerShape(void)
 {
     LoadOverlayScreen("ITEMICN", 5, 3);
-    gIconsDDE4[0] = gGetSpriteCell(0, 0, 2, 0x10, gOverlayBuf);
-    gPtrDD00 = gIconsDDE4[0];
+    gItemIcons[0] = gGetSpriteCell(0, 0, 2, 0x10, gOverlayBuf);
+    gPtrDD00 = gItemIcons[0];
     SetMousePointerShape(0, 0, gPtrDD00);
     gStatusLine = 0;
 }
@@ -263,8 +263,8 @@ extern void FileClose(int handle); /*@ 1C0E:03BB */
 
 /* ovl2:0171: loads the four item icon sheets (ITEML1, ITEMS1, THROWN, ITEMICN), slices every cell
    out of them through gGetSpriteCell into the icon tables (gItemL1Icons, gItemS1Icons,
-   gThrownIcons, gIconsDDE4) and the five single THROWN cells, allocates the 0x12C-byte item
-   description buffer (gDF48), then reads ITEMRMP.VGA (gGraphicsChoice == 3) or ITEMRMP.EGA into gBufF534.
+   gThrownIcons, gItemIcons) and the five single THROWN cells, allocates the 0x12C-byte item
+   description buffer (gRemappedIcon), then reads ITEMRMP.VGA (gGraphicsChoice == 3) or ITEMRMP.EGA into gItemRemapTable.
    Called by LoadDecorateIcons right before it loads DECORATE. */
 /*@ ovl2:0171 */ void LoadItemSheets(void)
 {
@@ -301,21 +301,21 @@ extern void FileClose(int handle); /*@ 1C0E:03BB */
 
     LoadOverlayScreen("ITEMICN", 5, 3);
     for (i = 1; i < 0x59; i++)
-        gIconsDDE4[i] = gGetSpriteCell((i % 20) * 2, (i / 20) * 16, 2, 0x10, gSheetITEMICN);
+        gItemIcons[i] = gGetSpriteCell((i % 20) * 2, (i / 20) * 16, 2, 0x10, gSheetITEMICN);
 
-    gDF48 = MemAlloc(0x12cL, 0);
+    gRemappedIcon = MemAlloc(0x12cL, 0);
     gStatusLine = 0;
     sprintf(gFileNameBuf, "ITEMRMP.%s", gGraphicsChoice == 3 ? "VGA" : "EGA");
     handle = FileOpen(gFileNameBuf, 1);
-    FileRead(handle, gBufF534, 0x640L);
+    FileRead(handle, gItemRemapTable, 0x640L);
     FileClose(handle);
 }
 
 /* ovl2:0496: resets the tables a new game starts from and allocates one 0x514-byte scratch buffer
    for each of the six character records: sets gIconTable (ds:FB34, the party member being moved,
    -1 when none; src/E0ACD.C:42) to -1, clears the two words gEFC8 and gEFCA, the 36 far pointers
-   of gB802 (src/EOV3.C:146), the six longs of gFB5E (src/EOV3.C:138), the far size-record pointer
-   of each of the six gA99C records (src/E122E.C:112-117) and the 200 far pointers of gRectKinds
+   of gB802 (src/EOV3.C:146), the six longs of gDoorShapes (src/EOV3.C:138), the far size-record pointer
+   of each of the six gDoorButtons records (src/E122E.C:112-117) and the 200 far pointers of gRectKinds
    (src/E122E.C:98, freed by src/EOV3.C:230-241), then writes each character record's index and
    allocates its buffer (gChars[i].buf). Called by LoadItemData. */
 /*@ ovl2:0496 */ void InitGameTables(void)
@@ -328,8 +328,8 @@ extern void FileClose(int handle); /*@ 1C0E:03BB */
     for (i = 0; i < 0x24; i++)
         gB802[i] = 0;
     for (i = 0; i < 6; i++) {
-        gFB5E[i] = 0;
-        gA99C[i].rec = 0;
+        gDoorShapes[i] = 0;
+        gDoorButtons[i].rec = 0;
     }
     for (i = 0; i < 0xc8; i++)
         gRectKinds[i] = 0;
@@ -471,7 +471,7 @@ extern void FileClose(int handle); /*@ 1C0E:03BB */
         gFailLabelLight = 6;
         gFailLabelShadow = 0xd;
         gFailLabelFill = 8;
-        strcpy(gBuf1CE7, gData65EA);
+        strcpy(gSelectFrameColours, gData65EA);
     }
 }
 

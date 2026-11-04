@@ -130,7 +130,7 @@ extern signed char g116E[]; /*@ ds:116E */ /* per-class byte (src/E0A72.C) */
 extern void far *MemAlloc(unsigned long size, int flags); /*@ 19BC:0007 */
 extern void *LoadOverlayScreen(char far *name, int srcKind, int dstKind); /*@ 082C:05EC */
 extern void *LoadScreenImage(char far *name, char far *extra, int srcKind, int dstKind, int mode); /*@ 082C:051B */
-extern void f19EC_002A(int a, int b, int c, int d); /*@ 19EC:002A */
+extern void CopyPage(int a, int b, int c, int d); /*@ 19EC:002A */
 extern int gGraphicsChoice; /*@ ds:8102 */ /* the video mode the game initialised (src/E082C.C) */
 extern void far *gBoxAnimCells[]; /*@ ds:FD54 */ /* the ten overlay buffers ovl0:2547 slices (Purpose unknown) */
 extern char gFileNameChargenA[]; /*@ ds:6272 */ /* a screen name (Purpose unknown) */
@@ -172,7 +172,7 @@ extern int gNamePosX[]; /*@ ds:5E44 */ /* the x of each panel name slot (Purpose
 extern int gNamePosY[]; /*@ ds:5E4C */ /* the y of each panel name slot (Purpose unknown) */
 extern char gStrBlankName[]; /*@ ds:618C */ /* a fixed panel label (Purpose unknown) */
 extern struct Node far *ListAdd(struct Node far *head, struct Node far *item); /*@ 1658:001E */
-extern char g5E20; /*@ ds:5E20 */ /* nonzero forces the row-list walk to rebuild and redraw the whole list (16A5:00BD); BuildRowNodeList sets it (ovl0:042F), not the mouse */
+extern char gNodeListChanged; /*@ ds:5E20 */ /* nonzero forces the row-list walk to rebuild and redraw the whole list (16A5:00BD); BuildRowNodeList sets it (ovl0:042F), not the mouse */
 
 struct Panel {                  /* the 16-byte option-list records at ds:017F (src/E14EF.C) */
     int x;                      /* +0 */
@@ -195,7 +195,7 @@ extern char gStrSelectClass[]; /*@ ds:624C */ /* the caption ovl0:207A draws (Pu
 extern char gStrSelectAlignment[]; /*@ ds:625A */ /* the caption ovl0:2238 draws (Purpose unknown) */
 extern char gStrNamePrompt[]; /*@ ds:626C */ /* the caption ovl0:23EC draws (Purpose unknown) */
 extern int gUnwrittenPanelRow; /*@ ds:DD12 */ /* the panel row ovl0:23EC redraws (Purpose unknown) */
-extern int gFC7A; /*@ ds:FC7A */ /* the key UpdateOptionList did not handle (src/E14EF.C) */
+extern int gUnhandledOptionKey; /*@ ds:FC7A */ /* the key UpdateOptionList did not handle (src/E14EF.C) */
 extern int gClickX; /*@ ds:8140 */ /* x of the last click (src/E082C.C) */
 extern int gClickY; /*@ ds:8142 */ /* y of the last click (src/E082C.C) */
 extern int gMouseDisabled; /*@ ds:814A */ /* nonzero disables the mouse (src/E07A9.C) */
@@ -349,7 +349,7 @@ extern void far *gPanelIconCells[0x11]; /*@ ds:5E64 */ /* the 17 sliced icon poi
 }
 /* ovl0:042F: builds the panel's linked row list. For i in 0..count-1 it initialises node i from the
    row definition gRowNodeDefs[base + i] (the definition's five bytes are the node's x, y, width,
-   height and key), then links nodes 1..count-1 onto node 0 with ListAdd and sets g5E20. Returns
+   height and key), then links nodes 1..count-1 onto node 0 with ListAdd and sets gNodeListChanged. Returns
    the list head (node 0). Called by ovl0:0A5E, 0DDC, 0EE5, 135D and 28F9. */
 /*@ ovl0:042F */ struct Node far *BuildRowNodeList(int base, int count)
 {
@@ -365,7 +365,7 @@ extern void far *gPanelIconCells[0x11]; /*@ ds:5E64 */ /* the 17 sliced icon poi
     }
     for (i = 1; i < count; i++)
         list = ListAdd(list, gNodePtrs[i]);
-    g5E20 = 1;
+    gNodeListChanged = 1;
     return list;
 }
 /* ovl0:0504: draws the party-status panel when all four front party slots hold a named character
@@ -1267,9 +1267,9 @@ int PickAlignment(int classIndex); /* ovl0:2238, defined below */
     while (!done
         && (sel = UpdateOptionList(3, gAlignmentNames, 0L, gClassAlignmentMasks[classIndex] & mask, 0)) == -1) {
         AnimateMemberBox();
-        if (gFC7A == 0x6e || gFC7A == 0x32)
+        if (gUnhandledOptionKey == 0x6e || gUnhandledOptionKey == 0x32)
             done = 1;
-        if (gFC7A == 0x41 || gFC7A == 0x42) {
+        if (gUnhandledOptionKey == 0x41 || gUnhandledOptionKey == 0x42) {
             if (IsPointInRect(gClickX, gClickY, 0x109, 0xab, 0x12f, 0xbb))
                 done = 1;
         }
@@ -1329,7 +1329,7 @@ int PickAlignment(int classIndex); /* ovl0:2238, defined below */
 /* ovl0:2547: loads the character panel's screens and slices its icon buffers. It allocates the 0x13
    0x3c-byte gNodePtrs nodes, loads three named screens (gFileNameChargenA, gFileNameChargen, gFileNameChargenB) and slices
    the 0x2c panel cells gPortraitCells ((i%10)*4, (i/10)*0x20) and ten row cells gBoxAnimCells (i*4, 0) out
-   of gOverlayBuf through ds:8082, builds the 17-icon table and blits gOverlayBuf with f19EC_002A
+   of gOverlayBuf through ds:8082, builds the 17-icon table and blits gOverlayBuf with CopyPage
    (the (3,4) region and a panel clip in video modes 0 and 1, the (3,2) region in every other mode).
    Called by ovl0:28F9. */
 /*@ ovl0:2547 */ void InitPanelScreens(void)
@@ -1348,10 +1348,10 @@ int PickAlignment(int classIndex); /* ovl0:2238, defined below */
         gBoxAnimCells[i] = gFn8082(i * 4, 0, 4, 0x20, gOverlayBuf);
     BuildIconTable();
     if (gGraphicsChoice == 0 || gGraphicsChoice == 1) {
-        f19EC_002A(3, 4, FP_OFF(gOverlayBuf), FP_SEG(gOverlayBuf));
+        CopyPage(3, 4, FP_OFF(gOverlayBuf), FP_SEG(gOverlayBuf));
         ClipRect(0, 0, 0, 0, 0x28, 0xc8, 4, 2);
     } else
-        f19EC_002A(3, 2, FP_OFF(gOverlayBuf), FP_SEG(gOverlayBuf));
+        CopyPage(3, 2, FP_OFF(gOverlayBuf), FP_SEG(gOverlayBuf));
     gStatusLine = 0;
     ClipRect(0x12, 0x40, 0, 0, 0x14, 0x80, 0, 2);
     LockShowPointer();

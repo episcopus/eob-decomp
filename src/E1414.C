@@ -6,7 +6,7 @@
    per-character status messages ("%s no longer has giant strength.", "%s feels the effects of
    poison!", "%s is no longer paralyzed!", 07CA), the member status-byte adjustment (03B4), the
    18-entry far table at ds:EF6A (04B0), the per-member food decay (0C82) and the object m17
-   re-roll (0CE7). The game timer is the 32-bit counter g8492 that the 1Ch handler bumps (src/EOV6.C);
+   re-roll (0CE7). The game timer is the 32-bit counter gGameTicks that the 1Ch handler bumps (src/EOV6.C);
    most meanings are not established, so names say what a function does rather than what the game
    calls it. */
 
@@ -16,7 +16,7 @@
 struct Effect {
     void (far *fn)(int);      /* +00: the far handler, called with `arg` as its argument */
     unsigned long period;     /* +04: the interval added to the current tick on re-arm */
-    unsigned long expiry;     /* +08: the time the effect next runs (g8492) */
+    unsigned long expiry;     /* +08: the time the effect next runs (gGameTicks) */
     int arg;                  /* +0C: the handler's argument */
     char sub;                 /* +0E: the third argument ArmEffectWith stores (1, 0xffff or idx,
                                  by caller; src/E122E.C:284, :307, :332) */
@@ -112,13 +112,13 @@ extern int gEFD2; /*@ ds:EFD2 */                /* Purpose unknown: 003E writes 
                                                   failure paths; src/E122E.C:18 calls it the mode the
                                                   driver runs a script in and tests it against 0x40 */
 extern int gPartyCell; /*@ ds:FBCA */         /* the party's map cell (re/globals.toml ds:FBCA) */
-extern unsigned char far *gEF6A[]; /*@ ds:EF6A */ /* 18 far pointers, walked by 04B0 */
-extern signed char gA9C6; /*@ ds:A9C6 */      /* an offset added into gEF6A's targets */
-extern int gFB78; /*@ ds:FB78 */              /* a flag toggled by 04B0 */
-extern signed char g5CAA; /*@ ds:5CAA */      /* the blink phase toggled by 0000 */
+extern unsigned char far *gViewCells[]; /*@ ds:EF6A */ /* 18 far pointers, walked by 04B0 */
+extern signed char gViewFrontSide; /*@ ds:A9C6 */      /* an offset added into gViewCells's targets */
+extern int gAnimWallPhase; /*@ ds:FB78 */              /* a flag toggled by 04B0 */
+extern signed char gBlinkPhase; /*@ ds:5CAA */      /* the blink phase toggled by 0000 */
 extern signed char g5C76; /*@ ds:5C76 */      /* the mode byte 03B4 reads; written in src/E122E.C
                                                  (set to 1 at 278, 0xff at 301, negated at 321) */
-extern unsigned char g5CAB[]; /*@ ds:5CAB */  /* a byte table indexed by direction in 0285 */
+extern unsigned char gNextPosByDir[]; /*@ ds:5CAB */  /* a byte table indexed by direction in 0285 */
 extern char gIconTable; /*@ ds:FB34 */             /* the index of the party member being moved, -1
                                                        when none (src/E0ACD.C:42) */
 extern char gViewDirty; /*@ ds:DF4C */             /* set to 1 when 0D1C:0006 finds the value
@@ -127,17 +127,17 @@ extern char gViewDirty; /*@ ds:DF4C */             /* set to 1 when 0D1C:0006 fi
                                                  byte */
 extern char gPanelMode; /*@ ds:FB44 */              /* the display mode byte 07CA case 7 tests (src/E0D1C.C) */
 extern char gFileNameBuf[]; /*@ ds:FE6E */     /* the text buffer 07CA formats into (src/EOV2.C) */
-extern unsigned long g8492; /*@ ds:8492 */    /* the 32-bit tick counter (src/EOV6.C) */
+extern unsigned long gGameTicks; /*@ ds:8492 */    /* the 32-bit tick counter (src/EOV6.C) */
 
 extern void RedrawMember(int member); /*@ 1547:0991 */
 extern void PlaySoundDefault(int sound); /*@ 177D:00F3 */
-extern int f0D1C_0006(int value); /*@ 0D1C:0006 */
+extern int IsCellInView(int value); /*@ 0D1C:0006 */
 extern int StepCell(int cell, int dir); /*@ 0D1C:00DA */
 extern int f0D1C_0163(int who, int fieldB); /*@ 0D1C:0163 */
 extern int MemberIs(int member, int what); /*@ 0D1C:0670 */
 extern int far RollDice(char count, char sides, char bonus); /*@ 082C:0458 */
 extern void UpdateObjects(int kind); /*@ 08E6:0CC8 */
-extern void Obj1410(void); /*@ 08E6:1410 */
+extern void TickLevelScriptTimer(void); /*@ 08E6:1410 */
 extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
 
 void ArmEffect(int idx, int active);
@@ -145,7 +145,7 @@ extern void DrawText(char *text); /*@ 1DE7:060A */
 extern void DrawMemberFood(int member); /*@ 1547:04A0 */
 extern void DispatchSlotHandler(int member, int a); /*@ 122E:0896 */
 extern void RunCellScript(int cell, int mode); /*@ 122E:1DA8 */
-extern int Obj189D(struct Monster far *obj, int a, int b); /*@ 08E6:189D */
+extern int IsMonsterAtPos(struct Monster far *obj, int a, int b); /*@ 08E6:189D */
 extern int RunRecordAttack(struct Projectile far *rec); /*@ 0DE8:01FF */
 extern int TryRecordAttack(struct Projectile far *rec, int idx); /*@ 0DE8:02D4 */
 extern void DamageCharacter(int who, int what); /*@ 0DE8:09B9 */
@@ -155,7 +155,7 @@ extern void InsertListItem(void far *head, int key, int item, int sound); /*@ 0B
 extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
 
 /* 1414:0000: the selected-character blink effect, entry 0 of the table (the period word at
-   ds:5BAC is 9). It flips the phase g5CAA; when the phase turns on it saves gIconTable (the member
+   ds:5BAC is 9). It flips the phase gBlinkPhase; when the phase turns on it saves gIconTable (the member
    being moved), replaces it with 0xFF, redraws that member's row through RedrawMember and restores
    gIconTable, and when the phase turns off it just redraws gIconTable's row. QUIRK 1414:0037: the
    argument comes in on the stack and is incremented by value, so the increment has no effect. */
@@ -163,7 +163,7 @@ extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
 {
     int old;
 
-    if (g5CAA ^= 1) {
+    if (gBlinkPhase ^= 1) {
         old = gIconTable;
         gIconTable = 0xFF;
         RedrawMember(old);
@@ -222,7 +222,7 @@ extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
 /* 1414:0172: the per-record test 0285 and 0D63 use. It returns 0 when the record already has a
    nonzero m02. A record in state 2 calls the far handler stored at +0E (rec->fn(rec)) and returns
    its result. Otherwise it looks up gMaze[index * 9 + 4]: when that byte has bits 0..2 set it
-   scans the 30 objects at ds:8A82 for one that Obj189D accepts and that TryRecordAttack then
+   scans the 30 objects at ds:8A82 for one that IsMonsterAtPos accepts and that TryRecordAttack then
    also accepts, returning 1 on the first; when the bits are clear it runs RunRecordAttack(rec)
    only when `index` is the party's map cell and returns that. Called by 0285 and 0D63. */
 /*@ 1414:0172 */ int TestDDEffect(struct Projectile far *rec, int index, int sel)
@@ -239,7 +239,7 @@ extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
         i = 0;
         obj = gMonsters;
         for (; i < 30; i++, obj++) {
-            if (Obj189D(obj, index, sel)) {
+            if (IsMonsterAtPos(obj, index, sel)) {
                 if (TryRecordAttack(rec, i))
                     return 1;
             }
@@ -272,7 +272,7 @@ extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
     rec->item = 0;
 }
 /* 1414:0285: the DD-record step, effect 1 of the table. For every live ds:DD2C record it looks
-   up the direction byte sel = g5CAB[rec->dir * 4 + (rec->m06 & 3)]. When sel has bit 7 set the
+   up the direction byte sel = gNextPosByDir[rec->dir * 4 + (rec->m06 & 3)]. When sel has bit 7 set the
    target index is StepCell(rec->cell, rec->dir) and m02 is cleared, otherwise it is rec->cell
    itself. StepDDEffect(rec, value, sel) then either, when it succeeds, redraws a translated target
    through 122E:1DA8(value, 0x10) and re-tests with TestDDEffect, or, when it fails and m0C has
@@ -305,7 +305,7 @@ extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
     for (; i < 10; i++, rec++) {
         if (rec->active != 0) {
             clearIt = rec->m0D == 0;
-            sel = g5CAB[rec->dir * 4 + (rec->m06 & 3)];
+            sel = gNextPosByDir[rec->dir * 4 + (rec->m06 & 3)];
             high = sel & 0x80;
             if (high) {
                 sel &= 3;
@@ -337,7 +337,7 @@ extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
    global mode byte g5C76 is -1 with bit 5 set, or 1 with bit 4 set, it disarms effect 0xC and
    returns. Otherwise it adds g5C76 to gMaze[who * 9 + slot] and gMaze[who * 9 + slot + 2], reads
    the flag again and plays sound 5 when bit 5 is set, 4 when g5C76 is -1, else 3, then reports
-   `who` through f0D1C_0006. Called by 122E and by the table. */
+   `who` through IsCellInView. Called by 122E and by the table. */
 /*@ 1414:03B4 */ void AdjustMemberStatus(int who)
 {
     int sel;
@@ -361,10 +361,10 @@ extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
         PlaySoundDefault(4);
     else
         PlaySoundDefault(3);
-    f0D1C_0006(who);
+    IsCellInView(who);
 }
-/* 1414:04B0: effect 13 of the table. Toggles gFB78, then walks the 18 far pointers at ds:EF6A,
-   adding gA9C6 to each target and setting gViewDirty when a byte there is 0x34 ('4'); the loop stops
+/* 1414:04B0: effect 13 of the table. Toggles gAnimWallPhase, then walks the 18 far pointers at ds:EF6A,
+   adding gViewFrontSide to each target and setting gViewDirty when a byte there is 0x34 ('4'); the loop stops
    at the first such byte. QUIRK 1414:04B4: the argument is incremented by value, so the increment
    has no effect. */
 /*@ 1414:04B0 */ void CheckFarTable(int unused)
@@ -372,18 +372,18 @@ extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
     int i;
 
     unused++;
-    gFB78 ^= 1;
+    gAnimWallPhase ^= 1;
     for (i = 0; i < 0x12; i++) {
-        if (gEF6A[i][gA9C6] == 0x34) {
+        if (gViewCells[i][gViewFrontSide] == 0x34) {
             gViewDirty = 1;
             break;
         }
     }
 }
 
-/* 1414:04E7: the effect tick: for every entry of gEffects whose expiry (g8492, the 32-bit tick
+/* 1414:04E7: the effect tick: for every entry of gEffects whose expiry (gGameTicks, the 32-bit tick
    counter) has passed, call its handler with its argument; when the handler leaves the entry
-   active, re-arm it with expiry = g8492 + period (the expiry is taken from the current tick, not
+   active, re-arm it with expiry = gGameTicks + period (the expiry is taken from the current tick, not
    the old expiry). Finally runs 08E6:1410. An entry the handler disarms (active 0) is left alone.
    Called by RunMapLoop (src/E0ACD.C:890) on every pass of its for (;;) loop, after Action0E6C,
    with no condition. */
@@ -395,13 +395,13 @@ extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
     i = 0;
     effect = gEffects;
     for (; i < gEffectCount; i++, effect++) {
-        if (effect->active != 0 && effect->expiry < g8492) {
+        if (effect->active != 0 && effect->expiry < gGameTicks) {
             effect->fn(effect->arg);
             if (effect->active != 0)
-                effect->expiry = g8492 + effect->period;
+                effect->expiry = gGameTicks + effect->period;
         }
     }
-    Obj1410();
+    TickLevelScriptTimer();
 }
 
 /* 1414:055B: arms effect `idx` at its table period (like 05A4) and also stores `active` (0
@@ -413,19 +413,19 @@ extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
 
     effect = &gEffects[idx];
     effect->active = active;
-    effect->expiry = g8492 + effect->period;
+    effect->expiry = gGameTicks + effect->period;
     effect->arg = arg;
     effect->sub = sub;
 }
 /* 1414:05A4: (re-)arms effect `idx` at its table period: stores `active` and sets the expiry to
-   g8492 plus the entry's period. Called by many units (0ACD, 0D1C, 1414). */
+   gGameTicks plus the entry's period. Called by many units (0ACD, 0D1C, 1414). */
 /*@ 1414:05A4 */ void ArmEffect(int idx, int active)
 {
     struct Effect far *effect;
 
     effect = &gEffects[idx];
     effect->active = active;
-    effect->expiry = g8492 + effect->period;
+    effect->expiry = gGameTicks + effect->period;
 }
 /* 1414:05DF: the four table entries that point here (ds:5BC8 to ds:5BF8) run the object-list
    update of one kind through UpdateObjects (08E6:0CC8). */
@@ -433,7 +433,7 @@ extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
 {
     UpdateObjects(kind);
 }
-/* 1414:05ED: applies a timed effect to character `who`. The interval is added to g8492 (time),
+/* 1414:05ED: applies a timed effect to character `who`. The interval is added to gGameTicks (time),
    and effect `who` + 6 is armed. When that entry is inactive its period is set to `interval`,
    the character's slot 0 is set to `time` and `value`, and the entry is armed. When it is active
    the entry's expiry is pulled back to `time` if it is later, and then the time and value are
@@ -453,7 +453,7 @@ extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
     int found;
 
     idx = who + 6;
-    time = g8492 + interval;
+    time = gGameTicks + interval;
     effect = &gEffects[idx];
     rec = &gChars[who];
     if (!effect->active) {
@@ -512,7 +512,7 @@ extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
    in mode 2; 8 handles poison ("%s feels the effects of poison!"), damages 5 points through
    DamageCharacter unless effectFlags bit 7 is set, and re-arms effect 8, or clears status bit 1; and 9
    handles recovered paralysis ("%s is no longer paralyzed!") and clears status bit 2. It then
-   computes the smallest nonzero gChars[who].timers and stores it (minus g8492 when there is one,
+   computes the smallest nonzero gChars[who].timers and stores it (minus gGameTicks when there is one,
    else -1 and it disarms effect who + 6) in gEffects[who + 6].period. Called from the table (and
    0DE8, 0EF3, 0BD2).
 
@@ -521,8 +521,8 @@ extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
    one (WHITEPAPER 2.1.1, the same class as 0ACD:091C). Two further divergences are handled in the
    source: (1) the bit tests read `mov ax, [bx + N]; and ax, M; or ax, 0; je` (1414:08AD, 1414:09A1)
    because effectFlags is a `long`, not an `int`: TCC emits the and/or form only for a long bit test (the
-   `or ax, 0` distinct from `or ax, ax`); (2) the expiry test is written `if (tl <= g8492) { body }`
-   (1414:0814 `jbe L1; jmp cont; L1: jne body`), not `if (tl > g8492) continue;`. */
+   `or ax, 0` distinct from `or ax, ax`); (2) the expiry test is written `if (tl <= gGameTicks) { body }`
+   (1414:0814 `jbe L1; jmp cont; L1: jne body`), not `if (tl > gGameTicks) continue;`. */
 /*@ 1414:07CA */ void RunCharEffects(int who)
 {
     unsigned long min;
@@ -537,7 +537,7 @@ extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
         tl = rec->timers[i];
         if (tl == 0)
             continue;
-        if (tl <= g8492) {
+        if (tl <= gGameTicks) {
             rec->timers[i] = 0;
             type = rec->mD5[i];
             if (type < 0) {
@@ -613,7 +613,7 @@ extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
             min = rec->timers[i];
     }
     if (min != -1) {
-        gEffects[who + 6].period = min - g8492;
+        gEffects[who + 6].period = min - gGameTicks;
     } else {
         gEffects[who + 6].period = min;
         ArmEffect(who + 6, 0);
@@ -622,7 +622,7 @@ extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
 
 /* 1414:0B2E: re-arms effect `who` + 6 for every party member `who` that passes MemberIs(who, 1).
    It takes the smallest nonzero of the member's 10 effect times gChars[who].timers and, when there
-   is one, sets the entry's period to that time minus g8492 and arms it; when all ten are zero it
+   is one, sets the entry's period to that time minus gGameTicks and arms it; when all ten are zero it
    sets the period to -1 and disarms it. Called by 0ACD, 0D1C:035A, 0C2D and overlays 1 and 3. */
 /*@ 1414:0B2E */ void RearmCharEffects(void)
 {
@@ -646,7 +646,7 @@ extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
         idx = who + 6;
         effect = &gEffects[idx];
         if (min != -1) {
-            effect->period = min - g8492;
+            effect->period = min - gGameTicks;
             ArmEffect(idx, 1);
         } else {
             effect->period = min;
@@ -694,7 +694,7 @@ extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
 }
 /* 1414:0CE7: effect 15 of the table. For every one of the 30 objects at ds:8A82 that wins a
    1d2 roll, it stores a fresh (1d2 << 4) + 1d2 value in obj->m17 and reports the object's id
-   through f0D1C_0006. */
+   through IsCellInView. */
 /*@ 1414:0CE7 */ void RandomiseObjectState(void)
 {
     struct Monster far *obj;
@@ -706,7 +706,7 @@ extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
         if (RollDice(1, 2, 0) == 1) {
             obj->m17 = RollDice(1, 2, 0) << 4;
             obj->m17 += RollDice(1, 2, 0);
-            f0D1C_0006(obj->cell);
+            IsCellInView(obj->cell);
         }
     }
 }

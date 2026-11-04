@@ -112,7 +112,7 @@ extern struct CharRec gCharPool[]; /*@ ds:7298 */  /* the pre-made character rec
 extern struct PoolNameRec gPoolNameBase[]; /*@ ds:71A7 */  /* ds:71A7 = gCharPool + 2 - 0xF3, the base of the
                                                               folded gCharPool[-n-1].name access */
 extern struct ItemRecord gItems[]; /*@ ds:8DD0 */
-extern struct ItemInfo gA9F5[]; /*@ ds:A9F5 */
+extern struct ItemInfo gItemTypesClasses[]; /*@ ds:A9F5 */
 extern struct Monster gMonsters[]; /*@ ds:8A82 */
 extern int gCountDDE0; /*@ ds:DDE0 */
 extern int gTableF4E6[]; /*@ ds:F4E6 */
@@ -226,8 +226,8 @@ extern void FileRead(int handle, void far *buf, unsigned long len); /*@ 1C0E:040
 extern void FileClose(int handle); /*@ 1C0E:03BB */
 extern void SetFont(void far *font); /*@ 1A47:0169 */
 extern void ShutdownGame(void); /*@ 07C8:058A */
-extern void far *f19EC_0002(int kind); /*@ 19EC:0002 */
-extern void f19EC_002A(int a, int b, int c, int d); /*@ 19EC:002A */
+extern void far *GetPageBuffer(int kind); /*@ 19EC:0002 */
+extern void CopyPage(int a, int b, int c, int d); /*@ 19EC:002A */
 extern int gF1; /*@ ds:00F1 */
 
 /* siblings not decompiled yet: their real signatures, so callers compile */
@@ -785,7 +785,7 @@ enum {
 /* ovl5:0BBE: builds the list at ds:F4E6 (count in gCountDDE0) of the characters and items the
    resurrect/heal panel 0EB9 may act on: first every character whose flags bit 0 is set and whose
    hit points are -10 (0xf6, a dead member); then, for every character with flags bit 0 set, each
-   of its 25 item slots whose item type's gA9F5[type].m09 low 7 bits equal 8, stored as
+   of its 25 item slots whose item type's gItemTypesClasses[type].m09 low 7 bits equal 8, stored as
    -gItems[item].value. Returns the count. ResurrectPicker reads a negative entry n back as the
    pool index -(n + 1): that reading is an inference from ResurrectPicker and the
    RemoveCarriedItems(0x21, who + 1) calls; what value itself means is not established (0D1C:01CA).
@@ -816,7 +816,7 @@ enum {
                 if (!item)
                     continue;
                 type = gItems[item].type;
-                kind = gA9F5[type].m09 & 0x7f;
+                kind = gItemTypesClasses[type].m09 & 0x7f;
                 if (kind == 8)
                     gTableF4E6[gCountDDE0++] = -gItems[item].value;
             }
@@ -1045,7 +1045,7 @@ enum {
 /* ovl5:1204: the first ending animation (mode 8). It tears down the dungeon resources, loads
    PORTALA ds:7E43 and slices fifteen cells out of gOverlayBuf (three per sprite: a 3x0x4b column, a
    3x0x4b column offset 0x50, and an 0xf x 0x12 cell) plus one 8 x 0x4d cell, blits PORTALB
-   ds:7E4B, fills the action field with f19EC_0002(5), clips the panel, draws block[0], stripA[0],
+   ds:7E4B, fills the action field with GetPageBuffer(5), clips the panel, draws block[0], stripA[0],
    stripB[0] and extra[0] and shuffles the grid at origin (0x18, 0) of 0x90 columns by 0x68 rows.
    It then runs an animation script at ds:7C32 of (cell, step) byte pairs: each pair draws
    block[i], stripA[i] and stripB[i], then draws the board cell the step selects (or the extra
@@ -1076,14 +1076,14 @@ enum {
     PlaySound(0x21);
     PlaySound(0x13);
     gStatusLine = 2;
-    gFn807E(3, 0, 0x12, 0x68, f19EC_0002(5));
+    gFn807E(3, 0, 0x12, 0x68, GetPageBuffer(5));
     ClipRect(3, 0, 3, 0, 0x12, 0x68, 0, 2);
     DrawShape(2, block[0], 0x1c, 9, 0);
     DrawShape(2, stripA[0], 0x22, 0x1c, 0);
     DrawShape(2, stripB[0], 0x78, 0x1c, 0);
     DrawShape(2, extra[0], 0x38, 0x1b, 0);
     ShuffleGrid(0x18, 0, 0x90, 0x68, 2, 0);
-    gFn804A(3, 0, 0x12, 0x68, f19EC_0002(5));
+    gFn804A(3, 0, 0x12, 0x68, GetPageBuffer(5));
     WaitTicks(0x1e);
     script = gText7C32;
     while (*script > -1) {
@@ -1172,7 +1172,7 @@ enum {
    and slices one 0x10 x 0x5f cell, blits XDEATH1 (ds:7EFF), then plays ten frames: six clipped
    cells (with the sounds 0x48, 0x36, 0x36, 0x22) and, for the last four, the 2x2 sprite grid
    (sprites[i-6], sound 0x2a). It then clears gStatusLine, fills the action field with
-   f19EC_0002(5) (gFn807E), sets gF1 to 8 and runs the 19-step explosion: each step plays 0x77,
+   GetPageBuffer(5) (gFn807E), sets gF1 to 8 and runs the 19-step explosion: each step plays 0x77,
    blits the page (gFn804A), draws the sliced cell moving from y=-0x5a in steps of 5, clips the
    portrait region and waits 2 ticks. It finally plays sound 5, clears gF1, waits 0x3c ticks, shows
    the pointer, runs the winning-party panel (160A), frees the four sprites and the sliced cell and
@@ -1192,7 +1192,7 @@ enum {
     LoadOverlayScreen(gFileNameXDeath3, 5, 3);
     cell = gFn8082(0x16, 0, 0x10, 0x5f, gOverlayBuf);
     LoadScreenImage(gFileNameXDeath1, gOverlayBuf, 5, 3, -1);
-    f19EC_002A(3, 2, FP_OFF(gOverlayBuf), FP_SEG(gOverlayBuf));
+    CopyPage(3, 2, FP_OFF(gOverlayBuf), FP_SEG(gOverlayBuf));
     for (i = 0; i < 0xa; i++) {
         if (i == 2)
             PlaySound(0x48);
@@ -1210,12 +1210,12 @@ enum {
         WaitTicks(4);
     }
     gStatusLine = 0;
-    gFn807E(0, 0, 0x16, 0x78, f19EC_0002(5));
+    gFn807E(0, 0, 0x16, 0x78, GetPageBuffer(5));
     gF1 = 8;
     for (i = 0; i < 0x13; i++) {
         PlaySound(0x77);
         gStatusLine = 2;
-        gFn804A(0, 0, 0x16, 0x78, f19EC_0002(5));
+        gFn804A(0, 0, 0x16, 0x78, GetPageBuffer(5));
         DrawShape(2, cell, 0x18, i * 5 + 0xffa6, 5);
         ClipRect(0, 0, 0, 0, 0x16, 0x78, 2, 0);
         WaitTicks(2);

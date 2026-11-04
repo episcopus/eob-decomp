@@ -10,8 +10,8 @@
 
 ; 1D8F:0002: the saved INT 1Ch vector lives at cs:[2]/cs:[4]; then AX:DX = the 32-bit tick
 ; counter at ds:8496:8498, read atomically (cli/sti).
-        PUBLIC  _f1D8F_0002              ; @ 1D8F:0002
-_f1D8F_0002 PROC FAR
+        PUBLIC  _ReadTickCount              ; @ 1D8F:0002
+_ReadTickCount PROC FAR
         dw      0                       ; cs:[2]: old INT 1Ch offset
         dw      0                       ; cs:[4]: old INT 1Ch segment
         cli
@@ -19,7 +19,7 @@ _f1D8F_0002 PROC FAR
         mov     dx,ds:[8498h]
         sti
         retf
-_f1D8F_0002 ENDP
+_ReadTickCount ENDP
 
 ; 1D8F:0010: save the current INT 1Ch vector into cs:[2]/cs:[4], then point INT 1Ch at cs:0055.
         PUBLIC  _f1D8F_0010              ; @ 1D8F:0010

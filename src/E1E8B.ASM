@@ -249,8 +249,8 @@ _SwapAndReopenOverlayFile ENDP
 ; with retf or `ret 2`): the caller's `pop ds; pop bp; retf` at the end depends on the two pushes being
 ; balanced by the callees; what a callee uses CS for is not established. Evidence: the [0B8h] handle
 ; test, the far call to 0134 and the two `push cs; call [..]` pointers.
-        PUBLIC  _f1E8B_0185  ; @ 1E8B:0185
-_f1E8B_0185 PROC FAR
+        PUBLIC  _ShutdownOverlayManager  ; @ 1E8B:0185
+_ShutdownOverlayManager PROC FAR
         push    bp
         mov     bp,sp
         push    ds
@@ -266,7 +266,7 @@ shutdown_nohandle:
         pop     ds
         pop     bp
         retf
-_f1E8B_0185 ENDP
+_ShutdownOverlayManager ENDP
 
 ; 1E8B:01A7: open the overlay file named by this caller's far argument. It copies the whole name
 ; into the 20B5:001C buffer with 0250 (the frame and buffer are shared with the caller, 000F). It

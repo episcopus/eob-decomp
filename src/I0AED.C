@@ -5,7 +5,7 @@
    of the switch table at 0AED:0211 (1B82:020D), each four higher
    than its EOB entry (0AED:00EB for 1B82:00E7, and so on), which twin.py does not relocate. The INTRO
    map also folded SetUnpackBuffer into Unpack's range. LoadFile reads up to len bytes of a named file
-   into a buffer; LoadPacked takes two slot kinds, srcKind and dstKind, and f19EC_0002 turns each into
+   into a buffer; LoadPacked takes two slot kinds, srcKind and dstKind, and GetPagePtr turns each into
    the far pointer (offset 0) of that slot's segment (MK_FP(gSegsFC0C[kind | 1], 0), a segment read
    from the page/buffer table, not an allocation), reads a 2-byte length then the packed block and
    calls Unpack; Unpack dispatches on the block's format byte to one of five unpackers (0B10:0000 for
@@ -67,7 +67,7 @@ extern int FileOpen(char far *name, int mode); /*@ 0B5D:00D1 */
    (src/E1C0E.C:277, at 0B5D:03F6). */
 extern long FileRead(int index, char far *buf, unsigned long len); /*@ 0B5D:03F6 */
 extern void FileClose(int index); /*@ 0B5D:03B1 */
-extern void far *f19EC_0002(int kind); /*@ 097F:0002 */
+extern void far *GetPagePtr(int kind); /*@ 097F:0002 */
 extern void far *MemAlloc(unsigned long size, int flags); /*@ 094F:0007 */
 extern void MemFree(void far *block); /*@ 094F:0137 */
 extern void Unpack0(char far *src, void far *dst, long len); /*@ 0B10:0000: format 0, a raw copy */
@@ -97,7 +97,7 @@ void Unpack(char far *src, void far *dst);
     FileClose(slot);
 }
 
-/* 0AED:0045: loads a packed file: takes two slot kinds, srcKind and dstKind; f19EC_0002 turns each
+/* 0AED:0045: loads a packed file: takes two slot kinds, srcKind and dstKind; GetPagePtr turns each
    into the far pointer (offset 0) of that slot's segment. Reads a 2-byte length then up to that many
    bytes into src, closes the file, and unpacks src into dst. QUIRK 0AED:0045: as in LoadFile, the
    FileOpen result is not checked before FileRead and the count FileRead returns is discarded
@@ -109,8 +109,8 @@ void Unpack(char far *src, void far *dst);
     void far *dst;
     int slot;
 
-    src = f19EC_0002(srcKind);
-    dst = f19EC_0002(dstKind);
+    src = GetPagePtr(srcKind);
+    dst = GetPagePtr(dstKind);
     slot = FileOpen(name, 1);   /* mode 1: read (src/E1C0E.C:166) */
     /* the packed block's byte length: WHITEPAPER 4.2 gives this u16 as the "size
        of the rest (some files: the file size)"; LoadPacked reads up to that many bytes after the
@@ -137,7 +137,7 @@ void Unpack(char far *src, void far *dst);
         since no pinned file shows a non-zero value) and calls Unpack4 with the data at block offset
         +8+skipLen.
    Cases 1 to 3 pass only segments (FP_SEG(src), FP_SEG(dst) and the work segment), so they rely on
-   the block and the output sitting at offset 0, as LoadPacked's f19EC_0002 pointers do (src/E19EC.C:20);
+   the block and the output sitting at offset 0, as LoadPacked's GetPagePtr pointers do (src/E19EC.C:20);
    the decoders take segments (src/E1D9A.ASM:163-174, Unpack3's src at [bp+6] and dst at [bp+8];
    src/E1D9A.ASM:285 mov es,[bp+8] in Unpack1), so a port of Unpack must keep that rule. The original
    sign-extends the format byte (cbw; cwd) and switches on the int in AX. The

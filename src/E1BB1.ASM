@@ -85,14 +85,14 @@
         EXTRN   _gPointerBackSeg:WORD   ; @ ds:816C: save-under buffer, far segment (0 = none)
         EXTRN   _gPointerShapeOff:WORD  ; @ ds:816E: pointer shape record, far offset
         EXTRN   _gPointerShapeSeg:WORD  ; @ ds:8170: pointer shape record, far segment
-        EXTRN   g8172:WORD              ; @ ds:8172: argument of the [ds:80AA] call, offset; written by
+        EXTRN   gEgaRegShadowOff:WORD              ; @ ds:8172: argument of the [ds:80AA] call, offset; written by
                                         ; _SetFarPointer 1A72:02FE (src/E1A72.ASM:442), read by _GetFarPointer 1A72:033A
-        EXTRN   g8174:WORD              ; @ ds:8174: argument of the [ds:80AA] call, segment; written by
+        EXTRN   gEgaRegShadowSeg:WORD              ; @ ds:8174: argument of the [ds:80AA] call, segment; written by
                                         ; _SetFarPointer 1A72:02FE (src/E1A72.ASM:443), read by _GetFarPointer 1A72:033A
         EXTRN   gSaveRectSize:DWORD             ; @ ds:80C6: indirect far function, returns the save-under buffer
                                         ; size in bytes; called as (width, height) at 1BB1:006F
-        EXTRN   g80AA:DWORD             ; @ ds:80AA: indirect far function, called with ds:8172/8174
-        EXTRN   g80A2:DWORD             ; @ ds:80A2: indirect far function, no arguments
+        EXTRN   gSaveDrawState:DWORD             ; @ ds:80AA: indirect far function, called with ds:8172/8174
+        EXTRN   gRestoreDrawState:DWORD             ; @ ds:80A2: indirect far function, no arguments
         _DATA   ENDS
         DGROUP  GROUP   _DATA
 
@@ -190,14 +190,14 @@ alloc:  mov     ax,0                    ; MemAlloc flags = 0: neither zero-fill 
         je      failed
         mov     word ptr [_gPointerBackOff],ax
         mov     word ptr [_gPointerBackSeg],dx
-ready:  push    word ptr [g8174]
-        push    word ptr [g8172]
-        call    dword ptr [g80AA]
+ready:  push    word ptr [gEgaRegShadowSeg]
+        push    word ptr [gEgaRegShadowOff]
+        call    dword ptr [gSaveDrawState]
         add     sp,4
         ASSUME  CS:NOTHING
         call    far ptr _ShowPointer
         ASSUME  CS:_TEXT
-        call    dword ptr [g80A2]
+        call    dword ptr [gRestoreDrawState]
         mov     ax,1
         jmp     short release
 ; QUIRK 1BB1:0058: on failure the old buffer was already freed at resize (1BB1:0058..005C) and the

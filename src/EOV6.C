@@ -68,7 +68,7 @@ extern int gPartyCell; /*@ ds:FBCA */
 extern signed char gF57E; /*@ ds:F57E */        /* the colour2 argument ovl6:0858 passes; 082C:0898
                                                    forwards it to its first shadow draw only */
 extern char gF442; /*@ ds:F442 */               /* 1 while ovl6:09D2 updates the objects */
-extern unsigned long g8492; /*@ ds:8492 */      /* the 32-bit counter the 1Ch handler bumps */
+extern unsigned long gGameTicks; /*@ ds:8492 */      /* the 32-bit counter the 1Ch handler bumps */
 
 extern void LockHidePointer(void); /*@ 1BBE:0307 */
 extern void LockShowPointer(void); /*@ 1BBE:0332 */
@@ -283,7 +283,7 @@ void f0B9B(int message);
         if (tick == 6) {
             tick = 0;
             hours++;
-            g8492 += 0x7ff8L;
+            gGameTicks += 0x7ff8L;
             f0858(hours, 0);
             for (member = 0; member < 6; member++) {
                 if (!MemberIs(member, 1))

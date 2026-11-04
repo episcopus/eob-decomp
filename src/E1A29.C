@@ -55,11 +55,11 @@ extern int gRegionBottom;        /*@ ds:FE44 */  /* selected region's bottom lin
    same kind, is gDrawLine (src/E1A1F.C:6), which supports the family but is not evidence for
    these six. */
 extern void (far *gDrawShape)(int mode, void far *src, int x, int y);        /*@ ds:80C2 */
-extern void (far *gDraw80A6)(int mode, void far *src, int x, int y);        /*@ ds:80A6 */
-extern void (far *gDraw80D6)(int mode, void far *src, int x, int y);        /*@ ds:80D6 */
-extern void (far *gDraw80DA)(int mode, void far *src, int x, int y);        /*@ ds:80DA */
-extern void (far *gDraw809A)(int mode, void far *src, int x, int y, int extra); /*@ ds:809A */
-extern void (far *gDraw8096)(int mode, void far *src, int x, int y, int extra); /*@ ds:8096 */
+extern void (far *gDrawShapeFlipped)(int mode, void far *src, int x, int y);        /*@ ds:80A6 */
+extern void (far *gDrawShapeRemapped)(int mode, void far *src, int x, int y);        /*@ ds:80D6 */
+extern void (far *gDrawShapeFlippedRemapped)(int mode, void far *src, int x, int y);        /*@ ds:80DA */
+extern void (far *gDrawShapeMasked)(int mode, void far *src, int x, int y, int extra); /*@ ds:809A */
+extern void (far *gDrawShapeMaskedFlipped)(int mode, void far *src, int x, int y, int extra); /*@ ds:8096 */
 /* called with (left, right, top, bottom) after a region is selected */
 extern void (far *gSetRegion)(int left, int right, int top, int bottom);    /*@ ds:80B6 */
 
@@ -87,59 +87,59 @@ void SelectRegion(int region);
 
 /* 1A29:004D: Purpose unknown: a front end over the driver pointer ds:80A6, identical to
    1A29:000F otherwise (null check, lazy region select, region-relative x and y). */
-/*@ 1A29:004D */ void f1A29_004D(int mode, void far *src, int x, int y, int region)
+/*@ 1A29:004D */ void DrawShapeFlipped(int mode, void far *src, int x, int y, int region)
 {
     if (!src)
         return;
     if (region != gCurRegion)
         SelectRegion(region);
-    gDraw80A6(mode, src, x + gRegionLeftPx, y + gRegionTop);
+    gDrawShapeFlipped(mode, src, x + gRegionLeftPx, y + gRegionTop);
 }
 
-/* 1A29:008B: Purpose unknown: a front end over the driver pointer ds:80D6, identical to
+/* 1A29:008B: Draws a shape like DrawShape but through the driver's colour-remapping entry ds:80D6, after the caller has set the remap row through ds:80D2. a front end over the driver pointer ds:80D6, identical to
    1A29:000F otherwise (null check, lazy region select, region-relative x and y). */
-/*@ 1A29:008B */ void f1A29_008B(int mode, void far *src, int x, int y, int region)
+/*@ 1A29:008B */ void DrawShapeRemapped(int mode, void far *src, int x, int y, int region)
 {
     if (!src)
         return;
     if (region != gCurRegion)
         SelectRegion(region);
-    gDraw80D6(mode, src, x + gRegionLeftPx, y + gRegionTop);
+    gDrawShapeRemapped(mode, src, x + gRegionLeftPx, y + gRegionTop);
 }
 
 /* 1A29:00C9: Purpose unknown: a front end over the driver pointer ds:80DA, identical to
    1A29:000F otherwise (null check, lazy region select, region-relative x and y). */
-/*@ 1A29:00C9 */ void f1A29_00C9(int mode, void far *src, int x, int y, int region)
+/*@ 1A29:00C9 */ void DrawShapeFlippedRemapped(int mode, void far *src, int x, int y, int region)
 {
     if (!src)
         return;
     if (region != gCurRegion)
         SelectRegion(region);
-    gDraw80DA(mode, src, x + gRegionLeftPx, y + gRegionTop);
+    gDrawShapeFlippedRemapped(mode, src, x + gRegionLeftPx, y + gRegionTop);
 }
 
 /* 1A29:0107: Purpose unknown: a front end over the driver pointer ds:809A, like 1A29:000F but
    with one extra word forwarded to the driver. No caller of it was found in EOB.EXE or its
    overlays (make packet), so both its role and the meaning of `extra` are unknown. */
-/*@ 1A29:0107 */ void f1A29_0107(int mode, void far *src, int x, int y, int region, int extra)
+/*@ 1A29:0107 */ void DrawShapeMasked(int mode, void far *src, int x, int y, int region, int extra)
 {
     if (!src)
         return;
     if (region != gCurRegion)
         SelectRegion(region);
-    gDraw809A(mode, src, x + gRegionLeftPx, y + gRegionTop, extra);
+    gDrawShapeMasked(mode, src, x + gRegionLeftPx, y + gRegionTop, extra);
 }
 
 /* 1A29:0148: Purpose unknown: a front end over the driver pointer ds:8096, like 1A29:000F but
    with one extra word forwarded to the driver. No caller of it was found in EOB.EXE or its
    overlays (make packet), so both its role and the meaning of `extra` are unknown. */
-/*@ 1A29:0148 */ void f1A29_0148(int mode, void far *src, int x, int y, int region, int extra)
+/*@ 1A29:0148 */ void DrawShapeMaskedFlipped(int mode, void far *src, int x, int y, int region, int extra)
 {
     if (!src)
         return;
     if (region != gCurRegion)
         SelectRegion(region);
-    gDraw8096(mode, src, x + gRegionLeftPx, y + gRegionTop, extra);
+    gDrawShapeMaskedFlipped(mode, src, x + gRegionLeftPx, y + gRegionTop, extra);
 }
 
 /* 1A29:0189: makes `region` the current one. `region` is an index into gRegions (the record is

@@ -190,7 +190,7 @@ extern int gSavedPanelMember;                       /*@ ds:FC74 */ /* the panel 
                                                          restored by 0EF3:026F */
 extern int gSavedClericMode;                       /*@ ds:FC76 */
 extern char gClericSpellMode;                      /*@ ds:F43D */
-extern int gF518;                       /*@ ds:F518 */ /* set while 08E6:0E48 has not run */
+extern int gDeferMonsterHits;                       /*@ ds:F518 */ /* set while 08E6:0E48 has not run */
 extern unsigned char gPartySpellFlags;             /*@ ds:FBD2 */ /* a flag byte: bit 0 is the item-swap mode
                                                         (0EF3:1069, 0EF3:10AE); bit 4 is the swap
                                                         flag (set by 0EF3:1AD0, cleared by
@@ -203,7 +203,7 @@ extern char gViewDirty;                      /*@ ds:DF4C */
 extern char gFileNameBuf[];             /*@ ds:FE6E */ /* the scratch text buffer that EOV2 also
                                                         formats file names into (re/globals.toml
                                                         ds:FE6E); this unit formats messages into it */
-extern unsigned g5E1C;                  /*@ ds:5E1C */ /* a button/mode word (src/E0ACD.C) */
+extern unsigned gLeftButtonMode;                  /*@ ds:5E1C */ /* a button/mode word (src/E0ACD.C) */
 extern char gF542[];                    /*@ ds:F542 */ /* the action record passed to
                                                          RedrawPartyPanel (0EF3:2541, which reads its
                                                          +4 word); this unit passes it as
@@ -212,14 +212,14 @@ extern char gF542[];                    /*@ ds:F542 */ /* the action record pass
 extern char far *gConeOfColdCells[];               /*@ ds:5763 */ /* far byte tables, one per page gPartyDir */
 extern int gConeOfColdColours[];                     /*@ ds:5737 */ /* a word table of animation frames 0EF3:2EBC
                                                            reads as frameTable[row6 >> 8] */
-extern void Obj0E48(void);              /*@ 08E6:0E48 */ /* clears the object marks (src/E08E6.C) */
+extern void FinishDeferredHits(void);              /*@ 08E6:0E48 */ /* clears the object marks (src/E08E6.C) */
 extern int ClampOrWrap(int value, int low, int high, int invert); /*@ 082C:0AB4 */
 extern signed char gInFrontRank[];          /*@ ds:5717 */ /* a per-member byte: nonzero when the member
                                                      can use melee effects (read by 0EF3:0E1B) */
 extern signed char gNeighbourCellDeltas[];        /*@ ds:5733 */ /* four cell deltas walked by 0EF3:17D8 */
 extern char gMaze[];                    /*@ ds:B894 */ /* nine-byte records; +4 (ds:B898) is the
                                                        object's type byte tested by 0EF3:0A3F */
-extern signed char g1A2B[];             /*@ ds:1A2B */ /* per-page sprite base (src/E0DE8.C) */
+extern signed char gViewRelativePos[];             /*@ ds:1A2B */ /* per-page sprite base (src/E0DE8.C) */
 extern signed char gBurningHandsShapes[];    /*@ ds:571B */ /* a per-member icon index; a negative value
                                                            picks the 004D region drawing (0EF3:0F99) */
 extern int gIconX5721[];                /*@ ds:5721 */ /* the icon's x, per member (0EF3:0F99) */
@@ -227,9 +227,9 @@ extern signed char gIconY572D[];        /*@ ds:572D */ /* the icon's y, per memb
 extern void far *gIconTable[];          /*@ ds:FB34 */ /* far sprite pointers indexed by an icon
                                                            magnitude; entry 1 is ds:FB38 (src/EOV2.C
                                                            names the entries gThrownIcon0..2 singly) */
-extern void DrawRegion000F(int mode, void far *src, int x, int y, int region); /*@ 082C:063B */
-extern void DrawRegion004D(int mode, void far *src, int x, int y, int region); /*@ 082C:0681 */
-extern void Obj16D6(int key, char count, char sides, char bonus, char flag); /*@ 08E6:16D6 */
+extern void DrawShapeClipped(int mode, void far *src, int x, int y, int region); /*@ 082C:063B */
+extern void DrawShapeClippedFlipped(int mode, void far *src, int x, int y, int region); /*@ 082C:0681 */
+extern void DamageNearRowMonsters(int key, char count, char sides, char bonus, char flag); /*@ 08E6:16D6 */
 extern void ClipRect(int x1, int y1, int x2, int y2, int width, int height, int extra1, int extra2); /*@ 19F3:000E */
 
 extern char gStrCastOnWhich[];                /*@ ds:57A3 */
@@ -332,11 +332,11 @@ extern int StepCell(int cell, int dir); /*@ 0D1C:00DA */
 extern int GetCurrentItem(void); /*@ 0D1C:02DC */
 extern int MemberIs(int who, int mask); /*@ 0D1C:0670 */
 extern int TakeItemFromSlot(int who, int row); /*@ 0BD2:0106 */
-extern int Obj15B4(char who, int value); /*@ 08E6:15B4 */
+extern int FindMeleeTarget(char who, int value); /*@ 08E6:15B4 */
 extern void DamageObject(struct Monster far *obj, int n); /*@ 08E6:0FBE */
 extern void ClearObjectType(struct Monster far *obj); /*@ 08E6:000B */
 extern void ListMonstersAtCell(int far *list, int key, int field, char flags, char scanAll, char scanFiltered); /*@ 08E6:17FD */
-extern int Obj106B(struct Monster far *obj, int who); /*@ 08E6:106B */
+extern int RollMonsterToHit(struct Monster far *obj, int who); /*@ 08E6:106B */
 extern void SetMouseItem(int n); /*@ 07A9:010C */
 extern void MovePointerBy(int dx, int dy); /*@ 1BF3:00A8 */
 extern int sprintf(char far *buf, char far *fmt, ...); /*@ 0000:57AE */
@@ -348,7 +348,7 @@ extern void BuildList5(void); /*@ 0CF7:0211 */
 extern signed char gModeRampIndex[];      /*@ ds:55E6 */ /* an animation index per Tgt.m08 */
 extern void far *gAnimTable[];   /*@ ds:5615 */ /* far-pointer animation templates, indexed by
                                                    0EF3:00CD and passed to 0EF3:2A53 */
-extern int gAngleA9C8[];         /*@ ds:A9C8 */ /* 18 words searched for the target cell by 0EF3:00CD
+extern int gViewCellIds[];         /*@ ds:A9C8 */ /* 18 words searched for the target cell by 0EF3:00CD
                                                    (the heading table of EOV4.C) */
 extern signed char gDepthFirstDrawSlot[];      /*@ ds:55EF */ /* DrawViewSlots start slot per object index */
 extern unsigned char gFlashPassMask[]; /*@ ds:5621 */ /* eight per-pass bytes */
@@ -369,8 +369,8 @@ extern unsigned long gFlashFrame2[];/*@ ds:5677 */ /* per-frame long masks for 0
 extern unsigned char gFlashShift2[];/*@ ds:56B7 */ /* per-frame shift for 0EF3:06E7 */
 extern unsigned char gFlashX2[];    /*@ ds:56C7 */ /* per-frame x in pixels for 0EF3:06E7 */
 extern unsigned char gFlashY2[];    /*@ ds:56D7 */ /* per-frame y in pixels for 0EF3:06E7 */
-extern signed char g1A09[];      /*@ ds:1A09 */ /* per-slot object index (EOV4.C) */
-extern int g1D61[];              /*@ ds:1D61 */ /* per-slot, per-part x table (EOV4.C) */
+extern signed char gViewSlotRow[];      /*@ ds:1A09 */ /* per-slot object index (EOV4.C) */
+extern int gViewPosX[];              /*@ ds:1D61 */ /* per-slot, per-part x table (EOV4.C) */
 extern int gStatusLine;                /*@ ds:8115 */ /* nonzero while a status line is up (E082C.C) */
 extern int gBurstOriginX;                /*@ ds:DD18 */ /* the animation's origin x, written here and read by
                                                    0EF3:2A53 */
@@ -461,7 +461,7 @@ extern int gBurstMaskPixel;                /*@ ds:FC72 */ /* the handle gGetPixe
    entry and entry 0x0F, then computes the slot's view span. It clears the record's +0 byte,
    redraws a full view frame, sets the status line flag, blanks the view box through the gFillRect
    hook, draws the view slots from gDepthFirstDrawSlot, computes the span again, hides the pointer, sets the
-   animation origin (ds:DD18 from g1D61, ds:DD1A = 0x30), plays sound 0x23 and runs the effect
+   animation origin (ds:DD18 from gViewPosX, ds:DD1A = 0x30), plays sound 0x23 and runs the effect
    animation 0EF3:2A53 with the template gAnimTable[gModeRampIndex[m08]] chosen per object index. Called by
    the melee attacker 0EF3:0A3F on a hit with the record's flag bit 0x40, and by 1414:0285. */
 /*@ 0EF3:00CD */ void AnimateEffect(struct Tgt far *rec)
@@ -478,14 +478,14 @@ extern int gBurstMaskPixel;                /*@ ds:FC72 */ /* the handle gGetPixe
     index = gModeRampIndex[rec->m08];
     anim = gAnimTable[index];
     for (slot = 0; slot < 0x12; slot++) {
-        if (gAngleA9C8[slot] == cell)
+        if (gViewCellIds[slot] == cell)
             break;
     }
     if (slot > 0x11)
         return;
     if (slot == 0xF)
         return;
-    objIndex = g1A09[slot];
+    objIndex = gViewSlotRow[slot];
     ComputeViewSpan(slot, &left, &right, 5);
     if (right < left)
         return;
@@ -498,7 +498,7 @@ extern int gBurstMaskPixel;                /*@ ds:FC72 */ /* the handle gGetPixe
     gStatusLine = 0;
     ComputeViewSpan(slot, &left, &right, 5);
     LockHidePointer();
-    gBurstOriginX = g1D61[(slot * 5 + 4) * 2] + 0x58;
+    gBurstOriginX = gViewPosX[(slot * 5 + 4) * 2] + 0x58;
     gBurstOriginY = 0x30;
     PlaySound(0x23);
     switch (objIndex) {
@@ -866,7 +866,7 @@ extern int gBurstMaskPixel;                /*@ ds:FC72 */ /* the handle gGetPixe
    `count`d`sides`+`bonus` times `n`, halve it on a successful save (flag 8), and damage the object
    unless 0D1C:0BAB rejects it. Otherwise, when the cell is the party cell and the member index is
    negative (or flag 0x10 is set), either walk the six members (flag 2) or pick one from the
-   g1A2B table and damage it. Finally, when anything was hit and the record's +0xC has bit 0x40,
+   gViewRelativePos table and damage it. Finally, when anything was hit and the record's +0xC has bit 0x40,
    run the animation 0EF3:00CD; a record whose +8 is 5 clears the hit. Returns the hit flag.
    The picking branch keeps the `hit = 1` at the end of the chain, so its source is the negated
    form `if (m08 != 0 || (effectFlags & 2) == 0) { ... } else hit = 1;`, not `if (m08 == 0 && (effectFlags & 2))`. */
@@ -910,7 +910,7 @@ extern int gBurstMaskPixel;                /*@ ds:FC72 */ /* the handle gGetPixe
             for (i = 0; i < 6; i++) {
                 if ((gChars[i].status & 1) == 0)
                     continue;
-                if (Obj106B(gMonsters, i) || !flag04) {
+                if (RollMonsterToHit(gMonsters, i) || !flag04) {
                     dmg = RollDice(count, sides, bonus) * n;
                     if (flag08)
                         dmg = HalveSaveDamageA(i, dmg);
@@ -920,13 +920,13 @@ extern int gBurstMaskPixel;                /*@ ds:FC72 */ /* the handle gGetPixe
             }
         } else {
             idx = rec->m06 & 3;
-            idx = g1A2B[gPartyDir * 4 + idx];
+            idx = gViewRelativePos[gPartyDir * 4 + idx];
             if (idx > 2 && (MemberIs(5, 1) || MemberIs(6, 1)) && RollDice(1, 2, -1))
                 i = idx + 2;
             else
                 i = idx;
             if (rec->m08 != 0 || (gChars[i].effectFlags & 2) == 0) {
-                if ((gChars[i].status & 1) && (Obj106B(gMonsters, i) || !flag04)) {
+                if ((gChars[i].status & 1) && (RollMonsterToHit(gMonsters, i) || !flag04)) {
                     dmg = RollDice(count, sides, bonus) * n;
                     if (flag08)
                         dmg = HalveSaveDamageA(i, dmg);
@@ -981,7 +981,7 @@ extern int gBurstMaskPixel;                /*@ ds:FC72 */ /* the handle gGetPixe
 
     if (gInFrontRank[gPanelMember] != 0) {
         target = StepCell(gPartyCell, gPartyDir);
-        obj = Obj15B4(gPanelMember, target);
+        obj = FindMeleeTarget(gPanelMember, target);
         if (obj != -1) {
             if (!RollToHit(gPanelMember, obj, 0, 1))
                 return;
@@ -1041,15 +1041,15 @@ extern int gBurstMaskPixel;                /*@ ds:FC72 */ /* the handle gGetPixe
 
     for (i = 0; i < 6; i++) {
         if (gBurningHandsShapes[i] < 0)
-            DrawRegion004D(0, gIconTable[gBurningHandsShapes[i] < 0 ? -gBurningHandsShapes[i] : gBurningHandsShapes[i]],
+            DrawShapeClippedFlipped(0, gIconTable[gBurningHandsShapes[i] < 0 ? -gBurningHandsShapes[i] : gBurningHandsShapes[i]],
                            gIconX5721[i], gIconY572D[i], 0);
         else
-            DrawRegion000F(0, gIconTable[gBurningHandsShapes[i]], gIconX5721[i], gIconY572D[i], 0);
+            DrawShapeClipped(0, gIconTable[gBurningHandsShapes[i]], gIconX5721[i], gIconY572D[i], 0);
     }
     WaitTicks(2);
     value = GetClassSlot1Value(gPanelMember);
     target = StepCell(gPartyCell, gPartyDir);
-    Obj16D6(target, 1, 3, value << 1, 1);
+    DamageNearRowMonsters(target, 1, 3, value << 1, 1);
     gViewDirty = 1;
 }
 
@@ -1432,7 +1432,7 @@ void AnimateConeOfCold(int count, int spread, int step, int cycle, int divisor,
                        int far *frameTable);
 /* 0EF3:18D8: the cone of cold. It reads the panel member's class-slot 1 value, blanks the view
    (gStatusLine = 2, gFillRect, DrawViewSlots(7), gStatusLine = 0), hides the pointer, runs the cone drawing
-   0EF3:2EBC(0x96, 0x32, 0xa, 1, 0x64, ds:5737) and shows it again. It sets gF518 and, for each of
+   0EF3:2EBC(0x96, 0x32, 0xa, 1, 0x64, ds:5737) and shows it again. It sets gDeferMonsterHits and, for each of
    the seven rows of the per-page table gConeOfColdCells[gPartyDir], lists the objects whose cell is the party cell
    plus the row's delta (masked to 0x3FF) with ListMonstersAtCell and damages each that 0D1C:0BAB does not
    reject by RollDice(classSlot, 4, classSlot) through 08E6:0FBE, then runs 08E6:0E48. Reached
@@ -1456,7 +1456,7 @@ void AnimateConeOfCold(int count, int spread, int step, int cycle, int divisor,
     AnimateConeOfCold(0x96, 0x32, 0x0A, 1, 0x64, gConeOfColdColours);
     ShowPointerZone();
     table = gConeOfColdCells[gPartyDir];
-    gF518 = 1;
+    gDeferMonsterHits = 1;
     for (row = 0; row < 7; row++, table++) {
         cell = (gPartyCell + *table) & 0x3FF;
         ListMonstersAtCell((int far *)buffer, cell, 4, gPartyDir, 1, 1);
@@ -1468,7 +1468,7 @@ void AnimateConeOfCold(int count, int spread, int step, int cycle, int divisor,
             list++;
         }
     }
-    Obj0E48();
+    FinishDeferredHits();
 }
 
 /* 0EF3:1A0F: add the panel member's effect record of mode 7 through 0EF3:097B. */
@@ -2125,7 +2125,7 @@ void DrawSpellPanel(void);
 }
 
 /* 0EF3:2929: the spell panel's list callback. It reads the action key (the node's +0x38): key 6
-   walks the member's six spell slots once, stepping gSpellPanelSlot by -1 or 1 (the g5E1C button bits 0 and
+   walks the member's six spell slots once, stepping gSpellPanelSlot by -1 or 1 (the gLeftButtonMode button bits 0 and
    7) and clamping or wrapping it into 0..6 (ClampOrWrap with its last argument 1) until it lands
    on a slot over zero, then runs the panel body
    0EF3:2295; any other key accepts the slot only when its value is over zero or the key is 7,
@@ -2155,7 +2155,7 @@ void DrawSpellPanel(void);
         }
         if (found == 0)
             return node->m04;
-        step = (g5E1C & 0x81) ? -1 : 1;
+        step = (gLeftButtonMode & 0x81) ? -1 : 1;
         do {
             gSpellPanelSlot += step;
             gSpellPanelSlot = ClampOrWrap(gSpellPanelSlot, 0, 6, 1);
