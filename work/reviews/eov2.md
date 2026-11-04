@@ -1,7 +1,7 @@
 # Review: eov2
 
-Reviewer: rev-haiku
-Commit reviewed: 3b0319b (main; round 4 reviewed 3b0319b, round 3 c2b1de9, round 2 e8be50a, round 1 4649fc4)
+Reviewer: p6-rev-9
+Commit reviewed: 5b96f5b (main; round P6 reviewed 5b96f5bd1c6908b219b153bab4238e50148b8421, round 4 reviewed 3b0319b, round 3 c2b1de9, round 2 e8be50a, round 1 4649fc4)
 
 Playbook 70. Judge what a matching file can still get wrong: names, types, comments, structure.
 The matcher already proved the bytes; do not re-prove them, read for meaning.
@@ -10,6 +10,28 @@ The matcher already proved the bytes; do not re-prove them, read for meaning.
 
 Each finding is a checkbox. `must-fix` blocks `make review-pass` until a decompiler ticks it off
 (with the commit that fixes it); `should` and `note` do not block.
+
+### Round P6 (2026-11-04), commit 5b96f5bd1c6908b219b153bab4238e50148b8421
+
+Playbook 70, later round. Judged: the Phase 6 diff since 3b0319b (`git diff 3b0319b HEAD -- src/EOV2.C re/symbols.toml re/globals.toml`): the shared EOB.H include, the renamed globals and callees, the CharRec.portrait field and the comments rewritten to match. `make match FILE=src/EOV2.C` exits 0, 11 of 11 (3332 bytes); `make readability UNIT=eov2` 0 findings; `make names UNIT=eov2` 0 placeholder functions, 0 globals and the two ItemRec fields below. Round 4 had no must-fix; the two round 3 must-fix ticks stay. Checked each new name against re/renames.toml, re/fields.toml, re/globals.toml, the callers in src/ and the driver source in src/drivers/: the draw-page, font, palette, door and monster names are backed. The gCgaMapDefault description, the gTeleporterCells name and the gGetPixel comment are not.
+
+- [ ] must-fix src/EOV2.C:9 and :15-17 (header): gCgaMapDefault (ds:113F) is not "the DGROUP image buffer the art loads land in", and the cells are not cut "from gCgaMapDefault". ds:113F holds 32 bytes of values 0..3 (00 02 02 01 01 00 01 02 ...), a CGA colour map; re/globals.toml names it "a 32-byte CGA colour map" and says the other drivers ignore it. The art pages go into page kind 3 through LoadPacked, and GetSpriteCell cuts from the page after the draw page (CellSource at src/drivers/MCGA.ASM:1487-1499); its fifth argument is the map, which MCGA does not use (src/drivers/MCGA.ASM:1522-1525) and CGA uses only for its dither tables (src/drivers/CGA.ASM:1666-1671). Say that gCgaMapDefault is the colour map LoadScreenImage passes as its extra argument (src/E082C.C:301-314, :329), and that the cells come from the page after the draw page. The same wrong source is repeated at :72 (gDecorateCellRects), :73 (gTeleporterCells), :175-177 (SetPointerShape), :301-303 (LoadDecorateIcons) and :330 (LoadIntroScreen); fix those too.
+- [ ] must-fix src/EOV2.C:73 and :303 (gTeleporterCells): the name claims the six cells are teleporters. Their only reader, DrawSlotTeleporter (ovl4:1D20), says "Purpose unknown: what the object is and what the 20AB:0000 bytes mean" (src/EOV4.C:959-966); the 0x34 heading is not established as a teleporter anywhere in src/ or the whitepaper. The rename log only says "nothing ties them to INTRO", which does not tie them to a teleporter either. Name what is known (for example the six animated-wall cells the 0x34 handler draws) or keep a placeholder with Purpose unknown, and say so.
+- [ ] must-fix src/EOV2.C:133 and :331-332 (gGetPixel): "saves the pixels under (x, y) and returns a handle" and "a saved-pixel handle used as a colour" are wrong. GetPixel returns the colour of the draw page's pixel at (x, y), 0 off the screen (src/drivers/MCGA.ASM:1132-1165), which is why LoadIntroScreen can pass the result to gFillRect as its colour (src/E082C.C:64). Say that it reads the pixel's colour.
+
+- [ ] should the cross-file line cites in the changed lines are stale after the Phase 6 edits: :70-71 cites this file's loop at :366-368 (now :323-325); :73 cites src/EOV4.C:955 (now :952); :74 cites src/E0EF3.C:356, :696, :707, :771 and :773 (now :245, :587, :598, :663 and :665); :85 cites src/EOV2.C:214 (now :181); :105 cites src/E0ACD.C:911 (now :959); :111-112 cites src/EOV3.C:146 and :138 and src/EOV4.C:756 (now EOV3.C:111 and :110, EOV4.C:689); :114 cites src/EOV3.C:14 and :230-241 (now :15 and :188-190); :333 cites src/E082C.C:317 (now :309 and :314); :353-354 cites src/E0ACD.C:909-918 (now :959-965). Use the addresses instead of another file's lines.
+- [ ] should src/EOV2.C:112 (gDoorShapes): "src/EOV3.C:138 declares them longs" is no longer true; src/EOV3.C:110 declares `struct SlotSize far *gDoorShapes[]`, as does src/EOV4.C:689. This file's `long` is the same width; use the far-pointer type to match, or say why it stays long.
+- [ ] should src/EOV2.C:120: the block comment calls the 2069 map "of the item and DECORATE art"; 2069 is the map passed with PLAYFLD (src/E0ACD.C:972, src/EOV3.C:913) and used for the DECORATE cells here. Say "the item, PLAYFLD and DECORATE art" or just "the art the overlay slices".
+
+- [ ] note src/EOV2.C:24-28 and :54 (struct ItemRec): the 14-byte records at ds:8DD0 are `struct ItemRecord` in every other unit and in src/EOB.H, with real field names (`key` at +06, not `word6`; `b0` and `b8` are the two fields `make names UNIT=eov2` still lists). The P6 pass did not merge this copy; a later pass should use the header record.
+- [ ] note src/EOV2.C:278 (InitGameTables comment): it still says "allocates its buffer (gChars[i].buf)"; the field is now gChars[i].portrait and the comment above calls the 0x514-byte block a "scratch buffer", while the field is the character's picture buffer (src/EOB.H:104-105, src/E1547.C:332).
+- [ ] note src/EOV2.C:139 (LoadScreenImage): the second parameter is named `buf` here but `extra` (the colour map) in src/E082C.C:301; the other parameters are unnamed `a`, `b`, `c`. Use `extra`, `srcKind`, `dstKind`, `mode`.
+- [ ] note src/EOV2.C:127-132 (gGetSpriteCell): the fifth parameter is named `sheet`, but it is the colour map (`map` in src/drivers/CGA.ASM:1666, unused by MCGA, src/drivers/MCGA.ASM:1525). Rename it.
+- [ ] note other units still describe ds:113F as an overlay buffer (src/EOV5.C:187, :206; src/E082C.C:66), and re/globals.toml ds:F4BE still says gIntroCells and ds:FC70 says gStatusLine; the whole-tree pass should follow this file's gCgaMapDefault reading.
+- [ ] note the round 4 gIconTable shoulds remain: src/EOV2.C:108 cites src/E1414.C:106 and :141-145, now :37 and :70-76, and src/E1547.C:128, now :75. The address 1414:0000 is right.
+- [ ] note the header still says "several names are placeholders" (src/EOV2.C:18); `make names UNIT=eov2` now reports 0 placeholder functions, 0 globals and the two ItemRec fields above.
+
+Round P6 result: three must-fix items open, all in changed lines: the gCgaMapDefault description (and its repeated "cut from" claims), the gTeleporterCells name and the gGetPixel comment. Shoulds are stale line cites, the gDoorShapes type and the 2069 map wording. Nothing escalated: no matcher, spec or pin question.
 
 ### Round 4 (rev-haiku, at 3b0319b)
 
