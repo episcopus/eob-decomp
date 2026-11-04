@@ -78,9 +78,29 @@ the findings below are empty or each has an owner; the reviewer signs each subsy
   by kind. Renamed: `LoadFont` (1A47:0005), `SetFont` (1A47:0169), `TextWidth` (1A47:018E), `gCurFont` (ds:FE4E),
   `MemberIs` (0D1C:0670), `DrawShape` (1A29:000F), `gDrawShape` (ds:80C2); fields `CharRec.status`
   (+01), `CharRec.hp` (+1B), `CharRec.maxHp` (+1C).
+- 2026-11-03, the shared vocabulary, first pass:
+  - every named offset of `struct CharRec` has one name in all 16 files (abilities, `armorClass`,
+    `race`, `classIndex`, `alignment`, `food`, `levels`, `experience`, `portrait`, `spellBook`,
+    `items`, `timers`, `effectFlags`, `lastDamage`, `lastAction`);
+  - the maze: `gMaze` (ds:B894, nine bytes per cell: four walls, the monster count, the item list,
+    the script), `gMazeItems`, `gWallTypeFlags`, `gDirCellOffset`, `gOppositeSide`, `StepCell`,
+    `StepIfOpen`, `RunCellScript`, `gScriptCell`;
+  - the party: `gPartyDir`, `MoveParty`, `gStepCount`, the movement keys `MoveForward`,
+    `MoveBackward`, `MoveLeft`, `MoveRight`, `TurnLeft`, `TurnRight`;
+  - the panel: `gPanelMode`, `gInventoryMember`; the 6x6 font `gFont6x6`.
 
 ## Findings
 
+- Settled 2026-11-03: gPartyCell is the party's map cell. E0ACD and E122E had read it as a sound
+  volume (`SetSoundVolume`), from the movement keys' table walk; 122E:0001 moves the party and runs
+  the cells' scripts, and the "volume message" is a carriage return.
+- `gEFB2` is the floor position (0..3) PickListItem 0ACD:0BA6 last took an item from; turning and
+  moving reset it to 0xFF. Its old comment called it the sound page.
+- `gF51A`: E0D1C reads it as an index into the inventory's 27 slots, E0ACD as an action-menu row
+  0..2 with 0x10 for the own list. Not settled.
+- `rename.replace_word` treats an apostrophe in a comment as the start of a character literal, so
+  a rename can miss a name between two apostrophes ("the character's ... LevelUpSlot's"); `make
+  names` and a grep for the old name catch it.
 - `struct Region` +08 to +0E: four files call the words `attr1`, `attr2`, `column`, `row`, three call
   them `saved0` to `saved3`; which is right has not been read yet.
 - ds:8DD2 is declared as `struct Entry14` (10 files) and `struct Item14` (1), and ds:8DD0 as

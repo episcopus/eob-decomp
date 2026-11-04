@@ -122,7 +122,7 @@ struct CharRec {                /* the 243-byte character records at ds:F580 (sr
     signed char classIndex;     /* +20: an index into the per-class tables (g1231, 0A72:007B) */
     char pad21[0x23 - 0x21];
     unsigned char food;         /* +23: the food value EatFood clamps (src/E0ACD.C) */
-    signed char classLevel[3];  /* +24: the level in each class slot (src/E0A72.C) */
+    signed char levels[3];      /* +24: the level in each class slot (src/E0A72.C) */
     char pad27[0x37 - 0x27];
     signed char known[30];      /* +37: the mage's spell slots: a spell number, negative while it is
                                    still to be memorised (src/EOV6.C) */
@@ -155,12 +155,12 @@ extern void SelectCharacter(int who); /*@ 0D1C:003F */
 extern void BuildList1(void); /*@ 0CF7:0028 */
 extern void RearmCharEffects(void); /*@ 1414:0B2E */
 extern char gF542[]; /*@ ds:F542 */
-extern char gFB44; /*@ ds:FB44 */
+extern char gPanelMode; /*@ ds:FB44 */
 extern char gFlag; /*@ ds:F3B9 */
 extern int gFlags849E; /*@ ds:849E */
 extern void far *gCurFont; /*@ ds:FE4E */
 extern void far *gFont8x8; /*@ ds:FE5A */
-extern void far *gA9C0; /*@ ds:A9C0 */
+extern void far *gFont6x6; /*@ ds:A9C0 */
 extern void far *gSegDF4E; /*@ ds:DF4E */
 extern int gTextRegion; /*@ ds:811F */
 extern int gFD98; /*@ ds:FD98 */      /* set when a party member cannot be picked (SelectPartyMember
@@ -519,7 +519,7 @@ int AskYesNo(int message);
 
         slot = FindClassSlot(4, gChars[sel].classIndex);
         if (slot != -1) {
-            if (gChars[sel].classLevel[slot] <= 8) {
+            if (gChars[sel].levels[slot] <= 8) {
                 ShowMessage(0x18);
                 sel = -1;
                 return sel;
@@ -536,7 +536,7 @@ int AskYesNo(int message);
     }
     if (!gMouseDisabled)
         cur = -1;
-    SetFont(gA9C0);
+    SetFont(gFont6x6);
     while (sel == -2) {
         key = DispatchKeyWait(list);
         DrawRowList(cur);
@@ -578,7 +578,7 @@ int AskYesNo(int message);
             WaitFrames(5);
             DrawListNode(list, 0, 0, 1);
             sel = -1;
-            SetFont(gA9C0);
+            SetFont(gFont6x6);
             break;
         case 0x8013:
         case 0x8014:
@@ -607,7 +607,7 @@ int AskYesNo(int message);
 
             slot = FindClassSlot(4, gChars[sel].classIndex);
             if (slot != -1) {
-                if (gChars[sel].classLevel[slot] <= 8) {
+                if (gChars[sel].levels[slot] <= 8) {
                     ShowMessage(0x18);
                     sel = -1;
                 }
@@ -690,7 +690,7 @@ int AskYesNo(int message);
     if (pray) {
         slot = FindClassSlot(2, gChars[who].classIndex);
         if (slot != -1) {
-            levelRow = gChars[who].classLevel[slot] - 1;
+            levelRow = gChars[who].levels[slot] - 1;
             for (i = 0; i < 5; i++) {
                 if (allowance[i] = g62FE[levelRow * 5 + i])
                     allowance[i] += g6330[wisdom * 5 + i];
@@ -699,7 +699,7 @@ int AskYesNo(int message);
         } else {
             slot = FindClassSlot(4, gChars[who].classIndex);
             if (slot != -1) {
-                levelRow = gChars[who].classLevel[slot];
+                levelRow = gChars[who].levels[slot];
                 levelRow = levelRow < 0 ? 0 : levelRow;
                 for (i = 0; i < 5; i++)
                     allowance[i] = g6358[levelRow * 5 + i];
@@ -710,7 +710,7 @@ int AskYesNo(int message);
     } else {
         slot = FindClassSlot(1, gChars[who].classIndex);
         if (slot != -1) {
-            levelRow = gChars[who].classLevel[slot] - 1;
+            levelRow = gChars[who].levels[slot] - 1;
             for (i = 0; i < 5; i++)
                 allowance[i] = g6394[levelRow * 5 + i];
             mask = gChars[who].spellBook;
@@ -884,7 +884,7 @@ int AskYesNo(int message);
         }
         FreeFarList(list);
         DrawRowList(-1);
-        SetFont(gA9C0);
+        SetFont(gFont6x6);
         RedrawMember(who);
         SetFont(gFont8x8);
         SpendSpellSlot(who, cleric);
@@ -1250,7 +1250,7 @@ int AskYesNo(int message);
     int i;
     int nextMenu;
 
-    if (gFB44)
+    if (gPanelMode)
         Action01E3(gF542);
     if (gFlag)
         RedrawPartyPanel((struct ActRec far *)gF542);
@@ -1348,7 +1348,7 @@ int AskYesNo(int message);
                 reloadInvent = 1;
                 LoadScreenImage("INVENT", gOverlayBuf, 5, 3, 2);
                 gSaveRect(0, 0x78, 0x16, 0x18, (char far *)gSegDF4E + 0x4e20);
-                SetFont(gA9C0);
+                SetFont(gFont6x6);
                 RedrawCharacters();
                 SetFont(gFont8x8);
                 LockShowPointer();
@@ -1402,7 +1402,7 @@ int AskYesNo(int message);
                 reloadInvent = 1;
                 LockHidePointer();
                 DrawOptionField();
-                SetFont(gA9C0);
+                SetFont(gFont6x6);
                 DrawViewFrame(1);
                 if (LoadGame() == 0) {
                     SetFont(gFont8x8);

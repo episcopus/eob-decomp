@@ -41,12 +41,11 @@ struct ItemRec {            /* the 14-byte ITEM.DAT records, at ds:8DD0 */
 };
 
 struct CharRec {            /* 243-byte character records at ds:F580 (src/E0A72.C) */
-    unsigned char index;    /* +00: the record's own index, written here by InitGameTables; no unit
-                               read so far reads +00 as an index (src/E122E.C:119-121 treats +00 as
-                               padding with the status byte at +01) */
+    unsigned char index;    /* +00: the record's own member index, written here by InitGameTables
+                               (src/E0EF3.C reads it as the member's index) */
     char pad01[0x32];
-    void far *buf;          /* +33: the 0x514-byte scratch buffer MemAlloc'd per record (src/EOV5.C:36
-                               names it the character's picture buffer) */
+    void far *portrait;     /* +33: the member's picture, a 0x514-byte buffer MemAlloc'd per
+                               record (src/E1547.C draws it as the portrait) */
     char pad37[0xF3 - 0x37];
 };
 
@@ -135,7 +134,7 @@ extern int gTextHeight; /*@ ds:FE60 */
 extern int gTextWidth; /*@ ds:FE62 */
 extern int gTextLeft; /*@ ds:FE64 */
 extern int gTextTop; /*@ ds:FE66 */
-extern char far *gA9C0; /*@ ds:A9C0 */
+extern char far *gFont6x6; /*@ ds:A9C0 */
 extern char gF57E; /*@ ds:F57E */ /* a UI colour (src/E0D1C.C:46), set by SetUiPalette */
 extern char gFB4C; /*@ ds:FB4C */ /* a UI colour (src/E0D1C.C:47), set by SetUiPalette */
 extern char gF53A; /*@ ds:F53A */ /* a UI colour (src/E0D1C.C:48), set by SetUiPalette */
@@ -336,7 +335,7 @@ extern void FileClose(int handle); /*@ 1C0E:03BB */
         gRectKinds[i] = 0;
     for (i = 0; i < 6; i++) {
         gChars[i].index = i;
-        gChars[i].buf = MemAlloc(0x514L, 0);
+        gChars[i].portrait = MemAlloc(0x514L, 0);
     }
 }
 
@@ -397,7 +396,7 @@ extern void FileClose(int handle); /*@ 1C0E:03BB */
    shows the loaded map and the inventory. On failure it prints "Unable to load your saved game!",
    clears gA998 and redraws the panel to wait again. Entry 1 sets gA998 to 0, selects the 8x8 font
    (SetFont with gFont8x8, the Font8.fnt loaded at src/E07C8.C:376, src/E1C0E.C:57) and runs
-   RunCharacterPanel (ovl0:28F9), then restores the 6x6 font (gA9C0, the FONT6.FNT loaded at
+   RunCharacterPanel (ovl0:28F9), then restores the 6x6 font (gFont6x6, the FONT6.FNT loaded at
    src/E07C8.C:377, src/EOV0.C:168, src/EOV3.C:42): the "Start a new party" entry [H]
    (docs/design/WHITEPAPER.md:137). Entry 2 shuts the game down with exit. Called by LoadItemData. */
 /*@ ovl2:0846 */ void LoadGamePanel(void)
@@ -430,7 +429,7 @@ extern void FileClose(int handle); /*@ 1C0E:03BB */
         case 1:
             SetFont(gFont8x8);
             RunCharacterPanel();
-            SetFont(gA9C0);
+            SetFont(gFont6x6);
             gA998 = 0;
             break;
         case 2:

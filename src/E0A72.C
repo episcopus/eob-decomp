@@ -4,7 +4,7 @@
    its fields and derives stats through the far-pointer and byte tables at ds:3406, ds:341E,
    ds:3424, ds:342A, ds:3430, ds:3435, ds:3439, ds:3453, ds:3458, ds:345C, ds:3474, ds:349E,
    ds:35BC, ds:35D4, ds:3610, ds:3614, ds:3618, ds:116E and the per-class hit dice tables ds:174B,
-   ds:175A, ds:1769 and the m17-indexed multiplier ds:1778. Called from the party, combat,
+   ds:175A, ds:1769 and the constitution-indexed multiplier ds:1778. Called from the party, combat,
    inventory and character-screen modules (0DE8, 0D1C, 0EF3, 08E6, 1547) and from overlays 0, 1
    and 6. The meaning of each field and table is not established, so most function names say what a
    function computes rather than what the game calls it. */
@@ -13,21 +13,21 @@
    this unit touches are named; everything else is padding. */
 struct CharRec {
     char pad00[0x0D];
-    signed char m0D;      /* +0D: the strength score, the base g3439/m0D and g345C/m0D of 0A72:00CF
+    signed char strength;      /* +0D: the strength score, the base g3439/strength and g345C/strength of 0A72:00CF
                              and 0A72:0128; E122E.C:364 indexes gForceDoorRoll by it and
                              E0BD2.C:0D2D sets it to 0x16 for a strength item */
     char pad0E;
-    signed char m0F;      /* +0F: the exceptional strength percentile: 0A72:00CF and 0A72:0128
+    signed char strengthPct;   /* +0F: the exceptional strength percentile: 0A72:00CF and 0A72:0128
                              compare it with {1, 51, 76, 91, 100}, and 100 prints as "00"
                              (FormatStrengthPercent) */
     char pad10[5];
-    signed char m15;      /* +15: one of the five further stat bytes drawn after the strength
-                             score (EOV0.C:442-444 formats m11, m13, m15, m17, m19); it indexes the
+    signed char dexterity;     /* +15: one of the five further stat bytes drawn after the strength
+                             score (EOV0.C:442-444 formats intelligence, wisdom, dexterity, constitution, charisma); it indexes the
                              per-stat tables ds:3474 (0A72:0181) and ds:349E (0A72:019D) */
     char pad16[0x0A];
-    signed char m20;      /* +20: an index into a class table, read by 0A72:0522 and 0DE8:0B45 */
+    signed char classIndex;    /* +20: an index into a class table, read by 0A72:0522 and 0DE8:0B45 */
     char pad21[3];
-    signed char m24[3];   /* +24: the three class-slot levels: LevelUpSlot increments m24[slot]
+    signed char levels[3];     /* +24: the three class-slot levels: LevelUpSlot increments levels[slot]
                              when a slot gains a level (E0DE8.C:650), E1547.C:570 reads it as
                              `slotValue` and E1547.C:573-574 prints it as the slot's level-like byte
                              (E1547.C:563-564), and 0A72:0522 reads element [0] */
@@ -58,7 +58,7 @@ extern signed char g116E[]; /*@ ds:116E */     /* per-class byte, read by 0A72:0
 extern signed char g174B[]; /*@ ds:174B */     /* hit dice sides for group A, per class index (0A72:01AE) */
 extern signed char g175A[]; /*@ ds:175A */     /* hit dice sides for group B, per class index (0A72:01AE) */
 extern signed char g1769[]; /*@ ds:1769 */     /* hit dice sides for group C, per class index (0A72:01AE) */
-extern signed char g1778[]; /*@ ds:1778 */     /* per-stat multiplier, indexed by the m17 byte minus 1 (0A72:01AE) */
+extern signed char g1778[]; /*@ ds:1778 */     /* per-stat multiplier, indexed by the constitution byte minus 1 (0A72:01AE) */
 extern char gTextBuf[]; /*@ ds:FC4E */         /* static buffer the formatting helpers write into */
 
 extern int far RollDice(char count, char sides, char bonus); /*@ 082C:0458 */
@@ -97,7 +97,7 @@ char GetClassSlotByte(char row, char slot); /*@ 0A72:0509 */
     return -1;
 }
 
-/* 0A72:00CF: the attacker's strength to-hit bonus. It starts from the base g3439[m0D] (+0D is the
+/* 0A72:00CF: the attacker's strength to-hit bonus. It starts from the base g3439[strength] (+0D is the
    strength score) and, only when the +0F percentile is nonzero, replaces it with g3435[i] for
    every i with +0F >= g3430[i] (so the last threshold that matches wins, and nothing is added or
    raised); when +0F is 0 the base is returned untouched. The evidence that +0D/+0F are a score and
@@ -110,10 +110,10 @@ char GetClassSlotByte(char row, char slot); /*@ 0A72:0509 */
     int value;
     int i;
 
-    value = g3439[gChars[who].m0D];
-    if (gChars[who].m0F != 0) {
+    value = g3439[gChars[who].strength];
+    if (gChars[who].strengthPct != 0) {
         for (i = 0; i < 5; i++) {
-            if (gChars[who].m0F >= g3430[i])
+            if (gChars[who].strengthPct >= g3430[i])
                 value = g3435[i];
         }
     }
@@ -130,10 +130,10 @@ char GetClassSlotByte(char row, char slot); /*@ 0A72:0509 */
     int value;
     int i;
 
-    value = g345C[gChars[who].m0D];
-    if (gChars[who].m0F != 0) {
+    value = g345C[gChars[who].strength];
+    if (gChars[who].strengthPct != 0) {
         for (i = 0; i < 5; i++) {
-            if (gChars[who].m0F >= g3453[i])
+            if (gChars[who].strengthPct >= g3453[i])
                 value = g3458[i];
         }
     }
@@ -145,16 +145,16 @@ char GetClassSlotByte(char row, char slot); /*@ 0A72:0509 */
    to the attack bonus when its `flag` is zero (GetStrengthToHitBonus is added otherwise, E0DE8.C:200-203). */
 /*@ 0A72:0181 */ int GetCharM15Value(int who)
 {
-    return g3474[gChars[who].m15];
+    return g3474[gChars[who].dexterity];
 }
 
-/* 0A72:019D: the word ds:349E[+15 stat byte] for the `m15` argument of a character record. It is
-   the base 0DE8:0D5E builds the armour class m1D from: 0DE8:0D5E does
-   `base = GetArmourClassBase(rec->m15);` and then `rec->m1D = base + 10;` (E0DE8.C:684-685),
+/* 0A72:019D: the word ds:349E[+15 stat byte] for the `dexterity` argument of a character record. It is
+   the base 0DE8:0D5E builds the armour class armorClass from: 0DE8:0D5E does
+   `base = GetArmourClassBase(rec->dexterity);` and then `rec->armorClass = base + 10;` (E0DE8.C:684-685),
    before the item modifiers and clamps. Called by 0DE8:0D5E, 0EF3:0F0B (which does
-   `base = GetArmourClassBase(gCurRec->m15)` and compares m1D with base + 6, E0EF3.C:1004-1005),
+   `base = GetArmourClassBase(gCurRec->dexterity)` and compares armorClass with base + 6, E0EF3.C:1004-1005),
    ovl0:135D EditStatField (`GetArmourClassBase(amount)` under `if (index == 3)`, EOV0.C:1002) and
-   ovl0:1BF2 RollCharacterStats (`GetArmourClassBase(scores[3])`, where scores[3] is stored as m15
+   ovl0:1BF2 RollCharacterStats (`GetArmourClassBase(scores[3])`, where scores[3] is stored as dexterity
    at EOV0.C:1103, EOV0.C:1106). */
 /*@ 0A72:019D */ int GetArmourClassBase(char m15)
 {
@@ -163,35 +163,35 @@ char GetClassSlotByte(char row, char slot); /*@ 0A72:0509 */
 
 /* 0A72:01AE: a random hit-point total for class `classIndex`. It rolls the three hit dice groups
    (RollDice(count, sides) for the class's dice sides g174B, g175A and g1769), then looks up the
-   per-stat multiplier g1778[m17 - 1] and adds multiplier * count for each group: the first group's
+   per-stat multiplier g1778[constitution - 1] and adds multiplier * count for each group: the first group's
    term is always added, while the second and third are added only when both their count and their
    sides are nonzero. The multiplier is capped at 2 while g174B[classIndex] < 10 (group A's dice are
    small); no reason for that cap is known from src/. Finally it divides by 3 when g1769 is
-   nonzero or by 2 when only g175A is nonzero. The counts are the three class-slot levels m24[0..2],
-   one die per level: RollCharacterStats calls RollHitPoints(m20, m17, m24[0], m24[1], m24[2]) for a
+   nonzero or by 2 when only g175A is nonzero. The counts are the three class-slot levels levels[0..2],
+   one die per level: RollCharacterStats calls RollHitPoints(classIndex, constitution, levels[0], levels[1], levels[2]) for a
    new character (EOV0.C:1107-1108), while LevelUpSlot calls it with one die for the single slot
-   that gained a level (E0DE8.C:652-656). `m17` is decremented in place and then reused to hold
+   that gained a level (E0DE8.C:652-656). `constitution` is decremented in place and then reused to hold
    the multiplier (a separate local does not match: the original shows `dec byte ptr [bp + 8]` at
-   0A72:01B2); `m17` is the character's +17 byte, an index into g54F6 (the caller 0DE8:0C82 passes
-   gChars[who].m17, E0DE8.C:652; E0DE8.C:23), and the evidence does not show it is a character
-   level. `classIndex` is a character's class index m20 (the caller 0DE8:0C82 passes LevelUpSlot's
-   `attr`, which AddExperience sets to gChars[who].m20, E0DE8.C:652 and :607, and overlay 0 pushes
+   0A72:01B2); `constitution` is the character's constitution (CharRec +17, which also indexes g54F6;
+   the caller 0DE8:0C82 passes gChars[who].constitution, E0DE8.C:652), whose hit point bonus per
+   die g1778 holds. `classIndex` is the character's class index, CharRec +20 (the caller 0DE8:0C82 passes LevelUpSlot's
+   `attr`, which AddExperience sets to gChars[who].classIndex, E0DE8.C:652 and :607, and overlay 0 pushes
    +20 at 1BF2:1E78). Called by 0DE8:0C82 and overlay 0 at 1BF2. */
-/*@ 0A72:01AE */ int RollHitPoints(char classIndex, char m17, char countA, char countB, char countC)
+/*@ 0A72:01AE */ int RollHitPoints(char classIndex, char constitution, char countA, char countB, char countC)
 {
     int total;
 
-    m17--;
+    constitution--;
     total = RollDice(countA, g174B[classIndex], 0) + RollDice(countB, g175A[classIndex], 0)
           + RollDice(countC, g1769[classIndex], 0);
-    m17 = g1778[m17];
-    if (m17 > 2 && g174B[classIndex] < 10)
-        m17 = 2;
-    total += m17 * countA;
+    constitution = g1778[constitution];
+    if (constitution > 2 && g174B[classIndex] < 10)
+        constitution = 2;
+    total += constitution * countA;
     if (countB != 0 && g175A[classIndex] != 0)
-        total += m17 * countB;
+        total += constitution * countB;
     if (countC != 0 && g1769[classIndex] != 0)
-        total += m17 * countC;
+        total += constitution * countC;
     if (g1769[classIndex] != 0)
         total /= 3;
     else if (g175A[classIndex] != 0)
@@ -202,21 +202,21 @@ char GetClassSlotByte(char row, char slot); /*@ 0A72:0509 */
 /* 0A72:02B3: the maximum of the same three hit dice groups for class `classIndex`: countA *
    g174B[classIndex] + countB * g175A[classIndex] + countC * g1769[classIndex], plus the
    per-stat multiplier term. The same divide-by-3-or-2 as 0A72:01AE. Called by overlay 0 at 135D,
-   which pushes gChars[gDCB0].m20 as `classIndex` (135D:14BE) and gChars[gDCB0].m17 as `m17`. */
-/*@ 0A72:02B3 */ int MaxHitPoints(char classIndex, char m17, char countA, char countB, char countC)
+   which pushes gChars[gDCB0].classIndex as `classIndex` (135D:14BE) and gChars[gDCB0].constitution as `constitution`. */
+/*@ 0A72:02B3 */ int MaxHitPoints(char classIndex, char constitution, char countA, char countB, char countC)
 {
     int total;
 
-    m17--;
+    constitution--;
     total = countA * g174B[classIndex] + countB * g175A[classIndex] + countC * g1769[classIndex];
-    m17 = g1778[m17];
-    if (m17 > 2 && g174B[classIndex] < 10)
-        m17 = 2;
-    total += m17 * countA;
+    constitution = g1778[constitution];
+    if (constitution > 2 && g174B[classIndex] < 10)
+        constitution = 2;
+    total += constitution * countA;
     if (countB != 0 && g175A[classIndex] != 0)
-        total += m17 * countB;
+        total += constitution * countB;
     if (countC != 0 && g1769[classIndex] != 0)
-        total += m17 * countC;
+        total += constitution * countC;
     if (g1769[classIndex] != 0)
         total /= 3;
     else if (g175A[classIndex] != 0)
@@ -226,22 +226,22 @@ char GetClassSlotByte(char row, char slot); /*@ 0A72:0509 */
 
 /* 0A72:03A4: the minimum of the same three hit dice groups for class `classIndex`: countA + countB +
    countC (one per die), plus the per-stat multiplier term, the same divide-by-3-or-2, and finally
-   clamped to at least 1. Called by overlay 0 at 135D, which pushes gChars[gDCB0].m20 as
-   `classIndex` (135D:1514) and gChars[gDCB0].m17 as `m17`. */
-/*@ 0A72:03A4 */ int MinHitPoints(char classIndex, char m17, char countA, char countB, char countC)
+   clamped to at least 1. Called by overlay 0 at 135D, which pushes gChars[gDCB0].classIndex as
+   `classIndex` (135D:1514) and gChars[gDCB0].constitution as `constitution`. */
+/*@ 0A72:03A4 */ int MinHitPoints(char classIndex, char constitution, char countA, char countB, char countC)
 {
     int total;
 
-    m17--;
+    constitution--;
     total = countA + countB + countC;
-    m17 = g1778[m17];
-    if (m17 > 2 && g174B[classIndex] < 10)
-        m17 = 2;
-    total += m17 * countA;
+    constitution = g1778[constitution];
+    if (constitution > 2 && g174B[classIndex] < 10)
+        constitution = 2;
+    total += constitution * countA;
     if (countB != 0 && g175A[classIndex] != 0)
-        total += m17 * countB;
+        total += constitution * countB;
     if (countC != 0 && g1769[classIndex] != 0)
-        total += m17 * countC;
+        total += constitution * countC;
     if (g1769[classIndex] != 0)
         total /= 3;
     else if (g175A[classIndex] != 0)
@@ -257,7 +257,7 @@ char GetClassSlotByte(char row, char slot); /*@ 0A72:0509 */
    100 is written as 0, which a port must keep (inferred: the 18/100 form cannot be drawn). The
    "%d/%02d" and "%d" formats are the literals at ds:36A4 and ds:36AC. Called by 1547:0991 (drawn
    on the STRENGTH row of the CHARACTER INFO block, E1547.C:554), ovl0:065B and ovl0:135D (both
-   pass CharRec m0D, m0F). Inferred (not from a source in src/): 100 prints as 0 because %02d would
+   pass CharRec strength, strengthPct). Inferred (not from a source in src/): 100 prints as 0 because %02d would
    widen the field to three digits, and the screen field is two digits wide; the only src/ caller
    (E1547.C:554) gives the x position, not the width. */
 /*@ 0A72:0468 */ char *FormatStrengthPercent(char score, char percent)
@@ -276,7 +276,7 @@ char GetClassSlotByte(char row, char slot); /*@ 0A72:0509 */
    g35BC[index], where index is the g35D4 byte at row `row`, slot `slot` (the class's slot index),
    or -1 when that byte is -1 (the class has no such slot); the byte replaces `row` in place, the
    original uses one local for both. `level` is the level being reached, so the entry for level 1
-   is at index 0: the caller 0DE8:0B45 passes gChars[who].m24[i] + 1 (E0DE8.C:613), adds the share
+   is at index 0: the caller 0DE8:0B45 passes gChars[who].levels[i] + 1 (E0DE8.C:613), adds the share
    to the slot's experience total m27[i] and levels the slot up when that total passes this value
    (E0DE8.C:612-615). Called by 0DE8:0B45 (AddExperience). */
 /*@ 0A72:04B7 */ long GetClassSlotExpThreshold(char row, char slot, char level)
@@ -303,13 +303,13 @@ char GetClassSlotByte(char row, char slot); /*@ 0A72:0509 */
     return g35D4[row * 4 + slot];
 }
 
-/* 0A72:0522: 20 - (m24[0] - 1) / g3614[g116E[m20]] * g3610[g116E[m20]] - classByte, computed in
+/* 0A72:0522: 20 - (levels[0] - 1) / g3614[g116E[classIndex]] * g3610[g116E[classIndex]] - classByte, computed in
    bytes. It is the d20 number a to-hit roll must reach before the attacker bonus is subtracted:
    its only caller 0DE8:0007 computes `ac = GetHitTarget(who, gTable1A3B[b0].m00) - bonus`
    (E0DE8.C:206) and then compares a d20 roll against it (`return roll >= ac;`, E0DE8.C:214).
-   `classByte` is the +0 field of the target's ds:1A3B entry (E0DE8.C:57), m20 is the character's
-   class index into ds:116E, and m24[0] is the character's first class-slot level at +24; this
-   function subtracts 1 from it (`num`), while E0D1C.C:433 passes the unchanged m24[0] as
+   `classByte` is the +0 field of the target's ds:1A3B entry (E0DE8.C:57), classIndex is the character's
+   class index into ds:116E, and levels[0] is the character's first class-slot level at +24; this
+   function subtracts 1 from it (`num`), while E0D1C.C:433 passes the unchanged levels[0] as
    GetIndexedByte's limit, so the less-one value is used only here. Build note: `result` is what
    keeps the two lookups in memory; without it -O promotes `cls` (or `num`) to CL and the spills
    differ from the original. */
@@ -319,15 +319,15 @@ char GetClassSlotByte(char row, char slot); /*@ 0A72:0509 */
     char cls;
     char result;
 
-    num = gChars[who].m24[0] - 1;
-    cls = g116E[gChars[who].m20];
+    num = gChars[who].levels[0] - 1;
+    cls = g116E[gChars[who].classIndex];
     result = 20 - num / g3614[cls] * g3610[cls];
     result -= classByte;
     return result;
 }
 
 /* 0A72:058C: the difference of two ints. Purpose unknown: its only caller 08E6:106B takes
-   `need = SubtractInts(gTable1A3B[index].m01, gChars[who].m1D)` and hits when a d20 roll reaches
+   `need = SubtractInts(gTable1A3B[index].m01, gChars[who].armorClass)` and hits when a d20 roll reaches
    `need` (E08E6.C:861-862). */
 /*@ 0A72:058C */ int SubtractInts(int minuend, int subtrahend)
 {

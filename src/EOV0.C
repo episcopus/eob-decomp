@@ -54,38 +54,38 @@ extern char gStr613D[]; /*@ ds:613D */ /* the string the party-status report dra
 extern void DrawRowList(int index); /*@ 0D1C:0454 */
 
 struct CharRec {                /* 243-byte character records at ds:F580 (src/E0A72.C) */
-    char index00;               /* +00: the character index ovl0:26C6 writes */
-    unsigned char status;          /* +01: status bits */
-    char name[0x0b];            /* +02: the character's name, NUL padded */
-    char m0D;                   /* +0D: the source of 284A's byte copy */
-    char m0E;
-    char m0F;
-    char m10;
-    char m11;
+    char index;                   /* +00: the character index ovl0:26C6 writes */
+    unsigned char status;         /* +01: status bits */
+    char name[0x0b];              /* +02: the character's name, NUL padded */
+    char strength;                /* +0D: the source of 284A's byte copy */
+    char baseStrength;
+    char strengthPct;
+    char baseStrengthPct;
+    char intelligence;
     char m12;
-    char m13;
+    char wisdom;
     char m14;
-    char m15;
+    char dexterity;
     char m16;
-    char m17;
+    char constitution;
     char m18;
-    char m19;
+    char charisma;
     char m1A;
     char hp;
     char maxHp;                   /* +1C: the destination of 284A's byte copy */
-    char m1D;
+    char armorClass;
     char m1E;
-    signed char m1F;            /* +1F: the race index, half of it indexes gTable5F35 (src/E0A72.C) */
-    signed char m20;            /* +20: the class index, indexes g1231 (src/E0BD2.C) */
-    signed char align;          /* +21: index into the alignment-name table ds:1240 (src/E1547.C) */
-    signed char m22;            /* +22: the position ovl0:0A5E stores (Purpose unknown) */
-    signed char m23;            /* +23: set to 0x64 by ovl0:26C6 (Purpose unknown) */
-    signed char m24[3];         /* +24: three per-class bytes ovl0:1BF2 fills from gTable5EF9 */
-    long exp[3];                /* +27: three 32-bit values ovl0:1BF2 fills (Purpose unknown) */
-    void far *sprite;           /* +33: the character's packed sprite buffer (src/EOV3.C) */
+    signed char race;             /* +1F: the race index, half of it indexes gTable5F35 (src/E0A72.C) */
+    signed char classIndex;       /* +20: the class index, indexes g1231 (src/E0BD2.C) */
+    signed char alignment;        /* +21: index into the alignment-name table ds:1240 (src/E1547.C) */
+    signed char m22;              /* +22: the position ovl0:0A5E stores (Purpose unknown) */
+    signed char food;             /* +23: the food value, set to 100 (full) by ovl0:26C6 */
+    signed char levels[3];        /* +24: the class-slot levels ovl0:1BF2 fills from gTable5EF9 */
+    long experience[3];           /* +27: the experience of each class slot, which ovl0:1BF2 sets */
+    void far *portrait;           /* +33: the character's packed sprite buffer (src/EOV3.C) */
     char pad37[0x73 - 0x37];
-    long m7375;                 /* +73: a 32-bit value 280D sets to 0x26c (Purpose unknown) */
-    int m77[27];                /* +77: 27 carried-item slots (src/E0DE8.C) */
+    long spellBook;               /* +73: the mage's spell book (src/EOV1.C); 280D sets 0x26c */
+    int items[27];                /* +77: 27 carried-item slots (src/E0DE8.C) */
     char padAD[0xf3 - 0xAD];
 };
 extern struct CharRec gChars[]; /*@ ds:F580 */
@@ -113,7 +113,7 @@ extern char gStr6239[]; /*@ ds:6239 */ /* a value format ovl0:135D uses (Purpose
 extern char gStr623C[]; /*@ ds:623C */ /* a value format ovl0:135D uses (Purpose unknown) */
 extern int CopyItemToFreeSlot(int n); /*@ 0BD2:089E */
 extern void ComputeArmourClass(int who); /*@ 0DE8:0D5E */
-extern signed char g1231[]; /*@ ds:1231 */ /* byte table indexed by gChars[].m20 (src/E0BD2.C) */
+extern signed char g1231[]; /*@ ds:1231 */ /* byte table indexed by gChars[].classIndex (src/E0BD2.C) */
 extern int far RollDice(char count, char sides, char bonus); /*@ 082C:0458 */
 extern void far *gPtrsFC8C[]; /*@ ds:FC8C */ /* the overlay screen buffers, ds:FC8C up to ds:FD98 (0x43 far pointers); ovl0:28B0 frees all of them, InitPanelScreens sets only the first 0x2c (ovl0:2547) and entries 0x32..0x3b alias the ten gPtrsFD54 row cells */
 extern int gDCB0; /*@ ds:DCB0 */ /* the current character index for the panel: RunCharacterPanel toggles it (ovl0:28F9) and the panel routines index gChars[gDCB0]. Purpose unknown beyond "current character" */
@@ -165,7 +165,7 @@ extern unsigned char g607D[]; /*@ ds:607D */ /* per-character y read by ovl0:1F6
 extern char gStr623F[]; /*@ ds:623F */ /* a fixed panel label (Purpose unknown) */
 extern void (far *gDrawText)(char far *text, int x, int y, int colour, int extra); /*@ ds:80CA */
 extern char far *gCurFont; /*@ ds:FE4E */ /* the current font (src/E1547.C) */
-extern void far *gA9C0; /*@ ds:A9C0 */ /* the 6x6 font loaded from FONT6.FNT (src/E07A9.C) */
+extern void far *gFont6x6; /*@ ds:A9C0 */ /* the 6x6 font loaded from FONT6.FNT (src/E07A9.C) */
 extern void SetFont(char far *font); /*@ 1A47:0169 */
 extern char gFontWidth; /*@ ds:8100 */ /* the current font's character width (src/E14EF.C) */
 extern int gNamePosX[]; /*@ ds:5E44 */ /* the x of each panel name slot (Purpose unknown) */
@@ -189,7 +189,7 @@ extern char far *g1240[]; /*@ ds:1240 */ /* the alignment names (src/E1547.C) */
 extern long gTable6081[]; /*@ ds:6081 */ /* the class-availability mask per race pair ovl0:207A picks */
 extern long gTable6099[]; /*@ ds:6099 */ /* the alignment-availability mask per class ovl0:2238 picks */
 extern int gTable5EB1[][6]; /*@ ds:5EB1 */ /* the six ability bonuses per race pair ovl0:1BF2 adds */
-extern unsigned char gTable5EF9[]; /*@ ds:5EF9 */ /* the four bytes per class ovl0:1BF2 copies to m24 */
+extern unsigned char gTable5EF9[]; /*@ ds:5EF9 */ /* the four bytes per class ovl0:1BF2 copies to levels */
 extern unsigned char gTable5EFC[]; /*@ ds:5EFC */ /* the divisor per class ovl0:1BF2 divides 5000 by */
 extern char gStr624C[]; /*@ ds:624C */ /* the caption ovl0:207A draws (Purpose unknown) */
 extern char gStr625A[]; /*@ ds:625A */ /* the caption ovl0:2238 draws (Purpose unknown) */
@@ -393,7 +393,7 @@ extern void far *g5E64[0x11]; /*@ ds:5E64 */ /* the 17 sliced icon pointers this
     } else
         DrawPanelIcon(0xe, 0, 0);
 }
-/* ovl0:05BA: draws one panel name slot: switches the current font to the 6x6 gA9C0, computes the
+/* ovl0:05BA: draws one panel name slot: switches the current font to the 6x6 gFont6x6, computes the
    centred x offset (0x3c - len * gFontWidth) >> 1 (pixels) for the name's `len` characters, hides the
    pointer, draws the fixed label gStr618C at gNamePosX[index]/gNamePosY[index] and the character's
    name gChars[index].name centred on it in `color`, shows the pointer and restores the font.
@@ -404,7 +404,7 @@ extern void far *g5E64[0x11]; /*@ ds:5E64 */ /* the 17 sliced icon pointers this
     int x;
 
     savedFont = gCurFont;
-    SetFont(gA9C0);
+    SetFont(gFont6x6);
     x = (0x3c - gFontWidth * len) >> 1;
     LockHidePointer();
     gDrawText(gStr618C, gNamePosX[index], gNamePosY[index], 0xc, 0xc);
@@ -413,11 +413,11 @@ extern void far *g5E64[0x11]; /*@ ds:5E64 */ /* the 17 sliced icon pointers this
     SetFont(savedFont);
 }
 /* ovl0:065B: draws the current character's panel page for gChars[index]. It clips the page and,
-   unless `mode` is 4, draws the character's sprite, then the name, race g11AD[m1F] and class
-   g11DD[m20] centred over the page and six labels g115D[8..13] down the left column. It formats
-   three stat lines into gFileNameBuf (the strength string "score/percentile" from m0D and m0F with
-   m11, m13, m15, m17, m19, the m1D/maxHp pair and the m24[0..2] triple, the third picking one of three
-   gStr61xx formats from m24[1] and m24[2]) and draws each; the mode selects which panel icons are
+   unless `mode` is 4, draws the character's sprite, then the name, race g11AD[race] and class
+   g11DD[classIndex] centred over the page and six labels g115D[8..13] down the left column. It formats
+   three stat lines into gFileNameBuf (the strength string "score/percentile" from strength and strengthPct with
+   intelligence, wisdom, dexterity, constitution, charisma, the armorClass/maxHp pair and the levels[0..2] triple, the third picking one of three
+   gStr61xx formats from levels[1] and levels[2]) and draws each; the mode selects which panel icons are
    highlighted: 1 highlights 4, 7, 8 and 6, 2 highlights 0x10 and 9, 3 highlights 0xa, 0xb and 9
    (each drawn through DrawPanelIcon mode 2, at the icon's own origin with the pointer left shown).
    Called by ovl0:0A5E, 0DDC, 0EE5, 135D, 1ADD and 23EC. */
@@ -430,28 +430,28 @@ extern void far *g5E64[0x11]; /*@ ds:5E64 */ /* the 17 sliced icon pointers this
     ClipRect(0, 0, 0x14, 0, 0x14, 0x80, 2, 2);
     gStatusLine = 2;
     if (mode != 4)
-        DrawShape(2, gChars[index].sprite, 0xe0, 2, 0);
+        DrawShape(2, gChars[index].portrait, 0xe0, 2, 0);
     text = gChars[index].name;
     DrawShadowText(text, 0xa0 + (0x14 - strlen(text)) * 4, 0x23, 0xf, 0);
-    text = g11AD[gChars[index].m1F];
+    text = g11AD[gChars[index].race];
     DrawShadowText(text, 0xa0 + (0x14 - strlen(text)) * 4, 0x2d, 0xf, 0);
-    text = g11DD[gChars[index].m20];
+    text = g11DD[gChars[index].classIndex];
     DrawShadowText(text, 0xa0 + (0x14 - strlen(text)) * 4, 0x36, 0xf, 0);
     for (i = 8; i < 0xe; i++)
         DrawShadowText(g115D[i], 0xa3, i * 8, 0xf, 0);
     DrawShadowText(gStr6197, 0xf8, 0x40, 0xf, 0);
-    sprintf(gFileNameBuf, gStr61A1, FormatStrengthPercent(gChars[index].m0D, gChars[index].m0F),
-        gChars[index].m11, gChars[index].m13, gChars[index].m15, gChars[index].m17,
-        gChars[index].m19);
+    sprintf(gFileNameBuf, gStr61A1, FormatStrengthPercent(gChars[index].strength, gChars[index].strengthPct),
+        gChars[index].intelligence, gChars[index].wisdom, gChars[index].dexterity, gChars[index].constitution,
+        gChars[index].charisma);
     DrawShadowText(gFileNameBuf, 0xc0, 0x40, 0xf, 0);
-    sprintf(gFileNameBuf, gStr61B3, gChars[index].m1D, gChars[index].maxHp);
+    sprintf(gFileNameBuf, gStr61B3, gChars[index].armorClass, gChars[index].maxHp);
     DrawShadowText(gFileNameBuf, 0x118, 0x40, 0xf, 0);
     text = gStr61B9;
-    if (gChars[index].m24[1] > 0)
+    if (gChars[index].levels[1] > 0)
         text = gStr61BC;
-    if (gChars[index].m24[2] > 0)
+    if (gChars[index].levels[2] > 0)
         text = gStr61C2;
-    sprintf(gFileNameBuf, text, gChars[index].m24[0], gChars[index].m24[1], gChars[index].m24[2]);
+    sprintf(gFileNameBuf, text, gChars[index].levels[0], gChars[index].levels[1], gChars[index].levels[2]);
     DrawShadowText(gFileNameBuf, 0x118, 0x50, 0xf, 0);
     switch (mode) {
     case 1:
@@ -588,7 +588,7 @@ int PickAlignment(int classIndex); /* ovl0:2238, defined below */
     Ovl0_1224();
     g5EAC[gDCB0] = taken[cur];
     gChars[gDCB0].m22 = taken[cur];
-    Unpack0(gPtrsFC8C[taken[cur]], gChars[gDCB0].sprite, 0x514);
+    Unpack0(gPtrsFC8C[taken[cur]], gChars[gDCB0].portrait, 0x514);
     DrawCharPanel(gDCB0, 1);
 }
 /* ovl0:0D5B: walks the panel slot indices modulo 0x2c (44) to find one that is free. Starting from
@@ -827,7 +827,7 @@ int PickAlignment(int classIndex); /* ovl0:2238, defined below */
         row -= 0x32;
         DrawPanelIcon(row, 0, 0);
     } else
-        DrawShape(0, gChars[gDCB0].sprite, gPanelX5E54[gDCB0], gPanelY5E5C[gDCB0] + 1, 0);
+        DrawShape(0, gChars[gDCB0].portrait, gPanelX5E54[gDCB0], gPanelY5E5C[gDCB0] + 1, 0);
     LockShowPointer();
 }
 /* ovl0:1224: advances and draws the current character's animation frame. When the selected character
@@ -870,7 +870,7 @@ int PickAlignment(int classIndex); /* ovl0:2238, defined below */
    gOutDC98[0] & 0xff, with a strength above 0x12 moved into the percentile and the percentile reset,
    later indexes between gOutDD04[index] and gOutDC98[index]), stored, and index 6 copies it to maxHp
    (on entry for index 6 it also recomputes gDCA4/gDD10 from MaxHitPoints/MinHitPoints), index 4
-   recomputes the derived hit points (hp/maxHp from gDCA4/gDD10) or index 3 the armour class m1D
+   recomputes the derived hit points (hp/maxHp from gDCA4/gDD10) or index 3 the armour class armorClass
    (GetArmourClassBase + 10). A key that changed nothing but set the done flag redraws the value and
    ends. Returns the field index to move to (-2 for the confirm key). Called by ovl0:1ADD. Purpose
    unknown: the per-index special cases and formats. */
@@ -901,10 +901,10 @@ int PickAlignment(int classIndex); /* ovl0:2238, defined below */
     count = *percent;
     move = index;
     if (index == 6) {
-        gDCA4 = MaxHitPoints(gChars[gDCB0].m20, gChars[gDCB0].m17, gChars[gDCB0].m24[0],
-            gChars[gDCB0].m24[1], gChars[gDCB0].m24[2]);
-        gDD10 = MinHitPoints(gChars[gDCB0].m20, gChars[gDCB0].m17, gChars[gDCB0].m24[0],
-            gChars[gDCB0].m24[1], gChars[gDCB0].m24[2]);
+        gDCA4 = MaxHitPoints(gChars[gDCB0].classIndex, gChars[gDCB0].constitution, gChars[gDCB0].levels[0],
+            gChars[gDCB0].levels[1], gChars[gDCB0].levels[2]);
+        gDD10 = MinHitPoints(gChars[gDCB0].classIndex, gChars[gDCB0].constitution, gChars[gDCB0].levels[0],
+            gChars[gDCB0].levels[1], gChars[gDCB0].levels[2]);
     }
     while (!flag) {
         amount = *value;
@@ -991,10 +991,10 @@ int PickAlignment(int classIndex); /* ovl0:2238, defined below */
             DrawShadowText(gFileNameBuf, node->x + 0x20, node->y, 6, 0);
             if (index == 4) {
                 old = gChars[gDCB0].hp;
-                gDCA4 = MaxHitPoints(gChars[gDCB0].m20, gChars[gDCB0].m17, gChars[gDCB0].m24[0],
-                    gChars[gDCB0].m24[1], gChars[gDCB0].m24[2]);
-                gDD10 = MinHitPoints(gChars[gDCB0].m20, gChars[gDCB0].m17, gChars[gDCB0].m24[0],
-                    gChars[gDCB0].m24[1], gChars[gDCB0].m24[2]);
+                gDCA4 = MaxHitPoints(gChars[gDCB0].classIndex, gChars[gDCB0].constitution, gChars[gDCB0].levels[0],
+                    gChars[gDCB0].levels[1], gChars[gDCB0].levels[2]);
+                gDD10 = MinHitPoints(gChars[gDCB0].classIndex, gChars[gDCB0].constitution, gChars[gDCB0].levels[0],
+                    gChars[gDCB0].levels[1], gChars[gDCB0].levels[2]);
                 gChars[gDCB0].hp = gChars[gDCB0].maxHp
                     = gChars[gDCB0].hp < gDD10 ? gDD10 : gChars[gDCB0].hp;
                 gChars[gDCB0].hp = gChars[gDCB0].maxHp
@@ -1006,10 +1006,10 @@ int PickAlignment(int classIndex); /* ovl0:2238, defined below */
                 }
             }
             if (index == 3) {
-                old = gChars[gDCB0].m1D;
-                gChars[gDCB0].m1D = GetArmourClassBase(amount) + 0xa;
-                if (gChars[gDCB0].m1D != old) {
-                    sprintf(gFileNameBuf, gStr6236, gChars[gDCB0].m1D);
+                old = gChars[gDCB0].armorClass;
+                gChars[gDCB0].armorClass = GetArmourClassBase(amount) + 0xa;
+                if (gChars[gDCB0].armorClass != old) {
+                    sprintf(gFileNameBuf, gStr6236, gChars[gDCB0].armorClass);
                     ClipRect(0xf, 0x40, 0x21, 0x80, 5, 8, 2, 0);
                     DrawShadowText(gFileNameBuf, 0x108, 0x80, 0xf, 0);
                 }
@@ -1034,7 +1034,7 @@ int PickAlignment(int classIndex); /* ovl0:2238, defined below */
 /* ovl0:1ADD: Purpose unknown: edits one of the seven ability/stat fields of the current character.
    It draws the page through ovl0:065B(mode 3) and loops over the field index i (0..6); for each it
    opens the field with EditStatField(i, &gChars[gDCB0].<field>, second) and redraws the page.
-   Field 0 passes both m0D and m0F; fields 1..6 pass m11, m13, m15, m17, m19 and hp with no second
+   Field 0 passes both strength and strengthPct; fields 1..6 pass intelligence, wisdom, dexterity, constitution, charisma and hp with no second
    field. A return of -2 leaves, a negative return wraps i to 6, then i is taken modulo 7. Finally
    it redraws the page through ovl0:065B(mode 1). Called by ovl0:0DDC. */
 /*@ ovl0:1ADD */ void Ovl0_1ADD(void)
@@ -1047,22 +1047,22 @@ int PickAlignment(int classIndex); /* ovl0:2238, defined below */
     while (i >= 0 && i <= 6) {
         switch (i) {
         case 0:
-            i = EditStatField(i, &gChars[gDCB0].m0D, &gChars[gDCB0].m0F);
+            i = EditStatField(i, &gChars[gDCB0].strength, &gChars[gDCB0].strengthPct);
             break;
         case 1:
-            i = EditStatField(i, &gChars[gDCB0].m11, (char far *)0);
+            i = EditStatField(i, &gChars[gDCB0].intelligence, (char far *)0);
             break;
         case 2:
-            i = EditStatField(i, &gChars[gDCB0].m13, (char far *)0);
+            i = EditStatField(i, &gChars[gDCB0].wisdom, (char far *)0);
             break;
         case 3:
-            i = EditStatField(i, &gChars[gDCB0].m15, (char far *)0);
+            i = EditStatField(i, &gChars[gDCB0].dexterity, (char far *)0);
             break;
         case 4:
-            i = EditStatField(i, &gChars[gDCB0].m17, (char far *)0);
+            i = EditStatField(i, &gChars[gDCB0].constitution, (char far *)0);
             break;
         case 5:
-            i = EditStatField(i, &gChars[gDCB0].m19, (char far *)0);
+            i = EditStatField(i, &gChars[gDCB0].charisma, (char far *)0);
             break;
         case 6:
             i = EditStatField(i, &gChars[gDCB0].hp, (char far *)0);
@@ -1078,26 +1078,26 @@ int PickAlignment(int classIndex); /* ovl0:2238, defined below */
     DrawCharPanel(gDCB0, 1);
 }
 /* ovl0:1BF2: rolls a fresh set of stats for character `who` of the party being created. For the
-   three class slots it copies gTable5EF9[class * 4 + slot] into the record's m24 and the 32-bit
+   three class slots it copies gTable5EF9[class * 4 + slot] into the record's levels and the 32-bit
    5000 / gTable5EFC[class * 4] into its exp; it then builds the class combat tables (ovl0:1EA9) and
    rolls the six abilities: each is RollAbilityScore plus the per-race-pair bonus gTable5EB1, clamped
    up to gOutDD04; then, when the strength roll is exactly 18, the 1d100 percentile roll is ORed
    into the high byte (the low byte stays 18), and finally clamped down to gOutDC98. The order matters
-   for the 0x12 case. The six values are stored into the record's stat pairs (m0D/m0E, m0F/m10 and
-   m11/m12..m19/m1A), m1D becomes GetArmourClassBase(m15) + 10, and the hit points hp/maxHp become
-   RollHitPoints(class, m17, the three m24 slots). Called by ovl0:0DDC and ovl0:23EC. */
+   for the 0x12 case. The six values are stored into the record's stat pairs (strength/baseStrength, strengthPct/baseStrengthPct and
+   intelligence/m12..charisma/m1A), armorClass becomes GetArmourClassBase(dexterity) + 10, and the hit points hp/maxHp become
+   RollHitPoints(class, constitution, the three levels slots). Called by ovl0:0DDC and ovl0:23EC. */
 /*@ ovl0:1BF2 */ void RollCharacterStats(int who)
 {
     int scores[6];
     int i;
 
     for (i = 0; i < 3; i++) {
-        gChars[who].m24[i] = gTable5EF9[gChars[who].m20 * 4 + i];
-        gChars[who].exp[i] = 0x1388 / gTable5EFC[gChars[who].m20 * 4];
+        gChars[who].levels[i] = gTable5EF9[gChars[who].classIndex * 4 + i];
+        gChars[who].experience[i] = 0x1388 / gTable5EFC[gChars[who].classIndex * 4];
     }
     BuildCombatTables();
     for (i = 0; i < 6; i++) {
-        scores[i] = RollAbilityScore() + gTable5EB1[gChars[who].m1F >> 1][i];
+        scores[i] = RollAbilityScore() + gTable5EB1[gChars[who].race >> 1][i];
         if (scores[i] < gOutDD04[i])
             scores[i] = gOutDD04[i];
         if (i == 0 && scores[0] == 0x12)
@@ -1105,20 +1105,20 @@ int PickAlignment(int classIndex); /* ovl0:2238, defined below */
         if (scores[i] > gOutDC98[i])
             scores[i] = gOutDC98[i];
     }
-    gChars[who].m0D = gChars[who].m0E = scores[0] & 0xff;
-    gChars[who].m0F = gChars[who].m10 = (scores[0] & 0xff00) >> 8;
-    gChars[who].m11 = gChars[who].m12 = scores[1];
-    gChars[who].m13 = gChars[who].m14 = scores[2];
-    gChars[who].m15 = gChars[who].m16 = scores[3];
-    gChars[who].m17 = gChars[who].m18 = scores[4];
-    gChars[who].m19 = gChars[who].m1A = scores[5];
-    gChars[who].m1D = GetArmourClassBase(scores[3]) + 0xa;
-    gChars[who].hp = gChars[who].maxHp = RollHitPoints(gChars[who].m20, gChars[who].m17,
-        gChars[who].m24[0], gChars[who].m24[1], gChars[who].m24[2]);
+    gChars[who].strength = gChars[who].baseStrength = scores[0] & 0xff;
+    gChars[who].strengthPct = gChars[who].baseStrengthPct = (scores[0] & 0xff00) >> 8;
+    gChars[who].intelligence = gChars[who].m12 = scores[1];
+    gChars[who].wisdom = gChars[who].m14 = scores[2];
+    gChars[who].dexterity = gChars[who].m16 = scores[3];
+    gChars[who].constitution = gChars[who].m18 = scores[4];
+    gChars[who].charisma = gChars[who].m1A = scores[5];
+    gChars[who].armorClass = GetArmourClassBase(scores[3]) + 0xa;
+    gChars[who].hp = gChars[who].maxHp = RollHitPoints(gChars[who].classIndex, gChars[who].constitution,
+        gChars[who].levels[0], gChars[who].levels[1], gChars[who].levels[2]);
 }
 /* ovl0:1EA9: builds two six-word combat tables for the current character gDCB0. For each of the
-   six slots it takes the larger of gTable5FC5[m20][i] and gTable5F35[m1F>>1][i] into gOutDD04[i],
-   copies gTable5F7D[m1F>>1][i] into gOutDC98[i], and when the class byte g116E[m20] is nonzero
+   six slots it takes the larger of gTable5FC5[classIndex][i] and gTable5F35[race>>1][i] into gOutDD04[i],
+   copies gTable5F7D[race>>1][i] into gOutDC98[i], and when the class byte g116E[classIndex] is nonzero
    forces gOutDC98[0] to 0x12. Called by ovl0:1BF2. Purpose unknown. */
 /*@ ovl0:1EA9 */ void BuildCombatTables(void)
 {
@@ -1126,8 +1126,8 @@ int PickAlignment(int classIndex); /* ovl0:2238, defined below */
     int row;
     int i;
 
-    cls = gChars[gDCB0].m1F >> 1;
-    row = gChars[gDCB0].m20;
+    cls = gChars[gDCB0].race >> 1;
+    row = gChars[gDCB0].classIndex;
     for (i = 0; i < 6; i++) {
         if (gTable5FC5[row][i] > gTable5F35[cls][i])
             gOutDD04[i] = gTable5FC5[row][i];
@@ -1196,7 +1196,7 @@ int PickAlignment(int classIndex); /* ovl0:2238, defined below */
 
     mask = -1;
     for (sel = 0; sel < 4; sel++) {
-        if (gChars[sel].name[0] && gChars[sel].align >= 6)
+        if (gChars[sel].name[0] && gChars[sel].alignment >= 6)
             mask = -5;
     }
     race /= 2;
@@ -1249,7 +1249,7 @@ int PickAlignment(int classIndex); /* ovl0:2238, defined below */
 
     mask = -1;
     for (sel = 0; sel < 4; sel++) {
-        if (gChars[sel].name[0] && gChars[sel].m20 == 2)
+        if (gChars[sel].name[0] && gChars[sel].classIndex == 2)
             mask = 0xfe3f;
     }
     sel = CountMaskBits(9, gTable6099[classIndex] & mask, 0);
@@ -1300,13 +1300,13 @@ int PickAlignment(int classIndex); /* ovl0:2238, defined below */
         confirmed = 0;
         switch (step) {
         case 0:
-            gChars[gDCB0].m1F = PickOption();
+            gChars[gDCB0].race = PickOption();
             break;
         case 1:
-            confirmed = (gChars[gDCB0].m20 = PickClass(gChars[gDCB0].m1F)) == 0x6e;
+            confirmed = (gChars[gDCB0].classIndex = PickClass(gChars[gDCB0].race)) == 0x6e;
             break;
         case 2:
-            confirmed = (gChars[gDCB0].align = PickAlignment(gChars[gDCB0].m20)) == 0x6e;
+            confirmed = (gChars[gDCB0].alignment = PickAlignment(gChars[gDCB0].classIndex)) == 0x6e;
             break;
         }
         step++;
@@ -1357,10 +1357,10 @@ int PickAlignment(int classIndex); /* ovl0:2238, defined below */
     LockShowPointer();
 }
 /* ovl0:26C6: gives each of the first four characters its class starting equipment. It copies item
-   0x23 into gChars[0]'s slot 2, then for each character sets m01 = 1, m23 = 0x64, index00 = i and slot
+   0x23 into gChars[0]'s slot 2, then for each character sets m01 = 1, food = 0x64, index00 = i and slot
    3 = item 0xa; for each of the class's four table entries g6101[m20][j] it looks up g60D5[idx]'s
    item and slot: an item of -1 is skipped, a negative slot takes the first free of slots 0..2, an
-   occupied slot is skipped, item 5 for m1F >> 1 == 3 becomes 0x24, the item is copied into a free
+   occupied slot is skipped, item 5 for race >> 1 == 3 becomes 0x24, the item is copied into a free
    slot (the first free from slot 2) and stored. Finally it rebuilds the character's armour class
    through ComputeArmourClass. Called by ovl0:28F9. Purpose unknown: the item numbers. */
 /*@ ovl0:26C6 */ void Ovl0_26C6(void)
@@ -1373,53 +1373,53 @@ int PickAlignment(int classIndex); /* ovl0:2238, defined below */
     register int slot;
 
     item = CopyItemToFreeSlot(0x23);
-    gChars[0].m77[2] = item;
+    gChars[0].items[2] = item;
     for (i = 0; i < 4; i++) {
         rec = &gChars[i];
         rec->status = 1;
-        rec->m23 = 0x64;
-        rec->index00 = i;
+        rec->food = 0x64;
+        rec->index = i;
         item = CopyItemToFreeSlot(0xa);
-        rec->m77[3] = item;
+        rec->items[3] = item;
         for (j = 0; j < 4; j++) {
-            idx = g6101[rec->m20 * 4 + j];
+            idx = g6101[rec->classIndex * 4 + j];
             item = g60D5[idx].item;
             slot = g60D5[idx].slot;
             if (item == -1)
                 continue;
             if (slot < 0) {
                 slot = 0;
-                if (rec->m77[slot] != 0)
+                if (rec->items[slot] != 0)
                     slot = 1;
-                if (rec->m77[slot] != 0)
+                if (rec->items[slot] != 0)
                     slot = 2;
             }
-            if (slot != 2 && rec->m77[slot] != 0)
+            if (slot != 2 && rec->items[slot] != 0)
                 continue;
-            if (item == 5 && (rec->m1F >> 1) == 3)
+            if (item == 5 && (rec->race >> 1) == 3)
                 item = 0x24;
             item = CopyItemToFreeSlot(item);
             if (slot != 2) {
-                rec->m77[slot] = item;
+                rec->items[slot] = item;
             } else {
                 slot = 2;
-                while (rec->m77[slot] != 0)
+                while (rec->items[slot] != 0)
                     slot++;
-                rec->m77[slot] = item;
+                rec->items[slot] = item;
             }
         }
         ComputeArmourClass(i);
     }
 }
-/* ovl0:280D: for each of the first four characters whose class byte g1231[gChars[i].m20] has bit 1
+/* ovl0:280D: for each of the first four characters whose class byte g1231[gChars[i].classIndex] has bit 1
    (value 2) set, sets the 32-bit gChars[i].m7375 to 0x26c. Called by ovl0:28F9. Purpose unknown. */
 /*@ ovl0:280D */ void InitCharSlotValues(void)
 {
     int i;
 
     for (i = 0; i < 4; i++) {
-        if (g1231[gChars[i].m20] & 2)
-            gChars[i].m7375 = 0x26c;
+        if (g1231[gChars[i].classIndex] & 2)
+            gChars[i].spellBook = 0x26c;
     }
 }
 
@@ -1433,13 +1433,13 @@ int PickAlignment(int classIndex); /* ovl0:2238, defined below */
 
     rec = (struct CharRec far *)gChars;
     for (i = 0; i < 4; i++, rec++) {
-        rec->m0E = rec->m0D;
-        rec->m10 = rec->m0F;
-        rec->m12 = rec->m11;
-        rec->m14 = rec->m13;
-        rec->m16 = rec->m15;
-        rec->m18 = rec->m17;
-        rec->m1A = rec->m19;
+        rec->baseStrength = rec->strength;
+        rec->baseStrengthPct = rec->strengthPct;
+        rec->m12 = rec->intelligence;
+        rec->m14 = rec->wisdom;
+        rec->m16 = rec->dexterity;
+        rec->m18 = rec->constitution;
+        rec->m1A = rec->charisma;
         rec->maxHp = rec->hp;
     }
 }

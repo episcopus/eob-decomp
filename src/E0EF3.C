@@ -11,37 +11,37 @@
 /* A 243-byte character record at ds:F580; only the fields this unit reads or writes (src/E0A72.C,
    src/E0BD2.C, src/EOV6.C name overlapping views). */
 struct CharRec {
-    signed char m00;        /* +00: the member index (0..5) this record is */
-    unsigned char status;      /* +01: status bits */
+    signed char index;      /* +00: the member index (0..5) this record is */
+    unsigned char status;   /* +01: status bits */
     char name[0x0B];        /* +02: the character's name, NUL padded */
-    signed char m0D;        /* +0D: a class index */
+    signed char strength;   /* +0D: a class index */
     char pad0E;
-    signed char m0F;        /* +0F: a level or score */
+    signed char strengthPct;        /* +0F: a level or score */
     char pad10[0x15 - 0x10];
-    signed char m15;        /* +15: an index read by 0A72:019D */
+    signed char dexterity;  /* +15: an index read by 0A72:019D */
     char pad16[0x1B - 0x16];
     signed char hp;         /* +1B: current hit points */
     signed char maxHp;      /* +1C: maximum hit points */
-    signed char m1D;        /* +1D: the armour-class byte */
+    signed char armorClass; /* +1D: the armour-class byte */
     signed char m1E;        /* +1E: a condition bit set */
-    signed char m1F;        /* +1F */
-    signed char m20;        /* +20: an index into a class table */
+    signed char race;       /* +1F */
+    signed char classIndex; /* +20: an index into a class table */
     char pad21[0x23 - 0x21];
-    signed char m23;        /* +23: a hunger/food value clamped to 100 by EatFood (07E0,
+    signed char food;       /* +23: a hunger/food value clamped to 100 by EatFood (07E0,
                                src/E0ACD.C:108, :623); set to 100 by 0EF3:1DC0 and by 0BD2
                                case 5 (src/E0BD2.C:746) */
-    signed char m24[0x37 - 0x24]; /* +24: per-class-slot bytes, indexed by a FindClassSlot result */
+    signed char levels[0x37 - 0x24]; /* +24: per-class-slot bytes, indexed by a FindClassSlot result */
     signed char known[30];  /* +37: spell slots */
     signed char memorized[30]; /* +55: spell slots */
     char pad73[0x77 - 0x73];
-    int m77[27];            /* +77: carried-item slots; slot 0 and 1 hold the equipped items */
-    long mAD[10];           /* +AD: a 32-bit value per spell slot, cleared when its spell is removed */
+    int items[27];          /* +77: carried-item slots; slot 0 and 1 hold the equipped items */
+    long timers[10];        /* +AD: a 32-bit value per spell slot, cleared when its spell is removed */
     signed char mD5[10];    /* +D5: ten per-member bytes (spell slots) */
     signed char mDF;        /* +DF */
     signed char mE0;        /* +E0: a countdown */
     char padE1;
     signed char mE2;        /* +E2: hit points pending from a bandage-like effect */
-    unsigned long mE3;      /* +E3: effect flags, a 32-bit mask */
+    unsigned long effectFlags;      /* +E3: effect flags, a 32-bit mask */
     char padE7[0xF3 - 0xE7];
 };
 
@@ -200,7 +200,7 @@ extern signed char gF3B8;               /*@ ds:F3B8 */ /* a view byte passed to 
 extern signed char gEFB8;               /*@ ds:EFB8 */ /* an effect value passed to 0EF3:0302 */
 extern signed char g8DD5;               /*@ ds:8DD5 */ /* cleared by 0EF3:0418 */
 extern signed char gA999;               /*@ ds:A999 */ /* the member 0EF3:1233 redraws */
-extern signed char gA99A;               /*@ ds:A99A */ /* the selected character index */
+extern signed char gInventoryMember;               /*@ ds:A99A */ /* the selected character index */
 extern int gFC74;                       /*@ ds:FC74 */ /* the panel member saved by 0EF3:28ED and
                                                          restored by 0EF3:026F */
 extern int gFC76;                       /*@ ds:FC76 */
@@ -210,9 +210,9 @@ extern unsigned char gFBD2;             /*@ ds:FBD2 */ /* a flag byte: bit 0 is 
                                                         (0EF3:1069, 0EF3:10AE); bit 4 is the swap
                                                         flag (set by 0EF3:1AD0, cleared by
                                                         0EF3:1B13) and bit 5 is set by 0EF3:1E3E */
-extern char gFB44;                      /*@ ds:FB44 */
+extern char gPanelMode;                      /*@ ds:FB44 */
 extern int gFBC8;                       /*@ ds:FBC8 */
-extern int gFBCC;                       /*@ ds:FBCC */
+extern int gPartyDir;                       /*@ ds:FBCC */
 extern int gPartyCell;                  /*@ ds:FBCA */
 extern char gDF4C;                      /*@ ds:DF4C */
 extern char gFileNameBuf[];             /*@ ds:FE6E */ /* the scratch text buffer that EOV2 also
@@ -224,7 +224,7 @@ extern char gF542[];                    /*@ ds:F542 */ /* the action record pass
                                                          +4 word); this unit passes it as
                                                          struct ActRec far * (0EF3:2676, :2929,
                                                          src/E0ACD.C:72) */
-extern char far *g5763[];               /*@ ds:5763 */ /* far byte tables, one per page gFBCC */
+extern char far *g5763[];               /*@ ds:5763 */ /* far byte tables, one per page gPartyDir */
 extern int g5737[];                     /*@ ds:5737 */ /* a word table of animation frames 0EF3:2EBC
                                                            reads as frameTable[row6 >> 8] */
 extern void Obj0E48(void);              /*@ 08E6:0E48 */ /* clears the object marks (src/E08E6.C) */
@@ -232,7 +232,7 @@ extern int ClampOrWrap(int value, int low, int high, int invert); /*@ 082C:0AB4 
 extern signed char gAt5717[];          /*@ ds:5717 */ /* a per-member byte: nonzero when the member
                                                      can use melee effects (read by 0EF3:0E1B) */
 extern signed char gTable5733[];        /*@ ds:5733 */ /* four cell deltas walked by 0EF3:17D8 */
-extern char gB894[];                    /*@ ds:B894 */ /* nine-byte records; +4 (ds:B898) is the
+extern char gMaze[];                    /*@ ds:B894 */ /* nine-byte records; +4 (ds:B898) is the
                                                        object's type byte tested by 0EF3:0A3F */
 extern signed char g1A2B[];             /*@ ds:1A2B */ /* per-page sprite base (src/E0DE8.C) */
 extern signed char gIconIndex571B[];    /*@ ds:571B */ /* a per-member icon index; a negative value
@@ -343,7 +343,7 @@ extern void PlaySound(int sound); /*@ 177D:0070 */
 extern void WaitTicks(int n); /*@ 082C:0425 */
 extern void ClearCharEffectSlot(int who, int what); /*@ 1414:0C2D */
 extern int f0D1C_0BAB(int obj); /*@ 0D1C:0BAB */
-extern int f0D1C_00DA(int value, int page); /*@ 0D1C:00DA */
+extern int StepCell(int cell, int dir); /*@ 0D1C:00DA */
 extern int GetCurrentItem(void); /*@ 0D1C:02DC */
 extern int MemberIs(int who, int mask); /*@ 0D1C:0670 */
 extern int TakeItemFromSlot(int who, int row); /*@ 0BD2:0106 */
@@ -537,7 +537,7 @@ extern int gFC72;                /*@ ds:FC72 */ /* the handle gFn8072 returned u
    the bit at that index in the member's +0x1E condition byte, applies a 0x12-tick char effect
    whose value is the slot number plus two, redraws the member, then restores the panel member
    from ds:FC74, gF43D from ds:FC76 and the slot number to zero, and rebuilds the active item list
-   (BuildList1 to 3 by gFB44). Called by 0EF3:08CF and 0EF3:2676 CastSpell (packet row 22). */
+   (BuildList1 to 3 by gPanelMode). Called by 0EF3:08CF and 0EF3:2676 CastSpell (packet row 22). */
 /*@ 0EF3:026F */ void FinishMemberEffect(void)
 {
     g8DCE--;
@@ -547,7 +547,7 @@ extern int gFC72;                /*@ ds:FC72 */ /* the handle gFn8072 returned u
     gPanelMember = gFC74;
     gF43D = gFC76;
     g8DCE = 0;
-    switch (gFB44) {
+    switch (gPanelMode) {
     case 0:
         BuildList1();
         break;
@@ -642,7 +642,7 @@ extern int gFC72;                /*@ ds:FC72 */ /* the handle gFn8072 returned u
    slot a created item goes into (callers 0EF3:1197, 0EF3:1656, 0EF3:1D38). */
 /*@ 0EF3:0482 */ int ItemSlot1Empty(struct CharRec far *rec)
 {
-    return rec->m77[1] == 0;
+    return rec->items[1] == 0;
 }
 
 /* 0EF3:0498: the character's class-slot 1 value: the byte at +0x24 indexed by the class table
@@ -661,9 +661,9 @@ extern int gFC72;                /*@ ds:FC72 */ /* the handle gFn8072 returned u
             return 5;
         return 9;
     }
-    slot = FindClassSlot(1, gChars[who].m20);
+    slot = FindClassSlot(1, gChars[who].classIndex);
     if (slot > -1)
-        return gChars[who].m24[slot];
+        return gChars[who].levels[slot];
     return 1;
 }
 
@@ -682,13 +682,13 @@ extern int gFC72;                /*@ ds:FC72 */ /* the handle gFn8072 returned u
             return 5;
         return 9;
     }
-    slot = FindClassSlot(2, gChars[who].m20);
+    slot = FindClassSlot(2, gChars[who].classIndex);
     if (slot > -1)
-        return gChars[who].m24[slot];
-    slot = FindClassSlot(4, gChars[who].m20);
+        return gChars[who].levels[slot];
+    slot = FindClassSlot(4, gChars[who].classIndex);
     if (slot > -1) {
-        if (gChars[who].m24[slot] > 8)
-            return gChars[who].m24[slot] - 8;
+        if (gChars[who].levels[slot] > 8)
+            return gChars[who].levels[slot] - 8;
         return 1;
     }
     return 1;
@@ -706,7 +706,7 @@ extern int gFC72;                /*@ ds:FC72 */ /* the handle gFn8072 returned u
 /* 0EF3:05BD: draw one flash frame for member `who` at pass `pass`: redraw the member, then for
    each of the four frame bits (the gFlashPassMask[pass] bits selected by gFlashFrameMask, shifted
    down by gFlashFrameShift) draw the image gFlashFrames[frame - 1] at the member's flash base
-   (gFlashBaseX[who] * 8, gFlashBaseY[who], or 0xB5, 3 when gFB44 is nonzero, a screen mode other
+   (gFlashBaseX[who] * 8, gFlashBaseY[who], or 0xB5, 3 when gPanelMode is nonzero, a screen mode other
    than the plain character screen) plus the frame's gFlashDelta offset. Called by 0EF3:0665. */
 /*@ 0EF3:05BD */ void DrawFlashFrame(int who, int pass)
 {
@@ -720,7 +720,7 @@ extern int gFC72;                /*@ ds:FC72 */ /* the handle gFn8072 returned u
         frame = (gFlashPassMask[pass] & gFlashFrameMask[i]) >> gFlashFrameShift[i];
         if (frame-- == 0)
             continue;
-        if (gFB44 == 0) {
+        if (gPanelMode == 0) {
             x = gFlashBaseX[who] * 8;
             y = gFlashBaseY[who];
         } else {
@@ -734,8 +734,8 @@ extern int gFC72;                /*@ ds:FC72 */ /* the handle gFn8072 returned u
 }
 
 /* 0EF3:0665: run the "flash" animation for one member or the whole party: eight passes over the
-   living members (m01 bit 0, and either the plain character screen is up, gFB44 == 0, or the
-   member is the selected one gA99A), each drawing one frame through 0EF3:05BD and waiting two
+   living members (m01 bit 0, and either the plain character screen is up, gPanelMode == 0, or the
+   member is the selected one gInventoryMember), each drawing one frame through 0EF3:05BD and waiting two
    ticks, then redraw each member. `who` is a member index, or -1 for the whole party; the function
    reuses the parameter as the walk index. Called by 0EF3:08CF and 0EF3:2676 CastSpell (packet row
    32), and the item effect at 0BD2:0D2D. */
@@ -753,7 +753,7 @@ extern int gFC72;                /*@ ds:FC72 */ /* the handle gFn8072 returned u
     }
     for (pass = 0; pass < 8; pass++) {
         for (who = first; who <= last; who++) {
-            if ((gChars[who].status & 1) && (gFB44 == 0 || who == gA99A))
+            if ((gChars[who].status & 1) && (gPanelMode == 0 || who == gInventoryMember))
                 DrawFlashFrame(who, pass);
         }
         WaitTicks(2);
@@ -876,7 +876,7 @@ extern int gFC72;                /*@ ds:FC72 */ /* the handle gFn8072 returned u
 
 /* 0EF3:0A3F: run a melee effect on the record's target. The record's +0xC byte holds five flags:
    0x10 (the target is not a member), 1, 2, 4 and 8. When the target cell's object type byte
-   (gB894[cell * 9 + 4]) has any of bits 0..2 and the record's +0xB member index is not negative
+   (gMaze[cell * 9 + 4]) has any of bits 0..2 and the record's +0xB member index is not negative
    (or flag 0x10 is set), list the objects at the cell with 08E6:17FD and for each one roll
    `count`d`sides`+`bonus` times `n`, halve it on a successful save (flag 8), and damage the object
    unless 0D1C:0BAB rejects it. Otherwise, when the cell is the party cell and the member index is
@@ -884,7 +884,7 @@ extern int gFC72;                /*@ ds:FC72 */ /* the handle gFn8072 returned u
    g1A2B table and damage it. Finally, when anything was hit and the record's +0xC has bit 0x40,
    run the animation 0EF3:00CD; a record whose +8 is 5 clears the hit. Returns the hit flag.
    The picking branch keeps the `hit = 1` at the end of the chain, so its source is the negated
-   form `if (m08 != 0 || (mE3 & 2) == 0) { ... } else hit = 1;`, not `if (m08 == 0 && (mE3 & 2))`. */
+   form `if (m08 != 0 || (effectFlags & 2) == 0) { ... } else hit = 1;`, not `if (m08 == 0 && (effectFlags & 2))`. */
 /*@ 0EF3:0A3F */ int DamageTargetCell(struct Tgt far *rec, int count, int sides, int bonus, int n)
 {
     char dmg;
@@ -907,7 +907,7 @@ extern int gFC72;                /*@ ds:FC72 */ /* the handle gFn8072 returned u
     hit = 0;
     if (n <= 0)
         n = 1;
-    if ((gB894[rec->m04 * 9 + 4] & 7) && (rec->m0B >= 0 || flag10)) {
+    if ((gMaze[rec->m04 * 9 + 4] & 7) && (rec->m0B >= 0 || flag10)) {
         Obj17FD(buffer, rec->m04, rec->m06, rec->m07, flag02, flag01);
         list = buffer;
         for (; *list != -1; list++) {
@@ -935,12 +935,12 @@ extern int gFC72;                /*@ ds:FC72 */ /* the handle gFn8072 returned u
             }
         } else {
             idx = rec->m06 & 3;
-            idx = g1A2B[gFBCC * 4 + idx];
+            idx = g1A2B[gPartyDir * 4 + idx];
             if (idx > 2 && (MemberIs(5, 1) || MemberIs(6, 1)) && RollDice(1, 2, -1))
                 i = idx + 2;
             else
                 i = idx;
-            if (rec->m08 != 0 || (gChars[i].mE3 & 2) == 0) {
+            if (rec->m08 != 0 || (gChars[i].effectFlags & 2) == 0) {
                 if ((gChars[i].status & 1) && (Obj106B(gObjs, i) || !flag04)) {
                     dmg = RollDice(count, sides, bonus) * n;
                     if (flag08)
@@ -995,7 +995,7 @@ extern int gFC72;                /*@ ds:FC72 */ /* the handle gFn8072 returned u
     register int dmg;
 
     if (gAt5717[gPanelMember] != 0) {
-        target = f0D1C_00DA(gPartyCell, gFBCC);
+        target = StepCell(gPartyCell, gPartyDir);
         obj = Obj15B4(gPanelMember, target);
         if (obj != -1) {
             if (!RollToHit(gPanelMember, obj, 0, 1))
@@ -1022,8 +1022,8 @@ extern int gFC72;                /*@ ds:FC72 */ /* the handle gFn8072 returned u
     char penalty;
     register int base;
 
-    base = GetArmourClassBase(gCurRec->m15);
-    if (gCurRec->m1D > base + 6) {
+    base = GetArmourClassBase(gCurRec->dexterity);
+    if (gCurRec->armorClass > base + 6) {
         penalty = GetClassSlot1Value(gPanelMember) + 8;
         gCurRec->mDF = penalty;
         ComputeArmourClass(gCurMember);
@@ -1037,7 +1037,7 @@ extern int gFC72;                /*@ ds:FC72 */ /* the handle gFn8072 returned u
    and 0EF3:131A. */
 /*@ 0EF3:0F86 */ void RecomputeArmourClass(struct CharRec far *rec)
 {
-    ComputeArmourClass(rec->m00);
+    ComputeArmourClass(rec->index);
 }
 
 /* 0EF3:0F99: draw one icon per party member in its panel cell, then strike the object the current
@@ -1063,7 +1063,7 @@ extern int gFC72;                /*@ ds:FC72 */ /* the handle gFn8072 returned u
     }
     WaitTicks(2);
     value = GetClassSlot1Value(gPanelMember);
-    target = f0D1C_00DA(gPartyCell, gFBCC);
+    target = StepCell(gPartyCell, gPartyDir);
     Obj16D6(target, 1, 3, value << 1, 1);
     gDF4C = 1;
 }
@@ -1091,7 +1091,7 @@ extern int gFC72;                /*@ ds:FC72 */ /* the handle gFn8072 returned u
 /* 0EF3:10D2: add the panel member's effect record of mode 0 through 0EF3:097B. */
 /*@ 0EF3:10D2 */ void AddEffectRecord0(void)
 {
-    StartCellEffect(gPanelMember, 0, gPartyCell, gF3B8, gFBCC);
+    StartCellEffect(gPanelMember, 0, gPartyCell, gF3B8, gPartyDir);
 }
 
 /* 0EF3:10F2: run the record's melee effect through 0EF3:0A3F with 1d4, a bonus of 1 and
@@ -1108,7 +1108,7 @@ extern int gFC72;                /*@ ds:FC72 */ /* the handle gFn8072 returned u
     struct CharRec far *rec;
 
     rec = &gChars[gPanelMember];
-    rec->mE3 |= 2;
+    rec->effectFlags |= 2;
     ComputeArmourClass(gPanelMember);
     ApplyTimedCharEffect(gEFB8, 0, 0x222L, 5, 1);
 }
@@ -1118,8 +1118,8 @@ extern int gFC72;                /*@ ds:FC72 */ /* the handle gFn8072 returned u
    which sets the same bit and applies the same 5-turn effect. */
 /*@ 0EF3:1176 */ void ClearAttackEffect(struct CharRec far *rec)
 {
-    rec->mE3 &= ~2L;
-    ComputeArmourClass(rec->m00);
+    rec->effectFlags &= ~2L;
+    ComputeArmourClass(rec->index);
 }
 
 /* 0EF3:1197: give the panel member the item of effect mode 0: 0EF3:035A allocates the first free
@@ -1133,7 +1133,7 @@ extern int gFC72;                /*@ ds:FC72 */ /* the handle gFn8072 returned u
 
     index = ItemSlot1Empty(gCurRec);
     itemType = CreateItemType(0, 0, 0, 0xF, 1, 8, GetClassSlot1Value(gPanelMember), 1);
-    gCurRec->m77[index] = CreateItemRecord(0x10, 0x52, 0, itemType);
+    gCurRec->items[index] = CreateItemRecord(0x10, 0x52, 0, itemType);
     RedrawMember(gPanelMember);
     ApplyTimedCharEffect(gEFB8, 0, 0x222L, 1, 1);
 }
@@ -1153,10 +1153,10 @@ extern int gFC72;                /*@ ds:FC72 */ /* the handle gFn8072 returned u
     int item;
 
     for (i = 0; i < 2; i++) {
-        item = rec->m77[i];
+        item = rec->items[i];
         if (IsDiscardedItem(item)) {
             FreeItemRecord(item);
-            rec->m77[i] = 0;
+            rec->items[i] = 0;
             break;
         }
     }
@@ -1166,7 +1166,7 @@ extern int gFC72;                /*@ ds:FC72 */ /* the handle gFn8072 returned u
 /* 0EF3:127F: set the current record's effect flag bit 2 and redraw the current member. */
 /*@ 0EF3:127F */ void SetEffectFlag4(void)
 {
-    gCurRec->mE3 |= 4;
+    gCurRec->effectFlags |= 4;
     RedrawMember(gCurMember);
 }
 
@@ -1174,14 +1174,14 @@ extern int gFC72;                /*@ ds:FC72 */ /* the handle gFn8072 returned u
    0DE8:0763 and 0EF3:131A. */
 /*@ 0EF3:12A1 */ void ClearEffectFlag4(struct CharRec far *rec)
 {
-    rec->mE3 &= ~4L;
+    rec->effectFlags &= ~4L;
     RedrawMember(gCurMember);
 }
 
 /* 0EF3:12C2: add the panel member's effect record of mode 1 through 0EF3:097B. */
 /*@ 0EF3:12C2 */ void AddEffectRecord1(void)
 {
-    StartCellEffect(gPanelMember, 1, gPartyCell, gF3B8, gFBCC);
+    StartCellEffect(gPanelMember, 1, gPartyCell, gF3B8, gPartyDir);
 }
 
 /* 0EF3:12E3: run the record's melee effect through 0EF3:0A3F with 2d4 and a third of the
@@ -1214,24 +1214,24 @@ extern int gFC72;                /*@ ds:FC72 */ /* the handle gFn8072 returned u
         if (spell < 0) {
             gSpells1344[-spell].remove(gCurRec);
             gCurRec->mD5[i] = 0;
-            gCurRec->mAD[i] = 0;
+            gCurRec->timers[i] = 0;
         }
-        if (gCurRec->mE3 & 4)
+        if (gCurRec->effectFlags & 4)
             ClearEffectFlag4(gCurRec);
         if (gCurRec->mDF > 0)
             RecomputeArmourClass(gCurRec);
     }
     gCurRec->mDF = 0;
-    gCurRec->mE3 = 0;
-    gCurRec->mE3 = 0;       /* the original stores it twice; one store drops a `mov word ptr
+    gCurRec->effectFlags = 0;
+    gCurRec->effectFlags = 0;       /* the original stores it twice; one store drops a `mov word ptr
                                es:[bx + 0xe3], 0` that `make match` needs */
-    RedrawMember(gCurRec->m00);
+    RedrawMember(gCurRec->index);
 }
 
 /* 0EF3:13FD: add the panel member's effect record of mode 2 through 0EF3:097B. */
 /*@ 0EF3:13FD */ void AddEffectRecord2(void)
 {
-    StartCellEffect(gPanelMember, 2, gPartyCell, gF3B8, gFBCC);
+    StartCellEffect(gPanelMember, 2, gPartyCell, gF3B8, gPartyDir);
 }
 
 /* 0EF3:141E: run the record's 1d6 melee effect through 0EF3:0A3F. */
@@ -1243,7 +1243,7 @@ extern int gFC72;                /*@ ds:FC72 */ /* the handle gFn8072 returned u
 /* 0EF3:144A: add the panel member's effect record of mode 3 through 0EF3:097B. */
 /*@ 0EF3:144A */ void AddEffectRecord3(void)
 {
-    StartCellEffect(gPanelMember, 3, gPartyCell, gF3B8, gFBCC);
+    StartCellEffect(gPanelMember, 3, gPartyCell, gF3B8, gPartyDir);
 }
 
 /* 0EF3:146B: run the record's 5d6 melee effect through 0EF3:0A3F. */
@@ -1260,7 +1260,7 @@ extern int gFC72;                /*@ ds:FC72 */ /* the handle gFn8072 returned u
 
     for (i = 0; i < 6; i++) {
         if (gChars[i].status & 1) {
-            gChars[i].mE3 |= 8L;
+            gChars[i].effectFlags |= 8L;
             gCurMember = i;
             ApplyTimedCharEffect(gEFB8, 3, 0x222L, 1, 1);
         }
@@ -1270,13 +1270,13 @@ extern int gFC72;                /*@ ds:FC72 */ /* the handle gFn8072 returned u
 /* 0EF3:14F9: clear the record's effect flag bit 3 (value 8) and leave the member alone. */
 /*@ 0EF3:14F9 */ void ClearEffectFlag8(struct CharRec far *rec)
 {
-    rec->mE3 &= ~8L;
+    rec->effectFlags &= ~8L;
 }
 
 /* 0EF3:150F: add the panel member's effect record of mode 4 through 0EF3:097B. */
 /*@ 0EF3:150F */ void AddEffectRecord4(void)
 {
-    StartCellEffect(gPanelMember, 4, gPartyCell, gF3B8, gFBCC);
+    StartCellEffect(gPanelMember, 4, gPartyCell, gF3B8, gPartyDir);
 }
 
 /* 0EF3:1530: list the objects that match the record's cell and field with Obj17FD, then walk the
@@ -1318,7 +1318,7 @@ extern int gFC72;                /*@ ds:FC72 */ /* the handle gFn8072 returned u
 
     rec = gChars;
     for (i = 0; i < 6; i++, rec++) {
-        rec->mE3 |= 4L;
+        rec->effectFlags |= 4L;
     }
     RedrawCharacters();
 }
@@ -1326,7 +1326,7 @@ extern int gFC72;                /*@ ds:FC72 */ /* the handle gFn8072 returned u
 /* 0EF3:1609: add the panel member's effect record of mode 5 through 0EF3:097B. */
 /*@ 0EF3:1609 */ void AddEffectRecord5(void)
 {
-    StartCellEffect(gPanelMember, 5, gPartyCell, gF3B8, gFBCC);
+    StartCellEffect(gPanelMember, 5, gPartyCell, gF3B8, gPartyDir);
 }
 
 /* 0EF3:162A: run the record's 1d6 melee effect through 0EF3:0A3F. */
@@ -1345,7 +1345,7 @@ extern int gFC72;                /*@ ds:FC72 */ /* the handle gFn8072 returned u
 
     index = ItemSlot1Empty(gCurRec);
     itemType = CreateItemType(0, 0, 0, 0xF, GetClassSlot1Value(gPanelMember) >> 1, 6, 0, 1);
-    gCurRec->m77[index] = CreateItemRecord(0x18, 0x53, 0, itemType);
+    gCurRec->items[index] = CreateItemRecord(0x18, 0x53, 0, itemType);
     RedrawMember(gPanelMember);
     ApplyTimedCharEffect(gEFB8, 0, 0x222L, 1, 1);
 }
@@ -1375,7 +1375,7 @@ extern int gFC72;                /*@ ds:FC72 */ /* the handle gFn8072 returned u
     int i;
 
     FlashViewDamage();
-    target = f0D1C_00DA(gPartyCell, gFBCC);
+    target = StepCell(gPartyCell, gPartyDir);
     obj = gObjs;
     for (i = 0; i < 0x1E; i++, obj++) {
         rec = &gTable1A3B[obj->b0];
@@ -1390,7 +1390,7 @@ extern int gFC72;                /*@ ds:FC72 */ /* the handle gFn8072 returned u
 /* 0EF3:17B7: add the panel member's effect record of mode 6 through 0EF3:097B. */
 /*@ 0EF3:17B7 */ void AddEffectRecord6(void)
 {
-    StartCellEffect(gPanelMember, 6, gPartyCell, gF3B8, gFBCC);
+    StartCellEffect(gPanelMember, 6, gPartyCell, gF3B8, gPartyDir);
 }
 
 /* 0EF3:17D8: run the record's 1d6 melee effect, then for each of the four cell deltas at ds:5733
@@ -1448,7 +1448,7 @@ void AnimateConeOfCold(int count, int spread, int step, int cycle, int divisor,
 /* 0EF3:18D8: the cone of cold. It reads the panel member's class-slot 1 value, blanks the view
    (gStatusLine = 2, gFillRect, DrawViewSlots(7), gStatusLine = 0), hides the pointer, runs the cone drawing
    0EF3:2EBC(0x96, 0x32, 0xa, 1, 0x64, ds:5737) and shows it again. It sets gF518 and, for each of
-   the seven rows of the per-page table g5763[gFBCC], lists the objects whose cell is the party cell
+   the seven rows of the per-page table g5763[gPartyDir], lists the objects whose cell is the party cell
    plus the row's delta (masked to 0x3FF) with Obj17FD and damages each that 0D1C:0BAB does not
    reject by RollDice(classSlot, 4, classSlot) through 08E6:0FBE, then runs 08E6:0E48. Reached
    through the spell table (gSpells1344 record 24, "cone of cold", its apply callback). */
@@ -1470,11 +1470,11 @@ void AnimateConeOfCold(int count, int spread, int step, int cycle, int divisor,
     HidePointerZone(0, 0, 0xB0, 0x78);
     AnimateConeOfCold(0x96, 0x32, 0x0A, 1, 0x64, g5737);
     ShowPointerZone();
-    table = g5763[gFBCC];
+    table = g5763[gPartyDir];
     gF518 = 1;
     for (row = 0; row < 7; row++, table++) {
         cell = (gPartyCell + *table) & 0x3FF;
-        Obj17FD((int far *)buffer, cell, 4, gFBCC, 1, 1);
+        Obj17FD((int far *)buffer, cell, 4, gPartyDir, 1, 1);
         list = buffer;
         while (*list != -1) {
             dmg = RollDice(classSlot, 4, classSlot);
@@ -1489,7 +1489,7 @@ void AnimateConeOfCold(int count, int spread, int step, int cycle, int divisor,
 /* 0EF3:1A0F: add the panel member's effect record of mode 7 through 0EF3:097B. */
 /*@ 0EF3:1A0F */ void AddEffectRecord7(void)
 {
-    StartCellEffect(gPanelMember, 7, gPartyCell, gF3B8, gFBCC);
+    StartCellEffect(gPanelMember, 7, gPartyCell, gF3B8, gPartyDir);
 }
 
 /* 0EF3:1A30: list the objects that match the record's cell and field with Obj17FD, then walk the
@@ -1557,14 +1557,14 @@ void AnimateConeOfCold(int count, int spread, int step, int cycle, int divisor,
 /* 0EF3:1B5A: set the current record's effect flag bit 0x200 and apply a 3-turn effect. */
 /*@ 0EF3:1B5A */ void SetEffectFlag200(void)
 {
-    gCurRec->mE3 |= 0x200L;
+    gCurRec->effectFlags |= 0x200L;
     ApplyTimedCharEffect(gEFB8, 0, 0x222L, 3, 1);
 }
 
 /* 0EF3:1B8D: clear the record's effect flag bit 0x200, the marker 0EF3:1B5A sets. */
 /*@ 0EF3:1B8D */ void ClearEffectFlag200(struct CharRec far *rec)
 {
-    rec->mE3 &= ~0x200L;
+    rec->effectFlags &= ~0x200L;
 }
 
 /* 0EF3:1BA3: the "aid" spell. When the current member is not protected (0D1C:0670 with mask 3) it
@@ -1577,7 +1577,7 @@ void AnimateConeOfCold(int count, int spread, int step, int cycle, int divisor,
     int amount;
 
     if (MemberIs(gCurMember, 3)) {
-        gCurRec->mE3 |= 0x40;
+        gCurRec->effectFlags |= 0x40;
         amount = RollDice(1, 8, 0);
         if (gCurRec->hp < (signed char)(gCurRec->hp + amount)) {
             gCurRec->mE2 += amount;
@@ -1598,7 +1598,7 @@ void AnimateConeOfCold(int count, int spread, int step, int cycle, int divisor,
         rec->hp -= rec->mE2;
         rec->mE2 = 0;
     }
-    rec->mE3 &= ~0x40L;
+    rec->effectFlags &= ~0x40L;
 }
 
 /* 0EF3:1C75: when the current member's m01 bit 1 is set, set the current record's effect flag bit
@@ -1607,7 +1607,7 @@ void AnimateConeOfCold(int count, int spread, int step, int cycle, int divisor,
 /*@ 0EF3:1C75 */ void ApplyConditionEffect(void)
 {
     if (gChars[gCurMember].status & 2) {
-        gCurRec->mE3 |= 0x80L;
+        gCurRec->effectFlags |= 0x80L;
         ApplyTimedCharEffect(gEFB8, 1, 0x7FF8L, GetClassSlot24Value(gPanelMember), 1);
     } else {
         DrawText(gText58AF);
@@ -1617,7 +1617,7 @@ void AnimateConeOfCold(int count, int spread, int step, int cycle, int divisor,
 /* 0EF3:1CD2: clear the record's effect flag bit 0x80. */
 /*@ 0EF3:1CD2 */ void ClearEffectFlag80(struct CharRec far *rec)
 {
-    rec->mE3 &= ~0x80L;
+    rec->effectFlags &= ~0x80L;
 }
 
 /* 0EF3:1CE8: clear a member's m01 bit 1 and effect flag bit 0x80, clear its effect slot 0x22 and
@@ -1625,7 +1625,7 @@ void AnimateConeOfCold(int count, int spread, int step, int cycle, int divisor,
 /*@ 0EF3:1CE8 */ void ClearPoisonEffect(int who)
 {
     gChars[who].status &= ~2;
-    gChars[who].mE3 &= ~0x80L;
+    gChars[who].effectFlags &= ~0x80L;
     ClearCharEffectSlot(who, -0x22);
     RedrawMember(who);
 }
@@ -1640,7 +1640,7 @@ void AnimateConeOfCold(int count, int spread, int step, int cycle, int divisor,
 
     index = ItemSlot1Empty(gCurRec);
     itemType = CreateItemType(0, 0, 0, 0xF, 1, 4, 4, 1);
-    gCurRec->m77[index] = CreateItemRecord(0, 0x54, 0, itemType);
+    gCurRec->items[index] = CreateItemRecord(0, 0x54, 0, itemType);
     RedrawMember(gPanelMember);
     ApplyTimedCharEffect(gEFB8, 4, 0x222L, GetClassSlot24Value(gPanelMember) >> 1, 1);
 }
@@ -1653,14 +1653,14 @@ void AnimateConeOfCold(int count, int spread, int step, int cycle, int divisor,
     int i;
 
     for (i = 0; i < 6; i++)
-        gChars[i].m23 = 100;
+        gChars[i].food = 100;
 }
 
 /* 0EF3:1DDF: set the current record's effect flag bit 0x100, recompute the panel member's armour
    class and apply a 5-turn effect. */
 /*@ 0EF3:1DDF */ void SetEffectFlag100(void)
 {
-    gCurRec->mE3 |= 0x100L;
+    gCurRec->effectFlags |= 0x100L;
     ComputeArmourClass(gPanelMember);
     ApplyTimedCharEffect(gEFB8, 0, 0x222L, 5, 1);
 }
@@ -1669,7 +1669,7 @@ void AnimateConeOfCold(int count, int spread, int step, int cycle, int divisor,
    class. */
 /*@ 0EF3:1E1D */ void ClearEffectFlag100(struct CharRec far *rec)
 {
-    rec->mE3 &= ~0x100L;
+    rec->effectFlags &= ~0x100L;
     ComputeArmourClass(gPanelMember);
 }
 
@@ -1740,7 +1740,7 @@ void AnimateConeOfCold(int count, int spread, int step, int cycle, int divisor,
 
     rec = gChars;
     for (i = 0; i < 6; i++, rec++) {
-        rec->mE3 |= 0x200L;
+        rec->effectFlags |= 0x200L;
     }
     ApplyTimedCharEffect(gEFB8, 0, 0x1554L, GetClassSlot24Value(gPanelMember), 1);
     RedrawCharacters();
@@ -1754,7 +1754,7 @@ void AnimateConeOfCold(int count, int spread, int step, int cycle, int divisor,
 
     rec = gChars;
     for (i = 0; i < 6; i++, rec++) {
-        rec->mE3 &= ~0x200L;
+        rec->effectFlags &= ~0x200L;
     }
     RedrawCharacters();
 }
@@ -1783,7 +1783,7 @@ void AnimateConeOfCold(int count, int spread, int step, int cycle, int divisor,
 /* 0EF3:2011: add the panel member's effect record of mode 8 through 0EF3:097B. */
 /*@ 0EF3:2011 */ void AddEffectRecord8(void)
 {
-    StartCellEffect(gPanelMember, 8, gPartyCell, gF3B8, gFBCC);
+    StartCellEffect(gPanelMember, 8, gPartyCell, gF3B8, gPartyDir);
 }
 
 /* 0EF3:2032: run the record's 6d8 melee effect through 0EF3:0A3F. */
@@ -1796,7 +1796,7 @@ void AnimateConeOfCold(int count, int spread, int step, int cycle, int divisor,
    exactly one, set it to 1 and redraw the member; otherwise say the message at ds:58C6. */
 /*@ 0EF3:2050 */ void ReviveAtMinusTen(void)
 {
-    if (gCurRec->hp == -10 && (gCurRec->m1F >> 1) != 1) {
+    if (gCurRec->hp == -10 && (gCurRec->race >> 1) != 1) {
         gCurRec->hp = 1;
         RedrawMember(gCurMember);
     } else {
@@ -1852,7 +1852,7 @@ void AnimateConeOfCold(int count, int spread, int step, int cycle, int divisor,
         DrawText(gText58ED);
         count = RollDice(1, 4, 0);
         for (i = 0; i < 6; i++) {
-            if (MemberIs(i, 3) && gChars[i].m24[0] < 8) {
+            if (MemberIs(i, 3) && gChars[i].levels[0] < 8) {
                 DamageCharacter(i, 0x64);
                 count--;
             }
@@ -1867,7 +1867,7 @@ void AnimateConeOfCold(int count, int spread, int step, int cycle, int divisor,
 /* 0EF3:21BC: heal the current member by twice the panel member's +0x24 class-slot 0 value. */
 /*@ 0EF3:21BC */ void HealFromClassSlot(void)
 {
-    HealCharacter(gCurMember, gChars[gPanelMember].m24[0] * 2);
+    HealCharacter(gCurMember, gChars[gPanelMember].levels[0] * 2);
 }
 
 void DrawSpellPanel(void);
@@ -1988,7 +1988,7 @@ void DrawSpellPanel(void);
    gates the redraw, src/E0ACD.C:73, :143), hide the pointer
    and restore the panel rectangle (8, 0x7a, 0x0e by 0x37) from the slot-5 buffer gSegDF4E plus
    0x61a8, show the pointer, draw the view rows, and rebuild the active item list (BuildList1 to 3
-   by gFB44). Returns the action record's +4 word. */
+   by gPanelMode). Returns the action record's +4 word. */
 /*@ 0EF3:2541 */ int RedrawPartyPanel(struct ActRec far *rec)
 {
     gFlag = 0;
@@ -1996,7 +1996,7 @@ void DrawSpellPanel(void);
     gRestoreRect(8, 0x7A, 0x0E, 0x37, (char far *)gSegDF4E + 0x61A8);
     ShowPointerZone();
     DrawViewRows();
-    switch (gFB44) {
+    switch (gPanelMode) {
     case 0:
         BuildList1();
         break;
@@ -2037,7 +2037,7 @@ void DrawSpellPanel(void);
 {
     int item, left;
 
-    item = gChars[who].m77[slot];
+    item = gChars[who].items[slot];
     switch (gTable8DD2[item].m02) {
     case 0x22:
     case 0x23:
@@ -2075,21 +2075,21 @@ void DrawSpellPanel(void);
     int index;
 
     gEFB8 = action;
-    if ((gSpells1344[action].m12 & 1) && (gChars[gPanelMember].mE3 & 4))
+    if ((gSpells1344[action].m12 & 1) && (gChars[gPanelMember].effectFlags & 4))
         ClearEffectFlag4(&gChars[gPanelMember]);
     spell = &gSpells1344[action];
     gFnEFBA = spell->apply;
     index = gPanelMember;
     if (index > 3)
         index -= 2;
-    gF3B8 = g1A1B[gFBCC * 4 + index];
+    gF3B8 = g1A1B[gPartyDir * 4 + index];
     if (spell->flags & 2) {
-        if (gChars[gPanelMember].m77[0] != 0 && gChars[gPanelMember].m77[1] != 0) {
+        if (gChars[gPanelMember].items[0] != 0 && gChars[gPanelMember].items[1] != 0) {
             SayAndPlaySound(gText5943);
             return;
         }
-        if (IsDiscardedItem(gChars[gPanelMember].m77[0]) ||
-            IsDiscardedItem(gChars[gPanelMember].m77[1])) {
+        if (IsDiscardedItem(gChars[gPanelMember].items[0]) ||
+            IsDiscardedItem(gChars[gPanelMember].items[1])) {
             SayAndPlaySound(gText596E);
             return;
         }

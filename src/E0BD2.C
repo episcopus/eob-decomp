@@ -51,21 +51,21 @@ extern struct ItemType gItemTypes[]; /*@ ds:A9F0 */
 /* A 243-byte character record at ds:F580; only the fields this unit uses (src/E0A72.C, src/E0DE8.C). */
 struct CharRec {
     char pad00;
-    unsigned char status;      /* +01: status bits, tested by 0BD2:0D2D */
+    unsigned char status;   /* +01: status bits, tested by 0BD2:0D2D */
     char name[0x0B];        /* +02: the character's name, NUL padded */
-    signed char m0D;        /* +0D: the strength score, set to 0x16 by 0BD2:0D2D (src/E0A72.C) */
+    signed char strength;   /* +0D: the strength score, set to 0x16 by 0BD2:0D2D (src/E0A72.C) */
     char pad0E;
-    signed char m0F;        /* +0F: the exceptional strength percentile, set to 0 by 0BD2:0D2D */
+    signed char strengthPct;        /* +0F: the exceptional strength percentile, set to 0 by 0BD2:0D2D */
     char pad10[0x1E - 0x10];
     signed char m1E;        /* +1E: per-slot status bits; bit `slot` is tested by UseItemSlot */
-    signed char m1F;        /* +1F: bit 0 selects "her" over "his" in ReportLostItem (0BD2:000E) */
-    signed char m20;        /* +20: indexes g1231 in 0BD2:11FD */
+    signed char race;       /* +1F: bit 0 selects "her" over "his" in ReportLostItem (0BD2:000E) */
+    signed char classIndex; /* +20: indexes g1231 in 0BD2:11FD */
     char pad21[0x23 - 0x21];
-    signed char m23;        /* +23: set to 100 by 0BD2:0D2D */
+    signed char food;       /* +23: set to 100 by 0BD2:0D2D */
     char pad24[0x77 - 0x24];
-    int m77[27];            /* +77: 27 carried-item slots; slot 16 (+97) is also a list head */
+    int items[27];          /* +77: 27 carried-item slots; slot 16 (+97) is also a list head */
     char padAD[0xE3 - 0xAD];
-    long mE3;               /* +E3: effect flags, changed by 0BD2:0D2D */
+    long effectFlags;       /* +E3: effect flags, changed by 0BD2:0D2D */
     char padE7[0xF3 - 0xE7];
 };
 extern struct CharRec gChars[]; /*@ ds:F580 */
@@ -97,19 +97,19 @@ struct Obj28 {
 };
 extern struct Obj28 gObjs[]; /*@ ds:8A82 */
 
-extern signed char gA99A; /*@ ds:A99A */    /* the selected character index (src/E0ACD.C) */
+extern signed char gInventoryMember; /*@ ds:A99A */    /* the selected character index (src/E0ACD.C) */
 extern char gF51A; /*@ ds:F51A */           /* the selected row (src/E0D1C.C) */
-extern char gFB44; /*@ ds:FB44 */           /* a display-mode byte (src/E0D1C.C) */
+extern char gPanelMode; /*@ ds:FB44 */           /* a display-mode byte (src/E0D1C.C) */
 extern int gFBC8; /*@ ds:FBC8 */            /* the current action (src/E0D1C.C) */
-extern int gFBCC; /*@ ds:FBCC */            /* a page number 0..3 (src/E0D1C.C) */
+extern int gPartyDir; /*@ ds:FBCC */            /* the party's facing, 0..3 north, east, south, west */
 extern int gPartyCell; /*@ ds:FBCA */     /* the party's map cell (src/E177D.C:92): this unit passes
-                                            it to f0D1C_00DA (UseWandItem) as the cell; E0ACD.C
+                                            it to StepCell (UseWandItem) as the cell; E0ACD.C
                                             indexes the nine-byte records with it */
 extern int gMouseDisabled; /*@ ds:814A */   /* nonzero disables the mouse (src/E07A9.C) */
 extern int gStatusLine; /*@ ds:8115 */            /* nonzero while a status line is up (src/E082C.C) */
 extern int gGraphicsChoice; /*@ ds:8102 */            /* nonzero: a colour row exists (src/E07A9.C) */
-extern signed char g194B[]; /*@ ds:194B */  /* byte table (src/E0D1C.C) */
-extern signed char g1231[]; /*@ ds:1231 */  /* byte table indexed by gChars[].m20 (src/E0DE8.C) */
+extern signed char gWallTypeFlags[]; /*@ ds:194B */  /* byte table (src/E0D1C.C) */
+extern signed char g1231[]; /*@ ds:1231 */  /* byte table indexed by gChars[].classIndex (src/E0DE8.C) */
 extern int g1C8D[]; /*@ ds:1C8D */          /* per-row class mask (0BD2:0AF2/0C8E) */
 extern signed char gF57E; /*@ ds:F57E */    /* a colour read by 0BD2:0917 (src/E0D1C.C) */
 extern signed char gF53A; /*@ ds:F53A */    /* a colour read by 0BD2:0917 (src/E0D1C.C) */
@@ -117,8 +117,8 @@ extern signed char gFB4C; /*@ ds:FB4C */    /* a colour read by 0BD2:0917 (src/E
 extern char gFileNameBuf[]; /*@ ds:FE6E */  /* the text buffer sprintf formats into (src/EOV2.C) */
 extern void far *gSegDF4E; /*@ ds:DF4E */   /* slot 5's buffer segment (src/E07A9.C) */
 extern char gDF4C; /*@ ds:DF4C */           /* set to 1 when an action took effect (src/E0ACD.C) */
-extern char gB899[]; /*@ ds:B899 */         /* the nine-byte record list head (src/E0D1C.C) */
-extern char gB894[]; /*@ ds:B894 */         /* the nine-byte records (src/E0D1C.C) */
+extern char gMazeItems[]; /*@ ds:B899 */         /* the nine-byte record list head (src/E0D1C.C) */
+extern char gMaze[]; /*@ ds:B894 */         /* the nine-byte records (src/E0D1C.C) */
 extern void (far *gSaveRect)(int x, int y, int w, int h, void far *buf); /*@ ds:80AE */ /* E1BBE.ASM */
 extern void (far *gFillRect)(int x1, int y1, int x2, int y2, int pattern); /*@ ds:806A */ /* src/E082C.C */
 extern void DrawFilledPanel(int x1, int y1, int x2, int y2, int c1, int c2, int c3); /*@ 082C:09D5 */
@@ -146,7 +146,7 @@ extern char g37B4[]; /*@ ds:37B4 */        /* a string table SkipStrings walks (
 extern char g37E1[]; /*@ ds:37E1 */        /* a string table SkipStrings walks (0BD2:05B5) */
 extern char g3837[]; /*@ ds:3837 */        /* a string table SkipStrings walks (0BD2:05B5) */
 
-extern int f0D1C_00DA(int value, int page); /*@ 0D1C:00DA */
+extern int StepCell(int cell, int dir); /*@ 0D1C:00DA */
 extern int GetCurrentItem(void); /*@ 0D1C:02DC */
 extern int MemberIs(int who, int mask); /*@ 0D1C:0670 */
 extern int f0D1C_07DB(int who, int flag); /*@ 0D1C:07DB */
@@ -179,7 +179,7 @@ void DrawItemName(int item);
 /* functions of this unit, in address order */
 /* 0BD2:000E: the "lost item" message. Rolls 1d27 for a starting slot, then scans the 27 item slots
    of character `who` from there, wrapping, for the first item whose type flags have 0x80. It clears
-   the slot, prints "<name> has lost her/his " (the possessive by m1F bit 0), draws the item's name
+   the slot, prints "<name> has lost her/his " (the possessive by race bit 0), draws the item's name
    through 0BD2:05B5 and ".\r", and redraws the character's row. */
 /*@ 0BD2:000E */ void ReportLostItem(int who)
 {
@@ -189,11 +189,11 @@ void DrawItemName(int item);
 
     roll = RollDice(1, 0x1b, -1);
     for (i = 0; i < 0x1b; i++) {
-        item = gChars[who].m77[roll];
+        item = gChars[who].items[roll];
         if (item != 0) {
             if (gItemTypes[gItems[item].m02].m0E.word & 0x80) {
-                gChars[who].m77[roll] = 0;
-                if (gChars[who].m1F & 1)
+                gChars[who].items[roll] = 0;
+                if (gChars[who].race & 1)
                     sprintf(gFileNameBuf, "%s has lost her ", gChars[who].name);
                 else
                     sprintf(gFileNameBuf, "%s has lost his ", gChars[who].name);
@@ -218,15 +218,15 @@ void DrawItemName(int item);
     if (row == -1)
         item = GetCurrentItem();
     else
-        item = gChars[who].m77[row];
+        item = gChars[who].items[row];
     gItems[item].m04 = -1;
     if (row == -1) {
         SetMouseItem(0);
     } else {
-        gChars[who].m77[row] = 0;
-        if (gFB44 == 1)
+        gChars[who].items[row] = 0;
+        if (gPanelMode == 1)
             DrawItemRow(row, 1, 0);
-        else if (gFB44 == 0)
+        else if (gPanelMode == 0)
             RedrawMember(who);
     }
     return gItems[item].m0B;
@@ -236,10 +236,10 @@ void DrawItemName(int item);
    mode other than 2 through 0BD2:0C8E with the selected character and row. Purpose unknown. */
 /*@ 0BD2:019F */ void RedrawSelectedRow(void)
 {
-    if (gFB44 == 1)
+    if (gPanelMode == 1)
         UseSelectedItem(gF51A);
-    else if (gFB44 != 2)
-        SwapSelectedItem(gA99A, gF51A);
+    else if (gPanelMode != 2)
+        SwapSelectedItem(gInventoryMember, gF51A);
 }
 
 /* 0BD2:01D0: inserts the item `item` into the circular list whose head word is `head`, stamping it
@@ -394,17 +394,17 @@ next:
     }
 }
 
-/* 0BD2:0458: queues item `item` at the nine-byte record gB899 + `volume` * 9 through 0BD2:01D0
+/* 0BD2:0458: queues item `item` at the nine-byte record gMazeItems + `volume` * 9 through 0BD2:01D0
    with the tag `tag`. When the queued item still links onward (its m08 is not itself), the record's
    head word moves to that m08. Purpose unknown. */
 /*@ 0BD2:0458 */ void PushListItem(int volume, int item, int tag)
 {
-    InsertListItem((void far *)(gB899 + volume * 9), volume, item, tag);
+    InsertListItem((void far *)(gMazeItems + volume * 9), volume, item, tag);
     if (gItems[item].m08 != item)
-        *(int *)(gB899 + volume * 9) = gItems[item].m08;
+        *(int *)(gMazeItems + volume * 9) = gItems[item].m08;
 }
 
-/* 0BD2:04AA: drains the list at gB899 + `volume` * 9. Items whose m02 is `type` (or all when
+/* 0BD2:04AA: drains the list at gMazeItems + `volume` * 9. Items whose m02 is `type` (or all when
    `type` is -1) are freed (m04 = -1, m0A = 0); the others are re-queued through 0BD2:01D0 in their
    original order, keeping each item's tag. Purpose unknown. */
 /*@ 0BD2:04AA */ void DrainListItem(int volume, int type)
@@ -414,10 +414,10 @@ next:
     int count;
     int saved;
 
-    item = *(int *)(gB899 + volume * 9);
+    item = *(int *)(gMazeItems + volume * 9);
     if (item == 0)
         return;
-    *(int *)(gB899 + volume * 9) = 0;
+    *(int *)(gMazeItems + volume * 9) = 0;
     count = 0;
     start = item;
     while (item != start || count == 0) {
@@ -433,7 +433,7 @@ next:
             item = gItems[item].m08;
             gItems[saved].m08 = 0;
             gItems[saved].m06 = 0;
-            InsertListItem((void far *)(gB899 + volume * 9), volume, saved, gItems[saved].tag);
+            InsertListItem((void far *)(gMazeItems + volume * 9), volume, saved, gItems[saved].tag);
         }
         count++;
     }
@@ -515,10 +515,10 @@ next:
 }
 
 /* 0BD2:07DE: reserves one of the ten effect records at ds:DD2C (returning 0 when all are live),
-   queues `item` at the map record gB899 + `volume` * 9 through 0BD2:01D0 with the tag `kind | 4`,
+   queues `item` at the map record gMazeItems + `volume` * 9 through 0BD2:01D0 with the tag `kind | 4`,
    fills the record from the arguments, plays sound 0x0B (0x1A when `type` is 7), and returns 1.
    `volume` is the item's map cell (most callers pass gPartyCell, E0ACD.C:434, :769, E0DE8.C:406;
-   E122E.C:728 passes the script's id), `page` is gFBCC, `kind` is the per-page action kind and
+   E122E.C:728 passes the script's id), `page` is gPartyDir, `kind` is the per-page action kind and
    `type` is the item's m02. QUIRK 0BD2:07DE: rec->m02 is stored 1 twice (the second store is in the original). */
 /*@ 0BD2:07DE */ int AddDDEffect(int who, int item, int volume, int kind, int page, int type)
 {
@@ -532,7 +532,7 @@ next:
     }
     if (i == 10)
         return 0;
-    InsertListItem((void far *)(gB899 + volume * 9), volume, item, kind | 4);
+    InsertListItem((void far *)(gMazeItems + volume * 9), volume, item, kind | 4);
     rec->active = 1;
     rec->m02 = 1;
     rec->m0C = 0;
@@ -582,7 +582,7 @@ next:
     return slot;
 }
 
-/* 0BD2:0917: draws the selected character's (gA99A) item row `row`. When `slot` is nonzero it draws
+/* 0BD2:0917: draws the selected character's (gInventoryMember) item row `row`. When `slot` is nonzero it draws
    the row's frame: a filled panel and rectangle at x g17CE[row], y g1804[row] sized by
    g3890[g3875[row]] (a kind-1 row is the count row, which also prints the row's item count, and a
    row that is the selected row gF51A is highlighted when gMouseDisabled). When the row holds an
@@ -603,7 +603,7 @@ next:
     gStatusLine = drawMode;
     x = g17CE[row];
     y = g1804[row];
-    item = gChars[gA99A].m77[row];
+    item = gChars[gInventoryMember].items[row];
     if (kind != 0) {
         kind = g3875[row];
         if (gGraphicsChoice == 0)
@@ -614,7 +614,7 @@ next:
                     kind != 1 ? gF57E : -1);
         if (kind == 1) {
             gFillRect(0xE3, 0x41, 0xEE, 0x45, 0xC);
-            count = ScanListItem(&gChars[gA99A].m77[row], -1, -1, 1);
+            count = ScanListItem(&gChars[gInventoryMember].items[row], -1, -1, 1);
             if (count < 10)
                 x = 0xE9;
             else
@@ -640,7 +640,7 @@ next:
 {
     if (drawMode)
         gSaveRect(0x16, 0, 0x12, 0xA8, gSegDF4E);
-    RedrawMember(gA99A);
+    RedrawMember(gInventoryMember);
 }
 
 /* 0BD2:0AF2: when `row` is 0x11 and `item` is carried, checks that character `who` may wear the
@@ -657,7 +657,7 @@ next:
             return 0;
         }
     }
-    if (gItems[gChars[who].m77[row]].flags & 0x20)
+    if (gItems[gChars[who].items[row]].flags & 0x20)
         return 0;
     if (item != 0)
         mask = gItemTypes[gItems[item].m02].m00.word;
@@ -669,32 +669,32 @@ next:
     }
     return 1;
 }
-/* 0BD2:0BA0: uses the item in slot `slot` of the selected character gA99A through 0BD2:0AF2. For a
+/* 0BD2:0BA0: uses the item in slot `slot` of the selected character gInventoryMember through 0BD2:0AF2. For a
    slot other than 0x10 it exchanges the held item with the slot: the slot's item goes into the hand
    (SetMouseItem) and the held item goes into the slot, then the row is redrawn and the armour class
    recomputed. For slot 0x10 (the pack list) with an empty hand it takes the first item out of the
-   list at m77[16] into the hand; with an item in hand it puts the held item into the list with the
+   list at items[16] into the hand; with an item in hand it puts the held item into the list with the
    key 0xFFFE and empties the hand. */
 /*@ 0BD2:0BA0 */ void UseSelectedItem(int slot)
 {
     int saved;
     int item;
 
-    saved = gChars[gA99A].m77[slot];
+    saved = gChars[gInventoryMember].items[slot];
     item = GetCurrentItem();
-    if (!CanPlaceItemInSlot(item, gA99A, slot))
+    if (!CanPlaceItemInSlot(item, gInventoryMember, slot))
         return;
     if (slot != 0x10) {
         SetMouseItem(saved);
-        gChars[gA99A].m77[slot] = item;
+        gChars[gInventoryMember].items[slot] = item;
         DrawItemRow(slot, 1, 0);
-        ComputeArmourClass(gA99A);
+        ComputeArmourClass(gInventoryMember);
     } else if (item == 0) {
-        saved = RemoveListItem(&gChars[gA99A].m77[16], 0, -1);
+        saved = RemoveListItem(&gChars[gInventoryMember].items[16], 0, -1);
         DrawItemRow(slot, 1, 0);
         SetMouseItem(saved);
     } else {
-        InsertListItem((void far *)&gChars[gA99A].m77[16], 0xFFFE, item, 0);
+        InsertListItem((void far *)&gChars[gInventoryMember].items[16], 0xFFFE, item, 0);
         DrawItemRow(slot, 1, 0);
         SetMouseItem(0);
     }
@@ -709,7 +709,7 @@ next:
     int type;
     unsigned char mask;
 
-    item = gChars[who].m77[row];
+    item = gChars[who].items[row];
     if (gItems[item].flags & 0x20)
         return;
     heldItem = GetCurrentItem();
@@ -720,7 +720,7 @@ next:
         mask = 0xFF;
     if (g1C8D[row] & mask) {
         SetMouseItem(item);
-        gChars[who].m77[row] = heldItem;
+        gChars[who].items[row] = heldItem;
         RedrawMember(who);
     }
     ComputeArmourClass(who);
@@ -730,9 +730,9 @@ next:
    clears the slot through 0BD2:0106 (the item's m0B selects the effect), plays sound 0x0A and
    dispatches on m0B: 1 sets the strength score m0D to 0x16 and arms a timed giant-strength effect
    (ApplyCharEffect(who, ..., 7, 1); 7 is the giant-strength effect type, E1414.C:05ED stores it as
-   the type byte and the 07CA runner prints "%s no longer has giant strength" and restores m0D/m0F
+   the type byte and the 07CA runner prints "%s no longer has giant strength" and restores m0D/strengthPct
    from m0E/m10 when it runs out), 2 and 3 heal by a dice roll, 4 poisons through 0DE8:101A, 5 sets
-   m23 to 100, 6 and 8 run the 0EF3 helpers, 7 sets effect flag 4. After the switch it announces
+   food to 100, 6 and 8 run the 0EF3 helpers, 7 sets effect flag 4. After the switch it announces
    "%s feels <effect>!\r" with the effect name from the ds:3893 table, except for effect 4 when m01
    bit 1 is set. Called by 0BD2:1001. */
 /*@ 0BD2:0D2D */ void ApplyItemEffect(int who, int slot)
@@ -746,8 +746,8 @@ next:
     switch (kind) {
     case 1:
         FlashPartyMembers(who);
-        rec->m0D = 0x16;
-        rec->m0F = 0;
+        rec->strength = 0x16;
+        rec->strengthPct = 0;
         ApplyCharEffect(who, (RollDice(1, 4, 0) + 4) * 0x222, 7, 1);
         break;
     case 2:
@@ -760,12 +760,12 @@ next:
         break;
     case 4:
         ApplyStatusEffect(who, 2, "poisoned", 0, 1, 8, 1);
-        rec->mE3 &= ~0x80;
+        rec->effectFlags &= ~0x80;
         break;
     case 5:
         FlashPartyMembers(who);
-        rec->m23 = 0x64;
-        if (gFB44 != 0)
+        rec->food = 0x64;
+        if (gPanelMode != 0)
             RedrawMember(who);
         break;
     case 6:
@@ -773,7 +773,7 @@ next:
         break;
     case 7:
         FlashPartyMembers(who);
-        rec->mE3 |= 4;
+        rec->effectFlags |= 4;
         RedrawMember(who);
         break;
     case 8:
@@ -789,8 +789,8 @@ next:
 
 /* 0BD2:0EE8: uses the wand in slot `slot` of character `who`. When the item's m0B is 0 it reports
    no effect; when it is not 5 it dispatches through 0EF3:28ED with the action g38FA[m0B]; for 5 it
-   plays the wand sound, and when the surroundings pass the g194B/gB894 tests, moves every gObjs
-   record whose m02 equals the cell x (from f0D1C_00DA(gPartyCell, page)) to the cell y
+   plays the wand sound, and when the surroundings pass the gWallTypeFlags/gMaze tests, moves every gObjs
+   record whose m02 equals the cell x (from StepCell(gPartyCell, page)) to the cell y
    (MoveObjectToId(obj, y, -1)) and sets gDF4C, otherwise reports no effect. */
 /*@ 0BD2:0EE8 */ void UseWandItem(int who, int slot)
 {
@@ -802,7 +802,7 @@ next:
     int type;
     int page;
 
-    type = gItems[gChars[who].m77[slot]].m0B;
+    type = gItems[gChars[who].items[slot]].m0B;
     if (type == 0) {
         DrawText("The wand has no apparent magical effect\r");
         return;
@@ -812,13 +812,13 @@ next:
         StartPanelAction(who, effect, slot);
         return;
     }
-    page = gFBCC;
-    x = f0D1C_00DA(gPartyCell, page);
-    y = f0D1C_00DA(x, page);
+    page = gPartyDir;
+    x = StepCell(gPartyCell, page);
+    y = StepCell(x, page);
     PlaySound(0x62);
     FlashViewDamage();
-    if ((g194B[gB894[y * 9 + (page ^ 2)]] & 4) && (gB894[y * 9 + 4] & 7) == 0
-            && (gB894[x * 9 + 4] & 7) != 0) {
+    if ((gWallTypeFlags[gMaze[y * 9 + (page ^ 2)]] & 4) && (gMaze[y * 9 + 4] & 7) == 0
+            && (gMaze[x * 9 + 4] & 7) != 0) {
         obj = gObjs;
         for (i = 0; i < 30; i++, obj++) {
             if (obj->m02 == x) {
@@ -851,12 +851,12 @@ next:
     rec = &gChars[who];
     if (!MemberIs(who, 0x0D))
         return;
-    item = rec->m77[slot];
+    item = rec->items[slot];
     firstTwo = FirstTwoSlots(slot);
     if (firstTwo != -1) {
         if (!f0D1C_07DB(who, firstTwo))
             return;
-        if (gFB44 == 0 && (gChars[who].m1E & (1 << slot)))
+        if (gPanelMode == 0 && (gChars[who].m1E & (1 << slot)))
             return;
     }
     if (!ItemClassAllowed(who, item)) {
@@ -876,13 +876,13 @@ next:
     case 1:
     case 2:
     case 3:
-        if (gFB44 != 0)
+        if (gPanelMode != 0)
             break;
         UseItem(who, slot, item);
         break;
     case 5:
     case 6:
-        if (gFB44 == 0)
+        if (gPanelMode == 0)
             OpenSpellPanel(who, cls == 6);
         break;
     case 7:
@@ -897,13 +897,13 @@ next:
         DrawText("This item is not used in this way.\r");
         break;
     case 9:
-        if (gFB44 == 0) {
+        if (gPanelMode == 0) {
             value = gItems[item].m0B;
             StartPanelAction(who, value, firstTwo);
         }
         break;
     case 10:
-        if (gFB44 == 0) {
+        if (gPanelMode == 0) {
             value = gItems[item].m0B + 0x19;
             StartPanelAction(who, value, firstTwo);
         }
@@ -915,21 +915,21 @@ next:
         ApplyItemEffect(who, slot);
         break;
     case 18:
-        if (gFB44 == 0)
+        if (gPanelMode == 0)
             UseWandItem(who, slot);
         break;
     }
 }
 
 /* 0BD2:11FD: returns 1 when `item` is empty, otherwise the item-type byte gItemTypes[m02].m05 ANDed
-   with g1231[gChars[who].m20], cast to signed char. The result is nonzero when the character's
+   with g1231[gChars[who].classIndex], cast to signed char. The result is nonzero when the character's
    class may use the item, so the callers use it as yes/no. Purpose unknown beyond that. */
 /*@ 0BD2:11FD */ int ItemClassAllowed(int who, int item)
 {
     int result;
 
     if (item != 0) {
-        result = (signed char)(gItemTypes[gItems[item].m02].m05 & g1231[gChars[who].m20]);
+        result = (signed char)(gItemTypes[gItems[item].m02].m05 & g1231[gChars[who].classIndex]);
     } else {
         result = 1;
     }

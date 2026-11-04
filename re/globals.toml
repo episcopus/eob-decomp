@@ -623,3 +623,51 @@ why = "the far pointer to the current font: SetFont 1A47:0169 stores it, TextWid
 id = "ds:80C2"
 name = "gDrawShape"
 why = "the driver entry that draws a shape record at a screen position: DrawShape 1A29:000F calls it with region offsets added, ShowPointer 1BBE:01F4 with the pointer's shape record (gPointerShapeOff/Seg)"
+[[global]]
+id = "ds:A9C0"
+name = "gFont6x6"
+why = "the 6x6 font: 07C8:0419 stores LoadFont(\"FONT6.FNT\") in it (E07C8 line 377), and the file's header bytes 102h and 103h are 6 and 6"
+[[global]]
+id = "ds:B894"
+name = "gMaze"
+why = "the maze in memory, one nine-byte record per map cell indexed by the cell (gPartyCell, a monster's cell): bytes 0..3 the cell's walls by side (08E6:0297 reads +(orient ^ 2)), +4 bits 0..2 the monsters in the cell (08E6:0297 counts moves in and out), +5 the cell's item list"
+[[global]]
+id = "ds:B899"
+name = "gMazeItems"
+why = "the item list head of each nine-byte maze cell, gMaze + 5 (gMaze[cell * 9 + 5]): 08E6 inserts into it at a monster's cell, 0D1C:035A drains a member's items into the party's cell"
+[[global]]
+id = "ds:194B"
+name = "gWallTypeFlags"
+why = "flags per wall type, indexed by a wall byte of gMaze: a step needs bits 0..1 set in the target side's entry (08E6:058A area, E08E6 line 550), bit 2 is tested by the path search (E08E6 line 670)"
+[[global]]
+id = "ds:FB44"
+name = "gPanelMode"
+why = "what the right-hand panel shows: 0 the party (Action01E3 0ACD:01E3 restores it), 1 a member's inventory (Action0034 sets it when a portrait is picked; 1547 draws the 27 item rows), 2 the member's second page (Action018E toggles 1 and 2)"
+[[global]]
+id = "ds:A99A"
+name = "gInventoryMember"
+why = "the party member whose inventory the panel shows: Action0034 0ACD:0034 sets it to the picked slot as it sets gPanelMode to 1, and the panel reads gChars[it].items (0D1C:02DC, 0D1C:0304)"
+[[global]]
+id = "ds:1790"
+name = "gDirCellOffset"
+why = "the cell offset of one step north, east, south and west: the bytes -32, 1, 32, -1 at ds:1790 in EOB.EXE, added to a cell by StepCell 0D1C:00DA"
+[[global]]
+id = "ds:FBCC"
+name = "gPartyDir"
+why = "the direction the party faces, 0..3 north, east, south, west: 0ACD:056C and 0ACD:0593 turn by decrementing and incrementing it modulo 4, 0ACD:0529 steps back along (it + 2) % 4, StepCell(gPartyCell, it) is the cell ahead"
+[[global]]
+id = "ds:547E"
+name = "gOppositeSide"
+why = "the side of a cell that faces back along each direction: the bytes 2, 3, 0, 1 at ds:547E, indexed by the step direction in StepIfOpen 0D1C:0080"
+[[global]]
+id = "ds:F540"
+name = "gStepCount"
+why = "counts the party's steps: MoveParty 122E:0001 increments it on every move"
+[[global]]
+id = "ds:5AB5"
+name = "gStrNewline"
+why = "the one-character string carriage return at ds:5AB5 (bytes 0D 00); MoveParty 122E:0001 draws it to scroll the message area on every step"
+[[global]]
+id = "ds:B800"
+name = "gScriptCell"
+why = "the map cell whose script is running: RunCellScript 122E:1DA8 stores its cell argument in it, and the turning opcode 122E (case 0xFFF5) turns the gDD2C effects whose cell +04 equals it"

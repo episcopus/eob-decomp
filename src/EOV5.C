@@ -25,7 +25,7 @@ struct Cell {               /* the header gGetSpriteCell returns; bytes +1 and +
 
 struct CharRec {            /* 243-byte (0xF3) character records at ds:F580 (src/EOV6.C) */
     char index;             /* +00 */
-    unsigned char status;    /* +01: status bits (only bit 0 is read here) */
+    unsigned char status;   /* +01: status bits (only bit 0 is read here) */
     char name[0x0B];        /* +02: the character's name, NUL padded */
     char pad0D[0x1B - 0x0D];
     signed char hp;         /* +1B: current hit points */
@@ -33,12 +33,12 @@ struct CharRec {            /* 243-byte (0xF3) character records at ds:F580 (src
     char pad1D[0x22 - 0x1D];
     unsigned char m22;      /* +22: compared with 0xf7 by 0AB1 (0D1C:0415 uses it too) */
     char pad23[0x33 - 0x23];
-    void far *m33;          /* +33: a far pointer to the character's picture buffer, preserved by
+    void far *portrait;     /* +33: a far pointer to the character's picture buffer, preserved by
                                    the record swap at 070E (the movmem destination there) */
     char pad37[0x77 - 0x37];
-    int m77[25];            /* +77: 25 item-slot words (the carried and equipped items) */
+    int items[25];          /* +77: 25 item-slot words (the carried and equipped items) */
     char padA9[0xE3 - 0xA9];
-    unsigned long mE3;      /* +E3: effect flags (0C9D clears bit 7 of the low word) */
+    unsigned long effectFlags;      /* +E3: effect flags (0C9D clears bit 7 of the low word) */
     char padE7[0xF3 - 0xE7];
 };
 
@@ -91,10 +91,10 @@ extern int gEFC6; /*@ ds:EFC6 */
 extern int gFE42; /*@ ds:FE42 */
 extern char gScrollOn; /*@ ds:8110 */
 extern unsigned long gFC04; /*@ ds:FC04 */
-extern int gFBCC; /*@ ds:FBCC */
+extern int gPartyDir; /*@ ds:FBCC */
 extern int gPartyCell; /*@ ds:FBCA */
 extern signed char g1A1B[]; /*@ ds:1A1B */
-extern char gB899[]; /*@ ds:B899 */
+extern char gMazeItems[]; /*@ ds:B899 */
 extern struct CharRec gChars[]; /*@ ds:F580 */
 extern struct CharRec gCharPool[]; /*@ ds:7298 */  /* the pre-made character records 070E copies into gChars */
 extern struct PoolNameRec gPoolNameBase[]; /*@ ds:71A7 */  /* ds:71A7 = gCharPool + 2 - 0xF3, the base of the
@@ -139,8 +139,8 @@ extern char gText7BF2[]; /*@ ds:7BF2 */
 extern char gText7BFA[]; /*@ ds:7BFA */
 extern char gFileNameBuf[]; /*@ ds:FE6E */
 extern void far *gCurFont; /*@ ds:FE4E */
-extern void far *gA9C0; /*@ ds:A9C0 */
-extern char gFB44; /*@ ds:FB44 */
+extern void far *gFont6x6; /*@ ds:A9C0 */
+extern char gPanelMode; /*@ ds:FB44 */
 extern char gFlag; /*@ ds:F3B9 */
 extern char gFileNameOuttake[]; /*@ ds:7F07 */
 extern char gFileNameText2[]; /*@ ds:7F0F */
@@ -562,10 +562,10 @@ enum {
     return 1;
 }
 /* ovl5:070E: adds the character `which` of the pool ds:7298 to the party. It finds the first slot
-   of gChars whose flags bit 0 is clear, saves that slot's picture pointer m33, copies the pool
-   record over it through movmem, restores m33, recomputes the armour class, requeues every carried
+   of gChars whose flags bit 0 is clear, saves that slot's picture pointer portrait, copies the pool
+   record over it through movmem, restores portrait, recomputes the armour class, requeues every carried
    item through CopyItemToFreeSlot, then slices the character's sprite cell through gFn8082
-   (ds:8082: which*4, 0xa0, 4, 0x20 out of gOverlayBuf) into the picture buffer m33 and frees the
+   (ds:8082: which*4, 0xa0, 4, 0x20 out of gOverlayBuf) into the picture buffer portrait and frees the
    slice. Called by AddCharPanel. */
 /*@ ovl5:070E */ void AddPartyMember(int which)
 {
@@ -582,17 +582,17 @@ enum {
         }
     }
     rec = &gChars[slot];
-    saved = rec->m33;
+    saved = rec->portrait;
     movmem((void far *)&gCharPool[which], (void far *)rec, 0xF3);
-    rec->m33 = saved;
+    rec->portrait = saved;
     ComputeArmourClass(slot);
     for (i = 0; i < 0x19; i++) {
-        if (rec->m77[i])
-            rec->m77[i] = CopyItemToFreeSlot(rec->m77[i]);
+        if (rec->items[i])
+            rec->items[i] = CopyItemToFreeSlot(rec->items[i]);
     }
     gStatusLine = 2;
     saved = gFn8082(which * 4, 0xA0, 4, 0x20, gOverlayBuf);
-    movmem(saved, rec->m33, 0x514);
+    movmem(saved, rec->portrait, 0x514);
     farfree(saved);
     gStatusLine = 0;
 }
@@ -629,15 +629,15 @@ enum {
     }
 }
 /* ovl5:08D2: turns item `n` into a carried item (CopyItemToFreeSlot) and queues it on the list
-   head gB899 keyed by gPartyCell (the party's map cell), with a random sound from the current
-   sound page gFBCC. Called by the panels that add an item to a character. */
+   head gMazeItems keyed by gPartyCell (the party's map cell), with a random sound from the current
+   sound page gPartyDir. Called by the panels that add an item to a character. */
 /*@ ovl5:08D2 */ void QueueItem(int item)
 {
     int sound;
 
     item = CopyItemToFreeSlot(item);
-    sound = g1A1B[gFBCC * 4 + RollDice(1, 2, -1)];
-    InsertListItem(&gB899[gPartyCell * 9], gPartyCell, item, sound);
+    sound = g1A1B[gPartyDir * 4 + RollDice(1, 2, -1)];
+    InsertListItem(&gMazeItems[gPartyCell * 9], gPartyCell, item, sound);
 }
 
 /* ovl5:0924: the temple/NPC panel. Clears the panel, draws message 8 and shows the menu ds:7BB2
@@ -800,7 +800,7 @@ enum {
         rec = &gChars[i];
         if (rec->status & 1) {
             for (j = 0; j < 0x19; j++) {
-                item = rec->m77[j];
+                item = rec->items[j];
                 if (!item)
                     continue;
                 type = gTable8DD2[item].m02;
@@ -829,7 +829,7 @@ enum {
     while (cures && i < 6) {
         if (MemberIs(i, 3)) {
             gChars[i].status &= 0xf9;
-            gChars[i].mE3 &= ~0x80L;
+            gChars[i].effectFlags &= ~0x80L;
             ClearCharEffectSlot(i, -0x22);
             if (gChars[i].hp < gChars[i].maxHp) {
                 cures--;
@@ -981,7 +981,7 @@ enum {
 /* ovl5:10A6: the "surrender / attack" NPC panel. Draws message 0x10 and shows the 2-entry menu
    ds:7BF2 ("Surrender"/"Attack"); choice 0 draws message 0x11 and, for every character's first two
    item slots whose item type gTable8DD2[item].m02 is outside 0x33..0x38, clears the slot and
-   queues the item on the list keyed by gPartyCell, with the sound from gFBCC. Sets gFC04 bit
+   queues the item on the list keyed by gPartyCell, with the sound from gPartyDir. Sets gFC04 bit
    0x2000000. Called from the menu dispatcher 1A82 (mode 5). */
 /*@ ovl5:10A6 */ void SurrenderPanel(void)
 {
@@ -996,11 +996,11 @@ enum {
         PrintTableString(0x11, 1);
         for (i = 0; i < 6; i++) {
             for (j = 0; j < 2; j++) {
-                if (item = gChars[i].m77[j]) {
+                if (item = gChars[i].items[j]) {
                     if (gTable8DD2[item].m02 < 0x33 || gTable8DD2[item].m02 > 0x38) {
-                        gChars[i].m77[j] = 0;
-                        InsertListItem(&gB899[gPartyCell * 9], gPartyCell, item,
-                                       g1A1B[gFBCC * 4 + RollDice(1, 2, -1)]);
+                        gChars[i].items[j] = 0;
+                        InsertListItem(&gMazeItems[gPartyCell * 9], gPartyCell, item,
+                                       g1A1B[gPartyDir * 4 + RollDice(1, 2, -1)]);
                     }
                 }
             }
@@ -1219,7 +1219,7 @@ enum {
     ShutdownGame();
 }
 /* ovl5:1A82: the overlay's entry and dispatcher (reached from 122E:1D76 and the overlay's stub
-   entry). It hides the pointer, saves the current font, handles the gFB44/gFlag message redraws
+   entry). It hides the pointer, saves the current font, handles the gPanelMode/gFlag message redraws
    and the overlay-4 call, then dispatches `mode`: 8 runs the 1204 animation, 9 the 17C8 one and
    0xa the "find the word" panel (ovl2:09ED); every other mode draws the item screen (loads OUTTAKE
    ds:7F07, reads TEXT.DAT ds:7F0F into gSegDF4E, draws the panel and the 8x8 font) and runs one of
@@ -1239,7 +1239,7 @@ enum {
     gEFC6 = -1;
     gFE42 = 0;
     LockHidePointer();
-    if (gFB44)
+    if (gPanelMode)
         Action01E3(gF542);
     if (gFlag)
         RedrawPartyPanel(gF542);
@@ -1262,7 +1262,7 @@ enum {
         handle = FileOpen(gFileNameText2, 1);
         FileRead(handle, gSegDF4E, 0x7d00L);
         FileClose(handle);
-        SetFont(gA9C0);
+        SetFont(gFont6x6);
         HidePointerZone(0, 0x79, 0x13f, 0xc8);
         DrawFilledPanel(0, 0x79, 0x13f, 0xc8, gFB4C, gF53A, gF57E);
         ShowPointerZone();
@@ -1312,7 +1312,7 @@ enum {
     LockShowPointer();
 }
 /* ovl5:1CDD: the "use item" result panel. It hides the mouse cursor, runs the pending
-   gFB44/gFlag messages, opens TEXT.DAT (ds:7F27, 1: read) and reads it into the string base
+   gPanelMode/gFlag messages, opens TEXT.DAT (ds:7F27, 1: read) and reads it into the string base
    gSegDF4E, sets the text window and the panel colours, draws the panel (0,0)-(0xaf,0xae) and
    shows message `msg` through PrintTableString. It then restores the screen: loads the wall
    textures through fOvl3_07A5 (LoadWallTextures, sheet gOverlayBuf, name NULL reuses the current
@@ -1323,7 +1323,7 @@ enum {
     int handle;
 
     gFE42 = 1;
-    if (gFB44)
+    if (gPanelMode)
         Action01E3(gF542);
     if (gFlag)
         RedrawPartyPanel(gF542);

@@ -27,12 +27,12 @@ struct Effect {
    the fields this unit touches are named. */
 struct CharRec {
     char pad00;
-    char status;                 /* +01: status bits tested by 0C82 and 07CA */
+    char status;              /* +01: status bits tested by 0C82 and 07CA */
     char name[0x0D - 0x02];   /* +02: the character's NUL-padded name (src/EOV6.C) */
-    signed char m0D;          /* +0D: a copy of m0E made by 07CA case 7 */
-    signed char m0E;          /* +0E */
-    signed char m0F;          /* +0F: a copy of m10 made by 07CA case 7 */
-    signed char m10;          /* +10 */
+    signed char strength;     /* +0D: a copy of baseStrength made by 07CA case 7 */
+    signed char baseStrength; /* +0E */
+    signed char strengthPct;  /* +0F: a copy of baseStrengthPct made by 07CA case 7 */
+    signed char baseStrengthPct;          /* +10 */
     char pad11[0x1B - 0x11];
     signed char hp;           /* +1B: current hit points (src/EOV6.C); 0C82 requires it above -10 */
     char pad1C[0x1E - 0x1C];
@@ -41,12 +41,12 @@ struct CharRec {
     unsigned char food;       /* +23: the hunger/food value EatFood (0ACD:07E0) adds to and 0C82
                                  decrements (src/E0ACD.C:107, :616-619) */
     char pad24[0xAD - 0x24];
-    unsigned long mAD[10];    /* +AD: 10 32-bit effect times (07CA, 0B2E, 0C2D, 05ED) */
-    signed char mD5[10];      /* +D5: 10 effect type bytes, one per mAD slot */
+    unsigned long timers[10]; /* +AD: 10 32-bit effect times (07CA, 0B2E, 0C2D, 05ED) */
+    signed char mD5[10];      /* +D5: 10 effect type bytes, one per timers slot */
     char padDF[0xE3 - 0xDF];
-    long mE3;                 /* +E3: flags tested by 07CA (a long: the tests are and/or, 1414:08AD) */
-    unsigned char mE7;        /* +E7: a counter cleared by 07CA */
-    unsigned char mE8[0xF3 - 0xE8]; /* +E8: a byte table cleared at +E8 + slot by 0770 */
+    long effectFlags;         /* +E3: flags tested by 07CA (a long: the tests are and/or, 1414:08AD) */
+    unsigned char lastDamage; /* +E7: a counter cleared by 07CA */
+    unsigned char lastAction[0xF3 - 0xE8]; /* +E8: a byte table cleared at +E8 + slot by 0770 */
 };
 
 /* The 18-byte records at ds:DD2C, 10 of them, walked by 0285 and 0D63. */
@@ -90,8 +90,8 @@ extern struct CharRec gChars[]; /*@ ds:F580 */
 extern struct DDRec gDD2C[]; /*@ ds:DD2C */   /* 10 records, 18 bytes each */
 extern struct Entry14 gTable8DD2[]; /*@ ds:8DD2 */ /* 14-byte records (src/E0D1C.C) */
 extern struct Obj28 gObjs[]; /*@ ds:8A82 */   /* 30 records, 28 bytes each (src/E08E6.C) */
-extern char gB894[]; /*@ ds:B894 */             /* nine-byte records (src/E0D1C.C) */
-extern signed char g194B[]; /*@ ds:194B */      /* byte table indexed by a gB894 byte (src/E0D1C.C) */
+extern char gMaze[]; /*@ ds:B894 */             /* nine-byte records (src/E0D1C.C) */
+extern signed char gWallTypeFlags[]; /*@ ds:194B */      /* byte table indexed by a gMaze byte (src/E0D1C.C) */
 extern signed char g181F[]; /*@ ds:181F */      /* byte table indexed by a ds:8DD2 icon in 003E */
 extern int gEFD2; /*@ ds:EFD2 */                /* Purpose unknown: 003E writes 0x10 or 1 on its
                                                   failure paths; src/E122E.C:18 calls it the mode the
@@ -110,14 +110,14 @@ extern char gDF4C; /*@ ds:DF4C */             /* set to 1 when 0D1C:0006 finds t
                                                  (src/E0D1C.C:30) or when an action took effect
                                                  (src/E0ACD.C:53); CheckFarTable sets it on a 0x34
                                                  byte */
-extern char gFB44; /*@ ds:FB44 */              /* the display mode byte 07CA case 7 tests (src/E0D1C.C) */
+extern char gPanelMode; /*@ ds:FB44 */              /* the display mode byte 07CA case 7 tests (src/E0D1C.C) */
 extern char gFileNameBuf[]; /*@ ds:FE6E */     /* the text buffer 07CA formats into (src/EOV2.C) */
 extern unsigned long g8492; /*@ ds:8492 */    /* the 32-bit tick counter (src/EOV6.C) */
 
 extern void RedrawMember(int member); /*@ 1547:0991 */
 extern void PlaySoundDefault(int sound); /*@ 177D:00F3 */
 extern int f0D1C_0006(int value); /*@ 0D1C:0006 */
-extern int f0D1C_00DA(int value, int page); /*@ 0D1C:00DA */
+extern int StepCell(int cell, int dir); /*@ 0D1C:00DA */
 extern int f0D1C_0163(int who, int fieldB); /*@ 0D1C:0163 */
 extern int MemberIs(int member, int what); /*@ 0D1C:0670 */
 extern int far RollDice(char count, char sides, char bonus); /*@ 082C:0458 */
@@ -129,7 +129,7 @@ void ArmEffect(int idx, int active);
 extern void DrawText(char *text); /*@ 1DE7:060A */
 extern void DrawMemberFood(int member); /*@ 1547:04A0 */
 extern void DispatchSlotHandler(int member, int a); /*@ 122E:0896 */
-extern void RunMemberScript(int member, int a); /*@ 122E:1DA8 */
+extern void RunCellScript(int cell, int mode); /*@ 122E:1DA8 */
 extern int Obj189D(struct Obj28 far *obj, int a, int b); /*@ 08E6:189D */
 extern int RunRecordAttack(struct DDRec far *rec); /*@ 0DE8:01FF */
 extern int TryRecordAttack(struct DDRec far *rec, int idx); /*@ 0DE8:02D4 */
@@ -159,11 +159,11 @@ extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
     unused++;
 }
 /* 1414:003E: the per-record step 0285 runs for every live ds:DD2C record. It reads a status byte
-   db = gB894[target * 9 + (rec->m07 ^ 2)] and bits = g194B[db]. A record in state 1 whose bits say
+   db = gMaze[target * 9 + (rec->m07 ^ 2)] and bits = gWallTypeFlags[db]. A record in state 1 whose bits say
    so (bits bit 0, a nonzero m02, or bits bit 1 together with a ds:8DD2 icon of 15 or more) is moved
    onto character `target`: one RemoveListItem takes the record's item m08 off the old cell's list
-   (gB894[rec->m04 * 9 + 5]) and one InsertListItem puts it on the target's list
-   (gB894[target * 9 + 5], key target, sound sel | 4); m04 and m06 are set to `target` and `sel`,
+   (gMaze[rec->m04 * 9 + 5]) and one InsertListItem puts it on the target's list
+   (gMaze[target * 9 + 5], key target, sound sel | 4); m04 and m06 are set to `target` and `sel`,
    m0D is decremented and it returns 1; otherwise gEFD2 is 0x10. Any other record is moved when bits
    bit 0 is set or when m04 already equals `target` (m0D is decremented unless it is -1) and returns
    1; otherwise gEFD2 is 1. The two failure paths report through DispatchSlotHandler(target,
@@ -176,15 +176,15 @@ extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
     int m08;
     register int bits;
 
-    db = gB894[target * 9 + (rec->m07 ^ 2)];
-    bits = g194B[db];
+    db = gMaze[target * 9 + (rec->m07 ^ 2)];
+    bits = gWallTypeFlags[db];
     if (rec->active == 1) {
         m08 = rec->m08;
         flag = g181F[gTable8DD2[m08].icon] >= 0xF;
         hit = (bits & 1) || rec->m02 != 0 || ((bits & 2) && flag);
         if (hit) {
-            RemoveListItem((int far *)(gB894 + rec->m04 * 9 + 5), 0, m08);
-            InsertListItem((int far *)(gB894 + target * 9 + 5), target, m08, sel | 4);
+            RemoveListItem((int far *)(gMaze + rec->m04 * 9 + 5), 0, m08);
+            InsertListItem((int far *)(gMaze + target * 9 + 5), target, m08, sel | 4);
             rec->m04 = target;
             rec->m06 = sel;
             rec->m0D--;
@@ -206,7 +206,7 @@ extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
 }
 /* 1414:0172: the per-record test 0285 and 0D63 use. It returns 0 when the record already has a
    nonzero m02. A record in state 2 calls the far handler stored at +0E (rec->fn(rec)) and returns
-   its result. Otherwise it looks up gB894[index * 9 + 4]: when that byte has bits 0..2 set it
+   its result. Otherwise it looks up gMaze[index * 9 + 4]: when that byte has bits 0..2 set it
    scans the 30 objects at ds:8A82 for one that Obj189D accepts and that TryRecordAttack then
    also accepts, returning 1 on the first; when the bits are clear it runs RunRecordAttack(rec)
    only when `index` is the party's map cell and returns that. Called by 0285 and 0D63. */
@@ -220,7 +220,7 @@ extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
     if (rec->active == 2) {
         return rec->fn(rec);
     }
-    if (gB894[index * 9 + 4] & 7) {
+    if (gMaze[index * 9 + 4] & 7) {
         i = 0;
         obj = gObjs;
         for (; i < 30; i++, obj++) {
@@ -245,7 +245,7 @@ extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
 {
     if (rec->active == 1) {
         gTable8DD2[rec->m08].m03 &= 3;
-        RunMemberScript(rec->m04, 4);
+        RunCellScript(rec->m04, 4);
         PlaySoundDefault(0x12);
     }
     rec->active = 0;
@@ -258,7 +258,7 @@ extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
 }
 /* 1414:0285: the DD-record step, effect 1 of the table. For every live ds:DD2C record it looks
    up the direction byte sel = g5CAB[rec->m07 * 4 + (rec->m06 & 3)]. When sel has bit 7 set the
-   target index is f0D1C_00DA(rec->m04, rec->m07) and m02 is cleared, otherwise it is rec->m04
+   target index is StepCell(rec->m04, rec->m07) and m02 is cleared, otherwise it is rec->m04
    itself. StepDDEffect(rec, value, sel) then either, when it succeeds, redraws a translated target
    through 122E:1DA8(value, 0x10) and re-tests with TestDDEffect, or, when it fails and m0C has
    bit 0x20, runs 0EF3:00CD(rec) unless TestDDEffect(rec, m04, m06) accepts. The record is
@@ -294,14 +294,14 @@ extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
             high = sel & 0x80;
             if (high) {
                 sel &= 3;
-                value = f0D1C_00DA(rec->m04, rec->m07);
+                value = StepCell(rec->m04, rec->m07);
                 rec->m02 = 0;
             } else {
                 value = rec->m04;
             }
             if (StepDDEffect(rec, value, sel)) {
                 if (high)
-                    RunMemberScript(value, 0x10);
+                    RunCellScript(value, 0x10);
                 if (TestDDEffect(rec, value, sel))
                     clearIt = 1;
             } else {
@@ -317,10 +317,10 @@ extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
         }
     }
 }
-/* 1414:03B4: effect 12 of the table. For character `who` it picks the record gB894[who * 9]
-   whose g194B flag has no bit 3 (slot 1) or one (slot 0), and reads that record's flag. When the
+/* 1414:03B4: effect 12 of the table. For character `who` it picks the record gMaze[who * 9]
+   whose gWallTypeFlags flag has no bit 3 (slot 1) or one (slot 0), and reads that record's flag. When the
    global mode byte g5C76 is -1 with bit 5 set, or 1 with bit 4 set, it disarms effect 0xC and
-   returns. Otherwise it adds g5C76 to gB894[who * 9 + slot] and gB894[who * 9 + slot + 2], reads
+   returns. Otherwise it adds g5C76 to gMaze[who * 9 + slot] and gMaze[who * 9 + slot + 2], reads
    the flag again and plays sound 5 when bit 5 is set, 4 when g5C76 is -1, else 3, then reports
    `who` through f0D1C_0006. Called by 122E and by the table. */
 /*@ 1414:03B4 */ void AdjustMemberStatus(int who)
@@ -330,16 +330,16 @@ extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
     int slot;
 
     sel = g5C76;
-    bits = g194B[gB894[who * 9]];
+    bits = gWallTypeFlags[gMaze[who * 9]];
     slot = (bits & 8) ? 0 : 1;
-    bits = g194B[gB894[who * 9 + slot]];
+    bits = gWallTypeFlags[gMaze[who * 9 + slot]];
     if ((sel == -1 && (bits & 0x20)) || (sel == 1 && (bits & 0x10))) {
         ArmEffect(0xC, 0);
         return;
     }
-    gB894[who * 9 + slot] += sel;
-    gB894[who * 9 + slot + 2] += sel;
-    bits = g194B[gB894[who * 9 + slot]];
+    gMaze[who * 9 + slot] += sel;
+    gMaze[who * 9 + slot + 2] += sel;
+    bits = gWallTypeFlags[gMaze[who * 9 + slot]];
     if (bits & 0x20)
         PlaySoundDefault(5);
     else if (sel == -1)
@@ -422,11 +422,11 @@ extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
    and effect `who` + 6 is armed. When that entry is inactive its period is set to `interval`,
    the character's slot 0 is set to `time` and `value`, and the entry is armed. When it is active
    the entry's expiry is pulled back to `time` if it is later, and then the time and value are
-   stored in the first slot whose mAD is 0 when `firstEmpty` is zero, or in the slot whose mD5
+   stored in the first slot whose timers is 0 when `firstEmpty` is zero, or in the slot whose mD5
    already holds `value` (else the first empty one) when `firstEmpty` is nonzero. Called by 0BD2,
    0DE8, 0EF3 and 07CA. QUIRK 1414:0755: when `firstEmpty` is nonzero and all ten slots are full
-   with none holding `value`, `slot` stays -1 and the stores write mAD[-1] (+A9, padding before the
-   arrays) and mD5[-1] (+D4, the top byte of mAD[9]). */
+   with none holding `value`, `slot` stays -1 and the stores write timers[-1] (+A9, padding before the
+   arrays) and mD5[-1] (+D4, the top byte of timers[9]). */
 /*@ 1414:05ED */ void ApplyCharEffect(char who, long interval, char value, char firstEmpty)
 {
     struct Effect far *effect;
@@ -443,7 +443,7 @@ extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
     rec = &gChars[who];
     if (!effect->active) {
         effect->period = interval;
-        rec->mAD[0] = time;
+        rec->timers[0] = time;
         rec->mD5[0] = value;
         ArmEffect(idx, 1);
         return;
@@ -452,8 +452,8 @@ extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
         effect->expiry = time;
     if (!firstEmpty) {
         for (i = 0; i < 10; i++) {
-            if (rec->mAD[i] == 0) {
-                rec->mAD[i] = time;
+            if (rec->timers[i] == 0) {
+                rec->timers[i] = time;
                 rec->mD5[i] = value;
                 break;
             }
@@ -463,18 +463,18 @@ extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
     found = 0;
     slot = -1;
     for (i = 0; i < 10 && !found; i++) {
-        if (slot == -1 && rec->mAD[i] == 0)
+        if (slot == -1 && rec->timers[i] == 0)
             slot = i;
         if (found == 0 && rec->mD5[i] == value) {
             slot = i;
             found = 1;
         }
     }
-    rec->mAD[slot] = time;
+    rec->timers[slot] = time;
     rec->mD5[slot] = value;
 }
 /* 1414:0770: toggles or clears one of a character's effect-flag bits. In modes 0 and 2 it flips
-   bit `slot` of gChars[who].m1E, then modes 0, 1 and 2 clear gChars[who].mE8[slot] and redraw
+   bit `slot` of gChars[who].m1E, then modes 0, 1 and 2 clear gChars[who].lastAction[slot] and redraw
    the member's row through RedrawMember; any other mode does nothing. Called by 07CA. */
 /*@ 1414:0770 */ void SetCharEffectSlot(int who, int mode, int slot)
 {
@@ -484,20 +484,20 @@ extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
         gChars[who].m1E ^= 1 << slot;
         /* falls through */
     case 1:
-        gChars[who].mE8[slot] = 0;
+        gChars[who].lastAction[slot] = 0;
         RedrawMember(who);
     }
 }
 /* 1414:07CA: the per-character effect runner, entries 6 to 11 of the table (one per member). For
-   every one of the member's 10 effect slots whose time gChars[who].mAD has passed, it clears the
+   every one of the member's 10 effect slots whose time gChars[who].timers has passed, it clears the
    slot and dispatches on the type byte gChars[who].mD5. A negative type calls
    ExpireSpellEffect(-type, who). Types 0, 1, 4 and 5 toggle a tracking bit through 0770; 2 and 3
-   arm a 0x24 (halved when mE3 bit 3 is set) 4/5-type effect through 05ED; 6 clears mE7 and redraws
-   the member; 7 prints "%s no longer has giant strength.", copies m0E/m10 into m0D/m0F and redraws
+   arm a 0x24 (halved when effectFlags bit 3 is set) 4/5-type effect through 05ED; 6 clears lastDamage and redraws
+   the member; 7 prints "%s no longer has giant strength.", copies baseStrength/baseStrengthPct into m0D/strengthPct and redraws
    in mode 2; 8 handles poison ("%s feels the effects of poison!"), damages 5 points through
-   DamageCharacter unless mE3 bit 7 is set, and re-arms effect 8, or clears status bit 1; and 9
+   DamageCharacter unless effectFlags bit 7 is set, and re-arms effect 8, or clears status bit 1; and 9
    handles recovered paralysis ("%s is no longer paralyzed!") and clears status bit 2. It then
-   computes the smallest nonzero gChars[who].mAD and stores it (minus g8492 when there is one,
+   computes the smallest nonzero gChars[who].timers and stores it (minus g8492 when there is one,
    else -1 and it disarms effect who + 6) in gEffects[who + 6].period. Called from the table (and
    0DE8, 0EF3, 0BD2).
 
@@ -505,7 +505,7 @@ extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
    call 1547:0991; pop cx` at 1414:0169 and 1414:0281), which a build without it cross-jumps into
    one (WHITEPAPER 2.1.1, the same class as 0ACD:091C). Two further divergences are handled in the
    source: (1) the bit tests read `mov ax, [bx + N]; and ax, M; or ax, 0; je` (1414:08AD, 1414:09A1)
-   because mE3 is a `long`, not an `int`: TCC emits the and/or form only for a long bit test (the
+   because effectFlags is a `long`, not an `int`: TCC emits the and/or form only for a long bit test (the
    `or ax, 0` distinct from `or ax, ax`); (2) the expiry test is written `if (tl <= g8492) { body }`
    (1414:0814 `jbe L1; jmp cont; L1: jne body`), not `if (tl > g8492) continue;`. */
 /*@ 1414:07CA */ void RunCharEffects(int who)
@@ -519,11 +519,11 @@ extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
 
     rec = &gChars[who];
     for (i = 0; i < 10; i++) {
-        tl = rec->mAD[i];
+        tl = rec->timers[i];
         if (tl == 0)
             continue;
         if (tl <= g8492) {
-            rec->mAD[i] = 0;
+            rec->timers[i] = 0;
             type = rec->mD5[i];
             if (type < 0) {
                 ExpireSpellEffect(-type, who);
@@ -539,14 +539,14 @@ extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
             case 2:
                 SetCharEffectSlot(who, 1, 0);
                 value = 0x24;
-                if (rec->mE3 & 8)
+                if (rec->effectFlags & 8)
                     value >>= 1;
                 ApplyCharEffect(who, value, 4, 1);
                 break;
             case 3:
                 SetCharEffectSlot(who, 1, 1);
                 value = 0x24;
-                if (rec->mE3 & 8)
+                if (rec->effectFlags & 8)
                     value >>= 1;
                 ApplyCharEffect(who, value, 5, 1);
                 break;
@@ -557,20 +557,20 @@ extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
                 SetCharEffectSlot(who, 2, 1);
                 break;
             case 6:
-                rec->mE7 = 0;
+                rec->lastDamage = 0;
                 RedrawMember(who);
                 break;
             case 7:
                 sprintf(gFileNameBuf, "%s no longer has giant strength.\r", rec->name);
                 DrawText(gFileNameBuf);
-                rec->m0D = rec->m0E;
-                rec->m0F = rec->m10;
-                if (gFB44 == 2)
+                rec->strength = rec->baseStrength;
+                rec->strengthPct = rec->baseStrengthPct;
+                if (gPanelMode == 2)
                     RedrawMember(who);
                 break;
             case 8:
                 if (rec->status & 2) {
-                    if ((rec->mE3 & 0x80) == 0) {
+                    if ((rec->effectFlags & 0x80) == 0) {
                         DamageCharacter(who, 5);
                         sprintf(gFileNameBuf, "%s feels the effects of poison!\r", rec->name);
                         DrawText(gFileNameBuf);
@@ -594,8 +594,8 @@ extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
     }
     min = -1;
     for (i = 0; i < 10; i++) {
-        if (rec->mAD[i] < min && rec->mAD[i] != 0)
-            min = rec->mAD[i];
+        if (rec->timers[i] < min && rec->timers[i] != 0)
+            min = rec->timers[i];
     }
     if (min != -1) {
         gEffects[who + 6].period = min - g8492;
@@ -606,7 +606,7 @@ extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
 }
 
 /* 1414:0B2E: re-arms effect `who` + 6 for every party member `who` that passes MemberIs(who, 1).
-   It takes the smallest nonzero of the member's 10 effect times gChars[who].mAD and, when there
+   It takes the smallest nonzero of the member's 10 effect times gChars[who].timers and, when there
    is one, sets the entry's period to that time minus g8492 and arms it; when all ten are zero it
    sets the period to -1 and disarms it. Called by 0ACD, 0D1C:035A, 0C2D and overlays 1 and 3. */
 /*@ 1414:0B2E */ void RearmCharEffects(void)
@@ -625,8 +625,8 @@ extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
             continue;
         min = -1;
         for (i = 0; i < 10; i++) {
-            if (rec->mAD[i] < min && rec->mAD[i] != 0)
-                min = rec->mAD[i];
+            if (rec->timers[i] < min && rec->timers[i] != 0)
+                min = rec->timers[i];
         }
         idx = who + 6;
         effect = &gEffects[idx];
@@ -641,7 +641,7 @@ extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
 }
 /* 1414:0C2D: clears effect slot `value` of character `who`: for each of the member's 10 effect
    slots whose gChars[who].mD5 equals `value`, clears the type byte and the 32-bit time
-   gChars[who].mAD, then re-arms the per-member effects through 0B2E. Called by 0EF3 and
+   gChars[who].timers, then re-arms the per-member effects through 0B2E. Called by 0EF3 and
    overlay 5. */
 /*@ 1414:0C2D */ void ClearCharEffectSlot(int who, int value)
 {
@@ -652,7 +652,7 @@ extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
     for (i = 0; i < 10; i++) {
         if (rec->mD5[i] == value) {
             rec->mD5[i] = 0;
-            rec->mAD[i] = 0;
+            rec->timers[i] = 0;
         }
     }
     RearmCharEffects();

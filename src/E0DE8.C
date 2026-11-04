@@ -15,35 +15,35 @@
 
 struct CharRec {            /* the 243-byte (0xF3) character records at ds:F580; see src/E0A72.C */
     char pad00;
-    unsigned char status;      /* +01: status bits (0D1C:0670, 0DE8:09B9) */
+    unsigned char status;   /* +01: status bits (0D1C:0670, 0DE8:09B9) */
     char name[0x0B];        /* +02: the character's name, NUL padded (0DE8:0C82) */
     char pad0D[0x15 - 0x0D];
-    signed char m15;        /* +15: one of the five further stat bytes (src/E0A72.C); indexes the
+    signed char dexterity;  /* +15: one of the five further stat bytes (src/E0A72.C); indexes the
                                per-stat table g349E for the armour-class base (GetArmourClassBase, 0A72:019D)
                                and the per-stat table ds:3474 (GetCharM15Value, 0A72:0181) */
     char pad16;
-    signed char m17;        /* +17: an index into g54F6 (0D1C:059B); also the second argument of
+    signed char constitution;        /* +17: an index into g54F6 (0D1C:059B); also the second argument of
                                RollHitPoints (0A72:01AE), which LevelUpSlot passes there */
     char pad18[0x1B - 0x18];
     signed char hp;         /* +1B: current hit points */
     signed char maxHp;      /* +1C: the maximum hit points (src/EOV5.C:32) */
-    signed char m1D;        /* +1D: the armour-class byte 0D5E builds */
+    signed char armorClass; /* +1D: the armour-class byte 0D5E builds */
     signed char m1E;        /* +1E: a per-slot bit UseItem toggles itself (:522) */
-    signed char m1F;        /* +1F */
-    signed char m20;        /* +20: an index into a class table */
+    signed char race;       /* +1F */
+    signed char classIndex; /* +20: an index into a class table */
     char pad21[3];
-    signed char m24[3];     /* +24: three per-class-slot levels (AddExperience passes m24[i] + 1,
+    signed char levels[3];  /* +24: three per-class-slot levels (AddExperience passes levels[i] + 1,
                                src/E0A72.C:276-281) */
-    unsigned long m27[3];   /* +27: three per-class-slot experience totals (0DE8:0B45) */
+    unsigned long experience[3];   /* +27: three per-class-slot experience totals (0DE8:0B45) */
     char pad33[0x77 - 0x33];
-    int m77[27];            /* +77: 27 carried-item slots (0D1C:00F1) */
+    int items[27];          /* +77: 27 carried-item slots (0D1C:00F1) */
     char padAD[0xDF - 0xAD];
     signed char mDF;        /* +DF: the descending armour-class penalty (DamageCharacter :589-594) */
     char padE0[0xE2 - 0xE0];
     signed char mE2;        /* +E2: the damage-reduction value (DamageCharacter :573-576) */
-    long mE3;               /* +E3: effect flags (a 32-bit mask; 09B9 clears bit 2 only) */
-    unsigned char mE7;      /* +E7: the last damage amount (DamageCharacter :579) */
-    unsigned char mE8[0xF3 - 0xE8]; /* +E8: the last action result per carried slot (UseItem :523) */
+    long effectFlags;       /* +E3: effect flags (a 32-bit mask; 09B9 clears bit 2 only) */
+    unsigned char lastDamage;      /* +E7: the last damage amount (DamageCharacter :579) */
+    unsigned char lastAction[0xF3 - 0xE8]; /* +E8: the last action result per carried slot (UseItem :523) */
 };
 
 struct Obj28 {              /* the 28-byte object records at ds:8A82; see src/E08E6.C */
@@ -121,32 +121,32 @@ extern struct ItemType gItemTypes[]; /*@ ds:A9F0 */
 extern signed char g1A1B[]; /*@ ds:1A1B */   /* per-page sound table (src/E0D1C.C) */
 extern signed char g1A2B[]; /*@ ds:1A2B */   /* per-page byte table used by 01FF */
 extern signed char g115F[]; /*@ ds:115F */   /* a byte table indexed by a class, used by 0B45 */
-extern signed char g1231[]; /*@ ds:1231 */   /* a byte table indexed by the class m20 (:725;
+extern signed char g1231[]; /*@ ds:1231 */   /* a byte table indexed by the class classIndex (:725;
                                                 src/E0BD2.C:102) */
 extern signed char g552F[]; /*@ ds:552F */   /* a byte table indexed by the item's m02 (UseItemByKind
                                                 :432) */
-extern signed char g553E[]; /*@ ds:553E */   /* the four m77 slot indexes ComputeArmourClass walks
+extern signed char g553E[]; /*@ ds:553E */   /* the four items slot indexes ComputeArmourClass walks
                                                 (:719) */
-extern signed char g54F6[]; /*@ ds:54F6 */   /* byte table indexed by m17; used by 0D1C:059B
+extern signed char g54F6[]; /*@ ds:54F6 */   /* byte table indexed by constitution; used by 0D1C:059B
                                                 (src/E0D1C.C:437, :441) */
 extern unsigned char gFBD2; /*@ ds:FBD2 */   /* bit 0 gates the icon colour row (src/E07A9.C);
                                                 RollToHit reads bits 4 and 5 (:225) */
-extern int gFBCC; /*@ ds:FBCC */             /* a page number 0..3 (src/E0D1C.C) */
+extern int gPartyDir; /*@ ds:FBCC */             /* the party's facing, 0..3 north, east, south, west */
 extern int gPartyCell; /*@ ds:FBCA */      /* the party's map cell (src/E177D.C:92) */
 extern signed char gF57E; /*@ ds:F57E */     /* a colour read by 0D1C:0C21 */
 extern signed char gFB4C; /*@ ds:FB4C */     /* a colour read by 0D1C:0C21 */
 extern signed char gF53A; /*@ ds:F53A */     /* a colour read by 0D1C:0C21 */
-extern char gFB44; /*@ ds:FB44 */            /* a mode byte: 0 and 1 gate 0D1C:01CA's redraws
+extern char gPanelMode; /*@ ds:FB44 */            /* a mode byte: 0 and 1 gate 0D1C:01CA's redraws
                                                 (src/E0D1C.C:108); DamageCharacter redraws the member
                                                 when it is 0 and the portrait otherwise (:596-599) */
-extern signed char gA9C6; /*@ ds:A9C6 */     /* an offset within a nine-byte gB894 record (:348-350;
+extern signed char gA9C6; /*@ ds:A9C6 */     /* an offset within a nine-byte gMaze record (:348-350;
                                                 0ACD:0644) */
 extern char gDF4C; /*@ ds:DF4C */            /* set to 1 when an action took effect (0DE8:0359,
                                                 0DE8:0537, 0DE8:05BB) */
 extern char gDCA4; /*@ ds:DCA4 */            /* the target object 0359 records (:361); UseItem damages
                                                 gObjs[gDCA4] (:520) */
-extern unsigned char g1905[]; /*@ ds:1905 */   /* a 256-byte table gB894 indexes into (0359) */
-extern char gB894[]; /*@ ds:B894 */          /* the nine-byte records at ds:B894 indexed by row * 9
+extern unsigned char g1905[]; /*@ ds:1905 */   /* a 256-byte table gMaze indexes into (0359) */
+extern char gMaze[]; /*@ ds:B894 */          /* the nine-byte records at ds:B894 indexed by row * 9
                                                 (:348-350); the +4 byte is read at 0D1C:0080 */
 extern char gFileNameBuf[]; /*@ ds:FE6E */   /* the text buffer sprintf formats into (src/EOV2.C) */
 
@@ -161,7 +161,7 @@ extern int GetArmourClassBase(char m15); /*@ 0A72:019D */
 extern int GetIndexedByte(char index, char limit, char offset); /*@ 0A72:0006 */
 extern int RollHitPoints(char classIndex, char m17, char countA, char countB, char countC); /*@ 0A72:01AE */
 extern int MemberIs(int who, int mask); /*@ 0D1C:0670 */
-extern int f0D1C_00DA(int value, int page); /*@ 0D1C:00DA */
+extern int StepCell(int cell, int dir); /*@ 0D1C:00DA */
 extern int f0D1C_0BAB(int obj); /*@ 0D1C:0BAB */
 extern int f0D1C_0BEB(int obj, int flag); /*@ 0D1C:0BEB */
 extern int f0D1C_059B(int who, int attack); /*@ 0D1C:059B */
@@ -193,9 +193,9 @@ void LevelUpSlot(int who, int cls, int slot);  /* forward: 0B45 reaches it with 
 /* 0DE8:0007: the to-hit roll of character `who` against object `obj`. It derives an attack bonus
    from the item record `slot` (an index into gTable8DD2; its m02 item type index selects the m0B
    weapon value when it is 1..3), adds either the attacker's strength to-hit bonus
-   (GetStrengthToHitBonus, 0A72:00CF) or the m15 char value depending on `useStrength`, sets
+   (GetStrengthToHitBonus, 0A72:00CF) or the dexterity char value depending on `useStrength`, sets
    gObjs[obj].m16 bit 0 on every call (the object was attacked), whatever the outcome, and compares
-   a d20 roll (raised by gFBD2 bits 4 and 5 and by gChars[who].mE3 bit 6, clamped to 1..20) against
+   a d20 roll (raised by gFBD2 bits 4 and 5 and by gChars[who].effectFlags bit 6, clamped to 1..20) against
    GetHitTarget(who, gTable1A3B[gObjs[obj].b0].m00) minus the bonus. Returns 1 when the roll
    reaches that to-hit target. Called by 0DE8:02D4, 0DE8:0359, 0EF3:0A3F DamageTargetCell and
    0EF3:0E1B CastMeleeEffect. */
@@ -225,7 +225,7 @@ void LevelUpSlot(int who, int cls, int slot);  /* forward: 0B45 reaches it with 
     roll = RollDice(1, 20, 0);
     if (gFBD2 & 0x30)
         roll++;
-    if ((gChars[who].mE3 & 0x40) != 0)
+    if ((gChars[who].effectFlags & 0x40) != 0)
         roll++;
     roll = roll < 20 ? roll : 20;
     roll = roll > 1 ? roll : 1;
@@ -272,7 +272,7 @@ void LevelUpSlot(int who, int cls, int slot);  /* forward: 0B45 reaches it with 
 
 /* 0DE8:01FF: runs the attack of a ds:DD2C record against the object it names. It takes the
    record's m08 slot (an index into gTable8DD2) and m0A item type, reads
-   g1A2B[gFBCC * 4 + (gTable8DD2[slot].m03 & 3)] as the base member, rolls 011A damage (or 1 when
+   g1A2B[gPartyDir * 4 + (gTable8DD2[slot].m03 & 3)] as the base member, rolls 011A damage (or 1 when
    IsKind2Or3 is false) and adds 2 to the base when MemberIs(5, 1) or MemberIs(6, 1)
    holds and RollDice(1, 2, -1) is nonzero, then applies DamageCharacter to that member and
    returns 1, else 0. Called by 1414:0172 via TestDDEffect. */
@@ -287,7 +287,7 @@ void LevelUpSlot(int who, int cls, int slot);  /* forward: 0B45 reaches it with 
     slot = rec->m08;
     itemType = rec->m0A;
     baseMember = gTable8DD2[slot].m03 & 3;
-    baseMember = g1A2B[gFBCC * 4 + baseMember];
+    baseMember = g1A2B[gPartyDir * 4 + baseMember];
     if (IsKind2Or3(itemType))
         damage = RollAttackDamage(-1, -1, slot, itemType, 0);
     else
@@ -328,8 +328,8 @@ void LevelUpSlot(int who, int cls, int slot);  /* forward: 0B45 reaches it with 
 }
 /* 0DE8:0359: one item/effect attack by character `who` on the item record `slot` (an index into
    gTable8DD2). It rejects a `who` above 1 with -3, then looks the action up through
-   f0D1C_00DA(gPartyCell, gFBCC) and Obj15B4. A -1 target with g1905[gB894[row * 9 + gA9C6]] at
-   0xFF bumps two gB894 cells and sets gDF4C, returning -2, otherwise -1. A real target demands the
+   StepCell(gPartyCell, gPartyDir) and Obj15B4. A -1 target with g1905[gMaze[row * 9 + gA9C6]] at
+   0xFF bumps two gMaze cells and sets gDF4C, returning -2, otherwise -1. A real target demands the
    0007 to-hit roll (returns -1 on a miss), and when the slot's m02 is 0x34..0x38 f0D1C_0BAB can
    also fail it; the surviving hit is rolled through 011A and halved when f0D1C_0BEB says so.
    Returns -3, -2 or -1 as above, else the damage. Called by 0DE8:0763. The gDCA4 byte records the
@@ -343,12 +343,12 @@ void LevelUpSlot(int who, int cls, int slot);  /* forward: 0B45 reaches it with 
 
     if (who > 1)
         return -3;
-    row = f0D1C_00DA(gPartyCell, gFBCC);
+    row = StepCell(gPartyCell, gPartyDir);
     target = Obj15B4(who, row);
     if (target == -1) {
-        if (g1905[gB894[row * 9 + gA9C6]] == 0xff) {
-            gB894[row * 9 + gA9C6]++;
-            gB894[row * 9 + (gA9C6 ^ 2)]++;
+        if (g1905[gMaze[row * 9 + gA9C6]] == 0xff) {
+            gMaze[row * 9 + gA9C6]++;
+            gMaze[row * 9 + (gA9C6 ^ 2)]++;
             gDF4C = 1;
             return -2;
         }
@@ -368,8 +368,8 @@ fail:
     return -1;
 }
 
-/* 0DE8:0474: moves a carried item into gChars[who].m77[slot] (slot is the carried-item index).
-   With `flag` set and the special slot m77[16] occupied, it takes that slot's item through
+/* 0DE8:0474: moves a carried item into gChars[who].items[slot] (slot is the carried-item index).
+   With `flag` set and the special slot items[16] occupied, it takes that slot's item through
    RemoveListItem (key 0, target -1). Otherwise it scans slots 24 down to 22 for the first occupied
    item whose gTable8DD2 m02 is not `type` (or `type` is -1) and moves that item to `slot`,
    clearing the source. Called by 0DE8:0537. */
@@ -378,23 +378,23 @@ fail:
     int i;
     int item;
 
-    if (flag != 0 && gChars[who].m77[16] != 0) {
-        gChars[who].m77[slot] = RemoveListItem(&gChars[who].m77[16], 0, -1);
+    if (flag != 0 && gChars[who].items[16] != 0) {
+        gChars[who].items[slot] = RemoveListItem(&gChars[who].items[16], 0, -1);
     } else {
         for (i = 0x18; i >= 0x16; i--) {
-            item = gChars[who].m77[i];
+            item = gChars[who].items[i];
             if (item != 0 && (gTable8DD2[item].m02 != type || type == -1)) {
-                gChars[who].m77[slot] = item;
-                gChars[who].m77[i] = 0;
+                gChars[who].items[slot] = item;
+                gChars[who].items[i] = 0;
                 break;
             }
         }
     }
 }
-/* 0DE8:0537: tries to use the item in the carried slot `slot` (an index into m77) of character
+/* 0DE8:0537: tries to use the item in the carried slot `slot` (an index into items) of character
    `who` against the item record `field` (an index into gTable8DD2). It dispatches through
-   AddDDEffect(who, field, gPartyCell as volume, the g1A1B page byte as kind, gFBCC as page, the
-   item's m02 as type); on success it plays sound 0x0B, clears gChars[who].m77[slot] and refills
+   AddDDEffect(who, field, gPartyCell as volume, the g1A1B page byte as kind, gPartyDir as page, the
+   item's m02 as type); on success it plays sound 0x0B, clears gChars[who].items[slot] and refills
    it through MoveCarriedItem(who, slot, -1, 0), setting gDF4C. Returns 0. Called by 0DE8:0763. */
 /*@ 0DE8:0537 */ int UseCarriedItem(int who, int slot, int field)
 {
@@ -403,10 +403,10 @@ fail:
     idx = who;
     if (idx > 3)
         idx -= 2;
-    if (AddDDEffect(who, field, gPartyCell, g1A1B[gFBCC * 4 + idx], gFBCC,
+    if (AddDDEffect(who, field, gPartyCell, g1A1B[gPartyDir * 4 + idx], gPartyDir,
                    gTable8DD2[field].m02)) {
         PlaySound(0xb);
-        gChars[who].m77[slot] = 0;
+        gChars[who].items[slot] = 0;
         MoveCarriedItem(who, slot, -1, 0);
         gDF4C = 1;
     }
@@ -414,8 +414,8 @@ fail:
 }
 
 /* 0DE8:05BB: picks the item for the action `slot` (an index into gTable8DD2) and runs it. The
-   item's m02 indexes g552F to a `kind`; kind 0x10 takes the first of m77[0] and m77[1] whose own
-   m02 is 0x10 (clearing that slot), else the special m77[16] slot (pulled through RemoveListItem,
+   item's m02 indexes g552F to a `kind`; kind 0x10 takes the first of items[0] and items[1] whose own
+   m02 is 0x10 (clearing that slot), else the special items[16] slot (pulled through RemoveListItem,
    with no m02 test); otherwise it scans all 27 slots for the first whose item m02 equals `kind`
    (clearing it and redrawing with RedrawMember when the slot is below 2). A found item is
    dispatched through AddDDEffect; when that returns nonzero it plays sound 0x1A when m02 is 7
@@ -433,25 +433,25 @@ fail:
     kind = g552F[m02];
     item = 0;
     if (kind == 0x10) {
-        item = gChars[who].m77[0];
+        item = gChars[who].items[0];
         if (item == 0 || gTable8DD2[item].m02 != 0x10)
             item = 0;
         else
-            gChars[who].m77[0] = 0;
+            gChars[who].items[0] = 0;
         if (item == 0) {
-            item = gChars[who].m77[1];
+            item = gChars[who].items[1];
             if (item == 0 || gTable8DD2[item].m02 != 0x10)
                 item = 0;
             else
-                gChars[who].m77[1] = 0;
+                gChars[who].items[1] = 0;
         }
-        if (item == 0 && gChars[who].m77[16] != 0)
-            item = RemoveListItem(&gChars[who].m77[16], 0, -1);
+        if (item == 0 && gChars[who].items[16] != 0)
+            item = RemoveListItem(&gChars[who].items[16], 0, -1);
     } else {
         for (i = 0; i < 0x1b; i++) {
-            if (gTable8DD2[gChars[who].m77[i]].m02 == kind) {
-                item = gChars[who].m77[i];
-                gChars[who].m77[i] = 0;
+            if (gTable8DD2[gChars[who].items[i]].m02 == kind) {
+                item = gChars[who].items[i];
+                gChars[who].items[i] = 0;
                 if (i < 2)
                     RedrawMember(who);
                 break;
@@ -462,7 +462,7 @@ fail:
         idx = who;
         if (idx > 3)
             idx -= 2;
-        if (AddDDEffect(who, item, gPartyCell, g1A1B[idx + gFBCC * 4], gFBCC, m02)) {
+        if (AddDDEffect(who, item, gPartyCell, g1A1B[idx + gPartyDir * 4], gPartyDir, m02)) {
             if (m02 == 7)
                 PlaySound(0x1a);
             else
@@ -474,11 +474,11 @@ fail:
     return -4;
 }
 /* 0DE8:0763: runs the action item record `field` (an index into gTable8DD2) for character `who`
-   and carried slot `slot` (an index into m77). It derives the item's m02, calls ClearEffectFlag4
-   when mE3 bit 2 is set, dispatches on the gItemTypes m0E kind (1 rolls 0359 and forces a miss
+   and carried slot `slot` (an index into items). It derives the item's m02, calls ClearEffectFlag4
+   when effectFlags bit 2 is set, dispatches on the gItemTypes m0E kind (1 rolls 0359 and forces a miss
    from 0 to -1 with sound 0x20, 2 runs 0537, 3 runs 05BB and redraws), then, on a hit, raises hp
-   (capped at 0x7F) for a flag-8 item, clears m77[slot] for a flag-16 item and hands gObjs[gDCA4]
-   to DamageObject. It toggles m1E bit `slot`, stores the result in mE8[slot], redraws and arms
+   (capped at 0x7F) for a flag-8 item, clears items[slot] for a flag-16 item and hands gObjs[gDCA4]
+   to DamageObject. It toggles m1E bit `slot`, stores the result in lastAction[slot], redraws and arms
    ApplyCharEffect(who, 0x12, slot, 1) when the result is below -2, else ApplyCharEffect(who, 0x12,
    slot + 2, 1). Called by 0BD2:1001. */
 /*@ 0DE8:0763 */ void UseItem(int who, int slot, int field)
@@ -491,7 +491,7 @@ fail:
     else
         m02 = 0;
     result = 0;
-    if (gChars[who].mE3 & 4)
+    if (gChars[who].effectFlags & 4)
         ClearEffectFlag4(&gChars[who]);
     switch (gItemTypes[m02].m0E & 0x7f) {
     case 1:
@@ -517,11 +517,11 @@ fail:
             RedrawMember(who);
         }
         if (gTable8DD2[field].flags & 0x10)
-            gChars[who].m77[slot] = 0;
+            gChars[who].items[slot] = 0;
         DamageObject(&gObjs[gDCA4], result);
     }
     gChars[who].m1E ^= 1 << slot;
-    gChars[who].mE8[slot] = result;
+    gChars[who].lastAction[slot] = result;
     RedrawMember(who);
     if (result < -2)
         ApplyCharEffect(who, 0x12, slot, 1);
@@ -555,10 +555,10 @@ fail:
 
 /* 0DE8:09B9: applies `amount` points of damage to character `who`. When MemberIs(who, 3) holds
    it derates mE2 (the clamp to 0 is dead: QUIRK 0DE8:09FD), subtracts from hp, stores the amount
-   in mE7, and at or below -10 sets hp to -10, clears mE2, clears mE3 bit 2 and keeps only bit 0 of
+   in lastDamage, and at or below -10 sets hp to -10, clears mE2, clears effectFlags bit 2 and keeps only bit 0 of
    m01; it plays sound 0x16 for the death and 0x15 otherwise, runs the mDF descending effect
    through RecomputeArmourClass when it runs out, redraws through RedrawMember (or
-   DrawMemberPortrait when gFB44 is set), triggers the party-wipe ending when hp is at or below -10
+   DrawMemberPortrait when gPanelMode is set), triggers the party-wipe ending when hp is at or below -10
    and arms ApplyCharEffect(who, 0x12, 6, 1). Called by 0EF3, 08E6, 122E, 1414, 0DE8:01FF
    RunRecordAttack and overlay 6.
    QUIRK 0DE8:09FD: the mE2 clamp reads `if (&rec->mDF < 0)`, a far-pointer comparison that is
@@ -577,11 +577,11 @@ fail:
             rec->mE2 = 0;
     }
     rec->hp -= amount;
-    rec->mE7 = amount;
+    rec->lastDamage = amount;
     if (rec->hp <= -10) {
         rec->hp = -10;
         rec->mE2 = 0;
-        rec->mE3 &= ~4;
+        rec->effectFlags &= ~4;
         rec->status &= 1;
         PlaySound(0x16);
     } else {
@@ -594,7 +594,7 @@ fail:
             RecomputeArmourClass(&gChars[who]);
         }
     }
-    if (gFB44 == 0)
+    if (gPanelMode == 0)
         RedrawMember(who);
     else
         DrawMemberPortrait(who);
@@ -621,9 +621,9 @@ fail:
 }
 
 /* 0DE8:0B45: adds `amount` experience to character `who`'s three class slots. It divides `amount`
-   by g115F[cls] (the per-class divisor for m20), then for each slot 0..2 whose GetClassSlotByte
-   byte is not -1 (the class has that slot), accumulates the share into that slot's m27 total,
-   reads the slot's next-level threshold through GetClassSlotExpThreshold(cls, i, m24[i] + 1) and
+   by g115F[cls] (the per-class divisor for classIndex), then for each slot 0..2 whose GetClassSlotByte
+   byte is not -1 (the class has that slot), accumulates the share into that slot's experience total,
+   reads the slot's next-level threshold through GetClassSlotExpThreshold(cls, i, levels[i] + 1) and
    levels the slot up through LevelUpSlot when the threshold is not -1 and the total has passed it.
    Called by 0DE8:0C2B. */
 /*@ 0DE8:0B45 */ void AddExperience(int who, int amount)
@@ -632,14 +632,14 @@ fail:
     int cls;
     long value;
 
-    cls = gChars[who].m20;
+    cls = gChars[who].classIndex;
     amount /= g115F[cls];
     for (i = 0; i < 3; i++) {
         if (GetClassSlotByte(cls, i) == -1)
             continue;
-        gChars[who].m27[i] += amount;
-        value = GetClassSlotExpThreshold(cls, i, gChars[who].m24[i] + 1);
-        if (value != -1 && gChars[who].m27[i] > value)
+        gChars[who].experience[i] += amount;
+        value = GetClassSlotExpThreshold(cls, i, gChars[who].levels[i] + 1);
+        if (value != -1 && gChars[who].experience[i] > value)
             LevelUpSlot(who, cls, i);
     }
 }
@@ -666,8 +666,8 @@ fail:
     }
 }
 
-/* 0DE8:0C82: levels character `who` up in class slot `slot`. It bumps that m24 slot and, for the
-   three slots 0/1/2, rolls one die of the matching damage group through RollHitPoints(cls, m17),
+/* 0DE8:0C82: levels character `who` up in class slot `slot`. It bumps that levels slot and, for the
+   three slots 0/1/2, rolls one die of the matching damage group through RollHitPoints(cls, constitution),
    adding the result to both hp and maxHp, then formats
    "\x06\x01%s has gained a level of experience.\x06\x0f\r" into gFileNameBuf for the
    character's name (0x06 is the control byte that takes the next byte as the first text attribute,
@@ -677,13 +677,13 @@ fail:
 {
     int damage;
 
-    gChars[who].m24[slot]++;
+    gChars[who].levels[slot]++;
     if (slot == 0)
-        damage = RollHitPoints(cls, gChars[who].m17, 1, 0, 0);
+        damage = RollHitPoints(cls, gChars[who].constitution, 1, 0, 0);
     else if (slot == 1)
-        damage = RollHitPoints(cls, gChars[who].m17, 0, 1, 0);
+        damage = RollHitPoints(cls, gChars[who].constitution, 0, 1, 0);
     else if (slot == 2)
-        damage = RollHitPoints(cls, gChars[who].m17, 0, 0, 1);
+        damage = RollHitPoints(cls, gChars[who].constitution, 0, 0, 1);
     gChars[who].hp += damage;
     gChars[who].maxHp += damage;
     sprintf(gFileNameBuf, "\x06\x01%s has gained a level of experience.\x06\x0f\r",
@@ -692,14 +692,14 @@ fail:
     DrawText(gFileNameBuf);
     PlaySound(0x17);
 }
-/* 0DE8:0D5E: computes the armour class m1D of character `who`. It starts from GetArmourClassBase(m15) + 10,
+/* 0DE8:0D5E: computes the armour class armorClass of character `who`. It starts from GetArmourClassBase(dexterity) + 10,
    then for the four slots named by g553E adds the item type's m04 and subtracts the slot's m0B when
-   the item m02 passes the gItemTypes m0E and g1231[m20] tests (slot 2 also needs f0D1C_07DB); for
-   slots 1 and 2 only item type 0x1B counts (:728), and the m77[25]/m77[26] items count only
-   when their m0E kind is 0 (:738, :741). When m77[17]'s slot m0B is 0 it subtracts the larger m0B
-   of those two items. It clamps against base + 6 while mDF holds (when m1D is not above base + 6
-   the else branch clears mDF, :750), caps at 4 when mE3 bit 1 is set and at
-   5 + (GetClassSlot24Value - 5) / 3 when mE3 bit 8 is set. Called by 0ACD, 0BD2, 0EF3 and overlays
+   the item m02 passes the gItemTypes m0E and g1231[classIndex] tests (slot 2 also needs f0D1C_07DB); for
+   slots 1 and 2 only item type 0x1B counts (:728), and the items[25]/items[26] items count only
+   when their m0E kind is 0 (:738, :741). When items[17]'s slot m0B is 0 it subtracts the larger m0B
+   of those two items. It clamps against base + 6 while mDF holds (when armorClass is not above base + 6
+   the else branch clears mDF, :750), caps at 4 when effectFlags bit 1 is set and at
+   5 + (GetClassSlot24Value - 5) / 3 when effectFlags bit 8 is set. Called by 0ACD, 0BD2, 0EF3 and overlays
    0 and 5. */
 /*@ 0DE8:0D5E */ void ComputeArmourClass(int who)
 {
@@ -714,50 +714,50 @@ fail:
     struct CharRec far *rec;
 
     rec = &gChars[who];
-    base = GetArmourClassBase(rec->m15);
-    rec->m1D = base + 10;
+    base = GetArmourClassBase(rec->dexterity);
+    rec->armorClass = base + 10;
     for (i = 0; i < 4; i++) {
-        item = rec->m77[g553E[i]];
+        item = rec->items[g553E[i]];
         if (item == 0)
             continue;
         if (i == 2 && !f0D1C_07DB(who, 1))
             continue;
         itemType = gTable8DD2[item].m02;
-        value = gItemTypes[itemType].m05 & g1231[rec->m20];
+        value = gItemTypes[itemType].m05 & g1231[rec->classIndex];
         if ((gItemTypes[itemType].m0E & 0x7f) != 0 || value == 0)
             continue;
         if (i >= 1 && i <= 2 && itemType != 0x1b)
             continue;
-        rec->m1D += gItemTypes[itemType].m04;
-        rec->m1D -= gTable8DD2[item].m0B;
+        rec->armorClass += gItemTypes[itemType].m04;
+        rec->armorClass -= gTable8DD2[item].m0B;
     }
-    item = rec->m77[17];
+    item = rec->items[17];
     if (gTable8DD2[item].m0B == 0) {
         bonus25 = 0;
         bonus26 = 0;
-        item = rec->m77[25];
+        item = rec->items[25];
         if (item != 0 && (gItemTypes[gTable8DD2[item].m02].m0E & 0x7f) == 0)
             bonus25 = gTable8DD2[item].m0B;
-        item = rec->m77[26];
+        item = rec->items[26];
         if (item != 0 && (gItemTypes[gTable8DD2[item].m02].m0E & 0x7f) == 0)
             bonus26 = gTable8DD2[item].m0B;
         bonus25 = bonus25 > bonus26 ? bonus25 : bonus26;
-        rec->m1D -= bonus25;
+        rec->armorClass -= bonus25;
     }
     if (rec->mDF > 0) {
-        if (rec->m1D > base + 6)
-            rec->m1D = base + 6;
+        if (rec->armorClass > base + 6)
+            rec->armorClass = base + 6;
         else
             rec->mDF = 0;
     }
-    if ((rec->mE3 & 2) != 0 && rec->m1D > 4)
-        rec->m1D = 4;
-    if ((rec->mE3 & 0x100) != 0) {
+    if ((rec->effectFlags & 2) != 0 && rec->armorClass > 4)
+        rec->armorClass = 4;
+    if ((rec->effectFlags & 0x100) != 0) {
         limit = 5;
         if (GetClassSlot24Value(who) > 5)
             limit += (GetClassSlot24Value(who) - 5) / 3;
-        if (rec->m1D > limit)
-            rec->m1D = limit;
+        if (rec->armorClass > limit)
+            rec->armorClass = limit;
     }
 }
 /* 0DE8:0F98: a saving-throw style keeper: it takes 0D1C:059B's 0/1 result as the threshold

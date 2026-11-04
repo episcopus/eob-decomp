@@ -20,9 +20,9 @@ struct CharRec {
     char pad1D[0x20 - 0x1D];
     signed char classIndex;    /* +20: an index into a class table (0A72:007B's classIndex) */
     char pad21[0x23 - 0x21];
-    unsigned char level;       /* +23: the character's level [H], inferred from ovl6:0000's tests
-                                  (0 stops the spell scan and the regain; 5 or less drops to 0);
-                                  src/E0A72.C:29 leaves +23 as padding */
+    unsigned char food;        /* +23: the food value (EatFood, 0ACD:07E0): a member with none
+                                  regains neither spells nor hit points while resting, and rest
+                                  without a ration costs 5 (ovl6:0000) */
     char pad24[0x37 - 0x24];
     signed char known[30];     /* +37: spell slots, negative: a spell to be memorised */
     signed char memorized[30]; /* +55: spell slots, positive: a spell ready to cast; negative:
@@ -63,7 +63,7 @@ extern int gTextTop; /*@ ds:FE66 */
 extern char gFileNameBuf[]; /*@ ds:FE6E */              /* the text buffer ovl6:0858 formats into */
 extern void *gCurFont; /*@ ds:FE4E */          /* the current font (1A47:0169 records it) */
 extern void *gFont8x8; /*@ ds:FE5A */              /* the 8x8 font loaded from Font8.fnt */
-extern void *gA9C0; /*@ ds:A9C0 */              /* the 6x6 font loaded from FONT6.FNT */
+extern void *gFont6x6; /*@ ds:A9C0 */              /* the 6x6 font loaded from FONT6.FNT */
 extern int gPartyCell; /*@ ds:FBCA */
 extern signed char gF57E; /*@ ds:F57E */        /* the colour2 argument ovl6:0858 passes; 082C:0898
                                                    forwards it to its first shadow draw only */
@@ -174,7 +174,7 @@ void f0B9B(int message);
                 continue;
             if (gChars[member].name[0] == 0)
                 continue;
-            if (gChars[member].level <= 0)
+            if (gChars[member].food <= 0)
                 continue;
             flag2 = fOvl1_243A(0x28);
             break;
@@ -185,12 +185,12 @@ void f0B9B(int message);
     tick = 0;
     f0858(hours, 1);
     SetTextWindow(7);
-    SetFont(gA9C0);
+    SetFont(gFont6x6);
     for (;;) {
         tick++;
         for (i = 0; i < 6; i++) {
             counters[i]++;
-            if (gChars[i].level == 0)
+            if (gChars[i].food == 0)
                 continue;
             if (!MemberIs(i, 5))
                 continue;
@@ -304,24 +304,24 @@ void f0B9B(int message);
                     }
                     if (!MemberIs(member, 3))
                         continue;
-                    if (gChars[member].level != 0) {
+                    if (gChars[member].food != 0) {
                         if (gChars[member].hp < gChars[member].maxHp) {
                             gChars[member].hp++;
-                            SetFont(gA9C0);
+                            SetFont(gFont6x6);
                             RedrawMember(member);
                         }
                         if (f0D1C_0163(member, 2) < 0) {
-                            if (gChars[member].level <= 5) {
-                                gChars[member].level = 0;
+                            if (gChars[member].food <= 5) {
+                                gChars[member].food = 0;
                                 changed = 1;
                             } else {
-                                gChars[member].level -= 5;
+                                gChars[member].food -= 5;
                             }
                         }
                     } else if (hours % 0x18 == 0 && gChars[member].hp > (signed char)0xf6) {
                         DamageCharacter(member, 1);
                         changed = 1;
-                        SetFont(gA9C0);
+                        SetFont(gFont6x6);
                         RedrawMember(member);
                     }
                 }
@@ -430,7 +430,7 @@ done:
     register int savedRegion;
 
     savedFont = gCurFont;
-    SetFont(gA9C0);
+    SetFont(gFont6x6);
     gF442 = 1;
     UpdateObjects(0);
     UpdateObjects(1);
@@ -466,7 +466,7 @@ done:
     for (member = 0; member < 6; member++) {
         if (gChars[member].hp <= 0)
             continue;
-        if (gChars[member].level <= 0)
+        if (gChars[member].food <= 0)
             continue;
         if (FindClassSlot(2, gChars[member].classIndex) != -1
             || FindClassSlot(4, gChars[member].classIndex) != 0) {

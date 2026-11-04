@@ -12,41 +12,40 @@
 struct CharRec {            /* 243-byte (0xF3) character records at ds:F580; see src/E0A72.C */
     char pad00;
     unsigned char status;      /* +01 */
-    char name[0x0B];        /* +02: the character's name, NUL padded (src/EOV6.C) */
+    char name[0x0B];           /* +02: the character's name, NUL padded (src/EOV6.C) */
     char pad0D[0x17 - 0x0D];
-    signed char m17;        /* +17 */
+    signed char constitution;  /* +17 */
     char pad18[0x1B - 0x18];
-    signed char hp;        /* +1B */
+    signed char hp;            /* +1B */
     char pad1C[0x1F - 0x1C];
-    signed char m1F;        /* +1F */
-    signed char m20;        /* +20 */
+    signed char race;          /* +1F */
+    signed char classIndex;    /* +20 */
     char pad21[3];
-    signed char m24[3];     /* +24: three per-class-slot bytes (0D1C:0903 indexes it, 0D1C:059B reads [0]) */
+    signed char levels[3];     /* +24: three per-class-slot bytes (0D1C:0903 indexes it, 0D1C:059B reads [0]) */
     char pad27[0x77 - 0x27];
-    int m77[27];            /* +77: 27 word slots; slot 16 (+97) is also read on its own */
+    int items[27];             /* +77: 27 word slots; slot 16 (+97) is also read on its own */
     char padAD[0xF3 - 0xAD];
 };
 
 extern int gA9C8[]; /*@ ds:A9C8 */       /* a 15-word table searched by 0D1C:0006 */
 extern char gDF4C; /*@ ds:DF4C */        /* set to 1 when 0D1C:0006 finds the value */
-extern signed char gA99A; /*@ ds:A99A */ /* the selected character index (src/E0ACD.C) */
-extern char gF51A; /*@ ds:F51A */        /* an index into the 27 word slots of gChars[gA99A].m77
+extern signed char gInventoryMember; /*@ ds:A99A */ /* the selected character index (src/E0ACD.C) */
+extern char gF51A; /*@ ds:F51A */        /* an index into the 27 word slots of gChars[gInventoryMember].items
                                             (0D1C:02DC, 0D1C:0304); slot 16 is the own-list head
                                             0D1C:035A drains. E0ACD disagrees: it reads it as an
                                             action-menu row 0..2 with 0x10 for the own list */
 extern struct CharRec gChars[]; /*@ ds:F580 */
-extern signed char g1790[]; /*@ ds:1790 */  /* byte table indexed by the second argument of 0D1C:00DA */
-extern signed char g547E[]; /*@ ds:547E */  /* byte table indexed by the second argument of 0D1C:0080 */
-extern char gB894[]; /*@ ds:B894 */         /* nine-byte records; +4 (ds:B898) is tested by 0D1C:0080 and +5 (ds:B899) is a list head used by 0D1C:035A */
-extern signed char g194B[]; /*@ ds:194B */  /* byte table read by 0D1C:0080 */
+extern signed char gDirCellOffset[]; /*@ ds:1790 */  /* byte table indexed by the second argument of 0D1C:00DA */
+extern signed char gOppositeSide[]; /*@ ds:547E */  /* byte table indexed by the second argument of 0D1C:0080 */
+extern char gMaze[]; /*@ ds:B894 */         /* nine-byte records; +4 (ds:B898) is tested by 0D1C:0080 and +5 (ds:B899) is a list head used by 0D1C:035A */
+extern signed char gWallTypeFlags[]; /*@ ds:194B */  /* byte table read by 0D1C:0080 */
 extern signed char g1A1B[]; /*@ ds:1A1B */  /* per-page sound table read by 0D1C:035A */
 extern int gPartyCell; /*@ ds:FBCA */     /* the party's map cell: 0D1C:035A indexes the nine-byte
-                                            records (gB894 + gPartyCell * 9 + 5) and passes it as the
+                                            records (gMaze + gPartyCell * 9 + 5) and passes it as the
                                             InsertListItem key, and 0D1C:09CB passes it as the second
-                                            point of DirectionFromPoints. E177D.C:92 and EOV4.C:524
-                                            read it as the map cell too; E0ACD.C:55 calls it the sound
-                                            volume (disagreement, work/reviews/e0d1c.md) */
-extern int gFBCC; /*@ ds:FBCC */            /* a page number 0..3 (kept modulo 4 by 0ACD) */
+                                            point of DirectionFromPoints. MoveParty (122E:0001)
+                                            sets it (settled 2026-11-03, playbook 65) */
+extern int gPartyDir; /*@ ds:FBCC */            /* the party's facing, 0..3 (TurnLeft, TurnRight) */
 extern int g54F2; /*@ ds:54F2 */            /* the index drawn by 0D1C:0454, -1 when none */
 extern int g54F4; /*@ ds:54F4 */            /* the row of the animated list 0D1C:0454 draws */
 extern unsigned long gTicks; /*@ ds:848A */  /* a tick counter compared with gFC5E by 0D1C:0454 */
@@ -55,7 +54,7 @@ extern signed char g1CE7[]; /*@ ds:1CE7 */  /* per-row colours for the list 0D1C
 extern signed char gF57E; /*@ ds:F57E */    /* a colour read by 0D1C:0C21 */
 extern signed char gFB4C; /*@ ds:FB4C */    /* a colour read by 0D1C:0C21 */
 extern signed char gF53A; /*@ ds:F53A */    /* a colour read by 0D1C:0C21 */
-extern signed char g54F6[]; /*@ ds:54F6 */  /* byte table indexed by a character's m17 in 0D1C:059B */
+extern signed char g54F6[]; /*@ ds:54F6 */  /* byte table indexed by a character's constitution in 0D1C:059B */
 extern unsigned char gFBD2; /*@ ds:FBD2 */  /* bit 0 gates the icon colour row in 0D1C:070F (src/E07A9.C) */
 extern int gGraphicsChoice; /*@ ds:8102 */            /* nonzero: a colour row exists (src/E07A9.C) */
 extern char far *gBufF534; /*@ ds:F534 */   /* the 1600-byte ITEMRMP buffer (src/E07A9.C) */
@@ -114,7 +113,7 @@ struct Entry14 {            /* the 14-byte records E07A9 calls Entry14; view bas
 };
 extern struct Entry14 gTable8DD2[]; /*@ ds:8DD2 */
 
-extern char gFB44; /*@ ds:FB44 */            /* a mode byte: 0 and 1 gate the redraws in 0D1C:01CA and 0D1C:0304 */
+extern char gPanelMode; /*@ ds:FB44 */            /* a mode byte: 0 and 1 gate the redraws in 0D1C:01CA and 0D1C:0304 */
 extern int gFBCE; /*@ ds:FBCE */             /* the item index shown by the mouse (src/E07A9.C) */
 extern int gMouseDisabled; /*@ ds:814A */    /* nonzero disables the mouse (src/E07A9.C) */
 extern int gFBC8; /*@ ds:FBC8 */             /* the current action: 2 or 7 gates the turn-undead
@@ -146,7 +145,7 @@ extern void DrawBox(int x1, int y1, int x2, int y2, int colour); /*@ 1A1F:000C *
 extern int GetIndexedByte(char index, char limit, char offset); /*@ 0A72:0006 */
 extern char GetClassSlotByte(char row, char slot); /*@ 0A72:0509 */
 extern int FindClassSlot(int slotId, int classIndex); /*@ 0A72:007B */
-/* the original sign-extends the m20 argument at 0D1C:0942 and 0D1C:0977 (`mov al,es:[bx+0x20];
+/* the original sign-extends the classIndex argument at 0D1C:0942 and 0D1C:0977 (`mov al,es:[bx+0x20];
    cwde; push ax`), so the second parameter is int, not char */
 extern int GetClampedTableByte(int col, int row); /*@ 0A72:0597 */
 extern void f1A29_008B(int mode, void far *src, int x, int y, int region); /*@ 1A29:008B */
@@ -178,18 +177,18 @@ int GetCurrentItem(void);
 
 /* 0D1C:003F: selects the party member at index `who` (the signed char at ds:A99A). When
    `who` differs from the current one, the old index and the new index are passed to RedrawMember
-   (which redraws that member's row), and nothing is done when they are equal. gA99A indexes the
+   (which redraws that member's row), and nothing is done when they are equal. gInventoryMember indexes the
    character records read by 0D1C:0670 and is toggled 0..5 by Turn091C (src/E0ACD.C). Called by
    0ACD, 0DE8, 0EF3, 1414 and overlays 1, 5 and 6. */
 /*@ 0D1C:003F */ void SelectCharacter(int who)
 {
     int old;
 
-    if (gA99A != who) {
-        old = gA99A;
-        gA99A = who;
+    if (gInventoryMember != who) {
+        old = gInventoryMember;
+        gInventoryMember = who;
         RedrawMember(old);
-        RedrawMember(gA99A);
+        RedrawMember(gInventoryMember);
     }
 }
 
@@ -207,31 +206,32 @@ int GetCurrentItem(void);
 {
     value++;
 }
-/* 0D1C:0080: Purpose unknown: computes a ten-bit value x through 0D1C:00DA, then looks up
-   gB894[x * 9 + g547E[page]] in g194B; returns -1 unless that byte is odd and gB894[x * 9 + 4] has
-   no bits 0..2 set, otherwise returns x. The callers (0ACD key handlers) pass gFBCC as `page`, so
-   g547E and g1790 are indexed by a page number 0..3. */
-/*@ 0D1C:0080 */ int f0D1C_0080(int value, signed char page)
+/* 0D1C:0080: the cell one step from `cell` toward `dir`, or -1 when the party cannot go there:
+   the wall of the target cell on the side facing back (gOppositeSide[dir]) must have bit 0 of
+   gWallTypeFlags set (passable), and no monster may stand in the target (gMaze + 4, bits 0..2).
+   The movement keys (0ACD:04F8 to 05FF) call it with gPartyCell before MoveParty. */
+/*@ 0D1C:0080 */ int StepIfOpen(int cell, signed char dir)
 {
-    int x;
+    int next;
     int flag;
 
-    x = f0D1C_00DA(value, page);
-    flag = g194B[gB894[x * 9 + g547E[page]]];
+    next = StepCell(cell, dir);
+    flag = gWallTypeFlags[gMaze[next * 9 + gOppositeSide[dir]]];
     if (!(flag & 1))
         return -1;
-    if (gB894[x * 9 + 4] & 7)
+    if (gMaze[next * 9 + 4] & 7)
         return -1;
-    return x;
+    return next;
 }
 
-/* 0D1C:00DA: Purpose unknown: returns (value + g1790[page]) & 0x3FF, a ten-bit value. g1790 is a
-   byte table indexed by `page` (gFBCC at the call sites). Called by 0D1C:0080 and 0D1C:0A43. */
-/*@ 0D1C:00DA */ int f0D1C_00DA(int value, int page)
+/* 0D1C:00DA: the map cell one step from `cell` toward `dir` (0..3 north, east, south, west):
+   cell plus gDirCellOffset[dir] (-32, 1, 32, -1) kept in the 32 x 32 maze by & 0x3FF, so a step
+   off one edge wraps to the other. Called by StepIfOpen, the item and attack code and 0D1C:0A43. */
+/*@ 0D1C:00DA */ int StepCell(int cell, int dir)
 {
-    return (value + g1790[page]) & 0x3FF;
+    return (cell + gDirCellOffset[dir]) & 0x3FF;
 }
-/* 0D1C:00F1: finds the first of the 27 word slots of gChars[who].m77 that holds an item (a
+/* 0D1C:00F1: finds the first of the 27 word slots of gChars[who].items that holds an item (a
    nonzero index into the 14-byte records at ds:8DD2) whose m02 equals `field2` and whose m0B
    equals `fieldB`. A `field2` or `fieldB` of -1 is a wildcard. Returns the slot number, or -1.
    Called by 0D1C:01CA and from overlays 1 and 6. */
@@ -240,7 +240,7 @@ int GetCurrentItem(void);
     int far *slot;
     unsigned i;
 
-    slot = gChars[who].m77;
+    slot = gChars[who].items;
     for (i = 0; i < 27; slot++, i++) {
         if (*slot != 0) {
             if (gTable8DD2[*slot].m02 == field2 || field2 == -1) {
@@ -251,14 +251,14 @@ int GetCurrentItem(void);
     }
     return -1;
 }
-/* 0D1C:0163: Purpose unknown: over the last two of the 27 word slots of gChars[who].m77 (25
+/* 0D1C:0163: Purpose unknown: over the last two of the 27 word slots of gChars[who].items (25
    and 26), returns 1 when one of them holds an item (an index into the ds:8DD2 records) whose
    m02 is 0x2F and whose m0B equals `fieldB`, otherwise 0. Slots 25 and 26 are the only two
    inspected. Called by 122E, 1414 and overlays 1 and 6. The empty-slot test is an early
    `continue`, not an `if` around the body: that is the source form the original has. The
    original reloads `item` into AX before the first multiply (0D1C:0194 `mov ax, di`), and the
    reload survives -O only when the body follows an early `continue` (the same redundant-load
-   quirk the e08E6 note in `re/symbols.toml` records); with `if (item = rec->m77[i]) { ... }`
+   quirk the e08E6 note in `re/symbols.toml` records); with `if (item = rec->items[i]) { ... }`
    TCC elides the load (2 bytes short). */
 /*@ 0D1C:0163 */ int f0D1C_0163(int who, int fieldB)
 {
@@ -268,7 +268,7 @@ int GetCurrentItem(void);
 
     rec = &gChars[who];
     for (i = 25; i <= 26; i++) {
-        if (!(item = rec->m77[i]))
+        if (!(item = rec->items[i]))
             continue;
         if (gTable8DD2[item].m02 == 0x2F && gTable8DD2[item].m0B == fieldB)
             return 1;
@@ -279,8 +279,8 @@ int GetCurrentItem(void);
    all carried items whose ds:8DD2 record has m02 == `field2` and m0B == `fieldB`
    (FindCarriedSlot's match): clears the item's m04 (sets it to -1), clears the character's slot,
    and redraws. Returns 1 when at least one item was removed, otherwise 0. The redraw paths: when
-   gFB44 is 0 and the slot is one of the first two of a character before the sixth, DrawMemberSlot;
-   when gFB44 is 1 and the character is the selected one, DrawItemRow; and when the mouse is
+   gPanelMode is 0 and the slot is one of the first two of a character before the sixth, DrawMemberSlot;
+   when gPanelMode is 1 and the character is the selected one, DrawItemRow; and when the mouse is
    enabled, the item in the slot GetCurrentItem names is cleared and redrawn through SetMouseItem.
    Called by overlays 5. What m02, m0B and m04 mean is not established. */
 /*@ 0D1C:01CA */ int RemoveCarriedItems(int field2, int fieldB)
@@ -295,15 +295,15 @@ int GetCurrentItem(void);
         if (!MemberIs(who, 1))
             continue;
         while ((slot = FindCarriedSlot(who, field2, fieldB)) != -1) {
-            item = gChars[who].m77[slot];
+            item = gChars[who].items[slot];
             gTable8DD2[item].m04 = -1;
-            gChars[who].m77[slot] = 0;
+            gChars[who].items[slot] = 0;
             found = 1;
-            if (gFB44 == 0) {
+            if (gPanelMode == 0) {
                 if (slot < 2 && who < 5)
                     DrawMemberSlot(who, slot);
             }
-            if (gFB44 == 1 && gA99A == who)
+            if (gPanelMode == 1 && gInventoryMember == who)
                 DrawItemRow(who, slot, 1);
             if (!gMouseDisabled) {
                 item = GetCurrentItem();
@@ -317,36 +317,36 @@ int GetCurrentItem(void);
     return found;
 }
 /* 0D1C:02DC: returns the item index of the currently displayed slot: gFBCE when the mouse is
-   enabled, otherwise gChars[gA99A].m77[gF51A]. The getter of the SetCurrentItem pair (0D1C:0304).
+   enabled, otherwise gChars[gInventoryMember].items[gF51A]. The getter of the SetCurrentItem pair (0D1C:0304).
    Called by 0D1C:01CA and from many other units. */
 /*@ 0D1C:02DC */ int GetCurrentItem(void)
 {
     if (!gMouseDisabled)
         return gFBCE;
-    return gChars[gA99A].m77[gF51A];
+    return gChars[gInventoryMember].items[gF51A];
 }
 /* 0D1C:0304: stores `n` as the item index in the current slot: gFBCE when the mouse is enabled,
-   or gChars[gA99A].m77[gF51A] when it is disabled. When the mouse is disabled it also redraws
-   the slot, through RedrawMember(gA99A) when gFB44 is 0 and DrawItemRow(gF51A, 1, 0) otherwise.
+   or gChars[gInventoryMember].items[gF51A] when it is disabled. When the mouse is disabled it also redraws
+   the slot, through RedrawMember(gInventoryMember) when gPanelMode is 0 and DrawItemRow(gF51A, 1, 0) otherwise.
    Called by SetMouseItem to set the icon shown for a selected item. */
 /*@ 0D1C:0304 */ void SetCurrentItem(int n)
 {
     if (!gMouseDisabled) {
         gFBCE = n;
     } else {
-        gChars[gA99A].m77[gF51A] = n;
-        if (gFB44 == 0)
-            RedrawMember(gA99A);
+        gChars[gInventoryMember].items[gF51A] = n;
+        if (gPanelMode == 0)
+            RedrawMember(gInventoryMember);
         else
             DrawItemRow(gF51A, 1, 0);
     }
 }
 /* 0D1C:035A: Purpose unknown: clears gChars[who].status and then, for each of the 27 word slots of
-   gChars[who].m77 except slot 16 (which is a list head at +97), queues the item in the slot
+   gChars[who].items except slot 16 (which is a list head at +97), queues the item in the slot
    through InsertListItem at the head gPartyCell * 9 + 5 (the nine-byte records at ds:B894) with a
-   random sound g1A1B[gFBCC * 4 + RollDice(1, 2, -1)]. Then it drains the slot-16 list through
+   random sound g1A1B[gPartyDir * 4 + RollDice(1, 2, -1)]. Then it drains the slot-16 list through
    RemoveListItem and queues each returned item the same way. Finally, when `who` is the selected
-   character, gA99A is cleared to 0, and RearmCharEffects runs. Called by overlays 1 and 5. */
+   character, gInventoryMember is cleared to 0, and RearmCharEffects runs. Called by overlays 1 and 5. */
 /*@ 0D1C:035A */ void f0D1C_035A(int who)
 {
     struct CharRec far *rec;
@@ -358,18 +358,18 @@ int GetCurrentItem(void);
     for (i = 0; i < 27; i++) {
         if (i == 16)
             continue;
-        if (item = rec->m77[i]) {
-            InsertListItem((int far *)(gB894 + gPartyCell * 9 + 5), gPartyCell, item,
-                    g1A1B[gFBCC * 4 + RollDice(1, 2, -1)]);
+        if (item = rec->items[i]) {
+            InsertListItem((int far *)(gMaze + gPartyCell * 9 + 5), gPartyCell, item,
+                    g1A1B[gPartyDir * 4 + RollDice(1, 2, -1)]);
         }
     }
-    while (rec->m77[16]) {
-        item = RemoveListItem(&rec->m77[16], 0, -1);
-        InsertListItem((int far *)(gB894 + gPartyCell * 9 + 5), gPartyCell, item,
-                g1A1B[gFBCC * 4 + RollDice(1, 2, -1)]);
+    while (rec->items[16]) {
+        item = RemoveListItem(&rec->items[16], 0, -1);
+        InsertListItem((int far *)(gMaze + gPartyCell * 9 + 5), gPartyCell, item,
+                g1A1B[gPartyDir * 4 + RollDice(1, 2, -1)]);
     }
-    if (gA99A == who)
-        gA99A = 0;
+    if (gInventoryMember == who)
+        gInventoryMember = 0;
     RearmCharEffects();
 }
 /* 0D1C:0454: draws the animated row list at ds:5482. When `index` differs from the stored g54F2
@@ -424,11 +424,11 @@ int GetCurrentItem(void);
         RedrawMember(i);
 }
 /* 0D1C:059B: Purpose unknown: a per-character check against a 1d20 roll. It derives a class
-   slot from gChars[who].m20 (GetClassSlotByte, with 4 and 5 folded to 0), a value from
-   GetIndexedByte(classSlot, m24, `attack`), then, depending on a level-like value m1F * 2
+   slot from gChars[who].classIndex (GetClassSlotByte, with 4 and 5 folded to 0), a value from
+   GetIndexedByte(classSlot, levels, `attack`), then, depending on a level-like value race * 2
    (3 or 5, and separately 4), for `attack` 4, 0 or 1 in the 3-or-5 case and for `attack` 4 or 1
-   in the level-4 case, subtracts g54F6[m17]; finally it returns 1 when RollDice(1, 20, 0) >=
-   value. QUIRK 0D1C:0609/0604: m1F * 2 is even, so the tests for 3
+   in the level-4 case, subtracts g54F6[constitution]; finally it returns 1 when RollDice(1, 20, 0) >=
+   value. QUIRK 0D1C:0609/0604: race * 2 is even, so the tests for 3
    and 5 can never hold; the original still has them. Called by 0DE8:0F98 and 0DE8:101A. */
 /*@ 0D1C:059B */ int f0D1C_059B(int who, int attack)
 {
@@ -438,18 +438,18 @@ int GetCurrentItem(void);
     int level;
 
     rec = &gChars[who];
-    classSlot = GetClassSlotByte(rec->m20, 0);
+    classSlot = GetClassSlotByte(rec->classIndex, 0);
     if (classSlot == 4 || classSlot == 5)
         classSlot = 0;
-    value = GetIndexedByte(classSlot, rec->m24[0], attack);
-    level = rec->m1F * 2;
+    value = GetIndexedByte(classSlot, rec->levels[0], attack);
+    level = rec->race * 2;
     if (level == 3 || level == 5) {
         if (attack == 4 || attack == 0 || attack == 1)
-            value -= g54F6[rec->m17];
+            value -= g54F6[rec->constitution];
     }
     if (level == 4) {
         if (attack == 4 || attack == 1)
-            value -= g54F6[rec->m17];
+            value -= g54F6[rec->constitution];
     }
     return RollDice(1, 20, 0) >= value;
 }
@@ -530,12 +530,12 @@ int GetCurrentItem(void);
     int m0;
     int m1;
 
-    slot0 = gChars[who].m77[0];
+    slot0 = gChars[who].items[0];
     result0 = ItemClassAllowed(who, slot0);
     m0 = gTable8DD2[slot0].m02;
     if (flag == 0)
         return slot0 == 0 || result0 != 0;
-    slot1 = gChars[who].m77[1];
+    slot1 = gChars[who].items[1];
     result1 = ItemClassAllowed(who, slot1);
     m1 = gTable8DD2[slot1].m02;
     if (slot0 != 0 && gA9F5[m0].m01 == 2)
@@ -550,7 +550,7 @@ int GetCurrentItem(void);
     return result1;
 }
 /* 0D1C:08B1: Purpose unknown: returns 1 when one of the first two carried items of the character
-   record `rec` (m77[0] or m77[1]) holds a nonzero item whose ds:8DD2 record's m02 indexes a
+   record `rec` (items[0] or items[1]) holds a nonzero item whose ds:8DD2 record's m02 indexes a
    ds:A9F5 record with m09 == 6, otherwise 0. The pointer is a character record (the slots are at
    +77). Called by 0D1C:0903. */
 /*@ 0D1C:08B1 */ int f0D1C_08B1(struct CharRec far *rec)
@@ -559,8 +559,8 @@ int GetCurrentItem(void);
     int i;
 
     for (i = 0; i <= 1; i++) {
-        if (rec->m77[i]) {
-            item = gTable8DD2[rec->m77[i]].m02;
+        if (rec->items[i]) {
+            item = gTable8DD2[rec->items[i]].m02;
             if (gA9F5[item].m09 == 6)
                 return 1;
         }
@@ -569,8 +569,8 @@ int GetCurrentItem(void);
 }
 /* 0D1C:0903: Purpose unknown: scans the six party members and returns a packed word. A member
    qualifies when MemberIs(who, 0xD) and f0D1C_08B1(rec) hold; for it the code takes
-   FindClassSlot(2, m20) and, failing that, FindClassSlot(4, m20), and compares the member's
-   m24[slot] (minus 2 in the second case) with the best so far. The result is (best member << 8)
+   FindClassSlot(2, classIndex) and, failing that, FindClassSlot(4, classIndex), and compares the member's
+   levels[slot] (minus 2 in the second case) with the best so far. The result is (best member << 8)
    + best value, or 0 when none qualifies. Called by 0D1C:0A43. */
 /*@ 0D1C:0903 */ int f0D1C_0903(void)
 {
@@ -587,18 +587,18 @@ int GetCurrentItem(void);
             continue;
         if (!f0D1C_08B1(rec))
             continue;
-        slot = FindClassSlot(2, rec->m20);
+        slot = FindClassSlot(2, rec->classIndex);
         if (slot != -1) {
-            if (rec->m24[slot] > bestVal) {
-                bestVal = rec->m24[slot];
+            if (rec->levels[slot] > bestVal) {
+                bestVal = rec->levels[slot];
                 best = who;
             }
         } else {
-            slot = FindClassSlot(4, rec->m20);
+            slot = FindClassSlot(4, rec->classIndex);
             if (slot == -1)
                 continue;
-            if (rec->m24[slot] - 2 > bestVal) {
-                bestVal = rec->m24[slot] - 2;
+            if (rec->levels[slot] - 2 > bestVal) {
+                bestVal = rec->levels[slot] - 2;
                 best = who;
             }
         }
@@ -630,7 +630,7 @@ int GetCurrentItem(void);
     return 0;
 }
 /* 0D1C:0A43: the "turn undead" action. When gFBC8 is 2 or 7 it derives a ten-bit key from
-   gPartyCell and gFBCC (f0D1C_00DA) and requires gB894[key * 9 + 4] & 7 to be nonzero, then
+   gPartyCell and gPartyDir (StepCell) and requires gMaze[key * 9 + 4] & 7 to be nonzero, then
    asks f0D1C_0903 for the best qualifying party member (its low byte the member's value, its
    high byte the member's index) and rolls 1d20. It lists the gObjs indices whose ds:8A82 object
    record's m02 equals key (f08E6_17FD) and, for each object whose ds:1A3B record's m0F has bit 2
@@ -655,8 +655,8 @@ int GetCurrentItem(void);
     if (gFBC8 != 2 && gFBC8 != 7)
         return;
     turned = 0;
-    key = f0D1C_00DA(gPartyCell, gFBCC);
-    value = (unsigned char)gB894[key * 9 + 4] & 7;
+    key = StepCell(gPartyCell, gPartyDir);
+    value = (unsigned char)gMaze[key * 9 + 4] & 7;
     if (value == 0)
         return;
     packed = f0D1C_0903();

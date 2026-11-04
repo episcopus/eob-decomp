@@ -2501,10 +2501,10 @@ unit = "e0acd"
 addr = "0ACD:04F8"
 size = 49
 evidence = ["frame"]
-name = "Action04F8"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "MoveForward"
 
 [[function]]
 id = "e0acd_0529"
@@ -2512,10 +2512,10 @@ unit = "e0acd"
 addr = "0ACD:0529"
 size = 67
 evidence = ["frame"]
-name = "Action0529"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "MoveBackward"
 
 [[function]]
 id = "e0acd_056c"
@@ -2523,10 +2523,10 @@ unit = "e0acd"
 addr = "0ACD:056C"
 size = 39
 evidence = ["frame"]
-name = "Action056C"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "TurnLeft"
 
 [[function]]
 id = "e0acd_0593"
@@ -2534,10 +2534,10 @@ unit = "e0acd"
 addr = "0ACD:0593"
 size = 39
 evidence = ["frame"]
-name = "Action0593"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "TurnRight"
 
 [[function]]
 id = "e0acd_05ba"
@@ -2545,10 +2545,10 @@ unit = "e0acd"
 addr = "0ACD:05BA"
 size = 69
 evidence = ["frame"]
-name = "Action05BA"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "MoveLeft"
 
 [[function]]
 id = "e0acd_05ff"
@@ -2556,10 +2556,10 @@ unit = "e0acd"
 addr = "0ACD:05FF"
 size = 69
 evidence = ["frame"]
-name = "Action05FF"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "MoveRight"
 
 [[function]]
 id = "e0acd_0644"
@@ -3103,10 +3103,10 @@ unit = "e0d1c"
 addr = "0D1C:0080"
 size = 90
 evidence = ["far", "frame"]
-name = "f0D1C_0080"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "StepIfOpen"
 
 [[function]]
 id = "e0d1c_00da"
@@ -3114,10 +3114,10 @@ unit = "e0d1c"
 addr = "0D1C:00DA"
 size = 23
 evidence = ["far", "near", "frame"]
-name = "f0D1C_00DA"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "StepCell"
 
 [[function]]
 id = "e0d1c_00f1"
@@ -4714,10 +4714,10 @@ unit = "e122e"
 addr = "122E:0001"
 size = 84
 evidence = ["far", "near", "segment"]
-name = "SetSoundVolume"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "MoveParty"
 
 [[function]]
 id = "e122e_0055"
@@ -5147,10 +5147,10 @@ unit = "e122e"
 addr = "122E:1DA8"
 size = 184
 evidence = ["far", "frame"]
-name = "RunMemberScript"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "RunCellScript"
 
 [[function]]
 id = "e122e_1194"
