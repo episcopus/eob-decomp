@@ -8,7 +8,7 @@
 extern signed char gViewCellOffsets[]; /*@ ds:199D */  /* rows of 18 signed heading offsets */
 extern signed char gMaze[]; /*@ ds:B894 */    /* 9-byte tile records (src/E08E6.C) */
 extern signed char far *gViewCells[]; /*@ ds:EF6A */ /* 18 far pointers into gMaze (src/E1414.C) */
-extern signed char gViewFrontSide; /*@ ds:A9C6 */        /* an offset added into gViewCells's targets (src/E1414.C:101; src/E0ACD.C:78, src/E122E.C:99 differ) */
+extern signed char gViewFrontSide; /*@ ds:A9C6 */        /* the cell side facing the party, gNearSideByDir[gPartyDir] = (dir + 2) & 3 (ovl4:044B) */
 extern signed char gWallTypeFlags[]; /*@ ds:194B */      /* per-slot byte flags (src/E08E6.C) */
 extern signed char gWallVmpSet[]; /*@ ds:1879 */      /* per-object count-1 (this unit) */
 extern int gViewCellIds[]; /*@ ds:A9C8 */         /* 18 heading words, the masked sum (this unit) */
@@ -238,11 +238,11 @@ extern unsigned char gViewBlockMap[]; /*@ ds:ADB0 */  /* the view pixel buffer (
     return slot != 0 && !(gWallTypeFlags[slot] & 8);
 }
 
-extern signed char gNearSideByDir[]; /*@ ds:1991 */   /* per-page index into a gViewCells target (src/E08E6.C) */
-extern signed char gRightSideByDir[]; /*@ ds:1995 */   /* per-page index into a gViewCells target (this unit) */
-extern signed char gLeftSideByDir[]; /*@ ds:1999 */   /* per-page index into a gViewCells target (this unit) */
-extern signed char gViewRightSide; /*@ ds:EFB9 */     /* the second per-page gViewCells target index (this unit) */
-extern signed char gViewLeftSide; /*@ ds:EFD0 */     /* the third per-page gViewCells target index (this unit) */
+extern signed char gNearSideByDir[]; /*@ ds:1991 */   /* per facing, the cell side facing the party, (dir + 2) & 3 */
+extern signed char gRightSideByDir[]; /*@ ds:1995 */   /* per facing, the cell side (dir + 1) & 3 (this unit) */
+extern signed char gLeftSideByDir[]; /*@ ds:1999 */   /* per facing, the cell side (dir + 3) & 3 (this unit) */
+extern signed char gViewRightSide; /*@ ds:EFB9 */     /* gRightSideByDir[gPartyDir], cached by ovl4:044B */
+extern signed char gViewLeftSide; /*@ ds:EFD0 */     /* gLeftSideByDir[gPartyDir], cached by ovl4:044B */
 extern int gViewMirrorParity; /*@ ds:F4BC */             /* the cell and page parity (this unit) */
 
 /* ovl4:044B: draws the whole view page. It caches the three per-page gViewCells target offsets
@@ -657,7 +657,7 @@ extern void far *gWallFaces[]; /*@ ds:7018 */      /* per slot, two far pointers
 extern signed char gWallOffsets[]; /*@ ds:70A8 */  /* per wall face, its signed segment offset (this unit) */
 extern int gWallXBias[]; /*@ ds:70CC */            /* per slot, the x base when the face flag bit 2 is clear (this unit) */
 
-struct RectKind {           /* the per-kind size record gRectKinds points at (src/E122E.C) */
+struct RectKind {           /* the per-kind size record gDecorShapes points at (src/E122E.C) */
     char pad00;
     signed char height;     /* +1 */
     signed char width;      /* +2: base width in eighths */
@@ -669,7 +669,7 @@ struct ViewWallRec {        /* the 0x34-byte wall records at ds:E06A this unit w
     int x[0xa];             /* +0C: the per-cell x, the cell index doubled apart */
     int y[0xa];             /* +20: the per-cell y, the cell index doubled apart */
 };
-extern struct RectKind far *gRectKinds[]; /*@ ds:EFD4 */  /* per-cell far size records (src/E122E.C) */
+extern struct RectKind far *gDecorShapes[]; /*@ ds:EFD4 */  /* per-cell far size records (src/E122E.C) */
 extern struct ViewWallRec gViewWalls[]; /*@ ds:E06A */
 
 /* ovl4:1091: draws the wall faces of one view slot. The slot's two faces are ds:7018[slot*2+1],
@@ -711,13 +711,13 @@ extern struct ViewWallRec gViewWalls[]; /*@ ds:E06A */
                     x = gViewWalls[n].x[seg];
                 } else {
                     x = 0xb0 - gViewWalls[n].x[seg];
-                    x -= gRectKinds[spr]->width << 3;
+                    x -= gDecorShapes[spr]->width << 3;
                 }
                 y = gViewWalls[n].y[seg];
                 if (delta >= 0)
-                    DrawShapeClipped(2, gRectKinds[spr], x, y, 5);
+                    DrawShapeClipped(2, gDecorShapes[spr], x, y, 5);
                 else
-                    DrawShapeClippedFlipped(2, gRectKinds[spr], x, y, 5);
+                    DrawShapeClippedFlipped(2, gDecorShapes[spr], x, y, 5);
             }
         }
     }
@@ -742,13 +742,13 @@ extern struct ViewWallRec gViewWalls[]; /*@ ds:E06A */
                         x = 0xb0 - gViewWalls[n].x[seg] + gViewPosX[(slot * 5 + 4) * 2];
                     else
                         x = 0xb0 - gViewWalls[n].x[seg] + gWallXBias[slot];
-                    x -= gRectKinds[spr]->width << 3;
+                    x -= gDecorShapes[spr]->width << 3;
                 }
                 y = gViewWalls[n].y[seg];
                 if (delta >= 0)
-                    DrawShapeClipped(2, gRectKinds[spr], x, y, 5);
+                    DrawShapeClipped(2, gDecorShapes[spr], x, y, 5);
                 else
-                    DrawShapeClippedFlipped(2, gRectKinds[spr], x, y, 5);
+                    DrawShapeClippedFlipped(2, gDecorShapes[spr], x, y, 5);
             }
         }
     }

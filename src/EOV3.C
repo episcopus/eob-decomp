@@ -12,7 +12,7 @@
 #include <dos.h>
 
 extern void farfree(void far *block); /*@ 0000:71EE */
-extern struct RectKind far *gRectKinds[]; /*@ ds:EFD4, the per-kind size records (src/E122E.C:91) */
+extern struct RectKind far *gDecorShapes[]; /*@ ds:EFD4, the per-kind size records (src/E122E.C:91) */
 extern int gWallRecCount; /*@ ds:F538 */            /* the wall-record slot count RegisterWallObject advances; Reset by FreePtrTable */
 
 extern void LoadOverlayScreen(char far *name, int a, int b); /*@ 082C:05EC */
@@ -96,9 +96,9 @@ extern void RearmCharEffects(void); /*@ 1414:0B2E */
 extern signed char gWallTypeFlags[]; /*@ ds:194B */
 extern signed char gWallDecorHead[]; /*@ ds:18BF */  /* per-object-kind table (src/E122E.C) */
 extern unsigned char gWallHandlerIndex[]; /*@ ds:1905 */     /* a 256-byte table gMaze indexes into (src/E0DE8.C) */
-extern int gDragMember; /*@ ds:5C74 */
+extern int gDoorEffectCell; /*@ ds:5C74 */
 extern signed char gDoorMoveDir; /*@ ds:5C76 */
-extern char gDragActive; /*@ ds:5C77 */
+extern char gDoorEffectActive; /*@ ds:5C77 */
 
 struct Projectile {              /* 18-byte effect records, 10 of them at ds:DD2C (src/E1414.C) */
     char active;            /* +0: 1 or 2 when live */
@@ -240,9 +240,9 @@ struct WallDec {            /* the 52-byte wall-set decorations LoadWallSet read
     int i;
 
     for (i = 0; i < 0xc8; i++) {
-        if (gRectKinds[i]) {
-            farfree(gRectKinds[i]);
-            gRectKinds[i] = 0;
+        if (gDecorShapes[i]) {
+            farfree(gDecorShapes[i]);
+            gDecorShapes[i] = 0;
         }
     }
     gWallRecCount = 0;
@@ -327,10 +327,10 @@ struct WallDec {            /* the 52-byte wall-set decorations LoadWallSet read
                 cell = gWallRecs[gWallRecCount].cells[i];
                 if (cell == 0xff)
                     continue;
-                if (gRectKinds[cell])
+                if (gDecorShapes[cell])
                     continue;
                 rect = &((struct Cell8 far *)gDecorationRects)[cell];
-                gRectKinds[cell] = gGetSpriteCell(rect->w0, rect->w1, rect->w2, rect->w3, MAPSHEET);
+                gDecorShapes[cell] = gGetSpriteCell(rect->w0, rect->w1, rect->w2, rect->w3, MAPSHEET);
             }
             gWallRecCount++;
             recordIndex = gWallRecs[gWallRecCount].next;
@@ -985,9 +985,9 @@ done:
 /* ovl3:19F7: resets the level. It clears the m0A byte of the 30 gMonsters objects, clears every live
    ds:DD2C effect record (for an active 1, keeping only the low two bits of the m03 byte of the
    item record its item indexes, then clearing its active byte; an active 2 is just cleared),
-   then, when gDragActive is set, walks the gMaze record of character gDragMember adding the mode
+   then, when gDoorEffectActive is set, walks the gMaze record of character gDoorEffectCell adding the mode
    byte gDoorMoveDir to two bytes of its slot until the gWallTypeFlags flag of that slot has bit 0x30 set (the
-   loop has no other bound), and clears gDragActive. Called by ovl3:1368 and ovl3:15B9. */
+   loop has no other bound), and clears gDoorEffectActive. Called by ovl3:1368 and ovl3:15B9. */
 /*@ ovl3:19F7 */ void ResetLevel(void)
 {
     int i;
@@ -1005,14 +1005,14 @@ done:
         if (gProjectiles[i].active == 2)
             gProjectiles[i].active = 0;
     }
-    if (gDragActive) {
-        who = gDragMember;
+    if (gDoorEffectActive) {
+        who = gDoorEffectCell;
         sel = gDoorMoveDir;
         slot = (gWallTypeFlags[gMaze[who * 9]] & 8) ? 0 : 1;
         while ((gWallTypeFlags[gMaze[who * 9 + slot]] & 0x30) == 0) {
             gMaze[who * 9 + slot] += sel;
             gMaze[who * 9 + slot + 2] += sel;
         }
-        gDragActive = 0;
+        gDoorEffectActive = 0;
     }
 }

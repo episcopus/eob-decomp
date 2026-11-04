@@ -88,7 +88,7 @@ extern void ArmEffect(int a, int b); /*@ 1414:05A4 */
 extern void RearmCharEffects(void); /*@ 1414:0B2E */
 extern void SetMouseItem(int n); /*@ 07A9:010C */
 extern void MoveParty(int cell); /*@ 122E:0001 */
-extern void DispatchSlotHandler(int a, int b); /*@ 122E:0896 */
+extern void DispatchWallHandler(int a, int b); /*@ 122E:0896 */
 extern void ComputeArmourClass(int who); /*@ 0DE8:0D5E */
 extern int far RollDice(char count, char sides, char bonus); /*@ 082C:0458 */
 extern void BuildList4(void); /*@ 0CF7:01CC */
@@ -656,14 +656,14 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
 /* 0ACD:08E7: Runs the handler of the wall the party faces in the cell ahead, as a click on the view
    does, then recomputes the armour class of gInventoryMember. Derives a key from gPartyCell and
    gPartyDir (StepCell), sets
-   gWallTrigger to 0xff, passes the key and the page to DispatchSlotHandler and the selected character gInventoryMember to
+   gWallTrigger to 0xff, passes the key and the page to DispatchWallHandler and the selected character gInventoryMember to
    ComputeArmourClass. */
 /*@ 0ACD:08E7 */ void ActivateWallAhead(void)
 {
     int x = StepCell(gPartyCell, gPartyDir);
 
     gWallTrigger = 0xff;
-    DispatchSlotHandler(x, gPartyDir);
+    DispatchWallHandler(x, gPartyDir);
     ComputeArmourClass(gInventoryMember);
 }
 

@@ -374,7 +374,7 @@ next:
 /* 0BD2:040E: sets bit 0x40 of the flags of every item in the circular list `head`. 0BD2:05B5 reads
    that bit to show the item's specific name (or its second name) instead of the generic first name,
    so 0x40 is the identified flag. */
-/*@ 0BD2:040E */ void MarkListItems(void far *head)
+/*@ 0BD2:040E */ void IdentifyListItems(void far *head)
 {
     int start;
     int item;
@@ -854,7 +854,7 @@ next:
     if (!MemberIs(who, 0x0D))
         return;
     item = rec->items[slot];
-    firstTwo = FirstTwoSlots(slot);
+    firstTwo = GetHandOfSlot(slot);
     if (firstTwo != -1) {
         if (!CanUseHand(who, firstTwo))
             return;
@@ -938,8 +938,8 @@ next:
     return result;
 }
 
-/* 0BD2:1244: returns `slot` when it is 0 or 1, otherwise -1. Purpose unknown. */
-/*@ 0BD2:1244 */ int FirstTwoSlots(int slot)
+/* 0BD2:1244: returns `slot` when it is 0 or 1, one of the two hands, otherwise -1. */
+/*@ 0BD2:1244 */ int GetHandOfSlot(int slot)
 {
     if (slot > 1)
         return -1;

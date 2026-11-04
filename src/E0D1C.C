@@ -143,7 +143,7 @@ extern void DrawText(char far *text); /*@ 1DE7:060A */
 extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
 
 extern void RedrawMember(int who); /*@ 1547:0991 */
-extern void DrawMemberSlot(char who, char slot); /*@ 1547:07E7 */
+extern void DrawHandSlot(char who, char slot); /*@ 1547:07E7 */
 extern void DrawItemRow(int who, int slot, int one); /*@ 0BD2:0917 */
 extern void InsertListItem(void far *head, int key, int item, int sound); /*@ 0BD2:01D0 */
 extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
@@ -297,7 +297,7 @@ int GetCurrentItem(void);
    all carried items whose item record has type == `field2` and value == `fieldB`
    (FindCarriedSlot's match): clears the item's key (sets it to -1), clears the character's slot,
    and redraws. Returns 1 when at least one item was removed, otherwise 0. The redraw paths: when
-   gPanelMode is 0 and the slot is one of the first two of a character before the sixth, DrawMemberSlot;
+   gPanelMode is 0 and the slot is one of the first two of a character before the sixth, DrawHandSlot;
    when gPanelMode is 1 and the character is the selected one, DrawItemRow; and when the mouse is
    enabled, the item in the slot GetCurrentItem names is cleared and redrawn through SetMouseItem.
    Called by overlays 5. What type, value and key mean is not established. */
@@ -319,7 +319,7 @@ int GetCurrentItem(void);
             found = 1;
             if (gPanelMode == 0) {
                 if (slot < 2 && who < 5)
-                    DrawMemberSlot(who, slot);
+                    DrawHandSlot(who, slot);
             }
             if (gPanelMode == 1 && gInventoryMember == who)
                 DrawItemRow(who, slot, 1);

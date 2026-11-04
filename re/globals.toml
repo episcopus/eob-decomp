@@ -2442,8 +2442,9 @@ name = "gStrInvent"
 why = "the string \"INVENT\" (image bytes at ds:5BA1) that LoadLevelOp (122E:1AAB) passes to LoadScreenImage with gSheetINVENT (E122E.C:1338), the screen the other callers name with a literal"
 [[global]]
 id = "ds:EF9E"
-name = "gClickedWallTypes"
-why = "a far byte pointer the door-button click handler 122E:04CA indexes by gA9C6 (a side offset into a gMaze record, E0DE8.C:153) to get a wall type, which then indexes the per-wall-type tables g59F8 and g59D8; no writer of ds:EF9E is found in src/ and its image value is 0000:0000"
+name = "gViewCellAhead"
+why = "it is gViewCells[13] (ds:EF6A + 13 * 4), and view cell 13 has offset -32, +1, +32, -1 by facing in ds:199D: the far pointer to the gMaze record of the cell ahead, indexed by gViewFrontSide in 122E:04CA"
+
 [[global]]
 id = "ds:59F8"
 name = "gDoorButtonIndex"
@@ -2524,3 +2525,19 @@ why = "not a table of its own: ds:5BD0 is gEffects[2].expiry (+8 of the 16-byte 
 id = "ds:5BDC"
 name = "gEffects3Period"
 why = "not a table of its own: ds:5BDC is gEffects[3].period (+4 of the record at ds:5BD8); LoadMapScreen (ovl3:0A7C) writes the same level timer value through it as through gEffects2Period, so each pair of effects shares the period"
+[[global]]
+id = "ds:5C77"
+name = "gDoorEffectActive"
+why = "the active byte (+0F) of timed effect 12, ds:5BA8 + 12 * 16 + 0x0F; the door handlers 122E:0154, 01D9 and 0271 test it to see whether a door is already moving"
+[[global]]
+id = "ds:5C74"
+name = "gDoorEffectCell"
+why = "the argument word (+0C) of timed effect 12 (ds:5BA8 + 0xC0 + 0x0C), the map cell of the moving door that ArmEffectWith stores for StepDoor 1414:03B4; 122E:0154 compares it with its cell"
+[[global]]
+id = "ds:FBD4"
+name = "gLevelFlags"
+why = "32-bit flag words indexed by the dungeon level gCurLevel (ds:FBC8, 1..12), set and cleared by script opcodes 122E:1097 and 122E:11E8 and tested by 0xFFEF of 122E:147F; they are not per action"
+[[global]]
+id = "ds:EFD4"
+name = "gDecorShapes"
+why = "200 far shape pointers that ovl3:01C8 cuts for each decoration's ten shape indices out of the decoration sheet; 122E:0055 reads their height and width (eighths) to build a decoration's click rectangle"

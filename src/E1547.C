@@ -37,7 +37,7 @@ struct CharRec {            /* the 243-byte (0xF3) records at ds:F580 (src/E0A72
     signed char armorClass; /* +1D: the armour-class byte, drawn on the ARMOR CLASS row
                                (src/E08E6.C:60 and src/E0EF3.C:25 name it the armour-class byte) */
     signed char m1E;        /* +1E: a per-slot bit toggled by UseItem's `m1E ^= 1 << slot`
-                               (0DE8:0763); DrawMemberSlot tests bit `slot` (src/E1414.C) */
+                               (0DE8:0763); DrawHandSlot tests bit `slot` (src/E1414.C) */
     signed char race;       /* +1F: index into the race-name table ds:11AD */
     signed char classIndex; /* +20: index into the class-name table ds:11DD (src/E0A72.C) */
     signed char alignment;  /* +21: index into the alignment-name table ds:1240 */
@@ -393,7 +393,7 @@ extern void DrawItemRow(int who, int slot, int one); /*@ 0BD2:0917 */
    fills `name` (6 bytes) and the optional `suffix` (6 bytes, empty for the default): -1 "MISS" (and
    y + 1), -2 "HACK", -3 "CAN'T"+"REACH", -4 "NO"+"AMMO", anything else the decimal `result`. It
    draws `name` centred (indent 0x10 - strlen*6/2) at (x + indent, y + 5), or `name` at (x + indent,
-   y + 2) and `suffix` at (x + indent, y + 9) when the suffix is set. Called by DrawMemberSlot (07E7)
+   y + 2) and `suffix` at (x + indent, y + 9) when the suffix is set. Called by DrawHandSlot (07E7)
    only. `result` is what UseItem (0DE8:0763, src/E0DE8.C:499) stored in the record's lastAction[slot]. */
 /*@ 1547:0642 */ void DrawActionLabel(int x, int y, int result)
 {
@@ -441,16 +441,16 @@ extern void DrawItemRow(int who, int slot, int one); /*@ 0BD2:0917 */
         gDrawText(suffix, x + indent, y + 9, colour, 0);
     }
 }
-/* 1547:07E7: draws one carried item slot of member `who` (0 or 1) on the character screen. The
-   slot corner is (gHandSlotX[who & 1], gHandSlotY[(who & 6) + slot]), the x shifted by 0xB0 while no status
-   line is up. It hides the pointer, fills the panel in gPanelHighlight/gPanelShadow/gPanelFillColour, and outlines it in colour
+/* 1547:07E7: draws hand slot `slot` (0 or 1) of member `who` on the character screen. The
+   slot corner is (gHandSlotX[who & 1], gHandSlotY[(who & 6) + slot]), the x shifted by 0xB0 when
+   gDrawPage is 0. It hides the pointer, fills the panel in gPanelHighlight/gPanelShadow/gPanelFillColour, and outlines it in colour
    0xF when the mouse is DISABLED and the slot is the selected one (gMouseDisabled, gInventoryMember, gCursorSlot).
    When the record's lastAction[slot] is set it draws the item-use label DrawActionLabel; else it draws the
    item icon through DrawItemIcon, or the empty-slot icon gEmptySlotIcons[slot] through DrawShape,
    and then, in that else branch only, draws the highlight icon gHandShadeIcon when the slot's m1E bit is
    set, or CanUseHand(who, slot) returns 0, or hp is 0 or below, or status bit 2 (paralyzed) is set.
    Called by RedrawMember (0991) and RemoveCarriedItems (0D1C:01CA, src/E0D1C.C:294). */
-/*@ 1547:07E7 */ void DrawMemberSlot(char who, char slot)
+/*@ 1547:07E7 */ void DrawHandSlot(char who, char slot)
 {
     int item;
     int x;
@@ -533,8 +533,8 @@ extern void DrawItemRow(int who, int slot, int one); /*@ 0BD2:0917 */
         else
             gDrawText(rec->name, x + 2, y + 2, textColour, gPanelFillColour);
         DrawMemberPortrait(who);
-        DrawMemberSlot(who, 0);
-        DrawMemberSlot(who, 1);
+        DrawHandSlot(who, 0);
+        DrawHandSlot(who, 1);
         DrawMemberHp(who);
         DrawMemberFrame(who);
         if (rec->lastDamage > 0) {

@@ -153,7 +153,7 @@ extern int gEFCA; /*@ ds:EFCA */ /* a word cleared by InitGameTables; no other r
 extern void far *gLoadedMonsterShapes[]; /*@ ds:B802 */ /* 36 far map-icon pointers (src/EOV3.C:146, freed at :390-401), cleared by InitGameTables */
 extern long gDoorShapes[]; /*@ ds:FB5E */ /* six size-record pointers (src/EOV3.C:138 declares them longs; src/EOV4.C:756 declares them struct SlotSize far *), cleared by InitGameTables */
 extern struct SlotPos gDoorButtons[]; /*@ ds:A99C */
-extern void far *gRectKinds[]; /*@ ds:EFD4 */ /* 200 far size-record pointers (src/EOV3.C:14, freed at :230-241; src/E122E.C:98 declares them struct RectKind far *), cleared by InitGameTables */
+extern void far *gDecorShapes[]; /*@ ds:EFD4 */ /* 200 far size-record pointers (src/EOV3.C:14, freed at :230-241; src/E122E.C:98 declares them struct RectKind far *), cleared by InitGameTables */
 extern char gSelectFrameColours[]; /*@ ds:1CE7 */
 extern char gBoxCycleColours16[]; /*@ ds:65EA */
 extern char gOverlayBuf[]; /*@ ds:113F */
@@ -315,7 +315,7 @@ extern void FileClose(int handle); /*@ 1C0E:03BB */
    for each of the six character records: sets gIconTable (ds:FB34, the party member being moved,
    -1 when none; src/E0ACD.C:42) to -1, clears the two words gUnusedStartupWord and gEFCA, the 36 far pointers
    of gLoadedMonsterShapes (src/EOV3.C:146), the six longs of gDoorShapes (src/EOV3.C:138), the far size-record pointer
-   of each of the six gDoorButtons records (src/E122E.C:112-117) and the 200 far pointers of gRectKinds
+   of each of the six gDoorButtons records (src/E122E.C:112-117) and the 200 far pointers of gDecorShapes
    (src/E122E.C:98, freed by src/EOV3.C:230-241), then writes each character record's index and
    allocates its buffer (gChars[i].buf). Called by LoadItemData. */
 /*@ ovl2:0496 */ void InitGameTables(void)
@@ -332,7 +332,7 @@ extern void FileClose(int handle); /*@ 1C0E:03BB */
         gDoorButtons[i].rec = 0;
     }
     for (i = 0; i < 0xc8; i++)
-        gRectKinds[i] = 0;
+        gDecorShapes[i] = 0;
     for (i = 0; i < 6; i++) {
         gChars[i].index = i;
         gChars[i].portrait = MemAlloc(0x514L, 0);

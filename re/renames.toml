@@ -9252,3 +9252,318 @@ new = "gEffects3Period"
 kind = "global"
 why = "not a table of its own: ds:5BDC is gEffects[3].period (+4 of the record at ds:5BD8); LoadMapScreen (ovl3:0A7C) writes the same level timer value through it as through gEffects2Period, so each pair of effects shares the period"
 date = "2026-11-03"
+
+[[rename]]
+id = "122E:0154=OpenDoor"
+addr = "122E:0154"
+old = "ArmMemberEffect"
+new = "OpenDoor"
+kind = "function"
+why = "argument is a map cell; it arms gEffects[12] (handler 1414:03B4 at ds:5C68) with step +1 to move the door's wall types, returns early when the door side's gWallTypeFlags bit 0 (passable) is already set, and ForceDoorAction 122E:0325 calls it after forcing the door"
+date = "2026-11-03"
+
+[[rename]]
+id = "122E:01D9=CloseDoor"
+addr = "122E:01D9"
+old = "DisarmMemberEffect"
+new = "CloseDoor"
+kind = "function"
+why = "argument is a map cell; it refuses while the cell holds monsters (gMaze +4 & 7), and arms gEffects[12] (1414:03B4) with step -1 when the door side is passable (gWallTypeFlags bit 0), the counterpart of OpenDoor 122E:0154"
+date = "2026-11-03"
+
+[[rename]]
+id = "122E:0271=ToggleDoor"
+addr = "122E:0271"
+old = "ToggleArmEffect"
+new = "ToggleDoor"
+kind = "function"
+why = "argument is a map cell and wall side; it arms the door effect gEffects[12] with -1 (close) when the side is passable and +1 (open) otherwise, called by the door button handler 122E:04CA and opcode 0xFFEA of 122E:0A16"
+date = "2026-11-03"
+
+[[rename]]
+id = "122E:0B23=OpenDoorOp"
+addr = "122E:0B23"
+old = "ArmMember"
+new = "OpenDoorOp"
+kind = "function"
+why = "script opcode handler (index 2 of the RunCellScript table at 122E:1DA8): reads a cell word and calls OpenDoor 122E:0154"
+date = "2026-11-03"
+
+[[rename]]
+id = "122E:0B56=CloseDoorOp"
+addr = "122E:0B56"
+old = "DisarmMember"
+new = "CloseDoorOp"
+kind = "function"
+why = "script opcode handler (index 3 of the RunCellScript table at 122E:1DA8): reads a cell word and calls CloseDoor 122E:01D9"
+date = "2026-11-03"
+
+[[rename]]
+id = "1414:03B4=StepDoor"
+addr = "1414:03B4"
+old = "AdjustMemberStatus"
+new = "StepDoor"
+kind = "function"
+why = "it is the handler of timed effect 12 (far pointer 1414:03B4 at ds:5C68, period 5); it adds gDoorMoveDir to the door's two opposite wall types of the cell, stops the effect at the fully open (0x10) or closed (0x20) frame and plays sound 3, 4 or 5"
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:5C77=gDoorEffectActive"
+addr = "ds:5C77"
+old = "gDragActive"
+new = "gDoorEffectActive"
+kind = "global"
+why = "the active byte (+0F) of timed effect 12, ds:5BA8 + 12 * 16 + 0x0F; the door handlers 122E:0154, 01D9 and 0271 test it to see whether a door is already moving"
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:5C74=gDoorEffectCell"
+addr = "ds:5C74"
+old = "gDragMember"
+new = "gDoorEffectCell"
+kind = "global"
+why = "the argument word (+0C) of timed effect 12 (ds:5BA8 + 0xC0 + 0x0C), the map cell of the moving door that ArmEffectWith stores for StepDoor 1414:03B4; 122E:0154 compares it with its cell"
+date = "2026-11-03"
+
+[[rename]]
+id = "122E:0055=IsWallDecorClicked"
+addr = "122E:0055"
+old = "HitTestObjectKind"
+new = "IsWallDecorClicked"
+kind = "function"
+why = "its argument is gWallDecorHead[wall type], the 1-based first decoration that ovl3:01C8 registers; it walks the decoration chain in gWallRecs (ds:E040) and returns 1 when the last click hit one decoration shape's rectangle, or always in a non-click trigger"
+date = "2026-11-03"
+
+[[rename]]
+id = "122E:0137=CellMonsterCountIsOdd"
+addr = "122E:0137"
+old = "ObjectCountIsOdd"
+new = "CellMonsterCountIsOdd"
+kind = "function"
+why = "it tests bit 0 of gMaze[cell * 9 + 4], whose bits 0..2 count the monsters in the cell (08E6:0297 increments and decrements them); script expression sub-opcode 0xFFF3 in 122E:147F pushes it"
+date = "2026-11-03"
+
+[[rename]]
+id = "122E:04CA=DoorButtonAction"
+addr = "122E:04CA"
+old = "MemberSlotClickAction"
+new = "DoorButtonAction"
+kind = "function"
+why = "wall handler 1 (gWallHandlerIndex is 1 for the door wall types 3..7 and 0x0D..0x11): it hit-tests the door button rectangle from gDoorButtons and calls ToggleDoor 122E:0271 with sound 6, else falls back to 122E:0847"
+date = "2026-11-03"
+
+[[rename]]
+id = "122E:05DF=WallScriptAction"
+addr = "122E:05DF"
+old = "PerformItemSlotAction"
+new = "WallScriptAction"
+kind = "function"
+why = "wall handler 2 of the 122E:0896 table: when IsWallDecorClicked accepts the wall type's decoration it runs the cell's script with the current trigger gWallTrigger; no item is involved"
+date = "2026-11-03"
+
+[[rename]]
+id = "122E:0620=WallTypeUpAction"
+addr = "122E:0620"
+old = "IncreaseItemSlot"
+new = "WallTypeUpAction"
+kind = "function"
+why = "wall handler 3 of the 122E:0896 table: when the decoration is clicked it increments the wall type gMaze[cell * 9 + side], sets gViewDirty and runs the cell script; no item is involved (a lever [H])"
+date = "2026-11-03"
+
+[[rename]]
+id = "122E:0678=WallTypeDownAction"
+addr = "122E:0678"
+old = "DecreaseItemSlot"
+new = "WallTypeDownAction"
+kind = "function"
+why = "wall handler 4 of the 122E:0896 table: when the decoration is clicked it decrements the wall type gMaze[cell * 9 + side], sets gViewDirty and runs the cell script; the counterpart of 122E:0620"
+date = "2026-11-03"
+
+[[rename]]
+id = "122E:06D0=WallNicheAction"
+addr = "122E:06D0"
+old = "ItemSlotAction"
+new = "WallNicheAction"
+kind = "function"
+why = "wall handler 10 of the 122E:0896 table: it takes or puts the item at cell position 8 of the cell's gMazeItems list, runs triggers 8 and 4, and says \"The item is too large to fit.\" for a large icon"
+date = "2026-11-03"
+
+[[rename]]
+id = "122E:0847=UnpryableDoorAction"
+addr = "122E:0847"
+old = "CheckMemberSlotRect"
+new = "UnpryableDoorAction"
+kind = "function"
+why = "wall handler 6 (gWallHandlerIndex 6 for wall types 8 and 0x12): when the click is in the view and the wall is a closed door (gWallTypeFlags 0x20) it draws \"No one is able to pry this door open.\" (ds:5B78)"
+date = "2026-11-03"
+
+[[rename]]
+id = "122E:0896=DispatchWallHandler"
+addr = "122E:0896"
+old = "DispatchSlotHandler"
+new = "DispatchWallHandler"
+kind = "function"
+why = "it flips the direction to the cell side facing it (side ^ 2), reads that wall type and calls the gWallHandlerIndex handler from its ten-entry table (ds:5A18 template); callers 0ACD:08E7, 1414:003E and 122E:0933 pass a cell and a direction"
+date = "2026-11-03"
+
+[[rename]]
+id = "122E:0933=ClickWallAhead"
+addr = "122E:0933"
+old = "RunRowHandler"
+new = "ClickWallAhead"
+kind = "function"
+why = "it sets the click trigger 0x40 in gWallTrigger and dispatches the wall the party faces in the cell ahead, DispatchWallHandler(StepCell(gPartyCell, gPartyDir), gPartyDir), like ActivateWallAhead 0ACD:08E7 does with trigger 0xFF"
+date = "2026-11-03"
+
+[[rename]]
+id = "122E:0960=SetWallTypeOp"
+addr = "122E:0960"
+old = "WriteObjectFieldOp"
+new = "SetWallTypeOp"
+kind = "function"
+why = "script opcode handler (index 0 of the 122E:1DA8 table): 0xFFF7 sets all four wall types gMaze[cell * 9 + 0..3], 0xFFE9 sets one side's wall type, 0xFFED sets the party's facing gPartyDir"
+date = "2026-11-03"
+
+[[rename]]
+id = "122E:0A16=ToggleWallTypeOp"
+addr = "122E:0A16"
+old = "WriteObjectRunOp"
+new = "ToggleWallTypeOp"
+kind = "function"
+why = "script opcode handler (index 1 of the 122E:1DA8 table): 0xFFF7 switches the four wall types of a cell between two script values, and 0xFFEA toggles the door of a cell through ToggleDoor 122E:0271"
+date = "2026-11-03"
+
+[[rename]]
+id = "122E:0B89=SpawnMonsterOp"
+addr = "122E:0B89"
+old = "SpawnObjectOp"
+new = "SpawnMonsterOp"
+kind = "function"
+why = "script opcode handler (index 4 of the 122E:1DA8 table): it reads the ten arguments from the script and hands them to SpawnMonster 08E6:1505, which fills one of the 30 gMonsters records"
+date = "2026-11-03"
+
+[[rename]]
+id = "122E:0D57=TeleportOp"
+addr = "122E:0D57"
+old = "ReassignObjectsOp"
+new = "TeleportOp"
+kind = "function"
+why = "script opcode handler (index 5 of the 122E:1DA8 table): it moves the party (0xFFE8, MoveParty), the gMonsters in cell srcId (0xFFF3), or the items and live gProjectiles of srcId (0xFFF5) to the cell read from the script"
+date = "2026-11-03"
+
+[[rename]]
+id = "122E:1097=SetFlagOp"
+addr = "122E:1097"
+old = "SetActionFlagsOp"
+new = "SetFlagOp"
+kind = "function"
+why = "script opcode handler: it sets one bit in the level flags gActionFlags[gCurLevel] (0xFFEF), in gGameFlags (0xFFF0), or in a monster's +16 byte (0xFFF3); gCurLevel is the dungeon level, not an action"
+date = "2026-11-03"
+
+[[rename]]
+id = "122E:11E8=ClearFlagOp"
+addr = "122E:11E8"
+old = "ClearActionBit"
+new = "ClearFlagOp"
+kind = "function"
+why = "script opcode handler, the counterpart of 122E:1097: it clears one bit in the level flags gActionFlags[gCurLevel] (0xFFEF) or in gGameFlags (0xFFF0); gCurLevel is the dungeon level, not an action"
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:FBD4=gLevelFlags"
+addr = "ds:FBD4"
+old = "gActionFlags"
+new = "gLevelFlags"
+kind = "global"
+why = "32-bit flag words indexed by the dungeon level gCurLevel (ds:FBC8, 1..12), set and cleared by script opcodes 122E:1097 and 122E:11E8 and tested by 0xFFEF of 122E:147F; they are not per action"
+date = "2026-11-03"
+
+[[rename]]
+id = "122E:1C16=TurnOp"
+addr = "122E:1C16"
+old = "TurnPageOp"
+new = "TurnOp"
+kind = "function"
+why = "script opcode handler (index 23 of the 122E:1DA8 table): 0xFFF1 turns the party's facing gPartyDir by a byte modulo 4, 0xFFF5 turns the dir of every live gProjectiles record in the script's cell gScriptCell; there is no page"
+date = "2026-11-03"
+
+[[rename]]
+id = "122E:1CAD=IdentifyItemsOp"
+addr = "122E:1CAD"
+old = "MarkMemberItemsOp"
+new = "IdentifyItemsOp"
+kind = "function"
+why = "script opcode handler: when the cell read is the party cell it sets the identified flag 0x40 (read by 0BD2:05B5) on every item the live characters carry, and it always identifies the cell's gMazeItems list through 0BD2:040E"
+date = "2026-11-03"
+
+[[rename]]
+id = "122E:1B9A=CreateItemOp"
+addr = "122E:1B9A"
+old = "TakeItemOp"
+new = "CreateItemOp"
+kind = "function"
+why = "script opcode handler: it copies an item template into a new gItems record (CopyItemToFreeSlot 0BD2:089E) and puts it on the mouse (cell -1) or into the cell's gMazeItems list at the cell position the last byte gives"
+date = "2026-11-03"
+
+[[rename]]
+id = "122E:0C4D=LaunchProjectileOp"
+addr = "122E:0C4D"
+old = "AddEffectOp"
+new = "LaunchProjectileOp"
+kind = "function"
+why = "script opcode handler: it launches a copied item as a projectile at a cell (AddDDEffect 0BD2:07DE) or, for 0xDF, a spell projectile (StartCellEffect 0EF3:097B), both at gLaunchPositions[v2 * 2 + v3]"
+date = "2026-11-03"
+
+[[rename]]
+id = "0BD2:040E=IdentifyListItems"
+addr = "0BD2:040E"
+old = "MarkListItems"
+new = "IdentifyListItems"
+kind = "function"
+why = "it sets flag 0x40 on every item of a circular item list, and 0BD2:05B5 shows the identified name only when 0x40 is set; called by IdentifyItemsOp 122E:1CAD for the party's and the cell's lists"
+date = "2026-11-03"
+
+[[rename]]
+id = "0BD2:1244=GetHandOfSlot"
+addr = "0BD2:1244"
+old = "FirstTwoSlots"
+new = "GetHandOfSlot"
+kind = "function"
+why = "it returns the slot for slots 0 and 1, else -1; items[0] and items[1] are the hands (CastSpell 0EF3:2676 says \"free hand\" when both are taken), and UseItemSlot 0BD2:1001 passes its result to CanUseHand"
+date = "2026-11-03"
+
+[[rename]]
+id = "0EF3:08CF=CastSpellOnTarget"
+addr = "0EF3:08CF"
+old = "ApplyMemberEffect"
+new = "CastSpellOnTarget"
+kind = "function"
+why = "it finishes a spell that needed a target: CastSpell 0EF3:2676 calls PromptSpellTarget (\"Cast on which\") for spell flag 1, and this takes the chosen character (+0x38), plays the spell sound, draws \"ok\" and runs the spell callback gFnEFBA, or says \"Spell aborted.\""
+date = "2026-11-03"
+
+[[rename]]
+id = "1547:07E7=DrawHandSlot"
+addr = "1547:07E7"
+old = "DrawMemberSlot"
+new = "DrawHandSlot"
+kind = "function"
+why = "it draws one of the two hand slots (items[0] or items[1], its `slot` is 0 or 1) at gHandSlotX/gHandSlotY, shaded with gHandShadeIcon when CanUseHand refuses; RedrawMember 1547:0991 calls it for slots 0 and 1"
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:EF9E=gViewCellAhead"
+addr = "ds:EF9E"
+old = "gClickedWallTypes"
+new = "gViewCellAhead"
+kind = "global"
+why = "it is gViewCells[13] (ds:EF6A + 13 * 4), and view cell 13 has offset -32, +1, +32, -1 by facing in ds:199D: the far pointer to the gMaze record of the cell ahead, indexed by gViewFrontSide in 122E:04CA"
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:EFD4=gDecorShapes"
+addr = "ds:EFD4"
+old = "gRectKinds"
+new = "gDecorShapes"
+kind = "global"
+why = "200 far shape pointers that ovl3:01C8 cuts for each decoration's ten shape indices out of the decoration sheet; 122E:0055 reads their height and width (eighths) to build a decoration's click rectangle"
+date = "2026-11-03"

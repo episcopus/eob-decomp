@@ -77,7 +77,7 @@ struct ItemRecord {
     signed char cellPos;        /* +5 (ds:8DD5): 01D0 stores its 4th argument here and 02B9 matches it
                                against its `key`. No caller shows a sound (01D0's callers pass a
                                slot kind, E0ACD.C:561-568, a roll, E08E6.C:807, or an effect kind | 4,
-                               0BD2:07DE), so Purpose unknown: a per-entry tag */
+                               0BD2:07DE): the item's position in its cell, 8 a wall niche (122E:06D0) */
     int key;                /* +6 (ds:8DD6): the key; -1 when the record is free */
     int prevLink;                /* +8 (ds:8DD8): one link of the circular list; 0BD2:01D0 splices a
                                new item in after this record through it */
@@ -116,7 +116,7 @@ extern unsigned char far *gViewCells[]; /*@ ds:EF6A */ /* 18 far pointers, walke
 extern signed char gViewFrontSide; /*@ ds:A9C6 */      /* an offset added into gViewCells's targets */
 extern int gAnimWallPhase; /*@ ds:FB78 */              /* a flag toggled by 04B0 */
 extern signed char gBlinkPhase; /*@ ds:5CAA */      /* the blink phase toggled by 0000 */
-extern signed char gDoorMoveDir; /*@ ds:5C76 */      /* the mode byte 03B4 reads; written in src/E122E.C
+extern signed char gDoorMoveDir; /*@ ds:5C76 */      /* gEffects[12].sub, the door step 03B4 reads; src/E122E.C
                                                  (set to 1 at 278, 0xff at 301, negated at 321) */
 extern unsigned char gNextPosByDir[]; /*@ ds:5CAB */  /* a byte table indexed by direction in 0285 */
 extern char gIconTable; /*@ ds:FB34 */             /* the index of the party member being moved, -1
@@ -143,7 +143,7 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
 void ArmEffect(int idx, int active);
 extern void DrawText(char *text); /*@ 1DE7:060A */
 extern void DrawMemberFood(int member); /*@ 1547:04A0 */
-extern void DispatchSlotHandler(int member, int a); /*@ 122E:0896 */
+extern void DispatchWallHandler(int member, int a); /*@ 122E:0896 */
 extern void RunCellScript(int cell, int mode); /*@ 122E:1DA8 */
 extern int IsMonsterAtPos(struct Monster far *obj, int a, int b); /*@ 08E6:189D */
 extern int RunRecordAttack(struct Projectile far *rec); /*@ 0DE8:01FF */
@@ -181,7 +181,7 @@ extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
    (gMaze[target * 9 + 5], key target, sound sel | 4); cell and m06 are set to `target` and `sel`,
    m0D is decremented and it returns 1; otherwise gWallTrigger is 0x10. Any other record is moved when bits
    bit 0 is set or when cell already equals `target` (m0D is decremented unless it is -1) and returns
-   1; otherwise gWallTrigger is 1. The two failure paths report through DispatchSlotHandler(target,
+   1; otherwise gWallTrigger is 1. The two failure paths report through DispatchWallHandler(target,
    rec->dir) (122E:0896) and return 0. Called by 0285. */
 /*@ 1414:003E */ int StepDDEffect(struct Projectile far *rec, register int target, int sel)
 {
@@ -216,7 +216,7 @@ extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
         }
         gWallTrigger = 1;
     }
-    DispatchSlotHandler(target, rec->dir);
+    DispatchWallHandler(target, rec->dir);
     return 0;
 }
 /* 1414:0172: the per-record test 0285 and 0D63 use. It returns 0 when the record already has a
@@ -332,13 +332,14 @@ extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
         }
     }
 }
-/* 1414:03B4: effect 12 of the table. For character `who` it picks the record gMaze[who * 9]
-   whose gWallTypeFlags flag has no bit 3 (slot 1) or one (slot 0), and reads that record's flag. When the
-   global mode byte gDoorMoveDir is -1 with bit 5 set, or 1 with bit 4 set, it disarms effect 0xC and
-   returns. Otherwise it adds gDoorMoveDir to gMaze[who * 9 + slot] and gMaze[who * 9 + slot + 2], reads
-   the flag again and plays sound 5 when bit 5 is set, 4 when gDoorMoveDir is -1, else 3, then reports
-   `who` through IsCellInView. Called by 122E and by the table. */
-/*@ 1414:03B4 */ void AdjustMemberStatus(int who)
+/* 1414:03B4: effect 12 of the table, the door step. For the door of cell `who` it picks the wall
+   side (0 when side 0's wall type has gWallTypeFlags bit 3, a door, else 1) and reads that type's
+   flags. When the step gDoorMoveDir is -1 and the door is closed (0x20), or 1 and it is open
+   (0x10), it disarms effect 0xC and returns. Otherwise it adds gDoorMoveDir to gMaze[who * 9 +
+   slot] and gMaze[who * 9 + slot + 2], reads the flag again and plays sound 5 when the door is now
+   closed, 4 when closing, else 3, then passes `who` to IsCellInView. Called by 122E and by the
+   table. */
+/*@ 1414:03B4 */ void StepDoor(int who)
 {
     int sel;
     register int bits;

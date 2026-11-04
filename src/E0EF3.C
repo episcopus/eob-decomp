@@ -282,7 +282,7 @@ extern char gStrNeedFreeHand[];                /*@ ds:5943 */ /* "You must have 
 extern char gStrTwoSpellsActive[];                /*@ ds:596E */ /* "You can't have two of this spell type active." (0EF3:2676) */
 extern char gStrCastsSpell[];                /*@ ds:599D */ /* "%s casts %s." (0EF3:2676) */
 extern char gStrCastOk[];                /*@ ds:59AB */ /* "ok" (0EF3:2676) */
-extern signed char gViewToCellPos[];             /*@ ds:1A1B */ /* per-page sound table (src/E0ACD.C) */
+extern signed char gViewToCellPos[];             /*@ ds:1A1B */ /* per facing, the cell position of each party slot */
 extern void movmem(void far *src, void far *dst, unsigned n); /*@ 0000:63A3 */
 extern signed char gPanelFillColour;               /*@ ds:F57E */ /* a colour (src/E0BD2.C) */
 extern signed char gPanelShadow;               /*@ ds:F53A */ /* a colour (src/E0BD2.C) */
@@ -809,7 +809,7 @@ extern int gBurstMaskPixel;                /*@ ds:FC72 */ /* the handle gGetPixe
    Reached through a pointer; returns the record's +4 word. The alive test is an early return
    (`if ((m01 & 1) == 0) return rec->m04;`), which is why the original lays it out as
    `test ...; jne alive; jmp done` rather than an inverted `je`. */
-/*@ 0EF3:08CF */ int ApplyMemberEffect(struct ActRec far *rec)
+/*@ 0EF3:08CF */ int CastSpellOnTarget(struct ActRec far *rec)
 {
     gCurMember = rec->m38;
     if (gCurMember != -1) {
@@ -2055,7 +2055,7 @@ void DrawSpellPanel(void);
    0 (0EF3:2929). It remembers the spell value
    gCurrentSpell, clears the panel member's effect flag 4 when the spell's ds:1344+0x12 bit 0 says so and
    the member has flag 4 set, copies the spell's apply callback into gFnEFBA, sets gCasterSubPos from the
-   per-page sound table gViewToCellPos (the member index, minus two when it is over three), and, for a spell
+   cell position table gViewToCellPos (the member index, minus two when it is over three), and, for a spell
    whose flags have bit 1, says "You must have a free hand..." when both equipped slots are taken
    or "...two of this spell type active" when either slot is a discarded item, and returns. When a
    condition slot is open (gItemCastHand) it uses the item row (0EF3:2604); otherwise it removes the

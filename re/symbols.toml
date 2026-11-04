@@ -2816,10 +2816,10 @@ unit = "e0bd2"
 addr = "0BD2:040E"
 size = 74
 evidence = ["far", "frame"]
-name = "MarkListItems"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "IdentifyListItems"
 
 [[function]]
 id = "e0bd2_0458"
@@ -2984,10 +2984,10 @@ unit = "e0bd2"
 addr = "0BD2:1244"
 size = 19
 evidence = ["far", "frame"]
-name = "FirstTwoSlots"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "GetHandOfSlot"
 
 [[function]]
 id = "e0cf7_0007"
@@ -3724,10 +3724,10 @@ unit = "e0ef3"
 addr = "0EF3:08CF"
 size = 172
 evidence = ["frame"]
-name = "ApplyMemberEffect"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "CastSpellOnTarget"
 
 [[function]]
 id = "e0ef3_097b"
@@ -4727,10 +4727,10 @@ unit = "e122e"
 addr = "122E:0055"
 size = 226
 evidence = ["near", "frame"]
-name = "HitTestObjectKind"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "IsWallDecorClicked"
 
 [[function]]
 id = "e122e_0137"
@@ -4738,10 +4738,10 @@ unit = "e122e"
 addr = "122E:0137"
 size = 29
 evidence = ["near", "frame"]
-name = "ObjectCountIsOdd"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "CellMonsterCountIsOdd"
 
 [[function]]
 id = "e122e_0154"
@@ -4750,10 +4750,10 @@ addr = "122E:0154"
 size = 133
 evidence = ["near", "frame"]
 notes = "2026-11-02: matches with the !! boolean-conversion form around the bit test. The original sign-extends the g194B byte before testing bit 0 (mov al,[bx+0x194b]; cwde; test ax,1, 8 bytes); a plain & 1 folds to a memory byte test in our build. The !! form reproduces the sign-extended bytes (133 total). The earlier & 8 test in the same function stays a byte test in the original, and the sibling DisarmMemberEffect (122E:01D9) uses a byte test for the same & 1."
-name = "ArmMemberEffect"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "OpenDoor"
 
 [[function]]
 id = "e122e_01d9"
@@ -4761,10 +4761,10 @@ unit = "e122e"
 addr = "122E:01D9"
 size = 152
 evidence = ["near", "frame"]
-name = "DisarmMemberEffect"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "CloseDoor"
 
 [[function]]
 id = "e122e_0271"
@@ -4772,10 +4772,10 @@ unit = "e122e"
 addr = "122E:0271"
 size = 180
 evidence = ["near", "frame"]
-name = "ToggleArmEffect"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "ToggleDoor"
 
 [[function]]
 id = "e122e_0325"
@@ -4794,10 +4794,10 @@ unit = "e122e"
 addr = "122E:04CA"
 size = 277
 evidence = ["frame"]
-name = "MemberSlotClickAction"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "DoorButtonAction"
 
 [[function]]
 id = "e122e_05df"
@@ -4805,10 +4805,10 @@ unit = "e122e"
 addr = "122E:05DF"
 size = 65
 evidence = ["frame"]
-name = "PerformItemSlotAction"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "WallScriptAction"
 
 [[function]]
 id = "e122e_0620"
@@ -4816,10 +4816,10 @@ unit = "e122e"
 addr = "122E:0620"
 size = 88
 evidence = ["frame"]
-name = "IncreaseItemSlot"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "WallTypeUpAction"
 
 [[function]]
 id = "e122e_0678"
@@ -4827,10 +4827,10 @@ unit = "e122e"
 addr = "122E:0678"
 size = 88
 evidence = ["frame"]
-name = "DecreaseItemSlot"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "WallTypeDownAction"
 
 [[function]]
 id = "e122e_06d0"
@@ -4839,10 +4839,10 @@ addr = "122E:06D0"
 size = 375
 evidence = ["frame"]
 notes = "matched 2026-11-03 under -v. The form: `if (item != 0) { RunMemberScript; SetMouseItem; gDF4C = 1; }` inside the `GetCurrentItem() == 0` arm, then an `else if (g181F[...] > 0xe)` / `else` chain, and ONE `return 1` after the chain (the `return 0` after the outer if). TCC then emits the long guard jump the original has (`jne 122E:07BD; jmp 122E:083C`, TCC -S: `jne @@8; jmp @12@386`, with `@12@386: jmp @12@194` as the last stub). Earlier sessions got the stub only from an early `return 1` for an empty list (`if (item == 0) return 1;`), which TCC chains straight to the shared return; the `!= 0` guard keeps the empty-list jump on the stub."
-name = "ItemSlotAction"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "WallNicheAction"
 
 [[function]]
 id = "e122e_0847"
@@ -4850,10 +4850,10 @@ unit = "e122e"
 addr = "122E:0847"
 size = 79
 evidence = ["far", "frame"]
-name = "CheckMemberSlotRect"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "UnpryableDoorAction"
 
 [[function]]
 id = "e122e_0896"
@@ -4861,10 +4861,10 @@ unit = "e122e"
 addr = "122E:0896"
 size = 157
 evidence = ["far", "near", "frame"]
-name = "DispatchSlotHandler"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "DispatchWallHandler"
 
 [[function]]
 id = "e122e_0933"
@@ -4872,10 +4872,10 @@ unit = "e122e"
 addr = "122E:0933"
 size = 45
 evidence = ["frame"]
-name = "RunRowHandler"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "ClickWallAhead"
 
 [[function]]
 id = "e122e_0960"
@@ -4883,10 +4883,10 @@ unit = "e122e"
 addr = "122E:0960"
 size = 182
 evidence = ["frame"]
-name = "WriteObjectFieldOp"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "SetWallTypeOp"
 
 [[function]]
 id = "e122e_0a16"
@@ -4895,10 +4895,10 @@ addr = "122E:0A16"
 size = 269
 evidence = ["frame"]
 notes = "matched 2026-11-02 under -v: the game modules were compiled with debug information, which keeps identical code tails apart while TCC sizes the jumps (whitepaper 2.1.1); the earlier -B question is answered"
-name = "WriteObjectRunOp"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "ToggleWallTypeOp"
 
 [[function]]
 id = "e122e_0b23"
@@ -4906,10 +4906,10 @@ unit = "e122e"
 addr = "122E:0B23"
 size = 51
 evidence = ["frame"]
-name = "ArmMember"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "OpenDoorOp"
 
 [[function]]
 id = "e122e_0b56"
@@ -4917,10 +4917,10 @@ unit = "e122e"
 addr = "122E:0B56"
 size = 51
 evidence = ["frame"]
-name = "DisarmMember"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "CloseDoorOp"
 
 [[function]]
 id = "e122e_0b89"
@@ -4928,10 +4928,10 @@ unit = "e122e"
 addr = "122E:0B89"
 size = 196
 evidence = ["frame"]
-name = "SpawnObjectOp"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "SpawnMonsterOp"
 
 [[function]]
 id = "e122e_0c4d"
@@ -4939,10 +4939,10 @@ unit = "e122e"
 addr = "122E:0C4D"
 size = 266
 evidence = ["frame"]
-name = "AddEffectOp"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "LaunchProjectileOp"
 
 [[function]]
 id = "e122e_0d57"
@@ -4950,10 +4950,10 @@ unit = "e122e"
 addr = "122E:0D57"
 size = 324
 evidence = ["frame"]
-name = "ReassignObjectsOp"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "TeleportOp"
 
 [[function]]
 id = "e122e_0e9b"
@@ -4983,10 +4983,10 @@ unit = "e122e"
 addr = "122E:1097"
 size = 253
 evidence = ["frame"]
-name = "SetActionFlagsOp"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "SetFlagOp"
 
 [[function]]
 id = "e122e_11e8"
@@ -4994,10 +4994,10 @@ unit = "e122e"
 addr = "122E:11E8"
 size = 134
 evidence = ["frame"]
-name = "ClearActionBit"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "ClearFlagOp"
 
 [[function]]
 id = "e122e_126e"
@@ -5105,10 +5105,10 @@ unit = "e122e"
 addr = "122E:1B9A"
 size = 124
 evidence = ["frame"]
-name = "TakeItemOp"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "CreateItemOp"
 
 [[function]]
 id = "e122e_1c16"
@@ -5116,10 +5116,10 @@ unit = "e122e"
 addr = "122E:1C16"
 size = 151
 evidence = ["frame"]
-name = "TurnPageOp"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "TurnOp"
 
 [[function]]
 id = "e122e_1cad"
@@ -5127,10 +5127,10 @@ unit = "e122e"
 addr = "122E:1CAD"
 size = 201
 evidence = ["frame"]
-name = "MarkMemberItemsOp"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "IdentifyItemsOp"
 
 [[function]]
 id = "e122e_1d76"
@@ -5238,10 +5238,10 @@ unit = "e1414"
 addr = "1414:03B4"
 size = 252
 evidence = ["far", "frame"]
-name = "AdjustMemberStatus"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "StepDoor"
 
 [[function]]
 id = "e1414_04b0"
@@ -5526,10 +5526,10 @@ unit = "e1547"
 addr = "1547:07E7"
 size = 426
 evidence = ["far", "near"]
-name = "DrawMemberSlot"
 level = "L2"
 match_flags = "-ml -O -Z"
 review = "passed 2026-11-02 rev-haiku"
+name = "DrawHandSlot"
 
 [[function]]
 id = "e1547_0991"
