@@ -2998,7 +2998,7 @@ evidence = ["near", "segment"]
 name = "ListInit"
 level = "L2"
 match_flags = "-ml -O -Z"
-review = "passed 2026-11-01 rev-haiku"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e0cf7_0028"
@@ -3009,7 +3009,7 @@ evidence = ["far", "frame"]
 name = "BuildList1"
 level = "L2"
 match_flags = "-ml -O -Z"
-review = "passed 2026-11-01 rev-haiku"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e0cf7_00b4"
@@ -3020,7 +3020,7 @@ evidence = ["far", "frame"]
 name = "BuildList2"
 level = "L2"
 match_flags = "-ml -O -Z"
-review = "passed 2026-11-01 rev-haiku"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e0cf7_0140"
@@ -3031,7 +3031,7 @@ evidence = ["far", "frame"]
 name = "BuildList3"
 level = "L2"
 match_flags = "-ml -O -Z"
-review = "passed 2026-11-01 rev-haiku"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e0cf7_01cc"
@@ -3042,7 +3042,7 @@ evidence = ["far", "frame"]
 name = "BuildList4"
 level = "L2"
 match_flags = "-ml -O -Z"
-review = "passed 2026-11-01 rev-haiku"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e0cf7_0211"
@@ -3053,7 +3053,7 @@ evidence = ["far", "frame"]
 name = "BuildList5"
 level = "L2"
 match_flags = "-ml -O -Z"
-review = "passed 2026-11-01 rev-haiku"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e0d1c_0006"
