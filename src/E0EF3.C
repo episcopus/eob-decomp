@@ -204,7 +204,7 @@ extern char gFileNameBuf[];             /*@ ds:FE6E */ /* the scratch text buffe
                                                         formats file names into (re/globals.toml
                                                         ds:FE6E); this unit formats messages into it */
 extern unsigned gLeftButtonMode;                  /*@ ds:5E1C */ /* a button/mode word (src/E0ACD.C) */
-extern char gF542[];                    /*@ ds:F542 */ /* the action record passed to
+extern char gDirectAction[];                    /*@ ds:F542 */ /* the action record passed to
                                                          RedrawPartyPanel (0EF3:2541, which reads its
                                                          +4 word); this unit passes it as
                                                          struct ActRec far * (0EF3:2676, :2929,
@@ -254,7 +254,7 @@ extern void (far *gFnEFBA)(void);       /*@ ds:EFBA */ /* the current spell's ap
                                                          spell->apply and run there, and run by
                                                          0EF3:08CF */
 extern char gFlag;                      /*@ ds:F3B9 */ /* cleared by 0EF3:2541 (E0ACD.C) */
-extern void far *gSegDF4E;              /*@ ds:DF4E */ /* the slot-5 buffer (E07A9.C) */
+extern void far *gStagingPage;              /*@ ds:DF4E */ /* the slot-5 buffer (E07A9.C) */
 extern void (far *gRestoreRect)(int x, int y, int width, int height, void far *buf); /*@ ds:804E */
 extern void (far *gRestoreRectToPage)(int x, int y, int width, int height, void far *buf); /*@ ds:804A */ /* the
     far blit that restores a saved rectangle (src/EOV1.C ovl1:112D draws the option field back
@@ -1859,7 +1859,7 @@ void DrawSpellPanel(void);
 /* 0EF3:21E0: open the member's spell panel: clear gSpellPanelLevel, make `who` the panel member, set gClericSpellMode
    when `flag` is 1, point gNameTable at gClericSpellNames (memorized) or gMageSpellNames (known), point gSpellBookSlots at the
    member's +0x55 or +0x37 spell slots and gSpellPanelSlot at its first slot over zero. Save the panel
-   rectangle into gSegDF4E + 0x61a8 (gSaveRect, ds:80AE) when gFlag is clear, then set gFlag,
+   rectangle into gStagingPage + 0x61a8 (gSaveRect, ds:80AE) when gFlag is clear, then set gFlag,
    rebuild the item list (BuildList1) and run the panel body 0EF3:2295; returns 1. Called by the
    item class 5/6 path of 0BD2:1001. */
 /*@ 0EF3:21E0 */ int OpenSpellPanel(int who, char flag)
@@ -1880,7 +1880,7 @@ void DrawSpellPanel(void);
         gSpellPanelSlot++;
     }
     if (!gFlag)
-        gSaveRect(8, 0x7A, 0x0E, 0x37, (char far *)gSegDF4E + 0x61A8);
+        gSaveRect(8, 0x7A, 0x0E, 0x37, (char far *)gStagingPage + 0x61A8);
     gFlag = 1;
     BuildList1();
     DrawSpellPanel();
@@ -1971,14 +1971,14 @@ void DrawSpellPanel(void);
 
 /* 0EF3:2541: redraw the party panel after an action: clear gFlag (which picks a table set and
    gates the redraw, src/E0ACD.C:73, :143), hide the pointer
-   and restore the panel rectangle (8, 0x7a, 0x0e by 0x37) from the slot-5 buffer gSegDF4E plus
+   and restore the panel rectangle (8, 0x7a, 0x0e by 0x37) from the slot-5 buffer gStagingPage plus
    0x61a8, show the pointer, draw the view rows, and rebuild the active item list (BuildList1 to 3
    by gPanelMode). Returns the action record's +4 word. */
 /*@ 0EF3:2541 */ int RedrawPartyPanel(struct ActRec far *rec)
 {
     gFlag = 0;
     HidePointerZone(0x40, 0x78, 0xB0, 0xB1);
-    gRestoreRect(8, 0x7A, 0x0E, 0x37, (char far *)gSegDF4E + 0x61A8);
+    gRestoreRect(8, 0x7A, 0x0E, 0x37, (char far *)gStagingPage + 0x61A8);
     ShowPointerZone();
     DrawViewRows();
     switch (gPanelMode) {
@@ -2107,7 +2107,7 @@ void DrawSpellPanel(void);
     if (gItemCastHand != 0)
         EndItemCast();
     else
-        RedrawPartyPanel((struct ActRec far *)gF542);
+        RedrawPartyPanel((struct ActRec far *)gDirectAction);
 }
 
 /* 0EF3:28ED: save the panel member in ds:FC74 and gClericSpellMode in ds:FC76, start a condition slot
@@ -2173,7 +2173,7 @@ void DrawSpellPanel(void);
                 value += (gClericSpellMode == 1 ? 0x19 : 0);
                 CastSpell(value, 0);
             } else {
-                RedrawPartyPanel((struct ActRec far *)gF542);
+                RedrawPartyPanel((struct ActRec far *)gDirectAction);
             }
         }
     }

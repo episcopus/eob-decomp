@@ -1469,10 +1469,10 @@ unit = "e07c8"
 addr = "07C8:061D"
 size = 8
 evidence = ["frame"]
-name = "f07C8_061D"
 level = "L2"
 match_flags = "-ml -O -Z"
 review = "passed 2026-11-02 rev-haiku"
+name = "ExitHook"
 
 [[function]]
 id = "e07c8_0625"
@@ -1832,10 +1832,10 @@ unit = "e08e6"
 addr = "08E6:0150"
 size = 46
 evidence = ["far", "frame"]
-name = "Obj0150"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "AlertNearbyMonsters"
 
 [[function]]
 id = "e08e6_017e"
@@ -2107,10 +2107,10 @@ unit = "e08e6"
 addr = "08E6:1505"
 size = 90
 evidence = ["far", "frame"]
-name = "Obj1505"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "SpawnMonster"
 
 [[function]]
 id = "e08e6_155f"
@@ -2437,10 +2437,10 @@ unit = "e0acd"
 addr = "0ACD:01E3"
 size = 129
 evidence = ["far", "frame"]
-name = "Action01E3"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "RestorePortraitPanel"
 
 [[function]]
 id = "e0acd_0264"
@@ -3139,10 +3139,10 @@ addr = "0D1C:0163"
 size = 103
 evidence = ["far", "frame"]
 notes = "matched 2026-11-02 under -v: the redundant `mov ax,di` reload before the first multiply (0D1C:0194) is what TCC -O keeps when the loop body follows an early `continue`, not an `if` around it. The source is `for (i = 25; i <= 26; i++) { if (!(item = rec->m77[i])) continue; if (gTable8DD2[item].m02 == 0x2F && gTable8DD2[item].m0B == fieldB) return 1; }`; with `if (item = rec->m77[i]) { ... }` TCC elides the load (101 of 103 bytes). Probes: -O elides with or without -Z/-v/-G/-P; without -O the load stays but the trailing `jmp` is kept too; the same redundant-load-after-early-exit quirk is in the e08E6 note."
-name = "f0D1C_0163"
 level = "L2"
 match_flags = "-ml -O -Z -v"
 review = "passed 2026-11-02 rev-haiku"
+name = "IsWearingRing"
 
 [[function]]
 id = "e0d1c_01ca"
@@ -7473,10 +7473,10 @@ unit = "e1d8f"
 addr = "1D8F:0010"
 size = 40
 evidence = ["far", "frame"]
-name = "_f1D8F_0010"
 level = "L2"
 match_flags = "tasm /mx"
 review = "passed 2026-11-01 rev-sonnet"
+name = "InstallTickHandler"
 
 [[function]]
 id = "e1d8f_0038"
@@ -7484,10 +7484,10 @@ unit = "e1d8f"
 addr = "1D8F:0038"
 size = 131
 evidence = ["far", "frame"]
-name = "_f1D8F_0038"
 level = "L2"
 match_flags = "tasm /mx"
 review = "passed 2026-11-01 rev-sonnet"
+name = "RemoveTickHandler"
 
 [[function]]
 id = "e1d9a_000b"
@@ -7594,10 +7594,10 @@ unit = "e1ddd"
 addr = "1DDD:002D"
 size = 67
 evidence = ["far", "frame"]
-name = "f1DDD_002D"
 level = "L2"
 match_flags = "-ml -O -Z"
 review = "passed 2026-11-01 rev-haiku"
+name = "SetVideoMode"
 
 [[function]]
 id = "e1de4_0000"

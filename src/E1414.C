@@ -107,8 +107,8 @@ extern struct ItemRecord gItems[]; /*@ ds:8DD0 */
 extern struct Monster gMonsters[]; /*@ ds:8A82 */   /* 30 records, 28 bytes each (src/E08E6.C) */
 extern char gMaze[]; /*@ ds:B894 */             /* nine-byte records (src/E0D1C.C) */
 extern signed char gWallTypeFlags[]; /*@ ds:194B */      /* byte table indexed by a gMaze byte (src/E0D1C.C) */
-extern signed char g181F[]; /*@ ds:181F */      /* byte table indexed by an item's icon in 003E */
-extern int gEFD2; /*@ ds:EFD2 */                /* Purpose unknown: 003E writes 0x10 or 1 on its
+extern signed char gIconPictureIndex[]; /*@ ds:181F */      /* byte table indexed by an item's icon in 003E */
+extern int gWallTrigger; /*@ ds:EFD2 */                /* Purpose unknown: 003E writes 0x10 or 1 on its
                                                   failure paths; src/E122E.C:18 calls it the mode the
                                                   driver runs a script in and tests it against 0x40 */
 extern int gPartyCell; /*@ ds:FBCA */         /* the party's map cell (re/globals.toml ds:FBCA) */
@@ -116,7 +116,7 @@ extern unsigned char far *gViewCells[]; /*@ ds:EF6A */ /* 18 far pointers, walke
 extern signed char gViewFrontSide; /*@ ds:A9C6 */      /* an offset added into gViewCells's targets */
 extern int gAnimWallPhase; /*@ ds:FB78 */              /* a flag toggled by 04B0 */
 extern signed char gBlinkPhase; /*@ ds:5CAA */      /* the blink phase toggled by 0000 */
-extern signed char g5C76; /*@ ds:5C76 */      /* the mode byte 03B4 reads; written in src/E122E.C
+extern signed char gDoorMoveDir; /*@ ds:5C76 */      /* the mode byte 03B4 reads; written in src/E122E.C
                                                  (set to 1 at 278, 0xff at 301, negated at 321) */
 extern unsigned char gNextPosByDir[]; /*@ ds:5CAB */  /* a byte table indexed by direction in 0285 */
 extern char gIconTable; /*@ ds:FB34 */             /* the index of the party member being moved, -1
@@ -133,7 +133,7 @@ extern void RedrawMember(int member); /*@ 1547:0991 */
 extern void PlaySoundDefault(int sound); /*@ 177D:00F3 */
 extern int IsCellInView(int value); /*@ 0D1C:0006 */
 extern int StepCell(int cell, int dir); /*@ 0D1C:00DA */
-extern int f0D1C_0163(int who, int fieldB); /*@ 0D1C:0163 */
+extern int IsWearingRing(int who, int fieldB); /*@ 0D1C:0163 */
 extern int MemberIs(int member, int what); /*@ 0D1C:0670 */
 extern int far RollDice(char count, char sides, char bonus); /*@ 082C:0458 */
 extern void UpdateObjects(int kind); /*@ 08E6:0CC8 */
@@ -179,9 +179,9 @@ extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
    onto character `target`: one RemoveListItem takes the record's item m08 off the old cell's list
    (gMaze[rec->cell * 9 + 5]) and one InsertListItem puts it on the target's list
    (gMaze[target * 9 + 5], key target, sound sel | 4); cell and m06 are set to `target` and `sel`,
-   m0D is decremented and it returns 1; otherwise gEFD2 is 0x10. Any other record is moved when bits
+   m0D is decremented and it returns 1; otherwise gWallTrigger is 0x10. Any other record is moved when bits
    bit 0 is set or when cell already equals `target` (m0D is decremented unless it is -1) and returns
-   1; otherwise gEFD2 is 1. The two failure paths report through DispatchSlotHandler(target,
+   1; otherwise gWallTrigger is 1. The two failure paths report through DispatchSlotHandler(target,
    rec->dir) (122E:0896) and return 0. Called by 0285. */
 /*@ 1414:003E */ int StepDDEffect(struct Projectile far *rec, register int target, int sel)
 {
@@ -195,7 +195,7 @@ extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
     bits = gWallTypeFlags[db];
     if (rec->active == 1) {
         m08 = rec->item;
-        flag = g181F[gItems[m08].icon] >= 0xF;
+        flag = gIconPictureIndex[gItems[m08].icon] >= 0xF;
         hit = (bits & 1) || rec->m02 != 0 || ((bits & 2) && flag);
         if (hit) {
             RemoveListItem((int far *)(gMaze + rec->cell * 9 + 5), 0, m08);
@@ -205,7 +205,7 @@ extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
             rec->m0D--;
             return 1;
         }
-        gEFD2 = 0x10;
+        gWallTrigger = 0x10;
     } else {
         if ((bits & 1) || rec->cell == target) {
             rec->cell = target;
@@ -214,7 +214,7 @@ extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
                 rec->m0D--;
             return 1;
         }
-        gEFD2 = 1;
+        gWallTrigger = 1;
     }
     DispatchSlotHandler(target, rec->dir);
     return 0;
@@ -334,9 +334,9 @@ extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
 }
 /* 1414:03B4: effect 12 of the table. For character `who` it picks the record gMaze[who * 9]
    whose gWallTypeFlags flag has no bit 3 (slot 1) or one (slot 0), and reads that record's flag. When the
-   global mode byte g5C76 is -1 with bit 5 set, or 1 with bit 4 set, it disarms effect 0xC and
-   returns. Otherwise it adds g5C76 to gMaze[who * 9 + slot] and gMaze[who * 9 + slot + 2], reads
-   the flag again and plays sound 5 when bit 5 is set, 4 when g5C76 is -1, else 3, then reports
+   global mode byte gDoorMoveDir is -1 with bit 5 set, or 1 with bit 4 set, it disarms effect 0xC and
+   returns. Otherwise it adds gDoorMoveDir to gMaze[who * 9 + slot] and gMaze[who * 9 + slot + 2], reads
+   the flag again and plays sound 5 when bit 5 is set, 4 when gDoorMoveDir is -1, else 3, then reports
    `who` through IsCellInView. Called by 122E and by the table. */
 /*@ 1414:03B4 */ void AdjustMemberStatus(int who)
 {
@@ -344,7 +344,7 @@ extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
     register int bits;
     int slot;
 
-    sel = g5C76;
+    sel = gDoorMoveDir;
     bits = gWallTypeFlags[gMaze[who * 9]];
     slot = (bits & 8) ? 0 : 1;
     bits = gWallTypeFlags[gMaze[who * 9 + slot]];
@@ -672,7 +672,7 @@ extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
     }
     RearmCharEffects();
 }
-/* 1414:0C82: effect 14 of the table. For every party member whose f0D1C_0163(who, 2) test
+/* 1414:0C82: effect 14 of the table. For every party member whose IsWearingRing(who, 2) test
    passes, whose status bit 0 is set (the 0D1C:0670 mask-1 test), with a nonzero food value and hit
    points above -10, it decrements the food value and runs 1547:04A0 for that member. */
 /*@ 1414:0C82 */ void DecayMemberState(void)
@@ -680,7 +680,7 @@ extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
     int who;
 
     for (who = 0; who < 6; who++) {
-        if (f0D1C_0163(who, 2) < 0)
+        if (IsWearingRing(who, 2) < 0)
             continue;
         if (gChars[who].food == 0)
             continue;

@@ -115,7 +115,7 @@ extern signed char gPanelFillColour; /*@ ds:F57E */    /* a colour read by 0BD2:
 extern signed char gPanelShadow; /*@ ds:F53A */    /* a colour read by 0BD2:0917 (src/E0D1C.C) */
 extern signed char gPanelHighlight; /*@ ds:FB4C */    /* a colour read by 0BD2:0917 (src/E0D1C.C) */
 extern char gFileNameBuf[]; /*@ ds:FE6E */  /* the text buffer sprintf formats into (src/EOV2.C) */
-extern void far *gSegDF4E; /*@ ds:DF4E */   /* slot 5's buffer segment (src/E07A9.C) */
+extern void far *gStagingPage; /*@ ds:DF4E */   /* slot 5's buffer segment (src/E07A9.C) */
 extern char gViewDirty; /*@ ds:DF4C */           /* set to 1 when an action took effect (src/E0ACD.C) */
 extern char gMazeItems[]; /*@ ds:B899 */         /* the nine-byte record list head (src/E0D1C.C) */
 extern char gMaze[]; /*@ ds:B894 */         /* the nine-byte records (src/E0D1C.C) */
@@ -639,7 +639,7 @@ next:
 /*@ 0BD2:0ABE */ void RedrawRowArea(int drawMode)
 {
     if (drawMode)
-        gSaveRect(0x16, 0, 0x12, 0xA8, gSegDF4E);
+        gSaveRect(0x16, 0, 0x12, 0xA8, gStagingPage);
     RedrawMember(gInventoryMember);
 }
 

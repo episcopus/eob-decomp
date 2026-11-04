@@ -7,7 +7,7 @@
    out one; each is the .x.ax word of a 16 byte union REGS [H].
    GetVideoMode is INT 10h AH=0Fh (get current video mode): it puts 0F00h in the in union
    (AH=0Fh), calls int86(0x10, &gVideoInRegs, &gVideoOutRegs), and returns the low byte (AL) of the out AX.
-   f1DDD_002D is INT 10h AH=00h (set video mode) with AL = the mode: for an index below 7 it
+   SetVideoMode is INT 10h AH=00h (set video mode) with AL = the mode: for an index below 7 it
    takes the mode from the 7 word table at ds:84A2 (4, 9, 0Dh, 13h, 13h, 7, 2), otherwise the
    word at ds:84A0 (argv[5]; 07C8:0074 calls 0000:5D63 with it and 07C8:007B stores only AX,
    so 5D63 is atoi-like with an int result, not atol [H]; the video mode restored on exit).
@@ -40,7 +40,7 @@ extern unsigned gVideoOutRegs; /*@ ds:FF36 */
     return gVideoOutRegs & 0xff;
 }
 
-/*@ 1DDD:002D */ void f1DDD_002D(int i)
+/*@ 1DDD:002D */ void SetVideoMode(int i)
 {
     if (i < 7)
         gVideoInRegs = gBiosVideoModes[i];

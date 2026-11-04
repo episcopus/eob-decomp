@@ -126,7 +126,7 @@ extern struct CharRec gChars[]; /*@ ds:F580 */
 extern void far *gItemIcons[]; /*@ ds:DDE4 */
 extern void far *gDefaultPointerIcon; /*@ ds:DD00 */ /* the mouse pointer image: gItemIcons[0], set by SetPointerShape (src/EOV2.C:214) and given to SetMousePointerShape (src/E1BB1.ASM:12) */
 extern void far *gRemappedIcon; /*@ ds:DF48 */
-extern void far *gSegDF4E; /*@ ds:DF4E */
+extern void far *gStagingPage; /*@ ds:DF4E */
 extern char far *gItemRemapTable; /*@ ds:F534 */
 extern void far *gCurFont; /*@ ds:FE4E */
 extern void far *gFont8x8; /*@ ds:FE5A */
@@ -150,7 +150,7 @@ extern char gFailLabelFill; /*@ ds:8A7D */ /* the third colour of the action pan
 extern char gIconTable; /*@ ds:FB34 */ /* this unit, src/E0ACD.C:48, src/E1414.C:106 and src/E1547.C:128 read it as the party member being moved (-1 when none); the BlinkSelected comment (1414:0000, src/E1414.C:141-145) saves and restores it as that member. src/E0EF3.C:227 declares ds:FB34 as an array of far sprite pointers (a cross-unit conflict to settle) */
 extern int gUnusedStartupWord; /*@ ds:EFC8 */ /* a word cleared by InitGameTables; no other reader in src/ yet */
 extern int gEFCA; /*@ ds:EFCA */ /* a word cleared by InitGameTables; no other reader in src/ yet */
-extern void far *gB802[]; /*@ ds:B802 */ /* 36 far map-icon pointers (src/EOV3.C:146, freed at :390-401), cleared by InitGameTables */
+extern void far *gLoadedMonsterShapes[]; /*@ ds:B802 */ /* 36 far map-icon pointers (src/EOV3.C:146, freed at :390-401), cleared by InitGameTables */
 extern long gDoorShapes[]; /*@ ds:FB5E */ /* six size-record pointers (src/EOV3.C:138 declares them longs; src/EOV4.C:756 declares them struct SlotSize far *), cleared by InitGameTables */
 extern struct SlotPos gDoorButtons[]; /*@ ds:A99C */
 extern void far *gRectKinds[]; /*@ ds:EFD4 */ /* 200 far size-record pointers (src/EOV3.C:14, freed at :230-241; src/E122E.C:98 declares them struct RectKind far *), cleared by InitGameTables */
@@ -314,7 +314,7 @@ extern void FileClose(int handle); /*@ 1C0E:03BB */
 /* ovl2:0496: resets the tables a new game starts from and allocates one 0x514-byte scratch buffer
    for each of the six character records: sets gIconTable (ds:FB34, the party member being moved,
    -1 when none; src/E0ACD.C:42) to -1, clears the two words gUnusedStartupWord and gEFCA, the 36 far pointers
-   of gB802 (src/EOV3.C:146), the six longs of gDoorShapes (src/EOV3.C:138), the far size-record pointer
+   of gLoadedMonsterShapes (src/EOV3.C:146), the six longs of gDoorShapes (src/EOV3.C:138), the far size-record pointer
    of each of the six gDoorButtons records (src/E122E.C:112-117) and the 200 far pointers of gRectKinds
    (src/E122E.C:98, freed by src/EOV3.C:230-241), then writes each character record's index and
    allocates its buffer (gChars[i].buf). Called by LoadItemData. */
@@ -326,7 +326,7 @@ extern void FileClose(int handle); /*@ 1C0E:03BB */
     gUnusedStartupWord = 0;
     gEFCA = 0;
     for (i = 0; i < 0x24; i++)
-        gB802[i] = 0;
+        gLoadedMonsterShapes[i] = 0;
     for (i = 0; i < 6; i++) {
         gDoorShapes[i] = 0;
         gDoorButtons[i].rec = 0;
@@ -513,7 +513,7 @@ extern void FileClose(int handle); /*@ 1C0E:03BB */
     gColour179 = gPanelFillColour;
     gDrawPage = 0;
     SetTextWindow(0xd);
-    gSaveRectFromPage(gTextLeft, gTextTop, gTextWidth, gTextHeight, gSegDF4E);
+    gSaveRectFromPage(gTextLeft, gTextTop, gTextWidth, gTextHeight, gStagingPage);
     tries = 0;
     ClearTextRegion();
     DrawFilledPanel(gTextLeft * 8, gTextTop, (gTextLeft + gTextWidth) * 8 - 1, gTextTop + gTextHeight - 1,
@@ -553,7 +553,7 @@ extern void FileClose(int handle); /*@ 1C0E:03BB */
     gRegions[gTextRegion].width += 2;
     gRegions[gTextRegion].height += 0x10;
     SetTextWindow(0xd);
-    gRestoreRectToPage(gTextLeft, gTextTop, gTextWidth, gTextHeight, gSegDF4E);
+    gRestoreRectToPage(gTextLeft, gTextTop, gTextWidth, gTextHeight, gStagingPage);
     SetTextWindow(saveRegion);
     SetFont(font);
 }

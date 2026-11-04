@@ -136,7 +136,7 @@ struct CharRec {                /* the 243-byte character records at ds:F580 (sr
 };
 extern struct CharRec gChars[]; /*@ ds:F580 */
 extern char far gCampStrings; /*@ 2003:0000 */
-extern unsigned char far gSheet2067[]; /*@ 2067:0000 */
+extern unsigned char far gSheetINVENT[]; /*@ 2067:0000 */
 extern unsigned char far gSheetDECORATE[]; /*@ 2069:0000 */
 extern char gOverlayBuf[]; /*@ ds:113F */
 
@@ -154,14 +154,14 @@ extern void RemovePartyMember(int who); /*@ 0D1C:035A */
 extern void SelectCharacter(int who); /*@ 0D1C:003F */
 extern void BuildList1(void); /*@ 0CF7:0028 */
 extern void RearmCharEffects(void); /*@ 1414:0B2E */
-extern char gF542[]; /*@ ds:F542 */
+extern char gDirectAction[]; /*@ ds:F542 */
 extern char gPanelMode; /*@ ds:FB44 */
 extern char gFlag; /*@ ds:F3B9 */
 extern int gTimerEnableFlags; /*@ ds:849E */
 extern void far *gCurFont; /*@ ds:FE4E */
 extern void far *gFont8x8; /*@ ds:FE5A */
 extern void far *gFont6x6; /*@ ds:A9C0 */
-extern void far *gSegDF4E; /*@ ds:DF4E */
+extern void far *gStagingPage; /*@ ds:DF4E */
 extern int gTextRegion; /*@ ds:811F */
 extern int gMembersMarkedDisabled; /*@ ds:FD98 */      /* set when a party member cannot be picked (SelectPartyMember
                                           draws the icons over its portrait box) */
@@ -221,7 +221,7 @@ extern unsigned char gClericSpellsPerLevel[]; /*@ ds:62FE */ /* a cleric's spell
 extern char gClericWisdomBonus[]; /*@ ds:6330 */ /* a cleric's bonus spells per level (5 bytes) by wisdom - 12 */
 extern unsigned char gPaladinSpellsPerLevel[]; /*@ ds:6358 */ /* a paladin's spells per level (5 bytes) by class level */
 extern unsigned char gMageSpellsPerLevel[]; /*@ ds:6394 */ /* a mage's spells per level (5 bytes) by class level 1 to 11 */
-extern int f0D1C_0163(int who, int fieldB); /*@ 0D1C:0163 */
+extern int IsWearingRing(int who, int fieldB); /*@ 0D1C:0163 */
 extern int IsMouseInRect(int left, int top, int right, int bottom); /*@ 1A72:02A6 */
 extern int g159; /*@ ds:0159 */ /* a copy of gPanelFillColour that ShowMessageBox and ovl6:0B9B store; no reader found */
 extern int gTunesOn; /*@ ds:80E8 */
@@ -263,7 +263,7 @@ extern int strlen(char far *s); /*@ 0000:67F6 */
 extern void (far *gRestoreRectToPage)(int x, int y, int w, int h, void far *buf); /*@ ds:804A */
 extern int WaitGameKey(void); /*@ 1AAD:053A */
 extern int ReadKey(void); /*@ 1AAD:038E */
-extern int Action01E3(char far *text); /*@ 0ACD:01E3 */
+extern int RestorePortraitPanel(char far *text); /*@ 0ACD:01E3 */
 extern int RedrawPartyPanel(struct ActRec far *rec); /*@ 0EF3:2541 */
 extern int MemberIs(int who, int mask); /*@ 0D1C:0670 */
 extern void DrawShape(int page, void far *src, int x, int y, int region); /*@ 1A29:000F */
@@ -732,7 +732,7 @@ int AskYesNo(int message);
                 allowance[i] = gMageSpellsPerLevel[levelRow * 5 + i];
             mask = gChars[who].spellBook;
         }
-        if (f0D1C_0163(who, 1)) {
+        if (IsWearingRing(who, 1)) {
             allowance[3] <<= 1;
             allowance[4] <<= 1;
         }
@@ -917,17 +917,17 @@ int AskYesNo(int message);
     return SkipStrings(&gCampStrings, on);
 }
 /* ovl1:1107: saves the screen rectangle x 0, y 0x78, 0x16 by 0x18 (the "option field", the strip the
-   camp menu is drawn over) into the far buffer at gSegDF4E + 0x4E20 through gSaveRect. Called by
+   camp menu is drawn over) into the far buffer at gStagingPage + 0x4E20 through gSaveRect. Called by
    RunCampMenu before it draws a menu and after a loaded game's screens are replaced. */
 /*@ ovl1:1107 */ void SaveOptionField(void)
 {
-    gSaveRect(0, 0x78, 0x16, 0x18, (char far *)gSegDF4E + 0x4e20);
+    gSaveRect(0, 0x78, 0x16, 0x18, (char far *)gStagingPage + 0x4e20);
 }
 /* ovl1:112D: draws the rectangle SaveOptionField saved back to the screen through gRestoreRectToPage (the
-   blit routine that puts the buffer at gSegDF4E + 0x4E20 at x 0, y 0x78, 0x16 by 0x18). */
+   blit routine that puts the buffer at gStagingPage + 0x4E20 at x 0, y 0x78, 0x16 by 0x18). */
 /*@ ovl1:112D */ void DrawOptionField(void)
 {
-    gRestoreRectToPage(0, 0x78, 0x16, 0x18, (char far *)gSegDF4E + 0x4e20);
+    gRestoreRectToPage(0, 0x78, 0x16, 0x18, (char far *)gStagingPage + 0x4e20);
 }
 
 /* ovl1:1153: builds the button list of menu `menu` (an index into the seven five-byte records at
@@ -1268,9 +1268,9 @@ int AskYesNo(int message);
     int nextMenu;
 
     if (gPanelMode)
-        Action01E3(gF542);
+        RestorePortraitPanel(gDirectAction);
     if (gFlag)
-        RedrawPartyPanel((struct ActRec far *)gF542);
+        RedrawPartyPanel((struct ActRec far *)gDirectAction);
     gTimerEnableFlags &= ~2;
     savedFont = gCurFont;
     savedWindow = gTextRegion;
@@ -1364,7 +1364,7 @@ int AskYesNo(int message);
                 LoadScreenImage("PLAYFLD", gOverlayBuf, 5, 3, 0);
                 reloadInvent = 1;
                 LoadScreenImage("INVENT", gOverlayBuf, 5, 3, 2);
-                gSaveRect(0, 0x78, 0x16, 0x18, (char far *)gSegDF4E + 0x4e20);
+                gSaveRect(0, 0x78, 0x16, 0x18, (char far *)gStagingPage + 0x4e20);
                 SetFont(gFont6x6);
                 RedrawCharacters();
                 SetFont(gFont8x8);
@@ -1452,7 +1452,7 @@ int AskYesNo(int message);
                 if (gGraphicsChoice == 1) {
                     LoadScreenImage("PLAYFLD", (char far *)gSheetDECORATE, 5, 3, 2);
                     gDrawPage = 2;
-                    gSaveRectFromPage(0, 0x78, 0x16, 0x18, (char far *)gSegDF4E + 0x4e20);
+                    gSaveRectFromPage(0, 0x78, 0x16, 0x18, (char far *)gStagingPage + 0x4e20);
                     gDrawPage = 0;
                     reloadInvent = 1;
                 }
@@ -1555,7 +1555,7 @@ int AskYesNo(int message);
     SetTextWindow(0xa);
     CopyRegion(gTextLeft, gTextTop, gTextLeft, gTextTop, gTextWidth, gTextHeight, 2, 0);
     if (reloadInvent)
-        LoadScreenImage("INVENT", (char far *)gSheet2067, 5, 3, 2);
+        LoadScreenImage("INVENT", (char far *)gSheetINVENT, 5, 3, 2);
     SetTextWindow(savedWindow);
     LockShowPointer();
     gDrawPage = 0;

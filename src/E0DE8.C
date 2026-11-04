@@ -156,7 +156,7 @@ extern char gViewDirty; /*@ ds:DF4C */            /* set to 1 when an action too
                                                 0DE8:0537, 0DE8:05BB) */
 extern char gHpMaxOrAttackTarget; /*@ ds:DCA4 */            /* the target object 0359 records (:361); UseItem damages
                                                 gMonsters[gHpMaxOrAttackTarget] (:520) */
-extern unsigned char g1905[]; /*@ ds:1905 */   /* a 256-byte table gMaze indexes into (0359) */
+extern unsigned char gWallHandlerIndex[]; /*@ ds:1905 */   /* a 256-byte table gMaze indexes into (0359) */
 extern char gMaze[]; /*@ ds:B894 */          /* the nine-byte records at ds:B894 indexed by row * 9
                                                 (:348-350); the +4 byte is read at 0D1C:0080 */
 extern char gFileNameBuf[]; /*@ ds:FE6E */   /* the text buffer sprintf formats into (src/EOV2.C) */
@@ -339,7 +339,7 @@ void LevelUpSlot(int who, int cls, int slot);  /* forward: 0B45 reaches it with 
 }
 /* 0DE8:0359: one item/effect attack by character `who` on the item record `slot` (an index into
    gItems). It rejects a `who` above 1 with -3, then looks the action up through
-   StepCell(gPartyCell, gPartyDir) and FindMeleeTarget. A -1 target with g1905[gMaze[row * 9 + gViewFrontSide]] at
+   StepCell(gPartyCell, gPartyDir) and FindMeleeTarget. A -1 target with gWallHandlerIndex[gMaze[row * 9 + gViewFrontSide]] at
    0xFF bumps two gMaze cells and sets gViewDirty, returning -2, otherwise -1. A real target demands the
    0007 to-hit roll (returns -1 on a miss), and when the slot's m02 is 0x34..0x38 MonsterResistsMagic can
    also fail it; the surviving hit is rolled through 011A and halved when IsWeaponDamageHalved says so.
@@ -357,7 +357,7 @@ void LevelUpSlot(int who, int cls, int slot);  /* forward: 0B45 reaches it with 
     row = StepCell(gPartyCell, gPartyDir);
     target = FindMeleeTarget(who, row);
     if (target == -1) {
-        if (g1905[gMaze[row * 9 + gViewFrontSide]] == 0xff) {
+        if (gWallHandlerIndex[gMaze[row * 9 + gViewFrontSide]] == 0xff) {
             gMaze[row * 9 + gViewFrontSide]++;
             gMaze[row * 9 + (gViewFrontSide ^ 2)]++;
             gViewDirty = 1;

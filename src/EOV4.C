@@ -153,7 +153,7 @@ extern signed char gViewSlotRow[]; /*@ ds:1A09 */       /* per-object index into
                      *bottom - *top);
 }
 
-extern unsigned char far *gBufF43E; /*@ ds:F43E */   /* 6000-byte start-up buffer (src/E07A9.C) */
+extern unsigned char far *gWallBlockMaps; /*@ ds:F43E */   /* 6000-byte start-up buffer (src/E07A9.C) */
 extern unsigned char gViewBlockMap[]; /*@ ds:ADB0 */  /* the view pixel buffer (this unit) */
 
 /* ovl4:02A5: copies a rectangle of word pixels out of the page buffer pointed to by ds:F43E into
@@ -172,7 +172,7 @@ extern unsigned char gViewBlockMap[]; /*@ ds:ADB0 */  /* the view pixel buffer (
 
     if (gWallVmpSet[page] == 0)
         return;
-    src = (unsigned int far *)(gBufF43E + (gWallVmpSet[page] - 1) * 0x35E + x2 * 2);
+    src = (unsigned int far *)(gWallBlockMaps + (gWallVmpSet[page] - 1) * 0x35E + x2 * 2);
     src += 0x14A;
     for (row = 0; row < height; row++) {
         dst = (unsigned int far *)(gViewBlockMap + ((y + row) * 0x16 + x) * 2);
@@ -209,7 +209,7 @@ extern unsigned char gViewBlockMap[]; /*@ ds:ADB0 */  /* the view pixel buffer (
 
     if (gWallVmpSet[page] == 0)
         return;
-    src = (unsigned int far *)(gBufF43E + (gWallVmpSet[page] - 1) * 0x35E + x2 * 2);
+    src = (unsigned int far *)(gWallBlockMaps + (gWallVmpSet[page] - 1) * 0x35E + x2 * 2);
     src += 0x14A;
     for (row = 0; row < height; row++) {
         for (col = 0; col < width; col++) {
@@ -376,7 +376,7 @@ struct ItemRecord {
 };
 extern struct ItemRecord gItems[]; /*@ ds:8DD0 */
 extern signed char gViewRelativePos[]; /*@ ds:1A2B */   /* per-page sprite base (src/E0DE8.C) */
-extern signed char g181F[]; /*@ ds:181F */   /* byte table indexed by an item icon (src/E122E.C) */
+extern signed char gIconPictureIndex[]; /*@ ds:181F */   /* byte table indexed by an item icon (src/E122E.C) */
 extern signed char gItemClipSlot[]; /*@ ds:6F86 */   /* per-slot byte (this unit) */
 extern signed char gItemScaleFrame[]; /*@ ds:6F98 */   /* per-slot, per-part byte (this unit) */
 extern int gNicheItemY[]; /*@ ds:6FA8 */           /* per-slot y base (this unit) */
@@ -395,7 +395,7 @@ extern void DrawShapeClipped(int page, void far *src, int x, int y, int region);
    as the head and walks the list back to it. For each item, the kind +5 picks the sprite base
    ds:1A2B[gPartyDir * 4 + (kind & 3)]; the cell position comes from ds:1D61/ds:1D63 (or, when the kind
    is 8, from gViewSlotCenterX[slot] and gNicheItemY[gViewSlotRow[slot]] with sprite 0) and is nudged by ds:6FAE at
-   `field & 7` and `(field >> 1) & 7`; the cell itself is ds:EC9A[g181F[icon]][frame], its byte +2
+   `field & 7` and `(field >> 1) & 7`; the cell itself is ds:EC9A[gIconPictureIndex[icon]][frame], its byte +2
    (in 8-pixel units) and byte +1 shift the position. Items whose kind is 8 or below 4 are drawn;
    the rest are skipped. The tile's ds:194B flags (forced to 0x80 when slot is 0x10) and its ds:1879
    count gate the slot: it returns when the count is nonzero and bit 7 of the flags is clear, so it
@@ -461,7 +461,7 @@ extern void DrawShapeClipped(int page, void far *src, int x, int y, int region);
                 y -= 4;
             }
             if (frame >= 0) {
-                cell = gItemL1Icons[g181F[rec->icon]][frame];
+                cell = gItemL1Icons[gIconPictureIndex[rec->icon]][frame];
                 x -= (((signed char far *)cell)[2] << 3) >> 1;
                 x += gItemJitter[field & 7] * 2;
                 y -= ((signed char far *)cell)[1];
@@ -1008,7 +1008,7 @@ extern void far *gThrownIcons[][4]; /*@ ds:F2F8 */  /* far sprite cells, four pe
         wrapper = 0;
         if (frame >= 0) {
             if (rec->active == 1) {
-                kind = g181F[gItems[rec->item].icon];
+                kind = gIconPictureIndex[gItems[rec->item].icon];
                 if (rec->dir == gPartyDir)
                     side = 0;
                 else if (rec->dir == (gPartyDir ^ 2))
@@ -1159,18 +1159,18 @@ extern char gQuietObjectUpdate; /*@ ds:F442 */           /* gate checked here (s
 extern char gFlag; /*@ ds:F3B9 */           /* selects a table set (src/E0ACD.C) */
 extern char gViewDirty; /*@ ds:DF4C */           /* a notify flag, cleared here (src/E08E6.C) */
 extern unsigned long gFrameWaitTicks; /*@ ds:849A */  /* the frame/effect busy counter (src/E08E6.C) */
-extern void far *gSegDCA6; /*@ ds:DCA6 */   /* the far pointer DrawTile draws (src/E07A9.C) */
-extern unsigned char far *gFE68; /*@ ds:FE68 */  /* the loaded palette buffer (src/E07C8.C) */
-extern void (far *gFn80BA)(void far *table); /*@ ds:80BA */  /* palette setter (src/E07C8.C) */
+extern void far *gWallBlocks; /*@ ds:DCA6 */   /* the far pointer DrawTile draws (src/E07A9.C) */
+extern unsigned char far *gPaletteBuf; /*@ ds:FE68 */  /* the loaded palette buffer (src/E07C8.C) */
+extern void (far *gSetPalette)(void far *table); /*@ ds:80BA */  /* palette setter (src/E07C8.C) */
 extern void (far *gFillRect)(int x1, int y1, int x2, int y2, int pattern); /*@ ds:806A */
 extern void CopyRegion(int x1, int y1, int x2, int y2, int width, int height, int extra1, int extra2); /*@ 19F3:000E */
 extern void DrawTile(void far *src); /*@ 17A6:03E7 */
 extern void PlaySoundDefault(int sound); /*@ 177D:00F3 */
 
 /* ovl4:1F51: draws one frame of the view: BuildViewBlockMap draws the objects into the page buffer (with
-   gPartyCell and gPartyDir), DrawTile blits it from gSegDCA6, DrawViewSlots(0) draws the slots, and
+   gPartyCell and gPartyDir), DrawTile blits it from gWallBlocks, DrawViewSlots(0) draws the slots, and
    when gLevelPalettePending is set and gGraphicsChoice is 3 (MCGA/VGA, re/globals.toml ds:8102) it loads the
-   palette gFE68 and clears gLevelPalettePending; when `full` is also set, it first blanks the view box (gFillRect
+   palette gPaletteBuf and clears gLevelPalettePending; when `full` is also set, it first blanks the view box (gFillRect
    with pattern 0xc). Then it waits for gFrameWaitTicks
    to reach zero, and, when `full` is set and gQuietObjectUpdate is clear, clips a rectangle. It always plays
    sound 0 and, when gFlag is zero, runs DrawCompass; finally it clears gViewDirty. Called from the game
@@ -1178,7 +1178,7 @@ extern void PlaySoundDefault(int sound); /*@ 177D:00F3 */
 /*@ ovl4:1F51 */ void DrawViewFrame(int full)
 {
     BuildViewBlockMap(gPartyCell, gPartyDir);
-    DrawTile(gSegDCA6);
+    DrawTile(gWallBlocks);
     DrawViewSlots(0);
     if (gLevelPalettePending && gGraphicsChoice == 3) {
         if (full) {
@@ -1186,7 +1186,7 @@ extern void PlaySoundDefault(int sound); /*@ 177D:00F3 */
             gFillRect(0, 0, 0xb0, 0x78, 0xc);
             ShowPointerZone();
         }
-        gFn80BA(gFE68);
+        gSetPalette(gPaletteBuf);
         gLevelPalettePending = 0;
     }
     while (gFrameWaitTicks != 0)

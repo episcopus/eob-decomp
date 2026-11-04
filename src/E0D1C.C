@@ -263,7 +263,7 @@ int GetCurrentItem(void);
     }
     return -1;
 }
-/* 0D1C:0163: Purpose unknown: over the last two of the 27 word slots of gChars[who].items (25
+/* 0D1C:0163: Tests whether character who wears, in item slot 25 or 26, an item of type 0x2F with the given power value (1, 2 or 3 by the callers); EOV1.C:678 reads value 1 as a ring of wizardry [H]. over the last two of the 27 word slots of gChars[who].items (25
    and 26), returns 1 when one of them holds an item (an index into gItems) whose
    type is 0x2F and whose value equals `fieldB`, otherwise 0. Slots 25 and 26 are the only two
    inspected. Called by 122E, 1414 and overlays 1 and 6. The empty-slot test is an early
@@ -272,7 +272,7 @@ int GetCurrentItem(void);
    reload survives -O only when the body follows an early `continue` (the same redundant-load
    quirk the e08E6 note in `re/symbols.toml` records); with `if (item = rec->items[i]) { ... }`
    TCC elides the load (2 bytes short). */
-/*@ 0D1C:0163 */ int f0D1C_0163(int who, int fieldB)
+/*@ 0D1C:0163 */ int IsWearingRing(int who, int fieldB)
 {
     struct CharRec far *rec;
     int item;

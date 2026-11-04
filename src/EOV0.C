@@ -126,7 +126,7 @@ extern int gRaceMinAbilities[][6]; /*@ ds:5F35 */ /* per-class rows read by ovl0
 extern int gRaceMaxAbilities[][6]; /*@ ds:5F7D */ /* per-class rows read by ovl0:1EA9 (Purpose unknown) */
 extern int gStatMin[6]; /*@ ds:DD04 */ /* six words ovl0:1EA9 writes (Purpose unknown) */
 extern int gStatMax[6]; /*@ ds:DC98 */ /* six words ovl0:1EA9 writes (Purpose unknown) */
-extern signed char g116E[]; /*@ ds:116E */ /* per-class byte (src/E0A72.C) */
+extern signed char gClassCombatGroup[]; /*@ ds:116E */ /* per-class byte (src/E0A72.C) */
 extern void far *MemAlloc(unsigned long size, int flags); /*@ 19BC:0007 */
 extern void *LoadOverlayScreen(char far *name, int srcKind, int dstKind); /*@ 082C:05EC */
 extern void *LoadScreenImage(char far *name, char far *extra, int srcKind, int dstKind, int mode); /*@ 082C:051B */
@@ -1118,7 +1118,7 @@ int PickAlignment(int classIndex); /* ovl0:2238, defined below */
 }
 /* ovl0:1EA9: builds the ability limits of the new character gChargenMember. For each of the
    six slots it takes the larger of gClassMinAbilities[classIndex][i] and gRaceMinAbilities[race>>1][i] into gStatMin[i],
-   copies gRaceMaxAbilities[race>>1][i] into gStatMax[i], and when the class byte g116E[classIndex] is nonzero
+   copies gRaceMaxAbilities[race>>1][i] into gStatMax[i], and when the class byte gClassCombatGroup[classIndex] is nonzero
    forces gStatMax[0] to 0x12. Called by ovl0:1BF2. */
 /*@ ovl0:1EA9 */ void BuildAbilityLimits(void)
 {
@@ -1134,7 +1134,7 @@ int PickAlignment(int classIndex); /* ovl0:2238, defined below */
         else
             gStatMin[i] = gRaceMinAbilities[cls][i];
         gStatMax[i] = gRaceMaxAbilities[cls][i];
-        if (g116E[row])
+        if (gClassCombatGroup[row])
             gStatMax[0] = 0x12;
     }
 }

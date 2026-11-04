@@ -7,7 +7,7 @@
 ; translator TranslateImage (17A6:197E). The code writes the sequencer map mask data port
 ; 3C5 and the graphics controller (3CE/3CF); it never writes the sequencer index port 3C4,
 ; it relies on the index its caller left. DrawTile stores through ES:DI, where ES is 0A200h
-; in EGA mode (L0419) and the gSegEFC2 far pointer otherwise (just before L041F); the
+; in EGA mode (L0419) and the gArtPage far pointer otherwise (just before L041F); the
 ; A400/A600 segments hold the source tile planes (L04B8, L0535 and L0576). The scratch words at
 ; CS:0300..03E6 and CS:0FEF..0FF9 hold the saved far pointer, the port shadows and the
 ; current source and destination pointers. The overlays call the blitters; the call sites
@@ -24,7 +24,7 @@
 
         .DATA
         EXTRN   gGraphicsChoice:WORD              ; @ ds:8102: graphics mode word
-        EXTRN   gSegEFC2:DWORD          ; @ ds:EFC2: far pointer to the saved screen buffer
+        EXTRN   gArtPage:DWORD          ; @ ds:EFC2: far pointer to the saved screen buffer
         EXTRN   gDirectionFromMask:BYTE         ; @ ds:7FBC: direction table (17A6:0373)
         EXTRN   gNeighbourOffsets:WORD         ; @ ds:7FCC: neighbour offsets (17A6:0FB8)
         EXTRN   gAheadOffsets2And3:WORD         ; @ ds:7FDC: neighbour offsets (17A6:0FD3)
@@ -273,8 +273,8 @@ _DrawTile PROC FAR
         mov bp, cx
         cmp word ptr [gGraphicsChoice], 2
         je L0419
-        mov di, word ptr [gSegEFC2]
-        mov ax, word ptr [gSegEFC2+2]
+        mov di, word ptr [gArtPage]
+        mov ax, word ptr [gArtPage+2]
         jmp short L041F
 L0419:
         mov ax, 0A200h

@@ -28,7 +28,7 @@ extern char gPanelMode; /*@ ds:FB44 */           /* a mode byte: 0, 1 and 2 gate
 extern int gMatchedNodeKey; /*@ ds:FC82 */            /* an action mode: 0, 1 and 2 pick the branches of the
                                                0034, 008C and 00EB handlers */
 extern int gDrawPage; /*@ ds:8115 */            /* the graphics driver's draw page (src/E082C.C) */
-extern void far *gSegDF4E; /*@ ds:DF4E */   /* the 19EC:0002(slot 5) far buffer (src/E07A9.C) */
+extern void far *gStagingPage; /*@ ds:DF4E */   /* the 19EC:0002(slot 5) far buffer (src/E07A9.C) */
 
 extern void DrawText(char far *text); /*@ 1DE7:060A */
 extern void PlaySound(int sound); /*@ 177D:0070 */
@@ -64,10 +64,10 @@ extern char gDCAA; /*@ ds:DCAA */           /* the menu/rest phase: 1 and 2 are 
                                                EnterMapScreen 0ACD:0F72 sets 1); 5 is the rest phase
                                                the handlers skip (0ACD:0A34, 0A61 and 0D9D). No writer
                                                of 5 was found in the program */
-extern int gEFD2; /*@ ds:EFD2 */            /* set to 0xff by 08E7 */
+extern int gWallTrigger; /*@ ds:EFD2 */            /* set to 0xff by 08E7 */
 extern int gPickFirstItem; /*@ ds:F3BA */            /* the item just picked, -1 when none (0BA6) */
 extern int gViewPosAhead[]; /*@ ds:374A */          /* a per-page word flag read by 0BA6 */
-extern char gF542[]; /*@ ds:F542 */         /* the action record passed to RedrawPartyPanel
+extern char gDirectAction[]; /*@ ds:F542 */         /* the action record passed to RedrawPartyPanel
                                                (0EF3:2541) when gFlag is set (0ACD:0264);
                                                RedrawPartyPanel takes it as struct ActRec far * */
 extern char gViewDirty; /*@ ds:DF4C */           /* set to 1 when an action took effect (src/E0D1C.C) */
@@ -168,7 +168,7 @@ extern int gUnreadButtonChanges; /*@ ds:8134 */            /* set to 0 by the ma
 extern char gFileNameBuf[]; /*@ ds:FE6E */  /* the text buffer sprintf formats into (src/E082C.C) */
 extern unsigned char far gSheetDECORATE[]; /*@ 2069:0000 */  /* the PLAYFLD sheet, loaded by
                                                EnterMapScreen (0ACD:0F72) (src/EOV3.C:27) */
-extern unsigned char far gSheet2067[]; /*@ 2067:0000 */      /* the INVENT sheet, loaded by
+extern unsigned char far gSheetINVENT[]; /*@ 2067:0000 */      /* the INVENT sheet, loaded by
                                                EnterMapScreen (0ACD:0F72) (src/EOV3.C:26) */
 
 extern int CanPlaceItemInSlot(int a, int b, int c); /*@ 0BD2:0AF2 */
@@ -312,16 +312,16 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
 }
 
 /* 0ACD:01E3: clears the action screen: hides the pointer, sets the draw page gDrawPage to 2, blits
-   the slot-5 buffer gSegDF4E into the 0x12 by 0xa8 field, resets the selected row and mode, redraws
+   the slot-5 buffer gStagingPage into the 0x12 by 0xa8 field, resets the selected row and mode, redraws
    all six character rows, clears the status flag, clips the field, rebuilds list 1 and shows the
    pointer. Returns the record's +4. */
-/*@ 0ACD:01E3 */ int Action01E3(struct Action far *action)
+/*@ 0ACD:01E3 */ int RestorePortraitPanel(struct Action far *action)
 {
     int i;
 
     LockHidePointer();
     gDrawPage = 2;
-    gRestoreRectToPage(0, 0, 0x12, 0xa8, gSegDF4E);
+    gRestoreRectToPage(0, 0, 0x12, 0xa8, gStagingPage);
     gCursorSlot = 0;
     gPanelMode = 0;
     for (i = 0; i < 6; i++)
@@ -336,7 +336,7 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
 /* 0ACD:0264: the "move/swap party member" action. When MemberIs accepts the record's slot it
    hides the pointer. With no member being moved (gIconTable == -1) it takes this slot as the moving
    member, rebuilds list 4, redraws the member and calls ArmEffect(0, 1); otherwise it swaps the
-   moving member's 243-byte record with this slot's through the gSegDF4E buffer (three Unpack0
+   moving member's 243-byte record with this slot's through the gStagingPage buffer (three Unpack0
    copies), calls ArmEffect(0, 0), clears the moving member, redraws both members, selects the slot,
    rebuilds list 1 and calls RearmCharEffects. A gFlag-gated RedrawPartyPanel runs before both
    branches and a second one runs in the pick-up branch after gIconTable is set; the swap branch has
@@ -350,20 +350,20 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
         return action->result;
     LockHidePointer();
     if (gFlag)
-        RedrawPartyPanel((struct ActRec far *)gF542);
+        RedrawPartyPanel((struct ActRec far *)gDirectAction);
     if (gIconTable == -1) {
         gIconTable = action->slot;
         if (gFlag)
-            RedrawPartyPanel((struct ActRec far *)gF542);
+            RedrawPartyPanel((struct ActRec far *)gDirectAction);
         BuildList4();
         RedrawMember(gIconTable);
         ArmEffect(0, 1);
     } else {
         old = gIconTable;
         slot = action->slot;
-        Unpack0((char far *)(gChars + gIconTable), gSegDF4E, 0xF3L);
+        Unpack0((char far *)(gChars + gIconTable), gStagingPage, 0xF3L);
         Unpack0((char far *)(gChars + slot), (void far *)(gChars + gIconTable), 0xF3L);
-        Unpack0((char far *)gSegDF4E, (void far *)(gChars + slot), 0xF3L);
+        Unpack0((char far *)gStagingPage, (void far *)(gChars + slot), 0xF3L);
         ArmEffect(0, 0);
         gIconTable = -1;
         RedrawMember(old);
@@ -649,13 +649,13 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
 }
 
 /* 0ACD:08E7: Runs the handler of the wall the party faces in the cell ahead, as a click on the view does, then recomputes the armour class of gInventoryMember. derives a key from gPartyCell and gPartyDir (StepCell), sets
-   gEFD2 to 0xff, passes the key and the page to DispatchSlotHandler and the selected character gInventoryMember to
+   gWallTrigger to 0xff, passes the key and the page to DispatchSlotHandler and the selected character gInventoryMember to
    ComputeArmourClass. */
 /*@ 0ACD:08E7 */ void ActivateWallAhead(void)
 {
     int x = StepCell(gPartyCell, gPartyDir);
 
-    gEFD2 = 0xff;
+    gWallTrigger = 0xff;
     DispatchSlotHandler(x, gPartyDir);
     ComputeArmourClass(gInventoryMember);
 }
@@ -977,7 +977,7 @@ done:
    it shows the mouse item (SetMouseItem(gFBCE), unless the mouse is disabled), loads level gCurLevel's
    map and inventory (LoadMapScreen, ovl3:0A7C) and clears gGameLoadState. Then it clears gFlag, resets the
    character index and the menu phase, rebuilds list 1, loads PLAYFLD and INVENT through
-   LoadScreenImage (into gSheetDECORATE and gSheet2067), selects the font, clears the status
+   LoadScreenImage (into gSheetDECORATE and gSheetINVENT), selects the font, clears the status
    flag, redraws the characters, shows the pointer and sets text window 7. */
 /*@ 0ACD:0F72 */ void EnterMapScreen(void)
 {
@@ -995,7 +995,7 @@ done:
     gDCAA = 1;
     BuildList1();
     LoadScreenImage("PLAYFLD", (char far *)gSheetDECORATE, 5, 3, 0);
-    LoadScreenImage("INVENT", (char far *)gSheet2067, 5, 3, 2);
+    LoadScreenImage("INVENT", (char far *)gSheetINVENT, 5, 3, 2);
     SetFont(gFont6x6);
     gDrawPage = 0;
     RedrawCharacters();

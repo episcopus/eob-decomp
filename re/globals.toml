@@ -278,18 +278,18 @@ why = "the shared unpack work buffer's size in bytes, stored by SetUnpackBuffer 
 
 [[global]]
 id = "ds:DCA6"
-name = "gSegDCA6"
-why = "19EC:0002 does not allocate: it returns MK_FP(gSegsFC0C[kind|1], 0), a far pointer with offset 0 to the page/buffer table segment of ds:DCA6's slot 7 (src/E19EC.C:18-20, src/E1B82.C); not an object (review of e07a9)"
+name = "gWallBlocks"
+why = "the far pointer to page 7 (f19EC_0002(7), 07A9:00A3); LoadWallTextures (ovl3:07A5) unpacks the 0xCB20-byte block set of the <name>.VCN/.ECN file into it (EOV3.C:490) and DrawViewFrame (ovl4:1F51) passes it to DrawTile to draw the view"
 
 [[global]]
 id = "ds:DF4E"
-name = "gSegDF4E"
-why = "19EC:0002 returns MK_FP(gSegsFC0C[kind|1], 0), a far pointer with offset 0 to the page/buffer table segment of ds:DF4E's slot 5 (src/E19EC.C:18-20); not an object (review of e07a9)"
+name = "gStagingPage"
+why = "the far pointer to page 5 (f19EC_0002(5), 07A9:00BA): every LoadOverlayScreen and LoadScreenImage call passes srcKind 5, so packed files are read here before unpacking, LoadMapScreen reads LEVEL<n>.INF into it (EOV3.C:593), and it also keeps saved panel pixels (0ACD:01E3, 0EF3:2541)"
 
 [[global]]
 id = "ds:EFC2"
-name = "gSegEFC2"
-why = "19EC:0002 returns MK_FP(gSegsFC0C[kind|1], 0), a far pointer with offset 0 to the page/buffer table segment of ds:EFC2's slot 3 (src/E19EC.C:18-20); not an object (review of e07a9)"
+name = "gArtPage"
+why = "the far pointer to page 3 (f19EC_0002(3), 07A9:00CB), the dstKind 3 every LoadOverlayScreen and LoadPacked call unpacks into (082C:05EC calls it the art page); overlay 3 also reuses it as the LEVELS.TMP and EOBDATA.SAV block buffer (ovl3:1147, 1368, 15B9)"
 
 [[global]]
 id = "ds:812E"
@@ -2260,3 +2260,267 @@ why = "a word InitGameTables ovl2:0496 clears at start-up with ds:EFCA, which no
 id = "ds:FBC8"
 name = "gCurLevel"
 why = "the current dungeon level, 1 to 12: EnterMapScreen loads LoadMapScreen(gCurLevel), overlay 5 indexes gMapTiles[gCurLevel - 1], the door styles of ovl4:1411 switch on levels 1 to 3 and 12, 4 to 6, 7 to 9, 10 and 11, and RunMapLoop plays the random sound only on levels 1 to 3"
+[[global]]
+id = "ds:8DCA"
+name = "gLevelInf"
+why = "LoadMapScreen (ovl3:0A7C) reads LEVEL<n>.INF into gSegDF4E and Unpacks it into this 7500-byte block (EOV3.C:595), then reads the maze file name, sprite name, header, monsters and wall records from it; RunCellScript (122E:1DA8) runs each cell's script at this base plus gMaze[cell*9+7]"
+[[global]]
+id = "ds:F43E"
+name = "gWallBlockMaps"
+why = "LoadMapScreen reads the level's <name>.VMP or .EMP file (6000 bytes, ovl3:0A7C, EOV3.C:599-602) into it, and CopyViewColumn and ToggleViewColumn (ovl4:02A5, ovl4:036A) index it by wall type at (gTable1879[type]-1)*0x35E words of view block numbers, bit 0x4000 marking a flipped block"
+[[global]]
+id = "ds:FC0C"
+name = "gPageSegs"
+why = "the eight segment words StartupGame fills per graphics choice (07C8:02A4..03D9: 0xB800, 0xA000 or MemAlloc'd 64000, 32000, 52000 byte blocks) and 19EC:0002 turns into page far pointers; the graphics driver reads it through the import ds:802E (MCGA.OVL 0B1D)"
+[[global]]
+id = "ds:FC08"
+name = "gSavedInt3F"
+why = "main stores getvect(0x3F) here before installing Int3FHandler (07C8:0045, E07C8.C:236) and ShutdownGame puts it back with setvect (E07C8.C:475); the INTRO.EXE twin ds:28C8 is already gSavedInt3F"
+[[global]]
+id = "ds:80FA"
+name = "gExitHook"
+why = "main stores 07C8:061D here (E07C8.C:244) and ShutdownGame calls it when nonzero (E07C8.C:466-467); the graphics driver's table ends at ds:80E2 so it never overwrites it, and the INTRO.EXE twin ds:1F86 is gExitHook"
+[[global]]
+id = "ds:3092"
+name = "gStartupDone"
+why = "StartupGame sets it to 1 (07C8:0532, E07C8.C:406) just before starting the sound card and its only `return 1`; main reads it (E07C8.C:265) before setting the mouse and calling StartupAlloc"
+[[global]]
+id = "ds:3056"
+name = "gOverlayCacheUp"
+why = "StartupGame sets it to 1 right after InitOverlayCache (E07C8.C:401-402) and ShutdownGame calls ShutdownOverlayCache only when it is set (E07C8.C:470-471); the INTRO.EXE twin ds:19E6 has the same two uses"
+[[global]]
+id = "ds:80BA"
+name = "gSetPalette"
+why = "a graphics driver entry (slot 36 of the table at ds:802A that the driver fills); in MCGA.OVL it is offset 1BE3, INT 10h AX=1012h setting 256 DAC registers from the far pointer argument; main and StartupGame call it with the palette buffers (E07C8.C:253, :258), and the INTRO.EXE twin ds:1F46 is gSetPalette"
+[[global]]
+id = "ds:8056"
+name = "gClearPage"
+why = "a graphics driver entry (slot 11 of the ds:802A table): MCGA.OVL 0693 fills the current draw page's segment (gPageSegs[*ds:8115 & 0x1F], MCGA.OVL 0B1D) with 0x7D00 zero words and EGA.OVL 07FB clears 0xFA0 words the same way; StartupGame calls it once the page table is built (E07C8.C:375)"
+[[global]]
+id = "ds:FE68"
+name = "gPaletteBuf"
+why = "StartupGame allocates it (16 bytes for graphics choices 1 and 2, 0x300 for 3 and 4, E07C8.C:385-397), main loads eobpal.col into it (E07C8.C:257), LoadMapScreen loads <name>.PAL into it (EOV3.C:606) and DrawViewFrame passes it to gSetPalette; the INTRO.EXE twin ds:2D42 is gPaletteBuf"
+[[global]]
+id = "ds:3057"
+name = "gBuiltinPalette"
+why = "the 16 bytes {0,5,3,2,10,14,12,6,4,11,9,1,0,8,7,15} (read from the image) that main and StartupGame pass to gSetPalette for graphics choices 1 and 2 (E07C8.C:253, :388); the INTRO.EXE twin ds:19E7 is gBuiltinPalette"
+[[global]]
+id = "ds:F510"
+name = "gLevelTimerPeriod"
+why = "LoadMapScreen reads it from the level header (EOV3.C:616) and sets gDeadline = g8492 + it (EOV3.C:620); the periodic level tick 08E6:1410 resets gDeadline to g8492 + it each time it fires RunCellScript(0, 0x20)"
+[[global]]
+id = "ds:3406"
+name = "gSaveTables"
+why = "six far pointers (DGROUP 33BB, 33ED, 337A, 339D, 33BB, 33BB in the image), one per base class of gClassSlotBaseClass (fighter, mage, cleric, thief, paladin and ranger share the fighter's); 0A72:0006 reads byte min(level, max)/step + rowLength*saveType of one, and 08E6:1634, 0DE8:0FCA and 0D1C:059B compare a d20 against it to halve damage: AD&D saving throws"
+[[global]]
+id = "ds:341E"
+name = "gSaveMaxLevel"
+why = "per base class {17, 21, 19, 21, 17, 17} (image bytes), the level 0A72:0006 clamps the level argument to before dividing by gSaveLevelStep; the AD&D saving-throw tables stop improving at those levels"
+[[global]]
+id = "ds:3424"
+name = "gSaveLevelStep"
+why = "per base class {2, 5, 3, 4, 2, 2} (image bytes): 0A72:0006 divides the clamped level by it, the levels per saving-throw column (fighters every 2 levels, mages 5, clerics 3, thieves 4)"
+[[global]]
+id = "ds:342A"
+name = "gSaveRowLength"
+why = "per base class {10, 5, 7, 6, 10, 10} (image bytes): 0A72:0006 multiplies the save-type argument by it to pick the row, so it is the number of level columns in each saving-throw row of that table"
+[[global]]
+id = "ds:3430"
+name = "gStrPctHitSteps"
+why = "the five exceptional strength thresholds {1, 51, 76, 91, 100} GetStrengthToHitBonus (0A72:00CF) compares strengthPct with; the last threshold reached picks gStrPctHitBonus"
+[[global]]
+id = "ds:3435"
+name = "gStrPctHitBonus"
+why = "the to-hit bonuses {1, 2, 2, 2, 3} (image bytes) that GetStrengthToHitBonus (0A72:00CF) returns for an exceptional strength at or above each gStrPctHitSteps threshold, the AD&D 18/xx hit bonuses"
+[[global]]
+id = "ds:3439"
+name = "gStrHitBonus"
+why = "the per-strength-score to-hit bonus {.., -5, -3, -3, -2, -2, -1, -1, 0 .., +1, +1, +3 ..} GetStrengthToHitBonus (0A72:00CF) starts from, indexed by CharRec.strength"
+[[global]]
+id = "ds:3453"
+name = "gStrPctDamageSteps"
+why = "the five exceptional strength thresholds {1, 51, 76, 91, 100} GetStrengthDamageBonus (0A72:0128) compares strengthPct with; a separate copy of gStrPctHitSteps used for damage"
+[[global]]
+id = "ds:3458"
+name = "gStrPctDamageBonus"
+why = "the damage bonuses {3, 3, 4, 5, 6} (image bytes) that GetStrengthDamageBonus (0A72:0128) returns for an exceptional strength at or above each gStrPctDamageSteps threshold, the AD&D 18/xx damage bonuses"
+[[global]]
+id = "ds:345C"
+name = "gStrDamageBonus"
+why = "the per-strength-score damage bonus {.., -4, -2, -1, -1, -1, 0 .., +1, +1, +2, +7 ..} GetStrengthDamageBonus (0A72:0128) starts from, indexed by CharRec.strength"
+[[global]]
+id = "ds:3474"
+name = "gDexMissileBonus"
+why = "words indexed by the +15 dexterity byte {.., -6, -4, -3, -2, -1, 0 .., +1, +2, +2, +3 ..} (image words); 0A72:0181 returns it and RollToHit (0DE8:0007) adds it when its flag is clear, the strength to-hit bonus when set (E0DE8.C:200-203): the AD&D dexterity missile adjustment"
+[[global]]
+id = "ds:349E"
+name = "gDexArmourAdjust"
+why = "words indexed by dexterity {5, 5, 5, 4, 3, 2, 1, 0 .., -1, -2, -3, -4, -4} (image words); GetArmourClassBase (0A72:019D) returns it and ComputeArmourClass (0DE8:0D5E) sets armorClass to it plus 10, the AD&D dexterity defensive adjustment"
+[[global]]
+id = "ds:35BC"
+name = "gExpTables"
+why = "six far pointers (DGROUP 3500, 34D0, 3530, 355C, 358C, 358C), one per base class; GetClassSlotExpThreshold (0A72:04B7) returns entry level-1 of the class slot's table and AddExperience (0DE8:0B45) levels a slot up when its experience passes it"
+[[global]]
+id = "ds:35D4"
+name = "gClassSlotBaseClass"
+why = "15 classes by 4 bytes, each the base class of a class slot or -1 (image: class 0 {0}, 3 {1}, 4 {2}, 5 {3}, 6 {0,2}, 8 {0,1}, 9 {0,1,3}); GetClassSlotByte (0A72:0509) reads it and the result indexes gSaveTables, gExpTables and the slot names g1219"
+[[global]]
+id = "ds:3610"
+name = "gHitGainPerStep"
+why = "per combat group {2, 1, 1, 1} (image bytes): GetHitTarget (0A72:0522) subtracts (level-1)/gHitLevelsPerStep times this from 20, the to-hit number RollToHit compares a d20 with"
+[[global]]
+id = "ds:3614"
+name = "gHitLevelsPerStep"
+why = "per combat group {3, 2, 1, 3} (image bytes): GetHitTarget (0A72:0522) divides the first class level minus one by it before multiplying by gHitGainPerStep, the number of levels per to-hit improvement"
+[[global]]
+id = "ds:3618"
+name = "gTurnUndeadTable"
+why = "ten 14-byte rows of values {10, 7, 4, 0, -1 .., 20, 19, 16 .., 99} (image bytes), read by 0A72:0597 for 0D1C:09CB, which destroys the monster on -1 and makes it flee when its roll reaches the value; TurnUndead (0D1C:0A43) is the action that calls it"
+[[global]]
+id = "ds:116E"
+name = "gClassCombatGroup"
+why = "per class index {0,0,0,1,2,3,0,0,0,0,3,2,0,0,2} (image bytes): 0 for fighter, ranger, paladin and fighter multi-classes, 1 mage, 2 cleric, 3 thief; GetHitTarget (0A72:0522) indexes gHitGainPerStep and gHitLevelsPerStep by it, and ovl0:1EA9 caps strength at 18 when it is nonzero"
+[[global]]
+id = "ds:174B"
+name = "gHitDieSlot0"
+why = "per class the hit die sides of class slot 0 {10,10,10,4,8,6,10,..} (image bytes: fighter d10, mage d4, cleric d8, thief d6); RollHitPoints, MaxHitPoints and MinHitPoints (0A72:01AE, 02B3, 03A4) roll levels[0] of them"
+[[global]]
+id = "ds:175A"
+name = "gHitDieSlot1"
+why = "per class the hit die sides of class slot 1 (0 for single classes; class 6 fighter/cleric 8, class 8 fighter/mage 4, image bytes); the three hit-point functions (0A72:01AE, 02B3, 03A4) use it with levels[1] and halve the total when it is nonzero"
+[[global]]
+id = "ds:1769"
+name = "gHitDieSlot2"
+why = "per class the hit die sides of class slot 2 (nonzero only for the triple classes 9 and 12, 6 and 4, image bytes); the three hit-point functions (0A72:01AE, 02B3, 03A4) use it with levels[2] and divide the total by 3 when it is nonzero"
+[[global]]
+id = "ds:1778"
+name = "gConHitPointBonus"
+why = "indexed by constitution minus 1: {-3,-2,-2,-1,-1,-1,0..,+1,+2,+3,+4,+5..} (image bytes); the hit-point functions (0A72:01AE) add it once per die and cap it at 2 unless the slot-0 die is d10, the AD&D warrior constitution rule"
+[[global]]
+id = "ds:EFD2"
+name = "gWallTrigger"
+why = "the event the wall handlers run with: RunRowHandler (122E:0933) sets 0x40 for a click on the facing wall, 0ACD:08E7 0xff, StepDDEffect (1414:003E) 0x10 or 1 for a flying object; DispatchSlotHandler (122E:0896) tests it against the cell's trigger mask and the handlers pass it to RunCellScript, then it is cleared"
+[[global]]
+id = "ds:F542"
+name = "gDirectAction"
+why = "an all-zero record (image bytes) that 0ACD:01E3 and RedrawPartyPanel (0EF3:2541) receive as their struct Action / ActRec argument when the code calls them directly, not from a menu click (122E:1AAB, ovl1, ovl5); both return its +4 word"
+[[global]]
+id = "ds:1905"
+name = "gWallHandlerIndex"
+why = "per wall type, the 1-based index into DispatchSlotHandler's ten-entry handler table (122E:0896 calls handlers[g1905[type]-1]); image bytes give 1 (door click) to types 3..7 and 13..17 and 6 (the pry-door message) to 8 and 18; RegisterWallObject (ovl3:01C8) sets it from the level"
+[[global]]
+id = "ds:A9EC"
+name = "gScriptDone"
+why = "RunCellScript (122E:1DA8) clears it before the walk and loops until it is set; ScriptStop (122E:13D1) and LoadLevelOp (122E:1AAB) set it to 1 to end the cell script"
+[[global]]
+id = "ds:F50E"
+name = "gScriptStackDepth"
+why = "the number of far pointers in gScriptStack (ds:F444): PushScriptPointer (122E:1422) stores at it and increments it while it is under 10, PopScriptPointer (122E:13E0) decrements it and reloads the script pointer"
+[[global]]
+id = "ds:FB36"
+name = "gScriptTrigger"
+why = "RunCellScript (122E:1DA8) stores its mode argument (1 enter, 2 leave, 4 drop, 8 take, 0x40 click and others) here before running the cell script, and EvaluateScriptExpr (122E:147F) pushes it for the expression opcode 0xFFE0"
+[[global]]
+id = "ds:5C76"
+name = "gDoorMoveDir"
+why = "the step (+1 or -1) a moving door adds to its two wall bytes: ArmMemberEffect sets 1, DisarmMemberEffect -1, ToggleArmEffect negates it (122E:0154, 01D9, 0271), 1414:03B4 adds it to gMaze[cell*9+side] and side+2 and ResetLevel adds it until the wall flags show 0x30"
+[[global]]
+id = "ds:5A40"
+name = "gLaunchPositions"
+why = "eight bytes {2,3,0,2,1,0,3,1} (image bytes) indexed by direction*2 + side; AddEffectOp (122E:0C4D) passes the entry as the kind that AddDDEffect stores in the projectile's +06 and in its item's list tag (kind | 4), the position in the cell the object starts at"
+[[global]]
+id = "ds:181F"
+name = "gIconPictureIndex"
+why = "per item icon, the row of gItemL1Icons drawn for the item in the view (ovl4:0AD0, EOV4.C:464) and for a flying item (EOV4.C:1011); ItemSlotAction (122E:06D0) refuses \"The item is too large to fit.\" when it is 0x0E or below and StepDDEffect (1414:003E) tests it against 0x0F"
+[[global]]
+id = "ds:FB76"
+name = "gUnreadScriptFlag"
+why = "the script opcode 0xFFE4 of SetActionFlagsOp (122E:1097) sets it to 1 and RunCellScript (122E:1DA8) clears it when a script starts; no file in src/ reads ds:FB76"
+[[global]]
+id = "ds:5BA1"
+name = "gStrInvent"
+why = "the string \"INVENT\" (image bytes at ds:5BA1) that LoadLevelOp (122E:1AAB) passes to LoadScreenImage with gSheetINVENT (E122E.C:1338), the screen the other callers name with a literal"
+[[global]]
+id = "ds:EF9E"
+name = "gClickedWallTypes"
+why = "a far byte pointer the door-button click handler 122E:04CA indexes by gA9C6 (a side offset into a gMaze record, E0DE8.C:153) to get a wall type, which then indexes the per-wall-type tables g59F8 and g59D8; no writer of ds:EF9E is found in src/ and its image value is 0000:0000"
+[[global]]
+id = "ds:59F8"
+name = "gDoorButtonIndex"
+why = "32 bytes per wall type (image: 0 for types 3..12, 3 for 13..22 and 31) that 122E:04CA uses to pick the gA99C entry, the door button sprites and positions LoadMapCells (ovl3:03A2) slices from the DOOR screen at dstA 0 and dstB 3"
+[[global]]
+id = "ds:59D8"
+name = "gDoorFirstWallType"
+why = "32 bytes per wall type (image: 3 for 3..7, 8 for 8..12, 13 for 13..17, 18 for 18..22, then 30, 31) giving the first wall type of the door's run; 122E:04CA shifts the button x by (type - this) * 9 on levels 4 to 6, the door's open step"
+[[global]]
+id = "ds:1E75"
+name = "gDoorButtonXBias"
+why = "a word (0 in the image, no writer in src/) that 122E:04CA adds to the door button's x before the click test, the only use of ds:1E75"
+[[global]]
+id = "ds:5B78"
+name = "gStrCannotPryDoor"
+why = "the string \"No one is able to pry this door open.\\r\" (image bytes at ds:5B78) that CheckMemberSlotRect (122E:0847) draws when the wall under the mouse has flag 0x20"
+[[global]]
+id = "ds:B802"
+name = "gLoadedMonsterShapes"
+why = "36 far pointers: the level's monster loaders (ovl3:0624, 069E, 0718) slice six frames into it at 0 and 0x12, one set per monster type, FreeMapIcons frees them, and ovl4 reads them as gB7FE[sprite + (m07 ? 0x12 : 0)] (EOV4.C:613: ds:B7FE is this table read one entry earlier, 1-based, which g1 proposes as gMonsterShapes) to draw each monster"
+[[global]]
+id = "ds:F538"
+name = "gWallRecCount"
+why = "the number of filled gWallRecs slots: RegisterWallObject (ovl3:01C8) copies each decoration into gWallRecs[gF538] and increments it, FreePtrTable (ovl3:0000) resets it to 0"
+[[global]]
+id = "ds:808E"
+name = "gCopyToPlanar"
+why = "a graphics driver entry (slot 25 of the ds:802A table): EGA.OVL 123C writes the bytes of the far buffer argument into the video segment argument plane by plane through the graphics controller (port 3CFh), MCGA.OVL FCD is an empty function; LoadWallTextures calls it only in EGA mode with 0xA400, 0xAA00 and 0xABF4"
+[[global]]
+id = "ds:F4D6"
+name = "gWallPlaneTableA"
+why = "the first 16-byte table of the wall texture file, unpacked from gArtPage+2 by LoadWallTextures (ovl3:07A5) and passed first to SetPlaneTables (17A6:037E), which copies it into gPlaneTableA, the nibble map DrawTile's MCGA/VGA branch uses"
+[[global]]
+id = "ds:FB4D"
+name = "gWallPlaneTableB"
+why = "the second 16-byte table of the wall texture file, unpacked from gArtPage+0x12 by LoadWallTextures (ovl3:07A5) and passed second to SetPlaneTables (17A6:037E), which copies it into gPlaneTableB (used when gFlipPlanes is 0)"
+[[global]]
+id = "ds:E062"
+name = "gDecorationRects"
+why = "LoadWallSet (ovl3:004F) points it just past the wall-set decorations in gStagingPage and reads the file's 8-byte rectangles there; RegisterWallObject (ovl3:01C8) slices each decoration cell's rectangle from the map sheet into gRectKinds[cell]"
+[[global]]
+id = "ds:FBD0"
+name = "gSavedLevels"
+why = "a bit mask of levels: SaveLevelState (ovl3:11AF) and SaveGame (ovl3:1368) set bit level-1, and LoadObjects (ovl3:09AA) and LoadMapScreen (ovl3:0A7C) test it to restore the level from LEVELS.TMP instead of its INF file"
+[[global]]
+id = "ds:6930"
+name = "gMonsterRectsA"
+why = "six 4-word rectangles (x8, y, w8, h) LoadMapIcons6 (ovl3:0624, handler 0 of LoadMapScreen's table) cuts the six frames of a monster type from gOverlayBuf with into gLoadedMonsterShapes; image values (0,0,7,96), (7,40,12,56), ..."
+[[global]]
+id = "ds:69C0"
+name = "gMonsterRectsB"
+why = "six 4-word rectangles LoadMapIcons6b (ovl3:069E, handler 1) cuts monster frames with into gLoadedMonsterShapes; image values five 7 by 96 frames side by side then (0,96,7,96)"
+[[global]]
+id = "ds:6A50"
+name = "gMonsterRectsC"
+why = "six 4-word rectangles LoadNamedIcons (ovl3:0718, handler 2, the \"%s1\" screen) cuts monster frames with into gLoadedMonsterShapes; image values 10 by 88 frames, four across then two on the second row"
+[[global]]
+id = "ds:6840"
+name = "gDoorRects"
+why = "4-byte rectangles, three per door type (near, middle, far sizes, image (0,0,10,72), (17,152,7,47), (25,72,4,29)), that LoadMapCells (ovl3:03A2) cuts from the \"DOOR\" screen into gFB5E"
+[[global]]
+id = "ds:68A0"
+name = "gDoorButtonRects"
+why = "4-byte rectangles, three per door type, one cell wide and 7, 3 or 1 high (image bytes), that LoadMapCells (ovl3:03A2) cuts from the \"DOOR\" screen into gA99C[].rec, the buttons 122E:04CA hit-tests to open a door"
+[[global]]
+id = "ds:6900"
+name = "gDoorButtonPos"
+why = "x/y byte pairs, three per door type (image (130,36), (116,39), ...), that LoadMapCells (ovl3:03A2) copies into gA99C[].x and .y; 122E:04CA builds the button's click rectangle from them"
+[[global]]
+id = "ds:5BCC"
+name = "gEffects2Period"
+why = "not a table of its own: ds:5BCC is gEffects[2].period (gEffects is 16-byte records at ds:5BA8 with the period at +4, E1414.C:16-19); LoadMapScreen (ovl3:0A7C) stores the level's timer values into gEffects[2+2i] and [3+2i] through it and gEffects3Period"
+[[global]]
+id = "ds:5BD0"
+name = "gEffects2Expiry"
+why = "not a table of its own: ds:5BD0 is gEffects[2].expiry (+8 of the 16-byte record at ds:5BC8); LoadMapScreen (ovl3:0A7C) sets entries 2..5 to g8492 plus the period (halved for the odd ones)"
+[[global]]
+id = "ds:5BDC"
+name = "gEffects3Period"
+why = "not a table of its own: ds:5BDC is gEffects[3].period (+4 of the record at ds:5BD8); LoadMapScreen (ovl3:0A7C) writes the same level timer value through it as through gEffects2Period, so each pair of effects shares the period"

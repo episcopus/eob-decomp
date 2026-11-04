@@ -80,7 +80,7 @@ extern void SetFont(void *font); /*@ 1A47:0169 */
 extern void WaitFrames(int n); /*@ 1A16:000B */
 extern int MemberIs(int member, int what); /*@ 0D1C:0670 */
 extern int FindCarriedSlot(int who, int field2, int fieldB); /*@ 0D1C:00F1 */
-extern int f0D1C_0163(int member, int what); /*@ 0D1C:0163 */
+extern int IsWearingRing(int member, int what); /*@ 0D1C:0163 */
 extern void DrawFramedPanel(int x, int y, int width, int height, int c, int d); /*@ 0D1C:0C21 */
 extern char *SkipStrings(char *s, int n); /*@ 0D1C:07A7 */
 extern void DrawShadowText(char *text, int x, int y, int colour, int colour2); /*@ 082C:0898 */
@@ -310,7 +310,7 @@ void ShowCampMessage(int message);
                             SetFont(gFont6x6);
                             RedrawMember(member);
                         }
-                        if (f0D1C_0163(member, 2) < 0) {
+                        if (IsWearingRing(member, 2) < 0) {
                             if (gChars[member].food <= 5) {
                                 gChars[member].food = 0;
                                 changed = 1;

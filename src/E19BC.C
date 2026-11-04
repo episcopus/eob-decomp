@@ -34,7 +34,7 @@ extern void far *NormalizePtr(void far *p); /*@ 1BA8:0072: normalizes a far poin
                                               stays a placeholder */
 extern int EvictFile(unsigned size, unsigned char flags); /*@ 1C0E:0E5B: first retry before the
                                                               OOM hook (src/E1C0E.C:631) */
-extern void f1DDD_002D(int mode); /*@ 1DDD:002D: INT 10h AH=0 set video mode (src/E1DDD.C:43) */
+extern void SetVideoMode(int mode); /*@ 1DDD:002D: INT 10h AH=0 set video mode (src/E1DDD.C:43) */
 extern void PrintString(char far *s); /*@ 19EA:0000 */
 extern int WaitGameKey(void); /*@ 1AAD:053A: returns the value _ProcessKeyEvent leaves in AX
                                  (src/E1AAD.ASM:481-483); src/E1C0E.C:46 and src/E082C.C:99
@@ -210,8 +210,8 @@ extern void ShutdownGame(void); /*@ 07C8:058A */
    (07C8:0001) replaces it with AllocationFailure (07C8:0625) before any allocation
    (src/E07C8.C:132), so this function only runs if something allocates before main installs the
    hook. It restores the command line's video mode only when
-   argv[5] (ds:84A0) is nonzero: f1DDD_002D(7) takes the index 7 branch, which loads ds:84A0 (the
-   mode from argv[5], src/E07C8.C:124), not the literal 7 (src/E1DDD.C:45-48), and f1DDD_002D
+   argv[5] (ds:84A0) is nonzero: SetVideoMode(7) takes the index 7 branch, which loads ds:84A0 (the
+   mode from argv[5], src/E07C8.C:124), not the literal 7 (src/E1DDD.C:45-48), and SetVideoMode
    calls the BIOS only when g84A2[7] (ds:84B0, 0 in the image, src/E1DDD.C:16-18) differs from
    ds:84A0 (src/E1DDD.C:49). It then prints "Memory Allocation Error! Press any key to exit to
    DOS.", waits for a key (WaitGameKey, which does no cleanup) and runs the shut-down path
@@ -219,7 +219,7 @@ extern void ShutdownGame(void); /*@ 07C8:058A */
    it is never reached. */
 /*@ 19BC:02B6 */ int OutOfMemory(void)
 {
-    f1DDD_002D(7);
+    SetVideoMode(7);
     PrintString("Memory Allocation Error! Press any key to exit to DOS.");
     WaitGameKey();
     ShutdownGame();

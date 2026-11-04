@@ -117,7 +117,7 @@ extern struct Monster gMonsters[]; /*@ ds:8A82 */
 extern int gDeathListCount; /*@ ds:DDE0 */
 extern int gDeathList[]; /*@ ds:F4E6 */
 extern char gOverlayBuf[]; /*@ ds:113F */
-extern char far *gSegDF4E; /*@ ds:DF4E */
+extern char far *gStagingPage; /*@ ds:DF4E */
 extern unsigned char gOuttakeCellRects[]; /*@ ds:7B2B */
 extern unsigned char gMenuRowX[]; /*@ ds:7B89 */
 extern char gMenuRowYOffset[]; /*@ ds:7B94 */
@@ -166,7 +166,7 @@ extern int g169; /*@ ds:0169 */
 extern int (far *gGetPixel)(int x, int y); /*@ ds:8072 */
 extern void (far *gPutPixel)(int x, int y, int handle); /*@ ds:809E */
 extern int RandomRange(int low, int high); /*@ 1AAA:0005 */
-extern char gF542[]; /*@ ds:F542 */
+extern char gDirectAction[]; /*@ ds:F542 */
 extern int gScrollHook; /*@ ds:8117 */
 extern int gScrollHookSeg; /*@ ds:8119 */
 extern int g139; /*@ ds:0139 */
@@ -174,7 +174,7 @@ extern int gCurLevel; /*@ ds:FBC8 */
 extern signed char far gMapTiles[]; /*@ 1F1D:0000 */  /* the level's tile-index table (src/EOV3.C) */
 extern unsigned char far gMapSheet[]; /*@ 1F1E:0000 */  /* the sheet gMapTiles indexes into (src/EOV3.C's MAPSHEET) */
 extern unsigned char far gSheetDECORATE[]; /*@ 2069:0000 */  /* the PLAYFLD sheet (src/E0ACD.C, src/EOV3.C) */
-extern unsigned char far gSheet2067[]; /*@ 2067:0000 */  /* the INVENT sheet (src/E0ACD.C, src/EOV3.C) */
+extern unsigned char far gSheetINVENT[]; /*@ 2067:0000 */  /* the INVENT sheet (src/E0ACD.C, src/EOV3.C) */
 
 extern void far * (far *gGetSpriteCell)(int x, int y, int w, int h, void far *sheet); /*@ ds:8086 */
 extern void far * (far *gGetSpriteCellRle)(int x, int y, int w, int h, void far *buf); /*@ ds:8082 */
@@ -211,7 +211,7 @@ extern int MemberIs(int who, int mask); /*@ 0D1C:0670 */
 extern void ComputeArmourClass(int who); /*@ 0DE8:0D5E */
 extern void ClearCharEffectSlot(int who, int what); /*@ 1414:0C2D */
 extern void RedrawCharacters(void); /*@ 0D1C:0583 */
-extern void Action01E3(char far *text); /*@ 0ACD:01E3 */
+extern void RestorePortraitPanel(char far *text); /*@ 0ACD:01E3 */
 extern void RedrawPartyPanel(char far *text); /*@ 0EF3:2541 */
 extern void FindWordPanel(void); /*@ 2106:0039 */  /* overlay 2 entry, ovl2:09ED */
 extern void LoadWallTextures(char far *name, char far *sheet); /*@ 210C:0052 */  /* overlay 3 entry, ovl3:07A5 */
@@ -424,19 +424,19 @@ enum {
     ClearTextRegion();
     LockShowPointer();
 }
-/* ovl5:03A9: draws string `index` (1-based) of the string-offset table pointed at by gSegDF4E
+/* ovl5:03A9: draws string `index` (1-based) of the string-offset table pointed at by gStagingPage
    (the word at index-1 is an offset from that base), then, when `flag` is nonzero, the modal
    message panel 025F. The indexed strings are the overlay's message texts (a TEXT.DAT page read
-   into gSegDF4E); the menu labels are the ds:7B tables, not these. */
+   into gStagingPage); the menu labels are the ds:7B tables, not these. */
 /*@ ovl5:03A9 */ void PrintTableString(int index, int flag)
 {
     char far *offsets;
     int off;
 
-    offsets = gSegDF4E;
+    offsets = gStagingPage;
     index--;
     off = ((int far *)offsets)[index];
-    DrawText(gSegDF4E + off);
+    DrawText(gStagingPage + off);
     if (flag)
         MessagePanel();
 }
@@ -1116,7 +1116,7 @@ enum {
     }
 }
 /* ovl5:160A: the winning-party password screen at the end of the game. It loads TEXT.DAT
-   (ds:7E53) into the string base gSegDF4E, sets up the panel, and when gGameFlags bits 1..12 are all
+   (ds:7E53) into the string base gStagingPage, sets up the panel, and when gGameFlags bits 1..12 are all
    set (gGameFlags & 0x1FFE == 0x1FFE) draws the winner title ds:7E5C, the first four party members'
    names (separated by ds:7EDB) and then a checksum of every party member's name: the sum, over the
    name's characters, of the signed long square of each character (F_LXMUL@, 0000:7737), formatted
@@ -1130,7 +1130,7 @@ enum {
     int j;
 
     handle = FileOpen(gFileNameText, 1);
-    FileRead(handle, gSegDF4E, 0x7d00L);
+    FileRead(handle, gStagingPage, 0x7d00L);
     FileClose(handle);
     PlaySound(0x14);
     gDrawPage = 0;
@@ -1234,7 +1234,7 @@ enum {
    entry). It hides the pointer, saves the current font, handles the gPanelMode/gFlag message redraws
    and the overlay-4 call, then dispatches `mode`: 8 runs the 1204 animation, 9 the 17C8 one and
    0xa the "find the word" panel (ovl2:09ED); every other mode draws the item screen (loads OUTTAKE
-   ds:7F07, reads TEXT.DAT ds:7F0F into gSegDF4E, draws the panel and the 8x8 font) and runs one of
+   ds:7F07, reads TEXT.DAT ds:7F0F into gStagingPage, draws the panel and the 8x8 font) and runs one of
    the eight menu panels through the jump table at cs:1CCD. Finally it restores the font and the
    pointer, loads a wall texture set (LoadWallTextures) for the sheet
    gMapSheet + (gMapTiles[gCurLevel - 1] << 5), with a NULL name so the current wall name is reused,
@@ -1252,9 +1252,9 @@ enum {
     gTextPanelInView = 0;
     LockHidePointer();
     if (gPanelMode)
-        Action01E3(gF542);
+        RestorePortraitPanel(gDirectAction);
     if (gFlag)
-        RedrawPartyPanel(gF542);
+        RedrawPartyPanel(gDirectAction);
     DrawViewFrame(1);
     switch (mode) {
     case 8:
@@ -1272,7 +1272,7 @@ enum {
         DrawCharPortrait(mode);
         LockShowPointer();
         handle = FileOpen(gFileNameText2, 1);
-        FileRead(handle, gSegDF4E, 0x7d00L);
+        FileRead(handle, gStagingPage, 0x7d00L);
         FileClose(handle);
         SetFont(gFont6x6);
         HidePointerZone(0, 0x79, 0x13f, 0xc8);
@@ -1314,7 +1314,7 @@ enum {
         LockHidePointer();
         LoadWallTextures(0, gMapSheet + (gMapTiles[gCurLevel - 1] << 5));
         LoadScreenImage(gFileNamePlayfld, gSheetDECORATE, 5, 3, 0);
-        LoadScreenImage(gFileNameInvent, gSheet2067, 5, 3, 2);
+        LoadScreenImage(gFileNameInvent, gSheetINVENT, 5, 3, 2);
         gDrawPage = 0;
         RedrawCharacters();
         DrawViewFrame(1);
@@ -1325,7 +1325,7 @@ enum {
 }
 /* ovl5:1CDD: the "use item" result panel. It hides the mouse cursor, runs the pending
    gPanelMode/gFlag messages, opens TEXT.DAT (ds:7F27, 1: read) and reads it into the string base
-   gSegDF4E, sets the text window and the panel colours, draws the panel (0,0)-(0xaf,0xae) and
+   gStagingPage, sets the text window and the panel colours, draws the panel (0,0)-(0xaf,0xae) and
    shows message `msg` through PrintTableString. It then restores the screen: loads the wall
    textures through LoadWallTextures (sheet gOverlayBuf, name NULL reuses the current
    wall name), loads the PLAYFLD (ds:7F30) and INVENT (ds:7F38) images, redraws the characters and
@@ -1336,11 +1336,11 @@ enum {
 
     gTextPanelInView = 1;
     if (gPanelMode)
-        Action01E3(gF542);
+        RestorePortraitPanel(gDirectAction);
     if (gFlag)
-        RedrawPartyPanel(gF542);
+        RedrawPartyPanel(gDirectAction);
     handle = FileOpen(gFileNameText3, 1);
-    FileRead(handle, gSegDF4E, 0x7d00L);
+    FileRead(handle, gStagingPage, 0x7d00L);
     FileClose(handle);
     gScrollOn = 1;
     g169 = gPanelFillColour;
@@ -1354,7 +1354,7 @@ enum {
     LockHidePointer();
     LoadWallTextures(0, gOverlayBuf);
     LoadScreenImage(gFileNamePlayfld2, gSheetDECORATE, 5, 3, 0);
-    LoadScreenImage(gFileNameInvent2, gSheet2067, 5, 3, 2);
+    LoadScreenImage(gFileNameInvent2, gSheetINVENT, 5, 3, 2);
     gDrawPage = 0;
     RedrawCharacters();
     DrawViewFrame(1);

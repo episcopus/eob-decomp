@@ -132,7 +132,7 @@ extern int gPartyDir; /*@ ds:FBCC */
 extern unsigned char gPartySpellFlags; /*@ ds:FBD2 */
 extern unsigned long gDeadline; /*@ ds:F512 */   /* a 32-bit deadline at ds:F512:F514 */
 extern unsigned long gGameTicks; /*@ ds:8492 */       /* the 32-bit tick counter (src/E0ACD.C) */
-extern int gF510; /*@ ds:F510 */
+extern int gLevelTimerPeriod; /*@ ds:F510 */
 extern char gLevelTimerMode; /*@ ds:F51B */
 extern int gStepCount; /*@ ds:F540 */
 extern int gLevelTimerSteps; /*@ ds:FB32 */
@@ -238,7 +238,7 @@ void ResolveMonsterMelee(struct Monster far *obj);   /* forward: 05EA reaches it
 }
 
 /* 08E6:0150: run AlertMonsterToParty over every one of the 30 objects in gMonsters */
-/*@ 08E6:0150 */ void Obj0150(void)
+/*@ 08E6:0150 */ void AlertNearbyMonsters(void)
 {
     struct Monster far *obj;
     int i;
@@ -985,7 +985,7 @@ second:
    either holds; any other mode does nothing. Firing runs RunCellScript(0, 0x20), then, when no
    object of the 30 (from index 1) has a count of zero or less (that is, every object still has a
    count), runs 0EC3 on the first object whose Distance(id, gPartyCell) is over 3. After that
-   optional 0EC3 the fire path resets the deadline to gGameTicks + gF510 and clears gStepCount. Called by
+   optional 0EC3 the fire path resets the deadline to gGameTicks + gLevelTimerPeriod and clears gStepCount. Called by
    1414:04E7 and overlay 6. The unit's -v flag is what keeps the mode-3 low-word branch at
    1410:005A the right way round that a -O build inverts. */
 /*@ 08E6:1410 */ void TickLevelScriptTimer(void)
@@ -1024,13 +1024,13 @@ fire:
             }
         }
     }
-    gDeadline = gGameTicks + gF510;
+    gDeadline = gGameTicks + gLevelTimerPeriod;
     gStepCount = 0;
 }
 /* 08E6:1505: when the object id `id` has no count in gMaze, fill the first free object slot (count
    <= 0) by calling 131D with the ten new-object fields (kind, id, frame, orient, typeIndex, m07, type,
    timer, dropItem1, dropItem2). Called by 122E:0B89. Purpose unknown: what the fields select. */
-/*@ 08E6:1505 */ void Obj1505(int kind, int id, int frame, int orient, int b0, int m07, int type, int timer, int m12, int m14)
+/*@ 08E6:1505 */ void SpawnMonster(int kind, int id, int frame, int orient, int b0, int m07, int type, int timer, int m12, int m14)
 {
     int i;
 

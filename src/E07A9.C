@@ -9,7 +9,7 @@
    ds:F534 the ITEMRMP buffer; the sizes are the MemAlloc arguments at 07A9:002F, 0046, 005D,
    0074 and 008B, and whitepaper 4 names only ds:F534 and ds:DCAC), reads the segments of
    slots 7, 5 and 3 from the 19EC:0002 page/buffer table (ds:FC0C), loads the sound driver
-   (177D:000A, 07A9:00D2), passes the slot 7 segment (gSegsFC0C[7], the word at ds:FC1A) and size
+   (177D:000A, 07A9:00D2), passes the slot 7 segment (gPageSegs[7], the word at ds:FC1A) and size
    0xFC00 to SetUnpackBuffer (1B82:0217, 07A9:00DB/00DF; 0xFC00 is the unpacker's work-buffer
    requirement, see UNPACK_BUFFER_SIZE). Slot 7's own block is 0xCB20 bytes in cases 0 to 3
    (src/E07C8.C:256, 265, 274, 280) and 0xFC00 only in case 4 (src/E07C8.C:290). It clears ds:810E
@@ -97,7 +97,7 @@ extern char gLevelPalettePending; /*@ ds:FB45 */  /* written by StartupAlloc (07
                                       its comment at :1045 says the same; main makes the start-up palette
                                       call too (gFn80BA(gFE68), src/E07C8.C:182, described at :145-147).
                                       What the request is is Purpose unknown */
-extern void far *gBuf8DCA; /*@ ds:8DCA */  /* start-up far allocation, 7500 bytes (07A9:002F); the base
+extern void far *gLevelInf; /*@ ds:8DCA */  /* start-up far allocation, 7500 bytes (07A9:002F); the base
                                               of the 122E action-script driver's script (declared
                                               src/E122E.C:22): JumpToScriptOffset (122E:139D,
                                               src/E122E.C:1001) adds the script's word offset to it
@@ -109,14 +109,14 @@ extern void far *gBuf8DCA; /*@ ds:8DCA */  /* start-up far allocation, 7500 byte
                                               and RunMemberScript (122E:1DA8, src/E122E.C:1414) starts its
                                               script walk at it (src/E122E.C:1438). Overlay
                                               3 uses it too: LoadMapScreen unpacks LEVEL<n>.INF
-                                              (read into gSegDF4E at src/EOV3.C:571) into it
+                                              (read into gStagingPage at src/EOV3.C:571) into it
                                               (src/EOV3.C:573-574, "the 7500-byte unpacked level
                                               script", src/EOV3.C:200), reads the item records through
                                               it (the script word and item loop, src/EOV3.C:666-681) and
-                                              passes gBuf8DCA + 0x1a to LoadWallTextures
+                                              passes gLevelInf + 0x1a to LoadWallTextures
                                               (src/EOV3.C:682). Why the start-up block holds the script
                                               is Purpose unknown */
-extern void far *gBufF43E; /*@ ds:F43E */  /* start-up far allocation, 6000 bytes (07A9:0046); the
+extern void far *gWallBlockMaps; /*@ ds:F43E */  /* start-up far allocation, 6000 bytes (07A9:0046); the
                                               overlay 3 LoadMapScreen fills it from the level graphics
                                               file (src/EOV3.C:579-580, "the 6000-byte level
                                               graphics file", src/EOV3.C:201 [H]), and the overlay 4
@@ -144,17 +144,17 @@ extern char far *gItemRemapTable; /*@ ds:F534 */  /* the 1600-byte ITEMRMP buffe
                                               (FileRead of 0x640 bytes into it, src/EOV2.C:296, in
                                               LoadItemSheets) and the icon colour row (src/E0D1C.C:480,
                                               gSetRemapTable(gItemRemapTable + (icon << 4))) */
-extern void far *gSegDCA6; /*@ ds:DCA6 */  /* the far pointer GetPageBuffer(7) returns (src/E19EC.C:20,
-                                              07A9:00A3): offset 0, segment gSegsFC0C[7], the word at
+extern void far *gWallBlocks; /*@ ds:DCA6 */  /* the far pointer GetPageBuffer(7) returns (src/E19EC.C:20,
+                                              07A9:00A3): offset 0, segment gPageSegs[7], the word at
                                               ds:FC1A that SetUnpackBuffer gets at 07A9:00DB. Overlay 3
                                               and 4 use it too: LoadWallTextures writes the
                                               0xCB20-byte texture block through it (src/EOV3.C:471),
                                               expands and masks it (src/EOV3.C:474-478 and :482; the
                                               comment above LoadWallTextures, src/EOV3.C:454-459), and
-                                              DrawViewFrame draws from it (DrawTile(gSegDCA6), src/EOV4.C:1052;
+                                              DrawViewFrame draws from it (DrawTile(gWallBlocks), src/EOV4.C:1052;
                                               declared "the far pointer DrawTile draws",
                                               src/EOV4.C:1033) */
-extern void far *gSegDF4E; /*@ ds:DF4E */  /* slot 5's far pointer, GetPageBuffer(5) (07A9:00BA); the
+extern void far *gStagingPage; /*@ ds:DF4E */  /* slot 5's far pointer, GetPageBuffer(5) (07A9:00BA); the
                                               action screen's swap buffer: Action0264 (src/E0ACD.C:287)
                                               swaps the moving member's 243-byte record with the slot's
                                               through it (the record at gChars + gFB34 out to it, the
@@ -167,16 +167,16 @@ extern void far *gSegDF4E; /*@ ds:DF4E */  /* slot 5's far pointer, GetPageBuffe
                                               gSaveRect with the same 0x12 by 0xA8 field that
                                               Action01E3 blits (src/E0ACD.C:269).
                                               Overlay 3 uses it too: LoadMapScreen reads LEVEL<n>.INF
-                                              into it before unpacking that into gBuf8DCA (src/EOV3.C:571,
+                                              into it before unpacking that into gLevelInf (src/EOV3.C:571,
                                               the Unpack at :573), LoadObjects (ovl3:09AA,
                                               src/EOV3.C:503) reads 0x1000 bytes into it (FileRead at
                                               src/EOV3.C:513) and copies it back (src/EOV3.C:518-525),
                                               LoadWallSet (ovl3:004F, src/EOV3.C:250) puts its
-                                              decorations at gSegDF4E + 0x3E80 (src/EOV3.C:265-266,
+                                              decorations at gStagingPage + 0x3E80 (src/EOV3.C:265-266,
                                               274), and LoadWallTextures (ovl3:07A5, src/EOV3.C:460)
                                               expands the texture plane tables into it in EGA mode 2
                                               (src/EOV3.C:474-478) */
-extern void far *gSegEFC2; /*@ ds:EFC2 */  /* slot 3's far pointer, GetPageBuffer(3) (07A9:00CB); a
+extern void far *gArtPage; /*@ ds:EFC2 */  /* slot 3's far pointer, GetPageBuffer(3) (07A9:00CB); a
                                               shared overlay 3 buffer (src/EOV3.C:130 declares it
                                               with no comment), used four ways. Level state:
                                               LoadLevelState (ovl3:1147, src/EOV3.C:739) reads 0x7F8
@@ -184,13 +184,13 @@ extern void far *gSegEFC2; /*@ ds:EFC2 */  /* slot 3's far pointer, GetPageBuffe
                                               src/EOV3.C:745) and unpacks them (UnpackLevelState,
                                               ovl3:109D, src/EOV3.C:719, called at src/EOV3.C:747);
                                               SaveLevelState (ovl3:11AF, src/EOV3.C:753) packs
-                                              gSegEFC2 + 0xC800 back to LEVELS.TMP (the +0xC800
+                                              gArtPage + 0xC800 back to LEVELS.TMP (the +0xC800
                                               normalisation at src/EOV3.C:758, PackLevelState at
                                               :759). Wall texture plane tables:
                                               LoadWallTextures (ovl3:07A5, src/EOV3.C:460) unpacks
-                                              the 16-byte planes from gSegEFC2+2 and +0x12
+                                              the 16-byte planes from gArtPage+2 and +0x12
                                               (src/EOV3.C:469-470) and the 0xCB20-byte block from
-                                              gSegEFC2+0x22 (src/EOV3.C:471). The saved-game screen
+                                              gArtPage+0x22 (src/EOV3.C:471). The saved-game screen
                                               block: SaveGame (ovl3:1368, src/EOV3.C:811) reads the
                                               0x5FA0-byte screen block from LEVELS.TMP into it
                                               (src/EOV3.C:821) and writes it to EOBDATA.SAV (opened
@@ -208,8 +208,8 @@ extern void far *gSegEFC2; /*@ ds:EFC2 */  /* slot 3's far pointer, GetPageBuffe
                                               src/E17A6.ASM:256-257 when gGraphicsChoice != 2 [H]. What the
                                               buffer is is Purpose unknown */
 /* the page/buffer segment table (src/E07C8.C:74, src/E19EC.C:15), whose eighth word at ds:FC1A
-   is slot 7, the segment gSegDCA6 holds (GetPageBuffer(7), 07A9:00A3). */
-extern unsigned gSegsFC0C[]; /*@ ds:FC0C */
+   is slot 7, the segment gWallBlocks holds (GetPageBuffer(7), 07A9:00A3). */
+extern unsigned gPageSegs[]; /*@ ds:FC0C */
 /* the net allocation counter: MemAlloc adds one at src/E19BC.C:112 and MemFree subtracts one at
    src/E19BC.C:137, so it is the number of successful MemAlloc calls minus the number of MemFree
    calls and can fall below the number of live blocks (src/E19BC.C:17-21). StartupAlloc sets it
@@ -278,7 +278,7 @@ extern void far *gRemappedIcon; /*@ ds:DF48 */  /* the 0x12C-byte buffer LoadIte
 extern void far *gItemIcons[]; /*@ ds:DDE4 */
 
 extern void far *MemAlloc(unsigned long size, int flags); /*@ 19BC:0007 */
-/* returns MK_FP(gSegsFC0C[kind | 1], 0): offset 0 and the segment word at the table slot
+/* returns MK_FP(gPageSegs[kind | 1], 0): offset 0 and the segment word at the table slot
    (src/E19EC.C:20); the placeholder name stays. */
 extern void far *GetPageBuffer(int kind); /*@ 19EC:0002 */
 extern void LoadSoundDriver(void); /*@ 177D:000A */
@@ -320,7 +320,7 @@ extern void SetMousePointerShape(int hotX, int hotY, void far *icon); /*@ 1BB1:0
    ds:F534 the ITEMRMP buffer; the sizes are the MemAlloc arguments at 07A9:002F, 0046, 005D, 0074
    and 008B, and whitepaper 4 names only ds:F534 and ds:DCAC), reads the segments of slots 7, 5 and
    3 from the 19EC:0002 page/buffer table (ds:FC0C), loads the sound driver (177D:000A, 07A9:00D2),
-   passes the slot 7 segment (gSegsFC0C[7], the word at ds:FC1A) and size 0xFC00 to SetUnpackBuffer
+   passes the slot 7 segment (gPageSegs[7], the word at ds:FC1A) and size 0xFC00 to SetUnpackBuffer
    (1B82:0217, 07A9:00DB; see the header for the size's relation to the video mode), clears ds:810E
    (07A9:00E6), loads the item tables (LoadItemData, Ovl2 stub entry 2, 07A9:00EC), selects the 6x6
    font as the current font (1A47:0169(gFont6x6), 07A9:00F9), and loads the item sheets
@@ -342,16 +342,16 @@ extern void SetMousePointerShape(int hotX, int hotY, void far *icon); /*@ 1BB1:0
        and :174): the bit is defined at src/E19BC.C:49 (described at :44-46), and src/E19BC.C:62-66
        (code at :81 and :95-98) turns it into an offset-0 block, the block shape E1B82.C:21-25
        describes for the work buffer. Why this block alone gets the flag is Purpose unknown. */
-    gBuf8DCA = MemAlloc(7500L, MEMALLOC_ALIGNED);
-    gBufF43E = MemAlloc(6000L, 0);
+    gLevelInf = MemAlloc(7500L, MEMALLOC_ALIGNED);
+    gWallBlockMaps = MemAlloc(6000L, 0);
     gSoundMap = MemAlloc(120L, 0);
     gBufDCFC = MemAlloc(4096L, 0);
     gItemRemapTable = MemAlloc(1600L, 0);
-    gSegDCA6 = GetPageBuffer(7);
-    gSegDF4E = GetPageBuffer(5);
-    gSegEFC2 = GetPageBuffer(3);
+    gWallBlocks = GetPageBuffer(7);
+    gStagingPage = GetPageBuffer(5);
+    gArtPage = GetPageBuffer(3);
     LoadSoundDriver();
-    SetUnpackBuffer(gSegsFC0C[7], UNPACK_BUFFER_SIZE);
+    SetUnpackBuffer(gPageSegs[7], UNPACK_BUFFER_SIZE);
     gAllocCount = 0;
     LoadItemData();
     SetFont(gFont6x6);

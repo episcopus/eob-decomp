@@ -157,7 +157,7 @@
         ;                                              at 1BBE:029F)
         EXTRN   gHitTestX:WORD              ; @ ds:8026: scratch copy of gDrawnX made by IsMouseInRect
         EXTRN   gHitTestY:WORD              ; @ ds:8028: scratch copy of gDrawnY made by IsMouseInRect
-        EXTRN   gFC08:DWORD             ; @ ds:FC08: previous INT 3Fh vector, chained by 1A72:0006
+        EXTRN   gSavedInt3F:DWORD             ; @ ds:FC08: previous INT 3Fh vector, chained by 1A72:0006
         .CODE
 
 ; 1A72:0006: the INT 3Fh handler main installs (07C8:008F, `setvect(0x3F, 1A72:0006)`; the old
@@ -271,7 +271,7 @@ L00CD:  pop     bp
         pop     cx
         pop     bx
         pop     ax
-        jmp     dword ptr [gFC08]
+        jmp     dword ptr [gSavedInt3F]
 _Int3FHandler ENDP
 
 ; 1A72:00DA: initialise the mouse driver through INT 33h and install the event handler. It reads

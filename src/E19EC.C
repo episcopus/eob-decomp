@@ -12,18 +12,18 @@
 
 #include <dos.h>
 
-extern unsigned gSegsFC0C[]; /*@ ds:FC0C */
+extern unsigned gPageSegs[]; /*@ ds:FC0C */
 extern void (far *gCopyPage)(); /*@ ds:8046 */
 
 /*@ 19EC:0002 */ void far *GetPageBuffer(int kind)
 {
-    return MK_FP(gSegsFC0C[kind | 1], 0);
+    return MK_FP(gPageSegs[kind | 1], 0);
 }
 
 /*@ 19EC:0016 */ void far *GetPageVideo(int kind)
 {
     /* The even twin of GetPageBuffer (slot kind & ~1); no direct caller found. */
-    return MK_FP(gSegsFC0C[kind & ~1], 0);
+    return MK_FP(gPageSegs[kind & ~1], 0);
 }
 
 /*@ 19EC:002A */ void CopyPage(int a, int b, int c, int d)
@@ -31,6 +31,6 @@ extern void (far *gCopyPage)(); /*@ ds:8046 */
     /* Calls the far handler at ds:8046 (cdecl, caller pops 8). c and d are unused by the
        tests below, so their roles are unknown; ds:8046 is not traced to a direct store in
        the image (probably copied from a per-mode handler table) [H]. */
-    if (gSegsFC0C[a] && gSegsFC0C[b] && gSegsFC0C[a] != gSegsFC0C[b])
-        gCopyPage(gSegsFC0C[a], gSegsFC0C[b], c, d);
+    if (gPageSegs[a] && gPageSegs[b] && gPageSegs[a] != gPageSegs[b])
+        gCopyPage(gPageSegs[a], gPageSegs[b], c, d);
 }
