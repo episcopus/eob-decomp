@@ -1,6 +1,6 @@
 # Sessions
 
-Scripts of input for the oracle (playbook 25, format in `tools/oracle/input.py`), and their goldens in `golden/` (recorded by `make golden`, verified by `make golden CHECK=1` and `make test-slow`).
+Scripts of input for the oracle (playbook 25, format in `tools/oracle/input.py`), and their goldens in `golden/` (recorded by `make golden`, verified by `make golden CHECK=1` and `make test-slow`). Recorded on the originals; `make golden CHECK=1 REBUILT=1` replays them on the programs `make rebuild` links (playbook 50). Together they load EOB.EXE's overlays 0, 2, 3 and 4, never 1, 5 or 6.
 
 | Session | Covers |
 |---|---|

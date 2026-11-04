@@ -7,7 +7,13 @@ tests/sessions/golden/<name>.json (instructions, state digest and image hash of 
 the end of the run) with the screenshots beside it in tests/sessions/golden/<name>/ for people to look at.
 
   golden.py [--check] [NAME ...]      record (default) or verify; no NAME: every session
-Exit code 0 when everything recorded or verified, 1 otherwise.
+  golden.py --check --rebuilt [NAME ...]
+                                      verify on the programs `make rebuild` linked (Phase 5, playbook 50):
+                                      the same instructions, screens, sound and state digests, the state
+                                      read in the original's form (tools/oracle/layout.py)
+Exit code 0 when everything recorded or verified, 1 otherwise. A rebuilt run that differs is played
+again on the originals, and the first checkpoint whose state differs is reported with the memory that
+differs (in the original's form).
 """
 from __future__ import annotations
 
@@ -22,20 +28,40 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from oracle.machine import ROOT  # noqa: E402
 from oracle.input import Script  # noqa: E402
-from oracle import run  # noqa: E402
+from oracle import run, layout  # noqa: E402
 
 SESSIONS = ROOT / "tests" / "sessions"
 GOLDEN = SESSIONS / "golden"
 KEEP = ("program", "stop", "instructions", "video_mode", "digest", "final_image", "script_done", "sound_digest", "adlib_writes")
 
 
-def play(name: str, out: Path) -> dict:
+def play(name: str, out: Path, memory: list | None = None) -> dict:
+    """One run of the session; with `memory`, a copy of memory (in the original's form) at every
+    state digest is appended to it, for `first_difference`."""
     text = (SESSIONS / ("%s.keys" % name)).read_text()
     opts = Script(text).options
     save = SESSIONS / opts["save"] if "save" in opts else None
-    s = run.run_session(text, out=out, max_insns=int(opts.get("insns", 60_000_000)),
-                        mouse="mouse" in opts, sound=opts.get("sound"), save=save,
-                        program=opts.get("program", "EOB.EXE"))
+    build = run.build_machine
+    if memory is not None:
+        def build_and_watch(*a, **k):
+            m = build(*a, **k)
+            digest = m.state_digest
+
+            def watched(*aa, **kk):
+                mem = m.uc.mem_read(0x500, 0xA0000 - 0x500)
+                if m.canonical is not None:
+                    m.canonical(m, mem)
+                memory.append((m.insns, bytes(mem)))
+                return digest(*aa, **kk)
+            m.state_digest = watched
+            return m
+        run.build_machine = build_and_watch
+    try:
+        s = run.run_session(text, out=out, max_insns=int(opts.get("insns", 60_000_000)),
+                            mouse="mouse" in opts, sound=opts.get("sound"), save=save,
+                            program=opts.get("program", "EOB.EXE"))
+    finally:
+        run.build_machine = build
     g = {k: s[k] for k in KEEP}
     g["checkpoints"] = [{k: c[k] for k in ("kind", "name", "instructions", "digest", "image") if k in c}
                         for c in s["checkpoints"]]
@@ -86,13 +112,80 @@ def check(name: str) -> bool:
     return not diff
 
 
+def first_difference(name: str, rebuilt: layout.Layout) -> list[str]:
+    """Play the session on the originals and on `rebuilt`, keeping memory at every state digest (each
+    checkpoint, then the end); the first one that differs, and where (linear addresses, the rebuild's
+    memory read in the original's form)."""
+    runs = {}
+    prev = layout.current()
+    try:
+        for lay in (layout.original(), rebuilt):
+            layout.use(lay)
+            mem: list = []
+            with tempfile.TemporaryDirectory() as tmp:
+                play(name, Path(tmp), memory=mem)
+            runs[lay.name] = mem
+    finally:
+        layout.use(prev)
+    a, b = runs["original"], runs[rebuilt.name]
+    for i, ((ia, ma), (ib, mb)) in enumerate(zip(a, b)):
+        if ia != ib:
+            return ["state %d: at instruction %d on the rebuild, %d on the original" % (i, ib, ia)]
+        if ma == mb:
+            continue
+        spans: list[list[int]] = []
+        for k in (k for k in range(len(ma)) if ma[k] != mb[k]):
+            if spans and k - spans[-1][1] <= 4:
+                spans[-1][1] = k
+            else:
+                spans.append([k, k])
+        out = ["state %d (instruction %d) is the first that differs: %d bytes in %d places" % (
+            i, ia, sum(ma[k] != mb[k] for k in range(len(ma))), len(spans))]
+        for x, y in spans[:16]:
+            out.append("  %05X-%05X original %s, rebuild %s" % (
+                x + 0x500, y + 0x500, ma[x:y + 1][:12].hex(" "), mb[x:y + 1][:12].hex(" ")))
+        return out
+    return ["memory is the same at every state; the registers or the screen differ"]
+
+
+def check_rebuilt(name: str, lay: layout.Layout) -> bool:
+    """Verify a golden recorded on the originals against the rebuilt programs."""
+    p = GOLDEN / ("%s.json" % name)
+    if not p.exists():
+        print("%s: no golden (make golden NAME=%s)" % (name, name))
+        return False
+    prev = layout.use(lay)
+    try:
+        with tempfile.TemporaryDirectory() as tmp:
+            g = play(name, Path(tmp))
+    finally:
+        layout.use(prev)
+    diff = differences(json.loads(p.read_text()), g)
+    print("%s (rebuilt): %s" % (name, "OK" if not diff else "DIFFERS: " + "; ".join(diff)))
+    if diff:
+        for line in first_difference(name, lay):
+            print("  " + line)
+    return not diff
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--check", action="store_true")
+    ap.add_argument("--rebuilt", action="store_true", help="with --check: on the programs `make rebuild` linked")
     ap.add_argument("names", nargs="*")
     a = ap.parse_args(argv)
+    if a.rebuilt and not a.check:
+        print("--rebuilt only checks: goldens are recorded on the originals")
+        return 1
     names = a.names or sorted(p.stem for p in SESSIONS.glob("*.keys"))
-    ok = all([(check if a.check else record)(n) for n in names])
+    if a.rebuilt:
+        lay = layout.rebuilt()
+        for n, p in sorted(lay.programs.items()):
+            print("%s: %s; %d stubs with entries in another order; put back: %s" % (
+                n, p.exe.relative_to(ROOT), len(p.entry_map), ", ".join(w for *_x, w in p.file_values)))
+        ok = all([check_rebuilt(n, lay) for n in names])
+    else:
+        ok = all([(check if a.check else record)(n) for n in names])
     return 0 if ok else 1
 
 

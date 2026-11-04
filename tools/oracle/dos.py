@@ -650,6 +650,7 @@ class Dos:
         else:
             image = bytearray(d)
         m.write(seg, 0, bytes(image))
+        m.image_loads.append((path.split("\\")[-1].upper(), seg, factor))   # layout.canonical (playbook 50)
         m.notify_file("overlay", f.path, 0, len(image))
         m.ok()
 

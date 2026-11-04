@@ -103,6 +103,8 @@ class Machine:
         self.service_counts: dict = {}   # calls that reached one of our service stubs, by number
         self.overlay_listeners: list = []   # callables(machine) after each read of GAME.OVR (routines.py)
         self.file_listeners: list = []   # callables(machine, op, path, pos, n) after each file read/write
+        self.image_loads: list = []      # (name, segment, relocation factor) of every INT 21h 4B03h load of an MZ file
+        self.canonical = None            # callable(machine, memory) putting a rebuild's memory in the original's form (layout.py)
 
         self.uc = uc = Uc(UC_ARCH_X86, UC_MODE_16)
         # Conventional RAM is a host buffer so the C lift can address it (SPEC 7.3).
@@ -605,7 +607,10 @@ class Machine:
         if registers:
             h.update(struct.pack("<12H", *[self.get(r) for r in
                      ("ax", "bx", "cx", "dx", "si", "di", "bp", "sp", "cs", "ds", "es", "ss")]))
-        h.update(bytes(self.uc.mem_read(0x500, 0xA0000 - 0x500)))
+        mem = self.uc.mem_read(0x500, 0xA0000 - 0x500)
+        if self.canonical is not None:
+            self.canonical(self, mem)
+        h.update(bytes(mem))
         if include_video:
             h.update(self.ega.digest_bytes())
         return h.hexdigest()
