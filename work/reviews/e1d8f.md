@@ -1,7 +1,7 @@
 # Review: e1d8f
 
-Reviewer: rev-sonnet
-Commit reviewed: 984852abaef5e03ec2482e038f62af4a6a470e4a
+Reviewer: p6-rev-3 (round P6; round 1 by rev-sonnet)
+Commit reviewed: ce0608f (round P6, 2026-11-04; diffed against 984852abaef5e03ec2482e038f62af4a6a470e4a, round 1's commit).
 
 Playbook 70. Judge what a matching file can still get wrong: names, types, comments, structure.
 The matcher already proved the bytes; do not re-prove them, read for meaning.
@@ -10,6 +10,35 @@ The matcher already proved the bytes; do not re-prove them, read for meaning.
 
 Each finding is a checkbox. `must-fix` blocks `make review-pass` until a decompiler ticks it off
 (with the commit that fixes it); `should` and `note` do not block.
+
+## Round P6 (p6-rev-3, 2026-11-04, commit ce0608f)
+
+Judged: round 1 had no must-fix (four shoulds and seven notes; the shoulds are still open below), and
+the diff since 984852a (`git diff 984852a..ce0608f -- src/E1D8F.ASM re/symbols.toml re/globals.toml`).
+The diff is labels only: `_f1D8F_0002`, `_f1D8F_0010` and `_f1D8F_0038` became _ReadTickCount,
+_InstallTickHandler and _RemoveTickHandler. No instruction or operand changed. `make match
+FILE=src/E1D8F.ASM` 3 of 3 (185 bytes); `make readability UNIT=e1d8f` 0 findings; `make names
+UNIT=e1d8f` 0 placeholders and 0 `Purpose unknown`.
+
+The names are true and recorded in re/renames.toml: 1D8F:0002 returns the 32-bit counter at
+ds:8496/8498 in AX:DX between cli and sti (ReadTickCount); 1D8F:0010 saves the INT 1Ch vector and
+points INT 1Ch at cs:0055 (InstallTickHandler, main calls it at 07C8:00E4); 1D8F:0038 restores the
+saved vector (RemoveTickHandler, ShutdownGame calls it at 07C8:05DE). They are the three names round
+1's last note suggested.
+
+Notes (not blocking):
+
+- note src/E1D8F.ASM:10-12: the comment still calls the whole symbol 1D8F:0002 the tick reader; the
+  PROC begins with the two saved-vector words at 0002..0005 and the code entry is 1D8F:0006 (round
+  1's should). Say "entry 0006, 0002..0005 is data" and keep the ReadTickCount name.
+- note src/E1D8F.ASM:49-53: the INT 1Ch handler at 1D8F:0055 is inside the RemoveTickHandler symbol;
+  the name covers the entry role (restore the vector), and the comment says the handler is inside.
+  A future split would give the handler its own name; the matcher shows no problem (round 1 note).
+- note the four round 1 shoulds remain open and unchanged by P6: the "bank of 16-bit counters" wording
+  (one 16-bit and four 32-bit counters, two gated by ds:849E bits), the 0006 code entry, the DGROUP
+  212E evidence, and the timer-user evidence. The P6 diff touched none of those lines.
+
+## Round 1 (rev-sonnet, 984852a)
 
 - [ ] should src/E1D8F.ASM:4-5: "The handler bumps a bank of 16-bit counters" is inaccurate. From the bytes at 1D8F:0055..00B4 the handler has one 16-bit counter and four 32-bit (lo/hi) counters: ds:8488 (16-bit, always); ds:848A:848C (32-bit, always); ds:848E:8490 (32-bit, only if ds:849E bit 0); ds:8492:8494 (32-bit, only if ds:849E bit 1); ds:8496:8498 (32-bit, always, the one the reader at 1D8F:0006 returns). Say that, and name the 32-bit carry as `inc lo; jne; inc hi`.
 - [ ] should src/E1D8F.ASM:8-17 (and 1D8F:0002 in the header): the function labelled 1D8F:0002 starts with the four zero bytes of the saved vector; the first instruction (`cli`, byte FA) is at 1D8F:0006, and the reader's real entry is 1D8F:0006. Calling 1D8F:0002 would execute `00 00` as `add [bx+si],al` (twice). The map put the unit start at the data slot, which is fine for matching, but a comment should say "entry is 0006; 0002..0005 is data". No direct `9a 02 00 8f 1d` or `9a 06 00 8f 1d` exists in the resident image of EOB.EXE, and no other word pair `0006:1D8F`/`0002:1D8F` either, so "called by: none found" in the packet is real; the reader may be called from an overlay (ovl03 has many `9a 06 00 ..` but with the overlay stub segment, unresolved here). Do not claim a caller for it.
