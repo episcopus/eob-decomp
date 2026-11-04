@@ -1,9 +1,10 @@
 # Review: e0ef3
 
-Reviewer: rev-haiku
-Commit reviewed: 50a428c74364a60f97ecc541728e4cbae3720042 (round 1; main when I started; src/E0EF3.C is unchanged since a729f44 on both main and review/e0ef3)
-Round 2 commit reviewed: ec11fb5 (main; the diff since 50a428c, see the round 2 section)
-Round 3 commit reviewed: c48c94e (main; the diff since ec11fb5 is the round 2 fix commit 0c21ff5, merged in 298a3fc, see the round 3 section)
+Reviewer: p6-rev-7
+Commit reviewed: ce0608f367ed01b1b1df84e254eef04d1a734b27 (round P6, 2026-11-04; the diff since c48c94e, see the round P6 section)
+Round 1 (rev-haiku) reviewed: 50a428c74364a60f97ecc541728e4cbae3720042 (main when rev-haiku started; src/E0EF3.C is unchanged since a729f44 on both main and review/e0ef3)
+Round 2 (rev-haiku) reviewed: ec11fb5 (main; the diff since 50a428c, see the round 2 section)
+Round 3 (rev-haiku) reviewed: c48c94e (main; the diff since ec11fb5 is the round 2 fix commit 0c21ff5, merged in 298a3fc, see the round 3 section)
 
 Playbook 70. Judge what a matching file can still get wrong: names, types, comments, structure.
 The matcher already proved the bytes; do not re-prove them, read for meaning.
@@ -12,6 +13,44 @@ The matcher already proved the bytes; do not re-prove them, read for meaning.
 
 Each finding is a checkbox. `must-fix` blocks `make review-pass` until a decompiler ticks it off
 (with the commit that fixes it); `should` and `note` do not block.
+
+### Round P6 (p6-rev-7, at ce0608f; the diff since c48c94e)
+
+Judged: the names, the struct fields and the changed comments of `src/E0EF3.C` and `src/EOB.H`, against the WHY each rename logs in `re/renames.toml` and `re/fields.toml` (checked against the code at its address, the callers and callees in `src/`, and the address a comment cites). Checked in particular: the spell callbacks named from the table at ds:1344 (Cast*, Hit*, End*, the no-op entries 0EF3:1315 and 0EF3:18D3), the effect wrappers 0EF3:10D2 to 0EF3:2011, the globals (gMaze ds:B894, gPanelMode ds:FB44, gPartySpellFlags ds:FBD2, gItemCastHand ds:8DCE, gCasterSubPos ds:F3B8, gCurrentSpell ds:EFB8, gItemZeroTag ds:8DD5, gInFrontRank ds:5717, gViewSlotRow ds:1A09, gViewCellIds ds:A9C8, gDrawPage ds:8115, the gBurst* set ds:FC62 to FC72, gConeOfColdCells ds:5763, gConeOfColdColours ds:5737, the gBurningHands* set ds:571B to 572D, gScratchBuf ds:DCFC, gTimerEnableFlags ds:849E, gStagingPage ds:DF4E, gRestoreRectToPage ds:804A, gLeftButtonMode ds:5E1C, gDirectAction ds:F542, gViewDirty ds:DF4C, the gStr* strings, the panel colours), the functions (AnimateParticleBurst 0EF3:2A53, ListMonstersAtCell 08E6:17FD, MakeMonsterFlee 08E6:000B, MonsterResistsMagic 0D1C:0BAB, StepCell 0D1C:00DA, MemberIs 0D1C:0670, FindMeleeTarget 08E6:15B4, TakeItemFromSlot 0BD2:0106, RollMonsterToHit 08E6:106B, MovePointerBy 1BF3:00A8, DamageNearRowMonsters 08E6:16D6, DrawShapeClipped and DrawShapeClippedFlipped 082C:063B/0681, CopyRegion 19F3:000E, GetSavingThrowTarget 0A72:0006, EndItemCast 0EF3:026F, CastSpellOnTarget 0EF3:08CF, PromptSpellTarget 0EF3:059D, GetCasterLevel 0EF3:0498) and the structs moved to `src/EOB.H` (ItemRecord, Region, CharRec, Monster, MonsterType, Projectile, Spell, ItemType; the fields re/fields.toml records: status, hp, maxHp, armorClass, dexterity, classIndex, levels, effectFlags, items, timers, mageSpells, clericSpells, typeIndex, cellPos, mode, flags, slotMask, nameIndex, identifiedNameIndex, prevLink, nextLink, key, value). The names say what the registry's evidence says the addresses do, and the code at each address does it. The changed comments are sound.
+
+Evidence: `make match FILE=src/E0EF3.C` 104 of 104 (13219 bytes), exit 0; `make readability UNIT=e0ef3` 0 findings.
+
+#### Must-fix (round P6)
+
+None. The P6 names are backed by the registry; the changed comments describe the code. The stale comments below sit in text the P6 diff did not retype, so they are notes under the "Later rounds" rule, not blockers.
+
+#### Should (round P6)
+
+None. A later pass should fix the notes below, but none is a wrong new name or a wrong changed comment.
+
+#### Notes (round P6)
+
+- [ ] note P6-1 src/E0EF3.C:76-79 (gPartySpellFlags): the declaration still calls bit 0 "the item-swap mode" and bit 4 "the swap flag". The registry (ds:FBD2) says bit 0 is detect magic (0EF3:1069 and 0EF3:10AE, which P6 renamed CastDetectMagic and EndDetectMagic), bit 4 is bless (CastBless 0EF3:1AD0, "The party is already blessed!") and bit 5 is prayer (0EF3:1E3E). The new name gPartySpellFlags matches the registry; the comment does not. Say detect magic, bless and prayer.
+- [ ] note P6-2 src/E0EF3.C:937-939 (CastDetectMagic) and the EndDetectMagic header (:947): "enter the item-swap mode" and "leave the item-swap mode" are stale; the registry says the detect magic spell's apply and remove callbacks set and clear bit 0. Say "start the detect magic effect" and "end it".
+- [ ] note P6-3 src/E0EF3.C:1706 (CastBless) and :1712 (EndBless): "set the swap flag" and "the swap flag is off again" are stale; the registry says record 26 "bless" uses 0EF3:1AD0 as its +05 and 0EF3:1B13 as its +0D. Say "set the bless flag" and "the bless flag is off again".
+- [ ] note P6-4 src/E0EF3.C:104 and :745 (gMaze): "+4 (ds:B898) is the object's type byte" is stale; the registry (ds:B894) says +4 bits 0..2 are the monster count in the cell (08E6:0297 counts them in and out). Say "monster count bits".
+- [ ] note P6-5 src/E0EF3.C:1153 and :1366 (HitHoldPerson, HitHoldMonster): "set the object's type byte to 0x0A" says type but the code sets `obj->mode = 0x0A` (the hold behaviour, re/fields.toml +08 mode); `obj->type` is +00 typeIndex. Say "mode byte".
+- [ ] note P6-6 src/E0EF3.C:1232 (CastFear): "clear the object's type" says type but MakeMonsterFlee (08E6:000B) sets the mode to 0, turns the monster away and sets its fleeing bit; say "makes the monster flee" or "clears its mode".
+- [ ] note P6-7 src/E0EF3.C:256 (gViewSlotRow): "per-slot object index (EOV4.C)" is stale; the registry (ds:1A09) says the 18 bytes are the slot's row counted from the farthest (0) to the party's row (3), and the name says Row. Say "per-slot depth row".
+- [ ] note P6-8 src/E0EF3.C:237 (gDepthFirstDrawSlot): "DrawViewSlots start slot per object index" has the same stale "object index"; the registry (ds:55EF) indexes it by gViewSlotRow (the depth row) and it gives the draw order. Say "per view-slot row".
+- [ ] note P6-9 src/E0EF3.C:278-279 (gGetPixel): "saves the pixels under (x, y), returns a handle" is stale; the registry (ds:8072) says it reads a pixel and gPutPixel (ds:809E) puts it back. Say "reads the pixel under (x, y)".
+- [ ] note P6-10 src/E0EF3.C:107 (gBurningHandsShapes): "a per-member icon index" is stale; the registry (ds:571B) says the six signed numbers 3,-3,2,-2,1,-1 are the six flame positions, not per party member (ds:5721 and ds:572D hold the positions).
+- [ ] note P6-11 src/E0EF3.C:1117 (CastBurningHands): "draw one icon per party member in its panel cell" is stale; the registry (ds:5721/572D) says the six entries are the six flame positions, not per party member.
+- [ ] note P6-12 src/E0EF3.C:235-236 (gViewCellIds): "(the heading table of EOV4.C)" is stale; the registry (ds:A9C8) says the 18 words are the cell numbers InitViewSlots (ovl4:0000) stores, not headings (the old name was gAngleA9C8).
+- [ ] note P6-13 src/E0EF3.C:95 (gConeOfColdColours): "a word table of animation frames" is loose; the registry (ds:5737) says the eight words are the pixel colours the cone draws, indexed by the particle's frame counter. Say "the cone's colour ramp".
+- [ ] note P6-14 src/E0EF3.C:94 and :1319 (gConeOfColdCells): "one per page gPartyDir" and "the per-page table" call the facing a page; gPartyDir is the party's direction 0..3. Say "one per facing".
+- [ ] note P6-15 src/E0EF3.C:285 (gBurstColour): "current animation frame's byte" is vague; the registry (ds:FC64) says the current particle's colour from the ramp, zero retiring the particle.
+- [ ] note P6-16 src/E0EF3.C:575 and :603 (DrawFlashFrame, FlashPartyMembers): "a screen mode other than the plain character screen" and "the plain character screen is up" call gPanelMode a screen mode; the registry (ds:FB44) says it is what the right-hand panel shows (0 the party, 1 a member's inventory, 2 the second page). Say "the panel shows something other than the party" and "the party panel".
+- [ ] note P6-17 src/E0EF3.C:232 (gModeRampIndex): "an animation index per Tgt.m08" is vague; the registry (ds:55E6) says it picks the colour ramp gAnimTable[...] per effect mode.
+- [ ] note P6-18 src/E0EF3.C:106 (gViewRelativePos): "per-page sprite base (src/E0DE8.C)" is stale; the registry (ds:1A2B) says it rotates the four cell positions into the party's frame (ovl4:0AD0, 0D1B and 19C4, and E0DE8:290).
+- [ ] note P6-19 src/E0EF3.C:160 (gStrAbortSpellLit): "Lit" is terse; the registry (ds:5937) says the second "ABORT SPELL" string drawn in row 6 with the highlight colour. gStrAbortSpellHighlighted would say it.
+- [ ] note P6-20 registry text, not source: the WHY of gBurstSavedPage (ds:FC70) still calls ds:8115 "gStatusLine" in parentheses while the ds:8115 rename is gDrawPage (the source comment says gDrawPage); the WHY of gBurstParticle (ds:FC62) still says gBufDCFC (the old name of gScratchBuf). The source comments are right; a later registry pass can follow.
+- [ ] note P6-21 src/E0EF3.C:283 (gBurstParticle) and :232 (gModeRampIndex) use "0EF3:2A53" and "Tgt.m08" while the function is now AnimateParticleBurst and the field is mode; the text is right, the older terms are in the registry's text.
 
 ### Round 3 (rev-haiku, at c48c94e; the diff since ec11fb5)
 
@@ -132,4 +171,4 @@ Checked and right in round 2 (no finding): the round 1 items 18, 20, 21, 22, 23,
 
 ## Summary
 
-The unit is mostly understandable from its source alone. Names of the form `f0EF3_2A53`, `f0EF3_25BD`, `EmptyFunction*` and the `g` globals with a number are honest placeholders, and the `Purpose unknown:` notes on f0EF3_2A53, f0EF3_25BD and DrawMemberIcons are acceptable. What fails the review is the text that claims more than the evidence: several callers that the packet does not show (ClearAttackEffect, UndoBandage, ClearObjectsFacingCell, GetClassSlot24Value, StartPanelAction), two record identities (struct Entry27 called a "character record" in 1530, 1A30 and 1702), the meaning of gFB44 (a mode byte, not a status line), the food meaning of +0x23 (SetMemberLevels), a misdescribed branch in ApplyAidEffect, a stale DRAFT note on a matched function, a word table named gText5737, a save called a restore, and a wrong declaration of HalveSaveDamageB (the e0de8 routed item). Evidence: `make match FILE=src/E0EF3.C` 104 of 104 (13219 bytes), exit 0; `make readability UNIT=e0ef3` 0 findings. Nothing escalated: no matcher, spec or pin question. Round 3 (at c48c94e): no must-fix open; `make review-pass` is run on the strength of round 3 (see its section).
+The unit is mostly understandable from its source alone. Names of the form `f0EF3_2A53`, `f0EF3_25BD`, `EmptyFunction*` and the `g` globals with a number are honest placeholders, and the `Purpose unknown:` notes on f0EF3_2A53, f0EF3_25BD and DrawMemberIcons are acceptable. What fails the review is the text that claims more than the evidence: several callers that the packet does not show (ClearAttackEffect, UndoBandage, ClearObjectsFacingCell, GetClassSlot24Value, StartPanelAction), two record identities (struct Entry27 called a "character record" in 1530, 1A30 and 1702), the meaning of gFB44 (a mode byte, not a status line), the food meaning of +0x23 (SetMemberLevels), a misdescribed branch in ApplyAidEffect, a stale DRAFT note on a matched function, a word table named gText5737, a save called a restore, and a wrong declaration of HalveSaveDamageB (the e0de8 routed item). Evidence: `make match FILE=src/E0EF3.C` 104 of 104 (13219 bytes), exit 0; `make readability UNIT=e0ef3` 0 findings. Nothing escalated: no matcher, spec or pin question. Round 3 (at c48c94e): no must-fix open; `make review-pass` is run on the strength of round 3 (see its section). Round P6 (at ce0608f): the P6 names are backed by re/renames.toml and re/fields.toml and the changed comments are sound; the stale declaration comments are notes P6-1 to P6-21 for the operator. `make review-pass` is run on the strength of round P6.
