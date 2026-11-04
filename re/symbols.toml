@@ -5683,7 +5683,7 @@ evidence = ["segment"]
 name = "DispatchKey"
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e16a5_005a"
@@ -5694,7 +5694,7 @@ evidence = ["far", "frame"]
 name = "DispatchKeyWait"
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e16a5_00bd"
@@ -5705,7 +5705,7 @@ evidence = ["far", "frame"]
 name = "DispatchNodeEvent"
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e16a5_07c3"
@@ -5716,7 +5716,7 @@ evidence = ["far"]
 name = "DrawNode"
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e16a5_0d78"
@@ -5727,7 +5727,7 @@ evidence = ["far", "frame"]
 name = "SetNodeCallback"
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e177d_000a"
