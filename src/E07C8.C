@@ -14,14 +14,11 @@
 #define NULL 0
 #endif
 /* Named constants for values whose meaning the code establishes (READABILITY 4). */
-#define PAGE_64000 0xFA00L    /* a 64000-byte screen/buffer page (320 x 200) */
+#include "EOB.H"
 #define PAGE_52000 0xCB20L    /* a 52000-byte buffer page */
-#define PAGE_65000 0xFDE8L    /* a 65000-byte page (the largest, choice 3) */
-#define PAGE_64512 0xFC00L    /* a 64512-byte page */
 enum { DEFAULT_TEXT_ATTR1 = 0x0F, DEFAULT_TEXT_ATTR2 = 0x0C, INT3F_VECTOR = 0x3F,
        PALETTE_ENTRY15_OFFSET = 0x2D, DAC_MAX = 0x3F,   /* top of a 6-bit DAC [H] */
        TEXT_SCREEN_SEG = 0xB800, VGA_SCREEN_SEG = 0xA000,
-       MEMALLOC_ALIGNED = 0x20,   /* MemAlloc's paragraph-aligned flag (src/E19BC.C:49) */
        PALETTE_SIZE = 0x300, PAGE_32000 = 0x7D00, PAGE_32576 = 0x7F40,
        VGA_SEG_A200 = 0xA200, VGA_SEG_A400 = 0xA400, VGA_SEG_A800 = 0xA800,
        VGA_SEG_AC00 = 0xAC00 };
@@ -30,13 +27,6 @@ struct ArgVector {          /* the program's argument vector, which the C librar
                                playbook 50 item 23) */
     char far *arg[6];       /* argv[0] to argv[5]: not read in src/ */
     char far *number;       /* argv[6]: the numeric argument StartupGame parses with atol */
-};
-
-struct OverlayRequest {     /* the request 1C00:0055 runs, ds:8121 */
-    char far *name;         /* +0: the overlay file name (word +0 the offset, word +2 the segment) */
-    void far *table;        /* +4: a far pointer (offset then segment) to a table the overlay entry's
-                               pointer walks (src/E1C00.ASM:121-127); Purpose unknown: nothing in
-                               src/ says who writes ds:8125/ds:8127; this unit reads only `name` */
 };
 
 extern int gGraphicsChoice;                     /*@ ds:8102: graphics choice: argv[1][0] + 1 at :229, less

@@ -10,36 +10,12 @@
 
 #include <dos.h>        /* FP_OFF/FP_SEG, the blit calls split a far pointer */
 
-struct Cell4 {              /* a four-byte sprite-cell definition, x, y, w, h (src/EOV2.C) */
-    unsigned char x;
-    unsigned char y;
-    unsigned char w;
-    unsigned char h;
-};
+#include "EOB.H"
 
 struct Cell {               /* the header gGetSpriteCell returns; bytes +1 and +2 are read here */
     char b0;                /* +0 */
     signed char b1;         /* +1: a vertical size the caller subtracts */
     signed char b2;         /* +2: a horizontal size, times four */
-};
-
-struct CharRec {            /* 243-byte (0xF3) character records at ds:F580 (src/EOV6.C) */
-    char index;             /* +00 */
-    unsigned char status;   /* +01: status bits (only bit 0 is read here) */
-    char name[0x0B];        /* +02: the character's name, NUL padded */
-    char pad0D[0x1B - 0x0D];
-    signed char hp;         /* +1B: current hit points */
-    signed char maxHp;      /* +1C: maximum hit points */
-    char pad1D[0x22 - 0x1D];
-    unsigned char portraitIndex;      /* +22: compared with 0xf7 by 0AB1 (0D1C:0415 uses it too) */
-    char pad23[0x33 - 0x23];
-    void far *portrait;     /* +33: a far pointer to the character's picture buffer, preserved by
-                                   the record swap at 070E (the movmem destination there) */
-    char pad37[0x77 - 0x37];
-    int items[25];          /* +77: 25 item-slot words (the carried and equipped items) */
-    char padA9[0xE3 - 0xA9];
-    unsigned long effectFlags;      /* +E3: effect flags (0C9D clears bit 7 of the low word) */
-    char padE7[0xF3 - 0xE7];
 };
 
 struct PoolNameRec {        /* a view of one 243-byte pre-made character record from its name field:
@@ -49,53 +25,6 @@ struct PoolNameRec {        /* a view of one 243-byte pre-made character record 
     char rest[0xE8];        /* +0x0B: the rest of the record, not read here */
 };
 
-struct ItemRecord {
-    signed char nameIndex;        /* +0 (ds:8DD0): indexes the item-name table at segment 0x1F28 */
-    signed char identifiedNameIndex;        /* +1 (ds:8DD1): the second name index */
-    unsigned char flags;    /* +2 (ds:8DD2): bit 0x20 gates 0BD2:0AF2/0C8E, 0x40 is set by
-                               0BD2:040E and tested by 0BD2:05B5; src/E07A9.C calls it flags */
-    signed char icon;       /* +3 (ds:8DD3): the icon number */
-    signed char type;        /* +4 (ds:8DD4): the item type */
-    signed char cellPos;        /* +5 (ds:8DD5): 01D0 stores its 4th argument here and 02B9 matches it
-                               against its `key`. No caller shows a sound (01D0's callers pass a
-                               slot kind, E0ACD.C:561-568, a roll, E08E6.C:807, or an effect kind | 4,
-                               0BD2:07DE): the item's position in its cell, 8 a wall niche (122E:06D0) */
-    int key;                /* +6 (ds:8DD6): the key; -1 when the record is free */
-    int prevLink;                /* +8 (ds:8DD8): one link of the circular list; 0BD2:01D0 splices a
-                               new item in after this record through it */
-    int nextLink;                /* +0xa (ds:8DDA): the other link; the list walks (0BD2:0385, 040E,
-                               04AA) follow it */
-    signed char level;        /* +0xc (ds:8DDC): gCurLevel or -1, set by 01D0 */
-    signed char value;        /* +0xd (ds:8DDD): the item's bonus or effect value: the signed bonus
-                               printed as "%s +%d" and "Cursed %s %d", the spell index into ds:1278
-                               and ds:12E0, the wand effect index gWandSpells[m0B], and the scroll and
-                               potion values (0BD2:05B5, 0D2D, 0EE8, 1001) */
-};
-
-struct ItemInfo {           /* 16-byte records at ds:A9F5 (src/E0D1C.C) */
-    signed char m00;
-    signed char m01;
-    char pad02[0x09 - 0x02];
-    int m09;                /* +9 */
-    char pad0B[0x10 - 0x0B];
-};
-
-struct Monster {              /* 28-byte object records at ds:8A82 (src/E08E6.C) */
-    char pad00[8];
-    signed char mode;       /* +8 */
-    char pad09[0x1C - 0x09];
-};
-
-struct Region {             /* 16-byte records at ds:009F (src/E1A29.C) */
-    int left;               /* +0: left edge in 8-pixel columns */
-    int top;                /* +2: top edge in lines */
-    int width;              /* +4: width in 8-pixel columns */
-    int height;             /* +6: height in lines */
-    int textAttr1;              /* +8: text attribute 1 [H] (gTextAttr1, src/E1DE7.C:26) */
-    int textAttr2;              /* +a: text attribute 2 [H] (gTextAttr2, src/E1DE7.C:27) */
-    int textCol;             /* +c: cursor column (gTextCol) */
-    int textRow;                /* +e: cursor row (gTextRow) */
-};
 extern struct Region gRegions[]; /*@ ds:009F */ /* the text windows, 16 bytes each (src/E1A29.C) */
 extern int gDrawPage; /*@ ds:8115 */
 extern signed char gPanelFillColour; /*@ ds:F57E */
@@ -743,7 +672,7 @@ enum {
 
     for (i = 0; i < 6; i++) {
         if (gChars[i].status & 1) {
-            if (gChars[i].portraitIndex == 0xf7)
+            if ((unsigned char)gChars[i].portraitIndex == 0xf7)   /* the original compares the byte unsigned */
                 break;
         }
     }

@@ -620,742 +620,927 @@ why = "Eight words 15,9,15,9,2,10,2,0 that AnimateConeOfCold (0EF3:2EBC) indexes
 id = "ds:FE4E"
 name = "gCurFont"
 why = "the far pointer to the current font: SetFont 1A47:0169 stores it, TextWidth 1A47:018E reads byte +103h (the character width) through it"
+
 [[global]]
 id = "ds:80C2"
 name = "gDrawShape"
 why = "the driver entry that draws a shape record at a screen position: DrawShape 1A29:000F calls it with region offsets added, ShowPointer 1BBE:01F4 with the pointer's shape record (gPointerShapeOff/Seg)"
+
 [[global]]
 id = "ds:A9C0"
 name = "gFont6x6"
 why = "the 6x6 font: 07C8:0419 stores LoadFont(\"FONT6.FNT\") in it (E07C8 line 377), and the file's header bytes 102h and 103h are 6 and 6"
+
 [[global]]
 id = "ds:B894"
 name = "gMaze"
 why = "the maze in memory, one nine-byte record per map cell indexed by the cell (gPartyCell, a monster's cell): bytes 0..3 the cell's walls by side (08E6:0297 reads +(orient ^ 2)), +4 bits 0..2 the monsters in the cell (08E6:0297 counts moves in and out), +5 the cell's item list"
+
 [[global]]
 id = "ds:B899"
 name = "gMazeItems"
 why = "the item list head of each nine-byte maze cell, gMaze + 5 (gMaze[cell * 9 + 5]): 08E6 inserts into it at a monster's cell, 0D1C:035A drains a member's items into the party's cell"
+
 [[global]]
 id = "ds:194B"
 name = "gWallTypeFlags"
 why = "flags per wall type, indexed by a wall byte of gMaze: a step needs bits 0..1 set in the target side's entry (08E6:058A area, E08E6 line 550), bit 2 is tested by the path search (E08E6 line 670)"
+
 [[global]]
 id = "ds:FB44"
 name = "gPanelMode"
 why = "what the right-hand panel shows: 0 the party (Action01E3 0ACD:01E3 restores it), 1 a member's inventory (Action0034 sets it when a portrait is picked; 1547 draws the 27 item rows), 2 the member's second page (Action018E toggles 1 and 2)"
+
 [[global]]
 id = "ds:A99A"
 name = "gInventoryMember"
 why = "the party member whose inventory the panel shows: Action0034 0ACD:0034 sets it to the picked slot as it sets gPanelMode to 1, and the panel reads gChars[it].items (0D1C:02DC, 0D1C:0304)"
+
 [[global]]
 id = "ds:1790"
 name = "gDirCellOffset"
 why = "the cell offset of one step north, east, south and west: the bytes -32, 1, 32, -1 at ds:1790 in EOB.EXE, added to a cell by StepCell 0D1C:00DA"
+
 [[global]]
 id = "ds:FBCC"
 name = "gPartyDir"
 why = "the direction the party faces, 0..3 north, east, south, west: 0ACD:056C and 0ACD:0593 turn by decrementing and incrementing it modulo 4, 0ACD:0529 steps back along (it + 2) % 4, StepCell(gPartyCell, it) is the cell ahead"
+
 [[global]]
 id = "ds:547E"
 name = "gOppositeSide"
 why = "the side of a cell that faces back along each direction: the bytes 2, 3, 0, 1 at ds:547E, indexed by the step direction in StepIfOpen 0D1C:0080"
+
 [[global]]
 id = "ds:F540"
 name = "gStepCount"
 why = "counts the party's steps: MoveParty 122E:0001 increments it on every move"
+
 [[global]]
 id = "ds:5AB5"
 name = "gStrNewline"
 why = "the one-character string carriage return at ds:5AB5 (bytes 0D 00); MoveParty 122E:0001 draws it to scroll the message area on every step"
+
 [[global]]
 id = "ds:B800"
 name = "gScriptCell"
 why = "the map cell whose script is running: RunCellScript 122E:1DA8 stores its cell argument in it, and the turning opcode 122E (case 0xFFF5) turns the gDD2C effects whose cell +04 equals it"
+
 [[global]]
 id = "ds:8A82"
 name = "gMonsters"
 why = "the 30 monster records of 28 bytes (struct Monster): each has hit points and a death check (+E at or below 0 is dead), drops its item ids at death (08E6:0EC3), walks toward a target cell and is counted in gMaze[cell * 9 + 4] (08E6:0297)"
+
 [[global]]
 id = "ds:DD2C"
 name = "gProjectiles"
 why = "the ten 18-byte flying-object records (struct Projectile): the use-item action 0ACD:0494 adds one with the item, the party's cell and gPartyDir (AddDDEffect 0BD2:07DE), each holds its cell (+04, which the spinner opcode turns), its direction (+07) and its item (+08), and a handler 1414:0172 calls each tick"
+
 [[global]]
 id = "ds:1A3B"
 name = "gMonsterTypes"
 why = "the 27-byte monster type records at ds:1A3B, indexed by each monster's typeIndex (Monster +00): its +0 is the class byte the to-hit roll reads (0DE8:0007, E0A72), +0E the flags 08E6 tests"
+
 [[global]]
 id = "ds:DD10"
 name = "gHpMinOrHitFlag"
 why = "one variable with two uses: overlay 0's stat editor ovl0:135D keeps the new character's minimum hit points in it (MinHitPoints 0A72:03A4, the seventh word after the six-word table ds:DD04), and in play 08E6:0FBE sets it to 1 and 08E6:0E48 clears it"
+
 [[global]]
 id = "ds:DCA4"
 name = "gHpMaxOrAttackTarget"
 why = "one variable with two uses: overlay 0's stat editor ovl0:135D keeps the new character's maximum hit points in it (MaxHitPoints 0A72:02B3, the seventh word after the six-word table ds:DC98), and in play 0DE8:0359 stores the attacked monster's index in its low byte, which UseItem 0DE8:0763 damages (gMonsters[it])"
+
 [[global]]
 id = "ds:11AD"
 name = "gRaceNames"
 why = "Twelve far string pointers whose targets read HUMAN MALE, HUMAN FEMALE, ELF MALE ... HALFLING FEMALE; ovl0:065B draws g11AD[race] and PickOption ovl0:1F66 lists them; E1547.C already calls them the race names."
+
 [[global]]
 id = "ds:11DD"
 name = "gClassNames"
 why = "Fifteen far string pointers whose targets read FIGHTER, RANGER, PALADIN ... CLERIC/MAGE; ovl0:065B draws g11DD[classIndex] and PickClass ovl0:207A lists them; E1547.C already calls them the class names."
+
 [[global]]
 id = "ds:1240"
 name = "gAlignmentNames"
 why = "Nine far string pointers whose targets read LAWFUL GOOD ... CHAOTIC EVIL; PickAlignment ovl0:2238 lists them and E1547.C draws g1240[rec->alignment]."
+
 [[global]]
 id = "ds:613D"
 name = "gStrPartyComplete"
 why = "The string reads \"Your party is complete. Select the PLAY button or press 'P' to start the game.\"; DrawPartyStatus ovl0:0504 draws it only when all four members have a name."
+
 [[global]]
 id = "ds:60D5"
 name = "gStartItems"
 why = "Eleven (item type, slot) word pairs; GiveStartingEquipment ovl0:26C6 looks one up per class entry of ds:6101, makes the item through CopyItemToFreeSlot and puts it in that carried slot (-1 slot means the first free hand slot 0..2)."
+
 [[global]]
 id = "ds:6101"
 name = "gClassStartItems"
 why = "Fifteen rows of four bytes, one row per class index (ovl0:26C6 reads g6101[classIndex * 4 + j]), each byte an index into the starting-item table ds:60D5; 255 marks an unused entry (see the quirk note in the report)."
+
 [[global]]
 id = "ds:6227"
 name = "gFmtStrengthOnEntry"
 why = "The string is \"%s\"; EditStatField ovl0:135D formats the strength field's FormatStrengthPercent text with it when the field editor opens (index 0)."
+
 [[global]]
 id = "ds:622A"
 name = "gFmtValueOnEntry"
 why = "The string is \"%d\"; EditStatField ovl0:135D formats a non-strength field's value with it when the field editor opens (index 1..6)."
+
 [[global]]
 id = "ds:622D"
 name = "gFmtStrengthChanged"
 why = "The string is \"%s\"; EditStatField ovl0:135D formats the strength text with it after a key changed the value (index 0)."
+
 [[global]]
 id = "ds:6230"
 name = "gFmtValueChanged"
 why = "The string is \"%d\"; EditStatField ovl0:135D formats a non-strength field with it after a key changed the value (index 1..6)."
+
 [[global]]
 id = "ds:6233"
 name = "gFmtHpChanged"
 why = "The string is \"%d\"; EditStatField ovl0:135D formats gChars[].hp with it and draws it at (0x108, 0x88) when a constitution change moved the hit points."
+
 [[global]]
 id = "ds:6236"
 name = "gFmtArmorClassChanged"
 why = "The string is \"%d\"; EditStatField ovl0:135D formats gChars[].armorClass with it and draws it at (0x108, 0x80) when a dexterity change moved the armour class."
+
 [[global]]
 id = "ds:6239"
 name = "gFmtStrengthOnExit"
 why = "The string is \"%s\"; EditStatField ovl0:135D formats the final strength text with it when the field editor ends (index 0)."
+
 [[global]]
 id = "ds:623C"
 name = "gFmtValueOnExit"
 why = "The string is \"%d\"; EditStatField ovl0:135D formats a non-strength field's final value with it when the field editor ends (index 1..6)."
+
 [[global]]
 id = "ds:FC8C"
 name = "gPortraitCells"
 why = "InitPanelScreens ovl0:2547 slices 0x2c (44) 32 by 32 cells out of CHARGENA into it; PickPartySlot ovl0:0A5E draws four of them in a row and unpacks the chosen one into gChars[].portrait (Unpack0, 0x514 bytes). FreePanelBuffers ovl0:28B0 frees 0x43 entries, so the table also covers ds:FD54 (entries 0x32..0x3b)."
+
 [[global]]
 id = "ds:DCB0"
 name = "gChargenMember"
 why = "The party member 0..3 the character-generation screens act on: RunCharacterPanel ovl0:28F9 sets it from the clicked box and flips bits 0/1 with the arrow keys, and CreateCharacter ovl0:23EC, ReviewRolledStats and EditStatField all index gChars[gDCB0]."
+
 [[global]]
 id = "ds:61CB"
 name = "gStrSelectBoxPrompt"
 why = "The string reads \"Select the box of the character you wish to create or view.\"; ShowReportLine1 ovl0:1071 draws it at (0xa8, 0x10) on the party screen."
+
 [[global]]
 id = "ds:6207"
 name = "gStrEnteringGame"
 why = "The string reads \"Entering game. Please wait.\"; ShowReportLine2 ovl0:10F6 draws it, and RunCharacterPanel ovl0:28F9 calls that only after the PLAY icon 0xf flashed."
+
 [[global]]
 id = "ds:5FC5"
 name = "gClassMinAbilities"
 why = "Fifteen rows of six words, one per class index, the minimum ability scores: row 1 (RANGER) is 13,0,14,13,14,0 and row 2 (PALADIN) 12,0,13,0,9,17; ovl0:1EA9 takes the larger of it and the race minimum into the stat minimum table ds:DD04."
+
 [[global]]
 id = "ds:5F35"
 name = "gRaceMinAbilities"
 why = "Six rows of six words indexed by race >> 1 (the race without its sex), the race minimum ability scores (row 3, DWARF: str 8, con 12); ovl0:1EA9 takes the larger of it and the class minimum into ds:DD04."
+
 [[global]]
 id = "ds:5F7D"
 name = "gRaceMaxAbilities"
 why = "Six rows of six words indexed by race >> 1, the race maximum ability scores (0x6412 is strength 18/100, elves have dex 19 and con 17); ovl0:1EA9 copies the row into the stat maximum table ds:DC98."
+
 [[global]]
 id = "ds:DD04"
 name = "gStatMin"
 why = "The minimum of each stat for the member being made: ovl0:1EA9 fills words 0..5 from gClassMinAbilities and gRaceMinAbilities, RollCharacterStats ovl0:1BF2 raises rolls to it and EditStatField ovl0:135D clamps to it, index 6 (hp) being ds:DD10."
+
 [[global]]
 id = "ds:DC98"
 name = "gStatMax"
 why = "The maximum of each stat for the member being made: ovl0:1EA9 copies gRaceMaxAbilities into words 0..5 (strength forced to 18 for classes with a nonzero ds:116E byte), and ovl0:1BF2 and ovl0:135D clamp to it, index 6 (hp) being ds:DCA4."
+
 [[global]]
 id = "ds:FD54"
 name = "gBoxAnimCells"
 why = "InitPanelScreens ovl0:2547 slices ten 32 by 32 cells from CHARGENB into it, and AnimateMemberBox ovl0:1224 cycles them (gFC84 0..9) into the current member's box; the ten entries are also entries 0x32..0x3b of gPortraitCells."
+
 [[global]]
 id = "ds:6272"
 name = "gFileNameChargenA"
 why = "The string is \"CHARGENA\"; InitPanelScreens ovl0:2547 loads that screen through LoadOverlayScreen and slices the 44 portraits from it, matching the gFileName naming of other screen names."
+
 [[global]]
 id = "ds:627B"
 name = "gFileNameChargen"
 why = "The string is \"CHARGEN\"; InitPanelScreens ovl0:2547 loads that screen through LoadScreenImage into gOverlayBuf as the character-generation background."
+
 [[global]]
 id = "ds:6283"
 name = "gFileNameChargenB"
 why = "The string is \"CHARGENB\"; InitPanelScreens ovl0:2547 loads it through LoadOverlayScreen and slices the ten box-animation cells and the 17 panel icons from it."
+
 [[global]]
 id = "ds:6197"
 name = "gStrAcHpLvlLabels"
 why = "The string is \"AC\\rHP\\rLVL\"; DrawCharPanel ovl0:065B draws it at (0xf8, 0x40), beside the values it formats with ds:61B3 and the level formats."
+
 [[global]]
 id = "ds:61A1"
 name = "gFmtAbilityScores"
 why = "The string is \"%s\\r%d\\r%d\\r%d\\r%d\\r%d\"; DrawCharPanel ovl0:065B formats strength (FormatStrengthPercent) and the five other abilities with it into one column."
+
 [[global]]
 id = "ds:61B3"
 name = "gFmtAcHp"
 why = "The string is \"%d\\r%d\"; DrawCharPanel ovl0:065B formats armorClass and maxHp with it, drawn at (0x118, 0x40) next to the AC and HP labels."
+
 [[global]]
 id = "ds:61B9"
 name = "gFmtOneLevel"
 why = "The string is \"%d\"; DrawCharPanel ovl0:065B formats the levels with it when the second and third class slots have no level (single class)."
+
 [[global]]
 id = "ds:61BC"
 name = "gFmtTwoLevels"
 why = "The string is \"%d/%d\"; DrawCharPanel ovl0:065B picks it when levels[1] is above 0 (a two-class character)."
+
 [[global]]
 id = "ds:61C2"
 name = "gFmtThreeLevels"
 why = "The string is \"%d/%d/%d\"; DrawCharPanel ovl0:065B picks it when levels[2] is above 0 (a three-class character)."
+
 [[global]]
 id = "ds:115D"
 name = "gAbilityAbbrevs"
 why = "DrawCharPanel ovl0:065B draws entries 8..13, whose targets read STR, INT, WIS, DEX, CON, CHA. The real table starts at ds:117D (115D + 8 * 4); 115D..117C hold other tables (ds:115F, ds:116E), so src should declare it at 117D and index [i - 8]."
+
 [[global]]
 id = "ds:FC8A"
 name = "gNewMemberFemale"
 why = "PickOption ovl0:1F66 stores choice % 2 of the race list, and odd race indices are the FEMALE entries of gRaceNames; PickPartySlot passes it to FindSlot, which limits a female to portraits 0x1a.. and a male to ..0x1c."
+
 [[global]]
 id = "ds:5EB0"
 name = "gBoxAnimMember"
 why = "AnimateMemberBox ovl0:1224 compares it with gChargenMember and, when they differ, resets the frame timer and stores the member; its initial byte is 6 (no member yet)."
+
 [[global]]
 id = "ds:FC84"
 name = "gBoxAnimFrame"
 why = "AnimateMemberBox ovl0:1224 steps it 0..9 every two ticks and draws gBoxAnimCells[gFC84] into the current member's box."
+
 [[global]]
 id = "ds:FC85"
 name = "gBoxAnimDrawnFrame"
 why = "AnimateMemberBox ovl0:1224 returns early while it equals gBoxAnimFrame and sets it to gBoxAnimFrame after drawing, so it holds the frame last drawn."
+
 [[global]]
 id = "ds:FC86"
 name = "gBoxAnimNextTick"
 why = "AnimateMemberBox ovl0:1224 advances the frame when it is below gTicks and then sets it to gTicks + 2; a member change resets it to 0."
+
 [[global]]
 id = "ds:6079"
 name = "gMemberBoxX"
 why = "Four bytes 16, 80, 16, 80, the left edge of each member's box (the same values as ds:5E54); PickOption ovl0:1F66 draws the box outline with DrawRect from them."
+
 [[global]]
 id = "ds:607D"
 name = "gMemberBoxY"
 why = "Four bytes 63, 63, 127, 127, the top edge of each member's box (the same values as ds:5E5C); PickOption ovl0:1F66 draws the box outline with DrawRect from them."
+
 [[global]]
 id = "ds:623F"
 name = "gStrSelectRace"
 why = "The string reads \"SELECT RACE:\"; PickOption ovl0:1F66 draws it at (0x93, 0x43) before listing gRaceNames."
+
 [[global]]
 id = "ds:618C"
 name = "gStrBlankName"
 why = "The string is ten spaces; DrawCharName ovl0:05BA draws it at the name slot before the centred name, erasing the old name (ten is the name length EditTextField allows in ovl0:23EC)."
+
 [[global]]
 id = "ds:6081"
 name = "gRaceClassMasks"
 why = "Six longs indexed by race >> 1, a bit per class index the race may take (HUMAN 0x3f is the six single classes); PickClass ovl0:207A filters the class list gClassNames with it."
+
 [[global]]
 id = "ds:6099"
 name = "gClassAlignmentMasks"
 why = "Fifteen longs indexed by class, a bit per alignment allowed (PALADIN 0x1 is LAWFUL GOOD only, RANGER 0x7 the good ones, THIEF 0x1fe no LAWFUL GOOD); PickAlignment ovl0:2238 filters gAlignmentNames with it."
+
 [[global]]
 id = "ds:5EB1"
 name = "gRaceAbilityBonus"
 why = "Six rows of six words indexed by race >> 1 (ELF dex +1 con -1, DWARF con +1 cha -1, GNOME int +1 wis -1, HALFLING str -1 dex +1); RollCharacterStats ovl0:1BF2 adds row[i] to each rolled ability."
+
 [[global]]
 id = "ds:5EF9"
 name = "gClassStartLevels"
 why = "Fifteen 4-byte records per class: bytes 0..2 the starting level of each class slot for 5000 experience (FIGHTER 3, THIEF 4, FIGHTER/MAGE/THIEF 1/1/2), which RollCharacterStats ovl0:1BF2 copies to levels[]; byte 3 is ds:5EFC."
+
 [[global]]
 id = "ds:5EFC"
 name = "gClassStartLevelsNumClasses"
 why = "Byte 3 of each gClassStartLevels record (ds:5EF9 + 3), the number of classes (1, 2 or 3); RollCharacterStats ovl0:1BF2 gives each class slot 5000 / it experience. One object with ds:5EF9."
+
 [[global]]
 id = "ds:624C"
 name = "gStrSelectClass"
 why = "The string reads \"SELECT CLASS:\"; PickClass ovl0:207A draws it at (0x93, 0x43) before listing gClassNames."
+
 [[global]]
 id = "ds:625A"
 name = "gStrSelectAlignment"
 why = "The string reads \"SELECT ALIGNMENT:\"; PickAlignment ovl0:2238 draws it at (0x93, 0x43) before listing gAlignmentNames."
+
 [[global]]
 id = "ds:626C"
 name = "gStrNamePrompt"
 why = "The string reads \"Name:\"; CreateCharacter ovl0:23EC draws it at (0x95, 0x64) just before EditTextField reads the new member's name."
+
 [[global]]
 id = "ds:DD12"
 name = "gUnwrittenPanelRow"
 why = "CreateCharacter ovl0:23EC passes it to DrawPanelRow, but no code writes it (the bytes 12 DD occur once in the code, at that read), so it is always 0 and the call redraws the member's portrait."
+
 [[global]]
 id = "ds:5EAC"
 name = "gMemberPortraits"
 why = "Four bytes, initially 0xFF, the portrait index each member chose: PickPartySlot ovl0:0A5E stores the chosen cell into g5EAC[gChargenMember] and gChars[].m22, and FindSlot ovl0:0D5B skips portraits another named member already holds."
+
 [[global]]
 id = "ds:5E64"
 name = "gPanelIconCells"
 why = "The 17 sprite cells BuildIconTable ovl0:0000 slices from CHARGENB using gIcons2084, which DrawPanelIcon ovl0:0128 draws through DrawShape and FreeIconTable ovl0:00AF frees."
+
 [[global]]
 id = "ds:DF4C"
 name = "gViewDirty"
 why = "Set to 1 whenever something visible changes (TurnLeft 0ACD:056C, MoveParty 122E:0001, floor item moves 0ACD:0644, 0D1C:0006); RunMapLoop (0ACD:0E8A) calls DrawViewFrame(1) while it is set and DrawViewFrame (ovl4:1F51) and 08E6 clear it after drawing."
+
 [[global]]
 id = "ds:F51A"
 name = "gCursorSlot"
 why = "The keyboard cursor's item slot of gInventoryMember: DrawMemberSlot (1547:07E7) and DrawItemRow (0BD2:0917) outline slot gF51A only while gMouseDisabled, key 0x17 calls UseItemSlot(gInventoryMember, gF51A) (0ACD:0D9D), and SetActionRow (0ACD:09EF) moves it through the 27-slot neighbour table ds:36D0; 0 and 1 are the hands, 0x10 the list slot."
+
 [[global]]
 id = "ds:FC82"
 name = "gMatchedNodeKey"
 why = "DispatchNodeEvent (16A5:00BD, src/E16A5.C:328 and :334) writes 1 when a node's first key word (+06) matched, 2 for the second (+08), and clears it first (:237), so 0 means a mouse hit; 0ACD:008C and 00EB use 1 and 2 to pick members 0/1 and 2..5 for the keys 0x70..0x75."
+
 [[global]]
 id = "ds:EFB2"
 name = "gPickViewPos"
 why = "The view position 0..3 the keyboard pick PickListItem (0ACD:0BA6) last tried, stepped (gEFB2 + 1) & 3 and used to index g374A and g1A1B; reset to 0xff when the party turns (0ACD:056C, 0593), moves (MoveParty 122E:0001) or drops an item (0ACD:0A61). Not a sound page."
+
 [[global]]
 id = "ds:F3BA"
 name = "gPickFirstItem"
 why = "PickListItem (0ACD:0BA6) stores the first item it picks in a cycle here and clears it to -1 when the same item comes round again or a position is empty, so repeated presses cycle through the floor items without repeating."
+
 [[global]]
 id = "ds:374A"
 name = "gViewPosAhead"
 why = "Four words 0, 0, 1, 1 (read from DGROUP) indexed by the view position gEFB2: PickListItem (0ACD:0BA6) takes the cell ahead (StepCell) for positions 2 and 3 and the party's own cell for 0 and 1, the same split as the floor nodes of 0ACD:0644 (slots 0, 1 own cell, 2, 3 ahead)."
+
 [[global]]
 id = "ds:1A1B"
 name = "gViewToCellPos"
 why = "Sixteen bytes, four per facing (0,1,2,3 / 1,3,0,2 / 3,2,1,0 / 2,0,3,1), indexed [gPartyDir * 4 + view position]: maps a view-relative floor position to the cell's absolute sub-position, which is the item tag InsertListItem stores and RemoveListItem matches (0ACD:0BA6, 0ACD:0494, 0D1C:035A, EOV3, EOV5); it equals the local slotKind table of 0ACD:0644. Not a sound table."
+
 [[global]]
 id = "ds:36B0"
 name = "gHandSplitY"
 why = "Six words 24, 24, 80, 80, 136, 136, one per party member (row by member pair); ClickHandSlot (0ACD:0415) picks hand 1 when gHitY is at least this value, else hand 0, and the two hand slots of each member are drawn at g5D33 y 11/27, 63/79, 115/131."
+
 [[global]]
 id = "ds:36D0"
 name = "gSlotNeighbours"
 why = "108 bytes ending exactly at ds:373C, four per item slot for the 27 slots: SetActionRow (0ACD:09EF) sets gF51A = g36D0[gF51A * 4 + dir], so each entry is the slot the keyboard cursor moves to in direction dir (row 0: 18, 1, 25, 11)."
+
 [[global]]
 id = "ds:373C"
 name = "gFrontPosByDir"
 why = "Eight bytes, two per facing (0,1 / 1,3 / 3,2 / 2,0), the first two entries of each gViewToCellPos row; MoveListItem (0ACD:0A61) drops the item at g373C[gPartyDir * 2 + g3744[member]], the front floor position on the member's side of the party's cell."
+
 [[global]]
 id = "ds:3744"
 name = "gMemberSide"
 why = "Six bytes 0, 1, 0, 1, 0, 1, one per party member: the member's column (left or right) in the 2 by 3 party layout, used by MoveListItem (0ACD:0A61) to pick the left or right front drop position from g373C."
+
 [[global]]
 id = "ds:FC5A"
 name = "gNextRandomSoundTick"
 why = "RunMapLoop (0ACD:0E8A) sets it to the tick counter g8492 plus (1d10 + 3) * 0x12 ticks (about 4 to 13 seconds); when g8492 passes it and level gFBC8 is 1..3 it re-arms it and plays sound 0x1E at gPartyCell plus 1d12 - 1."
+
 [[global]]
 id = "ds:FC58"
 name = "gUnreadPartyCellCopy"
 why = "RunMapLoop (0ACD:0E8A) copies gPartyCell into it before the loop and on every pass, and no file in src/ reads it (only src/E0ACD.C declares ds:FC58)."
+
 [[global]]
 id = "ds:1231"
 name = "gClassBaseBits"
 why = "Fifteen bytes indexed by classIndex: 1, 1, 5, 2, 4, 8, 5, 9, 3, 11, 10, 12, 7, 5, 6, the base-class bits (1 fighter, 2 mage, 4 cleric, 8 thief, the order of the class-slot names at ds:1219) of each class; ItemClassAllowed (0BD2:11FD) ANDs it with the item type's m05 and ovl0:280D tests bit 2 (mage)."
+
 [[global]]
 id = "ds:1C8D"
 name = "gSlotItemMask"
 why = "27 words, one per item slot (0x8, 0x8 for the hands, 0xFFFF for the 14 pack slots, 0x1, 0x2, 0x4, 0x20, 0x40, 0x10 for slots 16..21, 0x80 and 0x100 for 23..26): CanPlaceItemInSlot (0BD2:0AF2) and SwapSelectedItem (0BD2:0C8E) refuse an item whose type mask gItemTypes[].m00 has no bit in common (\"You cant put that item there.\")."
+
 [[global]]
 id = "ds:F53A"
 name = "gPanelShadow"
 why = "A UI colour SetUiPalette (ovl2:0937) sets (0x87 VGA, 0xD else); DrawFilledPanel (082C:09D5) draws its left and bottom edges in it as colourB for raised panels (0BD2:0917, 0DE8 :547), and DrawRatioBar (1547:028C) passes it as colourA to sink the bar well, so it is the bevel's dark edge opposite gFB4C."
+
 [[global]]
 id = "ds:FB4C"
 name = "gPanelHighlight"
 why = "A UI colour SetUiPalette (ovl2:0937) sets (0x82 VGA, 9 else); DrawFilledPanel (082C:09D5) draws its top and right edges in it as colourA for the raised panels (0BD2:0917, 1547:07E7, 0D1C:0C21) and DrawRatioBar (1547:028C) swaps it with gF53A for the sunken bar well, so it is the bevel's light edge."
+
 [[global]]
 id = "ds:17CE"
 name = "gInvSlotX"
 why = "27 words, one per item slot (230, 278, then 181/199 for the pack, ...): DrawItemRow (0BD2:0917) draws slot row at x g17CE[row], and the 27 inventory nodes of ClickInventorySlot (0ACD:01C0) have the same x (230, 278, 181, 199)."
+
 [[global]]
 id = "ds:1804"
 name = "gInvSlotY"
 why = "27 bytes, one per item slot (116, 116, 40, 40, 58, ...): DrawItemRow (0BD2:0917) draws slot row at y g1804[row], matching the y of the 27 inventory nodes of ClickInventorySlot (0ACD:01C0)."
+
 [[global]]
 id = "ds:3875"
 name = "gInvSlotKind"
 why = "27 bytes, one per item slot: 0 for normal slots, 1 for slot 16 (DrawItemRow 0BD2:0917 prints the item count of its list instead of an icon) and 2 for slots 25 and 26 (icon drawn offset by -4, box size 8; their nodes are 10 by 10)."
+
 [[global]]
 id = "ds:3890"
 name = "gInvSlotBoxSize"
 why = "Three bytes 16, 16, 8 indexed by gInvSlotKind: DrawItemRow (0BD2:0917) draws the slot frame from (x - 1, y - 1) to (x + size, y + size), 16 for normal and list slots and 8 for the small kind-2 slots."
+
 [[global]]
 id = "ds:38FA"
 name = "gWandSpells"
 why = "Bytes 0, 18, 24, 40, 13, -1, 4, 37 indexed by a wand's m0B (wand names at ds:3837: Stick, Lightning, Frost, Curing, Fireball, Silvias, Magic Missile): UseWandItem (0BD2:0EE8) passes g38FA[m0B] as the spell action to StartPanelAction; 5 (Silvias, -1) is handled by its own push code."
+
 [[global]]
 id = "ds:3893"
 name = "gPotionFeelings"
 why = "The NUL-separated strings \"\", much stronger, better, much better, ill for a moment, no longer hungry, fast and agile, transparent: ApplyItemEffect (0BD2:0D2D) prints \"%s feels %s!\" with SkipStrings(g3893, kind), kind being the potion's m0B."
+
 [[global]]
 id = "ds:37B4"
 name = "gRingNames"
 why = "The NUL-separated strings Adornment, Wizardry, Sustenance, Feather Fall: DrawItemName (0BD2:05B5) joins \"Ring\" and SkipStrings(g37B4, m0B) with \" of \"."
+
 [[global]]
 id = "ds:37E1"
 name = "gPotionNames"
 why = "The NUL-separated strings \"\", Giant Strength, Healing, Extra Healing, Poison, Vitality, Speed, Invisibility, Cure Poison: DrawItemName (0BD2:05B5) joins \"Potion\" and SkipStrings(g37E1, m0B) with \" of \"; the order matches ApplyItemEffect's cases (1 giant strength, 2 and 3 heal, 4 poison)."
+
 [[global]]
 id = "ds:3837"
 name = "gWandNames"
 why = "The NUL-separated strings Stick, Lightning, Frost, Curing, Fireball, Silvias, Magic Missile: DrawItemName (0BD2:05B5) joins \"Wand\" and SkipStrings(g3837, m0B) with \" of \"."
+
 [[global]]
 id = "ds:FB7B"
 name = "gAltPanelFill"
 why = "A UI colour SetUiPalette (ovl2:0937) sets (0xB4 VGA, 0xE else); DrawSpellPanel (0EF3:2295) fills the cells that are not the member's own in it (with the second bevel pair gA9C4/gA928) and RedrawMember (1547:0991) fills the CHARACTER INFO columns and the status text background with it."
+
 [[global]]
 id = "ds:5D1F"
 name = "gMemberFrameX"
 why = "Bytes 8, 80 by member column (who & 1): DrawMemberBar (1547:0009) draws the 0x3F by 0x31 frame of a member block at this x (plus 0xB0 on screen, the 184/256 x of the member nodes)."
+
 [[global]]
 id = "ds:5D21"
 name = "gMemberFrameY"
 why = "Bytes 2, 54, 106 by member row (who >> 1): DrawMemberBar (1547:0009) draws the member block frame at this y, the y of the 63 by 50 member nodes of 0ACD:078C."
+
 [[global]]
 id = "ds:5D26"
 name = "gHpLineY"
 why = "Bytes 46, 98, 150 by member row (who >> 1): DrawMemberHp (1547:033F) draws the \"HP\" label and bar, or the \"%3d of %-3d\" text, at this y in panel mode 0."
+
 [[global]]
 id = "ds:5D24"
 name = "gHpLineX"
 why = "Bytes 23, 95 by member column (who & 1): DrawMemberHp (1547:033F) draws the HP bar at this x (plus 0xB0 while no status line is up) in panel mode 0."
+
 [[global]]
 id = "ds:5D1C"
 name = "gHpBarColours"
 why = "Three bytes 3, 5, 8 indexed by the wound state of DrawMemberHp (1547:033F): 0 healthy, 1 below a third of max, 2 at 0 hp or below; passed to DrawRatioBar as the filled colour."
+
 [[global]]
 id = "ds:5D29"
 name = "gFoodBarColours"
 why = "Three bytes 3, 5, 8 indexed by the hunger state of DrawMemberFood (1547:04A0): 0 fed, 1 food below 0x21, 2 below 0x14; passed to DrawRatioBar as the filled colour."
+
 [[global]]
 id = "ds:FB7A"
 name = "gBarEmptyColour"
 why = "A UI colour SetUiPalette (ovl2:0937) sets (0x85 VGA, 2 else) that DrawMemberHp (1547:033F) and DrawMemberFood (1547:04A0) pass to DrawRatioBar as emptyColour, the colour of the unfilled part of the bar."
+
 [[global]]
 id = "ds:A95A"
 name = "gFailLabelLight"
 why = "SetUiPalette (ovl2:0937) sets it (0x11 VGA, 6 else); DrawActionLabel (1547:0642) passes it as colourA (top and right edges) of the DrawFilledPanel behind the CAN'T REACH and NO AMMO labels (result -3, -4), its only reader."
+
 [[global]]
 id = "ds:8A6C"
 name = "gFailLabelShadow"
 why = "SetUiPalette (ovl2:0937) sets it (0x17 VGA, 0xD else); DrawActionLabel (1547:0642) passes it as colourB (left and bottom edges) of the DrawFilledPanel behind CAN'T REACH and NO AMMO; src/EOV2.C:148 calls it the fill colour, but the fill is the next argument, g8A7D."
+
 [[global]]
 id = "ds:8A7D"
 name = "gFailLabelFill"
 why = "SetUiPalette (ovl2:0937) sets it (0x14 VGA, 8 else); DrawActionLabel (1547:0642) passes it as the fill argument of DrawFilledPanel (082C:09D5) behind the CAN'T REACH and NO AMMO labels."
+
 [[global]]
 id = "ds:5D31"
 name = "gHandSlotX"
 why = "Bytes 40, 112 by member column (who & 1): DrawMemberSlot (1547:07E7) draws the hand slots at this x (plus 0xB0 on screen: 216 and 288, the x of the ClickHandSlot nodes)."
+
 [[global]]
 id = "ds:5D33"
 name = "gHandSlotY"
 why = "Six bytes 11, 27, 63, 79, 115, 131 indexed by (who & 6) + hand: DrawMemberSlot (1547:07E7) draws hand 0 and hand 1 of each member row at these y."
+
 [[global]]
 id = "ds:8A7E"
 name = "gHandShadeIcon"
 why = "A 32 by 16 cell cut from the PLAYFLD sheet (ovl2, gGetSpriteCell(8, 0x58, 4, 0x10)); DrawMemberSlot (1547:07E7) draws it over a hand that cannot be used now (m1E bit set, CanUseHand false, hp at or below 0 or paralyzed). Not an empty-slot highlight."
+
 [[global]]
 id = "ds:F2F4"
 name = "gDeadPortraitIcon"
 why = "A 32 by 32 cell cut from the PLAYFLD sheet (ovl2, gGetSpriteCell(0, 0x58, 4, 0x20)); DrawMemberPortrait (1547:0544) draws it instead of the portrait when hp is -10, the value RedrawMember labels DEAD."
+
 [[global]]
 id = "ds:DC94"
 name = "gUnconsciousIcon"
 why = "A 32 by 32 cell cut from the PLAYFLD sheet (ovl2, gGetSpriteCell(4, 0x58, 4, 0x20)); DrawMemberPortrait (1547:0544) draws it over the portrait when hp is below 1, the range RedrawMember labels UNCONSCIOUS (-9..0)."
+
 [[global]]
 id = "ds:5D2C"
 name = "gPortraitX"
 why = "Bytes 8, 80 by member column (who & 1): DrawMemberPortrait (1547:0544) draws the portrait at this x (plus 0xB0 on screen: 184 and 256, the x of the OpenInventory portrait nodes)."
+
 [[global]]
 id = "ds:5D2E"
 name = "gPortraitY"
 why = "Bytes 11, 63, 115 by member row (who >> 1): DrawMemberPortrait (1547:0544) draws the portrait at this y in panel mode 0."
+
 [[global]]
 id = "ds:5D4B"
 name = "gMemberBlockCol"
 why = "Bytes 1, 10 by member column, in 8-pixel columns: RedrawMember (1547:0991) clears the member block there with ClipRect and draws the name at x << 3 plus 2 (8 and 80 pixels, the same x as gMemberFrameX)."
+
 [[global]]
 id = "ds:5D4D"
 name = "gMemberScreenCol"
 why = "Bytes 23, 32 by member column (gMemberBlockCol plus 22, that is plus 0xB0 pixels): RedrawMember (1547:0991) copies the finished member block from page 2 to this screen column with ClipRect when no status line is up."
+
 [[global]]
 id = "ds:5D4F"
 name = "gMemberBlockY"
 why = "Bytes 2, 54, 106 by member row (who >> 1): RedrawMember (1547:0991) clears and draws the member block (name at y + 2) at this y; same values as gMemberFrameY."
+
 [[global]]
 id = "ds:5D39"
 name = "gInfoBoxLeft"
 why = "Three words 179, 272, 301: the left edges of the three rectangles RedrawMember (1547:0991) fills with gFB7B in panel mode 2, the CHARACTER INFO screen."
+
 [[global]]
 id = "ds:5D3F"
 name = "gInfoBoxTop"
 why = "Three bytes 36, 51, 51: the top edges of the three CHARACTER INFO rectangles RedrawMember (1547:0991) fills in panel mode 2."
+
 [[global]]
 id = "ds:5D42"
 name = "gInfoBoxRight"
 why = "Three words 271, 300, 318: the right edges of the three CHARACTER INFO rectangles RedrawMember (1547:0991) fills in panel mode 2."
+
 [[global]]
 id = "ds:5D48"
 name = "gInfoBoxBottom"
 why = "Three bytes 165, 165, 147: the bottom edges of the three CHARACTER INFO rectangles RedrawMember (1547:0991) fills in panel mode 2."
+
 [[global]]
 id = "ds:1195"
 name = "gStatNames"
 why = "Six far strings STRENGTH, INTELLIGENCE, WISDOM, DEXTERITY, CONSTITUTION, CHARISMA (read from the image); RedrawMember (1547:0991) draws them as the stat labels of the CHARACTER INFO panel."
+
 [[global]]
 id = "ds:1219"
 name = "gBaseClassNames"
 why = "Far strings FIGHTER, MAGE, CLERIC, THIEF, PALADIN, RANGER (read from the image), indexed by GetClassSlotByte(classIndex, n); RedrawMember (1547:0991) draws them as the labels of the per-class EXP and LVL lines."
+
 [[global]]
 id = "ds:FBD2"
 name = "gPartySpellFlags"
 why = "Party-wide spell bits: bit 0 is set and cleared by the detect magic apply and remove callbacks (spell records 3 and 29 hold 0EF3:1069 and 0EF3:10AE) and makes flagged item icons glow (07A9:015C); bit 4 is bless (0EF3:1AD0 says \"The party is already blessed!\", ds:587A), bit 5 is prayer (spell 38 apply 0EF3:1E3E); bits 4|5 raise the party's to-hit roll in 0DE8 and bit 5 lowers a monster's in 08E6."
+
 [[global]]
 id = "ds:849E"
 name = "gTimerEnableFlags"
 why = "The INT 1Ch handler (1D8F:0055) bumps the counter ds:848E only while bit 0 is set and the game clock ds:8492 only while bit 1 is set; animations, the camp menu (ovl1:1ACD) and the map load (ovl3:0A7C) clear bit 1 around their work, pausing game time."
+
 [[global]]
 id = "ds:1344"
 name = "gSpells"
 why = "The 0x13-byte spell records: the table's +0 far pointers name them in order (1 \"armor\", 2 \"burning hands\" ... 52; mage 1..25, cleric 26..52) with their apply, damage and remove callbacks and sound; CastSpell (0EF3:2676) indexes it by the spell number and EOV6 prints the names."
+
 [[global]]
 id = "ds:AD20"
 name = "gSpellItemTypes"
 why = "ds:AD20 is gItemTypes (ds:A9F0) + 0x33 * 16: the six 16-byte item-type records 0x33..0x38 that CreateItemType (0EF3:035A) hands out for the shocking grasp, vampiric touch and flame blade items (spells 7, 19, 32); the save code (EOV3 ovl3 save and load) writes and reads these 0x60 bytes."
+
 [[global]]
 id = "ds:8DCE"
 name = "gItemCastHand"
 why = "Set to `kind + 1` by StartPanelAction (0EF3:28ED) when UseItemSlot or UseWandItem (0BD2:1001, 0BD2:0EE8) casts a spell from the item in hand `kind`, 0 for a memorized spell; when set CastSpell consumes that hand's item (0EF3:2604) instead of a memorized slot and 0EF3:026F ends it by marking the hand used (m1E bit) and clearing it."
+
 [[global]]
 id = "ds:F3B8"
 name = "gCasterSubPos"
 why = "CastSpell (0EF3:2676) sets it to g1A1B[gPartyDir * 4 + rank], rank the caster's member index with 4 and 5 folded to 2 and 3, a facing-by-rank to cell sub-position table (0..3); the spell starters pass it to StartCellEffect as m06, which 0EF3:0A3F uses as the sub-position for ListMonstersAtCell and through g1A2B."
+
 [[global]]
 id = "ds:EFB8"
 name = "gCurrentSpell"
 why = "CastSpell (0EF3:2676) stores its spell number here (gEFB8 = action, an index into gSpells ds:1344); ApplyMemberEffect plays gSpells[gEFB8].sound (ds:1355 + gEFB8 * 0x13) and every apply callback passes it to ApplyTimedCharEffect as the effect that will expire."
+
 [[global]]
 id = "ds:8DD5"
 name = "gItemZeroTag"
 why = "ds:8DD5 is the +5 tag byte of item record 0 (gItems at ds:8DD0, E0BD2.C ItemRecord.tag); the only access, CreateItemRecord 0EF3:0418, clears it by fixed address in the same chain that clears the new record's fields, so record 0's tag is written instead of the new record's (looks like a source slip)."
+
 [[global]]
 id = "ds:A999"
 name = "gExpiringMember"
 why = "ExpireSpellEffect (0EF3:0D78) stores the member whose spell is expiring here just before running the spell's remove callback, and the remove callback DiscardEquippedItems (0EF3:1233, which only receives the record) redraws that member from it."
+
 [[global]]
 id = "ds:FC74"
 name = "gSavedPanelMember"
 why = "StartPanelAction (0EF3:28ED) saves gPanelMember here before making the item's user the panel member, and FinishMemberEffect (0EF3:026F) restores gPanelMember from it when the item cast ends."
+
 [[global]]
 id = "ds:FC76"
 name = "gSavedClericMode"
 why = "StartPanelAction (0EF3:28ED) saves gF43D (the cleric spell mode, ds:F43D) here before setting it from the item's spell number, and FinishMemberEffect (0EF3:026F) restores ds:F43D from it."
+
 [[global]]
 id = "ds:F43D"
 name = "gClericSpellMode"
 why = "1 while the spell panel or cast is for cleric spells: OpenSpellPanel (0EF3:21E0) sets it for the holy symbol (flag 1, item class 6) with gClericSpellNames and the +0x55 slots, StartPanelAction sets it when the spell number is over 0x19 (cleric spells are 26..52), and HandleSpellList adds 0x19 to the slot's spell when it is 1."
+
 [[global]]
 id = "ds:5763"
 name = "gConeOfColdCells"
 why = "Four far pointers, one per facing gPartyDir, to seven signed cell offsets (north: -32,-64,-63,-65,-96,-97,-95, the cone in front of the party on the 32-wide maze); CastConeOfCold (0EF3:18D8, spell 24) adds each to gPartyCell and damages the monsters there."
+
 [[global]]
 id = "ds:5717"
 name = "gInFrontRank"
 why = "Four bytes 1,1,0,0, one per party rank: CastMeleeEffect (0EF3:0E1B, the cause wounds spells) says \"%s must be in the front ranks to hit!\" (ds:5809) when the caster's byte is 0. QUIRK: members 4 and 5 read past it into ds:571B (3, -3) and count as front."
+
 [[global]]
 id = "ds:5733"
 name = "gNeighbourCellDeltas"
 why = "Four signed bytes -32, 32, 1, -1, the maze cell offsets of the four neighbours on the 32-wide map; RunMeleeAroundCell (0EF3:17D8, the ice storm damage callback of spell 21) adds each to the target cell (masked to 0x3FF) to hit the cells around it."
+
 [[global]]
 id = "ds:571B"
 name = "gBurningHandsShapes"
 why = "Six signed shape numbers 3,-3,2,-2,1,-1 that DrawMemberIcons (0EF3:0F99, the burning hands apply callback, spell 2) draws from gIconTable at the six positions ds:5721/ds:572D before damaging the cell ahead; a negative number picks the other drawing routine (082C:0681), the mirrored flame [H]."
+
 [[global]]
 id = "ds:57A3"
 name = "gStrCastOnWhich"
 why = "The string \"Cast spell on which character? \" said by 0EF3:059D, which CastSpell (0EF3:2676) runs for spells whose flags bit 0 asks for a target member."
+
 [[global]]
 id = "ds:57F1"
 name = "gStrMissedMonster"
 why = "The string \"%s missed the monster.\\r\" formatted with the caster's name by CastMeleeEffect (0EF3:0E1B) when no monster is in front of the party."
+
 [[global]]
 id = "ds:5809"
 name = "gStrMustBeInFront"
 why = "The string \"%s must be in the front ranks to hit!\\r\" formatted by CastMeleeEffect (0EF3:0E1B) when gInFrontRank (ds:5717) is 0 for the caster."
+
 [[global]]
 id = "ds:5830"
 name = "gStrHighBaseArmor"
 why = "The string \"%s already has a high base armor class.\\r\" said by the armor spell's apply callback 0EF3:0F0B when the record's armour class is not above the base plus six."
+
 [[global]]
 id = "ds:587A"
 name = "gStrAlreadyBlessed"
 why = "The string \"The party is already blessed!\\r\" said by the bless apply callback 0EF3:1AD0 when gFBD2 bit 4 is already set."
+
 [[global]]
 id = "ds:58AF"
 name = "gStrSlowPoisonNoEffect"
 why = "The string \"no effect.\\r\" drawn by the slow poison apply callback 0EF3:1C75 (spell 34) when the target is not poisoned (status bit 1 clear); the other two \"no effect\" strings are separate copies."
+
 [[global]]
 id = "ds:58BB"
 name = "gStrNeutralizeNoEffect"
 why = "The string \"no effect\\r\" said by the neutralize poison apply callback 0EF3:1F0B (spell 42) when the target's status byte is zero."
+
 [[global]]
 id = "ds:58C6"
 name = "gStrRaiseDeadNoEffect"
 why = "The string \"no effect\\r\" said by the raise dead apply callback 0EF3:2050 (spell 48) when the target is not at -10 hit points or its race check fails."
+
 [[global]]
 id = "ds:58D1"
 name = "gStrDisintegrated"
 why = "The string \"%s has been disintegrated!\\r\" formatted with the member's name by DamageOneMember (0EF3:20A8) after it deals 100 damage."
+
 [[global]]
 id = "ds:58ED"
 name = "gStrDeathSpell"
 why = "The string \"The party has been hit by a death spell!\\r\" drawn by DamageParty (0EF3:2145) before it deals 100 damage to up to 1d4 members."
+
 [[global]]
 id = "ds:57C3"
 name = "gStrTargetOk"
 why = "The string \"\\rok\\r\" drawn after the target member's name by ApplyMemberEffect (0EF3:08CF) when a spell's target has been picked."
+
 [[global]]
 id = "ds:57C8"
 name = "gStrSpellAborted"
 why = "The string \"\\rSpell aborted.\\r\" said by ApplyMemberEffect (0EF3:08CF) when the target pick names no member (-1)."
+
 [[global]]
 id = "ds:57D9"
 name = "gStrSpellExpires"
 why = "The string \"%s's %s spell expires.\\r\" formatted with the member and spell names by ExpireSpellEffect (0EF3:0D78)."
+
 [[global]]
 id = "ds:5859"
 name = "gStrAllDispelled"
 why = "The string \"All spells on %s are dispelled.\\r\" formatted by the dispel magic apply callback 0EF3:131A."
+
 [[global]]
 id = "ds:5899"
 name = "gStrAidFails"
 why = "The string \"The aid spell fails!\\r\" said by the aid apply callback 0EF3:1BA3 when MemberIs(gCurMember, 3) refuses."
+
 [[global]]
 id = "ds:DD14"
 name = "gSpellBookSlots"
 why = "Far pointer OpenSpellPanel (0EF3:21E0) sets to the member's +0x55 cleric or +0x37 mage memorized spell bytes (five rows of six, one per level, matching SortSpellSlots); the panel draws and casts from row gDDE2 (`gDD14 + gDDE2 * 6`) and CastSpell stores the negated spell in it once cast."
+
 [[global]]
 id = "ds:DDE2"
 name = "gSpellPanelLevel"
 why = "The spell level row the panel shows (0..4): DrawSpellPanel (0EF3:2295) highlights the cell i == gDDE2 of the five labelled \"1ST\"..\"5TH\" and reads names from gDD14 + gDDE2 * 6; 0EF3:25BD sets it from the clicked level tab's key, OpenSpellPanel clears it."
+
 [[global]]
 id = "ds:A9C5"
 name = "gSpellPanelSlot"
 why = "The highlighted row of the spell list, 0..5 a memorized slot and 6 the ABORT SPELL row (DrawSpellPanel 0EF3:2295 draws ds:5937 for it); OpenSpellPanel and 0EF3:25BD move it to the first slot over zero, HandleSpellList steps it and CastSpell casts and removes that slot."
+
 [[global]]
 id = "ds:592B"
 name = "gStrAbortSpell"
 why = "The string \"ABORT SPELL\" DrawSpellPanel (0EF3:2295) draws in row 6 when that row is not highlighted (gA9C5 != 6)."
+
 [[global]]
 id = "ds:5937"
 name = "gStrAbortSpellLit"
 why = "The second \"ABORT SPELL\" string, drawn by DrawSpellPanel (0EF3:2295) in row 6 with the highlight colour when gA9C5 is 6."
+
 [[global]]
 id = "ds:5943"
 name = "gStrNeedFreeHand"
 why = "The string \"You must have a free hand for this spell.\\r\" said by CastSpell (0EF3:2676) when a spell with flags bit 1 is cast and both hand slots are full."
+
 [[global]]
 id = "ds:596E"
 name = "gStrTwoSpellsActive"
 why = "The string \"You can't have two of this spell type active.\\r\" said by CastSpell (0EF3:2676) when a hand already holds a spell-made item (0EF3:121B)."
+
 [[global]]
 id = "ds:599D"
 name = "gStrCastsSpell"
 why = "The string \"%s casts %s.\\r\" formatted with the caster and spell names and drawn by CastSpell (0EF3:2676)."
+
 [[global]]
 id = "ds:59AB"
 name = "gStrCastOk"
 why = "The string \"ok\\r\" drawn by CastSpell (0EF3:2676) just before it runs the spell's apply callback."
+
 [[global]]
 id = "ds:A9C4"
 name = "gUnselTabLightColour"
 why = "DrawSpellPanel (0EF3:2295) passes it as colourA (the top and right bevel edges of DrawFilledPanel 082C:09D5) for the spell-level tabs that are not selected, where the selected tab uses gFB4C; SetUiPalette (ovl2:0937) sets it to 0xB1 or 0x0F."
+
 [[global]]
 id = "ds:A928"
 name = "gUnselTabDarkColour"
 why = "DrawSpellPanel (0EF3:2295) passes it as colourB (the left and bottom bevel edges of DrawFilledPanel 082C:09D5) for the spell-level tabs that are not selected, where the selected tab uses gF53A; SetUiPalette (ovl2:0937) sets it to 0xB8 or 0x0D."
+
 [[global]]
 id = "ds:55E6"
 name = "gModeRampIndex"
 why = "Nine bytes 2,0,0,0,1,0,1,1,0, one per effect mode (Tgt.m08, the StartCellEffect mode 0..8); AnimateEffect (0EF3:00CD) uses it to pick the colour ramp gAnimTable[g55E6[mode]] for the particle burst 0EF3:2A53."
+
 [[global]]
 id = "ds:55EF"
 name = "gDepthFirstDrawSlot"
 why = "Six bytes 7,12,15,18,15,5 indexed by the view slot's depth row (g1A09[slot]); AnimateEffect (0EF3:00CD) passes the entry to DrawViewSlots (2116:0025), which draws the view slots in draw order from that index, onto page 2 before the burst."
+
 [[global]]
 id = "ds:DD18"
 name = "gBurstOriginX"
 why = "AnimateEffect (0EF3:00CD) sets it to the target view slot's x from g1D61 plus 0x58 before running the particle burst 0EF3:2A53, which copies it into ds:FC68 as the x every particle is offset from."
+
 [[global]]
 id = "ds:DD1A"
 name = "gBurstOriginY"
 why = "AnimateEffect (0EF3:00CD) sets it to 0x30 before the particle burst 0EF3:2A53, which copies it into ds:FC6A as the y every particle is offset from."
+
 [[global]]
 id = "ds:8072"
 name = "gGetPixel"
 why = "INTRO.EXE's driver table has gGetPixel at ds:1EFE and the EOB table sits 0x6174 higher (gDrawLine 1EEE/8062, gFillRect 1EF6/806A, gPutPixel 1F2A/809E); ovl2:078D uses its result as gFillRect's colour and the bursts and ShuffleGrid (ovl5:1E1B) read a pixel and put it back with ds:809E."
+
 [[global]]
 id = "ds:809E"
 name = "gPutPixel"
 why = "The driver hook at the offset of INTRO.EXE's gPutPixel (ds:1F2A plus the 0x6174 the whole table is shifted by in EOB.EXE); the bursts (0EF3:2A53, 0EF3:2EBC) call it with (x, y, colour) using colour bytes from the ramps and to restore the pixels gGetPixel read."
+
 [[global]]
 id = "ds:579B"
 name = "gBurstFloorY"
 why = "Four words 119, 103, 79, 63, one per burst depth `scale`; 0EF3:2A53 clamps each particle's y to it and bounces the particle (negates half its y velocity) when it reaches it, the floor line of that view depth."
+
 [[global]]
 id = "ds:FC62"
 name = "gBurstParticle"
 why = "The particle index 0EF3:2A53 loops with over the rows of the gBufDCFC buffer in its set-up, erase and draw passes (no other function uses it)."
+
 [[global]]
 id = "ds:FC64"
 name = "gBurstColour"
 why = "0EF3:2A53 loads the current particle's colour from the ramp, frameTable[row6 >> 8], into it; zero retires the particle, otherwise it is drawn with gPutPixel (ds:809E)."
+
 [[global]]
 id = "ds:FC66"
 name = "gBurstState"
 why = "0EF3:2A53's loop state: 2 before the first pass (skips the erase), 1 while some particle still has a nonzero colour, 0 ends the loop."
+
 [[global]]
 id = "ds:FC68"
 name = "gBurstBaseX"
 why = "0EF3:2A53 copies gBurstOriginX (ds:DD18) into it on entry and adds it to every particle's scaled x position."
+
 [[global]]
 id = "ds:FC6A"
 name = "gBurstBaseY"
 why = "0EF3:2A53 copies gBurstOriginY (ds:DD1A) into it on entry and adds it to every particle's scaled y position."
+
 [[global]]
 id = "ds:FC6C"
 name = "gBurstX"
 why = "The current particle's screen x in 0EF3:2A53 (row0 >> 6 >> scale plus gBurstBaseX), tested against the bounds and passed to gGetPixel and gPutPixel."
+
 [[global]]
 id = "ds:FC6E"
 name = "gBurstY"
 why = "The current particle's screen y in 0EF3:2A53 (row1 >> 6 >> scale plus gBurstBaseY), clamped to gBurstFloorY and passed to gGetPixel and gPutPixel."
+
 [[global]]
 id = "ds:FC70"
 name = "gBurstSavedPage"
 why = "0EF3:2A53 saves ds:8115 (gStatusLine, which INTRO.EXE's twin ds:1FA1 names gDrawPage) into it on entry and restores ds:8115 from it on exit, since the loop sets that word to 2 and 0."
+
 [[global]]
 id = "ds:FC72"
 name = "gBurstMaskPixel"
 why = "0EF3:2A53 reads the pixel at the particle with ds:8115 set to 2 (page 2, where AnimateEffect drew the nearer view slots) into it, and draws the particle only when that pixel is 0, so nearer walls hide the burst [H]."
+
 [[global]]
 id = "ds:8DD2"
 name = "gItemsFlags"
 why = "A view of the 14-byte ITEM.DAT records gItems (ds:8DD0) two bytes later, so its +0 is the record's flags byte (E0BD2.C ItemRecord +2), +1 the icon, +2 the item type and +4 the key; named after gItems as the view that starts at the flags."
+
 [[global]]
 id = "ds:3237"
 name = "gTurnForMode1To3"
@@ -1370,662 +1555,827 @@ why = "Indexed by Monster +08 for modes 5 and 6 at 08E6:0CC8, reading ds:3239 = 
 id = "ds:321E"
 name = "gDirSearchLeftFirst"
 why = "An int Obj0430 (08E6:0430) flips whenever a monster's state exceeds 6; it selects which direction search table the step uses: 0 gDirSearchRight (ds:31FE, tries +1 before -1) and 1 gDirSearchLeft (ds:320E, tries -1 first)."
+
 [[global]]
 id = "ds:31FE"
 name = "gDirSearchRight"
 why = "Eight words {7,-6,5,-4,3,-2,1,0} that Obj0430 (08E6:0430) adds to the preferred eighth-direction from index 7 down to 0, so the tries are d, d+1, d-1, d+2, d-2, d+3, d-3, d+4: the clockwise neighbour first. Selected when gDirSearchLeftFirst (ds:321E) is 0."
+
 [[global]]
 id = "ds:320E"
 name = "gDirSearchLeft"
 why = "Eight words {-7,6,-5,4,-3,2,-1,0}, the mirror of gDirSearchRight: Obj0430 (08E6:0430) tries d, d-1, d+1, d-2, d+2 and so on, the anticlockwise neighbour first. Selected when gDirSearchLeftFirst (ds:321E) is 1."
+
 [[global]]
 id = "ds:31F2"
 name = "gFrontLeftPosByDir"
 why = "Four bytes {0,1,3,2} by orientation: BuildObjectFrameMask (08E6:017E) gives a monster at the centre position 4 the position g31F2[orient], which is the front-left quarter of the cell for that facing (N: 0 NW, E: 1 NE, S: 3 SE, W: 2 SW)."
+
 [[global]]
 id = "ds:31F6"
 name = "gPosSearchOrder"
 why = "Two rows of four bytes {0,1,2,3} and {0,2,1,3}, chosen by orient & 1 and XORed with the orientation by FindObjectFrameBit (08E6:0218): the order in which the four sub-cell positions are tried for a free one when a monster enters a cell."
+
 [[global]]
 id = "ds:849A"
 name = "gFrameWaitTicks"
 why = "A 32-bit countdown the INT 1Ch handler decrements to zero (E1D8F.ASM 1D8F:0098); DrawViewFrame (ovl4:1F51) spins until it is zero, and 08E6:05EA, 0DCA and 0E48 set it to 8 or 1 around the attack and hit-flash frames to hold them on screen."
+
 [[global]]
 id = "ds:F518"
 name = "gDeferMonsterHits"
 why = "Set to 1 by Obj16D6 (08E6:16D6), TurnUndead (0D1C:0A43) and 0EF3:18D8 before damaging several monsters; while set DamageObject (08E6:0FBE) only marks a visible monster (m16 bit 1) and leaves its death to 08E6:0E48, which shows the frame, kills the dead and clears it."
+
 [[global]]
 id = "ds:1CD3"
 name = "gHitFlashRemap"
 why = "A 16-byte colour row {0, 15 x 15}: RestoreObjectFlags (08E6:0DCA) passes it to the colour callback ds:80D2 when gGraphicsChoice is nonzero right after a monster is damaged, and ovl4:0D1B uses it for monsters with m16 bit 1, so every colour but 0 draws as 15 (a white hit flash)."
+
 [[global]]
 id = "ds:1CE3"
 name = "gHitFlashRemapCga"
 why = "The CGA counterpart of gHitFlashRemap: 08E6:0DCA and ovl4:0D1B pass it to ds:80D2 when gGraphicsChoice is 0 (cga.ovl, table ds:3074); its first four bytes {0,255,255,255} are the remap and the bytes from ds:1CE7 are the selection-frame colour string, which overlaps it."
+
 [[global]]
 id = "ds:1991"
 name = "gNearSideByDir"
 why = "Four bytes {2,3,0,1} by direction, the side of the cell ahead that faces back toward the viewer: ovl4:044B caches g1991[gPartyDir] in gA9C6 to pick the front wall of each view cell, and Obj0B94 (08E6:0B94) reads gMaze[cell * 9 + g1991[dir]]. Same bytes as gOppositeSide (ds:547E)."
+
 [[global]]
 id = "ds:32C3"
 name = "gProjectileHitOrder"
 why = "64 bytes read as [dir * 16 + position * 4] by Obj1775 (08E6:1775), which 08E6:17FD calls with a ds:DD2C projectile's cell, position (m06) and direction (m07): the order of sub-cell positions (centre 4 first) whose monster is hit when none stands at the exact position."
+
 [[global]]
 id = "ds:329B"
 name = "gTargetPosOrder"
 why = "32 bytes read as [gPartyDir * 8 + (who & 1) * 4] by Obj15B4 (08E6:15B4): for facing north the left front member tries positions 2,3,0,1 and the right one 3,2,1,0, the near-side quarter on its own side first; the melee target order of the two front members."
+
 [[global]]
 id = "ds:32BB"
 name = "gNearPosPair"
 why = "Eight bytes, two per party facing {2,3, 0,2, 0,1, 1,3}: the two sub-cell positions of the cell ahead nearest the party (facing north the south pair 2 and 3), which Obj16D6 (08E6:16D6) damages together with the centre position 4."
+
 [[global]]
 id = "ds:324B"
 name = "gAttackSideByDir"
 why = "16 bytes read as [gPartyDir * 4 + monster orient] by Obj10F3 (08E6:10F3); the value is (orient - gPartyDir + 2) & 3, the side of the party the monster attacks from, which selects one of the four 12-byte groups of gAttackTargetOrder. The comment's \"page\" index is gPartyDir."
+
 [[global]]
 id = "ds:325B"
 name = "gAttackTargetOrder"
 why = "48 bytes, four groups of two six-member orders, which Obj10F3 (08E6:10F3) scans for the first living member to attack: from the front {1,0,3,2,5,4} or {0,1,2,3,4,5}, from behind {4,5,2,3,0,1} or {5,4,3,2,1,0}, the rank nearest the attacker first."
+
 [[global]]
 id = "ds:328B"
 name = "gRightSidePosByDir"
 why = "16 bytes read as [orient * 4 + position] by Obj10F3 (08E6:10F3) to choose a half of the target order: the value is 1 exactly for the two positions on the monster's right for that facing (north: 1 and 3, east: 2 and 3, south: 0 and 2, west: 0 and 1)."
+
 [[global]]
 id = "ds:8492"
 name = "gGameTicks"
 why = "The 32-bit counter the INT 1Ch handler increments only while ds:849E bit 1 is set (E1D8F.ASM 1D8F:006E), so animations that clear the bit pause it; RunEffects (1414:04E7) compares effect expiries with it and the level timer deadline (ds:F512) is set from it (ovl3:0A7C, 08E6:1410)."
+
 [[global]]
 id = "ds:F51B"
 name = "gLevelTimerMode"
 why = "The first byte of a level script header (LoadMapScreen ovl3:0A7C stores script[0]); Obj1410 (08E6:1410) fires the level's timed script on 1 when gGameTicks passes gDeadline, on 2 when gStepCount reaches ds:FB32, on 3 on either, never otherwise."
+
 [[global]]
 id = "ds:FB32"
 name = "gLevelTimerSteps"
 why = "A word from the level script header (ovl3:0A7C); Obj1410 (08E6:1410) fires the timed level script in modes 2 and 3 once gStepCount (the party's steps, MoveParty) reaches it, then clears gStepCount."
+
 [[global]]
 id = "ds:3220"
 name = "gBossSpellModes"
 why = "Three bytes {2,10,11} indexed by a 1d4-1 roll in Obj0765 case 21 (08E6:0765) and passed as the StartCellEffect mode; type 21 (0x15) is the monster whose death 08E6:0EC3 answers with the winner screen and ShutdownGame, so these are the final enemy's spells."
+
 [[global]]
 id = "ds:3223"
 name = "gBossSpellSounds"
 why = "Three sound numbers {0x62,0x53,0x40} played through PlaySoundAtCell in Obj0765 case 21 (08E6:0765) with the spell gBossSpellModes (ds:3220) picks by the same roll; type 21 is the monster whose death ends the game (08E6:0EC3)."
+
 [[global]]
 id = "ds:3226"
 name = "gSpellSequenceModes"
 why = "Bytes indexed by the monster's remaining action count m19 in Obj0765 case 14 (08E6:0765), passed to Obj073F as the StartCellEffect spell mode, so a type-14 monster casts a fixed sequence (6, 5, 2, 2, then 0) as its count runs down."
+
 [[global]]
 id = "ds:322F"
 name = "gSpellSequenceSounds"
 why = "Bytes indexed by the monster's remaining action count m19 in Obj0765 case 14 (08E6:0765) and played through PlaySoundAtCell before the spell gSpellSequenceModes (ds:3226) names; index 8 reads ds:3237, the next table."
+
 [[global]]
 id = "ds:54F2"
 name = "gSelectFrameIndex"
 why = "The index into the rectangle table ds:5482 that DrawRowList (0D1C:0454) currently outlines in cycling colours, -1 when none (initial value 0xFFFF); a new index erases the old frame in colour 0xC."
+
 [[global]]
 id = "ds:54F4"
 name = "gSelectFrameStep"
 why = "The position in the colour string ds:1CE7 that DrawRowList (0D1C:0454) draws the selection frame with next; it advances once per tick and wraps to 0 at the string's NUL."
+
 [[global]]
 id = "ds:FC5E"
 name = "gSelectFrameTick"
 why = "The 32-bit tick (gTicks, ds:848A) after which DrawRowList (0D1C:0454) redraws the selection frame in the next colour; set to gTicks on a new index and gTicks + 1 after each redraw."
+
 [[global]]
 id = "ds:1CE7"
 name = "gSelectFrameColours"
 why = "A NUL-terminated colour string {15, 0xB0..0xBC, 12, ...} DrawRowList (0D1C:0454) cycles the selection frame through; ovl2 copies another one in from ds:65EA for the EGA choice (EOV2.C strcpy). It starts four bytes into gHitFlashRemapCga (ds:1CE3)."
+
 [[global]]
 id = "ds:54F6"
 name = "gConSaveBonus"
 why = "Bytes indexed by constitution {0,0,0,0,1,1,1,2,2,2,2,3,3,3,4,4,4,4,5,5}, one point per 3.5 points of constitution, which f0D1C_059B (0D1C:059B) subtracts from the saving throw target for certain races and save kinds."
+
 [[global]]
 id = "ds:A9F5"
 name = "gItemTypesClasses"
 why = "A view of the 16-byte ITEMTYPE.DAT records gItemTypes (ds:A9F0) five bytes later: its +0 is ItemType m05, the class mask ItemClassAllowed (0BD2:11FD) ANDs with g1231[classIndex], and its +9 is m0E, the item kind (0D1C:07DB, 08B1); named after gItemTypes as the view starting at the class mask."
+
 [[global]]
 id = "ds:5482"
 name = "gSelectFrameRects"
 why = "Rectangles of four words (x1, y1, x2, y2) that DrawRowList (0D1C:0454) outlines with DrawBox: the six party boxes on the right (x 0xB7..0x13F, three rows) and further boxes for the character panel (overlay 0 calls it with indices from 6 and 10)."
+
 [[global]]
 id = "ds:115F"
 name = "gClassSlotCount"
 why = "Bytes indexed by classIndex {1,1,1,1,1,1,2,2,2,3,2,2,3,2,2}, the number of class slots of each class (single classes 1, multi-classes 2 or 3); AddExperience (0DE8:0B45) divides the experience by it before sharing it among the slots."
+
 [[global]]
 id = "ds:552F"
 name = "gLauncherAmmoType"
 why = "Bytes indexed by an item type that UseItemByKind (0DE8:05BB) uses as the type of item to fire: kind 0x10 is taken from the hands or the quiver slot items[16], and item type 7 plays sound 0x1A; launcher item types map to their ammunition item type."
+
 [[global]]
 id = "ds:553E"
 name = "gArmourSlots"
 why = "Four item slot numbers {17, 0, 1, 18} that ComputeArmourClass (0DE8:0D5E) walks to add the armour value m04 and bonus of the items there; the hand slots 0 and 1 count only item type 0x1B."
+
 [[global]]
 id = "ds:FB78"
 name = "gAnimWallPhase"
 why = "Flipped by CheckFarTable (1414:04B0, a timed effect), which sets gDF4C when a view cell's wall byte is 0x34; ovl4:1D20, the drawer of wall type 0x34, picks its sprite cells by idx ^ gFB78, so it is that wall's two-frame animation phase."
+
 [[global]]
 id = "ds:5CAA"
 name = "gBlinkPhase"
 why = "The phase BlinkSelected (1414:0000, timed effect 0) flips each period: on, it redraws the member being moved with gIconTable set to 0xFF (hidden); off, it redraws the member normally."
+
 [[global]]
 id = "ds:5CAB"
 name = "gNextPosByDir"
 why = "16 bytes read as [dir * 4 + position] by MoveDDEffects (1414:0285) for a projectile: the sub-cell position it moves to, bit 7 meaning it enters the next cell (StepCell); for north 0 and 1 go to 2 and 3 of the next cell, 2 and 3 to 0 and 1 of the same cell."
+
 [[global]]
 id = "ds:FB45"
 name = "gLevelPalettePending"
 why = "LoadMapScreen (ovl3:0A7C) sets it to 1 at its end after loading the level's .PAL, StartupAlloc (07A9:0024) clears it, and DrawViewFrame (ovl4:1F51) in VGA mode (gGraphicsChoice 3) loads the palette gFE68 through ds:80BA and clears it: a new level's palette waiting to be applied on the next view frame."
+
 [[global]]
 id = "ds:A9C6"
 name = "gViewFrontSide"
 why = "Set at ovl4:044B to g1991[gPartyDir], whose bytes are 2,3,0,1, i.e. (gPartyDir + 2) & 3: the wall side of each visible cell that faces the party; gEF6A[i][gA9C6] is then the wall type drawn as a front wall, and E0DE8:349-351 opens a door by bumping side gA9C6 and its opposite gA9C6 ^ 2. The src/E122E.C:104 comment calling it a member row is wrong."
+
 [[global]]
 id = "ds:A9C8"
 name = "gViewCellIds"
 why = "InitViewSlots (ovl4:0000) stores (base + gHead199D[dir * 18 + i]) & 0x3FF for each of the 18 visible slots, base being gPartyCell (DrawViewFrame passes it); 0D1C:0006 searches its first 15 words for a cell to request a redraw, 0EF3:00CD searches it for a target cell, ovl4:19C4 compares projectile cells with it. Cell numbers, not headings."
+
 [[global]]
 id = "ds:1A2B"
 name = "gViewRelativePos"
 why = "Bytes 0,1,2,3 / 2,0,3,1 / 3,2,1,0 / 1,3,0,2 indexed gPartyDir * 4 + (pos & 3): a rotation of the four positions within a cell into the party's frame; ovl4:0AD0 (items), ovl4:0D1B (monsters, obj->frame) and ovl4:19C4 (projectiles) use the result to pick the per-slot screen position, and E0DE8:290 to pick the member hit."
+
 [[global]]
 id = "ds:1A09"
 name = "gViewSlotRow"
 why = "18 bytes 0 x7, 1 x5, 2 x3, 3 x3 for the 18 visible slots, whose cell offsets in gHead199D are 3, 2, 1 and 0 rows ahead of the party: the slot's row counted from the farthest (0) to the party's own row (3); it indexes the per-row tables g6FBE, g6FA8, g6F98, g70F0 and the door shape choice col = base + 2 - row (ovl4:1411)."
+
 [[global]]
 id = "ds:1D61"
 name = "gViewPosX"
 why = "Interleaved {x, y} word pairs, five per view slot (index (slot * 5 + pos) * 2, pos 0..3 the cell positions and 4 the centre): ovl4:0AD0 and ovl4:0D1B take x from here plus 0x58 and y from ds:1D63 (the same pairs two bytes on); ovl4:1411 and 0EF3 use pos 4 as the slot's centre x offset. One table with ds:1D63 (gViewPosY)."
+
 [[global]]
 id = "ds:18BF"
 name = "gWallDecorHead"
 why = "Per wall type: RegisterWallObject (ovl3:01C8) stores gF538 + 1, the 1-based index of the type's first 0x34-byte decoration record in gViewWalls, or 0 when it has none; ovl4:1091 walks gViewWalls from it, ovl4:1411 draws the door button when it is -1 (the static bytes are -1 for door types 3..7 and 13..17), 122E:05DF hit-tests the decoration it names."
+
 [[global]]
 id = "ds:A99C"
 name = "gDoorButtons"
 why = "Six records {far shape, x, y} that LoadMapCells (ovl3:03A2) cuts from the DOOR screen beside gFB5E's door shapes; DrawSlotDoor (ovl4:1411) draws gA99C[col] next to the door when gTable18BF is -1, and 122E:04CA hit-tests its rectangle (grown by 4) and on a hit plays sound 6 and toggles: a clickable button drawn by a door."
+
 [[global]]
 id = "ds:EF6A"
 name = "gViewCells"
 why = "InitViewSlots (ovl4:0000) points entry i at &gMaze[cell * 9] for each of the 18 visible cell ids it stores in gAngleA9C8; the drawers read the cell's wall bytes (gEF6A[i][side]), its +4 monster bits and +5 item list head, and 1414:04B0 scans the 18 entries for wall type 0x34."
+
 [[global]]
 id = "ds:FB5E"
 name = "gDoorShapes"
 why = "Six far shape pointers that LoadMapCells (ovl3:03A2) cuts from the DOOR overlay screen (LoadOverlayScreen(\"DOOR\")) through the ds:6840 rectangles; DrawSlotDoor (ovl4:1411) draws gFB5E[g716E[wall] + 2 - row], three sizes per door graphic, and FreeSlotTables (ovl3:031A) frees them."
+
 [[global]]
 id = "ds:199D"
 name = "gViewCellOffsets"
 why = "Four rows of 18 signed cell offsets, one row per facing (InitViewSlots ovl4:0000 indexes row * 18): facing north the row is -99..-93, -66..-62, -33..-31, -1, 0, 1, the cells 3, 2, 1 and 0 rows ahead on a 32-wide map; added to gPartyCell (masked 0x3FF) they give the visible cells."
+
 [[global]]
 id = "ds:6B82"
 name = "gSpanWallClip"
 why = "Per view slot, 18 signed bytes, one per visible cell (index slot * 18 + i), read by ComputeViewSpan (ovl4:0097) when cell i's front wall is not a door (gWallTypeFlags bit 3 clear) and has blocks (gWallVmpSet nonzero): a positive value caps the right column, a negative one raises the left, -41 empties the span, -40 leaves it."
+
 [[global]]
 id = "ds:6CC6"
 name = "gSpanDoorClip"
 why = "Per view slot and visible cell (index (slot * 18 + i) * 2) a {left, right} column pair that ComputeViewSpan (ovl4:0097) intersects with the span when cell i's front wall has gWallTypeFlags bit 3, the bit DrawViewSlots tests before calling the door drawer ovl4:1411."
+
 [[global]]
 id = "ds:6F4E"
 name = "gDoorClipY"
 why = "The row table SetRegionColumnExtent (ovl4:021E) reads the clip top and bottom lines from, at gDoorClipTopRow[level] + gViewSlotRow[slot] and gDoorClipBottomRow[level] + row; its only caller is the door drawer ovl4:1411, which clips region 5 vertically to the door before drawing (values 32, 24, 15 and 58, 72, 96, 120 lines)."
+
 [[global]]
 id = "ds:6F6D"
 name = "gDoorClipTopRow"
 why = "Indexed by gFBC8 (the current level 1..12, see LoadMapScreen ovl3:0A7C) in SetRegionColumnExtent (ovl4:021E): the start in gDoorClipY of the door clip's top lines (0, 4, 8, 12 by level group). It holds 12 bytes, so level 12 reads ds:6F79[0] (28)."
+
 [[global]]
 id = "ds:6F79"
 name = "gDoorClipBottomRow"
 why = "Indexed by gFBC8 (the current level) in SetRegionColumnExtent (ovl4:021E): the start in gDoorClipY of the door clip's bottom lines (16, 24, 20 by level group); its first byte also serves as level 12's entry of gDoorClipTopRow (ds:6F6D)."
+
 [[global]]
 id = "ds:ADB0"
 name = "gViewBlockMap"
 why = "0x14A words (22 columns by 15 rows of 8-pixel blocks, the 176 by 120 view) filled by ovl4:044B with block words copied from the .VMP data (bit 0x4000 marks a mirrored block, ovl4:036A); DrawTile (17A6:03E7) loads 0ADB0h into BX and draws the view from it with the block graphics gSegDCA6. Block indices, not pixels."
+
 [[global]]
 id = "ds:1995"
 name = "gRightSideByDir"
 why = "Bytes 1, 2, 3, 0, i.e. (dir + 1) & 3: ovl4:044B copies gPartyDir's entry into gEFB9, the wall side of the cells left of the party that faces the viewer's right, drawn as left side walls (CopyViewColumn at x -2, 2, 8)."
+
 [[global]]
 id = "ds:1999"
 name = "gLeftSideByDir"
 why = "Bytes 3, 0, 1, 2, i.e. (dir + 3) & 3: ovl4:044B copies gPartyDir's entry into gEFD0, the wall side of the cells right of the party that faces the viewer's left, drawn mirrored as right side walls (ToggleViewColumn at x 0x15, 0x11, 0xd)."
+
 [[global]]
 id = "ds:EFB9"
 name = "gViewRightSide"
 why = "Set to gRightSideByDir[gPartyDir] ((dir + 1) & 3) at ovl4:044B and used as gEF6A[i][gEFB9] for the slots left of the centre line (0, 1, 2, 7, 8, 12, 15): the side wall drawn on the left of the view."
+
 [[global]]
 id = "ds:EFD0"
 name = "gViewLeftSide"
 why = "Set to gLeftSideByDir[gPartyDir] ((dir + 3) & 3) at ovl4:044B and used as gEF6A[i][gEFD0] for the slots right of the centre line (4, 5, 6, 10, 11, 14, 17), drawn mirrored on the right of the view."
+
 [[global]]
 id = "ds:F4BC"
 name = "gViewMirrorParity"
 why = "ovl4:044B stores ((cell >> 5) + (cell & 0x1f) + gPartyDir) & 1 and draws the floor and ceiling strip mirrored (ToggleViewColumn) when it is 1, plain otherwise; ovl4:1091 also mirrors decorations whose flag bit 1 is set when it is 1. It alternates with every step and turn."
+
 [[global]]
 id = "ds:6F86"
 name = "gItemClipSlot"
 why = "Per view slot a slot number or -1 (set only for slots 9, 13, 15, 16, 17, giving 3, 9, 11, 12, 13); ovl4:0AD0 refits the clip span to that slot through ComputeViewSpan while drawing an item at the two far positions of a cell whose wall has gWallTypeFlags bit 3, then restores the slot's own span."
+
 [[global]]
 id = "ds:6F98"
 name = "gItemScaleFrame"
 why = "Indexed gViewSlotRow * 4 + position (bytes -1,-1,3,3 / 2,2,2,2 / 1,1,1,1 / 0,0,-1,-1): ovl4:0AD0 draws the item icon gItemL1Icons[icon][frame] only when it is not negative, so it is the icon size per row and position, 0 largest for the party's own row, -1 out of sight."
+
 [[global]]
 id = "ds:6FA8"
 name = "gNicheItemY"
 why = "Three words 37, 49, 56 indexed by gViewSlotRow; ovl4:0AD0 uses it as the y of an item whose position byte is 8, drawn at the slot's centre x (ds:19E5) with frame from position 0, and items show in a wall with blocks only when its gWallTypeFlags bit 7 is set: an item placed in a wall."
+
 [[global]]
 id = "ds:6FAE"
 name = "gItemJitter"
 why = "Eight words 0, -2, 1, -1, 2, 0, 1, -1; ovl4:0AD0 adds entry (item & 7) * 2 to x and entry ((item >> 1) & 7) to y, so items on the same spot are drawn slightly apart according to their item number."
+
 [[global]]
 id = "ds:1D63"
 name = "gViewPosY"
 why = "The y word of the {x, y} pairs at ds:1D61 (gViewPosX), read with the same index (slot * 5 + pos) * 2 at ovl4:0AD0 (plus 0x7c for items) and ovl4:0D1B (plus 0x7f for monsters); it is ds:1D61 two bytes on, one table."
+
 [[global]]
 id = "ds:19E5"
 name = "gViewSlotCenterX"
 why = "18 words, -56, -8, 40, 88, 136, 184, 232 for the farthest row and 88 for every centre slot (3, 9, 13, 16): the screen x of a slot's middle in the 176-pixel view; ovl4:0AD0 draws items in a wall there and ovl4:1D20 centres its cells on it."
+
 [[global]]
 id = "ds:6FBE"
 name = "gMonsterShrinkSteps"
 why = "Bytes 2, 1, 0 indexed by gViewSlotRow; ovl4:0D1B passes the monster shape through the sprite blitter (BlitSpriteEga/Cga/Default into gBufDCFC) that many times, so the farthest row is shrunk twice, and the value 0 (nearest row) also enables the attack frames 5 and 6."
+
 [[global]]
 id = "ds:7001"
 name = "gMonsterDrawOrder"
 why = "Per facing, five bytes indexed gPartyDir * 5 + obj->frame (the monster's position 0..4 in its cell): ovl4:0D1B stores each monster of the cell at arr[g7001[...]] and then draws arr[0..4] in order, so the table orders the five positions back to front for the party's facing."
+
 [[global]]
 id = "ds:6FC1"
 name = "gMonsterFramesMirrorStep"
 why = "Frame table indexed (obj->toggle << 4) + gPartyDir * 4 + obj->orient used by ovl4:0D1B when the type's gTable1A3B[b0].m0E has bit 1; a negative frame is drawn mirrored. It differs from ds:6FE1 only on the second animation step, where it mirrors frames 4 and 1 (-4, -1) that ds:6FE1 keeps plain."
+
 [[global]]
 id = "ds:6FE1"
 name = "gMonsterFrames"
 why = "Frame table indexed (obj->toggle << 4) + gPartyDir * 4 + obj->orient used by ovl4:0D1B when the type's m0E bit 1 is clear (the other case uses ds:6FC1); its absolute value picks the shape in gB7FE and a negative value the mirrored DrawShapeClipped wrapper."
+
 [[global]]
 id = "ds:7015"
 name = "gMonsterYAdjust"
 why = "Bytes 20, 12, 4 indexed by the shrink steps (gMonsterShrinkSteps); ovl4:0D1B adds it to the monster's y only for types whose gTable1A3B[b0].m15 is 1 and only for frames 1 or above 3. What those types are is not shown."
+
 [[global]]
 id = "ds:B7FE"
 name = "gMonsterShapes"
 why = "Far shape pointers indexed |frame| + (obj->m07 ? 0x12 : 0) in ovl4:0D1B, which shrinks the shape by gMonsterShrinkSteps and draws it for every monster record (gObjs at ds:8A82) in the slot's cell: 18 shapes per monster graphic set, two sets."
+
 [[global]]
 id = "ds:716E"
 name = "gDoorShapeSet"
 why = "32 bytes per wall type, 0 for door types 3..12 and 3 for 13..22; DrawSlotDoor (ovl4:1411) computes col = g716E[wall] + 2 - gViewSlotRow to pick gDoorShapes[col], so it selects which of the level's two door graphics (three sizes each) a door wall uses."
+
 [[global]]
 id = "ds:70F0"
 name = "gDoorYLevels1to3"
 why = "Bytes 58, 71, 86 indexed by gViewSlotRow: DrawSlotDoor (ovl4:1411) takes the door's bottom y from it for gFBC8 (the current level) 1, 2, 3, then subtracts the shape height and the open step's lift."
+
 [[global]]
 id = "ds:70F4"
 name = "gDoorYLevels4to6"
 why = "Bytes 59, 71, 88 indexed by gViewSlotRow: the door's bottom y in DrawSlotDoor (ovl4:1411) for levels 4..6 (gFBC8), where the door is drawn as two mirrored halves pushed apart."
+
 [[global]]
 id = "ds:70F8"
 name = "gDoorYLevels7to9"
 why = "Bytes 32, 32, 24 indexed by gViewSlotRow: in DrawSlotDoor (ovl4:1411) for levels 7..9 (gFBC8) the y of both the back shape gDoorShapes[col + 3] and the door itself, before the lift."
+
 [[global]]
 id = "ds:70FC"
 name = "gDoorYLevels10to11"
 why = "Bytes 30, 24, 16 indexed by gViewSlotRow: in DrawSlotDoor (ovl4:1411) for levels 10 and 11 (gFBC8) the y of the first half gDoorShapes[col], moved down by the open step."
+
 [[global]]
 id = "ds:70FF"
 name = "gDoorBackYLevels10to11"
 why = "Bytes 48, 52, 59 indexed by gViewSlotRow: in DrawSlotDoor (ovl4:1411) for levels 10 and 11 the y of the second half gDoorShapes[col + 3], moved up by 3/8 of the first half's offset."
+
 [[global]]
 id = "ds:7102"
 name = "gDoorYLevel12"
 why = "Bytes 58, 69, 90 indexed by gViewSlotRow: DrawSlotDoor (ovl4:1411) uses it instead of ds:70F0 when gFBC8 (the current level) is 12, otherwise drawing like levels 1..3."
+
 [[global]]
 id = "ds:7106"
 name = "gDoorClipLeftX"
 why = "Interleaved {left, right} pixel words per view slot (index slot * 2; ds:7108 is the right word two bytes on): DrawSlotDoor (ovl4:1411) for levels 4..6 shifts them right 3, clamps them to gViewColLeft/gViewColRight and clips region 5 to them before drawing the two door halves."
+
 [[global]]
 id = "ds:7108"
 name = "gDoorClipRightX"
 why = "The right word of the {left, right} pairs at ds:7106 (gDoorClipLeftX), read with the same index slot * 2 at ovl4:1411 for levels 4..6 and clamped to gViewColRight."
+
 [[global]]
 id = "ds:714E"
 name = "gDoorStepBase"
 why = "Per wall type, the first wall type of its run of five (0,0,0,3x5,8x5,13x5,18x5, then 30 and 31): DrawSlotDoor (ovl4:1411) multiplies (wall - g714E[wall]) by the per-row step tables, so it gives the door's open step for wall types below 0x1e."
+
 [[global]]
 id = "ds:718E"
 name = "gDoorLiftStep"
 why = "Bytes 8, 12, 18 indexed by gViewSlotRow: DrawSlotDoor (ovl4:1411) raises the door by (wall - gDoorStepBase[wall]) times this for levels 1..3, 7..9 and 12 when the wall type is below 0x1e."
+
 [[global]]
 id = "ds:7192"
 name = "gDoorLiftFrom30"
 why = "Bytes 0, 2, 4 indexed by gViewSlotRow: the fixed lift DrawSlotDoor (ovl4:1411) uses instead of gDoorLiftStep times the step when the wall type is 0x1e or above (levels 1..3, 7..9, 12)."
+
 [[global]]
 id = "ds:7196"
 name = "gDoorSlideStep"
 why = "Bytes 4, 6, 9 indexed by gViewSlotRow: for levels 4..6 DrawSlotDoor (ovl4:1411) moves the two mirrored door halves apart by the open step times this when the wall type is below 0x1e."
+
 [[global]]
 id = "ds:719A"
 name = "gDoorSlideFrom30"
 why = "Bytes 0, 2, 4 indexed by gViewSlotRow: the fixed sideways shift DrawSlotDoor (ovl4:1411) uses for levels 4..6 instead of gDoorSlideStep when the wall type is 0x1e or above."
+
 [[global]]
 id = "ds:719E"
 name = "gDoorSplitStep"
 why = "Bytes 7, 11, 14 indexed by gViewSlotRow: for levels 10 and 11 DrawSlotDoor (ovl4:1411) moves the first door half down by the open step times this and the second half up by 3/8 of it, wall types below 0x1e."
+
 [[global]]
 id = "ds:71A2"
 name = "gDoorSplitFrom30"
 why = "Bytes 0, 2, 4 indexed by gViewSlotRow: the fixed offset DrawSlotDoor (ovl4:1411) uses for levels 10 and 11 instead of gDoorSplitStep when the wall type is 0x1e or above."
+
 [[global]]
 id = "ds:7246"
 name = "gProjectileDrawOrder"
 why = "Per facing, five bytes indexed gPartyDir * 5 + (record +6 & 3), the same bytes as gMonsterDrawOrder (ds:7001): ovl4:19C4 sorts the flying records of the slot's cell into arr[] through it and draws arr[0..4] in order, back to front."
+
 [[global]]
 id = "ds:71A6"
 name = "gProjectileX"
 why = "Unsigned bytes indexed slot * 4 + gViewRelativePos value: the screen x ovl4:19C4 draws a flying record's shape at in that view slot (recomputed from gViewPosX when the record's +0xC has bit 6)."
+
 [[global]]
 id = "ds:71EE"
 name = "gProjectileY"
 why = "Signed bytes indexed gViewSlotRow * 4 + position (32, 32, 31, 31 for the farthest row): the screen y ovl4:19C4 draws a flying record's shape at."
+
 [[global]]
 id = "ds:71FE"
 name = "gProjectileFrame"
 why = "Signed bytes indexed slot * 4 + position, -1 for the positions out of sight and 0..3 for the size: ovl4:19C4 draws a flying record only when it is not negative and uses it as the frame of the ds:F2F8 or ds:EC9A shape row."
+
 [[global]]
 id = "ds:725A"
 name = "gProjectileFixWidth"
 why = "Bytes 4, 3, 2, 1 per frame: ovl4:19C4 compares a flying item's shape width byte (cell +2) with entry [frame] and, when equal, adds gProjectileFixX[frame] to x; only the mechanics are shown."
+
 [[global]]
 id = "ds:725E"
 name = "gProjectileFixX"
 why = "Bytes 16, 8, 4, 2 per frame: the x shift ovl4:19C4 adds to a flying item's position when its shape width matches gProjectileFixWidth[frame] (ds:725A)."
+
 [[global]]
 id = "ds:7262"
 name = "gProjectileFlip"
 why = "Bytes 0 or 1 indexed record +7 * 4 + record +6: ovl4:19C4 draws a flying shape mirrored (DrawShapeClippedFlipped) when the entry is nonzero, for the thrown-shape rows and for every non-item record."
+
 [[global]]
 id = "ds:1D07"
 name = "gItemThrownShape"
 why = "Per item shape (g181F[icon] (ds:181F)) and side (0 flying away along the facing, 1 toward the party, stride 0x2d), a row of gThrownIcons (ds:F2F8) or -1; ovl4:19C4 draws a flying item with that row, or with its own icon gItemL1Icons when it is -1 or the item flies sideways."
+
 [[global]]
 id = "ds:7272"
 name = "gTeleporterLeftOffset"
 why = "Bytes 40, 28, 18, 13 indexed by col = 2 - gViewSlotRow: ovl4:1D20 subtracts it from gViewSlotCenterX[slot] to get the left x of its two columns of 13 cells; larger for nearer rows."
+
 [[global]]
 id = "ds:7275"
 name = "gTeleporterTopY"
 why = "Bytes 13, 21, 26 indexed by col = 2 - gViewSlotRow: the top y ovl4:1D20 adds the per-cell y bytes of 20AB:0000 to."
+
 [[global]]
 id = "ds:7278"
 name = "gViewDrawOrder"
 why = "18 bytes 0, 6, 1, 5, 2, 4, 3, 7, 11, 8, 10, 9, 12, 14, 13, 15, 17, 16: DrawViewSlots (ovl4:1E18) draws slot g7278[i] for i = start..17, so the slots are drawn from the farthest row inward, outer cells before the centre one."
+
 [[global]]
 id = "ds:7296"
 name = "gCompassDir"
 why = "DrawViewRows (ovl4:1EDE) returns at once when it equals gPartyDir and otherwise redraws its three shapes, each with four versions gIconTableA92A[gPartyDir + 4 * i], below the view and then stores gPartyDir in it (initial -1): the facing the compass was last drawn for."
+
 [[global]]
 id = "ds:7290"
 name = "gCompassY"
 why = "Three words 127, 154, 154: the y DrawViewRows (ovl4:1EDE) draws each of its three facing-dependent shapes at; one table with the x words at ds:728A."
+
 [[global]]
 id = "ds:728A"
 name = "gCompassX"
 why = "Three words 112, 77, 149: the x DrawViewRows (ovl4:1EDE) draws each of its three facing-dependent shapes at, inside the pointer zone (0x46, 0x79)-(0xb0, 0xaf) below the view."
+
 [[global]]
 id = "ds:80EA"
 name = "gKeyboardOptions"
 why = "The keyboard driver copies this word into its kModifierState on every INT 9 (the load at 1AAD:07F4) and every GetKeyState call (1AAD:0607); its bits steer the driver (bit 2 skips GetKeyState's key list search, 80h diverts E1-prefixed bytes in the INT 9 handler, 200h picks the keypad table in TranslateKey 1AAD:0223). Load-time value 0110h, main sets 1 (E07C8.C:261)."
+
 [[global]]
 id = "ds:7FBC"
 name = "gDirectionFromMask"
 why = "DirectionFromPoints (17A6:0314) builds a 4-bit mask from the signs and dominance of dx and dy and indexes this 16-byte table at 17A6:0373; its bytes are FF,6,2,FF,4,5,3,FF,0,7,1,FF... so mask 8 gives 0 (north), 2 gives 2 (east), 4 gives 4 (south), 1 gives 6 (west), FF none."
+
 [[global]]
 id = "ds:7FCC"
 name = "gNeighbourOffsets"
 why = "Eight words -33,-32,-31,-1,1,31,32,33 in the EOB.EXE image: the offsets of the eight cells around a cell on the 32-wide map; FindNeighbour (17A6:0F9D) adds each to a packed cell and masks with 3FFh (17A6:0FB8)."
+
 [[global]]
 id = "ds:7FDC"
 name = "gAheadOffsets2And3"
 why = "Eight words -64,-96, 2,3, 64,96, -2,-3 in the EOB.EXE image: for each facing N, E, S, W the cell offsets two and three squares ahead on the 32-wide map; FindNeighbour (17A6:0F9D) picks the pair by its third argument (17A6:0FCB, 17A6:0FD3)."
+
 [[global]]
 id = "ds:80CE"
 name = "gRowOffsetTableOff"
 why = "Slot 41 of the driver table at ds:802A (the request's table pointer 212E:802A at ds:8125), filled by the graphics driver: EGA.OVL slot 41 is cs:03A9, a 200-word table 0, 28h, 50h... (y * 40), MCGA y * 320, CGA interleaved; EGA indexes it by y (EGA.OVL 1033, 159A). BuildMask (17A6:18FF) reads the tables 190h and 290h past it. Offset half."
+
 [[global]]
 id = "ds:80D0"
 name = "gRowOffsetTableSeg"
 why = "Segment half of the driver table slot 41 far pointer at ds:80CE (the driver's own code segment, stored by the exchange loop EGA.OVL 0F2A..0F2F); BuildMask loads it into DS at 17A6:1913 to read the driver's translation tables after the row offsets."
+
 [[global]]
 id = "ds:80A2"
 name = "gRestoreDrawState"
 why = "Slot 30 of the driver table ds:802A: in CGA.OVL (19CF), TGA and MCGA.OVL (1612) it copies the saved region words back into the driver's current region (cs:CA..D0, the words gSetRegion slot 35 writes, CGA 1DE5); EGA.OVL (13BE) also reloads the EGA registers from the shadow. Called after each pointer redraw (1A72:0200, 1A72:0275, 1BBE:02B2, 1BF3:0082)."
+
 [[global]]
 id = "ds:80AA"
 name = "gSaveDrawState"
 why = "Slot 32 of the driver table ds:802A: CGA.OVL 1C9D and MCGA.OVL 1A7A save the driver's region (cs:CA..D0) and set it to the full screen (0, 28h, 0, C8h); EGA.OVL 1746 also copies 16 bytes of register shadow from its far argument (ds:8172/8174). Called before each pointer redraw (1A72:01F4, 1A72:0264, 1BBE:02A7, 1BF3:0071)."
+
 [[global]]
 id = "ds:80EC"
 name = "gRecordMode"
 why = "Input record mode, a byte 0/1/2: ProcessKeyEvent (1AAD:0C17) does nothing at 0, writes each event to the file at ds:80ED at 1 and reads them back at 2; InjectRecordedKey (1AAD:0D26) and DequeueKeyEvent (1AAD:04A2) replay at 2, and the mouse handler skips the position update at 2 (1A72:0212)."
+
 [[global]]
 id = "ds:8130"
 name = "gLastMouseButtons"
 why = "The INT 33h handler compares the event's button word BX with it (1A72:01B8), calls HandleMouseButtons only when they differ, folds the change into ds:8134 and then stores BX here (1A72:01D3)."
+
 [[global]]
 id = "ds:8132"
 name = "gMiddleButtonBits"
 why = "When nonzero and the event has the middle button bit 4 set, the handler replaces BX with (BX and 3) or this word (1A72:01A6 to 01B6); the image holds 0002, the right button bit, so a held middle button reads as the right one."
+
 [[global]]
 id = "ds:8136"
 name = "gMouseButtonSeen"
 why = "Latched to 1 when an INT 33h event carries any button (1A72:01DC) and when a replayed mouse event is read (1AAD:0D04); nothing in src/ clears it, so it records that a button has been seen."
+
 [[global]]
 id = "ds:813C"
 name = "gMouseEventX"
 why = "x of the INT 33h event being handled, after the 640-wide halving and the 13Fh clamp (stored at 1A72:019E); HandleMouseButtons queues it with the button event (E1AAD.ASM:1228). Pairs with gMouseEventY at ds:813E."
+
 [[global]]
 id = "ds:813E"
 name = "gMouseEventY"
 why = "y of the INT 33h event being handled, stored unclamped next to gMouseEventX (1A72:01A2); HandleMouseButtons queues it after the x (E1AAD.ASM:1232)."
+
 [[global]]
 id = "ds:8144"
 name = "gMouseXDoubled"
 why = "InitMouse sets it to 1 when the driver's x after reset is not 0A0h (1A72:013E); then the handler halves each event x (the test at 1A72:018C), InitMouse doubles the x it sets (the test at 1A72:0156) and PlacePointer doubles x for INT 33h function 4 (1BF3:000E). Whether that means a 640-wide range is [H]."
+
 [[global]]
 id = "ds:814E"
 name = "gCursorMaxX"
 why = "Set to 13Fh (screen width minus one) by InitMouse (1A72:00FE); PlacePointer (1BF3:000E) clamps gCursorX to it from above, with ds:814C as the lower limit."
+
 [[global]]
 id = "ds:8152"
 name = "gCursorMaxY"
 why = "Set to 0C7h (screen height minus one) by InitMouse (1A72:0104); PlacePointer (1BF3:000E) clamps gCursorY to it from above, with ds:8150 as the lower limit."
+
 [[global]]
 id = "ds:8172"
 name = "gEgaRegShadowOff"
 why = "Offset of the far pointer the game exports to the driver as slots 5 and 6 (GetFarPointer, SetFarPointer at ds:803E, 8042); only EGA.OVL calls SetFarPointer, with its own register shadow cs:00C1 (EGA.OVL 0F3A to 0F3F), and the 17A6 blitters redirect it to their own 16-byte copy (17A6:0446, 04EE)."
+
 [[global]]
 id = "ds:8174"
 name = "gEgaRegShadowSeg"
 why = "Segment half of the EGA register shadow pointer at ds:8172; SetFarPointer tests it (jcxz at 1A72:0320) and copies the 16 shadow bytes only when it is nonzero, and the pointer redraws push it before the offset for gSaveDrawState (1BBE:029F)."
+
 [[global]]
 id = "ds:8026"
 name = "gHitTestX"
 why = "Scratch copy of gDrawnX that IsMouseInRect (1A72:02A6) makes under the busy flag (1A72:02C7) and compares with the rectangle's left and right edges (1A72:02D0, 02D6); no other reader."
+
 [[global]]
 id = "ds:8028"
 name = "gHitTestY"
 why = "Scratch copy of gDrawnY that IsMouseInRect (1A72:02A6) makes under the busy flag (1A72:02CD) and compares with the rectangle's top and bottom edges (1A72:02DC, 02E2); no other reader."
+
 [[global]]
 id = "ds:80ED"
 name = "gRecordHandle"
 why = "File handle of the recorded input stream: ProcessKeyEvent passes it to FileWrite in record mode 1 (the push at 1AAD:0C46) and to FileRead in replay mode 2 (1AAD:0CA7), four bytes per call."
+
 [[global]]
 id = "ds:80EF"
 name = "gLastEventKey"
 why = "DequeueKeyEvent stores every event key taken from the ring here (1AAD:04A5) and reads it back instead of the ring in replay mode; ProcessKeyEvent writes it to the recording (1AAD:0C22) or loads it from the recording (1AAD:0CC2)."
+
 [[global]]
 id = "ds:80F1"
 name = "gRecordDelay"
 why = "Tick count read with each replayed event (1AAD:0CBB); InjectRecordedKey releases the replayed key only once gTicksSinceEvent (ds:8488) reaches it (1AAD:0D3E), so it is the delay before the event."
+
 [[global]]
 id = "ds:80F3"
 name = "gLastEventX"
 why = "x word of the last mouse event taken from the ring (DequeueKeyEvent 1AAD:04C7, 0507), written to or read from the recording by ProcessKeyEvent (1AAD:0C5F, 0CF4), which also copies it to gCursorX on replay."
+
 [[global]]
 id = "ds:80F5"
 name = "gLastEventY"
 why = "y word of the last mouse event taken from the ring (DequeueKeyEvent 1AAD:04E3, 0520), written to or read from the recording by ProcessKeyEvent (1AAD:0C66, 0CFE), which also copies it to gCursorY on replay."
+
 [[global]]
 id = "ds:80F7"
 name = "gRecordEnded"
 why = "Set to 1 when a FileRead of the recording fails (1AAD:0D12); InjectRecordedKey then injects 0 instead of the recorded key (the test at 1AAD:0D34), so it marks the end of the replay."
+
 [[global]]
 id = "ds:8488"
 name = "gTicksSinceEvent"
 why = "16-bit counter the INT 1Ch handler increments every tick (1D8F:0080); ProcessKeyEvent records it with each event (1AAD:0C30) and clears it after each recorded or replayed event (1AAD:0C88, 0D0A), and replay waits for it to reach gRecordDelay (1AAD:0D3E)."
+
 [[global]]
 id = "intro/ds:1FA9"
 name = "gTextAttr1"
 why = "Twin of EOB's gTextAttr1 (ds:811D, same 6174h DGROUP shift as gGraphicsChoice 8102/1F8E): load-time 000Fh, main sets 0xF after the palette (0892:0145) as EOB main sets DEFAULT_TEXT_ATTR1 (E07C8.C:262), and the twin text unit reads it at the same relative sites."
+
 [[global]]
 id = "intro/ds:1FA7"
 name = "gTextAttr2"
 why = "Twin of EOB's gTextAttr2 (ds:811B, the 6174h DGROUP shift): load-time 000Ch, main sets 0xC after the palette (0892:014B) as EOB main sets DEFAULT_TEXT_ATTR2 (E07C8.C:263); the twin text unit reads it."
+
 [[global]]
 id = "intro/ds:1A34"
 name = "gStartupDone"
 why = "Set to 1 only on StartupGame's success exit (0892:0817 at the done label, after the sound card starts); main runs the intro overlay Ovl0Main only when it is set (0892:0151)."
+
 [[global]]
 id = "intro/ds:232C"
 name = "gRestoreMode"
 why = "Twin of EOB's gRestoreMode (ds:84A0): StartupGame stores the mode INT 10h AH=0Fh reports (GetVideoMode, 0892:024B), SetVideoMode (0D2B:0033) reads it for index 7 (image 0xD2FA, 0xD309), and main passes it to EOB.EXE as argv[5], which EOB restores on exit."
+
 [[global]]
 id = "intro/ds:28A4"
 name = "gRestoreModeArg"
 why = "itoa's decimal buffer for gRestoreMode (ds:232C) at 0892:01BA; main passes it to EOB.EXE as argv[5] in the execl (I0892.C:271)."
+
 [[global]]
 id = "intro/ds:28B4"
 name = "gMemTopArg"
 why = "itoa's buffer for gMemTopSeg (ds:28C4) at 0892:01CF; main passes it to EOB.EXE as argv[6] in the execl (I0892.C:271)."
+
 [[global]]
 id = "intro/ds:19E6"
 name = "gOverlayCacheOn"
 why = "Set to 1 by StartupGame right after InitOverlayCache (0892:0641); ShutdownGame calls ShutdownOverlayCache only when it is set (0892:0851). EOB's twin is ds:3056."
+
 [[global]]
 id = "intro/ds:28CC"
 name = "gPageSegs"
 why = "Eight segment words StartupGame fills per graphics choice with screen segments (B800, A000, A200..AC00) and MemAlloc'd page buffers (0892:036B to 0540); driver import slot 1 and GetPagePtr (097F:0002) index it by page. Twin of EOB's ds:FC0C."
+
 [[global]]
 id = "intro/ds:19F7"
 name = "gBlackPalette"
 why = "Sixteen zero bytes right after gBuiltinPalette in the INTRO.EXE image (ds:19F7 to 1A06); main passes it to gSetPalette for the Tandy choice when gMovedSeg is set (0892:01AE), every entry colour 0."
+
 [[global]]
 id = "ds:F534"
 name = "gItemRemapTable"
 why = "The 1600-byte block StartupAlloc allocates at 07A9:008B; LoadItemSheets reads the 0x640-byte ITEMRMP file (item remap) into it (ovl2:0478 push [F534], src/EOV2.C:296), and SetMouseItem (07A9:0184 path) and DrawItemIcon (0D1C:070F, src/E0D1C.C:493) pass its 16-byte row icon<<4 to gSetRemapTable before a remapped draw."
+
 [[global]]
 id = "ds:80E2"
 name = "gRemapTable"
 why = "Graphics driver export 39 is not code: its far pointer is mcga.ovl offset 030C, the 16-byte colour remap buffer gSetRemapTable (ds:80D2, mcga.ovl 277B) fills; SetMouseItem passes it to TranslateImage as the xlatb table (07A9:0197, 17A6:19BE). The driver table mapping: the graphics overlay's init (mcga.ovl 0BF2..0C2F) walks the request table at ds:802A (request +4, ds:8125 = 802A:212E), copies the game's seven import pointers into the driver and writes its own export pointers into the zero pairs that follow, so ds:8046 + 4*i is mcga.ovl export i (the far pointer table at mcga.ovl 001F)."
+
 [[global]]
 id = "ds:DF48"
 name = "gRemappedIcon"
 why = "LoadItemSheets allocates 0x12C bytes and stores them here (ovl2:041D, 0425); SetMouseItem translates the item icon into it through gRemapTable (TranslateImage destination pushed at 07A9:019B) and shows it as the mouse pointer as gIconsDDE4[0x59] (0xDDE4 + 0x59*4 = 0xDF48, 07A9:01B9). src/EOV2.C:253 calls it the item description buffer [H], which this contradicts."
+
 [[global]]
 id = "ds:5E1C"
 name = "gLeftButtonMode"
 why = "DispatchNodeEvent sets it from the left button: 2 or 4 from GetKeyState(0x41) on every call and 1 or 3 on the 0xC6 click (src/E16A5.C:240-259); E1658.C writes 0x81/0x83 with a latch bit, Action0415 tests its low seven bits (0ACD:0415) and src/E0EF3.C:2158 its 0x81 bits; src/E0ACD.C:132 already calls it the left-button mode word."
+
 [[global]]
 id = "ds:8134"
 name = "gUnreadButtonChanges"
 why = "The INT 33h handler ORs the changed button bits (old xor new) into it (or ax,[8134]; mov [8134],ax at 1A72 image 0x1A8EC, src/E1A72.ASM:410-411); DrawOptionList (14EF image 0x15158) and RunMapLoop (image 0xBB98) clear it, and no instruction in EOB.EXE or the overlays reads it otherwise."
+
 [[global]]
 id = "ds:FC78"
 name = "gOptionLineSpacing"
 why = "DrawOptionList (14EF:0154) stores its spacing argument here (14EF image 0x1514B, src/E14EF.C:212) and UpdateOptionList adds it to the font height for each row and uses half of it for the band top (src/E14EF.C:285-286); every shipped caller passes 0."
+
 [[global]]
 id = "ds:FC7A"
 name = "gUnhandledOptionKey"
 why = "UpdateOptionList clears it (14EF image 0x151F4) and stores a key it did not handle there, a click outside the list or any other key (src/E14EF.C:330, 338); PickAlignment reads it for 0x6E/0x32 and the click codes 0x41/0x42 (ovl0:2342..235C, src/EOV0.C:1270-1272)."
+
 [[global]]
 id = "ds:5D1A"
 name = "gHoverSelectsOption"
 why = "Word 1 in the image (ds:5D1A = 01 00) and never written in EOB.EXE or the overlays; UpdateOptionList lets the pointer position pick the row only when it is set (14EF image 0x15288, src/E14EF.C:301) and DrawOptionList draws the selected row in colorB when it or gMouseDisabled is set (image 0x15108, src/E14EF.C:209)."
+
 [[global]]
 id = "ds:5E1E"
 name = "gRightButtonMode"
 why = "The right-button twin of gLeftButtonMode: DispatchNodeEvent sets it 2 or 4 from GetKeyState(0x42) and 1 or 3 on the 0xC7 click (src/E16A5.C:246-259), E1658.C writes 0x81/0x83 for node flags 0x1000/0x4000, and the dispatcher indexes gRightButtonMasks with it (16A5 image 0x170CF)."
+
 [[global]]
 id = "ds:FC7C"
 name = "gNodeCallback"
 why = "SetNodeCallback (16A5:0D78) stores its far argument here (image 0x177D1) and main clears it with SetNodeCallback(0, 0L) (src/E07C8.C:264, \"the node callback\"); DispatchNodeEvent calls it with each node it redraws whose state has 0x20 and a tile (lcall [FC7C] at image 0x16C86, src/E16A5.C:293-295)."
+
 [[global]]
 id = "ds:FC80"
 name = "gUnreadShapeDrawWord"
 why = "Only DrawNode (16A5:07C3) touches it: it saves the word, clears it and restores it around each kind-1 DrawShape call (three copies, 16A5 image 0x17332..0x1768E, src/E16A5.C:598-601, 640-643, 681-684); no other instruction in EOB.EXE or the overlays reads it, so the cleared value is never used."
+
 [[global]]
 id = "ds:805E"
 name = "gDrawIndexedTile"
 why = "Graphics driver export 6 (mcga.ovl 0717): it maps the tile number through the byte table set by export 13 (ds:807A, mcga.ovl 0C5C stores the tile data, colour rows and map pointers), copies that 16-byte colour row and draws the tile's 4-bit pixels through it at column x, line y; DrawNode passes node->tile34/36 and x>>3 (src/E16A5.C:612, 655, 693). The driver table mapping: the graphics overlay's init (mcga.ovl 0BF2..0C2F) walks the request table at ds:802A (request +4, ds:8125 = 802A:212E), copies the game's seven import pointers into the driver and writes its own export pointers into the zero pairs that follow, so ds:8046 + 4*i is mcga.ovl export i (the far pointer table at mcga.ovl 001F)."
+
 [[global]]
 id = "ds:8066"
 name = "gXorRect"
 why = "Graphics driver export 8 (mcga.ovl 2617): it clamps (x1, y1, x2, y2) to 320 by 200 and XORs the colour byte into every pixel of the rectangle (xor es:[di],bl at mcga.ovl 2736, 2748, 2762); DrawNode uses it for the mode-3 highlight of kind-0 nodes (src/E16A5.C:629, 671, 709). The driver table mapping: the graphics overlay's init (mcga.ovl 0BF2..0C2F) walks the request table at ds:802A (request +4, ds:8125 = 802A:212E), copies the game's seven import pointers into the driver and writes its own export pointers into the zero pairs that follow, so ds:8046 + 4*i is mcga.ovl export i (the far pointer table at mcga.ovl 001F)."
+
 [[global]]
 id = "ds:5DEA"
 name = "gLeftButtonMasks"
 why = "Words 1..4 are 0x100, 0x200, 0x400, 0x800 in the image, the node flag bit DispatchNodeEvent picks with mask = g5DEA[gLeftButtonMode] (16A5 image 0x170AD, src/E16A5.C:488); word 0 is reused as the OR of the drawn nodes' flags & 0xAA04 (image 0x16C40..0x16C63) and tested at 0x16DBA. Same layout as gRightButtonMasks (ds:5DF2), which overlaps its word 4."
+
 [[global]]
 id = "ds:5E20"
 name = "gNodeListChanged"
 why = "DispatchNodeEvent redraws the whole list and resets the press state when it is nonzero (cmp byte [5E20],0 at 16A5 image 0x16C29) and clears it after (0x16CCB); the list builders set it to 1 (BuildRowNodeList ovl0:04F3, src/EOV0.C:368; ovl1:13DB, src/EOV1.C:970)."
+
 [[global]]
 id = "ds:5DF2"
 name = "gRightButtonMasks"
 why = "Words 1..4 are 0x1000, 0x2000, 0x4000, 0x8000 in the image, the node flag bit DispatchNodeEvent picks with mask = g5DF2[gRightButtonMode] (16A5 image 0x170CF, src/E16A5.C:493); word 0 is gLeftButtonMasks[4] (0x800), so the two tables are one run of nine words at ds:5DEA."
+
 [[global]]
 id = "ds:8046"
 name = "gCopyPage"
 why = "Graphics driver export 0 (mcga.ovl 04F8): it copies 0x7D00 words from offset 0 of its first segment argument to offset 0 of the second, a whole 64000-byte page; its only caller is CopyPage (19EC:002A). The driver table mapping: the graphics overlay's init (mcga.ovl 0BF2..0C2F) walks the request table at ds:802A (request +4, ds:8125 = 802A:212E), copies the game's seven import pointers into the driver and writes its own export pointers into the zero pairs that follow, so ds:8046 + 4*i is mcga.ovl export i (the far pointer table at mcga.ovl 001F)."
+
 [[global]]
 id = "ds:FE6C"
 name = "gRetraceInverted"
 why = "CalibrateRetrace (1A65:000E) sets it to 1 when 10000 samples of port 3DAh bit 3 read set more often than clear (image 0x1A71A); WaitFrames passes it to WaitRetrace (1A16 image 0x1A170), which with 1 swaps the order of its two waits, treating a clear bit as the retrace (src/E1DE4.ASM:24-48)."
+
 [[global]]
 id = "ds:80A6"
 name = "gDrawShapeFlipped"
 why = "Graphics driver export 24 (mcga.ovl 1639): the same argument list as gDrawShape (ds:80C2) but it writes each run pixel then decrements DI (mcga.ovl 17F7 to 17FA), drawing the shape mirrored left to right; reached through DrawShapeFlipped (1A29:004D). The driver table mapping: the graphics overlay's init (mcga.ovl 0BF2..0C2F) walks the request table at ds:802A (request +4, ds:8125 = 802A:212E), copies the game's seven import pointers into the driver and writes its own export pointers into the zero pairs that follow, so ds:8046 + 4*i is mcga.ovl export i (the far pointer table at mcga.ovl 001F)."
+
 [[global]]
 id = "ds:80D6"
 name = "gDrawShapeRemapped"
 why = "Graphics driver export 36 (mcga.ovl 279C): it draws a 4-bit packed shape translating each pixel through the remap buffer (mov bx,30Ch at mcga.ovl 28C2, xlatb at 2930 and 293B) that gSetRemapTable fills; reached through 1A29:008B, called right after gSetRemapTable (src/E0D1C.C:493-496, src/EOV4.C:638-642). The driver table mapping: the graphics overlay's init (mcga.ovl 0BF2..0C2F) walks the request table at ds:802A (request +4, ds:8125 = 802A:212E), copies the game's seven import pointers into the driver and writes its own export pointers into the zero pairs that follow, so ds:8046 + 4*i is mcga.ovl export i (the far pointer table at mcga.ovl 001F)."
+
 [[global]]
 id = "ds:80DA"
 name = "gDrawShapeFlippedRemapped"
 why = "Graphics driver export 37 (mcga.ovl 298A): like gDrawShapeRemapped it returns at once for a shape whose first byte is 0 and draws through the remap buffer at mcga.ovl 030C, and it also swaps the pixel nibbles through the table at mcga.ovl 00F6 (2BA8, 2BBD); its caller pairs it with DrawShapeFlipped for sprite < 0 (src/EOV4.C:642-649). The driver table mapping: the graphics overlay's init (mcga.ovl 0BF2..0C2F) walks the request table at ds:802A (request +4, ds:8125 = 802A:212E), copies the game's seven import pointers into the driver and writes its own export pointers into the zero pairs that follow, so ds:8046 + 4*i is mcga.ovl export i (the far pointer table at mcga.ovl 001F)."
+
 [[global]]
 id = "ds:809A"
 name = "gDrawShapeMasked"
 why = "Graphics driver export 21 (mcga.ovl 12F0): its extra word is a level compared with up to seven mask planes in page 4 (offsets 1F40h steps, mcga.ovl 14DE..1568); a covered pixel is replaced by the page 2 pixel (1576..157F), so the shape is drawn behind the masked layers. Reached through 1A29:0107, which has no caller. The driver table mapping: the graphics overlay's init (mcga.ovl 0BF2..0C2F) walks the request table at ds:802A (request +4, ds:8125 = 802A:212E), copies the game's seven import pointers into the driver and writes its own export pointers into the zero pairs that follow, so ds:8046 + 4*i is mcga.ovl export i (the far pointer table at mcga.ovl 001F)."
+
 [[global]]
 id = "ds:8096"
 name = "gDrawShapeMaskedFlipped"
 why = "Graphics driver export 20 (mcga.ovl 1006): the same level and page 4 mask test as gDrawShapeMasked (cs:[1FB] set from [bp+10h] at 1012, plane reads at 11FF and 1213) with a decrementing destination (dec di at 117C), the mirrored twin. Reached through 1A29:0148, which has no caller. The driver table mapping: the graphics overlay's init (mcga.ovl 0BF2..0C2F) walks the request table at ds:802A (request +4, ds:8125 = 802A:212E), copies the game's seven import pointers into the driver and writes its own export pointers into the zero pairs that follow, so ds:8046 + 4*i is mcga.ovl export i (the far pointer table at mcga.ovl 001F)."
+
 [[global]]
 id = "ds:80FE"
 name = "gErrorDialogRegion"
 why = "Its only reader is DisplayFileError (1C0E:0ADD), which pushes it for SetTextWindow (push [80FE] at image 0x1CC13, src/E1C0E.C:545) to switch to the error box's text window; 1 in the image and never written."
+
 [[global]]
 id = "ds:84A2"
 name = "gBiosVideoModes"
 why = "Seven words 4, 9, 0Dh, 13h, 13h, 7, 2 in the image: f1DDD_002D (1DDD:002D, INT 10h set mode) loads entry [graphics choice] into AX for INT 10h AH=00h, mode 4 for CGA, 9 Tandy, 0Dh EGA, 13h MCGA and VGA (src/E1DDD.C:10-12)."
+
 [[global]]
 id = "ds:FF46"
 name = "gVideoInRegs"
 why = "The union REGS input of the unit's int86 calls: 1DDD:0006 stores 0F00h (image 0x1DDD9) and 1DDD:002D the mode (0x1DE16) before int86(0x10, &gFF46, &gFF36) (src/E1DDD.C:35-48)."
+
 [[global]]
 id = "ds:FF36"
 name = "gVideoOutRegs"
 why = "The union REGS output of the unit's int86 calls (int86(0x10, &gFF46, &gFF36)); GetVideoMode returns its low byte, the AL of INT 10h AH=0Fh (image 0x1DDF5, src/E1DDD.C:37)."
+
 [[global]]
 id = "ds:323B"
 name = "gMonsterFrontPos"
 why = "16 bytes read as [orient * 4 + position] by 08E6:103D: {1,1,0,0, 0,1,0,1, 0,0,1,1, 1,0,1,0} is 1 for the two positions in a cell (0 NW, 1 NE, 2 SW, 3 SE) on the side the monster faces"
+
 [[global]]
 id = "ds:F442"
 name = "gQuietMonsterUpdate"
@@ -2035,414 +2385,517 @@ why = "Set to 1 by ovl6:09D2 around UpdateObjects(0) and UpdateObjects(1), the m
 id = "ds:FC04"
 name = "gGameFlags"
 why = "A 32-bit set of game-wide flags: the cell-script opcodes 0xFFF0 set, clear and test bit n of it (122E:1097 SetActionFlagsOp, 122E:1142 and the clear at 122E:0958), ClearType8Objects (08E6:0055) sets bits 18 and 27, the overlay 5 NPC panels set bits 0x2000 to 0x8000000, and WinnerPanel (ovl5:160A) requires bits 1..12 (the 12 Beholder Bonuses). Unlike gActionFlags (ds:FBD4) it is not per level."
+
 [[global]]
 id = "ds:804A"
 name = "gRestoreRectToPage"
 why = "Graphics driver slot 1 of the table at ds:8046 (MCGA.OVL function table cs:0003, entry 8 = 0516h): it reads the page number through the far pointer ds:8032 (= ds:8115) and then runs gRestoreRect's body (0536h, buffer back to a rectangle) on page gSegsFC0C[page & 0x1F] instead of page 0; callers pair it with gSaveRect or gSaveRectFromPage (ovl1:112D, ovl2:09ED, ovl5:1204, 0ACD:01E3)."
+
 [[global]]
 id = "ds:A998"
 name = "gGameLoadState"
 why = "Records how the map screen is entered after a load: LoadGamePanel (ovl2:0846) sets 0xFF while the title load runs and 0xFE when it worked, LoadGame (ovl3:15B9) sets 1 on success and 0 on failure and skips its map reload on 0xFF, and EnterMapScreen (0ACD:0F72) loads the saved map instead of resetting when it is nonzero, then clears it."
+
 [[global]]
 id = "ds:F57E"
 name = "gPanelFillColour"
 why = "The UI panel background colour set by SetUiPalette (ovl2:0937, 0x84 on VGA, 2 otherwise): it is the fill argument of every DrawFilledPanel panel (ovl5:025F, ovl5:03EF, 0DE8, 0EF3:1963, 1547:0464), the colour ClearPanel (ovl5:021C) fills the character panel with, and the text background passed to gDrawText and DrawShadowText (1547:0307, ovl6:0858)."
+
 [[global]]
 id = "ds:8082"
 name = "gGetSpriteCellRle"
 why = "Graphics driver slot 15 of the table at ds:8046 (MCGA.OVL entry 22 = 0C8Dh): like gGetSpriteCell (0DD9h, which writes a header of type 1 with a 16-colour map) it cuts the cell (x, y, w, h) from a page, but writes a type-0 header and codes runs of zero bytes, which is why LoadGame (ovl3:15B9) unpacks its result with Unpack0 into the 0x514-byte portraits (also ovl5:070E, ovl5:17C8, EOV0)."
+
 [[global]]
 id = "ds:FD98"
 name = "gMembersMarkedDisabled"
 why = "SelectPartyMember (ovl1:0416) clears it and sets it to 1 when it draws gDisabledMemberIcon over a member that cannot be picked; RunCampMenu (ovl1:1ACD, at the `if (gFD98 || redrawParty)` test) then redraws every member (RedrawMember, SortSpellSlots) to remove the marks and clears it."
+
 [[global]]
 id = "ds:FDE7"
 name = "gSpellsTakenByTab"
 why = "The count of spells chosen at each spell level, indexed by the 0-based level tab of SpellSlotScreen (ovl1:097A: \"%d of %d Remaining.\" shows allowance[tab] - gFDE7[tab], the take keys increment it, Clear subtracts); cleared for 10 bytes by BuildSpellSlots (ovl1:00DD). Same array as ds:FDE6 one byte earlier."
+
 [[global]]
 id = "ds:FDE6"
 name = "gSpellsTakenByLevel"
 why = "One byte before gSpellsTakenByTab (ds:FDE7) and the same array, indexed by the 1-based spell level: BuildSpellSlots (ovl1:00DD) bumps gFDE6[gSpellLevels[spell]] for each spell already in the member's slots, the same counter SpellSlotScreen reads as gFDE7[tab]."
+
 [[global]]
 id = "ds:FD9A"
 name = "gSpellLevels"
 why = "BuildSpellSlots (ovl1:00DD) strcpy's the class's spell-to-level map into it (ds:62C9 for clerics, ds:62AF for mages); BuildSpellSlots and SpendSpellSlot (ovl1:025D) read gFD9A[spell - 1] as the spell's level 1 to 5 to pick its list and its six slots."
+
 [[global]]
 id = "ds:62AF"
 name = "gMageSpellLevels"
 why = "The level of each mage spell, NUL terminated (bytes 01 x7, 02 x4, 03 x8, 04 x3, 05 x3: 25 spells), copied into gSpellLevels by BuildSpellSlots (ovl1:00DD) when the screen is not the cleric one."
+
 [[global]]
 id = "ds:62C9"
 name = "gClericSpellLevels"
 why = "The level of each cleric spell, NUL terminated (01 x5, 02 x4, 03 x5, 04 x5, 05 x4, then 01: 24 spells), copied into gSpellLevels by BuildSpellSlots (ovl1:00DD) for the Pray for Spells screen."
+
 [[global]]
 id = "ds:62F2"
 name = "gMemberBoxColumn"
 why = "Six bytes 17 20 17 20 17 20: the x of each party member's box in 8-pixel columns (184 and 256, the two columns of the party panel); SelectPartyMember (ovl1:0416) draws the four marks at gMemberBoxColumn[i] * 8 + 0, 0x10, 0x20, 0x30."
+
 [[global]]
 id = "ds:62F8"
 name = "gMemberBoxTop"
 why = "Six bytes 02 02 36 36 6A 6A: the top y of each party member's box (three rows of the party panel), the y SelectPartyMember (ovl1:0416) draws gDisabledMemberIcon at, paired with gMemberBoxColumn."
+
 [[global]]
 id = "ds:DD28"
 name = "gDisabledMemberIcon"
 why = "A 2 by 8 cell cut from DECORATE at (9, 0x58) by LoadDecorateIcons (ovl2:0577); SelectPartyMember (ovl1:0416) draws it four times across the top strip of the box of every member that cannot be picked, then sets gMembersMarkedDisabled."
+
 [[global]]
 id = "ds:62FE"
 name = "gClericSpellsPerLevel"
 why = "Ten rows of five bytes (01 00 00 00 00, 02 00 .., 02 01 .., up to 04 04 03 03 02): SpellSlotScreen (ovl1:097A) takes allowance[i] = gClericSpellsPerLevel[(classLevel - 1) * 5 + i] for a cleric's class slot (FindClassSlot kind 2), the spells per spell level."
+
 [[global]]
 id = "ds:6330"
 name = "gClericWisdomBonus"
 why = "Rows of five bytes indexed by wisdom - 12 (clamped at 0): SpellSlotScreen (ovl1:097A) adds gClericWisdomBonus[wisdom * 5 + i] to each nonzero cleric allowance, the extra spells for high wisdom (row 0 all zero, row 1 one first-level spell)."
+
 [[global]]
 id = "ds:6358"
 name = "gPaladinSpellsPerLevel"
 why = "Rows of five bytes (01 00 00 00 00 for many rows, then 02, 02 01, 02 02): SpellSlotScreen (ovl1:097A) takes allowance[i] from it by class level for a member whose class slot is the paladin one (FindClassSlot kind 4), with the paladin spell mask 0x00800FF2."
+
 [[global]]
 id = "ds:6394"
 name = "gMageSpellsPerLevel"
 why = "Eleven rows of five bytes (01 00 00 00 00 up to 04 04 04 03 03): SpellSlotScreen (ovl1:097A) takes allowance[i] = gMageSpellsPerLevel[(classLevel - 1) * 5 + i] for a mage (FindClassSlot kind 1), doubled at levels 4 and 5 when 0D1C:0163(who, 1) finds its item."
+
 [[global]]
 id = "ds:807E"
 name = "gSaveRectFromPage"
 why = "Graphics driver slot 14 of the table at ds:8046 (MCGA.OVL entry 21 = 1ABDh): it reads the page number through the far pointer ds:8032 (= ds:8115) and runs gSaveRect's body (1ADCh, a screen rectangle into a buffer) on page gSegsFC0C[page & 0x1F] instead of page 0; FindWordPanel (ovl2:09ED), TileAnimation and EndingAnimation save with it and restore with gRestoreRectToPage."
+
 [[global]]
 id = "ds:65C0"
 name = "gCompassRowHeights"
 why = "Three bytes 11 0A 0A: the height of the cells of row i of gCompassIcons that LoadDecorateIcons (ovl2:0577) cuts from DECORATE (gGetSpriteCell(j * 3, gCompassRowTops[i], 3, gCompassRowHeights[i]))."
+
 [[global]]
 id = "ds:65C3"
 name = "gCompassRowTops"
 why = "Three bytes 78 89 93: the DECORATE y of row i of gCompassIcons, used by LoadDecorateIcons (ovl2:0577) with gCompassRowHeights to cut the four facings of each of the three rows."
+
 [[global]]
 id = "ds:65C6"
 name = "gDecorateCellRects"
 why = "Six four-byte rectangles x, y, w, h (0C 58 02 0E, 0C 67 01 07, ... 0C 83 01 03) that LoadDecorateIcons (ovl2:0577) cuts from the DECORATE page in gOverlayBuf into the six cells at ds:F4BE that Ovl4_1D20 draws; what the cells show is not established."
+
 [[global]]
 id = "ds:DD00"
 name = "gDefaultPointerIcon"
 why = "SetPointerShape (ovl2:0000) cuts cell 0 of ITEMICN (2 by 0x10) into gIconsDDE4[0], copies it here and passes it to SetMousePointerShape (1BB1:0002) with hot spot (0, 0): the mouse pointer shown when no item is held."
+
 [[global]]
 id = "ds:65EA"
 name = "gBoxCycleColours16"
 why = "The NUL-terminated colour cycle 0C 0D 0E 0F 0E 0D that SetUiPalette (ovl2:0937) strcpy's into ds:1CE7 for the non-VGA modes; DrawRowList (0D1C:0454) steps through ds:1CE7 one colour per tick to animate the selection box, so this is the 16-colour version of that cycle."
+
 [[global]]
 id = "ds:EFC6"
 name = "gResurrectedPoolChar"
 why = "CharOverlay (ovl5:1A82) sets it to -1; ResurrectPicker (ovl5:0DBB) stores the pool index of the pre-made character chosen for resurrection (gCharPool[n]) and calls DrawCharPortrait(2), which then draws that character's cells cellIdxA[gEFC6] and cellIdxB[gEFC6] beside the panel picture."
+
 [[global]]
 id = "ds:FE42"
 name = "gTextPanelInView"
 why = "1 when the overlay's text panel is the one over the view, (0,0)-(0xAF,0xAE) (UseItemPanel ovl5:1CDD and WinnerPanel ovl5:160A set it), 0 for the bottom panel (0,0x79)-(0x13F,0xC8) of CharOverlay (ovl5:1A82); MessagePanel (ovl5:025F) places its MORE box at (0x8B,0xA2) or (0x11D,0xBD) by it."
+
 [[global]]
 id = "ds:DDE0"
 name = "gDeathListCount"
 why = "BuildDeathList (ovl5:0BBE) resets it, increments it for each entry it stores in gDeathList and returns it; ResurrectPicker (ovl5:0DBB) loops over gDeathListCount entries and passes it to SelectMenu as the row count."
+
 [[global]]
 id = "ds:F4E6"
 name = "gDeathList"
 why = "The word list BuildDeathList (ovl5:0BBE) fills: party members with hp -10 (their index) and, for each carried item whose type kind is 8, -m0B (a pool character); ResurrectPicker (ovl5:0DBB, \"Which should be resurrected?\") names and acts on its entries."
+
 [[global]]
 id = "ds:7B2B"
 name = "gOuttakeCellRects"
 why = "Nineteen four-byte rectangles x, y, w, h that DrawSheetCell (ovl5:0000) cuts from gOverlayBuf after CharOverlay (ovl5:1A82) loads OUTTAKE (ds:7F07) into it; DrawCharPortrait (ovl5:00A1) picks the cells per NPC panel mode (2, 0, 5, 3, 7, 6, 0x12, 0x11, 4 and the per-character 8 to 0x10)."
+
 [[global]]
 id = "ds:7B89"
 name = "gMenuRowX"
 why = "Eleven bytes 3B A6 04 70 DC 04 70 DC 04 70 DC: SelectMenu (ovl5:0455) zero-extends gMenuRowX[first + j] as the x of menu row j for DrawMenuRow and its IsPointInsideRect hit tests."
+
 [[global]]
 id = "ds:7B94"
 name = "gMenuRowYOffset"
 why = "Signed bytes 00 00 00 00 00 0C 0C 0C 18 18 18 right after gMenuRowX: SelectMenu (ovl5:0455) adds gMenuRowYOffset[first + j] to the text baseline ybase to place menu row j."
+
 [[global]]
 id = "ds:7B23"
 name = "gYesNoMenu"
 why = "Two far pointers to \"yes\" and \"no\" (ds:7CB0, ds:7CB4), the menu AddCharPanel (ovl5:0828) shows through SelectMenu(0, 2, gYesNoMenu) before adding a character."
+
 [[global]]
 id = "ds:7B9F"
 name = "gStrCancel"
 why = "The string \"CANCEL\", which ChooseChar (ovl5:067B) appends as the seventh row after the six member names; choosing it (row 6) returns 0."
+
 [[global]]
 id = "ds:7BBA"
 name = "gProposalMenu"
 why = "Two far pointers, \"Hear proposal\" (ds:7D54) and \"Leave\" (ds:7D62): the first menu of GiveItemPanel (ovl5:09C5), SelectMenu(0, 2, ...)."
+
 [[global]]
 id = "ds:7BC2"
 name = "gHelpHimMenu"
 why = "Two far pointers, \"Help him\" (ds:7D68) and \"Leave\" (ds:7D71): the second menu of GiveItemPanel (ovl5:09C5); choice 0 queues the items and runs AddCharPanel(7, ...)."
+
 [[global]]
 id = "ds:7CB7"
 name = "gStrMore"
 why = "The string \"MORE\", which MessagePanel (ovl5:025F) draws in colour 0xF inside its box before it waits for a key or a click."
+
 [[global]]
 id = "ds:7CBC"
 name = "gStrPartyFull"
 why = "The string \"You may only have six characters in your party. Select the one you wish to drop.\", which ChooseChar (ovl5:067B) draws when all six slots are taken."
+
 [[global]]
 id = "ds:7D0E"
 name = "gStrJoinsParty"
 why = "The sprintf format \"%s joins the party.\\r\" that AddCharPanel (ovl5:0828) fills with gCharPool[who].name into gFileNameBuf when the yes message is -1."
+
 [[global]]
 id = "ds:7D77"
 name = "gStrFarewell"
 why = "The string \"\\r I wish you luck in your travels.\" that ItemPanelDispatch (ovl5:0B58) draws when none of its three panels did anything."
+
 [[global]]
 id = "ds:7D9E"
 name = "gStrWhichResurrect"
 why = "The string \"Which should be resurrected?\", the title ResurrectPicker (ovl5:0DBB) draws above its list of gDeathList entries."
+
 [[global]]
 id = "ds:7E5C"
 name = "gStrWinnerTitle"
 why = "The string \"Congratulations on completing all 12 Beholder Bonuses. ... winning Beholder Bonus party are:\" that WinnerPanel (ovl5:160A) draws when gGameFlags bits 1..12 are all set."
+
 [[global]]
 id = "ds:7EDB"
 name = "gStrWinnerNameBreak"
 why = "The one-character string \"\\r\" that WinnerPanel (ovl5:160A) draws before each of the first four party names; ds:5AB5 already holds the name gStrNewline, so this copy is named by its use."
+
 [[global]]
 id = "ds:7EDD"
 name = "gStrPasswordFormat"
 why = "The sprintf format \"\\r\\rPassword: %04x\\r\" into which WinnerPanel (ovl5:160A) prints the checksum of the party's names into gFileNameBuf."
+
 [[global]]
 id = "ds:7C32"
 name = "gPortalAnimScript"
 why = "The (cell, step) byte pairs ending at 0xFF that TileAnimation (ovl5:1204, mode 8, the PORTALA/PORTALB sequence) walks: each pair selects block/strip cells and a board cell, with sounds at chosen steps; the bytes after the 0xFF are \"yes\" and \"no\"."
+
 [[global]]
 id = "ds:7BA6"
 name = "gTendTalkMenu"
 why = "Three far pointers, \"Tend his wounds\" (ds:7D23), \"Talk\" and \"Leave\": TemplePanel (ovl5:0924) shows it with SelectMenu(2, 3, ...) while gGameFlags bit 0x2000 is clear."
+
 [[global]]
 id = "ds:7BB2"
 name = "gTendLeaveMenu"
 why = "Two far pointers, \"Tend his wounds\" (ds:7D3E) and \"Leave\" (ds:7D4E): TemplePanel (ovl5:0924) shows it once gGameFlags bit 0x2000 is set, remapping choice 1 to 2."
+
 [[global]]
 id = "ds:7BCA"
 name = "gHealMenu"
 why = "Two far pointers, \"Heal Party\" (ds:7DBB) and \"Leave\" (ds:7DC6): ResurrectPanel (ovl5:0EB9) shows it when BuildDeathList found nobody to resurrect."
+
 [[global]]
 id = "ds:7BD2"
 name = "gHealResurrectMenu"
 why = "Three far pointers, \"Heal Party\", \"Resurrect Dead\" (ds:7DD7) and \"Leave\": ResurrectPanel (ovl5:0EB9) shows it when BuildDeathList found entries; choice 1 runs ResurrectPicker."
+
 [[global]]
 id = "ds:7BDE"
 name = "gAttackBribeMenu"
 why = "Two far pointers, \"Attack\" (ds:7DEC) and \"Bribe\" (ds:7DF3): AttackPanel (ovl5:0F77) shows it with SelectMenu(0, 2, ...)."
+
 [[global]]
 id = "ds:7BE6"
 name = "gKillHerMenu"
 why = "Three far pointers, \"Kill her\" (ds:7DF9), \"Hear her out\" (ds:7E02) and \"Let her go\" (ds:7E0F): KillHerPanel (ovl5:102C) shows it with SelectMenu(2, 3, ...); it spans ds:7BE6 to 7BF1, so ds:7BEE is its third entry."
+
 [[global]]
 id = "ds:7BEE"
 name = "gKillHerMenuLetGo"
 why = "ds:7BEE is gKillHerMenu (ds:7BE6) + 8, its third far pointer (\"Let her go\", ds:7E0F); the menu tables are laid out back to back (7BE6 + 12 = 7BF2) and nothing in src/ uses this declaration."
+
 [[global]]
 id = "ds:7BF2"
 name = "gSurrenderMenu"
 why = "Two far pointers, \"Surrender\" (ds:7E1A) and \"Attack\" (ds:7E24): SurrenderPanel (ovl5:10A6) shows it with SelectMenu(0, 2, ...)."
+
 [[global]]
 id = "ds:7BFA"
 name = "gFreeHimMenu"
 why = "Three far pointers, \"Free Him\" (ds:7E2B), \"Kill Him\" and \"Leave\": FreeHimPanel (ovl5:119E) shows it with SelectMenu(2, 3, ...)."
+
 [[global]]
 id = "ds:8119"
 name = "gScrollHookSeg"
 why = "The segment word of the far pointer gScrollHook (ds:8117): overlay 5 stores offset 0xAC and segment 0x2D0 in the pair (ovl5:1A82, ovl5:160A, ovl5:1CDD), the far address of its MessagePanel stub that DrawTextLine (1DE7:03B2) calls (src/E1DE7.C:79-84, whitepaper rebuild notes)."
+
 [[global]]
 id = "ds:151F"
 name = "gClericSpells"
 why = "ds:151F is ds:1344 + 25 * 19: record 25 of the spell table, so gClericSpells[n] is the cleric spell n (record 1 names \"bless\", 2 \"cure light wounds\"); CampLoop (ovl6:0000) prints \"%s gained %s.\" with gClericSpells[*slot].name for the slots at +0x55."
+
 [[global]]
 id = "ds:F53B"
 name = "gUnusedPanelColour"
 why = "a panel colour SetUiPalette ovl2:0937 sets to 0x85 in both branches, next to gF53A and gFB4C, which no code in src/ reads"
+
 [[global]]
 id = "ds:EFC8"
 name = "gUnusedStartupWord"
 why = "a word InitGameTables ovl2:0496 clears at start-up with ds:EFCA, which no code in src/ (C or assembly) reads or writes otherwise"
+
 [[global]]
 id = "ds:FBC8"
 name = "gCurLevel"
 why = "the current dungeon level, 1 to 12: EnterMapScreen loads LoadMapScreen(gCurLevel), overlay 5 indexes gMapTiles[gCurLevel - 1], the door styles of ovl4:1411 switch on levels 1 to 3 and 12, 4 to 6, 7 to 9, 10 and 11, and RunMapLoop plays the random sound only on levels 1 to 3"
+
 [[global]]
 id = "ds:8DCA"
 name = "gLevelInf"
 why = "LoadMapScreen (ovl3:0A7C) reads LEVEL<n>.INF into gSegDF4E and Unpacks it into this 7500-byte block (EOV3.C:595), then reads the maze file name, sprite name, header, monsters and wall records from it; RunCellScript (122E:1DA8) runs each cell's script at this base plus gMaze[cell*9+7]"
+
 [[global]]
 id = "ds:F43E"
 name = "gWallBlockMaps"
 why = "LoadMapScreen reads the level's <name>.VMP or .EMP file (6000 bytes, ovl3:0A7C, EOV3.C:599-602) into it, and CopyViewColumn and ToggleViewColumn (ovl4:02A5, ovl4:036A) index it by wall type at (gTable1879[type]-1)*0x35E words of view block numbers, bit 0x4000 marking a flipped block"
+
 [[global]]
 id = "ds:FC0C"
 name = "gPageSegs"
 why = "the eight segment words StartupGame fills per graphics choice (07C8:02A4..03D9: 0xB800, 0xA000 or MemAlloc'd 64000, 32000, 52000 byte blocks) and 19EC:0002 turns into page far pointers; the graphics driver reads it through the import ds:802E (MCGA.OVL 0B1D)"
+
 [[global]]
 id = "ds:FC08"
 name = "gSavedInt3F"
 why = "main stores getvect(0x3F) here before installing Int3FHandler (07C8:0045, E07C8.C:236) and ShutdownGame puts it back with setvect (E07C8.C:475); the INTRO.EXE twin ds:28C8 is already gSavedInt3F"
+
 [[global]]
 id = "ds:80FA"
 name = "gExitHook"
 why = "main stores 07C8:061D here (E07C8.C:244) and ShutdownGame calls it when nonzero (E07C8.C:466-467); the graphics driver's table ends at ds:80E2 so it never overwrites it, and the INTRO.EXE twin ds:1F86 is gExitHook"
+
 [[global]]
 id = "ds:3092"
 name = "gStartupDone"
 why = "StartupGame sets it to 1 (07C8:0532, E07C8.C:406) just before starting the sound card and its only `return 1`; main reads it (E07C8.C:265) before setting the mouse and calling StartupAlloc"
+
 [[global]]
 id = "ds:3056"
 name = "gOverlayCacheUp"
 why = "StartupGame sets it to 1 right after InitOverlayCache (E07C8.C:401-402) and ShutdownGame calls ShutdownOverlayCache only when it is set (E07C8.C:470-471); the INTRO.EXE twin ds:19E6 has the same two uses"
+
 [[global]]
 id = "ds:80BA"
 name = "gSetPalette"
 why = "a graphics driver entry (slot 36 of the table at ds:802A that the driver fills); in MCGA.OVL it is offset 1BE3, INT 10h AX=1012h setting 256 DAC registers from the far pointer argument; main and StartupGame call it with the palette buffers (E07C8.C:253, :258), and the INTRO.EXE twin ds:1F46 is gSetPalette"
+
 [[global]]
 id = "ds:8056"
 name = "gClearPage"
 why = "a graphics driver entry (slot 11 of the ds:802A table): MCGA.OVL 0693 fills the current draw page's segment (gPageSegs[*ds:8115 & 0x1F], MCGA.OVL 0B1D) with 0x7D00 zero words and EGA.OVL 07FB clears 0xFA0 words the same way; StartupGame calls it once the page table is built (E07C8.C:375)"
+
 [[global]]
 id = "ds:FE68"
 name = "gPaletteBuf"
 why = "StartupGame allocates it (16 bytes for graphics choices 1 and 2, 0x300 for 3 and 4, E07C8.C:385-397), main loads eobpal.col into it (E07C8.C:257), LoadMapScreen loads <name>.PAL into it (EOV3.C:606) and DrawViewFrame passes it to gSetPalette; the INTRO.EXE twin ds:2D42 is gPaletteBuf"
+
 [[global]]
 id = "ds:3057"
 name = "gBuiltinPalette"
 why = "the 16 bytes {0,5,3,2,10,14,12,6,4,11,9,1,0,8,7,15} (read from the image) that main and StartupGame pass to gSetPalette for graphics choices 1 and 2 (E07C8.C:253, :388); the INTRO.EXE twin ds:19E7 is gBuiltinPalette"
+
 [[global]]
 id = "ds:F510"
 name = "gLevelTimerPeriod"
 why = "LoadMapScreen reads it from the level header (EOV3.C:616) and sets gDeadline = g8492 + it (EOV3.C:620); the periodic level tick 08E6:1410 resets gDeadline to g8492 + it each time it fires RunCellScript(0, 0x20)"
+
 [[global]]
 id = "ds:3406"
 name = "gSaveTables"
 why = "six far pointers (DGROUP 33BB, 33ED, 337A, 339D, 33BB, 33BB in the image), one per base class of gClassSlotBaseClass (fighter, mage, cleric, thief, paladin and ranger share the fighter's); 0A72:0006 reads byte min(level, max)/step + rowLength*saveType of one, and 08E6:1634, 0DE8:0FCA and 0D1C:059B compare a d20 against it to halve damage: AD&D saving throws"
+
 [[global]]
 id = "ds:341E"
 name = "gSaveMaxLevel"
 why = "per base class {17, 21, 19, 21, 17, 17} (image bytes), the level 0A72:0006 clamps the level argument to before dividing by gSaveLevelStep; the AD&D saving-throw tables stop improving at those levels"
+
 [[global]]
 id = "ds:3424"
 name = "gSaveLevelStep"
 why = "per base class {2, 5, 3, 4, 2, 2} (image bytes): 0A72:0006 divides the clamped level by it, the levels per saving-throw column (fighters every 2 levels, mages 5, clerics 3, thieves 4)"
+
 [[global]]
 id = "ds:342A"
 name = "gSaveRowLength"
 why = "per base class {10, 5, 7, 6, 10, 10} (image bytes): 0A72:0006 multiplies the save-type argument by it to pick the row, so it is the number of level columns in each saving-throw row of that table"
+
 [[global]]
 id = "ds:3430"
 name = "gStrPctHitSteps"
 why = "the five exceptional strength thresholds {1, 51, 76, 91, 100} GetStrengthToHitBonus (0A72:00CF) compares strengthPct with; the last threshold reached picks gStrPctHitBonus"
+
 [[global]]
 id = "ds:3435"
 name = "gStrPctHitBonus"
 why = "the to-hit bonuses {1, 2, 2, 2, 3} (image bytes) that GetStrengthToHitBonus (0A72:00CF) returns for an exceptional strength at or above each gStrPctHitSteps threshold, the AD&D 18/xx hit bonuses"
+
 [[global]]
 id = "ds:3439"
 name = "gStrHitBonus"
 why = "the per-strength-score to-hit bonus {.., -5, -3, -3, -2, -2, -1, -1, 0 .., +1, +1, +3 ..} GetStrengthToHitBonus (0A72:00CF) starts from, indexed by CharRec.strength"
+
 [[global]]
 id = "ds:3453"
 name = "gStrPctDamageSteps"
 why = "the five exceptional strength thresholds {1, 51, 76, 91, 100} GetStrengthDamageBonus (0A72:0128) compares strengthPct with; a separate copy of gStrPctHitSteps used for damage"
+
 [[global]]
 id = "ds:3458"
 name = "gStrPctDamageBonus"
 why = "the damage bonuses {3, 3, 4, 5, 6} (image bytes) that GetStrengthDamageBonus (0A72:0128) returns for an exceptional strength at or above each gStrPctDamageSteps threshold, the AD&D 18/xx damage bonuses"
+
 [[global]]
 id = "ds:345C"
 name = "gStrDamageBonus"
 why = "the per-strength-score damage bonus {.., -4, -2, -1, -1, -1, 0 .., +1, +1, +2, +7 ..} GetStrengthDamageBonus (0A72:0128) starts from, indexed by CharRec.strength"
+
 [[global]]
 id = "ds:3474"
 name = "gDexMissileBonus"
 why = "words indexed by the +15 dexterity byte {.., -6, -4, -3, -2, -1, 0 .., +1, +2, +2, +3 ..} (image words); 0A72:0181 returns it and RollToHit (0DE8:0007) adds it when its flag is clear, the strength to-hit bonus when set (E0DE8.C:200-203): the AD&D dexterity missile adjustment"
+
 [[global]]
 id = "ds:349E"
 name = "gDexArmourAdjust"
 why = "words indexed by dexterity {5, 5, 5, 4, 3, 2, 1, 0 .., -1, -2, -3, -4, -4} (image words); GetArmourClassBase (0A72:019D) returns it and ComputeArmourClass (0DE8:0D5E) sets armorClass to it plus 10, the AD&D dexterity defensive adjustment"
+
 [[global]]
 id = "ds:35BC"
 name = "gExpTables"
 why = "six far pointers (DGROUP 3500, 34D0, 3530, 355C, 358C, 358C), one per base class; GetClassSlotExpThreshold (0A72:04B7) returns entry level-1 of the class slot's table and AddExperience (0DE8:0B45) levels a slot up when its experience passes it"
+
 [[global]]
 id = "ds:35D4"
 name = "gClassSlotBaseClass"
 why = "15 classes by 4 bytes, each the base class of a class slot or -1 (image: class 0 {0}, 3 {1}, 4 {2}, 5 {3}, 6 {0,2}, 8 {0,1}, 9 {0,1,3}); GetClassSlotByte (0A72:0509) reads it and the result indexes gSaveTables, gExpTables and the slot names g1219"
+
 [[global]]
 id = "ds:3610"
 name = "gHitGainPerStep"
 why = "per combat group {2, 1, 1, 1} (image bytes): GetHitTarget (0A72:0522) subtracts (level-1)/gHitLevelsPerStep times this from 20, the to-hit number RollToHit compares a d20 with"
+
 [[global]]
 id = "ds:3614"
 name = "gHitLevelsPerStep"
 why = "per combat group {3, 2, 1, 3} (image bytes): GetHitTarget (0A72:0522) divides the first class level minus one by it before multiplying by gHitGainPerStep, the number of levels per to-hit improvement"
+
 [[global]]
 id = "ds:3618"
 name = "gTurnUndeadTable"
 why = "ten 14-byte rows of values {10, 7, 4, 0, -1 .., 20, 19, 16 .., 99} (image bytes), read by 0A72:0597 for 0D1C:09CB, which destroys the monster on -1 and makes it flee when its roll reaches the value; TurnUndead (0D1C:0A43) is the action that calls it"
+
 [[global]]
 id = "ds:116E"
 name = "gClassCombatGroup"
 why = "per class index {0,0,0,1,2,3,0,0,0,0,3,2,0,0,2} (image bytes): 0 for fighter, ranger, paladin and fighter multi-classes, 1 mage, 2 cleric, 3 thief; GetHitTarget (0A72:0522) indexes gHitGainPerStep and gHitLevelsPerStep by it, and ovl0:1EA9 caps strength at 18 when it is nonzero"
+
 [[global]]
 id = "ds:174B"
 name = "gHitDieSlot0"
 why = "per class the hit die sides of class slot 0 {10,10,10,4,8,6,10,..} (image bytes: fighter d10, mage d4, cleric d8, thief d6); RollHitPoints, MaxHitPoints and MinHitPoints (0A72:01AE, 02B3, 03A4) roll levels[0] of them"
+
 [[global]]
 id = "ds:175A"
 name = "gHitDieSlot1"
 why = "per class the hit die sides of class slot 1 (0 for single classes; class 6 fighter/cleric 8, class 8 fighter/mage 4, image bytes); the three hit-point functions (0A72:01AE, 02B3, 03A4) use it with levels[1] and halve the total when it is nonzero"
+
 [[global]]
 id = "ds:1769"
 name = "gHitDieSlot2"
 why = "per class the hit die sides of class slot 2 (nonzero only for the triple classes 9 and 12, 6 and 4, image bytes); the three hit-point functions (0A72:01AE, 02B3, 03A4) use it with levels[2] and divide the total by 3 when it is nonzero"
+
 [[global]]
 id = "ds:1778"
 name = "gConHitPointBonus"
 why = "indexed by constitution minus 1: {-3,-2,-2,-1,-1,-1,0..,+1,+2,+3,+4,+5..} (image bytes); the hit-point functions (0A72:01AE) add it once per die and cap it at 2 unless the slot-0 die is d10, the AD&D warrior constitution rule"
+
 [[global]]
 id = "ds:EFD2"
 name = "gWallTrigger"
 why = "the event the wall handlers run with: RunRowHandler (122E:0933) sets 0x40 for a click on the facing wall, 0ACD:08E7 0xff, StepDDEffect (1414:003E) 0x10 or 1 for a flying object; DispatchSlotHandler (122E:0896) tests it against the cell's trigger mask and the handlers pass it to RunCellScript, then it is cleared"
+
 [[global]]
 id = "ds:F542"
 name = "gDirectAction"
 why = "an all-zero record (image bytes) that 0ACD:01E3 and RedrawPartyPanel (0EF3:2541) receive as their struct Action / ActRec argument when the code calls them directly, not from a menu click (122E:1AAB, ovl1, ovl5); both return its +4 word"
+
 [[global]]
 id = "ds:1905"
 name = "gWallHandlerIndex"
 why = "per wall type, the 1-based index into DispatchSlotHandler's ten-entry handler table (122E:0896 calls handlers[g1905[type]-1]); image bytes give 1 (door click) to types 3..7 and 13..17 and 6 (the pry-door message) to 8 and 18; RegisterWallObject (ovl3:01C8) sets it from the level"
+
 [[global]]
 id = "ds:A9EC"
 name = "gScriptDone"
 why = "RunCellScript (122E:1DA8) clears it before the walk and loops until it is set; ScriptStop (122E:13D1) and LoadLevelOp (122E:1AAB) set it to 1 to end the cell script"
+
 [[global]]
 id = "ds:F50E"
 name = "gScriptStackDepth"
 why = "the number of far pointers in gScriptStack (ds:F444): PushScriptPointer (122E:1422) stores at it and increments it while it is under 10, PopScriptPointer (122E:13E0) decrements it and reloads the script pointer"
+
 [[global]]
 id = "ds:FB36"
 name = "gScriptTrigger"
 why = "RunCellScript (122E:1DA8) stores its mode argument (1 enter, 2 leave, 4 drop, 8 take, 0x40 click and others) here before running the cell script, and EvaluateScriptExpr (122E:147F) pushes it for the expression opcode 0xFFE0"
+
 [[global]]
 id = "ds:5C76"
 name = "gDoorMoveDir"
 why = "the step (+1 or -1) a moving door adds to its two wall bytes: ArmMemberEffect sets 1, DisarmMemberEffect -1, ToggleArmEffect negates it (122E:0154, 01D9, 0271), 1414:03B4 adds it to gMaze[cell*9+side] and side+2 and ResetLevel adds it until the wall flags show 0x30"
+
 [[global]]
 id = "ds:5A40"
 name = "gLaunchPositions"
 why = "eight bytes {2,3,0,2,1,0,3,1} (image bytes) indexed by direction*2 + side; AddEffectOp (122E:0C4D) passes the entry as the kind that AddDDEffect stores in the projectile's +06 and in its item's list tag (kind | 4), the position in the cell the object starts at"
+
 [[global]]
 id = "ds:181F"
 name = "gIconPictureIndex"
 why = "per item icon, the row of gItemL1Icons drawn for the item in the view (ovl4:0AD0, EOV4.C:464) and for a flying item (EOV4.C:1011); ItemSlotAction (122E:06D0) refuses \"The item is too large to fit.\" when it is 0x0E or below and StepDDEffect (1414:003E) tests it against 0x0F"
+
 [[global]]
 id = "ds:FB76"
 name = "gUnreadScriptFlag"
 why = "the script opcode 0xFFE4 of SetActionFlagsOp (122E:1097) sets it to 1 and RunCellScript (122E:1DA8) clears it when a script starts; no file in src/ reads ds:FB76"
+
 [[global]]
 id = "ds:5BA1"
 name = "gStrInvent"
 why = "the string \"INVENT\" (image bytes at ds:5BA1) that LoadLevelOp (122E:1AAB) passes to LoadScreenImage with gSheetINVENT (E122E.C:1338), the screen the other callers name with a literal"
+
 [[global]]
 id = "ds:EF9E"
 name = "gViewCellAhead"
@@ -2452,98 +2905,122 @@ why = "it is gViewCells[13] (ds:EF6A + 13 * 4), and view cell 13 has offset -32,
 id = "ds:59F8"
 name = "gDoorButtonIndex"
 why = "32 bytes per wall type (image: 0 for types 3..12, 3 for 13..22 and 31) that 122E:04CA uses to pick the gA99C entry, the door button sprites and positions LoadMapCells (ovl3:03A2) slices from the DOOR screen at dstA 0 and dstB 3"
+
 [[global]]
 id = "ds:59D8"
 name = "gDoorFirstWallType"
 why = "32 bytes per wall type (image: 3 for 3..7, 8 for 8..12, 13 for 13..17, 18 for 18..22, then 30, 31) giving the first wall type of the door's run; 122E:04CA shifts the button x by (type - this) * 9 on levels 4 to 6, the door's open step"
+
 [[global]]
 id = "ds:1E75"
 name = "gDoorButtonXBias"
 why = "a word (0 in the image, no writer in src/) that 122E:04CA adds to the door button's x before the click test, the only use of ds:1E75"
+
 [[global]]
 id = "ds:5B78"
 name = "gStrCannotPryDoor"
 why = "the string \"No one is able to pry this door open.\\r\" (image bytes at ds:5B78) that CheckMemberSlotRect (122E:0847) draws when the wall under the mouse has flag 0x20"
+
 [[global]]
 id = "ds:B802"
 name = "gLoadedMonsterShapes"
 why = "36 far pointers: the level's monster loaders (ovl3:0624, 069E, 0718) slice six frames into it at 0 and 0x12, one set per monster type, FreeMapIcons frees them, and ovl4 reads them as gB7FE[sprite + (m07 ? 0x12 : 0)] (EOV4.C:613: ds:B7FE is this table read one entry earlier, 1-based, which g1 proposes as gMonsterShapes) to draw each monster"
+
 [[global]]
 id = "ds:F538"
 name = "gWallRecCount"
 why = "the number of filled gWallRecs slots: RegisterWallObject (ovl3:01C8) copies each decoration into gWallRecs[gF538] and increments it, FreePtrTable (ovl3:0000) resets it to 0"
+
 [[global]]
 id = "ds:808E"
 name = "gCopyToPlanar"
 why = "a graphics driver entry (slot 25 of the ds:802A table): EGA.OVL 123C writes the bytes of the far buffer argument into the video segment argument plane by plane through the graphics controller (port 3CFh), MCGA.OVL FCD is an empty function; LoadWallTextures calls it only in EGA mode with 0xA400, 0xAA00 and 0xABF4"
+
 [[global]]
 id = "ds:F4D6"
 name = "gWallPlaneTableA"
 why = "the first 16-byte table of the wall texture file, unpacked from gArtPage+2 by LoadWallTextures (ovl3:07A5) and passed first to SetPlaneTables (17A6:037E), which copies it into gPlaneTableA, the nibble map DrawTile's MCGA/VGA branch uses"
+
 [[global]]
 id = "ds:FB4D"
 name = "gWallPlaneTableB"
 why = "the second 16-byte table of the wall texture file, unpacked from gArtPage+0x12 by LoadWallTextures (ovl3:07A5) and passed second to SetPlaneTables (17A6:037E), which copies it into gPlaneTableB (used when gFlipPlanes is 0)"
+
 [[global]]
 id = "ds:E062"
 name = "gDecorationRects"
 why = "LoadWallSet (ovl3:004F) points it just past the wall-set decorations in gStagingPage and reads the file's 8-byte rectangles there; RegisterWallObject (ovl3:01C8) slices each decoration cell's rectangle from the map sheet into gRectKinds[cell]"
+
 [[global]]
 id = "ds:FBD0"
 name = "gSavedLevels"
 why = "a bit mask of levels: SaveLevelState (ovl3:11AF) and SaveGame (ovl3:1368) set bit level-1, and LoadObjects (ovl3:09AA) and LoadMapScreen (ovl3:0A7C) test it to restore the level from LEVELS.TMP instead of its INF file"
+
 [[global]]
 id = "ds:6930"
 name = "gMonsterRectsA"
 why = "six 4-word rectangles (x8, y, w8, h) LoadMapIcons6 (ovl3:0624, handler 0 of LoadMapScreen's table) cuts the six frames of a monster type from gOverlayBuf with into gLoadedMonsterShapes; image values (0,0,7,96), (7,40,12,56), ..."
+
 [[global]]
 id = "ds:69C0"
 name = "gMonsterRectsB"
 why = "six 4-word rectangles LoadMapIcons6b (ovl3:069E, handler 1) cuts monster frames with into gLoadedMonsterShapes; image values five 7 by 96 frames side by side then (0,96,7,96)"
+
 [[global]]
 id = "ds:6A50"
 name = "gMonsterRectsC"
 why = "six 4-word rectangles LoadNamedIcons (ovl3:0718, handler 2, the \"%s1\" screen) cuts monster frames with into gLoadedMonsterShapes; image values 10 by 88 frames, four across then two on the second row"
+
 [[global]]
 id = "ds:6840"
 name = "gDoorRects"
 why = "4-byte rectangles, three per door type (near, middle, far sizes, image (0,0,10,72), (17,152,7,47), (25,72,4,29)), that LoadMapCells (ovl3:03A2) cuts from the \"DOOR\" screen into gFB5E"
+
 [[global]]
 id = "ds:68A0"
 name = "gDoorButtonRects"
 why = "4-byte rectangles, three per door type, one cell wide and 7, 3 or 1 high (image bytes), that LoadMapCells (ovl3:03A2) cuts from the \"DOOR\" screen into gA99C[].rec, the buttons 122E:04CA hit-tests to open a door"
+
 [[global]]
 id = "ds:6900"
 name = "gDoorButtonPos"
 why = "x/y byte pairs, three per door type (image (130,36), (116,39), ...), that LoadMapCells (ovl3:03A2) copies into gA99C[].x and .y; 122E:04CA builds the button's click rectangle from them"
+
 [[global]]
 id = "ds:5BCC"
 name = "gEffects2Period"
 why = "not a table of its own: ds:5BCC is gEffects[2].period (gEffects is 16-byte records at ds:5BA8 with the period at +4, E1414.C:16-19); LoadMapScreen (ovl3:0A7C) stores the level's timer values into gEffects[2+2i] and [3+2i] through it and gEffects3Period"
+
 [[global]]
 id = "ds:5BD0"
 name = "gEffects2Expiry"
 why = "not a table of its own: ds:5BD0 is gEffects[2].expiry (+8 of the 16-byte record at ds:5BC8); LoadMapScreen (ovl3:0A7C) sets entries 2..5 to g8492 plus the period (halved for the odd ones)"
+
 [[global]]
 id = "ds:5BDC"
 name = "gEffects3Period"
 why = "not a table of its own: ds:5BDC is gEffects[3].period (+4 of the record at ds:5BD8); LoadMapScreen (ovl3:0A7C) writes the same level timer value through it as through gEffects2Period, so each pair of effects shares the period"
+
 [[global]]
 id = "ds:5C77"
 name = "gDoorEffectActive"
 why = "the active byte (+0F) of timed effect 12, ds:5BA8 + 12 * 16 + 0x0F; the door handlers 122E:0154, 01D9 and 0271 test it to see whether a door is already moving"
+
 [[global]]
 id = "ds:5C74"
 name = "gDoorEffectCell"
 why = "the argument word (+0C) of timed effect 12 (ds:5BA8 + 0xC0 + 0x0C), the map cell of the moving door that ArmEffectWith stores for StepDoor 1414:03B4; 122E:0154 compares it with its cell"
+
 [[global]]
 id = "ds:FBD4"
 name = "gLevelFlags"
 why = "32-bit flag words indexed by the dungeon level gCurLevel (ds:FBC8, 1..12), set and cleared by script opcodes 122E:1097 and 122E:11E8 and tested by 0xFFEF of 122E:147F; they are not per action"
+
 [[global]]
 id = "ds:EFD4"
 name = "gDecorShapes"
 why = "200 far shape pointers that ovl3:01C8 cuts for each decoration's ten shape indices out of the decoration sheet; 122E:0055 reads their height and width (eighths) to build a decoration's click rectangle"
+
 [[global]]
 id = "ds:113F"
 name = "gCgaMapDefault"
@@ -2553,90 +3030,112 @@ why = "a 32-byte CGA colour map (values 0 to 3, two halves of 16): the map LoadO
 id = "intro/ds:1C0A"
 name = "gCgaMapDefault"
 why = "INTRO.EXE's twin of EOB ds:113F: 32 bytes of values 0..3 in two 16-entry halves (00 02 03 01 ...), only passed as the last argument of gMakeImage and CopyPage (IOV0.C:176, :235, :240), never read as pixels."
+
 [[global]]
 id = "ds:F4BE"
 name = "gTeleporterCells"
 why = "Six cells LoadDecorateIcons ovl2:0577 cuts from the DECORATE screen by gDecorateCellRects; their only reader is DrawSlotTeleporter ovl4:1D20, which draws gIntroCells[idx ^ gAnimWallPhase] for the animated wall type 0x34; nothing ties them to INTRO."
+
 [[global]]
 id = "ds:DCFC"
 name = "gScratchBuf"
 why = "StartupGame allocates it once as MemAlloc(4096L, 0) (07A9:0074, src/E07A9.C:348) and unrelated routines borrow it as scratch: the party record swap (ovl1, SwapBlocks), the flash save rects (0EF3, gSaveRect into gScratchBuf + i*256), the particle arrays (0EF3), the grid shuffle (ovl5:1E1B), the level save compression (ovl3, CompressLcw over 0x1000 bytes) and the sprite blit target (ovl4)."
+
 [[global]]
 id = "ds:FBCE"
 name = "gMouseItem"
 why = "The item held on the mouse pointer: GetCurrentItem (0D1C:02DC) returns it while the mouse is enabled (else the cursor slot item), SetCurrentItem (0D1C:0304) stores it, EnterMapScreen (0ACD:0F72) and ovl3 redisplay it with SetMouseItem(gMouseItem), and 07A9 reads gItems[gMouseItem].flags for the pointer icon."
+
 [[global]]
 id = "ds:DCAA"
-name = "gMenuPhase"
-why = "Named after its only stepper StepMenuPhase (0ACD:0753, which wraps it over 1 and 2 and has no caller found in EOB.EXE); EnterMapScreen sets it to 1 (0ACD:0FA9) and MoveKeyCursor (0A34), MoveListItem (0A61) and HandleMapKey (0D9D) do nothing when it is 5. The six references in EOB.EXE are all in 0ACD and none stores 5, so the meaning of 5 is not shown."
+name = "gMapPhase"
+why = "ds:DCAA: EnterMapScreen 0ACD:0F72 stores 1 and the uncalled 0ACD:0753 steps it 1, 2; the tests for 5 at 0ACD:0A34, 0A61 and 0D9D never fire since no code stores 5 (every reference in EOB.EXE and its overlays read from the bytes); the rest-phase reading is withdrawn"
+
 [[global]]
 id = "ds:5721"
 name = "gBurningHandsX"
 why = "Six words 0, 152, 24, 120, 56, 88 read only by CastBurningHands (0EF3:0F99) as the x of flame shape i, beside gBurningHandsShapes (ds:571B: 3, -3, 2, -2, 1, -1, the negative ones drawn flipped); the pairs mirror about the view centre, so these are the six flame positions, not per party member."
+
 [[global]]
 id = "ds:572D"
 name = "gBurningHandsY"
 why = "Six signed bytes 64, 64, 56, 56, 56, 56 read only by CastBurningHands (0EF3:0F99) as the y of flame shape i, the partner table of gBurningHandsX (ds:5721) and gBurningHandsShapes (ds:571B)."
+
 [[global]]
 id = "ds:EFBA"
 name = "gCurrentSpellApply"
 why = "CastSpell (0EF3:2676) stores spell->apply (Spell +5) into it beside gCurrentSpell and calls it, and CastSpellOnTarget (0EF3:08CF) calls it again once the target member is chosen; it is the apply callback of the spell being cast."
+
 [[global]]
 id = "ds:00EF"
 name = "gViewRegionLeft"
 why = "ds:00EF is gRegions[5].left (gRegions at ds:009F, 16-byte records, 0x9F + 5*16); the record holds 0, 0, 22, 120, the 176 by 120 maze view, which ovl4 rewrites with SetRegionExtents(5, ...) and the particle routine at 0EF3:2238 uses as left << 3."
+
 [[global]]
 id = "ds:00F1"
 name = "gViewRegionTop"
 why = "ds:00F1 is gRegions[5].top (gRegions at ds:009F, 16-byte records); read as the view top by 0EF3:2238 and ovl4 SetRegionExtents(5, left, gViewRegionTop, ...), and set to 8 then 0 around the explosion in ovl5 (EOV5.C:1215, 1225)."
+
 [[global]]
 id = "ds:00F3"
 name = "gViewRegionWidth"
 why = "ds:00F3 is gRegions[5].width, in 8-pixel columns (value 22, gRegions at ds:009F, 16-byte records); 0EF3:2238 uses it as right = left + (width << 3) for the particles in the maze view."
+
 [[global]]
 id = "ds:00F5"
 name = "gViewRegionHeight"
 why = "ds:00F5 is gRegions[5].height (value 120, gRegions at ds:009F, 16-byte records); 0EF3:2238 uses it as bottom = top + height - 1 and ovl4 passes it to SetRegionExtents(5, ...)."
+
 [[global]]
 id = "ds:5E54"
 name = "gChargenBoxX"
 why = "Four words 16, 80, 16, 80 indexed by gChargenMember: DrawPanelRow (ovl0:11BA) draws the member's portrait at this x and AnimateMemberBox (ovl0:1224) hides the pointer over and copies the 32 by 32 box at it; the 2 by 2 grid of character boxes on the creation screen."
+
 [[global]]
 id = "ds:5E5C"
 name = "gChargenBoxY"
 why = "Four words 63, 63, 127, 127 indexed by gChargenMember, the y partner of gChargenBoxX (ds:5E54): the portrait goes at y + 1 in DrawPanelRow (ovl0:11BA) and AnimateMemberBox (ovl0:1224) covers y + 1 to y + 0x20."
+
 [[global]]
 id = "ds:FDEA"
 name = "gSpellCopies"
 why = "A view two bytes before gSpellCopyPairs (ds:FDEC) so spell number s indexes it as [s * 2]: the first counter of the pair, the copies of the spell the character takes, printed by DrawSpellRow (ovl1:0881, \"%-18s %1d\") and raised or lowered by the spell-slot screen keys against the level allowance."
+
 [[global]]
 id = "ds:FDBA"
 name = "gLevelSpellLists"
 why = "Five 9-byte lists, one per spell level, cleared by BuildSpellSlots (ovl1:00DD, memset 0x2d) and filled with each allowed spell number i + 1 after a count byte; the spell-slot screen draws and walks tab * 9 + row + 1 from it."
+
 [[global]]
 id = "ds:FDEC"
 name = "gSpellCopyPairs"
 why = "32 byte pairs, one per spell (0-based index * 2): BuildSpellSlots (ovl1:00DD) counts each nonzero slot of the character into the first byte and each positive (memorised) one into the second, and SpendSpellSlot (ovl1:025D) writes the second count back as ready slots and the rest as negative ones; gSpellCopies and gSpellCopiesReady are views of it."
+
 [[global]]
 id = "ds:FDEB"
 name = "gSpellCopiesReady"
 why = "A view one byte before gSpellCopyPairs (ds:FDEC), indexed [s * 2] by spell number s, so it is the second byte of the pair: BuildSpellSlots (ovl1:00DD) bumps it only for a positive (memorised) slot entry, and SpendSpellSlot stores that many copies as ready."
+
 [[global]]
 id = "ds:0159"
 name = "gMessageWindowFill"
 why = "ds:0159 is gRegions[11].textAttr2 (ds:009F + 11*16 + 0xA); ShowMessageBox (ovl1:13F7) and ShowCampMessage (ovl6:0B9B) store gPanelFillColour in it just before SetTextWindowAndClear(0xb), which loads it into gTextAttr2 (1DE7:0009), the fill colour, so it is read there."
+
 [[global]]
 id = "ds:0179"
 name = "gFindWordWindowFill"
 why = "ds:0179 is gRegions[13].textAttr2 (ds:009F + 13*16 + 0xA); FindWordPanel (ovl2:09ED) stores gPanelFillColour in it just before SetTextWindow(0xd), which loads it as gTextAttr2, the fill colour ClearTextRegion then uses."
+
 [[global]]
 id = "ds:EFCA"
 name = "gUnreadInitWord"
 why = "The only reference to ds:EFCA in all of EOB.EXE (overlays included) is the store of 0 in InitGameTables (ovl2:0496), next to gUnusedStartupWord (ds:EFC8); it is never read."
+
 [[global]]
 id = "ds:0169"
 name = "gTextPanelWindowFill"
 why = "ds:0169 is gRegions[12].textAttr2 (ds:009F + 12*16 + 0xA); WinnerPanel (ovl5:160A) and UseItemPanel (ovl5:1CDD) store gPanelFillColour in it, set gTextPanelInView and call SetTextWindow(0xc), which loads it as the fill colour gTextAttr2, before printing TEXT.DAT strings."
+
 [[global]]
 id = "ds:0139"
 name = "gDialogWindowFill"

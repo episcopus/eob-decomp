@@ -8,55 +8,11 @@
    modal warning box (ovl6:0B9B). Character records are the 243-byte (0xF3) records at ds:F580
    (0A72.C); their spells are the 30-byte arrays at +0x37 and +0x55. Names are placeholders. */
 
-/* A character record: the 243-byte records at ds:F580 (6 of them). Only the fields this unit
-   touches are named. */
-struct CharRec {
-    char pad00[2];
-    char name[11];             /* +02: the character's name, NUL padded */
-    char pad0D[0x1B - 0x0D];
-    signed char hp;            /* +1B: current hit points (ovl6:07E2 picks the lowest) */
-    signed char maxHp;         /* +1C: maximum hit points; HealCharacter (0DE8:0ADB) clamps
-                                  hp at it */
-    char pad1D[0x20 - 0x1D];
-    signed char classIndex;    /* +20: an index into a class table (0A72:007B's classIndex) */
-    char pad21[0x23 - 0x21];
-    unsigned char food;        /* +23: the food value (EatFood, 0ACD:07E0): a member with none
-                                  regains neither spells nor hit points while resting, and rest
-                                  without a ration costs 5 (ovl6:0000) */
-    char pad24[0x37 - 0x24];
-    signed char mageSpells[30];     /* +37: spell slots, negative: a spell to be memorised */
-    signed char clericSpells[30]; /* +55: spell slots, positive: a spell ready to cast; negative:
-                                  spent or not yet regained (CampLoop turns it positive as
-                                  "gained") */
-    char pad73[0xF3 - 0x55 - 30];
-};
+#include "EOB.H"
 
 /* a 19-byte spell record at ds:1344 and ds:151F: a far pointer to its name, then spell data this
    unit does not read (src/E0EF3.C:155-161 names flags +04, apply +05 and ddFn +09) */
-struct Spell {
-    char *name;                /* +00: a far pointer to the spell's name */
-    char rest[0x13 - 4];
-};
 
-/* the 28-byte map-object records at ds:8A82 (struct Monster in src/E08E6.C); ovl6:09D2 reads each
-   record's id at +2 for its Distance test */
-struct Monster {
-    char typeIndex;                   /* +00: an index into the ds:1A3B table (src/E08E6.C) */
-    signed char updateGroup;          /* +01 */
-    int cell;                    /* +02: the object's map cell, Distance-tested */
-    char rest[0x1C - 4];
-};
-
-struct Region {             /* 16-byte records at ds:009F (src/E1A29.C) */
-    int left;               /* +0: left edge in 8-pixel columns */
-    int top;                /* +2: top edge in lines */
-    int width;              /* +4: width in 8-pixel columns */
-    int height;             /* +6: height in lines */
-    int textAttr1;              /* +8: text attribute 1 [H] (gTextAttr1, src/E1DE7.C:26) */
-    int textAttr2;              /* +a: text attribute 2 [H] (gTextAttr2, src/E1DE7.C:27) */
-    int textCol;             /* +c: cursor column (gTextCol) */
-    int textRow;                /* +e: cursor row (gTextRow) */
-};
 extern struct Region gRegions[]; /*@ ds:009F */ /* the text windows, 16 bytes each (src/E1A29.C) */
 extern struct CharRec gChars[]; /*@ ds:F580 */  /* the 243-byte character records */
 extern struct Spell gSpells[]; /*@ ds:1344 */ /* far name pointers, indexed by a spell id */

@@ -37,7 +37,7 @@
    src/E19BC.C:49 (described at :44-46), the block shape is described at src/E19BC.C:62-66 (the
    block starts at offset 0 of a paragraph, its header at offset 15), and the code is at
    src/E19BC.C:81 and :95-98 */
-#define MEMALLOC_ALIGNED 0x20
+#include "EOB.H"
 /* the size SetUnpackBuffer is given for the shared unpack work buffer, 0xFC00 in every video
    mode (07A9:00D7). It is the unpacker's own work-buffer requirement, not the size of slot 7's
    block: the work segment holds the LZW dictionary the format 1 and format 2 decoders build
@@ -60,29 +60,6 @@
    src/EOV2.C:290 (gGetSpriteCell(..., 2, 0x10, ...)), and the unit of the cell's width argument
    is not cited */
 #define MOUSE_HOTSPOT 8
-
-struct ItemRecord {
-    signed char nameIndex;        /* +0 (ds:8DD0): indexes the item-name table at segment 0x1F28 */
-    signed char identifiedNameIndex;        /* +1 (ds:8DD1): the second name index */
-    unsigned char flags;    /* +2 (ds:8DD2): bit 0x20 gates 0BD2:0AF2/0C8E, 0x40 is set by
-                               0BD2:040E and tested by 0BD2:05B5; src/E07A9.C calls it flags */
-    signed char icon;       /* +3 (ds:8DD3): the icon number */
-    signed char type;        /* +4 (ds:8DD4): the item type */
-    signed char cellPos;        /* +5 (ds:8DD5): 01D0 stores its 4th argument here and 02B9 matches it
-                               against its `key`. No caller shows a sound (01D0's callers pass a
-                               slot kind, E0ACD.C:561-568, a roll, E08E6.C:807, or an effect kind | 4,
-                               0BD2:07DE): the item's position in its cell, 8 a wall niche (122E:06D0) */
-    int key;                /* +6 (ds:8DD6): the key; -1 when the record is free */
-    int prevLink;                /* +8 (ds:8DD8): one link of the circular list; 0BD2:01D0 splices a
-                               new item in after this record through it */
-    int nextLink;                /* +0xa (ds:8DDA): the other link; the list walks (0BD2:0385, 040E,
-                               04AA) follow it */
-    signed char level;        /* +0xc (ds:8DDC): gCurLevel or -1, set by 01D0 */
-    signed char value;        /* +0xd (ds:8DDD): the item's bonus or effect value: the signed bonus
-                               printed as "%s +%d" and "Cursed %s %d", the spell index into ds:1278
-                               and ds:12E0, the wand effect index gWandSpells[m0B], and the scroll and
-                               potion values (0BD2:05B5, 0D2D, 0EE8, 1001) */
-};
 
 extern char gBarGraphsOn; /*@ ds:F43C */  /* written by StartupAlloc (07A9:000D, set to 1); read by
                                       DrawMemberHp, which draws the "HP" label instead of

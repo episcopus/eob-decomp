@@ -80,14 +80,7 @@ extern struct WallRec gWallRecs[]; /*@ ds:E040 */
 extern void Unpack0(char far *src, void far *dst, long len); /*@ 1BA8:0006 */
 extern void Unpack4(char far *src, void far *dst, int len); /*@ 1D9A:0013 */
 
-struct Monster {              /* 28-byte records, 30 of them at ds:8A82 (src/E08E6.C) */
-    char typeIndex;                /* +0 */
-    signed char updateGroup;       /* +1 */
-    int cell;                 /* +2 */
-    char pad04[6];          /* +4 */
-    char attackFrame;               /* +A: cleared by ovl3:19F7 */
-    char pad0B[0x1c - 0x0b];/* +B */
-};
+#include "EOB.H"
 
 extern struct Monster gMonsters[]; /*@ ds:8A82 */
 extern unsigned long gGameTicks; /*@ ds:8492 */
@@ -100,28 +93,7 @@ extern int gDoorEffectCell; /*@ ds:5C74 */
 extern signed char gDoorMoveDir; /*@ ds:5C76 */
 extern char gDoorEffectActive; /*@ ds:5C77 */
 
-struct Projectile {              /* 18-byte effect records, 10 of them at ds:DD2C (src/E1414.C) */
-    char active;            /* +0: 1 or 2 when live */
-    char pad01[7];
-    int item;                /* +8: an index into gItems */
-    char pad0A[8];
-};
-
-
-
 extern struct Projectile gProjectiles[]; /*@ ds:DD2C */
-
-struct CharRec {            /* 243-byte character records at ds:F580 (src/E08E6.C) */
-    char pad00;
-    unsigned char status;     /* +1: status bits (src/E08E6.C); 0 when the slot is empty */
-    char pad02[0x22 - 0x02];
-    signed char portraitIndex;          /* +0x22: the character's cell row/column (src/E0D1C.C) */
-    char pad23[0x33 - 0x23];
-    void far *portrait;       /* +0x33: the character's packed sprite buffer */
-    char pad37[0xad - 0x37];
-    unsigned long timers[10]; /* +0xAD: ten 32-bit countdowns */
-    char padD5[0xf3 - 0xd5];
-};
 
 extern struct CharRec gChars[]; /*@ ds:F580 */
 extern void LoadLevelState(int action); /*@ ovl3:1147 */
@@ -137,11 +109,6 @@ extern void WaitKeyEvent(void); /*@ 1AAD:05D3 */
 extern void ShutdownGame(void); /*@ 07C8:058A */
 extern struct SlotSize far *gDoorShapes[]; /*@ ds:FB5E (the per-column size records, src/E122E.C:106) */
 
-struct SlotPos {            /* the six-byte slot-position records at ds:A99C (src/E122E.C:112) */
-    struct SlotSize far *rec; /* +0: the far size record */
-    unsigned char x;        /* +4 */
-    unsigned char y;        /* +5 */
-};
 extern struct SlotPos gDoorButtons[]; /*@ ds:A99C */
 extern void far *gLoadedMonsterShapes[]; /*@ ds:B802 */
 extern int gMonsterRectsA[]; /*@ ds:6930 */
@@ -162,20 +129,6 @@ extern int sprintf(char far *buf, char far *fmt, ...); /*@ 0000:57AE */
 extern int gCurLevel; /*@ ds:FBC8 */
 extern char gMazeItems[]; /*@ ds:B899 */        /* the nine-byte record list head (src/E0ACD.C) */
 extern void InsertListItem(void far *head, int key, int item, int sound); /*@ 0BD2:01D0 */
-
-struct ItemRecord {         /* the 14-byte records at ds:8DD0 (src/E0BD2.C) */
-    signed char nameIndex;        /* +0 */
-    signed char identifiedNameIndex;        /* +1 */
-    unsigned char flags;    /* +2 */
-    signed char icon;       /* +3 */
-    signed char type;        /* +4 */
-    signed char cellPos;        /* +5: the item's position within its maze cell (src/E0BD2.C:420) */
-    int key;                /* +6: the key, -1 when free */
-    int prevLink;                /* +8 */
-    int nextLink;                /* +0xa */
-    signed char level;        /* +0xc: gCurLevel or -1 */
-    signed char value;        /* +0xd */
-};
 
 extern struct ItemRecord gItems[]; /*@ ds:8DD0 */
 
@@ -209,14 +162,6 @@ extern void LoadFile(char far *name, void far *buf, unsigned len); /*@ 1B82:0009
 extern void InitMonster(int index, int kind, int id, int frame, int orient, int b0, int m07, int type, int timer, int m12, int m14); /*@ 08E6:131D */
 extern void PlaySound(int sound); /*@ 177D:0070 */
 
-struct Effect {                     /* the 16-byte timed effect records at ds:5BA8 (src/E1414.C) */
-    void (far *fn)(int);            /* +00: the handler */
-    unsigned long period;           /* +04: the interval added to the tick on re-arm */
-    unsigned long expiry;           /* +08: the tick the effect next runs at */
-    int arg;                        /* +0C: the handler's argument */
-    char sub;                       /* +0E */
-    char active;                    /* +0F: nonzero while the effect is armed */
-};
 extern struct Effect gEffects[]; /*@ ds:5BA8 */
 
 /* ds:6A80 is the initialiser template for ovl3:0A7C's local `handlers` array: the three map icon

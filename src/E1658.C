@@ -19,25 +19,7 @@
    here inserts in key order. Names and the unknown bit meanings are placeholders until the
    callers name them. */
 
-struct Node {
-    struct Node far *next;                       /* +00: next node, or a null pointer at the tail */
-    unsigned key;                                /* +04: sort key, compared unsigned */
-    unsigned char pad06[8];                      /* +06..+0D: key06 (+06), key08 (+08), kind (+0A),
-                                                    modeB (+0B) and modeC (+0C) as E16A5.C names
-                                                    them; none of these bytes is touched here;
-                                                    the flags word +0E is the next field */
-    unsigned flags;                              /* +0E: the inactive bit 0x0008 and the button-mode
-                                                    selectors (see the flags comment below) */
-    unsigned char pad10[0x1E];                   /* +10..+2D: the art pointers, region, box and
-                                                    colour fields E16A5.C names (+10 src10, +14
-                                                    src14, +18 src18, then the box and colours);
-                                                    none of these bytes is touched here; the
-                                                    state word +2E is the next field */
-    unsigned state;                              /* +2E: the on bit, the previous-on bit, others */
-    int (far *callback30)(struct Node far *node); /* +30: optional callback, fired when asked; the
-                                                    dispatcher is the only caller that uses its
-                                                    result (E16A5.C:475-476) */
-};
+#include "EOB.H"
 
 /* The +0E flags word. Bit 0x0008 makes 0073, 01E6 and 02F5 do nothing but return the node, and
    04A7 returns its inverse, so it reads as an "inactive" mark: 0154 sets it and 017B clears it.
@@ -51,12 +33,6 @@ struct Node {
    DispatchNodeEvent sets the mode on every call (E16A5.C:205-212, inside the gMouseDisabled
    gate at E16A5.C:202-245); while it is disabled only a key match writes the mode
    (E16A5.C:293, 299), which clears the latch. */
-#define NODE_INACTIVE   0x0008
-#define NODE_FLAG_ON    0x0001  /* picks BUTTON_MODE_NODE_ON over BUTTON_MODE_NODE_OFF */
-#define NODE_FLAG_ON_5E1C  0x0400 /* with NODE_FLAG_ON set: gLeftButtonMode gets 0x83 unless it is already 3 */
-#define NODE_FLAG_ON_5E1E  0x4000 /* with NODE_FLAG_ON set: gRightButtonMode gets 0x83 unless it is already 3 */
-#define NODE_FLAG_OFF_5E1C 0x0100 /* with NODE_FLAG_ON clear: gLeftButtonMode gets 0x81 unless it is already 1 */
-#define NODE_FLAG_OFF_5E1E 0x1000 /* with NODE_FLAG_ON clear: gRightButtonMode gets 0x81 unless it is already 1 */
 
 /* The gLeftButtonMode/gRightButtonMode button modes. With the mouse enabled DispatchNodeEvent sets them to 2 or 4 from
    GetKeyState on every call (E16A5.C:202-212), writes 1 or 3 on a button click (E16A5.C:217-223,
@@ -82,12 +58,6 @@ struct Node {
    differ, or when bits 0x0010 and 0x0004 differ (E16A5.C:472-473); the second test is the one
    01E6's 0x0004/0x0010 writes feed. That is the "previous on" reading below. The remaining bits
    (0x0004, 0x0010) are used only by 01E6 in this unit; E16A5.C sets and tests them too. */
-#define NODE_STATE_ON   0x0001
-#define NODE_STATE_2    0x0002  /* set by DispatchNodeEvent (E16A5.C:316), cleared by 01E6, read
-                                   with the flags 0x20 test (E16A5.C:477-478) */
-#define NODE_STATE_4    0x0004
-#define NODE_STATE_PREV 0x0008
-#define NODE_STATE_10   0x0010
 
 /* The two words at ds:5E1C and ds:5E1E, set here to 0x81 or 0x83 and compared with 1 or 3; bit
    0x80 of either makes the whole block a no-op. DispatchNodeEvent (16A5:00BD) sets them to the

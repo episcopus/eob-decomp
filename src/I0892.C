@@ -22,15 +22,12 @@
 #define INT3F_VECTOR 0x3F
 /* LargestFreeBlock returns bytes; below 0xFDE8 (65000) even the largest page has no room (the same
    check and constant as EOB.EXE's main, src/E07C8.C:238-240). */
-#define PAGE_65000 0xFDE8L
-#define MEMALLOC_ALIGNED 0x20
+#include "EOB.H"
 #define PALETTE_SIZE 0x300
 #define VGA_SCREEN_SEG 0xA000
 /* the page/buffer sizes and video segments StartupGame's table uses (:0368 to :0540) */
-#define PAGE_64000 0xFA00L
 #define PAGE_32576 0x7F40L
 #define PAGE_65500 0xFFDCL
-#define PAGE_64512 0xFC00L
 #define PALETTE_BUFFER_SIZE 0x10
 #define TEXT_SCREEN_SEG 0xB800
 #define VGA_SEG_A200 0xA200
@@ -38,7 +35,6 @@
 #define VGA_SEG_A800 0xA800
 #define VGA_SEG_AC00 0xAC00
 /* the sound map size (120 bytes) and the driver data block size (:06C1 to :0811) */
-#define SOUND_MAP_SIZE 0x78L
 #define DRIVER_BLOCK_SIZE 0x36B0L
 /* The palette entry the start-up paths set: entry 15 is white. StartupGame's palette switch
    (:0596): case 0 (Tandy, :05B2) and case 1 (EGA, :05D3 to :05DB) allocate the 16-byte table
@@ -55,10 +51,6 @@
 
 /* the request RunOverlayRequest (0B4E:005B) runs: a far name pointer (offset then segment) at +0;
    this unit writes only `name`. Same layout as src/E07C8.C:35. */
-struct OverlayRequest {
-    char far *name;                 /* +0: the overlay file name */
-    void far *table;                /* +4: Purpose unknown: this unit does not write it */
-};
 
 extern int gGraphicsChoice;              /*@ ds:1F8E: argv[1][0] + 1 (:0010), reduced by 0x31 in
                                              StartupGame (:0258) to the graphics choice (whitepaper 2.6) */

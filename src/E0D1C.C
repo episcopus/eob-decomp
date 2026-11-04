@@ -9,23 +9,7 @@
 
 /*@flags -ml -O -Z -v */
 
-struct CharRec {            /* 243-byte (0xF3) character records at ds:F580; see src/E0A72.C */
-    char pad00;
-    unsigned char status;      /* +01 */
-    char name[0x0B];           /* +02: the character's name, NUL padded (src/EOV6.C) */
-    char pad0D[0x17 - 0x0D];
-    signed char constitution;  /* +17 */
-    char pad18[0x1B - 0x18];
-    signed char hp;            /* +1B */
-    char pad1C[0x1F - 0x1C];
-    signed char race;          /* +1F */
-    signed char classIndex;    /* +20 */
-    char pad21[3];
-    signed char levels[3];     /* +24: three per-class-slot bytes (0D1C:0903 indexes it, 0D1C:059B reads [0]) */
-    char pad27[0x77 - 0x27];
-    int items[27];             /* +77: 27 word slots; slot 16 (+97) is also read on its own */
-    char padAD[0xF3 - 0xAD];
-};
+#include "EOB.H"
 
 extern int gViewCellIds[]; /*@ ds:A9C8 */       /* a 15-word table searched by 0D1C:0006 */
 extern char gViewDirty; /*@ ds:DF4C */        /* set to 1 when 0D1C:0006 finds the value */
@@ -61,36 +45,10 @@ extern char far *gItemRemapTable; /*@ ds:F534 */   /* the 1600-byte ITEMRMP buff
 extern void (far *gSetRemapTable)(void far *map); /*@ ds:80D2 */ /* the far colour-table callback (src/E07A9.C) */
 extern void far *gItemIcons[]; /*@ ds:DDE4 */ /* the item icon far pointers (src/E07A9.C) */
 
-struct ItemInfo {           /* 16-byte records at ds:A9F5; read by 0D1C:07DB, 0D1C:08B1 and 0D1C:0BEB */
-    signed char m00;        /* +0 (ds:A9F5), bit 2 tested by 0D1C:0BEB */
-    signed char m01;        /* +1 (ds:A9F6), compared by 0D1C:07DB */
-    char pad02[7];
-    int m09;                /* +9 (ds:A9FE), tested by 0D1C:07DB */
-    char pad0B[5];
-};
 extern struct ItemInfo gItemTypesClasses[]; /*@ ds:A9F5 */
 
-struct Monster {              /* 28-byte monster records at ds:8A82 (see src/E08E6.C) */
-    char typeIndex;                /* +0: an index into the ds:1A3B table */
-    char pad01;
-    int cell;                 /* +2: the monster's map cell, read by 0D1C:09CB */
-    char pad04;
-    char orient;            /* +5: the facing 0..3 N E S W (times 2 is a direction), written by 0D1C:09CB */
-    char pad06[0x16 - 0x06];
-    char flags;               /* +0x16: flags; 0D1C:09CB sets bit 3 (fleeing), 0D1C:0A43 bit 4 */
-    char pad17[0x1C - 0x17];
-};
 extern struct Monster gMonsters[]; /*@ ds:8A82 */
 
-struct MonsterType {            /* 27-byte records at ds:1A3B, indexed by gMonsters[obj].typeIndex */
-    char pad00[0x0E];
-    signed char m0E;        /* +0xE (ds:1A49), bit 2 tested by 0D1C:0BEB */
-    long m0F;               /* +0xF (ds:1A4A), tested by 0D1C:0A43; a `long` because the original
-                               emits the and/or bit-test form at 0D1C:0B17 */
-    char pad13[0x19 - 0x13];
-    signed char m19;        /* +0x19 (ds:1A54), read by 0D1C:09CB */
-    signed char m1A;        /* +0x1A (ds:1A55), read by 0D1C:0BAB */
-};
 extern struct MonsterType gMonsterTypes[]; /*@ ds:1A3B */
 
 struct Row8 {               /* eight-byte rows at ds:5482, four words: a DrawBox rectangle */
@@ -101,28 +59,6 @@ struct Row8 {               /* eight-byte rows at ds:5482, four words: a DrawBox
 };
 extern struct Row8 gSelectFrameRects[]; /*@ ds:5482 */
 
-struct ItemRecord {
-    signed char nameIndex;        /* +0 (ds:8DD0): indexes the item-name table at segment 0x1F28 */
-    signed char identifiedNameIndex;        /* +1 (ds:8DD1): the second name index */
-    unsigned char flags;    /* +2 (ds:8DD2): bit 0x20 gates 0BD2:0AF2/0C8E, 0x40 is set by
-                               0BD2:040E and tested by 0BD2:05B5; src/E07A9.C calls it flags */
-    signed char icon;       /* +3 (ds:8DD3): the icon number */
-    signed char type;        /* +4 (ds:8DD4): the item type */
-    signed char cellPos;        /* +5 (ds:8DD5): 01D0 stores its 4th argument here and 02B9 matches it
-                               against its `key`. No caller shows a sound (01D0's callers pass a
-                               slot kind, E0ACD.C:561-568, a roll, E08E6.C:807, or an effect kind | 4,
-                               0BD2:07DE): the item's position in its cell, 8 a wall niche (122E:06D0) */
-    int key;                /* +6 (ds:8DD6): the key; -1 when the record is free */
-    int prevLink;                /* +8 (ds:8DD8): one link of the circular list; 0BD2:01D0 splices a
-                               new item in after this record through it */
-    int nextLink;                /* +0xa (ds:8DDA): the other link; the list walks (0BD2:0385, 040E,
-                               04AA) follow it */
-    signed char level;        /* +0xc (ds:8DDC): gCurLevel or -1, set by 01D0 */
-    signed char value;        /* +0xd (ds:8DDD): the item's bonus or effect value: the signed bonus
-                               printed as "%s +%d" and "Cursed %s %d", the spell index into ds:1278
-                               and ds:12E0, the wand effect index gWandSpells[m0B], and the scroll and
-                               potion values (0BD2:05B5, 0D2D, 0EE8, 1001) */
-};
 extern struct ItemRecord gItems[]; /*@ ds:8DD0 */
 
 extern char gPanelMode; /*@ ds:FB44 */            /* a mode byte: 0 and 1 gate the redraws in 0D1C:01CA and 0D1C:0304 */

@@ -25,6 +25,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from oracle.machine import Machine, Unimplemented, GuestCrash, OracleError, ROOT  # noqa: E402
 from oracle.ega import write_png  # noqa: E402
 from oracle.input import Script, Mouse, no_mouse  # noqa: E402
+from oracle import layout  # noqa: E402
 
 GAME = ROOT / "eob"
 DEFAULT_ARGS = "3 4 0 homie 3"
@@ -73,8 +74,12 @@ def use_save(m: Machine, save: Path) -> None:
 def build_machine(program: str = "EOB.EXE", args: str = DEFAULT_ARGS, *, mouse: bool = False,
                   sound: str | None = None, insn_per_sec: int = 1_000_000) -> Machine:
     args = command_line(args, mouse, sound)
-    m = Machine(GAME / program, GAME, cmdline=b" " + args.encode("latin-1"), insn_per_sec=insn_per_sec)
+    lay = layout.current()       # the originals unless layout.use() chose the rebuild (playbook 50)
+    m = Machine(lay.exe(program), GAME, cmdline=b" " + args.encode("latin-1"), insn_per_sec=insn_per_sec)
     hide_unpinned(m)
+    lay.serve(m)
+    if not lay.is_original:
+        m.canonical = lay.canonical
     if mouse:
         Mouse(m)
     else:
@@ -161,7 +166,10 @@ def main(argv=None) -> int:
     ap.add_argument("--shot-every", type=int, default=0, help="instructions between screenshots")
     ap.add_argument("--out", default=str(ROOT / "build" / "oracle" / "run"))
     ap.add_argument("--save", help="a saved game to use as EOBDATA.SAV")
+    ap.add_argument("--rebuilt", action="store_true", help="run the programs `make rebuild` linked (playbook 50)")
     a = ap.parse_args(argv)
+    if a.rebuilt:
+        layout.use(layout.rebuilt())
     text = Path(a.script).read_text() if a.script else None
     s = run_session(text, out=Path(a.out), max_insns=a.max_insns, args=a.args, mouse=a.mouse, sound=a.sound,
                     shot_every=a.shot_every, save=Path(a.save) if a.save else None,

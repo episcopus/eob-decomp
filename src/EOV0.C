@@ -53,41 +53,7 @@ extern int gDrawPage; /*@ ds:8115 */ /* the graphics driver's draw page (src/E08
 extern char gStrPartyComplete[]; /*@ ds:613D */ /* the string the party-status report draws (Purpose unknown) */
 extern void DrawRowList(int index); /*@ 0D1C:0454 */
 
-struct CharRec {                /* 243-byte character records at ds:F580 (src/E0A72.C) */
-    char index;                   /* +00: the character index ovl0:26C6 writes */
-    unsigned char status;         /* +01: status bits */
-    char name[0x0b];              /* +02: the character's name, NUL padded */
-    char strength;                /* +0D: the source of 284A's byte copy */
-    char baseStrength;
-    char strengthPct;
-    char baseStrengthPct;
-    char intelligence;
-    char m12;
-    char wisdom;
-    char m14;
-    char dexterity;
-    char m16;
-    char constitution;
-    char m18;
-    char charisma;
-    char m1A;
-    char hp;
-    char maxHp;                   /* +1C: the destination of 284A's byte copy */
-    char armorClass;
-    char m1E;
-    signed char race;             /* +1F: the race index, half of it indexes gRaceMinAbilities (src/E0A72.C) */
-    signed char classIndex;       /* +20: the class index, indexes gClassBaseBits (src/E0BD2.C) */
-    signed char alignment;        /* +21: index into the alignment-name table ds:1240 (src/E1547.C) */
-    signed char portraitIndex;              /* +22: the position ovl0:0A5E stores (Purpose unknown) */
-    signed char food;             /* +23: the food value, set to 100 (full) by ovl0:26C6 */
-    signed char levels[3];        /* +24: the class-slot levels ovl0:1BF2 fills from gClassStartLevels */
-    long experience[3];           /* +27: the experience of each class slot, which ovl0:1BF2 sets */
-    void far *portrait;           /* +33: the character's packed sprite buffer (src/EOV3.C) */
-    char pad37[0x73 - 0x37];
-    long spellBook;               /* +73: the mage's spell book (src/EOV1.C); 280D sets 0x26c */
-    int items[27];                /* +77: 27 carried-item slots (src/E0DE8.C) */
-    char padAD[0xf3 - 0xAD];
-};
+#include "EOB.H"
 extern struct CharRec gChars[]; /*@ ds:F580 */
 
 struct ItemSlot {               /* 4-byte records at ds:60D5 (ovl0:26C6) */
@@ -177,16 +143,6 @@ extern char gStrBlankName[]; /*@ ds:618C */ /* a fixed panel label (Purpose unkn
 extern struct Node far *ListAdd(struct Node far *head, struct Node far *item); /*@ 1658:001E */
 extern char gNodeListChanged; /*@ ds:5E20 */ /* nonzero forces the row-list walk to rebuild and redraw the whole list (16A5:00BD); BuildRowNodeList sets it (ovl0:042F), not the mouse */
 
-struct Panel {                  /* the 16-byte option-list records at ds:017F (src/E14EF.C) */
-    int x;                      /* +0 */
-    int y;                      /* +2 */
-    int width;                  /* +4 */
-    int height;                 /* +6: the number of rows the list draws */
-    int sel;                    /* +8: the selected entry */
-    int colorA;                 /* +a */
-    int colorB;                 /* +c */
-    int pad;                    /* +e */
-};
 extern struct Panel gPanels[]; /*@ ds:017F */ /* the shared option-list panels (src/E14EF.C) */
 extern char far *gAlignmentNames[]; /*@ ds:1240 */ /* the alignment names (src/E1547.C) */
 extern long gRaceClassMasks[]; /*@ ds:6081 */ /* the class-availability mask per race pair ovl0:207A picks */
@@ -213,26 +169,6 @@ extern int ReadKey(void); /*@ 1AAD:038E */
 extern int WaitKeyEvent(void); /*@ 1AAD:05D3 */
 extern int EditTextField(char far *text, char x, char y, char maxlen, char color, char attr, char cursorAttr); /*@ 082C:000B */
 
-struct Node {                   /* the 60-byte panel row records (src/E0CF7.C) */
-    struct Node far *next;      /* +00: next node, or null at the tail */
-    unsigned key;               /* +04: the sort key ListAdd compares */
-    unsigned key06;             /* +06: the first key word the dispatcher matches */
-    unsigned key08;             /* +08: the second key word the dispatcher matches */
-    unsigned char kind;         /* +0A: the drawing kind */
-    unsigned char modeB;        /* +0B: the "on" drawing mode */
-    unsigned char modeC;        /* +0C: the second drawing mode */
-    unsigned char pad0D;        /* +0D: unknown (src/E0CF7.C leaves it unnamed) */
-    unsigned flags;             /* +0E: the inactive bit and the layout bits */
-    void far *src10;            /* +10: the default art pointer */
-    void far *src14;            /* +14: the "on" art pointer */
-    void far *src18;            /* +18: the second art pointer */
-    int region;                 /* +1C: index into the region table ds:009F */
-    int x;                      /* +1E: box left */
-    int y;                      /* +20: box top */
-    unsigned width;             /* +22: box width */
-    unsigned height;            /* +24: box height */
-    char pad26[0x3c - 0x26];
-};
 extern struct Node far *gNodePtrs[]; /*@ ds:FB7C */ /* the panel row nodes this unit lists and draws */
 extern struct Node gNodeTemplate; /*@ ds:3A62 */ /* the template InitRowNode copies into each node */
 

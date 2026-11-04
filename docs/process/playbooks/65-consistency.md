@@ -56,16 +56,38 @@ the struct offsets two files name differently. `make names UNIT=<id>` is one fil
 - On a unit branch both tools change only the unit's own file; `make integrate` replays
   `re/renames.toml` on other files, but not yet `re/fields.toml`.
 
-## The shared header (decided 2026-11-04)
+## The shared header (decided and made 2026-11-04)
 
-Every C file declares its own copy of the structs, externs and constants it uses: `struct CharRec`
-is in 16 files, `struct Monster` in 11. The human decided (2026-11-04) on one shared header with
+Every C file declared its own copy of the structs, externs and constants it used: `struct CharRec`
+was in 16 files, `struct Monster` in 11. The human decided (2026-11-04) on one shared header with
 **the structs, enums and constants only**, for all three programs; each file keeps its own extern
 declarations with their address tags (`/*@ ds:FBC8 */`), since INTRO.EXE's addresses differ from
 EOB.EXE's. It needs the matcher and the rebuild to copy the header next to the unit they compile
 (both write one file today, `tools/match/cmatch.py` and `tools/rebuild/rebuild.py`): that matcher
 change is approved. A struct that is a variant in one file (`struct Node` +34) keeps one
-declaration with a union. Until the header lands, `make field` keeps the copies in step.
+declaration with a union.
+
+Made 2026-11-04: `src/EOB.H` declares the 17 structs two or more units shared (CharRec, Monster,
+MonsterType, ItemRecord, ItemType, Projectile, Region, Node, Spell, Effect, Panel and the small
+ones) and the 24 constants two or more units defined; 33 C files include it. `make match` and
+`make rebuild` inline it (`cmatch.expand`), so the compiler sees the same single file as before.
+What the merge showed:
+- The copies agreed on every offset; they differed in signedness and width. The header keeps the
+  type the code needs: `experience` is unsigned (0DE8 compares it with `jb`), `lastDamage` and
+  `lastAction` signed, `portraitIndex` signed (EOV3 draws the negative ones from OUTTAKE) with one
+  `(unsigned char)` cast where EOV5 (ovl5:0AB1) compares it with 0xF7.
+- Two fields are read at two widths: `ItemType.slotMask` and `ItemType.m0E` are `union ItemMask`
+  (`.word`, `.byte`); `ItemType.m04` is unsigned with a `(signed char)` cast where 0DE8 adds it
+  to the armour class. `Node` +34 is `union NodeData` (`data.tile.tile34`, `data.def`).
+- E0ACD's `m97` was a view of `items[16]` (+0x97, a list head): now `&gChars[i].items[16]`.
+- A struct only one unit uses stays in that unit; so do constants one unit uses, `NULL`, and
+  `DRIVER_BLOCK_SIZE` (EOB.EXE 0x32C8, INTRO.EXE 0x36B0).
+- Open: `ItemInfo` is gItemTypes seen five bytes in, and `SlotSize` and `RectKind` have one layout;
+  merging those is a rename for a later pass.
+
+A new unit includes `"EOB.H"` for these records rather than declaring its own copy. `make field`
+renames a field in the header and in every file that includes it; `make names` counts the
+header's fields once.
 
 ## The review sign-off (decided 2026-11-04)
 
@@ -130,12 +152,21 @@ the findings below are empty or each has an owner; the reviewer signs each subsy
   textAttr2 of gRegions[9], [11], [12], [13] (the fill colour SetTextWindow loads): the files now
   write them as gRegions fields (the same code). gPanels (ds:017F) starts where gRegions[14] would,
   so the region table has 14 entries.
-- Open (the human, 2026-11-04: fix these three from the code, guesses marked [H]): gIconTable (ds:FB34) is declared as a byte (the member being moved) in several units and as
-  an array of far pointers in E0EF3 (CastBurningHands reads entries 1 to 3, from ds:FB38); one of the
-  two readings is a different object that shares the address. gSpellsTakenByTab (ds:FDE7) has 5
-  bytes but BuildSpellSlots clears 10, into ds:FDEC, which it clears again (a QUIRK). ds:DCAA
-  (gMenuPhase) has no store of 5 and its stepper 0ACD:0753 no caller found: the "rest phase"
-  reading is unsupported.
+- The three loose ends (the human, 2026-11-04: fix them from the code, guesses marked [H]):
+  - Settled: ds:DCAA is `gMapPhase`. Every reference in EOB.EXE and its overlays, read from the bytes:
+    EnterMapScreen (0ACD:0F72) stores 1, `StepMapPhase` (0ACD:0753) steps it 1, 2, 1, and three
+    handlers skip their work at 5 (0ACD:0A34, 0A61, 0D9D). Nothing calls 0ACD:0753 (no near call,
+    no stored far pointer) and nothing stores 5: dead code, and the "rest phase" reading is withdrawn.
+  - Settled: Monster +0C `maxHp` stays, marked [H] in src/EOB.H (InitMonster writes the roll it
+    gives +0E; nothing reads +0C).
+  - Open, waiting for the human: ds:FB34 is a byte, the party member being moved (five units).
+    E0EF3's far-pointer table "at ds:FB34" is the flame sprites at ds:FB38 (EOV2 cuts them from the
+    thrown-item sheet, `gThrownIcon0` to `2`), indexed from 1, so the compiler's base sits 4 bytes
+    early. The true source form, `gThrownIcons[n - 1]` declared at ds:FB38, compiles to the
+    original's bytes, but `make match` cannot resolve a reference below a symbol's start (each
+    extern is a 256-byte block in its stub DGROUP): a matcher change, asked first.
+- gSpellsTakenByTab (ds:FDE7) has 5 bytes but BuildSpellSlots clears 10, into ds:FDEC, which it
+  clears again (a QUIRK).
 - Open, for the oracle (the human, 2026-11-04: trace each one; results go in the whitepaper as QUIRKs with evidence): gLevelFlags (ds:FBD4) is indexed by gCurLevel 1 to 12, so
   level 12's flags are the bytes of gGameFlags (ds:FC04), a QUIRK if the game relies on it; the
   door code (122E:0137, ToggleDoor) tests only bit 0 of a cell's monster count; the 32-byte maps

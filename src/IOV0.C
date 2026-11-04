@@ -101,7 +101,7 @@ extern int gOrderX[320];                /*@ ds:290C */
 extern int gOrderY[200];                /*@ ds:2B8C */
 
 /* the key code of the escape key, the one key the wait loop reacts to */
-#define KEY_ESC 0x1B
+#include "EOB.H"
 
 /* Functions of this file, in address order (a call to one defined later compiles through the
    overlay's far call, which TLINK rewrites to nop; push cs; call near, the form the original

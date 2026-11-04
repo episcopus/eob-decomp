@@ -38,19 +38,12 @@ typedef union {
    format 2 is 14-bit because 1D9A:03CC ReadCode2 reads its codes 14 bits at a time
    (src/E1D9A.ASM:542; the file's unit comment at :11 names it); format 3's "literal and fill stream"
    is this unit's own reading of the bytes, [H] (src/E1D9A.ASM:7). */
-#define FORMAT_STORED      0L  /* stored: Unpack0 copies the data */
-#define FORMAT_LZW_12      1L  /* 12-bit LZW (Unpack1, 3C00h work buffer) */
-#define FORMAT_LZW_14      2L  /* 14-bit LZW (Unpack2, FC00h work buffer) */
-#define FORMAT_LITERAL_FILL 3L /* [H] a literal and fill stream (Unpack3) */
-#define FORMAT_LCW         4L  /* LCW (Unpack4) */
+#include "EOB.H"
 
 /* the MemAlloc flag that returns a paragraph-aligned, offset-0 block: the bit is defined at
    src/E19BC.C:49, and the block shape it gives is at src/E19BC.C:94-102 */
-#define MEMALLOC_ALIGNED 0x20
 /* work-buffer sizes of formats 1 and 2 (WHITEPAPER 4.2); UNPACK_BUFFER_SIZE in src/E07A9.C:39 is the
    size of the shared buffer, a different thing that happens to equal format 2's */
-#define FORMAT1_BUFFER_SIZE 0x3C00
-#define FORMAT2_BUFFER_SIZE 0xFC00
 
 extern "C" {
 

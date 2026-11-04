@@ -117,16 +117,7 @@ extern signed char gSpanDoorClip[]; /*@ ds:6CC6 */   /* per slot,i signed {left,
     }
     SetRegionRect(region, *left, 0, *right, VIEW_BOTTOM);
 }
-struct Region {             /* the 16-byte region records at ds:009F (src/E1DE7.C) */
-    int left;               /* +0 */
-    int top;                /* +2 */
-    int width;              /* +4 */
-    int height;             /* +6 */
-    int textAttr1;
-    int textAttr2;
-    int textCol;
-    int textRow;
-};
+#include "EOB.H"
 
 extern struct Region gRegions[]; /*@ ds:009F */
 extern int gCurLevel; /*@ ds:FBC8 */                 /* the dungeon level, 1..12 (src/E0D1C.C) */
@@ -362,20 +353,6 @@ extern int gViewMirrorParity; /*@ ds:F4BC */             /* the cell and page pa
         ToggleViewColumn(0x13, 0, slot2, 0, 3, 0xf);
 }
 
-/* A 14-byte item record at ds:8DD0 (src/E0BD2.C declares the same layout). */
-struct ItemRecord {
-    signed char nameIndex;
-    signed char identifiedNameIndex;
-    unsigned char flags;
-    signed char icon;       /* +3: indexes ds:181F */
-    signed char type;
-    signed char cellPos;        /* +5: the kind tested here */
-    int key;
-    int prevLink;                /* +8: one link of the circular list */
-    int nextLink;
-    signed char level;
-    signed char value;
-};
 extern struct ItemRecord gItems[]; /*@ ds:8DD0 */
 extern signed char gViewRelativePos[]; /*@ ds:1A2B */   /* per-page sprite base (src/E0DE8.C) */
 extern signed char gIconPictureIndex[]; /*@ ds:181F */   /* byte table indexed by an item icon (src/E122E.C) */
@@ -478,47 +455,6 @@ extern void DrawShapeClipped(int page, void far *src, int x, int y, int region);
     }
 }
 
-/* The 28-byte object records at ds:8A82 and the 27-byte records at ds:1A3B (src/E08E6.C). */
-struct Monster {
-    char typeIndex;                /* +0: index into the ds:1A3B table */
-    signed char updateGroup;       /* +1 */
-    int cell;                 /* +2 */
-    char cellPos;             /* +4 */
-    char orient;            /* +5 */
-    char animPhase;            /* +6 */
-    char altShapes;               /* +7 */
-    signed char mode;       /* +8 */
-    signed char state;      /* +9 */
-    char attackFrame;               /* +A */
-    char timer;             /* +B */
-    int maxHp;          /* +C */
-    int hp;              /* +E */
-    int targetCell;
-    int dropItem1;
-    int dropItem2;
-    char flags;               /* +16: flag byte */
-    char drawOffset;               /* +17 */
-    char actionDelay;
-    char actionsLeft;
-    char m1A;
-    char m1B;
-};
-struct MonsterType {
-    char pad00;
-    char m01;
-    char m02;
-    char m03;
-    char m04[3][3];
-    char pad0D;
-    char m0E;               /* +0xE: bits tested here */
-    char pad0F[0x13 - 0x0F];
-    int m13;
-    char m15;               /* +0x15: tested here */
-    char m16;
-    char m17;
-    char m18;
-    char pad19[0x1B - 0x19];
-};
 extern struct Monster gMonsters[]; /*@ ds:8A82 */
 extern struct MonsterType gMonsterTypes[]; /*@ ds:1A3B */
 extern signed char gMonsterShrinkSteps[]; /*@ ds:6FBE */   /* byte table indexed by gViewSlotRow[slot] (this unit) */
@@ -659,11 +595,6 @@ extern void far *gWallFaces[]; /*@ ds:7018 */      /* per slot, two far pointers
 extern signed char gWallOffsets[]; /*@ ds:70A8 */  /* per wall face, its signed segment offset (this unit) */
 extern int gWallXBias[]; /*@ ds:70CC */            /* per slot, the x base when the face flag bit 2 is clear (this unit) */
 
-struct RectKind {           /* the per-kind size record gDecorShapes points at (src/E122E.C) */
-    char pad00;
-    signed char height;     /* +1 */
-    signed char width;      /* +2: base width in eighths */
-};
 struct ViewWallRec {        /* the 0x34-byte wall records at ds:E06A this unit walks (src/EOV3.C) */
     unsigned char cells[0xa]; /* +00: ten cell indices, 0xff = none */
     signed char next;       /* +0A: the next record, nonpositive ends the walk */
@@ -755,18 +686,6 @@ extern struct ViewWallRec gViewWalls[]; /*@ ds:E06A */
         }
     }
 }
-/* The 3-byte size record a gDoorShapes entry points at (src/E122E.C declares the same layout). */
-struct SlotSize {
-    char pad00;
-    signed char height;     /* +1: base height in pixels */
-    signed char width;      /* +2: base width in eighths */
-};
-/* The 6-byte slot-position records at ds:A99C: a far size record, then x and y (src/E122E.C). */
-struct SlotPos {
-    struct SlotSize far *rec;   /* +0 */
-    unsigned char x;            /* +4 */
-    unsigned char y;            /* +5 */
-};
 extern struct SlotSize far *gDoorShapes[]; /*@ ds:FB5E */  /* per column, a far size record (ovl3:031A frees and clears the entries, src/EOV3.C:356-358; src/EOV2.C:155 and src/EOV3.C:143 declare it long, but the ->width use here needs a far pointer) */
 extern struct SlotPos gDoorButtons[]; /*@ ds:A99C */
 extern signed char gDoorShapeSet[]; /*@ ds:716E */   /* per heading, a column base (this unit) */
@@ -918,21 +837,6 @@ extern signed char gDoorSplitFrom30[]; /*@ ds:71A2 */   /* per index nudge f (th
     }
     SetRegionRect(5, gViewColLeft, 0, gViewColRight, 0xf);
 }
-/* The 18-byte records at ds:DD2C (src/E1414.C declares the same layout). */
-struct Projectile {
-    char active;              /* +00: the record state, 1 selects the ds:F2F8 path here */
-    char pad01;
-    int m02;                  /* +02 */
-    int cell;                  /* +04: the slot heading the record belongs to */
-    char m06;                 /* +06: its low two bits index ds:7246; ds:7262 is indexed by the whole byte (altShapes * 4 + m06) */
-    signed char dir;          /* +07: the page the record is seen from */
-    int item;                  /* +08: indexes the ds:8DD0 item records */
-    char m0A;                 /* +0A: row in the ds:F2F8 cell table */
-    char m0B;                 /* +0B */
-    char m0C;                 /* +0C: bit 6 gates a position recompute */
-    unsigned char m0D;        /* +0D */
-    int (far *fn)(struct Projectile far *rec); /* +0E */
-};
 extern struct Projectile gProjectiles[]; /*@ ds:DD2C */
 extern signed char gProjectileDrawOrder[]; /*@ ds:7246 */   /* per page and low-2-bit index, the list slot (this unit) */
 extern unsigned char gProjectileX[]; /*@ ds:71A6 */ /* per slot, per sprite, the x base (this unit) */
