@@ -1,5 +1,27 @@
 # Review: e1d8c
 
+# Round P6 (2026-11-04), commit ce0608f
+
+Reviewer: p6-rev-1
+Commit reviewed: ce0608f (main; review/e1d8c was ce0608f when this round began and no fast-forward was needed). The last review round was Round 1 at a7f9bf7. Since a7f9bf7, src/E1D8C.ASM changed by the Phase 6 rename: f1D8C_0000 is RandomByte, in the PUBLIC/PROC/ENDP labels. The diff is 3 insertions and 3 deletions. The header comment is not changed. The names do not change the machine code.
+
+Later round (playbook 70). Judged: the diff since a7f9bf7 for src/E1D8C.ASM (the rename) and the name it introduces. The Round 1 note 18 (the placeholder name) is superseded by the rename.
+
+Checked: `make match FILE=src/E1D8C.ASM` 1 of 1 (50 bytes), exit 0; `make readability UNIT=e1d8c` 0 findings. Evidence used this round: `git diff a7f9bf7 HEAD -- src/E1D8C.ASM` (the rename); `grep -n -A8 "addr = \"1D8C:0000\"" re/renames.toml` (re/renames.toml:4965, the RandomByte why); `sed -n '1,30p' src/E1D8C.ASM` (the header comment).
+
+## Findings
+
+Each finding is a checkbox. `must-fix` blocks `make review-pass` until a decompiler ticks it off
+(with the commit that fixes it); `should` and `note` do not block.
+
+- [ ] must-fix src/E1D8C.ASM:18 (the header comment): "The placeholder name stays: those uses support 'random byte' but nothing more specific." is false after the P6 rename. The name is RandomByte now, backed by re/renames.toml:4965: "The same 50-byte 24-bit generator as INTRO.EXE's RandomByte (0CDA:0006, src/I0CDA.ASM), stepping the state at ds:8484 (seed 34 12 76) and returning new b0 xor b1; its two callers in AnimateConeOfCold mask it (and 3, test 1)." Say the name comes from the twin (0CDA:0006, src/I0CDA.ASM) and the algorithm; drop "The placeholder name stays". The "those uses support 'random byte' but nothing more specific" is also stale: the twin and the algorithm back the name.
+- [ ] note the P6 diff's changed lines are the PUBLIC/PROC/ENDP labels; `make match` is 1 of 1 (50 bytes), so the bytes are unchanged. The header's algorithm description (the 24-bit step, the state at ds:8484, the seed 34 12 76, the two far calls) still holds.
+- [ ] note the Round 1 note 18 said the name was a placeholder and the callers supported only "small random value"; the P6 rename's why adds the INTRO.EXE twin (0CDA:0006) and the state step, so the name RandomByte is backed. The Round 1 note is superseded.
+
+## Summary
+
+One must-fix item is open. The P6 rename replaced f1D8C_0000 with RandomByte, backed by the INTRO.EXE twin and the state step, but the header comment still says "The placeholder name stays: those uses support 'random byte' but nothing more specific." The matcher is 1 of 1 and readability is 0 findings; the bytes are unchanged. The unit does not pass (review-failed) until the header comment is rewritten.
+
 Reviewer: rev-sonnet
 Commit reviewed: a7f9bf773118dfbb201d1ac06ec31417aae0c893
 
