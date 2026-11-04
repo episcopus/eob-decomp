@@ -7464,8 +7464,8 @@ size = 14
 evidence = ["segment"]
 level = "L2"
 match_flags = "tasm /mx"
-review = "passed 2026-11-01 rev-sonnet"
 name = "ReadTickCount"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e1d8f_0010"
@@ -7475,8 +7475,8 @@ size = 40
 evidence = ["far", "frame"]
 level = "L2"
 match_flags = "tasm /mx"
-review = "passed 2026-11-01 rev-sonnet"
 name = "InstallTickHandler"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e1d8f_0038"
@@ -7486,8 +7486,8 @@ size = 131
 evidence = ["far", "frame"]
 level = "L2"
 match_flags = "tasm /mx"
-review = "passed 2026-11-01 rev-sonnet"
 name = "RemoveTickHandler"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e1d9a_000b"
