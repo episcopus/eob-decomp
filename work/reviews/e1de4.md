@@ -1,10 +1,39 @@
 # Review: e1de4
 
-Reviewer: rev-sonnet
-Commit reviewed: cbfe8c4eda6584fb136904b571c1cb1be5bf4a6f
+Reviewer: p6-rev-2
+Commit reviewed: b08c0a8d7bcd68a111e511064630da3a2512de67 (P6 round; the earlier round read cbfe8c4)
 
 Playbook 70. Judge what a matching file can still get wrong: names, types, comments, structure.
 The matcher already proved the bytes; do not re-prove them, read for meaning.
+
+## Round P6 (2026-11-04), commit b08c0a8d7bcd68a111e511064630da3a2512de67
+
+Judged the diff cbfe8c4..b08c0a8 on src/E1DE4.ASM: _f1DE4_0000 -> _IsInVerticalRetrace
+(1DE4:0000), _f1DE4_000D -> _WaitRetrace (1DE4:000D). The comments are unchanged.
+
+Evidence checked against re/renames.toml (1DE4:0000=IsInVerticalRetrace, 1DE4:000D=WaitRetrace;
+no struct field in re/fields.toml). The names match their WHYs: IsInVerticalRetrace reads port
+3DAh bit 3 once and returns 8 or 0; WaitRetrace polls bit 3 twice, for the start and end of
+retrace, or with argument 1 in the other order. The callers in src/E1A65.C and src/E1A16.C use
+the same names (CalibrateRetrace calls IsInVerticalRetrace, WaitFrames calls WaitRetrace).
+
+The earlier round's three shoulds are unchanged by this diff and still stand: the
+"(into active display)" parenthetical is wrong; the caller comment says "rate" where the caller
+does a polarity test; and the VGA/vertical-retrace labels are prior knowledge and should be
+tagged [H].
+
+- [ ] should (carried) src/E1DE4.ASM:23: "(into active display)" is wrong; say "waits until
+  bit 3 is clear, then until it is set", as the earlier round asked.
+- [ ] should (carried) src/E1DE4.ASM:9: "counts set and clear samples to measure the retrace
+  rate" overstates; the caller does a polarity test. Say so and name the gRetraceInverted link.
+- [ ] should (carried) src/E1DE4.ASM:1-3: "VGA retrace support" and "(vertical retrace)" are
+  prior knowledge, not bytes; tag them [H], as the earlier round asked.
+- [ ] note The new names are backed and the callers use them (src/E1A65.C CalibrateRetrace and
+  src/E1A16.C WaitFrames).
+- [ ] note The earlier round's notes still hold: the byte match (AL & 8, AH cleared; only the
+  low byte of [bp+6] compared), the no-timeout loops, and the `je done` after the first loop.
+
+No open must-fix. The names are backed by the evidence and the callers use them consistently.
 
 ## Findings
 
