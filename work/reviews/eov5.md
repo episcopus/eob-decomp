@@ -1,7 +1,7 @@
 # Review: eov5
 
-Reviewer: rev-haiku
-Commit reviewed: 5767eb38ee1512e5c9994792c9e8fc61ed181448 (round 1), 5fadbc39b1563e907468dc17cae60b2c3d78d625 (round 2), d1a3d98 (round 3, main)
+Reviewer: p6-rev-11
+Commit reviewed: P6 round at ce0608f (main); round 3 at d1a3d98; round 2 at 5fadbc3; round 1 at 5767eb3
 
 Playbook 70. Judge what a matching file can still get wrong: names, types, comments, structure.
 The matcher already proved the bytes; do not re-prove them, read for meaning.
@@ -17,6 +17,14 @@ Evidence used: the code in `src/EOV5.C` (line numbers below); the call lists in
 `eob/EOB.EXE`, read only (`strings`, `grep -b`). The EXE literals line up with the ds addresses
 (file-offset differences equal ds-address differences, within one byte, e.g. ds:7B9F "CANCEL" to
 ds:7D9E "Which should be resurrected?").
+
+### Round P6 (2026-11-04, reviewed at ce0608f)
+
+Later round. Changed since d1a3d98: the P6 naming pass, `git diff d1a3d98 HEAD -- src/EOV5.C`; 340 insertions, 390 deletions; names and comments only. The names checked against re/renames.toml and re/fields.toml; the changed comments against the code at each address. The matcher still proves the bytes (31 of 31).
+
+No must-fix in the changed lines. The P6 names are backed by the registry: gDrawPage ds:8115, gPanelFillColour ds:F57E, gPanelShadow ds:F53A, gPanelHighlight ds:FB4C, gResurrectedPoolChar ds:EFC6, gTextPanelInView ds:FE42, gGameFlags ds:FC04, gPartyDir ds:FBCC, gViewToCellPos ds:1A1B, gMazeItems ds:B899, gItems ds:8DD0, gItemTypesClasses ds:A9F5, gMonsters ds:8A82, gDeathListCount ds:DDE0, gDeathList ds:F4E6, gCgaMapDefault ds:113F, gStagingPage ds:DF4E, gOuttakeCellRects ds:7B2B, gMenuRowX ds:7B89, gMenuRowYOffset ds:7B94, the gYesNoMenu and gStr* tables ds:7B23 to ds:7F38, gCurFont ds:FE4E, gFont6x6 ds:A9C0, gPanelMode ds:FB44, gScratchBuf ds:DCFC, gGetPixel ds:8072, gPutPixel ds:809E, gDirectAction ds:F542, gScrollHookSeg ds:8119, gCurLevel ds:FBC8, gLevelCgaMapIndex 1F1D:0000, gWallSetCgaMaps 1F1E:0000, gCgaMapPlayfld 2069:0000, gCgaMapInvent 2067:0000; the functions gGetSpriteCellRle ds:8082, gRestoreRectToPage ds:804A, gSaveRectFromPage ds:807E, DrawShape 1A29:000F, CopyRegion 19F3:000E, RemovePartyMember 0D1C:035A, MemberIs 0D1C:0670, RestorePortraitPanel 0ACD:01E3, FindWordPanel 2106:0039, LoadWallTextures 210C:0052, FreeSlotTables 210C:003E, FreeMonsterShapes 210C:0061, SetFont 1A47:0169, GetPageBuffer 19EC:0002, CopyPage 19EC:002A. The changed comments match the code: DrawSheetCell (ovl5:0000) uses gCgaMapDefault and gDrawPage, MessagePanel (ovl5:025F) uses gTextPanelInView, ShowMenuText (ovl5:03A9) reads gStagingPage, AddCharPanel (ovl5:0828) calls RemovePartyMember.
+
+The Round 3 should (the CharOverlay header should say what the sheet offset selects) is still open, not blocking. The two Round 3 notes (the re/globals.toml gPartyCell line cites and the "not complete" output for overlay units) are still open.
 
 ### Round 3 (2026-11-02, reviewed at d1a3d98: the round 2 fixes of b2dac64 are on main)
 
