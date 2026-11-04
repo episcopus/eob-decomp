@@ -1494,7 +1494,7 @@ evidence = ["segment"]
 name = "EditTextField"
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e082c_0425"
@@ -1505,7 +1505,7 @@ evidence = ["far", "frame"]
 name = "WaitTicks"
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e082c_0458"
@@ -1516,7 +1516,7 @@ evidence = ["far", "frame"]
 name = "RollDice"
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e082c_04c4"
@@ -1527,7 +1527,7 @@ evidence = ["far", "frame"]
 name = "DrawRect"
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e082c_051b"
@@ -1538,7 +1538,7 @@ evidence = ["far", "near", "frame"]
 name = "LoadScreenImage"
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e082c_05ec"
@@ -1549,7 +1549,7 @@ evidence = ["frame"]
 name = "LoadOverlayScreen"
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e082c_0613"
@@ -1560,7 +1560,7 @@ evidence = ["far", "near", "frame"]
 name = "IsPointInsideRect"
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e082c_063b"
@@ -1570,8 +1570,8 @@ size = 70
 evidence = ["far", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
 name = "DrawShapeClipped"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e082c_0681"
@@ -1581,8 +1581,8 @@ size = 70
 evidence = ["far", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
 name = "DrawShapeClippedFlipped"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e082c_06c7"
@@ -1592,8 +1592,8 @@ size = 70
 evidence = ["frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
 name = "DrawShapeClippedRemapped"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e082c_070d"
@@ -1603,8 +1603,8 @@ size = 64
 evidence = ["frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
 name = "DrawShapeClippedRemapFlipped"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e082c_074d"
@@ -1615,7 +1615,7 @@ evidence = ["frame"]
 name = "DrawBevelBox"
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e082c_07a4"
@@ -1626,7 +1626,7 @@ evidence = ["far", "frame"]
 name = "SwapChars"
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e082c_07c5"
@@ -1637,7 +1637,7 @@ evidence = ["frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
 name = "SwapBlocks"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e082c_081a"
@@ -1648,7 +1648,7 @@ evidence = ["near", "frame"]
 name = "ShowMemoryDiagnostics"
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e082c_0898"
@@ -1659,7 +1659,7 @@ evidence = ["far", "frame"]
 name = "DrawShadowText"
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e082c_090a"
@@ -1670,7 +1670,7 @@ evidence = ["frame"]
 name = "DrawShadowInt"
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e082c_0974"
@@ -1681,7 +1681,7 @@ evidence = ["far", "frame"]
 name = "NumberWidthLong"
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e082c_09a6"
@@ -1692,7 +1692,7 @@ evidence = ["far", "frame"]
 name = "NumberWidthInt"
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e082c_09d5"
@@ -1703,7 +1703,7 @@ evidence = ["far", "frame"]
 name = "DrawFilledPanel"
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e082c_0a53"
@@ -1714,7 +1714,7 @@ evidence = ["frame"]
 name = "QuitGame"
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e082c_0a5d"
@@ -1725,7 +1725,7 @@ evidence = ["far", "frame"]
 name = "ClickInRect"
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e082c_0a7d"
@@ -1736,7 +1736,7 @@ evidence = ["frame"]
 name = "ReadFileBytes"
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e082c_0ab4"
@@ -1747,7 +1747,7 @@ evidence = ["far", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
 name = "ClampOrWrap"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e082c_0ae8"
@@ -1758,7 +1758,7 @@ evidence = ["frame"]
 name = "FormatName"
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e082c_0b0e"
@@ -1769,7 +1769,7 @@ evidence = ["frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
 name = "DrawTextAndMemoryReport"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e082c_0b43"
@@ -1780,7 +1780,7 @@ evidence = ["far", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
 name = "DelaySecondsThenKey"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e082c_0b8f"
@@ -1791,7 +1791,7 @@ evidence = ["far", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
 name = "SayAndPlaySound"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e08e6_000b"
