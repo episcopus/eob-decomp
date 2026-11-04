@@ -8,7 +8,7 @@
    the mouse buttons E14EF.C names KEY_CLICK and KEY_CLICK2 (the table at 14EF:055D); the pair
    0xC6/0xC7 is the mouse's confirm keys (ovl0:207A PickClass tests it). Placeholder names. The
    unit was compiled with debug information (the flags line records -v): that keeps DrawNode's
-   identical restart tails (the gStatusLine and gUnreadShapeDrawWord save/restore around each kind) as separate
+   identical restart tails (the gDrawPage and gUnreadShapeDrawWord save/restore around each kind) as separate
    copies, where a build without it merges them into one (whitepaper 2.1.1). */
 
 /*@flags -ml -O -Z -v */
@@ -101,7 +101,7 @@ void DrawNode(struct Node far *node);
 
 extern int gPointerHeight;   /*@ ds:8154: sprite height in pixels (E1BBE.ASM) */
 extern int gPointerWidth8;   /*@ ds:8156: sprite width in 8-pixel columns (E1BBE.ASM) */
-extern int gStatusLine;            /*@ ds:8115: nonzero while a status line is up (src/E082C.C) */
+extern int gDrawPage;            /*@ ds:8115: the graphics driver's draw page (src/E082C.C) */
 extern int gUnreadShapeDrawWord;            /*@ ds:FC80: a flag DrawNode clears while it draws a kind-1 node */
 extern struct Region gRegions[]; /*@ ds:009F */
 extern void (far *gDrawText)(char far *text, int x, int y, int color, int extra); /*@ ds:80CA */
@@ -111,7 +111,7 @@ extern void (far *gXorRect)(int x1, int y1, int x2, int y2, int colour); /*@ ds:
 extern void HidePointerZone(int left, int top, int right, int bottom); /*@ 1BBE:01FE */
 extern void ShowPointerZone(void); /*@ 1BBE:02C2 */
 extern void DrawBox(int x1, int y1, int x2, int y2, int colour); /*@ 1A1F:000C */
-extern void DrawShape(int mode, void far *src, int x, int y, int region); /*@ 1A29:000F */
+extern void DrawShape(int page, void far *src, int x, int y, int region); /*@ 1A29:000F */
 
 /* The dispatcher's working state in DGROUP. The hit point comes from the mouse (gCursorX/gCursorY)
    or, when a button is down, from the last click (ds:8140/8142). gLastNode and gPressedNode are
@@ -547,7 +547,7 @@ done:
    `modeB` or `modeC` is 2 (DrawBox), or `modeB` is 3 with NODE_STATE_PREV set, or `modeC` is 3
    with NODE_STATE_10 set (gXorRect), and only in the both-clear branch (NODE_STATE_ON and
    NODE_STATE_4 clear). The pointer is hidden with HidePointerZone over the box grown by the mouse
-   sprite size and shown again at the end; gStatusLine (ds:8115) is cleared around every DrawBox
+   sprite size and shown again at the end; gDrawPage (ds:8115) is cleared around every DrawBox
    and gXorRect call and around the kind 0, 2, 3 and 5 draws; the kind 1 and 4 art calls never
    clear it, and ds:FC80 is cleared while a kind-1 node is. Callers: ToggleNode (1658:0073),
    DisableNode (1658:0154), EnableNode (1658:017B), ClearNode (1658:01E6), SetNode (1658:02F5) and
@@ -601,33 +601,33 @@ done:
                 gUnreadShapeDrawWord = savedFC80;
             } else if (kind == 2) {
                 if (!mark4) {
-                    savedAttr = gStatusLine;
-                    gStatusLine = 0;
+                    savedAttr = gDrawPage;
+                    gDrawPage = 0;
                     gDrawText(node->src14, x, y, node->color28, node->color29);
-                    gStatusLine = savedAttr;
+                    gDrawPage = savedAttr;
                 }
             } else if (kind == 3) {
-                savedAttr = gStatusLine;
-                gStatusLine = 0;
+                savedAttr = gDrawPage;
+                gDrawPage = 0;
                 gDrawIndexedTile(node->tile36, x >> 3, y);
-                gStatusLine = savedAttr;
+                gDrawPage = savedAttr;
             } else if (kind == 4) {
                 if (node->src14)
                     ((NodeFn)node->src14)(node);
             }
         } else if (modeB == 2) {
             if (!mark4) {
-                savedAttr = gStatusLine;
-                gStatusLine = 0;
+                savedAttr = gDrawPage;
+                gDrawPage = 0;
                 DrawBox(x, y, x + node->width - 1, y + node->height - 1, node->color28);
-                gStatusLine = savedAttr;
+                gDrawPage = savedAttr;
             }
         } else if (modeB == 3) {
             if (!mark4) {
-                savedAttr = gStatusLine;
-                gStatusLine = 0;
+                savedAttr = gDrawPage;
+                gDrawPage = 0;
                 gXorRect(x, y, x + node->width - 1, y + node->height - 1, node->color28);
-                gStatusLine = savedAttr;
+                gDrawPage = savedAttr;
             }
         } else if (modeB == 4) {
             if (node->src14)
@@ -642,34 +642,34 @@ done:
                 DrawShape(0, node->src18, x, y, region);
                 gUnreadShapeDrawWord = savedFC80;
             } else if (kind == 2) {
-                savedAttr = gStatusLine;
-                gStatusLine = 0;
+                savedAttr = gDrawPage;
+                gDrawPage = 0;
                 if (isOn)
                     gDrawText(node->src18, x, y, node->color2C, node->color2D);
                 else
                     gDrawText(node->src18, x, y, node->color2A, node->color2B);
-                gStatusLine = savedAttr;
+                gDrawPage = savedAttr;
             } else if (kind == 3) {
-                savedAttr = gStatusLine;
-                gStatusLine = 0;
+                savedAttr = gDrawPage;
+                gDrawPage = 0;
                 gDrawIndexedTile(node->tile36, x >> 3, y);
-                gStatusLine = savedAttr;
+                gDrawPage = savedAttr;
             } else if (kind == 4) {
                 if (node->src18)
                     ((NodeFn)node->src18)(node);
             }
         } else if (modeC == 2) {
-            savedAttr = gStatusLine;
-            gStatusLine = 0;
+            savedAttr = gDrawPage;
+            gDrawPage = 0;
             colour = isOn ? node->color2C : node->color2A;
             DrawBox(x, y, x + node->width - 1, y + node->height - 1, colour);
-            gStatusLine = savedAttr;
+            gDrawPage = savedAttr;
         } else if (modeC == 3) {
-            savedAttr = gStatusLine;
-            gStatusLine = 0;
+            savedAttr = gDrawPage;
+            gDrawPage = 0;
             colour = isOn ? node->color2C : node->color2A;
             gXorRect(x, y, x + node->width - 1, y + node->height - 1, colour);
-            gStatusLine = savedAttr;
+            gDrawPage = savedAttr;
         } else if (modeC == 4) {
             if (node->src18)
                 ((NodeFn)node->src18)(node);
@@ -683,33 +683,33 @@ done:
                 DrawShape(0, node->src10, x, y, region);
                 gUnreadShapeDrawWord = savedFC80;
             } else if (kind == 2) {
-                savedAttr = gStatusLine;
-                gStatusLine = 0;
+                savedAttr = gDrawPage;
+                gDrawPage = 0;
                 gDrawText(node->src10, x, y, node->color26, node->color27);
-                gStatusLine = savedAttr;
+                gDrawPage = savedAttr;
             } else if (kind == 3) {
-                savedAttr = gStatusLine;
-                gStatusLine = 0;
+                savedAttr = gDrawPage;
+                gDrawPage = 0;
                 gDrawIndexedTile(node->tile34, x >> 3, y);
-                gStatusLine = savedAttr;
+                gDrawPage = savedAttr;
             } else if (kind == 4) {
                 if (node->src10)
                     ((NodeFn)node->src10)(node);
             } else if (kind == 5) {
-                savedAttr = gStatusLine;
-                gStatusLine = 0;
+                savedAttr = gDrawPage;
+                gDrawPage = 0;
                 DrawBox(x, y, x + node->width - 1, y + node->height - 1, node->color26);
-                gStatusLine = savedAttr;
+                gDrawPage = savedAttr;
             } else if (kind == 0) {
-                savedAttr = gStatusLine;
-                gStatusLine = 0;
+                savedAttr = gDrawPage;
+                gDrawPage = 0;
                 if (modeB == 2 || modeC == 2)
                     DrawBox(x, y, x + node->width - 1, y + node->height - 1, node->color26);
                 else if (modeB == 3 && wasOn)
                     gXorRect(x, y, x + node->width - 1, y + node->height - 1, node->color28);
                 else if (modeC == 3 && mark10)
                     gXorRect(x, y, x + node->width - 1, y + node->height - 1, node->color2A);
-                gStatusLine = savedAttr;
+                gDrawPage = savedAttr;
             }
         }
     }

@@ -8433,3 +8433,12 @@ new = "AskYesNo"
 kind = "function"
 why = "the resident stub of overlay 1's ovl1:243A, AskYesNo: an overlay stub takes its function's name, as 2116:005C DrawViewFrame does"
 date = "2026-11-03"
+
+[[rename]]
+id = "ds:8115=gDrawPage"
+addr = "ds:8115"
+old = "gStatusLine"
+new = "gDrawPage"
+kind = "global"
+why = "the page the graphics driver draws to: the driver's import slot ds:8032 points at it (212E:8115) and MCGA.OVL 0B3F reads it masked with 1Fh to index the page segments gPageSegs (ds:FC0C); setting it to 2 draws to page 2; its INTRO.EXE twin ds:1FA1 is gDrawPage"
+date = "2026-11-03"

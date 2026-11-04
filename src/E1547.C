@@ -66,7 +66,7 @@ struct CharRec {            /* the 243-byte (0xF3) records at ds:F580 (src/E0A72
 };
 
 extern int gGraphicsChoice; /*@ ds:8102 */         /* the video mode the game initialised (src/E082C.C) */
-extern int gStatusLine; /*@ ds:8115 */         /* nonzero while a status line is up (src/E082C.C) */
+extern int gDrawPage; /*@ ds:8115 */         /* the graphics driver's draw page (src/E082C.C) */
 extern unsigned char gPartySpellFlags; /*@ ds:FBD2 */ /* bit 0 gates the icon colour row (src/E0D1C.C); the 0x30
                                               bits DrawMemberBar tests (:163) are not understood */
 extern signed char gPanelHighlight; /*@ ds:FB4C */ /* a colour (src/E0D1C.C) */
@@ -116,7 +116,7 @@ extern char *strcpy(char far *dest, char far *src); /*@ 0000:67CD */
 extern void DrawRect(int x1, int y1, int x2, int y2, int colour); /*@ 082C:04C4 */
 extern void DrawFilledPanel(int x1, int y1, int x2, int y2, int colourA, int colourB, int fill); /*@ 082C:09D5 */
 extern int MemberIs(int who, int mask); /*@ 0D1C:0670 */
-extern void DrawShape(int statusLine, void far *src, int x, int y, int region); /*@ 1A29:000F */
+extern void DrawShape(int page, void far *src, int x, int y, int region); /*@ 1A29:000F */
 extern void ClipRect(int x1, int y1, int x2, int y2, int width, int height, int extra1, int extra2); /*@ 19F3:000E */
 extern void LockHidePointer(void); /*@ 1BBE:0307 */
 extern void LockShowPointer(void); /*@ 1BBE:0332 */
@@ -159,7 +159,7 @@ extern char *FormatStrengthPercent(char score, char percent); /*@ 0A72:0468 */
 extern char GetClassSlotByte(char row, char slot); /*@ 0A72:0509 */
 extern void DrawItemRow(int who, int slot, int one); /*@ 0BD2:0917 */
 /* 1547:0009: draws the status bar at the member's block corner (gMemberFrameX[who & 1], gMemberFrameY[who >> 1],
-   the x shifted by 0xB0 while no status line is up). Two conditions chosen from the record decide
+   the x shifted by 0xB0 while gDrawPage is 0). Two conditions chosen from the record decide
    the shape: `outline` is set by effectFlags bits 0x302, the descending penalty counter mDF or the
    countdown mE0; `hatch` by effectFlags bits 0x4c8 or the gPartySpellFlags bits 0x30. When neither holds the bar is
    only a frame of four lines (colours gPanelHighlight, gPanelShadow, 0xC); when only `outline` holds it is a
@@ -183,7 +183,7 @@ extern void DrawItemRow(int who, int slot, int one); /*@ 0BD2:0917 */
     colour = gGraphicsChoice == 0 ? 3 : 6;
     x = gMemberFrameX[who & 1];
     y = gMemberFrameY[who >> 1];
-    if (!gStatusLine)
+    if (!gDrawPage)
         x += 0xb0;
     rec = &gChars[who];
     outline = (rec->effectFlags & 0x302) || rec->mDF || rec->mE0;
@@ -259,7 +259,7 @@ extern void DrawItemRow(int who, int slot, int one); /*@ 0BD2:0917 */
 }
 /* 1547:033F: draws one member's HP line. It returns unless the member passes MemberIs(member,
    1) and, while gPanelMode is nonzero, is also the selected member gInventoryMember. The line is at (gHpLineX[member &
-   1], gHpLineY[member >> 1]), shifted right by 0xB0 while no status line is up, or fixed at (0xfa, 0x10)
+   1], gHpLineY[member >> 1]), shifted right by 0xB0 while gDrawPage is 0, or fixed at (0xfa, 0x10)
    while gPanelMode is nonzero. When gBarGraphsOn is set it draws the "HP" label (only while gPanelMode is 0) and a
    ratio bar (DrawRatioBar) of hp + 10 against maxHp + 10 (the +10 keeps the bar visible at negative
    hit points), the colour picked by a wound state: 1 when (maxHp + 10) / 3 exceeds hp + 10, 2 when
@@ -287,7 +287,7 @@ extern void DrawItemRow(int who, int slot, int one); /*@ 0BD2:0917 */
         y = gHpLineY[member >> 1];
         width = 0x26;
         height = 3;
-        if (!gStatusLine)
+        if (!gDrawPage)
             x += 0xb0;
     } else {
         x = 0xfa;
@@ -344,7 +344,7 @@ extern void DrawItemRow(int who, int slot, int one); /*@ 0BD2:0917 */
 }
 /* 1547:0544: draws one member's portrait on the character screen. It returns unless the member
    passes MemberIs(who, 1). The portrait corner is (gPortraitX[who & 1], gPortraitY[who >> 1]), the x
-   shifted by 0xB0 while no status line is up, or the fixed (0xb5, 3) while gPanelMode is nonzero (and
+   shifted by 0xB0 while gDrawPage is 0, or the fixed (0xb5, 3) while gPanelMode is nonzero (and
    only for the selected member gInventoryMember). At hp == -10 it draws the dead portrait gDeadPortraitIcon and
    returns; when effectFlags bit 2 is set and gPanelMode is 0 it fills the portrait in colour 0xC and returns;
    otherwise it draws the member's own portrait pointer (rec + 0x33) and, at hp below 1, the
@@ -363,7 +363,7 @@ extern void DrawItemRow(int who, int slot, int one); /*@ 0BD2:0917 */
     if (gPanelMode == 0) {
         x = gPortraitX[who & 1];
         y = gPortraitY[who >> 1];
-        if (!gStatusLine)
+        if (!gDrawPage)
             x += 0xb0;
     } else {
         if (gInventoryMember != who)
@@ -372,7 +372,7 @@ extern void DrawItemRow(int who, int slot, int one); /*@ 0BD2:0917 */
         y = 3;
     }
     if (rec->hp == -10) {
-        DrawShape(gStatusLine, gDeadPortraitIcon, x, y, 0);
+        DrawShape(gDrawPage, gDeadPortraitIcon, x, y, 0);
         return;
     }
     if (rec->effectFlags & 4) {
@@ -381,9 +381,9 @@ extern void DrawItemRow(int who, int slot, int one); /*@ 0BD2:0917 */
             return;
         }
     }
-    DrawShape(gStatusLine, rec->portrait, x, y, 0);
+    DrawShape(gDrawPage, rec->portrait, x, y, 0);
     if (rec->hp < 1)
-        DrawShape(gStatusLine, gUnconsciousIcon, x, y, 0);
+        DrawShape(gDrawPage, gUnconsciousIcon, x, y, 0);
 }
 /* 1547:0642: draws the label of an item-use result at (x, y). It clears the second line buffer,
    sets the colour (0xF, or 2 while the video mode gGraphicsChoice is 0), and then either draws the
@@ -406,7 +406,7 @@ extern void DrawItemRow(int who, int slot, int one); /*@ 0BD2:0917 */
     if (gGraphicsChoice == 0)
         colour = 2;
     if (result > -3) {
-        DrawShape(gStatusLine, gThrownIcon4, x - 1, y, 0);
+        DrawShape(gDrawPage, gThrownIcon4, x - 1, y, 0);
     } else {
         DrawFilledPanel(x, y, x + 0x1e, y + 0xf, gFailLabelLight, gFailLabelShadow, gFailLabelFill);
     }
@@ -457,7 +457,7 @@ extern void DrawItemRow(int who, int slot, int one); /*@ 0BD2:0917 */
 
     x = gHandSlotX[who & 1];
     y = gHandSlotY[(who & 6) + slot];
-    if (!gStatusLine)
+    if (!gDrawPage)
         x += 0xb0;
     item = gChars[who].items[slot];
     LockHidePointer();
@@ -468,12 +468,12 @@ extern void DrawItemRow(int who, int slot, int one); /*@ 0BD2:0917 */
         DrawActionLabel(x, y, gChars[who].lastAction[slot]);
     } else {
         if (item != 0)
-            DrawItemIcon(gStatusLine, item, x + 8, y);
+            DrawItemIcon(gDrawPage, item, x + 8, y);
         else
-            DrawShape(gStatusLine, gEmptySlotIcons[slot], x + 8, y, 0);
+            DrawShape(gDrawPage, gEmptySlotIcons[slot], x + 8, y, 0);
         if ((gChars[who].m1E & (1 << slot)) || CanUseHand(who, slot) == 0
                 || gChars[who].hp <= 0 || (gChars[who].status & 4))
-            DrawShape(gStatusLine, gHandShadeIcon, x, y, 0);
+            DrawShape(gDrawPage, gHandShadeIcon, x, y, 0);
     }
     LockShowPointer();
 }
@@ -524,8 +524,8 @@ extern void DrawItemRow(int who, int slot, int one); /*@ 0BD2:0917 */
         y = gMemberBlockY[who >> 1];
         ClipRect(0x16, 0xa8, x, y, 8, 0x18, 2, 2);
         ClipRect(0x1e, 0xa8, x, y + 0x18, 8, 0x1a, 2, 2);
-        savedStatusLine = gStatusLine;
-        gStatusLine = 2;
+        savedStatusLine = gDrawPage;
+        gDrawPage = 2;
         x <<= 3;    /* the layout tables hold 8-pixel columns; the text routines take pixels */
         if (gIconTable == who)
             gDrawText("Swapping", x + 2, y + 2, 8, gPanelFillColour);
@@ -542,8 +542,8 @@ extern void DrawItemRow(int who, int slot, int one); /*@ 0BD2:0917 */
             gDrawText(buf, x + 0x22 - strlen(buf) * 3, y + 0x2a,
                     gGraphicsChoice == 0 ? 0xc : 0xf, 0);
         }
-        gStatusLine = savedStatusLine;
-        if (!gStatusLine)
+        gDrawPage = savedStatusLine;
+        if (!gDrawPage)
             ClipRect(x >> 3, y, gMemberScreenCol[who & 1], y, 8, 0x32, 2, 0);
         SetFont(savedFont);
         LockShowPointer();
@@ -553,7 +553,7 @@ extern void DrawItemRow(int who, int slot, int one); /*@ 0BD2:0917 */
         if (gInventoryMember != who)
             return;
         ClipRect(0x16, 0, 0, 0, 0x12, 0xa8, 2, 2);
-        gStatusLine = 2;
+        gDrawPage = 2;
         DrawMemberPortrait(who);
         DrawShadowText(rec->name, 0xdb, 6, textAttr, gPanelFillColour);
         DrawMemberHp(who);
@@ -613,7 +613,7 @@ extern void DrawItemRow(int who, int slot, int one); /*@ 0BD2:0917 */
                         0xf, gAltPanelFill);
             }
         }
-        gStatusLine = 0;
+        gDrawPage = 0;
         LockHidePointer();
         ClipRect(0x16, 0, 0x16, 0, 0x12, 0xa8, 2, 0);
         LockShowPointer();

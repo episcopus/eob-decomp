@@ -86,7 +86,7 @@ struct WordCell {           /* the 4-byte "find the word" records at ds:65F0, 30
 };
 
 extern int gGraphicsChoice; /*@ ds:8102 */
-extern int gStatusLine; /*@ ds:8115 */
+extern int gDrawPage; /*@ ds:8115 */
 extern int gTextAttr2; /*@ ds:811B */
 extern int gTextAttr1; /*@ ds:811D */
 extern int gTextRegion; /*@ ds:811F */
@@ -188,7 +188,7 @@ extern void SetTextWindow(int n); /*@ 1DE7:0009 */
 extern void ClearTextRegion(void); /*@ 1DE7:0344 */
 extern void DrawText(char far *text); /*@ 1DE7:060A */
 extern void SetFont(char far *font); /*@ 1A47:0169 */
-extern void DrawShape(int mode, void far *src, int x, int y, int region); /*@ 1A29:000F */
+extern void DrawShape(int page, void far *src, int x, int y, int region); /*@ 1A29:000F */
 extern void DrawOptionList(int panel, char far * far *names, long mask, int shift, int spacing); /*@ 14EF:0154 */
 extern int UpdateOptionList(int panel, char far * far *names, long counter, long mask, int shift); /*@ 14EF:0274 */
 extern void LockShowPointer(void); /*@ 1BBE:0332 */
@@ -216,14 +216,14 @@ extern void FileClose(int handle); /*@ 1C0E:03BB */
 
 /* ovl2:0000: loads the ITEMICN image, slices one 2 by 0x10 cell out of gOverlayBuf through
    gGetSpriteCell and makes the result (gItemIcons[0] and gDefaultPointerIcon) the mouse pointer shape at
-   (0,0), then clears the status line. Called first by LoadItemData. */
+   (0,0), then sets the draw page back to 0. Called first by LoadItemData. */
 /*@ ovl2:0000 */ void SetPointerShape(void)
 {
     LoadOverlayScreen("ITEMICN", 5, 3);
     gItemIcons[0] = gGetSpriteCell(0, 0, 2, 0x10, gOverlayBuf);
     gDefaultPointerIcon = gItemIcons[0];
     SetMousePointerShape(0, 0, gDefaultPointerIcon);
-    gStatusLine = 0;
+    gDrawPage = 0;
 }
 
 /* ovl2:005E: reads ITEM.DAT (whitepaper 4): a u16 item count (432), one 14-byte item record per
@@ -304,7 +304,7 @@ extern void FileClose(int handle); /*@ 1C0E:03BB */
         gItemIcons[i] = gGetSpriteCell((i % 20) * 2, (i / 20) * 16, 2, 0x10, gSheetITEMICN);
 
     gRemappedIcon = MemAlloc(0x12cL, 0);
-    gStatusLine = 0;
+    gDrawPage = 0;
     sprintf(gFileNameBuf, "ITEMRMP.%s", gGraphicsChoice == 3 ? "VGA" : "EGA");
     handle = FileOpen(gFileNameBuf, 1);
     FileRead(handle, gItemRemapTable, 0x640L);
@@ -365,28 +365,28 @@ extern void FileClose(int handle); /*@ 1C0E:03BB */
     for (i = 0; i < 3; i++)
         for (j = 0; j < 4; j++)
             gCompassIcons[i * 4 + j] = gGetSpriteCell(j * 3, gCompassRowTops[i], 3, gCompassRowHeights[i], gSheetDECORATE);
-    gStatusLine = 0;
+    gDrawPage = 0;
 }
 
 /* ovl2:078D: draws the INTRO screen for the "load a saved game" panel: loads the INTRO page into
-   gOverlayBuf (LoadScreenImage, mode 2), marks the status line up, saves the pixels under (0, 0)
+   gOverlayBuf (LoadScreenImage, mode 2), draws to page 2 (gDrawPage), saves the pixels under (0, 0)
    with gGetPixel and fills the rectangle (0, 0x9f)-(0x13f, 0xc7) with the returned handle as
    gFillRect's colour argument (a saved-pixel handle used as a colour; src/E0EF3.C:389-390,
    src/E082C.C:64), draws the two panel frames, clips a 40 by 200 region at (0, 0) (0x28 and 0xc8
-   are the width and height, the same rectangle src/E082C.C:317 makes) and clears the status line.
+   are the width and height, the same rectangle src/E082C.C:317 makes) and sets the draw page back to 0.
    It cuts no sprite cells. Called by LoadItemData. */
 /*@ ovl2:078D */ void LoadIntroScreen(void)
 {
     int handle;
 
     LoadScreenImage("INTRO", gOverlayBuf, 5, 3, 2);
-    gStatusLine = 2;
+    gDrawPage = 2;
     handle = gGetPixel(0, 0);
     gFillRect(0, 0x9f, 0x13f, 0xc7, handle);
     DrawFilledPanel(0x4d, 0xa5, 0xf9, 0xc1, 0xd, 0xe, 0xc);
     DrawFilledPanel(0x4c, 0xa4, 0xfa, 0xc2, 0xd, 0xe, -1);
     ClipRect(0, 0, 0, 0, 0x28, 0xc8, 2, 0);
-    gStatusLine = 0;
+    gDrawPage = 0;
 }
 
 /* ovl2:0846: the title menu's "load a saved game" panel. Draws the panel (DrawOptionList) and waits
@@ -511,7 +511,7 @@ extern void FileClose(int handle); /*@ 1C0E:03BB */
     font = gCurFont;
     SetFont(gFont8x8);
     gColour179 = gPanelFillColour;
-    gStatusLine = 0;
+    gDrawPage = 0;
     SetTextWindow(0xd);
     gSaveRectFromPage(gTextLeft, gTextTop, gTextWidth, gTextHeight, gSegDF4E);
     tries = 0;

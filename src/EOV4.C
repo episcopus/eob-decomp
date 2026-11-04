@@ -387,7 +387,7 @@ extern void far *gItemL1Icons[][4]; /*@ ds:EC9A */  /* far sprite cells, one 4-c
 extern int gViewSlotCenterX[]; /*@ ds:19E5 */           /* per-slot x base (this unit) */
 extern int gViewColLeft; /*@ ds:FE3E */      /* the visible left column (this unit) */
 extern int gViewColRight; /*@ ds:FE40 */     /* the visible right column (this unit) */
-extern void DrawShapeClipped(int mode, void far *src, int x, int y, int region); /*@ 082C:063B */
+extern void DrawShapeClipped(int page, void far *src, int x, int y, int region); /*@ 082C:063B */
 
 /* ovl4:0AD0: draws the map object that one view slot's tile record names at word +5, as a run of
    sprite cells taken from the circular item list at ds:8DD0. `slot` is the view slot, `field` the
@@ -534,9 +534,9 @@ extern char gHitFlashRemapCga[]; /*@ ds:1CE3 */  /* the 16-byte colour row ds:80
 extern void BlitSpriteEga(void far *src, void far *dst); /*@ 17A6:1715 */
 extern void BlitSpriteCga(void far *src, void far *dst); /*@ 17A6:11CD */
 extern void BlitSpriteDefault(void far *src, void far *dst); /*@ 17A6:0FFA */
-extern void DrawShapeClippedFlipped(int mode, void far *src, int x, int y, int region); /*@ 082C:0681 */
-extern void DrawShapeClippedRemapped(int mode, void far *src, int x, int y, int region); /*@ 082C:06C7 */
-extern void DrawShapeClippedRemapFlipped(int mode, void far *src, int x, int y, int region); /*@ 082C:070D */
+extern void DrawShapeClippedFlipped(int page, void far *src, int x, int y, int region); /*@ 082C:0681 */
+extern void DrawShapeClippedRemapped(int page, void far *src, int x, int y, int region); /*@ 082C:06C7 */
+extern void DrawShapeClippedRemapFlipped(int page, void far *src, int x, int y, int region); /*@ 082C:070D */
 
 /* ovl4:0D1B: draws the map objects whose ds:8A82 record id matches the cell the player's facing
    points at. The cell id is (gPartyCell + gViewCellOffsets[gPartyDir * 18 + slot]) & 0x3ff; the 30 object
@@ -1132,7 +1132,7 @@ extern int gCompassDir; /*@ ds:7296 */              /* the page the rows were la
 extern int gCompassY[]; /*@ ds:7290 */             /* per-row y (this unit) */
 extern int gCompassX[]; /*@ ds:728A */             /* per-row x (this unit) */
 extern void far *gCompassIcons[]; /*@ ds:A92A */    /* per-page, per-row far image pointers (this unit) */
-extern void DrawShape(int mode, void far *src, int x, int y, int region); /*@ 1A29:000F */
+extern void DrawShape(int page, void far *src, int x, int y, int region); /*@ 1A29:000F */
 extern void HidePointerZone(int left, int top, int right, int bottom); /*@ 1BBE:01FE */
 extern void ShowPointerZone(void); /*@ 1BBE:02C2 */
 

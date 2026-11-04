@@ -69,7 +69,7 @@ extern int gGraphicsChoice; /*@ ds:8102: the graphics mode chosen at start-up: 0
                              for 3, the MCGA/VGA art suffix (the sprintf below) */
 extern int gClickX; /*@ ds:8140: x of the last click, written by src/E1AAD.ASM:396 and also read by src/E14EF.C:325 */
 extern int gClickY; /*@ ds:8142: y of the last click, written by src/E1AAD.ASM:405 and also read by src/E14EF.C:325 */
-extern int gStatusLine; /*@ ds:8115: nonzero while a status line is up (set to 2 by LoadOverlayScreen) */
+extern int gDrawPage; /*@ ds:8115: the graphics driver's draw page (2 while LoadOverlayScreen draws off screen) */
 extern unsigned long gTicks; /*@ ds:848A: the game's own 32-bit tick counter, stepped by the INT 1Ch handler at src/E1D8F.ASM:76 (label 1D8F:0055); the increment of ds:848A is at src/E1D8F.ASM:91 (`inc word ptr ds:[848Ah]`) */
 extern char gFileNameBuf[]; /*@ ds:FE6E */ /* the shared text buffer the filename/format helpers and the memory report build into */
 extern char gOverlayBuf[]; /*@ ds:113F */ /* the DGROUP image buffer, passed as LoadScreenImage's extra pointer to CopyPage, which hands it to the far handler at ds:8046 only when two slots hold non-zero segments that differ (src/E19EC.C:29-35); overlays cut sprite cells out of it (src/EOV2.C:209, src/EOV5.C:1021) */
@@ -97,10 +97,10 @@ extern void FileClose(int slot); /*@ 1C0E:03BB: `slot` is FileOpen's slot index,
 extern void ShutdownGame(void); /*@ 07C8:058A */
 extern void PlaySound(int sound); /*@ 177D:0070 */
 extern void DrawText(char far *text); /*@ 1DE7:060A */  /* the text console's string renderer (src/E1DE7.C) */
-extern void DrawShape(int mode, void far *src, int x, int y, int region); /*@ 1A29:000F */
-extern void DrawShapeFlipped(int mode, void far *src, int x, int y, int region); /*@ 1A29:004D */
-extern void DrawShapeRemapped(int mode, void far *src, int x, int y, int region); /*@ 1A29:008B */
-extern void DrawShapeFlippedRemapped(int mode, void far *src, int x, int y, int region); /*@ 1A29:00C9 */
+extern void DrawShape(int page, void far *src, int x, int y, int region); /*@ 1A29:000F */
+extern void DrawShapeFlipped(int page, void far *src, int x, int y, int region); /*@ 1A29:004D */
+extern void DrawShapeRemapped(int page, void far *src, int x, int y, int region); /*@ 1A29:008B */
+extern void DrawShapeFlippedRemapped(int page, void far *src, int x, int y, int region); /*@ 1A29:00C9 */
 extern void FlushKeyBuffer(void); /*@ 1AAD:0480 */
 extern int ReadKey(void); /*@ 1AAD:038E */
 extern int WaitGameKey(void); /*@ 1AAD:053A */
@@ -326,7 +326,7 @@ done:
 }
 
 /* 082C:05EC: load the art page `name` into the slot `dstKind` (LoadPacked) and mark the status
-   line as up (gStatusLine = 2). With mode -1 LoadScreenImage skips the 19EC:002A blit, so nothing
+   line as up (gDrawPage = 2). With mode -1 LoadScreenImage skips the 19EC:002A blit, so nothing
    is drawn here: the page reaches the screen only when `dstKind` is itself a screen slot (segment
    0xB800 or 0xA000, src/E19EC.C:5-7). Called by many overlays, all with dstKind 3, for example
    src/EOV0.C:1328 and src/EOV2.C:208. `name` is the art name the caller passes (for example
@@ -335,7 +335,7 @@ done:
 /*@ 082C:05EC */ void LoadOverlayScreen(char far *name, int srcKind, int dstKind)
 {
     LoadScreenImage(name, gOverlayBuf, srcKind, dstKind, -1);
-    gStatusLine = 2;
+    gDrawPage = 2;
 }
 
 /* 082C:0613: the point (x, y) is inside the inclusive rectangle built from its left, top, right
@@ -355,44 +355,44 @@ done:
    front end's address. It makes the coordinates relative to `region`: x is first rounded down to an
    even value and the region's left edge in pixels (left * 8) is subtracted, y has the region's top
    line subtracted. */
-/*@ 082C:063B */ void DrawShapeClipped(int mode, void far *src, int x, int y, int region)
+/*@ 082C:063B */ void DrawShapeClipped(int page, void far *src, int x, int y, int region)
 {
     x &= -2;
     x -= gRegions[region].left * 8;
     y -= gRegions[region].top;
-    DrawShape(mode, src, x, y, region);
+    DrawShape(page, src, x, y, region);
 }
 
 /* 082C:0681: like DrawShapeClipped (even rounding of x and the region-relative coordinates) but
    through the region front end 1A29:004D, which is Purpose unknown, so the name is only that
    front end's address. */
-/*@ 082C:0681 */ void DrawShapeClippedFlipped(int mode, void far *src, int x, int y, int region)
+/*@ 082C:0681 */ void DrawShapeClippedFlipped(int page, void far *src, int x, int y, int region)
 {
     x &= -2;
     x -= gRegions[region].left * 8;
     y -= gRegions[region].top;
-    DrawShapeFlipped(mode, src, x, y, region);
+    DrawShapeFlipped(page, src, x, y, region);
 }
 
 /* 082C:06C7: like DrawShapeClipped (even rounding of x and the region-relative coordinates) but
    through the region front end 1A29:008B, which is Purpose unknown, so the name is only that
    front end's address. */
-/*@ 082C:06C7 */ void DrawShapeClippedRemapped(int mode, void far *src, int x, int y, int region)
+/*@ 082C:06C7 */ void DrawShapeClippedRemapped(int page, void far *src, int x, int y, int region)
 {
     x &= -2;
     x -= gRegions[region].left * 8;
     y -= gRegions[region].top;
-    DrawShapeRemapped(mode, src, x, y, region);
+    DrawShapeRemapped(page, src, x, y, region);
 }
 
 /* 082C:070D: like DrawShapeClipped through the region front end 1A29:00C9, which is Purpose unknown,
    so the name is only that front end's address; unlike the other three wrappers it does not round
    x down to an even value. */
-/*@ 082C:070D */ void DrawShapeClippedRemapFlipped(int mode, void far *src, int x, int y, int region)
+/*@ 082C:070D */ void DrawShapeClippedRemapFlipped(int page, void far *src, int x, int y, int region)
 {
     x -= gRegions[region].left * 8;
     y -= gRegions[region].top;
-    DrawShapeFlippedRemapped(mode, src, x, y, region);
+    DrawShapeFlippedRemapped(page, src, x, y, region);
 }
 
 /* 082C:074D: draw a bevelled rectangle: the top and right edges in `colourA`, the left and bottom
@@ -434,7 +434,7 @@ done:
    _HEAPCORRUPT -1, build/toolchain/tc100/INCLUDE/ALLOC.H:12-17; 0x74B0 is both _heapcheck and
    _farheapcheck, build/re/rtl_compare.json) it prints the "%lu:%lu" report with the largest free
    block and then farcoreleft; when heapcheck reports corruption it prints the "HEAP CORRUPT!!"
-   message with the largest free block. gStatusLine, the status-line flag, is cleared while the
+   message with the largest free block. the draw page gDrawPage is set to 0 while the
    report is drawn and restored after. The report is built in gFileNameBuf, the shared text buffer.
    Both cited files sit under build/ (git-ignored, so absent from a clean clone): ALLOC.H is
    installed by `make tc-install` and rtl_compare.json written by `make rtl-compare`. */
@@ -442,8 +442,8 @@ done:
 {
     int saved;
 
-    saved = gStatusLine;
-    gStatusLine = 0;
+    saved = gDrawPage;
+    gDrawPage = 0;
     if (heapcheck() >= 0)
         sprintf(gFileNameBuf, "%lu:%lu", LargestFreeBlock(), farcoreleft());
     else
@@ -451,7 +451,7 @@ done:
     gDrawText(gFileNameBuf, x, y, 0xf, 0xc);  /* 0xF foreground, 0xC the shadow colour */
     if (wait)
         WaitGameKey();
-    gStatusLine = saved;
+    gDrawPage = saved;
 }
 
 /* 082C:0898: draw one text string at (x, y): first its drop shadow at (x-1, y), (x, y+1) and

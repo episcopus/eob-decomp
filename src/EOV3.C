@@ -147,7 +147,7 @@ extern void far *gB802[]; /*@ ds:B802 */
 extern int g6930[]; /*@ ds:6930 */
 extern int g69C0[]; /*@ ds:69C0 */
 extern int g6A50[]; /*@ ds:6A50 */
-extern int gStatusLine; /*@ ds:8115 */
+extern int gDrawPage; /*@ ds:8115 */
 extern char gOverlayBuf[]; /*@ ds:113F */
 
 struct Rect {               /* a four-word cell rectangle (x, y, w, h) */
@@ -363,7 +363,7 @@ struct WallDec {            /* the 52-byte wall-set decorations LoadWallSet read
    For `srcA` (when not -1) it slices three cells from the 4-byte rectangles at ds:6840 into gDoorShapes
    starting at `dstA` and three more from ds:68A0 into gDoorButtons[dstA].rec, and copies the x and y bytes of
    gDoorButtons[dstA] from ds:6900. For `srcB` (when not -1) it slices the three cells at `dstB` the same way,
-   but reads its ds:6900 x/y pair with srcA's index (QUIRK ovl3:0597). Clears gStatusLine. Called by
+   but reads its ds:6900 x/y pair with srcA's index (QUIRK ovl3:0597). Clears gDrawPage. Called by
    ovl3:0A7C. */
 /*@ ovl3:03A2 */ void LoadMapCells(int srcA, int dstA, int srcB, int dstB)
 {
@@ -395,7 +395,7 @@ second:
         gDoorButtons[dstB + i].y = g6900[j + 1];
     }
 done:
-    gStatusLine = 0;
+    gDrawPage = 0;
 }
 /* ovl3:05D2: frees and clears the `count` map icon pointers in gB802 starting at index `base`.
    Called by ovl3:0A7C and overlay 5. */
@@ -414,7 +414,7 @@ done:
 }
 /* ovl3:0624: loads the overlay screen `screen` and slices six map icon cells out of gOverlayBuf
    (ds:113F), one per 4-word rectangle in the table at ds:6930, into gB802 starting at index
-   `dest`. Clears gStatusLine. Called through the `handlers` table LoadMapScreen builds (ovl3:0A7C,
+   `dest`. Clears gDrawPage. Called through the `handlers` table LoadMapScreen builds (ovl3:0A7C,
    ds:6A80 initialiser). */
 /*@ ovl3:0624 */ void LoadMapIcons6(char far *screen, int dest)
 {
@@ -427,7 +427,7 @@ done:
     for (i = 0, si = 0; i < n; si += 4, i++)
         gB802[dest + i] = gGetSpriteCell(g6930[si], g6930[si + 1], g6930[si + 2],
             g6930[si + 3], gOverlayBuf);
-    gStatusLine = 0;
+    gDrawPage = 0;
 }
 /* ovl3:069E: the same as ovl3:0624 but slices the six cells from the 4-word rectangle table at
    ds:69C0 instead of ds:6930. Called through the `handlers` table LoadMapScreen builds (ds:6A80
@@ -443,11 +443,11 @@ done:
     for (i = 0, si = 0; i < n; si += 4, i++)
         gB802[dest + i] = gGetSpriteCell(g69C0[si], g69C0[si + 1], g69C0[si + 2],
             g69C0[si + 3], gOverlayBuf);
-    gStatusLine = 0;
+    gDrawPage = 0;
 }
 /* ovl3:0718: builds the screen name `name` + "1" through sprintf("%s1"), loads it through
    LoadOverlayScreen and slices six map icon cells out of gOverlayBuf using the 4-word rectangle
-   table at ds:6A50 into gB802 starting at index `dest`. Clears gStatusLine. Called through the
+   table at ds:6A50 into gB802 starting at index `dest`. Clears gDrawPage. Called through the
    `handlers` table LoadMapScreen builds (ds:6A80 initialiser). */
 /*@ ovl3:0718 */ void LoadNamedIcons(char far *name, int dest)
 {
@@ -460,7 +460,7 @@ done:
     for (i = 0, si = 0; i < 6; si += 4, i++)
         gB802[dest + i] = gGetSpriteCell(g6A50[si], g6A50[si + 1], g6A50[si + 2],
             g6A50[si + 3], gOverlayBuf);
-    gStatusLine = 0;
+    gDrawPage = 0;
 }
 /* ovl3:07A5: loads a wall texture set for `name`. It builds the file name "<name>.VCN" (VGA mode
    3) or "<name>.ECN" (otherwise) into gFileNameBuf; when `name` is NULL it reuses the name kept
@@ -679,7 +679,7 @@ done:
             script += 5;
         }
     }
-    gStatusLine = 0;
+    gDrawPage = 0;
     scriptWord = *(int far *)gBuf8DCA;
     script = gBuf8DCA + scriptWord;
     itemCount = *(int far *)script;
@@ -721,7 +721,7 @@ done:
             *src++ = gMaze[i * 9 + j];
     len = CompressLcw((char far *)gBufDCFC, (char far *)buf, 0x1000);
     if (len > 0x4b0) {
-        gStatusLine = 0;
+        gDrawPage = 0;
         sprintf(gFileNameBuf, "Map compression failure: size of map = %d", len);
         gDrawText(gFileNameBuf, 0, 0, 0xf, 0);
         WaitKeyEvent();

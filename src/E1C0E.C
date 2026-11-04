@@ -58,7 +58,7 @@ extern void far *gFont8x8;                                                  /*@ 
 extern void far *gCurFont;                                                 /*@ ds:FE4E: the current font (E1A47.C) */
 
 /* DGROUP globals and indirect far functions. */
-extern int gStatusLine;                        /*@ ds:8115: nonzero while a status line is up (E082C.C) */
+extern int gDrawPage;                        /*@ ds:8115: the graphics driver's draw page (E082C.C) */
 extern int gTextRegion;                        /*@ ds:811F */
 extern int gGraphicsChoice;                        /*@ ds:8102: the video mode the game initialised (E07A9.C) */
 extern int gTextLeft;                    /*@ ds:FE64: the text window's left edge, 8-pixel columns */
@@ -505,7 +505,7 @@ extern long gSlotLengths[];              /*@ ds:FF0C: the record's length per sl
     close(fd);
     return 1;
 }
-/* 1C0E:0ADD: the file error dialog. It hides the mouse pointer, saves the status-line flag, the
+/* 1C0E:0ADD: the file error dialog. It hides the mouse pointer, saves the draw page gDrawPage, the
    window region and the current font, switches to the 8x8 font gFont8x8 and the region gErrorDialogRegion, and
    frames the window with four 0xf lines through gDrawLine. It shows the message gErrorText[code]
    (the array of FatalError texts at ds:8196); when `code` is MSG_NOT_FOUND ("Could not find") it
@@ -536,8 +536,8 @@ extern long gSlotLengths[];              /*@ ds:FF0C: the record's length per sl
 
     bufSize = 0;
     LockHidePointer();
-    savedStatusLine = gStatusLine;
-    gStatusLine = 0;
+    savedStatusLine = gDrawPage;
+    gDrawPage = 0;
     title = gErrorText[code];
     savedTextRegion = gTextRegion;
     savedFont = gCurFont;
@@ -603,23 +603,23 @@ extern long gSlotLengths[];              /*@ ds:FF0C: the record's length per sl
         MemFree(gMsgBuf);
         gMsgBuf = 0;
     }
-    gStatusLine = savedStatusLine;
+    gDrawPage = savedStatusLine;
     LockShowPointer();
     return 1;
 }
 
 
-/* 1C0E:0D9B: clear the status-line flag ds:8115 while 1C0E:0ADD draws its message box, then put
+/* 1C0E:0D9B: draw to page 0 (gDrawPage, ds:8115) while 1C0E:0ADD draws its message box, then put
    the old value back and return 1. This is the fatal file error handler stored at ds:8104
    (gFatalHandler; the image holds 1C0E:0D9B there, file offset 2BBE4); `code` is the FatalError
    code, the index into gErrorText (1C0E:00AA). */
 /*@ 1C0E:0D9B */ int ShowMessage(int code, char far *name)
 {
-    int saved = gStatusLine;
+    int saved = gDrawPage;
 
-    gStatusLine = 0;
+    gDrawPage = 0;
     DisplayFileError(code, name);
-    gStatusLine = saved;
+    gDrawPage = saved;
     return 1;
 }
 

@@ -42,24 +42,20 @@ extern int gRegionRight;         /*@ ds:FE4C */  /* selected region's right edge
 extern int gRegionTop;           /*@ ds:FE46 */  /* selected region's top line */
 extern int gRegionBottom;        /*@ ds:FE44 */  /* selected region's bottom line (top + height), in lines */
 
-/* The driver's drawing entry points. No writer of these words exists in the resident code, so
-   they are filled at load time [H]; their meanings are unknown and their first argument `mode`
-   is passed straight through. This unit calls each of the five pointers other than ds:80C2
-   (80A6, 80D6, 80DA, 809A, 8096) once, from its own front end (for example 1A29:0082 `lcall
-   [0x80a6]`), and calls ds:80C2 once from DrawShape (1A29:0044 `lcall [0x80c2]`). It is not
-   the only caller of ds:80C2: ShowPointer (1BBE:00ED, src/E1BBE.ASM:252-258) calls the same
-   pointer at 1BBE:01F4 (`mov ax, 0` at 1BBE:01F0) with a literal 0 for `mode`, bypassing this
-   unit. gSetRegion below is called once, in SelectRegion (1A29:01DB `lcall [0x80b6]`).
-   The `gDraw` prefix is a family guess: only ds:80C2 is evidenced as drawing (ShowPointer
-   draws the mouse shape through it, src/E1BBE.ASM:252-258); ds:8062, another pointer of the
-   same kind, is gDrawLine (src/E1A1F.C:6), which supports the family but is not evidence for
-   these six. */
-extern void (far *gDrawShape)(int mode, void far *src, int x, int y);        /*@ ds:80C2 */
-extern void (far *gDrawShapeFlipped)(int mode, void far *src, int x, int y);        /*@ ds:80A6 */
-extern void (far *gDrawShapeRemapped)(int mode, void far *src, int x, int y);        /*@ ds:80D6 */
-extern void (far *gDrawShapeFlippedRemapped)(int mode, void far *src, int x, int y);        /*@ ds:80DA */
-extern void (far *gDrawShapeMasked)(int mode, void far *src, int x, int y, int extra); /*@ ds:809A */
-extern void (far *gDrawShapeMaskedFlipped)(int mode, void far *src, int x, int y, int extra); /*@ ds:8096 */
+/* The graphics driver's drawing entry points: slots of the driver's export table at ds:8046,
+   which the driver fills when it loads (the overlay request at ds:8121 points at ds:802A; MCGA.OVL
+   0BF2 to 0C2F copies the game's imports and writes its exports). Their first argument is the
+   destination page, which the driver turns into a segment through gPageSegs (MCGA.OVL 0B3F).
+   This unit calls each of them once from its own front end (for example 1A29:0082 `lcall
+   [0x80a6]`), DrawShape calls ds:80C2 (1A29:0044); ShowPointer (1BBE:00ED, src/E1BBE.ASM:252-258)
+   also calls ds:80C2, at 1BBE:01F4, with page 0. gSetRegion below is called once, in SelectRegion
+   (1A29:01DB `lcall [0x80b6]`). */
+extern void (far *gDrawShape)(int page, void far *src, int x, int y);        /*@ ds:80C2 */
+extern void (far *gDrawShapeFlipped)(int page, void far *src, int x, int y);        /*@ ds:80A6 */
+extern void (far *gDrawShapeRemapped)(int page, void far *src, int x, int y);        /*@ ds:80D6 */
+extern void (far *gDrawShapeFlippedRemapped)(int page, void far *src, int x, int y);        /*@ ds:80DA */
+extern void (far *gDrawShapeMasked)(int page, void far *src, int x, int y, int extra); /*@ ds:809A */
+extern void (far *gDrawShapeMaskedFlipped)(int page, void far *src, int x, int y, int extra); /*@ ds:8096 */
 /* called with (left, right, top, bottom) after a region is selected */
 extern void (far *gSetRegion)(int left, int right, int top, int bottom);    /*@ ds:80B6 */
 
@@ -72,74 +68,73 @@ void SelectRegion(int region);
    bypasses this front end: ShowPointer (1BBE:00ED) calls the driver pointer ds:80C2 directly at
    1BBE:01F4 (`mov ax, 0` at 1BBE:01F0; src/E1BBE.ASM:252-258), passing the shape record
    ([816E]:[8170], gPointerShapeOff and gPointerShapeSeg, re/renames.toml) as `src` at the
-   unclipped absolute position gShapeX/gShapeY, with no region origin added, and a literal 0 as
-   `mode`. This front end is called from 20 functions (9 in the resident code, 11 in the
+   unclipped absolute position gShapeX/gShapeY, with no region origin added, and page 0. This front end is called from 20 functions (9 in the resident code, 11 in the
    overlays; for example 082C:063B, the `lcall 1A29:000F` at 082C:0675), which pass
    region-relative coordinates. */
-/*@ 1A29:000F */ void DrawShape(int mode, void far *src, int x, int y, int region)
+/*@ 1A29:000F */ void DrawShape(int page, void far *src, int x, int y, int region)
 {
     if (!src)
         return;
     if (region != gCurRegion)
         SelectRegion(region);
-    gDrawShape(mode, src, x + gRegionLeftPx, y + gRegionTop);
+    gDrawShape(page, src, x + gRegionLeftPx, y + gRegionTop);
 }
 
 /* 1A29:004D: Purpose unknown: a front end over the driver pointer ds:80A6, identical to
    1A29:000F otherwise (null check, lazy region select, region-relative x and y). */
-/*@ 1A29:004D */ void DrawShapeFlipped(int mode, void far *src, int x, int y, int region)
+/*@ 1A29:004D */ void DrawShapeFlipped(int page, void far *src, int x, int y, int region)
 {
     if (!src)
         return;
     if (region != gCurRegion)
         SelectRegion(region);
-    gDrawShapeFlipped(mode, src, x + gRegionLeftPx, y + gRegionTop);
+    gDrawShapeFlipped(page, src, x + gRegionLeftPx, y + gRegionTop);
 }
 
 /* 1A29:008B: Draws a shape like DrawShape but through the driver's colour-remapping entry ds:80D6, after the caller has set the remap row through ds:80D2. a front end over the driver pointer ds:80D6, identical to
    1A29:000F otherwise (null check, lazy region select, region-relative x and y). */
-/*@ 1A29:008B */ void DrawShapeRemapped(int mode, void far *src, int x, int y, int region)
+/*@ 1A29:008B */ void DrawShapeRemapped(int page, void far *src, int x, int y, int region)
 {
     if (!src)
         return;
     if (region != gCurRegion)
         SelectRegion(region);
-    gDrawShapeRemapped(mode, src, x + gRegionLeftPx, y + gRegionTop);
+    gDrawShapeRemapped(page, src, x + gRegionLeftPx, y + gRegionTop);
 }
 
 /* 1A29:00C9: Purpose unknown: a front end over the driver pointer ds:80DA, identical to
    1A29:000F otherwise (null check, lazy region select, region-relative x and y). */
-/*@ 1A29:00C9 */ void DrawShapeFlippedRemapped(int mode, void far *src, int x, int y, int region)
+/*@ 1A29:00C9 */ void DrawShapeFlippedRemapped(int page, void far *src, int x, int y, int region)
 {
     if (!src)
         return;
     if (region != gCurRegion)
         SelectRegion(region);
-    gDrawShapeFlippedRemapped(mode, src, x + gRegionLeftPx, y + gRegionTop);
+    gDrawShapeFlippedRemapped(page, src, x + gRegionLeftPx, y + gRegionTop);
 }
 
 /* 1A29:0107: Purpose unknown: a front end over the driver pointer ds:809A, like 1A29:000F but
    with one extra word forwarded to the driver. No caller of it was found in EOB.EXE or its
    overlays (make packet), so both its role and the meaning of `extra` are unknown. */
-/*@ 1A29:0107 */ void DrawShapeMasked(int mode, void far *src, int x, int y, int region, int extra)
+/*@ 1A29:0107 */ void DrawShapeMasked(int page, void far *src, int x, int y, int region, int extra)
 {
     if (!src)
         return;
     if (region != gCurRegion)
         SelectRegion(region);
-    gDrawShapeMasked(mode, src, x + gRegionLeftPx, y + gRegionTop, extra);
+    gDrawShapeMasked(page, src, x + gRegionLeftPx, y + gRegionTop, extra);
 }
 
 /* 1A29:0148: Purpose unknown: a front end over the driver pointer ds:8096, like 1A29:000F but
    with one extra word forwarded to the driver. No caller of it was found in EOB.EXE or its
    overlays (make packet), so both its role and the meaning of `extra` are unknown. */
-/*@ 1A29:0148 */ void DrawShapeMaskedFlipped(int mode, void far *src, int x, int y, int region, int extra)
+/*@ 1A29:0148 */ void DrawShapeMaskedFlipped(int page, void far *src, int x, int y, int region, int extra)
 {
     if (!src)
         return;
     if (region != gCurRegion)
         SelectRegion(region);
-    gDrawShapeMaskedFlipped(mode, src, x + gRegionLeftPx, y + gRegionTop, extra);
+    gDrawShapeMaskedFlipped(page, src, x + gRegionLeftPx, y + gRegionTop, extra);
 }
 
 /* 1A29:0189: makes `region` the current one. `region` is an index into gRegions (the record is

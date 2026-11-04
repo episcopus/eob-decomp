@@ -208,7 +208,7 @@ extern unsigned char gTileY[31];        /*@ ds:1C49 */  /* Purpose unknown: y ro
 extern unsigned gStarX[31];             /*@ ds:1C68 */  /* Purpose unknown: x to draw each star, ovl0:015D */
 extern unsigned char gStarY[31];        /*@ ds:1CA6 */  /* Purpose unknown: y of each star, ovl0:015D */
 extern unsigned char gTileScale[31];    /*@ ds:1CC5 */  /* Purpose unknown: size of each tile, ovl0:015D */
-extern void DrawShape(int mode, void far *src, int x, int y, int region); /*@ 0998:0008 */
+extern void DrawShape(int page, void far *src, int x, int y, int region); /*@ 0998:0008 */
 extern void MemFree(void far *block); /*@ 094F:0137 */
 
 /* ovl0:015D: the WTRDP scene, the tutorial corridor. It loads the WTRDP2 palette and the
@@ -954,7 +954,7 @@ extern unsigned char gZoomW[6];         /*@ ds:1D10 */  /* Purpose unknown: widt
 extern unsigned char gZoomH[6];         /*@ ds:1D16 */  /* Purpose unknown: height of each zoom rect, ovl0:23A3 */
 extern unsigned char gZoomX2[6];        /*@ ds:1D1C */  /* Purpose unknown: x2 of each zoom rect, ovl0:23A3 */
 extern unsigned char gZoomY2[6];        /*@ ds:1D22 */  /* Purpose unknown: y2 of each zoom rect, ovl0:23A3 */
-extern void DrawShapeFlipped(int mode, void far *src, int x, int y, int region); /*@ 0998:0046 */
+extern void DrawShapeFlipped(int page, void far *src, int x, int y, int region); /*@ 0998:0046 */
 
 /* ovl0:23A3: the AVALANCH/ZOOMTUNL scene. It cuts two 0x14 by 0x78 panels out of gOverlayBuf
    and flashes them three times with ClipRect wipes, sound 7 twice per pass, six plays in

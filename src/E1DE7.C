@@ -11,7 +11,7 @@
    default 0x0F at E07C8.C:262, DEFAULT_TEXT_ATTR1 at :21) and ds:811B (gTextAttr2, the fill colour of
    ClearTextRegion and of the redrawn scroll line, default 0x0C at E07C8.C:263, DEFAULT_TEXT_ATTR2 at :21);
    the initial region record gRegions[0] at ds:009F (file offset 0x23B7F) holds textAttr1 = 0x0F and
-   textAttr2 = 0x0C (ds:00A7 and ds:00A9). ds:8115 is the status-line flag
+   textAttr2 = 0x0C (ds:00A7 and ds:00A9). ds:8115 is the graphics driver's draw page gDrawPage
    (src/E082C.C:72; set to 2 by LoadOverlayScreen at 082C:05EC, saved and cleared around
    the memory report at 082C:081A). Compiled with -G (the two-byte argument clean-ups are
    `inc sp; inc sp`). */
@@ -83,12 +83,12 @@ extern void (far *gDrawText)(char far *text, int x, int y, int color, int extra)
    words 0xAC and 0x2D0 at EOV5.C:1114-1115 are the offset and segment of the far pointer). */
 extern void (far *gScrollHook)(void);  /*@ ds:8117 */
 extern char gScrollOn;     /*@ ds:8110 */  /* overlay 5 sets it to 1 beside the hook (EOV5.C:1110, :1114-1115) and the hook is gated by it at src/E1DE7.C:274 */
-/* ds:8115: the status-line flag, nonzero while a status line is up (src/E082C.C:72); it is set to 2
+/* ds:8115: gDrawPage, the page the graphics driver draws to (src/E082C.C:72); it is set to 2
    by LoadOverlayScreen (082C:05EC), saved and cleared around the memory
    report ShowMemoryDiagnostics (082C:081A) and the message box (src/E1C0E.C:589), and cleared
    while a node is drawn (src/E16A5.C:511). Passed twice as the two extra arguments of ClipRect
    here. */
-extern int gStatusLine;          /*@ ds:8115 */
+extern int gDrawPage;          /*@ ds:8115 */
 
 /* 1DE7:0009: make `region` (an index into gRegions) the active text window. The first call only
    sets gTextSaved; after that, the window being left has its live attributes and cursor saved back
@@ -278,7 +278,7 @@ extern unsigned far *gFrameTable[]; /*@ ds:113B */
     if (gTextHeight - gFontHeight < y) {
         HidePointerZone(gTextLeft * 8, gTextTop, (gTextLeft + gTextWidth) * 8, gTextTop + gTextHeight);
         bottomLine = (gTextHeight / gFontHeight - 1) * gFontHeight;
-        ClipRect(gTextLeft, gTextTop + gFontHeight, gTextLeft, gTextTop, gTextWidth, bottomLine, gStatusLine, gStatusLine);
+        ClipRect(gTextLeft, gTextTop + gFontHeight, gTextLeft, gTextTop, gTextWidth, bottomLine, gDrawPage, gDrawPage);
         gFillRect(gTextLeft * 8, gTextTop + bottomLine, (gTextLeft + gTextWidth) * 8 - 1,
                   gTextTop + bottomLine + gFontHeight - 1, gTextAttr2);
         gDrawText(text, gTextLeft * 8, gTextTop + bottomLine, gTextAttr1, gTextAttr2);

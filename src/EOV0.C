@@ -42,14 +42,14 @@ struct IconDef4 {               /* 4-byte rectangle records at 2080 (the icon ce
 extern struct IconDef4 far gPanelIconRects[]; /*@ 2080:0000 */
 
 extern void ClipRect(int x1, int y1, int x2, int y2, int width, int height, int extra1, int extra2); /*@ 19F3:000E */
-extern void DrawShape(int mode, void far *src, int x, int y, int region); /*@ 1A29:000F */
+extern void DrawShape(int page, void far *src, int x, int y, int region); /*@ 1A29:000F */
 extern void HidePointerZone(int left, int top, int right, int bottom); /*@ 1BBE:01FE */
 extern void ShowPointerZone(void); /*@ 1BBE:02C2 */
 extern void movmem(void far *src, void far *dst, unsigned n); /*@ 0000:63A3 */
 extern void DrawShadowText(char far *text, int x, int y, int color, int extra); /*@ 082C:0898 */
 extern void LockHidePointer(void); /*@ 1BBE:0307 */
 extern void LockShowPointer(void); /*@ 1BBE:0332 */
-extern int gStatusLine; /*@ ds:8115 */ /* nonzero while a status line is up (src/E082C.C) */
+extern int gDrawPage; /*@ ds:8115 */ /* the graphics driver's draw page (src/E082C.C) */
 extern char gStrPartyComplete[]; /*@ ds:613D */ /* the string the party-status report draws (Purpose unknown) */
 extern void DrawRowList(int index); /*@ 0D1C:0454 */
 
@@ -370,7 +370,7 @@ extern void far *gPanelIconCells[0x11]; /*@ ds:5E64 */ /* the 17 sliced icon poi
 }
 /* ovl0:0504: draws the party-status panel when all four front party slots hold a named character
    (a nonzero first name byte at gChars[i]+2). It counts them, and when there are four it shows the
-   gStrPartyComplete report over the status line (DrawShadowText, gStatusLine = 2), hides the pointer, clips the
+   gStrPartyComplete report on page 2 (DrawShadowText, gDrawPage = 2), hides the pointer, clips the
    report box and draws panel icon 0xf; otherwise it draws icon 0xe. Called by ovl0:1071. */
 /*@ ovl0:0504 */ void DrawPartyStatus(void)
 {
@@ -383,9 +383,9 @@ extern void far *gPanelIconCells[0x11]; /*@ ds:5E64 */ /* the 17 sliced icon poi
             count++;
     count = (count == 4);
     if (count == 1) {
-        gStatusLine = 2;
+        gDrawPage = 2;
         DrawShadowText(gStrPartyComplete, 0xa8, 0x3d, 0xf, 0);
-        gStatusLine = 0;
+        gDrawPage = 0;
         LockHidePointer();
         ClipRect(0x15, 0x3d, 0x13, 0x7d, 0x11, 0x28, 2, 0);
         LockShowPointer();
@@ -428,7 +428,7 @@ extern void far *gPanelIconCells[0x11]; /*@ ds:5E64 */ /* the 17 sliced icon poi
 
     LockHidePointer();
     ClipRect(0, 0, 0x14, 0, 0x14, 0x80, 2, 2);
-    gStatusLine = 2;
+    gDrawPage = 2;
     if (mode != 4)
         DrawShape(2, gChars[index].portrait, 0xe0, 2, 0);
     text = gChars[index].name;
@@ -472,7 +472,7 @@ extern void far *gPanelIconCells[0x11]; /*@ ds:5E64 */ /* the 17 sliced icon poi
     }
     ClipRect(0x14, 0, 0x12, 0x40, 0x14, 0x80, 2, 0);
     LockShowPointer();
-    gStatusLine = 0;
+    gDrawPage = 0;
 }
 /* ovl0:0A4F: draws the row list index 0xa. No direct caller found (reached through an overlay entry
    or jump table). */
@@ -759,18 +759,18 @@ int PickAlignment(int classIndex); /* ovl0:2238, defined below */
     }
     return result;
 }
-/* ovl0:1071: draws the panel report line gStrSelectBoxPrompt at (0xa8, 0x10) over a fresh region (gStatusLine = 2
-   while it draws), restores gStatusLine, redraws the report box and then calls DrawPartyStatus. Called
+/* ovl0:1071: draws the panel report line gStrSelectBoxPrompt at (0xa8, 0x10) over a fresh region (gDrawPage = 2
+   while it draws), restores gDrawPage, redraws the report box and then calls DrawPartyStatus. Called
    by ovl0:28F9. */
 /*@ ovl0:1071 */ void ShowSelectBoxPrompt(void)
 {
     int saved;
 
     ClipRect(0, 0, 0x14, 0, 0x14, 0x80, 2, 2);
-    saved = gStatusLine;
-    gStatusLine = 2;
+    saved = gDrawPage;
+    gDrawPage = 2;
     DrawShadowText(gStrSelectBoxPrompt, 0xa8, 0x10, 0xf, 0);
-    gStatusLine = saved;
+    gDrawPage = saved;
     LockHidePointer();
     ClipRect(0x14, 0, 0x12, 0x40, 0x14, 0x80, 2, 0);
     LockShowPointer();
@@ -784,10 +784,10 @@ int PickAlignment(int classIndex); /* ovl0:2238, defined below */
     int saved;
 
     ClipRect(0, 0, 0x14, 0, 0x14, 0x80, 2, 2);
-    saved = gStatusLine;
-    gStatusLine = 2;
+    saved = gDrawPage;
+    gDrawPage = 2;
     DrawShadowText(gStrEnteringGame, 0xa8, 0x20, 0xf, 0);
-    gStatusLine = saved;
+    gDrawPage = saved;
     LockHidePointer();
     ClipRect(0x14, 0, 0x12, 0x40, 0x14, 0x80, 2, 0);
     LockShowPointer();
@@ -1023,7 +1023,7 @@ int PickAlignment(int classIndex); /* ovl0:2238, defined below */
                 sprintf(gFileNameBuf, gFmtStrengthOnExit, FormatStrengthPercent(*value, *percent));
             else
                 sprintf(gFileNameBuf, gFmtValueOnExit, *value);
-            gStatusLine = 0;
+            gDrawPage = 0;
             LockHidePointer();
             gDrawText(gFileNameBuf, (node->x + 0x20) << 3, node->y, 0xf, 0);
             LockShowPointer();
@@ -1147,7 +1147,7 @@ int PickAlignment(int classIndex); /* ovl0:2238, defined below */
 {
     int choice;
 
-    gStatusLine = 0;
+    gDrawPage = 0;
     LockHidePointer();
     DrawRect(gMemberBoxX[gChargenMember], gMemberBoxY[gChargenMember], gMemberBoxX[gChargenMember] + 0x20, gMemberBoxY[gChargenMember] + 0x21, 0xc);
     ClipRect(0, 0, 0x12, 0x40, 0x14, 0x80, 2, 0);
@@ -1341,7 +1341,7 @@ int PickAlignment(int classIndex); /* ovl0:2238, defined below */
     LoadOverlayScreen(gFileNameChargenA, 5, 3);
     for (i = 0; i < 0x2c; i++)
         gPortraitCells[i] = gGetSpriteCellRle((i % 10) * 4, (i / 10) * 0x20, 4, 0x20, gOverlayBuf);
-    gStatusLine = 0;
+    gDrawPage = 0;
     LoadScreenImage(gFileNameChargen, gOverlayBuf, 5, 3, 0);
     LoadOverlayScreen(gFileNameChargenB, 5, 3);
     for (i = 0; i < 0xa; i++)
@@ -1352,7 +1352,7 @@ int PickAlignment(int classIndex); /* ovl0:2238, defined below */
         ClipRect(0, 0, 0, 0, 0x28, 0xc8, 4, 2);
     } else
         CopyPage(3, 2, FP_OFF(gOverlayBuf), FP_SEG(gOverlayBuf));
-    gStatusLine = 0;
+    gDrawPage = 0;
     ClipRect(0x12, 0x40, 0, 0, 0x14, 0x80, 0, 2);
     LockShowPointer();
 }

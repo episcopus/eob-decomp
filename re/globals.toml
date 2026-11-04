@@ -428,8 +428,8 @@ why = "the graphics choice: Main sets it to argv[1][0] + 1 (src/E07C8.C:229) and
 
 [[global]]
 id = "ds:8115"
-name = "gStatusLine"
-why = "the status-line flag in E082C.C:44, E1C0E.C:589, DrawNode (16A5:07C3) and in the other declarations."
+name = "gDrawPage"
+why = "the page the graphics driver draws to: the driver's import slot ds:8032 points at it (212E:8115) and MCGA.OVL 0B3F reads it masked with 1Fh to index the page segments gPageSegs (ds:FC0C); setting it to 2 draws to page 2; its INTRO.EXE twin ds:1FA1 is gDrawPage"
 
 [[global]]
 id = "ds:8140"

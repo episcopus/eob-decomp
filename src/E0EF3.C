@@ -227,8 +227,8 @@ extern signed char gIconY572D[];        /*@ ds:572D */ /* the icon's y, per memb
 extern void far *gIconTable[];          /*@ ds:FB34 */ /* far sprite pointers indexed by an icon
                                                            magnitude; entry 1 is ds:FB38 (src/EOV2.C
                                                            names the entries gThrownIcon0..2 singly) */
-extern void DrawShapeClipped(int mode, void far *src, int x, int y, int region); /*@ 082C:063B */
-extern void DrawShapeClippedFlipped(int mode, void far *src, int x, int y, int region); /*@ 082C:0681 */
+extern void DrawShapeClipped(int page, void far *src, int x, int y, int region); /*@ 082C:063B */
+extern void DrawShapeClippedFlipped(int page, void far *src, int x, int y, int region); /*@ 082C:0681 */
 extern void DamageNearRowMonsters(int key, char count, char sides, char bonus, char flag); /*@ 08E6:16D6 */
 extern void ClipRect(int x1, int y1, int x2, int y2, int width, int height, int extra1, int extra2); /*@ 19F3:000E */
 
@@ -359,7 +359,7 @@ extern struct FlashDelta gFlashDelta[]; /*@ ds:5631 */ /* four per-frame offsets
 extern int gFlashBaseX[];        /*@ ds:5639 */ /* six per-member x bases */
 extern signed char gFlashBaseY[];/*@ ds:5645 */ /* six per-member y bases */
 extern char far *gFlashFrames[]; /*@ ds:DD1C */ /* far image pointers, indexed by frame - 1 */
-extern void DrawShape(int mode, void far *src, int x, int y, int region); /*@ 1A29:000F */
+extern void DrawShape(int page, void far *src, int x, int y, int region); /*@ 1A29:000F */
 extern int gTimerEnableFlags;           /*@ ds:849E */ /* bit 1 gates the object animation frames
                                                     (src/E08E6.C) */
 extern char far *gBufDCFC;       /*@ ds:DCFC */ /* the 4096-byte screen scratch buffer, one far
@@ -371,7 +371,7 @@ extern unsigned char gFlashX2[];    /*@ ds:56C7 */ /* per-frame x in pixels for 
 extern unsigned char gFlashY2[];    /*@ ds:56D7 */ /* per-frame y in pixels for 0EF3:06E7 */
 extern signed char gViewSlotRow[];      /*@ ds:1A09 */ /* per-slot object index (EOV4.C) */
 extern int gViewPosX[];              /*@ ds:1D61 */ /* per-slot, per-part x table (EOV4.C) */
-extern int gStatusLine;                /*@ ds:8115 */ /* nonzero while a status line is up (E082C.C) */
+extern int gDrawPage;                /*@ ds:8115 */ /* the graphics driver's draw page (E082C.C) */
 extern int gBurstOriginX;                /*@ ds:DD18 */ /* the animation's origin x, written here and read by
                                                    0EF3:2A53 */
 extern int gBurstOriginY;                /*@ ds:DD1A */ /* the animation's origin y */
@@ -410,7 +410,7 @@ extern int gBurstBaseX;                /*@ ds:FC68 */ /* the animation's origin 
 extern int gBurstBaseY;                /*@ ds:FC6A */ /* the animation's origin y, saved from ds:DD1A */
 extern int gBurstX;                /*@ ds:FC6C */ /* a particle's x pixel */
 extern int gBurstY;                /*@ ds:FC6E */ /* a particle's y pixel */
-extern int gBurstSavedPage;                /*@ ds:FC70 */ /* gStatusLine saved while the animation runs */
+extern int gBurstSavedPage;                /*@ ds:FC70 */ /* gDrawPage saved while the animation runs */
 extern int gBurstMaskPixel;                /*@ ds:FC72 */ /* the handle gGetPixel returned under the pointer */
 
 /* 0EF3:000E: bubble-sorts each of the ten six-byte rows that start at a character's +0x37 spell
@@ -459,7 +459,7 @@ extern int gBurstMaskPixel;                /*@ ds:FC72 */ /* the handle gGetPixe
 /* 0EF3:00CD: play the melee hit animation on the view slot the target's cell points at. It maps
    the record's cell (+4) to a word index in the 18-word heading table ds:A9C8, rejects the last
    entry and entry 0x0F, then computes the slot's view span. It clears the record's +0 byte,
-   redraws a full view frame, sets the status line flag, blanks the view box through the gFillRect
+   redraws a full view frame, sets the draw page gDrawPage, blanks the view box through the gFillRect
    hook, draws the view slots from gDepthFirstDrawSlot, computes the span again, hides the pointer, sets the
    animation origin (ds:DD18 from gViewPosX, ds:DD1A = 0x30), plays sound 0x23 and runs the effect
    animation 0EF3:2A53 with the template gAnimTable[gModeRampIndex[m08]] chosen per object index. Called by
@@ -492,10 +492,10 @@ extern int gBurstMaskPixel;                /*@ ds:FC72 */ /* the handle gGetPixe
     rec->m00 = 0;
     DrawViewFrame(1);
     rec->m00 = 2;
-    gStatusLine = 2;
+    gDrawPage = 2;
     gFillRect(0, 0, 0xB0, 0x78, 0);
     DrawViewSlots(gDepthFirstDrawSlot[objIndex]);
-    gStatusLine = 0;
+    gDrawPage = 0;
     ComputeViewSpan(slot, &left, &right, 5);
     LockHidePointer();
     gBurstOriginX = gViewPosX[(slot * 5 + 4) * 2] + 0x58;
@@ -769,7 +769,7 @@ extern int gBurstMaskPixel;                /*@ ds:FC72 */ /* the handle gGetPixe
     for (i = 0; i < 0x10; i++)
         gSaveRect(gFlashX2[i] >> 3, gFlashY2[i], 2, 0x10, gBufDCFC + (i << 8));
     for (pass = 0; pass < 0xB; pass++) {
-        gStatusLine = 2;
+        gDrawPage = 2;
         for (i = 0; i < 0x10; i++) {
             x = gFlashX2[i];
             y = gFlashY2[i];
@@ -783,7 +783,7 @@ extern int gBurstMaskPixel;                /*@ ds:FC72 */ /* the handle gGetPixe
                 continue;
             DrawShape(2, gFlashFrames[frame], x, y, 0);
         }
-        gStatusLine = 0;
+        gDrawPage = 0;
         HidePointerZone(0, 0, 0xB0, 0x78);
         ClipRect(0, 0, 0, 0, 0x16, 0x78, 2, 0);
         ShowPointerZone();
@@ -1431,7 +1431,7 @@ extern int gBurstMaskPixel;                /*@ ds:FC72 */ /* the handle gGetPixe
 void AnimateConeOfCold(int count, int spread, int step, int cycle, int divisor,
                        int far *frameTable);
 /* 0EF3:18D8: the cone of cold. It reads the panel member's class-slot 1 value, blanks the view
-   (gStatusLine = 2, gFillRect, DrawViewSlots(7), gStatusLine = 0), hides the pointer, runs the cone drawing
+   (gDrawPage = 2, gFillRect, DrawViewSlots(7), gDrawPage = 0), hides the pointer, runs the cone drawing
    0EF3:2EBC(0x96, 0x32, 0xa, 1, 0x64, ds:5737) and shows it again. It sets gDeferMonsterHits and, for each of
    the seven rows of the per-page table gConeOfColdCells[gPartyDir], lists the objects whose cell is the party cell
    plus the row's delta (masked to 0x3FF) with ListMonstersAtCell and damages each that 0D1C:0BAB does not
@@ -1448,10 +1448,10 @@ void AnimateConeOfCold(int count, int spread, int step, int cycle, int divisor,
     int dmg;
 
     classSlot = GetClassSlot1Value(gPanelMember);
-    gStatusLine = 2;
+    gDrawPage = 2;
     gFillRect(0, 0, 0xB0, 0x78, 0);
     DrawViewSlots(7);
-    gStatusLine = 0;
+    gDrawPage = 0;
     HidePointerZone(0, 0, 0xB0, 0x78);
     AnimateConeOfCold(0x96, 0x32, 0x0A, 1, 0x64, gConeOfColdColours);
     ShowPointerZone();
@@ -1887,7 +1887,7 @@ void DrawSpellPanel(void);
     return 1;
 }
 
-/* 0EF3:2295: draw the spell panel body. It sets gStatusLine, fills the panel's outer rectangle with
+/* 0EF3:2295: draw the spell panel body. It sets gDrawPage, fills the panel's outer rectangle with
    gFillRect, then draws the five spell cells: for each cell (the gSpellCells rectangle) it picks
    three colours: gPanelHighlight/gPanelShadow/gPanelFillColour for the member's own row (i == gSpellPanelLevel) and gUnselTabLightColour/gUnselTabDarkColour/gAltPanelFill
    for the others when gGraphicsChoice is nonzero; when it is zero the own row uses 1/2/3 and the
@@ -1895,7 +1895,7 @@ void DrawSpellPanel(void);
    It then draws the "1ST".."5TH" labels (gSpellLabels) and the name list box, and for each of the
    seven rows of the member's slot row (gDD14 + gDDE2*6) draws the spell's name from gNameTable
    (row 6, the abort row, gets ds:592B, or ds:5937 when it is the highlighted row gSpellPanelSlot). Finally
-   it clears gStatusLine, hides the pointer, clips a 0xD by 0x35 box at (9, 0x7a), draws the
+   it clears gDrawPage, hides the pointer, clips a 0xD by 0x35 box at (9, 0x7a), draws the
    panel's inner line with gDrawLine and shows the pointer. Called by 0EF3:21E0, 0EF3:25BD and
    0EF3:2929.
    The row 6 loop writes its condition `gSpellPanelSlot != i` with the plain row first: the original keeps
@@ -1913,7 +1913,7 @@ void DrawSpellPanel(void);
     int hiColour;
     int textColour;
 
-    gStatusLine = 2;
+    gDrawPage = 2;
     gFillRect(0x46, 0x7a, 0xaf, 0xaf, gPanelFillColour);
     for (i = 0; i < 5; i++) {
         cell = i * 4;
@@ -1962,7 +1962,7 @@ void DrawSpellPanel(void);
                 gDrawText(gStrAbortSpellLit, 0x49, i * 6 + 0x84, textColour, hiColour);
         }
     }
-    gStatusLine = 0;
+    gDrawPage = 0;
     HidePointerZone(0x48, 0x78, 0xb0, 0xaf);
     ClipRect(9, 0x7a, 9, 0x7a, 0xd, 0x35, 2, 0);
     gDrawLine(0x47, 0x7a, 0x47, 0xae, gPanelShadow);
@@ -2232,7 +2232,7 @@ void DrawSpellPanel(void);
     row4 = base + 0x258;
     row5 = base + 0x2EE;
     row6 = base + 0x384;
-    gBurstSavedPage = gStatusLine;
+    gBurstSavedPage = gDrawPage;
     if (count > 0x96)
         count = 0x96;
     gBurstBaseX = gBurstOriginX;
@@ -2274,9 +2274,9 @@ void DrawSpellPanel(void);
                 row2[gBurstParticle] = 0 - (row2[gBurstParticle] >> 1);
             if (gBurstY > bound)
                 gBurstY = bound;
-            gStatusLine = 2;
+            gDrawPage = 2;
             gBurstMaskPixel = gGetPixel(gBurstX, gBurstY);
-            gStatusLine = 0;
+            gDrawPage = 0;
             row4[gBurstParticle] = gGetPixel(gBurstX, gBurstY);
             gBurstColour = ((char far *)frameTable)[row6[gBurstParticle] >> 8];
             if (gBurstColour != 0) {
@@ -2291,7 +2291,7 @@ void DrawSpellPanel(void);
         WaitFrame();
     }
     gTimerEnableFlags |= 2;
-    gStatusLine = gBurstSavedPage;
+    gDrawPage = gBurstSavedPage;
 }
 
 /* 0EF3:2EBC: the cone-of-cold animation. It fills eight 150-word rows of the
@@ -2307,7 +2307,7 @@ void DrawSpellPanel(void);
    passes have elapsed) and looks up the frame table row6>>8; a zero entry retires the particle
    (row5 = 0) and a live frame is drawn (gPutPixel) only when the particle is not on hold
    (row7[i] == 0) and has no held handle (handle == 0). It runs
-   until no particle is live, restores gStatusLine, increments `cycle`, and sets bit 1 of ds:849E
+   until no particle is live, restores gDrawPage, increments `cycle`, and sets bit 1 of ds:849E
    (it was cleared on entry in 0EF3:2EBC).
    `count` is capped at 0x96, `divisor` scales the frame range, `frameTable` is the frame word
    table. `cycle` is only incremented (its value never used here). Called by 0EF3:18D8 with
@@ -2350,7 +2350,7 @@ void DrawSpellPanel(void);
     row7 = base + 0x41A;
     spread <<= 6;
     gTimerEnableFlags &= ~2;
-    savedAttr = gStatusLine;
+    savedAttr = gDrawPage;
     if (count > 0x96)
         count = 0x96;
     originX = 0x58;
@@ -2443,9 +2443,9 @@ void DrawSpellPanel(void);
             if (divisor >> 2 > frameCount) {
                 handle = 0;
             } else {
-                gStatusLine = 2;
+                gDrawPage = 2;
                 handle = gGetPixel(x, y);
-                gStatusLine = 0;
+                gDrawPage = 0;
             }
             row4[i] = gGetPixel(x, y);
             current = frameTable[row6[i] >> 8];
@@ -2460,7 +2460,7 @@ void DrawSpellPanel(void);
         WaitFrame();
         frameCount++;
     }
-    gStatusLine = savedAttr;
+    gDrawPage = savedAttr;
     cycle++;
     gTimerEnableFlags |= 2;
 }

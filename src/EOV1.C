@@ -240,7 +240,7 @@ extern void (far *gSaveRect)(int x, int y, int w, int h, void far *buf); /*@ ds:
 extern void (far *gSaveRectFromPage)(int x, int y, int w, int h, void far *buf); /*@ ds:807E */
 extern struct Node gNodeTemplate; /*@ ds:3A62 */
 extern signed char gPanelFillColour; /*@ ds:F57E */
-extern int gStatusLine; /*@ ds:8115 */
+extern int gDrawPage; /*@ ds:8115 */
 extern int gTextHeight; /*@ ds:FE60 */
 extern int gTextWidth; /*@ ds:FE62 */
 extern int gTextLeft; /*@ ds:FE64 */
@@ -266,7 +266,7 @@ extern int ReadKey(void); /*@ 1AAD:038E */
 extern int Action01E3(char far *text); /*@ 0ACD:01E3 */
 extern int RedrawPartyPanel(struct ActRec far *rec); /*@ 0EF3:2541 */
 extern int MemberIs(int who, int mask); /*@ 0D1C:0670 */
-extern void DrawShape(int mode, void far *src, int x, int y, int region); /*@ 1A29:000F */
+extern void DrawShape(int page, void far *src, int x, int y, int region); /*@ 1A29:000F */
 extern void DrawRowList(int index); /*@ 0D1C:0454 */
 extern int FindClassSlot(int slotId, int classIndex); /*@ 0A72:007B */
 extern int FindCarriedSlot(int who, int field2, int fieldB); /*@ 0D1C:00F1 */
@@ -777,10 +777,10 @@ int AskYesNo(int message);
             }
             if (redrawRows) {
                 redrawRows = 0;
-                gStatusLine = 2;
+                gDrawPage = 2;
                 for (i = 1; i < 9; i++)
                     DrawSpellRow(gFDBA[tab * 9 + i], i - 1, cleric, 0, 0);
-                gStatusLine = 0;
+                gDrawPage = 0;
                 LockHidePointer();
                 ClipRect(0, 0x32, 0, 0x32, 0x16, 0x48, 2, 0);
                 LockShowPointer();
@@ -942,7 +942,7 @@ int AskYesNo(int message);
    once through DrawListNode (ovl1:1551) and chained with ListAdd. At the end the pointer is hidden
    only around the final ClipRect (each node hides it itself inside DrawListNode); that ClipRect
    clips the window to the screen (19F3:000E with its own edges), then it sets gNodeListChanged (the key-list
-   walk then rebuilds its screen, src/E16A5.C), flushes the key buffer and clears gStatusLine again.
+   walk then rebuilds its screen, src/E16A5.C), flushes the key buffer and clears gDrawPage again.
    Called by ovl1:0416 (menu 3), 097A (menu 4), 1691 (menu 6), 1ACD (menus 0 to 2) and 243A
    (menu 5). The menu records' header messages are edited in place before the call: menus 0 to 2 by
    ovl1:1ACD and menu 3 by ovl1:0416. */
@@ -953,7 +953,7 @@ int AskYesNo(int message);
     struct Node far *node;
     int index;
 
-    gStatusLine = 2;
+    gDrawPage = 2;
     if (gMenus[menu].window) {
         gRegions[gMenus[menu].window].textAttr2 = gPanelFillColour;
         SetTextWindowAndClear(gMenus[menu].window);
@@ -986,16 +986,16 @@ int AskYesNo(int message);
     LockShowPointer();
     gNodeListChanged = 1;
     FlushKeyBuffer();
-    gStatusLine = 0;
+    gDrawPage = 0;
     return list;
 }
 
 /* ovl1:13F7: shows the gCampStrings message `message` in a framed box (text window 11) and waits for
    a key or at most 0x78 frames. It hides the pointer, selects the 8x8 font gFont8x8, copies the
-   shadow colour gPanelFillColour into g159, sets gStatusLine to 2 while it draws and fills and clips the window
+   shadow colour gPanelFillColour into g159, sets gDrawPage to 2 while it draws and fills and clips the window
    rectangle; the text goes at (left * 8 + 5, top + 5) in colour 0xF. It then polls ReadKey one frame
    at a time (WaitFrames(1)); a key press flushes the key buffer and ends the wait. Afterwards the
-   status line, font and text window are restored and the key buffer flushed again. Called by
+   draw page, font and text window are restored and the key buffer flushed again. Called by
    RunCampMenu, SelectPartyMember and ScribeScrolls (a plain message box; DrawListNode does not
    call it). */
 /*@ ovl1:13F7 */ void ShowMessage(int message)
@@ -1005,14 +1005,14 @@ int AskYesNo(int message);
     int savedStatus;
     int i;
 
-    savedStatus = gStatusLine;
+    savedStatus = gDrawPage;
     savedFont = gCurFont;
     savedWindow = gTextRegion;
     SetFont(gFont8x8);
     LockHidePointer();
     g159 = gPanelFillColour;
     SetTextWindowAndClear(0xb);
-    gStatusLine = 2;
+    gDrawPage = 2;
     DrawFramedPanel(gTextLeft << 3, gTextTop, gTextWidth << 3, gTextHeight, 0, 0);
     DrawShadowText(SkipStrings(&gCampStrings, message), (gTextLeft << 3) + 5, gTextTop + 5, 0xf, 0);
     ClipRect(gTextLeft, gTextTop, gTextLeft, gTextTop, gTextWidth, gTextHeight, 2, 0);
@@ -1024,7 +1024,7 @@ int AskYesNo(int message);
         }
         WaitFrames(1);
     }
-    gStatusLine = savedStatus;
+    gDrawPage = savedStatus;
     SetFont(savedFont);
     SetTextWindow(savedWindow);
     FlushKeyBuffer();
@@ -1451,9 +1451,9 @@ int AskYesNo(int message);
                     ShowMessage(0xf);
                 if (gGraphicsChoice == 1) {
                     LoadScreenImage("PLAYFLD", (char far *)gSheetDECORATE, 5, 3, 2);
-                    gStatusLine = 2;
+                    gDrawPage = 2;
                     gSaveRectFromPage(0, 0x78, 0x16, 0x18, (char far *)gSegDF4E + 0x4e20);
-                    gStatusLine = 0;
+                    gDrawPage = 0;
                     reloadInvent = 1;
                 }
             }
@@ -1546,11 +1546,11 @@ int AskYesNo(int message);
     } while (looping);
     FreeFarList(list);
     SetFont(savedFont);
-    gStatusLine = 2;
+    gDrawPage = 2;
     DrawOptionField();
     SetTextWindow(savedWindow);
     DrawViewFrame(0);
-    gStatusLine = 0;
+    gDrawPage = 0;
     LockHidePointer();
     SetTextWindow(0xa);
     ClipRect(gTextLeft, gTextTop, gTextLeft, gTextTop, gTextWidth, gTextHeight, 2, 0);
@@ -1558,7 +1558,7 @@ int AskYesNo(int message);
         LoadScreenImage("INVENT", (char far *)gSheet2067, 5, 3, 2);
     SetTextWindow(savedWindow);
     LockShowPointer();
-    gStatusLine = 0;
+    gDrawPage = 0;
     gTimerEnableFlags |= 2;
     return 1;
 }
@@ -1566,7 +1566,7 @@ int AskYesNo(int message);
 /* ovl1:243A: a Yes/No box: it shows the gCampStrings message `message` (for example 0x37 "Are you sure
    you wish to LOAD a saved game?", 0x36 for saving, 0x2E for quitting) over the two buttons of menu 5
    (Yes is button 0x8021, No 0x8022) and returns 1 for Yes, 0 for No. It selects the 8x8 font and
-   clears gStatusLine, builds the list, draws the message at (gTextLeft * 8 + 8, gTextTop + 4) and
+   clears gDrawPage, builds the list, draws the message at (gTextLeft * 8 + 8, gTextTop + 4) and
    keeps one button highlighted (`lit`, starting with none; `hot` is the one to light, starting with
    Yes at 0). The keys 0x5C and 0x66 flip `hot`, 0x2B, 0x3D and 0x61 take the highlighted button
    (Yes when it is button 0), a click answers 1 or 0 at once, and with the mouse enabled any other
@@ -1588,7 +1588,7 @@ int AskYesNo(int message);
 
     savedWindow = gTextRegion;
     savedFont = gCurFont;
-    gStatusLine = 0;
+    gDrawPage = 0;
     SetFont(gFont8x8);
     list = BuildMenuButtons(5);
     LockHidePointer();

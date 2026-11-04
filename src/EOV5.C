@@ -86,7 +86,7 @@ struct Monster {              /* 28-byte object records at ds:8A82 (src/E08E6.C)
     char pad09[0x1C - 0x09];
 };
 
-extern int gStatusLine; /*@ ds:8115 */
+extern int gDrawPage; /*@ ds:8115 */
 extern signed char gPanelFillColour; /*@ ds:F57E */
 extern signed char gPanelShadow; /*@ ds:F53A */
 extern signed char gPanelHighlight; /*@ ds:FB4C */
@@ -183,7 +183,7 @@ extern void (far *gDrawText)(char far *text, int x, int y, int colour, int flag)
 extern void (far *gRestoreRectToPage)(int x, int y, int w, int h, void far *buf); /*@ ds:804A */
 extern void (far *gSaveRectFromPage)(int x, int y, int w, int h, void far *buf); /*@ ds:807E */
 
-extern void DrawShape(int mode, void far *src, int x, int y, int region); /*@ 1A29:000F */
+extern void DrawShape(int page, void far *src, int x, int y, int region); /*@ 1A29:000F */
 extern void HidePointerZone(int left, int top, int right, int bottom); /*@ 1BBE:01FE */
 extern void ShowPointerZone(void); /*@ 1BBE:02C2 */
 extern void LockHidePointer(void); /*@ 1BBE:0307 */
@@ -249,7 +249,7 @@ void PrintTableString(int index, int flag);
 
 /* ovl5:0000: draws sprite cell `index` of the ds:7B2B table out of the overlay buffer gOverlayBuf
    at (x, y), moved left by the returned cell's byte +2 (times four) and up by its byte +1, into
-   region 5. Sets gStatusLine for the draw and frees the sliced cell. Called by DrawCharPortrait
+   region 5. Sets gDrawPage for the draw and frees the sliced cell. Called by DrawCharPortrait
    (00A1). */
 /*@ ovl5:0000 */ void DrawSheetCell(int index, int x, int y)
 {
@@ -260,14 +260,14 @@ void PrintTableString(int index, int flag);
     int ch;                 /* the cell's height, ds:7B2B[index*4 + 3] */
     int i;
 
-    gStatusLine = 2;
+    gDrawPage = 2;
     i = index * 4;
     cx = gOuttakeCellRects[i];
     cy = gOuttakeCellRects[i + 1];
     cw = gOuttakeCellRects[i + 2];
     ch = gOuttakeCellRects[i + 3];
     cell = gGetSpriteCell(cx, cy, cw, ch, gOverlayBuf);
-    gStatusLine = 0;
+    gDrawPage = 0;
     y -= ((struct Cell far *)cell)->b1;
     x -= (((struct Cell far *)cell)->b2 << 3) >> 1;
     DrawShape(0, cell, x, y, 5);
@@ -602,11 +602,11 @@ enum {
         if (rec->items[i])
             rec->items[i] = CopyItemToFreeSlot(rec->items[i]);
     }
-    gStatusLine = 2;
+    gDrawPage = 2;
     saved = gGetSpriteCellRle(which * 4, 0xA0, 4, 0x20, gOverlayBuf);
     movmem(saved, rec->portrait, 0x514);
     farfree(saved);
-    gStatusLine = 0;
+    gDrawPage = 0;
 }
 /* ovl5:0828: the character add panel. It clears the panel, draws message `which`, then shows the
    two-entry menu ds:7B23 ("yes"/"no"). Choice 0 ("yes") either draws message `yesMsg` or, when
@@ -1075,7 +1075,7 @@ enum {
     LoadScreenImage(gFileNamePortalB, gOverlayBuf, 5, 3, 2);
     PlaySound(0x21);
     PlaySound(0x13);
-    gStatusLine = 2;
+    gDrawPage = 2;
     gSaveRectFromPage(3, 0, 0x12, 0x68, GetPageBuffer(5));
     ClipRect(3, 0, 3, 0, 0x12, 0x68, 0, 2);
     DrawShape(2, block[0], 0x1c, 9, 0);
@@ -1133,7 +1133,7 @@ enum {
     FileRead(handle, gSegDF4E, 0x7d00L);
     FileClose(handle);
     PlaySound(0x14);
-    gStatusLine = 0;
+    gDrawPage = 0;
     gScrollOn = 1;
     gTextPanelInView = 1;
     g169 = gPanelFillColour;
@@ -1171,7 +1171,7 @@ enum {
    four sprite cells from gOverlayBuf (a 2x2 grid of 0xE x 0x58 cells), loads XDEATH3 (ds:7EF7)
    and slices one 0x10 x 0x5f cell, blits XDEATH1 (ds:7EFF), then plays ten frames: six clipped
    cells (with the sounds 0x48, 0x36, 0x36, 0x22) and, for the last four, the 2x2 sprite grid
-   (sprites[i-6], sound 0x2a). It then clears gStatusLine, fills the action field with
+   (sprites[i-6], sound 0x2a). It then clears gDrawPage, fills the action field with
    GetPageBuffer(5) (gSaveRectFromPage), sets gF1 to 8 and runs the 19-step explosion: each step plays 0x77,
    blits the page (gRestoreRectToPage), draws the sliced cell moving from y=-0x5a in steps of 5, clips the
    portrait region and waits 2 ticks. It finally plays sound 5, clears gF1, waits 0x3c ticks, shows
@@ -1209,12 +1209,12 @@ enum {
         }
         WaitTicks(4);
     }
-    gStatusLine = 0;
+    gDrawPage = 0;
     gSaveRectFromPage(0, 0, 0x16, 0x78, GetPageBuffer(5));
     gF1 = 8;
     for (i = 0; i < 0x13; i++) {
         PlaySound(0x77);
-        gStatusLine = 2;
+        gDrawPage = 2;
         gRestoreRectToPage(0, 0, 0x16, 0x78, GetPageBuffer(5));
         DrawShape(2, cell, 0x18, i * 5 + 0xffa6, 5);
         ClipRect(0, 0, 0, 0, 0x16, 0x78, 2, 0);
@@ -1315,7 +1315,7 @@ enum {
         LoadWallTextures(0, gMapSheet + (gMapTiles[gFBC8 - 1] << 5));
         LoadScreenImage(gFileNamePlayfld, gSheetDECORATE, 5, 3, 0);
         LoadScreenImage(gFileNameInvent, gSheet2067, 5, 3, 2);
-        gStatusLine = 0;
+        gDrawPage = 0;
         RedrawCharacters();
         DrawViewFrame(1);
         break;
@@ -1355,7 +1355,7 @@ enum {
     LoadWallTextures(0, gOverlayBuf);
     LoadScreenImage(gFileNamePlayfld2, gSheetDECORATE, 5, 3, 0);
     LoadScreenImage(gFileNameInvent2, gSheet2067, 5, 3, 2);
-    gStatusLine = 0;
+    gDrawPage = 0;
     RedrawCharacters();
     DrawViewFrame(1);
     SetTextWindow(7);
@@ -1365,7 +1365,7 @@ enum {
    x indices and, at +0x280, the y indices) with 0..cols-1 and 0..rows-1, Fisher-Yates shuffles
    each with RandomRange, then for each row k and column i saves the pixels under the cell at
    (x + xs[i], y + ys[j]) (j wrapping at rows) through the far pointer ds:8072 and restores them
-   through ds:809E, with gStatusLine set to saveStatus for the save and restoreStatus for the
+   through ds:809E, with gDrawPage set to saveStatus for the save and restoreStatus for the
    restore. Called by the 1204 animation. */
 /*@ ovl5:1E1B */ void ShuffleGrid(int x, int y, unsigned cols, unsigned rows, int saveStatus, int restoreStatus)
 {
@@ -1400,7 +1400,7 @@ enum {
         ys[pick] = ys[idx];
         ys[idx] = handle;
     }
-    saved = gStatusLine;
+    saved = gDrawPage;
     for (k = 0; k < rows; k++) {
         j = k;
         for (i = 0; i < cols; i++) {
@@ -1409,11 +1409,11 @@ enum {
             j++;
             if (j >= rows)
                 j = 0;
-            gStatusLine = saveStatus;
+            gDrawPage = saveStatus;
             handle = gGetPixel(pick, idx);
-            gStatusLine = restoreStatus;
+            gDrawPage = restoreStatus;
             gPutPixel(pick, idx, handle);
         }
     }
-    gStatusLine = saved;
+    gDrawPage = saved;
 }

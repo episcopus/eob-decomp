@@ -53,7 +53,7 @@ extern struct Spell gClericSpells[]; /*@ ds:151F */
 extern struct Monster gMonsters[]; /*@ ds:8A82 */       /* the 28-byte map-object records, 30 of them */
 extern char far gCampStrings; /*@ 2003:0000 */    /* the message string table */
 extern int gTextRegion; /*@ ds:811F */
-extern int gStatusLine; /*@ ds:8115 */
+extern int gDrawPage; /*@ ds:8115 */
 extern int g159; /*@ ds:0159 */                 /* written from gPanelFillColour by ovl6:0B9B and ovl1:13F7
                                                    (ShowMessage); no reader found in src/ */
 extern int gTextHeight; /*@ ds:FE60 */
@@ -382,9 +382,9 @@ done:
 }
 
 /* ovl6:0858: shows the camp panel and the "Hours rested" line. It selects the 8x8 font and the
-   region 0xa, and when `draw` is nonzero clears gStatusLine, hides the pointer, fills the panel
+   region 0xa, and when `draw` is nonzero clears gDrawPage, hides the pointer, fills the panel
    rectangle (DrawFramedPanel) inside its clip (ClipRect), draws the title through DrawShadowText and shows
-   the pointer again. Then it formats "Hours rested: %-4d" with gFileNameBuf and, with gStatusLine set to 2,
+   the pointer again. Then it formats "Hours rested: %-4d" with gFileNameBuf and, with gDrawPage set to 2,
    draws the line in colour 0xf with gPanelFillColour as the colour2 (fifth) argument of the first shadow draw
    only (DrawShadowText 082C:0898) inside a second clip. Finally it waits ten frames and restores the
    font and the region. Called by the camp loop. */
@@ -398,7 +398,7 @@ done:
     SetFont(gFont8x8);
     SetTextWindow(0xa);
     if (draw) {
-        gStatusLine = 0;
+        gDrawPage = 0;
         LockHidePointer();
         ClearTextRegion();
         DrawFramedPanel(gTextLeft << 3, gTextTop, gTextWidth << 3, gTextHeight, 0, 0);
@@ -407,10 +407,10 @@ done:
         LockShowPointer();
     }
     sprintf(gFileNameBuf, "Hours rested: %-4d", hours);
-    gStatusLine = 2;
+    gDrawPage = 2;
     LockHidePointer();
     DrawShadowText(gFileNameBuf, (gTextLeft + 1) << 3, gTextTop + 0x14, 0xf, gPanelFillColour);
-    gStatusLine = 0;
+    gDrawPage = 0;
     ClipRect(gTextLeft + 1, gTextTop + 0x14, gTextLeft + 1, gTextTop + 0x14, 0x12, 8, 2, 0);
     LockShowPointer();
     WaitFrames(0xa);
@@ -439,7 +439,7 @@ done:
         if (Distance(gPartyCell, gMonsters[i].cell) < 2) {
             savedRegion = gTextRegion;
             SetTextWindow(7);
-            gStatusLine = 0;
+            gDrawPage = 0;
             LockHidePointer();
             DrawText("\rYou can't rest here, monsters are near.");
             LockShowPointer();
@@ -487,12 +487,12 @@ done:
     return 0;
 }
 /* ovl6:0B9B: the copy in overlay 6 of ShowMessage (ovl1:13F7): shows the modal warning box for
-   message number `message` in the far string table at 2003:0000. It saves gStatusLine, the
+   message number `message` in the far string table at 2003:0000. It saves gDrawPage, the
    current font and gTextRegion, selects the 8x8 font and text region 0xb, stores gPanelFillColour in ds:0159
-   (the value here, gStatusLine = 2 at ds:8115), fills the panel (DrawFramedPanel) and draws the message
+   (the value here, gDrawPage = 2 at ds:8115), fills the panel (DrawFramedPanel) and draws the message
    string through DrawShadowText in color 0xf inside a clip (ClipRect). Then it waits up to 0x78
    frames for a key (1AAD:038E), clears the pending key (1AAD:0480) and restores the font, region
-   and gStatusLine. Its only caller's message is 0x2b, "All characters are fully rested." */
+   and gDrawPage. Its only caller's message is 0x2b, "All characters are fully rested." */
 /*@ ovl6:0B9B */ void ShowCampMessage(int message)
 {
     register int i;
@@ -500,14 +500,14 @@ done:
     int savedSelect;
     void *savedFont;
 
-    savedRegion = gStatusLine;
+    savedRegion = gDrawPage;
     savedFont = gCurFont;
     savedSelect = gTextRegion;
     SetFont(gFont8x8);
     LockHidePointer();
     g159 = gPanelFillColour;
     SetTextWindowAndClear(0xb);
-    gStatusLine = 2;
+    gDrawPage = 2;
     DrawFramedPanel(gTextLeft << 3, gTextTop, gTextWidth << 3, gTextHeight, 0, 0);
     DrawShadowText(SkipStrings(&gCampStrings, message), (gTextLeft << 3) + 5, gTextTop + 5, 0xf, 0);
     ClipRect(gTextLeft, gTextTop, gTextLeft, gTextTop, gTextWidth, gTextHeight, 2, 0);
@@ -519,7 +519,7 @@ done:
         }
         WaitFrames(1);
     }
-    gStatusLine = savedRegion;
+    gDrawPage = savedRegion;
     SetFont(savedFont);
     SetTextWindow(savedSelect);
     FlushKeyBuffer();

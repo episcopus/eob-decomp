@@ -106,7 +106,7 @@ extern int gPartyCell; /*@ ds:FBCA */     /* the party's map cell (src/E177D.C:9
                                             it to StepCell (UseWandItem) as the cell; E0ACD.C
                                             indexes the nine-byte records with it */
 extern int gMouseDisabled; /*@ ds:814A */   /* nonzero disables the mouse (src/E07A9.C) */
-extern int gStatusLine; /*@ ds:8115 */            /* nonzero while a status line is up (src/E082C.C) */
+extern int gDrawPage; /*@ ds:8115 */            /* the graphics driver's draw page (src/E082C.C) */
 extern int gGraphicsChoice; /*@ ds:8102 */            /* nonzero: a colour row exists (src/E07A9.C) */
 extern signed char gWallTypeFlags[]; /*@ ds:194B */  /* byte table (src/E0D1C.C) */
 extern signed char gClassBaseBits[]; /*@ ds:1231 */  /* byte table indexed by gChars[].classIndex (src/E0DE8.C) */
@@ -587,7 +587,7 @@ next:
    gInvSlotBoxSize[gInvSlotKind[row]] (a kind-1 row is the count row, which also prints the row's item count, and a
    row that is the selected row gCursorSlot is highlighted when gMouseDisabled). When the row holds an
    item and its kind gInvSlotKind[row] is not 1 it draws the item icon, offset by -4 when the kind is 2.
-   `drawMode` is stored in gStatusLine for the duration. Called by 0ACD:09EF, 0BD2:0106, 0BD2:0BA0,
+   `drawMode` is stored in gDrawPage for the duration. Called by 0ACD:09EF, 0BD2:0106, 0BD2:0BA0,
    0D1C:01CA, 0D1C:0304, 122E:06D0 and 1547:0991. */
 /*@ 0BD2:0917 */ void DrawItemRow(int row, int slot, int drawMode)
 {
@@ -599,8 +599,8 @@ next:
     int kind;
 
     kind = slot;
-    saved = gStatusLine;
-    gStatusLine = drawMode;
+    saved = gDrawPage;
+    gDrawPage = drawMode;
     x = gInvSlotX[row];
     y = gInvSlotY[row];
     item = gChars[gInventoryMember].items[row];
@@ -631,7 +631,7 @@ next:
         else
             DrawItemIcon(drawMode, item, x - 4, y - 4);
     }
-    gStatusLine = saved;
+    gDrawPage = saved;
 }
 
 /* 0BD2:0ABE: when `drawMode` is set, saves the 18x168 item sheet rectangle through the save-rect

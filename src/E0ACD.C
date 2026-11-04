@@ -27,7 +27,7 @@ extern char gPanelMode; /*@ ds:FB44 */           /* a mode byte: 0, 1 and 2 gate
                                                (src/E0D1C.C) */
 extern int gMatchedNodeKey; /*@ ds:FC82 */            /* an action mode: 0, 1 and 2 pick the branches of the
                                                0034, 008C and 00EB handlers */
-extern int gStatusLine; /*@ ds:8115 */            /* nonzero while a status line is up (src/E082C.C) */
+extern int gDrawPage; /*@ ds:8115 */            /* the graphics driver's draw page (src/E082C.C) */
 extern void far *gSegDF4E; /*@ ds:DF4E */   /* the 19EC:0002(slot 5) far buffer (src/E07A9.C) */
 
 extern void DrawText(char far *text); /*@ 1DE7:060A */
@@ -311,7 +311,7 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
     return action->result;
 }
 
-/* 0ACD:01E3: clears the action screen: hides the pointer, sets the status-line flag to 2, blits
+/* 0ACD:01E3: clears the action screen: hides the pointer, sets the draw page gDrawPage to 2, blits
    the slot-5 buffer gSegDF4E into the 0x12 by 0xa8 field, resets the selected row and mode, redraws
    all six character rows, clears the status flag, clips the field, rebuilds list 1 and shows the
    pointer. Returns the record's +4. */
@@ -320,13 +320,13 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
     int i;
 
     LockHidePointer();
-    gStatusLine = 2;
+    gDrawPage = 2;
     gRestoreRectToPage(0, 0, 0x12, 0xa8, gSegDF4E);
     gCursorSlot = 0;
     gPanelMode = 0;
     for (i = 0; i < 6; i++)
         RedrawMember(i);
-    gStatusLine = 0;
+    gDrawPage = 0;
     ClipRect(0, 0, 0x16, 0, 0x12, 0xa8, 2, 0);
     BuildList1();
     LockShowPointer();
@@ -997,7 +997,7 @@ done:
     LoadScreenImage("PLAYFLD", (char far *)gSheetDECORATE, 5, 3, 0);
     LoadScreenImage("INVENT", (char far *)gSheet2067, 5, 3, 2);
     SetFont(gFont6x6);
-    gStatusLine = 0;
+    gDrawPage = 0;
     RedrawCharacters();
     DrawViewFrame(1);
     LockShowPointer();

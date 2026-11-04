@@ -160,8 +160,8 @@ extern int FindClassSlot(int slotId, int classIndex); /*@ 0A72:007B */
 /* the original sign-extends the classIndex argument at 0D1C:0942 and 0D1C:0977 (`mov al,es:[bx+0x20];
    cwde; push ax`), so the second parameter is int, not char */
 extern int GetClampedTableByte(int col, int row); /*@ 0A72:0597 */
-extern void DrawShapeRemapped(int mode, void far *src, int x, int y, int region); /*@ 1A29:008B */
-extern void DrawShape(int mode, void far *src, int x, int y, int region); /*@ 1A29:000F */
+extern void DrawShapeRemapped(int page, void far *src, int x, int y, int region); /*@ 1A29:008B */
+extern void DrawShape(int page, void far *src, int x, int y, int region); /*@ 1A29:000F */
 extern void DrawFilledPanel(int x1, int y1, int x2, int y2, int c1, int c2, int c3); /*@ 082C:09D5 */
 extern int DirectionFromPoints(int fromCell, int toCell); /*@ 17A6:0314 */
 extern void DamageObject(struct Monster far *obj, int n); /*@ 08E6:0FBE */
