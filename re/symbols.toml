@@ -6322,7 +6322,7 @@ evidence = ["far", "near", "segment"]
 name = "WaitFrames"
 level = "L2"
 match_flags = "-ml -O -Z -G"
-review = "passed 2026-11-01 rev-sonnet"
+review = "passed 2026-11-04 p6-rev-2"
 
 [[function]]
 id = "e1a16_0027"
@@ -6333,7 +6333,7 @@ evidence = ["far", "frame"]
 name = "WaitFrame"
 level = "L2"
 match_flags = "-ml -O -Z -G"
-review = "passed 2026-11-01 rev-sonnet"
+review = "passed 2026-11-04 p6-rev-2"
 
 [[function]]
 id = "e1a19_0006"
