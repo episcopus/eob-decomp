@@ -1,10 +1,49 @@
 # Review: e1aad
 
-Reviewer: rev-haiku
-Commit reviewed: ea86526 (round 6; main, whose src/E1AAD.ASM is the same as 01a8380's). Round 5 was d7e541a, round 4 was b4eaa33, round 3 was 49e4d94, round 2 was 3331b69, round 1 was 7d0dd48.
+Reviewer: p6-rev-3 (round P6; rounds 1 to 6 by rev-haiku)
+Commit reviewed: ce0608f (round P6, 2026-11-04; diffed against ea86526, round 6's commit). Round 5 was d7e541a, round 4 was b4eaa33, round 3 was 49e4d94, round 2 was 3331b69, round 1 was 7d0dd48.
 
 Playbook 70. Judge what a matching file can still get wrong: names, types, comments, structure.
 The matcher already proved the bytes; do not re-prove them, read for meaning.
+
+## Round 7 (P6 round: p6-rev-3, 2026-11-04, commit ce0608f)
+
+Judged: round 6 had no must-fix (its one should, the gTunesOn comment, is still open below), and the
+P6 diff since ea86526 (`git diff ea86526..ce0608f -- src/E1AAD.ASM re/symbols.toml re/globals.toml`).
+The diff is names only: g80EA, g80EC, g80ED, g80EF, g80F1, g80F3, g80F5, g80F7, g8136, g813C, g813E
+and g8488 became gKeyboardOptions, gRecordMode, gRecordHandle, gLastEventKey, gRecordDelay,
+gLastEventX, gLastEventY, gRecordEnded, gMouseButtonSeen, gMouseEventX, gMouseEventY and
+gTicksSinceEvent. The ReadKey caller list now names ShowMessageBox (ovl1:13F7) and ShowCampMessage
+(ovl6:0B9B) where it said ShowMessage and f0B9B. No instruction or operand changed; re/symbols.toml
+has no e1aad function entry in the range and re/globals.toml/re/renames.toml carry the WHY of every
+rename.
+
+`make match FILE=src/E1AAD.ASM` 18 of 18 (3405 bytes); `make readability UNIT=e1aad` 0 findings;
+`make names UNIT=e1aad` 0 placeholder functions, globals or fields and 10 `Purpose unknown` (all
+pre-existing). The new names are true and backed by the code: gKeyboardOptions is the word copied
+into kModifierState at 1AAD:0607 and 1AAD:07F4; gRecordMode, gRecordHandle, gLastEventKey,
+gRecordDelay, gLastEventX, gLastEventY and gRecordEnded are the record/replay words ProcessKeyEvent,
+DequeueKeyEvent and InjectRecordedKey use for their roles (1AAD:0C17 to 0D58); gMouseButtonSeen,
+gMouseEventX and gMouseEventY are the mouse words the INT 33h handler and the keyboard glue read
+(1A72:01DC, 1AAD:1278 and :1282); gTicksSinceEvent is the INT 1Ch counter (1D8F:0080) that
+ProcessKeyEvent records and clears and InjectRecordedKey waits on; ShowMessageBox is the real
+ovl1:13F7 in src/EOV1.C:928, and ShowCampMessage is the ovl6:0B9B copy in src/EOV6.C:461, called only
+from CampLoop. The old shared name ShowMessage is gone from this file.
+
+Notes (not blocking):
+
+- note src/E1AAD.ASM:17-20: the gTunesOn comment still cites "EOV1.ASM:3724-3731"; P6 removed
+  EOV1.ASM. The toggle is now in src/EOV1.C (the gTunesOn references at :201, :1263, :1354). The
+  claim (the options code toggles it) still holds; cite the C lines or the address ovl1:1ACD.
+- note src/E1AAD.ASM:47-51: gTicksSinceEvent is the free-running 18.2 Hz INT 1Ch counter; only the
+  record/replay code clears it (1AAD:0C88, 0D0A), so "since event" is the record/replay role, not a
+  property of the counter outside those modes. The comment already calls it "tick counter"; a future
+  pass could say gTickCounter or keep this name for its only reader.
+- note src/E1AAD.ASM:249-251: ShowCampMessage names the overlay 6 copy by its only caller
+  (CampLoop, message 0x2B); the function itself is the generic ShowMessageBox copy (src/EOV6.C:454),
+  as that comment says. The name is true for the call site, not a narrower function.
+- note the open should of round 6 (the gTunesOn extern comment asks for the option's evidence) is
+  unchanged by P6 and still stands; the P6 diff did not touch its lines.
 
 ## Round 6 (ea86526)
 
