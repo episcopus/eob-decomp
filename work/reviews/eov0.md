@@ -1,7 +1,7 @@
 # Review: eov0
 
-Reviewer: rev-haiku
-Commit reviewed: round 3 at 25debaf (main); src/EOV0.C last changed at cd1070f (round 2 fixes) and is identical on main and on review/eov0; round 2 at 96459a0 (main); round 1 at 2ba0b7c (main, when I started); src/EOV0.C is unchanged from be85fef to 2ba0b7c
+Reviewer: p6-rev-11
+Commit reviewed: P6 round at ce0608f (main); round 3 at 25debaf; round 2 at 96459a0; round 1 at 2ba0b7c
 
 Playbook 70. Judge what a matching file can still get wrong: names, types, comments, structure.
 The matcher already proved the bytes; do not re-prove them, read for meaning.
@@ -10,6 +10,19 @@ The matcher already proved the bytes; do not re-prove them, read for meaning.
 
 Each finding is a checkbox. `must-fix` blocks `make review-pass` until a decompiler ticks it off
 (with the commit that fixes it); `should` and `note` do not block.
+
+Round P6 (2026-11-04), commit ce0608f367ed01b1b1df84e254eef04d1a734b27. Reviewer p6-rev-11. Playbook 70, later round: the names and comments the P6 naming pass changed since 25debaf (`git diff 25debaf HEAD -- src/EOV0.C`; 462 insertions, 511 deletions; names and comments only). The new names checked against re/renames.toml and re/fields.toml; the changed comments against the code at each address.
+
+- [ ] must-fix src/EOV0.C:1308 (the ovl0:26C6 comment): "sets m01 = 1 ... index00 = i" is stale. The code sets rec->status = 1, rec->food = 0x64 and rec->index = i (src/EOV0.C:1317-1319); re/fields.toml renames CharRec +01 from m01 to status and +00 from index00 to index. Say status and index.
+- [ ] must-fix src/EOV0.C:1309 (the ovl0:26C6 comment): "gClassStartItems[m20][j]" is stale and the indexing is wrong. The code indexes gClassStartItems[rec->classIndex * 4 + j] (src/EOV0.C:1326); re/fields.toml renames CharRec +20 from m20 to classIndex. Say gClassStartItems[classIndex * 4 + j].
+- [ ] must-fix src/EOV0.C:1029 (the ovl0:1BF2 comment): "builds the class combat tables (ovl0:1EA9)" names the old function. ovl0:1EA9 is now BuildAbilityLimits (src/EOV0.C:1229); its re/renames.toml why says it fills the per-ability minimum gStatMin and maximum gStatMax. Say "builds the ability limits".
+- [ ] should src/EOV0.C:104 (gBoxAnimCells): "the ten overlay buffers" describes the ten animation cells; say "the ten row cells ovl0:2547 slices" instead.
+- [ ] should src/EOV0.C:189 (gPanelIconCells): "slices a sprite cell out of the overlay buffer gCgaMapDefault" calls the default CGA colour map an overlay buffer; the whitepaper 2.5 and re/renames.toml say ds:113F is 32 bytes of values 0..3 passed as the colour map argument. Say "the default CGA colour map".
+- [ ] should src/EOV0.C:359 (DrawCharPanel): "draws the character's sprite" is the old field name; the field is CharRec.portrait (re/fields.toml +33). Say "portrait".
+- [ ] should src/EOV0.C:575 (the ovl0:0DDC comment): "pick the party slot (ovl0:0A5E)" names the old function; ovl0:0A5E is now PickPortrait (src/EOV0.C:616). Say "pick the portrait".
+- [ ] should src/EOV0.C:763 (DrawPanelRow): "the current character gChargenMember's sprite" is the old field name; the field is CharRec.portrait. Say "portrait".
+- [ ] note src/EOV0.C:434 (the ovl0:0A5E comment): "the party-position screen" is the old description; the function is PickPortrait. The comment's first sentence was not changed by P6; a later pass could say "the portrait picker".
+- [ ] note src/EOV0.C:1309: the next line still says "gStartItems[idx]" (correct) but the line above's "gClassStartItems[m20][j]" is the stale one.
 
 Round 3 (25debaf, main; the round 2 fixes are cd1070f). Reviewer rev-haiku. Playbook 70, later round: the round 2
 must-fix item and the changes since 96459a0 (`git diff 96459a0 HEAD -- src/EOV0.C re/symbols.toml re/globals.toml`;
