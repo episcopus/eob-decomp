@@ -60,7 +60,7 @@ notes = "data, not code: the pitch curve tables (020Ch to 039Fh) and the script 
 name = "_CurveTables"
 level = "L2"
 match_flags = "tasm /mx"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-4"
 
 [[function]]
 id = "e0000_03a1"
@@ -72,7 +72,7 @@ notes = "not found by the map: a far routine no call in the EXE names (returns d
 name = "_GetScriptFlag"
 level = "L2"
 match_flags = "tasm /mx"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-4"
 
 [[function]]
 id = "e0000_03aa"
@@ -83,7 +83,7 @@ evidence = ["far"]
 name = "_GetDriverBlock"
 level = "L2"
 match_flags = "tasm /mx"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-4"
 
 [[function]]
 id = "e0000_03b0"
@@ -94,7 +94,7 @@ evidence = ["far", "frame"]
 name = "_SetSoundByte"
 level = "L2"
 match_flags = "tasm /mx"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-4"
 
 [[function]]
 id = "e0000_03ca"
@@ -105,7 +105,7 @@ evidence = ["far", "frame"]
 name = "_GetSoundByte"
 level = "L2"
 match_flags = "tasm /mx"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-4"
 
 [[function]]
 id = "e0000_03e3"
@@ -116,7 +116,7 @@ evidence = ["far", "frame"]
 name = "_GetSoundData"
 level = "L2"
 match_flags = "tasm /mx"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-4"
 
 [[function]]
 id = "e0000_03fa"
@@ -128,7 +128,7 @@ notes = "split 2026-11-02 (escalation e_text): was one 14956-byte entry; now onl
 name = "_RebaseDriverBlock"
 level = "L2"
 match_flags = "tasm /mx"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-4"
 
 [[function]]
 id = "e0000_0416"
@@ -140,7 +140,7 @@ notes = "data, not code: the driver block (32C8h bytes LoadSoundDriver reads ove
 name = "_DriverBlock"
 level = "L2"
 match_flags = "tasm /mx"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-4"
 
 [[function]]
 id = "e0000_3944"
@@ -152,7 +152,7 @@ notes = "data, not code: the driver tables, the entry table (3944h), the level c
 name = "_DriverTables"
 level = "L2"
 match_flags = "tasm /mx"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-4"
 
 [[function]]
 id = "e0000_3b93"
@@ -164,7 +164,7 @@ notes = "data, not code: the ten voice records of 43h bytes (3B93h to 3E30h)."
 name = "_VoiceRecords"
 level = "L2"
 match_flags = "tasm /mx"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-4"
 
 [[function]]
 id = "e0000_3e31"
@@ -176,7 +176,7 @@ notes = "data, not code: the voice record pointers (3E31h), the operator offsets
 name = "_VoiceTables"
 level = "L2"
 match_flags = "tasm /mx"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-4"
 
 [[function]]
 id = "e0000_3e66"
@@ -188,7 +188,7 @@ notes = "not found by the map: an INT 08h handler, installed by 3F77h (mov dx,3E
 name = "_AdlibTimerIsr"
 level = "L2"
 match_flags = "tasm /mx"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-4"
 
 [[function]]
 id = "e0000_3ee5"
@@ -200,7 +200,7 @@ notes = "not found by the map: an INT 08h handler, installed by 4B7Fh (mov dx,3E
 name = "_SampleTimerIsr"
 level = "L2"
 match_flags = "tasm /mx"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-4"
 
 [[function]]
 id = "e0000_3f77"
@@ -211,7 +211,7 @@ evidence = ["far"]
 name = "_StartAdlibDriver"
 level = "L2"
 match_flags = "tasm /mx"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-4"
 
 [[function]]
 id = "e0000_3fca"
@@ -222,7 +222,7 @@ evidence = ["far"]
 name = "_StopAdlibDriver"
 level = "L2"
 match_flags = "tasm /mx"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-4"
 
 [[function]]
 id = "e0000_3ff4"
@@ -233,7 +233,7 @@ evidence = ["near"]
 name = "_SoundDriverTick"
 level = "L2"
 match_flags = "tasm /mx"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-4"
 
 [[function]]
 id = "e0000_400c"
@@ -244,7 +244,7 @@ evidence = ["far", "frame"]
 name = "_QueueSound"
 level = "L2"
 match_flags = "tasm /mx"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-4"
 
 [[function]]
 id = "e0000_402c"
@@ -255,7 +255,7 @@ evidence = ["near"]
 name = "_ProcessSoundQueue"
 level = "L2"
 match_flags = "tasm /mx"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-4"
 
 [[function]]
 id = "e0000_409e"
@@ -266,7 +266,7 @@ evidence = ["frame"]
 name = "_SetNote"
 level = "L2"
 match_flags = "tasm /mx"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-4"
 
 [[function]]
 id = "e0000_40ce"
@@ -277,7 +277,7 @@ evidence = ["frame"]
 name = "_SetSamplePlaying"
 level = "L2"
 match_flags = "tasm /mx"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-4"
 
 [[function]]
 id = "e0000_40e5"
@@ -288,7 +288,7 @@ evidence = ["frame"]
 name = "_SelectDriverTable"
 level = "L2"
 match_flags = "tasm /mx"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-4"
 
 [[function]]
 id = "e0000_4102"
@@ -299,7 +299,7 @@ evidence = ["frame"]
 name = "_GetDriverTable"
 level = "L2"
 match_flags = "tasm /mx"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-4"
 
 [[function]]
 id = "e0000_413b"
@@ -310,7 +310,7 @@ evidence = ["near"]
 name = "_ResetVoices"
 level = "L2"
 match_flags = "tasm /mx"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-4"
 
 [[function]]
 id = "e0000_418f"
@@ -321,7 +321,7 @@ evidence = ["near"]
 name = "_UpdateVoices"
 level = "L2"
 match_flags = "tasm /mx"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-4"
 
 [[function]]
 id = "e0000_4a3a"
@@ -332,7 +332,7 @@ evidence = ["near"]
 name = "_SetVoicePitch"
 level = "L2"
 match_flags = "tasm /mx"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-4"
 
 [[function]]
 id = "e0000_4aef"
@@ -343,7 +343,7 @@ evidence = ["near"]
 name = "_VoiceKeyOn"
 level = "L2"
 match_flags = "tasm /mx"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-4"
 
 [[function]]
 id = "e0000_4b1f"
@@ -354,7 +354,7 @@ evidence = ["near"]
 name = "_VoiceKeyOff"
 level = "L2"
 match_flags = "tasm /mx"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-4"
 
 [[function]]
 id = "e0000_4b47"
@@ -365,7 +365,7 @@ evidence = ["near"]
 name = "_StartVoiceNote"
 level = "L2"
 match_flags = "tasm /mx"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-4"
 
 [[function]]
 id = "e0000_4b7f"
@@ -376,7 +376,7 @@ evidence = ["frame"]
 name = "_StartSample"
 level = "L2"
 match_flags = "tasm /mx"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-4"
 
 [[function]]
 id = "e0000_4c6b"
@@ -387,7 +387,7 @@ evidence = ["near"]
 name = "_AdlibWrite"
 level = "L2"
 match_flags = "tasm /mx"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-4"
 
 [[function]]
 id = "e0000_4c7c"
@@ -398,7 +398,7 @@ evidence = ["near"]
 name = "_ClampLevel"
 level = "L2"
 match_flags = "tasm /mx"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-4"
 
 [[function]]
 id = "e0000_4c8d"
@@ -409,7 +409,7 @@ evidence = ["near"]
 name = "_TickTempo"
 level = "L2"
 match_flags = "tasm /mx"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-4"
 
 [[function]]
 id = "e0000_4cac"
@@ -421,7 +421,7 @@ notes = "not found by the map: the tail of the function at 4C8Dh the map took as
 name = "_GetSampleOffset"
 level = "L2"
 match_flags = "tasm /mx"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-4"
 
 [[function]]
 id = "e0000_4cb1"
@@ -432,7 +432,7 @@ evidence = ["frame"]
 name = "GetVoiceDelay"
 level = "L2"
 match_flags = "tasm /mx"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-4"
 
 [[function]]
 id = "e0000_4cd0"
@@ -443,7 +443,7 @@ evidence = ["near"]
 name = "_AdlibWaitAfterData"
 level = "L2"
 match_flags = "tasm /mx"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-4"
 
 [[function]]
 id = "e0000_4ce0"
@@ -454,7 +454,7 @@ evidence = ["near"]
 name = "_AdlibWaitAfterIndex"
 level = "L2"
 match_flags = "tasm /mx"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-4"
 
 [[function]]
 id = "e0000_4cf0"
@@ -465,7 +465,7 @@ evidence = ["near"]
 name = "_WriteVoiceReg"
 level = "L2"
 match_flags = "tasm /mx"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-4"
 
 [[function]]
 id = "e0000_4d1f"
@@ -476,7 +476,7 @@ evidence = ["near"]
 name = "_VoiceCarrierLevel"
 level = "L2"
 match_flags = "tasm /mx"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-4"
 
 [[function]]
 id = "e0000_4d57"
@@ -487,7 +487,7 @@ evidence = ["near"]
 name = "_VoiceModulatorLevel"
 level = "L2"
 match_flags = "tasm /mx"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-4"
 
 [[function]]
 id = "e0000_4d95"
@@ -498,7 +498,7 @@ evidence = ["near"]
 name = "_ClearVoice"
 level = "L2"
 match_flags = "tasm /mx"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-4"
 
 [[function]]
 id = "e0000_4dc8"
@@ -509,7 +509,7 @@ evidence = ["near"]
 name = "_LoadVoicePatch"
 level = "L2"
 match_flags = "tasm /mx"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-4"
 
 [[function]]
 id = "e0000_4e34"
@@ -520,7 +520,7 @@ evidence = ["near"]
 name = "_VoiceSilence"
 level = "L2"
 match_flags = "tasm /mx"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-4"
 
 [[function]]
 id = "e0000_4f84"
@@ -531,7 +531,7 @@ evidence = ["near"]
 name = "_SoundRandom"
 level = "L2"
 match_flags = "tasm /mx"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-4"
 
 [[function]]
 id = "e0000_4f94"
@@ -543,7 +543,7 @@ notes = "data, not code: the script command jump table (74 entries, 4F94h to 502
 name = "_CommandTable"
 level = "L2"
 match_flags = "tasm /mx"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-4"
 
 [[function]]
 id = "e0000_505d"
