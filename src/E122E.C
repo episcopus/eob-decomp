@@ -140,19 +140,31 @@ struct CharRec {                                /* the 243-byte character record
     char padE7[0xf3 - 0xE7];
 };
 
-struct Item14 {                                 /* the 14-byte item records at ds:8DD2 (src/E0BD2.C) */
-    unsigned char flags;                        /* +00 (ds:8DD2) */
-    signed char icon;                           /* +01 (ds:8DD3): indexes g181F (122E:06D0) */
-    signed char m02;                            /* +02 (ds:8DD4): the item type (src/E0BD2.C) */
-    signed char m03;                            /* +03 (ds:8DD5): the key (src/E0BD2.C) */
-    int m04;                                    /* +04 (ds:8DD6): the key, -1 when free (src/E0BD2.C) */
-    char pad06[0x0B - 0x06];
-    signed char m0B;                            /* +0B (ds:8DDD): read by 122E:147F */
-    char pad0C[0x0e - 0x0C];
+struct ItemRecord {
+    signed char nameIndex;        /* +0 (ds:8DD0): indexes the item-name table at segment 0x1F28 */
+    signed char identifiedNameIndex;        /* +1 (ds:8DD1): the second name index */
+    unsigned char flags;    /* +2 (ds:8DD2): bit 0x20 gates 0BD2:0AF2/0C8E, 0x40 is set by
+                               0BD2:040E and tested by 0BD2:05B5; src/E07A9.C calls it flags */
+    signed char icon;       /* +3 (ds:8DD3): the icon number */
+    signed char type;        /* +4 (ds:8DD4): the item type */
+    signed char tag;        /* +5 (ds:8DD5): 01D0 stores its 4th argument here and 02B9 matches it
+                               against its `key`. No caller shows a sound (01D0's callers pass a
+                               slot kind, E0ACD.C:561-568, a roll, E08E6.C:807, or an effect kind | 4,
+                               0BD2:07DE), so Purpose unknown: a per-entry tag */
+    int key;                /* +6 (ds:8DD6): the key; -1 when the record is free */
+    int prevLink;                /* +8 (ds:8DD8): one link of the circular list; 0BD2:01D0 splices a
+                               new item in after this record through it */
+    int nextLink;                /* +0xa (ds:8DDA): the other link; the list walks (0BD2:0385, 040E,
+                               04AA) follow it */
+    signed char m0A;        /* +0xc (ds:8DDC): gFBC8 or -1, set by 01D0 */
+    signed char value;        /* +0xd (ds:8DDD): the item's bonus or effect value: the signed bonus
+                               printed as "%s +%d" and "Cursed %s %d", the spell index into ds:1278
+                               and ds:12E0, the wand effect index g38FA[m0B], and the scroll and
+                               potion values (0BD2:05B5, 0D2D, 0EE8, 1001) */
 };
 
 extern struct CharRec gChars[]; /*@ ds:F580 */
-extern struct Item14 gTable8DD2[]; /*@ ds:8DD2 */
+extern struct ItemRecord gItems[]; /*@ ds:8DD0 */
 extern int gPartyDir; /*@ ds:FBCC */               /* the party's facing, 0..3 north, east, south, west */
 extern char gEFB2; /*@ ds:EFB2 */              /* set when the sound page changes (src/E0ACD.C) */
 extern char gDF4C; /*@ ds:DF4C */              /* set to 1 when an action took effect, which this
@@ -503,7 +515,7 @@ void RunCellScript(int cell, int mode);  /* forward: 1DA8 comes after its caller
     if (HitTestObjectKind(kind)) {
         if (gMouseDisabled != 0 && gF51A == 0x10) {
             item = RemoveListItem(&gMazeItems[id * 9], 8, -1);
-            if (gTable8DD2[item].m02 == 0x10) {
+            if (gItems[item].type == 0x10) {
                 InsertListItem(&gChars[gInventoryMember].items[16], -2, item, 0);
                 DrawItemRow(0x10, 1, 0);
             } else {
@@ -519,7 +531,7 @@ void RunCellScript(int cell, int mode);  /* forward: 1DA8 comes after its caller
                 SetMouseItem(item);
                 gDF4C = 1;
             }
-        } else if (g181F[gTable8DD2[GetCurrentItem()].icon] > 0xe) {
+        } else if (g181F[gItems[GetCurrentItem()].icon] > 0xe) {
             InsertListItem(&gMazeItems[id * 9], id, GetCurrentItem(), 8);
             RunCellScript(id, 4);
             SetMouseItem(0);
@@ -744,8 +756,8 @@ void RunCellScript(int cell, int mode);  /* forward: 1DA8 comes after its caller
     if (!flag) {
         item = CopyItemToFreeSlot(v1);
         if (item != 0) {
-            if (AddDDEffect(-1, item, id, g5A40[v2 * 2 + v3], v2, gTable8DD2[item].m02) == 0)
-                gTable8DD2[item].m04 = -1;
+            if (AddDDEffect(-1, item, id, g5A40[v2 * 2 + v3], v2, gItems[item].type) == 0)
+                gItems[item].key = -1;
         }
     } else {
         saved = gF43D;
@@ -793,7 +805,7 @@ void RunCellScript(int cell, int mode);  /* forward: 1DA8 comes after its caller
         break;
     case 0xfff5:
         while ((item = ScanListItem(&gMazeItems[srcId * 9], -1, -1, 0)) != 0) {
-            oldKey = gTable8DD2[item].m03;
+            oldKey = gItems[item].tag;
             RemoveListItem(&gMazeItems[srcId * 9], 0, item);
             InsertListItem(&gMazeItems[id * 9], id, item, oldKey);
         }
@@ -843,7 +855,7 @@ void RunCellScript(int cell, int mode);  /* forward: 1DA8 comes after its caller
     for (count = 0; count < 0x1b; count++) {
         if ((gPanelMode != 0 || idx > 1) && idx != 0x10) {
             item = gChars[who].items[idx];
-            if (item != 0 && g181F[gTable8DD2[item].icon] >= 0xf)
+            if (item != 0 && g181F[gItems[item].icon] >= 0xf)
                 break;
         }
         idx++;
@@ -1154,11 +1166,11 @@ done:
         case 0xFFE7:
             t1 = GetCurrentItem();
             if (*script == (char)0xE1)
-                gEvalStack[gEvalTop++] = gTable8DD2[t1].m02;
+                gEvalStack[gEvalTop++] = gItems[t1].type;
             else if (*script == (char)0xF5)
                 gEvalStack[gEvalTop++] = t1;
             else
-                gEvalStack[gEvalTop++] = gTable8DD2[t1].m0B;
+                gEvalStack[gEvalTop++] = gItems[t1].value;
             script++;
             break;
         case 0xFFE9:
@@ -1427,7 +1439,7 @@ done:
                 for (j = 0; j < 0x1b; j++) {
                     item = rec->items[j];
                     if (item != 0)
-                        gTable8DD2[item].flags |= 0x40;
+                        gItems[item].flags |= 0x40;
                 }
                 MarkListItems((char far *)rec + 0x97);
             }

@@ -111,21 +111,32 @@ struct CharRec {
 };
 extern struct CharRec gChars[]; /*@ ds:F580 */
 
-/* A 14-byte ds:8DD2 record (ITEM.DAT): type is the item type, key the record's key (-1 when free)
+/* A 14-byte item record (ITEM.DAT, gItems at ds:8DD0): type is the item type, key the record's key (-1 when free)
    and value the amount EatFood (07E0) adds to the character's food (the meaning is inferred; the
    src/E0D1C.C:275 comment says what type, value and key mean is not established). */
-struct Entry14 {
-    unsigned char flags;    /* +0 */
-    signed char icon;       /* +1 */
-    signed char type;        /* +2 */
-    char pad03;
-    int key;                /* +4: the key; -1 when free (set to -1 after eating, 07E0) */
-    char pad06[0x0B - 0x06];
-    signed char value;        /* +0xB: the amount EatFood (07E0) adds to food (meaning inferred,
-                               src/E0D1C.C:275) */
-    char pad0C[0x0E - 0x0C];
+struct ItemRecord {
+    signed char nameIndex;        /* +0 (ds:8DD0): indexes the item-name table at segment 0x1F28 */
+    signed char identifiedNameIndex;        /* +1 (ds:8DD1): the second name index */
+    unsigned char flags;    /* +2 (ds:8DD2): bit 0x20 gates 0BD2:0AF2/0C8E, 0x40 is set by
+                               0BD2:040E and tested by 0BD2:05B5; src/E07A9.C calls it flags */
+    signed char icon;       /* +3 (ds:8DD3): the icon number */
+    signed char type;        /* +4 (ds:8DD4): the item type */
+    signed char tag;        /* +5 (ds:8DD5): 01D0 stores its 4th argument here and 02B9 matches it
+                               against its `key`. No caller shows a sound (01D0's callers pass a
+                               slot kind, E0ACD.C:561-568, a roll, E08E6.C:807, or an effect kind | 4,
+                               0BD2:07DE), so Purpose unknown: a per-entry tag */
+    int key;                /* +6 (ds:8DD6): the key; -1 when the record is free */
+    int prevLink;                /* +8 (ds:8DD8): one link of the circular list; 0BD2:01D0 splices a
+                               new item in after this record through it */
+    int nextLink;                /* +0xa (ds:8DDA): the other link; the list walks (0BD2:0385, 040E,
+                               04AA) follow it */
+    signed char m0A;        /* +0xc (ds:8DDC): gFBC8 or -1, set by 01D0 */
+    signed char value;        /* +0xd (ds:8DDD): the item's bonus or effect value: the signed bonus
+                               printed as "%s +%d" and "Cursed %s %d", the spell index into ds:1278
+                               and ds:12E0, the wand effect index g38FA[m0B], and the scroll and
+                               potion values (0BD2:05B5, 0D2D, 0EE8, 1001) */
 };
-extern struct Entry14 gTable8DD2[]; /*@ ds:8DD2 */
+extern struct ItemRecord gItems[]; /*@ ds:8DD0 */
 extern signed char g1A1B[]; /*@ ds:1A1B */  /* per-page sound table (src/E0D1C.C) */
 extern int g36B0[]; /*@ ds:36B0 */          /* a per-slot word (screen row) compared with gHitY */
 extern int gHitY; /*@ ds:5E12 */            /* the y the hit test uses (the walk is 16A5:00BD, src/E16A5.C) */
@@ -430,7 +441,7 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
 
     if (item) {
         if (AddDDEffect(gInventoryMember, item, gPartyCell, g1A1B[action->slot + gPartyDir * 4], gPartyDir,
-                       gTable8DD2[item].type)) {
+                       gItems[item].type)) {
             SetMouseItem(0);
             gDF4C = 1;
         }
@@ -616,12 +627,12 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
         return;
     }
     item = GetCurrentItem();
-    if (gTable8DD2[item].type == 0x1F || gTable8DD2[item].type == 0x31) {
-        if (rec->food + gTable8DD2[item].value > 100)
+    if (gItems[item].type == 0x1F || gItems[item].type == 0x31) {
+        if (rec->food + gItems[item].value > 100)
             rec->food = 100;
         else
-            rec->food += gTable8DD2[item].value;
-        gTable8DD2[item].key = -1;
+            rec->food += gItems[item].value;
+        gItems[item].key = -1;
         SetMouseItem(0);
         DrawMemberFood(index);
         PlaySound(9);
@@ -749,7 +760,7 @@ done:
         goto call;
     if (gF51A != 0x10) {
         item = GetCurrentItem();
-        if (gTable8DD2[item].flags & 0x20)
+        if (gItems[item].flags & 0x20)
             return;
     } else {
         item = RemoveListItem((void far *)gChars[gInventoryMember].m97, 0, -1);
@@ -763,7 +774,7 @@ done:
         InsertListItem((void far *)(gMazeItems + gPartyCell * 9), gPartyCell, item, value);
         RunCellScript(gPartyCell, 4);
     } else {
-        flag = AddDDEffect(gInventoryMember, item, gPartyCell, value, gPartyDir, gTable8DD2[item].type);
+        flag = AddDDEffect(gInventoryMember, item, gPartyCell, value, gPartyDir, gItems[item].type);
     }
     if (flag != 0) {
         if (gMouseDisabled == 0 || gF51A != 0x10)

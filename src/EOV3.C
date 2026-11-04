@@ -103,18 +103,13 @@ extern char gDragActive; /*@ ds:5C77 */
 struct Projectile {              /* 18-byte effect records, 10 of them at ds:DD2C (src/E1414.C) */
     char active;            /* +0: 1 or 2 when live */
     char pad01[7];
-    int item;                /* +8: an index into the ds:8DD2 records */
+    int item;                /* +8: an index into gItems */
     char pad0A[8];
 };
 
-struct Entry14 {            /* 14-byte records at ds:8DD2 (src/E0D1C.C) */
-    char pad00[3];
-    unsigned char m03;      /* +3: ResetLevel keeps its low two bits and clears bits 2 to 7 */
-    char pad04[0xa];
-};
+
 
 extern struct Projectile gProjectiles[]; /*@ ds:DD2C */
-extern struct Entry14 gTable8DD2[]; /*@ ds:8DD2 */
 
 struct CharRec {            /* 243-byte character records at ds:F580 (src/E08E6.C) */
     char pad00;
@@ -985,7 +980,7 @@ done:
 }
 /* ovl3:19F7: resets the level. It clears the m0A byte of the 30 gMonsters objects, clears every live
    ds:DD2C effect record (for an active 1, keeping only the low two bits of the m03 byte of the
-   ds:8DD2 record its item indexes, then clearing its active byte; an active 2 is just cleared),
+   item record its item indexes, then clearing its active byte; an active 2 is just cleared),
    then, when gDragActive is set, walks the gMaze record of character gDragMember adding the mode
    byte g5C76 to two bytes of its slot until the gWallTypeFlags flag of that slot has bit 0x30 set (the
    loop has no other bound), and clears gDragActive. Called by ovl3:1368 and ovl3:15B9. */
@@ -1000,7 +995,7 @@ done:
         gMonsters[i].m0A = 0;
     for (i = 0; i < 0xa; i++) {
         if (gProjectiles[i].active == 1) {
-            gTable8DD2[gProjectiles[i].item].m03 &= 3;
+            gItems[gProjectiles[i].item].tag &= 3;
             gProjectiles[i].active = 0;
         }
         if (gProjectiles[i].active == 2)

@@ -24,13 +24,13 @@
    (entries 2 and 8). Placeholder names remain where no evidence is given. */
 
 /* Meaningful constants of this unit. */
-/* Entry14.flags bit that, with gFBD2 bit 0, gates the flagged branch of SetMouseItem (07A9:015C to
+/* ItemRecord.flags bit that, with gFBD2 bit 0, gates the flagged branch of SetMouseItem (07A9:015C to
    01B1): the icon colour row, the translated copy and the pointer image; when either gate fails the
    branch is skipped (07A9:0161 and 0168, je 0x1bc). The same test is in src/E0D1C.C:478. The bit
    selects the colour-row draw path: in f0D1C_070F (src/E0D1C.C:478 to 484) a record whose flags
    have the bit, when gFBD2 bit 0 is set too, is drawn through its icon's colour row (gFn80D2) and
    f1A29_008B; any other record, or the same record with gFBD2 bit 0 clear, goes through
-   f1A29_000F. The same byte is tested for 0x20, 0x08 and 0x10 elsewhere (see Entry14.flags
+   f1A29_000F. The same byte is tested for 0x20, 0x08 and 0x10 elsewhere (see ItemRecord.flags
    below). */
 #define ITEM_FLAG_COLOUR_ICON 0x80
 /* the MemAlloc flag that returns a paragraph-aligned, offset-0 block: the bit is defined at
@@ -61,21 +61,27 @@
    is not cited */
 #define MOUSE_HOTSPOT 8
 
-struct Entry14 {            /* 14-byte records at ds:8DD2 (ITEM.DAT records, whitepaper 4.4); the
-                               same layout src/E0D1C.C:96 uses */
-    unsigned char flags;    /* +0: bit 0x80, with gFBD2 bit 0, gates the flagged branch of SetMouseItem
-                               (07A9:015C): the colour row, the translated copy and the pointer image.
-                               Other code tests 0x20 (0ACD:0A91, 0BD2:0B5E, 0BD2:0CB4), 0x08 (0DE8:082E)
-                               and 0x10 (0DE8:0890); the byte is decremented (0EF3:266E) and stored
-                               (122E:1D2B). */
-    signed char icon;       /* +1: the item's icon number, an index into gIconsDDE4 (read at
-                               07A9:0141 and sign-extended by the cbw, byte 98h, at 07A9:0145) */
-    signed char type;        /* +2: compared by 0D1C:00F1 and 0D1C:01CA (src/E0D1C.C) */
-    char pad03;
-    int key;                /* +4: set to -1 by 0D1C:01CA (src/E0D1C.C) */
-    char pad06[0x0B - 0x06];
-    signed char value;        /* +0xB: compared by 0D1C:00F1 (src/E0D1C.C) */
-    char pad0C[0x0E - 0x0C];
+struct ItemRecord {
+    signed char nameIndex;        /* +0 (ds:8DD0): indexes the item-name table at segment 0x1F28 */
+    signed char identifiedNameIndex;        /* +1 (ds:8DD1): the second name index */
+    unsigned char flags;    /* +2 (ds:8DD2): bit 0x20 gates 0BD2:0AF2/0C8E, 0x40 is set by
+                               0BD2:040E and tested by 0BD2:05B5; src/E07A9.C calls it flags */
+    signed char icon;       /* +3 (ds:8DD3): the icon number */
+    signed char type;        /* +4 (ds:8DD4): the item type */
+    signed char tag;        /* +5 (ds:8DD5): 01D0 stores its 4th argument here and 02B9 matches it
+                               against its `key`. No caller shows a sound (01D0's callers pass a
+                               slot kind, E0ACD.C:561-568, a roll, E08E6.C:807, or an effect kind | 4,
+                               0BD2:07DE), so Purpose unknown: a per-entry tag */
+    int key;                /* +6 (ds:8DD6): the key; -1 when the record is free */
+    int prevLink;                /* +8 (ds:8DD8): one link of the circular list; 0BD2:01D0 splices a
+                               new item in after this record through it */
+    int nextLink;                /* +0xa (ds:8DDA): the other link; the list walks (0BD2:0385, 040E,
+                               04AA) follow it */
+    signed char m0A;        /* +0xc (ds:8DDC): gFBC8 or -1, set by 01D0 */
+    signed char value;        /* +0xd (ds:8DDD): the item's bonus or effect value: the signed bonus
+                               printed as "%s +%d" and "Cursed %s %d", the spell index into ds:1278
+                               and ds:12E0, the wand effect index g38FA[m0B], and the scroll and
+                               potion values (0BD2:05B5, 0D2D, 0EE8, 1001) */
 };
 
 extern char gBarGraphsOn; /*@ ds:F43C */  /* written by StartupAlloc (07A9:000D, set to 1); read by
@@ -217,7 +223,7 @@ extern void far *gFont6x6; /*@ ds:A9C0 */  /* the 6x6 font loaded from FONT6.FNT
 extern int gTextRegion; /*@ ds:811F */  /* this unit tests it as 7 to gate the " taken." message
                                      (07A9:011E, 0123); FindWordPanel saves it (src/EOV2.C:476) and
                                      indexes gRegions[gTextRegion] with it (src/EOV2.C:489-492, 517-520) */
-extern struct Entry14 gTable8DD2[]; /*@ ds:8DD2 */
+extern struct ItemRecord gItems[]; /*@ ds:8DD0 */
 extern int gMouseDisabled; /*@ ds:814A */  /* nonzero disables the mouse pointer code: the test at
                                               07A9:0148 (`cmp [814A],0; je`) runs SetMouseItem's body
                                               when zero. main sets it before StartupAlloc: 1 when
@@ -226,7 +232,7 @@ extern int gMouseDisabled; /*@ ds:814A */  /* nonzero disables the mouse pointer
                                               meaning (nonzero disables the mouse) */
 extern int gFBCE; /*@ ds:FBCE */  /* the item index shown by the mouse (src/E0D1C.C:109); SetCurrentItem
                                      stores it (0D1C:0311) */
-extern unsigned char gFBD2; /*@ ds:FBD2 */  /* bit 0, with Entry14.flags bit 0x80, gates the flagged
+extern unsigned char gFBD2; /*@ ds:FBD2 */  /* bit 0, with ItemRecord.flags bit 0x80, gates the flagged
                                                  branch of SetMouseItem (07A9:0163 to 01B1); the same
                                                  bit gates the icon colour row in 0D1C:070F
                                                  (src/E0D1C.C:50); read at 07A9:0163 and
@@ -358,8 +364,8 @@ extern void SetMousePointerShape(int hotX, int hotY, void far *icon); /*@ 1BB1:0
    gMouseDisabled; src/E0D1C.C:274 says an item is cleared and redrawn through SetMouseItem, and the
    call SetMouseItem(0) is at src/E0D1C.C:302 (the tests leading to it at :298 and :300). A nonzero
    item also passes " taken.\r" (ds:0094) to 1DE7:060A after 0BD2:05B5 when gTextRegion == 7, and the
-   record gTable8DD2[item].icon then supplies the icon number. When the current record
-   gTable8DD2[gFBCE] has flag 0x80 and gFBD2 bit 0 is set, the flagged branch runs (07A9:015C to
+   record gItems[item].icon then supplies the icon number. When the current record
+   gItems[gFBCE] has flag 0x80 and gFBD2 bit 0 is set, the flagged branch runs (07A9:015C to
    01B1): the icon's 16-byte colour row (gBufF534 + (item << 4), item now the icon number, or the
    dummy byte at ds:0090 when gGraphicsChoice == 0) is passed to ds:80D2, the icon is translated into gDF48
    by 17A6:197E, and the translated image becomes the mouse pointer (item set to ICON_SLOT_TRANSLATED, 0x59, so item > 0 at
@@ -380,12 +386,12 @@ extern void SetMousePointerShape(int hotX, int hotY, void far *icon); /*@ 1BB1:0
             DrawItemName(item);
             DrawText(" taken.\r");
         }
-        item = gTable8DD2[item].icon;   /* the item index becomes the icon number */
+        item = gItems[item].icon;   /* the item index becomes the icon number */
     }
     if (!gMouseDisabled) {
         /* the record of the index SetCurrentItem stored (gFBCE), not item, which is the icon
            number by now */
-        if ((gTable8DD2[gFBCE].flags & ITEM_FLAG_COLOUR_ICON) && (gFBD2 & 1)) {
+        if ((gItems[gFBCE].flags & ITEM_FLAG_COLOUR_ICON) && (gFBD2 & 1)) {
             if (gGraphicsChoice)
                 gFn80D2(gBufF534 + (item << 4));   /* the icon's 16-byte colour row */
             else

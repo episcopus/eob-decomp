@@ -5,8 +5,8 @@
    against an effect (0F98, 0FCA, 101A), runs the party-wipe ending (093B) and uses carried items
    (0359 ApplyItemAttack, 0474 MoveCarriedItem, 0537 UseCarriedItem, 05BB UseItemByKind, 0763
    UseItem). It walks the 243-byte character records at ds:F580 (struct CharRec, src/E0A72.C), the
-   28-byte object records at ds:8A82 (struct Monster, src/E08E6.C), the 14-byte records at ds:8DD2
-   (struct Entry14, src/E0D1C.C), the 27-byte records at ds:1A3B (struct MonsterType, src/E0D1C.C) and
+   28-byte object records at ds:8A82 (struct Monster, src/E08E6.C), the item records gItems (ds:8DD0)
+   (struct ItemRecord, src/E0D1C.C), the 27-byte records at ds:1A3B (struct MonsterType, src/E0D1C.C) and
    the 16-byte item types at ds:A9F0 (struct ItemType, src/EOV2.C). Most meanings are not
    established, so most function names say what a function does rather than what the game calls
    it. */
@@ -69,16 +69,27 @@ struct MonsterType {            /* the 27-byte records at ds:1A3B; see src/E0D1C
     signed char m1A;        /* +1A */
 };
 
-struct Entry14 {            /* the 14-byte records at ds:8DD2; see src/E0D1C.C */
-    unsigned char flags;    /* +0: bits 8 and 0x10 read by UseItem (:511, :518) */
-    signed char icon;       /* +1 */
-    signed char type;        /* +2: the item type index into gItemTypes (:406, :489) */
-    signed char m03;        /* +3: low two bits read by 01FF */
-    int key;                /* +4 */
-    char pad06[0x0B - 0x06];
-    signed char value;        /* +0B: the weapon or slot bonus used by RollToHit and RollAttackDamage
-                               (:214, :255) and ComputeArmourClass (:731) */
-    char pad0C[0x0E - 0x0C];
+struct ItemRecord {
+    signed char nameIndex;        /* +0 (ds:8DD0): indexes the item-name table at segment 0x1F28 */
+    signed char identifiedNameIndex;        /* +1 (ds:8DD1): the second name index */
+    unsigned char flags;    /* +2 (ds:8DD2): bit 0x20 gates 0BD2:0AF2/0C8E, 0x40 is set by
+                               0BD2:040E and tested by 0BD2:05B5; src/E07A9.C calls it flags */
+    signed char icon;       /* +3 (ds:8DD3): the icon number */
+    signed char type;        /* +4 (ds:8DD4): the item type */
+    signed char tag;        /* +5 (ds:8DD5): 01D0 stores its 4th argument here and 02B9 matches it
+                               against its `key`. No caller shows a sound (01D0's callers pass a
+                               slot kind, E0ACD.C:561-568, a roll, E08E6.C:807, or an effect kind | 4,
+                               0BD2:07DE), so Purpose unknown: a per-entry tag */
+    int key;                /* +6 (ds:8DD6): the key; -1 when the record is free */
+    int prevLink;                /* +8 (ds:8DD8): one link of the circular list; 0BD2:01D0 splices a
+                               new item in after this record through it */
+    int nextLink;                /* +0xa (ds:8DDA): the other link; the list walks (0BD2:0385, 040E,
+                               04AA) follow it */
+    signed char m0A;        /* +0xc (ds:8DDC): gFBC8 or -1, set by 01D0 */
+    signed char value;        /* +0xd (ds:8DDD): the item's bonus or effect value: the signed bonus
+                               printed as "%s +%d" and "Cursed %s %d", the spell index into ds:1278
+                               and ds:12E0, the wand effect index g38FA[m0B], and the scroll and
+                               potion values (0BD2:05B5, 0D2D, 0EE8, 1001) */
 };
 
 struct Projectile {              /* the records at ds:DD2C that 1414:0172 walks; see src/E1414.C */
@@ -88,7 +99,7 @@ struct Projectile {              /* the records at ds:DD2C that 1414:0172 walks;
     int cell;                /* +4 */
     char m06;               /* +6 */
     signed char dir;        /* +7 */
-    int item;                /* +8: an item slot, indexed into gTable8DD2 (01FF, 02D4) */
+    int item;                /* +8: an item slot, indexed into gItems (01FF, 02D4) */
     char m0A;               /* +0A: an item type, indexed into gItemTypes (01FF, 02D4) */
     char m0B;               /* +0B: the attacker (TryRecordAttack :318) */
     char m0C;               /* +0C */
@@ -116,7 +127,7 @@ struct ItemType {           /* the 16-byte item types at ds:A9F0; see src/EOV2.C
 extern struct CharRec gChars[]; /*@ ds:F580 */
 extern struct Monster gMonsters[]; /*@ ds:8A82 */
 extern struct MonsterType gMonsterTypes[]; /*@ ds:1A3B */
-extern struct Entry14 gTable8DD2[]; /*@ ds:8DD2 */
+extern struct ItemRecord gItems[]; /*@ ds:8DD0 */
 extern struct ItemType gItemTypes[]; /*@ ds:A9F0 */
 extern signed char g1A1B[]; /*@ ds:1A1B */   /* per-page sound table (src/E0D1C.C) */
 extern signed char g1A2B[]; /*@ ds:1A2B */   /* per-page byte table used by 01FF */
@@ -191,7 +202,7 @@ void DamageCharacter(int who, int what);  /* forward: 01FF reaches it with a far
 void LevelUpSlot(int who, int cls, int slot);  /* forward: 0B45 reaches it with a far call */
 
 /* 0DE8:0007: the to-hit roll of character `who` against object `obj`. It derives an attack bonus
-   from the item record `slot` (an index into gTable8DD2; its m02 item type index selects the m0B
+   from the item record `slot` (an index into gItems; its m02 item type index selects the m0B
    weapon value when it is 1..3), adds either the attacker's strength to-hit bonus
    (GetStrengthToHitBonus, 0A72:00CF) or the dexterity char value depending on `useStrength`, sets
    gMonsters[obj].m16 bit 0 on every call (the object was attacked), whatever the outcome, and compares
@@ -208,11 +219,11 @@ void LevelUpSlot(int who, int cls, int slot);  /* forward: 0B45 reaches it with 
     int roll;
 
     if (slot != 0)
-        itemType = gTable8DD2[slot].type;
+        itemType = gItems[slot].type;
     else
         itemType = 0;
     if (itemType >= 1 && itemType <= 3)
-        bonus = gTable8DD2[slot].value;
+        bonus = gItems[slot].value;
     else
         bonus = 0;
     if (useStrength != 0)
@@ -235,7 +246,7 @@ void LevelUpSlot(int who, int cls, int slot);  /* forward: 0B45 reaches it with 
 /* 0DE8:011A: the damage a hit deals. It starts from GetStrengthDamageBonus(who) when `useStrength`
    is set and `who` is valid, then adds a damage roll from the item type `itemType` (dice at
    m0A/m0B or m07/m08 with the m09 bonus, the choice depending on whether `obj`'s gMonsterTypes entry
-   has m0E bit 0 set) plus the item record `slot`'s m0B (slot is an index into gTable8DD2), or the
+   has m0E bit 0 set) plus the item record `slot`'s m0B (slot is an index into gItems), or the
    bare RollDice(1, 2, 0) when `slot` is 0, and clamps at 0. Called by 0DE8:01FF, 0DE8:02D4 and
    0DE8:0359. */
 /*@ 0DE8:011A */ int RollAttackDamage(int who, int obj, int slot, int itemType, char useStrength)
@@ -253,7 +264,7 @@ void LevelUpSlot(int who, int cls, int slot);  /* forward: 0B45 reaches it with 
             total += RollDice(item->m0A, item->m0B, item->m09);
         else
             total += RollDice(item->m07, item->m08, item->m09);
-        total += gTable8DD2[slot].value;
+        total += gItems[slot].value;
     } else {
         total += RollDice(1, 2, 0);
     }
@@ -271,8 +282,8 @@ void LevelUpSlot(int who, int cls, int slot);  /* forward: 0B45 reaches it with 
 }
 
 /* 0DE8:01FF: runs the attack of a ds:DD2C record against the object it names. It takes the
-   record's m08 slot (an index into gTable8DD2) and m0A item type, reads
-   g1A2B[gPartyDir * 4 + (gTable8DD2[slot].m03 & 3)] as the base member, rolls 011A damage (or 1 when
+   record's m08 slot (an index into gItems) and m0A item type, reads
+   g1A2B[gPartyDir * 4 + (gItems[slot].tag & 3)] as the base member, rolls 011A damage (or 1 when
    IsKind2Or3 is false) and adds 2 to the base when MemberIs(5, 1) or MemberIs(6, 1)
    holds and RollDice(1, 2, -1) is nonzero, then applies DamageCharacter to that member and
    returns 1, else 0. Called by 1414:0172 via TestDDEffect. */
@@ -286,7 +297,7 @@ void LevelUpSlot(int who, int cls, int slot);  /* forward: 0B45 reaches it with 
 
     slot = rec->item;
     itemType = rec->m0A;
-    baseMember = gTable8DD2[slot].m03 & 3;
+    baseMember = gItems[slot].tag & 3;
     baseMember = g1A2B[gPartyDir * 4 + baseMember];
     if (IsKind2Or3(itemType))
         damage = RollAttackDamage(-1, -1, slot, itemType, 0);
@@ -327,7 +338,7 @@ void LevelUpSlot(int who, int cls, int slot);  /* forward: 0B45 reaches it with 
     return 1;
 }
 /* 0DE8:0359: one item/effect attack by character `who` on the item record `slot` (an index into
-   gTable8DD2). It rejects a `who` above 1 with -3, then looks the action up through
+   gItems). It rejects a `who` above 1 with -3, then looks the action up through
    StepCell(gPartyCell, gPartyDir) and Obj15B4. A -1 target with g1905[gMaze[row * 9 + gA9C6]] at
    0xFF bumps two gMaze cells and sets gDF4C, returning -2, otherwise -1. A real target demands the
    0007 to-hit roll (returns -1 on a miss), and when the slot's m02 is 0x34..0x38 f0D1C_0BAB can
@@ -356,11 +367,11 @@ void LevelUpSlot(int who, int cls, int slot);  /* forward: 0B45 reaches it with 
     }
     if (RollToHit(who, target, slot, 1) == 0)
         goto fail;
-    m02 = gTable8DD2[slot].type;
+    m02 = gItems[slot].type;
     if (m02 > 0x33 && m02 < 0x39 && f0D1C_0BAB(target))
         return -1;
     gDCA4 = target;
-    damage = RollAttackDamage(who, target, slot, gTable8DD2[slot].type, 1);
+    damage = RollAttackDamage(who, target, slot, gItems[slot].type, 1);
     if (f0D1C_0BEB(target, m02))
         damage >>= 1;
     return damage;
@@ -371,7 +382,7 @@ fail:
 /* 0DE8:0474: moves a carried item into gChars[who].items[slot] (slot is the carried-item index).
    With `flag` set and the special slot items[16] occupied, it takes that slot's item through
    RemoveListItem (key 0, target -1). Otherwise it scans slots 24 down to 22 for the first occupied
-   item whose gTable8DD2 m02 is not `type` (or `type` is -1) and moves that item to `slot`,
+   item whose gItems m02 is not `type` (or `type` is -1) and moves that item to `slot`,
    clearing the source. Called by 0DE8:0537. */
 /*@ 0DE8:0474 */ void MoveCarriedItem(int who, int slot, int type, int flag)
 {
@@ -383,7 +394,7 @@ fail:
     } else {
         for (i = 0x18; i >= 0x16; i--) {
             item = gChars[who].items[i];
-            if (item != 0 && (gTable8DD2[item].type != type || type == -1)) {
+            if (item != 0 && (gItems[item].type != type || type == -1)) {
                 gChars[who].items[slot] = item;
                 gChars[who].items[i] = 0;
                 break;
@@ -392,7 +403,7 @@ fail:
     }
 }
 /* 0DE8:0537: tries to use the item in the carried slot `slot` (an index into items) of character
-   `who` against the item record `field` (an index into gTable8DD2). It dispatches through
+   `who` against the item record `field` (an index into gItems). It dispatches through
    AddDDEffect(who, field, gPartyCell as volume, the g1A1B page byte as kind, gPartyDir as page, the
    item's m02 as type); on success it plays sound 0x0B, clears gChars[who].items[slot] and refills
    it through MoveCarriedItem(who, slot, -1, 0), setting gDF4C. Returns 0. Called by 0DE8:0763. */
@@ -404,7 +415,7 @@ fail:
     if (idx > 3)
         idx -= 2;
     if (AddDDEffect(who, field, gPartyCell, g1A1B[gPartyDir * 4 + idx], gPartyDir,
-                   gTable8DD2[field].type)) {
+                   gItems[field].type)) {
         PlaySound(0xb);
         gChars[who].items[slot] = 0;
         MoveCarriedItem(who, slot, -1, 0);
@@ -413,7 +424,7 @@ fail:
     return 0;
 }
 
-/* 0DE8:05BB: picks the item for the action `slot` (an index into gTable8DD2) and runs it. The
+/* 0DE8:05BB: picks the item for the action `slot` (an index into gItems) and runs it. The
    item's m02 indexes g552F to a `kind`; kind 0x10 takes the first of items[0] and items[1] whose own
    m02 is 0x10 (clearing that slot), else the special items[16] slot (pulled through RemoveListItem,
    with no m02 test); otherwise it scans all 27 slots for the first whose item m02 equals `kind`
@@ -429,18 +440,18 @@ fail:
     int idx;
     int i;
 
-    m02 = gTable8DD2[slot].type;
+    m02 = gItems[slot].type;
     kind = g552F[m02];
     item = 0;
     if (kind == 0x10) {
         item = gChars[who].items[0];
-        if (item == 0 || gTable8DD2[item].type != 0x10)
+        if (item == 0 || gItems[item].type != 0x10)
             item = 0;
         else
             gChars[who].items[0] = 0;
         if (item == 0) {
             item = gChars[who].items[1];
-            if (item == 0 || gTable8DD2[item].type != 0x10)
+            if (item == 0 || gItems[item].type != 0x10)
                 item = 0;
             else
                 gChars[who].items[1] = 0;
@@ -449,7 +460,7 @@ fail:
             item = RemoveListItem(&gChars[who].items[16], 0, -1);
     } else {
         for (i = 0; i < 0x1b; i++) {
-            if (gTable8DD2[gChars[who].items[i]].type == kind) {
+            if (gItems[gChars[who].items[i]].type == kind) {
                 item = gChars[who].items[i];
                 gChars[who].items[i] = 0;
                 if (i < 2)
@@ -473,7 +484,7 @@ fail:
     }
     return -4;
 }
-/* 0DE8:0763: runs the action item record `field` (an index into gTable8DD2) for character `who`
+/* 0DE8:0763: runs the action item record `field` (an index into gItems) for character `who`
    and carried slot `slot` (an index into items). It derives the item's m02, calls ClearEffectFlag4
    when effectFlags bit 2 is set, dispatches on the gItemTypes m0E kind (1 rolls 0359 and forces a miss
    from 0 to -1 with sound 0x20, 2 runs 0537, 3 runs 05BB and redraws), then, on a hit, raises hp
@@ -487,7 +498,7 @@ fail:
     int result;
 
     if (field != 0)
-        m02 = gTable8DD2[field].type;
+        m02 = gItems[field].type;
     else
         m02 = 0;
     result = 0;
@@ -509,14 +520,14 @@ fail:
         break;
     }
     if (result > 0) {
-        if (gTable8DD2[field].flags & 8) {
+        if (gItems[field].flags & 8) {
             if (gChars[who].hp + result >= 0x80)
                 gChars[who].hp = 0x7f;
             else
                 gChars[who].hp += result;
             RedrawMember(who);
         }
-        if (gTable8DD2[field].flags & 0x10)
+        if (gItems[field].flags & 0x10)
             gChars[who].items[slot] = 0;
         DamageObject(&gMonsters[gDCA4], result);
     }
@@ -722,25 +733,25 @@ fail:
             continue;
         if (i == 2 && !f0D1C_07DB(who, 1))
             continue;
-        itemType = gTable8DD2[item].type;
+        itemType = gItems[item].type;
         value = gItemTypes[itemType].m05 & g1231[rec->classIndex];
         if ((gItemTypes[itemType].m0E & 0x7f) != 0 || value == 0)
             continue;
         if (i >= 1 && i <= 2 && itemType != 0x1b)
             continue;
         rec->armorClass += gItemTypes[itemType].m04;
-        rec->armorClass -= gTable8DD2[item].value;
+        rec->armorClass -= gItems[item].value;
     }
     item = rec->items[17];
-    if (gTable8DD2[item].value == 0) {
+    if (gItems[item].value == 0) {
         bonus25 = 0;
         bonus26 = 0;
         item = rec->items[25];
-        if (item != 0 && (gItemTypes[gTable8DD2[item].type].m0E & 0x7f) == 0)
-            bonus25 = gTable8DD2[item].value;
+        if (item != 0 && (gItemTypes[gItems[item].type].m0E & 0x7f) == 0)
+            bonus25 = gItems[item].value;
         item = rec->items[26];
-        if (item != 0 && (gItemTypes[gTable8DD2[item].type].m0E & 0x7f) == 0)
-            bonus26 = gTable8DD2[item].value;
+        if (item != 0 && (gItemTypes[gItems[item].type].m0E & 0x7f) == 0)
+            bonus26 = gItems[item].value;
         bonus25 = bonus25 > bonus26 ? bonus25 : bonus26;
         rec->armorClass -= bonus25;
     }

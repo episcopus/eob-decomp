@@ -57,7 +57,7 @@ struct Projectile {
     int cell;                  /* +04: a character or object index */
     char m06;                 /* +06 */
     signed char dir;          /* +07 */
-    int item;                  /* +08: an index into the 14-byte records at ds:8DD2 */
+    int item;                  /* +08: an index into gItems */
     char m0A;                 /* +0A */
     char m0B;                 /* +0B */
     char m0C;                 /* +0C: flags, bit 0x20 tested by 0285 */
@@ -65,14 +65,29 @@ struct Projectile {
     int (far *fn)(struct Projectile far *rec); /* +0E: called by 0172 when active is 2 */
 };
 
-/* The 14-byte records at ds:8DD2 (src/E0D1C.C names the same table Entry14); 020F keeps only the
-   low two bits of the byte at +3 of one. */
-struct Entry14 {
-    char flags;                 /* +00 */
-    signed char icon;         /* +01: an index into g181F */
-    signed char type;          /* +02 */
-    unsigned char m03;        /* +03: 020F clears its low two bits */
-    char pad04[0x0E - 0x04];
+/* The 14-byte item records gItems (ds:8DD0); 020F keeps only the low two bits of an item's
+   tag. */
+struct ItemRecord {
+    signed char nameIndex;        /* +0 (ds:8DD0): indexes the item-name table at segment 0x1F28 */
+    signed char identifiedNameIndex;        /* +1 (ds:8DD1): the second name index */
+    unsigned char flags;    /* +2 (ds:8DD2): bit 0x20 gates 0BD2:0AF2/0C8E, 0x40 is set by
+                               0BD2:040E and tested by 0BD2:05B5; src/E07A9.C calls it flags */
+    signed char icon;       /* +3 (ds:8DD3): the icon number */
+    signed char type;        /* +4 (ds:8DD4): the item type */
+    signed char tag;        /* +5 (ds:8DD5): 01D0 stores its 4th argument here and 02B9 matches it
+                               against its `key`. No caller shows a sound (01D0's callers pass a
+                               slot kind, E0ACD.C:561-568, a roll, E08E6.C:807, or an effect kind | 4,
+                               0BD2:07DE), so Purpose unknown: a per-entry tag */
+    int key;                /* +6 (ds:8DD6): the key; -1 when the record is free */
+    int prevLink;                /* +8 (ds:8DD8): one link of the circular list; 0BD2:01D0 splices a
+                               new item in after this record through it */
+    int nextLink;                /* +0xa (ds:8DDA): the other link; the list walks (0BD2:0385, 040E,
+                               04AA) follow it */
+    signed char m0A;        /* +0xc (ds:8DDC): gFBC8 or -1, set by 01D0 */
+    signed char value;        /* +0xd (ds:8DDD): the item's bonus or effect value: the signed bonus
+                               printed as "%s +%d" and "Cursed %s %d", the spell index into ds:1278
+                               and ds:12E0, the wand effect index g38FA[m0B], and the scroll and
+                               potion values (0BD2:05B5, 0D2D, 0EE8, 1001) */
 };
 
 /* The 28-byte object records at ds:8A82 (src/E08E6.C). */
@@ -88,11 +103,11 @@ extern struct Effect gEffects[]; /*@ ds:5BA8 */
 extern int gEffectCount; /*@ ds:5CA8 */       /* the number of entries, 16 */
 extern struct CharRec gChars[]; /*@ ds:F580 */
 extern struct Projectile gProjectiles[]; /*@ ds:DD2C */   /* 10 records, 18 bytes each */
-extern struct Entry14 gTable8DD2[]; /*@ ds:8DD2 */ /* 14-byte records (src/E0D1C.C) */
+extern struct ItemRecord gItems[]; /*@ ds:8DD0 */
 extern struct Monster gMonsters[]; /*@ ds:8A82 */   /* 30 records, 28 bytes each (src/E08E6.C) */
 extern char gMaze[]; /*@ ds:B894 */             /* nine-byte records (src/E0D1C.C) */
 extern signed char gWallTypeFlags[]; /*@ ds:194B */      /* byte table indexed by a gMaze byte (src/E0D1C.C) */
-extern signed char g181F[]; /*@ ds:181F */      /* byte table indexed by a ds:8DD2 icon in 003E */
+extern signed char g181F[]; /*@ ds:181F */      /* byte table indexed by an item's icon in 003E */
 extern int gEFD2; /*@ ds:EFD2 */                /* Purpose unknown: 003E writes 0x10 or 1 on its
                                                   failure paths; src/E122E.C:18 calls it the mode the
                                                   driver runs a script in and tests it against 0x40 */
@@ -160,7 +175,7 @@ extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
 }
 /* 1414:003E: the per-record step 0285 runs for every live ds:DD2C record. It reads a status byte
    db = gMaze[target * 9 + (rec->dir ^ 2)] and bits = gWallTypeFlags[db]. A record in state 1 whose bits say
-   so (bits bit 0, a nonzero m02, or bits bit 1 together with a ds:8DD2 icon of 15 or more) is moved
+   so (bits bit 0, a nonzero m02, or bits bit 1 together with an item icon of 15 or more) is moved
    onto character `target`: one RemoveListItem takes the record's item m08 off the old cell's list
    (gMaze[rec->cell * 9 + 5]) and one InsertListItem puts it on the target's list
    (gMaze[target * 9 + 5], key target, sound sel | 4); cell and m06 are set to `target` and `sel`,
@@ -180,7 +195,7 @@ extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
     bits = gWallTypeFlags[db];
     if (rec->active == 1) {
         m08 = rec->item;
-        flag = g181F[gTable8DD2[m08].icon] >= 0xF;
+        flag = g181F[gItems[m08].icon] >= 0xF;
         hit = (bits & 1) || rec->m02 != 0 || ((bits & 2) && flag);
         if (hit) {
             RemoveListItem((int far *)(gMaze + rec->cell * 9 + 5), 0, m08);
@@ -238,13 +253,13 @@ extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
 }
 
 /* 1414:020F: clears a live ds:DD2C record. When it is in state 1 it first keeps only the low two
-   bits of gTable8DD2[rec->item].m03, redraws rec->cell through 122E:1DA8 with mode 4 and plays
+   bits of gItems[rec->item].tag, redraws rec->cell through 122E:1DA8 with mode 4 and plays
    sound 0x12, then clears the record's active flag and its m0D, dir, cell, m0B, m0A and item
    fields. Called by 0285 and 0D63. */
 /*@ 1414:020F */ void ClearDDEffect(struct Projectile far *rec)
 {
     if (rec->active == 1) {
-        gTable8DD2[rec->item].m03 &= 3;
+        gItems[rec->item].tag &= 3;
         RunCellScript(rec->cell, 4);
         PlaySoundDefault(0x12);
     }

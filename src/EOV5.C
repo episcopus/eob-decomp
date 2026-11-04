@@ -49,15 +49,27 @@ struct PoolNameRec {        /* a view of one 243-byte pre-made character record 
     char rest[0xE8];        /* +0x0B: the rest of the record, not read here */
 };
 
-struct Entry14 {            /* the 14-byte item records at ds:8DD2 (src/E0D1C.C) */
-    char pad00;
-    signed char icon;       /* +1 */
-    signed char type;        /* +2: the item type */
-    char pad03;
-    int key;                /* +4 */
-    char pad06[0x0B - 0x06];
-    signed char value;        /* +0xB */
-    char pad0C[0x0E - 0x0C];
+struct ItemRecord {
+    signed char nameIndex;        /* +0 (ds:8DD0): indexes the item-name table at segment 0x1F28 */
+    signed char identifiedNameIndex;        /* +1 (ds:8DD1): the second name index */
+    unsigned char flags;    /* +2 (ds:8DD2): bit 0x20 gates 0BD2:0AF2/0C8E, 0x40 is set by
+                               0BD2:040E and tested by 0BD2:05B5; src/E07A9.C calls it flags */
+    signed char icon;       /* +3 (ds:8DD3): the icon number */
+    signed char type;        /* +4 (ds:8DD4): the item type */
+    signed char tag;        /* +5 (ds:8DD5): 01D0 stores its 4th argument here and 02B9 matches it
+                               against its `key`. No caller shows a sound (01D0's callers pass a
+                               slot kind, E0ACD.C:561-568, a roll, E08E6.C:807, or an effect kind | 4,
+                               0BD2:07DE), so Purpose unknown: a per-entry tag */
+    int key;                /* +6 (ds:8DD6): the key; -1 when the record is free */
+    int prevLink;                /* +8 (ds:8DD8): one link of the circular list; 0BD2:01D0 splices a
+                               new item in after this record through it */
+    int nextLink;                /* +0xa (ds:8DDA): the other link; the list walks (0BD2:0385, 040E,
+                               04AA) follow it */
+    signed char m0A;        /* +0xc (ds:8DDC): gFBC8 or -1, set by 01D0 */
+    signed char value;        /* +0xd (ds:8DDD): the item's bonus or effect value: the signed bonus
+                               printed as "%s +%d" and "Cursed %s %d", the spell index into ds:1278
+                               and ds:12E0, the wand effect index g38FA[m0B], and the scroll and
+                               potion values (0BD2:05B5, 0D2D, 0EE8, 1001) */
 };
 
 struct ItemInfo {           /* 16-byte records at ds:A9F5 (src/E0D1C.C) */
@@ -99,7 +111,7 @@ extern struct CharRec gChars[]; /*@ ds:F580 */
 extern struct CharRec gCharPool[]; /*@ ds:7298 */  /* the pre-made character records 070E copies into gChars */
 extern struct PoolNameRec gPoolNameBase[]; /*@ ds:71A7 */  /* ds:71A7 = gCharPool + 2 - 0xF3, the base of the
                                                               folded gCharPool[-n-1].name access */
-extern struct Entry14 gTable8DD2[]; /*@ ds:8DD2 */
+extern struct ItemRecord gItems[]; /*@ ds:8DD0 */
 extern struct ItemInfo gA9F5[]; /*@ ds:A9F5 */
 extern struct Monster gMonsters[]; /*@ ds:8A82 */
 extern int gCountDDE0; /*@ ds:DDE0 */
@@ -774,7 +786,7 @@ enum {
    resurrect/heal panel 0EB9 may act on: first every character whose flags bit 0 is set and whose
    hit points are -10 (0xf6, a dead member); then, for every character with flags bit 0 set, each
    of its 25 item slots whose item type's gA9F5[type].m09 low 7 bits equal 8, stored as
-   -gTable8DD2[item].value. Returns the count. ResurrectPicker reads a negative entry n back as the
+   -gItems[item].value. Returns the count. ResurrectPicker reads a negative entry n back as the
    pool index -(n + 1): that reading is an inference from ResurrectPicker and the
    RemoveCarriedItems(0x21, who + 1) calls; what value itself means is not established (0D1C:01CA).
    Called by 0EB9. */
@@ -803,10 +815,10 @@ enum {
                 item = rec->items[j];
                 if (!item)
                     continue;
-                type = gTable8DD2[item].type;
+                type = gItems[item].type;
                 kind = gA9F5[type].m09 & 0x7f;
                 if (kind == 8)
-                    gTableF4E6[gCountDDE0++] = -gTable8DD2[item].value;
+                    gTableF4E6[gCountDDE0++] = -gItems[item].value;
             }
         }
     }
@@ -980,7 +992,7 @@ enum {
 }
 /* ovl5:10A6: the "surrender / attack" NPC panel. Draws message 0x10 and shows the 2-entry menu
    ds:7BF2 ("Surrender"/"Attack"); choice 0 draws message 0x11 and, for every character's first two
-   item slots whose item type gTable8DD2[item].type is outside 0x33..0x38, clears the slot and
+   item slots whose item type gItems[item].type is outside 0x33..0x38, clears the slot and
    queues the item on the list keyed by gPartyCell, with the sound from gPartyDir. Sets gFC04 bit
    0x2000000. Called from the menu dispatcher 1A82 (mode 5). */
 /*@ ovl5:10A6 */ void SurrenderPanel(void)
@@ -997,7 +1009,7 @@ enum {
         for (i = 0; i < 6; i++) {
             for (j = 0; j < 2; j++) {
                 if (item = gChars[i].items[j]) {
-                    if (gTable8DD2[item].type < 0x33 || gTable8DD2[item].type > 0x38) {
+                    if (gItems[item].type < 0x33 || gItems[item].type > 0x38) {
                         gChars[i].items[j] = 0;
                         InsertListItem(&gMazeItems[gPartyCell * 9], gPartyCell, item,
                                        g1A1B[gPartyDir * 4 + RollDice(1, 2, -1)]);

@@ -193,12 +193,29 @@ extern unsigned char g62F2[]; /*@ ds:62F2 */ /* the icon x in 8-pixel columns fo
 extern unsigned char g62F8[]; /*@ ds:62F8 */ /* the icon y for each member slot (SelectPartyMember) */
 extern signed char g1231[]; /*@ ds:1231 */
 extern void far *gIconDD28; /*@ ds:DD28 */
-struct Entry14 {                /* the 14-byte item records at ds:8DD2 (src/E0D1C.C) */
-    char pad00[4];
-    int key;                    /* +4: set to -1 when the record is freed (0D1C:01CA) */
-    char pad06[0x0E - 0x06];
+struct ItemRecord {
+    signed char nameIndex;        /* +0 (ds:8DD0): indexes the item-name table at segment 0x1F28 */
+    signed char identifiedNameIndex;        /* +1 (ds:8DD1): the second name index */
+    unsigned char flags;    /* +2 (ds:8DD2): bit 0x20 gates 0BD2:0AF2/0C8E, 0x40 is set by
+                               0BD2:040E and tested by 0BD2:05B5; src/E07A9.C calls it flags */
+    signed char icon;       /* +3 (ds:8DD3): the icon number */
+    signed char type;        /* +4 (ds:8DD4): the item type */
+    signed char tag;        /* +5 (ds:8DD5): 01D0 stores its 4th argument here and 02B9 matches it
+                               against its `key`. No caller shows a sound (01D0's callers pass a
+                               slot kind, E0ACD.C:561-568, a roll, E08E6.C:807, or an effect kind | 4,
+                               0BD2:07DE), so Purpose unknown: a per-entry tag */
+    int key;                /* +6 (ds:8DD6): the key; -1 when the record is free */
+    int prevLink;                /* +8 (ds:8DD8): one link of the circular list; 0BD2:01D0 splices a
+                               new item in after this record through it */
+    int nextLink;                /* +0xa (ds:8DDA): the other link; the list walks (0BD2:0385, 040E,
+                               04AA) follow it */
+    signed char m0A;        /* +0xc (ds:8DDC): gFBC8 or -1, set by 01D0 */
+    signed char value;        /* +0xd (ds:8DDD): the item's bonus or effect value: the signed bonus
+                               printed as "%s +%d" and "Cursed %s %d", the spell index into ds:1278
+                               and ds:12E0, the wand effect index g38FA[m0B], and the scroll and
+                               potion values (0BD2:05B5, 0D2D, 0EE8, 1001) */
 };
-extern struct Entry14 gTable8DD2[]; /*@ ds:8DD2 */
+extern struct ItemRecord gItems[]; /*@ ds:8DD0 */
 extern int gClickY; /*@ ds:8142 */
 extern unsigned char g62FE[]; /*@ ds:62FE */ /* a cleric's spells per level (5 bytes) by class level 1 to 10 */
 extern char g6330[]; /*@ ds:6330 */ /* a cleric's bonus spells per level (5 bytes) by wisdom - 12 */
@@ -1190,7 +1207,7 @@ int AskYesNo(int message);
             gChars[member].spellBook |= 1L << i;
             gChars[owner[i]].items[scroll[i] - 1] = 0;
             scroll[i] = 0;
-            gTable8DD2[item].key = -1;
+            gItems[item].key = -1;
             rebuild = 1;
             RedrawMember(owner[i]);
             n--;

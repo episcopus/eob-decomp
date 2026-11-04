@@ -45,19 +45,6 @@ struct CharRec {
     char padE7[0xF3 - 0xE7];
 };
 
-/* A 14-byte item record at ds:8DD2 (the same records src/E07A9.C calls Entry14 and src/E0BD2.C
-   views two bytes earlier at ds:8DD0). */
-struct Entry14 {
-    unsigned char flags;    /* +0 (ds:8DD2) */
-    signed char icon;       /* +1 */
-    signed char type;        /* +2: the item type */
-    char pad03;
-    int key;                /* +4: the key; -2 when the record is freed here */
-    char pad06[0x0A - 0x06];
-    signed char m0A;        /* +0A */
-    signed char value;        /* +0B */
-    char pad0C[0x0E - 0x0C];
-};
 
 /* A 16-byte item-type record at ds:A9F0 (src/E0BD2.C names the same table). */
 struct ItemType {
@@ -76,8 +63,7 @@ struct ItemType {
     int m0E;                /* +0E */
 };
 
-/* A 14-byte item record at ds:8DD0 (src/E0BD2.C's struct ItemRecord; src/E0D1C.C views the same
-   table two bytes in at ds:8DD2 as Entry14). */
+/* A 14-byte item record, gItems at ds:8DD0 (src/E0BD2.C). */
 struct ItemRecord {
     signed char nameIndex;        /* +00 */
     signed char identifiedNameIndex;        /* +01 */
@@ -144,7 +130,7 @@ struct Projectile {
     int cell;                 /* +04: a character or object index */
     char m06;                /* +06 */
     signed char dir;         /* +07 */
-    int item;                 /* +08: an index into the 14-byte records at ds:8DD2 */
+    int item;                 /* +08: an index into gItems */
     char m0A;                /* +0A */
     char m0B;                /* +0B */
     char m0C;                /* +0C: flags, bit 0x20 tested by 1414:0285 */
@@ -181,7 +167,6 @@ extern struct Spell gSpells1344[];      /*@ ds:1344 */ /* 0x13-byte spell record
 extern struct EffectMode gEffectModes[]; /*@ ds:56E7 */ /* four bytes per effect mode */
 
 extern struct CharRec gChars[];         /*@ ds:F580 */
-extern struct Entry14 gTable8DD2[];     /*@ ds:8DD2 */
 extern struct ItemRecord gItems[];      /*@ ds:8DD0 */
 extern struct ItemType gItemTypes[];    /*@ ds:A9F0 */
 /* The six item-type slots 0x33..0x38 the game creates at runtime live at ds:AD20, the same 96
@@ -607,9 +592,9 @@ extern int gFC72;                /*@ ds:FC72 */ /* the handle gFn8072 returned u
    +4 byte (0xE2). Called by 0EF3:1233. */
 /*@ 0EF3:03D8 */ void FreeItemRecord(int n)
 {
-    gTable8DD2[n].key = -2;
-    gTable8DD2[n].m0A = -1;
-    gItemTypes[gTable8DD2[n].type].m04 = 0xE2;
+    gItems[n].key = -2;
+    gItems[n].m0A = -1;
+    gItemTypes[gItems[n].type].m04 = 0xE2;
 }
 
 /* 0EF3:0418: allocate a free item record: walk the 14-byte records at ds:8DD0 from index 0x0B to
@@ -2038,17 +2023,17 @@ void DrawSpellPanel(void);
     int item, left;
 
     item = gChars[who].items[slot];
-    switch (gTable8DD2[item].type) {
+    switch (gItems[item].type) {
     case 0x22:
     case 0x23:
         TakeItemFromSlot(who, slot);
         break;
     case 0x30:
-        left = gTable8DD2[item].flags & 0x3F;
+        left = gItems[item].flags & 0x3F;
         if (--left == 0)
             TakeItemFromSlot(who, slot);
         else
-            gTable8DD2[item].flags--;
+            gItems[item].flags--;
         break;
     }
 }

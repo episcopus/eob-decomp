@@ -1,26 +1,26 @@
 /* Unit at EOB.EXE 0BD2:000E (4681 bytes, 22 functions): the inventory and item-use module. Its
-   functions walk the item records at ds:8DD0 (struct ItemRecord, the same table src/E0D1C.C calls
-   Entry14 at ds:8DD2) through the circular lists whose head is a word, and the character records at
+   functions walk the item records at ds:8DD0 (struct ItemRecord, gItems) through the circular
+   lists whose head is a word, and the character records at
    ds:F580 (struct CharRec, src/E0A72.C). It draws the item rows, uses and wears items, applies a
    status effect, and is reached from the action handlers of 0ACD and the object/effect units.
    Placeholder names remain where the evidence names the behaviour but not the game concept. */
 
 /*@flags -ml -O -Z -v */
 
-/* A 14-byte item record. src/E0D1C.C declares the same layout with its base at ds:8DD2 (Entry14);
-   the code here computes the base at ds:8DD0 and uses the fields below. */
+/* A 14-byte item record of ITEM.DAT, gItems at ds:8DD0. Every unit declares the table at this
+   base (before 2026-11-03 several used a view at ds:8DD2, two bytes in). */
 struct ItemRecord {
     signed char nameIndex;        /* +0 (ds:8DD0): indexes the item-name table at segment 0x1F28 */
     signed char identifiedNameIndex;        /* +1 (ds:8DD1): the second name index */
     unsigned char flags;    /* +2 (ds:8DD2): bit 0x20 gates 0BD2:0AF2/0C8E, 0x40 is set by
                                0BD2:040E and tested by 0BD2:05B5; src/E07A9.C calls it flags */
-    signed char icon;       /* +3 (ds:8DD3): the icon number (src/E07A9.C Entry14.icon) */
-    signed char type;        /* +4 (ds:8DD4): the item type (src/E0D1C.C Entry14.m02) */
+    signed char icon;       /* +3 (ds:8DD3): the icon number */
+    signed char type;        /* +4 (ds:8DD4): the item type */
     signed char tag;        /* +5 (ds:8DD5): 01D0 stores its 4th argument here and 02B9 matches it
                                against its `key`. No caller shows a sound (01D0's callers pass a
                                slot kind, E0ACD.C:561-568, a roll, E08E6.C:807, or an effect kind | 4,
                                0BD2:07DE), so Purpose unknown: a per-entry tag */
-    int key;                /* +6 (ds:8DD6): the key; -1 when the record is free (Entry14.cell) */
+    int key;                /* +6 (ds:8DD6): the key; -1 when the record is free */
     int prevLink;                /* +8 (ds:8DD8): one link of the circular list; 0BD2:01D0 splices a
                                new item in after this record through it */
     int nextLink;                /* +0xa (ds:8DDA): the other link; the list walks (0BD2:0385, 040E,
@@ -29,7 +29,7 @@ struct ItemRecord {
     signed char value;        /* +0xd (ds:8DDD): the item's bonus or effect value: the signed bonus
                                printed as "%s +%d" and "Cursed %s %d", the spell index into ds:1278
                                and ds:12E0, the wand effect index g38FA[m0B], and the scroll and
-                               potion values (0BD2:05B5, 0D2D, 0EE8, 1001; Entry14.m0B) */
+                               potion values (0BD2:05B5, 0D2D, 0EE8, 1001) */
 };
 extern struct ItemRecord gItems[]; /*@ ds:8DD0 */
 
