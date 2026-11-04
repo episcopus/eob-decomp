@@ -110,7 +110,67 @@ The padding between records is 0 to 42 bytes in `EOB.EXE` and 169 bytes after `I
 
 ### 2.5 Graphics drivers
 
-`CGA.OVL`, `EGA.OVL`, `MCGA.OVL`, `TGA.OVL`: MZ files with 40 relocations each and entry `0000:0000`, loaded by the game with DOS function 4B03h (load overlay: an image relocated to a segment of the caller's choosing, no PSP); the VGA mode loads `MCGA.OVL` (oracle trace, section 2.6). `EOB.EXE` also names `vga.ovl`, which is not in the copy. [H] Assembly.
+`CGA.OVL`, `EGA.OVL`, `MCGA.OVL`, `TGA.OVL`: MZ files with 40 relocations each and entry `0000:0000`, loaded by the game with DOS function 4B03h (load overlay: an image relocated to a segment of the caller's choosing, no PSP); the VGA mode loads `MCGA.OVL` (oracle trace, section 2.6). `EOB.EXE` also names `vga.ovl`, which is not in the copy.
+
+**Each driver is one assembly module, linked alone by TLINK 3.0** [V] (`make rebuild PROGRAM=MCGA.OVL`, `tools/rebuild/driver.py`, 2026-11-04). `src/drivers/MCGA.ASM` and `src/drivers/CGA.ASM`, assembled by TASM 2.0 `/mx` (one pass) and linked with no start-up code, library or stack, give the whole files, header included: 11,832 and 13,271 bytes. The headers are TLINK's (the signature `01 00 FB 30 6A 72` at 1Ch, a 512-byte header, SS:SP 0000:0000 from a module with no stack segment). What the matching showed about the source: every jump that fits in a byte is a short one with no NOP after it, so the source wrote `jmp short` (TASM's one pass pads a plain forward `jmp`); the register to register `xchg` and `test` have their operands in the order that puts the first one in the ModRM reg field; segment overrides on string instructions and `xlat` are written out. The 40 relocations are the segment words of the export table (cs:001F, `dd Routine`). `CGA.OVL`'s header asks for one paragraph more than its image (minalloc 1): TLINK writes that for uninitialised bytes after the last initialised one, which nothing reads, so their number (1 to 16 give the same file) is not known. `EGA.OVL` and `TGA.OVL` rebuild identical from drafts made the same way (not yet in `src/drivers/`). `make match` does not prove a driver: it proves functions of `EOB.EXE` and `INTRO.EXE` linked with C0L, by `re/units.toml`, and a driver is a program of its own, so it is built and compared whole like `START1.EXE` (no level is recorded in `re/symbols.toml`).
+
+**The interface** [V] (`src/drivers/MCGA.ASM`, the callers in `src/`). The image starts with `jmp DriverEntry`. `RunOverlayRequest` (1C00:0055) loads the driver and calls segment:0000 far (1C00:0088); DriverEntry returns BX = the driver's size in paragraphs (the block is shrunk to it, 1C00:00A8) and AX = the offset of LinkDriver, which the game calls with the far pointer of its slot table, the request's words +4 and +6 (ds:8125 = 212E:802A, 1C00:00C0). The driver has the same table at cs:0003: 47 far pointers (the count is the word at cs:00BF). LinkDriver walks both: where the game's slot is not zero, the pointer is copied into the driver (an import); where it is zero, the driver's pointer is written into the game's slot (an export). The game's image holds seven pointers and forty zeros, so slots 0 to 6 are imports and slots 7 to 46 exports, the game's far pointer at ds:8046 + 4 * i being export i. LinkDriver returns carry set if a driver export slot is zero. All four drivers have the same slots; export 34 (the line offsets), 38 and 39 are data, the rest far routines.
+
+| Slot | ds: | Game name | MCGA | CGA | EGA | TGA | What (MCGA.OVL; CGA where it differs) |
+|---:|---|---|---|---|---|---|---|
+| 0 | 802A | import | | | | | ds:FE4E, the far pointer to the current font (gCurFont) |
+| 1 | 802E | import | | | | | ds:FC0C, the eight page segments (gPageSegs) |
+| 2 | 8032 | import | | | | | ds:8115, the page the driver draws to (gDrawPage) |
+| 3 | 8036 | import | | | | | 19BC:0007 MemAlloc(size low, size high, flags), dx:ax the block |
+| 4 | 803A | import | | | | | 19BC:0137 MemFree |
+| 5 | 803E | import | | | | | 1A72:033A GetFarPointer |
+| 6 | 8042 | import | | | | | 1A72:02FE SetFarPointer |
+| 7 | 8046 | gCopyPage | 04F8 | 0707 | 053B | 0614 | CopyPage: copy a whole page, segment to segment (CGA: an art page to CGA pixels through the dither tables, third argument the colour map) |
+| 8 | 804A | gRestoreRectToPage | 0516 | 07C2 | 057F | 065A | RestoreRectToPage: RestoreRect on the page gDrawPage names |
+| 9 | 804E | gRestoreRect | 0536 | 07E2 | 059F | 067A | RestoreRect: (col, y, cols, rows, buf): a saved rectangle back to page 0 |
+| 10 | 8052 | gCopyRegion | 05D4 | 0886 | 06C7 | 071D | CopyRegion: (srcCol, srcY, dstCol, dstY, cols, rows, srcPage, dstPage): a rectangle between pages |
+| 11 | 8056 | gClearPage | 0693 | 095B | 07FB | 07F2 | ClearPage: fill the draw page with colour 0 |
+| 12 | 805A | gDrawCell8x8 | 06AF | 0977 | 0819 | 080E | DrawCell8x8: (src, col, y): an 8 by 8 cell to the draw page |
+| 13 | 805E | gDrawIndexedTile | 0717 | 09E5 | 08EE | 087A | DrawIndexedTile: (tile, col, y): a tile of the set SetTileSet names, through its colour row (CGA: does nothing) |
+| 14 | 8062 | gDrawLine | 07E3 | 0AB3 | 08F3 | 0948 | DrawLine: (x1, y1, x2, y2, colour): a line, clipped to SetLineClip's rectangle |
+| 15 | 8066 | gXorRect | 2617 | 2A6A | 2234 | 24DE | XorRect: (x1, y1, x2, y2, colour): XOR colour into a rectangle |
+| 16 | 806A | gFillRect | 09F5 | 0E56 | 0BB8 | 0C69 | FillRect: (x1, y1, x2, y2, colour): fill a rectangle |
+| 17 | 806E | (none) | 0A97 | 0FA8 | 0D15 | 0D97 | ReadCell8x8: (page, dst, col, y): an 8 by 8 cell of a page into dst; not called |
+| 18 | 8072 | gGetPixel | 0B56 | 106E | 0E19 | 0E59 | GetPixel: (x, y): the draw page's pixel |
+| 19 | 8076 | (none) | 0B8F | 10C1 | 0ECC | 0EA5 | MirrorCell16: (src, dst): mirror a 16 by 16 cell; not called |
+| 20 | 807A | (none) | 0C5C | 1185 | 0FEC | 0F79 | SetTileSet: (pixels, colourRows, tileMap): the tile set (CGA: does nothing); not called |
+| 21 | 807E | gSaveRectFromPage | 1ABD | 1CE0 | 1889 | 1A01 | SaveRectFromPage: SaveRect from the page gDrawPage names |
+| 22 | 8082 | gGetSpriteCellRle | 0C8D | 11B8 | 0FF1 | 0FAC | GetSpriteCellRle: (col, y, cols, rows, map): cut a cell from the page after the draw page into MemAlloc'd memory, runs of 0 coded (CGA: the same routine as export 16) |
+| 23 | 8086 | gGetSpriteCell | 0DD9 | 11B8 | 0FF1 | 0FAC | GetSpriteCell: (col, y, cols, rows, map): cut a 4-bit cell with a 16-colour table (CGA: CGA pixels and a mask, through the map) |
+| 24 | 808A | (none) | 0F56 | 12EC | 1237 | 104F | DrawMaskedCell16: (maskCell, cell, sheet, col, y): a 16 by 16 cell through a mask cell (CGA: does nothing); INTRO.EXE only |
+| 25 | 808E | gCopyToPlanar | 0FCD | 1365 | 123C | 10C8 | CopyToPlanar: write a buffer to the EGA planes (MCGA and CGA: does nothing) |
+| 26 | 8092 | (none) | 0FD2 | 136A | 1309 | 10CD | SwapPageWithScreen: (page): exchange a page with page 0; not called |
+| 27 | 8096 | gDrawShapeMaskedFlipped | 1006 | 139E | 1355 | 1103 | DrawShapeMaskedFlipped: DrawShapeMasked mirrored |
+| 28 | 809A | gDrawShapeMasked | 12F0 | 1689 | 135A | 13EF | DrawShapeMasked: (page, shape, x, y, depth): a shape behind the scenery planes of page 4 (CGA: does nothing) |
+| 29 | 809E | gPutPixel | 15DA | 1974 | 135F | 16DB | PutPixel: (x, y, colour): set a pixel |
+| 30 | 80A2 | gRestoreDrawState | 1612 | 19CF | 13BE | 1732 | RestoreDrawState: put back the region SaveDrawState kept |
+| 31 | 80A6 | gDrawShapeFlipped | 1639 | 19F6 | 1583 | 1759 | DrawShapeFlipped: DrawShape mirrored |
+| 32 | 80AA | gSaveDrawState | 1A7A | 1C9D | 1746 | 19BE | SaveDrawState: keep the region and set it to the whole screen |
+| 33 | 80AE | gSaveRect | 1ADC | 1CFF | 18A8 | 1A20 | SaveRect: (col, y, cols, rows, buf): a rectangle of page 0 into buf; returns its bytes |
+| 34 | 80B2 | (none) | 1B9D | 1DC2 | 19A4 | 1AE2 | SetLineClip: (left, top, right, bottom): DrawLine's clip rectangle, in pixels; not called |
+| 35 | 80B6 | gSetRegion | 1BC0 | 1DE5 | 19C7 | 1B05 | SetRegion: (left, right, top, bottom): the shape draws' region, in columns and lines |
+| 36 | 80BA | gSetPalette | 1BE3 | 1E08 | 19EA | 1B28 | SetPalette: (rgb): load the 256 DAC registers, INT 10h AX=1012h (CGA: does nothing) |
+| 37 | 80BE | (none) | 1C03 | 1E2A | 1A3D | 1B58 | SetTileFormat: (width, height, a, b): the tile size in cells (CGA: does nothing); not called |
+| 38 | 80C2 | gDrawShape | 1CAB | 1ED3 | 1A42 | 1C02 | DrawShape: (page, shape, x, y): draw a shape, clipped to the region |
+| 39 | 80C6 | gSaveRectSize | 1FF1 | 2149 | 1BC4 | 1D54 | SaveRectSize: (cols, rows): the bytes SaveRect needs |
+| 40 | 80CA | gDrawText | 2543 | 2958 | 2149 | 23E0 | DrawText: (text, x, y, colour, background): a string in the current font |
+| 41 | 80CE | gRowOffsetTableOff | 0328 | 0321 | 03A9 | 042E | gRowOffsets: data: the offset of each screen line |
+| 42 | 80D2 | gSetRemapTable | 277B | 2C38 | 2569 | 2A6D | SetRemapTable: (colours): the remapped draws' colours |
+| 43 | 80D6 | gDrawShapeRemapped | 279C | 2F9E | 23E2 | 2705 | DrawShapeRemapped: (page, shape, x, y): a 4-bit shape through the remap table |
+| 44 | 80DA | gDrawShapeFlippedRemapped | 298A | 2CE6 | 25A5 | 28A3 | DrawShapeFlippedRemapped: DrawShapeRemapped mirrored |
+| 45 | 80DE | (none) | 00F6 | 00F9 | 02A1 | 020A | gNibbleSwap: data: a byte with its pixels in the other order (MCGA nibbles, CGA pixel pairs) |
+| 46 | 80E2 | gRemapTable | 030C | 01F9 | 018F | 010A | gRemapTable: data: the remap table SetRemapTable fills |
+
+"Not called": no far call through the slot in `EOB.EXE` or `INTRO.EXE` (a search for `FF 1E` and the slot's offset, 2026-11-04). Coordinates are pixels, or 8-pixel columns where the table says col; a page number goes through gPageSegs (`PageSeg`, MCGA.OVL 0B3F), the draw routines draw to gDrawPage's page (`DrawPageSeg`, 0B1D), and the sprite cutters read the page after it (0AFA). The shape draws clip to the region SetRegion sets (cs:00CA), which SaveDrawState and RestoreDrawState keep and restore around each pointer redraw. MCGA shapes have two formats by their first byte: 0, rows of 8-bit pixels with 0 and a count for a transparent run, or else 4-bit pixels with a 16-byte colour table of their own (DrawShape, 1CAB); the remapped draws use the driver's remap table instead.
+
+**CGA.OVL** keeps the same routines in the CGA format (two bits a pixel, 80 bytes a line, the odd lines at B800:2000). Seven exports return at once there, each followed by its old body as dead code: DrawIndexedTile, SetTileSet, DrawMaskedCell16, DrawShapeMasked and its mirror, SetPalette and SetTileFormat. Its cells (GetSpriteCell, used for exports 15 and 16) are CGA pixels followed by a transparency mask, and DrawShape draws that format.
+
+**The CGA colour maps** [V] (CGA.OVL 20E6, 2026-11-04). The pointer the game passes as CopyPage's two extra words (19EC:002A) and as GetSpriteCell's last argument is a 32-byte colour map: CGA.OVL's SetDitherTables (20E6) reads map[c] and map[16 + c], the two CGA colours of colour c, and builds the two pixel-pair tables CopyPage and GetSpriteCell convert 16-colour pixels through: on even lines map[hi] SHL 2 OR map[16 + lo], on odd lines map[16 + hi] SHL 2 OR map[lo], a checkerboard of the two colours. The other drivers do not read the pointer. This settles the names gCgaMapDefault (ds:113F), gCgaMapPlayfld (2069:0000), gCgaMapInvent (2067:0000), gCgaMapItemL1, gCgaMapItemS1, gCgaMapThrown and gCgaMapItemIcn (20A3:0000 to 20A9:0000): each is 32 bytes of values 0 to 3 in that layout, and the art they are passed with is drawn through them in CGA mode. CGA.OVL holds a map of its own at 07A0 that nothing reads.
 
 ### 2.6 Start-up and command line
 

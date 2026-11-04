@@ -2547,7 +2547,7 @@ why = "200 far shape pointers that ovl3:01C8 cuts for each decoration's ten shap
 [[global]]
 id = "ds:113F"
 name = "gCgaMapDefault"
-why = "the resident stub of intro/ds:1C0A, gCgaMapDefault: an overlay stub takes its function's name"
+why = "a 32-byte CGA colour map (values 0 to 3, two halves of 16): the map LoadOverlayScreen (082C:05EC) passes with most art; CGA.OVL's SetDitherTables (20E6, whitepaper 2.5) reads map[c] and map[16 + c] as the two CGA colours of colour c when CopyPage or GetSpriteCell get it; the other drivers ignore it. Its INTRO.EXE twin is intro/ds:1C0A"
 
 [[global]]
 id = "intro/ds:1C0A"
