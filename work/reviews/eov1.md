@@ -1,7 +1,7 @@
 # Review: eov1
 
-Reviewer: rev-haiku
-Commit reviewed: aa12bec (main, round 2; round 1 at 5ab5e506c9de9a707573ad68b289af65bc246347)
+Reviewer: p6-rev-11
+Commit reviewed: P6 round at ce0608f (main); round 2 at aa12bec; round 1 at 5ab5e506c9de9a707573ad68b289af65bc246347
 
 Playbook 70. Judge what a matching file can still get wrong: names, types, comments, structure.
 The matcher already proved the bytes; do not re-prove them, read for meaning.
@@ -15,6 +15,18 @@ Evidence used: the code of `src/EOV1.C` (line numbers below); the other files of
 (`E0D1C.C` headers for 0D1C:00F1, 0163, 0670, 0C21, 0454, 035A; `E0A72.C` for FindClassSlot;
 `EOV6.C` for the spell slots and g159); `make match FILE=src/EOV1.C` (16 of 16, exit 0);
 `make readability UNIT=eov1` (0 findings); and the quoted strings, read only, in `eob/EOB.EXE`.
+
+### Round P6 (2026-11-04, reviewed at ce0608f)
+
+Later round. Changed since aa12bec: the P6 naming pass, `git diff aa12bec HEAD -- src/EOV1.C`; 252 insertions, 308 deletions; names and comments only. The names checked against re/renames.toml and re/fields.toml; the changed comments against the code at each address. The matcher still proves the bytes (16 of 16).
+
+No must-fix in the changed lines. The P6 names are backed by the registry: gCampStrings 2003:0000, gPanelFillColour ds:F57E, gDrawPage ds:8115, gScratchBuf ds:DCFC, gDirectAction ds:F542, gPanelMode ds:FB44, gTimerEnableFlags ds:849E, gCurFont ds:FE4E, gFont6x6 ds:A9C0, gStagingPage ds:DF4E, gMembersMarkedDisabled ds:FD98, the gSpell* globals ds:FD9A to ds:FDEC, gMemberBoxColumn ds:62F2, gMemberBoxTop ds:62F8, gClassBaseBits ds:1231, gDisabledMemberIcon ds:DD28, gItems ds:8DD0, gClericSpellsPerLevel ds:62FE, gClericWisdomBonus ds:6330, gPaladinSpellsPerLevel ds:6358, gMageSpellsPerLevel ds:6394, gSaveRectFromPage ds:807E, gRestoreRectToPage ds:804A, gNodeListChanged ds:5E20, gCgaMapDefault ds:113F, gCgaMapInvent 2067:0000 and gCgaMapPlayfld 2069:0000; the functions SetFont 1A47:0169, MemberIs 0D1C:0670, DrawShape 1A29:000F, DrawFramedPanel 0D1C:0C21, CopyRegion 19F3:000E, RemovePartyMember 0D1C:035A, ShowMessageBox ovl1:13F7 and IsWearingRing 0D1C:0163; the fields Node.data.def, CharRec.levels, CharRec.mageSpells, CharRec.clericSpells, ItemRecord.key and Region.textAttr2. The changed comments match the code: BuildSpellSlots clears the five lists and the counters (src/EOV1.C:280-370), SpendSpellSlot reads gSpellLevels (src/EOV1.C:385-450), BuildMenuButtons sets gNodeListChanged and clears gDrawPage (src/EOV1.C:860-870), ShowMessageBox restores gDrawPage (src/EOV1.C:891-923), ScribeScrolls frees gItems[item].key (src/EOV1.C:984).
+
+The previous Round 2 must-fix items remain fixed: the gFDBA five lists, ScribeScrolls' 0x22 argument, the ShowMessageBox callers, the BuildMenuButtons callers and headers, and the pointer claim.
+
+The Round 2 should items are still open (not blocking): the three rewraps (src/EOV1.C:920-921, :1033-1034, :1075-1076), the unevidenced reason at :1036-1037, and the missing condition at :1232-1233.
+
+The Round 2 registry question remains open (not blocking): re/symbols.toml lists 12 rows, lacks BoolString, SaveOptionField, DrawOptionField and ScribeScrolls, and gives DrawListNode 1404 against 320 and SpellSlotScreen 2009 against 1892. `make review-pass CHECK=1` passes; the four missing functions need `make map` or a human decision.
 
 ### Round 2 (2026-11-02, reviewed at aa12bec)
 

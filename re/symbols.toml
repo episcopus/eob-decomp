@@ -8455,7 +8455,7 @@ evidence = ["segment"]
 name = "DropCharacter"
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-11"
 
 [[function]]
 id = "eov1_00dd"
@@ -8466,7 +8466,7 @@ evidence = ["near", "frame"]
 name = "BuildSpellSlots"
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-11"
 
 [[function]]
 id = "eov1_025d"
@@ -8477,7 +8477,7 @@ evidence = ["near", "frame"]
 name = "SpendSpellSlot"
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-11"
 
 [[function]]
 id = "eov1_0416"
@@ -8488,7 +8488,7 @@ evidence = ["frame"]
 name = "SelectPartyMember"
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-11"
 
 [[function]]
 id = "eov1_0881"
@@ -8499,7 +8499,7 @@ evidence = ["near"]
 name = "DrawSpellRow"
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-11"
 
 [[function]]
 id = "eov1_097a"
@@ -8510,7 +8510,7 @@ evidence = ["frame"]
 name = "SpellSlotScreen"
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-11"
 
 [[function]]
 id = "eov1_1153"
@@ -8521,7 +8521,7 @@ evidence = ["ovl", "near"]
 name = "BuildMenuButtons"
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-11"
 
 [[function]]
 id = "eov1_13f7"
@@ -8531,8 +8531,8 @@ size = 287
 evidence = ["ovl", "near"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
 name = "ShowMessageBox"
+review = "passed 2026-11-04 p6-rev-11"
 
 [[function]]
 id = "eov1_1516"
@@ -8543,7 +8543,7 @@ evidence = ["ovl", "near"]
 name = "FreeFarList"
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-11"
 
 [[function]]
 id = "eov1_1551"
@@ -8554,7 +8554,7 @@ evidence = ["ovl", "near"]
 name = "DrawListNode"
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-11"
 
 [[function]]
 id = "eov1_1acd"
@@ -8565,7 +8565,7 @@ evidence = ["ovl"]
 name = "RunCampMenu"
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-11"
 
 [[function]]
 id = "eov1_243a"
@@ -8576,7 +8576,7 @@ evidence = ["ovl"]
 name = "AskYesNo"
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-11"
 
 [[function]]
 id = "eov2_0000"
