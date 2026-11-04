@@ -56,14 +56,24 @@ the struct offsets two files name differently. `make names UNIT=<id>` is one fil
 - On a unit branch both tools change only the unit's own file; `make integrate` replays
   `re/renames.toml` on other files, but not yet `re/fields.toml`.
 
-## Decision for the human: a shared header
+## The shared header (decided 2026-11-04)
 
 Every C file declares its own copy of the structs, externs and constants it uses: `struct CharRec`
-is in 16 files, `struct Obj28` in 11. One header (`src/EOB.H`) with the shared structs and constants
-would give one vocabulary by construction, as poolrad's shared block in `POOLVARS.PAS` did. It needs
-the matcher and the rebuild to copy the header next to the unit they compile (both write one file
-today, `tools/match/cmatch.py` and `tools/rebuild/rebuild.py`), so it is a change of the matcher:
-asked before it is made (AGENTS.md). Until then `make field` keeps the copies in step.
+is in 16 files, `struct Monster` in 11. The human decided (2026-11-04) on one shared header with
+**the structs, enums and constants only**, for all three programs; each file keeps its own extern
+declarations with their address tags (`/*@ ds:FBC8 */`), since INTRO.EXE's addresses differ from
+EOB.EXE's. It needs the matcher and the rebuild to copy the header next to the unit they compile
+(both write one file today, `tools/match/cmatch.py` and `tools/rebuild/rebuild.py`): that matcher
+change is approved. A struct that is a variant in one file (`struct Node` +34) keeps one
+declaration with a union. Until the header lands, `make field` keeps the copies in step.
+
+## The review sign-off (decided 2026-11-04)
+
+Independent reviewer agents, one per subsystem (`work/p6-review.md`: the subsystems, their units,
+and the prompt to start one). Each unit is a later round of playbook 70: the reviewer judges what
+changed since the commit its last round reviewed, which in Phase 6 is the names and comments,
+against the evidence each rename logged (`re/renames.toml`, `re/fields.toml`). The operator fixes
+the must-fix items; the subsystem is signed off when every unit in it has passed again.
 
 ## Done when
 
@@ -120,13 +130,13 @@ the findings below are empty or each has an owner; the reviewer signs each subsy
   textAttr2 of gRegions[9], [11], [12], [13] (the fill colour SetTextWindow loads): the files now
   write them as gRegions fields (the same code). gPanels (ds:017F) starts where gRegions[14] would,
   so the region table has 14 entries.
-- Open: gIconTable (ds:FB34) is declared as a byte (the member being moved) in several units and as
+- Open (the human, 2026-11-04: fix these three from the code, guesses marked [H]): gIconTable (ds:FB34) is declared as a byte (the member being moved) in several units and as
   an array of far pointers in E0EF3 (CastBurningHands reads entries 1 to 3, from ds:FB38); one of the
   two readings is a different object that shares the address. gSpellsTakenByTab (ds:FDE7) has 5
   bytes but BuildSpellSlots clears 10, into ds:FDEC, which it clears again (a QUIRK). ds:DCAA
   (gMenuPhase) has no store of 5 and its stepper 0ACD:0753 no caller found: the "rest phase"
   reading is unsupported.
-- Open, for the oracle or a human: gLevelFlags (ds:FBD4) is indexed by gCurLevel 1 to 12, so
+- Open, for the oracle (the human, 2026-11-04: trace each one; results go in the whitepaper as QUIRKs with evidence): gLevelFlags (ds:FBD4) is indexed by gCurLevel 1 to 12, so
   level 12's flags are the bytes of gGameFlags (ds:FC04), a QUIRK if the game relies on it; the
   door code (122E:0137, ToggleDoor) tests only bit 0 of a cell's monster count; the 32-byte maps
   named gCgaMap* hold only the values 0 to 3 and are only passed as a colour map (the CGA reading

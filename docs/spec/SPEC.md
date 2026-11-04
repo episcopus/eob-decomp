@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Version | 0.1 (Phase 0, 2026-10-31) |
+| Version | 0.2 (2026-11-04: the graphics drivers in scope, the rebuild's accepted differences, the port's host and quirk policy) |
 | Target | Westwood / SSI *Eye of the Beholder*, DOS, the files in `eob/` (hashes in `re/inputs.toml`) |
 | Output | C source in `src/` that the original compiler turns into the original's machine code, a rebuild of the game from it, a living design doc in `docs/design/` |
 | Model | `poolrad-decomp` (SPEC 0.8, ADR-002): same proof ladder, same agent process, adapted to C |
@@ -15,13 +15,13 @@ This document says **what** we build, **how** we prove it is right, and **how ag
 
 | ID | Outcome | Measure of done |
 |---|---|---|
-| O1 | C source for the whole game | Every routine of `EOB.EXE`, `INTRO.EXE` and `START1.EXE` outside the Borland runtime library is C (or assembly where the original was assembly) that the pinned toolchain turns into the original's instructions (L2) |
-| O2 | A rebuild | `make rebuild` compiles and links `src/` into programs whose load modules, relocation tables and FBOV overlay data are identical to the originals, and the rebuilt programs play the golden sessions identically in the oracle |
+| O1 | C source for the whole game | Every routine of `EOB.EXE`, `INTRO.EXE` and `START1.EXE` outside the Borland runtime library is C (or assembly where the original was assembly) that the pinned toolchain turns into the original's instructions (L2); and the four graphics drivers `CGA.OVL`, `EGA.OVL`, `MCGA.OVL`, `TGA.OVL`, as TASM source that assembles and links to each file byte for byte (added by the human, 2026-11-04) |
+| O2 | A rebuild | `make rebuild` compiles and links `src/` into programs whose load modules, relocation tables and FBOV overlay data are identical to the originals, and the rebuilt programs play the golden sessions identically in the oracle. Accepted differences (the human, 2026-11-03 and 2026-11-04): the link date, the order of the overlay stub entries (it follows the original function names, which are not known), and in `EOB.EXE` overlay 5's three fixups of `gScrollHook` |
 | O3 | A design doc | `docs/design/WHITEPAPER.md` covers every subsystem with evidence-tagged claims |
 | O4 | Readable source | Real names for modules, functions, globals, parameters, constants and types, with evidence; a comment on every module and function |
-| O5 | A portable build | The matched C, with a platform layer replacing DOS, video and sound, built natively (later phase) |
+| O5 | A portable build | The matched C, with a platform layer replacing DOS, video and sound, built natively (Phase 7): SDL3, starting from poolrad's platform layer (branch `track-c-hybrid`), proven by the golden sessions (the human, 2026-11-04) |
 
-Non-goals for now: bug fixes or enhancements to game behaviour.
+Non-goals for now: bug fixes or enhancements to game behaviour. The port keeps the original's behaviour, its quirks included (the `QUIRK` comments in `src/`), so the goldens stay an exact test; fixes belong to a separate, later build behind a switch (the human, 2026-11-04).
 
 ---
 
@@ -69,7 +69,7 @@ Evidence is in the whitepaper, section 2.
 3. **Segments.** The FBOV header points to TLINK's segment table: 99 entries in `EOB.EXE` (58 code, 22 data, 7 overlay stubs, 12 of a fourth kind), 54 in `INTRO.EXE`. Segments are byte aligned; the table gives the exact boundary of every code segment, and with Borland's one code segment per source file, of every module outside segment 0. DGROUP is paragraph `212E` in `EOB.EXE`; 127,435 bytes of resident code in 53 non-empty segments.
 4. **Overlays (VROOMM).** 7 overlaid segments in `EOB.EXE` (125 entries, 50,641 bytes of code) and 1 in `INTRO.EXE` (22 entries, 11,741 bytes). The stub layout is Turbo Pascal's; the overlay data is appended to the EXE instead of a separate `.OVR` file. `make overlays` validates both.
 5. **No packing.** The load modules are analysed as they are.
-6. **Assembly.** Some code is hand-written: a segment with 36 `iret` and 77 `out` (interrupt handlers, timer, sound, video), near-return code, and probably the four graphics drivers. Assembly is matched as assembly (TASM source), as poolrad's sound driver.
+6. **Assembly.** Some code is hand-written: a segment with 36 `iret` and 77 `out` (interrupt handlers, timer, sound, video), near-return code, and probably the four graphics drivers (in scope since 2026-11-04, O1). Assembly is matched as assembly (TASM source), as poolrad's sound driver.
 7. **Data.** The 6 PAK archives parse with one layout and rebuild byte for byte (`make pak`).
 
 ---
