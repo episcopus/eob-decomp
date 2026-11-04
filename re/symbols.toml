@@ -7498,7 +7498,7 @@ evidence = ["segment"]
 name = "_UnpackScratch"
 level = "L2"
 match_flags = "tasm /mx"
-review = "passed 2026-11-01 rev-haiku"
+review = "passed 2026-11-04 p6-rev-2"
 
 [[function]]
 id = "e1d9a_0013"
@@ -7509,7 +7509,7 @@ evidence = ["far"]
 name = "_Unpack4"
 level = "L2"
 match_flags = "tasm /mx"
-review = "passed 2026-11-01 rev-haiku"
+review = "passed 2026-11-04 p6-rev-2"
 
 [[function]]
 id = "e1d9a_0113"
@@ -7520,7 +7520,7 @@ evidence = ["far"]
 name = "_Unpack3"
 level = "L2"
 match_flags = "tasm /mx"
-review = "passed 2026-11-01 rev-haiku"
+review = "passed 2026-11-04 p6-rev-2"
 
 [[function]]
 id = "e1d9a_0162"
@@ -7531,7 +7531,7 @@ evidence = ["near"]
 name = "_NormDest"
 level = "L2"
 match_flags = "tasm /mx"
-review = "passed 2026-11-01 rev-haiku"
+review = "passed 2026-11-04 p6-rev-2"
 
 [[function]]
 id = "e1d9a_018b"
@@ -7542,7 +7542,7 @@ evidence = ["far"]
 name = "_Unpack1"
 level = "L2"
 match_flags = "tasm /mx"
-review = "passed 2026-11-01 rev-haiku"
+review = "passed 2026-11-04 p6-rev-2"
 
 [[function]]
 id = "e1d9a_0299"
@@ -7553,7 +7553,7 @@ evidence = ["near"]
 name = "_ReadCode1"
 level = "L2"
 match_flags = "tasm /mx"
-review = "passed 2026-11-01 rev-haiku"
+review = "passed 2026-11-04 p6-rev-2"
 
 [[function]]
 id = "e1d9a_02cb"
@@ -7564,7 +7564,7 @@ evidence = ["far"]
 name = "_Unpack2"
 level = "L2"
 match_flags = "tasm /mx"
-review = "passed 2026-11-01 rev-haiku"
+review = "passed 2026-11-04 p6-rev-2"
 
 [[function]]
 id = "e1d9a_03cc"
@@ -7575,7 +7575,7 @@ evidence = ["near"]
 name = "_ReadCode2"
 level = "L2"
 match_flags = "tasm /mx"
-review = "passed 2026-11-01 rev-haiku"
+review = "passed 2026-11-04 p6-rev-2"
 
 [[function]]
 id = "e1ddd_0006"
