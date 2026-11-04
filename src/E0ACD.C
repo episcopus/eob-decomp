@@ -59,11 +59,12 @@ extern int gPartyCell; /*@ ds:FBCA */     /* the party's map cell: MoveParty (12
 extern char gPickViewPos; /*@ ds:EFB2 */           /* the floor position last picked from: set to 0xff when
                                                the party turns (056C, 0593) and used by PickListItem (0BA6) as the
                                                page index 0..3 into gViewPosAhead and gViewToCellPos */
-extern char gMenuPhase; /*@ ds:DCAA */           /* the menu/rest phase: 1 and 2 are the menu steps
-                                               (0ACD:0753 wraps a value above 2 back to 1 and
-                                               EnterMapScreen 0ACD:0F72 sets 1); 5 is the rest phase
-                                               the handlers skip (0ACD:0A34, 0A61 and 0D9D). No writer
-                                               of 5 was found in the program */
+extern char gMapPhase; /*@ ds:DCAA */           /* a step byte: EnterMapScreen (0ACD:0F72) sets 1,
+                                               its stepper 0ACD:0753 (no caller) steps 1, 2, 1;
+                                               three handlers skip their work at 5 (0ACD:0A34,
+                                               0A61, 0D9D). Those are the only references in
+                                               EOB.EXE and its overlays, so 5 is never stored
+                                               and the skips never run (QUIRK, dead code) */
 extern int gWallTrigger; /*@ ds:EFD2 */            /* set to 0xff by 08E7 */
 extern int gPickFirstItem; /*@ ds:F3BA */            /* the item just picked, -1 when none (0BA6) */
 extern int gViewPosAhead[]; /*@ ds:374A */          /* a per-page word flag read by 0BA6 */
@@ -550,14 +551,15 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
     return 1;
 }
 
-/* 0ACD:0753: advances the menu step gMenuPhase, wrapping above 2 to 1, then moves the selected row
-   gCursorSlot (step 2 passes it to NoOpAfterCursorMove with 9, otherwise NoOpBeforeCursorMove). */
-/*@ 0ACD:0753 */ void StepMenuPhase(void)
+/* 0ACD:0753: advances gMapPhase, wrapping above 2 to 1, then moves the selected row
+   gCursorSlot (step 2 passes it to NoOpAfterCursorMove with 9, otherwise NoOpBeforeCursorMove).
+   Nothing calls it: no call, and no far pointer to it, in EOB.EXE or its overlays (dead code). */
+/*@ 0ACD:0753 */ void StepMapPhase(void)
 {
-    gMenuPhase++;
-    if (gMenuPhase > 2)
-        gMenuPhase = 1;
-    if (gMenuPhase == 2)
+    gMapPhase++;
+    if (gMapPhase > 2)
+        gMapPhase = 1;
+    if (gMapPhase == 2)
         NoOpAfterCursorMove(gCursorSlot, 9);
     else
         NoOpBeforeCursorMove(gCursorSlot);
@@ -691,13 +693,13 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
     DrawItemRow(gCursorSlot, 1, 0);
 }
 
-/* 0ACD:0A34: the row/character turn dispatcher: does nothing in the rest phase (gMenuPhase == 5), calls
+/* 0ACD:0A34: the row/character turn dispatcher: does nothing when gMapPhase is 5 (never, see above), calls
    MoveHandCursor in mode 0 or SetActionRow in mode 1 with the direction dir. Case 0 jumps to the shared
    exit rather than breaking: a plain `break` makes the compiler cross-jump the two calls' argument
    cleanup, which the original keeps apart. */
 /*@ 0ACD:0A34 */ void MoveKeyCursor(int dir)
 {
-    if (gMenuPhase == 5)
+    if (gMapPhase == 5)
         return;
     switch (gPanelMode) {
     case 0:
@@ -710,7 +712,7 @@ done:
     return;
 }
 
-/* 0ACD:0A61: the list move/use handler. In mode 2 (gPanelMode == 2) or the rest phase (gMenuPhase == 5) it
+/* 0ACD:0A61: the list move/use handler. In mode 2 (gPanelMode == 2) or when gMapPhase is 5 (never) it
    only recomputes the armour class of gInventoryMember (ComputeArmourClass, 0DE8:0D5E). Otherwise it takes the
    current item (GetCurrentItem, or RemoveListItem over the character's +0x97 sub-table at row 0x10) and
    gives up without redrawing when the item's flags have bit 0x20 or the item is 0. It then computes
@@ -728,7 +730,7 @@ done:
 
     if (gPanelMode == 2)
         goto call;
-    if (gMenuPhase == 5)
+    if (gMapPhase == 5)
         goto call;
     if (gCursorSlot != 0x10) {
         item = GetCurrentItem();
@@ -849,7 +851,7 @@ done:
 }
 
 /* 0ACD:0D9D: the key dispatcher for the map screen. It acts only while the mouse is disabled and
-   outside the rest phase (gMenuPhase != 5). Keys 0x12/0x20/0x2e/0x1f set the direction dir 0/1/2/3, key
+   unless gMapPhase is 5 (never). Keys 0x12/0x20/0x2e/0x1f set the direction dir 0/1/2/3, key
    0x34 runs ActivateWallAhead, key 0x17 calls UseItemSlot(gInventoryMember, gCursorSlot), keys 0x21 and 0x15 call
    MoveListItem(0) and MoveListItem(1) and key 0x23 calls PickListItem (0ACD:0BA6). The four action
    cases are skipped in mode 2 (gPanelMode == 2), and a direction set is passed to MoveKeyCursor unless the
@@ -860,7 +862,7 @@ done:
 
     if (!gMouseDisabled)
         return;
-    if (gMenuPhase == 5)
+    if (gMapPhase == 5)
         return;
     dir = -1;
     switch (key) {
@@ -965,7 +967,7 @@ done:
     NoOpAfterMapLoad();
     gFlag = 0;
     gInventoryMember = 0;
-    gMenuPhase = 1;
+    gMapPhase = 1;
     BuildList1();
     LoadScreenImage("PLAYFLD", (char far *)gCgaMapPlayfld, 5, 3, 0);
     LoadScreenImage("INVENT", (char far *)gCgaMapInvent, 5, 3, 2);
