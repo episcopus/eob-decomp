@@ -136,9 +136,9 @@ struct CharRec {                /* the 243-byte character records at ds:F580 (sr
 };
 extern struct CharRec gChars[]; /*@ ds:F580 */
 extern char far gCampStrings; /*@ 2003:0000 */
-extern unsigned char far gSheetINVENT[]; /*@ 2067:0000 */
-extern unsigned char far gSheetDECORATE[]; /*@ 2069:0000 */
-extern char gOverlayBuf[]; /*@ ds:113F */
+extern unsigned char far gCgaMapInvent[]; /*@ 2067:0000 */
+extern unsigned char far gCgaMapPlayfld[]; /*@ 2069:0000 */
+extern char gCgaMapDefault[]; /*@ ds:113F */
 
 struct Box {
     int x1;
@@ -203,13 +203,13 @@ struct ItemRecord {
     signed char cellPos;        /* +5 (ds:8DD5): 01D0 stores its 4th argument here and 02B9 matches it
                                against its `key`. No caller shows a sound (01D0's callers pass a
                                slot kind, E0ACD.C:561-568, a roll, E08E6.C:807, or an effect kind | 4,
-                               0BD2:07DE), so Purpose unknown: a per-entry tag */
+                               0BD2:07DE): the item's position in its cell, 8 a wall niche (122E:06D0) */
     int key;                /* +6 (ds:8DD6): the key; -1 when the record is free */
     int prevLink;                /* +8 (ds:8DD8): one link of the circular list; 0BD2:01D0 splices a
                                new item in after this record through it */
     int nextLink;                /* +0xa (ds:8DDA): the other link; the list walks (0BD2:0385, 040E,
                                04AA) follow it */
-    signed char m0A;        /* +0xc (ds:8DDC): gFBC8 or -1, set by 01D0 */
+    signed char level;        /* +0xc (ds:8DDC): gFBC8 or -1, set by 01D0 */
     signed char value;        /* +0xd (ds:8DDD): the item's bonus or effect value: the signed bonus
                                printed as "%s +%d" and "Cursed %s %d", the spell index into ds:1278
                                and ds:12E0, the wand effect index g38FA[m0B], and the scroll and
@@ -1362,9 +1362,9 @@ int AskYesNo(int message);
             else {
                 DropCharacter(SelectPartyMember(0x35));
                 LockHidePointer();
-                LoadScreenImage("PLAYFLD", gOverlayBuf, 5, 3, 0);
+                LoadScreenImage("PLAYFLD", gCgaMapDefault, 5, 3, 0);
                 reloadInvent = 1;
-                LoadScreenImage("INVENT", gOverlayBuf, 5, 3, 2);
+                LoadScreenImage("INVENT", gCgaMapDefault, 5, 3, 2);
                 gSaveRect(0, 0x78, 0x16, 0x18, (char far *)gStagingPage + 0x4e20);
                 SetFont(gFont6x6);
                 RedrawCharacters();
@@ -1451,7 +1451,7 @@ int AskYesNo(int message);
                 else
                     ShowMessageBox(0xf);
                 if (gGraphicsChoice == 1) {
-                    LoadScreenImage("PLAYFLD", (char far *)gSheetDECORATE, 5, 3, 2);
+                    LoadScreenImage("PLAYFLD", (char far *)gCgaMapPlayfld, 5, 3, 2);
                     gDrawPage = 2;
                     gSaveRectFromPage(0, 0x78, 0x16, 0x18, (char far *)gStagingPage + 0x4e20);
                     gDrawPage = 0;
@@ -1556,7 +1556,7 @@ int AskYesNo(int message);
     SetTextWindow(0xa);
     CopyRegion(gTextLeft, gTextTop, gTextLeft, gTextTop, gTextWidth, gTextHeight, 2, 0);
     if (reloadInvent)
-        LoadScreenImage("INVENT", (char far *)gSheetINVENT, 5, 3, 2);
+        LoadScreenImage("INVENT", (char far *)gCgaMapInvent, 5, 3, 2);
     SetTextWindow(savedWindow);
     LockShowPointer();
     gDrawPage = 0;

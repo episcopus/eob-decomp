@@ -1,6 +1,6 @@
 /* Overlay 3 of EOB.EXE (6961 bytes, 23 functions, the map and level overlay). It loads a wall set
-   .DAT (ovl3:004F), slices map icon cells (ovl3:03A2, 0624, 069E, 0718), builds the ds:B899 item
-   list (ovl3:0951) and mounts a level's map screen (ovl3:0A7C), which loads an object table
+   .DAT (ovl3:004F), cuts door and monster shapes (ovl3:03A2, 0624, 069E, 0718), builds the ds:B899 item
+   list (ovl3:0951) and loads a dungeon level (ovl3:0A7C), which loads the LEVELn.MAZ maze
    (ovl3:09AA) and, for a level that was saved, reads its level-state slot from LEVELS.TMP
    (ovl3:1147) and unpacks it (ovl3:109D); it packs the level state (ovl3:0FD1) and saves it to
    LEVELS.TMP (ovl3:11AF), ages and advances the character timers (ovl3:123D, 12F1) and resets the
@@ -13,7 +13,7 @@
 
 extern void farfree(void far *block); /*@ 0000:71EE */
 extern struct RectKind far *gDecorShapes[]; /*@ ds:EFD4, the per-kind size records (src/E122E.C:91) */
-extern int gWallRecCount; /*@ ds:F538 */            /* the wall-record slot count RegisterWallObject advances; Reset by FreePtrTable */
+extern int gWallRecCount; /*@ ds:F538 */            /* the wall-record slot count DefineWallType advances; Reset by FreePtrTable */
 
 extern void LoadOverlayScreen(char far *name, int a, int b); /*@ 082C:05EC */
 extern void LoadScreenImage(char far *name, char far *extra, int srcKind, int dstKind, int mode); /*@ 082C:051B */
@@ -24,8 +24,8 @@ extern void BuildMask(void far *p); /*@ 17A6:18EA */
 extern void (far *gCopyToPlanar)(void far *buf, int a, int b); /*@ ds:808E */
 extern char gWallPlaneTableA[16]; /*@ ds:F4D6 */       /* a 16-byte plane table (src/E17A6.ASM) */
 extern char gWallPlaneTableB[16]; /*@ ds:FB4D */       /* a 16-byte plane table (src/E17A6.ASM) */
-extern unsigned char far gSheetINVENT[]; /*@ 2067:0000 */  /* the INVENT sheet (src/E0ACD.C) */
-extern unsigned char far gSheetDECORATE[]; /*@ 2069:0000 */  /* the PLAYFLD sheet (src/E0ACD.C) */
+extern unsigned char far gCgaMapInvent[]; /*@ 2067:0000 */  /* the INVENT sheet (src/E0ACD.C) */
+extern unsigned char far gCgaMapPlayfld[]; /*@ 2069:0000 */  /* the PLAYFLD sheet (src/E0ACD.C) */
 extern int gTunesOn; /*@ ds:80E8 */            /* toggled by Ctrl-key handling (src/E1AAD.ASM) */
 extern int gSoundOn; /*@ ds:80E6 */
 extern char gBarGraphsOn; /*@ ds:F43C */
@@ -42,7 +42,7 @@ extern void SetMouseItem(int item); /*@ 07A9:010C */
 extern int far RollDice(char count, char sides, char bonus); /*@ 082C:0458 */
 extern void far *gFont6x6; /*@ ds:A9C0 */      /* the current 6x6 font (src/E07A9.C) */
 extern char gGameLoadState; /*@ ds:A998 */           /* src/E0ACD.C */
-extern signed char gViewToCellPos[]; /*@ ds:1A1B */  /* per-page sound table (src/E0ACD.C:131) */
+extern signed char gViewToCellPos[]; /*@ ds:1A1B */  /* the cell position seen at a view position, four per gPartyDir */
 extern int gPartyCell; /*@ ds:FBCA */
 extern int gPartyDir; /*@ ds:FBCC */
 extern int gFBCE; /*@ ds:FBCE */
@@ -55,7 +55,7 @@ extern void *memset(void far *s, int c, unsigned n); /*@ 0000:6384 */
 extern void far *gStagingPage; /*@ ds:DF4E */
 extern struct Cell8 far *gDecorationRects; /*@ ds:E062 */  /* the 8-byte map cell rectangles (struct Cell8 below) */
 extern char gMaze[]; /*@ ds:B894 */
-extern int gSavedLevels; /*@ ds:FBD0 */            /* the saved-level bit mask: bit level-1 is set by SaveLevelState and SaveGame and tested by LoadObjects and LoadMapScreen */
+extern int gSavedLevels; /*@ ds:FBD0 */            /* the saved-level bit mask: bit level-1 is set by SaveLevelState and SaveGame and tested by LoadMaze and LoadLevel */
 extern void far *gBufDCFC; /*@ ds:DCFC */
 extern unsigned char gWallVmpSet[]; /*@ ds:1879 */  /* the four parallel per-kind tables at ds:1879..0x1990 */
 extern void movmem(void far *src, void far *dst, unsigned n); /*@ 0000:63A3 */
@@ -67,7 +67,7 @@ struct Cell8 {              /* the 8-byte sprite rectangles gDecorationRects poi
     int w3;
 };
 
-struct WallRec {            /* a 0x34-byte slot at ds:E040 (ovl3:01C8): RegisterWallObject copies a
+struct WallRec {            /* a 0x34-byte slot at ds:E040 (ovl3:01C8): DefineWallType copies a
                                0x34-byte wall-set decoration into cells (+0x2a), so the decoration's
                                byte 0x0a lands at +0 of the following slot */
     signed char next;       /* +0: the copied decoration's byte 0x0a, read back as the chain link after
@@ -94,7 +94,7 @@ extern unsigned long gGameTicks; /*@ ds:8492 */
 extern int MemberIs(int who, int mask); /*@ 0D1C:0670 */
 extern void RearmCharEffects(void); /*@ 1414:0B2E */
 extern signed char gWallTypeFlags[]; /*@ ds:194B */
-extern signed char gWallDecorHead[]; /*@ ds:18BF */  /* per-object-kind table (src/E122E.C) */
+extern signed char gWallDecorHead[]; /*@ ds:18BF */  /* per-wall-type table (src/E122E.C) */
 extern unsigned char gWallHandlerIndex[]; /*@ ds:1905 */     /* a 256-byte table gMaze indexes into (src/E0DE8.C) */
 extern int gDoorEffectCell; /*@ ds:5C74 */
 extern signed char gDoorMoveDir; /*@ ds:5C76 */
@@ -148,7 +148,7 @@ extern int gMonsterRectsA[]; /*@ ds:6930 */
 extern int gMonsterRectsB[]; /*@ ds:69C0 */
 extern int gMonsterRectsC[]; /*@ ds:6A50 */
 extern int gDrawPage; /*@ ds:8115 */
-extern char gOverlayBuf[]; /*@ ds:113F */
+extern char gCgaMapDefault[]; /*@ ds:113F */
 
 struct Rect {               /* a four-word cell rectangle (x, y, w, h) */
     int x;
@@ -169,29 +169,29 @@ struct ItemRecord {         /* the 14-byte records at ds:8DD0 (src/E0BD2.C) */
     unsigned char flags;    /* +2 */
     signed char icon;       /* +3 */
     signed char type;        /* +4 */
-    signed char cellPos;        /* +5: the sound InsertListItem plays for the item (src/E0BD2.C:420) */
+    signed char cellPos;        /* +5: the item's position within its maze cell (src/E0BD2.C:420) */
     int key;                /* +6: the key, -1 when free */
     int prevLink;                /* +8 */
     int nextLink;                /* +0xa */
-    signed char m0A;        /* +0xc: gCurLevel or -1 */
+    signed char level;        /* +0xc: gCurLevel or -1 */
     signed char value;        /* +0xd */
 };
 
 extern struct ItemRecord gItems[]; /*@ ds:8DD0 */
 
-struct ObjRec {             /* nine-byte object records at ds:B894 (src/E0D1C.C) */
-    void far *ptr;          /* +0: the far pointer ovl3:09AA fills */
+struct ObjRec {             /* the nine-byte gMaze cells at ds:B894 (src/E0D1C.C) */
+    void far *ptr;          /* +0: the four wall bytes ovl3:09AA copies in */
     char rest[5];           /* +4 */
 };
 extern unsigned char gDoorRects[]; /*@ ds:6840 */
 extern unsigned char gDoorButtonRects[]; /*@ ds:68A0 */
 extern unsigned char gDoorButtonPos[]; /*@ ds:6900 */
-extern signed char far gMapTiles[]; /*@ 1F1D:0000 */  /* the map tile byte table, read by the map screen
+extern signed char far gLevelCgaMapIndex[]; /*@ 1F1D:0000 */  /* the map tile byte table, read by the map screen
                                                          sheet computation (the overlay stores the
                                                          segment-table index 01D0, which resolves to
                                                          paragraph 1F1D; src/EOV5.C calls it gSeg1D0) */
 
-#define MAPSHEET ((void far *)((char far *)MK_FP(0x1d8, 0) + (gMapTiles[gCurLevel - 1] << 5)))
+#define MAPSHEET ((void far *)((char far *)MK_FP(0x1d8, 0) + (gLevelCgaMapIndex[gCurLevel - 1] << 5)))
 
 extern int gTimerEnableFlags; /*@ ds:849E */
 extern char gLevelTimerMode; /*@ ds:F51B */
@@ -220,12 +220,12 @@ struct Effect {                     /* the 16-byte timed effect records at ds:5B
 extern struct Effect gEffects[]; /*@ ds:5BA8 */
 
 /* ds:6A80 is the initialiser template for ovl3:0A7C's local `handlers` array: the three map icon
-   loaders LoadMapIcons6 (stub entry 0x25), LoadNamedIcons (0x2A) and LoadMapIcons6b (0x34), which
+   loaders LoadMonsterShapesA (stub entry 0x25), LoadMonsterShapesC (0x2A) and LoadMonsterShapesB (0x34), which
    ovl3:0A7C copies into the array through F_SCOPY (0000:78C9). Its far pointers are overlay stub
    entries, which `make match` compares by the function they name. */
 
 struct WallDec {            /* the 52-byte wall-set decorations LoadWallSet reads into
-                               gStagingPage+0x3E80; RegisterWallObject copies one into a gWallRec slot */
+                               gStagingPage+0x3E80; DefineWallType copies one into a gWallRec slot */
     char idx[0xc];          /* +0x00: idx[0..9] are the ten cell indices, idx[0xa] the chain link */
     int field0c[10];        /* +0x0C: ten words the self-assignment loop passes through */
     int field20[10];        /* +0x20: ten words the self-assignment loop passes through */
@@ -233,8 +233,8 @@ struct WallDec {            /* the 52-byte wall-set decorations LoadWallSet read
 
 /* ovl3:0000: frees every far pointer in the 200-entry table at ds:EFD4 (farfree), clears each slot
    and resets the wall-record slot count ds:F538. gWallRecs itself is not cleared: it is only read
-   through gWallRecCount (RegisterWallObject, :326-340), so the old records stay in memory until the next
-   RegisterWallObject overwrites them from slot 0. Called by ovl3:0A7C and overlay 5. */
+   through gWallRecCount (DefineWallType, :326-340), so the old records stay in memory until the next
+   DefineWallType overwrites them from slot 0. Called by ovl3:0A7C and overlay 5. */
 /*@ ovl3:0000 */ void FreePtrTable(void)
 {
     int i;
@@ -296,7 +296,7 @@ struct WallDec {            /* the 52-byte wall-set decorations LoadWallSet read
 {
     return (value & (1 << bit)) ? 1 : 0;
 }
-/* ovl3:01C8: registers a placed wall object `kind` (the first byte of a five-byte level record,
+/* ovl3:01C8: defines wall type `kind` (the wall byte value; the first byte of a five-byte level record,
    the rest `field1879`, `recordIndex`, `field1905`, `objectFlags`). It stores the four per-kind
    tables at ds:1879 (field1879 into the first, gWallRecCount+1 into ds:18BF, field1905 into ds:1905 and
    objectFlags^4 into ds:194B), then, unless `recordIndex` is -1 (clearing ds:18BF[kind]), walks
@@ -304,11 +304,11 @@ struct WallDec {            /* the 52-byte wall-set decorations LoadWallSet read
    gStagingPage+0x3E80+recordIndex*0x34 into gWallRecs[gWallRecCount].cells, 52 bytes at +0x2a of the slot, so
    the decoration's byte 0x0a lands at +0 of the next slot. For each of the ten cell indices in
    those first ten bytes that has no sprite yet in ds:EFD4, it slices the cell's 8-byte rectangle
-   out of gDecorationRects through ds:8086 with the map sheet (gMapTiles[gCurLevel-1] cells). gWallRecCount (the slot
+   out of gDecorationRects through ds:8086 with the map sheet (gLevelCgaMapIndex[gCurLevel-1] cells). gWallRecCount (the slot
    count) is bumped and the link is the decoration byte 0x0a now at gWallRecs[gWallRecCount].next: when it
    is nonzero it is set to gWallRecCount+1 and the walk continues, otherwise the loop ends. Called by
    ovl3:0A7C. */
-/*@ ovl3:01C8 */ void RegisterWallObject(int kind, int field1879, int recordIndex, int field1905, int objectFlags)
+/*@ ovl3:01C8 */ void DefineWallType(int kind, int field1879, int recordIndex, int field1905, int objectFlags)
 {
     int i;
     int cell;
@@ -361,13 +361,13 @@ struct WallDec {            /* the 52-byte wall-set decorations LoadWallSet read
     }
 }
 /* ovl3:03A2: loads the overlay screen "DOOR" (LoadOverlayScreen) and slices map icon cells out of
-   the map sheet (segment 0x1D8, offset from the tile byte table gMapTiles[gCurLevel-1] shifted left 5).
+   the map sheet (segment 0x1D8, offset from the tile byte table gLevelCgaMapIndex[gCurLevel-1] shifted left 5).
    For `srcA` (when not -1) it slices three cells from the 4-byte rectangles at ds:6840 into gDoorShapes
    starting at `dstA` and three more from ds:68A0 into gDoorButtons[dstA].rec, and copies the x and y bytes of
    gDoorButtons[dstA] from ds:6900. For `srcB` (when not -1) it slices the three cells at `dstB` the same way,
    but reads its ds:6900 x/y pair with srcA's index (QUIRK ovl3:0597). Clears gDrawPage. Called by
    ovl3:0A7C. */
-/*@ ovl3:03A2 */ void LoadMapCells(int srcA, int dstA, int srcB, int dstB)
+/*@ ovl3:03A2 */ void LoadDoorShapes(int srcA, int dstA, int srcB, int dstB)
 {
     int i;
     int j;
@@ -399,10 +399,10 @@ second:
 done:
     gDrawPage = 0;
 }
-/* ovl3:05D2: frees and clears the `count` map icon pointers in gLoadedMonsterShapes starting at
+/* ovl3:05D2: frees and clears the `count` monster shape pointers in gLoadedMonsterShapes starting at
    index `base`.
    Called by ovl3:0A7C and overlay 5. */
-/*@ ovl3:05D2 */ void FreeMapIcons(int base, int count)
+/*@ ovl3:05D2 */ void FreeMonsterShapes(int base, int count)
 {
     int i;
     int end;
@@ -415,11 +415,11 @@ done:
         }
     }
 }
-/* ovl3:0624: loads the overlay screen `screen` and slices six map icon cells out of gOverlayBuf
+/* ovl3:0624: loads the overlay screen `screen` and slices six map icon cells out of gCgaMapDefault
    (ds:113F), one per 4-word rectangle in the table at ds:6930, into gLoadedMonsterShapes starting at index
-   `dest`. Clears gDrawPage. Called through the `handlers` table LoadMapScreen builds (ovl3:0A7C,
+   `dest`. Clears gDrawPage. Called through the `handlers` table LoadLevel builds (ovl3:0A7C,
    ds:6A80 initialiser). */
-/*@ ovl3:0624 */ void LoadMapIcons6(char far *screen, int dest)
+/*@ ovl3:0624 */ void LoadMonsterShapesA(char far *screen, int dest)
 {
     int n;
     int i;
@@ -429,13 +429,13 @@ done:
     n = 6;
     for (i = 0, si = 0; i < n; si += 4, i++)
         gLoadedMonsterShapes[dest + i] = gGetSpriteCell(gMonsterRectsA[si], gMonsterRectsA[si + 1], gMonsterRectsA[si + 2],
-            gMonsterRectsA[si + 3], gOverlayBuf);
+            gMonsterRectsA[si + 3], gCgaMapDefault);
     gDrawPage = 0;
 }
 /* ovl3:069E: the same as ovl3:0624 but slices the six cells from the 4-word rectangle table at
-   ds:69C0 instead of ds:6930. Called through the `handlers` table LoadMapScreen builds (ds:6A80
+   ds:69C0 instead of ds:6930. Called through the `handlers` table LoadLevel builds (ds:6A80
    initialiser). */
-/*@ ovl3:069E */ void LoadMapIcons6b(char far *screen, int dest)
+/*@ ovl3:069E */ void LoadMonsterShapesB(char far *screen, int dest)
 {
     int n;
     int i;
@@ -445,14 +445,14 @@ done:
     n = 6;
     for (i = 0, si = 0; i < n; si += 4, i++)
         gLoadedMonsterShapes[dest + i] = gGetSpriteCell(gMonsterRectsB[si], gMonsterRectsB[si + 1], gMonsterRectsB[si + 2],
-            gMonsterRectsB[si + 3], gOverlayBuf);
+            gMonsterRectsB[si + 3], gCgaMapDefault);
     gDrawPage = 0;
 }
 /* ovl3:0718: builds the screen name `name` + "1" through sprintf("%s1"), loads it through
-   LoadOverlayScreen and slices six map icon cells out of gOverlayBuf using the 4-word rectangle
+   LoadOverlayScreen and slices six map icon cells out of gCgaMapDefault using the 4-word rectangle
    table at ds:6A50 into gLoadedMonsterShapes starting at index `dest`. Clears gDrawPage. Called through the
-   `handlers` table LoadMapScreen builds (ds:6A80 initialiser). */
-/*@ ovl3:0718 */ void LoadNamedIcons(char far *name, int dest)
+   `handlers` table LoadLevel builds (ds:6A80 initialiser). */
+/*@ ovl3:0718 */ void LoadMonsterShapesC(char far *name, int dest)
 {
     char buf[0x28];
     int i;
@@ -462,7 +462,7 @@ done:
     LoadOverlayScreen(buf, 5, 3);
     for (i = 0, si = 0; i < 6; si += 4, i++)
         gLoadedMonsterShapes[dest + i] = gGetSpriteCell(gMonsterRectsC[si], gMonsterRectsC[si + 1], gMonsterRectsC[si + 2],
-            gMonsterRectsC[si + 3], gOverlayBuf);
+            gMonsterRectsC[si + 3], gCgaMapDefault);
     gDrawPage = 0;
 }
 /* ovl3:07A5: loads a wall texture set for `name`. It builds the file name "<name>.VCN" (VGA mode
@@ -501,7 +501,7 @@ done:
     strcpy(gWallNameBuf, gFileNameBuf);
 }
 /* ovl3:0951: rebuilds the ds:B899 item list: walks the 500 items at ds:8DD0 and, for every item
-   whose m0A is the current action gCurLevel and whose key key is positive, inserts it through
+   whose level byte (+0xC) is gCurLevel and whose cell key is positive, inserts it through
    InsertListItem. Called by ovl3:0A7C. */
 /*@ ovl3:0951 */ void RebuildItemList(void)
 {
@@ -509,15 +509,15 @@ done:
     int i;
 
     for (rec = gItems, i = 0; i < 0x1f4; rec++, i++) {
-        if (rec->m0A == gCurLevel && rec->key > 0)
+        if (rec->level == gCurLevel && rec->key > 0)
             InsertListItem((void far *)(gMazeItems + rec->key * 9), rec->key, i, rec->cellPos);
     }
 }
-/* ovl3:09AA: loads an object table. It clears the 0x2400 bytes at gMaze, opens `name`, reads 6
-   bytes into gMaze and 0x1000 bytes into gStagingPage and closes it. When bit gCurLevel-1 of gSavedLevels is set
+/* ovl3:09AA: loads the maze LEVELn.MAZ. It clears the 0x2400 bytes at gMaze, opens `name`, reads the
+   6-byte header into gMaze and the 0x1000 cell bytes into gStagingPage and closes it. When bit gCurLevel-1 of gSavedLevels is set
    it hands gCurLevel to the sibling ovl3:1147; otherwise it copies the 0x400 far pointers of gStagingPage
-   into the +0 field of the gMaze records. Called by ovl3:0A7C. */
-/*@ ovl3:09AA */ void LoadObjects(char far *name)
+   into the four wall bytes (+0..3) of the gMaze cells. Called by ovl3:0A7C. */
+/*@ ovl3:09AA */ void LoadMaze(char far *name)
 {
     int handle;
     char far *src;
@@ -541,24 +541,24 @@ done:
         }
     }
 }
-/* ovl3:0A7C: mounts the map screen for level `level`. It clears bit 2 of gTimerEnableFlags, reads the
+/* ovl3:0A7C: loads dungeon level `level` (and sets gCurLevel). It clears bit 2 of gTimerEnableFlags, reads the
    level's packed script "LEVEL<n>.INF" (FormatName, FileOpen, FileRead into gStagingPage, Unpack into
-   gLevelInf), names its two object/screen files through LoadObjects and a "%s.%s" sprite name, loads
+   gLevelInf), names its two object/screen files through LoadMaze and a "%s.%s" sprite name, loads
    the sprite file into gWallBlockMaps and, in VGA mode, the "%s.PAL" palette, then frees the slot,
-   map-icon and pointer tables (FreeSlotTables, FreeMapIcons and FreePtrTable).
-   The rest of the script: four LoadMapCells arguments, the header bytes gLevelTimerMode/gLevelTimerPeriod/gLevelTimerSteps and the
-   gDeadline/gStepCount timers, two far function-pointer records (the local `handlers` list of the icon
-   loaders, called with 0 and 0x12), a run of (index, value) timer pairs stored as the
+   map-icon and pointer tables (FreeSlotTables, FreeMonsterShapes and FreePtrTable).
+   The rest of the script: four LoadDoorShapes arguments, the header bytes gLevelTimerMode/gLevelTimerPeriod/gLevelTimerSteps and the
+   gDeadline/gStepCount timers, two far function-pointer records (the local `handlers` list of the monster
+   shape loaders, called with 0 and 0x12), a run of (index, value) timer pairs stored as the
    periods of the timed effects gEffects[index + 2] and gEffects[index + 3], the four deadlines
    gEffects[2..5].expiry derived from those periods plus the tick counter gGameTicks, the 30
    14-byte object records handed to InitMonster (or skipped by 0x1a4 when the level was already
    unpacked), the wall/object records (0xEC introduces a 0x18-byte wall set through LoadWallSet,
-   otherwise a five-byte RegisterWallObject record), the item records keyed against gMaze, and
-   finally the wall textures (LoadWallTextures with the gMapTiles[gCurLevel-1] sheet) and the INVENT
+   otherwise a five-byte DefineWallType record), the item records keyed against gMaze, and
+   finally the wall textures (LoadWallTextures with the gLevelCgaMapIndex[gCurLevel-1] sheet) and the INVENT
    screen. It clears the 0x400 ds:B899 item-list heads, rebuilds the list, sets bit 2 of gTimerEnableFlags,
    calls PlaySound(0) and sets gLevelPalettePending to 1. Called by EnterMapScreen (0ACD:0F72), ResetMapScreen
    (0ACD:1033), LoadLevelOp (122E:1AAB, through the 210C:007A stub) and ovl3:15B9 LoadGame. */
-/*@ ovl3:0A7C */ void LoadMapScreen(int level)
+/*@ ovl3:0A7C */ void LoadLevel(int level)
 {
     int scriptWord;
     int itemIdx;
@@ -580,7 +580,7 @@ done:
     int payloadLen;
     int nObjects;             /* QUIRK ovl3:0A7C: counted but never read (dead result) */
     char far *script;
-    void (far *handlers[3])(char far *, int) = { LoadMapIcons6, LoadMapIcons6b, LoadNamedIcons };
+    void (far *handlers[3])(char far *, int) = { LoadMonsterShapesA, LoadMonsterShapesB, LoadMonsterShapesC };
     int i;
     int handle;
 
@@ -593,7 +593,7 @@ done:
     FileClose(handle);
     Unpack((char far *)gStagingPage, gLevelInf);
     script = gLevelInf + 2;
-    LoadObjects(script);
+    LoadMaze(script);
     script += 12;
     sprintf(gFileNameBuf, "%s.%s", script, gGraphicsChoice == 3 ? "VMP" : "EMP");
     handle = FileOpen(gFileNameBuf, 1);
@@ -606,9 +606,9 @@ done:
     }
     script += 0x18;
     FreeSlotTables();
-    FreeMapIcons(0, 0x24);
+    FreeMonsterShapes(0, 0x24);
     FreePtrTable();
-    LoadMapCells(script[0], script[1], script[2], script[3]);
+    LoadDoorShapes(script[0], script[1], script[2], script[3]);
     script += 4;
     gLevelTimerMode = script[0];
     script++;
@@ -679,7 +679,7 @@ done:
             script += 0x18;
         } else {
             nObjects++;
-            RegisterWallObject(script[0], script[1], script[2], script[3], script[4]);
+            DefineWallType(script[0], script[1], script[2], script[3], script[4]);
             script += 5;
         }
     }
@@ -701,7 +701,7 @@ done:
         *(unsigned short far *)((char far *)gMaze + itemIdx * 9 + 7) = scriptWord;
     }
     LoadWallTextures(gLevelInf + 0x1a, MAPSHEET);
-    LoadScreenImage("INVENT", (char far *)gSheetINVENT, 5, 3, 2);
+    LoadScreenImage("INVENT", (char far *)gCgaMapInvent, 5, 3, 2);
     gTimerEnableFlags |= 2;
     PlaySound(0);
     gLevelPalettePending = 1;
@@ -867,7 +867,7 @@ done:
         len = 0x60;
         ok &= (FileWrite(handle, (char far *)gSpellItemTypes, len) == len);
         FileClose(handle);
-        LoadScreenImage("INVENT", (char far *)gSheetINVENT, 5, 3, 2);
+        LoadScreenImage("INVENT", (char far *)gCgaMapInvent, 5, 3, 2);
     }
     return ok;
 }
@@ -880,13 +880,13 @@ done:
    offset 0 and carries the whole gBlockSizes[3] image). It stores the three single bytes ds:80E8
    (the Ctrl flag), ds:80E6 (gSoundOn) and ds:F43C, unpacks the 0x60 bytes into ds:AD20, loads
    the CHARGENA screen and, for each character whose identifiedNameIndex is nonzero and whose portraitIndex is >= 0, cuts its
-   4 by 32 cell out of gOverlayBuf (through ds:8082), unpacks it into its 0x514-byte sprite buffer
+   4 by 32 cell out of gCgaMapDefault (through ds:8082), unpacks it into its 0x514-byte sprite buffer
    and frees it (a character with identifiedNameIndex nonzero and portraitIndex < 0 sets `flag` at :953 instead);
    when any slot is empty or any occupied character has portraitIndex < 0 it then loads the OUTTAKE screen
    and cuts the portraitIndex < 0 characters' 4 by 32 cells out of it the same way. Unless ds:A998 is -1 it then rebuilds the
    map screen (ovl3:0A7C), reloads PLAYFLD and INVENT, hands gFont6x6 to SetFont, redraws the
    characters, and either restores the mouse item when the mouse is enabled (gMouseDisabled is 0)
-   or, when the mouse is disabled and gFBCE is nonzero, inserts it with a sound from the gViewToCellPos table
+   or, when the mouse is disabled and gFBCE is nonzero, drops it at a cell position from gViewToCellPos
    picked by RollDice(1, 2, -1) (the item is keyed by gPartyCell). Sets ds:A998 to 1 on success, 0 on
    (ovl1:1ACD) and overlay 2 (ovl2:0846). */
 /*@ ovl3:15B9 */ int LoadGame(void)
@@ -945,7 +945,7 @@ done:
         for (i = 0; i < 6; i++) {
             rec = &gChars[i];
             if (rec->status != 0 && rec->portraitIndex >= 0) {
-                cell = gGetSpriteCellRle((rec->portraitIndex % 10) * 4, (rec->portraitIndex / 10) * 32, 4, 0x20, gOverlayBuf);
+                cell = gGetSpriteCellRle((rec->portraitIndex % 10) * 4, (rec->portraitIndex / 10) * 32, 4, 0x20, gCgaMapDefault);
                 Unpack0(cell, rec->portrait, 0x514L);
                 farfree(cell);
             } else
@@ -957,17 +957,17 @@ done:
             for (i = 0; i < 6; i++) {
                 rec = &gChars[i];
                 if (rec->status != 0 && rec->portraitIndex < 0) {
-                    cell = gGetSpriteCellRle(-(rec->portraitIndex + 1) * 4, 0xa0, 4, 0x20, gOverlayBuf);
+                    cell = gGetSpriteCellRle(-(rec->portraitIndex + 1) * 4, 0xa0, 4, 0x20, gCgaMapDefault);
                     Unpack0(cell, rec->portrait, 0x514L);
                     farfree(cell);
                 }
             }
         }
         if (gGameLoadState != (char)0xff) {
-            LoadMapScreen(gCurLevel);
-            LoadScreenImage("PLAYFLD", (char far *)gSheetDECORATE, 5, 3, 0);
+            LoadLevel(gCurLevel);
+            LoadScreenImage("PLAYFLD", (char far *)gCgaMapPlayfld, 5, 3, 0);
             DrawViewRows();
-            LoadScreenImage("INVENT", (char far *)gSheetINVENT, 5, 3, 2);
+            LoadScreenImage("INVENT", (char far *)gCgaMapInvent, 5, 3, 2);
             SetFont((char far *)gFont6x6);
             RedrawCharacters();
             if (gMouseDisabled == 0)
@@ -985,8 +985,8 @@ done:
 /* ovl3:19F7: resets the level. It clears the m0A byte of the 30 gMonsters objects, clears every live
    ds:DD2C effect record (for an active 1, keeping only the low two bits of the m03 byte of the
    item record its item indexes, then clearing its active byte; an active 2 is just cleared),
-   then, when gDoorEffectActive is set, walks the gMaze record of character gDoorEffectCell adding the mode
-   byte gDoorMoveDir to two bytes of its slot until the gWallTypeFlags flag of that slot has bit 0x30 set (the
+   then, when gDoorEffectActive is set, steps the moving door in cell gDoorEffectCell, adding the
+   direction gDoorMoveDir to its two wall bytes until the gWallTypeFlags flag of that wall has bit 0x30 set (the
    loop has no other bound), and clears gDoorEffectActive. Called by ovl3:1368 and ovl3:15B9. */
 /*@ ovl3:19F7 */ void ResetLevel(void)
 {

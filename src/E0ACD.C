@@ -124,20 +124,20 @@ struct ItemRecord {
     signed char cellPos;        /* +5 (ds:8DD5): 01D0 stores its 4th argument here and 02B9 matches it
                                against its `key`. No caller shows a sound (01D0's callers pass a
                                slot kind, E0ACD.C:561-568, a roll, E08E6.C:807, or an effect kind | 4,
-                               0BD2:07DE), so Purpose unknown: a per-entry tag */
+                               0BD2:07DE): the item's position in its cell, 8 a wall niche (122E:06D0) */
     int key;                /* +6 (ds:8DD6): the key; -1 when the record is free */
     int prevLink;                /* +8 (ds:8DD8): one link of the circular list; 0BD2:01D0 splices a
                                new item in after this record through it */
     int nextLink;                /* +0xa (ds:8DDA): the other link; the list walks (0BD2:0385, 040E,
                                04AA) follow it */
-    signed char m0A;        /* +0xc (ds:8DDC): gCurLevel or -1, set by 01D0 */
+    signed char level;        /* +0xc (ds:8DDC): gCurLevel or -1, set by 01D0 */
     signed char value;        /* +0xd (ds:8DDD): the item's bonus or effect value: the signed bonus
                                printed as "%s +%d" and "Cursed %s %d", the spell index into ds:1278
                                and ds:12E0, the wand effect index g38FA[m0B], and the scroll and
                                potion values (0BD2:05B5, 0D2D, 0EE8, 1001) */
 };
 extern struct ItemRecord gItems[]; /*@ ds:8DD0 */
-extern signed char gViewToCellPos[]; /*@ ds:1A1B */  /* per-page sound table (src/E0D1C.C) */
+extern signed char gViewToCellPos[]; /*@ ds:1A1B */  /* the cell position seen at a view position, four per gPartyDir (src/E0D1C.C) */
 extern int gHandSplitY[]; /*@ ds:36B0 */          /* a per-slot word (screen row) compared with gHitY */
 extern int gHitY; /*@ ds:5E12 */            /* the y the hit test uses (the walk is 16A5:00BD, src/E16A5.C) */
 extern unsigned gLeftButtonMode; /*@ ds:5E1C */       /* the left-button mode word: ClickHandSlot (0ACD:0415)
@@ -157,7 +157,7 @@ extern char gGameLoadState; /*@ ds:A998 */           /* the saved-game load flag
                                                0xfe after a saved game loads and 0 otherwise
                                                (src/EOV2.C); EnterMapScreen (0ACD:0F72) tests it */
 extern int gMouseDisabled; /*@ ds:814A */   /* nonzero disables the mouse (src/E07A9.C) */
-extern int gCurLevel; /*@ ds:FBC8 */            /* the current action (src/E0D1C.C) */
+extern int gCurLevel; /*@ ds:FBC8 */            /* the dungeon level, 1..12 (src/E0D1C.C) */
 extern int gFBCE; /*@ ds:FBCE */            /* the item index shown by the mouse (src/E07A9.C) */
 extern void far *gFont6x6; /*@ ds:A9C0 */       /* the current 6x6 font (src/E07A9.C) */
 extern void far *gList; /*@ ds:FB48 */      /* the head of the list built last (src/E0CF7.C) */
@@ -166,9 +166,9 @@ extern int gUnreadPartyCellCopy; /*@ ds:FC58 */            /* the party's cell s
 extern unsigned long gGameTicks; /*@ ds:8492 */  /* the 32-bit counter the 1Ch handler bumps (src/EOV6.C) */
 extern int gUnreadButtonChanges; /*@ ds:8134 */            /* set to 0 by the map screen (src/E14EF.C) */
 extern char gFileNameBuf[]; /*@ ds:FE6E */  /* the text buffer sprintf formats into (src/E082C.C) */
-extern unsigned char far gSheetDECORATE[]; /*@ 2069:0000 */  /* the PLAYFLD sheet, loaded by
+extern unsigned char far gCgaMapPlayfld[]; /*@ 2069:0000 */  /* the PLAYFLD sheet, loaded by
                                                EnterMapScreen (0ACD:0F72) (src/EOV3.C:27) */
-extern unsigned char far gSheetINVENT[]; /*@ 2067:0000 */      /* the INVENT sheet, loaded by
+extern unsigned char far gCgaMapInvent[]; /*@ 2067:0000 */      /* the INVENT sheet, loaded by
                                                EnterMapScreen (0ACD:0F72) (src/EOV3.C:26) */
 
 extern int CanPlaceItemInSlot(int a, int b, int c); /*@ 0BD2:0AF2 */
@@ -194,7 +194,7 @@ extern void LoadScreenImage(char far *name, char far *extra, int srcKind, int ds
 extern void SetFont(char far *font); /*@ 1A47:0169 */
 void EnterMapScreen(void);
 void ResetMapScreen(void);
-extern void LoadMapScreen(int level); /*@ 210C:007A */   /* overlay 3 entry, ovl3:0A7C (src/EOV3.C:540) */
+extern void LoadLevel(int level); /*@ 210C:007A */   /* overlay 3 entry, ovl3:0A7C (src/EOV3.C:540) */
 extern void DrawViewFrame(int full); /*@ 2116:005C */    /* overlay 4 entry, ovl4:1F51 (src/EOV4.C) */
 extern void NoOpAfterMapLoad(void); /*@ 2116:0043 */    /* overlay 4 entry, ovl4:2039, a no-op (src/EOV4.C) */
 extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
@@ -984,9 +984,9 @@ done:
    ResetMapScreen
    (0ACD:1033); when it is nonzero (0xff while a load runs, 0xfe after a saved game loads, src/EOV2.C)
    it shows the mouse item (SetMouseItem(gFBCE), unless the mouse is disabled), loads level gCurLevel's
-   map and inventory (LoadMapScreen, ovl3:0A7C) and clears gGameLoadState. Then it clears gFlag, resets the
+   map and inventory (LoadLevel, ovl3:0A7C) and clears gGameLoadState. Then it clears gFlag, resets the
    character index and the menu phase, rebuilds list 1, loads PLAYFLD and INVENT through
-   LoadScreenImage (into gSheetDECORATE and gSheetINVENT), selects the font, clears the status
+   LoadScreenImage (into gCgaMapPlayfld and gCgaMapInvent), selects the font, clears the status
    flag, redraws the characters, shows the pointer and sets text window 7. */
 /*@ 0ACD:0F72 */ void EnterMapScreen(void)
 {
@@ -995,7 +995,7 @@ done:
     } else {
         if (!gMouseDisabled)
             SetMouseItem(gFBCE);
-        LoadMapScreen(gCurLevel);
+        LoadLevel(gCurLevel);
         gGameLoadState = 0;
     }
     NoOpAfterMapLoad();
@@ -1003,8 +1003,8 @@ done:
     gInventoryMember = 0;
     gDCAA = 1;
     BuildList1();
-    LoadScreenImage("PLAYFLD", (char far *)gSheetDECORATE, 5, 3, 0);
-    LoadScreenImage("INVENT", (char far *)gSheetINVENT, 5, 3, 2);
+    LoadScreenImage("PLAYFLD", (char far *)gCgaMapPlayfld, 5, 3, 0);
+    LoadScreenImage("INVENT", (char far *)gCgaMapInvent, 5, 3, 2);
     SetFont(gFont6x6);
     gDrawPage = 0;
     RedrawCharacters();
@@ -1013,12 +1013,12 @@ done:
     SetTextWindow(7);
 }
 
-/* 0ACD:1033: resets the map screen to its initial state: loads map level 1 (LoadMapScreen,
+/* 0ACD:1033: resets the map screen to its initial state: loads map level 1 (LoadLevel,
    ovl3:0A7C), sets gPartyCell to 0x1EA and the page gPartyDir to 0, and clears the mouse item
    (SetMouseItem(0)) when the mouse is enabled. */
 /*@ 0ACD:1033 */ void ResetMapScreen(void)
 {
-    LoadMapScreen(1);
+    LoadLevel(1);
     gPartyCell = 0x1EA;
     gPartyDir = 0;
     if (!gMouseDisabled)

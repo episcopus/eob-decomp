@@ -73,12 +73,12 @@ extern void StartSound(void far *routine); /*@ 084A:0417 */
 extern void SoundDriverResume(void);    /*@ 084A:0457 */
 
 /* The palette and image buffers of this unit's DGROUP. gPaletteBuf is a far pointer the front end
-   allocates and fills (i0892:05A2..061A); gOverlayBuf and gCopyBuf are the DGROUP buffers
-   CopyPage hands to its copy handler, EOB.EXE's gOverlayBuf at ds:113F: ovl0:2A99 passes
-   gOverlayBuf and ovl0:003A passes gCopyBuf (ds:1BEA) for the title copy and gOverlayBuf
+   allocates and fills (i0892:05A2..061A); gCgaMapDefault and gCopyBuf are the DGROUP buffers
+   CopyPage hands to its copy handler, EOB.EXE's gCgaMapDefault at ds:113F: ovl0:2A99 passes
+   gCgaMapDefault and ovl0:003A passes gCopyBuf (ds:1BEA) for the title copy and gCgaMapDefault
    (ds:1C0A, 32 bytes into the same region) for the text copy. */
 extern unsigned char far *gPaletteBuf;     /*@ ds:2D42 */
-extern unsigned char gOverlayBuf[];     /*@ ds:1C0A */
+extern unsigned char gCgaMapDefault[];     /*@ ds:1C0A */
 extern unsigned char gCopyBuf[];        /*@ ds:1BEA */
 extern unsigned char gBuiltinPalette[16];   /*@ ds:19E7 */
 extern int gDriverState;                /*@ ds:1F76 */  /* Purpose unknown: a driver flag; ovl0:003A sets bit 0 only */
@@ -155,7 +155,7 @@ void PlayLogoSequence(void);
    TITLE-V card on the VGA mode (gGraphicsChoice 3), TITLE-E otherwise, waits one frame, applies
    the WESTWOOD palette and plays sound 2, copies the title card out of gCopyBuf through
    CopyPage (slots 5 and 2), and dissolves it from page 2 to page 0. Then it loads TEXT.CMP,
-   copies it out of gOverlayBuf (slots 5 and 6), and WaitFrameDelay waits the 120 ticks armed
+   copies it out of gCgaMapDefault (slots 5 and 6), and WaitFrameDelay waits the 120 ticks armed
    above. Then the seven scene functions follow, DrawGrid last, each guarded by the abort flag,
    so a key during a wait skips the rest of the intro. */
 /*@ ovl0:003A */ void PlayIntroSequence(void)
@@ -173,7 +173,7 @@ void PlayLogoSequence(void);
     CopyPage(5, 2, FP_OFF(gCopyBuf), FP_SEG(gCopyBuf));
     Dissolve(0, 0, 320, 200, 2, 0);
     LoadPackedImage("TEXT.CMP", 3, 5);
-    CopyPage(5, 6, FP_OFF(gOverlayBuf), FP_SEG(gOverlayBuf));
+    CopyPage(5, 6, FP_OFF(gCgaMapDefault), FP_SEG(gCgaMapDefault));
     WaitFrameDelay();
     if (!gAbort)
         PlayTowerMageScene();
@@ -200,7 +200,7 @@ union SpriteSlot {
 };
 
 /* The byte and word tables ovl0:015D and ovl0:1DF3 walk, one entry per animation tile. What the
-   entries mean is not established yet: gMakeImage cuts the 31 tiles out of gOverlayBuf from
+   entries mean is not established yet: gMakeImage cuts the 31 tiles out of gCgaMapDefault from
    gTileX, gTileY and gTileScale (ovl0:015D:259, ovl0:1DF3:857), and the random star draws use
    gStarX and gStarY (ovl0:015D:294, ovl0:1DF3:889). */
 extern unsigned char gTileX[31];        /*@ ds:1C2A */  /* Purpose unknown: x of each tile, ovl0:015D */
@@ -215,7 +215,7 @@ extern void MemFree(void far *block); /*@ 094F:0137 */
    WTRDP1..3 images, cuts the title sprite and, in the main loop, slides a window (x from 0x108
    down, y from 0x0B up) across the screen: each step draws one 5 by 0x20 frame, the index
    cycling 0, 1, 2, 1 with i & 3 (283-285), and drops five random star tiles taken from
-   gOverlayBuf, occasionally playing a sound. A three-step wipe then clears the screen. The
+   gCgaMapDefault, occasionally playing a sound. A three-step wipe then clears the screen. The
    first loop frees all four title sprites as it draws them (246); the slot of sprites[3]
    is not cut again, so its freed slot becomes the window position the loop slides (278-279,
    the union at 196-199). The 31 stars, the three frames and the three sprites re-cut at 252-255
@@ -232,12 +232,12 @@ extern void MemFree(void far *block); /*@ 094F:0137 */
     LoadPalette("WTRDP2.COL");
     gDrawPage = 2;
     LoadPackedImage("WTRDP1.CMP", 5, 3);
-    sprites[3].image = gMakeImage(0, 0, 0x14, 0x88, gOverlayBuf);
+    sprites[3].image = gMakeImage(0, 0, 0x14, 0x88, gCgaMapDefault);
     for (i = 1; i < 4; i++) {
         BlitImage(0, 0, 0, 0, 0xa0, 0x88, i);
-        sprites[3 - i].image = gMakeImage(0, 0, 0x14, 0x88, gOverlayBuf);
+        sprites[3 - i].image = gMakeImage(0, 0, 0x14, 0x88, gCgaMapDefault);
     }
-    CopyPage(3, 4, FP_OFF(gOverlayBuf), FP_SEG(gOverlayBuf));
+    CopyPage(3, 4, FP_OFF(gCgaMapDefault), FP_SEG(gCgaMapDefault));
     WaitFrameDelay();
     ClearBottomBar();
     PlaySound(6);
@@ -250,17 +250,17 @@ extern void MemFree(void far *block); /*@ 094F:0137 */
     ClipRect(0, 0x50, 0, 0xa8, 0x28, 0x10, 6, 0);
     gDrawPage = 2;
     gFrameDelay = 0x32;
-    sprites[0].image = gMakeImage(0x14, 0, 0x14, 0x88, gOverlayBuf);
+    sprites[0].image = gMakeImage(0x14, 0, 0x14, 0x88, gCgaMapDefault);
     LoadPackedImage("WTRDP2.CMP", 5, 3);
-    sprites[1].image = gMakeImage(0, 0, 0x14, 0x88, gOverlayBuf);
-    sprites[2].image = gMakeImage(0x14, 0, 0x14, 0x88, gOverlayBuf);
+    sprites[1].image = gMakeImage(0, 0, 0x14, 0x88, gCgaMapDefault);
+    sprites[2].image = gMakeImage(0x14, 0, 0x14, 0x88, gCgaMapDefault);
     LoadPackedImage("WTRDP3.CMP", 5, 3);
     gDrawPage = 2;
     for (i = 0; i < 31; i++)
-        stars[i] = gMakeImage(gTileX[i], gTileY[i] * 8 + 0x88, gTileScale[i], gTileScale[i] * 8, gOverlayBuf);
+        stars[i] = gMakeImage(gTileX[i], gTileY[i] * 8 + 0x88, gTileScale[i], gTileScale[i] * 8, gCgaMapDefault);
     for (i = 0; i < 3; i++)
-        frames[i] = gMakeImage(i * 5, 0x98, 5, 0x20, gOverlayBuf);
-    CopyPage(3, 4, FP_OFF(gOverlayBuf), FP_SEG(gOverlayBuf));
+        frames[i] = gMakeImage(i * 5, 0x98, 5, 0x20, gCgaMapDefault);
+    CopyPage(3, 4, FP_OFF(gCgaMapDefault), FP_SEG(gCgaMapDefault));
     for (i = 0; i < 3; i++) {
         WaitFrameDelay();
         gFillRect(0, 0, 0x9f, 0x87, 0xc);
@@ -320,17 +320,17 @@ extern void MemFree(void far *block); /*@ 094F:0137 */
 
     LoadPackedImage("ORB.CMP", 5, 3);
     gDrawPage = 2;
-    orb = gMakeImage(0, 0, 0x14, 0x88, gOverlayBuf);
+    orb = gMakeImage(0, 0, 0x14, 0x88, gCgaMapDefault);
     LoadPackedImage("TOWRMAGE.CMP", 5, 3);
-    mage[3] = gMakeImage(0x10, 0, 0x10, 0x68, gOverlayBuf);
+    mage[3] = gMakeImage(0x10, 0, 0x10, 0x68, gCgaMapDefault);
     gFillRect(0, 0, 0x7f, 0x67, 0xc);
     for (i = 1; i < 4; i++) {
         BlitImage(0x80, 0, 0, 0, 0x80, 0x68, i);
-        mage[3 - i] = gMakeImage(0, 0, 0x10, 0x68, gOverlayBuf);
+        mage[3 - i] = gMakeImage(0, 0, 0x10, 0x68, gCgaMapDefault);
     }
     gFillRect(0, 0, 0x9f, 0x87, 0xc);
     gDrawPage = 0;
-    CopyPage(3, 4, FP_OFF(gOverlayBuf), FP_SEG(gOverlayBuf));
+    CopyPage(3, 4, FP_OFF(gCgaMapDefault), FP_SEG(gCgaMapDefault));
     WaitFrameDelay();
     gClearDrawPage();
     PlaySound(6);
@@ -438,7 +438,7 @@ extern void MemFree(void far *block); /*@ 094F:0137 */
 }
 /* ovl0:0B20: the TOWRMAGE scene. It draws the grid twice, both on page 0 (gDrawPage is 0 from
    PlayIntroSequence and the second DrawGrid runs with it 0 again), wipes the bottom bar, cuts
-   the tower mage sprite out of gOverlayBuf, then plays frame animations: a 32-step reveal
+   the tower mage sprite out of gCgaMapDefault, then plays frame animations: a 32-step reveal
    (i in steps of 2 to 0x40, 457), then two sweeps in steps of 2, the second of which moves the
    single mage image down the screen at x = 0x80 (491); there is no frame image. `center` is a
    row (484, 497, 502, 503) the second sweep compares with the step count (493). The mage image is
@@ -455,8 +455,8 @@ extern void MemFree(void far *block); /*@ 094F:0137 */
     LoadPalette("TOWRMAGE.COL");
     LoadPackedImage("TOWRMAGE.CMP", 5, 3);
     gDrawPage = 2;
-    mage = gMakeImage(0, 0, 0x10, 0x38, gOverlayBuf);
-    CopyPage(3, 4, FP_OFF(gOverlayBuf), FP_SEG(gOverlayBuf));
+    mage = gMakeImage(0, 0, 0x10, 0x38, gCgaMapDefault);
+    CopyPage(3, 4, FP_OFF(gCgaMapDefault), FP_SEG(gCgaMapDefault));
     gClearDrawPage();
     for (i = 0; i < 0xc8; i += 0x40)
         ClipRect(0x10, 0x68, 0xc, i, 0x10, 0x40, 4, 2);
@@ -634,7 +634,7 @@ extern int gKingW[4];                   /*@ ds:1CEC */  /* Purpose unknown: widt
 extern int gKingStep[8];                /*@ ds:1CF4 */  /* Purpose unknown: per-frame rise step, ovl0:1265 (-4, -8, -2, -2, 1, 0, 0, 0) */
 
 /* ovl0:1265: the KING/ADVENTUR scene. It loads KING.CMP and steps a framed rectangle open over
-   ten frames, then loads ADVENTUR.CMP, cuts four king sprites out of gOverlayBuf at gKingX/
+   ten frames, then loads ADVENTUR.CMP, cuts four king sprites out of gCgaMapDefault at gKingX/
    gKingW and gives each a random start height y (0xB4 to 0xCC) and a starting animation phase,
    anim[i] = (i * 5) & 3. In a loop it walks each sprite up by gKingStep[phase] (only the top of
    the range is clamped, to 0x52): a sprite at or past 0xB4 is not drawn but stays active, and
@@ -654,7 +654,7 @@ extern int gKingStep[8];                /*@ ds:1CF4 */  /* Purpose unknown: per-
     register int edge;
 
     LoadPackedImage("KING.CMP", 5, 3);
-    CopyPage(3, 4, FP_OFF(gOverlayBuf), FP_SEG(gOverlayBuf));
+    CopyPage(3, 4, FP_OFF(gCgaMapDefault), FP_SEG(gCgaMapDefault));
     inset = 0xf;
     edge = 0xe;
     width = height = 1;
@@ -677,7 +677,7 @@ extern int gKingStep[8];                /*@ ds:1CF4 */  /* Purpose unknown: per-
     LoadPackedImage("ADVENTUR.CMP", 5, 3);
     gDrawPage = 2;
     for (i = 0; i < 4; i++) {
-        imgs[i] = gMakeImage(gKingX[i], 0, gKingW[i], 0x62, gOverlayBuf);
+        imgs[i] = gMakeImage(gKingX[i], 0, gKingW[i], 0x62, gCgaMapDefault);
         y[i] = (RandomByte() & 3) * 8 + 0xb4;
         anim[i] = (i * 5) & 3;
     }
@@ -715,7 +715,7 @@ extern int gKingStep[8];                /*@ ds:1CF4 */  /* Purpose unknown: per-
 }
 /* ovl0:15F9: the HANDS scene. Four phases of hand animation, each opened by a GrowFrame
    (735, 759, 790, 812), then a DelayFrames hold and a loop that slides two or three images cut
-   from gOverlayBuf and wipes a ClipRect band. `tall` is the second image's moving height in the
+   from gCgaMapDefault and wipes a ClipRect band. `tall` is the second image's moving height in the
    last phase. Every phase frees its images before the next. Sound 0xB/0xC/0xD/0xA play at the
    phase boundaries. */
 /*@ ovl0:15F9 */ void PlayHandsScene(void)
@@ -725,8 +725,8 @@ extern int gKingStep[8];                /*@ ds:1CF4 */  /* Purpose unknown: per-
     register int tall;
 
     gDrawPage = 2;
-    sprites[0] = gMakeImage(0, 0x8c, 0x15, 0x3c, gOverlayBuf);
-    sprites[1] = gMakeImage(0x15, 0x8c, 0xc, 0x3c, gOverlayBuf);
+    sprites[0] = gMakeImage(0, 0x8c, 0x15, 0x3c, gCgaMapDefault);
+    sprites[1] = gMakeImage(0x15, 0x8c, 0xc, 0x3c, gCgaMapDefault);
     LoadPackedImage("HANDS.CMP", 3, 5);
     WaitFrameDelay();
     ClearBottomBar();
@@ -750,9 +750,9 @@ extern int gKingStep[8];                /*@ ds:1CF4 */  /* Purpose unknown: per-
     MemFree(sprites[0]);
     DelayFrames(0xf);
     gDrawPage = 4;
-    sprites[0] = gMakeImage(0x11, 0, 0xb, 0x78, gOverlayBuf);
-    sprites[1] = gMakeImage(0x1c, 0x70, 1, 0x1f, gOverlayBuf);
-    sprites[2] = gMakeImage(9, 0x8a, 0xe, 0x36, gOverlayBuf);
+    sprites[0] = gMakeImage(0x11, 0, 0xb, 0x78, gCgaMapDefault);
+    sprites[1] = gMakeImage(0x1c, 0x70, 1, 0x1f, gCgaMapDefault);
+    sprites[2] = gMakeImage(9, 0x8a, 0xe, 0x36, gCgaMapDefault);
     gDrawPage = 2;
     gFillRect(0, 0, 0x87, 0x3f, 0x9d);
     DrawShape(2, sprites[0], 0x20, 0xffb0, 0);
@@ -782,8 +782,8 @@ extern int gKingStep[8];                /*@ ds:1CF4 */  /* Purpose unknown: per-
     MemFree(sprites[1]);
     MemFree(sprites[0]);
     gDrawPage = 4;
-    sprites[0] = gMakeImage(0, 0, 0x11, 0x88, gOverlayBuf);
-    sprites[1] = gMakeImage(0, 0x88, 9, 0x30, gOverlayBuf);
+    sprites[0] = gMakeImage(0, 0, 0x11, 0x88, gCgaMapDefault);
+    sprites[1] = gMakeImage(0, 0x88, 9, 0x30, gCgaMapDefault);
     gDrawPage = 2;
     gFillRect(0, 0, 0x8f, 0x5f, 0x9d);
     DrawShape(2, sprites[0], 0xffc8, 0xffc8, 0);
@@ -805,8 +805,8 @@ extern int gKingStep[8];                /*@ ds:1CF4 */  /* Purpose unknown: per-
     MemFree(sprites[0]);
     DelayFrames(0xf);
     gDrawPage = 4;
-    sprites[0] = gMakeImage(0x1c, 0, 0xb, 0x28, gOverlayBuf);
-    sprites[1] = gMakeImage(0x1c, 0x28, 0xa, 0x48, gOverlayBuf);
+    sprites[0] = gMakeImage(0x1c, 0, 0xb, 0x28, gCgaMapDefault);
+    sprites[1] = gMakeImage(0x1c, 0x28, 0xa, 0x48, gCgaMapDefault);
     gDrawPage = 2;
     gFillRect(0, 0, 0x57, 0x70, 0x9d);
     DrawShape(2, sprites[1], 0, 0x5a, 0);
@@ -855,11 +855,11 @@ extern int gKingStep[8];                /*@ ds:1CF4 */  /* Purpose unknown: per-
     gDrawPage = 2;
     LoadPackedImage("WTRDP3.CMP", 5, 3);
     for (i = 0; i < 31; i++)
-        stars[i] = gMakeImage(gTileX[i], gTileY[i] * 8 + 0x88, gTileScale[i], gTileScale[i] * 8, gOverlayBuf);
+        stars[i] = gMakeImage(gTileX[i], gTileY[i] * 8 + 0x88, gTileScale[i], gTileScale[i] * 8, gCgaMapDefault);
     for (i = 0; i < 3; i++)
-        frames[i] = gMakeImage(i * 5 + 0xf, 0x98, 5, 0x20, gOverlayBuf);
-    img = gMakeImage(0x1f, 0x88, 5, 0x20, gOverlayBuf);
-    CopyPage(3, 4, FP_OFF(gOverlayBuf), FP_SEG(gOverlayBuf));
+        frames[i] = gMakeImage(i * 5 + 0xf, 0x98, 5, 0x20, gCgaMapDefault);
+    img = gMakeImage(0x1f, 0x88, 5, 0x20, gCgaMapDefault);
+    CopyPage(3, 4, FP_OFF(gCgaMapDefault), FP_SEG(gCgaMapDefault));
     ClipRect(0, 0, 0, 0x88, 6, 0x24, 4, 4);
     WaitFrameDelay();
     ClearBottomBar();
@@ -905,7 +905,7 @@ extern int gKingStep[8];                /*@ ds:1CF4 */  /* Purpose unknown: per-
     ClipRect(0, 0x88, 0, 0, 6, 0x24, 4, 4);
     LoadPalette("ORB.COL");
     LoadPackedImage("ORB.CMP", 3, 5);
-    CopyPage(5, 2, FP_OFF(gOverlayBuf), FP_SEG(gOverlayBuf));
+    CopyPage(5, 2, FP_OFF(gCgaMapDefault), FP_SEG(gCgaMapDefault));
     gFrameDelay = 6;
     DrawGrid();
     WaitFrameDelay();
@@ -938,7 +938,7 @@ extern int gKingStep[8];                /*@ ds:1CF4 */  /* Purpose unknown: per-
     }
     gFrameDelay = 0x1e;
     LoadPackedImage("TUNNEL.CMP", 3, 5);
-    CopyPage(5, 2, FP_OFF(gOverlayBuf), FP_SEG(gOverlayBuf));
+    CopyPage(5, 2, FP_OFF(gCgaMapDefault), FP_SEG(gCgaMapDefault));
     WaitFrameDelay();
     gDrawPage = 0;
     gFillRect(0, 0x10, 0x13f, 0x1f, 0xc);
@@ -956,7 +956,7 @@ extern unsigned char gZoomX2[6];        /*@ ds:1D1C */  /* Purpose unknown: x2 o
 extern unsigned char gZoomY2[6];        /*@ ds:1D22 */  /* Purpose unknown: y2 of each zoom rect, ovl0:23A3 */
 extern void DrawShapeFlipped(int page, void far *src, int x, int y, int region); /*@ 0998:0046 */
 
-/* ovl0:23A3: the AVALANCH/ZOOMTUNL scene. It cuts two 0x14 by 0x78 panels out of gOverlayBuf
+/* ovl0:23A3: the AVALANCH/ZOOMTUNL scene. It cuts two 0x14 by 0x78 panels out of gCgaMapDefault
    and flashes them three times with ClipRect wipes, sound 7 twice per pass, six plays in
    all (976-985). It loads AVALANCH.CMP (1004), plays sound 8 (1009) and sound 4 (1012), runs
    a 30-step clip loop (1013-1019), plays sound 9 (1020), draws the six ZOOMTUNL rectangles
@@ -969,8 +969,8 @@ extern void DrawShapeFlipped(int page, void far *src, int x, int y, int region);
     register int j;
 
     gDrawPage = 4;
-    imgA = gMakeImage(0x14, 0, 0x14, 0x78, gOverlayBuf);
-    imgB = gMakeImage(0, 0, 0x14, 0x78, gOverlayBuf);
+    imgA = gMakeImage(0x14, 0, 0x14, 0x78, gCgaMapDefault);
+    imgB = gMakeImage(0, 0, 0x14, 0x78, gCgaMapDefault);
     DrawShapeFlipped(4, imgA, 0xa0, 0, 0);
     DrawShapeFlipped(4, imgB, 0, 0, 0);
     WaitFrameDelay();
@@ -1003,7 +1003,7 @@ extern void DrawShapeFlipped(int page, void far *src, int x, int y, int region);
     gFrameDelay = 0x28;
     ClipRect(0, 0, 0xa, 0x20, 0x14, 0x78, 2, 0);
     LoadPackedImage("AVALANCH.CMP", 5, 3);
-    CopyPage(3, 4, FP_OFF(gOverlayBuf), FP_SEG(gOverlayBuf));
+    CopyPage(3, 4, FP_OFF(gCgaMapDefault), FP_SEG(gCgaMapDefault));
     WaitFrameDelay();
     gFrameDelay = 0x10;
     ClipRect(0x21, 0, 0x11, 0x38, 6, 0x30, 4, 0);
@@ -1031,7 +1031,7 @@ extern void DrawShapeFlipped(int page, void far *src, int x, int y, int region);
     ClipRect(0, 0, 0, 0, 0x28, 0xa8, 2, 0);
     gFrameDelay = 0x28;
     LoadPackedImage("ZOOMTUNL.CMP", 5, 3);
-    CopyPage(3, 4, FP_OFF(gOverlayBuf), FP_SEG(gOverlayBuf));
+    CopyPage(3, 4, FP_OFF(gCgaMapDefault), FP_SEG(gCgaMapDefault));
     WaitFrameDelay();
     PlaySound(6);
     gFrameDelay = 2;
@@ -1122,7 +1122,7 @@ extern void DrawShapeFlipped(int page, void far *src, int x, int y, int region);
     LoadPackedImage("WESTWOOD.CMP", 5, 3);
     gClearDrawPage();
     LoadPalette("WESTWOOD.COL");
-    CopyPage(3, 0, FP_OFF(gOverlayBuf), FP_SEG(gOverlayBuf));
+    CopyPage(3, 0, FP_OFF(gCgaMapDefault), FP_SEG(gCgaMapDefault));
     PlaySound(1);
     gFrameDelay = gWestwoodDelay;
     WaitFrameDelay();
@@ -1131,7 +1131,7 @@ extern void DrawShapeFlipped(int page, void far *src, int x, int y, int region);
     for (i = 0; i < 4; i++) {
         gFrameDelay = gLogoDelays[i];
         LoadPackedImage(gLogoFiles[i], 5, 3);
-        CopyPage(3, 4, FP_OFF(gOverlayBuf), FP_SEG(gOverlayBuf));
+        CopyPage(3, 4, FP_OFF(gCgaMapDefault), FP_SEG(gCgaMapDefault));
         Dissolve(0, 0x32, 0x140, 0x66, 4, 0);
         WaitFrameDelay();
         if (gAbort)

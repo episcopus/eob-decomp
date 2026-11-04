@@ -59,13 +59,13 @@ struct ItemRecord {
     signed char cellPos;        /* +5 (ds:8DD5): 01D0 stores its 4th argument here and 02B9 matches it
                                against its `key`. No caller shows a sound (01D0's callers pass a
                                slot kind, E0ACD.C:561-568, a roll, E08E6.C:807, or an effect kind | 4,
-                               0BD2:07DE), so Purpose unknown: a per-entry tag */
+                               0BD2:07DE): the item's position in its cell, 8 a wall niche (122E:06D0) */
     int key;                /* +6 (ds:8DD6): the key; -1 when the record is free */
     int prevLink;                /* +8 (ds:8DD8): one link of the circular list; 0BD2:01D0 splices a
                                new item in after this record through it */
     int nextLink;                /* +0xa (ds:8DDA): the other link; the list walks (0BD2:0385, 040E,
                                04AA) follow it */
-    signed char m0A;        /* +0xc (ds:8DDC): gCurLevel or -1, set by 01D0 */
+    signed char level;        /* +0xc (ds:8DDC): gCurLevel or -1, set by 01D0 */
     signed char value;        /* +0xd (ds:8DDD): the item's bonus or effect value: the signed bonus
                                printed as "%s +%d" and "Cursed %s %d", the spell index into ds:1278
                                and ds:12E0, the wand effect index g38FA[m0B], and the scroll and
@@ -116,7 +116,7 @@ extern struct ItemInfo gItemTypesClasses[]; /*@ ds:A9F5 */
 extern struct Monster gMonsters[]; /*@ ds:8A82 */
 extern int gDeathListCount; /*@ ds:DDE0 */
 extern int gDeathList[]; /*@ ds:F4E6 */
-extern char gOverlayBuf[]; /*@ ds:113F */
+extern char gCgaMapDefault[]; /*@ ds:113F */
 extern char far *gStagingPage; /*@ ds:DF4E */
 extern unsigned char gOuttakeCellRects[]; /*@ ds:7B2B */
 extern unsigned char gMenuRowX[]; /*@ ds:7B89 */
@@ -171,10 +171,10 @@ extern int gScrollHook; /*@ ds:8117 */
 extern int gScrollHookSeg; /*@ ds:8119 */
 extern int g139; /*@ ds:0139 */
 extern int gCurLevel; /*@ ds:FBC8 */
-extern signed char far gMapTiles[]; /*@ 1F1D:0000 */  /* the level's tile-index table (src/EOV3.C) */
-extern unsigned char far gMapSheet[]; /*@ 1F1E:0000 */  /* the sheet gMapTiles indexes into (src/EOV3.C's MAPSHEET) */
-extern unsigned char far gSheetDECORATE[]; /*@ 2069:0000 */  /* the PLAYFLD sheet (src/E0ACD.C, src/EOV3.C) */
-extern unsigned char far gSheetINVENT[]; /*@ 2067:0000 */  /* the INVENT sheet (src/E0ACD.C, src/EOV3.C) */
+extern signed char far gLevelCgaMapIndex[]; /*@ 1F1D:0000 */  /* the level's tile-index table (src/EOV3.C) */
+extern unsigned char far gWallSetCgaMaps[]; /*@ 1F1E:0000 */  /* the sheet gLevelCgaMapIndex indexes into (src/EOV3.C's MAPSHEET) */
+extern unsigned char far gCgaMapPlayfld[]; /*@ 2069:0000 */  /* the PLAYFLD sheet (src/E0ACD.C, src/EOV3.C) */
+extern unsigned char far gCgaMapInvent[]; /*@ 2067:0000 */  /* the INVENT sheet (src/E0ACD.C, src/EOV3.C) */
 
 extern void far * (far *gGetSpriteCell)(int x, int y, int w, int h, void far *sheet); /*@ ds:8086 */
 extern void far * (far *gGetSpriteCellRle)(int x, int y, int w, int h, void far *buf); /*@ ds:8082 */
@@ -217,7 +217,7 @@ extern void FindWordPanel(void); /*@ 2106:0039 */  /* overlay 2 entry, ovl2:09ED
 extern void LoadWallTextures(char far *name, char far *sheet); /*@ 210C:0052 */  /* overlay 3 entry, ovl3:07A5 */
 extern void FreePtrTable(void); /*@ 210C:0048 */  /* overlay 3 entry, ovl3:0000 */
 extern void FreeSlotTables(void); /*@ 210C:003E */  /* overlay 3 entry, ovl3:031A */
-extern void FreeMapIcons(int base, int count); /*@ 210C:0061 */  /* overlay 3 entry, ovl3:05D2 */
+extern void FreeMonsterShapes(int base, int count); /*@ 210C:0061 */  /* overlay 3 entry, ovl3:05D2 */
 extern void DrawViewFrame(int n); /*@ 2116:005C */  /* overlay 4 entry, ovl4:1F51 */
 extern void LoadOverlayScreen(char far *name, int a, int b); /*@ 082C:05EC */
 extern void LoadScreenImage(char far *name, void far *buf, int a, int b, int c); /*@ 082C:051B */
@@ -247,14 +247,14 @@ void ShuffleGrid(int x, int y, unsigned cols, unsigned rows, int saveStatus, int
 
 void PrintTableString(int index, int flag);
 
-/* ovl5:0000: draws sprite cell `index` of the ds:7B2B table out of the overlay buffer gOverlayBuf
+/* ovl5:0000: draws sprite cell `index` of the ds:7B2B table out of the overlay buffer gCgaMapDefault
    at (x, y), moved left by the returned cell's byte +2 (times four) and up by its byte +1, into
    region 5. Sets gDrawPage for the draw and frees the sliced cell. Called by DrawCharPortrait
    (00A1). */
 /*@ ovl5:0000 */ void DrawSheetCell(int index, int x, int y)
 {
     void far *cell;
-    int cx;                 /* the cell's source x in gOverlayBuf, ds:7B2B[index*4 + 0] */
+    int cx;                 /* the cell's source x in gCgaMapDefault, ds:7B2B[index*4 + 0] */
     int cy;                 /* the cell's source y, ds:7B2B[index*4 + 1] */
     int cw;                 /* the cell's width, ds:7B2B[index*4 + 2] */
     int ch;                 /* the cell's height, ds:7B2B[index*4 + 3] */
@@ -266,7 +266,7 @@ void PrintTableString(int index, int flag);
     cy = gOuttakeCellRects[i + 1];
     cw = gOuttakeCellRects[i + 2];
     ch = gOuttakeCellRects[i + 3];
-    cell = gGetSpriteCell(cx, cy, cw, ch, gOverlayBuf);
+    cell = gGetSpriteCell(cx, cy, cw, ch, gCgaMapDefault);
     gDrawPage = 0;
     y -= ((struct Cell far *)cell)->b1;
     x -= (((struct Cell far *)cell)->b2 << 3) >> 1;
@@ -578,7 +578,7 @@ enum {
    of gChars whose flags bit 0 is clear, saves that slot's picture pointer portrait, copies the pool
    record over it through movmem, restores portrait, recomputes the armour class, requeues every carried
    item through CopyItemToFreeSlot, then slices the character's sprite cell through gGetSpriteCellRle
-   (ds:8082: which*4, 0xa0, 4, 0x20 out of gOverlayBuf) into the picture buffer portrait and frees the
+   (ds:8082: which*4, 0xa0, 4, 0x20 out of gCgaMapDefault) into the picture buffer portrait and frees the
    slice. Called by AddCharPanel. */
 /*@ ovl5:070E */ void AddPartyMember(int which)
 {
@@ -604,7 +604,7 @@ enum {
             rec->items[i] = CopyItemToFreeSlot(rec->items[i]);
     }
     gDrawPage = 2;
-    saved = gGetSpriteCellRle(which * 4, 0xA0, 4, 0x20, gOverlayBuf);
+    saved = gGetSpriteCellRle(which * 4, 0xA0, 4, 0x20, gCgaMapDefault);
     movmem(saved, rec->portrait, 0x514);
     farfree(saved);
     gDrawPage = 0;
@@ -642,8 +642,8 @@ enum {
     }
 }
 /* ovl5:08D2: turns item `n` into a carried item (CopyItemToFreeSlot) and queues it on the list
-   head gMazeItems keyed by gPartyCell (the party's map cell), with a random sound from the current
-   sound page gPartyDir. Called by the panels that add an item to a character. */
+   head gMazeItems keyed by gPartyCell (the party's map cell), at a random cell position for the
+   facing gPartyDir. Called by the panels that add an item to a character. */
 /*@ ovl5:08D2 */ void QueueItem(int item)
 {
     int sound;
@@ -1044,7 +1044,7 @@ enum {
     gGameFlags |= 0x4000000L;
 }
 /* ovl5:1204: the first ending animation (mode 8). It tears down the dungeon resources, loads
-   PORTALA ds:7E43 and slices fifteen cells out of gOverlayBuf (three per sprite: a 3x0x4b column, a
+   PORTALA ds:7E43 and slices fifteen cells out of gCgaMapDefault (three per sprite: a 3x0x4b column, a
    3x0x4b column offset 0x50, and an 0xf x 0x12 cell) plus one 8 x 0x4d cell, blits PORTALB
    ds:7E4B, fills the action field with GetPageBuffer(5), clips the panel, draws block[0], stripA[0],
    stripB[0] and extra[0] and shuffles the grid at origin (0x18, 0) of 0x90 columns by 0x68 rows.
@@ -1064,16 +1064,16 @@ enum {
     int i;
 
     FreeSlotTables();
-    FreeMapIcons(0, 0x24);
+    FreeMonsterShapes(0, 0x24);
     FreePtrTable();
     LoadOverlayScreen(gFileNamePortalA, 5, 3);
     for (i = 0; i < 5; i++) {
-        stripA[i] = gGetSpriteCell(i * 3, 0, 3, 0x4b, gOverlayBuf);
-        stripB[i] = gGetSpriteCell(i * 3, 0x50, 3, 0x4b, gOverlayBuf);
-        block[i] = gGetSpriteCell(0xf, i * 0x12, 0xf, 0x12, gOverlayBuf);
+        stripA[i] = gGetSpriteCell(i * 3, 0, 3, 0x4b, gCgaMapDefault);
+        stripB[i] = gGetSpriteCell(i * 3, 0x50, 3, 0x4b, gCgaMapDefault);
+        block[i] = gGetSpriteCell(0xf, i * 0x12, 0xf, 0x12, gCgaMapDefault);
     }
-    extra[0] = gGetSpriteCell(0x1e, 0, 8, 0x4d, gOverlayBuf);
-    LoadScreenImage(gFileNamePortalB, gOverlayBuf, 5, 3, 2);
+    extra[0] = gGetSpriteCell(0x1e, 0, 8, 0x4d, gCgaMapDefault);
+    LoadScreenImage(gFileNamePortalB, gCgaMapDefault, 5, 3, 2);
     PlaySound(0x21);
     PlaySound(0x13);
     gDrawPage = 2;
@@ -1168,8 +1168,8 @@ enum {
     gScrollOn = 0;
 }
 /* ovl5:17C8: the second ending animation (mode 9). It tears down the dungeon resources
-   (FreeSlotTables, FreeMapIcons(0,0x24), FreePtrTable), loads XDEATH2 (ds:7EEF) and builds the
-   four sprite cells from gOverlayBuf (a 2x2 grid of 0xE x 0x58 cells), loads XDEATH3 (ds:7EF7)
+   (FreeSlotTables, FreeMonsterShapes(0,0x24), FreePtrTable), loads XDEATH2 (ds:7EEF) and builds the
+   four sprite cells from gCgaMapDefault (a 2x2 grid of 0xE x 0x58 cells), loads XDEATH3 (ds:7EF7)
    and slices one 0x10 x 0x5f cell, blits XDEATH1 (ds:7EFF), then plays ten frames: six clipped
    cells (with the sounds 0x48, 0x36, 0x36, 0x22) and, for the last four, the 2x2 sprite grid
    (sprites[i-6], sound 0x2a). It then clears gDrawPage, fills the action field with
@@ -1185,15 +1185,15 @@ enum {
     int i;
 
     FreeSlotTables();
-    FreeMapIcons(0, 0x24);
+    FreeMonsterShapes(0, 0x24);
     FreePtrTable();
     LoadOverlayScreen(gFileNameXDeath2, 5, 3);
     for (i = 0; i < 4; i++)
-        sprites[i] = gGetSpriteCellRle((i % 2) * 0xe, (i / 2) * 0x58, 0xe, 0x58, gOverlayBuf);
+        sprites[i] = gGetSpriteCellRle((i % 2) * 0xe, (i / 2) * 0x58, 0xe, 0x58, gCgaMapDefault);
     LoadOverlayScreen(gFileNameXDeath3, 5, 3);
-    cell = gGetSpriteCellRle(0x16, 0, 0x10, 0x5f, gOverlayBuf);
-    LoadScreenImage(gFileNameXDeath1, gOverlayBuf, 5, 3, -1);
-    CopyPage(3, 2, FP_OFF(gOverlayBuf), FP_SEG(gOverlayBuf));
+    cell = gGetSpriteCellRle(0x16, 0, 0x10, 0x5f, gCgaMapDefault);
+    LoadScreenImage(gFileNameXDeath1, gCgaMapDefault, 5, 3, -1);
+    CopyPage(3, 2, FP_OFF(gCgaMapDefault), FP_SEG(gCgaMapDefault));
     for (i = 0; i < 0xa; i++) {
         if (i == 2)
             PlaySound(0x48);
@@ -1238,7 +1238,7 @@ enum {
    ds:7F07, reads TEXT.DAT ds:7F0F into gStagingPage, draws the panel and the 8x8 font) and runs one of
    the eight menu panels through the jump table at cs:1CCD. Finally it restores the font and the
    pointer, loads a wall texture set (LoadWallTextures) for the sheet
-   gMapSheet + (gMapTiles[gCurLevel - 1] << 5), with a NULL name so the current wall name is reused,
+   gWallSetCgaMaps + (gLevelCgaMapIndex[gCurLevel - 1] << 5), with a NULL name so the current wall name is reused,
    loads the PLAYFLD (ds:7F18) and INVENT (ds:7F20) images,
    redraws the characters and resets the text window to 7. The eight panel cases are laid out in
    the source order 0,1,2,3,4,6,5,7 (the original's bodies are 0924, 0B58, 0EB9, 0F77, 102C, 1087,
@@ -1313,9 +1313,9 @@ enum {
         SetFont(font);
         gScrollOn = 0;
         LockHidePointer();
-        LoadWallTextures(0, gMapSheet + (gMapTiles[gCurLevel - 1] << 5));
-        LoadScreenImage(gFileNamePlayfld, gSheetDECORATE, 5, 3, 0);
-        LoadScreenImage(gFileNameInvent, gSheetINVENT, 5, 3, 2);
+        LoadWallTextures(0, gWallSetCgaMaps + (gLevelCgaMapIndex[gCurLevel - 1] << 5));
+        LoadScreenImage(gFileNamePlayfld, gCgaMapPlayfld, 5, 3, 0);
+        LoadScreenImage(gFileNameInvent, gCgaMapInvent, 5, 3, 2);
         gDrawPage = 0;
         RedrawCharacters();
         DrawViewFrame(1);
@@ -1328,7 +1328,7 @@ enum {
    gPanelMode/gFlag messages, opens TEXT.DAT (ds:7F27, 1: read) and reads it into the string base
    gStagingPage, sets the text window and the panel colours, draws the panel (0,0)-(0xaf,0xae) and
    shows message `msg` through PrintTableString. It then restores the screen: loads the wall
-   textures through LoadWallTextures (sheet gOverlayBuf, name NULL reuses the current
+   textures through LoadWallTextures (sheet gCgaMapDefault, name NULL reuses the current
    wall name), loads the PLAYFLD (ds:7F30) and INVENT (ds:7F38) images, redraws the characters and
    the view frame and resets the text window to 7. Called by the item-slot handler 0BD2:1001. */
 /*@ ovl5:1CDD */ void UseItemPanel(int msg)
@@ -1353,9 +1353,9 @@ enum {
     PrintTableString(msg, 1);
     gScrollOn = 0;
     LockHidePointer();
-    LoadWallTextures(0, gOverlayBuf);
-    LoadScreenImage(gFileNamePlayfld2, gSheetDECORATE, 5, 3, 0);
-    LoadScreenImage(gFileNameInvent2, gSheetINVENT, 5, 3, 2);
+    LoadWallTextures(0, gCgaMapDefault);
+    LoadScreenImage(gFileNamePlayfld2, gCgaMapPlayfld, 5, 3, 0);
+    LoadScreenImage(gFileNameInvent2, gCgaMapInvent, 5, 3, 2);
     gDrawPage = 0;
     RedrawCharacters();
     DrawViewFrame(1);

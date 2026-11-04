@@ -83,7 +83,7 @@ struct ItemRecord {
                                new item in after this record through it */
     int nextLink;                /* +0xa (ds:8DDA): the other link; the list walks (0BD2:0385, 040E,
                                04AA) follow it */
-    signed char m0A;        /* +0xc (ds:8DDC): gFBC8 or -1, set by 01D0 */
+    signed char level;        /* +0xc (ds:8DDC): gFBC8 or -1, set by 01D0 */
     signed char value;        /* +0xd (ds:8DDD): the item's bonus or effect value: the signed bonus
                                printed as "%s +%d" and "Cursed %s %d", the spell index into ds:1278
                                and ds:12E0, the wand effect index g38FA[m0B], and the scroll and

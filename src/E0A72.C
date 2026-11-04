@@ -47,8 +47,8 @@ extern signed char gStrPctDamageSteps[]; /*@ ds:3453 */     /* five strength-per
 extern signed char gStrPctDamageBonus[]; /*@ ds:3458 */     /* the five values 0A72:0128 puts in place of the
                                                   base gStrDamageBonus for the matching gStrPctDamageSteps threshold */
 extern signed char gStrDamageBonus[]; /*@ ds:345C */     /* base value per strength score, used by 0A72:0128 */
-extern int gDexMissileBonus[]; /*@ ds:3474 */             /* a word table indexed by the +15 stat byte (0A72:0181) */
-extern int gDexArmourAdjust[]; /*@ ds:349E */             /* a word table indexed by the +15 stat byte (0A72:019D) */
+extern int gDexMissileBonus[]; /*@ ds:3474 */             /* a word table indexed by dexterity (0A72:0181) */
+extern int gDexArmourAdjust[]; /*@ ds:349E */             /* a word table indexed by dexterity (0A72:019D) */
 extern long far *gExpTables[]; /*@ ds:35BC */       /* per-index far tables of 32-bit values, read by 0A72:04B7 */
 extern char gClassSlotBaseClass[]; /*@ ds:35D4 */            /* a 4-wide byte table indexed row * 4 + slot (0A72:0509) */
 extern signed char gHitGainPerStep[]; /*@ ds:3610 */     /* per-class multiplier, read by 0A72:0522 */
@@ -69,8 +69,10 @@ char GetClassSlotByte(char row, char slot); /*@ 0A72:0509 */
 /* 0A72:0006: a byte from the per-index far buffer gSaveTables[index], at position
    min(limit, gSaveMaxLevel[index]) / gSaveLevelStep[index] + gSaveRowLength[index] * offset. The four parallel tables are
    gSaveTables (the buffers), gSaveMaxLevel (the per-index clamps), gSaveLevelStep (the divisors) and gSaveRowLength (the
-   multipliers). Purpose unknown: called by 08E6:1634, 0D1C:059B, 0DE8:0FCA and 0EF3:1702. */
-/*@ 0A72:0006 */ int GetIndexedByte(char index, char limit, char offset)
+   multipliers). It is the saving throw target: index the class group (0 for monsters), limit the
+   level or hit dice, offset the save kind; the callers 08E6:1634, 0D1C:059B, 0DE8:0FCA and
+   0EF3:1702 succeed on a 1d20 at or above it. */
+/*@ 0A72:0006 */ int GetSavingThrowTarget(char index, char limit, char offset)
 {
     char far *base;
 
@@ -105,7 +107,7 @@ char GetClassSlotByte(char row, char slot); /*@ 0A72:0509 */
    raised); when +0F is 0 the base is returned untouched. The evidence that +0D/+0F are a score and
    its percentile: gStrPctHitSteps holds five bytes {1, 51, 76, 91, 100} and gStrPctHitBonus holds {1, 2, 2, 2, 3}
    (ds:3430 and ds:3435), gStrHitBonus is the per-score base {3, -5, -3, ...}, and the only caller
-   0DE8:0007 adds the result to the attack bonus when its `flag` is set (GetCharM15Value is added
+   0DE8:0007 adds the result to the attack bonus when its `flag` is set (GetDexMissileBonus is added
    otherwise, E0DE8.C:200-203). */
 /*@ 0A72:00CF */ int GetStrengthToHitBonus(int who)
 {
@@ -142,10 +144,10 @@ char GetClassSlotByte(char row, char slot); /*@ 0A72:0509 */
     return value;
 }
 
-/* 0A72:0181: the word ds:3474[+15 stat byte] for character `who`. Purpose unknown: the +15 byte is
-   one of the five further stat bytes (see the struct field); the only caller (0DE8:0007) adds this
-   to the attack bonus when its `flag` is zero (GetStrengthToHitBonus is added otherwise, E0DE8.C:200-203). */
-/*@ 0A72:0181 */ int GetCharM15Value(int who)
+/* 0A72:0181: the dexterity missile bonus gDexMissileBonus[dexterity] (ds:3474, CharRec +15) for
+   character `who`; the only caller RollToHit (0DE8:0007) adds this
+   to the attack bonus when its `useStrength` is zero (GetStrengthToHitBonus is added otherwise, E0DE8.C:200-203). */
+/*@ 0A72:0181 */ int GetDexMissileBonus(int who)
 {
     return gDexMissileBonus[gChars[who].dexterity];
 }
@@ -298,7 +300,7 @@ char GetClassSlotByte(char row, char slot); /*@ 0A72:0509 */
    byte as an index into gExpTables and returns -1 when it is -1, and the callers test for -1
    (E1547.C:566, E0DE8.C:610; E0DE8.C:614 tests 0A72:04B7's long result, not this byte). A
    non-negative byte indexes g1219, the per-class-slot names, at E1547.C:568 (g1219 is declared at
-   E1547.C:124), and gExpTables, and 0D1C:059B passes it to GetIndexedByte as `index`, the gSaveTables buffer,
+   E1547.C:124), and gExpTables, and 0D1C:059B passes it to GetSavingThrowTarget as `index`, the gSaveTables buffer,
    after folding 4 and 5 to 0 (E0D1C.C:430-433). Purpose unknown. */
 /*@ 0A72:0509 */ char GetClassSlotByte(char row, char slot)
 {
@@ -313,7 +315,7 @@ char GetClassSlotByte(char row, char slot); /*@ 0A72:0509 */
    `classByte` is the +0 field of the target's ds:1A3B entry (E0DE8.C:57), classIndex is the character's
    class index into ds:116E, and levels[0] is the character's first class-slot level at +24; this
    function subtracts 1 from it (`num`), while E0D1C.C:433 passes the unchanged levels[0] as
-   GetIndexedByte's limit, so the less-one value is used only here. Build note: `result` is what
+   GetSavingThrowTarget's limit, so the less-one value is used only here. Build note: `result` is what
    keeps the two lookups in memory; without it -O promotes `cls` (or `num`) to CL and the spills
    differ from the original. */
 /*@ 0A72:0522 */ char GetHitTarget(char who, char classByte)
@@ -329,7 +331,7 @@ char GetClassSlotByte(char row, char slot); /*@ 0A72:0509 */
     return result;
 }
 
-/* 0A72:058C: the difference of two ints. Purpose unknown: its only caller 08E6:106B takes
+/* 0A72:058C: the difference of two ints, a monster's to-hit target: its only caller 08E6:106B takes
    `need = SubtractInts(gTable1A3B[index].m01, gChars[who].armorClass)` and hits when a d20 roll reaches
    `need` (E08E6.C:861-862). */
 /*@ 0A72:058C */ int SubtractInts(int minuend, int subtrahend)
@@ -341,9 +343,9 @@ char GetClassSlotByte(char row, char slot); /*@ 0A72:0509 */
    0x0E-byte rows and ends at ds:36A4, where the "%d/%02d" literal begins, so a row holds columns
    0x00..0x0D and 0x0E is one past the row. QUIRK 0A72:0597: the clamp admits col 0x0E, which
    reads ds:3618[row * 0x0E + 0x0E], the first byte of the next row (and, for the last row, the
-   '%' byte at ds:36A4); a port must keep this aliasing. Purpose unknown: called by 0D1C:09CB with
-   the +19 field of the object's ds:1A3B entry as the row. */
-/*@ 0A72:0597 */ int GetClampedTableByte(int col, int row)
+   '%' byte at ds:36A4); a port must keep this aliasing. It is the turn undead target: TryTurnMonster
+   (0D1C:09CB) passes the turner's level as col and the monster type's +19 byte as the row; -1 destroys. */
+/*@ 0A72:0597 */ int GetTurnUndeadTarget(int col, int row)
 {
     if (col > 0x0E)
         col = 0x0E;

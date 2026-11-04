@@ -71,13 +71,13 @@ struct ItemRecord {
     signed char cellPos;        /* +5 (ds:8DD5): 01D0 stores its 4th argument here and 02B9 matches it
                                against its `key`. No caller shows a sound (01D0's callers pass a
                                slot kind, E0ACD.C:561-568, a roll, E08E6.C:807, or an effect kind | 4,
-                               0BD2:07DE), so Purpose unknown: a per-entry tag */
+                               0BD2:07DE): the item's position in its cell, 8 a wall niche (122E:06D0) */
     int key;                /* +6 (ds:8DD6): the key; -1 when the record is free */
     int prevLink;                /* +8 (ds:8DD8): one link of the circular list; 0BD2:01D0 splices a
                                new item in after this record through it */
     int nextLink;                /* +0xa (ds:8DDA): the other link; the list walks (0BD2:0385, 040E,
                                04AA) follow it */
-    signed char m0A;        /* +0xc (ds:8DDC): gFBC8 or -1, set by 01D0 */
+    signed char level;        /* +0xc (ds:8DDC): gFBC8 or -1, set by 01D0 */
     signed char value;        /* +0xd (ds:8DDD): the item's bonus or effect value: the signed bonus
                                printed as "%s +%d" and "Cursed %s %d", the spell index into ds:1278
                                and ds:12E0, the wand effect index g38FA[m0B], and the scroll and
@@ -119,12 +119,12 @@ extern void far *gLevelInf; /*@ ds:8DCA */  /* start-up far allocation, 7500 byt
 extern void far *gWallBlockMaps; /*@ ds:F43E */  /* start-up far allocation, 6000 bytes (07A9:0046); the
                                               overlay 3 LoadMapScreen fills it from the level graphics
                                               file (src/EOV3.C:579-580, "the 6000-byte level
-                                              graphics file", src/EOV3.C:201 [H]), and the overlay 4
-                                              page-buffer readers CopyViewColumn (src/EOV4.C:166, its
+                                              graphics file", src/EOV3.C:201), and the overlay 4
+                                              readers CopyViewColumn (src/EOV4.C:166, its
                                               source assignment at :175) and ToggleViewColumn
                                               (src/EOV4.C:203, source at :212, pixel read at :218)
-                                              read it as the page buffer (the comment at
-                                              src/EOV4.C:159). Purpose unknown */
+                                              read 0x35E bytes per gWallVmpSet entry: the level's
+                                              .VMP (VGA) or .EMP block map, read at ovl3:0A7C */
 extern unsigned char far *gSoundMap; /*@ ds:DCAC */  /* the 120-byte sound map (game number to
                                                          driver number), read from the driver file
                                                          (adlib.dat or pcgamesn.dat, src/E177D.C:2-3) */
@@ -267,8 +267,8 @@ extern void far *gRemappedIcon; /*@ ds:DF48 */  /* the 0x12C-byte buffer LoadIte
                                            segment fixup, a byte offset into TLINK's segment table
                                            (index times 8, docs/design/WHITEPAPER.md:100), so index 24,
                                            paragraph 19BC (build/re/eob.json), the segment that holds
-                                           MemAlloc at offset 7: the callee is MemAlloc [H]. src/EOV2.C:253
-                                           calls it the item description buffer [H] */
+                                           MemAlloc at offset 7: the callee is MemAlloc [H]. It is not an
+                                           item description buffer (the old reading of src/EOV2.C) */
 /* one far pointer per icon to the image it holds, indexed by icon number; slot 0 holds the
    pointer shape (src/EOV2.C:205-211). ovl2:0029..0033 writes entry 0 (ds:DDE4 and
    ds:DDE6) from a separate call through [ds:8086] with cell (0,0) and the sheet gOverlayBuf

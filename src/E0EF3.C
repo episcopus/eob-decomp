@@ -74,7 +74,7 @@ struct ItemRecord {
     int key;                /* +06: the key; -2 when the record is free (0EF3:0418) */
     int prevLink;                /* +08: one link of the circular list */
     int nextLink;                /* +0A: the other link */
-    signed char m0A;        /* +0C */
+    signed char level;        /* +0C */
     signed char value;        /* +0D: the value 0BD2:01D0 returns */
 };
 
@@ -324,7 +324,7 @@ extern void DamageCharacter(int who, int amount); /*@ 0DE8:09B9 */
 extern int HalveSaveDamageA(int who, int value); /*@ 0DE8:0F98 */
 extern int HalveSaveDamageB(struct Monster far *objRec, int value); /*@ 0DE8:0FCA */
 extern int FindClassSlot(int value, int classIndex); /*@ 0A72:007B */
-extern int GetIndexedByte(char index, char limit, char offset); /*@ 0A72:0006 */
+extern int GetSavingThrowTarget(char index, char limit, char offset); /*@ 0A72:0006 */
 extern int GetArmourClassBase(char classIndex); /*@ 0A72:019D */
 extern void SayAndPlaySound(char far *text); /*@ 082C:0B8F */
 extern void DrawText(char far *text); /*@ 1DE7:060A */
@@ -598,7 +598,7 @@ extern int gBurstMaskPixel;                /*@ ds:FC72 */ /* the handle gGetPixe
 /*@ 0EF3:03D8 */ void FreeItemRecord(int n)
 {
     gItems[n].key = -2;
-    gItems[n].m0A = -1;
+    gItems[n].level = -1;
     gItemTypes[gItems[n].type].m04 = 0xE2;
 }
 
@@ -1351,11 +1351,11 @@ extern int gBurstMaskPixel;                /*@ ds:FC72 */ /* the handle gGetPixe
     DiscardEquippedItems(rec);
 }
 
-/* 0EF3:1702: after FlashViewDamage, walk the 30 objects and for each whose id is the object the
-   current page faces (0D1C:00DA), whose MonsterType record gMonsterTypes[obj->typeIndex] has bit 0 or 1 of its
+/* 0EF3:1702: after FlashViewDamage, walk the 30 monsters and for each in the cell the party
+   faces (StepCell(gPartyCell, gPartyDir)), whose MonsterType record gMonsterTypes[obj->typeIndex] has bit 0 or 1 of its
    +0x0F long and which 0D1C:0BAB does not reject, roll 1d20 and clear the object's type when the
    roll is under the value 0A72:0006 gives for that record. The +2 byte is passed as
-   GetIndexedByte's `limit` argument, which 0A72:0006 clamps to g341E[index]
+   GetSavingThrowTarget's `limit` argument, which 0A72:0006 clamps to g341E[index]
    (src/E0A72.C:73-80). Reached through a table (the packet finds no direct caller). The threshold
    is a local and the clear uses &gMonsters[i], not the walking pointer. */
 /*@ 0EF3:1702 */ void CastFear(void)
@@ -1372,7 +1372,7 @@ extern int gBurstMaskPixel;                /*@ ds:FC72 */ /* the handle gGetPixe
     for (i = 0; i < 0x1E; i++, obj++) {
         rec = &gMonsterTypes[obj->typeIndex];
         if (obj->cell == target && (rec->m0F & 3) != 0 && MonsterResistsMagic(i) == 0) {
-            limit = GetIndexedByte(0, rec->m02, 4);
+            limit = GetSavingThrowTarget(0, rec->m02, 4);
             if (RollDice(1, 0x14, 0) < limit)
                 ClearObjectType(&gMonsters[i]);
         }

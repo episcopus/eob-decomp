@@ -9567,3 +9567,237 @@ new = "gDecorShapes"
 kind = "global"
 why = "200 far shape pointers that ovl3:01C8 cuts for each decoration's ten shape indices out of the decoration sheet; 122E:0055 reads their height and width (eighths) to build a decoration's click rectangle"
 date = "2026-11-03"
+
+[[rename]]
+id = "0A72:0006=GetSavingThrowTarget"
+addr = "0A72:0006"
+old = "GetIndexedByte"
+new = "GetSavingThrowTarget"
+kind = "function"
+why = "Returns gSaveTables[group][min(level, gSaveMaxLevel) / gSaveLevelStep + gSaveRowLength * kind]; every caller succeeds on a 1d20 at or above it: RollMemberSave 0D1C:059B (class group, levels[0], save kind), DamageMonsterWithSave 08E6:1634, HalveSaveDamageB 0DE8:0FCA and CastFear 0EF3:1702 (group 0, the monster type's +02 hit dice, kind 4)."
+date = "2026-11-03"
+
+[[rename]]
+id = "0A72:0181=GetDexMissileBonus"
+addr = "0A72:0181"
+old = "GetCharM15Value"
+new = "GetDexMissileBonus"
+kind = "function"
+why = "Returns gDexMissileBonus[gChars[who].dexterity] (ds:3474, CharRec +15 is dexterity); RollToHit 0DE8:0007 adds it to the attack bonus when useStrength is 0 and GetStrengthToHitBonus otherwise (E0DE8.C:229-232), the AD&D missile adjustment."
+date = "2026-11-03"
+
+[[rename]]
+id = "0A72:0597=GetTurnUndeadTarget"
+addr = "0A72:0597"
+old = "GetClampedTableByte"
+new = "GetTurnUndeadTarget"
+kind = "function"
+why = "Returns gTurnUndeadTable[row * 14 + min(col, 14)]; its only caller TryTurnMonster 0D1C:09CB passes the turner's level from FindBestUndeadTurner as col and the monster type's +19 byte as row, turns the monster when the 1d20 roll reaches it and destroys it (DamageObject 100) when it is -1."
+date = "2026-11-03"
+
+[[rename]]
+id = "ovl3:0624=LoadMonsterShapesA"
+addr = "ovl3:0624"
+old = "LoadMapIcons6"
+new = "LoadMonsterShapesA"
+kind = "function"
+why = "Loads the level's monster screen and cuts six cells by the rectangles gMonsterRectsA (ds:6930) into gLoadedMonsterShapes[dest..dest+5]; LoadMapScreen ovl3:0A7C calls it through its handlers table with dest 0 or 0x12 for the two monster types the LEVEL.INF names."
+date = "2026-11-03"
+
+[[rename]]
+id = "ovl3:069E=LoadMonsterShapesB"
+addr = "ovl3:069E"
+old = "LoadMapIcons6b"
+new = "LoadMonsterShapesB"
+kind = "function"
+why = "The twin of ovl3:0624 with the rectangle table gMonsterRectsB (ds:69C0, six 7 by 0x60 cells in a row): it fills gLoadedMonsterShapes[dest..dest+5] and is handler 1 of LoadMapScreen's handlers table (ovl3:0A7C, ds:6A80)."
+date = "2026-11-03"
+
+[[rename]]
+id = "ovl3:0718=LoadMonsterShapesC"
+addr = "ovl3:0718"
+old = "LoadNamedIcons"
+new = "LoadMonsterShapesC"
+kind = "function"
+why = "The third monster shape loader: it loads the screen \"<name>1\" and cuts six 0x0A by 0x58 cells by gMonsterRectsC (ds:6A50) into gLoadedMonsterShapes[dest..dest+5]; handler 2 of LoadMapScreen's handlers table (ovl3:0A7C, ds:6A80)."
+date = "2026-11-03"
+
+[[rename]]
+id = "ovl3:05D2=FreeMonsterShapes"
+addr = "ovl3:05D2"
+old = "FreeMapIcons"
+new = "FreeMonsterShapes"
+kind = "function"
+why = "Frees and clears gLoadedMonsterShapes[base..base+count-1] (ds:B802, the monster shapes the three loaders ovl3:0624, 069E and 0718 fill); LoadMapScreen ovl3:0A7C and overlay 5 (EOV5.C:1067, :1188) call it with 0, 0x24."
+date = "2026-11-03"
+
+[[rename]]
+id = "210C:0061=FreeMonsterShapes"
+addr = "210C:0061"
+old = "FreeMapIcons"
+new = "FreeMonsterShapes"
+kind = "function"
+why = "the resident stub of ovl3:05D2, FreeMonsterShapes: an overlay stub takes its function's name"
+date = "2026-11-03"
+
+[[rename]]
+id = "ovl3:09AA=LoadMaze"
+addr = "ovl3:09AA"
+old = "LoadObjects"
+new = "LoadMaze"
+kind = "function"
+why = "Clears gMaze (0x2400 bytes), reads the 6-byte header and the 0x1000 bytes of the LEVELn.MAZ named at LEVEL.INF+2 (whitepaper 4: u16 width, height, 4 bytes per cell) and copies four wall bytes into each of the 0x400 gMaze cells, or calls LoadLevelState for a saved level."
+date = "2026-11-03"
+
+[[rename]]
+id = "ovl3:01C8=DefineWallType"
+addr = "ovl3:01C8"
+old = "RegisterWallObject"
+new = "DefineWallType"
+kind = "function"
+why = "Fills entry `kind` of the four per-wall-type tables gWallVmpSet, gWallDecorHead, gWallHandlerIndex and gWallTypeFlags (ds:1879, 18BF, 1905, 194B), which the code indexes by gMaze wall bytes (ResetLevel ovl3:19F7, CopyViewColumn ovl4:02A5), and cuts the wall type's decoration chain; called for each 5-byte record of LEVEL.INF."
+date = "2026-11-03"
+
+[[rename]]
+id = "ovl3:03A2=LoadDoorShapes"
+addr = "ovl3:03A2"
+old = "LoadMapCells"
+new = "LoadDoorShapes"
+kind = "function"
+why = "Loads the \"DOOR\" screen and cuts three cells by ds:6840 into gDoorShapes and three by ds:68A0 into gDoorButtons[].rec with their ds:6900 positions, for the two door types LoadMapScreen ovl3:0A7C reads from LEVEL.INF."
+date = "2026-11-03"
+
+[[rename]]
+id = "ovl3:0A7C=LoadLevel"
+addr = "ovl3:0A7C"
+old = "LoadMapScreen"
+new = "LoadLevel"
+kind = "function"
+why = "Sets gCurLevel to `level` and loads that dungeon level: LEVELn.INF into gLevelInf, the maze (ovl3:09AA), the .VMP/.EMP block map, the .PAL, door and monster shapes, timers, the 30 monsters (InitMonster), wall types, cell scripts into gMaze +4/+7 and the wall textures; LoadLevelOp 122E:1AAB calls it."
+date = "2026-11-03"
+
+[[rename]]
+id = "210C:007A=LoadLevel"
+addr = "210C:007A"
+old = "LoadMapScreen"
+new = "LoadLevel"
+kind = "function"
+why = "the resident stub of ovl3:0A7C, LoadLevel: an overlay stub takes its function's name"
+date = "2026-11-03"
+
+[[rename]]
+id = "2069:0000=gCgaMapPlayfld"
+addr = "2069:0000"
+old = "gSheetDECORATE"
+new = "gCgaMapPlayfld"
+kind = "function"
+why = "A 32-byte data segment (TLINK segment 63) holding only values 0..3, two 16-entry halves: a 16 to 4 colour map; it is passed with PLAYFLD to LoadScreenImage (E0ACD.C:1006, EOV3.C:968) and to gGetSpriteCell for the DECORATE cells (EOV2.C:358-367)."
+date = "2026-11-03"
+
+[[rename]]
+id = "2067:0000=gCgaMapInvent"
+addr = "2067:0000"
+old = "gSheetINVENT"
+new = "gCgaMapInvent"
+kind = "function"
+why = "A 32-byte data segment (TLINK segment 62) of values 0..3 in two 16-entry halves, the same shape as 2069:0000 and ds:113F; it is the `extra` colour map passed with INVENT to LoadScreenImage (E0ACD.C:1007, EOV3.C:704, :870), never a pixel buffer."
+date = "2026-11-03"
+
+[[rename]]
+id = "20A3:0000=gCgaMapItemL1"
+addr = "20A3:0000"
+old = "gSheetITEML1"
+new = "gCgaMapItemL1"
+kind = "function"
+why = "A 32-byte data segment (TLINK segment 68) of values 0..3 in two 16-entry halves; LoadItemSheets ovl2:0171 passes it to gGetSpriteCell for the ITEML1 cells it cuts from the loaded art page (EOV2.C:276-280), never as pixels."
+date = "2026-11-03"
+
+[[rename]]
+id = "20A5:0000=gCgaMapItemS1"
+addr = "20A5:0000"
+old = "gSheetITEMS1"
+new = "gCgaMapItemS1"
+kind = "function"
+why = "A 32-byte data segment (TLINK segment 69) of values 0..3 in two 16-entry halves; LoadItemSheets ovl2:0171 passes it to gGetSpriteCell for the ITEMS1 cells (EOV2.C:283-288), the colour map role ds:113F has for other art."
+date = "2026-11-03"
+
+[[rename]]
+id = "20A7:0000=gCgaMapThrown"
+addr = "20A7:0000"
+old = "gSheetTHROWN"
+new = "gCgaMapThrown"
+kind = "function"
+why = "A 32-byte data segment (TLINK segment 70) of values 0..3 in two 16-entry halves; LoadItemSheets ovl2:0171 passes it to gGetSpriteCell for the THROWN cells and the five single thrown icons (EOV2.C:290-301)."
+date = "2026-11-03"
+
+[[rename]]
+id = "20A9:0000=gCgaMapItemIcn"
+addr = "20A9:0000"
+old = "gSheetITEMICN"
+new = "gCgaMapItemIcn"
+kind = "function"
+why = "A 32-byte data segment (TLINK segment 71) of values 0..3 in two 16-entry halves; LoadItemSheets ovl2:0171 passes it to gGetSpriteCell for the 0x58 ITEMICN item icons (EOV2.C:303-305)."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:113F=gCgaMapDefault"
+addr = "ds:113F"
+old = "gOverlayBuf"
+new = "gCgaMapDefault"
+kind = "global"
+why = "Holds 32 bytes of values 0..3 (00 02 02 01 01 00 01 02 ...), the layout of the 2067..20A9 segments; no code reads or writes it, it is only passed as the colour map argument of LoadScreenImage, CopyPage and gGetSpriteCell (E082C.C:337, EOV3.C:432)."
+date = "2026-11-03"
+
+[[rename]]
+id = "intro/ds:1C0A=gCgaMapDefault"
+addr = "intro/ds:1C0A"
+old = "gOverlayBuf"
+new = "gCgaMapDefault"
+kind = "global"
+why = "the resident stub of ds:113F, gCgaMapDefault: an overlay stub takes its function's name"
+date = "2026-11-03"
+
+[[rename]]
+id = "intro/ds:1C0A=gCgaMapDefault"
+addr = "intro/ds:1C0A"
+old = ""
+new = "gCgaMapDefault"
+kind = "global"
+why = "INTRO.EXE's twin of EOB ds:113F: 32 bytes of values 0..3 in two 16-entry halves (00 02 03 01 ...), only passed as the last argument of gMakeImage and CopyPage (IOV0.C:176, :235, :240), never read as pixels."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:113F=gCgaMapDefault"
+addr = "ds:113F"
+old = ""
+new = "gCgaMapDefault"
+kind = "global"
+why = "the resident stub of intro/ds:1C0A, gCgaMapDefault: an overlay stub takes its function's name"
+date = "2026-11-03"
+
+[[rename]]
+id = "1F1E:0000=gWallSetCgaMaps"
+addr = "1F1E:0000"
+old = "gMapSheet"
+new = "gWallSetCgaMaps"
+kind = "function"
+why = "A 160-byte data segment (TLINK segment 59), five 32-byte colour maps of values 0..3; MAPSHEET (EOV3.C:194) and EOV5.C:1316 pick one by gMapTiles[gCurLevel-1] << 5 for DefineWallType, LoadDoorShapes and LoadWallTextures."
+date = "2026-11-03"
+
+[[rename]]
+id = "1F1D:0000=gLevelCgaMapIndex"
+addr = "1F1D:0000"
+old = "gMapTiles"
+new = "gLevelCgaMapIndex"
+kind = "function"
+why = "Twelve bytes 0 0 0 1 1 1 2 2 2 3 3 4, one per dungeon level, used only as gMapTiles[gCurLevel-1] << 5 to select a 32-byte colour map of 1F1E:0000 (EOV3.C:194, EOV5.C:1316); not a tile table."
+date = "2026-11-03"
+
+[[rename]]
+id = "ds:F4BE=gTeleporterCells"
+addr = "ds:F4BE"
+old = "gIntroCells"
+new = "gTeleporterCells"
+kind = "global"
+why = "Six cells LoadDecorateIcons ovl2:0577 cuts from the DECORATE screen by gDecorateCellRects; their only reader is DrawSlotTeleporter ovl4:1D20, which draws gIntroCells[idx ^ gAnimWallPhase] for the animated wall type 0x34; nothing ties them to INTRO."
+date = "2026-11-03"

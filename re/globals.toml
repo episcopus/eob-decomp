@@ -2541,3 +2541,16 @@ why = "32-bit flag words indexed by the dungeon level gCurLevel (ds:FBC8, 1..12)
 id = "ds:EFD4"
 name = "gDecorShapes"
 why = "200 far shape pointers that ovl3:01C8 cuts for each decoration's ten shape indices out of the decoration sheet; 122E:0055 reads their height and width (eighths) to build a decoration's click rectangle"
+[[global]]
+id = "ds:113F"
+name = "gCgaMapDefault"
+why = "the resident stub of intro/ds:1C0A, gCgaMapDefault: an overlay stub takes its function's name"
+
+[[global]]
+id = "intro/ds:1C0A"
+name = "gCgaMapDefault"
+why = "INTRO.EXE's twin of EOB ds:113F: 32 bytes of values 0..3 in two 16-entry halves (00 02 03 01 ...), only passed as the last argument of gMakeImage and CopyPage (IOV0.C:176, :235, :240), never read as pixels."
+[[global]]
+id = "ds:F4BE"
+name = "gTeleporterCells"
+why = "Six cells LoadDecorateIcons ovl2:0577 cuts from the DECORATE screen by gDecorateCellRects; their only reader is DrawSlotTeleporter ovl4:1D20, which draws gIntroCells[idx ^ gAnimWallPhase] for the animated wall type 0x34; nothing ties them to INTRO."

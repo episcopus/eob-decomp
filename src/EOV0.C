@@ -12,7 +12,7 @@
 
 #include <dos.h>
 
-extern char gOverlayBuf[]; /*@ ds:113F */ /* the overlay screen buffer the cell slicer reads */
+extern char gCgaMapDefault[]; /*@ ds:113F */ /* the overlay screen buffer the cell slicer reads */
 extern void far * (far *gGetSpriteCellRle)(int x, int y, int w, int h, void far *buf); /*@ ds:8082 */
 extern void farfree(void far *block); /*@ 0000:71EE */
 extern void PlaySound(int sound); /*@ 177D:0070 */
@@ -251,7 +251,7 @@ extern void far *gPanelIconCells[0x11]; /*@ ds:5E64 */ /* the 17 sliced icon poi
 /* ovl0:0000: builds the 17-entry far-pointer table gPanelIconCells. For each of the 17 icon
    definitions in
    gPanelIconDefs whose +2 byte (the width) is nonzero, it slices a sprite cell out of the overlay buffer
-   gOverlayBuf through ds:8082 (the definition's four leading bytes are the cell rectangle) and
+   gCgaMapDefault through ds:8082 (the definition's four leading bytes are the cell rectangle) and
    stores the pointer at gPanelIconCells[i]; every slot is cleared first. Called by ovl0:2547. */
 /*@ ovl0:0000 */ void BuildIconTable(void)
 {
@@ -261,7 +261,7 @@ extern void far *gPanelIconCells[0x11]; /*@ ds:5E64 */ /* the 17 sliced icon poi
         gPanelIconCells[i] = 0;
         if (gPanelIconDefs[i].w)
             gPanelIconCells[i] = gGetSpriteCellRle(gPanelIconDefs[i].x, gPanelIconDefs[i].y, gPanelIconDefs[i].w, gPanelIconDefs[i].h,
-                gOverlayBuf);
+                gCgaMapDefault);
     }
 }
 /* ovl0:00AF: frees the 17 far pointers in gPanelIconCells through farfree and clears every slot.
@@ -1341,7 +1341,7 @@ int PickAlignment(int classIndex); /* ovl0:2238, defined below */
 /* ovl0:2547: loads the character panel's screens and slices its icon buffers. It allocates the 0x13
    0x3c-byte gNodePtrs nodes, loads three named screens (gFileNameChargenA, gFileNameChargen, gFileNameChargenB) and slices
    the 0x2c panel cells gPortraitCells ((i%10)*4, (i/10)*0x20) and ten row cells gBoxAnimCells (i*4, 0) out
-   of gOverlayBuf through ds:8082, builds the 17-icon table and blits gOverlayBuf with CopyPage
+   of gCgaMapDefault through ds:8082, builds the 17-icon table and blits gCgaMapDefault with CopyPage
    (the (3,4) region and a panel clip in video modes 0 and 1, the (3,2) region in every other mode).
    Called by ovl0:28F9. */
 /*@ ovl0:2547 */ void InitPanelScreens(void)
@@ -1352,18 +1352,18 @@ int PickAlignment(int classIndex); /* ovl0:2238, defined below */
         gNodePtrs[i] = (struct Node far *)MemAlloc(0x3cL, 0);
     LoadOverlayScreen(gFileNameChargenA, 5, 3);
     for (i = 0; i < 0x2c; i++)
-        gPortraitCells[i] = gGetSpriteCellRle((i % 10) * 4, (i / 10) * 0x20, 4, 0x20, gOverlayBuf);
+        gPortraitCells[i] = gGetSpriteCellRle((i % 10) * 4, (i / 10) * 0x20, 4, 0x20, gCgaMapDefault);
     gDrawPage = 0;
-    LoadScreenImage(gFileNameChargen, gOverlayBuf, 5, 3, 0);
+    LoadScreenImage(gFileNameChargen, gCgaMapDefault, 5, 3, 0);
     LoadOverlayScreen(gFileNameChargenB, 5, 3);
     for (i = 0; i < 0xa; i++)
-        gBoxAnimCells[i] = gGetSpriteCellRle(i * 4, 0, 4, 0x20, gOverlayBuf);
+        gBoxAnimCells[i] = gGetSpriteCellRle(i * 4, 0, 4, 0x20, gCgaMapDefault);
     BuildIconTable();
     if (gGraphicsChoice == 0 || gGraphicsChoice == 1) {
-        CopyPage(3, 4, FP_OFF(gOverlayBuf), FP_SEG(gOverlayBuf));
+        CopyPage(3, 4, FP_OFF(gCgaMapDefault), FP_SEG(gCgaMapDefault));
         CopyRegion(0, 0, 0, 0, 0x28, 0xc8, 4, 2);
     } else
-        CopyPage(3, 2, FP_OFF(gOverlayBuf), FP_SEG(gOverlayBuf));
+        CopyPage(3, 2, FP_OFF(gCgaMapDefault), FP_SEG(gCgaMapDefault));
     gDrawPage = 0;
     CopyRegion(0x12, 0x40, 0, 0, 0x14, 0x80, 0, 2);
     LockShowPointer();

@@ -72,7 +72,7 @@ extern int gClickY; /*@ ds:8142: y of the last click, written by src/E1AAD.ASM:4
 extern int gDrawPage; /*@ ds:8115: the graphics driver's draw page (2 while LoadOverlayScreen draws off screen) */
 extern unsigned long gTicks; /*@ ds:848A: the game's own 32-bit tick counter, stepped by the INT 1Ch handler at src/E1D8F.ASM:76 (label 1D8F:0055); the increment of ds:848A is at src/E1D8F.ASM:91 (`inc word ptr ds:[848Ah]`) */
 extern char gFileNameBuf[]; /*@ ds:FE6E */ /* the shared text buffer the filename/format helpers and the memory report build into */
-extern char gOverlayBuf[]; /*@ ds:113F */ /* the DGROUP image buffer, passed as LoadScreenImage's extra pointer to CopyPage, which hands it to the far handler at ds:8046 only when two slots hold non-zero segments that differ (src/E19EC.C:29-35); overlays cut sprite cells out of it (src/EOV2.C:209, src/EOV5.C:1021) */
+extern char gCgaMapDefault[]; /*@ ds:113F */ /* the DGROUP image buffer, passed as LoadScreenImage's extra pointer to CopyPage, which hands it to the far handler at ds:8046 only when two slots hold non-zero segments that differ (src/E19EC.C:29-35); overlays cut sprite cells out of it (src/EOV2.C:209, src/EOV5.C:1021) */
 extern char gCursorChar; /*@ ds:31AC: the one character drawn at the editing cursor */
 extern char gCursorOn; /*@ ds:FC4C: nonzero while the cursor is drawn (blinks in the editor) */
 
@@ -303,7 +303,8 @@ void DrawShadowText(char far *text, int x, int y, int colour, int colour2);
    through the driver pair 19EC:002A. In two special cases it also clips the frame with CopyRegion:
    graphics choice 0 or 1 with mode 2 (kind 4, extras 4 and 2) and graphics choice 2 with mode 0
    (kind 2, extras 2 and 0); every other case uses `mode` as the kind. `extra` is the pointer
-   argument passed to 19EC:002A: Purpose unknown, the handler it reaches is at ds:8046 (src/E19EC.C:29-35).
+   argument passed to 19EC:002A: a 32-byte colour map of values 0..3 (ds:113F, 2067:0000 and the
+   like), which the handler at ds:8046 gets (src/E19EC.C:29-35).
    QUIRK 082C:05E5: the final `extra++` bumps the local pointer and has no later use, so it is
    dead. */
 /*@ 082C:051B */ void LoadScreenImage(char far *name, char far *extra, int srcKind, int dstKind, int mode)
@@ -325,16 +326,16 @@ done:
     extra++;
 }
 
-/* 082C:05EC: load the art page `name` into the slot `dstKind` (LoadPacked) and mark the status
-   line as up (gDrawPage = 2). With mode -1 LoadScreenImage skips the 19EC:002A blit, so nothing
+/* 082C:05EC: load the art page `name` into the slot `dstKind` (LoadPacked) and set the draw
+   page gDrawPage to 2. With mode -1 LoadScreenImage skips the 19EC:002A blit, so nothing
    is drawn here: the page reaches the screen only when `dstKind` is itself a screen slot (segment
    0xB800 or 0xA000, src/E19EC.C:5-7). Called by many overlays, all with dstKind 3, for example
    src/EOV0.C:1328 and src/EOV2.C:208. `name` is the art name the caller passes (for example
-   "ITEMICN", src/EOV2.C:208); gOverlayBuf is the `extra` pointer passed on to LoadScreenImage. The
+   "ITEMICN", src/EOV2.C:208); gCgaMapDefault is the `extra` pointer passed on to LoadScreenImage. The
    "Overlay" in this name refers to that buffer, the DGROUP image buffer, not a VROOMM code overlay. */
 /*@ 082C:05EC */ void LoadOverlayScreen(char far *name, int srcKind, int dstKind)
 {
-    LoadScreenImage(name, gOverlayBuf, srcKind, dstKind, -1);
+    LoadScreenImage(name, gCgaMapDefault, srcKind, dstKind, -1);
     gDrawPage = 2;
 }
 

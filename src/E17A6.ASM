@@ -28,8 +28,8 @@
         EXTRN   gDirectionFromMask:BYTE         ; @ ds:7FBC: direction table (17A6:0373)
         EXTRN   gNeighbourOffsets:WORD         ; @ ds:7FCC: neighbour offsets (17A6:0FB8)
         EXTRN   gAheadOffsets2And3:WORD         ; @ ds:7FDC: neighbour offsets (17A6:0FD3)
-        EXTRN   gRowOffsetTableOff:WORD              ; @ ds:80CE: font/table base offset (17A6:18FF)
-        EXTRN   gRowOffsetTableSeg:WORD              ; @ ds:80D0: font/table base segment (17A6:1913)
+        EXTRN   gRowOffsetTableOff:WORD              ; @ ds:80CE: driver row offset table, offset (17A6:18FF)
+        EXTRN   gRowOffsetTableSeg:WORD              ; @ ds:80D0: driver row offset table, segment (17A6:1913)
         .CODE
 
 ; ---- data 0000..0100

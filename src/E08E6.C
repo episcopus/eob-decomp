@@ -80,7 +80,7 @@ struct ItemRecord {
                                new item in after this record through it */
     int nextLink;                /* +0xa (ds:8DDA): the other link; the list walks (0BD2:0385, 040E,
                                04AA) follow it */
-    signed char m0A;        /* +0xc (ds:8DDC): gFBC8 or -1, set by 01D0 */
+    signed char level;        /* +0xc (ds:8DDC): gFBC8 or -1, set by 01D0 */
     signed char value;        /* +0xd (ds:8DDD): the item's bonus or effect value: the signed bonus
                                printed as "%s +%d" and "Cursed %s %d", the spell index into ds:1278
                                and ds:12E0, the wand effect index g38FA[m0B], and the scroll and
@@ -143,7 +143,7 @@ extern int CopyItemToFreeSlot(int n); /*@ 0BD2:089E */
 extern void InsertListItem(void far *head, int key, int item, int sound); /*@ 0BD2:01D0 */
 extern int Distance(int x, int y); /*@ 17A6:0F61 */
 extern int MonsterResistsMagic(int obj); /*@ 0D1C:0BAB */
-extern int GetIndexedByte(char index, char limit, char offset); /*@ 0A72:0006 */
+extern int GetSavingThrowTarget(char index, char limit, char offset); /*@ 0A72:0006 */
 extern int SubtractInts(int minuend, int subtrahend); /*@ 0A72:058C */
 extern int far RollDice(char count, char sides, char bonus); /*@ 082C:0458 */
 extern void AddPartyExperience(int amount); /*@ 0DE8:0C2B */
@@ -1084,7 +1084,7 @@ fire:
     return -1;
 }
 /* 08E6:1634: roll RollDice(count, sides, bonus) against the object `index`: when `flag` is set and
-   a 1d20 reaches GetIndexedByte(0, gMonsterTypes[typeIndex].m02, 4), halve the roll when flag is 1, else
+   a 1d20 reaches GetSavingThrowTarget(0, gMonsterTypes[typeIndex].m02, 4), halve the roll when flag is 1, else
    zero it; then, unless 0D1C:0BAB rejects the object, damage it by the roll. Called by 16D6. */
 /*@ 08E6:1634 */ void DamageMonsterWithSave(char index, char count, char sides, char bonus, char flag)
 {
@@ -1095,7 +1095,7 @@ fire:
     cls = gMonsterTypes[gMonsters[index].typeIndex].m02;
     roll = RollDice(count, sides, bonus);
     if (flag != 0) {
-        save = GetIndexedByte(0, cls, 4);
+        save = GetSavingThrowTarget(0, cls, 4);
         if (RollDice(1, 0x14, 0) >= save) {
             if (flag == 1)
                 roll >>= 1;

@@ -6,15 +6,15 @@
    read (docs/design/WHITEPAPER.md 4). The art pages are loaded from the PAK data by
    LoadOverlayScreen/LoadScreenImage (082C:05EC/082C:051B, through LoadPacked) and sliced at fixed
    paragraphs of the overlay's own data (ITEML1 at 20A3, ITEMS1 at 20A5, THROWN at 20A7, ITEMICN at
-   20A9 and DECORATE at 2069, from TLINK's segment table); gOverlayBuf (ds:113F) is the DGROUP image
+   20A9 and DECORATE at 2069, from TLINK's segment table); gCgaMapDefault (ds:113F) is the DGROUP image
    buffer the art loads land in. LoadOverlayScreen passes mode -1, which makes LoadScreenImage
    return before the 19EC:002A blit (src/E082C.C:313-314, :337), so only a load with another mode,
    such as the INTRO load below (ovl2:078D, mode 2), hands the buffer to 19EC:002A as its `extra`
    pointer (src/E082C.C:329-330, src/E19EC.C:29-35). Cells are cut by the function pointer ds:8086
    (gGetSpriteCell):
-   LoadItemSheets slices from the sheet paragraphs, while SetPointerShape and the six gIntroCells of
-   LoadDecorateIcons slice from gOverlayBuf. ITEMICN is loaded and sliced twice: SetPointerShape
-   takes the pointer cell from gOverlayBuf and LoadItemSheets the 0x58 icon cells from its 20A9
+   LoadItemSheets slices from the sheet paragraphs, while SetPointerShape and the six gTeleporterCells of
+   LoadDecorateIcons slice from gCgaMapDefault. ITEMICN is loaded and sliced twice: SetPointerShape
+   takes the pointer cell from gCgaMapDefault and LoadItemSheets the 0x58 icon cells from its 20A9
    paragraph. All 11 functions are decompiled to L2; several names are placeholders. */
 
 /*@flags -ml -O -Z */
@@ -111,8 +111,8 @@ extern int gColour179; /*@ ds:0179 */ /* a text colour FindWordPanel copies from
 extern struct WordCell gWordCells[]; /*@ ds:65F0 */
 extern unsigned char gCompassRowHeights[]; /*@ ds:65C0 */ /* the three per-row cell heights of the gCompassIcons loop, indexed by the row i (0..2) (src/EOV2.C:366-368) */
 extern unsigned char gCompassRowTops[]; /*@ ds:65C3 */ /* the three per-row cell y origins of the gCompassIcons loop, indexed by the row i (0..2) (src/EOV2.C:366-368) */
-extern struct Cell4 gDecorateCellRects[]; /*@ ds:65C6 */ /* the six decoration-cell rectangles LoadDecorateIcons cuts from gOverlayBuf */
-extern void far *gIntroCells[]; /*@ ds:F4BE */ /* the six decoration cells LoadDecorateIcons cuts from gOverlayBuf (src/EOV2.C:346); src/EOV4.C:955 indexes the table */
+extern struct Cell4 gDecorateCellRects[]; /*@ ds:65C6 */ /* the six decoration-cell rectangles LoadDecorateIcons cuts from gCgaMapDefault */
+extern void far *gTeleporterCells[]; /*@ ds:F4BE */ /* the six decoration cells LoadDecorateIcons cuts from gCgaMapDefault (src/EOV2.C:346); src/EOV4.C:955 indexes the table */
 extern char far *gFlashFrames[]; /*@ ds:DD1C */ /* the flash-frame images src/E0EF3.C lays over a member, indexed by frame - 1 (src/E0EF3.C:356, :707, :773). The readers compute a frame 0 to 3 and then skip 0 (if (frame-- == 0) continue;, src/E0EF3.C:696, :771), so 0 means no frame and frames 1 to 3 index gFlashFrames[0..2]: DrawFlashFrame (0EF3:05BD) computes (gFlashPassMask[pass] & gFlashFrameMask[i]) >> gFlashFrameShift[i] from the bytes at ds:5621 (40 90 e4 b9 6e 1b 06 01), ds:5629 (c0 30 0c 03) and ds:562D (06 04 02 00), and FlashViewDamage (0EF3:06E7) does the same with gFlashPass2 (ds:564B), gFlashFrame2 (ds:5677) and gFlashShift2 (ds:56B7, shifts 0x1e to 0). So the array holds the three entries DD1C, DD20 and DD24 that LoadDecorateIcons fills; the next slot DD28 is the separate icon pointer gDisabledMemberIcon */
 extern char far *gDisabledMemberIcon; /*@ ds:DD28 */ /* the icon table src/EOV1.ASM:87 draws member icons from, filled by LoadDecorateIcons at the slot after gFlashFrames */
 extern void far *gDeadPortraitIcon; /*@ ds:F2F4 */
@@ -143,28 +143,28 @@ extern char gBarEmptyColour; /*@ ds:FB7A */ /* a colour DrawRatioBar is passed (
 extern char gAltPanelFill; /*@ ds:FB7B */ /* a colour DrawShadowText is passed (src/E1547.C:529), set by SetUiPalette */
 extern char gUnselTabLightColour; /*@ ds:A9C4 */ /* a panel colour (src/E0EF3.C:1911), set by SetUiPalette */
 extern char gUnselTabDarkColour; /*@ ds:A928 */ /* a panel colour (src/E0EF3.C:1912), set by SetUiPalette */
-extern char gFailLabelLight; /*@ ds:A95A */ /* the outer colour of the action panel (src/E1547.C:379), set by SetUiPalette */
+extern char gFailLabelLight; /*@ ds:A95A */ /* the top and right edge colour of the action label panel (src/E1547.C:412), set by SetUiPalette */
 extern char gGameLoadState; /*@ ds:A998 */ /* nonzero tells EnterMapScreen (src/E0ACD.C:911) to show the inventory and the loaded map; the saved-game panel writes it in LoadGamePanel */
-extern char gFailLabelShadow; /*@ ds:8A6C */ /* the fill colour of the action panel (src/E1547.C:379), set by SetUiPalette */
-extern char gFailLabelFill; /*@ ds:8A7D */ /* the third colour of the action panel (src/E1547.C:379), set by SetUiPalette */
+extern char gFailLabelShadow; /*@ ds:8A6C */ /* the left and bottom edge colour of the action label panel (src/E1547.C:412), set by SetUiPalette */
+extern char gFailLabelFill; /*@ ds:8A7D */ /* the fill colour of the action label panel (src/E1547.C:412), set by SetUiPalette */
 extern char gIconTable; /*@ ds:FB34 */ /* this unit, src/E0ACD.C:48, src/E1414.C:106 and src/E1547.C:128 read it as the party member being moved (-1 when none); the BlinkSelected comment (1414:0000, src/E1414.C:141-145) saves and restores it as that member. src/E0EF3.C:227 declares ds:FB34 as an array of far sprite pointers (a cross-unit conflict to settle) */
 extern int gUnusedStartupWord; /*@ ds:EFC8 */ /* a word cleared by InitGameTables; no other reader in src/ yet */
 extern int gEFCA; /*@ ds:EFCA */ /* a word cleared by InitGameTables; no other reader in src/ yet */
-extern void far *gLoadedMonsterShapes[]; /*@ ds:B802 */ /* 36 far map-icon pointers (src/EOV3.C:146, freed at :390-401), cleared by InitGameTables */
+extern void far *gLoadedMonsterShapes[]; /*@ ds:B802 */ /* 36 far monster shape pointers (src/EOV3.C:146, freed by ovl3:05D2), cleared by InitGameTables */
 extern long gDoorShapes[]; /*@ ds:FB5E */ /* six size-record pointers (src/EOV3.C:138 declares them longs; src/EOV4.C:756 declares them struct SlotSize far *), cleared by InitGameTables */
 extern struct SlotPos gDoorButtons[]; /*@ ds:A99C */
 extern void far *gDecorShapes[]; /*@ ds:EFD4 */ /* 200 far size-record pointers (src/EOV3.C:14, freed at :230-241; src/E122E.C:98 declares them struct RectKind far *), cleared by InitGameTables */
 extern char gSelectFrameColours[]; /*@ ds:1CE7 */
 extern char gBoxCycleColours16[]; /*@ ds:65EA */
-extern char gOverlayBuf[]; /*@ ds:113F */
+extern char gCgaMapDefault[]; /*@ ds:113F */
 extern char far *gOptionNames[]; /*@ ds:65DE */
 
-/* the loaded sprite sheets, at fixed paragraphs of the overlay's own data (TLINK segment table) */
-extern unsigned char far gSheetDECORATE[]; /*@ 2069:0000 */
-extern unsigned char far gSheetITEML1[]; /*@ 20A3:0000 */
-extern unsigned char far gSheetITEMS1[]; /*@ 20A5:0000 */
-extern unsigned char far gSheetTHROWN[]; /*@ 20A7:0000 */
-extern unsigned char far gSheetITEMICN[]; /*@ 20A9:0000 */
+/* the 32-byte colour maps (values 0..3) of the item and DECORATE art, one TLINK data segment each */
+extern unsigned char far gCgaMapPlayfld[]; /*@ 2069:0000 */
+extern unsigned char far gCgaMapItemL1[]; /*@ 20A3:0000 */
+extern unsigned char far gCgaMapItemS1[]; /*@ 20A5:0000 */
+extern unsigned char far gCgaMapThrown[]; /*@ 20A7:0000 */
+extern unsigned char far gCgaMapItemIcn[]; /*@ 20A9:0000 */
 
 /* a far function pointer that returns the far address of the cell (x, y, w, h) on `sheet`: x and y
    are the cell's origin on the sheet and w and h its width and height (the unit of the sheet
@@ -214,13 +214,13 @@ extern int FileOpen(char far *name, int mode); /*@ 1C0E:00DB */
 extern void FileRead(int handle, void far *buf, unsigned long len); /*@ 1C0E:0400 */
 extern void FileClose(int handle); /*@ 1C0E:03BB */
 
-/* ovl2:0000: loads the ITEMICN image, slices one 2 by 0x10 cell out of gOverlayBuf through
+/* ovl2:0000: loads the ITEMICN image, slices one 2 by 0x10 cell out of gCgaMapDefault through
    gGetSpriteCell and makes the result (gItemIcons[0] and gDefaultPointerIcon) the mouse pointer shape at
    (0,0), then sets the draw page back to 0. Called first by LoadItemData. */
 /*@ ovl2:0000 */ void SetPointerShape(void)
 {
     LoadOverlayScreen("ITEMICN", 5, 3);
-    gItemIcons[0] = gGetSpriteCell(0, 0, 2, 0x10, gOverlayBuf);
+    gItemIcons[0] = gGetSpriteCell(0, 0, 2, 0x10, gCgaMapDefault);
     gDefaultPointerIcon = gItemIcons[0];
     SetMousePointerShape(0, 0, gDefaultPointerIcon);
     gDrawPage = 0;
@@ -263,8 +263,8 @@ extern void FileClose(int handle); /*@ 1C0E:03BB */
 
 /* ovl2:0171: loads the four item icon sheets (ITEML1, ITEMS1, THROWN, ITEMICN), slices every cell
    out of them through gGetSpriteCell into the icon tables (gItemL1Icons, gItemS1Icons,
-   gThrownIcons, gItemIcons) and the five single THROWN cells, allocates the 0x12C-byte item
-   description buffer (gRemappedIcon), then reads ITEMRMP.VGA (gGraphicsChoice == 3) or ITEMRMP.EGA into gItemRemapTable.
+   gThrownIcons, gItemIcons) and the five single THROWN cells, allocates the 0x12C-byte remapped
+   icon image shown as the mouse pointer (gRemappedIcon), then reads ITEMRMP.VGA (gGraphicsChoice == 3) or ITEMRMP.EGA into gItemRemapTable.
    Called by LoadDecorateIcons right before it loads DECORATE. */
 /*@ ovl2:0171 */ void LoadItemSheets(void)
 {
@@ -277,31 +277,31 @@ extern void FileClose(int handle); /*@ 1C0E:03BB */
         for (j = 0; j < 4; j++)
             gItemL1Icons[i][j] = gGetSpriteCell(gCellPosL1[i].x,
                 gCellPosL1[i].y + gCellDX[j], gCellSize1[j].w, gCellSize1[j].h,
-                gSheetITEML1);
+                gCgaMapItemL1);
 
     LoadOverlayScreen("ITEMS1", 5, 3);
     for (i = 0; i < 0x17; i++)
         for (j = 0; j < 4; j++)
             gItemS1Icons[i][j] = gGetSpriteCell(gCellPosS1[i].x,
                 gCellPosS1[i].y + gCellDX[j], gCellSize2[j].w, gCellSize2[j].h,
-                gSheetITEMS1);
+                gCgaMapItemS1);
 
     LoadOverlayScreen("THROWN", 5, 3);
     for (i = 0; i < 0xc; i++)
         for (j = 0; j < 4; j++)
             gThrownIcons[i][j] = gGetSpriteCell(gCellPosS1[i].x,
                 gCellPosS1[i].y + gCellDX[j], gCellSize2[j].w, gCellSize2[j].h,
-                gSheetTHROWN);
+                gCgaMapThrown);
 
-    gThrownIcon0 = gGetSpriteCell(0x10, 0, 4, 0x18, gSheetTHROWN);
-    gThrownIcon1 = gGetSpriteCell(0x10, 0x18, 4, 0x18, gSheetTHROWN);
-    gThrownIcon2 = gGetSpriteCell(0x10, 0x30, 3, 0x18, gSheetTHROWN);
-    gThrownIcon3 = gGetSpriteCell(0x10, 0x90, 5, 0x18, gSheetTHROWN);
-    gThrownIcon4 = gGetSpriteCell(0x10, 0xa8, 5, 0x10, gSheetTHROWN);
+    gThrownIcon0 = gGetSpriteCell(0x10, 0, 4, 0x18, gCgaMapThrown);
+    gThrownIcon1 = gGetSpriteCell(0x10, 0x18, 4, 0x18, gCgaMapThrown);
+    gThrownIcon2 = gGetSpriteCell(0x10, 0x30, 3, 0x18, gCgaMapThrown);
+    gThrownIcon3 = gGetSpriteCell(0x10, 0x90, 5, 0x18, gCgaMapThrown);
+    gThrownIcon4 = gGetSpriteCell(0x10, 0xa8, 5, 0x10, gCgaMapThrown);
 
     LoadOverlayScreen("ITEMICN", 5, 3);
     for (i = 1; i < 0x59; i++)
-        gItemIcons[i] = gGetSpriteCell((i % 20) * 2, (i / 20) * 16, 2, 0x10, gSheetITEMICN);
+        gItemIcons[i] = gGetSpriteCell((i % 20) * 2, (i / 20) * 16, 2, 0x10, gCgaMapItemIcn);
 
     gRemappedIcon = MemAlloc(0x12cL, 0);
     gDrawPage = 0;
@@ -340,9 +340,9 @@ extern void FileClose(int handle); /*@ 1C0E:03BB */
 }
 
 /* ovl2:0577: the overlay-8 entry (reached as 2106:0048), leads to the ITEMRMP read. First calls
-   LoadItemSheets, then loads the DECORATE image (its page lands in gOverlayBuf, ds:113F) and
+   LoadItemSheets, then loads the DECORATE image (its page lands in gCgaMapDefault, ds:113F) and
    slices the creature/decoration icons out of it: six cells described by gDecorateCellRects, cut from
-   gOverlayBuf into gIntroCells, the three flash frames gFlashFrames[0..2], three more single cells
+   gCgaMapDefault into gTeleporterCells, the three flash frames gFlashFrames[0..2], three more single cells
    (gDeadPortraitIcon, gUnconsciousIcon, gHandShadeIcon), the icon pointer gDisabledMemberIcon, and the 3x4 gCompassIcons whose
    cells are 3 wide with y from gCompassRowTops and height from gCompassRowHeights. Called by StartupAlloc (07A9:000A). */
 /*@ ovl2:0577 */ void LoadDecorateIcons(void)
@@ -353,23 +353,23 @@ extern void FileClose(int handle); /*@ 1C0E:03BB */
     LoadItemSheets();
     LoadOverlayScreen("DECORATE", 5, 3);
     for (i = 0; i < 6; i++)
-        gIntroCells[i] = gGetSpriteCell(gDecorateCellRects[i].x, gDecorateCellRects[i].y,
-            gDecorateCellRects[i].w, gDecorateCellRects[i].h, gOverlayBuf);
-    gFlashFrames[0] = gGetSpriteCell(0x1d, 0, 2, 0x10, gSheetDECORATE);
-    gFlashFrames[1] = gGetSpriteCell(0x1f, 0, 2, 0x10, gSheetDECORATE);
-    gFlashFrames[2] = gGetSpriteCell(0x21, 0, 2, 0x10, gSheetDECORATE);
-    gDeadPortraitIcon = gGetSpriteCell(0, 0x58, 4, 0x20, gSheetDECORATE);
-    gUnconsciousIcon = gGetSpriteCell(4, 0x58, 4, 0x20, gSheetDECORATE);
-    gHandShadeIcon = gGetSpriteCell(8, 0x58, 4, 0x10, gSheetDECORATE);
-    gDisabledMemberIcon = gGetSpriteCell(9, 0x58, 2, 8, gSheetDECORATE);
+        gTeleporterCells[i] = gGetSpriteCell(gDecorateCellRects[i].x, gDecorateCellRects[i].y,
+            gDecorateCellRects[i].w, gDecorateCellRects[i].h, gCgaMapDefault);
+    gFlashFrames[0] = gGetSpriteCell(0x1d, 0, 2, 0x10, gCgaMapPlayfld);
+    gFlashFrames[1] = gGetSpriteCell(0x1f, 0, 2, 0x10, gCgaMapPlayfld);
+    gFlashFrames[2] = gGetSpriteCell(0x21, 0, 2, 0x10, gCgaMapPlayfld);
+    gDeadPortraitIcon = gGetSpriteCell(0, 0x58, 4, 0x20, gCgaMapPlayfld);
+    gUnconsciousIcon = gGetSpriteCell(4, 0x58, 4, 0x20, gCgaMapPlayfld);
+    gHandShadeIcon = gGetSpriteCell(8, 0x58, 4, 0x10, gCgaMapPlayfld);
+    gDisabledMemberIcon = gGetSpriteCell(9, 0x58, 2, 8, gCgaMapPlayfld);
     for (i = 0; i < 3; i++)
         for (j = 0; j < 4; j++)
-            gCompassIcons[i * 4 + j] = gGetSpriteCell(j * 3, gCompassRowTops[i], 3, gCompassRowHeights[i], gSheetDECORATE);
+            gCompassIcons[i * 4 + j] = gGetSpriteCell(j * 3, gCompassRowTops[i], 3, gCompassRowHeights[i], gCgaMapPlayfld);
     gDrawPage = 0;
 }
 
 /* ovl2:078D: draws the INTRO screen for the "load a saved game" panel: loads the INTRO page into
-   gOverlayBuf (LoadScreenImage, mode 2), draws to page 2 (gDrawPage), saves the pixels under (0, 0)
+   gCgaMapDefault (LoadScreenImage, mode 2), draws to page 2 (gDrawPage), saves the pixels under (0, 0)
    with gGetPixel and fills the rectangle (0, 0x9f)-(0x13f, 0xc7) with the returned handle as
    gFillRect's colour argument (a saved-pixel handle used as a colour; src/E0EF3.C:389-390,
    src/E082C.C:64), draws the two panel frames, clips a 40 by 200 region at (0, 0) (0x28 and 0xc8
@@ -379,7 +379,7 @@ extern void FileClose(int handle); /*@ 1C0E:03BB */
 {
     int handle;
 
-    LoadScreenImage("INTRO", gOverlayBuf, 5, 3, 2);
+    LoadScreenImage("INTRO", gCgaMapDefault, 5, 3, 2);
     gDrawPage = 2;
     handle = gGetPixel(0, 0);
     gFillRect(0, 0x9f, 0x13f, 0xc7, handle);

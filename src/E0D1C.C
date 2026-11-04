@@ -39,7 +39,7 @@ extern signed char gDirCellOffset[]; /*@ ds:1790 */  /* byte table indexed by th
 extern signed char gOppositeSide[]; /*@ ds:547E */  /* byte table indexed by the second argument of 0D1C:0080 */
 extern char gMaze[]; /*@ ds:B894 */         /* nine-byte records; +4 (ds:B898) is tested by 0D1C:0080 and +5 (ds:B899) is a list head used by 0D1C:035A */
 extern signed char gWallTypeFlags[]; /*@ ds:194B */  /* byte table read by 0D1C:0080 */
-extern signed char gViewToCellPos[]; /*@ ds:1A1B */  /* per-page sound table read by 0D1C:035A */
+extern signed char gViewToCellPos[]; /*@ ds:1A1B */  /* the cell position seen at a view position, four per gPartyDir, read by 0D1C:035A */
 extern int gPartyCell; /*@ ds:FBCA */     /* the party's map cell: 0D1C:035A indexes the nine-byte
                                             records (gMaze + gPartyCell * 9 + 5) and passes it as the
                                             InsertListItem key, and 0D1C:09CB passes it as the second
@@ -111,13 +111,13 @@ struct ItemRecord {
     signed char cellPos;        /* +5 (ds:8DD5): 01D0 stores its 4th argument here and 02B9 matches it
                                against its `key`. No caller shows a sound (01D0's callers pass a
                                slot kind, E0ACD.C:561-568, a roll, E08E6.C:807, or an effect kind | 4,
-                               0BD2:07DE), so Purpose unknown: a per-entry tag */
+                               0BD2:07DE): the item's position in its cell, 8 a wall niche (122E:06D0) */
     int key;                /* +6 (ds:8DD6): the key; -1 when the record is free */
     int prevLink;                /* +8 (ds:8DD8): one link of the circular list; 0BD2:01D0 splices a
                                new item in after this record through it */
     int nextLink;                /* +0xa (ds:8DDA): the other link; the list walks (0BD2:0385, 040E,
                                04AA) follow it */
-    signed char m0A;        /* +0xc (ds:8DDC): gCurLevel or -1, set by 01D0 */
+    signed char level;        /* +0xc (ds:8DDC): gCurLevel or -1, set by 01D0 */
     signed char value;        /* +0xd (ds:8DDD): the item's bonus or effect value: the signed bonus
                                printed as "%s +%d" and "Cursed %s %d", the spell index into ds:1278
                                and ds:12E0, the wand effect index g38FA[m0B], and the scroll and
@@ -128,7 +128,7 @@ extern struct ItemRecord gItems[]; /*@ ds:8DD0 */
 extern char gPanelMode; /*@ ds:FB44 */            /* a mode byte: 0 and 1 gate the redraws in 0D1C:01CA and 0D1C:0304 */
 extern int gFBCE; /*@ ds:FBCE */             /* the item index shown by the mouse (src/E07A9.C) */
 extern int gMouseDisabled; /*@ ds:814A */    /* nonzero disables the mouse (src/E07A9.C) */
-extern int gCurLevel; /*@ ds:FBC8 */             /* the current action: 2 or 7 gates the turn-undead
+extern int gCurLevel; /*@ ds:FBC8 */             /* the dungeon level: 2 or 7 gates the turn-undead
                                                 effect (0D1C:0A43); other units set it too */
 extern int gDeferMonsterHits; /*@ ds:F518 */             /* set to 1 while an object is being turned (0D1C:0A43) */
 extern char gFileNameBuf[]; /*@ ds:FE6E */   /* the text buffer sprintf formats into (src/EOV2.C) */
@@ -154,12 +154,12 @@ extern void RearmCharEffects(void); /*@ 1414:0B2E */
 extern void LockHidePointer(void); /*@ 1BBE:0307 */
 extern void LockShowPointer(void); /*@ 1BBE:0332 */
 extern void DrawBox(int x1, int y1, int x2, int y2, int colour); /*@ 1A1F:000C */
-extern int GetIndexedByte(char index, char limit, char offset); /*@ 0A72:0006 */
+extern int GetSavingThrowTarget(char index, char limit, char offset); /*@ 0A72:0006 */
 extern char GetClassSlotByte(char row, char slot); /*@ 0A72:0509 */
 extern int FindClassSlot(int slotId, int classIndex); /*@ 0A72:007B */
 /* the original sign-extends the classIndex argument at 0D1C:0942 and 0D1C:0977 (`mov al,es:[bx+0x20];
    cwde; push ax`), so the second parameter is int, not char */
-extern int GetClampedTableByte(int col, int row); /*@ 0A72:0597 */
+extern int GetTurnUndeadTarget(int col, int row); /*@ 0A72:0597 */
 extern void DrawShapeRemapped(int page, void far *src, int x, int y, int region); /*@ 1A29:008B */
 extern void DrawShape(int page, void far *src, int x, int y, int region); /*@ 1A29:000F */
 extern void DrawFilledPanel(int x1, int y1, int x2, int y2, int c1, int c2, int c3); /*@ 082C:09D5 */
@@ -447,7 +447,7 @@ int GetCurrentItem(void);
 /* 0D1C:059B: Rolls a character's saving throw of the given kind and returns 1 when it succeeds. A
    per-character check against a 1d20 roll. It derives a class
    slot from gChars[who].classIndex (GetClassSlotByte, with 4 and 5 folded to 0), a value from
-   GetIndexedByte(classSlot, levels, `attack`), then, depending on a level-like value race * 2
+   GetSavingThrowTarget(classSlot, levels, `attack`), then, depending on a level-like value race * 2
    (3 or 5, and separately 4), for `attack` 4, 0 or 1 in the 3-or-5 case and for `attack` 4 or 1
    in the level-4 case, subtracts gConSaveBonus[constitution]; finally it returns 1 when RollDice(1, 20, 0) >=
    value. QUIRK 0D1C:0609/0604: race * 2 is even, so the tests for 3
@@ -463,7 +463,7 @@ int GetCurrentItem(void);
     classSlot = GetClassSlotByte(rec->classIndex, 0);
     if (classSlot == 4 || classSlot == 5)
         classSlot = 0;
-    value = GetIndexedByte(classSlot, rec->levels[0], attack);
+    value = GetSavingThrowTarget(classSlot, rec->levels[0], attack);
     level = rec->race * 2;
     if (level == 3 || level == 5) {
         if (attack == 4 || attack == 0 || attack == 1)
@@ -633,7 +633,7 @@ int GetCurrentItem(void);
 }
 /* 0D1C:09CB: Applies one turn-undead roll to a monster: destroy, turn away or no effect. A
    per-object check. It takes the object's ds:1A3B record's m19 as
-   a row and GetClampedTableByte(column, m19) as a value. A value of -1 calls DamageObject(obj, 100)
+   a row and GetTurnUndeadTarget(column, m19) as a value. A value of -1 calls DamageObject(obj, 100)
    and returns 1. Otherwise, when `threshold` is below the value it returns 0; else it sets bit 3
    of obj->m16, stores (DirectionFromPoints(obj->id, gPartyCell) ^ 4) >> 1 in obj->orient and returns 1.
    Called by 0D1C:0A43 and 17A6. */
@@ -643,7 +643,7 @@ int GetCurrentItem(void);
     int value;
 
     row = gMonsterTypes[obj->typeIndex].m19;
-    value = GetClampedTableByte(column, row);
+    value = GetTurnUndeadTarget(column, row);
     if (value != -1) {
         if (threshold >= value) {
             obj->m16 |= 8;

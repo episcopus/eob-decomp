@@ -90,13 +90,15 @@ extern unsigned char gStartupDone;           /*@ ds:3092: start-up-completed fla
 extern unsigned char gOverlayCacheUp;           /*@ ds:3056: set to 1 at :402 right after InitOverlayCache and
                                          tested only by ShutdownGame (:470) before
                                          ShutdownOverlayCache; no other unit reads ds:3056 */
-extern int gKeyboardOptions;                     /*@ ds:80EA: start-up flag set to 1 by main (:261), after
+extern int gKeyboardOptions;                     /*@ ds:80EA: the keyboard driver's option bits (load-time
+                                         value 0110h; the driver tests bits 2, 80h and 200h of its copy
+                                         kModifierState, src/E1AAD.ASM:169, :619), set to 1 by main (:261), after
                                          InstallKeyboard (:246), so the install copy (InstallKeyboard,
                                          1AAD:0718, src/E1AAD.ASM:793) takes the load-time value,
                                          not 1; the value 1 reaches kModifierState only through the
                                          key-state query _GetKeyState (1AAD:05F1,
                                          src/E1AAD.ASM:548-573, the copy at :573), which copies on
-                                         every call. Purpose unknown beyond that */
+                                         every call */
 extern int gTextAttr2;                /*@ ds:811B: the second text attribute, the fill colour: ClearTextRegion
                                          fills the window with it (src/E1DE7.C:241), the redrawn scroll line fills
                                          with it and passes it to the draw-text hook (src/E1DE7.C:270-271); main sets DEFAULT_TEXT_ATTR2 (0xC) at start-up (:263); declared in src/E122E.C:75 and src/E1DE7.C:44, read with gTextAttr1 in src/EOV2.C:500 */

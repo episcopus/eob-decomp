@@ -2195,10 +2195,10 @@ unit = "e0a72"
 addr = "0A72:0006"
 size = 117
 evidence = ["far", "segment"]
-name = "GetIndexedByte"
 level = "L2"
 match_flags = "-ml -O -Z"
 review = "passed 2026-11-02 rev-haiku"
+name = "GetSavingThrowTarget"
 
 [[function]]
 id = "e0a72_007b"
@@ -2239,10 +2239,10 @@ unit = "e0a72"
 addr = "0A72:0181"
 size = 28
 evidence = ["far", "frame"]
-name = "GetCharM15Value"
 level = "L2"
 match_flags = "-ml -O -Z"
 review = "passed 2026-11-02 rev-haiku"
+name = "GetDexMissileBonus"
 
 [[function]]
 id = "e0a72_019d"
@@ -2349,10 +2349,10 @@ unit = "e0a72"
 addr = "0A72:0597"
 size = 33
 evidence = ["far", "frame"]
-name = "GetClampedTableByte"
 level = "L2"
 match_flags = "-ml -O -Z"
 review = "passed 2026-11-02 rev-haiku"
+name = "GetTurnUndeadTarget"
 
 [[function]]
 id = "e0acd_0008"
@@ -8738,10 +8738,10 @@ unit = "eov3"
 addr = "ovl3:01C8"
 size = 338
 evidence = ["ovl", "near", "frame"]
-name = "RegisterWallObject"
 level = "L2"
 match_flags = "-ml -O -Z"
 review = "passed 2026-11-02 rev-haiku"
+name = "DefineWallType"
 
 [[function]]
 id = "eov3_031a"
@@ -8760,10 +8760,10 @@ unit = "eov3"
 addr = "ovl3:03A2"
 size = 560
 evidence = ["ovl", "near", "frame"]
-name = "LoadMapCells"
 level = "L2"
 match_flags = "-ml -O -Z"
 review = "passed 2026-11-02 rev-haiku"
+name = "LoadDoorShapes"
 
 [[function]]
 id = "eov3_05d2"
@@ -8771,10 +8771,10 @@ unit = "eov3"
 addr = "ovl3:05D2"
 size = 82
 evidence = ["ovl", "near", "frame"]
-name = "FreeMapIcons"
 level = "L2"
 match_flags = "-ml -O -Z"
 review = "passed 2026-11-02 rev-haiku"
+name = "FreeMonsterShapes"
 
 [[function]]
 id = "eov3_0624"
@@ -8782,10 +8782,10 @@ unit = "eov3"
 addr = "ovl3:0624"
 size = 122
 evidence = ["ovl", "frame"]
-name = "LoadMapIcons6"
 level = "L2"
 match_flags = "-ml -O -Z"
 review = "passed 2026-11-02 rev-haiku"
+name = "LoadMonsterShapesA"
 
 [[function]]
 id = "eov3_069e"
@@ -8793,10 +8793,10 @@ unit = "eov3"
 addr = "ovl3:069E"
 size = 122
 evidence = ["ovl", "frame"]
-name = "LoadMapIcons6b"
 level = "L2"
 match_flags = "-ml -O -Z"
 review = "passed 2026-11-02 rev-haiku"
+name = "LoadMonsterShapesB"
 
 [[function]]
 id = "eov3_0718"
@@ -8804,10 +8804,10 @@ unit = "eov3"
 addr = "ovl3:0718"
 size = 141
 evidence = ["ovl", "frame"]
-name = "LoadNamedIcons"
 level = "L2"
 match_flags = "-ml -O -Z"
 review = "passed 2026-11-02 rev-haiku"
+name = "LoadMonsterShapesC"
 
 [[function]]
 id = "eov3_07a5"
@@ -8837,10 +8837,10 @@ unit = "eov3"
 addr = "ovl3:09AA"
 size = 210
 evidence = ["ovl", "near", "frame"]
-name = "LoadObjects"
 level = "L2"
 match_flags = "-ml -O -Z"
 review = "passed 2026-11-02 rev-haiku"
+name = "LoadMaze"
 
 [[function]]
 id = "eov3_0a7c"
@@ -8848,10 +8848,10 @@ unit = "eov3"
 addr = "ovl3:0A7C"
 size = 1365
 evidence = ["ovl", "near", "frame"]
-name = "LoadMapScreen"
 level = "L2"
 match_flags = "-ml -O -Z"
 review = "passed 2026-11-02 rev-haiku"
+name = "LoadLevel"
 
 [[function]]
 id = "eov3_0fd1"

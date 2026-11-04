@@ -19,7 +19,7 @@
                                         ; (EOV3.C:808-840) and toggled by the options code
                                         ; (EOV1.ASM:3724-3731); the INT 9 handler also toggles it on
                                         ; key 0434h (M), as it toggles gSoundOn on 0420h (S)
-        EXTRN   gKeyboardOptions:WORD              ; @ ds:80EA: start-up flag copied into the unit's 1AAD:0180
+        EXTRN   gKeyboardOptions:WORD              ; @ ds:80EA: the driver's option bits, copied into 1AAD:0180
         EXTRN   gRecordMode:BYTE              ; @ ds:80EC: input mode, 0/1/2: 1 writes the recorded input
                                         ; stream (1AAD:0C17), 2 replays it (1AAD:0C17/0D26). In state
                                         ; 2 the readers skip the wait for a ring event

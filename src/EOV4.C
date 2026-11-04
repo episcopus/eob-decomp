@@ -129,7 +129,7 @@ struct Region {             /* the 16-byte region records at ds:009F (src/E1DE7.
 };
 
 extern struct Region gRegions[]; /*@ ds:009F */
-extern int gCurLevel; /*@ ds:FBC8 */                 /* the current action (src/E0D1C.C) */
+extern int gCurLevel; /*@ ds:FBC8 */                 /* the dungeon level, 1..12 (src/E0D1C.C) */
 extern int gPartyDir; /*@ ds:FBCC */                 /* the party's facing, 0..3 north, east, south, west */
 extern signed char gDoorClipY[]; /*@ ds:6F4E */       /* row value table this unit indexes */
 extern signed char gDoorClipTopRow[]; /*@ ds:6F6D */       /* per-level index into ds:6F4E. QUIRK ds:6F6D:
@@ -155,14 +155,14 @@ extern signed char gViewSlotRow[]; /*@ ds:1A09 */       /* per-object index into
                      *bottom - *top);
 }
 
-extern unsigned char far *gWallBlockMaps; /*@ ds:F43E */   /* 6000-byte start-up buffer (src/E07A9.C) */
+extern unsigned char far *gWallBlockMaps; /*@ ds:F43E */   /* the level's 6000-byte .VMP/.EMP block map (src/E07A9.C) */
 extern unsigned char gViewBlockMap[]; /*@ ds:ADB0 */  /* the view pixel buffer (this unit) */
 
-/* ovl4:02A5: copies a rectangle of word pixels out of the page buffer pointed to by ds:F43E into
+/* ovl4:02A5: copies a rectangle of block words out of the wall block map pointed to by ds:F43E into
    the view buffer at ds:ADB0. `src` starts at (gWallVmpSet[page] - 1) * 0x35E + x2 * 2 + 0x294 in
    ds:F43E; each row walks `width` words and each of the `height` rows advances the destination by
    a 0x16-word row. Words outside columns 0..0x15 are skipped, and only nonzero source words are
-   stored. Called by BuildViewBlockMap at ovl4:04B4 and ovl4:04CD. Purpose unknown: what the buffers hold.
+   stored. Called by BuildViewBlockMap at ovl4:04B4 and ovl4:04CD. ds:F43E holds the level's .VMP/.EMP.
    The three duplicated increment tails are kept apart by the file's -v (debug information), as
    the original shows; without it our build merges the continue tails (whitepaper 2.1.1). */
 /*@ ovl4:02A5 */ void CopyViewColumn(char x, char y, char page, int x2, char width, char height)
@@ -197,7 +197,7 @@ extern unsigned char gViewBlockMap[]; /*@ ds:ADB0 */  /* the view pixel buffer (
 }
 
 /* ovl4:036A: flips bit 0x4000 of a rectangle of word pixels in the view buffer at ds:ADB0, reading
-   from the page buffer at ds:F43E. The far pointer `src` starts at
+   from the wall block map at ds:F43E. The far pointer `src` starts at
    (gWallVmpSet[page] - 1) * 0x35E + x2 * 2 + 0x294; for each of the `height` rows and `width` columns it
    reads the word at (src + width * row)[width - 1 - col], skips it when zero and stores it to
    ds:ADB0[(y + row) * 0x16 + x + col] with bit 0x4000 toggled, skipping columns outside 0..0x15.
@@ -373,7 +373,7 @@ struct ItemRecord {
     int key;
     int prevLink;                /* +8: one link of the circular list */
     int nextLink;
-    signed char m0A;
+    signed char level;
     signed char value;
 };
 extern struct ItemRecord gItems[]; /*@ ds:8DD0 */
@@ -1045,7 +1045,7 @@ extern void far *gThrownIcons[][4]; /*@ ds:F2F8 */  /* far sprite cells, four pe
 
 extern signed char gTeleporterLeftOffset[]; /*@ ds:7272 */   /* per-column x base correction (this unit) */
 extern signed char gTeleporterTopY[]; /*@ ds:7275 */   /* per-column y base (this unit) */
-extern void far *gIntroCells[]; /*@ ds:F4BE */  /* sprite cell table (src/EOV2.C) */
+extern void far *gTeleporterCells[]; /*@ ds:F4BE */  /* sprite cell table (src/EOV2.C) */
 extern int gAnimWallPhase; /*@ ds:FB78 */            /* toggled by 1414:04B0 (src/E1414.C) */
 extern signed char far gCellBytes[]; /*@ 20AB:0000 */  /* the cell bytes drawn here */
 
@@ -1084,7 +1084,7 @@ extern signed char far gCellBytes[]; /*@ 20AB:0000 */  /* the cell bytes drawn h
             xoff = -4;
             yoff = -4;
         }
-        cells = gIntroCells[idx ^ gAnimWallPhase];
+        cells = gTeleporterCells[idx ^ gAnimWallPhase];
         for (j = 0; j < CELL_COLS; j++) {
             DrawShapeClipped(2, cells,
                            xoff + xbase + gCellBytes[idx * CELL_ROW_BYTES + j * 2],

@@ -66,13 +66,13 @@ extern char gDirectAction[]; /*@ ds:F542 */            /* a message buffer (src/
 extern char gFlag; /*@ ds:F3B9 */              /* a mode byte (src/E0ACD.C) */
 extern int RestorePortraitPanel(void far *action); /*@ 0ACD:01E3 */
 extern void RedrawPartyPanel(char far *text); /*@ 0EF3:2541 */
-extern void LoadMapScreen(int n); /*@ 210C:007A */  /* overlay 3 entry, ovl3:0A7C */
+extern void LoadLevel(int n); /*@ 210C:007A */  /* overlay 3 entry, ovl3:0A7C */
 extern void SaveLevelState(int level); /*@ 210C:002F */  /* overlay 3 entry, ovl3:11AF */
 extern void ResetLevel(void); /*@ 210C:007F */  /* overlay 3 entry, ovl3:19F7 */
 extern void NoOpAfterMapLoad(void); /*@ 2116:0043 */  /* overlay 4 entry, ovl4:2039, a no-op (src/EOV4.C) */
 extern void LoadScreenImage(char far *name, char far *extra, int srcKind, int dstKind, int mode); /*@ 082C:051B */
 extern char gStrInvent[]; /*@ ds:5BA1 */        /* the "INVENT" screen name (122E:1AAB) */
-extern unsigned char far gSheetINVENT[]; /*@ 2067:0000 */ /* the sheet at segment 2067 (src/E0ACD.C) */
+extern unsigned char far gCgaMapInvent[]; /*@ 2067:0000 */ /* the sheet at segment 2067 (src/E0ACD.C) */
 extern void LockHidePointer(void); /*@ 1BBE:0307 */
 extern void LockShowPointer(void); /*@ 1BBE:0332 */
 extern int gTextAttr1; /*@ ds:811D */          /* the first text attribute (src/E07C8.C) */
@@ -150,13 +150,13 @@ struct ItemRecord {
     signed char cellPos;        /* +5 (ds:8DD5): 01D0 stores its 4th argument here and 02B9 matches it
                                against its `key`. No caller shows a sound (01D0's callers pass a
                                slot kind, E0ACD.C:561-568, a roll, E08E6.C:807, or an effect kind | 4,
-                               0BD2:07DE), so Purpose unknown: a per-entry tag */
+                               0BD2:07DE): the item's position in its cell, 8 a wall niche (122E:06D0) */
     int key;                /* +6 (ds:8DD6): the key; -1 when the record is free */
     int prevLink;                /* +8 (ds:8DD8): one link of the circular list; 0BD2:01D0 splices a
                                new item in after this record through it */
     int nextLink;                /* +0xa (ds:8DDA): the other link; the list walks (0BD2:0385, 040E,
                                04AA) follow it */
-    signed char m0A;        /* +0xc (ds:8DDC): gCurLevel or -1, set by 01D0 */
+    signed char level;        /* +0xc (ds:8DDC): gCurLevel or -1, set by 01D0 */
     signed char value;        /* +0xd (ds:8DDD): the item's bonus or effect value: the signed bonus
                                printed as "%s +%d" and "Cursed %s %d", the spell index into ds:1278
                                and ds:12E0, the wand effect index g38FA[m0B], and the scroll and
@@ -1341,8 +1341,8 @@ done:
         gPartyDir = v2;
     ResetLevel();
     SaveLevelState(gCurLevel);
-    LoadMapScreen(v1);
-    LoadScreenImage(gStrInvent, (char far *)gSheetINVENT, 5, 3, 2);
+    LoadLevel(v1);
+    LoadScreenImage(gStrInvent, (char far *)gCgaMapInvent, 5, 3, 2);
     NoOpAfterMapLoad();
     MoveParty(id);
     gScriptDone = 1;

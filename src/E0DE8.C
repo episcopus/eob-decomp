@@ -20,7 +20,7 @@ struct CharRec {            /* the 243-byte (0xF3) character records at ds:F580;
     char pad0D[0x15 - 0x0D];
     signed char dexterity;  /* +15: one of the five further stat bytes (src/E0A72.C); indexes the
                                per-stat table g349E for the armour-class base (GetArmourClassBase, 0A72:019D)
-                               and the per-stat table ds:3474 (GetCharM15Value, 0A72:0181) */
+                               and the per-stat table ds:3474 (GetDexMissileBonus, 0A72:0181) */
     char pad16;
     signed char constitution;        /* +17: an index into gConSaveBonus (0D1C:059B); also the second argument of
                                RollHitPoints (0A72:01AE), which LevelUpSlot passes there */
@@ -79,13 +79,13 @@ struct ItemRecord {
     signed char cellPos;        /* +5 (ds:8DD5): 01D0 stores its 4th argument here and 02B9 matches it
                                against its `key`. No caller shows a sound (01D0's callers pass a
                                slot kind, E0ACD.C:561-568, a roll, E08E6.C:807, or an effect kind | 4,
-                               0BD2:07DE), so Purpose unknown: a per-entry tag */
+                               0BD2:07DE): the item's position in its cell, 8 a wall niche (122E:06D0) */
     int key;                /* +6 (ds:8DD6): the key; -1 when the record is free */
     int prevLink;                /* +8 (ds:8DD8): one link of the circular list; 0BD2:01D0 splices a
                                new item in after this record through it */
     int nextLink;                /* +0xa (ds:8DDA): the other link; the list walks (0BD2:0385, 040E,
                                04AA) follow it */
-    signed char m0A;        /* +0xc (ds:8DDC): gFBC8 or -1, set by 01D0 */
+    signed char level;        /* +0xc (ds:8DDC): gFBC8 or -1, set by 01D0 */
     signed char value;        /* +0xd (ds:8DDD): the item's bonus or effect value: the signed bonus
                                printed as "%s +%d" and "Cursed %s %d", the spell index into ds:1278
                                and ds:12E0, the wand effect index g38FA[m0B], and the scroll and
@@ -129,7 +129,7 @@ extern struct Monster gMonsters[]; /*@ ds:8A82 */
 extern struct MonsterType gMonsterTypes[]; /*@ ds:1A3B */
 extern struct ItemRecord gItems[]; /*@ ds:8DD0 */
 extern struct ItemType gItemTypes[]; /*@ ds:A9F0 */
-extern signed char gViewToCellPos[]; /*@ ds:1A1B */   /* per-page sound table (src/E0D1C.C) */
+extern signed char gViewToCellPos[]; /*@ ds:1A1B */   /* the cell position seen at a view position, four per gPartyDir (src/E0D1C.C) */
 extern signed char gViewRelativePos[]; /*@ ds:1A2B */   /* per-page byte table used by 01FF */
 extern signed char gClassSlotCount[]; /*@ ds:115F */   /* a byte table indexed by a class, used by 0B45 */
 extern signed char gClassBaseBits[]; /*@ ds:1231 */   /* a byte table indexed by the class classIndex (:725;
@@ -164,12 +164,12 @@ extern char gFileNameBuf[]; /*@ ds:FE6E */   /* the text buffer sprintf formats 
 extern int far RollDice(char count, char sides, char bonus); /*@ 082C:0458 */
 extern int GetStrengthToHitBonus(int who); /*@ 0A72:00CF */
 extern int GetStrengthDamageBonus(int who); /*@ 0A72:0128 */
-extern int GetCharM15Value(int who); /*@ 0A72:0181 */
+extern int GetDexMissileBonus(int who); /*@ 0A72:0181 */
 extern char GetHitTarget(char who, char classByte); /*@ 0A72:0522 */
 extern char GetClassSlotByte(char row, char slot); /*@ 0A72:0509 */
 extern long GetClassSlotExpThreshold(char row, char slot, char level); /*@ 0A72:04B7 */
 extern int GetArmourClassBase(char m15); /*@ 0A72:019D */
-extern int GetIndexedByte(char index, char limit, char offset); /*@ 0A72:0006 */
+extern int GetSavingThrowTarget(char index, char limit, char offset); /*@ 0A72:0006 */
 extern int RollHitPoints(char classIndex, char m17, char countA, char countB, char countC); /*@ 0A72:01AE */
 extern int MemberIs(int who, int mask); /*@ 0D1C:0670 */
 extern int StepCell(int cell, int dir); /*@ 0D1C:00DA */
@@ -229,7 +229,7 @@ void LevelUpSlot(int who, int cls, int slot);  /* forward: 0B45 reaches it with 
     if (useStrength != 0)
         bonus += GetStrengthToHitBonus(who);
     else
-        bonus += GetCharM15Value(who);
+        bonus += GetDexMissileBonus(who);
     entry = gMonsters[obj].typeIndex;
     gMonsters[obj].m16 |= 1;
     toHit = GetHitTarget(who, gMonsterTypes[entry].m00) - bonus;
@@ -789,7 +789,7 @@ fail:
 
 /* 0DE8:0FCA: the same half-on-success keeper for the object record `objRec`: it reads that
    record's typeIndex as the gMonsterTypes index, derives a class value through gMonsterTypes[typeIndex].m02 and
-   GetIndexedByte, then halves `value` on a d20 roll at or above it. Its chance is a real
+   GetSavingThrowTarget, then halves `value` on a d20 roll at or above it. Its chance is a real
    threshold (A, by contrast, always halves). A takes a character index. Called by 0EF3:0A3F. */
 /*@ 0DE8:0FCA */ int HalveSaveDamageB(struct Monster far *objRec, int value)
 {
@@ -797,7 +797,7 @@ fail:
     int classByte;
 
     classByte = gMonsterTypes[objRec->typeIndex].m02;
-    chance = GetIndexedByte(0, classByte, 4);
+    chance = GetSavingThrowTarget(0, classByte, 4);
     if (RollDice(1, 20, 0) >= chance)
         value >>= 1;
     return value;

@@ -19,13 +19,13 @@ struct ItemRecord {
     signed char cellPos;        /* +5 (ds:8DD5): 01D0 stores its 4th argument here and 02B9 matches it
                                against its `key`. No caller shows a sound (01D0's callers pass a
                                slot kind, E0ACD.C:561-568, a roll, E08E6.C:807, or an effect kind | 4,
-                               0BD2:07DE), so Purpose unknown: a per-entry tag */
+                               0BD2:07DE): the item's position in its cell, 8 a wall niche (122E:06D0) */
     int key;                /* +6 (ds:8DD6): the key; -1 when the record is free */
     int prevLink;                /* +8 (ds:8DD8): one link of the circular list; 0BD2:01D0 splices a
                                new item in after this record through it */
     int nextLink;                /* +0xa (ds:8DDA): the other link; the list walks (0BD2:0385, 040E,
                                04AA) follow it */
-    signed char m0A;        /* +0xc (ds:8DDC): gCurLevel or -1, set by 01D0 */
+    signed char level;        /* +0xc (ds:8DDC): gCurLevel or -1, set by 01D0 */
     signed char value;        /* +0xd (ds:8DDD): the item's bonus or effect value: the signed bonus
                                printed as "%s +%d" and "Cursed %s %d", the spell index into ds:1278
                                and ds:12E0, the wand effect index gWandSpells[m0B], and the scroll and
@@ -100,7 +100,7 @@ extern struct Monster gMonsters[]; /*@ ds:8A82 */
 extern signed char gInventoryMember; /*@ ds:A99A */    /* the selected character index (src/E0ACD.C) */
 extern char gCursorSlot; /*@ ds:F51A */           /* the selected row (src/E0D1C.C) */
 extern char gPanelMode; /*@ ds:FB44 */           /* a display-mode byte (src/E0D1C.C) */
-extern int gCurLevel; /*@ ds:FBC8 */            /* the current action (src/E0D1C.C) */
+extern int gCurLevel; /*@ ds:FBC8 */            /* the dungeon level, 1..12 (src/E0D1C.C) */
 extern int gPartyDir; /*@ ds:FBCC */            /* the party's facing, 0..3 north, east, south, west */
 extern int gPartyCell; /*@ ds:FBCA */     /* the party's map cell (src/E177D.C:92): this unit passes
                                             it to StepCell (UseWandItem) as the cell; E0ACD.C
@@ -268,9 +268,9 @@ void DrawItemName(int item);
         rec->cellPos = tag;
         rec->key = key;
         if (key >= 0)
-            rec->m0A = gCurLevel;
+            rec->level = gCurLevel;
         else
-            rec->m0A = -1;
+            rec->level = -1;
     } else {
         oldHead = *(int far *)head;
         cur = &gItems[oldHead];
@@ -279,9 +279,9 @@ void DrawItemName(int item);
         rec->key = key;
         rec->cellPos = tag;
         if (key >= 0)
-            rec->m0A = gCurLevel;
+            rec->level = gCurLevel;
         else
-            rec->m0A = -1;
+            rec->level = -1;
         rec->nextLink = tailRec->nextLink;
         rec->prevLink = tail;
         tailRec->nextLink = item;
@@ -323,7 +323,7 @@ found:
         rec->nextLink = 0;
         rec->prevLink = 0;
         rec->key = 0;
-        rec->m0A = 0;
+        rec->level = 0;
         if (*(int far *)head == item)
             *(int far *)head = next;
         if (*(int far *)head == item)
@@ -423,7 +423,7 @@ next:
     while (item != start || count == 0) {
         if (gItems[item].type == type || type == -1) {
             gItems[item].key = -1;
-            gItems[item].m0A = 0;
+            gItems[item].level = 0;
             saved = item;
             item = gItems[item].nextLink;
             gItems[saved].nextLink = 0;

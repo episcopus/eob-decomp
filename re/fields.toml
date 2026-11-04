@@ -480,3 +480,11 @@ old = "tag"
 new = "cellPos"
 why = "the item's position inside its cell (0 to 3, through gViewToCellPos by facing), with 4 added while the item flies (AddDDEffect stores kind | 4); InsertListItem 0BD2:01D0 stores it, 0BD2:02B9 matches it"
 date = "2026-11-03"
+
+[[field]]
+struct = "ItemRecord"
+at = "0C"
+old = "m0A"
+new = "level"
+why = "InsertListItem 0BD2:01D0 stores gCurLevel or -1 in it and RebuildItemList ovl3:0951 inserts only the items whose +0C equals gCurLevel: the dungeon level the item lies on"
+date = "2026-11-03"
