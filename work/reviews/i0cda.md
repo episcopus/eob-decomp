@@ -1,10 +1,18 @@
 # Review: i0cda
 
-Reviewer: rev-haiku
-Commit reviewed: 48c9060 (round 6; round 5 reviewed 0cbdc72; round 4 reviewed a97a0d7; round 3 reviewed 6ea511f; round 1 reviewed aa139872dfa3474f683144e3ec4f289840e9c58d)
+Reviewer: p6-rev-12
+Commit reviewed: ce0608f367ed01b1b1df84e254eef04d1a734b27 (P6 round; `src/I0CDA.ASM` is unchanged since round 6 at 48c9060). Round 6 at 48c9060 (round 5 reviewed 0cbdc72; round 4 reviewed a97a0d7; round 3 reviewed 6ea511f; round 1 reviewed aa139872dfa3474f683144e3ec4f289840e9c58d)
 
 Playbook 70. Judge what a matching file can still get wrong: names, types, comments, structure.
 The matcher already proved the bytes; do not re-prove them, read for meaning.
+
+## Round P6 (2026-11-04), commit ce0608f367ed01b1b1df84e254eef04d1a734b27
+
+No changes to `src/I0CDA.ASM` since the round 6 commit `48c9060` (`git diff 48c9060 HEAD -- src/I0CDA.ASM` is empty). The previous review's findings (no must-fix, one open note) stand. Nothing to re-judge.
+
+### Round P6 summary
+
+The file is unchanged. The round 6 review stands: no must-fix. Nothing escalated.
 
 ## Findings
 

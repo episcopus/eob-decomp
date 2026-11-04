@@ -11242,7 +11242,7 @@ size = 1
 evidence = ["segment"]
 level = "L2"
 notes = "not a function: bytes of the unit outside its functions (a marker or padding), matched with the whole unit"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-12"
 
 [[function]]
 id = "i0cda_0006"
@@ -11253,7 +11253,7 @@ name = "_RandomByte"
 level = "L2"
 match_flags = "tasm /mx"
 notes = "not listed by the map: a function of the source, its bounds proven by the whole-unit match"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-12"
 
 [[function]]
 id = "i0cdd_0008"
