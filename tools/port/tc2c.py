@@ -199,7 +199,7 @@ class Unit:
         self.src = path.read_text(encoding="latin-1")
         code_only = re.sub(r"/\*.*?\*/", "", self.src, flags=re.S)
         if re.search(r"\binterrupt\b", code_only):
-            raise Unsupported("%s: interrupt functions (playbook 80, open question 6)" % path.name)
+            raise Unsupported("%s: interrupt vector types (playbook 80, open questions: the vector table)" % path.name)
         self.funcs, self.data, self.defined, stubs = cmatch.parse_annotations(self.src)
         self.fardata = set(cmatch.FARDATA)
         if stubs:

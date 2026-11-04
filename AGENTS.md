@@ -61,6 +61,7 @@ You are working on a **matching decompilation of Westwood's Eye of the Beholder 
 | `make review-pass UNIT= AGENT=` | Record a passed review (playbook 70) |
 | `make handoffs`, `make integrate`, `make handoff-done`, `make locks`, `make unlock`, `make worker` | The human's side (playbook 90) |
 | `make smoke-agent [NAME=] [UNIT=]` | One real session of a roster model on one unit, in a scratch clone (playbook 90) |
+| `make port` | Phase 7 skeleton: translate `port/units.txt` from `src/` (`tools/port/tc2c.py`), build `build/port/eob-port` with SDL3, run its self-test (playbook 80) |
 | `make start-run [DRY=1]`, `make watch-agents`, `make run-status`, `make run-add NAME=`, `make stop-run [WAIT=]` | A run of `work/roster.toml`: workers and the integrator in the background (playbook 90) |
 
 ## Playbooks
@@ -74,6 +75,7 @@ You are working on a **matching decompilation of Westwood's Eye of the Beholder 
 | `50-rebuild.md` | Phase 5: building a program from `src/` identical to the original |
 | `65-consistency.md` | Phase 6: one vocabulary, every symbol named where the evidence allows |
 | `70-review.md` | Reviewing a complete unit |
+| `80-port.md` | Phase 7: the portable build (the arena, tc2c, the platform layer, the proof) |
 | `90-orchestrate.md` | The human: running workers, integrating hand-offs, escalations |
 
 Later playbooks are brought over from poolrad as each phase starts (SPEC section 10).
