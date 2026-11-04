@@ -79,7 +79,7 @@ extern void far *gMsgBuf;                /*@ ds:81E6: the saved screen rectangle
 extern int gMsgLink;                     /*@ ds:FF0A: ResolveFileLink's result for the file in the dialog */
 extern int gErrorDialogRegion;                        /*@ ds:80FE: the text region the error dialog switches to; 1 in the image */
 
-#define KEY_ESC        0x1b     /* the key the error dialog treats as "abort" */
+#include "EOB.H"
 #define MSG_NOT_FOUND  2        /* gErrorText[2]: "Could not find" (0ADD appends the name) */
 #define MSG_DISK_ERROR 12       /* gErrorText[12]: "A fatal disk error has occurred..." */
 #define MSG_LINE_BREAK 18       /* gErrorText[18]: "\r " */
@@ -607,7 +607,6 @@ extern long gSlotLengths[];              /*@ ds:FF0C: the record's length per sl
     LockShowPointer();
     return 1;
 }
-
 
 /* 1C0E:0D9B: draw to page 0 (gDrawPage, ds:8115) while 1C0E:0ADD draws its message box, then put
    the old value back and return 1. This is the fatal file error handler stored at ds:8104

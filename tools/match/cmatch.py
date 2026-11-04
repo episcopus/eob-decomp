@@ -605,6 +605,19 @@ def split_entries(blocks: list, uid: str, names_by_addr: dict, sizes: dict, flag
     return len(new)
 
 
+INCLUDE = re.compile(r'^#include\s+"(\w+\.H)"[^\n]*$', re.M)
+
+
+def expand(text: str) -> str:
+    """The C text with each `#include "X.H"` of a header in src/ (src/EOB.H, the shared structs and
+    constants) replaced by that header, so the copy compiled here, and the rebuild's copies, are one
+    file as before the header existed. Headers the compiler ships (<dos.h>) are left to it."""
+    def sub(m):
+        p = ROOT / "src" / m.group(1)
+        return p.read_text().rstrip("\n") if p.is_file() else m.group(0)
+    return INCLUDE.sub(sub, text)
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("file")
@@ -626,7 +639,7 @@ def main() -> int:
     shutil.rmtree(w, ignore_errors=True)
     w.mkdir(parents=True)
     src_name = "U.ASM" if asm else "U.C"
-    (w / src_name).write_text(src.replace("\r\n", "\n").replace("\n", "\r\n"))
+    (w / src_name).write_text((src if asm else expand(src)).replace("\r\n", "\n").replace("\n", "\r\n"))
     A, B = link(w, release, flags, src_name, funcs, data, defined, asm)
     if a.write and a.unit:
         print("cmatch: --write records levels from src/ only, not from a file named with --unit")

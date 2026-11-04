@@ -83,12 +83,19 @@ def base_of(code: str, at: int) -> str | None:
     return name
 
 
-def rename_in(text: str, struct: str, at: int, new: str) -> tuple[str | None, str]:
-    """(the new text or None, what happened)."""
+def rename_in(text: str, struct: str, at: int, new: str, header: str = "") -> tuple[str | None, str]:
+    """(the new text or None, what happened). `header` is src/EOB.H's text for a file that includes
+    it: a struct the file does not declare itself is looked up there, and only its uses change here
+    (the declaration changes in the header)."""
     found = dict(names.struct_fields(text))
-    if struct not in found:
-        return None, ""
-    fields = found[struct]
+    local = struct in found
+    if not local:
+        hfound = dict(names.struct_fields(header)) if header and names.INCLUDE.search(text) else {}
+        if struct not in hfound:
+            return None, ""
+        fields = hfound[struct]
+    else:
+        fields = found[struct]
     old = next((n for o, n in fields if o == at), None)
     if old is None or names.PAD.match(old):
         return None, "no field at +%02X (padding or shorter)" % at
@@ -96,7 +103,7 @@ def rename_in(text: str, struct: str, at: int, new: str) -> tuple[str | None, st
         return None, "already %s" % new
     if any(n == new for o, n in fields if o != at):
         return None, "REFUSED: struct %s already has a field %s" % (struct, new)
-    shared = any(n == old for s, fs in names.struct_fields(text) if s != struct for o, n in fs)
+    shared = any(n == old for s, fs in names.struct_fields(text + "\n" + header) if s != struct for o, n in fs)
     code = names.comments_out(text)
     code = rename.C_LITERALS.sub(lambda m: " " * len(m.group(0)), code)
     types = typed_names(code)
@@ -114,12 +121,15 @@ def rename_in(text: str, struct: str, at: int, new: str) -> tuple[str | None, st
                 return None, "REFUSED: cannot tell the struct of the access at line %d (%s)" % (
                     code.count("\n", 0, a.start()) + 1, base or "an expression")
         spans.append((a.end() - len(old), a.end()))
-    m = next(m for m in names.STRUCT.finditer(code) if m.group(2) == struct)
-    d = re.search(r"(?<![\w.])%s(?=\s*(?:\[[^\]]*\]\s*)*[;)])" % re.escape(old), code[m.start(3):m.end(3)])
-    if not d:
-        return None, "REFUSED: the declaration of %s was not found" % old
     uses = len(spans)
-    spans.append((m.start(3) + d.start(), m.start(3) + d.end()))
+    if local:
+        m = next(m for m in names.STRUCT.finditer(code) if m.group(2) == struct)
+        d = re.search(r"(?<![\w.])%s(?=\s*(?:\[[^\]]*\]\s*)*[;)])" % re.escape(old), code[m.start(3):m.end(3)])
+        if not d:
+            return None, "REFUSED: the declaration of %s was not found" % old
+        spans.append((m.start(3) + d.start(), m.start(3) + d.end()))
+    elif not spans and not names.FIELD_PLACEHOLDER.match(old):
+        return None, ""
     if shared:                                          # `gChars[who].m01` written in a comment
         for c in re.finditer(r"/\*.*?\*/|//[^\n]*", text, re.S):
             for a in access.finditer(c.group(0)):
@@ -160,12 +170,16 @@ def main(argv=None) -> int:
         return 2
     only = rename.own_unit()
     olds, changed = [], 0
-    for p in sorted(rename.SRC.glob("*.C")):
+    hpath = rename.SRC / "EOB.H"
+    header = hpath.read_text() if hpath.exists() else ""
+    for p in sorted(rename.SRC.glob("*.C")) + ([hpath] if header else []):
         if only and p.stem.lower() != only.lower():
             continue
         text = p.read_text()
-        before = dict(names.struct_fields(text)).get(a.struct)
-        new_text, what = rename_in(text, a.struct, at, a.new)
+        before = dict(names.struct_fields(text)).get(a.struct) or dict(names.struct_fields(header)).get(a.struct)
+        new_text, what = rename_in(text, a.struct, at, a.new, "" if p == hpath else header)
+        if new_text == text:
+            continue
         if what:
             print("field: %-9s %s" % (p.name, what))
         if new_text is not None:

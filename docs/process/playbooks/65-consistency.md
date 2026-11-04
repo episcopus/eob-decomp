@@ -56,16 +56,38 @@ the struct offsets two files name differently. `make names UNIT=<id>` is one fil
 - On a unit branch both tools change only the unit's own file; `make integrate` replays
   `re/renames.toml` on other files, but not yet `re/fields.toml`.
 
-## The shared header (decided 2026-11-04)
+## The shared header (decided and made 2026-11-04)
 
-Every C file declares its own copy of the structs, externs and constants it uses: `struct CharRec`
-is in 16 files, `struct Monster` in 11. The human decided (2026-11-04) on one shared header with
+Every C file declared its own copy of the structs, externs and constants it used: `struct CharRec`
+was in 16 files, `struct Monster` in 11. The human decided (2026-11-04) on one shared header with
 **the structs, enums and constants only**, for all three programs; each file keeps its own extern
 declarations with their address tags (`/*@ ds:FBC8 */`), since INTRO.EXE's addresses differ from
 EOB.EXE's. It needs the matcher and the rebuild to copy the header next to the unit they compile
 (both write one file today, `tools/match/cmatch.py` and `tools/rebuild/rebuild.py`): that matcher
 change is approved. A struct that is a variant in one file (`struct Node` +34) keeps one
-declaration with a union. Until the header lands, `make field` keeps the copies in step.
+declaration with a union.
+
+Made 2026-11-04: `src/EOB.H` declares the 17 structs two or more units shared (CharRec, Monster,
+MonsterType, ItemRecord, ItemType, Projectile, Region, Node, Spell, Effect, Panel and the small
+ones) and the 24 constants two or more units defined; 33 C files include it. `make match` and
+`make rebuild` inline it (`cmatch.expand`), so the compiler sees the same single file as before.
+What the merge showed:
+- The copies agreed on every offset; they differed in signedness and width. The header keeps the
+  type the code needs: `experience` is unsigned (0DE8 compares it with `jb`), `lastDamage` and
+  `lastAction` signed, `portraitIndex` signed (EOV3 draws the negative ones from OUTTAKE) with one
+  `(unsigned char)` cast where EOV5 (ovl5:0AB1) compares it with 0xF7.
+- Two fields are read at two widths: `ItemType.slotMask` and `ItemType.m0E` are `union ItemMask`
+  (`.word`, `.byte`); `ItemType.m04` is unsigned with a `(signed char)` cast where 0DE8 adds it
+  to the armour class. `Node` +34 is `union NodeData` (`data.tile.tile34`, `data.def`).
+- E0ACD's `m97` was a view of `items[16]` (+0x97, a list head): now `&gChars[i].items[16]`.
+- A struct only one unit uses stays in that unit; so do constants one unit uses, `NULL`, and
+  `DRIVER_BLOCK_SIZE` (EOB.EXE 0x32C8, INTRO.EXE 0x36B0).
+- Open: `ItemInfo` is gItemTypes seen five bytes in, and `SlotSize` and `RectKind` have one layout;
+  merging those is a rename for a later pass.
+
+A new unit includes `"EOB.H"` for these records rather than declaring its own copy. `make field`
+renames a field in the header and in every file that includes it; `make names` counts the
+header's fields once.
 
 ## The review sign-off (decided 2026-11-04)
 

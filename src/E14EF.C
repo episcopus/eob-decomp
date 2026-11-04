@@ -31,17 +31,7 @@
    through and the failure is taken, matching 14EF:0417 `je`; the negated form made the optimizer
    branch the other way. Same class as 0ACD:091C. */
 
-struct Panel {                  /* the panel record the option list is drawn from; 16-byte records at ds:017F */
-    int x;                      /* +0: column offset from ds:FE64; eight-pixel cells in both drawing
-                                   functions (<< 3 at :201 and :288); the hit rectangle uses the font width (:295) */
-    int y;                      /* +2: row offset from ds:FE66 */
-    int width;                  /* +4: width in characters */
-    int height;                 /* +6: height in lines */
-    int sel;                    /* +8: the selected row, counted among the selectable entries */
-    int colorA;                 /* +a: normal text colour */
-    int colorB;                 /* +c: colour of the selected entry */
-    int pad;                    /* +e: the eighth word of the 16-byte record; Purpose unknown: never read in src/ */
-};
+#include "EOB.H"
 
 extern struct Panel gPanels[]; /*@ ds:017F */
 /* the text window's top-left corner (src/E1C0E.C:60-61, src/E1DE7.C:34): x is in 8-pixel columns

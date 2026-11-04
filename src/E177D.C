@@ -22,7 +22,7 @@
 #define DRIVER_BLOCK_SIZE 0x32C8L
 /* the length of the 120-byte sound map StartupAlloc allocates (src/E07A9.C:216); the FileRead
    length at 177D:004C */
-#define SOUND_MAP_SIZE 120L
+#include "EOB.H"
 /* a game-sound map value from here up is ignored (whitepaper 4.4, 177D:008C) */
 #define SOUND_MAP_IGNORED 0x96
 /* the low seven bits of the driver sound, the speaker driver routine index (177D:00D2, 177D:0240) */

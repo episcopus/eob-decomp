@@ -18,16 +18,7 @@
 
 /*@flags -ml -O -Z -G */
 
-struct Region {             /* 16 bytes: four edges, then four words of saved state (1DE7:0009) */
-    int left;               /* left edge, in 8-pixel columns */
-    int top;                /* top edge, in pixel rows */
-    int width;              /* width, in 8-pixel columns */
-    int height;             /* height, in pixel rows */
-    int textAttr1;              /* first text attribute (foreground), per-window state SetTextWindow saves and loads */
-    int textAttr2;              /* second text attribute (fill colour), saved and loaded the same way */
-    int textCol;             /* cursor column, in font widths */
-    int textRow;                /* cursor row, in font heights */
-};
+#include "EOB.H"
 
 extern struct Region gRegions[];  /*@ ds:009F */  /* the region table (src/E1A29.C) */
 extern int gCurRegion;            /*@ ds:8108 */  /* the region selected last (src/E1A29.C) */

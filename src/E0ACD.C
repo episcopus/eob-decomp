@@ -97,45 +97,9 @@ struct ActRec;      /* the action record 0EF3:2541 takes: the same +4 result wor
                        a byte in ActRec (src/E0EF3.C:292) and a word here (:18) */
 extern int RedrawPartyPanel(struct ActRec far *rec); /*@ 0EF3:2541 */
 
-/* A character record: this unit touches the name, the hunger byte food and the m97 item sub-table
-   (src/E0A72.C). */
-struct CharRec {
-    char pad00[2];
-    char name[0x0B];        /* +2: the character's name, NUL padded (src/E0D1C.C) */
-    char pad0D[0x23 - 0x0D];
-    unsigned char food;     /* +0x23: a hunger/food value clamped to 100 by EatFood (07E0) */
-    char pad24[0x97 - 0x24];
-    char m97[0xF3 - 0x97];  /* +0x97: the character's own item sub-table; RemoveListItem
-                               (0BD2:02B9) takes an item from it and InsertListItem
-                               (0BD2:01D0) puts one back (0ACD:0A61 and 0BA6) */
-};
+#include "EOB.H"
 extern struct CharRec gChars[]; /*@ ds:F580 */
 
-/* A 14-byte item record (ITEM.DAT, gItems at ds:8DD0): type is the item type, key the record's key (-1 when free)
-   and value the amount EatFood (07E0) adds to the character's food (the meaning is inferred; the
-   src/E0D1C.C:275 comment says what type, value and key mean is not established). */
-struct ItemRecord {
-    signed char nameIndex;        /* +0 (ds:8DD0): indexes the item-name table at segment 0x1F28 */
-    signed char identifiedNameIndex;        /* +1 (ds:8DD1): the second name index */
-    unsigned char flags;    /* +2 (ds:8DD2): bit 0x20 gates 0BD2:0AF2/0C8E, 0x40 is set by
-                               0BD2:040E and tested by 0BD2:05B5; src/E07A9.C calls it flags */
-    signed char icon;       /* +3 (ds:8DD3): the icon number */
-    signed char type;        /* +4 (ds:8DD4): the item type */
-    signed char cellPos;        /* +5 (ds:8DD5): 01D0 stores its 4th argument here and 02B9 matches it
-                               against its `key`. No caller shows a sound (01D0's callers pass a
-                               slot kind, E0ACD.C:561-568, a roll, E08E6.C:807, or an effect kind | 4,
-                               0BD2:07DE): the item's position in its cell, 8 a wall niche (122E:06D0) */
-    int key;                /* +6 (ds:8DD6): the key; -1 when the record is free */
-    int prevLink;                /* +8 (ds:8DD8): one link of the circular list; 0BD2:01D0 splices a
-                               new item in after this record through it */
-    int nextLink;                /* +0xa (ds:8DDA): the other link; the list walks (0BD2:0385, 040E,
-                               04AA) follow it */
-    signed char level;        /* +0xc (ds:8DDC): gCurLevel or -1, set by 01D0 */
-    signed char value;        /* +0xd (ds:8DDD): the item's bonus or effect value: the signed bonus
-                               printed as "%s +%d" and "Cursed %s %d", the spell index into ds:1278
-                               and ds:12E0, the wand effect index gWandSpells[m0B], and the scroll and
-                               potion values (0BD2:05B5, 0D2D, 0EE8, 1001) */
-};
 extern struct ItemRecord gItems[]; /*@ ds:8DD0 */
 extern signed char gViewToCellPos[]; /*@ ds:1A1B */  /* the cell position seen at a view position, four per gPartyDir (src/E0D1C.C) */
 extern int gHandSplitY[]; /*@ ds:36B0 */          /* a per-slot word (screen row) compared with gHitY */
@@ -771,7 +735,7 @@ done:
         if (gItems[item].flags & 0x20)
             return;
     } else {
-        item = RemoveListItem((void far *)gChars[gInventoryMember].m97, 0, -1);
+        item = RemoveListItem((void far *)&gChars[gInventoryMember].items[16], 0, -1);
     }
     if (item == 0)
         return;
@@ -793,7 +757,7 @@ done:
         gPickViewPos = 0xff;
     } else {
         if (gCursorSlot == 0x10)
-            InsertListItem((void far *)gChars[gInventoryMember].m97, 0xFFFE, item, 0);
+            InsertListItem((void far *)&gChars[gInventoryMember].items[16], 0xFFFE, item, 0);
     }
 call:
     ComputeArmourClass(gInventoryMember);
@@ -864,7 +828,7 @@ call:
                 }
             } else {
                 if (CanPlaceItemInSlot(item, gInventoryMember, gCursorSlot)) {
-                    InsertListItem((void far *)gChars[gInventoryMember].m97, 0xFFFE, item, 0);
+                    InsertListItem((void far *)&gChars[gInventoryMember].items[16], 0xFFFE, item, 0);
                     RedrawMember(gInventoryMember);
                 } else {
                     PushListItem(cell, item, value);

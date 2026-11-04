@@ -67,3 +67,16 @@ def test_address_suffix_placeholders():
     assert names.is_placeholder("gDCAA", "ds:DCAA") and names.is_placeholder("g159", "ds:0159")
     assert names.is_placeholder("gIconX5721", "ds:5721") and names.is_placeholder("f19EC_0016", "19EC:0016")
     assert not names.is_placeholder("gPartyCell", "ds:FBCA") and not names.is_placeholder("gF1Key", "ds:00F1")
+
+
+def test_field_in_shared_header():
+    """A struct declared in src/EOB.H: a file that includes it gets its accesses renamed, the header
+    its declaration; a file that does not include it is left alone."""
+    header = "struct Monster {\n    char typeIndex;\n    signed char m01;        /* +01 */\n};\n"
+    user = ('#include "EOB.H"\nextern struct Monster gMonsters[]; /*@ ds:8A82 */\n'
+            'void F(int i)\n{\n    gMonsters[i].m01 = 3;\n}\n')
+    text, what = field.rename_in(user, "Monster", 1, "updateGroup", header)
+    assert what == "m01 -> updateGroup, 1 uses" and "gMonsters[i].updateGroup = 3;" in text
+    htext, _ = field.rename_in(header, "Monster", 1, "updateGroup")
+    assert "signed char updateGroup;" in htext
+    assert field.rename_in(user.replace('#include "EOB.H"\n', ""), "Monster", 1, "updateGroup", header)[0] is None
