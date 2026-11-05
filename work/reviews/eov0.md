@@ -1,5 +1,19 @@
 # Review: eov0
 
+# Round P6 re-review (2026-11-04), commit 24711ec
+
+Reviewer: p6-rev-r2
+Commit reviewed: 24711ec (P6 re-review; the P6 round read ce0608f)
+
+Judged: the three open P6 must-fix items and the diff since ce0608f for src/EOV0.C. `make match FILE=src/EOV0.C`: 35 of 35 (10873 bytes), exit 0. `make readability UNIT=eov0`: 0 findings.
+
+- [x] must-fix src/EOV0.C:1029: fixed right. The comment now says BuildAbilityLimits builds the ability limits, not the class combat tables. The function is at src/EOV0.C:1070 (ovl0:1EA9) and is called at :1045.
+- [x] must-fix src/EOV0.C:1308: fixed right. The old `m01` and `index00` are now `status` and `index`, the CharRec field names the code at :1317-1319 uses.
+- [x] must-fix src/EOV0.C:1309: fixed right. The old `gClassStartItems[m20][j]` is now `gClassStartItems[classIndex * 4 + j]`, which matches the code at :1326 and the CharRec `classIndex` field.
+- [ ] note No new false claim in the changed lines. The P6 shoulds, if any, are unchanged and non-blocking.
+
+# Round P6 (2026-11-04), commit ce0608f
+
 Reviewer: p6-rev-11
 Commit reviewed: P6 round at ce0608f (main); round 3 at 25debaf; round 2 at 96459a0; round 1 at 2ba0b7c
 

@@ -8069,7 +8069,7 @@ evidence = ["near", "segment"]
 name = "BuildIconTable"
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-r2"
 
 [[function]]
 id = "eov0_00af"
@@ -8080,7 +8080,7 @@ evidence = ["near", "frame"]
 name = "FreeIconTable"
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-r2"
 
 [[function]]
 id = "eov0_00f7"
@@ -8091,7 +8091,7 @@ evidence = ["near", "frame"]
 name = "WaitKeyOrPause"
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-r2"
 
 [[function]]
 id = "eov0_0128"
@@ -8102,7 +8102,7 @@ evidence = ["near", "frame"]
 name = "DrawPanelIcon"
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-r2"
 
 [[function]]
 id = "eov0_037a"
@@ -8113,7 +8113,7 @@ evidence = ["near", "frame"]
 name = "FlashPanelIcon"
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-r2"
 
 [[function]]
 id = "eov0_03b2"
@@ -8124,7 +8124,7 @@ evidence = ["ovl", "near", "frame"]
 name = "InitRowNode"
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-r2"
 
 [[function]]
 id = "eov0_042f"
@@ -8135,7 +8135,7 @@ evidence = ["ovl", "near", "frame"]
 name = "BuildRowNodeList"
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-r2"
 
 [[function]]
 id = "eov0_0504"
@@ -8146,7 +8146,7 @@ evidence = ["ovl", "near", "frame"]
 name = "DrawPartyStatus"
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-r2"
 
 [[function]]
 id = "eov0_05ba"
@@ -8157,7 +8157,7 @@ evidence = ["ovl", "near", "frame"]
 name = "DrawCharName"
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-r2"
 
 [[function]]
 id = "eov0_065b"
@@ -8169,7 +8169,7 @@ notes = "draft: the function matches except one jump target in the mode switch (
 name = "DrawCharPanel"
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-r2"
 
 [[function]]
 id = "eov0_0a4f"
@@ -8180,7 +8180,7 @@ evidence = ["ovl", "frame"]
 name = "DrawRowList10"
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-r2"
 
 [[function]]
 id = "eov0_0a5e"
@@ -8190,7 +8190,7 @@ size = 765
 evidence = ["ovl", "near", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-r2"
 name = "PickPortrait"
 
 [[function]]
@@ -8201,7 +8201,7 @@ size = 129
 evidence = ["ovl", "near"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-r2"
 name = "FindFreePortrait"
 
 [[function]]
@@ -8212,7 +8212,7 @@ size = 265
 evidence = ["ovl", "near", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-r2"
 name = "ReviewRolledStats"
 
 [[function]]
@@ -8223,7 +8223,7 @@ size = 396
 evidence = ["ovl", "near"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-r2"
 name = "ViewCharacter"
 
 [[function]]
@@ -8234,7 +8234,7 @@ size = 133
 evidence = ["ovl", "near"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-r2"
 name = "ShowSelectBoxPrompt"
 
 [[function]]
@@ -8245,7 +8245,7 @@ size = 129
 evidence = ["ovl", "near", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-r2"
 name = "ShowEnteringGame"
 
 [[function]]
@@ -8257,7 +8257,7 @@ evidence = ["ovl", "near", "frame"]
 name = "RollAbilityScore"
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-r2"
 
 [[function]]
 id = "eov0_11ba"
@@ -8268,7 +8268,7 @@ evidence = ["ovl", "near", "frame"]
 name = "DrawPanelRow"
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-r2"
 
 [[function]]
 id = "eov0_1224"
@@ -8278,7 +8278,7 @@ size = 313
 evidence = ["ovl", "near", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-r2"
 name = "AnimateMemberBox"
 
 [[function]]
@@ -8290,7 +8290,7 @@ evidence = ["ovl", "near", "frame"]
 name = "EditStatField"
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-r2"
 
 [[function]]
 id = "eov0_1add"
@@ -8300,7 +8300,7 @@ size = 277
 evidence = ["ovl", "near"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-r2"
 name = "ModifyCharacterStats"
 
 [[function]]
@@ -8312,7 +8312,7 @@ evidence = ["ovl", "near"]
 name = "RollCharacterStats"
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-r2"
 
 [[function]]
 id = "eov0_1ea9"
@@ -8322,7 +8322,7 @@ size = 189
 evidence = ["ovl", "near", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-r2"
 name = "BuildAbilityLimits"
 
 [[function]]
@@ -8333,7 +8333,7 @@ size = 235
 evidence = ["ovl", "near", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-r2"
 name = "PickRace"
 
 [[function]]
@@ -8345,7 +8345,7 @@ evidence = ["ovl", "frame"]
 name = "FindNthSetBit"
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-r2"
 
 [[function]]
 id = "eov0_207a"
@@ -8356,7 +8356,7 @@ evidence = ["ovl", "near", "frame"]
 name = "PickClass"
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-r2"
 
 [[function]]
 id = "eov0_2238"
@@ -8367,7 +8367,7 @@ evidence = ["ovl", "near", "frame"]
 name = "PickAlignment"
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-r2"
 
 [[function]]
 id = "eov0_23ec"
@@ -8378,7 +8378,7 @@ evidence = ["ovl", "near", "frame"]
 name = "CreateCharacter"
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-r2"
 
 [[function]]
 id = "eov0_2547"
@@ -8389,7 +8389,7 @@ evidence = ["ovl", "near", "frame"]
 name = "InitPanelScreens"
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-r2"
 
 [[function]]
 id = "eov0_26c6"
@@ -8399,7 +8399,7 @@ size = 327
 evidence = ["ovl", "near", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-r2"
 name = "GiveStartingEquipment"
 
 [[function]]
@@ -8410,7 +8410,7 @@ size = 61
 evidence = ["ovl", "near", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-r2"
 name = "GiveStartingSpellBooks"
 
 [[function]]
@@ -8421,7 +8421,7 @@ size = 102
 evidence = ["ovl", "near", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-r2"
 name = "SetBaseStats"
 
 [[function]]
@@ -8433,7 +8433,7 @@ evidence = ["ovl", "near", "frame"]
 name = "FreePanelBuffers"
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-r2"
 
 [[function]]
 id = "eov0_28f9"
@@ -8444,7 +8444,7 @@ evidence = ["ovl", "frame"]
 name = "RunCharacterPanel"
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-r2"
 
 [[function]]
 id = "eov1_0000"
