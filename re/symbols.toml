@@ -7453,8 +7453,8 @@ size = 50
 evidence = ["far", "segment"]
 level = "L2"
 match_flags = "tasm /mx"
-review = "passed 2026-11-01 rev-sonnet"
 name = "RandomByte"
+review = "passed 2026-11-04 p6-rev-r2"
 
 [[function]]
 id = "e1d8f_0002"
