@@ -69,7 +69,7 @@ void SelectRegion(int region);
    (ds:80A6, driver export 24), whose MCGA body (mcga.ovl 1639) writes each pixel then decrements
    DI (mcga.ovl 17F7 to 17FA). Identical to 1A29:000F otherwise (null check, lazy region select,
    region-relative x and y). Callers use it for the negative-delta side of wall faces
-   (src/EOV4.C:707-718) and for negative icon indexes (DrawMemberIcons, src/E0EF3.C:1059). */
+   (src/EOV4.C:653, :684, :791) and for negative icon indexes (CastBurningHands, 0EF3:0F99, src/E0EF3.C:925). */
 /*@ 1A29:004D */ void DrawShapeFlipped(int page, void far *src, int x, int y, int region)
 {
     if (!src)
@@ -97,7 +97,7 @@ void SelectRegion(int region);
    remap buffer (mcga.ovl 030C) and swaps the nibbles of each pixel pair (the table at mcga.ovl
    00F6). Identical to 1A29:000F otherwise (null check, lazy region select, region-relative x and
    y). Its only caller picks it for sprite < 0 after gSetRemapTable, where the unremapped branch
-   picks DrawShapeFlipped (src/EOV4.C:636-649); the mirroring rests on that pairing and the nibble
+   picks DrawShapeFlipped (src/EOV4.C:580-589); the mirroring rests on that pairing and the nibble
    swap. */
 /*@ 1A29:00C9 */ void DrawShapeFlippedRemapped(int page, void far *src, int x, int y, int region)
 {
