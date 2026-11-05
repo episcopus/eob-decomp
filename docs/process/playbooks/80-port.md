@@ -19,7 +19,8 @@ sound and state.
 | Decisions | the nine answered by the human 2026-11-04, the five follow-ups (A to E) 2026-11-05 (section "Decisions"). Linux and Windows deferred by the human 2026-11-05: macOS only for now. Left for the human: install the newest LLVM (section "What the human installs") |
 | M1 tc2c for every C unit | done 2026-11-05 except the LLVM pin, which waits for the human's install: `make port` translates all 41 C units of `EOB.EXE` (609 functions) with none refused, compiles them with `-Werror` and links them; what is still a stub is 63 assembly routines (M3) and 23 library functions that need the machine (section "M1") |
 | M2 the per-function test | the machinery done 2026-11-05: `make port-hybrid` (section "M2"); on the five `EOB.EXE` goldens 129 of the 594 functions with an entry are reached, 118 are the same as the original on every call tested (635 calls), none differ, 11 are reached only where they wait for an interrupt (M3). The rest of the check, every function of `src/`, needs sessions that reach them |
-| M3 to M7 | not started (section "Order of work") |
+| M3 the machine and the assembly units | started 2026-11-05 (section "M3"): `port/asm/` has the four units that touch no hardware, `E1BA8`, `E1D8C`, `E19FC` and `E1D9A` (8 routines), each the same as the original on every call tested; the machine itself and the other 15 units are next |
+| M4 to M7 | not started (section "Order of work") |
 
 ## Why `src/` does not compile natively as it is
 
@@ -53,7 +54,9 @@ by hand: the arena **is** the real-mode address space.
 - A pointer is a `farptr`: a `u32` with the segment in the high word, as Turbo C stores it. `MK_FP`,
   `FP_SEG` and `FP_OFF` are the identity on that representation. Far pointer arithmetic adds to the
   offset only (`tc_fp_add`). A load or store goes through `tc_ld_*` and `tc_st_*` (little-endian, any
-  alignment, the second byte of a word at `xxxx:FFFF` at `xxxx:0000`).
+  alignment; the second byte of a word at `xxxx:FFFF` at the next linear address, as the oracle does,
+  where an 8086 would wrap to `xxxx:0000`: found by M3's test of `Unpack0`, section "M3"; a long is
+  two words at offsets +0 and +2 of the segment).
 - A global is read and written at `TC_MKFP(tc_ds, annotation)`; a far object of another segment
   (`/*@ 0000:3B36 */`) at its segment moved by the load segment.
 - A function of `src/` is registered under its original far address (`tc_code_register`), so a far
@@ -333,6 +336,39 @@ Whatever the clock, the proof has two levels:
 The new recording artefacts (per golden: the clock positions of each interrupt and input) are files
 beside the goldens, `tests/sessions/golden/<name>.clock.json`; the human approved this change to the
 golden format (decision 5). The goldens themselves do not change.
+
+## M3: the machine and the assembly units (started 2026-11-05)
+
+- `port/asm/<unit>.c` holds an assembly unit of `src/` written in C, one routine per routine of the
+  TASM source, each marked with its address as `src/` marks it (`/*@ 1D9A:0013 */`). tc2c reads those
+  marks: the routine leaves `unported.c`, `ported.h` declares it with the callers' prototype (so the
+  compiler checks the hand-written definition against it), `tc2c_init` registers it at its original
+  address (far pointers to it find it), and `hybrid.c` gives it a thunk, so the per-function test
+  stops at the original routine's entry and compares it as it compares a translated function.
+- Where the result depends on how an instruction moves its registers, the C is written over 16-bit
+  register variables named as the source names them, with the string instructions of
+  `port/asm/x86.h` (`lodsb`, `rep movsw`, `repe cmpsb` and so on, on the arena) and the carry kept by
+  hand (`rcl`, `rcr`, `sbb`), so it reads beside the TASM label by label. A unit's `cs:` variables stay
+  in the arena at their offsets in its code segment (`CS_VAR`), where the state digests see them.
+- Done: `E1BA8` (`Unpack0`, `NormalizePtr`), `E1D8C` (`RandomByte`), `E19FC` (`CompressLcw`), `E1D9A`
+  (`Unpack1` to `Unpack4`). The goldens reach three (`NormalizePtr`, `Unpack0`, `Unpack4`: 31 calls,
+  all the same); no pinned file uses formats 1 to 3 and the goldens never save a map or draw the
+  random step, so `hybrid.Direct` calls a routine on the bench with chosen arguments, the original
+  then the C. `tests/unit/test_port.py` (slow set) does so for all eight: the random step in
+  sequence, the far copy with overlaps, odd lengths and 64 KB blocks, the encoder and `Unpack4` on its
+  output (the original's round trip holds), `Unpack4` on random streams, the dictionary unpackers on
+  random code streams, `Unpack3` on well-formed ones. All the same; a copy of `RandomByte` without its
+  `cmc` fails every call.
+- Found on the way: the oracle reads a word at `xxxx:FFFF` with its second byte at the next linear
+  address (Unicorn, tested), not at `xxxx:0000` as an 8086 would; `Unpack0`'s 64 KB blocks straddle it.
+  The arena now does as the oracle (`tcport.h`, `TC_NEXT`); a long stays two word accesses at offsets +0
+  and +2 of the segment, as the compiled code makes them.
+- With these, the five goldens reach 132 functions: 121 the same on every call tested, none
+  different, the same 11 waiting for an interrupt.
+- Next: the machine (`port/runtime/`: the vector table, the PIT, the ports, INT 21h with DOS memory
+  and files, INT 33h, INT 10h, 4B03h), then the units that use it, the interrupt handlers last with
+  the clock. In the hybrid build an interrupt a routine issues can go to the oracle's own services,
+  as the routines with no C do now, so each unit is proven before the machine is complete.
 
 ## M2: the per-function test (2026-11-05)
 
