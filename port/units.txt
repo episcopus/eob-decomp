@@ -1,0 +1,45 @@
+# The src/ units the portable build translates (tools/port/tc2c.py), one a line: every C unit of
+# EOB.EXE (M1). A function they call that no unit here defines (an assembly routine, a library
+# function the runtime does not have yet) is linked as a stub that stops the program
+# (build/port/gen/unported.c). Playbook 80.
+E07A9.C
+E07C8.C
+E082C.C
+E08E6.C
+E0A72.C
+E0ACD.C
+E0BD2.C
+E0CF7.C
+E0D1C.C
+E0DE8.C
+E0EF3.C
+E122E.C
+E1414.C
+E14EF.C
+E1547.C
+E1658.C
+E16A5.C
+E177D.C
+E19BC.C
+E19EC.C
+E19F3.C
+E1A16.C
+E1A1F.C
+E1A29.C
+E1A47.C
+E1A63.C
+E1A65.C
+E1AA6.C
+E1AAA.C
+E1B82.C
+E1BA4.C
+E1C0E.C
+E1DDD.C
+E1DE7.C
+EOV0.C
+EOV1.C
+EOV2.C
+EOV3.C
+EOV4.C
+EOV5.C
+EOV6.C
