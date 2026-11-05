@@ -6253,8 +6253,8 @@ size = 20
 evidence = ["far", "segment"]
 level = "L2"
 match_flags = "-ml -O -Z"
-review = "passed 2026-11-01 rev-sonnet"
 name = "GetPageBuffer"
+review = "passed 2026-11-04 p6-rev-r2"
 
 [[function]]
 id = "e19ec_0016"
@@ -6264,8 +6264,8 @@ size = 20
 evidence = ["frame"]
 level = "L2"
 match_flags = "-ml -O -Z"
-review = "passed 2026-11-01 rev-sonnet"
 name = "GetPageVideo"
+review = "passed 2026-11-04 p6-rev-r2"
 
 [[function]]
 id = "e19ec_002a"
@@ -6275,8 +6275,8 @@ size = 84
 evidence = ["far", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z"
-review = "passed 2026-11-01 rev-sonnet"
 name = "CopyPage"
+review = "passed 2026-11-04 p6-rev-r2"
 
 [[function]]
 id = "e19f3_000e"

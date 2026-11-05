@@ -1,5 +1,17 @@
 # Review: e19ec
 
+# Round P6 re-review (2026-11-04), commit 24711ec
+
+Reviewer: p6-rev-r2
+Commit reviewed: 24711ec (P6 re-review; the P6 round read ce0608f)
+
+Judged: the open P6 must-fix (the gCopyPage export number) and the diff since ce0608f for src/E19EC.C. `make match FILE=src/E19EC.C`: 3 of 3 (124 bytes), exit 0. `make readability UNIT=e19ec`: 0 findings.
+
+- [x] must-fix src/E19EC.C:33: fixed right. The CopyPage comment now says gCopyPage is the driver's export 0 (mcga.ovl 04F8), not export 7. The export number matches the driver table and the rename evidence.
+- [ ] note The older P6 and earlier must-fix items in this file are unchanged and remain ticked. No new false claim in the changed line.
+
+# Round P6 (2026-11-04), commit ce0608f367ed01b1b1df84e254eef04d1a734b27
+
 Reviewer: p6-rev-2
 Commit reviewed: ce0608f367ed01b1b1df84e254eef04d1a734b27 (P6 round; earlier rounds read 8afc719b2730588a3f7f5fe83f8ce0e7a71e447e and 36d77ba6058a5e4014be8869973523d717099b8b)
 
