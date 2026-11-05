@@ -63,7 +63,7 @@ extern int gClickY; /*@ ds:8142: y of the last click, written by src/E1AAD.ASM:4
 extern int gDrawPage; /*@ ds:8115: the graphics driver's draw page (2 while LoadOverlayScreen draws off screen) */
 extern unsigned long gTicks; /*@ ds:848A: the game's own 32-bit tick counter, stepped by the INT 1Ch handler at src/E1D8F.ASM:76 (label 1D8F:0055); the increment of ds:848A is at src/E1D8F.ASM:91 (`inc word ptr ds:[848Ah]`) */
 extern char gFileNameBuf[]; /*@ ds:FE6E */ /* the shared text buffer the filename/format helpers and the memory report build into */
-extern char gCgaMapDefault[]; /*@ ds:113F */ /* the DGROUP image buffer, passed as LoadScreenImage's extra pointer to CopyPage, which hands it to the far handler at ds:8046 only when two slots hold non-zero segments that differ (src/E19EC.C:29-35); overlays cut sprite cells out of it (src/EOV2.C:209, src/EOV5.C:1021) */
+extern char gCgaMapDefault[]; /*@ ds:113F */ /* a 32-byte CGA colour map (values 0..3), not an image buffer: passed as LoadScreenImage's extra pointer to CopyPage, which hands it to the far handler at ds:8046 only when two slots hold non-zero segments that differ (src/E19EC.C:29-35); overlays pass it as the colour-map argument of gGetSpriteCell (src/EOV2.C:181, src/EOV5.C:1008), which cuts the cells from the page after the draw page */
 extern char gCursorChar; /*@ ds:31AC: the one character drawn at the editing cursor */
 extern char gCursorOn; /*@ ds:FC4C: nonzero while the cursor is drawn (blinks in the editor) */
 
@@ -321,9 +321,9 @@ done:
    page gDrawPage to 2. With mode -1 LoadScreenImage skips the 19EC:002A blit, so nothing
    is drawn here: the page reaches the screen only when `dstKind` is itself a screen slot (segment
    0xB800 or 0xA000, src/E19EC.C:5-7). Called by many overlays, all with dstKind 3, for example
-   src/EOV0.C:1328 and src/EOV2.C:208. `name` is the art name the caller passes (for example
-   "ITEMICN", src/EOV2.C:208); gCgaMapDefault is the `extra` pointer passed on to LoadScreenImage. The
-   "Overlay" in this name refers to that buffer, the DGROUP image buffer, not a VROOMM code overlay. */
+   src/EOV0.C:1289 and src/EOV2.C:180. `name` is the art name the caller passes (for example
+   "ITEMICN", src/EOV2.C:180); gCgaMapDefault, a 32-byte CGA colour map (ds:113F), is the `extra` pointer passed on to
+   LoadScreenImage. The "Overlay" in this name is not a VROOMM code overlay: the function loads an art page. */
 /*@ 082C:05EC */ void LoadOverlayScreen(char far *name, int srcKind, int dstKind)
 {
     LoadScreenImage(name, gCgaMapDefault, srcKind, dstKind, -1);
