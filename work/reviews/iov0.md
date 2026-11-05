@@ -1,5 +1,18 @@
 # Review: iov0
 
+# Round P6 re-review (2026-11-04), commit 24711ec
+
+Reviewer: p6-rev-r2
+Commit reviewed: 24711ec (P6 re-review; the P6 round read ce0608f)
+
+Judged: the two open P6 must-fix items and the diff since ce0608f for src/IOV0.C. `make match FILE=src/IOV0.C`: 22 of 22 (11741 bytes), exit 0. `make readability UNIT=iov0`: 0 findings.
+
+- [x] must-fix src/IOV0.C:58, :365, :382, :1156, :1157 (GetPagePtr): fixed right. The declaration, the DrawRect comment and both LoadPacked calls now use `GetPageBuffer`, matching the EOB twin 19EC:0002 and src/I0AED.C. No old name remains in src/.
+- [x] must-fix src/IOV0.C:24, :26, :145, :335, :460, :468, :1123 (gClearDrawPage): fixed right. The header, declaration and five calls now use `gClearPage`, matching EOB ds:8056 and src/I0892.C. No old name remains in src/.
+- [ ] note The registry historical entries and the gPageSegs `why` prose still mention the old `GetPagePtr`, as in i0aed. The registry owner may refresh that prose; it does not block.
+
+# Round P6 (2026-11-04), commit ce0608f367ed01b1b1df84e254eef04d1a734b27
+
 Reviewer: p6-rev-12
 Commit reviewed: P6 round at ce0608f367ed01b1b1df84e254eef04d1a734b27 (main; src/IOV0.C has the changes since round 4 at 8c882ae). Round 4 at 8c882ae (main). Round 3 at 765cb58 (main; src/IOV0.C has the 3e1080e changes since round 2, comments only). Round 2 at 38df9a6 (main; src/IOV0.C is identical to ac24cbe3, the merge of the round 1 fixes eb19ee8). Round 1: c7d121dc592cf92656c3a40297462ce3a16fb3a7 (main when I started; src/IOV0.C, re/symbols.toml and re/globals.toml are identical in the worktree's HEAD 97332d0)
 
