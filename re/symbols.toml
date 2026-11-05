@@ -8961,7 +8961,7 @@ evidence = ["ovl", "near", "segment"]
 name = "InitViewSlots"
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-r2"
 
 [[function]]
 id = "eov4_0066"
@@ -8972,7 +8972,7 @@ evidence = ["ovl", "near", "frame"]
 name = "SetRegionRect"
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-r2"
 
 [[function]]
 id = "eov4_0097"
@@ -8983,7 +8983,7 @@ evidence = ["ovl", "near", "frame"]
 name = "ComputeViewSpan"
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-r2"
 
 [[function]]
 id = "eov4_021e"
@@ -8994,7 +8994,7 @@ evidence = ["ovl", "near", "frame"]
 name = "SetRegionColumnExtent"
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-r2"
 
 [[function]]
 id = "eov4_02a5"
@@ -9005,7 +9005,7 @@ evidence = ["ovl", "near", "frame"]
 name = "CopyViewColumn"
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-r2"
 
 [[function]]
 id = "eov4_036a"
@@ -9016,7 +9016,7 @@ evidence = ["ovl", "near", "frame"]
 name = "ToggleViewColumn"
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-r2"
 
 [[function]]
 id = "eov4_042c"
@@ -9027,7 +9027,7 @@ evidence = ["ovl", "near", "frame"]
 name = "IsSlotLive"
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-r2"
 
 [[function]]
 id = "eov4_044b"
@@ -9037,8 +9037,8 @@ size = 1669
 evidence = ["ovl", "near", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
 name = "BuildViewBlockMap"
+review = "passed 2026-11-04 p6-rev-r2"
 
 [[function]]
 id = "eov4_0ad0"
@@ -9048,8 +9048,8 @@ size = 587
 evidence = ["ovl", "near", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
 name = "DrawSlotItems"
+review = "passed 2026-11-04 p6-rev-r2"
 
 [[function]]
 id = "eov4_0d1b"
@@ -9060,8 +9060,8 @@ evidence = ["ovl", "near", "frame"]
 notes = "matched 2026-11-02 under -v (the file's actual flag, which also keeps CopyViewColumn's tails apart). Four source forms the bytes pin down: the object byte +0xA compares against (char)0xfe/(char)0xff so it is a byte compare (int constants sign-extend first); the absolute sprite is an explicit if/else (abs() is a library call); the +7 nudge is an if/else assigning the local (a ?: keeps the value in AX and stores once); the ds:1A3B m15 test indexes the table directly (only the m0E test keeps the far-pointer local). The earlier -B store question (87 D8 vs 93) is moot: -v is right."
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
 name = "DrawSlotMonsters"
+review = "passed 2026-11-04 p6-rev-r2"
 
 [[function]]
 id = "eov4_1091"
@@ -9071,8 +9071,8 @@ size = 896
 evidence = ["ovl", "near", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
 name = "DrawSlotDecorations"
+review = "passed 2026-11-04 p6-rev-r2"
 
 [[function]]
 id = "eov4_1411"
@@ -9082,8 +9082,8 @@ size = 1459
 evidence = ["ovl", "near", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
 name = "DrawSlotDoor"
+review = "passed 2026-11-04 p6-rev-r2"
 
 [[function]]
 id = "eov4_19c4"
@@ -9094,8 +9094,8 @@ evidence = ["ovl", "near"]
 notes = "matched 2026-11-02 under -v. Three source forms the bytes pin down: the ds:194B bit-7 test is written `g1879[tile] == 0 || (g194B[tile] & 0x80)` with an empty then (a plain `g194B[tile] & 0x80` sign-extends the byte first); the frame guard is written `if (frame >= 0) { body }` (an `if (frame < 0) continue;` gives identical bytes but reloads ES before the record check, a TCC -Z register-state difference); and the cell +2 test is a raw `<< 3 >> 3` (a `% 8` compiles to idiv). The earlier xchg/store question is settled: -v is the file's flag."
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
 name = "DrawSlotProjectiles"
+review = "passed 2026-11-04 p6-rev-r2"
 
 [[function]]
 id = "eov4_1d20"
@@ -9105,8 +9105,8 @@ size = 248
 evidence = ["ovl", "near", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
 name = "DrawSlotTeleporter"
+review = "passed 2026-11-04 p6-rev-r2"
 
 [[function]]
 id = "eov4_1e18"
@@ -9117,7 +9117,7 @@ evidence = ["ovl", "near", "frame"]
 name = "DrawViewSlots"
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-r2"
 
 [[function]]
 id = "eov4_1ede"
@@ -9127,8 +9127,8 @@ size = 115
 evidence = ["ovl", "near", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
 name = "DrawCompass"
+review = "passed 2026-11-04 p6-rev-r2"
 
 [[function]]
 id = "eov4_1f51"
@@ -9139,7 +9139,7 @@ evidence = ["ovl", "frame"]
 name = "DrawViewFrame"
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-r2"
 
 [[function]]
 id = "eov4_2039"
@@ -9149,8 +9149,8 @@ size = 10
 evidence = ["ovl", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
 name = "PreloadViewOverlay"
+review = "passed 2026-11-04 p6-rev-r2"
 
 [[function]]
 id = "eov5_0000"
