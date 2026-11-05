@@ -6893,7 +6893,7 @@ size = 1
 evidence = ["segment"]
 level = "L2"
 match_flags = "tasm /mx"
-review = "passed 2026-11-01 rev-sonnet"
+review = "passed 2026-11-04 p6-rev-r2"
 name = "PadBeforeUnpack0"
 
 [[function]]
@@ -6905,7 +6905,7 @@ evidence = ["far"]
 name = "Unpack0"
 level = "L2"
 match_flags = "tasm /mx"
-review = "passed 2026-11-01 rev-sonnet"
+review = "passed 2026-11-04 p6-rev-r2"
 
 [[function]]
 id = "e1ba8_0072"
@@ -6915,7 +6915,7 @@ size = 15
 evidence = ["far", "frame"]
 level = "L2"
 match_flags = "tasm /mx"
-review = "passed 2026-11-01 rev-sonnet"
+review = "passed 2026-11-04 p6-rev-r2"
 name = "NormalizePtr"
 
 [[function]]
@@ -6927,7 +6927,7 @@ evidence = ["far", "near"]
 name = "NormFar"
 level = "L2"
 match_flags = "tasm /mx"
-review = "passed 2026-11-01 rev-sonnet"
+review = "passed 2026-11-04 p6-rev-r2"
 
 [[function]]
 id = "e1bb1_0001"
