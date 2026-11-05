@@ -1,5 +1,17 @@
 # Review: eov3
 
+# Round P6 re-review (2026-11-04), commit 24711ec
+
+Reviewer: p6-rev-r2
+Commit reviewed: 24711ec (P6 re-review; the P6 round read ce0608f)
+
+Judged: the open P6 must-fix (the LoadGame header field name) and the diff since ce0608f for src/EOV3.C. `make match FILE=src/EOV3.C`: 23 of 23 (6961 bytes), exit 0. `make readability UNIT=eov3`: 0 findings.
+
+- [x] must-fix src/EOV3.C:827 and :829 (LoadGame): fixed right. The header now says `status` nonzero at both places, matching `rec->status` at :892 and :904. `identifiedNameIndex` is gone. The `flag` at :953 sentence is unchanged and still matches the code.
+- [ ] note The older P6 and earlier must-fix items in this file are unchanged and remain ticked. No new false claim in the changed lines.
+
+# Round P6 (2026-11-04), commit ce0608f367ed01b1b1df84e254eef04d1a734b27
+
 Reviewer: p6-rev-8
 Commit reviewed: ce0608f367ed01b1b1df84e254eef04d1a734b27 (main tip when claimed for the P6 round)
 
