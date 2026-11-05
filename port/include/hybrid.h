@@ -27,6 +27,7 @@ typedef struct {
     u32 (*thunk)(void);
     u8 ret_bytes;
     u8 arg_bytes;
+    u8 interrupt;              /* an interrupt handler of port/asm: entered with FLAGS, CS, IP pushed */
 } tc_hybrid_entry;
 
 extern const tc_hybrid_entry tc_hybrid_entries[];

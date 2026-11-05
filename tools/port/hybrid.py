@@ -69,23 +69,39 @@ BUDGET = 20_000_000               # instructions the original may take on the be
 LIMIT_MS = 5000                   # CPU time the C may take
 MAX_WAITS = 2                     # calls of a function the original does not return from, then it is left
 # Machine attributes that are its wiring, not its state: the bench keeps its own
-WIRING = {"uc", "ram", "services", "port_handlers", "breakpoints", "routine_hooks", "watch_hooks",
+WIRING = {"uc", "ram", "services", "port_handlers", "breakpoints", "routine_hooks", "watch_hooks", "chunk_listeners",
           "overlay_listeners", "file_listeners", "tracer", "canonical", "keys"}
 
 
 class Entry(ctypes.Structure):
     _fields_ = [("seg", ctypes.c_uint16), ("off", ctypes.c_uint16), ("overlay", ctypes.c_int16),
                 ("code_off", ctypes.c_uint16), ("name", ctypes.c_char_p), ("unit", ctypes.c_char_p),
-                ("thunk", ctypes.c_void_p), ("ret_bytes", ctypes.c_uint8), ("arg_bytes", ctypes.c_uint8)]
+                ("thunk", ctypes.c_void_p), ("ret_bytes", ctypes.c_uint8), ("arg_bytes", ctypes.c_uint8),
+                ("interrupt", ctypes.c_uint8)]
 
 
 ORACLE_FN = ctypes.CFUNCTYPE(ctypes.c_uint32, ctypes.c_uint32, ctypes.POINTER(ctypes.c_uint8), ctypes.c_uint16)
 
 
+class Regs(ctypes.Structure):
+    _fields_ = [(n, ctypes.c_uint16) for n in ("ax", "bx", "cx", "dx", "si", "di", "bp", "ds", "es", "flags")]
+
+
+# the bench runs interrupt code (a service, a handler with no C) and port accesses for the C
+INT_FN = ctypes.CFUNCTYPE(ctypes.c_int, ctypes.c_uint16, ctypes.c_uint16, ctypes.POINTER(Regs))
+PORT_FN = ctypes.CFUNCTYPE(ctypes.c_int, ctypes.c_int, ctypes.c_uint16, ctypes.c_int, ctypes.POINTER(ctypes.c_uint16))
+
+
 def components(m) -> list:
-    """The machine and the oracle's objects it holds (the EGA, DOS, the VFS, the BIOS, the devices),
-    in a fixed order, so two machines built alike pair up."""
+    """The machine and the oracle's objects it holds (the EGA, DOS, the VFS, the BIOS, the devices,
+    those behind its port handlers), in a fixed order, so two machines built alike pair up."""
     out, seen = [m], {id(m)}
+    # a device the machine reaches only through its port handlers (the AdLib) is state too
+    for rd, _wr in m.port_handlers.values():
+        owner = getattr(rd, "__self__", None)
+        if owner is not None and id(owner) not in seen and type(owner).__module__.startswith("oracle."):
+            seen.add(id(owner))
+            out.append(owner)
     i = 0
     while i < len(out):
         for k, v in vars(out[i]).items():
@@ -130,6 +146,10 @@ class Bench:
         self.message = (ctypes.c_char * 512).in_dll(lib, "tc_hybrid_message")
         self.callback = ORACLE_FN(self.oracle)
         ctypes.c_void_p.in_dll(lib, "tc_hybrid_oracle").value = ctypes.cast(self.callback, ctypes.c_void_p).value
+        self.int_callback = INT_FN(self.oracle_int)
+        self.port_callback = PORT_FN(self.oracle_port)
+        ctypes.c_void_p.in_dll(lib, "tc_hybrid_int_fn").value = ctypes.cast(self.int_callback, ctypes.c_void_p).value
+        ctypes.c_void_p.in_dll(lib, "tc_hybrid_port_fn").value = ctypes.cast(self.port_callback, ctypes.c_void_p).value
         self.oracle_calls = 0
         self.oracle_error = ""
         self.written: set | None = None      # what the overlay manager wrote, while watched
@@ -175,14 +195,35 @@ class Bench:
     def memory(self) -> bytes:
         return ctypes.string_at(self.base, RAM)
 
+    def _memo(self) -> dict:
+        memo = {id(c): c for c in self.comps}
+        memo[id(self.m.uc)] = self.m.uc
+        return memo
+
+    def save(self) -> list:
+        """The oracle's Python state of the bench (its devices, DOS, the EGA), to restore()."""
+        memo = self._memo()
+        return [(c, {k: copy.deepcopy(v, memo) for k, v in vars(c).items() if not (c is self.m and k in WIRING)})
+                for c in self.comps]
+
+    def restore(self, saved: list) -> None:
+        memo = self._memo()
+        for c, d in saved:
+            c.__dict__.update({k: copy.deepcopy(v, memo) for k, v in d.items()})
+
     def outside(self) -> dict:
         m = self.m
         h = hashlib.sha256()
         for path in sorted(m.vfs.layer):
             h.update(path.encode() + b"\0" + bytes(m.vfs.layer[path]))
-        return {"screen": m.ega.digest_bytes().hex(), "adlib": len(getattr(m, "adlib_log", [])),
-                "adlib_tail": repr(getattr(m, "adlib_log", [])[-64:]), "speaker": repr(m.speaker_log[-16:]),
-                "files": h.hexdigest(), "deleted": sorted(m.vfs.deleted)}
+        out = {"screen": m.ega.digest_bytes().hex(), "clock": m.extra, "files": h.hexdigest(),
+               "deleted": sorted(m.vfs.deleted),
+               "timer": (m.port61, m.pic_mask, m.pit_reload, m.next_irq0, m.irq0_in_service, m.irq1_in_service)}
+        # what went to the sound devices and the timer: each log's length and its last entries
+        for name in ("adlib_log", "speaker_log", "tandy_log", "pit0_log"):
+            log = getattr(m, name, [])
+            out[name] = (len(log), repr(log[-64:]))
+        return out
 
     # -- running the original on the bench
     def until(self, seg, off, sp_after, budget=BUDGET) -> str:
@@ -233,6 +274,50 @@ class Bench:
             self.message.value = self.oracle_error.encode()[:500]
             self.failed.value = 1
             return 0
+
+
+    def oracle_int(self, seg, off, regs):
+        """The C reaches interrupt code it has no C for (a service stub, a handler it chains to): run it on
+        the bench as the CPU enters an interrupt, FLAGS and a return to the sentinel pushed below the C's
+        stack, the registers from and back to *regs."""
+        m, r = self.m, regs.contents
+        try:
+            self.oracle_calls += 1
+            ss, sp = self.tc_ss.value, (self.tc_sp.value - 6) & 0xFFFF
+            m.ww(ss, sp, SENTINEL[1])
+            m.ww(ss, sp + 2, SENTINEL[0])
+            m.ww(ss, sp + 4, (r.flags & 0x0CD5) | 0x0202)
+            for k in REG_NAMES:
+                m.set(k, getattr(r, k))
+            m.set("ss", ss)
+            m.set("sp", sp)
+            m.set("cs", seg)
+            m.set("ip", off)
+            why = self.until(SENTINEL[0], SENTINEL[1], (sp + 6) & 0xFFFF)
+            if why:
+                self.oracle_error = "%04X:%04X %s" % ((seg - LOAD_SEG) & 0xFFFF, off, why)
+                self.message.value = self.oracle_error.encode()[:500]
+                return -1
+            for k in REG_NAMES:
+                setattr(r, k, m.get(k))
+            r.flags = m.get("flags") & 0xFFFF
+            return 0
+        except Exception as e:  # noqa: BLE001
+            self.oracle_error = "the bench failed: %r" % e
+            self.message.value = self.oracle_error.encode()[:500]
+            return -1
+
+    def oracle_port(self, write, port, size, value):
+        try:
+            if write:
+                self.m.port_write(port, size, value.contents.value)
+            else:
+                value.contents.value = self.m.port_read(port, size) & 0xFFFF
+            return 0
+        except Exception as e:  # noqa: BLE001
+            self.oracle_error = "the bench's port %04X failed: %r" % (port, e)
+            self.message.value = self.oracle_error.encode()[:500]
+            return -1
 
 
 class Tester:
@@ -326,14 +411,15 @@ class Tester:
              "at": m.insns}
         ss, sp, ds = m.get("ss"), m.get("sp"), m.get("ds")
         ret_ip, ret_cs = m.rw(ss, sp), m.rw(ss, sp + 2)
-        if ds != DGROUP:
+        frame = 6 if e.interrupt else 4                  # IRET pops FLAGS too
+        if ds != DGROUP and not e.interrupt:
             r["status"] = "not tested: DS is %04X at the entry" % ds
             return r
         t0 = time.monotonic()
         # 2. the original
         bench.take(m, self.pairs, self.memo0)
         bench.watch()
-        why = bench.until(ret_cs, ret_ip, (sp + 4) & 0xFFFF)
+        why = bench.until(ret_cs, ret_ip, (sp + frame) & 0xFFFF)
         manager = bench.unwatch()
         if why:
             r["status"] = "not tested: the original %s" % why
@@ -356,7 +442,7 @@ class Tester:
         c_mem, c_out = bench.memory(), bench.outside()
         # 4. compare
         lo = ss * 16
-        masks = [(lo, lo + ((sp + 4 + e.arg_bytes) & 0xFFFF))]
+        masks = [(lo, lo + ((sp + frame + e.arg_bytes) & 0xFFFF))]
         spans = diff(o_mem, c_mem, masks, manager)
         if manager:
             r["masked_overlay_manager"] = len(manager)
@@ -403,20 +489,28 @@ class Direct:
 
     STACK = (0x9000, 0xFFF0)          # SS:SP of the calls: conventional memory the loaded program leaves free
 
-    def __init__(self, lib: Path = LIB):
+    def __init__(self, lib: Path = LIB, **machine):
+        """machine: run.build_machine's options (mouse=True, sound="adlib")"""
         self.t = Tester(1, None, lib)
-        self.bench = Bench(self.t.lib, run.build_machine)
+        self.bench = Bench(self.t.lib, lambda: run.build_machine(**machine))
         self.m = self.bench.m
         self.index = {e.name.decode(): i for i, e in enumerate(self.t.entries)}
 
     def write(self, seg: int, off: int, data: bytes) -> None:
         self.m.write(seg, off, data)
 
+    def clear_logs(self) -> None:
+        """Empties the oracle's device logs (the bench copies them at every call: a long sequence slows)."""
+        for name in ("adlib_log", "speaker_log", "tandy_log", "pit0_log", "tod_log"):
+            if hasattr(self.m, name):
+                getattr(self.m, name).clear()
+
     def read(self, seg: int, off: int, n: int) -> bytes:
         return bytes(self.m.read(seg, off, n))
 
-    def call(self, name: str, *args) -> dict:
-        """args: ints (a word each) or (value, 4) for a long or a far pointer. Returns {"status":
+    def call(self, name: str, *args, ds: int = DGROUP, es: int = DGROUP) -> dict:
+        """args: ints (a word each) or (value, 4) for a long or a far pointer. An interrupt handler is
+        entered as the CPU enters it (FLAGS, CS and IP pushed; ds and es as given). Returns {"status":
         "same" | "differs" | "C stopped" | "not tested: ...", "value": the original's DX:AX, ...}."""
         m, bench, i = self.m, self.bench, self.index[name]
         e = self.t.entries[i]
@@ -424,28 +518,36 @@ class Direct:
         for a in args:
             v, w = a if isinstance(a, tuple) else (a, 2)
             block += (v & (0xFFFFFFFF if w == 4 else 0xFFFF)).to_bytes(w, "little")
+        if e.interrupt:
+            block = b"\x02\x02" + block                  # the FLAGS the INT pushed: IF set
         ss, top = self.STACK
         sp = (top - len(block) - 4) & 0xFFFF
+        frame = 6 if e.interrupt else 4
         m.write(ss, sp + 4, block)
         m.ww(ss, sp, SENTINEL[1])
         m.ww(ss, sp + 2, SENTINEL[0])
-        for r, v in (("ss", ss), ("sp", sp), ("ds", DGROUP), ("es", DGROUP), ("cs", LOAD_SEG + e.seg), ("ip", e.off)):
+        for r, v in (("ss", ss), ("sp", sp), ("ds", ds), ("es", es), ("cs", LOAD_SEG + e.seg), ("ip", e.off)):
             m.set(r, v)
         before = bench.memory()
-        why = bench.until(SENTINEL[0], SENTINEL[1], (sp + 4) & 0xFFFF)
+        before_state = bench.save()
+        why = bench.until(SENTINEL[0], SENTINEL[1], (sp + frame) & 0xFFFF)
         r = {"function": name}
         if why:
             r["status"] = "not tested: the original %s" % why
             return r
         o_mem, o_regs = bench.memory(), (m.get("ax"), m.get("dx"))
         r["value"] = (o_regs[1] << 16) | o_regs[0]
+        o_out = bench.outside()
+        after_state = bench.save()
         ctypes.memmove(bench.base, before, RAM)
         m.uc.ctl_remove_cache(0, RAM)
+        bench.restore(before_state)
         val = ctypes.c_uint32(0)
-        code = self.t.lib.tc_hybrid_run(i, ss, sp, DGROUP, ctypes.byref(val), LIMIT_MS)
-        c_mem = bench.memory()
+        code = self.t.lib.tc_hybrid_run(i, ss, sp, ds, ctypes.byref(val), LIMIT_MS)
+        c_mem, c_out = bench.memory(), bench.outside()
         ctypes.memmove(bench.base, o_mem, RAM)          # go on from the original's state
         m.uc.ctl_remove_cache(0, RAM)
+        bench.restore(after_state)
         if code:
             r["status"] = "C stopped"
             r["why"] = bench.message.value.decode("latin-1")
@@ -456,15 +558,13 @@ class Direct:
             mask = (1 << (8 * e.ret_bytes)) - 1
             if r["value"] & mask != val.value & mask:
                 regs.append("returns %X, the original %X" % (val.value & mask, r["value"] & mask))
-        r["status"] = "same" if not spans and not regs else "differs"
+        outs = ["%s differs" % k for k in o_out if o_out[k] != c_out[k]]
+        r["status"] = "same" if not spans and not regs and not outs else "differs"
         if r["status"] == "differs":
             r["registers"] = regs
+            r["outside"] = outs
             r["memory"] = [self.t.describe(a, b, o_mem, c_mem) for a, b in spans[:8]]
         return r
-
-
-class Regs(ctypes.Structure):
-    _fields_ = [(n, ctypes.c_uint16) for n in ("ax", "bx", "cx", "dx", "si", "di", "bp", "ds", "es", "flags")]
 
 
 class Video(ctypes.Structure):

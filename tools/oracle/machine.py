@@ -103,6 +103,7 @@ class Machine:
         self.service_counts: dict = {}   # calls that reached one of our service stubs, by number
         self.overlay_listeners: list = []   # callables(machine) after each read of GAME.OVR (routines.py)
         self.file_listeners: list = []   # callables(machine, op, path, pos, n) after each file read/write
+        self.chunk_listeners: list = []  # callables(machine, chunk) after each run chunk (cclock.py)
         self.image_loads: list = []      # (name, segment, relocation factor) of every INT 21h 4B03h load of an MZ file
         self.canonical = None            # callable(machine, memory) putting a rebuild's memory in the original's form (layout.py)
 
@@ -574,6 +575,8 @@ class Machine:
                     return "max-insns"
                 start = self.linear(self.get("cs"), self.get("ip"))
                 uc.emu_start(start, 0xFFFFFFFF, count=chunk)
+                for cb in self.chunk_listeners:
+                    cb(self, chunk)
                 self.insns += chunk
                 # HLT leaves emu_start early; jump to the next timer event instead of spinning
                 # (in a replay the interrupts come from the recorded reads, so a halt simply resumes)

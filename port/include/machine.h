@@ -60,6 +60,20 @@ void machine_boot(const char *exe_name, const u8 *cmdline, u16 cmdlen, int mouse
 /* A software interrupt from the game, through the vector table. */
 void machine_int(u8 n, tc_regs *r);
 
+/* What the CPU runs for an interrupt whose handler is at seg:off, the registers in r (an IRQ, an INT,
+   a handler chaining to the vector it saved with `jmp far` or `pushf; call far`): one of the
+   machine's service stubs runs its service; the generic IRET nothing; the ROM's default INT 8 and its
+   IRQ default (EOI) run as their code does (machine.c); a routine of port/asm registered at that
+   address runs (an interrupt handler: it keeps every register, so r is unchanged). Anything else stops
+   (in the hybrid build, the original's code runs on the bench). */
+void machine_call_handler(u16 seg, u16 off, tc_regs *r);
+
+/* A hardware interrupt: the handler of vector n, as the CPU enters it (machine_call_handler). */
+void machine_irq(u8 n);
+
+/* An interrupt handler of port/asm (its routine marked `interrupt` beside its address) */
+typedef void (*machine_isr)(void);
+
 /* What the stub of service n does; 0, or -1 when the machine has no service n. */
 int machine_service(u8 n, tc_regs *r);
 
@@ -95,6 +109,11 @@ void mouse_int33(tc_regs *r);
 u16 machine_in(u16 port, int size);
 void machine_out(u16 port, int size, u16 value);
 void ports_reset(int adlib);
+
+/* A port access by the game's code (an assembly routine, the ROM's code): machine_in and machine_out;
+   in the hybrid build the oracle's ports on the bench, whose devices are the session's. */
+u16 machine_port_in(u16 port, int size);
+void machine_port_out(u16 port, int size, u16 value);
 u32 machine_irq0_period(void);
 void machine_unimplemented_port(const char *dir, u16 port, int size) __attribute__((noreturn));
 

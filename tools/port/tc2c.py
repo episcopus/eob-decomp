@@ -52,7 +52,12 @@ SYSINC = ROOT / "port" / "include" / "tc" / "sys"  # the library headers, in pla
 TCLIB_H = ROOT / "port" / "include" / "tclib.h"   # what the port's runtime provides
 LITERALS = ROOT / "port" / "literals.json"        # where each literal is (tools/port/literals.py)
 ASM_C = ROOT / "port" / "asm"                     # the assembly routines, hand-written in C (M3)
-HANDWRITTEN = re.compile(r"/\*@ ([0-9A-F]{4}):([0-9A-F]{4}) \*/\s*\w[\w ]*?\b(\w+)\s*\(")
+# `/*@ SSSS:OOOO */` before a routine; `/*@ SSSS:OOOO interrupt */` before an interrupt handler (entered
+# through a vector, `void f(void)`, which keeps every register and returns with IRET). A `static` routine
+# so marked is the unit's own helper (its address documents it); it is not registered.
+HANDWRITTEN = re.compile(r"/\*@ ([0-9A-F]{4}):([0-9A-F]{4})( interrupt)? \*/\s*((static\s+)?(\w+)\s+(\w+)\s*\(([^)]*)\))")
+# the types a routine of port/asm may take or return, by size (a char or an int is pushed as a word)
+OWN_SIZE = {"void": 0, "u8": 1, "s8": 1, "u16": 2, "s16": 2, "u32": 4, "s32": 4, "farptr": 4}
 CLANG_ARGS = ["-x", "c", "-std=gnu89", "-target", "msp430", "-fsigned-char", "-fsyntax-only",
               "-nostdinc", "-Wno-pragma-pack", "-Wno-incompatible-function-pointer-types",
               "-Xclang", "-ast-dump=json"]
@@ -317,7 +322,7 @@ def place_literals(lits: list[bytes], dgroup: bytes) -> list[int]:
 # ---- the program: what every unit needs to know ------------------------------------------------
 
 class Program:
-    def __init__(self, image: Path | None, layout: Path | None):
+    def __init__(self, image: Path | None, layout: Path | None, asm_c: list[Path] | None = None):
         self.dgroup = b""
         if image is not None:
             f = image.read_bytes()
@@ -354,12 +359,17 @@ class Program:
         self.called: set[str] = set()
         self.addr: dict[str, tuple] = {}      # function name -> its annotation, the first seen
         self.alias: dict[str, str] = {}       # a name callers use -> the defined function at its address
-        # the assembly routines port/asm has in C: name -> (segment, offset, file), from the `/*@ */`
-        # before each definition, as in src/
+        # the assembly routines port/asm has in C: name -> (segment, offset, file, interrupt handler),
+        # from the `/*@ */` before each definition, as in src/
         self.handwritten: dict[str, tuple] = {}
-        for f in sorted(ASM_C.glob("*.c")):
+        for f in sorted(asm_c if asm_c is not None else ASM_C.glob("*.c")):
             for m in HANDWRITTEN.finditer(f.read_text()):
-                self.handwritten[m.group(3)] = (int(m.group(1), 16), int(m.group(2), 16), f.name)
+                if m.group(5):
+                    continue
+                params = [x.strip().split()[0] for x in m.group(8).split(",") if x.strip() not in ("", "void")]
+                own = (m.group(6), params, m.group(4))
+                self.handwritten[m.group(7)] = (int(m.group(1), 16), int(m.group(2), 16), f.name, bool(m.group(3)),
+                                                own)
 
     def canonical(self, name: str):
         """The one prototype of a function: its definition's; else, among its declarations, a
@@ -1324,35 +1334,37 @@ def hybrid_table(units, prog, handwritten) -> str:
            '#include "tcport.h"', '#include "tclib.h"', '#include "ported.h"', '#include "hybrid.h"', ""]
     rows = []
     any_unit = units[0][0]
-    todo = [(u, name, prog.defs[name], u.funcs[name], u.path.name) for u, _ast in units for name in sorted(u.defined)]
-    todo += [(any_unit, name, t, prog.handwritten[name][:2], "port/asm/" + prog.handwritten[name][2])
-             for name, t in handwritten]
-    for u, name, t, (seg, off), where in todo:
+    todo = [(u, name, prog.defs[name], u.funcs[name], u.path.name, 0) for u, _ast in units
+            for name in sorted(u.defined)]
+    todo += [(any_unit, name, t, prog.handwritten[name][:2], "port/asm/" + prog.handwritten[name][2],
+              int(prog.handwritten[name][3])) for name, t in handwritten]
+    for u, name, t, (seg, off), where, isr in todo:
         ovl, code_off = -1, 0
         if isinstance(seg, str):
             ovl, code_off = int(seg[3:]), off
             stub = prog.stubs.get((ovl, off))
             seg, off = stub if stub is not None else (0xFFFF, 0xFFFF)
         args, o = [], 0
+        own = t[0] == "own"
         for x in t[2]:
-            w = 4 if u.size(x) > 2 else 2
-            args.append("(%s)tc_ld_u%d(tc_fp_add(a_, %d))" % (u.cname(x), 8 * w, o))
+            w = (4 if OWN_SIZE[x] > 2 else 2) if own else (4 if u.size(x) > 2 else 2)
+            args.append("(%s)tc_ld_u%d(tc_fp_add(a_, %d))" % (x if own else u.cname(x), 8 * w, o))
             o += w
-        call = "%s(%s)" % (u.fn_name(name), ", ".join(args))
+        call = "%s(%s)" % (name if own else u.fn_name(name), ", ".join(args))
         out.append("static u32 th_%s(void)" % name)
         out.append("{")
         out.append("    farptr a_ = TC_MKFP(tc_ss, (u16)(tc_sp + 4u));")
         if not args:
             out.append("    (void)a_;")
-        if t[1][0] == "void":
+        if (t[1] if own else t[1][0]) == "void":
             out += ["    %s;" % call, "    return 0;"]
             rb = 0
         else:
-            rb = u.size(t[1])
+            rb = OWN_SIZE[t[1]] if own else u.size(t[1])
             out.append("    return (u32)(u%d)%s;" % (8 * rb, call))
         out += ["}", ""]
-        rows.append('    {0x%04X, 0x%04X, %d, 0x%04X, "%s", "%s", th_%s, %d, %d},'
-                    % (seg, off, ovl, code_off, name, where, name, rb, o))
+        rows.append('    {0x%04X, 0x%04X, %d, 0x%04X, "%s", "%s", th_%s, %d, %d, %d},'
+                    % (seg, off, ovl, code_off, name, where, name, rb, o, isr))
     out.append("const tc_hybrid_entry tc_hybrid_entries[] = {")
     out += rows
     out += ["};", "const unsigned tc_hybrid_entry_count = %d;" % len(rows), ""]
@@ -1366,10 +1378,12 @@ def main(argv=None) -> int:
                     help="the original, whose DGROUP places the string literals (read only)")
     ap.add_argument("--layout", type=Path, default=ROOT / "build" / "re" / "eob.json",
                     help="TLINK's segment table and the overlay stubs (make overlays)")
+    ap.add_argument("--asm", type=Path, nargs="*", default=None,
+                    help="the files of port/asm to register (default: every one; the build passes its list)")
     ap.add_argument("units", nargs="+", type=Path)
     a = ap.parse_args(argv)
     a.out.mkdir(parents=True, exist_ok=True)
-    prog = Program(a.image if a.image.exists() else None, a.layout if a.layout.exists() else None)
+    prog = Program(a.image if a.image.exists() else None, a.layout if a.layout.exists() else None, a.asm)
     done = []
     try:
         units = []
@@ -1398,7 +1412,7 @@ def main(argv=None) -> int:
     tab += ["    tc2c_init_%s();" % n for n in done]
     tab += ["    /* the assembly routines in C (port/asm), at their original addresses */"]
     tab += ['    tc_code_register(TC_MKFP(tc_load_seg + 0x%04X, 0x%04X), (tc_fn)%s, "%s");' % (sg, of, n, n)
-            for n, (sg, of, _f) in sorted(prog.handwritten.items()) if prog.canonical(n)]
+            for n, (sg, of, *_x) in sorted(prog.handwritten.items())]
     tab += ["}"]
     (a.out / "units.c").write_text("\n".join(['#include "ported.h"'] + tab) + "\n")
 
@@ -1413,6 +1427,10 @@ def main(argv=None) -> int:
     missing = sorted(n for n in prog.called if n not in prog.defs and n not in prog.alias
                      and not (n in prog.library and n in prog.runtime) and n not in prog.handwritten)
     handwritten = sorted(n for n in prog.called if n in prog.handwritten and n not in prog.defs)
+    isrs = sorted(n for n, h in prog.handwritten.items() if h[3])
+    # in the per-function test's table: every routine of port/asm (the prototype of the C units that call
+    # it, else its own definition's), and the handlers
+    tested = sorted(n for n in prog.handwritten if n not in prog.defs)
     hdr = ["/* Generated by tools/port/tc2c.py: one prototype for each function the translated units",
            "   define or call (the library's that the runtime provides are in tclib.h). */",
            "#ifndef TC2C_PORTED_H", "#define TC2C_PORTED_H", '#include "tcport.h"', ""]
@@ -1422,6 +1440,13 @@ def main(argv=None) -> int:
     hdr += ["", "/* the assembly routines in C (port/asm) */"]
     for name in handwritten:
         hdr.append("%s;" % any_unit.proto(name, decl_of(name)))
+    for name in tested:
+        if name not in handwritten and not prog.handwritten[name][3]:
+            hdr.append("%s;" % (any_unit.proto(name, decl_of(name)) if prog.canonical(name)
+                                else prog.handwritten[name][4][2]))
+    hdr += ["", "/* the interrupt handlers in C (port/asm) */"]
+    for name in isrs:
+        hdr.append("void %s(void);" % name)
     hdr += ["", "/* called, defined by no translated unit (unported.c) */"]
     for name in missing:
         hdr.append("%s;" % any_unit.proto(name, decl_of(name)))
@@ -1481,7 +1506,10 @@ def main(argv=None) -> int:
               for sg, of, fn in registered]
     stubs += ["}", "#endif", ""]
     (a.out / "unported.c").write_text("\n".join(stubs))
-    (a.out / "hybrid.c").write_text(hybrid_table(units, prog, [(n, decl_of(n)) for n in handwritten]))
+    isr_type = ("func", ("void",), [], False)
+    (a.out / "hybrid.c").write_text(hybrid_table(
+        units, prog, [(n, isr_type if prog.handwritten[n][3] else decl_of(n) if prog.canonical(n)
+                       else ("own",) + prog.handwritten[n][4][:2]) for n in tested]))
     kinds = {k: sum(1 for n in missing if kind(n) == k) for k in ("library", "assembly", "C")}
     print("tc2c: %d units translated, %d functions; %d assembly routines in C (port/asm); still unported: "
           "%d library, %d assembly, %d C" % (len(done), len(prog.defs), len(handwritten), kinds["library"],

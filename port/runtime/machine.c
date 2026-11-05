@@ -100,23 +100,80 @@ int machine_service(u8 n, tc_regs *r)
     return 0;
 }
 
+#ifdef TC_HYBRID
+/* the hybrid build: a service, or code the port has no C for, runs in the oracle on the bench
+   (hybrid.c), whose DOS, BIOS and devices are the session's */
+int tc_hybrid_oracle_int(u16 seg, u16 off, tc_regs *r);
+#endif
+
+/* the ROM's default INT 8 (machine.py _build_rom): the BIOS tick count at 40:6C, INT 1Ch, EOI */
+static void rom_int8(void)
+{
+    tc_regs r;
+    farptr t = TC_MKFP(0x0040u, 0x006Cu);
+    u16 lo = (u16)(tc_ld_u16(t) + 1u);
+    tc_st_u16(t, lo);
+    if (lo == 0) {
+        tc_st_u16(TC_MKFP(0x0040u, 0x006Eu), (u16)(tc_ld_u16(TC_MKFP(0x0040u, 0x006Eu)) + 1u));
+    }
+    memset(&r, 0, sizeof r);
+    machine_int(0x1C, &r);
+    machine_port_out(0x20, 1, 0x20);
+}
+
+void machine_call_handler(u16 seg, u16 off, tc_regs *r)
+{
+    tc_fn fn;
+    if (seg == MACHINE_ROM_SEG) {
+        if (off >= MACHINE_STUB_OFF0 && off < MACHINE_STUB_OFF0 + 0x400u && (off - MACHINE_STUB_OFF0) % 4u == 0) {
+            u8 k = (u8)((off - MACHINE_STUB_OFF0) / 4u);
+#ifdef TC_HYBRID
+            if (tc_hybrid_oracle_int(seg, off, r)) {
+                return;
+            }
+#endif
+            if (machine_service(k, r) != 0) {
+                machine_unimplemented("INT has no service (vector points at its stub)", r);
+            }
+            return;
+        }
+        if (off == 0) {
+            return;                                /* the generic IRET */
+        }
+        if (off == MACHINE_ROM_INT8) {
+            rom_int8();
+            return;
+        }
+        if (off == MACHINE_ROM_EOI) {
+            machine_port_out(0x20, 1, 0x20);
+            return;
+        }
+    }
+    fn = tc_code_find(TC_MKFP(seg, off));
+    if (fn != 0) {
+        ((machine_isr)fn)();
+        return;
+    }
+#ifdef TC_HYBRID
+    if (tc_hybrid_oracle_int(seg, off, r)) {
+        return;
+    }
+#endif
+    tc_fail(74, "an interrupt goes to %04X:%04X (load-relative %04X:%04X), which has no C", seg, off,
+            (u16)(seg - tc_load_seg), off);
+}
+
 void machine_int(u8 n, tc_regs *r)
 {
     farptr v = tc_ld_u32(TC_MKFP(0, (u16)(n * 4u)));
-    u16 seg = TC_SEG(v), off = TC_OFF(v);
-    if (seg == MACHINE_ROM_SEG && off >= MACHINE_STUB_OFF0 && off < MACHINE_STUB_OFF0 + 0x400u
-        && (off - MACHINE_STUB_OFF0) % 4u == 0) {
-        u8 k = (u8)((off - MACHINE_STUB_OFF0) / 4u);
-        if (machine_service(k, r) != 0) {
-            machine_unimplemented("INT has no service (vector points at its stub)", r);
-        }
-        return;
-    }
-    if (seg == MACHINE_ROM_SEG && off == 0) {
-        return;                                /* the generic IRET */
-    }
-    tc_fail(74, "INT %02Xh goes to the game's handler at %04X:%04X, which the machine cannot call yet (M3)",
-            n, seg, off);
+    machine_call_handler(TC_SEG(v), TC_OFF(v), r);
+}
+
+void machine_irq(u8 n)
+{
+    tc_regs r;
+    memset(&r, 0, sizeof r);
+    machine_int(n, &r);
 }
 
 u32 machine_time_of_day(void)

@@ -30,7 +30,8 @@ CFLAGS := -std=gnu99 -O2 -Wall -Wextra -Werror -Wno-unused-value -Wno-parenthese
 # the generated C keeps every parameter of src/, read or not
 GEN_CFLAGS := -Wno-unused-parameter
 HEADERS := $(wildcard port/include/*.h port/include/tc/*.h port/asm/*.h)
-# the assembly units written in C (M3); tc2c reads their `/*@ */` addresses
+# the assembly units written in C (M3); tc2c reads their `/*@ */` addresses. OUT and ASM_C can be
+# given on the command line, to build a unit being written apart from the others
 ASM_C := $(wildcard port/asm/*.c)
 TC2C_IN := port/units.txt tools/port/tc2c.py port/include/tc/prelude.h $(wildcard port/include/tc/sys/*.h) \
 	port/include/tclib.h port/literals.json build/re/eob.json eob/EOB.EXE $(wildcard src/*.H src/*.ASM) \
@@ -45,7 +46,7 @@ HYB_O := $(patsubst %.c,$(HYB)/obj/%.o,$(HYB_C))
 CORE_C := port/runtime/arena.c port/runtime/tclib.c port/main.c $(MACHINE_C) $(ASM_C)
 CORE_O := $(patsubst $(GEN)/%.c,$(OBJ)/gen/%.o,$(GEN_C)) $(patsubst %.c,$(OBJ)/%.o,$(CORE_C))
 
-.PHONY: port port-check port-boundary port-sdl port-hybrid
+.PHONY: port port-check port-boundary port-sdl port-hybrid FORCE
 
 port: port-boundary $(OUT)/eob-port-headless port-check port-sdl
 
@@ -53,9 +54,18 @@ port-boundary:
 	@files=$$(grep -rlE '#include *<SDL|SDL_[A-Za-z]' port --include='*.c' --include='*.h' | grep -v '^port/platform/' || true); \
 	if [ -n "$$files" ]; then echo "port: only port/platform/ may use SDL; found in: $$files"; exit 1; fi
 
+# the list of port/asm files this build registers, rewritten only when it changes, so a build with
+# another list translates again
+$(GEN)/asm.list: FORCE
+	@mkdir -p $(GEN)
+	@echo "$(ASM_C)" | cmp -s - $@ || echo "$(ASM_C)" > $@
+
+FORCE:
+
 # one translation writes every generated file (a stamp: make 3.81 has no grouped targets)
-$(GEN)/.stamp: $(TC2C_IN) $(addprefix src/,$(UNITS))
-	$(PY) tools/port/tc2c.py --out $(GEN) --image eob/EOB.EXE --layout build/re/eob.json $(addprefix src/,$(UNITS))
+$(GEN)/.stamp: $(TC2C_IN) $(addprefix src/,$(UNITS)) $(GEN)/asm.list
+	$(PY) tools/port/tc2c.py --out $(GEN) --image eob/EOB.EXE --layout build/re/eob.json --asm $(ASM_C) -- \
+		$(addprefix src/,$(UNITS))
 	@touch $@
 
 $(GEN_C) $(GEN)/hybrid.c: $(GEN)/.stamp

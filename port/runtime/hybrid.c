@@ -223,3 +223,41 @@ int tc_hybrid_out(u16 port, int size, u16 value)
     }
     return code;
 }
+
+/* ---- the oracle's services, handlers and ports, for the routines of port/asm --------------------- */
+
+/* set by the oracle (ctypes) while a test runs: runs the code at seg:off as an interrupt on the bench
+   (pushes FLAGS and a return to the sentinel, the registers from and back to r); 0, or -1 when it did
+   not return. And a port access on the bench's devices. */
+int (*tc_hybrid_int_fn)(u16 seg, u16 off, tc_regs *r);
+int (*tc_hybrid_port_fn)(int write, u16 port, int size, u16 *value);
+
+int tc_hybrid_oracle_int(u16 seg, u16 off, tc_regs *r)
+{
+    int bad;
+    if (tc_hybrid_int_fn == NULL) {
+        return 0;
+    }
+    in_oracle = 1;
+    bad = tc_hybrid_int_fn(seg, off, r);
+    in_oracle = 0;
+    if (bad) {
+        tc_fail(73, "the original's interrupt code at %04X:%04X, run for the C, did not return (%s)", seg, off,
+                tc_hybrid_message);
+    }
+    if (late) {
+        tc_fail(72, "the C did not return within the time limit (last in the original's %04X:%04X)", seg, off);
+    }
+    return 1;
+}
+
+int tc_hybrid_oracle_port(int write, u16 port, int size, u16 *value)
+{
+    if (tc_hybrid_port_fn == NULL) {
+        return 0;
+    }
+    if (tc_hybrid_port_fn(write, port, size, value)) {
+        tc_fail(73, "the oracle's port %s %04Xh failed (%s)", write ? "out" : "in", port, tc_hybrid_message);
+    }
+    return 1;
+}

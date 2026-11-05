@@ -19,7 +19,7 @@ sound and state.
 | Decisions | the nine answered by the human 2026-11-04, the five follow-ups (A to E) 2026-11-05 (section "Decisions"). Linux and Windows deferred by the human 2026-11-05: macOS only for now. Left for the human: install the newest LLVM (section "What the human installs") |
 | M1 tc2c for every C unit | done 2026-11-05 except the LLVM pin, which waits for the human's install: `make port` translates all 41 C units of `EOB.EXE` (609 functions) with none refused, compiles them with `-Werror` and links them; what is still a stub is 63 assembly routines (M3) and 23 library functions that need the machine (section "M1") |
 | M2 the per-function test | the machinery done 2026-11-05: `make port-hybrid` (section "M2"); on the five `EOB.EXE` goldens 129 of the 594 functions with an entry are reached, 118 are the same as the original on every call tested (635 calls), none differ, 11 are reached only where they wait for an interrupt (M3). The rest of the check, every function of `src/`, needs sessions that reach them |
-| M3 the machine and the assembly units | started 2026-11-05 (section "M3"): `port/asm/` has the four units that touch no hardware, `E1BA8`, `E1D8C`, `E19FC` and `E1D9A` (8 routines), each the same as the original on every call tested; the machine boots to the oracle's memory byte for byte, and its DOS, INT 10h for MCGA, BIOS time, INT 33h driver and ports (PIC, PIT, 61h, 60h, retrace, DAC, AdLib) answer every one of the 335,055 service calls and port accesses of the five goldens as the oracle does. Next: the hardware interrupts with the clock and the handlers' units, the library functions and the assembly units on the machine, the other 15 units |
+| M3 the machine and the assembly units | started 2026-11-05 (section "M3"): `port/asm/` has the four units that touch no hardware, `E1BA8`, `E1D8C`, `E19FC` and `E1D9A` (8 routines), and the interrupt handlers' units `E1D8F`, `E1AAD`, `E1948`, `E_TEXT` with the retrace `E1DE4` (35 routines in all), each the same as the original on every call tested; the C-unit clock in the oracle and the five `.clock.json` recordings ("The interrupts and the C clock"); the machine boots to the oracle's memory byte for byte, and its DOS, INT 10h for MCGA, BIOS time, INT 33h driver and ports (PIC, PIT, 61h, 60h, retrace, DAC, AdLib) answer every one of the 335,055 service calls and port accesses of the five goldens as the oracle does. Next: the machine's wait for spinning routines, the library functions on the machine, the other 10 units |
 | M4 to M7 | not started (section "Order of work") |
 
 ## Why `src/` does not compile natively as it is
@@ -409,10 +409,96 @@ make port-hybrid && .venv/bin/python tools/port/hybrid.py --shadow [--session NA
     144,585 AdLib status polls, 63,946 retrace polls, 90,793 EOIs, the rest; all the same. A copy
     with three bugs (the current drive, one relocation of a 4B03h load, a retrace poll's charge) is
     caught.
-- Not yet: the interrupts the hardware raises (INT 8, 9, the mouse's events) with the clock of the C
-  units, which need the handlers' units (`E_TEXT.ASM`, `E1948.ASM`, `E1AAD.ASM`, `E1D8F.ASM`); the
-  library functions and the assembly units on `machine_int` and `machine_in`/`machine_out` (they
-  still run as the original's code in the hybrid build); text output.
+- Not yet: the delivery of the hardware interrupts in the port itself, on the C clock (M5, with tc2c's
+  block counts); the library functions on `machine_int` (they still run as the original's code in the
+  hybrid build); text output. The interrupts' handlers and the clock are the next section.
+
+### The interrupts and the C clock (2026-11-05)
+
+```
+make golden CLOCK=1 [CHECK=1] [NAME=x]          # the C-clock recordings beside the goldens
+```
+
+- **Handlers in C.** A routine of `port/asm` marked `/*@ SSSS:OOOO interrupt */` is an interrupt
+  handler, `void f(void)`, entered through a vector: tc2c registers it at its address (with no caller
+  in C it is declared in `ported.h` as such) and gives it an entry in the per-function table whose
+  frame is IRET's (FLAGS, CS, IP). The machine runs whatever a vector or a saved vector points at with
+  `machine_call_handler(seg, off, &regs)`: a service stub, the generic IRET, the ROM's default INT 8
+  (written in C from its code: the tick count at 40:6C, INT 1Ch, EOI) and IRQ default (EOI), or a
+  registered handler; `machine_irq(n)` is the hardware's entry, `machine_int(n)` a software INT's. A
+  handler chaining to the vector it replaced (`jmp far`, `pushf; call far`) calls `x86_chain`; its port
+  accesses are `machine_port_in`/`machine_port_out` (`x86_inb`, `x86_outb`).
+- **On the bench.** In the hybrid build a service, a handler with no C and every port access of a
+  routine of `port/asm` run on the bench, whose DOS and devices are the session's (`hybrid.py`:
+  `oracle_int` enters the code as the CPU enters an interrupt, `oracle_port` reads or writes the
+  oracle's port); the C machine answers the shadow test only. What a call is compared on now includes
+  the oracle's clock charges (`extra`): a wait that polls once too often or too few times differs.
+  `hybrid.Direct` calls an interrupt handler with chosen registers (`ds=`), and takes the oracle's
+  Python state back between the two runs, so a device the original changed is the same for the C.
+- **Done**, every handler unit of the plan and the retrace (35 routines of `port/asm` in all now; 28
+  assembly routines are still stubs):
+  - `E1D8F`: `ReadTickCount`, `InstallTickHandler`, `RemoveTickHandler`, the INT 1Ch handler `TickIsr`
+    (1D8F:0055). `E1DE4`: `IsInVerticalRetrace`, `WaitRetrace`.
+  - `E1AAD`, the keyboard driver: the readers, `GetKeyState`, install and removal, `QueueInputEvent`,
+    `HandleMouseButtons`; the INT 9 handler `KeyboardIsr` (1AAD:07C0, the address the install sets)
+    and the bare IRET it gives INT 23h (1AAD:09F5); its near routines are static.
+  - `E1948`, the PC speaker and Tandy driver: install, uninstall, `StartSound`, `StopSound`, resume,
+    the silence; the INT 8 handler `SoundTimerIsr` at 1948:000A (the vector's address: the symbol's
+    first four bytes, at 0006, are the saved vector).
+  - `E_TEXT`, the AdLib driver: the accessors at 03A1 to 03FA, the two INT 8 handlers (3E66, 3EE5),
+    start, stop, the queue and the tables, `StartSample`; the script interpreter reads its jump table
+    (4F94) from the arena and switches on the target address, so a changed entry is still followed and
+    an unknown one stops.
+- **Their proof.** In the goldens, all the same: 150 functions reached now, 139 the same on every call
+  tested, none differ, the same 11 waiting for an interrupt (three calls of each); with 3,000 samples,
+  `AdlibTimerIsr`, `QueueSound`, `SetSoundByte`, `GetSoundByte` and `KeyboardIsr` on boot-adlib and
+  load-walk, 7,997 calls. `Direct`, through `tests/port_asm/<unit>.py` (slow set): the keyboard
+  handler on make, break, E0 and E1 scancodes with the ring full or not, the readers in each record
+  mode (the record file written and replayed); every song of `PCGAMESN.DAT` to its end on the speaker
+  and on Tandy, synthetic streams over every command byte, random states (26,110 calls, 148 the
+  original does not return from: a song looping forever, a divide error the oracle sits on); the
+  AdLib driver with `ADLIB.DAT`'s block, the game's sounds and generated scripts over every command,
+  the handlers on every pass, all 74 jump-table entries dispatched over the seeds. A planted bug in
+  each unit is caught.
+- **Not exact, by construction** (each a `QUIRK` comment in the C): the keyboard handler tests its
+  lock tables against CH, the interrupted code's CX, which a C handler does not have (it uses 0; it
+  matters only with Caps Lock or Num Lock on, which the oracle's BIOS never sets); `WaitKeyEvent` in
+  replay mode and `GetDriverTable` above 4 return the caller's AX in the original (0 in the C); the
+  AdLib driver's pitch slide pops its own return address when an F-number's low ten bits are zero
+  (the C stops there; never reached). `StartSample` polls the timer chip until a count the oracle
+  never gives, so the original does not return on the bench; in the port the C clock stands still in
+  assembly code, so it needs the machine's wait (below).
+- **Found on the way:** the oracle's AdLib hangs off its port handlers only, so the bench never took or
+  restored it, and the AdLib register writes were not compared (M2's runs included). `components()`
+  now takes the owners of the port handlers; the reruns above compare them. The bench now also
+  compares the Tandy and timer logs and the timer and PIC state; `tc2c` regenerates when the build's
+  list of `port/asm` files changes, takes a routine's prototype from its own definition when no C unit
+  declares it (so `Direct` reaches routines only assembly calls), and leaves `static` routines alone.
+- Next: the machine's wait primitive, so a hand-written routine that spins on what a handler writes
+  (the blocking key readers, `StartSample`, the tick waits) lets the recorded interrupts arrive.
+- **The C clock in the oracle** (`tools/oracle/cclock.py`, question A): instructions executed in the
+  code of the C units of `port/units.txt`, resident (`re/units.toml`) or overlaid (an overlay's code,
+  recognised by its hash in `build/re/eob.json` when the manager reads it from `EOB.EXE` into its
+  buffer). A block hook adds each translation block's instruction count (capstone, cached) when it
+  starts in C code; `Machine.run` now tells `chunk_listeners` after each chunk, and the overshoot of a
+  chunk that stopped inside a block is taken back from that block. Over the first 40 million
+  instructions of `EOB.EXE` it equals a count taken instruction by instruction (37,158,988 C-unit
+  instructions); it costs about 7 s a session.
+- **The recordings** (`tests/sessions/golden/<name>.clock.json`, question E), for the five `EOB.EXE`
+  goldens (`INTRO.EXE`'s wait for M6): each hardware interrupt delivered at its C-clock position, in
+  order (`[position]` for IRQ 0, `[position, "irq1", scancode]`, `[position, "mouse", condition,
+  buttons, x, y]`); the C-clock position of each checkpoint; and the oracle's instruction count at
+  each port access or service call where it changed since the one before (`[access, insns]`). That
+  last list is an addition to the design: the oracle's clock moves by run chunks, which its own
+  scheduling decides, and the retrace bit, the AdLib's timers, the timer's next interrupt and the
+  time of day read it; no C clock gives those values, so the port's machine sets its clock from the
+  recording at each access. `golden.py --clock` plays the session once more with the clock and writes
+  the file only if the run is still its golden; `--clock --check` plays it again and compares. Sizes:
+  20 to 32 KB, 0.8 MB for boot-adlib and 1.8 MB for load-walk, whose timer runs fast (28,016 and
+  60,222 interrupts).
+- The proof: `tests/unit/test_port.py` (slow set), `test_the_c_unit_clock` (the two counts over 5
+  million instructions; every recording reproduced) and the assembly fuzz test, which now calls the
+  handler and the retrace routines.
 
 ## M2: the per-function test (2026-11-05)
 
