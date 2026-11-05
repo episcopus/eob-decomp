@@ -1,5 +1,17 @@
 # Review: e1de7
 
+# Round P6 re-review (2026-11-04), commit 24711ec
+
+Reviewer: p6-rev-r2
+Commit reviewed: 24711ec (P6 re-review; the P6 round read 890ba54)
+
+Judged: the one open P6 must-fix (the three "far target not identified" clauses) and the diff since 890ba54 for src/E1DE7.C. `make match FILE=src/E1DE7.C`: 9 of 9 (2619 bytes), exit 0. `make readability UNIT=e1de7`: 0 findings.
+
+- [x] must-fix src/E1DE7.C:148, :250 and :252: fixed right. The DrawTextFrame QUIRK now names gDrawCell8x8 as driver export 5 (mcga.ovl 06AF, src/drivers/MCGA.ASM:459), which writes only the draw page, so the gTextLeft re-read is dead. The DrawTextLine comment now names CopyRegion's target as gCopyRegion, export 3 (mcga.ovl 05D4), and reads the copy as a one-line scroll. The driver source backs both.
+- [ ] note The P6 should on the attr1/attr2 comments remains non-blocking. No new false claim in the changed lines.
+
+# Round P6 (2026-11-04), commit 890ba54
+
 # Round P6
 
 Reviewer: p6-rev-2
