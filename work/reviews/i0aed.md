@@ -1,5 +1,17 @@
 # Review: i0aed
 
+# Round P6 re-review (2026-11-04), commit 24711ec
+
+Reviewer: p6-rev-r2
+Commit reviewed: 24711ec (P6 re-review; the P6 round read ce0608f)
+
+Judged: the open P6 must-fix (the INTRO twin name) and the diff since ce0608f for src/I0AED.C. `make match FILE=src/I0AED.C`: 4 of 4 (547 bytes), exit 0. `make readability UNIT=i0aed`: 0 findings.
+
+- [x] must-fix src/I0AED.C:8, :63, :93, :105, :106, :133: fixed right. The declaration, both calls, the unit header and the LoadPacked comment now use `GetPageBuffer`, matching the EOB twin 19EC:0002 and the `make rename` entry. No `GetPagePtr` remains in src/.
+- [ ] note The registry still has the historical `GetPagePtr` entries and the gPageSegs `why` text in re/renames.toml and re/globals.toml still says "GetPagePtr (097F:0002)". The registry owner may refresh that prose; it does not affect the source name and does not block.
+
+# Round P6 (2026-11-04), commit ce0608f367ed01b1b1df84e254eef04d1a734b27
+
 Reviewer: p6-rev-12
 Commit reviewed: ce0608f367ed01b1b1df84e254eef04d1a734b27 (P6 round; the diff since round 2 at 41f1cda). Round 2 at 41f1cda (main; round 1 reviewed 6003a3d, the branch review/i0aed was at aa13987 and I fast-forwarded it to main first; src/I0AED.C is the same in both)
 
