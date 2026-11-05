@@ -7453,7 +7453,7 @@ size = 50
 evidence = ["far", "segment"]
 level = "L2"
 match_flags = "tasm /mx"
-review = "passed 2026-11-01 rev-sonnet"
+review = "passed 2026-11-04 p6-rev-r2"
 name = "RandomByte"
 
 [[function]]

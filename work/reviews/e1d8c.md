@@ -1,5 +1,17 @@
 # Review: e1d8c
 
+# Round P6 re-review (2026-11-04), commit 24711ec
+
+Reviewer: p6-rev-r2
+Commit reviewed: 24711ec (P6 re-review; the P6 round read ce0608f)
+
+Judged: the open P6 must-fix (the header's placeholder sentence) and the diff since ce0608f for src/E1D8C.ASM. `make match FILE=src/E1D8C.ASM`: 1 of 1 (50 bytes), exit 0. `make readability UNIT=e1d8c`: 0 findings.
+
+- [x] must-fix src/E1D8C.ASM:18: fixed right. The "placeholder name stays" sentence is gone. The header now says RandomByte comes from the algorithm and the INTRO twin (0CDA:0006, src/I0CDA.ASM), the same 50-byte generator, with re/renames.toml as the evidence. The twin and algorithm back the name.
+- [ ] note No new false claim in the changed lines.
+
+# Round P6 (2026-11-04), commit ce0608f
+
 # Round P6 (2026-11-04), commit ce0608f
 
 Reviewer: p6-rev-1
