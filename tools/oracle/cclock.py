@@ -16,12 +16,19 @@ was C code. `test_the_c_unit_clock` checks the sum against a per-instruction cou
 It also records what the port needs to replay a session on this clock (the recording file,
 tests/sessions/golden/<name>.clock.json, decision E):
 
-  - each hardware interrupt the machine delivers, at its C-clock position, in order: `[position]` for IRQ 0,
-    `[position, "irq1", scancode]`, `[position, "mouse", condition, buttons, x, y]`;
+  - each hardware interrupt the machine delivers, in order, at its C-clock position and after how many of
+    the game's accesses: `[position, access]` for IRQ 0, `[position, access, "irq1", scancode]`,
+    `[position, access, "mouse", condition, buttons, x, y]`. An access is a port access or a service
+    call made by the game's code, the library's excepted (its CS:IP, or for a service the return
+    address of the INT, outside the start-up and the library, re/units.toml): the C units' and the
+    assembly units' code, and the handlers'. The port's library is its own and makes other calls, so
+    the library's accesses are counted apart. The port delivers an event once its C clock and its
+    access count have both reached the event's: an interrupt that came while assembly code spun (the C
+    clock still) comes after the same access;
   - the oracle's instruction count (`Machine.insns`, which moves by chunks: the timer, the retrace bit, the
-    AdLib's timers and the time of day read it) at each port access or service call where it changed since
-    the previous one, keyed by the access's ordinal: the port's machine sets its clock from it, since the
-    chunks are the oracle's scheduling and no C clock gives them;
+    AdLib's timers and the time of day read it) at each access where it changed since the previous one,
+    keyed by the access's ordinal (`times`; the library's in `library_times`): the port's machine sets its
+    clock from it, since the chunks are the oracle's scheduling and no C clock gives them;
   - the C-clock position of each checkpoint of the session.
 """
 from __future__ import annotations
@@ -49,6 +56,16 @@ def c_units() -> set[str]:
         if line:
             out.add(line.rsplit(".", 1)[0].lower())
     return out
+
+
+def library_ranges(program: str = "EOB.EXE") -> list[tuple[int, int]]:
+    """Load-relative linear [start, end) of the start-up and the library."""
+    out = []
+    for u in tomllib.loads(UNITS_TOML.read_text())["unit"]:
+        if u["program"] == program and u["kind"] in ("startup", "library"):
+            seg, off = (int(x, 16) for x in u["start"].split(":"))
+            out.append((seg * 16 + off, seg * 16 + off + u["bytes"]))
+    return sorted(out)
 
 
 def resident_ranges(program: str = "EOB.EXE") -> list[tuple[int, int]]:
@@ -80,15 +97,31 @@ class CClock:
         self.times: list[list[int]] = []   # [access ordinal, insns]
         self.accesses = 0
         self._last_insns = None
+        self.library_times: list[list[int]] = []
+        self.library_accesses = 0
+        self._last_library_insns = None
+        base = LOAD_SEG * 16
+        self.library = [(base + a, base + b) for a, b in library_ranges(program)]
         self.checkpoints: list[list] = []
         self._overlays = []
         if program == "EOB.EXE" and LAYOUT.exists():
             lay = json.loads(LAYOUT.read_text())
             self._overlays = [(o["code_bytes"], o["code_sha256"]) for o in lay["overlays"]]
-        m.uc.hook_add(UC_HOOK_BLOCK, self._on_block)
+        self._block = m.uc.hook_add(UC_HOOK_BLOCK, self._on_block)
         m.chunk_listeners.append(self._on_chunk)
         m.file_listeners.append(self._on_file)
         self._wrap(m)
+
+    def pause(self) -> None:
+        """Stops counting (the block hook removed: with it, Unicorn's emu_start runs past its `until`
+        address, which the per-function bench relies on)."""
+        if self._block is not None:
+            self.m.uc.hook_del(self._block)
+            self._block = None
+
+    def resume(self) -> None:
+        if self._block is None:
+            self._block = self.m.uc.hook_add(UC_HOOK_BLOCK, self._on_block)
 
     # ---- counting
     def is_c(self, lin: int) -> bool:
@@ -143,15 +176,16 @@ class CClock:
 
         def deliver_interrupt(n, clear_if=True):
             if hw["on"]:
+                at = [self.count, self.accesses]
                 if n == 0x09:
-                    self.events.append([self.count, "irq1", m.kbd_data])
+                    self.events.append(at + ["irq1", m.kbd_data])
                 elif n == 0xFF:
                     from .input import ROM_MOUSE
                     import struct
                     pkt = struct.unpack("<4H", bytes(m.uc.mem_read(m.linear(*ROM_MOUSE) + 0x80, 8)))
-                    self.events.append([self.count, "mouse", *pkt])
+                    self.events.append(at + ["mouse", *pkt])
                 else:
-                    self.events.append([self.count])            # IRQ 0: the position alone
+                    self.events.append(at)                      # IRQ 0: the position alone
             return deliver(n, clear_if)
         m.deliver_interrupt = deliver_interrupt
         for name in ("_try_deliver_irq0", "_try_deliver_irq1", "_try_deliver_mouse"):
@@ -165,24 +199,34 @@ class CClock:
                     hw["on"] = False
             setattr(m, name, wrapped)
 
-        def access():
+        def access(lin):
+            if any(a <= lin < b for a, b in self.library):
+                self.library_accesses += 1
+                if m.insns != self._last_library_insns:
+                    self._last_library_insns = m.insns
+                    self.library_times.append([self.library_accesses, m.insns])
+                return
             self.accesses += 1
             if m.insns != self._last_insns:
                 self._last_insns = m.insns
                 self.times.append([self.accesses, m.insns])
         read, write = m.port_read, m.port_write
 
+        def here():
+            return m.linear(m.get("cs"), m.get("ip"))
+
         def port_read(port, size):
-            access()
+            access(here())
             return read(port, size)
 
         def port_write(port, size, val):
-            access()
+            access(here())
             return write(port, size, val)
         m.port_read, m.port_write = port_read, port_write
         for n, fn in list(m.services.items()):
             def service(mach, fn=fn):
-                access()
+                ss, sp = mach.get("ss"), mach.get("sp")       # the INT's frame: IP, CS of the caller
+                access(mach.linear(mach.rw(ss, sp + 2), mach.rw(ss, sp)))
                 return fn(mach)
             m.services[n] = service
 
@@ -192,4 +236,5 @@ class CClock:
     def recording(self) -> dict:
         return {"clock": "instructions executed in the code of the C units of port/units.txt (playbook 80)",
                 "checkpoints": self.checkpoints, "interrupts": self.events, "times": self.times,
-                "accesses": self.accesses}
+                "accesses": self.accesses, "library_times": self.library_times,
+                "library_accesses": self.library_accesses}

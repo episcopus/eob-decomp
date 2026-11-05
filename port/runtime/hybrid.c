@@ -11,12 +11,14 @@
 #include <setjmp.h>
 #include <signal.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sys/time.h>
 
 #include "tcport.h"
 #include "hybrid.h"
 #include "ported.h"
+#include "machine.h"
 
 void tc2c_init_unported(void);
 
@@ -32,6 +34,12 @@ static volatile sig_atomic_t running, in_oracle, late;
 static void fail_hook(int code, const char *msg)
 {
     snprintf(tc_hybrid_message, sizeof tc_hybrid_message, "%s", msg);
+    if (in_oracle) {
+        /* a stop in C that a Python callback called: a jump would leave that callback holding Python's
+           lock, and the test would hang for good; end it loudly instead */
+        fprintf(stderr, "hybrid: stop %d inside a Python callback: %s\n", code, msg);
+        abort();
+    }
     siglongjmp(jb, code);
 }
 
@@ -55,15 +63,18 @@ u32 tc_hybrid_far(farptr entry, const u8 *args, u16 n)
     if (tc_hybrid_oracle == NULL) {
         tc_fail(71, "no oracle to run %04X:%04X", TC_SEG(entry), TC_OFF(entry));
     }
-    in_oracle = 1;
-    r = tc_hybrid_oracle(entry, args, n);
-    in_oracle = 0;
+    {
+        sig_atomic_t was = in_oracle;
+        in_oracle = 1;
+        r = tc_hybrid_oracle(entry, args, n);
+        in_oracle = was;
+    }
     if (tc_hybrid_oracle_failed) {
         tc_hybrid_oracle_failed = 0;
         tc_fail(73, "the original's %04X:%04X, run for the C, did not return (%s)", TC_SEG(entry),
                 TC_OFF(entry), tc_hybrid_message);
     }
-    if (late) {
+    if (late && !in_oracle) {
         tc_fail(72, "the C did not return within the time limit (last in the original's %04X:%04X)",
                 TC_SEG(entry), TC_OFF(entry));
     }
@@ -104,6 +115,9 @@ int tc_hybrid_run(unsigned index, u16 ss, u16 sp, u16 ds, u32 *ret, unsigned lim
         t.it_value.tv_usec = (limit_ms % 1000u) * 1000;
         running = 1;
         setitimer(ITIMER_VIRTUAL, &t, NULL);
+        /* an interrupt due when the routine is entered is taken before its first instruction, as the
+           original took it (the port's next check would come after an access) */
+        machine_deliver_due();
         *ret = tc_hybrid_entries[index].thunk();
     }
     running = 0;
@@ -238,14 +252,17 @@ int tc_hybrid_oracle_int(u16 seg, u16 off, tc_regs *r)
     if (tc_hybrid_int_fn == NULL) {
         return 0;
     }
-    in_oracle = 1;
-    bad = tc_hybrid_int_fn(seg, off, r);
-    in_oracle = 0;
+    {
+        sig_atomic_t was = in_oracle;
+        in_oracle = 1;
+        bad = tc_hybrid_int_fn(seg, off, r);
+        in_oracle = was;
+    }
     if (bad) {
         tc_fail(73, "the original's interrupt code at %04X:%04X, run for the C, did not return (%s)", seg, off,
                 tc_hybrid_message);
     }
-    if (late) {
+    if (late && !in_oracle) {
         tc_fail(72, "the C did not return within the time limit (last in the original's %04X:%04X)", seg, off);
     }
     return 1;
@@ -253,11 +270,79 @@ int tc_hybrid_oracle_int(u16 seg, u16 off, tc_regs *r)
 
 int tc_hybrid_oracle_port(int write, u16 port, int size, u16 *value)
 {
+    int bad;
     if (tc_hybrid_port_fn == NULL) {
         return 0;
     }
-    if (tc_hybrid_port_fn(write, port, size, value)) {
+    {
+        sig_atomic_t was = in_oracle;
+        in_oracle = 1;
+        bad = tc_hybrid_port_fn(write, port, size, value);
+        in_oracle = was;
+    }
+    if (bad) {
         tc_fail(73, "the oracle's port %s %04Xh failed (%s)", write ? "out" : "in", port, tc_hybrid_message);
     }
+    if (late && !in_oracle) {
+        tc_fail(72, "the C did not return within the time limit (last at the oracle's port %04Xh)", port);
+    }
     return 1;
+}
+
+/* ---- the interrupts on the bench (irq.c) ------------------------------------------------------- */
+
+/* set by the oracle (ctypes): the bench's devices take an interrupt (in-service flags, port 60h, the
+   mouse trampoline's data), and its instruction count is set; 0 when done */
+int (*tc_hybrid_raise_fn)(u8 kind, u8 scancode, u16 cond, u16 buttons, u16 x, u16 y);
+int (*tc_hybrid_insns_fn)(u32 insns);
+
+int tc_hybrid_raise(const machine_event *e)
+{
+    if (tc_hybrid_raise_fn == NULL) {
+        return 0;
+    }
+    {
+        sig_atomic_t was = in_oracle;
+        int bad;
+        in_oracle = 1;
+        bad = tc_hybrid_raise_fn(e->kind, e->scancode, e->cond, e->buttons, e->x, e->y);
+        in_oracle = was;
+        if (bad) {
+            tc_fail(73, "the bench could not take an interrupt (%s)", tc_hybrid_message);
+        }
+    }
+    if (late && !in_oracle) {
+        tc_fail(72, "the C did not return within the time limit (last at an interrupt)");
+    }
+    return 1;
+}
+
+int tc_hybrid_set_insns(u32 insns)
+{
+    if (tc_hybrid_insns_fn == NULL) {
+        return 0;
+    }
+    {
+        sig_atomic_t was = in_oracle;
+        in_oracle = 1;
+        tc_hybrid_insns_fn(insns);
+        in_oracle = was;
+    }
+    if (late && !in_oracle) {
+        tc_fail(72, "the C did not return within the time limit");
+    }
+    return 1;
+}
+
+/* After a test's C returns: the events still due are delivered, as the port would at its next check;
+   0, or the stop's code */
+int tc_hybrid_drain(void)
+{
+    int code;
+    tc_hybrid_message[0] = 0;
+    code = sigsetjmp(jb, 1);
+    if (code == 0) {
+        machine_deliver_due();
+    }
+    return code;
 }

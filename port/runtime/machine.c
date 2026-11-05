@@ -127,14 +127,14 @@ void machine_call_handler(u16 seg, u16 off, tc_regs *r)
     if (seg == MACHINE_ROM_SEG) {
         if (off >= MACHINE_STUB_OFF0 && off < MACHINE_STUB_OFF0 + 0x400u && (off - MACHINE_STUB_OFF0) % 4u == 0) {
             u8 k = (u8)((off - MACHINE_STUB_OFF0) / 4u);
+            machine_access();                  /* a service the game calls */
 #ifdef TC_HYBRID
-            if (tc_hybrid_oracle_int(seg, off, r)) {
-                return;
-            }
+            if (!tc_hybrid_oracle_int(seg, off, r))
 #endif
-            if (machine_service(k, r) != 0) {
-                machine_unimplemented("INT has no service (vector points at its stub)", r);
-            }
+                if (machine_service(k, r) != 0) {
+                    machine_unimplemented("INT has no service (vector points at its stub)", r);
+                }
+            machine_deliver_due();
             return;
         }
         if (off == 0) {

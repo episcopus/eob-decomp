@@ -55,7 +55,7 @@ from oracle.machine import LOAD_SEG, REG, Stop, OracleError  # noqa: E402
 from oracle.input import Script  # noqa: E402
 from oracle import golden  # noqa: E402
 from unicorn import UC_PROT_ALL, UC_HOOK_MEM_WRITE, UcError  # noqa: E402
-from unicorn.x86_const import UC_X86_REG_CS  # noqa: E402
+from unicorn.x86_const import UC_X86_REG_CS, UC_X86_REG_EFLAGS  # noqa: E402
 
 import cmatch  # noqa: E402  (read-only: the `/*@ */` annotations, for the names of globals)
 
@@ -90,6 +90,27 @@ class Regs(ctypes.Structure):
 # the bench runs interrupt code (a service, a handler with no C) and port accesses for the C
 INT_FN = ctypes.CFUNCTYPE(ctypes.c_int, ctypes.c_uint16, ctypes.c_uint16, ctypes.POINTER(Regs))
 PORT_FN = ctypes.CFUNCTYPE(ctypes.c_int, ctypes.c_int, ctypes.c_uint16, ctypes.c_int, ctypes.POINTER(ctypes.c_uint16))
+RAISE_FN = ctypes.CFUNCTYPE(ctypes.c_int, ctypes.c_uint8, ctypes.c_uint8, ctypes.c_uint16, ctypes.c_uint16,
+                            ctypes.c_uint16, ctypes.c_uint16)
+INSNS_FN = ctypes.CFUNCTYPE(ctypes.c_int, ctypes.c_uint32)
+
+
+class Event(ctypes.Structure):
+    """machine.h's machine_event"""
+    _fields_ = [("at", ctypes.c_uint32), ("access", ctypes.c_uint32), ("kind", ctypes.c_uint8),
+                ("scancode", ctypes.c_uint8), ("cond", ctypes.c_uint16), ("buttons", ctypes.c_uint16),
+                ("x", ctypes.c_uint16), ("y", ctypes.c_uint16)]
+
+
+def event(rec: list) -> Event:
+    """A recording's interrupt ([at, access], [at, access, "irq1", scancode], [at, access, "mouse",
+    condition, buttons, x, y]) as the machine's."""
+    at, access, *rest = rec
+    if not rest:
+        return Event(at, access, 0)
+    if rest[0] == "irq1":
+        return Event(at, access, 1, rest[1] & 0xFF)
+    return Event(at, access, 2, 0, *rest[1:5])
 
 
 def components(m) -> list:
@@ -150,6 +171,11 @@ class Bench:
         self.port_callback = PORT_FN(self.oracle_port)
         ctypes.c_void_p.in_dll(lib, "tc_hybrid_int_fn").value = ctypes.cast(self.int_callback, ctypes.c_void_p).value
         ctypes.c_void_p.in_dll(lib, "tc_hybrid_port_fn").value = ctypes.cast(self.port_callback, ctypes.c_void_p).value
+        self.raise_callback = RAISE_FN(self.oracle_raise)
+        self.insns_callback = INSNS_FN(self.oracle_insns)
+        ctypes.c_void_p.in_dll(lib, "tc_hybrid_raise_fn").value = ctypes.cast(self.raise_callback, ctypes.c_void_p).value
+        ctypes.c_void_p.in_dll(lib, "tc_hybrid_insns_fn").value = ctypes.cast(self.insns_callback, ctypes.c_void_p).value
+        self.cclock = None                   # attached when a call runs with interrupts
         self.oracle_calls = 0
         self.oracle_error = ""
         self.written: set | None = None      # what the overlay manager wrote, while watched
@@ -318,6 +344,86 @@ class Bench:
             self.oracle_error = "the bench's port %04X failed: %r" % (port, e)
             self.message.value = self.oracle_error.encode()[:500]
             return -1
+
+
+    def oracle_raise(self, kind, scancode, cond, buttons, x, y):
+        """The C machine delivers an interrupt: the bench's controller and devices take it as the oracle's
+        delivery does (Machine._try_deliver_irq0/1, input.py Mouse.deliver)."""
+        m = self.m
+        try:
+            if kind == 0:
+                m.irq0_in_service = True
+            elif kind == 1:
+                m.kbd_data = scancode
+                m.irq1_in_service = True
+            else:
+                import struct
+                from oracle.input import ROM_MOUSE
+                seg, off, _mask = m.mouse.handler
+                m.uc.mem_write(m.linear(*ROM_MOUSE) + 0x80, struct.pack("<6H", cond, buttons, x, y, 0, 0))
+                m.uc.mem_write(m.linear(*ROM_MOUSE) + 0x90, struct.pack("<HH", off, seg))
+                m.mouse_busy = True
+            return 0
+        except Exception as e:  # noqa: BLE001
+            self.message.value = ("the bench's interrupt failed: %r" % e).encode()[:500]
+            return -1
+
+    def oracle_insns(self, insns):
+        self.m.insns = insns
+        return 0
+
+    def run_with_interrupts(self, seg, off, sp_after, keys=(), budget=BUDGET) -> str:
+        """Run from CS:IP until seg:off is reached with SP at sp_after, the oracle delivering its
+        interrupts as in a session (the timer by its clock, IRQ 1 for each of `keys`: a scancode now, or
+        (instructions, scancode) once that many have run); what it delivered and the clock it read are
+        in self.cclock (a CClock counted from 0); '' or why not."""
+        from oracle.cclock import CClock
+        from oracle.machine import FLAG_IF
+        m = self.m
+        if self.cclock is None:
+            self.cclock = CClock(m)
+            self._stop_at = None
+
+            def at_sentinel(mach):
+                if self._stop_at is not None and mach.get("sp") == self._stop_at:
+                    raise Stop("returned")
+            m.add_breakpoint(SENTINEL[0], SENTINEL[1], at_sentinel)
+            self._later = []
+
+            def feed(mach, chunk):
+                while self._later and mach.insns + chunk >= self._later[0][0]:
+                    mach.kbd_queue.append(self._later.pop(0)[1])
+            m.chunk_listeners.append(feed)
+            # a pending interrupt taken at the first instruction with IF set, as the CPU takes it: the C
+            # delivers right after the access before it, and a later look could fall after memory writes
+            # with no access between (StartSample's setup after its sti); and a spin loop's IF-on phases
+            # are always reached (machine.py wait_chunk)
+            m.wait_chunk = 1
+        cc = self.cclock
+        cc.resume()
+        cc.count = cc.accesses = cc.library_accesses = 0
+        cc.events, cc.times, cc.library_times = [], [], []
+        cc._last_insns = cc._last_library_insns = None
+        cc.chunk_sum, cc.last = 0, None
+        start = m.insns
+        m.kbd_queue.extend(k for k in keys if isinstance(k, int))
+        self._later = sorted((start + k[0], k[1]) for k in keys if not isinstance(k, int))
+        m.uc.reg_write(UC_X86_REG_EFLAGS, m.get("flags") | FLAG_IF)
+        self._stop_at = sp_after
+        try:
+            why = m.run(budget)
+        except OracleError as e:
+            return "oracle: %s" % str(e).splitlines()[0]
+        except UcError as e:
+            return "guest fault: %s" % e
+        finally:
+            self._stop_at = None
+            self._later = []
+            cc.pause()
+        if why != "returned":
+            return "did not return in %d instructions (%s, at %04X:%04X)" % (
+                budget, why, (m.get("cs") - LOAD_SEG) & 0xFFFF, m.get("ip"))
+        return ""
 
 
 class Tester:
@@ -508,10 +614,16 @@ class Direct:
     def read(self, seg: int, off: int, n: int) -> bytes:
         return bytes(self.m.read(seg, off, n))
 
-    def call(self, name: str, *args, ds: int = DGROUP, es: int = DGROUP) -> dict:
+    def call(self, name: str, *args, ds: int = DGROUP, es: int = DGROUP, interrupts: bool = False,
+             keys=(), alter=None, budget: int = BUDGET) -> dict:
         """args: ints (a word each) or (value, 4) for a long or a far pointer. An interrupt handler is
-        entered as the CPU enters it (FLAGS, CS and IP pushed; ds and es as given). Returns {"status":
-        "same" | "differs" | "C stopped" | "not tested: ...", "value": the original's DX:AX, ...}."""
+        entered as the CPU enters it (FLAGS, CS and IP pushed; ds and es as given). With interrupts, the
+        original runs as in a session, the oracle delivering the timer's interrupts and IRQ 1 for each
+        scancode of `keys`; the C then runs with what the original was delivered, in order, at the same
+        accesses (the machine's wait, irq.c), and those still due when it returns are delivered after;
+        `alter(events, times)` may change what the C is given (a test that the comparison notices).
+        Returns {"status": "same" | "differs" | "C stopped" | "not tested: ...", "value": the original's
+        DX:AX, ...}."""
         m, bench, i = self.m, self.bench, self.index[name]
         e = self.t.entries[i]
         block = b""
@@ -530,7 +642,10 @@ class Direct:
             m.set(r, v)
         before = bench.memory()
         before_state = bench.save()
-        why = bench.until(SENTINEL[0], SENTINEL[1], (sp + frame) & 0xFFFF)
+        if interrupts:
+            why = bench.run_with_interrupts(SENTINEL[0], SENTINEL[1], (sp + frame) & 0xFFFF, keys, budget)
+        else:
+            why = bench.until(SENTINEL[0], SENTINEL[1], (sp + frame) & 0xFFFF)
         r = {"function": name}
         if why:
             r["status"] = "not tested: the original %s" % why
@@ -542,8 +657,24 @@ class Direct:
         ctypes.memmove(bench.base, before, RAM)
         m.uc.ctl_remove_cache(0, RAM)
         bench.restore(before_state)
+        lib = self.t.lib
+        lib.machine_events_reset()
+        if interrupts:
+            cc = bench.cclock
+            r["interrupts"] = len(cc.events)
+            evs, tms = list(cc.events), list(cc.times)
+            if alter is not None:
+                evs, tms = alter(evs, tms)
+            for rec in evs:
+                ev = event(rec)
+                lib.machine_event_push(ctypes.byref(ev))
+            for access, insns in tms:
+                lib.machine_time_push(ctypes.c_uint32(access), ctypes.c_uint32(insns))
         val = ctypes.c_uint32(0)
-        code = self.t.lib.tc_hybrid_run(i, ss, sp, ds, ctypes.byref(val), LIMIT_MS)
+        code = lib.tc_hybrid_run(i, ss, sp, ds, ctypes.byref(val), LIMIT_MS)
+        if code == 0:
+            code = lib.tc_hybrid_drain()
+        left = lib.machine_events_left()
         c_mem, c_out = bench.memory(), bench.outside()
         ctypes.memmove(bench.base, o_mem, RAM)          # go on from the original's state
         m.uc.ctl_remove_cache(0, RAM)
@@ -559,6 +690,8 @@ class Direct:
             if r["value"] & mask != val.value & mask:
                 regs.append("returns %X, the original %X" % (val.value & mask, r["value"] & mask))
         outs = ["%s differs" % k for k in o_out if o_out[k] != c_out[k]]
+        if left:
+            outs.append("%d interrupts never came due for the C" % left)
         r["status"] = "same" if not spans and not regs and not outs else "differs"
         if r["status"] == "differs":
             r["registers"] = regs

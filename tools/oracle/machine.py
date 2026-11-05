@@ -132,6 +132,11 @@ class Machine:
         self.irq0_raised = 0               # timer interrupts raised so far (replay.py records it per read)
         self.irq0_owed: int | None = None  # replay: interrupts to raise, set at reads (None: from the clock)
         self._pending_since = 0
+        # how often a pending interrupt is looked at again while it cannot be taken (IF off, a handler in
+        # service); the sessions use 100. A guest loop whose length divides into it the same way each time
+        # can keep IF off at every look (WaitKeyEvent's 8-instruction cli/sti loop sees 2 of its 8 phases),
+        # so the per-function bench looks at every instruction (tools/port/hybrid.py run_with_interrupts)
+        self.wait_chunk = 100
         self.next_irq0 = self._irq0_period()
         self.pic_mask = 0
         self.speaker_log = []              # (time, divisor, on) for sound capture
@@ -565,7 +570,7 @@ class Machine:
                                           self.insns - self._pending_since, self.get("cs"), self.get("ip")))
                 if self.irq0_pending or self.irq1_pending or self.kbd_queue or (
                         self.mouse is not None and self.mouse.events):
-                    chunk = 100                      # waiting for IF; look again soon
+                    chunk = self.wait_chunk          # waiting for IF; look again soon
                 elif self.irq0_owed is not None:
                     chunk = 50_000                   # replay: no clock event to stop at
                 else:

@@ -279,21 +279,22 @@ int tc_hybrid_oracle_port(int write, u16 port, int size, u16 *value);
 
 u16 machine_port_in(u16 port, int size)
 {
-#ifdef TC_HYBRID
     u16 v;
-    if (tc_hybrid_oracle_port(0, port, size, &v)) {
-        return v;
-    }
+    machine_access();
+#ifdef TC_HYBRID
+    if (!tc_hybrid_oracle_port(0, port, size, &v))
 #endif
-    return machine_in(port, size);
+        v = machine_in(port, size);
+    machine_deliver_due();
+    return v;
 }
 
 void machine_port_out(u16 port, int size, u16 value)
 {
+    machine_access();
 #ifdef TC_HYBRID
-    if (tc_hybrid_oracle_port(1, port, size, &value)) {
-        return;
-    }
+    if (!tc_hybrid_oracle_port(1, port, size, &value))
 #endif
-    machine_out(port, size, value);
+        machine_out(port, size, value);
+    machine_deliver_due();
 }

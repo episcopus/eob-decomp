@@ -135,6 +135,43 @@ typedef struct {
 } machine_hw;
 extern machine_hw hw;
 
+/* ---- the interrupts the hardware raises, on the proof's clock (irq.c) ---------------------------- */
+
+enum { MACHINE_IRQ0, MACHINE_IRQ1, MACHINE_MOUSE };
+
+/* one interrupt, due at C-clock position `at` after `access` accesses of the game */
+typedef struct {
+    u32 at, access;
+    u8 kind;
+    u8 scancode;                              /* IRQ 1: what port 60h reads */
+    u16 cond, buttons, x, y;                  /* a mouse event */
+} machine_event;
+
+/* the oracle's instruction count from the access `access` on */
+typedef struct {
+    u32 access, insns;
+} machine_time_mark;
+
+extern u32 machine_cclock;     /* C-unit instructions run (tc2c's blocks add them, M5) */
+extern u32 machine_accesses;   /* the game's port accesses and service calls so far */
+
+void machine_events_reset(void);
+void machine_event_push(const machine_event *e);
+void machine_time_push(u32 access, u32 insns);
+u32 machine_events_left(void);
+
+/* An access of the game (machine_port_in/out, a service called through machine_int): counts it and
+   sets the clock the recording gives from it on; the events then due are delivered after it. */
+void machine_access(void);
+
+/* Delivers the events due (both counts reached), in order; how many. Not inside a handler. */
+int machine_deliver_due(void);
+
+/* A hand-written routine spinning on memory a handler writes (the ring of the key readers) calls this
+   on each turn: the next event due is delivered. When none is due the routine would spin forever (the
+   original waited for an interrupt that came later on the clock, or never): it stops. */
+void machine_wait(void);
+
 /* the INT 33h driver's state (mouse.c) */
 typedef struct {
     u16 x, y, buttons, visible;

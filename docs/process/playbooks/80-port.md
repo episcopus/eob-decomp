@@ -19,7 +19,7 @@ sound and state.
 | Decisions | the nine answered by the human 2026-11-04, the five follow-ups (A to E) 2026-11-05 (section "Decisions"). Linux and Windows deferred by the human 2026-11-05: macOS only for now. Left for the human: install the newest LLVM (section "What the human installs") |
 | M1 tc2c for every C unit | done 2026-11-05 except the LLVM pin, which waits for the human's install: `make port` translates all 41 C units of `EOB.EXE` (609 functions) with none refused, compiles them with `-Werror` and links them; what is still a stub is 63 assembly routines (M3) and 23 library functions that need the machine (section "M1") |
 | M2 the per-function test | the machinery done 2026-11-05: `make port-hybrid` (section "M2"); on the five `EOB.EXE` goldens 129 of the 594 functions with an entry are reached, 118 are the same as the original on every call tested (635 calls), none differ, 11 are reached only where they wait for an interrupt (M3). The rest of the check, every function of `src/`, needs sessions that reach them |
-| M3 the machine and the assembly units | started 2026-11-05 (section "M3"): `port/asm/` has the four units that touch no hardware, `E1BA8`, `E1D8C`, `E19FC` and `E1D9A` (8 routines), and the interrupt handlers' units `E1D8F`, `E1AAD`, `E1948`, `E_TEXT` with the retrace `E1DE4` (35 routines in all), each the same as the original on every call tested; the C-unit clock in the oracle and the five `.clock.json` recordings ("The interrupts and the C clock"); the machine boots to the oracle's memory byte for byte, and its DOS, INT 10h for MCGA, BIOS time, INT 33h driver and ports (PIC, PIT, 61h, 60h, retrace, DAC, AdLib) answer every one of the 335,055 service calls and port accesses of the five goldens as the oracle does. Next: the machine's wait for spinning routines, the library functions on the machine, the other 10 units |
+| M3 the machine and the assembly units | started 2026-11-05 (section "M3"): `port/asm/` has the four units that touch no hardware, `E1BA8`, `E1D8C`, `E19FC` and `E1D9A` (8 routines), and the interrupt handlers' units `E1D8F`, `E1AAD`, `E1948`, `E_TEXT` with the retrace `E1DE4` (35 routines in all), each the same as the original on every call tested; the C-unit clock in the oracle and the five `.clock.json` recordings ("The interrupts and the C clock"); the machine boots to the oracle's memory byte for byte, and its DOS, INT 10h for MCGA, BIOS time, INT 33h driver and ports (PIC, PIT, 61h, 60h, retrace, DAC, AdLib) answer every one of the 335,055 service calls and port accesses of the five goldens as the oracle does. the machine's wait delivers the recorded interrupts to spinning routines (`port/runtime/irq.c`). Next: the library functions on the machine, the other 10 units |
 | M4 to M7 | not started (section "Order of work") |
 
 ## Why `src/` does not compile natively as it is
@@ -474,8 +474,54 @@ make golden CLOCK=1 [CHECK=1] [NAME=x]          # the C-clock recordings beside 
   compares the Tandy and timer logs and the timer and PIC state; `tc2c` regenerates when the build's
   list of `port/asm` files changes, takes a routine's prototype from its own definition when no C unit
   declares it (so `Direct` reaches routines only assembly calls), and leaves `static` routines alone.
-- Next: the machine's wait primitive, so a hand-written routine that spins on what a handler writes
-  (the blocking key readers, `StartSample`, the tick waits) lets the recorded interrupts arrive.
+- **The wait** (`port/runtime/irq.c`, 2026-11-05). The machine takes the interrupts as a list of
+  events in the order they are due, each with its C-clock position and the number of the game's
+  accesses made before it (port accesses and service calls; the library's are counted apart, since
+  the port's library is its own and makes other calls: an access's CS:IP, or a service's return
+  address, in the start-up or the library). It delivers an event once both its counts are reached:
+  after each access (`machine_access`, in `machine_port_in`/`out` and a service called through
+  `machine_int`), at the C units' block boundaries (M5), and in `machine_wait`, which a hand-written
+  routine calls on each turn it spins on memory a handler writes (the three blocking key readers);
+  no event due there means the routine would spin forever, and the machine stops. A routine that
+  spins on a port (`StartSample` on the timer chip, `WaitRetrace`) needs no call: its accesses
+  deliver, and the oracle's instruction count, which the recording gives at the access where it
+  changed, moves the port's answer. An interrupt is the controller's in-service flag (the scancode in
+  port 60h for IRQ 1, the driver's event and the game's handler in the trampoline's data for the
+  mouse) and the handler through its vector; none is delivered inside a handler (the oracle's
+  controller would not either, but for a handler that opens interrupts, which the goldens show if it
+  matters).
+- The recordings now key each interrupt by the access count too (`[position, access]`, ...) and keep
+  the library's clock marks apart (`library_times`, `library_accesses`).
+- **Proven** by `hybrid.Direct` with `interrupts=True`: the original runs as in a session (the
+  oracle's own delivery, the timer by its clock, IRQ 1 for the keys given, at once or after a number
+  of instructions), the oracle's C clock records what it delivered and the clock marks, and the C is
+  given those; events still due when it returns are delivered after (as the port's next check
+  would); an event already due when the routine is entered is delivered before its first statement,
+  as the original took it before its first instruction (`tc_hybrid_run`). `tests/port_asm/waits.py`
+  (slow set, 83 calls, all the same): the three readers 25 times each over keys, released and special
+  keys among them, so a reader turns several times and waits between; `StartSample` 8 times, through
+  1 to 2,772 timer interrupts (the sample of the call before still playing at divisor 4Bh, so the C
+  `SampleTimerIsr` runs throughout; untestable before: the original never returned on a bench without
+  them); and two alterations noticed, the clock marks dropped and a key dropped.
+- **Where the bench's oracle takes an interrupt.** With an interrupt pending that it cannot take (IF
+  off, a handler in service) the oracle looks again every 100 instructions (`Machine.wait_chunk`; the
+  sessions keep 100, so the goldens and recordings are unchanged). The bench looks at every
+  instruction instead, so it takes the interrupt at the first instruction with IF set, as the CPU
+  does. Two failures showed why. The readers' loop opens interrupts for two instructions in eight
+  (`sti`, `jmp`, then `cli`), and a look every 100 lands on two phases of the eight, so 70 of 75
+  reader calls stalled. And `StartSample` runs its wait and two AdLib writes under `cli`, then sets up
+  the sample right after its `sti`: a look 100 instructions late took the pending timer interrupt
+  after those writes, with no access between, which no access count can say; the C, delivering right
+  after the access before, did as the CPU would and differed from the late oracle.
+- Found on the way: with a block hook installed, Unicorn's `emu_start` runs past its `until` address;
+  the bench's C clock counts only while a run with interrupts goes on (`CClock.pause`, `resume`).
+- Found on the way: the C's time limit (`LIMIT_MS`, a virtual-time signal that jumps out of the C)
+  must never jump while Python runs inside one of the library's callbacks: the jump leaves that
+  callback holding Python's lock and the test hangs for good with no CPU used (a first run of
+  `waits.py` sat 4.5 hours that way). Every callback (`tc_hybrid_far`, `_oracle_int`, `_oracle_port`,
+  `_raise`, `_set_insns`) now marks the time as Python's, saving and restoring the mark so a callback
+  that calls the C again cannot clear it; the limit then stops the C when the callback returns, and a
+  stop raised by C that a callback called aborts with its message instead of hanging.
 - **The C clock in the oracle** (`tools/oracle/cclock.py`, question A): instructions executed in the
   code of the C units of `port/units.txt`, resident (`re/units.toml`) or overlaid (an overlay's code,
   recognised by its hash in `build/re/eob.json` when the manager reads it from `EOB.EXE` into its

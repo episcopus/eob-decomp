@@ -395,7 +395,8 @@ static u16 queue_mouse_event(u16 es, u16 ax)
 
 /* The three blocking readers wait for the ring to hold an event: the INT 9 handler (or the INT 33h
    handler, through 1AAD:0B0E) fills it while they spin (playbook 80, "The clock with hand-written
-   assembly": the machine delivers the interrupts recorded while a routine waits). In state 2 they
+   assembly": the machine delivers the interrupts recorded while a routine waits: machine_wait on each
+   turn the ring is empty). In state 2 they
    do not wait and take the event with AX as it is: the segment value `mov ax,cs` left (053A, 0588),
    or the previous event's key on a later turn of the loop. In state 2 _DequeueKeyEvent replaces
    what it reads at that index, so the index only matters when the state the caller's DS shows and
@@ -409,6 +410,7 @@ static u16 queue_mouse_event(u16 es, u16 ax)
         if (LD8(tc_ds, G_RECORD_MODE) != 2) {
             ax = RD(K_KEY_BUF_READ);
             if (ax == RD(K_KEY_BUF_WRITE)) {
+                machine_wait();                             /* the ring is empty: an interrupt fills it */
                 continue;
             }
         }
@@ -433,6 +435,7 @@ static u16 queue_mouse_event(u16 es, u16 ax)
         if (RD8(G_RECORD_MODE) != 2) {
             ax = RD(K_KEY_BUF_READ);
             if (ax == RD(K_KEY_BUF_WRITE)) {
+                machine_wait();                             /* the ring is empty: an interrupt fills it */
                 continue;
             }
         }
@@ -457,6 +460,7 @@ static u16 queue_mouse_event(u16 es, u16 ax)
         if (LD8(tc_ds, G_RECORD_MODE) != 2) {
             ax = RD(K_KEY_BUF_READ);
             if (ax == RD(K_KEY_BUF_WRITE)) {
+                machine_wait();                             /* the ring is empty: an interrupt fills it */
                 continue;
             }
         }
